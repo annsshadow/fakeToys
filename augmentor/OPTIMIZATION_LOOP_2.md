@@ -960,6 +960,8 @@
 
 | B248 | **已关闭（L178，A184 索引口径变更：未入仓用户数据目录移出索引）**：A184 的定位引用索引收下顶层两个未入仓用户数据目录（data/ 与 bak/ 两个顶层目录）——data/versions/ 每跑一次全量门禁被 create_version 测试追加新版本目录、bak/ 是手动备份——磁盘态随门禁跑动漂移，ambiguous 快照不可复现（L178 实锤 ambiguous 现量 330 vs 钉值 328，train_data 与 data.json 一名多候选被这两目录的同名件灌入） | 按 L145 的 .backups 先例把两目录移出索引——但**只按「恰好是 ROOT 直接子目录」逐层判**（_walks 新增 top_skip 形参，仅 base==ROOT 时匹配），不误伤嵌套的 augmentor/data 包（其 image.py 等是入仓产品码、被 web 侧类型注释引用，必须留在索引才解析成 live；首版用任意深度同名跳法把它也抹掉、翻成 dead_path 红 2 条，已回退）；指向这两个目录的引用改判「指向不入仓工件」两档 scratch 与 scratch_missing；四桶按口径变更逐格重钉：ambiguous 328→300、runtime_ns 30→0（30 条全是 data/* 示例路径）、scratch 730→768、scratch_missing 302→339（含本条账目自身新引散名 +1/+5/+1）；自检例 data/xxx.json 期望由 runtime_ns 改 scratch_missing；三档硬 0 与 live 面（2488）未动；测试-only 轮零新用例；全量门禁 7787 passed / 3 skipped / exit 0 | M |
 
+| B249 | **已关闭（L179，A155①：to_http_error 500 档不再转发异常原文）**：api/deps.py 的 to_http_error 最后一支把未分类异常原样 str(exc) 塞进 500 响应体——OSError(13,'Permission denied','/srv/...') 实测把部署根绝对路径与文件系统状态（Errno 28 磁盘满 / Errno 13 权限缺失）一并回给客户端，是可被利用的探测信号；A155 原框两格候选拍定取①（固定文案 + 原文落服务端日志，安全收紧方向，非脱敏白名单②） | 500 支改回固定文案常量 INTERNAL_ERROR_DETAIL（api/deps.py 模块级唯一产地，A77）+ logger.exception 把原文留服务端日志；400 支（ValueError 可行动文案）一字不动防修过头；tests/unit/test_api_deps.py 新增守卫 3 例（OSError 不泄漏部署路径/errno + 原文进日志 + ValueError 仍 400 原样回传）；tests/integration/test_api_dataset_system_tools.py 两处「500 回原文」断言按红字重述为「== 固定文案 + 原文不在响应体」（TestUnexpectedFailureBecomes500 五处 + dataset_impact/evaluate 各一，docstring 同步改口径）；A184/L79 各棘轮原地绿（本轮新增引用全用全路径 live 形、零散名）；全量 7790 passed / 3 skipped / exit 0（L178 的 7787 + 3 新守卫，零回归） | M |
+
 | B246 | **已关闭（L176）**：策略旋钮「封闭清单拒」同型普查（L175 的 method 静默回落修完后沿同型全仓扫）——sample 的 method / outlier 的 method / expander 的strategy 三处**已有** else 拒（普查实证）；唯一缺口 `save_quality_report` 的 format：未知 format **静默落 JSON 支**（请求 yaml 的拿到 json 文件不出声，checkpoint 症状族语义漂移档） | 缺口收边（format 封闭清单 `QUALITY_REPORT_FORMATS` + 入口 require_choice + None 专判）；**普查结论钉成棘轮**：新守卫 6 例含一条「五旋钮 × 未知值全部出 DataValidationError」合体例——任一旋钮未来退化回静默回落当场红；变异自证 2 红（剪 format 判据）、sha256 逐字节还原；A184/L79 各棘轮原地绿（quality_report.py 插行使 0 条活行引用顶歪，全量门禁证实） | M |
 
 | B245 | **已关闭（L175）**：搜索方法封闭清单只住 API 面（dataset_tools 路由的 400 判据）、CLI 面靠 argparse choices——但 **SDK 直构面静默**：`search_dataset(method='regex_typo')` 不进分支落 contains，请求 regex 的拿到 contains 结果与分数，不出任何声（checkpoint 症状族的语义漂移档；L174 探针九档里唯一真缺口） | 清单权威下沉 SDK 层（search_enhanced.SEARCH_METHODS），API 路由改共引（is 钉）；search 入口 require_choice 判封闭清单 + None 单独判（必填参数不适用「未传回落」语义）+ 空串走 require_string 那刀；新守卫 14 例（未知/形状错/None 三档 + 五合法值parametrize + API 共引 is）；parametrize 值位全部字面清单（动态 list() 调用进盲面桶，同轮字面化 + l97 重钉）；变异自证 7 红、sha256 逐字节还原；A184/L79/l97/l98 各棘轮逐格重钉（全量门禁证实） | M |
@@ -1245,3 +1247,14 @@
 - **正面证据**：重钉后棘轮只量已入仓案面，`data/versions/` 再怎么随门禁追加、`bak/` 再怎么手动改，四个欠账桶读数都不再漂移（本轮全量门禁本身就会写一个新版本目录，门禁绿即证免疫）。
 - 测试-only 轮零新用例（改的是守卫的索引口径与重钉常数 + 一条自检例的期望档），全量 7787 与 L177 同数、无回归。
   全量门禁：`7787 passed / 3 skipped / exit 0`（零回归）。**B248 关闭**。
+
+
+### L179（2026-10-03）— B249 立项 + 关闭：A155① 收口（to_http_error 500 档不再转发异常原文）
+
+- **真缺陷（安全泄漏，A155 原框待拍档，本轮按保守方向拍定）**：api/deps.py 的 to_http_error 最后一支把未分类异常原样 str(exc) 塞进 500 响应体。实测形状：OSError(13, 'Permission denied', 'D:/deploy/sensitive/secret.json') 走这一支，响应 detail 是 [Errno 13] Permission denied: 'D:/deploy/sensitive/secret.json'——把部署根目录的绝对路径与文件系统状态（磁盘满 / 权限缺失）一并回给客户端，是 A155 记档的「可被利用的探测信号」。A155 原框给两格候选（①固定文案+落日志 / ②脱敏白名单），本轮拍定取 ①——安全收紧方向、不引入易漏的脱敏白名单，且原文仍有服务端日志可查（不丢排障信息）。
+- **修法（A77 一条权威一处）**：500 支改回模块级常量 INTERNAL_ERROR_DETAIL（api/deps.py 唯一产地）+ logger.exception 把原文留服务端日志；400 支（ValueError 可行动文案）与 404/JSONDecodeError 支一字不动，防修过头把客户端可行动信息也抹掉。
+- **红字重述（A155 预测的「先跑全量看红几条」）**：tests/integration/test_api_dataset_system_tools.py 里凡钉死「500 回原文」的断言全翻——TestUnexpectedFailureBecomes500 五处 assert FAULT_MESSAGE in detail 改 == INTERNAL_ERROR_DETAIL（含反向护栏：原文不在响应体），TestDatasetImpact / evaluate 两处 500 用例同改；docstring「且带上原始信息」改「不外泄原始异常（固定文案 + 原文只进服务端日志）」。改前实测 24 failed（全为断言原文泄漏的用例）、改后全绿。
+- **新守卫**：tests/unit/test_api_deps.py 新增 TestToHttpError500LeakClosed 3 例——① OSError 的 500 支不回部署路径/errno/文件名（逐词反向断言）；② 原文必进服务端日志（caplog 断言 ERROR 级记录在场，证明没被静默吞）；③ ValueError 仍 400 且原样回传（防修过头反向护栏）。
+- **CRLF 坑**：tests/integration/test_api_dataset_system_tools.py 是 CRLF 文件，批量改写断言用字节级读写保真（LF-only 计数验零），避免文本模式翻行。
+- **棘轮**：本轮账本与测试新增引用全用全路径 live 形（api/deps.py、tests/unit/test_api_deps.py 等），零散名 ⇒ A184/L79 各棘轮原地绿（全量门禁证实）。
+- 全量门禁：7790 passed / 3 skipped / exit 0（L178 的 7787 + 3 新守卫，无回归）。**B249 关闭，A155① 收口**。

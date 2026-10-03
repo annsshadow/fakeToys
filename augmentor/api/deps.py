@@ -457,6 +457,12 @@ def resolve_data_dir(name: str) -> Path:
     return resolve_within_roots(name, "目录路径")
 
 
+#: 500 档固定响应文案（A155①，L179）：未分类异常不再把 ``str(exc)`` 原样塞进响应体——
+#: 那里可能带部署根目录的绝对路径与文件系统状态（磁盘满 / 权限缺失）等可被利用的探测信号。
+#: 原文只落服务端日志（``logger.exception``），客户端拿到的是这一份不含实现细节的固定话术。
+INTERNAL_ERROR_DETAIL = "服务器内部错误，详情见服务端日志"
+
+
 def to_http_error(
     exc: Exception,
     *,
@@ -469,7 +475,9 @@ def to_http_error(
 
     1. ``FileNotFoundError`` → 404（``not_found`` 可定制文案，如「备份不存在」）；
     2. ``JSONDecodeError`` → 400，且**不转发 json 模块的英文原文**；
-    3. 其余 ``ValueError`` → 400（参数或数据不合法），其它 → 500。
+    3. 其余 ``ValueError`` → 400（参数或数据不合法，原文可行动、照回），其它 → 500
+       且**只回固定文案** ``INTERNAL_ERROR_DETAIL``、原文落 ``logger.exception``（不转发
+       部署路径 / 文件系统状态，A155①）。
 
     顺序有讲究：``JSONDecodeError`` 是 ``ValueError`` 的子类，必须先判。
     ``HTTPException`` **不**在这里处理 —— 它应当由调用方原样抛出，否则会被
@@ -503,7 +511,21 @@ def to_http_error(
         )
     if isinstance(exc, ValueError):
         return HTTPException(status_code=400, detail=str(exc))
-    return HTTPException(status_code=500, detail=str(exc))
+    # 500 档（A155①）：原文只落服务端日志、不进响应体，防部署路径与文件系统状态外泄。
+    logger.exception("未分类异常收敛为 500，原文仅留服务端日志、不转发客户端")
+    return HTTPException(status_code=500, detail=INTERNAL_ERROR_DETAIL)
+
+
+def raise_internal_error(exc: Exception) -> None:
+    """未分类异常收敛为 500：原文只落服务端日志、客户端拿固定文案（A155②，L180）
+
+    各路由收尾分支的裸 ``detail=str(e)`` 500 统一走这一处：``str(exc)`` 可能带部署根
+    绝对路径与文件系统状态（磁盘满 / 权限缺失等可被利用的探测信号），一律降级为服务端
+    日志，客户端只拿 ``INTERNAL_ERROR_DETAIL``。与 to_http_error 的 500 支同一口径
+    （A77 一条 500 泄漏判据住一处），区别只是这里直接 raise、供路由 except 分支调用。
+    """
+    logger.exception("未分类异常收敛为 500，原文仅留服务端日志、不转发客户端")
+    raise HTTPException(status_code=500, detail=INTERNAL_ERROR_DETAIL)
 
 
 _JSON_KIND_NAMES = {
