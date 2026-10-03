@@ -962,7 +962,9 @@
 
 | B250 | **已关闭（L180，A155②：路由裸 500 全面普查收边，A155 全清）**：A155 原框点名的「40 处路由里裸写 detail=str(e) 绕过归类器」实测 37 处（api/routes 十个路由文件，quality 9 / version 8 / data 5 / export 4 / augment 3 / config 3 / 余 5）——L179 只修了 to_http_error 这一份权威，这 37 处收尾分支仍把异常原文（部署路径 / 文件系统状态）直接回给客户端，修的是象征不是面 | 新增 raise_internal_error 助手（api/deps.py，与 to_http_error 500 支同一口径 A77：原文落 logger.exception、客户端拿 INTERNAL_ERROR_DETAIL）；37 处裸 500 全部改调助手（十路由 import 补齐，字节级保 CRLF/LF）；tests/integration/test_api_route_500_branches.py 8 处 + test_api_data_500_branches.py 1 处「500 回异常原文」断言按红字重述为 == 固定文案（404 版本不存在 / 文件不存在、400 非法组件等非泄漏档一字不动）；新守卫 2 例含一条**静态形状棘轮**（api/routes 下裸 500 detail=str(异常) 回流当场红）；A155 三格（to_http_error + 37 裸 500 + 404/400 非泄漏档）自此全清；A184 棘轮原地绿（全路径 live 形引用）、L79 漂移桶 145→146 逐格重钉（十路由补 import 行使产品行号下移、账本一条行号格翻漂移档）；全量 7792 passed / 3 skipped / exit 0 | M |
 
-| B251 | **已关闭（L181，A172 收口：泄漏 fuzzy_threshold 区间判据 (0,1] 三面共引）**：leakage 的 fuzzy_threshold 在 SDK 直构 / API 请求模型 / CLI 三面**零区间判据**（请求模型裸 float=0.8 无 gt/ge、构造器不判、CLI 裸 float 位置参）——Jaccard 下界语义可用区间是 0<t<=1：t<=0 时**每条**非精确样本都判泄漏（干净测试集报 100% 泄漏，网络面就能造出假读数），t>1 反向永远报不出近似泄漏（静默关闭）；L95 那条 legacy 守卫当年钉的是「t<=0 保持旧判决」，本轮按 A172 原框翻成「钉住拒绝」 | 判据权威住构造器（augmentor/leakage.py，A77 一条判据一处）：显式 None 专判 + require_ratio(0,1) + 下界取开（0<t 拒假零家族 L144 同式），detect_leakage 与 CLI 面（main 的 except 转「错误:…」+exit 1）经它自动吃到；API 请求面补 Pydantic Field(gt=0,le=1) 边界 422（实测 0.0/1.5/-1 均 422、0.8 放行）；新守卫 10 例（合法 (0,1] 四档放行 + 坏形状 9 档全拒 + detect 委托 + 防修过头）；legacy 守卫按红字翻转为「t<=0 构造期即 DataValidationError」（0.3/0.7/0.9 正区间逐字段一致档不动）；A184/L79 各棘轮原地绿（全路径 live 形引用）、l97 普查 CALLS 381→382 / READABLE 280→281 逐格重钉（新守卫坏形状 9 档字面清单 parametrize 进可读桶、盲面 101 不动，l98 随之回稳）；全量 7803 passed / 3 skipped / exit 0 | M |
+| B251 | **已关闭（L181，A172 收口：泄漏 fuzzy_threshold 区间判据 (0,1] 三面共引）**：leakage 的 fuzzy_threshold 在 SDK 直构 / API 请求模型 / CLI 三面**零区间判据**（请求模型裸 float=0.8 无 gt/ge、构造器不判、CLI 裸 float 位置参）——Jaccard 下界语义可用区间是 0<t<=1：t<=0 时**每条**非精确样本都判泄漏（干净测试集报 100% 泄漏，网络面就能造出假读数），t>1 反向永远报不出近似泄漏（静默关闭）；L95 那条 legacy 守卫当年钉的是「t<=0 保持旧判决」，本轮按 A172 原框翻成「钉住拒绝」 | 判据权威住构造器（augmentor/leakage.py，A77 一条判据一处）：显式 None 专判 + require_ratio(0,1) + 下界取开（0<t 拒假零家族 L144 同式），detect_leakage 与 CLI 面（main 的 except 转「错误:…」+exit 1）经它自动吃到；API 请求面补 Pydantic Field(gt=0,le=1) 边界 422（实测 0.0/1.5/-1 均 422、0.8 放行）；新守卫 11 例（合法 (0,1] 四档放行 1 例 + 坏形状 9 档全拒 9 例 + detect 委托 1 例）；legacy 守卫按红字翻转为「t<=0 构造期即 DataValidationError」（0.3/0.7/0.9 正区间逐字段一致档不动）；A184/L79 各棘轮原地绿（全路径 live 形引用）、l97 普查 CALLS 381→382 / READABLE 280→281 逐格重钉（新守卫坏形状 9 档字面清单 parametrize 进可读桶、盲面 101 不动，l98 随之回稳）；全量 7803 passed / 3 skipped / exit 0 | M |
+
+| B252 | **已关闭（L182，A147 收口：流式单值文件 total_input/processed 分叉记档钉死）**：`augmentor/streaming.py` 的 `read_chunks` 与 `_count_items` 对「整个文件是单个 JSON 值」的读数分叉——一份只写 `{"a": 1}`（单行合法 JSON 对象、非数组）的文件，`_count_items` 走单值支计 **0 条**（它数的是数据项、单值不是数据项），而 `read_chunks` 逐行 `json.loads` 成功产出 **1 条** ⇒ `process()` 报告 `total_input=0` 而 `processed=1`。这是老形状（L86 已逐形状钉住 0/1 两格），但用户看到两读数不一致会当 bug | 按 A147 候选③「原样承认并写进文档」拍定（① 单值算 1 条 / ② 读取循环拒收 都是对外读数变更、会动 API/CLI 报告文案与既有断言，留单独轮不动）：process() docstring 加「单值文件分叉」note 写明 total_input=0/processed=1 是既有契约、读到时不当 bug；tests/unit/test_stream_single_pass_l86.py 新增守卫 1 例把分叉两侧各自钉死（total_input==0、processed==1、两者不等）——谁把任一侧改了都要先翻这一格。测试-only 面（docstring + 新守卫），A184/L79/l97 各棘轮原地绿（docstring 无散名引用、新守卫非参数化位）；全量 7804 passed / 3 skipped / exit 0 | S |
 
 | B249 | **已关闭（L179，A155①：to_http_error 500 档不再转发异常原文）**：api/deps.py 的 to_http_error 最后一支把未分类异常原样 str(exc) 塞进 500 响应体——OSError(13,'Permission denied','/srv/...') 实测把部署根绝对路径与文件系统状态（Errno 28 磁盘满 / Errno 13 权限缺失）一并回给客户端，是可被利用的探测信号；A155 原框两格候选拍定取①（固定文案 + 原文落服务端日志，安全收紧方向，非脱敏白名单②） | 500 支改回固定文案常量 INTERNAL_ERROR_DETAIL（api/deps.py 模块级唯一产地，A77）+ logger.exception 把原文留服务端日志；400 支（ValueError 可行动文案）一字不动防修过头；tests/unit/test_api_deps.py 新增守卫 3 例（OSError 不泄漏部署路径/errno + 原文进日志 + ValueError 仍 400 原样回传）；tests/integration/test_api_dataset_system_tools.py 两处「500 回原文」断言按红字重述为「== 固定文案 + 原文不在响应体」（TestUnexpectedFailureBecomes500 五处 + dataset_impact/evaluate 各一，docstring 同步改口径）；A184/L79 各棘轮原地绿（本轮新增引用全用全路径 live 形、零散名）；全量 7790 passed / 3 skipped / exit 0（L178 的 7787 + 3 新守卫，零回归） | M |
 
@@ -1238,7 +1240,8 @@
 
 - **普查结果**：220 导出符号逐一核消费面，仅 1 个死别名。别名本身是历史重名避让的中间产物（converter 版与 export_enhanced 版同名，`__init__` 用别名分流），造出来 20 多轮无人消费。
 - **哨兵设计**：普查一次就蒸发的教训（L173/L175 靠每轮人工重扫）——把「`__all__` 逐条有消费方」写成常驻测试，未来任何死符号入库当场红；语料库缓存化把代价从 77s 压到 22s（import + 建库）。
-- **坑记档**：`__init__.py` 是 CRLF/LF 混合文件，行尾探测（sed 显示会吞 ，须用字节级 repr 定行尾）——本轮第一稿锚点因此没中。
+- **坑记档**：`__init__.py` 是 CRLF/LF 混合文件，行尾探测（sed 显示会吞 
+，须用字节级 repr 定行尾）——本轮第一稿锚点因此没中。
 - 全量门禁：`7787 passed / 3 skipped / exit 0`（L176 的 7785 + 2 新例，无回归）。
   **B247 关闭**。
 
@@ -1282,4 +1285,13 @@
 - **legacy 守卫翻转（A172 原框「那条 legacy 守卫要从钉住无意义判决改成钉住拒绝」）**：tests/unit/test_leakage_counts_l95.py 的 test_non_positive_threshold_keeps_legacy_verdict 按红字翻转为 test_non_positive_threshold_is_rejected（t<=0 构造期即 DataValidationError）；正区间 0.3/0.7/0.9 逐字段一致档（test_verdicts_match_brute_force）一字不动防修过头。
 - **新守卫 11 例**：合法 (0,1] 四档（0.1/0.8/1.0/int 1）放行 + 坏形状 9 档（0.0/-0.5/1.5/2.0/None/True/False/NaN/'0.8'）全拒 + detect 委托 + 防修过头（0.5 正常出报告）。
 - **棘轮**：全路径 live 形引用 ⇒ A184/L79 各棘轮原地绿（leakage.py 插行使 0 条活行引用顶歪、全量门禁证实）。
-- 全量门禁：见 B251 行（新守卫 11 例，无回归）。**B251 关闭，A172 收口**。
+- 全量门禁：7803 passed / 3 skipped / exit 0（L180 的 7792 + 11 新守卫，无回归）。**B251 关闭，A172 收口**。
+
+
+### L182（2026-10-04）— B252 立项 + 关闭：A147 收口（流式单值文件 total_input/processed 分叉记档钉死）
+
+- **真缺口（既有分叉，L86 起逐形状钉住但用户面未写明）**：streaming.py 的 read_chunks 与 _count_items 对「整个文件是单个 JSON 值」的读数分叉——一份只写 {"a": 1}（单行合法 JSON 对象、非数组）的文件，_count_items 走单值支计 0 条（它数的是数据项、单值不是数据项），而 read_chunks 逐行 json.loads 成功产出 1 条 ⇒ process() 报 total_input=0 / processed=1。L86 已在测试面逐形状钉住 0/1 两格，但用户看到两读数不一致会当 bug。
+- **定档（A147 候选③）**：三格候选里 ① 单值算 1 条、② 读取循环拒收 都是**对外读数变更**（会动 API system_stream 与 CLI 报告文案、既有断言），本轮不动；取 ③「原样承认并写进文档」——把分叉写明成契约，读者读到时不当 bug。
+- **落点**：augmentor/streaming.py 的 process() docstring 加「单值文件分叉」note；tests/unit/test_stream_single_pass_l86.py 新增守卫 1 例（total_input==0、processed==1、两者不等，两侧各自钉死）——谁把任一侧顺手修了都要先翻这一格并重新对账。
+- **棘轮**：docstring 无散名引用、新守卫非参数化位 ⇒ A184/L79/l97 各棘轮原地绿（全量门禁证实）。
+- 全量门禁：7804 passed / 3 skipped / exit 0（L181 的 7803 + 1 新守卫，无回归）。**B252 关闭，A147 收口**。

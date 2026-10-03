@@ -387,9 +387,18 @@ class StreamProcessor:
     
     def process(self) -> Dict:
         """执行流式处理
-        
+
         Returns:
             处理报告
+
+        .. note::
+           **单值文件的 total_input / processed 分叉（A147，L182 记档钉死）**：一份只写单个
+           JSON 值（如一行 ``{"a": 1}``，非 JSON 数组）的文件，``_count_items`` 走
+           「单个 JSON 值」支计 **0 条**（它数的是数据项、单值不是数据项），而 ``read_chunks``
+           的逐行循环把它 ``json.loads`` 成功并产出 1 条 ⇒ 本报告对这种文件读作
+           ``total_input=0`` 而 ``processed=1``。这是既有契约（L86 逐形状钉住 0/1 两格），
+           本轮**不**改读数（改 0→1 会动 API/CLI 报告文案与既有断言，属对外变更，留给单独轮）——
+           在此把分叉写明，读者看到 total_input 与 processed 不一致时不必当 bug。
         """
         self._processed_count = 0
         # 只累计计数，不保留结果本身——原实现用 results.extend() 把全部输出
