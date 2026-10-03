@@ -118,9 +118,9 @@ class DatasetBackup:
         with open(source, 'r', encoding='utf-8') as f:
             items = json.load(f)
         
-        # 保存备份
-        with open(backup_path, 'w', encoding='utf-8') as f:
-            json.dump(items, f, ensure_ascii=False, indent=2)
+        # 保存备份（L170 收原子写：备份的语义就是数据保全——同名覆盖时
+        # 写中途崩不该毁掉旧备份；os.replace 前旧内容完好）
+        atomic_write_json(backup_path, items)
         
         # 计算文件大小和校验和
         file_size = backup_path.stat().st_size
@@ -177,12 +177,11 @@ class DatasetBackup:
         with open(backup_path, 'r', encoding='utf-8') as f:
             items = json.load(f)
         
-        # 保存到输出路径
+        # 保存到输出路径（L170 收原子写：恢复动作毁掉用户输出路径上的既有
+        # 文件是自相矛盾的——同上，替换前旧内容完好）
         output = Path(output_path)
         output.parent.mkdir(parents=True, exist_ok=True)
-        
-        with open(output, 'w', encoding='utf-8') as f:
-            json.dump(items, f, ensure_ascii=False, indent=2)
+        atomic_write_json(output, items)
         
         return {
             "backup_id": backup_id,
