@@ -468,7 +468,13 @@ MEASURED = {
     #: 引用由漂移桶搬回全绿，code_but_no_name_match 161 → **160**，line_refs 296 与
     #: file_tokens 1640 一格未动。（本注记按 A153 纪律只写裸文本行号，不套反引号，
     #: 免得记账行自己变成新 dead_line——此形此文件已复现三次。）
-    LEDGER: {"line_refs": 285, "file_tokens": 1646, "code_but_no_name_match": 146},
+    #: L162 面位移（285 → 284、file_tokens 1646 → 1647、漂移 146 → 145）：
+    #: backup.py 收原子写插 import 与改写 _save_index docstring 后，账本里一条
+    #: 历史读数清单的 backup.py 行号格（L42 落点）落到非代码行，按 L151 / L153 /
+    #: L154 / L156 先例降成「文件名（原 N 行，降级名锚）」：行号引用退出
+    #: line_refs 与漂移两桶（各 −1），文件名反引号 token 转入 file_tokens 桶
+    #: （+1，先例同形）。
+    LEDGER: {"line_refs": 284, "file_tokens": 1647, "code_but_no_name_match": 145},
     #: L156 面位移（290 → 285）：streaming.py 插 `StreamConfig.__post_init__` 后，账本 5 条
     #: streaming.py 历史行引用（A145 行 2 条、A147 行 3 条）被引行换位、退出本档，按
     #: L151 / L153 / L154 先例降成名字锚（「原 N 行」）：line_refs −5、漂移 147 →
