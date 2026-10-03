@@ -114,7 +114,7 @@ CEILING = {
 #: 反空转下界卡住；它只负责证明「普查真的看见了成百条引用」，而不是钉住总数。
 FLOOR = {
     ARCH: {"line_refs": 38, "file_tokens": 200},
-    LEDGER: {"line_refs": 270, "file_tokens": 1050},
+    LEDGER: {"line_refs": 268, "file_tokens": 1050},
 }
 
 #: **现量**读数（`Temp/l79q/buckets.py` 的最后一个 run）。凡是在注释、`docs/ARCHITECTURE.md`
@@ -482,7 +482,12 @@ MEASURED = {
     #: atomic_write.py 收原子写插行后，账本里一条 Exporter.export 的行号格落到
     #: 别的代码行，按先例降级名锚——行号引用退出 line_refs 与漂移两桶（漂移
     #: 回 145），文件名 token 转入 file_tokens（+1）。
-    LEDGER: {"line_refs": 283, "file_tokens": 1648, "code_but_no_name_match": 145},
+    #: L164 面位移（line_refs 283 → 277、file_tokens 1648 → 1654、漂移 145 → 142）：
+    #: dataset_ops.py 收原子写插 import 后，账本里六条历史读数格（一条入参判定
+    #: 清单格、两条 largest_remainder 调用方格、三条 minimum_each 调用方格）落到
+    #: 别的代码行，全部按先例降级名锚——行号引用退出 line_refs 与漂移两桶
+    #: （各 −6 与 −3），文件名 token 转入 file_tokens（+6）。
+    LEDGER: {"line_refs": 277, "file_tokens": 1654, "code_but_no_name_match": 142},
     #: L156 面位移（290 → 285）：streaming.py 插 `StreamConfig.__post_init__` 后，账本 5 条
     #: streaming.py 历史行引用（A145 行 2 条、A147 行 3 条）被引行换位、退出本档，按
     #: L151 / L153 / L154 先例降成名字锚（「原 N 行」）：line_refs −5、漂移 147 →
