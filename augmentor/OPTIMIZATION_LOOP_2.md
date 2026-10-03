@@ -962,6 +962,8 @@
 
 | B250 | **已关闭（L180，A155②：路由裸 500 全面普查收边，A155 全清）**：A155 原框点名的「40 处路由里裸写 detail=str(e) 绕过归类器」实测 37 处（api/routes 十个路由文件，quality 9 / version 8 / data 5 / export 4 / augment 3 / config 3 / 余 5）——L179 只修了 to_http_error 这一份权威，这 37 处收尾分支仍把异常原文（部署路径 / 文件系统状态）直接回给客户端，修的是象征不是面 | 新增 raise_internal_error 助手（api/deps.py，与 to_http_error 500 支同一口径 A77：原文落 logger.exception、客户端拿 INTERNAL_ERROR_DETAIL）；37 处裸 500 全部改调助手（十路由 import 补齐，字节级保 CRLF/LF）；tests/integration/test_api_route_500_branches.py 8 处 + test_api_data_500_branches.py 1 处「500 回异常原文」断言按红字重述为 == 固定文案（404 版本不存在 / 文件不存在、400 非法组件等非泄漏档一字不动）；新守卫 2 例含一条**静态形状棘轮**（api/routes 下裸 500 detail=str(异常) 回流当场红）；A155 三格（to_http_error + 37 裸 500 + 404/400 非泄漏档）自此全清；A184 棘轮原地绿（全路径 live 形引用）、L79 漂移桶 145→146 逐格重钉（十路由补 import 行使产品行号下移、账本一条行号格翻漂移档）；全量 7792 passed / 3 skipped / exit 0 | M |
 
+| B251 | **已关闭（L181，A172 收口：泄漏 fuzzy_threshold 区间判据 (0,1] 三面共引）**：leakage 的 fuzzy_threshold 在 SDK 直构 / API 请求模型 / CLI 三面**零区间判据**（请求模型裸 float=0.8 无 gt/ge、构造器不判、CLI 裸 float 位置参）——Jaccard 下界语义可用区间是 0<t<=1：t<=0 时**每条**非精确样本都判泄漏（干净测试集报 100% 泄漏，网络面就能造出假读数），t>1 反向永远报不出近似泄漏（静默关闭）；L95 那条 legacy 守卫当年钉的是「t<=0 保持旧判决」，本轮按 A172 原框翻成「钉住拒绝」 | 判据权威住构造器（augmentor/leakage.py，A77 一条判据一处）：显式 None 专判 + require_ratio(0,1) + 下界取开（0<t 拒假零家族 L144 同式），detect_leakage 与 CLI 面（main 的 except 转「错误:…」+exit 1）经它自动吃到；API 请求面补 Pydantic Field(gt=0,le=1) 边界 422（实测 0.0/1.5/-1 均 422、0.8 放行）；新守卫 10 例（合法 (0,1] 四档放行 + 坏形状 9 档全拒 + detect 委托 + 防修过头）；legacy 守卫按红字翻转为「t<=0 构造期即 DataValidationError」（0.3/0.7/0.9 正区间逐字段一致档不动）；A184/L79 各棘轮原地绿（全路径 live 形引用）、l97 普查 CALLS 381→382 / READABLE 280→281 逐格重钉（新守卫坏形状 9 档字面清单 parametrize 进可读桶、盲面 101 不动，l98 随之回稳）；全量 7803 passed / 3 skipped / exit 0 | M |
+
 | B249 | **已关闭（L179，A155①：to_http_error 500 档不再转发异常原文）**：api/deps.py 的 to_http_error 最后一支把未分类异常原样 str(exc) 塞进 500 响应体——OSError(13,'Permission denied','/srv/...') 实测把部署根绝对路径与文件系统状态（Errno 28 磁盘满 / Errno 13 权限缺失）一并回给客户端，是可被利用的探测信号；A155 原框两格候选拍定取①（固定文案 + 原文落服务端日志，安全收紧方向，非脱敏白名单②） | 500 支改回固定文案常量 INTERNAL_ERROR_DETAIL（api/deps.py 模块级唯一产地，A77）+ logger.exception 把原文留服务端日志；400 支（ValueError 可行动文案）一字不动防修过头；tests/unit/test_api_deps.py 新增守卫 3 例（OSError 不泄漏部署路径/errno + 原文进日志 + ValueError 仍 400 原样回传）；tests/integration/test_api_dataset_system_tools.py 两处「500 回原文」断言按红字重述为「== 固定文案 + 原文不在响应体」（TestUnexpectedFailureBecomes500 五处 + dataset_impact/evaluate 各一，docstring 同步改口径）；A184/L79 各棘轮原地绿（本轮新增引用全用全路径 live 形、零散名）；全量 7790 passed / 3 skipped / exit 0（L178 的 7787 + 3 新守卫，零回归） | M |
 
 | B246 | **已关闭（L176）**：策略旋钮「封闭清单拒」同型普查（L175 的 method 静默回落修完后沿同型全仓扫）——sample 的 method / outlier 的 method / expander 的strategy 三处**已有** else 拒（普查实证）；唯一缺口 `save_quality_report` 的 format：未知 format **静默落 JSON 支**（请求 yaml 的拿到 json 文件不出声，checkpoint 症状族语义漂移档） | 缺口收边（format 封闭清单 `QUALITY_REPORT_FORMATS` + 入口 require_choice + None 专判）；**普查结论钉成棘轮**：新守卫 6 例含一条「五旋钮 × 未知值全部出 DataValidationError」合体例——任一旋钮未来退化回静默回落当场红；变异自证 2 红（剪 format 判据）、sha256 逐字节还原；A184/L79 各棘轮原地绿（quality_report.py 插行使 0 条活行引用顶歪，全量门禁证实） | M |
@@ -1271,3 +1273,13 @@
 - **A155 全清**：to_http_error（L179）+ 37 裸 500（本轮）+ 非泄漏档（404/400 不动）三格闭环；A155 自此关闭。
 - **棘轮**：全路径 live 形引用 ⇒ A184 棘轮原地绿；**L79 漂移桶 145→146 逐格重钉**（十路由补 raise_internal_error 的 import，config/data/export 三个多行块各 +1 行使产品行号下移、账本一条行号格翻「指向真代码行但非所名」，按 L175 先例重钉，line_refs 270 / file_tokens 1661 未动）；全量门禁证实。
 - 全量门禁：7792 passed / 3 skipped / exit 0（L179 的 7790 + 2 新守卫，无回归）。**B250 关闭，A155 全清**。
+
+
+### L181（2026-10-04）— B251 立项 + 关闭：A172 收口（泄漏 fuzzy_threshold 区间判据 (0,1] 三面共引）
+
+- **真缺陷（A172 原框待拍档，本轮按 fail-loud 方向拍定）**：leakage 的 fuzzy_threshold 在 SDK 直构 / API 请求模型 / CLI 三面**零区间判据**（请求模型裸 float=0.8 无 gt/ge、LeakageDetector 构造器不判、CLI 裸 float 位置参）。Jaccard 下界语义可用区间 0<t<=1：t<=0 时**每条**非精确样本都判泄漏（干净测试集报 100% 泄漏，网络面即可造出假读数）；t>1 反向永远报不出近似泄漏（静默关闭）。
+- **修法（A77 一条判据一处）**：判据权威住构造器（augmentor/leakage.py）——显式 None 专判（必填旋钮无未传回落语义）+ require_ratio(0,1) 吃类型/NaN/bool/越界 + **下界取开**（`<=0` 拒假零家族 L144 同式，0 档把干净数据全判泄漏）。detect_leakage 模块工厂与 CLI 面（main 的 except 转「错误:…」+exit 1）经它自动吃到同一档；API 请求面补 Pydantic Field(gt=0, le=1) 边界 422（实测 0.0/1.5/-1 均 422、0.8 放行 404）。
+- **legacy 守卫翻转（A172 原框「那条 legacy 守卫要从钉住无意义判决改成钉住拒绝」）**：tests/unit/test_leakage_counts_l95.py 的 test_non_positive_threshold_keeps_legacy_verdict 按红字翻转为 test_non_positive_threshold_is_rejected（t<=0 构造期即 DataValidationError）；正区间 0.3/0.7/0.9 逐字段一致档（test_verdicts_match_brute_force）一字不动防修过头。
+- **新守卫 11 例**：合法 (0,1] 四档（0.1/0.8/1.0/int 1）放行 + 坏形状 9 档（0.0/-0.5/1.5/2.0/None/True/False/NaN/'0.8'）全拒 + detect 委托 + 防修过头（0.5 正常出报告）。
+- **棘轮**：全路径 live 形引用 ⇒ A184/L79 各棘轮原地绿（leakage.py 插行使 0 条活行引用顶歪、全量门禁证实）。
+- 全量门禁：见 B251 行（新守卫 11 例，无回归）。**B251 关闭，A172 收口**。
