@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from ..deps import resolve_data_dir, resolve_within_roots, run_in_thread
+from ..deps import raise_internal_error, resolve_data_dir, resolve_within_roots, run_in_thread
 
 router = APIRouter(tags=["multimodal"])
 
@@ -89,7 +89,7 @@ async def process_multimodal(request: MultimodalRequest):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(e)
 
 
 @router.post(
@@ -117,7 +117,7 @@ async def scan_directory(request: ScanRequest):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(e)
 
 
 @router.get(

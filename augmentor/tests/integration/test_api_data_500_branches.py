@@ -12,6 +12,8 @@ from pathlib import Path
 
 import pytest
 
+from api.deps import INTERNAL_ERROR_DETAIL
+
 AI_DIR = Path(__file__).resolve().parent.parent.parent
 
 
@@ -52,7 +54,7 @@ class TestLoad500:
         client, _ = data_env
         response = client.get("/api/data/load/d.json")
         assert response.status_code == 500
-        assert "磁盘读失败" in response.json()["detail"]
+        assert response.json()["detail"] == INTERNAL_ERROR_DETAIL  # L180/A155②: no leak of 磁盘读失败
 
 
 class TestUpdateDelete500:
