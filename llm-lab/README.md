@@ -30,10 +30,12 @@ python -m experiments.scaling_law    # 尺度实验：S/M/L 三档模型的参�
 
 ```bash
 pip install -r requirements-torch.txt   # 版本按 https://pytorch.org 选
-pytest tests/ -q                         # 原本 skip 的 7 个 torchgpt 用例会激活
+pytest tests/ -q                         # 7 个 torchgpt 用例激活：38 passed, 0 skipped
 python -m torchgpt.main train --data data/tiny_corpus.txt --steps 500
 python -m torchgpt.main sample --ckpt checkpoints/ckpt.pt --prompt "The " --tokens 200
 ```
+
+> **Python 版本**：无需降级。Python 3.14 可直接 `pip install torch`（自 torch 2.14 起提供 cp314 轮子，本仓库已在 torch 2.14.1+cpu 上实测 38/38 全绿并跑通 CLI）；老版本 Python（3.10–3.13）对应更早的 torch 也兼容（代码 AMP API 下限为 torch 2.4）。
 
 ## 目录结构
 

@@ -1,0 +1,8 @@
+# torchgpt 实战轨（需要 GPU 更佳；CPU 也能跑小模型）
+# 安装：pip install -r requirements-torch.txt
+# 注意：torch 需与你的 Python / CUDA 版本匹配，具体版本见 https://pytorch.org/get-started/locally/
+# Python 3.14 可直接 `pip install torch`（自 torch 2.14 起提供 cp314 轮子）；
+# 代码使用 torch 2.4+ 的统一 AMP API（torch.amp.GradScaler），故下限为 2.4。
+torch>=2.4
+numpy>=1.24
+pytest>=7.0

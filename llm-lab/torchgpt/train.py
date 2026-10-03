@@ -13,6 +13,9 @@
 
 单机多卡请用 ``torchrun --nproc_per_node=N`` 启动并包一层 DDP，详见
 docs/06-规模化训练.md。
+
+注意：本模块使用 torch 2.4+ 的统一 AMP API（``torch.amp.GradScaler`` /
+``torch.autocast``）；在 torch>=2.14（Python 3.14 可用的首个完整版本）上实测通过。
 """
 
 from __future__ import annotations
@@ -74,7 +77,8 @@ def train(train_data, val_data, cfg: GPTConfig, tc: TrainConfig, device="cpu", m
     model = GPT(cfg).to(device)
     opt = configure_optimizer(model, tc)
     use_amp = tc.amp and device.startswith("cuda")
-    scaler = torch.cuda.amp.GradScaler(enabled=use_amp)
+    # torch 2.4+ 统一 AMP API；enabled=False 时是完全直通（no-op）
+    scaler = torch.amp.GradScaler("cuda" if use_amp else "cpu", enabled=use_amp)
 
     for step in range(tc.max_steps):
         for g in opt.param_groups:
