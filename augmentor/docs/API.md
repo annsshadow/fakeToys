@@ -226,6 +226,29 @@ $ python cli.py validate-config --config typo_config.yaml
   守卫：`tests/integration/test_cli_stdio_encoding.py`（真起子进程，`PYTHONIOENCODING=gbk`）
   与 `tests/unit/test_no_locale_text_io.py`（AST 扫产品包，禁止新增不带编码的文本 I/O）。
 
+### 可写四节的「读者分档」（A138，L184 记档）
+
+上面 L82 段落给 `export` / `vector` / `rag` / `multimodal` 四节 14 键全接上了判据（写坏即 400），
+但「写得进」不等于「有人读」。这 14 键按**现量**分三档，契约面与实现面的落差就摊开在这里：
+
+| 档 | 键 | 读点 | 语义 |
+|----|----|------|------|
+| ① 有行为读者（3） | `export.default_format` | `augmentor/pipeline.py`（导出走默认格式） | 真控行为 |
+| | `rag.chunk_size`、`rag.chunk_overlap` | `augmentor/cli/commands/quality.py`（RAG 切块） | 真控行为 |
+| ② 仅回显（6） | `export.formats`、`vector.enabled`、`vector.backend`、`rag.enabled`、`rag.default_format`、`multimodal.enabled` | `GET /api/config` 原样回显，**不改任何行为** | 契约面承诺能力、实现面只承诺可见 |
+| ③ 连回显都没有（5） | `vector.dimension`、`vector.storage_dir`、`vector.collection`、`multimodal.image_extensions`、`multimodal.audio_extensions` | 无处消费 | 配置了不生效 |
+
+**权威口径（读到时别被 ②③ 档骗到）**：向量库真正的后端入口是**调用参数**（`vector.build_vector_db` 的
+`backend` 形参 / API 请求体），**不是** `config.vector.backend`——后者回显成 `faiss` 只表示「配置里写了
+faiss」，不等于「向量库此刻在用 faiss」。`vector.dimension` 配 768 还是 8 在今天的产物里一字不变
+（维度由所选嵌入模型决定）。`multimodal.image_extensions` / `audio_extensions` 判的是「字符串列表形状」，
+但「扩展名必须以 . 开头」的消费方语义本仓没有读者，判了就是替一个不存在的功能定口径。
+
+**L184 处置（非破坏面收口）**：候选①（把 ②③ 档接到消费入口）属功能增强（要先拍「配置键与请求参数
+谁是权威」）、候选②（从文档与回显里降级）属对外破坏面，均不在本轮；本轮取**记档 + 机器钉死**——
+上表即「哪些键真有人读」的权威清单，`tests/integration/test_api_config_extended.py` 的守卫钉住
+③ 档 5 键**不出现**在 `GET /api/config` 回显里（谁给它们接了回显/读者都要先翻这一格并对账）。
+
 ### 跨源（CORS）
 
 出厂默认**不放行任何跨源**：`web.cors_origins: []` + `web.cors_credentials: false`，
