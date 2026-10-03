@@ -954,6 +954,8 @@
   各棘轮全部原地绿（全量门禁证实）。
 - 全量门禁：`7694 passed / 3 skipped / exit 0`（L154 的 7692 + 2 新例，无回归）。
   **B225 关闭**。
+| B238 | **已关闭（L168，A182 逐面收路线第十面）**：管线交付口两边（`AugmentorPipeline` 的 process 与异步变体的最终输出——产品核心交付面，API 链落数据根）与迁移输出边（`/api/system/migrate` 路径经白名单 for_write 校验）三边同判据必收；同轮完成剩余候选的读侧行为对账归档：benchmark 基准边读侧裸抛响亮、comparison/quality_report/visualize_enhanced 报告面、faiss meta 边读侧裸抛——全部有据豁免；**记档待裁**：tracker 实验记录是「写侧 except 吞成 log + 读侧吞成 None」的 checkpoint 症状完全体（修它要改两侧异常语义，属 fail-loud 行为变更另轮），quality_trend 同族复合形状（有检疫交互）一并待裁 | 三边改调 atomic_write_json；l99 棘轮 26→23；新守卫 4 例（迁移写中断旧文件完好 + 回环 + 管线双锚静态 + 迁移静态形状）；变异自证 2 红、sha256 还原；pipeline.py 插行使账本三条行号格（A138 一条落空行 + _init_components 两条落别行）降级名锚 + L79 三桶逐格重钉（line_refs 276→273 / file_tokens 1655→1658 / 漂移 142→141 / FLOOR 同步）；A184/docs 各棘轮原地绿（全量门禁证实） | M |
+
 | B237 | **已关闭（L167，A182 逐面收路线第九面 + 工具参数化）**：增强导出的九格式共用落盘口（`_export_json`，alpaca/sharegpt/chatml/llama/vicuna/belle/openai/hf/json 九个分支一处收口覆盖全交付面）与 L163 同判据必收；与 L163 不同点：本边的 ensure_ascii / indent 是**活选项**（ExportOptions 契约，既有测试断言过 indent=4）——不能直换紧凑工具 | `atomic_write_json` 参数化（可选 ensure_ascii/indent，默认紧凑与既有调用字节零变化，实证：默认档输出逐字节不变）；选项原样透传；l99 棘轮修正一轮：现量 28 = 预期 27 + 1（参数化把工具本体单行拆两支的形状噪声）——工具本体豁免显式化（atomic_write.py 写的是自身临时件非产品写边，普查排除并记档），棘轮 27→26；新守卫 4 例（默认紧凑字节断言 + 写中断旧文件完好 + 选项透传 + 静态形状）；变异自证 2 红、sha256 还原；A143 那行 ExportFormat 行号格降级名锚（账本 + l79 自注释两处）+ L79 两桶重钉 + FLOOR 同步；A184/docs 各棘轮原地绿（全量门禁证实） | M |
 
 | B236 | **已关闭（L166，A182 逐面收路线第八面）**：数据集工具路由的落盘口（`_dump` helper，写盘变换类六端点 convert/merge/sample/split/aggregate/rag 共用）与 L163/L164 同判据必收——产物经白名单落数据根、list_data_files 扫描读者在写窗口内拿半份；data_ops 命令的 --output 报告边同轮分档为豁免（CLI 报告一次性写，L165 口径） | `_dump` 改调 atomic_write_json（父目录创建由工具承担）；l99 棘轮 29→28（api/routes 现量降 1）；新守卫 3 例（写中断旧文件完好 + 回环建父目录 + 静态形状）；变异自证 3 红、sha256 还原；A184/L79/docs 各棘轮原地绿（全量门禁证实） | S |
@@ -1125,3 +1127,12 @@
 - **坑**：账本 A143 与 l79 自注释里各有一份 export_enhanced 行号格——守卫文件自己的注释也是普查对象（A77 用在测试注释上的自我适用），两处都要降名锚。
 - 全量门禁：`7747 passed / 3 skipped / exit 0`（L166 的 7743 + 4 新例，无回归）。
   **B237 关闭**。
+
+
+### L168（2026-10-03）— B238 立项 + 关闭：A182 逐面收第十面（管线交付口 + 迁移落盘三边）+ 剩余候选读侧行为对账归档完成
+
+- **侦察路径**：剩余 10 处候选逐个读侧对账——必收 3 边（pipeline×2 核心交付口、migration API 白名单面）；豁免 7 处全部有据（benchmark/faiss 读侧响亮、comparison/quality_report/visualize_enhanced 报告面）；**两个特殊形状记档**：tracker（写吞+读吞 None 完全体）与 quality_trend（检疫交互）超出 l99 收边类型，留给 fail-loud 行为变更单独轮。
+- **L79 三桶重钉的曲折**：pipeline 插行使三条格漂移（一条 dead_line + 两条漂移桶转入），重钉时三桶数字算错两轮（274→273、1657→1658、140→141）——每轮都被「散文总数 == 现量」守卫当场抓回，守卫的精确相等纪律就是为这种时刻立的。
+- **钉子**：新守卫 4 例；l99 棘轮 26→23；变异 2 红 + sha256 还原。
+- 全量门禁：`7751 passed / 3 skipped / exit 0`（L167 的 7747 + 4 新例，无回归）。
+  **B238 关闭**。

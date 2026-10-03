@@ -11,6 +11,8 @@ import logging
 from typing import List, Dict, Optional, Any, Callable
 from dataclasses import dataclass, field
 from pathlib import Path
+
+from .atomic_write import atomic_write_json
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
@@ -174,8 +176,7 @@ class DatasetMigrator:
         if output_path:
             output = Path(output_path)
             output.parent.mkdir(parents=True, exist_ok=True)
-            with open(output, 'w', encoding='utf-8') as f:
-                json.dump(migrated_items, f, ensure_ascii=False, indent=2)
+            atomic_write_json(output, migrated_items)
         
         result = MigrationResult(
             migration_id=hashlib.md5(str(datetime.now()).encode()).hexdigest()[:8],
