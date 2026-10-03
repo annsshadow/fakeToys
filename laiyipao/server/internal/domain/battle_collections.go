@@ -96,11 +96,29 @@ var (
 // 一个负数就能把「元素搭配不足」的诊断结论翻转。
 func validateReportCollections(gl GeneratedLevel, in SettleInput) error {
 	// ── elements_used ──
-	total := 0
 	if len(in.ElementsUsed) > len(knownElements) {
 		return fmt.Errorf("%w：elements_used 含 %d 个键，合法元素只有 %d 个",
 			ErrInvalidField, len(in.ElementsUsed), len(knownElements))
 	}
+	// ⚠️ 累加必须走 satAdd，不能写 `total += v`。
+	//
+	// 这是本文件**自己**记录的形态（文件头：「约束了被保护量却没约束控制量」）
+	// 的第三种变体：**约束了被保护量，却没约束产生它的算术**。
+	//
+	// 每项 `v < 0` 单独拒过了，但 `total += v` 仍会 int64 回绕：
+	// 两个键各报 2^62，相加正好是 2^63 → 变成 -9223372036854775808。
+	// 于是后面的 `total > cap` 判据拿一个**负数**去比，恒为假 → 放行。
+	//
+	// 后果不是"刷分"（这两个字段不进奖励），而是**看板永久 500**：
+	// 脏值落进 battle_records 后，`stats.go` 的 `SUM(e.value::bigint)`
+	// 返回 PG numeric（可超过 int64），pgx 扫进 `*int64` 时 ParseInt 越界报错
+	// → `AdminDashboard` 整个失败 → 之后每一次 GET /admin/dashboard 都 500，
+	// 且**无法自愈**（脏行不会消失，只能删行）。一个普通玩家 30 秒能量即可。
+	//
+	// satAdd 在 cap 处饱和，天然免疫回绕：它逐项比 `t > cap-sum`，
+	// 而 `sum` 恒 ≤ cap。
+	elemCap := int64(in.Shots) * int64(MaxKillsFor(gl))
+	elemTerms := make([]int64, 0, len(in.ElementsUsed))
 	for k, v := range in.ElementsUsed {
 		if !knownElements[k] {
 			return fmt.Errorf("%w：未知元素 %q", ErrInvalidField, k)
@@ -108,8 +126,20 @@ func validateReportCollections(gl GeneratedLevel, in SettleInput) error {
 		if v < 0 {
 			return fmt.Errorf("%w：元素 %q 的计数为负 %d", ErrInvalidField, k, v)
 		}
-		total += v
+		elemTerms = append(elemTerms, int64(v))
 	}
+	// ⚠️ 这里**不能**用 satAdd 来判超界。
+	//
+	// 第一版改成 `satAdd(cap, terms...)` 然后判 `total > cap` ——
+	// 而 satAdd 恰好在 cap 处**饱和**，所以 total 永远 ≤ cap，
+	// `> cap` 恒为假 → 上界被修复动作**悄悄削弱成了没有**。
+	//
+	// 也不能判 `total >= cap`：真实引擎达到理论上限的合法对局会被误拒。
+	//
+	// 正确形态是 `sumOverCap(cap, terms...)`：逐项在**相加之前**比较
+	// `t > cap-sum`，一旦超出立刻返回 true，且 `sum` 恒 ≤ cap 所以比较本身无溢出。
+	// 这样「恰好等于 cap」与「超过 cap」被精确区分开。
+	overCap := sumOverCap(elemCap, elemTerms...)
 	// 引擎里 elements_used 在 `hitEnemy` 内每命中一次 +1
 	//
 	// ⚠️ 上界**不能**取 `in.Hits`。第一版就是这么写的，
@@ -129,17 +159,20 @@ func validateReportCollections(gl GeneratedLevel, in SettleInput) error {
 	// 它的保护力确实弱（余量大），但集合类字段的主要防线是
 	// 「键白名单（5 个元素）」与「map 大小上限」——
 	// 那两条才是拦住 4096 个伪造键的地方。
-	if cap := int64(in.Shots) * int64(MaxKillsFor(gl)); int64(total) > cap {
-		return fmt.Errorf("%w：元素使用合计 %d 超过上界 %d（发射数 %d × 该关总怪数 %d）",
-			ErrInvalidField, total, cap, in.Shots, MaxKillsFor(gl))
+	if overCap {
+		return fmt.Errorf("%w：元素使用合计超过上界 %d（发射数 %d × 该关总怪数 %d）",
+			ErrInvalidField, elemCap, in.Shots, MaxKillsFor(gl))
 	}
 
 	// ── reactions_used ──
-	totalR := 0
 	if len(in.ReactionsUsed) > len(knownReactions) {
 		return fmt.Errorf("%w：reactions_used 含 %d 个键，合法反应只有 %d 种",
 			ErrInvalidField, len(in.ReactionsUsed), len(knownReactions))
 	}
+	// ⚠️ 同上，必须 sumOverCap。reactions 的 cap 更小（几十以内），
+	// 而两个 2^62 的键就足以回绕，所以这条比 elements_used 更容易被打穿 ——
+	// 元素侧 cap 有 ~9.7e8，反应侧 cap 常常只有个位数。
+	rTerms := make([]int64, 0, len(in.ReactionsUsed))
 	for k, v := range in.ReactionsUsed {
 		if !knownReactions[k] {
 			return fmt.Errorf("%w：未知反应 %q", ErrInvalidField, k)
@@ -147,12 +180,12 @@ func validateReportCollections(gl GeneratedLevel, in SettleInput) error {
 		if v < 0 {
 			return fmt.Errorf("%w：反应 %q 的计数为负 %d", ErrInvalidField, k, v)
 		}
-		totalR += v
+		rTerms = append(rTerms, int64(v))
 	}
 	// 引擎里 reactionsUsed 与 reactions 计数器同步 +1
-	if totalR > in.Reactions {
-		return fmt.Errorf("%w：反应分项合计 %d 超过反应总数 %d",
-			ErrInvalidField, totalR, in.Reactions)
+	if sumOverCap(int64(in.Reactions), rTerms...) {
+		return fmt.Errorf("%w：反应分项合计超过反应总数 %d",
+			ErrInvalidField, in.Reactions)
 	}
 
 	// ── terrain_used ──
