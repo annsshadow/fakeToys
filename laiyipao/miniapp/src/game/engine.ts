@@ -1116,6 +1116,14 @@ export class BattleEngine {
       p.hitSet.add(e.uid)
 
       // 溅射
+      //
+      // `this.hits` 只在**主目标**这里自增，applyAoe / 弹射内部**不**加。
+      //
+      // hits 的语义是「有多少次开火命中了东西」，不是「总共造成了几次伤害结算」。
+      // 理由是一条跨端强约束：服务端 ValidateSettle 拒 in.Hits > in.Shots
+      // （ErrInvalidHitRate），engine.test.ts 也有 hits <= shots。
+      // 一发带 aoe/chain 的弹丸本就能命中多个敌人，每次结算都 hits++ 会让
+      // 高 chain + 高 pierce 的构筑稳定产出 hits > shots —— 那是真的 422。
       if (p.aoeRadius > 0) {
         this.applyAoe(p, e, p.aoeRadius)
       }
@@ -1133,7 +1141,18 @@ export class BattleEngine {
           p.chainLeft--
           p.x = next.x
           p.y = next.y
-          p.hitSet.add(next.uid)
+          // 弹射目标必须**当场结算伤害**（第 65 轮修复）。
+          //
+          // 原来是 `p.hitSet.add(next.uid); continue`：
+          // continue 只是数组游标前进，不会回头结算 next；
+          // 而 next 已被写进 hitSet，下一轮开头的 hitSet.has 会跳过它。
+          // 于是弹射只消耗 chainLeft、只位移弹丸，目标一点伤害都吃不到 ——
+          // 连锁闪电 / 电弧弹这一整类多目标技能的定位完全失效。
+          //
+          // 结算顺序：先结算、后写 hitSet（反过来会重复结算）。
+          if (this.hitEnemy(p, next, true)) {
+            p.hitSet.add(next.uid)
+          }
           continue
         }
       }
@@ -1147,9 +1166,20 @@ export class BattleEngine {
     }
   }
 
-  /** 对单个敌人结算一次命中 */
-  private hitEnemy(p: Projectile, e: Enemy): boolean {
-    if (!this.withinEnemy(e, p.x, p.y)) return false
+  /**
+   * 对单个敌人结算一次命中。
+   *
+   * skipRadius 用于**已经确定要命中**的路径：溅射（applyAoe 已按 aoe_radius
+   * 选好目标）与弹射（弹丸直接跳到目标身上，距离恒为 0）。
+   *
+   * 为什么必须显式跳过（第 65 轮）：原实现无条件执行 withinEnemy，
+   * 而 withinEnemy 的半径是 toFixed(28 + flyHeight*0.1) —— 那是**单体命中半径**，
+   * 不是溅射半径。于是 applyAoe 按 aoeRadius 正确选出的目标，紧接着被这 28
+   * 单位再裁一次：声明的 aoe_radius 被当成 28，所有溅射技能实质失效
+   * （只有彼此贴在一起、距命中点不到 28 单位的敌人才会被顺带打到）。
+   */
+  private hitEnemy(p: Projectile, e: Enemy, skipRadius = false): boolean {
+    if (!skipRadius && !this.withinEnemy(e, p.x, p.y)) return false
 
     // 把敌人的运行时状态包成 Defender，复用与 Go 完全一致的结算
     const def = new Defender(e.hp, e.shield, e.armorPermille)
@@ -1266,8 +1296,14 @@ export class BattleEngine {
     const rr = toFixed(radius)
     for (const e of this.enemies) {
       if (e.dead || e.uid === origin.uid) continue
+      // 溅射目标也必须记进 hitSet。原实现不记，于是「穿透 + 溅射」组合下
+      // 同一敌人会被反复结算：每穿透一个主目标就再跑一次 applyAoe。
+      // 内容表里「电磁栅栏」Pierce 12 / AoeRadius 50 就是这个组合。
+      if (p.hitSet.has(e.uid)) continue
       if (dist2(origin.x, origin.y, e.x, e.y) > rr * rr) continue
-      this.hitEnemy(p, e)
+      if (this.hitEnemy(p, e, true)) {
+        p.hitSet.add(e.uid)
+      }
     }
   }
 

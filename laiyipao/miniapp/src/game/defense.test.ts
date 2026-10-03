@@ -307,10 +307,20 @@ describe('runChallenge', () => {
     // 「畸形关卡上报 0%」的兜底行为。敌人特意无攻击力 ——
     // 漏怪伤害走 breachDamage 的 baseHpMax<=0 兜底（100 点），
     // 让引擎侧与上报侧的同一条畸形数据路径都被走到。
+    //
+    // ⚠️ 第 65 轮：敌人血量从夹具默认值提到 40000。
+    //
+    // 原来只靠 `attack: 0n` 制造「打不完」，而第 65 轮修好弹射/溅射后
+    // 战斗整体上移 —— 即使 0 攻方也能把默认血量的怪全清掉，
+    // 于是 `won` 变成 true，这条用例测的就不再是「防线被突破」那条路径。
+    //
+    // 这是本项目记过多次的形态：**夹具的参数温和度本身就是一种掩盖**。
+    // 这里不去改断言（hp_left_pct 必须是 0 的结论仍然正确），
+    // 而是让夹具真的「打不完」—— 血量高到 0 攻方 + 4 个技能也清不掉。
     const r = runChallenge(view(), {
       ...deps,
       level: { ...level(), base_hp: 0 },
-      enemies: new Map([[1, mkEnemyDef(1, { attack: 0 })]]),
+      enemies: new Map([[1, mkEnemyDef(1, { attack: 0, hp: 40_000 })]]),
       myAttacker: { ...attacker(), attack: 0n }, // 保证有怪漏进防线
     })
     expect(r.won).toBe(false)
@@ -354,10 +364,29 @@ describe('runChallenge', () => {
   })
 
   it('攻击力有实际收益：攻方越强漏怪越少、耗时越短', () => {
-    // 敌人 30000 血时，0‰ 攻方打不完会漏怪，50000‰ 攻方能全清。
-    // 夹具选厚血是必要的：敌人太薄时刷怪节奏会掩盖攻方差异。
-    const weak = runChallenge(view(), { ...deps, myAttacker: { ...attacker(), attack: 0n } })
-    const strong = runChallenge(view(), { ...deps, myAttacker: { ...attacker(), attack: 50000n } })
+    // 夹具必须是**厚血敌人**，否则这条测不到攻方差异 ——
+    // 敌人太薄时刷怪节奏会掩盖攻方差异（README 记过这个坑）。
+    //
+    // ⚠️ 第 65 轮：必须**显式**给血量。
+    //
+    // 原来直接用 `deps.enemies`（真实内容表），注释写着「敌人 30000 血时」，
+    // 但那是**愿望**不是事实 —— deps 里用的是真实敌人表，血量各不相同。
+    // 第 65 轮修好弹射/溅射后战斗整体上移，0 攻方也能把默认厚度的怪清掉，
+    // 于是 `weak.leaked > 0` 断言失败。
+    //
+    // 所以这里把血量钉到 60_000：0‰ 攻方 + 4 技能打不完（会漏怪），
+    // 50000‰ 攻方能全清 —— 攻方差异因此可观测。
+    const thick = new Map(ENEMIES.map((e) => [e.id, { ...e, hp: 60_000 }]))
+    const weak = runChallenge(view(), {
+      ...deps,
+      enemies: thick,
+      myAttacker: { ...attacker(), attack: 0n },
+    })
+    const strong = runChallenge(view(), {
+      ...deps,
+      enemies: thick,
+      myAttacker: { ...attacker(), attack: 50000n },
+    })
 
     expect(weak.stats.leaked, '低攻方应打不完而有漏怪').toBeGreaterThan(0)
     expect(strong.stats.leaked, '高攻方应能全清').toBe(0)
