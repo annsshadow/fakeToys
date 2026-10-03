@@ -500,7 +500,11 @@ MEASURED = {
     #: converter.py 删死常数 4 行后，L23 那行的两条行号格（同一格两处引用）落到
     #: 空行，按先例降级名锚——行号引用退出 line_refs 桶（−2），文件名 token 转入
     #: file_tokens（+2），同两条格计入漂移桶（+2）。
-    LEDGER: {"line_refs": 271, "file_tokens": 1660, "code_but_no_name_match": 143},
+    #: L175 面位移（line_refs 271 → 270、file_tokens 1660 → 1661、漂移 143 → 145）：
+    #: search_enhanced.py 收方法清单判据插行后，一条 normalize_filters 调用点的
+    #: grep 读数格落空行（降级名锚）；漂移桶新增两条（插入区间顶进「指向真代码行
+    #: 但不是它说的那条」的既及格）。
+    LEDGER: {"line_refs": 270, "file_tokens": 1661, "code_but_no_name_match": 145},
     #: L156 面位移（290 → 285）：streaming.py 插 `StreamConfig.__post_init__` 后，账本 5 条
     #: streaming.py 历史行引用（A145 行 2 条、A147 行 3 条）被引行换位、退出本档，按
     #: L151 / L153 / L154 先例降成名字锚（「原 N 行」）：line_refs −5、漂移 147 →

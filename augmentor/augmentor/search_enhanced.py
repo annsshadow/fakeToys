@@ -16,9 +16,15 @@ from collections.abc import Mapping
 import time
 
 from augmentor.exceptions import DataValidationError
-from augmentor.validation import require_count
+from augmentor.validation import require_count, require_choice
 
 logger = logging.getLogger(__name__)
+
+# 搜索方法的**封闭清单**（L175 / B245 提为库层权威）：API 面（dataset_tools 路由）的
+# 400 判据与 CLI 面（无 choices 的那条）都共引这一份 —— 改前清单只住在 API 面，
+# SDK 直构的调用方传未知 method 会**静默回落 contains**（checkpoint 症状族：
+# 语义漂移不出声）。
+SEARCH_METHODS = ("exact", "contains", "ngram", "fuzzy", "regex")
 
 # 词法切分（中文串 / 英文单词 / 数字串）。编译一次放在模块级：`re.findall(字面模式, text)`
 # 每次都要走一遍 `re._compile()` 的缓存查找，而 `_build_indexes` 对每条数据的每个索引字段各调一次
@@ -354,6 +360,13 @@ class EnhancedSearcher:
                 含义是「只要总数，不要条目」——`total_matches` 本来就是分页前的
                 全集条数，所以这是一个有意义的答案，不能被当成「没传参数」。
         """
+        # method 必须先过封闭清单（L175）：改前未知值静默回落 contains（语义漂移
+        # 不出声），现在拒掉并列出全部合法取值；None 单独先判（require_choice 的
+        # 「未传回落默认」语义对必填参数不适用），空串由 require_string 那刀判。
+        if method is None:
+            raise DataValidationError(
+                f"method 不能为 null，合法取值: {' / '.join(SEARCH_METHODS)}")
+        require_choice("method", method, choices=SEARCH_METHODS)
         if not 0 < fuzzy_threshold <= 1:
             raise DataValidationError(
                 f"模糊阈值必须在 (0, 1] 区间内，当前是 {fuzzy_threshold}"
