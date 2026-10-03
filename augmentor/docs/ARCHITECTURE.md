@@ -1272,7 +1272,7 @@ config.augmentation.max_retries / retry_delay
 `pool_connections=10` 与上游默认同值（写了等于没写，但保留显式写法免得依赖上游不变），
 `pool_maxsize=20` 是本仓唯一偏离默认的项；`pool_connections` 语义是「缓存多少个 host 池」
 （每个后端实例一个 session、一个 host ⇒ 远未触顶），`pool_maxsize` 是单池连接上限。本仓各模块默认并发
-`max_workers ∈ {3, 4, 5}`（`expander.py:30` / `augmentor/export.py:51` / `multilingual.py:43` / `context.py:21` /
+`max_workers ∈ {3, 4, 5}`（`expander.py:30` / `augmentor/export.py`（原 51 行，L163 插入后降级名锚） / `multilingual.py:43` / `context.py:21` /
 `augmentor/pipeline.py` 的 `max_workers=4` 形参）⇒ 20 有 4 倍余量，且它是 per-host 上限，不构成跨后端瓶颈。原作者注释从未说明这两个数，
 本节只是把「实测得到的关系」补成可核对的话，不宣称这就是当初的理由。
 

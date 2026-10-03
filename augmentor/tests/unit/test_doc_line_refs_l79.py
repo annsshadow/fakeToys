@@ -113,7 +113,7 @@ CEILING = {
 #: 下界取整留了余量 —— 这两个数是**好引用的规模**，不是缺陷计数，删引用是改进、不该被
 #: 反空转下界卡住；它只负责证明「普查真的看见了成百条引用」，而不是钉住总数。
 FLOOR = {
-    ARCH: {"line_refs": 40, "file_tokens": 200},
+    ARCH: {"line_refs": 38, "file_tokens": 200},
     LEDGER: {"line_refs": 270, "file_tokens": 1050},
 }
 
@@ -442,7 +442,11 @@ MEASURED = {
     #: 规格后，架构文档 2 条指向 load_config 尾段的行引用的被引行换位、退出本档，按 L151 /
     #: L153 先例降成名字锚（「原 1014 行」），file_tokens 244 → **246**（两条裸文件名入档），
     #: code_but_no_name_match 34 原地未动。案面=产品布局变更，按「数字搬进常量」条款重钉。
-    ARCH: {"line_refs": 40, "file_tokens": 246, "code_but_no_name_match": 34},
+    #: L163 面位移（line_refs 40 → 39、file_tokens 246 → 247）：export.py 收原子写
+    #: 插 import 后，架构文档里 max_workers 形参清单的 export.py 行号格落到非代码行，
+    #: 按先例降级名锚——行号引用退出 line_refs 桶（−1），文件名反引号 token 转入
+    #: file_tokens 桶（+1），漂移桶不动（该格原本就在其中）。
+    ARCH: {"line_refs": 39, "file_tokens": 247, "code_but_no_name_match": 34},
     #: L153 面位移（37 → 34）：config/quality 接 require_ratio_list 插行后，3 条 config.py
     #: 历史行引用的被引行换位、退出本档。案面=产品布局变更，按「数字搬进常量」条款重钉。
     #: **L100 批②（产品码插行 ⇒ 账本 A144 那一行被顶红，三格同时动）**：批② 给 `augmentor/checkpoint.py`
@@ -474,7 +478,11 @@ MEASURED = {
     #: L154 / L156 先例降成「文件名（原 N 行，降级名锚）」：行号引用退出
     #: line_refs 与漂移两桶（各 −1），文件名反引号 token 转入 file_tokens 桶
     #: （+1，先例同形）。
-    LEDGER: {"line_refs": 284, "file_tokens": 1647, "code_but_no_name_match": 145},
+    #: L163 面位移（line_refs 284 → 283、file_tokens 1647 → 1648）：export.py 与
+    #: atomic_write.py 收原子写插行后，账本里一条 Exporter.export 的行号格落到
+    #: 别的代码行，按先例降级名锚——行号引用退出 line_refs 与漂移两桶（漂移
+    #: 回 145），文件名 token 转入 file_tokens（+1）。
+    LEDGER: {"line_refs": 283, "file_tokens": 1648, "code_but_no_name_match": 145},
     #: L156 面位移（290 → 285）：streaming.py 插 `StreamConfig.__post_init__` 后，账本 5 条
     #: streaming.py 历史行引用（A145 行 2 条、A147 行 3 条）被引行换位、退出本档，按
     #: L151 / L153 / L154 先例降成名字锚（「原 N 行」）：line_refs −5、漂移 147 →
