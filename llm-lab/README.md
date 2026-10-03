@@ -20,7 +20,10 @@ cd llm-lab
 pip install -r requirements.txt      # 只需 numpy + pytest
 
 python -m minigrad.train             # 训练字符级 GPT：loss ~4.1 → ~0.3，并生成文本
-pytest tests/ -q                     # 19 passed, 1 skipped（含逐算子数值梯度校验）
+pytest tests/ -q                     # 32 passed, 1 skipped（含逐算子数值梯度校验 + KV cache 等价性）
+
+python -m minigrad.visualize         # 训练一个小模型并生成注意力热力图 data/attention_demo.html
+python -m experiments.scaling_law    # 尺度实验：S/M/L 三档模型的参数量 vs loss，输出 CSV
 ```
 
 想上 PyTorch 实战轨：
@@ -28,6 +31,8 @@ pytest tests/ -q                     # 19 passed, 1 skipped（含逐算子数值
 ```bash
 pip install -r requirements-torch.txt   # 版本按 https://pytorch.org 选
 pytest tests/ -q                         # 原本 skip 的 7 个 torchgpt 用例会激活
+python -m torchgpt.main train --data data/tiny_corpus.txt --steps 500
+python -m torchgpt.main sample --ckpt checkpoints/ckpt.pt --prompt "The " --tokens 200
 ```
 
 ## 目录结构
@@ -36,12 +41,14 @@ pytest tests/ -q                         # 原本 skip 的 7 个 torchgpt 用例
 llm-lab/
 ├── minigrad/            # 原理轨（纯 NumPy）
 │   ├── engine.py        #   张量级 autograd 引擎（反向传播地基）
-│   ├── nn.py            #   Linear/Embedding/LayerNorm/注意力/Block/GPT
+│   ├── nn.py            #   Linear/Embedding/LayerNorm/注意力/Block/GPT（注意力支持 KV cache）
 │   ├── optim.py         #   SGD / AdamW
 │   ├── tokenizer.py     #   字符级 + BPE 分词器
 │   ├── data.py          #   批次采样
-│   ├── train.py         #   完整训练循环（可直接 python -m 运行）
-│   └── sample.py        #   自回归文本生成
+│   ├── train.py         #   完整训练循环（char/bpe 分词、checkpoint、训练统计）
+│   ├── sample.py        #   自回归生成：朴素版 + KV cache 版（逐 logit 等价）
+│   ├── checkpoint.py    #   模型保存/恢复（参数+配置+词表打包 npz）
+│   └── visualize.py     #   注意力热力图 → 独立 HTML（零依赖）
 ├── torchgpt/            # 实战轨（PyTorch）
 │   ├── model.py         #   nanoGPT 风格 GPT（FlashAttention 快路径）
 │   ├── train.py         #   AMP + 梯度累积 + 裁剪 + 余弦 LR + checkpoint
@@ -49,9 +56,12 @@ llm-lab/
 │   ├── dpo.py           #   DPO 偏好对齐
 │   ├── eval.py          #   困惑度评估
 │   ├── sample.py / data.py / config.py
+│   └── main.py          #   CLI：python -m torchgpt.main train|sample
+├── experiments/
+│   └── scaling_law.py   #   玩具版尺度实验：模型大小 vs loss
 ├── docs/                # 中文课程讲义 00~10（见下）
 ├── data/tiny_corpus.txt # 内置小语料
-└── tests/               # 梯度校验 + 单元 + 端到端冒烟
+└── tests/               # 梯度校验 + 单元 + KV cache 等价性 + 端到端冒烟
 ```
 
 ## 课程讲义
@@ -73,9 +83,10 @@ llm-lab/
 
 ## 设计原则
 
-- **可验证**：`tests/test_engine.py` 用中心差分对每个算子做数值梯度校验——引擎正确性有据可查，不是"看起来对"。
+- **可验证**：`tests/test_engine.py` 用中心差分对每个算子做数值梯度校验——引擎正确性有据可查，不是"看起来对"。`tests/test_kvcache.py` 验证 KV cache 增量前向与整段前向逐 logit 一致。
 - **原理优先**：所有网络层都建立在自己手写的 autograd 之上，复杂函数（LayerNorm、注意力）的反向传播是"免费"的，这正是自动微分的威力。
-- **两轨印证**：手写版讲清机制，PyTorch 版讲清工程，差异处（如权重共享、FlashAttention）在讲义里专门点出。
+- **两轨印证**：手写版讲清机制，PyTorch 版讲清工程，差异处（如权重共享、FlashAttention、KV cache）在讲义里专门点出。
+- **看得见**：`minigrad/visualize.py` 把注意力权重画成零依赖的 HTML 热力图；`experiments/scaling_law.py` 让你亲手跑一次"模型越大 loss 越低、小语料上大模型先过拟合"的尺度实验。
 
 ## 许可证
 

@@ -57,9 +57,19 @@ def train(
     lr=3e-3,
     seed=1337,
     eval_every=100,
+    tokenizer="char",
+    bpe_vocab=400,
+    out_ckpt=None,
+    return_stats=False,
     verbose=True,
 ):
-    """训练一个字符级 GPT，返回 ``(model, tokenizer)``。"""
+    """训练一个 GPT，返回 ``(model, tokenizer)``（``return_stats=True`` 时附带统计字典）。
+
+    ``tokenizer`` 可选 ``"char"``（默认，每个字符一个 token）或 ``"bpe"``（先用
+    ``tokenizer.BPETokenizer`` 在语料上学 ``bpe_vocab`` 大小的词表再训练）。
+    ``out_ckpt`` 给定路径时，训练结束把模型与词表保存为 checkpoint
+    （见 ``checkpoint.py``），可用 ``checkpoint.load`` 恢复。
+    """
     rng = np.random.RandomState(seed)
     np.random.seed(seed)
 
@@ -67,7 +77,14 @@ def train(
         with open(os.path.normpath(DEFAULT_CORPUS), encoding="utf-8") as f:
             text = f.read()
 
-    tok = CharTokenizer(text)
+    if tokenizer == "char":
+        tok = CharTokenizer(text)
+    elif tokenizer == "bpe":
+        from .tokenizer import BPETokenizer
+
+        tok = BPETokenizer().train(text, vocab_size=bpe_vocab)
+    else:
+        raise ValueError(f"未知 tokenizer: {tokenizer!r}（可选 'char' / 'bpe'）")
     ids = tok.encode(text)
     train_ids, val_ids = train_val_split(ids, val_ratio=0.1)
 
@@ -81,18 +98,36 @@ def train(
     model = GPT(cfg)
     opt = AdamW(model.parameters(), lr=lr)
 
+    final_val = float("nan")
+    final_train = float("nan")
     for step in range(steps):
         opt.lr = cosine_lr(step, warmup=steps // 20 + 1, total=steps, base_lr=lr, min_lr=lr * 0.1)
         x, y = get_batch(train_ids, batch_size, block_size, rng)
         loss = model.loss(x, y)
+        final_train = loss.data.item()
         opt.zero_grad()
         loss.backward()
         opt.step()
 
-        if verbose and (step % eval_every == 0 or step == steps - 1):
-            val = estimate_loss(model, val_ids, batch_size, block_size, 5, rng)
-            print(f"step {step:4d} | train {loss.data.item():.4f} | val {val:.4f} | lr {opt.lr:.2e}")
+        if step % eval_every == 0 or step == steps - 1:
+            final_val = estimate_loss(model, val_ids, batch_size, block_size, 5, rng)
+            if verbose:
+                print(f"step {step:4d} | train {loss.data.item():.4f} | val {final_val:.4f} | lr {opt.lr:.2e}")
 
+    if out_ckpt:
+        from .checkpoint import save
+
+        save(model, out_ckpt, stoi=tok.stoi)
+        if verbose:
+            print(f"checkpoint 已保存: {out_ckpt}")
+
+    if return_stats:
+        return model, tok, {
+            "steps": steps,
+            "final_train_loss": final_train,
+            "final_val_loss": final_val,
+            "vocab_size": tok.vocab_size,
+        }
     return model, tok
 
 
