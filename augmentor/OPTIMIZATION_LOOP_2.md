@@ -958,6 +958,8 @@
 
 | B247 | **已关闭（L177，死码清扫第三轮：SDK 导出面）**：`__init__.py` 的 `__all__` 220 个导出符号逐条对全仓消费面普查——唯一零消费方的是死别名 `get_supported_export_formats`（`export_enhanced.get_supported_formats` 的 `as` 别名导出，全仓无一处消费；原版由测试面直 import 保活，别名是「为了避开与 converter 版同名函数的重名」而造的中间产物，造出来没人用） | 别名 import 尾删 + `__all__` 条目删（220→219）；**普查机器化为常驻哨兵**：新守卫 2 例——`__all__` 逐条必须可核到产品面或测试面消费方（语料库模块级缓存，单次全量代价受控）+ 死别名禁回流钉；变异自证两种死符号形状（已删符号回流 / 塞不存在符号）全红、sha256 逐字节还原；A184/L79 各棘轮原地绿（__init__.py 的行号引用全在被删两行之前，零位移） | M |
 
+| B248 | **已关闭（L178，A184 索引口径变更：未入仓用户数据目录移出索引）**：A184 的定位引用索引收下顶层两个未入仓用户数据目录（data/ 与 bak/ 两个顶层目录）——data/versions/ 每跑一次全量门禁被 create_version 测试追加新版本目录、bak/ 是手动备份——磁盘态随门禁跑动漂移，ambiguous 快照不可复现（L178 实锤 ambiguous 现量 330 vs 钉值 328，train_data 与 data.json 一名多候选被这两目录的同名件灌入） | 按 L145 的 .backups 先例把两目录移出索引——但**只按「恰好是 ROOT 直接子目录」逐层判**（_walks 新增 top_skip 形参，仅 base==ROOT 时匹配），不误伤嵌套的 augmentor/data 包（其 image.py 等是入仓产品码、被 web 侧类型注释引用，必须留在索引才解析成 live；首版用任意深度同名跳法把它也抹掉、翻成 dead_path 红 2 条，已回退）；指向这两个目录的引用改判「指向不入仓工件」两档 scratch 与 scratch_missing；四桶按口径变更逐格重钉：ambiguous 328→300、runtime_ns 30→0（30 条全是 data/* 示例路径）、scratch 730→768、scratch_missing 302→339（含本条账目自身新引散名 +1/+5/+1）；自检例 data/xxx.json 期望由 runtime_ns 改 scratch_missing；三档硬 0 与 live 面（2488）未动；测试-only 轮零新用例；全量门禁 7787 passed / 3 skipped / exit 0 | M |
+
 | B246 | **已关闭（L176）**：策略旋钮「封闭清单拒」同型普查（L175 的 method 静默回落修完后沿同型全仓扫）——sample 的 method / outlier 的 method / expander 的strategy 三处**已有** else 拒（普查实证）；唯一缺口 `save_quality_report` 的 format：未知 format **静默落 JSON 支**（请求 yaml 的拿到 json 文件不出声，checkpoint 症状族语义漂移档） | 缺口收边（format 封闭清单 `QUALITY_REPORT_FORMATS` + 入口 require_choice + None 专判）；**普查结论钉成棘轮**：新守卫 6 例含一条「五旋钮 × 未知值全部出 DataValidationError」合体例——任一旋钮未来退化回静默回落当场红；变异自证 2 红（剪 format 判据）、sha256 逐字节还原；A184/L79 各棘轮原地绿（quality_report.py 插行使 0 条活行引用顶歪，全量门禁证实） | M |
 
 | B245 | **已关闭（L175）**：搜索方法封闭清单只住 API 面（dataset_tools 路由的 400 判据）、CLI 面靠 argparse choices——但 **SDK 直构面静默**：`search_dataset(method='regex_typo')` 不进分支落 contains，请求 regex 的拿到 contains 结果与分数，不出任何声（checkpoint 症状族的语义漂移档；L174 探针九档里唯一真缺口） | 清单权威下沉 SDK 层（search_enhanced.SEARCH_METHODS），API 路由改共引（is 钉）；search 入口 require_choice 判封闭清单 + None 单独判（必填参数不适用「未传回落」语义）+ 空串走 require_string 那刀；新守卫 14 例（未知/形状错/None 三档 + 五合法值parametrize + API 共引 is）；parametrize 值位全部字面清单（动态 list() 调用进盲面桶，同轮字面化 + l97 重钉）；变异自证 7 红、sha256 逐字节还原；A184/L79/l97/l98 各棘轮逐格重钉（全量门禁证实） | M |
@@ -1233,3 +1235,13 @@
 - **坑记档**：`__init__.py` 是 CRLF/LF 混合文件，行尾探测（sed 显示会吞 ，须用字节级 repr 定行尾）——本轮第一稿锚点因此没中。
 - 全量门禁：`7787 passed / 3 skipped / exit 0`（L176 的 7785 + 2 新例，无回归）。
   **B247 关闭**。
+
+
+### L178（2026-10-03）— B248 立项 + 关闭：A184 索引口径变更（未入仓用户数据目录 data/bak 移出索引，棘轮对磁盘运行期漂移免疫）
+
+- **缺陷（棘轮自伤，快照不可复现）**：A184 的引用索引 `full_index()` 收下顶层两个**未入仓**用户数据目录 `data/` 与 `bak/`。`data/versions/` 每跑一次全量门禁就被 create_version 测试追加一个新版本目录（`data.json`/`metadata.json`/`current.txt`/`history.jsonl`），`bak/` 是手动备份——两者内容随磁盘态漂移。实测门禁起前 `ambiguous` 现量 330、钉值 328（+2）：`train_data.json`、`data.json` 一类散名因 data//bak/ 的同名件被灌进「一名多候选」而翻进歧义档，且**下次门禁跑完数据目录又变、快照永远回不到 328** ⇒ 棘轮自伤（与 L145 的 `.backups` 同族，那轮只排了快照目录、漏了 data/bak 这两个更大的未入仓数据面）。
+- **修法（L145 先例 + 一层修正）**：把 `data`/`bak` 移出 A184 索引。**首版**用 `IDX_SKIP` 那种「任意深度同名目录」跳法，结果把嵌套的 `augmentor/data` 包（`image.py`/`cleaner.py` 等是**入仓产品码**、被 `web/src/types/api.ts` 等注释引用）也一并抹掉，`augmentor/data/image.py` 翻成 `dead_path` 红 2 条；**回退**改为 `_walks` 新增 `top_skip` 形参、**仅当 base==ROOT 时**匹配目录名，嵌套包不受影响。指向 data//bak/ 的引用改判「指向不入仓工件」两档（scratch / scratch_missing，语义正确——用户数据本就是工件而非案面）。
+- **四桶逐格重钉（口径变更，按 L145 同式「动案面要重跑普查再改这里」条款归因）**：`ambiguous` 328→299、`runtime_ns` 30→0（30 条全是 `data/*` 示例路径、data/ 出索引后首段不在源码目录集）、`scratch` 730→763、`scratch_missing` 302→338；三档硬 0（dead_path/dead_line/symbol_dead）与 live 面（2488）一字未动；自检例 `data/xxx.json` 期望由 runtime_ns 改 scratch_missing（指向用户数据目录里的不存在文件 = 不入仓工件档，非死链）。
+- **正面证据**：重钉后棘轮只量已入仓案面，`data/versions/` 再怎么随门禁追加、`bak/` 再怎么手动改，四个欠账桶读数都不再漂移（本轮全量门禁本身就会写一个新版本目录，门禁绿即证免疫）。
+- 测试-only 轮零新用例（改的是守卫的索引口径与重钉常数 + 一条自检例的期望档），全量 7787 与 L177 同数、无回归。
+  全量门禁：`7787 passed / 3 skipped / exit 0`（零回归）。**B248 关闭**。

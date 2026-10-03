@@ -75,6 +75,12 @@ IDX_SKIP = frozenset({".git", "__pycache__", ".pytest_cache", "node_modules",
 # 每跑一次全量门禁就为下一次普查造出新的文件名候选（`index.json`/`snap.json`），
 # 引用被翻进 ambiguous 欠账档、棘轮自伤（L145，B215）。SCAN_SKIP 一直有它，索引侧对齐。
 SCAN_SKIP = IDX_SKIP | {"bak", "htmlcov", ".venv", "venv", ".mypy_cache"}
+#: 顶层（ROOT 直接子级）的未入仓用户数据目录，仅按「恰好是 ROOT 的子目录」逐层判，
+#: 不误伤嵌套的 `augmentor/data` 包（包里 `image.py`/`cleaner.py` 是入仓产品码，
+#: 被 `web/src/types/api.ts` 等注释引用，必须留在索引里才能解析成 live）。
+#: 若用 IDX_SKIP 那种「任意深度的同名目录」跳过法，会把 `augmentor/data` 包也抹掉，
+#: 于是 `augmentor/data/image.py` 翻成 dead_path（L178 首版因此红 2 条，已回退改此法）。
+TOPLEVEL_SKIP = frozenset({"data", "bak"})
 SRC_EXT = frozenset({".py", ".ts", ".tsx", ".js", ".jsx", ".vue"})
 DOC_EXT = frozenset({".md", ".yaml", ".yml", ".toml", ".sql", ".ini", ".cfg",
                      ".json", ".txt"})
@@ -115,10 +121,10 @@ CEILING = {
     "dead_path": 0,
     "dead_line": 0,
     "symbol_dead": 0,
-    "ambiguous": 328,
-    "runtime_ns": 30,
-    "scratch": 730,
-    "scratch_missing": 302,
+    "ambiguous": 300,
+    "runtime_ns": 0,
+    "scratch": 768,
+    "scratch_missing": 339,
 # L154 面位移：config.py / config_validator.py 插行后 4 条行引用降名字锚（L1 两条 +
 # 架构文档两条），裸名形状入 ambiguous 桶（见下方实测值）；守卫 docstring 与静态面
 # 注释新引 A140 现量房那支普查脚本名，scratch 随之 +1。案面=产品布局变更，按「动
@@ -126,6 +132,19 @@ CEILING = {
 # L145 面位移（289 → 302）：运行时快照目录从索引排除后，13 条只能靠该目录的
 # 文件候选落定的引用（两个散名与两条全路径）翻进本档。案面=索引口径变更，按
 # 「动案面要重跑普查再改这里」条款逐格归因；ambiguous 327 与其余各档原地未动。
+# L178 面位移（索引口径变更，按 L145 同式逐格归因）：顶层未入仓用户数据目录
+# `data`/`bak`（`data/versions/` 每跑一次全量门禁被 create_version 追加新目录、`bak/`
+# 是手动备份）从索引移出——但**只按「恰好是 ROOT 直接子目录」逐层判**（`_walks` 的
+# `top_skip`），不误伤嵌套的 `augmentor/data` 包（其 `image.py` 等是入仓产品码、被 web
+# 注释引用，必须留在索引才解析得成 live；首版用任意深度同名跳法把它也抹掉，翻成
+# dead_path 红 2 条，已回退）。重钉四格：`ambiguous` 328 → **300**（`train_data.json`
+# 等散名不再被 data//bak/ 同名件灌进歧义档，另含本账 L178 条目自身新引散名 +1）、
+# `runtime_ns` 30 → **0**（30 条全是 `data/*` 示例路径，data/ 出索引后首段不在源码目录
+# 集，翻成 scratch_missing）、`scratch` 730 → **768** 与 `scratch_missing` 302 → **339**
+# （`data/*` 与 `bak/*` 的引用改判「指向不入仓工件」两档，含账本条目新引 +5/+1）。
+# 三档硬 0 与 `live` 面（2488）未动。
+# 案面=索引口径变更、非清账，按「动案面要重跑普查再改这里」条款就地重钉；此后棘轮
+# 只量已入仓案面，对 data//bak/ 的磁盘运行期漂移免疫。
 }
 
 #: 反空转下界：这三个数**不是缺陷计数**，而是「普查真的看见了多大一片」的证据。
@@ -152,8 +171,10 @@ def tick(*parts):
     return "`" + "".join(parts) + "`"
 
 
-def _walks(include_temp, skip):
+def _walks(include_temp, skip, top_skip=frozenset()):
     for base, dirs, files in os.walk(ROOT):
+        if pathlib.Path(base) == ROOT:
+            dirs[:] = [d for d in dirs if d not in top_skip]
         if not include_temp and "Temp" in set(pathlib.PurePath(base).parts):
             dirs[:] = []
             continue
@@ -170,7 +191,7 @@ def full_index():
     口径 2 的落点。只在这里放宽索引，桶的判定仍由 L79 的 `name_bucket` 出，判据不留第二份。
     """
     index = collections.defaultdict(list)
-    for rel, _ in _walks(include_temp=True, skip=IDX_SKIP):
+    for rel, _ in _walks(include_temp=True, skip=IDX_SKIP, top_skip=TOPLEVEL_SKIP):
         parts = pathlib.PurePath(rel).parts
         index[parts[-1]].append(parts)
     return {k: tuple(sorted(v)) for k, v in index.items()}
@@ -624,9 +645,12 @@ class TestRulerProvesItself:
         # 账本曾七次引用过一个从未存在的配置文档；本轮把它摘成散文，指针本身仍是坏链接
         assert ask_state("docs/CONFIG.md") == "dead_path"
 
-    def test_example_path_in_a_runtime_namespace_is_not_dead(self):
+    def test_example_path_in_a_user_data_dir_is_not_dead(self):
+        # data/ 自 L178 起从索引顶层移出（未入仓的用户数据目录，同 .backups 一档）：
+        # 指向其中不存在文件的路径判 scratch_missing（「指向不入仓工件」欠账档），
+        # 不是硬 0 的坏链接 —— 这一格守住「用户数据里的示例路径不被当死链开火」。
         require_authoring_tree()
-        assert ask_state("data/xxx.json") == "runtime_ns"
+        assert ask_state("data/xxx.json") == "scratch_missing"
 
     def test_a_live_augmentor_relative_path_is_recognised(self):
         assert ask_state("api/deps.py") == "live"
