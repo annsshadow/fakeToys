@@ -612,7 +612,47 @@ func satMul(a, b, cap int64) int64 {
 	return a * b
 }
 
+// sumOverCap 判断各项之和是否**超过** cap，全程不溢出。
+//
+// # 为什么不能直接 `total += v`
+//
+// 累加器本身会 int64 回绕：两个 2^62 相加 = 2^63 = -9223372036854775808。
+// 于是调用方拿一个**负数**去比 `> cap`，恒为假 → 上界形同虚设。
+// 而每一项单独判 `v < 0` 或 `v <= cap` 都挡不住 —— 2^62 本身完全合法。
+//
+// 这与本项目已修的两处同族但不是同一个：
+//   - `reactions <= shots*8` 而 `shots` 无上界 → 漏了控制量
+//   - 速率裁剪分母 `duration_ms=0` → 分母为零让整段裁剪被跳过
+//
+// 这一处是**漏了产生被保护量的算术**。
+//
+// # 为什么不能用 satAdd 代替
+//
+// satAdd 在 cap 处**饱和**，返回值 ≤ cap，于是：
+//   - 判 `total > cap` → 恒为假，上界被悄悄削弱成没有
+//   - 判 `total >= cap` → 真实引擎「恰好达到理论上限」的合法对局被误拒
+//
+// sumOverCap 逐项在**相加之前**比较 `t > cap-sum`，超出即返回 true。
+// 由于 `sum` 恒 ≤ cap，`cap-sum` 不会溢出，比较是精确的。
+// 这样「恰好等于 cap」（合法）与「超过 cap」（拒绝）被干净区分。
+func sumOverCap(cap int64, terms ...int64) bool {
+	cap = nonNeg(cap)
+	sum := int64(0)
+	for _, t := range terms {
+		t = nonNeg(t)
+		if t > cap-sum {
+			return true
+		}
+		sum += t
+	}
+	return false
+}
+
 // satAdd 把各项相加，任一项使总和超过 cap 时返回 cap。
+//
+// ⚠️ 它是**饱和**语义，与 sumOverCap 的「精确是否超界」不同。
+// 判上界时用 sumOverCap；需要「不溢出地取一个有界和」时才用本函数
+// （例如掉落封顶：超了就是取满，不需要知道超了多少）。
 func satAdd(cap int64, terms ...int64) int64 {
 	cap = nonNeg(cap)
 	sum := int64(0)
