@@ -53,7 +53,10 @@ REAL_REPLACE = os.replace
 # （读侧 _load_index 无 except 且 __init__ 必调，同 L160 形状）；其 data/version
 # 快照两边豁免（读侧 get_version_data 响亮抛异常，条件豁免机器化进 l161 守卫）。
 # version_control.py 的 4 处计数边现量降 2。
-NON_ATOMIC_JSON_DUMP_SITES_MAX = 40
+# L162（B232）：BackupManager 索引两边收原子写（同 L160/L161 形状）；快照与
+# 恢复输出两边豁免（读侧响亮抛异常），其「同名覆盖写中途崩毁既有」窗口是判据
+# 口径未覆盖的另一档，记档待裁。backup.py 的 4 处计数边现量降 2。
+NON_ATOMIC_JSON_DUMP_SITES_MAX = 38
 
 
 def _legacy_write_json(file_path: Path, data):

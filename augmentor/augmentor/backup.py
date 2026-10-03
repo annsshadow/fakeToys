@@ -14,6 +14,8 @@ from typing import List, Dict, Optional, Any
 from pathlib import Path
 from dataclasses import dataclass
 from datetime import datetime
+
+from .atomic_write import atomic_write_json
 from .validation import require_count
 from .exceptions import BackupError
 
@@ -66,16 +68,17 @@ class DatasetBackup:
         if self._index_file.exists():
             with open(self._index_file, 'r', encoding='utf-8') as f:
                 return json.load(f)
-        # 创建默认索引
+        # 创建默认索引（L162 收原子写：本方法无 except 且在 __init__ 必调，
+        # 旧写法的半份索引窗口会让第二个实例构造当场崩）
         default_index = {"backups": []}
-        with open(self._index_file, 'w', encoding='utf-8') as f:
-            json.dump(default_index, f, ensure_ascii=False, indent=2)
+        atomic_write_json(self._index_file, default_index)
         return default_index
     
     def _save_index(self):
-        """保存索引文件"""
-        with open(self._index_file, 'w', encoding='utf-8') as f:
-            json.dump(self._index, f, ensure_ascii=False, indent=2)
+        """保存索引文件（L162 收原子写——读侧 _load_index 无 except，坏索引
+        = 构造崩，错误答案档；快照与恢复输出两边不收：读侧响亮抛异常，且它们
+        的「同名覆盖写中途崩毁既有」窗口是判据口径未覆盖的另一档，记档待裁）"""
+        atomic_write_json(self._index_file, self._index)
     
     def _calculate_checksum(self, file_path: str) -> str:
         """计算文件校验和
