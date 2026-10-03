@@ -9,6 +9,11 @@ checkpoints/
 *.pt
 *.bin
 *.ckpt
+*.npz
+
+# 生成的可视化/实验产物
+data/*.html
+experiments/scaling_results.csv
 
 # 虚拟环境
 .venv/

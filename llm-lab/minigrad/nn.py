@@ -79,6 +79,11 @@ class CausalSelfAttention(Module):
 
     用三个独立的 ``Linear`` 产生 Q/K/V（比把一个大矩阵切片更易读），
     reshape 成多头后做缩放点积注意力，并用上三角 mask 保证"只能看过去"。
+
+    ``cache`` 用于增量解码（KV cache，见 ``sample.generate_cached``）：传入一个
+    ``{"k": ..., "v": ...}`` 字典（可为空），本层会把新算出的 K/V 追加进去，
+    并让新 token 只 attend 到"全部过去 + 自己"。前向会把注意力权重存到
+    ``self.last_att``，供 ``visualize`` 模块读取。
     """
 
     def __init__(self, n_embd, n_head):
@@ -89,8 +94,9 @@ class CausalSelfAttention(Module):
         self.k = Linear(n_embd, n_embd)
         self.v = Linear(n_embd, n_embd)
         self.proj = Linear(n_embd, n_embd)
+        self.last_att = None
 
-    def forward(self, x):
+    def forward(self, x, cache=None):
         B, T, C = x.shape
         H, d = self.n_head, self.head_dim
 
@@ -100,9 +106,19 @@ class CausalSelfAttention(Module):
 
         q, k, v = split_heads(self.q(x)), split_heads(self.k(x)), split_heads(self.v(x))
 
-        att = (q @ k.transpose((0, 1, 3, 2))) * (1.0 / np.sqrt(d))  # (B,H,T,T)
-        mask = np.triu(np.ones((T, T), dtype=np.float64), k=1) * -1e9  # 未来位置置 -inf
-        att = engine.softmax(att + Tensor(mask), axis=-1)
+        if cache is not None:
+            if cache.get("k") is not None:
+                k = Tensor(np.concatenate([cache["k"], k.data], axis=2))
+                v = Tensor(np.concatenate([cache["v"], v.data], axis=2))
+            cache["k"], cache["v"] = k.data, v.data
+
+        T_total = k.shape[2]
+        # 查询 i（绝对位置 T_past+i）允许看到键 j <= T_past+i。统一写成
+        # 上三角 mask：禁掉 j - i >= T_total - T + 1 的位置；无 cache 时
+        # T_total == T，恰好退化为普通的 k=1 因果 mask。
+        mask = np.triu(np.ones((T, T_total), dtype=np.float64), k=T_total - T + 1) * -1e9
+        att = engine.softmax((q @ k.transpose((0, 1, 3, 2))) * (1.0 / np.sqrt(d)) + Tensor(mask), axis=-1)
+        self.last_att = att.data  # (B, H, T, T_total)，可视化用
         y = att @ v  # (B,H,T,d)
         y = y.transpose((0, 2, 1, 3)).reshape(B, T, C)  # 合并多头
         return self.proj(y)
@@ -128,8 +144,8 @@ class Block(Module):
         self.ln2 = LayerNorm(n_embd)
         self.mlp = MLP(n_embd)
 
-    def forward(self, x):
-        x = x + self.attn(self.ln1(x))
+    def forward(self, x, cache=None):
+        x = x + self.attn(self.ln1(x), cache)
         x = x + self.mlp(self.ln2(x))
         return x
 
@@ -152,14 +168,20 @@ class GPT(Module):
         self.ln_f = LayerNorm(cfg.n_embd)
         self.head = Linear(cfg.n_embd, cfg.vocab_size, bias=False)
 
-    def forward(self, idx):
-        """idx: 整型数组 (B, T)，返回 logits (B, T, vocab)。"""
+    def forward(self, idx, caches=None):
+        """idx: 整型数组 (B, T)，返回 logits (B, T, vocab)。
+
+        ``caches`` 是与 ``self.blocks`` 等长的字典列表（元素可为空字典），
+        传入后做增量前向：新 token 的位置从已有 KV 长度接续算起，各注意力层
+        把 K/V 追加进对应缓存。训练/整段前向传 None 即可，行为不变。
+        """
         idx = np.asarray(idx)
         B, T = idx.shape
-        assert T <= self.cfg.block_size, "序列超过 block_size"
-        x = self.wte(idx) + self.wpe(np.arange(T))  # token + 位置嵌入
-        for block in self.blocks:
-            x = block(x)
+        T_past = caches[0]["k"].shape[2] if caches and caches[0].get("k") is not None else 0
+        assert T_past + T <= self.cfg.block_size, "序列超过 block_size"
+        x = self.wte(idx) + self.wpe(np.arange(T_past, T_past + T))  # token + 位置嵌入
+        for i, block in enumerate(self.blocks):
+            x = block(x, caches[i] if caches is not None else None)
         x = self.ln_f(x)
         return self.head(x)
 

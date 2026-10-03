@@ -123,14 +123,15 @@ npm start               # 启动定时签到 + Web 面板
 一个可运行、可验证、带完整中文讲义的大模型训练教学项目。目标不是堆术语，而是让你亲手把一个 GPT 从零造出来、训练起来、再优化。
 
 - **两条代码轨**：`minigrad`（纯 NumPy 手写张量级 autograd + GPT，任何环境可跑）与 `torchgpt`（PyTorch 复刻 nanoGPT，演示 AMP 混合精度、梯度累积/裁剪、LoRA、DPO、困惑度评估；未装 torch 时相关测试自动跳过）。
-- **可验证**：`tests/test_engine.py` 用中心差分对每个算子做数值梯度校验，引擎正确性有据可查；端到端冒烟测试证明 loss 真的会下降。
+- **可验证**：`tests/test_engine.py` 用中心差分对每个算子做数值梯度校验；`tests/test_kvcache.py` 验证 KV cache 增量前向与整段前向逐 logit 一致；端到端冒烟测试证明 loss 真的会下降。
+- **看得见**：注意力热力图（`python -m minigrad.visualize` 生成零依赖 HTML）、玩具版尺度实验（`python -m experiments.scaling_law`，亲手看"模型越大 loss 越低、小语料上先过拟合"）。
 - **11 篇中文讲义**：分词、嵌入与位置编码、自注意力、Transformer 结构、预训练与训练循环、规模化训练（DDP/FSDP/ZeRO）、微调（SFT/LoRA/QLoRA）、对齐（RLHF/PPO/DPO）、评估、推理优化。
 
 ```bash
 cd llm-lab
 pip install -r requirements.txt   # 只需 numpy + pytest
 python -m minigrad.train          # 训练字符级 GPT：loss ~4.1 → ~0.3，并生成文本
-pytest tests/ -q                  # 19 passed, 1 skipped（含逐算子数值梯度校验）
+pytest tests/ -q                  # 32 passed, 1 skipped（含逐算子数值梯度校验）
 ```
 
 > 学习路线与讲义目录见 [llm-lab/README.md](llm-lab/README.md) 与 [llm-lab/docs/00-学习路线.md](llm-lab/docs/00-学习路线.md)。

@@ -24,6 +24,16 @@ class CharDataset:
         self.train_ids = ids[:-n_val]
         self.val_ids = ids[-n_val:]
 
+    @classmethod
+    def from_vocab(cls, stoi: dict):
+        """从 checkpoint 里存的词表重建（无数据，仅用于解码生成结果）。"""
+        ds = cls.__new__(cls)
+        ds.stoi = dict(stoi)
+        ds.itos = {i: c for c, i in ds.stoi.items()}
+        ds.vocab_size = len(ds.stoi)
+        ds.train_ids = ds.val_ids = np.array([], dtype=np.int64)
+        return ds
+
     def encode(self, s):
         return np.array([self.stoi[c] for c in s], dtype=np.int64)
 
