@@ -15,6 +15,8 @@ from pathlib import Path
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
+from .atomic_write import atomic_write_json
+
 logger = logging.getLogger(__name__)
 
 
@@ -202,9 +204,14 @@ class DiskCache:
         return {}
     
     def _save_metadata(self):
-        """保存元数据"""
-        with open(self._metadata_file, 'w', encoding='utf-8') as f:
-            json.dump(self._metadata, f, ensure_ascii=False, indent=2)
+        """保存元数据（L160 收原子写）
+
+        读侧 `_load_metadata` 没有 except 且在 `__init__` 必调：写窗口里任何
+        新构造的 DiskCache（共享同一 cache_dir 的第二实例）都会被半份元数据
+        当场炸掉构造——按 atomic_write 的判据口径（读侧把坏 JSON 变成错误
+        答案的必须收）走原子替换。`set` 的缓存值写边**刻意不收**：其读侧
+        `get` 把坏 JSON 按未命中重算（可恢复代价，同口径明文「不必动」）。"""
+        atomic_write_json(self._metadata_file, self._metadata)
     
     def _get_cache_path(self, key: str) -> Path:
         """获取缓存文件路径"""
