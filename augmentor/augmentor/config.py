@@ -1171,7 +1171,7 @@ def get_model_config(config: AppConfig, model_name: Optional[str] = None) -> Mod
     """
     name = model_name or config.default_model
     if name not in config.models:
-        raise ConfigError(f"模型 '{name}' 未配置。可用模型: {list(config.models.keys())}")
+        raise ConfigError(_missing_model_message(name, config.models.keys()))
     return config.models[name]
 
 
@@ -1328,3 +1328,13 @@ def _require_mapping(value: Any, where: str) -> None:
             f"{where} 必须是「键: 值」的映射，当前是 {value!r}"
             f"（{type(value).__name__}）"
         )
+
+
+def _missing_model_message(name: str, available) -> str:
+    """「模型未配置」文案的唯一产地（A77；L159 提升自 get_model_config）。
+
+    悬空 `models.default` 在消费点（get_model_config，pipeline 构造必经）
+    是可行动的 ConfigError，但校验面对这一档零反馈（A85 族第四侧：校验
+    工具说好、运行才炸）。校验面同源投影本函数，文案改一处两侧同步。
+    """
+    return f"模型 '{name}' 未配置。可用模型: {list(available)}"
