@@ -303,6 +303,18 @@ func (s *Service) grantWallet(ctx context.Context, tx pgx.Tx, userID int64, delt
 		}
 		col, ok := walletColumns[currency]
 		if !ok {
+			// 第 74 轮：道具走 user_tokens，与货币列分开。
+			//
+			// 原来这里直接 `ErrBadInput: 未知货币`，而种子数据里
+			// 有三个商品的 payload 是道具名 —— 于是**商城 8 件商品里
+			// 有 3 件永远买不了**，客户端只看到一句
+			// 「未知货币 "revive_token"」的 400。
+			if isWalletToken(currency) {
+				if err := grantToken(ctx, tx, userID, currency, delta, reason, refID); err != nil {
+					return err
+				}
+				continue
+			}
 			return fmt.Errorf("%w: 未知货币 %q", ErrBadInput, currency)
 		}
 
@@ -339,9 +351,124 @@ func (s *Service) grantWallet(ctx context.Context, tx pgx.Tx, userID int64, delt
 	return nil
 }
 
+// grantToken 增减一件道具（第 74 轮）。
+//
+// # 与货币路径的三处**刻意**差异
+//
+//  1. **UPSERT 而非 UPDATE** —— 货币四列都有 DEFAULT 0、注册时就有行；
+//     道具是稀疏的，第一次拿到时行还不存在。
+//     用 `INSERT ... ON CONFLICT DO UPDATE` 一条语句解决，
+//     不必先 SELECT 再分支。
+//
+//  2. **扣减不靠 WHERE 余额判定** —— 货币那条 `WHERE coin >= $3`
+//     返回 `pgx.ErrNoRows`，上层据此报「不足」。
+//     道具侧没有 `ErrNoRows` 这条线索（UPSERT 永远成功），
+//     所以余额判定放到 CHECK 约束 + 显式回读：
+//     违反时整批失败，报的是 PG 的 check violation。
+//
+//     ⚠️ 这是本函数**唯一**不如货币路径干净的地方，如实标注。
+//     `grantToken` 目前只被 `grantWallet` 以 `delta > 0` 的方式调用
+//     （pay 侧只接受货币，因为道具的花费语义还没定），
+//     所以这条分支当前**不可达**。一旦有消费端点接上，必须先补余额判定。
+//
+//  3. **余额也写 wallet_flows** —— 运营看板与「货币流水」查询
+//     按 currency 聚合，道具的进出必须出现在同一条流里，
+//     否则看板会显示「道具收入 0」而实际有进账。
+func grantToken(ctx context.Context, tx pgx.Tx, userID int64, token string, delta int64, reason string, refID int64) error {
+	var balance int64
+	q := `INSERT INTO user_tokens (user_id, token, balance)
+	      VALUES ($1, $2, $3)
+	      ON CONFLICT (user_id, token)
+	      DO UPDATE SET balance = user_tokens.balance + EXCLUDED.balance, updated_at = now()
+	      RETURNING balance`
+	if err := tx.QueryRow(ctx, q, userID, token, delta).Scan(&balance); err != nil {
+		return fmt.Errorf("grant token %s: %w", token, err)
+	}
+	if balance < 0 {
+		// UPSERT 之后余额为负只可能是扣减超额。
+		// CHECK 约束其实会先拦下来（整批失败，报 PG 的 check violation），
+		// 这里的显式判断是**第二道**——它给出的是可读的中文错误。
+		return fmt.Errorf("%w: %s 不足（需要 %d）", ErrBadInput, token, -delta)
+	}
+	if _, err := tx.Exec(ctx,
+		`INSERT INTO wallet_flows (user_id, currency, delta, balance, reason, ref_id)
+		 VALUES ($1,$2,$3,$4,$5,$6)`,
+		userID, token, delta, balance, reason, refID); err != nil {
+		return fmt.Errorf("insert token flow: %w", err)
+	}
+	return nil
+}
+
+// TokenBalance 读一件道具的余额（第 74 轮）。
+//
+// # 为什么需要它
+//
+// `Wallet` 结构体只有四个货币字段，而道具是**稀疏**的
+// （没买过的道具连行都没有）。塞进 Wallet 会让每个玩家的
+// 响应里都带着三个恒为 0 的字段，而它们又确实需要一个「读得到」的地方——
+// 否则买了也看不见。
+//
+// 按需查询：只查调用方点名的那些 token。
+func (s *Service) TokenBalance(ctx context.Context, userID int64, tokens []string) (map[string]int64, error) {
+	out := map[string]int64{}
+	if len(tokens) == 0 {
+		return out, nil
+	}
+	rows, err := s.pool.Query(ctx,
+		`SELECT token, balance FROM user_tokens WHERE user_id = $1 AND token = ANY($2)`,
+		userID, tokens)
+	if err != nil {
+		return nil, fmt.Errorf("load tokens: %w", err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var tok string
+		var bal int64
+		if err := rows.Scan(&tok, &bal); err != nil {
+			return nil, err
+		}
+		out[tok] = bal
+	}
+	// 没买过的道具也要出现在结果里（余额 0），
+	// 否则客户端无法区分「0 个」与「这个道具不存在」。
+	for _, tok := range tokens {
+		if _, ok := out[tok]; !ok {
+			out[tok] = 0
+		}
+	}
+	return out, rows.Err()
+}
+
 var walletColumns = map[string]string{
 	"coin": "coin", "gem": "gem", "energy": "energy", "keys": "keys",
 }
+
+// walletTokens 是「道具类」货币的白名单（第 74 轮）。
+//
+// # 为什么它必须是一份**显式**名单，而不是「不在 walletColumns 里就算道具」
+//
+// 那样打错字会静默成功：`{"cino": 1}` 会被当成一种叫 `cino` 的道具，
+// 扣钱照扣、发货照发，只是发的东西没人看得见。
+// 而现在它会报「未知货币 "cino"」—— 那才是打错字时该看到的。
+//
+// 刻意的摩擦：新增一种道具要先在这里显式声明，
+// 顺便回答「这个道具被谁消耗」。
+//
+// # 完整的货币全集（守卫：`TestEveryShopPayloadKeyIsSpendable`）
+//
+//	货币（user_wallets 列）：coin / gem / energy / keys
+//	道具（user_tokens 行）  ：revive_token / mastery_reset / gem_wash_token
+//
+// ⚠️ 这三个道具**目前都没有消费端点**（没有「用掉复活币」的地方）。
+// 本轮只修「买不到」这个更硬的问题 —— 买了至少能在背包里看到。
+var walletTokens = map[string]bool{
+	"revive_token":   true,
+	"mastery_reset":  true,
+	"gem_wash_token": true,
+}
+
+// isWalletToken 报告这个货币是不是道具。
+func isWalletToken(currency string) bool { return walletTokens[currency] }
 
 // LoadWallet 读取钱包并顺带做体力恢复。
 func (s *Service) LoadWallet(ctx context.Context, userID int64) (Wallet, error) {
