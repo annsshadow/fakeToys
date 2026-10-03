@@ -462,19 +462,68 @@ func parseCardPicks(raw string) []int {
 }
 
 // GetReplay 返回复现信息。
-func (s *Service) GetReplay(ctx context.Context, battleID int64) (ReplayInfo, error) {
+//
+// # ⚠️ 第 75 轮：补上归属校验
+//
+// 原来只有 `WHERE br.id = $1`。`battle_records.id` 是连续 BIGSERIAL，
+// 任何注册用户都能遍历，于是任何人都能读走任意一局的
+// **完整构筑快照** —— 装备、词缀、技能等级，全都是别人的。
+//
+// 这条路径比 `VerifyReplay` 泄露得更多：它多返回一个 `build_snapshot`，
+// 而 `delete(r.Build, "settle_input")` 只剥掉了结算报文，
+// **构筑本身还在**。照抄别人的满级装备 + 关卡 + 种子 + card_picks
+// 就是一份「不需要自己打出来的高星战报蓝本」。
+//
+// # 为什么这不破坏验真的设计
+//
+// 下一行的注释说「这些数据公开是设计使然（否则无人能验真）」——
+// 那句话说的是**数据内容**公开，不是**谁的**战报公开。
+// 你验证自己的对局本来就不需要读别人的。
+func (s *Service) GetReplay(ctx context.Context, userID, battleID int64) (ReplayInfo, error) {
+	return s.getReplay(ctx, userID, battleID, true)
+}
+
+// AdminGetReplay 是运营侧读任意战报的复现信息（第 75 轮）。
+//
+// # 为什么单独一个方法而不是给 GetReplay 加个 bool 参数
+//
+// 与 `verification.go` 里的 `verifier{isAdmin}` 同一思路：
+// **归属校验是权限，不是行为开关**。把它做成参数就意味着
+// 调用方要自己记得传对，而漏传时是**静默放行**——
+// 那正是本轮修掉的那个洞。
+//
+// 两条路径共用 `getReplay`，所以「读哪些列、怎么剥 settle_input」
+// 不会漂。README 记的正是这类漂移：
+// 「两份实现只要有一处漂移，就会出现玩家验真和运营验真结论不同」。
+func (s *Service) AdminGetReplay(ctx context.Context, battleID int64) (ReplayInfo, error) {
+	return s.getReplay(ctx, 0, battleID, false)
+}
+
+func (s *Service) getReplay(ctx context.Context, userID, battleID int64, enforceOwner bool) (ReplayInfo, error) {
 	var r ReplayInfo
 	var createdAt time.Time
 	var seed int64
 	var cardPicks string
-	err := s.pool.QueryRow(ctx,
-		`SELECT br.level_id, COALESCE(bt.seed, 0), br.replay_hash, br.created_at,
-		        br.build_snapshot, COALESCE(br.card_picks, '')
-		 FROM battle_records br
-		 LEFT JOIN battle_tokens bt ON bt.id = br.battle_token_id
-		 WHERE br.id = $1`, battleID).
+	sql := `SELECT br.level_id, COALESCE(bt.seed, 0), br.replay_hash, br.created_at,
+	              br.build_snapshot, COALESCE(br.card_picks, '')
+	       FROM battle_records br
+	       LEFT JOIN battle_tokens bt ON bt.id = br.battle_token_id
+	       WHERE br.id = $1`
+	args := []any{battleID}
+	if enforceOwner {
+		sql += ` AND br.user_id = $2`
+		args = append(args, userID)
+	}
+	err := s.pool.QueryRow(ctx, sql, args...).
 		Scan(&r.LevelID, &seed, &r.ReplayHash, &createdAt, &r.Build, &cardPicks)
 	if err != nil {
+		// 「不存在」与「不是你的」返回**同一个**错误（第 75 轮）。
+		//
+		// 分开报错就等于一个预言机：`ErrNotFound` vs `ErrForbidden`
+		// 让人能二分出「某个 id 是否存在」，在连续 BIGSERIAL 上是 O(1) 的信息。
+		//
+		// ⚠️ 原来的代码把**任何** err 都报成 ErrNotFound，已经是安全的默认；
+		// 本轮只是确认了它，不改它。
 		return ReplayInfo{}, fmt.Errorf("%w: battle %d", ErrNotFound, battleID)
 	}
 	r.BattleID = battleID

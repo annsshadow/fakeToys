@@ -245,7 +245,7 @@ func TestVerifyReplayAndParseCardPicks(t *testing.T) {
 	}
 
 	// GetReplay：结构完整性 + settle_input 剥离 + card_picks 解析
-	info, err := ts.GetReplay(ctx, battleID)
+	info, err := ts.GetReplay(ctx, uid, battleID)
 	if err != nil {
 		t.Fatalf("回放失败：%v", err)
 	}
@@ -261,7 +261,7 @@ func TestVerifyReplayAndParseCardPicks(t *testing.T) {
 		t.Error("回放必须带 attacker")
 	}
 	// 未知战报
-	if _, err := ts.GetReplay(ctx, 999999999); !errors.Is(err, ErrNotFound) {
+	if _, err := ts.GetReplay(ctx, uid, 999999999); !errors.Is(err, ErrNotFound) {
 		t.Errorf("未知回放应 ErrNotFound，实际 %v", err)
 	}
 
@@ -316,7 +316,7 @@ func parseSeed(t *testing.T, s string) int64 {
 func TestReplayErrorBranches(t *testing.T) {
 	broken := openBrokenService(t)
 	ctx := context.Background()
-	if _, err := broken.GetReplay(ctx, 1); err == nil {
+	if _, err := broken.GetReplay(ctx, 1, 1); err == nil {
 		t.Error("故障态应报错")
 	}
 	if _, err := broken.VerifyReplay(ctx, 1, 1, "x"); err == nil {
