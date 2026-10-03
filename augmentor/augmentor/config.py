@@ -856,11 +856,22 @@ class AppConfig:
 
 
 def _resolve_env(value: Any) -> Any:
-    """解析环境变量占位符
-    
+    """解析环境变量占位符（A95/A122，L185 把语义钉成契约）
+
+    只对模型条目的三凭证键（api_key / secret_key / base_url，见 MODEL_CREDENTIAL_KEYS）
+    应用。语义：
+
+    - ``${VAR}`` 且 VAR 已设置 ⇒ 取该值；
+    - ``${VAR}`` 且 VAR **未设置** ⇒ 静默回落 ``''``（与 None 等价，都是「这条没配凭据」
+      的合法状态，由后端构造入口 ModelNotConfiguredError 在建后端时判）。**这是刻意的**：
+      加载期「环境变量未设置」的条数随本机 shell 而变，接进加载声会让同一份配置在不同
+      机器上行数不同（见 docs/API.md）；出声归 validate-config 的 warning 通道（A76/A84），
+      不在加载面判负。
+    - 非 ``${...}`` 完整形状（如裸 ``${VAR``、``VAR}``、或根本不是串）⇒ 原样返回，不当占位符。
+
     Args:
         value: 配置值，可能是 ${ENV_VAR} 格式的环境变量占位符
-    
+
     Returns:
         解析后的值
     """
