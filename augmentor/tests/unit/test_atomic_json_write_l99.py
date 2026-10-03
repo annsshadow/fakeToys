@@ -75,7 +75,11 @@ REAL_REPLACE = os.replace
 # 参数化（默认紧凑与既有调用零变化）、选项原样透传。export_enhanced.py 现量降 1。
 # 现量 28 含 atomic_write.py 工具本体 2 处（豁免排除后 26）；L167 净收
 # export_enhanced 1 处（27 + 1 拆分 - 2 排除 = 26）。
-NON_ATOMIC_JSON_DUMP_SITES_MAX = 26
+# L168（B238）：管线交付口两边（process/异步变体的最终输出）与迁移输出边收原子
+# 写（API 链白名单数据根 = L163 同判据必收）；tracker/quality_trend 的「历史记录 +
+# 静默吞」复合形状记档待单独轮裁；benchmark/comparison/faiss 等读侧响亮档有据豁免。
+# migration.py 现量降 1、pipeline.py 现量降 2。
+NON_ATOMIC_JSON_DUMP_SITES_MAX = 23
 
 
 def _legacy_write_json(file_path: Path, data):
