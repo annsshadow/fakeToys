@@ -468,6 +468,69 @@ type ChallengeInput struct {
 	ReplayHash string `json:"replay_hash"`
 }
 
+// 挑战上报字段的边界（第 69 轮）。
+//
+// # 缺陷：三个字段零校验，而目标列都是 INTEGER / TEXT
+//
+// `ChallengeInput` 的 `DurationMs` / `HPLeftPct` / `ReplayHash` 此前
+// **一个都没有校验**，而 `defense_challenges` 的对应列是：
+//
+//	duration_ms  INTEGER
+//	hp_left_pct  INTEGER  -- 挑战者剩余血量百分比
+//	replay_hash  TEXT
+//
+// 于是上报 `duration_ms: 2147483648` 或 `hp_left_pct: 2147483648` 时：
+//
+//	PG ERROR 22003 integer out of range -> failErr -> **500**
+//
+// 任何玩家都能定向让任意目标的挑战接口持续 500。
+//
+// # 与结算面的对比
+//
+// `SettleInput` 那一侧第 62/63 轮刚补过边界（集合字段溢出、duration_ms 上界）。
+// 这里是同一族的**另一个入口** —— 反射式覆盖率守卫 `settle_coverage_test.go`
+// 只管 `SettleInput`，所以防线挑战这条路径一直没人看。
+//
+// 这正是「守卫覆盖了一个结构、漏了同族的另一个」。
+const (
+	// MaxChallengeDurationMs 与结算面的 MaxPlausibleDurationMs 同量级（24h）。
+	MaxChallengeDurationMs = 24 * 60 * 60 * 1000
+	// MaxChallengeReplayHashLen 与结算面的 maxReplayHashLen 同值。
+	//
+	// 引擎产出的是 `hex16(fnv1a64(...))` = 16 个十六进制字符，
+	// 取 64 是给「将来换哈希算法」留余量，同时拒绝「传一段文章」。
+	MaxChallengeReplayHashLen = 64
+)
+
+// ValidateChallengeInput 校验挑战上报的字段边界。
+func ValidateChallengeInput(in ChallengeInput) error {
+	// 时长：必须为正（与结算面同），且有上界。
+	// 下界 0 意味着「这一局 0 毫秒就结束了」—— 那不是任何真实对局。
+	if in.DurationMs <= 0 || in.DurationMs > MaxChallengeDurationMs {
+		return fmt.Errorf("%w：挑战时长 %dms 必须在 (0, %d] 内",
+			domain.ErrInvalidField, in.DurationMs, MaxChallengeDurationMs)
+	}
+	// 剩余血量百分比：语义上是 0..100 的整数。
+	//
+	// 上界不是「随便取个大的」—— hp_left_pct 是**百分比**，
+	// 100 之外的值在分析与展示上都没有意义，
+	// 而它会直接进运营看板上「挑战者剩余血量」那一列。
+	if in.HPLeftPct < 0 || in.HPLeftPct > 100 {
+		return fmt.Errorf("%w：剩余血量百分比 %d 必须在 [0, 100] 内",
+			domain.ErrInvalidField, in.HPLeftPct)
+	}
+	// 回放哈希：长度上限与结算面一致。
+	//
+	// 同一处 TEXT 列若不限长，单次可写入接近 1MB ——
+	// 而这个端点**没有归属校验**（见 README 已知边界的第 3 条），
+	// 任意注册用户都能对任意 defense_id 写入。
+	if len(in.ReplayHash) > MaxChallengeReplayHashLen {
+		return fmt.Errorf("%w：replay_hash 长 %d 字符，上限 %d",
+			domain.ErrInvalidField, len(in.ReplayHash), MaxChallengeReplayHashLen)
+	}
+	return nil
+}
+
 // ChallengeResult 是挑战结算。
 type ChallengeResult struct {
 	Won              bool             `json:"won"`
@@ -485,6 +548,20 @@ type ChallengeResult struct {
 //  2. 对方每日被偷次数上限（2）与 24h 护盾
 //  3. 窃取比例固定 10%，且受全局掉落封顶
 func (s *Service) ChallengeDefense(ctx context.Context, userID, defenseID int64, in ChallengeInput) (ChallengeResult, error) {
+	// ⚠️ 第 69 轮：上报字段边界校验放在**事务之外**。
+	//
+	// 理由有两条，都不是风格问题：
+	//  1. 它是**请求校验**而不是业务规则 —— 一个 duration_ms 越界的请求
+	//     本来就不该开事务、开行锁。
+	//  2. 放在事务内的话，PG 的 22003 会在事务中间炸出来，
+	//     而它是个**真 500** —— 混进服务故障告警把真故障淹掉。
+	//
+	// 放在外面则它是一个可分类的 ErrInvalidField -> 422，
+	// 客户端能看到「上报不可信」而不是「服务内部错误」。
+	if err := ValidateChallengeInput(in); err != nil {
+		return ChallengeResult{}, err
+	}
+
 	var res ChallengeResult
 	err := s.DB.Tx(ctx, func(tx txType) error {
 		var ownerID int64

@@ -992,15 +992,15 @@ func TestE2EDefenses(t *testing.T) {
 	}
 
 	// 挑战：坏 id / 不存在 / 挑自己的
-	status, _ = e.post(t, "/api/v1/defenses/abc/challenge", foeTok, map[string]any{"won": true})
+	status, _ = e.post(t, "/api/v1/defenses/abc/challenge", foeTok, validChallengeBody())
 	if status != fiber.StatusBadRequest {
 		t.Errorf("defense id 非法应 400，实际 %d", status)
 	}
-	status, _ = e.post(t, "/api/v1/defenses/99999999/challenge", foeTok, map[string]any{"won": true})
+	status, _ = e.post(t, "/api/v1/defenses/99999999/challenge", foeTok, validChallengeBody())
 	if status != fiber.StatusNotFound {
 		t.Errorf("挑战不存在防线应 404，实际 %d", status)
 	}
-	status, _ = e.post(t, fmt.Sprintf("/api/v1/defenses/%d/challenge", defID), ownerTok, map[string]any{"won": true})
+	status, _ = e.post(t, fmt.Sprintf("/api/v1/defenses/%d/challenge", defID), ownerTok, validChallengeBody())
 	if status != fiber.StatusForbidden {
 		t.Errorf("挑战自己的防线应 403，实际 %d", status)
 	}
@@ -1043,4 +1043,25 @@ func TestE2EDefenses(t *testing.T) {
 		}
 	}
 	_ = foeID
+}
+
+// validChallengeBody 返回一份**合法**的挑战上报（第 69 轮）。
+//
+// ⚠️ 为什么需要它：第 69 轮给 `ChallengeInput` 补了字段边界校验后，
+// 那些只写 `{"won":true}` 的请求会在**触及数据库之前**就被 422 拒掉，
+// 于是「挑战不存在的防线应 404」「挑战自己的防线应 403」这些用例
+// 根本走不到它们要测的分支 —— 测试照样是绿的，但它测的东西消失了。
+//
+// 这与 README 记的「守卫被无关的早退路径满足」是同一类：
+// **测试变绿不等于它还在守原来的东西**。
+//
+// 形状照抄真实客户端（miniapp/src/game/defense.ts 的上报体）。
+func validChallengeBody() map[string]any {
+	return map[string]any{
+		"seed":        1,
+		"won":         true,
+		"duration_ms": 60_000,
+		"hp_left_pct": 100,
+		"replay_hash": "0000000000000000",
+	}
 }
