@@ -120,6 +120,29 @@ func Load() Config {
 		if !strings.Contains(cfg.DatabaseURL, "sslmode=") {
 			panic("config: APP_ENV=prod 时 DATABASE_URL 必须显式声明 sslmode")
 		}
+		// ⚠️ 第 67 轮补上这条 —— 它是 prod 守卫**唯一漏掉的密钥**。
+		//
+		// 上面两条守卫 JWT_SECRET 与 sslmode，而 `BootstrapAdminPass` 与 JWT_SECRET
+		// 是同一个函数里的同类默认值（都是"不设就给一个能用的值"），
+		// 却被漏掉了。后果不是理论问题：
+		//
+		//   任何全新 prod 部署（未显式设 BOOTSTRAP_ADMIN_PASS）
+		//   首次启动即创建 admin / admin12345
+		//
+		// 而 `admin12345` 恰好 10 位，**正好通过** `EnsureBootstrapAdmin` 的
+		// `len(password) >= 10` 门槛 —— 那个门槛拦不住它。
+		//
+		// 拿到 admin token 后可做什么（全部是既有端点，无需任何额外漏洞）：
+		//   POST /admin/users/:id/grant  给**任意** user_id 发放任意数额货币
+		//   封禁任意玩家 / 改商城价格 / 读全部战报与钱包
+		// 即完整经济系统与封禁体系的接管。
+		//
+		// 为什么用「显式声明」而不是「够长就行」：
+		// 长不等于安全，而默认值本身就是公开的（在 README 与本文件里），
+		// 任何人都能查到。用环境变量是否被设置来判定，语义明确且无法误解。
+		if os.Getenv("BOOTSTRAP_ADMIN_PASS") == "" {
+			panic("config: APP_ENV=prod 时必须显式设置 BOOTSTRAP_ADMIN_PASS（默认值 admin12345 是公开的，不能用于生产）")
+		}
 	}
 	return cfg
 }
