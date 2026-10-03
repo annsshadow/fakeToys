@@ -26,13 +26,6 @@ INTENT_KEYWORDS: Dict[str, List[str]] = {
     "process": ["流程", "手续", "步骤"],
 }
 
-# 特征类型
-FEATURE_TYPES = {
-    "numeric": lambda v: isinstance(v, (int, float)) and not isinstance(v, bool),
-    "text": lambda v: isinstance(v, str),
-    "boolean": lambda v: isinstance(v, bool),
-}
-
 
 @dataclass
 class FeatureInfo:
