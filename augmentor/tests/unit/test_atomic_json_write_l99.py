@@ -46,7 +46,10 @@ REAL_REPLACE = os.replace
 # `open(..., 'w')` 的位置。本轮只把两处**读侧会把截断变成错误答案**的边换成原子写
 # （`api/deps.py` 与 `augmentor/checkpoint.py`），其余按判据留在 A182：读侧要么报异常、
 # 要么按未命中重算，半份窗口是可恢复代价而非坏答案。
-NON_ATOMIC_JSON_DUMP_SITES_MAX = 43
+# L160（B230）：DiskCache 元数据写边收原子写（读侧无 except 且构造必调，
+# 半份窗口 = 第二实例构造当场崩）；其缓存值写边按判据口径豁免（get 按未命中
+# 重算，条件豁免已机器化进 l160 守卫）。cache.py 的 2 处里现量只降这 1 处。
+NON_ATOMIC_JSON_DUMP_SITES_MAX = 42
 
 
 def _legacy_write_json(file_path: Path, data):
