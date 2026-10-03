@@ -716,13 +716,6 @@ class ConfigValidator:
                     result.add_error(field_path, f"值不是有效数值: {value}")
                     continue
                 
-                # 范围检查
-                if "min" in spec and value < spec["min"]:
-                    result.add_error(field_path, 
-                                   f"值过小: {value} < {spec['min']}")
-                if "max" in spec and value > spec["max"]:
-                    result.add_error(field_path, 
-                                   f"值过大: {value} > {spec['max']}")
                 # 形状判据（L51 / A83）：列表元素类型与非空。这两条以前只有运行时那一侧
                 # 有（`validation.require_string_list` / `require_string`），于是
                 # `data_roots: [null]` 与 `host: ""` 在 `validate-config` 上绿灯、在
@@ -745,15 +738,6 @@ class ConfigValidator:
                             result.add_error(
                                 f"{field_path}[{i}]",
                                 f"元素不能是纯空白字符串: {item!r}")
-                        elif "item_choices" in spec and item not in spec["item_choices"]:
-                            # L82 / A118 的新维度：清单型列表（`export.formats`）的
-                            # 元素成员资格。与下面 `choices` 同一个来源的清单，只是
-                            # 判的对象是每一项。
-                            result.add_error(
-                                f"{field_path}[{i}]",
-                                f"元素不在允许集合内: {item!r}（可选: "
-                                f"{'/'.join(spec['item_choices'])}）"
-                            )
                 elif spec.get("non_empty"):
                     if not value:
                         result.add_error(field_path, "值不能为空字符串")
@@ -767,14 +751,6 @@ class ConfigValidator:
                 if spec.get("non_blank") and is_blank_string(value):
                     result.add_error(
                         field_path, f"值不能是纯空白字符串: {value!r}")
-                # 允许集合（L57）：`logging.level` 那类「看着像拼错」的写法。集合来自
-                # 运行时判据同一个常量，不是校验器独有的天花板。
-                if "choices" in spec and value not in spec["choices"]:
-                    result.add_error(
-                        field_path,
-                        f"值不在允许集合内: {value!r}（可选: "
-                        f"{'/'.join(spec['choices'])}）"
-                    )
                 # 可渲染性（L57）：`Formatter("%(nope)s")` 构造期不报错，到发第一条
                 # 日志才抛，所以「类型对但值没用」必须在这里判，且判据就是运行时那
                 # 同一个函数。
