@@ -408,15 +408,15 @@ jobs:
           except Exception:
               arts = []
           if not arts:
-              print("::notice::No behavior-report artifact found — gate passes vacuously")
-              sys.exit(0)
+              print("::error::behavior-compare completed without a behavior-report artifact")
+              sys.exit(1)
           url = arts[0]["archive_download_url"]
           req = urllib.request.Request(url, headers={"Authorization": "token " + os.environ["GITHUB_TOKEN"]})
           zf = zipfile.ZipFile(io.BytesIO(urllib.request.urlopen(req).read()))
           names = [n for n in zf.namelist() if n.endswith("behavior-report.md")]
           if not names:
-              print("::notice::Report artifact has no behavior-report.md — gate passes vacuously")
-              sys.exit(0)
+              print("::error::behavior-report artifact is missing behavior-report.md")
+              sys.exit(1)
           open("behavior-report.md", "wb").write(zf.read(names[0]))
           print(f"Downloaded {names[0]}")
           '
@@ -427,8 +427,12 @@ jobs:
           baseline="$(tail -n 1 oa4rust/backend/tests/behavior_comparison/fail_baseline)"
           report="behavior-report.md"
           if [ ! -f "$report" ]; then
-            echo "::notice::No behavior report available — gate passes vacuously (behavior-compare produced none)"
-            exit 0
+            if [ "${{ needs.behavior-compare.result }}" = "skipped" ]; then
+              echo "::notice::behavior-compare was skipped; no regression report is required"
+              exit 0
+            fi
+            echo "::error::behavior-compare did not produce behavior-report.md"
+            exit 1
           fi
           failed="$(grep -oE '^- \*\*Failed:\*\* [0-9]+' "$report" | grep -oE '[0-9]+' | head -n 1 || true)"
           if [ -z "$failed" ]; then
