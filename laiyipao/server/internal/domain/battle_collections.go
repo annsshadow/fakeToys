@@ -47,6 +47,56 @@ import (
 // 同时仍然拒绝「传一段文章当哈希」这种明显不是哈希的输入。
 const maxReplayHashLen = 64
 
+// card_picks 的编码常量（第 66 轮）。
+//
+// ⚠️ **必须与客户端逐位一致**（miniapp/src/game/engine.ts 的 PICK_* ）。
+// 两端由 `testdata/formula_vectors.json` 的 `card_picks` 双向锁住。
+//
+// 漂了的后果是**静默的**：客户端正常对局被服务端 422 拒掉，
+// 而 e2e 与客户端测试全绿（它们都不跑真实结算）。
+const (
+	// CardPickSkip 是「整波跳过」的编码（未弃牌）。
+	CardPickSkip = -1
+	// CardPickDiscardTakeBase 是「弃一张，取第 handIdx 张」的编码基址，
+	// 实际值 = -(base + handIdx)。
+	CardPickDiscardTakeBase = 3
+	// CardPickDiscardSkipBase 是「弃一张，整波跳过」的编码基址。
+	// 与上一个 BASE 相差 CardPickHandSlots —— 保证两个区间恰好相邻而不重叠。
+	CardPickDiscardSkipBase = 6
+	// CardPickHandSlots 是每波手牌数上界（rollWaveCards 固定产 3 张）。
+	CardPickHandSlots = 3
+)
+
+// CardPickMin 是 card_picks 单项的合法取值下界。
+const CardPickMin = -(CardPickDiscardSkipBase + CardPickHandSlots - 1) // = -8
+
+// validCardPick 判断一个 card_picks 编码是否有语义。
+//
+// # 为什么不能只比下界
+//
+// 三个负区间之间的**空隙**（如 -2）低于 CardPickMin 之上却没有任何语义。
+// 只判 `p >= CardPickMin` 会把它放行 —— 而它会落进 battle_records.card_picks，
+// 成为「看起来有数据、其实无法解释」的脏数据。
+//
+// 这与 README 记的「上界校验」是同一类问题的镜像：
+// 那里是漏了控制量，这里是**区间之间留了缝**。
+func validCardPick(p int) bool {
+	if p >= 0 {
+		return p < CardPickHandSlots
+	}
+	if p == CardPickSkip {
+		return true
+	}
+	neg := -p
+	if neg >= CardPickDiscardTakeBase && neg < CardPickDiscardTakeBase+CardPickHandSlots {
+		return true
+	}
+	if neg >= CardPickDiscardSkipBase && neg < CardPickDiscardSkipBase+CardPickHandSlots {
+		return true
+	}
+	return false
+}
+
 // allTerrainKinds 返回全部章节声明过的地形种类。
 //
 // 数据源是**章节表**而不是硬编码列表 ——
@@ -237,12 +287,30 @@ func validateReportCollections(gl GeneratedLevel, in SettleInput) error {
 			ErrInvalidField, len(in.CardPicks), gl.WaveCount)
 	}
 	for i, p := range in.CardPicks {
-		// -1 = 整波跳过，是合法取值。上界不设：引擎对越界索引按「跳过」处理，
-		// 而卡面数量本身由 `rollWaveCards` 决定（当前每波 3 张），
-		// 把它写死成一个常量会在加第 4 张卡那天变成一个静默的错误上限。
-		if p < -1 {
-			return fmt.Errorf("%w：card_picks[%d] = %d，合法值是 >= -1（-1 表示跳过）",
-				ErrInvalidField, i, p)
+		// ⚠️ 第 66 轮：判据从「>= -1」改成「落在已知编码集合内」。
+		//
+		// 原判据 `p >= -1`，下界放宽到 CardPickMin 之后就不再够用：
+		// `-2` 落在「跳过 -1」与「弃+取 -3..-5」之间的**空隙**里，
+		// 只比下界它会被放行 —— 而它没有任何语义。
+		//
+		// 放行无意义的值是有代价的：它会落进 battle_records.card_picks，
+		// 而运营分析与重放工具都读那一列。一个没有语义的编码在那里
+		// 就是「看起来有数据、其实无法解释」的脏数据。
+		//
+		// 编码（与 miniapp/src/game/engine.ts 的 PICK_* 常数一一对应）：
+		//
+		//	  0..handSlots-1   取第 handIdx 张（未弃牌）
+		//	  -1               整波跳过（未弃牌）
+		//	  -(3+handIdx)     弃一张，取第 handIdx 张    [-3..-5]
+		//	  -(6+handIdx)     弃一张，整波跳过            [-6..-8]
+		//
+		// 三个负区间互不相交，靠 BASE 相差 3（= 每波最大手牌数）。
+		// 若 `rollWaveCards` 改成每波 4 张，区间会开始重叠 ——
+		// 那时要拉开 BASE，而不是放宽这个判据。
+		if !validCardPick(p) {
+			return fmt.Errorf("%w：card_picks[%d] = %d 不是合法编码"+
+				"（合法：0~%d 取牌、%d 跳过、-3~-5 弃牌后取牌、-6~-8 弃牌后跳过）",
+				ErrInvalidField, i, p, CardPickHandSlots-1, CardPickSkip)
 		}
 	}
 

@@ -83,6 +83,61 @@ export function replaySkillsSegmentOf(
 }
 
 export const TICK_HZ = 20
+
+/**
+ * `card_picks` 里「本波弃过一张」的编码（第 66 轮）。
+ *
+ * 一波内的记录值形如 `-(PICK_DISCARD_BASE + handIdx)`：
+ * 弃过牌并取第 0 张 → -3，第 1 张 → -4，第 2 张 → -5。
+ *
+ * -1 保留给「整波跳过」（既有语义，不改）。
+ *
+ * ⚠️⚠️ 编码**必须恒为负**，否则与普通手牌下标撞车。
+ *
+ * 第一版写成 `PICK_DISCARD_BASE - handIdx`（base=2），于是
+ * 「弃过牌并取第 0 张」= 2 —— 而 2 也是合法的普通下标（取第 2 张）。
+ * 两者的 record / 事件流完全不同，却编码成同一个值。
+ *
+ * 实测症状很隐蔽：`cardPicks` 记成 `[2,2,2,2]`，看起来完全正常
+ * （全是合法下标），但重放按「取第 2 张」解释，于是每波少一次弃牌
+ * → 事件流少 4 条 → 哈希失配。
+ *
+ * **教训**：编码负数下标时，「编码值」与「合法取值域」必须**互不相交**。
+ * 这个 bug 与 README 记的「第 57 轮 slot=10 排在 slot=2 前面」同源：
+ * 都是编码与取值域撞车，而单测（全绿）看不出来，因为撞车只在**跨侧**发生。
+ *
+ * 下界：handIdx ∈ [0, 2]（每波固定 3 张牌）→ 最负 -5。
+ * **服务端 `card_picks` 的下界校验必须同步放宽到 -5。**
+ */
+export const PICK_DISCARD_BASE = 3
+
+/**
+ * `card_picks` 里「本波弃过牌但整波跳过」的编码（第 66 轮）。
+ *
+ * 形如 `-(PICK_DISCARD_SKIP_BASE + handIdx)`：
+ * 弃一张后跳过第 0 张 → -4，第 1 张 → -5，第 2 张 → -6。
+ *
+ * 为什么需要它：`-1`（整波跳过）无法表达「弃过牌再跳过」。
+ * 实测那种打法下原局与重放的事件流差一条 `record(..., 1)`，
+ * 热量也差 1 → replayHash 不同 → I-6 判伪造。
+ * 而「弃一张后跳过」是完全合法的操作（discardCard 与 skipCards 都只判
+ * `phase === 'card_select'`）。
+ *
+ * ⚠️ 它必须与 `-(PICK_DISCARD_BASE + handIdx)` 取值域**不相交**：
+ *   弃+取：-(3+0..2) = -3..-5
+ *   弃+跳：-(6+0..2) = -6..-8
+ * 不相交，靠的是两个 BASE 相差 3（大于单波最大手牌数 2）。
+ * 若哪天 `rollWaveCards` 改成每波 4 张，这两个区间就会开始重叠 ——
+ * 那时必须把 BASE 拉开，而不是改 `handIdx` 的上限。
+ */
+export const PICK_DISCARD_SKIP_BASE = 6
+
+/**
+ * `card_picks` 条目的合法取值下界（第 66 轮）。
+ *
+ * 导出给边界与契约测试共用，避免三处各写一份魔数。
+ */
+export const PICK_MIN = -(PICK_DISCARD_SKIP_BASE + 2) // = -8
 /**
  * 每 tick 的毫秒数。
  *
@@ -589,6 +644,9 @@ export class BattleEngine {
     this.phase = 'wave'
     this.deck.newWave()
     this.deck.discardsLeft += this.buffs.freeDiscard
+    // ⚠️ 第 66 轮：每波重置「本波弃过牌」标记 ——
+    // 编码只对**当前波**的 card_picks 项有意义。
+    this.discardedThisWave = false
 
     const wave = this.cfg.level.waves[index]
     if (!wave) {
@@ -726,6 +784,17 @@ export class BattleEngine {
   /** 推进一个固定步长。返回本步产生的事件 */
   step(): BattleEvent[] {
     if (this.phase === 'won' || this.phase === 'lost') return this.drainEvents()
+
+    // ⚠️ 待结束的本波在这里收尾（第 66 轮）。
+    //
+    // 位置关键：必须在 `applyReplayDecision` **之前**。
+    // 否则同一 tick 内 `applyReplayDecision` 会被再调一次，
+    // 消费 script 的下一项，把下一波的决策当成本波的第二张牌
+    // （实测 picks 记成 [-3,-3,-1,-1]，事件流多一条原局没有的 402/902/0）。
+    if (this.cardSelectDone) {
+      this.cardSelectDone = false
+      this.beginWave(this.waveIndex + 1)
+    }
 
     // ⚠️ 重放决策必须在 tick++ **之前**执行，否则会多消耗一个 tick。
     // tick 会写进每条 replay 事件（record(tick, ...)），
@@ -1458,8 +1527,13 @@ export class BattleEngine {
     this.applyCard(card)
     this.emit({ type: 'card_taken', card })
     this.record(this.tick, 'card', cardIndex(card))
-    this.recordPick(handIdx)
-    if (this.deck.size === 0) this.beginWave(this.waveIndex + 1)
+    // ⚠️ 第 66 轮：本波弃过牌时，把「弃过」编码进记录，
+    // 否则重放不会复现那次 refundHeat 与 record 事件（哈希必然失配）。
+    this.recordPick(this.discardedThisWave ? -(PICK_DISCARD_BASE + handIdx) : handIdx)
+    // ⚠️ 第 66 轮：走 finishCardSelect 而不是直接 beginWave ——
+    // 直接 beginWave 会让 `wave` 事件落在取牌那一 tick，而原局的
+    // wave 事件在下一 tick（实测 DIFF@61 orig=402 repl=401）。
+    if (this.deck.size === 0) this.finishCardSelect()
     return card
   }
 
@@ -1467,7 +1541,35 @@ export class BattleEngine {
    * 记录本波选中的手牌下标（-1 = 整波跳过）。
    *
    * 语义：手牌在本次 offer 中的下标（0/1/2），对应 applyReplayDecision 的解释。
-   * 每波只记第一次有效选择 —— 玩家若先弃牌后取牌，记的是取的那次。
+   *
+   * ⚠️ 第 66 轮：新增「本波弃过一张」的标记。
+   *
+   * 原来每波只记第一次选择，注释写「玩家若先弃牌后取牌，记的是取的那次」。
+   * **索引语义确实是对的**（弃一张后取到的下标仍指向同一张卡），
+   * 但**弃牌的副作用无人复现**：
+   *   - `discardCard` 会 `refundHeat(1)`（降低热量、延后过热）
+   *   - 以及 `record(..., 'card', ..., 1)` 写进回放事件流
+   *
+   * 而重放侧 `applyReplayDecision` 只按脚本取牌，既不回充热量也不写那条事件
+   * → 事件流少一条 → **replayHash 必然不同** → I-6 把这局判成伪造。
+   *
+   * 「先弃后取」是 `discardCard` 与 `takeCard` 都允许的合法操作
+   * （两者只判 `phase === 'card_select'`），所以这不是理论漏洞。
+   *
+   * # 为什么不改协议去表达「弃牌张数」
+   *
+   * `card_picks` 是 `number[]`，服务端校验 `len <= WaveCount` 且每项 `>= -1`。
+   * 改成变长序列要动跨端契约与历史战报兼容性；而弃牌每波**最多 1 次**
+   * （`DISCARD_PER_WAVE = 1`），所以「有没有弃过」这一个 bit 就够。
+   *
+   * 编码：`-2 - handIdx` 表示「本波先弃过一张，然后取第 handIdx 张」。
+   * handIdx 是**弃牌之后**的手牌下标（弃牌移除的是更靠前的一张），
+   * 与 `takeCard` 内部取下标的时机一致。
+   *
+   * ⚠️ 下界必须是 -2 - (handMax-1)。当前每波 3 张牌（rollWaveCards 固定
+   * 产 skill/attribute/mechanic 各 1），handIdx ∈ [0,2] → 最负 -4。
+   * 服务端 `p < -1` 的拒绝对本编码仍然成立（-2..-4 全被拒）。
+   * 所以**必须同步放宽服务端下界到 -4**，否则正常对局会被 422。
    */
   private recordPick(handIdx: number): void {
     if (this.cardPicks.length <= this.waveIndex) {
@@ -1475,7 +1577,100 @@ export class BattleEngine {
     }
   }
 
-  /** 弃牌 */
+  /**
+ * 结束本波选牌：清空剩余手牌并进入下一波（第 66 轮新增）。
+ *
+ * # ⚠️ 这里**不能**为剩余手牌写 record 事件
+ *
+ * 第一版写了 `record(tick, 'card', cardIndex(c), 1)`，理由是
+ * 「它们确实被丢弃了，应该记进事件流」。实测这是**错的**：
+ *
+ *   原局 ORIGCARD=401/30/1 401/506/0 **402/902/0** ...
+ *   重放 REPLCARD=401/30/1 401/506/0 **401/902/1** ...
+ *                                      ↑ tick 差 1 格、flag 差 1
+ *
+ * 根因：**原局根本没有「丢弃剩余手牌」这个动作**。
+ * 玩家取 1 张就离开选牌界面，剩下那 2 张一直躺在 `deck.hand` 里，
+ * 直到下一波的 `deck.setHand(cards)` 直接覆盖 —— 全程没有任何事件。
+ *
+ * 所以重放侧也不该造这个事件。`FIRSTDIFF@61` 精确定位到这一条：
+ * 事件流一多，后续所有 tick 全部偏移 → replayHash 不同。
+ *
+ * # 为什么还需要这个函数（而不是继续用 `deck.size === 0`）
+ *
+ * 原来只有「拿光最后一张牌」才进下一波。玩家「取 1 张就走」的正常路径
+ * 走不到那里，于是 `phase` 停在 `card_select`，
+ * 重放侧下一 tick 又进 `applyReplayDecision` 消费脚本下一项 → 波次错位
+ * （实测 `discardsLeft` 显示 wave 2 被进入两次）。
+ *
+ * 这里把「取完就结束本波」显式化，用 `deck.drop` 静默清空
+ * （不消耗弃牌次数、不写事件），`skipCards` 与弃牌路径共用。
+ */
+private finishCardSelect(): void {
+    for (const c of [...this.deck.hand]) {
+      this.deck.drop(c.id)
+    }
+    this.beginWave(this.waveIndex + 1)
+  }
+
+  /**
+   * 结束本波选牌，但**下一 tick** 才推进到下一波（第 66 轮）。
+   *
+   * # 为什么需要这个「延后一 tick」的变体
+   *
+   * 原局里玩家「弃 1 张、拿 1 张、剩下 2 张不动」，此时 `deck.size !== 0`，
+   * `takeCard` 里的 `if (this.deck.size === 0) beginWave(...)` 不成立 ——
+   * 于是 phase 停在 `card_select`，**下一 tick** 玩家离开界面时才推进。
+   *
+   * 实测证据（弃+取，每波一张）：
+   *
+   *   CARD_O: 401/30/1 401/506/0  [tick 728] 40/1 ...
+   *   CARD_R: 401/30/1 401/506/0  [tick 727] 40/1 ...
+   *                                          ^ wave 事件早了一格
+   *
+   *  ⚠️ 写这段注释时踩过一个坑：`... 506/0 **728**-/40/1 ...` 里的
+   * `**` 与紧随的 `/` 组成了注释闭合序列，把块注释提前结束 ——
+   * 表现是 esbuild 报 `Expected ";" but found "/"`，
+   * 而报错行号落在**注释内部**，看起来完全无辜。
+   // 在注释里写事件流样例时，避免让 `**` 紧跟 `/`。
+   *
+   * 而「弃牌后跳过整波」那条路径不同 —— `skipCards` 是**同 tick** 推进的
+   * （原局 `401:wave` 连着出现两次）。
+   *
+   * 两条路径的 tick 语义本来就不同，必须分别表达；
+   * 把它们统一成一种只会让其中一条失配。
+   *
+   * # 为什么重放侧必须走这条延后路径
+   *
+   * `applyReplayDecision` 在 `return` 之后，phase 仍是 `card_select`。
+   * 若不在下一 tick 立刻收尾，`applyReplayDecision` 会在**同一 tick**
+   * 再被调用一次（`step()` 开头无条件检查），消费 script 的下一项 ——
+   * 把下一波的决策当成本波的第二张牌。实测 picks 记成 `[-3,-3,-1,-1]`，
+   * 事件流多出 `402/902/0` 这条原局没有的记录。
+   *
+   * 所以：重放侧必须在**返回后**由 `step()` 在下一 tick 开头收尾，
+   * 且收尾时机要与原局「玩家离开界面」那一步对齐。
+   */
+private finishCardSelectNextTick(): void {
+    for (const c of [...this.deck.hand]) {
+      this.deck.drop(c.id)
+    }
+    this.cardSelectDone = true
+  }
+
+  /** 本波选牌已结束，等待下一 tick 推进到下一波（第 66 轮）。 */
+  private cardSelectDone = false
+
+  /** 本波是否已经弃过牌（第 66 轮新增）。 */
+  private discardedThisWave = false
+
+  /**
+   * 弃牌。
+   *
+   * ⚠️ 第 66 轮：弃牌会**改写本波的 card_picks 记录**，
+   * 让重放能复现这次弃牌（回充热量 + 那条 record 事件）。
+   * 见 `recordPick` 的注释。
+   */
   discardCard(id: string): Card | null {
     if (this.phase !== 'card_select') return null
     const card = this.deck.hand.find((c) => c.id === id)
@@ -1485,6 +1680,7 @@ export class BattleEngine {
     this.heat.refundHeat(r.refund)
     this.emit({ type: 'card_discarded', card })
     this.record(this.tick, 'card', cardIndex(card), 1)
+    this.discardedThisWave = true
     if (this.deck.size === 0) this.beginWave(this.waveIndex + 1)
     return card
   }
@@ -1492,14 +1688,15 @@ export class BattleEngine {
   /** 放弃全部手牌，直接进入下一波。不消耗弃牌次数，也不返还热量 */
   skipCards(): void {
     if (this.phase !== 'card_select') return
-    for (const c of [...this.deck.hand]) {
-      this.deck.drop(c.id)
-      this.emit({ type: 'card_discarded', card: c })
-      this.record(this.tick, 'card', cardIndex(c), 1)
-    }
     // -1 表示整波跳过（重放时按此原样复现）
-    this.recordPick(-1)
-    this.beginWave(this.waveIndex + 1)
+    //
+    // ⚠️ 第 66 轮：弃过牌再跳过时不能记 -1 ——
+    // 那样重放侧不知道要复现那次 discard 的 record 事件与热量变化。
+    // 记 `-(PICK_DISCARD_SKIP_BASE + handIdx)`，handIdx 取弃牌后的第一张
+    // （那正是「跳过时手牌里还剩什么」的信息，重放侧只需丢掉它）。
+    const encoded = this.discardedThisWave ? -PICK_DISCARD_SKIP_BASE : -1
+    this.recordPick(encoded)
+    this.finishCardSelect()
   }
 
   /**
@@ -1532,6 +1729,55 @@ export class BattleEngine {
         continue
       }
       const want = script[this.replayScriptPos++]
+      // ⚠️ 第 66 轮：负值编码表示「本波弃过牌」。
+      //   -1                  整波跳过（未弃牌）
+      //   -(3+handIdx)        弃一张，取第 handIdx 张   [-3..-5]
+      //   -(6+handIdx)        弃一张，整波跳过           [-6..-8]
+      //
+      // 原实现把任何 `want < 0` 都当「整波跳过」，于是「先弃后取」
+      // 与「弃后跳过」两种正常打法都被重放成「整波跳过」——
+      // 少了那次 refundHeat 与那条 record 事件，replayHash 必然不同，
+      // I-6 把这局判成伪造。
+      if (want <= -PICK_DISCARD_SKIP_BASE) {
+        // 弃一张后跳过：先复现 discard 的三件事，再走 skipCards。
+        const toDrop = this.deck.hand[0]
+        if (toDrop) this.discardCard(toDrop.id)
+        // recordPick 已被 discard 路径影响，这里显式写 -1 之外的语义：
+        // skipCards 会再 recordPick 一次，但 `length <= waveIndex` 保证只写一项。
+        this.skipCards()
+        return
+      }
+      if (want <= -PICK_DISCARD_BASE) {
+        // 弃掉第一张手牌。discardCard 会做原局同样的三件事：
+        // 扣次数 + refundHeat + record(..., 1)。
+        const toDrop = this.deck.hand[0]
+        if (toDrop) this.discardCard(toDrop.id)
+        // 编码是 -(PICK_DISCARD_BASE + handIdx)，所以 handIdx = -(want + PICK_DISCARD_BASE)
+        const rest = -(want + PICK_DISCARD_BASE)
+        const target = this.deck.hand[rest]
+        if (!target) {
+          this.skipCards()
+          continue
+        }
+        this.takeCard(target.id)
+        // ⚠️⚠️ 这里必须 `return`，**不能** `continue`（第 66 轮）。
+        //
+        // 一个 card_picks 项就是**一整波**的决策，原局里玩家
+        // 「弃 1 张、拿 1 张、剩下 2 张不动」就结束了 ——
+        // 剩下那 2 张在**下一 tick** 玩家离开界面时才被丢掉。
+        //
+        // 若写成 continue，while 会在同一 tick 里消费 script 的下一项，
+        // 把**下一波**的决策当成本波的第二张牌。实测 trace：
+        //   want=-3 pos=1 wave=0 hand=3
+        //   want=-3 pos=2 wave=0 hand=1   ← 本波只剩 1 张牌，本该结束
+        // 结果第 3、4 波错位，cardPicks 记成 [-3,-3,-1,-1]，事件流少 7 条。
+        //
+        // 用 `finishCardSelectNextTick` 而不是 `finishCardSelect`：
+        // 原局这条路径不立即进下一波（`deck.size` 非 0），
+        // 立即推进会让 `wave` 事件早一格（实测 orig=728 repl=727）。
+        this.finishCardSelectNextTick()
+        return
+      }
       // -1 或越界 → 整波跳过
       if (want < 0 || want >= this.deck.hand.length) {
         this.skipCards()
