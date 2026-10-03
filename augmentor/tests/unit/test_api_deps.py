@@ -144,3 +144,37 @@ class TestConfigDataRootsMissingFile:
         roots = deps._config_data_roots(missing)
         assert len(roots) == 1 and roots[0].name == "data"
         assert deps._config_roots_cache.get((str(missing), None)) is None
+
+
+class TestToHttpError500LeakClosed:
+    """L179（A155①）：500 档回固定文案、不再转发异常原文（部署路径 / 文件系统状态）。
+
+    判据钉三格：① 未分类异常（非 ValueError）⇒ 500 + 固定 ``INTERNAL_ERROR_DETAIL``，
+    且部署绝对路径与 errno 文案**不得**再出现在响应体；② 原文改走服务端日志（ERROR 级）；
+    ③ 400 档（ValueError 可行动文案）保持原样，防修过头把客户端可行动信息也抹掉。
+    """
+
+    def test_unclassified_error_returns_fixed_detail_not_str(self):
+        import api.deps as deps
+
+        exc = OSError(13, "Permission denied", "D:/deploy/sensitive/secret.json")
+        err = deps.to_http_error(exc)
+        assert err.status_code == 500
+        assert err.detail == deps.INTERNAL_ERROR_DETAIL
+        for leaked in ("D:/deploy/sensitive", "Permission denied", "Errno 13", "secret.json"):
+            assert leaked not in err.detail, leaked
+
+    def test_unclassified_error_goes_to_server_log(self, caplog):
+        import api.deps as deps
+
+        with caplog.at_level("ERROR", logger="api.deps"):
+            deps.to_http_error(RuntimeError("boom-detail"))
+        assert any("未分类异常收敛为 500" in rec.message for rec in caplog.records), \
+            "500 档必须 logger.exception 落服务端日志"
+
+    def test_value_error_still_400_with_actionable_detail(self):
+        import api.deps as deps
+
+        err = deps.to_http_error(ValueError("比例须在 [0,1] 区间"))
+        assert err.status_code == 400
+        assert err.detail == "比例须在 [0,1] 区间"
