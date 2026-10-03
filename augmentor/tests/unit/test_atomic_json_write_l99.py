@@ -83,7 +83,10 @@ REAL_REPLACE = os.replace
 # 的（损坏→None / 不应崩溃 / L146 检疫），收原子不翻案：半份窗口消失后损坏只剩
 # 磁盘故障一途，写失败仍被 except 吞（契约保持），检疫保留为纵深防御。
 # tracker.py 与 quality_trend.py 现量各降 1。
-NON_ATOMIC_JSON_DUMP_SITES_MAX = 21
+# L170（B240）：L162 记档的「同名覆盖毁既有」待裁档裁定并收边（备份/恢复的语义
+# 就是数据保全——语义自洽非扩判据）；backup.py 的快照与恢复输出两边现量降 2，
+# A182 逐面收至此实质完成（剩余全为有据豁免：CLI 报告面/响亮读侧/工具本体）。
+NON_ATOMIC_JSON_DUMP_SITES_MAX = 19
 
 
 def _legacy_write_json(file_path: Path, data):
