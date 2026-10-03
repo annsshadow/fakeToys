@@ -968,6 +968,8 @@
 
 | B253 | **已关闭（L183，收口第一本账 A130：哈希占位符 14 条历史欠账永久记档）**：第一本账「循环日志」标题行的「哈希待 L{n+1} 回填」占位符，L58..L71 共 14 条从未回填，L79 起已钉成精确相等棘轮（PLACEHOLDER_CEILING=14，只降不升）；原框留了「只回填哈希 vs 整段重述 vs 不动」三格待拍 | 拍定取「不动、永久记档」：补那 14 条历史正文属改历史账（哈希虽可从 git log 现取，但那几轮本账的 numstat 与当时秒数已不可重算，只回填哈希会留「半条已填」新形状；整段重述又直接改历史）三格皆不可取 ⇒ 14 条钉成终态欠账。落点：tests/unit/test_doc_line_refs_l79.py 的 test_only_the_current_round_leaves_a_hash_placeholder docstring 订正（原写「加本轮=15」旧读数，现稳态恰 14）+ 记 L183 拍定；第一本账 A130 行就地标「已关闭（L183）、14 条永久记档」。测试-only/文档轮零新用例；L79/A184 各棘轮原地绿（首账改动全为散文、零新反引号引用，全量门禁证实）；全量 7804 passed / 3 skipped / exit 0 | S |
 
+| B254 | **已关闭（L184，A138 收口：可写四节 14 键「读者分档」记档 + 回显面机器钉死）**：export/vector/rag/multimodal 四节 14 键 L82 起全接判据（写坏即 400），但「写得进」不等于「有人读」——按现量分三档：① 有行为读者 3 键（export.default_format→augmentor/pipeline.py；rag.chunk_size 与 rag.chunk_overlap→augmentor/cli/commands/quality.py）、② 仅回显 6 键（GET /api/config 原样回显、不改行为）、③ 连回显都没有 5 键（vector.dimension/storage_dir/collection、multimodal.image/audio_extensions，无处消费）；契约面承诺能力、实现面不消费，用户配 vector.backend: faiss 会以为向量库在用 faiss（实际后端入口是调用参数） | 候选①（接消费入口=功能增强，要先拍「配置键 vs 请求参数谁是权威」）与②（降级=对外破坏面）均不在本轮；取**记档 + 机器钉面**：docs/API.md 新增「可写四节的读者分档」小节（三档表 + 权威口径）；tests/integration/test_api_config_extended.py 新增守卫 2 例钉回显面——③ 档 5 键不得出现在 GET /api/config、①② 档 7 键是既定回显面不得被顺手摘掉（谁接了读者/回显都要先翻这一格）。A184 新增引用全用全路径 live 形、①②③ 键为点号键名（无文件扩展名、不进 REF）⇒ A184/L79 各棘轮原地绿；全量 7806 passed / 3 skipped / exit 0 | M |
+
 | B249 | **已关闭（L179，A155①：to_http_error 500 档不再转发异常原文）**：api/deps.py 的 to_http_error 最后一支把未分类异常原样 str(exc) 塞进 500 响应体——OSError(13,'Permission denied','/srv/...') 实测把部署根绝对路径与文件系统状态（Errno 28 磁盘满 / Errno 13 权限缺失）一并回给客户端，是可被利用的探测信号；A155 原框两格候选拍定取①（固定文案 + 原文落服务端日志，安全收紧方向，非脱敏白名单②） | 500 支改回固定文案常量 INTERNAL_ERROR_DETAIL（api/deps.py 模块级唯一产地，A77）+ logger.exception 把原文留服务端日志；400 支（ValueError 可行动文案）一字不动防修过头；tests/unit/test_api_deps.py 新增守卫 3 例（OSError 不泄漏部署路径/errno + 原文进日志 + ValueError 仍 400 原样回传）；tests/integration/test_api_dataset_system_tools.py 两处「500 回原文」断言按红字重述为「== 固定文案 + 原文不在响应体」（TestUnexpectedFailureBecomes500 五处 + dataset_impact/evaluate 各一，docstring 同步改口径）；A184/L79 各棘轮原地绿（本轮新增引用全用全路径 live 形、零散名）；全量 7790 passed / 3 skipped / exit 0（L178 的 7787 + 3 新守卫，零回归） | M |
 
 | B246 | **已关闭（L176）**：策略旋钮「封闭清单拒」同型普查（L175 的 method 静默回落修完后沿同型全仓扫）——sample 的 method / outlier 的 method / expander 的strategy 三处**已有** else 拒（普查实证）；唯一缺口 `save_quality_report` 的 format：未知 format **静默落 JSON 支**（请求 yaml 的拿到 json 文件不出声，checkpoint 症状族语义漂移档） | 缺口收边（format 封闭清单 `QUALITY_REPORT_FORMATS` + 入口 require_choice + None 专判）；**普查结论钉成棘轮**：新守卫 6 例含一条「五旋钮 × 未知值全部出 DataValidationError」合体例——任一旋钮未来退化回静默回落当场红；变异自证 2 红（剪 format 判据）、sha256 逐字节还原；A184/L79 各棘轮原地绿（quality_report.py 插行使 0 条活行引用顶歪，全量门禁证实） | M |
@@ -1306,3 +1308,12 @@
 - **落点**：tests/unit/test_doc_line_refs_l79.py 的 test_only_the_current_round_leaves_a_hash_placeholder docstring 订正（原文「加本轮 = 15」是 L79 当时读数、现稳态已回填本轮占位符故恰 14）+ 记 L183 拍定；第一本账 OPTIMIZATION_LOOP.md 的 A130 行就地标「已关闭（L183）、14 条永久记档」。
 - **零新用例**（文档 + docstring 订正），L79/A184 各棘轮原地绿（首账改动全为散文、零新反引号文件引用，全量门禁证实）。
 - 全量门禁：7804 passed / 3 skipped / exit 0（与 L182 同数，无回归）。**B253 关闭，第一本账 A130 收口**。
+
+
+### L184（2026-10-04）— B254 立项 + 关闭：A138 收口（可写四节 14 键读者分档记档 + 回显面机器钉死）
+
+- **真缺口（契约面承诺、实现面不消费，A138 原框待拍档）**：export/vector/rag/multimodal 四节 14 键 L82 起全接判据（写坏即 400），但只有 3 键有行为读者（export.default_format、rag.chunk_size、rag.chunk_overlap）；余 11 键里 6 键仅被 GET /api/config 原样回显、5 键连回显都没有（无处消费）。用户按 docs 配 vector.backend: faiss 会以为向量库在用 faiss，而真正的后端入口是调用参数（vector.build_vector_db 的 backend 形参 / API 请求体），不是配置键——契约面与实现面的落差没有写明。
+- **定档（非破坏面收口）**：候选①（把 ②③ 档接到消费入口）属功能增强、要先拍「配置键与请求参数谁是权威」；候选②（从文档与回显里降级）属对外破坏面——均不在本轮。本轮取**记档 + 机器钉面**：把三档分类写成权威清单，并钉成「③ 档 5 键不出现在 GET /api/config 回显」的机械红线。
+- **落点**：docs/API.md 新增「可写四节的读者分档（A138）」小节（三档表 + 权威口径 + 非破坏面说明）；tests/integration/test_api_config_extended.py 新增 TestConfigEchoReaderSplitL184 守卫 2 例（③ 档 5 键不回显 + ①② 档 7 键既定回显面不得被摘）。
+- **棘轮**：A184 新增引用全用全路径 live 形（augmentor/pipeline.py、augmentor/cli/commands/quality.py、tests/integration/test_api_config_extended.py）、①②③ 键为点号键名（无文件扩展名、不进 REF）⇒ A184/L79 各棘轮原地绿（全量门禁证实）；API.md 不在 L79 两文档扫描面、只进 A184 语料面。
+- 全量门禁：7806 passed / 3 skipped / exit 0（L183 的 7804 + 2 新守卫，无回归）。**B254 关闭，A138 收口**。
