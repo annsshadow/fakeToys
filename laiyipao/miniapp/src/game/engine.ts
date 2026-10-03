@@ -1488,6 +1488,15 @@ export class BattleEngine {
       enemies: this.enemies,
       projectiles: this.projectiles,
       terrainTick: ELEMENT_PER_STACK_BASE / 8n,
+      // ⚠️ 第 77 轮：元素层数上限必须**动态**取，不能写常量。
+      //
+      // 它是 `lv.element_cap` + 局内 `elementCapBonus` 的合成值
+      // （与 `currentAttacker()` 里那一项同源），玩家还能靠
+      // 「元素容器」卡（element_cap +1）抬高。
+      //
+      // 用 `currentAttacker()` 而不是各处重算：那是唯一一处
+      // 已经把这个合成值算对的地方，重算就是**第二份实现**。
+      elementCap: this.currentAttacker().elementCap,
       within: (tx: number, ty: number, r: number, x: bigint, y: bigint) => {
         const rr = toFixed(r)
         return dist2(toFixed(tx), toFixed(ty), x, y) <= rr * rr
