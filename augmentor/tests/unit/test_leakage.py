@@ -141,3 +141,32 @@ class TestFuzzyThresholdGuardL181:
             detect_leakage(train, test, fuzzy_threshold=0.0)
         # 合法值仍正常出报告（拒判据没有修过头）
         assert detect_leakage(train, test, fuzzy_threshold=0.5).total_leaks == 0
+
+
+class TestMinExamplesGuardL190:
+    """L190（B260）：min_examples 计数旋钮收口——非负整数放行、负数/坏形状拒。
+
+    改前 `self.min_examples = min_examples` 零判据：负数让 `[:n]` 切片换语义
+    （`[:-2]` = 丢掉最后 2 条，「要 2 条」变成「要 N-2 条」，silent 错答族），
+    None/非整数/bool 一律原样进切片下标。0 是合法「报告不带示例」意图，
+    与「没传参数」区分开（require_count minimum=0 口径）。
+    """
+
+    @pytest.mark.parametrize("ok", [0, 1, 10, 100])
+    def test_non_negative_counts_pass(self, ok):
+        assert LeakageDetector(min_examples=ok).min_examples == ok
+
+    @pytest.mark.parametrize("bad", [-1, -2, -10, None, True, False, 2.0, "3"])
+    def test_bad_shapes_rejected(self, bad):
+        from augmentor.exceptions import DataValidationError
+
+        with pytest.raises(DataValidationError):
+            LeakageDetector(min_examples=bad)
+
+    def test_zero_meaning_is_no_examples_kept(self):
+        """0 档语义钉死：精确泄漏也一条示例都不留（报告面照出统计）。"""
+        train = [{"instruction": "exact leak phrase"}]
+        test = [{"instruction": "exact leak phrase"}]
+        report = LeakageDetector(min_examples=0).detect(train, test)
+        assert report.total_leaks >= 1
+        assert report.leaked_examples == []
