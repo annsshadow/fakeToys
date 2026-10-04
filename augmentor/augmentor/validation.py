@@ -634,13 +634,22 @@ class DatasetValidator:
             rules: 自定义验证规则
             preset: 预设规则名称
         """
-        if rules:
+        # L189①：`rules` 用 `is not None` 判型——显式空 dict {} 是「零规则」的合法意图，
+        # 不是「没传」；旧写法 `if rules:` 把 {} 读成没传而静默落到 preset（strict 档拿到
+        # basic 规则面），falsy 假零。None 才是「用 preset」。
+        if rules is not None:
             self.rules = rules
+        # L189②：preset 走封闭清单——未知预设不再静默回落 basic（拼错 strict/chat 会被读成
+        # basic，规则面整档静默放宽，checkpoint 症状族语义漂移档）；API/CLI 面早有 400/choices
+        # 收口（VALIDATION_PRESETS / parser choices），SDK 直构面这一格补齐。
         elif preset in self.PRESET_RULES:
             # 浅拷贝：把类级字典直接挂到实例上，任一实例改规则就会污染全部预设
             self.rules = dict(self.PRESET_RULES[preset])
         else:
-            self.rules = dict(self.PRESET_RULES["basic"])
+            valid = " / ".join(self.PRESET_RULES)
+            raise DataValidationError(
+                f"未知验证预设: {preset!r}（可选 {valid}）"
+            )
         # 禁止模式的编译缓存，元素是 `(源列表, 编译结果)`；见 `_compiled_forbidden()`
         self._forbidden_cache = None
 

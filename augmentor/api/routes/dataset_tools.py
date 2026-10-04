@@ -49,16 +49,15 @@ router = APIRouter(tags=["dataset"])
 
 # ============ 枚举白名单 ============
 #
-# 这些取值与 CLI 的 `choices=` 一一对应（parser.py）。必须在这里显式校验，
-# 因为下游库对未知值**静默降级**：`DatasetValidator` 回退 basic、
-# `EnhancedSearcher` 回退 contains。静默降级比报错危险得多——调用方会以为
-# 「strict 校验通过了」「fuzzy 搜不到」，而实际用的是另一个规则/方法。
-#
-# 状态码用 400 而非 422：与本项目既有约定一致（`/api/quality/outliers` 的
-# 未知 method 也是 400，见 tests/integration/test_api.py）。
-VALIDATION_PRESETS = ("basic", "strict", "chat")
+# 这些取值与 CLI 的 `choices=` 一一对应（parser.py）。在这里显式校验是为了把
+# 未知值转成 4xx：SDK 层虽已各自收口（搜索面 L175 封闭清单、预设面 L189 未知
+# 预设抛 `DataValidationError`，均不再静默降级），但让坏值在调用前出声、且按
+# 既有约定用 400（pydantic 的 `choices` 会给 422），见
+# tests/integration/test_api.py（`/api/quality/outliers` 的未知 method 也是 400）。
+# L175/L189: 清单权威住 SDK 层，本路由的 400 判据共引同一份（A77）
 from augmentor.search_enhanced import SEARCH_METHODS
-# L175: 清单权威住 SDK 层，本路由的 400 判据共引同一份（A77）
+from augmentor.validation import DatasetValidator
+VALIDATION_PRESETS = tuple(DatasetValidator.PRESET_RULES)
 
 
 # ============ 请求模型 ============
