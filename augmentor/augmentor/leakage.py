@@ -23,7 +23,7 @@ from dataclasses import dataclass, field
 from itertools import chain
 from typing import Any, Dict, List, Optional, Set
 
-from augmentor.validation import DataValidationError, require_ratio
+from augmentor.validation import DataValidationError, require_count, require_ratio
 
 logger = logging.getLogger(__name__)
 
@@ -146,10 +146,14 @@ class LeakageDetector:
                 0 档是「假零」（Jaccard 下界 0 ⇒ 任何 token 相交即判泄漏，干净数据也报
                 100% 泄漏），> 1 档「静默关闭」（Jaccard 永不超过 1，永远报不出近似泄漏）。
                 两方向都能造出假读数，故构造期即拒（A172，L181；fail-loud 方向）。
-            min_examples: 报告中最多保留的泄漏示例条数
+            min_examples: 报告中最多保留的泄漏示例条数。只收「非负整数」：0 是合法
+                的「报告不带示例」意图（与「没传参数」区分开），负数会让 `[:n]` 切片
+                换语义（`[:-2]` = 丢掉最后 2 条、要得越多剩得越多），坏形状（None /
+                非整数 / bool）一并在构造期拒掉（计数旋钮族，require_count 先例 L144+）。
 
         Raises:
-            DataValidationError: fuzzy_threshold 为 None / 非数值 / bool / NaN / 越界（(0,1] 之外）
+            DataValidationError: fuzzy_threshold 为 None / 非数值 / bool / NaN / 越界（(0,1] 之外）；
+                min_examples 为 None / 负数 / 非整数 / bool
         """
         # fuzzy_threshold 权威判据住构造器（A77 一条判据一处）：API/CLI 面经 detect_leakage
         # 委托到本构造器，自动吃到同一档；下界取开（0 档是假零家族 L144 同式），上界取闭。
@@ -166,7 +170,14 @@ class LeakageDetector:
             )
         self.fields = fields or ["instruction"]
         self.fuzzy_threshold = fuzzy_threshold
-        self.min_examples = min_examples
+        # min_examples 是计数旋钮（require_count 口径）：0 = 「报告不带示例」的合法意图，
+        # 负数档让 `[:n]` 切片换语义（`[:-2]` = 丢掉最后 2 条，要得越多剩得越多）⇒ 拒；
+        # 显式 None 是坏值而非缺省（L181 的 fuzzy_threshold None 专判先例）。
+        if min_examples is None:
+            raise DataValidationError(
+                "min_examples 不能为 None（必填计数旋钮，显式 None 属坏值非缺省）"
+            )
+        self.min_examples = require_count("min_examples", min_examples, minimum=0)
 
     def _signature(self, item: Dict[str, Any]) -> str:
         parts = [_normalize(str(item.get(f, ""))) for f in self.fields]
