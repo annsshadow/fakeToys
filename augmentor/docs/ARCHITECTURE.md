@@ -1862,7 +1862,7 @@ Temp `l52q/post_check2.py` NONCE-45A0C1AB9510-POST —— 不再靠改前记忆�
 > 只新增过一个字段 —— `AugmentationConfig.request_timeout`（L71 / A74），没有删除过字段。
 
 **一律 WARNING，绝不动 `is_valid`**。`is_valid` 是 `POST /api/system/validate-config` 响应的判决位
-（`api/routes/system_ops.py:147` 的 `is_valid: bool`，本轮那条端点用例就断在它上面），而多余的键不让服务起不来；
+（`api/routes/system_ops.py:148` 的 `is_valid: bool`，本轮那条端点用例就断在它上面），而多余的键不让服务起不来；
 把它判红等于把「配置文件里夹自己的段落」变成破坏性变更 —— `save_config`
 **刻意**保留非 `AppConfig` 的顶层段落，正是这条决定让 ERROR 不可选。豁免只有两节（`META_TOP_SECTIONS`，
 由 `test_exempt_list_is_exactly_the_two_meta_sections` 逐字钉死）：`app` 是谁都不读的历史元信息、
@@ -1906,7 +1906,7 @@ m1 摘掉 `validate_config` 里那一遍走查（即回到 A76 改前态）⇒ *
 两解释器各一份报告落盘）：出厂 `config.yaml` 全量校验 aug 侧 66.390 → 78.026 µs（Δ **+11.636 µs** /
 1.18×，反序 +10.423 同号）、py314 侧 72.238 → 82.208 µs（Δ **+9.970 µs** / 1.14×，反序 +11.117 同号）；
 最小配置 `{models.default}` +1.731 / +2.288 µs。**这条路径不在任何热路径上**：`validate_config` 在生产代码里
-只有两个入口（`grep -rn` 坐实：`api/routes/system_ops.py:292` 与 `augmentor/cli/commands/data_ops.py:88`），
+只有两个入口（`grep -rn` 坐实：`api/routes/system_ops.py:293` 与 `augmentor/cli/commands/data_ops.py:88`；L193 顶部插 1 行共引 import，两目标各 +1），
 都是「用户主动要诊断」，`load_config` 与生成/服务路径一次都不调它 ⇒ 十几微秒落在诊断命令上。
 推导若每次重跑会吃掉整次校验的 97 %（aug 首跑 75.7 µs / py314 104.5 µs）⇒ 缓存不是装饰，
 命中后 0.0714 / 0.1417 µs 一次。⇒ **本轮不主张任何性能收益。**
