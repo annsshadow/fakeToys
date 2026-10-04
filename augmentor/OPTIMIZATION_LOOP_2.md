@@ -984,6 +984,8 @@
 
 | B261 | **已关闭（L191，sampler recommend_seeds 问题类型面 O(k×n) 重复分析→预计算）**：augmentor/sampler.py 的 recommend_seeds 在「每个覆盖不足类型 × 每条数据」的内层循环里对同一条 item 反复调 _analyze_question_type（纯函数、同输入同输出），k 个 question_type 覆盖不足档 = k 倍重复调用（98 条语料实测：top_k=1 付 2n+91 次、top_k=20 付 2n+186 次，差 95 次；修后两档同收在 3n=294 次） | 循环前预计算一次成索引数组 qtypes（O(n)），内层循环改 `enumerate` + `qtypes[i]` 查表（O(1)），语义不变（首匹配 seed 仍是数据里第一条匹配条目，守卫钉死 items[90]）；tests/unit/test_sampler.py 新增守卫 2 例（形状棘轮：同数据 top_k=1 与 top_k=20 两档调用数必须相同且 ≤3n——旧 k×n 形状当场分叉变红；+ 首匹配语义钉）；l121 docstring 的分支弧 `sampler.py 265->260` 因插入 5 行平移 `270->265`（红字重述）；变异自证：换回旧形 1 红（调用数分叉）、sha256 逐字节还原；l97/A184/L79/markdown 各棘轮原地绿（无新参数化位、无新增散名引用）；全量门禁：7853 passed / 3 skipped / exit 0（L190 的 7851 + 2 新守卫，无回归） | S |
 
+| B262 | **已关闭（L192，cleaner 规则名封闭清单下沉 SDK 直构面）**：augmentor/cleaner.py 的 DatasetCleaner.clean 对未知规则名静默跳过（`for rule_name in rules: if rule_name in self._default_rules:`），拼错 normalize_whitespace = 该规则无声不生效、清洗报告照常出（checkpoint 症状族语义漂移档；L175/L176/L189 封闭清单族同式）。清单权威住 `_default_rules` 键（A77），CLI 面 parser.CLEAN_RULES 字面清单早有 argparse choices 收口，SDK 直构面独缺这一格 | clean() 入口补封闭清单判据（unknown = 非 str 或不在 `_default_rules`，一并拒；列出全部 11 个合法规则名），clean_dataset / clean_batch_optimized 经委托自动吃档；test_cleaner.py 新增守卫 5 例（未知名拒+全量文案 + 坏形状 4 档 + 合法名照旧生效防修过头 + 两条入口委托继承 + CLI 字面清单与 SDK 键同一集合钉）；test_partial_branches_l118 的旧「未知名跳过不报错」例红字重述为拒收例、docstring 勘误注 L192 假支不可达；l97/A184/L79/markdown 各棘轮原地绿（守卫无 parametrize、无新增散名行引用）；全量门禁：7858 passed / 3 skipped / exit 0（L191 的 7853 + 5 新守卫，无回归） | S |
+
 | B249 | **已关闭（L179，A155①：to_http_error 500 档不再转发异常原文）**：api/deps.py 的 to_http_error 最后一支把未分类异常原样 str(exc) 塞进 500 响应体——OSError(13,'Permission denied','/srv/...') 实测把部署根绝对路径与文件系统状态（Errno 28 磁盘满 / Errno 13 权限缺失）一并回给客户端，是可被利用的探测信号；A155 原框两格候选拍定取①（固定文案 + 原文落服务端日志，安全收紧方向，非脱敏白名单②） | 500 支改回固定文案常量 INTERNAL_ERROR_DETAIL（api/deps.py 模块级唯一产地，A77）+ logger.exception 把原文留服务端日志；400 支（ValueError 可行动文案）一字不动防修过头；tests/unit/test_api_deps.py 新增守卫 3 例（OSError 不泄漏部署路径/errno + 原文进日志 + ValueError 仍 400 原样回传）；tests/integration/test_api_dataset_system_tools.py 两处「500 回原文」断言按红字重述为「== 固定文案 + 原文不在响应体」（TestUnexpectedFailureBecomes500 五处 + dataset_impact/evaluate 各一，docstring 同步改口径）；A184/L79 各棘轮原地绿（本轮新增引用全用全路径 live 形、零散名）；全量 7790 passed / 3 skipped / exit 0（L178 的 7787 + 3 新守卫，零回归） | M |
 
 | B246 | **已关闭（L176）**：策略旋钮「封闭清单拒」同型普查（L175 的 method 静默回落修完后沿同型全仓扫）——sample 的 method / outlier 的 method / expander 的strategy 三处**已有** else 拒（普查实证）；唯一缺口 `save_quality_report` 的 format：未知 format **静默落 JSON 支**（请求 yaml 的拿到 json 文件不出声，checkpoint 症状族语义漂移档） | 缺口收边（format 封闭清单 `QUALITY_REPORT_FORMATS` + 入口 require_choice + None 专判）；**普查结论钉成棘轮**：新守卫 6 例含一条「五旋钮 × 未知值全部出 DataValidationError」合体例——任一旋钮未来退化回静默回落当场红；变异自证 2 红（剪 format 判据）、sha256 逐字节还原；A184/L79 各棘轮原地绿（quality_report.py 插行使 0 条活行引用顶歪，全量门禁证实） | M |
@@ -1391,3 +1393,11 @@
 - **守卫（形状棘轮，不钉绝对次数）**：tests/unit/test_sampler.py 新增 2 例——① 同数据 top_k=1 与 top_k=20 的调用数必须相等且 ≤3n（旧 k×n 形状下两档分叉、当场红）；② 首匹配 seed = items[90] 语义钉死（防预计算改出排序漂移）。变异自证：换回旧形 1 红，sha256 逐字节还原。
 - **棘轮**：l121 的 `sampler.py 265->260` 分支弧 docstring 随插入 5 行平移 `270->265`（红字重述）；无新参数化位（守卫不参化）⇒ l97 原地绿；A184/L79/markdown 原地绿。
 - 全量门禁：7853 passed / 3 skipped / exit 0（L190 的 7851 + 2 新守卫，无回归）。**B261 关闭**。
+
+### L192（2026-10-04）— B262 立项 + 关闭：cleaner 规则名封闭清单下沉 SDK 直构面
+
+- **真缺陷（静默跳过）**：DatasetCleaner.clean 的 `if rule_name in self._default_rules:` 对未知名静默跳过，拼错规则名 = 该规则无声不生效、清洗报告照常出（与 L175 搜索 method 静默回落 contains 同式）。CLI 面 parser.CLEAN_RULES（argparse choices）与 L189 的 API/CLI 收口先例一样早有 400/choices 判据，SDK 直构面（clean / clean_dataset / clean_batch_optimized）独缺。
+- **修法**：clean() 入口补封闭清单判据——unknown 同时收「非 str 坏形状」与「不在 `_default_rules`」，拒并列出全部 11 个合法规则名（A77 权威住 `_default_rules` 键）；clean_dataset / clean_batch_optimized 经委托自动吃档。CLI 面维持「不 import 业务模块、字面清单」惯例，同一集合由新守卫钉。
+- **守卫**：tests/unit/test_cleaner.py 新增 TestUnknownRuleNamesClosedListL192 5 例；tests/unit/test_partial_branches_l118.py 旧「未知跳过」例红字重述为拒收例 + docstring 勘误（假支自此不可达）。
+- **棘轮**：守卫无 parametrize、无新增散名行引用 ⇒ l97/A184/L79/markdown 各棘轮原地绿（全量门禁证实）。
+- 全量门禁：7858 passed / 3 skipped / exit 0（L191 的 7853 + 5 新守卫，无回归）。**B262 关闭**。
