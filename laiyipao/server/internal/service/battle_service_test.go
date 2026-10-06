@@ -483,7 +483,7 @@ func TestComputeRatingForWrappers(t *testing.T) {
 	if r.ElementCoverage < 0 {
 		t.Errorf("ElementCoverage 异常：%+v", r)
 	}
-	if p := ts.ComputePowerFor(uid, build); p <= 0 {
+	if p := ts.ComputePowerFor(build); p <= 0 {
 		t.Errorf("战力应大于 0：%d", p)
 	}
 }

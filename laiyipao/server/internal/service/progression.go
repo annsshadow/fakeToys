@@ -16,7 +16,15 @@ func (s *Service) ComputeRatingFor(userID int64, build map[string]any) domain.Bu
 	return s.computeRating(s.ctxBackground(), userID, build)
 }
 
-func (s *Service) ComputePowerFor(userID int64, build map[string]any) int64 {
+// ComputePowerFor 是给运营接口用的包装。
+//
+// ⚠️ 第 103 轮移除了 `userID` —— 第 102 轮把 `computePower` 变成纯函数之后，
+// 它就成了纯装饰。而 `ComputeRatingFor`（**同名的兄弟**）**确实**要查
+// `user_progress`，仍然需要 userID —— 于是两个签名一度一模一样。
+//
+// 由 `TestNoFunctionIgnoresAParameter` 抓到：**级联**发现，
+// 因为第 102 轮那条守卫只盯 `ctx`。
+func (s *Service) ComputePowerFor(build map[string]any) int64 {
 	return computePower(build)
 }
 
