@@ -737,8 +737,15 @@ func (s *Service) AdminUpdateLevel(ctx context.Context, levelID int, patch map[s
 	return row, nil
 }
 
-// AdminUpdateSkill 更新技能配置。
-func (s *Service) AdminUpdateSkill(ctx context.Context, skillID int, patch map[string]any) error {
+// AdminUpdateSkill 更新技能配置，并**回读落库后的那一行**。
+//
+// ⚠️ 第 120 轮：修前只返回 error，handler 只好退回去整个重列 `adminSkills`
+// （`{items, recipes}`）当响应。但后台契约与 UI 的 `updateSkill` 写的是
+// `{ skill: AdminSkill }`，于是 `Object.assign(row, res.skill)` 里
+// `res.skill` 恒为 undefined —— 改完技能表行**停在上次刷新的旧值**
+// 却弹「已保存」（写后读与写入矛盾，第 107/108 轮同族）。
+// 现在返回读回的行，响应即「后台刷新列表会看到的那一行」。
+func (s *Service) AdminUpdateSkill(ctx context.Context, skillID int, patch map[string]any) (map[string]any, error) {
 	fields := []string{}
 	args := []any{skillID}
 	set := func(col string, v any) {
@@ -763,13 +770,45 @@ func (s *Service) AdminUpdateSkill(ctx context.Context, skillID int, patch map[s
 		}
 	}
 	if len(fields) == 0 {
-		return fmt.Errorf("%w: 没有可更新的字段", ErrBadInput)
+		return nil, fmt.Errorf("%w: 没有可更新的字段", ErrBadInput)
 	}
 	sql := fmt.Sprintf(`UPDATE skills SET %s WHERE id = $1`, joinComma(fields))
 	if _, err := s.pool.Exec(ctx, sql, args...); err != nil {
-		return fmt.Errorf("update skill: %w", err)
+		return nil, fmt.Errorf("update skill: %w", err)
 	}
-	return nil
+	// 回读落库后的那一行（第 120 轮：响应 = 后台刷新列表会看到的那一行）
+	row, err := s.skillRow(ctx, skillID)
+	if err != nil {
+		return nil, fmt.Errorf("read back skill: %w", err)
+	}
+	return row, nil
+}
+
+// skillRow 读回单行技能配置（与 fetchSkills 的列一致，供写后读与后台契约对齐）。
+func (s *Service) skillRow(ctx context.Context, skillID int) (map[string]any, error) {
+	var (
+		id, heatCost, cooldown, pierce, aoe, stacks, speed, chain, unlock int
+		code, name, family, element, kind, descr, applyElement            string
+		baseDamage                                                        int64
+	)
+	err := s.pool.QueryRow(ctx, `
+		SELECT id, code, name, family, element, kind, descr, base_damage, heat_cost,
+		       cooldown_ms, pierce, aoe_radius, apply_element, apply_stacks,
+		       projectile_speed, chain, unlock_level
+		FROM skills WHERE id = $1`, skillID).
+		Scan(&id, &code, &name, &family, &element, &kind, &descr,
+			&baseDamage, &heatCost, &cooldown, &pierce, &aoe, &applyElement, &stacks,
+			&speed, &chain, &unlock)
+	if err != nil {
+		return nil, err
+	}
+	return map[string]any{
+		"id": id, "code": code, "name": name, "family": family, "element": element,
+		"kind": kind, "descr": descr, "base_damage": baseDamage,
+		"heat_cost": heatCost, "cooldown_ms": cooldown, "pierce": pierce,
+		"aoe_radius": aoe, "apply_element": applyElement, "apply_stacks": stacks,
+		"projectile_speed": speed, "chain": chain, "unlock_level": unlock,
+	}, nil
 }
 
 // AdminRegenerateLevels 重新生成全部关卡（覆盖后台的手工改动）。

@@ -500,21 +500,29 @@ func TestAdminUpdateSkill(t *testing.T) {
 		_, _ = ts.pool.Exec(ctx, `UPDATE skills SET name = $1 WHERE id = 2`, origName)
 	})
 
-	if err := ts.AdminUpdateSkill(ctx, 1, map[string]any{
+	// 第 120 轮：AdminUpdateSkill 回读落库行作为返回值（后台契约 {skill}）
+	row, err := ts.AdminUpdateSkill(ctx, 1, map[string]any{
 		"name": "svc技能", "descr": "d", "base_damage": float64(33),
 		"element": "fire", "family": "flame", "kind": "active", "heat_cost": float64(5),
-	}); err != nil {
+	})
+	if err != nil {
 		t.Fatalf("更新失败：%v", err)
+	}
+	if row["name"] != "svc技能" {
+		t.Errorf("回读行 name 应为 svc技能，实际 %v", row["name"])
 	}
 	var dmg int64
 	if err := ts.pool.QueryRow(ctx, `SELECT base_damage FROM skills WHERE id = 1`).Scan(&dmg); err != nil || dmg != 33 {
 		t.Fatalf("base_damage 应写库 33，实际 %d（err=%v）", dmg, err)
 	}
+	if row["base_damage"] != int64(33) {
+		t.Errorf("回读行 base_damage 应为 33，实际 %v（写后读必须与落库一致）", row["base_damage"])
+	}
 
-	if err := ts.AdminUpdateSkill(ctx, 1, map[string]any{"name": 42, "base_damage": -1}); !errors.Is(err, ErrBadInput) {
+	if _, err := ts.AdminUpdateSkill(ctx, 1, map[string]any{"name": 42, "base_damage": -1}); !errors.Is(err, ErrBadInput) {
 		t.Errorf("全非法值应 ErrBadInput，实际 %v", err)
 	}
-	if err := ts.AdminUpdateSkill(ctx, 1, map[string]any{}); !errors.Is(err, ErrBadInput) {
+	if _, err := ts.AdminUpdateSkill(ctx, 1, map[string]any{}); !errors.Is(err, ErrBadInput) {
 		t.Errorf("空 patch 应 ErrBadInput，实际 %v", err)
 	}
 }
