@@ -14,7 +14,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 > **提交尾注用「（优化二轮 N）」与第一本的「（优化轮 N）」区分**；仍只暂存本人文件
 > （工作区有并行 CI/augmentor/laiyipao 会话在途改动，绝不越界暂存）。
 
-## 状态：进行中（轮 15/100）
+## 状态：进行中（轮 16/100）
 
 ## 启动基线（2026-10-06 实测）
 
@@ -51,6 +51,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 | 13 | FIX（后端安全，IM 越权） | FIX | **im_conversation_update 补会话成员门禁**（commit 见 git log）：会话改名/改类型端点无守卫=任何登录人可改任意会话（含把群类型改坏），同文件 im_conversation_id_single_delete_virtual 已有 is_conversation_member 校验=口径分裂 → 对齐补门禁。验证：message_assemble_communicate 102/102、clippy 0、fmt 0 |
 | 14 | IMPROVE（回归验证+扫描甄别，守卫批次收官） | IMPROVE | **轮5-13 守卫批次 workspace 级回归确认**：①`cargo check --workspace` rc=0——全部 handler 签名变化（新增 session 参数）无跨 crate 引用破坏；②受影响 crate 各自全绿（bbs 51/program_center 256/query 46/meeting 58/message 102/portal_surface 24/pp_designer 28，各轮已验）。**环境阻断如实记档**：workspace --lib 全量被两问题挡住——①并行会话共享 target 目录竞争（E0786 metadata 损坏+「另一程序正在使用此文件」文件占用）；②utoipa-swagger-ui 双版本（6.0.0 主 crate/7.1.0 openapi）build.rs 需从 GitHub 下载 swagger-ui zip 且连接超时（7.1.0 可用 SWAGGER_UI_DOWNLOAD_URL file: 绕过，6.0.0 的 embed.rs 需重新构建待网络恢复）。两者均非代码回归（改动面未触及 swagger 依赖链，cargo check 证明）。**扫描甄别结论**：全域「无守卫写端点」635 个=仓设计使然（鉴权在全局中间件+路由豁免表，handler 只在个人数据/管理动作语义时加守卫）——机械全域加守卫会误伤 o2 对齐面，正确策略=按域人工甄别（轮2/6/11/12/13 已按此模式完成 bbs/collect/query/meeting/message 域），后续按此节奏继续 |
 | 15 | FIX（后端安全，全局配置越权） | FIX | **ai 公告与全局配置族 11 端点补 admin 门禁**（commit `4171b5645`）：ann_create/save/delete（公告发布）+ config_create_mcp/model、config_delete_mcp/model_flag、config_save、config_update_mcp/model_flag、update_ai_control_config（全局模型/MCP 配置，含 URL 与密钥面）此前任何登录人可增删改 → require_admin 助手（is_admin）统一门禁。消费甄别：AnnApp.vue 公告管理、AIChatApp 管理动作面板。坑：助手上误留 #[axum::debug_handler]（它把函数当 handler 宏展开导致 E0637 假生命周期错）。验证：ai_assemble_control 53/53、clippy 0、fmt 0 |
+| 16 | FIX（后端安全，考勤申诉越权） | FIX | **考勤申诉三端点收口**（commit `748dacf09`）：①audit_appeal（批/驳申诉）/archive_appeal（归档）无守卫=任何登录人可批驳任意员工申诉 → 补「全局 admin 或 x_attendance_admin 登记管理员」双通道门禁（is_attendance_admin 本地助手，业务管理员语义优先）；②submit_appeal 的 personId/creator 从 body 取（可替别人提申诉/落 "system" 垃圾归属）→ 以会话登录人为事实源。验证：attendance 8/8、clippy 0、fmt 0 |
 
 ## 记账纪律（沿用第一本）
 
