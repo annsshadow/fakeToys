@@ -16,8 +16,13 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// newAdmin 建一个测试管理员并走真实登录拿令牌。
+// newAdmin 建一个测试管理员并走真实登录拿令牌（默认 role='admin'）。
 func (e *e2e) newAdmin(t *testing.T, tag string) (int64, string) {
+	return e.newAdminRole(t, tag, "admin")
+}
+
+// newAdminRole 建指定角色的测试管理员并登录拿令牌（第 127 轮：readonly 门禁守卫）。
+func (e *e2e) newAdminRole(t *testing.T, tag, role string) (int64, string) {
 	t.Helper()
 	username := fmt.Sprintf("e2e_admin_%s_%d", tag, time.Now().UnixNano()%1_000_000)
 	password := "e2e-admin-pass-123"
@@ -27,8 +32,8 @@ func (e *e2e) newAdmin(t *testing.T, tag string) (int64, string) {
 	}
 	var adminID int64
 	if err := e.pool.QueryRow(context.Background(),
-		`INSERT INTO admin_users (username, password_hash, role) VALUES ($1,$2,'admin') RETURNING id`,
-		username, string(hash)).Scan(&adminID); err != nil {
+		`INSERT INTO admin_users (username, password_hash, role) VALUES ($1,$2,$3) RETURNING id`,
+		username, string(hash), role).Scan(&adminID); err != nil {
 		t.Fatalf("建管理员失败：%v", err)
 	}
 	t.Cleanup(func() {
