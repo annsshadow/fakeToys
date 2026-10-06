@@ -323,7 +323,7 @@ describe('UsersView 发放资源', () => {
     wrapper.unmount()
   })
 
-  it('负数数量也允许提交（回收场景），弹窗取消则不提交', async () => {
+  it('负数数量 = 回收（保留既有能力），文案必须说「回收」而不是「发放」（第 109 轮）', async () => {
     box.prompt.mockResolvedValueOnce({ value: 'gem -500' })
     grantUser.mockResolvedValueOnce({ wallet: { coin: 1000, gem: 0 } })
     const row = userFixture()
@@ -332,6 +332,14 @@ describe('UsersView 发放资源', () => {
     await vm.onGrant(row)
     await flushPromises()
     expect(grantUser).toHaveBeenCalledWith(1, 'gem', -500)
+    // 判据落在文案上：运营在界面上必须看得见「这是回收」。
+    // 服务端同轮把符号写进了审计事件与流水 reason，
+    // UI 说「已发放」会让整个符号链路在最后一环断裂。
+    // ⚠️ document.body 会累积同文件前序用例的 ElMessage，
+    // 所以只断言**本用例自己的**「钻石 500」组合，不能全局 not.toContain。
+    const text = document.body.textContent as string
+    expect(text).toContain('已回收 钻石 500')
+    expect(text).not.toContain('已发放 钻石 500')
     wrapper.unmount()
 
     box.prompt.mockRejectedValueOnce('cancel')
