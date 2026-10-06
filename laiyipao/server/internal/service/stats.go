@@ -332,25 +332,40 @@ func (s *Service) AdminListUsers(ctx context.Context, keyword string, limit, off
 }
 
 // AdminSetUserStatus 封禁 / 解封玩家。
+// AdminSetUserStatus 封禁/解封玩家。
+//
+// ⚠️ 第 114 轮：状态写入与 refresh token 吊销必须在**同一事务**里。
+// 修前是两条独立 autocommit：封禁成功后第二条失败时，
+// users.status 已落库回不去，而 refresh token 还有效——
+// 被禁账号在 RefreshTTL 内仍可换访问令牌「续命」，
+// 运营止损动作实际没止住。下面的注释「封禁即吊销」
+// 与旧实现（两条可分别失败）自相矛盾，这正是缺陷能活下来的原因。
 func (s *Service) AdminSetUserStatus(ctx context.Context, userID int64, banned bool, reason string) (AdminUserView, error) {
 	status := 1
 	if banned {
 		status = 2
 	}
-	if _, err := s.pool.Exec(ctx,
-		`UPDATE users SET status = $2, ban_reason = $3 WHERE id = $1`, userID, status, reason); err != nil {
-		return AdminUserView{}, fmt.Errorf("set user status: %w", err)
-	}
-	// 封禁即吊销所有 refresh token，否则封禁后仍可用长期令牌续命
-	if banned {
-		if _, err := s.pool.Exec(ctx,
-			`UPDATE refresh_tokens SET revoked_at = now() WHERE user_id = $1 AND revoked_at IS NULL`,
-			userID); err != nil {
-			return AdminUserView{}, fmt.Errorf("revoke tokens: %w", err)
+	err := s.DB.Tx(ctx, func(tx txType) error {
+		if _, err := tx.Exec(ctx,
+			`UPDATE users SET status = $2, ban_reason = $3 WHERE id = $1`, userID, status, reason); err != nil {
+			return fmt.Errorf("set user status: %w", err)
 		}
+		// 封禁即吊销所有 refresh token，否则封禁后仍可用长期令牌续命；
+		// 失败则整单回滚（status 恢复原值），不允许「半封」状态。
+		if banned {
+			if _, err := tx.Exec(ctx,
+				`UPDATE refresh_tokens SET revoked_at = now() WHERE user_id = $1 AND revoked_at IS NULL`,
+				userID); err != nil {
+				return fmt.Errorf("revoke tokens: %w", err)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return AdminUserView{}, err
 	}
 	var v AdminUserView
-	err := s.pool.QueryRow(ctx, `
+	err = s.pool.QueryRow(ctx, `
 		SELECT u.id, u.nickname, u.is_guest, u.status,
 		       COALESCE(p.max_stage, 0), COALESCE(p.level_exp, 0),
 		       COALESCE(w.coin, 0), COALESCE(w.gem, 0), u.created_at, u.last_login_at
