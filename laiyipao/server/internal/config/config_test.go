@@ -318,3 +318,69 @@ func TestEnvHelpersWhitespace(t *testing.T) {
 		t.Errorf("envInt32 负越界应回退默认，实际 %d", got)
 	}
 }
+
+// TestEnvInt32BoundaryValues 钉住 int32 的**四个边界**。
+//
+// ⚠️ 第 84 轮补的。原因是变异测试暴露了一个真空缺：
+//
+// 把判据从「越界」改成「负数」（`if n < 0 { return def }`）→ **全部测试仍绿**。
+//
+// 那两种写法在**越界**输入上表现相同，只在
+// 「负数但仍在 int32 范围内」（如 -5）上不同：
+//
+//	正确   n = -5 → 不越界 → int32(-5) = -5
+//	变异   n = -5 → n < 0   → 回退默认 1
+//
+// 而 `DB_MAX_CONNS=-5` 在真实环境里是可能发生的（配错环境变量）——
+// 它会一路传到 `pgxpool.New` 才报错，报错信息是
+// 「MaxConns must be > 0」，与「配置写错了负数」之间隔了两层。
+//
+// 顺便把 int32 的两端边界都钉住：`MaxInt32` 本身**合法**（不该被夹），
+// `MaxInt32+1` 才该回退。
+func TestEnvInt32BoundaryValues(t *testing.T) {
+	const k = "CFG_TEST_INT32"
+
+	cases := []struct {
+		name string
+		set  string
+		def  int32
+		want int32
+	}{
+		{"int32 上界本身合法", "2147483647", 1, 2147483647},
+		{"上界+1 回退默认", "2147483648", 7, 7},
+		{"int32 下界本身合法", "-2147483648", 1, -2147483648},
+		{"下界-1 回退默认", "-2147483649", 7, 7},
+		// ⚠️ 这一条就是抓上面那个变异的那一条：
+		// 「负但在范围内」必须**原样通过**，不能被当成「非法」。
+		{"负但在范围内原样通过", "-5", 1, -5},
+		{"0 原样通过", "0", 9, 0},
+		{"非数字回退默认", "abc", 3, 3},
+		{"空串回退默认", "", 4, 4},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			t.Setenv(k, c.set)
+			if got := envInt32(k, c.def); got != c.want {
+				t.Errorf("envInt32(%q, %d) = %d，期望 %d", c.set, c.def, got, c.want)
+			}
+		})
+	}
+}
+
+// TestEnvInt32ClampDoesNotSwallowDefaults 确认「回退的是 def 而不是 0」。
+//
+// ⚠️ 一个很容易写错的形态：`n` 越界时若 `return 0` 而不是 `return def`，
+// 那么 `DB_MAX_CONNS=99999999999` 会让连接池上限变成 0 ——
+// 而 0 在 `pgxpool` 里意味着「用默认值」，于是**配置写错反而拿到合理值**，
+// 彻底静默。回退 `def` 才是「我不知道你要什么，用我准备好的」。
+func TestEnvInt32ClampDoesNotSwallowDefaults(t *testing.T) {
+	t.Setenv("CFG_TEST_INT32", "99999999999")
+	if got := envInt32("CFG_TEST_INT32", 0); got != 0 {
+		t.Errorf("def=0 时应回退 0，实际 %d", got)
+	}
+	t.Setenv("CFG_TEST_INT32", "-99999999999")
+	if got := envInt32("CFG_TEST_INT32", 42); got != 42 {
+		t.Errorf("越界应回退 def=42，实际 %d", got)
+	}
+}
