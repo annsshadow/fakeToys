@@ -400,6 +400,7 @@ pub async fn get_forum(
 #[allow(non_snake_case)]
 pub async fn create_topic(
     pool: Extension<Pool>,
+    session: Extension<Session>,
     axum::extract::Json(req): Json<CreateTopicRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -407,7 +408,8 @@ pub async fn create_topic(
     let forum_id = req.forum_id.clone().unwrap_or_default();
     let title = req.title.unwrap_or_default();
     let content = req.content.unwrap_or_default();
-    let creator = req.creator.clone().unwrap_or_default();
+    // creator/author 以会话登录人为事实源：客户端传值可伪造归属（冒名发帖）
+    let creator = session.person_unique.clone();
     // x_bbs_topic.author_id/section_id 为 NOT NULL（无默认）：author 缺省回退 creator，
     // section 缺省回退 forum_id（版块维度），杜绝 500。
     let author_id = req.author_id.clone().unwrap_or_else(|| creator.clone());
