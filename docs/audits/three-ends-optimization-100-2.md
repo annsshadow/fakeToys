@@ -14,7 +14,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 > **提交尾注用「（优化二轮 N）」与第一本的「（优化轮 N）」区分**；仍只暂存本人文件
 > （工作区有并行 CI/augmentor/laiyipao 会话在途改动，绝不越界暂存）。
 
-## 状态：进行中（轮 12/100）
+## 状态：进行中（轮 13/100）
 
 ## 启动基线（2026-10-06 实测）
 
@@ -48,6 +48,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 | 10 | GATE（中型门禁，轮 10） | GATE | **中型门禁全绿**：桌面+SDK vitest 1001/1001（轮3 +3 守卫）、mobile vitest 114/114、desktop build ✓（2.81s）、mobile h5+mp-weixin build DONE、biome check --error-on-warnings 0（261 文件）、tsc 3 工程 0；后端受影响 crate（bbs 51、program_center 256、query_assemble_designer 46、portal_surface 24、pp_designer 28）本批各自全绿。工具链坑重申：pnpm 根在 oa4rust/、Bash CWD 持久化不可靠（每命令内联 cd）、根目录 fakeToys 的 package.json 会吞 pnpm script 造成假输出 |
 | 11 | FIX（后端安全，越权删除） | FIX | **delete_meeting 属主门禁+软删幂等**（commit `8fef57c6c`）：MeetingApp.vue 真实消费的 `POST/DELETE /meeting/assemble/control/meeting/delete/{id}` 挂的是裸版 delete_meeting——无守卫物理删，任何登录人可删任意会议；同文件 u2_meeting_delete_owned（带 require_owner+事务级联）挂在 `/meeting/{id}` 却零前端消费——守卫与消费路径错位（与轮2 collect 同构）。修复=对齐 u2 口径：u2_meeting_creator 查属主 + shared::middleware::require_owner 门禁 + 软删幂等（UPDATE deleted_at=NOW() WHERE id AND creator AND deleted_at IS NULL），行不存在返 deleted=false 不泄漏。验证：meeting_assemble_control 58/58、clippy 0、fmt 0 |
 | 12 | FIX（后端安全，越权管理面） | FIX | **delete_meeting_control 补 admin 门禁+软删幂等**（commit `49df69f2d`）：控制级删除端点此前无守卫物理删，前端 meetingMore2 调试面板 prompt 手输 id 即可越权删任意控制配置（MeetingApp.vue:776 消费）；x_meeting_assemble_control 有 deleted_at 列 → 软删幂等。同 crate 甄别记档：u2_building_delete（u2_require_admin）、u2_attachment_delete（u2_attachment_guard）守卫齐全，u2 族口径完整。验证：meeting_assemble_control 58/58、clippy 0、fmt 0 |
+| 13 | FIX（后端安全，IM 越权） | FIX | **im_conversation_update 补会话成员门禁**（commit 见 git log）：会话改名/改类型端点无守卫=任何登录人可改任意会话（含把群类型改坏），同文件 im_conversation_id_single_delete_virtual 已有 is_conversation_member 校验=口径分裂 → 对齐补门禁。验证：message_assemble_communicate 102/102、clippy 0、fmt 0 |
 
 ## 记账纪律（沿用第一本）
 
