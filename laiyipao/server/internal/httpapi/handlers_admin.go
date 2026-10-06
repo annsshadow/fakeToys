@@ -90,7 +90,14 @@ func (s *Server) adminDashboard(c *fiber.Ctx) error {
 }
 
 func (s *Server) adminLevels(c *fiber.Ctx) error {
-	items, total, err := s.Svc.AdminListLevels(c.Context())
+	// 第 111 轮：筛选参数必须传到 service（修前这里一个都不收，UI 的
+	// 章节下拉与关键字搜索发了也白发，永远回全量）。
+	chapter, err := queryInt(c, "chapter", 0)
+	if err != nil {
+		return failErr(c, err)
+	}
+	keyword := c.Query("keyword")
+	items, total, err := s.Svc.AdminListLevels(c.Context(), chapter, keyword)
 	if err != nil {
 		return failErr(c, err)
 	}
