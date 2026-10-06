@@ -180,13 +180,19 @@ func TestE2EAdminUpdateLevelAndRegenerate(t *testing.T) {
 		t.Errorf("enabled 应写库为 true，实际 %d", got)
 	}
 
-	// regenerate 恢复生成器默认
+	// 第 116 轮起：regenerate **保留**运营自定义的 base_hp（与后台确认文案一致），
+	// 只把生成器内容（波次/难度/星级/地形）同步回来。
+	// 旧断言「base_hp 恢复生成器默认值」记录的是缺陷行为，本轮翻案。
 	status, body = e.post(t, "/api/v1/admin/levels/regenerate", tok, nil)
 	if status != 200 || num(body, "generated") != 100 {
 		t.Errorf("regenerate 应生成 100 关：%d %v", status, body)
 	}
-	if got := e.scalarInt(t, `SELECT base_hp FROM levels WHERE id = 1`); got == 5000 {
-		t.Error("regenerate 后 base_hp 应恢复生成器默认值")
+	if got := e.scalarInt(t, `SELECT base_hp FROM levels WHERE id = 1`); got != 5000 {
+		t.Errorf("regenerate 后应**保留**运营自定义的 base_hp=5000，实际 %d", got)
+	}
+	// 波次/难度这类生成器内容仍被同步回生成器值（第 1 关 wave_count=5）
+	if got := e.scalarInt(t, `SELECT wave_count FROM levels WHERE id = 1`); got != 5 {
+		t.Errorf("regenerate 后 wave_count 应同步回生成器值 5，实际 %d", got)
 	}
 }
 

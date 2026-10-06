@@ -467,13 +467,19 @@ func TestAdminUpdateLevel(t *testing.T) {
 		t.Errorf("空 patch 应 ErrBadInput，实际 %v", err)
 	}
 
-	// 恢复：regenerate 覆盖手工改动（它本身也是被测函数）
-	n, err := ts.AdminRegenerateLevels(ctx)
-	if err != nil || n != domain.TotalLevels {
-		t.Fatalf("regenerate 应生成 %d 关：%d, %v", domain.TotalLevels, n, err)
+	// 恢复：把第 1 关重置回生成器默认值（共享库卫生）。
+	// 第 116 轮起 regenerate **保留** base_hp（不再覆盖），
+	// 所以「靠 regenerate 恢复」这条路对 base_hp 失效了，必须显式还原。
+	g := domain.GenerateLevel(1)
+	if _, err := ts.pool.Exec(ctx,
+		`UPDATE levels SET name=$1, base_hp=$2, wave_count=$3, difficulty=$4,
+		 energy_cost=$5, is_boss=$6, enabled=TRUE WHERE id = 1`,
+		g.Name, g.BaseHP, g.WaveCount, g.Difficulty, g.EnergyCost, g.IsBoss); err != nil {
+		t.Errorf("还原第 1 关失败：%v", err)
 	}
-	if err := ts.pool.QueryRow(ctx, `SELECT base_hp FROM levels WHERE id = 1`).Scan(&hp); err != nil || hp == 6000 {
-		t.Errorf("regenerate 后 base_hp 应恢复默认（实际 %d）", hp)
+	// regenerate 仍必须能跑通且同步内容字段（它本身也是被测函数）
+	if n, err := ts.AdminRegenerateLevels(ctx); err != nil || n != domain.TotalLevels {
+		t.Fatalf("regenerate 应生成 %d 关：%d, %v", domain.TotalLevels, n, err)
 	}
 
 	broken := openBrokenService(t)
