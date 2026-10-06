@@ -767,7 +767,6 @@ func (s *Service) AdminUpdateSkill(ctx context.Context, skillID int, patch map[s
 }
 
 // AdminRegenerateLevels 重新生成全部关卡（覆盖后台的手工改动）。
-// AdminRegenerateLevels 重新生成全部关卡（覆盖后台的手工改动）。
 //
 // # 第 116 轮两处修正
 //
@@ -781,6 +780,11 @@ func (s *Service) AdminUpdateSkill(ctx context.Context, skillID int, patch map[s
 //     且 `starRaw,_ := json.Marshal` 静默吞错。中途失败会留下
 //     「前 N 关已重生成 + 后 M 关保留旧值」的**混合态**且不可回滚。
 //     现在整批进同一事务，任一失败整体回滚；Marshal 失败显式报错。
+//
+// # 第 117 轮
+//  3. **同步 `level_waves`**：旧实现只改 levels 行，从不碰波次表。
+//     生成器升级后点「重新生成」，后台波次抽屉与 levels.wave_count
+//     仍停在旧版本。现在同一事务里整体替换每关的 level_waves。
 func (s *Service) AdminRegenerateLevels(ctx context.Context) (int, error) {
 	levels := domain.GenerateAllLevels()
 	err := s.DB.Tx(ctx, func(tx txType) error {
@@ -802,6 +806,29 @@ func (s *Service) AdminRegenerateLevels(ctx context.Context) (int, error) {
 				gl.ID, gl.Chapter, gl.Name, gl.Seed, gl.WaveCount, gl.Difficulty,
 				gl.EnergyCost, starRaw, terrainRaw, gl.IsBoss); err != nil {
 				return fmt.Errorf("regenerate level %d: %w", gl.ID, err)
+			}
+			//
+			// ⚠️ 第 117 轮：同步 `level_waves`。
+			// 「重新生成」的完整含义是让库里的**关卡内容**对齐生成器，
+			// 而波次的敌人排布就在 level_waves 表里。旧实现只改 levels 行、
+			// 从不碰 level_waves —— 生成器升级（波次数/刷怪变化）后点「重新生成」，
+			// 后台「波次」抽屉与 levels.wave_count 仍停在旧版本，两者永久失同步。
+			// level_waves 没有运营编辑入口（后台只有只读抽屉），
+			// 是纯生成器派生内容，整体替换安全：先删旧波次、再写生成器的。
+			if _, err := tx.Exec(ctx,
+				`DELETE FROM level_waves WHERE level_id = $1`, gl.ID); err != nil {
+				return fmt.Errorf("regenerate level %d: clear waves: %w", gl.ID, err)
+			}
+			for _, w := range gl.Waves {
+				spawns, err := json.Marshal(w.Spawns)
+				if err != nil {
+					return fmt.Errorf("regenerate level %d: marshal wave %d: %w", gl.ID, w.Index, err)
+				}
+				if _, err := tx.Exec(ctx,
+					`INSERT INTO level_waves (level_id, wave_index, spawns) VALUES ($1,$2,$3)`,
+					gl.ID, w.Index, spawns); err != nil {
+					return fmt.Errorf("regenerate level %d: insert wave %d: %w", gl.ID, w.Index, err)
+				}
 			}
 		}
 		return nil
