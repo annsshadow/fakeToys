@@ -363,12 +363,27 @@ func (s *Service) AdminSetUserStatus(ctx context.Context, userID int64, banned b
 	return v, err
 }
 
-// AdminGrantCurrency 后台发币。
+// AdminGrantCurrency 后台发币（负数为回收）。
+//
+// ⚠️ 第 109 轮：**符号必须进审计**。
+// 修前无论正负，钱包流水一律记 `admin_grant`、
+// 后台审计一律记 `grant_currency` ——
+// 运营在「发放资源」框里输入负数就是**静默回收**玩家货币，
+// 事后翻审计只看到「发放」，分不清哪笔是扣款。
+// 回收是真实需求（老测试写明的「回收场景」），但需求不该靠
+// 「正数事件里混负数」实现 —— 符号本身必须成为审计字段。
 func (s *Service) AdminGrantCurrency(ctx context.Context, userID int64, currency string, amount int64) (map[string]int64, error) {
+	if amount == 0 {
+		return nil, fmt.Errorf("%w: 数量为 0 的发放没有意义", ErrBadInput)
+	}
+	reason := "admin_grant"
+	if amount < 0 {
+		reason = "admin_revoke"
+	}
 	out := map[string]int64{}
 	err := s.DB.Tx(ctx, func(tx txType) error {
 		if err := s.grantWallet(ctx, tx, userID,
-			map[string]int64{currency: amount}, "admin_grant", 0); err != nil {
+			map[string]int64{currency: amount}, reason, 0); err != nil {
 			return err
 		}
 		w, err := s.loadWalletTx(ctx, tx, userID)

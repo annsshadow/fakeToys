@@ -19,6 +19,7 @@ const REASON_LABEL: Record<string, string> = {
   task: '任务',
   shop: '商城消费',
   admin_grant: '后台发放',
+  admin_revoke: '后台回收',
   defense_steal: '防线窃取',
   redeem: '兑换码',
 }

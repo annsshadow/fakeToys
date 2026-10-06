@@ -286,7 +286,13 @@ func (s *Server) adminGrantUser(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	s.Svc.Audit(c.Context(), adminIDFrom(c), "grant_currency",
+	// 第 109 轮：符号进审计 —— 负数是回收，事件名必须与正数发放可区分，
+	// 否则审计里「发放」和「回收」长得一模一样。
+	evt := "grant_currency"
+	if body.Amount < 0 {
+		evt = "revoke_currency"
+	}
+	s.Svc.Audit(c.Context(), adminIDFrom(c), evt,
 		strconv.FormatInt(id, 10), fiber.Map{"currency": body.Currency, "amount": body.Amount})
 	return c.JSON(fiber.Map{"wallet": wallet})
 }
