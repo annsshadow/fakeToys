@@ -1058,6 +1058,26 @@ cd admin && npm run build && npm run size:check  # 超预算则退出码 1
     例如「我的战报列表」以外的分页/统计接口若存在，按 `user_id` 过滤的
     完整性**没有结构性守卫**，新增接口时可能再漏一次。
 
+22. **「今日」曾经有三套定义** —— 已在第 89/97/98 轮统一到 Go 口径。
+    守卫：`server/internal/service/challenge_day_boundary_test.go` 3 条
+    + `shop_day_boundary_test.go` 5 条 + `signin_day_boundary_test.go` 5 条。
+
+    | 路径 | 原来 | 现在 |
+    |---|---|---|
+    | 每日任务 | Go `periodStart` | Go `periodStart` |
+    | 每日签到 | **PG `CURRENT_DATE`** | Go `periodStart` |
+    | 商城限购 | **PG `CURRENT_DATE`** | Go `periodStart` |
+    | 挑战次数上限 | **PG `CURRENT_DATE`** | Go `periodStart` |
+
+    每一处内部都是自洽的，所以**单独测任何一处都看不出问题** ——
+    只有把「今日通关 3 关」这个任务和「今日挑战次数上限」放在一起
+    才看得出两者说的是不同的日子。
+
+    ⚠️ **有意保留的例外**：`stats.go` 里 3 处 `CURRENT_DATE`
+    （今日新增 x2 + 14 天曲线）是**运营看板口径**，改了会让历史报表不可比。
+    由 `TestStatsDayBoundaryIsDocumented` 钉住「数量仍是 3」——
+    「故意不改」与「漏掉了」在代码里长得一模一样，必须显式记下来。
+
 21. **成就可以每天重复领取** —— **已在第 93 轮修复（含迁移 00013）**。
     `user_tasks` 按 `(user_id, task_id, task_date)` 分行，
     而 `periodStart(now, "achievement")` 原先落到「今天零点」，

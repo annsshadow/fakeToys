@@ -147,10 +147,23 @@ func (s *Service) AllocateMastery(ctx context.Context, userID int64, nodeID int)
 // # 为什么 ensure 用 `ON CONFLICT DO UPDATE` 而不是 `DO NOTHING`
 //
 // `DO NOTHING` 对**已存在**的行不加锁 —— 那样预锁就漏掉了它们。
-// `DO UPDATE SET challenge_date = CURRENT_DATE` 是个无操作更新
+// `DO UPDATE SET challenge_date = $2`（$2 是同一个日期字面量）是个无操作更新
 // （值没变），但它**确实**拿行锁。
 // 「无操作更新」这个手法要写清楚，否则后来的人会以为是脏写法。
 func lockChallengeStateOrdered(ctx context.Context, tx txType, userIDs []int64) error {
+	// ⚠️ 第 98 轮：`challenge_date` 由 **Go** 决定，与每日任务 / 签到 / 商城同一个口径。
+	//
+	// 原来五处都用 `CURRENT_DATE`，由 **PG 会话时区**折算。
+	// 防线挑战内部因此自洽，但它与**每日任务**的日界不同 —— 而两者
+	// 语义上必须对齐：「今日通关 3 关」这个任务与「今日挑战次数上限」
+	// 说的是同一个「今日」。
+	//
+	// 两者不同时刻翻页时（Go 本地 ≠ PG 会话时区，容器里 `time.Local` 常为 UTC）：
+	// 玩家在凌晨到早上做的通关，任务在 08:00 就重置了，
+	// 而挑战次数要等到北京 00:00 才重置 —— 于是「今日」有两个定义。
+	//
+	// 传**日期字面量**（与第 89 轮签到、第 97 轮商城同一手法）。
+	today := periodStart(time.Now(), "daily").Format("2006-01-02")
 	ids := dedupPositive(userIDs)
 	if len(ids) == 0 {
 		return nil
@@ -162,9 +175,9 @@ func lockChallengeStateOrdered(ctx context.Context, tx txType, userIDs []int64) 
 		// 无操作更新只为拿行锁 —— 见函数头的说明。
 		if _, err := tx.Exec(ctx, `
 			INSERT INTO user_daily_challenges (user_id, challenge_date, attempts, stolen_times)
-			VALUES ($1, CURRENT_DATE, 0, 0)
+			VALUES ($1, $2, 0, 0)
 			ON CONFLICT (user_id, challenge_date)
-			DO UPDATE SET challenge_date = CURRENT_DATE`, id); err != nil {
+			DO UPDATE SET challenge_date = $2`, id, today); err != nil {
 			return fmt.Errorf("lock challenge counters of %d: %w", id, err)
 		}
 	}
@@ -361,11 +374,24 @@ func (s *Service) ListDefenses(ctx context.Context, userID int64) (mine *Defense
 }
 
 func (s *Service) dailyChallengeCounters(ctx context.Context, userID int64) (attempts, stolen int, err error) {
+	// ⚠️ 第 98 轮：`challenge_date` 由 **Go** 决定，与每日任务 / 签到 / 商城同一个口径。
+	//
+	// 原来五处都用 `CURRENT_DATE`，由 **PG 会话时区**折算。
+	// 防线挑战内部因此自洽，但它与**每日任务**的日界不同 —— 而两者
+	// 语义上必须对齐：「今日通关 3 关」这个任务与「今日挑战次数上限」
+	// 说的是同一个「今日」。
+	//
+	// 两者不同时刻翻页时（Go 本地 ≠ PG 会话时区，容器里 `time.Local` 常为 UTC）：
+	// 玩家在凌晨到早上做的通关，任务在 08:00 就重置了，
+	// 而挑战次数要等到北京 00:00 才重置 —— 于是「今日」有两个定义。
+	//
+	// 传**日期字面量**（与第 89 轮签到、第 97 轮商城同一手法）。
+	today := periodStart(time.Now(), "daily").Format("2006-01-02")
 	err = s.pool.QueryRow(ctx, `
 		INSERT INTO user_daily_challenges (user_id, challenge_date, attempts, stolen_times)
-		VALUES ($1, CURRENT_DATE, 0, 0)
-		ON CONFLICT (user_id, challenge_date) DO UPDATE SET challenge_date = CURRENT_DATE
-		RETURNING attempts, stolen_times`, userID).Scan(&attempts, &stolen)
+		VALUES ($1, $2, 0, 0)
+		ON CONFLICT (user_id, challenge_date) DO UPDATE SET challenge_date = $2
+		RETURNING attempts, stolen_times`, userID, today).Scan(&attempts, &stolen)
 	return attempts, stolen, err
 }
 
@@ -650,6 +676,19 @@ type ChallengeResult struct {
 //  2. 对方每日被偷次数上限（2）与 24h 护盾
 //  3. 窃取比例固定 10%，且受全局掉落封顶
 func (s *Service) ChallengeDefense(ctx context.Context, userID, defenseID int64, in ChallengeInput) (ChallengeResult, error) {
+	// ⚠️ 第 98 轮：`challenge_date` 由 **Go** 决定，与每日任务 / 签到 / 商城同一个口径。
+	//
+	// 原来五处都用 `CURRENT_DATE`，由 **PG 会话时区**折算。
+	// 防线挑战内部因此自洽，但它与**每日任务**的日界不同 —— 而两者
+	// 语义上必须对齐：「今日通关 3 关」这个任务与「今日挑战次数上限」
+	// 说的是同一个「今日」。
+	//
+	// 两者不同时刻翻页时（Go 本地 ≠ PG 会话时区，容器里 `time.Local` 常为 UTC）：
+	// 玩家在凌晨到早上做的通关，任务在 08:00 就重置了，
+	// 而挑战次数要等到北京 00:00 才重置 —— 于是「今日」有两个定义。
+	//
+	// 传**日期字面量**（与第 89 轮签到、第 97 轮商城同一手法）。
+	today := periodStart(time.Now(), "daily").Format("2006-01-02")
 	// ⚠️ 第 69 轮：上报字段边界校验放在**事务之外**。
 	//
 	// 理由有两条，都不是风格问题：
@@ -785,7 +824,7 @@ func (s *Service) ChallengeDefense(ctx context.Context, userID, defenseID int64,
 			// 记录被偷
 			if _, err := tx.Exec(ctx, `
 				UPDATE user_daily_challenges SET stolen_times = stolen_times + 1
-				 WHERE user_id = $1 AND challenge_date = CURRENT_DATE`, ownerID); err != nil {
+				 WHERE user_id = $1 AND challenge_date = $2`, ownerID, today); err != nil {
 				return err
 			}
 		} else if !in.Won {
@@ -809,7 +848,7 @@ func (s *Service) ChallengeDefense(ctx context.Context, userID, defenseID int64,
 		}
 		if _, err := tx.Exec(ctx, `
 			UPDATE user_daily_challenges SET attempts = attempts + 1
-			 WHERE user_id = $1 AND challenge_date = CURRENT_DATE`, userID); err != nil {
+			 WHERE user_id = $1 AND challenge_date = $2`, userID, today); err != nil {
 			return err
 		}
 
@@ -823,11 +862,14 @@ func (s *Service) ChallengeDefense(ctx context.Context, userID, defenseID int64,
 }
 
 func (s *Service) dailyChallengeCountersTx(ctx context.Context, tx txType, userID int64) (attempts, stolen int, err error) {
+	// ⚠️ 第 98 轮：`challenge_date` 由 **Go** 决定，与每日任务 / 签到 / 商城同一个口径。
+	// 详见 dailyChallengeCounters 上方的说明。
+	today := periodStart(time.Now(), "daily").Format("2006-01-02")
 	err = tx.QueryRow(ctx, `
 		INSERT INTO user_daily_challenges (user_id, challenge_date, attempts, stolen_times)
-		VALUES ($1, CURRENT_DATE, 0, 0)
-		ON CONFLICT (user_id, challenge_date) DO UPDATE SET challenge_date = CURRENT_DATE
-		RETURNING attempts, stolen_times`, userID).Scan(&attempts, &stolen)
+		VALUES ($1, $2, 0, 0)
+		ON CONFLICT (user_id, challenge_date) DO UPDATE SET challenge_date = $2
+		RETURNING attempts, stolen_times`, userID, today).Scan(&attempts, &stolen)
 	return attempts, stolen, err
 }
 

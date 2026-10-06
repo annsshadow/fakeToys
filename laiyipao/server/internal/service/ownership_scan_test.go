@@ -115,7 +115,7 @@ var ownershipExemptions = map[string]string{
 		"这不是「第 75 轮那个洞」的同类：那里泄露的是 build_snapshot + seed。\n" +
 		"⚠️ 键是 SQL **字面量的起始行**（114），不是 FROM 所在行（116）—— " +
 		"多行 raw string 里两者差 2 行。",
-	"progression.go:674": "「挑战别人的防线」本身就是玩法：读 `defenses WHERE id = $1` " +
+	"progression.go:713": "「挑战别人的防线」本身就是玩法：读 `defenses WHERE id = $1` " +
 		"是为了拿到 owner_id 做后续判定。归属检查在**同一事务内**紧接着做：" +
 		"`if ownerID == userID { return ErrForbidden }`。" +
 		"所以这里不按 owner_id 过滤是正确的 —— 过滤了反而挑战不了任何人。",
