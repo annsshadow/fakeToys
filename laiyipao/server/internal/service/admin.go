@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -116,10 +117,26 @@ func (s *Service) AdminMe(ctx context.Context, adminID int64) (AdminUser, error)
 }
 
 // Audit 记录后台操作。
+//
+// ⚠️ 第 125 轮：审计记录不得「以省略撒谎」。
+// detail 序列化失败时，旧代码静默把 detail 换成 `{}` ——
+// 那行审计日志看起来与「这个操作本来就没有明细」**完全相同**，
+// 运营/调查者后读审计轨迹时被误导：字段没了，但没有任何痕迹。
+// 现在失败时 detail 诚实记 `{"detail_error": "..."}`：
+// 行本身即证据——明细丢了、为什么丢，都写在里面。
 func (s *Service) Audit(ctx context.Context, adminID int64, action, target string, detail any) {
 	raw, err := marshalJSON(detail)
 	if err != nil {
-		raw = []byte(`{}`)
+		// 兜底字面量保证 detail 恒为合法 JSONB
+		raw = []byte(`{"detail_error":"json marshal failed"}`)
+		if m, merr := json.Marshal(map[string]string{
+			"detail_error": "json marshal failed: " + err.Error(),
+		}); merr == nil {
+			raw = m
+		}
+		// 服务端日志留痕（与全库 stdout 日志惯例一致）
+		fmt.Printf("[audit-failed] admin=%d action=%s target=%s detail 丢失：%v\n",
+			adminID, action, target, err)
 	}
 	var username string
 	_ = s.pool.QueryRow(ctx, `SELECT username FROM admin_users WHERE id = $1`, adminID).Scan(&username)
