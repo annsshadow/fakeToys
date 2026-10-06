@@ -17,10 +17,13 @@ type Config struct {
 	Env      string // dev / prod
 	LogLevel string
 
-	DatabaseURL      string
-	DBMaxConns       int32
-	DBMinConns       int32
-	DBConnLifetime   time.Duration
+	DatabaseURL    string
+	DBMaxConns     int32
+	DBMinConns     int32
+	DBConnLifetime time.Duration
+	// DBTimeZone 是连接会话时区（第 90 轮新增）。
+	// 详见 Config.DBTimeZone 的注释。
+	DBTimeZone       string
 	MigrationsOnBoot bool
 
 	JWTSecret  string
@@ -102,6 +105,7 @@ func Load() Config {
 		DBMaxConns:       envInt32("DB_MAX_CONNS", 10),
 		DBMinConns:       envInt32("DB_MIN_CONNS", 2),
 		DBConnLifetime:   envDuration("DB_CONN_LIFETIME", time.Hour),
+		DBTimeZone:       env("DB_TIMEZONE", "Asia/Shanghai"),
 		MigrationsOnBoot: envBool("MIGRATIONS_ON_BOOT", true),
 
 		JWTSecret:  env("JWT_SECRET", "dev-only-insecure-secret-change-me"),
