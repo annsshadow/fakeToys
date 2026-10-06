@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { stripTsComments } from '../testkit/stripComments'
 
 /**
  * `amplifyPct` 的生效**不得被 `statusDurationMs` 把门**（第 88 轮）。
@@ -123,39 +124,6 @@ describe('无反应时不得查反应表（第 88 轮）', () => {
   })
 })
 
-/**
- * stripTsComments 剥掉行注释与块注释。
- *
- * ⚠️ **这条是变异测试逼出来的，不是预防性设计。**
- *
- * 我第一版的 `hitEnemyBody()` 直接扫原文，于是「把 amplify 挪回
- * statusDurationMs 里面」这个变异**通过了守卫**——
- * 而它本该是红的。
- *
- * 原因：修复时我在那段代码上方写了一大段说明注释，
- * 注释里有「修复前的写法」的示例：
- *
- * ```ts
- * //    if (res.statusDurationMs > 0) {
- * //      if (spec.amplifyPct > 0) {
- * //        e.amplifyPermille = BigInt(spec.amplifyPct)
- * ```
- *
- * `findIndex` 找到的**第一处** `e.amplifyPermille =` 在注释里，
- * 于是判据在注释块内部来回走，从来没看见真正的代码。
- *
- * 这与第 83 轮撞的是**同一面墙**：
- * **文本扫描分不清「声明」与「使用」，也分不清注释与代码。**
- * 那次我加了 `stripTsComments`（在 `reaction_descr.test.ts` 里），
- * 这次忘了在新文件里也加 —— 说明**「剥注释」应该是共用工具而不是各写一份**。
- *
- * ⚠️ 代价取舍（与第 83 轮同一条理由）：这是**文本级**剥离，
- * 对字符串字面量里的 `//` 会误伤。那种写法本身就可疑，
- * 而误伤的代价是「有人要来解释这条守卫为什么红了」。
- */
-function stripTsComments(src: string): string {
-  return src.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/^\s*\/\/.*$/gm, ' ')
-}
 
 /** engine.ts 里 `hitEnemy` 方法的源码区间（**已剥注释**）。 */
 function hitEnemyBody(): string {
