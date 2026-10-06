@@ -1070,7 +1070,7 @@ async fn mobile_bbs_topic_reply_roundtrip_live() {
     }
     let app = crate::router(test_pool());
 
-    // 发主题（topic/create 无会话门禁；author/section 由后端缺省回退）
+    // 发主题（轮7 起 creator 以会话登录人为事实源；author/section 由后端缺省回退）
     let (st, created) = send_with_session(
         app.clone(),
         Method::POST,
@@ -1081,7 +1081,7 @@ async fn mobile_bbs_topic_reply_roundtrip_live() {
             "content": "roundtrip body",
             "creator": "u-roundtrip-author"
         })),
-        None,
+        Some(make_session("u-roundtrip-author", "rt")),
     )
     .await;
     assert_eq!(st, StatusCode::OK, "topic/create 应 200: {created}");
