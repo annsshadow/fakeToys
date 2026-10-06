@@ -359,12 +359,27 @@ type ShopItemView struct {
 
 // LoadShop 返回商城，附带玩家今日已购次数。
 func (s *Service) LoadShop(ctx context.Context, userID int64) ([]ShopItemView, error) {
+	// ⚠️ 第 97 轮：`purchase_date` 改由 **Go** 决定，与任务/签到同一个口径。
+	//
+	// 原来三处都用 `CURRENT_DATE`，由 **PG 会话时区**折算 ——
+	// 商城**内部**因此是自洽的，但它与每日任务的日界**不是同一套**：
+	//
+	//	每日任务：Go 的 `periodStart(now, "daily")`（用 `time.Local`）
+	//	商城限购：PG 会话时区
+	//
+	// 第 90 轮把 PG 会话时区钉成 `Asia/Shanghai`，但**没有钉 Go 那一侧** ——
+	// 容器里 `time.Local` 常常是 UTC。
+	// 两者不一致时，商城的「今日」与任务的「今日」在不同时刻翻页：
+	// 玩家早上 8 点看到任务已刷新，商城却还显示昨天的限购次数。
+	//
+	// 传**日期字面量**（与第 89 轮签到同一手法）让日界只由一处决定。
+	today := periodStart(time.Now(), "daily").Format("2006-01-02")
 	rows, err := s.pool.Query(ctx, `
 		SELECT si.id, si.code, si.name, si.category, si.price, si.payload, si.limit_per_day,
 		       (SELECT COUNT(*) FROM user_purchases up
 		         WHERE up.user_id = $1 AND up.item_id = si.id
-		           AND up.purchase_date = CURRENT_DATE)
-		FROM shop_items si WHERE si.enabled ORDER BY si.sort_order`, userID)
+		           AND up.purchase_date = $2)
+		FROM shop_items si WHERE si.enabled ORDER BY si.sort_order`, userID, today)
 	if err != nil {
 		return nil, fmt.Errorf("load shop: %w", err)
 	}
@@ -386,6 +401,8 @@ func (s *Service) LoadShop(ctx context.Context, userID int64) ([]ShopItemView, e
 
 // Buy 购买商城商品。
 func (s *Service) Buy(ctx context.Context, userID, itemID int64) (map[string]int, error) {
+	// 第 97 轮：与 LoadShop 同一个口径（Go 的日期字面量），见那里的说明。
+	today := periodStart(time.Now(), "daily").Format("2006-01-02")
 	var out map[string]int
 	err := s.DB.Tx(ctx, func(tx pgx.Tx) error {
 		var priceRaw, payloadRaw []byte
@@ -422,8 +439,8 @@ func (s *Service) Buy(ctx context.Context, userID, itemID int64) (map[string]int
 			var bought int
 			if err := tx.QueryRow(ctx,
 				`SELECT COUNT(*) FROM user_purchases
-				 WHERE user_id = $1 AND item_id = $2 AND purchase_date = CURRENT_DATE`,
-				userID, itemID).Scan(&bought); err != nil {
+				 WHERE user_id = $1 AND item_id = $2 AND purchase_date = $3`,
+				userID, itemID, today).Scan(&bought); err != nil {
 				return err
 			}
 			if bought >= limit {
@@ -460,8 +477,8 @@ func (s *Service) Buy(ctx context.Context, userID, itemID int64) (map[string]int
 			return err
 		}
 		if _, err := tx.Exec(ctx,
-			`INSERT INTO user_purchases (user_id, item_id, purchase_date, price) VALUES ($1,$2,CURRENT_DATE,$3)`,
-			userID, itemID, priceRaw); err != nil {
+			`INSERT INTO user_purchases (user_id, item_id, purchase_date, price) VALUES ($1,$2,$3,$4)`,
+			userID, itemID, today, priceRaw); err != nil {
 			return err
 		}
 		out = payload
