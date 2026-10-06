@@ -18,7 +18,7 @@ interface ConfigResp {
   // ⚠️ 字段名必须与 Go 侧 json tag 逐字一致（snake_case）。
   // 这两行曾经写成 PascalCase，而服务端一直下发 snake_case，
   // 于是反应表整列为空、章节下拉框没有选项 —— 且不报任何错。
-  reactions: Array<{ key: string; name: string; base_coef: number; attack_weight_pct: number; status_duration_ms: number; aoe_radius: number; dispel_shield: boolean; amplify_pct: number }>
+  reactions: Array<{ key: string; name: string; base_coef: number; attack_weight_pct: number; status_duration_ms: number; aoe_radius: number; dispel_shield: boolean; amplify_pct: number; descr: string }>
   chapters: Array<{ id: number; name: string; start_level: number; end_level: number; terrain_kind: string; boss_enemy_id: number }>
   rating_weights: Record<string, number>
   // ⚠️ 字段名与 Go 的 json tag 一律 snake_case（PascalCase 那些是笔误，
@@ -204,11 +204,36 @@ onMounted(load)
               <span v-else class="muted">—</span>
             </template>
           </el-table-column>
+          <!--
+            ⚠️ 第 87 轮：`aoe_radius` 这一列**恒为 0**。
+
+            溅射从未被实现 —— `resolveHit` 从不读它，它唯一的消费者
+            是 miniapp `render/canvas.ts` 的屏幕震动（已在第 83 轮删掉，
+            因为那是在视觉上谎称发生了爆炸）。
+
+            第 83 轮把所有值置 0 之后，这一列对 7 条反应全部显示「单体」，
+            那正是当前的真实现状。
+
+            保留这一列而不是删掉：删列会让「这里曾经有过溅射」这件事
+            从界面上消失，而 `descr` 一栏也会跟着少一句解释。
+            宽度之外的说明文字放在下面的 note 里。
+          -->
           <el-table-column label="溅射半径" width="100">
             <template #default="{ row }">{{ row.aoe_radius || '单体' }}</template>
           </el-table-column>
+          <!-- 第 87 轮新增：说明列。
+               敌人 / 技能 / 复合技能三张表都有这一列，只有反应表没有 ——
+               于是 `descr` 字段（服务端 `ReactionSpec.Descr` 的注释写着
+               「运营后台的玩法文档站直接展示它」）在这张表上被丢掉了。
+               第 83 轮修正的 5 条错误文案因此**一个都看不到**。 -->
+          <el-table-column prop="descr" label="说明" min-width="150" />
         </el-table>
         <p class="note">
+          「溅射半径」一栏全部显示「单体」：<b>溅射机制从未被实现</b>，
+          `aoe_radius` 字段是保留在公开契约里的历史值，当前恒为 0。
+          五条反应（蒸汽爆发 / 过热 / 燃烧云 / 腐蚀扩散 / 破甲击退）目前
+          **只有反应伤害**，没有特殊效果 —— 具体缺什么见 README 已知边界第 19 条。
+          <br />
           「攻击力权重」就是这一条反应里由面板攻击力贡献的比例上限。全部 ≤30% ——
           这是保证低养成玩家能靠技巧翻盘的结构性约束，不是可以随数值膨胀绕过的软性限制。
         </p>
