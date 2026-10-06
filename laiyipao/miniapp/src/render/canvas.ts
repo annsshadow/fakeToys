@@ -97,7 +97,19 @@ export class BattleRenderer {
             x: Number(e.x) / 1000,
             y: Number(e.y) / 1000,
           })
-          if (spec.aoeRadius > 0) this.shake = Math.max(this.shake, 4)
+          // ⚠️ 第 83 轮：删掉 `if (spec.aoeRadius > 0) this.shake = 4`。
+          //
+          // 那是 `aoeRadius` 在整个仓库里**唯一**的消费者 ——
+          // 而它做的事是「屏幕震动」。
+          //
+          // 问题不在于震动本身，而在于它是一个**假信号**：
+          // 玩家从震动推断「这里炸到了」，而实际上溅射从未被实现，
+          // 一个敌人都没被打到。于是这条反应「看起来生效了但其实没有」，
+          // 比完全没有反馈更让人困惑。
+          //
+          // 同理 `spec` 现在只用于 `spec.name`（弹字），
+          // 所以这个 case 里不再需要它。
+          void spec
           break
         }
         case 'kill':
