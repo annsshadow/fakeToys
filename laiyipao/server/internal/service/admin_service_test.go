@@ -704,7 +704,7 @@ func TestAdminRedeemCodes(t *testing.T) {
 	// 所以管理端"自动 id"创建兑换码现在能成功（此前 id 无默认值必然 500）。
 	// 这条钉住修复后的行为：创建成功、能被列表读回、且落库字段正确。
 	code := fmt.Sprintf("SVCBUG%d", time.Now().UnixNano()%1_000_000)
-	created, err := ts.AdminCreateRedeemCode(ctx, code, map[string]int{"coin": 1}, 3)
+	created, err := ts.AdminCreateRedeemCode(ctx, code, map[string]int{"coin": 1}, 3, nil)
 	if err != nil {
 		t.Fatalf("创建兑换码失败（迁移 00009 后应成功）：%v", err)
 	}
@@ -733,6 +733,39 @@ func TestAdminRedeemCodes(t *testing.T) {
 	}
 	if !found {
 		t.Error("新建兑换码应出现在列表里")
+	}
+
+	//
+	// ⚠️ 第 110 轮：过期时间必须**真的进库**。
+	// 修前 handler 解析了 expires_at 却从不传到这里，
+	// 运营在 UI 设的过期时间被静默丢弃（兑换码永久有效）。
+	// 判据：nil → 库里 IS NULL；非 nil → 库里 == 传入值。
+	var wasNull bool
+	_ = ts.pool.QueryRow(ctx,
+		`SELECT expires_at IS NULL FROM redeem_codes WHERE code = $1`, code).
+		Scan(&wasNull)
+	if !wasNull {
+		t.Errorf("expiresAt=nil 应落 NULL，实际非 NULL")
+	}
+
+	expiredCode := code + "-EXP"
+	// timestamptz 是微秒精度：带纳秒的 time.Time 写库再读回必然 != 原值，
+	// 断言前必须截到微秒（同一族「观测手段本身有前提」的坑）。
+	exp := time.Now().UTC().Truncate(time.Microsecond).Add(24 * time.Hour)
+	if _, err := ts.AdminCreateRedeemCode(ctx, expiredCode, map[string]int{"coin": 1}, 1, &exp); err != nil {
+		t.Fatalf("带过期时间创建失败：%v", err)
+	}
+	t.Cleanup(func() {
+		_, _ = ts.pool.Exec(ctx, `DELETE FROM redeem_codes WHERE code = $1`, expiredCode)
+	})
+	var got time.Time
+	if err := ts.pool.QueryRow(ctx,
+		`SELECT expires_at FROM redeem_codes WHERE code = $1`, expiredCode).
+		Scan(&got); err != nil {
+		t.Fatalf("读回过期时间失败：%v", err)
+	}
+	if !got.Equal(exp) {
+		t.Errorf("expires_at 应 == 传入值 %s，落库 %s", exp.Format(time.RFC3339), got.Format(time.RFC3339))
 	}
 }
 
