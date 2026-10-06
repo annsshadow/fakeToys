@@ -519,7 +519,7 @@ func TestAdminListLevelsAndWaves(t *testing.T) {
 	ts := openTestService(t)
 	ctx := context.Background()
 
-	items, total, err := ts.AdminListLevels(ctx)
+	items, total, err := ts.AdminListLevels(ctx, 0, "")
 	if err != nil || total != int64(domain.TotalLevels) {
 		t.Fatalf("关卡列表应 %d 关：%d, %v", domain.TotalLevels, total, err)
 	}
@@ -537,7 +537,7 @@ func TestAdminListLevelsAndWaves(t *testing.T) {
 	}
 
 	broken := openBrokenService(t)
-	if _, _, err := broken.AdminListLevels(ctx); err == nil {
+	if _, _, err := broken.AdminListLevels(ctx, 0, ""); err == nil {
 		t.Error("故障态应报错")
 	}
 	if _, err := broken.AdminLevelWaves(ctx, 1); err == nil {
