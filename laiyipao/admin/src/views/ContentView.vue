@@ -8,6 +8,7 @@ import {
   createRedeemCode,
   fetchAuditLogs,
 } from '@/api'
+import { fmtTime } from '@/utils/format'
 
 const activeTab = ref('announcements')
 const loading = ref(false)
@@ -35,11 +36,6 @@ function str(o: Record<string, unknown>, k: string): string {
 function num(o: Record<string, unknown>, k: string): number {
   const v = Number(o[k] ?? 0)
   return Number.isFinite(v) ? v : 0
-}
-
-function fmtTime(s: string): string {
-  if (!s) return '—'
-  return s.replace('T', ' ').slice(0, 19)
 }
 
 async function loadAll() {

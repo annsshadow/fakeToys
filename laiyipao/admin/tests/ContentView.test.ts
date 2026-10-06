@@ -144,7 +144,15 @@ describe('ContentView 列表渲染', () => {
     expect(vm.num({ a: null }, 'a')).toBe(0)
     expect(vm.num({ a: '7' }, 'a')).toBe(7) // 数字字符串被解析
     expect(vm.fmtTime('')).toBe('—')
-    expect(vm.fmtTime('2026-01-02T03:04:05Z')).toBe('2026-01-02 03:04:05')
+    // 第 124 轮：fmtTime 渲染成**查看者本地时区**（服务端下发 UTC）。
+    // 判据与生产同一算法（Date + 本地分量），与机器时区无关。
+    const iso = '2026-01-02T03:04:05Z'
+    const d = new Date(iso)
+    const p = (n: number) => String(n).padStart(2, '0')
+    const localExpected = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`
+    expect(vm.fmtTime(iso)).toBe(localExpected)
+    // 非法输入退回纯展示，不崩
+    expect(vm.fmtTime('not-a-time')).toContain('not-a-time')
     wrapper.unmount()
   })
 

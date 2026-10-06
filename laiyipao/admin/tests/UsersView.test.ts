@@ -89,9 +89,13 @@ describe('UsersView 列表渲染', () => {
     expect(rows[1].text()).not.toContain('需核查')
     expect(rows[2].text()).not.toContain('需核查')
     expect(rows[3].text()).not.toContain('需核查')
-    // 空时间显示 —，正常时间 T 换空格并截断秒
+    // 空时间显示 —；正常时间渲染成查看者本地时区（第 124 轮：服务端下发 UTC）
     expect(text).toContain('—')
-    expect(text).toContain('2026-01-02 03:04:05')
+    const d = new Date('2026-01-02T03:04:05Z')
+    const p = (n: number) => String(n).padStart(2, '0')
+    expect(text).toContain(
+      `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`,
+    )
     wrapper.unmount()
   })
 

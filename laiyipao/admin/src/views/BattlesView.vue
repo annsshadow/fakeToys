@@ -3,6 +3,7 @@ import { onMounted, ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { fetchBattles, fetchBattleDetail, verifyBattle, type AdminBattle, type VerifyResult } from '@/api'
 import { fetchReactionLabels, labelOfReaction, type ReactionLabels } from '@/reactions'
+import { fmtTime } from '@/utils/format'
 
 const loading = ref(false)
 const battles = ref<AdminBattle[]>([])
@@ -113,11 +114,6 @@ async function submitVerify() {
   } finally {
     verifying.value = false
   }
-}
-
-function fmtTime(s: string): string {
-  if (!s) return '—'
-  return s.replace('T', ' ').slice(0, 19)
 }
 
 function fmtDur(ms: number): string {

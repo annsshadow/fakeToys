@@ -2,6 +2,7 @@
 import { onMounted, ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { fetchDefenses } from '@/api'
+import { fmtTime } from '@/utils/format'
 
 const loading = ref(false)
 const rows = ref<Array<Record<string, unknown>>>([])
@@ -52,11 +53,6 @@ function rateTone(r: Record<string, unknown>): 'success' | 'info' | 'warning' | 
   if (rate > 0.98 || rate < 0.02) return 'danger'
   if (rate > 0.75 || rate < 0.25) return 'warning'
   return 'success'
-}
-
-function fmtTime(s: string): string {
-  if (!s) return '—'
-  return s.replace('T', ' ').slice(0, 19)
 }
 
 async function load() {

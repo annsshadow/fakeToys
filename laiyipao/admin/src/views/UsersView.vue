@@ -2,6 +2,7 @@
 import { onMounted, ref, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { fetchUsers, banUser, unbanUser, grantUser, type AdminUser } from '@/api'
+import { fmtTime } from '@/utils/format'
 
 const loading = ref(false)
 const users = ref<AdminUser[]>([])
@@ -144,11 +145,6 @@ async function onGrant(u: AdminUser) {
   } catch {
     /* 取消 */
   }
-}
-
-function fmtTime(s: string): string {
-  if (!s) return '—'
-  return s.replace('T', ' ').slice(0, 19)
 }
 
 onMounted(load)

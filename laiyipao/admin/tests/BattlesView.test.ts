@@ -98,7 +98,12 @@ describe('BattlesView 列表渲染', () => {
     expect(rows[0].text()).toContain('★★★')
     expect(rows[0].text()).toContain('守恒')
     expect(rows[0].text()).toContain('12.3s')
-    expect(rows[0].text()).toContain('2026-01-02 03:04:05')
+    // 第 124 轮：时间列渲染成查看者本地时区（服务端下发 UTC 的 2026-01-02T03:04:05Z）
+    const d = new Date('2026-01-02T03:04:05Z')
+    const p = (n: number) => String(n).padStart(2, '0')
+    expect(rows[0].text()).toContain(
+      `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`,
+    )
     expect(rows[1].text()).toContain('负')
     expect(rows[1].text()).not.toContain('★')
     expect(rows[1].text()).toContain('无接触')
