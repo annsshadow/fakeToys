@@ -17,7 +17,7 @@ func (s *Service) ComputeRatingFor(userID int64, build map[string]any) domain.Bu
 }
 
 func (s *Service) ComputePowerFor(userID int64, build map[string]any) int64 {
-	return s.computePower(s.ctxBackground(), userID, build)
+	return computePower(build)
 }
 
 func (s *Service) ctxBackground() context.Context { return context.Background() }
@@ -515,7 +515,7 @@ func (s *Service) SaveDefense(ctx context.Context, userID int64, in SaveDefenseI
 	elements := buildElements(build)
 	mastery, _ := build["mastery_nodes"].([]int)
 	rating := s.computeRating(ctx, userID, build)
-	power := s.computePower(ctx, userID, build)
+	power := computePower(build)
 
 	snapshot := map[string]any{
 		"skills":        in.Skills,

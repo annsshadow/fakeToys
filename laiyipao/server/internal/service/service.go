@@ -624,7 +624,20 @@ type ChapterInfo struct {
 // `TestConfigVolumeIsKnown` 守着。
 //
 // 传输侧由 `middleware/compress` 兜住：gzip 后 23,964 字节（14.3%）。
-func (s *Service) LoadGameConfig(ctx context.Context) GameConfig {
+// LoadGameConfig 组装下发给客户端的静态配置。
+//
+// ⚠️ 第 102 轮移除了 `ctx` 参数 —— 它从未被使用。
+//
+// 本函数是**纯静态数据组装**（关卡表 / 敌人表 / 技能表 / 分数规则 …），
+// **一次库都不查**，所以传 ctx 没有意义。
+//
+// 与 `computeRating`（确实读 `user_progress`）的对照见 `computePower` 的注释。
+// 那三个函数的签名曾经长得一模一样，而只有 `computeRating` 真的用 ctx ——
+// 后来的人会照着它以为传进去的 ctx 在这里生效。
+//
+// 将来若真的要加 DB 缓存，**那时再加回来** ——
+// 现在加是投机，而投机出来的参数没人会记得它是干什么的。
+func (s *Service) LoadGameConfig() GameConfig {
 	cfg := GameConfig{
 		Levels: domain.GenerateAllLevels(),
 		// ⚠️ 分数规则必须下发，不能让客户端自己写死
