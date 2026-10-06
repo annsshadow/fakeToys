@@ -268,7 +268,27 @@ func (s *Service) ResolveUser(ctx context.Context, token string) (int64, error) 
 		return 0, fmt.Errorf("%w: 令牌类型不匹配", ErrUnauthorized)
 	}
 	var status int
-	if err := s.pool.QueryRow(context.Background(),
+	//
+	// ⚠️ 第 101 轮：这里原本是 `context.Background()` —— **丢弃了调用方的 ctx**。
+	//
+	// # 后果
+	//
+	// 1. **客户端断开不会取消这条查询。** fiber 在客户端断开后取消请求 ctx，
+	//    而这里换成了 Background，于是 pgx 会**把查询跑完**。
+	//    一个慢查询 + 反复断开 = 连接池被占满，而每个占用者都不会超时退出。
+	// 2. **任何超时都不生效。** `ctxBackground()` 那个辅助函数的存在
+	//    说明这里**本来**是想传 ctx 的（HTTP 层包装成 HTTP 层用的）。
+	// 3. `ctx` 参数因此**完全未被使用** —— Go 不报「未使用的参数」，
+	//    所以它一直静默地错着。
+	//
+	// # 为什么单测抓不到
+	//
+	// `account_service_test.go` 等测试直接传 `context.Background()`，
+	// 于是「传进去的 ctx 被丢掉」与「正常传递」**行为完全一致**。
+	//
+	// 判据必须构造一个**带 Deadline 且已过期**的 ctx：
+	// 若实现忽略它，查询会成功；正确传递则必然返回「context deadline exceeded」。
+	if err := s.pool.QueryRow(ctx,
 		`SELECT status FROM users WHERE id = $1`, claims.Sub).Scan(&status); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return 0, fmt.Errorf("%w: 用户不存在", ErrUnauthorized)
