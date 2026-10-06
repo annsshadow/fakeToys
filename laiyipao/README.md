@@ -31,7 +31,7 @@ cd laiyipao/server
 export DATABASE_URL="postgres://postgres@127.0.0.1:5432/laiyipao?sslmode=disable"
 export BOOTSTRAP_ADMIN_PASS="admin12345"   # 少于 10 位会被拒绝引导
 
-go run ./cmd/migrate   # 建表（12 个 goose 迁移，48 张业务表 + 93 索引）
+go run ./cmd/migrate   # 建表（13 个 goose 迁移，48 张业务表 + 93 索引）
 go run ./cmd/seed      # 写入游戏内容（首次必须执行）
 go run ./cmd/api       # 监听 :8080
 ```
@@ -1057,6 +1057,24 @@ cd admin && npm run build && npm run size:check  # 超预算则退出码 1
     **仍然未做**：`battle_records` 里除战报外的玩家数据没有归属校验 ——
     例如「我的战报列表」以外的分页/统计接口若存在，按 `user_id` 过滤的
     完整性**没有结构性守卫**，新增接口时可能再漏一次。
+
+21. **成就可以每天重复领取** —— **已在第 93 轮修复（含迁移 00013）**。
+    `user_tasks` 按 `(user_id, task_id, task_date)` 分行，
+    而 `periodStart(now, "achievement")` 原先落到「今天零点」，
+    于是成就也成了每天一行新记录、`claimed_at` 归零：
+    今天领一次，明天再玩一次就能再领一次。
+
+    修复：成就改用固定哨兵日期 `1970-01-01`，
+    一个用户对每条成就永远只有一行，
+    `GREATEST` 累计成终身进度、`claimed_at` 永久生效。
+
+    迁移 00013 把历史行合并进哨兵行（`progress` 取 MAX、
+    `claimed_at` 取 MIN —— 「曾经领过」是既成事实，不该被改写）。
+
+    ⚠️ 更正：第 92 轮的探针结论写的是「跨日期领取被拒」，
+    **那是错的** —— 探针手工插了「明天」的行，
+    而 `ClaimTask` 内部自己算 `periodStart(time.Now(), scope)`、不接受传入日期，
+    于是读到的是**今天**已领取的那一行。**探针没有制造出「明天」。**
 
 20. **体力是被动回复的，但回复量被读取频率吃掉（第 85/86 轮）** ——
     两处都要说清，因为**第 85 轮我把第一处的结论写错了**。
