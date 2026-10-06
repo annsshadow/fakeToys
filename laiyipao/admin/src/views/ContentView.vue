@@ -114,6 +114,20 @@ function rewardText(v: unknown): string {
     .join(' · ')
 }
 
+/** 审计日志的 detail 是 JSON 对象（如 {currency, amount} / 技能 patch）。
+ *  修前表格用 prop="reason"（服务端根本没有这列）→ 恒空白。
+ *  现在读 detail 并渲染成可读文本。 */
+function detailText(v: unknown): string {
+  if (v === null || v === undefined) return '—'
+  if (typeof v === 'string') return v
+  try {
+    const s = JSON.stringify(v)
+    return s.length > 80 ? s.slice(0, 80) + '…' : s
+  } catch {
+    return String(v)
+  }
+}
+
 onMounted(loadAll)
 </script>
 
@@ -211,11 +225,18 @@ onMounted(loadAll)
         <el-card shadow="never">
           <el-table :data="logs" size="small" stripe>
             <el-table-column prop="id" label="ID" width="55" />
-            <el-table-column prop="admin_username" label="管理员" width="110" />
+            <el-table-column prop="username" label="管理员" width="110" />
             <el-table-column prop="action" label="操作" width="150" />
-            <el-table-column prop="target_type" label="对象类型" width="110" />
-            <el-table-column prop="target_id" label="对象 ID" width="90" />
-            <el-table-column prop="reason" label="原因" min-width="180" />
+            <!--
+              第 121 轮：旧列 admin_username / target_type / target_id / reason
+              在服务端响应（AdminListAuditLogs）里**都不存在**——
+              服务端字段是 username / action / target / detail。
+              「对象类型」没有独立列（action 已含语义），合并成「对象」= target。
+            -->
+            <el-table-column prop="target" label="对象" width="130" />
+            <el-table-column label="详情" min-width="180">
+              <template #default="{ row }">{{ detailText(row.detail) }}</template>
+            </el-table-column>
             <el-table-column label="时间" width="155">
               <template #default="{ row }">{{ fmtTime(str(row, 'created_at')) }}</template>
             </el-table-column>
