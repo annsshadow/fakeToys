@@ -308,4 +308,13 @@ func TestEnvHelpersWhitespace(t *testing.T) {
 	if got := envInt32("CFG_TEST_INT", 1); got != 7 {
 		t.Errorf("envInt32 应转发 envInt，实际 %d", got)
 	}
+	// 超出 int32 表示范围的值不得截断回绕，应回退默认（CodeQL go/incorrect-integer-conversion）
+	t.Setenv("CFG_TEST_INT", "99999999999")
+	if got := envInt32("CFG_TEST_INT", 1); got != 1 {
+		t.Errorf("envInt32 越界应回退默认，实际 %d", got)
+	}
+	t.Setenv("CFG_TEST_INT", "-99999999999")
+	if got := envInt32("CFG_TEST_INT", 1); got != 1 {
+		t.Errorf("envInt32 负越界应回退默认，实际 %d", got)
+	}
 }
