@@ -113,13 +113,18 @@ async function onUnban(u: AdminUser) {
 async function onGrant(u: AdminUser) {
   try {
     const { value } = await ElMessageBox.prompt(
-      `给「${u.nickname}」发放资源。格式：金币 10000 / 钻石 500 / 体力 200 / 钥匙 5`,
+      `给「${u.nickname}」发放资源。格式：coin 10000 / gem 500 / energy 200 / keys 5（货币名为 coin/gem/energy/keys；数量为负 = 回收）`,
       '发放资源',
-      { inputPlaceholder: '金币 10000' },
+      { inputPlaceholder: 'coin 10000' },
     )
+    //
+    // ⚠️ 第 109 轮：允许负数（回收场景），但文案必须说「回收」而不是「发放」。
+    // 服务端同轮把符号写进了审计事件（grant_currency / revoke_currency）
+    // 与钱包流水 reason（admin_grant / admin_revoke），
+    // UI 是唯一还知道运营「实际做了哪个动作」的界面，不能把回收显示成发放。
     const m = value.trim().match(/^(\S+)\s+(-?\d+)$/)
     if (!m) {
-      ElMessage.error('格式错误，应为「货币名 数量」')
+      ElMessage.error('格式错误，应为「货币名 数量」（负数为回收）')
       return
     }
     const currency = m[1]
@@ -127,10 +132,15 @@ async function onGrant(u: AdminUser) {
       ElMessage.error(`未知货币：${currency}`)
       return
     }
-    const res = await grantUser(u.id, currency, Number(m[2]))
+    const amount = Number(m[2])
+    const res = await grantUser(u.id, currency, amount)
     u.coin = res.wallet.coin
     u.gem = res.wallet.gem
-    ElMessage.success('已发放')
+    ElMessage.success(
+      amount < 0
+        ? `已回收 ${CURRENCY_LABEL[currency]} ${-amount}`
+        : `已发放 ${CURRENCY_LABEL[currency]} ${amount}`,
+    )
   } catch {
     /* 取消 */
   }

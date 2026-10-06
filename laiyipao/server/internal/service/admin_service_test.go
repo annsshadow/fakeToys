@@ -350,6 +350,40 @@ func TestAdminGrantCurrency(t *testing.T) {
 	if _, err := ts.AdminGrantCurrency(ctx, uid, "diamonds", 1); !errors.Is(err, ErrBadInput) {
 		t.Errorf("未知货币应 ErrBadInput，实际 %v", err)
 	}
+
+	//
+	// ⚠️ 第 109 轮：符号必须进钱包流水。
+	// 修前无论正负，wallet_flows.reason 一律是 admin_grant、
+	// 审计一律是 grant_currency —— 负数就是**静默回收**，
+	// 事后翻审计分不清哪笔是扣款。
+	// 判据落在流水的 reason 列上（能直接观测的那一层）：
+	// 正数 → admin_grant，负数 → admin_revoke，0 → 拒绝。
+	if _, err := ts.AdminGrantCurrency(ctx, uid, "coin", 0); !errors.Is(err, ErrBadInput) {
+		t.Errorf("数量 0 应 ErrBadInput（0 的发放没有意义），实际 %v", err)
+	}
+	// 先补足 gem 库存，避免「余额不足」干扰对流水 reason 的判读
+	ts.grant(t, ctx, uid, map[string]int64{"gem": 500})
+	if _, err := ts.AdminGrantCurrency(ctx, uid, "gem", -100); err != nil {
+		t.Fatalf("负数（回收场景，老测试钉住的既有能力）应可执行：%v", err)
+	}
+	if got := ts.countFlowsByReason(t, ctx, uid, "admin_revoke"); got != 1 {
+		t.Errorf("负数发放应写 1 条 admin_revoke 流水，实际 %d", got)
+	}
+	if got := ts.countFlowsByReason(t, ctx, uid, "admin_grant"); got != 1 {
+		t.Errorf("本轮唯一的正数发放（gem +77）应有 1 条 admin_grant 流水，实际 %d", got)
+	}
+}
+
+// countFlowsByReason 数某用户某 reason 的 wallet_flows 行数。
+func (ts *testService) countFlowsByReason(t *testing.T, ctx context.Context, uid int64, reason string) int {
+	t.Helper()
+	var n int
+	if err := ts.db.Pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM wallet_flows WHERE user_id = $1 AND reason = $2`, uid, reason).
+		Scan(&n); err != nil {
+		t.Fatalf("数流水失败：%v", err)
+	}
+	return n
 }
 
 func TestAdminListBattles(t *testing.T) {
@@ -404,10 +438,15 @@ func TestAdminUpdateLevel(t *testing.T) {
 	ctx := context.Background()
 
 	// 全部白名单字段
+	//
+	// ⚠️ 第 109 轮修：`star_targets` 用**线形**（JSON 数组在 Go 侧解码成
+	// []any of float64）。旧输入 []int 是 Go 直调类型，
+	// 第 107 轮的形状校验只认线形 —— 那是**契约**，
+	// 测试必须编码「请求真正长什么样」而不是随便一个 Go 类型。
 	_, err := ts.AdminUpdateLevel(ctx, 1, map[string]any{
 		"name": "svc关卡", "base_hp": float64(6000), "wave_count": float64(4),
 		"difficulty": float64(3), "energy_cost": float64(7),
-		"star_targets": []int{1, 2, 3}, "terrain_config": []any{}, "enabled": true, "is_boss": false,
+		"star_targets": []any{1.0, 2.0, 3.0}, "terrain_config": []any{}, "enabled": true, "is_boss": false,
 	})
 	if err != nil {
 		t.Fatalf("更新失败：%v", err)
@@ -417,7 +456,7 @@ func TestAdminUpdateLevel(t *testing.T) {
 		t.Fatalf("base_hp 应写库为 6000，实际 %d（err=%v）", hp, err)
 	}
 
-	// 类型不合法的值被静默过滤 → 没有可更新字段
+	// 全非法值 → 整单拒绝（第 107 轮起：不再是「静默过滤」）
 	if _, err := ts.AdminUpdateLevel(ctx, 1, map[string]any{
 		"name": 123, "base_hp": "x", "wave_count": float64(51), "energy_cost": float64(-1),
 	}); !errors.Is(err, ErrBadInput) {
