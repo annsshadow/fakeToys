@@ -166,14 +166,64 @@ func (s *Service) SignIn(ctx context.Context, userID int64) (SignInResult, error
 			return err
 		}
 
-		today := time.Now().Truncate(24 * time.Hour)
+		// ⚠️ 第 89 轮：日界由 **Go** 单层决定，不再交给 PG 去折算。
+		//
+		// 原来这里写的是 `time.Now()`，落进 `sign_date DATE` 时由
+		// **PG 会话时区**做 timestamptz -> date 的隐式转换。
+		// 而「同一天只能签一次」完全靠 `PRIMARY KEY (user_id, sign_date)` 保证，
+		// 所以「今天几号」这件事由**两个不同的层**各算一半：
+		//
+		//	每日任务：Go 的 `periodStart(now, "daily")`（用 `time.Local`）
+		//	每日签到：PG 会话时区
+		//
+		// # 实测（本地环境）
+		//
+		//	PG session TimeZone = "Asia/Shanghai"   与 Go 本地 +08:00 一致
+		//
+		// 所以**当前部署下两者一致，这不是正在发生的 bug** ——
+		// 但正确性**依赖一条没有任何东西钉住的配置**：
+		// 只要 PG 的会话时区是 UTC（托管实例的常见默认值），
+		// 签到的「天」就会在北京时间 **08:00** 翻页 ——
+		// 同一个自然日可以签两次，而每日任务却还在前一天。
+		//
+		// # 另一层证据：这段代码原本是打算在 Go 里算的
+		//
+		// 改前有一行 `today := time.Now().Truncate(24 * time.Hour)`
+		// 紧接着 `_ = today` —— 算完就扔。
+		//
+		// 而 `Truncate` 本身也是 **UTC 对齐**的（它按零时刻起算，忽略 Location），
+		// 所以即使当初保留它，得到的也不是「本地零点」。
+		// 意图是对的，实现两头都不对。
+		//
+		// 本轮改用 `periodStart(time.Now(), "daily")` —— 与每日任务同一个函数，
+		// 同一个 Location 口径。这样「今天几号」只由一处决定，
+		// 而 `sign_date` 存的就是那个 date（不再是 timestamptz）。
+		//
+		// ⚠️ 必须传**字符串**而不是 time.Time —— 这是本轮的第二步。
+		//
+		// 我第一版改成 `periodStart(time.Now(), "daily")` 就以为完事了，
+		// 结果守卫立刻抓到它仍然是错的：
+		//
+		//	today = 2026-10-06 00:00:00 +08:00   （Go 本地零点）
+		//	pgx 按 timestamptz 发送
+		//	PG 用**会话时区**把它折成 DATE：
+		//	  会话时区 = Asia/Shanghai -> 2026-10-06  ✅
+		//	  会话时区 = UTC           -> 2026-10-05  ❌ 差一天！
+		//
+		// 也就是说只要传 time.Time，**会话时区仍然在决定日界** ——
+		// 我只是把「PG 折算 now()」换成了「PG 折算 Go 的本地零点」，
+		// 而后者同样会被会话时区二次偏移。
+		//
+		// 传 `YYYY-MM-DD` 字符串则完全绕开 timestamptz：
+		// PG 只需要把它当字面量写进 DATE 列，不做任何时区换算。
+		// 这才是「日界由 Go 单层决定」的真含义。
+		today := periodStart(time.Now(), "daily").Format("2006-01-02")
 		if _, err := tx.Exec(ctx,
 			`INSERT INTO user_sign_ins (user_id, sign_date, day_index, reward) VALUES ($1,$2,$3,$4)`,
-			userID, time.Now(), dayIndex, rewardRaw); err != nil {
+			userID, today, dayIndex, rewardRaw); err != nil {
 			// 唯一键冲突 = 今天已签
 			return fmt.Errorf("%w: 今日已签到", ErrForbidden)
 		}
-		_ = today
 
 		var reward map[string]int
 		if err := json.Unmarshal(rewardRaw, &reward); err != nil {
