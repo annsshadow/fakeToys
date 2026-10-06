@@ -63,6 +63,47 @@ func (s *Service) AdminListLevels(ctx context.Context) ([]map[string]any, int64,
 	return out, int64(len(out)), rows.Err()
 }
 
+// AdminLevelRow 读回**单行**关卡配置（来自 `levels` 表）。
+//
+// # 它与 `domain.GenerateLevel` 的区别是本轮的核心（第 107 轮）
+//
+//	AdminLevelRow        → 读库，返回运营改过的值
+//	domain.GenerateLevel → **纯函数**，只从 ChapterOf + LCG 算，从不查库
+//
+// 所以：运营在后台改关卡 → 库里变了、后台列表显示变了、
+// 但 `GET /levels/:id` 与 `LoadGameConfig` 走的仍是生成器，玩家拿不到改动。
+//
+// 这是**设计决策**，不是我能单方面定的（见 README 已知边界）。
+// 但 `AdminUpdateLevel` 的**响应**必须与自己的写入一致 —— 那没有决策空间。
+func (s *Service) AdminLevelRow(ctx context.Context, levelID int) (map[string]any, error) {
+	var (
+		id, chapter, waveCount, difficulty, energyCost int
+		name                                           string
+		seed, baseHP                                   int64
+		starRaw, terrainRaw                            []byte
+		isBoss, enabled                                bool
+	)
+	err := s.pool.QueryRow(ctx,
+		`SELECT id, chapter, name, seed, base_hp, wave_count, difficulty,
+		        energy_cost, star_targets, terrain_config, is_boss, enabled
+		   FROM levels WHERE id = $1`, levelID).
+		Scan(&id, &chapter, &name, &seed, &baseHP, &waveCount, &difficulty,
+			&energyCost, &starRaw, &terrainRaw, &isBoss, &enabled)
+	if err != nil {
+		return nil, fmt.Errorf("level row %d: %w", levelID, err)
+	}
+	var stars []int64
+	var terrain []domain.TerrainPlacement
+	_ = json.Unmarshal(starRaw, &stars)
+	_ = json.Unmarshal(terrainRaw, &terrain)
+	return map[string]any{
+		"id": id, "chapter": chapter, "name": name, "seed": seed,
+		"base_hp": baseHP, "wave_count": waveCount, "difficulty": difficulty,
+		"energy_cost": energyCost, "star_targets": stars, "terrain_config": terrain,
+		"is_boss": isBoss, "enabled": enabled,
+	}, nil
+}
+
 // AdminLevelWaves 返回某关的波次配置。
 func (s *Service) AdminLevelWaves(ctx context.Context, levelID int) ([]map[string]any, error) {
 	rows, err := s.pool.Query(ctx,

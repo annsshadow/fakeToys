@@ -148,8 +148,21 @@ func TestE2EAdminUpdateLevelAndRegenerate(t *testing.T) {
 	}
 	status, _ = e.put(t, "/api/v1/admin/levels/1", tok, map[string]any{"unknown_key": 1})
 	if status != fiber.StatusBadRequest {
-		t.Errorf("白名单外字段应被忽略并判空 patch → 400，实际 %d", status)
+		t.Errorf("白名单外字段应 400，实际 %d", status)
 	}
+	//
+	// ⚠️ 第 107 轮改写了这条断言的**理由**。
+	//
+	// 原来写的是「白名单外字段应被**忽略**并判空 patch → 400」。
+	// 那句话描述的是「忽略」这个行为 —— 而忽略正是缺陷本身：
+	// 运营拼错字段名（`baseHP` / `hp`）时请求照样成功，
+	// 他会以为字段改了。
+	//
+	// 现在语义是：**任何**一个键不合法 → **整单拒绝**，
+	// 而不是「跳过它、执行其余」。
+	//
+	// 同一个「只有全部非法才报错」的漏洞，
+	// 在「合法 + 非法」混合时是抓不到的 —— 而混合恰恰是调参时最常见的形状。
 
 	// 合法更新（数值走 float64，模拟真实 JSON 反序列化形状）
 	status, body := e.put(t, "/api/v1/admin/levels/1", tok, map[string]any{

@@ -1058,6 +1058,36 @@ cd admin && npm run build && npm run size:check  # 超预算则退出码 1
     例如「我的战报列表」以外的分页/统计接口若存在，按 `user_id` 过滤的
     完整性**没有结构性守卫**，新增接口时可能再漏一次。
 
+23. **`levels` 表不是玩家侧的关卡来源（第 107 轮发现）** ——
+    `PUT /admin/levels/:id` 调参会**落库**（后台列表与响应都显示改后值），
+    但玩家侧 `GET /levels/:id` 与 `/config` 走的是**纯函数**
+    `domain.GenerateLevel`（由 ChapterOf + LCG 算出，从不查库），
+    所以运营的关卡调参**对玩家完全不生效**，
+    而后台界面**完全看不出来**（列表里就是改后的值）。
+
+    两条候选路径都要产品拍板：
+
+    - **(a) 让 `levels` 表成为权威** —— 玩家侧入口必须读库，
+      需要缓存 + 失效机制，且与 `LoadGameConfig`
+      「绝不失败」的签名约定冲突；
+    - **(b) 生成器继续权威** —— 那么后台界面应当明说
+      「记录在案，不影响线上」，而不是显示成已生效。
+
+    在决策之前，现状由刻画测试 `level_authority_test.go` 钉住：
+    任何把 `levels` 表接进玩家路径的改动都会让该测试变红
+    （那正是「该走产品决策了」的信号），而不是让静默失效继续潜伏。
+
+    同轮已修的（**没有**决策空间的部分）：
+    `AdminUpdateLevel` 原来是「部分生效 + 成功回执」——
+    混合 patch（一个合法键 + 一个非法键）返回 200，
+    合法键写进库、非法键被静默丢弃；
+    响应还回显 `domain.GenerateLevel` 的**改前**值，
+    与自己的写入矛盾。
+    现在：**任何一个键不合法 → 整单拒绝（400，零副作用）**，
+    响应改回读**真实落库的那一行**（`AdminLevelRow`）。
+    守卫：`level_patch_test.go` 3 条 + `level_authority_test.go` 1 条
+    + `handlers_admin_e2e_test.go` 的白名单外断言改写。
+
 22. **「今日」曾经有三套定义** —— 已在第 89/97/98 轮统一到 Go 口径。
     守卫：`server/internal/service/challenge_day_boundary_test.go` 3 条
     + `shop_day_boundary_test.go` 5 条 + `signin_day_boundary_test.go` 5 条。

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -499,64 +500,205 @@ func (s *Service) AdminListBattles(ctx context.Context, userID int64, levelID in
 // AdminUpdateLevel 更新关卡配置。
 //
 // 只有白名单字段可写 —— 客户端上报的任意字段绝不能直接进库。
-func (s *Service) AdminUpdateLevel(ctx context.Context, levelID int, patch map[string]any) (domain.GeneratedLevel, error) {
+func (s *Service) AdminUpdateLevel(ctx context.Context, levelID int, patch map[string]any) (map[string]any, error) {
 	fields := []string{}
 	args := []any{levelID}
 	set := func(col string, v any) {
 		args = append(args, v)
 		fields = append(fields, fmt.Sprintf("%s = $%d", col, len(args)))
 	}
+	//
+	// ⚠️ 第 107 轮：**非法键整单拒绝**，不再「静默丢弃那一项」。
+	//
+	// 修前每个 case 都是 `if 条件 { set(...) }`，条件不满足就什么都不做，
+	// 而循环继续。于是：
+	//
+	//	PUT {"name":"P107改名", "base_hp":-5}  →  200
+	//	  库里 name 改了，base_hp **没改**
+	//
+	// 运营看到 200 就以为两个字段都调过了。
+	// 那是「部分生效 + 成功回执」，比直接报错坏得多 ——
+	// 直接报错至少会说「你的请求有问题」。
+	//
+	// 只有一个键时 `len(fields)==0` 已经能兜住（返回 400「没有可更新的字段」），
+	// 但**混合**情况兜不住 —— 而混合恰恰是运营调参时最常见的形状。
+	var rejected []string
+	reject := func(key, why string) {
+		rejected = append(rejected, fmt.Sprintf("%s（%s）", key, why))
+	}
+
 	for key, val := range patch {
 		switch key {
 		case "name":
-			if v, ok := val.(string); ok && v != "" {
-				set("name", v)
+			v, ok := val.(string)
+			if !ok || v == "" {
+				reject(key, "必须是非空字符串")
+				continue
 			}
+			set("name", v)
 		case "base_hp":
-			if v, ok := toInt64(val); ok && v > 0 {
-				set("base_hp", v)
+			v, ok := toInt64(val)
+			if !ok || v <= 0 {
+				reject(key, "必须是正整数")
+				continue
 			}
+			set("base_hp", v)
 		case "wave_count":
-			if v, ok := toInt64(val); ok && v > 0 && v <= 50 {
-				set("wave_count", v)
+			v, ok := toInt64(val)
+			if !ok || v <= 0 || v > 50 {
+				reject(key, "必须在 1..50")
+				continue
 			}
+			set("wave_count", v)
 		case "difficulty":
-			if v, ok := toInt64(val); ok && v > 0 {
-				set("difficulty", v)
+			v, ok := toInt64(val)
+			if !ok || v <= 0 {
+				reject(key, "必须是正整数")
+				continue
 			}
+			set("difficulty", v)
 		case "energy_cost":
-			if v, ok := toInt64(val); ok && v >= 0 && v <= 100 {
-				set("energy_cost", v)
+			v, ok := toInt64(val)
+			if !ok || v < 0 || v > 100 {
+				reject(key, "必须在 0..100")
+				continue
 			}
+			set("energy_cost", v)
 		case "star_targets":
-			raw, err := json.Marshal(val)
-			if err == nil {
-				set("star_targets", raw)
+			//
+			// ⚠️ 第 107 轮：原来只有 `json.Marshal` 成不成功这一个判据。
+			//
+			// 我**原以为** `{"star_targets": null}` 会撞 NOT NULL 变成 500 ——
+			// **实测否证**：JSONB 的 `null` 是一个**合法的 JSONB 值**，
+			// 不是 SQL NULL，所以 NOT NULL 约束照样通过。
+			// （第 4 次「结论下得太早」：第 85/87/92/103 轮之后。）
+			//
+			// 但实测确实暴露了另一件事：`{"star_targets": "不是数组"}` 与
+			// `{"terrain_config": 42}` 都会被**接受**，
+			// 于是 `AdminListLevels` 的 `json.Unmarshal` 失败、
+			// `stars` / `terrain` 保持 nil，后台看到的是「星级目标为空」。
+			//
+			// 那是「写进去一个永远读不出来的东西」——
+			// 合法 JSONB、合法约束，但语义上已坏，且没有任何报错。
+			// 所以判据必须落在**形状**上，不是「能不能序列化」。
+			//
+			// 显式的 JSON `null` 是**清空语义**，必须放行。
+			// ⚠️ 我第一版的形状校验一刀切 `val.([]any)`，
+			// 于是 `{"star_targets": null}` 变成 400 ——
+			// 而「清空星级目标」是运营会真的想做的事。
+			//
+			// 判据踩在「合法」的边界上时，要么误杀、要么漏判；
+			// 所以「**该接受的**」也要逐条列出（见
+			// `TestLevelPatchAcceptsEmptyJSONArrays`）。
+			//
+			// 而且 `json.Unmarshal([]byte("null"), &[]int64{})` 是**成功**的
+			// （结果为 nil 切片），所以存 `null` 读回来不会报错。
+			if val == nil {
+				set(key, json.RawMessage("null"))
+				continue
 			}
+			arr, ok := val.([]any)
+			if !ok {
+				reject(key, "必须是数组或 null")
+				continue
+			}
+			badElem := false
+			for _, e := range arr {
+				n, ok := toInt64(e)
+				if !ok || n < 0 {
+					reject(key, "数组元素必须是非负整数")
+					badElem = true
+					break
+				}
+			}
+			if badElem {
+				continue
+			}
+			raw, err := json.Marshal(arr)
+			if err != nil {
+				reject(key, "无法序列化")
+				continue
+			}
+			set("star_targets", raw)
 		case "terrain_config":
-			raw, err := json.Marshal(val)
-			if err == nil {
-				set("terrain_config", raw)
+			if val == nil {
+				set(key, json.RawMessage("null"))
+				continue
 			}
+			arr, ok := val.([]any)
+			if !ok {
+				reject(key, "必须是数组或 null")
+				continue
+			}
+			badElem := false
+			for _, e := range arr {
+				if _, ok := e.(map[string]any); !ok {
+					reject(key, "数组元素必须是对象")
+					badElem = true
+					break
+				}
+			}
+			if badElem {
+				continue
+			}
+			raw, err := json.Marshal(arr)
+			if err != nil {
+				reject(key, "无法序列化")
+				continue
+			}
+			set("terrain_config", raw)
 		case "enabled":
-			if v, ok := val.(bool); ok {
-				set("enabled", v)
+			v, ok := val.(bool)
+			if !ok {
+				reject(key, "必须是布尔值")
+				continue
 			}
+			set("enabled", v)
 		case "is_boss":
-			if v, ok := val.(bool); ok {
-				set("is_boss", v)
+			v, ok := val.(bool)
+			if !ok {
+				reject(key, "必须是布尔值")
+				continue
 			}
+			set("is_boss", v)
+		default:
+			// 未知键必须报错 —— 「白名单外的字段被忽略」是个**陷阱**：
+			// 运营拼错字段名（`baseHP` / `hp`）时会被静默吞掉，
+			// 而请求整体因为有别的合法键而返回 200。
+			reject(key, "不在可更新字段的白名单里")
 		}
 	}
+
+	if len(rejected) > 0 {
+		sort.Strings(rejected)
+		return nil, fmt.Errorf("%w: 这些字段没被接受，整单未执行：%s",
+			ErrBadInput, strings.Join(rejected, "、"))
+	}
 	if len(fields) == 0 {
-		return domain.GeneratedLevel{}, fmt.Errorf("%w: 没有可更新的字段", ErrBadInput)
+		return nil, fmt.Errorf("%w: 没有可更新的字段", ErrBadInput)
 	}
 	sql := fmt.Sprintf(`UPDATE levels SET %s, updated_at = now() WHERE id = $1`,
 		joinComma(fields))
 	if _, err := s.pool.Exec(ctx, sql, args...); err != nil {
-		return domain.GeneratedLevel{}, fmt.Errorf("update level: %w", err)
+		return nil, fmt.Errorf("update level: %w", err)
 	}
-	return domain.GenerateLevel(levelID), nil
+	//
+	// ⚠️ 第 107 轮：这里原来返回 `domain.GenerateLevel(levelID)`。
+	//
+	// 那是**纯函数**（只从 ChapterOf + LCG 算，从不查库），
+	// 所以运营刚把 base_hp 改成 987654，响应里却是改**前**的 1000。
+	//
+	// 一个与自己的写入相矛盾的响应，不管背后是哪条设计路线，都是缺陷。
+	// 现在回读**真实落库的那一行**。
+	//
+	// ⚠️ 这**不代表**改动对玩家生效 —— 玩家侧走的是纯生成器。
+	// 见 `admin_level_authority_test.go` 的现状刻画测试，
+	// 以及 README 已知边界第 23 条（需要产品决策）。
+	row, err := s.AdminLevelRow(ctx, levelID)
+	if err != nil {
+		return nil, fmt.Errorf("read back level: %w", err)
+	}
+	return row, nil
 }
 
 // AdminUpdateSkill 更新技能配置。
