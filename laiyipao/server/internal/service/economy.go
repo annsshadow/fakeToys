@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 
 	"github.com/laiyipao/server/internal/domain"
 )
@@ -221,8 +222,21 @@ func (s *Service) SignIn(ctx context.Context, userID int64) (SignInResult, error
 		if _, err := tx.Exec(ctx,
 			`INSERT INTO user_sign_ins (user_id, sign_date, day_index, reward) VALUES ($1,$2,$3,$4)`,
 			userID, today, dayIndex, rewardRaw); err != nil {
-			// 唯一键冲突 = 今天已签
-			return fmt.Errorf("%w: 今日已签到", ErrForbidden)
+			//
+			// ⚠️ 第 115 轮：只有「唯一键冲突」才是「今日已签到」。
+			// 修前把 INSERT 的**任何**错误（连接抖断、锁超时、
+			// 磁盘满、死锁……）都报成「今日已签到」——
+			// 事务回滚、奖励没发，用户却被告知「已签到」，
+			// 以为当天领过了，不会重试，7 日奖励静默漏发。
+			// 「如实报错」永远比「谎报已签」便宜。
+			// 判据落在**错误码**上（23505 = unique_violation），
+			// 而不是「跑了没成功就当已签」。
+			var pgErr *pgconn.PgError
+			if errors.As(err, &pgErr) && pgErr.Code == "23505" &&
+				(pgErr.TableName == "user_sign_ins" || pgErr.ConstraintName == "user_sign_ins_pkey") {
+				return fmt.Errorf("%w: 今日已签到", ErrForbidden)
+			}
+			return err
 		}
 
 		// ⚠️ 第 91 轮：签到必须推进 `signin` 指标的任务。
