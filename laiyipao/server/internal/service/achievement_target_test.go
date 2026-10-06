@@ -124,7 +124,34 @@ func TestClearingLevelOneDoesNotUnlockReachAchievements(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	day := periodStart(time.Now(), "daily")
+	// ⚠️ 第 93 轮：成就的周期起点已是**哨兵日期**，不再是今天。
+	// 这里原来写的是 `periodStart(now, "daily")` —— 改完之后 LEFT JOIN 匹配不到任何行，
+	// progress 恒为 0，于是「通关第 1 关不得解锁」那条断言变成**空洞通过**。
+	//
+	// **空洞通过的守卫比没有守卫更危险**：它看起来在守着某件事。
+	day := periodStart(time.Now(), "achievement")
+
+	// ⚠️ 自证：**本条断言用的关联键必须真的能匹配到行**。
+	//
+	// 第 93 轮实测：把这里的 `"achievement"` 改回 `"daily"`，
+	// LEFT JOIN 就匹配不到任何行，`progress` 恒为 0，
+	// 下面那条「不得解锁」的断言变成**空洞通过**而全绿。
+	//
+	// 所以先验一次：通关第 1 关后 `ach_reach_20` 的行**必须存在**。
+	var exists int
+	if err := scratch.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM tasks t JOIN user_tasks ut
+		        ON ut.task_id = t.id AND ut.user_id = $1 AND ut.task_date = $2
+		  WHERE t.code = 'ach_reach_20'`, uid, day).Scan(&exists); err != nil {
+		t.Fatal(err)
+	}
+	if exists == 0 {
+		t.Fatalf("用 task_date=%s 关联不到 ach_reach_20 的进度行 —— "+
+			"本用例的关联键写错了，下面那条断言已是**空洞通过**。\n"+
+			"成就的周期起点是 periodStart(now, \"achievement\")（哨兵日期），不是 \"daily\"。",
+			day.Format("2006-01-02"))
+	}
+
 	rows, err := scratch.pool.Query(ctx,
 		`SELECT t.code, t.target, COALESCE(ut.progress, 0)
 		   FROM tasks t
@@ -189,7 +216,7 @@ func TestReachAchievementCompletesAtItsOwnLevel(t *testing.T) {
 		}
 	}
 
-	day := periodStart(time.Now(), "daily")
+	day := periodStart(time.Now(), "achievement")
 	for code, wantComplete := range map[string]bool{
 		"ach_reach_20": true, "ach_reach_60": false, "ach_reach_100": false,
 	} {

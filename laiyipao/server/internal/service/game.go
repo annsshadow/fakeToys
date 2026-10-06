@@ -861,7 +861,43 @@ func (s *Service) ClaimTask(ctx context.Context, userID int64, taskID int) (map[
 	return out, err
 }
 
+// achievementEpoch 是「成就」这一 scope 的**哨兵日期**（第 93 轮）。
+//
+// # 为什么需要一个哨兵
+//
+// `user_tasks` 的主键是 `(user_id, task_id, task_date)` ——
+// 每条进度记录都**按周期分行**。
+//
+// 而 `periodStart(now, "achievement")` 原先落到 `default` 分支，
+// 也就是**今天零点**。于是成就也成了「每天一行新记录」：
+//
+//	今天：progress = 20，claimed_at = NULL  → 领取，写 claimed_at
+//	明天：**新的一行**，progress = 20，claimed_at = **NULL**
+//
+// 而 `ClaimTask` 同样只查 `periodStart(now, scope)`（即「今天那一行」），
+// 于是明天再玩一次就能**再领一次**。
+//
+// # 实测口径：修复前 `ach_reach_20`（60 钻）可每天重复领取
+//
+// 修复前我跑过一次探针，结论写的是「跨日期领取被拒」—— **那是错的**。
+// 探针手工插了「明天」的行，但 `ClaimTask` 读的是**今天**的行
+// （它内部自己算 `periodStart(time.Now(), scope)`，不接受传入日期），
+// 于是读到的是昨天已领取的那一行 → 被拒。
+// **探针没有制造出「明天」，它只是又查了一次今天。**
+//
+// 用固定哨兵日期之后：一个用户对每条成就**永远只有一行**，
+// `GREATEST` 累计成终身进度，`claimed_at` 一旦写入就永久生效。
+//
+// 选 1970-01-01 而不是别的常量：它是 DATE 列能表达的下界附近，
+// 不会与任何真实日期撞上，且一眼可读。
+var achievementEpoch = time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC)
+
 func periodStart(t time.Time, scope string) time.Time {
+	switch scope {
+	case "achievement":
+		// 终身累计，不按天分行。理由见 achievementEpoch 的注释。
+		return achievementEpoch
+	}
 	d := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
 	switch scope {
 	case "weekly":
