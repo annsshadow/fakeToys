@@ -299,12 +299,23 @@ fn ann_spec() -> shared::crud::CrudSpec {
     }
 }
 
-#[axum::debug_handler]
+#[allow(non_snake_case)]
+async fn require_admin(pool: &Pool, session: &shared::session::Session) -> Result<(), AppError> {
+    // 公告发布/全局模型与 MCP 配置=管理动作；此前任何登录人可改（含模型 URL/密钥面）
+    if shared::middleware::is_admin(pool, &session.person_unique).await {
+        Ok(())
+    } else {
+        Err(AppError::Forbidden)
+    }
+}
+
 #[allow(non_snake_case)]
 pub async fn ann_create(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     body: Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
     let id = shared::crud_create(&pool, &ann_spec(), &body.0).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -318,9 +329,11 @@ pub async fn ann_create(
 #[allow(non_snake_case)]
 pub async fn ann_save(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Path(id): Path<String>,
     body: Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
     let saved = shared::crud_save(&pool, &ann_spec(), &id, &body.0).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -334,8 +347,10 @@ pub async fn ann_save(
 #[allow(non_snake_case)]
 pub async fn ann_delete(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
     let deleted = shared::crud_delete(&pool, &ann_spec(), &id).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -349,8 +364,10 @@ pub async fn ann_delete(
 #[allow(non_snake_case)]
 pub async fn update_ai_control_config(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let config = body.0;
 
@@ -557,8 +574,10 @@ pub async fn config_base_config(
 #[allow(non_snake_case)]
 pub async fn config_create_mcp(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     req: Option<axum::extract::Json<Value>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
     let req = req.map(|r| r.0).unwrap_or_default();
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
@@ -608,8 +627,10 @@ pub async fn config_create_mcp(
 #[allow(non_snake_case)]
 pub async fn config_create_model(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     req: Option<axum::extract::Json<Value>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
     let req = req.map(|r| r.0).unwrap_or_default();
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
@@ -659,8 +680,10 @@ pub async fn config_create_model(
 #[allow(non_snake_case)]
 pub async fn config_delete_mcp_flag(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM x_ai_mcp_config WHERE id = $1", &[&id])
@@ -683,8 +706,10 @@ pub async fn config_delete_mcp_flag(
 #[allow(non_snake_case)]
 pub async fn config_delete_model_flag(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM x_ai_model_config WHERE id = $1", &[&id])
@@ -1071,8 +1096,10 @@ pub async fn config_list_model_paging_page_size_size(
 #[allow(non_snake_case)]
 pub async fn config_save(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     req: Option<axum::extract::Json<Value>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
     let req = req.map(|r| r.0).unwrap_or_default();
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = req
@@ -1167,9 +1194,11 @@ pub async fn config_save(
 #[allow(non_snake_case)]
 pub async fn config_update_mcp_flag(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Path(id): Path<String>,
     req: Option<axum::extract::Json<Value>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
     let req = req.map(|r| r.0).unwrap_or_default();
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let name = req
@@ -1212,9 +1241,11 @@ pub async fn config_update_mcp_flag(
 #[allow(non_snake_case)]
 pub async fn config_update_model_flag(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Path(id): Path<String>,
     req: Option<axum::extract::Json<Value>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
     let req = req.map(|r| r.0).unwrap_or_default();
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let name = req
