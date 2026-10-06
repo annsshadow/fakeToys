@@ -225,6 +225,34 @@ func (s *Service) SignIn(ctx context.Context, userID int64) (SignInResult, error
 			return fmt.Errorf("%w: 今日已签到", ErrForbidden)
 		}
 
+		// ⚠️ 第 91 轮：签到必须推进 `signin` 指标的任务。
+		//
+		// # 缺陷：任务「每日签到」永远无法推进、永远领不到
+		//
+		// 种子里有这条任务：
+		//
+		//	{4, 1, "daily_signin", "完成每日签到", "daily", "signin", …}
+		//
+		// 而 `bumpTasks` 全仓库**只有一个调用点**（`game.go` 的结算路径），
+		// 它传的 metric 只有 4 个：`kills` / `clears` / `reactions` / `max_stage`。
+		// **没有 `signin`** —— 于是这条任务的 `progress` 永远是 0，
+		// 玩家每天签到、每天都看到它卡在 0/1、永远领不到那 500 金币。
+		//
+		// # 为什么没被测出来
+		//
+		// 既有测试都是「造一行 progress 然后 ClaimTask」，
+		// **绕过了 bump 这一步** —— 于是「bump 从不发生」这件事完全不可见。
+		//
+		// 与第 76 轮（周任务 `task_date` 写死 daily）同族：
+		// 那次是**找错了行**，这次是**根本没人写那一行**。
+		//
+		// 守卫：`task_metric_coverage_test.go` —— 种子里出现的每个 metric
+		// 都必须在某个 `bumpTasks` 调用点出现。
+		if err := s.bumpTasks(ctx, tx, userID,
+			map[string]int64{"signin": 1}, time.Now()); err != nil {
+			return err
+		}
+
 		var reward map[string]int
 		if err := json.Unmarshal(rewardRaw, &reward); err != nil {
 			return err
