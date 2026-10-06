@@ -1014,7 +1014,7 @@ pub async fn dict_dictFlag_portal_portalFlag_path_data_mockputtopost(
 
     let result = client
         .execute(
-            "UPDATE x_portal_dict SET app_data = $1, update_time = NOW() WHERE flag = $2 AND portal_flag = $3",
+            "UPDATE x_portal_dict SET app_data = $1, update_time = NOW(), deleted_at = NULL WHERE flag = $2 AND portal_flag = $3",
             &[&data_str, &dict_flag, &portal_flag],
         )
         .await
@@ -2589,7 +2589,7 @@ pub async fn dict_dictFlag_portal_portalFlag_path_data_delete(
 
     let result = client
         .execute(
-            "DELETE FROM x_portal_dict WHERE flag = $1 AND portal_flag = $2",
+            "UPDATE x_portal_dict SET deleted_at = NOW() WHERE flag = $1 AND portal_flag = $2 AND deleted_at IS NULL",
             &[&dict_flag, &portal_flag],
         )
         .await
@@ -2618,7 +2618,7 @@ pub async fn dict_dictFlag_portal_portalFlag_path_data_post(
 
     let result = client
         .execute(
-            "UPDATE x_portal_dict SET app_data = $1, update_time = NOW() WHERE flag = $2 AND portal_flag = $3",
+            "UPDATE x_portal_dict SET app_data = $1, update_time = NOW(), deleted_at = NULL WHERE flag = $2 AND portal_flag = $3",
             &[&data_str, &dict_flag, &portal_flag],
         )
         .await
@@ -2688,7 +2688,7 @@ pub async fn dict_dictFlag_portal_portalFlag_path_data_put(
 
     let updated = client
         .execute(
-            "UPDATE x_portal_dict SET app_data = $1, update_time = NOW() WHERE flag = $2 AND portal_flag = $3",
+            "UPDATE x_portal_dict SET app_data = $1, update_time = NOW(), deleted_at = NULL WHERE flag = $2 AND portal_flag = $3",
             &[&data_str, &dict_flag, &portal_flag],
         )
         .await
@@ -2812,4 +2812,141 @@ pub async fn script_portal_portal_name_post(
             ("portalId".to_string(), Value::String(portal)),
         ]),
     ))))
+}
+
+#[cfg(test)]
+mod soft_delete_lifecycle_tests {
+    //! 优化二轮1 守卫：x_portal_dict 写面软删语义。
+    //! delete 端点=软删幂等（修复前为物理 DELETE，与 designer 侧 crud 软删分裂）；
+    //! 删除后重新保存=复活已删行（修复前 UPDATE 写穿已删行，数据落进永远
+    //! 读不到的行，随后的 query_one 必查无行 500）。
+
+    use axum::extract::Path;
+    use axum::Extension;
+    use serde_json::Value;
+    use shared::testing::{is_db_available, test_pool};
+
+    use super::*;
+
+    const PORTAL_FLAG: &str = "u2test-dict-portal";
+
+    fn test_path(flag: &str) -> Path<(String, String, String)> {
+        Path((flag.to_string(), PORTAL_FLAG.to_string(), "p".to_string()))
+    }
+
+    async fn seed_row(pool: &Pool, flag: &str, data: &str) {
+        let client = pool.get().await.unwrap();
+        let id = uuid::Uuid::new_v4().to_string();
+        let name = flag.to_string();
+        let portal = PORTAL_FLAG.to_string();
+        let app_data = data.to_string();
+        let creator = "u2test";
+        client
+            .execute(
+                "INSERT INTO x_portal_dict (id, name, flag, portal_flag, app_data, creator, create_time, update_time) \
+                  VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())",
+                &[&id, &name, &flag.to_string(), &portal, &app_data, &creator],
+            )
+            .await
+            .unwrap();
+    }
+
+    /// (app_data, deleted_at::text)：deleted_at None=未删、Some=已软删。
+    async fn row_state(pool: &Pool, flag: &str) -> (String, Option<String>) {
+        let client = pool.get().await.unwrap();
+        let row = client
+            .query_one(
+                "SELECT app_data, deleted_at::text FROM x_portal_dict WHERE flag = $1 AND portal_flag = $2",
+                &[&flag.to_string(), &PORTAL_FLAG.to_string()],
+            )
+            .await
+            .unwrap();
+        (
+            row.get::<_, Option<String>>(0).unwrap_or_default(),
+            row.get(1),
+        )
+    }
+
+    async fn cleanup(pool: &Pool, flag: &str) {
+        let client = pool.get().await.unwrap();
+        client
+            .execute(
+                "DELETE FROM x_portal_dict WHERE flag = $1",
+                &[&flag.to_string()],
+            )
+            .await
+            .unwrap();
+    }
+
+    #[tokio::test]
+    async fn delete_soft_deletes_row_idempotently() {
+        if !is_db_available().await {
+            eprintln!("skip: PG unavailable");
+            return;
+        }
+        let pool = test_pool();
+        let flag = format!("u2test-dict-del-{}", uuid::Uuid::new_v4());
+        seed_row(&pool, &flag, "v1").await;
+
+        let resp = dict_dictFlag_portal_portalFlag_path_data_delete(
+            Extension(pool.clone()),
+            test_path(&flag),
+        )
+        .await
+        .unwrap();
+        assert_eq!(resp.0.r#type.as_deref(), Some("success"));
+        assert_eq!(resp.0.data.as_ref().unwrap()["deleted"].as_i64(), Some(1));
+
+        // 行保留 + deleted_at 非空：软删而非物理删，读侧按 deleted_at IS NULL 隐藏
+        let (data, deleted_at) = row_state(&pool, &flag).await;
+        assert_eq!(data, "v1");
+        assert!(deleted_at.is_some(), "delete must soft-delete the row");
+
+        // 幂等：二次 delete 不再命中（deleted 计数 0），行仍是唯一一条
+        let resp = dict_dictFlag_portal_portalFlag_path_data_delete(
+            Extension(pool.clone()),
+            test_path(&flag),
+        )
+        .await
+        .unwrap();
+        assert_eq!(resp.0.data.as_ref().unwrap()["deleted"].as_i64(), Some(0));
+
+        cleanup(&pool, &flag).await;
+    }
+
+    #[tokio::test]
+    async fn put_after_delete_revives_row() {
+        if !is_db_available().await {
+            eprintln!("skip: PG unavailable");
+            return;
+        }
+        let pool = test_pool();
+        let flag = format!("u2test-dict-put-{}", uuid::Uuid::new_v4());
+        seed_row(&pool, &flag, "old").await;
+        let _ = dict_dictFlag_portal_portalFlag_path_data_delete(
+            Extension(pool.clone()),
+            test_path(&flag),
+        )
+        .await
+        .unwrap();
+
+        // 重新保存必须复活已删行：新数据可读、deleted_at 归空
+        let resp = dict_dictFlag_portal_portalFlag_path_data_put(
+            Extension(pool.clone()),
+            test_path(&flag),
+            Json(Value::String("revived".to_string())),
+        )
+        .await
+        .unwrap();
+        assert_eq!(resp.0.r#type.as_deref(), Some("success"));
+
+        let (data, deleted_at) = row_state(&pool, &flag).await;
+        assert_eq!(data, "revived");
+        assert!(
+            deleted_at.is_none(),
+            "re-saving must revive the soft-deleted row"
+        );
+
+        cleanup(&pool, &flag).await;
+    }
 }

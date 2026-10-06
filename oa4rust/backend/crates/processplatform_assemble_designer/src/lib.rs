@@ -3936,7 +3936,7 @@ pub async fn form_list_next_exact(
     let rows = client
         .query(
             "SELECT xid, \"xname\", xapplication, \"xcreateTime\", \"xupdateTime\" FROM pp_e_form \
-             WHERE xid > $1 ORDER BY xid LIMIT $2",
+             WHERE xid > $1 AND deleted_at IS NULL ORDER BY xid LIMIT $2",
             &[&id, &count.clamp(1, 100)],
         )
         .await
@@ -3963,7 +3963,7 @@ pub async fn form_list_prev_exact(
     let rows = client
         .query(
             "SELECT xid, \"xname\", xapplication, \"xcreateTime\", \"xupdateTime\" FROM pp_e_form \
-             WHERE xid < $1 ORDER BY xid DESC LIMIT $2",
+             WHERE xid < $1 AND deleted_at IS NULL ORDER BY xid DESC LIMIT $2",
             &[&id, &count.clamp(1, 100)],
         )
         .await
