@@ -75,7 +75,7 @@ func TestLevelTableIsCurrentlyNotThePlayerSource(t *testing.T) {
 	}
 
 	// 2) 运营列表读到的是**同一个**表 → 运营看得到改动
-	list, _, err := ts.AdminListLevels(ctx)
+	list, _, err := ts.AdminListLevels(ctx, 0, "")
 	if err != nil {
 		t.Fatalf("读列表失败：%v", err)
 	}

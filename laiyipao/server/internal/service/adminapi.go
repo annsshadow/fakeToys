@@ -5,23 +5,47 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/laiyipao/server/internal/domain"
 )
 
 // AdminListLevels 返回关卡列表（含真实通关率，供运营判断难度）。
-func (s *Service) AdminListLevels(ctx context.Context) ([]map[string]any, int64, error) {
-	rows, err := s.pool.Query(ctx, `
+//
+// chapter > 0 时按章节过滤，keyword 非空时按关卡名模糊过滤。
+// ⚠️ 第 111 轮：这两个参数此前在 handler 层就被丢弃了——
+// UI 发 `?chapter=3&keyword=哨站`，服务端一个都不看，永远回全量 100 关。
+// 运营选「第 3 章」看到 100 关，会以为「该章无数据」或干脆不看。
+// keyword 进 LIKE 前必须转义 `%` / `_` / `\`——
+// 搜索 "100%" 退化成全表匹配是「输入了东西却得到无过滤结果」。
+func (s *Service) AdminListLevels(ctx context.Context, chapter int, keyword string) ([]map[string]any, int64, error) {
+	query := `
 		SELECT l.id, l.chapter, l.name, l.seed, l.base_hp, l.wave_count, l.difficulty,
 		       l.energy_cost, l.star_targets, l.terrain_config, l.is_boss, l.enabled,
 		       COUNT(br.id) AS attempts,
 		       COUNT(br.id) FILTER (WHERE br.result = 'win') AS clears,
 		       COALESCE(AVG(br.wave_reached), 0) AS avg_wave
 		FROM levels l
-		LEFT JOIN battle_records br ON br.level_id = l.id
+		LEFT JOIN battle_records br ON br.level_id = l.id`
+	var args []any
+	conds := []string{}
+	if chapter > 0 {
+		args = append(args, chapter)
+		conds = append(conds, fmt.Sprintf("l.chapter = $%d", len(args)))
+	}
+	if kw := strings.TrimSpace(keyword); kw != "" {
+		escaped := strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`).Replace(kw)
+		args = append(args, "%"+escaped+"%")
+		conds = append(conds, fmt.Sprintf("l.name LIKE $%d ESCAPE '\\'::char", len(args)))
+	}
+	if len(conds) > 0 {
+		query += "\n		WHERE " + strings.Join(conds, " AND ")
+	}
+	query += `
 		GROUP BY l.id
-		ORDER BY l.id`)
+		ORDER BY l.id`
+	rows, err := s.pool.Query(ctx, query, args...)
 	if err != nil {
 		return nil, 0, fmt.Errorf("admin levels: %w", err)
 	}
