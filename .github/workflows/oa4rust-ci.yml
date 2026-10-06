@@ -350,7 +350,7 @@ jobs:
       # ── U1: 聚类产物上传 ─────────────────────────────────────────────────
       - name: Upload diff clustering artifacts
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: diff-clustering-${{ github.run_id }}
           path: |
@@ -363,7 +363,7 @@ jobs:
       # 上传为 GitHub Actions artifact，FAIL 数变化可在 PR 上直接观察。
       - name: Upload behavior-compare report
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: behavior-report-${{ github.run_id }}
           path: oa4rust/backend/target/debug/behavior-report.md
@@ -436,11 +436,11 @@ jobs:
           fi
           failed="$(grep -oE '^- \*\*Failed:\*\* [0-9]+' "$report" | grep -oE '[0-9]+' | head -n 1 || true)"
           if [ -z "$failed" ]; then
-            echo "::warning::Could not parse the Failed count from behavior-report.md — gate passes"
-            exit 0
+            echo "::error::Could not parse the Failed count from behavior-report.md"
+            exit 1
           fi
           if [ "$baseline" = "bootstrap" ] || [ -z "$baseline" ]; then
-            echo "::notice::Behavior-compare baseline not established. Observed FAIL count: ${failed}. To activate the regression gate, commit ${failed} as the last line of oa4rust/tests/behavior_comparison/fail_baseline."
+            echo "::notice::Behavior-compare baseline not established. Observed FAIL count: ${failed}. To activate the regression gate, commit ${failed} as the last line of oa4rust/backend/tests/behavior_comparison/fail_baseline."
             exit 0
           fi
           if [ "$failed" -gt "$baseline" ]; then
