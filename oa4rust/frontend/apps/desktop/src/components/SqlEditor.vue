@@ -11,8 +11,9 @@
 import { autocompletion, completionKeymap } from '@codemirror/autocomplete'
 import { defaultKeymap } from '@codemirror/commands'
 import { sql } from '@codemirror/lang-sql'
+import { highlightSelectionMatches } from '@codemirror/search'
 import { EditorState } from '@codemirror/state'
-import { highlightSelectionMatches, keymap, syntaxHighlighting } from '@codemirror/view'
+import { keymap } from '@codemirror/view'
 import { basicSetup, EditorView } from 'codemirror'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
@@ -179,7 +180,6 @@ onMounted(() => {
         }
       }),
       EditorView.theme(theme.value as any),
-      syntaxHighlighting(),
       highlightSelectionMatches(),
       keymap.of([...defaultKeymap, ...completionKeymap]),
     ],

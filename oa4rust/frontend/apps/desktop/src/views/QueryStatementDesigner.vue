@@ -877,6 +877,8 @@
 import { api } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, onMounted, ref } from 'vue'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import SqlEditor from '../components/SqlEditor.vue'
 import { downloadBlob } from '../utils/download'
 import { toast } from '../utils/toast'
 
