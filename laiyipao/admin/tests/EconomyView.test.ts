@@ -93,12 +93,12 @@ describe('EconomyView 通胀监控', () => {
     wrapper.unmount()
   })
 
-  it('操作列按钮（改价/限购/改名）逐个点击：prompt 结果按字段类型解析提交', async () => {
-    const row: Row = { id: 1, name: '体力瓶', currency: 'coin', price: 100, limit: 0, on_sale: 1 }
+  it('操作列按钮（改价/限购/改名）逐个点击：按服务端形状解析提交（第 113 轮）', async () => {
+    const row: Row = { id: 1, name: '体力瓶', price: { coin: 100 }, limit_per_day: 0, enabled: true }
     updateShopItem.mockResolvedValue({ item: {} })
     box.prompt
-      .mockResolvedValueOnce({ value: '120' }) // 改价 → Number
-      .mockResolvedValueOnce({ value: '3' }) // 限购 → Number
+      .mockResolvedValueOnce({ value: 'coin:120' }) // 改价 → 对象
+      .mockResolvedValueOnce({ value: '3' }) // 限购 → 非负整数
       .mockResolvedValueOnce({ value: '超级体力瓶' }) // 改名 → 字符串
     const wrapper = await mountEconomy([], [row])
     const buttons = wrapper.findAll('.el-table__row')[0].findAll('button')
@@ -106,11 +106,11 @@ describe('EconomyView 通胀监控', () => {
 
     await buttons[0].trigger('click')
     await flushPromises()
-    expect(updateShopItem).toHaveBeenLastCalledWith(1, { price: 120 })
+    expect(updateShopItem).toHaveBeenLastCalledWith(1, { price: { coin: 120 } })
 
     await buttons[1].trigger('click')
     await flushPromises()
-    expect(updateShopItem).toHaveBeenLastCalledWith(1, { limit: 3 })
+    expect(updateShopItem).toHaveBeenLastCalledWith(1, { limit_per_day: 3 })
 
     await buttons[2].trigger('click')
     await flushPromises()
@@ -140,10 +140,10 @@ describe('EconomyView 通胀监控', () => {
 })
 
 describe('EconomyView 商城编辑', () => {
-  it('改价：数值输入转 Number 提交并合并返回', async () => {
-    box.prompt.mockResolvedValueOnce({ value: '120' })
-    const row: Row = { id: 1, name: '体力瓶', currency: 'coin', price: 100, limit: 0, on_sale: 1 }
-    updateShopItem.mockResolvedValueOnce({ item: { price: 120 } })
+  it('改价：「coin:120, gem:5」解析成 map 提交（第 113 轮：不再发裸数字）', async () => {
+    const row: Row = { id: 1, name: '体力瓶', price: { coin: 100 }, limit_per_day: 0, enabled: true }
+    updateShopItem.mockResolvedValueOnce({ item: { id: 1, updated: ['price'] } })
+    box.prompt.mockResolvedValueOnce({ value: 'coin:120, gem:5' })
     const wrapper = await mountEconomy([], [row])
     const vm = wrapper.vm as unknown as {
       patchShop: (r: Row, field: string, label: string) => Promise<void>
@@ -151,28 +151,53 @@ describe('EconomyView 商城编辑', () => {
     await vm.patchShop(row, 'price', '价格')
     await flushPromises()
 
-    expect(updateShopItem).toHaveBeenCalledWith(1, { price: 120 })
-    expect(row.price).toBe(120)
+    // 关键：price 必须提交成对象（服务端 JSONB 是 map[string]int，
+    // 玩家 Buy 按 map 读；裸数字落库会让该商品购买链路永久 500）
+    expect(updateShopItem).toHaveBeenCalledWith(1, { price: { coin: 120, gem: 5 } })
+    // 保存后整页重拉（响应只有 {id,updated}，旧数据 assign 没意义）
+    expect(fetchEconomy).toHaveBeenCalledTimes(2)
     expect(document.body.textContent).toContain('已保存')
     wrapper.unmount()
   })
 
-  it('限购与库存走同一个数值分支；改名保留字符串', async () => {
-    const row: Row = { id: 2, name: '改名前', price: 1 }
+  it('改价：裸数字/未知货币/负数全部拒绝提交', async () => {
+    const row: Row = { id: 1, name: '体力瓶', price: { coin: 100 }, limit_per_day: 0, enabled: true }
+    const wrapper = await mountEconomy([], [row])
+    const vm = wrapper.vm as unknown as {
+      patchShop: (r: Row, field: string, label: string) => Promise<void>
+    }
+    for (const bad of ['120', 'cino:5', 'coin:-3']) {
+      box.prompt.mockResolvedValueOnce({ value: bad })
+      await vm.patchShop(row, 'price', '价格')
+      await flushPromises()
+      expect(document.body.textContent).toContain('价格格式应为')
+    }
+    expect(updateShopItem).not.toHaveBeenCalled()
+    wrapper.unmount()
+  })
+
+  it('限购走 limit_per_day 键（服务端白名单），非法值拒绝；改名保留字符串', async () => {
+    const row: Row = { id: 2, name: '改名前', price: { coin: 1 }, limit_per_day: 0, enabled: true }
     updateShopItem.mockResolvedValue({ item: {} })
     box.prompt
-      .mockResolvedValueOnce({ value: '3' }) // limit
-      .mockResolvedValueOnce({ value: '9' }) // stock
+      .mockResolvedValueOnce({ value: '3' }) // limit_per_day
+      .mockResolvedValueOnce({ value: 'abc' }) // 非法
       .mockResolvedValueOnce({ value: '新名字' }) // name
     const wrapper = await mountEconomy([], [row])
     const vm = wrapper.vm as unknown as {
       patchShop: (r: Row, field: string, label: string) => Promise<void>
     }
-    await vm.patchShop(row, 'limit', '限购次数')
-    expect(updateShopItem).toHaveBeenLastCalledWith(2, { limit: 3 })
-    await vm.patchShop(row, 'stock', '库存')
-    expect(updateShopItem).toHaveBeenLastCalledWith(2, { stock: 9 })
+    await vm.patchShop(row, 'limit_per_day', '限购次数')
+    await flushPromises()
+    expect(updateShopItem).toHaveBeenLastCalledWith(2, { limit_per_day: 3 })
+
+    await vm.patchShop(row, 'limit_per_day', '限购次数')
+    await flushPromises()
+    expect(document.body.textContent).toContain('限购须为非负整数')
+    expect(updateShopItem).toHaveBeenCalledTimes(1) // 非法值没提交
+
     await vm.patchShop(row, 'name', '名称')
+    await flushPromises()
     expect(updateShopItem).toHaveBeenLastCalledWith(2, { name: '新名字' })
     wrapper.unmount()
   })

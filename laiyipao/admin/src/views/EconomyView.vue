@@ -100,17 +100,62 @@ async function load() {
   }
 }
 
+/**
+ * 第 113 轮：价格输入「coin:100, gem:5」→ {coin:100, gem:5}。
+ * 服务端 price 列是 JSONB 的 map[string]int（玩家 Buy 按 map 读），
+ * 修前发裸数字 100 → 落库成 JSON 标量 → 该商品购买链路永久 500。
+ * 货币 key 限定在 CURRENCY_LABEL（与服务端「货币全集」同一份名字）。
+ */
+function parsePriceMap(s: string): Record<string, number> | null {
+  const out: Record<string, number> = {}
+  const t = s.trim()
+  if (t === '') return null
+  for (const part of t.split(',')) {
+    const p = part.trim()
+    if (!p) continue
+    const i = p.lastIndexOf(':')
+    if (i <= 0) return null
+    const k = p.slice(0, i).trim()
+    const v = Number(p.slice(i + 1).trim())
+    if (!(k in CURRENCY_LABEL) || !Number.isInteger(v) || v < 0) return null
+    out[k] = v
+  }
+  return Object.keys(out).length === 0 ? null : out
+}
+
 async function patchShop(row: Record<string, unknown>, field: string, label: string) {
   try {
+    // price 当前值显示成「金币:100、钻石:5」而不是 raw JSON；
+    // 限购读的是 limit_per_day（服务端字段名，修前读 limit 恒空）
+    const current = field === 'price' ? priceText(row) : String(num(row, field))
     const { value } = await ElMessageBox.prompt(
-      `修改「${str(row, 'name')}」的${label}（当前 ${str(row, field)}）`,
+      `修改「${str(row, 'name')}」的${label}（当前 ${current}${field === 'price' ? '，格式 货币:数量, 货币:数量' : ''}）`,
       '编辑商城项',
-      { inputValue: str(row, field) },
+      { inputValue: current },
     )
-    const parsed = field === 'price' || field === 'limit' || field === 'stock' ? Number(value) : value
-    const res = await updateShopItem(num(row, 'id'), { [field]: parsed })
-    Object.assign(row, res.item)
+    let parsed: unknown
+    if (field === 'price') {
+      parsed = parsePriceMap(value)
+      if (parsed === null) {
+        ElMessage.error('价格格式应为「货币:数量, 货币:数量」（如 coin:100, gem:5）')
+        return
+      }
+    } else if (field === 'limit_per_day') {
+      const n = Number(value)
+      if (!Number.isInteger(n) || n < 0) {
+        ElMessage.error('限购须为非负整数（0 = 不限）')
+        return
+      }
+      parsed = n
+    } else {
+      parsed = value
+    }
+    await updateShopItem(num(row, 'id'), { [field]: parsed })
+    // 第 113 轮（A-7 同族）：写后读回不再 Object.assign 响应——
+    // 服务端响应只有 {id, updated}，assign 完表格还是旧值却弹「已保存」。
+    // 直接整页重拉：表格与 KPI 一起对齐真库。
     ElMessage.success('已保存')
+    await load()
   } catch {
     /* 取消 */
   }
@@ -196,7 +241,7 @@ onMounted(load)
         <el-table-column label="操作" width="150" fixed="right">
           <template #default="{ row }">
             <el-button size="small" text @click="patchShop(row, 'price', '价格')">改价</el-button>
-            <el-button size="small" text @click="patchShop(row, 'limit', '限购次数')">限购</el-button>
+            <el-button size="small" text @click="patchShop(row, 'limit_per_day', '限购次数')">限购</el-button>
             <el-button size="small" text @click="patchShop(row, 'name', '名称')">改名</el-button>
           </template>
         </el-table-column>
