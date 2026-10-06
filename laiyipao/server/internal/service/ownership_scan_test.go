@@ -110,10 +110,10 @@ func posKey(pos string) string {
 // **这正是那条守卫存在的理由。** 若没有它，失效的豁免会静默躺着，
 // 而「守卫从未报过」会被误读成「那里一直有约束」。
 var ownershipExemptions = map[string]string{
-	"economy.go:114": "排行榜本就跨用户 —— 它返回全服前 N 名，" +
+	"economy.go:115": "排行榜本就跨用户 —— 它返回全服前 N 名，" +
 		"而返回列里没有别人的任何私有数据（只有 nickname / avatar / level_exp）。" +
 		"这不是「第 75 轮那个洞」的同类：那里泄露的是 build_snapshot + seed。\n" +
-		"⚠️ 键是 SQL **字面量的起始行**（114），不是 FROM 所在行（116）—— " +
+		"⚠️ 键是 SQL **字面量的起始行**（115），不是 FROM 所在行（117）—— " +
 		"多行 raw string 里两者差 2 行。",
 	"progression.go:721": "「挑战别人的防线」本身就是玩法：读 `defenses WHERE id = $1` " +
 		"是为了拿到 owner_id 做后续判定。归属检查在**同一事务内**紧接着做：" +
