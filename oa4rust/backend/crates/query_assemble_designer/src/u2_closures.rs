@@ -330,9 +330,24 @@ pub async fn statement_edit(
 #[allow(non_snake_case)]
 pub async fn statement_delete(
     pool: Extension<Pool>,
+    session: Extension<Session>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    // 属主/管理员门禁（对齐同族 guard_write 口径；表无 deleted_at 列，维持物理删）
+    let found = guard_write(
+        &pool,
+        &session,
+        &client,
+        "SELECT COALESCE(creator_person, creator, '') AS owner FROM x_query_statement \
+         WHERE id = $1 LIMIT 1",
+        &flag,
+    )
+    .await?;
+    if !found {
+        return Ok(Json(ActionResult::error("statement not found")));
+    }
 
     let result = client
         .execute("DELETE FROM x_query_statement WHERE id = $1", &[&flag])
@@ -658,12 +673,31 @@ pub async fn importmodel_edit(
 #[allow(non_snake_case)]
 pub async fn importmodel_delete(
     pool: Extension<Pool>,
+    session: Extension<Session>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
+    // 属主/管理员门禁 + 软删幂等（对齐 importmodel_delete_by_flag 口径；
+    // 原 物理 DELETE 与 crud spec soft_delete 分裂，行无法恢复）
+    let found = guard_write(
+        &pool,
+        &session,
+        &client,
+        "SELECT COALESCE(creator_person, creator, '') AS owner FROM x_query_import_model \
+         WHERE id = $1 AND deleted_at IS NULL LIMIT 1",
+        &id,
+    )
+    .await?;
+    if !found {
+        return Ok(Json(ActionResult::error("import model not found")));
+    }
+
     let result = client
-        .execute("DELETE FROM x_query_import_model WHERE id = $1", &[&id])
+        .execute(
+            "UPDATE x_query_import_model SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -681,13 +715,28 @@ pub async fn importmodel_delete(
 #[allow(non_snake_case)]
 pub async fn neural_delete_model_modelFlag(
     pool: Extension<Pool>,
+    session: Extension<Session>,
     Path(model_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
+    // 属主/管理员门禁 + 软删幂等（对齐同族口径；原物理删与 spec soft_delete 分裂）
+    let found = guard_write(
+        &pool,
+        &session,
+        &client,
+        "SELECT COALESCE(creator_person, creator, '') AS owner FROM x_query_neural_model \
+         WHERE flag = $1 AND deleted_at IS NULL LIMIT 1",
+        &model_flag,
+    )
+    .await?;
+    if !found {
+        return Ok(Json(ActionResult::error("neural model not found")));
+    }
+
     let result = client
         .execute(
-            "DELETE FROM x_query_neural_model WHERE flag = $1",
+            "UPDATE x_query_neural_model SET deleted_at = NOW() WHERE flag = $1 AND deleted_at IS NULL",
             &[&model_flag],
         )
         .await
@@ -828,12 +877,30 @@ pub async fn stat_edit(
 #[allow(non_snake_case)]
 pub async fn stat_delete(
     pool: Extension<Pool>,
+    session: Extension<Session>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
+    // 属主/管理员门禁 + 软删幂等（对齐同族 importmodel_delete_by_flag 口径）
+    let found = guard_write(
+        &pool,
+        &session,
+        &client,
+        "SELECT COALESCE(creator_person, creator, '') AS owner FROM x_query_stat \
+         WHERE id = $1 AND deleted_at IS NULL LIMIT 1",
+        &id,
+    )
+    .await?;
+    if !found {
+        return Ok(Json(ActionResult::error("stat not found")));
+    }
+
     let result = client
-        .execute("DELETE FROM x_query_stat WHERE id = $1", &[&id])
+        .execute(
+            "UPDATE x_query_stat SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -934,12 +1001,30 @@ pub async fn table_edit(
 #[allow(non_snake_case)]
 pub async fn table_delete(
     pool: Extension<Pool>,
+    session: Extension<Session>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
+    // 属主/管理员门禁 + 软删幂等（对齐同族口径）
+    let found = guard_write(
+        &pool,
+        &session,
+        &client,
+        "SELECT COALESCE(creator_person, creator, '') AS owner FROM x_query_table \
+         WHERE table_flag = $1 AND deleted_at IS NULL LIMIT 1",
+        &flag,
+    )
+    .await?;
+    if !found {
+        return Ok(Json(ActionResult::error("table not found")));
+    }
+
     let result = client
-        .execute("DELETE FROM x_query_table WHERE table_flag = $1", &[&flag])
+        .execute(
+            "UPDATE x_query_table SET deleted_at = NOW() WHERE table_flag = $1 AND deleted_at IS NULL",
+            &[&flag],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -1021,13 +1106,28 @@ pub async fn table_tableFlag_row_update(
 #[allow(non_snake_case)]
 pub async fn table_tableFlag_row_delete(
     pool: Extension<Pool>,
+    session: Extension<Session>,
     Path((table_flag, id)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
+    // 表级属主/管理员门禁（guard_write 单键限制，行删除由表属主判定）+ 行软删
+    let found = guard_write(
+        &pool,
+        &session,
+        &client,
+        "SELECT COALESCE(creator_person, creator, '') AS owner FROM x_query_table_data \
+         WHERE table_flag = $1 AND deleted_at IS NULL LIMIT 1",
+        &table_flag,
+    )
+    .await?;
+    if !found {
+        return Ok(Json(ActionResult::error("row not found")));
+    }
+
     let result = client
         .execute(
-            "DELETE FROM x_query_table_data WHERE table_flag = $1 AND id = $2",
+            "UPDATE x_query_table_data SET deleted_at = NOW() WHERE table_flag = $1 AND id = $2 AND deleted_at IS NULL",
             &[&table_flag, &id],
         )
         .await
@@ -1141,12 +1241,30 @@ pub async fn view_edit(
 #[allow(non_snake_case)]
 pub async fn view_delete(
     pool: Extension<Pool>,
+    session: Extension<Session>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
+    // 属主/管理员门禁 + 软删幂等（对齐同族口径；表无 creator_person，owner 取 creator）
+    let found = guard_write(
+        &pool,
+        &session,
+        &client,
+        "SELECT COALESCE(creator, '') AS owner FROM x_query_view \
+         WHERE id = $1 AND deleted_at IS NULL LIMIT 1",
+        &id,
+    )
+    .await?;
+    if !found {
+        return Ok(Json(ActionResult::error("view not found")));
+    }
+
     let result = client
-        .execute("DELETE FROM x_query_view WHERE id = $1", &[&id])
+        .execute(
+            "UPDATE x_query_view SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -1454,12 +1572,14 @@ pub async fn importmodel_delete_flag(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
+    // OR 优先级修正：原式 id=$1 OR (model_flag=$1 AND deleted_at IS NULL)——
+    // 已删行按 id 仍可通过守卫；括号化后「未删即可见」
     let found = guard_write(
         &pool,
         &session,
         &client,
         "SELECT COALESCE(creator_person, creator, '') AS owner FROM x_query_import_model \
-         WHERE id = $1 OR model_flag = $1 AND deleted_at IS NULL LIMIT 1",
+         WHERE (id = $1 OR model_flag = $1) AND deleted_at IS NULL LIMIT 1",
         &flag,
     )
     .await?;
@@ -1469,7 +1589,7 @@ pub async fn importmodel_delete_flag(
 
     let result = client
         .execute(
-            "DELETE FROM x_query_import_model WHERE id = $1 OR model_flag = $1",
+            "UPDATE x_query_import_model SET deleted_at = NOW() WHERE (id = $1 OR model_flag = $1) AND deleted_at IS NULL",
             &[&flag],
         )
         .await
