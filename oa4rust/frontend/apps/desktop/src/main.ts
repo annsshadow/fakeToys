@@ -7,6 +7,7 @@ import { NConfigProvider } from 'naive-ui'
 import { createPinia } from 'pinia'
 import { createApp, h } from 'vue'
 import { createRouter, createWebHistory, RouterView } from 'vue-router'
+import { watchSessionCacheReset } from './utils/sessionCache'
 import '@oa4rust/ui'
 import AppShell from '@oa4rust/ui/components/AppShell.vue'
 import LoginScreen from '@oa4rust/ui/components/LoginScreen.vue'
@@ -536,4 +537,7 @@ window.addEventListener('unhandledrejection', (e) => {
 app.use(createPinia())
 app.use(router)
 app.use(VueQueryPlugin, { queryClient })
+// 登录人变化（登出/切换/换账号重登）即清查询缓存——视图 queryKey 不含登录人，
+// 保留缓存会把上一账号 staleTime 内的数据渲染给当前账号（跨账号数据泄漏）。
+watchSessionCacheReset(queryClient, () => useSession().state.user?.unique ?? null)
 app.mount('#o2-app-root')
