@@ -172,13 +172,16 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
 }
 
 #[allow(non_snake_case)]
-pub async fn collect_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn collect_list(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
-            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE deleted_at IS NULL ORDER BY create_time DESC",
-            &[],
+            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE person_id = $1 AND deleted_at IS NULL ORDER BY create_time DESC",
+            &[&session.person_unique],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -260,27 +263,6 @@ pub async fn collect_add(
     ))))
 }
 
-#[allow(non_snake_case)]
-pub async fn collect_remove(
-    pool: Extension<Pool>,
-    Path(id): Path<String>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-
-    let result = client
-        .execute("DELETE FROM x_program_collect WHERE id = $1", &[&id])
-        .await
-        .map_err(|_| AppError::Internal)?;
-
-    if result == 0 {
-        return Ok(Json(ActionResult::error("collect not found")));
-    }
-
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("id".to_string(), Value::String(id))]),
-    ))))
-}
-
 // ── collect 家族 CRUD（x_program_collect 032+037，通用参数化写；order_number BIGINT 不映射）──
 fn collect_spec() -> shared::crud::CrudSpec {
     shared::crud::CrudSpec {
@@ -329,9 +311,21 @@ pub async fn collect_save(
 #[allow(non_snake_case)]
 pub async fn collect_delete(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let deleted = shared::crud_delete(&pool, &collect_spec(), &id).await?;
+    // 属主门禁 + 软删幂等：持他人收藏 id 删除=横向越权（修复前 crud_delete
+    // 无属主校验，任何登录人可删任意收藏）；deleted=false 不区分
+    // 「不存在/非本人/已删」，不泄漏行存在性
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let deleted = client
+        .execute(
+            "UPDATE x_program_collect SET deleted_at = NOW() WHERE id = $1 AND person_id = $2 AND deleted_at IS NULL",
+            &[&id, &session.person_unique],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?
+        > 0;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
