@@ -298,9 +298,26 @@ func seedTasks(ctx context.Context, tx pgx.Tx, res *SeedResult) error {
 		{6, 20, "weekly_clears_20", "本周累计通关 20 关", "weekly", "clears", map[string]int{"coin": 6000, "keys": 2}},
 		{7, 150, "weekly_reactions_150", "本周累计触发 150 次元素反应", "weekly", "reactions", map[string]int{"gem": 40}},
 		{8, 1, "ach_first_clear", "首次通关任意关卡", "achievement", "clears", map[string]int{"gem": 30}},
-		{9, 1, "ach_reach_20", "抵达第 20 关", "achievement", "max_stage", map[string]int{"gem": 60}},
-		{10, 1, "ach_reach_60", "抵达第 60 关", "achievement", "max_stage", map[string]int{"gem": 150}},
-		{11, 1, "ach_reach_100", "通关第 100 关", "achievement", "max_stage", map[string]int{"gem": 500}},
+		// ⚠️ 第 92 轮：target 从 1 改成关号。
+		//
+		// `max_stage` 的 bump 值是**刚结算那一关的关号**，
+		// 而 `bumpTasks` 对 achievement 走 `GREATEST(progress, value)`
+		// —— 所以 progress 的语义是「**历史上到达过的最高关号**」。
+		//
+		// 「达到 N 关」的达成条件应当是 `progress >= N`，
+		// 而 target 写 1 时条件变成 `progress >= 1` ——
+		// **通关第 1 关就解锁**。
+		//
+		// 实测（只结算第 1 关）：
+		//
+		//	ach_reach_20   progress=1 target=1  可领取（应为不可）
+		//	ach_reach_60   progress=1 target=1  可领取（应为不可）
+		//	ach_reach_100  progress=1 target=1  可领取 —— 500 钻石！
+		//
+		// 三项合计 710 钻石只要清第 1 关。
+		{9, 20, "ach_reach_20", "抵达第 20 关", "achievement", "max_stage", map[string]int{"gem": 60}},
+		{10, 60, "ach_reach_60", "抵达第 60 关", "achievement", "max_stage", map[string]int{"gem": 150}},
+		{11, 100, "ach_reach_100", "通关第 100 关", "achievement", "max_stage", map[string]int{"gem": 500}},
 		{12, 100, "ach_reactions_100", "累计触发 100 次元素反应", "achievement", "reactions", map[string]int{"gem": 80}},
 	}
 	for _, t := range tasks {
