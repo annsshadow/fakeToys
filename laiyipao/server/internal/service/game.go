@@ -279,7 +279,7 @@ func (s *Service) SettleBattle(ctx context.Context, userID, tokenID int64, in do
 		}
 
 		// 4) 推进进度与统计
-		newMax, err := s.applyProgress(ctx, tx, userID, gl.ID, res.Win, int64(in.Kills), int64(in.Reactions))
+		newMax, err := s.applyProgress(ctx, tx, userID, gl.ID, res.Win, int64(in.Kills))
 		if err != nil {
 			return err
 		}
@@ -351,7 +351,20 @@ func boolToInt(b bool) int {
 }
 
 // applyProgress 推进关卡进度与累计统计。
-func (s *Service) applyProgress(ctx context.Context, tx pgx.Tx, userID int64, levelID int, win bool, kills, reactions int64) (int, error) {
+// applyProgress 结算一局后的进度写入。
+//
+// ⚠️ 第 103 轮移除了 `reactions` 参数 —— 它从未被使用：
+//
+//	原签名：…(…, win bool, kills, reactions int64)
+//	函数体：SQL 只用 $1..$4 = userID / win / levelID / kills
+//
+// `user_progress` 表里也**没有** `total_reactions` 列（00003 迁移），
+// 所以它不是「忘了写进某个已有列」，而是这个计数从来没被设计过。
+//
+// 由 `TestNoFunctionIgnoresAParameter` 抓到 —— 那种守卫只盯 `ctx`
+// 会漏掉它：`reactions` 没有 ctx 那样显眼的副作用，
+// 它只是「看起来多余」，于是更容易长期存在。
+func (s *Service) applyProgress(ctx context.Context, tx pgx.Tx, userID int64, levelID int, win bool, kills int64) (int, error) {
 	var newMax int
 	err := tx.QueryRow(ctx, `
 		UPDATE user_progress

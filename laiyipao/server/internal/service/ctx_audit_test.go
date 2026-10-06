@@ -310,7 +310,15 @@ func silencedIdents(body *ast.BlockStmt) map[*ast.Ident]bool {
 			return true
 		}
 		for _, rhs := range as.Rhs {
-			if id, ok := rhs.(*ast.Ident); ok && id.Name == "ctx" {
+			// ⚠️ 只认 Rhs **就是**一个标识符的情形，且**不限定名字**。
+			//
+			// 我第一版写的是 `id.Name == "ctx"` —— 于是变异
+			// 「`ComputePowerFor` 的 userID 参数加回来并写 `_ = userID`」
+			// **全绿通过**：消音规则只认 ctx，认不出 userID。
+			//
+			// 通用化之后两个守卫（ctx 专用与全参数）共用同一条规则，
+			// 不会再出现「一个认得、另一个认不出」的裂缝。
+			if id, ok := rhs.(*ast.Ident); ok && id.Name != "" {
 				out[id] = true
 			}
 		}
