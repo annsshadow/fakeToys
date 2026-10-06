@@ -8,7 +8,7 @@ use axum::{
 use deadpool_postgres::Pool;
 use serde::Serialize;
 use serde_json::Value;
-use shared::{error::AppError, response::ActionResult};
+use shared::{error::AppError, middleware::is_admin, response::ActionResult, session::Session};
 
 pub mod routes;
 
@@ -59,6 +59,19 @@ pub struct StatisticalCycleInfo {
 }
 
 // --- Handlers ---
+
+/// 考勤管理员判定：x_attendance_admin 登记的 admin（与全局 admin 二选一即过）。
+async fn is_attendance_admin(pool: &Pool, person_unique: &str) -> Result<bool, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT 1 FROM x_attendance_admin WHERE admin = $1 LIMIT 1",
+            &[&person_unique.to_string()],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(row.is_some())
+}
 
 #[allow(non_snake_case)]
 pub async fn list_admins(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -446,15 +459,13 @@ pub async fn list_appeal_records(
 #[allow(non_snake_case)]
 pub async fn submit_appeal(
     pool: Extension<Pool>,
+    session: Extension<Session>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let person_id = payload
-        .get("personId")
-        .and_then(|v| v.as_str())
-        .unwrap_or("")
-        .to_string();
+    // 申诉人/创建者以会话登录人为事实源：客户端 personId 可伪造（替别人提申诉）
+    let person_id = session.person_unique.clone();
     let appeal_date = payload
         .get("appealDate")
         .and_then(|v| v.as_str())
@@ -465,11 +476,7 @@ pub async fn submit_appeal(
         .and_then(|v| v.as_str())
         .unwrap_or("")
         .to_string();
-    let creator = payload
-        .get("creator")
-        .and_then(|v| v.as_str())
-        .unwrap_or("system")
-        .to_string();
+    let creator = session.person_unique.clone();
 
     let new_id = uuid::Uuid::new_v4().to_string();
 
@@ -498,8 +505,15 @@ pub async fn submit_appeal(
 #[allow(non_snake_case)]
 pub async fn audit_appeal(
     pool: Extension<Pool>,
+    session: Extension<Session>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 审核（批/驳）=考勤管理员动作：此前任何登录人可批任意申诉
+    if !is_admin(&pool.0, &session.person_unique).await
+        && !is_attendance_admin(&pool, &session.person_unique).await?
+    {
+        return Err(AppError::Forbidden);
+    }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = payload
@@ -538,8 +552,15 @@ pub async fn audit_appeal(
 #[allow(non_snake_case)]
 pub async fn archive_appeal(
     pool: Extension<Pool>,
+    session: Extension<Session>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 归档=考勤管理员动作（同 audit_appeal 口径）
+    if !is_admin(&pool.0, &session.person_unique).await
+        && !is_attendance_admin(&pool, &session.person_unique).await?
+    {
+        return Err(AppError::Forbidden);
+    }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
