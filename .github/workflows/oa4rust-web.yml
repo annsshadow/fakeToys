@@ -6,12 +6,24 @@ on:
     paths:
       - "oa4rust/**"
       - "!oa4rust/backend/**"
+      - "oa4rust/pnpm-workspace.yaml"
+      - "oa4rust/package.json"
+      - "oa4rust/pnpm-lock.yaml"
+      - "oa4rust/biome.json"
+      - "oa4rust/tsconfig*.json"
+      - "oa4rust/scripts/**"
       - ".github/workflows/oa4rust-web.yml"
   pull_request:
     branches: [main, master]
     paths:
       - "oa4rust/**"
       - "!oa4rust/backend/**"
+      - "oa4rust/pnpm-workspace.yaml"
+      - "oa4rust/package.json"
+      - "oa4rust/pnpm-lock.yaml"
+      - "oa4rust/biome.json"
+      - "oa4rust/tsconfig*.json"
+      - "oa4rust/scripts/**"
       - ".github/workflows/oa4rust-web.yml"
   workflow_dispatch:
 
@@ -57,3 +69,5 @@ jobs:
         run: pnpm build
       - name: Build mobile (uni-app H5)
         run: pnpm --filter @oa4rust/mobile build:h5
+      - name: Build mobile (WeChat mini program)
+        run: pnpm --filter @oa4rust/mobile build:mp-weixin
