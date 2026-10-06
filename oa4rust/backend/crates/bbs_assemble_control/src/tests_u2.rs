@@ -976,8 +976,9 @@ async fn test_section_crud_roundtrip() {
         "list 必须含新建版块: {names:?}"
     );
 
-    // 4) 硬删（无 deleted_at 列 → DELETE）
-    let (st, body) = send_with_session(
+    // 4) 硬删（无 deleted_at 列 → DELETE）：轮6 起 section delete=管理动作，
+    //    非 admin 必 403，admin 成功（守卫双断言）
+    let (st, _) = send_with_session(
         app.clone(),
         Method::POST,
         &format!("/api/bbs/assemble/control/section/delete/{}", id),
@@ -985,8 +986,70 @@ async fn test_section_crud_roundtrip() {
         None,
     )
     .await;
-    assert_eq!(st, StatusCode::OK, "section delete 必须 200: {body}");
+    assert_eq!(st, StatusCode::FORBIDDEN, "非 admin 删除版块必须 403");
+
+    // 造临时 admin 探针身份（唯一前缀，测后清理；复用既有 admin 角色若存在）
+    {
+        let c = pool.get().await.unwrap();
+        c.execute(
+            "INSERT INTO auth_person (id, unique_id, name, password_hash, salt, created_at, updated_at) \
+             VALUES ('u2-admin-section-probe', 'u2-admin-section-probe', 'probe-admin', 'probe-not-a-login', '', NOW(), NOW()) \
+             ON CONFLICT (id) DO NOTHING",
+            &[],
+        )
+        .await
+        .unwrap();
+        c.execute(
+            "INSERT INTO auth_role (id, name, created_at, updated_at) \
+             SELECT 'u2-admin-section-probe-role', 'admin', NOW(), NOW() \
+             WHERE NOT EXISTS (SELECT 1 FROM auth_role WHERE name = 'admin')",
+            &[],
+        )
+        .await
+        .unwrap();
+        c.execute(
+            "INSERT INTO auth_person_role (person_id, role_id, unit_id, created_at) \
+             SELECT 'u2-admin-section-probe', r.id, '', NOW() FROM auth_role r WHERE r.name = 'admin' \
+             ON CONFLICT DO NOTHING",
+            &[],
+        )
+        .await
+        .unwrap();
+    }
+
+    let (st, body) = send_with_session(
+        crate::router(pool.clone()),
+        Method::POST,
+        &format!("/api/bbs/assemble/control/section/delete/{}", id),
+        None,
+        Some(make_session("u2-admin-section-probe", "admin-probe")),
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK, "admin 删除版块必须 200: {body}");
     assert_eq!(body["data"]["deleted"], Value::Bool(true));
+
+    {
+        let c = pool.get().await.unwrap();
+        c.execute(
+            "DELETE FROM auth_person_role WHERE person_id = 'u2-admin-section-probe'",
+            &[],
+        )
+        .await
+        .unwrap();
+        c.execute(
+            "DELETE FROM auth_person WHERE id = 'u2-admin-section-probe'",
+            &[],
+        )
+        .await
+        .unwrap();
+        c.execute(
+            "DELETE FROM auth_role WHERE id = 'u2-admin-section-probe-role'",
+            &[],
+        )
+        .await
+        .unwrap();
+    }
+
     let gone = client
         .query_one(
             "SELECT COUNT(*) FROM x_bbs_assemble_control_section WHERE id = $1",
