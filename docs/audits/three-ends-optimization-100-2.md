@@ -14,7 +14,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 > **提交尾注用「（优化二轮 N）」与第一本的「（优化轮 N）」区分**；仍只暂存本人文件
 > （工作区有并行 CI/augmentor/laiyipao 会话在途改动，绝不越界暂存）。
 
-## 状态：进行中（轮 6/100）
+## 状态：进行中（轮 7/100）
 
 ## 启动基线（2026-10-06 实测）
 
@@ -42,6 +42,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 | 4 | IMPROVE（跨端同构甄别，轮3 主题收尾） | IMPROVE | **mobile 端跨账号缓存泄漏面甄别=不存在**：①mobile 不用 vue-query（pnpm 依赖与源码零命中，自有 http.ts+pinia 方案）；②业务数据零 storage 落盘（`setStorageSync` 全仓仅 tab/theme 等 UI 偏好，页面数据内存态+onShow 重拉）；③会话恢复走服务端 `/who`（store 纯内存 ref，无持久化）——登出/换号后不存在上一账号数据复现路径。SDK 侧 `clearLegacyStorage()` 已有。结论：轮3 修复无需 mobile 同构改动，跨端缓存/存储泄漏主题双端闭环。验证：依赖清单+源码扫描+store 实读三重证据 |
 | 5 | FIX（后端安全/数据正确性，IDOR+语义分裂跨 8 端点） | FIX | **query designer 删除族口径统一收口**（commit `1ce67a79d`）：u2_closures.rs 内 8 个删除端点三类问题一次收口——①裸奔无守卫：importmodel_delete/stat_delete/statement_delete/neural_delete/table_delete/table_row_delete/view_delete 全部无 session 校验，任何登录人可删任意数据 → 补 guard_write（owner=COALESCE(creator_person,creator,'')，空 owner 回退 admin，同族既有惯例）；②物理 DELETE 与 crud spec soft_delete: true 分裂（7 表有 deleted_at 列）→ 软删幂等 `UPDATE SET deleted_at=NOW() ... AND deleted_at IS NULL`（statement 表无软删列维持物理删仅补守卫）；③guard SQL 的 OR 优先级 bug：`id=$1 OR model_flag=$1 AND deleted_at IS NULL` 实际等价 id=$1 OR (model_flag=$1 AND 未删)——已删行按 id 仍可通过守卫 → 括号化修正。**甄别记档（勿重扫）：mind 域 tree/my 列全部 = o2 原始契约语义（docs/oa/modules/o2server/x_mind_assemble_control.md 明确记录查 parent_id IS NULL 全量），共享目录树设计非 IDOR；mind create 的 creator 落 "system" 为低危展示字段质量问题记档**。验证：query_assemble_designer 46/46、clippy 0、fmt 0 |
 | 6 | FIX（后端安全，越权管理面） | FIX | **bbs assemble/control 删除族补 admin 门禁**（commit `411aeb822`）：delete_forum/reply/subject 的 Path 版+body 版共 6 端点 + section_delete（crud_delete 版）=7 端点此前任何登录人可调（BBSForum.vue 调用点全部在管理面板上下文，与禁言/角色并列=管理动作语义）→ 补 `shared::middleware::is_admin` 门禁，非 admin 返 Forbidden 信封。**消费面甄别：delete/subject 零前端消费（desktop 测试还断言不调用）、forum/reply/section 删除仅管理面板**——无误伤。section CRUD 往返测试改造为守卫双断言（非 admin 403 + 临时 admin 探针身份 200 硬删+清理）；坑：auth_person.password_hash 与 auth_person_role.unit_id NOT NULL，探针 INSERT 须带占位值。验证：bbs 51/51、clippy 0、fmt 0 |
+| 7 | FIX（后端安全，归属伪造+IDOR） | FIX | **bbs 发帖/回帖 creator 事实源收口 + 昵称 IDOR**（commit `a22dea854`）：①create_topic（mobile 发帖在用）/u2_subject_save/u2_user_reply_save 三端点 creator 从 body 取值（可伪造=冒名发帖/回帖，且漏发时落 "anonymous" 垃圾归属）→ 强制取 session.person_unique，客户端传值忽略；②u2_userinfo_update_nick 路径含 person 却无校验=任何人可改任意人昵称 → 本人或 admin（`person != session.person_unique → u2_require_admin`）。轮98 mobile roundtrip 测试同步带 session（creator 断言值与会话人一致）。**方法学教训：扫描器的守卫模式必须先枚举本域真实守卫原语（u2_require_admin/gate_topic_owner/gate_reply_owner）再扫，本轮两度误报「无守卫」实为模式漏配**。甄别排除：vote_submit 已用 session、role_list_by_section 为纯读。验证：bbs 51/51、desktop vitest 1001/1001、mobile 114/114、clippy 0、fmt 0 |
 
 ## 记账纪律（沿用第一本）
 
