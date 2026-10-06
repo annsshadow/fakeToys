@@ -14,7 +14,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 > **提交尾注用「（优化二轮 N）」与第一本的「（优化轮 N）」区分**；仍只暂存本人文件
 > （工作区有并行 CI/augmentor/laiyipao 会话在途改动，绝不越界暂存）。
 
-## 状态：进行中（轮 8/100）
+## 状态：进行中（轮 9/100）
 
 ## 启动基线（2026-10-06 实测）
 
@@ -44,6 +44,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 | 6 | FIX（后端安全，越权管理面） | FIX | **bbs assemble/control 删除族补 admin 门禁**（commit `411aeb822`）：delete_forum/reply/subject 的 Path 版+body 版共 6 端点 + section_delete（crud_delete 版）=7 端点此前任何登录人可调（BBSForum.vue 调用点全部在管理面板上下文，与禁言/角色并列=管理动作语义）→ 补 `shared::middleware::is_admin` 门禁，非 admin 返 Forbidden 信封。**消费面甄别：delete/subject 零前端消费（desktop 测试还断言不调用）、forum/reply/section 删除仅管理面板**——无误伤。section CRUD 往返测试改造为守卫双断言（非 admin 403 + 临时 admin 探针身份 200 硬删+清理）；坑：auth_person.password_hash 与 auth_person_role.unit_id NOT NULL，探针 INSERT 须带占位值。验证：bbs 51/51、clippy 0、fmt 0 |
 | 7 | FIX（后端安全，归属伪造+IDOR） | FIX | **bbs 发帖/回帖 creator 事实源收口 + 昵称 IDOR**（commit `a22dea854`）：①create_topic（mobile 发帖在用）/u2_subject_save/u2_user_reply_save 三端点 creator 从 body 取值（可伪造=冒名发帖/回帖，且漏发时落 "anonymous" 垃圾归属）→ 强制取 session.person_unique，客户端传值忽略；②u2_userinfo_update_nick 路径含 person 却无校验=任何人可改任意人昵称 → 本人或 admin（`person != session.person_unique → u2_require_admin`）。轮98 mobile roundtrip 测试同步带 session（creator 断言值与会话人一致）。**方法学教训：扫描器的守卫模式必须先枚举本域真实守卫原语（u2_require_admin/gate_topic_owner/gate_reply_owner）再扫，本轮两度误报「无守卫」实为模式漏配**。甄别排除：vote_submit 已用 session、role_list_by_section 为纯读。验证：bbs 51/51、desktop vitest 1001/1001、mobile 114/114、clippy 0、fmt 0 |
 | 8 | FIX（后端安全，归属事实源） | FIX | **collect 归属事实源收口**（commit `eb6e221fb`，轮2/7 同主题收尾）：①collect_create 的 personId 从 body 取（客户端可伪造=替别人创建收藏）→ 强制 session.person_unique 覆盖 body 值；②collect_save 双缺陷：无属主校验（可改他人收藏内容）+ personId 可经 save 改写 → 前置属主校验（WHERE id AND person_id AND deleted_at IS NULL，不匹配返 saved=false 不泄漏）+ payload 剥离 personId。desktop CollectApp 发的 personId=登录人（轮97），后端覆盖后行为不变仅堵伪造面。验证：program_center 256/256、clippy 0、fmt 0 |
+| 9 | FIX（desktop 功能缺失/死代码激活即炸） | FIX | **QueryStatementDesigner SQL 编辑器修复**（commit 见 git log）：①孤儿组件复扫出 SqlEditor.vue 零引用——QueryStatementDesigner.vue:84 模板用 `<SqlEditor>` 却全文件无 import，运行时组件解析失败编辑器恒空白（tsc 不查模板未注册组件=盲区）；②接线后 build 炸出 SqlEditor 内部潜伏错误：highlightSelectionMatches 误从 @codemirror/view 导入（真身在 @codemirror/search）、syntaxHighlighting 无参调用（需 HighlightStyle 且 basicSetup 已含默认高亮）——此前被 tree-shake 掩盖，与第一本轮67 ProcessDesigner 死代码「休眠链激活即炸」同款病灶；③根 package.json 补 @codemirror/search 显式声明（此前靠传递依赖）。顺带甄别：personal reset 流程（验证码 store：6 位码/5 分钟/5 次尝试/一次性/原子）扎实无必修；creator 伪造面全局复扫=0 残留（轮7/8 修复完整）。**教训：孤儿组件接线前先审实现质量（轮67 已记档，本轮实证再犯代价=build 门禁兜住）**。验证：desktop vitest 79/79（views 全量）、biome 0、tsc 0、desktop build ✓ |
 
 ## 记账纪律（沿用第一本）
 
