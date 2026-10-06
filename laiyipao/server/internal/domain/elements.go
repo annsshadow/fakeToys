@@ -131,18 +131,44 @@ type ReactionSpec struct {
 // 而 I-6 的回放哈希会随之失配（表现为"所有人都验不出真伪"）。
 // 两份副本由 testdata/reaction_specs.json 双向锁住，
 // 改动任何一侧都必须同步另一侧并重新生成契约文件。
+// ⚠️ 第 83 轮：这张表里 **5 条反应只有反应伤害**，没有特殊效果。
+//
+// 逐字段核过消费面（`resolveHit` + 服务端重算）：
+//
+//	baseCoef / attackWeightPct / statusDurationMs / dispelShield / amplifyPct  ✓
+//	aoeRadius                                                          ✗ 从未被读
+//
+// 所以 `steam_burst` 的「范围伤害」、`overheat` 的「爆炸」、
+// `burn_cloud` 的「持续火区」、`corrosion_spread` 的「层数传播」、
+// `armor_break` 的「击退 + 削甲」**都不存在**。
+//
+// 而 `Descr` 是**被消费的**（见 ReactionSpec.Descr 的注释：运营后台的
+// 玩法文档站直接展示它）—— 于是这不是「内部注释不准」，
+// 而是**对外文案在承诺不存在的机制**。
+//
+// 本轮把 Descr 改成只描述已实现的效果，并把 AoeRadius 全部置 0
+// （字段保留：它已在 `/config` 的公开 JSON 契约里，删字段是破坏性变更）。
+//
+// 「要不要实现」是产品决策，已记入 README 已知边界。
+
 var reactionSpecs = map[ReactionKey]ReactionSpec{
 	ReactionSteamBurst: {
 		Key: ReactionSteamBurst, Name: "蒸汽爆发", BaseCoef: 60, AttackWeightPct: 300,
-		AoeRadius: 120, DispelShield: true, Descr: "范围伤害并驱散护盾",
+		// ⚠️ 第 83 轮：120 -> 0。溅射**从未被实现**。
+		// `resolveHit` 不读 AoeRadius；它唯一的消费者是 miniapp 的屏幕震动，
+		// 于是游戏在视觉上谎称发生了爆炸。
+		AoeRadius: 0, DispelShield: true, Descr: "驱散护盾并造成反应伤害",
 	},
 	ReactionOverheat: {
 		Key: ReactionOverheat, Name: "过热", BaseCoef: 55, AttackWeightPct: 300,
-		AoeRadius: 90, StatusDurationMs: 1500, Descr: "爆炸并眩晕",
+		AoeRadius: 0, StatusDurationMs: 1500, Descr: "眩晕 1.5 秒并造成反应伤害",
 	},
 	ReactionBurnCloud: {
+		// ⚠️ 第 83 轮：这条反应的**整条文案都是未实现的**。
+		// statusDurationMs=0 -> 无燃烧状态；AoeRadius 未被消费 -> 无火区。
+		// 唯一的实现是「一个系数较低的应伤害」（baseCoef 40，七条里第二低）。
 		Key: ReactionBurnCloud, Name: "燃烧云", BaseCoef: 40, AttackWeightPct: 250,
-		AoeRadius: 100, Descr: "生成持续火区",
+		AoeRadius: 0, Descr: "造成反应伤害",
 	},
 	ReactionSuperconduct: {
 		Key: ReactionSuperconduct, Name: "超导", BaseCoef: 50, AttackWeightPct: 250,
@@ -154,11 +180,14 @@ var reactionSpecs = map[ReactionKey]ReactionSpec{
 	},
 	ReactionCorrosionSpray: {
 		Key: ReactionCorrosionSpray, Name: "腐蚀扩散", BaseCoef: 35, AttackWeightPct: 200,
-		AoeRadius: 150, Descr: "把元素层数传播给周围敌人",
+		AoeRadius: 0, Descr: "造成反应伤害",
 	},
 	ReactionArmorBreak: {
+		// ⚠️ 第 83 轮：「击退」与「削减护甲」**都没有实现**。
+		// Enemy.knockback 字段存在但没有任何代码写它；护甲削减也没有消费者。
+		// 所以这条反应现在只有反应伤害（baseCoef 30，七条里最低）。
 		Key: ReactionArmorBreak, Name: "破甲击退", BaseCoef: 30, AttackWeightPct: 300,
-		Descr: "击退并削减护甲",
+		Descr: "造成反应伤害",
 	},
 }
 

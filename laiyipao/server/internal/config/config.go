@@ -3,6 +3,7 @@ package config
 
 import (
 	"fmt"
+	"math"
 	"os"
 	"strconv"
 	"strings"
@@ -61,7 +62,15 @@ func envInt(key string, def int) int {
 	return def
 }
 
-func envInt32(key string, def int32) int32 { return int32(envInt(key, int(def))) }
+// envInt32 带范围裁剪：envInt 返回平台 int（64 位），直接 int32 截断会让
+// 越界值（如 DB_MAX_CONNS=99999999999）静默回绕成负数/错值，超界一律回退默认。
+func envInt32(key string, def int32) int32 {
+	n := envInt(key, int(def))
+	if n < math.MinInt32 || n > math.MaxInt32 {
+		return def
+	}
+	return int32(n)
+}
 
 func envBool(key string, def bool) bool {
 	if v := strings.TrimSpace(os.Getenv(key)); v != "" {
