@@ -347,13 +347,61 @@ func (s *Server) verifyReplay(c *fiber.Ctx) error {
 	return c.JSON(res)
 }
 
+// leaderboardKinds 是全部合法榜单类型 —— 与 `service.Leaderboard` 的
+// switch 分支、以及小程序 `pages/rank/rank.vue` 的三个 tab **三方一致**。
+//
+// ⚠️ 第 104 轮新增。原来 `type` 走 `default:` 分支，
+// 于是任何未知 type 都会**静默返回战力榜**，
+// 而响应里 `"type"` 仍然**回显那个未知的值**。
+//
+// 后果：客户端按 type 决定标题与说明
+// （`rank.vue` 的 `curDesc` + `formatScore`），
+// 于是会在「日榜」这种标题下显示战力榜的数据，
+// 且客户端**无法察觉**（响应确认了它请求的类型）。
+//
+// 这与 `user_id=abc` 是同一类：**把非法输入静默重解释成另一个合法值**。
+//
+// 三方一致由 `TestLeaderboardKindIsValidated` 的对拍守住。
+var leaderboardKinds = map[string]bool{"power": true, "stage": true, "efficiency": true}
+
 func (s *Server) leaderboard(c *fiber.Ctx) error {
-	kind := c.Query("type", "power")
-	limit, _ := strconv.Atoi(c.Query("limit", "50"))
+	//
+	// ⚠️⚠️ **不能**写成 `c.Query("type", "power")` 再校验。
+	//
+	// 实测（探针）：Fiber 的 `c.Query(key, default)` 在**值为空**时
+	// 也返回 default —— 它看的是值，不是键在不在：
+	//
+	//	?type=        → c.Query("type","power") == "power"   ← 空串被吞成默认值
+	//	（不传）      → c.Query("type","power") == "power"
+	//	?other=1      → c.Query("type","power") == "power"
+	//
+	// 三种输入三种含义（没传 / 显式传空 / 传了别的键），
+	// 而这个 API **把它们压成同一个值**。
+	//
+	// 我第一版就是这么写的，于是 `?type=` 绕过了校验返回 200 + 战力榜。
+	// 只有 `QueryArgs().Has(key)` 能区分「键在不在」——
+	// 实测 `?type=` → Has=true，`(不传)` → Has=false。
+	//
+	// 所以顺序必须是：**先 Has，再取不带默认值的 raw**，最后校验。
+	// 这与 `queryInt` 是同一条道理，两处必须一致。
+	kind := "power"
+	if c.Context().QueryArgs().Has("type") {
+		kind = c.Query("type") // 显式传了 —— 哪怕是空串，也要走下面的校验
+	}
+	if !leaderboardKinds[kind] {
+		return fail(c, fiber.StatusBadRequest, "bad_input",
+			"type 只能是 power / stage / efficiency")
+	}
+	limit, err := queryInt(c, "limit", 50)
+	if err != nil {
+		return failErr(c, err)
+	}
 	items, err := s.Svc.Leaderboard(c.Context(), kind, limit)
 	if err != nil {
 		return failErr(c, err)
 	}
+	// 回显**规范化之后**的 kind，而不是原样回显请求值 ——
+	// 响应里的 type 必须与实际返回的数据是同一件事。
 	return c.JSON(fiber.Map{"type": kind, "items": items})
 }
 
@@ -462,8 +510,14 @@ func (s *Server) redeem(c *fiber.Ctx) error {
 }
 
 func (s *Server) diagnose(c *fiber.Ctx) error {
-	levelID, _ := strconv.Atoi(c.Query("level_id", "1"))
-	failed, _ := strconv.Atoi(c.Query("failed_times", "1"))
+	levelID, err := queryInt(c, "level_id", 1)
+	if err != nil {
+		return failErr(c, err)
+	}
+	failed, err := queryInt(c, "failed_times", 1)
+	if err != nil {
+		return failErr(c, err)
+	}
 	res, err := s.Svc.Diagnose(c.Context(), int64(userIDFrom(c)), levelID, failed)
 	if err != nil {
 		return failErr(c, err)
