@@ -273,7 +273,7 @@ func (s *Server) wallet(c *fiber.Ctx) error {
 
 func (s *Server) getConfig(c *fiber.Ctx) error {
 	// LoadGameConfig 纯内存构造、恒不失败，签名没有 error 返回值
-	return c.JSON(s.Svc.LoadGameConfig(c.Context()))
+	return c.JSON(s.Svc.LoadGameConfig())
 }
 
 func (s *Server) getLevel(c *fiber.Ctx) error {
