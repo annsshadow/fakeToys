@@ -332,7 +332,7 @@ func (s *Service) SettleBattle(ctx context.Context, userID, tokenID int64, in do
 		return SettleResp{}, err
 	}
 	resp.Rating = s.computeRating(ctx, userID, build)
-	resp.Power = s.computePower(ctx, userID, build)
+	resp.Power = computePower(build)
 	return resp, nil
 }
 
@@ -629,7 +629,33 @@ func (s *Service) computeRating(ctx context.Context, userID int64, build map[str
 	return domain.ComputeBuildRating(in, domain.DefaultRatingWeights())
 }
 
-func (s *Service) computePower(ctx context.Context, userID int64, build map[string]any) int64 {
+// computePower 是**纯函数**：只解析 build 快照里的技能等级与专精节点数，
+// 交给 `domain.ComputePower` 算总战力，**不查库**。
+//
+// ⚠️ 第 102 轮移除了 `ctx` 与 `userID` 两个参数 —— 它们从未被使用。
+//
+//	原签名：func (s *Service) computePower(ctx context.Context, userID int64, build map[string]any) int64
+//	函数体：不出现 ctx，也不出现 userID
+//
+// # 为什么这是缺陷而不只是「多余的参数」
+//
+// 一个带 `ctx` 的签名会让人**以为**它会查库，
+// 进而假设「这个调用是可取消的」—— 而它其实不查任何库。
+//
+// 更实际的后果在第 101 轮已经出现过一次：`computePower` 的兄弟
+// `computeRating` **确实**查库（读 `user_progress` 的专精点），
+// 所以两者的签名长得一样，而行为完全不同。
+// 后来的人（或后来的我）会照着 `computeRating` 的样子，
+// 以为传进去的 ctx 在这里生效。
+//
+// # 与 computeRating 的对照（别把这两个搞混）
+//
+//	computeRating(ctx, userID, build) —— **查库**，需要 ctx
+//	computePower(build)                   —— 纯计算，不需要
+//
+// `ComputePowerFor`（运营接口的包装）也因此不再需要 `ctxBackground()`，
+// 它连 ctx 都不用造了。
+func computePower(build map[string]any) int64 {
 	in := domain.PowerInput{
 		SkillLevels:   map[int]int64{},
 		EquipmentLvls: map[int]int64{},

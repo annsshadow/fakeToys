@@ -97,9 +97,12 @@ func TestServiceHasNoStrayContextBackground(t *testing.T) {
 		// HTTP 层包装：给运营接口用，那些入口确实没有请求 ctx
 		// （它们是「一个不需要取消语义」的纯计算调用）。
 		// ctxBackground 这个名字本身就在说「我知道自己没有 ctx」。
-		"progression.go": "只有 ctxBackground() 辅助函数本体，" +
-			"它是给运营接口（ComputeRatingFor / ComputePowerFor）用的包装，" +
-			"那些入口按设计不接请求 ctx",
+		// 第 102 轮后：ComputePowerFor **不再需要** ctxBackground ——
+		// computePower 变成纯函数后，它连 ctx 都不用造了。
+		// 只剩 ctxBackground 本体，供 ComputeRatingFor（确实查库）使用。
+		"progression.go": "只剩 ctxBackground() 本体，供 ComputeRatingFor 使用" +
+			"（它确实查 user_progress，需要一个非取消的 ctx）。" +
+			"ComputePowerFor 在第 102 轮已不再需要它。",
 	}
 
 	files := listServiceSources(t)
