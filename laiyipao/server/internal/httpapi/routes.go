@@ -447,7 +447,29 @@ func (s *Server) allocateMastery(c *fiber.Ctx) error {
 }
 
 func (s *Server) tasks(c *fiber.Ctx) error {
-	scope := c.Query("scope", "daily")
+	//
+	// ⚠️ 第 106 轮：原来这里不校验 scope，
+	// 于是 `LoadTasks` 的 `WHERE t.scope = $3` 匹配不到任何行 →
+	// **200 + 空列表**，而响应里 `"scope"` 仍**回显那个未知的值**。
+	//
+	// 实测：`?scope=daliy`（拼错）与 `?scope=Daily`（大小写）→ 都是
+	// 200 + 0 条 + 回显原值。
+	//
+	// 为什么这比「返回了错数据」更糟：玩家看到的是
+	// 「**今天没有任务**」—— 一个**看起来完全合理**的答案。
+	// 而且它按玩家、按天出现，很可能永远不会被发现。
+	// （leaderboard 的 type 是同一个毛病，第 104 轮已修。）
+	//
+	// 顺序与 `leaderboard` 一致：**先 Has，再取不带默认值的 raw，最后校验**。
+	// 理由见那里的注释 —— `c.Query(key, default)` 会把空值吞成默认值。
+	scope := "daily"
+	if c.Context().QueryArgs().Has("scope") {
+		scope = c.Query("scope")
+	}
+	if !service.ValidTaskScope(scope) {
+		return fail(c, fiber.StatusBadRequest, "bad_input",
+			"scope 只能是 daily / weekly / achievement")
+	}
 	items, err := s.Svc.LoadTasks(c.Context(), userIDFrom(c), scope)
 	if err != nil {
 		return failErr(c, err)
