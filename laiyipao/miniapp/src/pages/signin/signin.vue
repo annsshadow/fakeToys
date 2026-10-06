@@ -31,7 +31,35 @@
       </view>
 
       <view class="card">
-        <text class="card-title">每日任务</text>
+        <!--
+          ⚠️ 第 94 轮：加周期切换。
+
+          此前这个页面**只**拉 `fetchTasks('daily')`，于是：
+
+            3 条周任务（weekly_kills_200 / weekly_clears_20 / weekly_reactions_150）
+            5 条成就（ach_first_clear / ach_reach_20 / ach_reach_60 /
+                       ach_reach_100 / ach_reactions_100）
+
+          **在客户端没有任何入口** —— 看不到、也领不到。
+          `/tasks?scope=weekly` 与 `?scope=achievement` 有服务端实现、
+          `client.ts` 里有 `fetchTasks(scope)`，只是**没有人调用**。
+
+          第 76 轮修的「周任务永远领不到」在服务端是对的，
+          但在客户端仍然够不着 —— 那是本轮要补的最后一环。
+        -->
+        <view class="flex-1" />
+        <text class="card-title">任务</text>
+        <view style="display: flex; gap: 12rpx">
+          <text
+            v-for="s in SCOPES"
+            :key="s.key"
+            class="dim"
+            :style="scope === s.key ? 'color: #58a6ff' : ''"
+            @click="switchScope(s.key)"
+          >
+            {{ s.label }}
+          </text>
+        </view>
         <view v-for="t in tasks" :key="t.id" class="task">
           <view class="flex-1">
             <text class="task-name">{{ t.name }}</text>
@@ -103,13 +131,38 @@ function currencyName(k: string): string {
   return k === 'coin' ? '金' : k === 'gem' ? '钻' : k === 'energy' ? '体' : k === 'keys' ? '钥匙' : k
 }
 
+/**
+ * SCOPES 是任务面板可切换的三种周期。
+ *
+ * ⚠️ 三者都必须有：服务端 `tasks.scope` 只有这三个取值
+ * （`seedTasks` 里种的就是 daily / weekly / achievement），
+ * 少一个就有一批任务在界面上消失。
+ */
+const SCOPES = [
+  { key: 'daily', label: '每日' },
+  { key: 'weekly', label: '每周' },
+  { key: 'achievement', label: '成就' },
+] as const
+
+type ScopeKey = (typeof SCOPES)[number]['key']
+
+const scope = ref<ScopeKey>('daily')
+
 async function load() {
   try {
-    const res = await api.fetchTasks('daily')
+    // ⚠️ 传当前 scope，而不是写死 'daily'。
+    const res = await api.fetchTasks(scope.value)
     tasks.value = res.items ?? []
   } catch (e) {
     uni.showToast({ title: (e as Error).message, icon: 'none' })
   }
+}
+
+/** 切换周期。scope 不是 ref 级别的响应式来源时这里会拉到同一份数据。 */
+function switchScope(k: ScopeKey) {
+  if (scope.value === k) return
+  scope.value = k
+  load()
 }
 
 async function doSignIn() {
