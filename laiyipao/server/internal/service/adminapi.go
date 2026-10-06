@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -366,6 +367,22 @@ func (s *Service) AdminEconomy(ctx context.Context) (map[string]any, error) {
 }
 
 // AdminUpdateShopItem 更新商城配置。
+//
+// # 第 113 轮：**整单拒绝 + price/payload 形状校验**（第 107 轮的同族缺陷）
+//
+// 修前的两个缺陷：
+//
+//  1. 部分生效 + 成功回执：每个 case 都是 `if ok { set }`，
+//     混合 patch（一个合法键 + 一个非法键）返回 200，
+//     合法的写进去、非法的被静默丢弃。运营以为都改过了。
+//
+//  2. price/payload 只判「json.Marshal 成不成功」：
+//     一个标量 `100`、字符串 `"abc"`、数组 `[1,2]` 都能塞进 jsonb。
+//     而玩家侧 `Buy` 读它们是 `json.Unmarshal(..., &map[string]int)`——
+//     一旦写进标量，该商品**购买链路永久 500**，且没有任何报错在写入时出现。
+//
+// 所以判据必须落在**形状**上（和「能不能序列化」无关）：
+// price/payload 必须是「已知货币 → 非负整数」的对象。
 func (s *Service) AdminUpdateShopItem(ctx context.Context, id int64, patch map[string]any) (map[string]any, error) {
 	fields := []string{}
 	args := []any{id}
@@ -373,33 +390,72 @@ func (s *Service) AdminUpdateShopItem(ctx context.Context, id int64, patch map[s
 		args = append(args, v)
 		fields = append(fields, fmt.Sprintf("%s = $%d", col, len(args)))
 	}
+	var rejected []string
+	reject := func(key, why string) {
+		rejected = append(rejected, fmt.Sprintf("%s（%s）", key, why))
+	}
 	for key, val := range patch {
 		switch key {
 		case "name":
-			if v, ok := val.(string); ok && v != "" {
-				set("name", v)
+			v, ok := val.(string)
+			if !ok || v == "" {
+				reject(key, "必须是非空字符串")
+				continue
 			}
-		case "price":
-			if raw, err := json.Marshal(val); err == nil {
-				set("price", raw)
+			set("name", v)
+		case "price", "payload":
+			m, ok := toIntMap(val)
+			if !ok {
+				reject(key, "必须是「货币:非负整数」的对象，不能是标量/数组")
+				continue
 			}
-		case "payload":
-			if raw, err := json.Marshal(val); err == nil {
-				set("payload", raw)
+			for k := range m {
+				if !validWalletCurrency(k) {
+					reject(key, "未知货币 "+k+"（拼错会静默坏掉玩家购买）")
+					m = nil
+					break
+				}
 			}
+			if m == nil {
+				continue
+			}
+			raw, err := json.Marshal(m)
+			if err != nil {
+				reject(key, "无法序列化")
+				continue
+			}
+			set(key, raw)
 		case "limit_per_day":
-			if v, ok := toInt64(val); ok && v >= 0 {
-				set("limit_per_day", v)
+			v, ok := toInt64(val)
+			if !ok || v < 0 {
+				reject(key, "必须是非负整数")
+				continue
 			}
+			set("limit_per_day", v)
 		case "sort_order":
-			if v, ok := toInt64(val); ok {
-				set("sort_order", v)
+			v, ok := toInt64(val)
+			if !ok {
+				reject(key, "必须是整数")
+				continue
 			}
+			set("sort_order", v)
 		case "enabled":
-			if v, ok := val.(bool); ok {
-				set("enabled", v)
+			v, ok := val.(bool)
+			if !ok {
+				reject(key, "必须是布尔值")
+				continue
 			}
+			set("enabled", v)
+		default:
+			// 未知键必须报错 —— 后台旧 UI 发 `limit`（正确键是 limit_per_day）
+			// 时会被静默吞掉、整单「没有可更新的字段」400，运营不知道键名错了。
+			reject(key, "不在可更新字段白名单里")
 		}
+	}
+	if len(rejected) > 0 {
+		sort.Strings(rejected)
+		return nil, fmt.Errorf("%w: 这些字段没被接受，整单未执行：%s",
+			ErrBadInput, strings.Join(rejected, "、"))
 	}
 	if len(fields) == 0 {
 		return nil, fmt.Errorf("%w: 没有可更新的字段", ErrBadInput)
@@ -409,6 +465,41 @@ func (s *Service) AdminUpdateShopItem(ctx context.Context, id int64, patch map[s
 		return nil, fmt.Errorf("update shop item: %w", err)
 	}
 	return map[string]any{"id": id, "updated": fields}, nil
+}
+
+// toIntMap 把 JSON 值转成 map[string]int。
+// 合法输入只有两种形状：map[string]int（Go 直调）或
+// map[string]any（JSON 反序列化，值是 float64），且每个值都是非负整数。
+func toIntMap(val any) (map[string]int, bool) {
+	switch m := val.(type) {
+	case map[string]int:
+		for _, v := range m {
+			if v < 0 {
+				return nil, false
+			}
+		}
+		return m, true
+	case map[string]any:
+		out := make(map[string]int, len(m))
+		for k, v := range m {
+			n, ok := toInt64(v)
+			if !ok || n < 0 {
+				return nil, false
+			}
+			out[k] = int(n)
+		}
+		return out, true
+	}
+	return nil, false
+}
+
+// validWalletCurrency 报告某货币名是否在「货币全集」内
+// （walletColumns 的 4 列 ∪ walletTokens 的 3 个道具）。
+func validWalletCurrency(k string) bool {
+	if _, ok := walletColumns[k]; ok {
+		return true
+	}
+	return isWalletToken(k)
 }
 
 // AdminListAnnouncements 返回公告。
