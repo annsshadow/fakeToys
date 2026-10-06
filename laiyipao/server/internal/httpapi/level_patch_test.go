@@ -213,3 +213,81 @@ func toF(v any) float64 {
 	f, _ := v.(float64)
 	return f
 }
+
+// TestLevelUpdateResponseMatchesListRowShape 守「写后读 = 刷新列表会看到的行」（第 108 轮）。
+//
+// # 缺陷
+//
+// 第 107 轮把响应改回读库（`AdminLevelRow`）时，读回的键集比列表行**少**：
+// 缺 `attempts` / `clears` / `clear_rate` / `avg_wave`。
+// 后台 `Object.assign(row, res.level)` 之后，
+// 通关率/尝试数列停在上次刷新时的值 ——
+// 与第 107 轮修掉的「响应与写入不一致」是同一种缺陷的变体：
+// **响应形状与同资源的其它读取面不一致**。
+//
+// 另一个缺陷：`seed` 以 int64 数字下发。
+// 关卡种子是 64 位 LCG 值（实测 `-7046029255919282421`），
+// 超过 2^53 后 JS Number 直接失精 ——
+// 后台 TS 契约 `AdminLevel.seed` 本来就是 string，
+// 玩家侧的同族约定是 `seed_str` + 数字清零（routes_e2e_test.go）。
+// 这里对齐后台契约：`seed` 字符串化。
+//
+// # 判据
+//
+// 键集**相等**（不是子集）：多一个键（响应夹带数据）与少一个键都是形状漂移。
+func TestLevelUpdateResponseMatchesListRowShape(t *testing.T) {
+	e := newE2E(t)
+	_, tok := e.newAdmin(t, "shape108")
+
+	// 列表行的键集是基准
+	_, listBody := e.get(t, "/api/v1/admin/levels", tok)
+	items, _ := listBody["items"].([]any)
+	if len(items) == 0 {
+		t.Fatal("列表为空，无法建立形状基准")
+	}
+	listRow, ok := items[0].(map[string]any)
+	if !ok {
+		t.Fatalf("列表行不是对象：%v", items[0])
+	}
+	listKeys := func() map[string]bool {
+		out := map[string]bool{}
+		for k := range listRow {
+			out[k] = true
+		}
+		return out
+	}
+
+	// 写后读
+	st, body := e.put(t, "/api/v1/admin/levels/1", tok, map[string]any{"base_hp": 32100.0})
+	if st != 200 {
+		t.Fatalf("更新应 200，实际 %d：%v", st, body)
+	}
+	lvl, _ := pick(body, "level").(map[string]any)
+	updKeys := map[string]bool{}
+	for k := range lvl {
+		updKeys[k] = true
+	}
+
+	base := listKeys()
+	for k := range base {
+		if !updKeys[k] {
+			t.Errorf("更新响应缺键 %q —— 与列表行不一致（后台 Object.assign 后该列会停在旧值）", k)
+		}
+	}
+	for k := range updKeys {
+		if !base[k] {
+			t.Errorf("更新响应多出键 %q —— 形状漂移（列表行没有它）", k)
+		}
+	}
+
+	// seed 必须是字符串，且两边一致
+	lSeed, okL := listRow["seed"].(string)
+	uSeed, okU := lvl["seed"].(string)
+	if !okL || !okU {
+		t.Fatalf("seed 必须字符串下发（int64 超过 2^53 时 JS 失精）：列表=%T 响应=%T",
+			listRow["seed"], lvl["seed"])
+	}
+	if lSeed != uSeed {
+		t.Errorf("seed 两边不一致：列表 %q vs 响应 %q", lSeed, uSeed)
+	}
+}

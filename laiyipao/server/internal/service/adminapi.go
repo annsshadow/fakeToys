@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/laiyipao/server/internal/domain"
@@ -52,7 +53,13 @@ func (s *Service) AdminListLevels(ctx context.Context) ([]map[string]any, int64,
 			clearRate = float64(clears) * 100 / float64(attempts)
 		}
 		out = append(out, map[string]any{
-			"id": id, "chapter": chapter, "name": name, "seed": seed,
+			"id": id, "chapter": chapter, "name": name,
+			// 第 108 轮：seed 以**字符串**下发。
+			// seed 是 64 位 LCG 值（如 -7046029255919282421），
+			// 超过 2^53 后 JS Number 直接失精，
+			// 且后台 TS 契约（AdminLevel.seed）本来就是 string。
+			// 玩家侧的同族约定见 routes_e2e_test.go 的 seed_str。
+			"seed": strconv.FormatInt(seed, 10),
 			"base_hp": baseHP, "wave_count": waveCount, "difficulty": difficulty,
 			"energy_cost": energyCost, "star_targets": stars, "terrain_config": terrain,
 			"is_boss": isBoss, "enabled": enabled,
@@ -75,20 +82,37 @@ func (s *Service) AdminListLevels(ctx context.Context) ([]map[string]any, int64,
 //
 // 这是**设计决策**，不是我能单方面定的（见 README 已知边界）。
 // 但 `AdminUpdateLevel` 的**响应**必须与自己的写入一致 —— 那没有决策空间。
+//
+// # 第 108 轮：形状与列表行**完全一致**
+//
+// 写后读回的行若缺 `attempts/clears/clear_rate/avg_wave`，
+// 后台 `Object.assign(row, res.level)` 后列表统计列就停在上次刷新的值，
+// 「改完刷新前后不一致」又回到第 107 轮修掉的同一种缺陷。
+// 所以这里直接复用列表的 JOIN 查询（按 id 过滤），
+// 保证「回读响应 = 刷新列表会看到的行」。
 func (s *Service) AdminLevelRow(ctx context.Context, levelID int) (map[string]any, error) {
 	var (
 		id, chapter, waveCount, difficulty, energyCost int
 		name                                           string
 		seed, baseHP                                   int64
 		starRaw, terrainRaw                            []byte
-		isBoss, enabled                                bool
+		isBoss, enabled                                 bool
+		attempts, clears                                int64
+		avgWave                                         float64
 	)
-	err := s.pool.QueryRow(ctx,
-		`SELECT id, chapter, name, seed, base_hp, wave_count, difficulty,
-		        energy_cost, star_targets, terrain_config, is_boss, enabled
-		   FROM levels WHERE id = $1`, levelID).
+	err := s.pool.QueryRow(ctx, `
+		SELECT l.id, l.chapter, l.name, l.seed, l.base_hp, l.wave_count, l.difficulty,
+		       l.energy_cost, l.star_targets, l.terrain_config, l.is_boss, l.enabled,
+		       COUNT(br.id) AS attempts,
+		       COUNT(br.id) FILTER (WHERE br.result = 'win') AS clears,
+		       COALESCE(AVG(br.wave_reached), 0) AS avg_wave
+		FROM levels l
+		LEFT JOIN battle_records br ON br.level_id = l.id
+		WHERE l.id = $1
+		GROUP BY l.id`, levelID).
 		Scan(&id, &chapter, &name, &seed, &baseHP, &waveCount, &difficulty,
-			&energyCost, &starRaw, &terrainRaw, &isBoss, &enabled)
+			&energyCost, &starRaw, &terrainRaw, &isBoss, &enabled,
+			&attempts, &clears, &avgWave)
 	if err != nil {
 		return nil, fmt.Errorf("level row %d: %w", levelID, err)
 	}
@@ -96,11 +120,19 @@ func (s *Service) AdminLevelRow(ctx context.Context, levelID int) (map[string]an
 	var terrain []domain.TerrainPlacement
 	_ = json.Unmarshal(starRaw, &stars)
 	_ = json.Unmarshal(terrainRaw, &terrain)
+
+	clearRate := 0.0
+	if attempts > 0 {
+		clearRate = float64(clears) * 100 / float64(attempts)
+	}
 	return map[string]any{
-		"id": id, "chapter": chapter, "name": name, "seed": seed,
+		"id": id, "chapter": chapter, "name": name,
+		"seed": strconv.FormatInt(seed, 10),
 		"base_hp": baseHP, "wave_count": waveCount, "difficulty": difficulty,
 		"energy_cost": energyCost, "star_targets": stars, "terrain_config": terrain,
 		"is_boss": isBoss, "enabled": enabled,
+		"attempts": attempts, "clears": clears,
+		"clear_rate": clearRate, "avg_wave": avgWave,
 	}, nil
 }
 
