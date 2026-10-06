@@ -115,7 +115,34 @@ func TestListDefensesViews(t *testing.T) {
 	}
 	// 候选集按战力取前 20 —— 开发库里有历史防线，把本用例的战力拉满
 	// 保证进入候选集（要测的是读路径的过滤与标记，不是排序）。
-	ts.exec(t, `UPDATE defenses SET power = 999999999 WHERE owner_id = $1`, owner)
+	// ⚠️ 第 81 轮：power 必须**严格大于**现存的任何一条，而不是「设成一个很大的数」。
+	//
+	// `ListDefenses` 是 `ORDER BY d.power DESC LIMIT 20`。
+	// 设成固定值 `999999999` 时，若库里已有 ≥20 条同值防线（每跑一次全包就多一条），
+	// 本用例的防线会被**任意**挤进或不进前 20 ——
+	// 实测累积到 26 条时通过率只剩 20/26 ≈ 77%。
+	//
+	// 「严格最大」把排序变成**确定**：无论表多脏，本用例恒为第 1。
+	// 这与 README 记的「判据必须落在能直接观测的那一层」同源——
+	// 依赖「表够干净」的断言不是断言，是运气。
+	ts.exec(t, `
+		UPDATE defenses
+		   SET power = (SELECT COALESCE(MAX(power), 0) + 1 FROM defenses)
+		 WHERE owner_id = $1`, owner)
+
+	// ⚠️ 第 81 轮补：这里**必须清理**，否则本用例会随运行次数衰减。
+	//
+	// 实测：共享测试库里累积了 **26 条** `power = 999999999` 的防线
+	// （每跑一次全包就多一条），而 `ListDefenses` 是
+	// `ORDER BY d.power DESC LIMIT 20` ——
+	// 于是这条测试只有 20/26 ≈ 77% 的概率通过。
+	//
+	// 它一直「绿」是因为没人连续跑几十次全包。
+	// 这与 README 记的「把夹具的巧合性质当成了契约」同型：
+	// 它能通过**不是因为它对，而是因为表还不够脏**。
+	t.Cleanup(func() {
+		ts.exec(t, `DELETE FROM defenses WHERE owner_id = $1`, owner)
+	})
 
 	// foe 视角：owner 的防线是候选
 	mine, candidates, err := ts.ListDefenses(ctx, foe)
