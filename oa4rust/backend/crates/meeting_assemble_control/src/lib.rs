@@ -140,13 +140,18 @@ pub async fn create_meeting_control(
 #[allow(non_snake_case)]
 pub async fn delete_meeting_control(
     pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 控制级删除=管理动作：此前无守卫物理删，调试面板手输 id 即可越权删配置
+    if !shared::middleware::is_admin(&pool.0, &session.person_unique).await {
+        return Err(AppError::Forbidden);
+    }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let count = client
         .execute(
-            "DELETE FROM x_meeting_assemble_control WHERE id = $1",
+            "UPDATE x_meeting_assemble_control SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
         )
         .await
