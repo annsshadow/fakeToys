@@ -1310,12 +1310,58 @@ export class BattleEngine {
     if (res.dispelShield && e.shield === 0n) {
       this.pushFloat(e.x, e.y, '护盾驱散', '#58a6ff', 14)
     }
+    //
+    // ⚠️ 第 88 轮：`amplifyPct` 与 `statusDurationMs` 是**两件独立的事**，
+    // 原来被一个 `if res.statusDurationMs > 0` 捆在一起。
+    //
+    // # 缺陷：潜伏耦合 —— 加一条「只有增伤、没有状态」的反应会静默失效
+    //
+    // 原写法：
+    //
+    //    if (res.statusDurationMs > 0) {
+    //      const spec = REACTIONS[...]
+    //      if (spec.amplifyPct > 0) e.amplifyPermille = ...
+    //      ...frozenMs / stunnedMs...
+    //    }
+    //
+    // `amplifyPct` 的生效被 `statusDurationMs > 0` 把门，于是：
+    //
+    //	新增一条 amplify_pct = 300、status_duration_ms = 0 的反应
+    //	→ 受击增伤**永远不会生效**，而代码看起来完全正常
+    //
+    // 为什么这不可能被测出来：**当前 7 条反应里没有任何一条落在这个组合**
+    //（superconduct 600/4000、flash_freeze 300/2000，其余全 0）。
+    // 所以判据「amplify 生效」在今天与「不生效」观察不到差别 ——
+    // 它是一个**只有在改动之后才会显形**的洞。
+    //
+    // 这与第 80/85 轮记的同一个陷阱：
+    // **只要输入落不到分界线上，关于分界线的断言都是空的。**
+    //
+    // # 修法
+    //
+    // 两个字段各管各的，各有自己的判据。
+    // ⚠️ 查表本身**必须**留在 `res.reaction` 非空的守卫里。
+    //
+    // 我第一版把查表提到条件之外，于是每次命中都执行
+    // `REACTIONS[res.reaction as ReactionKey]` —— 而无反应时
+    // `res.reaction` 是**空串**，`REACTIONS['']` 是 undefined，
+    // 紧接着读 `.amplifyPct` 就抛：
+    //
+    //	TypeError: Cannot read properties of undefined (reading 'amplifyPct')
+    //
+    // 既有测试（`replay_discard.test.ts` 等 4 个文件、35 个用例）**当场抓到**。
+    // 那条 `if (res.statusDurationMs > 0)` 除了把门 amplify，
+    // **顺带**把「无反应时不要查表」也挡住了 —— 一个副作用式的守卫。
+    //
+    // 拆耦合时必须把它显式补回来，否则就是拿一个偶发崩溃换另一个潜伏洞。
+    const reactKey = res.reaction as ReactionKey
+    const reactSpec = reactKey ? REACTIONS[reactKey] : undefined
+    if (reactSpec && reactSpec.amplifyPct > 0) {
+      e.amplifyPermille = BigInt(reactSpec.amplifyPct)
+    }
     if (res.statusDurationMs > 0) {
-      const spec = REACTIONS[res.reaction as ReactionKey]
-      if (spec.amplifyPct > 0) {
-        e.amplifyPermille = BigInt(spec.amplifyPct)
-      }
       const react = res.reaction
+      const spec = reactSpec ?? REACTIONS[react as ReactionKey]
       if (react === 'flash_freeze' || react === 'superconduct') e.frozenMs = spec.statusDurationMs
       if (react === 'overheat') e.stunnedMs = spec.statusDurationMs
     }
