@@ -825,10 +825,17 @@ pub async fn im_manager_config_post(
 #[allow(non_snake_case)]
 pub async fn im_conversation_update(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    // IDOR 门禁：仅会话成员可改会话信息（对齐 delete_virtual 口径；
+    // 此前任何登录人可改任意会话名/类型）
+    if !is_conversation_member(&client, &id, &session.person_unique).await? {
+        return Ok(Json(ActionResult::error("not a conversation member")));
+    }
 
     let name = req.get("name").and_then(|v| v.as_str());
     let conversation_type = req.get("type").and_then(|v| v.as_str());
