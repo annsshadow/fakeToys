@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"bytes"
 	"context"
 	"strconv"
 
@@ -217,7 +218,34 @@ func (s *Server) adminBanUser(c *fiber.Ctx) error {
 	var body struct {
 		Reason string `json:"reason"`
 	}
-	_ = c.BodyParser(&body)
+	//
+	// ⚠️ 第 105 轮：原来这里是 `_ = c.BodyParser(&body)` —— 解析错误被丢弃。
+	//
+	// 实测：`POST /admin/users/5/ban` 带一个**截断的** JSON（`{bad`）
+	// → 返回 **200**，用户**真的被封禁**，
+	// 而且 `ban_reason` 落库成「违反用户协议」—— 一个运营从未提交过的理由。
+	//
+	// 为什么这条比第 104 轮那两条查询参数更重：
+	//
+	//  1. **它是破坏性动作。** 前者是返回错数据，这里是改用户状态。
+	//     （好在有 unban，但那需要有人意识到出错了。）
+	//  2. **审计轨迹被污染。** 事后看 `admin_audit_logs`，
+	//     「违反用户协议」看起来像是运营深思熟虑后的判断，
+	//     而实际上那只是一个解析失败的默认值。
+	//  3. **触发条件极易达到** —— 运营脚本 / 代理截断 / 复制粘贴漏字符，
+	//     都会让一个手滑变成一次误封。
+	//
+	// # 为什么先判 `len(c.Body())`
+	//
+	// 空 body 是**合法**调用（「就封他，理由按默认的」），
+	// 而 `BodyParser` 对空 body 返回 EOF 类错误。
+	// 所以「没 body」与「body 坏了」必须分开 ——
+	// 这与第 104 轮 `queryInt` 的「键不存在」vs「值为空」同源。
+	if len(bytes.TrimSpace(c.Body())) > 0 {
+		if err := c.BodyParser(&body); err != nil {
+			return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+		}
+	}
 	if body.Reason == "" {
 		body.Reason = "违反用户协议"
 	}
@@ -334,7 +362,24 @@ func (s *Server) adminVerifyBattle(c *fiber.Ctx) error {
 	var body struct {
 		ReplayHash string `json:"replay_hash"`
 	}
-	_ = c.BodyParser(&body)
+	//
+	// ⚠️ 第 105 轮：原来也是 `_ = c.BodyParser(&body)`。
+	//
+	// 与 `adminBanUser` 不同，**这里当时是安全的** ——
+	// 因为紧接着的 `if body.ReplayHash == ""` 把后果挡住了
+	// （解析失败 → hash 为空 → 被判 400）。
+	//
+	// 但那是**运气**：安全来自下游的一个巧合，
+	// 而不是来自这里检查了解析错误。
+	// 任何人日后放宽那个空值检查（例如为了支持「空 = 跳过」），缺陷立刻回来。
+	//
+	// 18 个处理器检查 BodyParser 的错误，这两处不检查 ——
+	// 现在两处都检查，理由写在各自注释里。
+	if len(bytes.TrimSpace(c.Body())) > 0 {
+		if err := c.BodyParser(&body); err != nil {
+			return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+		}
+	}
 	// 空的 actual hash 会被判成「不匹配」，把一条**没验过**的记录
 	// 写成「验过且不符」—— 那是凭空制造一条指控。
 	// 所以这里直接拒掉，与空白的处理方式保持一致。
