@@ -445,6 +445,12 @@ type AdminBattleView struct {
 	ReplayHash  string    `json:"replay_hash"`
 	CreatedAt   time.Time `json:"created_at"`
 
+	// 第 123 轮：本关的总怪数（生成器权威值）。
+	// 后台「守恒」列此前只判 kills+leaked===0（无接触），其余一律显示「守恒」
+	// —— 没有任何总怪数来源，伪造战报的「一致性」列永远绿。
+	// 给了 total_enemies，kills+leaked **超出**它才是可判定的伪造信号。
+	TotalEnemies int `json:"total_enemies"`
+
 	// 本场战报的验真状态。
 	//
 	// 上一轮把「每用户」的验真统计接进了 `/admin/users`，运营于是知道**谁**可疑；
@@ -518,6 +524,22 @@ func (s *Service) AdminListBattles(ctx context.Context, userID int64, levelID in
 	}
 	defer rows.Close()
 	var out []AdminBattleView
+	// 第 123 轮：本关总怪数取自**生成器**（确定性、与 level_waves 同源）。
+	// 按 level_id 缓存，避免同一关反复 GenerateLevel。
+	totalCache := map[int]int{}
+	totalEnemies := func(levelID int) int {
+		if n, ok := totalCache[levelID]; ok {
+			return n
+		}
+		n := 0
+		for _, w := range domain.GenerateLevel(levelID).Waves {
+			for _, sp := range w.Spawns {
+				n += sp.Count
+			}
+		}
+		totalCache[levelID] = n
+		return n
+	}
 	for rows.Next() {
 		var v AdminBattleView
 		if err := rows.Scan(&v.ID, &v.UserID, &v.Nickname, &v.LevelID, &v.Result, &v.Stars,
@@ -526,6 +548,7 @@ func (s *Service) AdminListBattles(ctx context.Context, userID int64, levelID in
 			&v.VerifyChecked, &v.VerifyMismatched); err != nil {
 			return nil, 0, err
 		}
+		v.TotalEnemies = totalEnemies(v.LevelID)
 		out = append(out, v)
 	}
 	return out, total, rows.Err()

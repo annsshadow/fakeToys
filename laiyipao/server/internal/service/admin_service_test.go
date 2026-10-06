@@ -405,6 +405,29 @@ func TestAdminListBattles(t *testing.T) {
 	if err != nil || total < 1 {
 		t.Fatalf("按用户+关卡过滤应命中：%d, %v", total, err)
 	}
+	// 第 123 轮：total_enemies 必须填上（生成器权威值），后台「守恒」列靠它做伪造判定
+	list, _, err := ts.AdminListBattles(ctx, uid, 1, 10, false)
+	if err != nil {
+		t.Fatalf("读战报失败：%v", err)
+	}
+	wantTotal := 0
+	for _, w := range domain.GenerateLevel(1).Waves {
+		for _, sp := range w.Spawns {
+			wantTotal += sp.Count
+		}
+	}
+	if wantTotal <= 0 {
+		t.Fatalf("第 1 关生成器无怪，测试前提不成立")
+	}
+	for _, b := range list {
+		if b.LevelID != 1 {
+			continue
+		}
+		if b.TotalEnemies != wantTotal {
+			t.Errorf("第 1 关战报 total_enemies 应为生成器值 %d，实际 %d（修前恒 0，守恒列形同虚设）",
+				wantTotal, b.TotalEnemies)
+		}
+	}
 	// 非匹配过滤 → 0
 	_, total, err = ts.AdminListBattles(ctx, uid, 99, 10, false)
 	if err != nil || total != 0 {

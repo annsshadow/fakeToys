@@ -36,6 +36,7 @@ function battleFixture(overrides: Partial<AdminBattle> = {}): AdminBattle {
     heat_max: 90,
     replay_hash: 'abcd1234abcd1234abcd1234abcd1234',
     created_at: '2026-01-02T03:04:05Z',
+    total_enemies: 12, // kills(10)+leaked(2) 恰好等于总怪数 → 「守恒」
     verify_checked: 3,
     verify_mismatched: 0,
     ...overrides,
@@ -101,6 +102,22 @@ describe('BattlesView 列表渲染', () => {
     expect(rows[1].text()).toContain('负')
     expect(rows[1].text()).not.toContain('★')
     expect(rows[1].text()).toContain('无接触')
+    wrapper.unmount()
+  })
+
+  // 第 123 轮：kills+leaked 超出总怪数 → 标「可疑」（伪造信号），不再一律「守恒」
+  it('击杀+漏怪超出总怪数标记可疑（第 123 轮：守恒列不再形同虚设）', async () => {
+    const wrapper = await mountBattles([
+      battleFixture({ id: 1, kills: 50, leaked: 5, total_enemies: 12 }), // 55 > 12
+    ])
+    const rows = wrapper.findAll('.el-table__row')
+    expect(rows[0].text()).toContain('可疑')
+    expect(rows[0].text()).toContain('超总怪数')
+    expect(rows[0].text()).not.toContain('守恒')
+    // 恰好的情况仍是「守恒」
+    const ok = await mountBattles([battleFixture({ id: 2 })]) // 10+2=12=total
+    expect(ok.findAll('.el-table__row')[0].text()).toContain('守恒')
+    ok.unmount()
     wrapper.unmount()
   })
 
