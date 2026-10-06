@@ -59,7 +59,7 @@ func (s *Service) AdminListLevels(ctx context.Context) ([]map[string]any, int64,
 			// 超过 2^53 后 JS Number 直接失精，
 			// 且后台 TS 契约（AdminLevel.seed）本来就是 string。
 			// 玩家侧的同族约定见 routes_e2e_test.go 的 seed_str。
-			"seed": strconv.FormatInt(seed, 10),
+			"seed":    strconv.FormatInt(seed, 10),
 			"base_hp": baseHP, "wave_count": waveCount, "difficulty": difficulty,
 			"energy_cost": energyCost, "star_targets": stars, "terrain_config": terrain,
 			"is_boss": isBoss, "enabled": enabled,
@@ -96,9 +96,9 @@ func (s *Service) AdminLevelRow(ctx context.Context, levelID int) (map[string]an
 		name                                           string
 		seed, baseHP                                   int64
 		starRaw, terrainRaw                            []byte
-		isBoss, enabled                                 bool
-		attempts, clears                                int64
-		avgWave                                         float64
+		isBoss, enabled                                bool
+		attempts, clears                               int64
+		avgWave                                        float64
 	)
 	err := s.pool.QueryRow(ctx, `
 		SELECT l.id, l.chapter, l.name, l.seed, l.base_hp, l.wave_count, l.difficulty,
@@ -127,7 +127,7 @@ func (s *Service) AdminLevelRow(ctx context.Context, levelID int) (map[string]an
 	}
 	return map[string]any{
 		"id": id, "chapter": chapter, "name": name,
-		"seed": strconv.FormatInt(seed, 10),
+		"seed":    strconv.FormatInt(seed, 10),
 		"base_hp": baseHP, "wave_count": waveCount, "difficulty": difficulty,
 		"energy_cost": energyCost, "star_targets": stars, "terrain_config": terrain,
 		"is_boss": isBoss, "enabled": enabled,
@@ -457,18 +457,31 @@ func (s *Service) AdminListRedeemCodes(ctx context.Context) ([]map[string]any, e
 }
 
 // AdminCreateRedeemCode 创建兑换码。
-func (s *Service) AdminCreateRedeemCode(ctx context.Context, code string, reward map[string]int, maxUses int) (map[string]any, error) {
+//
+// expiresAt 为 nil = 永久有效。
+// ⚠️ 第 110 轮：这个参数此前在 handler 层就被丢掉了——
+// UI 有「过期时间」输入框、handler 也解析了 `expires_at`，
+// 却从不传进来，INSERT 也不写这一列。
+// 运营设的过期时间静默丢失，兑换码永久有效（可被无限期转卖滥用）。
+// 兑换路径本就认 `expires_at`（economy.go 的 Redeem SQL：
+// `expires_at IS NULL OR expires_at > now()`），只差创建端不写库。
+func (s *Service) AdminCreateRedeemCode(ctx context.Context, code string, reward map[string]int, maxUses int, expiresAt *time.Time) (map[string]any, error) {
 	raw, err := json.Marshal(reward)
 	if err != nil {
 		return nil, err
 	}
 	var id int
 	if err := s.pool.QueryRow(ctx,
-		`INSERT INTO redeem_codes (code, reward, max_uses) VALUES ($1,$2,$3) RETURNING id`,
-		code, raw, maxUses).Scan(&id); err != nil {
+		`INSERT INTO redeem_codes (code, reward, max_uses, expires_at)
+		 VALUES ($1,$2,$3,$4) RETURNING id`,
+		code, raw, maxUses, expiresAt).Scan(&id); err != nil {
 		return nil, fmt.Errorf("create redeem code: %w", err)
 	}
-	return map[string]any{"id": id, "code": code, "reward": reward, "max_uses": maxUses}, nil
+	out := map[string]any{"id": id, "code": code, "reward": reward, "max_uses": maxUses}
+	if expiresAt != nil {
+		out["expires_at"] = *expiresAt
+	}
+	return out, nil
 }
 
 // AdminListAuditLogs 返回操作审计。

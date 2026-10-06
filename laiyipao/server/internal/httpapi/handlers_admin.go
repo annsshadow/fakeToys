@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 
@@ -499,7 +501,22 @@ func (s *Server) adminCreateRedeemCode(c *fiber.Ctx) error {
 	if body.MaxUses <= 0 {
 		body.MaxUses = 1
 	}
-	item, err := s.Svc.AdminCreateRedeemCode(c.Context(), body.Code, body.Reward, body.MaxUses)
+	var expiresAt *time.Time
+	if s := strings.TrimSpace(body.ExpiresAt); s != "" {
+		//
+		// ⚠️ 第 110 轮：handler 此前解析了 ExpiresAt 却从不传给 service，
+		// UI 有「过期时间」输入框、运营设的值被**静默丢弃**，兑换码永久有效。
+		// 解析必须带时区（RFC3339 或显式偏移），不接受裸本地时间——
+		// 兑换判定的 `expires_at > now()` 是 UTC 语义，裸本地时间会让
+		// 「过期」在部署机时区漂移 8 小时。
+		parsed, err := time.Parse(time.RFC3339, s)
+		if err != nil {
+			return fail(c, fiber.StatusBadRequest, "bad_input",
+				"expires_at 必须是 RFC3339 格式（如 2026-12-31T23:59:59Z），不能是裸本地时间")
+		}
+		expiresAt = &parsed
+	}
+	item, err := s.Svc.AdminCreateRedeemCode(c.Context(), body.Code, body.Reward, body.MaxUses, expiresAt)
 	if err != nil {
 		return failErr(c, err)
 	}
