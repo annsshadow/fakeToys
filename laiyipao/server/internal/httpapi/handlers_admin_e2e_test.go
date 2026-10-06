@@ -234,6 +234,17 @@ func TestE2EAdminUpdateSkill(t *testing.T) {
 	if got := e.scalarInt(t, `SELECT base_damage FROM skills WHERE id = 1`); got != 42 {
 		t.Errorf("base_damage 应写库为 42，实际 %d", got)
 	}
+	//
+	// ⚠️ 第 120 轮：响应必须带 `skill`（回读行），与后台契约 { skill: AdminSkill } 一致。
+	// 修前 handler 退回整个 adminSkills（{items, recipes}），res.skill 恒 undefined，
+	// 后台改完技能表行停旧值却弹「已保存」。
+	skillObj, ok := body["skill"].(map[string]any)
+	if !ok {
+		t.Fatalf("更新响应必须带 skill 对象（回读行），实际 %v", body)
+	}
+	if skillObj["name"] != "E2E技能" || int64(skillObj["base_damage"].(float64)) != 42 {
+		t.Errorf("回读 skill 应与写入一致：name=%v base_damage=%v", skillObj["name"], skillObj["base_damage"])
+	}
 }
 
 func TestE2EAdminUserManagement(t *testing.T) {

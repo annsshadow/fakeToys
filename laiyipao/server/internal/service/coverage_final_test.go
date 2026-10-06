@@ -643,7 +643,7 @@ func TestStatsMidwayFailures(t *testing.T) {
 	t.Run("AdminUpdateSkill执行失败", func(t *testing.T) {
 		ts := openScratchService(t)
 		ts.renameTable(t, "skills", "skills_bak")
-		err := ts.AdminUpdateSkill(ctx, 1, map[string]any{"name": "x"})
+		_, err := ts.AdminUpdateSkill(ctx, 1, map[string]any{"name": "x"})
 		ts.renameTable(t, "skills_bak", "skills")
 		mustErr(t, err, "update skill")
 	})

@@ -159,11 +159,15 @@ func (s *Server) adminUpdateSkill(c *fiber.Ctx) error {
 	if err := c.BodyParser(&patch); err != nil {
 		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
 	}
-	if err := s.Svc.AdminUpdateSkill(c.Context(), id, patch); err != nil {
+	skill, err := s.Svc.AdminUpdateSkill(c.Context(), id, patch)
+	if err != nil {
 		return failErr(c, err)
 	}
 	s.Svc.Audit(c.Context(), adminIDFrom(c), "update_skill", strconv.Itoa(id), patch)
-	return s.adminSkills(c)
+	// 第 120 轮：回读行作为响应（后台契约 { skill: AdminSkill }），
+	// 不再整个重列 adminSkills（那样 res.skill 恒 undefined，
+	// 后台改完技能表行停旧值却弹「已保存」）。
+	return c.JSON(fiber.Map{"skill": skill})
 }
 
 func (s *Server) adminEquipment(c *fiber.Ctx) error {
