@@ -274,11 +274,17 @@ func (s *Service) AdminListUsers(ctx context.Context, keyword string, limit, off
 	if offset < 0 {
 		offset = 0
 	}
-	pattern := "%" + strings.TrimSpace(keyword) + "%"
+	// 第 118 轮：keyword 里的 `%`/`_`/`\` 必须转义成**字面量**。
+	// 旧实现直接拼 `%<kw>%`，搜 "100%" 会退化成 `%100%%`（% 当通配符），
+	// 结果「输入了东西却匹配到一大片」—— 与第 111 轮关卡搜索同族。
+	// 空 keyword 的 pattern 仍是 `%%`，`$1='%%'` 哨兵语义不变。
+	kw := strings.TrimSpace(keyword)
+	escaped := strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`).Replace(kw)
+	pattern := "%" + escaped + "%"
 
 	var total int64
 	if err := s.pool.QueryRow(ctx,
-		`SELECT COUNT(*) FROM users WHERE $1 = '%%' OR nickname LIKE $2 OR guest_token LIKE $2`,
+		`SELECT COUNT(*) FROM users WHERE $1 = '%%' OR nickname LIKE $2 ESCAPE '\'::char OR guest_token LIKE $2 ESCAPE '\'::char`,
 		pattern, pattern).Scan(&total); err != nil {
 		return nil, 0, fmt.Errorf("count users: %w", err)
 	}
@@ -311,7 +317,7 @@ func (s *Service) AdminListUsers(ctx context.Context, keyword string, limit, off
 			JOIN battle_records br ON br.id = rv.battle_id
 			GROUP BY br.user_id
 		) v ON v.user_id = u.id
-		WHERE $1 = '%%' OR u.nickname LIKE $1 OR u.guest_token LIKE $1
+		WHERE $1 = '%%' OR u.nickname LIKE $1 ESCAPE '\'::char OR u.guest_token LIKE $1 ESCAPE '\'::char
 		ORDER BY u.id DESC LIMIT $2 OFFSET $3`, pattern, limit, offset)
 	if err != nil {
 		return nil, 0, fmt.Errorf("list users: %w", err)
