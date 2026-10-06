@@ -59,7 +59,7 @@ func TestRedeemCodesBrokenBranches(t *testing.T) {
 	if _, err := broken.AdminListRedeemCodes(ctx); err == nil {
 		t.Error("故障态兑换码列表应报错")
 	}
-	if _, err := broken.AdminCreateRedeemCode(ctx, "X", map[string]int{"coin": 1}, 1); err == nil {
+	if _, err := broken.AdminCreateRedeemCode(ctx, "X", map[string]int{"coin": 1}, 1, nil); err == nil {
 		t.Error("故障态创建兑换码应报错")
 	}
 }
