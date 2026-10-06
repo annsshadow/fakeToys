@@ -27,12 +27,17 @@ const REASON_LABEL: Record<string, string> = {
 /**
  * 通胀监控：净流入长期为正说明货币在贬值，需要回收。
  * 这直接对应 I-1 的反通胀设计 —— 数值堆叠不能替代正确搭配。
+ *
+ * ⚠️ 第 112 轮：服务端 AdminEconomy 的流水行字段是 `delta`/`count`
+ * （SUM(delta)、COUNT(*)），**不是** `amount`/`cnt`，也没有 `updated_at`。
+ * 修前读 `f.amount`（undefined→0），净流入 KPI 恒 0、显示「健康」，
+ * 通胀监控形同虚设。这里改读真实字段。
  */
 const netFlow = computed(() => {
   const out: Record<string, number> = {}
   for (const f of flows.value) {
     const cur = String(f.currency ?? '')
-    const amt = Number(f.amount ?? 0)
+    const amt = Number(f.delta ?? 0)
     out[cur] = (out[cur] ?? 0) + amt
   }
   return out
@@ -52,6 +57,34 @@ function flowTone(net: number): 'success' | 'info' | 'warning' {
   if (net > 0) return 'warning'
   if (net === 0) return 'info'
   return 'success'
+}
+
+// 第 112 轮：商城行的 price 是 JSONB map（{coin:1000, gem:5}），不是数字；
+// 服务端没有 currency 列，币种就在 price 的 key 上。
+// 修前 `num(row, 'price')` 对一个 object 取 Number → NaN → 恒 0，
+// `str(row, 'currency')` 恒空 —— 价格列全 0、货币列全空。
+function priceMap(o: Record<string, unknown>): Record<string, number> {
+  const p = o.price
+  if (typeof p !== 'object' || p === null || Array.isArray(p)) return {}
+  return p as Record<string, number>
+}
+
+function priceText(o: Record<string, unknown>): string {
+  const m = priceMap(o)
+  const ks = Object.keys(m)
+  if (ks.length === 0) return '—'
+  return ks.map((k) => `${CURRENCY_LABEL[k] ?? k}:${m[k]}`).join('、')
+}
+
+function priceCurrencies(o: Record<string, unknown>): string {
+  const ks = Object.keys(priceMap(o))
+  if (ks.length === 0) return '—'
+  return ks.map((k) => CURRENCY_LABEL[k] ?? k).join('、')
+}
+
+/** enabled 是服务端布尔值（JSON true/false），显式 === true 兜住一切脏形状 */
+function isOnSale(o: Record<string, unknown>): boolean {
+  return o.enabled === true
 }
 
 async function load() {
@@ -123,17 +156,16 @@ onMounted(load)
           </template>
         </el-table-column>
         <el-table-column label="总量" width="120">
-          <template #default="{ row }">{{ num(row, 'amount').toLocaleString() }}</template>
+          <template #default="{ row }">{{ num(row, 'delta').toLocaleString() }}</template>
         </el-table-column>
         <el-table-column label="笔数" width="90">
-          <template #default="{ row }">{{ num(row, 'cnt') }}</template>
+          <template #default="{ row }">{{ num(row, 'count') }}</template>
         </el-table-column>
         <el-table-column label="人均" width="110">
           <template #default="{ row }">
-            {{ num(row, 'cnt') ? (num(row, 'amount') / num(row, 'cnt')).toFixed(1) : '—' }}
+            {{ num(row, 'count') ? (num(row, 'delta') / num(row, 'count')).toFixed(1) : '—' }}
           </template>
         </el-table-column>
-        <el-table-column prop="updated_at" label="统计时间" min-width="160" />
       </el-table>
     </el-card>
 
@@ -144,22 +176,20 @@ onMounted(load)
           <template #default="{ row }">{{ str(row, 'name') }}</template>
         </el-table-column>
         <el-table-column label="货币" width="80">
-          <template #default="{ row }">
-            {{ CURRENCY_LABEL[str(row, 'currency')] ?? str(row, 'currency') }}
-          </template>
+          <template #default="{ row }">{{ priceCurrencies(row) }}</template>
         </el-table-column>
         <el-table-column label="价格" width="100">
-          <template #default="{ row }">{{ num(row, 'price') }}</template>
+          <template #default="{ row }">{{ priceText(row) }}</template>
         </el-table-column>
         <el-table-column label="限购" width="90">
           <template #default="{ row }">
-            {{ num(row, 'limit') === 0 ? '不限' : num(row, 'limit') }}
+            {{ num(row, 'limit_per_day') === 0 ? '不限' : num(row, 'limit_per_day') }}
           </template>
         </el-table-column>
         <el-table-column label="上架" width="80">
           <template #default="{ row }">
-            <el-tag :type="num(row, 'on_sale') === 1 ? 'success' : 'info'" size="small">
-              {{ num(row, 'on_sale') === 1 ? '是' : '否' }}
+            <el-tag :type="isOnSale(row) ? 'success' : 'info'" size="small">
+              {{ isOnSale(row) ? '是' : '否' }}
             </el-tag>
           </template>
         </el-table-column>
