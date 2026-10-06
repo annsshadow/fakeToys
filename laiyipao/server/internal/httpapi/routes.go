@@ -215,7 +215,7 @@ func (s *Server) me(c *fiber.Ctx) error {
 		"user_id":      userID,
 		"build":        build,
 		"build_rating": s.Svc.ComputeRatingFor(userID, build),
-		"power":        s.Svc.ComputePowerFor(userID, build),
+		"power":        s.Svc.ComputePowerFor(build),
 	})
 }
 
