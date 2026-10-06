@@ -475,15 +475,58 @@ func (s *Service) LoadWallet(ctx context.Context, userID int64) (Wallet, error) 
 	// 体力每 6 分钟恢复 1 点，上限 120
 	const energyPerInterval = 6 * time.Minute
 	const energyMax = 120
+	//
+	// ⚠️ 第 86 轮：`energy_updated_at` 必须按**整间隔**推进，而不是推到 now()。
+	//
+	// # 缺陷：每次推进都丢掉不足一格的时间
+	//
+	// 原写法：
+	//
+	//	energy_updated_at = CASE WHEN elapsed >= interval THEN now() ELSE energy_updated_at END
+	//
+	// `now()` 落在下一次读取的时刻上，于是**两次读取之间不足一格的余数
+	// 被永久丢弃**。
+	//
+	// 客户端每次进页面都 `fetchWallet`，所以读取间隔（3~5 分钟）
+	// **短于**回复间隔（6 分钟）—— 正是最容易丢的形态。
+	//
+	// 实测（每 5 分钟读一次，一小时的账）：
+	//
+	//	t=0     at=0
+	//	t=300   +0  at=0      （300 < 360，不推进）
+	//	t=600   +1  at=600    ← 余数 240 被吞
+	//	t=900   +0  at=600
+	//	t=1200  +1  at=1200   ← 又吞 240
+	//	…
+	//	3600 分钟内共 12 次读取 → 只回 6 点
+	//
+	// 而 1 小时应当回 10 点 —— **少回 40%**。
+	//
+	// # 修法
+	//
+	// 推进量与加点量用**同一个**整格数，且推进量是 `interval` 的整数倍：
+	//
+	//	energy += k        （k = FLOOR(elapsed / interval)）
+	//	energy_updated_at += k * interval
+	//
+	// 这样余数留在 `energy_updated_at` 里，下一次继续累积，
+	// 长时间看总量精确等于 `FLOOR(总时长 / interval)`。
+	//
+	// 顺带：`LEAST($2::int, …)` 之外还要保证**扣能量时不回推时间戳** ——
+	// 原写法本来就没回推，保持不变。
+	const energyIntervalSecs = int64(energyPerInterval / time.Second)
 	if _, err := s.pool.Exec(ctx, `
-		UPDATE user_wallets
-		   SET energy = LEAST($2::int,
-		             energy + GREATEST(0, FLOOR(EXTRACT(EPOCH FROM (now() - energy_updated_at)) / $3))::int),
-		       energy_updated_at = CASE
-		           WHEN EXTRACT(EPOCH FROM (now() - energy_updated_at)) >= $3 THEN now()
-		           ELSE energy_updated_at END,
+		WITH k AS (
+		  SELECT GREATEST(0, FLOOR(EXTRACT(EPOCH FROM (now() - energy_updated_at)) / $3))::int AS n
+		    FROM user_wallets WHERE user_id = $1
+		)
+		UPDATE user_wallets w
+		   SET energy = LEAST($2::int, w.energy + k.n),
+		       energy_updated_at = w.energy_updated_at
+		                       + make_interval(secs => (k.n * $3)::double precision),
 		       updated_at = now()
-		 WHERE user_id = $1`, userID, energyMax, int64(energyPerInterval/time.Second)); err != nil {
+		  FROM k
+		 WHERE w.user_id = $1`, userID, energyMax, energyIntervalSecs); err != nil {
 		return Wallet{}, fmt.Errorf("regen energy: %w", err)
 	}
 
