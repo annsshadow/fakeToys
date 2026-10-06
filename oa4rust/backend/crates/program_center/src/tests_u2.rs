@@ -340,7 +340,16 @@ mod u2_tests {
             eprintln!("skipping collect roundtrip: DB not reachable");
             return;
         }
-        let app = program_center_router(test_pool());
+        let pool = test_pool();
+        // 优化二轮2：list/remove 收口为按登录人属主过滤——会话人须与 create 的 personId 一致
+        let now = chrono::Utc::now().naive_utc();
+        let session = shared::session::Session {
+            token: "u2-collect-roundtrip-token".to_string(),
+            person_unique: "u-collect-roundtrip".to_string(),
+            created_at: now,
+            expires_at: now + chrono::Duration::hours(2),
+        };
+        let app = program_center_router(pool).layer(Extension(session));
 
         // create：camelCase personId（轮77 alias 修复的契约）
         let create = app
@@ -427,5 +436,134 @@ mod u2_tests {
             .iter()
             .any(|r| r["id"] == serde_json::Value::String(id.clone()));
         assert!(!still_there, "软删后的收藏不应再出现在列表");
+    }
+
+    // ── 优化二轮2：collect remove 属主门禁守卫 ──
+    // 修复前 remove 无属主校验且为物理删：持他人收藏 id 即可横向越权删除。
+    #[tokio::test]
+    async fn collect_delete_rejects_non_owner_and_soft_deletes() {
+        use shared::testing::{is_db_available, test_pool};
+        if !is_db_available().await {
+            eprintln!("skipping collect owner guard: DB not reachable");
+            return;
+        }
+        let pool = test_pool();
+        fn session_for(person: &str) -> shared::session::Session {
+            let now = chrono::Utc::now().naive_utc();
+            shared::session::Session {
+                token: format!("u2-collect-owner-{}", person),
+                person_unique: person.to_string(),
+                created_at: now,
+                expires_at: now + chrono::Duration::hours(2),
+            }
+        }
+
+        // alice 创建收藏（走 HTTP create，personId=alice）
+        let alice_app =
+            program_center_router(pool.clone()).layer(Extension(session_for("u-collect-alice")));
+        let create = alice_app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/api/program_center/collect/create")
+                    .header("content-type", "application/json")
+                    .body(Body::from(
+                        r#"{"personId":"u-collect-alice","title":"owner guard","url":"https://internal.example/y"}"#,
+                    ))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(create.status(), StatusCode::OK);
+        let bytes = axum::body::to_bytes(create.into_body(), 65536)
+            .await
+            .unwrap();
+        let created: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        let id = created["data"]["id"]
+            .as_str()
+            .expect("create 应返回 id")
+            .to_string();
+
+        // bob 持 alice 的收藏 id 删除：必须被拒绝（非属主）
+        let bob_app =
+            program_center_router(pool.clone()).layer(Extension(session_for("u-collect-bob")));
+        let steal = bob_app
+            .oneshot(
+                Request::builder()
+                    .method("DELETE")
+                    .uri(format!("/api/program_center/collect/delete/{}", id))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(steal.status(), StatusCode::OK);
+        let bytes = axum::body::to_bytes(steal.into_body(), 65536)
+            .await
+            .unwrap();
+        let stolen: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(
+            stolen["data"]["deleted"].as_bool(),
+            Some(false),
+            "非属主删除必须落空（deleted=false，行原样保留）"
+        );
+
+        // 行必须原样保留：未软删、属主未变
+        {
+            let client = pool.get().await.unwrap();
+            let n = client
+                .query_one(
+                    "SELECT COUNT(*) FROM x_program_collect WHERE id = $1 AND person_id = 'u-collect-alice' AND deleted_at IS NULL",
+                    &[&id],
+                )
+                .await
+                .unwrap();
+            let count: i64 = n.get(0);
+            assert_eq!(count, 1, "越权删除后收藏必须原样保留");
+        }
+
+        // alice 本人删除：软删成功（行保留、deleted_at 非空），且 list 不再返回
+        let del = alice_app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method("DELETE")
+                    .uri(format!("/api/program_center/collect/delete/{}", id))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(del.status(), StatusCode::OK);
+        let bytes = axum::body::to_bytes(del.into_body(), 65536).await.unwrap();
+        let deleted: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(
+            deleted["data"]["deleted"].as_bool(),
+            Some(true),
+            "属主删除必须成功且为软删"
+        );
+
+        {
+            let client = pool.get().await.unwrap();
+            let row = client
+                .query_one(
+                    "SELECT deleted_at::text FROM x_program_collect WHERE id = $1",
+                    &[&id],
+                )
+                .await
+                .unwrap();
+            let gone: Option<String> = row.get(0);
+            assert!(gone.is_some(), "属主删除必须是软删（行保留）");
+        }
+
+        // 清理：物理删测试数据
+        {
+            let client = pool.get().await.unwrap();
+            client
+                .execute("DELETE FROM x_program_collect WHERE id = $1", &[&id])
+                .await
+                .unwrap();
+        }
     }
 }
