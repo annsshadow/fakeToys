@@ -36,15 +36,16 @@ beforeEach(() => {
 
 describe('EconomyView 通胀监控', () => {
   it('净流入聚合：同币种累加、四种货币卡齐全、数字字符串参与计算、缺字段兜底 0', async () => {
-    // 注意：netFlow 用裸 Number() 累加，无 NaN 保护（amount 为非数字时整列变 NaN）；
-    // 数字字符串 '150' 能正常解析。NaN 场景是已知鲁班口，不在本断言内。
+    // 注意：netFlow 读服务端 AdminEconomy 流水行的 `delta`（SUM）与 `currency`。
+    // ⚠️ 第 112 轮前读的是 `amount`（不存在的字段）→ 恒 0，通胀监控形同虚设。
+    // 服务端把 int64 发成数字，这里故意混一个字符串 '150' 验证 Number() 兜得住。
     const wrapper = await mountEconomy(
       [
-        { currency: 'coin', amount: '150', cnt: 3, reason: 'battle_loot', updated_at: '2026-01-01T00:00:00Z' },
-        { currency: 'coin', amount: -200, cnt: 0, reason: 'mystery_reason' },
-        { currency: 'gem', amount: 500, cnt: 2, reason: 'shop' },
-        { currency: 'energy', amount: 0, cnt: 0, reason: 'signin' },
-        { cnt: 1 }, // currency/amount 缺失 → ?? 兜底空币种 0
+        { currency: 'coin', delta: '150', count: 3, reason: 'battle_loot' },
+        { currency: 'coin', delta: -200, count: 0, reason: 'mystery_reason' },
+        { currency: 'gem', delta: 500, count: 2, reason: 'shop' },
+        { currency: 'energy', delta: 0, count: 0, reason: 'signin' },
+        { count: 1 }, // currency/delta 缺失 → ?? 兜底空币种 0
       ],
       [],
     )
@@ -59,6 +60,20 @@ describe('EconomyView 通胀监控', () => {
     // gem > 0 提示贬值；coin < 0 / energy 0 / keys 无 → 健康
     expect(text).toContain('在贬值，考虑回收')
     expect(text).toContain('健康')
+    wrapper.unmount()
+  })
+
+  // 第 112 轮守卫：净流入 KPI 必须真的等于 Σ delta。
+  // 若有人把字段读回 `amount`（修前 bug），delta=500 的 gem 卡会显示 0/健康，
+  // 这条断言直接红。
+  it('净流入 KPI = Σ delta（而非恒 0）', async () => {
+    const wrapper = await mountEconomy(
+      [{ currency: 'coin', delta: 300, count: 1, reason: 'battle_loot' }],
+      [],
+    )
+    const coinCard = wrapper.text()
+    expect(coinCard).toContain('+300')
+    expect(coinCard).toContain('在贬值，考虑回收') // 300 > 0
     wrapper.unmount()
   })
 
@@ -103,18 +118,20 @@ describe('EconomyView 通胀监控', () => {
     wrapper.unmount()
   })
 
-  it('流水表：来源中文映射与未知回退、人均分母为零显示 —', async () => {
+  it('流水表：来源中文映射与未知回退、人均分母为零显示 —（第 112 轮：读 delta/count）', async () => {
     const wrapper = await mountEconomy(
       [
-        { currency: 'coin', amount: '150', cnt: 3, reason: 'battle_loot' },
-        { currency: 'gem', amount: 500, cnt: 2, reason: 'mystery_reason' },
-        { currency: 'energy', amount: 0, cnt: 0, reason: 'signin' },
+        { currency: 'coin', delta: 150, count: 3, reason: 'battle_loot' },
+        { currency: 'gem', delta: 500, count: 2, reason: 'mystery_reason' },
+        { currency: 'energy', delta: 0, count: 0, reason: 'signin' },
       ],
       [],
     )
     const rows = wrapper.findAll('.el-table__row')
     expect(rows[0].text()).toContain('战斗掉落')
-    expect(rows[0].text()).toContain('50.0') // 150/3
+    expect(rows[0].text()).toContain('50.0') // 150/3 人均
+    expect(rows[0].text()).toContain('150') // 总量列 = delta
+    expect(rows[0].text()).toContain('3') // 笔数 = count
     expect(rows[1].text()).toContain('mystery_reason') // 未知来源回退原文
     expect(rows[1].text()).toContain('250.0') // 500/2
     expect(rows[2].text()).toContain('—') // 0 笔 → 无人均
@@ -172,21 +189,26 @@ describe('EconomyView 商城编辑', () => {
     wrapper.unmount()
   })
 
-  it('商城表渲染：限购 0 显示「不限」、上架状态双色、null 名称显示空', async () => {
+  it('商城表渲染：价格 map / 限购 limit_per_day / 上架 enabled（第 112 轮服务端真实形状）', async () => {
     const wrapper = await mountEconomy(
       [],
       [
-        { id: 1, name: '体力瓶', currency: 'coin', price: 100, limit: 0, on_sale: 1 },
-        { id: 2, name: null, currency: 'gem', price: '20', limit: 5, on_sale: 0 },
+        { id: 1, name: '体力瓶', price: { coin: 100 }, limit_per_day: 0, enabled: true },
+        { id: 2, name: null, price: { gem: 20, coin: 5 }, limit_per_day: 5, enabled: false },
       ],
     )
     const text = wrapper.text()
+    // 价格 map 渲染成「金币:100」「钻石:20、金币:5」，不再是 num(object)=0
+    expect(text).toContain('金币:100')
+    expect(text).toContain('钻石:20')
+    expect(text).toContain('金币:5')
+    // 限购：0 → 不限；5 → 5
     expect(text).toContain('不限')
     expect(text).toContain('5')
     expect(text).not.toContain('null')
     const rows = wrapper.findAll('.el-table__row')
-    expect(rows[0].find('.el-tag--success').exists()).toBe(true)
-    expect(rows[1].find('.el-tag--info').exists()).toBe(true)
+    expect(rows[0].find('.el-tag--success').exists()).toBe(true) // enabled=true 上架
+    expect(rows[1].find('.el-tag--info').exists()).toBe(true) // enabled=false 未上架
     wrapper.unmount()
   })
 
