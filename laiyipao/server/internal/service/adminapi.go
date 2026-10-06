@@ -196,6 +196,19 @@ func (s *Service) AdminSkills(ctx context.Context) (map[string]any, error) {
 }
 
 func (s *Service) fetchSkills(ctx context.Context) (base, composite []map[string]any, err error) {
+	//
+	// ⚠️ 第 119 轮：基础/复合用**生成器种子成员**判定，不再用写死的 `id <= 24`。
+	// 24 是魔法数字——当前 SeedSkills 恰好 1..24、SeedCompositeSkills 从 31 起，
+	// 但它只反映「今天种子里有多少基础技能」：
+	// 将来往 SeedSkills 加一个 id>24 的基础技能（seeder 会把它灌进 skills 表），
+	// `id<=24` 会把它**静默归进复合桶**，后台分组从此漂移且无任何报错。
+	// 基础技能的事实源是 `domain.SeedSkills`（skills 表就是它的种子），
+	// 分类跟着种子走，加新技能自动跟上。
+	baseIDs := make(map[int]bool, len(domain.SeedSkills))
+	for _, sk := range domain.SeedSkills {
+		baseIDs[sk.ID] = true
+	}
+
 	rows, qerr := s.pool.Query(ctx, `
 		SELECT id, code, name, family, element, kind, descr, base_damage, heat_cost,
 		       cooldown_ms, pierce, aoe_radius, apply_element, apply_stacks,
@@ -223,7 +236,7 @@ func (s *Service) fetchSkills(ctx context.Context) (base, composite []map[string
 			"aoe_radius": aoe, "apply_element": applyElement, "apply_stacks": stacks,
 			"projectile_speed": speed, "chain": chain, "unlock_level": unlock,
 		}
-		if id <= 24 {
+		if baseIDs[id] {
 			base = append(base, item)
 		} else {
 			composite = append(composite, item)
