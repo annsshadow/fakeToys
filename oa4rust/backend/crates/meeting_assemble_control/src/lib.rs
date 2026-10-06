@@ -2184,12 +2184,28 @@ pub async fn save_meeting(
 #[allow(non_snake_case)]
 pub async fn delete_meeting(
     pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 属主/管理员门禁 + 软删幂等（对齐 u2_meeting_delete_owned 口径；
+    // 原 无守卫物理删=任何登录人可删任意会议）
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let creator = u2_meeting_creator(&client, &id).await?;
+    let Some(creator) = creator else {
+        return Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(id)),
+                ("deleted".to_string(), Value::Bool(false)),
+            ]),
+        ))));
+    };
+    shared::middleware::require_owner(&pool.0, &session, &creator).await?;
 
     let result = client
-        .execute("DELETE FROM x_meeting WHERE id = $1", &[&id])
+        .execute(
+            "UPDATE x_meeting SET deleted_at = NOW() WHERE id = $1 AND creator = $2 AND deleted_at IS NULL",
+            &[&id, &creator],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 
