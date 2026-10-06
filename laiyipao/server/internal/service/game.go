@@ -931,7 +931,40 @@ func (s *Service) ClaimTask(ctx context.Context, userID int64, taskID int) (map[
 // 不会与任何真实日期撞上，且一眼可读。
 var achievementEpoch = time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC)
 
+// TaskScopes 是任务周期的**全部**合法取值 —— 本包与 HTTP 层共用同一份来源。
+//
+// # 为什么放在这里而不是 handler 里
+//
+// handler 若自己写一份 `map[string]bool{"daily":…}`，
+// 它就会和 `periodStart` 的 switch、和 `bumpTasks` 里的
+// `if t.scope == "achievement"` **各自漂移** ——
+// 这正是本仓库 `adminUpdateLevel` 里 `id > 100` 那种
+// 「硬编码常量复制了一份 `domain.TotalLevels`」的老毛病。
+//
+// 有了这一份：
+//
+//   - `periodStart` 的 switch 可以被守卫逐项对拍（第 106 轮）
+//   - HTTP 层校验直接复用
+//   - **种子数据新增第四种 scope 时能被抓到**（对 `tasks` 表做 DISTINCT）
+//
+// ⚠️ 它与 `tasks.scope` 列的取值必须一致。
+// `TestTaskScopeListMatchesSeedData` 会把两边的差集直接打出来。
+var TaskScopes = []string{"daily", "weekly", "achievement"}
+
+// ValidTaskScope 判断 scope 是否是合法的任务周期。
+func ValidTaskScope(scope string) bool {
+	for _, v := range TaskScopes {
+		if v == scope {
+			return true
+		}
+	}
+	return false
+}
+
 func periodStart(t time.Time, scope string) time.Time {
+	// ⚠️ 这里的 case 必须覆盖 `TaskScopes` 的每一项。
+	//    `TestPeriodStartHandlesEveryKnownScope` 会逐项对拍：
+	//    给 `TaskScopes` 加一项却忘了加 case，它会红。
 	switch scope {
 	case "achievement":
 		// 终身累计，不按天分行。理由见 achievementEpoch 的注释。
