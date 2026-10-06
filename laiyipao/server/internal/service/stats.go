@@ -767,20 +767,47 @@ func (s *Service) AdminUpdateSkill(ctx context.Context, skillID int, patch map[s
 }
 
 // AdminRegenerateLevels 重新生成全部关卡（覆盖后台的手工改动）。
+// AdminRegenerateLevels 重新生成全部关卡（覆盖后台的手工改动）。
+//
+// # 第 116 轮两处修正
+//
+//  1. **保留运营的 `base_hp`**（与后台确认文案一致）：
+//     文案承诺「自定义的防线血量会保留」，但旧实现把 `base_hp` 也按生成器值
+//     覆盖掉 —— 运营手工调过的防线血量被无声重置。
+//     重新生成的语义是「同步生成器内容（波次/难度/地形/星级）」，
+//     不该连运营自己调的 base_hp 一起冲掉。
+//
+//  2. **整批原子 + 不再吞错**：旧实现 100 条 UPDATE 各走独立 autocommit、
+//     且 `starRaw,_ := json.Marshal` 静默吞错。中途失败会留下
+//     「前 N 关已重生成 + 后 M 关保留旧值」的**混合态**且不可回滚。
+//     现在整批进同一事务，任一失败整体回滚；Marshal 失败显式报错。
 func (s *Service) AdminRegenerateLevels(ctx context.Context) (int, error) {
 	levels := domain.GenerateAllLevels()
-	for _, gl := range levels {
-		starRaw, _ := json.Marshal(gl.StarTargets)
-		terrainRaw, _ := json.Marshal(gl.Terrain)
-		if _, err := s.pool.Exec(ctx, `
-			UPDATE levels SET chapter=$2, name=$3, seed=$4, base_hp=$5, wave_count=$6,
-			                 difficulty=$7, energy_cost=$8, star_targets=$9, terrain_config=$10,
-			                 is_boss=$11, updated_at=now()
-			 WHERE id=$1`,
-			gl.ID, gl.Chapter, gl.Name, gl.Seed, gl.BaseHP, gl.WaveCount, gl.Difficulty,
-			gl.EnergyCost, starRaw, terrainRaw, gl.IsBoss); err != nil {
-			return 0, fmt.Errorf("regenerate level %d: %w", gl.ID, err)
+	err := s.DB.Tx(ctx, func(tx txType) error {
+		for _, gl := range levels {
+			starRaw, err := json.Marshal(gl.StarTargets)
+			if err != nil {
+				return fmt.Errorf("regenerate level %d: marshal star_targets: %w", gl.ID, err)
+			}
+			terrainRaw, err := json.Marshal(gl.Terrain)
+			if err != nil {
+				return fmt.Errorf("regenerate level %d: marshal terrain: %w", gl.ID, err)
+			}
+			// 注意：**没有 base_hp** —— 保留库里运营自定义的值。
+			if _, err := tx.Exec(ctx, `
+				UPDATE levels SET chapter=$2, name=$3, seed=$4, wave_count=$5,
+				                 difficulty=$6, energy_cost=$7, star_targets=$8, terrain_config=$9,
+				                 is_boss=$10, updated_at=now()
+				 WHERE id=$1`,
+				gl.ID, gl.Chapter, gl.Name, gl.Seed, gl.WaveCount, gl.Difficulty,
+				gl.EnergyCost, starRaw, terrainRaw, gl.IsBoss); err != nil {
+				return fmt.Errorf("regenerate level %d: %w", gl.ID, err)
+			}
 		}
+		return nil
+	})
+	if err != nil {
+		return 0, err
 	}
 	return len(levels), nil
 }
