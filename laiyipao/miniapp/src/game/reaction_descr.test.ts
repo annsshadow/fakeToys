@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { REACTIONS, type ReactionKey } from './elements'
 import type { ReactionSpec } from './elements'
+import { stripTsComments } from '../testkit/stripComments'
 
 /**
  * `ReactionSpec.descr` **只允许承诺已实现的效果**（第 83 轮）。
@@ -145,24 +146,6 @@ describe('反应文案与实现的一致性（第 83 轮）', () => {
  * 屏幕震动是**反馈**，不是玩法。把 `aoeRadius` 接到震动上
  * 让它在「有人读」的意义上活着，正是本轮要消灭的那种假信号。
  */
-/**
- * stripTsComments 剥掉 TS 的行注释与块注释。
- *
- * ⚠️ 这是**文本级**的剥离，不是 AST —— 它对字符串字面量里的
- * `//` 会误伤。
- *
- * 那会不会出问题？只有当某个字符串字面量里恰好含有 `//spec.aoeRadius`
- * 这类文本时才会误判，而那种写法本身就可疑。
- * 真正的解析器（`ts.createSourceFile`）更准，但引入编译器依赖
- * 只为一条守卫不值 —— **误伤的代价是「有人要来解释这条为什么红了」**。
- *
- * 这个取舍记在这里，而不是留给后来的人猜。
- */
-function stripTsComments(src: string): string {
-  return src
-    .replace(/\/\*[\s\S]*?\*\//g, ' ')
-    .replace(/^\s*\/\/.*$/gm, ' ')
-}
 
 describe('ReactionSpec 没有「只有表现层消费者」的字段', () => {
   const src = readFileSync(resolve(__dirname, 'elements.ts'), 'utf-8')

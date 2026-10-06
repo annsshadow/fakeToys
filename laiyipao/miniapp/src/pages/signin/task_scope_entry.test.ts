@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { stripTsComments } from '../../testkit/stripComments'
 
 /**
  * 三种任务周期（daily / weekly / achievement）**都必须**在客户端有入口（第 94 轮）。
@@ -39,40 +40,6 @@ import { resolve } from 'node:path'
  * 由服务端的 `tasks.scope` 定义 —— 那是个会增长的值。
  * 所以判据是：**客户端出现的 scope 集合 ⊇ 服务端种子里的 scope 集合**。
  */
-/**
- * stripTsComments 剥掉行注释与块注释。
- *
- * ⚠️ 这是本项目**第三次**为同一个原因加它：
- *
- *   - 第 83 轮：`canvas.ts` 的说明注释里两次提到 `spec.aoeRadius`
- *   - 第 88 轮：修复说明里引用了「修复前的写法」，判据在注释里找到目标
- *   - 第 94 轮：本文件下方那段说明注释里写着 ``fetchTasks('daily')``，
- *     于是「不得有硬编码 daily」那条断言**命中了注释**
- *
- * 三次都是同一个形状：**文本扫描分不清注释与代码**。
- * 它之所以重复发生，是因为每次都在新文件里重写判据 ——
- * **「剥注释」应该是共用工具而不是各写一份。**
- *
- * ⚠️ 这是文本级剥离，对字符串字面量里的 `//` 会误伤。
- * 那种写法本身可疑，而误伤的代价是「有人要来解释这条为什么红了」。
- */
-function stripTsComments(src: string): string {
-  return (
-    src
-      // 块注释
-      .replace(/\/\*[\s\S]*?\*\//g, ' ')
-      // 行注释
-      .replace(/^\s*\/\/.*$/gm, ' ')
-      // ⚠️ **模板里的 HTML 注释**（.vue 的 <template> 段落）
-      //
-      // 第 94 轮实测踩到：我把「此前写死 fetchTasks('daily')」这段说明
-      // 写在模板的 `<!-- -->` 里，而前两条规则都剥不掉它 ——
-      // 于是「不得有硬编码 daily」那条断言命中的**全是注释**。
-      //
-      // 三种注释形式都要剥，缺一种就会出现「判据在读注释」的假阴性。
-      .replace(/<!--[\s\S]*?-->/g, ' ')
-  )
-}
 
 describe('三种任务周期都要有客户端入口（第 94 轮）', () => {
   // ⚠️ 必须剥注释 —— 见 stripTsComments 的说明（本项目第三次为同一原因加它）。
