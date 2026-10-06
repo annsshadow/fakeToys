@@ -13,7 +13,9 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use shared::{
     error::AppError,
+    middleware::is_admin,
     response::{row_opt_json, ActionResult},
+    session::Session,
 };
 use std::collections::HashMap;
 use std::sync::Mutex;
@@ -292,8 +294,13 @@ pub async fn section_update(
 #[axum::debug_handler]
 pub async fn section_delete(
     pool: Extension<Pool>,
+    session: Extension<Session>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 版块管理=admin 动作（与 assemble/control 删除族同口径）
+    if !is_admin(&pool, &session.person_unique).await {
+        return Err(AppError::Forbidden);
+    }
     let deleted = shared::crud_delete(&pool, &section_create_spec(), &id).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -819,8 +826,14 @@ pub async fn section_viewforum_forumId(
 #[allow(non_snake_case)]
 pub async fn delete_forum(
     pool: Extension<Pool>,
+    session: Extension<Session>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // assemble/control 侧删除=管理面板动作（BBSForum.vue 与禁言/角色并列），
+    // 任何登录人可调=越权管理面 → admin 门禁
+    if !is_admin(&pool, &session.person_unique).await {
+        return Err(AppError::Forbidden);
+    }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows_affected = client
         .execute(
@@ -837,8 +850,12 @@ pub async fn delete_forum(
 #[allow(non_snake_case)]
 pub async fn delete_reply(
     pool: Extension<Pool>,
+    session: Extension<Session>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    if !is_admin(&pool, &session.person_unique).await {
+        return Err(AppError::Forbidden);
+    }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows_affected = client
         .execute(
@@ -855,8 +872,12 @@ pub async fn delete_reply(
 #[allow(non_snake_case)]
 pub async fn delete_subject(
     pool: Extension<Pool>,
+    session: Extension<Session>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    if !is_admin(&pool, &session.person_unique).await {
+        return Err(AppError::Forbidden);
+    }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows_affected = client
         .execute(
@@ -883,8 +904,12 @@ fn body_id(body: &Value) -> String {
 #[allow(non_snake_case)]
 pub async fn delete_forum_body(
     pool: Extension<Pool>,
+    session: Extension<Session>,
     axum::Json(body): axum::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    if !is_admin(&pool, &session.person_unique).await {
+        return Err(AppError::Forbidden);
+    }
     let id = body_id(&body);
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows_affected = client
@@ -902,8 +927,12 @@ pub async fn delete_forum_body(
 #[allow(non_snake_case)]
 pub async fn delete_reply_body(
     pool: Extension<Pool>,
+    session: Extension<Session>,
     axum::Json(body): axum::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    if !is_admin(&pool, &session.person_unique).await {
+        return Err(AppError::Forbidden);
+    }
     let id = body_id(&body);
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows_affected = client
@@ -921,8 +950,12 @@ pub async fn delete_reply_body(
 #[allow(non_snake_case)]
 pub async fn delete_subject_body(
     pool: Extension<Pool>,
+    session: Extension<Session>,
     axum::Json(body): axum::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    if !is_admin(&pool, &session.person_unique).await {
+        return Err(AppError::Forbidden);
+    }
     let id = body_id(&body);
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows_affected = client
