@@ -11,6 +11,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -184,13 +185,20 @@ func TestAuditWritesRow(t *testing.T) {
 		t.Errorf("审计 username = %q，期望 %q", uname, username)
 	}
 
-	// detail 无法 JSON 化（channel）必须降级为 {}，而不是让主流程失败
+	// detail 无法 JSON 化（channel）不得让主流程失败，
+	// 且不得静默降级成 `{}`（第 125 轮：那与「本来无明细」不可区分，
+	// 审计行撒谎）。现在必须落 `{"detail_error": "..."}` 诚实记丢。
 	ts.Audit(ctx, adminID, "svc_audit_badjson", "t", make(chan int))
 	var raw []byte
+	var detailType string
 	if err := ts.pool.QueryRow(ctx,
-		`SELECT detail FROM admin_audit_logs WHERE admin_id = $1 AND action = 'svc_audit_badjson'`,
-		adminID).Scan(&raw); err != nil || string(raw) != "{}" {
-		t.Errorf("不可序列化 detail 应落 {}，实际 %q err=%v", raw, err)
+		`SELECT detail, jsonb_typeof(detail)
+		 FROM admin_audit_logs WHERE admin_id = $1 AND action = 'svc_audit_badjson'`,
+		adminID).Scan(&raw, &detailType); err != nil || detailType != "object" {
+		t.Errorf("不可序列化 detail 应落对象型 JSONB，实际 %q (type=%s) err=%v", raw, detailType, err)
+	}
+	if !strings.Contains(string(raw), "detail_error") {
+		t.Errorf("detail 必须带 detail_error 标记（第 125 轮修复），实际 %q", raw)
 	}
 }
 
