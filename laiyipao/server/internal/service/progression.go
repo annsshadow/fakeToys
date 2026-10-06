@@ -729,6 +729,29 @@ func (s *Service) ChallengeDefense(ctx context.Context, userID, defenseID int64,
 			return fmt.Errorf("%w: 对方开启了护盾", ErrForbidden)
 		}
 
+		// ⚠️ 第 126 轮：预锁必须**先于计数器读取**。
+		//
+		// 第 79 轮修的是**钱包**锁序（下方窃取分支「对方→自己」互锁），
+		// 但当时把预锁放在了 `dailyChallengeCountersTx` **之后** ——
+		// 而计数器读取本身就会按「自己 → 对方」拿 `user_daily_challenges`
+		// 的行锁，预锁到来时那两行**已经**按任意序锁住了。
+		//
+		// 于是残留一个死锁窗口：两个玩家**当日第一次**互打
+		// （`user_daily_challenges` 里今天的行都还不存在）时：
+		//
+		//	Tx1（A 打 B）先锁 counters[A] → 等 counters[B]
+		//	Tx2（B 打 A）先锁 counters[B] → 等 counters[A]
+		//
+		// `ON CONFLICT DO UPDATE` 会等对面**未提交**的 INSERT，
+		// 完美成环 → PG 40P01 → 两个诚实玩家各点一次挑战、各收一个 500。
+		//
+		// 修：把预锁上移到计数器读取之前。两笔并发挑战的加锁序列
+		// 从此全局一致（升序），计数器读取只会命中**已锁**行、不再引入
+		// 新锁序。被拒路径（自用尽 / 护盾）仍在读前退出，语义不变。
+		if err := lockChallengeStateOrdered(ctx, tx, []int64{userID, ownerID}); err != nil {
+			return err
+		}
+
 		attempts, _, err := s.dailyChallengeCountersTx(ctx, tx, userID)
 		if err != nil {
 			return err
@@ -777,9 +800,10 @@ func (s *Service) ChallengeDefense(ctx context.Context, userID, defenseID int64,
 		// 只锁两个：`userID`（挑战者）与 `ownerID`（被挑战者）。
 		// 钱包是本事务唯一会跨用户触碰的资源
 		// （`user_daily_challenges` / `defenses` 的 UPDATE 不跨用户）。
-		if err := lockChallengeStateOrdered(ctx, tx, []int64{userID, ownerID}); err != nil {
-			return err
-		}
+		//
+		// ⚠️ 第 126 轮：这次调用已上移到**计数器读取之前**（见事务开头）。
+		// 走到这里时 counters 与 wallets 均已持锁，下方 `grantWallet`
+		// 不会再引入任何新锁。
 		stolen := map[string]int64{}
 		if in.Won && ownerStolen < DefenseStolenLimit {
 			// 窃取 10% 战力等价资源
