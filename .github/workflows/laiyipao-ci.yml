@@ -1,0 +1,115 @@
+# laiyipao（三端游戏）CI：Go 服务端 + admin 管理端 + miniapp 小程序/H5。
+# 此前 laiyipao 是仓库内唯一没有 CI 覆盖的子项目——2026-09-28 起三端
+# 各自的本地门禁（coverage 100%/93.7%）只靠会话内手工跑，回归无法在
+# PR 上暴露。本文件对齐仓库既有约定（见 oa4rust-ci.yml / ai-platform-ci.yml）：
+#   - 文件名 <子项目>-<用途>.yml，放在仓库根 .github/workflows/
+#   - paths 过滤限定到子项目目录 + 工作流自身
+#   - 动作一律 pin 到 commit SHA（与全仓一致，checkout/setup-node 同 SHA 复用）
+name: laiyipao CI
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - "laiyipao/**"
+      - ".github/workflows/laiyipao-ci.yml"
+  pull_request:
+    branches: [main, master]
+    paths:
+      - "laiyipao/**"
+      - ".github/workflows/laiyipao-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: laiyipao-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── Go 服务端：构建 + vet + 全量测试 ────────────────────────────────────
+  # go test 全绿（2026-10-06 实测）；部分用例无 PG 时自行跳过，无需 services。
+  server:
+    name: Server build & test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: laiyipao/server
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Set up Go
+        uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00
+        with:
+          go-version-file: laiyipao/server/go.mod
+          cache-dependency-path: laiyipao/server/go.sum
+      - name: Build
+        run: go build ./...
+      - name: Vet
+        run: go vet ./...
+      - name: Test
+        run: go test ./...
+
+  # ── admin 管理端（Vue3 + Vite）：类型检查 + 单测 + 构建 ─────────────────
+  admin:
+    name: Admin type-check, test & build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: laiyipao/admin
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "22"
+      - name: Activate pinned pnpm
+        run: |
+          set -euo pipefail
+          corepack enable
+          corepack prepare pnpm@11.25.0 --activate
+          node --version
+          pnpm --version
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Type-check
+        run: pnpm type-check
+      - name: Run Vitest tests
+        run: pnpm test
+      - name: Build (vue-tsc + vite)
+        run: pnpm build
+
+  # ── miniapp 小程序端（uni-app）：类型检查 + 单测 + H5/微信双构建 ─────────
+  # mp-weixin 构建对 vite 5.2.8 pin 敏感（依赖升级曾假红），进 CI 后回归可见。
+  miniapp:
+    name: Miniapp type-check, test & build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: laiyipao/miniapp
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "22"
+      - name: Activate pinned pnpm
+        run: |
+          set -euo pipefail
+          corepack enable
+          corepack prepare pnpm@11.25.0 --activate
+          node --version
+          pnpm --version
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Type-check
+        run: pnpm type-check
+      - name: Run Vitest tests
+        run: pnpm test
+      - name: Build H5
+        run: pnpm build:h5
+      - name: Build WeChat mini program
+        run: pnpm build:mp-weixin
