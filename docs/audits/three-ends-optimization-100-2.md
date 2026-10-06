@@ -14,7 +14,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 > **提交尾注用「（优化二轮 N）」与第一本的「（优化轮 N）」区分**；仍只暂存本人文件
 > （工作区有并行 CI/augmentor/laiyipao 会话在途改动，绝不越界暂存）。
 
-## 状态：进行中（轮 4/100）
+## 状态：进行中（轮 5/100）
 
 ## 启动基线（2026-10-06 实测）
 
@@ -40,6 +40,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 | 2 | FIX（后端安全/数据正确性，IDOR+语义分裂） | FIX | **collect 族属主边界收口**（commit `a02dfc1b3`）：软删表物理 DELETE 续扫 7 处甄别出真缺陷——①`GET collect/list` 全量列出所有人收藏（mobile 轮91 的「按登录人过滤」是前端假过滤，API 层任何人可枚举他人收藏 URL）→ 补 session 属主过滤 `person_id = $1`；②`DELETE collect/delete/{id}` 走 crud_delete 无属主校验——持他人收藏 id 即可横向越权软删（**真 IDOR**）→ 属主门禁+软删幂等手写 UPDATE（`WHERE id AND person_id AND deleted_at IS NULL`），`deleted=false` 不区分不存在/非本人/已删不泄漏存在性；③顺删 `collect_remove` 未注册死 handler（我按扫描命中先改它，守卫测试立功暴露真路由挂的是 `collect_delete`——**扫描甄别必须以 routes.rs 注册表为准，不能信函数名相似**）。甄别记档：pp_e_applicationdict 删除端点注释自证「物理删除=有意」、program_center u3 admin 清理有 require_admin、u2_closures 3 处 query 表物理删（不泄漏不写穿仅无回收）记档不扩大。新增越权守卫真库实跑（bob 删 alice 收藏 deleted=false+行原样 / alice 删 deleted=true+deleted_at 非空）。验证：program_center 256/256（+1 守卫）、clippy 0、fmt 0 |
 | 3 | FIX（desktop 安全/隐私，跨账号缓存泄漏） | FIX | **登录人变化即清 vue-query 缓存**（commit `9e92549d`）：链路=①SDK `logout()/switchUser()` 只清 user state 不清查询缓存；②QueryClient `staleTime: 5min + refetchOnWindowFocus: false`；③视图 queryKey 普遍不含登录人（如 CollectApp `['Collect','list']`）——换账号登录后 staleTime 窗口内上一账号数据直接渲染给当前账号（跨账号数据泄漏，CollectApp 仅为首例，全视图同构）。修法=装配层单一事实源：utils/sessionCache.ts `watchSessionCacheReset(queryClient, watchSource)`，main.ts 在 pinia 激活后接线 watch `session.user.unique` 变化（覆盖登出/切换/换账号重登全路径；SDK 不依赖 app 的 queryClient）。新守卫 3 例（换人清/登出清+重登再清/同人不触发），3 例先红（watcher 默认异步调度须 `await nextTick()`）后绿=判别力实证。**坑：SDK `session.state` 是 `readonly(state)` 解包对象（非 ref），`.state.value` tsc TS2339**。顺甄别：bundle 分片主题确认充分（入口 44KB gz12、echarts 524/codemirror 376 已独立懒加载块、EChartsView 已按需），desktop RecycleApp 四端点对 generated_routes 精确比对无错配。验证：desktop vitest 1001/1001、tsc 6 包 0、biome 0、desktop build ✓ |
 | 4 | IMPROVE（跨端同构甄别，轮3 主题收尾） | IMPROVE | **mobile 端跨账号缓存泄漏面甄别=不存在**：①mobile 不用 vue-query（pnpm 依赖与源码零命中，自有 http.ts+pinia 方案）；②业务数据零 storage 落盘（`setStorageSync` 全仓仅 tab/theme 等 UI 偏好，页面数据内存态+onShow 重拉）；③会话恢复走服务端 `/who`（store 纯内存 ref，无持久化）——登出/换号后不存在上一账号数据复现路径。SDK 侧 `clearLegacyStorage()` 已有。结论：轮3 修复无需 mobile 同构改动，跨端缓存/存储泄漏主题双端闭环。验证：依赖清单+源码扫描+store 实读三重证据 |
+| 5 | FIX（后端安全/数据正确性，IDOR+语义分裂跨 8 端点） | FIX | **query designer 删除族口径统一收口**（commit `1ce67a79d`）：u2_closures.rs 内 8 个删除端点三类问题一次收口——①裸奔无守卫：importmodel_delete/stat_delete/statement_delete/neural_delete/table_delete/table_row_delete/view_delete 全部无 session 校验，任何登录人可删任意数据 → 补 guard_write（owner=COALESCE(creator_person,creator,'')，空 owner 回退 admin，同族既有惯例）；②物理 DELETE 与 crud spec soft_delete: true 分裂（7 表有 deleted_at 列）→ 软删幂等 `UPDATE SET deleted_at=NOW() ... AND deleted_at IS NULL`（statement 表无软删列维持物理删仅补守卫）；③guard SQL 的 OR 优先级 bug：`id=$1 OR model_flag=$1 AND deleted_at IS NULL` 实际等价 id=$1 OR (model_flag=$1 AND 未删)——已删行按 id 仍可通过守卫 → 括号化修正。**甄别记档（勿重扫）：mind 域 tree/my 列全部 = o2 原始契约语义（docs/oa/modules/o2server/x_mind_assemble_control.md 明确记录查 parent_id IS NULL 全量），共享目录树设计非 IDOR；mind create 的 creator 落 "system" 为低危展示字段质量问题记档**。验证：query_assemble_designer 46/46、clippy 0、fmt 0 |
 
 ## 记账纪律（沿用第一本）
 
