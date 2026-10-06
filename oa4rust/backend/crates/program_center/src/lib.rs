@@ -280,9 +280,18 @@ fn collect_spec() -> shared::crud::CrudSpec {
 #[allow(non_snake_case)]
 pub async fn collect_create(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     body: Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let id = shared::crud_create(&pool, &collect_spec(), &body.0).await?;
+    // 归属以会话登录人为事实源：客户端 personId 可伪造（替别人收藏/冒名归属）
+    let mut payload = body.0;
+    if let Some(obj) = payload.as_object_mut() {
+        obj.insert(
+            "personId".to_string(),
+            Value::String(session.person_unique.clone()),
+        );
+    }
+    let id = shared::crud_create(&pool, &collect_spec(), &payload).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
@@ -295,10 +304,32 @@ pub async fn collect_create(
 #[allow(non_snake_case)]
 pub async fn collect_save(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Path(id): Path<String>,
     body: Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let saved = shared::crud_save(&pool, &collect_spec(), &id, &body.0).await?;
+    // 属主门禁（此前任何登录人可改任意收藏）+ personId 剥离（归属不可经 save 改写）
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let owned = client
+        .query_opt(
+            "SELECT 1 FROM x_program_collect WHERE id = $1 AND person_id = $2 AND deleted_at IS NULL",
+            &[&id, &session.person_unique],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if owned.is_none() {
+        return Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(id)),
+                ("saved".to_string(), Value::Bool(false)),
+            ]),
+        ))));
+    }
+    let mut payload = body.0;
+    if let Some(obj) = payload.as_object_mut() {
+        obj.remove("personId");
+    }
+    let saved = shared::crud_save(&pool, &collect_spec(), &id, &payload).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
