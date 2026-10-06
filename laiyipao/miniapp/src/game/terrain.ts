@@ -243,7 +243,7 @@ export class Terrain {
     // 260 让风障真正成为"覆盖一片区域的偏转场"，
     // 与它作为「风障」的视觉体量相称。
     for (const p of ctx.projectiles) {
-      if (ctx.within(this.x, this.y, 260, p.x, p.y)) {
+      if (ctx.within(this.x, this.y, ROTOR_RADIUS, p.x, p.y)) {
         p.vx += deflectX
         p.vy += deflectY
       }
@@ -310,7 +310,7 @@ export class Terrain {
           this.charge += Number(damage / 100n)
           if (this.charge >= this.param) {
             this.state = 'burning'
-            this.timer = 8000
+            this.timer = OIL_BURN_MS
             this.charge = this.param
             this.triggered = true
             return true
@@ -386,10 +386,53 @@ export const TERRAIN_NAME: Record<TerrainKind, string> = {
   charge_tower: '蓄能塔',
 }
 
+/**
+ * OIL_BURN_MS 是油桶火区的持续毫秒（第 80 轮从字面量提成命名常量）。
+ *
+ * # 为什么连这个也要提
+ *
+ * `TERRAIN_DESCR.oil_drum` 对玩家说的是「生成 **8 秒** 火区」，
+ * 而实现在 `onHit` 里写的是 `this.timer = 8000`。
+ *
+ * 这个数字**恰好**一致 —— 但「恰好」本身就是问题：
+ * 它一致是因为没人改过，不是因为任何机制保证它一致。
+ * 而文案里的数字**代码里根本没有**，改实现时不会有人想起改它。
+ *
+ * （同一个文件里的 `rotor_vane` 就漂了：文案 140、实现 260。）
+ *
+ * 提成常量 + 文案插值 + 守卫断言，三件事一起做才有效。
+ */
+export const OIL_BURN_MS = 8000
+
+/**
+ * ROTOR_RADIUS 是风障的作用半径（第 80 轮从字面量提成命名常量）。
+ *
+ * # 为什么提成常量
+ *
+ * 它此前是 `ctx.within(this.x, this.y, 260, ...)` 里的一个裸字面量，
+ * 而 `TERRAIN_DESCR.rotor_vane` 对玩家说的是「**140 半径**」——
+ * **文案与实现漂了 120**。
+ *
+ * 漂了的直接后果：玩家读到的作用范围是实际的 46%。
+ *
+ * 而「文案里的数字」这种知识天然会漂，因为**代码里没有它** ——
+ * 改代码时不会有人想到去改一句中文。
+ *
+ * 提成常量并让文案用模板串插值之后，
+ * 「文案里的数字 == ROTOR_RADIUS」由编译器保证，
+ * 再由 `terrain_descr.test.ts` 断言文案里确实出现了那个数字
+ * （模板串也可能被人改回硬编码字面量）。
+ *
+ * 原来的 140 → 260 是一次**有意的**平衡改动，
+ * 理由见 `updateRotorVane` 里的实测注释（6 个风障的作用范围内
+ * 一次弹丸都没进过，偏转计数恒为 0）。
+ */
+export const ROTOR_RADIUS = 260
+
 export const TERRAIN_DESCR: Record<TerrainKind, string> = {
-  oil_drum: '受到焰元素命中即引燃，爆炸并生成 8 秒火区',
+  oil_drum: `受到焰元素命中即引燃，爆炸并生成 ${OIL_BURN_MS / 1000} 秒火区`,
   tidal_gate: '周期开合，改变低层敌人通路',
-  rotor_vane: '持续改变 140 半径内弹丸的飞行方向',
+  rotor_vane: `持续改变 ${ROTOR_RADIUS} 半径内弹丸的飞行方向`,
   collapse_wall: '动能伤害累计到阈值即崩塌，永久改变弹道',
   charge_tower: '蓄满后给全场敌人上同种元素（翻盘机制）',
 }
