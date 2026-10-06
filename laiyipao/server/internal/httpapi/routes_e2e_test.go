@@ -421,14 +421,38 @@ func TestE2EMeConfigLeaderboard(t *testing.T) {
 		}
 	}
 
-	// /leaderboard 三种榜单 + 非法值回落
+	// /leaderboard 三种榜单
 	e.exec(t, `INSERT INTO level_stars (user_id, level_id, stars, best_score, clears, min_power_clear)
 	           VALUES ($1, 1, 3, 1000, 1, 100)
 	           ON CONFLICT (user_id, level_id) DO UPDATE SET clears = 1, min_power_clear = 100`, uid)
-	for _, q := range []string{"", "?type=stage", "?type=efficiency", "?type=bogus", "?limit=abc"} {
+	for _, q := range []string{"", "?type=power", "?type=stage", "?type=efficiency"} {
 		status, body = e.get(t, "/api/v1/leaderboard"+q, "")
 		if status != 200 {
-			t.Errorf("leaderboard%s 应 200（非法值回落默认榜单），实际 %d", q, status)
+			t.Errorf("leaderboard%s 应 200，实际 %d", q, status)
+		}
+	}
+	//
+	// ⚠️ 第 104 轮改写了这段断言。
+	//
+	// 原来这里是：
+	//
+	//	for _, q := range []string{"", "?type=stage", "?type=efficiency",
+	//	                           "?type=bogus", "?limit=abc"} {
+	//	    if status != 200 { t.Errorf("...非法值回落默认榜单...") }
+	//	}
+	//
+	// 也就是说**「非法输入被静默重解释」被写成了规格**。
+	// 一个守卫如果把缺陷固定住，它比没有守卫更糟 ——
+	// 因为下一个人会以为这里被考虑过了。
+	//
+	// 现在反过来：`?type=bogus` 与 `?limit=abc` 都必须 **400**。
+	// 理由见 `leaderboard` 上方注释：回显未知的 type 会让客户端
+	// 在错误的标题下显示另一个榜单的数据，且**察觉不到**。
+	for _, q := range []string{"?type=bogus", "?type=", "?limit=abc"} {
+		status, body = e.get(t, "/api/v1/leaderboard"+q, "")
+		if status != 400 {
+			t.Errorf("leaderboard%s 应 400（非法输入不得被静默重解释），实际 %d：%v",
+				q, status, body)
 		}
 	}
 	// power 榜必须有自己（level_exp 排序下新号也在列表里）

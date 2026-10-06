@@ -194,8 +194,14 @@ func (s *Server) adminReactions(c *fiber.Ctx) error {
 }
 
 func (s *Server) adminUsers(c *fiber.Ctx) error {
-	limit, _ := strconv.Atoi(c.Query("limit", "50"))
-	offset, _ := strconv.Atoi(c.Query("offset", "0"))
+	limit, err := queryInt(c, "limit", 50)
+	if err != nil {
+		return failErr(c, err)
+	}
+	offset, err := queryInt(c, "offset", 0)
+	if err != nil {
+		return failErr(c, err)
+	}
 	items, total, err := s.Svc.AdminListUsers(c.Context(), c.Query("keyword", ""), limit, offset)
 	if err != nil {
 		return failErr(c, err)
@@ -258,16 +264,33 @@ func (s *Server) adminGrantUser(c *fiber.Ctx) error {
 }
 
 func (s *Server) adminBattles(c *fiber.Ctx) error {
-	limit, _ := strconv.Atoi(c.Query("limit", "50"))
-	userID, _ := strconv.ParseInt(c.Query("user_id", "0"), 10, 64)
-	levelID, _ := strconv.Atoi(c.Query("level_id", "0"))
+	limit, err := queryInt(c, "limit", 50)
+	if err != nil {
+		return failErr(c, err)
+	}
+	//
+	// ⚠️ 第 104 轮：user_id / level_id 的默认值 0 是「**不过滤**」的哨兵值
+	// （`AdminListBattles` 的 `($1 = 0 OR br.user_id = $1)`）。
+	// 原来这两行是 `strconv.ParseInt(..., 10, 64)` 并**丢弃错误**，
+	// 于是 `?user_id=abc` → 0 → 过滤恒真 → **返回所有用户的战报 + 200**。
+	//
+	// 运营查疑似作弊玩家时打错 id，看到的是别人的战报，
+	// 于是得出「这个人没有异常战报」的结论。
+	userID, err := queryInt(c, "user_id", 0)
+	if err != nil {
+		return failErr(c, err)
+	}
+	levelID, err := queryInt(c, "level_id", 0)
+	if err != nil {
+		return failErr(c, err)
+	}
 	// 只看验真不匹配的战报。
 	//
 	// 上一轮把「每用户验真统计」接进了 /admin/users，运营知道**谁**可疑；
 	// 这一步是为了能直接回答「**哪一场**对局对不上」——
 	// 否则还得手工按 user_id 查战报再交叉比对 replay_verifications。
 	onlyMismatched := c.Query("only_mismatched") == "1" || c.Query("only_mismatched") == "true"
-	items, total, err := s.Svc.AdminListBattles(c.Context(), userID, levelID, limit, onlyMismatched)
+	items, total, err := s.Svc.AdminListBattles(c.Context(), int64(userID), levelID, limit, onlyMismatched)
 	if err != nil {
 		return failErr(c, err)
 	}
@@ -336,7 +359,10 @@ func (s *Server) adminVerifyBattle(c *fiber.Ctx) error {
 }
 
 func (s *Server) adminDefenses(c *fiber.Ctx) error {
-	limit, _ := strconv.Atoi(c.Query("limit", "50"))
+	limit, err := queryInt(c, "limit", 50)
+	if err != nil {
+		return failErr(c, err)
+	}
 	items, total, err := s.Svc.AdminListDefenses(c.Context(), limit)
 	if err != nil {
 		return failErr(c, err)
@@ -431,7 +457,10 @@ func (s *Server) adminCreateRedeemCode(c *fiber.Ctx) error {
 }
 
 func (s *Server) adminAuditLogs(c *fiber.Ctx) error {
-	limit, _ := strconv.Atoi(c.Query("limit", "100"))
+	limit, err := queryInt(c, "limit", 100)
+	if err != nil {
+		return failErr(c, err)
+	}
 	items, err := s.Svc.AdminListAuditLogs(c.Context(), limit)
 	if err != nil {
 		return failErr(c, err)
