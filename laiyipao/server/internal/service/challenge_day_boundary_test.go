@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"os"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -71,56 +72,118 @@ func TestChallengeDayBoundaryMatchesTaskDayBoundary(t *testing.T) {
 // ⚠️ 剥注释 —— 否则上面那段解释 `CURRENT_DATE` 的注释会被当成代码。
 // 本项目已因「文本扫描撞注释」踩坑四次（第 83/88/94/95 轮）。
 func TestServiceHasNoCurrentDateInBusinessDaySQL(t *testing.T) {
-	// 已统一到 Go 口径的文件：签到（第 89 轮）、商城（第 97 轮）、挑战（第 98 轮）
-	files := []string{"economy.go", "progression.go"}
+	// ⚠️ 第 99 轮：范围从「两个文件」扩到**整个 service 包**。
+	//
+	// 我第一版只查 `economy.go` + `progression.go` ——
+	// 理由是「只有这两处决定业务日界」。但那个理由**会失效**：
+	// 下一个人在新文件里写 `CURRENT_DATE` 时，
+	// 这条守卫根本不看那个文件。
+	//
+	// 这与第 74 轮（道具名单只有 Buy 在用）、第 91 轮（metric 只有结算在 bump）
+	// 是同一个形状：**守卫覆盖「我已知的几处」，而不是「这类情况」。**
+	//
+	// 唯一的例外是 `stats.go`（运营看板口径，**有意不改**），
+	// 由 TestStatsDayBoundaryIsDocumented 单独钉住。
+
+	// 白名单：文件名 -> 为什么它可以保留 CURRENT_DATE
+	allowed := map[string]string{
+		"stats.go": "运营看板口径（今日新增 / 14 天曲线）。改了会让历史报表不可比，" +
+			"由 TestStatsDayBoundaryIsDocumented 钉住数量仍是 3",
+	}
+
+	entries, err := os.ReadDir(".")
+	if err != nil {
+		t.Fatalf("读包目录失败：%v", err)
+	}
 
 	var offenders []string
-	for _, f := range files {
-		code := stripGoComments(readFileInPackage(t, f))
+	checked := 0
+
+	for _, e := range entries {
+		name := e.Name()
+		if e.IsDir() || !strings.HasSuffix(name, ".go") || strings.HasSuffix(name, "_test.go") {
+			continue
+		}
+		if _, ok := allowed[name]; ok {
+			continue
+		}
+		checked++
+
+		code := stripGoComments(readFileInPackage(t, name))
 		for i, ln := range strings.Split(code, "\n") {
 			if strings.Contains(ln, "CURRENT_DATE") {
 				offenders = append(offenders,
-					f+":"+itoa(int64(i+1))+": "+strings.TrimSpace(ln))
+					name+":"+itoa(int64(i+1))+": "+strings.TrimSpace(ln))
 			}
 		}
-	}
-	// ⚠️ 变异实测：把 `periodStart(time.Now(), "daily")` 换成
-	// `time.Now().Truncate(24 * time.Hour)` → **全绿通过**。
-	//
-	// 与第 97 轮（商城）完全同型：`Truncate` 对齐 **UTC 午夜**且忽略
-	// `Location`，而结果仍带 `+08:00`，所以它**只在部分时段与本地日一致**：
-	//
-	// | 北京时间 | Truncate 结果 | 与本地日 |
-	// |---|---|---|
-	// | 08:00–24:00 | 同一天 | 一致 ← 测不出来 |
-	// | **00:00–08:00** | **前一天** | **差一天** ❌ |
-	//
-	// 当前实测时刻落在「一致」那一栏 —— **测试结果随运行时刻变化**。
-	//
-	// 判据不比较结果，直接要求实现**必须是** `periodStart` ——
-	// 那是与每日任务共用口径的唯一入口。
-	for _, f := range files {
-		code := stripGoComments(readFileInPackage(t, f))
+
+		// 变异实测（第 97/98 轮各一次）：把 `periodStart` 换成
+		// `time.Now().Truncate(24*time.Hour)` → 行为判据**全绿**。
+		//
+		// `Truncate` 按**零时刻起算、忽略 Location**，对齐 UTC 午夜，
+		// 而结果仍带 `+08:00` —— 所以它只在部分时段与本地日一致：
+		//
+		// | 北京时间 | Truncate 结果 | 与本地日 |
+		// |---|---|---|
+		// | 08:00–24:00 | 同一天 | 一致 ← 测不出来 |
+		// | **00:00–08:00** | **前一天** | **差一天** ❌ |
+		//
+		// 当前实测时刻落在「一致」那一栏，**测试结果随运行时刻变化**。
+		// 判据不比较结果，直接要求实现**必须是** `periodStart`。
 		for _, ln := range strings.Split(code, "\n") {
 			if !strings.Contains(ln, "today :=") {
 				continue
 			}
 			if !strings.Contains(ln, "periodStart(") {
 				offenders = append(offenders,
-					f+": today 赋值没有用 periodStart： "+strings.TrimSpace(ln)+
+					name+": today 赋值没有用 periodStart： "+strings.TrimSpace(ln)+
 						"（`Truncate` 是 UTC 对齐的，北京时间 00:00–08:00 会比本地日早一天）")
 			}
 		}
 	}
 
+	// 自证：**扫过的文件数**必须 > 0，否则「零违规」与「目录读空了」无法区分。
+	//
+	// ⚠️ 与第 91 轮那条同源：守卫可以被「扫得少」而失效，
+	// 而失效方式与「全部合规」一模一样。
+	//
+	// ⚠️ 但 `checked == 0` 不够：变异「把范围缩回 economy.go + progression.go」
+	// → **全绿通过**（那两个文件本来就干净）。
+	//
+	// 「扫得少」与「全部合规」在输出里**一模一样** ——
+	// 这与第 91 轮那条同源。
+	//
+	// 所以要有**下限**：service 包的源文件远多于这个数，
+	// 缩到 2 个说明范围被人为收窄了。
+	const minExpectedFiles = 5
+	if checked < minExpectedFiles {
+		t.Fatalf("只扫了 %d 个文件，期望至少 %d 个\n"+
+			"「扫得少」与「全部合规」在输出里一模一样 —— "+
+			"变异「把范围缩回两个已知文件」是全绿的。"+
+			"新增源文件时这个下限要相应提高。",
+			checked, minExpectedFiles)
+	}
+
+	// 豁免必须写理由，空理由等于没有豁免
+	for f, why := range allowed {
+		if strings.TrimSpace(why) == "" {
+			offenders = append(offenders, f+" 在豁免表里但理由为空 —— "+
+				"「这里可以保留 CURRENT_DATE」不留给沉默")
+		}
+		_ = f
+	}
+
 	if len(offenders) > 0 {
-		t.Errorf("以下位置仍在 SQL 里决定业务「哪一天」：\n  %s\n\n"+
+		sort.Strings(offenders)
+		t.Errorf("以下 %d 处仍在 SQL 里决定业务「哪一天」"+
+			"（已扫 %d 个文件，豁免 %d 个）：\n  %s\n\n"+
 			"`CURRENT_DATE` 由 **PG 会话时区**决定，而任务/签到/商城/挑战"+
 			"用 Go 的 `periodStart(now, \"daily\")`。\n"+
 			"容器里 `time.Local` 常为 UTC，两者不同时刻翻页 —— "+
 			"于是「今日」有两个定义。\n"+
-			"请改成传日期字面量（第 89/97/98 轮都是这个手法）。",
-			strings.Join(offenders, "\n  "))
+			"修法：传日期字面量（第 89/97/98 轮都是这个手法）。\n"+
+			"若某处**确实**该按看板口径走，请写进 allowed 并说明理由。",
+			len(offenders), checked, len(allowed), strings.Join(offenders, "\n  "))
 	}
 }
 
