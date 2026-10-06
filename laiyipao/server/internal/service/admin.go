@@ -116,6 +116,24 @@ func (s *Service) AdminMe(ctx context.Context, adminID int64) (AdminUser, error)
 	return a, nil
 }
 
+// AdminRole 返回管理账号的角色（'admin'/'ops'/'readonly'，见 00007 迁移注释）。
+//
+// ⚠️ 第 127 轮：这个列**历史上从未被任何端点消费过** —— 一个
+// readonly 账号和 admin 账号能做的事完全一样（封禁、发币、改关卡/商城）。
+// 它是「纸面角色」。requireAdmin 现在把角色写进 Locals，
+// requireWritable 据此拒绝 readonly 的写操作。
+func (s *Service) AdminRole(ctx context.Context, adminID int64) (string, error) {
+	var role string
+	err := s.pool.QueryRow(ctx, `SELECT role FROM admin_users WHERE id = $1`, adminID).Scan(&role)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return "", fmt.Errorf("%w: 管理员不存在", ErrUnauthorized)
+		}
+		return "", fmt.Errorf("load admin role: %w", err)
+	}
+	return role, nil
+}
+
 // Audit 记录后台操作。
 //
 // ⚠️ 第 125 轮：审计记录不得「以省略撒谎」。

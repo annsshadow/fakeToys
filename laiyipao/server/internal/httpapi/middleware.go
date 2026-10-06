@@ -117,7 +117,7 @@ func requestLogger() fiber.Handler {
 	}
 }
 
-// requireAdmin 校验管理员 Bearer 令牌并把 admin_id 写入 Locals。
+// requireAdmin 校验管理员 Bearer 令牌并把 admin_id、admin_role 写入 Locals。
 func requireAdmin(s *service.Service) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		token := bearerToken(c)
@@ -128,7 +128,31 @@ func requireAdmin(s *service.Service) fiber.Handler {
 		if err != nil {
 			return failErr(c, err)
 		}
+		// 第 127 轮：连同角色一起解析，供 requireWritable 使用。
+		role, err := s.AdminRole(c.Context(), adminID)
+		if err != nil {
+			return failErr(c, err)
+		}
 		c.Locals("admin_id", adminID)
+		c.Locals("admin_role", role)
+		return c.Next()
+	}
+}
+
+// requireWritable 拒绝 readonly 账号的写操作。
+//
+// 必须挂在 requireAdmin **之后**（requireAdmin 负责写 admin_role）。
+//
+// ⚠️ 第 127 轮：admin_users.role 自 00007 迁移就标了 admin/ops/readonly
+// 三个角色，但**没有任何端点消费它** —— readonly 账号可以和 admin 一样
+// 封禁玩家、发币、改关卡/商城。
+// 语义：仅 "readonly" 被拒写；其余角色（admin/ops/未知值）保持可写
+// （该列默认 ops，放行才是「未知角色」的正确方向，不该把写操作打成 500）。
+func requireWritable() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		if role, _ := c.Locals("admin_role").(string); role == "readonly" {
+			return fail(c, fiber.StatusForbidden, "readonly", "readonly 账号不可执行写操作")
+		}
 		return c.Next()
 	}
 }
