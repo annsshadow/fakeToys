@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sort"
 	"time"
@@ -744,9 +745,36 @@ func (s *Service) ChallengeDefense(ctx context.Context, userID, defenseID int64,
 				if take > 0 {
 					stolen[k] = take
 					// 从对方扣除，扣不动就跳过（不强制负值）
+					//
+					// ⚠️ 第 81 轮：**只吞「余额不足」**，其余错误必须上抛。
+					//
+					// 原来是无差别 `delete(stolen, k)` —— 而
+					// `grantWallet` 内部是这样的：
+					//
+					//	UPDATE user_wallets SET coin = coin + $2 … RETURNING coin   ← 已生效
+					//	INSERT INTO wallet_flows …                                    ← 这里可能失败
+					//
+					// 所以它在**两个不同位置**返回错误：
+					//
+					//  (a) `pgx.ErrNoRows` → 余额不足     → 应当跳过（设计意图）
+					//  (b) UPDATE 成功、`insert flow` 失败 → **钱已经扣了**
+					//
+					// (b) 被当成 (a) 吞掉之后：事务照常提交 →
+					// **对方少了钱、流水没记录、挑战者什么也没拿到**。
+					// 三方全不一致，且没有任何错误日志。
+					//
+					// 更糟的一层：数据库连接断了、网络抖了、约束被别的改动破坏了 ——
+					// 全部被静默解释成「他没钱」，而真故障被彻底掩盖。
+					//
+					// 修法：`ErrBadInput`（余额不足 / 未知货币）是**业务拒绝**，
+					// 可以跳过；其余是**基础设施失败**，上抛让事务回滚。
 					if err := s.grantWallet(ctx, tx, ownerID, map[string]int64{k: -take},
 						"defense_stolen", defenseID); err != nil {
-						delete(stolen, k)
+						if errors.Is(err, ErrBadInput) {
+							delete(stolen, k)
+							continue
+						}
+						return fmt.Errorf("steal %s from %d: %w", k, ownerID, err)
 					}
 				}
 			}
