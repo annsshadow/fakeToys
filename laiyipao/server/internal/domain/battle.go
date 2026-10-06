@@ -560,6 +560,40 @@ func ValidateSettle(
 	// 10) 掉落按关卡理论上限封顶
 	res.Loot = computeLoot(gl, int64(res.Stars), int64(in.Kills), int64(maxKills), int64(in.Reactions))
 
+	// 10b) 体力只在**通关**时回补（第 85 轮）
+	//
+	// ⚠️ 缺陷：`DropRates.EnergyOnWin`（=5）与 `LootCaps.MaxEnergyPerBattle`（=15）
+	// **两个字段都在表里，但没有任何代码写过 `energy`**。
+	// 而 `StartBattle`（`game.go`）会在 battle_start 扣 `gl.EnergyCost`。
+	//
+	// 于是能量是一条**单向棘轮**：只出不进。
+	// 玩家打完一局扣 N、通关一分不返，余额单调下降直到 0，
+	// 此后再也无法开战 —— 而界面上没有任何地方提示「体力不会回来」。
+	//
+	// # 为什么不在 `computeLoot` 里加
+	//
+	// `computeLoot` 有**两个**调用方：
+	//
+	//	battle.go:561      通关结算     ← 该给体力
+	//	progression.go    挑战者窃取奖励 ← **不该给**（`ComputeLootExported`）
+	//
+	// `attacker_reward_isolation_test.go` 钉死了「窃取只按 `ComputeLoot` 的那几项算」，
+	// 所以体力必须**只挂在结算路径上**，否则窃取也白送体力 ——
+	// 那是「打别人的防线就能刷体力」，是个漏洞而不是奖励。
+	//
+	// 因此这里在 `computeLoot` **之外**补，刻意不改它的签名：
+	// 改了就要动 `ComputeLootExported` 的导出契约，而它被 `cmd/vectors` 与
+	// 契约向量共用。
+	if res.Win {
+		r := DefaultDropRates()
+		caps := DefaultLootCaps()
+		// 仍然走饱和算术：`EnergyOnWin` 将来被调大时自动被封顶拦住，
+		// 不需要在这里再写一遍 `if e > cap`。
+		if e := satMul(r.EnergyOnWin, 1, caps.MaxEnergyPerBattle); e > 0 {
+			res.Loot["energy"] = e
+		}
+	}
+
 	return res, nil
 }
 

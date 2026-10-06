@@ -1058,6 +1058,20 @@ cd admin && npm run build && npm run size:check  # 超预算则退出码 1
     例如「我的战报列表」以外的分页/统计接口若存在，按 `user_id` 过滤的
     完整性**没有结构性守卫**，新增接口时可能再漏一次。
 
+20. **体力是单向棘轮（已修，但平衡未调）** —— 第 85 轮补上了
+    「通关回 `EnergyOnWin`（5）点体力」。但各关 `EnergyCost` 未必 ≤ 5，
+    所以**净收支仍可能是负的**。
+
+    这是**平衡决策**不是缺陷：需要一张「关卡体力消耗 vs 通关回补」
+    的数值对照表才能定，而那张表不存在于仓库里。
+    已知事实：`EnergyOnWin = 5`、`MaxEnergyPerBattle = 15`
+    （后者已固化进 `testdata/formula_vectors.json` 的 `loot_caps`）。
+
+    守卫：`server/internal/domain/energy_refund_test.go` 6 条，
+    其中两条守「窃取路径不产体力」（否则打别人防线就能刷体力）
+    与「回补必须走 `satMul` 封顶」（当前 5 < 15 封顶不可达，
+    靠扫源码守住那个潜伏缺口）。
+
 19. **7 条反应里有 5 条只有反应伤害，没有任何特殊效果** ——
     `steam_burst` 的范围伤害、`overheat` 的爆炸、`burn_cloud` 的火区、
     `corrosion_spread` 的层数传播、`armor_break` 的击退与削甲
