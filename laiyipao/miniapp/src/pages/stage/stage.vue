@@ -156,6 +156,15 @@ onLoad(async (query) => {
     if (target) curChapter.value = target.chapter
     selectedId.value = lv
   }
+  // 星级以服务端的 level_stars（历史 GREATEST）为准：
+  // 不拉这份数据，stars.value 永远空，starOf() 恒为 0，
+  // 「已通关」与星级行在选关页永远不亮。
+  try {
+    const r = await api.fetchMyStars()
+    stars.value = r.stars
+  } catch {
+    /* 星级拉取失败不阻塞选关 */
+  }
   // 连续失败 >= 2 次时预取诊断
   try {
     const d = await api.diagnose(selected.value?.id ?? store.unlockedLevel, 2)
