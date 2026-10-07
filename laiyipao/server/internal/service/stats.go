@@ -227,7 +227,15 @@ func (s *Service) AdminDashboard(ctx context.Context) (Dashboard, error) {
 		}
 		d.StageFunnel = append(d.StageFunnel, f)
 	}
-	return d, rows.Err()
+	// 第 144 轮：逐个查询都要在迭代结束后查 `Err()`（fail-loud，AGENTS #11）。
+	// 修前这里 `return d, rows.Err()` —— `rows` 是上面**反应分布**那支查询的句柄，
+	// 早已迭代完且查过 Err()（恒为 nil）；漏斗 `frows` 的 `Err()` 从未被检查。
+	// 后果：漏斗查询若在迭代中途失败（连接抖断 / 死锁被杀 / 磁盘满），
+	// `d.StageFunnel` 只填了一半，函数却返回 nil 错误 —— 看板静默少了一半关卡。
+	if err := frows.Err(); err != nil {
+		return d, fmt.Errorf("dashboard funnel: %w", err)
+	}
+	return d, nil
 }
 
 // --- 玩家管理 ---
