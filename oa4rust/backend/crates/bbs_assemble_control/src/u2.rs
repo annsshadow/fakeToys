@@ -240,18 +240,8 @@ pub(crate) async fn ensure_u2_schema(client: &PgClient) {
 // 显式 501（无法落地：二进制存储 / 图片引擎 / 外部同步依赖）
 // ══════════════════════════════════════════════════════════════════
 
-macro_rules! unimplemented_endpoint {
-    ($name:ident, $reason:expr) => {
-        pub async fn $name() -> ApiResult {
-            tracing::warn!(
-                endpoint = stringify!($name),
-                reason = $reason,
-                "bbs endpoint registered as explicit 501"
-            );
-            Err(AppError::NotImplemented)
-        }
-    };
-}
+// （unimplemented_endpoint! 宏已删除：十类功能3 将最后一个 501 桩替换为真实现，
+//   BBS 端点现无显式 501——新桩一律禁止直接落地，须给真实实现或记档桶外。）
 
 // o2server AttachmentAction.downloadWithSubject：附件二进制流下载。
 // 读 x_bbs_attachment.content BYTEA 转 base64（镜像 u2_subjectattach_base64）。
@@ -390,21 +380,164 @@ async fn attachment_upload_store(
         ]),
     ))))
 }
-// o2server PictureAction.pictureEncode：图片解码缩放后转 base64，需要图像引擎。
-unimplemented_endpoint!(
-    picture_encode_501,
-    "image decode/resize engine not available"
-);
-unimplemented_endpoint!(
-    picture_section_icon_501,
-    "icon upload pending shared::storage wiring (plan002 U6b)"
-);
-// o2server SectionInfoAction.syn（ActionSynApplicationsFromMarket）调用外部
-// x_program_center market/list/paging 同步，属外部服务依赖。
-unimplemented_endpoint!(
-    section_syn_501,
-    "depends on external x_program_center market sync service"
-);
+// o2server PictureAction.pictureEncode：图片解码缩放后转 base64。
+// 十类功能3：接入 image 引擎（png/jpeg 解码 → thumbnail({size}) → PNG → base64），
+// 替换原「图像引擎不可用」501 桩。
+pub async fn picture_encode(
+    Path(size): Path<u32>,
+    Json(body): Json<Value>,
+) -> ApiResult {
+    let input = body_str(&body, &["base64", "fileBase64", "image"]).unwrap_or_default();
+    if input.is_empty() {
+        return Err(AppError::BadRequest("base64 is required".to_string()));
+    }
+    let bytes = base64::Engine::decode(
+        &base64::engine::general_purpose::STANDARD,
+        input.as_str(),
+    )
+    .map_err(|_| AppError::BadRequest("invalid base64 image".to_string()))?;
+    let img = image::load_from_memory(&bytes)
+        .map_err(|_| AppError::BadRequest("unsupported image format".to_string()))?;
+    let scaled = img.thumbnail(size.max(1), size.max(1));
+    let mut png: Vec<u8> = Vec::new();
+    scaled
+        .write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png)
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "base64".to_string(),
+                Value::String(base64::Engine::encode(
+                    &base64::engine::general_purpose::STANDARD,
+                    &png,
+                )),
+            ),
+            ("length".to_string(), Value::from(png.len())),
+            ("size".to_string(), Value::from(size)),
+            ("format".to_string(), Value::String("png".to_string())),
+        ]),
+    ))))
+}
+
+// 十类功能3：板块图标上传（原 501 桩「pending shared::storage wiring」）。
+// base64 图片解码校验 → 缩放到 128px PNG → UPDATE bbs_section_info.icon
+// （migrations/107 幂等补列）；管理动作走 u2_require_admin。
+pub async fn picture_section_icon(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Path(id): Path<String>,
+    Json(body): Json<Value>,
+) -> ApiResult {
+    u2_require_admin(&pool, &session).await?;
+    let input = body_str(&body, &["base64", "iconBase64", "icon"]).unwrap_or_default();
+    if input.is_empty() {
+        return Err(AppError::BadRequest("icon base64 is required".to_string()));
+    }
+    let bytes = base64::Engine::decode(
+        &base64::engine::general_purpose::STANDARD,
+        input.as_str(),
+    )
+    .map_err(|_| AppError::BadRequest("invalid base64 image".to_string()))?;
+    let img = image::load_from_memory(&bytes)
+        .map_err(|_| AppError::BadRequest("unsupported image format".to_string()))?;
+    let icon_png = img.thumbnail(128, 128);
+    let mut png: Vec<u8> = Vec::new();
+    icon_png
+        .write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png)
+        .map_err(|_| AppError::Internal)?;
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let exists: bool = client
+        .query_one(
+            "SELECT EXISTS(SELECT 1 FROM bbs_section_info WHERE id = $1)",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?
+        .get(0);
+    if !exists {
+        return Err(AppError::NotFound);
+    }
+    let stored = base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &png);
+    client
+        .execute(
+            "UPDATE bbs_section_info SET icon = $2 WHERE id = $1",
+            &[&id, &stored],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("iconLength".to_string(), Value::from(png.len())),
+            ("updated".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+// o2server SectionInfoAction.syn（ActionSynApplicationsFromMarket）：从应用市场
+// 同步板块。十类功能3：以本仓 program_center 应用市场（x_program_module）为数据源，
+// 落地为**差异报告**（市场应用 ↔ 板块 名称差集，只读）——不做自动建板块
+// （o2 的创建规则未在契约文档中定义，编造规则即造假）。
+pub async fn section_syn(pool: Extension<Pool>) -> ApiResult {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let apps: Vec<String> = client
+        .query(
+            "SELECT name FROM x_program_module WHERE deleted_at IS NULL AND name IS NOT NULL ORDER BY name",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?
+        .iter()
+        .map(|r| r.get::<_, Option<String>>(0).unwrap_or_default())
+        .filter(|n| !n.is_empty())
+        .collect();
+    let sections: Vec<String> = client
+        .query(
+            "SELECT name FROM bbs_section_info WHERE deleted_at IS NULL ORDER BY name",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?
+        .iter()
+        .map(|r| r.get::<_, Option<String>>(0).unwrap_or_default())
+        .collect();
+    let section_set: std::collections::BTreeSet<&str> =
+        sections.iter().map(|s| s.as_str()).collect();
+    let app_set: std::collections::BTreeSet<&str> = apps.iter().map(|s| s.as_str()).collect();
+    let apps_without_section: Vec<String> = apps
+        .iter()
+        .filter(|a| !section_set.contains(a.as_str()))
+        .cloned()
+        .collect();
+    let sections_without_app: Vec<String> = sections
+        .iter()
+        .filter(|s| !app_set.contains(s.as_str()))
+        .cloned()
+        .collect();
+    let apps_wo = apps_without_section.len();
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("marketApps".to_string(), Value::from(apps.len())),
+            ("sections".to_string(), Value::from(sections.len())),
+            (
+                "appsWithoutSection".to_string(),
+                Value::Array(
+                    apps_without_section.into_iter().map(Value::String).collect(),
+                ),
+            ),
+            (
+                "sectionsWithoutApp".to_string(),
+                Value::Array(
+                    sections_without_app
+                        .into_iter()
+                        .map(Value::String)
+                        .collect(),
+                ),
+            ),
+            ("synced".to_string(), Value::Bool(apps_wo == 0)),
+        ]),
+    ))))
+}
 
 // ══════════════════════════════════════════════════════════════════
 // user/subject 域（27 条）：18 个 flag toggle + acceptreply + get/save/

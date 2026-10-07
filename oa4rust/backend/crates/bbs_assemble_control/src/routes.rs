@@ -160,14 +160,14 @@ pub fn router(pool: Pool) -> Router {
             &fmt("permission/subjectPublishable/{sectionId}"),
             get(crate::permission_subjectPublishable_sectionId),
         )
-        // ── picture（PictureAction，2 条；图像引擎依赖显式 501）──
+        // ── picture（PictureAction，2 条；十类功能3：image 引擎真实现替换 501 桩）──
         .route(
             &fmt("picture/encode/base64/size/{size}"),
-            post(u2::picture_encode_501),
+            post(u2::picture_encode),
         )
         .route(
             &fmt("picture/section/{id}/icon"),
-            post(u2::picture_section_icon_501),
+            post(u2::picture_section_icon),
         )
         // ── reply（ReplyInfoAction，3 条；畸形 {page}/{page} 路由已替换）──
         .route(&fmt("reply/{id}"), get(u2::u2_reply_get))
@@ -178,7 +178,7 @@ pub fn router(pool: Pool) -> Router {
         .route(&fmt("reply/list/sub/{id}"), get(reply_list_sub_id))
         // ── section（SectionInfoAction，4 条）──
         .route(&fmt("section/{id}"), get(u2::u2_section_get))
-        .route(&fmt("section/syn"), get(u2::section_syn_501))
+        .route(&fmt("section/syn"), get(u2::section_syn))
         .route(
             &fmt("section/viewforum/{forumId}"),
             get(section_viewforum_forumId),

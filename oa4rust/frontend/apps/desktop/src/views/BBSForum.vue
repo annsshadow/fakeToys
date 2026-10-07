@@ -39,6 +39,12 @@
       <button class="new-topic-btn ghost" @click="bbsPost('shutupDel')">解禁言</button>
       <button class="new-topic-btn ghost" @click="bbsPost('delForum')">删帖论坛</button>
       <button class="new-topic-btn ghost" @click="bbsPost('delReply')">删帖回复</button>
+      <button class="new-topic-btn ghost" @click="bbsPost('delSubject')">删帖主题</button>
+      <button class="new-topic-btn ghost" @click="bbsLogin">论坛登录</button>
+      <button class="new-topic-btn ghost" @click="bbsLogout">论坛登出</button>
+      <button class="new-topic-btn ghost" @click="bbsPictureEncode">图片编码</button>
+      <button class="new-topic-btn ghost" @click="bbsSectionIcon">板块图标</button>
+      <button class="new-topic-btn ghost" @click="bbsSectionSyn">应用同步预览</button>
       <button class="new-topic-btn ghost" @click="bbsPost('userForum')">建论坛</button>
       <button class="new-topic-btn ghost" @click="bbsPost('userReply')">发回复</button>
       <button class="new-topic-btn ghost" @click="bbsPost('userRole')">建角色</button>
@@ -996,6 +1002,7 @@ async function bbsPost(kind: string) {
     else if (kind === 'shutupDel') await api.post('/api/bbs/assemble/control/shutup/delete', { person: v })
     else if (kind === 'delForum') await api.post('/api/bbs/assemble/control/delete/forum', { id: v })
     else if (kind === 'delReply') await api.post('/api/bbs/assemble/control/delete/reply', { id: v })
+    else if (kind === 'delSubject') await api.post('/api/bbs/assemble/control/delete/subject', { id: v })
     else if (kind === 'userForum') await api.post('/api/bbs/assemble/control/user/forum', { name: v })
     else if (kind === 'userReply') await api.post('/api/bbs/assemble/control/user/reply', { content: v })
     else if (kind === 'userRole') await api.post('/api/bbs/assemble/control/user/role', { name: v })
@@ -1006,6 +1013,90 @@ async function bbsPost(kind: string) {
     toast.success(`${kind} 已提交`)
   } catch (e: any) {
     toast.error(`${kind} 失败: ${e?.message ?? ''}`)
+  }
+}
+
+// ── 十类功能3：论坛独立会话 + 图像能力 + 应用同步预览 ─────────────────────
+// 论坛独立会话（POST login 校验 auth_person 签发 token；POST logout 注销 token）
+async function bbsLogin() {
+  const credential = prompt('论坛账号 (credential):', '') || ''
+  if (!credential) return
+  const password = prompt('密码:', '') || ''
+  try {
+    const r = await api.post('/api/bbs/assemble/control/login', { credential, password })
+    const token = String((r.data as any)?.token ?? '')
+    toast.success(token ? `论坛会话已建立（token ${token.slice(0, 8)}…）` : '论坛登录已受理')
+  } catch (e: any) {
+    toast.error(`论坛登录失败: ${e?.message ?? ''}`)
+  }
+}
+async function bbsLogout() {
+  const token = prompt('要注销的论坛 token:', '') || ''
+  if (!token) return
+  try {
+    const r = await api.post('/api/bbs/assemble/control/logout', { token })
+    const ok = Boolean((r.data as any)?.success)
+    toast.success(ok ? '论坛会话已注销' : 'token 不存在或已失效')
+  } catch (e: any) {
+    toast.error(`论坛登出失败: ${e?.message ?? ''}`)
+  }
+}
+
+// 图片编码（POST picture/encode/base64/size/{size}：image 引擎解码缩放转 PNG base64）
+function bbsPictureEncode() {
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.accept = 'image/png,image/jpeg'
+  input.onchange = async () => {
+    const file = input.files?.[0]
+    if (!file) return
+    const buf = await file.arrayBuffer()
+    const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)))
+    try {
+      const r = await api.post('/api/bbs/assemble/control/picture/encode/base64/size/128', { base64: b64 })
+      const len = Number((r.data as any)?.length ?? 0)
+      toast.success(`图片已编码缩放为 PNG base64（${len} 字节）`)
+    } catch (e: any) {
+      toast.error(`图片编码失败: ${e?.message ?? ''}`)
+    }
+  }
+  input.click()
+}
+
+// 板块图标上传（POST picture/section/{id}/icon：admin 门禁，解码缩放后落 bbs_section_info.icon）
+function bbsSectionIcon() {
+  const sectionId = prompt('板块 ID:', '') || ''
+  if (!sectionId) return
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.accept = 'image/png,image/jpeg'
+  input.onchange = async () => {
+    const file = input.files?.[0]
+    if (!file) return
+    const buf = await file.arrayBuffer()
+    const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)))
+    try {
+      await api.post(`/api/bbs/assemble/control/picture/section/${encodeURIComponent(sectionId)}/icon`, {
+        base64: b64,
+      })
+      toast.success('板块图标已更新')
+    } catch (e: any) {
+      toast.error(`板块图标上传失败: ${e?.message ?? ''}`)
+    }
+  }
+  input.click()
+}
+
+// 应用市场↔板块 差异预览（GET section/syn：市场应用与板块名称差集，只读报告）
+async function bbsSectionSyn() {
+  try {
+    const r = await api.get('/api/bbs/assemble/control/section/syn')
+    const d = (r.data ?? {}) as any
+    const wo = Array.isArray(d.appsWithoutSection) ? d.appsWithoutSection.length : 0
+    bbsControlText.value = `应用同步预览：市场应用 ${d.marketApps ?? 0} · 板块 ${d.sections ?? 0} · 待建板块应用 ${wo}`
+    toast.info('同步预览已生成（只读报告）')
+  } catch (e: any) {
+    toast.error(`同步预览失败: ${e?.message ?? ''}`)
   }
 }
 // rev349：BBS 主题附件上传 真实用户触发（文件选择 → multipart → x_bbs_attachment.content 落盘）
