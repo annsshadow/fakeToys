@@ -23,6 +23,7 @@ vi.mock('@/api/client', () => ({
   saveLoadout: vi.fn(),
   setTokenInternal: vi.fn(),
   diagnose: vi.fn(),
+  fetchMyStars: vi.fn(),
 }))
 
 const mockApi = vi.mocked(api, true)
@@ -188,5 +189,38 @@ describe('stage.vue 选关页', () => {
     mountPage(Stage)
     await flushPromises()
     expect(mockApi.guestLogin).toHaveBeenCalledTimes(1)
+  })
+
+  it('星级以服务端为准：/me/stars 下发后，已清关卡点亮 stars 行与 cleared 标记', async () => {
+    mockApi.fetchMyStars.mockResolvedValue({ stars: { 1: 2, 2: 3 } })
+    const { wrapper } = mountPage(Stage)
+    await flushPromises()
+    triggerUniHook(wrapper.vm, 'onLoad', {})
+    await flushPromises()
+    expect(mockApi.fetchMyStars).toHaveBeenCalledTimes(1)
+    const cells = wrapper.findAll('.level-cell')
+    // 第 1 关 2 星 / 第 2 关 3 星，都在第 1 章
+    expect(cells[0]!.classes()).toContain('cleared')
+    expect(cells[0]!.findAll('.stars .star').length).toBe(3)
+    expect(cells[0]!.find('.stars .star.off').exists()).toBe(true) // 第 3 颗灰
+    expect(cells[1]!.find('.stars .star.off').exists()).toBe(false) // 3 星全亮
+    // 第 2 章（3/4 关）无星级记录 → 不渲染星行，cleared 不亮
+    await wrapper.findAll('.chapter-chip')[1]!.trigger('click')
+    await flushPromises()
+    const ch2 = wrapper.findAll('.level-cell')
+    expect(ch2[0]!.find('.stars').exists()).toBe(false)
+    expect(ch2[0]!.classes()).not.toContain('cleared')
+  })
+
+  it('星级拉取失败 → 不阻塞选关，星行保持不渲染', async () => {
+    mockApi.fetchMyStars.mockRejectedValue(new Error('网络异常'))
+    const { wrapper } = mountPage(Stage)
+    await flushPromises()
+    triggerUniHook(wrapper.vm, 'onLoad', {})
+    await flushPromises()
+    expect(wrapper.findAll('.stars').length).toBe(0)
+    expect(um.mock.showToast).not.toHaveBeenCalled()
+    // 选关本身仍可用：默认选中第 1 关，详情卡照常渲染
+    expect(wrapper.text()).toContain('第 1 关 · 测试关')
   })
 })
