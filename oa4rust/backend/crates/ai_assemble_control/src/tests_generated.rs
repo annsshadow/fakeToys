@@ -59,8 +59,9 @@ mod tests {
             .oneshot(
                 Request::builder()
                     .uri("/api/ai_assemble_control/update/ai/control/config")
-                    .method("GET")
-                    .body(Body::empty())
+                    .method("POST")
+                    .header("content-type", "application/json")
+                    .body(Body::from("{}"))
                     .unwrap(),
             )
             .await
