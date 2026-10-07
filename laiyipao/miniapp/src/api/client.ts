@@ -429,6 +429,20 @@ export function fetchSignInCalendar() {
   return request<{ days: SignInCalendarDay[] }>('/signin/calendar')
 }
 
+/** /signin/status 响应：玩家签到状态（服务端权威，第 141 轮：初始展示不再写死）。 */
+export interface SignInStatus {
+  /** 本周期已签天数（MAX(day_index)，没签过为 0） */
+  claimed_count: number
+  /** 今天是否已签 */
+  signed_today: boolean
+  /** 今天还能不能签（今日未签且周期未满） */
+  can_sign: boolean
+}
+
+export function fetchSignInStatus() {
+  return request<SignInStatus>('/signin/status')
+}
+
 export function fetchShop() {
   return request<any>('/shop')
 }
