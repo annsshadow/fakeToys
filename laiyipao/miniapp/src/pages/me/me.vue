@@ -185,6 +185,7 @@ import {
   type DefenseView,
   type ChallengeOutcome,
 } from '@/game/defense'
+import { scoreRulesFromServer } from '@/game/score'
 import type { EquippedSkill } from '@/game/heatmap'
 import type { Element } from '@/game/elements'
 import type { GeneratedLevel } from '@/game/types'
@@ -324,6 +325,11 @@ function challenge(target: DefenseView) {
         level,
         enemies: store.enemyMap,
         skills: store.skillMap,
+        // 第 133 轮：防线挑战得分与结算同口径 —— 用服务端下发的 score_rules，
+        // 修前引擎恒用编译期 DEFAULT_SCORE_RULES（服务端重标定即漂移）。
+        scoreRules: store.config?.score_rules
+          ? scoreRulesFromServer(store.config.score_rules)
+          : undefined,
       })
       if (outcome.error) {
         lastChallenge.value = outcome

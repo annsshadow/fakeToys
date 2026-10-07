@@ -231,6 +231,9 @@ describe('battle.vue 战斗页', () => {
     expect(eng.options.level).toBe(startBattleResp.level)
     expect(eng.options.activeSlots).toBe(5)
     expect(eng.options.attacker).toBeDefined()
+    // 第 133 轮：分数规则必须由 battle.vue 从服务端 config 传入（不再是引擎缺省）。
+    // 若接线退化（不再传 scoreRules），这里是 undefined → 红。
+    expect(eng.options.scoreRules).toBeDefined()
 
     const renderer = FakeRenderer.instances[0]!
     expect(renderer.started).toBe(true)
