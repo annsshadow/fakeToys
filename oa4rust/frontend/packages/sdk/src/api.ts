@@ -175,7 +175,7 @@ export class ApiClient {
   async upload<T>(
     path: string,
     formData: FormData,
-    options?: ApiRequestOptions & { timeoutMs?: number },
+    options?: ApiRequestOptions & { timeoutMs?: number; method?: 'POST' | 'PUT' },
     retried = false,
   ): Promise<ApiResponse<T>> {
     const url = this.resolveUrl(path)
@@ -184,7 +184,7 @@ export class ApiClient {
       setTimeout(() => controller.abort(), options.timeoutMs)
     }
     const resp = await fetch(url.toString(), {
-      method: 'POST',
+      method: options?.method ?? 'POST',
       headers: {
         ...options?.headers,
       },
@@ -268,6 +268,45 @@ export class ApiClient {
       xhr.ontimeout = () => reject(new ApiError('Timeout', 0))
       xhr.send(formData)
     })
+  }
+
+  /**
+   * 原始字节流上传（application/octet-stream；o2 文件 API 的 octet 形态，
+   * 文件名经 ?fileName= 查询参数传递）。
+   */
+  async uploadBytes<T>(
+    path: string,
+    bytes: Blob | ArrayBuffer | Uint8Array,
+    options?: ApiRequestOptions & { timeoutMs?: number; fileName?: string },
+    retried = false,
+  ): Promise<ApiResponse<T>> {
+    const url = this.resolveUrl(path)
+    if (options?.fileName) url.searchParams.set('fileName', options.fileName)
+    const controller = new AbortController()
+    if (options?.timeoutMs) {
+      setTimeout(() => controller.abort(), options.timeoutMs)
+    }
+    const resp = await fetch(url.toString(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/octet-stream', ...options?.headers },
+      body: bytes as Blob,
+      credentials: 'include',
+      signal: controller.signal,
+    })
+    if (!resp.ok) {
+      if (resp.status === 401 && options?.requireAuth !== false && !retried) {
+        try {
+          await this.refreshSession()
+        } catch {
+          throw this.authenticationFailed()
+        }
+        return this.uploadBytes<T>(path, bytes, options, true)
+      }
+      if (resp.status === 401) throw this.authenticationFailed()
+      if (resp.status === 403) throw new PermissionError('Permission denied')
+      throw new ApiError(`HTTP ${resp.status}`, resp.status)
+    }
+    return resp.json() as Promise<ApiResponse<T>>
   }
 
   /**

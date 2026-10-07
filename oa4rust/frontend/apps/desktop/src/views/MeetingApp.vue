@@ -31,6 +31,8 @@
       <button class="sb" @click="meetingWrite('mtgCtrlCreate')">建会议控制</button>
       <button class="sb" @click="meetingWrite('sysCfgManage')">系统配置(管理)</button>
       <button class="sb" @click="meetingWrite('attFromPp')">流程附件入会议</button>
+      <button class="sb" @click="meetingAttachmentUpload">会议附件上传</button>
+      <button class="sb" @click="meetingAttachmentUpdate">会议附件更新</button>
       <button class="sb" @click="meetingWrite('reject')">拒绝会议</button>
       <button class="sb" @click="meetingWrite('confirmAllow')">确认允许</button>
       <button class="sb" @click="meetingWrite('confirmDeny')">确认拒绝</button>
@@ -682,6 +684,57 @@ async function manageInvitee(m: M) {
   }
 }
 // rev336：会议 审批(接受/拒绝/确认)/存删/楼栋·会议室编辑删照片/配置/核心会议室 真实写端点（用户触发，shape 已核；全字面量路径）
+// ── 十类功能6：会议附件上传/更新（multipart 落库，summary 标记纪要附件）──────
+function meetingAttachmentUpload(): void {
+  const mid = prompt('会议 ID (meetingId):', '') || ''
+  if (!mid) return
+  const summary = prompt('是否纪要附件 (true/false):', 'false') || 'false'
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.onchange = async () => {
+    const file = input.files?.[0]
+    if (!file) return
+    const form = new FormData()
+    form.append('file', file, file.name)
+    form.append('fileName', file.name)
+    try {
+      await api.upload(
+        `/api/meeting/assemble/control/attachment/meeting/${encodeURIComponent(mid)}/upload/${summary === 'true'}`,
+        form,
+      )
+      toast.success('会议附件已上传')
+    } catch (e: any) {
+      toast.error(`会议附件上传失败: ${e?.message ?? ''}`)
+    }
+  }
+  input.click()
+}
+
+// POST attachment/{id}/update/callback/{callback}：更新既有会议附件内容
+function meetingAttachmentUpdate(): void {
+  const aid = prompt('附件 ID:', '') || ''
+  if (!aid) return
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.onchange = async () => {
+    const file = input.files?.[0]
+    if (!file) return
+    const form = new FormData()
+    form.append('file', file, file.name)
+    form.append('fileName', file.name)
+    try {
+      await api.upload(
+        `/api/meeting/assemble/control/attachment/${encodeURIComponent(aid)}/update/callback/done`,
+        form,
+      )
+      toast.success('会议附件已更新')
+    } catch (e: any) {
+      toast.error(`会议附件更新失败: ${e?.message ?? ''}`)
+    }
+  }
+  input.click()
+}
+
 async function meetingWrite(op: string) {
   const id = prompt('目标 ID:', '') || ''
   const e = encodeURIComponent(id)

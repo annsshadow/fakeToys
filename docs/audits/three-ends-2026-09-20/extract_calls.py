@@ -27,7 +27,7 @@ WEB = os.path.join(find_repo_root(os.path.dirname(os.path.abspath(__file__))), "
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "frontend_calls.json")
 
 CLIENTS = ("api", "mapi", "http", "client", "req")
-VERBS = ("get", "post", "put", "delete", "patch", "upload", "download", "stream")
+VERBS = ("get", "post", "put", "delete", "patch", "upload", "download", "stream", "uploadBytes")
 ENTRY_RE = re.compile(r"\b(" + "|".join(CLIENTS) + r")\s*\.\s*(" + "|".join(VERBS) + r")\b")
 CONST_RE = re.compile(r"\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*(?::[^=\n]*)?=\s*([`'\"])(.*?)\2")
 OBJ_STR_RE = re.compile(r"\b([A-Za-z_$][\w$]*)\s*:\s*([`'\"])(.*?)\2")
