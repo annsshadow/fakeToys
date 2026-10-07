@@ -4,7 +4,7 @@
 <script setup lang="ts">
 import { onShow } from '@dcloudio/uni-app'
 import { ref } from 'vue'
-import { authApi } from '@/services'
+import { authApi, clientDeviceToken, pushApi } from '@/services'
 import { useSession } from '@/store/session'
 import { ensureAuthenticated, LOGIN_PAGE } from '@/utils/auth-guard'
 
@@ -30,6 +30,28 @@ async function logout() {
 
 function goCollect() {
   uni.navigateTo({ url: '/pages/collect/collect' })
+}
+
+// ── 推送设备注册（POST /api/jpush/device/create，十类功能8）──
+const pushBusy = ref(false)
+const pushRegistered = ref(false)
+
+async function registerPush() {
+  if (!session.user?.unique) return
+  pushBusy.value = true
+  try {
+    await pushApi.deviceCreate({
+      userId: session.user.unique,
+      platform: 'h5',
+      token: clientDeviceToken(),
+    })
+    pushRegistered.value = true
+    uni.showToast({ title: '推送注册成功', icon: 'success' })
+  } catch (e: unknown) {
+    uni.showToast({ title: e instanceof Error ? e.message : '注册失败', icon: 'none' })
+  } finally {
+    pushBusy.value = false
+  }
 }
 
 // ── 修改密码（PUT /api/person/password，对齐桌面 Personal.vue） ──
@@ -89,6 +111,16 @@ async function changePassword() {
     <view class="card entry-card" @tap="goCollect">
       <text class="entry-k">我的收藏</text>
       <text class="entry-arrow">›</text>
+    </view>
+
+    <view class="card push-card">
+      <view class="pwd-title">推送通知</view>
+      <view class="push-row">
+        <text class="push-desc">{{ pushRegistered ? '本机已注册推送通知' : '注册本机以接收推送通知' }}</text>
+        <button class="pwd-btn push-btn" :disabled="pushBusy" @tap="registerPush">
+          {{ pushBusy ? '注册中…' : pushRegistered ? '重新注册' : '开启推送' }}
+        </button>
+      </view>
     </view>
 
     <view class="card pwd-card">
@@ -201,6 +233,26 @@ async function changePassword() {
 .entry-arrow {
   color: #90979f;
   font-size: 32rpx;
+}
+.push-card {
+  display: block;
+  padding: 32rpx 40rpx;
+}
+.push-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  margin-top: 16rpx;
+}
+.push-desc {
+  flex: 1;
+  font-size: 26rpx;
+  color: #60676f;
+}
+.push-btn {
+  margin: 0;
+  flex-shrink: 0;
 }
 .logout {
   background: #fff;

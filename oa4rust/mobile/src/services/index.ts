@@ -545,7 +545,7 @@ export const statisticsApi = {
 }
 
 // ─────────────────────────────────────────────────────────────
-// 推送设备（阶段 G / F5：设备注册状态只读）
+// 推送设备（阶段 G / F5：设备注册状态只读；十类功能8：注册写面）
 // ─────────────────────────────────────────────────────────────
 export const pushApi = {
   /** 某推送类型下的设备清单。 */
@@ -555,6 +555,29 @@ export const pushApi = {
   pushTypeConfig: () => mapi.get<Record<string, unknown>>('/api/jpush/assemble/control/device/config/push/type'),
   /** 推送应用清单。 */
   apps: () => list(mapi.get<Record<string, unknown>[]>('/api/jpush/assemble/control/list/control/apps')),
+  /** 注册推送设备（POST /api/jpush/device/create，x_jpush_device INSERT）。 */
+  deviceCreate: (payload: { userId: string; platform: string; token: string }) =>
+    mapi.post<Record<string, unknown>>('/api/jpush/device/create', payload),
+}
+
+/** 本地持久化客户端标识（H5 无厂商推送通道时作为注册 token；首次生成后落 storage）。 */
+export function clientDeviceToken(): string {
+  const KEY = 'oa4rust_device_token'
+  let token = ''
+  try {
+    token = (uni.getStorageSync(KEY) as string) || ''
+  } catch {
+    token = ''
+  }
+  if (!token) {
+    token = `h5-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
+    try {
+      uni.setStorageSync(KEY, token)
+    } catch {
+      // storage 不可用时降级为会话内临时标识
+    }
+  }
+  return token
 }
 
 // ─────────────────────────────────────────────────────────────
