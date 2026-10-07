@@ -220,11 +220,19 @@ func (s *Server) me(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
+	// 第 142 轮：max_stage 是「玩家进度」的服务端权威来源。客户端此前只在
+	// 本会话结算后才知道进度，老玩家重进 App 恒从 0 开始。/me 带上它，
+	// 客户端 refreshProfile 即可恢复真实解锁进度。
+	maxStage, err := s.Svc.LoadMaxStage(c.Context(), userID)
+	if err != nil {
+		return failErr(c, err)
+	}
 	return c.JSON(fiber.Map{
 		"user_id":      userID,
 		"build":        build,
 		"build_rating": s.Svc.ComputeRatingFor(userID, build),
 		"power":        s.Svc.ComputePowerFor(build),
+		"max_stage":    maxStage,
 	})
 }
 

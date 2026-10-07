@@ -118,6 +118,21 @@ func (s *Service) StartBattle(ctx context.Context, userID int64, levelID int) (B
 	}, nil
 }
 
+// LoadMaxStage 返回玩家已通关的最高关卡（user_progress.max_stage，从未通关为 0）。
+//
+// ⚠️ 第 142 轮：此前客户端的 maxStage 只在**本会话结算后**才有值 ——
+// 老玩家重进 App 恒从 0 开始，「最高关卡 / 已解锁」全线错位。
+// 该字段进 /me 响应后，客户端每次 refreshProfile 都能恢复真实进度。
+func (s *Service) LoadMaxStage(ctx context.Context, userID int64) (int, error) {
+	var n int
+	err := s.pool.QueryRow(ctx,
+		`SELECT COALESCE(MAX(max_stage), 0) FROM user_progress WHERE user_id = $1`, userID).Scan(&n)
+	if err != nil {
+		return 0, fmt.Errorf("load max stage: %w", err)
+	}
+	return n, nil
+}
+
 func (s *Service) newBattleSeed(ctx context.Context) (int64, error) {
 	var seed int64
 	// PostgreSQL 的 random() 足够随机且不需额外依赖；写库前用取模压到正数
