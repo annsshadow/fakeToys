@@ -76,7 +76,7 @@ def match_one(front_segs, back_segs):
     return i == len(front_segs) and j == len(back_segs), used, swallowed
 
 
-METHOD_ALIAS = {"UPLOAD": "POST", "DOWNLOAD": "GET"}
+METHOD_ALIAS = {"UPLOAD": "POST", "DOWNLOAD": "GET", "STREAM": "POST"}
 
 
 def classify(call, backend):

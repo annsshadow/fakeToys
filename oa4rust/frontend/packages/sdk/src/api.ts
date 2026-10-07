@@ -269,6 +269,63 @@ export class ApiClient {
       xhr.send(formData)
     })
   }
+
+  /**
+   * SSE 流式 POST（POST + text/event-stream 响应）。
+   * 每收到一个完整 SSE 事件回调 onEvent(event, data)；流结束 resolve。
+   * 401 时的会话刷新语义与 request() 一致。
+   */
+  async stream(
+    path: string,
+    body: unknown,
+    onEvent: (event: string, data: string) => void,
+    options?: ApiRequestOptions,
+    retried = false,
+  ): Promise<void> {
+    const url = this.resolveUrl(path)
+    const resp = await fetch(url.toString(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...options?.headers },
+      credentials: 'include',
+      body: JSON.stringify(body ?? {}),
+    })
+    if (!resp.ok) {
+      if (resp.status === 401 && options?.requireAuth !== false && !retried) {
+        try {
+          await this.refreshSession()
+        } catch {
+          throw this.authenticationFailed()
+        }
+        return this.stream(path, body, onEvent, options, true)
+      }
+      if (resp.status === 401) throw this.authenticationFailed()
+      if (resp.status === 403) throw new PermissionError('Permission denied')
+      throw new ApiError(`HTTP ${resp.status}: ${resp.statusText}`, resp.status)
+    }
+    if (!resp.body) throw new ApiError('no response body stream', resp.status)
+    const reader = resp.body.getReader()
+    const decoder = new TextDecoder()
+    let buf = ''
+    for (;;) {
+      const { done, value } = await reader.read()
+      if (done) break
+      buf += decoder.decode(value, { stream: true })
+      // SSE 事件以空行分隔（容忍 \r\n）
+      for (;;) {
+        const m = buf.match(/(?:\r?\n){2}/)
+        if (!m || m.index === undefined) break
+        const raw = buf.slice(0, m.index)
+        buf = buf.slice(m.index + m[0].length)
+        let event = 'message'
+        const dataLines: string[] = []
+        for (const line of raw.split(/\r?\n/)) {
+          if (line.startsWith('event:')) event = line.slice(6).trim()
+          else if (line.startsWith('data:')) dataLines.push(line.slice(5).trimStart())
+        }
+        if (dataLines.length) onEvent(event, dataLines.join('\n'))
+      }
+    }
+  }
 }
 
 export class ApiError extends Error {
