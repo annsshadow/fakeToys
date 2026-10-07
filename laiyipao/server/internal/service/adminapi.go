@@ -70,8 +70,16 @@ func (s *Service) AdminListLevels(ctx context.Context, chapter int, keyword stri
 		}
 		var stars []int64
 		var terrain []domain.TerrainPlacement
-		_ = json.Unmarshal(starRaw, &stars)
-		_ = json.Unmarshal(terrainRaw, &terrain)
+		// 第 146 轮：fail-loud（AGENTS #11）。这两列是生成器写入的 jsonb，
+		// 正常必为合法数组。`_ =` 会把「列被写坏 / jsonb 变 null」静默吞掉，
+		// 后台关卡列表就把该关的星级门槛与地形显示成空 —— 运营误以为「这关没门槛/没地形」。
+		// 与第 125 轮（审计 `{}` 谎言）/ 第 144 轮（漏斗查错句柄）同族：出错必须响。
+		if err := json.Unmarshal(starRaw, &stars); err != nil {
+			return nil, 0, fmt.Errorf("admin levels: 关卡 %d 的 star_targets 非法 jsonb: %w", id, err)
+		}
+		if err := json.Unmarshal(terrainRaw, &terrain); err != nil {
+			return nil, 0, fmt.Errorf("admin levels: 关卡 %d 的 terrain_config 非法 jsonb: %w", id, err)
+		}
 
 		clearRate := 0.0
 		if attempts > 0 {
@@ -143,8 +151,13 @@ func (s *Service) AdminLevelRow(ctx context.Context, levelID int) (map[string]an
 	}
 	var stars []int64
 	var terrain []domain.TerrainPlacement
-	_ = json.Unmarshal(starRaw, &stars)
-	_ = json.Unmarshal(terrainRaw, &terrain)
+	// 第 146 轮：fail-loud，见 AdminListLevels 同族说明。单关详情更不该静默吞坏数据。
+	if err := json.Unmarshal(starRaw, &stars); err != nil {
+		return nil, fmt.Errorf("level row %d: star_targets 非法 jsonb: %w", levelID, err)
+	}
+	if err := json.Unmarshal(terrainRaw, &terrain); err != nil {
+		return nil, fmt.Errorf("level row %d: terrain_config 非法 jsonb: %w", levelID, err)
+	}
 
 	clearRate := 0.0
 	if attempts > 0 {
