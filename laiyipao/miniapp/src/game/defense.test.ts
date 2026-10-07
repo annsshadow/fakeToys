@@ -436,6 +436,32 @@ describe('runChallenge', () => {
   })
 })
 
+describe('nowMs 注入：服务端时钟基准（第 140 轮）', () => {
+  it('validateSnapshot：本地时钟下护盾仍生效、服务端时间下已过期 → 放行', () => {
+    // 2099-01-02 对真实本地时钟（2026）是未来 → 护盾生效，默认基准下拒绝
+    const v = view({ shielded_until: '2099-01-02T00:00:00Z' })
+    const denied = validateSnapshot(v)
+    expect(denied.ok).toBe(false)
+    if (!denied.ok) expect(denied.reason).toContain('护盾')
+    // 注入服务端时间 2100-01-01（护盾早已过期）→ 放行。
+    // 这条钉住「护盾判断可以被服务端时钟基准驱动」——本地时钟偏差不再误判。
+    expect(validateSnapshot(v, Date.parse('2100-01-01T00:00:00Z')).ok).toBe(true)
+  })
+
+  it('默认种子派生以注入的 now 为分钟桶基准：同分钟同局，跨分钟变局', () => {
+    const { seedOverride: _omit, ...noOverride } = deps
+    // 固定到某分钟正中间（+30s），保证 +60s 恰好跨桶
+    const base = Math.floor(Date.now() / 60000) * 60000 + 30_000
+    const a = runChallenge(view(), noOverride, base)
+    const b = runChallenge(view(), noOverride, base + 5000)
+    const c = runChallenge(view(), noOverride, base + 60_000)
+    expect(a.error).toBeUndefined()
+    expect(b.report.seed).toBe(a.report.seed)
+    expect(c.report.seed).not.toBe(a.report.seed)
+    expect(c.report.replay_hash).not.toBe(a.report.replay_hash)
+  })
+})
+
 describe('辅助函数', () => {
   it('snapshotDigest 与顺序无关', () => {
     const a = snapshotDigest(['slow_belt', 'tesla_grid'], [3, 1, 2])
