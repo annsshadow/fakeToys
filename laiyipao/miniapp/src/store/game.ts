@@ -205,6 +205,10 @@ export const useGameStore = defineStore('game', () => {
       power.value = me.power
       buildRating.value = me.build_rating
       build.value = me.build
+      // 第 142 轮：恢复服务端权威进度。修前 maxStage 只在**本会话结算后**
+      // 才有值，老玩家重进 App 恒从 0 开始（解锁关卡 / 最高关卡显示全错位）。
+      // setMaxStage 只增不减，不会压掉本会话刚结算出的更高值。
+      if (typeof me.max_stage === 'number') setMaxStage(me.max_stage)
     } catch (e) {
       // 静默：页面会展示已有数据，不因刷新失败而白屏
       console.warn('[来一炮] 刷新玩家信息失败', (e as Error).message)

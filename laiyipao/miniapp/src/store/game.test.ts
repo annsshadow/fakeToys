@@ -197,6 +197,33 @@ describe('档案与钱包刷新', () => {
   })
 })
 
+describe('进度恢复 max_stage（第 142 轮）', () => {
+  it('refreshProfile：服务端 max_stage 恢复进度（重进 App 不从 0 开始）', async () => {
+    mockApi.fetchMe.mockResolvedValue({
+      user_id: 7, build: null, build_rating: null, power: 9, max_stage: 57,
+    } as any)
+    await store.refreshProfile()
+    expect(store.maxStage).toBe(57)
+    expect(store.unlockedLevel).toBe(58)
+  })
+
+  it('refreshProfile：max_stage 缺失（老服务端/缺字段）→ 不碰本地值', async () => {
+    store.setMaxStage(12)
+    mockApi.fetchMe.mockResolvedValue({ user_id: 7, build: null, build_rating: null, power: 9 } as any)
+    await store.refreshProfile()
+    expect(store.maxStage).toBe(12)
+  })
+
+  it('refreshProfile：服务端值低于本会话刚结算的本地值 → 不覆盖（只增不减）', async () => {
+    store.setMaxStage(60)
+    mockApi.fetchMe.mockResolvedValue({
+      user_id: 7, build: null, build_rating: null, power: 9, max_stage: 57,
+    } as any)
+    await store.refreshProfile()
+    expect(store.maxStage).toBe(60)
+  })
+})
+
 describe('出战槽位（服务端权威 + 归一化）', () => {
   it('第 131 轮：equippedSkillIds 初值为空，不再捏造 [1,2,3]', () => {
     // 服务端对一个未保存过槽位的玩家返回 [0,0,0,0]（全空）。

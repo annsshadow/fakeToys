@@ -465,6 +465,33 @@ func TestE2EMeConfigLeaderboard(t *testing.T) {
 
 // --- 出战配置 / 技能升级 / 钱包 ---
 
+// 第 142 轮：/me 下发 max_stage（进度权威）。老玩家重进 App 靠它恢复解锁态。
+func TestE2EMeMaxStage(t *testing.T) {
+	e := newE2E(t)
+	uid, tok := e.newPlayer(t, "mestage")
+
+	// 新玩家：尚未通关任何一关 → max_stage = 0
+	status, body := e.get(t, "/api/v1/me/", tok)
+	if status != fiber.StatusOK {
+		t.Fatalf("/me 应 200，实际 %d %v", status, body)
+	}
+	if num(body, "max_stage") != 0 {
+		t.Errorf("新玩家 max_stage 应为 0，实际 %v", body["max_stage"])
+	}
+
+	// 服务端把进度写到 42 后，/me 必须跟着变（客户端 refreshProfile 据此恢复）
+	e.exec(t, `INSERT INTO user_progress (user_id, max_stage) VALUES ($1, 42)
+		ON CONFLICT (user_id) DO UPDATE SET
+		  max_stage = GREATEST(user_progress.max_stage, EXCLUDED.max_stage)`, uid)
+	status, body = e.get(t, "/api/v1/me/", tok)
+	if status != fiber.StatusOK {
+		t.Fatalf("/me 应 200，实际 %d %v", status, body)
+	}
+	if num(body, "max_stage") != 42 {
+		t.Errorf("进度 42 后 max_stage 应为 42，实际 %v", body["max_stage"])
+	}
+}
+
 func TestE2ELoadoutAndUpgradeSkill(t *testing.T) {
 	e := newE2E(t)
 	uid, tok := e.newPlayer(t, "loadout")
