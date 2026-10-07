@@ -481,8 +481,16 @@ func (s *Service) LoadShop(ctx context.Context, userID int64) ([]ShopItemView, e
 		if err := rows.Scan(&v.ID, &v.Code, &v.Name, &v.Category, &priceRaw, &payloadRaw, &v.Limit, &v.Bought); err != nil {
 			return nil, err
 		}
-		_ = json.Unmarshal(priceRaw, &v.Price)
-		_ = json.Unmarshal(payloadRaw, &v.Payload)
+		// 第 148 轮：fail-loud（AGENTS #11）。price/payload 是 jsonb 经济字段，
+		// `_ =` 会把坏数据静默吞成空 map —— 商品显示成「0 金 / 无内容」。
+		// 购买路径（Buy）本就 fail-loud，这里列表读侧也应同口径报错，
+		// 让坏商品在后台/客户端可见，而不是无声显示成「免费/空包」。
+		if err := json.Unmarshal(priceRaw, &v.Price); err != nil {
+			return nil, fmt.Errorf("load shop: 商品 %d 的 price 非法 jsonb: %w", v.ID, err)
+		}
+		if err := json.Unmarshal(payloadRaw, &v.Payload); err != nil {
+			return nil, fmt.Errorf("load shop: 商品 %d 的 payload 非法 jsonb: %w", v.ID, err)
+		}
 		out = append(out, v)
 	}
 	return out, rows.Err()
