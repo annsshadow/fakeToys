@@ -278,6 +278,18 @@ export const attendanceApi = {
     list(mapi.post<Array<Record<string, unknown>>>('/api/attendance/assemble/control/v2/my/detail/list', payload)),
   /** v2 考勤模块版本（用于客户端能力判定）。 */
   myVersion: () => mapi.get<{ version?: string }>('/api/attendance/assemble/control/v2/my/version'),
+  /**
+   * 外勤打卡（POST /api/attendance/assemble/control/v2/mobile/check/ from/out，
+   * o2 原契约路径字面含空格；后端同 handler 兼容 %20 形态；sourceType 记为「外部设备」）。
+   */
+  checkFromOut: (checkInType: 'checkIn' | 'checkOut') =>
+    mapi.post<{ id?: string; duplicated?: boolean; fromOut?: boolean }>(
+      '/api/attendance/assemble/control/v2/mobile/check/ from/out',
+      { checkInType, sourceType: '外部设备' },
+    ),
+  /** 自助假期申请（POST selfholidaysimple，INSERT x_attendance_selfholiday，person 取会话）。 */
+  selfHolidayApply: (payload: { holidayDate: string; reason?: string }) =>
+    mapi.post<Record<string, unknown>>('/api/attendance/assemble/control/selfholidaysimple', payload),
 }
 
 // ─────────────────────────────────────────────────────────────

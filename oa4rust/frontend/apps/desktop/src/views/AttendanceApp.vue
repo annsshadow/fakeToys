@@ -194,6 +194,7 @@
           <button class="cfg-tab" :class="{on:moreTab==='v2leave'}" @click="switchMore('v2leave')">v2请假</button>
         </span>
         <button class="mini-add" v-if="moreTab==='cycle'" @click="addCycle">+ 新建周期</button>
+        <button class="mini-add" v-if="moreTab==='holiday'" @click="addSelfHoliday">+ 申请假期</button>
         <button class="mini-add" v-if="moreTab==='v2group'" @click="addGroup">+ 新建考勤组</button>
         <button class="mini-add" v-if="moreTab==='v2shift'" @click="addShift">+ 新建班次</button>
         <button class="mini-add" v-if="moreTab==='v2leave'" @click="addLeave">+ 新建请假</button>
@@ -214,6 +215,16 @@
           </div>
         </div>
       </div>
+    </div>
+    <div class="content-panel glass-card">
+      <div class="pt cfg-pt"><span>外部考勤同步（钉钉/企微，管理员）</span></div>
+      <div class="cfg-list sync-row">
+        <button class="cfg-mini" @click="syncDingding">钉钉同步打卡</button>
+        <button class="cfg-mini" @click="syncQywx">企微同步打卡</button>
+        <button class="cfg-mini" @click="statDingdingPerson">钉钉个人月统计</button>
+        <button class="cfg-mini" @click="syncGroupSchedule">v2 群排班同步</button>
+      </div>
+      <p class="sync-note">同步与统计按日期区间触发；未配置钉钉/企微凭据时后端如实返回错误。</p>
     </div>
   </div>
 </template>
@@ -1451,6 +1462,77 @@ async function addLeave() {
     toast.error(`新建失败: ${e?.message ?? ''}`)
   }
 }
+
+// ── 十类功能7：自助假期申请 + 外部考勤同步 ─────────────────────────────────
+// 申请假期（POST attendanceselfholiday，INSERT x_attendance_selfholiday；personId 缺省取会话）
+async function addSelfHoliday() {
+  const holidayDate = prompt('假期日期 (holidayDate, 如 2026-10-09):', '')
+  if (!holidayDate) return
+  const reason = prompt('事由 (reason):', '') || ''
+  try {
+    await api.post('/api/attendance/assemble/control/attendanceselfholiday', { holidayDate, reason })
+    toast.success('假期申请已提交')
+    switchMore('holiday')
+  } catch (e: any) {
+    toast.error(`申请失败: ${e?.message ?? ''}`)
+  }
+}
+
+// 钉钉打卡同步（GET dingding/sync/from/{from}/to/{to}/start，admin）
+async function syncDingding() {
+  const from = prompt('开始日期 (YYYY-MM-DD):', '') || ''
+  const to = prompt('结束日期 (YYYY-MM-DD):', '') || ''
+  if (!from || !to) return
+  try {
+    await api.get(`/api/attendance/assemble/control/dingding/sync/from/${encodeURIComponent(from)}/to/${encodeURIComponent(to)}/start`)
+    toast.success('钉钉同步已启动')
+  } catch (e: any) {
+    toast.error(`钉钉同步失败: ${e?.message ?? ''}`)
+  }
+}
+
+// 企微打卡同步（GET qywx/sync/from/{from}/to/{to}/start）
+async function syncQywx() {
+  const from = prompt('开始日期 (YYYY-MM-DD):', '') || ''
+  const to = prompt('结束日期 (YYYY-MM-DD):', '') || ''
+  if (!from || !to) return
+  try {
+    await api.get(`/api/attendance/assemble/control/qywx/sync/from/${encodeURIComponent(from)}/to/${encodeURIComponent(to)}/start`)
+    toast.success('企微同步已启动')
+  } catch (e: any) {
+    toast.error(`企微同步失败: ${e?.message ?? ''}`)
+  }
+}
+
+// 钉钉个人月统计触发（GET dingding/statistic/person/year/{year}/month/{month}，admin）
+async function statDingdingPerson() {
+  const year = prompt('年份 (YYYY):', String(new Date().getFullYear())) || ''
+  const month = prompt('月份 (MM):', String(new Date().getMonth() + 1).padStart(2, '0')) || ''
+  if (!year || !month) return
+  try {
+    await api.get(`/api/attendance/assemble/control/dingding/statistic/person/year/${encodeURIComponent(year)}/month/${encodeURIComponent(month)}`)
+    toast.success('个人月统计已触发')
+  } catch (e: any) {
+    toast.error(`统计触发失败: ${e?.message ?? ''}`)
+  }
+}
+
+// v2 群排班同步（POST v2/groupschedule，admin；groupId/userId/月份）
+async function syncGroupSchedule() {
+  const groupId = prompt('考勤组 ID (groupId):', '') || ''
+  const userId = prompt('用户 ID (userId):', '') || ''
+  const month = prompt('排班月份 (scheduleMonthString, 如 2026-10):', '') || ''
+  if (!groupId || !month) {
+    toast.info('考勤组与月份必填')
+    return
+  }
+  try {
+    await api.post('/api/attendance/assemble/control/v2/groupschedule', { groupId, userId, scheduleMonthString: month })
+    toast.success('群排班同步已受理')
+  } catch (e: any) {
+    toast.error(`群排班同步失败: ${e?.message ?? ''}`)
+  }
+}
 // v2 详情：按 id GET 回读单条（字面量分支，提取器不解析 url 变量）
 async function viewMore(it: MoreItem) {
   try {
@@ -1658,6 +1740,8 @@ async function loadAttTwin2() {
 .cfg-act,.rec-act{display:flex;gap:6px;flex-wrap:wrap}
 .cfg-mini{padding:4px 10px;border-radius:var(--radius-sm);border:1px solid var(--border-subtle);background:var(--bg-elevated);color:var(--text-secondary);cursor:pointer;font-size:12px}
 .cfg-mini.danger{border-color:var(--color-error);color:var(--color-error)}
+.sync-row{flex-direction:row;flex-wrap:wrap;gap:8px}
+.sync-note{font-size:11px;color:var(--text-muted);margin:8px 0 0;font-family:'JetBrains Mono',monospace}
 .cfg-del{padding:4px 12px;border-radius:var(--radius-sm);border:1px solid var(--color-error);background:var(--color-error-glow);color:var(--color-error);cursor:pointer;font-size:12px}
 .es,.ls,.es-sm{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;color:var(--text-muted);gap:12px}
 .ei{font-size:48px;opacity:0.4}
