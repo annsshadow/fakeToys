@@ -142,6 +142,7 @@ type NavItem = { path?: string; label: string; icon: string; disabled?: boolean 
 const navItems: NavItem[] = [
   { path: '/app/dashboard', label: '工作台', icon: '🏠' },
   { path: '/app/org', label: '组织', icon: '🏢' },
+  { path: '/app/directory', label: '通讯录', icon: '📒' },
   { path: '/app/process', label: '工作流', icon: '📋' },
   { path: '/app/im', label: '消息', icon: '💬' },
   { path: '/app/calendar', label: '日历', icon: '📅' },
