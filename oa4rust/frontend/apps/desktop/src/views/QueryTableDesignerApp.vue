@@ -5,7 +5,7 @@
   <div class="designer-shell">
     <header class="designer-header glass-card">
       <div><h1>数据表设计器</h1><p>typed columns → 后端生成并执行受限 DDL</p></div>
-      <div class="actions"><button class="btn" @click="newTable">新建表</button><button class="btn primary" :disabled="!canSave || saving" @click="saveTable">{{ saving ? '保存中…' : '保存定义' }}</button><button class="btn success" :disabled="!activeFlag || executing" @click="executeTable">{{ executing ? '执行中…' : '执行建表/加列' }}</button></div>
+      <div class="actions"><button class="btn" @click="newTable">新建表</button><button class="btn primary" :disabled="!canSave || saving" @click="saveTable">{{ saving ? '保存中…' : '保存定义' }}</button><button class="btn success" :disabled="!activeFlag || executing" @click="executeTable">{{ executing ? '执行中…' : '执行建表/加列' }}</button><button class="btn" :disabled="!activeFlag || saving" @click="editTableStructure" title="按 flag 编辑表结构（PUT table/edit/{flag}）">编辑结构</button></div>
     </header>
     <main class="main-grid">
       <aside class="list glass-card">
@@ -121,6 +121,21 @@ async function saveTable() {
     await loadTables()
   } catch (error: any) {
     toast.error(`保存失败: ${error?.message ?? '未知错误'}`)
+  } finally {
+    saving.value = false
+  }
+}
+// 十类功能5：按 flag 编辑表结构（PUT table/edit/{flag}，update_table_definition 真实 DDL 校验）
+async function editTableStructure() {
+  if (!activeFlag.value) return
+  saving.value = true
+  const payload = tablePayload(form.value.name, form.value.queryFlag, form.value.columns)
+  try {
+    await api.put(`/api/query/assemble/designer/table/edit/${encodeURIComponent(activeFlag.value)}`, payload)
+    toast.success('表结构编辑已提交')
+    await loadTables()
+  } catch (error: any) {
+    toast.error(`结构编辑失败: ${error?.message ?? '未知错误'}`)
   } finally {
     saving.value = false
   }

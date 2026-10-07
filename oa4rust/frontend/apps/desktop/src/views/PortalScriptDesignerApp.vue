@@ -19,7 +19,6 @@ import ScriptWorkbench, {
   type ScriptWorkbenchAdapter,
 } from '../components/ScriptWorkbench.vue'
 
-const base = '/api/portal/assemble/designer'
 
 function extractData(response: unknown): Record<string, unknown>[] {
   const data = (response as { data?: unknown })?.data
@@ -32,7 +31,7 @@ function extractData(response: unknown): Record<string, unknown>[] {
 
 const adapter: ScriptWorkbenchAdapter = {
   async list(): Promise<ScriptListItem[]> {
-    const response = await api.post(`${base}/script/list/manager`, {})
+    const response = await api.post('/api/portal/assemble/designer/script/list/manager', {})
     return extractData(response).map((row) => ({
       id: String(row.id ?? ''),
       name: String(row.name ?? row.flag ?? row.id ?? ''),
@@ -41,7 +40,7 @@ const adapter: ScriptWorkbenchAdapter = {
     }))
   },
   async load(id: string) {
-    const response = await api.get(`${base}/script/${encodeURIComponent(id)}`)
+    const response = await api.get(`/api/portal/assemble/designer/script/${encodeURIComponent(id)}`)
     const row = ((response as { data?: Record<string, unknown> })?.data ?? {}) as Record<string, unknown>
     return {
       name: String(row.name ?? ''),
@@ -49,16 +48,16 @@ const adapter: ScriptWorkbenchAdapter = {
       code: String(row.content ?? ''),
     }
   },
-  create: (data) => api.post(`${base}/script`, { name: data.name, category: data.category, content: data.code }),
+  create: (data) => api.post('/api/portal/assemble/designer/script', { name: data.name, category: data.category, content: data.code }),
   save: (id, data) =>
-    api.put(`${base}/script/${encodeURIComponent(id)}`, {
+    api.put(`/api/portal/assemble/designer/script/${encodeURIComponent(id)}`, {
       name: data.name,
       category: data.category,
       content: data.code,
     }),
-  remove: (id) => api.delete(`${base}/script/${encodeURIComponent(id)}`),
+  remove: (id) => api.delete(`/api/portal/assemble/designer/script/${encodeURIComponent(id)}`),
   async versions(id: string): Promise<ScriptVersion[]> {
-    const response = await api.get(`${base}/scriptversion/list/script/${encodeURIComponent(id)}`)
+    const response = await api.get(`/api/portal/assemble/designer/scriptversion/list/script/${encodeURIComponent(id)}`)
     return extractData(response).map((row) => ({
       version: row.version === undefined ? undefined : String(row.version),
       content: row.content === undefined ? undefined : String(row.content),
