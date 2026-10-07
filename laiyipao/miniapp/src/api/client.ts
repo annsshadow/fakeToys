@@ -411,6 +411,16 @@ export function signIn() {
   return request<any>('/signin', { method: 'POST' })
 }
 
+/** 七日签到奖励表（服务端权威，第 135 轮：预览不再本地硬编码）。 */
+export interface SignInCalendarDay {
+  day_index: number
+  reward: Record<string, number>
+}
+
+export function fetchSignInCalendar() {
+  return request<{ days: SignInCalendarDay[] }>('/signin/calendar')
+}
+
 export function fetchShop() {
   return request<any>('/shop')
 }
