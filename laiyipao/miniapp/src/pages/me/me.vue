@@ -361,12 +361,19 @@ function challenge(target: DefenseView) {
 
 onMounted(async () => {
   if (!store.loggedIn) await store.login()
+  // 第 131 轮：防线快照必须基于**服务端**出战槽位。
+  // 先 loadLoadout 拉取 user_skill_slots（权威），再 loadDefenses ——
+  // 否则 saveDefense/toggleShield/myEquipped 会用本地初值（修前是捏造的
+  // [1,2,3]，修后是空），把玩家没装备过的技能写进防线。
+  await store.loadLoadout()
   await loadDefenses()
 })
 
 onShow(async () => {
   if (store.loggedIn) {
     await store.refreshProfile()
+    // 从「背包」页改过槽位再回来时，这里重新拉一次权威槽位。
+    await store.loadLoadout()
     await loadDefenses()
   }
 })
