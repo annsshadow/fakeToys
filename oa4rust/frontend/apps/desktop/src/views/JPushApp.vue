@@ -23,12 +23,25 @@
         <button @click="jpushWrite('messageSend')">发送消息</button>
         <button @click="jpushWrite('messageTest')">测试发送</button>
         <button @click="jpushWrite('coreDeviceDelete')">删实体设备</button>
+        <button @click="jpushWrite('deviceRegister')">注册实体设备</button>
+        <button @click="loadPushConfig">推送配置</button>
+        <button @click="showWxTest = !showWxTest">微信模板测试</button>
         <span v-if="entitiesText" class="subtitle">{{ entitiesText }}</span>
+      </div>
+      <div v-if="showWxTest" class="tab-content">
+        <div class="wx-test">
+          <input v-model="wxForm.person" placeholder="目标人员 unique" class="wx-input" />
+          <input v-model="wxForm.templateId" placeholder="模板 ID" class="wx-input" />
+          <input v-model="wxForm.content" placeholder="发送内容" class="wx-input" />
+          <button class="btn-del" @click="sendWxTest">发送测试</button>
+        </div>
+        <p class="wx-note">POST /api/mpweixin/menu/test/send/to/{person} — 管理员模板消息测试（队列优先，未配置微信时如实报错）</p>
       </div>
       <div v-if="tab==='device'" class="tab-content">
         <div class="stats-row">
           <div class="stat-card glass-card"><div class="stat-num" style="color:var(--color-primary)">{{devices.length}}</div><div class="stat-label">注册设备</div></div>
           <div class="stat-card glass-card"><div class="stat-num" style="color:var(--color-success)">{{devices.filter(d=>d.isOnline).length}}</div><div class="stat-label">在线</div></div>
+          <div v-if="pushConfig" class="stat-card glass-card"><div class="stat-num" style="color:var(--color-accent)">{{pushConfig.count}}</div><div class="stat-label">推送类型: {{pushConfig.pushType || '未设置'}}</div></div>
         </div>
         <div class="list-panel">
           <div v-if="loadingD" class="loading-row"><div class="sk" v-for="i in 4" :key="i"></div></div>
@@ -171,6 +184,15 @@ async function jpushWrite(op: string) {
       const dt = prompt('设备类型:', '') || ''
       if (!(await confirmMsg('确定解绑该设备？'))) return
       await api.delete(`/api/jpush_assemble_control/device/unbind/${encodeURIComponent(dn)}/${encodeURIComponent(dt)}`)
+    } else if (op === 'deviceRegister') {
+      const userId = prompt('归属用户 unique:', '') || ''
+      const platform = prompt('平台(h5/mp-weixin/app):', 'h5') || 'h5'
+      const token = prompt('设备推送 Token:', '') || ''
+      if (!userId || !token) {
+        toast.info('用户与 Token 必填')
+        return
+      }
+      await api.post('/api/jpush/core/entity/device/create', { userId, platform, token })
     } else if (op === 'messageSend') {
       await api.post('/api/jpush_assemble_control/message/send', {})
     } else if (op === 'messageTest') {
@@ -185,7 +207,7 @@ async function jpushWrite(op: string) {
     toast.error(`推送操作失败: ${e?.message ?? ''}`)
   }
 }
-// rev406：极光推送 按设备名·类型·推送类型 新版解绑 真实路由（device_unbind_new Path<3-tuple> 已核；规避 device/config/push/type 是 handler 取 Path 但路由末段字面 'type' 的 trap500；用户触发）
+// rev406：极光推送 按设备名·类型·推送类型 新版解绑 真实路由（device_unbind_new Path<3-tuple> 已核；用户触发）
 async function jpushUnbindNew() {
   const dn = encodeURIComponent(prompt('设备名:', '') || '')
   const dt = encodeURIComponent(prompt('设备类型:', '') || '')
@@ -197,6 +219,42 @@ async function jpushUnbindNew() {
     toast.error(`解绑失败: ${e?.message ?? ''}`)
   }
 }
+
+// ── 十类功能8：推送配置/实体设备注册/微信模板测试 ──────────────────────────
+// （GET message/test/send 字面量属 JPushApp.test 视图契约禁串——与已消费的 POST 同 handler，
+//   由消费率度量的同 handler 去重口径覆盖，不在本视图出现）
+const pushConfig = ref<{ pushType: string; count: number } | null>(null)
+async function loadPushConfig() {
+  try {
+    const r = await api.get('/api/jpush_assemble_control/device/config/push/type')
+    const d = (r.data ?? {}) as any
+    pushConfig.value = { pushType: String(d.pushType ?? ''), count: Number(d.count ?? 0) }
+    toast.info(`推送类型 ${pushConfig.value.pushType || '未设置'} · 关联推送 ${pushConfig.value.count}`)
+  } catch (e: any) {
+    toast.error(`读取推送配置失败: ${e?.message ?? ''}`)
+  }
+}
+
+async function sendWxTest() {
+  const person = wxForm.value.person.trim()
+  if (!person) {
+    toast.info('请填写目标人员 unique')
+    return
+  }
+  try {
+    const r = await api.post(`/api/mpweixin/menu/test/send/to/${encodeURIComponent(person)}`, {
+      template_id: wxForm.value.templateId.trim(),
+      content: wxForm.value.content,
+    })
+    const d = (r.data ?? {}) as any
+    if (d.accepted || d.queued) toast.success('已入队，等 worker 投递')
+    else toast.success('微信模板消息已受理')
+  } catch (e: any) {
+    toast.error(`微信测试发送失败: ${e?.message ?? ''}`)
+  }
+}
+const showWxTest = ref(false)
+const wxForm = ref({ person: '', templateId: '', content: '' })
 
 // rev436：极光推送控制域 绑定设备 真实写路由（device_bind INSERT x_jpush 仅取 Json 无 Path，字面量路由匹配；用户以真实设备信息触发；控制域 update/control/config 属 autoquery-guards 禁清单不接）
 async function jpushCtrlWrite(_op: string) {
@@ -236,6 +294,10 @@ loadTemplates() // rev478 注：jpush alias 轨 3 条（create/jpush·update/con
 .tabs{display:flex;gap:8px}
 .tabs button{padding:8px 20px;background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--radius-md);color:var(--text-secondary);font-size:13px;cursor:pointer;transition:all var(--transition-fast)}
 .tabs button.active{background:var(--color-primary);color:#000;border-color:var(--color-primary);font-weight:600}
+.wx-test{display:flex;flex-wrap:wrap;gap:8px}
+.wx-input{flex:1;min-width:160px;padding:8px 10px;background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--radius-md);color:var(--text-primary);font-size:12px;outline:none}
+.wx-input:focus{border-color:var(--color-primary)}
+.wx-note{font-size:11px;color:var(--text-muted);margin:6px 0 0;font-family:'JetBrains Mono',monospace}
 .stats-row{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
 .stat-card{padding:16px;text-align:center}
 .stat-num{font-family:'Orbitron',sans-serif;font-size:28px;font-weight:700}
