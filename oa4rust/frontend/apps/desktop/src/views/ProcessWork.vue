@@ -228,6 +228,25 @@
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest('taskTransfer')">转交任务</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest('timerCancel')">取消定时器</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest('attCopy')">复制附件</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="collabAction('attUploadWork')">附件上传(工作)</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="collabAction('attUploadCallback')">附件上传(回调)</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="collabAction('attUploadSaveAs')">附件另存</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="collabAction('attUploadWorkcompleted')">附件上传(已办)</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="collabAction('attUploadV2')">v2附件上传</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="collabAction('attUploadV2Base64')">v2附件(base64)</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="collabAction('attUpdateCallback')">附件更新(回调)</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="collabAction('attBatchManage')">批量上传(管理)</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="collabAction('attWithUrl')">URL 拉取上传</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="collabAction('attCopyWork')">复制附件到工作</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="collabAction('htmlToPdf')">HTML→PDF 归档</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="collabAction('htmlToImage')">HTML→图片归档</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="collabAction('reviewWork')">创建阅件(工作)</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="collabAction('reviewWorkcompleted')">创建阅件(已办)</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="collabAction('modeSave')">保存处理模式</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="collabAction('modeClearPerson')">清除个人模式</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="collabAction('snapUploadSurface')">上传快照(surface)</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="collabAction('pressCompleted')">已办催办</button>
+            <button class="btn-sm" :disabled="engineBusy" @click="collabAction('signalSeries')">流水号信号驱动</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest('attEditText')">改附件文本</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest('snapRestore')">恢复快照</button>
             <button class="btn-sm" :disabled="engineBusy" @click="engineRest('v2Goback')">v2退回</button>
@@ -1647,6 +1666,186 @@ async function engineTaskAction(kind: string): Promise<void> {
     engineBusy.value = false
   }
 }
+// ── 十类功能4：流程协作与归档（附件上传全形态/阅件/快照/模式/催办/信号）──────
+const SB = '/api/processplatform/assemble/surface'
+const SP = '/api/processplatform/service/processing'
+async function collabAction(op: string): Promise<void> {
+  if (engineBusy.value) return
+  engineBusy.value = true
+  const e = encodeURIComponent
+  const pick = (): Promise<File | null> =>
+    new Promise((resolve) => {
+      const input = document.createElement('input')
+      input.type = 'file'
+      input.onchange = () => resolve(input.files?.[0] ?? null)
+      input.oncancel = () => resolve(null)
+      input.click()
+    })
+  const withFile = async (build: (file: File) => Promise<any>) => {
+    const file = await pick()
+    if (!file) {
+      engineBusy.value = false
+      return
+    }
+    try {
+      await build(file)
+      toast.success('流程附件操作已完成')
+    } catch (err: any) {
+      toast.error(`操作失败: ${err?.message ?? ''}`)
+    } finally {
+      engineBusy.value = false
+    }
+  }
+  try {
+    if (op === 'attUploadWork') {
+      const wid = e(prompt('工作 ID:', workId(opened.value ?? {}) || '') || '')
+      await withFile(async (file) => {
+        const form = new FormData()
+        form.append('file', file, file.name)
+        form.append('fileName', file.name)
+        await api.upload(`${SB}/attachment/upload/work/${wid}`, form)
+      })
+      return
+    }
+    if (op === 'attUploadCallback') {
+      const wid = e(prompt('工作 ID:', workId(opened.value ?? {}) || '') || '')
+      const cb = e(prompt('回调标识:', 'done') || 'done')
+      await withFile(async (file) => {
+        const form = new FormData()
+        form.append('file', file, file.name)
+        form.append('fileName', file.name)
+        await api.upload(`${SB}/attachment/upload/work/${wid}/callback/${cb}`, form)
+      })
+      return
+    }
+    if (op === 'attUploadSaveAs') {
+      const wid = e(prompt('工作 ID:', workId(opened.value ?? {}) || '') || '')
+      const saveAs = e(prompt('另存名 (saveAs):', '') || '')
+      await withFile(async (file) => {
+        const form = new FormData()
+        form.append('file', file, file.name)
+        form.append('fileName', file.name)
+        await api.upload(`${SB}/attachment/upload/work/${wid}/save/as/${saveAs}`, form, { method: 'PUT' })
+      })
+      return
+    }
+    if (op === 'attUploadWorkcompleted') {
+      const wcid = e(prompt('已办 ID (workCompletedId):', '') || '')
+      await withFile(async (file) => {
+        const form = new FormData()
+        form.append('file', file, file.name)
+        form.append('fileName', file.name)
+        await api.upload(`${SB}/attachment/upload/workcompleted/${wcid}`, form)
+      })
+      return
+    }
+    if (op === 'attUploadV2') {
+      const flag = prompt('work 或 workCompleted ID (flag):', '') || ''
+      await withFile(async (file) => {
+        const form = new FormData()
+        form.append('file', file, file.name)
+        form.append('fileName', file.name)
+        await api.upload(`${SB}/attachment/v2/upload/workorworkcompleted/${e(flag)}`, form)
+      })
+      return
+    }
+    if (op === 'attUploadV2Base64') {
+      const flag = e(prompt('work 或 workCompleted ID (flag):', '') || '')
+      const content = prompt('文件 base64 内容:', '') || ''
+      if (!content) return
+      await api.post(`${SB}/attachment/v2/upload/workorworkcompleted/${flag}/base64`, { fileName: 'base64.bin', content })
+      toast.success('base64 附件已上传')
+      engineBusy.value = false
+      return
+    }
+    if (op === 'attUpdateCallback') {
+      const aid = e(prompt('附件 ID:', attachments.value?.[0]?.id ?? '') || '')
+      const wid = e(prompt('工作 ID:', workId(opened.value ?? {}) || '') || '')
+      await withFile(async (file) => {
+        const form = new FormData()
+        form.append('file', file, file.name)
+        form.append('fileName', file.name)
+        await api.upload(`${SB}/attachment/update/${aid}/work/${wid}/callback/done`, form)
+      })
+      return
+    }
+    if (op === 'attBatchManage') {
+      await withFile(async (file) => {
+        const form = new FormData()
+        form.append('file', file, file.name)
+        form.append('fileName', file.name)
+        await api.upload(`${SB}/attachment/batch/upload/manage`, form)
+      })
+      return
+    }
+    if (op === 'attWithUrl') {
+      const url = prompt('远程文件 URL（SSRF 防护：仅公网 http/https）:', '') || ''
+      if (!url) return
+      await api.post(`${SB}/attachment/upload/with/url`, { url, site: 'url-upload' })
+      toast.success('URL 拉取上传已完成')
+    } else if (op === 'attCopyWork') {
+      const wid = e(prompt('目标工作 ID:', workId(opened.value ?? {}) || '') || '')
+      const list = prompt('附件 ID 列表（逗号分隔）:', attachments.value?.map((a: any) => a.id).join(',') ?? '') || ''
+      await api.post(`${SP}/attachment/copy/work/${wid}`, {
+        attachmentList: list.split(',').map((x: string) => x.trim()).filter(Boolean),
+      })
+      toast.success('附件复制已完成')
+    } else if (op === 'htmlToPdf') {
+      const html = prompt('workHtml（HTML 内容，空=「无内容」）:', '') || ''
+      const title = prompt('归档标题:', '归档-' + new Date().toLocaleDateString('zh-CN')) || ''
+      await api.post(`${SB}/attachment/html/to/pdf`, { workHtml: html, title })
+      toast.success('PDF 归档已生成')
+    } else if (op === 'htmlToImage') {
+      const html = prompt('workHtml（HTML 内容，空=「无内容」）:', '') || ''
+      const title = prompt('归档标题:', '归档-' + new Date().toLocaleDateString('zh-CN')) || ''
+      await api.post(`${SB}/attachment/html/to/image`, { workHtml: html, title })
+      toast.success('图片归档已生成')
+    } else if (op === 'reviewWork') {
+      const rid = prompt('阅件引用的工作 ID:', workId(opened.value ?? {}) || '') || ''
+      if (!rid) return
+      await api.post(`${SB}/review/create/work`, { id: rid })
+      toast.success('阅件记录已创建')
+    } else if (op === 'reviewWorkcompleted') {
+      const rid = prompt('阅件引用的已办 ID:', '') || ''
+      if (!rid) return
+      await api.post(`${SB}/review/create/workcompleted`, { id: rid })
+      toast.success('已办阅件记录已创建')
+    } else if (op === 'modeSave') {
+      const mid = prompt('处理模式 ID:', '') || ''
+      if (!mid) return
+      await api.post(`${SB}/mode/save`, { id: mid })
+      toast.success('处理模式已保存')
+    } else if (op === 'modeClearPerson') {
+      const person = e(prompt('要清除处理模式的人员:', '') || '')
+      if (!person) return
+      await api.get(`${SB}/mode/clear/person/person/${person}`)
+      toast.success('个人处理模式已清除')
+    } else if (op === 'snapUploadSurface') {
+      const job = prompt('快照 job:', 'snap-' + Date.now()) || ''
+      const wid = prompt('工作 ID（与已办至少其一）:', workId(opened.value ?? {}) || '') || ''
+      await api.post(`${SB}/snap/upload`, { job, work: wid || undefined, title: '审批快照' })
+      toast.success('快照已上传')
+    } else if (op === 'pressCompleted') {
+      const cid = prompt('已办 ID (taskCompleted):', '') || ''
+      const wid = prompt('工作 ID:', workId(opened.value ?? {}) || '') || ''
+      if (!cid || !wid) return
+      await api.post(`${SP}/taskcompleted/press/${e(cid)}/${e(wid)}/${e(wid)}`, {})
+      toast.success('催办已受理')
+    } else if (op === 'signalSeries') {
+      const wid = e(prompt('工作 ID:', workId(opened.value ?? {}) || '') || '')
+      const tid = e(prompt('任务/活动 ID:', effectiveTaskId.value || '') || '')
+      const token = e(prompt('activityToken:', '') || '')
+      if (!wid || !tid || !token) return
+      await api.post(`${SP}/series/series/activitytoken/processing/signal/${wid}/${tid}/${token}`, {})
+      toast.success('信号驱动已提交')
+    }
+    engineBusy.value = false
+  } catch (err: any) {
+    engineBusy.value = false
+    toast.error(`操作失败: ${err?.message ?? ''}`)
+  }
+}
+
 async function engineAttAction(kind: string): Promise<void> {
   const id = prompt('附件 ID:', attachments.value?.[0]?.id ?? '') || ''
   if (!id) return
