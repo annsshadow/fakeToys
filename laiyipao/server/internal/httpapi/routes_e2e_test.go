@@ -846,6 +846,28 @@ func TestE2EShopAndSignin(t *testing.T) {
 	}
 }
 
+// 第 135 轮：签到日历端点 —— 客户端预览的权威来源。
+func TestE2ESigninCalendar(t *testing.T) {
+	e := newE2E(t)
+	_, tok := e.newPlayer(t, "sincal")
+
+	// 无 token → 401（挂 requireUser）
+	status, _ := e.get(t, "/api/v1/signin/calendar", "")
+	if status != fiber.StatusUnauthorized {
+		t.Errorf("无 token 应 401，实际 %d", status)
+	}
+
+	// 有 token → 200，且返回 7 天的日历
+	status, body := e.get(t, "/api/v1/signin/calendar", tok)
+	if status != 200 {
+		t.Fatalf("签到日历应 200，实际 %d %v", status, body)
+	}
+	days, _ := body["days"].([]any)
+	if len(days) != 7 {
+		t.Errorf("签到日历应为 7 天，实际 %d", len(days))
+	}
+}
+
 func TestE2ERedeemAndDiagnose(t *testing.T) {
 	e := newE2E(t)
 	_, tok := e.newPlayer(t, "redeem")
