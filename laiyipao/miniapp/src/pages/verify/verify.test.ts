@@ -189,6 +189,9 @@ describe('verify.vue 验真页', () => {
       level: replayInfoFixture.level,
       enemies: expect.anything(),
       skills: expect.anything(),
+      // 第 133 轮：verify.vue 现在把服务端 score_rules（经 scoreRulesFromServer）
+      // 传入重放，与原局同口径。必须存在且非空。
+      scoreRules: expect.anything(),
     })
     expect(mockApi.verifyReplay).toHaveBeenCalledWith(9, 'abc')
     expect(wrapper.text()).toContain('一致 — 分数可复现')

@@ -26,6 +26,7 @@ import type { EquippedSkill } from './heatmap'
 import type { Element } from './elements'
 import type { EnemyDef, GeneratedLevel, SkillDef } from './types'
 import { DEFAULT_SKILL_RULES, skillBaseDamageAtLevel } from './skill'
+import type { ScoreRules } from './score'
 
 /** 服务端 /battle/{id}/replay 的响应。 */
 export interface ReplayInfo {
@@ -128,6 +129,9 @@ export interface ReplayDeps {
   level: GeneratedLevel
   enemies: Map<number, EnemyDef>
   skills: Map<number, SkillDef>
+  // 第 133 轮：分数规则必须与原局同口径（服务端下发的 score_rules）。
+  // 缺省 undefined → 引擎回落到 DEFAULT_SCORE_RULES（老战报离线重放兜底）。
+  scoreRules?: ScoreRules
 }
 
 /** 重放结果 */
@@ -333,6 +337,9 @@ export function replay(info: ReplayInfo, deps: ReplayDeps): ReplayOutcome {
     // 玩家点了「额外插槽」的局槽位不是 4，重放算出的战斗会完全不同。
     // 老战报没有这个字段，undefined 会落到引擎缺省 ACTIVE_SLOTS = 4。
     activeSlots: info.build?.active_slots,
+    // 第 133 轮：分数规则与原局同口径（调用方从 /config 的 score_rules 转来）。
+    // I-6 验真的前提 —— 重放与开局若用不同分数规则，哈希必然不同、误判伪造。
+    scoreRules: deps.scoreRules,
   })
   // 注入选牌脚本：原局玩家点了哪张，重放就点哪张。
   // 缺脚本（空或 undefined）时不注入，引擎走交互模式，
