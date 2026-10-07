@@ -329,6 +329,45 @@ func (s *Service) SignIn(ctx context.Context, userID int64) (SignInResult, error
 	return res, nil
 }
 
+// SignInStatus 是签到页「初始展示」回读到的签到状态（第 141 轮）。
+type SignInStatus struct {
+	// 本周期已签天数（user_sign_ins 的 MAX(day_index)，没签过为 0）。
+	// 客户端用它点亮「已签」天并标出「今天」该是第几天。
+	ClaimedCount int `json:"claimed_count"`
+	// 今天是否已签（按 SignIn 同一日界口径）。
+	SignedToday bool `json:"signed_today"`
+	// 今天还能不能签：今日未签 且 七日周期未满。
+	CanSign bool `json:"can_sign"`
+}
+
+// SignInStatus 返回玩家当前签到状态，供签到页挂载时做**权威**初始展示。
+//
+// ⚠️ 第 141 轮：修前小程序签到页把 claimedCount=0 / canSign=true 写死，
+// 挂载后从不回读 —— 玩家当天已签到（甚至周期已签完）后重进页面，
+// 仍显示「今天还没签 / 可领取」，点按钮才吃一个「今日已签到」的错。
+// 「今天」的日界口径与 SignIn 完全相同（periodStart(now,"daily") 的 DATE 串），
+// 否则两处对「今天几号」的判断会裂开。
+func (s *Service) SignInStatus(ctx context.Context, userID int64) (SignInStatus, error) {
+	today := periodStart(time.Now(), "daily").Format("2006-01-02")
+	var claimed int
+	var signedToday bool
+	if err := s.pool.QueryRow(ctx, `
+		SELECT COALESCE(MAX(day_index), 0),
+		       EXISTS (SELECT 1 FROM user_sign_ins WHERE user_id = $1 AND sign_date = $2)
+		FROM user_sign_ins
+		WHERE user_id = $1`, userID, today).Scan(&claimed, &signedToday); err != nil {
+		return SignInStatus{}, fmt.Errorf("load signin status: %w", err)
+	}
+
+	// 周期是否签满：下一行（claimed+1）在日历里不存在即满（与 SignIn 的
+	// 「MAX+1 查不到行 → Already」同口径，避免本地再数一个 7）。
+	var cycleLen int
+	if err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM sign_in_calendar`).Scan(&cycleLen); err != nil {
+		return SignInStatus{}, fmt.Errorf("count signin calendar: %w", err)
+	}
+	return SignInStatus{ClaimedCount: claimed, SignedToday: signedToday, CanSign: !signedToday && claimed < cycleLen}, nil
+}
+
 // Redeem 兑换兑换码。
 func (s *Service) Redeem(ctx context.Context, userID int64, code string) (map[string]int, error) {
 	var out map[string]int

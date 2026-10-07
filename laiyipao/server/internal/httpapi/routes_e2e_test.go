@@ -868,6 +868,52 @@ func TestE2ESigninCalendar(t *testing.T) {
 	}
 }
 
+// 第 141 轮：签到状态端点 —— 签到页初始展示的权威来源。
+func TestE2ESigninStatus(t *testing.T) {
+	e := newE2E(t)
+	_, tok := e.newPlayer(t, "signst")
+
+	// 无 token → 401（挂 requireUser）
+	status, _ := e.get(t, "/api/v1/signin/status", "")
+	if status != fiber.StatusUnauthorized {
+		t.Errorf("无 token 应 401，实际 %d", status)
+	}
+
+	// 新用户 → 200：claimed 0 / 未签今日 / 可签
+	status, body := e.get(t, "/api/v1/signin/status", tok)
+	if status != 200 {
+		t.Fatalf("签到状态应 200，实际 %d %v", status, body)
+	}
+	if num(body, "claimed_count") != 0 {
+		t.Errorf("新用户 claimed_count 应为 0，实际 %v", body["claimed_count"])
+	}
+	if body["signed_today"] != false {
+		t.Errorf("新用户 signed_today 应为 false，实际 %v", body["signed_today"])
+	}
+	if body["can_sign"] != true {
+		t.Errorf("新用户 can_sign 应为 true，实际 %v", body["can_sign"])
+	}
+
+	// 真实签到一次后：claimed 1 / 已签今日 / 不可再签
+	status, body = e.post(t, "/api/v1/signin", tok, nil)
+	if status != 200 {
+		t.Fatalf("POST /signin 应 200，实际 %d %v", status, body)
+	}
+	status, body = e.get(t, "/api/v1/signin/status", tok)
+	if status != 200 {
+		t.Fatalf("签到状态应 200，实际 %d %v", status, body)
+	}
+	if num(body, "claimed_count") != 1 {
+		t.Errorf("签到后 claimed_count 应为 1，实际 %v", body["claimed_count"])
+	}
+	if body["signed_today"] != true {
+		t.Errorf("签到后 signed_today 应为 true，实际 %v", body["signed_today"])
+	}
+	if body["can_sign"] != false {
+		t.Errorf("签到后 can_sign 应为 false，实际 %v", body["can_sign"])
+	}
+}
+
 func TestE2ERedeemAndDiagnose(t *testing.T) {
 	e := newE2E(t)
 	_, tok := e.newPlayer(t, "redeem")
