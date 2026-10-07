@@ -12,6 +12,7 @@
 use super::*;
 use axum::body::Body;
 use axum::http::{Method, Request, StatusCode};
+use base64::Engine as _;
 use serde_json::json;
 use tower::util::ServiceExt;
 
@@ -319,32 +320,64 @@ async fn test_malformed_dup_param_reply_filter_route_removed() {
 }
 
 // ────────────────────────────────────────────────────────────────
-// 5. 显式 501 契约
+// 5. 原「显式 501 契约」→ 十类功能3 真实现契约
 // ────────────────────────────────────────────────────────────────
 
+/// 十类功能3：picture/encode 接入 image 引擎——合法 PNG 输入必须 200 并返回
+/// base64/length/size 字段（纯图像处理，不依赖 DB，离线可测）。
 #[tokio::test]
-async fn test_unlandable_endpoints_return_explicit_501() {
-    // 仅图像引擎 / 外部同步服务依赖项保持显式 501；
-    // attachment 下载/上传已迁移为真实 DB 落盘（见下方 attachment_* 测试）。
-    const UNLANDABLE: &[(&str, &str)] = &[
-        ("POST", "picture/encode/base64/size/100"),
-        ("POST", "picture/section/sec-1/icon"),
-        ("GET", "section/syn"),
-    ];
-    for (method, sub) in UNLANDABLE {
-        let st = status(
-            Method::from_bytes(method.as_bytes()).unwrap(),
-            &format!("{}/{}", BASE, sub),
-        )
-        .await;
-        assert_eq!(
-            st,
-            StatusCode::NOT_IMPLEMENTED,
-            "{} {} 应显式 501",
-            method,
-            sub
-        );
-    }
+async fn test_picture_encode_real_resize() {
+    let tiny = image::RgbImage::from_fn(64, 64, |x, y| {
+        image::Rgb([(x % 256) as u8, (y % 256) as u8, 128])
+    });
+    let mut png: Vec<u8> = Vec::new();
+    image::DynamicImage::ImageRgb8(tiny)
+        .write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png)
+        .unwrap();
+    let b64 = base64::engine::general_purpose::STANDARD.encode(&png);
+
+    let st = status_json(
+        Method::POST,
+        &format!("{}/picture/encode/base64/size/32", BASE),
+        json!({ "base64": b64 }),
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK, "picture/encode 应为真实图像处理");
+}
+
+/// picture/encode 对非法输入如实 400（非 501/非 500）。
+#[tokio::test]
+async fn test_picture_encode_rejects_garbage() {
+    let st = status_json(
+        Method::POST,
+        &format!("{}/picture/encode/base64/size/32", BASE),
+        json!({ "base64": "not-a-valid-image!!!" }),
+    )
+    .await;
+    assert_eq!(st, StatusCode::BAD_REQUEST);
+}
+
+/// 十类功能3：原 501 三端点已全部接真实现——路由可达且非 501。
+#[tokio::test]
+async fn test_previously_501_endpoints_now_real() {
+    // picture/section/icon：body 合法 base64 图片时走 admin 门禁/DB（无 DB → 500，
+    // 仍证明非 501 占位）；空 body → 400（handler 已真实解析参数）。
+    let st = status_json(
+        Method::POST,
+        &format!("{}/picture/section/sec-1/icon", BASE),
+        json!({}),
+    )
+    .await;
+    assert_ne!(
+        st,
+        StatusCode::NOT_IMPLEMENTED,
+        "板块图标上传应已接真实 handler"
+    );
+
+    // section/syn：DB 读报告（无 DB → 500 非 501）。
+    let st2 = status(Method::GET, &format!("{}/section/syn", BASE)).await;
+    assert_ne!(st2, StatusCode::NOT_IMPLEMENTED, "section/syn 应已接真实 handler");
+    assert_ne!(st2, StatusCode::NOT_FOUND);
 }
 
 /// attachment 下载不再是 501 占位：路由可达且非 501。
