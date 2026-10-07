@@ -304,8 +304,11 @@ async function clearSlot(idx: number) {
 
 onMounted(async () => {
   if (!store.loggedIn) await store.login()
-  // 槽位以服务端为准
-  await store.loadLoadout()
+  // 槽位以服务端为准；技能等级/升级花费同以服务端 build（owned skills 快照）为准。
+  // 第 145 轮：修前只 loadLoadout 不 refreshProfile —— 已登录态直接进背包时
+  // （未先经过 index/battle/me）store.build 为 null 或陈旧，levelOf 恒 0、
+  // 升级花费恒按 1 级算，与玩家真实养成不符。两者并发拉取，互不阻塞。
+  await Promise.all([store.loadLoadout(), store.refreshProfile()])
   selected.value = [...store.loadout]
   while (selected.value.length < 4) selected.value.push(0)
 })
