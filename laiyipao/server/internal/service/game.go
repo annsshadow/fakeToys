@@ -260,6 +260,15 @@ func (s *Service) SettleBattle(ctx context.Context, userID, tokenID int64, in do
 	buildRaw, _ := marshalJSON(buildSnapshot)
 	lootRaw, _ := marshalJSON(res.Loot)
 
+	// 第 143 轮：本局通关时的战力，写进 level_stars.min_power_clear（效率榜 L-2）。
+	// 修前 upsert 恒写 0 且 ON CONFLICT 不更新 → 效率榜 `WHERE min_power_clear > 0`
+	// 恒零行，整个榜单自出生起就是死代码。只在胜利时记 —— 失败局保持 0，
+	// 由下方 ON CONFLICT 的 CASE 保证不覆盖历史最好值。
+	var minPower int64
+	if res.Win {
+		minPower = s.ComputePowerFor(buildSnapshot)
+	}
+
 	resp := SettleResp{}
 	err = s.DB.Tx(ctx, func(tx pgx.Tx) error {
 		// 1) 抢占 token：条件更新保证并发下只有一个请求能成功
@@ -300,14 +309,22 @@ func (s *Service) SettleBattle(ctx context.Context, userID, tokenID int64, in do
 		}
 
 		// 5) 更新关卡星级（取历史最好）
+		// min_power_clear：第 143 轮起真的写值了 —— 效率榜（L-2）靠它排名。
+		// EXCLUDED=0（失败局）时保持旧值；两侧 >0 取更小（「通关时用的最低战力」）。
 		if _, err := tx.Exec(ctx, `
 			INSERT INTO level_stars (user_id, level_id, stars, best_score, clears, min_power_clear)
-			VALUES ($1,$2,$3,$4,$5,0)
+			VALUES ($1,$2,$3,$4,$5,$6)
 			ON CONFLICT (user_id, level_id) DO UPDATE SET
 				stars = GREATEST(level_stars.stars, EXCLUDED.stars),
 				best_score = GREATEST(level_stars.best_score, EXCLUDED.best_score),
-				clears = level_stars.clears + EXCLUDED.clears`,
-			userID, gl.ID, res.Stars, res.Score, boolToInt(res.Win)); err != nil {
+				clears = level_stars.clears + EXCLUDED.clears,
+				min_power_clear = CASE
+					WHEN EXCLUDED.min_power_clear > 0 THEN
+						CASE WHEN level_stars.min_power_clear > 0
+							THEN LEAST(level_stars.min_power_clear, EXCLUDED.min_power_clear)
+							ELSE EXCLUDED.min_power_clear END
+					ELSE level_stars.min_power_clear END`,
+			userID, gl.ID, res.Stars, res.Score, boolToInt(res.Win), minPower); err != nil {
 			return fmt.Errorf("upsert level stars: %w", err)
 		}
 
