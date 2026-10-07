@@ -89,7 +89,7 @@ func TestSettleAndEconomyBroken(t *testing.T) {
 	if _, err := broken.SaveDefense(ctx, 1, SaveDefenseInput{Skills: []int{1}}); err == nil {
 		t.Error("SaveDefense 故障态应报错")
 	}
-	if _, err := broken.ChallengeDefense(ctx, 1, 1, ChallengeInput{Won: true, DurationMs: 60_000, HPLeftPct: 100}); err == nil {
+	if _, err := broken.ChallengeDefense(ctx, 1, 1, ChallengeInput{Seed: "0", Won: true, DurationMs: 60_000, HPLeftPct: 100}); err == nil {
 		t.Error("ChallengeDefense 故障态应报错")
 	}
 	if _, err := broken.VerifyReplay(ctx, 1, 1, "x"); err == nil {

@@ -237,7 +237,7 @@ describe('me.vue 我的页', () => {
       expect.objectContaining({ level: expect.objectContaining({ id: 1 }), myEquipped: expect.anything() }),
     )
     expect(mockApi.challengeDefense).toHaveBeenCalledWith(5, {
-      seed: 42,
+      seed: '42', // 第 132 轮：字符串上报（修前是 Number('42')=42）
       won: true,
       duration_ms: 1000,
       hp_left_pct: 0,
@@ -246,6 +246,24 @@ describe('me.vue 我的页', () => {
     expect(wrapper.text()).toContain('攻破防线')
     expect(wrapper.text()).toContain('金币 10 · 钻石 2 · 钥匙 1 · 体力 3 · vip 9')
     expect(store.wallet.coin).toBe(1) // refreshWallet 生效
+  })
+
+  it('第 132 轮：大种子按字符串上报，不被 Number() 截断', async () => {
+    // 引擎产出的 63-bit 种子（> 2^53）必须以字符串原样上报。
+    const bigSeed = '9007199254740993' // 2^53+1，Number() 会舍成 ...992
+    runChallengeMock.mockReturnValue(
+      outcome({ report: { seed: bigSeed, won: true, duration_ms: 1000, hp_left_pct: 0, replay_hash: 'fff' } as any }),
+    )
+    mockApi.fetchLoadout.mockResolvedValue({ skill_ids: [1] } as any)
+    const { wrapper } = mountPage(Me)
+    await flushPromises()
+    await wrapper.findAll('.cand .btn')[0]!.trigger('click')
+    await new Promise((r) => setTimeout(r, 60))
+    await flushPromises()
+    expect(mockApi.challengeDefense).toHaveBeenCalledWith(
+      5,
+      expect.objectContaining({ seed: bigSeed }), // 字符串，且是精确值
+    )
   })
 
   it('模拟报错（outcome.error）→ 只展示战报不上报', async () => {
