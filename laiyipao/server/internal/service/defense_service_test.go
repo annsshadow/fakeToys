@@ -207,7 +207,7 @@ func TestChallengeDefensePaths(t *testing.T) {
 		t.Fatalf("建防线失败：%v", err)
 	}
 
-	in := ChallengeInput{Seed: 1, Won: true, DurationMs: 60_000, HPLeftPct: 100, ReplayHash: "0000000000000000"}
+	in := ChallengeInput{Seed: "1", Won: true, DurationMs: 60_000, HPLeftPct: 100, ReplayHash: "0000000000000000"}
 
 	// 不存在
 	if _, err := ts.ChallengeDefense(ctx, foe, 99999999, in); !errors.Is(err, ErrNotFound) {

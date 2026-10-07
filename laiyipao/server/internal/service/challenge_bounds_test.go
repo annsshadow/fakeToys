@@ -33,7 +33,7 @@ import (
 
 func validChallenge() ChallengeInput {
 	return ChallengeInput{
-		Seed:       1,
+		Seed:       "1",
 		Won:        true,
 		DurationMs: 60_000,
 		HPLeftPct:  100,
@@ -184,7 +184,7 @@ func TestChallengeEntryPointActuallyValidates(t *testing.T) {
 	// 越界上报：duration_ms 超出 int32。
 	// 若入口不校验，这一路会走到 INSERT 并让 PG 报 22003 → 500。
 	_, err = ts.ChallengeDefense(ctx, foe, dv.ID, ChallengeInput{
-		Seed:       1,
+		Seed:       "1",
 		Won:        true,
 		DurationMs: 2147483648,
 		HPLeftPct:  100,

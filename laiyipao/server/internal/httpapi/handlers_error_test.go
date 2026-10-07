@@ -119,7 +119,7 @@ func TestHandlerErrorBranchesOnBrokenPool(t *testing.T) {
 		//
 		// 真实客户端上报的是完整形态（见 miniapp/src/game/defense.ts），
 		// 这里照抄那份形状。
-		{"challengeDefense", "POST", "/x/1", `{"seed":1,"won":true,"duration_ms":60000,"hp_left_pct":100,"replay_hash":"0000000000000000"}`, true, 0, s.challengeDefense},
+		{"challengeDefense", "POST", "/x/1", `{"seed":"1","won":true,"duration_ms":60000,"hp_left_pct":100,"replay_hash":"0000000000000000"}`, true, 0, s.challengeDefense},
 		// 管理端
 		{"adminLogin", "POST", "/x", `{"username":"a","password":"b"}`, false, 0, s.adminLogin},
 		{"adminMe", "GET", "/x", "", false, fiber.StatusUnauthorized, s.adminMe},
