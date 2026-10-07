@@ -79,6 +79,11 @@ func Run(ctx context.Context, pool *pgxpool.Pool) (SeedResult, error) {
 
 func seedEnemies(ctx context.Context, tx pgx.Tx, res *SeedResult) error {
 	for _, e := range domain.SeedEnemies {
+		// ⚠️ 第 128 轮：库里必须落**投放用的缩放值**（血量 ×8），
+		// 与客户端实际拿到的 `LoadGameConfig` 数值一致。
+		// 修前直接写 SeedEnemies 基准值：后台/分析读 enemies 表看到的
+		// 血量是实际游戏里的 1/8。
+		se := domain.ScaleEnemy(e)
 		_, err := tx.Exec(ctx, `
 			INSERT INTO enemies (id, code, name, category, hp, speed, armor, shield_hp,
 			                    attack, attack_range, attack_interval, fly_height, burrow, is_boss)
@@ -89,8 +94,8 @@ func seedEnemies(ctx context.Context, tx pgx.Tx, res *SeedResult) error {
 				shield_hp=EXCLUDED.shield_hp, attack=EXCLUDED.attack,
 				attack_range=EXCLUDED.attack_range, attack_interval=EXCLUDED.attack_interval,
 				fly_height=EXCLUDED.fly_height, burrow=EXCLUDED.burrow, is_boss=EXCLUDED.is_boss`,
-			e.ID, e.Code, e.Name, e.Category, e.HP, e.Speed, e.Armor, e.ShieldHP,
-			e.Attack, e.AttackRange, e.AttackEvery, e.FlyHeight, e.Burrow, e.IsBoss)
+			se.ID, se.Code, se.Name, se.Category, se.HP, se.Speed, se.Armor, se.ShieldHP,
+			se.Attack, se.AttackRange, se.AttackEvery, se.FlyHeight, se.Burrow, se.IsBoss)
 		if err != nil {
 			return fmt.Errorf("insert enemy %d: %w", e.ID, err)
 		}
@@ -115,6 +120,8 @@ func seedSkills(ctx context.Context, tx pgx.Tx, res *SeedResult) error {
 	all = append(all, domain.SeedCompositeSkills...)
 
 	for _, s := range all {
+		// 第 128 轮：弹速 ×4 落库，与投放数值一致（修前后台读到 1/4）。
+		ss := domain.ScaleSkill(s)
 		if _, err := tx.Exec(ctx, `
 			INSERT INTO skills (id, code, name, family, element, kind, descr, base_damage,
 			                   heat_cost, cooldown_ms, pierce, aoe_radius, apply_element,
@@ -128,10 +135,10 @@ func seedSkills(ctx context.Context, tx pgx.Tx, res *SeedResult) error {
 				aoe_radius=EXCLUDED.aoe_radius, apply_element=EXCLUDED.apply_element,
 				apply_stacks=EXCLUDED.apply_stacks, projectile_speed=EXCLUDED.projectile_speed,
 				chain=EXCLUDED.chain, unlock_level=EXCLUDED.unlock_level`,
-			s.ID, s.Code, s.Name, s.Family, string(s.Element), s.Kind, s.Descr, s.BaseDamage,
-			s.HeatCost, s.CooldownMs, s.Pierce, s.AoeRadius, string(s.ApplyElement),
-			s.ApplyStacks, s.ProjectileSpeed, s.Chain, s.UnlockLevel); err != nil {
-			return fmt.Errorf("insert skill %d: %w", s.ID, err)
+			ss.ID, ss.Code, ss.Name, ss.Family, string(ss.Element), ss.Kind, ss.Descr, ss.BaseDamage,
+			ss.HeatCost, ss.CooldownMs, ss.Pierce, ss.AoeRadius, string(ss.ApplyElement),
+			ss.ApplyStacks, ss.ProjectileSpeed, ss.Chain, ss.UnlockLevel); err != nil {
+			return fmt.Errorf("insert skill %d: %w", ss.ID, err)
 		}
 		res.Skills++
 	}
