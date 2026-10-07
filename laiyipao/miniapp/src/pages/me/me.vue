@@ -187,6 +187,7 @@ import {
   type ChallengeOutcome,
 } from '@/game/defense'
 import { scoreRulesFromServer } from '@/game/score'
+import { skillBaseDamageAtLevel, DEFAULT_SKILL_RULES, skillRulesFromServer } from '@/game/skill'
 import type { EquippedSkill } from '@/game/heatmap'
 import type { Element } from '@/game/elements'
 import type { GeneratedLevel } from '@/game/types'
@@ -280,6 +281,17 @@ function challengeLevel(): GeneratedLevel | null {
 
 function myEquipped(): EquippedSkill[] {
   const skills = store.skillMap
+  // 第 147 轮：底伤必须按玩家**实际技能等级**烘进去（与 P1 战斗
+  // equippedFromSnapshot 同口径）。修前直接用内容表的 base_damage（恒 1 级），
+  // 玩家技能升到 10 级、防线挑战仍按 1 级模拟 —— 攻方伤害被系统性低估，
+  // 「挑战窃取」判定与玩家真实构筑脱节（I-6 同族的「口径漂移」）。
+  const rules = store.config?.skill_rules
+    ? skillRulesFromServer(store.config.skill_rules)
+    : DEFAULT_SKILL_RULES
+  const levelOf = (id: number): number => {
+    const row = (store.build as any)?.skills?.[String(id)]
+    return typeof row?.level === 'number' ? row.level : 1
+  }
   return store.equippedSkillIds
     .map((id) => skills.get(id))
     .filter(Boolean)
@@ -294,7 +306,7 @@ function myEquipped(): EquippedSkill[] {
       cooldownMs: s!.cooldown_ms,
       pierce: s!.pierce,
       aoeRadius: s!.aoe_radius,
-      baseDamage: BigInt(s!.base_damage),
+      baseDamage: skillBaseDamageAtLevel(rules, BigInt(s!.base_damage), levelOf(s!.id)),
       applyElement: (s!.apply_element || s!.element) as Element | '',
       applyStacks: BigInt(s!.apply_stacks),
       projectileSpeed: s!.projectile_speed,

@@ -18,6 +18,7 @@ import { triggerUniHook } from '../../test/uni-app-stub'
 import { mountPage } from '../../test/page'
 import { makeConfig, makeLevel, makeSkill } from '../../test/fixtures'
 import type { ChallengeOutcome, DefenseView } from '@/game/defense'
+import { skillBaseDamageAtLevel, skillRulesFromServer } from '@/game/skill'
 
 vi.mock('@/api/client', () => ({
   guestLogin: vi.fn(),
@@ -272,6 +273,36 @@ describe('me.vue 我的页', () => {
     expect(wrapper.text()).toContain('攻破防线')
     expect(wrapper.text()).toContain('金币 10 · 钻石 2 · 钥匙 1 · 体力 3 · vip 9')
     expect(store.wallet.coin).toBe(1) // refreshWallet 生效
+  })
+
+  it('第 147 轮：挑战者技能底伤按实际等级烘入（防线挑战与 P1 同口径，不恒按 1 级模拟）', async () => {
+    // 玩家技能 1 升到 3 级（服务端 build 权威）；config.skill_rules = {max_level:10, coef_permille:100}
+    mockApi.fetchMe.mockResolvedValue({
+      user_id: 7,
+      build: {
+        skills: { '1': { id: 1, level: 3 } },
+        attacker: {
+          attack: 100, crit_permille: 50, crit_multiplier_permille: 1500,
+          reaction_mult_permille: 1000, element_cap: 3, reaction_tier: 1,
+          element_coef_permille: 1000, heat_cap_permille: 0, armor_permille: 0, mechanic_permille: 0,
+        },
+      },
+      build_rating: null,
+      power: 9,
+    } as any)
+    const { wrapper } = mountPage(Me)
+    await flushPromises()
+    await wrapper.findAll('.cand .btn')[0]!.trigger('click')
+    await new Promise((r) => setTimeout(r, 60))
+    await flushPromises()
+
+    const myEq = runChallengeMock.mock.calls[0]![1].myEquipped as any[]
+    const s1 = myEq.find((e) => e.skillId === 1)!
+    const rules = skillRulesFromServer({ max_level: 10, coef_permille: 100, base_cost: 100 })
+    // 3 级 → coef 1200‰ → 100 * 1200 / 1000 = 120（非 1 级裸值 100）
+    expect(s1.baseDamage).toBe(skillBaseDamageAtLevel(rules, 100n, 3))
+    expect(s1.baseDamage).toBe(120n)
+    expect(s1.baseDamage).not.toBe(100n) // 修前会直接拿内容表裸 base_damage（1 级）
   })
 
   it('第 140 轮：护盾态由服务端时钟估算决定（远未来 server_time → 本地视为未来的护盾按已过期处理）', async () => {
