@@ -762,7 +762,12 @@ func (s *Service) LoadTasks(ctx context.Context, userID int64, scope string) ([]
 			&rewardRaw, &v.Progress, &v.Claimed); err != nil {
 			return nil, err
 		}
-		_ = json.Unmarshal(rewardRaw, &v.Reward)
+		// 第 148 轮：fail-loud（AGENTS #11）。reward 是发给玩家的奖励，
+		// `_ =` 会把坏 jsonb 静默吞成空奖励 —— 任务列表显示「奖励：」空白，
+		// 玩家以为没奖。改报错，让坏数据在后台/客户端可见。
+		if err := json.Unmarshal(rewardRaw, &v.Reward); err != nil {
+			return nil, fmt.Errorf("load tasks: task %d 的 reward 非法 jsonb: %w", v.ID, err)
+		}
 		v.Done = v.Progress >= v.Target
 		out = append(out, v)
 	}
