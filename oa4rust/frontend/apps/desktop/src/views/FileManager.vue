@@ -22,6 +22,17 @@
         <button class="action-btn" @click="fileRead3">🗂️ 附件/共享只读补消费</button>
         <button class="action-btn" @click="fileRest3('fiDocGet')">fileinfo文档</button>
         <button class="action-btn" @click="fileRest3('fiDelete')">删fileinfo</button>
+        <button class="action-btn" @click="uploadWithReference">📎 引用上传</button>
+        <button class="action-btn" @click="uploadFolderAttachment">📁 文件夹附件</button>
+        <button class="action-btn" @click="uploadFolderAttachment2">📁 附件2上传</button>
+        <button class="action-btn" @click="fiDocUpload">📤 文档附件登记</button>
+        <button class="action-btn" @click="uploadFileCore">📤 核心上传</button>
+        <button class="action-btn" @click="uploadToExistingFile">📤 追加上传</button>
+        <button class="action-btn" @click="uploadLegacyRef">🏷️ 遗留引用上传</button>
+        <button class="action-btn" @click="uploadOctet">📦 octet 上传</button>
+        <button class="action-btn" @click="fiDocSaveAs">📤 附件另存</button>
+        <button class="action-btn" @click="fiDocUploadCallback">📤 登记(回调)</button>
+        <button class="action-btn" @click="fiDocUpdate">♻️ 附件更新</button>
         <button class="action-btn" @click="fileRest3('fiListFilter')">fileinfo筛选</button>
         <button class="action-btn" @click="fileRest3('fiCopyDoc')">复制到文档</button>
         <button class="action-btn" @click="fileRest3('fiReplaceDoc')">替换到文档</button>
@@ -980,6 +991,233 @@ async function openDetail(f: FileItem): Promise<void> {
 
 function handleUpload(): void {
   showUpload.value = true
+}
+
+// ── 十类功能6：带业务引用上传 / 文件夹附件 / 文档附件登记 ─────────────────
+// PUT file/upload/referencetype/{rt}/reference/{ref}/scale/{scale}（multipart 落盘，
+// u2_file_upload_multipart：文件字节+xreferencetype+xreference 真实入库）
+function uploadWithReference(): void {
+  const rt = prompt('引用类型 (referencetype，如 cms_document):', 'cms_document') || ''
+  const ref = prompt('引用对象 ID (reference):', '') || ''
+  const scale = prompt('缩略图规格 (scale，0=原图):', '0') || '0'
+  if (!rt || !ref) return
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.onchange = async () => {
+    const file = input.files?.[0]
+    if (!file) return
+    const form = new FormData()
+    form.append('file', file, file.name)
+    try {
+      await api.upload(
+        `/api/file/assemble/control/file/upload/referencetype/${encodeURIComponent(rt)}/reference/${encodeURIComponent(ref)}/scale/${encodeURIComponent(scale)}`,
+        form,
+        { method: 'PUT' },
+      )
+      toast.success('引用文件已上传')
+      loadFiles(currentFolder.value)
+    } catch (e: any) {
+      toast.error(`引用上传失败: ${e?.message ?? ''}`)
+    }
+  }
+  input.click()
+}
+
+// POST attachment/upload/folder/{folderId}（multipart→附件落库挂文件夹）
+function uploadFolderAttachment(): void {
+  const fid = prompt('目标文件夹 ID (folderId):', '') || ''
+  if (!fid) return
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.onchange = async () => {
+    const file = input.files?.[0]
+    if (!file) return
+    const form = new FormData()
+    form.append('file', file, file.name)
+    form.append('fileName', file.name)
+    try {
+      await api.upload(`/api/attachment/upload/folder/${encodeURIComponent(fid)}`, form)
+      toast.success('文件夹附件已上传')
+    } catch (e: any) {
+      toast.error(`文件夹附件上传失败: ${e?.message ?? ''}`)
+    }
+  }
+  input.click()
+}
+
+// POST attachment2/upload/folder/{folderId}（附件2 体系 multipart 上传）
+function uploadFolderAttachment2(): void {
+  const fid = prompt('目标文件夹 ID (folderId):', '') || ''
+  if (!fid) return
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.onchange = async () => {
+    const file = input.files?.[0]
+    if (!file) return
+    const form = new FormData()
+    form.append('file', file, file.name)
+    form.append('fileName', file.name)
+    try {
+      await api.upload(`/api/attachment2/upload/folder/${encodeURIComponent(fid)}`, form)
+      toast.success('附件2 已上传')
+    } catch (e: any) {
+      toast.error(`附件2 上传失败: ${e?.message ?? ''}`)
+    }
+  }
+  input.click()
+}
+
+// POST fileinfo/upload/document/{id}（JSON 登记文档附件元数据，cms crate 真实现）
+async function fiDocUpload(): Promise<void> {
+  const docId = encodeURIComponent(prompt('文档 ID (docId):', '') || '')
+  const name = prompt('附件原始文件名 (originalName):', '') || ''
+  if (!docId || !name) return
+  try {
+    await api.post(`/api/fileinfo/upload/document/${docId}`, { originalName: name })
+    toast.success('文档附件已登记')
+  } catch (e: any) {
+    toast.error(`文档附件登记失败: ${e?.message ?? ''}`)
+  }
+}
+
+// ── 十类功能6：o2 遗留寻址形态的真实上传变体 ─────────────────────────────
+// POST /api/file/upload（file crate 基础 multipart 上传，带 reference 元数据字段）
+function uploadFileCore(): void {
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.onchange = async () => {
+    const file = input.files?.[0]
+    if (!file) return
+    const form = new FormData()
+    form.append('file', file, file.name)
+    form.append('fileName', file.name)
+    try {
+      await api.upload('/api/file/upload', form)
+      toast.success('文件已上传（file 核心）')
+    } catch (e: any) {
+      toast.error(`上传失败: ${e?.message ?? ''}`)
+    }
+  }
+  input.click()
+}
+
+// POST /api/file/{id}/upload（向既有 file 记录追加上传，cms crate multipart）
+function uploadToExistingFile(): void {
+  const fid = prompt('目标文件记录 ID:', '') || ''
+  if (!fid) return
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.onchange = async () => {
+    const file = input.files?.[0]
+    if (!file) return
+    const form = new FormData()
+    form.append('file', file, file.name)
+    form.append('fileName', file.name)
+    try {
+      await api.upload(`/api/file/${encodeURIComponent(fid)}/upload`, form)
+      toast.success('文件内容已追加上传')
+    } catch (e: any) {
+      toast.error(`追加失败: ${e?.message ?? ''}`)
+    }
+  }
+  input.click()
+}
+
+// POST /api/file/upload/referencetype/reference/reference/scale/scale/{referenceType}
+// （o2 遗留字面段寻址的 multipart 引用上传）
+function uploadLegacyRef(): void {
+  const rt = prompt('引用类型 ({referenceType} 在路径末段):', 'cms_document') || ''
+  if (!rt) return
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.onchange = async () => {
+    const file = input.files?.[0]
+    if (!file) return
+    const form = new FormData()
+    form.append('file', file, file.name)
+    form.append('fileName', file.name)
+    try {
+      await api.upload(
+        `/api/file/upload/referencetype/reference/reference/scale/scale/${encodeURIComponent(rt)}`,
+        form,
+      )
+      toast.success('遗留寻址引用上传成功')
+    } catch (e: any) {
+      toast.error(`遗留引用上传失败: ${e?.message ?? ''}`)
+    }
+  }
+  input.click()
+}
+
+// POST octet-stream 形态（同一 referencetype 路径的 POST 分支，Bytes 体 + ?fileName=）
+function uploadOctet(): void {
+  const rt = prompt('引用类型 (referencetype):', 'cms_document') || ''
+  const ref = prompt('引用对象 ID (reference):', '') || ''
+  const scale = prompt('缩略图规格 (scale):', '0') || '0'
+  if (!rt || !ref) return
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.onchange = async () => {
+    const file = input.files?.[0]
+    if (!file) return
+    try {
+      await api.uploadBytes(
+        `/api/file/assemble/control/file/upload/referencetype/${encodeURIComponent(rt)}/reference/${encodeURIComponent(ref)}/scale/${encodeURIComponent(scale)}`,
+        await file.arrayBuffer(),
+        { fileName: file.name },
+      )
+      toast.success('octet 流上传成功')
+    } catch (e: any) {
+      toast.error(`octet 上传失败: ${e?.message ?? ''}`)
+    }
+  }
+  input.click()
+}
+
+// POST /api/fileinfo/upload/doc/{docId}/save/as/{flag}（另存为新附件记录）
+async function fiDocSaveAs(): Promise<void> {
+  const docId = encodeURIComponent(prompt('文档 ID (docId):', '') || '')
+  const flag = prompt('另存标识 (flag):', '') || ''
+  const name = prompt('附件原始文件名 (originalName):', '') || ''
+  if (!docId || !flag || !name) return
+  try {
+    await api.post(`/api/fileinfo/upload/doc/${docId}/save/as/${encodeURIComponent(flag)}`, {
+      originalName: name,
+    })
+    toast.success('附件已另存登记')
+  } catch (e: any) {
+    toast.error(`另存登记失败: ${e?.message ?? ''}`)
+  }
+}
+
+// POST /api/fileinfo/upload/document/{docId}/callback/{callback}（带回调地址的登记）
+async function fiDocUploadCallback(): Promise<void> {
+  const docId = encodeURIComponent(prompt('文档 ID (docId):', '') || '')
+  const cb = encodeURIComponent(prompt('回调标识 (callback):', 'done') || 'done')
+  const name = prompt('附件原始文件名 (originalName):', '') || ''
+  if (!docId || !name) return
+  try {
+    await api.post(`/api/fileinfo/upload/document/${docId}/callback/${cb}`, { originalName: name })
+    toast.success('附件登记(回调)已提交')
+  } catch (e: any) {
+    toast.error(`登记失败: ${e?.message ?? ''}`)
+  }
+}
+
+// POST /api/fileinfo/update/document/{docId}/attachment/{id}/callback/{callback}（更新既有附件）
+async function fiDocUpdate(): Promise<void> {
+  const docId = encodeURIComponent(prompt('文档 ID (docId):', '') || '')
+  const aid = encodeURIComponent(prompt('附件 ID:', '') || '')
+  if (!docId || !aid) return
+  try {
+    await api.post(
+      `/api/fileinfo/update/document/${docId}/attachment/${aid}/callback/done`,
+      { originalName: 'updated.bin' },
+    )
+    toast.success('附件更新已提交')
+  } catch (e: any) {
+    toast.error(`附件更新失败: ${e?.message ?? ''}`)
+  }
 }
 
 function handleFileSelect(e: Event): void {

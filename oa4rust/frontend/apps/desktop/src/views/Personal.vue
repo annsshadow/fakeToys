@@ -67,6 +67,7 @@
       <textarea v-model="signature" class="form-textarea" rows="3" placeholder="设置您的个性签名..." maxlength="200" />
       <div class="char-count">{{ signature.length }}/200</div>
       <button class="save-btn" @click="saveSignature">保存签名</button>
+      <button class="save-btn ghost" @click="uploadSignatureImage" title="POST /api/person/signature/upload（multipart 落 x_custom，十类功能6）">上传签名图片</button>
       <button class="save-btn ghost" @click="loadSignatureManagers">查看全员签名（管理员）</button>
       <div v-if="sigManagers.length" class="sig-mgr-list">
         <span v-for="sm in sigManagers" :key="sm.id" class="sig-mgr-chip">{{ sm.personName || sm.name || sm.id }}</span>
@@ -235,6 +236,26 @@ const avatarMutation = useMutation({
     toast.error('头像上传失败')
   },
 })
+
+// 十类功能6：签名图片上传（POST /api/person/signature/upload，multipart→Base64 存 x_custom）
+function uploadSignatureImage(): void {
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.accept = 'image/png,image/jpeg'
+  input.onchange = async () => {
+    const file = input.files?.[0]
+    if (!file) return
+    const form = new FormData()
+    form.append('file', file, file.name)
+    try {
+      await api.upload('/api/person/signature/upload', form)
+      toast.success('签名图片已上传')
+    } catch (e: any) {
+      toast.error(`签名图片上传失败: ${e?.message ?? ''}`)
+    }
+  }
+  input.click()
+}
 
 function saveSignature(): void {
   api

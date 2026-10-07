@@ -96,7 +96,7 @@ async function loadHotpicDeep() {
   const application = 'default'
   const infoId = '0'
   try {
-    // rev312：hotpic 深度读 9 条（配置/用户存在检查/密文bbs·cms/详情/筛选清单/用户热图）；handler 体经核实纯 SELECT
+    // rev312：hotpic 深度读 9 条 + 十类功能6 孪生 3 条（配置/用户存在检查/密文bbs·cms/详情/筛选清单/用户热图）；handler 体经核实纯 SELECT
     const rs = await Promise.all([
       s(api.get(`/api/hotpic/assemble/control/config`)),
       s(api.get(`/api/hotpic/assemble/control/user/hotpic/exists/check`)),
@@ -107,6 +107,10 @@ async function loadHotpicDeep() {
       s(api.get(`/api/hotpic_assemble_control/get/hotpic/${id}`)),
       s(api.get(`/api/hotpic/assemble/control/user/hotpic/filter/list/page/${page}/count/${count}`)),
       s(api.get(`/api/hotpic/user/hotpic/${application}/${infoId}`)),
+      // 十类功能6：canonical 前缀孪生读（cipher{id}·user{application}/{infoId}·user{id}，纯 SELECT）
+      s(api.get(`/api/hotpic_assemble_control/cipher/hotpic/${id}`)),
+      s(api.get(`/api/hotpic_assemble_control/user/hotpic/${application}/${infoId}`)),
+      s(api.get(`/api/hotpic_assemble_control/user/hotpic/${id}`)),
     ])
     const hit = rs.filter((r) => (r as any)?.data != null).length
     hotpicMetaText.value = `热图深度读端点 ${rs.length} 条，命中 ${hit}`
