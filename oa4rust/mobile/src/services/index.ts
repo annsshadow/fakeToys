@@ -339,6 +339,16 @@ export const orgApi = {
   /** 某人的角色清单。 */
   personRoles: (personFlag: string) =>
     list(mapi.get<NamedRow[]>(`/api/organization/assemble/control/role/list/person/${personFlag}`)),
+  /** 按单位直查人员（POST /api/person/list/unit/sub/direct/object，o2 对象查询契约）。 */
+  personByUnitDirect: (unitList: string[]) =>
+    list(mapi.post<PersonRow[]>('/api/person/list/unit/sub/direct/object', { unitList })),
+  /** 按单位嵌套查人员（含下级单位）。 */
+  personByUnitNested: (unitList: string[]) =>
+    list(mapi.post<PersonRow[]>('/api/person/list/unit/sub/nested/object', { unitList })),
+  /** 全量人员（o2 全量对象查询）。 */
+  personAll: () => list(mapi.get<PersonRow[]>('/api/person/list/all/object')),
+  /** 最近登录人员（活跃度）。 */
+  personLoginRecent: () => list(mapi.post<PersonRow[]>('/api/person/list/login/recent/object', {})),
 }
 
 // ─────────────────────────────────────────────────────────────
