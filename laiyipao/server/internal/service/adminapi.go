@@ -190,7 +190,11 @@ func (s *Service) AdminLevelWaves(ctx context.Context, levelID int) ([]map[strin
 			return nil, err
 		}
 		var spawns []domain.Spawn
-		_ = json.Unmarshal(raw, &spawns)
+		// 第 149 轮：fail-loud。level_waves 的波次坏掉时静默给空 spawns，
+		// 运营会以为「这关没有刷怪」。
+		if err := json.Unmarshal(raw, &spawns); err != nil {
+			return nil, fmt.Errorf("admin level waves: 第 %d 波 spawns 非法 jsonb: %w", idx, err)
+		}
 		out = append(out, map[string]any{"wave_index": idx, "spawns": spawns})
 	}
 	return out, rows.Err()
@@ -381,8 +385,13 @@ func (s *Service) AdminEconomy(ctx context.Context) (map[string]any, error) {
 			return nil, err
 		}
 		var price, payload map[string]int
-		_ = json.Unmarshal(priceRaw, &price)
-		_ = json.Unmarshal(payloadRaw, &payload)
+		// 第 149 轮：fail-loud，与 LoadShop 同口径。
+		if err := json.Unmarshal(priceRaw, &price); err != nil {
+			return nil, fmt.Errorf("admin economy: 商品 price 非法 jsonb: %w", err)
+		}
+		if err := json.Unmarshal(payloadRaw, &payload); err != nil {
+			return nil, fmt.Errorf("admin economy: 商品 payload 非法 jsonb: %w", err)
+		}
 		shop = append(shop, map[string]any{
 			"id": id, "code": code, "name": name, "category": category,
 			"price": price, "payload": payload, "limit_per_day": limit,
@@ -588,7 +597,10 @@ func (s *Service) AdminListRedeemCodes(ctx context.Context) ([]map[string]any, e
 			return nil, err
 		}
 		var reward map[string]int
-		_ = json.Unmarshal(rewardRaw, &reward)
+		// 第 149 轮：fail-loud。兑换码奖励坏掉时静默给空，运营会以为「码没奖」。
+		if err := json.Unmarshal(rewardRaw, &reward); err != nil {
+			return nil, fmt.Errorf("admin redeem codes: 码 %s 的 reward 非法 jsonb: %w", code, err)
+		}
 		out = append(out, map[string]any{
 			"id": id, "code": code, "reward": reward, "max_uses": maxUses,
 			"used_count": used, "expires_at": expires, "enabled": enabled,

@@ -267,7 +267,11 @@ func (s *Service) Diagnose(ctx context.Context, userID int64, levelID, failedTim
 			return domain.Diagnose{}, err
 		}
 		elems := map[string]int{}
-		_ = json.Unmarshal(elemRaw, &elems)
+		// 第 149 轮：fail-loud。elements_used 坏掉（合法 jsonb 但非对象）时，
+		// `_ =` 会静默把该样本的元素用量算成 0，诊断建议悄悄失真。改报错。
+		if err := json.Unmarshal(elemRaw, &elems); err != nil {
+			return domain.Diagnose{}, fmt.Errorf("diagnose: 战报元素用量非法 jsonb: %w", err)
+		}
 		for k, v := range elems {
 			in.ElementsUsed[k] += v
 		}
