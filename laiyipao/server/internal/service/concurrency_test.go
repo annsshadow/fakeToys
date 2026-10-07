@@ -400,7 +400,7 @@ func TestConcurrentChallengeRespectsDailyLimit(t *testing.T) {
 	const workers = 12
 	ok, errs, peak := runParallel(workers, func(int) error {
 		_, err := ts.ChallengeDefense(ctx, owner, dv.ID, ChallengeInput{
-			Seed: 1, Won: true, DurationMs: 60_000, HPLeftPct: 100,
+			Seed: "1", Won: true, DurationMs: 60_000, HPLeftPct: 100,
 			ReplayHash: "0000000000000000",
 		})
 		return err

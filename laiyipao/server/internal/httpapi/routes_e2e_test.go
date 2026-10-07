@@ -1031,7 +1031,7 @@ func TestE2EDefenses(t *testing.T) {
 
 	// 对方挑战成功
 	status, body = e.post(t, fmt.Sprintf("/api/v1/defenses/%d/challenge", defID), foeTok, map[string]any{
-		"won": true, "seed": 1, "duration_ms": 60000, "hp_left_pct": 100,
+		"won": true, "seed": "1", "duration_ms": 60000, "hp_left_pct": 100,
 		"replay_hash": "0000000000000000",
 	})
 	if status != 200 {
@@ -1049,7 +1049,7 @@ func TestE2EDefenses(t *testing.T) {
 		t.Fatalf("开护盾保存应 200，实际 %d", status)
 	}
 	status, body = e.post(t, fmt.Sprintf("/api/v1/defenses/%d/challenge", defID), foeTok, map[string]any{
-		"won": true, "duration_ms": 60000, "replay_hash": "0000000000000000",
+		"won": true, "seed": "1", "duration_ms": 60000, "replay_hash": "0000000000000000",
 	})
 	if status != fiber.StatusForbidden {
 		t.Errorf("护盾期内挑战应 403，实际 %d %v", status, body)
@@ -1082,7 +1082,7 @@ func TestE2EDefenses(t *testing.T) {
 // 形状照抄真实客户端（miniapp/src/game/defense.ts 的上报体）。
 func validChallengeBody() map[string]any {
 	return map[string]any{
-		"seed":        1,
+		"seed":        "1",
 		"won":         true,
 		"duration_ms": 60_000,
 		"hp_left_pct": 100,

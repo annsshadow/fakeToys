@@ -331,7 +331,11 @@ function challenge(target: DefenseView) {
       }
       // 模拟完成后才上报，服务端只记账不重跑
       const res = await api.challengeDefense(target.id, {
-        seed: Number(outcome.report.seed),
+        // 第 132 轮：seed 按字符串上报（服务端 ChallengeInput.Seed 是 string）。
+        // 修前是 Number(outcome.report.seed) —— 引擎用 63-bit bigint 生成种子，
+        // 超过 2^53 时 Number() 截断，落库 seed 与本地模拟用的 seed 不一致，
+        // replay_hash 从此对不上。
+        seed: outcome.report.seed,
         won: outcome.report.won,
         duration_ms: outcome.report.duration_ms,
         hp_left_pct: outcome.report.hp_left_pct,

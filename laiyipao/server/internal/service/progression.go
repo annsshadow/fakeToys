@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"strconv"
 	"time"
 
 	"github.com/laiyipao/server/internal/domain"
@@ -597,11 +598,34 @@ func (s *Service) SaveDefense(ctx context.Context, userID int64, in SaveDefenseI
 
 // ChallengeInput 是挑战请求。
 type ChallengeInput struct {
-	Seed       int64  `json:"seed"`
+	// ⚠️ 第 132 轮：seed 由 int64 改成**字符串**，与结算面（battle/economy/
+	// verification）同口径 —— int64 超过 2^53 后 JSON number 在 JS 侧即失精，
+	// 防线挑战的本地模拟引擎（defense.ts）用 63-bit bigint 生成种子，
+	// 客户端必须按字符串上报，服务端解析回 int64 落库。
+	Seed       string `json:"seed"`
 	Won        bool   `json:"won"`
 	DurationMs int    `json:"duration_ms"`
 	HPLeftPct  int    `json:"hp_left_pct"`
 	ReplayHash string `json:"replay_hash"`
+}
+
+// challengeSeedValue 解析并校验挑战 seed（字符串形态）。
+//
+// 引擎侧（defense.ts）对种子做 63-bit 掩码 `& (2^63-1)`，
+// 合法范围 [0, 2^63-1]。ParseInt(_,10,64) 对越界（> MaxInt64）与非数字都报错，
+// 负数另拒。任何非法值 → ErrInvalidField（422），不落到库里。
+func challengeSeedValue(s string) (int64, error) {
+	if s == "" {
+		return 0, fmt.Errorf("%w：seed 不能为空", domain.ErrInvalidField)
+	}
+	v, err := strconv.ParseInt(s, 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("%w：seed 必须是 ≤2^63-1 的十进制整数，收到 %q", domain.ErrInvalidField, s)
+	}
+	if v < 0 {
+		return 0, fmt.Errorf("%w：seed 必须非负，收到 %q", domain.ErrInvalidField, s)
+	}
+	return v, nil
 }
 
 // 挑战上报字段的边界（第 69 轮）。
@@ -640,6 +664,12 @@ const (
 
 // ValidateChallengeInput 校验挑战上报的字段边界。
 func ValidateChallengeInput(in ChallengeInput) error {
+	// 种子（第 132 轮）：字符串形态，必须能解析成 [0, 2^63-1] 的整数。
+	// 与结算面同口径 —— 客户端用 bigint 生成 63-bit 种子，必须按字符串上报，
+	// 否则 >2^53 的种子在 JSON number 里失精、落库即错。
+	if _, err := challengeSeedValue(in.Seed); err != nil {
+		return err
+	}
 	// 时长：必须为正（与结算面同），且有上界。
 	// 下界 0 意味着「这一局 0 毫秒就结束了」—— 那不是任何真实对局。
 	if in.DurationMs <= 0 || in.DurationMs > MaxChallengeDurationMs {
@@ -871,11 +901,17 @@ func (s *Service) ChallengeDefense(ctx context.Context, userID, defenseID int64,
 				return err
 			}
 		}
+		// 种子在 ValidateChallengeInput 里已校验过（可解析、非负、≤2^63-1），
+		// 这里解析回 int64 落库；若仍失败说明校验被绕过，按原样上抛。
+		seedVal, err := challengeSeedValue(in.Seed)
+		if err != nil {
+			return err
+		}
 		if _, err := tx.Exec(ctx, `
 			INSERT INTO defense_challenges (defense_id, challenger_id, seed, won, duration_ms,
 			                                hp_left_pct, replay_hash, settled)
 			VALUES ($1,$2,$3,$4,$5,$6,$7,TRUE)`,
-			defenseID, userID, in.Seed, in.Won, in.DurationMs, in.HPLeftPct, in.ReplayHash); err != nil {
+			defenseID, userID, seedVal, in.Won, in.DurationMs, in.HPLeftPct, in.ReplayHash); err != nil {
 			return fmt.Errorf("record challenge: %w", err)
 		}
 		if _, err := tx.Exec(ctx, `
