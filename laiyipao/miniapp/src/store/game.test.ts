@@ -167,6 +167,14 @@ describe('档案与钱包刷新', () => {
 })
 
 describe('出战槽位（服务端权威 + 归一化）', () => {
+  it('第 131 轮：equippedSkillIds 初值为空，不再捏造 [1,2,3]', () => {
+    // 服务端对一个未保存过槽位的玩家返回 [0,0,0,0]（全空）。
+    // 本地若预填 [1,2,3]，消费方（me 页防线）会把这些「玩家没装过的技能」
+    // 当成出战技能上报。初值必须是诚实的空。
+    expect(store.equippedSkillIds).toEqual([])
+    expect(store.loadout).toEqual([0, 0, 0, 0])
+  })
+
   it('setEquippedSkills：超过 4 个截断', () => {
     store.setEquippedSkills([1, 2, 3, 4, 5, 6])
     expect(store.equippedSkillIds).toEqual([1, 2, 3, 4])

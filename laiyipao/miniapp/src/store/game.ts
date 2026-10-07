@@ -34,7 +34,16 @@ export const useGameStore = defineStore('game', () => {
   const buildRating = ref<any>(null)
   /** 服务端下发的构筑快照，含权威 attacker 属性 */
   const build = ref<any>(null)
-  const equippedSkillIds = ref<number[]>([1, 2, 3])
+  /**
+   * 出战技能（本地 UI 乐观值）。
+   *
+   * ⚠️ 第 131 轮：初值改为**空数组**，不再硬编码 [1,2,3]。
+   * 服务端对一个从未保存过槽位的玩家，`Loadout` 返回 `[0,0,0,0]`
+   * （全空）—— 本地若预填 1/2/3，就会在 me 页把「玩家没装过的技能」
+   * 写进防线快照（见 me.vue 的 saveDefense/myEquipped）。
+   * 空值 = 「尚未从服务端加载」的诚实状态，由各消费页先 loadLoadout() 再使用。
+   */
+  const equippedSkillIds = ref<number[]>([])
 
   const enemyMap = computed(() => {
     const m = new Map<number, EnemyDef>()

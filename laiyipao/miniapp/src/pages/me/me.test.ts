@@ -185,6 +185,19 @@ describe('me.vue 我的页', () => {
     )
   })
 
+  it('第 131 轮：点「保存防线」上报的 skills == 服务端槽位（非本地缺省 [1,2,3]）', async () => {
+    mockApi.fetchLoadout.mockResolvedValue({ skill_ids: [4, 0, 0, 0] } as any)
+    const { wrapper } = mountPage(Me)
+    await flushPromises()
+    const saveBtn = wrapper.findAll('.btn').find((b) => b.text().includes('保存当前构筑为防线'))!
+    await saveBtn.trigger('click')
+    await flushPromises()
+    // 修前这里会是本地缺省 [1,2,3]（技能 2/3 玩家根本没装）；修后必须是服务端 [4]
+    expect(mockApi.saveDefense).toHaveBeenCalledWith(
+      expect.objectContaining({ skills: [4] }),
+    )
+  })
+
   it('保存防线失败 → toast 错误信息', async () => {
     mockApi.saveDefense.mockRejectedValue(new Error('保存失败'))
     const { wrapper } = mountPage(Me)
@@ -261,6 +274,10 @@ describe('me.vue 我的页', () => {
   })
 
   it('挑战守卫：无出战技能 / 无关卡数据 / 不可挑战的候选', async () => {
+    // 第 131 轮：「无出战技能」现在由**服务端**返回空槽位来模拟 ——
+    // me.vue 挂载时会 loadLoadout()，把 equippedSkillIds 同步成服务端值。
+    // 若服务端返回 [4]，本地就不会是空，守卫不会触发。
+    mockApi.fetchLoadout.mockResolvedValue({} as any) // 空槽位 → equippedSkillIds=[]
     const { wrapper, store } = mountPage(Me, (s) => {
       s.equippedSkillIds = []
     })
