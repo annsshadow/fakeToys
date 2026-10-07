@@ -129,6 +129,11 @@ const levelId = ref(1)
 
 let loopStarted = false
 let timerId: ReturnType<typeof setInterval> | null = null
+// 第 137 轮：页面是否已卸载。setup() 里有多个 await（login/startBattle/getCanvas），
+// 若用户在任一 await 期间退出页面，onUnload 先跑（此时 renderer 还是 null、没东西可停），
+// 随后 await 完成会继续创建并 start() 渲染器 —— 在一个已卸载的页面上留下
+// 永久运行的 rAF/定时器 + 引擎步进（泄漏）。用本标志在每次 await 后拦截。
+let pageUnloaded = false
 
 const hpPct = computed(() => {
   if (!engine.value) return 100
@@ -214,10 +219,14 @@ async function setup() {
       return
     }
   }
+  // 第 137 轮：login 的 await 期间可能已退出页面
+  if (pageUnloaded) return
 
   // 启动战斗：向服务端申请一次性凭证（扣体力 + 服务端种子）
   try {
     const bt = await api.startBattle(levelId.value)
+    // startBattle 的 await 期间可能已退出页面
+    if (pageUnloaded) return
     tokenId.value = bt.token_id
     const level = bt.level as GeneratedLevel
     const skills = store.skillMap
@@ -276,6 +285,9 @@ async function setup() {
 
     // 渲染
     const canvas = await getCanvas()
+    // 第 137 轮：getCanvas 的 await 是关键窗口 —— 若期间已退出页面，
+    // 不再创建/启动渲染器（否则会留下无人 stop 的 rAF/定时器 + 引擎步进）。
+    if (pageUnloaded) return
     if (canvas) {
       const r = new BattleRenderer(canvas, eng)
       // 视口用 CSS 像素（逻辑缩放基准），而 canvas 内部是 dpr 放大后的像素。
@@ -392,6 +404,9 @@ onLoad(async (query) => {
 })
 
 onUnload(() => {
+  // 第 137 轮：先置标志，让仍在飞行中的 setup()（各 await 之后）能感知到
+  // 「页面已卸载」并停止创建渲染器/定时器。
+  pageUnloaded = true
   if (renderer.value) renderer.value.stop()
   if (timerId) clearInterval(timerId)
 })
