@@ -107,6 +107,37 @@ function orgNameOf(row: Record<string, unknown>): string {
   return String(row.name ?? row.id ?? '未命名')
 }
 
+// ── 十类功能2：按单位查人员（直查/嵌套两个真实对象查询）─────────────────
+const unitPeople = ref<Record<string, unknown>[]>([])
+const unitPeopleName = ref('')
+const unitPeopleLoading = ref(false)
+
+async function openUnit(row: Record<string, unknown>): Promise<void> {
+  const unit = String(row.id ?? row.name ?? '')
+  if (!unit) return
+  unitPeopleName.value = orgNameOf(row)
+  unitPeople.value = []
+  unitPeopleLoading.value = true
+  try {
+    const direct = await orgApi.personByUnitDirect([unit])
+    if ((direct.data ?? []).length > 0) {
+      unitPeople.value = direct.data ?? []
+    } else {
+      const nested = await orgApi.personByUnitNested([unit])
+      unitPeople.value = nested.data ?? []
+    }
+  } catch {
+    unitPeople.value = []
+  } finally {
+    unitPeopleLoading.value = false
+  }
+}
+
+function closeUnitPeople(): void {
+  unitPeople.value = []
+  unitPeopleName.value = ''
+}
+
 /** 发起单聊：创建一条 type=single 会话（名字取对方姓名），随即进入聊天页。 */
 async function startChat(row: Record<string, unknown>): Promise<void> {
   const flag = typeof row.flag === 'string' ? row.flag : ''
@@ -176,13 +207,30 @@ async function startChat(row: Record<string, unknown>): Promise<void> {
       <view v-else class="list">
         <view v-for="(o, i) in mode === 'unit' ? units : groups" :key="i" class="item">
           <text class="avatar">{{ mode === 'unit' ? '🏢' : '👥' }}</text>
-          <view class="body">
+          <view class="body" @tap="mode === 'unit' ? openUnit(o) : undefined">
             <view class="title">{{ orgNameOf(o) }}</view>
             <view class="meta">{{ o.id ? String(o.id) : ' ' }}</view>
           </view>
+          <text v-if="mode === 'unit'" class="detail-close">›</text>
         </view>
       </view>
     </template>
+
+    <view v-if="unitPeopleName" class="detail">
+      <view class="detail-head">
+        <text class="detail-title">{{ unitPeopleName }} · 人员</text>
+        <text class="detail-close" @tap="closeUnitPeople">关闭</text>
+      </view>
+      <view v-if="unitPeopleLoading" class="tip">加载中…</view>
+      <view v-else-if="unitPeople.length === 0" class="tip">该单位暂无人员</view>
+      <view v-for="(p, i) in unitPeople" :key="i" class="item">
+        <text class="avatar">{{ nameOf(p).slice(0, 1).toUpperCase() }}</text>
+        <view class="body" @tap="openPerson(p)">
+          <view class="title">{{ nameOf(p) }}</view>
+          <view class="meta">{{ subOf(p) || ' ' }}</view>
+        </view>
+      </view>
+    </view>
 
     <view v-if="detail" class="detail">
       <view class="detail-head">

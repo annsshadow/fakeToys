@@ -37,6 +37,12 @@ const router = createRouter({
           meta: { title: '组织架构' },
         },
         {
+          path: 'directory',
+          name: 'OrgDirectoryApp',
+          component: () => import('./views/OrgDirectoryApp.vue'),
+          meta: { title: '组织通讯录' },
+        },
+        {
           path: 'process',
           name: 'ProcessWork',
           component: () => import('./views/ProcessWork.vue'),
