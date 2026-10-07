@@ -118,6 +118,12 @@ describe('me.vue 我的页', () => {
 
   it('第 134 轮：已过期但字段仍在的护盾 → 显示「开启」（不是按字段存在误判为开启）', async () => {
     const past = new Date(Date.now() - 48 * 3600_000).toISOString() // 2 天前到期
+    // 第 140 轮：护盾现在按「服务端时钟基准」判断。server_time 必须与
+    // 「现在」对齐（取真实当前时间），否则基准会早于 past，把过期护盾误判为开启。
+    mockApi.fetchConfig.mockResolvedValue({
+      ...makeConfig({ levels: [makeLevel()], skills: [makeSkill({ id: 1, apply_element: '' })] }),
+      server_time: new Date().toISOString(),
+    })
     mockApi.fetchDefenses.mockResolvedValue({
       mine: defenseView({ shielded_until: past } as any),
       candidates: [],
@@ -254,6 +260,7 @@ describe('me.vue 我的页', () => {
     expect(runChallengeMock).toHaveBeenCalledWith(
       expect.objectContaining({ id: 5 }),
       expect.objectContaining({ level: expect.objectContaining({ id: 1 }), myEquipped: expect.anything() }),
+      expect.any(Number), // 第 140 轮：第三参 = store.estimateServerNowMs() 服务端时钟基准
     )
     expect(mockApi.challengeDefense).toHaveBeenCalledWith(5, {
       seed: '42', // 第 132 轮：字符串上报（修前是 Number('42')=42）
@@ -265,6 +272,32 @@ describe('me.vue 我的页', () => {
     expect(wrapper.text()).toContain('攻破防线')
     expect(wrapper.text()).toContain('金币 10 · 钻石 2 · 钥匙 1 · 体力 3 · vip 9')
     expect(store.wallet.coin).toBe(1) // refreshWallet 生效
+  })
+
+  it('第 140 轮：护盾态由服务端时钟估算决定（远未来 server_time → 本地视为未来的护盾按已过期处理）', async () => {
+    // beforeEach 的 mine.shielded_until = 2099-01-02（远期）：
+    // 按本地 2026 判是「护盾开启」；把服务端时钟设为 2100-01-01（estimate 用它），
+    // 2099-01-02 已过期 → 按钮必须是「开启 24h 护盾」。
+    // 若 me.vue 回退到裸 Date.now()，这条立刻红。
+    mockApi.fetchConfig.mockResolvedValue({
+      ...makeConfig({ levels: [makeLevel()], skills: [makeSkill({ id: 1, apply_element: '' })] }),
+      server_time: '2100-01-01T00:00:00Z',
+    })
+    const { wrapper } = mountPage(Me)
+    await flushPromises()
+    expect(wrapper.text()).toContain('开启 24h 护盾')
+    expect(wrapper.text()).not.toContain('关闭 24h 护盾')
+  })
+
+  it('第 140 轮：挑战模拟把 store 的服务端时钟估算传入 runChallenge（第三参）', async () => {
+    const { wrapper } = mountPage(Me)
+    await flushPromises()
+    await wrapper.findAll('.cand .btn')[0]!.trigger('click')
+    await new Promise((r) => setTimeout(r, 60))
+    await flushPromises()
+    const args = runChallengeMock.mock.calls[0]!
+    expect(args.length).toBe(3)
+    expect(typeof args[2]).toBe('number')
   })
 
   it('第 132 轮：大种子按字符串上报，不被 Number() 截断', async () => {
@@ -408,6 +441,7 @@ describe('me.vue 我的页', () => {
     expect(runChallengeMock).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({ level: expect.objectContaining({ id: 2 }) }),
+      expect.any(Number),
     )
 
     // config 无 levels → null → toast 守卫
