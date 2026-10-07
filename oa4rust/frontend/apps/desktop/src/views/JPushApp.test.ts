@@ -133,10 +133,17 @@ describe('JPushApp contracts', () => {
   })
   it('does not auto-query unconsumed jpush read-only lists', () => {
     expect(source).not.toContain("api.get('/api/jpush_assemble_control/get/control/config')")
-    expect(source).not.toContain("api.get('/api/jpush_assemble_control/device/config/push/type')")
     expect(source).not.toContain("api.get('/api/jpush_assemble_control/list/control/apps')")
     expect(source).not.toContain("api.get('/api/jpush_assemble_control/list/jpushs')")
     expect(source).not.toContain("api.get('/api/jpush/assemble/control/list/control/apps')")
-    expect(source).not.toContain("api.get('/api/jpush/assemble/control/device/config/push/type')")
+  })
+
+  it('consumes device push-type config only via the button-triggered action（十类功能8）', () => {
+    // 十类功能8：device/config/push/type 经真库探针实证为纯 SELECT（handler 无 Path 提取器，
+    // rev406 时代的 trap500 判断过时）。作为「推送配置」卡片数据源由用户点击触发；
+    // 本断言仍禁止挂载期/顶层自动调用（loadPushConfig 只允许定义与模板 @click 两处出现）。
+    expect(source.match(/device\/config\/push\/type/g)).toHaveLength(1)
+    expect(source).toMatch(/async function loadPushConfig\(\)[\s\S]{0,300}device\/config\/push\/type/)
+    expect(source.match(/loadPushConfig\(\)/g)).toHaveLength(1)
   })
 })
