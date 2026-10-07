@@ -181,7 +181,7 @@ export function validateSnapshot(view: DefenseView): { ok: true } | { ok: false;
   if (!view.snapshot_hash) {
     return { ok: false, reason: '对方快照缺少哈希，无法确认挑战的是同一份构筑' }
   }
-  if (view.shielded_until && new Date(view.shielded_until).getTime() > Date.now()) {
+  if (isShieldActive(view.shielded_until, Date.now())) {
     return { ok: false, reason: '对方护盾尚未过期' }
   }
   return { ok: true }
@@ -269,4 +269,20 @@ export function snapshotElements(view: DefenseView): Element[] {
   return (view.snapshot?.elements ?? []).filter((e): e is Element =>
     valid.includes(e as Element),
   )
+}
+
+/**
+ * 护盾是否**仍在生效**（按时间判断，不是按「字段存在」判断）。
+ *
+ * ⚠️ 第 134 轮：`shielded_until` 是服务端下发的 RFC3339 时间戳。
+ * 「字段非空」≠「护盾未过期」—— 护盾 24h 后 `shielded_until` 仍在库里
+ * （是过去的时间），但护盾其实已失效。旧 me.vue 用 `!!shielded_until`
+ * 判存在，于是过期护盾在「我的页」仍显示成「护盾开启」。
+ * 现统一走时间比较，nowMs 显式传入便于测试（生产传 Date.now()）。
+ */
+export function isShieldActive(until: string | undefined, nowMs: number): boolean {
+  if (!until) return false
+  const t = Date.parse(until)
+  if (Number.isNaN(t)) return false
+  return t > nowMs
 }

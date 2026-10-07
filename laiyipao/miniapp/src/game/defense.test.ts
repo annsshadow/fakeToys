@@ -12,6 +12,7 @@ import {
   validateSnapshot,
   snapshotDigest,
   snapshotElements,
+  isShieldActive,
   type DefenseView,
 } from './defense'
 import type { EquippedSkill } from './heatmap'
@@ -171,6 +172,22 @@ describe('validateSnapshot：拒绝一切不完整快照', () => {
   it('护盾已过期 → 放行', () => {
     const past = new Date(Date.now() - 3600_000).toISOString()
     expect(validateSnapshot(view({ shielded_until: past })).ok).toBe(true)
+  })
+})
+
+describe('isShieldActive：护盾按时间而非存在判断（第 134 轮）', () => {
+  const now = 1_000_000_000_000
+  it('未到期的护盾 → 生效', () => {
+    expect(isShieldActive(new Date(now + 1000).toISOString(), now)).toBe(true)
+  })
+  it('已过期的护盾（字段仍在）→ 不生效（缺陷核心）', () => {
+    expect(isShieldActive(new Date(now - 1000).toISOString(), now)).toBe(false)
+  })
+  it('无 shielded_until → 不生效', () => {
+    expect(isShieldActive(undefined, now)).toBe(false)
+  })
+  it('非法时间串 → 不生效（不抛错）', () => {
+    expect(isShieldActive('not-a-date', now)).toBe(false)
   })
 })
 

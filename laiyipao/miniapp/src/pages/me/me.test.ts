@@ -32,10 +32,15 @@ vi.mock('@/api/client', () => ({
   challengeDefense: vi.fn(),
 }))
 
-vi.mock('@/game/defense', () => ({
-  runChallenge: vi.fn(),
-  validateSnapshot: vi.fn((c: DefenseView) => ({ ok: !String(c.snapshot_hash).startsWith('bad') })),
-}))
+vi.mock('@/game/defense', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/game/defense')>()
+  return {
+    runChallenge: vi.fn(),
+    validateSnapshot: vi.fn((c: DefenseView) => ({ ok: !String(c.snapshot_hash).startsWith('bad') })),
+    // 第 134 轮：isShieldActive 是纯函数，用真实现（护盾时间判定本身就是被测行为）。
+    isShieldActive: actual.isShieldActive,
+  }
+})
 
 const mockApi = vi.mocked(api, true)
 const defenseModule = await import('@/game/defense')
@@ -85,7 +90,7 @@ beforeEach(() => {
   mockApi.fetchMe.mockResolvedValue({ user_id: 7, build: null, build_rating: null, power: 9 } as any)
   mockApi.fetchLoadout.mockResolvedValue({ skill_ids: [1] })
   mockApi.fetchDefenses.mockResolvedValue({
-    mine: defenseView({ shielded_until: '2026-01-02', my_attempts_today: 2 } as any),
+    mine: defenseView({ shielded_until: '2099-01-02T00:00:00Z', my_attempts_today: 2 } as any),
     candidates: [defenseView()],
     attempt_limit: 5,
   } as any)
@@ -108,7 +113,21 @@ describe('me.vue 我的页', () => {
     expect(wrapper.text()).toContain('1 胜 / 2 负')
     expect(wrapper.text()).toContain('可挑战的防线')
     expect(wrapper.text()).toContain('今日剩余 3 次') // attempt_limit 5 - my_attempts_today 2
-    expect(wrapper.text()).toContain('关闭 24h 护盾') // shielded_until 有值
+    expect(wrapper.text()).toContain('关闭 24h 护盾') // shielded_until 未到期（远期）
+  })
+
+  it('第 134 轮：已过期但字段仍在的护盾 → 显示「开启」（不是按字段存在误判为开启）', async () => {
+    const past = new Date(Date.now() - 48 * 3600_000).toISOString() // 2 天前到期
+    mockApi.fetchDefenses.mockResolvedValue({
+      mine: defenseView({ shielded_until: past } as any),
+      candidates: [],
+      attempt_limit: 3,
+    } as any)
+    const { wrapper } = mountPage(Me)
+    await flushPromises()
+    // 护盾其实已失效 → 按钮应是「开启 24h 护盾」（可重新开），而非「关闭」
+    expect(wrapper.text()).toContain('开启 24h 护盾')
+    expect(wrapper.text()).not.toContain('关闭 24h 护盾')
   })
 
   it('mine 为空 → "尚未设置防线"；快照不完整的候选不给挑战入口', async () => {

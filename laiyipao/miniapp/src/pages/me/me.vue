@@ -182,6 +182,7 @@ import * as api from '@/api/client'
 import {
   runChallenge,
   validateSnapshot,
+  isShieldActive,
   type DefenseView,
   type ChallengeOutcome,
 } from '@/game/defense'
@@ -223,7 +224,9 @@ async function loadDefenses() {
     myDefense.value = res.mine ?? null
     candidates.value = res.candidates ?? []
     attackLeft.value = Math.max(0, (res.attempt_limit ?? 3) - (res.mine?.my_attempts_today ?? 0))
-    shielded.value = !!myDefense.value?.shielded_until
+    // 第 134 轮：护盾「是否生效」按时间判断，不是按字段存在判断。
+    // 旧写法 `!!shielded_until` 会把「已过期但字段仍在」的护盾当成开启。
+    shielded.value = isShieldActive(myDefense.value?.shielded_until, Date.now())
   } catch {
     myDefense.value = null
     candidates.value = []
