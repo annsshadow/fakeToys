@@ -131,6 +131,37 @@ describe('loadConfig（缓存 + loading 态）', () => {
   })
 })
 
+describe('服务端时钟基准 estimateServerNowMs（第 140 轮）', () => {
+  it('按 config 里的 server_time 抵消本地时钟偏移（本地 2026-09 对服务端 2026-05）', async () => {
+    vi.useFakeTimers()
+    try {
+      vi.setSystemTime(Date.parse('2026-09-01T00:00:00Z')) // 本地时钟
+      mockApi.fetchConfig.mockResolvedValue({
+        ...makeConfig(),
+        server_time: '2026-05-01T00:00:00Z', // 服务端时钟比本地早 4 个月
+      })
+      await store.loadConfig()
+      const est = store.estimateServerNowMs()
+      // 估算值跟住服务端时钟（收到响应至今的漂移在秒级）
+      expect(Math.abs(est - Date.parse('2026-05-01T00:00:00Z'))).toBeLessThan(5000)
+      // 而不是本地时钟（4 个月偏移必须被抵消）
+      expect(Math.abs(est - Date.now())).toBeGreaterThan(24 * 3600_000)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('server_time 不可解析 → 诚实回退本地时钟', async () => {
+    mockApi.fetchConfig.mockResolvedValue({ ...makeConfig(), server_time: 'not-a-date' })
+    await store.loadConfig()
+    expect(Math.abs(store.estimateServerNowMs() - Date.now())).toBeLessThan(5000)
+  })
+
+  it('config 未加载 → 回退本地时钟', () => {
+    expect(Math.abs(store.estimateServerNowMs() - Date.now())).toBeLessThan(5000)
+  })
+})
+
 describe('档案与钱包刷新', () => {
   it('refreshProfile 成功：wallet / power / buildRating / build 全部落位', async () => {
     const build = { attacker: { attack: 100 } }

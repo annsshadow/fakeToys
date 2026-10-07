@@ -215,7 +215,8 @@ const stolenText = computed(() => {
 
 /** 快照不完整时不给出挑战入口 —— 盲报会污染对方的战绩数据 */
 function snapshotOk(c: DefenseView): boolean {
-  return validateSnapshot(c).ok
+  // 第 140 轮：护盾过期判断用服务端时钟基准，本地时钟偏几小时不再误判
+  return validateSnapshot(c, store.estimateServerNowMs()).ok
 }
 
 async function loadDefenses() {
@@ -226,7 +227,8 @@ async function loadDefenses() {
     attackLeft.value = Math.max(0, (res.attempt_limit ?? 3) - (res.mine?.my_attempts_today ?? 0))
     // 第 134 轮：护盾「是否生效」按时间判断，不是按字段存在判断。
     // 旧写法 `!!shielded_until` 会把「已过期但字段仍在」的护盾当成开启。
-    shielded.value = isShieldActive(myDefense.value?.shielded_until, Date.now())
+    // 第 140 轮：「现在」用服务端时钟估算而不是裸 Date.now()。
+    shielded.value = isShieldActive(myDefense.value?.shielded_until, store.estimateServerNowMs())
   } catch {
     myDefense.value = null
     candidates.value = []
@@ -322,7 +324,7 @@ function challenge(target: DefenseView) {
   // 让按钮先进入「模拟中」状态再跑同步模拟
   setTimeout(async () => {
     try {
-      const outcome = runChallenge(target, {
+      const deps = {
         myEquipped: equipped,
         myAttacker: store.attacker,
         level,
@@ -333,7 +335,9 @@ function challenge(target: DefenseView) {
         scoreRules: store.config?.score_rules
           ? scoreRulesFromServer(store.config.score_rules)
           : undefined,
-      })
+      }
+      // 第 140 轮：now 基准用服务端时钟估算（同时驱动护盾判断与默认种子分钟桶）
+      const outcome = runChallenge(target, deps, store.estimateServerNowMs())
       if (outcome.error) {
         lastChallenge.value = outcome
         return
