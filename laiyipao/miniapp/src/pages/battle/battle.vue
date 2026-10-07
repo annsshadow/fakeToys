@@ -108,6 +108,7 @@ import { BattleEngine, TICK_MS } from '@/game/engine'
 import { equippedFromSnapshot } from '@/game/replay'
 import { BattleRenderer } from '@/render/canvas'
 import { ELEMENT_NAME, type Element } from '@/game/elements'
+import { scoreRulesFromServer } from '@/game/score'
 import type { Card, EquippedSkill } from '@/game/heatmap'
 import type { GeneratedLevel } from '@/game/types'
 
@@ -262,6 +263,13 @@ async function setup() {
       // 专精那 8 个「额外插槽」节点此前完全惰性 ——
       // 客户端用编译期常量，根本不读服务端下发的槽位数。
       activeSlots: bt.build?.active_slots,
+      // 第 133 轮：分数规则同样必须来自服务端 /config 的 score_rules。
+      // 修前引擎恒用编译期 DEFAULT_SCORE_RULES —— 一旦服务端重标定
+      // DefaultScoreRules，客户端星级/得分与结算、I-6 验真全部漂移。
+      // config 未到达时 undefined → 引擎回落到 DEFAULT（离线兜底）。
+      scoreRules: store.config?.score_rules
+        ? scoreRulesFromServer(store.config.score_rules)
+        : undefined,
     })
     engine.value = eng
     eng.start()

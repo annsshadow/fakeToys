@@ -10,6 +10,7 @@
 import { describe, it, expect } from 'vitest'
 import { replay, equippedFromSnapshot, prettyHash, prettyDuration } from './replay'
 import { BattleEngine } from './engine'
+import { scoreRulesFromServer } from './score'
 import type { ReplayInfo, BuildSnapshot } from './replay'
 import type { EnemyDef, GeneratedLevel, SkillDef } from './types'
 import type { Element } from './elements'
@@ -114,6 +115,30 @@ describe('重放：确定性', () => {
     const r = replay(info(), deps)
     expect(r.stats.kills + r.stats.leaked).toBeGreaterThan(0)
     expect(r.stats.durationMs).toBeGreaterThan(0)
+  })
+})
+
+describe('重放：分数规则来自服务端（第 133 轮）', () => {
+  it('传入不同 scoreRules 会改变重放得分 —— 引擎确实在用传入的规则', () => {
+    const base = replay(info(), deps)
+    expect(base.error).toBeUndefined()
+    expect(base.stats.kills).toBeGreaterThan(0) // 有击杀，kill 分才参与
+
+    // 服务端下发一份「普通击杀分 500→999」的规则（其余同默认）
+    const serverRules = scoreRulesFromServer({
+      per_damage_unit: 100,
+      on_kill_normal: 999,
+      on_kill_boss: 5000,
+      star_target_ratio: [600, 850, 980],
+      score_full_at_sec: 60,
+    })
+    const custom = replay(info(), { ...deps, scoreRules: serverRules })
+    expect(custom.error).toBeUndefined()
+
+    // 击杀数相同，但击杀分不同 → 总分必须不同。
+    // 若引擎无视 deps.scoreRules 退回 DEFAULT_SCORE_RULES，两局得分会相等 → 本测试红。
+    expect(custom.stats.kills).toBe(base.stats.kills)
+    expect(custom.stats.score).not.toBe(base.stats.score)
   })
 })
 

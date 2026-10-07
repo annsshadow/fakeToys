@@ -129,6 +129,7 @@ import {
   type ReplayOutcome,
   type ReplayInfo,
 } from '@/game/replay'
+import { scoreRulesFromServer } from '@/game/score'
 
 const store = useGameStore()
 const battleId = ref('')
@@ -204,6 +205,11 @@ function doReplay() {
         level: ri.level,
         enemies: store.enemyMap,
         skills: store.skillMap,
+        // 第 133 轮：重放用服务端下发的 score_rules，与原局开局同口径，
+        // 否则 I-6 会把「两端分数规则不同」误判成伪造。
+        scoreRules: store.config?.score_rules
+          ? scoreRulesFromServer(store.config.score_rules)
+          : undefined,
       })
       outcome.value = r
       if (!r.error) await submit(r.computedHash)
