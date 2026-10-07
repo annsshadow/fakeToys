@@ -17,6 +17,7 @@
         <button class="btn-refresh" @click="loadCategories">📁 分类</button>
         <button class="btn-refresh" @click="loadDesignerApp">🧩 设计器应用明细</button>
         <button class="btn-refresh" @click="loadSurfaceApp">🌐 表面应用信息</button>
+        <button class="btn-refresh" @click="readWithFlag" title="POST application|process|edition/{id}/{onlyRemoveNotCompleted}（十类功能5）">📦 版本读取</button>
       </div>
       <div v-if="categories.length" class="cat-chips">
         <span v-for="c in categories" :key="c.id || c.name" class="cat-chip">{{ c.name || c.id }}</span>
@@ -176,6 +177,27 @@ async function deleteItem(item: Item) {
   if (await confirmMsg('确定删除该应用？')) delM.mutate(item.id)
 }
 const categories = ref<Array<{ id?: string; name?: string }>>([])
+// 十类功能5：按 onlyRemoveNotCompleted 选项读取 应用/流程/流程版本 详情
+// （POST application/{id}/{flag} · process/{id}/{flag} · process/edition/{id}/{flag}，均为真实 SELECT）
+async function readWithFlag() {
+  const appId = prompt('应用 ID (application xid):', '') || ''
+  if (!appId) return
+  const procId = prompt('流程 ID (process xid，可空):', '') || ''
+  const flag = prompt('onlyRemoveNotCompleted (true/false):', 'false') || 'false'
+  const e = encodeURIComponent
+  try {
+    const [app, proc, edition] = await Promise.all([
+      api.post(`/api/processplatform/assemble/designer/application/${e(appId)}/${flag}`, {}),
+      procId ? api.post(`/api/processplatform/assemble/designer/process/${e(procId)}/${flag}`, {}) : Promise.resolve(null),
+      procId ? api.post(`/api/processplatform/assemble/designer/process/edition/${e(procId)}/${flag}`, {}) : Promise.resolve(null),
+    ])
+    const name = (r: any) => (r as any)?.data?.name || (r as any)?.data?.xname || '—'
+    toast.info(`应用「${name(app)}」${proc ? ` · 流程「${name(proc)}」` : ''}${edition ? ' · 版本已读取' : ''}`)
+  } catch (err: any) {
+    toast.error(`版本读取失败: ${err?.message ?? ''}`)
+  }
+}
+
 async function loadCategories() {
   try {
     // GET processplatform/assemble/designer/applicationcategory/list —— 流程应用分类

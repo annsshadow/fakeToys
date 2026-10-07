@@ -14,6 +14,7 @@
         <button class="btn btn-outline" @click="loadStatements">🔄 刷新</button>
         <button class="btn btn-success" :disabled="!sql.trim()" @click="executeSQL">▶ 执行</button>
         <button class="btn btn-primary" :disabled="!currentStatement" @click="saveStatement">💾 保存</button>
+        <button class="btn btn-outline" :disabled="!currentStatement" @click="saveByFlag" title="按 flag 覆写保存（PUT statement/{flag}）">🏷️ 按Flag保存</button>
         <button class="btn btn-outline" @click="showVisualEditor=!showVisualEditor" title="SQL可视化编辑器">✏️ 可视化编辑器</button>
         <button class="btn btn-outline" @click="showRuleChain=!showRuleChain" title="规则链编辑器">🔗 规则链</button>
         <button class="btn btn-outline" @click="showFieldDrag=!showFieldDrag" title="字段配置器">📐 字段配置</button>
@@ -992,6 +993,22 @@ const saveM = useMutation({
     showModal.value = false
   },
 })
+// 十类功能5：按 flag 覆写语句（PUT statement/{flag}，o2 语义=按标识保存）
+async function saveByFlag() {
+  const flag = prompt('目标 flag（按该标识覆写保存）:', currentStatement.value?.flag || '') || ''
+  if (!flag) return
+  try {
+    await api.put(`/api/query/assemble/designer/statement/${encodeURIComponent(flag)}`, {
+      name: currentStatement.value?.name || flag,
+      flag,
+      sql: currentStatement.value?.sql ?? '',
+    })
+    toast.success(`语句已按 flag「${flag}」保存`)
+    queryClient.invalidateQueries({ queryKey: ['stmt', 'list'] })
+  } catch (e: any) {
+    toast.error(`按 flag 保存失败: ${e?.message ?? ''}`)
+  }
+}
 function modalSave() {
   if (!modalForm.value.name.trim()) return
   const payload = {

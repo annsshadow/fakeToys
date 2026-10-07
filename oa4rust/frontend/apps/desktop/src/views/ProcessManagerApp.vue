@@ -37,6 +37,7 @@
         <button class="btn-refresh" @click="pdCreate('mergeitemplan')">建合并项计划</button>
         <button class="btn-refresh" @click="pdCreate('itemaccess')">建项权限</button>
         <button class="btn-refresh" @click="pdCreate('itemaccessBach')">批存项权限</button>
+        <button class="btn-refresh" @click="ppFileUpload" title="POST designer/file/upload/{id}（UPDATE PP_E_FILE.xcontent，十类功能5）">流程资源上传</button>
         <button class="btn-refresh" @click="pdEdit('application')">改应用</button>
         <button class="btn-refresh" @click="pdEdit('appicon')">改应用图标</button>
         <button class="btn-refresh" @click="pdEdit('mapping')">改映射</button>
@@ -428,6 +429,26 @@ async function loadEngineReads() {
 }
 // rev320：流程设计器 真实写端点（用户触发 prompt+确认，非造假）——应用/字典/映射/合并项计划/item-access/流程/表单/xform 建改删+权限
 // 全字面量路径；请求体经 handler 签名核实（多为 Json<Value>），已排除 upgrade/disable/edition/merge-data 等生命周期动作
+// 十类功能5：流程设计器资源内容上传（POST file/upload/{id}，UPDATE PP_E_FILE.xcontent）
+function ppFileUpload() {
+  const fid = prompt('资源文件 ID (PP_E_FILE xid):', '') || ''
+  if (!fid) return
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.onchange = async () => {
+    const file = input.files?.[0]
+    if (!file) return
+    const content = await file.text()
+    try {
+      await api.post(`/api/processplatform/assemble/designer/file/upload/${encodeURIComponent(fid)}`, { content })
+      toast.success('流程资源内容已上传')
+    } catch (e: any) {
+      toast.error(`流程资源上传失败: ${e?.message ?? ''}`)
+    }
+  }
+  input.click()
+}
+
 async function pdCreate(kind: 'applicationdict' | 'mapping' | 'mergeitemplan' | 'itemaccess' | 'itemaccessBach') {
   const name = prompt(`新建${kind}（输入名称/标识）:`, '')
   if (!name) return

@@ -27,6 +27,7 @@
             <td class="mono">{{ item.createTime||'—' }}</td>
             <td>
               <button class="btn-sm" @click="editItem(item)">编辑</button>
+              <button class="btn-sm" @click="viewImportModel(item)" title="读取导入模型详情（GET importmodel/{id}）">模型详情</button>
               <button class="btn-sm btn-del" @click="deleteItem(item)">删除</button>
             </td>
           </tr>
@@ -134,6 +135,18 @@ const saveM = useMutation({
 })
 function saveItem() {
   saveM.mutate(form.value as Item)
+}
+// 十类功能5：读取导入模型详情（GET importmodel/{id}，u2::importmodel_get_flag）
+async function viewImportModel(item: Item) {
+  const id = String(item.id ?? '')
+  if (!id) return
+  try {
+    const r = await api.get(`/api/query/assemble/designer/importmodel/${encodeURIComponent(id)}`)
+    const d = (r.data ?? {}) as any
+    toast.info(`导入模型 ${d.flag || d.name || id}：${d.description || '（无描述）'}`)
+  } catch (e: any) {
+    toast.error(`读取导入模型失败: ${e?.message ?? ''}`)
+  }
 }
 const delM = useMutation({
   mutationFn: async (id: string) => api.post(`/api/query/assemble/designer/importer/delete/${id}`),
