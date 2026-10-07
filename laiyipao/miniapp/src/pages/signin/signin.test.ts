@@ -24,6 +24,7 @@ vi.mock('@/api/client', () => ({
   claimTask: vi.fn(),
   redeem: vi.fn(),
   fetchSignInCalendar: vi.fn(),
+  fetchSignInStatus: vi.fn(),
 }))
 
 const mockApi = vi.mocked(api, true)
@@ -107,6 +108,40 @@ describe('signin.vue 签到页', () => {
     await flushPromises()
     const days = wrapper.findAll('.day')
     expect(days[0]!.text()).toContain('1000 金') // 本地 day1 = coin 1000
+  })
+
+  it('第 141 轮：初始态以服务端签到状态为准：已签 3 天且今日已签 → 第 4 天标 today、按钮禁用且文案「今日已签到」', async () => {
+    mockApi.fetchSignInStatus.mockResolvedValue({ claimed_count: 3, signed_today: true, can_sign: false })
+    const { wrapper } = mountPage(Signin)
+    await flushPromises()
+    expect(mockApi.fetchSignInStatus).toHaveBeenCalledTimes(1)
+    const days = wrapper.findAll('.day')
+    expect(days[2]!.classes()).toContain('claimed') // 第 3 天已签
+    expect(days[3]!.classes()).toContain('today') // 今天是第 4 天
+    expect(days[3]!.classes()).not.toContain('claimed')
+    expect(days[4]!.classes()).not.toContain('today')
+    const btn = wrapper.find('.btn-primary')
+    expect(btn.classes()).toContain('btn-disabled')
+    expect(wrapper.text()).toContain('今日已签到')
+    expect(wrapper.text()).not.toContain('领取今日奖励')
+  })
+
+  it('第 141 轮：周期已签满（7 天全签、今日未签）→ 文案是「七日签到已完成」而非「今日已签到」', async () => {
+    mockApi.fetchSignInStatus.mockResolvedValue({ claimed_count: 7, signed_today: false, can_sign: false })
+    const { wrapper } = mountPage(Signin)
+    await flushPromises()
+    expect(wrapper.text()).toContain('七日签到已完成')
+    expect(wrapper.text()).not.toContain('今日已签到')
+    expect(wrapper.findAll('.day')[6]!.classes()).toContain('claimed')
+  })
+
+  it('第 141 轮：状态拉取失败 → 保持缺省可点态（点了由 POST 的权威结果兜底），页面不崩', async () => {
+    mockApi.fetchSignInStatus.mockRejectedValue(new Error('网络故障'))
+    const { wrapper } = mountPage(Signin)
+    await flushPromises()
+    const btn = wrapper.find('.btn-primary')
+    expect(btn.classes()).not.toContain('btn-disabled')
+    expect(wrapper.text()).toContain('领取今日奖励')
   })
 
   it('任务列表为空 → 显示"暂无任务"（items 缺失时 ?? [] 回退）', async () => {

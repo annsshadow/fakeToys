@@ -108,6 +108,8 @@ func (s *Server) Register(app *fiber.App) {
 	signin.Post("/", s.signIn)
 	// 第 135 轮：七日签到奖励表的权威来源。客户端预览改读它，不再本地硬编码。
 	signin.Get("/calendar", s.signinCalendar)
+	// 第 141 轮：玩家签到状态（已签天数 / 今日可否签）——签到页初始展示。
+	signin.Get("/status", s.signInStatus)
 
 	redeem := v1.Group("/redeem", requireUser(s.Svc))
 	redeem.Post("/", s.redeem)
@@ -519,6 +521,15 @@ func (s *Server) signinCalendar(c *fiber.Ctx) error {
 		return failErr(c, err)
 	}
 	return c.JSON(fiber.Map{"days": days})
+}
+
+// signInStatus 回读玩家签到状态（第 141 轮）：已签天数与今日是否可签。
+func (s *Server) signInStatus(c *fiber.Ctx) error {
+	st, err := s.Svc.SignInStatus(c.Context(), userIDFrom(c))
+	if err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(st)
 }
 
 func (s *Server) shop(c *fiber.Ctx) error {

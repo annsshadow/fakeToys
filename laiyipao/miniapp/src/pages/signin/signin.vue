@@ -23,7 +23,7 @@
           style="margin-top: 20rpx"
           @click="doSignIn"
         >
-          {{ canSign ? '领取今日奖励' : '今日已签到' }}
+          {{ canSign ? '领取今日奖励' : signedToday ? '今日已签到' : '七日签到已完成' }}
         </view>
         <text v-if="lastResult" class="muted" style="display: block; margin-top: 16rpx">
           {{ lastResult }}
@@ -110,6 +110,7 @@ const store = useGameStore()
 const tasks = ref<any[]>([])
 const claimedCount = ref(0)
 const canSign = ref(true)
+const signedToday = ref(false)
 const lastResult = ref('')
 const code = ref('')
 const redeemMsg = ref('')
@@ -125,6 +126,19 @@ async function loadCalendar() {
     calendar.value = m
   } catch {
     /* 离线/失败：回落本地缺省公式（preview 可能与服务端不一致，但不阻断页面） */
+  }
+}
+
+// 第 141 轮：签到初始态以服务端为准。修前 claimedCount=0 / canSign=true 写死，
+// 当天已签到（或周期签完）后重进页面仍显示「可领取」，点了才报错。
+async function loadStatus() {
+  try {
+    const res = await api.fetchSignInStatus()
+    claimedCount.value = res.claimed_count
+    signedToday.value = res.signed_today
+    canSign.value = res.can_sign
+  } catch {
+    /* 拉取失败保持缺省（可点，点了由 POST 的权威结果兜底） */
   }
 }
 
@@ -190,9 +204,12 @@ async function doSignIn() {
     const res = await api.signIn()
     if (res.already) {
       canSign.value = false
+      signedToday.value = true
       lastResult.value = '今日已签到'
     } else {
       claimedCount.value = res.day_index
+      canSign.value = false
+      signedToday.value = true
       lastResult.value = `签到成功，获得 ${rewardText(res.reward)}`
       await store.refreshWallet()
     }
@@ -228,7 +245,8 @@ async function doRedeem() {
 onMounted(async () => {
   if (!store.loggedIn) await store.login()
   // 第 135 轮：拉服务端权威签到日历（与 load 并发，互不阻塞）
-  await Promise.all([loadCalendar(), load()])
+  // 第 141 轮：并发回读签到状态（点亮已签天 / 决定按钮可否点）
+  await Promise.all([loadCalendar(), loadStatus(), load()])
 })
 </script>
 
