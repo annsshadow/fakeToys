@@ -325,6 +325,8 @@ export function fetchMe() {
     build: BuildSnapshotView
     build_rating: any
     power: number
+    /** 已通关最高关卡（第 142 轮：服务端权威进度，客户端刷新档案时恢复解锁态） */
+    max_stage: number
   }>('/me')
 }
 
