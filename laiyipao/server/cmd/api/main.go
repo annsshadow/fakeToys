@@ -59,6 +59,14 @@ func run() error {
 			cfg.BootstrapAdminUser)
 	}
 
+	// 第 129 轮：内容表体检。全新库自动补种子；库比当前版本「少内容」
+	// 时打警示（不自动覆盖，避免冲掉运营自定义行）。
+	if msg, err := svc.EnsureContentSeeded(bootCtx); err != nil {
+		return fmt.Errorf("内容体检: %w", err)
+	} else if msg != "" {
+		fmt.Printf("[来一炮 server] %s\n", msg)
+	}
+
 	app := buildApp(svc)
 
 	// 优雅退出：收到 SIGINT/SIGTERM 后给在途请求 10 秒收尾

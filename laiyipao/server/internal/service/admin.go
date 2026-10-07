@@ -7,6 +7,9 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
+
+	"github.com/laiyipao/server/internal/domain"
+	"github.com/laiyipao/server/internal/seeder"
 )
 
 // txType 是 pgx.Tx 的最小别名，让 service 各函数能同时接受事务与连接池上下文。
@@ -132,6 +135,43 @@ func (s *Service) AdminRole(ctx context.Context, adminID int64) (string, error) 
 		return "", fmt.Errorf("load admin role: %w", err)
 	}
 	return role, nil
+}
+
+// EnsureContentSeeded 是启动期的内容表体检（第 128/129 轮）：
+//
+//  1. 内容表（enemies/skills）**全空** → 全新库还没跑过 cmd/seed。
+//     自动补一次 `seeder.Run`（幂等 upsert，内容表不存玩家数据，
+//     安全）。此时玩家登录拿到的签到日历/任务/商城/兑换码全是空的，
+//     静默启动等于「开服即内容缺失」。
+//  2. 行数**少于** domain 期望（应用升级加了新敌人/技能，库没跟上）
+//     → 不自动覆盖（库里可能有运营自定义的行），返回**警示文案**
+//     让 main 打出来。投放走内存 domain，玩家可玩；
+//     但后台与 loadout 的 skills JOIN 会缺行（新技能在库里无对应行）。
+//  3. 行数齐平 → 无事发生。
+//
+// 返回 (message, error)：message 非空即供启动日志打印。
+func (s *Service) EnsureContentSeeded(ctx context.Context) (string, error) {
+	var enemiesN, skillsN int
+	if err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM enemies`).Scan(&enemiesN); err != nil {
+		return "", fmt.Errorf("content health: count enemies: %w", err)
+	}
+	var wantSkills int
+	if err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM skills`).Scan(&skillsN); err != nil {
+		return "", fmt.Errorf("content health: count skills: %w", err)
+	}
+	wantSkills = len(domain.SeedSkills) + len(domain.SeedCompositeSkills)
+
+	if enemiesN == 0 && skillsN == 0 {
+		if _, err := seeder.Run(ctx, s.pool); err != nil {
+			return "", fmt.Errorf("auto-seed content: %w", err)
+		}
+		return "内容表为空，已自动写入种子内容（等同 go run ./cmd/seed）", nil
+	}
+	if enemiesN < len(domain.SeedEnemies) || skillsN < wantSkills {
+		return fmt.Sprintf("内容表陈旧：enemies=%d（期望 %d）、skills=%d（期望 %d）——请运行 go run ./cmd/seed 刷新（投放走内存 domain，库只影响后台与 loadout JOIN）",
+			enemiesN, len(domain.SeedEnemies), skillsN, wantSkills), nil
+	}
+	return "", nil
 }
 
 // Audit 记录后台操作。
