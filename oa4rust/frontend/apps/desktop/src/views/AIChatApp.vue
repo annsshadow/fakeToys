@@ -98,6 +98,12 @@
             </div>
           </div>
           <div class="input-area">
+            <div v-if="attachments.length" class="attach-chips">
+              <span v-for="(a, i) in attachments" :key="i" class="attach-chip">
+                📎 {{ a.name }}
+                <button class="attach-x" @click="attachments.splice(i, 1)">✕</button>
+              </span>
+            </div>
             <textarea
               v-model="inputText"
               placeholder="输入消息 (Ctrl+Enter 发送)"
@@ -106,9 +112,17 @@
               @keydown.ctrl.enter.prevent="sendMessage"
               @keydown.meta.enter.prevent="sendMessage"
             ></textarea>
-            <button class="btn-send" :disabled="!inputText.trim() || loading" @click="sendMessage">
-              发送
-            </button>
+            <div class="input-actions">
+              <input ref="fileInputRef" type="file" class="file-hidden" @change="onPickFile" />
+              <button class="btn-attach" title="上传附件" @click="fileInputRef?.click()">📎</button>
+              <label class="stream-toggle" title="切换流式/整段回复">
+                <input v-model="streamMode" type="checkbox" />
+                流式
+              </label>
+              <button class="btn-send" :disabled="!inputText.trim() || loading" @click="sendMessage">
+                发送
+              </button>
+            </div>
           </div>
         </template>
       </div>
@@ -136,6 +150,7 @@
       <div class="config-actions">
         <button v-if="!showAddMcp" class="btn-mcp" @click="showAddMcp = true">+ 添加 MCP 服务</button>
         <button class="btn-mcp" @click="loadCoreModels">核心模型/MCP 管理</button>
+        <button class="btn-mcp" @click="applyControlConfig">应用控制配置</button>
         <button class="btn-close-config" @click="showConfig = false">关闭</button>
       </div>
       <div v-if="coreText" class="config-empty">{{ coreText }}</div>
@@ -163,6 +178,7 @@ const currentChat = ref<ChatItem | null>(null)
 const messages = ref<Message[]>([])
 const inputText = ref('')
 const loading = ref(false)
+const streamMode = ref(true)
 const messagesRef = ref<HTMLElement | null>(null)
 const showConfig = ref(false)
 const aiMetaText = ref('')
@@ -443,21 +459,88 @@ async function deleteChat(chat: ChatItem) {
 async function sendMessage() {
   const text = inputText.value.trim()
   if (!text || loading.value) return
+  const attachNote = attachments.value.length
+    ? `\n[附件] ${attachments.value.map((a) => `${a.name} → ${a.url}`).join('，')}`
+    : ''
   messages.value.push({ role: 'user', content: text })
   inputText.value = ''
+  attachments.value = []
   loading.value = true
   try {
-    const r = await api.post('/api/ai_assemble_control/chat/completion', {
-      message: text,
-      clueId: currentChat.value?.id,
-    })
-    const reply = r.data?.content ?? r.data?.reply ?? r.data?.message ?? '已收到'
-    messages.value.push({ role: 'assistant', content: String(reply) })
+    if (streamMode.value) {
+      // 流式回复：SSE 逐 token 渲染（POST /chat/completion/stream）
+      const live: Message = { role: 'assistant', content: '' }
+      messages.value.push(live)
+      await api.stream(
+        '/api/ai_assemble_control/chat/completion/stream',
+        { message: text + attachNote, clueId: currentChat.value?.id },
+        (_ev, data) => {
+          try {
+            const payload = JSON.parse(data) as { token?: string }
+            if (payload.token) live.content += payload.token
+          } catch {
+            live.content += data
+          }
+          nextTick(() => scrollToBottom())
+        },
+      )
+      if (!live.content) live.content = '（无返回内容）'
+    } else {
+      const r = await api.post('/api/ai_assemble_control/chat/completion', {
+        message: text + attachNote,
+        clueId: currentChat.value?.id,
+      })
+      const reply = r.data?.content ?? r.data?.reply ?? r.data?.message ?? '已收到'
+      messages.value.push({ role: 'assistant', content: String(reply) })
+    }
   } catch (e: any) {
     messages.value.push({ role: 'assistant', content: `❌ 错误: ${e?.message ?? '未知错误'}` })
   } finally {
     loading.value = false
     await nextTick(() => scrollToBottom())
+  }
+}
+
+// ── 附件上传（POST /file/upload：登记 x_ai_file 元数据，返回 /download/{id}）──
+type AttachItem = { name: string; url: string; size: number }
+const attachments = ref<AttachItem[]>([])
+const fileInputRef = ref<HTMLInputElement | null>(null)
+async function onPickFile(e: Event) {
+  const input = e.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+  if (!file) return
+  try {
+    const r = await api.post('/api/ai_assemble_control/file/upload', {
+      name: file.name,
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type || 'application/octet-stream',
+    })
+    const url = String((r.data as any)?.url ?? '')
+    if (!url) throw new Error('上传未返回文件地址')
+    attachments.value.push({ name: file.name, url, size: file.size })
+    toast.success(`附件已登记：${file.name}`)
+  } catch (err: any) {
+    toast.error(`附件上传失败: ${err?.message ?? ''}`)
+  }
+}
+
+// ── 应用控制配置（POST /update/ai/control/config，admin 门禁；改动 MCP/模型后生效）──
+async function applyControlConfig() {
+  try {
+    const cur: any = await api.get('/api/ai_assemble_control/get/ai/control/config')
+    const cfg = (cur?.data ?? {}) as Record<string, unknown>
+    await api.post('/api/ai_assemble_control/update/ai/control/config', {
+      name: cfg.name ?? 'default',
+      defaultModel: cfg.defaultModel ?? cfg.default_model ?? 'gpt-4',
+      temperature: cfg.temperature ?? 0.7,
+      maxTokens: cfg.maxTokens ?? cfg.max_tokens ?? 4096,
+      enabled: cfg.enabled ?? true,
+    })
+    toast.success('AI 控制配置已应用')
+  } catch (e: any) {
+    toast.error(`应用配置失败: ${e?.message ?? ''}`)
   }
 }
 
@@ -647,7 +730,16 @@ async function loadAiTwin2() {
 .loading-dots span:nth-child(2) { animation-delay: 0.2s }
 .loading-dots span:nth-child(3) { animation-delay: 0.4s }
 @keyframes bounce { 0%, 80%, 100% { transform: scale(0) } 40% { transform: scale(1) } }
-.input-area { display: flex; gap: 8px; padding-top: 12px; border-top: 1px solid var(--border-subtle); margin-top: 12px }
+.input-area { display: flex; flex-direction: column; gap: 8px; padding-top: 12px; border-top: 1px solid var(--border-subtle); margin-top: 12px }
+.input-actions { display: flex; align-items: center; justify-content: flex-end; gap: 10px }
+.file-hidden { display: none }
+.btn-attach { padding: 8px 12px; background: transparent; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); color: var(--text-secondary); cursor: pointer; font-size: 14px }
+.btn-attach:hover { border-color: var(--color-primary); color: var(--color-primary) }
+.stream-toggle { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text-secondary); cursor: pointer; user-select: none }
+.attach-chips { display: flex; flex-wrap: wrap; gap: 6px }
+.attach-chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 8px; background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); font-size: 12px; color: var(--text-secondary) }
+.attach-x { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 11px }
+.attach-x:hover { color: var(--color-error) }
 .msg-input { flex: 1; background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); color: var(--text-primary); padding: 10px 12px; font-size: 14px; resize: none; font-family: inherit }
 .msg-input:focus { outline: none; border-color: var(--color-primary) }
 .btn-send { padding: 10px 24px; background: var(--color-primary); color: #000; border: none; border-radius: var(--radius-md); font-size: 14px; cursor: pointer; font-weight: 600; white-space: nowrap }

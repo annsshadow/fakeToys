@@ -207,7 +207,8 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
         )
         .route(
             "/api/ai_assemble_control/update/ai/control/config",
-            get(update_ai_control_config),
+            // 本 crate 自家扩展端点（非 o2 契约）：写动作必须 POST，GET 带 body 在浏览器不可发
+            post(update_ai_control_config),
         )
         .route(
             "/api/ai_assemble_control/get/usage/stats",
