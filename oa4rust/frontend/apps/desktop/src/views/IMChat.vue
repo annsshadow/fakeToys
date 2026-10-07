@@ -110,6 +110,7 @@
             <button class="icon-btn" title="会话标记已读" @click="imMore2('convRead')">✔</button>
             <button class="icon-btn" title="退出群会话" @click="imMore2('groupQuit')">🚪</button>
             <button class="icon-btn" title="撤回消息" @click="imMore2('msgRevoke')">↩</button>
+            <button class="icon-btn" title="清空会话消息" @click="clearConversation">🧹</button>
             <button class="icon-btn" title="按类型消费(会话)" @click="imMore2('consumeType')">🔖</button>
             <button class="icon-btn" title="当前人已消费" @click="imMore2('consumed')">📥</button>
             <button class="icon-btn" title="更多信息">⋯</button>
@@ -140,7 +141,7 @@
 
         <div class="message-input">
           <button class="input-btn" title="表情">😊</button>
-          <button class="input-btn" title="文件">📎</button>
+          <button class="input-btn" title="文件" @click="sendFileMessage">📎</button>
           <textarea
             v-model="inputText"
             @keydown.enter.ctrl="sendMessage"
@@ -366,6 +367,49 @@ watch(
     }
   },
 )
+
+// ── 十类功能6：IM 文件/图片消息上传 + 清空会话 ──────────────────────────
+// POST im/msg/upload/{conversationId}/type/{type}（multipart：fileName 文本字段 + file 二进制字段，
+// 真实落 x_message_file 并返回 /im/msg/download/{id} 地址）
+function sendFileMessage(): void {
+  if (!selectedChat.value) {
+    toast.info('请先选择会话')
+    return
+  }
+  const convId = encodeURIComponent(selectedChat.value.id)
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.onchange = async () => {
+    const file = input.files?.[0]
+    if (!file) return
+    const form = new FormData()
+    form.append('fileName', file.name)
+    form.append('file', file, file.name)
+    const type = file.type.startsWith('image/') ? 'image' : 'file'
+    try {
+      const r = await api.upload(`/api/message/assemble/communicate/im/msg/upload/${convId}/type/${type}`, form)
+      const url = String((r.data as any)?.fileUrl ?? (r.data as any)?.url ?? '')
+      toast.success(url ? `文件消息已发送：${file.name}` : '文件消息已发送')
+      queryClient.invalidateQueries({ queryKey: ['im', 'messages'] })
+    } catch (e: any) {
+      toast.error(`文件消息发送失败: ${e?.message ?? ''}`)
+    }
+  }
+  input.click()
+}
+
+// POST im/msg/clear（清空指定会话消息记录；确认后执行）
+async function clearConversation(): Promise<void> {
+  if (!selectedChat.value) return
+  if (!(await confirmMsg(`清空会话「${selectedChat.value.name || selectedChat.value.id}」的全部消息？`))) return
+  try {
+    await api.post('/api/message/assemble/communicate/im/msg/clear', { conversationId: selectedChat.value.id })
+    toast.success('会话消息已清空')
+    queryClient.setQueryData(['im', 'messages', selectedChat.value.id], [])
+  } catch (e: any) {
+    toast.error(`清空失败: ${e?.message ?? ''}`)
+  }
+}
 
 // ── 发送消息（真实 API + WebSocket）────────────────────────────
 const sendMutation = useMutation({
