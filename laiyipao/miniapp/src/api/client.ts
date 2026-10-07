@@ -334,6 +334,14 @@ export function fetchLoadout() {
 }
 
 /**
+ * /me/stars 的响应。key 是关卡 ID（JSON 键为字符串），value 是该关历史最好星级（0–3）。
+ * 从未结算的关卡不在 map 里，消费侧按 0 处理。
+ */
+export function fetchMyStars() {
+  return request<{ stars: Record<string, number> }>('/me/stars')
+}
+
+/**
  * 保存出战技能。
  *
  * ⚠️ 必须落服务端，不能只存本地。槽位参与回放哈希计算 ——

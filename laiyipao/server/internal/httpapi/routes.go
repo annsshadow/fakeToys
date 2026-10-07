@@ -70,6 +70,9 @@ func (s *Server) Register(app *fiber.App) {
 	// 放在前端存的话重放方拿不到同一份槽位，I-6 直接失效。
 	me.Get("/loadout", s.getLoadout)
 	me.Put("/loadout", s.saveLoadout)
+	// 各关历史最好星级（level_stars 的 GREATEST）。选关页的星数/「已通关」
+	// 以此为准 —— 服务端没这个读端点的话，客户端的星图永远空白。
+	me.Get("/stars", s.myStars)
 	// 技能升级：消耗金币把一个已拥有技能升一级。
 	//
 	// ⚠️ 挂在 /me 组下（带 requireUser），因为它要花**玩家自己的**钱。
@@ -245,7 +248,15 @@ func (s *Server) saveLoadout(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"skill_ids": ids})
 }
 
-// upgradeSkill 把 :id 对应的技能升一级，返回新等级。
+// myStars 返回玩家各关历史最好星级，形状 { "stars": { "<关卡ID>": 星数 } }。
+// 从未结算的关卡不出现在 map 里 —— 客户端按缺省 0 处理，而不是服务端补 0。
+func (s *Server) myStars(c *fiber.Ctx) error {
+	stars, err := s.Svc.LevelStars(c.Context(), userIDFrom(c))
+	if err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(fiber.Map{"stars": stars})
+}
 //
 // 失败一律走 `failErr`，由它把 service 的哨兵错误翻成合适的 HTTP 码
 // （余额不足 / 未拥有 / 已满级 → 400，不泄漏「该技能存在但你没拥有」）。

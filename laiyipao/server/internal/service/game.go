@@ -737,6 +737,27 @@ func (s *Service) LoadTasks(ctx context.Context, userID int64, scope string) ([]
 	return out, rows.Err()
 }
 
+// LevelStars 返回玩家每关的历史最好星级（结算时 GREATEST 落库，见 SettleBattle）。
+// 客户端选关页的星数与「已通关」标记以此为准；从未结算的关卡不出现在结果里。
+func (s *Service) LevelStars(ctx context.Context, userID int64) (map[int]int, error) {
+	rows, err := s.pool.Query(ctx, `
+		SELECT level_id, stars FROM level_stars WHERE user_id = $1`, userID)
+	if err != nil {
+		return nil, fmt.Errorf("load level stars: %w", err)
+	}
+	defer rows.Close()
+
+	out := make(map[int]int)
+	for rows.Next() {
+		var lvl, st int
+		if err := rows.Scan(&lvl, &st); err != nil {
+			return nil, err
+		}
+		out[lvl] = st
+	}
+	return out, rows.Err()
+}
+
 // bumpTasks 按指标累加任务进度。周期内的同一任务只保留最大值，
 // 避免反复战斗把累计型任务刷爆。
 func (s *Service) bumpTasks(ctx context.Context, tx pgx.Tx, userID int64, deltas map[string]int64, now time.Time) error {
