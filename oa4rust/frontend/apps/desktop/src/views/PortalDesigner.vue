@@ -17,6 +17,7 @@
         <button class="btn" @click="pdDesignerOps('tplCategory')">模板页分类</button>
         <button class="btn" @click="pdDesignerOps('widgetDelete')">删组件</button>
         <button class="btn" @click="pdDesignerOps('designerDetail')">设计器详情</button>
+        <button class="btn" @click="pdDesignerOps('fileUpload')">资源内容上传</button>
         <button class="btn primary" :disabled="!activeId || saving" @click="saveDesign">
           {{ saving ? '保存中…' : '保存布局' }}
         </button>
@@ -382,6 +383,21 @@ async function pdDesignerOps(op: string) {
       const id = encodeURIComponent(prompt('要删除的组件 ID:', '') || '')
       if (!(await confirmMsg('确定删除该组件？'))) return
       await api.delete(`/api/portal/assemble/designer/widget/delete/${id}`)
+    } else if (op === 'fileUpload') {
+      // 十类功能5：设计器资源内容上传（POST file/upload/{id}，UPDATE x_portal_file.content）
+      const fid = prompt('资源文件 ID (x_portal_file xid):', '') || ''
+      if (!fid) return
+      const input = document.createElement('input')
+      input.type = 'file'
+      input.onchange = async () => {
+        const file = input.files?.[0]
+        if (!file) return
+        const content = await file.text()
+        await api.post(`/api/portal/assemble/designer/file/upload/${encodeURIComponent(fid)}`, { content })
+        toast.success('资源内容已上传')
+      }
+      input.click()
+      return
     } else {
       const id = encodeURIComponent(prompt('设计器对象 ID:', '') || '')
       const cnt = encodeURIComponent(prompt('数量:', '10') || '10')
