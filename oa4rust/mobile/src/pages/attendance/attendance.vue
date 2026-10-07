@@ -60,6 +60,50 @@ async function doCheck(kind: 'checkIn' | 'checkOut'): Promise<void> {
   }
 }
 
+// ── 外勤打卡（v2/mobile/check/ from/out，十类功能7）─────────────────────
+const checkingOut = ref(false)
+
+async function doCheckFromOut(kind: 'checkIn' | 'checkOut'): Promise<void> {
+  if (checkingOut.value) return
+  checkingOut.value = true
+  try {
+    const resp = await attendanceApi.checkFromOut(kind)
+    const duplicated = Boolean(resp.data?.duplicated)
+    uni.showToast({
+      title: duplicated ? '今日已打过此卡' : `外勤${kind === 'checkIn' ? '上' : '下'}班打卡成功`,
+      icon: duplicated ? 'none' : 'success',
+    })
+    await load()
+  } catch (e) {
+    uni.showToast({ title: e instanceof Error ? e.message : '外勤打卡失败', icon: 'none' })
+  } finally {
+    checkingOut.value = false
+  }
+}
+
+// ── 自助假期申请（selfholidaysimple，十类功能7）────────────────────────
+const leaveDate = ref('')
+const leaveReason = ref('')
+const leaveBusy = ref(false)
+
+async function applyLeave(): Promise<void> {
+  if (!leaveDate.value) {
+    uni.showToast({ title: '请选择假期日期', icon: 'none' })
+    return
+  }
+  leaveBusy.value = true
+  try {
+    await attendanceApi.selfHolidayApply({ holidayDate: leaveDate.value, reason: leaveReason.value })
+    uni.showToast({ title: '假期申请已提交', icon: 'success' })
+    leaveDate.value = ''
+    leaveReason.value = ''
+  } catch (e) {
+    uni.showToast({ title: e instanceof Error ? e.message : '申请失败', icon: 'none' })
+  } finally {
+    leaveBusy.value = false
+  }
+}
+
 function todayRecords(): AttendancePreCheck['records'] {
   return pre.value?.records ?? []
 }
@@ -127,8 +171,25 @@ function statText(): string {
           下班打卡
         </button>
       </view>
+      <view class="buttons out-buttons">
+        <button class="btn btn-out" :disabled="checkingOut || !pre?.canCheckIn" @tap="doCheckFromOut('checkIn')">
+          外勤上班
+        </button>
+        <button class="btn btn-out" :disabled="checkingOut || !pre?.canCheckIn" @tap="doCheckFromOut('checkOut')">
+          外勤下班
+        </button>
+      </view>
       <view v-if="!pre?.canCheckIn" class="tip">
         你尚未加入任何考勤组，暂无法打卡（请联系管理员配置考勤组）。
+      </view>
+
+      <view class="section">
+        <view class="section-title">假期申请</view>
+        <input v-model="leaveDate" class="leave-input" type="text" placeholder="假期日期（如 2026-10-09）" />
+        <input v-model="leaveReason" class="leave-input" type="text" placeholder="事由（选填）" />
+        <button class="btn leave-btn" :disabled="leaveBusy" @tap="applyLeave">
+          {{ leaveBusy ? '提交中…' : '提交假期申请' }}
+        </button>
       </view>
 
       <view class="section">
@@ -196,6 +257,22 @@ function statText(): string {
 }
 .btn[disabled] {
   background: #c0c4cc;
+}
+.out-buttons {
+  margin-top: -24rpx;
+}
+.btn-out {
+  background: #ff9900;
+}
+.leave-input {
+  background: #f5f7fa;
+  border-radius: 10rpx;
+  padding: 16rpx 20rpx;
+  font-size: 26rpx;
+  margin-bottom: 16rpx;
+}
+.leave-btn {
+  margin-top: 8rpx;
 }
 .tip {
   color: #90979f;

@@ -63,6 +63,7 @@
       <button class="cll-tab" @click="calWrite('eventManage')">事件管理</button>
       <button class="cll-tab" @click="calWrite('calDelete')">删日历</button>
       <button class="cll-tab" @click="calWrite('settingCreate')">建设置</button>
+      <button class="cll-tab" @click="calWrite('msgCreate')">提醒消息</button>
       <button class="cll-tab" @click="calMore('detail')">日历详情</button>
       <button class="cll-tab" @click="calMore('followCancel')">取消关注</button>
       <button class="cll-tab" @click="calMore('calFilter')">日历筛选</button>
@@ -222,6 +223,13 @@ async function calWrite(op: string) {
       if (!(await confirmMsg('确定删除该日历？'))) return
       await api.delete(`/api/calendar_assemble_control/calendar/${e}`)
     } else if (op === 'settingCreate') await api.post('/api/calendar_assemble_control/setting', { name: '日历设置' })
+    else if (op === 'msgCreate') {
+      // 十类功能7：日历提醒消息（POST message，INSERT cal_message；person 取会话）
+      const title = prompt('提醒标题:', '') || ''
+      if (!title) return
+      const body = prompt('提醒内容:', '') || ''
+      await api.post('/api/calendar_assemble_control/message', { calendarId: id || undefined, title, body })
+    }
     toast.success('日历操作已提交')
   } catch (err: any) {
     toast.error(`日历操作失败: ${err?.message ?? ''}`)
