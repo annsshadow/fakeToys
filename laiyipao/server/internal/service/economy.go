@@ -146,6 +146,42 @@ type SignInResult struct {
 	Wallet   Wallet         `json:"wallet"`
 }
 
+// SignInCalendarDay 是七日签到日历的一行（第 N 天给什么奖励）。
+type SignInCalendarDay struct {
+	Day    int            `json:"day_index"`
+	Reward map[string]int `json:"reward"`
+}
+
+// SignInCalendar 返回服务端权威的七日签到奖励表。
+//
+// ⚠️ 第 135 轮：客户端此前的 7 天奖励预览是**本地硬编码公式**
+// （miniapp signin.vue 的 rewardFor：coin=1000×天、第 3/7 天 gem、第 7 天
+// 体力）。它与 seeder 写入 sign_in_calendar 的公式**今天**恰好一致，
+// 但那是两份独立定义 —— 运营重灌/调节日历后，客户端预览会静默漂移，
+// 与玩家实际拿到的 `SignInResult.Reward` 对不上。
+// 故把日历作为权威来源下发，客户端预览改读它。
+func (s *Service) SignInCalendar(ctx context.Context) ([]SignInCalendarDay, error) {
+	rows, err := s.pool.Query(ctx,
+		`SELECT day_index, reward FROM sign_in_calendar ORDER BY day_index`)
+	if err != nil {
+		return nil, fmt.Errorf("load sign-in calendar: %w", err)
+	}
+	defer rows.Close()
+	out := []SignInCalendarDay{}
+	for rows.Next() {
+		var d SignInCalendarDay
+		var rewardRaw []byte
+		if err := rows.Scan(&d.Day, &rewardRaw); err != nil {
+			return nil, err
+		}
+		if err := json.Unmarshal(rewardRaw, &d.Reward); err != nil {
+			return nil, fmt.Errorf("unmarshal sign-in reward day %d: %w", d.Day, err)
+		}
+		out = append(out, d)
+	}
+	return out, rows.Err()
+}
+
 // SignIn 执行每日签到。
 //
 // 同一天只能签一次：靠 user_sign_ins 的 (user_id, sign_date) 主键保证，

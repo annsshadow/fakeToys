@@ -113,12 +113,31 @@ const canSign = ref(true)
 const lastResult = ref('')
 const code = ref('')
 const redeemMsg = ref('')
+// 第 135 轮：七日签到奖励表改由服务端下发（权威），不再本地硬编码。
+// key = day_index。未加载成功时为空对象 → rewardFor 回落本地缺省公式。
+const calendar = ref<Record<number, Record<string, number>>>({})
 
-function rewardFor(day: number): Record<string, number> {
+async function loadCalendar() {
+  try {
+    const res = await api.fetchSignInCalendar()
+    const m: Record<number, Record<string, number>> = {}
+    for (const d of res.days ?? []) m[d.day_index] = d.reward
+    calendar.value = m
+  } catch {
+    /* 离线/失败：回落本地缺省公式（preview 可能与服务端不一致，但不阻断页面） */
+  }
+}
+
+// 预览奖励优先用服务端日历；缺该天（或日历未加载）时回落本地缺省公式。
+function localRewardFor(day: number): Record<string, number> {
   const r: Record<string, number> = { coin: 1000 * day }
   if (day === 3 || day === 7) r.gem = 20 * day
   if (day === 7) r.energy = 50
   return r
+}
+
+function rewardFor(day: number): Record<string, number> {
+  return calendar.value[day] ?? localRewardFor(day)
 }
 
 function rewardText(reward: Record<string, number>): string {
@@ -208,7 +227,8 @@ async function doRedeem() {
 
 onMounted(async () => {
   if (!store.loggedIn) await store.login()
-  await load()
+  // 第 135 轮：拉服务端权威签到日历（与 load 并发，互不阻塞）
+  await Promise.all([loadCalendar(), load()])
 })
 </script>
 
