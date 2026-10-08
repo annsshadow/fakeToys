@@ -15,6 +15,8 @@ from types import SimpleNamespace
 
 import pytest
 
+from api.deps import INTERNAL_ERROR_DETAIL
+
 
 @pytest.fixture
 def env(tmp_path, monkeypatch):
@@ -54,7 +56,7 @@ class TestMultimodal500:
         client, _ = env
         response = client.post("/api/multimodal/process", json={"text": "你好"})
         assert response.status_code == 500
-        assert "fuse boom" in response.json()["detail"]
+        assert response.json()["detail"] == INTERNAL_ERROR_DETAIL  # L180/A155②: no leak of 'fuse boom'
 
     def test_scan_generic_500(self, env, monkeypatch):
         import augmentor.data as data_pkg
@@ -63,7 +65,7 @@ class TestMultimodal500:
         client, _ = env
         response = client.post("/api/multimodal/scan", json={"directory": "."})
         assert response.status_code == 500
-        assert "scan boom" in response.json()["detail"]
+        assert response.json()["detail"] == INTERNAL_ERROR_DETAIL  # L180/A155②: no leak of 'scan boom'
 
 
 class _FakeExporter:
@@ -90,7 +92,7 @@ class TestExport500:
             json={"datasets": {"ds": "a.json"}, "output_dir": "out"},
         )
         assert response.status_code == 500
-        assert "batch export boom" in response.json()["detail"]
+        assert response.json()["detail"] == INTERNAL_ERROR_DETAIL  # L180/A155②: no leak of 'batch export boom'
 
     def test_formats_generic_500(self, env, monkeypatch):
         import augmentor.export as export_module
@@ -99,7 +101,7 @@ class TestExport500:
         client, _ = env
         response = client.get("/api/export/formats")
         assert response.status_code == 500
-        assert "formats boom" in response.json()["detail"]
+        assert response.json()["detail"] == INTERNAL_ERROR_DETAIL  # L180/A155②: no leak of 'formats boom'
 
 
 class _FakeVersionManager:
@@ -135,14 +137,14 @@ class TestVersion500:
             "/api/versions/create", params={"filename": "a.json"}, json={}
         )
         assert response.status_code == 500
-        assert "create boom" in response.json()["detail"]
+        assert response.json()["detail"] == INTERNAL_ERROR_DETAIL  # L180/A155②: no leak of 'create boom'
 
     def test_rollback_generic_500(self, env, monkeypatch):
         _patch_pipeline(monkeypatch, _FakeVersionManager(fail_rollback=True))
         client, _ = env
         response = client.post("/api/versions/v-old/rollback")
         assert response.status_code == 500
-        assert "rollback boom" in response.json()["detail"]
+        assert response.json()["detail"] == INTERNAL_ERROR_DETAIL  # L180/A155②: no leak of 'rollback boom'
 
     def test_create_version_http_exception_passes_through(self, env, monkeypatch):
         """路由内的 HTTPException（如 404）必须原样直通，不得被包成 500"""
@@ -185,7 +187,7 @@ class TestDataExport500:
             json={"input_file": "a.json", "output_dir": "out"},
         )
         assert response.status_code == 500
-        assert "data export boom" in response.json()["detail"]
+        assert response.json()["detail"] == INTERNAL_ERROR_DETAIL  # L180/A155②: no leak of 'data export boom'
 
 
 class TestHealthGateErrorBranches:
@@ -223,7 +225,7 @@ class TestHealthGateErrorBranches:
             "/api/quality/health-gate", json={"input_file": "a.json"}
         )
         assert response.status_code == 500
-        assert "gate boom" in response.json()["detail"]
+        assert response.json()["detail"] == INTERNAL_ERROR_DETAIL  # L180/A155②: no leak of 'gate boom'
 
 
 class TestRouteHttpReraise:

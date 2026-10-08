@@ -44,15 +44,15 @@ process() {
 
 # Rust
 while IFS= read -r f; do process "$f" slash; done < <(
-  find oa4rust -path '*/target' -prune -o -path '*/target-ci' -prune -o -name '*.rs' -type f -print)
+  find oa4rust/backend -path '*/target' -prune -o -path '*/target-ci' -prune -o -name '*.rs' -type f -print)
 
 # Vue
 while IFS= read -r f; do process "$f" vue; done < <(
-  find oa4rust-web -path '*/node_modules' -prune -o -path '*/dist' -prune -o -name '*.vue' -type f -print)
+  find oa4rust/frontend oa4rust/mobile -path '*/node_modules' -prune -o -path '*/dist' -prune -o -name '*.vue' -type f -print)
 
 # TypeScript (web + auto-checkin)
 while IFS= read -r f; do process "$f" slash; done < <(
-  find oa4rust-web auto-checkin -path '*/node_modules' -prune -o -path '*/dist' -prune -o -name '*.ts' -type f -print)
+  find oa4rust/frontend oa4rust/mobile oa4rust/tests oa4rust/scripts oa4rust/e2e auto-checkin -path '*/node_modules' -prune -o -path '*/dist' -prune -o -name '*.ts' -type f -print)
 
 # Python
 while IFS= read -r f; do process "$f" hash; done < <(

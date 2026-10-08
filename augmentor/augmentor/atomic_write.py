@@ -32,7 +32,7 @@ import os
 import secrets
 import time
 from pathlib import Path
-from typing import Any, List, Union
+from typing import Any, List, Optional, Union
 
 # 同名并发替换在 Windows 上会撞到瞬时的 `ERROR_ACCESS_DENIED`：两支线程同时把各自的临时件
 # 换到同一个目标时，后到的那支会被拒绝（L99 的并发守卫实测：8 支线程同一时刻写同一文件，
@@ -59,7 +59,8 @@ def _replace_with_retry(src: Path, dst: Path):
     os.replace(src, dst)
 
 
-def atomic_write_json(file_path: Path, data: Union[List, Any]):
+def atomic_write_json(file_path: Path, data: Union[List, Any],
+                       ensure_ascii: bool = False, indent: Optional[int] = None):
     """把 `data` 序列化成紧凑 JSON，原子地替换到 `file_path`
 
     失败语义：序列化或写盘抛错时目标文件**保持原样**（旧内容还在），临时件被清掉，
@@ -81,7 +82,29 @@ def atomic_write_json(file_path: Path, data: Union[List, Any]):
     tmp = file_path.with_name(f".{file_path.name}.tmp-{secrets.token_hex(4)}")
     try:
         with open(tmp, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, separators=(",", ":"))
+            if indent is None:
+                json.dump(data, f, ensure_ascii=ensure_ascii, separators=(",", ":"))
+            else:
+                json.dump(data, f, ensure_ascii=ensure_ascii, indent=indent)
+        _replace_with_retry(tmp, file_path)
+    finally:
+        if tmp.exists():
+            tmp.unlink()
+
+
+def atomic_write_text(file_path: Path, text: str):
+    """把一段文本原子地替换到 `file_path`（L163 为 JSONL 导出边而加）
+
+    与 `atomic_write_json` 同一替换语义：失败时目标保持原样、临时件清掉、
+    异常原样上抛。临时件命名同样以「前导点 + `.tmp-` 中段」避开 `*.json`
+    与 `*.jsonl` 的目录扫描。
+    """
+    file_path = Path(file_path)
+    file_path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = file_path.with_name(f".{file_path.name}.tmp-{secrets.token_hex(4)}")
+    try:
+        with open(tmp, "w", encoding="utf-8", newline="") as f:
+            f.write(text)
         _replace_with_retry(tmp, file_path)
     finally:
         if tmp.exists():

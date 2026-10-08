@@ -6,6 +6,7 @@
 import json
 import pytest
 from pathlib import Path
+from augmentor.exceptions import DataValidationError
 from augmentor.validation import (
     DatasetValidator, DataSanitizer, ValidationResult,
     ValidationSeverity, validate_dataset, sanitize_dataset
@@ -449,10 +450,11 @@ class TestValidationHistoryFormat:
 class TestValidationRuleViolations:
     """DatasetValidator 第二轮扩展测试（覆盖剩余分支）"""
 
-    def test_unknown_preset_falls_back_to_basic(self):
-        """未知 preset 应回退到 basic"""
-        validator = DatasetValidator(preset="nonexistent_preset")
-        assert validator.rules == DatasetValidator.PRESET_RULES["basic"]
+    def test_unknown_preset_is_rejected(self):
+        """L189 红字重述：未知 preset 不再静默回退 basic，而是抛
+        `DataValidationError`（改前本例钉的是静默回落，随 L189 的语义翻转重写）。"""
+        with pytest.raises(DataValidationError):
+            DatasetValidator(preset="nonexistent_preset")
 
     def test_validate_non_dict_item(self):
         """非字典数据项应产生 root 错误"""

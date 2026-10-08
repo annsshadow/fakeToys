@@ -387,7 +387,7 @@
    "file": "crates/ai_assemble_control/src/routes.rs"
   },
   {
-   "method": "GET",
+   "method": "POST",
    "path": "/api/ai_assemble_control/update/ai/control/config",
    "handler": "update_ai_control_config",
    "file": "crates/ai_assemble_control/src/routes.rs"
@@ -2753,13 +2753,13 @@
   {
    "method": "POST",
    "path": "/api/bbs/assemble/control/picture/encode/base64/size/{size}",
-   "handler": "picture_encode_501",
+   "handler": "picture_encode",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "POST",
    "path": "/api/bbs/assemble/control/picture/section/{id}/icon",
-   "handler": "picture_section_icon_501",
+   "handler": "picture_section_icon",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
@@ -2789,7 +2789,7 @@
   {
    "method": "GET",
    "path": "/api/bbs/assemble/control/section/syn",
-   "handler": "section_syn_501",
+   "handler": "section_syn",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
@@ -8388,6 +8388,12 @@
   },
   {
    "method": "GET",
+   "path": "/api/config/system",
+   "handler": "config_system_config",
+   "file": "crates/file_assemble_control/src/routes.rs"
+  },
+  {
+   "method": "GET",
    "path": "/api/editor/list",
    "handler": "editor_list",
    "file": "crates/file_assemble_control/src/routes.rs"
@@ -12759,8 +12765,14 @@
   {
    "method": "PUT",
    "path": "/api/organization/assemble/control/unitduty/update/member",
-   "handler": "unitduty_update_member",
+   "handler": "duty_update_member",
    "file": "crates/organization_assemble_control/src/lib.rs"
+  },
+  {
+   "method": "GET",
+   "path": "/api/users/list",
+   "handler": "users_list",
+   "file": "crates/organization_assemble_control/src/u2_router.rs"
   },
   {
    "method": "POST",
@@ -12943,8 +12955,8 @@
    "file": "crates/organization_assemble_control/src/u2_router.rs"
   },
   {
-   "method": "GET",
-   "path": "/api/organization/assemble/control/person/check/password/{password}",
+   "method": "POST",
+   "path": "/api/organization/assemble/control/person/check/password",
    "handler": "person_check_password",
    "file": "crates/organization_assemble_control/src/u2_router.rs"
   },
@@ -13000,6 +13012,12 @@
    "method": "POST",
    "path": "/api/organization/assemble/control/unit",
    "handler": "unit_create",
+   "file": "crates/organization_assemble_control/src/u2_router.rs"
+  },
+  {
+   "method": "GET",
+   "path": "/api/departments/tree",
+   "handler": "departments_tree",
    "file": "crates/organization_assemble_control/src/u2_router.rs"
   },
   {
@@ -14543,8 +14561,8 @@
    "file": "crates/personal/src/lib.rs"
   },
   {
-   "method": "GET",
-   "path": "/api/reset/check/password/{password}",
+   "method": "POST",
+   "path": "/api/reset/check/password",
    "handler": "check_password",
    "file": "crates/personal/src/lib.rs"
   },
@@ -14675,8 +14693,8 @@
    "file": "crates/personal/src/lib.rs"
   },
   {
-   "method": "GET",
-   "path": "/api/person/regist/check/password/{password}",
+   "method": "POST",
+   "path": "/api/person/regist/check/password",
    "handler": "regist_check_password",
    "file": "crates/personal/src/lib.rs"
   },
@@ -22855,19 +22873,19 @@
   {
    "method": "GET",
    "path": "/api/processplatform/assemble/surface/attachment/batch/download/job/{job}/site/{site}",
-   "handler": "attachment_u2b_batch_download_zip",
+   "handler": "attachment_u2b_batch_download_zip_by_job",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
    "method": "GET",
    "path": "/api/processplatform/assemble/surface/attachment/batch/download/work/{work}/site/{site}",
-   "handler": "attachment_u2b_batch_download_zip",
+   "handler": "attachment_u2b_batch_download_zip_by_work",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {
    "method": "GET",
    "path": "/api/processplatform/assemble/surface/attachment/batch/download/work/{work}/site/{site}/stream",
-   "handler": "attachment_u2b_batch_download_zip",
+   "handler": "attachment_u2b_batch_download_zip_by_work",
    "file": "crates/processplatform_assemble_surface/src/routes.rs"
   },
   {

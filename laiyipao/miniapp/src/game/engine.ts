@@ -16,6 +16,7 @@ import {
   ELEMENT_PER_STACK_BASE,
   mulDiv,
   maxBig,
+  minBig,
   clampInt64,
   applyArmor,
   MAX_RESIST,
@@ -56,7 +57,88 @@ import type {
   SkillDef,
 } from './types'
 
+/**
+ * 回放前缀的 **S 段**（技能槽配置）—— 抽成纯函数。
+ *
+ * 格式：每槽一条 `slot:skillId:baseDamage:applyStacks:heatCost`，按**字符串**升序，逗号连接。
+ *
+ * ## 为什么要抽出来（第 56 轮）
+ *
+ * 服务端要独立重算这个串来校验上报（见 `server/internal/domain/replayskills.go`）。
+ * 两端格式一旦漂移，合法玩家的每一局都会被判成作弊 —— 而且是那种
+ * 「客户端、服务端、e2e 全绿，只有真机玩家被拒」的漂移，极难定位。
+ *
+ * 所以这个串进了 `server/testdata/formula_vectors.json`：
+ * Go 与 TS 两侧的测试读**同一个**字面期望值。
+ *
+ * 顺带一提：`.sort()` 无参数时按 UTF-16 码元比较，所以 `10:...` 排在 `2:...` 前面。
+ * Go 侧必须用 `sort.Strings` 才等价 —— 写成按槽位数值排会锁死 10 槽以上的玩家。
+ */
+export function replaySkillsSegmentOf(
+  skills: readonly Pick<EquippedSkill, 'slot' | 'skillId' | 'baseDamage' | 'applyStacks' | 'heatCost'>[]
+): string {
+  return skills
+    .map((s) => `${s.slot}:${s.skillId}:${s.baseDamage}:${s.applyStacks}:${s.heatCost}`)
+    .sort()
+    .join(',')
+}
+
 export const TICK_HZ = 20
+
+/**
+ * `card_picks` 里「本波弃过一张」的编码（第 66 轮）。
+ *
+ * 一波内的记录值形如 `-(PICK_DISCARD_BASE + handIdx)`：
+ * 弃过牌并取第 0 张 → -3，第 1 张 → -4，第 2 张 → -5。
+ *
+ * -1 保留给「整波跳过」（既有语义，不改）。
+ *
+ * ⚠️⚠️ 编码**必须恒为负**，否则与普通手牌下标撞车。
+ *
+ * 第一版写成 `PICK_DISCARD_BASE - handIdx`（base=2），于是
+ * 「弃过牌并取第 0 张」= 2 —— 而 2 也是合法的普通下标（取第 2 张）。
+ * 两者的 record / 事件流完全不同，却编码成同一个值。
+ *
+ * 实测症状很隐蔽：`cardPicks` 记成 `[2,2,2,2]`，看起来完全正常
+ * （全是合法下标），但重放按「取第 2 张」解释，于是每波少一次弃牌
+ * → 事件流少 4 条 → 哈希失配。
+ *
+ * **教训**：编码负数下标时，「编码值」与「合法取值域」必须**互不相交**。
+ * 这个 bug 与 README 记的「第 57 轮 slot=10 排在 slot=2 前面」同源：
+ * 都是编码与取值域撞车，而单测（全绿）看不出来，因为撞车只在**跨侧**发生。
+ *
+ * 下界：handIdx ∈ [0, 2]（每波固定 3 张牌）→ 最负 -5。
+ * **服务端 `card_picks` 的下界校验必须同步放宽到 -5。**
+ */
+export const PICK_DISCARD_BASE = 3
+
+/**
+ * `card_picks` 里「本波弃过牌但整波跳过」的编码（第 66 轮）。
+ *
+ * 形如 `-(PICK_DISCARD_SKIP_BASE + handIdx)`：
+ * 弃一张后跳过第 0 张 → -4，第 1 张 → -5，第 2 张 → -6。
+ *
+ * 为什么需要它：`-1`（整波跳过）无法表达「弃过牌再跳过」。
+ * 实测那种打法下原局与重放的事件流差一条 `record(..., 1)`，
+ * 热量也差 1 → replayHash 不同 → I-6 判伪造。
+ * 而「弃一张后跳过」是完全合法的操作（discardCard 与 skipCards 都只判
+ * `phase === 'card_select'`）。
+ *
+ * ⚠️ 它必须与 `-(PICK_DISCARD_BASE + handIdx)` 取值域**不相交**：
+ *   弃+取：-(3+0..2) = -3..-5
+ *   弃+跳：-(6+0..2) = -6..-8
+ * 不相交，靠的是两个 BASE 相差 3（大于单波最大手牌数 2）。
+ * 若哪天 `rollWaveCards` 改成每波 4 张，这两个区间就会开始重叠 ——
+ * 那时必须把 BASE 拉开，而不是改 `handIdx` 的上限。
+ */
+export const PICK_DISCARD_SKIP_BASE = 6
+
+/**
+ * `card_picks` 条目的合法取值下界（第 66 轮）。
+ *
+ * 导出给边界与契约测试共用，避免三处各写一份魔数。
+ */
+export const PICK_MIN = -(PICK_DISCARD_SKIP_BASE + 2) // = -8
 /**
  * 每 tick 的毫秒数。
  *
@@ -301,6 +383,17 @@ export class BattleEngine {
   buffs: Buffs = newBuffs()
   skills: EquippedSkill[]
 
+  /**
+   * **开战前**构筑的 S 段，在构造那一刻冻结（第 64 轮）。
+   *
+   * ⚠️ 必须是字符串快照，不能靠「持有 skills 数组的旧引用」：
+   * `applyCard` 走的是 `this.skills = this.skills.map(...)` —— 整体替换数组，
+   * 元素是 `{...s, baseDamage: 新值}` 这样的**新对象**。
+   * 所以旧引用指向的旧数组不会跟着变，但新数组的内容已经是升格后的 ——
+   * 只要上报时读 `this.skills` 就一定会带上局内状态。
+   */
+  private readonly buildSnapshotSkills: string
+
   // 统计
   shots = 0
   hits = 0
@@ -358,6 +451,8 @@ export class BattleEngine {
     this.cfg = cfg
     this.rng = new BattleRng(cfg.seed)
     this.skills = cfg.equipped.map((s) => ({ ...s, cooldownRemaining: 0 }))
+    // 上报用的 S 段在这里冻结 —— 早于任何 applyCard（第 64 轮）。
+    this.buildSnapshotSkills = replaySkillsSegmentOf(this.skills)
 
     this.baseHp = BigInt(cfg.level.base_hp)
     this.baseHpMax = BigInt(cfg.level.base_hp)
@@ -464,12 +559,67 @@ export class BattleEngine {
    * 注：种子不进前缀。种子的影响已经完整体现在事件流里
    * （刷怪洗牌、暴击滚点、命中次序），重复计入反而会让两端更难对齐。
    */
+  /**
+   * 回放前缀里的 **`S` 段**：本局装载的技能槽配置。
+   *
+   * 格式：每槽一条 `slot:skillId:baseDamage:applyStacks:heatCost`，按字符串升序，逗号连接。
+   *
+   * ## 为什么把它单独提出来（第 56 轮）
+   *
+   * `replayHash` 整体是 **无法**被服务端廉价校验的：
+   * 它是 `fnv1a64(前缀;事件1;事件2;…)` 的单向哈希，
+   * 而前缀里的 `A` 段取自 `currentAttacker()` —— 那个值含 `this.buffs.*`，
+   * 是**战斗中选卡产生的加成**，服务端在结算时不知道。
+   *
+   * 但 `S` 段**不含 buff**，它完全由构筑决定：槽位、技能 id、
+   * 底伤（技能等级已烘进去）、叠层、热量。
+   * 服务端同样有这些数据，于是可以独立重算并比对。
+   *
+   * 它能抓住：
+   * - 伪造 `base_damage`（即假报技能等级 —— 等级必须烘进底伤）
+   * - 上报一套与 `user_skill_slots` 不同的技能
+   * - 槽位错位
+   *
+   * 抓不到的：伪造 `A` 段（攻方系数）—— 那需要模拟，已记入 README 已知边界。
+   *
+   * ⚠️⚠️ 这里**只**服务于 `replayHash()`，不用于上报（第 64 轮修正）。
+   *
+   * 原注释写的是「这个字符串同时用于哈希与上报，必须是同一个来源」——
+   * 那条假设是**错的**，且它把一个把绝大多数玩家判成作弊的缺陷正当化了。
+   *
+   * 两个用途需要的是**相反**的口径：
+   *
+   *   | 用途   | 该含什么                     | 为什么 |
+   *   |--------|------------------------------|--------|
+   *   | 哈希   | **含**局内状态（取牌升格后） | 否则取牌不改变哈希，「同种子不同操作得同哈希」成立，验真说谎 |
+   *   | 上报   | **不含**局内状态（开战前构筑） | 服务端按 DB 重算，DB 里没有局内升格这回事 |
+   *
+   * 之前两处都调本方法（读 `this.skills`，会被 `applyCard` 就地升格），
+   * 于是取过一张技能卡的正常对局上报 `0:1:120:2:20`，
+   * 而服务端重算出 `0:1:100:1:20` → `ErrReplaySkillsMismatch` → 422。
+   * `rollWaveCards` 固定把技能卡放在手牌下标 0，5 波各取 1 张时
+   * 随机选命中技能卡的概率 ≈ 1-(2/3)^5 ≈ **86%**。
+   */
+  replaySkillsSegment(): string {
+    return replaySkillsSegmentOf(this.skills)
+  }
+
+  /**
+   * **上报给服务端的** S 段：开战前的构筑，不含任何局内升格（第 64 轮）。
+   *
+   * 与 `replaySkillsSegment()` 读同一个数组，但必须**在构造时冻结** ——
+   * `applyCard` 会 `this.skills = this.skills.map(...)` 整体替换数组元素，
+   * 所以持有旧数组的引用并不能免疫升格，必须在构造那一刻算出字符串。
+   *
+   * 守卫：`replay_skills_build_snapshot.test.ts`。
+   */
+  buildSnapshotSegment(): string {
+    return this.buildSnapshotSkills
+  }
+
   replayHash(): string {
     const a = this.currentAttacker()
-    const skills = this.skills
-      .map((s) => `${s.slot}:${s.skillId}:${s.baseDamage}:${s.applyStacks}:${s.heatCost}`)
-      .sort()
-      .join(',')
+    const skills = this.replaySkillsSegment()
     const prefix =
       `L${this.cfg.level.id}` +
       `|A${a.attack}.${a.critPermille}.${a.critMultiplierPermille}` +
@@ -495,6 +645,9 @@ export class BattleEngine {
     this.phase = 'wave'
     this.deck.newWave()
     this.deck.discardsLeft += this.buffs.freeDiscard
+    // ⚠️ 第 66 轮：每波重置「本波弃过牌」标记 ——
+    // 编码只对**当前波**的 card_picks 项有意义。
+    this.discardedThisWave = false
 
     const wave = this.cfg.level.waves[index]
     if (!wave) {
@@ -633,6 +786,17 @@ export class BattleEngine {
   step(): BattleEvent[] {
     if (this.phase === 'won' || this.phase === 'lost') return this.drainEvents()
 
+    // ⚠️ 待结束的本波在这里收尾（第 66 轮）。
+    //
+    // 位置关键：必须在 `applyReplayDecision` **之前**。
+    // 否则同一 tick 内 `applyReplayDecision` 会被再调一次，
+    // 消费 script 的下一项，把下一波的决策当成本波的第二张牌
+    // （实测 picks 记成 [-3,-3,-1,-1]，事件流多一条原局没有的 402/902/0）。
+    if (this.cardSelectDone) {
+      this.cardSelectDone = false
+      this.beginWave(this.waveIndex + 1)
+    }
+
     // ⚠️ 重放决策必须在 tick++ **之前**执行，否则会多消耗一个 tick。
     // tick 会写进每条 replay 事件（record(tick, ...)），
     // 多一格会让后续所有事件时间戳整体偏移 → 哈希必然不同。
@@ -704,7 +868,30 @@ export class BattleEngine {
             this.baseHp -= dmg
             this.leaked++
             this.emit({ type: 'leak', damage: dmg })
-            this.record(this.tick, 'leak', uidOf(dmg))
+            // ⚠️ 第 70 轮：`a` 从 `uidOf(dmg)` 改成 `e.uid`。
+            //
+            // 两条漏怪路径此前**语义不一致**：
+            //   射程内扣血  →  `record(tick, 'leak', uidOf(dmg))`
+            //   抵达防线    →  `record(tick, 'leak', e.uid)`
+            //
+            // `uidOf(v) = Number(v % 100000n)` —— 传进去的是**伤害值**，
+            // 于是 `a` 变成了「漏怪伤害 mod 100000」，与任何 uid 无关。
+            //
+            // 判定它是接线错误而非约定的证据：`uidOf` 全仓**只有一个调用点**，
+            // 函数名说「取 uid」而实参是伤害值 —— 名字与实参对不上，
+            // 说明写的时候想的是别的东西。
+            //
+            // 后果：
+            //  1. **语义错位** —— 这条事件不记录是哪只怪漏的，
+            //     事后无法从回放定位责任目标
+            //  2. **信息损失** —— 伤害相差 100000 的两次漏怪在哈希里
+            //     不可区分（`leakDamageFor` 的量级是
+            //     `baseHpMax × attack / 3600`，当前几百到几千，
+            //     尚未跨过 10^5，但随 base_hp 增长会跨过）
+            //
+            // 现在 `a` 统一是敌人 uid，伤害值放进 `b`
+            // —— `b` 此前在 leak 事件上恒为 0，没被别的类型占用。
+            this.record(this.tick, 'leak', e.uid, Number(dmg))
             if (this.baseHp <= 0n) {
               this.baseHp = 0n
               this.finish(false)
@@ -721,7 +908,12 @@ export class BattleEngine {
         this.baseHp -= dmg
         this.leaked++
         this.emit({ type: 'leak', damage: dmg })
-        this.record(this.tick, 'leak', e.uid)
+        // ⚠️ 第 70 轮：`b` 补上伤害值，与射程内那条对齐。
+        //
+        // 两条路径此前一处写 uid 一处写伤害，且都没有记录另一项 ——
+        // 也就是说无论走哪条路，都**丢掉了**一个信息。
+        // 现在约定：`a` = 敌人 uid，`b` = 漏掉的伤害值。
+        this.record(this.tick, 'leak', e.uid, Number(dmg))
         if (this.baseHp <= 0n) {
           this.baseHp = 0n
           this.finish(false)
@@ -1022,6 +1214,14 @@ export class BattleEngine {
       p.hitSet.add(e.uid)
 
       // 溅射
+      //
+      // `this.hits` 只在**主目标**这里自增，applyAoe / 弹射内部**不**加。
+      //
+      // hits 的语义是「有多少次开火命中了东西」，不是「总共造成了几次伤害结算」。
+      // 理由是一条跨端强约束：服务端 ValidateSettle 拒 in.Hits > in.Shots
+      // （ErrInvalidHitRate），engine.test.ts 也有 hits <= shots。
+      // 一发带 aoe/chain 的弹丸本就能命中多个敌人，每次结算都 hits++ 会让
+      // 高 chain + 高 pierce 的构筑稳定产出 hits > shots —— 那是真的 422。
       if (p.aoeRadius > 0) {
         this.applyAoe(p, e, p.aoeRadius)
       }
@@ -1039,7 +1239,18 @@ export class BattleEngine {
           p.chainLeft--
           p.x = next.x
           p.y = next.y
-          p.hitSet.add(next.uid)
+          // 弹射目标必须**当场结算伤害**（第 65 轮修复）。
+          //
+          // 原来是 `p.hitSet.add(next.uid); continue`：
+          // continue 只是数组游标前进，不会回头结算 next；
+          // 而 next 已被写进 hitSet，下一轮开头的 hitSet.has 会跳过它。
+          // 于是弹射只消耗 chainLeft、只位移弹丸，目标一点伤害都吃不到 ——
+          // 连锁闪电 / 电弧弹这一整类多目标技能的定位完全失效。
+          //
+          // 结算顺序：先结算、后写 hitSet（反过来会重复结算）。
+          if (this.hitEnemy(p, next, true)) {
+            p.hitSet.add(next.uid)
+          }
           continue
         }
       }
@@ -1053,9 +1264,20 @@ export class BattleEngine {
     }
   }
 
-  /** 对单个敌人结算一次命中 */
-  private hitEnemy(p: Projectile, e: Enemy): boolean {
-    if (!this.withinEnemy(e, p.x, p.y)) return false
+  /**
+   * 对单个敌人结算一次命中。
+   *
+   * skipRadius 用于**已经确定要命中**的路径：溅射（applyAoe 已按 aoe_radius
+   * 选好目标）与弹射（弹丸直接跳到目标身上，距离恒为 0）。
+   *
+   * 为什么必须显式跳过（第 65 轮）：原实现无条件执行 withinEnemy，
+   * 而 withinEnemy 的半径是 toFixed(28 + flyHeight*0.1) —— 那是**单体命中半径**，
+   * 不是溅射半径。于是 applyAoe 按 aoeRadius 正确选出的目标，紧接着被这 28
+   * 单位再裁一次：声明的 aoe_radius 被当成 28，所有溅射技能实质失效
+   * （只有彼此贴在一起、距命中点不到 28 单位的敌人才会被顺带打到）。
+   */
+  private hitEnemy(p: Projectile, e: Enemy, skipRadius = false): boolean {
+    if (!skipRadius && !this.withinEnemy(e, p.x, p.y)) return false
 
     // 把敌人的运行时状态包成 Defender，复用与 Go 完全一致的结算
     const def = new Defender(e.hp, e.shield, e.armorPermille)
@@ -1088,12 +1310,58 @@ export class BattleEngine {
     if (res.dispelShield && e.shield === 0n) {
       this.pushFloat(e.x, e.y, '护盾驱散', '#58a6ff', 14)
     }
+    //
+    // ⚠️ 第 88 轮：`amplifyPct` 与 `statusDurationMs` 是**两件独立的事**，
+    // 原来被一个 `if res.statusDurationMs > 0` 捆在一起。
+    //
+    // # 缺陷：潜伏耦合 —— 加一条「只有增伤、没有状态」的反应会静默失效
+    //
+    // 原写法：
+    //
+    //    if (res.statusDurationMs > 0) {
+    //      const spec = REACTIONS[...]
+    //      if (spec.amplifyPct > 0) e.amplifyPermille = ...
+    //      ...frozenMs / stunnedMs...
+    //    }
+    //
+    // `amplifyPct` 的生效被 `statusDurationMs > 0` 把门，于是：
+    //
+    //	新增一条 amplify_pct = 300、status_duration_ms = 0 的反应
+    //	→ 受击增伤**永远不会生效**，而代码看起来完全正常
+    //
+    // 为什么这不可能被测出来：**当前 7 条反应里没有任何一条落在这个组合**
+    //（superconduct 600/4000、flash_freeze 300/2000，其余全 0）。
+    // 所以判据「amplify 生效」在今天与「不生效」观察不到差别 ——
+    // 它是一个**只有在改动之后才会显形**的洞。
+    //
+    // 这与第 80/85 轮记的同一个陷阱：
+    // **只要输入落不到分界线上，关于分界线的断言都是空的。**
+    //
+    // # 修法
+    //
+    // 两个字段各管各的，各有自己的判据。
+    // ⚠️ 查表本身**必须**留在 `res.reaction` 非空的守卫里。
+    //
+    // 我第一版把查表提到条件之外，于是每次命中都执行
+    // `REACTIONS[res.reaction as ReactionKey]` —— 而无反应时
+    // `res.reaction` 是**空串**，`REACTIONS['']` 是 undefined，
+    // 紧接着读 `.amplifyPct` 就抛：
+    //
+    //	TypeError: Cannot read properties of undefined (reading 'amplifyPct')
+    //
+    // 既有测试（`replay_discard.test.ts` 等 4 个文件、35 个用例）**当场抓到**。
+    // 那条 `if (res.statusDurationMs > 0)` 除了把门 amplify，
+    // **顺带**把「无反应时不要查表」也挡住了 —— 一个副作用式的守卫。
+    //
+    // 拆耦合时必须把它显式补回来，否则就是拿一个偶发崩溃换另一个潜伏洞。
+    const reactKey = res.reaction as ReactionKey
+    const reactSpec = reactKey ? REACTIONS[reactKey] : undefined
+    if (reactSpec && reactSpec.amplifyPct > 0) {
+      e.amplifyPermille = BigInt(reactSpec.amplifyPct)
+    }
     if (res.statusDurationMs > 0) {
-      const spec = REACTIONS[res.reaction as ReactionKey]
-      if (spec.amplifyPct > 0) {
-        e.amplifyPermille = BigInt(spec.amplifyPct)
-      }
       const react = res.reaction
+      const spec = reactSpec ?? REACTIONS[react as ReactionKey]
       if (react === 'flash_freeze' || react === 'superconduct') e.frozenMs = spec.statusDurationMs
       if (react === 'overheat') e.stunnedMs = spec.statusDurationMs
     }
@@ -1172,8 +1440,14 @@ export class BattleEngine {
     const rr = toFixed(radius)
     for (const e of this.enemies) {
       if (e.dead || e.uid === origin.uid) continue
+      // 溅射目标也必须记进 hitSet。原实现不记，于是「穿透 + 溅射」组合下
+      // 同一敌人会被反复结算：每穿透一个主目标就再跑一次 applyAoe。
+      // 内容表里「电磁栅栏」Pierce 12 / AoeRadius 50 就是这个组合。
+      if (p.hitSet.has(e.uid)) continue
       if (dist2(origin.x, origin.y, e.x, e.y) > rr * rr) continue
-      this.hitEnemy(p, e)
+      if (this.hitEnemy(p, e, true)) {
+        p.hitSet.add(e.uid)
+      }
     }
   }
 
@@ -1182,7 +1456,45 @@ export class BattleEngine {
     const lv = this.cfg.level
     return {
       attack: base.attack + this.buffs.attackPermille,
-      critPermille: base.critPermille + this.buffs.critPermille,
+      // ⚠️ 第 73 轮：这里夹一层 `min(PERMILLE)`。
+      //
+      // 消费侧的判据是 `roll >= PERMILLE - critPermille`
+      // （damage.ts:348，与 Go 的 damage.go:359 同式）。
+      // 当 critPermille > 1000 时右边变成**负数**，而 roll 是 0..9999 ——
+      // 于是判据恒真，**每一发都暴击**。
+      //
+      // # 为什么能超过 1000
+      //
+      // `Attacker.CritPermille` 的文档写着「**0..1000 约定**」
+      // （Go 侧 damage.go:63 同样写着），但**两端都不执行它**：
+      //
+      //   装备侧  loadout_attacker.go 把词缀和夹到 MaxLoadoutCritPermille=500
+      //   基础值  defaultAttacker() = 50
+      //           → base.critPermille ≤ 550
+      //   局内卡  applyAttribute 的 crit 卡 value: 80n，**无夹取**
+      //
+      // 每波恰好 1 张属性卡（`rollWaveCards` 的固定构成），
+      // 最难关卡 10 波（levelgen.go 的 chapter 6），
+      // 6 张 crit 卡 = 550 + 480 = **1030 > 1000**。
+      //
+      // 概率不高（每波 1/6 命中，最多 10 波，P(≥6) ≈ 0.2%），
+      // 但这是**确定性**的：种子给定后必然如此。
+      //
+      // # 为什么是夹而不是「报错」
+      //
+      // 这是客户端的局内计算，服务端**不重算 replay_hash**
+      // （只校验长度，battle_collections.go:318），
+      // 所以夹取不会造成跨端哈希分歧。
+      //
+      // 而「报错」在这里无从谈起 —— 玩家无法选择抽到哪张卡，
+      // 卡池是种子决定的。夹取是唯一能把越界值变成合法值的地方。
+      //
+      // # 为什么只夹 crit，不夹 attack / elementCoefPermille
+      //
+      // 那两个是**线性**消费（`d = skillDamage * (1000 + attack) / 1000`），
+      // 越界只是数值变大，没有行为**悬崖**。
+      // crit 是唯一有悬崖的：`permille - critPermille` 会变号。
+      critPermille: minBig(base.critPermille + this.buffs.critPermille, PERMILLE),
       critMultiplierPermille: base.critMultiplierPermille,
       reactionMultPermille: base.reactionMultPermille,
       elementCap: (lv.element_cap ? BigInt(lv.element_cap) : base.elementCap) + this.buffs.elementCapBonus,
@@ -1222,6 +1534,15 @@ export class BattleEngine {
       enemies: this.enemies,
       projectiles: this.projectiles,
       terrainTick: ELEMENT_PER_STACK_BASE / 8n,
+      // ⚠️ 第 77 轮：元素层数上限必须**动态**取，不能写常量。
+      //
+      // 它是 `lv.element_cap` + 局内 `elementCapBonus` 的合成值
+      // （与 `currentAttacker()` 里那一项同源），玩家还能靠
+      // 「元素容器」卡（element_cap +1）抬高。
+      //
+      // 用 `currentAttacker()` 而不是各处重算：那是唯一一处
+      // 已经把这个合成值算对的地方，重算就是**第二份实现**。
+      elementCap: this.currentAttacker().elementCap,
       within: (tx: number, ty: number, r: number, x: bigint, y: bigint) => {
         const rr = toFixed(r)
         return dist2(toFixed(tx), toFixed(ty), x, y) <= rr * rr
@@ -1328,8 +1649,13 @@ export class BattleEngine {
     this.applyCard(card)
     this.emit({ type: 'card_taken', card })
     this.record(this.tick, 'card', cardIndex(card))
-    this.recordPick(handIdx)
-    if (this.deck.size === 0) this.beginWave(this.waveIndex + 1)
+    // ⚠️ 第 66 轮：本波弃过牌时，把「弃过」编码进记录，
+    // 否则重放不会复现那次 refundHeat 与 record 事件（哈希必然失配）。
+    this.recordPick(this.discardedThisWave ? -(PICK_DISCARD_BASE + handIdx) : handIdx)
+    // ⚠️ 第 66 轮：走 finishCardSelect 而不是直接 beginWave ——
+    // 直接 beginWave 会让 `wave` 事件落在取牌那一 tick，而原局的
+    // wave 事件在下一 tick（实测 DIFF@61 orig=402 repl=401）。
+    if (this.deck.size === 0) this.finishCardSelect()
     return card
   }
 
@@ -1337,7 +1663,35 @@ export class BattleEngine {
    * 记录本波选中的手牌下标（-1 = 整波跳过）。
    *
    * 语义：手牌在本次 offer 中的下标（0/1/2），对应 applyReplayDecision 的解释。
-   * 每波只记第一次有效选择 —— 玩家若先弃牌后取牌，记的是取的那次。
+   *
+   * ⚠️ 第 66 轮：新增「本波弃过一张」的标记。
+   *
+   * 原来每波只记第一次选择，注释写「玩家若先弃牌后取牌，记的是取的那次」。
+   * **索引语义确实是对的**（弃一张后取到的下标仍指向同一张卡），
+   * 但**弃牌的副作用无人复现**：
+   *   - `discardCard` 会 `refundHeat(1)`（降低热量、延后过热）
+   *   - 以及 `record(..., 'card', ..., 1)` 写进回放事件流
+   *
+   * 而重放侧 `applyReplayDecision` 只按脚本取牌，既不回充热量也不写那条事件
+   * → 事件流少一条 → **replayHash 必然不同** → I-6 把这局判成伪造。
+   *
+   * 「先弃后取」是 `discardCard` 与 `takeCard` 都允许的合法操作
+   * （两者只判 `phase === 'card_select'`），所以这不是理论漏洞。
+   *
+   * # 为什么不改协议去表达「弃牌张数」
+   *
+   * `card_picks` 是 `number[]`，服务端校验 `len <= WaveCount` 且每项 `>= -1`。
+   * 改成变长序列要动跨端契约与历史战报兼容性；而弃牌每波**最多 1 次**
+   * （`DISCARD_PER_WAVE = 1`），所以「有没有弃过」这一个 bit 就够。
+   *
+   * 编码：`-2 - handIdx` 表示「本波先弃过一张，然后取第 handIdx 张」。
+   * handIdx 是**弃牌之后**的手牌下标（弃牌移除的是更靠前的一张），
+   * 与 `takeCard` 内部取下标的时机一致。
+   *
+   * ⚠️ 下界必须是 -2 - (handMax-1)。当前每波 3 张牌（rollWaveCards 固定
+   * 产 skill/attribute/mechanic 各 1），handIdx ∈ [0,2] → 最负 -4。
+   * 服务端 `p < -1` 的拒绝对本编码仍然成立（-2..-4 全被拒）。
+   * 所以**必须同步放宽服务端下界到 -4**，否则正常对局会被 422。
    */
   private recordPick(handIdx: number): void {
     if (this.cardPicks.length <= this.waveIndex) {
@@ -1345,7 +1699,100 @@ export class BattleEngine {
     }
   }
 
-  /** 弃牌 */
+  /**
+ * 结束本波选牌：清空剩余手牌并进入下一波（第 66 轮新增）。
+ *
+ * # ⚠️ 这里**不能**为剩余手牌写 record 事件
+ *
+ * 第一版写了 `record(tick, 'card', cardIndex(c), 1)`，理由是
+ * 「它们确实被丢弃了，应该记进事件流」。实测这是**错的**：
+ *
+ *   原局 ORIGCARD=401/30/1 401/506/0 **402/902/0** ...
+ *   重放 REPLCARD=401/30/1 401/506/0 **401/902/1** ...
+ *                                      ↑ tick 差 1 格、flag 差 1
+ *
+ * 根因：**原局根本没有「丢弃剩余手牌」这个动作**。
+ * 玩家取 1 张就离开选牌界面，剩下那 2 张一直躺在 `deck.hand` 里，
+ * 直到下一波的 `deck.setHand(cards)` 直接覆盖 —— 全程没有任何事件。
+ *
+ * 所以重放侧也不该造这个事件。`FIRSTDIFF@61` 精确定位到这一条：
+ * 事件流一多，后续所有 tick 全部偏移 → replayHash 不同。
+ *
+ * # 为什么还需要这个函数（而不是继续用 `deck.size === 0`）
+ *
+ * 原来只有「拿光最后一张牌」才进下一波。玩家「取 1 张就走」的正常路径
+ * 走不到那里，于是 `phase` 停在 `card_select`，
+ * 重放侧下一 tick 又进 `applyReplayDecision` 消费脚本下一项 → 波次错位
+ * （实测 `discardsLeft` 显示 wave 2 被进入两次）。
+ *
+ * 这里把「取完就结束本波」显式化，用 `deck.drop` 静默清空
+ * （不消耗弃牌次数、不写事件），`skipCards` 与弃牌路径共用。
+ */
+private finishCardSelect(): void {
+    for (const c of [...this.deck.hand]) {
+      this.deck.drop(c.id)
+    }
+    this.beginWave(this.waveIndex + 1)
+  }
+
+  /**
+   * 结束本波选牌，但**下一 tick** 才推进到下一波（第 66 轮）。
+   *
+   * # 为什么需要这个「延后一 tick」的变体
+   *
+   * 原局里玩家「弃 1 张、拿 1 张、剩下 2 张不动」，此时 `deck.size !== 0`，
+   * `takeCard` 里的 `if (this.deck.size === 0) beginWave(...)` 不成立 ——
+   * 于是 phase 停在 `card_select`，**下一 tick** 玩家离开界面时才推进。
+   *
+   * 实测证据（弃+取，每波一张）：
+   *
+   *   CARD_O: 401/30/1 401/506/0  [tick 728] 40/1 ...
+   *   CARD_R: 401/30/1 401/506/0  [tick 727] 40/1 ...
+   *                                          ^ wave 事件早了一格
+   *
+   *  ⚠️ 写这段注释时踩过一个坑：`... 506/0 **728**-/40/1 ...` 里的
+   * `**` 与紧随的 `/` 组成了注释闭合序列，把块注释提前结束 ——
+   * 表现是 esbuild 报 `Expected ";" but found "/"`，
+   * 而报错行号落在**注释内部**，看起来完全无辜。
+   // 在注释里写事件流样例时，避免让 `**` 紧跟 `/`。
+   *
+   * 而「弃牌后跳过整波」那条路径不同 —— `skipCards` 是**同 tick** 推进的
+   * （原局 `401:wave` 连着出现两次）。
+   *
+   * 两条路径的 tick 语义本来就不同，必须分别表达；
+   * 把它们统一成一种只会让其中一条失配。
+   *
+   * # 为什么重放侧必须走这条延后路径
+   *
+   * `applyReplayDecision` 在 `return` 之后，phase 仍是 `card_select`。
+   * 若不在下一 tick 立刻收尾，`applyReplayDecision` 会在**同一 tick**
+   * 再被调用一次（`step()` 开头无条件检查），消费 script 的下一项 ——
+   * 把下一波的决策当成本波的第二张牌。实测 picks 记成 `[-3,-3,-1,-1]`，
+   * 事件流多出 `402/902/0` 这条原局没有的记录。
+   *
+   * 所以：重放侧必须在**返回后**由 `step()` 在下一 tick 开头收尾，
+   * 且收尾时机要与原局「玩家离开界面」那一步对齐。
+   */
+private finishCardSelectNextTick(): void {
+    for (const c of [...this.deck.hand]) {
+      this.deck.drop(c.id)
+    }
+    this.cardSelectDone = true
+  }
+
+  /** 本波选牌已结束，等待下一 tick 推进到下一波（第 66 轮）。 */
+  private cardSelectDone = false
+
+  /** 本波是否已经弃过牌（第 66 轮新增）。 */
+  private discardedThisWave = false
+
+  /**
+   * 弃牌。
+   *
+   * ⚠️ 第 66 轮：弃牌会**改写本波的 card_picks 记录**，
+   * 让重放能复现这次弃牌（回充热量 + 那条 record 事件）。
+   * 见 `recordPick` 的注释。
+   */
   discardCard(id: string): Card | null {
     if (this.phase !== 'card_select') return null
     const card = this.deck.hand.find((c) => c.id === id)
@@ -1355,6 +1802,7 @@ export class BattleEngine {
     this.heat.refundHeat(r.refund)
     this.emit({ type: 'card_discarded', card })
     this.record(this.tick, 'card', cardIndex(card), 1)
+    this.discardedThisWave = true
     if (this.deck.size === 0) this.beginWave(this.waveIndex + 1)
     return card
   }
@@ -1362,14 +1810,15 @@ export class BattleEngine {
   /** 放弃全部手牌，直接进入下一波。不消耗弃牌次数，也不返还热量 */
   skipCards(): void {
     if (this.phase !== 'card_select') return
-    for (const c of [...this.deck.hand]) {
-      this.deck.drop(c.id)
-      this.emit({ type: 'card_discarded', card: c })
-      this.record(this.tick, 'card', cardIndex(c), 1)
-    }
     // -1 表示整波跳过（重放时按此原样复现）
-    this.recordPick(-1)
-    this.beginWave(this.waveIndex + 1)
+    //
+    // ⚠️ 第 66 轮：弃过牌再跳过时不能记 -1 ——
+    // 那样重放侧不知道要复现那次 discard 的 record 事件与热量变化。
+    // 记 `-(PICK_DISCARD_SKIP_BASE + handIdx)`，handIdx 取弃牌后的第一张
+    // （那正是「跳过时手牌里还剩什么」的信息，重放侧只需丢掉它）。
+    const encoded = this.discardedThisWave ? -PICK_DISCARD_SKIP_BASE : -1
+    this.recordPick(encoded)
+    this.finishCardSelect()
   }
 
   /**
@@ -1402,6 +1851,55 @@ export class BattleEngine {
         continue
       }
       const want = script[this.replayScriptPos++]
+      // ⚠️ 第 66 轮：负值编码表示「本波弃过牌」。
+      //   -1                  整波跳过（未弃牌）
+      //   -(3+handIdx)        弃一张，取第 handIdx 张   [-3..-5]
+      //   -(6+handIdx)        弃一张，整波跳过           [-6..-8]
+      //
+      // 原实现把任何 `want < 0` 都当「整波跳过」，于是「先弃后取」
+      // 与「弃后跳过」两种正常打法都被重放成「整波跳过」——
+      // 少了那次 refundHeat 与那条 record 事件，replayHash 必然不同，
+      // I-6 把这局判成伪造。
+      if (want <= -PICK_DISCARD_SKIP_BASE) {
+        // 弃一张后跳过：先复现 discard 的三件事，再走 skipCards。
+        const toDrop = this.deck.hand[0]
+        if (toDrop) this.discardCard(toDrop.id)
+        // recordPick 已被 discard 路径影响，这里显式写 -1 之外的语义：
+        // skipCards 会再 recordPick 一次，但 `length <= waveIndex` 保证只写一项。
+        this.skipCards()
+        return
+      }
+      if (want <= -PICK_DISCARD_BASE) {
+        // 弃掉第一张手牌。discardCard 会做原局同样的三件事：
+        // 扣次数 + refundHeat + record(..., 1)。
+        const toDrop = this.deck.hand[0]
+        if (toDrop) this.discardCard(toDrop.id)
+        // 编码是 -(PICK_DISCARD_BASE + handIdx)，所以 handIdx = -(want + PICK_DISCARD_BASE)
+        const rest = -(want + PICK_DISCARD_BASE)
+        const target = this.deck.hand[rest]
+        if (!target) {
+          this.skipCards()
+          continue
+        }
+        this.takeCard(target.id)
+        // ⚠️⚠️ 这里必须 `return`，**不能** `continue`（第 66 轮）。
+        //
+        // 一个 card_picks 项就是**一整波**的决策，原局里玩家
+        // 「弃 1 张、拿 1 张、剩下 2 张不动」就结束了 ——
+        // 剩下那 2 张在**下一 tick** 玩家离开界面时才被丢掉。
+        //
+        // 若写成 continue，while 会在同一 tick 里消费 script 的下一项，
+        // 把**下一波**的决策当成本波的第二张牌。实测 trace：
+        //   want=-3 pos=1 wave=0 hand=3
+        //   want=-3 pos=2 wave=0 hand=1   ← 本波只剩 1 张牌，本该结束
+        // 结果第 3、4 波错位，cardPicks 记成 [-3,-3,-1,-1]，事件流少 7 条。
+        //
+        // 用 `finishCardSelectNextTick` 而不是 `finishCardSelect`：
+        // 原局这条路径不立即进下一波（`deck.size` 非 0），
+        // 立即推进会让 `wave` 事件早一格（实测 orig=728 repl=727）。
+        this.finishCardSelectNextTick()
+        return
+      }
       // -1 或越界 → 整波跳过
       if (want < 0 || want >= this.deck.hand.length) {
         this.skipCards()
@@ -1679,6 +2177,20 @@ export class BattleEngine {
       /** I-6 重放闭环：选牌决策序列，第三方据此复现原局 */
       card_picks: [...this.cardPicks],
       replay_hash: this.replayHash(),
+      /**
+       * 第 56 轮新增：前缀里的 S 段（技能槽配置）。
+       *
+       * 服务端用 `user_skill_slots` + `user_skills.level` + 内容表重算它并比对。
+       * 这不需要任何战斗模拟 —— 与 replay_hash 整体不同，那个算不出来。
+       *
+       * 抓的是：伪造 base_damage（假报技能等级）、上报另一套技能、槽位错位。
+       *
+       * ⚠️ 第 64 轮：这里用 `buildSnapshotSegment()`（开战前冻结），
+       * **不是** `replaySkillsSegment()`（读 this.skills，含局内取牌升格）。
+       * 服务端比对的是 DB，而 DB 里没有局内升格这回事 ——
+       * 用后者会让取过技能卡的正常对局被 422 判成作弊（约 86% 的真实对局）。
+       */
+      replay_skills: this.buildSnapshotSegment(),
     }
   }
 }
@@ -1747,6 +2259,17 @@ function mechanicIndex(kind: string): number {
   ) + 1
 }
 
-function uidOf(v: bigint): number {
-  return Number(v % 100000n)
-}
+/**
+ * ⚠️ 第 70 轮删除：`uidOf(v) = Number(v % 100000n)`。
+ *
+ * 它唯一的调用点是射程内漏怪那一条，传入的是**伤害值**：
+ * `record(tick, 'leak', uidOf(dmg))` —— 于是 `a` 变成了
+ * 「漏怪伤害 mod 100000」，与敌人 uid 无关。
+ *
+ * 函数名说「取 uid」而实参是伤害值，说明写的时候想的是别的东西；
+ * 且抵达防线那条路径写的是 `e.uid` —— 两条路径语义不一致。
+ *
+ * 留着它会让人以为「取 uid」是个通用工具而去复用它。
+ * 需要「把大整数压进 number」时应该显式写 `Number(v % 100000n)`，
+ * 让「为什么要取模」摆在现场。
+ */

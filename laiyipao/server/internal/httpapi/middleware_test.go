@@ -262,6 +262,12 @@ func TestSettleRejectionsAllMapTo422(t *testing.T) {
 		domain.ErrTooManyShots,
 		domain.ErrTooManyLeaked,
 		domain.ErrInvalidField,
+		// 第 58 轮补：这三个此前都落到兜底的 500。
+		// ErrReplaySkillsMismatch 是第 56 轮新加的校验 —— 加了校验却忘了
+		// 映射，作弊请求会得到 500 而不是 422，而且完全看不出是校验在拦。
+		domain.ErrHPLeftExceedsBase,
+		service.ErrSlotBudgetExceeded,
+		service.ErrReplaySkillsMismatch,
 	}
 	for _, target := range settleErrors {
 		if !isSettleRejection(target) {

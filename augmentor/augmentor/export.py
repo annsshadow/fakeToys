@@ -12,6 +12,8 @@
 
 import json
 import csv
+
+from .atomic_write import atomic_write_json, atomic_write_text
 import logging
 from typing import List, Dict, Optional
 from pathlib import Path
@@ -251,29 +253,19 @@ class Exporter:
         
         if export_format == ExportFormat.JSONL:
             lines = self._convert_to_jsonl(items)
-            with open(output_path, 'w', encoding='utf-8') as f:
-                f.write('\n'.join(lines))
-        
+            atomic_write_text(output_path, '\n'.join(lines))
         elif export_format == ExportFormat.LLAMA_FACTORY:
             data = self._convert_to_llama_factory(items)
-            with open(output_path, 'w', encoding='utf-8') as f:
-                json.dump(data, f, ensure_ascii=False, indent=2)
-        
+            atomic_write_json(output_path, data)
         elif export_format == ExportFormat.ALPACA:
             data = self._convert_to_alpaca(items)
-            with open(output_path, 'w', encoding='utf-8') as f:
-                json.dump(data, f, ensure_ascii=False, indent=2)
-        
+            atomic_write_json(output_path, data)
         elif export_format == ExportFormat.SHARE_GPT:
             data = self._convert_to_sharegpt(items)
-            with open(output_path, 'w', encoding='utf-8') as f:
-                json.dump(data, f, ensure_ascii=False, indent=2)
-        
+            atomic_write_json(output_path, data)
         elif export_format == ExportFormat.CHATML:
             data = self._convert_to_chatml(items)
-            with open(output_path, 'w', encoding='utf-8') as f:
-                json.dump(data, f, ensure_ascii=False, indent=2)
-        
+            atomic_write_json(output_path, data)
         elif export_format == ExportFormat.CSV:
             data = self._convert_to_csv(items)
             if data:

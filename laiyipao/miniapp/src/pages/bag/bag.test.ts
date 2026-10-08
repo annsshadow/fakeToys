@@ -209,4 +209,31 @@ describe('bag.vue 背包页', () => {
     expect(um.mock.showToast).toHaveBeenCalledWith({ title: '保存失败，出战配置未变更', icon: 'none' })
     expect(wrapper.findAll('.slot')[0]!.text()).toContain('燃烧弹')
   })
+
+  it('第 145 轮：已登录态进背包也会拉服务端 build（技能等级/升级花费以真实养成为准，不恒 0）', async () => {
+    // 服务端：玩家拥有技能 1（Lv.3）
+    mockApi.fetchMe.mockResolvedValue({
+      user_id: 7,
+      build: { skills: { '1': { id: 1, level: 3, slot: 0 } } },
+      build_rating: null,
+      power: 9,
+    } as any)
+    // 模拟「已登录、build 尚未拉取」——不触发 onMounted 的 login()，
+    // 只有挂载逻辑本身跑，才能证明 build 是页面主动刷新的。
+    // 已登录意味着 login()（含 loadConfig）不会跑，config 需手动就位，
+    // 否则 allSkills/skill_rules 全空、技能行一行都渲染不出来。
+    const { wrapper, store } = mountPage(Bag, (s) => {
+      s.loggedIn = true
+      s.config = bagConfig()
+      s.build = null
+    })
+    await flushPromises()
+    // 修前：onMounted 只 loadLoadout，build 仍是 null → levelOf 恒 0
+    expect(mockApi.fetchMe).toHaveBeenCalled() // refreshProfile 在挂载时被调用
+    expect(store.build?.skills?.['1']?.level).toBe(3)
+    const burnRow = wrapper.findAll('.skill-row').find((r) => r.text().includes('燃烧弹'))!
+    expect(burnRow.text()).toContain('Lv.3') // 等级来自服务端 build，不是 0
+    // 升级花费 = base_cost(100) × 当前等级(3) = 300；钱包 coin=1 → 不足
+    expect(burnRow.text()).toContain('金币不足（300）')
+  })
 })

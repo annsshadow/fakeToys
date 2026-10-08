@@ -39,8 +39,9 @@ from augmentor.config import (DEDUP_THRESHOLD_RANGE, QUALITY_THRESHOLD_RANGE,
                               DedupConfig, QualityConfig, apply_section_update,
                               load_config)
 from augmentor.config_validator import ConfigValidator
-from augmentor.dedup import Deduplicator
+from augmentor.dedup import Deduplicator, DedupError
 from augmentor.exceptions import DataValidationError
+from augmentor.quality import QualityScorer
 from augmentor.validation import require_bool
 
 SHIPPED_YAML = pathlib.Path(__file__).resolve().parent.parent.parent / "config.yaml"
@@ -306,20 +307,41 @@ class TestDedupGateHasABoolNanHole:
 
     @pytest.mark.parametrize("value", [True, False, float("nan")])
     def test_config_side_rejects_what_the_consumer_side_still_accepts(self, value):
+        """A125 收口（L151，B221）后按红字翻转：消费侧那道界也补上 `require_ratio`，
+        这两档从「配置面拒、组件面放」变成「两面同拒」。改前该用例红（组件面放行），
+        改后绿即收口证据。"""
         with pytest.raises(DataValidationError, match="dedup.threshold"):
             DedupConfig(threshold=value)
-        Deduplicator(threshold=value)  # 不许抛：这就是 A125 的洞本身
+        with pytest.raises(DedupError):
+            Deduplicator(threshold=value)
 
-    def test_a_nan_threshold_silently_deduplicates_nothing(self):
-        """产品面读数：NaN 穿过消费侧那道界之后，去重对逐字重复的样本零动作"""
+    def test_a_nan_threshold_now_rejected_at_construction(self):
+        """A125 收口（L151，B221）：NaN 不再「穿过界后去重整条静默失效」，而是构造即拒。
+        改前该方法是 `test_a_nan_threshold_silently_deduplicates_nothing`（钉住静默零动作），
+        收口后按 L76 docstring 的红字约定翻转成构造期拒绝。"""
         items = [{"instruction": "租房合同到期怎么办"},
                  {"instruction": "租房合同到期怎么办"},
                  {"instruction": "今天天气如何"}]
+        with pytest.raises(DedupError):
+            Deduplicator(threshold=float("nan"))
         baseline = Deduplicator(threshold=0.9).deduplicate(items)
         assert baseline.removed_count == 1, "这份样本不再是「含一组真重复」，用例失效"
-        nan_result = Deduplicator(threshold=float("nan")).deduplicate(items)
-        assert nan_result.removed_count == 0
-        assert nan_result.duplicate_groups == []
+
+
+class TestQualityScorerThresholdGateClosed:
+    """A125 后半（L151，B221）：`QualityScorer` 的 threshold 原先七档全放行
+    （含 None / 'x' / NaN / bool / 越界），判负迟到 `score()` 的 >= 比较上才炸。
+    收口后构造期即按 `require_ratio` 拒绝，界与 `QualityConfig` 共引
+    `QUALITY_THRESHOLD_RANGE`（A77 同式）。"""
+
+    @pytest.mark.parametrize("value", [True, False, float("nan"), None, "x", 5.0, -1.0])
+    def test_bad_values_rejected_at_construction(self, value):
+        with pytest.raises(DataValidationError, match="quality.threshold"):
+            QualityScorer(threshold=value)
+
+    @pytest.mark.parametrize("value", [0.0, 0.5, 0.6, 1.0])
+    def test_legal_values_still_construct(self, value):
+        assert QualityScorer(threshold=value).threshold == value
 
 
 class TestTheRangesAreOneCopyOnly:
@@ -330,46 +352,65 @@ class TestTheRangesAreOneCopyOnly:
         ("dedup", "threshold", DEDUP_THRESHOLD_RANGE),
     ])
     def test_the_spec_bounds_are_the_config_constants(self, section, key, expected):
+        """L157 / B227 翻转：区间判决维撤出规格表，界的权威只住运行时
+        `require_ratio(*RANGE)` 调用点；本条改钉「判决维不回表 + 越界有反馈」。"""
         spec = ConfigValidator.KNOWN_FIELDS["%s.%s" % (section, key)]
-        assert (spec["min"], spec["max"]) == expected
+        assert "min" not in spec and "max" not in spec, \
+            "%s.%s 的区间判决维回进规格表了（A139 复发）" % (section, key)
+        lo, hi = expected
+        errs = [e for e in ConfigValidator().validate_config(
+            {"app": {"name": "t"}, "models": {"default": "ernie"},
+             section: {key: hi + 0.5}}).errors if e.path == "%s.%s" % (section, key)]
+        assert errs, "%s.%s 越界零反馈" % (section, key)
 
     @pytest.mark.parametrize("section,key", [
         ("quality", "threshold"), ("dedup", "threshold")])
     def test_one_step_outside_the_table_is_red_on_both_faces(self, section, key):
-        """拿规格表自己的界算探针，要求两边同时拒 —— 只改一边界的写法当场红"""
-        spec = ConfigValidator.KNOWN_FIELDS["%s.%s" % (section, key)]
-        for probe in (spec["min"] - 0.5, spec["max"] + 0.5):
+        """两边同时拒 —— 只改一边界当场红（L157 / B227：探针按 config 常数端点，
+        判决维已撤出规格表，不再从表取 min/max）"""
+        ranges = {"quality": QUALITY_THRESHOLD_RANGE, "dedup": DEDUP_THRESHOLD_RANGE}
+        lo, hi = ranges[section]
+        for probe in (lo - 0.5, hi + 0.5):
             with pytest.raises(DataValidationError, match=key):
                 _construct(section, key, probe)
             assert _static_errors(section, key, probe), \
-                "%s=%r 规格表拒了、运行时没拒" % (key, probe)
+                "%s=%r 运行时拒了、静态面没拒（回放没出声？）" % (key, probe)
 
     @pytest.mark.parametrize("section", sorted(SECTIONS))
     def test_every_field_of_the_two_sections_has_a_spec(self, section):
         """两节的每个字段都要有静态规格 —— A118 的根之一就是「整条规格不存在」
 
-        清单从 `dataclasses.fields` 推导，不写死。唯一的豁免是 `quality.weights`，
-        由下面那条单独钉住（豁免要显式写，不能靠对账漏掉）。
+        清单从 `dataclasses.fields` 推导，不写死。原唯一的豁免 `quality.weights`
+        已在 L153（B223，收口 A124）补齐规格，此处不再跳过。
         """
         missing = []
         for f in dataclasses.fields(SECTIONS[section]):
-            if f.name == "weights":
-                continue
             if "%s.%s" % (section, f.name) not in ConfigValidator.KNOWN_FIELDS:
                 missing.append(f.name)
         assert missing == [], "%s 节有字段在 validate-config 上零反馈：%s" % (
             section, missing)
 
-    def test_weights_is_the_only_waived_field_of_quality(self):
-        """`quality.weights` 是**记下**的豁免（A124），不是对账漏掉的洞
-
-        这条看着像「把上一条例外硬编进来」，它守的是方向：A124 两侧同批补完之后，
-        这里必须跟着翻（`"weights" not in KNOWN_FIELDS` 变红），否则豁免就成了
-        永久的。与 L50 清空豁免清单同一个做法。
+    def test_weights_spec_exists_and_both_faces_agree(self):
+        """A124 收口（L153，B223）后翻转：`quality.weights` 的规格在场、null 仍拒、
+        坏形状两面同拒（原 `test_weights_is_the_only_waived_field_of_quality` 按
+        docstring 红字约定翻转，不是删豁免）。
         """
-        assert "quality.weights" not in ConfigValidator.KNOWN_FIELDS
+        assert "quality.weights" in ConfigValidator.KNOWN_FIELDS
         with pytest.raises(DataValidationError, match="weights"):
             QualityConfig(weights=None)
+        from augmentor.quality import QualityScorer
+        # 两侧共引 require_ratio_list ⇒ 同值同判；异常类型各异（DataValidationError /
+        # QualityError）但都是 ValueError，「都拒」这一格按基类断
+        for bad in ("abc", [0.5, 0.5], [-1.0, 2.0, 0.0], [True, True, False], [0.9] * 3, []):
+            with pytest.raises(DataValidationError, match="quality.weights"):
+                QualityConfig(weights=bad)
+            with pytest.raises(ValueError):
+                QualityScorer(weights=bad)
+        # 反向护栏：六档看着合法的三元组两侧都放行（A124 记档的 6/6 读数）
+        for good in ([0.1, 0.2, 0.7], [0.33, 0.33, 0.34], [1 / 3] * 3,
+                     [0.15, 0.35, 0.5], [0.7, 0.2, 0.1], [0.1, 0.1, 0.8]):
+            assert QualityConfig(weights=good).weights == good
+            assert QualityScorer(weights=good).weights == good
 
 
 class TestTheWritePathIsNowGatedToo:

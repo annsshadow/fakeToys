@@ -231,6 +231,9 @@ describe('battle.vue 战斗页', () => {
     expect(eng.options.level).toBe(startBattleResp.level)
     expect(eng.options.activeSlots).toBe(5)
     expect(eng.options.attacker).toBeDefined()
+    // 第 133 轮：分数规则必须由 battle.vue 从服务端 config 传入（不再是引擎缺省）。
+    // 若接线退化（不再传 scoreRules），这里是 undefined → 红。
+    expect(eng.options.scoreRules).toBeDefined()
 
     const renderer = FakeRenderer.instances[0]!
     expect(renderer.started).toBe(true)
@@ -251,6 +254,42 @@ describe('battle.vue 战斗页', () => {
     await setupDone(wrapper)
     expect(FakeRenderer.instances.length).toBe(1)
     expect(wrapper.text()).toContain('渲染: 帧循环')
+  })
+
+  it('第 137 轮：onUnload 之后 getCanvas 才 resolve，渲染器不在已卸载页面启动（防泄漏）', async () => {
+    const Battle = await loadPage()
+    const { wrapper } = mountPage(Battle)
+
+    // 可控的 canvas 查询：fields 回调先挂起，直到测试手动 resolve。
+    let resolveNode: (res: any) => void = () => {}
+    um.mock.createSelectorQuery.mockImplementation(() => {
+      const q: any = {}
+      q.in = () => q
+      q.select = () => q
+      q.fields = (_o: unknown, cb: (res: any) => void) => {
+        resolveNode = cb
+        return q
+      }
+      q.exec = () => {}
+      return q
+    })
+
+    // 触发 onLoad → setup() 跑过 login/startBattle，停在 await getCanvas()
+    triggerUniHook(wrapper.vm, 'onLoad', { level: '3' })
+    await flushPromises()
+    expect(FakeEngine.instances.length).toBe(1) // 引擎已建（在 getCanvas 之前）
+
+    // getCanvas 仍挂起时退出页面（onUnload 时 renderer 还是 null，无从可停）
+    triggerUniHook(wrapper.vm, 'onUnload')
+    await flushPromises()
+
+    // 此刻才让 getCanvas resolve（模拟「晚到的 canvas 节点」）
+    resolveNode({ node: { getContext: () => ({}) }, width: 375, height: 667 })
+    await flushPromises()
+
+    // 修前：getCanvas 完成后会 new BattleRenderer + r.start() → 已卸载页面上泄漏。
+    // 修后：pageUnloaded=true → setup 直接 return，渲染器绝不创建。
+    expect(FakeRenderer.instances.length).toBe(0)
   })
 
   it('未装备任何技能 → 提示去背包配置，不建引擎', async () => {

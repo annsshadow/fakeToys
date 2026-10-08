@@ -5,7 +5,8 @@
 
 逐条对应 L100 终态偏支：
 - feature_detect.py 130->122   字段值既非 bool/数值/字符串（如列表）⇒ 三档 elif 全不中
-- cleaner.py 153->152          规则名不在内置表 ⇒ 跳过
+- cleaner.py 153->152          规则名不在内置表 ⇒ 跳过（L192 后改由 `clean()` 入口拒未知名，
+                               跳过假支自此不可达；用例红字重述）
 - compare_enhanced.py 251->250 item_a 缺该字段 ⇒ 跳过
 - audit.py 131->137            参考集无泄漏（leak_count==0）⇒ 不追加 finding
 - indexer.py 147->145          字段值非字符串 ⇒ 不入倒排索引
@@ -24,14 +25,17 @@ class TestFeatureDetectNonScalarValue:
 
 
 class TestCleanerUnknownRule:
-    def test_unknown_rule_is_skipped(self):
+    def test_unknown_rule_now_rejected_at_entry(self):
+        """L192 红字重述：未知规则名不再静默跳过，改由 `clean()` 入口拒并列出
+        全部合法规则名（本例原先钉的是「跳过不报错」，随 L192 决策翻转重写）。"""
         from augmentor.cleaner import DatasetCleaner
+        from augmentor.exceptions import DataValidationError
+        import pytest
 
         items = [{"instruction": "  空白  ", "input": "", "output": "答"}]
         cleaner = DatasetCleaner()
-        cleaned, result = cleaner.clean(items, rules=["l118_unknown_rule"])
-        # 未知规则被跳过 ⇒ 不报错、数据条数不变
-        assert len(cleaned) == 1
+        with pytest.raises(DataValidationError):
+            cleaner.clean(items, rules=["l118_unknown_rule"])
 
 
 class TestCompareMissingField:

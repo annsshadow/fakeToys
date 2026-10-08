@@ -99,17 +99,46 @@ func fullStarTarget(gl GeneratedLevel) int64 {
 	return gl.StarTargets[len(gl.StarTargets)-1]
 }
 
+// MaxPlausibleDurationMs 是战斗时长的可信上界：24 小时。
+//
+// # 为什么必须有它
+//
+// `battle_records.duration_ms` 是 PG 的 **INTEGER**（int32，上限 2147483647），
+// 而 SettleInput.DurationMs 是 Go 的 `int`（64 位）。此前 ValidateSettle 只判
+// `DurationMs <= 0`，**没有上界**，于是上报 `duration_ms: 2147483648` 时：
+//
+//   - maxShotsFor 内部把它夹到 24h，所以发射数校验通过（那一层夹了）
+//   - 而 game.go 的 INSERT 用的是**原始未夹紧**的值
+//     → PG `ERROR 22003 integer out of range`
+//     → failErr 兜底成 500
+//
+// 即：**校验过的值与入库的值不是同一个**。任何持有合法 token 的玩家
+// 都能稳定把结算打成 500，而 500 的代价是客户端只会显示「服务内部错误」，
+// 排查会滑向「服务端坏了」，同时混进服务故障告警把真正的故障淹掉
+// （这正是 middleware.go 注释里描述过的代价）。
+//
+// # 为什么不静默夹紧
+//
+// 夹紧能让写入不报错，但战报里会记着一个**假的**时长 ——
+// 而 duration 是分析「关卡耗时分布」的维度，写假值比写失败更糟。
+// 数据不可信就该拒，这也是 ValidateSettle 开头写明的原则：
+// 「静默修正会让刷子以为自己在正常游戏」。
+const MaxPlausibleDurationMs = 24 * 60 * 60 * 1000
+
 // maxShotsFor 返回给定时长下的物理发射数上界。
 //
 // ⚠️ 必须对 int64 溢出保持 fail-closed。
-// 时长来自客户端上报，DurationMs 已经过 `> 0` 校验但没有上界，
+// 时长来自客户端上报，DurationMs 已经过 `> 0` 校验，
 // durationMs = 2^62 时除法结果仍很大，再乘 8 会溢出成负数 ——
 // 负数比较会让所有上报都通过，那比没有校验更糟。
-// 这里先夹到 24 小时（远超任何真实对局），保证后续运算不溢出。
+// 这里先夹到 MaxPlausibleDurationMs（远超任何真实对局），保证后续运算不溢出。
+//
+// ⚠️ 本函数**只用于算上界**，不再承担「防御超出范围的值」的职责 ——
+// 那是 ValidateSettle 里 MaxPlausibleDurationMs 判据的事。
+// 留着夹取是为了 fail-closed：即使判据被移除也不会溢出成负数放行一切。
 func maxShotsFor(durationMs int) int64 {
-	const maxPlausibleMs = 24 * 60 * 60 * 1000
-	if durationMs > maxPlausibleMs {
-		durationMs = maxPlausibleMs
+	if durationMs > MaxPlausibleDurationMs {
+		durationMs = MaxPlausibleDurationMs
 	}
 	if durationMs <= 0 {
 		return 0
@@ -157,6 +186,13 @@ type SettleInput struct {
 	ReactionsUsed map[string]int `json:"reactions_used"`
 	TerrainUsed   []string       `json:"terrain_used"`
 	ReplayHash    string         `json:"replay_hash"`
+	// ReplaySkills 是回放前缀里的 S 段：技能槽配置（第 56 轮新增）。
+	//
+	// 服务端用 user_skill_slots + user_skills.level + 内容表重算它并逐字比对，
+	// 不需要任何战斗模拟 —— 与 replay_hash 整体不同，那个算不出来（见 replayskills.go）。
+	//
+	// 抓的是：伪造底伤（等价于假报技能等级）、上报另一套技能、槽位错位。
+	ReplaySkills string `json:"replay_skills"`
 	// CardPicks 每波选中的手牌索引（-1 表示整波跳过）。
 	//
 	// ⚠️ 这是 I-6 重放闭环的最后一环：选牌会改变后续战斗，
@@ -334,6 +370,26 @@ func ValidateSettle(
 		return SettleResult{}, fmt.Errorf("%w：%dms", ErrTooShort, in.DurationMs)
 	}
 
+	// 4b) 时长上界。
+	//
+	// ⚠️ 缺了这条，`duration_ms` 就是一个「校验过但写不进去」的字段：
+	// battle_records.duration_ms 是 PG INTEGER（int32），
+	// 上报 2147483648 会让 INSERT 报 `22003 integer out of range`，
+	// 经 failErr 兜底成 500 —— 一次合法 token 就能稳定制造假 500，
+	// 而假 500 会把真正的服务故障淹掉（middleware.go 注释里记着这个代价）。
+	//
+	// 这与 `shots` 那条是同一族的第三个缺口：
+	//   - reactions 的上界由 shots 界定，而 shots 当时无上界 → 漏了控制量
+	//   - 本条：shots 的上界由 durationMs 算，而 durationMs 当时无上界
+	//     → **判据自己也是从一个无界的量算出来的**
+	//
+	// 判成 ErrInvalidField 而不是 ErrTooShort：两者都是 422，
+	// 但「超出可信范围」与「太短」是不同的诊断，混在一起会让排查误方向。
+	if in.DurationMs > MaxPlausibleDurationMs {
+		return SettleResult{}, fmt.Errorf("%w：时长 %dms 超过可信上界 %dms（24 小时）",
+			ErrInvalidField, in.DurationMs, MaxPlausibleDurationMs)
+	}
+
 	// 5) 秒通关检查。
 	//
 	// ⚠️ 位置有意义：它必须在下面「发射数物理上界」**之前**。
@@ -374,7 +430,20 @@ func ValidateSettle(
 		return SettleResult{}, fmt.Errorf("%w：命中 %d > 发射 %d", ErrInvalidHitRate, in.Hits, in.Shots)
 	}
 	if in.Reactions < 0 {
-		return SettleResult{}, errors.New("反应次数不能为负")
+		// ⚠️ 第 68 轮：这条原本是**匿名** errors.New，而
+		// `isSettleRejection` 遍历的是一份硬编码的哨兵清单 ——
+		// 匿名错误不在其中，于是语义上的「上报被拒」变成 500。
+		//
+		// 代价与 README 记的三个哨兵完全相同：
+		// 客户端只显示「服务内部错误」，排查会滑向「服务端坏了」
+		// 而不是「这个上报不可信」；且它混进服务故障告警，把真故障淹掉。
+		//
+		// 完备性守卫（sentinel_classification_test.go）此前没抓到，
+		// 因为它用 go/ast 只认**顶层 var GenDecl** ——
+		// 函数体里的 `errors.New(...)` 位于 ReturnStmt 的 CallExpr，
+		// 根本扫不到。
+		return SettleResult{}, fmt.Errorf("%w：反应次数 %d 不能为负",
+			ErrTooManyReactions, in.Reactions)
 	}
 	// 反应次数上界。取两个上界的较小者：
 	// ① Shots * MaxReactionsPerHit —— 一次开火最多触发 N 次反应
@@ -491,6 +560,40 @@ func ValidateSettle(
 	// 10) 掉落按关卡理论上限封顶
 	res.Loot = computeLoot(gl, int64(res.Stars), int64(in.Kills), int64(maxKills), int64(in.Reactions))
 
+	// 10b) 体力只在**通关**时回补（第 85 轮）
+	//
+	// ⚠️ 缺陷：`DropRates.EnergyOnWin`（=5）与 `LootCaps.MaxEnergyPerBattle`（=15）
+	// **两个字段都在表里，但没有任何代码写过 `energy`**。
+	// 而 `StartBattle`（`game.go`）会在 battle_start 扣 `gl.EnergyCost`。
+	//
+	// 于是能量是一条**单向棘轮**：只出不进。
+	// 玩家打完一局扣 N、通关一分不返，余额单调下降直到 0，
+	// 此后再也无法开战 —— 而界面上没有任何地方提示「体力不会回来」。
+	//
+	// # 为什么不在 `computeLoot` 里加
+	//
+	// `computeLoot` 有**两个**调用方：
+	//
+	//	battle.go:561      通关结算     ← 该给体力
+	//	progression.go    挑战者窃取奖励 ← **不该给**（`ComputeLootExported`）
+	//
+	// `attacker_reward_isolation_test.go` 钉死了「窃取只按 `ComputeLoot` 的那几项算」，
+	// 所以体力必须**只挂在结算路径上**，否则窃取也白送体力 ——
+	// 那是「打别人的防线就能刷体力」，是个漏洞而不是奖励。
+	//
+	// 因此这里在 `computeLoot` **之外**补，刻意不改它的签名：
+	// 改了就要动 `ComputeLootExported` 的导出契约，而它被 `cmd/vectors` 与
+	// 契约向量共用。
+	if res.Win {
+		r := DefaultDropRates()
+		caps := DefaultLootCaps()
+		// 仍然走饱和算术：`EnergyOnWin` 将来被调大时自动被封顶拦住，
+		// 不需要在这里再写一遍 `if e > cap`。
+		if e := satMul(r.EnergyOnWin, 1, caps.MaxEnergyPerBattle); e > 0 {
+			res.Loot["energy"] = e
+		}
+	}
+
 	return res, nil
 }
 
@@ -605,7 +708,47 @@ func satMul(a, b, cap int64) int64 {
 	return a * b
 }
 
+// sumOverCap 判断各项之和是否**超过** cap，全程不溢出。
+//
+// # 为什么不能直接 `total += v`
+//
+// 累加器本身会 int64 回绕：两个 2^62 相加 = 2^63 = -9223372036854775808。
+// 于是调用方拿一个**负数**去比 `> cap`，恒为假 → 上界形同虚设。
+// 而每一项单独判 `v < 0` 或 `v <= cap` 都挡不住 —— 2^62 本身完全合法。
+//
+// 这与本项目已修的两处同族但不是同一个：
+//   - `reactions <= shots*8` 而 `shots` 无上界 → 漏了控制量
+//   - 速率裁剪分母 `duration_ms=0` → 分母为零让整段裁剪被跳过
+//
+// 这一处是**漏了产生被保护量的算术**。
+//
+// # 为什么不能用 satAdd 代替
+//
+// satAdd 在 cap 处**饱和**，返回值 ≤ cap，于是：
+//   - 判 `total > cap` → 恒为假，上界被悄悄削弱成没有
+//   - 判 `total >= cap` → 真实引擎「恰好达到理论上限」的合法对局被误拒
+//
+// sumOverCap 逐项在**相加之前**比较 `t > cap-sum`，超出即返回 true。
+// 由于 `sum` 恒 ≤ cap，`cap-sum` 不会溢出，比较是精确的。
+// 这样「恰好等于 cap」（合法）与「超过 cap」（拒绝）被干净区分。
+func sumOverCap(cap int64, terms ...int64) bool {
+	cap = nonNeg(cap)
+	sum := int64(0)
+	for _, t := range terms {
+		t = nonNeg(t)
+		if t > cap-sum {
+			return true
+		}
+		sum += t
+	}
+	return false
+}
+
 // satAdd 把各项相加，任一项使总和超过 cap 时返回 cap。
+//
+// ⚠️ 它是**饱和**语义，与 sumOverCap 的「精确是否超界」不同。
+// 判上界时用 sumOverCap；需要「不溢出地取一个有界和」时才用本函数
+// （例如掉落封顶：超了就是取满，不需要知道超了多少）。
 func satAdd(cap int64, terms ...int64) int64 {
 	cap = nonNeg(cap)
 	sum := int64(0)

@@ -133,12 +133,16 @@ export function makeConfig(over: Partial<GameConfig> = {}): GameConfig {
       equipment_synergy: 1,
       mechanic_depth: 1,
     },
+    // 第 133 轮：score_rules 必须与真实服务端契约同形（千分比整数 + 整数字段）。
+    // 旧值是 [0.4,0.7,1] 小数 —— 该字段此前**零消费**，漂移无人发现；
+    // 现在引擎改从 score_rules 取数，BigInt(0.4) 直接抛错。
+    // 取 DEFAULT_SCORE_RULES 同值，保证「喂给引擎 == 引擎缺省」，测试行为不变。
     score_rules: {
-      per_damage_unit: 1,
-      on_kill_normal: 10,
-      on_kill_boss: 100,
-      star_target_ratio: [0.4, 0.7, 1],
-      score_full_at_sec: 120,
+      per_damage_unit: 100,
+      on_kill_normal: 500,
+      on_kill_boss: 5000,
+      star_target_ratio: [600, 850, 980],
+      score_full_at_sec: 60,
     },
     skill_rules: { max_level: 10, coef_permille: 100, base_cost: 100 },
     server_time: '2026-01-01T00:00:00Z',

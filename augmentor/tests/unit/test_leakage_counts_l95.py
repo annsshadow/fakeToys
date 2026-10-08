@@ -95,20 +95,19 @@ class TestEquivalenceToBruteForce:
             train, test, ["instruction"], threshold)
 
     @pytest.mark.parametrize("threshold", [0.0, -1.0])
-    def test_non_positive_threshold_keeps_legacy_verdict(self, threshold):
-        """阈值 <= 0 时旧实现把每条非精确样本都判为 fuzzy（best 从 0.0 起算）
+    def test_non_positive_threshold_is_rejected(self, threshold):
+        """阈值 <= 0（假零 / 负数）构造期即拒（A172，L181，fail-loud 方向）
 
-        这个判决在数学上没意义（任何相似度都 >= 0），但 API/CLI 的 fuzzy_threshold
-        没有范围校验，所以 0 与负数是可到达的输入；重写必须保持而不是顺手改掉。
-        注意「阈值极小但为正」不在此列 —— 两版都要求 best >= t，与一条元组都不共享
-        的样本本来就报不出来，这是旧行为的一部分（Temp/l95q 探针在 1e-9 档同样两版一致）。
+        旧实现在 t<=0 时把每条非精确样本都判为 fuzzy（best 从 0.0 起算，任何相似度 >= 0）——
+        数学上没意义，干净数据也报 100% 泄漏。L181 起构造器拒 (0,1] 之外的值（下界开、上界闭）：
+        0 与负数不再静默出假读数，而是当场 DataValidationError。注意「阈值极小但为正」不在此列
+        —— 两版都要求 best >= t，1e-9 档仍保持旧行为（见 test_verdicts_match_brute_force 的
+        0.3/0.7/0.9 档逐字段一致）。
         """
-        train, test = split(CORPUS, 4)
-        detector = LeakageDetector(fuzzy_threshold=threshold)
-        report = detector.detect(train, test)
-        # 空签名条目不参与比较（两版都跳过），其余每条必被判为 exact 或 fuzzy
-        comparable = sum(1 for i in test if detector._signature(i))
-        assert report.total_leaks == comparable
+        from augmentor.exceptions import DataValidationError
+
+        with pytest.raises(DataValidationError):
+            LeakageDetector(fuzzy_threshold=threshold)
 
 
 class TestPruneIsAdmissible:

@@ -3,6 +3,7 @@ import { onMounted, ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { fetchBattles, fetchBattleDetail, verifyBattle, type AdminBattle, type VerifyResult } from '@/api'
 import { fetchReactionLabels, labelOfReaction, type ReactionLabels } from '@/reactions'
+import { fmtTime } from '@/utils/format'
 
 const loading = ref(false)
 const battles = ref<AdminBattle[]>([])
@@ -17,11 +18,18 @@ const detailDrawer = ref(false)
 const detail = ref<(AdminBattle & Record<string, unknown>) | null>(null)
 
 /**
- * 内部一致性检查：kills + leaked 应等于该关该波次的总怪数。
- * 超出说明上报数据被构造过 —— 这正是服务端 ValidateSettle 要拦的情况。
+/**
+ * 内部一致性检查：kills + leaked 不应**超出**该关的总怪数（生成器权威值）。
+ * 超出 = 上报数据被构造过（刷了不存在的怪）—— 正是服务端 ValidateSettle
+ * 要拦的情况。修前这里只判 `=== 0`（无接触），其余一律「守恒」，
+ * 没有任何总怪数来源，伪造战报的「一致性」列永远绿。
  */
 function consistencyTag(b: AdminBattle): { text: string; type: 'success' | 'warning' | 'danger' } {
   if (b.kills + b.leaked === 0) return { text: '无接触', type: 'warning' }
+  const total = Number(b.total_enemies ?? 0)
+  if (total > 0 && b.kills + b.leaked > total) {
+    return { text: `可疑（击杀+漏怪 ${b.kills + b.leaked} 超总怪数 ${total}）`, type: 'danger' }
+  }
   return { text: '守恒', type: 'success' }
 }
 
@@ -106,11 +114,6 @@ async function submitVerify() {
   } finally {
     verifying.value = false
   }
-}
-
-function fmtTime(s: string): string {
-  if (!s) return '—'
-  return s.replace('T', ' ').slice(0, 19)
 }
 
 function fmtDur(ms: number): string {

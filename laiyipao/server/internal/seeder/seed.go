@@ -79,6 +79,11 @@ func Run(ctx context.Context, pool *pgxpool.Pool) (SeedResult, error) {
 
 func seedEnemies(ctx context.Context, tx pgx.Tx, res *SeedResult) error {
 	for _, e := range domain.SeedEnemies {
+		// ⚠️ 第 128 轮：库里必须落**投放用的缩放值**（血量 ×8），
+		// 与客户端实际拿到的 `LoadGameConfig` 数值一致。
+		// 修前直接写 SeedEnemies 基准值：后台/分析读 enemies 表看到的
+		// 血量是实际游戏里的 1/8。
+		se := domain.ScaleEnemy(e)
 		_, err := tx.Exec(ctx, `
 			INSERT INTO enemies (id, code, name, category, hp, speed, armor, shield_hp,
 			                    attack, attack_range, attack_interval, fly_height, burrow, is_boss)
@@ -89,8 +94,8 @@ func seedEnemies(ctx context.Context, tx pgx.Tx, res *SeedResult) error {
 				shield_hp=EXCLUDED.shield_hp, attack=EXCLUDED.attack,
 				attack_range=EXCLUDED.attack_range, attack_interval=EXCLUDED.attack_interval,
 				fly_height=EXCLUDED.fly_height, burrow=EXCLUDED.burrow, is_boss=EXCLUDED.is_boss`,
-			e.ID, e.Code, e.Name, e.Category, e.HP, e.Speed, e.Armor, e.ShieldHP,
-			e.Attack, e.AttackRange, e.AttackEvery, e.FlyHeight, e.Burrow, e.IsBoss)
+			se.ID, se.Code, se.Name, se.Category, se.HP, se.Speed, se.Armor, se.ShieldHP,
+			se.Attack, se.AttackRange, se.AttackEvery, se.FlyHeight, se.Burrow, se.IsBoss)
 		if err != nil {
 			return fmt.Errorf("insert enemy %d: %w", e.ID, err)
 		}
@@ -115,6 +120,8 @@ func seedSkills(ctx context.Context, tx pgx.Tx, res *SeedResult) error {
 	all = append(all, domain.SeedCompositeSkills...)
 
 	for _, s := range all {
+		// 第 128 轮：弹速 ×4 落库，与投放数值一致（修前后台读到 1/4）。
+		ss := domain.ScaleSkill(s)
 		if _, err := tx.Exec(ctx, `
 			INSERT INTO skills (id, code, name, family, element, kind, descr, base_damage,
 			                   heat_cost, cooldown_ms, pierce, aoe_radius, apply_element,
@@ -128,10 +135,10 @@ func seedSkills(ctx context.Context, tx pgx.Tx, res *SeedResult) error {
 				aoe_radius=EXCLUDED.aoe_radius, apply_element=EXCLUDED.apply_element,
 				apply_stacks=EXCLUDED.apply_stacks, projectile_speed=EXCLUDED.projectile_speed,
 				chain=EXCLUDED.chain, unlock_level=EXCLUDED.unlock_level`,
-			s.ID, s.Code, s.Name, s.Family, string(s.Element), s.Kind, s.Descr, s.BaseDamage,
-			s.HeatCost, s.CooldownMs, s.Pierce, s.AoeRadius, string(s.ApplyElement),
-			s.ApplyStacks, s.ProjectileSpeed, s.Chain, s.UnlockLevel); err != nil {
-			return fmt.Errorf("insert skill %d: %w", s.ID, err)
+			ss.ID, ss.Code, ss.Name, ss.Family, string(ss.Element), ss.Kind, ss.Descr, ss.BaseDamage,
+			ss.HeatCost, ss.CooldownMs, ss.Pierce, ss.AoeRadius, string(ss.ApplyElement),
+			ss.ApplyStacks, ss.ProjectileSpeed, ss.Chain, ss.UnlockLevel); err != nil {
+			return fmt.Errorf("insert skill %d: %w", ss.ID, err)
 		}
 		res.Skills++
 	}
@@ -298,9 +305,26 @@ func seedTasks(ctx context.Context, tx pgx.Tx, res *SeedResult) error {
 		{6, 20, "weekly_clears_20", "本周累计通关 20 关", "weekly", "clears", map[string]int{"coin": 6000, "keys": 2}},
 		{7, 150, "weekly_reactions_150", "本周累计触发 150 次元素反应", "weekly", "reactions", map[string]int{"gem": 40}},
 		{8, 1, "ach_first_clear", "首次通关任意关卡", "achievement", "clears", map[string]int{"gem": 30}},
-		{9, 1, "ach_reach_20", "抵达第 20 关", "achievement", "max_stage", map[string]int{"gem": 60}},
-		{10, 1, "ach_reach_60", "抵达第 60 关", "achievement", "max_stage", map[string]int{"gem": 150}},
-		{11, 1, "ach_reach_100", "通关第 100 关", "achievement", "max_stage", map[string]int{"gem": 500}},
+		// ⚠️ 第 92 轮：target 从 1 改成关号。
+		//
+		// `max_stage` 的 bump 值是**刚结算那一关的关号**，
+		// 而 `bumpTasks` 对 achievement 走 `GREATEST(progress, value)`
+		// —— 所以 progress 的语义是「**历史上到达过的最高关号**」。
+		//
+		// 「达到 N 关」的达成条件应当是 `progress >= N`，
+		// 而 target 写 1 时条件变成 `progress >= 1` ——
+		// **通关第 1 关就解锁**。
+		//
+		// 实测（只结算第 1 关）：
+		//
+		//	ach_reach_20   progress=1 target=1  可领取（应为不可）
+		//	ach_reach_60   progress=1 target=1  可领取（应为不可）
+		//	ach_reach_100  progress=1 target=1  可领取 —— 500 钻石！
+		//
+		// 三项合计 710 钻石只要清第 1 关。
+		{9, 20, "ach_reach_20", "抵达第 20 关", "achievement", "max_stage", map[string]int{"gem": 60}},
+		{10, 60, "ach_reach_60", "抵达第 60 关", "achievement", "max_stage", map[string]int{"gem": 150}},
+		{11, 100, "ach_reach_100", "通关第 100 关", "achievement", "max_stage", map[string]int{"gem": 500}},
 		{12, 100, "ach_reactions_100", "累计触发 100 次元素反应", "achievement", "reactions", map[string]int{"gem": 80}},
 	}
 	for _, t := range tasks {

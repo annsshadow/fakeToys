@@ -110,7 +110,16 @@ func TestHandlerErrorBranchesOnBrokenPool(t *testing.T) {
 		{"diagnose", "GET", "/x", "", false, 0, s.diagnose},
 		{"listDefenses", "GET", "/x", "", false, 0, s.listDefenses},
 		{"saveDefense", "POST", "/x", `{"name":"x","skills":[1]}`, false, 0, s.saveDefense},
-		{"challengeDefense", "POST", "/x/1", `{"won":true}`, true, 0, s.challengeDefense},
+		// ⚠️ 第 69 轮：body 必须是**合法**的挑战上报。
+		//
+		// 原本是 `{"won":true}` —— 缺 duration_ms / hp_left_pct / replay_hash，
+		// 三者都是零值。而第 69 轮给 `ChallengeInput` 补了边界校验后，
+		// 这条请求在**触及数据库之前**就被 422 拒掉了，
+		// 于是本用例测的「DB 故障态应 500」变成了一句空话 —— 它根本没走到 DB。
+		//
+		// 真实客户端上报的是完整形态（见 miniapp/src/game/defense.ts），
+		// 这里照抄那份形状。
+		{"challengeDefense", "POST", "/x/1", `{"seed":"1","won":true,"duration_ms":60000,"hp_left_pct":100,"replay_hash":"0000000000000000"}`, true, 0, s.challengeDefense},
 		// 管理端
 		{"adminLogin", "POST", "/x", `{"username":"a","password":"b"}`, false, 0, s.adminLogin},
 		{"adminMe", "GET", "/x", "", false, fiber.StatusUnauthorized, s.adminMe},

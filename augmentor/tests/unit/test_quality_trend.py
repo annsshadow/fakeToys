@@ -4,6 +4,7 @@
 """数据质量趋势追踪测试 - 验证趋势分析、方向计算和报告生成"""
 
 import pytest
+import json
 import tempfile
 from pathlib import Path
 from augmentor.quality_trend import QualityTrendTracker
@@ -113,4 +114,49 @@ class TestTrendComparison:
         tracker.record_quality_metrics("ds_a", {"quality": 0.9})
         tracker.record_quality_metrics("ds_b", {"quality": 0.7})
         assert tracker.compare_trends("ds_a", "ds_b", "quality")["comparison"] == "dataset_a_higher"
-        assert tracker.compare_trends("ds_b", "ds_a", "quality")["comparison"] == "dataset_b_higher"
+        assert tracker.compare_trends("ds_b", "ds_a", "quality")["comparison"] == "dataset_b_higher"
+
+class TestCorruptHistoryQuarantine:
+    """畸形文件防护：不静默置空历史、新条目不得覆盖原始数据（L146，B216）"""
+
+    def test_corrupt_file_quarantined_and_new_file_clean(self, tmp_path):
+        """损坏 JSON ⇒ 备份到 .corrupt-*，原内容可从备份找回；新文件只含新条目"""
+        p = tmp_path / "trend.json"
+        p.write_text("{this is not json", encoding="utf-8")
+        t = QualityTrendTracker(storage_path=str(p))
+        assert t._trend_history == []
+        t.record_quality_metrics("ds", {"quality": 0.5})
+        backups = list(tmp_path.glob("trend.json.corrupt-*"))
+        assert len(backups) == 1
+        assert "this is not json" in backups[0].read_text(encoding="utf-8")
+        assert len(json.loads(p.read_text(encoding="utf-8"))["trends"]) == 1
+
+    def test_non_list_trends_quarantined(self, tmp_path):
+        """'trends' 是非列表（字符串）⇒ 同样按畸形文件备份重置（改前：_trend_history 被置成字符串，append 直接崩）"""
+        p = tmp_path / "trend.json"
+        p.write_text(json.dumps({"trends": "not-a-list"}), encoding="utf-8")
+        t = QualityTrendTracker(storage_path=str(p))
+        assert t._trend_history == []
+        assert t._corrupt_unquarantined is False
+        t.record_quality_metrics("ds", {"quality": 0.5})
+        assert len(list(tmp_path.glob("trend.json.corrupt-*"))) == 1
+        assert len(t._trend_history) == 1
+
+    def test_unquarantineable_corrupt_file_kept_intact(self, tmp_path, monkeypatch):
+        """两条备份路径全断（rename 被挡、复制源被拒）⇒ 标记禁写、保存跳过，原文件逐字保留
+        （改前：open('w') 截断覆盖致数据永久丢失；monkeypatch 平台无关，不受
+        Windows/Linux 只读文件语义差异影响）"""
+        p = tmp_path / "trend.json"
+        p.write_text("{corrupt-locked", encoding="utf-8")
+        original = p.read_text(encoding="utf-8")
+
+        def boom(self, target=None):
+            raise OSError("file locked")
+        monkeypatch.setattr(Path, "rename", boom)
+        monkeypatch.setattr(Path, "read_bytes",
+                            lambda self: (_ for _ in ()).throw(PermissionError("复制源被拒")))
+        t = QualityTrendTracker(storage_path=str(p))
+        assert t._corrupt_unquarantined is True
+        t.record_quality_metrics("ds", {"quality": 0.5})
+        assert p.read_text(encoding="utf-8") == original
+        assert len(t._trend_history) == 1  # 内存历史仍在（功能不丢），仅不落盘

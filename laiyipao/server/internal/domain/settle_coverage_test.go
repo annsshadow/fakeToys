@@ -232,6 +232,18 @@ var fieldBounds = map[string]boundCase{
 		Mutate: func(in *SettleInput, _ GeneratedLevel) { in.ReplayHash = strings.Repeat("a", 4096) },
 		Why:    "长度超过上限",
 	},
+	"ReplaySkills": {
+		Mutate: func(in *SettleInput, _ GeneratedLevel) {
+			in.ReplaySkills = strings.Repeat("1:1:1:1:1,", ReplaySkillsMaxEntries+1)
+		},
+		Why: "条目数无界 —— 每条仅 9 字符，总长度可能仍在限内，所以长度与条数必须分开查",
+		Mutate2: func(in *SettleInput, _ GeneratedLevel) {
+			in.ReplaySkills = "1:1:1:1:1," + strings.Repeat("x", ReplaySkillsMaxLen)
+		},
+		Why2: "总长度无界",
+		// ⚠️ 形状类（字段数 / 非数字）与「形状合法但语义不符」不在这里 ——
+		// boundCase 最多两个变异位，其余见 replayskills_test.go 的 TestReplaySkillsBounds。
+	},
 }
 
 func TestEverySettleInputFieldIsAccountedFor(t *testing.T) {

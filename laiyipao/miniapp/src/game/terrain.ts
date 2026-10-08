@@ -10,6 +10,9 @@
 
 import type { TerrainKind, TerrainPlacement, Enemy, Projectile } from './types'
 import type { Element } from './elements'
+// ⚠️ 第 77 轮新增导入：火区伤害要走与 `resolveHit` 同一个护甲函数。
+// 口径一漂，「同一场战斗在两处算出不同伤害」就极难查。
+import { applyArmor } from './fixed'
 
 export const FIELD_W = 1000
 export const FIELD_H = 1000
@@ -48,8 +51,18 @@ export type TerrainState =
 export interface TerrainContext {
   enemies: Enemy[]
   projectiles: Projectile[]
-  /** 火区每 tick 伤害 */
+  /** 火区每 tick 伤害（**减伤前**，调用方负责过护甲） */
   terrainTick: bigint
+  /**
+   * 元素层数上限（第 77 轮新增）。
+   *
+   * ⚠️ 它必须来自 `currentAttacker().elementCap` 而不是常量 ——
+   * 它由关卡的 `element_cap` 与局内 `elementCapBonus` 合成，
+   * 玩家还能靠「元素容器」卡（element_cap +1）抬高。
+   *
+   * 油桶火区此前把上限写死成 `4n`，于是这个合成值对它完全无效。
+   */
+  elementCap: bigint
   /** 逻辑坐标半径内是否有实体 */
   within(terrainX: number, terrainY: number, r: number, x: bigint, y: bigint): boolean
   enemiesInRadius(x: number, y: number, r: number): Enemy[]
@@ -125,11 +138,46 @@ export class Terrain {
       return { blocked: false }
     }
     // 火区持续伤害
+    //
+    // ⚠️ 第 77 轮：这里此前是**裸减**（`e.hp -= ctx.terrainTick`）
+    // 且把元素层数上限写死成 `4n`。两处都绕过了标准管线，
+    // 而**同一个文件里的 rotor_vane 就是对的**
+    // （`applyChargeToAll` 走 `e.applyElement(element, 1n, cap)`）。
+    //
+    // # 缺陷一：护甲被完全绕过
+    //
+    // 引擎里敌人是按 `new Defender(e.hp, e.shield, e.armorPermille)`
+    // 处理的（engine.ts:1283），所以**每一次普通命中都过护甲**。
+    // 而火区直接 `e.hp -=`，等于给敌人开了一个「无视护甲」通道 ——
+    // 高护甲敌人（levelgen 各章 ArmorPermille 200~250‰）
+    // 在火区里承受的**相对**伤害比在别处高一倍。
+    //
+    // # 缺陷二：元素层数上限写死 4n
+    //
+    // `applyElement` 的注释（types.ts:149）写着：
+    //
+    //   「施加元素层数时按 elementCap 夹紧（terrain.ts 里的油桶
+    //     不能直接改元素栈）」
+    //
+    // **而油桶正是直接改元素栈的那一处。** 类型注释明明白白
+    // 指名了它，它却没照做。
+    //
+    // 后果与 `element_cap` 卡（轮 72）的单位错误同型：
+    // `elementCap` 由关卡的 `element_cap` + 局内 `elementCapBonus`
+    // 决定（默认 3、后期章节更高），玩家还能靠「元素容器」卡 +1。
+    // 写死 4n 意味着**上限 > 4 的构筑拿不到收益**，
+    // 而**上限 < 4 的构筑**（默认 3）却能白拿 1 层。
+    const cap = ctx.elementCap
     for (const e of ctx.enemiesInRadius(this.x, this.y, 90)) {
-      e.hp -= ctx.terrainTick
+      // 护甲：与 `resolveHit` 用**同一个** `applyArmor`，保证口径一致。
+      //
+      // ⚠️ 不就地重算公式 —— 护甲减伤的口径一漂，
+      // 同一场战斗在别处算出的伤害就与火区算出的对不上，
+      // 而这类漂移极难查（值都「看起来合理」）。
+      e.hp -= applyArmor(ctx.terrainTick, e.armorPermille)
       e.hitFlashMs = 120
-      const cur = e.stacks.get('fire') ?? 0n
-      e.stacks.set('fire', cur < 4n ? cur + 1n : cur)
+      // 层数：交给 Enemy 自己夹，cap 由 ctx 提供。
+      e.applyElement('fire', 1n, cap)
       if (e.hp <= 0n) {
         e.hp = 0n
         e.dead = true
@@ -195,7 +243,7 @@ export class Terrain {
     // 260 让风障真正成为"覆盖一片区域的偏转场"，
     // 与它作为「风障」的视觉体量相称。
     for (const p of ctx.projectiles) {
-      if (ctx.within(this.x, this.y, 260, p.x, p.y)) {
+      if (ctx.within(this.x, this.y, ROTOR_RADIUS, p.x, p.y)) {
         p.vx += deflectX
         p.vy += deflectY
       }
@@ -262,7 +310,7 @@ export class Terrain {
           this.charge += Number(damage / 100n)
           if (this.charge >= this.param) {
             this.state = 'burning'
-            this.timer = 8000
+            this.timer = OIL_BURN_MS
             this.charge = this.param
             this.triggered = true
             return true
@@ -338,10 +386,53 @@ export const TERRAIN_NAME: Record<TerrainKind, string> = {
   charge_tower: '蓄能塔',
 }
 
+/**
+ * OIL_BURN_MS 是油桶火区的持续毫秒（第 80 轮从字面量提成命名常量）。
+ *
+ * # 为什么连这个也要提
+ *
+ * `TERRAIN_DESCR.oil_drum` 对玩家说的是「生成 **8 秒** 火区」，
+ * 而实现在 `onHit` 里写的是 `this.timer = 8000`。
+ *
+ * 这个数字**恰好**一致 —— 但「恰好」本身就是问题：
+ * 它一致是因为没人改过，不是因为任何机制保证它一致。
+ * 而文案里的数字**代码里根本没有**，改实现时不会有人想起改它。
+ *
+ * （同一个文件里的 `rotor_vane` 就漂了：文案 140、实现 260。）
+ *
+ * 提成常量 + 文案插值 + 守卫断言，三件事一起做才有效。
+ */
+export const OIL_BURN_MS = 8000
+
+/**
+ * ROTOR_RADIUS 是风障的作用半径（第 80 轮从字面量提成命名常量）。
+ *
+ * # 为什么提成常量
+ *
+ * 它此前是 `ctx.within(this.x, this.y, 260, ...)` 里的一个裸字面量，
+ * 而 `TERRAIN_DESCR.rotor_vane` 对玩家说的是「**140 半径**」——
+ * **文案与实现漂了 120**。
+ *
+ * 漂了的直接后果：玩家读到的作用范围是实际的 46%。
+ *
+ * 而「文案里的数字」这种知识天然会漂，因为**代码里没有它** ——
+ * 改代码时不会有人想到去改一句中文。
+ *
+ * 提成常量并让文案用模板串插值之后，
+ * 「文案里的数字 == ROTOR_RADIUS」由编译器保证，
+ * 再由 `terrain_descr.test.ts` 断言文案里确实出现了那个数字
+ * （模板串也可能被人改回硬编码字面量）。
+ *
+ * 原来的 140 → 260 是一次**有意的**平衡改动，
+ * 理由见 `updateRotorVane` 里的实测注释（6 个风障的作用范围内
+ * 一次弹丸都没进过，偏转计数恒为 0）。
+ */
+export const ROTOR_RADIUS = 260
+
 export const TERRAIN_DESCR: Record<TerrainKind, string> = {
-  oil_drum: '受到焰元素命中即引燃，爆炸并生成 8 秒火区',
+  oil_drum: `受到焰元素命中即引燃，爆炸并生成 ${OIL_BURN_MS / 1000} 秒火区`,
   tidal_gate: '周期开合，改变低层敌人通路',
-  rotor_vane: '持续改变 140 半径内弹丸的飞行方向',
+  rotor_vane: `持续改变 ${ROTOR_RADIUS} 半径内弹丸的飞行方向`,
   collapse_wall: '动能伤害累计到阈值即崩塌，永久改变弹道',
   charge_tower: '蓄满后给全场敌人上同种元素（翻盘机制）',
 }

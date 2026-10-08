@@ -218,6 +218,20 @@ class StreamConfig:
     buffer_size: int = 10000  # 写入缓冲区大小
     max_memory_mb: int = 512  # 最大内存使用（MB）
 
+    def __post_init__(self):
+        """取值判据（A46② / L156）：三个计数键取正。
+
+        改前三键零反馈：`StreamReader` 的 `chunk_size` 形参早在 L51 起就按
+        `require_count(minimum=1)` 判负，配置类这边却是全盲——同一档的下界住两处
+        （A77 形状），且 `StreamConfig(chunk_size=0)` 静默构造成功。本轮把配置侧
+        接到同一档（`1` 是调用点字面量，无既有常数可共引，数值相等由守卫钉死）。
+        本类今天没有产品消费方（A46② 留档口径），判据买「写时就报」不买房子；
+        `buffer_size` / `max_memory_mb` 无消费侧权威，下界 1 按「正数量」读法。
+        """
+        require_count('streaming.chunk_size', self.chunk_size, minimum=1)
+        require_count('streaming.buffer_size', self.buffer_size, minimum=1)
+        require_count('streaming.max_memory_mb', self.max_memory_mb, minimum=1)
+
 
 class StreamReader:
     """数据流读取器
@@ -373,9 +387,18 @@ class StreamProcessor:
     
     def process(self) -> Dict:
         """执行流式处理
-        
+
         Returns:
             处理报告
+
+        .. note::
+           **单值文件的 total_input / processed 分叉（A147，L182 记档钉死）**：一份只写单个
+           JSON 值（如一行 ``{"a": 1}``，非 JSON 数组）的文件，``_count_items`` 走
+           「单个 JSON 值」支计 **0 条**（它数的是数据项、单值不是数据项），而 ``read_chunks``
+           的逐行循环把它 ``json.loads`` 成功并产出 1 条 ⇒ 本报告对这种文件读作
+           ``total_input=0`` 而 ``processed=1``。这是既有契约（L86 逐形状钉住 0/1 两格），
+           本轮**不**改读数（改 0→1 会动 API/CLI 报告文案与既有断言，属对外变更，留给单独轮）——
+           在此把分叉写明，读者看到 total_input 与 processed 不一致时不必当 bug。
         """
         self._processed_count = 0
         # 只累计计数，不保留结果本身——原实现用 results.extend() 把全部输出
@@ -520,16 +543,17 @@ class StreamAugmentor:
             return self.processor.process()
 
 
-def create_stream_processor(processor_func: Callable,
-                           chunk_size: int = 1000) -> Callable:
-    """创建流式处理器工厂
-    
+def create_stream_processor(processor_func: Callable) -> Callable:
+    """创建流式处理器工厂（A46① 收口，L152，B222）
+
     Args:
         processor_func: 单条数据处理函数
-        chunk_size: 分块大小
-    
+
     Returns:
         流式处理函数
+
+    原签名的 `chunk_size` 形参从未被读（工厂闭包逐条处理、无状态，
+    块边界无任何可观测后果）——「设了没生效」的死形参，按 A46 记档口径删除。
     """
     def stream_process(items: List[Dict]) -> List[Dict]:
         results = []

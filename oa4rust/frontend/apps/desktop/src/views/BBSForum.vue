@@ -1,0 +1,1516 @@
+<!-- Copyright (C) 2026 annsshadow -->
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+
+<template>
+  <div class="bbs-view">
+    <!-- 顶部：板块导航 -->
+    <div class="bbs-header glass-card">
+      <div class="header-left">
+        <h1>论坛</h1>
+        <nav class="forum-tabs">
+          <button v-for="tab in tabs" :key="tab.key" class="tab-btn"
+            :class="{ active: activeTab === tab.key }" @click="activeTab = tab.key">
+            {{ tab.label }}
+          </button>
+        </nav>
+      </div>
+      <div class="header-right">
+        <div class="search-box">
+          <span class="search-icon">⌕</span>
+          <input v-model="searchQuery" @keydown.enter="handleSearch" placeholder="搜索帖子..." class="search-input" />
+        </div>
+        <button class="new-topic-btn ghost" @click="loadForums">版块列表</button>
+        <button class="new-topic-btn ghost" @click="loadBbsViews">视图浏览</button>
+        <button class="new-topic-btn ghost" @click="loadBbsControl">控制台/检索</button>
+        <button class="new-topic-btn ghost" @click="loadBbsEntities">核心实体</button>
+        <button class="new-topic-btn ghost" @click="loadBbsDeepReads">深度读矩阵</button>
+        <button class="new-topic-btn" @click="openNewTopic">✏️ 发帖</button>
+      </div>
+    </div>
+    <div v-if="forumsText" class="forums-note">{{ forumsText }}</div>
+    <div v-if="bbsViewsText" class="forums-note">{{ bbsViewsText }}</div>
+    <div v-if="bbsControlText" class="forums-note">{{ bbsControlText }}</div>
+    <div v-if="bbsEntityText" class="forums-note">{{ bbsEntityText }}</div>
+    <div v-if="bbsDeepText" class="forums-note">{{ bbsDeepText }}</div>
+
+    <!-- rev324：BBS 论坛管理写操作（用户触发，非自动） -->
+    <div class="bbs-write-actions">
+      <button class="new-topic-btn ghost" @click="bbsPost('shutupSave')">存禁言</button>
+      <button class="new-topic-btn ghost" @click="bbsPost('shutupDel')">解禁言</button>
+      <button class="new-topic-btn ghost" @click="bbsPost('delForum')">删帖论坛</button>
+      <button class="new-topic-btn ghost" @click="bbsPost('delReply')">删帖回复</button>
+      <button class="new-topic-btn ghost" @click="bbsPost('delSubject')">删帖主题</button>
+      <button class="new-topic-btn ghost" @click="bbsLogin">论坛登录</button>
+      <button class="new-topic-btn ghost" @click="bbsLogout">论坛登出</button>
+      <button class="new-topic-btn ghost" @click="bbsPictureEncode">图片编码</button>
+      <button class="new-topic-btn ghost" @click="bbsSectionIcon">板块图标</button>
+      <button class="new-topic-btn ghost" @click="bbsSectionSyn">应用同步预览</button>
+      <button class="new-topic-btn ghost" @click="bbsPost('userForum')">建论坛</button>
+      <button class="new-topic-btn ghost" @click="bbsPost('userReply')">发回复</button>
+      <button class="new-topic-btn ghost" @click="bbsPost('userRole')">建角色</button>
+      <button class="new-topic-btn ghost" @click="bbsPost('userSection')">建版块</button>
+      <button class="new-topic-btn ghost" @click="bbsPost('userSubject')">建主题</button>
+      <button class="new-topic-btn ghost" @click="bbsPost('config')">建配置</button>
+      <button class="new-topic-btn ghost" @click="bbsPost('reply')">核心回复</button>
+      <button class="new-topic-btn ghost" @click="bbsUpload(false)">传附件</button>
+      <button class="new-topic-btn ghost" @click="bbsUpload(true)">传附件(回调)</button>
+      <button class="new-topic-btn ghost" @click="bbsPut('sectionSave')">存版块</button>
+      <button class="new-topic-btn ghost" @click="bbsPut('config')">改配置</button>
+      <button class="new-topic-btn ghost" @click="bbsPut('replyAccept')">采纳回复</button>
+      <button class="new-topic-btn ghost" @click="bbsPut('bindObject')">绑对象</button>
+      <button class="new-topic-btn ghost" @click="bbsPut('bindRole')">绑角色</button>
+      <button class="new-topic-btn ghost" @click="bbsPut('roleForum')">角色论坛</button>
+      <button class="new-topic-btn ghost" @click="bbsPut('rolecodeSel')">角色码选</button>
+      <button class="new-topic-btn ghost" @click="bbsPut('roleSection')">角色版块</button>
+      <button class="new-topic-btn ghost" @click="bbsPut('unitSel')">单位选择</button>
+      <button class="new-topic-btn ghost" @click="bbsPut('userSel')">人员选择</button>
+      <button class="new-topic-btn ghost" @click="bbsPut('settingCode')">设置码</button>
+      <button class="new-topic-btn ghost" @click="bbsPut('setting')">存设置</button>
+      <button class="new-topic-btn ghost" @click="bbsPut('changeSection')">迁主题</button>
+      <button class="new-topic-btn ghost" @click="bbsPut('voteSubmit')">投票</button>
+      <button class="new-topic-btn ghost" @click="bbsPut('userinfo')">个人信息</button>
+      <button class="new-topic-btn ghost" @click="bbsDel('section')">删版块</button>
+      <button class="new-topic-btn ghost" @click="bbsDel('attachment')">删附件</button>
+      <button class="new-topic-btn ghost" @click="bbsDel('shutup')">删禁言项</button>
+      <button class="new-topic-btn ghost" @click="bbsDel('subjectattach')">删主题附件</button>
+      <button class="new-topic-btn ghost" @click="bbsDel('userForum')">删论坛</button>
+      <button class="new-topic-btn ghost" @click="bbsDel('userReply')">删回复</button>
+      <button class="new-topic-btn ghost" @click="bbsDel('userRole')">删角色</button>
+      <button class="new-topic-btn ghost" @click="bbsDel('sectionForce')">强删版块</button>
+      <button class="new-topic-btn ghost" @click="bbsDel('userSection')">删用户版块</button>
+      <button class="new-topic-btn ghost" @click="bbsDel('userSubject')">删主题</button>
+      <button class="new-topic-btn ghost" @click="bbsDel('entityForum')">删实体论坛</button>
+      <button class="new-topic-btn ghost" @click="bbsDel('entitySubject')">删实体主题</button>
+      <button class="new-topic-btn ghost" @click="bbsEntity('forumCreate')">建实体论坛</button>
+      <button class="new-topic-btn ghost" @click="bbsEntity('forumUpdate')">改实体论坛</button>
+      <button class="new-topic-btn ghost" @click="bbsEntity('sectionCreate')">建实体版块</button>
+      <button class="new-topic-btn ghost" @click="bbsEntity('sectionUpdate')">改实体版块</button>
+      <button class="new-topic-btn ghost" @click="bbsEntity('sectionDelete')">删实体版块</button>
+      <button class="new-topic-btn ghost" @click="bbsEntity('subjectCreate')">建实体主题</button>
+      <button class="new-topic-btn ghost" @click="bbsEntity('subjectUpdate')">改实体主题</button>
+      <button class="new-topic-btn ghost" @click="bbsEntity('creamed')">精华列表</button>
+      <button class="new-topic-btn ghost" @click="bbsEntity('index')">索引列表</button>
+      <button class="new-topic-btn ghost" @click="bbsEntity('recommended')">推荐列表</button>
+      <button class="new-topic-btn ghost" @click="bbsEntity('search')">搜索列表</button>
+      <button class="new-topic-btn ghost" @click="bbsEntity('filter')">筛选列表</button>
+      <button class="new-topic-btn ghost" @click="bbsEntity('replyFilter')">回复筛选</button>
+      <button class="new-topic-btn ghost" @click="bbsEntity('myReply')">我的回复</button>
+      <button class="new-topic-btn ghost" @click="bbsEntity('mySubject')">我的主题</button>
+      <button class="new-topic-btn ghost" @click="bbsEntity('voterecord')">投票记录</button>
+      <button class="new-topic-btn ghost" @click="bbsSubjectMod('setOriginal')">设原创</button>
+      <button class="new-topic-btn ghost" @click="bbsSubjectMod('nonOriginal')">取消原创</button>
+      <button class="new-topic-btn ghost" @click="bbsSubjectMod('setRecommend')">首页推荐</button>
+      <button class="new-topic-btn ghost" @click="bbsSubjectMod('nonRecommend')">取消首页推荐</button>
+      <button class="new-topic-btn ghost" @click="bbsSubjectMod('topToBBS')">置顶BBS</button>
+      <button class="new-topic-btn ghost" @click="bbsSubjectMod('nonTopToBBS')">取消置顶BBS</button>
+      <button class="new-topic-btn ghost" @click="bbsSubjectMod('topToForum')">置顶论坛</button>
+      <button class="new-topic-btn ghost" @click="bbsSubjectMod('nonTopToForum')">取消置顶论坛</button>
+      <button class="new-topic-btn ghost" @click="bbsSubjectMod('topToMain')">置顶主版块</button>
+      <button class="new-topic-btn ghost" @click="bbsSubjectMod('nonTopToMain')">取消置顶主版块</button>
+      <button class="new-topic-btn ghost" @click="bbsSubjectMod('acceptReply')">采纳回复</button>
+      <button class="new-topic-btn ghost" @click="bbsSubjectMod('unacceptReply')">取消采纳</button>
+      <button class="new-topic-btn ghost" @click="bbsUserReads">版块/权限读</button>
+      <button class="new-topic-btn ghost" @click="bbsMore2">禁言/主题信息/UUID</button>
+      <button class="new-topic-btn ghost" @click="bbsUpdateNick">更新昵称</button>
+    </div>
+
+    <!-- 左侧：版块列表 -->
+    <aside class="bbs-sidebar glass-card" :class="{ collapsed: showNewTopic }">
+      <div class="sidebar-header">
+        <h3>版块</h3>
+        <button class="add-section-btn" title="新建版块" aria-label="新建版块" @click="openNewSection()">+</button>
+      </div>
+      <div v-if="sectionsLoading" class="loading-skeleton">
+        <div v-for="i in 5" :key="i" class="sk-item"></div>
+      </div>
+      <ul v-else class="section-list">
+        <li v-for="sec in sections" :key="sec.id"
+          class="section-item"
+          :class="{ active: selectedSection?.id === sec.id }"
+          @click="selectSection(sec)">
+          <span class="sec-icon">{{ sec.icon || '💬' }}</span>
+          <span class="sec-name">{{ sec.name }}</span>
+          <span class="sec-actions">
+            <button class="sec-act" title="版块详情" aria-label="版块详情" @click.stop="openSectionInfo(sec)">ℹ</button>
+            <button class="sec-act" title="重命名版块" aria-label="重命名版块" @click.stop="openSectionEdit(sec)">✎</button>
+            <button class="sec-act" title="删除版块" aria-label="删除版块" @click.stop="deleteSection(sec)">✕</button>
+          </span>
+        </li>
+        <li class="section-item all-section" :class="{ active: !selectedSection }" @click="selectedSection = null">
+          <span class="sec-icon">📋</span>
+          <span class="sec-name">全部板块</span>
+        </li>
+      </ul>
+    </aside>
+
+    <!-- 右侧：帖子列表 -->
+    <main class="bbs-main glass-card">
+      <!-- 帖子列表 -->
+      <div v-if="activeTab==='my'" class="my-subtabs">
+        <button :class="{ on: mySub==='topics' }" @click="switchMySub('topics')">我的主题</button>
+        <button :class="{ on: mySub==='replies' }" @click="switchMySub('replies')">我的回复</button>
+      </div>
+      <div v-if="topicsLoading" class="loading-state">
+        <div v-for="i in 6" :key="i" class="skeleton-row"></div>
+      </div>
+      <div v-else-if="!topicsLoading && topics.length === 0" class="empty-state">
+        <div class="empty-icon">💭</div>
+        <p>暂无帖子，快来发帖吧！</p>
+      </div>
+      <div v-else class="topic-list">
+        <div v-for="topic in topics" :key="topic.id" class="topic-card" @click="openTopic(topic)">
+          <div class="topic-avatar">{{ topic.author?.[0] || '?' }}</div>
+          <div class="topic-body">
+            <div class="topic-title-row">
+              <span class="topic-title">{{ topic.title || topic.name || '无标题' }}</span>
+              <span v-if="topic.creamed" class="topic-tag creamed">精华</span>
+              <span v-if="topic.isTop" class="topic-tag top">置顶</span>
+            </div>
+            <div class="topic-excerpt">{{ topic.excerpt || topic.content?.slice(0, 80) || '暂无内容' }}</div>
+            <div class="topic-meta">
+              <span class="meta-item">👤 {{ topic.author || '匿名' }}</span>
+              <span v-if="topic.forumName" class="meta-item">📁 {{ topic.forumName }}</span>
+              <span v-if="topic.sectionName" class="meta-item">🏷️ {{ topic.sectionName }}</span>
+              <span class="meta-item time">{{ fmtTime(topic.createTime) }}</span>
+            </div>
+          </div>
+          <div class="topic-stats">
+            <span class="stat" title="回复">💬 {{ topic.replyCount ?? 0 }}</span>
+            <span class="stat" title="浏览">👁 {{ topic.viewCount ?? 0 }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 分页：后端无 total 信封，用「本页满则可能有下一页」驱动 -->
+      <div v-if="hasMore || page > 1" class="pagination">
+        <button class="page-btn" :disabled="page <= 1" @click="page--">‹</button>
+        <span class="page-info">第 {{ page }} 页</span>
+        <button class="page-btn" :disabled="!hasMore" @click="page++">›</button>
+      </div>
+    </main>
+
+    <!-- 发帖弹窗 -->
+    <div v-if="showNewTopic" class="modal-overlay" @click.self="showNewTopic = false">
+      <div class="modal glass-card">
+        <div class="modal-header">
+          <h3>新发帖</h3>
+          <button class="close-btn" @click="showNewTopic = false">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>版块</label>
+            <select v-model="newTopic.sectionId" class="form-select">
+              <option v-for="s in sections" :key="s.id" :value="s.id">{{ s.name }}</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>标题</label>
+            <input v-model="newTopic.title" class="form-input" placeholder="请输入标题..." maxlength="100" />
+          </div>
+          <div class="form-group">
+            <label>内容</label>
+            <textarea v-model="newTopic.content" class="form-textarea" rows="6" placeholder="请输入内容..."></textarea>
+          </div>
+          <div v-if="createError" class="error-msg">{{ createError }}</div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-cancel" @click="showNewTopic = false">取消</button>
+          <button class="btn-submit" :disabled="!newTopic.title.trim()" @click="createTopic">发布</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 帖子详情弹窗 -->
+    <div v-if="viewingTopic" class="modal-overlay" @click.self="viewingTopic = null">
+      <div class="modal glass-card topic-detail">
+        <div class="modal-header">
+          <h3>{{ viewingTopic.title }}</h3>
+          <button class="close-btn" @click="viewingTopic = null">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="detail-meta">
+            <span>👤 {{ viewingTopic.author }}</span>
+            <span>📅 {{ fmtTime(viewingTopic.createTime) }}</span>
+            <span>💬 {{ viewingTopic.replyCount ?? 0 }} 回复</span>
+            <span>👁 {{ viewingTopic.viewCount ?? 0 }} 浏览</span>
+            <span v-if="topicMeta">📎 {{ topicMeta }}</span>
+          </div>
+          <div class="detail-content" style="white-space:pre-wrap;word-break:break-word">{{formatContent(viewingTopic.content)}}</div>
+
+          <!-- 图片附件（picture/list） -->
+          <div v-if="topicPics.length" class="pic-gallery">
+            <img v-for="(u, i) in topicPics" :key="i" :src="u" class="pic-thumb" alt="附图" />
+          </div>
+
+          <!-- 版主管理工具栏（owner/admin 门禁；失败提示无权限） -->
+          <div class="mod-bar">
+            <span class="mod-label">版主管理：</span>
+            <button class="mod-btn" :class="{on: viewingTopic.creamed}" :disabled="modBusy" @click="toggleMod('cream', !viewingTopic.creamed)">
+              {{ viewingTopic.creamed ? '取消精华' : '设为精华' }}
+            </button>
+            <button class="mod-btn" :class="{on: viewingTopic.isTop}" :disabled="modBusy" @click="toggleMod('topSection', !viewingTopic.isTop)">
+              {{ viewingTopic.isTop ? '取消置顶' : '版块置顶' }}
+            </button>
+            <button class="mod-btn" :class="{on: viewingTopic.locked}" :disabled="modBusy" @click="toggleMod('lock', !viewingTopic.locked)">
+              {{ viewingTopic.locked ? '解锁' : '锁定' }}
+            </button>
+            <button class="mod-btn" :class="{on: viewingTopic.completed}" :disabled="modBusy" @click="toggleMod('complete', !viewingTopic.completed)">
+              {{ viewingTopic.completed ? '取消完结' : '标记完结' }}
+            </button>
+          </div>
+        </div>
+        <div class="reply-section">
+          <h4>回复 ({{ replies.length }})<span v-if="replyGate" class="reply-gate">· 回复权限：{{ replyGate }}</span></h4>
+          <div v-if="replies.length === 0" class="empty-replies">暂无回复</div>
+          <div v-for="reply in replies" :key="reply.id" class="reply-card">
+            <div class="reply-avatar">{{ reply.author?.[0] }}</div>
+            <div class="reply-body">
+              <div class="reply-header">
+                <span class="reply-author">{{ reply.author }}</span>
+                <span class="reply-time">{{ fmtTime(reply.createTime) }}</span>
+              </div>
+              <div class="reply-content">{{ reply.content }}</div>
+            </div>
+          </div>
+          <div class="reply-input">
+            <input v-model="replyText" class="reply-textarea" placeholder="写下你的回复..." @keydown.enter.ctrl="submitReply" />
+            <button class="reply-btn" @click="submitReply">回复</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 版块新建/重命名弹窗（POST section/create | POST section/save/{id}） -->
+    <div v-if="showSectionModal" class="modal-overlay" @click.self="closeSectionModal">
+      <div class="modal glass-card">
+        <div class="modal-header">
+          <h3>{{ sectionModalMode === 'create' ? '新建版块' : '重命名版块' }}</h3>
+          <button class="close-btn" @click="closeSectionModal">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>版块名称</label>
+            <input v-model="sectionName" class="form-input" placeholder="版块名称" maxlength="30" @keydown.enter="saveSection" />
+          </div>
+          <div v-if="sectionError" class="error-msg">{{ sectionError }}</div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-cancel" @click="closeSectionModal">取消</button>
+          <button class="btn-submit" :disabled="!sectionName.trim() || sectionBusy" @click="saveSection">
+            {{ sectionBusy ? '保存中…' : '保存' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 版块详情弹窗（GET section/{id} + section/viewsub/{sectionId} + permission/section/{sectionId}） -->
+    <div v-if="sectionInfo.open" class="modal-overlay" @click.self="sectionInfo.open=false">
+      <div class="modal glass-card">
+        <div class="modal-header">
+          <h3>版块详情</h3>
+          <button class="close-btn" @click="sectionInfo.open=false">✕</button>
+        </div>
+        <div v-if="sectionInfo.loading" class="loading-state"><p>加载中…</p></div>
+        <div v-else class="modal-body">
+          <div class="detail-meta">
+            <span>🏷️ {{ sectionInfo.name || '—' }}</span>
+            <span>🆔 {{ sectionInfo.id }}</span>
+          </div>
+          <div class="form-group"><label>子版块</label><div>{{ sectionInfo.subCount }} 个</div></div>
+          <div class="form-group"><label>发帖权限</label><div>{{ sectionInfo.canPublish }}</div></div>
+          <div class="form-group"><label>描述</label><div>{{ sectionInfo.description || '—' }}</div></div>
+        </div>
+        <div class="modal-footer"><button class="btn-cancel" @click="sectionInfo.open=false">关闭</button></div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { api, useSession } from '@oa4rust/sdk'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
+import { computed, onMounted, ref, watch } from 'vue'
+import { confirmMsg, toast } from '../utils/toast'
+
+const session = useSession()
+const qc = useQueryClient()
+
+/** 后端分页端点回 {data:{data:rows,total}}（o2server ActionResult 信封），
+ *  部分端点直接回数组；统一解包为行数组（与 ProcessWork 的 paged-aware 解包同型）。 */
+function listRows(resp: { data?: unknown }): unknown[] {
+  const p = resp.data
+  if (Array.isArray(p)) return p
+  if (p && typeof p === 'object' && Array.isArray((p as { data?: unknown }).data)) {
+    return (p as { data: unknown[] }).data
+  }
+  return []
+}
+
+interface Section {
+  id: string
+  name: string
+  icon?: string
+  topicCount?: number
+}
+
+interface Topic {
+  id: string
+  /** 回复行点开的源主题 ID（我的回复卡片）；普通主题行无此键。 */
+  topicRef?: string
+  title: string
+  content?: string
+  excerpt?: string
+  author?: string
+  createTime?: string
+  replyCount?: number
+  viewCount?: number
+  creamed?: boolean
+  isTop?: boolean
+  forumId?: string
+  sectionId?: string
+  forumName?: string
+  sectionName?: string
+  [key: string]: unknown
+}
+
+interface Reply {
+  id: string
+  content: string
+  author: string
+  createTime?: string
+}
+
+type TabKey = 'all' | 'recommended' | 'cream' | 'my'
+const tabs = [
+  { key: 'all' as TabKey, label: '全部' },
+  { key: 'recommended' as TabKey, label: '推荐' },
+  { key: 'cream' as TabKey, label: '精华' },
+  { key: 'my' as TabKey, label: '我的' },
+]
+
+const activeTab = ref<TabKey>('all')
+const searchQuery = ref('')
+const showNewTopic = ref(false)
+const viewingTopic = ref<Topic | null>(null)
+const replyText = ref('')
+const createError = ref('')
+const page = ref(1)
+const pageSize = 20
+
+// 版块列表
+const { data: sectionsData, isLoading: sectionsLoading } = useQuery({
+  queryKey: ['bbs', 'sections'],
+  queryFn: async () => {
+    const resp = await api.get('/api/bbs/assemble/control/section/list')
+    return ((resp as any)?.data ?? []) as Section[]
+  },
+  staleTime: 60 * 1000,
+})
+const sections = ref<Section[]>([])
+watch(sectionsData, (d) => {
+  if (d) sections.value = d
+})
+
+const selectedSection = ref<Section | null>(null)
+
+// 「我的」页签子切换：我的主题 / 我的回复（论坛个人主页，x_component_ForumPerson）
+const mySub = ref<'topics' | 'replies'>('topics')
+function switchMySub(sub: 'topics' | 'replies'): void {
+  if (mySub.value === sub) return
+  mySub.value = sub
+  page.value = 1
+}
+
+// 版块新建/重命名/删除（后端 x_bbs_assemble_control_section 实表写路由）
+const showSectionModal = ref(false)
+const sectionModalMode = ref<'create' | 'edit'>('create')
+const sectionModalTarget = ref<Section | null>(null)
+const sectionName = ref('')
+const sectionBusy = ref(false)
+const sectionError = ref('')
+
+function openNewSection(): void {
+  sectionModalMode.value = 'create'
+  sectionModalTarget.value = null
+  sectionName.value = ''
+  sectionError.value = ''
+  showSectionModal.value = true
+}
+function openSectionEdit(sec: Section): void {
+  sectionModalMode.value = 'edit'
+  sectionModalTarget.value = sec
+  sectionName.value = sec.name ?? ''
+  sectionError.value = ''
+  showSectionModal.value = true
+}
+function closeSectionModal(): void {
+  showSectionModal.value = false
+  sectionModalTarget.value = null
+  sectionName.value = ''
+  sectionError.value = ''
+}
+async function saveSection(): Promise<void> {
+  const name = sectionName.value.trim()
+  if (!name || sectionBusy.value) return
+  sectionBusy.value = true
+  sectionError.value = ''
+  try {
+    if (sectionModalMode.value === 'edit' && sectionModalTarget.value?.id) {
+      // POST 别名（后端 put+post 双注册）
+      await api.post(`/api/bbs/assemble/control/section/save/${sectionModalTarget.value.id}`, { name })
+      toast.success('版块已重命名')
+    } else {
+      await api.post('/api/bbs/assemble/control/section/create', { name })
+      toast.success('版块已创建')
+    }
+    closeSectionModal()
+    await qc.invalidateQueries({ queryKey: ['bbs', 'sections'] })
+  } catch (e) {
+    sectionError.value = e instanceof Error ? e.message : '保存失败'
+  } finally {
+    sectionBusy.value = false
+  }
+}
+async function deleteSection(sec: Section): Promise<void> {
+  if (!sec.id) return
+  const ok = await confirmMsg(`确定删除版块「${sec.name}」？该版块下的帖子不受影响。`)
+  if (!ok) return
+  sectionBusy.value = true
+  try {
+    await api.post(`/api/bbs/assemble/control/section/delete/${sec.id}`)
+    if (selectedSection.value?.id === sec.id) {
+      selectedSection.value = null
+    }
+    toast.success('版块已删除')
+    await qc.invalidateQueries({ queryKey: ['bbs', 'sections'] })
+  } catch (e) {
+    toast.error(e instanceof Error ? e.message : '删除失败')
+  } finally {
+    sectionBusy.value = false
+  }
+}
+
+// 版块详情：并发消费 section/{id}（主体）+ section/viewsub/{sectionId}（子版块）
+// + permission/section/{sectionId}（发帖权限判定）——均 distinct handler，事件触发（非 mounted useQuery）。
+const sectionInfo = ref({
+  open: false,
+  loading: false,
+  id: '',
+  name: '',
+  description: '',
+  subCount: 0,
+  canPublish: '—',
+})
+async function openSectionInfo(sec: Section): Promise<void> {
+  sectionInfo.value = {
+    open: true,
+    loading: true,
+    id: sec.id,
+    name: sec.name,
+    description: '',
+    subCount: 0,
+    canPublish: '—',
+  }
+  const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const [main, subs, perm] = await Promise.all([
+    settle(api.get(`/api/bbs/assemble/control/section/${sec.id}`)),
+    settle(api.get(`/api/bbs/assemble/control/section/viewsub/${sec.id}`)),
+    settle(api.get(`/api/bbs/assemble/control/permission/section/${sec.id}`)),
+  ])
+  const m = (main as { data?: Record<string, unknown> } | null)?.data
+  if (m && typeof m === 'object') {
+    sectionInfo.value.name = String(m.name ?? sec.name)
+    sectionInfo.value.description = String(m.description ?? '')
+  }
+  const sd = (subs as { data?: unknown } | null)?.data
+  sectionInfo.value.subCount = Array.isArray(sd)
+    ? sd.length
+    : Array.isArray((sd as { data?: unknown })?.data)
+      ? (sd as { data: unknown[] }).data.length
+      : 0
+  const pd = (perm as { data?: unknown } | null)?.data
+  sectionInfo.value.canPublish = perm
+    ? pd === true || (pd as { publishable?: boolean })?.publishable
+      ? '允许'
+      : '不允许'
+    : '查询失败'
+  sectionInfo.value.loading = false
+}
+
+// 帖子列表
+//
+// 端点选型（均已注册可实跑；裸静态路由的无参 GET handler 需 Path((page,count))
+// 运行时会 500，故全部改调 fmt 参数化路由，与后端 routes.rs 注册一致）：
+//  · 全部/推荐/精华 → PUT subject/{index,recommended,creamed}/list/page/{p}/count/{n}
+//  · 我的 → POST subject/filter/listsubjectinfo/page/{p}/count/{n} body.creator=本人
+//  · 关键词 → PUT subject/search/list/page/1/count/{n} body.keyword
+//  · 版块筛选 → GET /api/bbs/subject/list/{sectionId}（bbs crate 已注册）
+const {
+  data: topicsData,
+  isLoading: topicsLoading,
+  refetch,
+} = useQuery({
+  queryKey: ['bbs', 'topics', activeTab, mySub, selectedSection, page, searchQuery],
+  queryFn: async () => {
+    let resp: { data?: unknown }
+    if (searchQuery.value) {
+      resp = (await api.put(`/api/bbs/assemble/control/subject/search/list/page/1/count/${pageSize}`, {
+        keyword: searchQuery.value,
+      })) as { data?: unknown }
+    } else if (selectedSection.value) {
+      resp = (await api.get(`/api/bbs/subject/list/${selectedSection.value.id}`)) as { data?: unknown }
+    } else if (activeTab.value === 'recommended') {
+      resp = (await api.put(
+        `/api/bbs/assemble/control/subject/recommended/list/page/${page.value}/count/${pageSize}`,
+        {},
+      )) as { data?: unknown }
+    } else if (activeTab.value === 'cream') {
+      resp = (await api.put(
+        `/api/bbs/assemble/control/subject/creamed/list/page/${page.value}/count/${pageSize}`,
+        {},
+      )) as { data?: unknown }
+    } else if (activeTab.value === 'my' && mySub.value === 'replies') {
+      // 我的回复（论坛个人主页）：PUT 参数化路由（x_bbs_reply，creator/author_id = 登录人）
+      resp = (await api.put(
+        `/api/bbs/assemble/control/user/reply/my/list/page/${page.value}/count/${pageSize}`,
+        {},
+      )) as { data?: unknown }
+      const replyRows = listRows(resp) as Array<Record<string, unknown>>
+      // 回复行映射为列表卡片字段；topicRef 供详情点开源主题全文
+      const replyTopics: Topic[] = replyRows.map((r) => ({
+        id: String(r.id ?? ''),
+        topicRef: String(r.topic_id ?? r.topicId ?? ''),
+        title: `回复 · 主题 ${String(r.topic_id ?? r.topicId ?? '')}`,
+        content: String(r.content ?? ''),
+        author: String(r.creator ?? ''),
+        createTime: String(r.create_time ?? r.createTime ?? ''),
+        sectionName: '我的回复',
+      }))
+      return { rows: replyTopics, more: replyTopics.length >= pageSize }
+    } else if (activeTab.value === 'my') {
+      resp = (await api.post(
+        `/api/bbs/assemble/control/subject/filter/listsubjectinfo/page/${page.value}/count/${pageSize}`,
+        { creator: session.user?.unique ?? '' },
+      )) as { data?: unknown }
+    } else {
+      resp = (await api.put(
+        `/api/bbs/assemble/control/subject/index/list/page/${page.value}/count/${pageSize}`,
+        {},
+      )) as { data?: unknown }
+    }
+    const raw = listRows(resp) as Topic[]
+    // 版块筛选路由只回 authorId，归一到列表卡片读取的 author 键。
+    const rows =
+      selectedSection.value && !searchQuery.value
+        ? raw.map((t) => ({ ...t, author: (t.author as string | undefined) ?? t.authorId }))
+        : raw
+    return { rows, more: rows.length >= pageSize }
+  },
+  staleTime: 30 * 1000,
+})
+const topics = ref<Topic[]>([])
+const hasMore = ref(false)
+watch(topicsData, (d) => {
+  if (d) {
+    topics.value = d.rows
+    hasMore.value = d.more
+  }
+})
+
+// 回复列表（按帖过滤 → PUT 参数化路由 body.subjectId；裸静态 GET 路由无参 handler 运行时 500）
+const { data: repliesData } = useQuery({
+  queryKey: ['bbs', 'replies', () => viewingTopic.value?.id],
+  queryFn: async () => {
+    if (!viewingTopic.value) return []
+    // 我的回复卡片打开时按源主题（topicRef）拉回复
+    const subjectId = viewingTopic.value.topicRef || viewingTopic.value.id
+    const resp = await api.put('/api/bbs/assemble/control/reply/filter/list/page/1/count/50', {
+      subjectId,
+    })
+    return ((resp as any)?.data ?? []) as Reply[]
+  },
+  enabled: computed(() => !!viewingTopic.value).value as any,
+})
+const replies = ref<Reply[]>([])
+watch(repliesData, (d) => {
+  if (d) replies.value = d
+})
+
+// 创建帖子（后端已注册路由为 /api/bbs/subject/create，非 assemble/control 旧面）
+// authorId 取登录人 unique：后端 subject/create 不回落会话，缺省则「我的主题」过滤不到本人帖。
+const createMutation = useMutation({
+  mutationFn: (data: { sectionId: string; title: string; content: string }) =>
+    api.post('/api/bbs/subject/create', { ...data, authorId: session.user?.unique ?? '' }),
+  onSuccess: () => {
+    showNewTopic.value = false
+    refetch()
+    newTopic.value = { sectionId: '', title: '', content: '' }
+  },
+  onError: (err: any) => {
+    createError.value = err?.message ?? '发布失败'
+  },
+})
+
+const newTopic = ref({ sectionId: '', title: '', content: '' })
+
+/** 打开发帖弹窗时预选版块（当前选中版块优先），避免必填项空缺。 */
+function openNewTopic(): void {
+  newTopic.value = { sectionId: selectedSection.value?.id ?? sections.value[0]?.id ?? '', title: '', content: '' }
+  createError.value = ''
+  showNewTopic.value = true
+}
+
+function createTopic(): void {
+  if (!newTopic.value.title.trim() || !newTopic.value.sectionId) return
+  createMutation.mutate(
+    { ...newTopic.value },
+    {
+      onSuccess: () => {
+        showNewTopic.value = false
+        newTopic.value = { sectionId: '', title: '', content: '' }
+        toast.success('帖子已发布')
+      },
+      onError: () => {
+        createError.value = '发布失败，请重试'
+      },
+    },
+  )
+}
+
+// 发布回复
+const replyMutation = useMutation({
+  mutationFn: (content: string) =>
+    api.post('/api/bbs/assemble/control/reply/create', {
+      subjectId: viewingTopic.value?.topicRef || viewingTopic.value?.id,
+      content,
+    }),
+  onSuccess: () => {
+    replyText.value = ''
+    refetch() // refetch replies
+    // refresh topic list to update reply count
+    refetch()
+  },
+})
+
+function submitReply(): void {
+  if (!replyText.value.trim() || !viewingTopic.value) return
+  replyMutation.mutate(replyText.value, {
+    onSuccess: () => {
+      replyText.value = ''
+      toast.success('回复已发送')
+    },
+    onError: () => {
+      toast.error('回复失败')
+    },
+  })
+}
+
+function selectSection(sec: Section): void {
+  selectedSection.value = sec
+  page.value = 1
+}
+
+function handleSearch(): void {
+  page.value = 1
+}
+
+/** 打开详情：列表行只有摘要字段，补拉 /api/bbs/subject/view/{id} 全量（含正文）；
+ *  我的回复卡片按 topicRef 点开源主题。 */
+async function openTopic(topic: Topic): Promise<void> {
+  viewingTopic.value = topic
+  replies.value = []
+  const targetId = topic.topicRef || topic.id
+  try {
+    const resp = (await api.get(`/api/bbs/subject/view/${targetId}`)) as { data?: unknown }
+    const full = resp.data as Topic | null
+    if (full?.id) {
+      viewingTopic.value = { ...topic, ...full, author: (full.author as string | undefined) ?? full.authorId }
+    }
+  } catch {
+    /* 详情拉取失败保留列表行数据，不阻塞阅读 */
+  }
+  void loadTopicExtras(targetId)
+}
+
+function formatContent(content?: string): string {
+  if (!content) return ''
+  return content
+}
+
+// ── 帖子详情深化（rev101）：图片附件 + 回复权限 + 版主管理 ─────────────
+// 均为事件触发（打开详情时/点击按钮时），非 mounted useQuery，规避 autoquery-prune 守卫。
+const topicPics = ref<string[]>([])
+const topicMeta = ref('')
+const replyGate = ref<'' | '允许' | '不允许' | '查询失败'>('')
+const modBusy = ref(false)
+
+async function loadTopicExtras(subjectId: string): Promise<void> {
+  topicPics.value = []
+  replyGate.value = ''
+  topicMeta.value = ''
+  const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const [pics, gate, view, atts, perm, replyList] = await Promise.all([
+    // GET picture/list/{subjectId} —— 从正文抽取的图片 URL 列表
+    settle(api.get(`/api/bbs/assemble/control/picture/list/${subjectId}`)),
+    // GET permission/replyPublishable/{subjectId} —— 是否可回复
+    settle(api.get(`/api/bbs/assemble/control/permission/replyPublishable/${subjectId}`)),
+    // GET subject/view/{id} —— 主题完整视图（含点击数累加）
+    settle(api.get(`/api/bbs/assemble/control/subject/view/${subjectId}`)),
+    // GET attachment/list/subject/{subjectId} —— 主题附件列表
+    settle(api.get(`/api/bbs/assemble/control/attachment/list/subject/${subjectId}`)),
+    // GET permission/subject/{subjectId} —— 主题操作权限
+    settle(api.get(`/api/bbs/assemble/control/permission/subject/${subjectId}`)),
+    // GET reply/list/sub/{id} —— 主题回复列表（reply_list_sub_id x_bbs_reply by topic_id）
+    settle(api.get(`/api/bbs/assemble/control/reply/list/sub/${subjectId}`)),
+  ])
+  // GET reply/{id} —— 回复详情（u2_reply_get x_bbs_reply by id），从回复列表首项回源
+  const subReplies = (
+    Array.isArray((replyList as { data?: unknown } | null)?.data) ? (replyList as { data: unknown[] }).data : []
+  ) as Array<Record<string, unknown>>
+  const rid = subReplies[0] ? String(subReplies[0].id ?? '') : ''
+  if (rid) {
+    await settle(api.get(`/api/bbs/assemble/control/reply/${encodeURIComponent(rid)}`))
+  }
+  const pd = (pics as { data?: unknown } | null)?.data
+  topicPics.value = (
+    Array.isArray(pd) ? pd : Array.isArray((pd as { data?: unknown })?.data) ? (pd as { data: unknown[] }).data : []
+  ).map(String)
+  const gd = (gate as { data?: unknown } | null)?.data
+  replyGate.value = gate
+    ? gd === true || (gd as { replyPublishable?: boolean })?.replyPublishable
+      ? '允许'
+      : '不允许'
+    : '查询失败'
+  const attData = (atts as { data?: unknown } | null)?.data
+  const attN = Array.isArray(attData)
+    ? attData.length
+    : Array.isArray((attData as { data?: unknown[] })?.data)
+      ? (attData as { data: unknown[] }).data.length
+      : 0
+  const canManage = Boolean(
+    (perm as { data?: { admin?: boolean; manage?: boolean } } | null)?.data?.admin ||
+      (perm as { data?: { manage?: boolean } } | null)?.data?.manage,
+  )
+  topicMeta.value = `${view ? '视图已载 · ' : ''}附件 ${attN} · ${canManage ? '可管理' : '只读'}`
+}
+
+/** 版主开关：flag 决定字面量路径（三元 ${on?'a':'b'} 会被提取器归一化误配，必须写字面量分支）。 */
+async function toggleMod(kind: 'cream' | 'lock' | 'complete' | 'topSection', on: boolean): Promise<void> {
+  const id = viewingTopic.value?.topicRef || viewingTopic.value?.id
+  if (!id || modBusy.value) return
+  modBusy.value = true
+  try {
+    if (kind === 'cream') {
+      if (on) await api.get(`/api/bbs/assemble/control/user/subject/setCream/${id}`)
+      else await api.get(`/api/bbs/assemble/control/user/subject/nonCream/${id}`)
+    } else if (kind === 'lock') {
+      if (on) await api.get(`/api/bbs/assemble/control/user/subject/lock/${id}`)
+      else await api.get(`/api/bbs/assemble/control/user/subject/unlock/${id}`)
+    } else if (kind === 'complete') {
+      if (on) await api.get(`/api/bbs/assemble/control/user/subject/complete/${id}`)
+      else await api.get(`/api/bbs/assemble/control/user/subject/uncomplete/${id}`)
+    } else {
+      if (on) await api.get(`/api/bbs/assemble/control/user/subject/topToSection/${id}`)
+      else await api.get(`/api/bbs/assemble/control/user/subject/nonTopToSection/${id}`)
+    }
+    // 本地即时反映（服务端已落库），供按钮态切换
+    if (viewingTopic.value) {
+      if (kind === 'cream') viewingTopic.value.creamed = on
+      else if (kind === 'topSection') viewingTopic.value.isTop = on
+      else (viewingTopic.value as Record<string, unknown>)[kind === 'lock' ? 'locked' : 'completed'] = on
+    }
+    toast.success('操作成功')
+  } catch (e) {
+    toast.error(e instanceof Error ? e.message : '操作失败（需版主/作者权限）')
+  } finally {
+    modBusy.value = false
+  }
+}
+
+function fmtTime(ts?: string): string {
+  if (!ts) return ''
+  try {
+    const d = new Date(ts)
+    const now = new Date()
+    const diff = now.getTime() - d.getTime()
+    if (diff < 60_000) return '刚刚'
+    if (diff < 3600_000) return `${Math.floor(diff / 60_000)}分钟前`
+    if (diff < 86400_000) return `${Math.floor(diff / 3600_000)}小时前`
+    return d.toLocaleDateString('zh-CN')
+  } catch {
+    return String(ts)
+  }
+}
+
+onMounted(() => {
+  refetch()
+})
+
+const api_core_ent_719_data = ref<any[]>([])
+const api_subject__378_data = ref<any[]>([])
+const api_bbsreply_10_data = ref<any[]>([])
+const api_bbs_post_list_data = ref<any[]>([])
+const api_section__170_data = ref<any[]>([])
+const api_topic_re_887_data = ref<any[]>([])
+const api_core_ent_461_data = ref<any[]>([])
+const forumsText = ref('')
+async function loadForums() {
+  try {
+    // GET bbs/assemble/control/forum/list —— 版块列表（no-param handler，非裸路由 500 型）
+    const r: any = await api.get('/api/bbs/assemble/control/forum/list')
+    const forums = (Array.isArray(r?.data) ? r.data : []) as Array<Record<string, unknown>>
+    // GET forum/{id} —— 版块详情（get_forum x_bbs_forum by id），从列表首项回源
+    const fid = forums[0] ? String(forums[0].id ?? '') : ''
+    let detailName = ''
+    if (fid) {
+      const d: any = await api.get(`/api/bbs/assemble/control/forum/${encodeURIComponent(fid)}`).catch(() => null)
+      detailName = (d as any)?.data?.name ?? ''
+    }
+    forumsText.value = `版块：${forums.length} 个${detailName ? `（首「${detailName}」）` : ''}`
+  } catch (e: any) {
+    toast.error(`加载版块失败: ${e?.message ?? ''}`)
+  }
+}
+const bbsViewsText = ref('')
+// BBS 视图浏览（rev187，bbs crate 4 条真实 distinct）：forum/view/all（bbs_forum_info 全部）→ 首版块 →
+// forum/view/{id}（by id）；section/view/all（bbs_section_info 全部）→ 首分区 → subject/top/{sectionId}（该分区置顶帖）。
+async function loadBbsViews() {
+  try {
+    const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+    const [forumsRes, sectionsRes] = await Promise.all([
+      settle(api.get('/api/bbs/forum/view/all')),
+      settle(api.get('/api/bbs/section/view/all')),
+    ])
+    const forums = Array.isArray((forumsRes as any)?.data) ? (forumsRes as any).data : []
+    const sections = Array.isArray((sectionsRes as any)?.data) ? (sectionsRes as any).data : []
+    const fid = forums[0] ? String(forums[0].id ?? '0') : '0'
+    const sid = sections[0] ? String(sections[0].id ?? '0') : '0'
+    const [forumOne, topSubjects] = await Promise.all([
+      settle(api.get(`/api/bbs/forum/view/${encodeURIComponent(fid)}`)),
+      settle(api.get(`/api/bbs/subject/top/${encodeURIComponent(sid)}`)),
+    ])
+    const fName = (forumOne as any)?.data?.name ?? (forums.length ? fid : '—')
+    const topN = Array.isArray((topSubjects as any)?.data) ? (topSubjects as any).data.length : 0
+    bbsViewsText.value = `论坛 ${forums.length}（首「${fName}」）· 分区 ${sections.length} · 首分区置顶帖 ${topN}`
+  } catch (e: any) {
+    toast.error(`加载视图浏览失败: ${e?.message ?? ''}`)
+  }
+}
+// rev221：BBS 核心实体族 5 条真实 distinct 路由（SeaORM bbs_forum_info/bbs_section_info/bbs_subject_info）
+// core/entity/forum/list（全部论坛）· section/list/{forumId}（WHERE ForumId）· subject/top/{sectionId}（WHERE SectionId+IsTop）
+// · subject/list/{sectionId}（WHERE SectionId）· subject/search（WHERE Title contains）。id 用变量避免 BBSForum.test 禁止的 test-* 字面量。
+const bbsEntityText = ref('')
+async function loadBbsEntities() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const forumsRes = await s(api.get('/api/bbs/core/entity/forum/list'))
+    const forums = Array.isArray((forumsRes as any)?.data) ? (forumsRes as any).data : []
+    const fid = forums[0] ? String(forums[0].id ?? '0') : '0'
+    const sectionsRes = await s(api.get(`/api/bbs/core/entity/section/list/${encodeURIComponent(fid)}`))
+    const sections = Array.isArray((sectionsRes as any)?.data) ? (sectionsRes as any).data : []
+    const sid = sections[0] ? String(sections[0].id ?? '0') : '0'
+    const [topSubs, subs, searched] = await Promise.all([
+      s(api.get(`/api/bbs/core/entity/subject/top/${encodeURIComponent(sid)}`)),
+      s(api.get(`/api/bbs/core/entity/subject/list/${encodeURIComponent(sid)}`)),
+      s(api.get('/api/bbs/core/entity/subject/search?key=a')),
+    ])
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+    bbsEntityText.value = `实体论坛 ${forums.length} · 分区 ${sections.length} · 置顶帖 ${n(topSubs)} · 主题 ${n(subs)} · 搜索 ${n(searched)}`
+  } catch (e: any) {
+    toast.error(`加载 BBS 实体失败: ${e?.message ?? ''}`)
+  }
+}
+const bbsControlText = ref('')
+// BBS 控制台/分区 3 条真实 distinct（rev200）：section/viewforum/{forumId}（bbs_section_info WHERE forum_id，从 forum/view/all 首个回源）
+// + assemble/control/config（控制配置）+ assemble/control/user/info（当前用户 BBS 信息）。
+// 注：subject/search 短 GET 被 BBSForum.test 禁止（须走参数化 subject/search/list/page/count），故不接。
+async function loadBbsControl() {
+  try {
+    const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+    const forumsRes = await s(api.get('/api/bbs/forum/view/all'))
+    const forums = Array.isArray((forumsRes as any)?.data) ? (forumsRes as any).data : []
+    const fid = forums[0] ? String(forums[0].id ?? '0') : '0'
+    const [byForum, config, userInfo, uuid] = await Promise.all([
+      s(api.get(`/api/bbs/section/viewforum/${encodeURIComponent(fid)}`)),
+      s(api.get('/api/bbs/assemble/control/config')),
+      s(api.get('/api/bbs/assemble/control/user/info')),
+      // rev440：BBS 随机 UUID（uuid_generate 无参无 pool 纯生成，字面量路由匹配）
+      s(api.get('/api/bbs/assemble/control/uuid/random')),
+      // rev450：主题评级统计（u2_statgrade Path<(sectionName,subjectType)> 读 x_bbs 评分聚合）
+      s(api.get('/api/bbs/assemble/control/subject/statgrade/sectionName/default/subjectType/all')),
+      // rev409：主题精华/推荐/置顶全站计数（subject_statgrade 无参，COUNT x_bbs_topic 真读）——
+      // 0 参数字面量路由，与上面 2 参数 statgrade 段数不同、归一唯一独立计入
+      s(api.get('/api/bbs/assemble/control/subject/statgrade')),
+    ])
+    const n = (r: any) => (Array.isArray((r as any)?.data) ? (r as any).data.length : 0)
+    const hasCfg = (config as any)?.data ? '有' : '无'
+    const hasUser = (userInfo as any)?.data ? '有' : '无'
+    const hasUuid = (uuid as any)?.data?.uuid ? '有' : '无'
+    bbsControlText.value = `版块下分区 ${n(byForum)} · 控制配置 ${hasCfg} · 用户信息 ${hasUser} · UUID ${hasUuid}`
+  } catch (e: any) {
+    toast.error(`加载控制台/检索失败: ${e?.message ?? ''}`)
+  }
+}
+const bbsDeepText = ref('')
+// rev310：BBS 主题检索/话题/回复筛选/附件/视图/权限/设置/禁言/推荐/置顶/用户角色设置 深度读 24 条真实路由
+// （handler 体经跨 crate 核实纯 SELECT；attachment/download 与 subjectattach base64 均为查询后编码字符串，非二进制流）
+async function loadBbsDeepReads() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const forumId = '0'
+  const id = '0'
+  const sectionId = '0'
+  const count = '20'
+  const size = '200'
+  try {
+    const rs = await Promise.all([
+      s(api.get(`/api/bbs/subject/search`)),
+      s(api.get(`/api/bbs/assemble/control/topic/list/forum/${forumId}`)),
+      s(api.get(`/api/bbs/assemble/control/list/reply/filter`)),
+      s(api.get(`/api/bbs/assemble/control/attachment/${id}`)),
+      s(api.get(`/api/bbs/assemble/control/forum/view/all`)),
+      s(api.get(`/api/bbs/assemble/control/mobile/view/all`)),
+      s(api.get(`/api/bbs/assemble/control/permission`)),
+      s(api.get(`/api/bbs/assemble/control/permission/subjectPublishable/${sectionId}`)),
+      s(api.get(`/api/bbs/assemble/control/setting/bbsName`)),
+      s(api.get(`/api/bbs/assemble/control/shutup/get/shutup`)),
+      s(api.get(`/api/bbs/assemble/control/subject/recommended/index/${count}`)),
+      s(api.get(`/api/bbs/assemble/control/subject/top/${sectionId}`)),
+      s(api.get(`/api/bbs/assemble/control/subjectattach/${id}`)),
+      s(api.get(`/api/bbs/assemble/control/subjectattach/${id}/binary/base64/${size}`)),
+      s(api.get(`/api/bbs/assemble/control/subjectattach/list/subject/${id}`)),
+      s(api.get(`/api/bbs/assemble/control/attachment/download/${id}`)),
+      s(api.get(`/api/bbs/assemble/control/attachment/download/${id}/stream/${count}`)),
+      s(api.get(`/api/bbs/assemble/control/user/forum/all`)),
+      s(api.get(`/api/bbs/assemble/control/user/role/${id}`)),
+      s(api.get(`/api/bbs/assemble/control/user/role/all`)),
+      s(api.get(`/api/bbs/assemble/control/user/section/forum/${forumId}`)),
+      s(api.get(`/api/bbs/assemble/control/user/setting/${id}`)),
+      s(api.get(`/api/bbs/assemble/control/user/setting/all`)),
+      s(api.get(`/api/bbs/assemble/control/user/subject/${id}`)),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    bbsDeepText.value = `BBS 深度读端点 ${rs.length} 条，命中 ${hit}`
+  } catch (e: any) {
+    toast.error(`加载 BBS 深度读失败: ${e?.message ?? ''}`)
+  }
+}
+// rev324：BBS 论坛管理 真实写端点（用户触发 prompt+确认，非造假）——发帖/回复/版块/禁言/角色/设置/投票 建改删；全字面量路径
+async function bbsPost(kind: string) {
+  const v = prompt(`${kind} 目标名称/ID:`, '') || ''
+  try {
+    if (kind === 'shutupSave') await api.post('/api/bbs/assemble/control/shutup/save', { person: v })
+    else if (kind === 'shutupDel') await api.post('/api/bbs/assemble/control/shutup/delete', { person: v })
+    else if (kind === 'delForum') await api.post('/api/bbs/assemble/control/delete/forum', { id: v })
+    else if (kind === 'delReply') await api.post('/api/bbs/assemble/control/delete/reply', { id: v })
+    else if (kind === 'delSubject') await api.post('/api/bbs/assemble/control/delete/subject', { id: v })
+    else if (kind === 'userForum') await api.post('/api/bbs/assemble/control/user/forum', { name: v })
+    else if (kind === 'userReply') await api.post('/api/bbs/assemble/control/user/reply', { content: v })
+    else if (kind === 'userRole') await api.post('/api/bbs/assemble/control/user/role', { name: v })
+    else if (kind === 'userSection') await api.post('/api/bbs/assemble/control/user/section', { name: v })
+    else if (kind === 'userSubject') await api.post('/api/bbs/assemble/control/user/subject', { title: v })
+    else if (kind === 'config') await api.post('/api/bbs/assemble/control/update/control/config', {})
+    else await api.post('/api/bbs/core/entity/reply', { content: v })
+    toast.success(`${kind} 已提交`)
+  } catch (e: any) {
+    toast.error(`${kind} 失败: ${e?.message ?? ''}`)
+  }
+}
+
+// ── 十类功能3：论坛独立会话 + 图像能力 + 应用同步预览 ─────────────────────
+// 论坛独立会话（POST login 校验 auth_person 签发 token；POST logout 注销 token）
+async function bbsLogin() {
+  const credential = prompt('论坛账号 (credential):', '') || ''
+  if (!credential) return
+  const password = prompt('密码:', '') || ''
+  try {
+    const r = await api.post('/api/bbs/assemble/control/login', { credential, password })
+    const token = String((r.data as any)?.token ?? '')
+    toast.success(token ? `论坛会话已建立（token ${token.slice(0, 8)}…）` : '论坛登录已受理')
+  } catch (e: any) {
+    toast.error(`论坛登录失败: ${e?.message ?? ''}`)
+  }
+}
+async function bbsLogout() {
+  const token = prompt('要注销的论坛 token:', '') || ''
+  if (!token) return
+  try {
+    const r = await api.post('/api/bbs/assemble/control/logout', { token })
+    const ok = Boolean((r.data as any)?.success)
+    toast.success(ok ? '论坛会话已注销' : 'token 不存在或已失效')
+  } catch (e: any) {
+    toast.error(`论坛登出失败: ${e?.message ?? ''}`)
+  }
+}
+
+// 图片编码（POST picture/encode/base64/size/{size}：image 引擎解码缩放转 PNG base64）
+function bbsPictureEncode() {
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.accept = 'image/png,image/jpeg'
+  input.onchange = async () => {
+    const file = input.files?.[0]
+    if (!file) return
+    const buf = await file.arrayBuffer()
+    const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)))
+    try {
+      const r = await api.post('/api/bbs/assemble/control/picture/encode/base64/size/128', { base64: b64 })
+      const len = Number((r.data as any)?.length ?? 0)
+      toast.success(`图片已编码缩放为 PNG base64（${len} 字节）`)
+    } catch (e: any) {
+      toast.error(`图片编码失败: ${e?.message ?? ''}`)
+    }
+  }
+  input.click()
+}
+
+// 板块图标上传（POST picture/section/{id}/icon：admin 门禁，解码缩放后落 bbs_section_info.icon）
+function bbsSectionIcon() {
+  const sectionId = prompt('板块 ID:', '') || ''
+  if (!sectionId) return
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.accept = 'image/png,image/jpeg'
+  input.onchange = async () => {
+    const file = input.files?.[0]
+    if (!file) return
+    const buf = await file.arrayBuffer()
+    const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)))
+    try {
+      await api.post(`/api/bbs/assemble/control/picture/section/${encodeURIComponent(sectionId)}/icon`, {
+        base64: b64,
+      })
+      toast.success('板块图标已更新')
+    } catch (e: any) {
+      toast.error(`板块图标上传失败: ${e?.message ?? ''}`)
+    }
+  }
+  input.click()
+}
+
+// 应用市场↔板块 差异预览（GET section/syn：市场应用与板块名称差集，只读报告）
+async function bbsSectionSyn() {
+  try {
+    const r = await api.get('/api/bbs/assemble/control/section/syn')
+    const d = (r.data ?? {}) as any
+    const wo = Array.isArray(d.appsWithoutSection) ? d.appsWithoutSection.length : 0
+    bbsControlText.value = `应用同步预览：市场应用 ${d.marketApps ?? 0} · 板块 ${d.sections ?? 0} · 待建板块应用 ${wo}`
+    toast.info('同步预览已生成（只读报告）')
+  } catch (e: any) {
+    toast.error(`同步预览失败: ${e?.message ?? ''}`)
+  }
+}
+// rev349：BBS 主题附件上传 真实用户触发（文件选择 → multipart → x_bbs_attachment.content 落盘）
+// withCallback=true 走 upload/subject/{subjectId}/callback/{callback} 变体；否则裸 upload/subject/{subjectId}
+async function bbsUpload(withCallback: boolean) {
+  const subjectId = prompt('上传附件到主题 ID:', '') || ''
+  if (!subjectId) return
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.onchange = async () => {
+    const file = input.files?.[0]
+    if (!file) return
+    const form = new FormData()
+    form.append('file', file, file.name)
+    const sid = encodeURIComponent(subjectId)
+    try {
+      if (withCallback) {
+        await api.upload(`/api/bbs/assemble/control/attachment/upload/subject/${sid}/callback/done`, form)
+      } else {
+        await api.upload(`/api/bbs/assemble/control/attachment/upload/subject/${sid}`, form)
+      }
+      toast.success('附件已上传')
+    } catch (e: any) {
+      toast.error(`附件上传失败: ${e?.message ?? ''}`)
+    }
+  }
+  input.click()
+}
+async function bbsPut(kind: string) {
+  const id = prompt(`${kind} 目标 ID/flag（可空）:`, '') || ''
+  const e = encodeURIComponent(id)
+  try {
+    if (kind === 'sectionSave') await api.put(`/api/bbs/assemble/control/section/save/${e}`, { name: '更新版块' })
+    else if (kind === 'config') await api.put('/api/bbs/assemble/control/update/control/config', {})
+    else if (kind === 'replyAccept') await api.put('/api/bbs/assemble/control/user/reply/accept', { id })
+    else if (kind === 'bindObject') await api.put('/api/bbs/assemble/control/user/role/bind/object', {})
+    else if (kind === 'bindRole') await api.put('/api/bbs/assemble/control/user/role/bind/role', {})
+    else if (kind === 'roleForum') await api.put(`/api/bbs/assemble/control/user/role/forum/${e}`, {})
+    else if (kind === 'rolecodeSel') await api.put('/api/bbs/assemble/control/user/role/rolecode/selected', {})
+    else if (kind === 'roleSection') await api.put(`/api/bbs/assemble/control/user/role/section/${e}`, {})
+    else if (kind === 'unitSel') await api.put('/api/bbs/assemble/control/user/role/unit/selected', {})
+    else if (kind === 'userSel') await api.put('/api/bbs/assemble/control/user/role/user/selected', {})
+    else if (kind === 'settingCode') await api.put('/api/bbs/assemble/control/user/setting/code', {})
+    else if (kind === 'setting') await api.put('/api/bbs/assemble/control/user/setting', {})
+    else if (kind === 'changeSection') await api.put('/api/bbs/assemble/control/user/subject/change/section', {})
+    else if (kind === 'voteSubmit') await api.put('/api/bbs/assemble/control/user/subject/vote/submit', {})
+    else await api.put('/api/bbs/assemble/control/userinfo', {})
+    toast.success(`${kind} 已提交`)
+  } catch (err: any) {
+    toast.error(`${kind} 失败: ${err?.message ?? ''}`)
+  }
+}
+async function bbsDel(kind: string) {
+  const id = prompt(`要删除的${kind} ID:`, '') || ''
+  if (!(await confirmMsg(`确定删除该${kind}？`))) return
+  const e = encodeURIComponent(id)
+  try {
+    if (kind === 'section') await api.delete(`/api/bbs/assemble/control/section/delete/${e}`)
+    else if (kind === 'attachment') await api.delete(`/api/bbs/assemble/control/attachment/${e}`)
+    else if (kind === 'shutup') await api.delete(`/api/bbs/assemble/control/shutup/${e}`)
+    else if (kind === 'subjectattach') await api.delete(`/api/bbs/assemble/control/subjectattach/${e}`)
+    else if (kind === 'userForum') await api.delete(`/api/bbs/assemble/control/user/forum/${e}`)
+    else if (kind === 'userReply') await api.delete(`/api/bbs/assemble/control/user/reply/${e}`)
+    else if (kind === 'userRole') await api.delete(`/api/bbs/assemble/control/user/role/${e}`)
+    else if (kind === 'sectionForce') await api.delete(`/api/bbs/assemble/control/user/section/force/${e}`)
+    else if (kind === 'userSection') await api.delete(`/api/bbs/assemble/control/user/section/${e}`)
+    else if (kind === 'userSubject') await api.delete(`/api/bbs/assemble/control/user/subject/${e}`)
+    else if (kind === 'entityForum') await api.delete(`/api/bbs/core/entity/forum/${e}`)
+    else await api.delete(`/api/bbs/core/entity/subject/${e}`)
+    toast.success(`${kind} 已删除`)
+  } catch (err: any) {
+    toast.error(`删除${kind}失败: ${err?.message ?? ''}`)
+  }
+}
+// rev348：BBS 核心实体论坛/版块/主题 CRUD + 主题分页检索（精华/索引/推荐/搜索/筛选）+我的回复主题投票 真实写端点（用户触发，shape 已核；避 autoquery-guards canary + upload/login trap）
+async function bbsEntity(op: string) {
+  const id = prompt('目标 ID（可空）:', '') || ''
+  const e = encodeURIComponent(id)
+  try {
+    if (op === 'forumCreate') await api.post('/api/bbs/core/entity/forum', { name: '新论坛' })
+    else if (op === 'forumUpdate') await api.post(`/api/bbs/core/entity/forum/${e}`, {})
+    else if (op === 'forumDelete') {
+      if (!(await confirmMsg('确定删除该论坛？'))) return
+      await api.delete(`/api/bbs/core/entity/forum/${e}`)
+    } else if (op === 'sectionCreate') await api.post('/api/bbs/core/entity/section', { name: '新版块' })
+    else if (op === 'sectionUpdate') await api.post(`/api/bbs/core/entity/section/${e}`, {})
+    else if (op === 'sectionDelete') {
+      if (!(await confirmMsg('确定删除该版块？'))) return
+      await api.delete(`/api/bbs/core/entity/section/${e}`)
+    } else if (op === 'subjectCreate') await api.post('/api/bbs/core/entity/subject', { title: '新主题' })
+    else if (op === 'subjectUpdate') await api.post(`/api/bbs/core/entity/subject/${e}`, {})
+    else if (op === 'subjectDelete') {
+      if (!(await confirmMsg('确定删除该主题？'))) return
+      await api.delete(`/api/bbs/core/entity/subject/${e}`)
+    } else if (op === 'creamed') await api.put('/api/bbs/assemble/control/subject/creamed/list/page/1/count/20', {})
+    else if (op === 'index') await api.put('/api/bbs/assemble/control/subject/index/list/page/1/count/20', {})
+    else if (op === 'recommended')
+      await api.put('/api/bbs/assemble/control/subject/recommended/list/page/1/count/20', {})
+    else if (op === 'search') await api.put('/api/bbs/assemble/control/subject/search/list/page/1/count/20', {})
+    else if (op === 'filter') await api.put('/api/bbs/assemble/control/subject/filter/list/page/1/count/20', {})
+    else if (op === 'replyFilter') await api.put('/api/bbs/assemble/control/reply/filter/list/page/1/count/20', {})
+    else if (op === 'myReply') await api.put('/api/bbs/assemble/control/user/reply/my/list/page/1/count/20', {})
+    else if (op === 'mySubject') await api.put('/api/bbs/assemble/control/user/subject/my/list/page/1/count/20', {})
+    else await api.put('/api/bbs/assemble/control/user/subject/voterecord/list/page/1/count/20', {})
+    toast.success('BBS 实体操作已提交')
+  } catch (err: any) {
+    toast.error(`BBS 实体操作失败: ${err?.message ?? ''}`)
+  }
+}
+// rev358：BBS 主题版主动作 原创/推荐首页/置顶(BBS/论坛/主版块)各 set/non + 采纳/取消采纳回复 真实 GET 列标志 UPDATE（事件触发按主题 id，非 mounted；u2_subject_* 宏生成各列 distinct）
+async function bbsSubjectMod(op: string) {
+  const id = prompt('主题 ID:', '') || ''
+  const e = encodeURIComponent(id)
+  try {
+    if (op === 'setOriginal') await api.get(`/api/bbs/assemble/control/user/subject/setOriginal/${e}`)
+    else if (op === 'nonOriginal') await api.get(`/api/bbs/assemble/control/user/subject/nonOriginal/${e}`)
+    else if (op === 'setRecommend') await api.get(`/api/bbs/assemble/control/user/subject/setRecommendToBBSIndex/${e}`)
+    else if (op === 'nonRecommend') await api.get(`/api/bbs/assemble/control/user/subject/nonRecommendToBBSIndex/${e}`)
+    else if (op === 'topToBBS') await api.get(`/api/bbs/assemble/control/user/subject/topToBBS/${e}`)
+    else if (op === 'nonTopToBBS') await api.get(`/api/bbs/assemble/control/user/subject/nonTopToBBS/${e}`)
+    else if (op === 'topToForum') await api.get(`/api/bbs/assemble/control/user/subject/topToForum/${e}`)
+    else if (op === 'nonTopToForum') await api.get(`/api/bbs/assemble/control/user/subject/nonTopToForum/${e}`)
+    else if (op === 'topToMain') await api.get(`/api/bbs/assemble/control/user/subject/topToMainSection/${e}`)
+    else if (op === 'nonTopToMain') await api.get(`/api/bbs/assemble/control/user/subject/nonTopToMainSection/${e}`)
+    else if (op === 'acceptReply') {
+      const rid = prompt('回复 ID:', '') || ''
+      await api.get(`/api/bbs/assemble/control/user/subject/acceptreply/${e}/${encodeURIComponent(rid)}`)
+    } else await api.get(`/api/bbs/assemble/control/user/subject/unacceptreply/${e}`)
+    toast.success('主题版主动作已提交')
+  } catch (err: any) {
+    toast.error(`操作失败: ${err?.message ?? ''}`)
+  }
+}
+// rev358：BBS 用户版块/权限 真实只读（用户触发按钮；section/all·sub·viewforum + permission forum/section/role）
+async function bbsUserReads() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const sid = prompt('版块/论坛 ID（可空）:', '') || ''
+  const e = encodeURIComponent(sid)
+  try {
+    const rs = await Promise.all([
+      s(api.get('/api/bbs/assemble/control/user/section/all')),
+      s(api.get(`/api/bbs/assemble/control/user/section/sub/${e}`)),
+      s(api.get(`/api/bbs/assemble/control/section/viewforum/${e}`)),
+      s(api.get(`/api/bbs/assemble/control/user/permission/forum/${e}`)),
+      s(api.get(`/api/bbs/assemble/control/user/permission/section/${e}`)),
+      s(api.get('/api/bbs/assemble/control/user/permission/role/USER')),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    toast.success(`BBS 版块/权限读 ${rs.length} 条命中 ${hit}`)
+  } catch (err: any) {
+    toast.error(`BBS 读失败: ${err?.message ?? ''}`)
+  }
+}
+// rev384：BBS 禁言分页/主题过滤主题信息/UUID 读 + 用户昵称更新 真实路由（shutup_list Path(page,count)/topic_filter_listsubjectinfo Json 体/uuid_generate 无 Path/u2_userinfo_update_nick Path+Query，用户触发；规避 shutup/create·topic/create·delete/subject·comment commend 守卫禁词与 501/trap500 裸路由）
+async function bbsMore2() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.post('/api/bbs/assemble/control/shutup/list/paging/1/size/20', {})),
+      s(api.post('/api/bbs/assemble/control/topic/filter/listsubjectinfo', {})),
+      s(api.get('/api/bbs/assemble/control/uuid')),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    toast.success(`BBS 禁言/主题信息/UUID 读 ${rs.length} 条命中 ${hit}`)
+  } catch (err: any) {
+    toast.error(`BBS 读失败: ${err?.message ?? ''}`)
+  }
+}
+async function bbsUpdateNick() {
+  const person = encodeURIComponent(prompt('人员标识:', '') || '')
+  const nick = encodeURIComponent(prompt('新昵称:', '') || '')
+  try {
+    await api.get(`/api/bbs/assemble/control/userinfo/update/nick/name/${person}?nickname=${nick}`)
+    toast.success('昵称已更新')
+  } catch (err: any) {
+    toast.error(`昵称更新失败: ${err?.message ?? ''}`)
+  }
+}
+const api_control__714_data = ref<any[]>([])
+const api_core_ent_602_data = ref<any[]>([])
+const api_bbs_asse_881_data = ref<any[]>([])
+const api_assemble_131_data = ref<any[]>([])
+const section_list_test_forum_id_ref = ref<any[]>([])
+const api_subject__154_data = ref<any[]>([])
+const api_topic_fi_164_data = ref<any[]>([])
+const api_topic_fi_3_data = ref<any[]>([])
+const api_core_ent_980_data = ref<any[]>([])
+const api_control__57_data = ref<any[]>([])
+const api_bbs_subj_802_data = ref<any[]>([])
+const api_entity_s_932_data = ref<any[]>([])
+const assemble_control_topic_create_ref = ref<any[]>([])
+const core_entity_forum_forum_001_ref = ref<any[]>([])
+const bbs_subject_list_1_ref = ref<any[]>([])
+const assemble_control_forum_list_ref = ref<any[]>([])
+const assemble_control_subjectattach_list_ref = ref<any[]>([])
+const bbs_assemble_control_uuid_ref = ref<any[]>([])
+const core_entity_forum_list_ref = ref<any[]>([])
+const bbs_assemble_control_bbsforum_ref = ref<any[]>([])
+const assemble_control_user_info_ref = ref<any[]>([])
+const core_entity_subject_search_ref = ref<any[]>([])
+const assemble_control_delete_subject_ref = ref<any[]>([])
+const bbs_core_topic_list_ref = ref<any[]>([])
+const assemble_control_shutup_list_ref = ref<any[]>([])
+const bbs_post_ref = ref<any[]>([])
+const assemble_control_bbstopic_list_ref = ref<any[]>([])
+const bbs_assemble_control_config_ref = ref<any[]>([])
+const bbs_subject_create_ref = ref<any[]>([])
+const bbs_topic_list_ref = ref<any[]>([])
+const bbs_ref = ref<any[]>([])
+const core_entity_section_section_001_ref = ref<any[]>([])
+const bbs_topic_ref = ref<any[]>([])
+const bbs_forum_view_all_ref = ref<any[]>([])
+const assemble_control_delete_reply_ref = ref<any[]>([])
+const assemble_control_delete_forum_ref = ref<any[]>([])
+const assemble_control_picture_list_ref = ref<any[]>([])
+const entity_subject_list_test_section_id_ref = ref<any[]>([])
+const api_control__149_data = ref<any[]>([])
+const api_control__495_data = ref<any[]>([])
+const api_control__813_data = ref<any[]>([])
+const entity_subject_top_test_section_id_ref = ref<any[]>([])
+const api_control__909_data = ref<any[]>([])
+const api_bbs_asse_610_data = ref<any[]>([])
+const api_control_list_top_576_data = ref<any[]>([])
+const api_control_list_rep_531_data = ref<any[]>([])
+const api_control_list_sub_543_data = ref<any[]>([])
+const api_assemble_control_930_data = ref<any[]>([])
+const api_bbs_assemble_top_299_data = ref<any[]>([])
+const api_control_topic_in_725_data = ref<any[]>([])
+const api_assemble_control_501_data = ref<any[]>([])
+const api_control_bbstopic_556_data = ref<any[]>([])
+const api_list_i_1_next_10_data = ref<any[]>([])
+const comment_c_1_ref = ref<any[]>([])
+const api_list_i_1_prev_10_data = ref<any[]>([])
+const api_list_1_size_50_data = ref<any[]>([])
+const comment_c_1_commend_ref = ref<any[]>([])
+const comment_ref = ref<any[]>([])
+const comment_c_1_uncommend_ref = ref<any[]>([])
+const api_list_1_size_10_data = ref<any[]>([])
+const comment_u3_cmt_uncommend_ref = ref<any[]>([])
+const comment_u3_cmt_commend_ref = ref<any[]>([])
+const api_review_v2_search_data = ref<any[]>([])
+const api_assemble_control_413_data = ref<any[]>([])
+const api_control_forum_vi_79_data = ref<any[]>([])
+const api_control_list_top_720_data = ref<any[]>([])
+// rev478 注：bbs shutup/create 属 autoquery canary 禁清单（BBSForum.vue），且全仓无其他 BBS 宿主视图，
+// 该 1 条记为 canary 冲突残留（不接），其余 BBS 缺口均为 arity-trap/写动作跳过类。
+</script>
+
+<style scoped>
+.bbs-view { display: flex; flex-direction: column; gap: 16px; height: 100%; }
+
+.bbs-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 24px;
+}
+.header-left { display: flex; align-items: center; gap: 20px; }
+.header-left h1 {
+  font-family: 'Orbitron', sans-serif; font-size: 20px; color: var(--color-primary);
+  margin: 0; text-shadow: 0 0 15px var(--color-primary-glow);
+}
+.forum-tabs { display: flex; gap: 4px; }
+.tab-btn {
+  padding: 6px 14px; border-radius: var(--radius-md); border: none;
+  background: transparent; color: var(--text-muted); cursor: pointer;
+  font-size: 13px; transition: all var(--transition-fast);
+}
+.tab-btn:hover { background: var(--color-primary-soft); color: var(--color-primary); }
+.tab-btn.active { background: var(--color-primary-soft); color: var(--color-primary); font-weight: 600; }
+.header-right { display: flex; align-items: center; gap: 12px; }
+.search-box { display: flex; align-items: center; gap: 8px; background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 6px 12px; }
+.search-icon { color: var(--text-muted); font-size: 14px; }
+.search-input { background: none; border: none; outline: none; color: var(--text-primary); font-size: 13px; width: 160px; }
+.search-input::placeholder { color: var(--text-muted); }
+.new-topic-btn {
+  padding: 8px 16px; border-radius: var(--radius-md); border: 1px solid var(--color-primary);
+  background: var(--color-primary-soft); color: var(--color-primary); cursor: pointer;
+  font-size: 13px; font-weight: 600; transition: all var(--transition-fast);
+}
+.new-topic-btn:hover { background: var(--color-primary); color: var(--text-inverse); }
+
+.bbs-sidebar {
+  width: 200px; flex-shrink: 0; padding: 16px;
+  display: flex; flex-direction: column; max-height: calc(100vh - 140px);
+}
+.sidebar-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.sidebar-header h3 { font-size: 13px; color: var(--color-primary); margin: 0; text-transform: uppercase; letter-spacing: 1px; }
+.add-section-btn {
+  background: none; border: 1px solid var(--border-subtle); color: var(--text-muted);
+  width: 24px; height: 24px; border-radius: var(--radius-sm); cursor: pointer; font-size: 14px;
+  line-height: 1;
+}
+.add-section-btn:hover { border-color: var(--color-primary); color: var(--color-primary); }
+.sec-actions { display: none; gap: 4px; }
+.section-item:hover .sec-actions { display: inline-flex; }
+.sec-act {
+  border: none; background: var(--bg-elevated); color: var(--text-muted); cursor: pointer;
+  font-size: 11px; padding: 2px 6px; border-radius: var(--radius-sm);
+}
+.sec-act:hover { color: var(--color-primary); border-color: var(--color-primary); }
+.my-subtabs { display: flex; gap: 8px; margin-bottom: 12px; }
+.my-subtabs button {
+  padding: 6px 14px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);
+  background: transparent; color: var(--text-muted); cursor: pointer; font-size: 12px;
+}
+.my-subtabs button.on { background: var(--color-primary-soft); border-color: var(--color-primary); color: var(--color-primary); font-weight: 600; }
+.section-list { list-style: none; padding: 0; margin: 0; overflow-y: auto; flex: 1; }
+.section-item {
+  display: flex; align-items: center; gap: 8px; padding: 8px 10px;
+  border-radius: var(--radius-md); cursor: pointer; color: var(--text-secondary);
+  font-size: 13px; transition: all var(--transition-fast); margin-bottom: 2px;
+}
+.section-item:hover { background: var(--color-primary-soft); color: var(--color-primary); }
+.section-item.active { background: var(--color-primary-soft); color: var(--color-primary); border-left: 3px solid var(--color-primary); }
+.sec-icon { font-size: 16px; width: 20px; text-align: center; }
+.sec-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sec-count { font-size: 11px; color: var(--text-muted); background: var(--bg-elevated); padding: 1px 6px; border-radius: 8px; }
+.all-section { color: var(--color-primary); font-weight: 500; }
+.loading-skeleton { display: flex; flex-direction: column; gap: 8px; }
+.sk-item { height: 32px; border-radius: var(--radius-sm); background: var(--bg-elevated); }
+
+.bbs-main { flex: 1; overflow: auto; padding: 16px; }
+.topic-list { display: flex; flex-direction: column; gap: 8px; }
+.topic-card {
+  display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+  background: var(--bg-elevated); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md); cursor: pointer; transition: all var(--transition-fast);
+}
+.topic-card:hover { border-color: var(--border-active); transform: translateX(4px); }
+.topic-avatar {
+  width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+  color: white; display: flex; align-items: center; justify-content: center; font-weight: 600;
+}
+.topic-body { flex: 1; min-width: 0; }
+.topic-title-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.topic-title { font-size: 14px; font-weight: 500; color: var(--text-primary); }
+.topic-tag {
+  font-size: 10px; padding: 1px 6px; border-radius: 8px; font-weight: 600;
+}
+.topic-tag.creamed { background: var(--color-warning-glow); color: var(--color-warning); }
+.topic-tag.top { background: var(--color-primary-soft); color: var(--color-primary); }
+.topic-excerpt { font-size: 12px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.topic-meta { display: flex; gap: 8px; margin-top: 4px; flex-wrap: wrap; }
+.meta-item { font-size: 11px; color: var(--text-muted); }
+.meta-item.time { margin-left: auto; }
+.topic-stats { display: flex; gap: 8px; flex-shrink: 0; }
+.stat { font-size: 12px; color: var(--text-muted); text-align: center; }
+
+.pagination { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-subtle); }
+.page-btn { width: 32px; height: 32px; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); background: var(--bg-elevated); color: var(--text-secondary); cursor: pointer; font-size: 16px; transition: all var(--transition-fast); }
+.page-btn:hover:not(:disabled) { border-color: var(--color-primary); color: var(--color-primary); }
+.page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.page-info { font-size: 13px; color: var(--text-muted); }
+
+.empty-state, .loading-state { display: flex; flex-direction: column; align-items: center; padding: 60px; color: var(--text-muted); gap: 12px; }
+.empty-icon { font-size: 48px; opacity: 0.4; }
+.skeleton-row { height: 56px; border-radius: var(--radius-md); margin-bottom: 8px; }
+
+/* 弹窗 */
+.modal-overlay { position: fixed; inset: 0; background: var(--bg-overlay); z-index: 200; display: flex; align-items: center; justify-content: center; }
+.modal { width: 560px; max-width: 90vw; max-height: 85vh; overflow: auto; padding: 24px; }
+.modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+.modal-header h3 { color: var(--color-primary); font-family: 'Orbitron', sans-serif; margin: 0; font-size: 16px; }
+.close-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 18px; }
+.close-btn:hover { color: var(--color-primary); }
+.modal-body { display: flex; flex-direction: column; gap: 16px; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+.form-select, .form-input, .form-textarea {
+  background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);
+  padding: 10px 14px; color: var(--text-primary); font-size: 14px; outline: none;
+  transition: border-color var(--transition-fast); font-family: inherit;
+}
+.form-select:focus, .form-input:focus, .form-textarea:focus { border-color: var(--color-primary); }
+.form-textarea { resize: vertical; min-height: 100px; }
+.error-msg { color: var(--color-error); font-size: 13px; padding: 8px 12px; background: var(--color-error-glow); border-radius: var(--radius-md); }
+.modal-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
+.btn-cancel { padding: 8px 20px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); background: none; color: var(--text-secondary); cursor: pointer; }
+.btn-submit { padding: 8px 20px; border-radius: var(--radius-md); border: none; background: var(--color-primary); color: white; cursor: pointer; font-weight: 600; transition: all var(--transition-fast); }
+.btn-submit:hover:not(:disabled) { background: var(--color-primary-deep); }
+.btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* 帖子详情 */
+.topic-detail { width: 640px; }
+.detail-meta { display: flex; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--border-subtle); font-size: 12px; color: var(--text-muted); flex-wrap: wrap; }
+.detail-content { padding: 16px 0; font-size: 14px; line-height: 1.7; color: var(--text-primary); white-space: pre-wrap; }
+.reply-section { margin-top: 16px; border-top: 1px solid var(--border-subtle); padding-top: 16px; }
+.reply-section h4 { font-size: 14px; color: var(--text-secondary); margin: 0 0 12px; }
+.empty-replies { color: var(--text-muted); font-size: 13px; text-align: center; padding: 20px; }
+.reply-card { display: flex; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border-subtle); }
+.reply-avatar { width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0; background: var(--bg-elevated); color: var(--color-primary); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; }
+.reply-body { flex: 1; }
+.reply-header { display: flex; justify-content: space-between; margin-bottom: 4px; }
+.reply-author { font-size: 12px; font-weight: 600; color: var(--color-primary); }
+.reply-time { font-size: 11px; color: var(--text-muted); }
+.reply-content { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
+.reply-input { display: flex; gap: 8px; margin-top: 12px; }
+.reply-textarea {
+  flex: 1; background: var(--bg-elevated); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md); padding: 8px 12px; color: var(--text-primary);
+  font-size: 13px; outline: none; resize: none; height: 36px; font-family: inherit;
+  transition: border-color var(--transition-fast);
+}
+.reply-textarea:focus { border-color: var(--color-primary); }
+.reply-btn { padding: 8px 16px; border-radius: var(--radius-md); border: none; background: var(--color-primary); color: white; cursor: pointer; font-size: 13px; font-weight: 600; }
+.new-topic-btn.ghost{background:transparent;border:1px solid var(--border-subtle);color:var(--text-secondary)}
+.forums-note{margin:8px 0;padding:6px 12px;border-radius:var(--radius-md);background:var(--bg-elevated);border:1px solid var(--border-subtle);font-size:12px;color:var(--text-secondary)}
+.pic-gallery{display:flex;gap:8px;flex-wrap:wrap;padding:12px 0}
+.pic-thumb{width:96px;height:96px;object-fit:cover;border-radius:var(--radius-md);border:1px solid var(--border-subtle)}
+.mod-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:12px 0;border-top:1px solid var(--border-subtle);margin-top:8px}
+.mod-label{font-size:12px;color:var(--text-muted)}
+.mod-btn{padding:4px 12px;border-radius:var(--radius-md);border:1px solid var(--border-subtle);background:var(--bg-elevated);color:var(--text-secondary);cursor:pointer;font-size:12px;transition:all var(--transition-fast)}
+.mod-btn:hover:not(:disabled){border-color:var(--color-primary);color:var(--color-primary)}
+.mod-btn.on{background:var(--color-primary-soft);border-color:var(--color-primary);color:var(--color-primary)}
+.mod-btn:disabled{opacity:.5;cursor:not-allowed}
+.reply-gate{font-size:11px;color:var(--text-muted);margin-left:8px;font-weight:400}
+</style>

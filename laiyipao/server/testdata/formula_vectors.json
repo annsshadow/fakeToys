@@ -4,14 +4,27 @@
   "lcg": {
     "_comment": "PCG-XSH-RR 变体，Go uint64 与 TS BigInt 必须逐位相同。64 位值必须用字符串承载：JSON number 超过 2^53 后 JS 解析即失精，断言会变成假通过。",
     "seed": 12345,
-    "expected": ["6917529027818027904", "1269031133", "9223372037807892195"]
+    "expected": [
+      "6917529027818027904",
+      "1269031133",
+      "9223372037807892195"
+    ]
   },
   "fnv1a64": {
     "_comment": "Go hash/fnv 与 TS 手写实现必须一致（回放哈希的基础）",
     "vectors": [
-      { "input": "", "expected": "cbf29ce484222325" },
-      { "input": "a", "expected": "af63dc4c8601ec8c" },
-      { "input": "foobar", "expected": "85944171f73967e8" }
+      {
+        "input": "",
+        "expected": "cbf29ce484222325"
+      },
+      {
+        "input": "a",
+        "expected": "af63dc4c8601ec8c"
+      },
+      {
+        "input": "foobar",
+        "expected": "85944171f73967e8"
+      }
     ]
   },
   "damage": {
@@ -30,7 +43,12 @@
           "hp": 1000000000,
           "armor_permille": 0,
           "stacks_per_element": 4,
-          "resist": { "fire": 500, "ice": -300, "lightning": 500, "corrosion": -300 }
+          "resist": {
+            "fire": 500,
+            "ice": -300,
+            "lightning": 500,
+            "corrosion": -300
+          }
         },
         "hit": {
           "skill_damage": 1000,
@@ -63,7 +81,12 @@
           "hp": 1000000000,
           "armor_permille": 0,
           "stacks_per_element": 4,
-          "resist": { "fire": 500, "ice": -300, "lightning": 500, "corrosion": -300 }
+          "resist": {
+            "fire": 500,
+            "ice": -300,
+            "lightning": 500,
+            "corrosion": -300
+          }
         },
         "hit": {
           "skill_damage": 1000,
@@ -96,7 +119,12 @@
           "hp": 1000000000,
           "armor_permille": 0,
           "stacks_per_element": 4,
-          "resist": { "fire": 500, "ice": -300, "lightning": 500, "corrosion": -300 }
+          "resist": {
+            "fire": 500,
+            "ice": -300,
+            "lightning": 500,
+            "corrosion": -300
+          }
         },
         "hit": {
           "skill_damage": 1000,
@@ -140,5 +168,249 @@
       "max_keys_per_battle": 3,
       "max_energy_per_battle": 15
     }
+  },
+  "replay_skills": {
+    "_comment": "回放前缀 S 段（技能槽配置）的跨端契约（第 56 轮）。Go 侧 internal/domain/replay_skills_contract_test.go 与 TS 侧 src/game/replay_skills_contract.test.ts 必须同时通过。expected 是字面串 —— 两端各自用**自己的** skillBaseDamageAtLevel / SkillBaseDamageAtLevel 算底伤再拼串，任一端的格式或排序漂移都会在这里露出来。sort 排的是**格式化后的字符串**（TS 的 Array.sort 无参 = UTF-16 码元序，Go 对应 sort.Strings），所以 slot=10 排在 slot=2 前面，这是最容易写错的一处。",
+    "cases": [
+      {
+        "name": "single_level1_no_baking",
+        "_why": "level 1 的 coef = 1000，底伤不变；这是最常见的情形，也是格式漂移最容易藏身的地方",
+        "skills": [
+          {
+            "slot": 0,
+            "skill_id": 1,
+            "level": 1,
+            "base_damage": 100,
+            "heat_cost": 20,
+            "apply_stacks": 1
+          }
+        ],
+        "expected": "0:1:100:1:20"
+      },
+      {
+        "name": "slot_ge_10_string_order",
+        "_why": "字符串序 ≠ 槽位数值序：10: 排在 2: 前面。按槽位排的实现在这里会红",
+        "skills": [
+          {
+            "slot": 2,
+            "skill_id": 1,
+            "level": 1,
+            "base_damage": 100,
+            "heat_cost": 20,
+            "apply_stacks": 1
+          },
+          {
+            "slot": 10,
+            "skill_id": 2,
+            "level": 1,
+            "base_damage": 140,
+            "heat_cost": 30,
+            "apply_stacks": 2
+          }
+        ],
+        "expected": "10:2:140:2:30,2:1:100:1:20"
+      },
+      {
+        "name": "level_baked_into_base_damage",
+        "_why": "等级必须烘进底伤：coef = 1000 + (level-1)*50。level 10 → 145，level 5 → 216",
+        "skills": [
+          {
+            "slot": 0,
+            "skill_id": 3,
+            "level": 10,
+            "base_damage": 100,
+            "heat_cost": 40,
+            "apply_stacks": 2
+          },
+          {
+            "slot": 1,
+            "skill_id": 4,
+            "level": 5,
+            "base_damage": 180,
+            "heat_cost": 50,
+            "apply_stacks": 3
+          }
+        ],
+        "expected": "0:3:145:2:40,1:4:216:3:50"
+      },
+      {
+        "name": "mixed_width_slot_and_4digit_damage",
+        "_why": "两位槽位 + 四位底伤一起出现，排错位或漏字段都在这里现形",
+        "skills": [
+          {
+            "slot": 9,
+            "skill_id": 5,
+            "level": 3,
+            "base_damage": 1000,
+            "heat_cost": 60,
+            "apply_stacks": 1
+          },
+          {
+            "slot": 11,
+            "skill_id": 6,
+            "level": 1,
+            "base_damage": 250,
+            "heat_cost": 70,
+            "apply_stacks": 4
+          }
+        ],
+        "expected": "11:6:250:4:70,9:5:1100:1:60"
+      },
+      {
+        "name": "empty_build",
+        "_why": "空构筑必须产出空串（而不是 ',,,' 之类），否则空技能玩家会被判不符",
+        "skills": [],
+        "expected": ""
+      }
+    ],
+    "limits": {
+      "_comment": "replay_skills 的长度/条目数上限（第 57 轮）。两处必须一致：Go 的 domain.ReplaySkillsMaxLen / ReplaySkillsMaxEntries，以及 TS 侧 parity 测试读这里的值。measured_* 是 100 关全扫描 + 槽位递增扫描的**实测**结果，不是估计。max_entries 必须 >= BaseSkillSlots(5) + extra_slot 节点数(8) = 13，由 Go 的 TestReplaySkillsEntryCapCoversMaxPossibleSlots 守着。",
+      "max_len": 1024,
+      "max_entries": 20,
+      "measured": {
+        "_comment": "客户端真实玩家构筑（ACTIVE_SLOTS = 4）扫 100 关：最长 51 字符 / 4 条。按槽位数递增实测：4 条→51、5 条→64、10 条→130、12 条→160、20 条→280、21 条→293。max_len=1024 远大于条目上限处的 280，所以长度校验**永远不会先于条目数触发** —— 两条边界分开写是为了让「塞了太多条」与「单条离谱地长」能分开报错，而不是为了让长度成为主要闸门。",
+        "player_max_len_level1": 50,
+        "player_max_len_level99": 51,
+        "_levels_note": "两档都记：客户端 parity 扫描（settle_bounds_parity.test.ts）的 buildSnapshot 用 level 缺省即 1，实测 50；把全部技能顶到 level 99（底伤最大）实测 51。上限校验要用更大的那个，所以取 51。",
+        "player_max_entries": 4,
+        "at_entry_cap_len": 280,
+        "worst_single_entry_len": 13,
+        "slots_vs_len": {
+          "4": 51,
+          "5": 64,
+          "10": 130,
+          "12": 160,
+          "20": 280,
+          "21": 293
+        }
+      }
+    }
+  },
+  "card_picks": {
+    "_comment": "card_picks 的取值域（第 66 轮）。两端各有一份边界：Go 是 CardPickMin（internal/domain/battle_collections.go），TS 是 PICK_MIN（src/game/engine.ts）。它们必须逐位一致 —— 漂了的后果是静默的：客户端正常对局被服务端 422 拒掉，而客户端测试、Go 测试、e2e 全绿（它们都不跑真实结算）。编码：-1 整波跳过；-(3+handIdx) 弃一张取第 handIdx 张；-(6+handIdx) 弃一张整波跳过。两个负区间不相交，靠 BASE 相差 3（> 每波最大手牌数 2）。",
+    "min": -8,
+    "discard_take_base": 3,
+    "discard_skip_base": 6,
+    "skip": -1,
+    "hand_slots": 3,
+    "cases": [
+      {
+        "name": "plain_pick_first",
+        "expected": 0
+      },
+      {
+        "name": "plain_skip",
+        "expected": -1
+      },
+      {
+        "name": "discard_then_take_first",
+        "expected": -3
+      },
+      {
+        "name": "discard_then_skip",
+        "expected": -6
+      }
+    ]
+  },
+  "apply_armor": {
+    "_comment": "applyArmor 的跨端绝对值用例（第 71 轮）。两端各有一份实现，文件头都声明「必须与对方逐行等价」：Go 是 internal/domain/damage.go 的 applyArmor，TS 是 src/game/fixed.ts 的。漂了的后果是同一场战斗算出不同伤害 → replayHash 不同 → I-6 判伪造。这里锁的是**绝对值**而不是比值 —— 因为公式_vectors.json 的 damage.cases 里armor_permille 三个取值全是 0，而 applyArmor 第一行就 return，所以那个向量从未执行到第二行（README armor_test.go 记录了这个空洞）。特别地：**负伤害**的语义只在这里被锁住 —— 两端的单测都不覆盖，而 Go 侧注释说它表示「反伤/异常」，是将来会用到的路径。",
+    "cases": [
+      {
+        "name": "zero_armor",
+        "dmg": 1000,
+        "armor": 0,
+        "expected": 1000
+      },
+      {
+        "name": "armor_100",
+        "dmg": 1000,
+        "armor": 100,
+        "expected": 900
+      },
+      {
+        "name": "armor_250",
+        "dmg": 1000,
+        "armor": 250,
+        "expected": 750
+      },
+      {
+        "name": "armor_250_bigger_dmg",
+        "dmg": 2000,
+        "armor": 250,
+        "expected": 1500
+      },
+      {
+        "name": "armor_750_within_cap",
+        "dmg": 2000,
+        "armor": 750,
+        "expected": 500
+      },
+      {
+        "name": "armor_1000_capped",
+        "dmg": 1000,
+        "armor": 1000,
+        "expected": 250
+      },
+      {
+        "name": "huge_armor_capped",
+        "dmg": 2000,
+        "armor": 100000,
+        "expected": 500
+      },
+      {
+        "name": "negative_armor_unchanged",
+        "dmg": 1000,
+        "armor": -500,
+        "expected": 1000
+      },
+      {
+        "name": "negative_armor_minus_one",
+        "dmg": 1000,
+        "armor": -1,
+        "expected": 1000
+      },
+      {
+        "name": "zero_damage",
+        "dmg": 0,
+        "armor": 500,
+        "expected": 0
+      },
+      {
+        "name": "trunc_down",
+        "dmg": 999,
+        "armor": 250,
+        "expected": 749
+      },
+      {
+        "name": "trunc_up",
+        "dmg": 1001,
+        "armor": 250,
+        "expected": 750
+      },
+      {
+        "name": "negative_damage_unchanged",
+        "dmg": -1000,
+        "armor": 500,
+        "expected": -1000
+      },
+      {
+        "name": "negative_damage_minus_one",
+        "dmg": -1,
+        "armor": 750,
+        "expected": -1
+      },
+      {
+        "name": "negative_damage_zero_armor",
+        "dmg": -5000,
+        "armor": 0,
+        "expected": -5000
+      },
+      {
+        "name": "negative_damage_huge_armor",
+        "dmg": -12345,
+        "armor": 999999,
+        "expected": -12345
+      }
+    ]
   }
 }

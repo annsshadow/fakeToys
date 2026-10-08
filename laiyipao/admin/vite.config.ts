@@ -43,13 +43,25 @@ export default defineConfig({
     chunkSizeWarningLimit: 1500,
     rollupOptions: {
       output: {
-        manualChunks: {
-          vue: ['vue', 'vue-router', 'pinia'],
-          // ⚠️ 这一行是「整包」的根因：手写 manualChunks 把整个
-          // element-plus 强行圈成一个 chunk，**绕过了按需引入的裁剪**。
-          // 改成按需之后不能再这么圈，否则前面的优化全部作废。
-          // 组件由 resolver 自动 import，交给 rollup 自行分块即可。
-          charts: ['echarts'],
+        // ⚠️ Vite 8 是 Rolldown 构建，manualChunks 只接受函数形式
+        // （Rollup 的对象映射 { vue: [...] } 在 Rolldown 类型里已不支持，
+        //  vue-tsc 报 TS2769）。语义与旧对象形式一致：
+        // vue 组 = vue/vue-router/pinia/@vue 框架层，charts 组 = echarts。
+        // ⚠️ 这一行是「整包」的根因：手写 manualChunks 把整个
+        // element-plus 强行圈成一个 chunk，**绕过了按需引入的裁剪**。
+        // 改成按需之后不能再这么圈，否则前面的优化全部作废。
+        // 组件由 resolver 自动 import，交给打包器自行分块即可（element-plus 不进组）。
+        manualChunks: (moduleId) => {
+          if (moduleId.includes('/echarts/')) return 'charts'
+          if (
+            moduleId.includes('/vue/') ||
+            moduleId.includes('/vue-router/') ||
+            moduleId.includes('/pinia/') ||
+            moduleId.includes('/@vue/')
+          ) {
+            return 'vue'
+          }
+          return null
         },
       },
     },

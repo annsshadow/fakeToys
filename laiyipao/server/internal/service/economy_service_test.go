@@ -20,7 +20,28 @@ func TestLeaderboardKinds(t *testing.T) {
 	ts.exec(t, `INSERT INTO level_stars (user_id, level_id, stars, best_score, clears, min_power_clear)
 	            VALUES ($1, 1, 3, 5000, 1, 100)
 	            ON CONFLICT (user_id, level_id) DO UPDATE SET clears = 1, min_power_clear = 100`, uid)
-	ts.exec(t, `UPDATE user_progress SET level_exp = level_exp + 777 WHERE user_id = $1`, uid)
+	// ⚠️ 第 83 轮：必须**严格最大**，而不是「加 777」。
+	//
+	// `Leaderboard(kind, 50)` 只返回前 50，而共享测试库里每跑一次全包
+	// 就多一批用户。`level_exp + 777` 让本用户落在中游 ——
+	// 实测在库里有足够多用户后，本用例直接掉出前 50 而**变红**。
+	//
+	// 与第 82 轮那条 `defenses` 的问题是同一个形状：
+	// **依赖「表还不够脏」的断言不是断言，是运气。**
+	//
+	// 三个榜的口径不同，所以三个都要置顶：
+	//   power       → level_exp 最大
+	//   stage       → MAX(level_id) 最大（表里最大的关卡是 48）
+	//   efficiency  → MIN(min_power_clear) **最小**（越小越靠前，且要 > 0）
+	ts.exec(t, `
+		UPDATE user_progress
+		   SET level_exp = (SELECT COALESCE(MAX(level_exp), 0) + 1 FROM user_progress)
+		 WHERE user_id = $1`, uid)
+	ts.exec(t, `
+		INSERT INTO level_stars (user_id, level_id, stars, best_score, clears, min_power_clear)
+		VALUES ($1, (SELECT MAX(level_id) FROM level_stars), 3, 5000, 1, 1)
+		ON CONFLICT (user_id, level_id) DO UPDATE
+		  SET clears = 1, min_power_clear = 1`, uid)
 
 	// 三种榜单都必须能跑且包含自己
 	for _, kind := range []string{"power", "stage", "efficiency"} {
@@ -245,7 +266,7 @@ func TestVerifyReplayAndParseCardPicks(t *testing.T) {
 	}
 
 	// GetReplay：结构完整性 + settle_input 剥离 + card_picks 解析
-	info, err := ts.GetReplay(ctx, battleID)
+	info, err := ts.GetReplay(ctx, uid, battleID)
 	if err != nil {
 		t.Fatalf("回放失败：%v", err)
 	}
@@ -261,7 +282,7 @@ func TestVerifyReplayAndParseCardPicks(t *testing.T) {
 		t.Error("回放必须带 attacker")
 	}
 	// 未知战报
-	if _, err := ts.GetReplay(ctx, 999999999); !errors.Is(err, ErrNotFound) {
+	if _, err := ts.GetReplay(ctx, uid, 999999999); !errors.Is(err, ErrNotFound) {
 		t.Errorf("未知回放应 ErrNotFound，实际 %v", err)
 	}
 
@@ -316,7 +337,7 @@ func parseSeed(t *testing.T, s string) int64 {
 func TestReplayErrorBranches(t *testing.T) {
 	broken := openBrokenService(t)
 	ctx := context.Background()
-	if _, err := broken.GetReplay(ctx, 1); err == nil {
+	if _, err := broken.GetReplay(ctx, 1, 1); err == nil {
 		t.Error("故障态应报错")
 	}
 	if _, err := broken.VerifyReplay(ctx, 1, 1, "x"); err == nil {

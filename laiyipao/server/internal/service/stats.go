@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -226,7 +227,15 @@ func (s *Service) AdminDashboard(ctx context.Context) (Dashboard, error) {
 		}
 		d.StageFunnel = append(d.StageFunnel, f)
 	}
-	return d, rows.Err()
+	// 第 144 轮：逐个查询都要在迭代结束后查 `Err()`（fail-loud，AGENTS #11）。
+	// 修前这里 `return d, rows.Err()` —— `rows` 是上面**反应分布**那支查询的句柄，
+	// 早已迭代完且查过 Err()（恒为 nil）；漏斗 `frows` 的 `Err()` 从未被检查。
+	// 后果：漏斗查询若在迭代中途失败（连接抖断 / 死锁被杀 / 磁盘满），
+	// `d.StageFunnel` 只填了一半，函数却返回 nil 错误 —— 看板静默少了一半关卡。
+	if err := frows.Err(); err != nil {
+		return d, fmt.Errorf("dashboard funnel: %w", err)
+	}
+	return d, nil
 }
 
 // --- 玩家管理 ---
@@ -273,11 +282,17 @@ func (s *Service) AdminListUsers(ctx context.Context, keyword string, limit, off
 	if offset < 0 {
 		offset = 0
 	}
-	pattern := "%" + strings.TrimSpace(keyword) + "%"
+	// 第 118 轮：keyword 里的 `%`/`_`/`\` 必须转义成**字面量**。
+	// 旧实现直接拼 `%<kw>%`，搜 "100%" 会退化成 `%100%%`（% 当通配符），
+	// 结果「输入了东西却匹配到一大片」—— 与第 111 轮关卡搜索同族。
+	// 空 keyword 的 pattern 仍是 `%%`，`$1='%%'` 哨兵语义不变。
+	kw := strings.TrimSpace(keyword)
+	escaped := strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`).Replace(kw)
+	pattern := "%" + escaped + "%"
 
 	var total int64
 	if err := s.pool.QueryRow(ctx,
-		`SELECT COUNT(*) FROM users WHERE $1 = '%%' OR nickname LIKE $2 OR guest_token LIKE $2`,
+		`SELECT COUNT(*) FROM users WHERE $1 = '%%' OR nickname LIKE $2 ESCAPE '\'::char OR guest_token LIKE $2 ESCAPE '\'::char`,
 		pattern, pattern).Scan(&total); err != nil {
 		return nil, 0, fmt.Errorf("count users: %w", err)
 	}
@@ -310,7 +325,7 @@ func (s *Service) AdminListUsers(ctx context.Context, keyword string, limit, off
 			JOIN battle_records br ON br.id = rv.battle_id
 			GROUP BY br.user_id
 		) v ON v.user_id = u.id
-		WHERE $1 = '%%' OR u.nickname LIKE $1 OR u.guest_token LIKE $1
+		WHERE $1 = '%%' OR u.nickname LIKE $1 ESCAPE '\'::char OR u.guest_token LIKE $1 ESCAPE '\'::char
 		ORDER BY u.id DESC LIMIT $2 OFFSET $3`, pattern, limit, offset)
 	if err != nil {
 		return nil, 0, fmt.Errorf("list users: %w", err)
@@ -331,25 +346,40 @@ func (s *Service) AdminListUsers(ctx context.Context, keyword string, limit, off
 }
 
 // AdminSetUserStatus 封禁 / 解封玩家。
+// AdminSetUserStatus 封禁/解封玩家。
+//
+// ⚠️ 第 114 轮：状态写入与 refresh token 吊销必须在**同一事务**里。
+// 修前是两条独立 autocommit：封禁成功后第二条失败时，
+// users.status 已落库回不去，而 refresh token 还有效——
+// 被禁账号在 RefreshTTL 内仍可换访问令牌「续命」，
+// 运营止损动作实际没止住。下面的注释「封禁即吊销」
+// 与旧实现（两条可分别失败）自相矛盾，这正是缺陷能活下来的原因。
 func (s *Service) AdminSetUserStatus(ctx context.Context, userID int64, banned bool, reason string) (AdminUserView, error) {
 	status := 1
 	if banned {
 		status = 2
 	}
-	if _, err := s.pool.Exec(ctx,
-		`UPDATE users SET status = $2, ban_reason = $3 WHERE id = $1`, userID, status, reason); err != nil {
-		return AdminUserView{}, fmt.Errorf("set user status: %w", err)
-	}
-	// 封禁即吊销所有 refresh token，否则封禁后仍可用长期令牌续命
-	if banned {
-		if _, err := s.pool.Exec(ctx,
-			`UPDATE refresh_tokens SET revoked_at = now() WHERE user_id = $1 AND revoked_at IS NULL`,
-			userID); err != nil {
-			return AdminUserView{}, fmt.Errorf("revoke tokens: %w", err)
+	err := s.DB.Tx(ctx, func(tx txType) error {
+		if _, err := tx.Exec(ctx,
+			`UPDATE users SET status = $2, ban_reason = $3 WHERE id = $1`, userID, status, reason); err != nil {
+			return fmt.Errorf("set user status: %w", err)
 		}
+		// 封禁即吊销所有 refresh token，否则封禁后仍可用长期令牌续命；
+		// 失败则整单回滚（status 恢复原值），不允许「半封」状态。
+		if banned {
+			if _, err := tx.Exec(ctx,
+				`UPDATE refresh_tokens SET revoked_at = now() WHERE user_id = $1 AND revoked_at IS NULL`,
+				userID); err != nil {
+				return fmt.Errorf("revoke tokens: %w", err)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return AdminUserView{}, err
 	}
 	var v AdminUserView
-	err := s.pool.QueryRow(ctx, `
+	err = s.pool.QueryRow(ctx, `
 		SELECT u.id, u.nickname, u.is_guest, u.status,
 		       COALESCE(p.max_stage, 0), COALESCE(p.level_exp, 0),
 		       COALESCE(w.coin, 0), COALESCE(w.gem, 0), u.created_at, u.last_login_at
@@ -362,12 +392,27 @@ func (s *Service) AdminSetUserStatus(ctx context.Context, userID int64, banned b
 	return v, err
 }
 
-// AdminGrantCurrency 后台发币。
+// AdminGrantCurrency 后台发币（负数为回收）。
+//
+// ⚠️ 第 109 轮：**符号必须进审计**。
+// 修前无论正负，钱包流水一律记 `admin_grant`、
+// 后台审计一律记 `grant_currency` ——
+// 运营在「发放资源」框里输入负数就是**静默回收**玩家货币，
+// 事后翻审计只看到「发放」，分不清哪笔是扣款。
+// 回收是真实需求（老测试写明的「回收场景」），但需求不该靠
+// 「正数事件里混负数」实现 —— 符号本身必须成为审计字段。
 func (s *Service) AdminGrantCurrency(ctx context.Context, userID int64, currency string, amount int64) (map[string]int64, error) {
+	if amount == 0 {
+		return nil, fmt.Errorf("%w: 数量为 0 的发放没有意义", ErrBadInput)
+	}
+	reason := "admin_grant"
+	if amount < 0 {
+		reason = "admin_revoke"
+	}
 	out := map[string]int64{}
 	err := s.DB.Tx(ctx, func(tx txType) error {
 		if err := s.grantWallet(ctx, tx, userID,
-			map[string]int64{currency: amount}, "admin_grant", 0); err != nil {
+			map[string]int64{currency: amount}, reason, 0); err != nil {
 			return err
 		}
 		w, err := s.loadWalletTx(ctx, tx, userID)
@@ -407,6 +452,12 @@ type AdminBattleView struct {
 	HeatMax     int       `json:"heat_max"`
 	ReplayHash  string    `json:"replay_hash"`
 	CreatedAt   time.Time `json:"created_at"`
+
+	// 第 123 轮：本关的总怪数（生成器权威值）。
+	// 后台「守恒」列此前只判 kills+leaked===0（无接触），其余一律显示「守恒」
+	// —— 没有任何总怪数来源，伪造战报的「一致性」列永远绿。
+	// 给了 total_enemies，kills+leaked **超出**它才是可判定的伪造信号。
+	TotalEnemies int `json:"total_enemies"`
 
 	// 本场战报的验真状态。
 	//
@@ -481,6 +532,22 @@ func (s *Service) AdminListBattles(ctx context.Context, userID int64, levelID in
 	}
 	defer rows.Close()
 	var out []AdminBattleView
+	// 第 123 轮：本关总怪数取自**生成器**（确定性、与 level_waves 同源）。
+	// 按 level_id 缓存，避免同一关反复 GenerateLevel。
+	totalCache := map[int]int{}
+	totalEnemies := func(levelID int) int {
+		if n, ok := totalCache[levelID]; ok {
+			return n
+		}
+		n := 0
+		for _, w := range domain.GenerateLevel(levelID).Waves {
+			for _, sp := range w.Spawns {
+				n += sp.Count
+			}
+		}
+		totalCache[levelID] = n
+		return n
+	}
 	for rows.Next() {
 		var v AdminBattleView
 		if err := rows.Scan(&v.ID, &v.UserID, &v.Nickname, &v.LevelID, &v.Result, &v.Stars,
@@ -489,6 +556,7 @@ func (s *Service) AdminListBattles(ctx context.Context, userID int64, levelID in
 			&v.VerifyChecked, &v.VerifyMismatched); err != nil {
 			return nil, 0, err
 		}
+		v.TotalEnemies = totalEnemies(v.LevelID)
 		out = append(out, v)
 	}
 	return out, total, rows.Err()
@@ -499,68 +567,216 @@ func (s *Service) AdminListBattles(ctx context.Context, userID int64, levelID in
 // AdminUpdateLevel 更新关卡配置。
 //
 // 只有白名单字段可写 —— 客户端上报的任意字段绝不能直接进库。
-func (s *Service) AdminUpdateLevel(ctx context.Context, levelID int, patch map[string]any) (domain.GeneratedLevel, error) {
+func (s *Service) AdminUpdateLevel(ctx context.Context, levelID int, patch map[string]any) (map[string]any, error) {
 	fields := []string{}
 	args := []any{levelID}
 	set := func(col string, v any) {
 		args = append(args, v)
 		fields = append(fields, fmt.Sprintf("%s = $%d", col, len(args)))
 	}
+	//
+	// ⚠️ 第 107 轮：**非法键整单拒绝**，不再「静默丢弃那一项」。
+	//
+	// 修前每个 case 都是 `if 条件 { set(...) }`，条件不满足就什么都不做，
+	// 而循环继续。于是：
+	//
+	//	PUT {"name":"P107改名", "base_hp":-5}  →  200
+	//	  库里 name 改了，base_hp **没改**
+	//
+	// 运营看到 200 就以为两个字段都调过了。
+	// 那是「部分生效 + 成功回执」，比直接报错坏得多 ——
+	// 直接报错至少会说「你的请求有问题」。
+	//
+	// 只有一个键时 `len(fields)==0` 已经能兜住（返回 400「没有可更新的字段」），
+	// 但**混合**情况兜不住 —— 而混合恰恰是运营调参时最常见的形状。
+	var rejected []string
+	reject := func(key, why string) {
+		rejected = append(rejected, fmt.Sprintf("%s（%s）", key, why))
+	}
+
 	for key, val := range patch {
 		switch key {
 		case "name":
-			if v, ok := val.(string); ok && v != "" {
-				set("name", v)
+			v, ok := val.(string)
+			if !ok || v == "" {
+				reject(key, "必须是非空字符串")
+				continue
 			}
+			set("name", v)
 		case "base_hp":
-			if v, ok := toInt64(val); ok && v > 0 {
-				set("base_hp", v)
+			v, ok := toInt64(val)
+			if !ok || v <= 0 {
+				reject(key, "必须是正整数")
+				continue
 			}
+			set("base_hp", v)
 		case "wave_count":
-			if v, ok := toInt64(val); ok && v > 0 && v <= 50 {
-				set("wave_count", v)
+			v, ok := toInt64(val)
+			if !ok || v <= 0 || v > 50 {
+				reject(key, "必须在 1..50")
+				continue
 			}
+			set("wave_count", v)
 		case "difficulty":
-			if v, ok := toInt64(val); ok && v > 0 {
-				set("difficulty", v)
+			v, ok := toInt64(val)
+			if !ok || v <= 0 {
+				reject(key, "必须是正整数")
+				continue
 			}
+			set("difficulty", v)
 		case "energy_cost":
-			if v, ok := toInt64(val); ok && v >= 0 && v <= 100 {
-				set("energy_cost", v)
+			v, ok := toInt64(val)
+			if !ok || v < 0 || v > 100 {
+				reject(key, "必须在 0..100")
+				continue
 			}
+			set("energy_cost", v)
 		case "star_targets":
-			raw, err := json.Marshal(val)
-			if err == nil {
-				set("star_targets", raw)
+			//
+			// ⚠️ 第 107 轮：原来只有 `json.Marshal` 成不成功这一个判据。
+			//
+			// 我**原以为** `{"star_targets": null}` 会撞 NOT NULL 变成 500 ——
+			// **实测否证**：JSONB 的 `null` 是一个**合法的 JSONB 值**，
+			// 不是 SQL NULL，所以 NOT NULL 约束照样通过。
+			// （第 4 次「结论下得太早」：第 85/87/92/103 轮之后。）
+			//
+			// 但实测确实暴露了另一件事：`{"star_targets": "不是数组"}` 与
+			// `{"terrain_config": 42}` 都会被**接受**，
+			// 于是 `AdminListLevels` 的 `json.Unmarshal` 失败、
+			// `stars` / `terrain` 保持 nil，后台看到的是「星级目标为空」。
+			//
+			// 那是「写进去一个永远读不出来的东西」——
+			// 合法 JSONB、合法约束，但语义上已坏，且没有任何报错。
+			// 所以判据必须落在**形状**上，不是「能不能序列化」。
+			//
+			// 显式的 JSON `null` 是**清空语义**，必须放行。
+			// ⚠️ 我第一版的形状校验一刀切 `val.([]any)`，
+			// 于是 `{"star_targets": null}` 变成 400 ——
+			// 而「清空星级目标」是运营会真的想做的事。
+			//
+			// 判据踩在「合法」的边界上时，要么误杀、要么漏判；
+			// 所以「**该接受的**」也要逐条列出（见
+			// `TestLevelPatchAcceptsEmptyJSONArrays`）。
+			//
+			// 而且 `json.Unmarshal([]byte("null"), &[]int64{})` 是**成功**的
+			// （结果为 nil 切片），所以存 `null` 读回来不会报错。
+			if val == nil {
+				set(key, json.RawMessage("null"))
+				continue
 			}
+			arr, ok := val.([]any)
+			if !ok {
+				reject(key, "必须是数组或 null")
+				continue
+			}
+			badElem := false
+			for _, e := range arr {
+				n, ok := toInt64(e)
+				if !ok || n < 0 {
+					reject(key, "数组元素必须是非负整数")
+					badElem = true
+					break
+				}
+			}
+			if badElem {
+				continue
+			}
+			raw, err := json.Marshal(arr)
+			if err != nil {
+				reject(key, "无法序列化")
+				continue
+			}
+			set("star_targets", raw)
 		case "terrain_config":
-			raw, err := json.Marshal(val)
-			if err == nil {
-				set("terrain_config", raw)
+			if val == nil {
+				set(key, json.RawMessage("null"))
+				continue
 			}
+			arr, ok := val.([]any)
+			if !ok {
+				reject(key, "必须是数组或 null")
+				continue
+			}
+			badElem := false
+			for _, e := range arr {
+				if _, ok := e.(map[string]any); !ok {
+					reject(key, "数组元素必须是对象")
+					badElem = true
+					break
+				}
+			}
+			if badElem {
+				continue
+			}
+			raw, err := json.Marshal(arr)
+			if err != nil {
+				reject(key, "无法序列化")
+				continue
+			}
+			set("terrain_config", raw)
 		case "enabled":
-			if v, ok := val.(bool); ok {
-				set("enabled", v)
+			v, ok := val.(bool)
+			if !ok {
+				reject(key, "必须是布尔值")
+				continue
 			}
+			set("enabled", v)
 		case "is_boss":
-			if v, ok := val.(bool); ok {
-				set("is_boss", v)
+			v, ok := val.(bool)
+			if !ok {
+				reject(key, "必须是布尔值")
+				continue
 			}
+			set("is_boss", v)
+		default:
+			// 未知键必须报错 —— 「白名单外的字段被忽略」是个**陷阱**：
+			// 运营拼错字段名（`baseHP` / `hp`）时会被静默吞掉，
+			// 而请求整体因为有别的合法键而返回 200。
+			reject(key, "不在可更新字段的白名单里")
 		}
 	}
+
+	if len(rejected) > 0 {
+		sort.Strings(rejected)
+		return nil, fmt.Errorf("%w: 这些字段没被接受，整单未执行：%s",
+			ErrBadInput, strings.Join(rejected, "、"))
+	}
 	if len(fields) == 0 {
-		return domain.GeneratedLevel{}, fmt.Errorf("%w: 没有可更新的字段", ErrBadInput)
+		return nil, fmt.Errorf("%w: 没有可更新的字段", ErrBadInput)
 	}
 	sql := fmt.Sprintf(`UPDATE levels SET %s, updated_at = now() WHERE id = $1`,
 		joinComma(fields))
 	if _, err := s.pool.Exec(ctx, sql, args...); err != nil {
-		return domain.GeneratedLevel{}, fmt.Errorf("update level: %w", err)
+		return nil, fmt.Errorf("update level: %w", err)
 	}
-	return domain.GenerateLevel(levelID), nil
+	//
+	// ⚠️ 第 107 轮：这里原来返回 `domain.GenerateLevel(levelID)`。
+	//
+	// 那是**纯函数**（只从 ChapterOf + LCG 算，从不查库），
+	// 所以运营刚把 base_hp 改成 987654，响应里却是改**前**的 1000。
+	//
+	// 一个与自己的写入相矛盾的响应，不管背后是哪条设计路线，都是缺陷。
+	// 现在回读**真实落库的那一行**。
+	//
+	// ⚠️ 这**不代表**改动对玩家生效 —— 玩家侧走的是纯生成器。
+	// 见 `admin_level_authority_test.go` 的现状刻画测试，
+	// 以及 README 已知边界第 23 条（需要产品决策）。
+	row, err := s.AdminLevelRow(ctx, levelID)
+	if err != nil {
+		return nil, fmt.Errorf("read back level: %w", err)
+	}
+	return row, nil
 }
 
-// AdminUpdateSkill 更新技能配置。
-func (s *Service) AdminUpdateSkill(ctx context.Context, skillID int, patch map[string]any) error {
+// AdminUpdateSkill 更新技能配置，并**回读落库后的那一行**。
+//
+// ⚠️ 第 120 轮：修前只返回 error，handler 只好退回去整个重列 `adminSkills`
+// （`{items, recipes}`）当响应。但后台契约与 UI 的 `updateSkill` 写的是
+// `{ skill: AdminSkill }`，于是 `Object.assign(row, res.skill)` 里
+// `res.skill` 恒为 undefined —— 改完技能表行**停在上次刷新的旧值**
+// 却弹「已保存」（写后读与写入矛盾，第 107/108 轮同族）。
+// 现在返回读回的行，响应即「后台刷新列表会看到的那一行」。
+func (s *Service) AdminUpdateSkill(ctx context.Context, skillID int, patch map[string]any) (map[string]any, error) {
 	fields := []string{}
 	args := []any{skillID}
 	set := func(col string, v any) {
@@ -585,30 +801,116 @@ func (s *Service) AdminUpdateSkill(ctx context.Context, skillID int, patch map[s
 		}
 	}
 	if len(fields) == 0 {
-		return fmt.Errorf("%w: 没有可更新的字段", ErrBadInput)
+		return nil, fmt.Errorf("%w: 没有可更新的字段", ErrBadInput)
 	}
 	sql := fmt.Sprintf(`UPDATE skills SET %s WHERE id = $1`, joinComma(fields))
 	if _, err := s.pool.Exec(ctx, sql, args...); err != nil {
-		return fmt.Errorf("update skill: %w", err)
+		return nil, fmt.Errorf("update skill: %w", err)
 	}
-	return nil
+	// 回读落库后的那一行（第 120 轮：响应 = 后台刷新列表会看到的那一行）
+	row, err := s.skillRow(ctx, skillID)
+	if err != nil {
+		return nil, fmt.Errorf("read back skill: %w", err)
+	}
+	return row, nil
+}
+
+// skillRow 读回单行技能配置（与 fetchSkills 的列一致，供写后读与后台契约对齐）。
+func (s *Service) skillRow(ctx context.Context, skillID int) (map[string]any, error) {
+	var (
+		id, heatCost, cooldown, pierce, aoe, stacks, speed, chain, unlock int
+		code, name, family, element, kind, descr, applyElement            string
+		baseDamage                                                        int64
+	)
+	err := s.pool.QueryRow(ctx, `
+		SELECT id, code, name, family, element, kind, descr, base_damage, heat_cost,
+		       cooldown_ms, pierce, aoe_radius, apply_element, apply_stacks,
+		       projectile_speed, chain, unlock_level
+		FROM skills WHERE id = $1`, skillID).
+		Scan(&id, &code, &name, &family, &element, &kind, &descr,
+			&baseDamage, &heatCost, &cooldown, &pierce, &aoe, &applyElement, &stacks,
+			&speed, &chain, &unlock)
+	if err != nil {
+		return nil, err
+	}
+	return map[string]any{
+		"id": id, "code": code, "name": name, "family": family, "element": element,
+		"kind": kind, "descr": descr, "base_damage": baseDamage,
+		"heat_cost": heatCost, "cooldown_ms": cooldown, "pierce": pierce,
+		"aoe_radius": aoe, "apply_element": applyElement, "apply_stacks": stacks,
+		"projectile_speed": speed, "chain": chain, "unlock_level": unlock,
+	}, nil
 }
 
 // AdminRegenerateLevels 重新生成全部关卡（覆盖后台的手工改动）。
+//
+// # 第 116 轮两处修正
+//
+//  1. **保留运营的 `base_hp`**（与后台确认文案一致）：
+//     文案承诺「自定义的防线血量会保留」，但旧实现把 `base_hp` 也按生成器值
+//     覆盖掉 —— 运营手工调过的防线血量被无声重置。
+//     重新生成的语义是「同步生成器内容（波次/难度/地形/星级）」，
+//     不该连运营自己调的 base_hp 一起冲掉。
+//
+//  2. **整批原子 + 不再吞错**：旧实现 100 条 UPDATE 各走独立 autocommit、
+//     且 `starRaw,_ := json.Marshal` 静默吞错。中途失败会留下
+//     「前 N 关已重生成 + 后 M 关保留旧值」的**混合态**且不可回滚。
+//     现在整批进同一事务，任一失败整体回滚；Marshal 失败显式报错。
+//
+// # 第 117 轮
+//  3. **同步 `level_waves`**：旧实现只改 levels 行，从不碰波次表。
+//     生成器升级后点「重新生成」，后台波次抽屉与 levels.wave_count
+//     仍停在旧版本。现在同一事务里整体替换每关的 level_waves。
 func (s *Service) AdminRegenerateLevels(ctx context.Context) (int, error) {
 	levels := domain.GenerateAllLevels()
-	for _, gl := range levels {
-		starRaw, _ := json.Marshal(gl.StarTargets)
-		terrainRaw, _ := json.Marshal(gl.Terrain)
-		if _, err := s.pool.Exec(ctx, `
-			UPDATE levels SET chapter=$2, name=$3, seed=$4, base_hp=$5, wave_count=$6,
-			                 difficulty=$7, energy_cost=$8, star_targets=$9, terrain_config=$10,
-			                 is_boss=$11, updated_at=now()
-			 WHERE id=$1`,
-			gl.ID, gl.Chapter, gl.Name, gl.Seed, gl.BaseHP, gl.WaveCount, gl.Difficulty,
-			gl.EnergyCost, starRaw, terrainRaw, gl.IsBoss); err != nil {
-			return 0, fmt.Errorf("regenerate level %d: %w", gl.ID, err)
+	err := s.DB.Tx(ctx, func(tx txType) error {
+		for _, gl := range levels {
+			starRaw, err := json.Marshal(gl.StarTargets)
+			if err != nil {
+				return fmt.Errorf("regenerate level %d: marshal star_targets: %w", gl.ID, err)
+			}
+			terrainRaw, err := json.Marshal(gl.Terrain)
+			if err != nil {
+				return fmt.Errorf("regenerate level %d: marshal terrain: %w", gl.ID, err)
+			}
+			// 注意：**没有 base_hp** —— 保留库里运营自定义的值。
+			if _, err := tx.Exec(ctx, `
+				UPDATE levels SET chapter=$2, name=$3, seed=$4, wave_count=$5,
+				                 difficulty=$6, energy_cost=$7, star_targets=$8, terrain_config=$9,
+				                 is_boss=$10, updated_at=now()
+				 WHERE id=$1`,
+				gl.ID, gl.Chapter, gl.Name, gl.Seed, gl.WaveCount, gl.Difficulty,
+				gl.EnergyCost, starRaw, terrainRaw, gl.IsBoss); err != nil {
+				return fmt.Errorf("regenerate level %d: %w", gl.ID, err)
+			}
+			//
+			// ⚠️ 第 117 轮：同步 `level_waves`。
+			// 「重新生成」的完整含义是让库里的**关卡内容**对齐生成器，
+			// 而波次的敌人排布就在 level_waves 表里。旧实现只改 levels 行、
+			// 从不碰 level_waves —— 生成器升级（波次数/刷怪变化）后点「重新生成」，
+			// 后台「波次」抽屉与 levels.wave_count 仍停在旧版本，两者永久失同步。
+			// level_waves 没有运营编辑入口（后台只有只读抽屉），
+			// 是纯生成器派生内容，整体替换安全：先删旧波次、再写生成器的。
+			if _, err := tx.Exec(ctx,
+				`DELETE FROM level_waves WHERE level_id = $1`, gl.ID); err != nil {
+				return fmt.Errorf("regenerate level %d: clear waves: %w", gl.ID, err)
+			}
+			for _, w := range gl.Waves {
+				spawns, err := json.Marshal(w.Spawns)
+				if err != nil {
+					return fmt.Errorf("regenerate level %d: marshal wave %d: %w", gl.ID, w.Index, err)
+				}
+				if _, err := tx.Exec(ctx,
+					`INSERT INTO level_waves (level_id, wave_index, spawns) VALUES ($1,$2,$3)`,
+					gl.ID, w.Index, spawns); err != nil {
+					return fmt.Errorf("regenerate level %d: insert wave %d: %w", gl.ID, w.Index, err)
+				}
+			}
 		}
+		return nil
+	})
+	if err != nil {
+		return 0, err
 	}
 	return len(levels), nil
 }

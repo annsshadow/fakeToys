@@ -470,3 +470,59 @@ class TestSamplerExtended2:
         dist = sampler._analyze_length_distribution(items)
         assert dist["short"] + dist["medium"] + dist["long"] == pytest.approx(1.0)
         assert dist["avg_length"] > 0
+
+
+class TestRecommendSeedsPrecomputeL191:
+    """L191（B261）：recommend_seeds 问题类型面预计算的性能形状棘轮。
+
+    旧形状：内层「每个覆盖不足类型 × 每条数据」循环里对同一条 item 反复调
+    _analyze_question_type（纯函数、同输入同输出），k 个 question_type 档就是
+    k 倍重复调用；新形状：循环前预计算一次成索引数组（O(n)），内层 O(1) 查表。
+    棘轮判据（相对形状，不钉绝对次数）：同一数据、不同 top_k 的两档实测调用数
+    必须相同——旧 k×n 形状下两档必然分叉（top_k=1 只走 1 个档、top_k=20 走满
+    4 个档）。
+    """
+
+    @staticmethod
+    def _corpus():
+        # why 90 / how 4 / what 4 ⇒ 类型占比 why≈0.92、how=what≈0.041（<0.1 覆盖不足），
+        # 全文本 <10 字符 ⇒ 长度面 medium/long 占比 0 也进不足清单（q 档 2 + 长度档 2）
+        items = (
+            [{"instruction": f"为什么会出现{i}"} for i in range(90)]
+            + [{"instruction": f"怎么处理{i}"} for i in range(4)]
+            + [{"instruction": f"什么是{i}"} for i in range(4)]
+        )
+        return items
+
+    @staticmethod
+    def _count_calls(items, top_k):
+        s = ActiveSampler()
+        calls = {"n": 0}
+        orig = s._analyze_question_type
+
+        def spy(text):
+            calls["n"] += 1
+            return orig(text)
+
+        s._analyze_question_type = spy
+        s.recommend_seeds(items, top_k=top_k)
+        return calls["n"]
+
+    def test_call_count_does_not_scale_with_underrepresented_kinds(self):
+        """形状棘轮：调用数与 top_k（= 处理的覆盖不足档数 k）无关，且 ≤ 3n（三条
+        过法：coverage + identify + 预计算各一遍）。旧 k×n 形状当场分叉变红。"""
+        items = self._corpus()
+        n = len(items)
+        c1 = self._count_calls(items, top_k=1)
+        c_many = self._count_calls(items, top_k=20)
+        assert c1 == c_many, (
+            f"_analyze_question_type 调用数不得随覆盖不足档数 k 增长（L191 预计算形状）："
+            f"top_k=1 测得 {c1}、top_k=20 测得 {c_many}"
+        )
+        assert c1 <= 3 * n, f"调用数 {c1} 超过 3n={3 * n}，内层循环疑似把调用塞回去了"
+
+    def test_first_match_seed_semantics_preserved(self):
+        """预计算没改语义：首匹配 seed 仍是数据里第一条 how 型条目（idx 90）。"""
+        items = self._corpus()
+        result = ActiveSampler().recommend_seeds(items, top_k=1)
+        assert result.recommended_seeds == [items[90]]

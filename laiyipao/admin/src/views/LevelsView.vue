@@ -13,6 +13,13 @@ const loading = ref(false)
 const levels = ref<AdminLevel[]>([])
 const total = ref(0)
 const chapter = ref<number | undefined>(undefined)
+/**
+ * 章节下拉选项从**首次无筛选的全量数据**推导，不硬编码章数。
+ * 旧实现写死 `v-for="c in 10"`，而关卡内容实际只有 6 章（levelgen 的
+ * Chapters 表）——选「第 7~10 章」必然 0 行，运营以为「该章无数据」，
+ * 其实是那个章根本不存在。内容加章后这里自动跟上，不用再改 UI。
+ */
+const chapterOptions = ref<number[]>([])
 const keyword = ref('')
 
 // 波次抽屉
@@ -53,6 +60,13 @@ async function load() {
   loading.value = true
   try {
     const res = await fetchLevels({ chapter: chapter.value, keyword: keyword.value || undefined })
+    // 只在**无章节筛选**时从全量推导下拉选项：筛选后 items 只剩该章，
+    // 拿它推导会把其它章从下拉里删掉，选项本身就漏了。
+    if (chapter.value === undefined) {
+      const seen = new Set<number>()
+      for (const l of res.items) seen.add(l.chapter)
+      chapterOptions.value = [...seen].sort((a, b) => a - b)
+    }
     levels.value = res.items
     total.value = res.total
   } catch (e) {
@@ -154,7 +168,7 @@ const asRow = (r: unknown) => r as AdminLevel
     <el-card shadow="never">
       <div class="toolbar">
         <el-select v-model="chapter" placeholder="全部章节" clearable style="width: 140px" @change="load">
-          <el-option v-for="c in 10" :key="c" :label="`第 ${c} 章`" :value="c" />
+          <el-option v-for="c in chapterOptions" :key="c" :label="`第 ${c} 章`" :value="c" />
         </el-select>
         <el-input
           v-model="keyword"

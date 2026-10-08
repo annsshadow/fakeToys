@@ -182,9 +182,12 @@ import * as api from '@/api/client'
 import {
   runChallenge,
   validateSnapshot,
+  isShieldActive,
   type DefenseView,
   type ChallengeOutcome,
 } from '@/game/defense'
+import { scoreRulesFromServer } from '@/game/score'
+import { skillBaseDamageAtLevel, DEFAULT_SKILL_RULES, skillRulesFromServer } from '@/game/skill'
 import type { EquippedSkill } from '@/game/heatmap'
 import type { Element } from '@/game/elements'
 import type { GeneratedLevel } from '@/game/types'
@@ -213,7 +216,8 @@ const stolenText = computed(() => {
 
 /** 快照不完整时不给出挑战入口 —— 盲报会污染对方的战绩数据 */
 function snapshotOk(c: DefenseView): boolean {
-  return validateSnapshot(c).ok
+  // 第 140 轮：护盾过期判断用服务端时钟基准，本地时钟偏几小时不再误判
+  return validateSnapshot(c, store.estimateServerNowMs()).ok
 }
 
 async function loadDefenses() {
@@ -222,7 +226,10 @@ async function loadDefenses() {
     myDefense.value = res.mine ?? null
     candidates.value = res.candidates ?? []
     attackLeft.value = Math.max(0, (res.attempt_limit ?? 3) - (res.mine?.my_attempts_today ?? 0))
-    shielded.value = !!myDefense.value?.shielded_until
+    // 第 134 轮：护盾「是否生效」按时间判断，不是按字段存在判断。
+    // 旧写法 `!!shielded_until` 会把「已过期但字段仍在」的护盾当成开启。
+    // 第 140 轮：「现在」用服务端时钟估算而不是裸 Date.now()。
+    shielded.value = isShieldActive(myDefense.value?.shielded_until, store.estimateServerNowMs())
   } catch {
     myDefense.value = null
     candidates.value = []
@@ -274,6 +281,17 @@ function challengeLevel(): GeneratedLevel | null {
 
 function myEquipped(): EquippedSkill[] {
   const skills = store.skillMap
+  // 第 147 轮：底伤必须按玩家**实际技能等级**烘进去（与 P1 战斗
+  // equippedFromSnapshot 同口径）。修前直接用内容表的 base_damage（恒 1 级），
+  // 玩家技能升到 10 级、防线挑战仍按 1 级模拟 —— 攻方伤害被系统性低估，
+  // 「挑战窃取」判定与玩家真实构筑脱节（I-6 同族的「口径漂移」）。
+  const rules = store.config?.skill_rules
+    ? skillRulesFromServer(store.config.skill_rules)
+    : DEFAULT_SKILL_RULES
+  const levelOf = (id: number): number => {
+    const row = (store.build as any)?.skills?.[String(id)]
+    return typeof row?.level === 'number' ? row.level : 1
+  }
   return store.equippedSkillIds
     .map((id) => skills.get(id))
     .filter(Boolean)
@@ -288,7 +306,7 @@ function myEquipped(): EquippedSkill[] {
       cooldownMs: s!.cooldown_ms,
       pierce: s!.pierce,
       aoeRadius: s!.aoe_radius,
-      baseDamage: BigInt(s!.base_damage),
+      baseDamage: skillBaseDamageAtLevel(rules, BigInt(s!.base_damage), levelOf(s!.id)),
       applyElement: (s!.apply_element || s!.element) as Element | '',
       applyStacks: BigInt(s!.apply_stacks),
       projectileSpeed: s!.projectile_speed,
@@ -318,20 +336,31 @@ function challenge(target: DefenseView) {
   // 让按钮先进入「模拟中」状态再跑同步模拟
   setTimeout(async () => {
     try {
-      const outcome = runChallenge(target, {
+      const deps = {
         myEquipped: equipped,
         myAttacker: store.attacker,
         level,
         enemies: store.enemyMap,
         skills: store.skillMap,
-      })
+        // 第 133 轮：防线挑战得分与结算同口径 —— 用服务端下发的 score_rules，
+        // 修前引擎恒用编译期 DEFAULT_SCORE_RULES（服务端重标定即漂移）。
+        scoreRules: store.config?.score_rules
+          ? scoreRulesFromServer(store.config.score_rules)
+          : undefined,
+      }
+      // 第 140 轮：now 基准用服务端时钟估算（同时驱动护盾判断与默认种子分钟桶）
+      const outcome = runChallenge(target, deps, store.estimateServerNowMs())
       if (outcome.error) {
         lastChallenge.value = outcome
         return
       }
       // 模拟完成后才上报，服务端只记账不重跑
       const res = await api.challengeDefense(target.id, {
-        seed: Number(outcome.report.seed),
+        // 第 132 轮：seed 按字符串上报（服务端 ChallengeInput.Seed 是 string）。
+        // 修前是 Number(outcome.report.seed) —— 引擎用 63-bit bigint 生成种子，
+        // 超过 2^53 时 Number() 截断，落库 seed 与本地模拟用的 seed 不一致，
+        // replay_hash 从此对不上。
+        seed: outcome.report.seed,
         won: outcome.report.won,
         duration_ms: outcome.report.duration_ms,
         hp_left_pct: outcome.report.hp_left_pct,
@@ -361,12 +390,19 @@ function challenge(target: DefenseView) {
 
 onMounted(async () => {
   if (!store.loggedIn) await store.login()
+  // 第 131 轮：防线快照必须基于**服务端**出战槽位。
+  // 先 loadLoadout 拉取 user_skill_slots（权威），再 loadDefenses ——
+  // 否则 saveDefense/toggleShield/myEquipped 会用本地初值（修前是捏造的
+  // [1,2,3]，修后是空），把玩家没装备过的技能写进防线。
+  await store.loadLoadout()
   await loadDefenses()
 })
 
 onShow(async () => {
   if (store.loggedIn) {
     await store.refreshProfile()
+    // 从「背包」页改过槽位再回来时，这里重新拉一次权威槽位。
+    await store.loadLoadout()
     await loadDefenses()
   }
 })

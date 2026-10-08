@@ -8,7 +8,7 @@ from typing import List, Optional
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from pydantic import BaseModel
 
-from ..deps import get_pipeline, resolve_data_path, verify_api_key
+from ..deps import raise_internal_error, get_pipeline, resolve_data_path, verify_api_key
 from ..schemas import MessageResponse
 
 router = APIRouter(tags=["augment"])
@@ -88,7 +88,7 @@ async def start_augmentation(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(e)
 
 
 @router.get(
@@ -103,7 +103,7 @@ async def get_augment_progress():
         p = get_pipeline()
         return p.checkpoint_manager.get_progress()
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(e)
 
 
 @router.get(
@@ -118,4 +118,4 @@ async def list_checkpoints():
         checkpoints = p.checkpoint_manager.list_checkpoints()
         return {"checkpoints": checkpoints}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(e)

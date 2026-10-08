@@ -14,7 +14,7 @@ import (
 // TestLoadGameConfig 配置下发是纯内存组装，不碰库 —— 全量字段一次断言。
 // 客户端把这一包当作整个游戏的内容真相，缺一块就是端上白屏/功能缺失。
 func TestLoadGameConfig(t *testing.T) {
-	cfg := openTestService(t).LoadGameConfig(context.Background())
+	cfg := openTestService(t).LoadGameConfig()
 	if len(cfg.Levels) != domain.TotalLevels {
 		t.Errorf("levels 应为 %d 关，实际 %d", domain.TotalLevels, len(cfg.Levels))
 	}

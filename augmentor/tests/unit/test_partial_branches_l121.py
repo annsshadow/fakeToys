@@ -27,7 +27,8 @@
                              `_tfidf` / `_use_sklearn`，**从不**回填 `_model` ⇒
                              `if self._model is None:` 恒真，假支是死守卫（置上再测等于
                              给产品代码造一个只活测试里存在的赋值，违反本轮纪律）。
-- sampler.py 265->260      `recommend_seeds` 里 `elif category == "length":` 的假支要
+- sampler.py 270->265      `recommend_seeds` 里 `elif category == "length":` 的假支要
+                             （L191 预计算档插入 5 行使 :265/:260 平移 :270/:265）
                              category 既非 question_type 也非 length 才走到，而
                              `identify_underrepresented`（:216 / :221）的产出口径只有这两个
                              词 ⇒ 公共路径 category 词表封闭，elif 恒真支，假支不可达。

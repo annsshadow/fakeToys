@@ -20,7 +20,7 @@
           "kind": "oil_drum",
           "x": 881,
           "y": 771,
-          "param": 10
+          "param": 9
         }
       ],
       "is_boss": false,
@@ -129,7 +129,7 @@
           "kind": "oil_drum",
           "x": 407,
           "y": 821,
-          "param": 13
+          "param": 6
         }
       ],
       "is_boss": false,
@@ -238,13 +238,13 @@
           "kind": "oil_drum",
           "x": 680,
           "y": 680,
-          "param": 8
+          "param": 7
         },
         {
           "kind": "oil_drum",
           "x": 443,
           "y": 617,
-          "param": 20
+          "param": 4
         }
       ],
       "is_boss": false,
@@ -1552,13 +1552,13 @@
           "kind": "oil_drum",
           "x": 515,
           "y": 872,
-          "param": 11
+          "param": 4
         },
         {
           "kind": "oil_drum",
           "x": 425,
           "y": 754,
-          "param": 20
+          "param": 4
         }
       ],
       "is_boss": false,
