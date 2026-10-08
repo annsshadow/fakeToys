@@ -1,3 +1,8 @@
 # pnpm 11 起 onlyBuiltDependencies 从 package.json 的 pnpm 字段迁移到本文件。
+# pnpm 11.25 以 allowBuilds（每包布尔审批）决定 native/build 脚本是否执行；
+# onlyBuiltDependencies 列表不再足以放行，否则 esbuild postinstall 被忽略
+# （ERR_PNPM_IGNORED_BUILDS）致 CI pnpm install 退出码 1。
+allowBuilds:
+  esbuild: true
 onlyBuiltDependencies:
   - esbuild
