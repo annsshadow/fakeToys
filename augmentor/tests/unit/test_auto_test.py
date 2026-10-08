@@ -3,6 +3,7 @@
 
 """数据集自动化测试模块测试"""
 
+import pathlib
 import pytest
 from augmentor.auto_test import (
     DatasetTestRunner, TestSuite, TestCase, TestResult,
@@ -100,7 +101,9 @@ class TestTestSuite:
     def test_to_dict(self, sample_dataset):
         """测试转换为字典"""
         runner = DatasetTestRunner()
-        suite = runner.run_tests(sample_dataset, "test")
+        # L194：未知套件名不再静默回落 default，本例要的是「跑完取字典」，
+        # 套件名改传合法内置档 "default"（原先写 "test" 靠静默回落才没红）。
+        suite = runner.run_tests(sample_dataset, "default")
         d = suite.to_dict()
         
         assert isinstance(d, dict)
@@ -272,3 +275,65 @@ class TestAutoTestExtended:
         suite = runner.run_tests(sample_dataset)
         report = runner.get_test_report(suite)
         assert "通过率" in report or "pass" in report.lower()
+
+
+class TestSuiteNameClosedListL194:
+    """L194（B264）：套件名封闭清单下沉 SDK 直构面。
+
+    改前 `run_tests()` 对显式未知套件名静默回落 default（拼错名拿到 default
+    套件的判决不出声，L175/L176/L189/L192/L193 封闭清单族同式；API 面早有
+    400 白名单，SDK 直构面独缺）。清单权威 = 已注册套件名 + 内置档
+    `DEFAULT_SUITE_NAME`（A77 单一权威，API 面共引同一名字）。
+    """
+
+    def test_unknown_suite_rejected_with_full_valid_list(self):
+        from augmentor.exceptions import DataValidationError
+
+        runner = DatasetTestRunner()
+        with pytest.raises(DataValidationError) as ei:
+            runner.run_tests([{"instruction": "q", "output": "a"}], "no_such_suite")
+        msg = str(ei.value)
+        assert "default" in msg
+        assert "no_such_suite" in msg
+
+    def test_registered_custom_suite_accepted(self):
+        """自定义套件经 create_test_suite 注册后是合法名，拒判据没修过头。"""
+        runner = DatasetTestRunner()
+        runner.create_test_suite("l194_custom", "自定义")
+        suite = runner.run_tests([{"instruction": "q", "output": "a"}], "l194_custom")
+        assert suite.name == "l194_custom"
+
+    def test_default_and_none_still_work(self):
+        """None（未指定）与显式 "default"（未注册也合法）两档照旧跑默认套件。"""
+        for name in (None, "default"):
+            suite = DatasetTestRunner().run_tests([{"instruction": "q", "output": "a"}], name)
+            assert suite.name == "default"
+
+    def test_bad_shape_suite_names_rejected(self):
+        from augmentor.exceptions import DataValidationError
+
+        runner = DatasetTestRunner()
+        for bad in ("", 5, ["default"], None):
+            if bad is None:
+                continue
+            with pytest.raises(DataValidationError):
+                runner.run_tests([{"instruction": "q", "output": "a"}], bad)
+
+    def test_module_function_inherits_guard(self):
+        from augmentor.exceptions import DataValidationError
+
+        with pytest.raises(DataValidationError):
+            run_dataset_tests([{"instruction": "q", "output": "a"}], "no_such_suite")
+        # 合法档照旧出套件（拒判据没有修过头）
+        assert run_dataset_tests([{"instruction": "q", "output": "a"}]).name == "default"
+
+    def test_api_face_shares_sdk_default_suite_name(self):
+        """A77 共引钉：API 白名单 `AUTO_TEST_SUITES` 由 SDK 层 `DEFAULT_SUITE_NAME`
+        派生（不是第二份手抄 "default" 字面）；源码级读法防回流成 `("default",)`。"""
+        import api.routes.system_ops as ops
+        from augmentor.auto_test import DEFAULT_SUITE_NAME
+
+        assert ops.AUTO_TEST_SUITES == (DEFAULT_SUITE_NAME,)
+        root = pathlib.Path(__file__).resolve().parents[2]
+        src = (root / "api" / "routes" / "system_ops.py").read_text(encoding="utf-8")
+        assert "AUTO_TEST_SUITES = (DEFAULT_SUITE_NAME,)" in src
