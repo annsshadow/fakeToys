@@ -12765,7 +12765,7 @@
   {
    "method": "PUT",
    "path": "/api/organization/assemble/control/unitduty/update/member",
-   "handler": "unitduty_update_member",
+   "handler": "duty_update_member",
    "file": "crates/organization_assemble_control/src/lib.rs"
   },
   {
@@ -12955,8 +12955,8 @@
    "file": "crates/organization_assemble_control/src/u2_router.rs"
   },
   {
-   "method": "GET",
-   "path": "/api/organization/assemble/control/person/check/password/{password}",
+   "method": "POST",
+   "path": "/api/organization/assemble/control/person/check/password",
    "handler": "person_check_password",
    "file": "crates/organization_assemble_control/src/u2_router.rs"
   },
@@ -14561,8 +14561,8 @@
    "file": "crates/personal/src/lib.rs"
   },
   {
-   "method": "GET",
-   "path": "/api/reset/check/password/{password}",
+   "method": "POST",
+   "path": "/api/reset/check/password",
    "handler": "check_password",
    "file": "crates/personal/src/lib.rs"
   },
@@ -14693,8 +14693,8 @@
    "file": "crates/personal/src/lib.rs"
   },
   {
-   "method": "GET",
-   "path": "/api/person/regist/check/password/{password}",
+   "method": "POST",
+   "path": "/api/person/regist/check/password",
    "handler": "regist_check_password",
    "file": "crates/personal/src/lib.rs"
   },

@@ -415,7 +415,7 @@ pub static GENERATED_ROUTE_DEFS: &[RouteDef] = &[
     },
     RouteDef {
         tool_name: "legacy_ai_assemble_control_ai_assemble_control_update_ai_control_config",
-        method: HttpMethod::Get,
+        method: HttpMethod::Post,
         path: "/api/ai_assemble_control/update/ai/control/config",
         description: "update_ai_control_config handler",
         path_params: &[],

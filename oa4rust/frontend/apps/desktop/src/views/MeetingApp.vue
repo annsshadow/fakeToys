@@ -694,13 +694,13 @@ function meetingAttachmentUpload(): void {
   input.onchange = async () => {
     const file = input.files?.[0]
     if (!file) return
-    const form = new FormData()
-    form.append('file', file, file.name)
-    form.append('fileName', file.name)
+    const fd = new FormData()
+    fd.append('file', file, file.name)
+    fd.append('fileName', file.name)
     try {
       await api.upload(
         `/api/meeting/assemble/control/attachment/meeting/${encodeURIComponent(mid)}/upload/${summary === 'true'}`,
-        form,
+        fd,
       )
       toast.success('会议附件已上传')
     } catch (e: any) {
@@ -719,13 +719,13 @@ function meetingAttachmentUpdate(): void {
   input.onchange = async () => {
     const file = input.files?.[0]
     if (!file) return
-    const form = new FormData()
-    form.append('file', file, file.name)
-    form.append('fileName', file.name)
+    const fd = new FormData()
+    fd.append('file', file, file.name)
+    fd.append('fileName', file.name)
     try {
       await api.upload(
         `/api/meeting/assemble/control/attachment/${encodeURIComponent(aid)}/update/callback/done`,
-        form,
+        fd,
       )
       toast.success('会议附件已更新')
     } catch (e: any) {

@@ -998,10 +998,10 @@ async function saveByFlag() {
   const flag = prompt('目标 flag（按该标识覆写保存）:', currentStatement.value?.flag || '') || ''
   if (!flag) return
   try {
+    // 后端 statement_edit 读 alias/data/countingData（flag 走 path）
     await api.put(`/api/query/assemble/designer/statement/${encodeURIComponent(flag)}`, {
-      name: currentStatement.value?.name || flag,
-      flag,
-      sql: currentStatement.value?.sql ?? '',
+      alias: currentStatement.value?.name || flag,
+      data: currentStatement.value?.sql ?? '',
     })
     toast.success(`语句已按 flag「${flag}」保存`)
     queryClient.invalidateQueries({ queryKey: ['stmt', 'list'] })

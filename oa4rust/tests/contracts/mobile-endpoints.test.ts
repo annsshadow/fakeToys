@@ -142,6 +142,16 @@ const REGISTERED_BACKEND_ROUTES: string[] = [
   '/api/jpush/assemble/control/device/list/{pushType}',
   '/api/jpush/assemble/control/device/config/push/type',
   '/api/jpush/assemble/control/list/control/apps',
+  // 补登：mobile 服务层已消费、后端已注册（此前漏登导致 404 误报）
+  // 推送设备注册（jpush/routes.rs）
+  '/api/jpush/device/create',
+  // 自助假期申请（attendance_assemble_control：INSERT x_attendance_selfholiday）
+  '/api/attendance/assemble/control/selfholidaysimple',
+  // 按单位直查人员 / 全量人员 / 最近登录（organization_assemble_express，o2 对象契约）
+  '/api/person/list/unit/sub/direct/object',
+  '/api/person/list/unit/sub/nested/object',
+  '/api/person/list/all/object',
+  '/api/person/list/login/recent/object',
 ]
 
 const mobileSrcRoot = resolve(import.meta.dirname, '../../mobile/src')

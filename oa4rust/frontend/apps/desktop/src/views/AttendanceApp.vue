@@ -1248,10 +1248,9 @@ async function submitAppeal() {
   const end = prompt('结束日期:', new Date().toISOString().slice(0, 10))
   if (!start || !end) return
   try {
-    // 后端 appeal/submit 契约：personId + appealDate + reason + creator（单日期，无结束日字段）
+    // 后端 appeal/submit 契约：appealDate + reason；申诉人/创建者以会话登录人为事实源（防冒充），
+    // 不再随请求体下发 personId/creator（单日期，无结束日字段）
     await api.post('/api/attendance/appeal/submit', {
-      personId: session.state.user?.unique ?? '',
-      creator: session.state.user?.unique ?? '',
       appealDate: start,
       reason: type,
     })

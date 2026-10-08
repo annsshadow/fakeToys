@@ -26,6 +26,14 @@ import { REGISTERED_BACKEND_ROUTES } from './backend-registered-routes.fixture'
 // KNOWN_BACKEND_GAPS 清零；此后新增未实现端点须在此显式声明（不虚构）。
 const KNOWN_BACKEND_GAPS: string[] = []
 
+// Base 前缀常量：ProcessWork.vue 的 SB/SP 仅用于拼接子段（`${SB}/task/...`、`${SP}/attachment/...`），
+// 实际调用的子路径均已注册（processplatform_assemble_surface / service_processing routes.rs），
+// 裸值本身不是独立端点。提取正则会把常量字面量误判为未注册端点，故显式豁免（有据，不虚构）。
+const BASE_PREFIX_ALLOWLIST: string[] = [
+  '/api/processplatform/assemble/surface',
+  '/api/processplatform/service/processing',
+]
+
 const desktopSrcRoot = resolve(import.meta.dirname, '../../frontend/apps/desktop/src')
 
 function collectPaths(): string[] {
@@ -87,6 +95,7 @@ describe('desktop endpoints are registered or acknowledged gaps', () => {
   it('no unregistered, non-bare /api endpoint outside KNOWN_BACKEND_GAPS', () => {
     const flagged = collectPaths().filter((p) => {
       if (p.endsWith('/')) return false // bare dynamic base prefix
+      if (BASE_PREFIX_ALLOWLIST.includes(p)) return false // base 前缀常量（子段已注册）
       const dyn = p.includes('${')
       return !hitsRegistered(p, dyn) && !isKnownGap(p)
     })

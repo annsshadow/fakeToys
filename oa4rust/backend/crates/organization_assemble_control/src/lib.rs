@@ -5055,7 +5055,9 @@ pub fn router(pool: deadpool_postgres::Pool) -> Router {
     .route("/api/organization/assemble/control/role/{flag}/mockdeletetoget", delete(role_flag_mockdeletetoget))
     .route("/api/organization/assemble/control/unitattribute/{flag}/mockdeletetoget", delete(unitattribute_flag_mockdeletetoget))
     .route("/api/organization/assemble/control/unitduty/{flag}/mockdeletetoget", delete(unitduty_flag_mockdeletetoget))
-    .route("/api/organization/assemble/control/unitduty/update/member", put(unitduty_update_member))
+    // PUT 走真实现 duty_update_member（读 unitDuty.name + identityList，admin 门禁）；
+    // 桩 unitduty_update_member 仅保留给 GET（列挙全职务，无写语义）。
+    .route("/api/organization/assemble/control/unitduty/update/member", put(u2_org::duty_update_member))
     .merge(u2_router::router())
     .layer(Extension(pool))
 }
