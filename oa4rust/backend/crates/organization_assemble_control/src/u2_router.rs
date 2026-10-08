@@ -59,7 +59,8 @@ pub fn router() -> Router {
         .route("/api/organization/assemble/control/person/{flag}/set/password", axum::routing::put(u2_person::person_set_password))
         .route("/api/organization/assemble/control/person/{flag}/set/password/mockputtopost", axum::routing::post(u2_person::person_set_password_mock_put_to_post))
         .route("/api/organization/assemble/control/person/{flag}/reset/password", axum::routing::get(u2_person::person_reset_password))
-        .route("/api/organization/assemble/control/person/check/password/{password}", axum::routing::get(u2_person::person_check_password))
+        // 十类功能1 安全重设计：口令改 POST body（原 GET /{password} 口令入 URL）
+        .route("/api/organization/assemble/control/person/check/password", axum::routing::post(u2_person::person_check_password))
         .route(
             "/api/organization/assemble/control/person/{flag}/icon",
             axum::routing::get(u2_person::person_get_icon).put(u2_person::person_set_icon),

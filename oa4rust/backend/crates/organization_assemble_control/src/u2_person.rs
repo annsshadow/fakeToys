@@ -493,8 +493,14 @@ pub async fn person_reset_password(
     ))
 }
 
+// 十类功能1 安全重设计：口令改由 POST body 传递（原 GET /{password} 口令入 URL）
 #[allow(non_snake_case)]
-pub async fn person_check_password(Path(password): Path<String>) -> HandlerResult {
+pub async fn person_check_password(axum::Json(body): axum::Json<Value>) -> HandlerResult {
+    let password = body
+        .get("password")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
     ok(Value::Object(
         vec![(
             "value".to_string(),
