@@ -1954,7 +1954,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1310,
+    "line": 1309,
     "method": "DELETE",
     "raw": "/api/attendance/assemble/control/workplace/${w.id}",
     "path": "/api/attendance/assemble/control/workplace/{}",
@@ -1967,7 +1967,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1340,
+    "line": 1339,
     "method": "DELETE",
     "raw": "/api/attendance/assemble/control/attendancesetting/${s.id}",
     "path": "/api/attendance/assemble/control/attendancesetting/{}",
@@ -1980,7 +1980,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1487,
+    "line": 1486,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/dingding/sync/from/${encodeURIComponent(from)}/to/${encodeURIComponent(to)}/start",
     "path": "/api/attendance/assemble/control/dingding/sync/from/{}/to/{}/start",
@@ -1993,7 +1993,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1500,
+    "line": 1499,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/qywx/sync/from/${encodeURIComponent(from)}/to/${encodeURIComponent(to)}/start",
     "path": "/api/attendance/assemble/control/qywx/sync/from/{}/to/{}/start",
@@ -2006,7 +2006,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1513,
+    "line": 1512,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/dingding/statistic/person/year/${encodeURIComponent(year)}/month/${encodeURIComponent(month)}",
     "path": "/api/attendance/assemble/control/dingding/statistic/person/year/{}/month/{}",
@@ -2019,7 +2019,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1543,
+    "line": 1542,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendanceadmin/${it.id}",
     "path": "/api/attendance/assemble/control/attendanceadmin/{}",
@@ -2032,7 +2032,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1545,
+    "line": 1544,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendanceemployeeconfig/${it.id}",
     "path": "/api/attendance/assemble/control/attendanceemployeeconfig/{}",
@@ -2045,7 +2045,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1547,
+    "line": 1546,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendanceworkdayconfig/${it.id}",
     "path": "/api/attendance/assemble/control/attendanceworkdayconfig/{}",
@@ -2058,7 +2058,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1549,
+    "line": 1548,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/v2/group/${it.id}",
     "path": "/api/attendance/assemble/control/v2/group/{}",
@@ -2071,7 +2071,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1551,
+    "line": 1550,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/v2/shift/${it.id}",
     "path": "/api/attendance/assemble/control/v2/shift/{}",
@@ -2084,7 +2084,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1564,
+    "line": 1563,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/v2/group/${it.id}/delete",
     "path": "/api/attendance/assemble/control/v2/group/{}/delete",
@@ -2097,7 +2097,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1567,
+    "line": 1566,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/v2/leave/delete/${it.id}",
     "path": "/api/attendance/assemble/control/v2/leave/delete/{}",
@@ -2110,7 +2110,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1569,
+    "line": 1568,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/v2/shift/delete/${it.id}",
     "path": "/api/attendance/assemble/control/v2/shift/delete/{}",
@@ -2123,7 +2123,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1591,
+    "line": 1590,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendancestatisticalcycle/${id}",
     "path": "/api/attendance/assemble/control/attendancestatisticalcycle/{}",
@@ -2136,7 +2136,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1618,
+    "line": 1617,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendancedetail/${r.id}",
     "path": "/api/attendance/assemble/control/attendancedetail/{}",
@@ -2149,7 +2149,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1627,
+    "line": 1626,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/attendancedetail/analyse/id/${r.id}",
     "path": "/api/attendance/assemble/control/attendancedetail/analyse/id/{}",
@@ -2162,7 +2162,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1635,
+    "line": 1634,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/attendancedetail/archive/${r.id}",
     "path": "/api/attendance/assemble/control/attendancedetail/archive/{}",
@@ -2175,7 +2175,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1644,
+    "line": 1643,
     "method": "DELETE",
     "raw": "/api/attendance/assemble/control/attendancedetail/${r.id}",
     "path": "/api/attendance/assemble/control/attendancedetail/{}",
@@ -9923,7 +9923,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/OrgDirectoryApp.vue",
-    "line": 318,
+    "line": 319,
     "method": "PUT",
     "raw": "/api/organization/assemble/control/personattribute/${encodeURIComponent(flag)}",
     "path": "/api/organization/assemble/control/personattribute/{}",
@@ -9936,7 +9936,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/OrgDirectoryApp.vue",
-    "line": 325,
+    "line": 327,
     "method": "PUT",
     "raw": "/api/organization/assemble/control/unitattribute/${encodeURIComponent(flag)}",
     "path": "/api/organization/assemble/control/unitattribute/{}",
@@ -27616,7 +27616,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/QueryStatementDesigner.vue",
-    "line": 1001,
+    "line": 1002,
     "method": "PUT",
     "raw": "/api/query/assemble/designer/statement/${encodeURIComponent(flag)}",
     "path": "/api/query/assemble/designer/statement/{}",
@@ -31093,7 +31093,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1252,
+    "line": 1253,
     "method": "POST",
     "raw": "/api/attendance/appeal/submit",
     "path": "/api/attendance/appeal/submit",
@@ -31106,7 +31106,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1265,
+    "line": 1264,
     "method": "GET",
     "raw": "/api/attendance/appeal/list",
     "path": "/api/attendance/appeal/list",
@@ -31119,7 +31119,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1289,
+    "line": 1288,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/workplace/list/all",
     "path": "/api/attendance/assemble/control/workplace/list/all",
@@ -31132,7 +31132,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1301,
+    "line": 1300,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/workplace",
     "path": "/api/attendance/assemble/control/workplace",
@@ -31145,7 +31145,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1318,
+    "line": 1317,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendancesetting/list/all",
     "path": "/api/attendance/assemble/control/attendancesetting/list/all",
@@ -31158,7 +31158,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1331,
+    "line": 1330,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/attendancesetting",
     "path": "/api/attendance/assemble/control/attendancesetting",
@@ -31171,7 +31171,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1385,
+    "line": 1384,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/v2/group/list/1/size/50",
     "path": "/api/attendance/assemble/control/v2/group/list/1/size/50",
@@ -31187,7 +31187,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1386,
+    "line": 1385,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/v2/shift/list/1/size/50",
     "path": "/api/attendance/assemble/control/v2/shift/list/1/size/50",
@@ -31203,7 +31203,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1400,
+    "line": 1399,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/v2/leave/list/1/size/50",
     "path": "/api/attendance/assemble/control/v2/leave/list/1/size/50",
@@ -31219,7 +31219,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1412,
+    "line": 1411,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendanceschedulesetting/list/all",
     "path": "/api/attendance/assemble/control/attendanceschedulesetting/list/all",
@@ -31232,7 +31232,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1412,
+    "line": 1411,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendanceemployeeconfig/list/all",
     "path": "/api/attendance/assemble/control/attendanceemployeeconfig/list/all",
@@ -31245,7 +31245,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1412,
+    "line": 1411,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendanceselfholiday/list/all",
     "path": "/api/attendance/assemble/control/attendanceselfholiday/list/all",
@@ -31258,7 +31258,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1412,
+    "line": 1411,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendanceworkdayconfig/list/all",
     "path": "/api/attendance/assemble/control/attendanceworkdayconfig/list/all",
@@ -31271,7 +31271,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1412,
+    "line": 1411,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendanceadmin/list/all",
     "path": "/api/attendance/assemble/control/attendanceadmin/list/all",
@@ -31284,7 +31284,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1412,
+    "line": 1411,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendanceimportfileinfo/list/all",
     "path": "/api/attendance/assemble/control/attendanceimportfileinfo/list/all",
@@ -31297,7 +31297,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1412,
+    "line": 1411,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/attendancestatisticrequirelog/list/all",
     "path": "/api/attendance/assemble/control/attendancestatisticrequirelog/list/all",
@@ -31310,7 +31310,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1412,
+    "line": 1411,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/v2/workplace/list/all",
     "path": "/api/attendance/assemble/control/v2/workplace/list/all",
@@ -31323,7 +31323,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1424,
+    "line": 1423,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/v2/group",
     "path": "/api/attendance/assemble/control/v2/group",
@@ -31336,7 +31336,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1438,
+    "line": 1437,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/v2/shift/create",
     "path": "/api/attendance/assemble/control/v2/shift/create",
@@ -31349,7 +31349,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1458,
+    "line": 1457,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/v2/leave",
     "path": "/api/attendance/assemble/control/v2/leave",
@@ -31362,7 +31362,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1473,
+    "line": 1472,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/attendanceselfholiday",
     "path": "/api/attendance/assemble/control/attendanceselfholiday",
@@ -31375,7 +31375,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1530,
+    "line": 1529,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/v2/groupschedule",
     "path": "/api/attendance/assemble/control/v2/groupschedule",
@@ -31388,7 +31388,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1584,
+    "line": 1583,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/attendancestatisticalcycle",
     "path": "/api/attendance/assemble/control/attendancestatisticalcycle",
@@ -31401,7 +31401,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1606,
+    "line": 1605,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/statistics/list?month=${month.value}",
     "path": "/api/attendance/assemble/control/statistics/list",
@@ -31414,7 +31414,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1656,
+    "line": 1655,
     "method": "PUT",
     "raw": "/api/attendance/assemble/control/rule/0/toggle",
     "path": "/api/attendance/assemble/control/rule/0/toggle",
@@ -31429,7 +31429,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1657,
+    "line": 1656,
     "method": "PUT",
     "raw": "/api/attendance/assemble/control/attendanceappealInfo/filter/list/0/prev/0",
     "path": "/api/attendance/assemble/control/attendanceappealInfo/filter/list/0/prev/0",
@@ -31445,7 +31445,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1658,
+    "line": 1657,
     "method": "PUT",
     "raw": "/api/attendance/assemble/control/attendanceappealInfo/workflow/appeal/0",
     "path": "/api/attendance/assemble/control/attendanceappealInfo/workflow/appeal/0",
@@ -31460,7 +31460,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1659,
+    "line": 1658,
     "method": "PUT",
     "raw": "/api/attendance/assemble/control/attendanceappealInfo/workflow/sync",
     "path": "/api/attendance/assemble/control/attendanceappealInfo/workflow/sync",
@@ -31473,7 +31473,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1660,
+    "line": 1659,
     "method": "PUT",
     "raw": "/api/attendance/assemble/control/attendancedetail/analyse/redo",
     "path": "/api/attendance/assemble/control/attendancedetail/analyse/redo",
@@ -31486,7 +31486,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1661,
+    "line": 1660,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/attendancedetail/analyse/0/0",
     "path": "/api/attendance/assemble/control/attendancedetail/analyse/0/0",
@@ -31502,7 +31502,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1662,
+    "line": 1661,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/attendancedetail/checkDetailWithPersonByCycle/0/0",
     "path": "/api/attendance/assemble/control/attendancedetail/checkDetailWithPersonByCycle/0/0",
@@ -31518,7 +31518,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1663,
+    "line": 1662,
     "method": "PUT",
     "raw": "/api/attendance/assemble/control/attendancedetail/filter/list",
     "path": "/api/attendance/assemble/control/attendancedetail/filter/list",
@@ -31531,7 +31531,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1664,
+    "line": 1663,
     "method": "PUT",
     "raw": "/api/attendance/assemble/control/attendancedetail/filter/list/0/next/0",
     "path": "/api/attendance/assemble/control/attendancedetail/filter/list/0/next/0",
@@ -31547,7 +31547,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1665,
+    "line": 1664,
     "method": "PUT",
     "raw": "/api/attendance/assemble/control/attendancedetail/filter/list/0/prev/0",
     "path": "/api/attendance/assemble/control/attendancedetail/filter/list/0/prev/0",
@@ -31563,7 +31563,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1666,
+    "line": 1665,
     "method": "PUT",
     "raw": "/api/attendance/assemble/control/attendancedetail/mobile/filter/list/page/0/count/0",
     "path": "/api/attendance/assemble/control/attendancedetail/mobile/filter/list/page/0/count/0",
@@ -31579,7 +31579,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1667,
+    "line": 1666,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/attendancedetail/mobile/mobilepreview",
     "path": "/api/attendance/assemble/control/attendancedetail/mobile/mobilepreview",
@@ -31592,7 +31592,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1668,
+    "line": 1667,
     "method": "PUT",
     "raw": "/api/attendance/assemble/control/attendanceworkdayconfig/filter",
     "path": "/api/attendance/assemble/control/attendanceworkdayconfig/filter",
@@ -31605,7 +31605,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1669,
+    "line": 1668,
     "method": "GET",
     "raw": "/api/attendance/assemble/control/statistic/do",
     "path": "/api/attendance/assemble/control/statistic/do",
@@ -31618,7 +31618,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1682,
+    "line": 1681,
     "method": "POST",
     "raw": "/api/attendance/assemble/control/attendancedetail/reciveSingle",
     "path": "/api/attendance/assemble/control/attendancedetail/reciveSingle",
@@ -31631,7 +31631,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1684,
+    "line": 1683,
     "method": "PUT",
     "raw": "/api/attendance/assemble/control/dingding/attendance/list/0/next/0",
     "path": "/api/attendance/assemble/control/dingding/attendance/list/0/next/0",
@@ -31647,7 +31647,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1685,
+    "line": 1684,
     "method": "PUT",
     "raw": "/api/attendance/assemble/control/qywx/attendance/list/0/next/0",
     "path": "/api/attendance/assemble/control/qywx/attendance/list/0/next/0",
@@ -31663,7 +31663,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1688,
+    "line": 1687,
     "method": "DELETE",
     "raw": "/api/attendance/assemble/control/dingding/all",
     "path": "/api/attendance/assemble/control/dingding/all",
@@ -31676,7 +31676,7 @@
    {
     "app": "desktop",
     "file": "frontend/apps/desktop/src/views/AttendanceApp.vue",
-    "line": 1689,
+    "line": 1688,
     "method": "DELETE",
     "raw": "/api/attendance/assemble/control/qywx/all",
     "path": "/api/attendance/assemble/control/qywx/all",
@@ -41698,11 +41698,11 @@
     "file": "frontend/apps/desktop/src/views/OrgDirectoryApp.vue",
     "line": 193,
     "method": "POST",
-    "raw": "/api/unit/list/person/object",
-    "path": "/api/unit/list/person/object",
+    "raw": "/api/person/list/unit/sub/nested/object",
+    "path": "/api/person/list/unit/sub/nested/object",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/unit/list/person/object",
+    "hit": "/api/person/list/unit/sub/nested/object",
     "hit_crate": "organization_assemble_express",
     "extra": []
    },
@@ -41711,11 +41711,11 @@
     "file": "frontend/apps/desktop/src/views/OrgDirectoryApp.vue",
     "line": 194,
     "method": "POST",
-    "raw": "/api/unit/list/person/sup/nested/object",
-    "path": "/api/unit/list/person/sup/nested/object",
+    "raw": "/api/person/list/unit/sub/direct/object",
+    "path": "/api/person/list/unit/sub/direct/object",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/unit/list/person/sup/nested/object",
+    "hit": "/api/person/list/unit/sub/direct/object",
     "hit_crate": "organization_assemble_express",
     "extra": []
    },
@@ -41724,11 +41724,11 @@
     "file": "frontend/apps/desktop/src/views/OrgDirectoryApp.vue",
     "line": 195,
     "method": "POST",
-    "raw": "/api/unit/list/identity/object",
-    "path": "/api/unit/list/identity/object",
+    "raw": "/api/identity/list/unit/sub/nested/object",
+    "path": "/api/identity/list/unit/sub/nested/object",
     "via": "literal",
     "ambiguous": false,
-    "hit": "/api/unit/list/identity/object",
+    "hit": "/api/identity/list/unit/sub/nested/object",
     "hit_crate": "organization_assemble_express",
     "extra": []
    },
