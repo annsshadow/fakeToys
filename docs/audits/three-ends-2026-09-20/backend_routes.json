@@ -387,7 +387,7 @@
    "file": "crates/ai_assemble_control/src/routes.rs"
   },
   {
-   "method": "GET",
+   "method": "POST",
    "path": "/api/ai_assemble_control/update/ai/control/config",
    "handler": "update_ai_control_config",
    "file": "crates/ai_assemble_control/src/routes.rs"
@@ -2753,13 +2753,13 @@
   {
    "method": "POST",
    "path": "/api/bbs/assemble/control/picture/encode/base64/size/{size}",
-   "handler": "picture_encode_501",
+   "handler": "picture_encode",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "POST",
    "path": "/api/bbs/assemble/control/picture/section/{id}/icon",
-   "handler": "picture_section_icon_501",
+   "handler": "picture_section_icon",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
@@ -2789,7 +2789,7 @@
   {
    "method": "GET",
    "path": "/api/bbs/assemble/control/section/syn",
-   "handler": "section_syn_501",
+   "handler": "section_syn",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
