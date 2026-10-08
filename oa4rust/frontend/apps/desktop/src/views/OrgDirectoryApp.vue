@@ -190,9 +190,9 @@ function runUnit(): void {
       await collect('子单位(嵌套)', await api.post('/api/unit/list/unit/sub/nested/object', { unitList }))
       await collect('上级单位(直连)', await api.post('/api/unit/list/unit/sup/direct/object', { unitList }))
       await collect('上级单位(嵌套)', await api.post('/api/unit/list/unit/sup/nested/object', { unitList }))
-      await collect('单位下人员', await api.post('/api/unit/list/person/object', { unitList }))
-      await collect('单位上级人员(嵌套)', await api.post('/api/unit/list/person/sup/nested/object', { unitList }))
-      await collect('单位下身份', await api.post('/api/unit/list/identity/object', { unitList }))
+      await collect('单位下人员(嵌套)', await api.post('/api/person/list/unit/sub/nested/object', { unitList }))
+      await collect('单位下人员(直连)', await api.post('/api/person/list/unit/sub/direct/object', { unitList }))
+      await collect('单位下身份(嵌套)', await api.post('/api/identity/list/unit/sub/nested/object', { unitList }))
     },
     async () => {
       await collect('单位层级', await api.post('/api/unit/list/level/object', {}))
@@ -296,34 +296,36 @@ async function manage(op: string): Promise<void> {
       toast.success('群组成员已移除')
     } else if (op === 'dutyUpdate') {
       const duty = prompt('职务名称 (unitDuty.name):', '') || ''
-      const persons = prompt('成员（人员标识，逗号分隔）:', '') || ''
+      const persons = prompt('成员（身份标识，逗号分隔）:', '') || ''
       if (!duty || !persons) return
       await api.put('/api/organization/assemble/control/unitduty/update/member', {
         unitDuty: { name: duty },
-        personList: persons.split(',').map((x) => x.trim()).filter(Boolean),
+        identityList: persons.split(',').map((x) => x.trim()).filter(Boolean),
       })
       toast.success('职务成员已更新')
     } else if (op === 'dutyUpdatePost') {
       const duty = prompt('职务名称 (unitDuty.name):', '') || ''
-      const persons = prompt('成员（人员标识，逗号分隔）:', '') || ''
+      const persons = prompt('成员（身份标识，逗号分隔）:', '') || ''
       if (!duty || !persons) return
       await api.post('/api/organization/assemble/control/unitduty/update/member', {
         unitDuty: { name: duty },
-        personList: persons.split(',').map((x) => x.trim()).filter(Boolean),
+        identityList: persons.split(',').map((x) => x.trim()).filter(Boolean),
       })
       toast.success('职务成员已更新(POST)')
     } else if (op === 'personAttr') {
       const flag = prompt('人员属性标识 (flag):', '') || ''
       if (!flag) return
+      const value = prompt('属性值 (attributeValue.value):', '') || ''
       await api.put(`/api/organization/assemble/control/personattribute/${encodeURIComponent(flag)}`, {
-        name: flag,
+        attributeValue: { value },
       })
       toast.success('人员属性已保存')
     } else if (op === 'unitAttr') {
       const flag = prompt('单位属性标识 (flag):', '') || ''
       if (!flag) return
+      const value = prompt('属性值 (attributeValue.value):', '') || ''
       await api.put(`/api/organization/assemble/control/unitattribute/${encodeURIComponent(flag)}`, {
-        name: flag,
+        attributeValue: { value },
       })
       toast.success('单位属性已保存')
     }
