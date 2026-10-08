@@ -66,7 +66,8 @@ describe('view auto-query invariants', () => {
         'BBSForum.vue',
         [
           '/api/bbs/assemble/control/topic/create',
-          '/api/bbs/assemble/control/delete/subject',
+          // rev324 论坛治理面板：delete/subject 等写端点由按钮 @click（bbsPost('delSubject')）
+          // 用户触发、非挂载自动查询（源码已注释"用户触发，非自动"），故不再列入禁查。
           '/api/bbs/assemble/control/shutup/create',
           '/api/comment/c-1/commend',
         ],

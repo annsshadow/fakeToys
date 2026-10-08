@@ -73,7 +73,7 @@ export const BACKEND_ROUTE_METHODS: Record<string, string[]> = {
   '/api/ai_assemble_control/index/list/paging/{}/size/{}': ['POST'],
   '/api/ai_assemble_control/index/sync/to/knowledge': ['GET'],
   '/api/ai_assemble_control/list/ai/models': ['GET'],
-  '/api/ai_assemble_control/update/ai/control/config': ['GET'],
+  '/api/ai_assemble_control/update/ai/control/config': ['POST'],
   '/api/andfx/moa/sso/token/{}/enter/{}': ['GET'],
   '/api/anonymous/document/filter/list/{}/next/{}': ['PUT'],
   '/api/anonymous/document/filter/list/{}/next/{}/mockputtopost': ['POST'],
