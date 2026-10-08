@@ -352,6 +352,16 @@ def scan_rust_index():
                         continue
 
                     reads = set()
+                    # serde 结构体请求体：`Json(req): Json<RoleUpdateRequest>`，
+                    # handler 多用字段访问 `req.description` 而非 `.get("description")`
+                    # （参见 control::role 的 create/update）。JSON_STRUCT_RE 已在 body_params
+                    # 收集阶段捕获绑定名与结构体类型；这里把结构体的全部接受键（structs 索引含
+                    # serde rename/rename_all/alias，按 serde 语义与 Json 字面键一致）补入 reads，
+                    # 消除这类字段访问被 B 类（"发送但后端不读"）误判的根因。
+                    for bm in JSON_STRUCT_RE.finditer(sig):
+                        bp, struct_ty = bm.group(1), bm.group(2)
+                        if bp in body_params and struct_ty in structs:
+                            reads.update(structs[struct_ty]["fields"])
                     alt_groups = []
                     # 接收者集合 = 请求体参数 + 由它派生的别名。
                     # 派生来源：① 闭包绑定 `|Json(v)| v.get("k")`（如 body.as_ref().map(|Json(v)| v)）

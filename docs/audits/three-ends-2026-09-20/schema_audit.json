@@ -7,7 +7,7 @@
   "meta": {
    "handlers_indexed": 1100,
    "structs_indexed": 279,
-   "frontend_body_calls": 1802,
+   "frontend_body_calls": 1805,
    "A": 0,
    "B": 0,
    "C": 0,
@@ -39351,7 +39351,10 @@
    "body_params": [
     "body"
    ],
-   "reads": [],
+   "reads": [
+    "category",
+    "key"
+   ],
    "opt_keys": [],
    "alt_groups": [],
    "opt_alt_groups": [],
