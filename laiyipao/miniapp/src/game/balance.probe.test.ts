@@ -527,6 +527,8 @@ describe('平衡基准', () => {
       const lastVel = new Map<number, { vx: bigint; vy: bigint }>()
       const deflected = new Set<string>()
       const heldEnemy = new Set<string>()
+      /** 战斗中**曾**处于 burning 的油桶（逐 tick 观测，见下方注释） */
+      const burntOnce = new Set<string>()
       type E = { dead: boolean; x: bigint; y: bigint }
       type P = { uid: number; vx: bigint; vy: bigint }
       const view = e as unknown as { enemies: E[]; projectiles: P[] }
@@ -536,6 +538,26 @@ describe('平衡基准', () => {
         if (e.phase === 'won' || e.phase === 'lost') break
         if (e.phase === 'card_select') e.skipCards()
         e.step()
+
+        // 3) 油桶：**逐 tick** 观测「曾处于 burning」。
+        //
+        // ⚠️ 这是第六次同形状的观测错误（README 工程约束 11 记过五次）。
+        //
+        // 战斗**结束后**读 `t.state === 'burning'` 会得到假的 0%：
+        // 油桶点燃后 burning 8 秒，随后 `updateOilDrum` 的 timer 归零
+        // 会把 state 设回 'idle' —— 而 charge 在点燃时已被钳到 param 且不再清零。
+        // 于是终态读到的是「charge = 9/9 但 state = idle」，
+        // 看起来像「充能满了却没点燃」，实际是**早就点燃过、只是早烧完了**。
+        //
+        // 判据必须是「战斗中任一 tick 曾处于 burning」。
+        // 这与潮汐闸/风障用逐 tick 观测是同一个道理，只是这个机制
+        // 恰好同时具备「一次性」与「持续型」两种性质 ——
+        // 只看终态两头都测不到。
+        for (const t2 of terrains) {
+          if (t2.kind === 'oil_drum' && t2.state === 'burning') {
+            burntOnce.add(t2.kind)
+          }
+        }
 
         // 1) 偏转：与**上一 tick** 的速度比对
         for (const p of view.projectiles) {
@@ -558,7 +580,7 @@ describe('平衡基准', () => {
 
       for (const t of terrains) {
         let ok = false
-        if (t.kind === 'oil_drum') ok = t.state === 'burning'
+        if (t.kind === 'oil_drum') ok = burntOnce.has(t.kind)
         else if (t.kind === 'collapse_wall') ok = t.state === 'collapsed'
         else if (t.kind === 'charge_tower') ok = t.charge > 0
         else if (t.kind === 'tidal_gate') ok = heldEnemy.has('tidal_gate')

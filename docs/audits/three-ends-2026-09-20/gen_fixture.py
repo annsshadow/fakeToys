@@ -16,7 +16,7 @@ for _crate, routes in backend.items():
         if p.startswith("/"):
             paths.add(p)
 
-fxp = os.path.join(ROOT, "oa4rust-web", "tests", "contracts", "backend-registered-routes.fixture.ts")
+fxp = os.path.join(ROOT, "oa4rust", "tests", "contracts", "backend-registered-routes.fixture.ts")
 fx = open(fxp, encoding="utf-8").read()
 header = fx[: fx.index("export const REGISTERED_BACKEND_ROUTES")]
 cur = set(re.findall(r"'(/[^']+)'", fx))
@@ -29,7 +29,9 @@ lines = [header.rstrip("\n"), "", "export const REGISTERED_BACKEND_ROUTES: strin
 for p in allpaths:
     lines.append(f"  '{p}',")
 lines.append("]")
-open(fxp, "w", encoding="utf-8").write("\n".join(lines) + "\n")
+# newline 显式 LF：Windows 下文本模式默认写 CRLF，会让 fixture 工作副本带 CRLF，
+# biome check 假红 + git 每次告警（eol=lf 属性归一发生在提交时，工作副本不归一）。
+open(fxp, "w", encoding="utf-8", newline="\n").write("\n".join(lines) + "\n")
 
 new = open(fxp, encoding="utf-8").read()
 print("fixture entries:", len(re.findall(r"'(/[^']+)'", new)))

@@ -18,6 +18,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 
 from augmentor.exceptions import BackupError
+from augmentor.migration import BUILTIN_MIGRATION_RULE_IDS
+from augmentor.auto_test import DEFAULT_SUITE_NAME
 
 from ..deps import (
     config_file_path,
@@ -40,15 +42,16 @@ router = APIRouter(tags=["system"])
 # 这两处的下游都是**静默降级/静默过滤**，必须在 API 边界显式拦下：
 #
 # * `run_dataset_tests()` 每次调用都新建 `DatasetTestRunner`，其 `_test_suites`
-#   初始为空且没有注册入口 —— 传任何套件名都会回退到内置的 `"default"` 套件。
-#   既然只有 default 真实存在，就只接受它。
-# * `DatasetMigrator.migrate()` 用 `r.rule_id in rules` 过滤，未知规则 id 被
-#   **静默丢弃**；全写错时 `rules_applied` 是空数组，等于「迁移跑了个寂寞」，
-#   而调用方不看这个字段就发现不了。
+#   初始为空且没有注册入口。L194 起 SDK 直构面在 `run_tests()` 入口即拒未知
+#   套件名（改前是静默回退内置 `"default"` 套件，拼错名不出声），故本端点白名单
+#   共引 SDK 层那份 `DEFAULT_SUITE_NAME`（L175/L189/L193 共引先例），只接受 default。
+# * `DatasetMigrator.migrate()` 改前用 `r.rule_id in rules` 过滤，未知规则 id 被
+#   **静默丢弃**；L193 起 SDK 直构面在 `migrate()` 入口即拒未知名，API 白名单
+#   共引 SDK 层那份内置清单（L175/L189 共引先例），把坏值转成 400。
 #
 # 状态码用 400 而非 422：与本项目既有约定一致（见 dataset_tools.py 的同名注释）。
-AUTO_TEST_SUITES = ("default",)
-MIGRATION_RULES = ("rename_instruction", "rename_output", "flatten_conversations")
+AUTO_TEST_SUITES = (DEFAULT_SUITE_NAME,)
+MIGRATION_RULES = BUILTIN_MIGRATION_RULE_IDS
 
 
 # ============ 请求模型 ============

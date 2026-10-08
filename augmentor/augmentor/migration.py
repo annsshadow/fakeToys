@@ -11,9 +11,17 @@ import logging
 from typing import List, Dict, Optional, Any, Callable
 from dataclasses import dataclass, field
 from pathlib import Path
+
+from .atomic_write import atomic_write_json
+from .exceptions import DataValidationError
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
+
+# L193：内置迁移规则 id 的封闭清单（A77 一条判据一处）——权威是 `_create_builtin_rules`
+# 产出的三条规则，本常量供 API 面共引（system_ops.MIGRATION_RULES 由它派生，
+# L175/L189 共引先例）与 SDK 面 `migrate()` 的未知 id 拒判据共用同一份名单。
+BUILTIN_MIGRATION_RULE_IDS = ("rename_instruction", "rename_output", "flatten_conversations")
 
 
 @dataclass
@@ -151,10 +159,20 @@ class DatasetMigrator:
         import hashlib
         
         # 获取要应用的规则
+        all_rules = self._rules + self._builtin_rules
         if rules:
-            applied_rules = [r for r in self._rules + self._builtin_rules if r.rule_id in rules]
+            # L193：规则 id 走封闭清单——改前未知名被 `r.rule_id in rules` 过滤静默丢弃
+            # （全拼错时迁移照跑、rules_applied 是空数组，「迁移跑了个寂寞」不出声；
+            # 与 L175/L176/L189/L192 封闭清单族同式）。API/CLI 面经本构造器吃同一档。
+            known_ids = [r.rule_id for r in all_rules]
+            unknown = [r for r in rules if not isinstance(r, str) or r not in known_ids]
+            if unknown:
+                raise DataValidationError(
+                    f"未知迁移规则: {unknown}（可选 {' / '.join(known_ids)}）"
+                )
+            applied_rules = [r for r in all_rules if r.rule_id in rules]
         else:
-            applied_rules = self._rules + self._builtin_rules
+            applied_rules = all_rules
         
         migrated_items = []
         errors = []
@@ -174,8 +192,7 @@ class DatasetMigrator:
         if output_path:
             output = Path(output_path)
             output.parent.mkdir(parents=True, exist_ok=True)
-            with open(output, 'w', encoding='utf-8') as f:
-                json.dump(migrated_items, f, ensure_ascii=False, indent=2)
+            atomic_write_json(output, migrated_items)
         
         result = MigrationResult(
             migration_id=hashlib.md5(str(datetime.now()).encode()).hexdigest()[:8],

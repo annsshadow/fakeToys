@@ -82,8 +82,19 @@ func TestValidateReportCollectionsRejectsOversizedElementsUsed(t *testing.T) {
 }
 
 // TestValidateReportCollectionsRejectsNegativeCardPick
-// card_picks 的取值下界：-1 是合法的「整波跳过」，-2 不是。
-// 负索引会被客户端引擎按「跳过」处理，但落到分析库里就是脏数据。
+// card_picks 的取值下界（第 66 轮从 -1 放宽到 CardPickMin = -8）。
+//
+// ⚠️ 这条断言的下界在第 66 轮**变过**，所以「哪些负值合法」必须重述：
+//
+//	-1              整波跳过
+//	-3..-5          弃一张，取第 handIdx 张
+//	-6..-8          弃一张，整波跳过
+//	< -8            拒绝
+//
+// 放宽的原因：弃牌要做三件不可复现的事（扣次数、动热量、写 record 事件），
+// 而 -1 无法表达「弃过牌」→ 重放失配 → I-6 把正常对局判成伪造。
+//
+// `-2` 恰好落在两个编码之间，**保持非法** —— 这是 BASE 相差 3 的效果。
 func TestValidateReportCollectionsRejectsNegativeCardPick(t *testing.T) {
 	gl := testLevel()
 
@@ -95,11 +106,34 @@ func TestValidateReportCollectionsRejectsNegativeCardPick(t *testing.T) {
 		}
 	})
 
-	t.Run("负索引", func(t *testing.T) {
+	t.Run("弃牌编码全部合法", func(t *testing.T) {
+		for _, pick := range []int{-3, -4, -5, -6, -7, -8} {
+			in := baseInput(gl)
+			in.CardPicks = []int{pick}
+			if err := validateReportCollections(gl, in); err != nil {
+				t.Errorf("card_picks[%d] 是第 66 轮新增的合法编码，却被拒：%v", pick, err)
+			}
+		}
+	})
+
+	t.Run("-2 不在任何编码区间内，必须被拒", func(t *testing.T) {
+		// ⚠️ -2 落在 -1（跳过）与 -3（弃+取）之间，是协议刻意留的空隙。
+		// 它非法才能保证「两个负区间不相交」这件事真的成立 ——
+		// 如果哪天 BASE 改动让区间靠拢，这条会先红。
 		in := baseInput(gl)
 		in.CardPicks = []int{-1, -2}
 		if err := validateReportCollections(gl, in); err == nil {
-			t.Fatal("card_picks 含 -2 应被拒绝")
+			t.Fatal("card_picks 含 -2 应被拒绝（它落在两个编码区间之间的空隙）")
+		}
+	})
+
+	t.Run("低于下界", func(t *testing.T) {
+		for _, pick := range []int{-9, -100} {
+			in := baseInput(gl)
+			in.CardPicks = []int{pick}
+			if err := validateReportCollections(gl, in); err == nil {
+				t.Errorf("card_picks[%d] 低于下界 %d 却被放行", pick, CardPickMin)
+			}
 		}
 	})
 }

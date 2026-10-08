@@ -37,6 +37,8 @@ const store = useGameStore()
 const curType = ref('power')
 const items = ref<any[]>([])
 const loading = ref(false)
+// 第 136 轮：请求序号（模块级 let，非 ref —— 无需响应式）。
+let loadSeq = 0
 
 const tabs = [
   { key: 'power', label: '战力榜' },
@@ -61,15 +63,22 @@ function formatScore(v: number): string {
 }
 
 async function load() {
+  // 第 136 轮：记录本次请求发起时的 tab + 自增序号。
+  // 若期间用户又切了 tab（发起更新的请求），本次的响应就是「陈旧」的，
+  // 一律丢弃，避免旧的 fetchLeaderboard 后到、把新 tab 的列表覆盖掉。
+  const seq = ++loadSeq
+  const type = curType.value
   loading.value = true
   try {
-    const res = await api.fetchLeaderboard(curType.value)
+    const res = await api.fetchLeaderboard(type)
+    if (seq !== loadSeq) return // 已有更新的请求，丢弃本陈旧响应
     items.value = res.items ?? []
   } catch (e) {
+    if (seq !== loadSeq) return
     uni.showToast({ title: (e as Error).message, icon: 'none' })
     items.value = []
   } finally {
-    loading.value = false
+    if (seq === loadSeq) loading.value = false
   }
 }
 

@@ -252,11 +252,21 @@ class TestStaticFaceSeesAbsentKeys:
             {"models": {"default": None}, "augmentation": {}}), "models.default.type")
         assert errors == []
 
-    def test_non_mapping_entry_gets_no_required_noise(self):
-        """条目正文写成标量时不叠一条「缺少必填字段」噪声（形状那一层管）"""
+    def test_non_mapping_entry_gets_exactly_one_actionable_verdict(self):
+        """条目正文写成标量：恰一条「映射」判决、无「缺少必填字段」叠报
+
+        L75 时点这一档在校验面零报错，当时的立意是「形状那层管，静态面不
+        叠噪声」。L158 把「必须是映射」判据升为 _require_mapping 唯一产地
+        （A77）后，校验面同源投影出恰一条准确错（与运行时 load_config
+        同判）：零报错的旧口径是 A85 族第三侧漏网（校验工具说好、启动时
+        才炸），不是需要保护的行为。本条守的立意不变——不叠噪声——只是
+        从「零错误」收紧为「一条对的错误」。
+        """
         result = ConfigValidator().validate_config(
             {"models": {"default": "m", "m": "abc"}, "augmentation": {}})
-        assert [e.path for e in result.errors] == []
+        assert [e.path for e in result.errors] == ["models.m"]
+        assert len(result.errors) == 1
+        assert "缺少必填字段" not in result.errors[0].message
 
     def test_only_type_is_required_in_the_entry_table(self):
         """必填只有 `type` 一根：其余八键「不在场」是合法状态（由字段默认回答）
@@ -372,3 +382,42 @@ class TestPinnedGaps:
         assert entry.temperature == 0.5
         with pytest.raises(DataValidationError, match="models.solo.temperature"):
             _model_entry("solo", {"type": "openai", "temperature": 999})
+
+
+class TestEnvExpansionSemanticsL185:
+    """L185（A95/A122 合轮）：${ENV} 占位符展开语义钉成契约——静默 '' 是「未配凭据」的合法态。
+
+    权威清单 MODEL_CREDENTIAL_KEYS 只住 config.py 一处；三凭证键之外的值不走 _resolve_env。
+    未设置的环境变量静默回落 ''（与 None 等价），**不**在加载面判负（条数随本机 shell 变），
+    出声归 validate-config 的 warning 通道（docs/API.md 3.x「没人读」段）。谁把静默改成加载期
+    fail-loud（或反过来把 '' 换成报错）都要先翻这一格并重新对账对外契约。
+    """
+
+    def test_set_var_resolves_to_value(self, monkeypatch):
+        from augmentor.config import _resolve_env
+        monkeypatch.setenv("A185_TEST_KEY", "the-secret")
+        assert _resolve_env("${A185_TEST_KEY}") == "the-secret"
+
+    def test_missing_var_is_silent_empty_string(self, monkeypatch):
+        from augmentor.config import _resolve_env
+        monkeypatch.delenv("A185_MISSING_KEY", raising=False)
+        assert _resolve_env("${A185_MISSING_KEY}") == ""
+
+    @pytest.mark.parametrize("not_a_placeholder", ["${no_close", "no_open}", "plain", "", " "])
+    def test_malformed_or_non_placeholder_returned_verbatim(self, not_a_placeholder):
+        from augmentor.config import _resolve_env
+        assert _resolve_env(not_a_placeholder) == not_a_placeholder
+
+    @pytest.mark.parametrize("non_str", [None, 42, 3.14, ["x"]])
+    def test_non_string_returned_verbatim(self, non_str):
+        from augmentor.config import _resolve_env
+        assert _resolve_env(non_str) is non_str
+
+
+    def test_valid_placeholder_with_unset_var_resolves_to_empty(self, monkeypatch):
+        from augmentor.config import _resolve_env
+        monkeypatch.delenv("A185_NOT_SET", raising=False)
+        assert _resolve_env("${A185_NOT_SET}") == ""
+    def test_credential_keys_are_the_authority_list(self):
+        from augmentor.config import MODEL_CREDENTIAL_KEYS
+        assert set(MODEL_CREDENTIAL_KEYS) == {"api_key", "secret_key", "base_url"}

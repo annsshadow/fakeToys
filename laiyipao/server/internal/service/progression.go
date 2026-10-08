@@ -3,8 +3,10 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sort"
+	"strconv"
 	"time"
 
 	"github.com/laiyipao/server/internal/domain"
@@ -15,8 +17,16 @@ func (s *Service) ComputeRatingFor(userID int64, build map[string]any) domain.Bu
 	return s.computeRating(s.ctxBackground(), userID, build)
 }
 
-func (s *Service) ComputePowerFor(userID int64, build map[string]any) int64 {
-	return s.computePower(s.ctxBackground(), userID, build)
+// ComputePowerFor 是给运营接口用的包装。
+//
+// ⚠️ 第 103 轮移除了 `userID` —— 第 102 轮把 `computePower` 变成纯函数之后，
+// 它就成了纯装饰。而 `ComputeRatingFor`（**同名的兄弟**）**确实**要查
+// `user_progress`，仍然需要 userID —— 于是两个签名一度一模一样。
+//
+// 由 `TestNoFunctionIgnoresAParameter` 抓到：**级联**发现，
+// 因为第 102 轮那条守卫只盯 `ctx`。
+func (s *Service) ComputePowerFor(build map[string]any) int64 {
+	return computePower(build)
 }
 
 func (s *Service) ctxBackground() context.Context { return context.Background() }
@@ -93,6 +103,120 @@ func (s *Service) AllocateMastery(ctx context.Context, userID int64, nodeID int)
 	})
 }
 
+// lockChallengeStateOrdered 按**固定顺序**锁住一次挑战会触碰的全部跨用户行（第 79 轮）。
+//
+// # 缺陷：两个对向挑战必然死锁（有两处，不是��处）
+//
+// `ChallengeDefense` 会碰到**两个人的**三类行：
+//
+//  1. `user_daily_challenges`（挑战次数 / 被偷次数）
+//     挑战者一行、被挑战者一行
+//  2. `user_wallets`（窃取与发放）
+//     被挑战者一行、挑战者一行
+//  3. `defenses`（wins / losses）—— **只有被挑战者那一条**，无冲突
+//
+// 修复前的实际顺序是：
+//
+//	dailyChallengeCounters(挑战者)   ← 第 583 行，INSERT…ON CONFLICT DO UPDATE 会**拿行锁**
+//	dailyChallengeCounters(被挑战者) ← 第 592 行
+//	grantWallet(被挑战者, -take)     ← 第 702 行
+//	grantWallet(挑战者, +stolen)     ← 第 726 行
+//
+// 也就是「挑战者→被挑战者」与「被挑战者→挑战者」**同时存在**。
+// A 打 B 与 B 打 A 同时发生时：
+//
+//	Tx1  锁 counters[A] → counters[B] → wallets[B] → 等 wallets[A]
+//	Tx2  锁 counters[B] → 等 counters[A]        → ...
+//
+// → PG `40P01 deadlock_detected` → failErr → **500**。
+//
+// 这是**自伤型 500**：两个玩家各点了一次挑战，服务端回 500，
+// 而任何人看日志都得不出「是自己这边的问题」。
+//
+// 我第一版只修了钱包顺序（加 `ORDER BY user_id FOR UPDATE`），
+// 实测**仍然死锁** 12 次里的 6 次 —— 因为计数器行在更早就被锁了。
+// **只修一处并发原语，剩下那处会立刻把问题重新暴露出来。**
+//
+// # 修法：表分轮 + id 升序
+//
+//	第一轮：对**每个** id 升序 ensure+lock `user_daily_challenges`
+//	第二轮：对**每个** id 升序 lock `user_wallets`
+//
+// 关键是**表顺序也必须固定**。若按「每个用户先 counters 再 wallets」，
+// Tx1 是 `counters[A] wallets[A] counters[B] wallets[B]`，
+// Tx2 是 `counters[B] wallets[B] counters[A] wallets[A]` —— 仍然互等。
+// 分轮之后两个事务的加锁序列**逐字相同**，不可能互等。
+//
+// # 为什么不能用 pg_advisory_xact_lock
+//
+// advisory lock 与这两张表的行锁**不是同一把锁** ——
+// 后续的 `INSERT … ON CONFLICT DO UPDATE` 与 `UPDATE user_wallets`
+// 仍然按任意顺序拿行锁，死锁依旧。必须让**同一把**（行锁）有序获取。
+//
+// # 为什么 ensure 用 `ON CONFLICT DO UPDATE` 而不是 `DO NOTHING`
+//
+// `DO NOTHING` 对**已存在**的行不加锁 —— 那样预锁就漏掉了它们。
+// `DO UPDATE SET challenge_date = $2`（$2 是同一个日期字面量）是个无操作更新
+// （值没变），但它**确实**拿行锁。
+// 「无操作更新」这个手法要写清楚，否则后来的人会以为是脏写法。
+func lockChallengeStateOrdered(ctx context.Context, tx txType, userIDs []int64) error {
+	// ⚠️ 第 98 轮：`challenge_date` 由 **Go** 决定，与每日任务 / 签到 / 商城同一个口径。
+	//
+	// 原来五处都用 `CURRENT_DATE`，由 **PG 会话时区**折算。
+	// 防线挑战内部因此自洽，但它与**每日任务**的日界不同 —— 而两者
+	// 语义上必须对齐：「今日通关 3 关」这个任务与「今日挑战次数上限」
+	// 说的是同一个「今日」。
+	//
+	// 两者不同时刻翻页时（Go 本地 ≠ PG 会话时区，容器里 `time.Local` 常为 UTC）：
+	// 玩家在凌晨到早上做的通关，任务在 08:00 就重置了，
+	// 而挑战次数要等到北京 00:00 才重置 —— 于是「今日」有两个定义。
+	//
+	// 传**日期字面量**（与第 89 轮签到、第 97 轮商城同一手法）。
+	today := periodStart(time.Now(), "daily").Format("2006-01-02")
+	ids := dedupPositive(userIDs)
+	if len(ids) == 0 {
+		return nil
+	}
+	sort.Slice(ids, func(i, j int) bool { return ids[i] < ids[j] })
+
+	// 第一轮：挑战计数器（**必须**先于钱包，全局固定）
+	for _, id := range ids {
+		// 无操作更新只为拿行锁 —— 见函数头的说明。
+		if _, err := tx.Exec(ctx, `
+			INSERT INTO user_daily_challenges (user_id, challenge_date, attempts, stolen_times)
+			VALUES ($1, $2, 0, 0)
+			ON CONFLICT (user_id, challenge_date)
+			DO UPDATE SET challenge_date = $2`, id, today); err != nil {
+			return fmt.Errorf("lock challenge counters of %d: %w", id, err)
+		}
+	}
+
+	// 第二轮：钱包
+	if _, err := tx.Exec(ctx, `
+		SELECT user_id FROM user_wallets
+		 WHERE user_id = ANY($1) ORDER BY user_id FOR UPDATE`, ids); err != nil {
+		return fmt.Errorf("lock wallets: %w", err)
+	}
+	return nil
+}
+
+// dedupPositive 去重并丢弃非正 id。
+//
+// 去重的理由不是正确性（`ANY($1)` 命中重复无害）而是可观测性：
+// 「锁了几行」这件事在日志/错误信息里要说得清。
+func dedupPositive(ids []int64) []int64 {
+	seen := make(map[int64]bool, len(ids))
+	out := make([]int64, 0, len(ids))
+	for _, id := range ids {
+		if id <= 0 || seen[id] {
+			continue
+		}
+		seen[id] = true
+		out = append(out, id)
+	}
+	return out
+}
+
 func (s *Service) masterySelected(ctx context.Context, tx txType, userID int64) (map[int]bool, error) {
 	rows, err := tx.Query(ctx,
 		`SELECT node_id FROM user_mastery_nodes WHERE user_id = $1`, userID)
@@ -143,7 +267,11 @@ func (s *Service) Diagnose(ctx context.Context, userID int64, levelID, failedTim
 			return domain.Diagnose{}, err
 		}
 		elems := map[string]int{}
-		_ = json.Unmarshal(elemRaw, &elems)
+		// 第 149 轮：fail-loud。elements_used 坏掉（合法 jsonb 但非对象）时，
+		// `_ =` 会静默把该样本的元素用量算成 0，诊断建议悄悄失真。改报错。
+		if err := json.Unmarshal(elemRaw, &elems); err != nil {
+			return domain.Diagnose{}, fmt.Errorf("diagnose: 战报元素用量非法 jsonb: %w", err)
+		}
 		for k, v := range elems {
 			in.ElementsUsed[k] += v
 		}
@@ -259,11 +387,24 @@ func (s *Service) ListDefenses(ctx context.Context, userID int64) (mine *Defense
 }
 
 func (s *Service) dailyChallengeCounters(ctx context.Context, userID int64) (attempts, stolen int, err error) {
+	// ⚠️ 第 98 轮：`challenge_date` 由 **Go** 决定，与每日任务 / 签到 / 商城同一个口径。
+	//
+	// 原来五处都用 `CURRENT_DATE`，由 **PG 会话时区**折算。
+	// 防线挑战内部因此自洽，但它与**每日任务**的日界不同 —— 而两者
+	// 语义上必须对齐：「今日通关 3 关」这个任务与「今日挑战次数上限」
+	// 说的是同一个「今日」。
+	//
+	// 两者不同时刻翻页时（Go 本地 ≠ PG 会话时区，容器里 `time.Local` 常为 UTC）：
+	// 玩家在凌晨到早上做的通关，任务在 08:00 就重置了，
+	// 而挑战次数要等到北京 00:00 才重置 —— 于是「今日」有两个定义。
+	//
+	// 传**日期字面量**（与第 89 轮签到、第 97 轮商城同一手法）。
+	today := periodStart(time.Now(), "daily").Format("2006-01-02")
 	err = s.pool.QueryRow(ctx, `
 		INSERT INTO user_daily_challenges (user_id, challenge_date, attempts, stolen_times)
-		VALUES ($1, CURRENT_DATE, 0, 0)
-		ON CONFLICT (user_id, challenge_date) DO UPDATE SET challenge_date = CURRENT_DATE
-		RETURNING attempts, stolen_times`, userID).Scan(&attempts, &stolen)
+		VALUES ($1, $2, 0, 0)
+		ON CONFLICT (user_id, challenge_date) DO UPDATE SET challenge_date = $2
+		RETURNING attempts, stolen_times`, userID, today).Scan(&attempts, &stolen)
 	return attempts, stolen, err
 }
 
@@ -387,7 +528,7 @@ func (s *Service) SaveDefense(ctx context.Context, userID int64, in SaveDefenseI
 	elements := buildElements(build)
 	mastery, _ := build["mastery_nodes"].([]int)
 	rating := s.computeRating(ctx, userID, build)
-	power := s.computePower(ctx, userID, build)
+	power := computePower(build)
 
 	snapshot := map[string]any{
 		"skills":        in.Skills,
@@ -461,11 +602,103 @@ func (s *Service) SaveDefense(ctx context.Context, userID int64, in SaveDefenseI
 
 // ChallengeInput 是挑战请求。
 type ChallengeInput struct {
-	Seed       int64  `json:"seed"`
+	// ⚠️ 第 132 轮：seed 由 int64 改成**字符串**，与结算面（battle/economy/
+	// verification）同口径 —— int64 超过 2^53 后 JSON number 在 JS 侧即失精，
+	// 防线挑战的本地模拟引擎（defense.ts）用 63-bit bigint 生成种子，
+	// 客户端必须按字符串上报，服务端解析回 int64 落库。
+	Seed       string `json:"seed"`
 	Won        bool   `json:"won"`
 	DurationMs int    `json:"duration_ms"`
 	HPLeftPct  int    `json:"hp_left_pct"`
 	ReplayHash string `json:"replay_hash"`
+}
+
+// challengeSeedValue 解析并校验挑战 seed（字符串形态）。
+//
+// 引擎侧（defense.ts）对种子做 63-bit 掩码 `& (2^63-1)`，
+// 合法范围 [0, 2^63-1]。ParseInt(_,10,64) 对越界（> MaxInt64）与非数字都报错，
+// 负数另拒。任何非法值 → ErrInvalidField（422），不落到库里。
+func challengeSeedValue(s string) (int64, error) {
+	if s == "" {
+		return 0, fmt.Errorf("%w：seed 不能为空", domain.ErrInvalidField)
+	}
+	v, err := strconv.ParseInt(s, 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("%w：seed 必须是 ≤2^63-1 的十进制整数，收到 %q", domain.ErrInvalidField, s)
+	}
+	if v < 0 {
+		return 0, fmt.Errorf("%w：seed 必须非负，收到 %q", domain.ErrInvalidField, s)
+	}
+	return v, nil
+}
+
+// 挑战上报字段的边界（第 69 轮）。
+//
+// # 缺陷：三个字段零校验，而目标列都是 INTEGER / TEXT
+//
+// `ChallengeInput` 的 `DurationMs` / `HPLeftPct` / `ReplayHash` 此前
+// **一个都没有校验**，而 `defense_challenges` 的对应列是：
+//
+//	duration_ms  INTEGER
+//	hp_left_pct  INTEGER  -- 挑战者剩余血量百分比
+//	replay_hash  TEXT
+//
+// 于是上报 `duration_ms: 2147483648` 或 `hp_left_pct: 2147483648` 时：
+//
+//	PG ERROR 22003 integer out of range -> failErr -> **500**
+//
+// 任何玩家都能定向让任意目标的挑战接口持续 500。
+//
+// # 与结算面的对比
+//
+// `SettleInput` 那一侧第 62/63 轮刚补过边界（集合字段溢出、duration_ms 上界）。
+// 这里是同一族的**另一个入口** —— 反射式覆盖率守卫 `settle_coverage_test.go`
+// 只管 `SettleInput`，所以防线挑战这条路径一直没人看。
+//
+// 这正是「守卫覆盖了一个结构、漏了同族的另一个」。
+const (
+	// MaxChallengeDurationMs 与结算面的 MaxPlausibleDurationMs 同量级（24h）。
+	MaxChallengeDurationMs = 24 * 60 * 60 * 1000
+	// MaxChallengeReplayHashLen 与结算面的 maxReplayHashLen 同值。
+	//
+	// 引擎产出的是 `hex16(fnv1a64(...))` = 16 个十六进制字符，
+	// 取 64 是给「将来换哈希算法」留余量，同时拒绝「传一段文章」。
+	MaxChallengeReplayHashLen = 64
+)
+
+// ValidateChallengeInput 校验挑战上报的字段边界。
+func ValidateChallengeInput(in ChallengeInput) error {
+	// 种子（第 132 轮）：字符串形态，必须能解析成 [0, 2^63-1] 的整数。
+	// 与结算面同口径 —— 客户端用 bigint 生成 63-bit 种子，必须按字符串上报，
+	// 否则 >2^53 的种子在 JSON number 里失精、落库即错。
+	if _, err := challengeSeedValue(in.Seed); err != nil {
+		return err
+	}
+	// 时长：必须为正（与结算面同），且有上界。
+	// 下界 0 意味着「这一局 0 毫秒就结束了」—— 那不是任何真实对局。
+	if in.DurationMs <= 0 || in.DurationMs > MaxChallengeDurationMs {
+		return fmt.Errorf("%w：挑战时长 %dms 必须在 (0, %d] 内",
+			domain.ErrInvalidField, in.DurationMs, MaxChallengeDurationMs)
+	}
+	// 剩余血量百分比：语义上是 0..100 的整数。
+	//
+	// 上界不是「随便取个大的」—— hp_left_pct 是**百分比**，
+	// 100 之外的值在分析与展示上都没有意义，
+	// 而它会直接进运营看板上「挑战者剩余血量」那一列。
+	if in.HPLeftPct < 0 || in.HPLeftPct > 100 {
+		return fmt.Errorf("%w：剩余血量百分比 %d 必须在 [0, 100] 内",
+			domain.ErrInvalidField, in.HPLeftPct)
+	}
+	// 回放哈希：长度上限与结算面一致。
+	//
+	// 同一处 TEXT 列若不限长，单次可写入接近 1MB ——
+	// 而这个端点**没有归属校验**（见 README 已知边界的第 3 条），
+	// 任意注册用户都能对任意 defense_id 写入。
+	if len(in.ReplayHash) > MaxChallengeReplayHashLen {
+		return fmt.Errorf("%w：replay_hash 长 %d 字符，上限 %d",
+			domain.ErrInvalidField, len(in.ReplayHash), MaxChallengeReplayHashLen)
+	}
+	return nil
 }
 
 // ChallengeResult 是挑战结算。
@@ -485,6 +718,33 @@ type ChallengeResult struct {
 //  2. 对方每日被偷次数上限（2）与 24h 护盾
 //  3. 窃取比例固定 10%，且受全局掉落封顶
 func (s *Service) ChallengeDefense(ctx context.Context, userID, defenseID int64, in ChallengeInput) (ChallengeResult, error) {
+	// ⚠️ 第 98 轮：`challenge_date` 由 **Go** 决定，与每日任务 / 签到 / 商城同一个口径。
+	//
+	// 原来五处都用 `CURRENT_DATE`，由 **PG 会话时区**折算。
+	// 防线挑战内部因此自洽，但它与**每日任务**的日界不同 —— 而两者
+	// 语义上必须对齐：「今日通关 3 关」这个任务与「今日挑战次数上限」
+	// 说的是同一个「今日」。
+	//
+	// 两者不同时刻翻页时（Go 本地 ≠ PG 会话时区，容器里 `time.Local` 常为 UTC）：
+	// 玩家在凌晨到早上做的通关，任务在 08:00 就重置了，
+	// 而挑战次数要等到北京 00:00 才重置 —— 于是「今日」有两个定义。
+	//
+	// 传**日期字面量**（与第 89 轮签到、第 97 轮商城同一手法）。
+	today := periodStart(time.Now(), "daily").Format("2006-01-02")
+	// ⚠️ 第 69 轮：上报字段边界校验放在**事务之外**。
+	//
+	// 理由有两条，都不是风格问题：
+	//  1. 它是**请求校验**而不是业务规则 —— 一个 duration_ms 越界的请求
+	//     本来就不该开事务、开行锁。
+	//  2. 放在事务内的话，PG 的 22003 会在事务中间炸出来，
+	//     而它是个**真 500** —— 混进服务故障告警把真故障淹掉。
+	//
+	// 放在外面则它是一个可分类的 ErrInvalidField -> 422，
+	// 客户端能看到「上报不可信」而不是「服务内部错误」。
+	if err := ValidateChallengeInput(in); err != nil {
+		return ChallengeResult{}, err
+	}
+
 	var res ChallengeResult
 	err := s.DB.Tx(ctx, func(tx txType) error {
 		var ownerID int64
@@ -503,6 +763,29 @@ func (s *Service) ChallengeDefense(ctx context.Context, userID, defenseID int64,
 			return fmt.Errorf("%w: 对方开启了护盾", ErrForbidden)
 		}
 
+		// ⚠️ 第 126 轮：预锁必须**先于计数器读取**。
+		//
+		// 第 79 轮修的是**钱包**锁序（下方窃取分支「对方→自己」互锁），
+		// 但当时把预锁放在了 `dailyChallengeCountersTx` **之后** ——
+		// 而计数器读取本身就会按「自己 → 对方」拿 `user_daily_challenges`
+		// 的行锁，预锁到来时那两行**已经**按任意序锁住了。
+		//
+		// 于是残留一个死锁窗口：两个玩家**当日第一次**互打
+		// （`user_daily_challenges` 里今天的行都还不存在）时：
+		//
+		//	Tx1（A 打 B）先锁 counters[A] → 等 counters[B]
+		//	Tx2（B 打 A）先锁 counters[B] → 等 counters[A]
+		//
+		// `ON CONFLICT DO UPDATE` 会等对面**未提交**的 INSERT，
+		// 完美成环 → PG 40P01 → 两个诚实玩家各点一次挑战、各收一个 500。
+		//
+		// 修：把预锁上移到计数器读取之前。两笔并发挑战的加锁序列
+		// 从此全局一致（升序），计数器读取只会命中**已锁**行、不再引入
+		// 新锁序。被拒路径（自用尽 / 护盾）仍在读前退出，语义不变。
+		if err := lockChallengeStateOrdered(ctx, tx, []int64{userID, ownerID}); err != nil {
+			return err
+		}
+
 		attempts, _, err := s.dailyChallengeCountersTx(ctx, tx, userID)
 		if err != nil {
 			return err
@@ -516,6 +799,45 @@ func (s *Service) ChallengeDefense(ctx context.Context, userID, defenseID int64,
 		if err != nil {
 			return err
 		}
+
+		// ⚠️ 第 79 轮：**按 user_id 升序预锁**两个钱包行。
+		//
+		// # 缺陷：两个对向挑战必然死锁
+		//
+		// 下面两处会锁 `user_wallets` 的行：
+		//
+		//   608 行  grantWallet(ownerID, -take)   ← 先锁【对方】
+		//   632 行  grantWallet(userID,  stolen)  ← 后锁【自己】
+		//
+		// 于是锁顺序是「对方 → 自己」。而两个玩家同时互打时：
+		//
+		//   Tx1（A 打 B 的防线）  锁 wallets[B] → 等 wallets[A]
+		//   Tx2（B 打 A 的防线）  锁 wallets[A] → 等 wallets[B]
+		//
+		// 互等 → PG 报 `40P01 deadlock_detected` → failErr → **500**。
+		//
+		// 这是**自伤型 500**：两个玩家各点了一次挑战，服务端回 500，
+		// 而任何人看日志都得不出「是自己这边的问题」。
+		//
+		// 频率不高（要求两人同一瞬间互打），但它是**确定存在**的：
+		// 只要两人互相点，就可能发生。
+		//
+		// # 修法：升序一次锁齐
+		//
+		// `ORDER BY user_id FOR UPDATE` 让 PG **按主键顺序**加锁，
+		// 于是任意两个挑战事务的加锁序列都一致 → 不可能互等。
+		//
+		// ⚠️ 为什么不能用「先锁小的那个」这种应用层判断：
+		// 那需要把比较结果带进后续所有分支，而 `grantWallet` 内部
+		// 还会再 UPDATE 同一行。**一处有序预锁**比**处处记得有序**可靠。
+		//
+		// 只锁两个：`userID`（挑战者）与 `ownerID`（被挑战者）。
+		// 钱包是本事务唯一会跨用户触碰的资源
+		// （`user_daily_challenges` / `defenses` 的 UPDATE 不跨用户）。
+		//
+		// ⚠️ 第 126 轮：这次调用已上移到**计数器读取之前**（见事务开头）。
+		// 走到这里时 counters 与 wallets 均已持锁，下方 `grantWallet`
+		// 不会再引入任何新锁。
 		stolen := map[string]int64{}
 		if in.Won && ownerStolen < DefenseStolenLimit {
 			// 窃取 10% 战力等价资源
@@ -528,9 +850,36 @@ func (s *Service) ChallengeDefense(ctx context.Context, userID, defenseID int64,
 				if take > 0 {
 					stolen[k] = take
 					// 从对方扣除，扣不动就跳过（不强制负值）
+					//
+					// ⚠️ 第 81 轮：**只吞「余额不足」**，其余错误必须上抛。
+					//
+					// 原来是无差别 `delete(stolen, k)` —— 而
+					// `grantWallet` 内部是这样的：
+					//
+					//	UPDATE user_wallets SET coin = coin + $2 … RETURNING coin   ← 已生效
+					//	INSERT INTO wallet_flows …                                    ← 这里可能失败
+					//
+					// 所以它在**两个不同位置**返回错误：
+					//
+					//  (a) `pgx.ErrNoRows` → 余额不足     → 应当跳过（设计意图）
+					//  (b) UPDATE 成功、`insert flow` 失败 → **钱已经扣了**
+					//
+					// (b) 被当成 (a) 吞掉之后：事务照常提交 →
+					// **对方少了钱、流水没记录、挑战者什么也没拿到**。
+					// 三方全不一致，且没有任何错误日志。
+					//
+					// 更糟的一层：数据库连接断了、网络抖了、约束被别的改动破坏了 ——
+					// 全部被静默解释成「他没钱」，而真故障被彻底掩盖。
+					//
+					// 修法：`ErrBadInput`（余额不足 / 未知货币）是**业务拒绝**，
+					// 可以跳过；其余是**基础设施失败**，上抛让事务回滚。
 					if err := s.grantWallet(ctx, tx, ownerID, map[string]int64{k: -take},
 						"defense_stolen", defenseID); err != nil {
-						delete(stolen, k)
+						if errors.Is(err, ErrBadInput) {
+							delete(stolen, k)
+							continue
+						}
+						return fmt.Errorf("steal %s from %d: %w", k, ownerID, err)
 					}
 				}
 			}
@@ -541,7 +890,7 @@ func (s *Service) ChallengeDefense(ctx context.Context, userID, defenseID int64,
 			// 记录被偷
 			if _, err := tx.Exec(ctx, `
 				UPDATE user_daily_challenges SET stolen_times = stolen_times + 1
-				 WHERE user_id = $1 AND challenge_date = CURRENT_DATE`, ownerID); err != nil {
+				 WHERE user_id = $1 AND challenge_date = $2`, ownerID, today); err != nil {
 				return err
 			}
 		} else if !in.Won {
@@ -556,16 +905,22 @@ func (s *Service) ChallengeDefense(ctx context.Context, userID, defenseID int64,
 				return err
 			}
 		}
+		// 种子在 ValidateChallengeInput 里已校验过（可解析、非负、≤2^63-1），
+		// 这里解析回 int64 落库；若仍失败说明校验被绕过，按原样上抛。
+		seedVal, err := challengeSeedValue(in.Seed)
+		if err != nil {
+			return err
+		}
 		if _, err := tx.Exec(ctx, `
 			INSERT INTO defense_challenges (defense_id, challenger_id, seed, won, duration_ms,
 			                                hp_left_pct, replay_hash, settled)
 			VALUES ($1,$2,$3,$4,$5,$6,$7,TRUE)`,
-			defenseID, userID, in.Seed, in.Won, in.DurationMs, in.HPLeftPct, in.ReplayHash); err != nil {
+			defenseID, userID, seedVal, in.Won, in.DurationMs, in.HPLeftPct, in.ReplayHash); err != nil {
 			return fmt.Errorf("record challenge: %w", err)
 		}
 		if _, err := tx.Exec(ctx, `
 			UPDATE user_daily_challenges SET attempts = attempts + 1
-			 WHERE user_id = $1 AND challenge_date = CURRENT_DATE`, userID); err != nil {
+			 WHERE user_id = $1 AND challenge_date = $2`, userID, today); err != nil {
 			return err
 		}
 
@@ -579,11 +934,14 @@ func (s *Service) ChallengeDefense(ctx context.Context, userID, defenseID int64,
 }
 
 func (s *Service) dailyChallengeCountersTx(ctx context.Context, tx txType, userID int64) (attempts, stolen int, err error) {
+	// ⚠️ 第 98 轮：`challenge_date` 由 **Go** 决定，与每日任务 / 签到 / 商城同一个口径。
+	// 详见 dailyChallengeCounters 上方的说明。
+	today := periodStart(time.Now(), "daily").Format("2006-01-02")
 	err = tx.QueryRow(ctx, `
 		INSERT INTO user_daily_challenges (user_id, challenge_date, attempts, stolen_times)
-		VALUES ($1, CURRENT_DATE, 0, 0)
-		ON CONFLICT (user_id, challenge_date) DO UPDATE SET challenge_date = CURRENT_DATE
-		RETURNING attempts, stolen_times`, userID).Scan(&attempts, &stolen)
+		VALUES ($1, $2, 0, 0)
+		ON CONFLICT (user_id, challenge_date) DO UPDATE SET challenge_date = $2
+		RETURNING attempts, stolen_times`, userID, today).Scan(&attempts, &stolen)
 	return attempts, stolen, err
 }
 

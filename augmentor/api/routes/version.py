@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from ..deps import get_pipeline, read_json_file, require_file, run_in_thread, verify_api_key
+from ..deps import raise_internal_error, get_pipeline, read_json_file, require_file, run_in_thread, verify_api_key
 from ..schemas import SuccessResponse
 
 router = APIRouter(tags=["version"])
@@ -96,7 +96,7 @@ async def list_versions():
             ]
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(e)
 
 
 @router.post(
@@ -127,7 +127,7 @@ async def create_version(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(e)
 
 
 @router.post(
@@ -150,7 +150,7 @@ async def diff_versions(request: DiffRequest):
             "modified_count": diff.modified_count
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(e)
 
 
 @router.get(
@@ -164,7 +164,7 @@ async def version_history(limit: int = 20):
         p = get_pipeline()
         return {"history": p.version_manager.get_history(limit=limit)}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(e)
 
 
 @router.get(
@@ -186,7 +186,7 @@ async def get_version(version_id: str):
             "metadata": version.metadata
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(e)
 
 
 @router.get(
@@ -201,7 +201,7 @@ async def get_version_data(version_id: str):
         items = await run_in_thread(p.version_manager.load_version, version_id)
         return {"items": items}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(e)
 
 
 @router.post(
@@ -218,7 +218,7 @@ async def rollback_version(
         success = await run_in_thread(p.version_manager.rollback, version_id)
         return {"success": success}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(e)
 
 
 @router.delete(
@@ -235,4 +235,4 @@ async def delete_version(
         await run_in_thread(p.version_manager.delete_version, version_id)
         return {"success": True}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(e)

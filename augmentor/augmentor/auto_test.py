@@ -13,7 +13,13 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from datetime import datetime
 
+from .exceptions import DataValidationError
+
 logger = logging.getLogger(__name__)
+
+# L194：内置套件名的唯一权威（A77）——`run_tests` 的「未指定 → 默认套件」回落档
+# 与 API 面 AUTO_TEST_SUITES 白名单都引用这一个名字，字面 "default" 不再有两份。
+DEFAULT_SUITE_NAME = "default"
 
 
 @dataclass
@@ -181,10 +187,21 @@ class DatasetTestRunner:
         Returns:
             测试套件结果
         """
+        # L194：套件名走封闭清单——显式未知套件名不再静默降级 default：
+        # 拼错套件名拿到 default 套件的判决不出声（checkpoint 症状族语义漂移档，
+        # L175/L176/L189/L192/L193 封闭清单族同式；API 面 AUTO_TEST_SUITES 早有 400
+        # 白名单，SDK 直构面独缺这一格）。None = 「未指定」→ default；"default"
+        # 是内置档，注册前也合法。
+        if suite_name is not None:
+            known = sorted(set(self._test_suites) | {DEFAULT_SUITE_NAME})
+            if not isinstance(suite_name, str) or suite_name not in known:
+                raise DataValidationError(
+                    f"未知测试套件: {suite_name!r}（可选 {' / '.join(known)}）"
+                )
         if suite_name and suite_name in self._test_suites:
             suite = self._test_suites[suite_name]
         else:
-            suite = self.create_test_suite("default", "默认测试套件")
+            suite = self.create_test_suite(DEFAULT_SUITE_NAME, "默认测试套件")
         
         suite.results = []
         

@@ -59,7 +59,7 @@ func TestRedeemCodesBrokenBranches(t *testing.T) {
 	if _, err := broken.AdminListRedeemCodes(ctx); err == nil {
 		t.Error("故障态兑换码列表应报错")
 	}
-	if _, err := broken.AdminCreateRedeemCode(ctx, "X", map[string]int{"coin": 1}, 1); err == nil {
+	if _, err := broken.AdminCreateRedeemCode(ctx, "X", map[string]int{"coin": 1}, 1, nil); err == nil {
 		t.Error("故障态创建兑换码应报错")
 	}
 }
@@ -520,7 +520,7 @@ func TestChallengeDefenseMidway(t *testing.T) {
 		ts := openScratchService(t)
 		challenger, defenseID := setupOpponent(t, ts)
 		ts.exec(t, `UPDATE defenses SET shielded_until = now() + interval '1 hour' WHERE id = $1`, defenseID)
-		_, err := ts.ChallengeDefense(ctx, challenger, defenseID, ChallengeInput{Won: true})
+		_, err := ts.ChallengeDefense(ctx, challenger, defenseID, ChallengeInput{Seed: "0", Won: true, DurationMs: 60_000, HPLeftPct: 100, ReplayHash: "0000000000000000"})
 		if !errors.Is(err, ErrForbidden) {
 			t.Errorf("护盾期内应 ErrForbidden，实际 %v", err)
 		}
@@ -532,7 +532,7 @@ func TestChallengeDefenseMidway(t *testing.T) {
 		// defenses 完好（SELECT 成功）→ user_daily_challenges 改名 →
 		// dailyChallengeCountersTx 失败。
 		ts.renameTable(t, "user_daily_challenges", "user_daily_challenges_bak")
-		_, err := ts.ChallengeDefense(ctx, challenger, defenseID, ChallengeInput{Won: false})
+		_, err := ts.ChallengeDefense(ctx, challenger, defenseID, ChallengeInput{Seed: "0", Won: false, DurationMs: 60_000, HPLeftPct: 0, ReplayHash: "0000000000000000"})
 		ts.renameTable(t, "user_daily_challenges_bak", "user_daily_challenges")
 		mustErr(t, err, "")
 	})
@@ -542,7 +542,7 @@ func TestChallengeDefenseMidway(t *testing.T) {
 		challenger, defenseID := setupOpponent(t, ts)
 		// 走失败（未胜）路径：跳过窃取，直达 INSERT defense_challenges。
 		ts.renameTable(t, "defense_challenges", "defense_challenges_bak")
-		_, err := ts.ChallengeDefense(ctx, challenger, defenseID, ChallengeInput{Won: false})
+		_, err := ts.ChallengeDefense(ctx, challenger, defenseID, ChallengeInput{Seed: "0", Won: false, DurationMs: 60_000, HPLeftPct: 0, ReplayHash: "0000000000000000"})
 		ts.renameTable(t, "defense_challenges_bak", "defense_challenges")
 		mustErr(t, err, "record challenge")
 	})
@@ -564,7 +564,7 @@ func TestChallengeDefenseStealSkippedWhenOwnerBroke(t *testing.T) {
 	ts.exec(t, `UPDATE defenses SET power = 20000 WHERE id = $1`, dv.ID)
 	ts.exec(t, `UPDATE user_wallets SET coin = 0, gem = 0, energy = 0, keys = 0 WHERE user_id = $1`, owner)
 
-	res, err := ts.ChallengeDefense(ctx, challenger, dv.ID, ChallengeInput{Won: true})
+	res, err := ts.ChallengeDefense(ctx, challenger, dv.ID, ChallengeInput{Seed: "0", Won: true, DurationMs: 60_000, HPLeftPct: 100, ReplayHash: "0000000000000000"})
 	if err != nil {
 		t.Fatalf("挑战应成功（扣不动只是跳过，不报错）：%v", err)
 	}
@@ -643,7 +643,7 @@ func TestStatsMidwayFailures(t *testing.T) {
 	t.Run("AdminUpdateSkill执行失败", func(t *testing.T) {
 		ts := openScratchService(t)
 		ts.renameTable(t, "skills", "skills_bak")
-		err := ts.AdminUpdateSkill(ctx, 1, map[string]any{"name": "x"})
+		_, err := ts.AdminUpdateSkill(ctx, 1, map[string]any{"name": "x"})
 		ts.renameTable(t, "skills_bak", "skills")
 		mustErr(t, err, "update skill")
 	})

@@ -3,12 +3,12 @@ on:
   push:
     branches: [main, master]
     paths:
-      - "oa4rust/**"
+      - "oa4rust/backend/**"
       - ".github/workflows/oa4rust-ci.yml"
   pull_request:
     branches: [main, master]
     paths:
-      - "oa4rust/**"
+      - "oa4rust/backend/**"
       - ".github/workflows/oa4rust-ci.yml"
 
 permissions:
@@ -24,18 +24,24 @@ jobs:
     timeout-minutes: 30
     defaults:
       run:
-        working-directory: oa4rust
+        working-directory: oa4rust/backend
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - name: Install Rust
         uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87
         with:
-          components: clippy
+          # 钉 1.98.1：rustc 1.99.0（stable 2026-09-28）编译 openapi crate 触发
+          # SIGSEGV（stack overflow ICE），CI 全部 rust job 失败；
+          # 2026-09-30 main 门禁在 1.98.1 上全绿。
+          toolchain: 1.98.1
+          # minimal profile 默认不含 rustfmt/clippy，显式补齐（Check formatting /
+          # Clippy 两步依赖这两个组件，缺了即 "cargo-fmt is not installed" 红）。
+          components: clippy, rustfmt
       - name: Cache cargo registry
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('oa4rust/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('oa4rust/backend/Cargo.lock') }}
       - name: Check formatting
         run: cargo fmt --all -- --check
       - name: Clippy (lint + type-check, deny warnings)
@@ -54,7 +60,7 @@ jobs:
     timeout-minutes: 60
     defaults:
       run:
-        working-directory: oa4rust
+        working-directory: oa4rust/backend
     services:
       # crates/shared/src/testing.rs 的 test_pool() 硬编码
       # postgres://o2server:password@localhost:5432/oa4rust，且 parity 的
@@ -76,11 +82,16 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - name: Install Rust
         uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87
+        with:
+          # 钉 1.98.1：rustc 1.99.0（stable 2026-09-28）编译 openapi crate 触发
+          # SIGSEGV（stack overflow ICE），CI 全部 rust job 失败；
+          # 2026-09-30 main 门禁在 1.98.1 上全绿。
+          toolchain: 1.98.1
       - name: Cache cargo registry
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('oa4rust/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('oa4rust/backend/Cargo.lock') }}
       # 空库无表时 handler 查库报错返回 500，会让 parity behavior 契约测试失败。
       # 复用项目内置迁移运行器（--migrate-only 在 src/main.rs 中实现），
       # 与生产启动路径一致，无需额外依赖外部迁移工具。
@@ -130,7 +141,7 @@ jobs:
     timeout-minutes: 90
     defaults:
       run:
-        working-directory: oa4rust
+        working-directory: oa4rust/backend
     services:
       postgres:
         image: postgres@sha256:f1c3376c26f2609ab9f29f71f824103fe2fcd8ee0346485cb6122a4f93df6f94
@@ -149,11 +160,16 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - name: Install Rust
         uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87
+        with:
+          # 钉 1.98.1：rustc 1.99.0（stable 2026-09-28）编译 openapi crate 触发
+          # SIGSEGV（stack overflow ICE），CI 全部 rust job 失败；
+          # 2026-09-30 main 门禁在 1.98.1 上全绿。
+          toolchain: 1.98.1
       - name: Cache cargo registry
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('oa4rust/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('oa4rust/backend/Cargo.lock') }}
       # 与 unit-tests 同理：cargo test -p parity --lib 的 behavior 契约测试
       # 会真实查库（test_pool() 硬编码 localhost:5432/oa4rust），空库无表时
       # handler 报错返回 500 → 41 个 parity 用例失败。此处先建表。
@@ -183,7 +199,7 @@ jobs:
     timeout-minutes: 30
     defaults:
       run:
-        working-directory: oa4rust
+        working-directory: oa4rust/backend
     continue-on-error: true
     services:
       postgres:
@@ -208,12 +224,17 @@ jobs:
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87
+        with:
+          # 钉 1.98.1：rustc 1.99.0（stable 2026-09-28）编译 openapi crate 触发
+          # SIGSEGV（stack overflow ICE），CI 全部 rust job 失败；
+          # 2026-09-30 main 门禁在 1.98.1 上全绿。
+          toolchain: 1.98.1
 
       - name: Cache cargo registry
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('oa4rust/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('oa4rust/backend/Cargo.lock') }}
 
       # ── 回归基线：若 fail_baseline 已建立（末行为整数），注入容忍上限 ──
       # 末行为 'bootstrap' 哨兵时保持严格模式（任何 FAIL 即失败，job 因
@@ -292,7 +313,7 @@ jobs:
         with:
           python-version: "3.x"
       - name: Seed Java side (full-seed dual-stack baseline)
-        # 本 job 的 defaults.run.working-directory 为 oa4rust，而播种脚本在
+        # 本 job 的 defaults.run.working-directory 为 oa4rust/backend，而播种脚本在
         # 仓库根 scripts/ 下；写死相对路径会在 CI 报 "can't open file
         # '.../oa4rust/scripts/seed_java.py'"（main 上即为此状态）。
         # 因此这里显式回到仓库根再执行。
@@ -325,7 +346,7 @@ jobs:
           else
             echo "::notice::tests/behavior_compare.rs not present — skipping behavior comparison."
             echo "::notice::The comparator implementation is not yet part of this repo;"
-            echo "::notice::see oa4rust/tests/behavior_comparison/ and the W12 convergence backlog."
+            echo "::notice::see oa4rust/backend/tests/behavior_comparison/ and the W12 convergence backlog."
           fi
         env:
           BEHAVIOR_COMPARE: "1"
@@ -350,12 +371,12 @@ jobs:
       # ── U1: 聚类产物上传 ─────────────────────────────────────────────────
       - name: Upload diff clustering artifacts
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: diff-clustering-${{ github.run_id }}
           path: |
-            oa4rust/target/diff_candidates.tsv
-            oa4rust/target/diff_candidates.md
+            oa4rust/backend/target/diff_candidates.tsv
+            oa4rust/backend/target/diff_candidates.md
           retention-days: 30
 
       # ── U1: 报告产物上传 ─────────────────────────────────────────────────
@@ -363,10 +384,10 @@ jobs:
       # 上传为 GitHub Actions artifact，FAIL 数变化可在 PR 上直接观察。
       - name: Upload behavior-compare report
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: behavior-report-${{ github.run_id }}
-          path: oa4rust/target/debug/behavior-report.md
+          path: oa4rust/backend/target/debug/behavior-report.md
           retention-days: 30
 
       # ── U1: 基线注记 ─────────────────────────────────────────────────────
@@ -408,15 +429,15 @@ jobs:
           except Exception:
               arts = []
           if not arts:
-              print("::notice::No behavior-report artifact found — gate passes vacuously")
-              sys.exit(0)
+              print("::error::behavior-compare completed without a behavior-report artifact")
+              sys.exit(1)
           url = arts[0]["archive_download_url"]
           req = urllib.request.Request(url, headers={"Authorization": "token " + os.environ["GITHUB_TOKEN"]})
           zf = zipfile.ZipFile(io.BytesIO(urllib.request.urlopen(req).read()))
           names = [n for n in zf.namelist() if n.endswith("behavior-report.md")]
           if not names:
-              print("::notice::Report artifact has no behavior-report.md — gate passes vacuously")
-              sys.exit(0)
+              print("::error::behavior-report artifact is missing behavior-report.md")
+              sys.exit(1)
           open("behavior-report.md", "wb").write(zf.read(names[0]))
           print(f"Downloaded {names[0]}")
           '
@@ -424,19 +445,23 @@ jobs:
       - name: Enforce FAIL regression baseline
         if: always()
         run: |
-          baseline="$(tail -n 1 oa4rust/tests/behavior_comparison/fail_baseline)"
+          baseline="$(tail -n 1 oa4rust/backend/tests/behavior_comparison/fail_baseline)"
           report="behavior-report.md"
           if [ ! -f "$report" ]; then
-            echo "::notice::No behavior report available — gate passes vacuously (behavior-compare produced none)"
-            exit 0
+            if [ "${{ needs.behavior-compare.result }}" = "skipped" ]; then
+              echo "::notice::behavior-compare was skipped; no regression report is required"
+              exit 0
+            fi
+            echo "::error::behavior-compare did not produce behavior-report.md"
+            exit 1
           fi
           failed="$(grep -oE '^- \*\*Failed:\*\* [0-9]+' "$report" | grep -oE '[0-9]+' | head -n 1 || true)"
           if [ -z "$failed" ]; then
-            echo "::warning::Could not parse the Failed count from behavior-report.md — gate passes"
-            exit 0
+            echo "::error::Could not parse the Failed count from behavior-report.md"
+            exit 1
           fi
           if [ "$baseline" = "bootstrap" ] || [ -z "$baseline" ]; then
-            echo "::notice::Behavior-compare baseline not established. Observed FAIL count: ${failed}. To activate the regression gate, commit ${failed} as the last line of oa4rust/tests/behavior_comparison/fail_baseline."
+            echo "::notice::Behavior-compare baseline not established. Observed FAIL count: ${failed}. To activate the regression gate, commit ${failed} as the last line of oa4rust/backend/tests/behavior_comparison/fail_baseline."
             exit 0
           fi
           if [ "$failed" -gt "$baseline" ]; then
@@ -456,7 +481,7 @@ jobs:
     timeout-minutes: 10
     defaults:
       run:
-        working-directory: oa4rust
+        working-directory: oa4rust/backend
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - name: Set up Python

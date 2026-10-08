@@ -1,0 +1,20 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
+//! Pre-build script: ensures web/dist exists before Rust compilation.
+//! Called via Cargo.toml build = "scripts/pre_build.rs"
+
+fn main() {
+    let web_dist = match std::env::var("OA4RUST_WEB_DIST") {
+        Ok(v) => v,
+        Err(_) => "../../frontend/dist/web".to_string(),
+    };
+    let dist_path = format!("../../{}", web_dist);
+    println!("cargo:rerun-if-env-changed=OA4RUST_WEB_DIST");
+    println!("cargo:rerun-if-changed={}", dist_path);
+    if !std::path::Path::new(&dist_path).exists() {
+        eprintln!(
+            "Warning: Frontend not built. Run `cd oa4rust && pnpm build` first, or set OA4RUST_WEB_DIST."
+        );
+    }
+}

@@ -255,14 +255,19 @@ class ActiveSampler:
         # 识别覆盖不足的类型
         underrepresented = self.identify_underrepresented(items)
         
+        # L191：问题类型面预计算——旧代码在「每个覆盖不足类型 × 每条数据」的内层循环里
+        # 对同一条 item 反复调 _analyze_question_type（纯函数、同输入同输出），k 个
+        # question_type 档就是 k 倍重复；预计算一次成索引数组，内层只做 O(1) 查表。
+        qtypes = [self._analyze_question_type(item.get("instruction", "")) for item in items]
+        
         # 为每个覆盖不足的类型找到代表性的 seed
         recommended_seeds = []
         for ur_type in underrepresented[:top_k]:
             category, value = ur_type.split(":")
             
-            for item in items:
+            for i, item in enumerate(items):
                 if category == "question_type":
-                    if self._analyze_question_type(item.get("instruction", "")) == value:
+                    if qtypes[i] == value:
                         recommended_seeds.append(item)
                         break
                 elif category == "length":

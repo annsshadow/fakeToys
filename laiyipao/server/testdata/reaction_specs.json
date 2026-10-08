@@ -5,10 +5,10 @@
     "base_coef": 60,
     "attack_weight_pct": 300,
     "status_duration_ms": 0,
-    "aoe_radius": 120,
+    "aoe_radius": 0,
     "dispel_shield": true,
     "amplify_pct": 0,
-    "descr": "范围伤害并驱散护盾"
+    "descr": "驱散护盾并造成反应伤害"
   },
   {
     "key": "overheat",
@@ -16,10 +16,10 @@
     "base_coef": 55,
     "attack_weight_pct": 300,
     "status_duration_ms": 1500,
-    "aoe_radius": 90,
+    "aoe_radius": 0,
     "dispel_shield": false,
     "amplify_pct": 0,
-    "descr": "爆炸并眩晕"
+    "descr": "眩晕 1.5 秒并造成反应伤害"
   },
   {
     "key": "burn_cloud",
@@ -27,10 +27,10 @@
     "base_coef": 40,
     "attack_weight_pct": 250,
     "status_duration_ms": 0,
-    "aoe_radius": 100,
+    "aoe_radius": 0,
     "dispel_shield": false,
     "amplify_pct": 0,
-    "descr": "生成持续火区"
+    "descr": "造成反应伤害"
   },
   {
     "key": "superconduct",
@@ -60,10 +60,10 @@
     "base_coef": 35,
     "attack_weight_pct": 200,
     "status_duration_ms": 0,
-    "aoe_radius": 150,
+    "aoe_radius": 0,
     "dispel_shield": false,
     "amplify_pct": 0,
-    "descr": "把元素层数传播给周围敌人"
+    "descr": "造成反应伤害"
   },
   {
     "key": "armor_break",
@@ -74,6 +74,6 @@
     "aoe_radius": 0,
     "dispel_shield": false,
     "amplify_pct": 0,
-    "descr": "击退并削减护甲"
+    "descr": "造成反应伤害"
   }
 ]

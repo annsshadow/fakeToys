@@ -1,0 +1,267 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+gen_mcp_tools.py — 从 oa4rust crates 源码扫描路由定义，生成 MCP 工具注册代码。
+
+输出：
+  - crates/mcp_server/src/generated_routes.rs（Rust 代码，可直接 include!）
+
+用法：
+  python scripts/gen_mcp_tools.py
+"""
+
+import re
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+CRATES_DIR = ROOT / "crates"
+OUTPUT_FILE = CRATES_DIR / "mcp_server" / "src" / "generated_routes.rs"
+
+# 权限级别映射（路径前缀 -> 是否需要认证）
+PUBLIC_PREFIXES = [
+    "/api/authentication",
+    "/api/authentication/captcha",
+    "/api/authentication/oauth",
+    "/api/authentication/code",
+    "/api/authentication/refresh",
+    "/api/reset",
+    "/api/secret/check",
+    "/api/secret/set",
+    "/health",
+]
+
+def is_public_path(path: str) -> bool:
+    for prefix in PUBLIC_PREFIXES:
+        if path.startswith(prefix):
+            return True
+    return False
+
+
+def strip_rust_comments(text: str) -> str:
+    """剥离 Rust 注释（// 行注释、/* */ 块注释），保留字符串/字符字面量。
+
+    必需：十类功能1 安全重设计起，check/password 等路由在 `.route( ... )` 的
+    左括号与路径字面量之间插入了 `//` 说明注释。旧实现直接 `re.sub('\\s+',' ',text)`
+    压平空白后匹配 `\\.route\\(\\s*"([^"]+)"`，注释夹在 `(` 与 `"path"` 之间导致
+    正则失配 → 该路由被漏扫，整文件再生即净删路由。故先剥注释再压平。
+    逐字符扫描以区分字符串/字符字面量内的 `//`、`/*`（非注释）。
+    """
+    out = []
+    i, n = 0, len(text)
+    in_str = False
+    in_char = False
+    while i < n:
+        c = text[i]
+        two = text[i:i + 2]
+        if in_str:
+            out.append(c)
+            if c == "\\" and i + 1 < n:
+                out.append(text[i + 1])
+                i += 2
+                continue
+            if c == '"':
+                in_str = False
+            i += 1
+            continue
+        if in_char:
+            out.append(c)
+            if c == "\\" and i + 1 < n:
+                out.append(text[i + 1])
+                i += 2
+                continue
+            if c == "'":
+                in_char = False
+            i += 1
+            continue
+        if c == "/":
+            if two == "//":
+                j = i + 2
+                while j < n and text[j] != "\n":
+                    j += 1
+                i = j  # 保留换行符本身
+                continue
+            if two == "/*":
+                j = i + 2
+                while j + 1 < n and not (text[j] == "*" and text[j + 1] == "/"):
+                    j += 1
+                i = j + 2 if j + 1 < n else n
+                out.append(" ")
+                continue
+            out.append(c)
+            i += 1
+            continue
+        if c == '"':
+            in_str = True
+            out.append(c)
+            i += 1
+            continue
+        if c == "'":
+            in_char = True
+            out.append(c)
+            i += 1
+            continue
+        out.append(c)
+        i += 1
+    return "".join(out)
+
+def parse_routes_from_file(filepath: Path) -> list:
+    """从 Rust 源码中提取路由定义。"""
+    try:
+        text = filepath.read_text(encoding="utf-8")
+    except Exception:
+        return []
+
+    routes = []
+    # Flatten multi-line .route() calls before matching. 先剥离注释（.route( 与路径串间
+    # 可能夹 // 说明注释），再压平空白，否则正则漏扫被注释夹断的路由。
+    text_flat = re.sub(r'\s+', ' ', strip_rust_comments(text))
+    # 统一解析：定位每个 .route("path", <handler-expr>) 的 handler 表达式，
+    # 再从表达式里抽出所有链式 HTTP 方法。此前的实现有两处漏洞：
+    #   ① single_pattern 只取链首方法 —— get(h).put(h2).delete(h3) 只记 GET；
+    #   ② multi_pattern 仅认「首方法为 put/delete/patch 的恰好两段链」。
+    # 结果三方法 CRUD（get.put.delete）在 MCP 工具表里丢掉 PUT/DELETE，
+    # 令工具面欠表达、契约漂移守卫读到假错配。改为「先切 route 参数、再枚举链上全部方法」。
+    method_call = re.compile(r'(?:axum::routing::)?\b(get|post|put|delete|patch|head|options)\s*\(\s*([\w:]+)')
+    for m in re.finditer(r'\.route\(\s*"([^"]+)"\s*,', text_flat):
+        path = m.group(1)
+        # handler 表达式：从方法参数起到本 route 的配平右括号止（.route( 已吃掉一层）
+        start = m.end()
+        depth = 1
+        i = start
+        while i < len(text_flat) and depth > 0:
+            ch = text_flat[i]
+            if ch == '(':
+                depth += 1
+            elif ch == ')':
+                depth -= 1
+            i += 1
+        expr = text_flat[start:i]
+        seen = set()
+        for mm in method_call.finditer(expr):
+            method_str = mm.group(1).upper()
+            if method_str in seen:
+                continue
+            seen.add(method_str)
+            routes.append((path, method_str, mm.group(2)))
+    return routes
+
+
+def extract_crate_name(filepath: Path) -> str:
+    """从文件路径提取 crate 名称。"""
+    parts = filepath.parts
+    # crates/<crate_name>/src/...
+    for i, part in enumerate(parts):
+        if part == "crates" and i + 1 < len(parts):
+            return parts[i + 1]
+    return "unknown"
+
+def path_to_tool_name(crate: str, path: str, method: str) -> str:
+    """将路由路径转换为 MCP 工具名称。
+    使用完整路径生成唯一名称，避免多 crate 共享同一路径前缀时命名冲突。
+    工具名格式：legacy_{crate}_{path_snake_case}
+    """
+    p = path.replace("/api/", "")
+    parts = p.split("/")
+    tool_parts = []
+    for part in parts:
+        param_match = re.match(r"\{(.+?)\}", part)
+        if param_match:
+            tool_parts.append(param_match.group(1).lower())
+        else:
+            s = re.sub(r'([A-Z])', r'_\1', part).lower().strip("_")
+            if s and (not tool_parts or tool_parts[-1] != s):
+                tool_parts.append(s)
+    return f"legacy_{crate}_{'_'.join(tool_parts)}"
+
+def extract_path_params(path: str) -> list:
+    """从路径提取路径参数名称。"""
+    return re.findall(r"\{(.+?)\}", path)
+
+def infer_body_params(method: str, path: str) -> list:
+    """根据 HTTP method 推断 body 参数。"""
+    if method in ("GET", "HEAD"):
+        return []
+    # POST/PUT/DELETE 通常有 body
+    # 简单启发式：根据路径段推断常见参数名
+    params = []
+    path_lower = path.lower()
+    if "password" in path_lower:
+        params.append("password")
+    if "credential" in path_lower:
+        params.append("credential")
+    if "name" in path_lower:
+        params.append("name")
+    if "token" in path_lower:
+        params.append("token")
+    return params
+
+def main():
+    all_routes = []
+
+    # 扫描所有 crate 的 src 目录
+    for crate_dir in sorted(CRATES_DIR.iterdir()):
+        if not crate_dir.is_dir():
+            continue
+        src_dir = crate_dir / "src"
+        if not src_dir.is_dir():
+            continue
+
+        crate_name = crate_dir.name
+        for rs_file in src_dir.rglob("*.rs"):
+            routes = parse_routes_from_file(rs_file)
+            for path, method, handler in routes:
+                all_routes.append({
+                    "crate": crate_name,
+                    "path": path,
+                    "method": method,
+                    "handler": handler,
+                })
+
+    # 去重
+    seen = set()
+    unique_routes = []
+    for r in all_routes:
+        key = (r["crate"], r["path"], r["method"])
+        if key not in seen:
+            seen.add(key)
+            unique_routes.append(r)
+
+    # 生成 Rust 代码
+    lines = []
+    lines.append("// Copyright (C) 2026 annsshadow")
+    lines.append("// SPDX-License-Identifier: AGPL-3.0-or-later")
+    lines.append("// AUTO-GENERATED by scripts/gen_mcp_tools.py — DO NOT EDIT")
+    lines.append("// This file defines GENERATED_ROUTE_DEFS as a Vec<RouteDef>")
+    lines.append("")
+    lines.append("/// 自动生成的 MCP 工具路由定义（Vec 版本，避免宏依赖）")
+    lines.append("pub static GENERATED_ROUTE_DEFS: &[RouteDef] = &[")
+
+    for r in sorted(unique_routes, key=lambda x: (x["crate"], x["method"], x["path"])):
+        tool_name = path_to_tool_name(r["crate"], r["path"], r["method"])
+        path_params = extract_path_params(r["path"])
+        body_params = infer_body_params(r["method"], r["path"])
+        http_method = r["method"].capitalize()
+        requires_auth = not is_public_path(r["path"])
+
+        lines.append(f'    RouteDef {{')
+        lines.append(f'        tool_name: "{tool_name}",')
+        lines.append(f'        method: HttpMethod::{http_method},')
+        lines.append(f'        path: "{r["path"]}",')
+        lines.append(f'        description: "{r["handler"]} handler",')
+        lines.append(f'        path_params: &[{", ".join(f'"{p}"' for p in path_params)}],')
+        lines.append(f'        body_params: &[{", ".join(f'"{p}"' for p in body_params)}],')
+        lines.append(f'    }},')
+
+    lines.append("];")
+    lines.append("")
+    lines.append(f"/// 生成的工具总数")
+    lines.append(f"pub const GENERATED_TOOL_COUNT: usize = {len(unique_routes)};")
+
+    OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
+    OUTPUT_FILE.write_text("\n".join(lines), encoding="utf-8")
+
+    print(f"Generated {len(unique_routes)} MCP tool definitions -> {OUTPUT_FILE}")
+
+if __name__ == "__main__":
+    main()

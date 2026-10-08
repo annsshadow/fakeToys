@@ -387,13 +387,36 @@ const ATTRIBUTE_POOL: Array<Omit<Card, 'id' | 'kind'>> = [
   {
     rarity: 'rare',
     name: '散热涂层',
-    descr: '热量上限 +20',
-    effect: { kind: 'heat_cap', value: 20n },
+    descr: '热量上限 +20%',
+    // ⚠️ 第 72 轮：20n → 200n。
+    //
+    // `heat_cap` 的 value 按**千分比**消费：
+    // `get cap() { return (HEAT_MAX * (1000 + capBonus)) / 1000 }`
+    // 于是 `20n` 只把上限从 100 抬到 **102**，而 descr 承诺「+20」= 120。
+    //
+    // 玩家拿到这张卡的实际收益是标称的 **1/10**。
+    //
+    // ⚠️ 这是 README 工程约束 13 记的那个单位错误的**另一半**：
+    // 那次修的是「`cap = HEAT_MAX + capBonus` 把千分比当绝对值加」，
+    // getter 修对了，**内容表这一侧的值没跟着改**。
+    //
+    // 兄弟卡的值都是千分比且与 descr 对齐：
+    //   attack 150n ↔ '+15%'、element_coef 200n ↔ '+20%'
+    //   crit 80n ↔ '+8%'、armor 100n ↔ '+10%'
+    // 只有这张是 20n。
+    //
+    // 而 `element_cap` 那张的 1n **确实是绝对值**（加进 elementCap 而非
+    // permille），所以那一栏的单位约定本来就是混的 ——
+    // 那正是需要守卫的地方（`attribute_card_units.test.ts`）。
+    effect: { kind: 'heat_cap', value: 200n },
   },
   {
     rarity: 'epic',
     name: '元素容器',
     descr: '单元素层数上限 +1',
+    // ⚠️ 这里 1n 是**绝对值**而不是千分比 —— 与上面那张不同。
+    // `applyAttribute` 把它加进 `attacker.elementCap`（层数），
+    // 而 capBonus 是千分比。同一个池子里两种单位，靠 kind 区分。
     effect: { kind: 'element_cap', value: 1n },
   },
   {

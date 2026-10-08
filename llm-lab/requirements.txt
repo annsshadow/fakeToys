@@ -1,0 +1,3 @@
+# minigrad 原理轨
+numpy>=1.24
+pytest>=7.0

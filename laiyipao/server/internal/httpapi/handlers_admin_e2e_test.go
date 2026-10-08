@@ -16,8 +16,13 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// newAdmin 建一个测试管理员并走真实登录拿令牌。
+// newAdmin 建一个测试管理员并走真实登录拿令牌（默认 role='admin'）。
 func (e *e2e) newAdmin(t *testing.T, tag string) (int64, string) {
+	return e.newAdminRole(t, tag, "admin")
+}
+
+// newAdminRole 建指定角色的测试管理员并登录拿令牌（第 127 轮：readonly 门禁守卫）。
+func (e *e2e) newAdminRole(t *testing.T, tag, role string) (int64, string) {
 	t.Helper()
 	username := fmt.Sprintf("e2e_admin_%s_%d", tag, time.Now().UnixNano()%1_000_000)
 	password := "e2e-admin-pass-123"
@@ -27,8 +32,8 @@ func (e *e2e) newAdmin(t *testing.T, tag string) (int64, string) {
 	}
 	var adminID int64
 	if err := e.pool.QueryRow(context.Background(),
-		`INSERT INTO admin_users (username, password_hash, role) VALUES ($1,$2,'admin') RETURNING id`,
-		username, string(hash)).Scan(&adminID); err != nil {
+		`INSERT INTO admin_users (username, password_hash, role) VALUES ($1,$2,$3) RETURNING id`,
+		username, string(hash), role).Scan(&adminID); err != nil {
 		t.Fatalf("建管理员失败：%v", err)
 	}
 	t.Cleanup(func() {
@@ -148,8 +153,21 @@ func TestE2EAdminUpdateLevelAndRegenerate(t *testing.T) {
 	}
 	status, _ = e.put(t, "/api/v1/admin/levels/1", tok, map[string]any{"unknown_key": 1})
 	if status != fiber.StatusBadRequest {
-		t.Errorf("白名单外字段应被忽略并判空 patch → 400，实际 %d", status)
+		t.Errorf("白名单外字段应 400，实际 %d", status)
 	}
+	//
+	// ⚠️ 第 107 轮改写了这条断言的**理由**。
+	//
+	// 原来写的是「白名单外字段应被**忽略**并判空 patch → 400」。
+	// 那句话描述的是「忽略」这个行为 —— 而忽略正是缺陷本身：
+	// 运营拼错字段名（`baseHP` / `hp`）时请求照样成功，
+	// 他会以为字段改了。
+	//
+	// 现在语义是：**任何**一个键不合法 → **整单拒绝**，
+	// 而不是「跳过它、执行其余」。
+	//
+	// 同一个「只有全部非法才报错」的漏洞，
+	// 在「合法 + 非法」混合时是抓不到的 —— 而混合恰恰是调参时最常见的形状。
 
 	// 合法更新（数值走 float64，模拟真实 JSON 反序列化形状）
 	status, body := e.put(t, "/api/v1/admin/levels/1", tok, map[string]any{
@@ -167,13 +185,19 @@ func TestE2EAdminUpdateLevelAndRegenerate(t *testing.T) {
 		t.Errorf("enabled 应写库为 true，实际 %d", got)
 	}
 
-	// regenerate 恢复生成器默认
+	// 第 116 轮起：regenerate **保留**运营自定义的 base_hp（与后台确认文案一致），
+	// 只把生成器内容（波次/难度/星级/地形）同步回来。
+	// 旧断言「base_hp 恢复生成器默认值」记录的是缺陷行为，本轮翻案。
 	status, body = e.post(t, "/api/v1/admin/levels/regenerate", tok, nil)
 	if status != 200 || num(body, "generated") != 100 {
 		t.Errorf("regenerate 应生成 100 关：%d %v", status, body)
 	}
-	if got := e.scalarInt(t, `SELECT base_hp FROM levels WHERE id = 1`); got == 5000 {
-		t.Error("regenerate 后 base_hp 应恢复生成器默认值")
+	if got := e.scalarInt(t, `SELECT base_hp FROM levels WHERE id = 1`); got != 5000 {
+		t.Errorf("regenerate 后应**保留**运营自定义的 base_hp=5000，实际 %d", got)
+	}
+	// 波次/难度这类生成器内容仍被同步回生成器值（第 1 关 wave_count=5）
+	if got := e.scalarInt(t, `SELECT wave_count FROM levels WHERE id = 1`); got != 5 {
+		t.Errorf("regenerate 后 wave_count 应同步回生成器值 5，实际 %d", got)
 	}
 }
 
@@ -214,6 +238,17 @@ func TestE2EAdminUpdateSkill(t *testing.T) {
 	}
 	if got := e.scalarInt(t, `SELECT base_damage FROM skills WHERE id = 1`); got != 42 {
 		t.Errorf("base_damage 应写库为 42，实际 %d", got)
+	}
+	//
+	// ⚠️ 第 120 轮：响应必须带 `skill`（回读行），与后台契约 { skill: AdminSkill } 一致。
+	// 修前 handler 退回整个 adminSkills（{items, recipes}），res.skill 恒 undefined，
+	// 后台改完技能表行停旧值却弹「已保存」。
+	skillObj, ok := body["skill"].(map[string]any)
+	if !ok {
+		t.Fatalf("更新响应必须带 skill 对象（回读行），实际 %v", body)
+	}
+	if skillObj["name"] != "E2E技能" || int64(skillObj["base_damage"].(float64)) != 42 {
+		t.Errorf("回读 skill 应与写入一致：name=%v base_damage=%v", skillObj["name"], skillObj["base_damage"])
 	}
 }
 

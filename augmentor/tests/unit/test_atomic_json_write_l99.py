@@ -46,7 +46,47 @@ REAL_REPLACE = os.replace
 # `open(..., 'w')` 的位置。本轮只把两处**读侧会把截断变成错误答案**的边换成原子写
 # （`api/deps.py` 与 `augmentor/checkpoint.py`），其余按判据留在 A182：读侧要么报异常、
 # 要么按未命中重算，半份窗口是可恢复代价而非坏答案。
-NON_ATOMIC_JSON_DUMP_SITES_MAX = 43
+# L160（B230）：DiskCache 元数据写边收原子写（读侧无 except 且构造必调，
+# 半份窗口 = 第二实例构造当场崩）；其缓存值写边按判据口径豁免（get 按未命中
+# 重算，条件豁免已机器化进 l160 守卫）。cache.py 的 2 处里现量只降这 1 处。
+# L161（B231）：VersionControl 索引两边（默认索引写 + _save_index）收原子写
+# （读侧 _load_index 无 except 且 __init__ 必调，同 L160 形状）；其 data/version
+# 快照两边豁免（读侧 get_version_data 响亮抛异常，条件豁免机器化进 l161 守卫）。
+# version_control.py 的 4 处计数边现量降 2。
+# L162（B232）：BackupManager 索引两边收原子写（同 L160/L161 形状）；快照与
+# 恢复输出两边豁免（读侧响亮抛异常），其「同名覆盖写中途崩毁既有」窗口是判据
+# 口径未覆盖的另一档，记档待裁。backup.py 的 4 处计数边现量降 2。
+# L163（B233）：导出物交付面收边——export.py 的四条 JSON 边收原子写（输出落
+# web.data_roots 白名单目录，数据管理端点按 *.json 扫同一目录 = 写窗口内读者
+# 拿半份「文件不是合法 JSON」错误答案）；JSONL 文本边同收（工具面新增
+# atomic_write_text，临时件命名同口径避开两种扫描）。四条边写盘字节从
+# indent=2 变紧凑序列化，读侧只解析不读格式，既有测试面无格式断言（实证）。
+# L164（B234）：数据集变换三边（merge/sample/split）收原子写——API 与 CLI 两链
+# 输出经白名单落数据根，同 L163 判据必收。dataset_ops.py 的 3 处计数边现量降 3。
+# L165（B235）：依赖登记两边收原子写（读侧 _load_file 无 except 且 __init__ 必调，
+# L160 同构第四份；截断静默回落 default 的另一路也封死——登记凭空消失是 checkpoint
+# 症状）。dependency.py 的 2 处计数边现量降 2。ops/io/analysis/quality 等 CLI 报告
+# 一次性写边按判据豁免（同步等待、任意路径、无扫描链），A182 逐面分档记档。
+# L166（B236）：数据集工具路由的落盘口 _dump 收原子写（写盘变换类六端点共用
+# helper，产物落白名单数据根 = L163 同判据）。data_ops 命令 --output 报告边同轮
+# 分档豁免（CLI 报告一次性写）。api/routes 现量降 1。
+# L167（B237）：增强导出的九格式共用落盘口 _export_json 收原子写（导出物交付
+# 面同 L163）；ensure_ascii/indent 是活选项（ExportOptions 契约），atomic_write_json
+# 参数化（默认紧凑与既有调用零变化）、选项原样透传。export_enhanced.py 现量降 1。
+# 现量 28 含 atomic_write.py 工具本体 2 处（豁免排除后 26）；L167 净收
+# export_enhanced 1 处（27 + 1 拆分 - 2 排除 = 26）。
+# L168（B238）：管线交付口两边（process/异步变体的最终输出）与迁移输出边收原子
+# 写（API 链白名单数据根 = L163 同判据必收）；tracker/quality_trend 的「历史记录 +
+# 静默吞」复合形状记档待单独轮裁；benchmark/comparison/faiss 等读侧响亮档有据豁免。
+# migration.py 现量降 1、pipeline.py 现量降 2。
+# L169（B239）：实验记录与趋势历史两写边收原子写——这两处读侧契约本来就是静默
+# 的（损坏→None / 不应崩溃 / L146 检疫），收原子不翻案：半份窗口消失后损坏只剩
+# 磁盘故障一途，写失败仍被 except 吞（契约保持），检疫保留为纵深防御。
+# tracker.py 与 quality_trend.py 现量各降 1。
+# L170（B240）：L162 记档的「同名覆盖毁既有」待裁档裁定并收边（备份/恢复的语义
+# 就是数据保全——语义自洽非扩判据）；backup.py 的快照与恢复输出两边现量降 2，
+# A182 逐面收至此实质完成（剩余全为有据豁免：CLI 报告面/响亮读侧/工具本体）。
+NON_ATOMIC_JSON_DUMP_SITES_MAX = 19
 
 
 def _legacy_write_json(file_path: Path, data):
@@ -322,6 +362,12 @@ class TestThroatsAreWired:
         sites = []
         for pkg in ("augmentor", "api"):
             for path in sorted((root / pkg).rglob("*.py")):
+                if path.name == "atomic_write.py":
+                    # L167 工具本体豁免：atomic_write_json / atomic_write_text
+                    # 写的是同目录临时件（.tmp- 中段），不是产品写边——工具自身
+                    # 的 json.dump 属实现细节（L167 参数化后单行拆两支，+1 是
+                    # 形状噪声）。
+                    continue
                 lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
                 for i, line in enumerate(lines, start=1):
                     if "json.dump(" not in line or "json.dumps(" in line:

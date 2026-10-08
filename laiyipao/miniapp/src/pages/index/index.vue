@@ -114,7 +114,11 @@ const menus = [
   { path: '/pages/me/me', label: '我的', icon: '👤' },
 ]
 
-/** 构筑评分五维进度。短板用醒目色，直接引导玩家去补。 */
+/** 构筑评分五维进度。短板用醒目色，直接引导玩家去补。
+ * 分母必须与服务端 BuildRating 各维上界一致（domain/power.go）：
+ *   元素 0..5 / 反应 0..7 / 专精 0..8 / 装备契合 0..18 / 机制深度 0..8。
+ * 第 138 轮修：① 此前只有 4 维（漏 mechanic_depth）；② equipment_synergy
+ * 分母误写 6（真实上界 18），导致契合度条形永远虚高（6/18 就显示满格）。 */
 const dims = computed(() => {
   const r = store.buildRating
   return [
@@ -138,9 +142,15 @@ const dims = computed(() => {
     },
     {
       label: '装备契合',
-      value: `${r?.equipment_synergy ?? 0}`,
-      pct: Math.min(100, ((r?.equipment_synergy ?? 0) / 6) * 100),
+      value: `${r?.equipment_synergy ?? 0}/18`,
+      pct: Math.min(100, ((r?.equipment_synergy ?? 0) / 18) * 100),
       color: '#ffd33d',
+    },
+    {
+      label: '机制深度',
+      value: `${r?.mechanic_depth ?? 0}/8`,
+      pct: ((r?.mechanic_depth ?? 0) / 8) * 100,
+      color: '#ff7b72',
     },
   ]
 })

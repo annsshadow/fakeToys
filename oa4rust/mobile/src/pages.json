@@ -1,0 +1,42 @@
+{
+  "pages": [
+    { "path": "pages/index/index", "style": { "navigationBarTitleText": "工作台" } },
+    { "path": "pages/message/message", "style": { "navigationBarTitleText": "消息" } },
+    { "path": "pages/chat/chat", "style": { "navigationBarTitleText": "即时通讯" } },
+    { "path": "pages/process/process", "style": { "navigationBarTitleText": "审批" } },
+    { "path": "pages/process/start", "style": { "navigationBarTitleText": "发起流程" } },
+    { "path": "pages/attendance/attendance", "style": { "navigationBarTitleText": "考勤打卡" } },
+    { "path": "pages/doc/doc", "style": { "navigationBarTitleText": "文档" } },
+    { "path": "pages/contacts/contacts", "style": { "navigationBarTitleText": "通讯录" } },
+    { "path": "pages/meeting/meeting", "style": { "navigationBarTitleText": "会议" } },
+    { "path": "pages/calendar/calendar", "style": { "navigationBarTitleText": "日历" } },
+    { "path": "pages/bbs/bbs", "style": { "navigationBarTitleText": "论坛", "enablePullDownRefresh": true } },
+    { "path": "pages/bbs/topic", "style": { "navigationBarTitleText": "主题详情" } },
+    { "path": "pages/bbs/new", "style": { "navigationBarTitleText": "发布主题" } },
+    { "path": "pages/collect/collect", "style": { "navigationBarTitleText": "我的收藏" } },
+    { "path": "pages/browse/browse", "style": { "navigationBarTitleText": "浏览" } },
+    { "path": "pages/search/search", "style": { "navigationBarTitleText": "搜索" } },
+    { "path": "pages/recycle/recycle", "style": { "navigationBarTitleText": "回收站" } },
+    { "path": "pages/mine/mine", "style": { "navigationBarTitleText": "我的" } },
+    { "path": "pages/login/login", "style": { "navigationBarTitleText": "登录" } }
+  ],
+  "tabBar": {
+    "color": "#90979f",
+    "selectedColor": "#2d8cf0",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "black",
+    "list": [
+      { "pagePath": "pages/index/index", "text": "工作台" },
+      { "pagePath": "pages/message/message", "text": "消息" },
+      { "pagePath": "pages/process/process", "text": "审批" },
+      { "pagePath": "pages/attendance/attendance", "text": "考勤" },
+      { "pagePath": "pages/mine/mine", "text": "我的" }
+    ]
+  },
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "OA4Rust",
+    "navigationBarBackgroundColor": "#ffffff",
+    "backgroundColor": "#f5f7fa"
+  }
+}

@@ -113,8 +113,8 @@ CEILING = {
 #: 下界取整留了余量 —— 这两个数是**好引用的规模**，不是缺陷计数，删引用是改进、不该被
 #: 反空转下界卡住；它只负责证明「普查真的看见了成百条引用」，而不是钉住总数。
 FLOOR = {
-    ARCH: {"line_refs": 40, "file_tokens": 200},
-    LEDGER: {"line_refs": 270, "file_tokens": 1050},
+    ARCH: {"line_refs": 38, "file_tokens": 200},
+    LEDGER: {"line_refs": 263, "file_tokens": 1050},
 }
 
 #: **现量**读数（`Temp/l79q/buckets.py` 的最后一个 run）。凡是在注释、`docs/ARCHITECTURE.md`
@@ -184,7 +184,7 @@ FLOOR = {
 #: 架构文档 `file_tokens` 219 → **221**、`file_unique` 175 → 177（§6 新增那一格点名两份产品
 #: 文件），`line_refs` 48 与 `code_but_no_name_match` 37 **未动**。账本 `line_refs` 287 →
 #: **292**（+5 全部来自 A143 那一行，且**五条全落 `name_hit`**：`api/routes/export.py:153` /
-#: `augmentor/cli/parser.py:50` / `augmentor/export.py:235` / `augmentor/export_enhanced.py:27` /
+#: `augmentor/cli/parser.py:50` / `augmentor/export.py:235` / augmentor/export_enhanced.py 的 ExportFormat（原 27 行，L167 插入后降名锚） /
 #: `tests/integration/test_cli_merged_commands.py:1081`）、`file_tokens` 1218 → **1236**（+18：
 #: 进度行、L84 日志块、A143 与 B2 两处注解；其中 5 个是 `Temp/l84q/` 探针名，落 `scratch_artifact`
 #: 而不进缺陷档）、`code_but_no_name_match` 170 → **170**。**这一格本轮是被判据抓过一次才对的**：
@@ -438,7 +438,17 @@ FLOOR = {
 #: 「记下两笔欠账」，113 → 114 只是同一笔欠账被我重复抄了一遍，两者不该混在同一格里 —— 棘轮抬一次要有
 #: 新事实，不能只有新字数。摘掉后复量回 **113**。
 MEASURED = {
-    ARCH: {"line_refs": 42, "file_tokens": 244, "code_but_no_name_match": 37},
+    #: L154 面位移（42 → 40）：config.py 插 11 个 `__post_init__`、config_validator.py 补 40 行
+    #: 规格后，架构文档 2 条指向 load_config 尾段的行引用的被引行换位、退出本档，按 L151 /
+    #: L153 先例降成名字锚（「原 1014 行」），file_tokens 244 → **246**（两条裸文件名入档），
+    #: code_but_no_name_match 34 原地未动。案面=产品布局变更，按「数字搬进常量」条款重钉。
+    #: L163 面位移（line_refs 40 → 39、file_tokens 246 → 247）：export.py 收原子写
+    #: 插 import 后，架构文档里 max_workers 形参清单的 export.py 行号格落到非代码行，
+    #: 按先例降级名锚——行号引用退出 line_refs 桶（−1），文件名反引号 token 转入
+    #: file_tokens 桶（+1），漂移桶不动（该格原本就在其中）。
+    ARCH: {"line_refs": 39, "file_tokens": 247, "code_but_no_name_match": 34},
+    #: L153 面位移（37 → 34）：config/quality 接 require_ratio_list 插行后，3 条 config.py
+    #: 历史行引用的被引行换位、退出本档。案面=产品布局变更，按「数字搬进常量」条款重钉。
     #: **L100 批②（产品码插行 ⇒ 账本 A144 那一行被顶红，三格同时动）**：批② 给 `augmentor/checkpoint.py`
     #: 的 `__init__` 与两处 docstring 插了行，账本里 A144 行那两组历史落点集体搬家，其中
     #: augmentor/checkpoint.py:218（L85 落点，早已是历史）落到一个空行上 ⇒ `dead_line` 0 → 1，
@@ -462,7 +472,68 @@ MEASURED = {
     #: 引用由漂移桶搬回全绿，code_but_no_name_match 161 → **160**，line_refs 296 与
     #: file_tokens 1640 一格未动。（本注记按 A153 纪律只写裸文本行号，不套反引号，
     #: 免得记账行自己变成新 dead_line——此形此文件已复现三次。）
-    LEDGER: {"line_refs": 296, "file_tokens": 1640, "code_but_no_name_match": 160},
+    #: L162 面位移（285 → 284、file_tokens 1646 → 1647、漂移 146 → 145）：
+    #: backup.py 收原子写插 import 与改写 _save_index docstring 后，账本里一条
+    #: 历史读数清单的 backup.py 行号格（L42 落点）落到非代码行，按 L151 / L153 /
+    #: L154 / L156 先例降成「文件名（原 N 行，降级名锚）」：行号引用退出
+    #: line_refs 与漂移两桶（各 −1），文件名反引号 token 转入 file_tokens 桶
+    #: （+1，先例同形）。
+    #: L163 面位移（line_refs 284 → 283、file_tokens 1647 → 1648）：export.py 与
+    #: atomic_write.py 收原子写插行后，账本里一条 Exporter.export 的行号格落到
+    #: 别的代码行，按先例降级名锚——行号引用退出 line_refs 与漂移两桶（漂移
+    #: 回 145），文件名 token 转入 file_tokens（+1）。
+    #: L164 面位移（line_refs 283 → 277、file_tokens 1648 → 1654、漂移 145 → 142）：
+    #: dataset_ops.py 收原子写插 import 后，账本里六条历史读数格（一条入参判定
+    #: 清单格、两条 largest_remainder 调用方格、三条 minimum_each 调用方格）落到
+    #: 别的代码行，全部按先例降级名锚——行号引用退出 line_refs 与漂移两桶
+    #: （各 −6 与 −3），文件名 token 转入 file_tokens（+6）。
+    #: L167 面位移（line_refs 277 → 276、file_tokens 1654 → 1655）：export_enhanced.py
+    #: 收原子写插 import 后，A143 那一行的 ExportFormat 行号格落到空行，按先例降级
+    #: 名锚——行号引用退出 line_refs 桶（−1），文件名 token 转入 file_tokens（+1），
+    #: 漂移桶不动。
+    #: L168 面位移（line_refs 276 → 273、file_tokens 1655 → 1658、漂移 142 → 141）：
+    #: pipeline.py 收原子写插 import 后，A138 那行的一条行号格落到空行（降名锚）、
+    #: 另两条 _init_components 的行号格落到别的代码行（降名锚）——行号引用退出
+    #: line_refs 桶（−3），文件名 token 转入 file_tokens（+3），漂移桶 −3（其中
+    #: 一条本就在漂移桶、两条由 dead_line 侧转入后同批降锚）。
+    #: L173 面位移（line_refs 273 → 271、file_tokens 1658 → 1660、漂移 141 → 143）：
+    #: converter.py 删死常数 4 行后，L23 那行的两条行号格（同一格两处引用）落到
+    #: 空行，按先例降级名锚——行号引用退出 line_refs 桶（−2），文件名 token 转入
+    #: file_tokens（+2），同两条格计入漂移桶（+2）。
+    #: L175 面位移（line_refs 271 → 270、file_tokens 1660 → 1661、漂移 143 → 145）：
+    #: search_enhanced.py 收方法清单判据插行后，一条 normalize_filters 调用点的
+    #: grep 读数格落空行（降级名锚）；漂移桶新增两条（插入区间顶进「指向真代码行
+    #: 但不是它说的那条」的既及格）。
+    #: L180 面位移（漂移 145 → 146）：A155② 给 api/routes 十个路由文件补
+    #: raise_internal_error 的 import（config/data/export 三个多行 import 块各 +1 行），
+    #: 产品行号下移使账本一条指向路由文件的行号格「指向真代码行但非所名」⇒ 漂移桶 +1。
+    #: 案面=产品布局变更，按「数字搬进常量」条款重钉；line_refs 270 / file_tokens 1661 未动。
+    #: L193/L194 面位移（漂移 146 → 149）：轮193 共引 import 前移与 L194 账本/ARCHITECTURE
+    #: 引用刷新（纯引用漂移，无内容语义变更）使账本五格读数「指向真代码行但非所名」：
+    #: system_ops.py 415 行（A42 行 L32 与 L44 校正两处读数格）2 条、system_ops.py 514 行
+    #: （A16 历史行）1 条、validation.py 697 行（A92 行 :639 格在 L189 改指后仍落本档）1 条、
+    #: auto_test.py 402-403 行（A91 边界① 行 385-386 格改指后落本档）1 条；
+    #: 旧格 validation.py 639 行与 auto_test.py 385-386 行随改指退出本档（−2）⇒ 净 +3。
+    #: 案面=文档引用漂移（账本读数出处记录，按 A127 口径不做批量改写），
+    #: 循 L180 先例按「数字搬进常量」条款重钉；line_refs 270 / file_tokens 1661 未动。
+    LEDGER: {"line_refs": 270, "file_tokens": 1661, "code_but_no_name_match": 149},
+    #: L156 面位移（290 → 285）：streaming.py 插 `StreamConfig.__post_init__` 后，账本 5 条
+    #: streaming.py 历史行引用（A145 行 2 条、A147 行 3 条）被引行换位、退出本档，按
+    #: L151 / L153 / L154 先例降成名字锚（「原 N 行」）：line_refs −5、漂移 147 →
+    #: **146**（降锚的一条不再走行匹配档）。案面=产品布局变更，按「数字搬进常量」条款重钉。
+    #: L154 面位移（292 → 290）：config.py / config_validator.py 插行后，账本 2 条历史行引用
+    #: （A102 行与 A119 行各一条）被引行换位、退出本档，按 L151 / L153 先例降成名字锚
+    #: （「原 1014 / 418 行」）：line_refs −2、file_tokens +2、code_but_no_name_match
+    #: 150 → **147**（换锚的两条不再走行匹配档，另 1 格为同批换写的连带读数）。
+    #: 案面=产品布局变更，按「数字搬进常量」条款重钉。
+    #: L150 面位移（160 → 157）：dataset_ops 的 _deduplicate 插行后，3 条历史行引用
+    #: 的被引行内容换位、退出本档。案面=产品布局变更，按「数字搬进常量」条款重钉。
+    #: L151 面位移（157 → 155 / line_refs 296 → 293 / file_tokens 1640 → 1643）
+    #: L153 面位移（155 → 150 / line_refs 293 → 292 / file_tokens 1643 → 1644）：config/quality
+    #: 插行使 5 条历史行引用换位（4 条退出本档、1 条 config.py:311 降名锚 ⇒ 行引用 −1、
+    #: 文件 token +1），逐格归因如上。：dedup/quality
+    #: 接 require_ratio 给 dedup.py 顶部插行，账本 3 条 dedup.py 历史行引用（:111/:626/:431）
+    #: 落空行被硬 0 档抓住，按 A127 先例降名锚（行引用 −3、文件 token +3），本档净 −2。
 }
 
 #: 日志块标题行上「下一轮才填得出自己哈希」的占位符。精确相等 = **只许有该填的那几条**。
@@ -770,8 +841,11 @@ class TestRatchetsAreExact:
         """**每一轮的提交哈希必须当轮回填**：忘了就当场红
 
         日志块开头写「`哈希待 L{n+1} 回填`」是允许的（自己那一轮的哈希还不存在），
-        但下一轮必须把它填掉 —— 所以非 0 的只许有本轮这一条。实测 L58..L71 共 14 条
-        从未回填（那是 A130 的历史欠账，补正文要用户拍），加本轮 = 15。
+        但下一轮必须把它填掉。L58..L71 共 **14 条**从未回填，是 A130 的历史欠账。
+        **L183 拍定：不动、永久记档**（补那 14 条历史正文属改历史账，哈希可现取但
+        那几轮的本账 numstat 与秒数已不可重算 ⇒ 只回填哈希会留「半条已填」新形状；
+        整段重述又改历史）⇒ 这 14 条钉成 PLACEHOLDER_CEILING=14 的终态欠账，只降不升。
+        本用例在「本轮占位符已回填」的稳态下测，故现量恰为 14（非 14+1）。
         """
         text = (ROOT / LEDGER).read_text(encoding="utf-8")
         found = HASH_PLACEHOLDER.findall(text)
@@ -1137,7 +1211,11 @@ BACKLOG_A_MISSING = {52}
 #: （`| ~~A184~~ |`），于是两档同时 +1 ⇒ 含删除线 101 → **102**、行首结案 86 → **87**，而差值
 #: 15 一格未动 —— 这正是把两个口径**分开钉**的理由：只钉一个的话，「行首结案」与「局部划掉」
 #: 两种形状谁动了看不出来，L98 那格撞到的 84/85 位移就是这么溜过去的。
-BACKLOG_A_CLOSED = 102
+BACKLOG_A_CLOSED = 107
+#: L157 回填（106 → 107）：A139 行收口划掉定级格（`~~M~~`），关闭数 +1。
+#: L156 回填（105 → 106）：A46 行收口划掉定级格（`~~S~~`），关闭数 +1。
+#: L154 回填（104 → 105）：A140 行收口划掉定级格（`~~M~~`），关闭数 +1。
+#: L153 回填（103 → 104）：A124 行收口划掉 S 格（`~~S~~`），关闭数 +1。#: L151 回填（102 → 103）：A125 行收口划掉 S 格（`~~S~~`），关闭数 +1。
 BACKLOG_A_CLOSED_AT_HEAD = 87
 #: Backlog B 现量：11 条竖线行 = 2 表头 + 7 条可编号 + 2 条带角标（B3① / ~~B3②~~）。
 BACKLOG_B_LINES = 11

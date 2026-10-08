@@ -11,6 +11,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -184,13 +185,20 @@ func TestAuditWritesRow(t *testing.T) {
 		t.Errorf("审计 username = %q，期望 %q", uname, username)
 	}
 
-	// detail 无法 JSON 化（channel）必须降级为 {}，而不是让主流程失败
+	// detail 无法 JSON 化（channel）不得让主流程失败，
+	// 且不得静默降级成 `{}`（第 125 轮：那与「本来无明细」不可区分，
+	// 审计行撒谎）。现在必须落 `{"detail_error": "..."}` 诚实记丢。
 	ts.Audit(ctx, adminID, "svc_audit_badjson", "t", make(chan int))
 	var raw []byte
+	var detailType string
 	if err := ts.pool.QueryRow(ctx,
-		`SELECT detail FROM admin_audit_logs WHERE admin_id = $1 AND action = 'svc_audit_badjson'`,
-		adminID).Scan(&raw); err != nil || string(raw) != "{}" {
-		t.Errorf("不可序列化 detail 应落 {}，实际 %q err=%v", raw, err)
+		`SELECT detail, jsonb_typeof(detail)
+		 FROM admin_audit_logs WHERE admin_id = $1 AND action = 'svc_audit_badjson'`,
+		adminID).Scan(&raw, &detailType); err != nil || detailType != "object" {
+		t.Errorf("不可序列化 detail 应落对象型 JSONB，实际 %q (type=%s) err=%v", raw, detailType, err)
+	}
+	if !strings.Contains(string(raw), "detail_error") {
+		t.Errorf("detail 必须带 detail_error 标记（第 125 轮修复），实际 %q", raw)
 	}
 }
 
@@ -350,6 +358,40 @@ func TestAdminGrantCurrency(t *testing.T) {
 	if _, err := ts.AdminGrantCurrency(ctx, uid, "diamonds", 1); !errors.Is(err, ErrBadInput) {
 		t.Errorf("未知货币应 ErrBadInput，实际 %v", err)
 	}
+
+	//
+	// ⚠️ 第 109 轮：符号必须进钱包流水。
+	// 修前无论正负，wallet_flows.reason 一律是 admin_grant、
+	// 审计一律是 grant_currency —— 负数就是**静默回收**，
+	// 事后翻审计分不清哪笔是扣款。
+	// 判据落在流水的 reason 列上（能直接观测的那一层）：
+	// 正数 → admin_grant，负数 → admin_revoke，0 → 拒绝。
+	if _, err := ts.AdminGrantCurrency(ctx, uid, "coin", 0); !errors.Is(err, ErrBadInput) {
+		t.Errorf("数量 0 应 ErrBadInput（0 的发放没有意义），实际 %v", err)
+	}
+	// 先补足 gem 库存，避免「余额不足」干扰对流水 reason 的判读
+	ts.grant(t, ctx, uid, map[string]int64{"gem": 500})
+	if _, err := ts.AdminGrantCurrency(ctx, uid, "gem", -100); err != nil {
+		t.Fatalf("负数（回收场景，老测试钉住的既有能力）应可执行：%v", err)
+	}
+	if got := ts.countFlowsByReason(t, ctx, uid, "admin_revoke"); got != 1 {
+		t.Errorf("负数发放应写 1 条 admin_revoke 流水，实际 %d", got)
+	}
+	if got := ts.countFlowsByReason(t, ctx, uid, "admin_grant"); got != 1 {
+		t.Errorf("本轮唯一的正数发放（gem +77）应有 1 条 admin_grant 流水，实际 %d", got)
+	}
+}
+
+// countFlowsByReason 数某用户某 reason 的 wallet_flows 行数。
+func (ts *testService) countFlowsByReason(t *testing.T, ctx context.Context, uid int64, reason string) int {
+	t.Helper()
+	var n int
+	if err := ts.db.Pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM wallet_flows WHERE user_id = $1 AND reason = $2`, uid, reason).
+		Scan(&n); err != nil {
+		t.Fatalf("数流水失败：%v", err)
+	}
+	return n
 }
 
 func TestAdminListBattles(t *testing.T) {
@@ -370,6 +412,29 @@ func TestAdminListBattles(t *testing.T) {
 	_, total, err := ts.AdminListBattles(ctx, uid, 1, 10, false)
 	if err != nil || total < 1 {
 		t.Fatalf("按用户+关卡过滤应命中：%d, %v", total, err)
+	}
+	// 第 123 轮：total_enemies 必须填上（生成器权威值），后台「守恒」列靠它做伪造判定
+	list, _, err := ts.AdminListBattles(ctx, uid, 1, 10, false)
+	if err != nil {
+		t.Fatalf("读战报失败：%v", err)
+	}
+	wantTotal := 0
+	for _, w := range domain.GenerateLevel(1).Waves {
+		for _, sp := range w.Spawns {
+			wantTotal += sp.Count
+		}
+	}
+	if wantTotal <= 0 {
+		t.Fatalf("第 1 关生成器无怪，测试前提不成立")
+	}
+	for _, b := range list {
+		if b.LevelID != 1 {
+			continue
+		}
+		if b.TotalEnemies != wantTotal {
+			t.Errorf("第 1 关战报 total_enemies 应为生成器值 %d，实际 %d（修前恒 0，守恒列形同虚设）",
+				wantTotal, b.TotalEnemies)
+		}
 	}
 	// 非匹配过滤 → 0
 	_, total, err = ts.AdminListBattles(ctx, uid, 99, 10, false)
@@ -404,10 +469,15 @@ func TestAdminUpdateLevel(t *testing.T) {
 	ctx := context.Background()
 
 	// 全部白名单字段
+	//
+	// ⚠️ 第 109 轮修：`star_targets` 用**线形**（JSON 数组在 Go 侧解码成
+	// []any of float64）。旧输入 []int 是 Go 直调类型，
+	// 第 107 轮的形状校验只认线形 —— 那是**契约**，
+	// 测试必须编码「请求真正长什么样」而不是随便一个 Go 类型。
 	_, err := ts.AdminUpdateLevel(ctx, 1, map[string]any{
 		"name": "svc关卡", "base_hp": float64(6000), "wave_count": float64(4),
 		"difficulty": float64(3), "energy_cost": float64(7),
-		"star_targets": []int{1, 2, 3}, "terrain_config": []any{}, "enabled": true, "is_boss": false,
+		"star_targets": []any{1.0, 2.0, 3.0}, "terrain_config": []any{}, "enabled": true, "is_boss": false,
 	})
 	if err != nil {
 		t.Fatalf("更新失败：%v", err)
@@ -417,7 +487,7 @@ func TestAdminUpdateLevel(t *testing.T) {
 		t.Fatalf("base_hp 应写库为 6000，实际 %d（err=%v）", hp, err)
 	}
 
-	// 类型不合法的值被静默过滤 → 没有可更新字段
+	// 全非法值 → 整单拒绝（第 107 轮起：不再是「静默过滤」）
 	if _, err := ts.AdminUpdateLevel(ctx, 1, map[string]any{
 		"name": 123, "base_hp": "x", "wave_count": float64(51), "energy_cost": float64(-1),
 	}); !errors.Is(err, ErrBadInput) {
@@ -428,13 +498,19 @@ func TestAdminUpdateLevel(t *testing.T) {
 		t.Errorf("空 patch 应 ErrBadInput，实际 %v", err)
 	}
 
-	// 恢复：regenerate 覆盖手工改动（它本身也是被测函数）
-	n, err := ts.AdminRegenerateLevels(ctx)
-	if err != nil || n != domain.TotalLevels {
-		t.Fatalf("regenerate 应生成 %d 关：%d, %v", domain.TotalLevels, n, err)
+	// 恢复：把第 1 关重置回生成器默认值（共享库卫生）。
+	// 第 116 轮起 regenerate **保留** base_hp（不再覆盖），
+	// 所以「靠 regenerate 恢复」这条路对 base_hp 失效了，必须显式还原。
+	g := domain.GenerateLevel(1)
+	if _, err := ts.pool.Exec(ctx,
+		`UPDATE levels SET name=$1, base_hp=$2, wave_count=$3, difficulty=$4,
+		 energy_cost=$5, is_boss=$6, enabled=TRUE WHERE id = 1`,
+		g.Name, g.BaseHP, g.WaveCount, g.Difficulty, g.EnergyCost, g.IsBoss); err != nil {
+		t.Errorf("还原第 1 关失败：%v", err)
 	}
-	if err := ts.pool.QueryRow(ctx, `SELECT base_hp FROM levels WHERE id = 1`).Scan(&hp); err != nil || hp == 6000 {
-		t.Errorf("regenerate 后 base_hp 应恢复默认（实际 %d）", hp)
+	// regenerate 仍必须能跑通且同步内容字段（它本身也是被测函数）
+	if n, err := ts.AdminRegenerateLevels(ctx); err != nil || n != domain.TotalLevels {
+		t.Fatalf("regenerate 应生成 %d 关：%d, %v", domain.TotalLevels, n, err)
 	}
 
 	broken := openBrokenService(t)
@@ -455,21 +531,29 @@ func TestAdminUpdateSkill(t *testing.T) {
 		_, _ = ts.pool.Exec(ctx, `UPDATE skills SET name = $1 WHERE id = 2`, origName)
 	})
 
-	if err := ts.AdminUpdateSkill(ctx, 1, map[string]any{
+	// 第 120 轮：AdminUpdateSkill 回读落库行作为返回值（后台契约 {skill}）
+	row, err := ts.AdminUpdateSkill(ctx, 1, map[string]any{
 		"name": "svc技能", "descr": "d", "base_damage": float64(33),
 		"element": "fire", "family": "flame", "kind": "active", "heat_cost": float64(5),
-	}); err != nil {
+	})
+	if err != nil {
 		t.Fatalf("更新失败：%v", err)
+	}
+	if row["name"] != "svc技能" {
+		t.Errorf("回读行 name 应为 svc技能，实际 %v", row["name"])
 	}
 	var dmg int64
 	if err := ts.pool.QueryRow(ctx, `SELECT base_damage FROM skills WHERE id = 1`).Scan(&dmg); err != nil || dmg != 33 {
 		t.Fatalf("base_damage 应写库 33，实际 %d（err=%v）", dmg, err)
 	}
+	if row["base_damage"] != int64(33) {
+		t.Errorf("回读行 base_damage 应为 33，实际 %v（写后读必须与落库一致）", row["base_damage"])
+	}
 
-	if err := ts.AdminUpdateSkill(ctx, 1, map[string]any{"name": 42, "base_damage": -1}); !errors.Is(err, ErrBadInput) {
+	if _, err := ts.AdminUpdateSkill(ctx, 1, map[string]any{"name": 42, "base_damage": -1}); !errors.Is(err, ErrBadInput) {
 		t.Errorf("全非法值应 ErrBadInput，实际 %v", err)
 	}
-	if err := ts.AdminUpdateSkill(ctx, 1, map[string]any{}); !errors.Is(err, ErrBadInput) {
+	if _, err := ts.AdminUpdateSkill(ctx, 1, map[string]any{}); !errors.Is(err, ErrBadInput) {
 		t.Errorf("空 patch 应 ErrBadInput，实际 %v", err)
 	}
 }
@@ -480,7 +564,7 @@ func TestAdminListLevelsAndWaves(t *testing.T) {
 	ts := openTestService(t)
 	ctx := context.Background()
 
-	items, total, err := ts.AdminListLevels(ctx)
+	items, total, err := ts.AdminListLevels(ctx, 0, "")
 	if err != nil || total != int64(domain.TotalLevels) {
 		t.Fatalf("关卡列表应 %d 关：%d, %v", domain.TotalLevels, total, err)
 	}
@@ -498,7 +582,7 @@ func TestAdminListLevelsAndWaves(t *testing.T) {
 	}
 
 	broken := openBrokenService(t)
-	if _, _, err := broken.AdminListLevels(ctx); err == nil {
+	if _, _, err := broken.AdminListLevels(ctx, 0, ""); err == nil {
 		t.Error("故障态应报错")
 	}
 	if _, err := broken.AdminLevelWaves(ctx, 1); err == nil {
@@ -665,7 +749,7 @@ func TestAdminRedeemCodes(t *testing.T) {
 	// 所以管理端"自动 id"创建兑换码现在能成功（此前 id 无默认值必然 500）。
 	// 这条钉住修复后的行为：创建成功、能被列表读回、且落库字段正确。
 	code := fmt.Sprintf("SVCBUG%d", time.Now().UnixNano()%1_000_000)
-	created, err := ts.AdminCreateRedeemCode(ctx, code, map[string]int{"coin": 1}, 3)
+	created, err := ts.AdminCreateRedeemCode(ctx, code, map[string]int{"coin": 1}, 3, nil)
 	if err != nil {
 		t.Fatalf("创建兑换码失败（迁移 00009 后应成功）：%v", err)
 	}
@@ -694,6 +778,39 @@ func TestAdminRedeemCodes(t *testing.T) {
 	}
 	if !found {
 		t.Error("新建兑换码应出现在列表里")
+	}
+
+	//
+	// ⚠️ 第 110 轮：过期时间必须**真的进库**。
+	// 修前 handler 解析了 expires_at 却从不传到这里，
+	// 运营在 UI 设的过期时间被静默丢弃（兑换码永久有效）。
+	// 判据：nil → 库里 IS NULL；非 nil → 库里 == 传入值。
+	var wasNull bool
+	_ = ts.pool.QueryRow(ctx,
+		`SELECT expires_at IS NULL FROM redeem_codes WHERE code = $1`, code).
+		Scan(&wasNull)
+	if !wasNull {
+		t.Errorf("expiresAt=nil 应落 NULL，实际非 NULL")
+	}
+
+	expiredCode := code + "-EXP"
+	// timestamptz 是微秒精度：带纳秒的 time.Time 写库再读回必然 != 原值，
+	// 断言前必须截到微秒（同一族「观测手段本身有前提」的坑）。
+	exp := time.Now().UTC().Truncate(time.Microsecond).Add(24 * time.Hour)
+	if _, err := ts.AdminCreateRedeemCode(ctx, expiredCode, map[string]int{"coin": 1}, 1, &exp); err != nil {
+		t.Fatalf("带过期时间创建失败：%v", err)
+	}
+	t.Cleanup(func() {
+		_, _ = ts.pool.Exec(ctx, `DELETE FROM redeem_codes WHERE code = $1`, expiredCode)
+	})
+	var got time.Time
+	if err := ts.pool.QueryRow(ctx,
+		`SELECT expires_at FROM redeem_codes WHERE code = $1`, expiredCode).
+		Scan(&got); err != nil {
+		t.Fatalf("读回过期时间失败：%v", err)
+	}
+	if !got.Equal(exp) {
+		t.Errorf("expires_at 应 == 传入值 %s，落库 %s", exp.Format(time.RFC3339), got.Format(time.RFC3339))
 	}
 }
 

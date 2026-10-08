@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "jsx": "preserve",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "baseUrl": ".",
+    "paths": {
+      "@oa4rust/sdk": ["frontend/packages/sdk/src"],
+      "@oa4rust/sdk/*": ["frontend/packages/sdk/src/*"],
+      "@oa4rust/ui": ["frontend/packages/ui/src"],
+      "@oa4rust/ui/*": ["frontend/packages/ui/src/*"],
+      "@oa4rust/locales": ["frontend/packages/locales/src"],
+      "@oa4rust/locales/*": ["frontend/packages/locales/src/*"],
+      "@oa4rust/apis": ["frontend/packages/apis/src"],
+      "@oa4rust/apis/*": ["frontend/packages/apis/src/*"]
+    }
+  },
+  "exclude": ["node_modules", "dist", "**/*.spec.ts", "**/*.test.ts"]
+}

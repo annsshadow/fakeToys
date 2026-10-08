@@ -1,8 +1,11 @@
 package httpapi
 
 import (
+	"bytes"
 	"context"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 
@@ -87,7 +90,14 @@ func (s *Server) adminDashboard(c *fiber.Ctx) error {
 }
 
 func (s *Server) adminLevels(c *fiber.Ctx) error {
-	items, total, err := s.Svc.AdminListLevels(c.Context())
+	// 第 111 轮：筛选参数必须传到 service（修前这里一个都不收，UI 的
+	// 章节下拉与关键字搜索发了也白发，永远回全量）。
+	chapter, err := queryInt(c, "chapter", 0)
+	if err != nil {
+		return failErr(c, err)
+	}
+	keyword := c.Query("keyword")
+	items, total, err := s.Svc.AdminListLevels(c.Context(), chapter, keyword)
 	if err != nil {
 		return failErr(c, err)
 	}
@@ -149,11 +159,15 @@ func (s *Server) adminUpdateSkill(c *fiber.Ctx) error {
 	if err := c.BodyParser(&patch); err != nil {
 		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
 	}
-	if err := s.Svc.AdminUpdateSkill(c.Context(), id, patch); err != nil {
+	skill, err := s.Svc.AdminUpdateSkill(c.Context(), id, patch)
+	if err != nil {
 		return failErr(c, err)
 	}
 	s.Svc.Audit(c.Context(), adminIDFrom(c), "update_skill", strconv.Itoa(id), patch)
-	return s.adminSkills(c)
+	// 第 120 轮：回读行作为响应（后台契约 { skill: AdminSkill }），
+	// 不再整个重列 adminSkills（那样 res.skill 恒 undefined，
+	// 后台改完技能表行停旧值却弹「已保存」）。
+	return c.JSON(fiber.Map{"skill": skill})
 }
 
 func (s *Server) adminEquipment(c *fiber.Ctx) error {
@@ -194,8 +208,14 @@ func (s *Server) adminReactions(c *fiber.Ctx) error {
 }
 
 func (s *Server) adminUsers(c *fiber.Ctx) error {
-	limit, _ := strconv.Atoi(c.Query("limit", "50"))
-	offset, _ := strconv.Atoi(c.Query("offset", "0"))
+	limit, err := queryInt(c, "limit", 50)
+	if err != nil {
+		return failErr(c, err)
+	}
+	offset, err := queryInt(c, "offset", 0)
+	if err != nil {
+		return failErr(c, err)
+	}
 	items, total, err := s.Svc.AdminListUsers(c.Context(), c.Query("keyword", ""), limit, offset)
 	if err != nil {
 		return failErr(c, err)
@@ -211,7 +231,34 @@ func (s *Server) adminBanUser(c *fiber.Ctx) error {
 	var body struct {
 		Reason string `json:"reason"`
 	}
-	_ = c.BodyParser(&body)
+	//
+	// ⚠️ 第 105 轮：原来这里是 `_ = c.BodyParser(&body)` —— 解析错误被丢弃。
+	//
+	// 实测：`POST /admin/users/5/ban` 带一个**截断的** JSON（`{bad`）
+	// → 返回 **200**，用户**真的被封禁**，
+	// 而且 `ban_reason` 落库成「违反用户协议」—— 一个运营从未提交过的理由。
+	//
+	// 为什么这条比第 104 轮那两条查询参数更重：
+	//
+	//  1. **它是破坏性动作。** 前者是返回错数据，这里是改用户状态。
+	//     （好在有 unban，但那需要有人意识到出错了。）
+	//  2. **审计轨迹被污染。** 事后看 `admin_audit_logs`，
+	//     「违反用户协议」看起来像是运营深思熟虑后的判断，
+	//     而实际上那只是一个解析失败的默认值。
+	//  3. **触发条件极易达到** —— 运营脚本 / 代理截断 / 复制粘贴漏字符，
+	//     都会让一个手滑变成一次误封。
+	//
+	// # 为什么先判 `len(c.Body())`
+	//
+	// 空 body 是**合法**调用（「就封他，理由按默认的」），
+	// 而 `BodyParser` 对空 body 返回 EOF 类错误。
+	// 所以「没 body」与「body 坏了」必须分开 ——
+	// 这与第 104 轮 `queryInt` 的「键不存在」vs「值为空」同源。
+	if len(bytes.TrimSpace(c.Body())) > 0 {
+		if err := c.BodyParser(&body); err != nil {
+			return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+		}
+	}
 	if body.Reason == "" {
 		body.Reason = "违反用户协议"
 	}
@@ -252,22 +299,45 @@ func (s *Server) adminGrantUser(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	s.Svc.Audit(c.Context(), adminIDFrom(c), "grant_currency",
+	// 第 109 轮：符号进审计 —— 负数是回收，事件名必须与正数发放可区分，
+	// 否则审计里「发放」和「回收」长得一模一样。
+	evt := "grant_currency"
+	if body.Amount < 0 {
+		evt = "revoke_currency"
+	}
+	s.Svc.Audit(c.Context(), adminIDFrom(c), evt,
 		strconv.FormatInt(id, 10), fiber.Map{"currency": body.Currency, "amount": body.Amount})
 	return c.JSON(fiber.Map{"wallet": wallet})
 }
 
 func (s *Server) adminBattles(c *fiber.Ctx) error {
-	limit, _ := strconv.Atoi(c.Query("limit", "50"))
-	userID, _ := strconv.ParseInt(c.Query("user_id", "0"), 10, 64)
-	levelID, _ := strconv.Atoi(c.Query("level_id", "0"))
+	limit, err := queryInt(c, "limit", 50)
+	if err != nil {
+		return failErr(c, err)
+	}
+	//
+	// ⚠️ 第 104 轮：user_id / level_id 的默认值 0 是「**不过滤**」的哨兵值
+	// （`AdminListBattles` 的 `($1 = 0 OR br.user_id = $1)`）。
+	// 原来这两行是 `strconv.ParseInt(..., 10, 64)` 并**丢弃错误**，
+	// 于是 `?user_id=abc` → 0 → 过滤恒真 → **返回所有用户的战报 + 200**。
+	//
+	// 运营查疑似作弊玩家时打错 id，看到的是别人的战报，
+	// 于是得出「这个人没有异常战报」的结论。
+	userID, err := queryInt(c, "user_id", 0)
+	if err != nil {
+		return failErr(c, err)
+	}
+	levelID, err := queryInt(c, "level_id", 0)
+	if err != nil {
+		return failErr(c, err)
+	}
 	// 只看验真不匹配的战报。
 	//
 	// 上一轮把「每用户验真统计」接进了 /admin/users，运营知道**谁**可疑；
 	// 这一步是为了能直接回答「**哪一场**对局对不上」——
 	// 否则还得手工按 user_id 查战报再交叉比对 replay_verifications。
 	onlyMismatched := c.Query("only_mismatched") == "1" || c.Query("only_mismatched") == "true"
-	items, total, err := s.Svc.AdminListBattles(c.Context(), userID, levelID, limit, onlyMismatched)
+	items, total, err := s.Svc.AdminListBattles(c.Context(), int64(userID), levelID, limit, onlyMismatched)
 	if err != nil {
 		return failErr(c, err)
 	}
@@ -279,7 +349,9 @@ func (s *Server) adminBattleDetail(c *fiber.Ctx) error {
 	if err != nil {
 		return fail(c, fiber.StatusBadRequest, "bad_input", "battle id 非法")
 	}
-	info, err := s.Svc.GetReplay(c.Context(), id)
+	// 运营侧**不加**归属过滤 —— 查任意玩家的战报本来就是它的职责
+	// （见 service.AdminGetReplay 的注释）。
+	info, err := s.Svc.AdminGetReplay(c.Context(), id)
 	if err != nil {
 		return failErr(c, err)
 	}
@@ -309,7 +381,24 @@ func (s *Server) adminVerifyBattle(c *fiber.Ctx) error {
 	var body struct {
 		ReplayHash string `json:"replay_hash"`
 	}
-	_ = c.BodyParser(&body)
+	//
+	// ⚠️ 第 105 轮：原来也是 `_ = c.BodyParser(&body)`。
+	//
+	// 与 `adminBanUser` 不同，**这里当时是安全的** ——
+	// 因为紧接着的 `if body.ReplayHash == ""` 把后果挡住了
+	// （解析失败 → hash 为空 → 被判 400）。
+	//
+	// 但那是**运气**：安全来自下游的一个巧合，
+	// 而不是来自这里检查了解析错误。
+	// 任何人日后放宽那个空值检查（例如为了支持「空 = 跳过」），缺陷立刻回来。
+	//
+	// 18 个处理器检查 BodyParser 的错误，这两处不检查 ——
+	// 现在两处都检查，理由写在各自注释里。
+	if len(bytes.TrimSpace(c.Body())) > 0 {
+		if err := c.BodyParser(&body); err != nil {
+			return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+		}
+	}
 	// 空的 actual hash 会被判成「不匹配」，把一条**没验过**的记录
 	// 写成「验过且不符」—— 那是凭空制造一条指控。
 	// 所以这里直接拒掉，与空白的处理方式保持一致。
@@ -334,7 +423,10 @@ func (s *Server) adminVerifyBattle(c *fiber.Ctx) error {
 }
 
 func (s *Server) adminDefenses(c *fiber.Ctx) error {
-	limit, _ := strconv.Atoi(c.Query("limit", "50"))
+	limit, err := queryInt(c, "limit", 50)
+	if err != nil {
+		return failErr(c, err)
+	}
 	items, total, err := s.Svc.AdminListDefenses(c.Context(), limit)
 	if err != nil {
 		return failErr(c, err)
@@ -420,7 +512,22 @@ func (s *Server) adminCreateRedeemCode(c *fiber.Ctx) error {
 	if body.MaxUses <= 0 {
 		body.MaxUses = 1
 	}
-	item, err := s.Svc.AdminCreateRedeemCode(c.Context(), body.Code, body.Reward, body.MaxUses)
+	var expiresAt *time.Time
+	if s := strings.TrimSpace(body.ExpiresAt); s != "" {
+		//
+		// ⚠️ 第 110 轮：handler 此前解析了 ExpiresAt 却从不传给 service，
+		// UI 有「过期时间」输入框、运营设的值被**静默丢弃**，兑换码永久有效。
+		// 解析必须带时区（RFC3339 或显式偏移），不接受裸本地时间——
+		// 兑换判定的 `expires_at > now()` 是 UTC 语义，裸本地时间会让
+		// 「过期」在部署机时区漂移 8 小时。
+		parsed, err := time.Parse(time.RFC3339, s)
+		if err != nil {
+			return fail(c, fiber.StatusBadRequest, "bad_input",
+				"expires_at 必须是 RFC3339 格式（如 2026-12-31T23:59:59Z），不能是裸本地时间")
+		}
+		expiresAt = &parsed
+	}
+	item, err := s.Svc.AdminCreateRedeemCode(c.Context(), body.Code, body.Reward, body.MaxUses, expiresAt)
 	if err != nil {
 		return failErr(c, err)
 	}
@@ -429,7 +536,10 @@ func (s *Server) adminCreateRedeemCode(c *fiber.Ctx) error {
 }
 
 func (s *Server) adminAuditLogs(c *fiber.Ctx) error {
-	limit, _ := strconv.Atoi(c.Query("limit", "100"))
+	limit, err := queryInt(c, "limit", 100)
+	if err != nil {
+		return failErr(c, err)
+	}
 	items, err := s.Svc.AdminListAuditLogs(c.Context(), limit)
 	if err != nil {
 		return failErr(c, err)

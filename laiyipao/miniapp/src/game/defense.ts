@@ -171,8 +171,16 @@ function applyWorks(att: Attacker, works: string[]): Attacker {
  *
  * ⚠️ 这一步不能省：拿不到完整快照就直接跑，得到的胜负毫无意义，
  * 却会被服务端记账（影响对方战绩）—— 那是在污染别人的数据。
+ *
+ * @param nowMs 「当前时间」基准。服务端时间字段（shielded_until）必须
+ *   用服务端时钟比 —— 生产调用点传 `store.estimateServerNowMs()`；
+ *   缺省 Date.now() 仅供无 store 环境（如单元测试）。
  */
-export function validateSnapshot(view: DefenseView): { ok: true } | { ok: false; reason: string } {
+export function validateSnapshot(
+  view: DefenseView,
+  nowMs?: number,
+): { ok: true } | { ok: false; reason: string } {
+  const now = nowMs ?? Date.now()
   const snap = view.snapshot
   if (!snap) return { ok: false, reason: '未获取到对方防线快照，无法模拟挑战' }
   if (!Array.isArray(snap.skills) || snap.skills.length === 0) {
@@ -181,7 +189,7 @@ export function validateSnapshot(view: DefenseView): { ok: true } | { ok: false;
   if (!view.snapshot_hash) {
     return { ok: false, reason: '对方快照缺少哈希，无法确认挑战的是同一份构筑' }
   }
-  if (view.shielded_until && new Date(view.shielded_until).getTime() > Date.now()) {
+  if (isShieldActive(view.shielded_until, now)) {
     return { ok: false, reason: '对方护盾尚未过期' }
   }
   return { ok: true }
@@ -192,8 +200,16 @@ export function validateSnapshot(view: DefenseView): { ok: true } | { ok: false;
  *
  * 注意语义：我是攻方，挑战对方构筑。胜负由"我把对方防线打穿"决定 ——
  * 与 P1 的规则一致（守住 = 胜利），只是攻守互换。
+ *
+ * @param nowMs 「当前时间」基准，同时用于护盾过期判断与默认种子的分钟桶。
+ *   生产调用点传 `store.estimateServerNowMs()`（抵消本地时钟偏移）；
+ *   缺省 Date.now()。
  */
-export function runChallenge(view: DefenseView, deps: ChallengeDeps): ChallengeOutcome {
+export function runChallenge(
+  view: DefenseView,
+  deps: ChallengeDeps,
+  nowMs?: number,
+): ChallengeOutcome {
   const fail = (reason: string): ChallengeOutcome => ({
     won: false,
     report: { seed: '0', won: false, duration_ms: 0, hp_left_pct: 100, replay_hash: '0000000000000000' },
@@ -201,17 +217,20 @@ export function runChallenge(view: DefenseView, deps: ChallengeDeps): ChallengeO
     error: reason,
   })
 
-  const v = validateSnapshot(view)
+  const now = nowMs ?? Date.now()
+
+  const v = validateSnapshot(view, now)
   if (!v.ok) return fail(v.reason)
 
   if (deps.myEquipped.length === 0) return fail('未装备任何技能，请先配置出战技能')
 
-  // 种子：默认按「对方防线 id + 当前分钟」派生（见 ChallengeDeps.seedOverride 的说明）。
-  // 测试必须显式注入固定种子，否则断言会随运行时刻漂移。
+  // 种子：默认按「对方防线 id + 当前分钟桶」派生（见 ChallengeDeps.seedOverride 的说明）。
+  // 分钟桶用传入的 now 基准（生产是服务端时钟估算），测试必须显式注入固定
+  // nowMs 或种子，否则断言会随运行时刻漂移。
   const seedBig =
     deps.seedOverride !== undefined
       ? deps.seedOverride & ((1n << 63n) - 1n)
-      : (BigInt(view.id) * 1000003n + BigInt(Math.floor(Date.now() / 60000))) &
+      : (BigInt(view.id) * 1000003n + BigInt(Math.floor(now / 60000))) &
         ((1n << 63n) - 1n)
 
   const attacker = applyWorks(deps.myAttacker, view.snapshot?.works ?? [])
@@ -269,4 +288,20 @@ export function snapshotElements(view: DefenseView): Element[] {
   return (view.snapshot?.elements ?? []).filter((e): e is Element =>
     valid.includes(e as Element),
   )
+}
+
+/**
+ * 护盾是否**仍在生效**（按时间判断，不是按「字段存在」判断）。
+ *
+ * ⚠️ 第 134 轮：`shielded_until` 是服务端下发的 RFC3339 时间戳。
+ * 「字段非空」≠「护盾未过期」—— 护盾 24h 后 `shielded_until` 仍在库里
+ * （是过去的时间），但护盾其实已失效。旧 me.vue 用 `!!shielded_until`
+ * 判存在，于是过期护盾在「我的页」仍显示成「护盾开启」。
+ * 现统一走时间比较，nowMs 显式传入便于测试（生产传 Date.now()）。
+ */
+export function isShieldActive(until: string | undefined, nowMs: number): boolean {
+  if (!until) return false
+  const t = Date.parse(until)
+  if (Number.isNaN(t)) return false
+  return t > nowMs
 }

@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 
 	"github.com/laiyipao/server/internal/domain"
 )
@@ -145,6 +146,42 @@ type SignInResult struct {
 	Wallet   Wallet         `json:"wallet"`
 }
 
+// SignInCalendarDay 是七日签到日历的一行（第 N 天给什么奖励）。
+type SignInCalendarDay struct {
+	Day    int            `json:"day_index"`
+	Reward map[string]int `json:"reward"`
+}
+
+// SignInCalendar 返回服务端权威的七日签到奖励表。
+//
+// ⚠️ 第 135 轮：客户端此前的 7 天奖励预览是**本地硬编码公式**
+// （miniapp signin.vue 的 rewardFor：coin=1000×天、第 3/7 天 gem、第 7 天
+// 体力）。它与 seeder 写入 sign_in_calendar 的公式**今天**恰好一致，
+// 但那是两份独立定义 —— 运营重灌/调节日历后，客户端预览会静默漂移，
+// 与玩家实际拿到的 `SignInResult.Reward` 对不上。
+// 故把日历作为权威来源下发，客户端预览改读它。
+func (s *Service) SignInCalendar(ctx context.Context) ([]SignInCalendarDay, error) {
+	rows, err := s.pool.Query(ctx,
+		`SELECT day_index, reward FROM sign_in_calendar ORDER BY day_index`)
+	if err != nil {
+		return nil, fmt.Errorf("load sign-in calendar: %w", err)
+	}
+	defer rows.Close()
+	out := []SignInCalendarDay{}
+	for rows.Next() {
+		var d SignInCalendarDay
+		var rewardRaw []byte
+		if err := rows.Scan(&d.Day, &rewardRaw); err != nil {
+			return nil, err
+		}
+		if err := json.Unmarshal(rewardRaw, &d.Reward); err != nil {
+			return nil, fmt.Errorf("unmarshal sign-in reward day %d: %w", d.Day, err)
+		}
+		out = append(out, d)
+	}
+	return out, rows.Err()
+}
+
 // SignIn 执行每日签到。
 //
 // 同一天只能签一次：靠 user_sign_ins 的 (user_id, sign_date) 主键保证，
@@ -166,14 +203,105 @@ func (s *Service) SignIn(ctx context.Context, userID int64) (SignInResult, error
 			return err
 		}
 
-		today := time.Now().Truncate(24 * time.Hour)
+		// ⚠️ 第 89 轮：日界由 **Go** 单层决定，不再交给 PG 去折算。
+		//
+		// 原来这里写的是 `time.Now()`，落进 `sign_date DATE` 时由
+		// **PG 会话时区**做 timestamptz -> date 的隐式转换。
+		// 而「同一天只能签一次」完全靠 `PRIMARY KEY (user_id, sign_date)` 保证，
+		// 所以「今天几号」这件事由**两个不同的层**各算一半：
+		//
+		//	每日任务：Go 的 `periodStart(now, "daily")`（用 `time.Local`）
+		//	每日签到：PG 会话时区
+		//
+		// # 实测（本地环境）
+		//
+		//	PG session TimeZone = "Asia/Shanghai"   与 Go 本地 +08:00 一致
+		//
+		// 所以**当前部署下两者一致，这不是正在发生的 bug** ——
+		// 但正确性**依赖一条没有任何东西钉住的配置**：
+		// 只要 PG 的会话时区是 UTC（托管实例的常见默认值），
+		// 签到的「天」就会在北京时间 **08:00** 翻页 ——
+		// 同一个自然日可以签两次，而每日任务却还在前一天。
+		//
+		// # 另一层证据：这段代码原本是打算在 Go 里算的
+		//
+		// 改前有一行 `today := time.Now().Truncate(24 * time.Hour)`
+		// 紧接着 `_ = today` —— 算完就扔。
+		//
+		// 而 `Truncate` 本身也是 **UTC 对齐**的（它按零时刻起算，忽略 Location），
+		// 所以即使当初保留它，得到的也不是「本地零点」。
+		// 意图是对的，实现两头都不对。
+		//
+		// 本轮改用 `periodStart(time.Now(), "daily")` —— 与每日任务同一个函数，
+		// 同一个 Location 口径。这样「今天几号」只由一处决定，
+		// 而 `sign_date` 存的就是那个 date（不再是 timestamptz）。
+		//
+		// ⚠️ 必须传**字符串**而不是 time.Time —— 这是本轮的第二步。
+		//
+		// 我第一版改成 `periodStart(time.Now(), "daily")` 就以为完事了，
+		// 结果守卫立刻抓到它仍然是错的：
+		//
+		//	today = 2026-10-06 00:00:00 +08:00   （Go 本地零点）
+		//	pgx 按 timestamptz 发送
+		//	PG 用**会话时区**把它折成 DATE：
+		//	  会话时区 = Asia/Shanghai -> 2026-10-06  ✅
+		//	  会话时区 = UTC           -> 2026-10-05  ❌ 差一天！
+		//
+		// 也就是说只要传 time.Time，**会话时区仍然在决定日界** ——
+		// 我只是把「PG 折算 now()」换成了「PG 折算 Go 的本地零点」，
+		// 而后者同样会被会话时区二次偏移。
+		//
+		// 传 `YYYY-MM-DD` 字符串则完全绕开 timestamptz：
+		// PG 只需要把它当字面量写进 DATE 列，不做任何时区换算。
+		// 这才是「日界由 Go 单层决定」的真含义。
+		today := periodStart(time.Now(), "daily").Format("2006-01-02")
 		if _, err := tx.Exec(ctx,
 			`INSERT INTO user_sign_ins (user_id, sign_date, day_index, reward) VALUES ($1,$2,$3,$4)`,
-			userID, time.Now(), dayIndex, rewardRaw); err != nil {
-			// 唯一键冲突 = 今天已签
-			return fmt.Errorf("%w: 今日已签到", ErrForbidden)
+			userID, today, dayIndex, rewardRaw); err != nil {
+			//
+			// ⚠️ 第 115 轮：只有「唯一键冲突」才是「今日已签到」。
+			// 修前把 INSERT 的**任何**错误（连接抖断、锁超时、
+			// 磁盘满、死锁……）都报成「今日已签到」——
+			// 事务回滚、奖励没发，用户却被告知「已签到」，
+			// 以为当天领过了，不会重试，7 日奖励静默漏发。
+			// 「如实报错」永远比「谎报已签」便宜。
+			// 判据落在**错误码**上（23505 = unique_violation），
+			// 而不是「跑了没成功就当已签」。
+			var pgErr *pgconn.PgError
+			if errors.As(err, &pgErr) && pgErr.Code == "23505" &&
+				(pgErr.TableName == "user_sign_ins" || pgErr.ConstraintName == "user_sign_ins_pkey") {
+				return fmt.Errorf("%w: 今日已签到", ErrForbidden)
+			}
+			return err
 		}
-		_ = today
+
+		// ⚠️ 第 91 轮：签到必须推进 `signin` 指标的任务。
+		//
+		// # 缺陷：任务「每日签到」永远无法推进、永远领不到
+		//
+		// 种子里有这条任务：
+		//
+		//	{4, 1, "daily_signin", "完成每日签到", "daily", "signin", …}
+		//
+		// 而 `bumpTasks` 全仓库**只有一个调用点**（`game.go` 的结算路径），
+		// 它传的 metric 只有 4 个：`kills` / `clears` / `reactions` / `max_stage`。
+		// **没有 `signin`** —— 于是这条任务的 `progress` 永远是 0，
+		// 玩家每天签到、每天都看到它卡在 0/1、永远领不到那 500 金币。
+		//
+		// # 为什么没被测出来
+		//
+		// 既有测试都是「造一行 progress 然后 ClaimTask」，
+		// **绕过了 bump 这一步** —— 于是「bump 从不发生」这件事完全不可见。
+		//
+		// 与第 76 轮（周任务 `task_date` 写死 daily）同族：
+		// 那次是**找错了行**，这次是**根本没人写那一行**。
+		//
+		// 守卫：`task_metric_coverage_test.go` —— 种子里出现的每个 metric
+		// 都必须在某个 `bumpTasks` 调用点出现。
+		if err := s.bumpTasks(ctx, tx, userID,
+			map[string]int64{"signin": 1}, time.Now()); err != nil {
+			return err
+		}
 
 		var reward map[string]int
 		if err := json.Unmarshal(rewardRaw, &reward); err != nil {
@@ -199,6 +327,45 @@ func (s *Service) SignIn(ctx context.Context, userID int64) (SignInResult, error
 	}
 	res.Wallet = w
 	return res, nil
+}
+
+// SignInStatus 是签到页「初始展示」回读到的签到状态（第 141 轮）。
+type SignInStatus struct {
+	// 本周期已签天数（user_sign_ins 的 MAX(day_index)，没签过为 0）。
+	// 客户端用它点亮「已签」天并标出「今天」该是第几天。
+	ClaimedCount int `json:"claimed_count"`
+	// 今天是否已签（按 SignIn 同一日界口径）。
+	SignedToday bool `json:"signed_today"`
+	// 今天还能不能签：今日未签 且 七日周期未满。
+	CanSign bool `json:"can_sign"`
+}
+
+// SignInStatus 返回玩家当前签到状态，供签到页挂载时做**权威**初始展示。
+//
+// ⚠️ 第 141 轮：修前小程序签到页把 claimedCount=0 / canSign=true 写死，
+// 挂载后从不回读 —— 玩家当天已签到（甚至周期已签完）后重进页面，
+// 仍显示「今天还没签 / 可领取」，点按钮才吃一个「今日已签到」的错。
+// 「今天」的日界口径与 SignIn 完全相同（periodStart(now,"daily") 的 DATE 串），
+// 否则两处对「今天几号」的判断会裂开。
+func (s *Service) SignInStatus(ctx context.Context, userID int64) (SignInStatus, error) {
+	today := periodStart(time.Now(), "daily").Format("2006-01-02")
+	var claimed int
+	var signedToday bool
+	if err := s.pool.QueryRow(ctx, `
+		SELECT COALESCE(MAX(day_index), 0),
+		       EXISTS (SELECT 1 FROM user_sign_ins WHERE user_id = $1 AND sign_date = $2)
+		FROM user_sign_ins
+		WHERE user_id = $1`, userID, today).Scan(&claimed, &signedToday); err != nil {
+		return SignInStatus{}, fmt.Errorf("load signin status: %w", err)
+	}
+
+	// 周期是否签满：下一行（claimed+1）在日历里不存在即满（与 SignIn 的
+	// 「MAX+1 查不到行 → Already」同口径，避免本地再数一个 7）。
+	var cycleLen int
+	if err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM sign_in_calendar`).Scan(&cycleLen); err != nil {
+		return SignInStatus{}, fmt.Errorf("count signin calendar: %w", err)
+	}
+	return SignInStatus{ClaimedCount: claimed, SignedToday: signedToday, CanSign: !signedToday && claimed < cycleLen}, nil
 }
 
 // Redeem 兑换兑换码。
@@ -281,12 +448,27 @@ type ShopItemView struct {
 
 // LoadShop 返回商城，附带玩家今日已购次数。
 func (s *Service) LoadShop(ctx context.Context, userID int64) ([]ShopItemView, error) {
+	// ⚠️ 第 97 轮：`purchase_date` 改由 **Go** 决定，与任务/签到同一个口径。
+	//
+	// 原来三处都用 `CURRENT_DATE`，由 **PG 会话时区**折算 ——
+	// 商城**内部**因此是自洽的，但它与每日任务的日界**不是同一套**：
+	//
+	//	每日任务：Go 的 `periodStart(now, "daily")`（用 `time.Local`）
+	//	商城限购：PG 会话时区
+	//
+	// 第 90 轮把 PG 会话时区钉成 `Asia/Shanghai`，但**没有钉 Go 那一侧** ——
+	// 容器里 `time.Local` 常常是 UTC。
+	// 两者不一致时，商城的「今日」与任务的「今日」在不同时刻翻页：
+	// 玩家早上 8 点看到任务已刷新，商城却还显示昨天的限购次数。
+	//
+	// 传**日期字面量**（与第 89 轮签到同一手法）让日界只由一处决定。
+	today := periodStart(time.Now(), "daily").Format("2006-01-02")
 	rows, err := s.pool.Query(ctx, `
 		SELECT si.id, si.code, si.name, si.category, si.price, si.payload, si.limit_per_day,
 		       (SELECT COUNT(*) FROM user_purchases up
 		         WHERE up.user_id = $1 AND up.item_id = si.id
-		           AND up.purchase_date = CURRENT_DATE)
-		FROM shop_items si WHERE si.enabled ORDER BY si.sort_order`, userID)
+		           AND up.purchase_date = $2)
+		FROM shop_items si WHERE si.enabled ORDER BY si.sort_order`, userID, today)
 	if err != nil {
 		return nil, fmt.Errorf("load shop: %w", err)
 	}
@@ -299,8 +481,16 @@ func (s *Service) LoadShop(ctx context.Context, userID int64) ([]ShopItemView, e
 		if err := rows.Scan(&v.ID, &v.Code, &v.Name, &v.Category, &priceRaw, &payloadRaw, &v.Limit, &v.Bought); err != nil {
 			return nil, err
 		}
-		_ = json.Unmarshal(priceRaw, &v.Price)
-		_ = json.Unmarshal(payloadRaw, &v.Payload)
+		// 第 148 轮：fail-loud（AGENTS #11）。price/payload 是 jsonb 经济字段，
+		// `_ =` 会把坏数据静默吞成空 map —— 商品显示成「0 金 / 无内容」。
+		// 购买路径（Buy）本就 fail-loud，这里列表读侧也应同口径报错，
+		// 让坏商品在后台/客户端可见，而不是无声显示成「免费/空包」。
+		if err := json.Unmarshal(priceRaw, &v.Price); err != nil {
+			return nil, fmt.Errorf("load shop: 商品 %d 的 price 非法 jsonb: %w", v.ID, err)
+		}
+		if err := json.Unmarshal(payloadRaw, &v.Payload); err != nil {
+			return nil, fmt.Errorf("load shop: 商品 %d 的 payload 非法 jsonb: %w", v.ID, err)
+		}
 		out = append(out, v)
 	}
 	return out, rows.Err()
@@ -308,6 +498,8 @@ func (s *Service) LoadShop(ctx context.Context, userID int64) ([]ShopItemView, e
 
 // Buy 购买商城商品。
 func (s *Service) Buy(ctx context.Context, userID, itemID int64) (map[string]int, error) {
+	// 第 97 轮：与 LoadShop 同一个口径（Go 的日期字面量），见那里的说明。
+	today := periodStart(time.Now(), "daily").Format("2006-01-02")
 	var out map[string]int
 	err := s.DB.Tx(ctx, func(tx pgx.Tx) error {
 		var priceRaw, payloadRaw []byte
@@ -344,8 +536,8 @@ func (s *Service) Buy(ctx context.Context, userID, itemID int64) (map[string]int
 			var bought int
 			if err := tx.QueryRow(ctx,
 				`SELECT COUNT(*) FROM user_purchases
-				 WHERE user_id = $1 AND item_id = $2 AND purchase_date = CURRENT_DATE`,
-				userID, itemID).Scan(&bought); err != nil {
+				 WHERE user_id = $1 AND item_id = $2 AND purchase_date = $3`,
+				userID, itemID, today).Scan(&bought); err != nil {
 				return err
 			}
 			if bought >= limit {
@@ -382,8 +574,8 @@ func (s *Service) Buy(ctx context.Context, userID, itemID int64) (map[string]int
 			return err
 		}
 		if _, err := tx.Exec(ctx,
-			`INSERT INTO user_purchases (user_id, item_id, purchase_date, price) VALUES ($1,$2,CURRENT_DATE,$3)`,
-			userID, itemID, priceRaw); err != nil {
+			`INSERT INTO user_purchases (user_id, item_id, purchase_date, price) VALUES ($1,$2,$3,$4)`,
+			userID, itemID, today, priceRaw); err != nil {
 			return err
 		}
 		out = payload
@@ -462,19 +654,68 @@ func parseCardPicks(raw string) []int {
 }
 
 // GetReplay 返回复现信息。
-func (s *Service) GetReplay(ctx context.Context, battleID int64) (ReplayInfo, error) {
+//
+// # ⚠️ 第 75 轮：补上归属校验
+//
+// 原来只有 `WHERE br.id = $1`。`battle_records.id` 是连续 BIGSERIAL，
+// 任何注册用户都能遍历，于是任何人都能读走任意一局的
+// **完整构筑快照** —— 装备、词缀、技能等级，全都是别人的。
+//
+// 这条路径比 `VerifyReplay` 泄露得更多：它多返回一个 `build_snapshot`，
+// 而 `delete(r.Build, "settle_input")` 只剥掉了结算报文，
+// **构筑本身还在**。照抄别人的满级装备 + 关卡 + 种子 + card_picks
+// 就是一份「不需要自己打出来的高星战报蓝本」。
+//
+// # 为什么这不破坏验真的设计
+//
+// 下一行的注释说「这些数据公开是设计使然（否则无人能验真）」——
+// 那句话说的是**数据内容**公开，不是**谁的**战报公开。
+// 你验证自己的对局本来就不需要读别人的。
+func (s *Service) GetReplay(ctx context.Context, userID, battleID int64) (ReplayInfo, error) {
+	return s.getReplay(ctx, userID, battleID, true)
+}
+
+// AdminGetReplay 是运营侧读任意战报的复现信息（第 75 轮）。
+//
+// # 为什么单独一个方法而不是给 GetReplay 加个 bool 参数
+//
+// 与 `verification.go` 里的 `verifier{isAdmin}` 同一思路：
+// **归属校验是权限，不是行为开关**。把它做成参数就意味着
+// 调用方要自己记得传对，而漏传时是**静默放行**——
+// 那正是本轮修掉的那个洞。
+//
+// 两条路径共用 `getReplay`，所以「读哪些列、怎么剥 settle_input」
+// 不会漂。README 记的正是这类漂移：
+// 「两份实现只要有一处漂移，就会出现玩家验真和运营验真结论不同」。
+func (s *Service) AdminGetReplay(ctx context.Context, battleID int64) (ReplayInfo, error) {
+	return s.getReplay(ctx, 0, battleID, false)
+}
+
+func (s *Service) getReplay(ctx context.Context, userID, battleID int64, enforceOwner bool) (ReplayInfo, error) {
 	var r ReplayInfo
 	var createdAt time.Time
 	var seed int64
 	var cardPicks string
-	err := s.pool.QueryRow(ctx,
-		`SELECT br.level_id, COALESCE(bt.seed, 0), br.replay_hash, br.created_at,
-		        br.build_snapshot, COALESCE(br.card_picks, '')
-		 FROM battle_records br
-		 LEFT JOIN battle_tokens bt ON bt.id = br.battle_token_id
-		 WHERE br.id = $1`, battleID).
+	sql := `SELECT br.level_id, COALESCE(bt.seed, 0), br.replay_hash, br.created_at,
+	              br.build_snapshot, COALESCE(br.card_picks, '')
+	       FROM battle_records br
+	       LEFT JOIN battle_tokens bt ON bt.id = br.battle_token_id
+	       WHERE br.id = $1`
+	args := []any{battleID}
+	if enforceOwner {
+		sql += ` AND br.user_id = $2`
+		args = append(args, userID)
+	}
+	err := s.pool.QueryRow(ctx, sql, args...).
 		Scan(&r.LevelID, &seed, &r.ReplayHash, &createdAt, &r.Build, &cardPicks)
 	if err != nil {
+		// 「不存在」与「不是你的」返回**同一个**错误（第 75 轮）。
+		//
+		// 分开报错就等于一个预言机：`ErrNotFound` vs `ErrForbidden`
+		// 让人能二分出「某个 id 是否存在」，在连续 BIGSERIAL 上是 O(1) 的信息。
+		//
+		// ⚠️ 原来的代码把**任何** err 都报成 ErrNotFound，已经是安全的默认；
+		// 本轮只是确认了它，不改它。
 		return ReplayInfo{}, fmt.Errorf("%w: battle %d", ErrNotFound, battleID)
 	}
 	r.BattleID = battleID

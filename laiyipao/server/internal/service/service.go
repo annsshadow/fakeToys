@@ -268,7 +268,27 @@ func (s *Service) ResolveUser(ctx context.Context, token string) (int64, error) 
 		return 0, fmt.Errorf("%w: 令牌类型不匹配", ErrUnauthorized)
 	}
 	var status int
-	if err := s.pool.QueryRow(context.Background(),
+	//
+	// ⚠️ 第 101 轮：这里原本是 `context.Background()` —— **丢弃了调用方的 ctx**。
+	//
+	// # 后果
+	//
+	// 1. **客户端断开不会取消这条查询。** fiber 在客户端断开后取消请求 ctx，
+	//    而这里换成了 Background，于是 pgx 会**把查询跑完**。
+	//    一个慢查询 + 反复断开 = 连接池被占满，而每个占用者都不会超时退出。
+	// 2. **任何超时都不生效。** `ctxBackground()` 那个辅助函数的存在
+	//    说明这里**本来**是想传 ctx 的（HTTP 层包装成 HTTP 层用的）。
+	// 3. `ctx` 参数因此**完全未被使用** —— Go 不报「未使用的参数」，
+	//    所以它一直静默地错着。
+	//
+	// # 为什么单测抓不到
+	//
+	// `account_service_test.go` 等测试直接传 `context.Background()`，
+	// 于是「传进去的 ctx 被丢掉」与「正常传递」**行为完全一致**。
+	//
+	// 判据必须构造一个**带 Deadline 且已过期**的 ctx：
+	// 若实现忽略它，查询会成功；正确传递则必然返回「context deadline exceeded」。
+	if err := s.pool.QueryRow(ctx,
 		`SELECT status FROM users WHERE id = $1`, claims.Sub).Scan(&status); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return 0, fmt.Errorf("%w: 用户不存在", ErrUnauthorized)
@@ -303,6 +323,18 @@ func (s *Service) grantWallet(ctx context.Context, tx pgx.Tx, userID int64, delt
 		}
 		col, ok := walletColumns[currency]
 		if !ok {
+			// 第 74 轮：道具走 user_tokens，与货币列分开。
+			//
+			// 原来这里直接 `ErrBadInput: 未知货币`，而种子数据里
+			// 有三个商品的 payload 是道具名 —— 于是**商城 8 件商品里
+			// 有 3 件永远买不了**，客户端只看到一句
+			// 「未知货币 "revive_token"」的 400。
+			if isWalletToken(currency) {
+				if err := grantToken(ctx, tx, userID, currency, delta, reason, refID); err != nil {
+					return err
+				}
+				continue
+			}
 			return fmt.Errorf("%w: 未知货币 %q", ErrBadInput, currency)
 		}
 
@@ -339,24 +371,182 @@ func (s *Service) grantWallet(ctx context.Context, tx pgx.Tx, userID int64, delt
 	return nil
 }
 
+// grantToken 增减一件道具（第 74 轮）。
+//
+// # 与货币路径的三处**刻意**差异
+//
+//  1. **UPSERT 而非 UPDATE** —— 货币四列都有 DEFAULT 0、注册时就有行；
+//     道具是稀疏的，第一次拿到时行还不存在。
+//     用 `INSERT ... ON CONFLICT DO UPDATE` 一条语句解决，
+//     不必先 SELECT 再分支。
+//
+//  2. **扣减不靠 WHERE 余额判定** —— 货币那条 `WHERE coin >= $3`
+//     返回 `pgx.ErrNoRows`，上层据此报「不足」。
+//     道具侧没有 `ErrNoRows` 这条线索（UPSERT 永远成功），
+//     所以余额判定放到 CHECK 约束 + 显式回读：
+//     违反时整批失败，报的是 PG 的 check violation。
+//
+//     ⚠️ 这是本函数**唯一**不如货币路径干净的地方，如实标注。
+//     `grantToken` 目前只被 `grantWallet` 以 `delta > 0` 的方式调用
+//     （pay 侧只接受货币，因为道具的花费语义还没定），
+//     所以这条分支当前**不可达**。一旦有消费端点接上，必须先补余额判定。
+//
+//  3. **余额也写 wallet_flows** —— 运营看板与「货币流水」查询
+//     按 currency 聚合，道具的进出必须出现在同一条流里，
+//     否则看板会显示「道具收入 0」而实际有进账。
+func grantToken(ctx context.Context, tx pgx.Tx, userID int64, token string, delta int64, reason string, refID int64) error {
+	var balance int64
+	q := `INSERT INTO user_tokens (user_id, token, balance)
+	      VALUES ($1, $2, $3)
+	      ON CONFLICT (user_id, token)
+	      DO UPDATE SET balance = user_tokens.balance + EXCLUDED.balance, updated_at = now()
+	      RETURNING balance`
+	if err := tx.QueryRow(ctx, q, userID, token, delta).Scan(&balance); err != nil {
+		return fmt.Errorf("grant token %s: %w", token, err)
+	}
+	if balance < 0 {
+		// UPSERT 之后余额为负只可能是扣减超额。
+		// CHECK 约束其实会先拦下来（整批失败，报 PG 的 check violation），
+		// 这里的显式判断是**第二道**——它给出的是可读的中文错误。
+		return fmt.Errorf("%w: %s 不足（需要 %d）", ErrBadInput, token, -delta)
+	}
+	if _, err := tx.Exec(ctx,
+		`INSERT INTO wallet_flows (user_id, currency, delta, balance, reason, ref_id)
+		 VALUES ($1,$2,$3,$4,$5,$6)`,
+		userID, token, delta, balance, reason, refID); err != nil {
+		return fmt.Errorf("insert token flow: %w", err)
+	}
+	return nil
+}
+
+// TokenBalance 读一件道具的余额（第 74 轮）。
+//
+// # 为什么需要它
+//
+// `Wallet` 结构体只有四个货币字段，而道具是**稀疏**的
+// （没买过的道具连行都没有）。塞进 Wallet 会让每个玩家的
+// 响应里都带着三个恒为 0 的字段，而它们又确实需要一个「读得到」的地方——
+// 否则买了也看不见。
+//
+// 按需查询：只查调用方点名的那些 token。
+func (s *Service) TokenBalance(ctx context.Context, userID int64, tokens []string) (map[string]int64, error) {
+	out := map[string]int64{}
+	if len(tokens) == 0 {
+		return out, nil
+	}
+	rows, err := s.pool.Query(ctx,
+		`SELECT token, balance FROM user_tokens WHERE user_id = $1 AND token = ANY($2)`,
+		userID, tokens)
+	if err != nil {
+		return nil, fmt.Errorf("load tokens: %w", err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var tok string
+		var bal int64
+		if err := rows.Scan(&tok, &bal); err != nil {
+			return nil, err
+		}
+		out[tok] = bal
+	}
+	// 没买过的道具也要出现在结果里（余额 0），
+	// 否则客户端无法区分「0 个」与「这个道具不存在」。
+	for _, tok := range tokens {
+		if _, ok := out[tok]; !ok {
+			out[tok] = 0
+		}
+	}
+	return out, rows.Err()
+}
+
 var walletColumns = map[string]string{
 	"coin": "coin", "gem": "gem", "energy": "energy", "keys": "keys",
 }
+
+// walletTokens 是「道具类」货币的白名单（第 74 轮）。
+//
+// # 为什么它必须是一份**显式**名单，而不是「不在 walletColumns 里就算道具」
+//
+// 那样打错字会静默成功：`{"cino": 1}` 会被当成一种叫 `cino` 的道具，
+// 扣钱照扣、发货照发，只是发的东西没人看得见。
+// 而现在它会报「未知货币 "cino"」—— 那才是打错字时该看到的。
+//
+// 刻意的摩擦：新增一种道具要先在这里显式声明，
+// 顺便回答「这个道具被谁消耗」。
+//
+// # 完整的货币全集（守卫：`TestEveryShopPayloadKeyIsSpendable`）
+//
+//	货币（user_wallets 列）：coin / gem / energy / keys
+//	道具（user_tokens 行）  ：revive_token / mastery_reset / gem_wash_token
+//
+// ⚠️ 这三个道具**目前都没有消费端点**（没有「用掉复活币」的地方）。
+// 本轮只修「买不到」这个更硬的问题 —— 买了至少能在背包里看到。
+var walletTokens = map[string]bool{
+	"revive_token":   true,
+	"mastery_reset":  true,
+	"gem_wash_token": true,
+}
+
+// isWalletToken 报告这个货币是不是道具。
+func isWalletToken(currency string) bool { return walletTokens[currency] }
 
 // LoadWallet 读取钱包并顺带做体力恢复。
 func (s *Service) LoadWallet(ctx context.Context, userID int64) (Wallet, error) {
 	// 体力每 6 分钟恢复 1 点，上限 120
 	const energyPerInterval = 6 * time.Minute
 	const energyMax = 120
+	//
+	// ⚠️ 第 86 轮：`energy_updated_at` 必须按**整间隔**推进，而不是推到 now()。
+	//
+	// # 缺陷：每次推进都丢掉不足一格的时间
+	//
+	// 原写法：
+	//
+	//	energy_updated_at = CASE WHEN elapsed >= interval THEN now() ELSE energy_updated_at END
+	//
+	// `now()` 落在下一次读取的时刻上，于是**两次读取之间不足一格的余数
+	// 被永久丢弃**。
+	//
+	// 客户端每次进页面都 `fetchWallet`，所以读取间隔（3~5 分钟）
+	// **短于**回复间隔（6 分钟）—— 正是最容易丢的形态。
+	//
+	// 实测（每 5 分钟读一次，一小时的账）：
+	//
+	//	t=0     at=0
+	//	t=300   +0  at=0      （300 < 360，不推进）
+	//	t=600   +1  at=600    ← 余数 240 被吞
+	//	t=900   +0  at=600
+	//	t=1200  +1  at=1200   ← 又吞 240
+	//	…
+	//	3600 分钟内共 12 次读取 → 只回 6 点
+	//
+	// 而 1 小时应当回 10 点 —— **少回 40%**。
+	//
+	// # 修法
+	//
+	// 推进量与加点量用**同一个**整格数，且推进量是 `interval` 的整数倍：
+	//
+	//	energy += k        （k = FLOOR(elapsed / interval)）
+	//	energy_updated_at += k * interval
+	//
+	// 这样余数留在 `energy_updated_at` 里，下一次继续累积，
+	// 长时间看总量精确等于 `FLOOR(总时长 / interval)`。
+	//
+	// 顺带：`LEAST($2::int, …)` 之外还要保证**扣能量时不回推时间戳** ——
+	// 原写法本来就没回推，保持不变。
+	const energyIntervalSecs = int64(energyPerInterval / time.Second)
 	if _, err := s.pool.Exec(ctx, `
-		UPDATE user_wallets
-		   SET energy = LEAST($2::int,
-		             energy + GREATEST(0, FLOOR(EXTRACT(EPOCH FROM (now() - energy_updated_at)) / $3))::int),
-		       energy_updated_at = CASE
-		           WHEN EXTRACT(EPOCH FROM (now() - energy_updated_at)) >= $3 THEN now()
-		           ELSE energy_updated_at END,
+		WITH k AS (
+		  SELECT GREATEST(0, FLOOR(EXTRACT(EPOCH FROM (now() - energy_updated_at)) / $3))::int AS n
+		    FROM user_wallets WHERE user_id = $1
+		)
+		UPDATE user_wallets w
+		   SET energy = LEAST($2::int, w.energy + k.n),
+		       energy_updated_at = w.energy_updated_at
+		                       + make_interval(secs => (k.n * $3)::double precision),
 		       updated_at = now()
-		 WHERE user_id = $1`, userID, energyMax, int64(energyPerInterval/time.Second)); err != nil {
+		  FROM k
+		 WHERE w.user_id = $1`, userID, energyMax, energyIntervalSecs); err != nil {
 		return Wallet{}, fmt.Errorf("regen energy: %w", err)
 	}
 
@@ -434,7 +624,20 @@ type ChapterInfo struct {
 // `TestConfigVolumeIsKnown` 守着。
 //
 // 传输侧由 `middleware/compress` 兜住：gzip 后 23,964 字节（14.3%）。
-func (s *Service) LoadGameConfig(ctx context.Context) GameConfig {
+// LoadGameConfig 组装下发给客户端的静态配置。
+//
+// ⚠️ 第 102 轮移除了 `ctx` 参数 —— 它从未被使用。
+//
+// 本函数是**纯静态数据组装**（关卡表 / 敌人表 / 技能表 / 分数规则 …），
+// **一次库都不查**，所以传 ctx 没有意义。
+//
+// 与 `computeRating`（确实读 `user_progress`）的对照见 `computePower` 的注释。
+// 那三个函数的签名曾经长得一模一样，而只有 `computeRating` 真的用 ctx ——
+// 后来的人会照着它以为传进去的 ctx 在这里生效。
+//
+// 将来若真的要加 DB 缓存，**那时再加回来** ——
+// 现在加是投机，而投机出来的参数没人会记得它是干什么的。
+func (s *Service) LoadGameConfig() GameConfig {
 	cfg := GameConfig{
 		Levels: domain.GenerateAllLevels(),
 		// ⚠️ 分数规则必须下发，不能让客户端自己写死

@@ -111,8 +111,11 @@ describe('ContentView 列表渲染', () => {
         { id: 3, code: 'LYP-C', reward: null },
         { id: 4, code: 'LYP-D', reward: '' }, // 空串 → JSON.parse(v || '{}') 的兜底分支
       ],
+      // 第 121 轮：审计日志字段按**服务端真实形状**（AdminListAuditLogs：
+      // username / action / target / detail），修前 UI 读的 admin_username /
+      // target_type / target_id / reason 全都不存在，四列恒空白。
       logs: [
-        { id: 1, admin_username: 'admin', action: 'ban', target_type: 'user', target_id: 9, reason: '刷分', created_at: '2026-01-02T03:04:05Z' },
+        { id: 1, username: 'admin', action: 'grant_currency', target: '9', detail: { currency: 'coin', amount: -300 }, created_at: '2026-01-02T03:04:05Z' },
       ],
     })
     const text = wrapper.text()
@@ -122,7 +125,12 @@ describe('ContentView 列表渲染', () => {
     expect(text).toContain('gem×50')
     expect(text).toContain('3 / 100')
     expect(text).toContain('—') // 空时间
-    expect(text).toContain('刷分')
+    // 审计日志：管理员 / 操作 / 对象 三列按服务端字段渲染
+    expect(text).toContain('admin')
+    expect(text).toContain('grant_currency')
+    // detail 是 JSON 对象，detailText 渲染成可读文本
+    expect(text).toContain('coin')
+    expect(text).toContain('-300')
     wrapper.unmount()
   })
 
@@ -136,7 +144,15 @@ describe('ContentView 列表渲染', () => {
     expect(vm.num({ a: null }, 'a')).toBe(0)
     expect(vm.num({ a: '7' }, 'a')).toBe(7) // 数字字符串被解析
     expect(vm.fmtTime('')).toBe('—')
-    expect(vm.fmtTime('2026-01-02T03:04:05Z')).toBe('2026-01-02 03:04:05')
+    // 第 124 轮：fmtTime 渲染成**查看者本地时区**（服务端下发 UTC）。
+    // 判据与生产同一算法（Date + 本地分量），与机器时区无关。
+    const iso = '2026-01-02T03:04:05Z'
+    const d = new Date(iso)
+    const p = (n: number) => String(n).padStart(2, '0')
+    const localExpected = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`
+    expect(vm.fmtTime(iso)).toBe(localExpected)
+    // 非法输入退回纯展示，不崩
+    expect(vm.fmtTime('not-a-time')).toContain('not-a-time')
     wrapper.unmount()
   })
 

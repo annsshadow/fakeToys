@@ -277,3 +277,34 @@ class TestBenchmarkExtended:
         current = {"metrics": {"pass_rate": 0.9}, "timestamp": "t1"}
         comparison = bench.compare_with_baseline(current, baseline)
         assert comparison["overall"] == "improved"
+
+
+class TestDeltaRatioZeroBaselineL187:
+    """L187：baseline 指标读数为 0.0 时 delta_ratio 未定义（除零），记 None 而非 0.0。
+
+    改前 `if reference else 0.0` 把 reference=0.0 读成「无相对变化」，与同条目
+    improved/regressed 状态自相矛盾；改后记 None（与 no_baseline 哨兵同口径）。
+    """
+
+    def test_zero_baseline_ratio_is_none_not_zero(self):
+        bench = make_benchmark()
+        baseline = {"metrics": {"pass_rate": 0.0}, "timestamp": "t0"}
+        current = {"metrics": {"pass_rate": 0.5}, "timestamp": "t1"}
+        comp = bench.compare_with_baseline(current, baseline)
+        assert comp["comparisons"]["pass_rate"]["status"] == "improved"
+        assert comp["comparisons"]["pass_rate"]["delta_ratio"] is None
+
+    def test_zero_baseline_and_zero_current_ratio_is_none(self):
+        bench = make_benchmark()
+        baseline = {"metrics": {"pass_rate": 0.0}, "timestamp": "t0"}
+        current = {"metrics": {"pass_rate": 0.0}, "timestamp": "t1"}
+        comp = bench.compare_with_baseline(current, baseline)
+        assert comp["comparisons"]["pass_rate"]["status"] == "unchanged"
+        assert comp["comparisons"]["pass_rate"]["delta_ratio"] is None
+
+    def test_nonzero_baseline_ratio_still_computed(self):
+        bench = make_benchmark()
+        baseline = {"metrics": {"pass_rate": 0.5}, "timestamp": "t0"}
+        current = {"metrics": {"pass_rate": 0.9}, "timestamp": "t1"}
+        comp = bench.compare_with_baseline(current, baseline)
+        assert comp["comparisons"]["pass_rate"]["delta_ratio"] == 0.8  # (0.9-0.5)/0.5

@@ -18,6 +18,7 @@ import { triggerUniHook } from '../../test/uni-app-stub'
 import { mountPage } from '../../test/page'
 import { makeConfig, makeLevel, makeSkill } from '../../test/fixtures'
 import type { ChallengeOutcome, DefenseView } from '@/game/defense'
+import { skillBaseDamageAtLevel, skillRulesFromServer } from '@/game/skill'
 
 vi.mock('@/api/client', () => ({
   guestLogin: vi.fn(),
@@ -32,10 +33,15 @@ vi.mock('@/api/client', () => ({
   challengeDefense: vi.fn(),
 }))
 
-vi.mock('@/game/defense', () => ({
-  runChallenge: vi.fn(),
-  validateSnapshot: vi.fn((c: DefenseView) => ({ ok: !String(c.snapshot_hash).startsWith('bad') })),
-}))
+vi.mock('@/game/defense', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/game/defense')>()
+  return {
+    runChallenge: vi.fn(),
+    validateSnapshot: vi.fn((c: DefenseView) => ({ ok: !String(c.snapshot_hash).startsWith('bad') })),
+    // 第 134 轮：isShieldActive 是纯函数，用真实现（护盾时间判定本身就是被测行为）。
+    isShieldActive: actual.isShieldActive,
+  }
+})
 
 const mockApi = vi.mocked(api, true)
 const defenseModule = await import('@/game/defense')
@@ -85,7 +91,7 @@ beforeEach(() => {
   mockApi.fetchMe.mockResolvedValue({ user_id: 7, build: null, build_rating: null, power: 9 } as any)
   mockApi.fetchLoadout.mockResolvedValue({ skill_ids: [1] })
   mockApi.fetchDefenses.mockResolvedValue({
-    mine: defenseView({ shielded_until: '2026-01-02', my_attempts_today: 2 } as any),
+    mine: defenseView({ shielded_until: '2099-01-02T00:00:00Z', my_attempts_today: 2 } as any),
     candidates: [defenseView()],
     attempt_limit: 5,
   } as any)
@@ -108,7 +114,27 @@ describe('me.vue 我的页', () => {
     expect(wrapper.text()).toContain('1 胜 / 2 负')
     expect(wrapper.text()).toContain('可挑战的防线')
     expect(wrapper.text()).toContain('今日剩余 3 次') // attempt_limit 5 - my_attempts_today 2
-    expect(wrapper.text()).toContain('关闭 24h 护盾') // shielded_until 有值
+    expect(wrapper.text()).toContain('关闭 24h 护盾') // shielded_until 未到期（远期）
+  })
+
+  it('第 134 轮：已过期但字段仍在的护盾 → 显示「开启」（不是按字段存在误判为开启）', async () => {
+    const past = new Date(Date.now() - 48 * 3600_000).toISOString() // 2 天前到期
+    // 第 140 轮：护盾现在按「服务端时钟基准」判断。server_time 必须与
+    // 「现在」对齐（取真实当前时间），否则基准会早于 past，把过期护盾误判为开启。
+    mockApi.fetchConfig.mockResolvedValue({
+      ...makeConfig({ levels: [makeLevel()], skills: [makeSkill({ id: 1, apply_element: '' })] }),
+      server_time: new Date().toISOString(),
+    })
+    mockApi.fetchDefenses.mockResolvedValue({
+      mine: defenseView({ shielded_until: past } as any),
+      candidates: [],
+      attempt_limit: 3,
+    } as any)
+    const { wrapper } = mountPage(Me)
+    await flushPromises()
+    // 护盾其实已失效 → 按钮应是「开启 24h 护盾」（可重新开），而非「关闭」
+    expect(wrapper.text()).toContain('开启 24h 护盾')
+    expect(wrapper.text()).not.toContain('关闭 24h 护盾')
   })
 
   it('mine 为空 → "尚未设置防线"；快照不完整的候选不给挑战入口', async () => {
@@ -185,6 +211,19 @@ describe('me.vue 我的页', () => {
     )
   })
 
+  it('第 131 轮：点「保存防线」上报的 skills == 服务端槽位（非本地缺省 [1,2,3]）', async () => {
+    mockApi.fetchLoadout.mockResolvedValue({ skill_ids: [4, 0, 0, 0] } as any)
+    const { wrapper } = mountPage(Me)
+    await flushPromises()
+    const saveBtn = wrapper.findAll('.btn').find((b) => b.text().includes('保存当前构筑为防线'))!
+    await saveBtn.trigger('click')
+    await flushPromises()
+    // 修前这里会是本地缺省 [1,2,3]（技能 2/3 玩家根本没装）；修后必须是服务端 [4]
+    expect(mockApi.saveDefense).toHaveBeenCalledWith(
+      expect.objectContaining({ skills: [4] }),
+    )
+  })
+
   it('保存防线失败 → toast 错误信息', async () => {
     mockApi.saveDefense.mockRejectedValue(new Error('保存失败'))
     const { wrapper } = mountPage(Me)
@@ -222,9 +261,10 @@ describe('me.vue 我的页', () => {
     expect(runChallengeMock).toHaveBeenCalledWith(
       expect.objectContaining({ id: 5 }),
       expect.objectContaining({ level: expect.objectContaining({ id: 1 }), myEquipped: expect.anything() }),
+      expect.any(Number), // 第 140 轮：第三参 = store.estimateServerNowMs() 服务端时钟基准
     )
     expect(mockApi.challengeDefense).toHaveBeenCalledWith(5, {
-      seed: 42,
+      seed: '42', // 第 132 轮：字符串上报（修前是 Number('42')=42）
       won: true,
       duration_ms: 1000,
       hp_left_pct: 0,
@@ -233,6 +273,80 @@ describe('me.vue 我的页', () => {
     expect(wrapper.text()).toContain('攻破防线')
     expect(wrapper.text()).toContain('金币 10 · 钻石 2 · 钥匙 1 · 体力 3 · vip 9')
     expect(store.wallet.coin).toBe(1) // refreshWallet 生效
+  })
+
+  it('第 147 轮：挑战者技能底伤按实际等级烘入（防线挑战与 P1 同口径，不恒按 1 级模拟）', async () => {
+    // 玩家技能 1 升到 3 级（服务端 build 权威）；config.skill_rules = {max_level:10, coef_permille:100}
+    mockApi.fetchMe.mockResolvedValue({
+      user_id: 7,
+      build: {
+        skills: { '1': { id: 1, level: 3 } },
+        attacker: {
+          attack: 100, crit_permille: 50, crit_multiplier_permille: 1500,
+          reaction_mult_permille: 1000, element_cap: 3, reaction_tier: 1,
+          element_coef_permille: 1000, heat_cap_permille: 0, armor_permille: 0, mechanic_permille: 0,
+        },
+      },
+      build_rating: null,
+      power: 9,
+    } as any)
+    const { wrapper } = mountPage(Me)
+    await flushPromises()
+    await wrapper.findAll('.cand .btn')[0]!.trigger('click')
+    await new Promise((r) => setTimeout(r, 60))
+    await flushPromises()
+
+    const myEq = runChallengeMock.mock.calls[0]![1].myEquipped as any[]
+    const s1 = myEq.find((e) => e.skillId === 1)!
+    const rules = skillRulesFromServer({ max_level: 10, coef_permille: 100, base_cost: 100 })
+    // 3 级 → coef 1200‰ → 100 * 1200 / 1000 = 120（非 1 级裸值 100）
+    expect(s1.baseDamage).toBe(skillBaseDamageAtLevel(rules, 100n, 3))
+    expect(s1.baseDamage).toBe(120n)
+    expect(s1.baseDamage).not.toBe(100n) // 修前会直接拿内容表裸 base_damage（1 级）
+  })
+
+  it('第 140 轮：护盾态由服务端时钟估算决定（远未来 server_time → 本地视为未来的护盾按已过期处理）', async () => {
+    // beforeEach 的 mine.shielded_until = 2099-01-02（远期）：
+    // 按本地 2026 判是「护盾开启」；把服务端时钟设为 2100-01-01（estimate 用它），
+    // 2099-01-02 已过期 → 按钮必须是「开启 24h 护盾」。
+    // 若 me.vue 回退到裸 Date.now()，这条立刻红。
+    mockApi.fetchConfig.mockResolvedValue({
+      ...makeConfig({ levels: [makeLevel()], skills: [makeSkill({ id: 1, apply_element: '' })] }),
+      server_time: '2100-01-01T00:00:00Z',
+    })
+    const { wrapper } = mountPage(Me)
+    await flushPromises()
+    expect(wrapper.text()).toContain('开启 24h 护盾')
+    expect(wrapper.text()).not.toContain('关闭 24h 护盾')
+  })
+
+  it('第 140 轮：挑战模拟把 store 的服务端时钟估算传入 runChallenge（第三参）', async () => {
+    const { wrapper } = mountPage(Me)
+    await flushPromises()
+    await wrapper.findAll('.cand .btn')[0]!.trigger('click')
+    await new Promise((r) => setTimeout(r, 60))
+    await flushPromises()
+    const args = runChallengeMock.mock.calls[0]!
+    expect(args.length).toBe(3)
+    expect(typeof args[2]).toBe('number')
+  })
+
+  it('第 132 轮：大种子按字符串上报，不被 Number() 截断', async () => {
+    // 引擎产出的 63-bit 种子（> 2^53）必须以字符串原样上报。
+    const bigSeed = '9007199254740993' // 2^53+1，Number() 会舍成 ...992
+    runChallengeMock.mockReturnValue(
+      outcome({ report: { seed: bigSeed, won: true, duration_ms: 1000, hp_left_pct: 0, replay_hash: 'fff' } as any }),
+    )
+    mockApi.fetchLoadout.mockResolvedValue({ skill_ids: [1] } as any)
+    const { wrapper } = mountPage(Me)
+    await flushPromises()
+    await wrapper.findAll('.cand .btn')[0]!.trigger('click')
+    await new Promise((r) => setTimeout(r, 60))
+    await flushPromises()
+    expect(mockApi.challengeDefense).toHaveBeenCalledWith(
+      5,
+      expect.objectContaining({ seed: bigSeed }), // 字符串，且是精确值
+    )
   })
 
   it('模拟报错（outcome.error）→ 只展示战报不上报', async () => {
@@ -261,6 +375,10 @@ describe('me.vue 我的页', () => {
   })
 
   it('挑战守卫：无出战技能 / 无关卡数据 / 不可挑战的候选', async () => {
+    // 第 131 轮：「无出战技能」现在由**服务端**返回空槽位来模拟 ——
+    // me.vue 挂载时会 loadLoadout()，把 equippedSkillIds 同步成服务端值。
+    // 若服务端返回 [4]，本地就不会是空，守卫不会触发。
+    mockApi.fetchLoadout.mockResolvedValue({} as any) // 空槽位 → equippedSkillIds=[]
     const { wrapper, store } = mountPage(Me, (s) => {
       s.equippedSkillIds = []
     })
@@ -354,6 +472,7 @@ describe('me.vue 我的页', () => {
     expect(runChallengeMock).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({ level: expect.objectContaining({ id: 2 }) }),
+      expect.any(Number),
     )
 
     // config 无 levels → null → toast 守卫

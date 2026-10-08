@@ -25,6 +25,13 @@ function ctx(over: Partial<TerrainContext> = {}): TerrainContext {
     enemies: [] as Enemy[],
     projectiles: [] as Projectile[],
     terrainTick: 5n,
+    // ⚠️ 第 77 轮新增字段：`elementCap`（元素层数上限）。
+    //
+    // 夹具里必须给一个**显式**值而不是让它可选 ——
+    // 若它是可选的（`elementCap?:`），那么没给 cap 的测试就会
+    // 静默走「与 undefined 比较」（恒 false → 永不叠层），
+    // 而那正是本轮修掉的那个 bug 的一个变体。
+    elementCap: 3n,
     enemiesInRadius: () => [] as Enemy[],
     within: (_tx: number, _ty: number, _r: number, x: bigint, y: bigint) => {
       void _tx
@@ -104,6 +111,22 @@ describe('地形：油桶', () => {
       hp: 3n,
       maxHp: 100n,
       shield: 0n,
+      // ⚠️ 第 77 轮补上 `armorPermille` 与 `applyElement`。
+      //
+      // 这个夹具此前**只**声明油桶火区用到的那几个字段
+      // （hp / hitFlashMs / stacks / dead）。
+      // 修复后火区会读 `e.armorPermille` 并调 `e.applyElement`，
+      // 于是缺字段的夹具炸了。
+      //
+      // ⚠️ 这是「夹具温和度失效」而不是「修复引入缺陷」：
+      // 真实的 `Enemy` 上这两个字段**恒为 bigint**（构造器里初始化），
+      // 只有手搓的字面量夹具才会缺。
+      // 所以改夹具而不是把产品码里的护甲去掉。
+      armorPermille: 0n,
+      applyElement: (e: Element, add: bigint, cap: bigint) => {
+        const cur = victim.stacks.get(e) ?? 0n
+        victim.stacks.set(e, cur < cap ? cur + add : cur)
+      },
       hitFlashMs: 0,
       stacks: new Map<Element, bigint>(),
       dead: false,

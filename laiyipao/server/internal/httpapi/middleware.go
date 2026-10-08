@@ -3,8 +3,10 @@ package httpapi
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"runtime/debug"
+	"strconv"
 	"strings"
 	"time"
 
@@ -79,6 +81,22 @@ func isSettleRejection(err error) bool {
 		// 上界校验类（2026-09-26 补齐，此前全部误返回 500）
 		domain.ErrTooManyReactions, domain.ErrTooManyShots,
 		domain.ErrTooManyLeaked, domain.ErrInvalidField,
+		// HPLeft / slot-budget / replay_skills（第 58 轮补）。
+		//
+		// 这三个都是「用户输入被理解后拒绝」，此前一律落到兜底的 500：
+		//   - ErrHPLeftExceedsBase      结算时上报的剩余血量超过关卡初始血量
+		//   - ErrSlotBudgetExceeded     装备件数超过槽位预算（loadout 路径）
+		//   - ErrReplaySkillsMismatch   回放 S 段与构筑不符（第 56 轮加的校验）
+		//
+		// 500 的代价是具体的：客户端只能显示「服务内部错误」，
+		// 排查会滑向「服务端坏了」而不是「这个上报被拒了」，
+		// 而且它们会混进服务故障告警，把真正的故障淹掉。
+		//
+		// `TestEverySentinelErrorIsClassified` 保证这个名单不会再漏 ——
+		// 之前那份名单是硬编码的，漏一个测试照样绿。
+		domain.ErrHPLeftExceedsBase,
+		service.ErrSlotBudgetExceeded,
+		service.ErrReplaySkillsMismatch,
 	} {
 		if errors.Is(err, target) {
 			return true
@@ -99,7 +117,7 @@ func requestLogger() fiber.Handler {
 	}
 }
 
-// requireAdmin 校验管理员 Bearer 令牌并把 admin_id 写入 Locals。
+// requireAdmin 校验管理员 Bearer 令牌并把 admin_id、admin_role 写入 Locals。
 func requireAdmin(s *service.Service) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		token := bearerToken(c)
@@ -110,7 +128,31 @@ func requireAdmin(s *service.Service) fiber.Handler {
 		if err != nil {
 			return failErr(c, err)
 		}
+		// 第 127 轮：连同角色一起解析，供 requireWritable 使用。
+		role, err := s.AdminRole(c.Context(), adminID)
+		if err != nil {
+			return failErr(c, err)
+		}
 		c.Locals("admin_id", adminID)
+		c.Locals("admin_role", role)
+		return c.Next()
+	}
+}
+
+// requireWritable 拒绝 readonly 账号的写操作。
+//
+// 必须挂在 requireAdmin **之后**（requireAdmin 负责写 admin_role）。
+//
+// ⚠️ 第 127 轮：admin_users.role 自 00007 迁移就标了 admin/ops/readonly
+// 三个角色，但**没有任何端点消费它** —— readonly 账号可以和 admin 一样
+// 封禁玩家、发币、改关卡/商城。
+// 语义：仅 "readonly" 被拒写；其余角色（admin/ops/未知值）保持可写
+// （该列默认 ops，放行才是「未知角色」的正确方向，不该把写操作打成 500）。
+func requireWritable() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		if role, _ := c.Locals("admin_role").(string); role == "readonly" {
+			return fail(c, fiber.StatusForbidden, "readonly", "readonly 账号不可执行写操作")
+		}
 		return c.Next()
 	}
 }
@@ -169,6 +211,63 @@ func bearerToken(c *fiber.Ctx) string {
 		return strings.TrimSpace(h[len(prefix):])
 	}
 	return ""
+}
+
+// queryInt 解析查询参数里的整数，并把「存在但不是合法整数」变成 ErrBadInput。
+//
+// # 为什么不能用 strconv 然后丢错误
+//
+// 第 104 轮：`adminBattles` 写的是
+//
+//	userID, _ := strconv.ParseInt(c.Query("user_id", "0"), 10, 64)
+//
+// 而 service 层的过滤条件是
+//
+//	($1 = 0 OR br.user_id = $1) AND ($2 = 0 OR br.level_id = $2)
+//
+// —— **0 是「不过滤」的哨兵值**（`stats.go`）。
+// 于是 `?user_id=abc` 解析失败 → 0 → 过滤条件恒真
+// → **返回所有用户的战报**，而且返回 **200**。实测确认。
+//
+// 后果不是「参数没生效」那么轻：运营在查一个疑似作弊的玩家时，
+// 若 user_id 打错，看到的是**别人的**战报列表，
+// 于是得出「这个人没有异常战报」的结论。
+//
+// 这是一个**会误导调查方向的静默错误答案**，比 400 坏得多。
+//
+// # 三种情形必须分开
+//
+//	（键不存在）  → 返回 def（「不过滤」/「默认页大小」）
+//	?limit=      → ErrBadInput（400）
+//	?limit=%20   → ErrBadInput（400）
+//	?limit=abc   → ErrBadInput（400）
+//
+// # 为什么「显式空串」也算非法，而不是宽容地当缺失
+//
+// 我第一版把空串当缺失（理由是「前端拼 URL 可能传空」）。
+// **实测推翻了它**：`?user_id=` 走默认值 0 → 不过滤 →
+// 200 + **所有人的**战报 —— 与 `?user_id=abc` 危害完全相同。
+//
+// 宽容在这里不是仁慈，是**开一个同样的洞**。
+//
+// 而「前端会不会真发空参数」是可以查的，不必猜：
+// `admin/src/api/index.ts` 用 `URLSearchParams` 且只在
+// `if (params.x)` 为真时 `q.set(...)` —— **从不发空参数**。
+//
+// 所以判据必须是「键在不在」（`QueryArgs().Has`），
+// 而不是「值空不空」（`c.Query(name) != ""`）。
+// 前者区分「没传」与「传了但是空的」，后者分不开 ——
+// 而这两个的**后果完全不同**。
+func queryInt(c *fiber.Ctx, name string, def int) (int, error) {
+	if !c.Context().QueryArgs().Has(name) {
+		return def, nil
+	}
+	raw := strings.TrimSpace(c.Query(name))
+	v, err := strconv.Atoi(raw)
+	if err != nil {
+		return 0, fmt.Errorf("%w: 查询参数 %s=%q 不是合法整数", service.ErrBadInput, name, raw)
+	}
+	return v, nil
 }
 
 // userIDFrom 读取中间件写入的 user_id。

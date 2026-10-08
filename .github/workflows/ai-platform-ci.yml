@@ -105,9 +105,11 @@ jobs:
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: "22"
+          cache: npm
+          cache-dependency-path: augmentor/web/package-lock.json
 
       - name: Install dependencies
-        run: npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
 
       - name: Lint
         # --max-warnings 0 已写进 package.json 的 lint 脚本：任何新 warning 都会让 CI 失败

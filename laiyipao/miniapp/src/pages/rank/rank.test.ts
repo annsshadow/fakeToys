@@ -82,6 +82,38 @@ describe('rank.vue 排行榜', () => {
     expect(wrapper.text()).toContain('按累计成长值排名。')
   })
 
+  it('第 136 轮：陈旧响应不覆盖更新的 tab（快速切 tab 的竞态）', async () => {
+    // 手动控制两个在途请求的完成顺序：让「更早发起」的 stage 请求
+    // 比「更晚发起」的 efficiency 请求后到。修前 items 会被 stage 覆盖，
+    // 修后（seq 守卫）stage 响应被丢弃，列表保持 efficiency。
+    let resolveStage: (v: any) => void = () => {}
+    let resolveEff: (v: any) => void = () => {}
+    const stagePending = new Promise((r) => (resolveStage = r))
+    const effPending = new Promise((r) => (resolveEff = r))
+    mockApi.fetchLeaderboard.mockImplementation((type?: string) => {
+      if (type === 'stage') return stagePending as unknown as Promise<any>
+      if (type === 'efficiency') return effPending as unknown as Promise<any>
+      return Promise.resolve({ items: [] })
+    })
+
+    const { wrapper } = mountPage(Rank)
+    await flushPromises() // 挂载默认 power（已 resolve {items:[]}）
+    const tabs = wrapper.findAll('.tab')
+    await tabs[1]!.trigger('click') // 发起 stage（seq 2，在途）
+    await tabs[2]!.trigger('click') // 发起 efficiency（seq 3，在途）
+
+    // 先让「新」的 efficiency 完成，再让「旧」的 stage 后到
+    resolveEff({ items: [{ user_id: 100, nickname: 'FRESH_EFF', score: 1 }] })
+    await flushPromises()
+    expect(wrapper.text()).toContain('FRESH_EFF')
+
+    resolveStage({ items: [{ user_id: 200, nickname: 'STALE_STAGE', score: 2 }] })
+    await flushPromises()
+    // 陈旧 stage 响应被丢弃：列表仍是 efficiency 的 FRESH_EFF，而非 STALE_STAGE
+    expect(wrapper.text()).toContain('FRESH_EFF')
+    expect(wrapper.text()).not.toContain('STALE_STAGE')
+  })
+
   it('加载中 → 显示加载文案', async () => {
     mockApi.fetchLeaderboard.mockImplementation(() => new Promise(() => {}))
     const { wrapper } = mountPage(Rank)

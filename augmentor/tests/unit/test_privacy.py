@@ -135,3 +135,34 @@ class TestModuleConvenience:
         """模式按长串优先：身份证先于手机号匹配"""
         keys = list(DEFAULT_PATTERNS.keys())
         assert keys.index("id_card") < keys.index("phone")
+
+
+class TestPiiSanitizerFalsyZeroL188:
+    """L188：PiiSanitizer 构造器 falsy 假零收口——显式空容器是「零元素」，不是「没传」。
+
+    改前 `patterns or DEFAULT_PATTERNS` 把显式 `patterns={}` 读成没传、悄悄套上全量默认
+    模式（脱敏范围被无声放大）；改后 `patterns if patterns is not None else ...`，空容器保留
+    为「零元素」。fields / patterns / placeholders 三处同式，各钉一格 + None 回落默认防修过头。
+    """
+
+    def test_empty_patterns_means_zero_patterns(self):
+        from augmentor import PiiSanitizer
+        text, hits = PiiSanitizer(patterns={}).sanitize_text("联系 a@b.com 电话 13800138000")
+        assert hits == [] and "a@b.com" in text, "patterns={} 应零模式、不做脱敏"
+
+    def test_none_patterns_falls_back_to_default(self):
+        from augmentor import PiiSanitizer
+        text, hits = PiiSanitizer().sanitize_text("联系 a@b.com")
+        assert "a@b.com" not in text and hits, "patterns=None 应回落默认全量模式（防修过头）"
+
+    def test_empty_fields_means_zero_fields(self):
+        from augmentor import PiiSanitizer
+        s = PiiSanitizer(fields=[])
+        assert s.fields == []
+
+    def test_empty_placeholders_is_kept(self):
+        import re
+        from augmentor import PiiSanitizer
+        pat = re.compile(r"\d+")
+        s = PiiSanitizer(patterns={"digits": pat}, placeholders={})
+        assert s.placeholders == {}

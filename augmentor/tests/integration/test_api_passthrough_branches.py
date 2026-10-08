@@ -15,6 +15,8 @@ from types import SimpleNamespace
 
 import pytest
 
+from api.deps import INTERNAL_ERROR_DETAIL
+
 
 @pytest.fixture
 def env(tmp_path, monkeypatch):
@@ -105,7 +107,7 @@ class TestQualityHttpPassthrough:
             json={"input_file": "a.json", "method": "zscore", "threshold": 3.0},
         )
         assert response.status_code == 500
-        assert "outlier boom" in response.json()["detail"]
+        assert response.json()["detail"] == INTERNAL_ERROR_DETAIL  # L180/A155②: no leak of original exception text
 
 
 class TestDataRoutePassthrough:
@@ -171,7 +173,7 @@ class TestAugmentStart500:
             json={"input_file": "a.json", "output_file": "out.json"},
         )
         assert response.status_code == 500
-        assert "pipeline down" in response.json()["detail"]
+        assert response.json()["detail"] == INTERNAL_ERROR_DETAIL  # L180/A155②: no leak of original exception text
 
 
 class TestRateLimiterReset:

@@ -233,11 +233,14 @@ class QualityBenchmark:
                 status = "regressed"
                 regressed.append(metric)
 
+            # L187：reference == 0.0 时相对变化未定义（除零），旧写法 `if reference else 0.0`
+            # 把它读成「无相对变化」，与同条目 improved/regressed 状态自相矛盾。改记 None
+            # （与 :217 no_baseline 档的哨兵同口径），机器面读到 None 即知「无相对基准」。
             comparisons[metric] = {
                 "current": current,
                 "baseline": reference,
                 "delta": delta,
-                "delta_ratio": (delta / reference) if reference else 0.0,
+                "delta_ratio": (delta / reference) if reference != 0.0 else None,
                 "status": status
             }
 

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 攻方加成（装备/宝石/专精）对**关卡可完成性**的影响。
  *
  * ⚠️ 为什么在接线之后立刻要测这个
@@ -125,10 +125,16 @@ const TIERS = {
   mid: { attack: 1200n, elementCoefPermille: 600n, critPermille: 200n, heatCapPermille: 400n },
   max: {
     attack: 1000n,
-    elementCoefPermille: 1200n,
+    // ⚠️ 这两个值与 `server/internal/service/loadout_attacker.go` 的
+    // MaxLoadoutElementCoefPermille / MaxLoadoutHeatCapPermille **同源**。
+    //
+    // 第 65 轮：1200→1000、1000→600。修好弹射/溅射后战斗整体上移，
+    // 逐关回归重新出现（第 10 关 -4.25% 且掉星），实测扫描后收敛到这两个值。
+    // 数据表见 loadout_attacker.go 对应常量的注释。
+    elementCoefPermille: 1000n,
     critPermille: 500n,
     reactionMultPermille: 800n,
-    heatCapPermille: 1000n,
+    heatCapPermille: 600n,
     armorPermille: 750n,
     mechanicPermille: 1000n,
   },

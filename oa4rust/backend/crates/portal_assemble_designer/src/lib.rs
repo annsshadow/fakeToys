@@ -1,0 +1,3736 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
+#[allow(dead_code)]
+use axum::{
+    extract::{Extension, Path},
+    routing::delete,
+    routing::get,
+    routing::post,
+    routing::put,
+    Json, Router,
+};
+use deadpool_postgres::Pool;
+use serde::Deserialize;
+use serde_json::Value;
+use shared::{
+    error::AppError,
+    response::{option_to_json, ActionResult},
+};
+
+pub mod routes;
+pub mod u2_script;
+
+#[derive(Debug, Deserialize)]
+pub struct CreatePortalRequest {
+    pub name: Option<String>,
+    pub description: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CreatePageRequest {
+    pub name: Option<String>,
+    pub category: Option<String>,
+    pub content: Option<Value>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct SavePageRequest {
+    pub content: Option<Value>,
+}
+
+#[allow(non_snake_case)]
+pub async fn create_design(
+    pool: Extension<Pool>,
+    axum::extract::Json(req): Json<CreatePortalRequest>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let id = uuid::Uuid::new_v4().to_string();
+    let name = req.name.unwrap_or_default();
+    let description = req.description.unwrap_or_default();
+    let creator = "system";
+
+    client
+        .execute(
+            "INSERT INTO x_portal_design (id, name, description, creator, create_time, update_time) VALUES ($1, $2, $3, $4, NOW(), NOW())",
+            &[&id, &name, &description, &creator],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let result = Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(id)),
+        ("name".to_string(), Value::String(name)),
+        ("description".to_string(), Value::String(description)),
+    ]));
+    Ok(Json(ActionResult::success(result)))
+}
+
+#[allow(non_snake_case)]
+pub async fn get_design(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, name, description, content FROM x_portal_design WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let content: Option<String> = row.get("content");
+            let mut map = serde_json::Map::new();
+            map.insert(
+                "id".to_string(),
+                Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+            );
+            map.insert(
+                "name".to_string(),
+                Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+            );
+            map.insert(
+                "description".to_string(),
+                Value::String(
+                    row.get::<_, Option<String>>("description")
+                        .unwrap_or_default(),
+                ),
+            );
+            if let Some(val) =
+                option_to_json::<Value>(content.and_then(|s| serde_json::from_str(&s).ok()))
+            {
+                map.insert("components".to_string(), val);
+            }
+            let result = Value::Object(map);
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("design not found"))),
+    }
+}
+
+#[allow(non_snake_case)]
+pub async fn list_designs(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, name, description, create_time, update_time FROM x_portal_design WHERE deleted_at IS NULL ORDER BY update_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "description".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("description")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "updateTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("update_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn save_design(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let content = body
+        .get("content")
+        .and_then(|v| v.as_str())
+        .unwrap_or("null");
+    let content_str = content.to_string();
+
+    let result = client
+        .execute(
+            "UPDATE x_portal_design SET content = $1, update_time = NOW() WHERE id = $2",
+            &[&content_str, &id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("design not found")));
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("saved".to_string(), Value::Bool(result > 0)),
+            ("content".to_string(), Value::String(content.to_string())),
+        ]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn list_pages_by_category(
+    pool: Extension<Pool>,
+    axum::extract::Path(category): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, name, category, content, creator, create_time, update_time FROM x_portal_page WHERE category = $1 ORDER BY update_time DESC",
+            &[&category],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            let content: Option<String> = row.get("content");
+            let mut map = serde_json::Map::new();
+            map.insert("id".to_string(), Value::String(row.get("id")));
+            map.insert("name".to_string(), Value::String(row.get("name")));
+            map.insert(
+                "category".to_string(),
+                Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+            );
+            if let Some(val) =
+                option_to_json::<Value>(content.and_then(|s| serde_json::from_str(&s).ok()))
+            {
+                map.insert("content".to_string(), val);
+            }
+            map.insert(
+                "creator".to_string(),
+                Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+            );
+            map.insert(
+                "createTime".to_string(),
+                Value::String(row.get("create_time")),
+            );
+            map.insert(
+                "updateTime".to_string(),
+                Value::String(row.get("update_time")),
+            );
+            Value::Object(map)
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn get_page(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, category, content, creator, create_time, update_time FROM x_portal_page WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let content: Option<String> = row.get("content");
+            let mut map = serde_json::Map::new();
+            map.insert("id".to_string(), Value::String(row.get("id")));
+            map.insert("name".to_string(), Value::String(row.get("name")));
+            map.insert(
+                "category".to_string(),
+                Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+            );
+            if let Some(val) =
+                option_to_json::<Value>(content.and_then(|s| serde_json::from_str(&s).ok()))
+            {
+                map.insert("content".to_string(), val);
+            }
+            map.insert(
+                "creator".to_string(),
+                Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+            );
+            map.insert(
+                "createTime".to_string(),
+                Value::String(row.get("create_time")),
+            );
+            map.insert(
+                "updateTime".to_string(),
+                Value::String(row.get("update_time")),
+            );
+            let result = Value::Object(map);
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("page not found"))),
+    }
+}
+
+#[allow(non_snake_case)]
+pub async fn create_page(
+    pool: Extension<Pool>,
+    axum::extract::Json(req): Json<CreatePageRequest>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let id = uuid::Uuid::new_v4().to_string();
+    let name = req.name.unwrap_or_default();
+    let category = req.category.unwrap_or_default();
+    let content = req
+        .content
+        .unwrap_or_else(|| Value::Object(serde_json::Map::new()));
+    let content_str = serde_json::to_string(&content).map_err(|_| AppError::Internal)?;
+    let creator = "system";
+
+    client
+        .execute(
+            "INSERT INTO x_portal_page (id, name, category, content, creator, create_time, update_time) VALUES ($1, $2, $3, $4, $5, NOW(), NOW())",
+            &[&id, &name, &category, &content_str, &creator],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let result = Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(id)),
+        ("name".to_string(), Value::String(name)),
+        ("category".to_string(), Value::String(category)),
+        ("content".to_string(), content),
+    ]));
+
+    Ok(Json(ActionResult::success(result)))
+}
+
+#[allow(non_snake_case)]
+pub async fn save_page(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Json(req): Json<SavePageRequest>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let content = req
+        .content
+        .unwrap_or_else(|| Value::Object(serde_json::Map::new()));
+    let content_str = serde_json::to_string(&content).map_err(|_| AppError::Internal)?;
+
+    let result = client
+        .execute(
+            "UPDATE x_portal_page SET content = $1, update_time = NOW() WHERE id = $2",
+            &[&content_str, &id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("page not found")));
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("saved".to_string(), Value::Bool(result > 0)),
+            ("content".to_string(), Value::String(content.to_string())),
+        ]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn delete_page(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let result = client
+        .execute("DELETE FROM x_portal_page WHERE id = $1", &[&id])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error(
+            "page not found or already deleted",
+        )));
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(result > 0)),
+        ]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn design_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    list_designs(pool).await
+}
+
+#[allow(non_snake_case)]
+pub async fn design_get(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    get_design(pool, Path(id)).await
+}
+
+#[allow(non_snake_case)]
+pub async fn design_save(
+    pool: Extension<Pool>,
+    axum::extract::Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let id = body
+        .get("id")
+        .and_then(|v| v.as_str())
+        .ok_or(AppError::BadRequest("id is required".to_string()))?;
+    let content = body
+        .get("content")
+        .and_then(|v| v.as_str())
+        .unwrap_or("null");
+    let content_str = content.to_string();
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let result = client
+        .execute(
+            "UPDATE x_portal_design SET content = $1, update_time = NOW() WHERE id = $2 AND deleted_at IS NULL",
+            &[&content_str, &id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("design not found")));
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id.to_string())),
+            ("saved".to_string(), Value::Bool(result > 0)),
+            ("content".to_string(), Value::String(content.to_string())),
+        ]),
+    ))))
+}
+
+pub fn portal_assemble_designer_router() -> Router {
+    Router::new()
+        .route(
+            "/api/portal/assemble/designer/page/list/{category}",
+            get(list_pages_by_category),
+        )
+        .route("/api/portal/assemble/designer/page/{id}", get(get_page))
+        .route(
+            "/api/portal/assemble/designer/page/create",
+            post(create_page),
+        )
+        .route(
+            "/api/portal/assemble/designer/page/save/{id}",
+            post(save_page),
+        )
+        .route(
+            "/api/portal/assemble/designer/page/delete/{id}",
+            post(delete_page),
+        )
+        .route("/api/portal/assemble/designer/create", post(create_design))
+        .route("/api/portal/assemble/designer/get/{id}", get(get_design))
+        .route("/api/portal/assemble/designer/list", get(list_designs))
+        // 裸根（桌面 PortalDesignerApp 配置串引用）：返回门户设计器列表
+        .route("/api/portal/assemble/designer", get(list_designs))
+        .route("/api/portal/assemble/designer/save/{id}", post(save_design))
+        .route("/api/portal/design/list", get(design_list))
+        .route("/api/portal/design/{id}", get(design_get))
+        .route("/api/portal/design/save", post(design_save))
+        .route(
+            "/api/portal/assemble/designer/dict/{id}",
+            get(crate::dict_id),
+        )
+        .route(
+            "/api/portal/assemble/designer/dict/list/paging/{page}/{size}/{size}",
+            get(crate::dict_list_paging_page_size_size),
+        )
+        .route(
+            "/api/portal/assemble/designer/dict/list/portal/{portalId}",
+            get(crate::dict_list_portal_portalId),
+        )
+        .route(
+            "/api/portal/assemble/designer/file/{flag}",
+            get(crate::file_flag),
+        )
+        .route(
+            "/api/portal/assemble/designer/file/download/{id}",
+            get(crate::file_id_download),
+        )
+        .route(
+            "/api/portal/assemble/designer/file/upload/{id}",
+            post(crate::file_id_upload),
+        )
+        .route(
+            "/api/portal/assemble/designer/file/list/application/{applicationFlag}",
+            get(crate::file_list_application_applicationFlag),
+        )
+        .route(
+            "/api/portal/assemble/designer/file/list/{id}/{next}/{count}",
+            get(crate::file_list_id_next_count),
+        )
+        .route(
+            "/api/portal/assemble/designer/{id}/{count}",
+            get(crate::id_count),
+        )
+        .route(
+            "/api/portal/assemble/designer/output/select/file/{flag}",
+            get(crate::output_flag_select_file),
+        )
+        .route(
+            "/api/portal/assemble/designer/output/select/{portalFlag}",
+            get(crate::output_portalFlag_select),
+        )
+        .route(
+            "/api/portal/assemble/designer/list/portal/{page}/{portalId}",
+            get(crate::page_list_portal_page_portalId),
+        )
+        .route(
+            "/api/portal/assemble/designer/pageversion/{id}",
+            get(crate::pageversion_id),
+        )
+        .route(
+            "/api/portal/assemble/designer/pageversion/list/{page}/{pageId}",
+            get(crate::pageversion_list_page_page_pageId),
+        )
+        .route(
+            "/api/portal/assemble/designer/portal/{id}",
+            get(crate::portal_id),
+        )
+        .route(
+            "/api/portal/assemble/designer/portal/icon/{id}",
+            get(crate::portal_id_icon),
+        )
+        .route(
+            "/api/portal/assemble/designer/portal/permission/{id}",
+            get(crate::portal_id_permission),
+        )
+        .route(
+            "/api/portal/assemble/designer/portal/list/portalcategory/{portalCategory}",
+            get(crate::portal_list_portalcategory_portalCategory),
+        )
+        .route(
+            "/api/portal/assemble/designer/portal/list/summary/portalcategory/{portalCategory}",
+            get(crate::portal_list_summary_portalcategory_portalCategory),
+        )
+        .route(
+            "/api/portal/assemble/designer/script/{id}",
+            get(crate::script_id)
+                .put(crate::u2_script::update)
+                .delete(crate::u2_script::delete),
+        )
+        .route(
+            "/api/portal/assemble/designer/script",
+            post(crate::u2_script::create),
+        )
+        .route(
+            "/api/portal/assemble/designer/script/list/paging/{page}/{size}/{size}",
+            get(crate::script_list_paging_page_size_size),
+        )
+        .route(
+            "/api/portal/assemble/designer/script/list/portal/{portalId}",
+            get(crate::script_list_portal_portalId),
+        )
+        .route(
+            "/api/portal/assemble/designer/scriptversion/{id}",
+            get(crate::scriptversion_id),
+        )
+        .route(
+            "/api/portal/assemble/designer/scriptversion/list/script/{scriptId}",
+            get(crate::scriptversion_list_script_scriptId),
+        )
+        .route(
+            "/api/portal/assemble/designer/templatepage/{id}",
+            get(crate::templatepage_id),
+        )
+        .route(
+            "/api/portal/assemble/designer/widget/{id}",
+            get(crate::widget_id),
+        )
+        .route(
+            "/api/portal/assemble/designer/widget/list/portal/{portalId}",
+            get(crate::widget_list_portal_portalId),
+        )
+        .route(
+            "/api/portal/assemble/designer/page/delete/{id}",
+            delete(delete_page),
+        )
+        .route("/api/portal/design/save", put(design_save))
+        .route("/api/portal/assemble/designer/save/{id}", put(save_design))
+        .route(
+            "/api/portal/assemble/designer/page/save/{id}",
+            put(save_page),
+        )
+        // ── plan002 U2: page/file/import 族 + 动词差 缺口 (20) ──
+        .route(
+            "/api/portal/assemble/designer/page",
+            post(crate::create_page),
+        )
+        .route(
+            "/api/portal/assemble/designer/page/list/portal/{portalId}",
+            get(crate::page_list_portal_portalId),
+        )
+        .route(
+            "/api/portal/assemble/designer/page/{id}",
+            delete(crate::delete_page),
+        )
+        .route(
+            "/api/portal/assemble/designer/page/{id}",
+            put(crate::save_page),
+        )
+        .route(
+            "/api/portal/assemble/designer/pageversion/list/page/{pageId}",
+            get(crate::pageversion_list_page_pageId),
+        )
+        .route(
+            "/api/portal/assemble/designer/portal",
+            post(crate::create_portal),
+        )
+        .route(
+            "/api/portal/assemble/designer/portal/list/summary",
+            get(crate::portal_list_summary),
+        )
+        .route(
+            "/api/portal/assemble/designer/portal/list/summary/v2",
+            post(crate::portal_list_summary_v2),
+        )
+        .route(
+            "/api/portal/assemble/designer/portal/{id}",
+            delete(crate::delete_portal),
+        )
+        .route(
+            "/api/portal/assemble/designer/portal/{id}",
+            put(crate::update_portal),
+        )
+        .route(
+            "/api/portal/assemble/designer/portal/{id}/icon",
+            put(crate::update_portal_icon),
+        )
+        .route(
+            "/api/portal/assemble/designer/portal/{id}/permission",
+            post(crate::portal_id_permission_post),
+        )
+        .route(
+            "/api/portal/assemble/designer/templatepage",
+            post(crate::create_templatepage),
+        )
+        .route(
+            "/api/portal/assemble/designer/templatepage/list",
+            get(crate::templatepage_list),
+        )
+        .route(
+            "/api/portal/assemble/designer/templatepage/list/category",
+            get(crate::templatepage_list_category),
+        )
+        .route(
+            "/api/portal/assemble/designer/templatepage/list/category",
+            put(crate::update_templatepage_category),
+        )
+        .route(
+            "/api/portal/assemble/designer/templatepage/{id}",
+            delete(crate::delete_templatepage),
+        )
+        .route(
+            "/api/portal/assemble/designer/widget",
+            post(crate::create_widget),
+        )
+        .route(
+            "/api/portal/assemble/designer/widget/{id}",
+            delete(crate::delete_widget),
+        )
+        .route(
+            "/api/portal/assemble/designer/widget/{id}",
+            put(crate::update_widget),
+        )
+        .route(
+            "/api/portal/assemble/designer/designer/search",
+            post(crate::designer_search),
+        )
+        .route(
+            "/api/portal/assemble/designer/file/list/{id}/prev/{count}",
+            get(crate::file_list_id_prev_count),
+        )
+        .route(
+            "/api/portal/assemble/designer/input/compare",
+            put(crate::input_compare),
+        )
+        .route(
+            "/api/portal/assemble/designer/input/cover",
+            put(crate::input_cover),
+        )
+        .route(
+            "/api/portal/assemble/designer/input/create",
+            put(crate::input_create),
+        )
+        .route(
+            "/api/portal/assemble/designer/input/prepare/cover",
+            put(crate::input_prepare_cover),
+        )
+        .route(
+            "/api/portal/assemble/designer/input/prepare/create",
+            put(crate::input_prepare_create),
+        )
+        .route(
+            "/api/portal/assemble/designer/output/list",
+            get(crate::output_list),
+        )
+        .route(
+            "/api/portal/assemble/designer/portal/list",
+            get(crate::portal_list),
+        )
+        .route(
+            "/api/portal/assemble/designer/portalcategory/list",
+            get(crate::portalcategory_list),
+        )
+        .route(
+            "/api/portal/assemble/designer/script/list/manager",
+            post(crate::script_list_manager),
+        )
+        // ── dict / page / widget 斜杠路径家族（设计器桌面视图，shared::crud 通用参数化写）──
+        // 注：page/create、page/save/{id}、page/delete/{id} 已被 U2 类型化 handler 占用
+        .route("/api/portal/assemble/designer/dict/list", get(dict_list))
+        .route(
+            "/api/portal/assemble/designer/dict/create",
+            post(dict_create),
+        )
+        .route(
+            "/api/portal/assemble/designer/dict/save/{id}",
+            put(dict_save),
+        )
+        .route(
+            "/api/portal/assemble/designer/dict/save/{id}",
+            post(dict_save),
+        )
+        .route(
+            "/api/portal/assemble/designer/dict/delete/{id}",
+            delete(dict_delete),
+        )
+        .route(
+            "/api/portal/assemble/designer/dict/delete/{id}",
+            post(dict_delete),
+        )
+        .route("/api/portal/assemble/designer/page/list", get(page_list))
+        .route(
+            "/api/portal/assemble/designer/widget/list",
+            get(widget_list),
+        )
+        .route(
+            "/api/portal/assemble/designer/widget/create",
+            post(widget_create),
+        )
+        .route(
+            "/api/portal/assemble/designer/widget/save/{id}",
+            put(widget_save),
+        )
+        .route(
+            "/api/portal/assemble/designer/widget/save/{id}",
+            post(widget_save),
+        )
+        .route(
+            "/api/portal/assemble/designer/widget/delete/{id}",
+            delete(widget_delete),
+        )
+        .route(
+            "/api/portal/assemble/designer/widget/delete/{id}",
+            post(widget_delete),
+        )
+}
+
+#[cfg(test)]
+#[allow(clippy::module_inception)]
+mod tests;
+#[cfg(test)]
+mod tests_generated;
+
+pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
+    portal_assemble_designer_router().layer(axum::extract::Extension(pool))
+}
+
+#[allow(non_snake_case)]
+pub async fn designer_search(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, name, category, create_time, update_time FROM x_portal_design WHERE deleted_at IS NULL ORDER BY update_time DESC LIMIT 20",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "updateTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("update_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn dict_list_paging_page_size_size(
+    pool: Extension<Pool>,
+    Path((_page, _size, _s2)): Path<(i64, i64, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, name, app_name, create_time FROM x_portal_dict WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $2::bigint OFFSET ($1::bigint - 1) * $2::bigint",
+            &[&_page, &_size],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "appName".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_name").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn dict_list_portal_portalId(
+    pool: Extension<Pool>,
+    Path(portal_id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, name, app_name, create_time FROM x_portal_dict WHERE portal_id = $1 AND deleted_at IS NULL ORDER BY create_time DESC",
+            &[&portal_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "appName".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_name").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn dict_id(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, app_name, app_data, creator, create_time FROM x_portal_dict WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "appName".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_name").unwrap_or_default()),
+                ),
+                (
+                    "appData".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_data").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("dict not found"))),
+    }
+}
+
+#[allow(non_snake_case)]
+pub async fn file_list_application_applicationFlag(
+    pool: Extension<Pool>,
+    Path(application_flag): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, name, flag, file_type, creator, create_time FROM x_portal_file WHERE application_flag = $1 ORDER BY create_time DESC",
+            &[&application_flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
+                (
+                    "fileType".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("file_type")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn file_list_id_next_count(
+    pool: Extension<Pool>,
+    Path((id, _s1, count)): Path<(String, String, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, name, flag, file_type, creator, create_time FROM x_portal_file WHERE id > $1 ORDER BY id ASC LIMIT $2::bigint",
+            &[&id, &count],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
+                (
+                    "fileType".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("file_type")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn file_list_id_prev_count(
+    pool: Extension<Pool>,
+    Path((id, count)): Path<(String, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, name, flag, file_type, creator, create_time FROM x_portal_file WHERE id < $1 ORDER BY id DESC LIMIT $2::bigint",
+            &[&id, &count],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
+                (
+                    "fileType".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("file_type")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn file_flag(
+    pool: Extension<Pool>,
+    Path(flag): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, flag, file_type, content, creator, create_time FROM x_portal_file WHERE flag = $1 LIMIT 1",
+            &[&flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
+                (
+                    "fileType".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("file_type")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("file not found"))),
+    }
+}
+
+#[allow(non_snake_case)]
+pub async fn file_id(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, flag, file_type, content, creator, create_time FROM x_portal_file WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
+                (
+                    "fileType".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("file_type")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("file not found"))),
+    }
+}
+
+#[allow(non_snake_case)]
+pub async fn file_id_download(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, flag, file_type, content FROM x_portal_file WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
+                (
+                    "fileType".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("file_type")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("file not found"))),
+    }
+}
+
+#[allow(non_snake_case)]
+pub async fn file_id_upload(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let content = body
+        .get("content")
+        .and_then(|v| v.as_str())
+        .unwrap_or("null");
+    let content_str = content.to_string();
+
+    let result = client
+        .execute(
+            "UPDATE x_portal_file SET content = $1, update_time = NOW() WHERE id = $2",
+            &[&content_str, &id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("file not found")));
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("uploaded".to_string(), Value::Bool(result > 0)),
+        ]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn id_count(
+    pool: Extension<Pool>,
+    Path((_s0, count)): Path<(String, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_one("SELECT COUNT(*) as cnt FROM x_portal", &[])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let total: i64 = row.get("cnt");
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "total".to_string(),
+                Value::Number(serde_json::Number::from(total)),
+            ),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(count)),
+            ),
+        ]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn input_compare(
+    pool: Extension<Pool>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let input_id = body.get("id").and_then(|v| v.as_str()).unwrap_or_default();
+    let content_str = body
+        .get("content")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
+
+    let row = client
+        .query_opt(
+            "SELECT id, content FROM x_portal_input WHERE id = $1",
+            &[&input_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let old_content: Option<String> = row.get("content");
+            let mut result_map = serde_json::Map::new();
+            result_map.insert("id".to_string(), Value::String(input_id.to_string()));
+            if let Some(val) =
+                option_to_json(old_content.as_ref().map(|s| Value::String(s.to_string())))
+            {
+                result_map.insert("oldContent".to_string(), val);
+            }
+            result_map.insert(
+                "newContent".to_string(),
+                Value::String(content_str.to_string()),
+            );
+            let compared = old_content.is_some();
+            result_map.insert("compared".to_string(), Value::Bool(compared));
+            let result = Value::Object(result_map);
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("input not found"))),
+    }
+}
+
+#[allow(non_snake_case)]
+pub async fn input_cover(
+    pool: Extension<Pool>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let input_id = body.get("id").and_then(|v| v.as_str()).unwrap_or_default();
+    let content_str = body
+        .get("content")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
+    let _creator = "system";
+
+    let result = client
+        .execute(
+            "UPDATE x_portal_input SET content = $1, update_time = NOW() WHERE id = $2",
+            &[&content_str, &input_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("input not found")));
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(input_id.to_string())),
+            ("covered".to_string(), Value::Bool(result > 0)),
+        ]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn input_create(
+    pool: Extension<Pool>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let id = uuid::Uuid::new_v4().to_string();
+    let content = body
+        .get("content")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
+    let creator = "system";
+
+    let result = client
+        .execute(
+            "INSERT INTO x_portal_input (id, content, creator, create_time) VALUES ($1, $2, $3, NOW())",
+            &[&id, &content, &creator],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("saved".to_string(), Value::Bool(result > 0)),
+        ]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn input_prepare_cover(
+    pool: Extension<Pool>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let input_id = body.get("id").and_then(|v| v.as_str()).unwrap_or_default();
+    let row = client
+        .query_opt(
+            "SELECT id, content FROM x_portal_input WHERE id = $1",
+            &[&input_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let content: Option<String> = row.get("content");
+            let mut map = serde_json::Map::new();
+            map.insert("id".to_string(), Value::String(input_id.to_string()));
+            if let Some(val) = option_to_json(content.map(Value::String)) {
+                map.insert("content".to_string(), val);
+            }
+            Ok(Json(ActionResult::success(Value::Object(map))))
+        }
+        None => Ok(Json(ActionResult::error("input not found"))),
+    }
+}
+
+#[allow(non_snake_case)]
+pub async fn input_prepare_create(
+    pool: Extension<Pool>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let id = uuid::Uuid::new_v4().to_string();
+    let content = body
+        .get("content")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
+    let creator = "system";
+
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let result = client
+        .execute(
+            "INSERT INTO x_portal_input (id, content, creator, create_time) VALUES ($1, $2, $3, NOW())",
+            &[&id, &content, &creator],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("saved".to_string(), Value::Bool(result > 0)),
+        ]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn output_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, name, flag, app_name, creator, create_time FROM x_portal_output WHERE deleted_at IS NULL ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
+                (
+                    "appName".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_name").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn output_flag_select_file(
+    pool: Extension<Pool>,
+    Path(flag): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, flag, select_file FROM x_portal_output WHERE flag = $1 AND deleted_at IS NULL",
+            &[&flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
+                (
+                    "selectFile".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("select_file")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("output not found"))),
+    }
+}
+
+#[allow(non_snake_case)]
+pub async fn output_portalFlag_select(
+    pool: Extension<Pool>,
+    Path(portal_flag): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, name, flag, app_name, creator, create_time FROM x_portal_output WHERE portal_flag = $1 AND deleted_at IS NULL ORDER BY create_time DESC",
+            &[&portal_flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
+                (
+                    "appName".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_name").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn page_list_portal_portalId(
+    pool: Extension<Pool>,
+    Path(portal_id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, name, category, creator, create_time, update_time FROM x_portal_page WHERE portal_id = $1 ORDER BY update_time DESC",
+            &[&portal_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+                (
+                    "updateTime".to_string(),
+                    Value::String(row.get("update_time")),
+                ),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn page_id(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, category, content, creator, create_time, update_time FROM x_portal_page WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let content: Option<String> = row.get("content");
+            let mut map = serde_json::Map::new();
+            map.insert("id".to_string(), Value::String(row.get("id")));
+            map.insert("name".to_string(), Value::String(row.get("name")));
+            map.insert(
+                "category".to_string(),
+                Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+            );
+            if let Some(val) =
+                option_to_json::<Value>(content.and_then(|s| serde_json::from_str(&s).ok()))
+            {
+                map.insert("content".to_string(), val);
+            }
+            map.insert(
+                "creator".to_string(),
+                Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+            );
+            map.insert(
+                "createTime".to_string(),
+                Value::String(row.get("create_time")),
+            );
+            map.insert(
+                "updateTime".to_string(),
+                Value::String(row.get("update_time")),
+            );
+            let result = Value::Object(map);
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("page not found"))),
+    }
+}
+
+#[allow(non_snake_case)]
+pub async fn pageversion_list_page_pageId(
+    pool: Extension<Pool>,
+    Path(page_id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, page_id, version, creator, create_time FROM x_portal_page_version WHERE page_id = $1 ORDER BY create_time DESC",
+            &[&page_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "pageId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("page_id").unwrap_or_default()),
+                ),
+                (
+                    "version".to_string(),
+                    Value::String(row.get::<_, Option<String>>("version").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+/// 2 段变体：前端 PortalDesigner 调 list/portal/{page}/{portalId}、
+/// pageversion/list/{page}/{pageId}（首段为分页页码），委派到 1 段实现按 id 取全量。
+#[allow(non_snake_case)]
+pub async fn page_list_portal_page_portalId(
+    pool: Extension<Pool>,
+    Path((_page, portal_id)): Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    page_list_portal_portalId(pool, Path(portal_id)).await
+}
+
+#[allow(non_snake_case)]
+pub async fn pageversion_list_page_page_pageId(
+    pool: Extension<Pool>,
+    Path((_page, page_id)): Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    pageversion_list_page_pageId(pool, Path(page_id)).await
+}
+
+#[allow(non_snake_case)]
+pub async fn pageversion_id(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_opt(
+            "SELECT id, page_id, version, content, creator, create_time FROM x_portal_page_version WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "pageId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("page_id").unwrap_or_default()),
+                ),
+                (
+                    "version".to_string(),
+                    Value::String(row.get::<_, Option<String>>("version").unwrap_or_default()),
+                ),
+                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("page version not found"))),
+    }
+}
+
+#[allow(non_snake_case)]
+pub async fn portal_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, name, category, logo, creator, create_time FROM x_portal WHERE deleted_at IS NULL ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
+                (
+                    "logo".to_string(),
+                    Value::String(row.get::<_, Option<String>>("logo").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn portal_list_portalcategory_portalCategory(
+    pool: Extension<Pool>,
+    Path(portal_category): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, name, category, logo, creator, create_time FROM x_portal WHERE category = $1 AND deleted_at IS NULL ORDER BY create_time DESC",
+            &[&portal_category],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
+                (
+                    "logo".to_string(),
+                    Value::String(row.get::<_, Option<String>>("logo").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn portal_list_summary(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, name, category, logo, creator, create_time FROM x_portal WHERE deleted_at IS NULL ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
+                (
+                    "logo".to_string(),
+                    Value::String(row.get::<_, Option<String>>("logo").unwrap_or_default()),
+                ),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn portal_list_summary_portalcategory_portalCategory(
+    pool: Extension<Pool>,
+    Path(portal_category): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, name, category, logo FROM x_portal WHERE category = $1 AND deleted_at IS NULL ORDER BY create_time DESC",
+            &[&portal_category],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
+                (
+                    "logo".to_string(),
+                    Value::String(row.get::<_, Option<String>>("logo").unwrap_or_default()),
+                ),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn portal_list_summary_v2(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, name, category, logo, description, creator, create_time FROM x_portal WHERE deleted_at IS NULL ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
+                (
+                    "logo".to_string(),
+                    Value::String(row.get::<_, Option<String>>("logo").unwrap_or_default()),
+                ),
+                (
+                    "description".to_string(),
+                    Value::String(row.get("description")),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn portal_id(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, category, logo, description, creator, create_time, update_time FROM x_portal WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
+                (
+                    "logo".to_string(),
+                    Value::String(row.get::<_, Option<String>>("logo").unwrap_or_default()),
+                ),
+                (
+                    "description".to_string(),
+                    Value::String(row.get("description")),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "updateTime".to_string(),
+                    Value::String(row.get("update_time")),
+                ),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("portal not found"))),
+    }
+}
+
+#[allow(non_snake_case)]
+pub async fn portal_id_icon(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_opt(
+            "SELECT id, logo FROM x_portal WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "logo".to_string(),
+                    Value::String(row.get::<_, Option<String>>("logo").unwrap_or_default()),
+                ),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("portal not found"))),
+    }
+}
+
+#[allow(non_snake_case)]
+pub async fn portal_id_permission(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_opt(
+            "SELECT id, permission FROM x_portal WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "permission".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("permission")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("portal not found"))),
+    }
+}
+
+#[allow(non_snake_case)]
+pub async fn portalcategory_list(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT DISTINCT category FROM x_portal WHERE deleted_at IS NULL AND category IS NOT NULL ORDER BY category",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([(
+                "category".to_string(),
+                Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+            )]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn script_list_manager(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, name, flag, category, creator, create_time FROM x_portal_script WHERE deleted_at IS NULL ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn script_list_paging_page_size_size(
+    pool: Extension<Pool>,
+    Path((page, size, _s2)): Path<(i64, i64, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, name, flag, category, creator, create_time FROM x_portal_script WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $2::bigint OFFSET ($1::bigint - 1) * $2::bigint",
+            &[&page, &size],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn script_list_portal_portalId(
+    pool: Extension<Pool>,
+    Path(portal_id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, name, flag, category, creator, create_time FROM x_portal_script WHERE portal_id = $1 AND deleted_at IS NULL ORDER BY create_time DESC",
+            &[&portal_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn script_id(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, flag, category, content, creator, create_time FROM x_portal_script WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("script not found"))),
+    }
+}
+
+#[allow(non_snake_case)]
+pub async fn scriptversion_list_script_scriptId(
+    pool: Extension<Pool>,
+    Path(script_id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, script_id, version, content, creator, create_time FROM x_portal_script_version WHERE script_id = $1 ORDER BY create_time DESC",
+            &[&script_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "scriptId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("script_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "version".to_string(),
+                    Value::String(row.get::<_, Option<String>>("version").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    option_to_json(row.get::<_, Option<String>>("content")).unwrap_or(Value::Null),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn scriptversion_id(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_opt(
+            "SELECT id, script_id, version, content, creator, create_time FROM x_portal_script_version WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "scriptId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("script_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "version".to_string(),
+                    Value::String(row.get::<_, Option<String>>("version").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("script version not found"))),
+    }
+}
+
+#[allow(non_snake_case)]
+pub async fn templatepage_list(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, name, category, content, creator, create_time FROM x_portal_template_page WHERE deleted_at IS NULL ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn templatepage_list_category(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT DISTINCT category FROM x_portal_template_page WHERE deleted_at IS NULL AND category IS NOT NULL ORDER BY category",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([(
+                "category".to_string(),
+                Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+            )]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn templatepage_id(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, category, content, creator, create_time FROM x_portal_template_page WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let content: Option<String> = row.get("content");
+            let mut map = serde_json::Map::new();
+            map.insert(
+                "id".to_string(),
+                Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+            );
+            map.insert(
+                "name".to_string(),
+                Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+            );
+            map.insert(
+                "category".to_string(),
+                Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+            );
+            if let Some(val) =
+                option_to_json::<Value>(content.and_then(|s| serde_json::from_str(&s).ok()))
+            {
+                map.insert("content".to_string(), val);
+            }
+            map.insert(
+                "creator".to_string(),
+                Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+            );
+            map.insert(
+                "createTime".to_string(),
+                Value::String(
+                    row.get::<_, Option<String>>("create_time")
+                        .unwrap_or_default(),
+                ),
+            );
+            let result = Value::Object(map);
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("template page not found"))),
+    }
+}
+
+#[allow(non_snake_case)]
+pub async fn widget_list_portal_portalId(
+    pool: Extension<Pool>,
+    Path(portal_id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, name, portal_id, category, config, creator, create_time FROM x_portal_widget WHERE portal_id = $1 AND deleted_at IS NULL ORDER BY create_time DESC",
+            &[&portal_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "portalId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("portal_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
+                (
+                    "config".to_string(),
+                    Value::String(row.get::<_, Option<String>>("config").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn widget_id(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, portal_id, category, config, creator, create_time, update_time FROM x_portal_widget WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "portalId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("portal_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
+                (
+                    "config".to_string(),
+                    Value::String(row.get::<_, Option<String>>("config").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "updateTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("update_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("widget not found"))),
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// plan002 U2: page/file/import 族 + 动词差 缺口补建 (20 gap)
+// 复用既有 x_portal_* 表，参数化真实 SQL；归一化查重 / IDOR 门禁。
+// ─────────────────────────────────────────────────────────────────────────────
+
+#[allow(non_snake_case)]
+pub async fn create_portal(
+    pool: Extension<Pool>,
+    axum::extract::Json(req): Json<CreatePortalRequest>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let name = req.name.clone().unwrap_or_default();
+    let description = req.description.clone().unwrap_or_default();
+    let alias = name.clone();
+    let portal_category = "default".to_string();
+    let category = "default".to_string();
+    let creator = "system";
+
+    // 归一化查重：同名 portal 视为重复
+    let existing = client
+        .query_opt(
+            "SELECT id FROM x_portal WHERE name = $1 AND deleted_at IS NULL",
+            &[&name],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if existing.is_some() {
+        return Ok(Json(ActionResult::error("portal already exists")));
+    }
+
+    let id = uuid::Uuid::new_v4().to_string();
+    client
+        .execute(
+            "INSERT INTO x_portal (id, name, alias, description, portal_category, category, creator, create_time, update_time) \
+              VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())",
+            &[&id, &name, &alias, &description, &portal_category, &category, &creator],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("name".to_string(), Value::String(name)),
+        ]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn delete_portal(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let result = client
+        .execute(
+            "UPDATE x_portal SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if result == 0 {
+        return Ok(Json(ActionResult::error("portal not found")));
+    }
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn update_portal(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let name = body
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let description = body
+        .get("description")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let category = body
+        .get("category")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let logo = body
+        .get("logo")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let result = client
+        .execute(
+            "UPDATE x_portal SET name = $1, description = $2, category = $3, logo = $4, update_time = NOW() WHERE id = $5 AND deleted_at IS NULL",
+            &[&name, &description, &category, &logo, &id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if result == 0 {
+        return Ok(Json(ActionResult::error("portal not found")));
+    }
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("updated".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn update_portal_icon(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let logo = body
+        .get("logo")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let result = client
+        .execute(
+            "UPDATE x_portal SET logo = $1, update_time = NOW() WHERE id = $2 AND deleted_at IS NULL",
+            &[&logo, &id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if result == 0 {
+        return Ok(Json(ActionResult::error("portal not found")));
+    }
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("logo".to_string(), Value::String(logo)),
+        ]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn portal_id_permission_post(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let permission = serde_json::to_string(&body).map_err(|_| AppError::Internal)?;
+    let result = client
+        .execute(
+            "UPDATE x_portal SET permission = $1, update_time = NOW() WHERE id = $2 AND deleted_at IS NULL",
+            &[&permission, &id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if result == 0 {
+        return Ok(Json(ActionResult::error("portal not found")));
+    }
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("permission".to_string(), Value::String(permission)),
+        ]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn create_templatepage(
+    pool: Extension<Pool>,
+    axum::extract::Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let name = body
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let category = body
+        .get("category")
+        .and_then(|v| v.as_str())
+        .unwrap_or("default")
+        .to_string();
+    let content_str = body
+        .get("content")
+        .and_then(|v| serde_json::to_string(v).ok())
+        .unwrap_or_else(|| "null".to_string());
+    let creator = "system";
+
+    let existing = client
+        .query_opt(
+            "SELECT id FROM x_portal_template_page WHERE name = $1 AND deleted_at IS NULL",
+            &[&name],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if existing.is_some() {
+        return Ok(Json(ActionResult::error("template page already exists")));
+    }
+
+    let id = uuid::Uuid::new_v4().to_string();
+    client
+        .execute(
+            "INSERT INTO x_portal_template_page (id, name, category, content, creator, create_time, update_time) \
+              VALUES ($1, $2, $3, $4, $5, NOW(), NOW())",
+            &[&id, &name, &category, &content_str, &creator],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("name".to_string(), Value::String(name)),
+        ]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn update_templatepage_category(
+    pool: Extension<Pool>,
+    axum::extract::Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let category = body
+        .get("category")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let rows = client
+        .query(
+            "SELECT id, name, category, content, creator, create_time FROM x_portal_template_page WHERE category = $1 AND deleted_at IS NULL ORDER BY create_time DESC",
+            &[&category],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
+            ]))
+        })
+        .collect();
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("category".to_string(), Value::String(category)),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn delete_templatepage(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let result = client
+        .execute(
+            "UPDATE x_portal_template_page SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if result == 0 {
+        return Ok(Json(ActionResult::error("template page not found")));
+    }
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn create_widget(
+    pool: Extension<Pool>,
+    axum::extract::Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let name = body
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let portal_id = body
+        .get("portalId")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let category = body
+        .get("category")
+        .and_then(|v| v.as_str())
+        .unwrap_or("default")
+        .to_string();
+    let config_str = body
+        .get("config")
+        .and_then(|v| serde_json::to_string(v).ok())
+        .unwrap_or_else(|| "null".to_string());
+    let creator = "system";
+
+    let existing = client
+        .query_opt(
+            "SELECT id FROM x_portal_widget WHERE name = $1 AND portal_id = $2 AND deleted_at IS NULL",
+            &[&name, &portal_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if existing.is_some() {
+        return Ok(Json(ActionResult::error("widget already exists")));
+    }
+
+    let id = uuid::Uuid::new_v4().to_string();
+    client
+        .execute(
+            "INSERT INTO x_portal_widget (id, name, portal_id, category, config, creator, create_time, update_time) \
+              VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())",
+            &[&id, &name, &portal_id, &category, &config_str, &creator],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("name".to_string(), Value::String(name)),
+            ("portalId".to_string(), Value::String(portal_id)),
+        ]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn delete_widget(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let result = client
+        .execute(
+            "UPDATE x_portal_widget SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if result == 0 {
+        return Ok(Json(ActionResult::error("widget not found")));
+    }
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn update_widget(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let name = body
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let category = body
+        .get("category")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let config_str = body
+        .get("config")
+        .and_then(|v| serde_json::to_string(v).ok())
+        .unwrap_or_else(|| "null".to_string());
+    let result = client
+        .execute(
+            "UPDATE x_portal_widget SET name = $1, category = $2, config = $3, update_time = NOW() WHERE id = $4",
+            &[&name, &category, &config_str, &id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if result == 0 {
+        return Ok(Json(ActionResult::error("widget not found")));
+    }
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("updated".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// dict / page / widget 斜杠路径家族（桌面设计器视图 list + shared::crud 通用参数化写）
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── dict/list（门户字典，查 x_portal_dict）──
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn dict_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, name, app_name, create_time FROM x_portal_dict WHERE deleted_at IS NULL ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "appName".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_name").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+// ── dict 家族 CRUD（x_portal_dict，通用参数化写）──
+fn dict_spec() -> shared::crud::CrudSpec {
+    shared::crud::CrudSpec {
+        table: "x_portal_dict",
+        columns: &[
+            ("name", "name"),
+            ("appName", "app_name"),
+            ("appData", "app_data"),
+            ("creator", "creator"),
+        ],
+        soft_delete: true,
+    }
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn dict_create(
+    pool: Extension<Pool>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let id = shared::crud_create(&pool, &dict_spec(), &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("created".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn dict_save(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let saved = shared::crud_save(&pool, &dict_spec(), &id, &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("saved".to_string(), Value::Bool(saved)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn dict_delete(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let deleted = shared::crud_delete(&pool, &dict_spec(), &id).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(deleted)),
+        ]),
+    ))))
+}
+
+// ── page/list（门户页面设计器，查 x_portal_page；注意：page/create、page/save/{id}、
+//    page/delete/{id} 已被 U2 类型化 handler（create_page/save_page/delete_page，
+//    含 IDOR 门禁与 content JSON 序列化）占用，不能再重复注册同 path+method）──
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn page_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, name, category, content, creator, create_time, update_time \
+             FROM x_portal_page WHERE deleted_at IS NULL ORDER BY update_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            let content: Option<String> = row.get("content");
+            let mut map = serde_json::Map::new();
+            map.insert("id".to_string(), Value::String(row.get("id")));
+            map.insert("name".to_string(), Value::String(row.get("name")));
+            map.insert(
+                "category".to_string(),
+                Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+            );
+            if let Some(val) =
+                option_to_json::<Value>(content.and_then(|s| serde_json::from_str(&s).ok()))
+            {
+                map.insert("content".to_string(), val);
+            }
+            map.insert(
+                "creator".to_string(),
+                Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+            );
+            map.insert(
+                "createTime".to_string(),
+                Value::String(row.get("create_time")),
+            );
+            map.insert(
+                "updateTime".to_string(),
+                Value::String(row.get("update_time")),
+            );
+            Value::Object(map)
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+// ── widget/list（门户小部件设计器，查 x_portal_widget）──
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn widget_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, name, portal_id, category, config, creator, create_time \
+             FROM x_portal_widget WHERE deleted_at IS NULL ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "portalId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("portal_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
+                (
+                    "config".to_string(),
+                    Value::String(row.get::<_, Option<String>>("config").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+// ── widget 家族 CRUD（x_portal_widget，通用参数化写）──
+fn widget_spec() -> shared::crud::CrudSpec {
+    shared::crud::CrudSpec {
+        table: "x_portal_widget",
+        columns: &[
+            ("name", "name"),
+            ("portalId", "portal_id"),
+            ("category", "category"),
+            ("config", "config"),
+            ("creator", "creator"),
+        ],
+        soft_delete: true,
+    }
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn widget_create(
+    pool: Extension<Pool>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let id = shared::crud_create(&pool, &widget_spec(), &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("created".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn widget_save(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let saved = shared::crud_save(&pool, &widget_spec(), &id, &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("saved".to_string(), Value::Bool(saved)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn widget_delete(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let deleted = shared::crud_delete(&pool, &widget_spec(), &id).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(deleted)),
+        ]),
+    ))))
+}

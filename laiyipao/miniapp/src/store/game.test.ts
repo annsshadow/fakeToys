@@ -131,6 +131,37 @@ describe('loadConfig（缓存 + loading 态）', () => {
   })
 })
 
+describe('服务端时钟基准 estimateServerNowMs（第 140 轮）', () => {
+  it('按 config 里的 server_time 抵消本地时钟偏移（本地 2026-09 对服务端 2026-05）', async () => {
+    vi.useFakeTimers()
+    try {
+      vi.setSystemTime(Date.parse('2026-09-01T00:00:00Z')) // 本地时钟
+      mockApi.fetchConfig.mockResolvedValue({
+        ...makeConfig(),
+        server_time: '2026-05-01T00:00:00Z', // 服务端时钟比本地早 4 个月
+      })
+      await store.loadConfig()
+      const est = store.estimateServerNowMs()
+      // 估算值跟住服务端时钟（收到响应至今的漂移在秒级）
+      expect(Math.abs(est - Date.parse('2026-05-01T00:00:00Z'))).toBeLessThan(5000)
+      // 而不是本地时钟（4 个月偏移必须被抵消）
+      expect(Math.abs(est - Date.now())).toBeGreaterThan(24 * 3600_000)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('server_time 不可解析 → 诚实回退本地时钟', async () => {
+    mockApi.fetchConfig.mockResolvedValue({ ...makeConfig(), server_time: 'not-a-date' })
+    await store.loadConfig()
+    expect(Math.abs(store.estimateServerNowMs() - Date.now())).toBeLessThan(5000)
+  })
+
+  it('config 未加载 → 回退本地时钟', () => {
+    expect(Math.abs(store.estimateServerNowMs() - Date.now())).toBeLessThan(5000)
+  })
+})
+
 describe('档案与钱包刷新', () => {
   it('refreshProfile 成功：wallet / power / buildRating / build 全部落位', async () => {
     const build = { attacker: { attack: 100 } }
@@ -166,7 +197,42 @@ describe('档案与钱包刷新', () => {
   })
 })
 
+describe('进度恢复 max_stage（第 142 轮）', () => {
+  it('refreshProfile：服务端 max_stage 恢复进度（重进 App 不从 0 开始）', async () => {
+    mockApi.fetchMe.mockResolvedValue({
+      user_id: 7, build: null, build_rating: null, power: 9, max_stage: 57,
+    } as any)
+    await store.refreshProfile()
+    expect(store.maxStage).toBe(57)
+    expect(store.unlockedLevel).toBe(58)
+  })
+
+  it('refreshProfile：max_stage 缺失（老服务端/缺字段）→ 不碰本地值', async () => {
+    store.setMaxStage(12)
+    mockApi.fetchMe.mockResolvedValue({ user_id: 7, build: null, build_rating: null, power: 9 } as any)
+    await store.refreshProfile()
+    expect(store.maxStage).toBe(12)
+  })
+
+  it('refreshProfile：服务端值低于本会话刚结算的本地值 → 不覆盖（只增不减）', async () => {
+    store.setMaxStage(60)
+    mockApi.fetchMe.mockResolvedValue({
+      user_id: 7, build: null, build_rating: null, power: 9, max_stage: 57,
+    } as any)
+    await store.refreshProfile()
+    expect(store.maxStage).toBe(60)
+  })
+})
+
 describe('出战槽位（服务端权威 + 归一化）', () => {
+  it('第 131 轮：equippedSkillIds 初值为空，不再捏造 [1,2,3]', () => {
+    // 服务端对一个未保存过槽位的玩家返回 [0,0,0,0]（全空）。
+    // 本地若预填 [1,2,3]，消费方（me 页防线）会把这些「玩家没装过的技能」
+    // 当成出战技能上报。初值必须是诚实的空。
+    expect(store.equippedSkillIds).toEqual([])
+    expect(store.loadout).toEqual([0, 0, 0, 0])
+  })
+
   it('setEquippedSkills：超过 4 个截断', () => {
     store.setEquippedSkills([1, 2, 3, 4, 5, 6])
     expect(store.equippedSkillIds).toEqual([1, 2, 3, 4])

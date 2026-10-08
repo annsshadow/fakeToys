@@ -11,6 +11,8 @@ import random
 import logging
 from typing import Any, List, Dict, Optional, Tuple, Union
 from pathlib import Path
+
+from .atomic_write import atomic_write_json
 from dataclasses import dataclass
 import hashlib
 from .exceptions import DataValidationError
@@ -25,7 +27,7 @@ logger = logging.getLogger(__name__)
 class MergeConfig:
     """合并配置"""
     deduplicate: bool = True  # 合并时是否去重
-    dedup_threshold: float = 0.9  # 去重阈值
+    dedup_threshold: float = 0.9  # 去重阈值（< 0.9 启用宽松键：大小写折叠 + 空白归一并删近似重复，L150）
     preserve_order: bool = True  # 保持原始顺序
     max_items: Optional[int] = None  # 最大保留条数
 
@@ -159,8 +161,9 @@ class DatasetOperations:
         if config.deduplicate:
             merged = self._deduplicate(merged, config.dedup_threshold)
         
-        # 限制最大条数
-        if config.max_items and len(merged) > config.max_items:
+        # 限制最大条数（`is not None` 而非 falsy：max_items=0 语义是「一条不留」，
+        # 写成 `if config.max_items` 会把 0 读成「不限」而返回全量）
+        if config.max_items is not None and len(merged) > config.max_items:
             merged = merged[:config.max_items]
         
         logger.info(f"合并完成: {len(datasets)} 个数据集, 共 {len(merged)} 条数据")
@@ -188,32 +191,46 @@ class DatasetOperations:
                 logger.info(f"加载 {file_path}: {len(data)} 条数据")
         
         merged = self.merge(datasets, config)
+        total_input = sum(len(d) for d in datasets)
+        # 去重删除与 max_items 截断分开报（旧实现混成一个数，L148，B218）
+        removed_duplicates = 0
+        if config and config.deduplicate:
+            flat = [item for dataset in datasets for item in dataset]
+            removed_duplicates = total_input - len(self._deduplicate(flat, config.dedup_threshold))
+        truncated_by_max_items = total_input - removed_duplicates - len(merged)
         
         # 保存结果
         output = Path(output_path)
         output.parent.mkdir(parents=True, exist_ok=True)
-        with open(output, 'w', encoding='utf-8') as f:
-            json.dump(merged, f, ensure_ascii=False, indent=2)
+        atomic_write_json(output, merged)
         
         return {
             "input_files": len(file_paths),
             "output_file": output_path,
-            "total_input": sum(len(d) for d in datasets),
+            "total_input": total_input,
             "total_output": len(merged),
-            "removed_duplicates": sum(len(d) for d in datasets) - len(merged)
+            "removed_duplicates": removed_duplicates,
+            "truncated_by_max_items": truncated_by_max_items
         }
     
     def _deduplicate(self, items: List[Dict], threshold: float = 0.9) -> List[Dict]:
-        """简单的基于哈希的去重
+        """基于哈希的去重，threshold 分档近似相似度口径（L150，B220）
+        
+        改前 threshold 形参从不被读（文档承诺「去重阈值」实为死旋钮，auto_config
+        逐条推荐的数值全部空转）：
+        - threshold >= 0.9：只删 instruction 完全相同（原默认行为，保守）
+        - threshold <  0.9：追加宽松键（大小写折叠 + 空白归一），近似重复一并删
         
         Args:
             items: 数据列表
-            threshold: 阈值（此处未使用，保持接口一致）
+            threshold: 去重阈值（< 0.9 启用宽松键档）
         
         Returns:
             去重后的数据列表
         """
+        loose = threshold < 0.9
         seen_hashes = set()
+        seen_loose = set()
         unique_items = []
         
         for item in items:
@@ -221,9 +238,15 @@ class DatasetOperations:
             text = item.get("instruction", "")
             item_hash = hashlib.md5(text.encode('utf-8')).hexdigest()
             
-            if item_hash not in seen_hashes:
-                seen_hashes.add(item_hash)
-                unique_items.append(item)
+            if item_hash in seen_hashes:
+                continue
+            if loose:
+                loose_hash = hashlib.md5("".join(text.casefold().split()).encode('utf-8')).hexdigest()
+                if loose_hash in seen_loose:
+                    continue
+                seen_loose.add(loose_hash)
+            seen_hashes.add(item_hash)
+            unique_items.append(item)
         
         return unique_items
     
@@ -248,7 +271,9 @@ class DatasetOperations:
         require_count("size", config.size)
         if config.size is not None:
             sample_size = min(config.size, len(items))
-        elif config.ratio:
+        # `is not None` 而非 falsy：ratio=0 语义是「采 0 条」，写成 `if config.ratio`
+        # 会把 0 读成「未设置」而采全量（L149，B219；下游 0 条由下面的短路守卫接住）
+        elif config.ratio is not None:
             sample_size = int(len(items) * config.ratio)
         else:
             sample_size = len(items)
@@ -351,8 +376,7 @@ class DatasetOperations:
         # 保存结果
         output = Path(output_path)
         output.parent.mkdir(parents=True, exist_ok=True)
-        with open(output, 'w', encoding='utf-8') as f:
-            json.dump(sampled, f, ensure_ascii=False, indent=2)
+        atomic_write_json(output, sampled)
         
         return {
             "input_file": input_path,
@@ -461,8 +485,7 @@ class DatasetOperations:
         results = {}
         for prefix, data in zip(prefixes, [train, val, test]):
             file_path = output_path / f"{prefix}.json"
-            with open(file_path, 'w', encoding='utf-8') as f:
-                json.dump(data, f, ensure_ascii=False, indent=2)
+            atomic_write_json(file_path, data)
             results[prefix] = {
                 "file": str(file_path),
                 "count": len(data)

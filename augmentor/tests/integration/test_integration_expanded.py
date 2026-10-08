@@ -50,16 +50,22 @@ class TestQualityTrendIntegration:
     
     def test_trend_tracker_persists_and_loads(self, integration_setup):
         """趋势追踪应支持持久化存储和加载"""
+        import os
         import tempfile
-        with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
-            from augmentor.quality_trend import QualityTrendTracker
-            tracker = QualityTrendTracker(storage_path=f.name)
-            tracker.record_quality_metrics("test_ds", {"quality": 0.85})
-            
-            # 重新加载验证持久化
-            tracker2 = QualityTrendTracker(storage_path=f.name)
-            trend = tracker2.get_trend_for_metric("quality", "test_ds")
-            assert len(trend) == 1
+        # L169：趋势落盘收原子替换后，写入期间不能有第二个句柄占着目标文件
+        # （Windows 的 os.replace 会拒绝访问）——NamedTemporaryFile 借名习惯改为
+        # mkstemp 建后即关。
+        fd, trend_path = tempfile.mkstemp(suffix=".json")
+        os.close(fd)
+        from augmentor.quality_trend import QualityTrendTracker
+        tracker = QualityTrendTracker(storage_path=trend_path)
+        tracker.record_quality_metrics("test_ds", {"quality": 0.85})
+
+        # 重新加载验证持久化
+        tracker2 = QualityTrendTracker(storage_path=trend_path)
+        trend = tracker2.get_trend_for_metric("quality", "test_ds")
+        assert len(trend) == 1
+        os.unlink(trend_path)
 
 
 class TestDomainAdaptiveIntegration:

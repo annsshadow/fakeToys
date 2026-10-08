@@ -428,3 +428,56 @@ class TestNormalizePunctuation:
         items = [{"instruction": "plain ascii text", "output": "1234"}]
         cleaned, result = DatasetCleaner().clean(items, rules=["normalize_punctuation"])
         assert cleaned[0]["instruction"] == "plain ascii text"
+
+
+class TestUnknownRuleNamesClosedListL192:
+    """L192（B262）：clean() 的规则名封闭清单——未知/坏形状拒并列出全部合法值。
+
+    改前 `for rule_name in rules: if rule_name in self._default_rules:` 对未知名
+    静默跳过：拼错 normalize_whitespace 该规则无声不生效、清洗报告照常出
+    （checkpoint 症状族语义漂移档；L175/L176/L189 封闭清单族同式）。清单权威住
+    `_default_rules` 键（A77），CLI 面 parser.CLEAN_RULES 字面清单同一集合由
+    本类钉（L189 的 CLI 钉先例）。
+    """
+
+    def test_unknown_rule_name_rejected_with_full_valid_list(self):
+        from augmentor.exceptions import DataValidationError
+
+        cleaner = DatasetCleaner()
+        with pytest.raises(DataValidationError) as ei:
+            cleaner.clean([{"instruction": "x"}], rules=["normalise_whitespace"])
+        msg = str(ei.value)
+        for name in cleaner._default_rules:
+            assert name in msg, f"报错文案必须列出全部合法规则名，缺 {name!r}：{msg}"
+        assert "normalise_whitespace" in msg
+
+    def test_bad_shape_rule_entries_rejected(self):
+        from augmentor.exceptions import DataValidationError
+
+        cleaner = DatasetCleaner()
+        for bad in (None, 5, ["remove_empty"], ("remove_empty",)):
+            with pytest.raises(DataValidationError):
+                cleaner.clean([{"instruction": "x"}], rules=["remove_empty", bad])
+
+    def test_valid_names_still_apply(self):
+        """拒判据没有修过头：合法名照旧生效。"""
+        cleaner = DatasetCleaner()
+        cleaned, result = cleaner.clean(
+            [{"instruction": "  a  ", "output": "x"}], rules=["trim_whitespace"])
+        assert "trim_whitespace" in result.rules_applied
+        assert cleaned[0]["instruction"] == "a"
+
+    def test_dataset_and_batch_entries_inherit_guard(self):
+        from augmentor.cleaner import clean_batch_optimized
+        from augmentor.exceptions import DataValidationError
+
+        with pytest.raises(DataValidationError):
+            clean_dataset([{"instruction": "x"}], rules=["nope"])
+        with pytest.raises(DataValidationError):
+            clean_batch_optimized([{"instruction": "x"}], rules=["nope"])
+
+    def test_cli_clean_rules_equal_sdk_default_rule_keys(self):
+        """A77 同集合同钉：CLI parser.CLEAN_RULES 字面清单 == SDK `_default_rules` 键。"""
+        from augmentor.cli.parser import CLEAN_RULES
+
+        assert set(CLEAN_RULES) == set(DatasetCleaner()._default_rules)

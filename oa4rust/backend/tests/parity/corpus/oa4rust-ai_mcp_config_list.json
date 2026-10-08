@@ -1,0 +1,16 @@
+{
+  "body": {
+    "count": 0,
+    "data": [],
+    "date": "2026-10-01 09:50:28",
+    "message": "",
+    "position": 0,
+    "size": 10,
+    "spent": 0,
+    "type": "success"
+  },
+  "method": "GET",
+  "name": "ai_mcp_config_list",
+  "path": "/api/ai/config/list/mcp/paging/1/size/10",
+  "status": 200
+}

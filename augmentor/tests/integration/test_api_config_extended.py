@@ -12,6 +12,8 @@ from pathlib import Path
 
 import pytest
 
+from api.deps import INTERNAL_ERROR_DETAIL
+
 AI_DIR = Path(__file__).resolve().parent.parent.parent
 
 
@@ -162,7 +164,7 @@ class TestConfigErrorPaths:
         client = _client(monkeypatch)
         response = client.get("/api/config")
         assert response.status_code == 500
-        assert "pipeline broken" in response.json()["detail"]
+        assert response.json()["detail"] == INTERNAL_ERROR_DETAIL  # L180/A155②: no leak of original exception text
 
     def test_models_500_when_pipeline_fails(self, monkeypatch):
         import api.routes.config as cfg_module
@@ -185,3 +187,37 @@ class TestConfigErrorPaths:
         client = _client(monkeypatch)
         response = client.post("/api/config", json={"default_model": "x"})
         assert response.status_code == 500
+
+
+class TestConfigEchoReaderSplitL184:
+    """L184（A138）：可写四节 14 键的「读者分档」钉成机器可查的回显面。
+
+    ③ 档 5 键（vector.dimension / vector.storage_dir / vector.collection /
+    multimodal.image_extensions / multimodal.audio_extensions）**无处消费、也不回显**——
+    谁给它们接了回显或读者，都要先翻这一格并对账（A138 候选①② 未拍，本轮只记档 + 钉面）。
+    ①② 档 7 键是 GET /api/config 的既定回显面，钉住防止被顺手摘掉。
+    """
+
+    _TIER_3_NO_ECHO = ("vector.dimension", "vector.storage_dir", "vector.collection",
+                       "multimodal.image_extensions", "multimodal.audio_extensions")
+    _TIER_12_ECHO = ("export.default_format", "export.formats", "vector.enabled",
+                     "vector.backend", "rag.enabled", "rag.default_format", "multimodal.enabled")
+
+    def test_tier3_keys_are_not_echoed_by_get_config(self, pipeline, monkeypatch):
+        import api.routes.config as cfg
+        # get_pipeline 必须可用：本端点读 p.config
+        import api.deps as deps
+        client = _client(monkeypatch)
+        resp = client.get("/api/config")
+        assert resp.status_code == 200, resp.text
+        body = resp.json()
+        for key in self._TIER_3_NO_ECHO:
+            section, _, field = key.partition(".")
+            assert field not in body.get(section, {}),                 f"{key}（A138 ③ 档，无处消费）不得出现在 GET /api/config 的 {section} 回显里"
+
+    def test_tier12_echo_surface_is_pinned(self, pipeline, monkeypatch):
+        client = _client(monkeypatch)
+        body = client.get("/api/config").json()
+        for key in self._TIER_12_ECHO:
+            section, _, field = key.partition(".")
+            assert field in body.get(section, {}),                 f"{key}（A138 ①/② 档）是既定回显面，不得被顺手摘掉"

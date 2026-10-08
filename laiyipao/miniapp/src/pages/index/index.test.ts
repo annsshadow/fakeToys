@@ -52,7 +52,7 @@ beforeEach(() => {
   mockApi.fetchMe.mockResolvedValue({
     user_id: 7,
     build: null,
-    build_rating: { total: 42, element_coverage: 5, reaction_coverage: 7, mastery_done: 8, equipment_synergy: 6, weaknesses: ['缺少冰系'] },
+    build_rating: { total: 42, element_coverage: 5, reaction_coverage: 7, mastery_done: 8, equipment_synergy: 6, mechanic_depth: 4, weaknesses: ['缺少冰系'] },
     power: 9,
   } as any)
 })
@@ -77,6 +77,12 @@ describe('index.vue 首页', () => {
     expect(wrapper.text()).toContain('5/5')
     expect(wrapper.text()).toContain('搭配建议')
     expect(wrapper.text()).toContain('缺少冰系')
+    // 第 138 轮：五维必须全（此前漏 mechanic_depth 只有 4 条）
+    expect(wrapper.findAll('.dim-row').length).toBe(5)
+    expect(wrapper.text()).toContain('机制深度')
+    expect(wrapper.text()).toContain('4/8') // mechanic_depth=4 → 4/8
+    // 装备契合分母是 18（服务端上界），不是误写的 6
+    expect(wrapper.text()).toContain('6/18')
     // 7 个功能入口
     expect(wrapper.findAll('.grid-item').length).toBe(7)
     // 5 种元素说明
@@ -139,17 +145,18 @@ describe('index.vue 首页', () => {
     expect(wrapper.find('.weakness-box').exists()).toBe(false)
   })
 
-  it('equipment_synergy 超过 6 → 进度条宽度夹到 100%', async () => {
+  it('equipment_synergy 超过 18 → 进度条宽度夹到 100%', async () => {
     mockApi.fetchMe.mockResolvedValue({
       user_id: 7,
       build: null,
-      build_rating: { total: 1, element_coverage: 0, reaction_coverage: 0, mastery_done: 0, equipment_synergy: 99, weaknesses: [] },
+      build_rating: { total: 1, element_coverage: 0, reaction_coverage: 0, mastery_done: 0, equipment_synergy: 99, mechanic_depth: 0, weaknesses: [] },
       power: 9,
     } as any)
     mountPage()
     await flushPromises()
     const fills = wrapper.findAll('.bar-fill')
-    expect(fills.length).toBe(4)
+    expect(fills.length).toBe(5) // 第 138 轮起五维齐全（原 4）
+    // 第 4 维（索引 3）是装备契合：99/18 → 550% → 夹到 100%
     expect(fills[3]!.attributes('style')).toContain('width: 100%')
   })
 

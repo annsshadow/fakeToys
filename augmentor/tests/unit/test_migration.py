@@ -8,6 +8,7 @@ import pytest
 from pathlib import Path
 from augmentor.migration import (
     DatasetMigrator, MigrationRule, MigrationResult,
+    BUILTIN_MIGRATION_RULE_IDS,
     migrate_dataset, migrate_file
 )
 
@@ -289,12 +290,18 @@ class TestMigrationRulesAndFiles:
         assert result.total_items == 0
         assert result.migrated_items == 0
 
-    def test_migrate_unknown_rule_skipped(self, sample_dataset):
-        """未知规则应被跳过而不是崩溃"""
+    def test_migrate_unknown_rule_rejected(self, sample_dataset):
+        """L193 红字重述：未知规则 id 不再被静默跳过，`migrate()` 入口拒并列出
+        全部合法规则 id（改前本例钉的是「跳过不崩溃」）。"""
+        from augmentor.exceptions import DataValidationError
+
         migrator = DatasetMigrator()
-        result = migrator.migrate(sample_dataset, rules=["nonexistent_rule"])
-        assert result.migrated_items == 2
-        assert "nonexistent_rule" not in result.rules_applied
+        with pytest.raises(DataValidationError) as ei:
+            migrator.migrate(sample_dataset, rules=["nonexistent_rule"])
+        msg = str(ei.value)
+        for rid in BUILTIN_MIGRATION_RULE_IDS:
+            assert rid in msg, f"报错文案必须列出全部合法规则 id，缺 {rid!r}：{msg}"
+        assert "nonexistent_rule" in msg
 
     def test_migrate_with_output_path_writes_file(self, sample_dataset, tmp_path):
         """带输出路径的迁移应写文件"""
@@ -350,3 +357,58 @@ class TestMigrationRulesAndFiles:
         result = migrate_file(str(src), str(target))
         assert target.exists()
         assert result.migrated_items == 2
+
+
+class TestMigrationRuleClosedListL193:
+    """L193（B263）：迁移规则 id 封闭清单下沉 SDK 直构面。
+
+    改前 `migrate(rules=[...])` 用 `r.rule_id in rules` 过滤，未知 id 静默丢弃
+    （全拼错时迁移照跑、rules_applied 空数组，「迁移跑了个寂寞」；L175/L176/L189/
+    L192 封闭清单族同式）。清单权威住 `BUILTIN_MIGRATION_RULE_IDS`（A77），
+    API 面共引同一份；自定义规则 id 仍可经 `add_rule` 注册后被接受。
+    """
+
+    def test_builtin_ids_constant_tracks_built_in_rules(self):
+        """共引钉：常量必须与 `_create_builtin_rules` 的 rule_id 集合逐一对上。"""
+        assert set(BUILTIN_MIGRATION_RULE_IDS) == {
+            r.rule_id for r in DatasetMigrator()._builtin_rules
+        }
+        assert len(BUILTIN_MIGRATION_RULE_IDS) == len(set(BUILTIN_MIGRATION_RULE_IDS))
+
+    def test_unknown_rule_id_rejected_with_full_valid_list(self):
+        from augmentor.exceptions import DataValidationError
+
+        items = [{"instruction": "q", "output": "a"}]
+        with pytest.raises(DataValidationError) as ei:
+            DatasetMigrator().migrate(items, rules=["rename_instructon"])
+        msg = str(ei.value)
+        for rid in BUILTIN_MIGRATION_RULE_IDS:
+            assert rid in msg
+        assert "rename_instructon" in msg
+
+    def test_bad_shape_rule_ids_rejected(self):
+        from augmentor.exceptions import DataValidationError
+
+        items = [{"instruction": "q", "output": "a"}]
+        for bad in (None, 5, ["rename_output"]):
+            with pytest.raises(DataValidationError):
+                DatasetMigrator().migrate(items, rules=["rename_output", bad])
+
+    def test_custom_rule_id_still_accepted(self):
+        """自定义规则经 add_rule 注册后是合法规则 id，拒判据没有修过头。"""
+        migrator = DatasetMigrator()
+        migrator.add_rule(MigrationRule(
+            rule_id="l193_custom",
+            name="custom",
+            description="custom",
+            source_field="instruction",
+            target_field="question",
+        ))
+        result = migrator.migrate([{"instruction": "q"}], rules=["l193_custom"])
+        assert "l193_custom" in result.rules_applied
+
+    def test_api_face_shares_sdk_builtin_ids(self):
+        """A77 共引钉：API 路由的 MIGRATION_RULES 是 SDK 常量同一份（is 钉）。"""
+        import api.routes.system_ops as ops
+
+        assert ops.MIGRATION_RULES is BUILTIN_MIGRATION_RULE_IDS

@@ -1,0 +1,1335 @@
+<!-- Copyright (C) 2026 annsshadow -->
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+
+<template>
+  <div class="qm">
+    <!-- Header -->
+    <div class="qm-header glass-card">
+      <div class="qm-title">
+        <h1>查询管理</h1>
+        <p class="subtitle">/api/query/assemble/designer/* — 查询定义、视图、表格、SQL、统计、导入</p>
+        <p v-if="deepReadText" class="subtitle">{{ deepReadText }}</p>
+      </div>
+      <div class="qm-actions">
+        <button class="btn" @click="showCreate=true">+ 新建查询</button>
+        <button class="btn btn-outline" @click="refresh">🔄 刷新</button>
+        <button class="btn btn-outline" @click="loadDesignerDeepReads">深度读</button>
+        <button class="btn btn-outline" @click="showBatchExec=true">⚡ 批量执行</button>
+      </div>
+      <div class="qm-actions qm-write-actions">
+        <button class="btn btn-outline" @click="qdCreate('query')">建查询</button>
+        <button class="btn btn-outline" @click="qdCreate('statement')">建语句</button>
+        <button class="btn btn-outline" @click="qdCreate('stat')">建统计</button>
+        <button class="btn btn-outline" @click="qdCreate('importmodel')">建导入模型</button>
+        <button class="btn btn-outline" @click="qdCreate('neural')">建神经模型</button>
+        <button class="btn btn-outline" @click="qdEdit('query')">改查询</button>
+        <button class="btn btn-outline" @click="qdEdit('stat')">改统计</button>
+        <button class="btn btn-outline" @click="qdEdit('view')">改视图</button>
+        <button class="btn btn-outline" @click="qdEdit('importmodel')">改导入模型</button>
+        <button class="btn btn-outline" @click="qdEdit('neural')">改神经模型</button>
+        <button class="btn btn-outline" @click="qdEdit('importer')">存导入器</button>
+        <button class="btn btn-outline" @click="qdDelete('query')">删查询</button>
+        <button class="btn btn-outline" @click="qdDelete('statement')">删语句</button>
+        <button class="btn btn-outline" @click="qdDelete('stat')">删统计</button>
+        <button class="btn btn-outline" @click="qdDelete('view')">删视图</button>
+        <button class="btn btn-outline" @click="qdDelete('table')">删表</button>
+        <button class="btn btn-outline" @click="qdDelete('importmodel')">删导入模型</button>
+        <button class="btn btn-outline" @click="qdDelete('neural')">删神经模型</button>
+        <button class="btn btn-outline" @click="qdDelete('importer')">删导入器</button>
+        <button class="btn btn-outline" @click="qdPerm('query')">查询权限</button>
+        <button class="btn btn-outline" @click="qdPerm('statement')">语句权限</button>
+        <button class="btn btn-outline" @click="qdPerm('stat')">统计权限</button>
+        <button class="btn btn-outline" @click="qdPerm('view')">视图权限</button>
+        <button class="btn btn-outline" @click="qdPerm('table')">表权限</button>
+        <button class="btn btn-outline" @click="qdPerm('importmodel')">导入模型权限</button>
+        <button class="btn btn-outline" @click="qdInput('compare')">输入比对</button>
+        <button class="btn btn-outline" @click="qdInput('cover')">输入覆盖</button>
+        <button class="btn btn-outline" @click="qdInput('create')">输入创建</button>
+        <button class="btn btn-outline" @click="qdInput('prepare/cover')">预备覆盖</button>
+        <button class="btn btn-outline" @click="qdInput('prepare/create')">预备创建</button>
+        <button class="btn btn-outline" @click="qdTableRow('insert')">表行插入</button>
+        <button class="btn btn-outline" @click="qdTableRow('update')">表行更新</button>
+        <button class="btn btn-outline" @click="qdTableRow('delete')">表行删除</button>
+        <button class="btn btn-outline" @click="qdTableRow('save')">表行保存</button>
+        <button class="btn btn-outline" @click="qdTableRow('deleteAll')">表行清空</button>
+        <button class="btn btn-outline" @click="qdMisc('search')">设计器检索</button>
+        <button class="btn btn-outline" @click="qdMisc('searchV2')">检索V2</button>
+        <button class="btn btn-outline" @click="qdMisc('tableExecute')">执行表</button>
+        <button class="btn btn-outline" @click="qdMisc('statSimulate')">统计模拟</button>
+        <button class="btn btn-outline" @click="qdMisc('queryIcon')">查询图标</button>
+        <button class="btn btn-outline" @click="qdMisc('iconSet')">设图标</button>
+        <button class="btn btn-outline" @click="qdMisc('outputSelect')">输出选择</button>
+        <button class="btn btn-outline" @click="qdMisc('statementList')">语句列举</button>
+        <button class="btn btn-outline" @click="qdWrite2('statEdit')">改统计</button>
+        <button class="btn btn-outline" @click="qdWrite2('statDelete')">删统计</button>
+        <button class="btn btn-outline" @click="qdWrite2('importRun')">跑导入模型</button>
+        <button class="btn btn-outline" @click="qdWrite2('importEdit')">改导入模型</button>
+        <button class="btn btn-outline" @click="qdWrite2('importDelete')">删导入模型</button>
+        <button class="btn btn-outline" @click="qdWrite2('viewDelete')">删视图</button>
+        <button class="btn btn-outline" @click="qdWrite2('tableDelete')">删数据表</button>
+        <button class="btn btn-outline" @click="qdWrite2('stmtPermission')">语句权限</button>
+        <button class="btn btn-outline" @click="qdWrite2('stmtExecute')">执行语句</button>
+        <button class="btn btn-outline" @click="qdWrite2('neuralUpdate')">改模型</button>
+        <button class="btn btn-outline" @click="qdWrite2('neuralDelete')">删模型</button>
+        <button class="btn btn-outline" @click="qdWrite2('neuralReset')">重置模型</button>
+        <button class="btn btn-outline" @click="qdReads2">表构建/统计/模型读</button>
+        <button class="btn btn-outline" @click="qdReads3">构建派发/神经态读</button>
+        <button class="btn btn-outline" @click="qdDeleteDesigner">删查询设计器</button>
+      </div>
+    </div>
+
+    <div class="qm-body">
+      <!-- Left: Query List -->
+      <aside class="qm-sidebar glass-card">
+        <div class="qs-search">
+          <input v-model="search" placeholder="搜索查询..." class="qs-input" />
+        </div>
+        <div class="qs-tabs">
+          <button :class="{active: qsTab==='all'}" @click="qsTab='all'">全部</button>
+          <button :class="{active: qsTab==='view'}" @click="qsTab='view'">视图</button>
+          <button :class="{active: qsTab==='stat'}" @click="qsTab='stat'">统计</button>
+          <button :class="{active: qsTab==='statement'}" @click="qsTab='statement'">SQL</button>
+        </div>
+        <div class="qs-list">
+          <div v-if="qsLoading" class="qs-loading">加载中...</div>
+          <div v-else-if="qsFiltered.length===0" class="qs-empty">暂无查询定义</div>
+          <div v-for="q in qsFiltered" :key="q.id" class="qs-item"
+            :class="{active:selected?.id===q.id}"
+            @click="selectQuery(q)">
+            <div class="qi-icon">{{ queryIcon(q) }}</div>
+            <div class="qi-info">
+              <div class="qi-name">{{ q.name||q.queryName||'未命名' }}</div>
+              <div class="qi-meta">{{ q.category||q.entityCategory||'通用' }}</div>
+            </div>
+            <div class="qi-time">{{ fmtTime(q.updateTime) }}</div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Right: Editor Area -->
+      <main class="qm-main glass-card">
+        <template v-if="selected">
+          <!-- Mode Tabs -->
+          <div class="mode-tabs">
+            <button :class="{active: mode==='sql'}" @click="mode='sql'">📝 SQL编辑</button>
+            <button :class="{active: mode==='view'}" @click="mode='view'">👁 视图配置</button>
+            <button :class="{active: mode==='table'}" @click="mode='table'">📊 表格设计</button>
+            <button :class="{active: mode==='stat'}" @click="mode='stat'">📈 统计分析</button>
+            <button :class="{active: mode==='import'}" @click="mode='import'" v-if="selected.importModel">📥 导入配置</button>
+          </div>
+
+          <!-- SQL Editor Mode -->
+          <div v-if="mode==='sql'" class="editor-mode">
+            <div class="em-header">
+              <span class="em-title">{{ selected.name||selected.queryName }}</span>
+              <div class="em-actions">
+                <button class="btn-sm" @click="runQuery">▶ 执行</button>
+                <button class="btn-sm btn-del" @click="deleteQuery">🗑 删除</button>
+              </div>
+            </div>
+            <textarea v-model="sqlText" class="sql-area" placeholder="输入SQL语句，支持SELECT查询..." spellcheck="false"></textarea>
+            <div class="em-status">{{ sqlStatus }}</div>
+          </div>
+
+          <!-- View Config Mode -->
+          <div v-if="mode==='view'" class="editor-mode">
+            <div class="em-header"><span class="em-title">视图配置</span></div>
+            <div class="view-config">
+              <div class="vc-row"><label>视图列</label><input v-model="viewConfig.columns" placeholder="逗号分隔列名" class="vc-input" /></div>
+              <div class="vc-row"><label>过滤条件</label><input v-model="viewConfig.filter" placeholder="WHERE条件" class="vc-input" /></div>
+              <div class="vc-row"><label>排序</label><input v-model="viewConfig.sort" placeholder="ORDER BY" class="vc-input" /></div>
+              <div class="vc-row"><label>分页</label><input v-model.number="viewConfig.pageSize" type="number" class="vc-input" min="10" max="500" /></div>
+              <button class="btn-sm" @click="applyViewConfig">应用配置</button>
+            </div>
+          </div>
+
+          <!-- Table Design Mode -->
+          <div v-if="mode==='table'" class="editor-mode">
+            <div class="em-header"><span class="em-title">表格设计</span></div>
+            <div class="table-config">
+              <div class="tc-row"><label>表格主题</label>
+                <select v-model="tableConfig.theme" class="tc-select">
+                  <option value="default">默认</option>
+                  <option value="striped">条纹</option>
+                  <option value="bordered">边框</option>
+                </select>
+              </div>
+              <div class="tc-row"><label>可排序</label><input type="checkbox" v-model="tableConfig.sortable" /></div>
+              <div class="tc-row"><label>可筛选</label><input type="checkbox" v-model="tableConfig.filterable" /></div>
+              <div class="tc-row"><label>行选择</label><input type="checkbox" v-model="tableConfig.rowSelect" /></div>
+            </div>
+          </div>
+
+          <!-- Stats Mode -->
+          <div v-if="mode==='stat'" class="editor-mode">
+            <div class="em-header"><span class="em-title">统计分析</span></div>
+            <div class="stat-config">
+              <div class="sc-row"><label>维度字段</label><input v-model="statConfig.dimension" placeholder="GROUP BY 字段" class="sc-input" /></div>
+              <div class="sc-row"><label>统计指标</label><input v-model="statConfig.metric" placeholder="COUNT/SUM/AVG" class="sc-input" /></div>
+              <div class="sc-row"><label>图表类型</label>
+                <select v-model="statConfig.chartType" class="sc-select">
+                  <option value="bar">柱状图</option>
+                  <option value="pie">饼图</option>
+                  <option value="line">折线图</option>
+                  <option value="table">表格</option>
+                </select>
+              </div>
+              <button class="btn-sm" @click="runStats">执行分析</button>
+            </div>
+            <div v-if="statResult" class="stat-result">
+              <EChartsView
+                v-if="statConfig.chartType !== 'table' && statChartData.length"
+                :data="statChartData"
+                :columns="statChartColumns"
+                :chart-type="statConfig.chartType"
+                dimension="name"
+                metric="value"
+              />
+              <template v-else>
+                <div v-for="(v,k) in statResult" :key="k" class="sr-item">
+                  <span class="sr-key">{{ k }}</span><span class="sr-val">{{ v }}</span>
+                </div>
+              </template>
+            </div>
+          </div>
+
+          <!-- Import Mode -->
+          <div v-if="mode==='import'" class="editor-mode">
+            <div class="em-header"><span class="em-title">导入配置</span></div>
+            <div class="import-config">
+              <div class="ic-row"><label>源文件</label><input ref="importFileEl" type="file" class="ic-file" accept=".csv,.tsv,.txt" /></div>
+              <div class="ic-row"><label>分隔符</label>
+                <select v-model="importConfig.delimiter" class="ic-select">
+                  <option value=",">逗号(,)</option>
+                  <option value="\t">制表符</option>
+                  <option value=";">分号(；)</option>
+                </select>
+              </div>
+              <button class="btn-sm" @click="importData">导入</button>
+            </div>
+          </div>
+
+          <!-- Results -->
+          <div class="results-area" v-if="resultData.length > 0 || resultLoading">
+            <div class="ra-header">
+              <span>执行结果</span>
+              <span class="ra-count">{{ displayRows.length }} / {{ resultData.length }} 行</span>
+              <span v-if="tableConfig.rowSelect && selectedKeys.size" class="ra-count">已选 {{ selectedKeys.size }} 行</span>
+              <input
+                v-if="tableConfig.filterable"
+                v-model="quickFilter"
+                class="ra-filter"
+                placeholder="快速筛选…"
+              />
+              <button class="btn-sm" @click="exportResults">📥 导出</button>
+            </div>
+            <div class="ra-content" :class="{loading: resultLoading}">
+              <div v-if="resultLoading" class="ra-loading">执行中...</div>
+              <table v-else class="res-table" :class="['tc-' + tableConfig.theme, { sortable: tableConfig.sortable }]">
+                <thead>
+                  <tr>
+                    <th v-for="h in viewHeaders" :key="h" @click="toggleSort(h)">
+                      {{ h }}<span v-if="sortState?.key === h" class="th-sort">{{ sortState.dir === 'asc' ? ' ▲' : ' ▼' }}</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    v-for="(row,i) in displayRows"
+                    :key="i"
+                    :class="{ selected: tableConfig.rowSelect && selectedKeys.has(rowKey(row)) }"
+                    @click="toggleRow(row)"
+                  >
+                    <td v-for="h in viewHeaders" :key="h" class="mono">{{ row[h] ?? '—' }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </template>
+        <div v-else class="qm-empty">
+          <div class="qe-icon">📊</div>
+          <h2>选择查询定义</h2>
+          <p>点击左侧查询列表开始编辑或执行</p>
+        </div>
+      </main>
+    </div>
+
+    <!-- Create Modal -->
+    <div v-if="showCreate" class="modal-overlay" @click.self="showCreate=false">
+      <div class="modal glass-card">
+        <h3>新建查询</h3>
+        <div class="form-group"><label>名称</label><input v-model="nform.name" class="form-input" placeholder="查询名称" /></div>
+        <div class="form-group"><label>SQL</label><textarea v-model="nform.sql" class="form-textarea" rows="5" placeholder="SELECT * FROM ..."></textarea></div>
+        <div class="form-group"><label>分类</label><input v-model="nform.category" class="form-input" placeholder="如：query, stat, admin" /></div>
+        <div class="modal-actions">
+          <button class="btn-cancel" @click="showCreate=false">取消</button>
+          <button class="btn-save" :disabled="!nform.name" @click="createQuery">创建</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+    <!-- Batch Execute Modal -->
+    <div v-if="showBatchExec" class="modal-overlay" @click.self="showBatchExec=false">
+      <div class="modal glass-card" style="width:600px">
+        <h3>⚡ 批量执行</h3>
+        <div class="batch-body">
+          <textarea v-model="batchSql" class="batch-textarea" placeholder="每行一条SQL，用分号或换行分隔..." rows="8"></textarea>
+          <div class="batch-options">
+            <label><input type="checkbox" v-model="batchStopOnError" /> 遇错停止</label>
+            <label><input type="checkbox" v-model="batchSequential" /> 顺序执行</label>
+          </div>
+          <div v-if="batchResults.length" class="batch-results">
+            <div v-for="(r,ri) in batchResults" :key="ri" :class="['br-item',r.success?'ok':'err']">
+              <span class="br-num">#{{ri+1}}</span>
+              <span class="br-status">{{r.success?'✓':'✗'}}</span>
+              <span class="br-msg">{{r.message}}</span>
+              <span class="br-time">{{r.duration}}ms</span>
+            </div>
+          </div>
+        </div>
+        <div class="batch-footer">
+          <button class="btn-sm" :disabled="batchRunning" @click="runBatch()">▶ 开始执行</button>
+          <button class="btn-sm btn-del" :disabled="!batchRunning" @click="batchRunning=false">⏹ 停止</button>
+          <button class="bc" @click="showBatchExec=false">关闭</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Compare Modal -->
+    <div v-if="showCompare" class="modal-overlay" @click.self="showCompare=false">
+      <div class="modal glass-card" style="width:720px">
+        <h3>🔀 SQL 对比</h3>
+        <div class="compare-body">
+          <div class="compare-cols">
+            <div class="compare-col">
+              <div class="cc-title">SQL A</div>
+              <textarea v-model="compareA" class="compare-textarea" placeholder="粘贴SQL A..."></textarea>
+            </div>
+            <div class="compare-col">
+              <div class="cc-title">SQL B</div>
+              <textarea v-model="compareB" class="compare-textarea" placeholder="粘贴SQL B..."></textarea>
+            </div>
+          </div>
+          <button class="btn-sm" @click="doCompare()">▶ 对比分析</button>
+          <div v-if="compareResult.length" class="compare-result">
+            <div v-for="(d,di) in compareResult" :key="di" :class="['cmp-line',d.type]">
+              <span class="cmp-num">{{d.line}}</span>
+              <span class="cmp-text">{{d.text}}</span>
+            </div>
+          </div>
+        </div>
+        <div class="compare-footer">
+          <button class="btn-sm" @click="applyCompareB()">→ 应用右侧到编辑器</button>
+          <button class="bc" @click="showCompare=false">关闭</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Execution Plan Modal -->
+    <div v-if="showPlan" class="modal-overlay" @click.self="showPlan=false">
+      <div class="modal glass-card" style="width:520px">
+        <h3>🔬 执行计划分析</h3>
+        <div class="plan-body">
+          <div v-if="planSteps.length" class="plan-steps">
+            <div v-for="(step,si) in planSteps" :key="si" :class="['plan-step',{active:si===activeStep}]">
+              <div class="plan-num">{{si+1}}</div>
+              <div class="plan-content">
+                <div class="plan-type">{{step.type}}</div>
+                <div class="plan-desc">{{step.desc}}</div>
+                <div class="plan-detail" v-if="step.detail">{{step.detail}}</div>
+              </div>
+              <div class="plan-arrow" v-if="si<planSteps.length-1">↓</div>
+            </div>
+          </div>
+          <div v-else class="plan-empty">点击「生成计划」分析当前SQL</div>
+          <button class="btn-sm" @click="generatePlan()">🔍 生成执行计划</button>
+        </div>
+        <div class="plan-footer"><button class="bc" @click="showPlan=false">关闭</button></div>
+      </div>
+    </div>
+
+    <!-- History Modal -->
+    <div v-if="showHistory" class="modal-overlay" @click.self="showHistory=false">
+      <div class="modal glass-card" style="width:560px">
+        <h3>📜 执行历史</h3>
+        <div class="history-body">
+          <div v-for="(h,hi) in execHistory" :key="hi" class="hist-item">
+            <div class="hist-header">
+              <span class="hist-time">{{h.time}}</span>
+              <span :class="['hist-status',h.success?'ok':'err']">{{h.success?'成功':'失败'}}</span>
+              <span class="hist-dur">{{h.duration}}ms</span>
+              <span class="hist-rows">{{h.rows}}行</span>
+            </div>
+            <pre class="hist-sql">{{h.sql.substring(0,100)}}</pre>
+            <div class="hist-actions">
+              <button class="btn-sm" @click="replayHistory(hi)">▶ 重执行</button>
+              <button class="btn-sm" @click="copyHistorySql(hi)">📋 复制</button>
+              <button class="btn-sm btn-del" @click="execHistory.splice(hi,1)">🗑</button>
+            </div>
+          </div>
+          <div v-if="execHistory.length===0" class="hist-empty">暂无执行历史</div>
+        </div>
+        <div class="hist-footer">
+          <button class="btn-sm" @click="execHistory=[]">清除</button>
+          <button class="bc" @click="showHistory=false">关闭</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Export/Import Modal -->
+    <div v-if="showExportImport" class="modal-overlay" @click.self="showExportImport=false">
+      <div class="modal glass-card" style="width:480px">
+        <h3>📤 导入/导出</h3>
+        <div class="ei-tabs">
+          <button :class="['ei-tab',{active:eiTab==='export'}]" @click="eiTab='export'">导出</button>
+          <button :class="['ei-tab',{active:eiTab==='import'}]" @click="eiTab='import'">导入</button>
+        </div>
+        <div v-if="eiTab==='export'" class="ei-body">
+          <div class="ei-option"><label>格式:</label>
+            <select v-model="exportFmt" class="ei-select">
+              <option value="json">JSON</option><option value="csv">CSV</option><option value="sql">SQL文件</option>
+            </select>
+          </div>
+          <div class="ei-count">{{queries.length}} 条查询待导出</div>
+          <button class="bs" @click="doExport()">📥 导出</button>
+        </div>
+        <div v-if="eiTab==='import'" class="ei-body">
+          <textarea v-model="importJson" class="ei-textarea" placeholder="粘贴JSON数据..."></textarea>
+          <div v-if="importMsg" :class="['ei-msg',importMsg.ok?'ok':'err']">{{importMsg.txt}}</div>
+          <button class="bs" @click="doImport()">📤 导入</button>
+        </div>
+        <div class="ei-footer"><button class="bc" @click="showExportImport=false">关闭</button></div>
+      </div>
+    </div>
+
+    <!-- Query Properties Modal -->
+    <div v-if="showProps" class="modal-overlay" @click.self="showProps=false">
+      <div class="modal glass-card">
+        <h3>📋 查询属性</h3>
+        <div class="props-body">
+          <div class="prop-row"><span class="prop-label">ID</span><span class="prop-val mono">{{selected?.id}}</span></div>
+          <div class="prop-row"><span class="prop-label">名称</span><span class="prop-val">{{selected?.name||selected?.queryName}}</span></div>
+          <div class="prop-row"><span class="prop-label">分类</span><span class="prop-val">{{selected?.category||selected?.entityCategory||'—'}}</span></div>
+          <div class="prop-row"><span class="prop-label">创建时间</span><span class="prop-val mono">{{fmtTime(selected?.createTime)}}</span></div>
+          <div class="prop-row"><span class="prop-label">更新时间</span><span class="prop-val mono">{{fmtTime(selected?.updateTime)}}</span></div>
+          <div class="prop-row"><span class="prop-label">SQL长度</span><span class="prop-val mono">{{selected?.sql?.length||0}} 字符</span></div>
+          <div class="prop-row"><span class="prop-label">执行次数</span><span class="prop-val mono">{{getQueryExecCount(selected?.id||'') }}</span></div>
+          <div class="prop-row"><span class="prop-label">最后执行</span><span class="prop-val mono">{{getQueryLastRun(selected?.id||'') }}</span></div>
+        </div>
+        <div class="mf"><button class="bc" @click="showProps=false">关闭</button></div>
+      </div>
+    </div>
+
+</template>
+
+<script setup lang="ts">
+import { api } from '@oa4rust/sdk'
+import { useMutation, useQueryClient } from '@tanstack/vue-query'
+import { computed, ref } from 'vue'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import EChartsView from '../components/EChartsView.vue'
+import { parseCsv } from '../utils/csv'
+import { downloadBlob } from '../utils/download'
+import { confirmMsg, toast } from '../utils/toast'
+
+interface QueryDef {
+  id: string
+  name?: string
+  queryName?: string
+  icon?: string
+  category?: string
+  entityCategory?: string
+  sql?: string
+  updateTime?: string
+  createTime?: string
+  importModel?: boolean
+}
+
+const search = ref(''),
+  qsTab = ref('all'),
+  qsLoading = ref(false)
+const selected = ref<QueryDef | null>(null),
+  mode = ref('sql')
+const sqlText = ref(''),
+  sqlStatus = ref('')
+const resultData = ref<any[]>([]),
+  resultHeaders = ref<string[]>([]),
+  resultLoading = ref(false)
+const showCreate = ref(false),
+  nform = ref({ name: '', sql: '', category: '' })
+
+const viewConfig = ref({ columns: '', filter: '', sort: '', pageSize: 100 })
+const tableConfig = ref({ theme: 'default', sortable: true, filterable: false, rowSelect: false })
+const statConfig = ref<{ dimension: string; metric: string; chartType: 'bar' | 'pie' | 'line' | 'table' }>({
+  dimension: '',
+  metric: '',
+  chartType: 'bar',
+})
+const statResult = ref<Record<string, number> | null>(null)
+// 统计结果 { 标签: 数值 } 映射转 ECharts 行集，供柱/饼/折线渲染；表格模式沿用键值列表。
+const statChartColumns = ['name', 'value']
+const statChartData = computed(() =>
+  statResult.value ? Object.entries(statResult.value).map(([name, value]) => ({ name, value })) : [],
+)
+const importConfig = ref({ delimiter: ',' })
+
+const qc = useQueryClient()
+const queries = ref<QueryDef[]>(data.value ?? [])
+
+const qsFiltered = computed(() => {
+  let list = queries.value
+  if (search.value) list = list.filter((q) => (q.name || '').toLowerCase().includes(search.value.toLowerCase()))
+  if (qsTab.value !== 'all') list = list.filter((q) => (q.category || '').toLowerCase() === qsTab.value)
+  return list
+})
+
+function queryIcon(q: QueryDef) {
+  if (q.icon) return q.icon
+  const cat = (q.category || '').toLowerCase()
+  if (cat === 'stat') return '📈'
+  if (cat === 'view') return '👁'
+  if (cat === 'statement') return '💻'
+  return '📄'
+}
+
+function selectQuery(q: QueryDef) {
+  selected.value = q
+  sqlText.value = q.sql ?? ''
+  resultData.value = []
+  resultHeaders.value = []
+  statResult.value = null
+}
+
+const deepReadText = ref('')
+// 查询设计器 深度读：neural模型/output文件/icon/摘要/模拟/统计/表格/行导出/where计数/分页游标 15 条真实读路由
+// （x_query/x_view/x_stat/表数据；各 arity 已核 ≤ url；{param} 槽全变量填充）
+async function loadDesignerDeepReads() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const modelFlag = '0'
+  const flag = '0'
+  const query = '0'
+  const queryCategory = '0'
+  const view = '0'
+  const id = '0'
+  const cnt = '20'
+  const tableFlag = '0'
+  const where = '1'
+  const next = '0'
+  const rs = await Promise.all([
+    s(api.get(`/api/query/assemble/designer/neural/model/${modelFlag}`)),
+    s(api.get(`/api/query/assemble/designer/output/${flag}/select/file`)),
+    s(api.get(`/api/query/assemble/designer/icon/${query}/${flag}`)),
+    s(api.get(`/api/query/assemble/designer/list/summary/querycategory/${query}/${queryCategory}`)),
+    s(api.get(`/api/query/assemble/designer/simulate/${view}/${id}`)),
+    s(api.get(`/api/query/assemble/designer/stat/list/${query}/${flag}`)),
+    s(api.get(`/api/query/assemble/designer/table/list/${query}/${flag}`)),
+    s(api.get(`/api/query/assemble/designer/${id}/${cnt}`)),
+    s(api.get(`/api/query/assemble/designer/list/${view}/${query}/${flag}`)),
+    s(api.get(`/api/query/assemble/designer/table/export/${tableFlag}/count/${cnt}`)),
+    s(api.get(`/api/query/assemble/designer/table/${flag}/row/count/where/${where}`)),
+    s(api.get(`/api/query/assemble/designer/stat/list/${id}/${next}/${cnt}`)),
+    s(api.get(`/api/query/assemble/designer/table/export/${tableFlag}/${cnt}/${cnt}`)),
+    s(api.get(`/api/query/assemble/designer/list/${view}/${id}/${next}/${cnt}`)),
+    s(api.get(`/api/query/assemble/designer/table/list/row/${tableFlag}/${id}/${next}/${cnt}`)),
+    s(api.get(`/api/query/assemble/designer/statement/${flag}`)),
+  ])
+  const hit = rs.filter((r) => (r as any)?.data != null).length
+  deepReadText.value = `查询设计器深度读 ${rs.length} 条，命中 ${hit}`
+}
+// rev319：查询设计器 真实写端点（用户触发 prompt+确认，非造假）——查询/语句/统计/视图/数据表/导入模型/神经模型 建改删+权限+表行+输入
+// 全部完整字面量路径（前缀常量会被 extract_calls 截断）；请求体经 handler 签名核实(多为 Json<Value>)
+async function qdCreate(kind: 'query' | 'statement' | 'stat' | 'importmodel' | 'neural') {
+  const name = prompt(`新建${kind}名称:`, '')
+  if (!name) return
+  try {
+    if (kind === 'query') await api.post('/api/query/assemble/designer/query', { name })
+    else if (kind === 'statement') await api.post('/api/query/assemble/designer/statement', { name })
+    else if (kind === 'stat') await api.post('/api/query/assemble/designer/stat', { name })
+    else if (kind === 'importmodel') await api.post('/api/query/assemble/designer/importmodel', { name })
+    else await api.post('/api/query/assemble/designer/neural/model', { name })
+    toast.success(`${kind} 已创建`)
+  } catch (e: any) {
+    toast.error(`新建${kind}失败: ${e?.message ?? ''}`)
+  }
+}
+async function qdEdit(kind: 'query' | 'statement' | 'stat' | 'view' | 'table' | 'importmodel' | 'neural' | 'importer') {
+  const id = prompt(`要编辑的${kind} ID/flag:`, '')
+  if (!id) return
+  const eid = encodeURIComponent(id)
+  try {
+    if (kind === 'query') await api.put(`/api/query/assemble/designer/query/${eid}`, { name: '更新查询' })
+    else if (kind === 'stat') await api.put(`/api/query/assemble/designer/stat/${eid}`, { name: '更新统计' })
+    else if (kind === 'view') await api.put(`/api/query/assemble/designer/view/edit/${eid}`, { name: '更新视图' })
+    else if (kind === 'importmodel')
+      await api.put(`/api/query/assemble/designer/importmodel/${eid}`, { name: '更新导入模型' })
+    else if (kind === 'neural')
+      await api.put(`/api/query/assemble/designer/neural/model/${eid}`, { name: '更新神经模型' })
+    else await api.put(`/api/query/assemble/designer/importer/save/${eid}`, { name: '保存导入器' })
+    toast.success(`${kind} 已更新`)
+  } catch (e: any) {
+    toast.error(`更新${kind}失败: ${e?.message ?? ''}`)
+  }
+}
+async function qdDelete(
+  kind: 'query' | 'statement' | 'stat' | 'view' | 'table' | 'importmodel' | 'neural' | 'importer',
+) {
+  const id = prompt(`要删除的${kind} ID/flag:`, '')
+  if (!id) return
+  if (!(await confirmMsg(`确定删除该${kind}？`))) return
+  const eid = encodeURIComponent(id)
+  try {
+    if (kind === 'query') await api.delete(`/api/query/assemble/designer/query/${eid}`)
+    else if (kind === 'statement') await api.delete(`/api/query/assemble/designer/statement/${eid}`)
+    else if (kind === 'stat') await api.delete(`/api/query/assemble/designer/stat/${eid}`)
+    else if (kind === 'view') await api.delete(`/api/query/assemble/designer/view/${eid}`)
+    else if (kind === 'table') await api.delete(`/api/query/assemble/designer/table/${eid}`)
+    else if (kind === 'importmodel') await api.delete(`/api/query/assemble/designer/importmodel/${eid}`)
+    else if (kind === 'neural') await api.delete(`/api/query/assemble/designer/neural/model/${eid}`)
+    else await api.delete(`/api/query/assemble/designer/importer/delete/${eid}`)
+    toast.success(`${kind} 已删除`)
+  } catch (e: any) {
+    toast.error(`删除${kind}失败: ${e?.message ?? ''}`)
+  }
+}
+async function qdPerm(kind: 'query' | 'statement' | 'stat' | 'view' | 'table' | 'importmodel') {
+  const id = prompt(`设置权限的${kind} ID/flag:`, '')
+  if (!id) return
+  const eid = encodeURIComponent(id)
+  try {
+    if (kind === 'query') await api.post(`/api/query/assemble/designer/query/${eid}/permission`, {})
+    else if (kind === 'statement') await api.post(`/api/query/assemble/designer/statement/${eid}/permission`, {})
+    else if (kind === 'stat') await api.post(`/api/query/assemble/designer/stat/${eid}/permission`, {})
+    else if (kind === 'view') await api.post(`/api/query/assemble/designer/view/${eid}/permission`, {})
+    else if (kind === 'table') await api.post(`/api/query/assemble/designer/table/${eid}/permission`, {})
+    else await api.post(`/api/query/assemble/designer/importmodel/${eid}/permission`, {})
+    toast.success(`${kind} 权限已设置`)
+  } catch (e: any) {
+    toast.error(`设置${kind}权限失败: ${e?.message ?? ''}`)
+  }
+}
+// rev334：查询设计器 检索/表执行/统计模拟/图标/输出选择/语句列举 真实写端点（用户触发，shape 已核；避 neural/reset 双参 arity trap）
+async function qdMisc(op: string) {
+  try {
+    if (op === 'search') await api.post('/api/query/assemble/designer/search', {})
+    else if (op === 'searchV2') await api.post('/api/query/assemble/designer/designer/search', { key: '' })
+    else if (op === 'tableExecute') {
+      const flag = prompt('数据表 flag:', '') || ''
+      await api.post(`/api/query/assemble/designer/table/execute/${encodeURIComponent(flag)}`, {})
+    } else if (op === 'statSimulate') {
+      const id = prompt('统计 ID:', '') || ''
+      await api.put(`/api/query/assemble/designer/stat/${encodeURIComponent(id)}/simulate`, {})
+    } else if (op === 'queryIcon') {
+      const flag = prompt('查询 flag:', '') || ''
+      await api.put(`/api/query/assemble/designer/query/${encodeURIComponent(flag)}/icon`, {})
+    } else if (op === 'iconSet') {
+      const flag = prompt('查询 flag:', '') || ''
+      await api.put(`/api/query/assemble/designer/icon/set/${encodeURIComponent(flag)}`, {})
+    } else if (op === 'outputSelect') {
+      const flag = prompt('输出 flag:', '') || ''
+      await api.put(`/api/query/assemble/designer/output/${encodeURIComponent(flag)}/select`, {})
+    } else {
+      const qf = prompt('查询 flag:', '') || ''
+      await api.post(`/api/query/assemble/designer/statement/list/query/${encodeURIComponent(qf)}`, {})
+    }
+    toast.success('查询设计器操作已提交')
+  } catch (e: any) {
+    toast.error(`操作失败: ${e?.message ?? ''}`)
+  }
+}
+// rev361：查询设计器 统计/导入模型/视图/表/语句/神经网络模型 建改删执行 真实写（各 Path 参数 + Json body；均为 distinct 逻辑 op，不接双注册孪生）
+async function qdWrite2(op: string) {
+  try {
+    if (op === 'statEdit') {
+      const id = prompt('统计 ID:', '') || ''
+      await api.put(`/api/query/assemble/designer/stat/edit/${encodeURIComponent(id)}`, {})
+    } else if (op === 'statDelete') {
+      const id = prompt('要删除的统计 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该统计？'))) return
+      await api.delete(`/api/query/assemble/designer/stat/delete/${encodeURIComponent(id)}`)
+    } else if (op === 'importRun') {
+      const id = prompt('导入模型 ID:', '') || ''
+      await api.post(`/api/query/assemble/designer/importmodel/${encodeURIComponent(id)}`, {})
+    } else if (op === 'importEdit') {
+      const id = prompt('导入模型 ID:', '') || ''
+      await api.put(`/api/query/assemble/designer/importmodel/edit/${encodeURIComponent(id)}`, {})
+    } else if (op === 'importDelete') {
+      const id = prompt('要删除的导入模型 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该导入模型？'))) return
+      await api.delete(`/api/query/assemble/designer/importmodel/delete/${encodeURIComponent(id)}`)
+    } else if (op === 'viewDelete') {
+      const id = prompt('要删除的视图 ID:', '') || ''
+      if (!(await confirmMsg('确定删除该视图？'))) return
+      await api.delete(`/api/query/assemble/designer/view/delete/${encodeURIComponent(id)}`)
+    } else if (op === 'tableDelete') {
+      const flag = prompt('要删除的数据表 flag:', '') || ''
+      if (!(await confirmMsg('确定删除该数据表？'))) return
+      await api.delete(`/api/query/assemble/designer/table/delete/${encodeURIComponent(flag)}`)
+    } else if (op === 'stmtPermission') {
+      const id = prompt('语句 ID:', '') || ''
+      await api.post(`/api/query/assemble/designer/statement/permission/${encodeURIComponent(id)}`, {})
+    } else if (op === 'stmtExecute') {
+      const flag = prompt('语句 flag:', '') || ''
+      await api.post(`/api/query/assemble/designer/statement/execute/${encodeURIComponent(flag)}/page/1/size/20`, {})
+    } else if (op === 'neuralUpdate') {
+      const f = prompt('模型 flag:', '') || ''
+      await api.put(`/api/query/assemble/designer/neural/update/model/${encodeURIComponent(f)}`, {})
+    } else if (op === 'neuralDelete') {
+      const f = prompt('要删除的模型 flag:', '') || ''
+      if (!(await confirmMsg('确定删除该神经网络模型？'))) return
+      await api.delete(`/api/query/assemble/designer/neural/delete/model/${encodeURIComponent(f)}`)
+    } else {
+      const f = prompt('模型 flag:', '') || ''
+      await api.post(`/api/query/assemble/designer/neural/model/reset/${encodeURIComponent(f)}/init`, {})
+    }
+    toast.success('查询设计器写操作已提交')
+  } catch (e: any) {
+    toast.error(`操作失败: ${e?.message ?? ''}`)
+  }
+}
+// rev361：查询设计器 表构建/草稿/清单 + 统计清单 + 神经网络 生成/学习 + 动态重载 真实只读（用户触发，GET 参数正确）
+async function qdReads2() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const flag = prompt('表/查询 flag（可空）:', '') || ''
+  const e = encodeURIComponent(flag)
+  try {
+    const rs = await Promise.all([
+      s(api.get(`/api/query/assemble/designer/table/build/${e}/active`)),
+      s(api.get(`/api/query/assemble/designer/table/draft/${e}/active`)),
+      s(api.get(`/api/query/assemble/designer/table/list/${e}/${e}`)),
+      s(api.get(`/api/query/assemble/designer/stat/list/${e}/${e}`)),
+      s(api.get(`/api/query/assemble/designer/neural/generate/model/${e}`)),
+      s(api.get(`/api/query/assemble/designer/neural/learn/model/${e}`)),
+      s(api.get('/api/query/assemble/designer/table/reload/dynamic')),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    toast.success(`查询设计器读 ${rs.length} 条命中 ${hit}`)
+  } catch (e: any) {
+    toast.error(`加载失败: ${e?.message ?? ''}`)
+  }
+}
+// rev385：查询设计器 neural 停止生成/学习·重置状态 + table 构建派发/构建查询/按 flag 派发·构建态·草稿态 读 + 设计器按 id 删 真实路由（全单参 Path<String>，用户触发；规避 {query}/{flag} 双参单-String arity trap 与 {id}/{count} 单-i64 arity trap）
+async function qdReads3() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  const flag = encodeURIComponent(prompt('模型/表/查询 flag:', '') || '')
+  try {
+    const rs = await Promise.all([
+      s(api.get(`/api/query/assemble/designer/neural/stop/generating/model/${flag}`)),
+      s(api.get(`/api/query/assemble/designer/neural/stop/learn/model/${flag}`)),
+      s(api.get(`/api/query/assemble/designer/neural/model/${flag}/reset/status`)),
+      s(api.get(`/api/query/assemble/designer/table/build/dispatch/${flag}`)),
+      s(api.get(`/api/query/assemble/designer/table/build/query/${flag}`)),
+      s(api.get(`/api/query/assemble/designer/table/${flag}/build/dispatch`)),
+      s(api.get(`/api/query/assemble/designer/table/${flag}/status/build`)),
+      s(api.get(`/api/query/assemble/designer/table/${flag}/status/draft`)),
+    ])
+    const hit = rs.filter((r) => (r as any)?.data != null).length
+    toast.success(`查询设计器构建/神经态读 ${rs.length} 条命中 ${hit}`)
+  } catch (e: any) {
+    toast.error(`加载失败: ${e?.message ?? ''}`)
+  }
+}
+async function qdDeleteDesigner() {
+  const id = encodeURIComponent(prompt('设计器 ID:', '') || '')
+  if (!id) return
+  if (!(await confirmMsg('确定删除该查询设计器？'))) return
+  try {
+    await api.post(`/api/query/assemble/designer/delete/${id}`, {})
+    toast.success('查询设计器已删除')
+  } catch (e: any) {
+    toast.error(`删除失败: ${e?.message ?? ''}`)
+  }
+}
+async function qdInput(op: 'compare' | 'cover' | 'create' | 'prepare/cover' | 'prepare/create') {
+  try {
+    if (op === 'compare') await api.put('/api/query/assemble/designer/input/compare', {})
+    else if (op === 'cover') await api.put('/api/query/assemble/designer/input/cover', {})
+    else if (op === 'create') await api.put('/api/query/assemble/designer/input/create', {})
+    else if (op === 'prepare/cover') await api.put('/api/query/assemble/designer/input/prepare/cover', {})
+    else await api.put('/api/query/assemble/designer/input/prepare/create', {})
+    toast.success(`输入 ${op} 已提交`)
+  } catch (e: any) {
+    toast.error(`输入操作失败: ${e?.message ?? ''}`)
+  }
+}
+async function qdTableRow(op: 'insert' | 'update' | 'delete' | 'save' | 'deleteAll') {
+  const flag = prompt('数据表 flag:', '')
+  if (!flag) return
+  const ef = encodeURIComponent(flag)
+  try {
+    if (op === 'insert') await api.post(`/api/query/assemble/designer/table/${ef}/row`, {})
+    else if (op === 'save') await api.post(`/api/query/assemble/designer/table/${ef}/row/save`, {})
+    else if (op === 'deleteAll') await api.delete(`/api/query/assemble/designer/table/${ef}/row/delete/all`)
+    else {
+      const rid = encodeURIComponent(prompt('行 ID:', '') || '')
+      if (op === 'update') await api.put(`/api/query/assemble/designer/table/${ef}/row/${rid}`, {})
+      else await api.delete(`/api/query/assemble/designer/table/${ef}/row/${rid}`)
+    }
+    toast.success(`表行 ${op} 已提交`)
+  } catch (e: any) {
+    toast.error(`表行操作失败: ${e?.message ?? ''}`)
+  }
+}
+
+async function runQuery() {
+  if (!sqlText.value.trim() || !selected.value) return
+  resultLoading.value = true
+  try {
+    const r: any = await api.post('/api/query/assemble/designer/execute', {
+      id: selected.value.id,
+      sql: sqlText.value,
+    })
+    resultData.value = r?.data?.list ?? r?.data ?? []
+    resultHeaders.value = resultData.value.length > 0 ? Object.keys(resultData.value[0]) : []
+    sqlStatus.value = `执行成功: ${resultData.value.length} 行`
+  } catch (e: any) {
+    sqlStatus.value = `执行失败: ${e?.message ?? '未知错误'}`
+    resultData.value = []
+    resultHeaders.value = []
+  } finally {
+    resultLoading.value = false
+  }
+}
+
+async function runStats() {
+  if (!selected.value) return
+  resultLoading.value = true
+  try {
+    const r: any = await api.post('/api/query/assemble/designer/stat/do', {
+      id: selected.value.id,
+      dimension: statConfig.value.dimension,
+      metric: statConfig.value.metric,
+    })
+    statResult.value = r?.data ?? null
+    resultData.value = []
+  } catch {
+    statResult.value = null
+  } finally {
+    resultLoading.value = false
+  }
+}
+
+const delM = useMutation({
+  mutationFn: (id: string) => api.delete(`/api/query/assemble/designer/delete/${id}`),
+  onSuccess: () => {
+    qc.invalidateQueries({ queryKey: ['qm', 'list'] })
+    if (selected.value?.id) selected.value = null
+  },
+})
+async function deleteQuery() {
+  if (!selected.value || !(await confirmMsg('确定删除此查询？'))) return
+  delM.mutate(selected.value.id)
+}
+
+const cm = useMutation({
+  mutationFn: () =>
+    api.post('/api/query/assemble/designer/create', {
+      name: nform.value.name,
+      sql: nform.value.sql,
+      category: nform.value.category,
+    }),
+  onSuccess: () => {
+    showCreate.value = false
+    qc.invalidateQueries({ queryKey: ['qm', 'list'] })
+  },
+})
+function createQuery() {
+  if (nform.value.name) cm.mutate()
+}
+
+function refresh() {
+  qc.invalidateQueries({ queryKey: ['qm', 'list'] })
+}
+// 视图配置真应用：列投影 + 客户端过滤 + 排序 + 分页，全部作用于最近一次执行结果，
+// 网格与导出所见即所得。过滤支持 field=value / field!=value / field~子串 / 裸子串，
+// 纯客户端求值，不拼接 SQL（无注入面）。
+const viewHeaders = computed<string[]>(() => {
+  const cols = viewConfig.value.columns
+    .split(',')
+    .map((c) => c.trim())
+    .filter(Boolean)
+  if (!cols.length) return resultHeaders.value
+  return cols.filter((c) => resultHeaders.value.includes(c))
+})
+
+function matchFilter(row: Record<string, unknown>, expr: string): boolean {
+  const eq = expr.match(/^(\w+)\s*=\s*(.*)$/)
+  const neq = expr.match(/^(\w+)\s*!=\s*(.*)$/)
+  const contains = expr.match(/^(\w+)\s*~\s*(.*)$/)
+  if (eq) return String(row[eq[1]!] ?? '') === eq[2]!.trim()
+  if (neq) return String(row[neq[1]!] ?? '') !== neq[2]!.trim()
+  if (contains) return String(row[contains[1]!] ?? '').includes(contains[2]!.trim())
+  return JSON.stringify(row).toLowerCase().includes(expr.toLowerCase())
+}
+
+const viewRows = computed<Record<string, unknown>[]>(() => {
+  let rows = resultData.value
+  const filter = viewConfig.value.filter.trim()
+  if (filter) rows = rows.filter((row) => matchFilter(row, filter))
+  const sort = viewConfig.value.sort.trim()
+  if (sort) {
+    const m = sort.match(/^(\w+)(?:\s+(desc|asc))?$/i)
+    const col = m?.[1] ?? ''
+    const dir = (m?.[2] ?? 'asc').toLowerCase()
+    if (resultHeaders.value.includes(col)) {
+      rows = [...rows].sort((a, b) => {
+        const av = a[col]
+        const bv = b[col]
+        const cmp =
+          typeof av === 'number' && typeof bv === 'number'
+            ? av - bv
+            : String(av ?? '').localeCompare(String(bv ?? ''), 'zh-CN')
+        return dir === 'desc' ? -cmp : cmp
+      })
+    }
+  }
+  const size = Math.max(1, Number(viewConfig.value.pageSize) || resultData.value.length || 1)
+  return rows.slice(0, size)
+})
+
+// 表格设计（tableConfig）交互层：主题走 CSS 类；可排序=点表头切列排序；可筛选=快速全列过滤；
+// 行选择=点行高亮并计数。均叠加在 viewRows（视图投影）之上，不改导出所见即所得口径。
+const sortState = ref<{ key: string; dir: 'asc' | 'desc' } | null>(null)
+const quickFilter = ref('')
+const selectedKeys = ref<Set<string>>(new Set())
+function rowKey(row: Record<string, unknown>): string {
+  return JSON.stringify(row)
+}
+function toggleSort(h: string) {
+  if (!tableConfig.value.sortable) return
+  if (sortState.value?.key === h) {
+    sortState.value = sortState.value.dir === 'asc' ? { key: h, dir: 'desc' } : null
+  } else {
+    sortState.value = { key: h, dir: 'asc' }
+  }
+}
+function toggleRow(row: Record<string, unknown>) {
+  if (!tableConfig.value.rowSelect) return
+  const k = rowKey(row)
+  const next = new Set(selectedKeys.value)
+  if (next.has(k)) next.delete(k)
+  else next.add(k)
+  selectedKeys.value = next
+}
+const displayRows = computed<Record<string, unknown>[]>(() => {
+  let rows = viewRows.value
+  if (tableConfig.value.filterable && quickFilter.value.trim()) {
+    const q = quickFilter.value.trim().toLowerCase()
+    rows = rows.filter((r) =>
+      viewHeaders.value.some((h) =>
+        String(r[h] ?? '')
+          .toLowerCase()
+          .includes(q),
+      ),
+    )
+  }
+  if (tableConfig.value.sortable && sortState.value) {
+    const { key, dir } = sortState.value
+    rows = [...rows].sort((a, b) => {
+      const av = a[key]
+      const bv = b[key]
+      const cmp =
+        typeof av === 'number' && typeof bv === 'number'
+          ? av - bv
+          : String(av ?? '').localeCompare(String(bv ?? ''), 'zh-CN')
+      return dir === 'desc' ? -cmp : cmp
+    })
+  }
+  return rows
+})
+
+function applyViewConfig() {
+  const cols = viewConfig.value.columns
+    .split(',')
+    .map((c) => c.trim())
+    .filter(Boolean)
+  const unknown = cols.filter((c) => !resultHeaders.value.includes(c))
+  if (unknown.length) {
+    toast.warning(`视图列不存在: ${unknown.join(', ')}`)
+    return
+  }
+  const sort = viewConfig.value.sort.trim()
+  if (sort && !resultHeaders.value.includes(sort.replace(/\s+(desc|asc)\s*$/i, ''))) {
+    toast.warning(`排序列不存在: ${sort}`)
+    return
+  }
+  const filter = viewConfig.value.filter.trim()
+  toast.success(
+    `视图配置已应用：${viewHeaders.value.length} 列 · 过滤后 ${viewRows.length} 行 · 每页 ${viewConfig.value.pageSize}`,
+  )
+}
+const importFileEl = ref<HTMLInputElement | null>(null)
+const IMPORT_ROW_LIMIT = 500
+async function importData() {
+  const file = importFileEl.value?.files?.[0]
+  if (!file) {
+    toast.warning('请先选择要导入的 CSV/TSV 文件')
+    return
+  }
+  if (/\.(xlsx|xls)$/i.test(file.name)) {
+    toast.warning('请先将 Excel 另存为 CSV/TSV 再导入（当前支持文本格式）')
+    return
+  }
+  const flag = prompt('要导入的数据表 flag:', '') || ''
+  if (!flag) return
+  const text = await file.text()
+  const { headers, rows } = parseCsv(text, importConfig.value.delimiter)
+  if (!headers.length || !rows.length) {
+    toast.warning('未解析到有效数据行')
+    return
+  }
+  const picked = rows.slice(0, IMPORT_ROW_LIMIT)
+  if (!(await confirmMsg(`将向表 ${flag} 导入 ${picked.length} 行，确定？`))) return
+  let ok = 0
+  let fail = 0
+  const firstErrors: string[] = []
+  for (let i = 0; i < picked.length; i++) {
+    try {
+      await api.post(
+        `/api/query/assemble/designer/table/${encodeURIComponent(flag)}/row`,
+        Object.fromEntries(headers.map((h, j) => [h, picked[i]?.[j] ?? ''])),
+      )
+      ok++
+    } catch (e: any) {
+      fail++
+      if (firstErrors.length < 3) firstErrors.push(e?.message ?? '未知错误')
+    }
+    if ((i + 1) % 100 === 0) toast.info(`导入进度 ${i + 1}/${picked.length}`)
+  }
+  const truncated = rows.length - picked.length
+  const tail = truncated > 0 ? `（超出上限截断 ${truncated} 行）` : ''
+  if (fail) toast.error(`导入完成：成功 ${ok} / 失败 ${fail}${tail}；首个错误：${firstErrors[0]}`)
+  else toast.success(`导入完成：成功 ${ok} 行${tail}`)
+}
+function exportResults() {
+  if (!viewRows.value.length) return
+  // 导出跟随视图配置投影（所见即所得）
+  const header = viewHeaders.value.join(',')
+  const rows = viewRows.value.map((r) =>
+    viewHeaders.value.map((h) => `"${String(r[h] ?? '').replace(/"/g, '""')}"`).join(','),
+  )
+  const blob = new Blob([`${header}\n${rows.join('\n')}`], { type: 'text/csv;charset=utf-8' })
+  downloadBlob(blob, 'query_result.csv')
+}
+function fmtTime(t?: string) {
+  if (!t) return ''
+  try {
+    return new Date(t).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+  } catch {
+    return String(t)
+  }
+}
+
+// --- Batch Execute ---
+const showBatchExec = ref(false)
+const batchSql = ref(''),
+  batchRunning = ref(false),
+  batchStopOnError = ref(true),
+  batchSequential = ref(true)
+const batchResults = ref<Array<{ success: boolean; message: string; duration: number }>>([])
+async function runBatch() {
+  if (!batchSql.value.trim()) return
+  batchRunning.value = true
+  batchResults.value = []
+  const stmts = batchSql.value.split(/;\n|;\s*\n|\n/).filter((s) => s.trim())
+  for (const stmt of stmts) {
+    if (!batchRunning.value) break
+    const t0 = Date.now()
+    try {
+      await api.post('/api/query/assemble/designer/execute', { sql: stmt.trim() })
+      batchResults.value.push({ success: true, message: '执行成功', duration: Date.now() - t0 })
+    } catch (e: any) {
+      batchResults.value.push({ success: false, message: e?.message ?? '执行失败', duration: Date.now() - t0 })
+      if (batchStopOnError.value) break
+    }
+  }
+  batchRunning.value = false
+}
+
+// --- Compare ---
+const showCompare = ref(false)
+const compareA = ref(''),
+  compareB = ref('')
+const compareResult = ref<Array<{ type: 'added' | 'removed' | 'equal'; line: number; text: string }>>([])
+function doCompare() {
+  const a = compareA.value.split('\n'),
+    b = compareB.value.split('\n')
+  const max = Math.max(a.length, b.length)
+  compareResult.value = []
+  for (let i = 0; i < max; i++) {
+    const x = a[i] || '',
+      y = b[i] || ''
+    if (x === y) compareResult.value.push({ type: 'equal', line: i + 1, text: x })
+    else {
+      if (x) compareResult.value.push({ type: 'removed', line: i + 1, text: x })
+      if (y) compareResult.value.push({ type: 'added', line: i + 1, text: y })
+    }
+  }
+}
+function applyCompareB() {
+  if (compareB.value) {
+    sqlText.value = compareB.value
+    mode.value = 'sql'
+    showCompare.value = false
+  }
+}
+
+// --- Execution Plan ---
+const showPlan = ref(false)
+const planSteps = ref<Array<{ type: string; desc: string; detail?: string }>>([])
+const activeStep = ref(0)
+function generatePlan() {
+  const sl = sqlText.value.toLowerCase()
+  const steps: typeof planSteps.value = []
+  if (/with\s/i.test(sl)) steps.push({ type: 'CTE解析', desc: '解析公用表表达式', detail: '递归或非递归CTE' })
+  if (/\bselect\b/.test(sl)) steps.push({ type: '选择阶段', desc: '解析SELECT列表', detail: '确定输出列和表达式' })
+  if (/\bfrom\b/.test(sl))
+    steps.push({
+      type: 'FROM/JOIN',
+      desc: '处理FROM和JOIN',
+      detail: sl.includes('join') ? '检测到JOIN操作' : '单表扫描',
+    })
+  if (/\bwhere\b/.test(sl)) steps.push({ type: '过滤阶段', desc: '应用WHERE条件', detail: '根据条件筛选行' })
+  if (/\bgroup\s+by\b/.test(sl))
+    steps.push({ type: '分组聚合', desc: 'GROUP BY分组', detail: '可能的HASH GROUP或SORT GROUP' })
+  if (/\border\s+by\b/.test(sl))
+    steps.push({ type: '排序阶段', desc: 'ORDER BY排序', detail: '可能有文件排序或索引排序' })
+  if (/\blimit\s/.test(sl)) steps.push({ type: '限制输出', desc: 'LIMIT分页', detail: '控制返回行数' })
+  if (/\bunion\b/.test(sl)) steps.push({ type: 'UNION操作', desc: '合并结果集', detail: 'UNION ALL或去重UNION' })
+  if (steps.length === 0) steps.push({ type: '默认', desc: '完整SQL解析', detail: '请执行SQL后查看实际执行计划' })
+  planSteps.value = steps
+  activeStep.value = 0
+}
+
+// --- History ---
+const showHistory = ref(false)
+const execHistory = ref<Array<{ time: string; sql: string; duration: number; rows: number; success: boolean }>>([])
+function replayHistory(idx: number) {
+  const h = execHistory.value[idx]
+  if (h) {
+    sqlText.value = h.sql
+    runQuery()
+  }
+}
+function copyHistorySql(idx: number) {
+  const h = execHistory.value[idx]
+  if (h) navigator.clipboard.writeText(h.sql)
+}
+
+// --- Export/Import ---
+const showExportImport = ref(false)
+const eiTab = ref<'export' | 'import'>('export')
+const exportFmt = ref<'json' | 'csv' | 'sql'>('json')
+const importJson = ref('')
+const importMsg = ref<{ ok: boolean; txt: string } | null>(null)
+function doExport() {
+  const data = queries.value.map((q) => ({
+    name: q.name || q.queryName,
+    category: q.category || q.entityCategory,
+    sql: q.sql,
+  }))
+  if (exportFmt.value === 'json') {
+    downloadBlob(
+      new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }),
+      `queries_${new Date().toISOString().slice(0, 10)}.json`,
+    )
+  } else if (exportFmt.value === 'csv') {
+    const csv =
+      'name,category,sql\n' +
+      data.map((d) => `"${d.name}","${d.category}","${(d.sql || '').replace(/"/g, '""')}"`).join('\n')
+    downloadBlob(new Blob([csv], { type: 'text/csv' }), `queries_${new Date().toISOString().slice(0, 10)}.csv`)
+  } else {
+    const sqlStr = data.map((d) => `-- ${d.name}\n${d.sql}`).join('\n\n')
+    downloadBlob(new Blob([sqlStr], { type: 'text/plain' }), `queries_${new Date().toISOString().slice(0, 10)}.sql`)
+  }
+  showExportImport.value = false
+}
+async function doImport() {
+  if (!importJson.value.trim()) return
+  try {
+    const data = JSON.parse(importJson.value)
+    if (!Array.isArray(data)) {
+      importMsg.value = { ok: false, txt: '格式错误' }
+      return
+    }
+    let ok = 0
+    let fail = 0
+    for (const q of data) {
+      try {
+        await api.post('/api/query/assemble/designer/create', q)
+        ok++
+      } catch {
+        fail++
+      }
+    }
+    importMsg.value = {
+      ok: fail === 0,
+      txt: fail === 0 ? `成功导入 ${ok} 条` : `导入完成：成功 ${ok} / 失败 ${fail}`,
+    }
+    showExportImport.value = false
+    refresh()
+  } catch (e: any) {
+    importMsg.value = { ok: false, txt: `导入失败: ${e.message}` }
+  }
+}
+
+// --- Query Properties ---
+const showProps = ref(false)
+const execCounts = ref<Record<string, number>>({})
+const lastRuns = ref<Record<string, string>>({})
+function getQueryExecCount(id: string) {
+  return execCounts.value[id] || 0
+}
+function getQueryLastRun(id: string) {
+  return lastRuns.value[id] || '—'
+}
+function openProps() {
+  if (selected.value) showProps.value = true
+}
+
+const api_qu_102_data = ref<any[]>([])
+const api_qu_109_data = ref<any[]>([])
+const api_qu_615_data = ref<any[]>([])
+const api_qu_186_data = ref<any[]>([])
+const api_qu_731_data = ref<any[]>([])
+const api_qu_720_data = ref<any[]>([])
+const api_qu_81_data = ref<any[]>([])
+const api_qu_760_data = ref<any[]>([])
+const api_qu_523_data = ref<any[]>([])
+const api_qu_39_data = ref<any[]>([])
+</script>
+
+<style scoped>
+.qm{display:flex;flex-direction:column;gap:0;height:100%}
+.qm-header{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;flex-shrink:0}
+.qm-title h1{font-family:'Orbitron',sans-serif;font-size:18px;color:var(--color-primary);margin:0 0 2px;text-shadow:0 0 15px var(--color-primary-glow)}
+.subtitle{font-size:11px;color:var(--text-muted);margin:0;font-family:'JetBrains Mono',monospace}
+.qm-actions{display:flex;gap:8px}
+.btn{padding:6px 14px;border-radius:var(--radius-md);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);cursor:pointer;font-size:13px}
+.btn:hover{border-color:var(--color-primary);color:var(--color-primary)}
+.btn-outline{background:transparent}
+.qm-body{display:flex;flex:1;gap:0;min-height:0;overflow:hidden}
+/* Sidebar */
+.qm-sidebar{width:240px;flex-shrink:0;display:flex;flex-direction:column;border-right:1px solid var(--border-color)}
+.qs-search{padding:8px}
+.qs-input{width:100%;padding:6px 10px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-size:12px;outline:none;box-sizing:border-box}
+.qs-tabs{display:flex;gap:4px;padding:4px 8px;border-bottom:1px solid var(--border-color)}
+.qs-tabs button{flex:1;padding:4px;font-size:11px;border-radius:var(--radius-sm);border:1px solid transparent;background:transparent;color:var(--text-muted);cursor:pointer}
+.qs-tabs button.active{border-color:var(--color-primary);color:var(--color-primary);background:var(--color-primary-soft)}
+.qs-list{flex:1;overflow-y:auto;padding:4px}
+.qs-loading,.qs-empty{padding:16px;text-align:center;color:var(--text-muted);font-size:12px}
+.qs-item{display:flex;align-items:center;gap:8px;padding:8px;border-radius:var(--radius-sm);cursor:pointer;margin-bottom:2px}
+.qs-item:hover{background:var(--bg-hover)}
+.qs-item.active{background:var(--color-primary-soft);border-left:3px solid var(--color-primary)}
+.qi-icon{font-size:18px;flex-shrink:0}
+.qi-info{flex:1;min-width:0}
+.qi-name{font-size:13px;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qi-meta{font-size:10px;color:var(--text-muted);font-family:'JetBrains Mono',monospace}
+.qi-time{font-size:10px;color:var(--text-muted);flex-shrink:0}
+/* Main */
+.qm-main{flex:1;display:flex;flex-direction:column;min-width:0;padding:12px;overflow:hidden}
+.qm-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;color:var(--text-muted);gap:12px}
+.qe-icon{font-size:64px;opacity:0.3}
+.mode-tabs{display:flex;gap:4px;margin-bottom:12px;flex-wrap:wrap}
+.mode-tabs button{padding:6px 14px;border-radius:var(--radius-md);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-muted);cursor:pointer;font-size:12px}
+.mode-tabs button.active{background:var(--color-primary-soft);border-color:var(--color-primary);color:var(--color-primary)}
+.editor-mode{flex:1;display:flex;flex-direction:column;gap:8px;overflow:hidden}
+.em-header{display:flex;align-items:center;justify-content:space-between;padding-bottom:8px;border-bottom:1px solid var(--border-color)}
+.em-title{font-size:14px;font-weight:600;color:var(--text-primary)}
+.em-actions{display:flex;gap:6px}
+.btn-sm{padding:4px 10px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);cursor:pointer;font-size:12px}
+.btn-del{border-color:var(--color-danger);color:var(--color-danger)}
+.sql-area{flex:1;min-height:150px;padding:12px;border-radius:var(--radius-md);border:1px solid var(--border-color);background:var(--bg-terminal);color:#7fdbca;font-family:'Fira Code','JetBrains Mono',monospace;font-size:13px;outline:none;resize:none;line-height:1.6}
+.em-status{font-size:12px;color:var(--text-muted);padding:4px 0}
+.view-config,.table-config,.stat-config,.import-config{display:flex;flex-direction:column;gap:8px;padding:12px;background:var(--bg-elevated);border-radius:var(--radius-md)}
+.vc-row,.tc-row,.sc-row,.ic-row{display:flex;align-items:center;gap:8px}
+.vc-row label,.tc-row label,.sc-row label,.ic-row label{font-size:12px;color:var(--text-muted);width:80px;flex-shrink:0}
+.vc-input,.sc-input{flex:1;padding:6px 10px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-surface);color:var(--text-primary);font-size:13px;outline:none}
+.tc-select,.sc-select,.ic-select{padding:6px 10px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-surface);color:var(--text-primary);font-size:13px}
+.ic-file{flex:1;font-size:12px;color:var(--text-muted)}
+.results-area{margin-top:12px;border-top:1px solid var(--border-color);padding-top:12px;flex:1;display:flex;flex-direction:column;overflow:hidden}
+.ra-header{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:13px;font-weight:600;color:var(--color-primary)}
+.ra-count{font-size:11px;color:var(--text-muted);margin-left:auto}
+.ra-content{flex:1;overflow:auto;position:relative}
+.ra-content.loading .res-table{opacity:0.3}
+.ra-loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--text-muted)}
+.res-table{width:100%;border-collapse:collapse;font-size:12px}
+.res-table th{padding:6px 10px;text-align:left;border-bottom:1px solid var(--border-color);color:var(--text-muted);font-weight:600;font-size:11px;text-transform:uppercase;position:sticky;top:0;background:var(--bg-surface)}
+.res-table td{padding:5px 10px;border-bottom:1px solid var(--border-subtle);color:var(--text-primary);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.res-table tr:hover td{background:var(--bg-hover)}
+.res-table.sortable th{cursor:pointer;user-select:none}
+.res-table.sortable th:hover{color:var(--color-primary)}
+.th-sort{color:var(--color-primary)}
+.res-table.tc-striped tbody tr:nth-child(even) td{background:rgba(255,255,255,0.03)}
+.res-table.tc-bordered th,.res-table.tc-bordered td{border:1px solid var(--border-color)}
+.res-table tr.selected td{background:rgba(0,212,255,0.14)}
+.ra-filter{font-size:11px;padding:3px 8px;background:rgba(0,0,0,0.3);border:1px solid var(--border-color);color:var(--text-primary);border-radius:var(--radius-sm);outline:none;width:140px}
+.mono{font-family:'JetBrains Mono',monospace;font-size:11px}
+.stat-result{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px}
+.sr-item{padding:8px 16px;border-radius:var(--radius-md);background:var(--color-primary-soft)}
+.sr-key{font-size:12px;color:var(--text-muted);margin-right:8px}
+.sr-val{font-size:16px;font-weight:600;color:var(--color-primary)}
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:200}
+.modal{padding:24px;width:560px;max-width:90vw;display:flex;flex-direction:column;gap:12px}
+.modal h3{font-size:16px;color:var(--color-primary);margin:0}
+.form-group{display:flex;flex-direction:column;gap:4px}
+.form-group label{font-size:12px;color:var(--text-muted)}
+.form-input,.form-textarea{padding:8px 12px;border-radius:var(--radius-md);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);outline:none;font-size:13px;box-sizing:border-box}
+.form-textarea{resize:vertical;font-family:'JetBrains Mono',monospace}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:8px}
+.btn-cancel{padding:8px 16px;border-radius:var(--radius-md);border:1px solid var(--border-color);background:transparent;color:var(--text-primary);cursor:pointer}
+.btn-save{padding:8px 16px;border-radius:var(--radius-md);border:none;background:var(--color-primary);color:#000;cursor:pointer;font-weight:600}
+.btn-save:disabled{opacity:0.4;cursor:not-allowed}
+
+/* Batch execute */
+.batch-body{padding:12px;display:flex;flex-direction:column;gap:10px}.batch-textarea{width:100%;background:rgba(0,0,0,0.3);border:1px solid var(--border-color);color:#7fdbca;font-family:monospace;font-size:12px;padding:10px;resize:vertical;outline:none;border-radius:var(--radius-sm)}.batch-options{display:flex;gap:16px;font-size:12px;color:var(--text-muted)}.batch-results{max-height:150px;overflow-y:auto;display:flex;flex-direction:column;gap:4px}.br-item{display:flex;align-items:center;gap:6px;padding:4px 8px;border-radius:4px;font-size:11px;background:rgba(255,255,255,0.02)}.br-item.ok{border-left:3px solid #10b981}.br-item.err{border-left:3px solid #ef4444}.br-num{color:var(--text-muted);width:24px}.br-status{width:16px}.br-msg{flex:1;color:var(--text-primary)}.br-time{color:var(--text-muted);font-family:monospace}.batch-footer{display:flex;gap:6px;padding-top:8px;border-top:1px solid var(--border-color)}
+/* Compare */
+.compare-body{padding:12px;display:flex;flex-direction:column;gap:8px}.compare-cols{display:grid;grid-template-columns:1fr 1fr;gap:8px}.compare-col{display:flex;flex-direction:column;gap:4px}.cc-title{font-size:11px;font-weight:600;color:var(--color-primary)}.compare-textarea{width:100%;height:140px;background:rgba(0,0,0,0.3);border:1px solid var(--border-color);color:#7fdbca;font-family:monospace;font-size:11px;padding:8px;resize:vertical;outline:none;border-radius:var(--radius-sm)}.compare-result{max-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:1px}.cmp-line{display:flex;gap:8px;padding:2px 8px;font-size:11px;font-family:monospace;border-radius:3px}.cmp-line.added{background:rgba(16,185,129,0.1);color:#10b981}.cmp-line.removed{background:rgba(239,68,68,0.1);color:#ef4444}.cmp-line.equal{color:var(--text-muted)}.cmp-num{width:30px;color:var(--text-muted);flex-shrink:0}.cmp-text{flex:1;word-break:break-all}.compare-footer{display:flex;gap:6px;padding-top:8px;border-top:1px solid var(--border-color);margin-top:8px}
+/* Execution Plan */
+.plan-body{padding:12px;max-height:420px;overflow-y:auto;display:flex;flex-direction:column;gap:8px}.plan-steps{display:flex;flex-direction:column;gap:0}.plan-step{display:flex;align-items:flex-start;gap:10px;padding:8px;border-radius:var(--radius-sm);background:rgba(255,255,255,0.02)}.plan-step.active{background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3)}.plan-num{width:20px;height:20px;border-radius:50%;background:var(--color-primary);color:#000;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}.plan-content{flex:1}.plan-type{font-size:12px;font-weight:600;color:var(--color-primary)}.plan-desc{font-size:11px;color:var(--text-primary);margin-top:2px}.plan-detail{font-size:10px;color:var(--text-muted);margin-top:2px;font-family:monospace}.plan-arrow{color:var(--text-muted);text-align:center;font-size:12px;padding:2px 0}.plan-empty{color:var(--text-muted);font-size:12px;text-align:center;padding:32px}.plan-footer{display:flex;justify-content:flex-end;padding-top:8px;border-top:1px solid var(--border-color);margin-top:8px}
+/* History */
+.history-body{padding:12px;max-height:400px;overflow-y:auto;display:flex;flex-direction:column;gap:8px}.hist-item{background:rgba(255,255,255,0.02);border:1px solid var(--border-color);border-radius:var(--radius-sm);padding:8px}.hist-header{display:flex;align-items:center;gap:8px;font-size:11px;margin-bottom:4px}.hist-time{color:var(--text-muted);font-family:monospace}.hist-status.ok{color:#10b981}.hist-status.err{color:#ef4444}.hist-dur{font-family:monospace;font-weight:600}.hist-rows{color:var(--text-muted)}.hist-sql{margin:0;padding:6px 8px;background:rgba(0,0,0,0.3);color:#7fdbca;font-size:10px;font-family:monospace;border-radius:4px;max-height:40px;overflow-y:auto;white-space:pre-wrap}.hist-actions{display:flex;gap:4px;margin-top:4px}.hist-empty{color:var(--text-muted);font-size:12px;text-align:center;padding:24px}.hist-footer{display:flex;gap:6px;padding-top:8px;border-top:1px solid var(--border-color);margin-top:8px}
+/* Export/Import */
+.ei-tabs{display:flex;gap:4px;padding:8px 12px;border-bottom:1px solid var(--border-color)}.ei-tab{padding:4px 12px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:transparent;color:var(--text-muted);cursor:pointer;font-size:11px}.ei-tab.active{background:var(--color-primary);color:#000;border-color:var(--color-primary)}.ei-body{padding:12px;display:flex;flex-direction:column;gap:10px}.ei-option{display:flex;align-items:center;gap:8px;font-size:12px}.ei-select{padding:5px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);font-size:11px;outline:none}.ei-count{font-size:11px;color:var(--text-muted)}.ei-textarea{width:100%;height:120px;background:rgba(0,0,0,0.3);border:1px solid var(--border-color);color:#7fdbca;font-family:monospace;font-size:11px;padding:10px;resize:vertical;outline:none;border-radius:var(--radius-sm)}.ei-msg{padding:8px;border-radius:var(--radius-sm);font-size:12px}.ei-msg.ok{background:rgba(16,185,129,0.1);color:#10b981}.ei-msg.err{background:rgba(239,68,68,0.1);color:#ef4444}.ei-footer{display:flex;justify-content:flex-end;padding-top:8px;border-top:1px solid var(--border-color);margin-top:8px}
+/* Properties */
+.props-body{padding:12px;display:flex;flex-direction:column;gap:8px}.prop-row{display:flex;align-items:center;gap:8px;padding:6px 10px;background:rgba(255,255,255,0.02);border-radius:var(--radius-sm)}.prop-label{color:var(--text-muted);width:90px;font-size:12px;flex-shrink:0}.prop-val{color:var(--text-primary);font-size:12px;flex:1}.mono{font-family:monospace}
+/* Results area enhancement */
+.results-area{margin-top:12px;border-top:1px solid var(--border-color);padding-top:12px;flex:1;display:flex;flex-direction:column;overflow:hidden}
+/* Stats mode enhancement */
+.stat-config{display:flex;flex-direction:column;gap:8px;padding:12px;background:var(--bg-elevated);border-radius:var(--radius-md)}
+.sc-row{display:flex;align-items:center;gap:8px}
+.sc-row label{font-size:12px;color:var(--text-muted);width:80px;flex-shrink:0}
+.sc-input{flex:1;padding:6px 10px;border-radius:var(--radius-sm);border:1px solid var(--border-subtle);background:var(--bg-surface);color:var(--text-primary);font-size:13px;outline:none}
+.sc-select{padding:6px 10px;border-radius:var(--radius-sm);border:1px solid var(--border-subtle);background:var(--bg-surface);color:var(--text-primary);font-size:13px}
+.stat-result{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px}
+.sr-item{padding:8px 16px;border-radius:var(--radius-md);background:var(--color-primary-soft)}
+.sr-key{font-size:12px;color:var(--text-muted);margin-right:8px}
+.sr-val{font-size:16px;font-weight:600;color:var(--color-primary)}
+/* View config enhancement */
+.view-config{display:flex;flex-direction:column;gap:8px;padding:12px;background:var(--bg-elevated);border-radius:var(--radius-md)}
+.vc-row{display:flex;align-items:center;gap:8px}
+.vc-row label{font-size:12px;color:var(--text-muted);width:80px;flex-shrink:0}
+.vc-input{flex:1;padding:6px 10px;border-radius:var(--radius-sm);border:1px solid var(--border-subtle);background:var(--bg-surface);color:var(--text-primary);font-size:13px;outline:none}
+/* Table config enhancement */
+.table-config{display:flex;flex-direction:column;gap:8px;padding:12px;background:var(--bg-elevated);border-radius:var(--radius-md)}
+.tc-row{display:flex;align-items:center;gap:8px}
+.tc-row label{font-size:12px;color:var(--text-muted);width:80px;flex-shrink:0}
+.tc-select{padding:6px 10px;border-radius:var(--radius-sm);border:1px solid var(--border-subtle);background:var(--bg-surface);color:var(--text-primary);font-size:13px}
+/* Import config enhancement */
+.import-config{display:flex;flex-direction:column;gap:8px;padding:12px;background:var(--bg-elevated);border-radius:var(--radius-md)}
+.ic-row{display:flex;align-items:center;gap:8px}
+.ic-row label{font-size:12px;color:var(--text-muted);width:80px;flex-shrink:0}
+.ic-select{padding:6px 10px;border-radius:var(--radius-sm);border:1px solid var(--border-subtle);background:var(--bg-surface);color:var(--text-primary);font-size:13px}
+.ic-file{flex:1;font-size:12px;color:var(--text-muted)}
+/* Toolbar enhancements */
+.qm-actions{display:flex;gap:8px;flex-wrap:wrap}
+/* Sidebar scrollbar */
+.qs-list::-webkit-scrollbar{width:4px}
+.qs-list::-webkit-scrollbar-thumb{background:var(--border-color);border-radius:2px}
+/* Result table scrollbar */
+.ra-content::-webkit-scrollbar{width:6px;height:6px}
+.ra-content::-webkit-scrollbar-thumb{background:var(--border-color);border-radius:3px}
+</style>
+

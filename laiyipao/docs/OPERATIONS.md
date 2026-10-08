@@ -88,7 +88,7 @@ cd laiyipao/admin   && pnpm install && pnpm dev          # :5175
 | `DATABASE_URL` | PostgreSQL 连接串 |
 | `JWT_SECRET` | **生产必须覆盖**。`APP_ENV=prod` 时若仍以 `dev-only` 开头，**进程直接 panic 拒绝启动** |
 | `BOOTSTRAP_ADMIN_USER` | `admin` | 首次启动创建的后台**用户名** |
-| `BOOTSTRAP_ADMIN_PASS` | `admin12345` | 首次启动创建的后台**密码**，**至少 10 位**，缺省则拒绝引导 |
+| `BOOTSTRAP_ADMIN_PASS` | `admin12345` | 首次启动创建的后台**密码**，**至少 10 位**，缺省则拒绝引导 | ⚠️ **第 67 轮**：`APP_ENV=prod` 时**必须显式设置**，未设直接 panic —— 默认值 `admin12345` 写在 README 与源码里是**公开的**，且恰好 10 位**正好通过**长度门槛
 
 ### 服务
 
@@ -108,6 +108,22 @@ cd laiyipao/admin   && pnpm install && pnpm dev          # :5175
 | `DB_MAX_CONNS` | `10` | ⚠️ 见 §7.2 的连接数计算 |
 | `DB_MIN_CONNS` | `2` | — |
 | `DB_CONN_LIFETIME` | `1h` | 连接最大存活时间 |
+| `DB_TIMEZONE` | `Asia/Shanghai` | **连接会话时区**，第 90 轮新增 |
+
+> ⚠️ **不要把它设成 UTC。**
+>
+> 这个值决定 PG 把 `TIMESTAMPTZ` 折成 `DATE` 时用哪个日界，
+> 进而决定「今天几号」。业务是中文小程序，
+> 「今天」必须等于**玩家所在时区的自然日** ——
+> 设成 UTC 会让每日任务与每日签到在北京时间 **08:00** 翻页，
+> 而玩家手机上显示的还是同一天。
+>
+> 服务端已在连接握手上钉死这个值（`RuntimeParams["TimeZone"]`），
+> 所以它**不依赖** `postgresql.conf` 或托管实例的默认时区。
+> 改这个环境变量是改**业务日界**，不是改部署细节。
+>
+> 守卫：`server/internal/store/timezone_test.go` 3 条
+> （含「5 条物理连接各自都必须是该值」与「赋值必须无条件执行」）。
 
 ### 玩法
 

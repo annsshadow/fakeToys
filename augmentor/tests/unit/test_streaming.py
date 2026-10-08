@@ -7,6 +7,7 @@ import json
 import pytest
 from pathlib import Path
 from augmentor.streaming import StreamReader, StreamWriter, StreamProcessor, StreamAugmentor, StreamConfig, create_stream_processor
+from augmentor.validation import DataValidationError
 
 
 @pytest.fixture
@@ -66,6 +67,40 @@ class TestStreamConfig:
         assert config.chunk_size == 500
         assert config.buffer_size == 5000
         assert config.max_memory_mb == 256
+
+
+    def test_a_falsy_zero_chunk_size_now_refused_at_construction(self):
+        """A46② 收口（L156 / B226）：读侧 `chunk_size` 形参早接 `require_count`，
+        配置侧却全档静默放行（0 / 负数 / bool / 字符串）；改前本用例红。"""
+
+        for value in (0, -1, True, "1"):
+            with pytest.raises(DataValidationError):
+                StreamConfig(chunk_size=value)
+
+    def test_buffer_and_memory_lower_bound_is_the_positive_reading(self):
+        """`buffer_size` / `max_memory_mb` 无读侧权威，下界 1 是「正数量」读法
+        （A46② 留档口径）；0 档是假零档（L144 同式），一并拒。"""
+
+        for bad in (0, -1):
+            with pytest.raises(DataValidationError):
+                StreamConfig(buffer_size=bad)
+            with pytest.raises(DataValidationError):
+                StreamConfig(max_memory_mb=bad)
+        assert StreamConfig(buffer_size=1).buffer_size == 1
+        assert StreamConfig(max_memory_mb=1).max_memory_mb == 1
+
+    def test_config_side_and_reader_side_share_the_chunk_size_band(self):
+        """两侧的下界同源（同一字面 1）：同批值在构造器形参面与配置节面同判，
+        谁把一侧的下界改了，本用例当场红。"""
+
+        for value in (0, -3):
+            with pytest.raises(DataValidationError):
+                StreamReader("does-not-matter.jsonl", chunk_size=value)
+            with pytest.raises(DataValidationError):
+                StreamConfig(chunk_size=value)
+        for value in (1, 500):
+            StreamReader("does-not-matter.jsonl", chunk_size=value)
+            StreamConfig(chunk_size=value)
 
 
 class TestStreamReaderCountJSONL:
@@ -439,13 +474,23 @@ class TestCreateStreamProcessor:
         def process_item(item):
             return {"processed": True, **item}
         
-        stream_process = create_stream_processor(process_item, chunk_size=10)
+        stream_process = create_stream_processor(process_item)
         
         items = [{"instruction": "问题1"}, {"instruction": "问题2"}]
         result = stream_process(items)
         
         assert len(result) == 2
         assert all(item["processed"] is True for item in result)
+    
+    def test_dead_chunk_size_param_is_gone(self):
+        """A46① 收口（L152，B222）：`create_stream_processor` 的死形参 `chunk_size` 已删。
+
+        改前它被声明却从不被读（工厂闭包逐条处理、无状态，块边界无任何可观测后果），
+        「设了没生效」是静默的。删掉后传它会 `TypeError`——钉住死形参没有回来。
+        """
+        import inspect
+        sig = inspect.signature(create_stream_processor)
+        assert "chunk_size" not in sig.parameters, "死形参 chunk_size 又回来了"
     
     def test_create_stream_processor_with_error(self):
         """测试创建带错误处理的流式处理器"""

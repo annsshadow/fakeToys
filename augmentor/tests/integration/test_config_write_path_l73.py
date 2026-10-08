@@ -243,46 +243,11 @@ class TestApplySectionUpdateSdk:
             if dataclasses.is_dataclass(getattr(config, f.name))
             and not hasattr(type(getattr(config, f.name)), "__post_init__")
         )
-        assert all_sections == [
-            "active_learning", "benchmark", "context", "evaluation", "expander",
-            "frameworks", "multilingual", "sampler", "tracker", "versioning",
-            "visualization",
-        ], "A118 现量变了：按本轮同款推导重测再改这里，别照抄"
+        # L154 / B224（A140 收口）第三次翻转：11 节全接上判据 ⇒ 名单清空。
+        # 按「按本轮同款推导重测再改这里」条款翻转，不是手抄新名单。
+        assert all_sections == [],             "全 20 节判据现量变了：按同款推导重测再改这里（A140 已收口的那一格）"
 
-    def test_sections_without_runtime_gates_still_write_through(self):
-        """设计选择 3 的行为面：没有 `__post_init__` 的节照旧写入，不抛也不吞键
-
-        为什么本轮补它：覆盖报表里 `config.py` 的 `if post_init is not None` 是本轮
-        唯一新增的偏支 —— 七节全部接上判据后，假臂只余上面那 11 节会走，而它们全在
-        `POST /api/config` 的可写清单之外，只有 SDK 直构能到这里。没有这条用例，下一轮
-        把它当死代码删掉就是一次对外行为变更（A140 接节时这一支还要继续走）。
-        """
-        from augmentor import load_config
-        from augmentor.config import apply_section_update
-
-        config = load_config(str(AI_DIR / "config.yaml"))
-        all_sections = sorted(
-            f.name for f in dataclasses.fields(config)
-            if dataclasses.is_dataclass(getattr(config, f.name))
-            and not hasattr(type(getattr(config, f.name)), "__post_init__")
-        )
-        assert all_sections, "全 20 节都接上了判据 ⇒ 假臂无来源，本用例连同设计选择 3 一起退役"
-        flipped = 0
-        for name in all_sections:
-            section = getattr(config, name)
-            assert not hasattr(type(section), "__post_init__"), \
-                "%s 节接上了判据，本用例的靶子消失，改走七节那条路" % name
-            old = getattr(section, dataclasses.fields(section)[0].name)
-            # 首字段是 bool ⇒ 写一个**不同**的值，断言才不是自等
-            new = (not old) if isinstance(old, bool) else old
-            flipped += isinstance(old, bool)
-            ignored = apply_section_update(
-                section, {dataclasses.fields(section)[0].name: new, "no_such_knob": 1}
-            )
-            assert ignored == ["no_such_knob"], name
-            assert getattr(section, dataclasses.fields(section)[0].name) == new, name
-        assert flipped == len(all_sections), \
-            "有节的首字段不再是 bool ⇒ 那一节的写入断言退化成自等，换字段选择再改这里"
+    # L154 / B224 退役：全 20 节都有 `__post_init__`，「无判据节仍照旧写入」的行为面靶子消失（本用例 docstring 的明文处方：全 20 节接上判据即连同设计选择 3 一起退役）。假臂 `if post_init is not None` 的另一半（无判据写直通）自此无来源，留档 B225 待下一轮判删。
 
 
 class TestApiRejectsOutOfRange:
@@ -478,3 +443,53 @@ class TestRouteStructure:
                                         if isinstance(elt, ast.Constant)]
                 break
         assert sections == WRITABLE_SECTIONS
+
+
+class TestTheUngatedWriteThroughIsAPinnedContract:
+    """B225 处置（L155）：无判据节的写直通是冻结契约，不是可删死代码
+
+    L154 起全 20 节都有节内判据（写面棘轮 `ungated == []` 已翻），仓内再无来源
+    走到这一支。但这个函数不是 20 节的私有件：写入路径（api 路由）拿到的是
+    「任意 dataclass 节对象」才调它，没装备节内判据的用户自定义节也是合法入参。
+    删掉这一支是对外行为变更（「写直通、不抛也不吞键」的契约悄悄破了）；留它并
+    用用例钉死是更便宜的一档——本类就是那根钉子。原先测这支的行为面用例已在
+    L154 按其 docstring 明文处方退役，这里只接它的「行为面」，不碰七节写入路径。
+    """
+
+    def test_an_ungated_section_writes_through_without_rechecking(self):
+        import dataclasses
+
+        from augmentor.config import apply_section_update
+
+        @dataclasses.dataclass
+        class UngatedSection:
+            alpha: str = "a"
+            beta: int = 1
+
+        section = UngatedSection()
+        ignored = apply_section_update(
+            section, {"alpha": "x", "beta": 9, "no_such_knob": 1})
+        assert section.alpha == "x"
+        assert section.beta == 9
+        assert ignored == ["no_such_knob"]
+
+    def test_an_ungated_section_lands_values_the_gate_would_refuse(self):
+        """写直通的全部含义：不复查 ⇒ 有判据的节会拒的值在这里照落
+
+        这条钉的是「无判据支不做判决」这一档本身——若哪一轮把判据顺手接到
+        这一支（或把这支删了让异常从 setattr 漏出），本用例当场红。
+        """
+        import dataclasses
+
+        from augmentor.config import apply_section_update
+
+        @dataclasses.dataclass
+        class UngatedCounts:
+            batch_size: int = 50
+            max_iterations: int = 10
+
+        section = UngatedCounts()
+        ignored = apply_section_update(section, {"batch_size": 0, "max_iterations": -1})
+        assert ignored == []
+        assert section.batch_size == 0
+        assert section.max_iterations == -1

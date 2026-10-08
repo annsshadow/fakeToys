@@ -1,0 +1,206 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
+/**
+ * 移动端业务 API 层单测：纯函数语义钉死。
+ * （端点路径本身由 tests/contracts/mobile-endpoints.test.ts 的契约守卫覆盖，
+ * 这里不重复钉 URL，只钉数据解析与请求体形状。）
+ */
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { getApiBase, setApiBase } from './http'
+import {
+  bbsApi,
+  collectApi,
+  fileApi,
+  messageApi,
+  messageConversationId,
+  processApi,
+  searchApi,
+  statisticsApi,
+} from './index'
+
+/** 捕获 uni.request 的最小 stub（服务方法本身只关心 method/url/data/options）。 */
+function installRequestCapture() {
+  const calls: Array<{ method: string; url: string; data?: unknown }> = []
+  vi.stubGlobal('uni', {
+    request: (opts: { method: string; url: string; data?: unknown; success: (r: unknown) => void }) => {
+      calls.push({ method: opts.method, url: opts.url, data: opts.data })
+      opts.success({ statusCode: 200, data: { success: true } })
+    },
+    uploadFile: () => {},
+  })
+  return calls
+}
+
+describe('processApi approval bodies (真实审批引擎 /api/task/{id}/complete|reject)', () => {
+  it('completeTask 仅提交 opinion（后端 task_complete 只读 opinion；approve/reject 由端点区分）', async () => {
+    // 契约核实：后端 task_complete/task_reject 只从请求体读取 opinion，
+    // 不读 data（表单数据经 data/work/{id} 落库）也不读 action（动作由 URL 端点表达）。
+    const calls = installRequestCapture()
+    await processApi.completeTask('t-1', { opinion: '同意', data: { x: 1 } })
+    const call = calls[0]
+    expect(call.method).toBe('POST')
+    expect(call.url).toBe('/api/task/t-1/complete')
+    expect(call.data).toEqual({ opinion: '同意' })
+  })
+
+  it('completeTask 无 payload 时提交空 opinion', async () => {
+    const calls = installRequestCapture()
+    await processApi.completeTask('t-2')
+    expect(calls[0].data).toEqual({ opinion: '' })
+  })
+
+  it('rejectTask 打在 reject 端点上，仅提交 opinion', async () => {
+    const calls = installRequestCapture()
+    await processApi.rejectTask('t-3', { opinion: '材料不全' })
+    expect(calls[0].url).toBe('/api/task/t-3/reject')
+    expect(calls[0].data).toEqual({ opinion: '材料不全' })
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+})
+
+describe('messageApi.send (IM 会话归属)', () => {
+  it('sends the plain conversationId key only', async () => {
+    // 后端已修复「键名带引号」缺陷（docs/plans/2026-09-20-001 §6.7），
+    // 只发普通键即可，不再需要双键兼容。
+    const calls = installRequestCapture()
+    await messageApi.send('conv-9', 'hi', 'alice')
+    expect(calls[0].url).toBe('/api/message/assemble/communicate/im/msg')
+    expect(calls[0].data).toMatchObject({
+      conversationId: 'conv-9',
+      content: 'hi',
+      sender: 'alice',
+      type: 'text',
+    })
+    expect(Object.keys(calls[0].data as Record<string, unknown>)).not.toContain('"conversationId"')
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+})
+
+describe('fileApi download URLs (原生 App / 小程序绝对地址)', () => {
+  it('joins the configured apiBase so offline targets reach the backend', () => {
+    setApiBase('http://10.0.0.8:5432/')
+    expect(fileApi.fileDownloadUrl('f-1')).toBe('http://10.0.0.8:5432/api/file/assemble/control/file/f-1/download')
+    expect(fileApi.attachmentDownloadUrl('a-1')).toBe('http://10.0.0.8:5432/api/attachment/a-1/download')
+    setApiBase('')
+    expect(fileApi.fileDownloadUrl('f-2')).toBe('/api/file/assemble/control/file/f-2/download')
+    expect(getApiBase()).toBe('')
+  })
+})
+
+describe('bbsApi 主题详情/回帖/发帖（bbs_assemble_control 既有业务路由）', () => {
+  it('subjectView/replyList 走 GET 且路径段与后端注册一致', async () => {
+    const calls = installRequestCapture()
+    await bbsApi.subjectView('t-1')
+    await bbsApi.replyList('t-1')
+    expect(calls[0]).toEqual({ method: 'GET', url: '/api/bbs/assemble/control/subject/view/t-1' })
+    expect(calls[1]).toEqual({ method: 'GET', url: '/api/bbs/assemble/control/reply/list/sub/t-1' })
+  })
+
+  it('replyCreate 以 topicId 提交（后端 subjectId/topicId 同义归一）', async () => {
+    const calls = installRequestCapture()
+    await bbsApi.replyCreate({ topicId: 't-2', content: '赞' })
+    expect(calls[0]).toEqual({
+      method: 'POST',
+      url: '/api/bbs/assemble/control/reply/create',
+      data: { topicId: 't-2', content: '赞' },
+    })
+  })
+
+  it('topicCreate 携带版块/标题/内容/创建人（author/section 由后端缺省回退）', async () => {
+    const calls = installRequestCapture()
+    await bbsApi.topicCreate({ forumId: 'f-1', title: '标题', content: '正文', creator: 'u-1' })
+    expect(calls[0]).toEqual({
+      method: 'POST',
+      url: '/api/bbs/assemble/control/topic/create',
+      data: { forumId: 'f-1', title: '标题', content: '正文', creator: 'u-1' },
+    })
+  })
+
+  it('forumList 走 o2 契约 forum/view/all', async () => {
+    const calls = installRequestCapture()
+    await bbsApi.forumList()
+    expect(calls[0]).toEqual({ method: 'GET', url: '/api/bbs/assemble/control/forum/view/all' })
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+})
+
+describe('collectApi 我的收藏（program_center collect 族）', () => {
+  it('list 走 GET collect/list，remove 走 DELETE collect/delete/{id}', async () => {
+    const calls = installRequestCapture()
+    await collectApi.list()
+    await collectApi.remove('c-1')
+    expect(calls[0]).toEqual({ method: 'GET', url: '/api/program_center/collect/list' })
+    expect(calls[1]).toEqual({
+      method: 'DELETE',
+      url: '/api/program_center/collect/delete/c-1',
+    })
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+})
+
+describe('searchApi 论坛主题检索（x_bbs_topic 现役表）', () => {
+  it('bbsSubject 打 u2 搜索端点（原打遗留 bbs_subject_info 表恒空）', async () => {
+    const calls = installRequestCapture()
+    await searchApi.bbsSubject('会议')
+    expect(calls[0]).toEqual({
+      method: 'PUT',
+      url: '/api/bbs/assemble/control/subject/search/list/page/1/count/20',
+      data: { keyword: '会议' },
+    })
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+})
+
+describe('statisticsApi 个人月度统计（用户可读读端点）', () => {
+  it('attendancePersonMonth 打 dingdingstatistic 读端点（原错指 require_admin 触发端点必 403）', async () => {
+    const calls = installRequestCapture()
+    await statisticsApi.attendancePersonMonth('u-1', 2026, 10)
+    expect(calls[0]).toEqual({
+      method: 'GET',
+      url: '/api/attendance/assemble/control/dingdingstatistic/person/u-1/2026/10',
+    })
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+})
+
+describe('messageConversationId (IM 会话键解析)', () => {
+  it('reads the plain conversationId key', () => {
+    // 后端已修复「键名带引号」缺陷（见 docs/plans/2026-09-20-001 §6.7），
+    // 现在统一按普通键 conversationId 归属消息。
+    expect(messageConversationId({ conversationId: 'c-2' })).toBe('c-2')
+  })
+
+  it('ignores a legacy quoted key and still resolves the plain key', () => {
+    expect(messageConversationId({ '"conversationId"': 'c-1', conversationId: 'c-2' })).toBe('c-2')
+    expect(messageConversationId({ '"conversationId"': '', conversationId: 'c-2' })).toBe('c-2')
+  })
+
+  it('non-string values are ignored', () => {
+    expect(messageConversationId({ '"conversationId"': 42, conversationId: 'ok' })).toBe('ok')
+    expect(messageConversationId({ conversationId: 7 })).toBe('')
+  })
+
+  it('a row with no conversation attribution resolves to empty string', () => {
+    expect(messageConversationId({ id: 'm-1', content: 'hi' })).toBe('')
+    expect(messageConversationId({})).toBe('')
+  })
+})

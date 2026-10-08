@@ -3,6 +3,7 @@ package config
 
 import (
 	"fmt"
+	"math"
 	"os"
 	"strconv"
 	"strings"
@@ -16,10 +17,13 @@ type Config struct {
 	Env      string // dev / prod
 	LogLevel string
 
-	DatabaseURL      string
-	DBMaxConns       int32
-	DBMinConns       int32
-	DBConnLifetime   time.Duration
+	DatabaseURL    string
+	DBMaxConns     int32
+	DBMinConns     int32
+	DBConnLifetime time.Duration
+	// DBTimeZone 是连接会话时区（第 90 轮新增）。
+	// 详见 Config.DBTimeZone 的注释。
+	DBTimeZone       string
 	MigrationsOnBoot bool
 
 	JWTSecret  string
@@ -61,7 +65,15 @@ func envInt(key string, def int) int {
 	return def
 }
 
-func envInt32(key string, def int32) int32 { return int32(envInt(key, int(def))) }
+// envInt32 带范围裁剪：envInt 返回平台 int（64 位），直接 int32 截断会让
+// 越界值（如 DB_MAX_CONNS=99999999999）静默回绕成负数/错值，超界一律回退默认。
+func envInt32(key string, def int32) int32 {
+	n := envInt(key, int(def))
+	if n < math.MinInt32 || n > math.MaxInt32 {
+		return def
+	}
+	return int32(n)
+}
 
 func envBool(key string, def bool) bool {
 	if v := strings.TrimSpace(os.Getenv(key)); v != "" {
@@ -93,6 +105,7 @@ func Load() Config {
 		DBMaxConns:       envInt32("DB_MAX_CONNS", 10),
 		DBMinConns:       envInt32("DB_MIN_CONNS", 2),
 		DBConnLifetime:   envDuration("DB_CONN_LIFETIME", time.Hour),
+		DBTimeZone:       env("DB_TIMEZONE", "Asia/Shanghai"),
 		MigrationsOnBoot: envBool("MIGRATIONS_ON_BOOT", true),
 
 		JWTSecret:  env("JWT_SECRET", "dev-only-insecure-secret-change-me"),
@@ -119,6 +132,29 @@ func Load() Config {
 		}
 		if !strings.Contains(cfg.DatabaseURL, "sslmode=") {
 			panic("config: APP_ENV=prod 时 DATABASE_URL 必须显式声明 sslmode")
+		}
+		// ⚠️ 第 67 轮补上这条 —— 它是 prod 守卫**唯一漏掉的密钥**。
+		//
+		// 上面两条守卫 JWT_SECRET 与 sslmode，而 `BootstrapAdminPass` 与 JWT_SECRET
+		// 是同一个函数里的同类默认值（都是"不设就给一个能用的值"），
+		// 却被漏掉了。后果不是理论问题：
+		//
+		//   任何全新 prod 部署（未显式设 BOOTSTRAP_ADMIN_PASS）
+		//   首次启动即创建 admin / admin12345
+		//
+		// 而 `admin12345` 恰好 10 位，**正好通过** `EnsureBootstrapAdmin` 的
+		// `len(password) >= 10` 门槛 —— 那个门槛拦不住它。
+		//
+		// 拿到 admin token 后可做什么（全部是既有端点，无需任何额外漏洞）：
+		//   POST /admin/users/:id/grant  给**任意** user_id 发放任意数额货币
+		//   封禁任意玩家 / 改商城价格 / 读全部战报与钱包
+		// 即完整经济系统与封禁体系的接管。
+		//
+		// 为什么用「显式声明」而不是「够长就行」：
+		// 长不等于安全，而默认值本身就是公开的（在 README 与本文件里），
+		// 任何人都能查到。用环境变量是否被设置来判定，语义明确且无法误解。
+		if os.Getenv("BOOTSTRAP_ADMIN_PASS") == "" {
+			panic("config: APP_ENV=prod 时必须显式设置 BOOTSTRAP_ADMIN_PASS（默认值 admin12345 是公开的，不能用于生产）")
 		}
 	}
 	return cfg

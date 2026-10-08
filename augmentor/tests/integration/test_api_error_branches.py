@@ -12,6 +12,8 @@ from pathlib import Path
 
 import pytest
 
+from api.deps import INTERNAL_ERROR_DETAIL
+
 AI_DIR = Path(__file__).resolve().parent.parent.parent
 
 
@@ -107,4 +109,4 @@ class TestPrivacyErrorBranches:
         client, _ = env
         response = client.post("/api/privacy/sanitize", json={"input_file": "a.json"})
         assert response.status_code == 500
-        assert "脱敏器故障" in response.json()["detail"]
+        assert response.json()["detail"] == INTERNAL_ERROR_DETAIL  # L180/A155②: no leak of original exception text

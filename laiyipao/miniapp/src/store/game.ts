@@ -27,6 +27,14 @@ export const useGameStore = defineStore('game', () => {
   const config = ref<GameConfig | null>(null)
   const configLoading = ref(false)
 
+  // ---- 服务端时钟基准（第 140 轮）----
+  // /config 的 server_time 是服务端当时的挂钟（RFC3339）。客户端本地时钟可能
+  // 偏数小时；拿本地 Date.now() 去比服务端的 shielded_until 会判错护盾状态。
+  // 用「服务端响应时刻 + 自收到响应以来经过的时间」抵消本地时钟的**偏移**，
+  // 残留误差只有会话期间的漂移 —— 远好于固定几小时的偏差。
+  let serverTimeMs: number | null = null
+  let serverTimeReceivedAtMs = 0
+
   // ---- 钱包与进度 ----
   const wallet = ref({ coin: 0, gem: 0, energy: 0, keys: 0 })
   const maxStage = ref(0)
@@ -34,7 +42,16 @@ export const useGameStore = defineStore('game', () => {
   const buildRating = ref<any>(null)
   /** 服务端下发的构筑快照，含权威 attacker 属性 */
   const build = ref<any>(null)
-  const equippedSkillIds = ref<number[]>([1, 2, 3])
+  /**
+   * 出战技能（本地 UI 乐观值）。
+   *
+   * ⚠️ 第 131 轮：初值改为**空数组**，不再硬编码 [1,2,3]。
+   * 服务端对一个从未保存过槽位的玩家，`Loadout` 返回 `[0,0,0,0]`
+   * （全空）—— 本地若预填 1/2/3，就会在 me 页把「玩家没装过的技能」
+   * 写进防线快照（见 me.vue 的 saveDefense/myEquipped）。
+   * 空值 = 「尚未从服务端加载」的诚实状态，由各消费页先 loadLoadout() 再使用。
+   */
+  const equippedSkillIds = ref<number[]>([])
 
   const enemyMap = computed(() => {
     const m = new Map<number, EnemyDef>()
@@ -150,10 +167,35 @@ export const useGameStore = defineStore('game', () => {
     if (config.value) return // 已加载
     configLoading.value = true
     try {
-      config.value = await api.fetchConfig()
+      const cfg = await api.fetchConfig()
+      config.value = cfg
+      // 记下服务端时钟基准：响应里的 server_time + 收到响应的本地时刻。
+      // 本地时钟偏移由后续 estimateServerNowMs() 抵消。
+      const t = Date.parse(cfg.server_time ?? '')
+      if (Number.isFinite(t)) {
+        serverTimeMs = t
+        serverTimeReceivedAtMs = Date.now()
+      }
     } finally {
       configLoading.value = false
     }
+  }
+
+  /**
+   * 估算「当前服务端时间」（毫秒）。
+   *
+   * 有服务端时钟基准时返回 `serverTimeMs + (Date.now() - serverTimeReceivedAtMs)`
+   * —— 抵消本地时钟偏移；没有（config 未加载 / server_time 缺失或不可解析）时
+   * 诚实回退到本地时钟。
+   *
+   * ⚠️ 消费方：凡是拿服务端的绝对时间字段（如 shielded_until）做比较的地方
+   * 都应用它，而不是裸 Date.now()。
+   */
+  function estimateServerNowMs(): number {
+    if (serverTimeMs !== null) {
+      return serverTimeMs + (Date.now() - serverTimeReceivedAtMs)
+    }
+    return Date.now()
   }
 
   async function refreshProfile(): Promise<void> {
@@ -163,6 +205,10 @@ export const useGameStore = defineStore('game', () => {
       power.value = me.power
       buildRating.value = me.build_rating
       build.value = me.build
+      // 第 142 轮：恢复服务端权威进度。修前 maxStage 只在**本会话结算后**
+      // 才有值，老玩家重进 App 恒从 0 开始（解锁关卡 / 最高关卡显示全错位）。
+      // setMaxStage 只增不减，不会压掉本会话刚结算出的更高值。
+      if (typeof me.max_stage === 'number') setMaxStage(me.max_stage)
     } catch (e) {
       // 静默：页面会展示已有数据，不因刷新失败而白屏
       console.warn('[来一炮] 刷新玩家信息失败', (e as Error).message)
@@ -247,6 +293,7 @@ export const useGameStore = defineStore('game', () => {
     equippedElements,
     login,
     loadConfig,
+    estimateServerNowMs,
     refreshProfile,
     refreshWallet,
     setEquippedSkills,

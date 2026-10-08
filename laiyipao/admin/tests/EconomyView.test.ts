@@ -36,15 +36,16 @@ beforeEach(() => {
 
 describe('EconomyView 通胀监控', () => {
   it('净流入聚合：同币种累加、四种货币卡齐全、数字字符串参与计算、缺字段兜底 0', async () => {
-    // 注意：netFlow 用裸 Number() 累加，无 NaN 保护（amount 为非数字时整列变 NaN）；
-    // 数字字符串 '150' 能正常解析。NaN 场景是已知鲁班口，不在本断言内。
+    // 注意：netFlow 读服务端 AdminEconomy 流水行的 `delta`（SUM）与 `currency`。
+    // ⚠️ 第 112 轮前读的是 `amount`（不存在的字段）→ 恒 0，通胀监控形同虚设。
+    // 服务端把 int64 发成数字，这里故意混一个字符串 '150' 验证 Number() 兜得住。
     const wrapper = await mountEconomy(
       [
-        { currency: 'coin', amount: '150', cnt: 3, reason: 'battle_loot', updated_at: '2026-01-01T00:00:00Z' },
-        { currency: 'coin', amount: -200, cnt: 0, reason: 'mystery_reason' },
-        { currency: 'gem', amount: 500, cnt: 2, reason: 'shop' },
-        { currency: 'energy', amount: 0, cnt: 0, reason: 'signin' },
-        { cnt: 1 }, // currency/amount 缺失 → ?? 兜底空币种 0
+        { currency: 'coin', delta: '150', count: 3, reason: 'battle_loot' },
+        { currency: 'coin', delta: -200, count: 0, reason: 'mystery_reason' },
+        { currency: 'gem', delta: 500, count: 2, reason: 'shop' },
+        { currency: 'energy', delta: 0, count: 0, reason: 'signin' },
+        { count: 1 }, // currency/delta 缺失 → ?? 兜底空币种 0
       ],
       [],
     )
@@ -59,6 +60,20 @@ describe('EconomyView 通胀监控', () => {
     // gem > 0 提示贬值；coin < 0 / energy 0 / keys 无 → 健康
     expect(text).toContain('在贬值，考虑回收')
     expect(text).toContain('健康')
+    wrapper.unmount()
+  })
+
+  // 第 112 轮守卫：净流入 KPI 必须真的等于 Σ delta。
+  // 若有人把字段读回 `amount`（修前 bug），delta=500 的 gem 卡会显示 0/健康，
+  // 这条断言直接红。
+  it('净流入 KPI = Σ delta（而非恒 0）', async () => {
+    const wrapper = await mountEconomy(
+      [{ currency: 'coin', delta: 300, count: 1, reason: 'battle_loot' }],
+      [],
+    )
+    const coinCard = wrapper.text()
+    expect(coinCard).toContain('+300')
+    expect(coinCard).toContain('在贬值，考虑回收') // 300 > 0
     wrapper.unmount()
   })
 
@@ -78,12 +93,12 @@ describe('EconomyView 通胀监控', () => {
     wrapper.unmount()
   })
 
-  it('操作列按钮（改价/限购/改名）逐个点击：prompt 结果按字段类型解析提交', async () => {
-    const row: Row = { id: 1, name: '体力瓶', currency: 'coin', price: 100, limit: 0, on_sale: 1 }
+  it('操作列按钮（改价/限购/改名）逐个点击：按服务端形状解析提交（第 113 轮）', async () => {
+    const row: Row = { id: 1, name: '体力瓶', price: { coin: 100 }, limit_per_day: 0, enabled: true }
     updateShopItem.mockResolvedValue({ item: {} })
     box.prompt
-      .mockResolvedValueOnce({ value: '120' }) // 改价 → Number
-      .mockResolvedValueOnce({ value: '3' }) // 限购 → Number
+      .mockResolvedValueOnce({ value: 'coin:120' }) // 改价 → 对象
+      .mockResolvedValueOnce({ value: '3' }) // 限购 → 非负整数
       .mockResolvedValueOnce({ value: '超级体力瓶' }) // 改名 → 字符串
     const wrapper = await mountEconomy([], [row])
     const buttons = wrapper.findAll('.el-table__row')[0].findAll('button')
@@ -91,11 +106,11 @@ describe('EconomyView 通胀监控', () => {
 
     await buttons[0].trigger('click')
     await flushPromises()
-    expect(updateShopItem).toHaveBeenLastCalledWith(1, { price: 120 })
+    expect(updateShopItem).toHaveBeenLastCalledWith(1, { price: { coin: 120 } })
 
     await buttons[1].trigger('click')
     await flushPromises()
-    expect(updateShopItem).toHaveBeenLastCalledWith(1, { limit: 3 })
+    expect(updateShopItem).toHaveBeenLastCalledWith(1, { limit_per_day: 3 })
 
     await buttons[2].trigger('click')
     await flushPromises()
@@ -103,18 +118,20 @@ describe('EconomyView 通胀监控', () => {
     wrapper.unmount()
   })
 
-  it('流水表：来源中文映射与未知回退、人均分母为零显示 —', async () => {
+  it('流水表：来源中文映射与未知回退、人均分母为零显示 —（第 112 轮：读 delta/count）', async () => {
     const wrapper = await mountEconomy(
       [
-        { currency: 'coin', amount: '150', cnt: 3, reason: 'battle_loot' },
-        { currency: 'gem', amount: 500, cnt: 2, reason: 'mystery_reason' },
-        { currency: 'energy', amount: 0, cnt: 0, reason: 'signin' },
+        { currency: 'coin', delta: 150, count: 3, reason: 'battle_loot' },
+        { currency: 'gem', delta: 500, count: 2, reason: 'mystery_reason' },
+        { currency: 'energy', delta: 0, count: 0, reason: 'signin' },
       ],
       [],
     )
     const rows = wrapper.findAll('.el-table__row')
     expect(rows[0].text()).toContain('战斗掉落')
-    expect(rows[0].text()).toContain('50.0') // 150/3
+    expect(rows[0].text()).toContain('50.0') // 150/3 人均
+    expect(rows[0].text()).toContain('150') // 总量列 = delta
+    expect(rows[0].text()).toContain('3') // 笔数 = count
     expect(rows[1].text()).toContain('mystery_reason') // 未知来源回退原文
     expect(rows[1].text()).toContain('250.0') // 500/2
     expect(rows[2].text()).toContain('—') // 0 笔 → 无人均
@@ -123,10 +140,10 @@ describe('EconomyView 通胀监控', () => {
 })
 
 describe('EconomyView 商城编辑', () => {
-  it('改价：数值输入转 Number 提交并合并返回', async () => {
-    box.prompt.mockResolvedValueOnce({ value: '120' })
-    const row: Row = { id: 1, name: '体力瓶', currency: 'coin', price: 100, limit: 0, on_sale: 1 }
-    updateShopItem.mockResolvedValueOnce({ item: { price: 120 } })
+  it('改价：「coin:120, gem:5」解析成 map 提交（第 113 轮：不再发裸数字）', async () => {
+    const row: Row = { id: 1, name: '体力瓶', price: { coin: 100 }, limit_per_day: 0, enabled: true }
+    updateShopItem.mockResolvedValueOnce({ item: { id: 1, updated: ['price'] } })
+    box.prompt.mockResolvedValueOnce({ value: 'coin:120, gem:5' })
     const wrapper = await mountEconomy([], [row])
     const vm = wrapper.vm as unknown as {
       patchShop: (r: Row, field: string, label: string) => Promise<void>
@@ -134,28 +151,53 @@ describe('EconomyView 商城编辑', () => {
     await vm.patchShop(row, 'price', '价格')
     await flushPromises()
 
-    expect(updateShopItem).toHaveBeenCalledWith(1, { price: 120 })
-    expect(row.price).toBe(120)
+    // 关键：price 必须提交成对象（服务端 JSONB 是 map[string]int，
+    // 玩家 Buy 按 map 读；裸数字落库会让该商品购买链路永久 500）
+    expect(updateShopItem).toHaveBeenCalledWith(1, { price: { coin: 120, gem: 5 } })
+    // 保存后整页重拉（响应只有 {id,updated}，旧数据 assign 没意义）
+    expect(fetchEconomy).toHaveBeenCalledTimes(2)
     expect(document.body.textContent).toContain('已保存')
     wrapper.unmount()
   })
 
-  it('限购与库存走同一个数值分支；改名保留字符串', async () => {
-    const row: Row = { id: 2, name: '改名前', price: 1 }
+  it('改价：裸数字/未知货币/负数全部拒绝提交', async () => {
+    const row: Row = { id: 1, name: '体力瓶', price: { coin: 100 }, limit_per_day: 0, enabled: true }
+    const wrapper = await mountEconomy([], [row])
+    const vm = wrapper.vm as unknown as {
+      patchShop: (r: Row, field: string, label: string) => Promise<void>
+    }
+    for (const bad of ['120', 'cino:5', 'coin:-3']) {
+      box.prompt.mockResolvedValueOnce({ value: bad })
+      await vm.patchShop(row, 'price', '价格')
+      await flushPromises()
+      expect(document.body.textContent).toContain('价格格式应为')
+    }
+    expect(updateShopItem).not.toHaveBeenCalled()
+    wrapper.unmount()
+  })
+
+  it('限购走 limit_per_day 键（服务端白名单），非法值拒绝；改名保留字符串', async () => {
+    const row: Row = { id: 2, name: '改名前', price: { coin: 1 }, limit_per_day: 0, enabled: true }
     updateShopItem.mockResolvedValue({ item: {} })
     box.prompt
-      .mockResolvedValueOnce({ value: '3' }) // limit
-      .mockResolvedValueOnce({ value: '9' }) // stock
+      .mockResolvedValueOnce({ value: '3' }) // limit_per_day
+      .mockResolvedValueOnce({ value: 'abc' }) // 非法
       .mockResolvedValueOnce({ value: '新名字' }) // name
     const wrapper = await mountEconomy([], [row])
     const vm = wrapper.vm as unknown as {
       patchShop: (r: Row, field: string, label: string) => Promise<void>
     }
-    await vm.patchShop(row, 'limit', '限购次数')
-    expect(updateShopItem).toHaveBeenLastCalledWith(2, { limit: 3 })
-    await vm.patchShop(row, 'stock', '库存')
-    expect(updateShopItem).toHaveBeenLastCalledWith(2, { stock: 9 })
+    await vm.patchShop(row, 'limit_per_day', '限购次数')
+    await flushPromises()
+    expect(updateShopItem).toHaveBeenLastCalledWith(2, { limit_per_day: 3 })
+
+    await vm.patchShop(row, 'limit_per_day', '限购次数')
+    await flushPromises()
+    expect(document.body.textContent).toContain('限购须为非负整数')
+    expect(updateShopItem).toHaveBeenCalledTimes(1) // 非法值没提交
+
     await vm.patchShop(row, 'name', '名称')
+    await flushPromises()
     expect(updateShopItem).toHaveBeenLastCalledWith(2, { name: '新名字' })
     wrapper.unmount()
   })
@@ -172,21 +214,26 @@ describe('EconomyView 商城编辑', () => {
     wrapper.unmount()
   })
 
-  it('商城表渲染：限购 0 显示「不限」、上架状态双色、null 名称显示空', async () => {
+  it('商城表渲染：价格 map / 限购 limit_per_day / 上架 enabled（第 112 轮服务端真实形状）', async () => {
     const wrapper = await mountEconomy(
       [],
       [
-        { id: 1, name: '体力瓶', currency: 'coin', price: 100, limit: 0, on_sale: 1 },
-        { id: 2, name: null, currency: 'gem', price: '20', limit: 5, on_sale: 0 },
+        { id: 1, name: '体力瓶', price: { coin: 100 }, limit_per_day: 0, enabled: true },
+        { id: 2, name: null, price: { gem: 20, coin: 5 }, limit_per_day: 5, enabled: false },
       ],
     )
     const text = wrapper.text()
+    // 价格 map 渲染成「金币:100」「钻石:20、金币:5」，不再是 num(object)=0
+    expect(text).toContain('金币:100')
+    expect(text).toContain('钻石:20')
+    expect(text).toContain('金币:5')
+    // 限购：0 → 不限；5 → 5
     expect(text).toContain('不限')
     expect(text).toContain('5')
     expect(text).not.toContain('null')
     const rows = wrapper.findAll('.el-table__row')
-    expect(rows[0].find('.el-tag--success').exists()).toBe(true)
-    expect(rows[1].find('.el-tag--info').exists()).toBe(true)
+    expect(rows[0].find('.el-tag--success').exists()).toBe(true) // enabled=true 上架
+    expect(rows[1].find('.el-tag--info').exists()).toBe(true) // enabled=false 未上架
     wrapper.unmount()
   })
 

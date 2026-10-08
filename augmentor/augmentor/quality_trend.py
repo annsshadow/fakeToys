@@ -17,7 +17,11 @@ import logging
 from typing import List, Dict, Optional
 from datetime import datetime
 from pathlib import Path
+
+from .atomic_write import atomic_write_json
 import json
+
+from augmentor.exceptions import DataFormatError
 
 logger = logging.getLogger(__name__)
 
@@ -28,26 +32,62 @@ class QualityTrendTracker:
     def __init__(self, storage_path: Optional[str] = None):
         self.storage_path = Path(storage_path) if storage_path else None
         self._trend_history: List[Dict] = []
+        # 损坏文件尚未完成备份的标志：True 时 _save_history 跳过写入 (L146, B216)
+        self._corrupt_unquarantined = False
         if self.storage_path and self.storage_path.exists():
             self._load_history()
     
     def _load_history(self):
-        """从文件加载历史记录"""
+        """从文件加载历史记录
+
+        畸形文件（JSON 解析失败，或 `trends` 非列表）会先备份到 `.corrupt-<时间戳>` 再重置为空，
+        备份失败则置 `self._corrupt_unquarantined`：后续 `_save_history` 跳过写入，避免
+        `open('w')` 把原文件截断成「仅含新条目」而永久丢失既有历史（L146，B216）
+        """
         try:
             with open(self.storage_path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
-                self._trend_history = data.get("trends", [])
+            trends = data.get("trends", []) if isinstance(data, dict) else None
+            if not isinstance(trends, list):
+                raise DataFormatError("趋势文件 'trends' 字段必须是列表")
+            self._trend_history = trends
         except Exception as e:
-            logger.warning(f"加载趋势历史失败: {e}")
+            self._quarantine_corrupt_file(e)
+    
+    def _quarantine_corrupt_file(self, error):
+        """把损坏的趋势文件备份为 `.corrupt-<时间戳>`；备份也失败则标记禁写、原样保留"""
+        self._corrupt_unquarantined = True
+        logger.warning(f"加载趋势历史失败: {error}；尝试备份损坏文件")
+        try:
+            stamp = datetime.now().strftime("%Y%m%d%H%M%S")
+            backup = self.storage_path.with_name(f"{self.storage_path.name}.corrupt-{stamp}")
+            n = 0
+            while backup.exists():
+                n += 1
+                backup = self.storage_path.with_name(f"{self.storage_path.name}.corrupt-{stamp}-{n}")
+            try:
+                self.storage_path.rename(backup)
+            except OSError:
+                # Windows 上被占用的句柄会挡掉 rename（WinError 32）：退化成复制式备份，
+                # 原文件留在原地，后续保存可以写新文件（L146）
+                backup.write_bytes(self.storage_path.read_bytes())
+            self._corrupt_unquarantined = False
+            logger.warning(f"损坏趋势文件已备份到 {backup}（原内容保留可恢复）")
+        except Exception as e2:
+            logger.error(f"备份损坏趋势文件失败: {e2}；后续保存跳过，避免覆盖原文件")
     
     def _save_history(self):
         """保存历史记录到文件"""
         if not self.storage_path:
             return
+        if self._corrupt_unquarantined:
+            logger.error("存在未备份的损坏趋势文件，跳过本次保存（避免新条目覆盖原始数据）")
+            return
         self.storage_path.parent.mkdir(parents=True, exist_ok=True)
         try:
-            with open(self.storage_path, 'w', encoding='utf-8') as f:
-                json.dump({"trends": self._trend_history}, f, ensure_ascii=False)
+            # L169 收原子写：趋势历史是累积记录，半份会让下次加载走检疫路径
+            # （备份+重置）——原子替换让检疫只留给真正的磁盘故障（纵深防御）。
+            atomic_write_json(self.storage_path, {"trends": self._trend_history})
         except Exception as e:
             logger.error(f"保存趋势历史失败: {e}")
     

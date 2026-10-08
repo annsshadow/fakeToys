@@ -421,14 +421,38 @@ func TestE2EMeConfigLeaderboard(t *testing.T) {
 		}
 	}
 
-	// /leaderboard 三种榜单 + 非法值回落
+	// /leaderboard 三种榜单
 	e.exec(t, `INSERT INTO level_stars (user_id, level_id, stars, best_score, clears, min_power_clear)
 	           VALUES ($1, 1, 3, 1000, 1, 100)
 	           ON CONFLICT (user_id, level_id) DO UPDATE SET clears = 1, min_power_clear = 100`, uid)
-	for _, q := range []string{"", "?type=stage", "?type=efficiency", "?type=bogus", "?limit=abc"} {
+	for _, q := range []string{"", "?type=power", "?type=stage", "?type=efficiency"} {
 		status, body = e.get(t, "/api/v1/leaderboard"+q, "")
 		if status != 200 {
-			t.Errorf("leaderboard%s 应 200（非法值回落默认榜单），实际 %d", q, status)
+			t.Errorf("leaderboard%s 应 200，实际 %d", q, status)
+		}
+	}
+	//
+	// ⚠️ 第 104 轮改写了这段断言。
+	//
+	// 原来这里是：
+	//
+	//	for _, q := range []string{"", "?type=stage", "?type=efficiency",
+	//	                           "?type=bogus", "?limit=abc"} {
+	//	    if status != 200 { t.Errorf("...非法值回落默认榜单...") }
+	//	}
+	//
+	// 也就是说**「非法输入被静默重解释」被写成了规格**。
+	// 一个守卫如果把缺陷固定住，它比没有守卫更糟 ——
+	// 因为下一个人会以为这里被考虑过了。
+	//
+	// 现在反过来：`?type=bogus` 与 `?limit=abc` 都必须 **400**。
+	// 理由见 `leaderboard` 上方注释：回显未知的 type 会让客户端
+	// 在错误的标题下显示另一个榜单的数据，且**察觉不到**。
+	for _, q := range []string{"?type=bogus", "?type=", "?limit=abc"} {
+		status, body = e.get(t, "/api/v1/leaderboard"+q, "")
+		if status != 400 {
+			t.Errorf("leaderboard%s 应 400（非法输入不得被静默重解释），实际 %d：%v",
+				q, status, body)
 		}
 	}
 	// power 榜必须有自己（level_exp 排序下新号也在列表里）
@@ -440,6 +464,33 @@ func TestE2EMeConfigLeaderboard(t *testing.T) {
 }
 
 // --- 出战配置 / 技能升级 / 钱包 ---
+
+// 第 142 轮：/me 下发 max_stage（进度权威）。老玩家重进 App 靠它恢复解锁态。
+func TestE2EMeMaxStage(t *testing.T) {
+	e := newE2E(t)
+	uid, tok := e.newPlayer(t, "mestage")
+
+	// 新玩家：尚未通关任何一关 → max_stage = 0
+	status, body := e.get(t, "/api/v1/me/", tok)
+	if status != fiber.StatusOK {
+		t.Fatalf("/me 应 200，实际 %d %v", status, body)
+	}
+	if num(body, "max_stage") != 0 {
+		t.Errorf("新玩家 max_stage 应为 0，实际 %v", body["max_stage"])
+	}
+
+	// 服务端把进度写到 42 后，/me 必须跟着变（客户端 refreshProfile 据此恢复）
+	e.exec(t, `INSERT INTO user_progress (user_id, max_stage) VALUES ($1, 42)
+		ON CONFLICT (user_id) DO UPDATE SET
+		  max_stage = GREATEST(user_progress.max_stage, EXCLUDED.max_stage)`, uid)
+	status, body = e.get(t, "/api/v1/me/", tok)
+	if status != fiber.StatusOK {
+		t.Fatalf("/me 应 200，实际 %d %v", status, body)
+	}
+	if num(body, "max_stage") != 42 {
+		t.Errorf("进度 42 后 max_stage 应为 42，实际 %v", body["max_stage"])
+	}
+}
 
 func TestE2ELoadoutAndUpgradeSkill(t *testing.T) {
 	e := newE2E(t)
@@ -822,6 +873,74 @@ func TestE2EShopAndSignin(t *testing.T) {
 	}
 }
 
+// 第 135 轮：签到日历端点 —— 客户端预览的权威来源。
+func TestE2ESigninCalendar(t *testing.T) {
+	e := newE2E(t)
+	_, tok := e.newPlayer(t, "sincal")
+
+	// 无 token → 401（挂 requireUser）
+	status, _ := e.get(t, "/api/v1/signin/calendar", "")
+	if status != fiber.StatusUnauthorized {
+		t.Errorf("无 token 应 401，实际 %d", status)
+	}
+
+	// 有 token → 200，且返回 7 天的日历
+	status, body := e.get(t, "/api/v1/signin/calendar", tok)
+	if status != 200 {
+		t.Fatalf("签到日历应 200，实际 %d %v", status, body)
+	}
+	days, _ := body["days"].([]any)
+	if len(days) != 7 {
+		t.Errorf("签到日历应为 7 天，实际 %d", len(days))
+	}
+}
+
+// 第 141 轮：签到状态端点 —— 签到页初始展示的权威来源。
+func TestE2ESigninStatus(t *testing.T) {
+	e := newE2E(t)
+	_, tok := e.newPlayer(t, "signst")
+
+	// 无 token → 401（挂 requireUser）
+	status, _ := e.get(t, "/api/v1/signin/status", "")
+	if status != fiber.StatusUnauthorized {
+		t.Errorf("无 token 应 401，实际 %d", status)
+	}
+
+	// 新用户 → 200：claimed 0 / 未签今日 / 可签
+	status, body := e.get(t, "/api/v1/signin/status", tok)
+	if status != 200 {
+		t.Fatalf("签到状态应 200，实际 %d %v", status, body)
+	}
+	if num(body, "claimed_count") != 0 {
+		t.Errorf("新用户 claimed_count 应为 0，实际 %v", body["claimed_count"])
+	}
+	if body["signed_today"] != false {
+		t.Errorf("新用户 signed_today 应为 false，实际 %v", body["signed_today"])
+	}
+	if body["can_sign"] != true {
+		t.Errorf("新用户 can_sign 应为 true，实际 %v", body["can_sign"])
+	}
+
+	// 真实签到一次后：claimed 1 / 已签今日 / 不可再签
+	status, body = e.post(t, "/api/v1/signin", tok, nil)
+	if status != 200 {
+		t.Fatalf("POST /signin 应 200，实际 %d %v", status, body)
+	}
+	status, body = e.get(t, "/api/v1/signin/status", tok)
+	if status != 200 {
+		t.Fatalf("签到状态应 200，实际 %d %v", status, body)
+	}
+	if num(body, "claimed_count") != 1 {
+		t.Errorf("签到后 claimed_count 应为 1，实际 %v", body["claimed_count"])
+	}
+	if body["signed_today"] != true {
+		t.Errorf("签到后 signed_today 应为 true，实际 %v", body["signed_today"])
+	}
+	if body["can_sign"] != false {
+		t.Errorf("签到后 can_sign 应为 false，实际 %v", body["can_sign"])
+	}
+}
+
 func TestE2ERedeemAndDiagnose(t *testing.T) {
 	e := newE2E(t)
 	_, tok := e.newPlayer(t, "redeem")
@@ -992,22 +1111,22 @@ func TestE2EDefenses(t *testing.T) {
 	}
 
 	// 挑战：坏 id / 不存在 / 挑自己的
-	status, _ = e.post(t, "/api/v1/defenses/abc/challenge", foeTok, map[string]any{"won": true})
+	status, _ = e.post(t, "/api/v1/defenses/abc/challenge", foeTok, validChallengeBody())
 	if status != fiber.StatusBadRequest {
 		t.Errorf("defense id 非法应 400，实际 %d", status)
 	}
-	status, _ = e.post(t, "/api/v1/defenses/99999999/challenge", foeTok, map[string]any{"won": true})
+	status, _ = e.post(t, "/api/v1/defenses/99999999/challenge", foeTok, validChallengeBody())
 	if status != fiber.StatusNotFound {
 		t.Errorf("挑战不存在防线应 404，实际 %d", status)
 	}
-	status, _ = e.post(t, fmt.Sprintf("/api/v1/defenses/%d/challenge", defID), ownerTok, map[string]any{"won": true})
+	status, _ = e.post(t, fmt.Sprintf("/api/v1/defenses/%d/challenge", defID), ownerTok, validChallengeBody())
 	if status != fiber.StatusForbidden {
 		t.Errorf("挑战自己的防线应 403，实际 %d", status)
 	}
 
 	// 对方挑战成功
 	status, body = e.post(t, fmt.Sprintf("/api/v1/defenses/%d/challenge", defID), foeTok, map[string]any{
-		"won": true, "seed": 1, "duration_ms": 60000, "hp_left_pct": 100,
+		"won": true, "seed": "1", "duration_ms": 60000, "hp_left_pct": 100,
 		"replay_hash": "0000000000000000",
 	})
 	if status != 200 {
@@ -1025,7 +1144,7 @@ func TestE2EDefenses(t *testing.T) {
 		t.Fatalf("开护盾保存应 200，实际 %d", status)
 	}
 	status, body = e.post(t, fmt.Sprintf("/api/v1/defenses/%d/challenge", defID), foeTok, map[string]any{
-		"won": true, "duration_ms": 60000, "replay_hash": "0000000000000000",
+		"won": true, "seed": "1", "duration_ms": 60000, "replay_hash": "0000000000000000",
 	})
 	if status != fiber.StatusForbidden {
 		t.Errorf("护盾期内挑战应 403，实际 %d %v", status, body)
@@ -1043,4 +1162,25 @@ func TestE2EDefenses(t *testing.T) {
 		}
 	}
 	_ = foeID
+}
+
+// validChallengeBody 返回一份**合法**的挑战上报（第 69 轮）。
+//
+// ⚠️ 为什么需要它：第 69 轮给 `ChallengeInput` 补了字段边界校验后，
+// 那些只写 `{"won":true}` 的请求会在**触及数据库之前**就被 422 拒掉，
+// 于是「挑战不存在的防线应 404」「挑战自己的防线应 403」这些用例
+// 根本走不到它们要测的分支 —— 测试照样是绿的，但它测的东西消失了。
+//
+// 这与 README 记的「守卫被无关的早退路径满足」是同一类：
+// **测试变绿不等于它还在守原来的东西**。
+//
+// 形状照抄真实客户端（miniapp/src/game/defense.ts 的上报体）。
+func validChallengeBody() map[string]any {
+	return map[string]any{
+		"seed":        "1",
+		"won":         true,
+		"duration_ms": 60_000,
+		"hp_left_pct": 100,
+		"replay_hash": "0000000000000000",
+	}
 }

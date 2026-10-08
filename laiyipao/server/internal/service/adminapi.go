@@ -4,23 +4,49 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sort"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/laiyipao/server/internal/domain"
 )
 
 // AdminListLevels 返回关卡列表（含真实通关率，供运营判断难度）。
-func (s *Service) AdminListLevels(ctx context.Context) ([]map[string]any, int64, error) {
-	rows, err := s.pool.Query(ctx, `
+//
+// chapter > 0 时按章节过滤，keyword 非空时按关卡名模糊过滤。
+// ⚠️ 第 111 轮：这两个参数此前在 handler 层就被丢弃了——
+// UI 发 `?chapter=3&keyword=哨站`，服务端一个都不看，永远回全量 100 关。
+// 运营选「第 3 章」看到 100 关，会以为「该章无数据」或干脆不看。
+// keyword 进 LIKE 前必须转义 `%` / `_` / `\`——
+// 搜索 "100%" 退化成全表匹配是「输入了东西却得到无过滤结果」。
+func (s *Service) AdminListLevels(ctx context.Context, chapter int, keyword string) ([]map[string]any, int64, error) {
+	query := `
 		SELECT l.id, l.chapter, l.name, l.seed, l.base_hp, l.wave_count, l.difficulty,
 		       l.energy_cost, l.star_targets, l.terrain_config, l.is_boss, l.enabled,
 		       COUNT(br.id) AS attempts,
 		       COUNT(br.id) FILTER (WHERE br.result = 'win') AS clears,
 		       COALESCE(AVG(br.wave_reached), 0) AS avg_wave
 		FROM levels l
-		LEFT JOIN battle_records br ON br.level_id = l.id
+		LEFT JOIN battle_records br ON br.level_id = l.id`
+	var args []any
+	conds := []string{}
+	if chapter > 0 {
+		args = append(args, chapter)
+		conds = append(conds, fmt.Sprintf("l.chapter = $%d", len(args)))
+	}
+	if kw := strings.TrimSpace(keyword); kw != "" {
+		escaped := strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`).Replace(kw)
+		args = append(args, "%"+escaped+"%")
+		conds = append(conds, fmt.Sprintf("l.name LIKE $%d ESCAPE '\\'::char", len(args)))
+	}
+	if len(conds) > 0 {
+		query += "\n		WHERE " + strings.Join(conds, " AND ")
+	}
+	query += `
 		GROUP BY l.id
-		ORDER BY l.id`)
+		ORDER BY l.id`
+	rows, err := s.pool.Query(ctx, query, args...)
 	if err != nil {
 		return nil, 0, fmt.Errorf("admin levels: %w", err)
 	}
@@ -44,15 +70,29 @@ func (s *Service) AdminListLevels(ctx context.Context) ([]map[string]any, int64,
 		}
 		var stars []int64
 		var terrain []domain.TerrainPlacement
-		_ = json.Unmarshal(starRaw, &stars)
-		_ = json.Unmarshal(terrainRaw, &terrain)
+		// 第 146 轮：fail-loud（AGENTS #11）。这两列是生成器写入的 jsonb，
+		// 正常必为合法数组。`_ =` 会把「列被写坏 / jsonb 变 null」静默吞掉，
+		// 后台关卡列表就把该关的星级门槛与地形显示成空 —— 运营误以为「这关没门槛/没地形」。
+		// 与第 125 轮（审计 `{}` 谎言）/ 第 144 轮（漏斗查错句柄）同族：出错必须响。
+		if err := json.Unmarshal(starRaw, &stars); err != nil {
+			return nil, 0, fmt.Errorf("admin levels: 关卡 %d 的 star_targets 非法 jsonb: %w", id, err)
+		}
+		if err := json.Unmarshal(terrainRaw, &terrain); err != nil {
+			return nil, 0, fmt.Errorf("admin levels: 关卡 %d 的 terrain_config 非法 jsonb: %w", id, err)
+		}
 
 		clearRate := 0.0
 		if attempts > 0 {
 			clearRate = float64(clears) * 100 / float64(attempts)
 		}
 		out = append(out, map[string]any{
-			"id": id, "chapter": chapter, "name": name, "seed": seed,
+			"id": id, "chapter": chapter, "name": name,
+			// 第 108 轮：seed 以**字符串**下发。
+			// seed 是 64 位 LCG 值（如 -7046029255919282421），
+			// 超过 2^53 后 JS Number 直接失精，
+			// 且后台 TS 契约（AdminLevel.seed）本来就是 string。
+			// 玩家侧的同族约定见 routes_e2e_test.go 的 seed_str。
+			"seed":    strconv.FormatInt(seed, 10),
 			"base_hp": baseHP, "wave_count": waveCount, "difficulty": difficulty,
 			"energy_cost": energyCost, "star_targets": stars, "terrain_config": terrain,
 			"is_boss": isBoss, "enabled": enabled,
@@ -61,6 +101,77 @@ func (s *Service) AdminListLevels(ctx context.Context) ([]map[string]any, int64,
 		})
 	}
 	return out, int64(len(out)), rows.Err()
+}
+
+// AdminLevelRow 读回**单行**关卡配置（来自 `levels` 表）。
+//
+// # 它与 `domain.GenerateLevel` 的区别是本轮的核心（第 107 轮）
+//
+//	AdminLevelRow        → 读库，返回运营改过的值
+//	domain.GenerateLevel → **纯函数**，只从 ChapterOf + LCG 算，从不查库
+//
+// 所以：运营在后台改关卡 → 库里变了、后台列表显示变了、
+// 但 `GET /levels/:id` 与 `LoadGameConfig` 走的仍是生成器，玩家拿不到改动。
+//
+// 这是**设计决策**，不是我能单方面定的（见 README 已知边界）。
+// 但 `AdminUpdateLevel` 的**响应**必须与自己的写入一致 —— 那没有决策空间。
+//
+// # 第 108 轮：形状与列表行**完全一致**
+//
+// 写后读回的行若缺 `attempts/clears/clear_rate/avg_wave`，
+// 后台 `Object.assign(row, res.level)` 后列表统计列就停在上次刷新的值，
+// 「改完刷新前后不一致」又回到第 107 轮修掉的同一种缺陷。
+// 所以这里直接复用列表的 JOIN 查询（按 id 过滤），
+// 保证「回读响应 = 刷新列表会看到的行」。
+func (s *Service) AdminLevelRow(ctx context.Context, levelID int) (map[string]any, error) {
+	var (
+		id, chapter, waveCount, difficulty, energyCost int
+		name                                           string
+		seed, baseHP                                   int64
+		starRaw, terrainRaw                            []byte
+		isBoss, enabled                                bool
+		attempts, clears                               int64
+		avgWave                                        float64
+	)
+	err := s.pool.QueryRow(ctx, `
+		SELECT l.id, l.chapter, l.name, l.seed, l.base_hp, l.wave_count, l.difficulty,
+		       l.energy_cost, l.star_targets, l.terrain_config, l.is_boss, l.enabled,
+		       COUNT(br.id) AS attempts,
+		       COUNT(br.id) FILTER (WHERE br.result = 'win') AS clears,
+		       COALESCE(AVG(br.wave_reached), 0) AS avg_wave
+		FROM levels l
+		LEFT JOIN battle_records br ON br.level_id = l.id
+		WHERE l.id = $1
+		GROUP BY l.id`, levelID).
+		Scan(&id, &chapter, &name, &seed, &baseHP, &waveCount, &difficulty,
+			&energyCost, &starRaw, &terrainRaw, &isBoss, &enabled,
+			&attempts, &clears, &avgWave)
+	if err != nil {
+		return nil, fmt.Errorf("level row %d: %w", levelID, err)
+	}
+	var stars []int64
+	var terrain []domain.TerrainPlacement
+	// 第 146 轮：fail-loud，见 AdminListLevels 同族说明。单关详情更不该静默吞坏数据。
+	if err := json.Unmarshal(starRaw, &stars); err != nil {
+		return nil, fmt.Errorf("level row %d: star_targets 非法 jsonb: %w", levelID, err)
+	}
+	if err := json.Unmarshal(terrainRaw, &terrain); err != nil {
+		return nil, fmt.Errorf("level row %d: terrain_config 非法 jsonb: %w", levelID, err)
+	}
+
+	clearRate := 0.0
+	if attempts > 0 {
+		clearRate = float64(clears) * 100 / float64(attempts)
+	}
+	return map[string]any{
+		"id": id, "chapter": chapter, "name": name,
+		"seed":    strconv.FormatInt(seed, 10),
+		"base_hp": baseHP, "wave_count": waveCount, "difficulty": difficulty,
+		"energy_cost": energyCost, "star_targets": stars, "terrain_config": terrain,
+		"is_boss": isBoss, "enabled": enabled,
+		"attempts": attempts, "clears": clears,
+		"clear_rate": clearRate, "avg_wave": avgWave,
+	}, nil
 }
 
 // AdminLevelWaves 返回某关的波次配置。
@@ -79,7 +190,11 @@ func (s *Service) AdminLevelWaves(ctx context.Context, levelID int) ([]map[strin
 			return nil, err
 		}
 		var spawns []domain.Spawn
-		_ = json.Unmarshal(raw, &spawns)
+		// 第 149 轮：fail-loud。level_waves 的波次坏掉时静默给空 spawns，
+		// 运营会以为「这关没有刷怪」。
+		if err := json.Unmarshal(raw, &spawns); err != nil {
+			return nil, fmt.Errorf("admin level waves: 第 %d 波 spawns 非法 jsonb: %w", idx, err)
+		}
 		out = append(out, map[string]any{"wave_index": idx, "spawns": spawns})
 	}
 	return out, rows.Err()
@@ -98,6 +213,19 @@ func (s *Service) AdminSkills(ctx context.Context) (map[string]any, error) {
 }
 
 func (s *Service) fetchSkills(ctx context.Context) (base, composite []map[string]any, err error) {
+	//
+	// ⚠️ 第 119 轮：基础/复合用**生成器种子成员**判定，不再用写死的 `id <= 24`。
+	// 24 是魔法数字——当前 SeedSkills 恰好 1..24、SeedCompositeSkills 从 31 起，
+	// 但它只反映「今天种子里有多少基础技能」：
+	// 将来往 SeedSkills 加一个 id>24 的基础技能（seeder 会把它灌进 skills 表），
+	// `id<=24` 会把它**静默归进复合桶**，后台分组从此漂移且无任何报错。
+	// 基础技能的事实源是 `domain.SeedSkills`（skills 表就是它的种子），
+	// 分类跟着种子走，加新技能自动跟上。
+	baseIDs := make(map[int]bool, len(domain.SeedSkills))
+	for _, sk := range domain.SeedSkills {
+		baseIDs[sk.ID] = true
+	}
+
 	rows, qerr := s.pool.Query(ctx, `
 		SELECT id, code, name, family, element, kind, descr, base_damage, heat_cost,
 		       cooldown_ms, pierce, aoe_radius, apply_element, apply_stacks,
@@ -125,7 +253,7 @@ func (s *Service) fetchSkills(ctx context.Context) (base, composite []map[string
 			"aoe_radius": aoe, "apply_element": applyElement, "apply_stacks": stacks,
 			"projectile_speed": speed, "chain": chain, "unlock_level": unlock,
 		}
-		if id <= 24 {
+		if baseIDs[id] {
 			base = append(base, item)
 		} else {
 			composite = append(composite, item)
@@ -257,8 +385,13 @@ func (s *Service) AdminEconomy(ctx context.Context) (map[string]any, error) {
 			return nil, err
 		}
 		var price, payload map[string]int
-		_ = json.Unmarshal(priceRaw, &price)
-		_ = json.Unmarshal(payloadRaw, &payload)
+		// 第 149 轮：fail-loud，与 LoadShop 同口径。
+		if err := json.Unmarshal(priceRaw, &price); err != nil {
+			return nil, fmt.Errorf("admin economy: 商品 price 非法 jsonb: %w", err)
+		}
+		if err := json.Unmarshal(payloadRaw, &payload); err != nil {
+			return nil, fmt.Errorf("admin economy: 商品 payload 非法 jsonb: %w", err)
+		}
 		shop = append(shop, map[string]any{
 			"id": id, "code": code, "name": name, "category": category,
 			"price": price, "payload": payload, "limit_per_day": limit,
@@ -269,6 +402,22 @@ func (s *Service) AdminEconomy(ctx context.Context) (map[string]any, error) {
 }
 
 // AdminUpdateShopItem 更新商城配置。
+//
+// # 第 113 轮：**整单拒绝 + price/payload 形状校验**（第 107 轮的同族缺陷）
+//
+// 修前的两个缺陷：
+//
+//  1. 部分生效 + 成功回执：每个 case 都是 `if ok { set }`，
+//     混合 patch（一个合法键 + 一个非法键）返回 200，
+//     合法的写进去、非法的被静默丢弃。运营以为都改过了。
+//
+//  2. price/payload 只判「json.Marshal 成不成功」：
+//     一个标量 `100`、字符串 `"abc"`、数组 `[1,2]` 都能塞进 jsonb。
+//     而玩家侧 `Buy` 读它们是 `json.Unmarshal(..., &map[string]int)`——
+//     一旦写进标量，该商品**购买链路永久 500**，且没有任何报错在写入时出现。
+//
+// 所以判据必须落在**形状**上（和「能不能序列化」无关）：
+// price/payload 必须是「已知货币 → 非负整数」的对象。
 func (s *Service) AdminUpdateShopItem(ctx context.Context, id int64, patch map[string]any) (map[string]any, error) {
 	fields := []string{}
 	args := []any{id}
@@ -276,33 +425,72 @@ func (s *Service) AdminUpdateShopItem(ctx context.Context, id int64, patch map[s
 		args = append(args, v)
 		fields = append(fields, fmt.Sprintf("%s = $%d", col, len(args)))
 	}
+	var rejected []string
+	reject := func(key, why string) {
+		rejected = append(rejected, fmt.Sprintf("%s（%s）", key, why))
+	}
 	for key, val := range patch {
 		switch key {
 		case "name":
-			if v, ok := val.(string); ok && v != "" {
-				set("name", v)
+			v, ok := val.(string)
+			if !ok || v == "" {
+				reject(key, "必须是非空字符串")
+				continue
 			}
-		case "price":
-			if raw, err := json.Marshal(val); err == nil {
-				set("price", raw)
+			set("name", v)
+		case "price", "payload":
+			m, ok := toIntMap(val)
+			if !ok {
+				reject(key, "必须是「货币:非负整数」的对象，不能是标量/数组")
+				continue
 			}
-		case "payload":
-			if raw, err := json.Marshal(val); err == nil {
-				set("payload", raw)
+			for k := range m {
+				if !validWalletCurrency(k) {
+					reject(key, "未知货币 "+k+"（拼错会静默坏掉玩家购买）")
+					m = nil
+					break
+				}
 			}
+			if m == nil {
+				continue
+			}
+			raw, err := json.Marshal(m)
+			if err != nil {
+				reject(key, "无法序列化")
+				continue
+			}
+			set(key, raw)
 		case "limit_per_day":
-			if v, ok := toInt64(val); ok && v >= 0 {
-				set("limit_per_day", v)
+			v, ok := toInt64(val)
+			if !ok || v < 0 {
+				reject(key, "必须是非负整数")
+				continue
 			}
+			set("limit_per_day", v)
 		case "sort_order":
-			if v, ok := toInt64(val); ok {
-				set("sort_order", v)
+			v, ok := toInt64(val)
+			if !ok {
+				reject(key, "必须是整数")
+				continue
 			}
+			set("sort_order", v)
 		case "enabled":
-			if v, ok := val.(bool); ok {
-				set("enabled", v)
+			v, ok := val.(bool)
+			if !ok {
+				reject(key, "必须是布尔值")
+				continue
 			}
+			set("enabled", v)
+		default:
+			// 未知键必须报错 —— 后台旧 UI 发 `limit`（正确键是 limit_per_day）
+			// 时会被静默吞掉、整单「没有可更新的字段」400，运营不知道键名错了。
+			reject(key, "不在可更新字段白名单里")
 		}
+	}
+	if len(rejected) > 0 {
+		sort.Strings(rejected)
+		return nil, fmt.Errorf("%w: 这些字段没被接受，整单未执行：%s",
+			ErrBadInput, strings.Join(rejected, "、"))
 	}
 	if len(fields) == 0 {
 		return nil, fmt.Errorf("%w: 没有可更新的字段", ErrBadInput)
@@ -312,6 +500,41 @@ func (s *Service) AdminUpdateShopItem(ctx context.Context, id int64, patch map[s
 		return nil, fmt.Errorf("update shop item: %w", err)
 	}
 	return map[string]any{"id": id, "updated": fields}, nil
+}
+
+// toIntMap 把 JSON 值转成 map[string]int。
+// 合法输入只有两种形状：map[string]int（Go 直调）或
+// map[string]any（JSON 反序列化，值是 float64），且每个值都是非负整数。
+func toIntMap(val any) (map[string]int, bool) {
+	switch m := val.(type) {
+	case map[string]int:
+		for _, v := range m {
+			if v < 0 {
+				return nil, false
+			}
+		}
+		return m, true
+	case map[string]any:
+		out := make(map[string]int, len(m))
+		for k, v := range m {
+			n, ok := toInt64(v)
+			if !ok || n < 0 {
+				return nil, false
+			}
+			out[k] = int(n)
+		}
+		return out, true
+	}
+	return nil, false
+}
+
+// validWalletCurrency 报告某货币名是否在「货币全集」内
+// （walletColumns 的 4 列 ∪ walletTokens 的 3 个道具）。
+func validWalletCurrency(k string) bool {
+	if _, ok := walletColumns[k]; ok {
+		return true
+	}
+	return isWalletToken(k)
 }
 
 // AdminListAnnouncements 返回公告。
@@ -374,7 +597,10 @@ func (s *Service) AdminListRedeemCodes(ctx context.Context) ([]map[string]any, e
 			return nil, err
 		}
 		var reward map[string]int
-		_ = json.Unmarshal(rewardRaw, &reward)
+		// 第 149 轮：fail-loud。兑换码奖励坏掉时静默给空，运营会以为「码没奖」。
+		if err := json.Unmarshal(rewardRaw, &reward); err != nil {
+			return nil, fmt.Errorf("admin redeem codes: 码 %s 的 reward 非法 jsonb: %w", code, err)
+		}
 		out = append(out, map[string]any{
 			"id": id, "code": code, "reward": reward, "max_uses": maxUses,
 			"used_count": used, "expires_at": expires, "enabled": enabled,
@@ -384,18 +610,31 @@ func (s *Service) AdminListRedeemCodes(ctx context.Context) ([]map[string]any, e
 }
 
 // AdminCreateRedeemCode 创建兑换码。
-func (s *Service) AdminCreateRedeemCode(ctx context.Context, code string, reward map[string]int, maxUses int) (map[string]any, error) {
+//
+// expiresAt 为 nil = 永久有效。
+// ⚠️ 第 110 轮：这个参数此前在 handler 层就被丢掉了——
+// UI 有「过期时间」输入框、handler 也解析了 `expires_at`，
+// 却从不传进来，INSERT 也不写这一列。
+// 运营设的过期时间静默丢失，兑换码永久有效（可被无限期转卖滥用）。
+// 兑换路径本就认 `expires_at`（economy.go 的 Redeem SQL：
+// `expires_at IS NULL OR expires_at > now()`），只差创建端不写库。
+func (s *Service) AdminCreateRedeemCode(ctx context.Context, code string, reward map[string]int, maxUses int, expiresAt *time.Time) (map[string]any, error) {
 	raw, err := json.Marshal(reward)
 	if err != nil {
 		return nil, err
 	}
 	var id int
 	if err := s.pool.QueryRow(ctx,
-		`INSERT INTO redeem_codes (code, reward, max_uses) VALUES ($1,$2,$3) RETURNING id`,
-		code, raw, maxUses).Scan(&id); err != nil {
+		`INSERT INTO redeem_codes (code, reward, max_uses, expires_at)
+		 VALUES ($1,$2,$3,$4) RETURNING id`,
+		code, raw, maxUses, expiresAt).Scan(&id); err != nil {
 		return nil, fmt.Errorf("create redeem code: %w", err)
 	}
-	return map[string]any{"id": id, "code": code, "reward": reward, "max_uses": maxUses}, nil
+	out := map[string]any{"id": id, "code": code, "reward": reward, "max_uses": maxUses}
+	if expiresAt != nil {
+		out["expires_at"] = *expiresAt
+	}
+	return out, nil
 }
 
 // AdminListAuditLogs 返回操作审计。

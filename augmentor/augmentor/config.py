@@ -23,6 +23,7 @@ from .rag import SUPPORTED_FORMATS
 from .vector import SUPPORTED_BACKENDS
 from .validation import (is_blank_string, require_bool, require_choice,
                          require_chunk_window, require_count, require_ratio,
+                         require_ratio_list,
                          require_seconds, require_string, require_string_list)
 
 # `augmentation` / `web` 两节的取值区间。**校验器与运行时判据共用这一批常量**：
@@ -324,14 +325,18 @@ class QualityConfig:
           ——报错点离笔误隔了一整个流水线。
 
         `weights` 只判 null：形状与「和为 1」那两条判据的权威住在 `quality.QualityScorer`
-        （`len != 3` / `abs(sum - 1) > 0.01` 抛 `QualityError`），在这里再抄一遍就是
-        A77 禁止的第二份权威；剩下的洞（`weights: 'abc'` 长度恰好 3、判不过的是
-        `sum()` 的 `TypeError`）记在 A124。
+        权威改前在组件层两行手抄（`len != 3` / `abs(sum - 1) > 0.01`），在此再抄就是
+        A77 禁止的第二份权威；其洞（`weights: 'abc'` / `[-1.0, 2.0, 0.0]`）记在 A124。
+        A124 已由 L153 收口：判据搬进 validation 族（`require_ratio_list`），本层与组件层
+        共引同一份。
         """
         _reject_null_fields("quality", self)
         require_bool("quality.enabled", self.enabled)
         lo, hi = QUALITY_THRESHOLD_RANGE
         require_ratio("quality.threshold", self.threshold, minimum=lo, maximum=hi)
+        # A124 收口（L153，B223）：weights 形状判据与组件层共引同一份 require_ratio_list
+        # （改前配置层只判 null：'abc' / [-1.0, 2.0, 0.0] / [True, True, False] 加载面全放行）
+        require_ratio_list("quality.weights", self.weights)
 
 
 @dataclass
@@ -402,6 +407,17 @@ class ContextConfig:
     enabled: bool = False
     num_turns: int = 3
 
+    def __post_init__(self):
+        """取值判据（A140 余 11 节 / L154）：轮数取正。
+
+        改前两键四面零反馈：`num_turns: 0` 构造放行，`pipeline.py` 直读它喂给
+        `context.py` 的 `range(self.num_turns - 1)`，对 0 与负数都答「零轮」⇒ 对话上下文
+        整件静默失效（假零家族，L144 同式）。判在构造期，加载面自动吃到。
+        """
+        _reject_null_fields('context', self)
+        require_bool('context.enabled', self.enabled)
+        require_count('context.num_turns', self.num_turns, minimum=1)
+
 
 @dataclass
 class VersioningConfig:
@@ -410,12 +426,34 @@ class VersioningConfig:
     storage_dir: str = "data/versions"
     auto_snapshot: bool = True
 
+    def __post_init__(self):
+        """取值判据（A140 余 11 节 / L154）：目录名非空、两个开关是布尔。
+
+        改前 `storage_dir: ''` 构造放行，`VersionManager` 拿 `Path('')` 去 mkdir 落在当前目录；
+        `auto_snapshot: 'no'`（加引号档）在 `pipeline.py` 的 `if` 上恒真（`require_bool`
+        docstring 同档）。
+        """
+        _reject_null_fields('versioning', self)
+        require_bool('versioning.enabled', self.enabled)
+        require_string('versioning.storage_dir', self.storage_dir)
+        require_bool('versioning.auto_snapshot', self.auto_snapshot)
+
 
 @dataclass
 class SamplerConfig:
     """主动学习配置"""
     enabled: bool = False
     dimensions: list = field(default_factory=lambda: ["topic", "question_type", "length", "complexity"])
+
+    def __post_init__(self):
+        """取值判据（A140 余 11 节 / L154）：维度是字符串列表。
+
+        改前写成标量 `topic` 会逐字符拆成 4 个「维度」（`require_string_list` 的立身案例同形）。
+        本键今天没有产品消费方（属性面普查，L154 记入 B224），判据买「写时就报」不买崩溃。
+        """
+        _reject_null_fields('sampler', self)
+        require_bool('sampler.enabled', self.enabled)
+        require_string_list('sampler.dimensions', self.dimensions)
 
 
 @dataclass
@@ -424,6 +462,15 @@ class ExpanderConfig:
     enabled: bool = False
     strategies: list = field(default_factory=lambda: ["similar", "related", "scenario"])
 
+    def __post_init__(self):
+        """取值判据（A140 余 11 节 / L154）：策略是字符串列表。
+
+        改前本键四面零反馈且无产品消费方（属性面普查，L154 / B224），标量 / 空白 / 混型档全静默放行。
+        """
+        _reject_null_fields('expander', self)
+        require_bool('expander.enabled', self.enabled)
+        require_string_list('expander.strategies', self.strategies)
+
 
 @dataclass
 class TrackerConfig:
@@ -431,12 +478,31 @@ class TrackerConfig:
     enabled: bool = False
     metrics: list = field(default_factory=lambda: ["train_loss", "eval_accuracy", "perplexity"])
 
+    def __post_init__(self):
+        """取值判据（A140 余 11 节 / L154）：指标是字符串列表。
+
+        改前本键四面零反馈且无产品消费方（属性面普查，L154 / B224），形状各档全静默放行。
+        """
+        _reject_null_fields('tracker', self)
+        require_bool('tracker.enabled', self.enabled)
+        require_string_list('tracker.metrics', self.metrics)
+
 
 @dataclass
 class VisualizationConfig:
     """可视化配置"""
     enabled: bool = True
     types: list = field(default_factory=lambda: ["wordcloud", "length_distribution", "topic_cluster", "timeline", "quality_distribution"])
+
+    def __post_init__(self):
+        """取值判据（A140 余 11 节 / L154）：图表类型是字符串列表。
+
+        `visualizer` 只把本节类型当函数形参用，没有任何产品接线读 `config.visualization`
+        （属性面普查，L154 / B224），改前形状各档全静默放行。
+        """
+        _reject_null_fields('visualization', self)
+        require_bool('visualization.enabled', self.enabled)
+        require_string_list('visualization.types', self.types)
 
 
 @dataclass
@@ -446,6 +512,18 @@ class MultilingualConfig:
     default_target_lang: str = "en"
     supported_langs: list = field(default_factory=lambda: ["zh", "en"])
     translate_batch_size: int = 10
+
+    def __post_init__(self):
+        """取值判据（A140 余 11 节 / L154）：批尺寸取正、语言码与清单是字符串形状。
+
+        改前 `translate_batch_size: 0` 是假零档（L144 同式：读处 `or` 回落会当「未传」），
+        `supported_langs` 写成标量会逐字符拆成语言码，`default_target_lang: ''` 静默放行。
+        """
+        _reject_null_fields('multilingual', self)
+        require_bool('multilingual.enabled', self.enabled)
+        require_string('multilingual.default_target_lang', self.default_target_lang)
+        require_string_list('multilingual.supported_langs', self.supported_langs)
+        require_count('multilingual.translate_batch_size', self.translate_batch_size, minimum=1)
 
 
 @dataclass
@@ -484,6 +562,17 @@ class EvaluationConfig:
     enabled: bool = False
     metrics: list = field(default_factory=lambda: ["bleu", "rouge_l", "similarity"])
     reference_field: str = "output"
+
+    def __post_init__(self):
+        """取值判据（A140 余 11 节 / L154）：参考字段名非空、指标是字符串列表。
+
+        `reference_field` 写空串 ⇒ 评估器取错字段静默评分（改前四面零反馈，本键亦无
+        产品消费方，属性面普查 L154 / B224）。
+        """
+        _reject_null_fields('evaluation', self)
+        require_bool('evaluation.enabled', self.enabled)
+        require_string_list('evaluation.metrics', self.metrics)
+        require_string('evaluation.reference_field', self.reference_field)
 
 
 @dataclass
@@ -555,6 +644,17 @@ class BenchmarkConfig:
     baseline_file: str = "data/benchmark_baseline.json"
     metrics: list = field(default_factory=lambda: ["pass_rate", "avg_total_score", "diversity", "duplication_rate"])
 
+    def __post_init__(self):
+        """取值判据（A140 余 11 节 / L154）：三键是 `cli` 基准子命令直读的两半。
+
+        `metrics` 的消费方（`benchmark.py`）期待字符串列表、逐项对 `SUPPORTED_METRICS`
+        判成员；改前标量 / 空白 / null 档全静默进加载面，坏值要等 CLI 跑基准那天才出声。
+        """
+        _reject_null_fields('benchmark', self)
+        require_bool('benchmark.enabled', self.enabled)
+        require_string('benchmark.baseline_file', self.baseline_file)
+        require_string_list('benchmark.metrics', self.metrics)
+
 
 @dataclass
 class ActiveLearningConfig:
@@ -564,12 +664,33 @@ class ActiveLearningConfig:
     batch_size: int = 50
     max_iterations: int = 10
 
+    def __post_init__(self):
+        """取值判据（A140 余 11 节 / L154）：批与轮数取正、策略名非空。
+
+        本键今天没有产品消费方（属性面普查，L154 / B224），但 `batch_size: 0` 与
+        `max_iterations: 0` 是假零家族的两档（L144 同式），按「要多少轮」读法一次判掉。
+        """
+        _reject_null_fields('active_learning', self)
+        require_bool('active_learning.enabled', self.enabled)
+        require_string('active_learning.strategy', self.strategy)
+        require_count('active_learning.batch_size', self.batch_size, minimum=1)
+        require_count('active_learning.max_iterations', self.max_iterations, minimum=1)
+
 
 @dataclass
 class FrameworkConfig:
     """LLM 框架集成配置"""
     enabled: bool = False
     frameworks: list = field(default_factory=lambda: ["langchain", "llamaindex"])
+
+    def __post_init__(self):
+        """取值判据（A140 余 11 节 / L154）：框架清单是字符串列表。
+
+        改前本键四面零反馈且无产品消费方（属性面普查，L154 / B224），形状各档全静默放行。
+        """
+        _reject_null_fields('frameworks', self)
+        require_bool('frameworks.enabled', self.enabled)
+        require_string_list('frameworks.frameworks', self.frameworks)
 
 
 @dataclass
@@ -735,11 +856,22 @@ class AppConfig:
 
 
 def _resolve_env(value: Any) -> Any:
-    """解析环境变量占位符
-    
+    """解析环境变量占位符（A95/A122，L185 把语义钉成契约）
+
+    只对模型条目的三凭证键（api_key / secret_key / base_url，见 MODEL_CREDENTIAL_KEYS）
+    应用。语义：
+
+    - ``${VAR}`` 且 VAR 已设置 ⇒ 取该值；
+    - ``${VAR}`` 且 VAR **未设置** ⇒ 静默回落 ``''``（与 None 等价，都是「这条没配凭据」
+      的合法状态，由后端构造入口 ModelNotConfiguredError 在建后端时判）。**这是刻意的**：
+      加载期「环境变量未设置」的条数随本机 shell 而变，接进加载声会让同一份配置在不同
+      机器上行数不同（见 docs/API.md）；出声归 validate-config 的 warning 通道（A76/A84），
+      不在加载面判负。
+    - 非 ``${...}`` 完整形状（如裸 ``${VAR``、``VAR}``、或根本不是串）⇒ 原样返回，不当占位符。
+
     Args:
         value: 配置值，可能是 ${ENV_VAR} 格式的环境变量占位符
-    
+
     Returns:
         解析后的值
     """
@@ -884,11 +1016,7 @@ def _load_section(raw_config: Dict, key: str, config_class: type) -> Any:
     # 写了节名而什么都没写 = 该节全默认；写成标量则是摆错了形状，明说。
     if conf is None:
         return config_class()
-    if not isinstance(conf, dict):
-        raise ConfigError(
-            f"{key} 必须是「键: 值」的映射，当前是 {conf!r}"
-            f"（{type(conf).__name__}）"
-        )
+    _require_mapping(conf, key)
 
     # 取键用 `__dataclass_fields__` 而不是 `fields(cls)` 再套一层 frozenset：这不是
     # 风格偏好，是同进程 A/B 量出来的差额（`Temp/l77q/perf_ab_l77.py` → `perf_ab.json`
@@ -975,11 +1103,7 @@ def load_config(config_path: Optional[str] = None) -> AppConfig:
         def _as_mapping(value, where):
             if value is None:
                 return {}
-            if not isinstance(value, dict):
-                raise ConfigError(
-                    f"{where} 必须是「键: 值」的映射，当前是 {value!r}"
-                    f"（{type(value).__name__}）"
-                )
+            _require_mapping(value, where)
             return value
 
         if 'models' in raw_config:
@@ -1058,7 +1182,7 @@ def get_model_config(config: AppConfig, model_name: Optional[str] = None) -> Mod
     """
     name = model_name or config.default_model
     if name not in config.models:
-        raise ConfigError(f"模型 '{name}' 未配置。可用模型: {list(config.models.keys())}")
+        raise ConfigError(_missing_model_message(name, config.models.keys()))
     return config.models[name]
 
 
@@ -1199,3 +1323,29 @@ def apply_section_update(section: Any, updates: Dict[str, Any]) -> list:
             setattr(section, key, old)
         raise
     return ignored
+
+
+def _require_mapping(value: Any, where: str) -> None:
+    """「必须是映射」判据的唯一产地（A77；L158 提升自两份逐字相同的 raise）。
+
+    `_load_section`（20 节加载面）与 `load_config` 的 `_as_mapping`（models
+    条目）原先各持一份同文案的 raise；校验面对 `models.<名字>` 条目写成
+    标量 / 列表 / 数的档**完全静默**（运行时抛 ConfigError、校验工具报
+    is_valid=True —— A85 族第三侧漏网，L158 实测）。三处共引本函数，文案
+    改一处三侧同步。
+    """
+    if not isinstance(value, dict):
+        raise ConfigError(
+            f"{where} 必须是「键: 值」的映射，当前是 {value!r}"
+            f"（{type(value).__name__}）"
+        )
+
+
+def _missing_model_message(name: str, available) -> str:
+    """「模型未配置」文案的唯一产地（A77；L159 提升自 get_model_config）。
+
+    悬空 `models.default` 在消费点（get_model_config，pipeline 构造必经）
+    是可行动的 ConfigError，但校验面对这一档零反馈（A85 族第四侧：校验
+    工具说好、运行才炸）。校验面同源投影本函数，文案改一处两侧同步。
+    """
+    return f"模型 '{name}' 未配置。可用模型: {list(available)}"
