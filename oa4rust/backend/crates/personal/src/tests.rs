@@ -361,7 +361,6 @@ mod u2_contract {
 
     use crate::u2;
     use auth::SessionManager;
-    use axum::extract::Path;
     use shared::testing::test_pool;
     use tower::util::ServiceExt;
 
@@ -779,13 +778,16 @@ mod u2_contract {
 
     #[tokio::test]
     async fn u2_regist_check_password_policy_hint() {
-        let weak = u2::regist_check_password(Path("123".into())).await.unwrap();
+        let weak =
+            u2::regist_check_password(axum::Json(serde_json::json!({"password": "123"})))
+                .await
+                .unwrap();
         let weak_json = serde_json::to_value(&weak.0).unwrap();
         // data = {"value": "..."} for weak password
         let hint = weak_json["data"]["value"].as_str().unwrap_or("");
         assert!(!hint.is_empty(), "弱密码应返回策略提示, body={weak_json}");
 
-        let strong = u2::regist_check_password(Path("abc123456".into()))
+        let strong = u2::regist_check_password(axum::Json(serde_json::json!({"password": "abc123456"})))
             .await
             .unwrap();
         let strong_json = serde_json::to_value(&strong.0).unwrap();

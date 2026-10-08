@@ -170,13 +170,17 @@ pub async fn check_credential(
 ///
 /// 校验新密码是否符合安全规则（原型规则：长度 6 至 64）。
 ///
-/// 注意：密码以明文形式出现在 URL path 中，此端点仅用于开发联调。
-/// 生产环境应通过内部网络或防火墙限制调用来源，避免密码泄露到访问日志或代理服务器日志中。
-/// 密码仅用于本地校验，不存储、不记录日志。
+/// 十类功能1 安全重设计：口令改由 POST body 传递（原 o2 GET /{password} 形态
+/// 会把明文密码泄入访问日志/代理日志）。密码仅本地校验，不存储、不记日志。
 #[allow(non_snake_case)]
 pub async fn check_password(
-    Path(password): Path<String>,
+    axum::Json(body): axum::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let password = body
+        .get("password")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
     let passed = is_password_acceptable(&password);
     Ok(Json(ActionResult::success(json!({ "value": passed }))))
 }
