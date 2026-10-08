@@ -158,3 +158,5 @@ laiyipao/admin/coverage/
 # PR 描述草稿（内容已提交至 PR，不入库）
 PR_DESCRIPTION.md
 .vitest/
+
+target-loop2
