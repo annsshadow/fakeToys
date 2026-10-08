@@ -169,8 +169,9 @@ pub fn router(pool: Pool, session_manager: SessionManager) -> Router {
             get(reset::check_credential),
         )
         .route(
-            "/api/reset/check/password/{password}",
-            get(reset::check_password),
+            // 十类功能1 安全重设计：口令改 POST body（原 GET /{password} 口令入 URL）
+            "/api/reset/check/password",
+            post(reset::check_password),
         )
         .route(
             "/api/reset/code/credential/{credential}",
@@ -230,8 +231,9 @@ pub fn router(pool: Pool, session_manager: SessionManager) -> Router {
             get(u2::regist_code_mobile),
         )
         .route(
-            "/api/person/regist/check/password/{password}",
-            get(u2::regist_check_password),
+            // 十类功能1 安全重设计：口令改 POST body（原 GET /{password} 口令入 URL）
+            "/api/person/regist/check/password",
+            post(u2::regist_check_password),
         )
         // ResetAction
         .route("/api/reset/mockputtopost", post(reset::reset_password))

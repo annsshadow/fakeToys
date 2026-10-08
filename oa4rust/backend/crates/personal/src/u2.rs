@@ -151,13 +151,19 @@ pub async fn regist_code_mobile(
     )))
 }
 
-/// GET /api/person/regist/check/password/{password}
+/// POST /api/person/regist/check/password
 ///
 /// 对齐 o2server：不满足密码策略时返回策略提示文案；满足时无 data。
+/// 十类功能1 安全重设计：口令改由 POST body 传递（口令不入 URL）。
 #[allow(non_snake_case)]
 pub async fn regist_check_password(
-    Path(password): Path<String>,
+    axum::Json(body): axum::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let password = body
+        .get("password")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
     if is_password_acceptable(&password) {
         return Ok(Json(ActionResult::success(
             json!({ "value": String::new() }),
