@@ -508,7 +508,15 @@ MEASURED = {
     #: raise_internal_error 的 import（config/data/export 三个多行 import 块各 +1 行），
     #: 产品行号下移使账本一条指向路由文件的行号格「指向真代码行但非所名」⇒ 漂移桶 +1。
     #: 案面=产品布局变更，按「数字搬进常量」条款重钉；line_refs 270 / file_tokens 1661 未动。
-    LEDGER: {"line_refs": 270, "file_tokens": 1661, "code_but_no_name_match": 146},
+    #: L193/L194 面位移（漂移 146 → 149）：轮193 共引 import 前移与 L194 账本/ARCHITECTURE
+    #: 引用刷新（纯引用漂移，无内容语义变更）使账本五格读数「指向真代码行但非所名」：
+    #: system_ops.py 415 行（A42 行 L32 与 L44 校正两处读数格）2 条、system_ops.py 514 行
+    #: （A16 历史行）1 条、validation.py 697 行（A92 行 :639 格在 L189 改指后仍落本档）1 条、
+    #: auto_test.py 402-403 行（A91 边界① 行 385-386 格改指后落本档）1 条；
+    #: 旧格 validation.py 639 行与 auto_test.py 385-386 行随改指退出本档（−2）⇒ 净 +3。
+    #: 案面=文档引用漂移（账本读数出处记录，按 A127 口径不做批量改写），
+    #: 循 L180 先例按「数字搬进常量」条款重钉；line_refs 270 / file_tokens 1661 未动。
+    LEDGER: {"line_refs": 270, "file_tokens": 1661, "code_but_no_name_match": 149},
     #: L156 面位移（290 → 285）：streaming.py 插 `StreamConfig.__post_init__` 后，账本 5 条
     #: streaming.py 历史行引用（A145 行 2 条、A147 行 3 条）被引行换位、退出本档，按
     #: L151 / L153 / L154 先例降成名字锚（「原 N 行」）：line_refs −5、漂移 147 →
