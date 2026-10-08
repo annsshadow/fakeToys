@@ -376,7 +376,11 @@ async fn test_previously_501_endpoints_now_real() {
 
     // section/syn：DB 读报告（无 DB → 500 非 501）。
     let st2 = status(Method::GET, &format!("{}/section/syn", BASE)).await;
-    assert_ne!(st2, StatusCode::NOT_IMPLEMENTED, "section/syn 应已接真实 handler");
+    assert_ne!(
+        st2,
+        StatusCode::NOT_IMPLEMENTED,
+        "section/syn 应已接真实 handler"
+    );
     assert_ne!(st2, StatusCode::NOT_FOUND);
 }
 

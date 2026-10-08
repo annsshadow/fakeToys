@@ -159,7 +159,12 @@ async fn person_wrong_method_rejected_with_405() {
         StatusCode::METHOD_NOT_ALLOWED
     );
     assert_eq!(
-        request(Method::DELETE, &format!("{BASE}/person/check/password"), None).await,
+        request(
+            Method::DELETE,
+            &format!("{BASE}/person/check/password"),
+            None
+        )
+        .await,
         StatusCode::METHOD_NOT_ALLOWED
     );
 }
@@ -194,7 +199,9 @@ async fn person_check_password_success_contract() {
                 .method(Method::POST)
                 .uri(format!("{BASE}/person/check/password"))
                 .header("content-type", "application/json")
-                .body(Body::from(serde_json::json!({"password": "Abc123"}).to_string()))
+                .body(Body::from(
+                    serde_json::json!({"password": "Abc123"}).to_string(),
+                ))
                 .unwrap(),
         )
         .await
@@ -216,7 +223,9 @@ async fn person_check_password_weak_returns_false() {
                 .method(Method::POST)
                 .uri(format!("{BASE}/person/check/password"))
                 .header("content-type", "application/json")
-                .body(Body::from(serde_json::json!({"password": "abc"}).to_string()))
+                .body(Body::from(
+                    serde_json::json!({"password": "abc"}).to_string(),
+                ))
                 .unwrap(),
         )
         .await
