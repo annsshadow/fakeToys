@@ -37,6 +37,74 @@ def is_public_path(path: str) -> bool:
             return True
     return False
 
+
+def strip_rust_comments(text: str) -> str:
+    """剥离 Rust 注释（// 行注释、/* */ 块注释），保留字符串/字符字面量。
+
+    必需：十类功能1 安全重设计起，check/password 等路由在 `.route( ... )` 的
+    左括号与路径字面量之间插入了 `//` 说明注释。旧实现直接 `re.sub('\\s+',' ',text)`
+    压平空白后匹配 `\\.route\\(\\s*"([^"]+)"`，注释夹在 `(` 与 `"path"` 之间导致
+    正则失配 → 该路由被漏扫，整文件再生即净删路由。故先剥注释再压平。
+    逐字符扫描以区分字符串/字符字面量内的 `//`、`/*`（非注释）。
+    """
+    out = []
+    i, n = 0, len(text)
+    in_str = False
+    in_char = False
+    while i < n:
+        c = text[i]
+        two = text[i:i + 2]
+        if in_str:
+            out.append(c)
+            if c == "\\" and i + 1 < n:
+                out.append(text[i + 1])
+                i += 2
+                continue
+            if c == '"':
+                in_str = False
+            i += 1
+            continue
+        if in_char:
+            out.append(c)
+            if c == "\\" and i + 1 < n:
+                out.append(text[i + 1])
+                i += 2
+                continue
+            if c == "'":
+                in_char = False
+            i += 1
+            continue
+        if c == "/":
+            if two == "//":
+                j = i + 2
+                while j < n and text[j] != "\n":
+                    j += 1
+                i = j  # 保留换行符本身
+                continue
+            if two == "/*":
+                j = i + 2
+                while j + 1 < n and not (text[j] == "*" and text[j + 1] == "/"):
+                    j += 1
+                i = j + 2 if j + 1 < n else n
+                out.append(" ")
+                continue
+            out.append(c)
+            i += 1
+            continue
+        if c == '"':
+            in_str = True
+            out.append(c)
+            i += 1
+            continue
+        if c == "'":
+            in_char = True
+            out.append(c)
+            i += 1
+            continue
+        out.append(c)
+        i += 1
+    return "".join(out)
+
 def parse_routes_from_file(filepath: Path) -> list:
     """从 Rust 源码中提取路由定义。"""
     try:
@@ -45,8 +113,9 @@ def parse_routes_from_file(filepath: Path) -> list:
         return []
 
     routes = []
-    # Flatten multi-line .route() calls before matching
-    text_flat = re.sub(r'\s+', ' ', text)
+    # Flatten multi-line .route() calls before matching. 先剥离注释（.route( 与路径串间
+    # 可能夹 // 说明注释），再压平空白，否则正则漏扫被注释夹断的路由。
+    text_flat = re.sub(r'\s+', ' ', strip_rust_comments(text))
     # 统一解析：定位每个 .route("path", <handler-expr>) 的 handler 表达式，
     # 再从表达式里抽出所有链式 HTTP 方法。此前的实现有两处漏洞：
     #   ① single_pattern 只取链首方法 —— get(h).put(h2).delete(h3) 只记 GET；
