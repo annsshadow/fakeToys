@@ -25,11 +25,20 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
+# 剥 Rust 注释（保留字符串/字符字面量）：九类安全重设计起，部分 `.route(`
+# 与路径字面量之间插了 `//` 说明注释（如 9eec1d158 的 check/password POST），
+# ROUTE_RE 直接扫原文会把这类路由漏掉 → 再生净删/漏加路由。与 gen_mcp_tools.py
+# 共用同一实现（单一权威），故直接 import 不复制。
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from gen_mcp_tools import strip_rust_comments
+
 # ── Paths ─────────────────────────────────────────────────────────────────────
 # BASE is the workspace root (parent of oa4rust/), where docs/ lives.
-BASE = Path(__file__).resolve().parent.parent.parent
+# 2026-10-01 三端归一后本脚本位于 oa4rust/backend/scripts/，需四级 parent 才到
+# repo 根；crates 同在 oa4rust/backend/ 下（旧布局 oa4rust/crates 已不存在）。
+BASE = Path(__file__).resolve().parent.parent.parent.parent
 REPORT_PATH = BASE / "docs" / "audits" / "o2server-parity-report.json"
-CRATES_DIR = BASE / "oa4rust" / "crates"
+CRATES_DIR = BASE / "oa4rust" / "backend" / "crates"
 OUTPUT_PATH = CRATES_DIR / "parity" / "src" / "generated_tests.rs"
 
 # ── Regexes ───────────────────────────────────────────────────────────────────
@@ -70,7 +79,7 @@ def extract_routes_from_crate(crate_dir: Path) -> List[Tuple[str, str, str]]:
             text = rs_file.read_text(encoding="utf-8", errors="replace")
         except Exception:
             continue
-        for m in ROUTE_RE.finditer(text):
+        for m in ROUTE_RE.finditer(strip_rust_comments(text)):
             path = m.group(1).strip('"')
             method = m.group(2).upper()
             handler = m.group(3)
@@ -94,7 +103,7 @@ def find_router_fn(crate_dir: Path) -> Optional[Tuple[str, str, bool]]:
                 text = rs_file.read_text(encoding="utf-8", errors="replace")
             except Exception:
                 continue
-            for m in ROUTER_FN_RE.finditer(text):
+            for m in ROUTER_FN_RE.finditer(strip_rust_comments(text)):
                 fn_name = m.group(2)
                 is_async = m.group(1) is not None
                 params = m.group(3).strip()

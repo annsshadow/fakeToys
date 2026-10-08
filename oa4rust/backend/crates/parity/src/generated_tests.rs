@@ -10,8 +10,8 @@
 // is registered on the crate's Router.  A NOT_FOUND (404) response means the
 // route is missing from the Rust implementation — a parity gap.
 //
-// Generated: 2026-09-27 22:55:15
-// Crates: 55   Routes: 4044   Tests: 4044
+// Generated: 2026-10-08 20:27:22
+// Crates: 55   Routes: 4045   Tests: 4045
 
 use axum::http::StatusCode;
 use tower::util::ServiceExt;
@@ -1080,7 +1080,7 @@ use tower::util::ServiceExt;
             .oneshot(
                 axum::http::Request::builder()
                     .uri("/api/ai_assemble_control/update/ai/control/config")
-                    .method(axum::http::Method::GET)
+                    .method(axum::http::Method::POST)
                     .body(axum::body::Body::empty())
                     .expect("build request"),
             )
@@ -1092,7 +1092,7 @@ use tower::util::ServiceExt;
             .expect("read parity body");
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on ai_assemble_control: /api/ai_assemble_control/update/ai/control/config (GET)"
+            "parity: route missing on ai_assemble_control: /api/ai_assemble_control/update/ai/control/config (POST)"
         );
     }
 
@@ -21438,7 +21438,7 @@ use tower::util::ServiceExt;
         );
     }
 
-    // ── x_file_assemble_control → file_assemble_control (159 routes) ──
+    // ── x_file_assemble_control → file_assemble_control (160 routes) ──
     #[tokio::test]
     async fn parity__file_assemble_control__anonymous_file_id_download() {
         let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
@@ -22409,6 +22409,28 @@ use tower::util::ServiceExt;
     }
     #[tokio::test]
     async fn parity__file_assemble_control__config_system_config() {
+        let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/config/system")
+                    .method(axum::http::Method::GET)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on file_assemble_control: /api/config/system (GET)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__file_assemble_control__config_system_config_1() {
         let router = oa4rust::file_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -39847,8 +39869,8 @@ use tower::util::ServiceExt;
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/api/person/regist/check/password/test-id")
-                    .method(axum::http::Method::GET)
+                    .uri("/api/person/regist/check/password")
+                    .method(axum::http::Method::POST)
                     .body(axum::body::Body::empty())
                     .expect("build request"),
             )
@@ -39860,7 +39882,7 @@ use tower::util::ServiceExt;
             .expect("read parity body");
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on personal: /api/person/regist/check/password/{{password}} (GET)"
+            "parity: route missing on personal: /api/person/regist/check/password (POST)"
         );
     }
     #[tokio::test]
@@ -40089,8 +40111,8 @@ use tower::util::ServiceExt;
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/api/reset/check/password/test-id")
-                    .method(axum::http::Method::GET)
+                    .uri("/api/reset/check/password")
+                    .method(axum::http::Method::POST)
                     .body(axum::body::Body::empty())
                     .expect("build request"),
             )
@@ -40102,7 +40124,7 @@ use tower::util::ServiceExt;
             .expect("read parity body");
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on personal: /api/reset/check/password/{{password}} (GET)"
+            "parity: route missing on personal: /api/reset/check/password (POST)"
         );
     }
     #[tokio::test]
@@ -89073,5 +89095,5 @@ use tower::util::ServiceExt;
 // ──────────────────────────────────────────────────────────────────────────────
 #[test]
 fn parity_generated_test_count() {
-    assert!(4044 > 0, "no parity tests generated — check the Python script output");
+    assert!(4045 > 0, "no parity tests generated — check the Python script output");
 }
