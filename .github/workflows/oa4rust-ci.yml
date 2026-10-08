@@ -34,7 +34,9 @@ jobs:
           # SIGSEGV（stack overflow ICE），CI 全部 rust job 失败；
           # 2026-09-30 main 门禁在 1.98.1 上全绿。
           toolchain: 1.98.1
-          components: clippy
+          # minimal profile 默认不含 rustfmt/clippy，显式补齐（Check formatting /
+          # Clippy 两步依赖这两个组件，缺了即 "cargo-fmt is not installed" 红）。
+          components: clippy, rustfmt
       - name: Cache cargo registry
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
