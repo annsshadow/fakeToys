@@ -197,6 +197,8 @@ jobs:
   behavior-compare:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    outputs:
+      java_not_ready: ${{ steps.readiness.outputs.java_not_ready }}
     defaults:
       run:
         working-directory: oa4rust/backend
@@ -282,7 +284,10 @@ jobs:
 
       # 就绪探针：POST /jaxrs/secret/set 初始化，再 GET /jaxrs/server/execute。
       # 超时上限 ≥15 分钟（100 次 × 10s），避免 o2server 冷启动导致 CI 误失败。
+      # 就绪与否通过 job output java_not_ready 向 behavior-gate 透传：Java 不可达
+      # 时 gate 不应把缺少 report 当 regression 记红（外部依赖缺失≠回归）。
       - name: Wait for o2server readiness
+        id: readiness
         run: |
           ready=0
           for i in $(seq 1 100); do
@@ -295,6 +300,7 @@ jobs:
                 http://localhost:18080/jaxrs/server/execute || true)
               if [ "$ex" != "000" ]; then
                 echo "o2server ready after $((i * 10))s (secret/set=$code, server/execute=$ex)"
+                echo "java_not_ready=false" >> "$GITHUB_OUTPUT"
                 ready=1
                 break
               fi
@@ -302,6 +308,7 @@ jobs:
             sleep 10
           done
           if [ "$ready" -ne 1 ]; then
+            echo "java_not_ready=true" >> "$GITHUB_OUTPUT"
             echo "::warning::o2server not ready within timeout; behavior comparison will SKIP Java side"
           fi
 
@@ -448,8 +455,8 @@ jobs:
           baseline="$(tail -n 1 oa4rust/backend/tests/behavior_comparison/fail_baseline)"
           report="behavior-report.md"
           if [ ! -f "$report" ]; then
-            if [ "${{ needs.behavior-compare.result }}" = "skipped" ]; then
-              echo "::notice::behavior-compare was skipped; no regression report is required"
+            if [ "${{ needs.behavior-compare.outputs.java_not_ready }}" = "true" ]; then
+              echo "::notice::o2server not ready in behavior-compare; Java side unavailable, no regression report is required"
               exit 0
             fi
             echo "::error::behavior-compare did not produce behavior-report.md"
