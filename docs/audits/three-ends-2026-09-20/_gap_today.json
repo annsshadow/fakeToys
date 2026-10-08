@@ -1,0 +1,1186 @@
+[
+ {
+  "method": "DELETE",
+  "path": "/api/authentication"
+ },
+ {
+  "method": "DELETE",
+  "path": "/api/bbs/assemble/control/delete/forum"
+ },
+ {
+  "method": "DELETE",
+  "path": "/api/bbs/assemble/control/delete/reply"
+ },
+ {
+  "method": "DELETE",
+  "path": "/api/bbs/assemble/control/delete/subject"
+ },
+ {
+  "method": "DELETE",
+  "path": "/api/bbs/assemble/control/shutup/delete"
+ },
+ {
+  "method": "DELETE",
+  "path": "/api/organization/assemble/authentication/authentication"
+ },
+ {
+  "method": "DELETE",
+  "path": "/api/portal/assemble/surface/delete/layout"
+ },
+ {
+  "method": "DELETE",
+  "path": "/api/program_center/adminlogin"
+ },
+ {
+  "method": "DELETE",
+  "path": "/api/program_center/collect/name/{name}/mobile/{mobile}/code/{code}"
+ },
+ {
+  "method": "GET",
+  "path": "/api/ai_assemble_control/update/ai/control/config"
+ },
+ {
+  "method": "GET",
+  "path": "/api/andfx/moa/sso/token/{token}/enter/{enterId}"
+ },
+ {
+  "method": "GET",
+  "path": "/api/attendance/assemble/control/dingding/statistic/person/year/{year}/month/{month}"
+ },
+ {
+  "method": "GET",
+  "path": "/api/attendance/assemble/control/dingding/sync/from/{from}/to/{to}/start"
+ },
+ {
+  "method": "GET",
+  "path": "/api/attendance/assemble/control/qywx/sync/from/{from}/to/{to}/start"
+ },
+ {
+  "method": "GET",
+  "path": "/api/authentication/oauth/bind/name/{name}/code/{code}/redirecturi/{redirectUri}"
+ },
+ {
+  "method": "GET",
+  "path": "/api/authentication/oauth/login/dingding/code/{code}"
+ },
+ {
+  "method": "GET",
+  "path": "/api/authentication/oauth/login/name/{name}/code/{code}/redirecturi/{redirectUri}"
+ },
+ {
+  "method": "GET",
+  "path": "/api/authentication/oauth/login/qywx/code/{code}"
+ },
+ {
+  "method": "GET",
+  "path": "/api/authentication/oidc/authorize"
+ },
+ {
+  "method": "GET",
+  "path": "/api/authentication/oidc/callback"
+ },
+ {
+  "method": "GET",
+  "path": "/api/bbs/assemble/control/section/syn"
+ },
+ {
+  "method": "GET",
+  "path": "/api/calendar_assemble_control/test/1"
+ },
+ {
+  "method": "GET",
+  "path": "/api/departments/tree"
+ },
+ {
+  "method": "GET",
+  "path": "/api/file/copy/attachment/{p0}/referencetype/{p1}/reference/{p2}/scale/{p3}"
+ },
+ {
+  "method": "GET",
+  "path": "/api/hotpic_assemble_control/cipher/hotpic/{id}"
+ },
+ {
+  "method": "GET",
+  "path": "/api/hotpic_assemble_control/user/hotpic/{application}/{infoId}"
+ },
+ {
+  "method": "GET",
+  "path": "/api/hotpic_assemble_control/user/hotpic/{id}"
+ },
+ {
+  "method": "GET",
+  "path": "/api/jpush/assemble/control/device/check/{p0}/{p1}/{p2}"
+ },
+ {
+  "method": "GET",
+  "path": "/api/jpush/assemble/control/message/test/send"
+ },
+ {
+  "method": "GET",
+  "path": "/api/jpush_assemble_control/device/config/push/type"
+ },
+ {
+  "method": "GET",
+  "path": "/api/jpush_assemble_control/message/test/send"
+ },
+ {
+  "method": "GET",
+  "path": "/api/mpweixin/bind/code/{code}"
+ },
+ {
+  "method": "GET",
+  "path": "/api/mpweixin/bind/openid/{openid}"
+ },
+ {
+  "method": "GET",
+  "path": "/api/mpweixin/login/code/{code}"
+ },
+ {
+  "method": "GET",
+  "path": "/api/organization/assemble/authentication/andfx/moa/sso/token/{token}/enter/{enterId}"
+ },
+ {
+  "method": "GET",
+  "path": "/api/organization/assemble/authentication/authentication"
+ },
+ {
+  "method": "GET",
+  "path": "/api/organization/assemble/authentication/authentication/oauth/bind/name/{name}/code/{code}/redirecturi/{redirectUri}"
+ },
+ {
+  "method": "GET",
+  "path": "/api/organization/assemble/authentication/authentication/oauth/login/dingding/code/{code}"
+ },
+ {
+  "method": "GET",
+  "path": "/api/organization/assemble/authentication/authentication/oauth/login/name/{name}/code/{code}/redirecturi/{redirectUri}"
+ },
+ {
+  "method": "GET",
+  "path": "/api/organization/assemble/authentication/authentication/oauth/login/qywx/code/{code}"
+ },
+ {
+  "method": "GET",
+  "path": "/api/organization/assemble/authentication/authentication/safe/logout"
+ },
+ {
+  "method": "GET",
+  "path": "/api/organization/assemble/authentication/dingding/bind/{meta}/callback/{code}"
+ },
+ {
+  "method": "GET",
+  "path": "/api/organization/assemble/authentication/dingding/code/{code}"
+ },
+ {
+  "method": "GET",
+  "path": "/api/organization/assemble/authentication/dingding/login/{code}"
+ },
+ {
+  "method": "GET",
+  "path": "/api/organization/assemble/authentication/mpweixin/bind/code/{code}"
+ },
+ {
+  "method": "GET",
+  "path": "/api/organization/assemble/authentication/mpweixin/bind/openid/{openid}"
+ },
+ {
+  "method": "GET",
+  "path": "/api/organization/assemble/authentication/mpweixin/login/code/{code}"
+ },
+ {
+  "method": "GET",
+  "path": "/api/organization/assemble/authentication/qiyeweixin/bind/{meta}/callback/{code}"
+ },
+ {
+  "method": "GET",
+  "path": "/api/organization/assemble/authentication/qiyeweixin/code/{code}"
+ },
+ {
+  "method": "GET",
+  "path": "/api/organization/assemble/authentication/qiyeweixin/login/{code}"
+ },
+ {
+  "method": "GET",
+  "path": "/api/organization/assemble/authentication/qiyeweixin/update/person/detail/{code}"
+ },
+ {
+  "method": "GET",
+  "path": "/api/organization/assemble/authentication/welink/code/{code}"
+ },
+ {
+  "method": "GET",
+  "path": "/api/organization/assemble/authentication/zhengwudingding/bind/{meta}/callback/{code}"
+ },
+ {
+  "method": "GET",
+  "path": "/api/organization/assemble/authentication/zhengwudingding/code/{code}"
+ },
+ {
+  "method": "GET",
+  "path": "/api/organization/assemble/authentication/zhengwudingding/login/{code}"
+ },
+ {
+  "method": "GET",
+  "path": "/api/organization/assemble/control/export/zhengwudingding/person"
+ },
+ {
+  "method": "GET",
+  "path": "/api/organization/assemble/control/person/check/password/{password}"
+ },
+ {
+  "method": "GET",
+  "path": "/api/organization/assemble/control/person/{flag}/reset/password"
+ },
+ {
+  "method": "GET",
+  "path": "/api/organization/assemble/control/person/{flag}/set/password/expired/time/{date}"
+ },
+ {
+  "method": "GET",
+  "path": "/api/person/list/all/object"
+ },
+ {
+  "method": "GET",
+  "path": "/api/person/regist/captcha/width/{width}/height/{height}"
+ },
+ {
+  "method": "GET",
+  "path": "/api/person/regist/check/password/{password}"
+ },
+ {
+  "method": "GET",
+  "path": "/api/person/regist/code/mobile/{mobile}"
+ },
+ {
+  "method": "GET",
+  "path": "/api/processplatform/assemble/surface/mode/clear/person/person/{p0}"
+ },
+ {
+  "method": "GET",
+  "path": "/api/program_center/appstyle/image/login/avatar/erase"
+ },
+ {
+  "method": "GET",
+  "path": "/api/program_center/collect/connect"
+ },
+ {
+  "method": "GET",
+  "path": "/api/program_center/collect/controllebbs"
+ },
+ {
+  "method": "GET",
+  "path": "/api/program_center/collect/disconnect"
+ },
+ {
+  "method": "GET",
+  "path": "/api/program_center/collect/login"
+ },
+ {
+  "method": "GET",
+  "path": "/api/program_center/collect/mobile/check/connect"
+ },
+ {
+  "method": "GET",
+  "path": "/api/program_center/collect/person"
+ },
+ {
+  "method": "GET",
+  "path": "/api/program_center/collect/resetpassword"
+ },
+ {
+  "method": "GET",
+  "path": "/api/program_center/collect/sync/area"
+ },
+ {
+  "method": "GET",
+  "path": "/api/program_center/collect/urlMapping"
+ },
+ {
+  "method": "GET",
+  "path": "/api/program_center/collect/validate"
+ },
+ {
+  "method": "GET",
+  "path": "/api/program_center/collect/validate/codeanswer"
+ },
+ {
+  "method": "GET",
+  "path": "/api/program_center/collect/validate/direct"
+ },
+ {
+  "method": "GET",
+  "path": "/api/program_center/collect/validate/password"
+ },
+ {
+  "method": "GET",
+  "path": "/api/program_center/dingding/request/pull/sync"
+ },
+ {
+  "method": "GET",
+  "path": "/api/program_center/dingding/sync/organization/callback"
+ },
+ {
+  "method": "GET",
+  "path": "/api/program_center/dingding/sync/organization/register/callback/{enable}"
+ },
+ {
+  "method": "GET",
+  "path": "/api/program_center/foo/create/mass/{from}/{count}"
+ },
+ {
+  "method": "GET",
+  "path": "/api/program_center/invoke/flag/execute"
+ },
+ {
+  "method": "GET",
+  "path": "/api/program_center/mpweixin/menu/subscribe"
+ },
+ {
+  "method": "GET",
+  "path": "/api/program_center/mpweixin/message/template/send"
+ },
+ {
+  "method": "GET",
+  "path": "/api/program_center/qiyeweixin"
+ },
+ {
+  "method": "GET",
+  "path": "/api/program_center/qiyeweixin/get/callback/aes"
+ },
+ {
+  "method": "GET",
+  "path": "/api/program_center/qiyeweixin/send/getprivateinfo/message"
+ },
+ {
+  "method": "GET",
+  "path": "/api/program_center/schedule/schedule/fire"
+ },
+ {
+  "method": "GET",
+  "path": "/api/program_center/test/test1"
+ },
+ {
+  "method": "GET",
+  "path": "/api/program_center/test/test2"
+ },
+ {
+  "method": "GET",
+  "path": "/api/program_center/zhengwudingding/sync/organization/callback"
+ },
+ {
+  "method": "GET",
+  "path": "/api/qiyeweixin/code/{code}"
+ },
+ {
+  "method": "GET",
+  "path": "/api/qiyeweixin/update/person/detail/{code}"
+ },
+ {
+  "method": "GET",
+  "path": "/api/query/assemble/designer/importmodel/{id}"
+ },
+ {
+  "method": "GET",
+  "path": "/api/queryview/{query}/{flag}"
+ },
+ {
+  "method": "GET",
+  "path": "/api/reset/check/credential/{credential}"
+ },
+ {
+  "method": "GET",
+  "path": "/api/reset/check/password/{password}"
+ },
+ {
+  "method": "GET",
+  "path": "/api/reset/code/credential/{credential}"
+ },
+ {
+  "method": "GET",
+  "path": "/api/secret/set/cancel"
+ },
+ {
+  "method": "GET",
+  "path": "/api/share/{id}/password/{password}"
+ },
+ {
+  "method": "GET",
+  "path": "/api/users/list"
+ },
+ {
+  "method": "GET",
+  "path": "/api/welink/code/{code}"
+ },
+ {
+  "method": "GET",
+  "path": "/api/zhengwudingding/code/{code}"
+ },
+ {
+  "method": "GET",
+  "path": "/api/zhengwudingding/info"
+ },
+ {
+  "method": "GET",
+  "path": "/ws/realtime"
+ },
+ {
+  "method": "GET",
+  "path": "/ws/realtime/room/{room_id}"
+ },
+ {
+  "method": "GET",
+  "path": "/ws/realtime/room/{room_id}/stats"
+ },
+ {
+  "method": "POST",
+  "path": "/api/ai_assemble_control/chat/completion/stream"
+ },
+ {
+  "method": "POST",
+  "path": "/api/ai_assemble_control/file/upload"
+ },
+ {
+  "method": "POST",
+  "path": "/api/attachment/upload/folder/callback/callback/{folderId}"
+ },
+ {
+  "method": "POST",
+  "path": "/api/attachment/upload/folder/{folderId}/callback/{callback}"
+ },
+ {
+  "method": "POST",
+  "path": "/api/attachment2/upload/folder/{folderId}"
+ },
+ {
+  "method": "POST",
+  "path": "/api/attendance/assemble/control/attendanceselfholiday"
+ },
+ {
+  "method": "POST",
+  "path": "/api/attendance/assemble/control/selfholidaysimple"
+ },
+ {
+  "method": "POST",
+  "path": "/api/attendance/assemble/control/v2/groupschedule"
+ },
+ {
+  "method": "POST",
+  "path": "/api/attendance/assemble/control/v2/mobile/check/ from/out"
+ },
+ {
+  "method": "POST",
+  "path": "/api/attendance/assemble/control/v2/mobile/check/%20from/out"
+ },
+ {
+  "method": "POST",
+  "path": "/api/authentication"
+ },
+ {
+  "method": "POST",
+  "path": "/api/authentication/bind/meta/{meta}"
+ },
+ {
+  "method": "POST",
+  "path": "/api/authentication/safe/logout"
+ },
+ {
+  "method": "POST",
+  "path": "/api/authentication/sms/send"
+ },
+ {
+  "method": "POST",
+  "path": "/api/authentication/sms/verify"
+ },
+ {
+  "method": "POST",
+  "path": "/api/authentication/sso"
+ },
+ {
+  "method": "POST",
+  "path": "/api/authentication/two_factor"
+ },
+ {
+  "method": "POST",
+  "path": "/api/bbs/assemble/control/delete/subject"
+ },
+ {
+  "method": "POST",
+  "path": "/api/bbs/assemble/control/login"
+ },
+ {
+  "method": "POST",
+  "path": "/api/bbs/assemble/control/logout"
+ },
+ {
+  "method": "POST",
+  "path": "/api/bbs/assemble/control/picture/encode/base64/size/{size}"
+ },
+ {
+  "method": "POST",
+  "path": "/api/bbs/assemble/control/picture/section/{id}/icon"
+ },
+ {
+  "method": "POST",
+  "path": "/api/bbs/assemble/control/shutup/create"
+ },
+ {
+  "method": "POST",
+  "path": "/api/calendar_assemble_control/message"
+ },
+ {
+  "method": "POST",
+  "path": "/api/cms/view/unpublish/{id}"
+ },
+ {
+  "method": "POST",
+  "path": "/api/file/assemble/control/file/upload"
+ },
+ {
+  "method": "POST",
+  "path": "/api/file/assemble/control/file/upload/referencetype/{referenceType}/reference/{reference}/scale/{scale}"
+ },
+ {
+  "method": "POST",
+  "path": "/api/file/assemble/control/file/upload/referencetype/{referenceType}/reference/{reference}/scale/{scale}/callback/{callback}"
+ },
+ {
+  "method": "POST",
+  "path": "/api/file/upload"
+ },
+ {
+  "method": "POST",
+  "path": "/api/file/upload/referencetype/reference/reference/scale/scale/callback/callback/{referenceType}"
+ },
+ {
+  "method": "POST",
+  "path": "/api/file/upload/referencetype/reference/reference/scale/scale/{referenceType}"
+ },
+ {
+  "method": "POST",
+  "path": "/api/file/{id}/upload"
+ },
+ {
+  "method": "POST",
+  "path": "/api/fileinfo/update/document/{docId}/attachment/{id}/callback/{callback}"
+ },
+ {
+  "method": "POST",
+  "path": "/api/fileinfo/upload/doc/{docId}/save/as/{flag}"
+ },
+ {
+  "method": "POST",
+  "path": "/api/fileinfo/upload/document/{docId}/callback/{callback}"
+ },
+ {
+  "method": "POST",
+  "path": "/api/fileinfo/upload/document/{id}"
+ },
+ {
+  "method": "POST",
+  "path": "/api/group/list/group/sub/direct/object"
+ },
+ {
+  "method": "POST",
+  "path": "/api/group/list/group/sub/nested/object"
+ },
+ {
+  "method": "POST",
+  "path": "/api/group/list/group/sup/direct/object"
+ },
+ {
+  "method": "POST",
+  "path": "/api/group/list/group/sup/nested/object"
+ },
+ {
+  "method": "POST",
+  "path": "/api/group/list/identity/object"
+ },
+ {
+  "method": "POST",
+  "path": "/api/group/list/object"
+ },
+ {
+  "method": "POST",
+  "path": "/api/group/list/person/object"
+ },
+ {
+  "method": "POST",
+  "path": "/api/identity/list/group/object"
+ },
+ {
+  "method": "POST",
+  "path": "/api/identity/list/major/person/object"
+ },
+ {
+  "method": "POST",
+  "path": "/api/identity/list/object"
+ },
+ {
+  "method": "POST",
+  "path": "/api/identity/list/person/object"
+ },
+ {
+  "method": "POST",
+  "path": "/api/identity/list/unit/person/object"
+ },
+ {
+  "method": "POST",
+  "path": "/api/identity/list/unit/sub/direct/object"
+ },
+ {
+  "method": "POST",
+  "path": "/api/identity/list/unit/sub/nested/object"
+ },
+ {
+  "method": "POST",
+  "path": "/api/jpush/core/entity/device/create"
+ },
+ {
+  "method": "POST",
+  "path": "/api/jpush/device/create"
+ },
+ {
+  "method": "POST",
+  "path": "/api/meeting/assemble/control/attachment/meeting/{meetingId}/upload/{summary}"
+ },
+ {
+  "method": "POST",
+  "path": "/api/meeting/assemble/control/attachment/meeting/{meetingId}/upload/{summary}/callback/{callback}"
+ },
+ {
+  "method": "POST",
+  "path": "/api/meeting/assemble/control/attachment/{id}/update/callback/{ballback}"
+ },
+ {
+  "method": "POST",
+  "path": "/api/meeting/assemble/control/meeting/save/{id}"
+ },
+ {
+  "method": "POST",
+  "path": "/api/meeting/core/entity/meeting/create"
+ },
+ {
+  "method": "POST",
+  "path": "/api/message/assemble/communicate/im/msg/clear"
+ },
+ {
+  "method": "POST",
+  "path": "/api/message/assemble/communicate/im/msg/upload/{conversationId}/type/{type}"
+ },
+ {
+  "method": "POST",
+  "path": "/api/mpweixin/menu/test/send/to/{person}"
+ },
+ {
+  "method": "POST",
+  "path": "/api/organization/assemble/authentication/authentication"
+ },
+ {
+  "method": "POST",
+  "path": "/api/organization/assemble/authentication/authentication/bind/meta/{meta}"
+ },
+ {
+  "method": "POST",
+  "path": "/api/organization/assemble/authentication/authentication/two/factory/login"
+ },
+ {
+  "method": "POST",
+  "path": "/api/organization/assemble/authentication/bind/meta/{meta}"
+ },
+ {
+  "method": "POST",
+  "path": "/api/organization/assemble/authentication/dingding/bind/{meta}/confirm"
+ },
+ {
+  "method": "POST",
+  "path": "/api/organization/assemble/authentication/dingding/info"
+ },
+ {
+  "method": "POST",
+  "path": "/api/organization/assemble/authentication/mpweixin/menu/test/send/to/{person}"
+ },
+ {
+  "method": "POST",
+  "path": "/api/organization/assemble/authentication/qiyeweixin/bind/{meta}/confirm"
+ },
+ {
+  "method": "POST",
+  "path": "/api/organization/assemble/authentication/qiyeweixin/info/sign"
+ },
+ {
+  "method": "POST",
+  "path": "/api/organization/assemble/authentication/sso"
+ },
+ {
+  "method": "POST",
+  "path": "/api/organization/assemble/authentication/zhengwudingding/bind/{meta}/confirm"
+ },
+ {
+  "method": "POST",
+  "path": "/api/organization/assemble/authentication/zhengwudingding/info"
+ },
+ {
+  "method": "POST",
+  "path": "/api/organization/assemble/control/unitduty/update/member"
+ },
+ {
+  "method": "POST",
+  "path": "/api/person/list/group/object"
+ },
+ {
+  "method": "POST",
+  "path": "/api/person/list/identity/object"
+ },
+ {
+  "method": "POST",
+  "path": "/api/person/list/login/after/object"
+ },
+ {
+  "method": "POST",
+  "path": "/api/person/list/login/recent/object"
+ },
+ {
+  "method": "POST",
+  "path": "/api/person/list/object"
+ },
+ {
+  "method": "POST",
+  "path": "/api/person/list/person/sub/direct/object"
+ },
+ {
+  "method": "POST",
+  "path": "/api/person/list/person/sub/nested/object"
+ },
+ {
+  "method": "POST",
+  "path": "/api/person/list/person/sup/direct/object"
+ },
+ {
+  "method": "POST",
+  "path": "/api/person/list/person/sup/nested/object"
+ },
+ {
+  "method": "POST",
+  "path": "/api/person/list/personattribute/object"
+ },
+ {
+  "method": "POST",
+  "path": "/api/person/list/role/object"
+ },
+ {
+  "method": "POST",
+  "path": "/api/person/list/unit/sub/direct/like/object"
+ },
+ {
+  "method": "POST",
+  "path": "/api/person/list/unit/sub/direct/object"
+ },
+ {
+  "method": "POST",
+  "path": "/api/person/list/unit/sub/nested/like/object"
+ },
+ {
+  "method": "POST",
+  "path": "/api/person/list/unit/sub/nested/object"
+ },
+ {
+  "method": "POST",
+  "path": "/api/person/regist"
+ },
+ {
+  "method": "POST",
+  "path": "/api/person/regist/code"
+ },
+ {
+  "method": "POST",
+  "path": "/api/person/signature/upload"
+ },
+ {
+  "method": "POST",
+  "path": "/api/portal/assemble/designer/file/upload/{id}"
+ },
+ {
+  "method": "POST",
+  "path": "/api/portal/assemble/surface/delete/layout"
+ },
+ {
+  "method": "POST",
+  "path": "/api/portal/assemble/surface/save/layout"
+ },
+ {
+  "method": "POST",
+  "path": "/api/processplatform/assemble/designer/application/{id}/{onlyRemoveNotCompleted}"
+ },
+ {
+  "method": "POST",
+  "path": "/api/processplatform/assemble/designer/file/upload/{id}"
+ },
+ {
+  "method": "POST",
+  "path": "/api/processplatform/assemble/designer/process/edition/{id}/{onlyRemoveNotCompleted}"
+ },
+ {
+  "method": "POST",
+  "path": "/api/processplatform/assemble/designer/process/{id}/{onlyRemoveNotCompleted}"
+ },
+ {
+  "method": "POST",
+  "path": "/api/processplatform/assemble/surface/attachment/batch/upload/manage"
+ },
+ {
+  "method": "POST",
+  "path": "/api/processplatform/assemble/surface/attachment/html/to/image"
+ },
+ {
+  "method": "POST",
+  "path": "/api/processplatform/assemble/surface/attachment/html/to/pdf"
+ },
+ {
+  "method": "POST",
+  "path": "/api/processplatform/assemble/surface/attachment/update/{id}/work/{workId}/callback/{callbackId}"
+ },
+ {
+  "method": "POST",
+  "path": "/api/processplatform/assemble/surface/attachment/upload/with/url"
+ },
+ {
+  "method": "POST",
+  "path": "/api/processplatform/assemble/surface/attachment/upload/work/{workId}"
+ },
+ {
+  "method": "POST",
+  "path": "/api/processplatform/assemble/surface/attachment/upload/work/{workId}/callback/{callbackId}"
+ },
+ {
+  "method": "POST",
+  "path": "/api/processplatform/assemble/surface/attachment/upload/workcompleted/{workCompletedId}"
+ },
+ {
+  "method": "POST",
+  "path": "/api/processplatform/assemble/surface/attachment/v2/upload/workorworkcompleted/{flag}"
+ },
+ {
+  "method": "POST",
+  "path": "/api/processplatform/assemble/surface/attachment/v2/upload/workorworkcompleted/{flag}/base64"
+ },
+ {
+  "method": "POST",
+  "path": "/api/processplatform/assemble/surface/mode/save"
+ },
+ {
+  "method": "POST",
+  "path": "/api/processplatform/assemble/surface/review/create/work"
+ },
+ {
+  "method": "POST",
+  "path": "/api/processplatform/assemble/surface/review/create/workcompleted"
+ },
+ {
+  "method": "POST",
+  "path": "/api/processplatform/assemble/surface/snap/upload"
+ },
+ {
+  "method": "POST",
+  "path": "/api/processplatform/service/processing/attachment/copy/work/{workId}"
+ },
+ {
+  "method": "POST",
+  "path": "/api/processplatform/service/processing/series/series/activitytoken/processing/signal/{work}/{id}/{activityToken}"
+ },
+ {
+  "method": "POST",
+  "path": "/api/processplatform/service/processing/taskcompleted/press/{id}/{work}/{work}"
+ },
+ {
+  "method": "POST",
+  "path": "/api/program_center/bar/create/mass/from/count"
+ },
+ {
+  "method": "POST",
+  "path": "/api/program_center/collect/updateUnit"
+ },
+ {
+  "method": "POST",
+  "path": "/api/program_center/config/change/password"
+ },
+ {
+  "method": "POST",
+  "path": "/api/program_center/dingding/request/pull/sync"
+ },
+ {
+  "method": "POST",
+  "path": "/api/program_center/dingding/sync/organization/callback"
+ },
+ {
+  "method": "POST",
+  "path": "/api/program_center/foo/create/mass/from/count"
+ },
+ {
+  "method": "POST",
+  "path": "/api/program_center/invoke/token"
+ },
+ {
+  "method": "POST",
+  "path": "/api/program_center/invoke/{flag}/client/{client}/token/{token}/execute"
+ },
+ {
+  "method": "POST",
+  "path": "/api/program_center/module/compare/upload"
+ },
+ {
+  "method": "POST",
+  "path": "/api/program_center/mpweixin/media/add/forever"
+ },
+ {
+  "method": "POST",
+  "path": "/api/program_center/mpweixin/menu/add"
+ },
+ {
+  "method": "POST",
+  "path": "/api/program_center/mpweixin/menu/create/to/weixin"
+ },
+ {
+  "method": "POST",
+  "path": "/api/program_center/mpweixin/message/template/send"
+ },
+ {
+  "method": "POST",
+  "path": "/api/program_center/qiyeweixin/request/pull/sync"
+ },
+ {
+  "method": "POST",
+  "path": "/api/program_center/qiyeweixin/send/getprivateinfo/message"
+ },
+ {
+  "method": "POST",
+  "path": "/api/program_center/zhengwudingding/sync/organization/callback"
+ },
+ {
+  "method": "POST",
+  "path": "/api/qiyeweixin/jssdk/sign/info"
+ },
+ {
+  "method": "POST",
+  "path": "/api/reset"
+ },
+ {
+  "method": "POST",
+  "path": "/api/reset/password/anonymous"
+ },
+ {
+  "method": "POST",
+  "path": "/api/role/list/object"
+ },
+ {
+  "method": "POST",
+  "path": "/api/role/list/person/object"
+ },
+ {
+  "method": "POST",
+  "path": "/api/secret/captcha/verify"
+ },
+ {
+  "method": "POST",
+  "path": "/api/secret/set"
+ },
+ {
+  "method": "POST",
+  "path": "/api/unit/identity/level/object"
+ },
+ {
+  "method": "POST",
+  "path": "/api/unit/identity/type/object"
+ },
+ {
+  "method": "POST",
+  "path": "/api/unit/list/identity/object"
+ },
+ {
+  "method": "POST",
+  "path": "/api/unit/list/identity/sup/nested/object"
+ },
+ {
+  "method": "POST",
+  "path": "/api/unit/list/level/object"
+ },
+ {
+  "method": "POST",
+  "path": "/api/unit/list/object"
+ },
+ {
+  "method": "POST",
+  "path": "/api/unit/list/person/object"
+ },
+ {
+  "method": "POST",
+  "path": "/api/unit/list/person/sup/nested/object"
+ },
+ {
+  "method": "POST",
+  "path": "/api/unit/list/types/object"
+ },
+ {
+  "method": "POST",
+  "path": "/api/unit/list/unit/sub/direct/object"
+ },
+ {
+  "method": "POST",
+  "path": "/api/unit/list/unit/sub/nested/object"
+ },
+ {
+  "method": "POST",
+  "path": "/api/unit/list/unit/sup/direct/object"
+ },
+ {
+  "method": "POST",
+  "path": "/api/unit/list/unit/sup/nested/object"
+ },
+ {
+  "method": "POST",
+  "path": "/api/unit/list/unitattribute/object"
+ },
+ {
+  "method": "POST",
+  "path": "/api/unit/list/unitduty/object"
+ },
+ {
+  "method": "POST",
+  "path": "/api/unitduty/list/identity/unit/name/object"
+ },
+ {
+  "method": "PUT",
+  "path": "/api/calendar_assemble_control/event"
+ },
+ {
+  "method": "PUT",
+  "path": "/api/cms/assemble/control/dict/save/{id}"
+ },
+ {
+  "method": "PUT",
+  "path": "/api/cms/assemble/control/form/save/{id}"
+ },
+ {
+  "method": "PUT",
+  "path": "/api/cms/assemble/control/view/save/{id}"
+ },
+ {
+  "method": "PUT",
+  "path": "/api/cms/assemble/control/xform/save/{id}"
+ },
+ {
+  "method": "PUT",
+  "path": "/api/file/assemble/control/file/upload/referencetype/{referenceType}/reference/{reference}/scale/{scale}"
+ },
+ {
+  "method": "PUT",
+  "path": "/api/organization/assemble/authentication/authentication/switchuser"
+ },
+ {
+  "method": "PUT",
+  "path": "/api/organization/assemble/control/group/{flag}/add/member"
+ },
+ {
+  "method": "PUT",
+  "path": "/api/organization/assemble/control/group/{flag}/delete/member"
+ },
+ {
+  "method": "PUT",
+  "path": "/api/organization/assemble/control/personattribute/{flag}"
+ },
+ {
+  "method": "PUT",
+  "path": "/api/organization/assemble/control/unitattribute/{flag}"
+ },
+ {
+  "method": "PUT",
+  "path": "/api/organization/assemble/control/unitduty/update/member"
+ },
+ {
+  "method": "PUT",
+  "path": "/api/portal/assemble/designer/dict/save/{id}"
+ },
+ {
+  "method": "PUT",
+  "path": "/api/portal/assemble/designer/script/{id}"
+ },
+ {
+  "method": "PUT",
+  "path": "/api/portal/assemble/designer/widget/save/{id}"
+ },
+ {
+  "method": "PUT",
+  "path": "/api/portal/assemble/surface/save/layout"
+ },
+ {
+  "method": "PUT",
+  "path": "/api/processplatform/assemble/designer/dict/save/{id}"
+ },
+ {
+  "method": "PUT",
+  "path": "/api/processplatform/assemble/designer/form/save/{id}"
+ },
+ {
+  "method": "PUT",
+  "path": "/api/processplatform/assemble/designer/xform/save/{id}"
+ },
+ {
+  "method": "PUT",
+  "path": "/api/processplatform/assemble/surface/attachment/upload/work/{workId}/save/as/{saveAs}"
+ },
+ {
+  "method": "PUT",
+  "path": "/api/program_center/appstyle/image/login/avatar"
+ },
+ {
+  "method": "PUT",
+  "path": "/api/program_center/collect/resetpassword"
+ },
+ {
+  "method": "PUT",
+  "path": "/api/program_center/collect/save/{id}"
+ },
+ {
+  "method": "PUT",
+  "path": "/api/program_center/collect/updateUnit"
+ },
+ {
+  "method": "PUT",
+  "path": "/api/program_center/collect/validate/codeanswer"
+ },
+ {
+  "method": "PUT",
+  "path": "/api/program_center/collect/validate/direct"
+ },
+ {
+  "method": "PUT",
+  "path": "/api/program_center/collect/validate/password"
+ },
+ {
+  "method": "PUT",
+  "path": "/api/program_center/config/token"
+ },
+ {
+  "method": "PUT",
+  "path": "/api/program_center/module/compare/upload"
+ },
+ {
+  "method": "PUT",
+  "path": "/api/program_center/tokenthreshold/update"
+ },
+ {
+  "method": "PUT",
+  "path": "/api/query/assemble/designer/statement/{flag}"
+ },
+ {
+  "method": "PUT",
+  "path": "/api/query/assemble/designer/table/edit/{flag}"
+ },
+ {
+  "method": "PUT",
+  "path": "/api/reset"
+ },
+ {
+  "method": "PUT",
+  "path": "/api/templateform/save/{id}"
+ }
+]
