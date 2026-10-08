@@ -383,19 +383,13 @@ async fn attachment_upload_store(
 // o2server PictureAction.pictureEncode：图片解码缩放后转 base64。
 // 十类功能3：接入 image 引擎（png/jpeg 解码 → thumbnail({size}) → PNG → base64），
 // 替换原「图像引擎不可用」501 桩。
-pub async fn picture_encode(
-    Path(size): Path<u32>,
-    Json(body): Json<Value>,
-) -> ApiResult {
+pub async fn picture_encode(Path(size): Path<u32>, Json(body): Json<Value>) -> ApiResult {
     let input = body_str(&body, &["base64", "fileBase64", "image"]).unwrap_or_default();
     if input.is_empty() {
         return Err(AppError::BadRequest("base64 is required".to_string()));
     }
-    let bytes = base64::Engine::decode(
-        &base64::engine::general_purpose::STANDARD,
-        input.as_str(),
-    )
-    .map_err(|_| AppError::BadRequest("invalid base64 image".to_string()))?;
+    let bytes = base64::Engine::decode(&base64::engine::general_purpose::STANDARD, input.as_str())
+        .map_err(|_| AppError::BadRequest("invalid base64 image".to_string()))?;
     let img = image::load_from_memory(&bytes)
         .map_err(|_| AppError::BadRequest("unsupported image format".to_string()))?;
     let scaled = img.thumbnail(size.max(1), size.max(1));
@@ -433,11 +427,8 @@ pub async fn picture_section_icon(
     if input.is_empty() {
         return Err(AppError::BadRequest("icon base64 is required".to_string()));
     }
-    let bytes = base64::Engine::decode(
-        &base64::engine::general_purpose::STANDARD,
-        input.as_str(),
-    )
-    .map_err(|_| AppError::BadRequest("invalid base64 image".to_string()))?;
+    let bytes = base64::Engine::decode(&base64::engine::general_purpose::STANDARD, input.as_str())
+        .map_err(|_| AppError::BadRequest("invalid base64 image".to_string()))?;
     let img = image::load_from_memory(&bytes)
         .map_err(|_| AppError::BadRequest("unsupported image format".to_string()))?;
     let icon_png = img.thumbnail(128, 128);
@@ -522,7 +513,10 @@ pub async fn section_syn(pool: Extension<Pool>) -> ApiResult {
             (
                 "appsWithoutSection".to_string(),
                 Value::Array(
-                    apps_without_section.into_iter().map(Value::String).collect(),
+                    apps_without_section
+                        .into_iter()
+                        .map(Value::String)
+                        .collect(),
                 ),
             ),
             (
