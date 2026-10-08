@@ -414,14 +414,6 @@ pub static GENERATED_ROUTE_DEFS: &[RouteDef] = &[
         body_params: &[],
     },
     RouteDef {
-        tool_name: "legacy_ai_assemble_control_ai_assemble_control_update_ai_control_config",
-        method: HttpMethod::Post,
-        path: "/api/ai_assemble_control/update/ai/control/config",
-        description: "update_ai_control_config handler",
-        path_params: &[],
-        body_params: &[],
-    },
-    RouteDef {
         tool_name: "legacy_ai_assemble_control_ai_assemble_control_ann_create",
         method: HttpMethod::Post,
         path: "/api/ai/assemble/control/ann/create",
@@ -571,6 +563,14 @@ pub static GENERATED_ROUTE_DEFS: &[RouteDef] = &[
         path: "/api/ai_assemble_control/index/list/paging/{page}/size/{size}",
         description: "index_list_paging_page_size_size handler",
         path_params: &["page", "size"],
+        body_params: &[],
+    },
+    RouteDef {
+        tool_name: "legacy_ai_assemble_control_ai_assemble_control_update_ai_control_config",
+        method: HttpMethod::Post,
+        path: "/api/ai_assemble_control/update/ai/control/config",
+        description: "update_ai_control_config handler",
+        path_params: &[],
         body_params: &[],
     },
     RouteDef {
@@ -15574,14 +15574,6 @@ pub static GENERATED_ROUTE_DEFS: &[RouteDef] = &[
         body_params: &[],
     },
     RouteDef {
-        tool_name: "legacy_organization_assemble_control_organization_assemble_control_person_check_password_password",
-        method: HttpMethod::Get,
-        path: "/api/organization/assemble/control/person/check/password/{password}",
-        description: "u2_person::person_check_password handler",
-        path_params: &["password"],
-        body_params: &[],
-    },
-    RouteDef {
         tool_name: "legacy_organization_assemble_control_organization_assemble_control_person_list_group_groupflag_sub_direct",
         method: HttpMethod::Get,
         path: "/api/organization/assemble/control/person/list/group/{groupFlag}/sub/direct",
@@ -16358,6 +16350,14 @@ pub static GENERATED_ROUTE_DEFS: &[RouteDef] = &[
         body_params: &[],
     },
     RouteDef {
+        tool_name: "legacy_organization_assemble_control_organization_assemble_control_person_check_password",
+        method: HttpMethod::Post,
+        path: "/api/organization/assemble/control/person/check/password",
+        description: "u2_person::person_check_password handler",
+        path_params: &[],
+        body_params: &["password"],
+    },
+    RouteDef {
         tool_name: "legacy_organization_assemble_control_organization_assemble_control_person_list_delete_page_size_size",
         method: HttpMethod::Post,
         path: "/api/organization/assemble/control/person/list/delete/{page}/size/{size}",
@@ -16921,7 +16921,7 @@ pub static GENERATED_ROUTE_DEFS: &[RouteDef] = &[
         tool_name: "legacy_organization_assemble_control_organization_assemble_control_unitduty_update_member",
         method: HttpMethod::Put,
         path: "/api/organization/assemble/control/unitduty/update/member",
-        description: "unitduty_update_member handler",
+        description: "u2_org::duty_update_member handler",
         path_params: &[],
         body_params: &[],
     },
@@ -18478,14 +18478,6 @@ pub static GENERATED_ROUTE_DEFS: &[RouteDef] = &[
         body_params: &[],
     },
     RouteDef {
-        tool_name: "legacy_personal_person_regist_check_password_password",
-        method: HttpMethod::Get,
-        path: "/api/person/regist/check/password/{password}",
-        description: "u2::regist_check_password handler",
-        path_params: &["password"],
-        body_params: &[],
-    },
-    RouteDef {
         tool_name: "legacy_personal_person_regist_code_mobile_mobile",
         method: HttpMethod::Get,
         path: "/api/person/regist/code/mobile/{mobile}",
@@ -18539,14 +18531,6 @@ pub static GENERATED_ROUTE_DEFS: &[RouteDef] = &[
         path: "/api/reset/check/credential/{credential}",
         description: "reset::check_credential handler",
         path_params: &["credential"],
-        body_params: &[],
-    },
-    RouteDef {
-        tool_name: "legacy_personal_reset_check_password_password",
-        method: HttpMethod::Get,
-        path: "/api/reset/check/password/{password}",
-        description: "reset::check_password handler",
-        path_params: &["password"],
         body_params: &[],
     },
     RouteDef {
@@ -18686,6 +18670,14 @@ pub static GENERATED_ROUTE_DEFS: &[RouteDef] = &[
         body_params: &[],
     },
     RouteDef {
+        tool_name: "legacy_personal_person_regist_check_password",
+        method: HttpMethod::Post,
+        path: "/api/person/regist/check/password",
+        description: "u2::regist_check_password handler",
+        path_params: &[],
+        body_params: &["password"],
+    },
+    RouteDef {
         tool_name: "legacy_personal_person_regist_code",
         method: HttpMethod::Post,
         path: "/api/person/regist/code",
@@ -18700,6 +18692,14 @@ pub static GENERATED_ROUTE_DEFS: &[RouteDef] = &[
         description: "signature::upload handler",
         path_params: &[],
         body_params: &[],
+    },
+    RouteDef {
+        tool_name: "legacy_personal_reset_check_password",
+        method: HttpMethod::Post,
+        path: "/api/reset/check/password",
+        description: "reset::check_password handler",
+        path_params: &[],
+        body_params: &["password"],
     },
     RouteDef {
         tool_name: "legacy_personal_reset_mockputtopost",
