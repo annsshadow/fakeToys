@@ -23,6 +23,8 @@ vi.mock('@/api/client', () => ({
   signIn: vi.fn(),
   claimTask: vi.fn(),
   redeem: vi.fn(),
+  fetchSignInCalendar: vi.fn(),
+  fetchSignInStatus: vi.fn(),
 }))
 
 const mockApi = vi.mocked(api, true)
@@ -47,6 +49,8 @@ beforeEach(() => {
       { id: 3, name: '已领任务', progress: 1, target: 1, done: true, claimed: true, reward: { keys: 1 } },
     ],
   })
+  // 缺省：日历拉取失败 → 回落本地缺省公式（保持既有用例的展示值不变）
+  mockApi.fetchSignInCalendar.mockRejectedValue(new Error('offline'))
 })
 
 afterEach(() => {
@@ -72,6 +76,72 @@ describe('signin.vue 签到页', () => {
     // 奖励文案（currencyName 的金/钻/钥匙分支）
     expect(wrapper.text()).toContain('金 500 · 钻 10')
     expect(wrapper.text()).toContain('钥匙 1')
+  })
+
+  it('第 135 轮：预览奖励由服务端日历驱动，不是本地硬编码公式', async () => {
+    // 服务端日历：第 1 天给 77 钻（与本地缺省 { coin: 1000 } 完全不同）。
+    mockApi.fetchSignInCalendar.mockResolvedValue({
+      days: [
+        { day_index: 1, reward: { gem: 77 } },
+        { day_index: 2, reward: { coin: 10 } },
+        { day_index: 3, reward: { coin: 1000 } },
+        { day_index: 4, reward: { coin: 1000 } },
+        { day_index: 5, reward: { coin: 1000 } },
+        { day_index: 6, reward: { coin: 1000 } },
+        { day_index: 7, reward: { coin: 1000 } },
+      ],
+    } as any)
+    const { wrapper } = mountPage(Signin)
+    await flushPromises()
+    const days = wrapper.findAll('.day')
+    // 第 1 天：必须是服务端的 77 钻（本地公式会显示 1000 金）
+    expect(days[0]!.text()).toContain('77 钻')
+    expect(days[0]!.text()).not.toContain('1000 金')
+    // 第 2 天：服务端 10 金（本地公式会是 2000 金）
+    expect(days[1]!.text()).toContain('10 金')
+    expect(days[1]!.text()).not.toContain('2000 金')
+  })
+
+  it('第 135 轮：日历缺失/失败 → 回落本地缺省公式（不阻断页面）', async () => {
+    // beforeEach 默认 fetchSignInCalendar reject → 回落本地公式
+    const { wrapper } = mountPage(Signin)
+    await flushPromises()
+    const days = wrapper.findAll('.day')
+    expect(days[0]!.text()).toContain('1000 金') // 本地 day1 = coin 1000
+  })
+
+  it('第 141 轮：初始态以服务端签到状态为准：已签 3 天且今日已签 → 第 4 天标 today、按钮禁用且文案「今日已签到」', async () => {
+    mockApi.fetchSignInStatus.mockResolvedValue({ claimed_count: 3, signed_today: true, can_sign: false })
+    const { wrapper } = mountPage(Signin)
+    await flushPromises()
+    expect(mockApi.fetchSignInStatus).toHaveBeenCalledTimes(1)
+    const days = wrapper.findAll('.day')
+    expect(days[2]!.classes()).toContain('claimed') // 第 3 天已签
+    expect(days[3]!.classes()).toContain('today') // 今天是第 4 天
+    expect(days[3]!.classes()).not.toContain('claimed')
+    expect(days[4]!.classes()).not.toContain('today')
+    const btn = wrapper.find('.btn-primary')
+    expect(btn.classes()).toContain('btn-disabled')
+    expect(wrapper.text()).toContain('今日已签到')
+    expect(wrapper.text()).not.toContain('领取今日奖励')
+  })
+
+  it('第 141 轮：周期已签满（7 天全签、今日未签）→ 文案是「七日签到已完成」而非「今日已签到」', async () => {
+    mockApi.fetchSignInStatus.mockResolvedValue({ claimed_count: 7, signed_today: false, can_sign: false })
+    const { wrapper } = mountPage(Signin)
+    await flushPromises()
+    expect(wrapper.text()).toContain('七日签到已完成')
+    expect(wrapper.text()).not.toContain('今日已签到')
+    expect(wrapper.findAll('.day')[6]!.classes()).toContain('claimed')
+  })
+
+  it('第 141 轮：状态拉取失败 → 保持缺省可点态（点了由 POST 的权威结果兜底），页面不崩', async () => {
+    mockApi.fetchSignInStatus.mockRejectedValue(new Error('网络故障'))
+    const { wrapper } = mountPage(Signin)
+    await flushPromises()
+    const btn = wrapper.find('.btn-primary')
+    expect(btn.classes()).not.toContain('btn-disabled')
+    expect(wrapper.text()).toContain('领取今日奖励')
   })
 
   it('任务列表为空 → 显示"暂无任务"（items 缺失时 ?? [] 回退）', async () => {

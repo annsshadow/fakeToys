@@ -70,6 +70,9 @@ func (s *Server) Register(app *fiber.App) {
 	// 放在前端存的话重放方拿不到同一份槽位，I-6 直接失效。
 	me.Get("/loadout", s.getLoadout)
 	me.Put("/loadout", s.saveLoadout)
+	// 各关历史最好星级（level_stars 的 GREATEST）。选关页的星数/「已通关」
+	// 以此为准 —— 服务端没这个读端点的话，客户端的星图永远空白。
+	me.Get("/stars", s.myStars)
 	// 技能升级：消耗金币把一个已拥有技能升一级。
 	//
 	// ⚠️ 挂在 /me 组下（带 requireUser），因为它要花**玩家自己的**钱。
@@ -103,6 +106,10 @@ func (s *Server) Register(app *fiber.App) {
 
 	signin := v1.Group("/signin", requireUser(s.Svc))
 	signin.Post("/", s.signIn)
+	// 第 135 轮：七日签到奖励表的权威来源。客户端预览改读它，不再本地硬编码。
+	signin.Get("/calendar", s.signinCalendar)
+	// 第 141 轮：玩家签到状态（已签天数 / 今日可否签）——签到页初始展示。
+	signin.Get("/status", s.signInStatus)
 
 	redeem := v1.Group("/redeem", requireUser(s.Svc))
 	redeem.Post("/", s.redeem)
@@ -124,26 +131,28 @@ func (s *Server) Register(app *fiber.App) {
 	adm.Get("/dashboard", s.adminDashboard)
 	adm.Get("/levels", s.adminLevels)
 	adm.Get("/levels/:id/waves", s.adminLevelWaves)
-	adm.Put("/levels/:id", s.adminUpdateLevel)
-	adm.Post("/levels/regenerate", s.adminRegenerateLevels)
+	// 第 127 轮：写操作挂 requireWritable —— readonly 账号 403，
+	// 读端点（上方 GET）对 readonly 保持放行。
+	adm.Put("/levels/:id", requireWritable(), s.adminUpdateLevel)
+	adm.Post("/levels/regenerate", requireWritable(), s.adminRegenerateLevels)
 	adm.Get("/skills", s.adminSkills)
-	adm.Put("/skills/:id", s.adminUpdateSkill)
+	adm.Put("/skills/:id", requireWritable(), s.adminUpdateSkill)
 	adm.Get("/equipment", s.adminEquipment)
 	adm.Get("/reactions", s.adminReactions)
 	adm.Get("/users", s.adminUsers)
-	adm.Post("/users/:id/ban", s.adminBanUser)
-	adm.Post("/users/:id/unban", s.adminUnbanUser)
-	adm.Post("/users/:id/grant", s.adminGrantUser)
+	adm.Post("/users/:id/ban", requireWritable(), s.adminBanUser)
+	adm.Post("/users/:id/unban", requireWritable(), s.adminUnbanUser)
+	adm.Post("/users/:id/grant", requireWritable(), s.adminGrantUser)
 	adm.Get("/battles", s.adminBattles)
 	adm.Get("/battles/:id", s.adminBattleDetail)
-	adm.Post("/battles/:id/verify", s.adminVerifyBattle)
+	adm.Post("/battles/:id/verify", requireWritable(), s.adminVerifyBattle)
 	adm.Get("/defenses", s.adminDefenses)
 	adm.Get("/economy", s.adminEconomy)
-	adm.Put("/shop/:id", s.adminUpdateShop)
+	adm.Put("/shop/:id", requireWritable(), s.adminUpdateShop)
 	adm.Get("/announcements", s.adminAnnouncements)
-	adm.Post("/announcements", s.adminCreateAnnouncement)
+	adm.Post("/announcements", requireWritable(), s.adminCreateAnnouncement)
 	adm.Get("/redeem-codes", s.adminRedeemCodes)
-	adm.Post("/redeem-codes", s.adminCreateRedeemCode)
+	adm.Post("/redeem-codes", requireWritable(), s.adminCreateRedeemCode)
 	adm.Get("/audit-logs", s.adminAuditLogs)
 }
 
@@ -211,11 +220,19 @@ func (s *Server) me(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
+	// 第 142 轮：max_stage 是「玩家进度」的服务端权威来源。客户端此前只在
+	// 本会话结算后才知道进度，老玩家重进 App 恒从 0 开始。/me 带上它，
+	// 客户端 refreshProfile 即可恢复真实解锁进度。
+	maxStage, err := s.Svc.LoadMaxStage(c.Context(), userID)
+	if err != nil {
+		return failErr(c, err)
+	}
 	return c.JSON(fiber.Map{
 		"user_id":      userID,
 		"build":        build,
 		"build_rating": s.Svc.ComputeRatingFor(userID, build),
-		"power":        s.Svc.ComputePowerFor(userID, build),
+		"power":        s.Svc.ComputePowerFor(build),
+		"max_stage":    maxStage,
 	})
 }
 
@@ -241,7 +258,15 @@ func (s *Server) saveLoadout(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"skill_ids": ids})
 }
 
-// upgradeSkill 把 :id 对应的技能升一级，返回新等级。
+// myStars 返回玩家各关历史最好星级，形状 { "stars": { "<关卡ID>": 星数 } }。
+// 从未结算的关卡不出现在 map 里 —— 客户端按缺省 0 处理，而不是服务端补 0。
+func (s *Server) myStars(c *fiber.Ctx) error {
+	stars, err := s.Svc.LevelStars(c.Context(), userIDFrom(c))
+	if err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(fiber.Map{"stars": stars})
+}
 //
 // 失败一律走 `failErr`，由它把 service 的哨兵错误翻成合适的 HTTP 码
 // （余额不足 / 未拥有 / 已满级 → 400，不泄漏「该技能存在但你没拥有」）。
@@ -273,7 +298,7 @@ func (s *Server) wallet(c *fiber.Ctx) error {
 
 func (s *Server) getConfig(c *fiber.Ctx) error {
 	// LoadGameConfig 纯内存构造、恒不失败，签名没有 error 返回值
-	return c.JSON(s.Svc.LoadGameConfig(c.Context()))
+	return c.JSON(s.Svc.LoadGameConfig())
 }
 
 func (s *Server) getLevel(c *fiber.Ctx) error {
@@ -321,7 +346,11 @@ func (s *Server) getReplay(c *fiber.Ctx) error {
 	if err != nil {
 		return fail(c, fiber.StatusBadRequest, "bad_input", "battle id 非法")
 	}
-	info, err := s.Svc.GetReplay(c.Context(), id)
+	// ⚠️ 第 75 轮：把 caller 传进去做归属校验。
+	//
+	// 原来只有 battleID，于是任何注册用户都能遍历连续 BIGSERIAL
+	// 读到别人的完整构筑快照。详见 service.GetReplay 的注释。
+	info, err := s.Svc.GetReplay(c.Context(), userIDFrom(c), id)
 	if err != nil {
 		return failErr(c, err)
 	}
@@ -343,13 +372,61 @@ func (s *Server) verifyReplay(c *fiber.Ctx) error {
 	return c.JSON(res)
 }
 
+// leaderboardKinds 是全部合法榜单类型 —— 与 `service.Leaderboard` 的
+// switch 分支、以及小程序 `pages/rank/rank.vue` 的三个 tab **三方一致**。
+//
+// ⚠️ 第 104 轮新增。原来 `type` 走 `default:` 分支，
+// 于是任何未知 type 都会**静默返回战力榜**，
+// 而响应里 `"type"` 仍然**回显那个未知的值**。
+//
+// 后果：客户端按 type 决定标题与说明
+// （`rank.vue` 的 `curDesc` + `formatScore`），
+// 于是会在「日榜」这种标题下显示战力榜的数据，
+// 且客户端**无法察觉**（响应确认了它请求的类型）。
+//
+// 这与 `user_id=abc` 是同一类：**把非法输入静默重解释成另一个合法值**。
+//
+// 三方一致由 `TestLeaderboardKindIsValidated` 的对拍守住。
+var leaderboardKinds = map[string]bool{"power": true, "stage": true, "efficiency": true}
+
 func (s *Server) leaderboard(c *fiber.Ctx) error {
-	kind := c.Query("type", "power")
-	limit, _ := strconv.Atoi(c.Query("limit", "50"))
+	//
+	// ⚠️⚠️ **不能**写成 `c.Query("type", "power")` 再校验。
+	//
+	// 实测（探针）：Fiber 的 `c.Query(key, default)` 在**值为空**时
+	// 也返回 default —— 它看的是值，不是键在不在：
+	//
+	//	?type=        → c.Query("type","power") == "power"   ← 空串被吞成默认值
+	//	（不传）      → c.Query("type","power") == "power"
+	//	?other=1      → c.Query("type","power") == "power"
+	//
+	// 三种输入三种含义（没传 / 显式传空 / 传了别的键），
+	// 而这个 API **把它们压成同一个值**。
+	//
+	// 我第一版就是这么写的，于是 `?type=` 绕过了校验返回 200 + 战力榜。
+	// 只有 `QueryArgs().Has(key)` 能区分「键在不在」——
+	// 实测 `?type=` → Has=true，`(不传)` → Has=false。
+	//
+	// 所以顺序必须是：**先 Has，再取不带默认值的 raw**，最后校验。
+	// 这与 `queryInt` 是同一条道理，两处必须一致。
+	kind := "power"
+	if c.Context().QueryArgs().Has("type") {
+		kind = c.Query("type") // 显式传了 —— 哪怕是空串，也要走下面的校验
+	}
+	if !leaderboardKinds[kind] {
+		return fail(c, fiber.StatusBadRequest, "bad_input",
+			"type 只能是 power / stage / efficiency")
+	}
+	limit, err := queryInt(c, "limit", 50)
+	if err != nil {
+		return failErr(c, err)
+	}
 	items, err := s.Svc.Leaderboard(c.Context(), kind, limit)
 	if err != nil {
 		return failErr(c, err)
 	}
+	// 回显**规范化之后**的 kind，而不是原样回显请求值 ——
+	// 响应里的 type 必须与实际返回的数据是同一件事。
 	return c.JSON(fiber.Map{"type": kind, "items": items})
 }
 
@@ -395,7 +472,29 @@ func (s *Server) allocateMastery(c *fiber.Ctx) error {
 }
 
 func (s *Server) tasks(c *fiber.Ctx) error {
-	scope := c.Query("scope", "daily")
+	//
+	// ⚠️ 第 106 轮：原来这里不校验 scope，
+	// 于是 `LoadTasks` 的 `WHERE t.scope = $3` 匹配不到任何行 →
+	// **200 + 空列表**，而响应里 `"scope"` 仍**回显那个未知的值**。
+	//
+	// 实测：`?scope=daliy`（拼错）与 `?scope=Daily`（大小写）→ 都是
+	// 200 + 0 条 + 回显原值。
+	//
+	// 为什么这比「返回了错数据」更糟：玩家看到的是
+	// 「**今天没有任务**」—— 一个**看起来完全合理**的答案。
+	// 而且它按玩家、按天出现，很可能永远不会被发现。
+	// （leaderboard 的 type 是同一个毛病，第 104 轮已修。）
+	//
+	// 顺序与 `leaderboard` 一致：**先 Has，再取不带默认值的 raw，最后校验**。
+	// 理由见那里的注释 —— `c.Query(key, default)` 会把空值吞成默认值。
+	scope := "daily"
+	if c.Context().QueryArgs().Has("scope") {
+		scope = c.Query("scope")
+	}
+	if !service.ValidTaskScope(scope) {
+		return fail(c, fiber.StatusBadRequest, "bad_input",
+			"scope 只能是 daily / weekly / achievement")
+	}
 	items, err := s.Svc.LoadTasks(c.Context(), userIDFrom(c), scope)
 	if err != nil {
 		return failErr(c, err)
@@ -421,6 +520,24 @@ func (s *Server) signIn(c *fiber.Ctx) error {
 		return failErr(c, err)
 	}
 	return c.JSON(res)
+}
+
+// signinCalendar 下发服务端权威的七日签到奖励表（第 135 轮）。
+func (s *Server) signinCalendar(c *fiber.Ctx) error {
+	days, err := s.Svc.SignInCalendar(c.Context())
+	if err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(fiber.Map{"days": days})
+}
+
+// signInStatus 回读玩家签到状态（第 141 轮）：已签天数与今日是否可签。
+func (s *Server) signInStatus(c *fiber.Ctx) error {
+	st, err := s.Svc.SignInStatus(c.Context(), userIDFrom(c))
+	if err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(st)
 }
 
 func (s *Server) shop(c *fiber.Ctx) error {
@@ -458,8 +575,14 @@ func (s *Server) redeem(c *fiber.Ctx) error {
 }
 
 func (s *Server) diagnose(c *fiber.Ctx) error {
-	levelID, _ := strconv.Atoi(c.Query("level_id", "1"))
-	failed, _ := strconv.Atoi(c.Query("failed_times", "1"))
+	levelID, err := queryInt(c, "level_id", 1)
+	if err != nil {
+		return failErr(c, err)
+	}
+	failed, err := queryInt(c, "failed_times", 1)
+	if err != nil {
+		return failErr(c, err)
+	}
 	res, err := s.Svc.Diagnose(c.Context(), int64(userIDFrom(c)), levelID, failed)
 	if err != nil {
 		return failErr(c, err)

@@ -191,28 +191,37 @@ class TestTheRangesAreOneCopyOnly:
             out.append(hi + step)
         return out
 
-    def test_every_numeric_model_field_has_a_spec(self):
-        """`ModelConfig` 的每个数值字段都必须有规格 —— 防 A113 的根复发
+    def test_every_numeric_model_field_is_judged(self):
+        """`ModelConfig` 的每个数值字段都必须有**判决**——防 A113 的根复发
 
-        改前正是「九个字段里只有 `request_timeout` 有判据」，而这条对账不存在，
-        所以下一轮新加一根旋钮照样会漏。清单从字段注解推导。
-
-        L74 起对账对象是**区间类规格**那一半：条目表里现在还有 `choices` 那一类
-        （`type`，A115），它没有上下界，混进这条等式会把「加一类新规格」误报成
-        「漏了一个数值字段」。所以本条与 `test_every_spec_declares_its_kind`
-        合起来才等于改前那条等式：数值字段 ⇔ 区间规格，且每条规格都必须声明种类。
+        L157 / B227（A139 收口）：区间判决维撤出条目表后，本条对账对象从
+        「数值字段 ⇔ 区间规格行」换成「数值字段 ⇔ 回放判得出」：清单仍从字段
+        注解推导（不手抄），越界一档两侧同红（运行时构造抛 + 静态面回放报）。
         """
         numeric = sorted(_numeric_field_names())
-        ranged = _ranged_spec_names()
-        assert numeric == ranged, \
-            "数值字段清单与区间规格清单不吻合：%s vs %s" % (
-                numeric, ranged)
+        assert _ranged_spec_names() == [], \
+            "L157：区间判决维回进条目表了（A139：判决权威只住运行时 + 回放）"
+        probes = {
+            "temperature": TEMPERATURE_RANGE[1] + 0.1,
+            "top_p": TOP_P_RANGE[1] + 0.1,
+            "max_output_tokens": MAX_OUTPUT_TOKENS_MIN - 1,
+            "request_timeout": REQUEST_TIMEOUT_RANGE[1] + 1,
+        }
+        for key in numeric:
+            assert key in ConfigValidator.MODEL_ENTRY_FIELDS, \
+                "数值字段 %s 无条目规格行（连类型层都没有）" % key
+            assert _static_errors(key, probes[key]), \
+                "%s=%r 两侧零反馈（A113 复发）" % (key, probes[key])
 
     def test_every_spec_declares_its_kind(self):
-        """规格表里不许有「既无界也无清单」的第三种条目（上面那条对账的另一半）"""
-        other = [k for k, s in ConfigValidator.MODEL_ENTRY_FIELDS.items()
-                 if _spec_kind(s) == "other"]
-        assert not other, "未声明种类的规格：%s" % sorted(other)
+        """条目表里只许留**类型层 + 形状层**（L157 / B227）：区间与清单判决维清零
+
+        改前这条钉的是「不得有第三种条目」；判决维撤下后改钉反向——`range` /
+        `choices` 两类谁回表里谁红（判决权威只住运行时 + 回放，A139 原案）。
+        """
+        judged = [k for k, s in ConfigValidator.MODEL_ENTRY_FIELDS.items()
+                  if _spec_kind(s) in ("range", "choices")]
+        assert not judged, "L157：判决维回进条目表了（%s）" % sorted(judged)
 
     def test_no_ghost_model_spec(self):
         """规格表里不许躺着 `ModelConfig` 没有的键（A76 方向守护在模型条目那一侧的版本）"""
@@ -220,36 +229,51 @@ class TestTheRangesAreOneCopyOnly:
         ghost = set(ConfigValidator.MODEL_ENTRY_FIELDS) - names
         assert not ghost, "幽灵规格：%s" % sorted(ghost)
 
-    @pytest.mark.parametrize("key", _ranged_spec_names())
+    @pytest.mark.parametrize("key", _numeric_field_names())
     def test_one_step_outside_the_table_is_red_on_both_faces(self, key):
-        """「界外一步」两侧同红 —— 只对区间类规格成立
+        """「界外一步」两侧同红（L157 / B227：探针值改从 config.py 同一批常数推导）
 
-        `choices` 那一类（`type`）没有「界外一步」可探，它的两侧同拒由
+        区间不再住条目表，探点按常数端点各外探一步；`choices` 那一类（`type`）
+        没有「界外一步」可探，它的两侧同拒由
         `tests/unit/test_model_type_choices_l74.py` 负责。
         """
-        spec = ConfigValidator.MODEL_ENTRY_FIELDS[key]
-        assert spec.get("min") is not None, "%s 的规格没有下界" % key
-        for probe in self._probe_outside(spec):
+        probes = {
+            "temperature": [TEMPERATURE_RANGE[0] - 0.1, TEMPERATURE_RANGE[1] + 0.1],
+            "top_p": [TOP_P_RANGE[0] - 0.1, TOP_P_RANGE[1] + 0.1],
+            "max_output_tokens": [MAX_OUTPUT_TOKENS_MIN - 1],
+            "request_timeout": [REQUEST_TIMEOUT_RANGE[0] - 0.5,
+                                REQUEST_TIMEOUT_RANGE[1] + 1],
+        }[key]
+        for probe in probes:
             with pytest.raises(DataValidationError, match=key):
                 ModelConfig(type="openai", **{key: probe})
             assert _static_errors(key, probe), \
-                "%s=%r 规格表拒了、运行时没拒" % (key, probe)
+                "%s=%r 运行时拒了、静态面没拒（回放没出声？）" % (key, probe)
 
     def test_the_bounds_match_the_config_constants(self):
-        """界与常数的对应关系本身也要钉住：`temperature` 用 `TEMPERATURE_RANGE` ……
+        """L157 / B227 翻转：区间权威移进回放后，改钉「判决文案带常量端点」
 
-        这条看着像同义反复（表就是从常数构造的），它守的是**接线方向**：哪天有人
-        把某行的常数换成字面量，表与常数就不再同批，两侧同判立刻漂。
+        原断言钉的是「表里的 min/max 与 config.py 常量同批」。撤下后接线方向改在
+        运行时调用点；本条用行为代位：越界一档的报错文案必须带常数端点的字面
+        （把常数换成字面量 ⇒ 常数动、文案不动 ⇒ 红）。`max_output_tokens` 不设
+        上界那一格照钉：给 10^6 的合法值不许报上界错。
         """
-        table = ConfigValidator.MODEL_ENTRY_FIELDS
-        assert (table["temperature"]["min"],
-                table["temperature"]["max"]) == TEMPERATURE_RANGE
-        assert (table["top_p"]["min"], table["top_p"]["max"]) == TOP_P_RANGE
-        assert table["max_output_tokens"]["min"] == MAX_OUTPUT_TOKENS_MIN
-        assert "max" not in table["max_output_tokens"], \
+        pairs = {
+            "temperature": TEMPERATURE_RANGE,
+            "top_p": TOP_P_RANGE,
+            "request_timeout": REQUEST_TIMEOUT_RANGE,
+        }
+        for key, (lo, hi) in pairs.items():
+            for bad, tok in ((lo - 0.1, str(lo)), (hi + 0.1, str(hi))):
+                errs = _static_errors(key, bad)
+                assert errs, "%s=%r 越界零反馈" % (key, bad)
+                assert any(tok in e.message for e in errs), \
+                    "%s 越界文案没带常数端点 %s" % (key, tok)
+        assert _static_errors("max_output_tokens", 10 ** 6) == [], \
             "给 `max_output_tokens` 编上界等于凭空造第二家权威"
-        assert (table["request_timeout"]["min"],
-                table["request_timeout"]["max"]) == REQUEST_TIMEOUT_RANGE
+        errs = _static_errors("max_output_tokens", MAX_OUTPUT_TOKENS_MIN - 1)
+        assert any(str(MAX_OUTPUT_TOKENS_MIN) in e.message for e in errs), \
+            "下界文案没带常数值"
 
     def test_only_request_timeout_accepts_null(self):
         """`nullable` 那一维只给 `request_timeout`：采样三键的 null 两侧都拒"""

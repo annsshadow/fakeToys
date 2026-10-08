@@ -325,12 +325,22 @@ export function fetchMe() {
     build: BuildSnapshotView
     build_rating: any
     power: number
+    /** 已通关最高关卡（第 142 轮：服务端权威进度，客户端刷新档案时恢复解锁态） */
+    max_stage: number
   }>('/me')
 }
 
 /** /me/loadout 的响应。skill_ids 按槽位排列，0 表示空槽 */
 export function fetchLoadout() {
   return request<{ skill_ids: number[] }>('/me/loadout')
+}
+
+/**
+ * /me/stars 的响应。key 是关卡 ID（JSON 键为字符串），value 是该关历史最好星级（0–3）。
+ * 从未结算的关卡不在 map 里，消费侧按 0 处理。
+ */
+export function fetchMyStars() {
+  return request<{ stars: Record<string, number> }>('/me/stars')
 }
 
 /**
@@ -409,6 +419,30 @@ export function claimTask(taskId: number) {
 
 export function signIn() {
   return request<any>('/signin', { method: 'POST' })
+}
+
+/** 七日签到奖励表（服务端权威，第 135 轮：预览不再本地硬编码）。 */
+export interface SignInCalendarDay {
+  day_index: number
+  reward: Record<string, number>
+}
+
+export function fetchSignInCalendar() {
+  return request<{ days: SignInCalendarDay[] }>('/signin/calendar')
+}
+
+/** /signin/status 响应：玩家签到状态（服务端权威，第 141 轮：初始展示不再写死）。 */
+export interface SignInStatus {
+  /** 本周期已签天数（MAX(day_index)，没签过为 0） */
+  claimed_count: number
+  /** 今天是否已签 */
+  signed_today: boolean
+  /** 今天还能不能签（今日未签且周期未满） */
+  can_sign: boolean
+}
+
+export function fetchSignInStatus() {
+  return request<SignInStatus>('/signin/status')
 }
 
 export function fetchShop() {

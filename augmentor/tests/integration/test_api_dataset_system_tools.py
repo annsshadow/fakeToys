@@ -38,6 +38,8 @@ from types import SimpleNamespace
 import pytest
 from fastapi.testclient import TestClient
 
+from api.deps import INTERNAL_ERROR_DETAIL
+
 AI_DIR = Path(__file__).resolve().parent.parent.parent
 
 # 5 条数据，其中「如何申请公租房」重复一次 —— 便于同时验证去重与采样。
@@ -2524,7 +2526,7 @@ FAULT_MESSAGE = "注入的底层故障"
 
 
 class TestUnexpectedFailureBecomes500:
-    """底层意外抛错 → 500，且带上原始信息"""
+    """底层意外抛错 → 500，且**不外泄原始异常**（A155①：固定文案 + 原文只进服务端日志）"""
 
     @pytest.mark.parametrize("route,payload,module_name,attr", POST_FAULT_INJECTIONS)
     def test_post_endpoint_returns_500(
@@ -2540,7 +2542,7 @@ class TestUnexpectedFailureBecomes500:
         body = _substitute(payload, data=tools_env.data, out=tools_env.out)
         response = tools_env.client.post(route, json=body)
         assert response.status_code == 500, response.text
-        assert FAULT_MESSAGE in response.json()["detail"]
+        assert response.json()["detail"] == INTERNAL_ERROR_DETAIL  # L179/A155: no leak of FAULT_MESSAGE
 
     def test_restore_backup_returns_500(self, tools_env, monkeypatch):
         """恢复备份的收尾分支"""
@@ -2556,7 +2558,7 @@ class TestUnexpectedFailureBecomes500:
             json={"output_file": str(tools_env.out)},
         )
         assert response.status_code == 500, response.text
-        assert FAULT_MESSAGE in response.json()["detail"]
+        assert response.json()["detail"] == INTERNAL_ERROR_DETAIL  # L179/A155: no leak of FAULT_MESSAGE
 
     def test_delete_backup_returns_500(self, tools_env, monkeypatch):
         """删除备份的收尾分支"""
@@ -2571,7 +2573,7 @@ class TestUnexpectedFailureBecomes500:
             params={"backup_dir": str(tools_env.backup_dir)},
         )
         assert response.status_code == 500, response.text
-        assert FAULT_MESSAGE in response.json()["detail"]
+        assert response.json()["detail"] == INTERNAL_ERROR_DETAIL  # L179/A155: no leak of FAULT_MESSAGE
 
     def test_list_backups_returns_500(self, tools_env, monkeypatch):
         """列备份的收尾分支"""
@@ -2585,7 +2587,7 @@ class TestUnexpectedFailureBecomes500:
             "/api/system/backups", params={"backup_dir": str(tools_env.backup_dir)}
         )
         assert response.status_code == 500, response.text
-        assert FAULT_MESSAGE in response.json()["detail"]
+        assert response.json()["detail"] == INTERNAL_ERROR_DETAIL  # L179/A155: no leak of FAULT_MESSAGE
 
     @pytest.mark.parametrize("path", ["/api/system/dependency/datasets",
                                      "/api/system/dependency/graph"])
@@ -2601,7 +2603,7 @@ class TestUnexpectedFailureBecomes500:
             path, params={"registry_path": str(tools_env.registry)}
         )
         assert response.status_code == 500, response.text
-        assert FAULT_MESSAGE in response.json()["detail"]
+        assert response.json()["detail"] == INTERNAL_ERROR_DETAIL  # L179/A155: no leak of FAULT_MESSAGE
 
 
 # ============================================================
@@ -2814,13 +2816,14 @@ class TestDatasetImpact:
     def test_unexpected_compute_error_becomes_500_via_to_http_error(
         self, tools_env, monkeypatch
     ):
-        """计算层抛非 ValueError → 500，且把原文回出，而不是被降级成 400
+        """计算层抛非 ValueError → 500，且原文**不回出**（A155①：只落服务端日志）
 
         `dataset_impact` 的 `except Exception as e: raise to_http_error(e)` 这一支在
         HEAD 上是**未覆盖**的（A63）：正常数据走不到、上面几条 400 用例都在守卫里就
         拦下了。这里逼 `ImpactEvaluator.evaluate` 抛 `RuntimeError`——它既不是
         `FileNotFoundError` 也不是 `ValueError`，只可能落到 `to_http_error` 的最后一支
-        （500）。断言状态码 = 500 就是把「意外故障不被误报成客户端错误」钉住。
+        （500）。断言状态码 = 500 把「意外故障不被误报成客户端错误」钉住；detail 断言
+        **固定文案**而非异常原文（原文含部署路径 / 文件系统状态会外泄，L179 起只进日志）。
         """
         def boom(self, before, after):
             raise RuntimeError("计算层内部炸了")
@@ -2828,7 +2831,9 @@ class TestDatasetImpact:
         monkeypatch.setattr("augmentor.impact.ImpactEvaluator.evaluate", boom)
         response = self._post(tools_env, self.BEFORE, self.AFTER)
         assert response.status_code == 500, response.text
-        assert "计算层内部炸了" in response.json()["detail"]
+        assert response.json()["detail"] == INTERNAL_ERROR_DETAIL
+        # 泄漏面反向护栏：异常原文不得再出现在响应体
+        assert "计算层内部炸了" not in response.json()["detail"]
 
     def test_value_error_becomes_400_via_to_http_error(self, tools_env, monkeypatch):
         """计算层抛 ValueError → 400（`to_http_error` 的「参数/数据不合法」那一支）
@@ -3005,12 +3010,13 @@ class TestDatasetEvaluate:
     def test_unexpected_compute_error_becomes_500_via_to_http_error(
         self, tools_env, monkeypatch
     ):
-        """指标计算层抛非 ValueError → 500
+        """指标计算层抛非 ValueError → 500，原文不回出（A155①，固定文案 + 服务端日志）
 
         与 `TestDatasetImpact` 里那两条同构：`dataset_evaluate` 的
         `except Exception as e: raise to_http_error(e)` 在 HEAD 上未覆盖（A63），
         上面几条 400 用例全在守卫或 `_as_column` 里就返回了，从没走到 `run()`。
-        这里让 `ModelEvaluator.evaluate_batch` 抛 `RuntimeError`，逼出 500 那一支。
+        这里让 `ModelEvaluator.evaluate_batch` 抛 `RuntimeError`，逼出 500 那一支；
+        detail 断言固定文案、原文只进服务端日志不回客户端（L179）。
         """
         def boom(self, generated, references):
             raise RuntimeError("指标计算炸了")
@@ -3018,7 +3024,8 @@ class TestDatasetEvaluate:
         monkeypatch.setattr("augmentor.evaluation.ModelEvaluator.evaluate_batch", boom)
         response = self._post(tools_env, self.GENERATED, self.REFERENCE)
         assert response.status_code == 500, response.text
-        assert "指标计算炸了" in response.json()["detail"]
+        assert response.json()["detail"] == INTERNAL_ERROR_DETAIL
+        assert "指标计算炸了" not in response.json()["detail"]
 
     def test_value_error_becomes_400_via_to_http_error(self, tools_env, monkeypatch):
         """指标计算层抛 ValueError → 400 且原样回传

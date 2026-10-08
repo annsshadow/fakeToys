@@ -253,9 +253,15 @@ class TestTheRangeIsOneCopyOnly:
     """下界常数只能有一处产地，否则「配了不生效」与「两边各判一套」迟早复发"""
 
     def test_validator_spec_borrows_the_runtime_constant(self):
+        """L157 / B227 翻转：min 维撤出规格表，改由回放钉「文案带常数值」"""
         spec = ConfigValidator.KNOWN_FIELDS["web.max_upload_bytes"]
-        assert spec["min"] == MAX_UPLOAD_BYTES_MIN
+        assert "min" not in spec, "L157：min 判决维回进规格表了"
         assert spec["type"] is int
+        errs = [e for e in ConfigValidator().validate_config(
+            {"app": {"name": "t"}, "models": {"default": "ernie"},
+             "web": {"max_upload_bytes": MAX_UPLOAD_BYTES_MIN - 1}}).errors
+            if e.path == "web.max_upload_bytes"]
+        assert errs and str(MAX_UPLOAD_BYTES_MIN) in errs[0].message,             "回放文案没带常数值"
 
     def test_shipped_yaml_is_accepted_by_both_faces(self):
         body = yaml.safe_load(SHIPPED_YAML.read_text(encoding="utf-8"))

@@ -78,7 +78,15 @@ class TestDatasetOperations:
         merged = ops.merge([test_data, dataset_b], config)
         
         assert len(merged) == 5
-    
+
+    def test_merge_max_items_zero_keeps_none(self, test_data):
+        """max_items=0 语义是「一条不留」；改前 `if config.max_items` 把 0 读成「不限」而返回全量（L144，B214）"""
+        ops = DatasetOperations()
+        merged = ops.merge([test_data], MergeConfig(max_items=0, deduplicate=False))
+        assert merged == [], f"max_items=0 应保留 0 条，实际 {len(merged)} 条"
+        # 对照：None（未设置）应返回全量，避免修过头
+        assert len(ops.merge([test_data], MergeConfig(max_items=None, deduplicate=False))) == len(test_data)
+
     def test_sample_random(self, test_data):
         """测试随机采样"""
         ops = DatasetOperations()
@@ -94,6 +102,14 @@ class TestDatasetOperations:
         
         sampled = ops.sample(test_data, config)
         assert len(sampled) == 3  # 5 * 0.6 = 3
+    
+    def test_sample_ratio_zero_samples_none(self, test_data):
+        """ratio=0 语义是「采 0 条」；改前 `elif config.ratio` 把 0 读成「未设置」而采全量（L149，B219）"""
+        ops = DatasetOperations()
+        sampled = ops.sample(test_data, SampleConfig(ratio=0.0, seed=42))
+        assert sampled == [], f"ratio=0 应采 0 条，实际 {len(sampled)} 条"
+        # 对照：None（未设置）采全量，防修过头
+        assert len(ops.sample(test_data, SampleConfig(ratio=None, seed=42))) == len(test_data)
     
     def test_sample_systematic(self, test_data):
         """测试系统采样"""
@@ -394,6 +410,27 @@ class TestDatasetOpsExtended:
         assert output.exists()
         assert result["total_input"] == 6
 
+    def test_merge_files_reports_dedup_and_truncation_separately(self, tmp_path):
+        """removed_duplicates 只记去重删除，max_items 截断单独记（改前两数混报：L148，B218）"""
+        ops = DatasetOperations()
+        a = [{"instruction": f"q{i}"} for i in range(4)]
+        b = [a[0], a[1], {"instruction": "q4"}, {"instruction": "q5"}]  # 2 条重复
+        fa, fb, out = tmp_path / "a.json", tmp_path / "b.json", tmp_path / "out.json"
+        fa.write_text(json.dumps(a), encoding="utf-8")
+        fb.write_text(json.dumps(b), encoding="utf-8")
+        r = ops.merge_files([str(fa), str(fb)], str(out),
+                            MergeConfig(deduplicate=True, max_items=3))
+        assert r["total_input"] == 8
+        assert r["total_output"] == 3
+        assert r["removed_duplicates"] == 2, "应只记去重删除数（改前混入截断数会报 5）"
+        assert r["truncated_by_max_items"] == 3, "去重后 6 条截到 3 条 ⇒ 截掉 3 条"
+        # 对照：不做去重、不截断时两数皆为 0（显式关去重，避开默认配置）
+        r2 = ops.merge_files([str(fa), str(fb)], str(tmp_path / "o2.json"),
+                            MergeConfig(deduplicate=False, max_items=None))
+        assert r2["removed_duplicates"] == 0
+        assert r2["truncated_by_max_items"] == 0
+        assert r2["total_output"] == 8
+
     def test_deduplicate_empty(self):
         """空列表去重"""
         ops = DatasetOperations()
@@ -408,6 +445,32 @@ class TestDatasetOpsExtended:
         ]
         result = ops._deduplicate(items)
         assert len(result) == 1
+
+    def test_deduplicate_loose_tier_catches_case_whitespace_duplicates(self):
+        """threshold < 0.9 启用宽松键（大小写折叠 + 空白归一）：近似重复一并删；
+        0.9 档只删完全相同（L150，B220——改前 threshold 是死旋钮，任何值结果相同）"""
+        ops = DatasetOperations()
+        items = [
+            {"instruction": " 如何申请？ ", "output": "a"},
+            {"instruction": "如何申请？", "output": "b"},
+            {"instruction": "如何 申请？", "output": "c"},
+            {"instruction": "如何租房", "output": "d"},
+        ]
+        # 宽松档：前三条归一化后同一 key ⇒ 只留第一条
+        assert len(ops._deduplicate(items, 0.5)) == 2
+        # 保守档（默认 0.9）：四个原始串各不相同 ⇒ 全留
+        assert len(ops._deduplicate(items, 0.9)) == 4
+
+    def test_merge_consumes_dedup_threshold(self):
+        """MergeConfig.dedup_threshold 真被消费（改前旋钮空转：0.5 与 0.9 结果相同）"""
+        ops = DatasetOperations()
+        data = [
+            {"instruction": "  什么是QA? "},
+            {"instruction": "什么是qa?"},
+            {"instruction": "不相关"},
+        ]
+        assert len(ops.merge([data], MergeConfig(deduplicate=True, dedup_threshold=0.5))) == 2
+        assert len(ops.merge([data], MergeConfig(deduplicate=True, dedup_threshold=0.9))) == 3
 
     def test_convenience_split_dataset(self, test_data, tmp_path):
         """便捷函数 split_dataset 应写出分割文件"""

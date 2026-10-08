@@ -1,46 +1,27 @@
 # oa4rust
 
-O2OA 后端的 Rust 实现，以认证模块为第一个迁移试点。
-
-## 开发环境
-
-- Rust 1.75+
-- PostgreSQL 14+
-- 推荐使用 `rust-analyzer` 插件
-
-## 快速开始
-
-1. 克隆仓库
-2. 复制 `.env.example` 到 `.env` 并配置数据库连接
-3. 运行 `cargo run`
-
-## 安全与质量门禁
-
-- 浏览器会话 Cookie、CSRF 与代理部署：[`docs/security/browser-session-cookie.md`](docs/security/browser-session-cookie.md)
-- RustSec 依赖审计与例外流程：[`docs/security/rustsec-audit.md`](docs/security/rustsec-audit.md)
-- 后端验证：`cargo check --workspace --locked`、`cargo test --workspace --lib --locked`
-- 前端验证：在 `../oa4rust-web` 运行 `pnpm test && pnpm typecheck && pnpm lint:check && pnpm build`
-
-供应链扫描器由 CI 使用 Rust 1.88.0 运行；这与应用在 `[workspace.package]` 中声明的最低 Rust 版本是两个独立约束。
-
-## 项目结构
+OA4Rust 三端 monorepo 根：服务端、桌面 Web 端、移动端共用一个目录。
 
 ```
 oa4rust/
-├── Cargo.toml              # workspace 根
-├── crates/
-│   ├── shared/             # 共享基础设施（响应格式、错误处理、数据库）
-│   ├── auth/               # 认证模块业务逻辑
-│   └── personal/           # 个人设置模块
-├── src/
-│   └── main.rs             # 入口
-├── migrations/             # 数据库迁移文件
-├── scripts/                # 数据迁移脚本
-├── deploy/                 # 部署配置
-└── .env.example
+├── backend/     # 🦀 Rust 后端（axum workspace，96 crates，含 migrations/deploy）
+├── frontend/    # 🖥️ 桌面 Web 端（Vue3 + Vite）与共享包（packages/{apis,sdk,ui,locales}）
+├── mobile/      # 📱 移动端（uni-app：H5 / 微信小程序 / 原生 App）
+├── package.json / pnpm-workspace.yaml   # 前端 workspace 根（frontend + mobile 同一 workspace）
+├── vitest.config.ts / biome.json / tsconfig.base.json   # 前端共同门禁
+├── tests/contracts/   # 三端 API 契约守卫（desktop/mobile 端点 × 后端注册路由）
+├── e2e/               # Playwright E2E（需 live 后端）
+└── scripts/ / docs/   # 前端脚本与文档
 ```
 
-## 端口
+## 常用命令（在本目录执行）
 
-- Rust 服务：3000
-- o2server（legacy）服务：20020
+- 前端全量测试：`pnpm test`（desktop + packages + 契约守卫）
+- 移动端测试：`pnpm test:mobile`
+- 类型检查 / Lint：`pnpm typecheck` / `pnpm lint`
+- 构建桌面端（产物 `frontend/dist/web`）：`pnpm build`
+- 构建移动端 H5：`pnpm --filter @oa4rust/mobile build:h5`
+- 后端：见 [backend/README.md](backend/README.md)（`cd backend && cargo run`）
+
+后端服务默认从 `frontend/dist/web` 读取前端构建产物（可用 `OA4RUST_WEB_DIST` 覆盖）。
+三端契约门禁脚本位于 `../docs/audits/three-ends-2026-09-20/`。

@@ -49,15 +49,15 @@ router = APIRouter(tags=["dataset"])
 
 # ============ 枚举白名单 ============
 #
-# 这些取值与 CLI 的 `choices=` 一一对应（parser.py）。必须在这里显式校验，
-# 因为下游库对未知值**静默降级**：`DatasetValidator` 回退 basic、
-# `EnhancedSearcher` 回退 contains。静默降级比报错危险得多——调用方会以为
-# 「strict 校验通过了」「fuzzy 搜不到」，而实际用的是另一个规则/方法。
-#
-# 状态码用 400 而非 422：与本项目既有约定一致（`/api/quality/outliers` 的
-# 未知 method 也是 400，见 tests/integration/test_api.py）。
-VALIDATION_PRESETS = ("basic", "strict", "chat")
-SEARCH_METHODS = ("exact", "contains", "ngram", "fuzzy", "regex")
+# 这些取值与 CLI 的 `choices=` 一一对应（parser.py）。在这里显式校验是为了把
+# 未知值转成 4xx：SDK 层虽已各自收口（搜索面 L175 封闭清单、预设面 L189 未知
+# 预设抛 `DataValidationError`，均不再静默降级），但让坏值在调用前出声、且按
+# 既有约定用 400（pydantic 的 `choices` 会给 422），见
+# tests/integration/test_api.py（`/api/quality/outliers` 的未知 method 也是 400）。
+# L175/L189: 清单权威住 SDK 层，本路由的 400 判据共引同一份（A77）
+from augmentor.search_enhanced import SEARCH_METHODS
+from augmentor.validation import DatasetValidator
+VALIDATION_PRESETS = tuple(DatasetValidator.PRESET_RULES)
 
 
 # ============ 请求模型 ============
@@ -392,10 +392,10 @@ class EvaluateResponse(BaseModel):
 
 
 def _dump(items: Any, path: Path) -> None:
-    """写入 JSON 数据集文件"""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(items, f, ensure_ascii=False, indent=2)
+    """写入 JSON 数据集文件（L166 收原子写——本 helper 是写盘变换类的落盘口，
+    产物落白名单数据根、list_data_files 按扫描目录在写窗口内就能列到，
+    读者拿半份）"""
+    atomic_write_json(path, items)
 
 
 # ============ 只读分析 ============
@@ -896,4 +896,5 @@ async def dataset_rag(request: RagRequest):
         raise
     except Exception as e:
         raise to_http_error(e) from e
+from augmentor.atomic_write import atomic_write_json
 

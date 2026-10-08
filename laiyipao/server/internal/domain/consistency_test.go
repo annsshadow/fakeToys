@@ -69,6 +69,73 @@ type ConsistencyVectors struct {
 		MaxResistPermille    int64 `json:"max_resist_permille"`
 		MaxArmorPermille     int64 `json:"max_armor_permille"`
 	} `json:"constants"`
+	ReplaySkills struct {
+		Cases []struct {
+			Name   string `json:"name"`
+			Skills []struct {
+				Slot        int   `json:"slot"`
+				SkillID     int   `json:"skill_id"`
+				Level       int   `json:"level"`
+				BaseDamage  int64 `json:"base_damage"`
+				HeatCost    int64 `json:"heat_cost"`
+				ApplyStacks int64 `json:"apply_stacks"`
+			} `json:"skills"`
+			Expected string `json:"expected"`
+		} `json:"cases"`
+		// Limits 是上报边界（第 57 轮）。
+		//
+		// 为什么上限也要进契约：它有两个消费者 —— Go 的 ValidateSettle 按它拒，
+		// TS 侧的 parity 测试按它断言客户端产物不越界。两份漂移就会出现
+		// 「客户端全绿但真实玩家被拒」。
+		Limits struct {
+			MaxLen     int64 `json:"max_len"`
+			MaxEntries int64 `json:"max_entries"`
+			Measured   struct {
+				// 两档都记：parity 扫描用 level 1，顶满等级用 level 99。
+				// 上限校验按较大的一档判断。
+				PlayerMaxLenLevel1  int64 `json:"player_max_len_level1"`
+				PlayerMaxLenLevel99 int64 `json:"player_max_len_level99"`
+				PlayerMaxEntries    int64 `json:"player_max_entries"`
+				AtEntryCapLen       int64 `json:"at_entry_cap_len"`
+			} `json:"measured"`
+		} `json:"limits"`
+	} `json:"replay_skills"`
+	// CardPicks 是 card_picks 的取值域（第 66 轮）。
+	//
+	// 为什么要跨端锁：Go 侧按 CardPickMin 拒，TS 侧按 PICK_MIN 生成。
+	// 两份漂移的后果是**静默**的 —— 客户端正常对局被服务端 422 拒掉，
+	// 而客户端测试、Go 测试、e2e 全绿（它们都不跑真实结算）。
+	//
+	// 这与 replay_skills 同机制：只导数据、不导期望值之外的语义，
+	// 期望值由两侧各自用同一份字面值断言。
+	CardPicks struct {
+		Min             int64 `json:"min"`
+		DiscardTakeBase int64 `json:"discard_take_base"`
+		DiscardSkipBase int64 `json:"discard_skip_base"`
+		Skip            int64 `json:"skip"`
+		HandSlots       int64 `json:"hand_slots"`
+		Cases           []struct {
+			Name     string `json:"name"`
+			Expected int64  `json:"expected"`
+		} `json:"cases"`
+	} `json:"card_picks"`
+	// ApplyArmor 是 applyArmor 的跨端绝对值用例（第 71 轮）。
+	//
+	// 为什么要单独一块：`damage.cases` 里的 armor_permille 三个取值全是 0，
+	// 而 applyArmor 第一行就 `return dmg` —— 那个向量从未执行到第二行。
+	// README 的 armor_test.go 记录了这个空洞（13 个跨端向量全绿，
+	// 但把两端都改成 `return dmg` 也没人发现）。
+	//
+	// 特别地：**负伤害**的语义只在这里被锁住 ——
+	// 两端的单测都不覆盖，而 Go 侧注释说它表示「反伤/异常」。
+	ApplyArmor struct {
+		Cases []struct {
+			Name     string `json:"name"`
+			Dmg      int64  `json:"dmg"`
+			Armor    int64  `json:"armor"`
+			Expected int64  `json:"expected"`
+		} `json:"cases"`
+	} `json:"apply_armor"`
 	Levelgen struct {
 		Levels          int `json:"levels"`
 		TerrainLevelMin int `json:"terrain_level_min"`

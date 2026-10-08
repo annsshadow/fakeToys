@@ -118,6 +118,21 @@ func (s *Service) StartBattle(ctx context.Context, userID int64, levelID int) (B
 	}, nil
 }
 
+// LoadMaxStage 返回玩家已通关的最高关卡（user_progress.max_stage，从未通关为 0）。
+//
+// ⚠️ 第 142 轮：此前客户端的 maxStage 只在**本会话结算后**才有值 ——
+// 老玩家重进 App 恒从 0 开始，「最高关卡 / 已解锁」全线错位。
+// 该字段进 /me 响应后，客户端每次 refreshProfile 都能恢复真实进度。
+func (s *Service) LoadMaxStage(ctx context.Context, userID int64) (int, error) {
+	var n int
+	err := s.pool.QueryRow(ctx,
+		`SELECT COALESCE(MAX(max_stage), 0) FROM user_progress WHERE user_id = $1`, userID).Scan(&n)
+	if err != nil {
+		return 0, fmt.Errorf("load max stage: %w", err)
+	}
+	return n, nil
+}
+
 func (s *Service) newBattleSeed(ctx context.Context) (int64, error) {
 	var seed int64
 	// PostgreSQL 的 random() 足够随机且不需额外依赖；写库前用取模压到正数
@@ -171,6 +186,29 @@ func (s *Service) SettleBattle(ctx context.Context, userID, tokenID int64, in do
 		return SettleResp{}, fmt.Errorf("settle rejected: %w", err)
 	}
 
+	// ── replay_skills 语义比对（第 56 轮）──
+	//
+	// `replay_hash` 整体算不出来（它含战斗中选卡产生的 buff），
+	// 但它前缀里的 **S 段**（技能槽配置）不含 buff，可以重算比对。
+	//
+	// 抓的是：伪造底伤（等价于假报技能等级）、上报另一套技能、槽位错位。
+	//
+	// ⚠️ 空串**放行**：老客户端不上报这个字段，直接拒会把它们全部锁死。
+	// 「没上报」与「上报了但不对」要分开 —— 后者才是作弊。
+	if in.ReplaySkills != "" {
+		expect, err := s.replaySkillsSegment(ctx, userID)
+		if err != nil {
+			return SettleResp{}, fmt.Errorf("recompute replay skills: %w", err)
+		}
+		if in.ReplaySkills != expect {
+			// ⚠️ 用 %q 而不是 %s：这两个串可能含大量数字，直接打出来会
+			// 让人在日志里一眼扫过去 —— 而这正是排查这类问题最需要看清的东西。
+			return SettleResp{}, fmt.Errorf(
+				"%w：replay_skills 与构筑不符\n上报 %q\n重算 %q",
+				ErrReplaySkillsMismatch, in.ReplaySkills, expect)
+		}
+	}
+
 	// ⚠️ 三个上报集合**必须归一化 nil**，否则会写成 JSON `null`。
 	//
 	// `json.Marshal(map[string]int(nil))` 返回 `[]byte("null")`，
@@ -222,6 +260,15 @@ func (s *Service) SettleBattle(ctx context.Context, userID, tokenID int64, in do
 	buildRaw, _ := marshalJSON(buildSnapshot)
 	lootRaw, _ := marshalJSON(res.Loot)
 
+	// 第 143 轮：本局通关时的战力，写进 level_stars.min_power_clear（效率榜 L-2）。
+	// 修前 upsert 恒写 0 且 ON CONFLICT 不更新 → 效率榜 `WHERE min_power_clear > 0`
+	// 恒零行，整个榜单自出生起就是死代码。只在胜利时记 —— 失败局保持 0，
+	// 由下方 ON CONFLICT 的 CASE 保证不覆盖历史最好值。
+	var minPower int64
+	if res.Win {
+		minPower = s.ComputePowerFor(buildSnapshot)
+	}
+
 	resp := SettleResp{}
 	err = s.DB.Tx(ctx, func(tx pgx.Tx) error {
 		// 1) 抢占 token：条件更新保证并发下只有一个请求能成功
@@ -256,20 +303,28 @@ func (s *Service) SettleBattle(ctx context.Context, userID, tokenID int64, in do
 		}
 
 		// 4) 推进进度与统计
-		newMax, err := s.applyProgress(ctx, tx, userID, gl.ID, res.Win, int64(in.Kills), int64(in.Reactions))
+		newMax, err := s.applyProgress(ctx, tx, userID, gl.ID, res.Win, int64(in.Kills))
 		if err != nil {
 			return err
 		}
 
 		// 5) 更新关卡星级（取历史最好）
+		// min_power_clear：第 143 轮起真的写值了 —— 效率榜（L-2）靠它排名。
+		// EXCLUDED=0（失败局）时保持旧值；两侧 >0 取更小（「通关时用的最低战力」）。
 		if _, err := tx.Exec(ctx, `
 			INSERT INTO level_stars (user_id, level_id, stars, best_score, clears, min_power_clear)
-			VALUES ($1,$2,$3,$4,$5,0)
+			VALUES ($1,$2,$3,$4,$5,$6)
 			ON CONFLICT (user_id, level_id) DO UPDATE SET
 				stars = GREATEST(level_stars.stars, EXCLUDED.stars),
 				best_score = GREATEST(level_stars.best_score, EXCLUDED.best_score),
-				clears = level_stars.clears + EXCLUDED.clears`,
-			userID, gl.ID, res.Stars, res.Score, boolToInt(res.Win)); err != nil {
+				clears = level_stars.clears + EXCLUDED.clears,
+				min_power_clear = CASE
+					WHEN EXCLUDED.min_power_clear > 0 THEN
+						CASE WHEN level_stars.min_power_clear > 0
+							THEN LEAST(level_stars.min_power_clear, EXCLUDED.min_power_clear)
+							ELSE EXCLUDED.min_power_clear END
+					ELSE level_stars.min_power_clear END`,
+			userID, gl.ID, res.Stars, res.Score, boolToInt(res.Win), minPower); err != nil {
 			return fmt.Errorf("upsert level stars: %w", err)
 		}
 
@@ -309,7 +364,7 @@ func (s *Service) SettleBattle(ctx context.Context, userID, tokenID int64, in do
 		return SettleResp{}, err
 	}
 	resp.Rating = s.computeRating(ctx, userID, build)
-	resp.Power = s.computePower(ctx, userID, build)
+	resp.Power = computePower(build)
 	return resp, nil
 }
 
@@ -328,7 +383,20 @@ func boolToInt(b bool) int {
 }
 
 // applyProgress 推进关卡进度与累计统计。
-func (s *Service) applyProgress(ctx context.Context, tx pgx.Tx, userID int64, levelID int, win bool, kills, reactions int64) (int, error) {
+// applyProgress 结算一局后的进度写入。
+//
+// ⚠️ 第 103 轮移除了 `reactions` 参数 —— 它从未被使用：
+//
+//	原签名：…(…, win bool, kills, reactions int64)
+//	函数体：SQL 只用 $1..$4 = userID / win / levelID / kills
+//
+// `user_progress` 表里也**没有** `total_reactions` 列（00003 迁移），
+// 所以它不是「忘了写进某个已有列」，而是这个计数从来没被设计过。
+//
+// 由 `TestNoFunctionIgnoresAParameter` 抓到 —— 那种守卫只盯 `ctx`
+// 会漏掉它：`reactions` 没有 ctx 那样显眼的副作用，
+// 它只是「看起来多余」，于是更容易长期存在。
+func (s *Service) applyProgress(ctx context.Context, tx pgx.Tx, userID int64, levelID int, win bool, kills int64) (int, error) {
 	var newMax int
 	err := tx.QueryRow(ctx, `
 		UPDATE user_progress
@@ -606,7 +674,33 @@ func (s *Service) computeRating(ctx context.Context, userID int64, build map[str
 	return domain.ComputeBuildRating(in, domain.DefaultRatingWeights())
 }
 
-func (s *Service) computePower(ctx context.Context, userID int64, build map[string]any) int64 {
+// computePower 是**纯函数**：只解析 build 快照里的技能等级与专精节点数，
+// 交给 `domain.ComputePower` 算总战力，**不查库**。
+//
+// ⚠️ 第 102 轮移除了 `ctx` 与 `userID` 两个参数 —— 它们从未被使用。
+//
+//	原签名：func (s *Service) computePower(ctx context.Context, userID int64, build map[string]any) int64
+//	函数体：不出现 ctx，也不出现 userID
+//
+// # 为什么这是缺陷而不只是「多余的参数」
+//
+// 一个带 `ctx` 的签名会让人**以为**它会查库，
+// 进而假设「这个调用是可取消的」—— 而它其实不查任何库。
+//
+// 更实际的后果在第 101 轮已经出现过一次：`computePower` 的兄弟
+// `computeRating` **确实**查库（读 `user_progress` 的专精点），
+// 所以两者的签名长得一样，而行为完全不同。
+// 后来的人（或后来的我）会照着 `computeRating` 的样子，
+// 以为传进去的 ctx 在这里生效。
+//
+// # 与 computeRating 的对照（别把这两个搞混）
+//
+//	computeRating(ctx, userID, build) —— **查库**，需要 ctx
+//	computePower(build)                   —— 纯计算，不需要
+//
+// `ComputePowerFor`（运营接口的包装）也因此不再需要 `ctxBackground()`，
+// 它连 ctx 都不用造了。
+func computePower(build map[string]any) int64 {
 	in := domain.PowerInput{
 		SkillLevels:   map[int]int64{},
 		EquipmentLvls: map[int]int64{},
@@ -668,9 +762,35 @@ func (s *Service) LoadTasks(ctx context.Context, userID int64, scope string) ([]
 			&rewardRaw, &v.Progress, &v.Claimed); err != nil {
 			return nil, err
 		}
-		_ = json.Unmarshal(rewardRaw, &v.Reward)
+		// 第 148 轮：fail-loud（AGENTS #11）。reward 是发给玩家的奖励，
+		// `_ =` 会把坏 jsonb 静默吞成空奖励 —— 任务列表显示「奖励：」空白，
+		// 玩家以为没奖。改报错，让坏数据在后台/客户端可见。
+		if err := json.Unmarshal(rewardRaw, &v.Reward); err != nil {
+			return nil, fmt.Errorf("load tasks: task %d 的 reward 非法 jsonb: %w", v.ID, err)
+		}
 		v.Done = v.Progress >= v.Target
 		out = append(out, v)
+	}
+	return out, rows.Err()
+}
+
+// LevelStars 返回玩家每关的历史最好星级（结算时 GREATEST 落库，见 SettleBattle）。
+// 客户端选关页的星数与「已通关」标记以此为准；从未结算的关卡不出现在结果里。
+func (s *Service) LevelStars(ctx context.Context, userID int64) (map[int]int, error) {
+	rows, err := s.pool.Query(ctx, `
+		SELECT level_id, stars FROM level_stars WHERE user_id = $1`, userID)
+	if err != nil {
+		return nil, fmt.Errorf("load level stars: %w", err)
+	}
+	defer rows.Close()
+
+	out := make(map[int]int)
+	for rows.Next() {
+		var lvl, st int
+		if err := rows.Scan(&lvl, &st); err != nil {
+			return nil, err
+		}
+		out[lvl] = st
 	}
 	return out, rows.Err()
 }
@@ -733,20 +853,47 @@ func (s *Service) bumpTasks(ctx context.Context, tx pgx.Tx, userID int64, deltas
 }
 
 // ClaimTask 领取任务奖励。
+//
+// # ⚠️ 第 76 轮：周任务此前**永远领不到**
+//
+// 原来的 JOIN 把 `task_date` 写死成 `periodStart(now, "daily")`：
+//
+//	LEFT JOIN user_tasks ut
+//	       ON ut.task_id = t.id AND ut.user_id = $1
+//	      AND ut.task_date = periodStart(time.Now(), "daily")   ← 写死 daily
+//
+// 而 `bumpTasks` 记进度时用的是**任务自己的 scope**：
+//
+//	day := periodStart(now, t.scope)     ← weekly 就是本周一
+//
+// 于是周任务的进度行 `task_date = 本周一`，
+// 而 ClaimTask 去找 `task_date = 今天零点` → 找不到 → `COALESCE(progress,0) = 0`
+// → `progress < target` → 报「任务未完成（0/N）」，**一次都领不到**。
+//
+// 更坏的是它**看起来是能领的**：`LoadTasks(ctx, uid, "weekly")`
+// 用的是 `periodStart(now, scope)`（正确），所以 UI 上那个周任务
+// 显示 progress = target、可领取 —— 点下去报「未完成」。
+//
+// # 为什么改成两步查，而不是把 scope 塞进 SQL
+//
+// SQL 里算周期起点就要复制一份「周日是 0、转成 1..7」的规则 ——
+// 那是 Go 的 `periodStart`，复制过去就是**第二份实现**。
+// 而本项目已经吃过一次同型的亏：
+// `fixed.ts` 与 `damage.go` 的「逐行等价」声明（README 记的跨端一致 ≠ 两端都对）。
+//
+// 所以周期起点仍然只在 Go 里算一次：
+// 先查任务定义（拿到 scope），再按 scope 算 `day`，最后查玩家进度。
+// 两步在同一个事务里，互斥点仍是下面那个条件 UPDATE 的 RowsAffected。
 func (s *Service) ClaimTask(ctx context.Context, userID int64, taskID int) (map[string]int64, error) {
 	var out map[string]int64
 	err := s.DB.Tx(ctx, func(tx pgx.Tx) error {
+		// 第一步：任务定义。scope 必须在 Go 里先拿到才能算周期起点。
 		var scope string
-		var target, progress int
-		var claimedAt *time.Time
+		var target int
 		var rewardRaw []byte
 		err := tx.QueryRow(ctx,
-			`SELECT t.scope, t.target, t.reward, COALESCE(ut.progress,0), ut.claimed_at
-			 FROM tasks t
-			 LEFT JOIN user_tasks ut
-			        ON ut.task_id = t.id AND ut.user_id = $1 AND ut.task_date = $2
-			 WHERE t.id = $3 AND t.enabled`, userID, periodStart(time.Now(), "daily"), taskID).
-			Scan(&scope, &target, &rewardRaw, &progress, &claimedAt)
+			`SELECT scope, target, reward FROM tasks WHERE id = $1 AND enabled`, taskID).
+			Scan(&scope, &target, &rewardRaw)
 		if errors.Is(err, pgx.ErrNoRows) {
 			return fmt.Errorf("%w: task %d", ErrNotFound, taskID)
 		}
@@ -754,6 +901,23 @@ func (s *Service) ClaimTask(ctx context.Context, userID int64, taskID int) (map[
 			return err
 		}
 		day := periodStart(time.Now(), scope)
+
+		// 第二步：玩家在本周期的进度。
+		// 没有行 = 还没开始做（progress 0，未领取）——
+		// 原来的 LEFT JOIN + COALESCE 表达的就是这件事，这里显式处理。
+		var progress int
+		var claimedAt *time.Time
+		err = tx.QueryRow(ctx,
+			`SELECT progress, claimed_at FROM user_tasks
+			  WHERE user_id = $1 AND task_id = $2 AND task_date = $3`,
+			userID, taskID, day).Scan(&progress, &claimedAt)
+		switch {
+		case errors.Is(err, pgx.ErrNoRows):
+			progress, claimedAt = 0, nil
+		case err != nil:
+			return err
+		}
+
 		if claimedAt != nil {
 			return fmt.Errorf("%w: 奖励已领取", ErrForbidden)
 		}
@@ -794,7 +958,76 @@ func (s *Service) ClaimTask(ctx context.Context, userID int64, taskID int) (map[
 	return out, err
 }
 
+// achievementEpoch 是「成就」这一 scope 的**哨兵日期**（第 93 轮）。
+//
+// # 为什么需要一个哨兵
+//
+// `user_tasks` 的主键是 `(user_id, task_id, task_date)` ——
+// 每条进度记录都**按周期分行**。
+//
+// 而 `periodStart(now, "achievement")` 原先落到 `default` 分支，
+// 也就是**今天零点**。于是成就也成了「每天一行新记录」：
+//
+//	今天：progress = 20，claimed_at = NULL  → 领取，写 claimed_at
+//	明天：**新的一行**，progress = 20，claimed_at = **NULL**
+//
+// 而 `ClaimTask` 同样只查 `periodStart(now, scope)`（即「今天那一行」），
+// 于是明天再玩一次就能**再领一次**。
+//
+// # 实测口径：修复前 `ach_reach_20`（60 钻）可每天重复领取
+//
+// 修复前我跑过一次探针，结论写的是「跨日期领取被拒」—— **那是错的**。
+// 探针手工插了「明天」的行，但 `ClaimTask` 读的是**今天**的行
+// （它内部自己算 `periodStart(time.Now(), scope)`，不接受传入日期），
+// 于是读到的是昨天已领取的那一行 → 被拒。
+// **探针没有制造出「明天」，它只是又查了一次今天。**
+//
+// 用固定哨兵日期之后：一个用户对每条成就**永远只有一行**，
+// `GREATEST` 累计成终身进度，`claimed_at` 一旦写入就永久生效。
+//
+// 选 1970-01-01 而不是别的常量：它是 DATE 列能表达的下界附近，
+// 不会与任何真实日期撞上，且一眼可读。
+var achievementEpoch = time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC)
+
+// TaskScopes 是任务周期的**全部**合法取值 —— 本包与 HTTP 层共用同一份来源。
+//
+// # 为什么放在这里而不是 handler 里
+//
+// handler 若自己写一份 `map[string]bool{"daily":…}`，
+// 它就会和 `periodStart` 的 switch、和 `bumpTasks` 里的
+// `if t.scope == "achievement"` **各自漂移** ——
+// 这正是本仓库 `adminUpdateLevel` 里 `id > 100` 那种
+// 「硬编码常量复制了一份 `domain.TotalLevels`」的老毛病。
+//
+// 有了这一份：
+//
+//   - `periodStart` 的 switch 可以被守卫逐项对拍（第 106 轮）
+//   - HTTP 层校验直接复用
+//   - **种子数据新增第四种 scope 时能被抓到**（对 `tasks` 表做 DISTINCT）
+//
+// ⚠️ 它与 `tasks.scope` 列的取值必须一致。
+// `TestTaskScopeListMatchesSeedData` 会把两边的差集直接打出来。
+var TaskScopes = []string{"daily", "weekly", "achievement"}
+
+// ValidTaskScope 判断 scope 是否是合法的任务周期。
+func ValidTaskScope(scope string) bool {
+	for _, v := range TaskScopes {
+		if v == scope {
+			return true
+		}
+	}
+	return false
+}
+
 func periodStart(t time.Time, scope string) time.Time {
+	// ⚠️ 这里的 case 必须覆盖 `TaskScopes` 的每一项。
+	//    `TestPeriodStartHandlesEveryKnownScope` 会逐项对拍：
+	//    给 `TaskScopes` 加一项却忘了加 case，它会红。
+	switch scope {
+	case "achievement":
+		// 终身累计，不按天分行。理由见 achievementEpoch 的注释。
+		return achievementEpoch
+	}
 	d := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
 	switch scope {
 	case "weekly":
@@ -806,4 +1039,82 @@ func periodStart(t time.Time, scope string) time.Time {
 	default:
 		return d
 	}
+}
+
+// ErrReplaySkillsMismatch 表示上报的技能槽配置与服务端按构筑重算的结果不符。
+//
+// 抓的是：伪造底伤（等价于假报技能等级 —— 等级必须烘进底伤）、
+// 上报一套与 `user_skill_slots` 不同的技能、槽位错位。
+//
+// ⚠️ 与「`replay_hash` 对不上」不同：那个算不出来（它含战斗中选卡的 buff），
+// 所以这是目前**唯一**能廉价抓到的技能侧伪造。攻方系数仍然抓不到。
+var ErrReplaySkillsMismatch = errors.New("回放技能配置与构筑不符")
+
+// 重算本局应上报的回放前缀 S 段（第 56 轮）。
+//
+// ## 数据来源：`skills` 表，不是 `domain.SeedSkills`
+//
+// 我第一版用的是 `domain.SeedSkills`，**这是错的**，而且错法很隐蔽：
+//
+// 客户端的技能内容是**服务端从库里下发**的（见 `miniapp/src/api/client.ts`
+// 的 `skills` + `composite_skills`）。也就是说，客户端烘进底伤用的
+// `def.base_damage` 就是 `skills` 表里的那一行。
+//
+// 而 `skills` 表**允许与 `domain.SeedSkills` 不一致** —— 运营后台的
+// `PUT /admin/skills/:id` 就是为了改它。两者一旦不同：
+//
+//   - 客户端上报的是 DB 里的底伤
+//   - 重算用的是 Go 常量里的底伤
+//     → **所有合法玩家的每一局都被判成作弊**
+//
+// 这不是假想：开发库当前就是漂的（`skills` 表 42 行 = 24 基础 + 18 复合，
+// 且基础技能 1 的底伤已被改成 33 而常量仍是 100 —— 管理端测试没还原）。
+// 全量跑测试时这条重算立刻失配，就是这么发现的。
+//
+// 复合技能也在同一张 `skills` 表里（`seedSkills` 把 `SeedSkills` 与
+// `SeedCompositeSkills` 一起写入），所以按 id 查一张表就够了。
+//
+// ## 与客户端的对应关系
+//
+// 客户端在 `equippedFromSnapshot` 里用 `DEFAULT_SKILL_RULES` 烘等级，
+// 这里用 `domain.DefaultSkillRules()`。两者必须相同 ——
+// `TestSkillRulesMatchServerContract` 守着这条。
+// 若哪天服务端改了 `SkillLevelCoefPermille` 而客户端默认值没跟着改，
+// 这里会开始拒绝**所有合法对局**。
+func (s *Service) replaySkillsSegment(ctx context.Context, userID int64) (string, error) {
+	rows, err := s.pool.Query(ctx,
+		`SELECT sl.slot, sl.skill_id, s.base_damage, s.apply_stacks, s.heat_cost,
+		        COALESCE(us.level, 1)
+		   FROM user_skill_slots sl
+		   JOIN skills s ON s.id = sl.skill_id
+		   LEFT JOIN user_skills us
+		          ON us.skill_id = sl.skill_id AND us.user_id = sl.user_id
+		  WHERE sl.user_id = $1`,
+		userID,
+	)
+	if err != nil {
+		return "", fmt.Errorf("query equipped skills: %w", err)
+	}
+	defer rows.Close()
+
+	rules := domain.DefaultSkillRules()
+	items := make([]domain.ReplaySkillSlot, 0, domain.BaseSkillSlots)
+	for rows.Next() {
+		var slot, skillID, level int
+		var base, stacks, heat int64
+		if err := rows.Scan(&slot, &skillID, &base, &stacks, &heat, &level); err != nil {
+			return "", fmt.Errorf("scan equipped skill: %w", err)
+		}
+		items = append(items, domain.ReplaySkillSlot{
+			Slot:        slot,
+			SkillID:     skillID,
+			BaseDamage:  domain.SkillBaseDamageAtLevel(rules, base, level),
+			ApplyStacks: stacks,
+			HeatCost:    heat,
+		})
+	}
+	if err := rows.Err(); err != nil {
+		return "", fmt.Errorf("iterate equipped skills: %w", err)
+	}
+	return domain.ReplaySkillsSegment(items), nil
 }

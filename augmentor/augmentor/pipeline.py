@@ -11,6 +11,8 @@ import hashlib
 import threading
 from typing import List, Dict, Optional
 from pathlib import Path
+
+from .atomic_write import atomic_write_json
 import asyncio
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from queue import Queue
@@ -414,8 +416,9 @@ class AugmentorPipeline:
             logger.info(f"去重后: {len(all_results)} 条")
         
         # 保存输出
-        with open(output_file, 'w', encoding='utf-8') as f:
-            json.dump(all_results, f, ensure_ascii=False, indent=2)
+        # L168 收原子写：本方法是管线的最终交付落盘口（API 链落数据根、
+        # list_data_files 扫描读者在写窗口内拿半份）
+        atomic_write_json(output_file, all_results)
         
         logger.info(f"保存 {len(all_results)} 条数据到 {output_file}")
         
@@ -626,8 +629,9 @@ class AugmentorPipeline:
             all_results = self.deduplicator.deduplicate_and_filter(all_results)
             logger.info(f"异步去重后: {len(all_results)} 条")
         
-        with open(output_file, 'w', encoding='utf-8') as f:
-            json.dump(all_results, f, ensure_ascii=False, indent=2)
+        # L168 收原子写：本方法是管线的最终交付落盘口（API 链落数据根、
+        # list_data_files 扫描读者在写窗口内拿半份）
+        atomic_write_json(output_file, all_results)
         
         logger.info(f"异步保存 {len(all_results)} 条数据到 {output_file}")
         

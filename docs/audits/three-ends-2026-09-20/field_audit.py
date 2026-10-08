@@ -10,20 +10,20 @@ import os
 import re
 
 def find_repo_root(start):
-    """向上查找同时包含 oa4rust 与 oa4rust-web 的目录，使脚本可任意位置运行。"""
+    """向上查找含 oa4rust 三端（backend/frontend/mobile）的仓库根，使脚本可任意位置运行。"""
     cur = os.path.abspath(start)
     while True:
-        if os.path.isdir(os.path.join(cur, "oa4rust")) and os.path.isdir(os.path.join(cur, "oa4rust-web")):
+        if all(os.path.isdir(os.path.join(cur, "oa4rust", end)) for end in ("backend", "frontend", "mobile")):
             return cur
         parent = os.path.dirname(cur)
         if parent == cur:
-            raise SystemExit("未找到仓库根（需同时存在 oa4rust 与 oa4rust-web）")
+            raise SystemExit("未找到仓库根（oa4rust/ 下需存在 backend、frontend、mobile）")
         cur = parent
 
 
 ROOT = find_repo_root(os.path.dirname(os.path.abspath(__file__)))
-RUST = os.path.join(ROOT, "oa4rust")
-WEB = os.path.join(ROOT, "oa4rust-web")
+RUST = os.path.join(ROOT, "oa4rust", "backend")
+WEB = os.path.join(ROOT, "oa4rust")
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "field_audit.json")
 
 KEY_JSON = re.compile(r'"([A-Za-z_][A-Za-z0-9_]*)"\s*:')

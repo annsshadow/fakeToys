@@ -1,10 +1,13 @@
 allowBuilds:
-  core-js: set this to true or false
-  core-js-pure: set this to true or false
-  esbuild: set this to true or false
-  vue-demi: set this to true or false
+  core-js: true
+  core-js-pure: true
+  esbuild: true
+  vue-demi: true
 # pnpm 11 起 onlyBuiltDependencies 从 package.json 的 pnpm 字段迁移到本文件。
-# esbuild / vue-demi 的 postinstall 必须执行，否则 vite 无法启动。
+# esbuild / vue-demi / core-js 的 postinstall 必须执行，否则 vite 无法启动。
+# pnpm 11.25 以 allowBuilds（每包布尔审批）决定 build 脚本是否执行；
+# 此前此处为 pnpm 写入的占位符 "set this to true or false"（非法值），致
+# ERR_PNPM_IGNORED_BUILDS、CI pnpm install 退出码 1。现显式置 true。
 onlyBuiltDependencies:
   - esbuild
   - vue-demi

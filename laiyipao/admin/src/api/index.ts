@@ -192,6 +192,8 @@ export interface AdminBattle {
   heat_max: number
   replay_hash: string
   created_at: string
+  /** 第 123 轮：本关总怪数（生成器权威值），供「守恒」列做伪造判定 */
+  total_enemies: number
   /**
    * 本场战报的验真状态。**两个字段必须一起看**：
    * `0 / 0` = 从没被验真过（**未知**，不是「干净」）。

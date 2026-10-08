@@ -279,3 +279,25 @@ class TestProgressLogStillReports:
         assert "流式处理完成：输入 7 条，已处理 7 条" in text, text
         # 旧形状里那个「/总数」的分母正是被删掉的那一趟 I/O，不该再出现
         assert "/None" not in text, text
+class TestSingleValueForkDocumentedL182:
+    """L182（A147）：单值文件的 total_input / processed 分叉是**文档化契约**，不是 bug。
+
+    一份只写单个 JSON 值（一行 `{"a": 1}`，非数组）的文件：`_count_items` 走「单个 JSON
+    值」支计 0 条（它数的是数据项，单值不是数据项），而 `read_chunks` 逐行 `json.loads`
+    成功产出 1 条 ⇒ `process()` 读作 total_input=0 / processed=1。L182 按 A147 候选③
+    「原样承认并写进 docstring」拍定——不改读数（改 0→1 会动 API/CLI 报告文案与既有断言，
+    属对外变更），把分叉钉成契约：谁把 total_input 改成 1（或把 processed 改成 0）都要先
+    翻这一格。
+    """
+
+    def test_single_value_file_reads_as_zero_input_one_processed(self, tmp_path):
+        inp = tmp_path / "in.json"
+        _write_shape(inp, "single_json_object_one_line")
+        processor = StreamProcessor(
+            StreamReader(str(inp), chunk_size=2), _identity, writer=None
+        )
+        report = processor.process()
+        assert report["total_input"] == 0, report
+        assert report["processed"] == 1, report
+        # 分叉的两侧各自钉死：total_input 走 _count_items 单值支（0）、processed 走真实产出（1）
+        assert report["total_input"] != report["processed"]

@@ -26,6 +26,7 @@ from typing import List, Dict, Optional, Any, Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from .exceptions import DataValidationError
 from .validation import require_count
 
 logger = logging.getLogger(__name__)
@@ -139,7 +140,18 @@ class DatasetCleaner:
         """
         fields = fields or ["instruction", "output", "input"]
         rules = rules or list(self._default_rules.keys())
-        
+
+        # L192：规则名走封闭清单——权威是本实例 `_default_rules` 的键（A77）。
+        # 改前 `for rule_name in rules: if rule_name in ...` 对未知名静默跳过：
+        # 拼错规则名（normalize_whitespace → normalise_whitespace）该规则无声不生效，
+        # 清洗报告照常出（checkpoint 症状族语义漂移档；L175/L176/L189 封闭清单族同式）。
+        unknown = [r for r in rules if not isinstance(r, str) or r not in self._default_rules]
+        if unknown:
+            valid = " / ".join(self._default_rules)
+            raise DataValidationError(
+                f"未知清洗规则: {unknown}（可选 {valid}）"
+            )
+
         original_count = len(items)
         # 必须逐条浅拷贝：规则是就地改 `item[field]` 的，只做 `items.copy()`
         # （浅拷贝）会把调用方传进来的 dict 一起改掉——`clean_dataset(items)`

@@ -24,7 +24,7 @@ jobs:
     defaults:
       run:
         shell: bash
-        working-directory: oa4rust
+        working-directory: oa4rust/backend
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - name: Install pinned Rust toolchain and scanners
@@ -69,7 +69,7 @@ jobs:
     defaults:
       run:
         shell: bash
-        working-directory: oa4rust
+        working-directory: oa4rust/backend
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - name: Install pinned scanner

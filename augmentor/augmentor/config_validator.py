@@ -12,7 +12,7 @@ import yaml
 import logging
 import difflib
 from typing import Any, Dict, List, Optional, Set, Union
-from dataclasses import dataclass, field, fields, is_dataclass
+from dataclasses import (dataclass, field, fields, is_dataclass, replace)
 from pathlib import Path
 from enum import Enum
 
@@ -28,11 +28,13 @@ from .config import (AUTO_SAVE_INTERVAL_MIN, DEDUP_THRESHOLD_RANGE,
                      REQUEST_TIMEOUT_RANGE, RETRY_DELAY_RANGE,
                      TEMPERATURE_RANGE, TOP_P_RANGE, VECTOR_BACKENDS,
                      VECTOR_DIMENSION_MIN, VARIANTS_PER_SEED_RANGE,
-                     AppConfig, MODEL_ENTRY_KEYS, RAGConfig)
-from .exceptions import DataValidationError
+                     AppConfig, MODEL_ENTRY_KEYS, MODEL_ENTRY_PLACEHOLDER,
+                     ModelConfig, RAGConfig, _missing_model_message,
+                     _require_mapping)
+from .exceptions import ConfigError, DataValidationError
 from .logging_setup import LOGGING_LEVELS, build_formatter
 from .retry import MAX_RETRY_AFTER
-from .validation import is_blank_string, require_chunk_window
+from .validation import is_blank_string, require_chunk_window, require_ratio_list
 
 logger = logging.getLogger(__name__)
 
@@ -110,6 +112,13 @@ class ConfigValidator:
     # 读它。因此**不能**把 `app.*` 设为必填——`save_config` 按 `AppConfig` 的字段集
     # 落盘，永远写不出这个段，一旦设为必填，「保存配置」再「校验配置」必然失败
     # （实测 4 个必填错误）。这里保留为已知字段，仍做类型检查，只是不强制存在。
+    # A139 收口（L157 / B227）：本表只留**类型层 + 形状层**（type / items / non_empty /
+    # non_blank / required / nullable / renderable），判决层（min / max / choices /
+    # item_choices，原先 24 + 5 行）整批撤下，改由 `_validate_replay_sections` 逐键
+    # 回放各节 `__post_init__`（运行时权威原样投影，`dataclasses.replace` 单键探针——
+    # 整批构造会在第一个坏键上停手、吞掉同节其余键的判决，L157 现场撞出后改逐键）。
+    # 一条界从此只住运行时一处（A77 终极形）；回放只在「该路径及其元素档、节级同文案
+    # 档均无规格层错误」时出声，同一个错不出两声。
     KNOWN_FIELDS = {
         "app": {"type": dict},
         "app.name": {"type": str},
@@ -120,35 +129,25 @@ class ConfigValidator:
         "models": {"type": dict, "required": True},
         "models.default": {"type": str, "required": True},
         "augmentation": {"type": dict},
-        "augmentation.variants_per_seed": {
-            "type": int, "min": VARIANTS_PER_SEED_RANGE[0],
-            "max": VARIANTS_PER_SEED_RANGE[1]},
-        "augmentation.num_threads": {
-            "type": int, "min": NUM_THREADS_RANGE[0],
-            "max": NUM_THREADS_RANGE[1]},
+        "augmentation.variants_per_seed": {"type": int},
+        "augmentation.num_threads": {"type": int},
         # 每 N 条自动存一次增量。下界 1 是 L51 补的：实测改前 0 与 −1 都和 1 逐字
         # 同答（`processed - last >= interval` 恒真），20 条样本触发 20 次增量写盘，
         # 默认档 10 只 2 次 —— 不是崩，是 10 倍静默写放大，而且两侧都没有判据。
-        "augmentation.auto_save_interval": {
-            "type": int, "min": AUTO_SAVE_INTERVAL_MIN},
+        "augmentation.auto_save_interval": {"type": int},
         # 重试两旋钮自 L45 起真的被消费（经 create_model_backend 透传给模型后端），
         # 所以要在校验器里有对应门槛。上界不是形式主义：`max_retries: 1000000` 在最坏
         # 情况下是 10^6 × 30s 的等待，`retry_delay` 再大也会被退避上限夹住，但 60s 已经
         # 远超任何合理的单次退避基数。**L51 起这两条不再只是校验器独有的天花板**：
         # 同一批常量已经进了 `AugmentationConfig.__post_init__`（A77）。
-        "augmentation.max_retries": {
-            "type": int, "min": MAX_RETRIES_RANGE[0],
-            "max": MAX_RETRIES_RANGE[1]},
-        "augmentation.retry_delay": {
-            "type": float, "min": RETRY_DELAY_RANGE[0],
-            "max": RETRY_DELAY_RANGE[1]},
+        "augmentation.max_retries": {"type": int},
+        "augmentation.retry_delay": {"type": float},
         # 等待预算两旋钮（L49 / A73 + A75）。上界与运行时判据**同源**，不是校验器
         # 独有的天花板：`max_retry_wait` 本身就是那道封顶，放大它会作废
         # 「服务端指令一支封顶 300 s」的承诺（retry.MAX_RETRY_AFTER）；
         # `retry_jitter` 的 0-1 与 `validation.require_ratio` 的默认闭区间逐字一致。
-        "augmentation.max_retry_wait": {"type": float, "min": 0.0,
-                                        "max": MAX_RETRY_AFTER},
-        "augmentation.retry_jitter": {"type": float, "min": 0.0, "max": 1.0},
+        "augmentation.max_retry_wait": {"type": float},
+        "augmentation.retry_jitter": {"type": float},
         # 单次请求超时的全局档（A74 / L71）。区间与运行时判据同一批常量
         # （`config.REQUEST_TIMEOUT_RANGE`，A77 口径）：下界 1 是实测硬界 ——
         # `requests` 对 `timeout=0` 直接抛 `ValueError`，而那发生在第一次真实
@@ -158,9 +157,7 @@ class ConfigValidator:
         # `MODEL_ENTRY_FIELDS`（L72 补的，同一条界同一个常数）：本表表达不了
         # 「任意键名下的一种子键」，所以按 `models.*.<键>` 归一后去那张表查。
         # （L71 曾把这一档只留在运行时那一侧，实测留下过一条 A77 镜像缝，见下。）
-        "augmentation.request_timeout": {
-            "type": float, "min": REQUEST_TIMEOUT_RANGE[0],
-            "max": REQUEST_TIMEOUT_RANGE[1]},
+        "augmentation.request_timeout": {"type": float},
         # `quality` / `dedup` 两节的规格自 L76 / A118 起与运行时判据同源：那两节
         # 补上了 `__post_init__`，界就住在 `config.QUALITY_THRESHOLD_RANGE` /
         # `config.DEDUP_THRESHOLD_RANGE`，这里只引常数。改前的不对称实测在两面上：
@@ -178,14 +175,14 @@ class ConfigValidator:
         # 那一洞记在 A124，两侧同批补。
         "quality": {"type": dict},
         "quality.enabled": {"type": bool},
-        "quality.threshold": {
-            "type": float, "min": QUALITY_THRESHOLD_RANGE[0],
-            "max": QUALITY_THRESHOLD_RANGE[1]},
+        "quality.threshold": {"type": float},
+        # A124 收口（L153，B223）：weights 的形状权威在 `validation.require_ratio_list`，
+        # 本表只判「是 list」这一层（非 list 交类型检查报），逐项/长度/和=1 在
+        # `_validate_quality_weights` 回放里走运行时同一份判据（rag 窗先例同形）。
+        "quality.weights": {"type": list},
         "dedup": {"type": dict},
         "dedup.enabled": {"type": bool},
-        "dedup.threshold": {
-            "type": float, "min": DEDUP_THRESHOLD_RANGE[0],
-            "max": DEDUP_THRESHOLD_RANGE[1]},
+        "dedup.threshold": {"type": float},
         # `output` / `output.export_dir` 两条规格在 L52 删掉了。它们是**规格表自己
         # 造的死旋钮**：`load_config` 里没有 `output` 节（真节后是 `export`，字段是
         # `default_format` / `formats`），实测 `output: {export_dir: out}` 得到
@@ -205,17 +202,15 @@ class ConfigValidator:
         # `items` / `non_empty` 两个形状键同样是 L51 补的，方向相反（新立 A83）：
         # 改前 `data_roots: [null]` 与 `host: ""` 在校验器绿灯、在 `load_config` 抛。
         "web": {"type": dict},
-        "web.port": {"type": int, "min": PORT_RANGE[0], "max": PORT_RANGE[1]},
+        "web.port": {"type": int},
         "web.host": {"type": str, "non_empty": True},
         "web.static_dir": {"type": str, "non_empty": True},
         "web.cors_origins": {"type": list, "items": str},
         "web.cors_credentials": {"type": bool},
         "web.data_roots": {"type": list, "items": str},
-        "web.max_upload_bytes": {"type": int, "min": MAX_UPLOAD_BYTES_MIN},
-        "web.rate_limit_max_requests": {"type": int,
-                                        "min": RATE_LIMIT_MIN_REQUESTS},
-        "web.rate_limit_window_seconds": {"type": float,
-                                          "min": RATE_LIMIT_MIN_WINDOW_SECONDS},
+        "web.max_upload_bytes": {"type": int},
+        "web.rate_limit_max_requests": {"type": int},
+        "web.rate_limit_window_seconds": {"type": float},
         "web.rate_limit_exempt_paths": {"type": list, "items": str},
         # `logging` 节自 L57 起真的被装配（`logging_setup.apply_logging_config`），
         # 所以三键也进了规格表 —— 否则就是 A77 的镜像症状：`level: INFORMATION`
@@ -229,7 +224,7 @@ class ConfigValidator:
         # `validation.is_blank_string` 拒掉 —— 两把钥匙差一格，正是为了不把
         # 「空串合法」这一档设计抹平。
         "logging": {"type": dict},
-        "logging.level": {"type": str, "choices": LOGGING_LEVELS},
+        "logging.level": {"type": str},
         "logging.file": {"type": str, "non_blank": True},
         "logging.format": {"type": str, "non_empty": True, "renderable": True},
         # `export` / `vector` / `rag` / `multimodal` 四节 14 键的规格（A118 余四节 / L82）。
@@ -246,27 +241,73 @@ class ConfigValidator:
         # 调那同一个函数（同 `renderable` 直调 `build_formatter` 的先例）。把 1 与 0
         # 抄进本表就是给同一条界造第二个家 —— 那正是 A77 的成因。
         "export": {"type": dict},
-        "export.default_format": {"type": str, "choices": EXPORT_FORMATS},
+        "export.default_format": {"type": str},
         # `item_choices` 是本表第一位新用户（下面 `items` 那段判据）：清单型列表的
         # 元素成员资格，与运行时 `ExportConfig.__post_init__` 那个逐项
         # `require_choice` 同一判据。
-        "export.formats": {"type": list, "items": str, "item_choices": EXPORT_FORMATS},
+        "export.formats": {"type": list, "items": str},
         "vector": {"type": dict},
         "vector.enabled": {"type": bool},
-        "vector.backend": {"type": str, "choices": VECTOR_BACKENDS},
-        "vector.dimension": {"type": int, "min": VECTOR_DIMENSION_MIN},
+        "vector.backend": {"type": str},
+        "vector.dimension": {"type": int},
         "vector.storage_dir": {"type": str, "non_empty": True},
         "vector.collection": {"type": str, "non_empty": True},
         "rag": {"type": dict},
         "rag.enabled": {"type": bool},
-        "rag.default_format": {"type": str, "choices": RAG_FORMATS},
+        "rag.default_format": {"type": str},
         "rag.chunk_size": {"type": int},
         "rag.chunk_overlap": {"type": int},
         "multimodal": {"type": dict},
         "multimodal.enabled": {"type": bool},
         "multimodal.image_extensions": {"type": list, "items": str},
         "multimodal.audio_extensions": {"type": list, "items": str},
-    }
+        # A140 余 11 节 29 键的规格（L154 / B224）：这 11 节此前**一条规格行都没有**
+        # （静态面 0 反馈，与运行时 `__post_init__` 缺席同病；A140 现量房在
+        # `Temp/l82q/ungated_census.json`，11 节名单与键数 29 都是那里推导的）。
+        # 形状键（type / items / non_empty / min）与 `web` / `export` 各行同语法；四个
+        # int 键的 `min: 1` 与运行时 `require_count(minimum=1)` 同档，`tests/unit/
+        # test_config_gates_l154.py` 钉数值相等 —— 这里没有可共引的既有常数，1 住在
+        # 调用点字面量里，本表与运行时同档，不另立第二产地。
+        "context": {"type": dict},
+        "context.enabled": {"type": bool},
+        "context.num_turns": {"type": int},
+        "versioning": {"type": dict},
+        "versioning.enabled": {"type": bool},
+        "versioning.storage_dir": {"type": str, "non_empty": True},
+        "versioning.auto_snapshot": {"type": bool},
+        "sampler": {"type": dict},
+        "sampler.enabled": {"type": bool},
+        "sampler.dimensions": {"type": list, "items": str},
+        "expander": {"type": dict},
+        "expander.enabled": {"type": bool},
+        "expander.strategies": {"type": list, "items": str},
+        "tracker": {"type": dict},
+        "tracker.enabled": {"type": bool},
+        "tracker.metrics": {"type": list, "items": str},
+        "visualization": {"type": dict},
+        "visualization.enabled": {"type": bool},
+        "visualization.types": {"type": list, "items": str},
+        "multilingual": {"type": dict},
+        "multilingual.enabled": {"type": bool},
+        "multilingual.default_target_lang": {"type": str, "non_empty": True},
+        "multilingual.supported_langs": {"type": list, "items": str},
+        "multilingual.translate_batch_size": {"type": int},
+        "evaluation": {"type": dict},
+        "evaluation.enabled": {"type": bool},
+        "evaluation.metrics": {"type": list, "items": str},
+        "evaluation.reference_field": {"type": str, "non_empty": True},
+        "benchmark": {"type": dict},
+        "benchmark.enabled": {"type": bool},
+        "benchmark.baseline_file": {"type": str, "non_empty": True},
+        "benchmark.metrics": {"type": list, "items": str},
+        "active_learning": {"type": dict},
+        "active_learning.enabled": {"type": bool},
+        "active_learning.strategy": {"type": str, "non_empty": True},
+        "active_learning.batch_size": {"type": int},
+        "active_learning.max_iterations": {"type": int},
+        "frameworks": {"type": dict},
+        "frameworks.enabled": {"type": bool},
+        "frameworks.frameworks": {"type": list, "items": str},    }
 
     # `models.<名字>.<键>` 的规格（L72 / A113，同时补掉 L71 记下的那个缺口）。
     #
@@ -295,7 +336,7 @@ class ConfigValidator:
         # `choices` 这一维 L57 就有了（`logging.level` 是第一位用户），
         # `type` 是第二个：清单与运行时 `ModelConfig.__post_init__` 共引
         # `MODEL_TYPES`，两边不可能各抄一份再漂（A77）。
-        "type": {"type": str, "choices": MODEL_TYPES, "required": True},
+        "type": {"type": str, "required": True},
         # `model` 是本轮补上的第二个字符串键（A114）：改前本表没有它，运行时也没有
         # 任何判据 ⇒ 实测 `model: ''` / `model:`（null）/ `model: 123` / `model: true`
         # 四形状**两侧全绿**（同探针的 `model_shapes` 档），而那值是要直发后端的
@@ -303,12 +344,10 @@ class ConfigValidator:
         # 与运行时 `require_string` 同判据（那一维 L51 就有，`logging.format` 是
         # 第一位用户）。三条凭证键至今两侧都无判据，记在 A122。
         "model": {"type": str, "non_empty": True},
-        "temperature": {"type": float, "min": TEMPERATURE_RANGE[0],
-                        "max": TEMPERATURE_RANGE[1]},
-        "top_p": {"type": float, "min": TOP_P_RANGE[0], "max": TOP_P_RANGE[1]},
-        "max_output_tokens": {"type": int, "min": MAX_OUTPUT_TOKENS_MIN},
-        "request_timeout": {"type": float, "min": REQUEST_TIMEOUT_RANGE[0],
-                            "max": REQUEST_TIMEOUT_RANGE[1], "nullable": True},
+        "temperature": {"type": float},
+        "top_p": {"type": float},
+        "max_output_tokens": {"type": int},
+        "request_timeout": {"type": float, "nullable": True},
     }
     
     # 环境变量模式
@@ -448,6 +487,25 @@ class ConfigValidator:
         except DataValidationError as exc:
             result.add_error("rag", str(exc))
 
+    def _validate_quality_weights(self, config: Dict, result: ValidationResult) -> None:
+        """`quality.weights` 的形状回放（L153 / A124）：把运行时那份 `require_ratio_list`
+        原样放一遍（rag 窗先例：不重写判据，只回放，「界与判据」两侧没有第二份）。
+
+        非 list 的形状由 `KNOWN_FIELDS` 的类型检查报（本函数遇到就跳过，免报两次）；
+        `null` 由运行时的 `_reject_null_fields` 拒（YAML 面「写了键没给值」才走到这，
+        按「没给 = 用默认」放行给类型层，与出厂配置行为一致）。
+        """
+        body = config.get("quality")
+        if not isinstance(body, dict):
+            return
+        value = body.get("weights")
+        if value is None or not isinstance(value, (list, tuple)):
+            return
+        try:
+            require_ratio_list("quality.weights", list(value))
+        except DataValidationError as exc:
+            result.add_error("quality.weights", str(exc))
+
     def _warn_unread_model_keys(self, models: Dict, result: ValidationResult) -> None:
         """模型条目里的子键按**加载侧那一份键集**判（A126 / L78 起不再自己推导）
 
@@ -539,6 +597,13 @@ class ConfigValidator:
 
         # 跨键关系（L82 / A118）：规格表表达不了的那一类，单独一遍回放运行时判据
         self._validate_rag_window(config, result)
+
+        # 权重三件套（L153 / A124）：逐项 bool/NaN/越界 + 长度 + 和=1
+        self._validate_quality_weights(config, result)
+
+        # 整节回放（L157 / A139）：判决层的唯一产地是各节 `__post_init__`，
+        # 静态面逐键构造当投影，与规格层按路径去重
+        self._validate_replay_sections(config, result)
 
         # 「写了没人读」的键（A76）：独立一遍走，不塞进上面那个规格走查里，
         # 因为它的权威来源是 `AppConfig` 的字段集而不是 `KNOWN_FIELDS`
@@ -651,13 +716,6 @@ class ConfigValidator:
                     result.add_error(field_path, f"值不是有效数值: {value}")
                     continue
                 
-                # 范围检查
-                if "min" in spec and value < spec["min"]:
-                    result.add_error(field_path, 
-                                   f"值过小: {value} < {spec['min']}")
-                if "max" in spec and value > spec["max"]:
-                    result.add_error(field_path, 
-                                   f"值过大: {value} > {spec['max']}")
                 # 形状判据（L51 / A83）：列表元素类型与非空。这两条以前只有运行时那一侧
                 # 有（`validation.require_string_list` / `require_string`），于是
                 # `data_roots: [null]` 与 `host: ""` 在 `validate-config` 上绿灯、在
@@ -680,15 +738,6 @@ class ConfigValidator:
                             result.add_error(
                                 f"{field_path}[{i}]",
                                 f"元素不能是纯空白字符串: {item!r}")
-                        elif "item_choices" in spec and item not in spec["item_choices"]:
-                            # L82 / A118 的新维度：清单型列表（`export.formats`）的
-                            # 元素成员资格。与下面 `choices` 同一个来源的清单，只是
-                            # 判的对象是每一项。
-                            result.add_error(
-                                f"{field_path}[{i}]",
-                                f"元素不在允许集合内: {item!r}（可选: "
-                                f"{'/'.join(spec['item_choices'])}）"
-                            )
                 elif spec.get("non_empty"):
                     if not value:
                         result.add_error(field_path, "值不能为空字符串")
@@ -702,14 +751,6 @@ class ConfigValidator:
                 if spec.get("non_blank") and is_blank_string(value):
                     result.add_error(
                         field_path, f"值不能是纯空白字符串: {value!r}")
-                # 允许集合（L57）：`logging.level` 那类「看着像拼错」的写法。集合来自
-                # 运行时判据同一个常量，不是校验器独有的天花板。
-                if "choices" in spec and value not in spec["choices"]:
-                    result.add_error(
-                        field_path,
-                        f"值不在允许集合内: {value!r}（可选: "
-                        f"{'/'.join(spec['choices'])}）"
-                    )
                 # 可渲染性（L57）：`Formatter("%(nope)s")` 构造期不报错，到发第一条
                 # 日志才抛，所以「类型对但值没用」必须在这里判，且判据就是运行时那
                 # 同一个函数。
@@ -727,6 +768,114 @@ class ConfigValidator:
                     if isinstance(item, dict):
                         self._validate_known_fields(item, f"{field_path}[{i}]", result)
     
+    def _validate_replay_sections(self, config: Dict, result: ValidationResult) -> None:
+        """A139 收口（L157 / B227）：静态面对每节逐键回放运行时判据
+
+        规格表只管类型层与形状层（表头注释）；数值界、清单成员、null 档这些
+        **判决**全部住在各节 `__post_init__`（A77：一条界只住运行时一处），
+        本方法把构造器逐键跑一遍当静态面投影。
+
+        三条纪律：
+
+        - **类型层先短路**（L139 理由②）：节写成标量、值类型不对，规格走查
+          先报「类型错误」；值类型错时探针抛的错与规格层同路径 ⇒ 去重吞掉。
+        - **逐键探针**：`dataclasses.replace(默认底, 单键覆盖)`。整批构造在第一个
+          坏键上停手（六键写坏只出五声），单键探针让每个键各判各的。
+        - **去重按路径**：点分键名已有错误（含元素路径 `key[0]`、节级同文案）
+          就不报；模型条目把占位符 `models.<名字>` 折成真实条目名。
+        """
+        # 专项回放已持有的键（跨键窗口的三刀 `require_chunk_window` 与权重三件套
+        # `require_ratio_list` 各由 `_validate_rag_window` / `_validate_quality_weights`
+        # 按整批终态回放）：通用回放不重复探——单键探针会把「单独合法、跨键关系
+        # 非法」的档位按默认底判成违规（L82 的整批语义归专项回放负责）。
+        cross_key_owned = {"rag": {"chunk_size", "chunk_overlap"},
+                          "quality": {"weights"}}
+        base_probe = AppConfig()
+        model_entry_names = set(MODEL_ENTRY_KEYS)
+        for f in fields(base_probe):
+            cls = type(getattr(base_probe, f.name))
+            if not is_dataclass(cls):
+                continue
+            raw = config.get(f.name)
+            if raw is None or not isinstance(raw, dict):
+                continue
+            base = cls()
+            init_names = {sf.name for sf in fields(cls) if sf.init}
+            owned = cross_key_owned.get(f.name, set())
+            err_paths = {e.path for e in result.errors}
+            for k, v in raw.items():
+                if k not in init_names or k in owned:
+                    continue
+                try:
+                    replace(base, **{k: v})
+                except DataValidationError as exc:
+                    path = str(exc).split(" ", 1)[0]
+                    same_msg_at_section = any(
+                        e.path == path.split(".", 1)[0] and e.message == str(exc)
+                        for e in result.errors)
+                    if not (path in err_paths or
+                            any(q == path or q.startswith(path + "[") for q in err_paths)
+                            or same_msg_at_section):
+                        result.add_error(path, str(exc))
+                        err_paths.add(path)
+        models_raw = config.get("models")
+        if isinstance(models_raw, dict):
+            err_paths = {e.path for e in result.errors}
+            for name, entry in models_raw.items():
+                if name == "default":
+                    continue
+                if not isinstance(entry, dict):
+                    # 条目写成标量 / 列表 / 数：运行时 `_require_mapping` 抛
+                    # ConfigError，这里同源调它取文案（A77 投影，L158）——
+                    # 改前这一档静默 continue，校验工具报 is_valid=True 而
+                    # 启动时 load_config 才拒（A85 族第三侧）。
+                    try:
+                        _require_mapping(entry, "models.%s" % name)
+                    except ConfigError as exc:
+                        where = "models.%s" % name
+                        if where not in err_paths:
+                            result.add_error(where, str(exc))
+                            err_paths.add(where)
+                    continue
+                kwargs = {k: v for k, v in entry.items() if k in model_entry_names}
+                if "type" not in kwargs:
+                    continue  # 缺必填由 `_check_required_fields` 报，不叠噪声
+                type_value = kwargs["type"]
+                base = None
+                if isinstance(type_value, str) and type_value in MODEL_TYPES:
+                    base = ModelConfig(type=type_value)
+                for k, v in kwargs.items():
+                    try:
+                        if base is None:
+                            # `type` 本身不在封闭清单：单独探针判「清单成员」那一刀
+                            ModelConfig(type=v)
+                        else:
+                            replace(base, **{k: v})
+                    except DataValidationError as exc:
+                        path = str(exc).split(" ", 1)[0].replace(
+                            MODEL_ENTRY_PLACEHOLDER, "models.%s" % name)
+                        same_msg_at_entry = any(
+                            e.path == "models.%s" % name and e.message == str(exc)
+                            for e in result.errors)
+                        if not (path in err_paths or
+                                any(q == path or q.startswith(path + "[") for q in err_paths)
+                                or same_msg_at_entry):
+                            result.add_error(path, str(exc))
+                            err_paths.add(path)
+
+            # 悬空 models.default：消费点 get_model_config 在「要建默认后端」
+            # 时才 ConfigError（显式按名取模型的调用方不受影响），故此档不是
+            # 必炸——校验面按「值不会生效」族先例报 **warning**（文案仍同源
+            # 投影产地，L159；ERROR 档实测过度收紧，56 例既有测试面实证）。
+            default_value = models_raw.get("default")
+            entry_names = [n for n in models_raw if n != "default"]
+            if isinstance(default_value, str) and default_value not in entry_names:
+                result.add_warning(
+                    "models.default",
+                    _missing_model_message(default_value, entry_names),
+                )
+
+
     def _validate_env_refs(self, config: Dict, prefix: str, result: ValidationResult):
         """验证环境变量引用"""
         for key, value in config.items():

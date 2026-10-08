@@ -55,9 +55,27 @@ NS_PREFIXES = frozenset({
 # **第二本账 L114 回填（总数 +1、可读 +1，盲面不动）**：test_export_enhanced 新增一支
 # TestConversationEmptyFieldBranches 的对话式格式空字段假支参数化，桶=plain（可读）⇒
 # MEASURED_CALLS 356→357、MEASURED_READABLE 263→264，MEASURED_BLIND 93 与 L98 六档分布一字未动。
-MEASURED_CALLS = 357
-MEASURED_READABLE = 264
-MEASURED_BLIND = 93
+#: 第二本账 L151 回填（总数 +2、可读 +2，盲面不动）：test_quality_dedup_gates_l76 新增两支
+#: QualityScorer 阈值参数化（坏值 7 档 / 合法 4 档，全字面量列表）⇒ CALLS 357→359、
+#: READABLE 264→266，BLIND 93 一格未动。
+#: 第二本账 L154 回填（总数 +18、盲 +8）：test_config_gates_l154 新增 18 处
+#: parametrize（11 节坏值 × 四面 + 独立性 19 档 + 加载面 7 档）；值位含 list 对象的 8 处
+#: 未自带 ids ⇒ 盲面 93 → **101**，CALLS 359 → **377**；READABLE 是差值口径
+#: （总数 − 盲面）⇒ 266 → **276**。
+#: L163（B233）：新增导出原子写守卫文件，两支 parametrize（字面格式清单，
+#: 自带 literal-list）⇒ CALLS 377 → 379、READABLE 276 → 278，盲面（no-literal-list
+#: 桶）101 一格未动。
+MEASURED_CALLS = 387
+#: （L185：${ENV} 展开语义守卫两支 parametrize（坏形状 5 档 / 非串 4 档，全是字面清单）
+#: ⇒ CALLS 382 → 384、READABLE 281 → 283，盲面 101 一格未动）
+#: （L189：验证预设封闭清单守卫一支 parametrize（坏预设 5 档，全字面清单）⇒
+#: CALLS 384 → 385、READABLE 283 → 284，盲面 101 一格未动）
+#: （L190：leakage min_examples 计数旋钮守卫两支 parametrize（合法 4 档 / 坏形状 8 档，
+#: 全字面清单）⇒ CALLS 385 → 387、READABLE 284 → 286，盲面 101 一格未动）
+MEASURED_READABLE = 286
+#: L175：搜索方法封闭清单守卫两支 parametrize（坏值 6 档 / 合法 5 档，全是字面
+#: 清单）⇒ CALLS 379 → 381、READABLE 278 → 279，盲面（no-literal-list 桶）101 不动。
+MEASURED_BLIND = 101
 #: 值位含类型对象的那些档（必须全部自带 ids，否则就是本判据的违规）
 KNOWN_TYPED_SITES = frozenset({("tests/unit/test_schema_type_spec_l96.py", "test_label")})
 

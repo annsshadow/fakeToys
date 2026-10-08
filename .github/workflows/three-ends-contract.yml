@@ -20,14 +20,14 @@ on:
     branches: [main, master]
     paths:
       - "oa4rust/**"
-      - "oa4rust-web/**"
+
       - "docs/audits/three-ends-2026-09-20/**"
       - ".github/workflows/three-ends-contract.yml"
   pull_request:
     branches: [main, master]
     paths:
       - "oa4rust/**"
-      - "oa4rust-web/**"
+
       - "docs/audits/three-ends-2026-09-20/**"
       - ".github/workflows/three-ends-contract.yml"
   workflow_dispatch:

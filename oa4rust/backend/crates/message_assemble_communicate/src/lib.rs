@@ -1,0 +1,3142 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
+use axum::{extract::Extension, Json};
+use base64::Engine;
+use deadpool_postgres::Pool;
+use serde_json::Value;
+use shared::{error::AppError, response::ActionResult};
+use uuid::Uuid;
+
+pub mod routes;
+#[cfg(test)]
+mod tests_u2;
+
+// ── message/unread/count（裸路径，桌面 Dashboard 引用；统计未读消息）────────────
+// 未读 = x_message_consume 中 read_status 非 'read' 的待消费条目。
+#[allow(non_snake_case)]
+pub async fn unread_count(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_one(
+            "SELECT COUNT(*)::int AS c FROM x_message_consume WHERE (read_status IS NULL OR read_status = '' OR read_status <> 'read')",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let count: i32 = row.get("c");
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(count as i64)),
+            ),
+            (
+                "im".to_string(),
+                Value::Number(serde_json::Number::from(count as i64)),
+            ),
+        ]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn send_message(
+    pool: Extension<Pool>,
+    axum::extract::Json(req): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let conversation_id = req
+        .get("conversationId")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
+    let content = req
+        .get("content")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
+    let sender = req
+        .get("sender")
+        .and_then(|v| v.as_str())
+        .unwrap_or("system");
+    let msg_type = req.get("type").and_then(|v| v.as_str()).unwrap_or("text");
+    let id = Uuid::new_v4().to_string();
+
+    let result = client
+        .execute("INSERT INTO x_message (id, conversation_id, content, sender, type, create_time) VALUES ($1, $2, $3, $4, $5, NOW())", &[&id, &conversation_id, &content, &sender, &msg_type])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    client
+        .execute(
+            "UPDATE x_message_conversation SET last_message_time = NOW() WHERE id = $1",
+            &[&conversation_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            (
+                "conversationId".to_string(),
+                Value::String(conversation_id.to_string()),
+            ),
+            ("content".to_string(), Value::String(content.to_string())),
+            ("sender".to_string(), Value::String(sender.to_string())),
+            ("type".to_string(), Value::String(msg_type.to_string())),
+            ("sent".to_string(), Value::Bool(result > 0)),
+        ]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn receive_list(
+    pool: Extension<Pool>,
+    axum::extract::Path(consume): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE consume = $1 AND consumed = false ORDER BY create_time ASC", &[&consume])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "consume".to_string(),
+                    Value::String(row.get::<_, Option<String>>("consume").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "sender".to_string(),
+                    Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::legacy_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
+}
+
+#[allow(non_snake_case)]
+pub async fn mark_read(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let result = client
+        .execute(
+            "UPDATE x_message_consume SET consumed = true WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("marked_read".to_string(), Value::Bool(result > 0))]),
+    ))))
+}
+
+pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
+    routes::router(pool)
+}
+
+#[cfg(test)]
+#[allow(clippy::module_inception)]
+mod tests;
+#[cfg(test)]
+mod tests_generated;
+
+#[allow(non_snake_case)]
+pub async fn consume_list_consume_count_count(
+    pool: Extension<Pool>,
+    axum::extract::Path((consume, count)): axum::extract::Path<(String, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let limit = count.max(1);
+    let rows = client
+        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE consume = $1 ORDER BY create_time DESC LIMIT $2", &[&consume, &limit])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "consume".to_string(),
+                    Value::String(row.get::<_, Option<String>>("consume").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "sender".to_string(),
+                    Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::legacy_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
+}
+
+#[allow(non_snake_case)]
+pub async fn consume_list_consume_currentperson_count_count(
+    pool: Extension<Pool>,
+    axum::extract::Path((consume, count)): axum::extract::Path<(String, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let limit = count.max(1);
+    let rows = client
+        .query("SELECT id, consume, content, sender, read_status, create_time FROM x_message_consume WHERE consume = $1 AND sender = consume ORDER BY create_time DESC LIMIT $2", &[&consume, &limit])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "consume".to_string(),
+                    Value::String(row.get::<_, Option<String>>("consume").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "sender".to_string(),
+                    Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
+                ),
+                (
+                    "readStatus".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("read_status")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::legacy_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
+}
+
+#[allow(non_snake_case)]
+pub async fn consume_list_consume_person_person_count_count(
+    pool: Extension<Pool>,
+    axum::extract::Path((consume, person, count)): axum::extract::Path<(String, String, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let limit = count.max(1);
+    let rows = client
+        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE consume = $1 AND sender = $2 ORDER BY create_time DESC LIMIT $3", &[&consume, &person, &limit])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "consume".to_string(),
+                    Value::String(row.get::<_, Option<String>>("consume").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "sender".to_string(),
+                    Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::legacy_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
+}
+
+#[allow(non_snake_case)]
+pub async fn consume_type_type(
+    pool: Extension<Pool>,
+    axum::extract::Path(msg_type): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query("SELECT id, consume, content, type, sender, create_time FROM x_message_consume WHERE type = $1 ORDER BY create_time DESC", &[&msg_type])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "consume".to_string(),
+                    Value::String(row.get::<_, Option<String>>("consume").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "sender".to_string(),
+                    Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::legacy_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
+}
+
+#[allow(non_snake_case)]
+pub async fn consume_type_type_mockputtopost(
+    pool: Extension<Pool>,
+    axum::extract::Path(msg_type): axum::extract::Path<String>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    // W12 收敛：对齐 o2server ActionUpdate（consume/type/{type}）——按 Wi.idList 定位
+    // x_message、标记 consumed=true，WrapNumber 返回命中条数；空 body → 0。
+    let id_list: Vec<String> = body
+        .get("idList")
+        .and_then(Value::as_array)
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|v| v.as_str().map(String::from))
+                .collect()
+        })
+        .unwrap_or_default();
+
+    let found: i64 = if id_list.is_empty() {
+        0
+    } else {
+        let n = client
+            .execute(
+                "UPDATE x_message SET consumed = true WHERE id = ANY($1)",
+                &[&id_list],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?;
+        // o2server 回 os.size()（按 idList 命中）；UPDATE 影响行数为最接近的可观测代理
+        let _ = msg_type;
+        n as i64
+    };
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([(
+            "value".to_string(),
+            Value::Number(serde_json::Number::from(found)),
+        )]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn consume_id_type_type(
+    pool: Extension<Pool>,
+    axum::extract::Path((id, msg_type)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let result = client
+        .execute(
+            "UPDATE x_message_consume SET type = $1 WHERE id = $2",
+            &[&msg_type, &id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("consume not found")));
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("saved".to_string(), Value::Bool(result > 0))]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn im_conversation(
+    pool: Extension<Pool>,
+    axum::extract::Json(req): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let name = req.get("name").and_then(|v| v.as_str()).unwrap_or_default();
+    let conversation_type = req.get("type").and_then(|v| v.as_str()).unwrap_or("single");
+    let id = Uuid::new_v4().to_string();
+
+    let result = client
+        .execute("INSERT INTO x_message_conversation (id, name, type, create_time) VALUES ($1, $2, $3, NOW())", &[&id, &name, &conversation_type])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("name".to_string(), Value::String(name.to_string())),
+            (
+                "type".to_string(),
+                Value::String(conversation_type.to_string()),
+            ),
+            ("created".to_string(), Value::Bool(result > 0)),
+        ]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn im_conversation_business_businessId(
+    pool: Extension<Pool>,
+    axum::extract::Path(business_id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_opt("SELECT id, name, type, business_id, create_time FROM x_message_conversation WHERE business_id = $1 LIMIT 1", &[&business_id])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "businessId".to_string(),
+                    Value::String(row.get("business_id")),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("conversation not found"))),
+    }
+}
+
+#[allow(non_snake_case)]
+pub async fn im_conversation_list_my(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query("SELECT id, name, type, last_message, create_time FROM x_message_conversation ORDER BY update_time DESC", &[])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "lastMessage".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("last_message")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::legacy_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
+}
+
+#[allow(non_snake_case)]
+pub async fn im_conversation_list_with_person(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query("SELECT id, name, type, create_time FROM x_message_conversation WHERE type = 'single' ORDER BY create_time DESC", &[])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::legacy_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
+}
+
+#[allow(non_snake_case)]
+pub async fn im_conversation_mockputtopost(
+    pool: Extension<Pool>,
+    axum::extract::Json(req): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let id = req.get("id").and_then(|v| v.as_str()).unwrap_or_default();
+    let title = req
+        .get("title")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
+    let note = req.get("note").and_then(|v| v.as_str()).unwrap_or_default();
+
+    let result = client
+        .execute("UPDATE x_message_conversation SET title = COALESCE($2, title), note = COALESCE($3, note), update_time = NOW() WHERE id = $1", &[&id, &title, &note])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("updated".to_string(), Value::Bool(result > 0))]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn im_conversation_id(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_opt("SELECT id, name, type, last_message, create_time FROM x_message_conversation WHERE id = $1", &[&id])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "lastMessage".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("last_message")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("conversation not found"))),
+    }
+}
+
+#[allow(non_snake_case)]
+pub async fn im_conversation_id_group(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query("SELECT id, conversation_id, person_id, role, join_time FROM x_message_conversation_member WHERE conversation_id = $1 ORDER BY join_time", &[&id])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "conversationId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("conversation_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "personId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "role".to_string(),
+                    Value::String(row.get::<_, Option<String>>("role").unwrap_or_default()),
+                ),
+                (
+                    "joinTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("join_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::legacy_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
+}
+
+#[allow(non_snake_case)]
+pub async fn im_manager_config_post(
+    pool: Extension<Pool>,
+    axum::extract::Json(req): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let config_key = req
+        .get("configKey")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
+    let config_value = req
+        .get("configValue")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
+
+    let result = client
+        .execute("UPDATE x_message_config SET config_key = $1, config_value = $2, update_time = NOW() WHERE id = (SELECT id FROM x_message_config ORDER BY create_time DESC LIMIT 1)", &[&config_key, &config_value])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        let id = Uuid::new_v4().to_string();
+        client
+            .execute("INSERT INTO x_message_config (id, config_key, config_value, create_time) VALUES ($1, $2, $3, NOW())", &[&id, &config_key, &config_value])
+            .await
+            .map_err(|_| AppError::Internal)?;
+    }
+
+    let row = client
+        .query_opt("SELECT id, config_key, config_value, create_time FROM x_message_config ORDER BY create_time DESC LIMIT 1", &[])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "configKey".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("config_key")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "configValue".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("config_value")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("config not found"))),
+    }
+}
+
+#[allow(non_snake_case)]
+pub async fn im_conversation_update(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Json(req): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    // IDOR 门禁：仅会话成员可改会话信息（对齐 delete_virtual 口径；
+    // 此前任何登录人可改任意会话名/类型）
+    if !is_conversation_member(&client, &id, &session.person_unique).await? {
+        return Ok(Json(ActionResult::error("not a conversation member")));
+    }
+
+    let name = req.get("name").and_then(|v| v.as_str());
+    let conversation_type = req.get("type").and_then(|v| v.as_str());
+
+    let result = client
+        .execute("UPDATE x_message_conversation SET name = COALESCE($2, name), type = COALESCE($3, type), update_time = NOW() WHERE id = $1", &[&id, &name, &conversation_type])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("conversation not found")));
+    }
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, type, create_time FROM x_message_conversation WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("conversation not found"))),
+    }
+}
+
+#[allow(non_snake_case)]
+pub async fn im_conversation_id_group_mockdeletetoget(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let result = client
+        .execute(
+            "DELETE FROM x_message_conversation_member WHERE conversation_id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(result > 0))]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn im_conversation_id_group_quit_self(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    // o2server 仅允许群聊退出；IDOR：person 取自会话，只能退自己所在的群
+    let conv_type = conversation_type(&client, &id).await?;
+    if conv_type.as_deref() != Some("group") {
+        return Ok(Json(ActionResult::error(
+            "conversation not found or not a group",
+        )));
+    }
+    if !is_conversation_member(&client, &id, &session.person_unique).await? {
+        return Ok(Json(ActionResult::error("not a conversation member")));
+    }
+
+    let result = client
+        .execute("DELETE FROM x_message_conversation_member WHERE conversation_id = $1 AND person_id = $2", &[&id, &session.person_unique])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("quit".to_string(), Value::Bool(result > 0))]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn im_conversation_id_icon(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_opt("SELECT icon_url, icon_name, create_time FROM x_message_conversation_icon WHERE conversation_id = $1 ORDER BY create_time DESC LIMIT 1", &[&id])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("conversationId".to_string(), Value::String(id)),
+                (
+                    "iconUrl".to_string(),
+                    Value::String(row.get::<_, Option<String>>("icon_url").unwrap_or_default()),
+                ),
+                (
+                    "iconName".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("icon_name")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("icon not found"))),
+    }
+}
+
+#[allow(non_snake_case)]
+pub async fn im_conversation_id_read(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    // o2server ActionConversationRead 校验会话成员；IDOR：仅成员可标记已读
+    if !is_conversation_member(&client, &id, &session.person_unique).await? {
+        return Ok(Json(ActionResult::error("not a conversation member")));
+    }
+
+    let result = client
+        .execute("UPDATE x_message_conversation SET read_status = 'read', read_time = NOW() WHERE id = $1", &[&id])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("read".to_string(), Value::Bool(result > 0))]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn im_conversation_id_read_mockputtopost(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let result = client
+        .execute("UPDATE x_message_conversation SET read_status = 'read', read_time = NOW() WHERE id = $1", &[&id])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("read".to_string(), Value::Bool(result > 0))]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn im_conversation_id_single(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_opt("SELECT id, name, type, create_time FROM x_message_conversation WHERE id = $1 AND type = 'single'", &[&id])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("single conversation not found"))),
+    }
+}
+
+#[allow(non_snake_case)]
+pub async fn im_conversation_id_single_mockdeletetoget(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    // IDOR：仅会话成员可删除该单聊
+    if !is_conversation_member(&client, &id, &session.person_unique).await? {
+        return Ok(Json(ActionResult::error("not a conversation member")));
+    }
+
+    let result = client
+        .execute(
+            "DELETE FROM x_message_conversation WHERE id = $1 AND type = 'single'",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(result > 0))]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn im_conversation_id_top_cancel(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let result = client
+        .execute(
+            "UPDATE x_message_conversation SET top = false WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("topCancelled".to_string(), Value::Bool(result > 0))]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn im_conversation_id_top_cancel_mockputtopost(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let result = client
+        .execute(
+            "UPDATE x_message_conversation SET top = false WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("topCancelled".to_string(), Value::Bool(result > 0))]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn im_conversation_id_top_set(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let result = client
+        .execute(
+            "UPDATE x_message_conversation SET top = true, top_time = NOW() WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("topSet".to_string(), Value::Bool(result > 0))]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn im_conversation_id_top_set_mockputtopost(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let result = client
+        .execute(
+            "UPDATE x_message_conversation SET top = true, top_time = NOW() WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("topSet".to_string(), Value::Bool(result > 0))]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn im_manager_config(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_opt("SELECT id, config_key, config_value, create_time FROM x_message_config ORDER BY create_time DESC LIMIT 1", &[])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "configKey".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("config_key")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "configValue".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("config_value")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("config not found"))),
+    }
+}
+
+#[allow(non_snake_case)]
+pub async fn im_msg(
+    pool: Extension<Pool>,
+    axum::extract::Json(req): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let conversation_id = req
+        .get("conversationId")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
+    let content = req
+        .get("content")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
+    let sender = req
+        .get("sender")
+        .and_then(|v| v.as_str())
+        .unwrap_or("system");
+    let msg_type = req.get("type").and_then(|v| v.as_str()).unwrap_or("text");
+    let id = Uuid::new_v4().to_string();
+
+    let result = client
+        .execute("INSERT INTO x_message (id, conversation_id, content, sender, type, create_time) VALUES ($1, $2, $3, $4, $5, NOW())", &[&id, &conversation_id, &content, &sender, &msg_type])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            (
+                "conversationId".to_string(),
+                Value::String(conversation_id.to_string()),
+            ),
+            ("content".to_string(), Value::String(content.to_string())),
+            ("sender".to_string(), Value::String(sender.to_string())),
+            ("type".to_string(), Value::String(msg_type.to_string())),
+            ("sent".to_string(), Value::Bool(result > 0)),
+        ]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn im_msg_clear(
+    pool: Extension<Pool>,
+    axum::extract::Json(req): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let conversation_id = req
+        .get("conversationId")
+        .or_else(|| req.get("conversation_id"))
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+
+    let result = client
+        .execute(
+            "UPDATE x_message SET cleared = true WHERE conversation_id = $1",
+            &[&conversation_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("cleared".to_string(), Value::Bool(result > 0))]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn im_msg_collection(
+    pool: Extension<Pool>,
+    axum::extract::Json(req): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let message_id = req
+        .get("messageId")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
+    let result = client
+        .execute(
+            "INSERT INTO x_message_collection (id, message_id, create_time) VALUES ($1, $2, NOW())",
+            &[&Uuid::new_v4().to_string(), &message_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("collected".to_string(), Value::Bool(result > 0))]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn im_msg_collection_list_page_size_size(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let offset = ((page.max(1) - 1) * size).max(0);
+    let limit = size.max(1);
+    let rows = client
+        .query("SELECT id, message_id, create_time FROM x_message_collection ORDER BY create_time DESC LIMIT $1 OFFSET $2", &[&limit, &offset])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "messageId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("message_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::legacy_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
+}
+
+#[allow(non_snake_case)]
+pub async fn im_msg_collection_remove(
+    pool: Extension<Pool>,
+    axum::extract::Json(req): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let message_id = req
+        .get("messageId")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
+    let result = client
+        .execute(
+            "DELETE FROM x_message_collection WHERE message_id = $1",
+            &[&message_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("removed".to_string(), Value::Bool(result > 0))]),
+    ))))
+}
+
+/// W10：IM 富媒体上传大小上限（50MB）
+pub const MAX_IM_FILE_SIZE: usize = 50 * 1024 * 1024;
+
+/// W10：清洗上传文件名——剥离任意路径分量，防目录穿越/路径注入。
+pub fn sanitize_filename(name: &str) -> String {
+    name.rsplit(['/', '\\'])
+        .next()
+        .unwrap_or_default()
+        .to_string()
+}
+
+/// W10：解析后的 IM 富媒体消息。
+#[derive(Debug, Clone, PartialEq)]
+pub struct ParsedImMessage {
+    pub conversation_id: String,
+    pub msg_type: String,
+    /// 富媒体文件引用（上传接口返回的附件 id）
+    pub body_file_id: Option<String>,
+    /// 引用回复的目标消息 id
+    pub quote_message_id: Option<String>,
+}
+
+/// W10：解析 IM 富媒体消息信封（`{conversationId, body, quoteMessageId?}`）。
+///
+/// body 必须是 JSON 对象文本且带非空 `type`（text/image/file/voice/video/...），
+/// `fileId` 为富媒体文件引用；缺 conversationId、body 非 JSON 或空对象
+/// （无 type）一律拒绝，绝不落库为不可渲染的消息。
+pub fn parse_im_message(req: &Value) -> Result<ParsedImMessage, AppError> {
+    let bad = |msg: &str| AppError::BadRequest(msg.to_string());
+    let conversation_id = req
+        .get("conversationId")
+        .and_then(Value::as_str)
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| bad("conversationId is required"))?
+        .to_string();
+    let body_text = req
+        .get("body")
+        .and_then(Value::as_str)
+        .ok_or_else(|| bad("body is required"))?;
+    let body: Value =
+        serde_json::from_str(body_text).map_err(|_| bad("body must be a JSON object"))?;
+    let msg_type = body
+        .get("type")
+        .and_then(Value::as_str)
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| bad("body.type is required"))?
+        .to_string();
+    let body_file_id = body
+        .get("fileId")
+        .and_then(Value::as_str)
+        .map(str::to_string);
+    let quote_message_id = req
+        .get("quoteMessageId")
+        .and_then(Value::as_str)
+        .map(str::to_string);
+    Ok(ParsedImMessage {
+        conversation_id,
+        msg_type,
+        body_file_id,
+        quote_message_id,
+    })
+}
+
+#[allow(non_snake_case)]
+pub async fn im_msg_download_id(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<axum::response::Response, AppError> {
+    use axum::http::{header, StatusCode};
+    use axum::response::IntoResponse;
+
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_opt("SELECT file_name, type, mime, content FROM x_message_file WHERE message_id = $1 LIMIT 1", &[&id])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let (file_name, mime, content_b64) = match row {
+        Some(row) => (
+            row.get::<_, Option<String>>("file_name"),
+            row.get::<_, Option<String>>("mime"),
+            row.get::<_, Option<String>>("content"),
+        ),
+        None => return Ok((StatusCode::NOT_FOUND, "file not found").into_response()),
+    };
+
+    let content_b64 = match content_b64.as_deref() {
+        Some(b64) if !b64.is_empty() => b64,
+        _ => return Ok((StatusCode::NOT_FOUND, "file content missing").into_response()),
+    };
+    let data = base64::engine::general_purpose::STANDARD
+        .decode(content_b64)
+        .map_err(|_| AppError::Internal)?;
+
+    let mime = mime
+        .or(file_type_fallback(&file_name))
+        .unwrap_or_else(|| "application/octet-stream".to_string());
+    let name = sanitize_filename(file_name.as_deref().unwrap_or(&id));
+    let headers = [
+        (header::CONTENT_TYPE, mime),
+        (
+            header::CONTENT_DISPOSITION,
+            shared::response::attachment_disposition(&name),
+        ),
+    ];
+    Ok((StatusCode::OK, headers, data).into_response())
+}
+
+/// 上传时未记录 mime 的旧数据：按扩展名兜底
+fn file_type_fallback(file_name: &Option<String>) -> Option<String> {
+    let ext = file_name
+        .as_deref()?
+        .rsplit('.')
+        .next()?
+        .to_ascii_lowercase();
+    let mime = match ext.as_str() {
+        "png" => "image/png",
+        "jpg" | "jpeg" => "image/jpeg",
+        "gif" => "image/gif",
+        "webp" => "image/webp",
+        "webm" => "audio/webm",
+        "mp4" => "video/mp4",
+        "mp3" => "audio/mpeg",
+        "pdf" => "application/pdf",
+        _ => return None,
+    };
+    Some(mime.to_string())
+}
+
+#[allow(non_snake_case)]
+pub async fn im_msg_download_id_image_width_width_height_height(
+    pool: Extension<Pool>,
+    axum::extract::Path((id, width, height)): axum::extract::Path<(String, i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_opt("SELECT id, file_url, file_name, create_time FROM x_message_file WHERE message_id = $1 LIMIT 1", &[&id])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let file_url: String = row.get::<_, Option<String>>("file_url").unwrap_or_default();
+            let resized_url = format!("{}?w={}&h={}", file_url, width, height);
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("fileUrl".to_string(), Value::String(resized_url)),
+                (
+                    "fileName".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("file_name")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "width".to_string(),
+                    Value::Number(serde_json::Number::from(width)),
+                ),
+                (
+                    "height".to_string(),
+                    Value::Number(serde_json::Number::from(height)),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("file not found"))),
+    }
+}
+
+#[allow(non_snake_case)]
+pub async fn im_msg_list_object(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query("SELECT id, conversation_id, content, sender, type, create_time FROM x_message WHERE type != 'text' ORDER BY create_time DESC LIMIT 50", &[])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "conversationId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("conversation_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "sender".to_string(),
+                    Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::legacy_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
+}
+
+#[allow(non_snake_case)]
+pub async fn im_msg_list_page_size_size(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
+    body: Option<Json<Value>>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let offset = ((page.max(1) - 1) * size).max(0);
+    let limit = size.max(1);
+    // 会话过滤：此前本 handler 完全忽略请求体，导致"某会话的消息列表"实际返回
+    // 全库消息（见 docs/plans/2026-09-20-001 §6.3 A 类）。GET（无 body）保持原行为。
+    let conversation_id = body
+        .as_ref()
+        .and_then(|Json(v)| v.get("conversationId"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    let rows = if conversation_id.is_empty() {
+        client
+            .query("SELECT id, conversation_id, content, sender, type, create_time FROM x_message ORDER BY create_time DESC LIMIT $1 OFFSET $2", &[&limit, &offset])
+            .await
+            .map_err(|_| AppError::Internal)?
+    } else {
+        client
+            .query("SELECT id, conversation_id, content, sender, type, create_time FROM x_message WHERE conversation_id = $1 ORDER BY create_time DESC LIMIT $2 OFFSET $3", &[&conversation_id, &limit, &offset])
+            .await
+            .map_err(|_| AppError::Internal)?
+    };
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "conversationId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("conversation_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "sender".to_string(),
+                    Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::legacy_success(
+        Value::Array(data),
+        count,
+        size,
+    )))
+}
+
+#[allow(non_snake_case)]
+pub async fn im_msg_revoke_id(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let result = client
+        .execute(
+            "UPDATE x_message SET revoked = true, revoke_time = NOW() WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("revoked".to_string(), Value::Bool(result > 0))]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn im_msg_upload_conversationId_type_type(
+    pool: Extension<Pool>,
+    axum::extract::Path((conversation_id, msg_type)): axum::extract::Path<(String, String)>,
+    mut form: axum::extract::Multipart,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    // W10：IM 富媒体必须走真实 multipart——`fileName` 文本字段 + `file` 二进制字段
+    let mut file_name: Option<String> = None;
+    let mut file_mime: Option<String> = None;
+    let mut file_data: Option<Vec<u8>> = None;
+    while let Some(field) = form
+        .next_field()
+        .await
+        .map_err(|_| AppError::BadRequest("multipart parse failed".to_string()))?
+    {
+        if let Some(fname) = field.file_name() {
+            file_mime = field.content_type().map(|s| s.to_string());
+            file_name = Some(fname.to_string());
+            file_data = Some(
+                field
+                    .bytes()
+                    .await
+                    .map_err(|_| AppError::BadRequest("file read failed".to_string()))?
+                    .to_vec(),
+            );
+        } else if field.name() == Some("fileName") {
+            file_name = Some(
+                field
+                    .text()
+                    .await
+                    .map_err(|_| AppError::BadRequest("form read failed".to_string()))?,
+            );
+        }
+    }
+
+    let data = file_data.ok_or_else(|| AppError::BadRequest("no file provided".to_string()))?;
+    if data.len() > MAX_IM_FILE_SIZE {
+        return Ok(Json(ActionResult::error("file too large")));
+    }
+    let name = sanitize_filename(
+        file_name
+            .as_deref()
+            .filter(|n| !n.is_empty())
+            .unwrap_or("file"),
+    );
+
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let id = Uuid::new_v4().to_string();
+    let content_b64 = base64::engine::general_purpose::STANDARD.encode(&data);
+    let file_size = data.len().to_string();
+    let file_url = format!("/api/message/assemble/communicate/im/msg/download/{id}");
+    let file_mime = file_mime.unwrap_or_else(|| "application/octet-stream".to_string());
+
+    let result = client
+        .execute("INSERT INTO x_message_file (id, message_id, conversation_id, file_url, file_name, file_size, type, mime, content, create_time) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())", &[&id, &id, &conversation_id, &file_url, &name, &file_size, &msg_type, &file_mime, &content_b64])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("conversationId".to_string(), Value::String(conversation_id)),
+            ("type".to_string(), Value::String(msg_type)),
+            ("fileName".to_string(), Value::String(name)),
+            ("fileUrl".to_string(), Value::String(file_url.to_string())),
+            ("uploaded".to_string(), Value::Bool(result > 0)),
+        ]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn instant_currentperson_consumed(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query("SELECT id, consume, content, sender, consume_time FROM x_message_consume WHERE consumed = true ORDER BY consume_time DESC LIMIT 50", &[])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "consume".to_string(),
+                    Value::String(row.get::<_, Option<String>>("consume").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "sender".to_string(),
+                    Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
+                ),
+                (
+                    "consumeTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("consume_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::legacy_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
+}
+
+#[allow(non_snake_case)]
+pub async fn instant_currentperson_consumed_all(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query("SELECT id, consume, content, sender, consume_time FROM x_message_consume WHERE consumed = true ORDER BY consume_time DESC", &[])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "consume".to_string(),
+                    Value::String(row.get::<_, Option<String>>("consume").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "sender".to_string(),
+                    Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
+                ),
+                (
+                    "consumeTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("consume_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::legacy_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
+}
+
+#[allow(non_snake_case)]
+pub async fn instant_currentperson_consumed_mockputtopost(
+    pool: Extension<Pool>,
+    axum::extract::Json(req): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let id_list = req
+        .get("idList")
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|v| v.as_str().map(String::from))
+                .collect::<Vec<String>>()
+        })
+        .unwrap_or_default();
+
+    let result = if !id_list.is_empty() {
+        Some(
+            client
+                .execute(
+                    "UPDATE x_message_instant SET consumed = true WHERE id = ANY($1)",
+                    &[&id_list],
+                )
+                .await
+                .map_err(|_| AppError::Internal)?,
+        )
+    } else {
+        None
+    };
+
+    // W12 收敛：对齐 o2server ActionCurrentPersonConsumed——Wo extends WrapBoolean，
+    // 成功路径恒 value=true（与 idList 是否为空无关，o2server 总是先 setValue(true)）
+    let _ = result;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("value".to_string(), Value::Bool(true))]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn instant_list_currentperson_consumed_count_count_asc(
+    pool: Extension<Pool>,
+    axum::extract::Path(count): axum::extract::Path<i64>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query("SELECT id, consume, content, sender, consume_time FROM x_message_consume WHERE consumed = true ORDER BY consume_time ASC LIMIT $1", &[&count])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "consume".to_string(),
+                    Value::String(row.get::<_, Option<String>>("consume").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "sender".to_string(),
+                    Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
+                ),
+                (
+                    "consumeTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("consume_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::legacy_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
+}
+
+#[allow(non_snake_case)]
+pub async fn instant_list_currentperson_consumed_count_count_desc(
+    pool: Extension<Pool>,
+    axum::extract::Path(count): axum::extract::Path<i64>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query("SELECT id, consume, content, sender, consume_time FROM x_message_consume WHERE consumed = true ORDER BY consume_time DESC LIMIT $1", &[&count])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "consume".to_string(),
+                    Value::String(row.get::<_, Option<String>>("consume").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "sender".to_string(),
+                    Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
+                ),
+                (
+                    "consumeTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("consume_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::legacy_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
+}
+
+#[allow(non_snake_case)]
+pub async fn instant_list_currentperson_count_count_asc(
+    pool: Extension<Pool>,
+    axum::extract::Path(count): axum::extract::Path<i64>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume ORDER BY create_time ASC LIMIT $1", &[&count])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "consume".to_string(),
+                    Value::String(row.get::<_, Option<String>>("consume").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "sender".to_string(),
+                    Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::legacy_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
+}
+
+#[allow(non_snake_case)]
+pub async fn instant_list_currentperson_count_count_desc(
+    pool: Extension<Pool>,
+    axum::extract::Path(count): axum::extract::Path<i64>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume ORDER BY create_time DESC LIMIT $1", &[&count])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "consume".to_string(),
+                    Value::String(row.get::<_, Option<String>>("consume").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "sender".to_string(),
+                    Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::legacy_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
+}
+
+#[allow(non_snake_case)]
+pub async fn instant_list_currentperson_noim_count_count_desc(
+    pool: Extension<Pool>,
+    axum::extract::Path(count): axum::extract::Path<i64>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE type != 'im' ORDER BY create_time DESC LIMIT $1", &[&count])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "consume".to_string(),
+                    Value::String(row.get::<_, Option<String>>("consume").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "sender".to_string(),
+                    Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::legacy_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
+}
+
+#[allow(non_snake_case)]
+pub async fn instant_list_currentperson_not_consumed_count_count_asc(
+    pool: Extension<Pool>,
+    axum::extract::Path(count): axum::extract::Path<i64>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE consumed = false ORDER BY create_time ASC LIMIT $1", &[&count])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "consume".to_string(),
+                    Value::String(row.get::<_, Option<String>>("consume").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "sender".to_string(),
+                    Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::legacy_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
+}
+
+#[allow(non_snake_case)]
+pub async fn instant_list_currentperson_not_consumed_count_count_desc(
+    pool: Extension<Pool>,
+    axum::extract::Path(count): axum::extract::Path<i64>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE consumed = false ORDER BY create_time DESC LIMIT $1", &[&count])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "consume".to_string(),
+                    Value::String(row.get::<_, Option<String>>("consume").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "sender".to_string(),
+                    Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::legacy_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
+}
+
+#[allow(non_snake_case)]
+pub async fn instant_list_id_next_count(
+    pool: Extension<Pool>,
+    axum::extract::Path((id, count)): axum::extract::Path<(String, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE id > $1 ORDER BY create_time ASC LIMIT $2", &[&id, &count])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "consume".to_string(),
+                    Value::String(row.get::<_, Option<String>>("consume").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "sender".to_string(),
+                    Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::legacy_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
+}
+
+#[allow(non_snake_case)]
+pub async fn instant_list_id_prev_count(
+    pool: Extension<Pool>,
+    axum::extract::Path((id, count)): axum::extract::Path<(String, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE id < $1 ORDER BY create_time DESC LIMIT $2", &[&id, &count])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "consume".to_string(),
+                    Value::String(row.get::<_, Option<String>>("consume").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "sender".to_string(),
+                    Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::legacy_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
+}
+
+#[allow(non_snake_case)]
+pub async fn mass_enable_type(
+    pool: Extension<Pool>,
+    axum::extract::Json(req): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let msg_type = req.get("type").and_then(|v| v.as_str()).unwrap_or_default();
+    let enabled = req.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true);
+
+    client
+        .execute(
+            "UPDATE x_message_mass SET enabled = $1 WHERE type = $2",
+            &[&enabled, &msg_type],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("type".to_string(), Value::String(msg_type.to_string())),
+            ("enabled".to_string(), Value::Bool(enabled)),
+        ]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn mass_list_id_next_count(
+    pool: Extension<Pool>,
+    axum::extract::Path((id, count)): axum::extract::Path<(String, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query("SELECT id, mass_id, content, sender, create_time FROM x_message WHERE mass_id = $1 AND id > $2 ORDER BY create_time ASC LIMIT $3", &[&id, &id, &count])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "massId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("mass_id").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "sender".to_string(),
+                    Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::legacy_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
+}
+
+#[allow(non_snake_case)]
+pub async fn mass_list_id_prev_count(
+    pool: Extension<Pool>,
+    axum::extract::Path((id, count)): axum::extract::Path<(String, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query("SELECT id, mass_id, content, sender, create_time FROM x_message WHERE mass_id = $1 AND id < $2 ORDER BY create_time DESC LIMIT $3", &[&id, &id, &count])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "massId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("mass_id").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "sender".to_string(),
+                    Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::legacy_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
+}
+
+#[allow(non_snake_case)]
+pub async fn mass_id(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_opt(
+            "SELECT id, title, content, sender, create_time FROM x_message_mass WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "sender".to_string(),
+                    Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("mass message not found"))),
+    }
+}
+
+#[allow(non_snake_case)]
+pub async fn message_custom_create(
+    pool: Extension<Pool>,
+    axum::extract::Json(req): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let conversation_id = req
+        .get("conversationId")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
+    let content = req
+        .get("content")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
+    let sender = req
+        .get("sender")
+        .and_then(|v| v.as_str())
+        .unwrap_or("system");
+    let id = Uuid::new_v4().to_string();
+
+    let result = client
+        .execute("INSERT INTO x_message (id, conversation_id, content, sender, type, create_time) VALUES ($1, $2, $3, $4, 'custom', NOW())", &[&id, &conversation_id, &content, &sender])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            (
+                "conversationId".to_string(),
+                Value::String(conversation_id.to_string()),
+            ),
+            ("content".to_string(), Value::String(content.to_string())),
+            ("type".to_string(), Value::String("custom".to_string())),
+            ("created".to_string(), Value::Bool(result > 0)),
+        ]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn message_list_paging_page_size_size(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let offset = ((page.max(1) - 1) * size).max(0);
+    let limit = size.max(1);
+    let rows = client
+        .query("SELECT id, conversation_id, content, sender, type, create_time FROM x_message ORDER BY create_time DESC LIMIT $1 OFFSET $2", &[&limit, &offset])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "conversationId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("conversation_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "sender".to_string(),
+                    Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::legacy_success(
+        Value::Array(data),
+        count,
+        size,
+    )))
+}
+
+// ══════════════════════════════════════════════════════════════════
+// plan002 U2 — o2server 对齐缺口端点（connector / ws / mass 家族 + 动词补齐）
+//
+// 表：x_message_ws_session / x_message_conversation_ext（migration 063 幂等
+// 补建），其余沿用既有表。写操作按 IDOR 门禁：
+//   - 管理资源（mass 群发创建/删除）一律 require_admin（o2server 要求
+//     Manager/MessageManager 角色），is_admin 对不可用 DB fail-closed；
+//   - 会话内个人操作（退群/已读/单聊删除）person_unique 取自会话，
+//     操作前校验成员身份，禁止代他人操作。
+// ══════════════════════════════════════════════════════════════════
+
+async fn require_admin(pool: &Pool, session: &shared::session::Session) -> Result<(), AppError> {
+    if shared::middleware::is_admin(pool, &session.person_unique).await {
+        Ok(())
+    } else {
+        Err(AppError::Forbidden)
+    }
+}
+
+async fn is_conversation_member(
+    client: &deadpool_postgres::Client,
+    conversation_id: &str,
+    person_unique: &str,
+) -> Result<bool, AppError> {
+    let member = client
+        .query_opt(
+            "SELECT 1 FROM x_message_conversation_member WHERE conversation_id = $1 AND person_id = $2",
+            &[&conversation_id, &person_unique],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(member.is_some())
+}
+
+async fn conversation_type(
+    client: &deadpool_postgres::Client,
+    conversation_id: &str,
+) -> Result<Option<String>, AppError> {
+    let row = client
+        .query_opt(
+            "SELECT type FROM x_message_conversation WHERE id = $1",
+            &[&conversation_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(row.map(|r| r.get::<_, Option<String>>("type").unwrap_or_default()))
+}
+
+/// POST /connector — o2server ActionCreate：先落 Instant(consumed=false)，
+/// 再为每个启用的 consumer 展开一条 Message 落库。
+#[allow(non_snake_case)]
+pub async fn connector_create(
+    pool: Extension<Pool>,
+    axum::extract::Json(req): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let msg_type = req
+        .get("type")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let person = req
+        .get("person")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let title = req
+        .get("title")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let body = match req.get("body") {
+        Some(v) => v.to_string(),
+        None => String::new(),
+    };
+
+    let instant_id = Uuid::new_v4().to_string();
+    client
+        .execute(
+            "INSERT INTO x_message_instant (id, body, type, person, title, consumed, create_time) VALUES ($1, $2, $3, $4, $5, false, NOW())",
+            &[&instant_id, &body, &msg_type, &person, &title],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    // 启用的 consumer 渠道来自消息配置；无配置时仅保留 Instant 落库。
+    let consumers = client
+        .query(
+            "SELECT DISTINCT consume FROM x_message_config WHERE enabled = true AND consume IS NOT NULL",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let mut dispatched: u64 = 0;
+    for row in consumers {
+        let consumer: String = row.get::<_, Option<String>>("consume").unwrap_or_default();
+        if consumer.is_empty() {
+            continue;
+        }
+        let message_id = Uuid::new_v4().to_string();
+        dispatched += client
+            .execute(
+                "INSERT INTO x_message (id, content, sender, type, create_time) VALUES ($1, $2, $3, $4, NOW())",
+                &[&message_id, &body, &person, &consumer],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?;
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("value".to_string(), Value::Bool(true)),
+            ("instantId".to_string(), Value::String(instant_id)),
+            (
+                "messages".to_string(),
+                Value::Number(serde_json::Number::from(dispatched)),
+            ),
+        ]),
+    ))))
+}
+
+/// POST /ws — o2server ActionCreate：仅向当前打开的 ws 连接投递；
+/// 有在线连接时落 ws 消费记录，返回 value=true，否则如实返回 false。
+#[allow(non_snake_case)]
+pub async fn ws_create(
+    pool: Extension<Pool>,
+    axum::extract::Json(req): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let person = req
+        .get("person")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let sender = req
+        .get("sender")
+        .and_then(|v| v.as_str())
+        .unwrap_or("system")
+        .to_string();
+    let body = match req.get("body") {
+        Some(v) => v.to_string(),
+        None => String::new(),
+    };
+
+    let open = client
+        .query_opt(
+            "SELECT 1 FROM x_message_ws_session WHERE person = $1 AND disconnected_at IS NULL LIMIT 1",
+            &[&person],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let mut delivered = false;
+    if open.is_some() {
+        let id = Uuid::new_v4().to_string();
+        client
+            .execute(
+                "INSERT INTO x_message_consume (id, consume, content, sender, consumed, create_time) VALUES ($1, 'ws', $2, $3, false, NOW())",
+                &[&id, &body, &sender],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?;
+        delivered = true;
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("value".to_string(), Value::Bool(delivered))]),
+    ))))
+}
+
+/// GET /ws/count/person — 当前在线（未断开）ws 连接的去重人数。
+#[allow(non_snake_case)]
+pub async fn ws_count_person(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let count: i64 = client
+        .query_one(
+            "SELECT COUNT(DISTINCT person) AS cnt FROM x_message_ws_session WHERE disconnected_at IS NULL",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?
+        .get("cnt");
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([(
+            "count".to_string(),
+            Value::Number(serde_json::Number::from(count)),
+        )]),
+    ))))
+}
+
+/// GET /ws/list/person/current/node — 本节点在线人员列表。
+#[allow(non_snake_case)]
+pub async fn ws_list_person_current_node(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT DISTINCT person FROM x_message_ws_session WHERE disconnected_at IS NULL ORDER BY person",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([(
+                "person".to_string(),
+                Value::String(row.get("person")),
+            )]))
+        })
+        .collect();
+
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::legacy_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
+}
+
+/// GET /ws/list/person — 按节点分组的在线人员列表。
+#[allow(non_snake_case)]
+pub async fn ws_list_person(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT node, person FROM x_message_ws_session WHERE disconnected_at IS NULL ORDER BY node, person",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let mut groups: std::collections::BTreeMap<String, Vec<String>> =
+        std::collections::BTreeMap::new();
+    for row in &rows {
+        let node: String = row
+            .get::<_, Option<String>>("node")
+            .unwrap_or_else(|| "local".to_string());
+        let person: String = row.get("person");
+        groups.entry(node).or_default().push(person);
+    }
+
+    let data: Vec<Value> = groups
+        .into_iter()
+        .map(|(node, people)| {
+            let list: Vec<Value> = people.into_iter().map(Value::String).collect();
+            Value::Object(serde_json::Map::from_iter([
+                ("node".to_string(), Value::String(node)),
+                ("personList".to_string(), Value::Array(list)),
+            ]))
+        })
+        .collect();
+
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::legacy_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
+}
+
+/// 群发目标人群：personList/identityList/groupList/unitList 合并去重。
+fn mass_target_list(req: &Value) -> Vec<String> {
+    let mut targets: Vec<String> = Vec::new();
+    for key in ["personList", "identityList", "groupList", "unitList"] {
+        if let Some(arr) = req.get(key).and_then(|v| v.as_array()) {
+            for v in arr {
+                if let Some(s) = v.as_str() {
+                    if !s.is_empty() && !targets.iter().any(|t| t == s) {
+                        targets.push(s.to_string());
+                    }
+                }
+            }
+        }
+    }
+    targets
+}
+
+/// POST /mass — o2server ActionCreate：需 Manager/MessageManager 角色，
+/// 目标人群与 body 必填，落 Mass 记录（creator_person 取自会话）。
+#[allow(non_snake_case)]
+pub async fn mass_create(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Json(req): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    // IDOR：权限门禁先于任何资源获取/写操作，fail-closed
+    require_admin(&pool, &session).await?;
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let targets = mass_target_list(&req);
+    if targets.is_empty() {
+        return Ok(Json(ActionResult::error("empty target")));
+    }
+    let body = req
+        .get("body")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    if body.is_empty() {
+        return Ok(Json(ActionResult::error("empty body")));
+    }
+
+    let id = Uuid::new_v4().to_string();
+    let msg_type = req
+        .get("type")
+        .and_then(|v| v.as_str())
+        .unwrap_or("dingding")
+        .to_string();
+    let title = req
+        .get("title")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let send_person_list = targets.join(",");
+
+    client
+        .execute(
+            "INSERT INTO x_message_mass (id, title, content, body, type, send_person_list, creator_person, enabled, create_time) \
+             VALUES ($1, $2, $3, $3, $4, $5, $6, true, NOW())",
+            &[&id, &title, &body, &msg_type, &send_person_list, &session.person_unique],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("type".to_string(), Value::String(msg_type)),
+            (
+                "targetCount".to_string(),
+                Value::Number(serde_json::Number::from(targets.len() as i64)),
+            ),
+        ]),
+    ))))
+}
+
+/// GET /mass/enable/type — 已启用群发渠道列表。
+#[allow(non_snake_case)]
+pub async fn mass_enable_type_get(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT DISTINCT type FROM x_message_mass WHERE enabled = true AND type IS NOT NULL ORDER BY type",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .filter_map(|row| row.get::<_, Option<String>>("type").map(Value::String))
+        .collect();
+
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::legacy_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
+}
+
+/// DELETE /mass/{id} 与 GET /mass/{id}/mockdeletetoget 共用：
+/// o2server ActionDelete 需 Manager/MessageManager 角色，删除前校验存在性。
+#[allow(non_snake_case)]
+pub async fn mass_id_mockdeletetoget(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    // IDOR：权限门禁先于任何资源获取/删除操作，fail-closed
+    require_admin(&pool, &session).await?;
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let exists = client
+        .query_opt("SELECT id FROM x_message_mass WHERE id = $1", &[&id])
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if exists.is_none() {
+        return Ok(Json(ActionResult::error("mass message not found")));
+    }
+
+    client
+        .execute("DELETE FROM x_message_mass WHERE id = $1", &[&id])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id.clone())),
+            ("deleted".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+/// DELETE /im/conversation/{id}/single（及 GET mockdeletetoget）—
+/// o2server ActionDeleteSingleConversationVirtual：单聊虚拟删除（per-person ext 置位）。
+#[allow(non_snake_case)]
+pub async fn im_conversation_id_single_delete_virtual(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let conv_type = conversation_type(&client, &id).await?;
+    match conv_type.as_deref() {
+        None => return Ok(Json(ActionResult::error("conversation not found"))),
+        Some(t) if t != "single" => {
+            return Ok(Json(ActionResult::error(
+                "only single conversation can be deleted",
+            )))
+        }
+        _ => {}
+    }
+
+    // IDOR：只能虚拟删除自己所在的会话
+    if !is_conversation_member(&client, &id, &session.person_unique).await? {
+        return Ok(Json(ActionResult::error("not a conversation member")));
+    }
+
+    let ext = client
+        .query_opt(
+            "SELECT id FROM x_message_conversation_ext WHERE conversation_id = $1 AND person = $2",
+            &[&id, &session.person_unique],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match ext {
+        Some(row) => {
+            let ext_id: String = row.get("id");
+            client
+                .execute(
+                    "UPDATE x_message_conversation_ext SET is_deleted = true, last_delete_time = NOW(), last_read_time = NOW(), update_time = NOW() WHERE id = $1",
+                    &[&ext_id],
+                )
+                .await
+                .map_err(|_| AppError::Internal)?;
+        }
+        None => {
+            let ext_id = Uuid::new_v4().to_string();
+            client
+                .execute(
+                    "INSERT INTO x_message_conversation_ext (id, conversation_id, person, is_deleted, last_delete_time, last_read_time, create_time, update_time) \
+                     VALUES ($1, $2, $3, true, NOW(), NOW(), NOW(), NOW())",
+                    &[&ext_id, &id, &session.person_unique],
+                )
+                .await
+                .map_err(|_| AppError::Internal)?;
+        }
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("value".to_string(), Value::Bool(true))]),
+    ))))
+}
+
+/// PUT /instant/currentperson/consumed — o2server PUT：将当前人员的 instant 标记已消费。
+#[allow(non_snake_case)]
+pub async fn instant_currentperson_consumed_put(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let marked = client
+        .execute(
+            "UPDATE x_message_instant SET consumed = true WHERE person = $1 AND consumed = false",
+            &[&session.person_unique],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("value".to_string(), Value::Bool(true)),
+            (
+                "marked".to_string(),
+                Value::Number(serde_json::Number::from(marked as i64)),
+            ),
+        ]),
+    ))))
+}

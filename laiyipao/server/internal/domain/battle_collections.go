@@ -34,7 +34,11 @@ package domain
 // 键名同样要校验：`reactions_used` 进了 GROUP BY，
 // 塞进 `"totally_fake_reaction": 999` 就会在看板里多出一行。
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+	"strings"
+)
 
 // maxReplayHashLen 是 replay_hash 的长度上限。
 //
@@ -42,6 +46,56 @@ import "fmt"
 // 取 64 是为了给「将来换哈希算法」留余量，
 // 同时仍然拒绝「传一段文章当哈希」这种明显不是哈希的输入。
 const maxReplayHashLen = 64
+
+// card_picks 的编码常量（第 66 轮）。
+//
+// ⚠️ **必须与客户端逐位一致**（miniapp/src/game/engine.ts 的 PICK_* ）。
+// 两端由 `testdata/formula_vectors.json` 的 `card_picks` 双向锁住。
+//
+// 漂了的后果是**静默的**：客户端正常对局被服务端 422 拒掉，
+// 而 e2e 与客户端测试全绿（它们都不跑真实结算）。
+const (
+	// CardPickSkip 是「整波跳过」的编码（未弃牌）。
+	CardPickSkip = -1
+	// CardPickDiscardTakeBase 是「弃一张，取第 handIdx 张」的编码基址，
+	// 实际值 = -(base + handIdx)。
+	CardPickDiscardTakeBase = 3
+	// CardPickDiscardSkipBase 是「弃一张，整波跳过」的编码基址。
+	// 与上一个 BASE 相差 CardPickHandSlots —— 保证两个区间恰好相邻而不重叠。
+	CardPickDiscardSkipBase = 6
+	// CardPickHandSlots 是每波手牌数上界（rollWaveCards 固定产 3 张）。
+	CardPickHandSlots = 3
+)
+
+// CardPickMin 是 card_picks 单项的合法取值下界。
+const CardPickMin = -(CardPickDiscardSkipBase + CardPickHandSlots - 1) // = -8
+
+// validCardPick 判断一个 card_picks 编码是否有语义。
+//
+// # 为什么不能只比下界
+//
+// 三个负区间之间的**空隙**（如 -2）低于 CardPickMin 之上却没有任何语义。
+// 只判 `p >= CardPickMin` 会把它放行 —— 而它会落进 battle_records.card_picks，
+// 成为「看起来有数据、其实无法解释」的脏数据。
+//
+// 这与 README 记的「上界校验」是同一类问题的镜像：
+// 那里是漏了控制量，这里是**区间之间留了缝**。
+func validCardPick(p int) bool {
+	if p >= 0 {
+		return p < CardPickHandSlots
+	}
+	if p == CardPickSkip {
+		return true
+	}
+	neg := -p
+	if neg >= CardPickDiscardTakeBase && neg < CardPickDiscardTakeBase+CardPickHandSlots {
+		return true
+	}
+	if neg >= CardPickDiscardSkipBase && neg < CardPickDiscardSkipBase+CardPickHandSlots {
+		return true
+	}
+	return false
+}
 
 // allTerrainKinds 返回全部章节声明过的地形种类。
 //
@@ -92,11 +146,29 @@ var (
 // 一个负数就能把「元素搭配不足」的诊断结论翻转。
 func validateReportCollections(gl GeneratedLevel, in SettleInput) error {
 	// ── elements_used ──
-	total := 0
 	if len(in.ElementsUsed) > len(knownElements) {
 		return fmt.Errorf("%w：elements_used 含 %d 个键，合法元素只有 %d 个",
 			ErrInvalidField, len(in.ElementsUsed), len(knownElements))
 	}
+	// ⚠️ 累加必须走 satAdd，不能写 `total += v`。
+	//
+	// 这是本文件**自己**记录的形态（文件头：「约束了被保护量却没约束控制量」）
+	// 的第三种变体：**约束了被保护量，却没约束产生它的算术**。
+	//
+	// 每项 `v < 0` 单独拒过了，但 `total += v` 仍会 int64 回绕：
+	// 两个键各报 2^62，相加正好是 2^63 → 变成 -9223372036854775808。
+	// 于是后面的 `total > cap` 判据拿一个**负数**去比，恒为假 → 放行。
+	//
+	// 后果不是"刷分"（这两个字段不进奖励），而是**看板永久 500**：
+	// 脏值落进 battle_records 后，`stats.go` 的 `SUM(e.value::bigint)`
+	// 返回 PG numeric（可超过 int64），pgx 扫进 `*int64` 时 ParseInt 越界报错
+	// → `AdminDashboard` 整个失败 → 之后每一次 GET /admin/dashboard 都 500，
+	// 且**无法自愈**（脏行不会消失，只能删行）。一个普通玩家 30 秒能量即可。
+	//
+	// satAdd 在 cap 处饱和，天然免疫回绕：它逐项比 `t > cap-sum`，
+	// 而 `sum` 恒 ≤ cap。
+	elemCap := int64(in.Shots) * int64(MaxKillsFor(gl))
+	elemTerms := make([]int64, 0, len(in.ElementsUsed))
 	for k, v := range in.ElementsUsed {
 		if !knownElements[k] {
 			return fmt.Errorf("%w：未知元素 %q", ErrInvalidField, k)
@@ -104,8 +176,20 @@ func validateReportCollections(gl GeneratedLevel, in SettleInput) error {
 		if v < 0 {
 			return fmt.Errorf("%w：元素 %q 的计数为负 %d", ErrInvalidField, k, v)
 		}
-		total += v
+		elemTerms = append(elemTerms, int64(v))
 	}
+	// ⚠️ 这里**不能**用 satAdd 来判超界。
+	//
+	// 第一版改成 `satAdd(cap, terms...)` 然后判 `total > cap` ——
+	// 而 satAdd 恰好在 cap 处**饱和**，所以 total 永远 ≤ cap，
+	// `> cap` 恒为假 → 上界被修复动作**悄悄削弱成了没有**。
+	//
+	// 也不能判 `total >= cap`：真实引擎达到理论上限的合法对局会被误拒。
+	//
+	// 正确形态是 `sumOverCap(cap, terms...)`：逐项在**相加之前**比较
+	// `t > cap-sum`，一旦超出立刻返回 true，且 `sum` 恒 ≤ cap 所以比较本身无溢出。
+	// 这样「恰好等于 cap」与「超过 cap」被精确区分开。
+	overCap := sumOverCap(elemCap, elemTerms...)
 	// 引擎里 elements_used 在 `hitEnemy` 内每命中一次 +1
 	//
 	// ⚠️ 上界**不能**取 `in.Hits`。第一版就是这么写的，
@@ -125,17 +209,20 @@ func validateReportCollections(gl GeneratedLevel, in SettleInput) error {
 	// 它的保护力确实弱（余量大），但集合类字段的主要防线是
 	// 「键白名单（5 个元素）」与「map 大小上限」——
 	// 那两条才是拦住 4096 个伪造键的地方。
-	if cap := int64(in.Shots) * int64(MaxKillsFor(gl)); int64(total) > cap {
-		return fmt.Errorf("%w：元素使用合计 %d 超过上界 %d（发射数 %d × 该关总怪数 %d）",
-			ErrInvalidField, total, cap, in.Shots, MaxKillsFor(gl))
+	if overCap {
+		return fmt.Errorf("%w：元素使用合计超过上界 %d（发射数 %d × 该关总怪数 %d）",
+			ErrInvalidField, elemCap, in.Shots, MaxKillsFor(gl))
 	}
 
 	// ── reactions_used ──
-	totalR := 0
 	if len(in.ReactionsUsed) > len(knownReactions) {
 		return fmt.Errorf("%w：reactions_used 含 %d 个键，合法反应只有 %d 种",
 			ErrInvalidField, len(in.ReactionsUsed), len(knownReactions))
 	}
+	// ⚠️ 同上，必须 sumOverCap。reactions 的 cap 更小（几十以内），
+	// 而两个 2^62 的键就足以回绕，所以这条比 elements_used 更容易被打穿 ——
+	// 元素侧 cap 有 ~9.7e8，反应侧 cap 常常只有个位数。
+	rTerms := make([]int64, 0, len(in.ReactionsUsed))
 	for k, v := range in.ReactionsUsed {
 		if !knownReactions[k] {
 			return fmt.Errorf("%w：未知反应 %q", ErrInvalidField, k)
@@ -143,12 +230,12 @@ func validateReportCollections(gl GeneratedLevel, in SettleInput) error {
 		if v < 0 {
 			return fmt.Errorf("%w：反应 %q 的计数为负 %d", ErrInvalidField, k, v)
 		}
-		totalR += v
+		rTerms = append(rTerms, int64(v))
 	}
 	// 引擎里 reactionsUsed 与 reactions 计数器同步 +1
-	if totalR > in.Reactions {
-		return fmt.Errorf("%w：反应分项合计 %d 超过反应总数 %d",
-			ErrInvalidField, totalR, in.Reactions)
+	if sumOverCap(int64(in.Reactions), rTerms...) {
+		return fmt.Errorf("%w：反应分项合计超过反应总数 %d",
+			ErrInvalidField, in.Reactions)
 	}
 
 	// ── terrain_used ──
@@ -200,12 +287,30 @@ func validateReportCollections(gl GeneratedLevel, in SettleInput) error {
 			ErrInvalidField, len(in.CardPicks), gl.WaveCount)
 	}
 	for i, p := range in.CardPicks {
-		// -1 = 整波跳过，是合法取值。上界不设：引擎对越界索引按「跳过」处理，
-		// 而卡面数量本身由 `rollWaveCards` 决定（当前每波 3 张），
-		// 把它写死成一个常量会在加第 4 张卡那天变成一个静默的错误上限。
-		if p < -1 {
-			return fmt.Errorf("%w：card_picks[%d] = %d，合法值是 >= -1（-1 表示跳过）",
-				ErrInvalidField, i, p)
+		// ⚠️ 第 66 轮：判据从「>= -1」改成「落在已知编码集合内」。
+		//
+		// 原判据 `p >= -1`，下界放宽到 CardPickMin 之后就不再够用：
+		// `-2` 落在「跳过 -1」与「弃+取 -3..-5」之间的**空隙**里，
+		// 只比下界它会被放行 —— 而它没有任何语义。
+		//
+		// 放行无意义的值是有代价的：它会落进 battle_records.card_picks，
+		// 而运营分析与重放工具都读那一列。一个没有语义的编码在那里
+		// 就是「看起来有数据、其实无法解释」的脏数据。
+		//
+		// 编码（与 miniapp/src/game/engine.ts 的 PICK_* 常数一一对应）：
+		//
+		//	  0..handSlots-1   取第 handIdx 张（未弃牌）
+		//	  -1               整波跳过（未弃牌）
+		//	  -(3+handIdx)     弃一张，取第 handIdx 张    [-3..-5]
+		//	  -(6+handIdx)     弃一张，整波跳过            [-6..-8]
+		//
+		// 三个负区间互不相交，靠 BASE 相差 3（= 每波最大手牌数）。
+		// 若 `rollWaveCards` 改成每波 4 张，区间会开始重叠 ——
+		// 那时要拉开 BASE，而不是放宽这个判据。
+		if !validCardPick(p) {
+			return fmt.Errorf("%w：card_picks[%d] = %d 不是合法编码"+
+				"（合法：0~%d 取牌、%d 跳过、-3~-5 弃牌后取牌、-6~-8 弃牌后跳过）",
+				ErrInvalidField, i, p, CardPickHandSlots-1, CardPickSkip)
 		}
 	}
 
@@ -213,6 +318,56 @@ func validateReportCollections(gl GeneratedLevel, in SettleInput) error {
 	if len(in.ReplayHash) > maxReplayHashLen {
 		return fmt.Errorf("%w：replay_hash 长 %d 字符，上限 %d",
 			ErrInvalidField, len(in.ReplayHash), maxReplayHashLen)
+	}
+
+	// ── replay_skills（第 56 轮）──
+	//
+	// 两条边界分开报：长度与条目数。
+	// 只查长度的话，一个塞了 1000 个空条目的字符串长度可能仍在限内；
+	// 只查条目数的话，一个超长的单条又会绕过。
+	if len(in.ReplaySkills) > ReplaySkillsMaxLen {
+		return fmt.Errorf("%w：replay_skills 长 %d 字符，上限 %d",
+			ErrInvalidField, len(in.ReplaySkills), ReplaySkillsMaxLen)
+	}
+	if in.ReplaySkills != "" {
+		n := strings.Count(in.ReplaySkills, ",") + 1
+		if n > ReplaySkillsMaxEntries {
+			return fmt.Errorf("%w：replay_skills 有 %d 条，上限 %d",
+				ErrInvalidField, n, ReplaySkillsMaxEntries)
+		}
+		// 每条必须是 slot:skillId:baseDamage:applyStacks:heatCost 五个非负整数。
+		// 形状不对就没法与重算值比对，早一步报错更容易定位。
+		for i, seg := range strings.Split(in.ReplaySkills, ",") {
+			if err := validateSkillSegment(seg); err != nil {
+				return fmt.Errorf("%w：replay_skills[%d] %v", ErrInvalidField, i, err)
+			}
+		}
+	}
+	return nil
+}
+
+/**
+ * 校验一条 `slot:skillId:baseDamage:applyStacks:heatCost`。
+ *
+ * 五个字段都必须是非负十进制整数。
+ *
+ * ⚠️ 刻意**不**校验「等于某个已知技能」—— 那是 `BuildReplaySkillsSegment`
+ * 重算比对那一层的事，形状校验与语义校验分开，失败时更好定位。
+ */
+func validateSkillSegment(seg string) error {
+	parts := strings.Split(seg, ":")
+	if len(parts) != 5 {
+		return fmt.Errorf("字段数 %d，应为 5", len(parts))
+	}
+	for _, p := range parts {
+		if p == "" {
+			return errors.New("存在空字段")
+		}
+		for _, c := range p {
+			if c < '0' || c > '9' {
+				return fmt.Errorf("字段 %q 含非数字字符", p)
+			}
+		}
 	}
 	return nil
 }

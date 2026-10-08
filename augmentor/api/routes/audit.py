@@ -8,7 +8,7 @@ from typing import List, Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from ..deps import load_items, run_in_thread
+from ..deps import raise_internal_error, load_items, run_in_thread
 from augmentor.audit import AuditReport, DatasetAuditor
 
 router = APIRouter(tags=["audit"])
@@ -44,4 +44,4 @@ async def audit_dataset_endpoint(request: AuditRequest):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise_internal_error(e)
