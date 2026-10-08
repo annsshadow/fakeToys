@@ -5,9 +5,9 @@
   "C_read_not_sent": [],
   "D_delegated_unverifiable": [],
   "meta": {
-   "handlers_indexed": 1095,
+   "handlers_indexed": 1100,
    "structs_indexed": 279,
-   "frontend_body_calls": 1693,
+   "frontend_body_calls": 1802,
    "A": 0,
    "B": 0,
    "C": 0,
@@ -69,6 +69,8 @@
    ],
    "params": [
     "pool",
+    "session",
+    "shared",
     "body"
    ],
    "param_gets": [],
@@ -104,6 +106,8 @@
    ],
    "params": [
     "pool",
+    "session",
+    "shared",
     "id",
     "body"
    ],
@@ -143,6 +147,8 @@
    ],
    "params": [
     "pool",
+    "session",
+    "shared",
     "body",
     "axum",
     "extract"
@@ -182,6 +188,8 @@
    ],
    "params": [
     "pool",
+    "session",
+    "shared",
     "req",
     "axum",
     "extract"
@@ -223,6 +231,8 @@
    ],
    "params": [
     "pool",
+    "session",
+    "shared",
     "req",
     "axum",
     "extract"
@@ -278,6 +288,8 @@
    ],
    "params": [
     "pool",
+    "session",
+    "shared",
     "req",
     "axum",
     "extract"
@@ -322,6 +334,8 @@
    ],
    "params": [
     "pool",
+    "session",
+    "shared",
     "id",
     "req",
     "axum",
@@ -364,6 +378,8 @@
    ],
    "params": [
     "pool",
+    "session",
+    "shared",
     "id",
     "req",
     "axum",
@@ -650,14 +666,10 @@
    ],
    "reads": [
     "appealDate",
-    "creator",
-    "personId",
     "reason"
    ],
    "opt_keys": [
     "appealDate",
-    "creator",
-    "personId",
     "reason"
    ],
    "alt_groups": [],
@@ -673,6 +685,7 @@
    ],
    "params": [
     "pool",
+    "session",
     "payload"
    ],
    "param_gets": [],
@@ -710,6 +723,7 @@
    ],
    "params": [
     "pool",
+    "session",
     "payload"
    ],
    "param_gets": [],
@@ -4031,6 +4045,7 @@
    ],
    "params": [
     "pool",
+    "session",
     "axum",
     "extract",
     "req"
@@ -4139,6 +4154,7 @@
    ],
    "params": [
     "pool",
+    "session",
     "axum",
     "body"
    ],
@@ -4171,6 +4187,7 @@
    ],
    "params": [
     "pool",
+    "session",
     "axum",
     "body"
    ],
@@ -4203,6 +4220,7 @@
    ],
    "params": [
     "pool",
+    "session",
     "axum",
     "body"
    ],
@@ -4505,6 +4523,90 @@
    "emits": [],
    "file": "crates/bbs_assemble_control/src/u2.rs"
   },
+  "bbs_assemble_control::picture_encode": {
+   "body_params": [
+    "body"
+   ],
+   "reads": [],
+   "opt_keys": [],
+   "alt_groups": [
+    [
+     "base64",
+     "fileBase64",
+     "image"
+    ]
+   ],
+   "opt_alt_groups": [
+    [
+     "base64",
+     "fileBase64",
+     "image"
+    ]
+   ],
+   "delegated": true,
+   "crud_resolved": false,
+   "callees": [
+    "body_str",
+    "decode",
+    "map_err"
+   ],
+   "params": [
+    "size",
+    "body"
+   ],
+   "param_gets": [],
+   "consumes_whole": false,
+   "emits": [
+    "base64",
+    "format",
+    "length",
+    "size"
+   ],
+   "file": "crates/bbs_assemble_control/src/u2.rs"
+  },
+  "bbs_assemble_control::picture_section_icon": {
+   "body_params": [
+    "body"
+   ],
+   "reads": [],
+   "opt_keys": [],
+   "alt_groups": [
+    [
+     "base64",
+     "iconBase64",
+     "icon"
+    ]
+   ],
+   "opt_alt_groups": [
+    [
+     "base64",
+     "iconBase64",
+     "icon"
+    ]
+   ],
+   "delegated": true,
+   "crud_resolved": false,
+   "callees": [
+    "body_str",
+    "decode",
+    "map_err"
+   ],
+   "params": [
+    "pool",
+    "session",
+    "shared",
+    "id",
+    "body"
+   ],
+   "param_gets": [],
+   "consumes_whole": false,
+   "emits": [
+    "iconLength",
+    "id",
+    "updated"
+   ],
+   "file": "crates/bbs_assemble_control/src/u2.rs"
+  },
   "bbs_assemble_control::u2_subject_save": {
    "body_params": [
     "body"
@@ -4517,11 +4619,6 @@
     ],
     [
      "content"
-    ],
-    [
-     "creator",
-     "person",
-     "authorId"
     ],
     [
      "forumId"
@@ -4542,11 +4639,6 @@
     ],
     [
      "content"
-    ],
-    [
-     "creator",
-     "person",
-     "authorId"
     ],
     [
      "forumId"
@@ -4573,6 +4665,8 @@
    ],
    "params": [
     "pool",
+    "session",
+    "shared",
     "body",
     "axum",
     "extract"
@@ -4903,10 +4997,6 @@
     [
      "topicId",
      "subjectId"
-    ],
-    [
-     "creator",
-     "person"
     ]
    ],
    "opt_alt_groups": [
@@ -4916,10 +5006,6 @@
     [
      "topicId",
      "subjectId"
-    ],
-    [
-     "creator",
-     "person"
     ]
    ],
    "delegated": true,
@@ -4934,6 +5020,8 @@
    ],
    "params": [
     "pool",
+    "session",
+    "shared",
     "body",
     "axum",
     "extract"
@@ -16891,6 +16979,8 @@
    ],
    "params": [
     "pool",
+    "session",
+    "shared",
     "axum",
     "extract",
     "id",
@@ -21198,6 +21288,35 @@
    "emits": [],
    "file": "crates/organization_assemble_control/src/u2_person.rs",
    "delegated_resolved": true
+  },
+  "organization_assemble_control::person_check_password": {
+   "body_params": [
+    "body"
+   ],
+   "reads": [
+    "password"
+   ],
+   "opt_keys": [
+    "password"
+   ],
+   "alt_groups": [],
+   "opt_alt_groups": [],
+   "delegated": true,
+   "crud_resolved": false,
+   "callees": [
+    "ok",
+    "validate_password_policy"
+   ],
+   "params": [
+    "axum",
+    "body"
+   ],
+   "param_gets": [],
+   "consumes_whole": false,
+   "emits": [
+    "value"
+   ],
+   "file": "crates/organization_assemble_control/src/u2_person.rs"
   },
   "organization_assemble_control::person_set_icon": {
    "body_params": [
@@ -26545,6 +26664,34 @@
    ],
    "file": "crates/personal/src/regist.rs"
   },
+  "personal::check_password": {
+   "body_params": [
+    "body"
+   ],
+   "reads": [
+    "password"
+   ],
+   "opt_keys": [
+    "password"
+   ],
+   "alt_groups": [],
+   "opt_alt_groups": [],
+   "delegated": true,
+   "crud_resolved": false,
+   "callees": [
+    "is_password_acceptable"
+   ],
+   "params": [
+    "axum",
+    "body"
+   ],
+   "param_gets": [],
+   "consumes_whole": false,
+   "emits": [
+    "value"
+   ],
+   "file": "crates/personal/src/reset.rs"
+  },
   "personal::reset_password": {
    "body_params": [
     "req"
@@ -26610,6 +26757,34 @@
    "consumes_whole": false,
    "emits": [],
    "file": "crates/personal/src/reset.rs"
+  },
+  "personal::regist_check_password": {
+   "body_params": [
+    "body"
+   ],
+   "reads": [
+    "password"
+   ],
+   "opt_keys": [
+    "password"
+   ],
+   "alt_groups": [],
+   "opt_alt_groups": [],
+   "delegated": true,
+   "crud_resolved": false,
+   "callees": [
+    "is_password_acceptable"
+   ],
+   "params": [
+    "axum",
+    "body"
+   ],
+   "param_gets": [],
+   "consumes_whole": false,
+   "emits": [
+    "value"
+   ],
+   "file": "crates/personal/src/u2.rs"
   },
   "personal::log_currentperson_paging": {
    "body_params": [
@@ -33233,13 +33408,16 @@
    ],
    "params": [
     "pool",
+    "session",
+    "shared",
     "body"
    ],
    "param_gets": [],
    "consumes_whole": false,
    "emits": [
     "created",
-    "id"
+    "id",
+    "personId"
    ],
    "file": "crates/program_center/src/lib.rs"
   },
@@ -33266,6 +33444,8 @@
    ],
    "params": [
     "pool",
+    "session",
+    "shared",
     "id",
     "body"
    ],
