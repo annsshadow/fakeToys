@@ -1274,4 +1274,59 @@ mod u2_contract {
             .await
             .unwrap();
     }
+
+    // workcompleted_flag_rollback 事务化 (优化二轮 32): 回滚须原子地「work→pending」
+    // +「删除完成记录」。本测试验证事务版产出的终态一致：work_status=pending 且
+    // x_workcompleted 行已删（二写同事务提交后的可观测终态）。
+    #[tokio::test]
+    async fn u2_workcompleted_rollback_is_atomic_endstate() {
+        if !is_db_available().await {
+            return;
+        }
+        let pool = test_pool();
+        ensure_schema(&pool).await;
+        {
+            let c = pool.get().await.unwrap();
+            c.execute("DELETE FROM x_workcompleted WHERE id='r32-wc'", &[])
+                .await
+                .unwrap();
+            c.execute("DELETE FROM x_work WHERE id='r32-work'", &[])
+                .await
+                .unwrap();
+            c.execute(
+                "INSERT INTO x_work (id, title, process, work_status) VALUES ('r32-work','t','p','completed')",
+                &[],
+            )
+            .await
+            .unwrap();
+            c.execute(
+                "INSERT INTO x_workcompleted (id, work_id) VALUES ('r32-wc','r32-work')",
+                &[],
+            )
+            .await
+            .unwrap();
+        }
+        let url = "/api/processplatform/service/processing/workcompleted/rollback/r32-wc";
+        let (_, v) = send(Method::GET, url, None).await;
+        assert_eq!(v["type"], "success");
+        // 终态：work 已恢复 pending
+        let pending = count(
+            &pool,
+            "SELECT COUNT(*) AS c FROM x_work WHERE id='r32-work' AND work_status='pending'",
+        )
+        .await;
+        assert_eq!(pending, 1, "work 必须回滚为 pending");
+        // 终态：完成记录已删（同事务）
+        let wc_left = count(
+            &pool,
+            "SELECT COUNT(*) AS c FROM x_workcompleted WHERE id='r32-wc'",
+        )
+        .await;
+        assert_eq!(wc_left, 0, "完成记录必须随回滚删除");
+
+        let c = pool.get().await.unwrap();
+        c.execute("DELETE FROM x_work WHERE id='r32-work'", &[])
+            .await
+            .unwrap();
+    }
 }
