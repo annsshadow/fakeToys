@@ -458,4 +458,78 @@ mod tests {
             .execute("DELETE FROM x_mind WHERE id = $1", &[&id])
             .await;
     }
+
+    // mind filter IDOR fix (优化二轮 30): the recycle/shared/received filters now
+    // scope by session.person_unique, ignoring the client-supplied path {id}.
+    // Calling with ANOTHER user's unique (or empty) as the path must still only
+    // return the session owner's rows. Live DB only.
+    #[tokio::test]
+    async fn real_mind_filter_recycle_scopes_by_session_not_path_id() {
+        if !is_db_available().await {
+            return;
+        }
+        let pool = test_pool();
+        let client = pool.get().await.expect("db");
+        let owner = "r30-owner@P";
+        let other = "r30-other@P";
+        client
+            .execute(
+                "DELETE FROM x_mind WHERE creator = ANY($1)",
+                &[&vec![owner.to_string(), other.to_string()]],
+            )
+            .await
+            .unwrap();
+        let own_id = uuid::Uuid::new_v4().to_string();
+        let other_id = uuid::Uuid::new_v4().to_string();
+        // both deleted (in recycle bin), different owners.
+        client
+            .execute(
+                "INSERT INTO x_mind (id, name, content, creator, create_time, deleted_at) \
+                 VALUES ($1, 'own', 'c', $2, NOW(), NOW())",
+                &[&own_id, &owner],
+            )
+            .await
+            .unwrap();
+        client
+            .execute(
+                "INSERT INTO x_mind (id, name, content, creator, create_time, deleted_at) \
+                 VALUES ($1, 'other', 'c', $2, NOW(), NOW())",
+                &[&other_id, &other],
+            )
+            .await
+            .unwrap();
+
+        let session = shared::session::Session {
+            token: "r30-tok".to_string(),
+            person_unique: owner.to_string(),
+            created_at: chrono::Utc::now().naive_utc(),
+            expires_at: (chrono::Utc::now() + chrono::Duration::hours(1)).naive_utc(),
+        };
+        // path id is the OTHER user's unique — must be ignored in favour of session.
+        let out = crate::u2::mind_filter_recycle(
+            axum::extract::Extension(pool.clone()),
+            axum::extract::Extension(session),
+            axum::extract::Path((other.to_string(), "1".to_string())),
+        )
+        .await
+        .unwrap();
+        let data = out.0.data.expect("data");
+        let items = data.as_array().expect("array");
+        // every returned row belongs to the session owner, never the other user.
+        assert!(
+            items.iter().all(|it| it["creator"] == owner),
+            "recycle must be session-scoped: {items:?}"
+        );
+        assert!(
+            items.iter().any(|it| it["id"] == own_id),
+            "owner's own recycled mind must be present"
+        );
+
+        let _ = client
+            .execute(
+                "DELETE FROM x_mind WHERE creator = ANY($1)",
+                &[&vec![owner.to_string(), other.to_string()]],
+            )
+            .await;
+    }
 }
