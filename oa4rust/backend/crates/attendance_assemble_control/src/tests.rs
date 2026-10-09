@@ -347,4 +347,81 @@ mod tests {
             .await
             .unwrap();
     }
+
+    // v2_group_person_date 假过滤 IDOR 门禁（优化二轮 37）：原先无会话、按路径
+    // {person} 过滤 participate_list，前端把 session.user.unique 塞进 {person}。
+    // 修复后忽略路径 {person}、以会话登录人为属主——传受害者 {person} 只会返回
+    // 「会话人自己」所属的组，拿不到受害者的组及同组成员名单。
+    #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
+    async fn v2_group_person_date_scopes_to_session_not_path() {
+        let pool = test_pool();
+        let client = pool.get().await.unwrap();
+        client
+            .execute(
+                "CREATE TABLE IF NOT EXISTS x_attendance_v2_group (id TEXT PRIMARY KEY, group_name TEXT, check_type TEXT, shift_id TEXT, participate_list TEXT, start_date TEXT, end_date TEXT, create_time TEXT)",
+                &[],
+            )
+            .await
+            .unwrap();
+        client
+            .execute(
+                "DELETE FROM x_attendance_v2_group WHERE id IN ('u2-grp-a','u2-grp-b')",
+                &[],
+            )
+            .await
+            .unwrap();
+        let victim = "u2-grp-victim@P";
+        let attacker = "u2-grp-attacker@P";
+        // 组 A 只含受害者；组 B 只含攻击者（会话人）
+        client
+            .execute(
+                "INSERT INTO x_attendance_v2_group (id, group_name, participate_list, create_time) \
+                 VALUES ('u2-grp-a', 'victim-grp', $1, '2026-10-09 00:00:00'), \
+                        ('u2-grp-b', 'attacker-grp', $2, '2026-10-09 00:00:01')",
+                &[
+                    &format!(",{victim},"),
+                    &format!(",{attacker},"),
+                ],
+            )
+            .await
+            .unwrap();
+
+        let session = shared::session::Session {
+            token: "grp-tok".to_string(),
+            person_unique: attacker.to_string(),
+            created_at: chrono::Utc::now().naive_utc(),
+            expires_at: (chrono::Utc::now() + chrono::Duration::hours(1)).naive_utc(),
+        };
+        // 攻击者带受害者 {person} 发起查询（假过滤攻击）
+        let resp = crate::v2_group_person_date(
+            axum::Extension(pool.clone()),
+            axum::Extension(session),
+            axum::extract::Path((victim.to_string(), "2026-10-09".to_string())),
+        )
+        .await
+        .unwrap();
+        let j = serde_json::to_value(&resp.0).unwrap();
+        let data = j["data"].as_array().expect("data array");
+        let ids: Vec<String> = data
+            .iter()
+            .map(|r| r["id"].as_str().unwrap_or_default().to_string())
+            .collect();
+        assert!(
+            ids.contains(&"u2-grp-b".to_string()),
+            "会话人应看到自己所属的组"
+        );
+        assert!(
+            !ids.contains(&"u2-grp-a".to_string()),
+            "绝不能通过路径 {{person}} 枚举受害者所属的组（IDOR 已堵）"
+        );
+
+        client
+            .execute(
+                "DELETE FROM x_attendance_v2_group WHERE id IN ('u2-grp-a','u2-grp-b')",
+                &[],
+            )
+            .await
+            .unwrap();
+    }
 }
