@@ -2334,55 +2334,33 @@ pub async fn state_organization(
 pub async fn state_running(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let pending_works = client
-        .query("SELECT COUNT(*) as cnt FROM x_work WHERE work_status = 'pending' AND deleted_at IS NULL", &[])
+    // 5 独立 COUNT(*)（x_work 2 / x_task 3）折叠为每表一条 FILTER 条件聚合：
+    // 5 次串行往返 + 5 次全表扫描 → 2 次往返 + 2 次扫描，结果等价。
+    let work_row = client
+        .query_one(
+            "SELECT COUNT(*) FILTER (WHERE work_status = 'pending') AS pending, \
+             COUNT(*) FILTER (WHERE work_status = 'processing') AS processing \
+             FROM x_work WHERE deleted_at IS NULL",
+            &[],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
-    let pending_works: i64 = if !pending_works.is_empty() {
-        pending_works[0].get("cnt")
-    } else {
-        0
-    };
+    let task_row = client
+        .query_one(
+            "SELECT COUNT(*) FILTER (WHERE task_status = 'pending') AS pending, \
+             COUNT(*) FILTER (WHERE task_status = 'processing') AS processing, \
+             COUNT(*) FILTER (WHERE task_status = 'started') AS started \
+             FROM x_task WHERE deleted_at IS NULL",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
 
-    let processing_works = client
-        .query("SELECT COUNT(*) as cnt FROM x_work WHERE work_status = 'processing' AND deleted_at IS NULL", &[])
-        .await
-        .map_err(|_| AppError::Internal)?;
-    let processing_works: i64 = if !processing_works.is_empty() {
-        processing_works[0].get("cnt")
-    } else {
-        0
-    };
-
-    let pending_tasks = client
-        .query("SELECT COUNT(*) as cnt FROM x_task WHERE task_status = 'pending' AND deleted_at IS NULL", &[])
-        .await
-        .map_err(|_| AppError::Internal)?;
-    let pending_tasks: i64 = if !pending_tasks.is_empty() {
-        pending_tasks[0].get("cnt")
-    } else {
-        0
-    };
-
-    let processing_tasks = client
-        .query("SELECT COUNT(*) as cnt FROM x_task WHERE task_status = 'processing' AND deleted_at IS NULL", &[])
-        .await
-        .map_err(|_| AppError::Internal)?;
-    let processing_tasks: i64 = if !processing_tasks.is_empty() {
-        processing_tasks[0].get("cnt")
-    } else {
-        0
-    };
-
-    let started_tasks = client
-        .query("SELECT COUNT(*) as cnt FROM x_task WHERE task_status = 'started' AND deleted_at IS NULL", &[])
-        .await
-        .map_err(|_| AppError::Internal)?;
-    let started_tasks: i64 = if !started_tasks.is_empty() {
-        started_tasks[0].get("cnt")
-    } else {
-        0
-    };
+    let pending_works: i64 = work_row.get("pending");
+    let processing_works: i64 = work_row.get("processing");
+    let pending_tasks: i64 = task_row.get("pending");
+    let processing_tasks: i64 = task_row.get("processing");
+    let started_tasks: i64 = task_row.get("started");
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
