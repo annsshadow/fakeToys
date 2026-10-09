@@ -551,3 +551,87 @@ async fn state_summary_filter_buckets_match_seeded_deltas() {
         .await
         .unwrap();
 }
+
+// state_running 5→2 FILTER-aggregate collapse (优化二轮 26): same delta-based
+// live assertion as state_summary, for the running-state buckets. Live DB only.
+#[tokio::test]
+async fn state_running_filter_buckets_match_seeded_deltas() {
+    if !shared::testing::is_db_available().await {
+        return;
+    }
+    let pool = shared::testing::test_pool();
+    let client = pool.get().await.unwrap();
+
+    async fn running(pool: &Pool) -> serde_json::Value {
+        let resp = crate::router(pool.clone())
+            .oneshot(
+                Request::builder()
+                    .method(Method::GET)
+                    .uri("/api/processplatform/assemble/bam/state/running")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), StatusCode::OK);
+        let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        serde_json::from_slice::<serde_json::Value>(&bytes).unwrap()["data"].clone()
+    }
+    let get = |v: &serde_json::Value, k: &str| v[k].as_i64().unwrap();
+
+    let before = running(&pool).await;
+    // 1 pending + 1 processing work; 1 pending + 1 processing + 2 started task.
+    for (id, st) in [("r26-w-p1", "pending"), ("r26-w-r1", "processing")] {
+        client
+            .execute(
+                "INSERT INTO x_work (id, title, process, work_status) VALUES ($1, 'r26', 'r26', $2)",
+                &[&id, &st],
+            )
+            .await
+            .unwrap();
+    }
+    for (id, st) in [
+        ("r26-t-p1", "pending"),
+        ("r26-t-r1", "processing"),
+        ("r26-t-s1", "started"),
+        ("r26-t-s2", "started"),
+    ] {
+        client
+            .execute(
+                "INSERT INTO x_task (id, work, task_status) VALUES ($1, 'r26-w-p1', $2)",
+                &[&id, &st],
+            )
+            .await
+            .unwrap();
+    }
+    let after = running(&pool).await;
+
+    assert_eq!(get(&after, "pendingWork") - get(&before, "pendingWork"), 1);
+    assert_eq!(
+        get(&after, "processingWork") - get(&before, "processingWork"),
+        1
+    );
+    assert_eq!(get(&after, "pendingTask") - get(&before, "pendingTask"), 1);
+    assert_eq!(
+        get(&after, "processingTask") - get(&before, "processingTask"),
+        1
+    );
+    assert_eq!(get(&after, "startedTask") - get(&before, "startedTask"), 2);
+
+    client
+        .execute(
+            "DELETE FROM x_work WHERE id IN ('r26-w-p1','r26-w-r1')",
+            &[],
+        )
+        .await
+        .unwrap();
+    client
+        .execute(
+            "DELETE FROM x_task WHERE id IN ('r26-t-p1','r26-t-r1','r26-t-s1','r26-t-s2')",
+            &[],
+        )
+        .await
+        .unwrap();
+}
