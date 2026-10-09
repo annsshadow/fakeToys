@@ -670,3 +670,62 @@ mod tests {
         }
     }
 }
+
+/// CMS 关键词搜索 LIKE 通配符转义（优化二轮 44）：review_v2_search 等关键词
+/// 搜索原 `format!("%{}%", keyword)` 把用户词原样拼进 ILIKE，含 `_`/`%` 会被当
+/// 通配符（搜 `_` 命中任意单字=近全表）。转义后须按字面匹配。
+#[tokio::test]
+async fn cms_keyword_search_treats_underscore_as_literal() {
+    if !shared::testing::is_db_available().await {
+        eprintln!("skipping cms_keyword_search_treats_underscore_as_literal: DB not reachable");
+        return;
+    }
+    let pool = shared::testing::test_pool();
+    let c = pool.get().await.unwrap();
+    c.execute(
+        "CREATE TABLE IF NOT EXISTS x_cms_comment (id VARCHAR(255) PRIMARY KEY, doc_id VARCHAR(255) NOT NULL, person_id VARCHAR(255), content TEXT, parent_id VARCHAR(255), create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP, deleted_at TIMESTAMP)",
+        &[],
+    )
+    .await
+    .unwrap();
+    c.execute(
+        "DELETE FROM x_cms_comment WHERE id IN ('u2-cmt-under','u2-cmt-plain')",
+        &[],
+    )
+    .await
+    .unwrap();
+    // content 'a_c' 含字面下划线；'abc' 不含
+    c.execute(
+        "INSERT INTO x_cms_comment (id, doc_id, content) VALUES ('u2-cmt-under','u2doc','a_c'), ('u2-cmt-plain','u2doc','abc')",
+        &[],
+    )
+    .await
+    .unwrap();
+
+    let params = std::collections::HashMap::from([("keyword".to_string(), "_".to_string())]);
+    let resp = crate::review_v2_search(axum::Extension(pool.clone()), axum::extract::Query(params))
+        .await
+        .unwrap();
+    let j = serde_json::to_value(&resp.0).unwrap();
+    let ids: Vec<String> = j["data"]
+        .as_array()
+        .expect("data array")
+        .iter()
+        .map(|r| r["id"].as_str().unwrap_or_default().to_string())
+        .collect();
+    assert!(
+        ids.contains(&"u2-cmt-under".to_string()),
+        "应命中含字面下划线的评论"
+    );
+    assert!(
+        !ids.contains(&"u2-cmt-plain".to_string()),
+        "下划线须按字面匹配，不得当通配符命中 'abc'"
+    );
+
+    c.execute(
+        "DELETE FROM x_cms_comment WHERE id IN ('u2-cmt-under','u2-cmt-plain')",
+        &[],
+    )
+    .await
+    .unwrap();
+}
