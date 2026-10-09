@@ -90,6 +90,12 @@ docker build -f docker/Dockerfile -t ai-data-platform:3.0.0 .
 镜像基于 `python:3.11-slim`，预装 `libgomp1`（FAISS/OpenMP）、`libsndfile1`（音频）、
 `libgl1` 与 `libglib2.0-0`（图像）等系统库。
 
+> **版本口径**：全仓统一为「最低 Python **3.10+**」（产品码语法下限实测是 3.8，但
+> `requirements-core.txt` 里已装的 `fastapi` / `uvicorn` / `requests` 与测试套件
+> 本身都要求 ≥3.10）。这里的 `python:3.11-slim` 是**部署钉的版本**、也是装全套
+> 可选依赖（numpy 2.x / pandas 3.0 / chromadb 1.5）所需的下限，比最低要求更严，
+> 两者不冲突。下面服务器段的 `python3.11` 同理。
+
 构建参数：
 
 | 参数 | 默认 | 说明 |
