@@ -492,7 +492,13 @@ class StreamWriter:
     
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self._file:
-            if self.format == 'json' and self.mode == 'w':
+            # L201（B266）：异常穿过 with 块时**不补**闭合括号。
+            # 改前无条件补 ']'，而 write_chunk 是「先写分隔符再序列化」，序列化一炸
+            # 盘上就留下悬挂逗号 ⇒ 最终产物 '[{"a": 1},]'，一份非法 JSON
+            # （实测 json.loads 报 Illegal trailing comma）。用户先看到 TypeError，
+            # 回头看文件还以为「写到一半了」，其实是永久损坏。
+            # 不补则盘上是明确的截断形态，且调用方本来就要处理正在传播的那个异常。
+            if exc_type is None and self.format == 'json' and self.mode == 'w':
                 self._file.write(']')
             self._file.close()
             self._file = None
@@ -511,9 +517,13 @@ class StreamWriter:
                 line = json.dumps(item, ensure_ascii=False)
                 self._file.write(line + '\n')
             else:  # json
+                # L201（B266）：先序列化再写分隔符。改前顺序相反，json.dumps 抛异常时
+                # 上一个 ',' 已经落盘 ⇒ 留下悬挂逗号（与 __exit__ 那条合起来才构成
+                # 完整的非法 JSON）。分开任何一半都还会坏，所以两处必须一起改。
+                payload = json.dumps(item, ensure_ascii=False)
                 if not self._first_chunk:
                     self._file.write(',')
-                self._file.write(json.dumps(item, ensure_ascii=False))
+                self._file.write(payload)
                 self._first_chunk = False
         
         self._file.flush()
