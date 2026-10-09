@@ -340,7 +340,10 @@ export function validateFormValues(
     const value = values[key]
     const validation = object(module.validation)
     const required = Boolean(module.required || validation.required)
-    if (required && (value === null || value === '' || (Array.isArray(value) && !value.length))) {
+    if (
+      required &&
+      (value === undefined || value === null || value === '' || (Array.isArray(value) && !value.length))
+    ) {
       errors[key] = String(validation.message || `${module.label || key}为必填项`)
     }
     const pattern = typeof validation.pattern === 'string' ? validation.pattern : ''
