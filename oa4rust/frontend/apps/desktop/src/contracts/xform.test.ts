@@ -50,6 +50,16 @@ describe('Xform moduleList contract', () => {
     expect(validateFormValues(definition, { subject: '真实数据' })).toEqual({})
   })
 
+  it('flags a required field whose key is absent (undefined) from the submitted values', () => {
+    // 回归：原空判缺 value===undefined 分支，键缺失时 values[key] 为 undefined 会绕过必填校验静默放行。
+    const definition = serializeFormDefinition({
+      name: '申请',
+      application: 'app-1',
+      fields: [{ id: 'subject', type: 'text', label: '标题', key: 'subject', required: true }],
+    })
+    expect(validateFormValues(definition, {})).toEqual({ subject: '标题为必填项' })
+  })
+
   it('requires the real application id for create payloads', () => {
     const definition = serializeFormDefinition({ name: '申请', application: '', fields: [] })
     expect(() => formSavePayload(definition, { name: '申请', appId: '' })).toThrow('appId required')
