@@ -139,3 +139,22 @@ async fn test_u2_put_component_by_id_route() {
         .unwrap();
     assert_ne!(response.status(), StatusCode::NOT_FOUND);
 }
+
+// list_control_categories N+1→GROUP BY collapse: the fold maps grouped
+// (type, count) rows to category objects. system→"System Components",
+// anything else→"Custom Components", enabled = count > 0.
+#[test]
+fn test_fold_control_categories_maps_names_and_enabled() {
+    let cats = crate::fold_control_categories(vec![
+        (Some("system".to_string()), 3i64),
+        (Some("widget".to_string()), 1i64),
+        (Some("empty".to_string()), 0i64),
+    ]);
+    assert_eq!(cats.len(), 3);
+    assert_eq!(cats[0]["id"], json!("system"));
+    assert_eq!(cats[0]["name"], json!("System Components"));
+    assert_eq!(cats[0]["enabled"], json!(true));
+    assert_eq!(cats[1]["name"], json!("Custom Components"));
+    assert_eq!(cats[1]["enabled"], json!(true));
+    assert_eq!(cats[2]["enabled"], json!(false));
+}
