@@ -1182,3 +1182,79 @@ async fn mobile_bbs_topic_reply_roundtrip_live() {
     assert_eq!(st, StatusCode::OK);
     assert_eq!(missing["type"], "error");
 }
+
+/// 投票二写原子性（优化二轮 34）：vote/submit 现把「写 x_bbs_vote_record」+
+/// 「x_bbs_topic.vote_count +1」包进单事务+commit。验证提交后终态一致——票数
+/// 恰 +1 且恰有一条本人投票记录（二写同时可见，证非半提交）。
+#[tokio::test]
+async fn test_vote_submit_record_and_count_are_atomic() {
+    use shared::testing::{is_db_available, test_pool};
+    if !is_db_available().await {
+        eprintln!("skipping test_vote_submit_record_and_count_are_atomic: DB not reachable");
+        return;
+    }
+    u2::ensure_u2_schema(&test_pool().get().await.unwrap()).await;
+
+    let voter = "u2-voter-carol";
+    let topic_id = "u2-topic-vote-atom-001";
+    {
+        let client = test_pool().get().await.unwrap();
+        client
+            .execute(
+                "DELETE FROM x_bbs_vote_record WHERE topic_id = $1",
+                &[&topic_id],
+            )
+            .await
+            .unwrap();
+        client
+            .execute(
+                "INSERT INTO x_bbs_topic (id, title, author_id, creator, section_id, vote_count) \
+                 VALUES ($1,'t',$2,$2,'sec-u2',0) \
+                 ON CONFLICT (id) DO UPDATE SET deleted_at = NULL, vote_count = 0",
+                &[&topic_id, &voter],
+            )
+            .await
+            .expect("seed topic");
+    }
+
+    let app = crate::router(test_pool());
+    let (st, v) = send_with_session(
+        app,
+        Method::PUT,
+        &format!("{BASE}/user/subject/vote/submit"),
+        Some(json!({"subjectId": topic_id, "optionId": "opt-a", "optionName": "甲"})),
+        Some(make_session(voter, "carol")),
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK);
+    assert_eq!(v["data"]["voted"], true);
+
+    // 事务提交后：票数 +1 且投票记录恰一条（二写同时落库）
+    let client = test_pool().get().await.unwrap();
+    let count: i32 = client
+        .query_one(
+            "SELECT vote_count FROM x_bbs_topic WHERE id = $1",
+            &[&topic_id],
+        )
+        .await
+        .unwrap()
+        .get("vote_count");
+    assert_eq!(count, 1, "vote_count 应原子 +1");
+    let records: i64 = client
+        .query_one(
+            "SELECT COUNT(*) AS c FROM x_bbs_vote_record WHERE topic_id = $1 AND person = $2",
+            &[&topic_id, &voter],
+        )
+        .await
+        .unwrap()
+        .get("c");
+    assert_eq!(records, 1, "应恰有一条本人投票记录与计数同事务落库");
+
+    client
+        .execute(
+            "DELETE FROM x_bbs_vote_record WHERE topic_id = $1",
+            &[&topic_id],
+        )
+        .await
+        .unwrap();
+}
