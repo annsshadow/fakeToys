@@ -357,7 +357,8 @@ def tracked_dirs():
     本轮第一版实测把 414 条示例路径全判成了死链。
     """
     out = subprocess.run(["git", "ls-files", "--", "augmentor"], cwd=ROOT.parent,
-                         capture_output=True, text=True)
+                         capture_output=True, text=True,
+                         encoding="utf-8", errors="replace")
     dirs = set()
     for line in out.stdout.splitlines():
         if not line.startswith("augmentor/"):
