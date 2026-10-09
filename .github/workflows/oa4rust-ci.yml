@@ -416,7 +416,10 @@ jobs:
   # 对比：基线为 'bootstrap' 哨兵时记录观测值并通过（提示提交者落基线）；
   # 基线为整数时仅当 观测值 > 基线（回归）才失败并阻断构建。
   # 报告经 Actions artifacts API 拉取（zip 解包），不依赖 download-artifact
-  # 的具体版本；behavior-compare 被跳过（如纯前端 PR）时本 job 自动跳过。
+  # 的具体版本。外部依赖缺失判定：behavior-compare 因 o2server(Java) 未就绪而
+  # 跳过 Java 侧时，会经 job output java_not_ready=true 透传；本 job 据此把
+  # 「缺 report」判为外部阻塞（exit 0）而非 regression（continue-on-error 掩盖后
+  # needs.result 恒非 skipped，不能靠 result 判定，故改用 output 信号）。
   behavior-gate:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
