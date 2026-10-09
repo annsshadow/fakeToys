@@ -3003,26 +3003,30 @@ pub async fn workcompleted_flag_rollback(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let row = client
+    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    // 回滚=原子地「x_work 恢复 pending」+「删除完成记录」，二写须同事务：否则中途失败
+    // 会留下 work 既 pending 又仍存在完成记录的自相矛盾态（孪生 wc_rollback_flag 已事务化）。
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let row = tx
         .query_one(
-            "SELECT id, work_id, completed_time, creator FROM x_workcompleted WHERE id = $1",
+            "SELECT id, work_id, completed_time, creator FROM x_workcompleted WHERE id = $1 FOR UPDATE",
             &[&id],
         )
         .await
         .map_err(|_| AppError::Internal)?;
     let work_id: String = row.get("work_id");
-    client
-        .execute(
-            "UPDATE x_work SET work_status = $1 WHERE id = $2",
-            &[&"pending", &work_id],
-        )
+    tx.execute(
+        "UPDATE x_work SET work_status = $1 WHERE id = $2",
+        &[&"pending", &work_id],
+    )
+    .await
+    .map_err(|_| AppError::Internal)?;
+    tx.execute("DELETE FROM x_workcompleted WHERE id = $1", &[&id])
         .await
         .map_err(|_| AppError::Internal)?;
-    client
-        .execute("DELETE FROM x_workcompleted WHERE id = $1", &[&id])
-        .await
-        .map_err(|_| AppError::Internal)?;
+    tx.commit().await.map_err(|_| AppError::Internal)?;
+
+    // 回滚提交后再读快照（复用同一 client，无需再取连接）。
     let snap_row = client
         .query_opt(
             "SELECT id, snap_data FROM x_snap WHERE work_id = $1 ORDER BY create_time DESC LIMIT 1",
