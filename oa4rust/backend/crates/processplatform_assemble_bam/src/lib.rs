@@ -2273,44 +2273,21 @@ pub async fn state_organization(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let total_persons = client
-        .query(
-            "SELECT COUNT(*) as cnt FROM x_org_person WHERE deleted_at IS NULL",
+    // 3 条跨表独立 COUNT(*)（x_org_person/unit/group）合并为单条标量子查询：3 次
+    // 往返 → 1 次往返（三表各扫一次不变）。各表不同，无法用 FILTER 单表聚合，故用
+    // 标量子查询并表为一行；"groups" 是保留字故别名用 grps。
+    let row = client
+        .query_one(
+            "SELECT (SELECT COUNT(*) FROM x_org_person WHERE deleted_at IS NULL) AS persons, \
+                    (SELECT COUNT(*) FROM x_org_unit WHERE deleted_at IS NULL) AS units, \
+                    (SELECT COUNT(*) FROM x_org_group WHERE deleted_at IS NULL) AS grps",
             &[],
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    let total_persons: i64 = if !total_persons.is_empty() {
-        total_persons[0].get("cnt")
-    } else {
-        0
-    };
-
-    let total_units = client
-        .query(
-            "SELECT COUNT(*) as cnt FROM x_org_unit WHERE deleted_at IS NULL",
-            &[],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
-    let total_units: i64 = if !total_units.is_empty() {
-        total_units[0].get("cnt")
-    } else {
-        0
-    };
-
-    let total_groups = client
-        .query(
-            "SELECT COUNT(*) as cnt FROM x_org_group WHERE deleted_at IS NULL",
-            &[],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
-    let total_groups: i64 = if !total_groups.is_empty() {
-        total_groups[0].get("cnt")
-    } else {
-        0
-    };
+    let total_persons: i64 = row.get("persons");
+    let total_units: i64 = row.get("units");
+    let total_groups: i64 = row.get("grps");
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
