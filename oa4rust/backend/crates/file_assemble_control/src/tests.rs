@@ -275,6 +275,23 @@ mod tests {
         assert_eq!(result.message, Some("test error".to_string()));
     }
 
+    // 优化二轮 47：attachment2 列表分页 offset 原 page*size（page=1 跳过首页）
+    // + size 无上限 → 修为 (page-1)*size + size 夹到 1..=200。
+    #[test]
+    fn attachment2_limit_offset_is_one_based_and_clamped() {
+        // page=1 必须 offset=0（修复前为 size）
+        assert_eq!(crate::attachment2_limit_offset("1", "20"), (20, 0));
+        assert_eq!(crate::attachment2_limit_offset("2", "20"), (20, 20));
+        assert_eq!(crate::attachment2_limit_offset("3", "50"), (50, 100));
+        // page<=0 / 非法 → 兜底第一页
+        assert_eq!(crate::attachment2_limit_offset("0", "20"), (20, 0));
+        assert_eq!(crate::attachment2_limit_offset("x", "20"), (20, 0));
+        // size 非法回退 20、上限夹到 200、下限 1
+        assert_eq!(crate::attachment2_limit_offset("1", "bad"), (20, 0));
+        assert_eq!(crate::attachment2_limit_offset("1", "9999"), (200, 0));
+        assert_eq!(crate::attachment2_limit_offset("2", "0"), (1, 1));
+    }
+
     // ── route existence: routes defined in file_assemble_control_router ──────
 
     #[ignore = "requires a running PostgreSQL server"]
