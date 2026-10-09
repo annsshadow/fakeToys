@@ -3310,7 +3310,7 @@ pub async fn designer_search(
     let rows = client
         .query(
             "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time::text FROM x_cms_surface_appdict WHERE app_info_flag ILIKE $1 AND deleted_at IS NULL",
-            &[&format!("%{}%", keyword)],
+            &[&format!("%{}%", shared::db::escape_like(&keyword))],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -6013,7 +6013,7 @@ pub async fn review_v2_search(
     let rows = client
         .query(
             "SELECT id, doc_id, person_id, create_time::text FROM x_cms_comment WHERE content ILIKE $1 AND deleted_at IS NULL",
-            &[&format!("%{}%", keyword)],
+            &[&format!("%{}%", shared::db::escape_like(&keyword))],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -9748,7 +9748,7 @@ pub async fn designer_u2_search(
     if keyword.trim().is_empty() {
         return Err(AppError::BadRequest("keyword required".to_string()));
     }
-    let pattern = format!("%{}%", keyword);
+    let pattern = format!("%{}%", shared::db::escape_like(&keyword));
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -10337,7 +10337,7 @@ pub async fn review_v2_search_u3(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let keyword = u2_body_str(&body, "keyword").unwrap_or_default();
     let size = u2_body_i64(&body, "size").unwrap_or(20).clamp(1, 100);
-    let pattern = format!("%{}%", keyword);
+    let pattern = format!("%{}%", shared::db::escape_like(&keyword));
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
