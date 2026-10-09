@@ -516,7 +516,17 @@ MEASURED = {
     #: 旧格 validation.py 639 行与 auto_test.py 385-386 行随改指退出本档（−2）⇒ 净 +3。
     #: 案面=文档引用漂移（账本读数出处记录，按 A127 口径不做批量改写），
     #: 循 L180 先例按「数字搬进常量」条款重钉；line_refs 270 / file_tokens 1661 未动。
-    LEDGER: {"line_refs": 270, "file_tokens": 1661, "code_but_no_name_match": 149},
+    #: **L199 面位移（line_refs 270 → 268、file_tokens 1661 → 1663）**：L199 给
+    #: `augmentor/validation.py`（+7）与 `augmentor/streaming.py`（+21）顶部插判据档，
+    #: 账本两条行号引用的**被引行换位**（A92 行那条的旧行号与 A145 行那条的旧行号，
+    #: 后者账本原文已注「预取那一行已不在」）双双落到非代码行，`dead_line` 硬 0 档当场
+    #: 抓住。处置按 A127 / L180 / L193 既有口径：**行号引用降成名字锚点**（历史行号不是
+    #: 对今天文件的断言，不该用断言语法写它）⇒ 两条从 LINE_REF 语法搬进 FILE_TOKEN
+    #: 语法：line_refs −2、file_tokens +2（引用总规模不变、语法搬家），漂移 149 与
+    #: `dead_line` 0 一格未动。
+    #: **本段自己就是同款事故的第四次复现**：第一版归因注释把被降级的那两个旧行号原样
+    #: 抄了进来 ⇒ A184 硬 0 档当场红（注释也进普查面）。已改为只描述不抄形状。
+    LEDGER: {"line_refs": 268, "file_tokens": 1663, "code_but_no_name_match": 149},
     #: L156 面位移（290 → 285）：streaming.py 插 `StreamConfig.__post_init__` 后，账本 5 条
     #: streaming.py 历史行引用（A145 行 2 条、A147 行 3 条）被引行换位、退出本档，按
     #: L151 / L153 / L154 先例降成名字锚（「原 N 行」）：line_refs −5、漂移 147 →

@@ -22,6 +22,12 @@ from enum import Enum
 
 from augmentor.exceptions import DataValidationError
 
+#: L199（B265）：`DataSanitizer.remove_duplicates(keep=)` 的保留策略封闭清单
+#: （A77 单一权威）。改前只跟 `"last"` 比一次，`"Last"` / `"last "` / `"firts"`
+#: 全部静默按 first 走——用户以为「保留最后一次」，实际保留第一次，且无任何提示。
+#: B205 / L135 两轮都在优化这条路径的复杂度，却没补这道判据。
+DEDUP_KEEP_MODES = ("first", "last")
+
 logger = logging.getLogger(__name__)
 
 # 空白折叠模式。编译一次放在模块级：`re.sub(字面模式, ...)` 每次都要走一遍
@@ -907,7 +913,16 @@ class DataSanitizer:
         
         Returns:
             去重后的数据列表
+
+        Raises:
+            DataValidationError: `keep` 不是 first/last 之一
         """
+        if keep is None:
+            raise DataValidationError(
+                f"keep 不能为 null，合法取值: {' / '.join(DEDUP_KEEP_MODES)}"
+            )
+        require_choice("keep", keep, choices=DEDUP_KEEP_MODES)
+
         seen = {}
         result = []
         

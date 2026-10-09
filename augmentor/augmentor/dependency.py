@@ -13,9 +13,17 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from .atomic_write import atomic_write_json
+from .exceptions import DataValidationError
+from .validation import require_choice
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
+
+#: L199（B265）：`get_dependencies(direction=)` 的方向封闭清单（A77 单一权威）。
+#: 改前三条分支各跟一个字面量比，未知值**一条都不命中** ⇒ 返回 `[]`，用户读到的是
+#: 「这个数据集没有任何依赖」这个**正面论断**，而不是「参数写错了」。这与
+#: 「静默回落默认分支」是同一族的另一面：那里给错结果，这里给错结论。
+DEPENDENCY_DIRECTIONS = ("upstream", "downstream", "both")
 
 
 @dataclass
@@ -219,7 +227,17 @@ class DependencyManager:
         
         Returns:
             依赖列表
+
+        Raises:
+            DataValidationError: `direction` 不是 upstream/downstream/both 之一
         """
+        if direction is None:
+            raise DataValidationError(
+                "direction 不能为 null，合法取值: "
+                f"{' / '.join(DEPENDENCY_DIRECTIONS)}"
+            )
+        require_choice("direction", direction, choices=DEPENDENCY_DIRECTIONS)
+
         result = []
         
         for dep in self._dependencies:

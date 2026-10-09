@@ -19,7 +19,17 @@ from pathlib import Path
 from dataclasses import dataclass
 from collections import Counter
 
+from augmentor.validation import require_choice
+from .exceptions import DataValidationError
+
 logger = logging.getLogger(__name__)
+
+#: L199（B265）：`visualize_dataset` 的输出格式封闭清单（A77 单一权威）。
+#: 改前 `format` 只跟一个字面量比一次，未知值静默落 text 支——`"txt"` / `"JSON"` /
+#: `"json "` / `None` 全都按 text 出报告还按 text 落盘，用户拿到的是另一种格式。
+#: 与 L175 的 `search_enhanced.search(method=)`、L176 的
+#: `save_quality_report(format=)` 同族，那两处已收，本处是漏网的一处。
+VISUALIZE_FORMATS = ("text", "json")
 
 
 @dataclass
@@ -237,10 +247,21 @@ def visualize_dataset(items: List[Dict], output_path: str = None, format: str = 
         items: 数据列表
         output_path: 输出路径
         format: 输出格式 (text/json)
-    
+
     Returns:
         可视化结果
+
+    Raises:
+        DataValidationError: `format` 不是 text/json 之一
     """
+    # L199：判据先于产物。None 单独先判——本函数有默认值 "text"，None 意味着
+    # 调用方显式传了 null，那与「没传」不是一回事。
+    if format is None:
+        raise DataValidationError(
+            f"format 不能为 null，合法取值: {' / '.join(VISUALIZE_FORMATS)}"
+        )
+    require_choice("format", format, choices=VISUALIZE_FORMATS)
+
     visualizer = EnhancedVisualizer()
     
     if format == "json":

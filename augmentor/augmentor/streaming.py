@@ -11,8 +11,16 @@ import logging
 from typing import List, Dict, Iterator, Callable, Optional, Generator, Any
 from pathlib import Path
 from dataclasses import dataclass
-from .exceptions import StreamError, DataFormatError
-from .validation import require_count
+from .exceptions import StreamError, DataFormatError, DataValidationError
+from .validation import require_count, require_choice
+
+#: L199（B265）：`StreamWriter` 两个字符串形参的封闭清单（A77 单一权威）。
+#: 改前两者各只与一个字面量比一次：`format` 只跟 'jsonl' 比 ⇒ `"csv"` / `"JSONL"`
+#: 静默落 json 支，**把 JSON 数组写进用户声称为 csv 的产物**；`mode` 只跟 'w' 比
+#: ⇒ `mode='a' + format='json'` 时三处方括号记账被静默跳过，追加写出无括号的
+#: 半份 JSON。两者都是「声明与产物不一致」且全程无信号。
+WRITER_MODES = ("w", "a")
+WRITER_FORMATS = ("json", "jsonl")
 
 try:
     from .memory_monitor import MemoryMonitor
@@ -458,7 +466,18 @@ class StreamWriter:
             file_path: 文件路径
             mode: 文件模式 ('w' 写入, 'a' 追加)
             format: 输出格式 ('json' 或 'jsonl')
+
+        Raises:
+            DataValidationError: `mode` / `format` 不在各自封闭清单内
         """
+        for knob, value, choices in (("mode", mode, WRITER_MODES),
+                                     ("format", format, WRITER_FORMATS)):
+            if value is None:
+                raise DataValidationError(
+                    f"{knob} 不能为 null，合法取值: {' / '.join(choices)}"
+                )
+            require_choice(knob, value, choices=choices)
+
         self.file_path = Path(file_path)
         self.mode = mode
         self.format = format
