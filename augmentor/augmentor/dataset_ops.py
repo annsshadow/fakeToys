@@ -132,6 +132,46 @@ class DatasetOperations:
     
     # ==================== 合并操作 ====================
     
+    def _merge_and_count(self,
+                         datasets: List[List[Dict]],
+                         config: Optional[MergeConfig] = None) -> Tuple[List[Dict], int]:
+        """合并 + 顺带回报「去重删了几条」（L196 起 merge 与 merge_files 的唯一实现）
+
+        `merge()` 与 `merge_files()` 必须共用这一份合并口径：后者以前为拿一个
+        `removed_duplicates` 计数，把整份数据**又去重了一遍**（实测占 merge_files
+        端到端 20%+）。多传一个返回值比抄第二份合并逻辑便宜。
+
+        Args:
+            datasets: 数据集列表
+            config: 合并配置
+
+        Returns:
+            `(合并后的数据集, 去重删除条数)`；`config.deduplicate` 为假时第二部分是 0
+        """
+        config = config or MergeConfig()
+
+        # 合并数据（保序与否只差在末尾那次洗牌）
+        merged = []
+        for dataset in datasets:
+            merged.extend(dataset)
+        if not config.preserve_order:
+            random.Random().shuffle(merged)
+
+        # 去重
+        removed = 0
+        if config.deduplicate:
+            deduped = self._deduplicate(merged, config.dedup_threshold)
+            removed = len(merged) - len(deduped)
+            merged = deduped
+
+        # 限制最大条数（`is not None` 而非 falsy：max_items=0 语义是「一条不留」，
+        # 写成 `if config.max_items` 会把 0 读成「不限」而返回全量）
+        if config.max_items is not None and len(merged) > config.max_items:
+            merged = merged[:config.max_items]
+
+        logger.info(f"合并完成: {len(datasets)} 个数据集, 共 {len(merged)} 条数据")
+        return merged, removed
+
     def merge(self,
              datasets: List[List[Dict]],
              config: Optional[MergeConfig] = None) -> List[Dict]:
@@ -144,29 +184,7 @@ class DatasetOperations:
         Returns:
             合并后的数据集
         """
-        config = config or MergeConfig()
-        
-        # 合并数据
-        if config.preserve_order:
-            merged = []
-            for dataset in datasets:
-                merged.extend(dataset)
-        else:
-            merged = []
-            for dataset in datasets:
-                merged.extend(dataset)
-            random.Random().shuffle(merged)
-        
-        # 去重
-        if config.deduplicate:
-            merged = self._deduplicate(merged, config.dedup_threshold)
-        
-        # 限制最大条数（`is not None` 而非 falsy：max_items=0 语义是「一条不留」，
-        # 写成 `if config.max_items` 会把 0 读成「不限」而返回全量）
-        if config.max_items is not None and len(merged) > config.max_items:
-            merged = merged[:config.max_items]
-        
-        logger.info(f"合并完成: {len(datasets)} 个数据集, 共 {len(merged)} 条数据")
+        merged, _ = self._merge_and_count(datasets, config)
         return merged
     
     def merge_files(self,
@@ -190,13 +208,15 @@ class DatasetOperations:
                 datasets.append(data)
                 logger.info(f"加载 {file_path}: {len(data)} 条数据")
         
-        merged = self.merge(datasets, config)
+        # L196：走与 merge() 同一份口径（_merge_and_count），一次去重同时喂产物与
+        # 报表；旧实现在这里把整份数据又去重了一遍只为拿一个计数。
+        merged, dedup_removed = self._merge_and_count(datasets, config)
         total_input = sum(len(d) for d in datasets)
+        # config=None 时报表口径刻意仍是 0（「没传配置就不统计去重数」），承 L148/B218
+        # 起的旧行为；产物侧照旧去重（默认 MergeConfig.deduplicate=True）。要不要把
+        # 这个「产物去了重、报表说没去」的口径对齐属行为变更轮，本轮不动。
+        removed_duplicates = dedup_removed if config is not None else 0
         # 去重删除与 max_items 截断分开报（旧实现混成一个数，L148，B218）
-        removed_duplicates = 0
-        if config and config.deduplicate:
-            flat = [item for dataset in datasets for item in dataset]
-            removed_duplicates = total_input - len(self._deduplicate(flat, config.dedup_threshold))
         truncated_by_max_items = total_input - removed_duplicates - len(merged)
         
         # 保存结果
@@ -604,14 +624,21 @@ class DatasetOperations:
         if not items:
             return {"total": 0}
         
-        lengths = [len(item.get("instruction", "")) for item in items]
+        # L196：长度清单与唯一 instruction 集合同源，一趟累积；旧实现为这两个数
+        # 把整份 items 遍历两遍。
+        lengths = []
+        unique = set()
+        for item in items:
+            instruction = item.get("instruction", "")
+            lengths.append(len(instruction))
+            unique.add(instruction)
         
         return {
             "total": len(items),
             "avg_length": sum(lengths) / len(lengths),
             "min_length": min(lengths),
             "max_length": max(lengths),
-            "unique_instructions": len(set(item.get("instruction", "") for item in items))
+            "unique_instructions": len(unique)
         }
 
 
