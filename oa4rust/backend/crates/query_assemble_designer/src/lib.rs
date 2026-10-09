@@ -211,7 +211,7 @@ pub async fn update_table_definition(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
-            "UPDATE x_query_table SET name = COALESCE(NULLIF($1,''), name), columns = $2, status = 'draft', update_time = NOW() \
+            "UPDATE x_query_table SET name = COALESCE(NULLIF($1,''), name), columns = $2, status = 'draft', update_time = to_char(NOW(),'YYYY-MM-DD HH24:MI:SS') \
              WHERE table_flag = $3 AND deleted_at IS NULL",
             &[&name, &columns_json, &flag],
         )
@@ -326,7 +326,7 @@ pub async fn execute_table_definition(
     }
     client
         .execute(
-            "UPDATE x_query_table SET status = 'build', update_time = NOW() WHERE table_flag = $1",
+            "UPDATE x_query_table SET status = 'build', update_time = to_char(NOW(),'YYYY-MM-DD HH24:MI:SS') WHERE table_flag = $1",
             &[&flag],
         )
         .await
@@ -3022,7 +3022,7 @@ pub async fn table_reload_dynamic(
 
     let result = client
         .execute(
-            "UPDATE x_query_table SET reloaded = true, update_time = NOW() WHERE reloaded = false",
+            "UPDATE x_query_table SET reloaded = true, update_time = to_char(NOW(),'YYYY-MM-DD HH24:MI:SS') WHERE reloaded = false",
             &[],
         )
         .await

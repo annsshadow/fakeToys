@@ -876,3 +876,64 @@ async fn importmodel_get_flag_hides_soft_deleted_by_id() {
     .await
     .unwrap();
 }
+
+/// NOW()→TEXT 列类型错配回归（优化二轮 49）：x_query_table.update_time 为 TEXT，
+/// table_reload_dynamic 原 `SET update_time = NOW()`（timestamptz）在 PG 无 text 隐式
+/// 赋值转换会 500；修为 to_char 字面量后应成功。同族 build/draft 写法已 to_char。
+#[tokio::test]
+async fn table_reload_dynamic_writes_text_update_time_ok() {
+    if !shared::testing::is_db_available().await {
+        eprintln!("skipping table_reload_dynamic_writes_text_update_time_ok: DB not reachable");
+        return;
+    }
+    let pool = shared::testing::test_pool();
+    let c = pool.get().await.unwrap();
+    c.execute(
+        "CREATE TABLE IF NOT EXISTS x_query_table (id TEXT, name TEXT, table_flag TEXT, creator TEXT, create_time TEXT, query_flag TEXT, update_time TEXT, status TEXT, reloaded BOOLEAN DEFAULT false)",
+        &[],
+    )
+    .await
+    .unwrap();
+    for col in [
+        "ALTER TABLE x_query_table ADD COLUMN IF NOT EXISTS status TEXT",
+        "ALTER TABLE x_query_table ADD COLUMN IF NOT EXISTS reloaded BOOLEAN DEFAULT false",
+        "ALTER TABLE x_query_table ADD COLUMN IF NOT EXISTS update_time TEXT",
+    ] {
+        c.execute(col, &[]).await.unwrap();
+    }
+    c.execute("DELETE FROM x_query_table WHERE id = 'u2-qt-reload'", &[])
+        .await
+        .unwrap();
+    c.execute(
+        "INSERT INTO x_query_table (id, table_flag, reloaded) VALUES ('u2-qt-reload','u2flag',false)",
+        &[],
+    )
+    .await
+    .unwrap();
+
+    // 修复前：NOW() 赋给 TEXT 列 → PG 报错 → handler 返回 500；修复后成功
+    let resp = crate::table_reload_dynamic(axum::Extension(pool.clone()))
+        .await
+        .expect("reload handler 不应因 NOW()→TEXT 类型错配而 500");
+    let j = serde_json::to_value(&resp.0).unwrap();
+    assert_eq!(j["type"], "success");
+
+    let row = c
+        .query_one(
+            "SELECT reloaded, update_time FROM x_query_table WHERE id = 'u2-qt-reload'",
+            &[],
+        )
+        .await
+        .unwrap();
+    assert!(row.get::<_, bool>("reloaded"), "reloaded 应被置 true");
+    assert!(
+        !row.get::<_, Option<String>>("update_time")
+            .unwrap_or_default()
+            .is_empty(),
+        "update_time 应写入字面量时间串"
+    );
+
+    c.execute("DELETE FROM x_query_table WHERE id = 'u2-qt-reload'", &[])
+        .await
+        .unwrap();
+}
