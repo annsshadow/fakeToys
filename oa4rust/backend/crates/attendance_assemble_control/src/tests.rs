@@ -282,4 +282,69 @@ mod tests {
             .unwrap();
         assert_ne!(response.status(), StatusCode::NOT_FOUND);
     }
+
+    // import_checkin_rows N+1→prefetch+UNNEST collapse (优化二轮 23): verifies
+    // the batched import dedups against both pre-existing rows and earlier rows
+    // in the same batch, preserves id order, and counts only new inserts.
+    #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
+    async fn import_checkin_rows_dedups_and_batches() {
+        let pool = test_pool();
+        let client = pool.get().await.unwrap();
+        client
+            .execute(
+                "CREATE TABLE IF NOT EXISTS x_attendance_v2_checkin_record (id TEXT PRIMARY KEY, user_id TEXT, record_date_string TEXT, source_type TEXT, check_in_result TEXT, check_in_type TEXT, description TEXT, creator_person TEXT, create_time TIMESTAMP, update_time TIMESTAMP)",
+                &[],
+            )
+            .await
+            .unwrap();
+        client
+            .execute(
+                "DELETE FROM x_attendance_v2_checkin_record WHERE user_id = $1",
+                &[&"u2-imp-user@P"],
+            )
+            .await
+            .unwrap();
+        let session = shared::session::Session {
+            token: "imp-tok".to_string(),
+            person_unique: "u2-imp-user@P".to_string(),
+            created_at: chrono::Utc::now().naive_utc(),
+            expires_at: (chrono::Utc::now() + chrono::Duration::hours(1)).naive_utc(),
+        };
+        let rows = vec![
+            serde_json::json!({"userId":"u2-imp-user@P","recordDateString":"2026-10-09","checkInType":"onDuty"}),
+            serde_json::json!({"userId":"u2-imp-user@P","recordDateString":"2026-10-09","checkInType":"onDuty"}),
+            serde_json::json!({"userId":"u2-imp-user@P","recordDateString":"2026-10-09","checkInType":"offDuty"}),
+        ];
+        let (inserted, ids) = crate::import_checkin_rows(&pool, &session, &rows, "导入")
+            .await
+            .unwrap();
+        // two distinct keys inserted; intra-batch duplicate (#1) reuses #0's id.
+        assert_eq!(inserted, 2, "only two distinct keys are new");
+        assert_eq!(ids.len(), 3, "one id per input row, in order");
+        assert_eq!(ids[0], ids[1], "intra-batch duplicate reuses the same id");
+        assert_ne!(ids[0], ids[2], "distinct key gets a distinct id");
+        let n: i64 = client
+            .query_one(
+                "SELECT COUNT(*) AS c FROM x_attendance_v2_checkin_record WHERE user_id = $1",
+                &[&"u2-imp-user@P"],
+            )
+            .await
+            .unwrap()
+            .get("c");
+        assert_eq!(n, 2, "exactly two rows persisted");
+        // re-import the same batch: all keys now pre-exist → zero new inserts.
+        let (inserted2, ids2) = crate::import_checkin_rows(&pool, &session, &rows, "导入")
+            .await
+            .unwrap();
+        assert_eq!(inserted2, 0, "re-import inserts nothing");
+        assert_eq!(ids2[0], ids[0], "re-import returns the pre-existing id");
+        client
+            .execute(
+                "DELETE FROM x_attendance_v2_checkin_record WHERE user_id = $1",
+                &[&"u2-imp-user@P"],
+            )
+            .await
+            .unwrap();
+    }
 }
