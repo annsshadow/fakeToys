@@ -635,3 +635,83 @@ async fn state_running_filter_buckets_match_seeded_deltas() {
         .await
         .unwrap();
 }
+
+// state_organization 3 跨表 COUNT → 单条标量子查询 (优化二轮 27): one round-trip
+// instead of three. Seed person/unit/group rows and assert the three totals move
+// by the seeded deltas. Live DB only.
+#[tokio::test]
+async fn state_organization_scalar_subqueries_match_seeded_deltas() {
+    if !shared::testing::is_db_available().await {
+        return;
+    }
+    let pool = shared::testing::test_pool();
+    let client = pool.get().await.unwrap();
+
+    async fn org(pool: &Pool) -> serde_json::Value {
+        let resp = crate::router(pool.clone())
+            .oneshot(
+                Request::builder()
+                    .method(Method::GET)
+                    .uri("/api/processplatform/assemble/bam/state/organization")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), StatusCode::OK);
+        let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        serde_json::from_slice::<serde_json::Value>(&bytes).unwrap()["data"].clone()
+    }
+    let get = |v: &serde_json::Value, k: &str| v[k].as_i64().unwrap();
+
+    let before = org(&pool).await;
+    for (id, name) in [("r27-p1", "r27a"), ("r27-p2", "r27b")] {
+        client
+            .execute(
+                "INSERT INTO x_org_person (id, name) VALUES ($1, $2)",
+                &[&id, &name],
+            )
+            .await
+            .unwrap();
+    }
+    client
+        .execute(
+            "INSERT INTO x_org_unit (id, name) VALUES ('r27-u1', 'r27u')",
+            &[],
+        )
+        .await
+        .unwrap();
+    client
+        .execute(
+            "INSERT INTO x_org_group (id, name) VALUES ('r27-g1', 'r27g')",
+            &[],
+        )
+        .await
+        .unwrap();
+    let after = org(&pool).await;
+
+    assert_eq!(
+        get(&after, "totalPersons") - get(&before, "totalPersons"),
+        2
+    );
+    assert_eq!(get(&after, "totalUnits") - get(&before, "totalUnits"), 1);
+    assert_eq!(get(&after, "totalGroups") - get(&before, "totalGroups"), 1);
+
+    client
+        .execute(
+            "DELETE FROM x_org_person WHERE id IN ('r27-p1','r27-p2')",
+            &[],
+        )
+        .await
+        .unwrap();
+    client
+        .execute("DELETE FROM x_org_unit WHERE id = 'r27-u1'", &[])
+        .await
+        .unwrap();
+    client
+        .execute("DELETE FROM x_org_group WHERE id = 'r27-g1'", &[])
+        .await
+        .unwrap();
+}
