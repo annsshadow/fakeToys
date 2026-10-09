@@ -303,7 +303,7 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
 
 ### 响应契约
 
-**每个端点都声明了 `response_model`**（共 70 个），因此 `/openapi.json` 里不存在
+**每个端点都声明了 `response_model`**（共 71 个），因此 `/openapi.json` 里不存在
 「无 schema 的 200 响应」。这条由 `tests/integration/test_api_openapi_contract.py`
 双向守门：既要每个端点都声明契约，也要**每个已声明契约的端点都真实存在**
 （防止文档里留着一个早就删掉的端点）。
@@ -334,7 +334,7 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
 
 ## 端点总览
 
-按 OpenAPI tag 分组，共 **70** 个端点。
+按 OpenAPI tag 分组，共 **71** 个端点。
 
 ### audit（1）
 
@@ -447,7 +447,7 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
 | `GET` | `/api/privacy/patterns` | PII 模式清单 |
 | `POST` | `/api/privacy/sanitize` | PII 脱敏 |
 
-### quality（8）
+### quality（9）
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
@@ -871,8 +871,13 @@ CLI 侧等价命令：`augmentor health-gate --input data/train_data.json --pass
 列出支持的导出格式。
 
 ```json
-{"formats": ["jsonl", "llama_factory", "alpaca", "sharegpt", "chatml"]}
+{"formats": ["json", "jsonl", "csv", "tsv", "alpaca", "sharegpt", "chatml", "llama_factory", "vicuna", "belle", "openai", "huggingface", "raw"]}
 ```
+
+> 上表是 2026-10-09 实跑结果。清单由 `ExportFormat` 枚举驱动，**会随实现增长**，
+> 精确值以 `ExportFormat` / `GET /api/export/formats` 为准，不要从本文档手抄。
+> （注：`GET /api/config` 回显里的 `export.formats` 是**五值出厂默认**，
+> 与这里的「全部支持格式」不是同一件事。）
 
 ### `POST /api/data/export`
 

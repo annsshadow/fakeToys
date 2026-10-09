@@ -9,7 +9,7 @@
 - **质量控制**: 语义相似度、回答相关性、多样性多维评分
 - **智能去重**: 基于向量相似度的智能去重
 - **断点续传**: 支持中断后继续处理
-- **多格式导出**: JSONL、Llama-Factory、Alpaca、ShareGPT、ChatML、CSV
+- **多格式导出**: 13 种，清单以 `ExportFormat` 枚举为准（`GET /api/export/formats` 实时可查）
 - **流式处理**: 支持大数据集的分块处理
 - **数据集对比**: A/B测试对比功能
 - **数据集验证**: 格式验证和数据清洗
@@ -18,7 +18,7 @@
 - **泄漏检测**: 训练集/测试集之间的完全重复与模糊重复检测
 - **就绪审计**: 把脱敏、重复、空字段、泄漏信号合成一个 go / no-go 判定
 - **数据画像与离群点**: 字段完整度、长度分布、高频关键词；Z-Score / IQR 长度离群检测
-- **HTTP API + Web 界面**: 68 个 REST 端点，全部声明响应契约；React 前端 11 个功能页
+- **HTTP API + Web 界面**: 71 个 REST 端点，全部声明响应契约；React 前端 11 个功能页
 
 ## 数据格式
 
@@ -70,7 +70,7 @@ npm test         # vitest run
 
 ## HTTP API
 
-FastAPI 提供 **68 个端点**，全部声明 `response_model` —— `/openapi.json` 里
+FastAPI 提供 **71 个端点**，全部声明 `response_model` —— `/openapi.json` 里
 不存在「无 schema 的 200 响应」。契约由
 `tests/integration/test_api_openapi_contract.py` 双向守门：既要每个端点都声明
 契约，也要每个已声明契约的端点都真实存在。
@@ -101,7 +101,7 @@ uvicorn api.main:app --host 0.0.0.0 --port 8000
 >    以前 `save_config` 写出的配置**必然校验失败**（`AppConfig` 不建模 `app` 段、
 >    `load_config` 也从不读它），所以这是修 bug，不是放松校验。`models` /
 >    `models.default` 仍为必填。
-> 7. 新增两个路由分组：`dataset`（12 个端点，CLI 数据集工具的 API 化）与
+> 7. 新增两个路由分组：`dataset`（14 个端点，CLI 数据集工具的 API 化）与
 >    `system`（13 个端点，依赖诊断 / 备份 / 监控 / 迁移等运维能力）。
 >    写操作走 `verify_api_key` 鉴权。
 
