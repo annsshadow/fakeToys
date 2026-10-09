@@ -464,3 +464,90 @@ async fn route_path_arity_matches_handlers() {
     }
     assert!(bad.is_empty(), "{} arity traps remain", bad.len());
 }
+
+// state_summary 9→2 FILTER-aggregate collapse (优化二轮 25): seed known rows and
+// assert the summary buckets move by exactly the seeded deltas, proving the
+// per-table FILTER counts still map to the right output keys. Live DB only.
+#[tokio::test]
+async fn state_summary_filter_buckets_match_seeded_deltas() {
+    if !shared::testing::is_db_available().await {
+        return;
+    }
+    let pool = shared::testing::test_pool();
+    let client = pool.get().await.unwrap();
+
+    async fn summary(pool: &Pool) -> serde_json::Value {
+        let resp = crate::router(pool.clone())
+            .oneshot(
+                Request::builder()
+                    .method(Method::GET)
+                    .uri("/api/processplatform/assemble/bam/state/summary")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), StatusCode::OK);
+        let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        serde_json::from_slice::<serde_json::Value>(&bytes).unwrap()["data"].clone()
+    }
+    let get = |v: &serde_json::Value, k: &str| v[k].as_i64().unwrap();
+
+    let before = summary(&pool).await;
+    // 2 completed + 1 pending + 1 expired works; 1 completed + 1 expired task.
+    for (id, st) in [
+        ("r25-w-c1", "completed"),
+        ("r25-w-c2", "completed"),
+        ("r25-w-p1", "pending"),
+        ("r25-w-e1", "expired"),
+    ] {
+        client
+            .execute(
+                "INSERT INTO x_work (id, title, process, work_status) VALUES ($1, 'r25', 'r25', $2)",
+                &[&id, &st],
+            )
+            .await
+            .unwrap();
+    }
+    for (id, st) in [("r25-t-c1", "completed"), ("r25-t-e1", "expired")] {
+        client
+            .execute(
+                "INSERT INTO x_task (id, work, task_status) VALUES ($1, 'r25-w-c1', $2)",
+                &[&id, &st],
+            )
+            .await
+            .unwrap();
+    }
+    let after = summary(&pool).await;
+
+    assert_eq!(get(&after, "totalWork") - get(&before, "totalWork"), 4);
+    assert_eq!(
+        get(&after, "completedWork") - get(&before, "completedWork"),
+        2
+    );
+    assert_eq!(get(&after, "pendingWork") - get(&before, "pendingWork"), 1);
+    assert_eq!(get(&after, "expiredWork") - get(&before, "expiredWork"), 1);
+    assert_eq!(get(&after, "totalTask") - get(&before, "totalTask"), 2);
+    assert_eq!(
+        get(&after, "completedTask") - get(&before, "completedTask"),
+        1
+    );
+    assert_eq!(get(&after, "expiredTask") - get(&before, "expiredTask"), 1);
+
+    client
+        .execute(
+            "DELETE FROM x_work WHERE id IN ('r25-w-c1','r25-w-c2','r25-w-p1','r25-w-e1')",
+            &[],
+        )
+        .await
+        .unwrap();
+    client
+        .execute(
+            "DELETE FROM x_task WHERE id IN ('r25-t-c1','r25-t-e1')",
+            &[],
+        )
+        .await
+        .unwrap();
+}

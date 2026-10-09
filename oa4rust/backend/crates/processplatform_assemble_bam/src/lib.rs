@@ -2414,101 +2414,43 @@ pub async fn state_running(pool: Extension<Pool>) -> Result<Json<ActionResult<Va
 pub async fn state_summary(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let total_works = client
-        .query(
-            "SELECT COUNT(*) as cnt FROM x_work WHERE deleted_at IS NULL",
+    // 9 独立 COUNT(*)（x_work 5 条 / x_task 4 条）折叠为每表一条 FILTER 条件聚合：
+    // 串行 9 次往返 + 9 次全表扫描 → 2 次往返 + 2 次扫描，结果等价。（未进一步用
+    // 双 client try_join 并发，以免与连接池 max_size 耦合引入死锁隐患；主导成本=
+    // 往返数与重复全表扫描，已消除。）
+    let work_row = client
+        .query_one(
+            "SELECT COUNT(*) AS total, \
+             COUNT(*) FILTER (WHERE work_status = 'completed') AS completed, \
+             COUNT(*) FILTER (WHERE work_status = 'pending') AS pending, \
+             COUNT(*) FILTER (WHERE work_status = 'processing') AS processing, \
+             COUNT(*) FILTER (WHERE work_status = 'expired') AS expired \
+             FROM x_work WHERE deleted_at IS NULL",
             &[],
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    let total_works: i64 = if !total_works.is_empty() {
-        total_works[0].get("cnt")
-    } else {
-        0
-    };
-
-    let total_tasks = client
-        .query(
-            "SELECT COUNT(*) as cnt FROM x_task WHERE deleted_at IS NULL",
+    let task_row = client
+        .query_one(
+            "SELECT COUNT(*) AS total, \
+             COUNT(*) FILTER (WHERE task_status = 'completed') AS completed, \
+             COUNT(*) FILTER (WHERE task_status = 'pending') AS pending, \
+             COUNT(*) FILTER (WHERE task_status = 'expired') AS expired \
+             FROM x_task WHERE deleted_at IS NULL",
             &[],
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    let total_tasks: i64 = if !total_tasks.is_empty() {
-        total_tasks[0].get("cnt")
-    } else {
-        0
-    };
 
-    let completed_works = client
-        .query("SELECT COUNT(*) as cnt FROM x_work WHERE work_status = 'completed' AND deleted_at IS NULL", &[])
-        .await
-        .map_err(|_| AppError::Internal)?;
-    let completed_works: i64 = if !completed_works.is_empty() {
-        completed_works[0].get("cnt")
-    } else {
-        0
-    };
-
-    let completed_tasks = client
-        .query("SELECT COUNT(*) as cnt FROM x_task WHERE task_status = 'completed' AND deleted_at IS NULL", &[])
-        .await
-        .map_err(|_| AppError::Internal)?;
-    let completed_tasks: i64 = if !completed_tasks.is_empty() {
-        completed_tasks[0].get("cnt")
-    } else {
-        0
-    };
-
-    let pending_works = client
-        .query("SELECT COUNT(*) as cnt FROM x_work WHERE work_status = 'pending' AND deleted_at IS NULL", &[])
-        .await
-        .map_err(|_| AppError::Internal)?;
-    let pending_works: i64 = if !pending_works.is_empty() {
-        pending_works[0].get("cnt")
-    } else {
-        0
-    };
-
-    let pending_tasks = client
-        .query("SELECT COUNT(*) as cnt FROM x_task WHERE task_status = 'pending' AND deleted_at IS NULL", &[])
-        .await
-        .map_err(|_| AppError::Internal)?;
-    let pending_tasks: i64 = if !pending_tasks.is_empty() {
-        pending_tasks[0].get("cnt")
-    } else {
-        0
-    };
-
-    let processing_works = client
-        .query("SELECT COUNT(*) as cnt FROM x_work WHERE work_status = 'processing' AND deleted_at IS NULL", &[])
-        .await
-        .map_err(|_| AppError::Internal)?;
-    let processing_works: i64 = if !processing_works.is_empty() {
-        processing_works[0].get("cnt")
-    } else {
-        0
-    };
-
-    let expired_works = client
-        .query("SELECT COUNT(*) as cnt FROM x_work WHERE work_status = 'expired' AND deleted_at IS NULL", &[])
-        .await
-        .map_err(|_| AppError::Internal)?;
-    let expired_works: i64 = if !expired_works.is_empty() {
-        expired_works[0].get("cnt")
-    } else {
-        0
-    };
-
-    let expired_tasks = client
-        .query("SELECT COUNT(*) as cnt FROM x_task WHERE task_status = 'expired' AND deleted_at IS NULL", &[])
-        .await
-        .map_err(|_| AppError::Internal)?;
-    let expired_tasks: i64 = if !expired_tasks.is_empty() {
-        expired_tasks[0].get("cnt")
-    } else {
-        0
-    };
+    let total_works: i64 = work_row.get("total");
+    let completed_works: i64 = work_row.get("completed");
+    let pending_works: i64 = work_row.get("pending");
+    let processing_works: i64 = work_row.get("processing");
+    let expired_works: i64 = work_row.get("expired");
+    let total_tasks: i64 = task_row.get("total");
+    let completed_tasks: i64 = task_row.get("completed");
+    let pending_tasks: i64 = task_row.get("pending");
+    let expired_tasks: i64 = task_row.get("expired");
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
