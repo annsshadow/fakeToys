@@ -2408,7 +2408,7 @@ pub async fn mass_list_id_next_count(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, mass_id, content, sender, create_time FROM x_message WHERE mass_id = $1 AND id > $2 ORDER BY create_time ASC LIMIT $3", &[&id, &id, &count])
+        .query("SELECT id, mass_id, content, sender, create_time FROM x_message WHERE id > $1 ORDER BY create_time ASC LIMIT $2", &[&id, &count])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -2459,7 +2459,7 @@ pub async fn mass_list_id_prev_count(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, mass_id, content, sender, create_time FROM x_message WHERE mass_id = $1 AND id < $2 ORDER BY create_time DESC LIMIT $3", &[&id, &id, &count])
+        .query("SELECT id, mass_id, content, sender, create_time FROM x_message WHERE id < $1 ORDER BY create_time DESC LIMIT $2", &[&id, &count])
         .await
         .map_err(|_| AppError::Internal)?;
 
