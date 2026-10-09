@@ -253,5 +253,24 @@ mod u2_tests {
         assert_eq!(obj["personList"], serde_json::json!([]));
     }
 
+    // attr_write_values N+1→UNNEST batch: the pure selection helper decides
+    // which values still need inserting. set mode keeps all; append mode drops
+    // case-insensitive matches of existing values.
+    #[test]
+    fn u2_attr_values_to_insert_set_vs_append() {
+        use crate::endpoints_attr::attr_values_to_insert;
+        let values = vec!["Red".to_string(), "green".to_string(), "BLUE".to_string()];
+        let existing = vec!["red".to_string(), "Blue".to_string()];
+        // set mode (append=false): existing ignored, all values selected.
+        let set: Vec<&String> = attr_values_to_insert(&values, &existing, false);
+        assert_eq!(set, vec![&values[0], &values[1], &values[2]]);
+        // append mode: "Red" and "BLUE" match existing case-insensitively → only
+        // "green" remains.
+        let app: Vec<&String> = attr_values_to_insert(&values, &existing, true);
+        assert_eq!(app, vec![&values[1]]);
+        // append with no existing selects all.
+        assert_eq!(attr_values_to_insert(&values, &[], true).len(), 3);
+    }
+
     use serde_json::Value;
 }
