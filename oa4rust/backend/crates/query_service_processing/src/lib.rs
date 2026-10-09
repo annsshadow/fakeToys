@@ -101,6 +101,30 @@ pub async fn batch_process(
         ));
     }
 
+    // Collapse the per-query N+1 (one query_opt per input query, all hitting
+    // x_query) into a single prefetch keyed by query_type, then assemble each
+    // input item in order from the in-memory map.
+    let wanted: Vec<String> = queries
+        .iter()
+        .filter_map(|q| q.query_type.clone())
+        .filter(|t| !t.is_empty())
+        .collect();
+    use std::collections::HashMap;
+    type QRow = deadpool_postgres::tokio_postgres::Row;
+    let prefetched = client
+        .query(
+            "SELECT id, name, query_type, count FROM x_query WHERE query_type = ANY($1)",
+            &[&wanted],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let mut by_type: HashMap<&str, &QRow> = HashMap::new();
+    for row in &prefetched {
+        if let Some(t) = row.get::<_, Option<&str>>("query_type") {
+            by_type.entry(t).or_insert(row);
+        }
+    }
+
     let mut results = Vec::new();
     for q in queries {
         let query_type = q.query_type.unwrap_or_default();
@@ -116,16 +140,8 @@ pub async fn batch_process(
             continue;
         }
 
-        let row = client
-            .query_opt(
-                "SELECT id, name, query_type, count FROM x_query WHERE query_type = $1 LIMIT 1",
-                &[&query_type],
-            )
-            .await
-            .map_err(|_| AppError::Internal)?;
-
-        match row {
-            Some(row) => {
+        match by_type.get(query_type.as_str()) {
+            Some(&row) => {
                 let count: i64 = row
                     .get::<_, Option<String>>("count")
                     .and_then(|s| s.parse().ok())
