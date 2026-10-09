@@ -131,6 +131,16 @@ describe('mobile form group order (computeGroupOrder)', () => {
     ]
     expect(computeGroupOrder(fields, groups)).toEqual(['', '第一组'])
   })
+
+  it('de-dups named groups that share a label across distinct container ids (regression: fields rendered twice)', () => {
+    // 两个不同容器 id 共用同一 label '基本信息'；消费端按 label 匹配字段，
+    // 不去重会产出 ['基本信息','基本信息'] → v-for 同键迭代两次、每次取两容器全部字段，字段整体重复渲染。
+    const groups: MobileFormGroup[] = [
+      { id: 'c1', label: '基本信息' },
+      { id: 'c2', label: '基本信息' },
+    ]
+    expect(computeGroupOrder([], groups)).toEqual(['基本信息'])
+  })
 })
 
 /** 构造一个「定义体藏在 definition / pcData / mobileData 里」的完整后端响应。 */
