@@ -1137,10 +1137,7 @@ function uploadLegacyRef(): void {
     form.append('file', file, file.name)
     form.append('fileName', file.name)
     try {
-      await api.upload(
-        `/api/file/upload/referencetype/reference/reference/scale/scale/${encodeURIComponent(rt)}`,
-        form,
-      )
+      await api.upload(`/api/file/upload/referencetype/reference/reference/scale/scale/${encodeURIComponent(rt)}`, form)
       toast.success('遗留寻址引用上传成功')
     } catch (e: any) {
       toast.error(`遗留引用上传失败: ${e?.message ?? ''}`)
@@ -1210,10 +1207,9 @@ async function fiDocUpdate(): Promise<void> {
   const aid = encodeURIComponent(prompt('附件 ID:', '') || '')
   if (!docId || !aid) return
   try {
-    await api.post(
-      `/api/fileinfo/update/document/${docId}/attachment/${aid}/callback/done`,
-      { originalName: 'updated.bin' },
-    )
+    await api.post(`/api/fileinfo/update/document/${docId}/attachment/${aid}/callback/done`, {
+      originalName: 'updated.bin',
+    })
     toast.success('附件更新已提交')
   } catch (e: any) {
     toast.error(`附件更新失败: ${e?.message ?? ''}`)

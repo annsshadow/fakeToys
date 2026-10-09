@@ -19,7 +19,6 @@ import ScriptWorkbench, {
   type ScriptWorkbenchAdapter,
 } from '../components/ScriptWorkbench.vue'
 
-
 function extractData(response: unknown): Record<string, unknown>[] {
   const data = (response as { data?: unknown })?.data
   if (Array.isArray(data)) return data
@@ -48,7 +47,8 @@ const adapter: ScriptWorkbenchAdapter = {
       code: String(row.content ?? ''),
     }
   },
-  create: (data) => api.post('/api/portal/assemble/designer/script', { name: data.name, category: data.category, content: data.code }),
+  create: (data) =>
+    api.post('/api/portal/assemble/designer/script', { name: data.name, category: data.category, content: data.code }),
   save: (id, data) =>
     api.put(`/api/portal/assemble/designer/script/${encodeURIComponent(id)}`, {
       name: data.name,
