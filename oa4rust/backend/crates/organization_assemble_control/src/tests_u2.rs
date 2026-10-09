@@ -869,3 +869,55 @@ async fn unit_list_with_unit_type_matches_by_id_and_name_respecting_type() {
         .await
         .unwrap();
 }
+
+// units_by_flags 2N→single-query collapse (优化二轮 21): POST /unit/list with a
+// unitList now resolves all flags in one query, assembling in flag order with
+// duplicates preserved. Verifies id-match, name-match, repeated-flag duplicate,
+// and no-match exclusion against a live DB.
+#[tokio::test]
+async fn unit_list_by_body_resolves_flags_in_order_with_duplicates() {
+    if !shared::testing::is_db_available().await {
+        return;
+    }
+    let pool = shared::testing::test_pool();
+    let client = pool.get().await.unwrap();
+    for (id, name) in [("u2-ubf-a", "甲单位"), ("u2-ubf-b", "乙单位")] {
+        client
+            .execute(
+                "INSERT INTO x_org_unit (id, name, parent_id, level) VALUES ($1, $2, NULL, 1)",
+                &[&id, &name],
+            )
+            .await
+            .unwrap();
+    }
+    // flag by id, flag by name, the id flag again (duplicate), and a no-match.
+    let body = r#"{"unitList":["u2-ubf-a","乙单位","u2-ubf-a","nope-xyz"]}"#;
+    let response = crate::router(pool.clone())
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/api/organization/assemble/control/unit/list")
+                .header("content-type", "application/json")
+                .extension(u2_session())
+                .body(Body::from(body))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    let items = json["data"].as_array().expect("data is array");
+    let ids: Vec<&str> = items.iter().filter_map(|it| it["id"].as_str()).collect();
+    // order preserved, duplicate kept, no-match dropped.
+    assert_eq!(ids, vec!["u2-ubf-a", "u2-ubf-b", "u2-ubf-a"], "ids={ids:?}");
+    client
+        .execute(
+            "DELETE FROM x_org_unit WHERE id IN ($1, $2)",
+            &[&"u2-ubf-a", &"u2-ubf-b"],
+        )
+        .await
+        .unwrap();
+}
