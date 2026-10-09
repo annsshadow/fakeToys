@@ -428,7 +428,9 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: Fetch behavior report artifact
-        if: always()
+        # Java(o2server) 不可达时 behavior-compare 跳对比、不产 report 工件——此时缺件
+        # 属外部阻塞而非回归，跳过 Fetch（Enforce 步经 java_not_ready 走 exit 0 分支）。
+        if: always() && needs.behavior-compare.outputs.java_not_ready != 'true'
         run: |
           meta="$(curl -fsS -H "Authorization: token $GITHUB_TOKEN" \
             "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/artifacts?name=behavior-report-${GITHUB_RUN_ID}&per_page=1" || true)"
