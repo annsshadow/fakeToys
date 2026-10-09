@@ -1512,89 +1512,96 @@ pub async fn touch_handover_job(pool: Extension<Pool>) -> H {
 }
 
 /// GET touch/loglongdetained：滞留超 24h 的活动工作补记日志（按内容幂等去重）
+///
+/// 单条 `INSERT ... SELECT ... RETURNING` 取代原「SELECT 候选 + 对每行一条
+/// INSERT」的写 N+1（命中行数无上限，滞留越多越慢）。NOT EXISTS 已在语句内
+/// 完成每日去重，RETURNING 回填 workList。
 #[allow(non_snake_case)]
 pub async fn touch_log_long_detained(pool: Extension<Pool>) -> H {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT w.id FROM x_work w \
+            "INSERT INTO x_record (id, work_id, record_type, content, creator, create_time) \
+             SELECT gen_random_uuid()::text, w.id, 'long_detained', \
+                    'work detained over 24 hours', 'system', NOW() \
+             FROM x_work w \
              WHERE w.end_time IS NULL \
                AND w.start_time < NOW() - INTERVAL '24 hours' \
                AND NOT EXISTS (\
                    SELECT 1 FROM x_record r \
                    WHERE r.work_id = w.id AND r.record_type = 'long_detained' \
-                     AND r.create_time >= date_trunc('day', NOW()))",
+                     AND r.create_time >= date_trunc('day', NOW())) \
+             RETURNING work_id",
             &[],
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    let mut logged: Vec<String> = Vec::new();
-    for row in &rows {
-        let work: String = row.get("id");
-        record_insert(
-            &client,
-            &work,
-            "long_detained",
-            "work detained over 24 hours",
-            "system",
-        )
-        .await
-        .ok();
-        logged.push(work);
-    }
+    let logged: Vec<String> = rows
+        .iter()
+        .map(|r| r.get::<_, Option<String>>("work_id").unwrap_or_default())
+        .collect();
     ok(json!({ "value": true, "count": logged.len() as i64, "workList": logged }))
 }
 
 /// GET touch/touchdelay：为存在过期任务的工作补接触摸记录（每日去重）
+///
+/// 同 loglongdetained：单条 `INSERT ... SELECT ... RETURNING` 取代写 N+1。
+/// 内层 DISTINCT + NOT EXISTS 复刻原逐行查重；`COALESCE(t.work,'')` 复刻原
+/// `unwrap_or_default()` 的空串归属。
 #[allow(non_snake_case)]
 pub async fn touch_delay(pool: Extension<Pool>) -> H {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT DISTINCT t.work FROM x_task t \
-             WHERE t.task_status = 'expired' \
-               AND NOT EXISTS (\
-                   SELECT 1 FROM x_record r \
-                   WHERE r.work_id = t.work AND r.record_type = 'touch_delay' \
-                     AND r.create_time >= date_trunc('day', NOW()))",
+            "INSERT INTO x_record (id, work_id, record_type, content, creator, create_time) \
+             SELECT gen_random_uuid()::text, COALESCE(t.work, ''), 'touch_delay', \
+                    'delay touched', 'system', NOW() \
+             FROM (SELECT DISTINCT t.work FROM x_task t \
+                   WHERE t.task_status = 'expired' \
+                     AND NOT EXISTS (\
+                         SELECT 1 FROM x_record r \
+                         WHERE r.work_id = t.work AND r.record_type = 'touch_delay' \
+                           AND r.create_time >= date_trunc('day', NOW()))) t \
+             RETURNING work_id",
             &[],
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    let mut touched: Vec<String> = Vec::new();
-    for row in &rows {
-        let work: String = row.get::<_, Option<String>>("work").unwrap_or_default();
-        record_insert(&client, &work, "touch_delay", "delay touched", "system")
-            .await
-            .ok();
-        touched.push(work);
-    }
+    let touched: Vec<String> = rows
+        .iter()
+        .map(|r| r.get::<_, Option<String>>("work_id").unwrap_or_default())
+        .collect();
     ok(json!({ "value": true, "count": touched.len() as i64, "workList": touched }))
 }
 
-/// GET touch/urge：为滞留超 24h 的活动任务补催办记录（每日去重）
+/// GET touch/urge：为滞留超 24h 的活动任务补催办记录（按 work+类型+内容去重）
+///
+/// 同族写 N+1 折叠：原逐行 `record_exists`（work+type+content，无日期）去重，
+/// 这里以内层 DISTINCT + 外层 NOT EXISTS（同谓词）等价复刻为单条语句。
 #[allow(non_snake_case)]
 pub async fn touch_urge(pool: Extension<Pool>) -> H {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT t.work FROM x_task t \
-             WHERE t.task_status = 'active' AND t.start_time < NOW() - INTERVAL '24 hours'",
+            "INSERT INTO x_record (id, work_id, record_type, content, creator, create_time) \
+             SELECT gen_random_uuid()::text, t.work, 'urge', 'urge processing', 'system', NOW() \
+             FROM (SELECT DISTINCT t.work FROM x_task t \
+                   WHERE t.task_status = 'active' \
+                     AND t.start_time < NOW() - INTERVAL '24 hours') t \
+             WHERE NOT EXISTS (\
+                 SELECT 1 FROM x_record r \
+                 WHERE r.work_id = t.work \
+                   AND COALESCE(r.record_type,'') = 'urge' \
+                   AND COALESCE(r.content,'') = 'urge processing') \
+             RETURNING work_id",
             &[],
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    let mut urged: Vec<String> = Vec::new();
-    for row in &rows {
-        let work: String = row.get("work");
-        if record_exists(&client, &work, "urge", "urge processing").await? {
-            continue;
-        }
-        record_insert(&client, &work, "urge", "urge processing", "system")
-            .await
-            .ok();
-        urged.push(work);
-    }
+    let urged: Vec<String> = rows
+        .iter()
+        .map(|r| r.get::<_, Option<String>>("work_id").unwrap_or_default())
+        .collect();
     ok(json!({ "value": true, "count": urged.len() as i64, "workList": urged }))
 }
 
