@@ -1282,4 +1282,20 @@ mod u2c_tests {
         assert!(body["paths"][&format!("{}/review/v2/search", BASE)]["post"].is_object());
         assert!(body["paths"][&format!("{}/openapi", BASE)]["get"].is_object());
     }
+
+    // 优化二轮 46：snap 列表分页 offset 原为 page*size（跳过首页）→ 修为 (page-1)*size。
+    #[test]
+    fn snap_limit_offset_is_one_based() {
+        // page=1 必须 offset=0（修复前为 size，整页被跳过）
+        assert_eq!(crate::u2_snap_limit_offset(1, 20), (20, 0));
+        // page=2 → offset=一页
+        assert_eq!(crate::u2_snap_limit_offset(2, 20), (20, 20));
+        assert_eq!(crate::u2_snap_limit_offset(3, 50), (50, 100));
+        // page<=0 兜底 offset=0
+        assert_eq!(crate::u2_snap_limit_offset(0, 20), (20, 0));
+        assert_eq!(crate::u2_snap_limit_offset(-5, 20), (20, 0));
+        // size 夹到 1..=500
+        assert_eq!(crate::u2_snap_limit_offset(2, 0), (1, 1));
+        assert_eq!(crate::u2_snap_limit_offset(1, 9999), (500, 0));
+    }
 }
