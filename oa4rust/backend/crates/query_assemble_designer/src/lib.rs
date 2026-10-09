@@ -2837,7 +2837,7 @@ pub async fn table_list_tableFlag_row_select_where_where(
     let rows = client
         .query(
             &"SELECT id, table_flag, data FROM x_query_table_data WHERE table_flag = $1 AND data ILIKE $2 ORDER BY id DESC".to_string(),
-            &[&table_flag, &format!("%{}%", _where)],
+            &[&table_flag, &format!("%{}%", shared::db::escape_like(&_where))],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -3349,7 +3349,7 @@ pub async fn table_tableFlag_row_count_where_where(
     let row = client
         .query_one(
             &"SELECT COUNT(*) as cnt FROM x_query_table_data WHERE table_flag = $1 AND data ILIKE $2".to_string(),
-            &[&table_flag, &format!("%{}%", _where)],
+            &[&table_flag, &format!("%{}%", shared::db::escape_like(&_where))],
         )
         .await
         .map_err(|_| AppError::Internal)?;

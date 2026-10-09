@@ -1450,7 +1450,7 @@ pub async fn attachment2_list_filter_name(
         .query(
             "SELECT id, name, person, reference_type, extension, length, mime_type, create_time::text
              FROM FILE_FILE WHERE name ILIKE $1 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC",
-            &[&format!("%{}%", name)],
+            &[&format!("%{}%", shared::db::escape_like(&name))],
         )
         .await.map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows

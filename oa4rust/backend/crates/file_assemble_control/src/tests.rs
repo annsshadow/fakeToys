@@ -796,4 +796,61 @@ mod office_preview_tests {
         assert!(crate::xlsx_to_html(b"not a zip").is_none());
         assert!(crate::pptx_to_html(b"not a zip").is_none());
     }
+
+    // 优化二轮 45：附件名搜索 ILIKE 通配符转义。搜索词里的 `_` 必须按字面匹配，
+    // 不得当通配符命中任意单字（否则搜 "_" 近乎列全部附件）。
+    #[ignore = "requires a running PostgreSQL server"]
+    #[tokio::test]
+    async fn attachment_name_search_treats_underscore_as_literal() {
+        let pool = shared::testing::test_pool();
+        let c = pool.get().await.unwrap();
+        c.execute(
+            "CREATE TABLE IF NOT EXISTS FILE_FILE (id VARCHAR(255) PRIMARY KEY, name VARCHAR(500) NOT NULL, person VARCHAR(255) NOT NULL, reference_id VARCHAR(255) DEFAULT '', reference_type VARCHAR(100) DEFAULT 'file', extension VARCHAR(50), length BIGINT DEFAULT 0, mime_type VARCHAR(200), create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP, update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP, deleted_at TIMESTAMP)",
+            &[],
+        )
+        .await
+        .unwrap();
+        c.execute(
+            "DELETE FROM FILE_FILE WHERE id IN ('u2-ff-under','u2-ff-plain')",
+            &[],
+        )
+        .await
+        .unwrap();
+        // name 'a_c' 含字面下划线；'abc' 不含
+        c.execute(
+            "INSERT INTO FILE_FILE (id, name, person) VALUES ('u2-ff-under','a_c','u2p'), ('u2-ff-plain','abc','u2p')",
+            &[],
+        )
+        .await
+        .unwrap();
+
+        let resp = crate::attachment2_list_filter_name(
+            axum::Extension(pool.clone()),
+            axum::extract::Path("_".to_string()),
+        )
+        .await
+        .unwrap();
+        let j = serde_json::to_value(&resp.0).unwrap();
+        let ids: Vec<String> = j["data"]
+            .as_array()
+            .expect("data array")
+            .iter()
+            .map(|r| r["id"].as_str().unwrap_or_default().to_string())
+            .collect();
+        assert!(
+            ids.contains(&"u2-ff-under".to_string()),
+            "应命中含字面下划线的附件名"
+        );
+        assert!(
+            !ids.contains(&"u2-ff-plain".to_string()),
+            "下划线须按字面匹配，不得当通配符命中 'abc'"
+        );
+
+        c.execute(
+            "DELETE FROM FILE_FILE WHERE id IN ('u2-ff-under','u2-ff-plain')",
+            &[],
+        )
+        .await
+        .unwrap();
+    }
 }
