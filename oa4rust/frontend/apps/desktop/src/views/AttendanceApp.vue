@@ -1483,7 +1483,9 @@ async function syncDingding() {
   const to = prompt('结束日期 (YYYY-MM-DD):', '') || ''
   if (!from || !to) return
   try {
-    await api.get(`/api/attendance/assemble/control/dingding/sync/from/${encodeURIComponent(from)}/to/${encodeURIComponent(to)}/start`)
+    await api.get(
+      `/api/attendance/assemble/control/dingding/sync/from/${encodeURIComponent(from)}/to/${encodeURIComponent(to)}/start`,
+    )
     toast.success('钉钉同步已启动')
   } catch (e: any) {
     toast.error(`钉钉同步失败: ${e?.message ?? ''}`)
@@ -1496,7 +1498,9 @@ async function syncQywx() {
   const to = prompt('结束日期 (YYYY-MM-DD):', '') || ''
   if (!from || !to) return
   try {
-    await api.get(`/api/attendance/assemble/control/qywx/sync/from/${encodeURIComponent(from)}/to/${encodeURIComponent(to)}/start`)
+    await api.get(
+      `/api/attendance/assemble/control/qywx/sync/from/${encodeURIComponent(from)}/to/${encodeURIComponent(to)}/start`,
+    )
     toast.success('企微同步已启动')
   } catch (e: any) {
     toast.error(`企微同步失败: ${e?.message ?? ''}`)
@@ -1509,7 +1513,9 @@ async function statDingdingPerson() {
   const month = prompt('月份 (MM):', String(new Date().getMonth() + 1).padStart(2, '0')) || ''
   if (!year || !month) return
   try {
-    await api.get(`/api/attendance/assemble/control/dingding/statistic/person/year/${encodeURIComponent(year)}/month/${encodeURIComponent(month)}`)
+    await api.get(
+      `/api/attendance/assemble/control/dingding/statistic/person/year/${encodeURIComponent(year)}/month/${encodeURIComponent(month)}`,
+    )
     toast.success('个人月统计已触发')
   } catch (e: any) {
     toast.error(`统计触发失败: ${e?.message ?? ''}`)

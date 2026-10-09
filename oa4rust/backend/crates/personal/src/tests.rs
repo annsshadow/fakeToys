@@ -536,6 +536,17 @@ mod u2_contract {
         let admin_uid = "u2-admin@P";
         for uid in [user_uid, admin_uid] {
             let pid = format!("u2-person-{}", uid.trim_end_matches("@P"));
+            // 先按 unique_id 清掉"同 unique_id 但不同 id"的历史残留：auth_person 的
+            // unique_id 带 UNIQUE 约束，ON CONFLICT (id) 覆盖不到它——共享测试库里
+            // 若别的用例先以不同 id 插了同一 unique_id，这里会 E23505 崩（flaky）。
+            // 删除后再 UPSERT by id，使夹具与 DB 既有状态无关、顺序无关。
+            client
+                .execute(
+                    "DELETE FROM auth_person WHERE unique_id = $1 AND id <> $2",
+                    &[&uid.to_string(), &pid],
+                )
+                .await
+                .unwrap();
             client
                 .execute(
                     "INSERT INTO auth_person (id, unique_id, name, password_hash) \

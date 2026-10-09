@@ -172,6 +172,7 @@ def extract(path):
             methods = ["<unknown>"]
         # 捕获每个方法对应的 handler 标识符（取最后一段，如 u2::data_work_create → data_work_create）
         handler_by_method = {}
+        handler_full_by_method = {}
         for mm in re.finditer(
             r"(?<![A-Za-z0-9_])(get|post|put|delete|patch|head|options|any|trace)\s*\(", seg_masked
         ):
@@ -185,9 +186,17 @@ def extract(path):
             inner = seg_orig[open_p + 1 : close_p].strip()
             hm = re.search(r"([A-Za-z_][\w:]*)\s*$", inner)
             if hm:
-                handler_by_method[name] = hm.group(1).split("::")[-1]
+                full = hm.group(1)
+                # handler=裸名（兼容下游），handler_q=模块限定名（如 role::update）——
+                # 同 crate 内 group/person/role/unit 四模块各有同名 CRUD fn，裸名会
+                # 撞名且 os.walk 顺序不定（本地 role.rs 先 vs CI person.rs 先），
+                # 只有保留限定名才能让 schema_audit 按 (crate, 模块::fn) 精确消歧、跨平台确定。
+                handler_by_method[name] = full.split("::")[-1]
+                handler_full_by_method[name] = full
         for name in methods:
-            found.append((name.upper(), route_path, handler_by_method.get(name, "")))
+            found.append(
+                (name.upper(), route_path, handler_by_method.get(name, ""), handler_full_by_method.get(name, ""))
+            )
     return found
 
 
@@ -211,9 +220,15 @@ def main():
                 rows = extract(full)
                 if rows:
                     results.setdefault(owner, [])
-                    for method, p, handler in rows:
+                    for method, p, handler, handler_q in rows:
                         results[owner].append(
-                            {"method": method, "path": p, "handler": handler, "file": rel}
+                            {
+                                "method": method,
+                                "path": p,
+                                "handler": handler,
+                                "handler_q": handler_q,
+                                "file": rel,
+                            }
                         )
 
     out = os.path.join(os.path.dirname(os.path.abspath(__file__)), "backend_routes.json")

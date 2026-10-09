@@ -723,10 +723,7 @@ function meetingAttachmentUpdate(): void {
     fd.append('file', file, file.name)
     fd.append('fileName', file.name)
     try {
-      await api.upload(
-        `/api/meeting/assemble/control/attachment/${encodeURIComponent(aid)}/update/callback/done`,
-        fd,
-      )
+      await api.upload(`/api/meeting/assemble/control/attachment/${encodeURIComponent(aid)}/update/callback/done`, fd)
       toast.success('会议附件已更新')
     } catch (e: any) {
       toast.error(`会议附件更新失败: ${e?.message ?? ''}`)
