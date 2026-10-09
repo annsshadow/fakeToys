@@ -806,3 +806,73 @@ fn table_ddl_is_generated_from_whitelisted_metadata() {
     assert_eq!(ddl, "CREATE TABLE \"x_query_data_t_safe_1\" (\"id\" UUID PRIMARY KEY DEFAULT gen_random_uuid(), \"title\" TEXT NOT NULL, \"score\" DOUBLE PRECISION)");
     assert!(physical_table_name("bad-name").is_err());
 }
+
+/// 软删泄漏回归（优化二轮 42）：importmodel_get_flag 原 WHERE 子句
+/// `id=$1 OR model_flag=$1 AND deleted_at IS NULL` 因 AND 优先级高于 OR，实际为
+/// `id=$1 OR (model_flag=$1 AND deleted_at IS NULL)`——按 id 命中的已删行照样返回。
+/// 括号化修复后：已删导入模型按 id 查应返回「not found」，未删行正常返回。
+#[tokio::test]
+async fn importmodel_get_flag_hides_soft_deleted_by_id() {
+    if !shared::testing::is_db_available().await {
+        eprintln!("skipping importmodel_get_flag_hides_soft_deleted_by_id: DB not reachable");
+        return;
+    }
+    let pool = shared::testing::test_pool();
+    let c = pool.get().await.unwrap();
+    c.execute(
+        "CREATE TABLE IF NOT EXISTS x_query_import_model (id TEXT PRIMARY KEY, name TEXT, model_flag TEXT, query_flag TEXT, content TEXT, creator TEXT, creator_person TEXT, create_time TEXT, update_time TEXT, permission TEXT, deleted_at TIMESTAMP)",
+        &[],
+    )
+    .await
+    .unwrap();
+    c.execute(
+        "DELETE FROM x_query_import_model WHERE id IN ('u2-im-dead','u2-im-live')",
+        &[],
+    )
+    .await
+    .unwrap();
+    // 已删行（按 id 命中）+ 未删行
+    c.execute(
+        "INSERT INTO x_query_import_model (id, name, deleted_at) VALUES ('u2-im-dead', 'dead-model', NOW())",
+        &[],
+    )
+    .await
+    .unwrap();
+    c.execute(
+        "INSERT INTO x_query_import_model (id, name, deleted_at) VALUES ('u2-im-live', 'live-model', NULL)",
+        &[],
+    )
+    .await
+    .unwrap();
+
+    // 已删行按 id 查 → 必须 not found（修复前因 OR/AND 优先级会泄漏）
+    let dead = crate::u2_closures::importmodel_get_flag(
+        axum::Extension(pool.clone()),
+        axum::extract::Path("u2-im-dead".to_string()),
+    )
+    .await
+    .unwrap();
+    let dead_json = serde_json::to_value(&dead.0).unwrap();
+    assert_eq!(
+        dead_json["type"], "error",
+        "软删导入模型按 id 查不得返回记录"
+    );
+
+    // 未删行按 id 查 → 正常返回
+    let live = crate::u2_closures::importmodel_get_flag(
+        axum::Extension(pool.clone()),
+        axum::extract::Path("u2-im-live".to_string()),
+    )
+    .await
+    .unwrap();
+    let live_json = serde_json::to_value(&live.0).unwrap();
+    assert_eq!(live_json["type"], "success");
+    assert_eq!(live_json["data"]["id"], "u2-im-live");
+
+    c.execute(
+        "DELETE FROM x_query_import_model WHERE id IN ('u2-im-dead','u2-im-live')",
+        &[],
+    )
+    .await
+    .unwrap();
+}
