@@ -228,6 +228,19 @@ describe('mobile form fields — options, grouping, defaults', () => {
     expect(form.fields.map((f) => f.key)).toEqual(['a', 'b', 'c'])
   })
 
+  it('unlabeled layout container does not leak its internal id as a group header', () => {
+    // 无 label/name 的布局容器此前回退用 pid 当标题 → start.vue 分组标题显示内部模块 id。
+    // 修复后并入默认组（无标题流式渲染），不暴露 'c0'。
+    const form = parseMobileForm(
+      def({
+        c0: { id: 'c0', type: 'div' },
+        f1: { id: 'f1', type: 'text', name: 'a', label: 'A', pid: 'c0' },
+      }),
+    )
+    expect(form.fields.map((f) => [f.groupId, f.groupLabel])).toEqual([['', '']])
+    expect(form.groups).toEqual([{ id: '', label: '' }])
+  })
+
   it('skips hidden modules and non-renderable types (Label/static)', () => {
     const form = parseMobileForm(
       def({
