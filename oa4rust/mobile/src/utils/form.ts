@@ -200,7 +200,10 @@ function resolveGroup(
   for (const pid of pids) {
     const parent = modules[pid]
     if (parent && isContainer(parent)) {
-      const label = String(parent.label || parent.name || pid)
+      // 无标题的布局容器不得把内部模块 id 当作可见分组标题（start.vue 的分组标题直接
+      // 显示 label）；此时并入默认组（无标题流式渲染），而非暴露 pid。
+      const label = String(parent.label || parent.name || '')
+      if (!label) return { id: '', label: '' }
       return { id: pid, label }
     }
   }
