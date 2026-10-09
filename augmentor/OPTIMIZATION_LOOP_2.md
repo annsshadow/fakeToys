@@ -15,12 +15,24 @@
 - 前端：11 页仅 1 页有组件级测试（DataManagement 上传一页）；门禁 = vitest + eslint（--max-warnings 0）+ tsc
 - 分支：augmentor-opt100 与远端同步于 587392a91
 
+> **上面是 L100 的起点读数，早已过期，不作为当前基准。** 缺数 37 → **0**（L172 清零）、
+> 偏支 85 → **19**（L205 后由本轮 L196 复核为 19）、全量 7276 → **7897 passed / 3 skipped**
+> （L196 终态）。当前基准一律以**最近一轮循环日志末尾的全量门禁行**为准。
+
 ## 已完成
+
+> **本清单只到 L113，L114–L193 的逐轮条目在下面的「循环日志」里**（那是权威处）；
+> 本清单在 L197 補記 L194–L196 三条，其余历史轮次不再回填——补 80 行的边际价值
+> 低于让两处数字不一致的风险。
 
 - [x] **L101** `015b2ca2e` + （批② docs 即本条所在提交）`test,docs(retry,version_control,models,loop)`：**A201 容错路径族 16 条缺数清零，偏支 85 → 80** —— 三支文件（`augmentor/retry.py`、`augmentor/version_control.py`、`augmentor/models/base.py`）的守卫支第一次被踩，9 例新用例全绿，全量 7290 passed / 3 skipped / exit 0 ⇒ 详见循环日志 L101
 - [x] **L102** `c1734be35` + （账本批即本条所在提交）`test(api,config)`：**A202 路由/依赖/配置错误路径族 11 条缺数清零** —— health-gate 的 FileNotFoundError 防御支与 500 收尾、`/api/data/export` 500 收尾、augment/multimodal 的 HTTPException 复位支、`_config_data_roots` 降级不冻缓存、`save_config` 对坏旧文件的「继续保存」两支；8 例新增定向全绿，**全量读数被并行会话撞库污染（9 failed 全部归因对方在途改动），干净全量待补** ⇒ 详见循环日志 L102 与撞库记录
 - [x] **L103** `28e3a1264` + （同上）`test(cli,preview)`：**A203/A204——version delete 动作三支（缺参 exit / 删除成功 / 版本不存在 exit）与非原生导出格式守卫支清零**，9 条缺数（version.py 98-106 + preview 177）定向覆盖实证从缺数清单消失 ⇒ 详见循环日志 L103
 - [x] **L104–L113** 前端页面级组件测试从零建立（A206）：10 个页面各一份 一份 `Dashboard.test.tsx` 同型文件，逐页提交 —— L104 Dashboard `21c3ae1f5`、L105 Settings `39eaa30b0`、L106 System `51096d9fc`、L107 Augmentation `41024a400`、L108 Multimodal `5559e8768`、L109 Export `6d800cb2f`、L110 Versions `2d71358df`、L111 Analysis `b85aacf32`、L112 Quality `e0de32b94`、L113 Security `7ab30f256`；配套 `284d89e29` 抬高 vitest testTimeout。**前端全量 13 文件 / 112 例全绿，tsc 0 错，各文件 eslint --max-warnings 0 通过** ⇒ 详见循环日志 L104–L113
+- [x] **L194** `1e4df8881` +（行号刷新即本条所在提交）`29b715600` +（棘轮重钉）`2b2d8fb03` `fix(augmentor)`：**B264 套件名封闭清单下沉 SDK 直构面** —— `run_tests()` 对显式未知套件名静默回落内置 default 套件，拼错的名字拿到 default 的判决不出声；`DEFAULT_SUITE_NAME` 成单一权威并共引 API 白名单，6 例回归。**本条是 L197 补记：L194 当时漏写了「已完成」行，代码与测试早已提交** ⇒ 详见循环日志 L194
+- [x] **L195** `f531e62e3` `test(augmentor)`：**子进程文本解码与 locale 解耦** —— `text=True` 不传 `encoding=` 让 `test_warning_when_key_absent` 在文档约定的测试命令（`PYTHONIOENCODING=utf-8`）下必红、在 CI 上必绿；两侧同时钉编码，并建 AST 同族守门 7 例 + 行为例 1 例。全量 7877 passed / 3 skipped / exit 0 ⇒ 详见循环日志 L195
+- [x] **L196** `63ef9368e` `perf(augmentor)`：**五处「同一件事算两遍」** —— sampler 的 `analyze_coverage`、`merge_files` 的第二次 `_deduplicate`、iqr 的两次排序、`diff_datasets` 的三个差集、`get_statistics` 的双趟；真实 6902 条合计 **1.73×**，44872 字节输出与 HEAD 逐键相同；新增 20 例**计数式**守卫。全量 7897 passed / 3 skipped / exit 0 ⇒ 详见循环日志 L196
+- [x] **L197**（账本批即本条所在提交）`docs(augmentor)`：**文档数字对账 + 账本补记** —— 端点总数 68/70 → **71**、`quality` tag 8 → **9**、导出格式 5 → **13**、router 11 → **13**、前端页面 9 → **11**、事件循环守门家族 12 → **13** 条；routes 目录树补 `dataset_tools.py` / `system_ops.py` 两行；补 L194/L195/L196 三轮账本条目。**Python 版本口径三处不一致（3.8+ / 3.10+ / 3.11）留作维护者决策，本轮只记不改** ⇒ 详见循环日志 L197
 
 ## Backlog A — 质量缺口（缺数 / 偏支 / 健壮性）
 
@@ -34,6 +46,8 @@
 | A206 | `web/src/pages` | **已关闭（L104–L113）**：10 页各建组件测试，前端全量 13 文件 112 例全绿 | L |
 | A207 | `web` | **已关闭（L128）**：路由懒加载 + 三 vendor 拆分本体已就位，补 `check-dist.mjs` 六格产物体检 + `npm run build:check` 入口 | M |
 | A208 | `docs` | **已关闭（L129）**：API 易混字段词典（9 字段）+ API 面排查 FAQ（6 问） | M |
+| A265 | `OPTIMIZATION_LOOP_2.md` | **新立（L197）**：账本「已完成」清单与循环日志的进度一致性**没有机器守卫**——L194 与 L50 两次漏写清单行都靠人眼发现。修法方向：从循环日志的 `### L\d+` 标题集合推导应有轮次，与清单行对账（防空转断言同 `test_cli_verdict_wiring.py` 的 S1==S2 型式）。**这是第二次同类，按纪律升级为待办而不是再忍一次** | S |
+| A266 | `docs/API.md` / `docs/ARCHITECTURE.md` / augmentor 顶层 README | **新立（L197）**：契约面数字（端点总数、tag 计数、导出格式清单、前端页面数、事件循环守门条数）全靠人肉对账，L197 一次就抓出六处历史遗留错误。修法方向：从 `app.openapi()` / `ExportFormat` 枚举 / 前端页面目录**实推**后与文档断言相等（同 `TestExportFormatSurface` 先例） | M |
 
 ## Backlog B — 功能增强与体验（价值 ÷ 工作量）
 
@@ -64,6 +78,9 @@
 | B223 | **已关闭（L153，收口第一本账 A124）**：`quality.weights` 的形状判据权威住组件（`QualityScorer` 两行手抄只判长度与和）——配置层只判 null，两面对同一键不同判；三档洞：`'abc'` 长度恰 3 死在 `sum()` 的 TypeError、`[-1.0, 2.0, 0.0]` 静默放行（权重符号反了排序整个反过来不出声）、`[True, True, False]` 被 sum 当 `[1,1,0]` | 判据权威搬进 validation 族（新族员 `require_ratio_list`：逐项 bool/NaN/越界 + 长度 + 和=1±0.01），配置层 / 组件层 / 静态回放三面共引同一份（A77）；`quality.weights` 进静态规格表、L76 的「唯一豁免」钉子按 docstring 红字约定翻转为「规格在场 + 坏值两面同拒 + 合法 6/6 两面放行」；`[]` 由静默回落默认改为即拒。新增 6 条组件层守卫 + 翻转 1 条，改前红/改后绿 | M |
 | B224 | **已关闭（L154，收口第一本账 A140）**：A140 余 11 节 29 键（context / versioning / sampler / expander / tracker / visualization / multilingual / evaluation / benchmark / active_learning / frameworks）四面零反馈——运行时零判据（一个节内判据都没有）、静态规格表零行、不可经 API 写入 ⇒ 坏值全静默进加载面；三节有真读者（pipeline 直读 num_turns / storage_dir / auto_snapshot，CLI 基准子命令读 metrics / baseline_file），假零 / 字符串假真 / 标量拆字符等档症状要到消费日才出声 | 11 节整批接节（同式同族一批收掉，A140 原框「单节约等于 S」）：节内判据引 validation 族既有成员（12 布尔键、4 计数键取正、5 字符串键、8 清单键、null 全拒），不新造判据不新造常数；静态面补 11 节 dict 行 + 29 键规格行与运行时同档；加载面构造器自动吃到。新守卫 8 类（普查名单翻转 + 坏值 × 面矩阵 + 合法反向 + 删规格行独立性 + 加载面 + 消费面）；l83 分档 13 键移档、validator 两计数扩员、l73 棘轮第三次翻空 + 1 用例按其 docstring 明文处方退役（假臂无来源 ⇒ B225 留档）；行引用 4 条降名锚 + L79 / A184 / l97 逐格重钉 | M |
 | B225 | **已关闭（L155，留防御支 + 钉死其契约）**：`apply_section_update` 的假臂（节无节内判据时「写直通、不复查」那一支）自 L154 全 20 节接上判据起仓内无来源 | 处置二选一拍定为「留」：写入路径拿到的是任意 dataclass 节对象，无判据节（含用户自定义节）是合法入参，删臂 = 对外行为变更；l73 新增 `TestTheUngatedWriteThroughIsAPinnedContract`（2 例）把「写直通、不吞键、不做判决（有判据节会拒的 0 / 负数照落）」钉成契约，谁删臂或顺手接判据就红。测试-only 一轮，产品码零改动、无行引用位移 | S |
+| B265 | **新立（L197 立案，未开工）**：**封闭清单族还剩 6 处 SDK 直构面漏网**——与 L175/L176/L189/L192/L193/L194 同族，全部实测过症状：① `visualize_enhanced.visualize_dataset(format=)` 未知值静默走 text 支还按 text 落盘（`"txt"` / `"JSON"` / `"json "` / `None` 全中）；② `indexer.DatasetIndexer.search(method=)` 未知值静默回落 contains，而 `QueryResult.index_used` 回显 `"regex:instruction,output"` —— **结果主动谎报实际方法**（比静默默默更糟，读结果的人无法自证）；③ `validation.DataSanitizer.remove_duplicates(keep=)` 的 `"Last"` / `"firts"` 静默按 first 走（B205/L135 两轮优化过这条路径的复杂度，却没补判据）；④ `dependency.DependencyManager.get_dependencies(direction=)` 未知值三条分支全不命中 ⇒ 返回 `[]`，用户读到的是「这个数据集没有任何依赖」这个**正面论断**；同文件 `add_dependency(dependency_type=)` 同样零判据；⑤ `streaming.StreamWriter(mode=, format=)` 两个字符串形参各只与一个字面量比一次 ⇒ `format="csv"` 把 JSON 数组写进用户声称为 csv 的产物、`mode='a' + format='json'` 写出无括号的半份 JSON；⑥ `quality_gate` 的 `rule.severity == "warning"` 漏网 ⇒ `"warn"`（少个 ing）静默升级为 error 级门禁阻断流水线。另 `indexer.DatasetView` 的 `format=`（:499）同形 | 一律接 `validation.require_choice`，合法值清单立为 A77 单一权威并与 API 面共引（L175/L189/L193 先例）。**建议一批收掉：同族同式，分开做会出现「修了 5 处漏 1 处」的 L194 型二次欠账** | M |
+| B266 | **新立（L197 立案，未开工）**：**C 族「except 后继续用半成品状态」5 处**（调研读过全仓 64 处 except，逐处判过「刻意降级」与「真缺陷」，5 处是后者）：① `data_pipeline.py` 的 `stop_on_failure` 默认 False ⇒ 阶段 B 抛异常时 `current` 从未重赋值，阶段 C 拿到的是**阶段 A 的输出**，整条管道少跑一环却照常跑完（输出条数不缩水，唯一信号是 logger.error 与 `get_report()` 里的 `result.error`）；② `streaming.StreamWriter.__exit__` 不看 `exc_type` 无条件补 `']'`，而 `write_chunk` 里 `json.dumps` 抛异常时上一个 `','` 已落盘 ⇒ 得到 `[{...},{...},]` 这份**非法 JSON**，用户先看到 TypeError、回头看文件还以为「写到一半了」；③ `context.batch_generate` 并行支把失败条目整条抹掉（串行支直接抛），同一入口 `use_parallel` 两值失败语义**相反**，而同仓 `multilingual.batch_translate` 正是「保留长度 + 回落原值」的反例；④ `pipeline._process_errors` 收进状态却**零读者**（`augment_dataset` 返回报告里没有 `errors` 键），且跨调用累积不清理；⑤ `quality_gate` 把「规则算不出来」（TypeError）与「算出来不及格」塞进同一个 `failed_rules`，`verdict=FAILED` 可能来自一条坏规则而不是坏数据 | 每条都要先拍「下游哪个分支被污染」，再决定是抛、回落原值、还是单开一栏（`errored_rules` / `failed_indices`）。**不要一次全上：①③④会改对外契约，②是产物面破坏性变更，⑤改判决语义** | M |
+| B267 | **新立（L197 立案，未开工）**：`preview.PreviewGenerator` 的缓存两个问题——① 命中后把 `ExportPreview` **就地改后按引用返回**，同实例所有调用方共享同一可变对象；② 缓存键只哈希 `sample[:min(5, len(sample))]`，`preview_size > 5` 时「前 5 条相同、后续不同」的两个数据集**撞键**，第二个调用方拿到第一个数据集的 `original_data` / `converted_data`（只有两个计数被刷新）。L127 的注释自称「三者缺一即换键」，但数据因子被截断到 5 条 | 键改整份 `sample`（或加长度 + 全量哈希）；命中时返回 `dataclasses.replace(cached, format_info={...})` 的副本 | S |
 
 
 
@@ -1411,3 +1428,47 @@
 - **守卫**：tests/unit/test_migration.py 新增 5 例 + 旧「未知跳过」例红字重述；常量与内置规则集逐一对上、未知拒（文案含全量清单）、坏形状 3 档、自定义 id 放行、API 共引 is 钉。
 - **棘轮（行号位移房）**：system_ops.py 顶部插 1 行共引 import ⇒ 全文件行号 +1，OPTIMIZATION_LOOP.md 既有 6 处 `system_ops.py:` 活行引用（:147/:292×3/:397×2）与 docs/ARCHITECTURE.md 2 处（:147/:292）同步平移，L79 `code_but_no_name_match` 两格（账本 146、架构 34）随修引用**回稳而非升档**；l97 原地绿（守卫不参化）。
 - 全量门禁：7863 passed / 3 skipped / exit 0（L192 的 7858 + 5 新守卫，无回归）。**B263 关闭**。
+
+### L194（2026-10-08，L197 补记）— B264 立项 + 关闭：套件名封闭清单下沉 SDK 直构面
+
+- **真缺陷（静默回落）**：`augmentor/auto_test.py` 的 `DatasetTestRunner.run_tests()` 对**显式未知套件名**静默回落到内置 default 套件 —— `_test_suites` 初始为空且没有注册入口，`if suite_name and suite_name in self._test_suites:` 不中就往 `create_test_suite("default", …)` 落。拼错的套件名拿到 default 套件的判决**不出声**（checkpoint 症状族语义漂移档；L175 / L176 / L189 / L192 / L193 封闭清单族同式）。API 面 `AUTO_TEST_SUITES` 早有 400 白名单，SDK 直构面（`run_tests` / `run_dataset_tests` / CLI `auto-test`）独缺这一格。
+- **修法**：① `auto_test.py` 立模块级 `DEFAULT_SUITE_NAME = "default"`（A77 单一权威，字面 "default" 全仓不再有两份）；② `run_tests()` 入口按 `set(self._test_suites) | {DEFAULT_SUITE_NAME}` 判封闭清单，未知名 / 非 str 抛 `DataValidationError` 并列出全部合法名；`None` = 「未指定」仍走 default、显式 `"default"` 在注册前也合法、`create_test_suite` 注册过的自定义套件名照旧放行（三条防修过头对照同轮钉死）；③ API 面 `AUTO_TEST_SUITES` 由手抄 `("default",)` 改共引 SDK 常量（`is` 钉，400 判据与文案不变）。
+- **守卫**：`tests/unit/test_auto_test.py` 新增 `TestSuiteNameClosedListL194` **6 例**；旧 `test_to_dict` 里靠静默回落才没红的套件名 `"test"` 改为 `"default"`。
+- **棘轮（行号位移房）**：顶部插 1 行共引 import ⇒ `system_ops.py` 全文件行号 +1，`OPTIMIZATION_LOOP.md` 既有活行引用与 `docs/ARCHITECTURE.md` 2 处（`:147→:148`、`:292→:293`）随移（`29b715600`，纯引用漂移）；L79 `code_but_no_name_match` 漂移桶按「数字搬进常量」条款重钉 **146 → 149**（`2b2d8fb03`）；`line_refs 270 / file_tokens 1661` 未动；l97 原地绿。
+- 全量门禁：7869 passed / 3 skipped / exit 0（L193 的 7863 + 6 新守卫，无回归）。**B264 关闭**。
+- **本条的欠账**：L194 当时只写了循环日志块、漏写「已完成」清单行，直到 L197 才补（同型事故 L50 也发生过一次）。判据本身没有守卫 ⇒ 新立一条：见 L197 的「账本自洽」小节。
+
+### L195（2026-10-09）— 子进程文本解码与 locale 解耦（缺陷由基线全量实测发现）
+
+- **真缺陷（环境相依的假绿/假红）**：`tests/unit/test_partial_branches_l123.py` 的两处 `subprocess.run(..., text=True)` 没传 `encoding=`。父进程按 `locale.getpreferredencoding()` 解码子进程输出 —— 中文 Windows 是 **cp936**；子进程那侧的编码却取决于环境里有没有 `PYTHONIOENCODING`，而**本仓文档 `OPTIMIZATION_LOOP.md` 的基线恰恰要求测试命令带 `PYTHONIOENCODING=utf-8`**。于是子进程写 UTF-8、父进程按 GBK 解，subprocess 读线程 `UnicodeDecodeError` 把 `proc.stderr` 变成 `None`，`test_warning_when_key_absent` 直接 TypeError 崩。同一条用例在 Linux CI（UTF-8 locale）必绿 ⇒ **在项目自己写的那条测试命令下必红、在 CI 上必绿**。探针实测字节：子进程写出 UTF-8 的「未设置」，cp936 解到第 49 字节的 `0xaa` 即 `illegal multibyte sequence`。
+- **修法**：两侧同时钉。① 子进程 `env["PYTHONIOENCODING"] = "utf-8"`（不设时它的字节形态随本机 locale 变）；② 父进程 `encoding="utf-8", errors="replace"`。既有正确先例三处（`test_config_unread_feedback.py` / `test_ledger_hash_slots_l98.py` / `test_excel_write_native_l85.py`），本轮补齐最后一处，另把两处原本靠「恰好是 ASCII」蒙混的调用点（`test_model_cache_optimization.py` / `test_comment_refs_a184.py`）一并补上。
+- **新增守卫** `tests/unit/test_subprocess_text_decoding.py`（7 例，AST 推导不抄清单，承 L56 纪律）：**A** 文本模式（`text=True` / legacy `universal_newlines=True`）必须给 `encoding=`，无豁免；**B** 字节模式调用必须登记在 `BYTE_MODE_ALLOWLIST` 并写明「父进程不解码文本 + 用哪个具名编解码器 + 子进程编码怎么钉」；**C** 登记不许过期（指向的调用点已不存在或已补 `encoding=` ⇒ 红）；**D** 登记文件必须自己出现 `PYTHONIOENCODING`；**E** 扫描下限 13 防 glob 静默扫空。另有一条「AST 与 grep 双向互证」——两个方向都不许多或少（排除判据自身，它的 docstring 必然写出被检形状）。
+- **新增行为例** `test_decoded_warning_is_the_real_sentence_not_mojibake`：单靠 `errors="replace"` 会把「未设置」换成一串替换字符，于是 `"未设置" not in stderr` **假绿**；必须连编码一起钉，替换字符一出现就红。
+- **红→绿注入 6 模式**（一次性注入脚本，还原后 4 文件 sha 逐字节一致）：M1 整体退回缺陷态 **4 红**（2 行为例 + 守门 A/B）、M2 只退父进程编码（保留 `errors="replace"`）**4 红**、M3 删一条登记 **1 红**、M4 登记过期 **2 红**、M5 子进程编码不再钉 **1 红**、M6 无害对照 **0 红**。红名单逐条与预定 node-id 同名。
+- **过程缺陷如实记（三处，都只属于注入脚本）**：① 首版把还原写最外层 `finally`，于是各模式补丁**叠加**而不是逐模式还原，第二个模式的锚点必然脱靶；② 更早一版崩在还原之前，把守卫文件留在缺陷态（登记块被删），手工复原后才继续 —— 自此还原必须在**同一个模式内**完成，且还原失败只打印不让它盖掉后续模式；③ 还原循环的解包顺序写反（`patches` 项是 `(key, old, new)`，写成了 `(key, new, old)`）。
+- **A184 棘轮未被触动**：守卫 docstring 原引两个不入仓工件（一次性探针脚本、被 `.gitignore` 覆盖的真实语料文件），都会记进 `scratch_missing`。测试本身只用语料内数据、不依赖任何不入仓文件，故**删掉路径引用而不是去改常数** —— 改常数是「把欠账记下来」，删引用是「不欠这笔账」，后者更便宜。探针脚本本身不写路径名，理由是同一个。
+- 全量门禁：基线 7872 collected（7868 passed + **1 failed**）→ **7880 collected，7877 passed / 3 skipped / exit 0**，覆盖率 99.89%。**+8 = 7 条守门 + 1 条行为例，两路独立闭合（numstat 与新例数精确对上）**。（`f531e62e3`）
+
+### L196（2026-10-09）— 五处「同一件事算两遍」（代价轮，行为零变化）
+
+- **共同形状**：同一个纯函数在同一轮里被完整算了两遍，第二次的结果要么直接丢掉、要么只为了拿一个 `len()`。这类改动的难点是**验收**——行为必须一字不变，所以每条都配**计数式预言机**而不是只断言「结果没变」（旧实现也算得出同样结果）。
+- **五处**：① `sampler.recommend_seeds` 把 `analyze_coverage`（4 趟遍历）算了两遍（自己一次、`identify_underrepresented` 内部一次）⇒ 后者新增可选形参 `analysis`，不传仍自算，老调用方形状不变；② `dataset_ops.merge_files` 为拿一个 `removed_duplicates` 计数把整份数据又去重了一遍 ⇒ 抽出 `_merge_and_count()` 作为 `merge()` 与 `merge_files` 的**唯一实现**（不抄第二份合并口径），顺带把 `preserve_order` 的 if/else 收成一行（两个分支本来就只差末尾那次洗牌）；③ `outlier` 的 iqr 分支对同一份 `valid` 排两遍 ⇒ 共一次排序，`_quantile` 新增可选形参 `ordered`；④ `compare_enhanced.diff_datasets` 三个集合差 `list()` 与 `len()` 各算一次 ⇒ 三个变量先算好两侧复用；⑤ `dataset_ops.get_statistics` 长度清单一趟、唯一 instruction 集合又一趟 ⇒ 单趟同时累积。
+- **`config=None` 的口径刻意不动**：产物侧照旧去重（`MergeConfig.deduplicate` 默认 True），报表的 `removed_duplicates` 仍是 0 ——「没传配置就不统计」是 L148/B218 起的旧行为，对齐它属行为变更轮，本轮不动并在代码注释里写明。
+- **等价性不靠推理**（一次性探针脚本，两个独立测量链互证）：真实 6902 条房产客服语料，`PYTHONHASHSEED=0`，把改动前**整包内容**经 `git show HEAD:` 物化成另一个同名包当**独立预言机**（不是新代码的副本），双进程跑同一份 dump 后比字节 ⇒ **44872 字节输出逐键相同**，仅 3 个「新能力标记」按预期不同。计时 min-of-3：`recommend_seeds` **0.0484 → 0.0266 s（1.82×）**、`detect(method="iqr")` **0.0024 → 0.0013 s（1.85×）**、`get_statistics` 0.0013 → 0.0012、`diff_datasets` 0.0016 → 0.0014，**合计 0.0555 → 0.0321 s（1.73×）**。
+- **新增守卫** `tests/unit/test_double_compute_l196.py`（20 例）：`analyze_coverage` / `_deduplicate` / `sorted` / `items` 迭代各必须**只发生一次**（旧实现必然多一次，退回去必须红）；另含新形参等价性（`analysis` / `ordered` 两形状同答）、`merge_files` 报表恒等式（其中「产物必须与 `merge()` 逐条一致」才是「内联没改口径」的真判据）、`diff_datasets` 的 `stats` 与清单同源。
+- **三轮自我纠错，逐条如实记**：
+  1. **探针首版物化错了包**：用 `git ls-files` 拿路径却 `REPO / rel` 读盘，物化出的「OLD」其实是**新代码本身** ⇒「完全一致」和那次计时全是自我印证（旧 0.0395 vs 新 0.0221 那个读数就是这么来的，作废）。改成真取 `git show HEAD:` 后重跑，并加两条自检断言（HEAD 不该有 `analysis` 形参、`_quantile` 不收 3 参）防再犯。
+  2. **探针的离群段空转**：`_extract_values` 读的是**名为该字段的数值**，传 `field="instruction"` 得到全 `None`，`detect` 在排序之前就早退 ⇒ 一直在比两个空报表。换成真数值语料后 iqr 的受益才量到（1.85×）。
+  3. **`shuffle_same_multiset` 一度 OLD=True / NEW=False，看着像回归**：把同一探针喂两个包根各跑 8 次，两侧同为 **1/8** —— 未播种的 `random.Random().shuffle` 让「洗后去重保留哪一份重复」本身随机（语料里有 instruction 相同而 output 不同的记录），**不是回归**。已把该键换成确定性判据（条数不变 + 洗牌确实发生），并把「探针键本身不确定就不许当等价性判据」立为纪律。
+- **棘轮未被触动**：守卫 docstring 原引两个不入仓工件（一次性探针脚本、被 `.gitignore` 覆盖的真实语料文件），会使 A184 `scratch_missing` +2；测试只用语料内数据，故删路径引用而非改常数（同 L195 的取舍）。
+- 全量门禁：7880 collected → **7900 collected，7897 passed / 3 skipped / exit 0**，覆盖率 **99.89%**（13240 语句 **0 missed**、3870 分支偏 19）。**+20 精确对上**；A184 / L79 / markdown / l97 各棘轮原地绿。（`63ef9368e`）
+
+### L197（2026-10-09）— 文档数字对账 + 账本补记（docs 轮，产品码 0 改动）
+
+- **动机**：L196 收尾后重扫文档，发现 6 处 A 级「契约面数字直接错」。全部先用代码实测再改，**不采信任何二手读数**：数 `api/routes/*.py` 的 `@router.*` 装饰器（70）+ `api/main.py` 的 `@app.get("/api/health")`（1）= **71**；进程内生成 OpenAPI 得 `paths 67 / operations 71 / tag 13`；`ExportFormat` 枚举与 `GET /api/export/formats` 实调均得 **13** 种；`include_router` **13** 次；`web/src/pages/*.tsx`（非测试）**11** 个、`App.tsx` **11** 条 `<Route>`；`test_api_event_loop_blocking.py` 的 `BLOCKING_SITES` 数到 **13** 条其中 quality **9** 条。
+- **改动的六处数字**：README 端点 68 → **71**（两处）、README `dataset` 分组 12 → **14**、`docs/API.md` 端点总数 70 → **71**（两处）、`docs/API.md` `### quality（8）` → **（9）**（该节表格本来就有 9 行，是标题写错）、`docs/API.md` 导出格式示例 5 → **13**、`docs/ARCHITECTURE.md` router 11 → **13** 并补 `dataset_tools.py` / `system_ops.py` 两行、页面 9 → **11**（两处）、事件循环守门 12 → **13** 条且 quality 8 → **9** 条。
+- **会漂移的数字改成「以枚举为准」的写法**（承第一本账 F-06 纪律）：README 的导出格式行与 API.md 的 `GET /api/export/formats` 示例都加了「清单由 `ExportFormat` 驱动、精确值以枚举/实时接口为准、不要从文档手抄」；并**顺手堵掉一个会让人改错的相邻陷阱** —— `GET /api/config` 回显里的 `export.formats` 是**五值出厂默认**，与这里的「全部支持格式」不是同一件事（探针实测两者分别为 5 与 13，第二本账 L184 也把前者归入「仅回显」档）。
+- **账本自洽三件**：① 补 L194 的「已完成」行与循环日志段（L194 当时只写日志块、漏写清单行，同型事故 L50 也发生过一次 ⇒ 判据本身没有守卫，这是**第二次**同类，按纪律升级为一条待办而不是再忍一次）；② 在「已完成」段首加指针，说明清单只到 L113、L114–L193 以循环日志为权威，不再回填 80 行（两处数字长期不一致的风险高于补行的边际价值）；③ 全量读数从 7869 更新到 7897。
+- **留作维护者决策、本轮只记不改的一处**：Python 版本口径三处不一致 —— README `3.8+`、`docs/README.md` `3.10+（开发验证环境为 3.13）`、`docs/DEPLOYMENT.md` 镜像与服务器段 `3.11`。实测代码侧无 3.10 独有语法（无 `match`、无内置泛型运行期注解），依赖上限也按 3.8 钉（`numpy<3.0.0` / `fastapi<1.0.0`），但两个验证解释器是 3.13.14 与 3.14.4、部署镜像是 3.11-slim ⇒ 「最低支持哪个版本」是产品决策，按「先记后问」处理，不擅自拍数。
+- **新立待办**：**A265** 账本「已完成」清单与循环日志的进度一致性没有机器守卫（L194 / L50 两次漏写清单行都靠人眼发现）；**A266** 文档里的契约面数字（端点总数、tag 计数、格式清单、页面数）全靠人肉对账，本轮六处错全部是历史遗留 ⇒ 应收敛成一条从 `app.openapi()` / 枚举实推的门禁。
+- 文档守卫全绿：`test_docs_markdown_structure.py` / `test_doc_line_refs_l79.py` / `test_comment_refs_a184.py` 共 116 passed；本轮只改数字与目录树，**不动任何「文件名 + 行号」形的行引用**，故 L79 与 A184 棘轮未被触动。（账本批即本条所在提交）
