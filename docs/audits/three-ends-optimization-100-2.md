@@ -14,7 +14,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 > **提交尾注用「（优化二轮 N）」与第一本的「（优化轮 N）」区分**；仍只暂存本人文件
 > （工作区有并行 CI/augmentor/laiyipao 会话在途改动，绝不越界暂存）。
 
-## 状态：进行中（轮 17/100）
+## 状态：进行中（轮 18/100）
 
 ## 启动基线（2026-10-06 实测）
 
@@ -53,6 +53,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 | 15 | FIX（后端安全，全局配置越权） | FIX | **ai 公告与全局配置族 11 端点补 admin 门禁**（commit `4171b5645`）：ann_create/save/delete（公告发布）+ config_create_mcp/model、config_delete_mcp/model_flag、config_save、config_update_mcp/model_flag、update_ai_control_config（全局模型/MCP 配置，含 URL 与密钥面）此前任何登录人可增删改 → require_admin 助手（is_admin）统一门禁。消费甄别：AnnApp.vue 公告管理、AIChatApp 管理动作面板。坑：助手上误留 #[axum::debug_handler]（它把函数当 handler 宏展开导致 E0637 假生命周期错）。验证：ai_assemble_control 53/53、clippy 0、fmt 0 |
 | 16 | FIX（后端安全，考勤申诉越权） | FIX | **考勤申诉三端点收口**（commit `748dacf09`）：①audit_appeal（批/驳申诉）/archive_appeal（归档）无守卫=任何登录人可批驳任意员工申诉 → 补「全局 admin 或 x_attendance_admin 登记管理员」双通道门禁（is_attendance_admin 本地助手，业务管理员语义优先）；②submit_appeal 的 personId/creator 从 body 取（可替别人提申诉/落 "system" 垃圾归属）→ 以会话登录人为事实源。验证：attendance 8/8、clippy 0、fmt 0 |
 | 17 | PERF（后端读路径 N+1 折叠，方向⑤） | PERF | **group_list_object 批量成员查询 1+N → 单条 LEFT JOIN**（`organization_assemble_express/endpoints_org.rs`）：`POST /api/group/list/object`（routes.rs:159 已注册、可达）原先 1 条分组查询 + 对每个分组各发 1 条 `SELECT person_id ... WHERE group_id=$1` 成员查询——N 由请求 `groupList` 决定，上限 `ID_COUNT_LIMIT=100`，典型数据成正比 N+1。改为单条 `g LEFT JOIN x_org_group_member m` 按 `(g.id=ANY($1) OR g.name=ANY($1))` 过滤、`ORDER BY g.id, m.person_id`，Rust 侧单遍聚合。**铁证=同文件 group_list_person 早已用 JOIN 一次查完**，照搬其形。为可测把聚合抽成纯函数 `fold_group_members(impl IntoIterator<Item=GroupMemberRow>) -> Vec<Value>`（结构体承载行，脱离 live DB 可单测）。**行为保持**：输出键 id/name/type/unit_id 仅非空插入（对齐 row_to_map）、memberCount 恒存（=personList 长度，等价原 COUNT 子查询）、空成员组 personList=[]；且旧版 `m.get::<_,String>("person_id")` 遇 NULL 会 panic，新版 Option 更安全。原 member_count 相关子查询与逐组查询全部删除，PICK_ANY/row_to_map 其余调用点未动。新增纯函数单测 2 例（多成员聚合 + 空列省略 null 列保留 count）。验证：organization_assemble_express --lib 40/40（+2 新测）、clippy 0、fmt 0 |
+| 18 | PERF（后端写路径 N+1 折叠，方向⑤续） | PERF | **touch 维护族三端点 SELECT+逐行 INSERT → 单条 `INSERT ... SELECT ... RETURNING`**（`processplatform_service_processing/u2.rs`）：`GET touch/loglongdetained`（routes.rs:183）、`touch/touchdelay`（186）、`touch/urge`（187）均为维护/巡检型端点，原先各发 1 条候选 SELECT + 对每个命中行一条 `record_insert`（+urge 还逐行 `record_exists`），命中行数无上限（滞留/过期任务越多越慢）=写 N+1。三者改为单条 `INSERT INTO x_record SELECT ... RETURNING work_id`，`gen_random_uuid()::text` 生成行 id（cms_assemble_control 既有同款用法）。**语义复刻**：①loglongdetained 的 `NOT EXISTS(每日去重)` 原样内移；②touchdelay 内层 `DISTINCT + NOT EXISTS` 复刻逐行查重，`COALESCE(t.work,'')` 复刻原 `unwrap_or_default()` 空串归属；③urge 内层 DISTINCT + 外层 `NOT EXISTS(work+COALESCE(type)+COALESCE(content))` 等价复刻原逐行 `record_exists`（work+type+content，无日期）；三者 workList/count 由 RETURNING 回填。**改进副作用（如实记）**：原逐行 `.ok()` 吞错=尽力而为，折叠后单语句失败即 500 fail-loud。`record_insert`/`record_exists` 其余调用点（u2.rs:1425/1428 press 族）保留未动。验证：processplatform_service_processing --lib 53/53（含三端点 reachability 回归）、clippy 0、fmt 0 |
 
 ## 记账纪律（沿用第一本）
 
