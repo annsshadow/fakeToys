@@ -245,6 +245,24 @@ def crate_of(path):
     return parts[1] if parts[0] == "crates" else "oa4rust(facade)"
 
 
+def module_qualifier(path):
+    """从源文件路径推导 crate 内的模块限定（如 role.rs → role，a/b.rs → a::b）。
+    lib.rs / main.rs 的 fn 在 crate 根，返回 ''（裸名即可）。"""
+    rel = os.path.relpath(path, RUST).replace("\\", "/")
+    parts = rel.split("/")
+    if parts[0] == "crates" and len(parts) >= 4 and parts[2] == "src":
+        rest = "/".join(parts[3:])
+    elif parts[0] == "src" and len(parts) >= 2:
+        rest = "/".join(parts[1:])
+    else:
+        return ""
+    if rest.endswith(".rs"):
+        rest = rest[: -3]
+    if rest in ("lib", "main", ""):
+        return ""
+    return rest.replace("/", "::")
+
+
 def scan_rust_index():
     """返回 (handler_index, struct_index)。
     handler_index[name] = {"body_params":[...], "reads":[...], "emits":[...]}
@@ -352,6 +370,16 @@ def scan_rust_index():
                         continue
 
                     reads = set()
+                    # serde 结构体请求体：`Json(req): Json<RoleUpdateRequest>`，
+                    # handler 多用字段访问 `req.description` 而非 `.get("description")`
+                    # （参见 control::role 的 create/update）。JSON_STRUCT_RE 已在 body_params
+                    # 收集阶段捕获绑定名与结构体类型；这里把结构体的全部接受键（structs 索引含
+                    # serde rename/rename_all/alias，按 serde 语义与 Json 字面键一致）补入 reads，
+                    # 消除这类字段访问被 B 类（"发送但后端不读"）误判的根因。
+                    for bm in JSON_STRUCT_RE.finditer(sig):
+                        bp, struct_ty = bm.group(1), bm.group(2)
+                        if bp in body_params and struct_ty in structs:
+                            reads.update(structs[struct_ty]["fields"])
                     alt_groups = []
                     # 接收者集合 = 请求体参数 + 由它派生的别名。
                     # 派生来源：① 闭包绑定 `|Json(v)| v.get("k")`（如 body.as_ref().map(|Json(v)| v)）
@@ -631,25 +659,30 @@ def scan_rust_index():
                     consumes_whole = any(
                         wm.group(1) in receivers for wm in WHOLE_BODY_RE.finditer(body_orig)
                     )
-                    handlers.setdefault(
-                        (crate_of(p), name),
-                        {
-                            "body_params": body_params,
-                            "reads": sorted(reads),
-                            "opt_keys": sorted(opt_keys),
-                            "alt_groups": alt_groups,
-                            "opt_alt_groups": opt_alt_groups,
-                            "delegated": delegated,
-                            "crud_resolved": crud_resolved,
-                            "callees": sorted(callees),
-                            "callee_calls": callee_calls,
-                            "params": fn_params,
-                            "param_gets": param_gets,
-                            "consumes_whole": consumes_whole,
-                            "emits": sorted(emits),
-                            "file": os.path.relpath(p, RUST).replace("\\", "/"),
-                        },
-                    )
+                    rec = {
+                        "body_params": body_params,
+                        "reads": sorted(reads),
+                        "opt_keys": sorted(opt_keys),
+                        "alt_groups": alt_groups,
+                        "opt_alt_groups": opt_alt_groups,
+                        "delegated": delegated,
+                        "crud_resolved": crud_resolved,
+                        "callees": sorted(callees),
+                        "callee_calls": callee_calls,
+                        "params": fn_params,
+                        "param_gets": param_gets,
+                        "consumes_whole": consumes_whole,
+                        "emits": sorted(emits),
+                        "file": os.path.relpath(p, RUST).replace("\\", "/"),
+                    }
+                    # 双 key：裸名（crate_of,p）保持旧口径；模块限定名（如 control::role::update）
+                    # 是唯一确定的消歧键——同 crate 内 group/person/role/unit 各有同名 CRUD fn，
+                    # 裸名 setdefault 会因 os.walk 顺序（本地 role.rs 先 / CI person.rs 先）产生
+                    # 跨平台不一致的 B 判定。路由 handler_q 走限定 key，结果与走序无关。
+                    qual = module_qualifier(p)
+                    handlers.setdefault((crate_of(p), name), rec)
+                    if qual:
+                        handlers.setdefault((crate_of(p), qual + "::" + name), rec)
 
                 # 宏生成端点登记（见 MACRO_ENDPOINT_READS 注释）：函数体由宏展开，FN_RE 不可见
                 for mm in MACRO_ENDPOINT_RE.finditer(masked):
@@ -1008,9 +1041,14 @@ def main():
     for crate, rs in routes.items():
         for r in rs:
             h = r.get("handler") or ""
-            hi = handlers.get((crate, h))
-            if hi is None and len(by_name.get(h, [])) == 1:
-                hi = handlers[(by_name[h][0], h)]
+            # 优先用模块限定名（role::update）精确命中——同 crate 多模块同名 fn 的唯一确定消歧；
+            # 无限定名或限定键未命中时回退裸名，再回退跨 crate 单一定义。
+            hq = r.get("handler_q") or ""
+            hi = handlers.get((crate, hq)) if hq else None
+            if hi is None:
+                hi = handlers.get((crate, h))
+                if hi is None and len(by_name.get(h, [])) == 1:
+                    hi = handlers[(by_name[h][0], h)]
             endpoint.setdefault((r["method"], r["path"]), []).append(
                 {
                     "crate": crate,

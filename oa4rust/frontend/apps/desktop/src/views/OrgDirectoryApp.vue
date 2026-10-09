@@ -121,13 +121,15 @@ async function collect(label: string, p: Promise<unknown>): Promise<void> {
 // ── 人员 ────────────────────────────────────────────────────────────
 function runPerson(): void {
   void runAll([
-    async () =>
-      collect('全量人员(all/object)', await api.get('/api/person/list/all/object')),
+    async () => collect('全量人员(all/object)', await api.get('/api/person/list/all/object')),
     async () => collect('人员清单(list/object)', await api.post('/api/person/list/object', {})),
     async () => {
       const u = prompt('单位标识（多个用逗号分隔）:', '') || ''
       if (!u) return
-      const unitList = u.split(',').map((x) => x.trim()).filter(Boolean)
+      const unitList = u
+        .split(',')
+        .map((x) => x.trim())
+        .filter(Boolean)
       await collect(
         '按单位直查(sub/direct/object)',
         await api.post('/api/person/list/unit/sub/direct/object', { unitList }),
@@ -148,7 +150,10 @@ function runPerson(): void {
     async () => {
       const p = prompt('人员标识（上下级查询，逗号分隔）:', '') || ''
       if (!p) return
-      const personList = p.split(',').map((x) => x.trim()).filter(Boolean)
+      const personList = p
+        .split(',')
+        .map((x) => x.trim())
+        .filter(Boolean)
       await collect('下属(直连)', await api.post('/api/person/list/person/sub/direct/object', { personList }))
       await collect('下属(嵌套)', await api.post('/api/person/list/person/sub/nested/object', { personList }))
       await collect('上级(直连)', await api.post('/api/person/list/person/sup/direct/object', { personList }))
@@ -157,12 +162,18 @@ function runPerson(): void {
     async () => {
       const r = prompt('角色标识（逗号分隔）:', '') || ''
       if (r) {
-        const roleList = r.split(',').map((x) => x.trim()).filter(Boolean)
+        const roleList = r
+          .split(',')
+          .map((x) => x.trim())
+          .filter(Boolean)
         await collect('按角色查人', await api.post('/api/person/list/role/object', { roleList }))
       }
       const g = prompt('群组标识（逗号分隔）:', '') || ''
       if (g) {
-        const groupList = g.split(',').map((x) => x.trim()).filter(Boolean)
+        const groupList = g
+          .split(',')
+          .map((x) => x.trim())
+          .filter(Boolean)
         await collect('按群组查人', await api.post('/api/person/list/group/object', { groupList }))
       }
       await collect('按身份查人', await api.post('/api/person/list/identity/object', {}))
@@ -185,7 +196,12 @@ function runUnit(): void {
     async () => collect('全量单位(list/object)', await api.post('/api/unit/list/object', {})),
     async () => {
       const u = prompt('单位标识（逗号分隔）:', '') || ''
-      const unitList = u ? u.split(',').map((x) => x.trim()).filter(Boolean) : []
+      const unitList = u
+        ? u
+            .split(',')
+            .map((x) => x.trim())
+            .filter(Boolean)
+        : []
       await collect('子单位(直连)', await api.post('/api/unit/list/unit/sub/direct/object', { unitList }))
       await collect('子单位(嵌套)', await api.post('/api/unit/list/unit/sub/nested/object', { unitList }))
       await collect('上级单位(直连)', await api.post('/api/unit/list/unit/sup/direct/object', { unitList }))
@@ -212,18 +228,33 @@ function runIdentity(): void {
     async () => collect('身份清单(list/object)', await api.post('/api/identity/list/object', {})),
     async () => {
       const p = prompt('人员标识（逗号分隔）:', '') || ''
-      const personList = p ? p.split(',').map((x) => x.trim()).filter(Boolean) : []
+      const personList = p
+        ? p
+            .split(',')
+            .map((x) => x.trim())
+            .filter(Boolean)
+        : []
       await collect('按人员查身份', await api.post('/api/identity/list/person/object', { personList }))
       await collect('主职身份', await api.post('/api/identity/list/major/person/object', { personList }))
       await collect('单位+人员身份', await api.post('/api/identity/list/unit/person/object', { personList }))
     },
     async () => {
       const u = prompt('单位标识（逗号分隔）:', '') || ''
-      const unitList = u ? u.split(',').map((x) => x.trim()).filter(Boolean) : []
+      const unitList = u
+        ? u
+            .split(',')
+            .map((x) => x.trim())
+            .filter(Boolean)
+        : []
       await collect('按单位(直连)查身份', await api.post('/api/identity/list/unit/sub/direct/object', { unitList }))
       await collect('按单位(嵌套)查身份', await api.post('/api/identity/list/unit/sub/nested/object', { unitList }))
       const g = prompt('群组标识（逗号分隔）:', '') || ''
-      const groupList = g ? g.split(',').map((x) => x.trim()).filter(Boolean) : []
+      const groupList = g
+        ? g
+            .split(',')
+            .map((x) => x.trim())
+            .filter(Boolean)
+        : []
       await collect('按群组查身份', await api.post('/api/identity/list/group/object', { groupList }))
     },
   ])
@@ -235,7 +266,12 @@ function runGroup(): void {
     async () => collect('群组清单(list/object)', await api.post('/api/group/list/object', {})),
     async () => {
       const g = prompt('群组标识（逗号分隔）:', '') || ''
-      const groupList = g ? g.split(',').map((x) => x.trim()).filter(Boolean) : []
+      const groupList = g
+        ? g
+            .split(',')
+            .map((x) => x.trim())
+            .filter(Boolean)
+        : []
       await collect('子群组(直连)', await api.post('/api/group/list/group/sub/direct/object', { groupList }))
       await collect('子群组(嵌套)', await api.post('/api/group/list/group/sub/nested/object', { groupList }))
       await collect('上级群组(直连)', await api.post('/api/group/list/group/sup/direct/object', { groupList }))
@@ -254,7 +290,12 @@ function runRole(): void {
     async () => collect('角色清单', await api.post('/api/role/list/object', {})),
     async () => {
       const p = prompt('人员标识（逗号分隔）:', '') || ''
-      const personList = p ? p.split(',').map((x) => x.trim()).filter(Boolean) : []
+      const personList = p
+        ? p
+            .split(',')
+            .map((x) => x.trim())
+            .filter(Boolean)
+        : []
       await collect('按人员查角色', await api.post('/api/role/list/person/object', { personList }))
     },
     async () => collect('部门树', await api.get('/api/departments/tree')),
@@ -283,7 +324,10 @@ async function manage(op: string): Promise<void> {
       const persons = prompt('新增成员（人员标识，逗号分隔）:', '') || ''
       if (!flag || !persons) return
       await api.put(`/api/organization/assemble/control/group/${encodeURIComponent(flag)}/add/member`, {
-        personList: persons.split(',').map((x) => x.trim()).filter(Boolean),
+        personList: persons
+          .split(',')
+          .map((x) => x.trim())
+          .filter(Boolean),
       })
       toast.success('群组成员已新增')
     } else if (op === 'groupRemove') {
@@ -291,7 +335,10 @@ async function manage(op: string): Promise<void> {
       const persons = prompt('移除成员（人员标识，逗号分隔）:', '') || ''
       if (!flag || !persons) return
       await api.put(`/api/organization/assemble/control/group/${encodeURIComponent(flag)}/delete/member`, {
-        personList: persons.split(',').map((x) => x.trim()).filter(Boolean),
+        personList: persons
+          .split(',')
+          .map((x) => x.trim())
+          .filter(Boolean),
       })
       toast.success('群组成员已移除')
     } else if (op === 'dutyUpdate') {
@@ -300,7 +347,10 @@ async function manage(op: string): Promise<void> {
       if (!duty || !persons) return
       await api.put('/api/organization/assemble/control/unitduty/update/member', {
         unitDuty: { name: duty },
-        identityList: persons.split(',').map((x) => x.trim()).filter(Boolean),
+        identityList: persons
+          .split(',')
+          .map((x) => x.trim())
+          .filter(Boolean),
       })
       toast.success('职务成员已更新')
     } else if (op === 'dutyUpdatePost') {
@@ -309,7 +359,10 @@ async function manage(op: string): Promise<void> {
       if (!duty || !persons) return
       await api.post('/api/organization/assemble/control/unitduty/update/member', {
         unitDuty: { name: duty },
-        identityList: persons.split(',').map((x) => x.trim()).filter(Boolean),
+        identityList: persons
+          .split(',')
+          .map((x) => x.trim())
+          .filter(Boolean),
       })
       toast.success('职务成员已更新(POST)')
     } else if (op === 'personAttr') {

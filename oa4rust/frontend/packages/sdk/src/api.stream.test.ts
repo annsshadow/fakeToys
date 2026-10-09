@@ -36,12 +36,14 @@ describe('ApiClient.stream', () => {
   })
 
   it('POSTs JSON and parses SSE token events across chunk boundaries', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(
-      sseResponse([
-        'event: token\ndata: {"conversationId":"c1","token":"你"}\n\nevent: token\ndata',
-        ': {"token":"好"}\n\n',
-      ]),
-    )
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(
+        sseResponse([
+          'event: token\ndata: {"conversationId":"c1","token":"你"}\n\nevent: token\ndata',
+          ': {"token":"好"}\n\n',
+        ]),
+      )
     vi.stubGlobal('fetch', fetchMock)
 
     const events: Array<[string, string]> = []
@@ -49,9 +51,7 @@ describe('ApiClient.stream', () => {
       events.push([e, d])
     })
 
-    expect(fetchMock.mock.calls[0][0]).toBe(
-      'https://web.example.test/api/ai_assemble_control/chat/completion/stream',
-    )
+    expect(fetchMock.mock.calls[0][0]).toBe('https://web.example.test/api/ai_assemble_control/chat/completion/stream')
     const init = fetchMock.mock.calls[0][1] as RequestInit
     expect(init.method).toBe('POST')
     expect(init.body).toBe(JSON.stringify({ message: 'hi' }))
@@ -62,9 +62,9 @@ describe('ApiClient.stream', () => {
   })
 
   it('tolerates CRLF separators and non-token events without data loss', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(
-      sseResponse(['event: token\r\ndata: {"token":"a"}\r\n\nevent: done\r\ndata: [DONE]\r\n\r\n']),
-    )
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(sseResponse(['event: token\r\ndata: {"token":"a"}\r\n\nevent: done\r\ndata: [DONE]\r\n\r\n']))
     vi.stubGlobal('fetch', fetchMock)
 
     const events: Array<[string, string]> = []
@@ -79,14 +79,10 @@ describe('ApiClient.stream', () => {
   it('maps HTTP 403 to PermissionError and 401 (after failed refresh) to AuthenticationError', async () => {
     const fetch403 = vi.fn().mockResolvedValue(new Response('no', { status: 403 }))
     vi.stubGlobal('fetch', fetch403)
-    await expect(
-      new ApiClient().stream('/api/x', {}, () => {}),
-    ).rejects.toBeInstanceOf(PermissionError)
+    await expect(new ApiClient().stream('/api/x', {}, () => {})).rejects.toBeInstanceOf(PermissionError)
 
     const fetch401 = vi.fn().mockResolvedValue(new Response('no', { status: 401 }))
     vi.stubGlobal('fetch', fetch401)
-    await expect(
-      new ApiClient().stream('/api/x', {}, () => {}),
-    ).rejects.toBeInstanceOf(AuthenticationError)
+    await expect(new ApiClient().stream('/api/x', {}, () => {})).rejects.toBeInstanceOf(AuthenticationError)
   })
 })

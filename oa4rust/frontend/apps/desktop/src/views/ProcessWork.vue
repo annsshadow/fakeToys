@@ -1753,7 +1753,10 @@ async function collabAction(op: string): Promise<void> {
       const flag = e(prompt('work 或 workCompleted ID (flag):', '') || '')
       const content = prompt('文件 base64 内容:', '') || ''
       if (!content) return
-      await api.post(`${SB}/attachment/v2/upload/workorworkcompleted/${flag}/base64`, { fileName: 'base64.bin', content })
+      await api.post(`${SB}/attachment/v2/upload/workorworkcompleted/${flag}/base64`, {
+        fileName: 'base64.bin',
+        content,
+      })
       toast.success('base64 附件已上传')
       engineBusy.value = false
       return
@@ -1787,17 +1790,20 @@ async function collabAction(op: string): Promise<void> {
       const wid = e(prompt('目标工作 ID:', workId(opened.value ?? {}) || '') || '')
       const list = prompt('附件 ID 列表（逗号分隔）:', attachments.value?.map((a: any) => a.id).join(',') ?? '') || ''
       await api.post(`${SP}/attachment/copy/work/${wid}`, {
-        attachmentList: list.split(',').map((x: string) => x.trim()).filter(Boolean),
+        attachmentList: list
+          .split(',')
+          .map((x: string) => x.trim())
+          .filter(Boolean),
       })
       toast.success('附件复制已完成')
     } else if (op === 'htmlToPdf') {
       const html = prompt('workHtml（HTML 内容，空=「无内容」）:', '') || ''
-      const title = prompt('归档标题:', '归档-' + new Date().toLocaleDateString('zh-CN')) || ''
+      const title = prompt('归档标题:', `归档-${new Date().toLocaleDateString('zh-CN')}`) || ''
       await api.post(`${SB}/attachment/html/to/pdf`, { workHtml: html, title })
       toast.success('PDF 归档已生成')
     } else if (op === 'htmlToImage') {
       const html = prompt('workHtml（HTML 内容，空=「无内容」）:', '') || ''
-      const title = prompt('归档标题:', '归档-' + new Date().toLocaleDateString('zh-CN')) || ''
+      const title = prompt('归档标题:', `归档-${new Date().toLocaleDateString('zh-CN')}`) || ''
       await api.post(`${SB}/attachment/html/to/image`, { workHtml: html, title })
       toast.success('图片归档已生成')
     } else if (op === 'reviewWork') {
@@ -1821,7 +1827,7 @@ async function collabAction(op: string): Promise<void> {
       await api.get(`${SB}/mode/clear/person/person/${person}`)
       toast.success('个人处理模式已清除')
     } else if (op === 'snapUploadSurface') {
-      const job = prompt('快照 job:', 'snap-' + Date.now()) || ''
+      const job = prompt('快照 job:', `snap-${Date.now()}`) || ''
       const wid = prompt('工作 ID（与已办至少其一）:', workId(opened.value ?? {}) || '') || ''
       await api.post(`${SB}/snap/upload`, { job, work: wid || undefined, title: '审批快照' })
       toast.success('快照已上传')

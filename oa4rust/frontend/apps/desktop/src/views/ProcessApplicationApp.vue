@@ -188,8 +188,12 @@ async function readWithFlag() {
   try {
     const [app, proc, edition] = await Promise.all([
       api.post(`/api/processplatform/assemble/designer/application/${e(appId)}/${flag}`, {}),
-      procId ? api.post(`/api/processplatform/assemble/designer/process/${e(procId)}/${flag}`, {}) : Promise.resolve(null),
-      procId ? api.post(`/api/processplatform/assemble/designer/process/edition/${e(procId)}/${flag}`, {}) : Promise.resolve(null),
+      procId
+        ? api.post(`/api/processplatform/assemble/designer/process/${e(procId)}/${flag}`, {})
+        : Promise.resolve(null),
+      procId
+        ? api.post(`/api/processplatform/assemble/designer/process/edition/${e(procId)}/${flag}`, {})
+        : Promise.resolve(null),
     ])
     const name = (r: any) => (r as any)?.data?.name || (r as any)?.data?.xname || '—'
     toast.info(`应用「${name(app)}」${proc ? ` · 流程「${name(proc)}」` : ''}${edition ? ' · 版本已读取' : ''}`)
