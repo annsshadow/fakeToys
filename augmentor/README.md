@@ -149,7 +149,10 @@ augmentor/
 
 ## 环境要求
 
-- Python 3.8+
+- **Python 3.10+**（实测结论：产品码语法下限 3.8，但测试套件与 `requirements-core.txt`
+  里 `fastapi` / `uvicorn` / `requests` / `pytest` 的已装版本都要求 ≥3.10；
+  Docker 镜像钉 `python:3.11-slim`，开发验证在 3.13.14 与 3.14.4 两套解释器上跑。
+  想装**全套可选依赖**（numpy 2.x / pandas 3.0 / chromadb 1.5）需 3.11+）
 - 依赖包见 `requirements.txt`
 
 ## 环境变量
