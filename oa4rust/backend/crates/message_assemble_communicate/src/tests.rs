@@ -592,3 +592,69 @@ async fn test_send_message_row_and_conversation_touch_are_atomic() {
     .await
     .unwrap();
 }
+
+/// 群发消息游标分页回归（优化二轮 48）：mass_list next/prev 原把路径锚点 id 同时绑到
+/// `mass_id = $1`（campaign id 列）AND `id > $2`，mass_id=<消息id> 恒假 → 永远返回空。
+/// 修复后对齐同文件 instant_list 的 `WHERE id > $1 ... LIMIT $2` 游标语义。
+#[tokio::test]
+async fn test_mass_list_next_returns_messages_after_anchor() {
+    if !shared::testing::is_db_available().await {
+        eprintln!("skipping test_mass_list_next_returns_messages_after_anchor: DB not reachable");
+        return;
+    }
+    let pool = shared::testing::test_pool();
+    let c = pool.get().await.unwrap();
+    c.execute(
+        "CREATE TABLE IF NOT EXISTS x_message (id TEXT, conversation_id TEXT, content TEXT, sender TEXT, type TEXT, create_time TEXT, mass_id TEXT)",
+        &[],
+    )
+    .await
+    .unwrap();
+    c.execute(
+        "ALTER TABLE x_message ADD COLUMN IF NOT EXISTS mass_id TEXT",
+        &[],
+    )
+    .await
+    .unwrap();
+    c.execute(
+        "DELETE FROM x_message WHERE id IN ('u2-mass-a','u2-mass-b')",
+        &[],
+    )
+    .await
+    .unwrap();
+    // 同一 mass campaign 的两条消息，id 'a' < 'b'
+    c.execute(
+        "INSERT INTO x_message (id, mass_id, content, create_time) VALUES \
+         ('u2-mass-a','camp-1','first','2026-10-10 00:00:00'), \
+         ('u2-mass-b','camp-1','second','2026-10-10 00:00:01')",
+        &[],
+    )
+    .await
+    .unwrap();
+
+    // 以 'u2-mass-a' 为锚点取之后的消息 → 必含 'u2-mass-b'（修复前恒空）
+    let resp = crate::mass_list_id_next_count(
+        axum::Extension(pool.clone()),
+        axum::extract::Path(("u2-mass-a".to_string(), 10)),
+    )
+    .await
+    .unwrap();
+    let j = serde_json::to_value(&resp.0).unwrap();
+    let ids: Vec<String> = j["data"]
+        .as_array()
+        .expect("data array")
+        .iter()
+        .map(|r| r["id"].as_str().unwrap_or_default().to_string())
+        .collect();
+    assert!(
+        ids.contains(&"u2-mass-b".to_string()),
+        "锚点之后的群发消息必须可达（修复前因 mass_id=<消息id> 恒空）"
+    );
+
+    c.execute(
+        "DELETE FROM x_message WHERE id IN ('u2-mass-a','u2-mass-b')",
+        &[],
+    )
+    .await
+    .unwrap();
+}
