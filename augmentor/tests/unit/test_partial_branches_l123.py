@@ -159,33 +159,58 @@ class TestApiMainImportsWithKeySet:
     子进程隔离：不动测试进程里的 `api.main` 模块对象（TestClient 全家拿的是它）。
     """
 
-    def test_no_warning_when_key_configured(self):
-        env = dict(os.environ)
-        env["AUGMENTOR_API_KEY"] = "test-key"
-        code = (
-            "import api.main  # noqa: F401"
-        )
-        proc = subprocess.run(
-            [sys.executable, "-c", code],
-            cwd=str(Path(__file__).resolve().parents[2]),
-            env=env,
-            capture_output=True,
-            text=True,
-            timeout=120,
-        )
-        assert proc.returncode == 0, proc.stderr
-        assert "未设置" not in proc.stderr
+    @staticmethod
+    def _import_api_main(env_overrides: dict) -> subprocess.CompletedProcess:
+        """在子进程里 `import api.main`，拿回**解码确定**的 stderr
 
-    def test_warning_when_key_absent(self):
+        两侧编码必须同时钉住，否则这条用例的结论随本机 locale 漂移：
+
+        1. 子进程侧 `PYTHONIOENCODING=utf-8`。不设时子进程按 locale 编码
+           （这台中文 Windows 是 GBK、Linux CI 是 UTF-8），同一条中文告警有
+           两种字节形态。
+        2. 父进程侧 `encoding="utf-8"`。`text=True` 不给编码时按
+           `locale.getpreferredencoding()` 解，而这台机器是 cp936。
+
+        改前（`text=True` 且两侧都不钉）在项目文档约定的测试命令
+        （`OPTIMIZATION_LOOP.md` 基线：`PYTHONIOENCODING=utf-8`）下，子进程写
+        UTF-8、父进程按 GBK 解 ⇒ subprocess 读线程 `UnicodeDecodeError` 把
+        `proc.stderr` 变成 `None`，`test_warning_when_key_absent` 直接
+        TypeError 崩，而它是本文件唯一被这条偏支喂到的用例。同族守门见
+        `tests/unit/test_subprocess_text_decoding.py`。
+        """
         env = dict(os.environ)
         env.pop("AUGMENTOR_API_KEY", None)
-        proc = subprocess.run(
+        env.update(env_overrides)
+        env["PYTHONIOENCODING"] = "utf-8"
+        return subprocess.run(
             [sys.executable, "-c", "import api.main  # noqa: F401"],
             cwd=str(Path(__file__).resolve().parents[2]),
             env=env,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=120,
         )
+
+    def test_no_warning_when_key_configured(self):
+        proc = self._import_api_main({"AUGMENTOR_API_KEY": "test-key"})
+        assert proc.returncode == 0, proc.stderr
+        assert "未设置" not in proc.stderr
+
+    def test_warning_when_key_absent(self):
+        proc = self._import_api_main({})
         assert proc.returncode == 0, proc.stderr
         assert "未设置" in proc.stderr
+
+    def test_decoded_warning_is_the_real_sentence_not_mojibake(self):
+        """解码必须真的把中文还原出来，而不是靠 `errors="replace"` 蒙混过关
+
+        `text=True` 不带 `encoding=` 时，即便父进程加了 `errors="replace"`，
+        两侧编码不一致也只会把 `未设置` 换成一串 `\\ufffd`——「未设置 not in
+        stderr」于是**假绿**。这条钉住告警原文，替换字符一出现就红。
+        """
+        proc = self._import_api_main({})
+        assert proc.returncode == 0, proc.stderr
+        assert "未设置 AUGMENTOR_API_KEY" in proc.stderr
+        assert "\ufffd" not in proc.stderr
