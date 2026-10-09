@@ -5041,10 +5041,16 @@ pub async fn v2_group_refresh_participate(
 /// GET /api/attendance/assemble/control/v2/group/person/{person}/date/{date}
 pub async fn v2_group_person_date(
     pool: Extension<Pool>,
-    Path((person, date)): Path<(String, String)>,
+    session: Extension<shared::session::Session>,
+    Path((_person, date)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
+    // 考勤组成员名单属隐私：以会话登录人为属主事实源，忽略路径 {person}。原先无
+    // 会话、直接按路径 {person} 过滤 participate_list，前端 AttendanceApp.vue 把
+    // session.user.unique 塞进 {person}=假过滤——攻击者替换他人 unique 即可枚举其
+    // 所属考勤组及同组成员 participate_list（IDOR + 名单泄漏）。
+    let person = session.person_unique.clone();
     let rows = client
         .query(
             "SELECT id, group_name, check_type, shift_id, participate_list, start_date, end_date \
