@@ -370,19 +370,34 @@ pub async fn unit_get_sup_direct(pool: Extension<Pool>, Path(flag): Path<String>
 async fn units_by_flags(pool: &Pool, flags: &[String]) -> HandlerResult {
     check_batch_len(flags.len())?;
     let client = client_of(pool).await?;
+    // Single query instead of 2N serial round-trips: the old loop ran, per flag,
+    // a resolve_generic_id (SELECT id WHERE id/name) plus a full-row fetch by id —
+    // both against x_org_unit. Fetch every flagged unit at once, then assemble in
+    // flag order so duplicates (same flag repeated) are preserved. More robust
+    // than the old query_opt resolve, which 500s when a name matches >1 row.
+    let rows = client
+        .query(
+            "SELECT id, name, parent_id, level, sort, creator, create_time::text FROM x_org_unit WHERE (id = ANY($1) OR name = ANY($1)) AND deleted_at IS NULL",
+            &[&flags],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    use std::collections::HashMap;
+    type Row = deadpool_postgres::tokio_postgres::Row;
+    let mut by_id: HashMap<&str, &Row> = HashMap::new();
+    let mut by_name: HashMap<&str, &Row> = HashMap::new();
+    for row in &rows {
+        if let Some(id) = row.get::<_, Option<&str>>("id") {
+            by_id.entry(id).or_insert(row);
+        }
+        if let Some(name) = row.get::<_, Option<&str>>("name") {
+            by_name.entry(name).or_insert(row);
+        }
+    }
     let mut data = Vec::new();
     for f in flags {
-        if let Some(id) = resolve_generic_id(&client, UNIT_TABLE, f).await? {
-            if let Some(row) = client
-                .query_opt(
-                    "SELECT id, name, parent_id, level, sort, creator, create_time::text FROM x_org_unit WHERE id = $1 AND deleted_at IS NULL",
-                    &[&id],
-                )
-                .await
-                .map_err(|_| AppError::Internal)?
-            {
-                data.push(unit_row_json(&row));
-            }
+        if let Some(&row) = by_id.get(f.as_str()).or_else(|| by_name.get(f.as_str())) {
+            data.push(unit_row_json(row));
         }
     }
     list_ok_legacy(data)
