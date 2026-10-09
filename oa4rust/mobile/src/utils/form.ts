@@ -256,10 +256,15 @@ export function parseSimpleForm(raw: unknown): MobileFormField[] {
 /**
  * 计算分组渲染顺序：布局容器组按 groups 声明顺序排列，无容器的默认组（groupId=''）恒在最前。
  * 扁平表单（所有字段 groupId=''）时 groups 已含 ''，需去重，避免默认组重复导致字段渲染两次。
+ * 具名组同样去重：不同容器 id 可共用同一 label，而消费端按 label 匹配字段，不去重会让
+ * 同 label 的两容器各迭代一次、每次都取到两容器的全部字段，导致字段整体重复渲染。
  */
 export function computeGroupOrder(fields: MobileFormField[], groups: MobileFormGroup[]): string[] {
   const order: string[] = []
-  for (const g of groups) order.push(g.label || g.id)
+  for (const g of groups) {
+    const key = g.label || g.id
+    if (!order.includes(key)) order.push(key)
+  }
   if (fields.some((f) => f.groupId === '') && !order.includes('')) order.unshift('')
   return order
 }
