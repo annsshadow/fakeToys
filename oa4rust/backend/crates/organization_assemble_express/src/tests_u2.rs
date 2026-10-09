@@ -272,5 +272,70 @@ mod u2_tests {
         assert_eq!(attr_values_to_insert(&values, &[], true).len(), 3);
     }
 
+    // person_detail_flag resolve+fetch merge (优化二轮 28): the merged single
+    // query must resolve the person by BOTH id and name and return its row. Live
+    // DB only (gated); the express router has no auth layer so no session needed.
+    #[tokio::test]
+    async fn u2_person_detail_flag_resolves_by_id_and_name() {
+        if !shared::testing::is_db_available().await {
+            return;
+        }
+        let pool = shared::testing::test_pool();
+        let client = pool.get().await.unwrap();
+        client
+            .execute(
+                "DELETE FROM x_org_person WHERE id = $1",
+                &[&"r28-detail-p1"],
+            )
+            .await
+            .unwrap();
+        client
+            .execute(
+                "INSERT INTO x_org_person (id, name) VALUES ($1, $2)",
+                &[&"r28-detail-p1", &"r28-detail-name"],
+            )
+            .await
+            .unwrap();
+
+        async fn detail(pool: &deadpool_postgres::Pool, flag: &str) -> Value {
+            let resp = express_router(pool.clone())
+                .oneshot(
+                    Request::builder()
+                        .method(axum::http::Method::POST)
+                        .uri(format!("/api/person/detail/{flag}"))
+                        .header("content-type", "application/json")
+                        .body(Body::from("{}"))
+                        .unwrap(),
+                )
+                .await
+                .unwrap();
+            assert_eq!(resp.status(), StatusCode::OK);
+            let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+                .await
+                .unwrap();
+            serde_json::from_slice::<Value>(&bytes).unwrap()["data"].clone()
+        }
+
+        // resolve by id
+        let by_id = detail(&pool, "r28-detail-p1").await;
+        assert_eq!(by_id["id"], Value::String("r28-detail-p1".into()));
+        assert_eq!(by_id["name"], Value::String("r28-detail-name".into()));
+        assert_eq!(
+            by_id["distinguishedName"],
+            Value::String("r28-detail-p1".into())
+        );
+        // resolve by name → same person
+        let by_name = detail(&pool, "r28-detail-name").await;
+        assert_eq!(by_name["id"], Value::String("r28-detail-p1".into()));
+
+        client
+            .execute(
+                "DELETE FROM x_org_person WHERE id = $1",
+                &[&"r28-detail-p1"],
+            )
+            .await
+            .unwrap();
+    }
+
     use serde_json::Value;
 }
