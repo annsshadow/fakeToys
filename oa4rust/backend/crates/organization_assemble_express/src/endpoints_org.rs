@@ -362,7 +362,65 @@ pub async fn group_list(
     ok_legacy_list(data.len(), data)
 }
 
+/// One LEFT JOIN row from the batch group-with-members query. Carried as an
+/// explicit struct so the fold below is unit-testable without a live database.
+pub(crate) struct GroupMemberRow {
+    pub id: Option<String>,
+    pub name: Option<String>,
+    pub type_: Option<String>,
+    pub unit_id: Option<String>,
+    pub person_id: Option<String>,
+}
+
+/// Collapse rows ordered by group id into group objects carrying `personList`
+/// and `memberCount`. Groups with no members yield an empty list / count 0.
+/// Output shape matches the pre-refactor per-group assembly (keys id/name/type/
+/// unit_id present only when non-null, memberCount always present).
+pub(crate) fn fold_group_members(rows: impl IntoIterator<Item = GroupMemberRow>) -> Vec<Value> {
+    let mut data: Vec<Value> = Vec::new();
+    let mut last_id: Option<String> = None;
+    for row in rows {
+        let gid_key = row.id.clone().unwrap_or_default();
+        if last_id.as_deref() != Some(gid_key.as_str()) {
+            let mut map = serde_json::Map::new();
+            if let Some(v) = row.id {
+                map.insert("id".to_string(), Value::String(v));
+            }
+            if let Some(v) = row.name {
+                map.insert("name".to_string(), Value::String(v));
+            }
+            if let Some(v) = row.type_ {
+                map.insert("type".to_string(), Value::String(v));
+            }
+            if let Some(v) = row.unit_id {
+                map.insert("unit_id".to_string(), Value::String(v));
+            }
+            map.insert("personList".to_string(), Value::Array(Vec::new()));
+            map.insert("memberCount".to_string(), Value::Number(0i64.into()));
+            data.push(Value::Object(map));
+            last_id = Some(gid_key);
+        }
+        if let Some(pid) = row.person_id {
+            if let Some(Value::Object(map)) = data.last_mut() {
+                let new_len = if let Some(Value::Array(list)) = map.get_mut("personList") {
+                    list.push(Value::String(pid));
+                    list.len() as i64
+                } else {
+                    0
+                };
+                map.insert("memberCount".to_string(), Value::Number(new_len.into()));
+            }
+        }
+    }
+    data
+}
+
 /// POST /api/group/list/object: batch group objects with member lists.
+///
+/// Single LEFT JOIN instead of 1 (groups) + N (per-group member) queries: the
+/// former per-group member lookup was a data-proportional N+1 (N bounded only
+/// by `groupList`, up to `ID_COUNT_LIMIT`). Rows arrive ordered by group id so
+/// [`fold_group_members`] can aggregate in one pass.
 pub async fn group_list_object(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -375,36 +433,22 @@ pub async fn group_list_object(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            &format!(
-                "SELECT g.id, g.name, \"type\", unit_id, \
-                 (SELECT COUNT(*) FROM x_org_group_member m WHERE m.group_id = g.id) AS member_count \
-                 FROM x_org_group g WHERE g.deleted_at IS NULL AND {} ORDER BY g.id",
-                PICK_ANY
-            ),
+            "SELECT g.id, g.name, g.\"type\", g.unit_id, m.person_id \
+             FROM x_org_group g \
+             LEFT JOIN x_org_group_member m ON m.group_id = g.id \
+             WHERE g.deleted_at IS NULL AND (g.id = ANY($1) OR g.name = ANY($1)) \
+             ORDER BY g.id, m.person_id",
             &[&flags],
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    let mut data: Vec<Value> = Vec::new();
-    for row in &rows {
-        let mut obj = crate::endpoints::row_to_map(row);
-        let gid: String = row.get::<_, Option<String>>("id").unwrap_or_default();
-        let member_rows = client
-            .query(
-                "SELECT person_id FROM x_org_group_member WHERE group_id = $1 ORDER BY person_id",
-                &[&gid],
-            )
-            .await
-            .map_err(|_| AppError::Internal)?;
-        if let Value::Object(ref mut map) = obj {
-            let members: Vec<Value> = member_rows
-                .iter()
-                .map(|m| Value::String(m.get::<_, String>("person_id")))
-                .collect();
-            map.insert("personList".to_string(), Value::Array(members));
-        }
-        data.push(obj);
-    }
+    let data = fold_group_members(rows.iter().map(|row| GroupMemberRow {
+        id: row.get("id"),
+        name: row.get("name"),
+        type_: row.get("type"),
+        unit_id: row.get("unit_id"),
+        person_id: row.get("person_id"),
+    }));
     ok_legacy_list(data.len(), data)
 }
 

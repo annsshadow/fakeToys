@@ -203,5 +203,55 @@ mod u2_tests {
         assert!(result.data.is_some());
     }
 
+    // group_list_object N+1→single-query fold: aggregation of LEFT JOIN rows
+    // (ordered by group id) into group objects. Verifies the single-pass fold
+    // preserves the pre-refactor shape without needing a live database.
+    #[test]
+    fn u2_fold_group_members_aggregates_members_per_group() {
+        use crate::endpoints_org::{fold_group_members, GroupMemberRow};
+        fn row(id: &str, person: Option<&str>) -> GroupMemberRow {
+            GroupMemberRow {
+                id: Some(id.to_string()),
+                name: Some(format!("name-{id}")),
+                type_: Some("custom".to_string()),
+                unit_id: Some("u1".to_string()),
+                person_id: person.map(str::to_string),
+            }
+        }
+        // g1 has two members, g2 has none (LEFT JOIN yields one null-member row).
+        let data = fold_group_members(vec![
+            row("g1", Some("p1")),
+            row("g1", Some("p2")),
+            row("g2", None),
+        ]);
+        assert_eq!(data.len(), 2);
+        assert_eq!(data[0]["id"], serde_json::json!("g1"));
+        assert_eq!(data[0]["personList"], serde_json::json!(["p1", "p2"]));
+        assert_eq!(data[0]["memberCount"], serde_json::json!(2));
+        assert_eq!(data[1]["id"], serde_json::json!("g2"));
+        assert_eq!(data[1]["personList"], serde_json::json!([]));
+        assert_eq!(data[1]["memberCount"], serde_json::json!(0));
+    }
+
+    // Null optional columns are omitted (matches row_to_map's Some-only inserts),
+    // while memberCount is always present even for an empty group.
+    #[test]
+    fn u2_fold_group_members_omits_null_cols_keeps_count() {
+        use crate::endpoints_org::{fold_group_members, GroupMemberRow};
+        let data = fold_group_members(vec![GroupMemberRow {
+            id: Some("g9".to_string()),
+            name: Some("g9".to_string()),
+            type_: None,
+            unit_id: None,
+            person_id: None,
+        }]);
+        assert_eq!(data.len(), 1);
+        let obj = data[0].as_object().unwrap();
+        assert!(!obj.contains_key("type"));
+        assert!(!obj.contains_key("unit_id"));
+        assert_eq!(obj["memberCount"], serde_json::json!(0));
+        assert_eq!(obj["personList"], serde_json::json!([]));
+    }
+
     use serde_json::Value;
 }
