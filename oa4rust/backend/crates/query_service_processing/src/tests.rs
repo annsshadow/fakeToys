@@ -666,4 +666,72 @@ mod u2_contract {
         .await
         .unwrap();
     }
+
+    // reset 二写补事务（优化二轮 33）：/reset 现把「清近 1h 处理缓存（DELETE
+    // x_query_processing）」与「x_query 计数归 1（UPDATE）」包进单事务+commit，
+    // 避免中途失败留下半重置态。此处聚焦验证事务内 DELETE 的时间窗语义——近 1h
+    // 行必删、超 1h 行必留——且在 commit 后对新连接可见（证明事务已提交非回滚）。
+    // 注：reset 的 UPDATE x_query 无 WHERE 为全表（O2OA 契约语义），本测试不播种/
+    // 断言 x_query，仅验 x_query_processing，以免与并发用例争 x_query 行。
+    #[tokio::test]
+    async fn u2_reset_clears_recent_processing_in_one_txn() {
+        if !shared::testing::is_db_available().await {
+            return;
+        }
+        let c = client().await;
+        c.execute(
+            "CREATE TABLE IF NOT EXISTS x_query_processing (id VARCHAR(255) PRIMARY KEY, query TEXT NOT NULL, model_flag VARCHAR(255), params JSONB DEFAULT '{}', creator VARCHAR(255), create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP, update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP)",
+            &[],
+        )
+        .await
+        .unwrap();
+        c.execute(
+            "DELETE FROM x_query_processing WHERE id IN ($1, $2)",
+            &[&"u2-reset-recent", &"u2-reset-old"],
+        )
+        .await
+        .unwrap();
+        // 近 1h（NOW）必删 / 超 1h（NOW-2h）必留
+        c.execute(
+            "INSERT INTO x_query_processing (id, query, create_time) VALUES \
+             ($1, 'q', NOW()), ($2, 'q', NOW() - INTERVAL '2 hours')",
+            &[&"u2-reset-recent", &"u2-reset-old"],
+        )
+        .await
+        .unwrap();
+
+        let v = post(app(), "/api/query/service/processing/reset", "{}".into()).await;
+        assert_eq!(v["type"], "success");
+        assert_eq!(
+            v["data"]["clearedCache"], true,
+            "近 1h 行被清则 clearedCache=true"
+        );
+
+        // commit 后新连接可见：近行已删、旧行仍在（事务已提交，非回滚）
+        let gone: i64 = c
+            .query_one(
+                "SELECT COUNT(*) AS c FROM x_query_processing WHERE id = $1",
+                &[&"u2-reset-recent"],
+            )
+            .await
+            .unwrap()
+            .get("c");
+        assert_eq!(gone, 0, "近 1h 处理缓存应被事务内 DELETE 清除");
+        let kept: i64 = c
+            .query_one(
+                "SELECT COUNT(*) AS c FROM x_query_processing WHERE id = $1",
+                &[&"u2-reset-old"],
+            )
+            .await
+            .unwrap()
+            .get("c");
+        assert_eq!(kept, 1, "超 1h 处理缓存不在时间窗内应保留");
+
+        c.execute(
+            "DELETE FROM x_query_processing WHERE id IN ($1, $2)",
+            &[&"u2-reset-recent", &"u2-reset-old"],
+        )
+        .await
+        .unwrap();
+    }
 }

@@ -248,14 +248,17 @@ pub async fn get_service_status(
 /// 重置查询服务
 /// 重置查询服务状态并清除缓存
 pub async fn reset_service(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let row = client
+    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    // reset=原子地「清近 1h 处理缓存」+「x_query 计数归 1」，二写须同事务：否则中途
+    // 失败会留下缓存已清但计数未重置（或反之）的半重置态。
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let row = tx
         .query_one("SELECT COUNT(*) as count FROM x_query", &[])
         .await
         .map_err(|_| AppError::Internal)?;
     let count: i64 = row.get("count");
 
-    let cleared_count = client
+    let cleared_count = tx
         .execute(
             "DELETE FROM x_query_processing WHERE create_time > NOW() - INTERVAL '1 hour'",
             &[],
@@ -263,10 +266,11 @@ pub async fn reset_service(pool: Extension<Pool>) -> Result<Json<ActionResult<Va
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let reset = client
+    let reset = tx
         .execute("UPDATE x_query SET count = '1', update_time = NOW()", &[])
         .await
         .map_err(|_| AppError::Internal)?;
+    tx.commit().await.map_err(|_| AppError::Internal)?;
 
     let now = chrono::Utc::now()
         .naive_utc()
