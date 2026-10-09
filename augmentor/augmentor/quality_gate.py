@@ -11,8 +11,15 @@ import logging
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional
 from .exceptions import QualityError, DataValidationError
+from .validation import require_choice
 
 logger = logging.getLogger(__name__)
+
+#: L199（B265）：`GateRule.severity` 的封闭清单（A77 单一权威）。
+#: 改前门禁侧 `if rule.severity == "warning": ... else: 升 error`——写少一个 ing
+#: 的 `"warn"` 会被 else 分支**静默升级为 error 级门禁**，把一条本不该阻断流水线的
+#: 警告变成阻断项。同族先例：L175/L176/L189/L192/L193/L194 的封闭清单下沉。
+GATE_SEVERITIES = ("error", "warning")
 
 
 class GateVerdict:
@@ -31,6 +38,14 @@ class GateRule:
     value: Any
     severity: str = "error"  # error / warning
     description: str = ""
+
+    def __post_init__(self):
+        """L199：severity 走封闭清单——`"warn"` 这类拼错曾被 else 分支静默升为 error 级"""
+        if self.severity is None:
+            raise DataValidationError(
+                f"severity 不能为 null，合法取值: {' / '.join(GATE_SEVERITIES)}"
+            )
+        require_choice("severity", self.severity, choices=GATE_SEVERITIES)
 
     def evaluate(self, metrics: Dict[str, Any]) -> bool:
         """对指标字典求值，返回是否满足规则
