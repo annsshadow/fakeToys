@@ -427,16 +427,14 @@ pub async fn unit_list_with_unit_type(
             .await
             .map_err(|_| AppError::Internal)?
     } else {
-        let mut ids = Vec::new();
-        for f in &flags {
-            if let Some(id) = resolve_generic_id(&client, UNIT_TABLE, f).await? {
-                ids.push(id);
-            }
-        }
+        // Single query instead of per-flag resolve_generic_id (N+1): filter the
+        // typed units directly by (id or name) in the flag batch. Equivalent to
+        // the old resolve-then-id=ANY path, and robust to a name that matches
+        // multiple units (query_opt in resolve_generic_id would 500 on that).
         client
             .query(
-                "SELECT id, name, parent_id, level, sort, creator, create_time::text FROM x_org_unit WHERE type = $1 AND id = ANY($2) AND deleted_at IS NULL ORDER BY sort ASC",
-                &[&unit_type, &ids],
+                "SELECT id, name, parent_id, level, sort, creator, create_time::text FROM x_org_unit WHERE type = $1 AND (id = ANY($2) OR name = ANY($2)) AND deleted_at IS NULL ORDER BY sort ASC",
+                &[&unit_type, &flags],
             )
             .await
             .map_err(|_| AppError::Internal)?
