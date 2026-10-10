@@ -44,6 +44,24 @@ class StageResult:
         }
 
 
+@dataclass
+class PipelineOutcome:
+    """一次 run() 的完整结果（L207）
+
+    `data` 与 `run()` 的返回值同一个对象；`stages` 与 `self.results` 同源。
+    `failed_stages` 是新增的**机器可读失败清单**——改前调用方想判断「有没有
+    阶段失败了」只能翻 `self.results` 逐条看 `error` 字段，而那要求你本来就
+    知道有失败这回事。
+    """
+    data: List[Dict]
+    stages: List[StageResult]
+    failed_stages: List[str]
+
+    @property
+    def ok(self) -> bool:
+        return not self.failed_stages
+
+
 class DataPipeline:
     """声明式数据管道
 
@@ -60,6 +78,8 @@ class DataPipeline:
         self.name = name
         self._stages: List[Dict[str, Any]] = []
         self.results: List[StageResult] = []
+        # L207：最近一次 run() 的结果（含机器可读的失败清档）。
+        self.last_outcome: Optional[PipelineOutcome] = None
 
     def add_stage(self,
                   name: str,
@@ -132,6 +152,41 @@ class DataPipeline:
         if stopped:
             logger.warning(f"管道 {self.name} 因阶段失败而终止")
 
+        # L207：把失败清档提到调用方默认看得见的位置。改前只有 logger.error 与
+        # `self.results` 里那条 error——「有阶段失败了」这件事本身没有出口，下游
+        # 于是拿着上一阶段的输出继续跑，整条管道少跑一环却毫无信号。
+        failed = [r.name for r in self.results if not r.success]
+        self.last_outcome = PipelineOutcome(
+            data=current, stages=list(self.results), failed_stages=failed,
+        )
+        return current
+
+    def run_strict(self,
+                   items: List[Dict],
+                   context: Optional[Dict[str, Any]] = None) -> List[Dict]:
+        """任何阶段失败即整体失败（不再静默跳过）
+
+        `run()` 的语义是「跑完能跑的阶段」：失败阶段被跳过、下游拿到上一阶段的
+        输出。这在某些链路里正是要的（让强项继续跑），在另一些链路里是灾难
+        （少跑一环还毫无信号）。本方法把后者变成显式选择。
+
+        Raises:
+            PipelineError: 任一阶段抛异常，或返回了非列表
+        """
+        current = list(items) if items is not None else []
+        for stage in self._stages:
+            try:
+                current = stage["func"](current, context or {})
+            except Exception as e:
+                raise PipelineError(
+                    f"阶段 {stage['name']} 执行失败: {e}"
+                    f"（管道 {self.name} 以 run_strict 运行，任一阶段失败即整体失败）"
+                ) from e
+            if not isinstance(current, list):
+                raise PipelineError(
+                    f"阶段 {stage['name']} 必须返回列表，"
+                    f"实际返回 {type(current).__name__}"
+                )
         return current
 
     def run_stage(self,
