@@ -113,6 +113,10 @@ CEILING = {
 #: 下界取整留了余量 —— 这两个数是**好引用的规模**，不是缺陷计数，删引用是改进、不该被
 #: 反空转下界卡住；它只负责证明「普查真的看见了成百条引用」，而不是钉住总数。
 FLOOR = {
+    # L209 面位移（line_refs 39 → 38、file_tokens 247 → 248）：dependency_type
+    # 封闭清单判据在 augmentor/dependency.py 顶部插 9 行 ⇒ 架构文档里
+    # 指向 `add_dependency` 的那条行引用的被引行换位，dead_line 硬 0 档
+    # 当场抓住 ⇒ 按 A127 / L180 / L193 口径降级为名字锚点。
     ARCH: {"line_refs": 38, "file_tokens": 200},
     LEDGER: {"line_refs": 263, "file_tokens": 1050},
 }
@@ -446,7 +450,7 @@ MEASURED = {
     #: 插 import 后，架构文档里 max_workers 形参清单的 export.py 行号格落到非代码行，
     #: 按先例降级名锚——行号引用退出 line_refs 桶（−1），文件名反引号 token 转入
     #: file_tokens 桶（+1），漂移桶不动（该格原本就在其中）。
-    ARCH: {"line_refs": 39, "file_tokens": 247, "code_but_no_name_match": 34},
+    ARCH: {"line_refs": 38, "file_tokens": 248, "code_but_no_name_match": 34},
     #: L153 面位移（37 → 34）：config/quality 接 require_ratio_list 插行后，3 条 config.py
     #: 历史行引用的被引行换位、退出本档。案面=产品布局变更，按「数字搬进常量」条款重钉。
     #: **L100 批②（产品码插行 ⇒ 账本 A144 那一行被顶红，三格同时动）**：批② 给 `augmentor/checkpoint.py`
@@ -526,7 +530,11 @@ MEASURED = {
     #: `dead_line` 0 一格未动。
     #: **本段自己就是同款事故的第四次复现**：第一版归因注释把被降级的那两个旧行号原样
     #: 抄了进来 ⇒ A184 硬 0 档当场红（注释也进普查面）。已改为只描述不抄形状。
-    LEDGER: {"line_refs": 268, "file_tokens": 1663, "code_but_no_name_match": 149},
+    # L209 面位移（line_refs 268 → 265、file_tokens 1663 → 1666）：dependency_type
+    # 封闭清单判据在 dependency.py 顶部插 9 行，账本与架构文档共 4 处指向
+    # `add_dependency` 的行引用被引行换位，dead_line 硬 0 档当场抓住 ⇒ 按
+    # A127 口径降级为名字锚点（line_refs −4，其中 −1 让 file_tokens +1）。
+    LEDGER: {"line_refs": 265, "file_tokens": 1666, "code_but_no_name_match": 149},
     #: L156 面位移（290 → 285）：streaming.py 插 `StreamConfig.__post_init__` 后，账本 5 条
     #: streaming.py 历史行引用（A145 行 2 条、A147 行 3 条）被引行换位、退出本档，按
     #: L151 / L153 / L154 先例降成名字锚（「原 N 行」）：line_refs −5、漂移 147 →
