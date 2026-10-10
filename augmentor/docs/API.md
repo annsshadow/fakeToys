@@ -226,28 +226,39 @@ $ python cli.py validate-config --config typo_config.yaml
   守卫：`tests/integration/test_cli_stdio_encoding.py`（真起子进程，`PYTHONIOENCODING=gbk`）
   与 `tests/unit/test_no_locale_text_io.py`（AST 扫产品包，禁止新增不带编码的文本 I/O）。
 
-### 可写四节的「读者分档」（A138，L184 记档）
+### 可写四节的「读者分档」（A138，L184 记档 / L214 接线第一批）
 
 上面 L82 段落给 `export` / `vector` / `rag` / `multimodal` 四节 14 键全接上了判据（写坏即 400），
 但「写得进」不等于「有人读」。这 14 键按**现量**分三档，契约面与实现面的落差就摊开在这里：
 
 | 档 | 键 | 读点 | 语义 |
 |----|----|------|------|
-| ① 有行为读者（3） | `export.default_format` | `augmentor/pipeline.py`（导出走默认格式） | 真控行为 |
-| | `rag.chunk_size`、`rag.chunk_overlap` | `augmentor/cli/commands/quality.py`（RAG 切块） | 真控行为 |
-| ② 仅回显（6） | `export.formats`、`vector.enabled`、`vector.backend`、`rag.enabled`、`rag.default_format`、`multimodal.enabled` | `GET /api/config` 原样回显，**不改任何行为** | 契约面承诺能力、实现面只承诺可见 |
-| ③ 连回显都没有（5） | `vector.dimension`、`vector.storage_dir`、`vector.collection`、`multimodal.image_extensions`、`multimodal.audio_extensions` | 无处消费 | 配置了不生效 |
+| ① 有行为读者（7） | `export.default_format` | `augmentor/pipeline.py`（导出走默认格式）、`api/routes/export.py`（preview 默认格式、批量导出构造） | 真控行为 |
+| | `export.formats` | `api/routes/export.py`（`/api/data/export`、`/api/export/batch` 未点名格式时按它导出） | 真控行为（L214） |
+| | `rag.chunk_size`、`rag.chunk_overlap` | `augmentor/cli/commands/quality.py`（RAG 切块）、`api/routes/dataset_tools.py`（`/api/dataset/rag`） | 真控行为 |
+| | `rag.default_format` | `api/routes/dataset_tools.py`（请求未点名格式时按它切形） | 真控行为（L214） |
+| | `multimodal.image_extensions`、`multimodal.audio_extensions` | `api/routes/multimodal.py`（`process` / `scan` 的识别面、`formats` 的清单） | 真控行为（L214） |
+| ② 仅回显（4） | `vector.enabled`、`vector.backend`、`rag.enabled`、`multimodal.enabled` | `GET /api/config` 原样回显，**不改任何行为** | 可见但未消费；`enabled` 三键归管道阶段（见下），vector 两键见 L215 |
+| ③ 连回显都没有（3） | `vector.dimension`、`vector.storage_dir`、`vector.collection` | 无处消费 | 配置了不生效；见 L215 |
 
-**权威口径（读到时别被 ②③ 档骗到）**：向量库真正的后端入口是**调用参数**（`vector.build_vector_db` 的
-`backend` 形参 / API 请求体），**不是** `config.vector.backend`——后者回显成 `faiss` 只表示「配置里写了
-faiss」，不等于「向量库此刻在用 faiss」。`vector.dimension` 配 768 还是 8 在今天的产物里一字不变
-（维度由所选嵌入模型决定）。`multimodal.image_extensions` / `audio_extensions` 判的是「字符串列表形状」，
-但「扩展名必须以 . 开头」的消费方语义本仓没有读者，判了就是替一个不存在的功能定口径。
+**权威口径（L214 定稿）**：① 档那几只键的读取序是**请求参数 &gt; 配置键 &gt; 内置默认**——请求体点名
+了 `formats` / `format` / `image_extensions` 就以它为准，没点名才落到配置，配置也没写才用各处理器自己的
+内置默认。所以「配置里写了什么」只决定**不点名时**的行为，不缩小契约面承诺的能力。
 
-**L184 处置（非破坏面收口）**：候选①（把 ②③ 档接到消费入口）属功能增强（要先拍「配置键与请求参数
-谁是权威」）、候选②（从文档与回显里降级）属对外破坏面，均不在本轮；本轮取**记档 + 机器钉死**——
-上表即「哪些键真有人读」的权威清单，`tests/integration/test_api_config_extended.py` 的守卫钉住
-③ 档 5 键**不出现**在 `GET /api/config` 回显里（谁给它们接了回显/读者都要先翻这一格并对账）。
+向量库这节要单独提醒（读 ②③ 档时别被骗）：`vector.backend` 回显成 `faiss` 只表示「配置里写了 faiss」，
+**不等于**向量库此刻在用 faiss——真正的后端入口是 `vector.build_vector_db` 的 `backend` 形参与 API 请求体。
+`vector.dimension` 配 768 还是 8 在今天的产物里一字不变（维度由所选嵌入模型决定）。这三键的读者在 L215。
+
+**`enabled` 为什么不做成端点拒绝门（L214 实测，不是推理）**：本仓 `enabled` 的既有语义是**管道阶段开关**
+（`quality.enabled` / `dedup.enabled` 同族，住在 `AugmentorPipeline` 里决定某阶段跑不跑），不是「这个
+endpoint 存不存在」。把它接成端点门的后果是具体的：出厂默认里 `vector.enabled` / `rag.enabled` /
+`multimodal.enabled` 全是 `false`，一旦按字面判，随包 API 的这三项既有能力当场消失，13 支集成测试全红——
+那是对外破坏面，不是消费能力。⇒ 三键的消费点是**管道阶段**（L215），端点面保持不变。
+
+**分档的机器口径**：`tests/integration/test_api_config_extended.py` 的 `TestConfigEchoReaderSplitL184`
+钉住 ③ 档 3 键**不出现**在 `GET /api/config` 回显里（幽灵键防线）、① /② 档 9 键**必须**回显（防止回显面
+被顺手摘掉），另有 `test_consumed_keys_are_echoed` 反向钉「已有读者的键必须可见」；① 档每只键的**行为差**
+由 `tests/integration/test_api_config_consumption_l214.py` 逐键证明（同一端点、只换配置、产物必须不同）。
 
 ### 跨源（CORS）
 
@@ -521,7 +532,7 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
 | `POST` | `/api/dataset/sample` | 数据集采样 | **写盘变换类**：同上。 |
 | `POST` | `/api/dataset/split` | 分割数据集 | **写盘变换类**：同上。`stratify_distribution` 在按 `instruction` 分层时可能有**数千个键**（紧凑 JSON 数百 KB），所以写盘类只回计数不回明细。 |
 | `POST` | `/api/dataset/aggregate` | 多源聚合 | **写盘变换类**：同上。`weighted` 策略下 `target_size` 省略会 400（不让 `None` 溜进算术）。 |
-| `POST` | `/api/dataset/rag` | 转换为 RAG 格式 | **写盘变换类**：同上。 |
+| `POST` | `/api/dataset/rag` | 转换为 RAG 格式 | **写盘变换类**：同上。`format` 省略时落 `config.rag.default_format`（出厂默认 `langchain`），响应里的 `format` 是**生效值**（L214）。 |
 
 ### system 运维面（13）
 
@@ -914,7 +925,9 @@ CLI 侧等价命令：`augmentor health-gate --input data/train_data.json --pass
 > 上表是 2026-10-09 实跑结果。清单由 `ExportFormat` 枚举驱动，**会随实现增长**，
 > 精确值以 `ExportFormat` / `GET /api/export/formats` 为准，不要从本文档手抄。
 > （注：`GET /api/config` 回显里的 `export.formats` 是**五值出厂默认**，
-> 与这里的「全部支持格式」不是同一件事。）
+> 与这里的「全部支持格式」不是同一件事：本端点报的是**能力清单**，因此不受
+> `export.formats` 收窄（那是「不给点名时导出哪几只」的**策略**，不是「本装配支持哪几只」）；
+> 清单里出现 `csv` 而出厂默认五值没有它，正是这一区分的实测证据。）
 
 ### `POST /api/data/export`
 
@@ -924,7 +937,11 @@ CLI 侧等价命令：`augmentor health-gate --input data/train_data.json --pass
 {"input_file": "train_data.json", "output_dir": "exports", "formats": ["jsonl", "alpaca"]}
 ```
 
-`formats` 为 `null` 或省略时导出全部格式。
+`formats` 的取值序是**请求参数 &gt; `config.export.formats` &gt; 全部格式**（L214）：点名了就只导那几只；
+没点名而配置里写了 `export.formats` 就按配置导；两边都没写才导出全部格式。
+**这对省略方是行为变更**：出厂默认 `export.formats` 是五值非空清单，所以从 L214 起「省略 `formats`」
+得到的是那 5 只而不是全部 13 只。要旧行为就显式点名，或把配置里的 `formats` 写成 `[]`。
+（管道层 `AugmentorPipeline.export_dataset(..., formats=None)` 的「None = 全部」不变，本档只讲 HTTP 入口。）
 
 ```json
 {
@@ -955,6 +972,7 @@ CLI 侧等价命令：`augmentor health-gate --input data/train_data.json --pass
 }
 ```
 
+`formats` 省略时与 `/api/data/export` 同一档序（请求 &gt; `config.export.formats` &gt; 全部，L214）。
 格式名非法时在开启线程前即校验并返回 `500`，不会产生部分写入的文件。
 
 ### `POST /api/export/preview`
@@ -976,6 +994,9 @@ CLI 侧等价命令：`augmentor health-gate --input data/train_data.json --pass
 ```
 
 `warnings` 会在以下情况出现：数据集为空、必填字段为空、目标格式需要 `history` 但数据未提供。
+
+`format` 省略或传 `null` 时落 `config.export.default_format`（L214）——响应里的 `format` 就是**生效值**，
+不是请求原值。
 
 ---
 
@@ -1072,6 +1093,11 @@ CLI 侧等价命令：`augmentor health-gate --input data/train_data.json --pass
 }
 ```
 
+上表是**出厂默认**下的清单。从 L214 起它由 `config.multimodal.image_extensions` /
+`audio_extensions` 驱动：配置里改了识别面，这里就跟着变（大小写与缺失的前导点会先归一成
+`Path.suffix` 口径）。配置留空时才回落处理器的内置默认——内置默认额外认 `.gif`，
+而出厂配置不认，这正是「配置能改变行为」的可证证据。
+
 ### `POST /api/multimodal/process`
 
 融合单条多模态记录。`image` / `audio` 为可选的文件路径。
@@ -1091,7 +1117,9 @@ CLI 侧等价命令：`augmentor health-gate --input data/train_data.json --pass
 
 ### `POST /api/multimodal/scan`
 
-扫描目录，把同名 stem 的图片与音频融合为一条记录。
+扫描目录，把同名 stem 的图片与音频融合为一条记录。请求可带
+`image_extensions` / `audio_extensions` 覆盖本轮识别面，取值序同样是**请求参数 &gt; 配置键 &gt; 内置默认**
+（L214）——同名 stem 配对看的是「这一轮认哪些扩展名」，所以覆盖扩展名会直接改变 `total_records`。
 
 ```json
 {"directory": "samples"}

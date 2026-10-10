@@ -128,7 +128,11 @@ async def get_config():
                 "default_format": p.config.rag.default_format
             },
             "multimodal": {
-                "enabled": p.config.multimodal.enabled
+                "enabled": p.config.multimodal.enabled,
+                # L214：这两键从今天起有正牌读者（/api/multimodal/formats 与 /scan），
+                # 回显它们才谈得上「操作者看得见生效值」。
+                "image_extensions": p.config.multimodal.image_extensions,
+                "audio_extensions": p.config.multimodal.audio_extensions
             }
         }
     except Exception as e:
