@@ -44,6 +44,18 @@ def _keys(*names: str) -> FrozenSet[str]:
     return frozenset(names)
 
 
+def _gate_report_keys() -> FrozenSet[str]:
+    """`gate` 子对象的契约键集 —— 从 SDK 的 `GateReport.to_dict()` **实推**
+
+    L205 之前这里是手抄的五键。加了 `errored_rules` 之后手抄那份当场红
+    （断言消息「多出: ['errored_rules']」）。改成实推后，SDK 加字段、契约与
+    OpenAPI 自动跟上，不会再出现「SDK 有、契约没登记」的漂移。
+    """
+    from augmentor.quality_gate import GateReport
+
+    return frozenset(GateReport(verdict="passed").to_dict())
+
+
 @dataclasses.dataclass(frozen=True)
 class _Case:
     """一个端点的契约用例
@@ -265,13 +277,15 @@ CALLS = {
         ),
         keys=_keys("health", "gate", "skipped_rules"),
         nested={
-            # 与 `DatasetHealthScore.score()` / `GateReport.to_dict()` 一一对应
+            # 与 `DatasetHealthScore.score()` 一一对应
             "health": _keys(
                 "health_score", "level", "metrics", "weights", "total_samples",
             ),
-            "gate": _keys(
-                "verdict", "passed", "failed_rules", "warned_rules", "metrics",
-            ),
+            # L205：`gate` 子对象的键集**从 SDK 实推**（`GateReport.to_dict()`），
+            # 不再手抄 —— 手抄的那份在 L205 加 `errored_rules` 时当场红
+            # （「多出: ['errored_rules']」）。这与 L200 建的纪律同源：
+            # 契约数字不手抄，一律由领域代码导出。
+            "gate": _keys(*_gate_report_keys()),
         },
     ),
     # ---------- config ----------

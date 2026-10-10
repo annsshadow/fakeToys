@@ -465,11 +465,17 @@ class GateReportResponse(BaseModel):
     """门禁判定（与 `GateReport.to_dict()` 的键一致）
 
     `metrics` 是门禁**实际看到**的那份指标，用它可复核 verdict 是怎么来的。
+
+    `errored_rules`（L205）与 `failed_rules` 是两种不同的坏：前者是「规则压根算不
+    出来」（`evaluate` 抛异常），后者是「算出来了、不达标」。**必须在这里声明**——
+    FastAPI 按 `response_model` 过滤返回值，模型少写一键，该键就会从响应里**静默
+    消失**（L27 记过的坑）。于是「求值失败」这种最需要被看见的信号反而看不见了。
     """
     verdict: str
     passed: bool
     failed_rules: List[str]
     warned_rules: List[str]
+    errored_rules: List[str]
     metrics: Dict[str, Any]
 
 
