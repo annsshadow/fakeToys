@@ -219,7 +219,7 @@ class EvaluateRequest(BaseModel):
 
     两侧默认都取 `output` 字段；用同一份文件的两个字段做对照时，把
     `generated_file` 与 `reference_file` 传成同一路径即可。
-    `metrics` 留空 = 全算（`bleu` / `rouge_l` / `similarity`）。
+    `metrics` 留空 ⇒ 取 `config.evaluation.metrics`（出厂值与 SDK 内置默认同值 ⇒ 零漂移；L219 接线）。
     """
     generated_file: str
     reference_file: str
@@ -648,11 +648,32 @@ async def dataset_evaluate(request: EvaluateRequest):
 
     指标白名单由 `augmentor.evaluation.METRIC_FUNCTIONS` **反推**，不在这里再抄一份
     枚举——F-04 那族缺陷的教训是：手抄的枚举会成为第二事实来源并与实现漂移。
+
+    指标清单的权威序是 **请求参数 > `config.evaluation.metrics` > SDK 内置默认**
+    （L219，A138 ② 档）。出厂配置值与 SDK 回落值同为 `bleu / rouge_l / similarity`，
+    所以按出厂配置部署的读数一字未变；改配置才看得见这只键生效。
+
+    空清单在这里**出声**而不是往下传：SDK 的 `ModelEvaluator.__init__` 写的是
+    `self.metrics = metrics or [内置三只]`，空列表是假值，传下去会被**静默补成三只**——
+    配置说「一个指标都不算」而响应里三个指标齐全，是这张表里最容易被读错的一格。
     """
     try:
         from augmentor.evaluation import METRIC_FUNCTIONS, ModelEvaluator
 
-        unknown = [m for m in (request.metrics or []) if m not in METRIC_FUNCTIONS]
+        from ..deps import get_pipeline
+
+        evaluation_config = get_pipeline().config.evaluation
+        metrics = request.metrics or evaluation_config.metrics
+        if not metrics:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "评估指标清单为空（请求 `metrics` 与 `config.evaluation.metrics` 都没值）；"
+                    "空清单交给 SDK 会被 `or` 回落成内置三只，等于配置说「不算」而响应算了三项"
+                ),
+            )
+
+        unknown = [m for m in metrics if m not in METRIC_FUNCTIONS]
         if unknown:
             raise HTTPException(
                 status_code=400,
@@ -695,7 +716,7 @@ async def dataset_evaluate(request: EvaluateRequest):
             )
 
         def run():
-            result = ModelEvaluator(metrics=request.metrics).evaluate_batch(
+            result = ModelEvaluator(metrics=metrics).evaluate_batch(
                 generated, references
             )
             payload = result.to_dict()

@@ -21,7 +21,7 @@
    L218 起这一档**每条理由再配一条机器可验的证据**（`_UNREAD_KNOB`，五种形状：构造形参 /
    方法形参 / 明说那里没有 / 请求模型字段 / 无同名旋钮），由 `TestKnobClaimsAreFalsifiable`
    拿 `inspect.signature` 与 `api/routes` 的 AST 逐条验真。由来很硬：L217 第一版的 20 条理由里
-   **有 7 条是假的**（宣称存在并不存在的请求参数或构造形参），散文写得好看不等于说得对。
+   **有 8 条是假的**（宣称存在并不存在的请求参数或构造形参），散文写得好看不等于说得对。
 
 第四个桶 `_NAME_COLLISIONS` 装的是**不算键**的同名属性：`self.sampler.analyze_coverage`
 里的 `sampler` 是管道的 `ActiveSampler` 实例，与配置节 `sampler` 撞名。按名字判的尺子会把它
@@ -74,6 +74,7 @@ SCAN_EXCLUDE_PARTS = {"tests", "Temp", "data", "web", "node_modules", ".git",
 
 #: 只能经别名才看得见的读者（别名臂的正控制）
 _MUST_BE_ALIAS_ONLY = (
+    "evaluation.metrics",
     "multilingual.supported_langs",
     "multilingual.translate_batch_size",
     "multimodal.image_extensions",
@@ -98,7 +99,7 @@ _LOADER_CONSUMED = (
 
 #: 第 3 档：产品树零读者，逐键签字。
 #:
-#: **理由第一版有 7 条是假的**（L217 记账后 L218 复核实码时翻出来的）：它们声称「等价旋钮
+#: **理由第一版有 8 条是假的**（L217 记账后 L218 复核实码时翻出来的）：它们声称「等价旋钮
 #: 走请求参数 / 是某构造形参」，而 `api/routes/` 里压根没有那些字段、`ActiveSampler.__init__`
 #: 也没有任何形参。散文骗过人眼，所以这一档从 L218 起**每键再挂一条机器可验的证据**
 #: （见 `_UNREAD_KNOB`），理由与证据不一致就红。
@@ -110,7 +111,6 @@ _UNREAD = {
     "benchmark.enabled": "基准端点 `/api/quality/benchmark` 无条件可用，不看闸",
     "context.enabled": "`ContextAugmentor` 由管道无条件构造（只读 `num_turns`），这只闸是装饰",
     "evaluation.enabled": "评估端点无条件可用，不看闸",
-    "evaluation.metrics": "指标清单由 `/api/dataset/evaluate` 的请求体 `metrics` 提供",
     "evaluation.reference_field": "参考侧字段由同一条请求模型的 `reference_field` 提供，默认写死在请求侧",
     "expander.enabled": "扩展器由管道无条件 `DomainExpander(backend)` 构造，不看本节",
     "expander.strategies": "策略清单是 `batch_expand` 的方法形参，而该方法无产品调用者（`self.expander` 构造之后从未被用，见 A273）",
@@ -141,7 +141,6 @@ _UNREAD_KNOB = {
     "benchmark.enabled": ("none", None, None),
     "context.enabled": ("none", None, None),
     "evaluation.enabled": ("none", None, None),
-    "evaluation.metrics": ("request", "api/routes/dataset_tools.py", "metrics"),
     "evaluation.reference_field": ("request", "api/routes/dataset_tools.py", "reference_field"),
     "expander.enabled": ("none", None, None),
     "expander.strategies": ("method", "augmentor.expander:DomainExpander.batch_expand", "strategies"),
@@ -157,7 +156,7 @@ _UNREAD_KNOB = {
 }
 
 #: 散文与证据的一致性判据：理由里点了「请求」就必须真是 request 档，点了「形参」就必须
-#: 真是 ctor/method 档。这正是 L217 那 7 条假理由共同的形状——它们都宣称有一个并不存在
+#: 真是 ctor/method 档。这正是 L217 那 8 条假理由共同的形状——它们都宣称有一个并不存在
 #: 的请求参数或形参。两条窄规则够用，不做「理由写得好不好」的判决（那种断言已删过一次）。
 _PROSE_CLAIMS = (("请求", frozenset({"request"})),
                  ("形参", frozenset({"ctor", "method"})))
@@ -461,7 +460,7 @@ class TestNameCollisions:
 class TestKnobClaimsAreFalsifiable:
     """第 3 档每只键的「等价旋钮住在哪」必须机器可验，不许由散文自证
 
-    立这一档的由来：L217 给 20 只零读者键各写了一条理由，其中 **7 条是假的**——它们说
+    立这一档的由来：L217 给 20 只零读者键各写了一条理由，其中 **8 条是假的**——它们说
     存在某个请求参数或构造形参，而实码里压根没有。人眼读散文读不出这件事，所以 L218 起
     理由与证据成对存放（`_UNREAD` 配 `_UNREAD_KNOB`），证据由解释器（`inspect.signature`）
     和 AST（`api/routes` 的模型字段）验真，两边不一致或证据说谎就红。
@@ -556,7 +555,7 @@ class TestKnobClaimsAreFalsifiable:
                         f"{key}: 理由写了「{word}」但证据是 {kind} 档"
                         f"（该词只许用于 {sorted(allowed)}）: {reason}"
                     )
-        assert not bad, "散文与证据不一致（L217 的 7 条假理由就是这个形状）:\n  " + "\n  ".join(bad)
+        assert not bad, "散文与证据不一致（L217 的 8 条假理由就是这个形状）:\n  " + "\n  ".join(bad)
 
     def test_the_verifiers_are_not_vacuous(self):
         """正控制：两把验真的尺子都要能看见已知为真的主张，否则上面几条会集体空转"""
