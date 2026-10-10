@@ -933,6 +933,119 @@ mod u2_contract {
         assert_eq!(response.status(), axum::http::StatusCode::FORBIDDEN);
     }
 
+    /// 授权列表个人隐私门禁（优化二轮 36，前端假过滤 IDOR）：
+    /// GET empower/list/person/{flag} 原先丢弃会话、直接按路径 {flag} 过滤
+    /// from_person，攻击者替换受害者 unique_id/name/id 即可枚举其全部授权。
+    /// 修复后：非本人非管理员 → 403；本人自查 → 200；管理员跨人 → 200。
+    #[tokio::test]
+    async fn u2_empower_list_person_scopes_to_owner_or_admin() {
+        if !shared::testing::is_db_available().await {
+            eprintln!("skipping u2_empower_list_person_scopes_to_owner_or_admin: DB not reachable");
+            return;
+        }
+        let (pool, user_token, admin_token, user_uid, admin_uid, sm) = fixture().await;
+        {
+            let c = pool.get().await.unwrap();
+            c.execute(
+                "CREATE TABLE IF NOT EXISTS x_empower (\
+                 id VARCHAR(255) PRIMARY KEY, from_person VARCHAR(255) NOT NULL, \
+                 to_person VARCHAR(255) NOT NULL, role_id VARCHAR(255), \
+                 enabled BOOLEAN DEFAULT true, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, \
+                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, deleted_at TIMESTAMP)",
+                &[],
+            )
+            .await
+            .unwrap();
+            // 受害者=admin，持有一条私有授权；攻击者=普通用户
+            c.execute(
+                "DELETE FROM x_empower WHERE id IN ('u2-emp-victim','u2-emp-self')",
+                &[],
+            )
+            .await
+            .unwrap();
+            c.execute(
+                "INSERT INTO x_empower (id, from_person, to_person, enabled) \
+                 VALUES ('u2-emp-victim', $1, 'someone', true)",
+                &[&admin_uid],
+            )
+            .await
+            .unwrap();
+            c.execute(
+                "INSERT INTO x_empower (id, from_person, to_person, enabled) \
+                 VALUES ('u2-emp-self', $1, 'other', true)",
+                &[&user_uid],
+            )
+            .await
+            .unwrap();
+        }
+        let router = app(pool.clone(), sm);
+
+        // 攻击者（普通用户）用受害者 flag 查其授权 → 403（原先会泄漏）
+        let attacker = format!("Bearer {user_token}");
+        let resp = router
+            .clone()
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri(format!("/api/person/empower/list/person/{}", admin_uid))
+                    .header("authorization", &attacker)
+                    .body(axum::body::Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(
+            resp.status(),
+            axum::http::StatusCode::FORBIDDEN,
+            "非本人非管理员查他人授权必须被拒"
+        );
+
+        // 本人自查 → 200 且只见自己的授权
+        let resp = router
+            .clone()
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri(format!("/api/person/empower/list/person/{}", user_uid))
+                    .header("authorization", &attacker)
+                    .body(axum::body::Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), axum::http::StatusCode::OK);
+        let v = body_bytes(resp).await;
+        assert_eq!(v["type"], "success", "本人自查应放行");
+
+        // 管理员跨人查 → 200（保留管理语义）
+        let admin = format!("Bearer {admin_token}");
+        let resp = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri(format!("/api/person/empower/list/person/{}", user_uid))
+                    .header("authorization", &admin)
+                    .body(axum::body::Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(
+            resp.status(),
+            axum::http::StatusCode::OK,
+            "管理员跨人查询应放行"
+        );
+        let v = body_bytes(resp).await;
+        assert_eq!(v["type"], "success");
+
+        {
+            let c = pool.get().await.unwrap();
+            c.execute(
+                "DELETE FROM x_empower WHERE id IN ('u2-emp-victim','u2-emp-self')",
+                &[],
+            )
+            .await
+            .unwrap();
+        }
+    }
+
     #[tokio::test]
     async fn u2_regist_mode_defaults_disabled() {
         std::env::remove_var("PERSON_REGISTER");

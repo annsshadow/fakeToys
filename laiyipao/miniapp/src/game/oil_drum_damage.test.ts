@@ -87,6 +87,8 @@ function fakeEnemy(armorPermille: bigint, hp = 10_000n): Enemy & { stacks: Map<E
     slowedMs: 0,
     amplifyPermille: 0n,
     knockback: 0n,
+    armorShredMs: 0,
+    armorShredPermille: 0n,
   } as unknown as Enemy & { stacks: Map<Element, bigint> }
 }
 

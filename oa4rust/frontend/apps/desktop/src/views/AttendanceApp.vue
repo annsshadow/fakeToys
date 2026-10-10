@@ -233,6 +233,7 @@ import { api, useSession } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, onMounted, ref } from 'vue'
 import { confirmMsg, toast } from '../utils/toast'
+import { monthEndYMD } from '../utils/date'
 
 const session = useSession()
 
@@ -380,8 +381,7 @@ async function exportData() {
     // 按所选月份区间调后端 v2 统计导出端点，返回 {status,count} 聚合行，
     // 前端落成 CSV（带 BOM 保证 Excel 中文不乱码）本地下载。
     const ym = month.value || new Date().toISOString().slice(0, 7)
-    const [y, m] = ym.split('-')
-    const endDate = new Date(Number(y), Number(m), 0).toISOString().slice(0, 10)
+    const endDate = monthEndYMD(ym)
     const r: any = await api.post('/api/attendance/assemble/control/v2/detail/statistic/export/filter', {
       startDate: `${ym}-01`,
       endDate,

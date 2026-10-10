@@ -198,6 +198,49 @@ func TestReactionStructuralInvariants(t *testing.T) {
 		if s.AmplifyPct < 0 {
 			t.Errorf("%s: AmplifyPct 为负 %d‰", s.Key, s.AmplifyPct)
 		}
+		if s.ArmorShredPermille < 0 {
+			t.Errorf("%s: ArmorShredPermille 为负 %d‰", s.Key, s.ArmorShredPermille)
+		}
+		if s.Knockback < 0 {
+			t.Errorf("%s: Knockback 为负 %d", s.Key, s.Knockback)
+		}
+	}
+}
+
+// TestArmorBreakEffectIsExclusive 把「削甲与击退是 armor_break 专属效果」立成不变式。
+//
+// 引擎侧（engine.ts 的 hitEnemy）只对 react === 'armor_break' 写
+// armorShredMs / armorShredPermille / knockback。若将来给**别的**反应
+// 配上 ArmorShredPermille / Knockback 而引擎没有对应分支，那个反应就会
+// 「字段有值但从未生效」—— 与第 12 轮记的「reactionMultPermille 空转」同形：
+// 数值看着在 /config 里流动，战斗里却什么都没发生。
+//
+// 所以这张表必须满足：除 armor_break 外，削甲与击退**全为 0**；
+// armor_break 三者（时长、削甲量、击退量）**全为正** —— 三件缺一即半接线。
+// 变异验证思路：给任意一条非 armor_break 反应配上非 0 削甲/击退（引擎无分支），
+// 或把 armor_break 任一项归零，本测试立刻红。
+func TestArmorBreakEffectIsExclusive(t *testing.T) {
+	for _, s := range AllReactionSpecs() {
+		if s.Key == ReactionArmorBreak {
+			if s.StatusDurationMs <= 0 {
+				t.Errorf("armor_break: StatusDurationMs %d 必须为正（削甲持续时长）", s.StatusDurationMs)
+			}
+			if s.ArmorShredPermille <= 0 {
+				t.Errorf("armor_break: ArmorShredPermille %d 必须为正（削甲量），否则时长字段是空的", s.ArmorShredPermille)
+			}
+			if s.Knockback <= 0 {
+				t.Errorf("armor_break: Knockback %d 必须为正（击退位移），「破甲击退」只剩半个", s.Knockback)
+			}
+			continue
+		}
+		if s.ArmorShredPermille != 0 {
+			t.Errorf("%s: ArmorShredPermille %d 非 0，但引擎只对 armor_break 消费削甲 —— 数值在空转",
+				s.Key, s.ArmorShredPermille)
+		}
+		if s.Knockback != 0 {
+			t.Errorf("%s: Knockback %d 非 0，但引擎只对 armor_break 消费击退 —— 数值在空转",
+				s.Key, s.Knockback)
+		}
 	}
 }
 

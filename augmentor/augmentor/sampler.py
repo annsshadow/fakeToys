@@ -196,17 +196,23 @@ class ActiveSampler:
     
     def identify_underrepresented(self, 
                                  items: List[Dict],
-                                 threshold: float = 0.1) -> List[str]:
+                                 threshold: float = 0.1,
+                                 analysis: Optional[Dict] = None) -> List[str]:
         """识别覆盖不足的类型
         
         Args:
             items: 数据列表
             threshold: 阈值，低于此比例的类型被认为是覆盖不足
+            analysis: 调用方已算出的 `analyze_coverage(items)` 结果。给了就复用，
+                不传则自算（向后兼容既有直调形状：老调用方照旧只传 items）
         
         Returns:
             覆盖不足的类型列表
         """
-        analysis = self.analyze_coverage(items)
+        # L196：调用方（recommend_seeds）刚算过同一份 coverage_analysis，传进来省掉
+        # 一整轮 4 趟遍历。后者不传时仍自算，老调用方形状不变。
+        if analysis is None:
+            analysis = self.analyze_coverage(items)
         underrepresented = []
         
         # 检查问题类型
@@ -252,8 +258,10 @@ class ActiveSampler:
         # 分析覆盖情况
         coverage_analysis = self.analyze_coverage(items)
         
-        # 识别覆盖不足的类型
-        underrepresented = self.identify_underrepresented(items)
+        # 识别覆盖不足的类型（复用上面刚算出的 coverage_analysis，不再重算一遍）
+        underrepresented = self.identify_underrepresented(
+            items, analysis=coverage_analysis
+        )
         
         # L191：问题类型面预计算——旧代码在「每个覆盖不足类型 × 每条数据」的内层循环里
         # 对同一条 item 反复调 _analyze_question_type（纯函数、同输入同输出），k 个

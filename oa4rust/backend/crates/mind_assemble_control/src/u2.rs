@@ -136,12 +136,15 @@ pub async fn mind_filter_list(
 #[allow(non_snake_case)]
 pub async fn mind_filter_received(
     pool: Extension<Pool>,
-    Path((id, page)): Path<(String, String)>,
+    session: Extension<shared::session::Session>,
+    Path((_id, page)): Path<(String, String)>,
 ) -> ApiResult {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let page_no: i64 = page.parse().unwrap_or(1).max(1);
     let offset = (page_no - 1) * 20;
-    // {id} 视作接收人 person；返回共享给该人的脑图
+    // 属主事实源=会话登录人；忽略客户端路径 {id} 防 IDOR（原先信任 {id} 可传他人
+    // unique 枚举其收到的共享脑图）。返回共享给登录人的脑图。
+    let me = session.person_unique.clone();
     let rows = client
         .query(
             "SELECT m.id, m.name, m.content, m.parent_id, m.folder_id, m.icon, m.description, \
@@ -150,7 +153,7 @@ pub async fn mind_filter_received(
              JOIN x_mind_share s ON s.mind_id = m.id \
              WHERE m.deleted_at IS NULL AND s.person = $1 \
              ORDER BY m.create_time DESC LIMIT 20 OFFSET $2",
-            &[&id, &offset],
+            &[&me, &offset],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -167,19 +170,23 @@ pub async fn mind_filter_received(
 #[allow(non_snake_case)]
 pub async fn mind_filter_recycle(
     pool: Extension<Pool>,
-    Path((id, page)): Path<(String, String)>,
+    session: Extension<shared::session::Session>,
+    Path((_id, page)): Path<(String, String)>,
 ) -> ApiResult {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let page_no: i64 = page.parse().unwrap_or(1).max(1);
     let offset = (page_no - 1) * 20;
+    // 属主事实源=会话登录人；忽略客户端路径 {id} 防 IDOR（原先 $1='' 分支直接返回
+    // 全体用户回收站脑图，传他人 unique 可读其已删脑图）。
+    let me = session.person_unique.clone();
     let rows = client
         .query(
             "SELECT id, name, content, parent_id, folder_id, icon, description, shared, \
              file_version, creator, creator_unit \
              FROM x_mind \
-             WHERE deleted_at IS NOT NULL AND ($1::text IS NULL OR $1 = '' OR creator = $1) \
+             WHERE deleted_at IS NOT NULL AND creator = $1 \
              ORDER BY deleted_at DESC LIMIT 20 OFFSET $2",
-            &[&id, &offset],
+            &[&me, &offset],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -196,20 +203,23 @@ pub async fn mind_filter_recycle(
 #[allow(non_snake_case)]
 pub async fn mind_filter_shared(
     pool: Extension<Pool>,
-    Path((id, page)): Path<(String, String)>,
+    session: Extension<shared::session::Session>,
+    Path((_id, page)): Path<(String, String)>,
 ) -> ApiResult {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let page_no: i64 = page.parse().unwrap_or(1).max(1);
     let offset = (page_no - 1) * 20;
+    // 属主事实源=会话登录人；忽略客户端路径 {id} 防 IDOR（原先 $1='' 分支返回全体
+    // 用户共享出的脑图，传他人 unique 可读其对外共享脑图）。
+    let me = session.person_unique.clone();
     let rows = client
         .query(
             "SELECT m.id, m.name, m.content, m.parent_id, m.folder_id, m.icon, m.description, \
              m.shared, m.file_version, m.creator, m.creator_unit \
              FROM x_mind m \
-             WHERE m.deleted_at IS NULL AND m.shared = true \
-               AND ($1::text IS NULL OR $1 = '' OR m.creator = $1) \
+             WHERE m.deleted_at IS NULL AND m.shared = true AND m.creator = $1 \
              ORDER BY m.create_time DESC LIMIT 20 OFFSET $2",
-            &[&id, &offset],
+            &[&me, &offset],
         )
         .await
         .map_err(|_| AppError::Internal)?;

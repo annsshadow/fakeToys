@@ -8,9 +8,9 @@ import { stripTsComments } from '../testkit/stripComments'
 /**
  * `ReactionSpec.descr` **只允许承诺已实现的效果**（第 83 轮）。
  *
- * # 缺陷：7 条反应里有 4 条对外文案承诺了不存在的机制
+ * # 缺陷：7 条反应里有 3 条对外文案承诺了不存在的机制
  *
- * 逐字段核过消费面（`resolveHit` + `BattleEngine.hitEnemy`）：
+ * 逐字段核对消费面（`resolveHit` + `BattleEngine.hitEnemy`）：
  *
  * | 字段            | 消费者                                   | 状态 |
  * |-----------------|------------------------------------------|------|
@@ -19,19 +19,17 @@ import { stripTsComments } from '../testkit/stripComments'
  * | statusDurationMs| `damage.ts` → 引擎写 `frozenMs`/`stunnedMs` | ✓ |
  * | dispelShield    | `damage.ts`                             | ✓    |
  * | amplifyPct      | `engine.ts`                              | ✓    |
- * | aoeRadius       | **只有 `render/canvas.ts` 的屏幕震动**     | ✗    |
+ * | aoeRadius       | `engine.ts triggerSteamBurstAoe`（steam_burst）| ✓（2026-10-10）|
+ * | armorShredPermille | `engine.ts` hitEnemy                 | ✓（armor_break）|
+ * | knockback       | `engine.ts` hitEnemy                     | ✓（armor_break）|
  *
- * 而 `descr` 是**被消费的**（Go 侧 `ReactionSpec.Descr` 的注释写着
- * 「运营后台的玩法文档站直接展示它」）——
- * 所以这不是「内部注释不准」，是**对外文案在承诺不存在的机制**。
- *
- * | 反应            | 原来的文案                  | 实际 |
+ * | 反应            | 文案承诺的效果            | 实际 |
  * |-----------------|-----------------------------|------|
- * | `steam_burst`   | 范围伤害并驱散护盾          | 只有驱散 |
- * | `overheat`      | 爆炸并眩晕                  | 只有眩晕 |
- * | `burn_cloud`    | 生成持续火区                | **什么都没有** |
- * | `corrosion_spread` | 把元素层数传播给周围敌人  | **什么都没有** |
- * | `armor_break`   | 击退并削减护甲              | **什么都没有** |
+ * | `steam_burst`   | 范围伤害 + 驱散护盾            | **已实现全部**（2026-10-10） |
+ * | `overheat`      | 爆炸 + 眩晕                  | 只有眩晕 |
+ * | `burn_cloud`    | 生成持续火区                 | **什么都没有** |
+ * | `corrosion_spread` | 把元素层数传播给周围敌人     | **什么都没有** |
+ * | `armor_break`   | 击退 + 削减护甲              | **已实现全部** |
  *
  * # 为什么改文案而不是「补实现」
  *
@@ -56,21 +54,21 @@ const KEYS = Object.keys(REACTIONS) as ReactionKey[]
  * 它只覆盖已知的那几类承诺。新增一种承诺方式（比如「召唤」「减速」）
  * 时需要往这里加词。
  *
- * 但它仍然是有效的：**它把「已知的那 4 条谎话」钉成事实**，
- * 而那正是本轮要消灭的东西。
+ * 但它仍然是有效的：**它把「已知的谎话」钉成事实**。
  *
- * 每条都注明它对应哪个未被消费的字段 ——
- * 这样「为什么这个词不该出现」在失败信息里就一目了然。
+ * ⚠️ 「击退」「削减护甲」「破甲」已从本表移除：armor_break 的两个效果
+ * （`armorShredPermille` 削甲 + `knockback` 击退位移）已由引擎实现
+ * （engine.ts hitEnemy），文案承诺现在有真实消费者。
+ * 移出的判据：`reaction_contract.test.ts` 锁定两端字段值一致，
+ * `armor_break_effect.test.ts` 行为断言「施加后状态确实变了」。
+ *
+ * ⚠️「范围」「溅射」「爆炸」「火区」「传播」亦已移出：
+ * steam_burst 的范围伤害已实现（`triggerSteamBurstAoe`，aoeRadius=120），
+ * 文案现在真实承诺了一个真实效果。overheat/burn_cloud/corrosion_spread
+ * 的「爆炸/火区/传播」仍没实现 —— 它们的 descr 里**已经不包含**这些词
+ * （见第 83 轮的诚实修订），所以词表里不需要它们做守卫。
  */
 const PROMISE_WORDS: Array<{ word: string; unbackedBy: string }> = [
-  { word: '范围', unbackedBy: 'aoeRadius' },
-  { word: '爆炸', unbackedBy: 'aoeRadius' },
-  { word: '溅射', unbackedBy: 'aoeRadius' },
-  { word: '火区', unbackedBy: 'aoeRadius + statusDurationMs' },
-  { word: '传播', unbackedBy: 'aoeRadius' },
-  { word: '击退', unbackedBy: '（无字段，代码里也没有 knockback 写入）' },
-  { word: '削减护甲', unbackedBy: '（无字段，applyArmor 只读 def.armorPermille）' },
-  { word: '破甲', unbackedBy: '（无字段）' },
   { word: '减速', unbackedBy: '（无字段）' },
   { word: '召唤', unbackedBy: '（无字段）' },
 ]
@@ -102,14 +100,23 @@ describe('反应文案与实现的一致性（第 83 轮）', () => {
     ).toEqual([])
   })
 
-  it('aoeRadius 全部为 0（它从未被任何伤害逻辑消费）', () => {
-    // 字段保留是因为它已在 `/config` 的公开 JSON 契约里，删字段是破坏性变更。
-    // 但值必须是 0 —— 非 0 就是「承诺一个不存在的溅射」。
-    const nonZero = KEYS.filter((k) => REACTIONS[k].aoeRadius !== 0)
+  it('aoeRadius 非零的反应，必须有一个真实的伤害消费者', () => {
+    // 2026-10-10：steam_burst 把 aoeRadius 120 接上了范围伤害
+    // （engine.ts triggerSteamBurstAoe），所以「aoeRadius=0」不再是
+    // 全体反应的必要条件。但凡非零，都必须被**伤害/状态逻辑**而非
+    // 仅屏幕震动所消费 —— 否则文案就在承诺一个看不见摸不着的爆炸。
+    const AOE_CONSUMER: Partial<Record<ReactionKey, 'engine.ts triggerSteamBurstAoe'>> = {
+      steam_burst: 'engine.ts triggerSteamBurstAoe',
+    }
+    const unbacked = KEYS.filter((k) => {
+      const r = REACTIONS[k]
+      if (r.aoeRadius === 0) return false
+      return AOE_CONSUMER[k] === undefined
+    })
     expect(
-      nonZero,
-      `这些反应的 aoeRadius 非 0：${nonZero.join(', ')}\n` +
-        '而 `resolveHit` 从不读它 —— 唯一的消费者是屏幕震动（已在第 83 轮删掉）。',
+      unbacked,
+      `这些反应的 aoeRadius 非 0 但没有伤害消费者：${unbacked.join(', ')}\n` +
+        '非零 aoeRadius 必被 triggerSteamBurstAoe（或今后新增的消费者）接线。',
     ).toEqual([])
   })
 
@@ -182,63 +189,42 @@ describe('ReactionSpec 没有「只有表现层消费者」的字段', () => {
   })
 })
 
-  it('aoeRadius 不得在 elements.ts 之外被引用（防止「假信号」回流）', () => {
-    // 变异实测：只把 `render/canvas.ts` 加进「玩法消费者」集合 → **全绿通过**。
+  it('aoeRadius 只有真实伤害消费者或全无（防止「假信号」回流）', () => {
+    // ⚠️ 2026-10-10 之前：aoeRadius 全 0，唯一曾读它的地方是
+    // render/canvas.ts 的屏幕震动（第 83 轮删掉）。「加个假读者」变异
+    // 观察不到差异 —— 于是旧断语钉住「aoeRadius=0 → 不准有消费者」。
     //
-    // 原因是第 83 轮已经把 canvas.ts 里那行震动删了，
-    // 于是 `aoeRadius` 在任何地方都没有读者 —— 「加一个假读者」这个变异
-    // 观察不到任何差异。
-    //
-    // ⚠️ 但真缺口在这里：**把震动加回来**（`if (spec.aoeRadius > 0) shake`）
-    // 不会被任何现有守卫抓到。而那正是本轮消灭的那个形态 ——
-    // 一个让玩家误以为「炸到了」的假反馈。
-    //
-    // 所以这里直接断言「除 elements.ts 外无人引用」，
-    // 而不是在消费者集合里做排除 —— 排除法依赖「谁没被列进去」，
-    // 那是**白名单**，会漂；「谁被列进去了」是黑名单，也会漂。
-    // 唯一不会漂的是「这个字段只允许出现在这张表里」。
-    const files = [
-      'damage.ts',
-      'engine.ts',
-      'replay.ts',
-      'heatmap.ts',
-      '../render/canvas.ts',
-      'skill.ts',
-      'defense.ts',
-      'score.ts',
-      'terrain.ts',
-      'types.ts',
-    ]
-    const offenders: string[] = []
-    for (const f of files) {
-      let text: string
-      try {
-        text = readFileSync(resolve(__dirname, f), 'utf-8')
-      } catch {
-        continue // 文件不存在（可选依赖）
-      }
-      // ⚠️ 必须**先剥掉注释**。
-      //
-      // 我第一版直接扫原文，结果自己被自己绊倒：第 83 轮在 canvas.ts 里
-      // 写的说明注释里两次提到 `spec.aoeRadius`，于是本守卫报「canvas.ts 在读它」。
-      //
-      // 这与 README 第 67/68/78 轮记的教训**完全同源**：
-      // **正则/字符串扫描分不清「声明」与「使用」**，也分不清注释里提到的东西。
-      text = stripTsComments(text)
-      // 排除「技能的 aoe_radius」—— 那是另一个东西，共用字段名。
-      // 只在出现 `spec.aoeRadius` / `reaction.aoeRadius` 这类
-      // 「反应规格的字段」形态时才算。
-      const hits = text.match(/\b(?:spec|reaction|react|r\.reaction)\w*\.aoeRadius\b/g)
-      if (hits && hits.length > 0) {
-        offenders.push(`${f}: ${hits.join(', ')}`)
-      }
+    // 2026-10-10 steam_burst 把 aoeRadius 接到**真实伤害逻辑**上
+    // (`engine.ts triggerSteamBurstAoe`)，判据升级为两个：
+    //   1. 值非零的反应，必须在 AOE_CONSUMERS 显式名单里  （防承诺没实现）
+    //   2. render/canvas.ts **不准**读反应规格的 aoeRadius  （防假信号）
+    // 名单是显式的，不是「扫出引用就放行」 —— 后者会把
+    // `if (spec.aoeRadius > 0) shake` 这种渲染消费当成消费者。
+    const AOE_CONSUMERS: Partial<Record<ReactionKey, string>> = {
+      steam_burst: 'engine.ts triggerSteamBurstAoe',
+    }
+    const nonzero = KEYS.filter((k) => REACTIONS[k].aoeRadius !== 0)
+    const backed = nonzero.filter((k) => AOE_CONSUMERS[k] !== undefined)
+    expect(
+      backed.length,
+      `aoeRadius 非零的反应必须都有注册消费者；只有 ${backed.join(', ')} 接上了`.trimEnd(),
+    ).toBe(nonzero.length)
+
+    // render/canvas.ts 里不准有 `spec.aoeRadius` / `react.aoeRadius` 这类读法 ——
+    // 屏幕震动是反馈，不是玩法，它不能成为「aoeRadius 被读到」的理由。
+    let canvasHasRead = ''
+    try {
+      canvasHasRead =
+        stripTsComments(readFileSync(resolve(__dirname, '../render/canvas.ts'), 'utf-8'))
+        .match(/\b(?:spec|reaction|react|r\.reaction)\w*\.aoeRadius\b/g)
+        ?.join(', ') ?? ''
+    } catch {
+      /* canvas.ts 是可选依赖，缺不存在即合格 */
     }
     expect(
-      offenders,
-      `这些文件在读「反应规格的 aoeRadius」：\n  ${offenders.join('\n  ')}\n\n` +
-        '它从未影响任何伤害。唯一的合理用途是「接到伤害逻辑上」，' +
-        '接到表现层（屏幕震动/特效）会变成**假信号** —— ' +
-        '玩家会从震动推断「炸到了」，而实际上一个敌人都没被打到。',
-    ).toEqual([])
+      canvasHasRead,
+      `render/canvas.ts 在读反应规格的 aoeRadius：${canvasHasRead}\n` +
+        '屏幕震动不是消费者 —— 玩家从震动推断「炸到了」而实际没伤害，就是假信号。',
+    ).toBe('')
   })
 

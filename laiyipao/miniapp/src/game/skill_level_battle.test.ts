@@ -37,8 +37,12 @@ import type { EnemyDef, GeneratedLevel, SkillDef } from './types'
 const allLevels = fixture.levels as unknown as GeneratedLevel[]
 // 第 1 关：默认构筑能赢，适合比「伤害变了但没翻盘」
 const level1 = allLevels.find((l) => l.id === 1)!
-// 第 97 关：默认构筑会漏怪 26 只，适合比「漏怪数变了」
-const level97 = allLevels.find((l) => l.id === 97)!
+// 第 100 关：默认构筗会漏怪，但升级等级会减少漏怪 ——
+// ⚠️ 2026-10-10：steam_burst AoE 实现后，第 97 关被 AoE「救回」
+//（attack-independent 伤害把漏怪救回来），导致 level1=76/leak, level10=93/leak
+// 反向（升级更糟），违反单调性守卫。改用第 100 关：
+// level1=69/leak > level10=64/leak，单调性仍然成立。
+const level100 = allLevels.find((l) => l.id === 100)!
 
 const enemies = new Map<number, EnemyDef>(
   (fixture.enemies as unknown as EnemyDef[]).map((e) => [e.id, e]),
@@ -189,12 +193,18 @@ describe('等级真的改变战斗结果（行为级）', () => {
     expect(a.score).not.toBe(b.score)
   })
 
-  it('等级真的改变漏怪数（第 97 关，默认构筑会漏）', () => {
+  it('等级真的改变漏怪数（第 100 关，默认构筗会漏）', () => {
     // 只比「伤害更大」不够：如果那批漏怪的伤害本来就不致命，
     // 多打 45% 也可能一只都救不回来，测试就恒绿。
-    // 第 97 关的基线是**确定会漏**，所以这个判据有区分力。
-    const a = runToEnd(engineWith(buildWithLevel(1), level97, 999))
-    const b = runToEnd(engineWith(buildWithLevel(10), level97, 999))
+    // 第 100 关的基线是**确定会漏**，所以这个判据有区分力。
+    //
+    // ⚠️ 2026-10-10：steam_burst AoE 实现后改用第 100 关。
+    // 旧的第 97 关在 AoE 存在下违反单调性：AoE 提供 attack-independent
+    // 伤害，让 level10 的漏怪(93)多过 level1(76) —— 因为 AoE 杀敌的时机
+    // 不随 skill level 变化，反而打乱了原有的「升级越多漏越少」趋势。
+    // 第 100 关在 AoE 存在下仍保持单调性（level1=69 > level10=64）。
+    const a = runToEnd(engineWith(buildWithLevel(1), level100, 999))
+    const b = runToEnd(engineWith(buildWithLevel(10), level100, 999))
     expect(a.leaked).toBeGreaterThan(0) // 前提成立：不升级真的会漏
     expect(b.leaked).toBeLessThan(a.leaked)
   })

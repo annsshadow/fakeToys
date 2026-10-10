@@ -55,44 +55,50 @@ pub async fn get_control_config(
     Ok(Json(ActionResult::success(data)))
 }
 
+/// Build category objects from grouped `(type, count)` rows. Extracted as a
+/// pure fn so the N+1→GROUP BY collapse is unit-testable without a live DB.
+pub(crate) fn fold_control_categories(
+    rows: impl IntoIterator<Item = (Option<String>, i64)>,
+) -> Vec<Value> {
+    rows.into_iter()
+        .map(|(comp_type, cnt)| {
+            let comp_type = comp_type.unwrap_or_default();
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(comp_type.clone())),
+                (
+                    "name".to_string(),
+                    Value::String(if comp_type == "system" {
+                        "System Components".to_string()
+                    } else {
+                        "Custom Components".to_string()
+                    }),
+                ),
+                ("enabled".to_string(), Value::Bool(cnt > 0)),
+            ]))
+        })
+        .collect()
+}
+
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn list_control_categories(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    // Single GROUP BY instead of DISTINCT type + per-type COUNT (textbook N+1).
     let rows = client
         .query(
-            "SELECT DISTINCT type FROM CPT_COMPONENT WHERE deleted_at IS NULL ORDER BY type",
+            "SELECT type, COUNT(*) AS cnt FROM CPT_COMPONENT \
+             WHERE deleted_at IS NULL GROUP BY type ORDER BY type",
             &[],
         )
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let mut categories = Vec::new();
-    for row in rows.iter() {
-        let comp_type: String = row.get::<_, Option<String>>("type").unwrap_or_default();
-        let cnt_row = client
-            .query_one(
-                "SELECT COUNT(*) as cnt FROM CPT_COMPONENT WHERE type = $1 AND deleted_at IS NULL",
-                &[&comp_type],
-            )
-            .await
-            .ok();
-        let enabled = cnt_row.map(|r| r.get::<_, i64>("cnt") > 0).unwrap_or(false);
-        categories.push(Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(comp_type.clone())),
-            (
-                "name".to_string(),
-                Value::String(if comp_type == "system" {
-                    "System Components".to_string()
-                } else {
-                    "Custom Components".to_string()
-                }),
-            ),
-            ("enabled".to_string(), Value::Bool(enabled)),
-        ])));
-    }
+    let categories = fold_control_categories(
+        rows.iter()
+            .map(|r| (r.get::<_, Option<String>>("type"), r.get::<_, i64>("cnt"))),
+    );
 
     let total_categories = categories.len();
     Ok(Json(ActionResult::legacy_success(

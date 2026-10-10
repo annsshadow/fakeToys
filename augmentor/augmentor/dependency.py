@@ -13,9 +13,23 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from .atomic_write import atomic_write_json
+from .exceptions import DataValidationError
+from .validation import require_choice
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
+
+#: L199（B265）：`get_dependencies(direction=)` 的方向封闭清单（A77 单一权威）。
+#: 改前三条分支各跟一个字面量比，未知值**一条都不命中** ⇒ 返回 `[]`，用户读到的是
+#: 「这个数据集没有任何依赖」这个**正面论断**，而不是「参数写错了」。这与
+#: 「静默回落默认分支」是同一族的另一面：那里给错结果，这里给错结论。
+DEPENDENCY_DIRECTIONS = ("upstream", "downstream", "both")
+
+#: L209（B265 备注）：依赖类型的封闭清单（A77 单一权威）。
+#: 该字段全仓**零分支读取**（只在 `to_dict()` 与依赖图里原样回显），所以收紧
+#: 它不改变任何行为——补的是「拼错了没人知道」这一格。实测测试里用过的值
+#: 只有 `derived`（清单成员），本判据不误伤。
+DEPENDENCY_TYPES = ("derived", "merged", "filtered", "transformed")
 
 
 @dataclass
@@ -190,12 +204,26 @@ class DependencyManager:
         Args:
             source_dataset: 源数据集
             target_dataset: 目标数据集
-            dependency_type: 依赖类型
+            dependency_type: 依赖类型（derived / merged / filtered / transformed）
             description: 描述
         
         Returns:
             依赖关系
+
+        Raises:
+            DataValidationError: `dependency_type` 不在封闭清单内
         """
+        # L209：见常量处的实测说明（零分支读取 ⇒ 收紧无行为影响）。
+        # None 单独先判：本参数是**必填位置参数**，`require_choice` 对 None
+        # 放行（那是「没传」的语义），而这里显式传 null 就是另一件事。
+        if dependency_type is None:
+            raise DataValidationError(
+                "dependency_type 不能为 null，合法取值: "
+                f"{' / '.join(DEPENDENCY_TYPES)}"
+            )
+        require_choice("dependency_type", dependency_type,
+                       choices=DEPENDENCY_TYPES)
+
         dep = Dependency(
             source_dataset=source_dataset,
             target_dataset=target_dataset,
@@ -219,7 +247,17 @@ class DependencyManager:
         
         Returns:
             依赖列表
+
+        Raises:
+            DataValidationError: `direction` 不是 upstream/downstream/both 之一
         """
+        if direction is None:
+            raise DataValidationError(
+                "direction 不能为 null，合法取值: "
+                f"{' / '.join(DEPENDENCY_DIRECTIONS)}"
+            )
+        require_choice("direction", direction, choices=DEPENDENCY_DIRECTIONS)
+
         result = []
         
         for dep in self._dependencies:

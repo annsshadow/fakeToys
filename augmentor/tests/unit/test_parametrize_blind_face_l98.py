@@ -74,11 +74,17 @@ TIER_OPAQUE = "opaque"              # 压根解析不到
 # 与 `test_no_blind_site_carries_literal_ids`），而不是靠这张表缺席来表达。
 #: 第二本账 L154 回填（盲 +8）：test_config_gates_l154 的 18 处参数化里 8 处值位无 ids
 #: ⇒ 纯字面量 5 处入 plain（46 → **51**）、含 list 元素 3 处入 derived（30 → **33**）。
+#: **L198/L199 回填（盲 +5）**：两轮各新增一支守卫文件、共 6 处 parametrize 装饰器，
+#: 档位现量 plain **51 → 52**（L198 的 `STALE` 字面量元组 +1）、
+#: derived **33 → 36**（L199 的 3 处推导式 + 1 处含 list/dict/bool 的坏形状档）、
+#: opaque **9 → 10**（L198 的 `sorted(DOCS.items())` 值位）、ids-derived 8 一格未动。
+#: 档位和 +5 而 l97 的 CALLS +6：差在 L199 有一对**叠在同一个用例上**的装饰器，
+#: l97 按装饰器计数、本名册按展示键计数（同一用例只留一格）——两边口径不同，都已实测。
 MEASURED_TIERS: Dict[str, int] = {
-    TIER_PLAIN: 51,
-    TIER_DERIVED: 33,
+    TIER_PLAIN: 54,
+    TIER_DERIVED: 36,
     TIER_IDS_DERIVED: 8,
-    TIER_OPAQUE: 9,
+    TIER_OPAQUE: 10,
 }
 #: 盲面里静态读到类型形状的格（无字面 ids 即违规）：**0 格** —— 这就是 L97 残项的答案
 MEASURED_TYPED_SITES: frozenset = frozenset()
@@ -93,6 +99,7 @@ MEASURED_OPAQUE_SITES: frozenset = frozenset({
     "unit/test_model_type_choices_l74.py::test_every_listed_type_is_accepted_by_both_faces#0",
     "unit/test_model_type_choices_l74.py::test_table_values_are_backends_not_strings#0",
     "unit/test_rag.py::test_supported_formats_dispatch#0",
+    "unit/test_python_version_floor_l198.py::test_documented_claim_is_present#0",
 })
 #: `ids=` 写成非字面量的 8 格（同上键形）—— L97 只记「有没有 ids」，这一档是它看不见的
 MEASURED_IDS_DERIVED_SITES: frozenset = frozenset({
@@ -115,8 +122,24 @@ MEASURED_HAZARD_ROSTER: Dict[Tuple[int, int], frozenset] = {
 }
 #: 现量：盲面用例 96 支（L154 起 101 格调用压成 96 个名字——新守卫里 5 支用例叠两层
 #: 无 ids 参数化、同一名下两格），动态面两支解释器都全数采到
-MEASURED_BLIND_TESTS = 96
-MEASURED_BLIND_SEEN = 96
+#: **L198/L199 回填（96 → 101）**：见 MEASURED_TIERS 那条归因。
+#: **L204 回填（101 → 101，盲面一格未动）**：test_readme_cli_index_l204.py 新增两处
+#: parametrize，值位都是模块级字面量元组 PROMISED ⇒ 两处都入 plain 档（见 MEASURED_TIERS），
+#: 盲面三档与盲面用例名册一格未动。
+#: **L198/L199 回填续（96 → 101，+5）**：
+#: 两支新守卫文件共新增 6 处 parametrize 装饰器，落到盲面的有 5 格
+#: （L198 `test_documented_claim_is_present` 的 `sorted(DOCS.items())` 值位 1 格 opaque；
+#: L199 三处 `[s[0] for s in SURFACE]` 推导式 + 一处含 list/dict/bool 的坏形状档 4 格
+#: derived，其中后两格**叠在同一个用例** `test_non_string_shapes_are_rejected` 上）。
+#: 名册按**用例名**计：那对叠置格压成 1 个名字 ⇒ 名字数增量 = 盲面格增量。
+#: （@pytest.mark.parametrize 在 L199 里叠了两层，名册口径与档位口径的差就是它——
+#:  实测而非推算，见循环日志 L199。）
+#: **L204 回填（盲面 106 → 108，+2）**：test_readme_cli_index_l204.py 新增两处 parametrize，
+#: 值位是**模块级名字引用** `PROMISED` 而非内联字面量 ⇒ 计入盲面，plain 档 52 → 54，
+#: 其余三档未动（档位和 = 盲面，两处独立闭合）。
+#: **L204 回填（101 → 103，+2）**：两支新函数各一处无 ids 参数化、非叠置 ⇒ 名册 +2。
+MEASURED_BLIND_TESTS = 103
+MEASURED_BLIND_SEEN = 103
 #: 现量：整支豁免（该用例的每一支 parametrize 都写了字面 ids）的用数
 MEASURED_EXEMPT_SITES = 17
 #: 动态面至少要采到这么多条，否则「没有风险对象」只是没采到（A171 口径：数不到不判干净）

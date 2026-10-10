@@ -25,7 +25,7 @@ import json
 
 import pytest
 
-from augmentor.exceptions import DataFormatError
+from augmentor.exceptions import DataFormatError, DataValidationError
 from augmentor.streaming import (
     StreamReader,
     StreamWriter,
@@ -211,11 +211,20 @@ class TestStreamWriterBranches:
         lines = [ln for ln in path.read_text(encoding="utf-8").splitlines() if ln.strip()]
         assert [json.loads(ln) for ln in lines] == ITEMS
 
-    def test_close_append_mode_does_not_add_bracket(self, tmp_path):
-        """json 格式但追加模式 → 不补 `[` / `]`，避免破坏已有内容"""
+    def test_append_mode_json_is_refused_altogether(self, tmp_path):
+        """`mode='a' + format='json'` 从「不闭合括号」改成**直接拒绝**（L208）
+
+        L123 写这条时钉的是「追加 json 不补 `[` / `]`，避免破坏已有内容」。
+        实测（Temp l208_probe.py）那样写出的产物是 `[{"a": 1}]{"b": 2}`，
+        `json.loads` 报 `Extra data`：一份**非法 JSON**，而调用方以为写成功了。
+        L208 拍定：追加一份已闭合的 JSON 数组，任何写法都产不出合法 JSON，索性
+        拒绝（候选「读回原数组再整体重写」是 O(n) 读 + O(n) 写，违背流式初衷）。
+        正确做法是一次性写，或用 `format='jsonl'`（天生可追加）。
+        """
         path = tmp_path / "append.json"
         path.write_text(json.dumps(ITEMS, ensure_ascii=False), encoding="utf-8")
-        writer = StreamWriter(str(path), mode="a", format="json")
-        with writer:
-            writer.write_chunk([ITEMS[0]])
-        assert path.read_text(encoding="utf-8").startswith("[")
+        with pytest.raises(DataValidationError) as exc:
+            StreamWriter(str(path), mode="a", format="json")
+        assert "jsonl" in str(exc.value), "文案必须给出替代方案"
+        # 构造就拒 ⇒ 盘上那份一个字节都没动
+        assert json.loads(path.read_text(encoding="utf-8")) == ITEMS

@@ -96,12 +96,20 @@
 | 超导 | 冰 + 电 | 50 | 25% | 目标受击伤害 **+60%**，持续 4s |
 | 急速冻结 | 冰 + 毒 | 45 | 25% | **冻结 2s**，受击伤害 +30% |
 | 腐蚀扩散 | 电 + 毒 | 35 | 20% | 把目标的元素层数传播给半径内目标 |
-| 破甲击退 | 动能 + 任意 | 30 | 30% | 削穿护甲，为其他伤害开窗口 |
+| 破甲击退 | 动能 + 任意 | 30 | 30% | 削穿护甲（4s 内 −150‰），击退目标，为其他伤害开窗口 |
 
 > ⚠️ **与设计意图的差异**：「燃烧云 6s 火区」「超导持续 4s」里的**持续伤害周期**
 > 未单独实现 —— 反应表只有 `status_duration_ms`（控制时长），
 > 没有 DoT 的 tick 定义。燃烧云的火区是地形机制（见 I-4），不是反应自带的 DoT。
 > 见 §11 边界 4。
+>
+> ✅ **`破甲击退` 已实现**（区别于上面 4 条未实现项）：触发后 4000ms 内目标
+> 有效护甲被削 150‰，并一次性击退 4px（定点 4000）。削甲/击退量与时长都落在
+> 反应表的 `armor_shred_permille` / `knockback` / `status_duration_ms` 三字段，
+> 客户端引擎（`engine.ts` hitEnemy）消费，跨端由 `reaction_specs.json` 与
+> `reaction_contract.test.ts` 双向锁定，行为由 `armor_break.test.ts` 钉住。
+> 其余 3 条（overheat 爆炸 / burn_cloud 火区 /
+> corrosion_spread 层数传播）仍是**纯反应伤害**，未实现，见 §11 边界 4。
 
 **敌人 5 维抗性**：每种敌人有 `fire/ice/lightning/corrosion/kinetic` 五个抗性值，
 范围 −50%（吃双倍）~ +50%（几乎免疫）。BOSS 必有高抗 + 负抗组合 → 强制换搭配。
@@ -437,7 +445,7 @@
 | 技能升级 | `POST /me/skills/:id/upgrade` |
 | 战斗 | `POST /battle/token` · `POST /battle/settle` · `POST /battle/verify` · `GET /battle/:id/replay` |
 | 关卡 | `GET /levels/:id` |
-| 专精 | `GET /mastery/` · `POST /mastery/allocate` |
+| 专精 | `GET /mastery/` · `POST /mastery/allocate` · `POST /mastery/reset`（消耗 1 件 `mastery_reset` 重铸，2026-10 接通） |
 | 日常 | `GET /tasks/` · `POST /tasks/:id/claim` · `POST /signin/` · `POST /redeem/` |
 | 商店 | `GET /shop/` · `POST /shop/:id/buy` |
 | 诊断 | `GET /diagnose` |
@@ -445,8 +453,8 @@
 | 后台 | `/admin/*`：登录、看板、关卡、技能、装备、用户、战报、审计日志 |
 
 > ⚠️ **与设计意图的差异**：原设计列的
-> `POST /mastery/reset`、`POST /mastery/nodes`、`POST /verify`、
-> `POST /terrain/config` **均不存在**。
+> `POST /mastery/nodes`、`POST /verify`、
+> `POST /terrain/config` **均不存在**（`/mastery/reset` 已于 2026-10 接通，见上行）。
 > 同时原清单**漏掉**了 tasks / shop / signin / redeem / wallet / loadout /
 > skills-upgrade / 全部 `/admin/*`。**以 `server/internal/httpapi/routes.go` 为准。**
 
@@ -490,3 +498,4 @@
 | 6 | 「每章至少 3 关地形」 | 满足，但**没有任何一关用 ≥2 种地形** | `generateTerrain` 按章节的单一 `terrain_kind` 生成 1~3 个同种地形 |
 | 7 | L-3 阵型预设（多套配置一键切换） | **未实现** | — |
 | 8 | 「每 10 级 +1 专精点」 | `3 + FLOOR((level_exp + 50 + 本局击杀) / 1000)` | 基于经验与击杀，不是关卡等级 |
+| 9 | 破甲击退「削穿护甲 + 击退」 | **已实现**（2026-10-09）：触发后 4s 内目标有效护甲 −150‰，并一次性击退 4px（定点 4000） | 数值落在反应表 `armor_shred_permille` / `knockback` / `status_duration_ms` 三字段，客户端引擎消费；跨端契约 + `armor_break.test.ts`（9 例，含 2 处变异验证）钉住。注意：**仅动能参与的构筑会进入这条新路径**，默认构筑（fire/fire/fire/ice）的历史 100 关基线不受影响 |

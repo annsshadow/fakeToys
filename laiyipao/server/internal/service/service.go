@@ -419,6 +419,43 @@ func grantToken(ctx context.Context, tx pgx.Tx, userID int64, token string, delt
 	return nil
 }
 
+// spendToken 在事务内**消耗**一件道具（第 2026-10 轮，道具消费端点接入）。
+//
+// # 为什么不用 `grantWallet` 的负数路径
+//
+// `user_tokens` 有 `CHECK (balance >= 0)` 约束。`grantToken` 走的是
+// `INSERT ... ON CONFLICT DO UPDATE`，把 `0 - 1` 写进去会**先触发 CHECK 违例**
+// （PG 报错 23514），而不是给人一句可读的「道具不足」。
+// 货币侧 `grantWallet` 的负数分支用 `WHERE coin >= $3` 提前拦，道具侧要对称，
+// 所以消费走**条件 UPDATE**（余额 < 1 时直接 `ErrNoRows`），不靠约束兜底。
+//
+// # 语义
+//
+// 消耗 1 件 `token`。余额不足（没有行、或 balance < 1）返回 `ErrBadInput`。
+// 成功后写一条 `wallet_flows`（currency = 道具名），与 `grantToken` 的入账流水
+// 同一条流，运营看板按 currency 聚合时「进了多少 / 花了多少」才对称。
+func spendToken(ctx context.Context, tx pgx.Tx, userID int64, token string, reason string, refID int64) error {
+	var balance int64
+	err := tx.QueryRow(ctx,
+		`UPDATE user_tokens SET balance = balance - 1, updated_at = now()
+		  WHERE user_id = $1 AND token = $2 AND balance >= 1
+		  RETURNING balance`,
+		userID, token).Scan(&balance)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return fmt.Errorf("%w: 道具 %s 不足（需要 1）", ErrBadInput, token)
+		}
+		return fmt.Errorf("spend token %s: %w", token, err)
+	}
+	if _, err := tx.Exec(ctx,
+		`INSERT INTO wallet_flows (user_id, currency, delta, balance, reason, ref_id)
+		 VALUES ($1,$2,$3,$4,$5,$6)`,
+		userID, token, -1, balance, reason, refID); err != nil {
+		return fmt.Errorf("insert token flow: %w", err)
+	}
+	return nil
+}
+
 // TokenBalance 读一件道具的余额（第 74 轮）。
 //
 // # 为什么需要它
@@ -479,8 +516,10 @@ var walletColumns = map[string]string{
 //	货币（user_wallets 列）：coin / gem / energy / keys
 //	道具（user_tokens 行）  ：revive_token / mastery_reset / gem_wash_token
 //
-// ⚠️ 这三个道具**目前都没有消费端点**（没有「用掉复活币」的地方）。
-// 本轮只修「买不到」这个更硬的问题 —— 买了至少能在背包里看到。
+// 消费面（2026-10 轮起）：
+//   - mastery_reset     → POST /mastery/reset（ResetMastery 清空专精，spendToken 扣 1）
+//   - gem_wash_token    → 无（user_gems 无获取途径，先补宝石获取再接洗练，见 README 边界 16）
+//   - revive_token      → 无（局内复活动 I-6 重放锚点，属核心战斗改动，见 README 边界 16）
 var walletTokens = map[string]bool{
 	"revive_token":   true,
 	"mastery_reset":  true,

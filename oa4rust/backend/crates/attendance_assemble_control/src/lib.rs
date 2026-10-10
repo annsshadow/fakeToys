@@ -5041,10 +5041,16 @@ pub async fn v2_group_refresh_participate(
 /// GET /api/attendance/assemble/control/v2/group/person/{person}/date/{date}
 pub async fn v2_group_person_date(
     pool: Extension<Pool>,
-    Path((person, date)): Path<(String, String)>,
+    session: Extension<shared::session::Session>,
+    Path((_person, date)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
+    // 考勤组成员名单属隐私：以会话登录人为属主事实源，忽略路径 {person}。原先无
+    // 会话、直接按路径 {person} 过滤 participate_list，前端 AttendanceApp.vue 把
+    // session.user.unique 塞进 {person}=假过滤——攻击者替换他人 unique 即可枚举其
+    // 所属考勤组及同组成员 participate_list（IDOR + 名单泄漏）。
+    let person = session.person_unique.clone();
     let rows = client
         .query(
             "SELECT id, group_name, check_type, shift_id, participate_list, start_date, end_date \
@@ -8496,6 +8502,18 @@ async fn import_checkin_rows(
     let mut inserted: i64 = 0;
     let mut ids: Vec<String> = Vec::with_capacity(rows.len());
 
+    // 两段式：先全量校验+解析（任一行非法即整批 Err→事务回滚，不留半导入态），
+    // 再一条预取去重 + 一条 UNNEST 批量 INSERT——取代原「逐行 query_opt 查重 + 逐行
+    // INSERT」的事务内最多 2N 次往返。
+    struct Parsed {
+        user_id: String,
+        date_str: String,
+        check_in_type: String,
+        source_type: String,
+        result: String,
+        description: Option<String>,
+    }
+    let mut parsed: Vec<Parsed> = Vec::with_capacity(rows.len());
     for item in rows {
         let user_id = normalize_key(item.get("userId").and_then(|v| v.as_str()).unwrap_or(""));
         if user_id.is_empty() {
@@ -8514,27 +8532,13 @@ async fn import_checkin_rows(
             .get("checkInType")
             .and_then(|v| v.as_str())
             .unwrap_or("")
-            .trim();
+            .trim()
+            .to_string();
         if check_in_type.is_empty() {
             return Err(AppError::BadRequest(
                 "each row requires checkInType".to_string(),
             ));
         }
-
-        let dup = tx
-            .query_opt(
-                "SELECT id FROM x_attendance_v2_checkin_record \
-                 WHERE user_id = $1 AND record_date_string = $2 AND check_in_type = $3 LIMIT 1",
-                &[&user_id, &date_str, &check_in_type],
-            )
-            .await
-            .map_err(|_| AppError::Internal)?;
-        if let Some(row) = dup {
-            ids.push(row.get::<_, String>("id"));
-            continue;
-        }
-
-        let id = uuid::Uuid::new_v4().to_string();
         let source_type = item
             .get("sourceType")
             .and_then(|v| v.as_str())
@@ -8551,16 +8555,86 @@ async fn import_checkin_rows(
             .get("description")
             .and_then(|v| v.as_str())
             .map(|s| s.to_string());
+        parsed.push(Parsed {
+            user_id,
+            date_str,
+            check_in_type,
+            source_type,
+            result,
+            description,
+        });
+    }
 
-        tx.execute(
-            "INSERT INTO x_attendance_v2_checkin_record (id, user_id, record_date_string, source_type, check_in_result, check_in_type, description, creator_person, create_time, update_time) \
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,NOW(),NOW())",
-            &[&id, &user_id, &date_str, &source_type, &result, &check_in_type.to_string(), &description, &session.person_unique],
+    // __R23_PREFETCH__
+    // 预取既有去重键：三列各自 ANY（会过取笛卡尔候选），按精确三元组建图后仅查本批
+    // 真实键，过取项永不被命中故无害；首行胜等价原 LIMIT 1。
+    use std::collections::HashMap;
+    let u_all: Vec<&str> = parsed.iter().map(|p| p.user_id.as_str()).collect();
+    let d_all: Vec<&str> = parsed.iter().map(|p| p.date_str.as_str()).collect();
+    let t_all: Vec<&str> = parsed.iter().map(|p| p.check_in_type.as_str()).collect();
+    let existing = tx
+        .query(
+            "SELECT id, user_id, record_date_string, check_in_type FROM x_attendance_v2_checkin_record \
+             WHERE user_id = ANY($1) AND record_date_string = ANY($2) AND check_in_type = ANY($3)",
+            &[&u_all, &d_all, &t_all],
         )
         .await
         .map_err(|_| AppError::Internal)?;
-        inserted += 1;
-        ids.push(id);
+    let mut by_key: HashMap<(String, String, String), String> = HashMap::new();
+    for row in &existing {
+        let key = (
+            row.get::<_, String>("user_id"),
+            row.get::<_, String>("record_date_string"),
+            row.get::<_, String>("check_in_type"),
+        );
+        by_key
+            .entry(key)
+            .or_insert_with(|| row.get::<_, String>("id"));
+    }
+
+    // 第二遍按行序定 id：命中既有或本批先行同键则复用（本批内去重靠边插边建图，
+    // 等价原事务内自见写入），否则新 uuid 入批。
+    let mut ins_id: Vec<String> = Vec::new();
+    let mut ins_user: Vec<String> = Vec::new();
+    let mut ins_date: Vec<String> = Vec::new();
+    let mut ins_source: Vec<String> = Vec::new();
+    let mut ins_result: Vec<String> = Vec::new();
+    let mut ins_type: Vec<String> = Vec::new();
+    let mut ins_desc: Vec<Option<String>> = Vec::new();
+    for p in &parsed {
+        let key = (
+            p.user_id.clone(),
+            p.date_str.clone(),
+            p.check_in_type.clone(),
+        );
+        if let Some(existing_id) = by_key.get(&key) {
+            ids.push(existing_id.clone());
+            continue;
+        }
+        let id = uuid::Uuid::new_v4().to_string();
+        by_key.insert(key, id.clone());
+        ids.push(id.clone());
+        ins_id.push(id);
+        ins_user.push(p.user_id.clone());
+        ins_date.push(p.date_str.clone());
+        ins_source.push(p.source_type.clone());
+        ins_result.push(p.result.clone());
+        ins_type.push(p.check_in_type.clone());
+        ins_desc.push(p.description.clone());
+    }
+
+    if !ins_id.is_empty() {
+        tx.execute(
+            "INSERT INTO x_attendance_v2_checkin_record \
+             (id, user_id, record_date_string, source_type, check_in_result, check_in_type, description, creator_person, create_time, update_time) \
+             SELECT t.id, t.user_id, t.record_date_string, t.source_type, t.check_in_result, t.check_in_type, t.description, $8, NOW(), NOW() \
+             FROM UNNEST($1::text[], $2::text[], $3::text[], $4::text[], $5::text[], $6::text[], $7::text[]) \
+                  AS t(id, user_id, record_date_string, source_type, check_in_result, check_in_type, description)",
+            &[&ins_id, &ins_user, &ins_date, &ins_source, &ins_result, &ins_type, &ins_desc, &session.person_unique],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+        inserted = ins_id.len() as i64;
     }
 
     tx.commit().await.map_err(|_| AppError::Internal)?;
