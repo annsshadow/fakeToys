@@ -35,6 +35,7 @@ window.ResizeObserver = window.ResizeObserver || (RO as unknown as typeof Resize
 const spies = vi.hoisted(() => ({
   startAugmentation: null as unknown as ReturnType<typeof vi.fn>,
   getProgress: null as unknown as ReturnType<typeof vi.fn>,
+  getCheckpoints: null as unknown as ReturnType<typeof vi.fn>,
   getDataFiles: null as unknown as ReturnType<typeof vi.fn>,
 }))
 
@@ -42,11 +43,13 @@ vi.mock('../services/api', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../services/api')>()
   spies.startAugmentation = vi.fn().mockResolvedValue({ success: true, message: 'ok' })
   spies.getProgress = vi.fn().mockResolvedValue({ status: 'no_checkpoint' })
+  spies.getCheckpoints = vi.fn().mockResolvedValue({ checkpoints: [] })
   spies.getDataFiles = vi.fn().mockResolvedValue({ files: [{ name: 'seed.json' }] })
   return {
     ...actual,
     startAugmentation: spies.startAugmentation,
     getProgress: spies.getProgress,
+    getCheckpoints: spies.getCheckpoints,
     getDataFiles: spies.getDataFiles,
   }
 })
@@ -136,5 +139,31 @@ describe('Augmentation 进度轮询', () => {
 
     await waitFor(() => expect(screen.getByText('t-42')).toBeInTheDocument())
     expect(screen.getByText('平均质量评分: 0.812')).toBeInTheDocument()
+  })
+})
+
+describe('Augmentation 断点列表（L211 接线）', () => {
+  it('挂载即拉断点并把每个断点 ID 渲成标签；刷新再拉一次', async () => {
+    spies.getCheckpoints.mockResolvedValue({ checkpoints: ['ck-a', 'ck-b'] })
+
+    render(<Augmentation />)
+
+    await waitFor(() => expect(screen.getByText('ck-a')).toBeInTheDocument())
+    expect(screen.getByText('ck-b')).toBeInTheDocument()
+    expect(spies.getCheckpoints).toHaveBeenCalledTimes(1)
+
+    fireEvent.click(screen.getByRole('button', { name: /刷新/ }))
+    await waitFor(() => expect(spies.getCheckpoints).toHaveBeenCalledTimes(2))
+  })
+
+  it('无断点时显示「暂无断点」而不是空卡片', async () => {
+    // clearAllMocks 只清调用记录、不清 mockResolvedValue —— 上一用例设的
+    // ['ck-a','ck-b'] 会漏进本用例，必须显式重设空清单
+    spies.getCheckpoints.mockResolvedValue({ checkpoints: [] })
+
+    render(<Augmentation />)
+
+    await waitFor(() => expect(spies.getCheckpoints).toHaveBeenCalled())
+    expect(await screen.findByText('暂无断点')).toBeInTheDocument()
   })
 })
