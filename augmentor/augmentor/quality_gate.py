@@ -82,10 +82,17 @@ class GateRule:
 
 @dataclass
 class GateReport:
-    """门禁执行报告"""
+    """门禁执行报告
+
+    `errored_rules`（L205）与 `failed_rules` 是**两种不同的坏**：前者是
+    「这条规则压根算不出来」（`evaluate` 抛异常，如指标类型与算子不匹配），
+    后者是「算出来了，不达标」。混在同一栏里，`verdict=FAILED` 就分不清是
+    数据不达标还是规则本身写错了——而后者该修的是规则，不是数据。
+    """
     verdict: str
     failed_rules: List[str] = field(default_factory=list)
     warned_rules: List[str] = field(default_factory=list)
+    errored_rules: List[str] = field(default_factory=list)
     metrics: Dict[str, Any] = field(default_factory=dict)
 
     @property
@@ -98,6 +105,7 @@ class GateReport:
             "passed": self.passed,
             "failed_rules": self.failed_rules,
             "warned_rules": self.warned_rules,
+            "errored_rules": self.errored_rules,
             "metrics": self.metrics,
         }
 
@@ -137,13 +145,20 @@ class QualityGate:
         """
         failed_errors: List[str] = []
         failed_warnings: List[str] = []
+        # L205：算不出来的规则单开一栏。改前它被计入 `satisfied = False`，
+        # 于是「规则写错了」与「数据不达标」同形——前者该修规则、后者该修数据，
+        # 而报告说不出区别。
+        errored: List[str] = []
 
         for rule in self.rules:
             try:
                 satisfied = rule.evaluate(metrics)
             except Exception as e:
+                # 求值失败**不参与判决**：它不是「不达标」这个事实。但仍要在
+                # 报告里点名，否则一条坏规则会被完全静默。
                 logger.warning(f"规则 {rule.name} 求值失败: {e}")
-                satisfied = False
+                errored.append(rule.name)
+                continue
 
             if not satisfied:
                 if rule.severity == "warning":
@@ -164,9 +179,13 @@ class QualityGate:
             verdict=verdict,
             failed_rules=failed_errors,
             warned_rules=failed_warnings,
+            errored_rules=errored,
             metrics=metrics,
         )
-        logger.info(f"质量门禁判定: {verdict} (失败 {len(failed_errors)}, 告警 {len(failed_warnings)})")
+        logger.info(
+            f"质量门禁判定: {verdict} (失败 {len(failed_errors)}, "
+            f"告警 {len(failed_warnings)}, 求值失败 {len(errored)})"
+        )
         return report
 
 
