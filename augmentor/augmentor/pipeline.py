@@ -277,8 +277,8 @@ class AugmentorPipeline:
                        input_file: str,
                        output_file: str,
                        use_checkpoint: bool = True,
-                       use_quality_check: bool = True,
-                       use_dedup: bool = True,
+                       use_quality_check: Optional[bool] = None,
+                       use_dedup: Optional[bool] = None,
                        use_parallel: bool = True) -> Dict:
         """增强整个数据集 - 优化版
         
@@ -288,14 +288,26 @@ class AugmentorPipeline:
             use_checkpoint: 是否使用断点续传；任务 ID 由输入文件路径派生，
                 因此对同一输入文件重复运行会跳过已完成的条目并复用已有输出。
                 如需从头重跑，先调用 checkpoint_manager.delete_checkpoint(task_id)
-            use_quality_check: 是否使用质量检查
-            use_dedup: 是否使用去重
+            use_quality_check: 是否使用质量检查。`None`（默认）= 调用方没点，
+                交给 `config.quality.enabled`；显式 True/False = 调用方点了，配置让位
+            use_dedup: 是否使用去重，同上，交给 `config.dedup.enabled`
             use_parallel: 是否使用并行处理
         
         Returns:
             处理报告。含 `errors` 键（L206）：本批失败条目的明细清单
             （下标 / 异常类型 / 消息 / 条目预览）；无失败时是空列表。
+            报告里的 `quality_check` / `dedup` 是**解析后的**布尔值，不是 `None`
+            （L215：加了配置臂之后，报告若回显 `None` 就等于说「这一阶段没定」，
+            而实际是定了的——由配置定的）。
         """
+        # L215（A138/B5 的 enabled 族第一批：出厂四只 true 键里落在本阶段的三只）：
+        # 权威序 调用参数 > 配置键 > 内置默认。`None` 是「调用方没点」的哨兵，
+        # 不是「关掉」——所以这两只键接上之后，随包配置（两只都 true）下行为零漂移。
+        if use_quality_check is None:
+            use_quality_check = self.config.quality.enabled
+        if use_dedup is None:
+            use_dedup = self.config.dedup.enabled
+
         # L206：每次运行前清空。改前不清 ⇒ 同一个实例跑第二批时，第一批的
         # 错误记录还留在里面，报告于是混进与本次无关的错。
         with self._lock:
@@ -448,7 +460,10 @@ class AugmentorPipeline:
         logger.info(f"增强流程内存监控完成，峰值: {memory_monitor.get_peak_usage_mb():.2f} MB，趋势: {memory_monitor.get_trend()}")
         
         # 创建版本快照
-        if self.config.versioning.auto_snapshot:
+        # L215（enabled 族）：`versioning.enabled` 是这一族的总闸，`auto_snapshot`
+        # 是「增强结束时自动打点」这一路的闸，两只串联而不是互相覆盖——总闸关掉之后
+        # 仍然自动打点，等于用户说「版本管理别跑」而代码回答「但自动打点你没关」。
+        if self.config.versioning.enabled and self.config.versioning.auto_snapshot:
             self.version_manager.create_version(
                 all_results,
                 label=f"增强数据_{int(time.time())}",
@@ -583,14 +598,24 @@ class AugmentorPipeline:
                          input_file: str,
                          output_dir: str = "visualizations") -> Dict[str, str]:
         """可视化数据集
-        
+
         Args:
             input_file: 输入文件路径
             output_dir: 输出目录
-        
+
         Returns:
-            图表文件路径字典
+            图表文件路径字典。`config.visualization.enabled` 为 False 时是**空字典**
+            而不是抛错（L215）：这一族键是阶段开关，关掉的意思是「这一步别做」，
+            不是「这个能力不存在」。调用方（含 `GET /api/visualize/{filename}`）
+            因此拿到 200 与空清单，形状不变。
+
+        出厂配置下这一节是 `true` ⇒ 接上之后随包行为零漂移。
         """
+        # L215（enabled 族第一批第四只）
+        if not self.config.visualization.enabled:
+            logger.info("config.visualization.enabled=false，跳过可视化阶段")
+            return {}
+
         with open(input_file, 'r', encoding='utf-8') as f:
             items = json.load(f)
         
@@ -601,8 +626,8 @@ class AugmentorPipeline:
                             input_file: str,
                             output_file: str,
                             use_checkpoint: bool = True,
-                            use_quality_check: bool = True,
-                            use_dedup: bool = True,
+                            use_quality_check: Optional[bool] = None,
+                            use_dedup: Optional[bool] = None,
                             max_workers: int = 4) -> Dict:
         """异步增强数据集 - 性能优化版，使用 asyncio 并行处理
         
@@ -610,13 +635,21 @@ class AugmentorPipeline:
             input_file: 输入文件路径
             output_file: 输出文件路径
             use_checkpoint: 是否使用断点续传
-            use_quality_check: 是否使用质量检查
-            use_dedup: 是否使用去重
+            use_quality_check: 是否使用质量检查。`None`（默认）交给
+                `config.quality.enabled`，与同步入口 `augment_dataset` 同一道判
+            use_dedup: 是否使用去重，同上，交给 `config.dedup.enabled`
             max_workers: 最大并发工作线程数
         
         Returns:
             处理报告
         """
+        # L215：两个入口同一权威序，否则「同步读配置、异步不读」会变成同一份配置
+        # 下两条路径出两种结果——这类分歧在报告里看不出来，只在产物里看得出来。
+        if use_quality_check is None:
+            use_quality_check = self.config.quality.enabled
+        if use_dedup is None:
+            use_dedup = self.config.dedup.enabled
+
         loop = asyncio.get_running_loop()
         with open(input_file, 'r', encoding='utf-8') as f:
             items = json.load(f)
