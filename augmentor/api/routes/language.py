@@ -81,6 +81,10 @@ class TranslateResponse(BaseModel):
 
     `batches` 与 `batch_size` 一起才看得出分批确实发生：25 条 / 批宽 10 是 3 批，
     没分批的话飞行中的翻译任务数就是整份清单的长度。
+
+    后四只是失败回执面（L221 / A270）：逐条翻译异常过去被吞成「回退原文」，端点回 200 时
+    调用方读不出产物里混着原文。`failed_indices` 是全量下标（可直接指回 `input_file`），
+    `errors` 是前 20 条样本、`errors_truncated` 说明样本是否收窄——计数与下标不随样本收窄。
     """
     total: int
     batches: int
@@ -88,6 +92,10 @@ class TranslateResponse(BaseModel):
     target_lang: str
     supported_langs: List[str]
     items: List[Dict[str, Any]]
+    failed: int
+    failed_indices: List[int]
+    errors: List[Dict[str, Any]]
+    errors_truncated: bool
 
 
 @router.post(
@@ -125,7 +133,12 @@ async def language_profile_endpoint(request: LanguageProfileRequest):
 )
 async def translate_endpoint(request: TranslateRequest,
                              _auth: None = Depends(verify_api_key)):
-    """按 `multilingual.translate_batch_size` 分批翻译；`enabled` 为 false 时直接拒"""
+    """按 `multilingual.translate_batch_size` 分批翻译；`enabled` 为 false 时直接拒
+
+    部分失败仍走 200：整批失败（后端缺失）由 SDK 的 `ModelNotConfiguredError` 落 400，
+    而「7 条里 1 条没翻成」既不是客户端错误也不是服务端故障，重发整份只会重复花钱。
+    它的诚实读数在响应体里（`failed` / `failed_indices`），不在状态码里。
+    """
     try:
         from augmentor.language import translate_dataset
 

@@ -115,17 +115,17 @@ class TestBatchTranslate:
         support = MultilingualSupport(model_backend=FakeBackend())
         items = [{"instruction": f"中文问题{i}"} for i in range(3)]
 
-        result = support.batch_translate(items, target_lang="en")
+        report = support.batch_translate(items, target_lang="en")
 
-        assert len(result) == 3
-        assert all(r["language"] == "en" for r in result)
+        assert len(report["items"]) == 3
+        assert all(r["language"] == "en" for r in report["items"])
 
     def test_keeps_original_when_requested(self):
         """保留原文便于人工核对，默认开启"""
         support = MultilingualSupport(model_backend=FakeBackend())
-        result = support.batch_translate([{"instruction": "中文问题"}], target_lang="en")
+        report = support.batch_translate([{"instruction": "中文问题"}], target_lang="en")
 
-        assert result[0]["instruction_original"] == "中文问题"
+        assert report["items"][0]["instruction_original"] == "中文问题"
 
     def test_does_not_mutate_input(self):
         """批量翻译不得修改调用方传入的数据（避免隐蔽副作用）"""
@@ -137,9 +137,12 @@ class TestBatchTranslate:
         assert "instruction_original" not in items[0]
 
     def test_empty_dataset(self):
-        """空数据集返回空列表"""
+        """空数据集返回等形的零值报告，而不是另一种形状"""
         support = MultilingualSupport(model_backend=FakeBackend())
-        assert support.batch_translate([]) == []
+        assert support.batch_translate([]) == {
+            "items": [], "total": 0, "failed": 0,
+            "failed_indices": [], "errors": [],
+        }
 
     def test_rejects_unsupported_target(self):
         """不支持的目标语言必须报错"""
@@ -148,42 +151,46 @@ class TestBatchTranslate:
             support.batch_translate([{"instruction": "x"}], target_lang="ja")
 
     def test_failed_items_fall_back_to_original(self):
-        """翻译失败时应回退原文，保证输出长度与输入对齐"""
+        """翻译失败时回退原文**并且出声**：长度对齐保留，回执不得是零值"""
         class FailingBackend:
             def generate(self, prompt):
                 raise RuntimeError("backend down")
 
         support = MultilingualSupport(model_backend=FailingBackend())
         items = [{"instruction": "中文问题"}]
-        result = support.batch_translate(items, target_lang="en")
+        report = support.batch_translate(items, target_lang="en")
 
-        assert len(result) == 1
-        assert result[0]["instruction"] == "中文问题"
+        assert len(report["items"]) == 1
+        assert report["items"][0]["instruction"] == "中文问题"
+        assert report["failed"] == 1
+        assert report["failed_indices"] == [0]
+        assert report["errors"][0]["index"] == 0
+        assert "RuntimeError: backend down" == report["errors"][0]["error"]
 
     def test_keep_original_false(self):
         """keep_original=False 时不保留原文字段"""
         support = MultilingualSupport(model_backend=FakeBackend())
-        result = support.batch_translate(
+        report = support.batch_translate(
             [{"instruction": "中文问题"}], target_lang="en", keep_original=False
         )
-        assert "instruction_original" not in result[0]
-        assert result[0]["language"] == "en"
+        assert "instruction_original" not in report["items"][0]
+        assert report["items"][0]["language"] == "en"
 
     def test_custom_text_key(self):
         """自定义 text_key 应翻译指定字段"""
         support = MultilingualSupport(model_backend=FakeBackend())
-        result = support.batch_translate(
+        report = support.batch_translate(
             [{"question": "中文问题"}], target_lang="en", text_key="question"
         )
-        assert result[0]["language"] == "en"
-        assert result[0].get("question_original") == "中文问题"
+        assert report["items"][0]["language"] == "en"
+        assert report["items"][0].get("question_original") == "中文问题"
 
     def test_parallel_translation(self):
         """并行翻译应返回正确结果"""
         support = MultilingualSupport(model_backend=FakeBackend(), max_workers=2)
         items = [{"instruction": f"问题{i}"} for i in range(5)]
-        result = support.batch_translate(items, target_lang="en")
-        assert len(result) == 5
+        report = support.batch_translate(items, target_lang="en")
+        assert len(report["items"]) == 5
 
 
 class TestAnalyzeLanguages:
@@ -219,8 +226,9 @@ class TestAnalyzeLanguages:
         """空项目列表"""
         backend = FakeBackend()
         support = MultilingualSupport(model_backend=backend)
-        result = support.batch_translate([])
-        assert result == []
+        report = support.batch_translate([])
+        assert report["items"] == []
+        assert report["failed"] == 0
 
     def test_detect_language_pure_latin(self):
         """纯拉丁文检测"""
@@ -238,28 +246,28 @@ class TestAnalyzeLanguages:
         """不保留原文"""
         backend = FakeBackend()
         support = MultilingualSupport(model_backend=backend)
-        result = support.batch_translate(
+        report = support.batch_translate(
             [{"instruction": "中文问题"}], target_lang="en", keep_original=False
         )
-        assert "instruction_original" not in result[0]
+        assert "instruction_original" not in report["items"][0]
 
     def test_custom_text_key_translate(self):
         """自定义文本键批量翻译"""
         backend = FakeBackend()
         support = MultilingualSupport(model_backend=backend)
-        result = support.batch_translate(
+        report = support.batch_translate(
             [{"question": "中文问题"}], target_lang="en", text_key="question"
         )
-        assert result[0]["language"] == "en"
-        assert result[0].get("question_original") == "中文问题"
+        assert report["items"][0]["language"] == "en"
+        assert report["items"][0].get("question_original") == "中文问题"
 
     def test_parallel_translation_result(self):
         """并行翻译结果"""
         backend = FakeBackend()
         support = MultilingualSupport(model_backend=backend, max_workers=2)
         items = [{"instruction": f"问题{i}"} for i in range(5)]
-        result = support.batch_translate(items, target_lang="en")
-        assert len(result) == 5
+        report = support.batch_translate(items, target_lang="en")
+        assert len(report["items"]) == 5
 
     def test_lang_name_exists(self):
         """语言名称存在"""
