@@ -292,7 +292,7 @@ npm run dev            # Vite 开发服务器，热更新
 | `versioning` | `storage_dir` `auto_snapshot` | 版本存储目录与增强后自动快照 |
 | `multilingual` | `enabled` `supported_langs` `default_target_lang` `translate_batch_size` | 翻译增强；四键自 L217 起由 `augmentor/language.py` 消费，经 `/api/dataset/language-profile` 与 `/api/dataset/translate` 生效（`enabled` 出厂 `false`） |
 | `rag` | `chunk_size` `chunk_overlap` | 分块大小与重叠，要求 `chunk_overlap < chunk_size` |
-| `evaluation` | `metrics` `reference_field` | BLEU / ROUGE-L / 相似度 |
+| `evaluation` | `metrics` `reference_field` | BLEU / ROUGE-L / 相似度；`metrics` 自 L219 起接进 `/api/dataset/evaluate` 的省略支路（请求参数 > 配置键 > SDK 内置默认，出厂值与内置回落值同值 ⇒ 零漂移），`reference_field` 仍未接（账本 A274） |
 | `vector` | `backend` `dimension` | `faiss` 或 `chromadb` |
 | `multimodal` | `image_extensions` `audio_extensions` | 支持的文件扩展名 |
 | `benchmark` | `baseline_file` `metrics` | 基准文件与指标清单 |
