@@ -38,6 +38,9 @@ const spies = vi.hoisted(() => ({
   diffVersions: null as unknown as ReturnType<typeof vi.fn>,
   rollbackVersion: null as unknown as ReturnType<typeof vi.fn>,
   deleteVersion: null as unknown as ReturnType<typeof vi.fn>,
+  getVersion: null as unknown as ReturnType<typeof vi.fn>,
+  getVersionData: null as unknown as ReturnType<typeof vi.fn>,
+  getVersionHistory: null as unknown as ReturnType<typeof vi.fn>,
 }))
 
 vi.mock('../services/api', async (importOriginal) => {
@@ -53,6 +56,22 @@ vi.mock('../services/api', async (importOriginal) => {
   spies.diffVersions = vi.fn()
   spies.rollbackVersion = vi.fn().mockResolvedValue({ success: true })
   spies.deleteVersion = vi.fn().mockResolvedValue({ success: true })
+  spies.getVersion = vi.fn().mockResolvedValue({
+    version_id: 'v-1',
+    label: '首版',
+    description: 'd',
+    created_at: 't',
+    item_count: 12,
+    metadata: { source: 'seed.json' },
+  })
+  spies.getVersionData = vi.fn().mockResolvedValue({
+    items: [{ instruction: '租房押金多少', input: '', output: '押金一个月' }],
+  })
+  spies.getVersionHistory = vi.fn().mockResolvedValue({
+    history: [
+      { action: 'create', version_id: 'v-1', timestamp: '2026-10-10T00:00:00', detail: { label: '首版', item_count: 12 } },
+    ],
+  })
   return {
     ...actual,
     getVersions: spies.getVersions,
@@ -61,6 +80,9 @@ vi.mock('../services/api', async (importOriginal) => {
     diffVersions: spies.diffVersions,
     rollbackVersion: spies.rollbackVersion,
     deleteVersion: spies.deleteVersion,
+    getVersion: spies.getVersion,
+    getVersionData: spies.getVersionData,
+    getVersionHistory: spies.getVersionHistory,
   }
 })
 
@@ -142,5 +164,40 @@ describe('Versions 对比', () => {
     await waitFor(() => expect(spies.diffVersions).toHaveBeenCalledWith('v-1', 'v-2'))
     expect(await screen.findByText('8')).toBeInTheDocument()
     expect(screen.getByText('对比结果')).toBeInTheDocument()
+  })
+})
+
+describe('Versions 详情/数据/操作历史（L211 接线）', () => {
+  it('点详情：getVersion 被调用，metadata 以 JSON 渲出', async () => {
+    render(<Versions />)
+    await waitFor(() => expect(screen.getByText('首版')).toBeInTheDocument())
+
+    fireEvent.click(screen.getAllByRole('button', { name: /详情/ })[0])
+
+    await waitFor(() => expect(spies.getVersion).toHaveBeenCalledWith('v-1'))
+    expect(await screen.findByTestId('version-metadata')).toHaveTextContent('"source": "seed.json"')
+  })
+
+  it('点数据：getVersionData 被调用，条目渲进表格', async () => {
+    render(<Versions />)
+    await waitFor(() => expect(screen.getByText('首版')).toBeInTheDocument())
+
+    fireEvent.click(screen.getAllByRole('button', { name: /数据/ })[0])
+
+    await waitFor(() => expect(spies.getVersionData).toHaveBeenCalledWith('v-1'))
+    expect(await screen.findByText('租房押金多少')).toBeInTheDocument()
+    expect(screen.getByText('押金一个月')).toBeInTheDocument()
+  })
+
+  it('操作历史：getVersionHistory(50) 被调用，行渲出操作/版本/详情 JSON', async () => {
+    render(<Versions />)
+    await waitFor(() => expect(screen.getByText('首版')).toBeInTheDocument())
+
+    fireEvent.click(screen.getByRole('button', { name: /操作历史/ }))
+
+    await waitFor(() => expect(spies.getVersionHistory).toHaveBeenCalledWith(50))
+    expect(await screen.findByText('create')).toBeInTheDocument()
+    // detail 渲的是 JSON.stringify 现量（冒号后无空格），不是格式化 JSON
+    expect(screen.getByText(/"item_count":12/)).toBeInTheDocument()
   })
 })

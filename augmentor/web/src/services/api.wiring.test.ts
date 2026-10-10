@@ -19,21 +19,16 @@ import { describe, expect, it } from 'vitest'
 import * as api from './api'
 
 /**
- * 已知「有封装但页面还没用上」的函数
+ * 「有封装但页面还没用上」的白名单 —— **L211 起为空**
  *
- * 这 5 个是本次改动**之前**就存在的历史遗留（版本详情 / 版本数据 / 版本历史 /
- * 断点列表 / 图表生成），不是本次引入的缺口。
+ * 历史上这里挂着 5 个函数（getCheckpoints / visualizeData / getVersion /
+ * getVersionData / getVersionHistory）。它们全部已在对应页面（增强页断点列表、
+ * 分析页图表文件、版本页详情/数据/操作历史）真实接线，白名单清空。
  *
- * 写成显式白名单而不是「只检查本次新增的 8 个函数」，是为了让**将来**任何
- * 新增的未接线封装都能被立刻拦下 —— 只检查新函数的话，这个守门会随时间失效。
+ * 保留这个常量而不是删掉判据：将来任何新增的未接线封装仍会被最后一条用例
+ * 当场拦下 —— 只检查新增函数的话，这个守门会随时间失效。
  */
-const KNOWN_UNWIRED = [
-  'getCheckpoints',
-  'visualizeData',
-  'getVersion',
-  'getVersionData',
-  'getVersionHistory',
-]
+const KNOWN_UNWIRED: string[] = []
 
 /**
  * 去掉 import 语句后再扫描
@@ -66,12 +61,21 @@ const stripComments = (source: string) =>
  *
  * 不能直接 import 这些 `.tsx`：那会真的执行页面模块（antd 组件在 jsdom 下
  * 需要 matchMedia / ResizeObserver 等一堆 shim），而本测试只关心「名字出现过没有」。
+ *
+ * **页面测试文件不算「接线」**（L211 补）：`../pages/*.tsx` 的 glob 会把同目录的
+ * `*.test.tsx` 一起收进语料面，而组件测试的 `vi.mock` 替身表天然逐条写出服务函数名
+ * ——「页面没接，但测试 mock 了」会骗过扫描。L211 的缺陷注入实证：把 `getVersionHistory`
+ * 从页面源码整体摘掉，守门照样 4 passed。接线只认页面/组件/App 的真实源码。
  */
-const uiSources = {
+const rawUiSources = {
   ...import.meta.glob('../pages/*.tsx', { query: '?raw', import: 'default', eager: true }),
   ...import.meta.glob('../components/*.tsx', { query: '?raw', import: 'default', eager: true }),
   ...import.meta.glob('../*.tsx', { query: '?raw', import: 'default', eager: true }),
 } as Record<string, string>
+
+const uiSources = Object.fromEntries(
+  Object.entries(rawUiSources).filter(([name]) => !name.endsWith('.test.tsx'))
+)
 
 describe('服务层与页面的接线', () => {
   it('页面源码确实被读到了（否则下面的断言会空转通过）', () => {
@@ -82,6 +86,12 @@ describe('服务层与页面的接线', () => {
     expect(names).toContain('../App.tsx')
     expect(names.filter(name => name.startsWith('../pages/')).length).toBeGreaterThanOrEqual(10)
     expect(names.filter(name => name.startsWith('../components/')).length).toBeGreaterThanOrEqual(4)
+  })
+
+  it('语料面不含任何 *.test.tsx（L211：测试替身表不算接线）', () => {
+    // 若 glob 面再次被扩回含测试文件，本用例先红，指向上一条的过滤为什么存在。
+    expect(Object.keys(uiSources).filter(name => name.endsWith('.test.tsx'))).toEqual([])
+    expect(Object.keys(rawUiSources).some(name => name.endsWith('.test.tsx'))).toBe(true)
   })
 
   it('import 语句本身不算「已接线」（否则本守门形同虚设）', () => {
