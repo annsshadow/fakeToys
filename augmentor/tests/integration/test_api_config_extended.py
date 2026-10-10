@@ -235,11 +235,18 @@ class TestConfigEchoReaderSplitL184:
         与上一条的区别不是重复：上一条防「回显被摘」，这一条防「名单改了但回显没跟上」——
         也即本文件 L214 那次改写本身如果只做一半（把键从 ③ 挪进 `_TIER_12_ECHO` 却没
         给 GET 加字段），红点会落在这一格而不是别处。
+
+        L215 把这一格的范围从「四只 export/rag/multimodal 键」扩到「加上 enabled 族里
+        已接上管道阶段入口的四只」：`quality.enabled` / `dedup.enabled` 本来就在回显面里
+        （从「可见但无人读」升成「可见且真读」），`versioning.enabled` / `visualization.enabled`
+        是本轮新添的两只**只读**节。
         """
         client = _client(monkeypatch)
         body = client.get("/api/config").json()
         for key in ("export.formats", "rag.default_format",
-                    "multimodal.image_extensions", "multimodal.audio_extensions"):
+                    "multimodal.image_extensions", "multimodal.audio_extensions",
+                    "quality.enabled", "dedup.enabled",
+                    "versioning.enabled", "visualization.enabled"):
             section, _, field = key.partition(".")
             assert field in body.get(section, {}), f"{key} 已有正牌读者，GET /api/config 必须回显"
         assert body["multimodal"]["image_extensions"], "扩展名回显不许是空列表"

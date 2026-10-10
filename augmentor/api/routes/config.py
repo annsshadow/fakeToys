@@ -38,6 +38,11 @@ class ConfigResponse(BaseModel):
     vector: Dict[str, Any]
     rag: Dict[str, Any]
     multimodal: Dict[str, Any]
+    # L215：新增两只**只读**节。`versioning.enabled` / `visualization.enabled` 从今天起
+    # 有正牌读者（管道阶段入口），而这两节不在 `POST /api/config` 的写入清单里，
+    # 所以这里的语义是「操作者看得见生效值」，不是「这里可以改它」。
+    versioning: Dict[str, Any]
+    visualization: Dict[str, Any]
 
 
 class ModelsResponse(BaseModel):
@@ -133,6 +138,14 @@ async def get_config():
                 # 回显它们才谈得上「操作者看得见生效值」。
                 "image_extensions": p.config.multimodal.image_extensions,
                 "audio_extensions": p.config.multimodal.audio_extensions
+            },
+            # L215：两节整节都不在写入清单里，因此这里各回显**已接上读者的那一只键**。
+            # 不把 `visualization.types` 之类零读者的键塞进回显——那正是 A138 的幽灵形状。
+            "versioning": {
+                "enabled": p.config.versioning.enabled
+            },
+            "visualization": {
+                "enabled": p.config.visualization.enabled
             }
         }
     except Exception as e:

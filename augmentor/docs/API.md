@@ -238,8 +238,8 @@ $ python cli.py validate-config --config typo_config.yaml
 | | `rag.chunk_size`、`rag.chunk_overlap` | `augmentor/cli/commands/quality.py`（RAG 切块）、`api/routes/dataset_tools.py`（`/api/dataset/rag`） | 真控行为 |
 | | `rag.default_format` | `api/routes/dataset_tools.py`（请求未点名格式时按它切形） | 真控行为（L214） |
 | | `multimodal.image_extensions`、`multimodal.audio_extensions` | `api/routes/multimodal.py`（`scan` 的识别面、`formats` 的清单）；`process` **不读**——单条融合按文件内容解析，扩展名门只住在扫描侧（L214 量过之后撤掉了那里的字段） | 真控行为（L214） |
-| ② 仅回显（4） | `vector.enabled`、`vector.backend`、`rag.enabled`、`multimodal.enabled` | `GET /api/config` 原样回显，**不改任何行为** | 可见但未消费；`enabled` 属全仓 16 只零读者的一族（见下方订正），vector 两键见 L215 |
-| ③ 连回显都没有（3） | `vector.dimension`、`vector.storage_dir`、`vector.collection` | 无处消费 | 配置了不生效；见 L215 |
+| ② 仅回显（4） | `vector.enabled`、`vector.backend`、`rag.enabled`、`multimodal.enabled` | `GET /api/config` 原样回显，**不改任何行为** | 可见但未消费；这四只都是出厂 `false` 的 `enabled` 或向量库后端键，L215 只接了四只 `true` 键（见下方订正），它们留给 L216 |
+| ③ 连回显都没有（3） | `vector.dimension`、`vector.storage_dir`、`vector.collection` | 无处消费 | 配置了不生效；见 L216 |
 
 **权威口径（L214 定稿）**：① 档那几只键的读取序是**请求参数 &gt; 配置键 &gt; 内置默认**——请求体点名
 了 `formats` / `format` / `image_extensions` 就以它为准，没点名才落到配置，配置也没写才用各处理器自己的
@@ -247,7 +247,9 @@ $ python cli.py validate-config --config typo_config.yaml
 
 向量库这节要单独提醒（读 ②③ 档时别被骗）：`vector.backend` 回显成 `faiss` 只表示「配置里写了 faiss」，
 **不等于**向量库此刻在用 faiss——真正的后端入口是 `vector.build_vector_db` 的 `backend` 形参与 API 请求体。
-`vector.dimension` 配 768 还是 8 在今天的产物里一字不变（维度由所选嵌入模型决定）。这三键的读者在 L215。
+`vector.dimension` 配 768 还是 8 在今天的产物里一字不变（维度由所选嵌入模型决定）。这三键的读者在 L216
+（L214 那轮把它们许给了 L215，L215 实际只做四只出厂 `true` 的 `enabled`——承诺落空要在文档里改口，
+而不是悄悄顺延）。
 
 **`enabled` 这一族为什么不做成端点拒绝门（L214 实测，并在此订正一句自己写错的话）**：第一版这一段写的是
 「`enabled` 的既有语义是管道阶段开关，住在 `AugmentorPipeline`（与 `quality.enabled` / `dedup.enabled` 同族）」
@@ -258,15 +260,23 @@ $ python cli.py validate-config --config typo_config.yaml
 那就必须先量默认值再动：出厂 config 里 `quality` / `dedup` / `versioning` / `visualization` 四节是 `true`
 （接上即零行为漂移），其余十二节是 `false`（接上等于把当前始终在跑的行为关掉 = 对外破坏面，要单独拍）。
 端点拒绝门那一撤照旧成立，理由不变：`rag.enabled` / `multimodal.enabled` / `vector.enabled` 出厂全是 `false`，
-按字面判则随包 API 的这三项既有能力当场消失，13 支集成测试全红。⇒ 四只 true 键的消费点在 L215 的阶段入口，
-十二只 false 键立账待拍，端点面全部保持不变。
+按字面判则随包 API 的这三项既有能力当场消失，13 支集成测试全红。⇒ 四只 true 键的消费点**已在 L215 落地**
+（`quality.enabled` / `dedup.enabled` 进同步与异步两个增强入口的默认解析、
+`versioning.enabled` 与既有 `auto_snapshot` 串联、`visualization.enabled` 进出图阶段入口），
+十二只 false 键立账待拍，端点面全部保持不变。调用参数在 L215 之后仍是最高一档：
+`use_quality_check` / `use_dedup` 的默认值从 `True` 换成 `None` 哨兵，`None` 的意思是
+「调用方没点，交给配置」，不是「关掉」。
 （这一族不是新发现的病：Backlog **B5** 的 AST 尺子早已量出全仓 37 只死键，其中「16 格是各节的启用闸门」
 与本节这次 grep 的 16 只 `enabled` 同一读数 —— 本节写它是因为**文档自己曾经把 B5 已登记的事实写成反话**。）
 
 **分档的机器口径**：`tests/integration/test_api_config_extended.py` 的 `TestConfigEchoReaderSplitL184`
 钉住 ③ 档 3 键**不出现**在 `GET /api/config` 回显里（幽灵键防线）、① /② 档 9 键**必须**回显（防止回显面
-被顺手摘掉），另有 `test_consumed_keys_are_echoed` 反向钉「已有读者的键必须可见」；① 档每只键的**行为差**
-由 `tests/integration/test_api_config_consumption_l214.py` 逐键证明（同一端点、只换配置、产物必须不同）。
+被顺手摘掉），另有 `test_consumed_keys_are_echoed` 反向钉「已有读者的键必须可见」（L215 起名单从 4 键扩到
+8 键：加上 `quality.enabled` / `dedup.enabled` / `versioning.enabled` / `visualization.enabled`）；
+① 档每只键的**行为差**由 `tests/integration/test_api_config_consumption_l214.py` 逐键证明（同一端点、
+只换配置、产物必须不同），`enabled` 四只的行为差由 `tests/integration/test_pipeline_config_consumption_l215.py`
+逐键证明。`GET /api/config` 的**节清单**不手抄：`tests/integration/test_api_openapi_contract.py` 逐键核对，
+L215 新增两只只读节时红点就落在它身上。
 
 ### 跨源（CORS）
 
@@ -592,9 +602,20 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
   "export": {"default_format": "jsonl", "formats": ["jsonl", "llama_factory", "alpaca", "sharegpt", "chatml"]},
   "vector": {"enabled": false, "backend": "faiss"},
   "rag": {"enabled": false, "default_format": "llamaindex"},
-  "multimodal": {"enabled": false}
+  "multimodal": {"enabled": false, "image_extensions": [".jpg", ".jpeg", ".png", ".bmp", ".webp"], "audio_extensions": [".wav", ".mp3", ".flac", ".ogg", ".m4a"]},
+  "versioning": {"enabled": true},
+  "visualization": {"enabled": true}
 }
 ```
+
+> **末两节是只读节（L215）**：`versioning` / `visualization` 整节都不在
+> `POST /api/config` 的写入清单（`WRITABLE_SECTIONS` 七节）里，回显它们的意思是
+> 「操作者看得见生效值」，不是「这里可以改它」——要改只能改 `config.yaml`。
+> 这两节各只回显**已接上读者的那一只键**：同一节里的 `visualization.types` 至今零读者
+> （见下方 `enabled` 一段与账本 A267），把它塞进回显就是亲手造一格 A138 型幽灵面。
+>
+> 顺带订正一处本文件的陈旧：上面 `multimodal` 的两只扩展名键是 L214 才进回显面的，
+> 而这份示例当时没跟着改——本轮重读才抓到，形状与「回显面被钉而示例漂着」同源。
 
 ### `GET /api/models`
 
@@ -721,6 +742,15 @@ JSONL 进料交给转换器的读边解析成规范记录（`instruction` / `inp
 ```json
 {"success": true, "message": "增强任务已启动"}
 ```
+
+字段说明：
+
+- `use_quality` / `use_dedup`（L215 起是 `bool | 缺席`，缺席**不等于**关掉）：请求里给值就是
+  调用方点名，端点原样转发；**不写**这两只字段时管道读 `config.quality.enabled` /
+  `config.dedup.enabled`。权威序 请求参数 > 配置键 > 内置默认。出厂两键都是 `true`，
+  所以省略方拿到的结果与 L215 之前一致；随包前端两只字段总是显式送，也不受影响。
+  端点自己在缺席时补 `True` 是错的——那会让配置臂永远拿不到控制权。
+- `use_checkpoint`：仍是普通 `bool`，默认 `true`，没有配置对应键。
 
 ### `GET /api/augment/progress`
 
@@ -1166,6 +1196,10 @@ CLI 侧等价命令：`augmentor health-gate --input data/train_data.json --pass
 ```json
 {"charts": {"wordcloud": "visualizations/wordcloud.png", "length_distribution": "visualizations/length_distribution.png"}}
 ```
+
+`config.visualization.enabled` 为 `false` 时（L215 起这一键真的有读者）返回
+`{"charts": {}}` 而**不是** 4xx：这一族键是阶段开关，关掉的意思是「这一步别做」，
+不是「这个能力不存在」，所以响应形状保持不变。出厂是 `true`，随包行为不变。
 
 ---
 
