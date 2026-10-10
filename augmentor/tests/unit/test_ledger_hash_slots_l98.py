@@ -14,7 +14,8 @@ L97 **自己**的三批（`5655dd35f` + `4860e64a2` + `9dd0cfa6d`，主题各点
 本轮改造前全仓对哈希槽的读数能力是零：`test_doc_line_refs_l79` 数的是**占位符**有几处
 （`PLACEHOLDER_CEILING`），占位被填掉之后那一格就交回散文，从此无人再看。⇒ 六档判据：
 
-R1 槽内每笔哈希都能解析成 `git log --first-parent` 里的一个 commit；
+R1 槽内每笔哈希都能解析成 `git log --topo-order`（全祖先）里的一个 commit（L212 起，
+   原口径 `--first-parent` 对合并形状作了未明写的前提，见 `git_history` docstring）；
 R2 同一笔哈希不许被两轮同时记账（跨轮重复 ⇒ 复制粘贴漂移）；
 R3 槽内提交顺序单调：阅读顺序按时间递增，而 rev-list 的 0 是最新 ⇒ **序号严格递减**；
 R4 行文里声明的「三批 / 四批」与槽内哈希数量相等；
@@ -88,7 +89,7 @@ MEASURED_LOG_ONLY_ROUNDS = frozenset(
 MEASURED_PROGRESS_PLACEHOLDERS = 0
 
 #: R6 的白名单：**账本没错、commit 主题自己写错或压根没写轮号**的四格。
-#: 逐格理由（都按 `git log --first-parent` 的位置与该行声明的批数核过）：
+#: 逐格理由（都按 `git log --topo-order` 的位置与该行声明的批数核过，L212 换口径后重量仍四格）：
 #: `L83 / 3b0d513a6` 主题写着「L82 批②」，但它紧跟 L83 批① `ee3b12404`、且 L82 自己那行
 #: 已有三笔并声明「三批」⇒ 账本对、主题里的轮号错；其余三格主题压根不写轮号。
 MEASURED_SUBJECT_WHITELIST = frozenset({
@@ -144,13 +145,21 @@ def ordered(d: Dict) -> List:
 # --------------------------------------------------------------------------- git 真值
 
 def git_history() -> List[Tuple[str, str]]:
-    """`[(完整 sha, 主题)]`，按 `--first-parent` 从新到旧；读不到就抛，不给读数
+    """`[(完整 sha, 主题)]`，按**全祖先 topo-order** 从新到旧；读不到就抛，不给读数
 
     单次 `git log` 而不是每笔哈希一次 `git show`：53 笔逐个起进程会把这支守卫拖成
     整套里最慢的一支（Windows 上每次 spawn 都是几十毫秒）。
+
+    **L212：口径从 `--first-parent` 换成 `--topo-order`（全祖先）**。原口径隐含一个
+    未明写的前提——「账本批都沿 first-parent 主线走」。本机 main 的历史经一笔 graft
+    重建（`4f0cf03d1`），原 1582 笔循环史以 merge 第二父母挂进主线，first-parent 链
+    只剩 429 笔：槽内哈希解析不到、尺子按 ≥500 下限自曝不可靠，16 档全 ERROR。
+    判据要的是「槽内提交都在 HEAD 的真实历史里、且相对时序可信」，这与合并形状无关；
+    topo-order 保证父母晚于孩子，R3 单调序在**非合并快进**的批形状下仍然成立——
+    换口径后六档现量（15/24/15/69/占位 0/R6 四格白名单）逐格实测复现，一格没动。
     """
     try:
-        cp = subprocess.run(["git", "log", "--first-parent", "--format=%H\t%s", "HEAD"],
+        cp = subprocess.run(["git", "log", "--topo-order", "--format=%H\t%s", "HEAD"],
                             cwd=str(REPO_ROOT), capture_output=True, text=True,
                             encoding="utf-8", errors="replace", timeout=120)
     except OSError as exc:
@@ -161,7 +170,7 @@ def git_history() -> List[Tuple[str, str]]:
            in (raw.partition("\t") for raw in cp.stdout.splitlines())
            if re.fullmatch(r"[0-9a-f]{40}", sha)]
     if len(out) < 500:
-        raise RulerNotProven(f"first-parent 历史只有 {len(out)} 笔，不像本仓的真值")
+        raise RulerNotProven(f"全祖先历史只有 {len(out)} 笔，不像本仓的真值")
     return out
 
 
