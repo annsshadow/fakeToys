@@ -237,7 +237,7 @@ $ python cli.py validate-config --config typo_config.yaml
 | | `export.formats` | `api/routes/export.py`（`/api/data/export`、`/api/export/batch` 未点名格式时按它导出） | 真控行为（L214） |
 | | `rag.chunk_size`、`rag.chunk_overlap` | `augmentor/cli/commands/quality.py`（RAG 切块）、`api/routes/dataset_tools.py`（`/api/dataset/rag`） | 真控行为 |
 | | `rag.default_format` | `api/routes/dataset_tools.py`（请求未点名格式时按它切形） | 真控行为（L214） |
-| | `multimodal.image_extensions`、`multimodal.audio_extensions` | `api/routes/multimodal.py`（`process` / `scan` 的识别面、`formats` 的清单） | 真控行为（L214） |
+| | `multimodal.image_extensions`、`multimodal.audio_extensions` | `api/routes/multimodal.py`（`scan` 的识别面、`formats` 的清单）；`process` **不读**——单条融合按文件内容解析，扩展名门只住在扫描侧（L214 量过之后撤掉了那里的字段） | 真控行为（L214） |
 | ② 仅回显（4） | `vector.enabled`、`vector.backend`、`rag.enabled`、`multimodal.enabled` | `GET /api/config` 原样回显，**不改任何行为** | 可见但未消费；`enabled` 三键归管道阶段（见下），vector 两键见 L215 |
 | ③ 连回显都没有（3） | `vector.dimension`、`vector.storage_dir`、`vector.collection` | 无处消费 | 配置了不生效；见 L215 |
 
