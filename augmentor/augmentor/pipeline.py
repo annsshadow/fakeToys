@@ -58,6 +58,10 @@ class AugmentorPipeline:
         """
         self.config = config or load_config(config_path)
         self._lock = threading.Lock()
+        # L206：失败明细的出口。改前它是失败分支里惰性首建的，而**全仓零读者**
+        # ——整批里哪些条目失败了、为什么失败，除了 logger.error 之外没有任何
+        # 可编程出口，而那段注释明明写着「以便后续分析和重试」。
+        self._process_errors: List[Dict] = []
         self._response_cache_dir = response_cache_dir
         self._response_cache_ttl = response_cache_ttl
         self._response_cache_max_bytes = response_cache_max_bytes
@@ -264,8 +268,8 @@ class AugmentorPipeline:
                 "item_preview": str(item)[:100] if item else ""
             }
             with self._lock:
-                if not hasattr(self, '_process_errors'):
-                    self._process_errors = []
+                # L206：列表在 __init__ 就建好，这里只 append（仍持锁：
+                # 多工作线程并发 append 到同一个 list）。
                 self._process_errors.append(error_info)
             result_queue.put((idx, False, []))
     
@@ -289,8 +293,14 @@ class AugmentorPipeline:
             use_parallel: 是否使用并行处理
         
         Returns:
-            处理报告
+            处理报告。含 `errors` 键（L206）：本批失败条目的明细清单
+            （下标 / 异常类型 / 消息 / 条目预览）；无失败时是空列表。
         """
+        # L206：每次运行前清空。改前不清 ⇒ 同一个实例跑第二批时，第一批的
+        # 错误记录还留在里面，报告于是混进与本次无关的错。
+        with self._lock:
+            self._process_errors = []
+
         # 加载输入数据
         with open(input_file, 'r', encoding='utf-8') as f:
             items = json.load(f)
@@ -402,6 +412,16 @@ class AugmentorPipeline:
                     
                 except Exception as e:
                     logger.error(f"处理失败: {e}")
+                    # L206：串行支路此前只打日志、**不记 `_process_errors`** ⇒
+                    # `use_parallel=False`（或只剩一条数据）时 `errors` 恒为空，
+                    # 「失败明细有出口」这件事只在并行档成立。两支出同一份明细。
+                    with self._lock:
+                        self._process_errors.append({
+                            "index": idx,
+                            "error_type": type(e).__name__,
+                            "message": str(e),
+                            "item_preview": str(item)[:100] if item else "",
+                        })
                     if use_checkpoint:
                         self.checkpoint_manager.update_progress(idx, False)
         
@@ -445,6 +465,9 @@ class AugmentorPipeline:
             "quality_check": use_quality_check,
             "dedup": use_dedup,
             "parallel": use_parallel,
+            # L206：失败明细出得来了。放在 progress 之前——报告形键集中在
+            # 一起，`progress` / `memory_monitor` 是运行期诊断，错误是结果。
+            "errors": list(self._process_errors),
             "progress": self.checkpoint_manager.get_progress() if use_checkpoint else None,
             "memory_monitor": {
                 "peak_usage_mb": memory_monitor.get_peak_usage_mb(),
