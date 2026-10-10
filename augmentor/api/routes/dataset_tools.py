@@ -887,6 +887,8 @@ async def dataset_rag(request: RagRequest):
             # > langchain。`enabled` 不在这道判：端点是调用方点名要的独立能力，拿配置里的
             # false 拒绝一次显式调用属于改契约而不是消费配置（实测：13 支既有测试当场红）。
             # 全仓 16 只 `config.*.enabled` 在产品代码里零读者 ⇒ 消费点要从阶段入口重建，见 L215。
+            # （L217 的读者普查把这句更新成现量：16 只里还剩 10 只零读者，`multilingual.enabled`
+            #  已由翻译端点接走，逐键名单住在 `test_config_reader_census_l217.py`。）
             fmt = request.format or rag_config.default_format or "langchain"
             records = RAGFormatter(
                 chunk_size=rag_config.chunk_size,

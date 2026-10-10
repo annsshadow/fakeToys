@@ -80,8 +80,11 @@ TIER_OPAQUE = "opaque"              # 压根解析不到
 #: opaque **9 → 10**（L198 的 `sorted(DOCS.items())` 值位）、ids-derived 8 一格未动。
 #: 档位和 +5 而 l97 的 CALLS +6：差在 L199 有一对**叠在同一个用例上**的装饰器，
 #: l97 按装饰器计数、本名册按展示键计数（同一用例只留一格）——两边口径不同，都已实测。
+#: **L217 回填（plain 54 → 57，其余三档未动）**：test_config_reader_census_l217.py 的三处
+#: parametrize 值位全是模块级字面量容器（`_MUST_BE_DIRECT` / `_MUST_BE_ALIAS_ONLY` /
+#: `_LOADER_CONSUMED`，Scope 解析得到元素且皆可见常量）⇒ 三格入 plain；档位和 +3 = 盲面 +3。
 MEASURED_TIERS: Dict[str, int] = {
-    TIER_PLAIN: 54,
+    TIER_PLAIN: 57,
     TIER_DERIVED: 36,
     TIER_IDS_DERIVED: 8,
     TIER_OPAQUE: 10,
@@ -138,8 +141,12 @@ MEASURED_HAZARD_ROSTER: Dict[Tuple[int, int], frozenset] = {
 #: 值位是**模块级名字引用** `PROMISED` 而非内联字面量 ⇒ 计入盲面，plain 档 52 → 54，
 #: 其余三档未动（档位和 = 盲面，两处独立闭合）。
 #: **L204 回填（101 → 103，+2）**：两支新函数各一处无 ids 参数化、非叠置 ⇒ 名册 +2。
-MEASURED_BLIND_TESTS = 103
-MEASURED_BLIND_SEEN = 103
+#: **L217 回填（103 → 106，+3）**：test_config_reader_census_l217.py 的三支新函数
+#: （`test_direct_chains_are_seen` / `test_alias_readers_are_seen` /
+#: `test_citation_points_at_the_reading_line`）各一处无 ids 参数化、互不叠置 ⇒ 名册 +3，
+#: 与 plain 档 +3 独立闭合。
+MEASURED_BLIND_TESTS = 106
+MEASURED_BLIND_SEEN = 106
 #: 现量：整支豁免（该用例的每一支 parametrize 都写了字面 ids）的用数
 MEASURED_EXEMPT_SITES = 17
 #: 动态面至少要采到这么多条，否则「没有风险对象」只是没采到（A171 口径：数不到不判干净）

@@ -359,7 +359,7 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
 
 ### 响应契约
 
-**每个端点都声明了 `response_model`**（共 73 个），因此 `/openapi.json` 里不存在
+**每个端点都声明了 `response_model`**（共 75 个），因此 `/openapi.json` 里不存在
 「无 schema 的 200 响应」。这条由 `tests/integration/test_api_openapi_contract.py`
 双向守门：既要每个端点都声明契约，也要**每个已声明契约的端点都真实存在**
 （防止文档里留着一个早就删掉的端点）。
@@ -390,7 +390,7 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
 
 ## 端点总览
 
-按 OpenAPI tag 分组，共 **73** 个端点。
+按 OpenAPI tag 分组，共 **75** 个端点。
 
 ### audit（1）
 
@@ -427,7 +427,7 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
 | `GET` | `/api/demo/data` | 内置演示数据集（**裸数组**） |
 | `GET` | `/api/visualize/{filename}` | 生成可视化图表 |
 
-### dataset（16）
+### dataset（18）
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
@@ -438,18 +438,21 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
 | `POST` | `/api/dataset/evaluate` | 生成文本指标评估（BLEU / ROUGE-L / 相似度） |
 | `POST` | `/api/dataset/features` | 字段特征检测 |
 | `POST` | `/api/dataset/impact` | 增强前后影响评估（四项增益） |
+| `POST` | `/api/dataset/language-profile` | 语言分布画像（按 `config.multilingual.*` 生效值，不打模型） |
 | `POST` | `/api/dataset/merge` | 合并数据集 |
 | `POST` | `/api/dataset/rag` | 转换为 RAG 格式 |
 | `POST` | `/api/dataset/sample` | 数据集采样（`method="stratified"` 时按 `stratify_key` 分组） |
 | `POST` | `/api/dataset/search` | 数据集搜索 |
 | `POST` | `/api/dataset/semantic-search` | 语义相似检索（按 `config.vector.*` 生效值） |
 | `POST` | `/api/dataset/split` | 分割数据集（`stratify` 分层 / `stratify_key` 选字段 / `shuffle` 控段内次序） |
+| `POST` | `/api/dataset/translate` | 批量翻译数据集（受 `multilingual.enabled` 闸控制，挂鉴权） |
 | `POST` | `/api/dataset/stats` | 数据集统计 |
 | `POST` | `/api/dataset/validate` | 数据集验证 |
 | `GET` | `/api/dataset/vector-status` | 向量库状态（是否已建、多少条） |
 
 > `dataset` 分组的约定：**只读分析类**（stats / validate / search / compare /
-> features / auto-config / impact / evaluate / semantic-search / vector-status）内联返回完整结果；**写盘变换类**（convert / merge /
+> features / auto-config / impact / evaluate / semantic-search / vector-status /
+> language-profile）内联返回完整结果；**写盘变换类**（convert / merge /
 > sample / split / aggregate / rag）必须给 `output_path`，响应只回传「写到哪、
 > 写了多少」，不回传数据本身。
 >
@@ -488,6 +491,14 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
 > （`storage_dir=None`），`vector-status` 走 `load()`，而 `FAISSDB` 的构造与 `load()` 都不写盘。
 > 会写盘的是 `persist()`，它只在 `vector.enabled=true` 的建库阶段跑，而那条路只能由已挂鉴权的增强端点
 > 触发。至于「构造即落盘」的后端（chromadb），它在到达文件系统之前就被能力闸拒成 400。
+>
+> `language-profile` / `translate`（L217）是 `augmentor/multilingual.py` 第一次在产品侧被实例化——
+> 在那之前 `MultilingualSupport` 的调用者只有测试，`multilingual` 四键全部只写不读。四只键的落点：
+> `supported_langs` 是构造参数（画像的清单外集合、翻译的准入名单），`default_target_lang` 是请求
+> 省略 `target_lang` 时的生效值（权威序沿用 L214 的**请求参数 > 配置键 > 内置默认**），
+> `translate_batch_size` 是一次提交的条数上界，`enabled` 是翻译那条按 token 计费路径的闸。
+> 鉴权分档同样是判断而非照抄：画像是纯正则、不花钱 ⇒ 只读白名单；翻译逐条打模型 ⇒ 与
+> `/api/augment/start` 同档挂 `verify_api_key`。
 
 ### export（4）
 
@@ -576,7 +587,7 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
 
 ---
 
-### dataset 数据集工具（16）
+### dataset 数据集工具（18）
 
 | 方法 | 路径 | 说明 | 人读字段提示 |
 | --- | --- | --- | --- |
@@ -596,6 +607,8 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
 | `POST` | `/api/dataset/rag` | 转换为 RAG 格式 | **写盘变换类**：同上。`format` 省略时落 `config.rag.default_format`（出厂默认 `langchain`），响应里的 `format` 是**生效值**（L214）。 |
 | `POST` | `/api/dataset/semantic-search` | 语义相似检索 | 只读分析（L216）。按 `config.vector.*` 的生效值在**内存**建索引再检索，不落盘；`top_k` 非正整数 400（判据住在 `VectorDB.search`，不在路由里重复一遍）。`text_key` 换的是参与嵌入的字段，默认 `instruction`。 |
 | `GET` | `/api/dataset/vector-status` | 向量库状态 | 只读（L216）。`exists` / `count` 读的是 `config.vector.storage_dir` 里那份持久化索引；`enabled` 是「增强结束时自动建库」那只闸的生效值，两者分开设（`enabled=false` + `exists=true` = 上轮开着建过、这轮关了闸）。`backend` 是配置选择，`faiss-cpu` 没装时的引擎退化看 `/api/system/dependencies`。配 `chromadb` 时回 **400**：那侧没有 `persist`/`load` 面，闸在构造之前，所以既不会 500 也不会凭空建目录。 |
+| `POST` | `/api/dataset/language-profile` | 语言分布画像 | 只读分析（L217）。纯正则检测，**不打模型、不落盘**，所以 `multilingual.enabled` 关掉也照常可用（闸只管花钱那条路）。`supported_langs` / `default_target_lang` 回显的是生效值；`outside_supported` 里出现 `mixed` 不是错误——它是检测标签而非语言码。 |
+| `POST` | `/api/dataset/translate` | 批量翻译数据集 | **挂鉴权**（L217）：逐条调用模型后端，按 token 计费，与 `/api/augment/start` 同档——判据是「会不会替调用方花钱」，不是 HTTP 动词。`multilingual.enabled=false`（出厂值）直接 400，且闸在**读盘之前**。`target_lang` 省略时落 `default_target_lang`；`batches` / `batch_size` 一起才看得出分批确实发生（飞行中的翻译任务数被压到 `min(批宽, max_workers)` 以内）。 |
 
 ### system 运维面（13）
 
