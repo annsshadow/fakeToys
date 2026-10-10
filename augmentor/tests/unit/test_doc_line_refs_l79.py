@@ -187,7 +187,7 @@ FLOOR = {
 #: **L84 回填（本轮全部是「新增引用恰好都带了名字锚点」，无一是代码变坏，也无一处删改）**：
 #: 架构文档 `file_tokens` 219 → **221**、`file_unique` 175 → 177（§6 新增那一格点名两份产品
 #: 文件），`line_refs` 48 与 `code_but_no_name_match` 37 **未动**。账本 `line_refs` 287 →
-#: **292**（+5 全部来自 A143 那一行，且**五条全落 `name_hit`**：`api/routes/export.py:153` /
+#: **292**（+5 全部来自 A143 那一行，且**五条全落 `name_hit`**：`api/routes/export.py` 的 list_export_formats（L214 预览节接线后降名锚） /
 #: `augmentor/cli/parser.py:50` / `augmentor/export.py:235` / augmentor/export_enhanced.py 的 ExportFormat（原 27 行，L167 插入后降名锚） /
 #: `tests/integration/test_cli_merged_commands.py:1081`）、`file_tokens` 1218 → **1236**（+18：
 #: 进度行、L84 日志块、A143 与 B2 两处注解；其中 5 个是 `Temp/l84q/` 探针名，落 `scratch_artifact`
