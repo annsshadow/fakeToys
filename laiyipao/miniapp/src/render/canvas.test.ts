@@ -290,6 +290,65 @@ describe('BattleRenderer 无头渲染', () => {
       expect(() => r.draw(TICK_MS)).not.toThrow()
     }
   })
+
+  it('rAF 帧循环每帧重绘并重注册下一帧 —— 链路断裂的症状是画面停在首帧', () => {
+    const e = mkEngine()
+    const r = makeRenderer(e)
+    e.start()
+
+    // 生产（H5 与小程序）走的是 rAF 路径；node 测试环境没有 rAF，
+    // 渲染器降级到 drawTimer，所以上面的用例守不住这半条路。
+    // 这里装一个可手动驱动的假 rAF，守的是「帧循环本身」：
+    //   1. 每帧都要真的 draw（否则画面静止、逻辑照跑）
+    //   2. 每帧末尾都要重新注册下一帧（canvas.ts 的
+    //      `this.rafId = requestAnimationFrame(frame)`）
+    // 第 2 条此前的守卫是零：那行一旦被删或挪到 draw 之前，
+    // 无头测试（直接调 draw）与 drawTimer 路径全部照绿，
+    // 而真机表现是「战斗在打、画面冻在第一帧」——HUD 靠独立的
+    // logicTimer 照样更新，极具迷惑性。
+    const pending: Array<(ts: number) => void> = []
+    let nextId = 1
+    const g = globalThis as unknown as {
+      requestAnimationFrame?: unknown
+      cancelAnimationFrame?: unknown
+    }
+    const prevRaf = g.requestAnimationFrame
+    const prevCaf = g.cancelAnimationFrame
+    g.requestAnimationFrame = (cb: (ts: number) => void) => {
+      pending.push(cb)
+      return nextId++
+    }
+    g.cancelAnimationFrame = () => {}
+
+    try {
+      r.start(() => {})
+      // start() 应当注册首帧
+      expect(pending.length).toBe(1)
+
+      const before = canvas.__ctx.calls.length
+      // 手动驱动 5 帧。ts 从 1*16 起给非零递增值，
+      // 避开 lastTs=0 的初始化帧（dt 会是 0）。
+      for (let i = 1; i <= 5; i++) {
+        const cb = pending.shift()
+        expect(cb, `第 ${i} 帧没有待执行回调 —— 上一帧漏了重新注册`).toBeTruthy()
+        cb!(i * 16)
+        expect(
+          pending.length,
+          `第 ${i} 帧执行后没有重新注册下一帧 —— 画面将在此冻结`,
+        ).toBeGreaterThanOrEqual(1)
+      }
+
+      // 5 帧每帧都产出绘制指令（背景填充至少一次/帧）
+      const fills = canvas.__ctx.calls
+        .slice(before)
+        .filter((c) => c.startsWith('fillRect')).length
+      expect(fills).toBeGreaterThanOrEqual(5)
+    } finally {
+      r.stop()
+      g.requestAnimationFrame = prevRaf
+      g.cancelAnimationFrame = prevCaf
+    }
+  })
 })
 
 // ==================== 分支覆盖：假引擎直驱 ====================
