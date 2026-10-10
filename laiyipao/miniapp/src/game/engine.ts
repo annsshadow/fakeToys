@@ -1803,18 +1803,26 @@ export class BattleEngine {
    *
    * # 为什么不改协议去表达「弃牌张数」
    *
-   * `card_picks` 是 `number[]`，服务端校验 `len <= WaveCount` 且每项 `>= -1`。
+   * `card_picks` 是 `number[]`，服务端校验 `len <= WaveCount` 且每值落在
+   * `validCardPick` 接受的区间里（`internal/domain/battle_collections.go`，
+   * 与本文的 PICK_* 由 formula_vectors.json 双向锁住）。
    * 改成变长序列要动跨端契约与历史战报兼容性；而弃牌每波**最多 1 次**
    * （`DISCARD_PER_WAVE = 1`），所以「有没有弃过」这一个 bit 就够。
    *
-   * 编码：`-2 - handIdx` 表示「本波先弃过一张，然后取第 handIdx 张」。
-   * handIdx 是**弃牌之后**的手牌下标（弃牌移除的是更靠前的一张），
-   * 与 `takeCard` 内部取下标的时机一致。
+   * # 编码（第 66 轮定稿，与文件头 PICK_* 常量一一对应）
    *
-   * ⚠️ 下界必须是 -2 - (handMax-1)。当前每波 3 张牌（rollWaveCards 固定
-   * 产 skill/attribute/mechanic 各 1），handIdx ∈ [0,2] → 最负 -4。
-   * 服务端 `p < -1` 的拒绝对本编码仍然成立（-2..-4 全被拒）。
-   * 所以**必须同步放宽服务端下界到 -4**，否则正常对局会被 422。
+   * - 普通取牌：`handIdx`（0/1/2）
+   * - 整波跳过：`-1`
+   * - 弃一张后取牌：`-(PICK_DISCARD_BASE + handIdx)` = -3..-5
+   * - 弃一张后跳过整波：`-(PICK_DISCARD_SKIP_BASE + handIdx)` = -6..-8
+   *
+   * handIdx 是**弃牌之后**的手牌下标（弃牌移除的是更靠前的一张），
+   * 与 `takeCard` 内部取下标的时机一致。两个 BASE 相差 3（= 手牌上限），
+   * 保证两个负区间相邻而不重叠；`PICK_MIN = -8` 即服务端 CardPickMin。
+   *
+   * ⚠️ **第一版编码是 `-2 - handIdx`（下界 -4）**，后因要表达「弃牌后
+   * 跳过整波」改为两个 BASE。这段历史留给下一个读代码的人：**不要再把
+   * 编码改回单基址** —— 那是为了让「有没有弃过」这一个 bit 够用而付的账。
    */
   private recordPick(handIdx: number): void {
     if (this.cardPicks.length <= this.waveIndex) {
