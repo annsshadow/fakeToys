@@ -326,6 +326,8 @@ function fakeEnemy(over: Partial<Enemy> = {}): Enemy {
     slowedMs: 0,
     amplifyPermille: 0n,
     knockback: 0n,
+    armorShredMs: 0,
+    armorShredPermille: 0n,
     dead: false,
     spawnProgress: 1,
     hitFlashMs: 0,

@@ -95,6 +95,9 @@ func (s *Server) Register(app *fiber.App) {
 	mastery := v1.Group("/mastery", requireUser(s.Svc))
 	mastery.Get("/", s.getMastery)
 	mastery.Post("/allocate", s.allocateMastery)
+	// 重铸专精：消耗 1 件 mastery_reset 道具，清空已点亮节点。
+	// 挂在 /mastery 组（带 requireUser），因为要消耗**玩家自己的**道具。
+	mastery.Post("/reset", s.resetMastery)
 
 	tasks := v1.Group("/tasks", requireUser(s.Svc))
 	tasks.Get("/", s.tasks)
@@ -267,7 +270,7 @@ func (s *Server) myStars(c *fiber.Ctx) error {
 	}
 	return c.JSON(fiber.Map{"stars": stars})
 }
-//
+
 // 失败一律走 `failErr`，由它把 service 的哨兵错误翻成合适的 HTTP 码
 // （余额不足 / 未拥有 / 已满级 → 400，不泄漏「该技能存在但你没拥有」）。
 func (s *Server) upgradeSkill(c *fiber.Ctx) error {
@@ -469,6 +472,33 @@ func (s *Server) allocateMastery(c *fiber.Ctx) error {
 		return failErr(c, err)
 	}
 	return s.getMastery(c)
+}
+
+// resetMastery 重铸专精：消耗 1 件 mastery_reset 道具清空已点亮节点。
+//
+// 回执回显**清掉后的真实状态**（复用 getMastery 的字段形状）+ 本次清掉节点数，
+// 让客户端拿到的不是「操作成功」四个字，而是可直接刷 UI 的完整状态。
+func (s *Server) resetMastery(c *fiber.Ctx) error {
+	cleared, err := s.Svc.ResetMastery(c.Context(), userIDFrom(c))
+	if err != nil {
+		return failErr(c, err)
+	}
+	pts, nodes, err := s.Svc.LoadMastery(c.Context(), userIDFrom(c))
+	if err != nil {
+		return failErr(c, err)
+	}
+	extra, err := s.Svc.ExtraSlots(c.Context(), userIDFrom(c))
+	if err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(fiber.Map{
+		"reset_cleared": cleared,
+		"points":        pts,
+		"nodes":         nodes,
+		"layer_limit":   domain.PerLayerPickLimit,
+		"base_slots":    domain.BaseSkillSlots,
+		"total_slots":   domain.BaseSkillSlots + extra,
+	})
 }
 
 func (s *Server) tasks(c *fiber.Ctx) error {

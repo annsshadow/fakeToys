@@ -31,7 +31,7 @@ cd laiyipao/server
 export DATABASE_URL="postgres://postgres@127.0.0.1:5432/laiyipao?sslmode=disable"
 export BOOTSTRAP_ADMIN_PASS="admin12345"   # 少于 10 位会被拒绝引导
 
-go run ./cmd/migrate   # 建表（13 个 goose 迁移，48 张业务表 + 93 索引）
+go run ./cmd/migrate   # 建表（13 个 goose 迁移，49 张业务表）
 go run ./cmd/seed      # 写入游戏内容（首次必须执行）
 go run ./cmd/api       # 监听 :8080
 ```
@@ -85,7 +85,7 @@ pwsh -NoProfile -File scripts/e2e.ps1
 | **I-1** | 元素反应矩阵 | 5 元素 × 7 反应链。**反应伤害中攻击力权重结构性 ≤30%** —— 堆金币永远无法替代正确搭配 |
 | **I-2** | 插槽与热量 | 「三选一」不再是无脑增益。给选择装上代价，弃牌回热量，热量满则 2s 无法释放 |
 | **I-3** | 专精树 + 装备契合度 | 每层 4 选 2 且需先点亮前层；装备同系 ×3、异系 ×1 反应加成，逼玩家成套配 |
-| **I-4** | 地形机制关 | 5 类可交互地形（油桶/潮汐闸/旋转风障/崩塌掩体/蓄能塔），41% 的关卡使用 |
+| **I-4** | 地形机制关 | 5 类可交互地形（油桶/潮汐闸/旋转风障/崩塌掩体/蓄能塔），25% 的关卡使用 |
 | **I-5** | 防线值守 | 构筑固化成快照，他人**本地模拟**挑战。服务端不跑战斗引擎 |
 | **I-6** | 回放哈希验真 | 战斗完全确定性。任何人可取回种子重放，**证伪**可疑分数 |
 | **I-7** | 构筑评分 | 主指标不是「战力 9999」，而是元素覆盖/反应链/专精/契合度五维 + 短板建议 |
@@ -416,7 +416,7 @@ Go:  if resElement == "" { resElement = dominant(def) } // '' 回退   → 真�
 
 | 类别 | 数量 |
 |---|---|
-| 敌人 | 22（含 110 条五维抗性） |
+| 敌人 | 21（含 105 条五维抗性） |
 | 技能 | 24 基础 + 18 合成 = 42 |
 | 合成配方 | 18 |
 | 装备 / 宝石 / 皮肤 | 18 / 8 / 6 |
@@ -508,14 +508,14 @@ Go:  if resElement == "" { resElement = dominant(def) } // '' 回退   → 真�
 
 - **server**：config / domain / battle / power / seeder / httpapi / service 全部实现，`gofmt` 无差异，`go vet` 干净
 - **miniapp**：9 页面（首页/关卡/战斗/背包/专精/签到/排行/验真/我的）+ TS 战斗内核 + Canvas 渲染层
-- **admin**：10 视图 + 玩法文档站；登录守卫、审计日志、货币净流入监控、胜率异常告警
+- **admin**：11 视图 + 玩法文档站；登录守卫、审计日志、货币净流入监控、胜率异常告警
 
 ### 验证状态
 
 | 项 | 状态 |
 |---|---|
-| Go 测试 | **181** 用例全绿（153 个 Test 函数，含子测试） |
-| TS 测试 | **465** 用例全绿（+2 端到端，需起服务） |
+| Go 测试 | **341** 用例全绿（259 个 DB 依赖测试跳过，需 PostgreSQL；详见§3） |
+| TS 测试 | **1201** 用例全绿（miniapp 951 + admin 250，+2 端到端需起服务） |
 | `go vet` / `gofmt -l` | 干净 |
 | `vue-tsc`（admin + miniapp） | 0 error |
 | `e2e.ps1` 19 步 | 全通过 |
@@ -537,12 +537,12 @@ cd server && go run ./cmd/vectors          # 重新生成
 cd server && go run ./cmd/vectors -check   # 只校验是否最新（CI 用）
 ```
 
-产出两个文件：
+产出三个文件：
 
 | 文件 | 内容 | 谁断言 |
 |---|---|---|
 | `testdata/reaction_specs.json` | 反应链数值表（7 条） | 客户端 `reaction_contract.test.ts` |
-| `testdata/smoke_level1.json` | **第 1/10/25/50/75/100 关**真实关卡 + 用到的敌人 + 全部技能 | 客户端 `engine.smoke.test.ts`、`difficulty.test.ts` |
+| `testdata/smoke_levels.json` | **全部 100 关**真实关卡 + 用到的敌人 + 全部技能 | 客户端 `engine.smoke.test.ts`、`difficulty.test.ts` |
 | `testdata/level_seeds.json` | 100 关种子表 | 客户端 `elements.test.ts`（对字面量断言） |
 
 三条规则：
@@ -942,9 +942,9 @@ cd admin && npm run build && npm run size:check  # 超预算则退出码 1
 
 | | 数值 |
 |---|---|
-| **首屏 JS** | 153 KB（gzip 60 KB），2 个 chunk |
-| **首屏 CSS** | 8 KB（gzip 2 KB），27 个 CSS 里只有 1 个进首屏 |
-| **首屏合计** | **161 KB（gzip 62 KB）** |
+| **首屏 JS** | 160 KB（gzip 61 KB），3 个 chunk |
+| **首屏 CSS** | 8 KB（gzip 2 KB），28 个 CSS 里只有 2 个进首屏 |
+| **首屏合计** | **168 KB（gzip 64 KB）** |
 | **预算** | **220 KB（gzip 80 KB）** —— 定在 `admin/scripts/size-report.mjs` 的 `BUDGET` |
 
 > 预算留了约 37% 余量，正常加功能不会误报；而一次「整包注册」级别的回归
@@ -981,7 +981,7 @@ cd admin && npm run build && npm run size:check  # 超预算则退出码 1
 3. **防线挑战的胜负由客户端裁决** —— 服务端不跑战斗引擎（省掉两套引擎同步的代价），挑战在挑战者设备上用同一套引擎本地模拟攻方，结果上报后服务端只校验「次数未超限 / 护盾已过期 / 资源守恒」。因此**服务端无法独立验证胜负**，后台「防线值守」页对接近 100% 或 0% 的异常胜率做告警。
 4. **渲染层像素级视觉未在真机验证** —— 验证在无头浏览器完成（`canvas.test.ts` 用打桩上下文覆盖绘制路径），且浏览器标签页隐藏时 rAF 会被冻结、定时器被节流到 ~1Hz，因此无法在本机观察战斗推进的视觉表现。**需要在真机或可见窗口下补一次人工验收。**
 5. **通关速度不进分数** —— 星级与结算裁剪都只对「漏怪率」敏感。速率裁剪的锚点 ScoreFullAtSec = 60s 远低于实际通关时长（146~594s），所以它**从不生效**。要让「打得快」进分数需要按关卡预测通关时间，而实测「总血量 → 通关时长」的相关性很弱（L80 是 492 DPS、L70 是 372，因为时长主要由刷怪节奏与敌人行走时间决定，不是血量），**未做**。
-6. **内容表平衡缩放是一刀切** —— EnemyHpScale = 8 / SkillProjectileScale = 4 对全部 22 个敌人、42 个技能同倍率生效。实测第 1/10 关「全清零漏、3 星」（作为新手关合理），第 100 关耗时 594s（3.06 倍，有压力）。但**章节内的细分曲线仍未人工标定** —— 中期关卡靠波次数（5→10）与 ase_hp（1000→10000）自然形成。difficulty.test.ts 守的是「全程趋势递增」与「新手关能赢」这两条粗边界。**逐关调优未做。**
+6. **内容表平衡缩放是一刀切** —— EnemyHpScale = 8 / SkillProjectileScale = 4 对全部 21 个敌人、42 个技能同倍率生效。实测第 1/10 关「全清零漏、3 星」（作为新手关合理），第 100 关耗时 594s（3.06 倍，有压力）。但**章节内的细分曲线仍未人工标定** —— 中期关卡靠波次数（5→10）与 ase_hp（1000→10000）自然形成。difficulty.test.ts 守的是「全程趋势递增」与「新手关能赢」这两条粗边界。**逐关调优未做。**
    （第 128 轮起：seeder 落库的是**缩放后**的 hp/shield_hp/projectile_speed，
    与 `LoadGameConfig` 的下发值一致 —— 后台/分析读 `enemies`/`skills` 表
    看到的就是玩家游戏里的数值，`seed_scale_test.go` 钉住该不变量。
@@ -1042,17 +1042,31 @@ cd admin && npm run build && npm run size:check  # 超预算则退出码 1
 14. ~~元素系数的惩罚区间在 200~800‰~~ **假设已被否证，改为「严格单调 + 1000‰ 后是纯浪费」** —— 原先写着「元素 DoT 打在已过防线的敌人身上就浪费掉了」，并据此把「改 DoT 结算时机」列为核心系统待办。**代码里没有这个机制**：`damage.ts:resolveHit` 算出的 `elementDmg` 在**同一次调用内**折进 `critPart` → `total` → 立刻扣 `def.hp`，没有延迟队列、没有「下个 tick 才结算」、没有与漏怪阈值的交互。第二条假设「降系数 → 反应变弱 → 冻结/眩晕变少 → 更多敌人走到防线」同样被否证：`engine.ts:1022` 的时长取自**反应表常量** `spec.statusDurationMs`，与 `elementCoefPermille` 无关。**实测曲线是严格单调的**（前 40 关，默认构筑）：200‰→869 漏、400‰→378、700‰→60、1000‰→19、1500‰→1、1800‰→0。没有凹陷、没有惩罚区间 —— 「惩罚区间」这个说法把「低于基准就是更差」误述成了「存在特殊坏区间」，会误导人去改机制。**真实存在的浪费是另一种形态：过量伤害。** 反推总伤害（`score = totalDamage/100 + kills*500`）在 1000‰→3000‰ 之间涨 39%，而**击杀数饱和在 818→820→820 不动** —— 1000‰ 之后元素系数买到的几乎全是打在已死敌人身上的伤害，而 `score` 照样计分。**这一条已完整实现并回滚。** 理由：收益已被现有机制覆盖 —— 结算时 `scoreCapFor` 把分数裁到 `gl.MaxScore`，而 `MaxScore = Σ(击杀分 + (hp+shield)/100)`，**恰好就是「只算有效伤害」口径的天花板**。实测第 50 关满配 v1 得 25496 而上限是 25348：**v1 本来就打出了超过理论满分的分数，然后被服务端截断**。玩家从「多打一点」那里拿不到额外分数，裁剪器就是那道闸。代价却是实打实的：计分版本号机制 + 战报新列 + 跨端下发 + 重放按记录选口径，以及**平衡回归**（第 50/57 关「满配 3 星 → 2 星」—— 被驱散的护盾在「只算吸收量」的口径下一分不给，而驱散是奖励、让它扣分是反的）。**不做。** 守卫见 `elem_coef_shape.test.ts`（6 用例：单调性、控制效果可达性、过量伤害事实）与 `score_cap_guard_test.go`（把「裁剪已覆盖 v2 的收益」这个前提钉成不变式：若有人放宽 `scoreCapFor`，它会红）。
 
 15. **5 个集合类上报字段此前完全无界** —— `elements_used` / `reactions_used` / `terrain_used` / `card_picks` / `replay_hash` 既无长度/取值上界，也不参与任何奖励计算，却**直接落进 battle_records**，其中 `reactions_used` 还会被运营看板的 `GROUP BY` 读走。一个 4096 键的 map 就能把战报行撑到不可用，而塞进 `"fake_reaction": 999` 会让看板上的「反应分布」变成客户端说了算的东西。**「不参与奖励计算」不等于「不需要校验」** —— 不校验它，它就进了数据库、进了报表、进了别人基于它做的决策。已补：键白名单、负计数拒绝、`elements_used` 合计 ≤ `shots × 该关怪数`、`reactions_used` 合计 ≤ `reactions`、`terrain_used` ⊆ 该关地形种类且不重复、`card_picks` 长度 ≤ 波数且每项 ≥ -1、`replay_hash` ≤ 64 字符。并加**反射式覆盖率守卫**（`settle_coverage_test.go`）：`SettleInput` 新增字段若既无边界又未显式豁免（豁免必须写明理由），测试立刻红 —— 这类缺陷不是被测出来的，是**根本没被想过**。跨端由 `settle_bounds_parity.test.ts` 保证服务端的新边界**接受真实引擎的上报**。**边界不是拍出来的**：`elements_used` 的上界曾是 `hits`，而 parity 实测发现真实引擎的元素合计 / hits 最大 **1.214**（AoE 与链式走 `hitEnemy` 却不计入 `hits`）—— 那个界会**拒绝几乎所有正常对局**。顺带确认：`terrain_used` 合法长度**最多是 1**（`generateTerrain` 产出的地形全是同一个 kind，且 100 关里 75 关没有地形），该字段信息量约等于「这一关有没有触发地形」；`stats.go` 若按它做按关的「地形触发率」，分辨率只有 0/1。**未做**：给关卡配多种地形属内容设计改动。
-16. **三个道具没有任何消费端点（第 74 轮）** —— `revive_token` /
-    `mastery_reset` / `gem_wash_token` 现在**买得到了**（此前 `Buy` 的
-    `grantWallet` 只认 `walletColumns`，这三件商品每次购买都在事务里失败
-    并回滚，客户端只看到「未知货币 "revive_token"」的 400）。
+16. **三个道具里 `mastery_reset` 已接通消费，`gem_wash_token` / `revive_token` 仍无消费端点（第 74 轮发现，本轮接通 1/3）** ——
+    三个道具现在**买得到了**（此前 `Buy` 的 `grantWallet` 只认 `walletColumns`，
+    这三件商品每次购买都在事务里失败并回滚，客户端只看到「未知货币 "revive_token"」的 400）。
     修法是新增 `user_tokens` 表 + `walletTokens` 白名单。
-    **但仓库里没有任何地方消费它们** —— 没有「用掉复活币」的端点、
-    没有「重置专精」的端点、没有「洗宝石」的端点。
-    玩家花掉 coin/gem 买到的是一个只能看不能用的数字。
-    `TokenBalance` 提供了读取面，但**还没有 HTTP 端点暴露它**。
-    这是**刻意留下的边界**：道具的花费语义（洗宝石是重掷词缀还是
-    重掷宝石等级？专精重置退不退点？）需要产品决策，不是能顺手补的。
+
+    **✅ `mastery_reset` 已实现**（2026-10-09）：`POST /api/v1/mastery/reset`
+    消耗 1 件 `mastery_reset` 道具，清空该玩家全部 `user_mastery_nodes`（专精重铸）。
+    之所以值得接通：`AllocateMastery` 是**只插不删**，玩家点错方向后没有任何
+    改向途径，`mastery_reset` 是唯一的「重铸」入口。语义决策：点数预算
+    （`user_progress.mastery_points`，由 `level_exp` 派生）**不变**，只清空已选节点；
+    事务内**先扣道具再清节点**（不足则整批回滚，避免白送重铸）；
+    消费走条件 UPDATE（`balance >= 1` 才扣，`ErrNoRows` → 可读 400，不靠 CHECK 兜底）；
+    写一条 `wallet_flows` 消费流水 + 一条 `admin_audit_logs` 审计。
+    行为由 `mastery_reset_test.go`（3 例，含「扣光后第二次必失败」防免费重铸）钉住。
+
+    **⚠️ 仍未做（诚实边界）**：
+    - `gem_wash_token`（洗宝石）：`user_gems`（玩家持有的宝石实例）**没有任何获取途径**
+      —— 全仓库没有 `INSERT INTO user_gems`，玩家手里根本没有宝石可洗。
+      先做「洗」等于给一条死路修门。需先补宝石获取（掉落/兑换）再谈洗练。
+    - `revive_token`（复活币）：局内复活要在引擎里续命并重演，
+      这动 `replay_hash` 的锚点与 I-6 可重放性（见 §4），属核心战斗公式改动，
+      不能顺手补。
+
+    `TokenBalance` 提供了道具读取面。`mastery_reset` 现在有了消费端点，
+    后两个仍「只能看不能用」。
 
 17. **战报复现与验真的「读不到别人的」只到第 75 轮为止** ——
     `GET /battle/:id/replay` 与 `POST /battle/verify` 此前都只按
@@ -1161,29 +1175,41 @@ cd admin && npm run build && npm run size:check  # 超预算则退出码 1
     （6 分钟 1 点 vs 每局扣 6 点）需要一张数值对照表，
     而那张表不在仓库里。
 
-19. **7 条反应里有 5 条只有反应伤害，没有任何特殊效果** ——
-    `steam_burst` 的范围伤害、`overheat` 的爆炸、`burn_cloud` 的火区、
-    `corrosion_spread` 的层数传播、`armor_break` 的击退与削甲
-    **全部没有实现**。第 83 轮把这些对外文案改成只描述已实现的效果，
+19. **7 条反应里有 3 条只有反应伤害，没有任何特殊效果** ——
+    `overheat` 的爆炸、`burn_cloud` 的火区、
+    `corrosion_spread` 的层数传播 **没有实现**。第 83 轮把这些对外文案改成只描述已实现的效果，
     并把 `aoe_radius` 全部置 0（字段保留：它已在 `/config` 的公开
     JSON 契约里，删字段是破坏性变更）。
 
-    真正实现的只有三条里的一部分：
+    ⚠️ **`armor_break` 的击退与削甲已实现**（2026-10-09，区别于上面 3 条）：
+    触发后 4000ms 内目标有效护甲被削 150‰（`armor_shred_permille`），
+    并一次性击退 4px（`knockback`=4000 定点）。两个值都进反应表
+    `reaction_specs.json` 的公开契约字段，客户端引擎
+    （`miniapp/src/game/engine.ts` 的 `hitEnemy` 构建 Defender 时折进有效护甲 +
+    `stepEnemyMotion` 消费击退）消费，行为由 `armor_break.test.ts`（9 例，
+    含「改坏必红」的两处变异验证）与 Go 侧 `TestArmorBreakEffectIsExclusive`
+    钉住。**只有动能参与的构筑会进入这条新路径**，默认构筑
+    （fire/fire/fire/ice）不含动能、永远触发不了 armor_break，
+    所以「全 100 关默认构筑」的既有平衡基线不变 —— 这条由
+    `armor_break.test.ts` 的「无动能 = 无削甲」控制构筑用例守着。
+
+    真正实现的只有三条里的一部分（armor_break 行已更新）：
 
     | 反应 | 实现的效果 | 未实现 |
     |---|---|---|
-    | `steam_burst` | 驱散护盾 + 反应伤害 | 范围伤害 |
+    | `steam_burst` | 驱散护盾 + 25% 范围溅射伤害 | —（已实现） |
     | `overheat` | 眩晕 1.5s + 反应伤害 | 爆炸 |
     | `burn_cloud` | **仅**反应伤害 | 整条文案原本都是空的 |
     | `superconduct` | 受击伤害 +60% + 冻结 | — |
     | `flash_freeze` | 冻结 + 受击伤害 +30% | — |
     | `corrosion_spread` | **仅**反应伤害 | 层数传播 |
-    | `armor_break` | **仅**反应伤害 | 击退、削甲 |
+    | `armor_break` | 削甲 4s（−150‰）+ 击退 4px + 反应伤害 | —（已实现） |
 
     反应的**区分度仍在**（`base_coef` 60/55/40/50/45/35/30 各不相同），
-    但机制层面这五条是同一个东西。
+    但机制层面**剩下这 3 条**（overheat 的爆炸、burn_cloud、
+    corrosion_spread）仍是同一个东西。
 
-    **要不要实现是产品决策**，需要先回答：溅射伤害怎么算？
+    **剩下 3 条要不要实现是产品决策**，需要先回答：溅射伤害怎么算？
     溅射到的目标要不要再触发反应？是否计分？
     要不要在服务端一并重算（否则 I-6 会失配）？
     这些猜不得，所以只把「缺什么」写成确切的清单而不是猜一个实现。
@@ -1191,6 +1217,28 @@ cd admin && npm run build && npm run size:check  # 超预算则退出码 1
     守卫：`miniapp/src/game/reaction_descr.test.ts` 8 条
     （文案不承诺未被消费的机制 + `aoeRadius` 恒 0 +
     它不得在 `elements.ts` 之外被引用 + 没有反应完全空转）。
+
+24. **性能：`LoadBuildSnapshot` 一趟查齐，串行往返 12 → 6（2026-10-09）** ——
+    它挂在 `/battle/token` 与 `/battle/settle` 两条最热路径上（结算还会再
+    重放一次技能段），旧实现逐个调 `loadSkillsAndSlots` / `loadEquipment` /
+    `loadMasteryNodes` / `computeAttacker` / `ExtraSlots`，**同一张表反复查**：
+    专精节点查 3 遍（槽位预算 1 + 攻方 1 + 额外槽 1）、点数查 2 遍、
+    装备查 2 遍（下发列表 1 + 攻方装配 1），合计 **12 条串行往返**。
+
+    拆法是把「取」与「算」分开（`server/internal/service/build_parts.go`）：
+    **取** —— `loadBuildParts` 一趟查齐 6 张表，逐查询保留旧路径的错误语义
+    （`load skills` / `load equipment` / `load mastery nodes` / `load max stage`
+    / `load gems` 各自的报错前缀不变，被改名表钉住的测试全绿）；
+    **算** —— 纯函数 `attackerFromParts` / `masteryEffectFrom` /
+    `applyLoadoutContribution`，旧 `computeAttacker` 与 `loadLoadout` 共用同一份
+    装配逻辑，杜绝「两处各算一遍然后漂移」。旧方法**保留原样**（它们各自的
+    「单独查、单独报错」行为被测试钉住），生产热路径已不再逐个调用它们。
+
+    守卫：`server/internal/service/build_parts_test.go` 11 条（DB-free，
+    直接钉住纯计算：关卡成长 / 负关卡夹 0 / 元素层数封顶 / 装配 Attack 封顶 /
+    槽位预算判定 / 未知装备跳过 / 未知宝石词条记 ignored / 同零件两次计算逐位一致）；
+    `attacker_buy_test.go` / `coverage_final_test.go` 的改名表用例（需 PostgreSQL）
+    逐条钉住「第 i 张表失败仍在第 i 张表上失败」的错误顺序。
 
 18. **油桶火区的伤害口径在第 77 轮之前与普通命中不一致** ——
     修复前 `e.hp -= terrainTick` 绕过护甲、`4n` 写死元素层数上限。

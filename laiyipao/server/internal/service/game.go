@@ -431,24 +431,19 @@ type BuildSnapshot struct {
 
 // LoadBuildSnapshot 读取玩家当前构筑。
 func (s *Service) LoadBuildSnapshot(ctx context.Context, userID int64) (map[string]any, error) {
-	slots, elements, err := s.loadSkillsAndSlots(ctx, userID)
+	// 一趟查齐 6 张表（build_parts.go）：旧路径逐个方法自己查库，
+	// 专精节点查 3 遍、点数 2 遍、装备 2 遍，合计 12 条串行往返；
+	// 本端点挂在 /battle/token 与 /battle/settle 两条最热路径上。
+	parts, err := s.loadBuildParts(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
-	equip, err := s.loadEquipment(ctx, userID)
-	if err != nil {
-		return nil, err
-	}
-	masteryNodes, err := s.loadMasteryNodes(ctx, userID)
-	if err != nil {
-		return nil, err
-	}
+	slots, elements := parts.skills, parts.elements
+	equip := parts.equipment
+	masteryNodes := parts.masteryNodes
 	// 攻方属性由服务端权威下发。客户端绝不能自己猜 ——
 	// 两端各算一套的话，回放哈希必然对不上，I-6 会变成永远失败的机制。
-	att, err := s.computeAttacker(ctx, userID)
-	if err != nil {
-		return nil, err
-	}
+	att := attackerFromParts(parts)
 	// ⚠️ build 快照里 `skill_ids` 这个 key 是历史遗留的**误命名**：
 	// 它装的其实是 loadSkillsAndSlots 返回的「元素名集合」（fire/ice/...），
 	// 不是技能 id。而 /me/loadout 响应里的 `skill_ids` 是真的技能 id 数组 ——
@@ -461,8 +456,9 @@ func (s *Service) LoadBuildSnapshot(ctx context.Context, userID int64) (map[stri
 	// `/mastery` —— 两者都是「服务端权威的战斗输入」，
 	// 客户端绝不能自己算（I-6 的前提：两端各算一套哈希必然对不上）。
 	// 放在同一个响应里也避免了战斗路径上多一次往返。
-	extra, err := s.ExtraSlots(ctx, userID)
-	if err != nil {
+	extra := extraSlotsFrom(masteryEffectFrom(masteryNodes, parts.masteryPoints))
+	// 槽位预算校验：与旧路径相同，在装配完成后做一次（超预算 → 拒绝开战）。
+	if err := slotBudgetCheck(parts.occupied, extra); err != nil {
 		return nil, err
 	}
 	return map[string]any{
@@ -514,56 +510,12 @@ func (s *Service) checkSlotBudget(ctx context.Context, userID int64, occupied ma
 }
 
 func (s *Service) loadSkillsAndSlots(ctx context.Context, userID int64) (map[string]any, []string, error) {
-	rows, err := s.pool.Query(ctx,
-		`SELECT s.id, s.name, s.family, s.element, s.kind, COALESCE(us.level, 1),
-		        COALESCE(sl.slot, -1)
-		 FROM user_skills us
-		 JOIN skills s ON s.id = us.skill_id
-		 LEFT JOIN user_skill_slots sl ON sl.user_id = us.user_id AND sl.skill_id = us.skill_id
-		 WHERE us.user_id = $1 ORDER BY s.id`, userID)
+	// 查询与装配走 build_parts.go 的共享件（loadSkillsRows/skillsRowsToMaps），
+	// 与 LoadBuildSnapshot 的新路径同一份 SQL 与装配逻辑。
+	skills, elements, occupied, err := s.loadSkillsRows(ctx, userID)
 	if err != nil {
-		return nil, nil, fmt.Errorf("load skills: %w", err)
+		return nil, nil, err
 	}
-	defer rows.Close()
-
-	skills := map[string]any{}
-	elements := map[string]bool{}
-	// occupied 收集**去重后**被占用的槽位。
-	// slot = -1 表示"已拥有但未装备"，不占槽位。
-	occupied := map[int]bool{}
-	for rows.Next() {
-		var id, level, slot int
-		var name, family, element, kind string
-		if err := rows.Scan(&id, &name, &family, &element, &kind, &level, &slot); err != nil {
-			return nil, nil, err
-		}
-		// ⚠️ 等级必须夹紧才能下发。
-		//
-		// `COALESCE(us.level, 1)` 只挡 NULL，挡不住越界值。
-		// 客户端拿这个 level 直接缩放技能伤害（系数 = 1000 + (level-1)*coef_permille），
-		// 所以库里一行 `level = 99` 会变成 **4900‰** 的伤害加成 ——
-		// 而服务端的攻击封顶（1000‰）完全不知道这件事。
-		//
-		// 这不是「假设脏数据不会发生」，是**读路径必须必然产出合法值**：
-		// 迁移事故、手工改库、未来某个端点忘了带上限，任何一个都能写进 99。
-		//
-		// 更要紧的是 I-6：等级进了重放哈希，而哈希是「这局确实是这样打的」的凭证。
-		// 一个能被随手改成 4900‰ 的因子进入哈希，那这个哈希证明不了任何事。
-		level = skillRules.ClampLevel(level)
-		if slot >= 0 {
-			occupied[slot] = true
-		}
-		skills[fmt.Sprintf("%d", id)] = map[string]any{
-			"id": id, "name": name, "family": family, "element": element,
-			"kind": kind, "level": level, "slot": slot,
-		}
-		elements[element] = true
-	}
-	list := make([]string, 0, len(elements))
-	for e := range elements {
-		list = append(list, e)
-	}
-
 	// 槽位校验：装备的技能数不得超过「基础槽位 + 专精额外插槽」。
 	//
 	// ⚠️ 此前**完全没有这个校验** —— 客户端可以把任意多个技能写进
@@ -575,49 +527,20 @@ func (s *Service) loadSkillsAndSlots(ctx context.Context, userID int64) (map[str
 	// 判据用**去重后的槽位数**而不是技能条数：同一槽位重复写
 	// （`user_skill_slots` 有 (user_id, skill_id) 主键，重复的是不同 skill_id
 	// 写进同一 slot）不该被算成两个槽。
-	if err := rows.Err(); err != nil {
-		return nil, nil, err
-	}
 	if err := s.checkSlotBudget(ctx, userID, occupied); err != nil {
 		return nil, nil, err
 	}
-	return skills, list, nil
+	return skills, elements, nil
 }
 
 func (s *Service) loadEquipment(ctx context.Context, userID int64) ([]int, error) {
-	rows, err := s.pool.Query(ctx,
-		`SELECT equipment_id FROM user_equipment WHERE user_id = $1 AND equipped ORDER BY slot`, userID)
-	if err != nil {
-		return nil, fmt.Errorf("load equipment: %w", err)
-	}
-	defer rows.Close()
-	var out []int
-	for rows.Next() {
-		var id int
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-		out = append(out, id)
-	}
-	return out, rows.Err()
+	// 共享件（build_parts.go）：与 loadBuildParts / loadLoadout 同一份 SQL。
+	return s.loadEquipmentRows(ctx, userID)
 }
 
 func (s *Service) loadMasteryNodes(ctx context.Context, userID int64) ([]int, error) {
-	rows, err := s.pool.Query(ctx,
-		`SELECT node_id FROM user_mastery_nodes WHERE user_id = $1`, userID)
-	if err != nil {
-		return nil, fmt.Errorf("load mastery nodes: %w", err)
-	}
-	defer rows.Close()
-	var out []int
-	for rows.Next() {
-		var id int
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-		out = append(out, id)
-	}
-	return out, rows.Err()
+	// 共享件（build_parts.go）：与 loadBuildParts / loadMasteryEffect 同一份 SQL。
+	return s.loadMasteryNodeRows(ctx, userID)
 }
 
 func (s *Service) computeRating(ctx context.Context, userID int64, build map[string]any) domain.BuildRating {

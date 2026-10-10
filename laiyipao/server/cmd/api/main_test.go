@@ -63,6 +63,18 @@ func TestBuildAppRoutesAreUp(t *testing.T) {
 	if resp2.StatusCode != fiber.StatusUnauthorized {
 		t.Errorf("无凭证 /me 应 401，实际 %d", resp2.StatusCode)
 	}
+
+	// 道具消费端点（mastery_reset）必须已注册：无凭证 401 而不是 404。
+	// 若路由没挂上，玩家/客户端调用只会得到 404「页面不存在」，
+	// 而「重铸专精」按钮看起来像「这个功能还没上」。
+	resp3, err := app.Test(httptest.NewRequest(http.MethodPost, "/api/v1/mastery/reset", nil), 5000)
+	if err != nil {
+		t.Fatalf("mastery/reset 请求失败：%v", err)
+	}
+	resp3.Body.Close()
+	if resp3.StatusCode != fiber.StatusUnauthorized {
+		t.Errorf("无凭证 /mastery/reset 应 401（路由已注册），实际 %d（404 说明路由没挂上）", resp3.StatusCode)
+	}
 }
 
 // TestBuildAppErrorHandler 统一错误处理：fiber.Error 转结构化 JSON，

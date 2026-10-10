@@ -32,15 +32,17 @@ import (
 )
 
 type reactionRow struct {
-	Key              string `json:"key"`
-	Name             string `json:"name"`
-	BaseCoef         int    `json:"base_coef"`
-	AttackWeightPct  int    `json:"attack_weight_pct"`
-	StatusDurationMs int    `json:"status_duration_ms"`
-	AoeRadius        int    `json:"aoe_radius"`
-	DispelShield     bool   `json:"dispel_shield"`
-	AmplifyPct       int    `json:"amplify_pct"`
-	Descr            string `json:"descr"`
+	Key                string `json:"key"`
+	Name               string `json:"name"`
+	BaseCoef           int    `json:"base_coef"`
+	AttackWeightPct    int    `json:"attack_weight_pct"`
+	StatusDurationMs   int    `json:"status_duration_ms"`
+	AoeRadius          int    `json:"aoe_radius"`
+	DispelShield       bool   `json:"dispel_shield"`
+	AmplifyPct         int    `json:"amplify_pct"`
+	ArmorShredPermille int    `json:"armor_shred_permille"`
+	Knockback          int    `json:"knockback"`
+	Descr              string `json:"descr"`
 }
 
 func buildReactions() ([]byte, error) {
@@ -48,15 +50,17 @@ func buildReactions() ([]byte, error) {
 	rows := make([]reactionRow, 0, len(specs))
 	for _, s := range specs {
 		rows = append(rows, reactionRow{
-			Key:              string(s.Key),
-			Name:             s.Name,
-			BaseCoef:         s.BaseCoef,
-			AttackWeightPct:  s.AttackWeightPct,
-			StatusDurationMs: s.StatusDurationMs,
-			AoeRadius:        s.AoeRadius,
-			DispelShield:     s.DispelShield,
-			AmplifyPct:       s.AmplifyPct,
-			Descr:            s.Descr,
+			Key:                string(s.Key),
+			Name:               s.Name,
+			BaseCoef:           s.BaseCoef,
+			AttackWeightPct:    s.AttackWeightPct,
+			StatusDurationMs:   s.StatusDurationMs,
+			AoeRadius:          s.AoeRadius,
+			DispelShield:       s.DispelShield,
+			AmplifyPct:         s.AmplifyPct,
+			ArmorShredPermille: s.ArmorShredPermille,
+			Knockback:          s.Knockback,
+			Descr:              s.Descr,
 		})
 	}
 	return mustIndent(rows), nil
