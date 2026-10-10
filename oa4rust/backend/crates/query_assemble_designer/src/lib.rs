@@ -211,7 +211,7 @@ pub async fn update_table_definition(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
-            "UPDATE x_query_table SET name = COALESCE(NULLIF($1,''), name), columns = $2, status = 'draft', update_time = NOW() \
+            "UPDATE x_query_table SET name = COALESCE(NULLIF($1,''), name), columns = $2, status = 'draft', update_time = to_char(NOW(),'YYYY-MM-DD HH24:MI:SS') \
              WHERE table_flag = $3 AND deleted_at IS NULL",
             &[&name, &columns_json, &flag],
         )
@@ -326,7 +326,7 @@ pub async fn execute_table_definition(
     }
     client
         .execute(
-            "UPDATE x_query_table SET status = 'build', update_time = NOW() WHERE table_flag = $1",
+            "UPDATE x_query_table SET status = 'build', update_time = to_char(NOW(),'YYYY-MM-DD HH24:MI:SS') WHERE table_flag = $1",
             &[&flag],
         )
         .await
@@ -516,7 +516,7 @@ pub async fn save_designer(
 
     let result = client
         .execute(
-            "UPDATE x_query_design SET name = $1, category = $2, query_definition = $3, update_time = NOW() \
+            "UPDATE x_query_design SET name = $1, category = $2, query_definition = $3, update_time = to_char(NOW(),'YYYY-MM-DD HH24:MI:SS') \
              WHERE id = $4 AND deleted_at IS NULL",
             &[&name, &category, &query_definition, &id],
         )
@@ -643,7 +643,7 @@ pub async fn save_designer_bare(
 
     let updated = client
         .execute(
-            "UPDATE x_query_design SET name = $1, category = $2, query_definition = $3, update_time = NOW() \
+            "UPDATE x_query_design SET name = $1, category = $2, query_definition = $3, update_time = to_char(NOW(),'YYYY-MM-DD HH24:MI:SS') \
              WHERE id = $4 AND deleted_at IS NULL",
             &[&name, &category, &query, &id],
         )
@@ -1224,7 +1224,7 @@ pub async fn input_cover(
 
     let result = client
         .execute(
-            "UPDATE x_query_input SET content = $1, update_time = NOW() WHERE id = $2",
+            "UPDATE x_query_input SET content = $1, update_time = to_char(NOW(),'YYYY-MM-DD HH24:MI:SS') WHERE id = $2",
             &[&content_str, &input_id],
         )
         .await
@@ -1261,7 +1261,7 @@ pub async fn input_create(
 
     let result = client
         .execute(
-            "INSERT INTO x_query_input (id, content, creator, create_time) VALUES ($1, $2, $3, NOW())",
+            "INSERT INTO x_query_input (id, content, creator, create_time) VALUES ($1, $2, $3, to_char(NOW(),'YYYY-MM-DD HH24:MI:SS'))",
             &[&id, &content, &creator],
         )
         .await
@@ -1329,7 +1329,7 @@ pub async fn input_prepare_create(
 
     let result = client
         .execute(
-            "INSERT INTO x_query_input (id, content, creator, create_time) VALUES ($1, $2, $3, NOW())",
+            "INSERT INTO x_query_input (id, content, creator, create_time) VALUES ($1, $2, $3, to_char(NOW(),'YYYY-MM-DD HH24:MI:SS'))",
             &[&id, &content, &creator],
         )
         .await
@@ -1355,7 +1355,7 @@ pub async fn neural_generate_model_modelFlag(
 
     let result = client
         .execute(
-            "UPDATE x_query_neural_model SET status = 'generating', update_time = NOW() WHERE flag = $1",
+            "UPDATE x_query_neural_model SET status = 'generating', update_time = to_char(NOW(),'YYYY-MM-DD HH24:MI:SS') WHERE flag = $1",
             &[&model_flag],
         )
         .await
@@ -1385,7 +1385,7 @@ pub async fn neural_learn_model_modelFlag(
 
     let result = client
         .execute(
-            "UPDATE x_query_neural_model SET status = 'learning', update_time = NOW() WHERE flag = $1",
+            "UPDATE x_query_neural_model SET status = 'learning', update_time = to_char(NOW(),'YYYY-MM-DD HH24:MI:SS') WHERE flag = $1",
             &[&model_flag],
         )
         .await
@@ -1483,7 +1483,7 @@ pub async fn neural_model(
     let id = uuid::Uuid::new_v4().to_string();
     let result = client
         .execute(
-            "INSERT INTO x_query_neural_model (id, name, flag, status, creator, create_time) VALUES ($1, $2, $3, 'idle', $4, NOW())",
+            "INSERT INTO x_query_neural_model (id, name, flag, status, creator, create_time) VALUES ($1, $2, $3, 'idle', $4, to_char(NOW(),'YYYY-MM-DD HH24:MI:SS'))",
             &[&id, &name, &flag, &creator],
         )
         .await
@@ -1609,7 +1609,7 @@ pub async fn neural_stop_generating_model_modelFlag(
 
     let result = client
         .execute(
-            "UPDATE x_query_neural_model SET status = 'idle', update_time = NOW() WHERE flag = $1 AND status = 'generating'",
+            "UPDATE x_query_neural_model SET status = 'idle', update_time = to_char(NOW(),'YYYY-MM-DD HH24:MI:SS') WHERE flag = $1 AND status = 'generating'",
             &[&model_flag],
         )
         .await
@@ -1641,7 +1641,7 @@ pub async fn neural_stop_learn_model_modelFlag(
 
     let result = client
         .execute(
-            "UPDATE x_query_neural_model SET status = 'idle', update_time = NOW() WHERE flag = $1 AND status = 'learning'",
+            "UPDATE x_query_neural_model SET status = 'idle', update_time = to_char(NOW(),'YYYY-MM-DD HH24:MI:SS') WHERE flag = $1 AND status = 'learning'",
             &[&model_flag],
         )
         .await
@@ -2837,7 +2837,7 @@ pub async fn table_list_tableFlag_row_select_where_where(
     let rows = client
         .query(
             &"SELECT id, table_flag, data FROM x_query_table_data WHERE table_flag = $1 AND data ILIKE $2 ORDER BY id DESC".to_string(),
-            &[&table_flag, &format!("%{}%", _where)],
+            &[&table_flag, &format!("%{}%", shared::db::escape_like(&_where))],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -3022,7 +3022,7 @@ pub async fn table_reload_dynamic(
 
     let result = client
         .execute(
-            "UPDATE x_query_table SET reloaded = true, update_time = NOW() WHERE reloaded = false",
+            "UPDATE x_query_table SET reloaded = true, update_time = to_char(NOW(),'YYYY-MM-DD HH24:MI:SS') WHERE reloaded = false",
             &[],
         )
         .await
@@ -3349,7 +3349,7 @@ pub async fn table_tableFlag_row_count_where_where(
     let row = client
         .query_one(
             &"SELECT COUNT(*) as cnt FROM x_query_table_data WHERE table_flag = $1 AND data ILIKE $2".to_string(),
-            &[&table_flag, &format!("%{}%", _where)],
+            &[&table_flag, &format!("%{}%", shared::db::escape_like(&_where))],
         )
         .await
         .map_err(|_| AppError::Internal)?;

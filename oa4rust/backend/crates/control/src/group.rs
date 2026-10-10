@@ -294,7 +294,8 @@ pub async fn update(
         return Ok(Json(ActionResult::error("group not found")));
     }
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    // 复用上面已取的 client 回读（UPDATE 无显式事务已自动提交，同连接读己之写一致）；
+    // 原先此处再 pool.get() 一次多占一条池连接且无必要。
     let row = match client
         .query_one(
             "SELECT id, name, description, disable FROM auth_group WHERE (id = $1 OR name = $1) AND deleted_at IS NULL",

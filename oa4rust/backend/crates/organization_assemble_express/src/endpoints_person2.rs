@@ -23,8 +23,8 @@ use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
 use crate::endpoints::{
-    bool_field, capped, named_list, normalize_flags, ok_json, ok_legacy_list, resolve_person_ids,
-    row_to_map, string_field, string_list, PICK_ANY,
+    bool_field, capped, named_list, normalize_flags, ok_json, ok_legacy_list, row_to_map,
+    string_field, string_list, PICK_ANY,
 };
 
 // ── 登录相关（x_org_login_record 提供 lastLoginTime 语义） ───────────────────
@@ -246,8 +246,19 @@ pub async fn person_detail_flag(
     let f_id = fetch("fetchIdentity");
 
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let persons = resolve_person_ids(&client, std::slice::from_ref(&flag)).await?;
-    let Some(pid) = persons.first().cloned() else {
+    // 原先 resolve_person_ids(flag) 取 id + 末尾再按 id SELECT 一次 x_org_person =
+    // 对同一张表两查。合并为单条按 (id OR name) 命中取整行，pid 取自该行；"首个匹配"
+    // 语义保留（加 ORDER BY id 使其确定）。身份/职务/群组/角色链有真实数据依赖
+    // （duty←identity、role←group），不并发；仅消除这处同表冗余二查。
+    let person_rows = client
+        .query(
+            "SELECT id, name, unit_id FROM x_org_person \
+             WHERE deleted_at IS NULL AND (id = $1 OR name = $1) ORDER BY id LIMIT 1",
+            &[&flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let Some(pid) = person_rows.first().map(|r| r.get::<_, String>("id")) else {
         return ok_json(Value::Object(serde_json::Map::new()));
     };
 
@@ -360,16 +371,6 @@ pub async fn person_detail_flag(
         empty.clone()
     };
 
-    let person_rows = client
-        .query(
-            "SELECT id, name, unit_id FROM x_org_person WHERE deleted_at IS NULL AND id = $1",
-            &[&pid],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
-    if person_rows.is_empty() {
-        return ok_json(Value::Object(serde_json::Map::new()));
-    }
     let mut data = row_to_map(&person_rows[0]);
     let arr = |mut v: Vec<String>| {
         v.sort();

@@ -341,4 +341,56 @@ mod tests {
             "legacy", &md5_hash, "", None
         ));
     }
+
+    // person::update connection reuse (优化二轮 29): the write-then-read-back now
+    // reuses one pooled client instead of acquiring a second. This live test
+    // proves read-your-write still holds — the response must reflect the
+    // just-committed UPDATE. Live DB only (gated). Calls the handler directly.
+    #[tokio::test]
+    async fn person_update_readback_reflects_write_on_reused_client() {
+        if !shared::testing::is_db_available().await {
+            return;
+        }
+        let pool = shared::testing::test_pool();
+        let client = pool.get().await.unwrap();
+        // isolate: clear any residue sharing our id or unique_id (unique_id is UNIQUE).
+        client
+            .execute(
+                "DELETE FROM auth_person WHERE id = $1 OR unique_id = $2",
+                &[&"r29-ctl-p1", &"r29-ctl@P"],
+            )
+            .await
+            .unwrap();
+        client
+            .execute(
+                "INSERT INTO auth_person (id, unique_id, name, password_hash, locked) \
+                 VALUES ($1, $2, $3, 'x', FALSE)",
+                &[&"r29-ctl-p1", &"r29-ctl@P", &"before"],
+            )
+            .await
+            .unwrap();
+
+        let out = person::update(
+            Extension(pool.clone()),
+            axum::extract::Path("r29-ctl-p1".to_string()),
+            axum::Json(person::PersonUpdateRequest {
+                name: Some("after".to_string()),
+                mobile: None,
+                email: None,
+                locked: Some(true),
+            }),
+        )
+        .await
+        .unwrap();
+        // read-back on the reused client sees the committed update.
+        let data = out.0.data.expect("data present");
+        assert_eq!(data["id"], "r29-ctl-p1");
+        assert_eq!(data["name"], "after");
+        assert_eq!(data["locked"], true);
+
+        client
+            .execute("DELETE FROM auth_person WHERE id = $1", &[&"r29-ctl-p1"])
+            .await
+            .unwrap();
+    }
 }

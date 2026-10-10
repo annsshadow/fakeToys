@@ -68,23 +68,37 @@ export interface ReactionSpec {
   dispelShield: boolean
   /** 对目标的受击伤害放大（千分比），0 表示无 */
   amplifyPct: number
+  /**
+   * 削甲量（千分比，0 表示无）。armor_break 专用：
+   * 触发后目标护甲在 `statusDurationMs` 内被削减本值。
+   * 消费者：`engine.ts` 的 `hitEnemy`（构建 Defender 时折进有效护甲）。
+   */
+  armorShredPermille: number
+  /**
+   * 击退位移（定点 ×1000，0 表示无）。armor_break 专用：
+   * 触发时目标一次性向右（远离防线）位移本值。
+   * 消费者：`engine.ts` 的 `hitEnemy`（写入 `Enemy.knockback`）。
+   */
+  knockback: number
   /** 表现层用：简短说明 */
   descr: string
 }
 
 /**
- * # ⚠️ 第 83 轮：这张表里有 **4 条反应只有反应伤害**，没有特殊效果
+ * # ⚠️ 这张表里有 **3 条反应只有反应伤害**，没有特殊效果
  *
  * 逐字段核过消费面（`resolveHit` + `BattleEngine.hitEnemy`）：
  *
- * | 字段         | 消费者                                | 状态 |
- * |--------------|---------------------------------------|------|
- * | baseCoef     | `damage.ts` 反应伤害                  | ✓    |
- * | attackWeightPct | `damage.ts` 攻方贡献比例             | ✓    |
- * | statusDurationMs | `damage.ts` → 引擎写 `frozenMs`/`stunnedMs` | ✓ |
- * | dispelShield | `damage.ts`                          | ✓    |
- * | amplifyPct   | `engine.ts`（**且以 `statusDurationMs > 0` 为前提**） | ✓ |
- * | aoeRadius    | **只有 `render/canvas.ts` 的屏幕震动** | ✗ **从未影响任何伤害** |
+ * | 字段               | 消费者                                | 状态 |
+ * |-------------------|---------------------------------------|------|
+ * | baseCoef          | `damage.ts` 反应伤害                  | ✓    |
+ * | attackWeightPct   | `damage.ts` 攻方贡献比例              | ✓    |
+ * | statusDurationMs  | `damage.ts` → 引擎写 `frozenMs`/`stunnedMs`/`armorShredMs` | ✓ |
+ * | dispelShield      | `damage.ts`                          | ✓    |
+ * | amplifyPct        | `engine.ts`（**且以 `statusDurationMs > 0` 为前提**） | ✓ |
+ * | armorShredPermille| `engine.ts`（削甲，armor_break）      | ✓    |
+ * | knockback         | `engine.ts`（击退位移，armor_break）  | ✓    |
+ * | aoeRadius         | **只有 `render/canvas.ts` 的屏幕震动** | ✗ **从未影响任何伤害** |
  *
  * 所以：
  *
@@ -92,12 +106,14 @@ export interface ReactionSpec {
  * - `overheat` 的「爆炸」不存在（眩晕是真的）
  * - `burn_cloud` 的「持续火区」不存在 —— 它整条都是空的
  * - `corrosion_spread` 的「层数传播」不存在
- * - `armor_break` 的「击退」与「削甲」都不存在
+ * - `armor_break` 的「击退」与「削甲」**已实现**（armorShredPermille / knockback，
+ *   见下方该条注释），不再是空壳
  *
- * 本轮把它们改成只描述**已实现**的效果，并把 `aoeRadius` 全部置 0
+ * 第 83 轮把未实现项的文案改成只描述**已实现**的效果，并把 `aoeRadius` 全部置 0
  * （字段保留：它已经在 `/config` 的公开 JSON 契约里，删字段是破坏性变更）。
  *
- * 「要不要给它们实现」是**产品决策**，已记入 README 已知边界第 19 条。
+ * 「要不要给 steam_burst / overheat / burn_cloud / corrosion_spread 实现
+ * 溅射 / 爆炸 / 火区 / 传播」仍是**产品决策**，已记入 README 已知边界第 19 条。
  */
 
 export const REACTIONS: Record<ReactionKey, ReactionSpec> = {
@@ -107,20 +123,29 @@ export const REACTIONS: Record<ReactionKey, ReactionSpec> = {
     baseCoef: 60,
     attackWeightPct: 300,
     statusDurationMs: 0,
-    // ⚠️ 第 83 轮：120 → 0。**溅射从未被实现**。
+    // ⚠️ 第 83 轮：120 → 0。**溅射从未被实现** —— 渲染层的屏幕震动谎称发生了
+    // 爆炸，实际 0 半径，气冷逻辑上什么都没发生。
     //
-    // `resolveHit` 只消费 `baseCoef` / `attackWeightPct` / `statusDurationMs` /
-    // `dispelShield`（+ 引擎侧读 `amplifyPct`）—— `aoeRadius` 一个字都没读。
+    // 2026-10-10 实现 steam_burst 范围伤害：aoeRadius 恢复为 120（像素）。
+    // 引擎 `hitEnemy` 在 steam_burst 反应触发后、以命中敌人为圆心、半径
+    // aoeRadius 搜索邻居，造成 reactionDmg >> 2（25%）的二次伤害。
+    // 口径与 `reaction_specs.json`（服务端 canonical）逐行一致，
+    // 由 `reaction_contract.test.ts` 双向锁定。
     //
-    // 而它此前唯一的消费者是 `render/canvas.ts` 的**屏幕震动**：
-    // `if (spec.aoeRadius > 0) this.shake = …`
-    // 也就是说游戏**在视觉上谎称发生了爆炸**，而实际什么都没发生。
-    // 玩家从震动推断「炸到了」，于是这条反应看起来「有时不灵」。
-    aoeRadius: 0,
+    // I-6 安全性：服务端 replay_hash 只封 S 段（build_snapshot），
+    // 不重算事件流（battle_collections.go：replay_hash 仅封长 ≤64），
+    // 所以溅射事件只需客户端局内哈希稳定 —— `aoeRadius` 改动不影响
+    // replay_skills 段，因而不影响 I-6 的 S-段校验。
+    // `aoeRadius` 此前唯一的消费者是 `render/canvas.ts` 屏幕震动，
+    // 它原本谎称「120 像素范围爆炸」却不造成任何伤害。
+    aoeRadius: 120,
     dispelShield: true,
     amplifyPct: 0,
-    // ⚠️ 文案只描述**已实现**的效果（见 elements.ts 顶部的诚实标注）。
-    descr: '驱散护盾并造成反应伤害',
+    armorShredPermille: 0,
+    knockback: 0,
+    // 文案承诺已实现的效果（第 83 轮诚实修订），加上本轮接上的范围伤害。
+    // 与 server/testdata/reaction_specs.json 的 descr 逐字一致（contract test 钉住）。
+    descr: '驱散护盾并造成反应伤害（触发时以自身为圆心，半径 120 像素内的敌人受到 25% 范围伤害）',
   },
   overheat: {
     key: 'overheat',
@@ -131,6 +156,8 @@ export const REACTIONS: Record<ReactionKey, ReactionSpec> = {
     aoeRadius: 0, // ⚠️ 第 83 轮：90 → 0，「爆炸」从未被实现（理由同 steam_burst）
     dispelShield: false,
     amplifyPct: 0,
+    armorShredPermille: 0,
+    knockback: 0,
     descr: '眩晕 1.5 秒并造成反应伤害',
   },
   burn_cloud: {
@@ -157,6 +184,8 @@ export const REACTIONS: Record<ReactionKey, ReactionSpec> = {
     aoeRadius: 0, // [mutation] 100
     dispelShield: false,
     amplifyPct: 0,
+    armorShredPermille: 0,
+    knockback: 0,
     descr: '造成反应伤害',
   },
   superconduct: {
@@ -168,6 +197,8 @@ export const REACTIONS: Record<ReactionKey, ReactionSpec> = {
     aoeRadius: 0,
     dispelShield: false,
     amplifyPct: 600,
+    armorShredPermille: 0,
+    knockback: 0,
     descr: '受击伤害 +60%',
   },
   flash_freeze: {
@@ -179,6 +210,8 @@ export const REACTIONS: Record<ReactionKey, ReactionSpec> = {
     aoeRadius: 0,
     dispelShield: false,
     amplifyPct: 300,
+    armorShredPermille: 0,
+    knockback: 0,
     descr: '冻结并提高受击伤害',
   },
   corrosion_spread: {
@@ -190,27 +223,37 @@ export const REACTIONS: Record<ReactionKey, ReactionSpec> = {
     aoeRadius: 0, // ⚠️ 第 83 轮：150 → 0，「传播」从未被实现
     dispelShield: false,
     amplifyPct: 0,
+    armorShredPermille: 0,
+    knockback: 0,
     descr: '造成反应伤害',
   },
   armor_break: {
     key: 'armor_break',
     name: '破甲击退',
-    // ⚠️ 第 83 轮：「击退」与「削减护甲」**都没有实现**。
+    // 第 83 轮：「击退」与「削减护甲」当时**都没有实现**，只有反应伤害，
+    // 文案已改成诚实描述。
     //
-    // `Enemy.knockback` 字段存在，但没有任何代码写它；
-    // 护甲削减也没有消费者（`applyArmor` 只读 `def.armorPermille`，
-    // 而 `armorPermille` 不由反应改写）。
+    // 本轮（产品决策落地）：把「击退 + 削甲」真正实现出来。
     //
-    // 所以这条反应现在**只有反应伤害**（baseCoef 30，七条里最低）。
-    // 名字里的「破甲」「击退」也在承诺不存在的东西 —— 但改名要动
-    // 两端契约与已存档的战报语义，**留给产品决策**，这轮只改文案。
+    //  1. **削甲**：`armorShredPermille = 150`（15%），持续 `statusDurationMs`
+    //     = 4000ms。触发后 4 秒内，目标的有效护甲被削减 150‰，
+    //     引擎在构建 Defender 时折进 `effectiveArmor`（见 engine.ts hitEnemy）。
+    //  2. **击退**：`knockback = 4000`（定点 ×1000 = 4px），触发时一次性把
+    //     目标向右（远离防线）推 4px，写入 `Enemy.knockback`，
+    //     由 `stepEnemyMotion` 的击退分支消费并清零（一次性，非持续）。
+    //
+    // 这两个值都落在 0..合理区间：削甲 150‰ 相对敌人护甲（普通 0..150，
+    // BOSS 200..300）是「显著但不破坏」的量级；击退 4px 相对敌人每 tick
+    // 推进 2..4px 是「轻微后移」，不会把敌人推出命中范围。
     baseCoef: 30,
     attackWeightPct: 300,
-    statusDurationMs: 0,
+    statusDurationMs: 4000,
     aoeRadius: 0,
     dispelShield: false,
     amplifyPct: 0,
-    descr: '造成反应伤害',
+    armorShredPermille: 150,
+    knockback: 4000,
+    descr: '击退目标并削减其护甲 4 秒（150‰），同时造成反应伤害',
   },
 }
 

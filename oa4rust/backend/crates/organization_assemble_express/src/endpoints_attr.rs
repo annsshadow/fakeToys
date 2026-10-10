@@ -114,6 +114,20 @@ pub async fn personattr_list_person_object(
     ok_legacy_list(data.len(), data)
 }
 
+/// Values that still need inserting: in set mode (`append=false`) all of them;
+/// in append mode, only those not already present (case-insensitive). Pure
+/// helper so the batched-insert selection is unit-testable without a database.
+pub(crate) fn attr_values_to_insert<'a>(
+    values: &'a [String],
+    existing: &[String],
+    append: bool,
+) -> Vec<&'a String> {
+    values
+        .iter()
+        .filter(|v| !(append && existing.iter().any(|e| e.eq_ignore_ascii_case(v.as_str()))))
+        .collect()
+}
+
 async fn attr_write_values(
     pool: &Pool,
     body: &Value,
@@ -156,8 +170,9 @@ async fn attr_write_values(
 
     let insert_sql = format!(
         "INSERT INTO {table} (id, {owner_col}, attribute_key, attribute_value) \
-         VALUES ($1, (SELECT id FROM x_org_{owner_tbl} WHERE deleted_at IS NULL \
-             AND (id = $2 OR name = $2) ORDER BY id LIMIT 1), $3, $4)",
+         SELECT t.id, (SELECT id FROM x_org_{owner_tbl} WHERE deleted_at IS NULL \
+             AND (id = $2 OR name = $2) ORDER BY id LIMIT 1), $3, t.val \
+         FROM UNNEST($1::text[], $4::text[]) AS t(id, val)",
         owner_tbl = if owner_col == "person_id" {
             "person"
         } else {
@@ -180,12 +195,17 @@ async fn attr_write_values(
             .await
             .map_err(|_| AppError::Internal)?;
     }
-    for v in &values {
-        if append && existing.iter().any(|e| e.eq_ignore_ascii_case(v)) {
-            continue;
-        }
-        let id = uuid::Uuid::new_v4().to_string();
-        tx.execute(&insert_sql, &[&id, &owner, &name, v])
+    // Single UNNEST insert instead of one INSERT per attribute value: the owner
+    // subquery and attribute_key are identical for every row, so only id/value
+    // vary — batch them as parallel arrays.
+    let to_insert = attr_values_to_insert(&values, &existing, append);
+    if !to_insert.is_empty() {
+        let ids: Vec<String> = to_insert
+            .iter()
+            .map(|_| uuid::Uuid::new_v4().to_string())
+            .collect();
+        let vals: Vec<String> = to_insert.iter().map(|v| (*v).clone()).collect();
+        tx.execute(&insert_sql, &[&ids, &owner, &name, &vals])
             .await
             .map_err(|_| AppError::Internal)?;
     }

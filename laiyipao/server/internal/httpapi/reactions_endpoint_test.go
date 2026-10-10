@@ -112,7 +112,7 @@ func TestAdminReactionsIsNotTheHeavyConfig(t *testing.T) {
 	allowed := map[string]bool{
 		"key": true, "name": true, "base_coef": true, "attack_weight_pct": true,
 		"status_duration_ms": true, "aoe_radius": true, "dispel_shield": true,
-		"amplify_pct": true, "descr": true,
+		"amplify_pct": true, "armor_shred_permille": true, "knockback": true, "descr": true,
 	}
 	for _, item := range got {
 		m, ok := item.(map[string]any)

@@ -11,8 +11,16 @@ import logging
 from typing import List, Dict, Iterator, Callable, Optional, Generator, Any
 from pathlib import Path
 from dataclasses import dataclass
-from .exceptions import StreamError, DataFormatError
-from .validation import require_count
+from .exceptions import StreamError, DataFormatError, DataValidationError
+from .validation import require_count, require_choice
+
+#: L199（B265）：`StreamWriter` 两个字符串形参的封闭清单（A77 单一权威）。
+#: 改前两者各只与一个字面量比一次：`format` 只跟 'jsonl' 比 ⇒ `"csv"` / `"JSONL"`
+#: 静默落 json 支，**把 JSON 数组写进用户声称为 csv 的产物**；`mode` 只跟 'w' 比
+#: ⇒ `mode='a' + format='json'` 时三处方括号记账被静默跳过，追加写出无括号的
+#: 半份 JSON。两者都是「声明与产物不一致」且全程无信号。
+WRITER_MODES = ("w", "a")
+WRITER_FORMATS = ("json", "jsonl")
 
 try:
     from .memory_monitor import MemoryMonitor
@@ -458,7 +466,31 @@ class StreamWriter:
             file_path: 文件路径
             mode: 文件模式 ('w' 写入, 'a' 追加)
             format: 输出格式 ('json' 或 'jsonl')
+
+        Raises:
+            DataValidationError: `mode` / `format` 不在各自封闭清单内
         """
+        for knob, value, choices in (("mode", mode, WRITER_MODES),
+                                     ("format", format, WRITER_FORMATS)):
+            if value is None:
+                raise DataValidationError(
+                    f"{knob} 不能为 null，合法取值: {' / '.join(choices)}"
+                )
+            require_choice(knob, value, choices=choices)
+
+        # L208（B266②）：追加一份**已闭合**的 JSON 数组，任何写法都产不出合法
+        # JSON。实测（Temp l208_probe.py）：第一次 w 写出 '[{"a": 1}]'（合法、
+        # 已闭合），第二次 a 把 '{"b": 2}' 接在后面 ⇒ '[{"a": 1}]{"b": 2}'，
+        # json.loads 报 "Extra data"。候选②（读回原数组、追加后整体重写）是
+        # O(n) 读 + O(n) 写，违背「流式写入器」的初衷，故不做。多批数据进同一个
+        # 文件的正确做法是：一次性写，或用 format='jsonl'（它天生可追加）。
+        if format == "json" and mode == "a":
+            raise DataValidationError(
+                "mode='a' 不能与 format='json' 组合：追加一份已闭合的 "
+                "JSON 数组只会产出非法 JSON（实测 '[{\"a\": 1}]{\"b\": 2}'）。"
+                "要多批写入同一文件，请一次性写，或改用 format='jsonl'"
+            )
+
         self.file_path = Path(file_path)
         self.mode = mode
         self.format = format
@@ -473,7 +505,13 @@ class StreamWriter:
     
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self._file:
-            if self.format == 'json' and self.mode == 'w':
+            # L201（B266）：异常穿过 with 块时**不补**闭合括号。
+            # 改前无条件补 ']'，而 write_chunk 是「先写分隔符再序列化」，序列化一炸
+            # 盘上就留下悬挂逗号 ⇒ 最终产物 '[{"a": 1},]'，一份非法 JSON
+            # （实测 json.loads 报 Illegal trailing comma）。用户先看到 TypeError，
+            # 回头看文件还以为「写到一半了」，其实是永久损坏。
+            # 不补则盘上是明确的截断形态，且调用方本来就要处理正在传播的那个异常。
+            if exc_type is None and self.format == 'json' and self.mode == 'w':
                 self._file.write(']')
             self._file.close()
             self._file = None
@@ -492,9 +530,13 @@ class StreamWriter:
                 line = json.dumps(item, ensure_ascii=False)
                 self._file.write(line + '\n')
             else:  # json
+                # L201（B266）：先序列化再写分隔符。改前顺序相反，json.dumps 抛异常时
+                # 上一个 ',' 已经落盘 ⇒ 留下悬挂逗号（与 __exit__ 那条合起来才构成
+                # 完整的非法 JSON）。分开任何一半都还会坏，所以两处必须一起改。
+                payload = json.dumps(item, ensure_ascii=False)
                 if not self._first_chunk:
                     self._file.write(',')
-                self._file.write(json.dumps(item, ensure_ascii=False))
+                self._file.write(payload)
                 self._first_chunk = False
         
         self._file.flush()

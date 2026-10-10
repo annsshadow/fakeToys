@@ -405,13 +405,17 @@ def diff_datasets(items_a: List[Dict], items_b: List[Dict],
         key_parts = [str(item.get(f, "")) for f in key_fields]
         keys_b.add("|".join(key_parts))
     
+    # L196：三个集合运算各只算一次，list() 与 len() 复用同一份结果（旧实现每样算两遍）
+    only_a = keys_a - keys_b
+    only_b = keys_b - keys_a
+    both = keys_a & keys_b
     return {
-        "only_in_a": list(keys_a - keys_b),
-        "only_in_b": list(keys_b - keys_a),
-        "in_both": list(keys_a & keys_b),
+        "only_in_a": list(only_a),
+        "only_in_b": list(only_b),
+        "in_both": list(both),
         "stats": {
-            "only_in_a_count": len(keys_a - keys_b),
-            "only_in_b_count": len(keys_b - keys_a),
-            "in_both_count": len(keys_a & keys_b)
+            "only_in_a_count": len(only_a),
+            "only_in_b_count": len(only_b),
+            "in_both_count": len(both)
         }
     }

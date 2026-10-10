@@ -44,7 +44,7 @@ pub async fn send_message(
     pool: Extension<Pool>,
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let conversation_id = req
         .get("conversationId")
@@ -61,18 +61,21 @@ pub async fn send_message(
     let msg_type = req.get("type").and_then(|v| v.as_str()).unwrap_or("text");
     let id = Uuid::new_v4().to_string();
 
-    let result = client
+    // 发消息=原子地「写消息行」+「会话 last_message_time 刷新」，二写须同事务：否则
+    // INSERT 成功而 UPDATE 失败会留下消息已入库但会话时间戳未刷新态（会话列表排序失真）。
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let result = tx
         .execute("INSERT INTO x_message (id, conversation_id, content, sender, type, create_time) VALUES ($1, $2, $3, $4, $5, NOW())", &[&id, &conversation_id, &content, &sender, &msg_type])
         .await
         .map_err(|_| AppError::Internal)?;
 
-    client
-        .execute(
-            "UPDATE x_message_conversation SET last_message_time = NOW() WHERE id = $1",
-            &[&conversation_id],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
+    tx.execute(
+        "UPDATE x_message_conversation SET last_message_time = NOW() WHERE id = $1",
+        &[&conversation_id],
+    )
+    .await
+    .map_err(|_| AppError::Internal)?;
+    tx.commit().await.map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -2405,7 +2408,7 @@ pub async fn mass_list_id_next_count(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, mass_id, content, sender, create_time FROM x_message WHERE mass_id = $1 AND id > $2 ORDER BY create_time ASC LIMIT $3", &[&id, &id, &count])
+        .query("SELECT id, mass_id, content, sender, create_time FROM x_message WHERE id > $1 ORDER BY create_time ASC LIMIT $2", &[&id, &count])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -2456,7 +2459,7 @@ pub async fn mass_list_id_prev_count(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, mass_id, content, sender, create_time FROM x_message WHERE mass_id = $1 AND id < $2 ORDER BY create_time DESC LIMIT $3", &[&id, &id, &count])
+        .query("SELECT id, mass_id, content, sender, create_time FROM x_message WHERE id < $1 ORDER BY create_time DESC LIMIT $2", &[&id, &count])
         .await
         .map_err(|_| AppError::Internal)?;
 

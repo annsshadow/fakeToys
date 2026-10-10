@@ -9,7 +9,7 @@
 - **质量控制**: 语义相似度、回答相关性、多样性多维评分
 - **智能去重**: 基于向量相似度的智能去重
 - **断点续传**: 支持中断后继续处理
-- **多格式导出**: JSONL、Llama-Factory、Alpaca、ShareGPT、ChatML、CSV
+- **多格式导出**: 13 种，清单以 `ExportFormat` 枚举为准（`GET /api/export/formats` 实时可查）
 - **流式处理**: 支持大数据集的分块处理
 - **数据集对比**: A/B测试对比功能
 - **数据集验证**: 格式验证和数据清洗
@@ -18,7 +18,7 @@
 - **泄漏检测**: 训练集/测试集之间的完全重复与模糊重复检测
 - **就绪审计**: 把脱敏、重复、空字段、泄漏信号合成一个 go / no-go 判定
 - **数据画像与离群点**: 字段完整度、长度分布、高频关键词；Z-Score / IQR 长度离群检测
-- **HTTP API + Web 界面**: 68 个 REST 端点，全部声明响应契约；React 前端 11 个功能页
+- **HTTP API + Web 界面**: 71 个 REST 端点，全部声明响应契约；React 前端 11 个功能页
 
 ## 数据格式
 
@@ -70,7 +70,7 @@ npm test         # vitest run
 
 ## HTTP API
 
-FastAPI 提供 **68 个端点**，全部声明 `response_model` —— `/openapi.json` 里
+FastAPI 提供 **71 个端点**，全部声明 `response_model` —— `/openapi.json` 里
 不存在「无 schema 的 200 响应」。契约由
 `tests/integration/test_api_openapi_contract.py` 双向守门：既要每个端点都声明
 契约，也要每个已声明契约的端点都真实存在。
@@ -101,7 +101,7 @@ uvicorn api.main:app --host 0.0.0.0 --port 8000
 >    以前 `save_config` 写出的配置**必然校验失败**（`AppConfig` 不建模 `app` 段、
 >    `load_config` 也从不读它），所以这是修 bug，不是放松校验。`models` /
 >    `models.default` 仍为必填。
-> 7. 新增两个路由分组：`dataset`（12 个端点，CLI 数据集工具的 API 化）与
+> 7. 新增两个路由分组：`dataset`（14 个端点，CLI 数据集工具的 API 化）与
 >    `system`（13 个端点，依赖诊断 / 备份 / 监控 / 迁移等运维能力）。
 >    写操作走 `verify_api_key` 鉴权。
 
@@ -149,7 +149,10 @@ augmentor/
 
 ## 环境要求
 
-- Python 3.8+
+- **Python 3.10+**（实测结论：产品码语法下限 3.8，但测试套件与 `requirements-core.txt`
+  里 `fastapi` / `uvicorn` / `requests` / `pytest` 的已装版本都要求 ≥3.10；
+  Docker 镜像钉 `python:3.11-slim`，开发验证在 3.13.14 与 3.14.4 两套解释器上跑。
+  想装**全套可选依赖**（numpy 2.x / pandas 3.0 / chromadb 1.5）需 3.11+）
 - 依赖包见 `requirements.txt`
 
 ## 环境变量
@@ -172,6 +175,76 @@ export GOOGLE_API_KEY=<your_api_key>
 ```
 
 ## CLI 使用方法
+
+全部 **37 个**子命令一览。help 文案由 `augmentor/cli/parser.py` 现提，
+**权威出处是 `python cli.py --help`**；下方各小节的详细示例只覆盖其中一部分
+（下表「下方有详细示例」一列标了 ✅ 的才有），漏看的命令先查这张表。
+
+| 子命令 | 作用 | 下方有详细示例 |
+| --- | --- | --- |
+| `aggregate` | 聚合多个数据集 |  |
+| `analyze` | 分析数据集 | ✅ |
+| `annotate` | 自动标注 |  |
+| `audit` | 数据集就绪审计（带 --gate 且未就绪时退出码为 1） |  |
+| `augment` | 增强数据集 | ✅ |
+| `auto-config` | 推荐数据管线参数 |  |
+| `auto-test` | 自动化测试（带 --gate 且有失败用例时退出码为 1） |  |
+| `backup` | 数据备份 | ✅ |
+| `benchmark` | 数据质量基准 | ✅ |
+| `check-leakage` | 训练/测试集泄漏检测（带 --gate 且检出泄漏时退出码为 1） |  |
+| `clean` | 数据清洗 | ✅ |
+| `compare` | 对比两个数据集 | ✅ |
+| `convert` | 转换数据集格式 | ✅ |
+| `dependency` | 依赖管理（--action validate 发现问题时退出码为 1） |  |
+| `doctor` | 运行时依赖诊断（带 --gate 且必需依赖缺失时退出码为 1） |  |
+| `export` | 导出数据集 | ✅ |
+| `features` | 检测数据集特征维度 |  |
+| `health-gate` | 数据集健康度评分 + 质量门禁（门禁不通过时退出码为 1） |  |
+| `merge` | 合并多个数据集 | ✅ |
+| `migrate` | 数据迁移（带 --gate 且有失败条目时退出码为 1） |  |
+| `monitor` | 质量监控 |  |
+| `outliers` | 检测长度异常样本 |  |
+| `preview` | 预览导出格式转换结果 |  |
+| `profile` | 生成数据集画像 |  |
+| `quality` | 质量评估、去重与报告 | ✅ |
+| `quality-report` | 生成质量报告（带 --gate 且不通过时退出码为 1） | ✅ |
+| `rag` | 转换为 RAG 训练数据格式 | ✅ |
+| `sample` | 采样数据集 | ✅ |
+| `sanitize` | PII 脱敏 |  |
+| `search` | 搜索数据集 | ✅ |
+| `split` | 分割数据集 | ✅ |
+| `stats` | 数据集统计信息 | ✅ |
+| `stream` | 流式处理大数据集 | ✅ |
+| `validate` | 验证数据集格式（判负时退出码为 1） | ✅ |
+| `validate-config` | 验证配置文件（报 ERROR 时退出码为 1） | ✅ |
+| `version` | 版本管理 | ✅ |
+| `visualize` | 可视化数据集 | ✅ |
+
+> **退出码只有三种形状**：校验形命令（`validate` / `validate-config` /
+> `dependency --action validate`）判负即 `1`；报告形命令（`quality-report` /
+> `audit` / `check-leakage` / `doctor` / `auto-test` / `migrate`）**默认恒 0**，
+> 加 `--gate` 才把各自的判决位翻译成退出码；`2` 恒为 argparse 用法错误。
+> 哪些命令接了这套口径由 `tests/integration/test_cli_verdict_wiring.py` 从
+> parser 声明与 handler 源码**双向推导**对账，不抄清单。
+>
+> **本表与「全部子命令」的相等关系由 `tests/unit/test_readme_cli_index_l204.py`
+> 机器守门** —— 新增子命令而忘了更新 README，那条用例当场红。
+
+### 数据安全：三个承诺功能的 CLI 入口
+
+`sanitize` / `check-leakage` / `audit` 对应上面「功能特性」里承诺的隐私脱敏、
+泄漏检测与就绪审计。三者此前的文档缺口是：功能列表承诺了、CLI 一节却一个示例都没有。
+
+```bash
+# PII 脱敏（--fields 指定要处理的字段；--extra 启用信用卡/URL 等误伤面较大的模式）
+python cli.py sanitize --input raw.json --output masked.json --fields instruction output
+
+# 训练/测试集泄漏检测（--gate 时检出泄漏即退出码 1，可直接当 CI 门禁）
+python cli.py check-leakage --train train.json --test test.json --gate
+
+# 就绪审计：把脱敏、重复、空字段、泄漏信号合成一个 go / no-go 判定
+python cli.py audit --input data.json --gate
+```
 
 ### 基本命令
 

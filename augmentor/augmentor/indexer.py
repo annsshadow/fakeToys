@@ -14,7 +14,19 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from enum import Enum
 from collections import defaultdict
-from .validation import require_count
+from .exceptions import DataValidationError
+from .validation import require_count, require_choice
+
+#: L199（B265）：索引器自己的搜索方法封闭清单（A77 单一权威）。
+#: **刻意不共引 `search_enhanced.SEARCH_METHODS`**：那张表有 5 项
+#: （exact/contains/ngram/fuzzy/regex），而 `DatasetIndexer` 只建成 3 份索引，
+#: fuzzy 与 regex 在这里没有实现——照抄会让那两个值通过判据、然后继续静默回落
+#: contains，等于把 L175 刚堵上的口子原样开回来。要支持它们得先建索引，
+#: 那是能力轮，不是判据轮。
+INDEXER_SEARCH_METHODS = ("exact", "contains", "ngram")
+
+#: L199（B265）：`DatasetView.to_file` 的落盘容器封闭清单。
+INDEXER_FILE_FORMATS = ("json", "jsonl")
 
 logger = logging.getLogger(__name__)
 
@@ -258,12 +270,26 @@ class DatasetIndexer:
         
         Returns:
             查询结果
+
+        Raises:
+            DataValidationError: `method` 不在索引器实现的三法之内
         """
+        # L199：判据先于扫表。改前未知值静默落 contains 支，而返回值里的
+        # `index_used` 又原样回显调用方给的方法名 ⇒ 结果主动谎报「用的是 regex」，
+        # 读结果的人无法自证。fuzzy / regex 属 `search_enhanced`，这里没有实现。
+        if method is None:
+            raise DataValidationError(
+                "method 不能为 null，合法取值: "
+                f"{' / '.join(INDEXER_SEARCH_METHODS)}"
+            )
+        require_choice("method", method, choices=INDEXER_SEARCH_METHODS)
+
         import time
         start_time = time.time()
         
         fields = fields or ["instruction", "output"]
         all_matches: Dict[int, float] = defaultdict(float)
+        executed = method
         
         for field in fields:
             if method == "exact":
@@ -285,7 +311,7 @@ class DatasetIndexer:
             items=[self._items[idx] for idx in sorted_indices],
             total_matches=len(sorted_indices),
             query_time_ms=query_time,
-            index_used=f"{method}:{','.join(fields)}"
+            index_used=f"{executed}:{','.join(fields)}"
         )
     
     def get_item(self, index: int) -> Optional[Dict]:
@@ -502,7 +528,19 @@ class DatasetView:
         Args:
             path: 文件路径
             format: 文件格式
+
+        Raises:
+            DataValidationError: `format` 不是 json/jsonl 之一
         """
+        # L199：判据先于落盘。改前 `format` 只跟 'jsonl' 比一次，`"csv"` /
+        # `"jsonl "` 一律静默写成 JSON 数组——用户声称为 csv 的产物里装着 JSON。
+        if format is None:
+            raise DataValidationError(
+                "format 不能为 null，合法取值: "
+                f"{' / '.join(INDEXER_FILE_FORMATS)}"
+            )
+        require_choice("format", format, choices=INDEXER_FILE_FORMATS)
+
         output = Path(path)
         output.parent.mkdir(parents=True, exist_ok=True)
         

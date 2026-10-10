@@ -1450,7 +1450,7 @@ pub async fn attachment2_list_filter_name(
         .query(
             "SELECT id, name, person, reference_type, extension, length, mime_type, create_time::text
              FROM FILE_FILE WHERE name ILIKE $1 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC",
-            &[&format!("%{}%", name)],
+            &[&format!("%{}%", shared::db::escape_like(&name))],
         )
         .await.map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows
@@ -1726,6 +1726,16 @@ pub async fn attachment2_list_top(
     )))
 }
 
+/// attachment2 列表分页量（纯函数，便于单测）：page/size 为路径字符串。
+/// page 为 1 基 → offset=(page-1)*limit；size 解析失败回退 20、夹到 1..=200。
+/// 修复原 `page*size`（page=1 跳过首页 off-by-one）+ size 无上限（无界 LIMIT），
+/// 对齐全库 1 基 `(page-1)*size` 约定与 size 上限夹取。
+fn attachment2_limit_offset(page: &str, size: &str) -> (i64, i64) {
+    let limit = size.parse::<i64>().unwrap_or(20).clamp(1, 200);
+    let offset = (page.parse::<i64>().unwrap_or(1).max(1) - 1).saturating_mul(limit);
+    (limit, offset)
+}
+
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn attachment2_list_type_page_size_size(
@@ -1733,8 +1743,7 @@ pub async fn attachment2_list_type_page_size_size(
     axum::extract::Path((_type, page, size)): axum::extract::Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let page_size: i64 = size.parse().unwrap_or(20);
-    let offset: i64 = page.parse().unwrap_or(0) * page_size;
+    let (page_size, offset) = attachment2_limit_offset(&page, &size);
     let rows = client
         .query(
             "SELECT id, name, person, reference_type, extension, length, mime_type, create_time::text
@@ -2454,7 +2463,7 @@ pub async fn complex_folder_id(
 pub async fn complex_top(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let folder_rows = client
-        .query("SELECT id, name, person, superior FROM FILE_FOLDER WHERE superior IS NULL OR superior = '' ORDER BY name LIMIT 10", &[])
+        .query("SELECT id, name, person, superior FROM FILE_FOLDER WHERE (superior IS NULL OR superior = '') AND deleted_at IS NULL ORDER BY name LIMIT 10", &[])
         .await.map_err(|_| AppError::Internal)?;
     let folder_list: Vec<Value> = folder_rows
         .iter()
@@ -2479,7 +2488,7 @@ pub async fn complex_top(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
         })
         .collect();
     let attachment_rows = client
-        .query("SELECT id, name, person, reference_type, extension, length FROM FILE_FILE ORDER BY name LIMIT 10", &[])
+        .query("SELECT id, name, person, reference_type, extension, length FROM FILE_FILE WHERE deleted_at IS NULL ORDER BY name LIMIT 10", &[])
         .await.map_err(|_| AppError::Internal)?;
     let attachment_list: Vec<Value> = attachment_rows
         .iter()

@@ -599,4 +599,139 @@ mod u2_contract {
             assert_eq!(n, 1, "同 bundle 更新不得产生重复行");
         }
     }
+
+    // batch_process N+1→single prefetch collapse (优化二轮 22): /batch resolves
+    // all query_type lookups in one `query_type = ANY` prefetch, assembling per
+    // input item in order. Verifies found, duplicate, not-found and empty paths.
+    #[tokio::test]
+    async fn u2_batch_process_prefetches_and_preserves_order() {
+        if !shared::testing::is_db_available().await {
+            return;
+        }
+        let c = client().await;
+        c.execute(
+            "CREATE TABLE IF NOT EXISTS x_query (id TEXT, name TEXT, query_type TEXT, count TEXT, create_time TEXT, update_time TEXT, sequence TEXT, order_number BIGINT, creator TEXT, creator_person TEXT, update_person TEXT)",
+            &[],
+        )
+        .await
+        .unwrap();
+        c.execute(
+            "DELETE FROM x_query WHERE id IN ($1, $2)",
+            &[&"u2-bp-1", &"u2-bp-2"],
+        )
+        .await
+        .unwrap();
+        c.execute(
+            "INSERT INTO x_query (id, name, query_type, count) VALUES ($1,$2,$3,$4), ($5,$6,$7,$8)",
+            &[
+                &"u2-bp-1",
+                &"甲查询",
+                &"u2-bp-alpha",
+                &"5",
+                &"u2-bp-2",
+                &"乙查询",
+                &"u2-bp-beta",
+                &"0",
+            ],
+        )
+        .await
+        .unwrap();
+        // found(alpha), found+duplicate(alpha again), found(beta, count 0),
+        // not-found(missing), empty(error).
+        let body = r#"{"queries":[{"queryType":"u2-bp-alpha"},{"queryType":"u2-bp-alpha"},{"queryType":"u2-bp-beta"},{"queryType":"u2-bp-missing"},{"queryType":""}]}"#;
+        let v = post(app(), "/api/query/service/processing/batch", body.into()).await;
+        assert_eq!(v["type"], "success");
+        let results = v["data"]["results"].as_array().expect("results array");
+        assert_eq!(results.len(), 5);
+        assert_eq!(v["data"]["total"], 5);
+        // #0 alpha found, count 5 → processed true
+        assert_eq!(results[0]["id"], "u2-bp-1");
+        assert_eq!(results[0]["count"], 5);
+        assert_eq!(results[0]["processed"], true);
+        // #1 duplicate alpha → same found row
+        assert_eq!(results[1]["id"], "u2-bp-1");
+        // #2 beta found, count 0 → processed false
+        assert_eq!(results[2]["queryType"], "u2-bp-beta");
+        assert_eq!(results[2]["count"], 0);
+        assert_eq!(results[2]["processed"], false);
+        // #3 missing → not found error
+        assert_eq!(results[3]["processed"], false);
+        assert_eq!(results[3]["error"], "query type not found");
+        // #4 empty → required error
+        assert_eq!(results[4]["error"], "query_type is required");
+        c.execute(
+            "DELETE FROM x_query WHERE id IN ($1, $2)",
+            &[&"u2-bp-1", &"u2-bp-2"],
+        )
+        .await
+        .unwrap();
+    }
+
+    // reset 二写补事务（优化二轮 33）：/reset 现把「清近 1h 处理缓存（DELETE
+    // x_query_processing）」与「x_query 计数归 1（UPDATE）」包进单事务+commit，
+    // 避免中途失败留下半重置态。此处聚焦验证事务内 DELETE 的时间窗语义——近 1h
+    // 行必删、超 1h 行必留——且在 commit 后对新连接可见（证明事务已提交非回滚）。
+    // 注：reset 的 UPDATE x_query 无 WHERE 为全表（O2OA 契约语义），本测试不播种/
+    // 断言 x_query，仅验 x_query_processing，以免与并发用例争 x_query 行。
+    #[tokio::test]
+    async fn u2_reset_clears_recent_processing_in_one_txn() {
+        if !shared::testing::is_db_available().await {
+            return;
+        }
+        let c = client().await;
+        c.execute(
+            "CREATE TABLE IF NOT EXISTS x_query_processing (id VARCHAR(255) PRIMARY KEY, query TEXT NOT NULL, model_flag VARCHAR(255), params JSONB DEFAULT '{}', creator VARCHAR(255), create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP, update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP)",
+            &[],
+        )
+        .await
+        .unwrap();
+        c.execute(
+            "DELETE FROM x_query_processing WHERE id IN ($1, $2)",
+            &[&"u2-reset-recent", &"u2-reset-old"],
+        )
+        .await
+        .unwrap();
+        // 近 1h（NOW）必删 / 超 1h（NOW-2h）必留
+        c.execute(
+            "INSERT INTO x_query_processing (id, query, create_time) VALUES \
+             ($1, 'q', NOW()), ($2, 'q', NOW() - INTERVAL '2 hours')",
+            &[&"u2-reset-recent", &"u2-reset-old"],
+        )
+        .await
+        .unwrap();
+
+        let v = post(app(), "/api/query/service/processing/reset", "{}".into()).await;
+        assert_eq!(v["type"], "success");
+        assert_eq!(
+            v["data"]["clearedCache"], true,
+            "近 1h 行被清则 clearedCache=true"
+        );
+
+        // commit 后新连接可见：近行已删、旧行仍在（事务已提交，非回滚）
+        let gone: i64 = c
+            .query_one(
+                "SELECT COUNT(*) AS c FROM x_query_processing WHERE id = $1",
+                &[&"u2-reset-recent"],
+            )
+            .await
+            .unwrap()
+            .get("c");
+        assert_eq!(gone, 0, "近 1h 处理缓存应被事务内 DELETE 清除");
+        let kept: i64 = c
+            .query_one(
+                "SELECT COUNT(*) AS c FROM x_query_processing WHERE id = $1",
+                &[&"u2-reset-old"],
+            )
+            .await
+            .unwrap()
+            .get("c");
+        assert_eq!(kept, 1, "超 1h 处理缓存不在时间窗内应保留");
+
+        c.execute(
+            "DELETE FROM x_query_processing WHERE id IN ($1, $2)",
+            &[&"u2-reset-recent", &"u2-reset-old"],
+        )
+        .await
+        .unwrap();
+    }
 }

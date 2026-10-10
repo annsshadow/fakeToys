@@ -358,6 +358,8 @@ class TestCacheKeyCorrectness:
                 [sys.executable, "-c", script],
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 cwd=str(repo_root),
                 env=dict(os.environ, PYTHONHASHSEED=seed),
             )

@@ -103,6 +103,51 @@ func (s *Service) AllocateMastery(ctx context.Context, userID int64, nodeID int)
 	})
 }
 
+// ResetMastery 消耗一件 `mastery_reset` 道具，清空该玩家全部已点亮专精节点（重铸）。
+//
+// ## 产品语义（本轮落地的决策，README 已知边界第 16 条原「未做」项）
+//
+// `AllocateMastery` 是**只插不删**——选定方向后没有任何途径改向。
+// `mastery_reset` 是唯一的「重铸」入口：花一件道具清空全部
+// `user_mastery_nodes`，玩家得以重新分配。
+//
+// 专精**点数预算不变**（`user_progress.mastery_points` 由 `level_exp`
+// 派生，清节点不影响已挣点数）；清空后 `0 个选中 ≤ 点数` 恒成立，
+// 后续 `AllocateMastery` 的 `EvaluateMastery` 校验自然通过。
+//
+// ## 事务顺序：先扣道具、再清节点
+//
+// 若先清节点再扣道具，「道具不足」时节点已清却没消耗道具 ——
+// 等于白送一次重铸。必须先扣（不足即整批回滚，节点不动），再清。
+//
+// 返回值是**清掉的节点数**（供审计与回执），不是「还剩多少」。
+func (s *Service) ResetMastery(ctx context.Context, userID int64) (int, error) {
+	var cleared int
+	err := s.DB.Tx(ctx, func(tx txType) error {
+		if err := spendToken(ctx, tx, userID, "mastery_reset", "mastery_reset_used", userID); err != nil {
+			return err
+		}
+		tag, err := tx.Exec(ctx, `DELETE FROM user_mastery_nodes WHERE user_id = $1`, userID)
+		if err != nil {
+			return fmt.Errorf("clear mastery nodes: %w", err)
+		}
+		cleared = int(tag.RowsAffected())
+		// 审计：与 SaveLoadout 同一模式（admin_id=NULL，detail 是 JSONB）。
+		if _, err := tx.Exec(ctx,
+			`INSERT INTO admin_audit_logs (admin_id, username, action, target, detail)
+			 VALUES (NULL, $1, $2, $3, $4)`,
+			fmt.Sprintf("user#%d", userID), "mastery_reset",
+			fmt.Sprintf("user#%d", userID), fmt.Sprintf("{\"cleared\":%d}", cleared)); err != nil {
+			return fmt.Errorf("audit log: %w", err)
+		}
+		return nil
+	})
+	if err != nil {
+		return 0, err
+	}
+	return cleared, nil
+}
+
 // lockChallengeStateOrdered 按**固定顺序**锁住一次挑战会触碰的全部跨用户行（第 79 轮）。
 //
 // # 缺陷：两个对向挑战必然死锁（有两处，不是��处）

@@ -1356,8 +1356,14 @@ pub async fn picture_list(
 #[allow(non_snake_case)]
 pub async fn shutup_create(
     pool: Extension<Pool>,
+    session: Extension<Session>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 禁言是 BBS 管理动作（与 section_delete/delete_forum 同口径）：非管理员不得禁言他人。
+    // 前端 BBSForum.vue 存禁言走本端点（管理面板，调用者为 admin）；任何登录用户可禁言他人=越权。
+    if !is_admin(&pool, &session.person_unique).await {
+        return Err(AppError::Forbidden);
+    }
     let person = body.get("person").and_then(|v| v.as_str()).unwrap_or("");
     let reason = body.get("reason").and_then(|v| v.as_str()).unwrap_or("");
     let id = Uuid::new_v4().to_string();
@@ -1381,10 +1387,15 @@ pub async fn shutup_create(
 #[allow(non_snake_case)]
 pub async fn shutup_delete(
     pool: Extension<Pool>,
+    session: Extension<Session>,
     // 前端 BBSForum.vue: api.post('.../shutup/delete', { person }) —— 无路径参数，从体读 person，
     // 解除该 person 的禁言（此前误声明 Path(id) 致 0 槽路由恒 arity-500）。
     axum::Json(body): axum::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 解禁言同为 BBS 管理动作（与 section_delete/delete_forum 同口径）：非管理员不得解禁。
+    if !is_admin(&pool, &session.person_unique).await {
+        return Err(AppError::Forbidden);
+    }
     let person = body
         .get("person")
         .and_then(|v| v.as_str())

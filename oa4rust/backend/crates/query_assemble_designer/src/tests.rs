@@ -806,3 +806,189 @@ fn table_ddl_is_generated_from_whitelisted_metadata() {
     assert_eq!(ddl, "CREATE TABLE \"x_query_data_t_safe_1\" (\"id\" UUID PRIMARY KEY DEFAULT gen_random_uuid(), \"title\" TEXT NOT NULL, \"score\" DOUBLE PRECISION)");
     assert!(physical_table_name("bad-name").is_err());
 }
+
+/// 软删泄漏回归（优化二轮 42）：importmodel_get_flag 原 WHERE 子句
+/// `id=$1 OR model_flag=$1 AND deleted_at IS NULL` 因 AND 优先级高于 OR，实际为
+/// `id=$1 OR (model_flag=$1 AND deleted_at IS NULL)`——按 id 命中的已删行照样返回。
+/// 括号化修复后：已删导入模型按 id 查应返回「not found」，未删行正常返回。
+#[tokio::test]
+async fn importmodel_get_flag_hides_soft_deleted_by_id() {
+    if !shared::testing::is_db_available().await {
+        eprintln!("skipping importmodel_get_flag_hides_soft_deleted_by_id: DB not reachable");
+        return;
+    }
+    let pool = shared::testing::test_pool();
+    let c = pool.get().await.unwrap();
+    c.execute(
+        "CREATE TABLE IF NOT EXISTS x_query_import_model (id TEXT PRIMARY KEY, name TEXT, model_flag TEXT, query_flag TEXT, content TEXT, creator TEXT, creator_person TEXT, create_time TEXT, update_time TEXT, permission TEXT, deleted_at TIMESTAMP)",
+        &[],
+    )
+    .await
+    .unwrap();
+    c.execute(
+        "DELETE FROM x_query_import_model WHERE id IN ('u2-im-dead','u2-im-live')",
+        &[],
+    )
+    .await
+    .unwrap();
+    // 已删行（按 id 命中）+ 未删行
+    c.execute(
+        "INSERT INTO x_query_import_model (id, name, deleted_at) VALUES ('u2-im-dead', 'dead-model', NOW())",
+        &[],
+    )
+    .await
+    .unwrap();
+    c.execute(
+        "INSERT INTO x_query_import_model (id, name, deleted_at) VALUES ('u2-im-live', 'live-model', NULL)",
+        &[],
+    )
+    .await
+    .unwrap();
+
+    // 已删行按 id 查 → 必须 not found（修复前因 OR/AND 优先级会泄漏）
+    let dead = crate::u2_closures::importmodel_get_flag(
+        axum::Extension(pool.clone()),
+        axum::extract::Path("u2-im-dead".to_string()),
+    )
+    .await
+    .unwrap();
+    let dead_json = serde_json::to_value(&dead.0).unwrap();
+    assert_eq!(
+        dead_json["type"], "error",
+        "软删导入模型按 id 查不得返回记录"
+    );
+
+    // 未删行按 id 查 → 正常返回
+    let live = crate::u2_closures::importmodel_get_flag(
+        axum::Extension(pool.clone()),
+        axum::extract::Path("u2-im-live".to_string()),
+    )
+    .await
+    .unwrap();
+    let live_json = serde_json::to_value(&live.0).unwrap();
+    assert_eq!(live_json["type"], "success");
+    assert_eq!(live_json["data"]["id"], "u2-im-live");
+
+    c.execute(
+        "DELETE FROM x_query_import_model WHERE id IN ('u2-im-dead','u2-im-live')",
+        &[],
+    )
+    .await
+    .unwrap();
+}
+
+/// NOW()→TEXT 列类型错配回归（优化二轮 49）：x_query_table.update_time 为 TEXT，
+/// table_reload_dynamic 原 `SET update_time = NOW()`（timestamptz）在 PG 无 text 隐式
+/// 赋值转换会 500；修为 to_char 字面量后应成功。同族 build/draft 写法已 to_char。
+#[tokio::test]
+async fn table_reload_dynamic_writes_text_update_time_ok() {
+    if !shared::testing::is_db_available().await {
+        eprintln!("skipping table_reload_dynamic_writes_text_update_time_ok: DB not reachable");
+        return;
+    }
+    let pool = shared::testing::test_pool();
+    let c = pool.get().await.unwrap();
+    c.execute(
+        "CREATE TABLE IF NOT EXISTS x_query_table (id TEXT, name TEXT, table_flag TEXT, creator TEXT, create_time TEXT, query_flag TEXT, update_time TEXT, status TEXT, reloaded BOOLEAN DEFAULT false)",
+        &[],
+    )
+    .await
+    .unwrap();
+    for col in [
+        "ALTER TABLE x_query_table ADD COLUMN IF NOT EXISTS status TEXT",
+        "ALTER TABLE x_query_table ADD COLUMN IF NOT EXISTS reloaded BOOLEAN DEFAULT false",
+        "ALTER TABLE x_query_table ADD COLUMN IF NOT EXISTS update_time TEXT",
+    ] {
+        c.execute(col, &[]).await.unwrap();
+    }
+    c.execute("DELETE FROM x_query_table WHERE id = 'u2-qt-reload'", &[])
+        .await
+        .unwrap();
+    c.execute(
+        "INSERT INTO x_query_table (id, table_flag, reloaded) VALUES ('u2-qt-reload','u2flag',false)",
+        &[],
+    )
+    .await
+    .unwrap();
+
+    // 修复前：NOW() 赋给 TEXT 列 → PG 报错 → handler 返回 500；修复后成功
+    let resp = crate::table_reload_dynamic(axum::Extension(pool.clone()))
+        .await
+        .expect("reload handler 不应因 NOW()→TEXT 类型错配而 500");
+    let j = serde_json::to_value(&resp.0).unwrap();
+    assert_eq!(j["type"], "success");
+
+    let row = c
+        .query_one(
+            "SELECT reloaded, update_time FROM x_query_table WHERE id = 'u2-qt-reload'",
+            &[],
+        )
+        .await
+        .unwrap();
+    assert!(row.get::<_, bool>("reloaded"), "reloaded 应被置 true");
+    assert!(
+        !row.get::<_, Option<String>>("update_time")
+            .unwrap_or_default()
+            .is_empty(),
+        "update_time 应写入字面量时间串"
+    );
+
+    c.execute("DELETE FROM x_query_table WHERE id = 'u2-qt-reload'", &[])
+        .await
+        .unwrap();
+}
+
+/// NOW()→TEXT 类型错配回归（优化二轮 50，续轮49）：x_query_input 的 create_time
+/// 为 TEXT，input_create 原 `VALUES (.., NOW())` 在 PG 无 timestamptz→text 隐式赋值
+/// 转换会 500；修为 to_char 字面量后应成功落库。
+#[tokio::test]
+async fn input_create_writes_text_create_time_ok() {
+    if !shared::testing::is_db_available().await {
+        eprintln!("skipping input_create_writes_text_create_time_ok: DB not reachable");
+        return;
+    }
+    let pool = shared::testing::test_pool();
+    let c = pool.get().await.unwrap();
+    c.execute(
+        "CREATE TABLE IF NOT EXISTS x_query_input (id TEXT PRIMARY KEY, content TEXT, creator TEXT, create_time TEXT, update_time TEXT)",
+        &[],
+    )
+    .await
+    .unwrap();
+    for col in [
+        "ALTER TABLE x_query_input ADD COLUMN IF NOT EXISTS create_time TEXT",
+        "ALTER TABLE x_query_input ADD COLUMN IF NOT EXISTS update_time TEXT",
+    ] {
+        c.execute(col, &[]).await.unwrap();
+    }
+
+    // 修复前：NOW() 赋 TEXT 列 → 报错 500；修复后 to_char 字面量成功
+    let resp = crate::input_create(
+        axum::Extension(pool.clone()),
+        axum::Json(serde_json::json!({"content": "u2-input-body"})),
+    )
+    .await
+    .expect("input_create 不应因 NOW()→TEXT 类型错配而 500");
+    let j = serde_json::to_value(&resp.0).unwrap();
+    assert_eq!(j["type"], "success");
+    let id = j["data"]["id"].as_str().expect("new input id");
+
+    let ct: Option<String> = c
+        .query_one(
+            "SELECT create_time FROM x_query_input WHERE id = $1",
+            &[&id.to_string()],
+        )
+        .await
+        .unwrap()
+        .get("create_time");
+    assert!(
+        !ct.unwrap_or_default().is_empty(),
+        "create_time 应写入字面量时间串"
+    );
+    c.execute(
+        "DELETE FROM x_query_input WHERE id = $1",
+        &[&id.to_string()],
+    )
+    .await
+    .unwrap();
+}

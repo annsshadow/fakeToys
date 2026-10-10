@@ -7,6 +7,7 @@ import { ref } from 'vue'
 import { fileApi } from '@/services'
 import { useSession } from '@/store/session'
 import { ensureAuthenticated } from '@/utils/auth-guard'
+import { formatFileSize } from '@/utils/format'
 
 const session = useSession()
 const rows = ref<Record<string, unknown>[]>([])
@@ -25,8 +26,8 @@ function nameOf(row: Record<string, unknown>): string {
 }
 function metaOf(row: Record<string, unknown>): string {
   const parts: string[] = []
-  const size = row.size
-  if (typeof size === 'number') parts.push(size > 1048576 ? `${(size / 1048576).toFixed(1)} MB` : `${size} B`)
+  const sizeText = formatFileSize(row.size)
+  if (sizeText) parts.push(sizeText)
   for (const k of ['createTime', 'creator']) {
     const v = row[k]
     if (typeof v === 'string' && v) parts.push(v)

@@ -696,11 +696,16 @@ pub async fn empower_list_with_person(
     headers: HeaderMap,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    resolve_current_person_unique(&session_manager, &headers).await?;
+    let current = resolve_current_person_unique(&session_manager, &headers).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let Some(person_unique) = resolve_person_flag(&client, &flag).await? else {
         return Ok(Json(ActionResult::error("person not found")));
     };
+    // 授权列表属个人隐私：仅本人或管理员可查。原先丢弃会话、直接按路径 {flag}
+    // 过滤 from_person，攻击者替换他人 unique_id/name/id 即可枚举其全部授权（IDOR）。
+    if person_unique != current && !is_admin(&pool, &current).await {
+        return Err(AppError::Forbidden);
+    }
     let rows = client
         .query(
             "SELECT id, from_person, to_person, role_id, enabled FROM x_empower \

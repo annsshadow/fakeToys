@@ -1182,3 +1182,208 @@ async fn mobile_bbs_topic_reply_roundtrip_live() {
     assert_eq!(st, StatusCode::OK);
     assert_eq!(missing["type"], "error");
 }
+
+/// 投票二写原子性（优化二轮 34）：vote/submit 现把「写 x_bbs_vote_record」+
+/// 「x_bbs_topic.vote_count +1」包进单事务+commit。验证提交后终态一致——票数
+/// 恰 +1 且恰有一条本人投票记录（二写同时可见，证非半提交）。
+#[tokio::test]
+async fn test_vote_submit_record_and_count_are_atomic() {
+    use shared::testing::{is_db_available, test_pool};
+    if !is_db_available().await {
+        eprintln!("skipping test_vote_submit_record_and_count_are_atomic: DB not reachable");
+        return;
+    }
+    u2::ensure_u2_schema(&test_pool().get().await.unwrap()).await;
+
+    let voter = "u2-voter-carol";
+    let topic_id = "u2-topic-vote-atom-001";
+    {
+        let client = test_pool().get().await.unwrap();
+        client
+            .execute(
+                "DELETE FROM x_bbs_vote_record WHERE topic_id = $1",
+                &[&topic_id],
+            )
+            .await
+            .unwrap();
+        client
+            .execute(
+                "INSERT INTO x_bbs_topic (id, title, author_id, creator, section_id, vote_count) \
+                 VALUES ($1,'t',$2,$2,'sec-u2',0) \
+                 ON CONFLICT (id) DO UPDATE SET deleted_at = NULL, vote_count = 0",
+                &[&topic_id, &voter],
+            )
+            .await
+            .expect("seed topic");
+    }
+
+    let app = crate::router(test_pool());
+    let (st, v) = send_with_session(
+        app,
+        Method::PUT,
+        &format!("{BASE}/user/subject/vote/submit"),
+        Some(json!({"subjectId": topic_id, "optionId": "opt-a", "optionName": "甲"})),
+        Some(make_session(voter, "carol")),
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK);
+    assert_eq!(v["data"]["voted"], true);
+
+    // 事务提交后：票数 +1 且投票记录恰一条（二写同时落库）
+    let client = test_pool().get().await.unwrap();
+    let count: i32 = client
+        .query_one(
+            "SELECT vote_count FROM x_bbs_topic WHERE id = $1",
+            &[&topic_id],
+        )
+        .await
+        .unwrap()
+        .get("vote_count");
+    assert_eq!(count, 1, "vote_count 应原子 +1");
+    let records: i64 = client
+        .query_one(
+            "SELECT COUNT(*) AS c FROM x_bbs_vote_record WHERE topic_id = $1 AND person = $2",
+            &[&topic_id, &voter],
+        )
+        .await
+        .unwrap()
+        .get("c");
+    assert_eq!(records, 1, "应恰有一条本人投票记录与计数同事务落库");
+
+    client
+        .execute(
+            "DELETE FROM x_bbs_vote_record WHERE topic_id = $1",
+            &[&topic_id],
+        )
+        .await
+        .unwrap();
+}
+
+/// 禁言/解禁言管理门禁（优化二轮 48）：shutup_create / shutup_delete 原先无
+/// session、无 is_admin，任何登录用户可禁言/解禁任意 BBS 用户（越权 + 破坏论坛
+/// 管理）。同 crate 的 section_delete/delete_forum 均按 admin 门禁。修复后：
+/// 非 admin → 403 且不落库；admin → 成功且真实写入/删除。
+#[tokio::test]
+async fn test_shutup_create_and_delete_require_admin() {
+    use shared::testing::{is_db_available, test_pool};
+    if !is_db_available().await {
+        eprintln!("skipping test_shutup_create_and_delete_require_admin: DB not reachable");
+        return;
+    }
+    u2::ensure_u2_schema(&test_pool().get().await.unwrap()).await;
+
+    let victim = "u2-shutup-victim";
+    let admin = "u2-shutup-admin";
+    // 临时授予 admin 角色（is_admin 查 auth_role.name='admin' + auth_person_role 绑定）
+    {
+        let client = test_pool().get().await.unwrap();
+        client
+            .execute(
+                "INSERT INTO auth_role (id, name) VALUES ('u2-shutup-admin-role','admin') \
+                 ON CONFLICT (id) DO NOTHING",
+                &[],
+            )
+            .await
+            .expect("seed admin role");
+        client
+            .execute(
+                "INSERT INTO auth_person (id, unique_id, name, password_hash) \
+                 VALUES ('u2-shutup-admin-person','u2-shutup-admin','ShutupAdmin','x') \
+                 ON CONFLICT (id) DO NOTHING",
+                &[],
+            )
+            .await
+            .expect("seed admin person");
+        client
+            .execute(
+                "INSERT INTO auth_person_role (person_id, role_id, unit_id) \
+                 VALUES ('u2-shutup-admin-person','u2-shutup-admin-role','u2-unit') \
+                 ON CONFLICT DO NOTHING",
+                &[],
+            )
+            .await
+            .expect("bind admin role");
+        let _ = client
+            .execute("DELETE FROM x_bbs_shutup WHERE person = $1", &[&victim])
+            .await;
+    }
+
+    let app = crate::router(test_pool());
+
+    // 非 admin 存禁言 → 403，且不产生记录
+    let (st_non, _) = send_with_session(
+        app.clone(),
+        Method::POST,
+        &format!("{}/shutup/save", BASE),
+        Some(json!({"person": victim, "reason": "spam"})),
+        Some(make_session("u2-shutup-bob", "bob")),
+    )
+    .await;
+    assert_eq!(st_non, StatusCode::FORBIDDEN, "非管理员不得禁言");
+
+    let rows_after_non: i64 = {
+        let c = test_pool().get().await.unwrap();
+        c.query_one(
+            "SELECT COUNT(*) AS c FROM x_bbs_shutup WHERE person = $1",
+            &[&victim],
+        )
+        .await
+        .unwrap()
+        .get::<_, i64>("c")
+    };
+    assert_eq!(rows_after_non, 0, "403 后不得落库禁言记录");
+
+    // 非 admin 解禁 → 403
+    let (st_non_del, _) = send_with_session(
+        app.clone(),
+        Method::POST,
+        &format!("{}/shutup/delete", BASE),
+        Some(json!({"person": victim})),
+        Some(make_session("u2-shutup-bob", "bob")),
+    )
+    .await;
+    assert_eq!(st_non_del, StatusCode::FORBIDDEN, "非管理员不得解禁");
+
+    // admin 存禁言 → 200 且落库
+    let (st_admin, body) = send_with_session(
+        app.clone(),
+        Method::POST,
+        &format!("{}/shutup/save", BASE),
+        Some(json!({"person": victim, "reason": "spam"})),
+        Some(make_session(admin, "admin")),
+    )
+    .await;
+    assert_eq!(st_admin, StatusCode::OK);
+    assert_eq!(body["type"], "success");
+    let rows: i64 = {
+        let c = test_pool().get().await.unwrap();
+        c.query_one(
+            "SELECT COUNT(*) AS c FROM x_bbs_shutup WHERE person = $1",
+            &[&victim],
+        )
+        .await
+        .unwrap()
+        .get::<_, i64>("c")
+    };
+    assert_eq!(rows, 1, "admin 禁言后应真实落库一条");
+
+    // admin 解禁 → 200 且删除
+    let (st_admin_del, body_del) = send_with_session(
+        app.clone(),
+        Method::POST,
+        &format!("{}/shutup/delete", BASE),
+        Some(json!({"person": victim})),
+        Some(make_session(admin, "admin")),
+    )
+    .await;
+    assert_eq!(st_admin_del, StatusCode::OK);
+    assert_eq!(body_del["data"]["deleted"], true, "admin 解禁应删除记录");
+
+    // 清理
+    {
+        let c = test_pool().get().await.unwrap();
+        let _ = c
+            .execute("DELETE FROM x_bbs_shutup WHERE person = $1", &[&victim])
+            .await;
+    }
+}

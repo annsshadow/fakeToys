@@ -917,22 +917,24 @@ pub async fn u2_vote_submit(
     let person = session.person_unique.clone();
     let record_id = Uuid::new_v4().to_string();
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    client
-        .execute(
-            "INSERT INTO x_bbs_vote_record (id, topic_id, person, option_id, option_name) \
+    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    // 投票=原子地「写投票记录」+「topic 票数 +1」，二写须同事务：否则 INSERT 成功而
+    // UPDATE 失败会留下有记录却未计数的态（计数与记录数永久不一致）。
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    tx.execute(
+        "INSERT INTO x_bbs_vote_record (id, topic_id, person, option_id, option_name) \
              VALUES ($1, $2, $3, $4, $5)",
-            &[&record_id, &topic_id, &person, &option_id, &option_name],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
-    client
-        .execute(
-            "UPDATE x_bbs_topic SET vote_count = vote_count + 1 WHERE id = $1 AND deleted_at IS NULL",
-            &[&topic_id],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
+        &[&record_id, &topic_id, &person, &option_id, &option_name],
+    )
+    .await
+    .map_err(|_| AppError::Internal)?;
+    tx.execute(
+        "UPDATE x_bbs_topic SET vote_count = vote_count + 1 WHERE id = $1 AND deleted_at IS NULL",
+        &[&topic_id],
+    )
+    .await
+    .map_err(|_| AppError::Internal)?;
+    tx.commit().await.map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([

@@ -503,4 +503,74 @@ mod tests {
             .unwrap();
         assert_ne!(response.status(), StatusCode::NOT_FOUND);
     }
+
+    // 优化二轮 43：building/room 搜索 LIKE 通配符转义。意图——搜索词里的 `_`/`%`
+    // 必须当字面量匹配，不得被解释成 ILIKE 通配符（如搜 "_" 命中任意单字=全表泄漏）。
+    #[ignore = "requires a running PostgreSQL server"]
+    #[tokio::test]
+    async fn building_search_treats_underscore_as_literal_not_wildcard() {
+        let pool = test_pool();
+        let c = pool.get().await.unwrap();
+        c.execute(
+            "CREATE TABLE IF NOT EXISTS x_meeting_building (id VARCHAR(255) PRIMARY KEY, name VARCHAR(255) NOT NULL, address TEXT, description TEXT, order_number INTEGER DEFAULT 0, create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP)",
+            &[],
+        )
+        .await
+        .unwrap();
+        c.execute(
+            "ALTER TABLE x_meeting_building ADD COLUMN IF NOT EXISTS pinyin TEXT",
+            &[],
+        )
+        .await
+        .unwrap();
+        c.execute(
+            "ALTER TABLE x_meeting_building ADD COLUMN IF NOT EXISTS pinyin_initial TEXT",
+            &[],
+        )
+        .await
+        .unwrap();
+        c.execute(
+            "DELETE FROM x_meeting_building WHERE id IN ('u2-bld-under','u2-bld-plain')",
+            &[],
+        )
+        .await
+        .unwrap();
+        // pinyin 'a_c' 含字面下划线；'abc' 不含
+        c.execute(
+            "INSERT INTO x_meeting_building (id, name, pinyin) VALUES ('u2-bld-under','U','a_c'), ('u2-bld-plain','P','abc')",
+            &[],
+        )
+        .await
+        .unwrap();
+
+        // 搜索 "_"：转义后只命中含字面下划线的 'a_c'，不得把 'abc' 也命中（未转义时 _ 为任意单字会全命中）
+        let resp = crate::building_list_like_pinyin_key(
+            axum::Extension(pool.clone()),
+            axum::extract::Path("_".to_string()),
+        )
+        .await
+        .unwrap();
+        let j = serde_json::to_value(&resp.0).unwrap();
+        let ids: Vec<String> = j["data"]
+            .as_array()
+            .expect("data array")
+            .iter()
+            .map(|r| r["id"].as_str().unwrap_or_default().to_string())
+            .collect();
+        assert!(
+            ids.contains(&"u2-bld-under".to_string()),
+            "应命中含字面下划线的 pinyin"
+        );
+        assert!(
+            !ids.contains(&"u2-bld-plain".to_string()),
+            "下划线须按字面匹配，不得当通配符命中 'abc'"
+        );
+
+        c.execute(
+            "DELETE FROM x_meeting_building WHERE id IN ('u2-bld-under','u2-bld-plain')",
+            &[],
+        )
+        .await
+        .unwrap();
+    }
 }

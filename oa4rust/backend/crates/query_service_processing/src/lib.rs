@@ -101,6 +101,30 @@ pub async fn batch_process(
         ));
     }
 
+    // Collapse the per-query N+1 (one query_opt per input query, all hitting
+    // x_query) into a single prefetch keyed by query_type, then assemble each
+    // input item in order from the in-memory map.
+    let wanted: Vec<String> = queries
+        .iter()
+        .filter_map(|q| q.query_type.clone())
+        .filter(|t| !t.is_empty())
+        .collect();
+    use std::collections::HashMap;
+    type QRow = deadpool_postgres::tokio_postgres::Row;
+    let prefetched = client
+        .query(
+            "SELECT id, name, query_type, count FROM x_query WHERE query_type = ANY($1)",
+            &[&wanted],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let mut by_type: HashMap<&str, &QRow> = HashMap::new();
+    for row in &prefetched {
+        if let Some(t) = row.get::<_, Option<&str>>("query_type") {
+            by_type.entry(t).or_insert(row);
+        }
+    }
+
     let mut results = Vec::new();
     for q in queries {
         let query_type = q.query_type.unwrap_or_default();
@@ -116,16 +140,8 @@ pub async fn batch_process(
             continue;
         }
 
-        let row = client
-            .query_opt(
-                "SELECT id, name, query_type, count FROM x_query WHERE query_type = $1 LIMIT 1",
-                &[&query_type],
-            )
-            .await
-            .map_err(|_| AppError::Internal)?;
-
-        match row {
-            Some(row) => {
+        match by_type.get(query_type.as_str()) {
+            Some(&row) => {
                 let count: i64 = row
                     .get::<_, Option<String>>("count")
                     .and_then(|s| s.parse().ok())
@@ -232,14 +248,17 @@ pub async fn get_service_status(
 /// 重置查询服务
 /// 重置查询服务状态并清除缓存
 pub async fn reset_service(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let row = client
+    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    // reset=原子地「清近 1h 处理缓存」+「x_query 计数归 1」，二写须同事务：否则中途
+    // 失败会留下缓存已清但计数未重置（或反之）的半重置态。
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let row = tx
         .query_one("SELECT COUNT(*) as count FROM x_query", &[])
         .await
         .map_err(|_| AppError::Internal)?;
     let count: i64 = row.get("count");
 
-    let cleared_count = client
+    let cleared_count = tx
         .execute(
             "DELETE FROM x_query_processing WHERE create_time > NOW() - INTERVAL '1 hour'",
             &[],
@@ -247,10 +266,11 @@ pub async fn reset_service(pool: Extension<Pool>) -> Result<Json<ActionResult<Va
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let reset = client
+    let reset = tx
         .execute("UPDATE x_query SET count = '1', update_time = NOW()", &[])
         .await
         .map_err(|_| AppError::Internal)?;
+    tx.commit().await.map_err(|_| AppError::Internal)?;
 
     let now = chrono::Utc::now()
         .naive_utc()

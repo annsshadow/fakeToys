@@ -11,8 +11,15 @@ import logging
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional
 from .exceptions import QualityError, DataValidationError
+from .validation import require_choice
 
 logger = logging.getLogger(__name__)
+
+#: L199（B265）：`GateRule.severity` 的封闭清单（A77 单一权威）。
+#: 改前门禁侧 `if rule.severity == "warning": ... else: 升 error`——写少一个 ing
+#: 的 `"warn"` 会被 else 分支**静默升级为 error 级门禁**，把一条本不该阻断流水线的
+#: 警告变成阻断项。同族先例：L175/L176/L189/L192/L193/L194 的封闭清单下沉。
+GATE_SEVERITIES = ("error", "warning")
 
 
 class GateVerdict:
@@ -31,6 +38,14 @@ class GateRule:
     value: Any
     severity: str = "error"  # error / warning
     description: str = ""
+
+    def __post_init__(self):
+        """L199：severity 走封闭清单——`"warn"` 这类拼错曾被 else 分支静默升为 error 级"""
+        if self.severity is None:
+            raise DataValidationError(
+                f"severity 不能为 null，合法取值: {' / '.join(GATE_SEVERITIES)}"
+            )
+        require_choice("severity", self.severity, choices=GATE_SEVERITIES)
 
     def evaluate(self, metrics: Dict[str, Any]) -> bool:
         """对指标字典求值，返回是否满足规则
@@ -67,10 +82,17 @@ class GateRule:
 
 @dataclass
 class GateReport:
-    """门禁执行报告"""
+    """门禁执行报告
+
+    `errored_rules`（L205）与 `failed_rules` 是**两种不同的坏**：前者是
+    「这条规则压根算不出来」（`evaluate` 抛异常，如指标类型与算子不匹配），
+    后者是「算出来了，不达标」。混在同一栏里，`verdict=FAILED` 就分不清是
+    数据不达标还是规则本身写错了——而后者该修的是规则，不是数据。
+    """
     verdict: str
     failed_rules: List[str] = field(default_factory=list)
     warned_rules: List[str] = field(default_factory=list)
+    errored_rules: List[str] = field(default_factory=list)
     metrics: Dict[str, Any] = field(default_factory=dict)
 
     @property
@@ -83,6 +105,7 @@ class GateReport:
             "passed": self.passed,
             "failed_rules": self.failed_rules,
             "warned_rules": self.warned_rules,
+            "errored_rules": self.errored_rules,
             "metrics": self.metrics,
         }
 
@@ -122,13 +145,20 @@ class QualityGate:
         """
         failed_errors: List[str] = []
         failed_warnings: List[str] = []
+        # L205：算不出来的规则单开一栏。改前它被计入 `satisfied = False`，
+        # 于是「规则写错了」与「数据不达标」同形——前者该修规则、后者该修数据，
+        # 而报告说不出区别。
+        errored: List[str] = []
 
         for rule in self.rules:
             try:
                 satisfied = rule.evaluate(metrics)
             except Exception as e:
+                # 求值失败**不参与判决**：它不是「不达标」这个事实。但仍要在
+                # 报告里点名，否则一条坏规则会被完全静默。
                 logger.warning(f"规则 {rule.name} 求值失败: {e}")
-                satisfied = False
+                errored.append(rule.name)
+                continue
 
             if not satisfied:
                 if rule.severity == "warning":
@@ -149,9 +179,13 @@ class QualityGate:
             verdict=verdict,
             failed_rules=failed_errors,
             warned_rules=failed_warnings,
+            errored_rules=errored,
             metrics=metrics,
         )
-        logger.info(f"质量门禁判定: {verdict} (失败 {len(failed_errors)}, 告警 {len(failed_warnings)})")
+        logger.info(
+            f"质量门禁判定: {verdict} (失败 {len(failed_errors)}, "
+            f"告警 {len(failed_warnings)}, 求值失败 {len(errored)})"
+        )
         return report
 
 

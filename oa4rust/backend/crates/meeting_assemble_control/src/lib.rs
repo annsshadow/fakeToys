@@ -236,7 +236,7 @@ pub async fn building_list_like_pinyin_key(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let pattern = format!("%{}%", key);
+    let pattern = format!("%{}%", shared::db::escape_like(&key));
     let rows = client
         .query(
             "SELECT id, name, pinyin, pinyin_initial, address, description, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting_building WHERE pinyin ILIKE $1 ORDER BY create_time",
@@ -296,7 +296,7 @@ pub async fn building_list_like_key(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let pattern = format!("%{}%", key);
+    let pattern = format!("%{}%", shared::db::escape_like(&key));
     let rows = client
         .query(
             "SELECT id, name, pinyin, pinyin_initial, address, description, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting_building WHERE name ILIKE $1 OR address ILIKE $1 ORDER BY create_time",
@@ -2672,7 +2672,7 @@ pub async fn room_list_like_pinyin_key(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let pattern = format!("%{}%", key);
+    let pattern = format!("%{}%", shared::db::escape_like(&key));
     let rows = client
         .query(
             "SELECT id, name, pinyin, pinyin_initial, address, description, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting_room WHERE pinyin ILIKE $1 ORDER BY create_time",
@@ -2732,7 +2732,7 @@ pub async fn room_list_like_key(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let pattern = format!("%{}%", key);
+    let pattern = format!("%{}%", shared::db::escape_like(&key));
     let rows = client
         .query(
             "SELECT id, name, pinyin, pinyin_initial, address, description, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting_room WHERE name ILIKE $1 OR address ILIKE $1 ORDER BY create_time",

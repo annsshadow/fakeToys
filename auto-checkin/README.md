@@ -80,6 +80,18 @@ npm run login -- agentrouter    # 为 OAuth 站点建立/刷新 GitHub 登录会
 npm test                         # 运行回归测试
 ```
 
+### AgentRouter 需要人工过人机验证
+
+AgentRouter 把 `/api/user/self`（余额接口）单独挂在阿里云 WAF 后面，会返回**滑块验证**。这是人机验证，工具不做自动绕过——`npm run login` 会打开该接口地址并等待，你在窗口里手动拖一次滑块即可。
+
+WAF 放行窗口只有十几秒，所以**登录和签到必须连着做**，否则放行会先过期：
+
+```bash
+npm run login -- agentrouter --checkin   # 登录 → 等你拖滑块 → 立即在同一浏览器里签到
+```
+
+不带 `--checkin` 时只建立会话。日常定时任务无法自己过滑块，AgentRouter 需要每天先跑一次上面这条命令。
+
 面板上也可以点「立即全部签到」或每张卡片的「单独签到」手动触发。
 
 Windows 计划任务应调用 `run-once.bat`。该脚本会先执行 `npm run setup:browser`，验证实际 headless 浏览器；只有明确发现 executable 缺失时才强制重装，再运行一次全部站点。包装层日志写入 `logs/task-wrapper.log`。浏览器安装/验证失败会写入 wrapper 日志并以非零退出；浏览器启动失败会按站点记录为失败，其他站点仍会继续。常驻面板使用独立 daemon 锁，实际签到、单站和手动登录共用 run 租约锁。已启用但缺少凭据的跳过也会使任务返回非零。

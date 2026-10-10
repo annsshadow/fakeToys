@@ -210,7 +210,7 @@ class TestDependencyCommand:
         from augmentor.dependency import DependencyManager
 
         registry = tmp_path / "reg"
-        DependencyManager(str(registry)).add_dependency("src", "ghost", "derived_from")
+        DependencyManager(str(registry)).add_dependency("src", "ghost", "derived")
         out, err, code = run_cli(
             ["cli", "dependency", "--action", "validate", "--registry-path", str(registry)]
         )

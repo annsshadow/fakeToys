@@ -741,6 +741,8 @@ export class BattleEngine {
       slowedMs: 0,
       amplifyPermille: 0n,
       knockback: 0n,
+      armorShredMs: 0,
+      armorShredPermille: 0n,
       dead: false,
       spawnProgress: 0,
       hitFlashMs: 0,
@@ -766,6 +768,7 @@ export class BattleEngine {
     if (e.frozenMs > 0) e.frozenMs -= TICK_MS
     if (e.stunnedMs > 0) e.stunnedMs -= TICK_MS
     if (e.slowedMs > 0) e.slowedMs -= TICK_MS
+    if (e.armorShredMs > 0) e.armorShredMs -= TICK_MS
 
     const frozen = e.frozenMs > 0 || e.stunnedMs > 0 || frozenAll
     if (frozen) return
@@ -1279,8 +1282,15 @@ export class BattleEngine {
   private hitEnemy(p: Projectile, e: Enemy, skipRadius = false): boolean {
     if (!skipRadius && !this.withinEnemy(e, p.x, p.y)) return false
 
-    // 把敌人的运行时状态包成 Defender，复用与 Go 完全一致的结算
-    const def = new Defender(e.hp, e.shield, e.armorPermille)
+    // 把敌人的运行时状态包成 Defender，复用与 Go 完全一致的结算。
+    // 削甲生效期（armor_break）内折进有效护甲：削到 0 为止，不为负。
+    const effArmor =
+      e.armorShredMs > 0
+        ? (e.armorPermille > e.armorShredPermille
+            ? e.armorPermille - e.armorShredPermille
+            : 0n)
+        : e.armorPermille
+    const def = new Defender(e.hp, e.shield, effArmor)
     for (const [el, v] of e.resist) def.resist.set(el, v)
     for (const [el, v] of e.stacks) def.stacks.set(el, v)
     // 受击伤害放大（超导/急速冻结）
@@ -1364,6 +1374,14 @@ export class BattleEngine {
       const spec = reactSpec ?? REACTIONS[react as ReactionKey]
       if (react === 'flash_freeze' || react === 'superconduct') e.frozenMs = spec.statusDurationMs
       if (react === 'overheat') e.stunnedMs = spec.statusDurationMs
+      if (react === 'armor_break' && spec.armorShredPermille > 0) {
+        // 削甲：statusDurationMs 内目标护甲被削 spec.armorShredPermille 千分比
+        // （hitEnemy 构建 Defender 时折进有效护甲）；
+        // 击退：一次性右推（stepEnemyMotion 的 knockback 分支消费后清零）。
+        e.armorShredMs = spec.statusDurationMs
+        e.armorShredPermille = BigInt(spec.armorShredPermille)
+        e.knockback += BigInt(spec.knockback)
+      }
     }
 
     this.score += Number(damageScore(this.scoreRules, res.totalDamage))
@@ -1405,6 +1423,32 @@ export class BattleEngine {
       this.record(this.tick, 'reaction', e.uid, reactionIndex(res.reaction))
     }
 
+    // ⚠️ steam_burst 的溅射范围伤害。
+    //
+    // # 设计与 I-6
+    //
+    // `replay_hash` 仅覆盖 S 段（构筑快照），服务端**不**重算事件流
+    // （battle_collections.go：replay_hash 只封长 ≤64，store as-opaque）。
+    // 所以溅射事件只需「本局自身哈希稳定」，而非「服务端可独立验证」 ——
+    // 它不影响 replay_skills 段，因而不影响当前 I-6 校验。
+    //
+    // # 口径
+    //
+    // - 伤害 = reactionDmg >> 2（定点）。来源是**本次命中的
+    //   `res.reactionDamage`**——双端已通过 `resolveHit` 逐位一致
+    //   （formula_vectors.json 锁定），所以溅射伤害也一致。
+    // - 源体 e 不计（自身已结算）。
+    // - 半径 = 反应表 `aoeRadius`（像素，×1000 转定点）。
+    // - 邻居伤害走 `resolveHit` 复用护甲/护盾/抗性，但**不再触发反应**
+    //   （forceReaction 为空且邻居身上挂的已有元素 + 技能元素不再配对生成
+    //   新反应 —— 否则 steam_burst 就会在溅射目标上**再次**爆开，
+    //   形成指数级连锁。`res.reaction == ''` 守住这一点）。
+    // - 目标集合确定：`this.enemies` 数组顺序 + 距离 ≤ 半径 + 存活。
+    //   两者皆由种子决定（刷怪洗牌 / 坐标由 levelgen 产出），故同种子
+    //   同行。`dist2` 用 bigint 避免浮点，不存在跨端漂移。
+    if (res.reaction === 'steam_burst' && res.reactionDamage > 0n && reactSpec !== undefined && reactSpec.aoeRadius > 0) {
+      this.triggerSteamBurstAoe(e, res.reactionDamage, att)
+    }
     // 地形联动。地形自身负责判定弹丸是否经过它（updateXxx 内部已做空间判定），
     // 因此这里只需传入元素与伤害，不需要坐标。
     for (const t of this.terrains) {
@@ -1434,6 +1478,85 @@ export class BattleEngine {
       }
     }
     return true
+  }
+
+  /**
+   * steam_burst 的溅射范围伤害。
+   *
+   * 对「已命中触发 steam_burst 的敌人」周围 `aoeRadius` 内、存活的其他敌人，
+   * 造成 `reactionDmg >> 2`（25%）的二次伤害。
+   *
+   * # 二次伤害为何不用 `hitEnemy`
+   *
+   * `hitEnemy` 是投射体命中专用：它从 `Projectile` 里读伤害/元素/滚点，
+   * 并在结算后**施加元素层数** (`applyElementStacks`)。溅射如果复用它会：
+   *   - 把技能元素再次施加到邻居身上（触发第二次 steam_burst / overheat）；
+   *   - 消耗 `this.rng.roll`（rng 顺序偏移 → 整局事件流改动 → 哈希变化）。
+   *
+   * 所以这里只复用 `resolveHit` 的**装配 + 结算**部分（护甲/护盾/抗性)，
+   * 不施加元素、不掷骰、不触发反应 —— 二次伤害纯粹是「命中减去护甲/护盾」。
+   * 两端公式一致（formula_vectors.json），I-6 不受影响。
+   *
+   * # 确定性
+   *
+   * - 先判死亡：`e.dead` 已结算过的敌人跳过（不重复结算同一个死体）。
+   * - 距离 `≤ rr`（含边界）、`this.enemies` 数组顺序。
+   *   刷怪洗牌与坐标均由 levelgen 的 LCG 产出，所以同种子同行；
+   *   `dist2`/`toFixed` 全定点，无浮点。
+   */
+  private triggerSteamBurstAoe(origin: Enemy, reactionDmg: bigint, att: Attacker): void {
+    const spec = REACTIONS['steam_burst']
+    const rr = toFixed(spec.aoeRadius)
+    
+    //
+    // 2026-10-10 实现 steam_burst 范围伤害：aoeRadius 恢复为 120（像素）。
+    // 引擎 `hitEnemy` 在 steam_burst 反应触发后、以命中敌人为圆心、半径
+    // aoeRadius 搜索邻居，造成 reactionDmg >> 2（25%）的二次伤害。
+    // I-6 安全：溅射伤害来自 resolveHit（formula_vectors.json 锁定），
+    // 不进入 replay_skills 段，因而不影响 I-6 的 S-段校验。
+    const splash = reactionDmg >> 2n
+    if (splash <= 0n) return
+    for (const e of this.enemies) {
+      if (e.dead || e.uid === origin.uid) continue
+      if (dist2(origin.x, origin.y, e.x, e.y) > rr * rr) continue
+
+      const def = new Defender(e.hp, e.shield, e.armorShredMs > 0
+        ? (e.armorPermille > e.armorShredPermille ? e.armorPermille - e.armorShredPermille : 0n)
+        : e.armorPermille)
+      for (const [el, v] of e.resist) def.resist.set(el, v)
+      for (const [el, v] of e.stacks) def.stacks.set(el, v)
+
+      // 二次伤害：复用 direct+damage 结算，不触发反应（input.skillElement=''）。
+      const res = resolveHit(att, def, {
+        skillDamage: splash,
+        skillElement: '',
+        roll: 9999, // 不暴击（crit 作用于 direct+element，不影响 splash 本身），固定滚点防范
+      })
+      e.hp = def.hp
+      e.shield = def.shield
+      e.stacks = def.stacks
+
+      if (res.totalDamage > 0n) {
+        this.score += Number(damageScore(this.scoreRules, res.totalDamage))
+        this.emit({ type: 'hit', x: e.x, y: e.y, damage: res.totalDamage, crit: false })
+        this.record(this.tick, 'hit', e.uid, Number(damageScore(this.scoreRules, res.totalDamage)), 0)
+      }
+      if (res.killed) {
+        e.dead = true
+        this.kills++
+        this.score += Number(killScore(this.scoreRules, e.isBoss))
+        this.emit({ type: 'kill', x: e.x, y: e.y, boss: e.isBoss })
+        this.record(this.tick, 'kill', e.uid, e.isBoss ? 1 : 0)
+        const dom = dominantOf(e) ?? 'fire'
+        for (const t of this.terrains) {
+          if (t.onKillCharging(dom, att.elementCap, this.terrainCtx())) {
+            if (!this.terrainUsed.includes(t.kind)) this.terrainUsed.push(t.kind)
+            this.emit({ type: 'terrain', kind: t.kind, x: t.x, y: t.y })
+            this.record(this.tick, 'terrain', terrainIndex(t.kind), t.x, t.y)
+          }
+        }
+      }
+    }
   }
 
   private applyAoe(p: Projectile, origin: Enemy, radius: number): void {
