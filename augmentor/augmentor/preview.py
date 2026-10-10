@@ -9,7 +9,7 @@
 import hashlib
 import json
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import List, Dict, Any, Optional
 
 from .export import Exporter, ExportFormat, NATIVE_FORMATS
@@ -187,19 +187,30 @@ class PreviewGenerator:
             converted = raw_converted
 
         # 预览生成优化：缓存预览结果（避免相同数据重复生成预览）
-        # 缓存键必须同时覆盖「同一次预览」的三个决定因子：格式、预览条数、数据样本。
-        # 只哈希样本会把「同数据换格式 / 换条数」误判为命中，返回旧格式/旧条数的残缺
-        # 结果（L123 记档缺陷）。三者缺一即换键。
+        # 缓存键必须覆盖「同一次预览」的**全部**决定因子：格式、预览条数、样本本身。
+        # L123 修的是「只哈希样本」那一半（同数据换格式/换条数会误命中）；L202 修
+        # 剩下那一半——**样本被截断成前 5 条**，于是「前 5 条相同、第 6 条起不同」的
+        # 两个数据集撞键，第二个调用方拿到的是**第一个数据集的 original_data /
+        # converted_data**。`sample` 就是 items[:size] 的全部内容，键却只哈希它的
+        # 一角 ⇒ 「数据」这个因子等于又弄丢了。len(sample) 一并进键。
         preview_key = hashlib.md5(
-            f"{fmt}|{size}|{sample[:min(5, len(sample))]}".encode()
+            f"{fmt}|{size}|{len(sample)}|{sample}".encode()
         ).hexdigest()[:8]
         if hasattr(self, '_preview_cache') and preview_key in self._preview_cache:
             logger.debug(f"预览缓存命中（优化）: 格式 {fmt}")
             cached = self._preview_cache[preview_key]
-            # 更新总数信息（数据可能不同但预览内容相同）
-            cached.format_info["total_items"] = len(items)
-            cached.format_info["preview_items"] = len(sample)
-            return cached
+            # L202：命中时返回**副本**。改前把缓存对象就地改完按引用返回，同实例的
+            # 所有调用方共享同一个可变 ExportPreview——先来的调用方改一次，后来的
+            # 看到的就被改了。键现在覆盖整份样本，命中即数据相同，fields 无需刷新
+            # （要刷的只有可能不同的 total_items / preview_items）。
+            return replace(
+                cached,
+                format_info={
+                    **cached.format_info,
+                    "total_items": len(items),
+                    "preview_items": len(sample),
+                },
+            )
         
         converted = [self._truncate_record(record) for record in converted]
         
