@@ -18,6 +18,10 @@
    `(文件, 行号, 该行的标识符)`，由 `TestArchiveCitations` 逐条验真；
 3. `_UNREAD`（逐键写理由）：产品树里零读者。这一档是本守卫的**棘轮**：新键没人归档就红，
    归档的键接上读者也红（逼着清账的人改档），所以它不是一堆借口的堆放处。
+   L218 起这一档**每条理由再配一条机器可验的证据**（`_UNREAD_KNOB`，五种形状：构造形参 /
+   方法形参 / 明说那里没有 / 请求模型字段 / 无同名旋钮），由 `TestKnobClaimsAreFalsifiable`
+   拿 `inspect.signature` 与 `api/routes` 的 AST 逐条验真。由来很硬：L217 第一版的 20 条理由里
+   **有 7 条是假的**（宣称存在并不存在的请求参数或构造形参），散文写得好看不等于说得对。
 
 第四个桶 `_NAME_COLLISIONS` 装的是**不算键**的同名属性：`self.sampler.analyze_coverage`
 里的 `sampler` 是管道的 `ActiveSampler` 实例，与配置节 `sampler` 撞名。按名字判的尺子会把它
@@ -41,6 +45,8 @@
 import ast
 import dataclasses
 import functools
+import importlib
+import inspect
 from dataclasses import MISSING, fields
 from pathlib import Path
 
@@ -90,30 +96,74 @@ _LOADER_CONSUMED = (
     ("logging.format", "augmentor/logging_setup.py", 189, "settings.format"),
 )
 
-#: 第 3 档：产品树零读者，逐键签字。理由一句话说清「等价的旋钮现在住在哪」，
-#: 否则下一轮无从判断该接线还是该删键。
+#: 第 3 档：产品树零读者，逐键签字。
+#:
+#: **理由第一版有 7 条是假的**（L217 记账后 L218 复核实码时翻出来的）：它们声称「等价旋钮
+#: 走请求参数 / 是某构造形参」，而 `api/routes/` 里压根没有那些字段、`ActiveSampler.__init__`
+#: 也没有任何形参。散文骗过人眼，所以这一档从 L218 起**每键再挂一条机器可验的证据**
+#: （见 `_UNREAD_KNOB`），理由与证据不一致就红。
 _UNREAD = {
-    "active_learning.enabled": "选样器由管道无条件 `ActiveSampler()` 构造，不看本节",
-    "active_learning.strategy": "策略名只被 CLI 参数与 `ActiveSampler` 形参拿走，配置侧无读者",
-    "active_learning.batch_size": "同上：批尺寸住在请求参数，不在本节",
-    "active_learning.max_iterations": "迭代上限在产品侧压根没有对应入口",
+    "active_learning.enabled": "主动学习循环在产品侧连实例都没建过（只有包导出），这只闸无人问",
+    "active_learning.strategy": "同名旋钮在 `ActiveLearningLoop.__init__`，但那个类没有产品调用者",
+    "active_learning.batch_size": "同名旋钮同在 `ActiveLearningLoop.__init__`，同样没有产品调用者",
+    "active_learning.max_iterations": "轮数旋钮是 `run` 的方法形参 `iterations`，且默认 None⇒1 轮（与出厂 10 不同，接线即行为变更）",
     "benchmark.enabled": "基准端点 `/api/quality/benchmark` 无条件可用，不看闸",
     "context.enabled": "`ContextAugmentor` 由管道无条件构造（只读 `num_turns`），这只闸是装饰",
     "evaluation.enabled": "评估端点无条件可用，不看闸",
     "evaluation.metrics": "指标清单由 `/api/dataset/evaluate` 的请求体 `metrics` 提供",
-    "evaluation.reference_field": "参考侧字段由请求体 `reference_field` 提供，默认写在同一条请求模型里",
+    "evaluation.reference_field": "参考侧字段由同一条请求模型的 `reference_field` 提供，默认写死在请求侧",
     "expander.enabled": "扩展器由管道无条件 `DomainExpander(backend)` 构造，不看本节",
-    "expander.strategies": "策略清单在产品侧没有读者（扩展请求走参数）",
-    "frameworks.enabled": "框架导出走请求参数，本节整体无读者",
-    "frameworks.frameworks": "框架名由调用方在请求里给，与 `export.formats` 同一口径",
+    "expander.strategies": "策略清单是 `batch_expand` 的方法形参，而该方法无产品调用者（`self.expander` 构造之后从未被用，见 A273）",
+    "frameworks.enabled": "框架导出在产品侧没有入口，这只闸无处可判",
+    "frameworks.frameworks": "两个集成类的构造器只收 `text_key`/`answer_key`，没有清单型入口，且产品侧零实例化",
     "multimodal.enabled": "扫描与格式端点无条件可用，不看闸（L214 只接了两只 extensions）",
     "rag.enabled": "RAG 端点无条件可用，不看闸（L214 接了 chunk_size/chunk_overlap/default_format）",
-    "sampler.enabled": "采样端点走请求参数，闸从未被读",
-    "sampler.dimensions": "维度清单由 `/api/dataset/sample` 的请求参数提供",
+    "sampler.enabled": "采样端点无条件可用，本节闸从未被读（与 benchmark/evaluation 同形状）",
+    "sampler.dimensions": "四个分布硬写在 `analyze_coverage` 体内，它只收 `items`；端点侧也没有同名清单",
     "tracker.enabled": "追踪器由管道无条件 `ExperimentTracker()` 构造，不看本节",
-    "tracker.metrics": "指标名由调用方在请求里给，配置侧无读者",
-    "visualization.types": "可视化类型清单走请求参数；B224 已立案（L154 普查同款）",
+    "tracker.metrics": "指标名只有逐条运行时入参 `log_metric(metric_name, value)`，没有清单型入口（`self.tracker` 构造后也从未被用，见 A273）",
+    "visualization.types": "出图清单硬编码在 `DataVisualizer` 的方法集里，`visualize_dataset` 只收 `input_file`/`output_dir`；B224/A267 已在案",
 }
+
+#: 每只零读者键的「等价旋钮现在住在哪」，必须是下面五种证据之一（由
+#: `TestKnobClaimsAreFalsifiable` 机器验真，不许留空、不许凭散文过关）：
+#: - `("ctor", "模块:类.__init__", 形参名)`：同名形参**在**该构造器签名里；
+#: - `("method", "模块:类.方法", 形参名)`：同名形参**在**该方法签名里；
+#: - `("absent", "模块:类.可调用", 形参名)`：明说那里**没有**这个形参（签名里不许出现该名）；
+#: - `("request", "api/routes/x.py", 字段名)`：该路由文件的模型里**真有**这个类注解字段；
+#: - `("none", None, None)`：产品侧不存在任何同名旋钮（只许用于「闸」这类无旋钮可接的键）。
+#: 目标写法与 `_LOADER_CONSUMED` 同规：路径相对仓库根，符号名逐字可查。
+_UNREAD_KNOB = {
+    "active_learning.enabled": ("none", None, None),
+    "active_learning.strategy": ("ctor", "augmentor.active_learning:ActiveLearningLoop.__init__", "strategy"),
+    "active_learning.batch_size": ("ctor", "augmentor.active_learning:ActiveLearningLoop.__init__", "batch_size"),
+    "active_learning.max_iterations": ("method", "augmentor.active_learning:ActiveLearningLoop.run", "iterations"),
+    "benchmark.enabled": ("none", None, None),
+    "context.enabled": ("none", None, None),
+    "evaluation.enabled": ("none", None, None),
+    "evaluation.metrics": ("request", "api/routes/dataset_tools.py", "metrics"),
+    "evaluation.reference_field": ("request", "api/routes/dataset_tools.py", "reference_field"),
+    "expander.enabled": ("none", None, None),
+    "expander.strategies": ("method", "augmentor.expander:DomainExpander.batch_expand", "strategies"),
+    "frameworks.enabled": ("none", None, None),
+    "frameworks.frameworks": ("absent", "augmentor.frameworks.langchain:LangChainIntegration.__init__", "frameworks"),
+    "multimodal.enabled": ("none", None, None),
+    "rag.enabled": ("none", None, None),
+    "sampler.enabled": ("none", None, None),
+    "sampler.dimensions": ("absent", "augmentor.sampler:ActiveSampler.analyze_coverage", "dimensions"),
+    "tracker.enabled": ("none", None, None),
+    "tracker.metrics": ("absent", "augmentor.tracker:ExperimentTracker.__init__", "metrics"),
+    "visualization.types": ("absent", "augmentor.pipeline:AugmentorPipeline.visualize_dataset", "types"),
+}
+
+#: 散文与证据的一致性判据：理由里点了「请求」就必须真是 request 档，点了「形参」就必须
+#: 真是 ctor/method 档。这正是 L217 那 7 条假理由共同的形状——它们都宣称有一个并不存在
+#: 的请求参数或形参。两条窄规则够用，不做「理由写得好不好」的判决（那种断言已删过一次）。
+_PROSE_CLAIMS = (("请求", frozenset({"request"})),
+                 ("形参", frozenset({"ctor", "method"})))
+
+#: 证据形状的全集：不在全集里的 kind 一律红，防止「新造一档但没人验真」
+_KNOB_KINDS = frozenset({"ctor", "method", "absent", "request", "none"})
 
 
 #: 节名与产品代码里的普通属性名撞车的地方：`self.sampler` 是管道的 `ActiveSampler`
@@ -161,6 +211,44 @@ _CLASS_OF_SECTION = {
     if f.default_factory is not MISSING and f.default_factory is not None
     and dataclasses.is_dataclass(f.default_factory())
 }
+
+
+@functools.lru_cache(maxsize=1)
+def _request_fields() -> dict:
+    """`api/routes/*.py` 里模型类的**类注解字段名** ⇒ {文件名: 字段集合}
+
+    只认 `ClassDef` 体内的 `AnnAssign`（pydantic 模型就是这么声明字段的），不认函数体内的
+    局部变量——否则「某个函数里恰好有个同名局部量」会被算成请求侧旋钮。回显面
+    `api/routes/config.py` 与读者普查同口径排除在外。
+    """
+    out: dict = {}
+    for path in sorted((ROOT / "api" / "routes").glob("*.py")):
+        if path in SCAN_EXCLUDE_FILES:
+            continue
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        names: set = set()
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ClassDef):
+                for stmt in node.body:
+                    if isinstance(stmt, ast.AnnAssign) and isinstance(stmt.target, ast.Name):
+                        names.add(stmt.target.id)
+        if names:
+            out[path.name] = names
+    return out
+
+
+@functools.lru_cache(maxsize=64)
+def _callable_params(spec: str) -> set:
+    """把 `模块:类.可调用` 解成形参名集合（真 import + `inspect.signature`，不读源码文本）
+
+    读源码文本的写法挡不住「签名被折行 / 形参在 `*args` 之后」这类形状，而这一档的判据是
+    「同名旋钮到底在不在」，所以要问解释器而不是问正则。
+    """
+    module_name, _, rest = spec.partition(":")
+    target = importlib.import_module(module_name)
+    for part in rest.split("."):
+        target = getattr(target, part)
+    return set(inspect.signature(target).parameters)
 
 
 def _aliases_in(scope: ast.AST, own_nodes: list) -> dict:
@@ -368,3 +456,121 @@ class TestNameCollisions:
 
     def test_collisions_are_not_schema_keys(self):
         assert not _NAME_COLLISIONS & _all_keys(), "撞车名单里的键其实存在于 schema ⇒ 它不是撞车，是漏归档"
+
+
+class TestKnobClaimsAreFalsifiable:
+    """第 3 档每只键的「等价旋钮住在哪」必须机器可验，不许由散文自证
+
+    立这一档的由来：L217 给 20 只零读者键各写了一条理由，其中 **7 条是假的**——它们说
+    存在某个请求参数或构造形参，而实码里压根没有。人眼读散文读不出这件事，所以 L218 起
+    理由与证据成对存放（`_UNREAD` 配 `_UNREAD_KNOB`），证据由解释器（`inspect.signature`）
+    和 AST（`api/routes` 的模型字段）验真，两边不一致或证据说谎就红。
+
+    取循环而不是参数化：这一档的失败面是「一张 20 行的对账表」，一次跑完并报出**全部**
+    不一致条目，比逐键一支测试更贴近用途（少一条键就少一次对账），也不给参数化棘轮添新形状。
+    """
+
+    def test_every_unread_key_carries_an_evidence_entry(self):
+        assert set(_UNREAD_KNOB) == set(_UNREAD), (
+            f"零读者名单与证据表不配对。\n"
+            f"  缺证据: {sorted(set(_UNREAD) - set(_UNREAD_KNOB))}\n"
+            f"  证据多余（键已接上读者）: {sorted(set(_UNREAD_KNOB) - set(_UNREAD))}"
+        )
+
+    def test_evidence_shapes_are_one_of_the_five_kinds(self):
+        bad = []
+        for key, entry in sorted(_UNREAD_KNOB.items()):
+            if not isinstance(entry, tuple) or len(entry) != 3:
+                bad.append(f"{key}: 证据必须是三元组，实为 {entry!r}")
+                continue
+            kind, spec, name = entry
+            if kind not in _KNOB_KINDS:
+                bad.append(f"{key}: 未知证据形状 {kind!r}（可用: {sorted(_KNOB_KINDS)}）")
+            elif kind == "none":
+                if (spec, name) != (None, None):
+                    bad.append(f"{key}: none 档不许挂目标，实为 {spec!r}/{name!r}")
+            elif not (isinstance(spec, str) and spec and isinstance(name, str) and name):
+                bad.append(f"{key}: {kind} 档必须同时给出目标与名字")
+        assert not bad, "证据表形状不合法:\n  " + "\n  ".join(bad)
+
+    def test_none_tier_is_only_for_switches_without_a_knob(self):
+        """`none` 是「没有任何同名旋钮可接」的强主张，只许用于闸类键
+
+        否则它会变成假理由的新堆放处——写不动就往 `none` 一扔。
+        """
+        none_keys = sorted(k for k, e in _UNREAD_KNOB.items() if e[0] == "none")
+        assert none_keys, "证据表里一个 `none` 都没有 ⇒ 这条判据在空转"
+        assert all(k.endswith(".enabled") for k in none_keys), (
+            f"这些非闸键声称没有任何等价旋钮，要去 `TestKnobClaimsAreFalsifiable` 的真档里挂证据: "
+            f"{[k for k in none_keys if not k.endswith('.enabled')]}"
+        )
+
+    def test_ctor_and_method_params_really_are_in_the_signature(self):
+        bad = []
+        for key, (kind, spec, name) in sorted(_UNREAD_KNOB.items()):
+            if kind not in {"ctor", "method"}:
+                continue
+            params = _callable_params(spec)
+            if name not in params:
+                bad.append(f"{key}: 声称 `{spec}` 有 {kind} 形参 `{name}`，实签 {sorted(params)}")
+        assert not bad, "构造/方法形参主张与实码不符:\n  " + "\n  ".join(bad)
+
+    def test_absent_claims_really_are_absent(self):
+        """`absent` 是最容易被谎用的一档：它主张某个可调用处**没有**这个名字"""
+        bad = []
+        for key, (kind, spec, name) in sorted(_UNREAD_KNOB.items()):
+            if kind != "absent":
+                continue
+            params = _callable_params(spec)
+            if name in params:
+                bad.append(f"{key}: 声称 `{spec}` 不收 `{name}`，实签 {sorted(params)}")
+        assert not bad, "`absent` 主张被实码否证:\n  " + "\n  ".join(bad)
+
+    def test_request_fields_really_are_on_a_route_model(self):
+        bad = []
+        fields_by_file = _request_fields()
+        for key, (kind, spec, name) in sorted(_UNREAD_KNOB.items()):
+            if kind != "request":
+                continue
+            path = ROOT / spec
+            assert path.exists(), f"{key}: 证据点了不存在的路由文件 {spec}"
+            declared = fields_by_file.get(path.name)
+            if declared is None:
+                bad.append(f"{key}: {spec} 里没有任何模型字段可查")
+            elif name not in declared:
+                bad.append(f"{key}: 声称 {spec} 的模型有字段 `{name}`，实际类注解字段是 {sorted(declared)}")
+        assert not bad, "请求侧主张与实码不符:\n  " + "\n  ".join(bad)
+
+    def test_prose_claims_do_not_outrun_the_evidence(self):
+        """理由点了「请求」就得真是 request 档，点了「形参」就得真是 ctor/method 档
+
+        反向不成立：证据是 request 而理由只说「端点侧提供」也放行——这一档只堵
+        「散文说了实码没有的东西」，不评判散文写得够不够具体。
+        """
+        bad = []
+        for key, reason in sorted(_UNREAD.items()):
+            kind = _UNREAD_KNOB[key][0]
+            for word, allowed in _PROSE_CLAIMS:
+                if word in reason and kind not in allowed:
+                    bad.append(
+                        f"{key}: 理由写了「{word}」但证据是 {kind} 档"
+                        f"（该词只许用于 {sorted(allowed)}）: {reason}"
+                    )
+        assert not bad, "散文与证据不一致（L217 的 7 条假理由就是这个形状）:\n  " + "\n  ".join(bad)
+
+    def test_the_verifiers_are_not_vacuous(self):
+        """正控制：两把验真的尺子都要能看见已知为真的主张，否则上面几条会集体空转"""
+        fields_by_file = _request_fields()
+        assert fields_by_file, "模型字段扫描一个字段都没抓到 ⇒ `request` 档全在空转"
+        total = sum(len(v) for v in fields_by_file.values())
+        assert total >= 40, f"请求字段面缩到 {total}，扫描臂大概改坏了"
+        evaluate_fields = fields_by_file.get("dataset_tools.py", set())
+        assert {"metrics", "reference_field"} <= evaluate_fields, (
+            f"`evaluation.metrics` 的证据说 `/api/dataset/evaluate` 的请求模型有这两个字段，"
+            f"而扫描读不到: {sorted(evaluate_fields)}"
+        )
+
+        real_params = _callable_params("augmentor.active_learning:ActiveLearningLoop.__init__")
+        assert {"strategy", "batch_size"} <= real_params, (
+            f"签名读取失效或构造器改了形状: {sorted(real_params)}"
+        )
