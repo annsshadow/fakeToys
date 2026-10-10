@@ -30,7 +30,11 @@ import json
 
 import pytest
 
-from augmentor.dependency import DEPENDENCY_DIRECTIONS, DependencyManager
+from augmentor.dependency import (
+    DEPENDENCY_DIRECTIONS,
+    DEPENDENCY_TYPES,
+    DependencyManager,
+)
 from augmentor.exceptions import DataValidationError
 from augmentor.indexer import (
     INDEXER_FILE_FORMATS,
@@ -59,6 +63,7 @@ SURFACE = [
     ("writer_mode", "StreamWriter", WRITER_MODES),
     ("writer_format", "StreamWriter", WRITER_FORMATS),
     ("severity", "GateRule", GATE_SEVERITIES),
+    ("dependency_type", "DependencyManager.add_dependency", DEPENDENCY_TYPES),
 ]
 
 
@@ -83,6 +88,9 @@ def _bad_call(site, value, **kwargs):
     if site == "severity":
         return lambda: GateRule(name="r", metric_key="pass_rate",
                                 operator=">=", value=0.9, severity=value)
+    if site == "dependency_type":
+        manager = DependencyManager(str(kwargs["tmp"] / "reg2"))
+        return lambda: manager.add_dependency("a", "b", value)
     raise AssertionError(site)
 
 

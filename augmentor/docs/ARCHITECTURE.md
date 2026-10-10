@@ -2066,7 +2066,7 @@ skip 组成与 L51/L52 逐字相同。语句总数 +5、缺数与 L52 一字不�
 `l53/ab_try.py`，NONCE-L53-AB）⇒ 两序变号，按 L49 的规矩判为不可判定、不引用。
 
 **新立 A90–A92，三条都是本轮做走查时被量出来的**：**A90** = 判负那条支在**纯 CLI 世界不可达** ——
-`dependency` 的四个 action 里没有任何一个能造依赖边（`add_dependency` 只在 `augmentor/dependency.py:186`
+`dependency` 的四个 action 里没有任何一个能造依赖边（`add_dependency` 只在 `augmentor/dependency.py` 的 `add_dependency`
 与模块级 `:335`，`grep -rn` 坐实 `cli.py` / `augmentor/cli/` / `api/` **0 命中**）⇒ CLI 用户跑
 `dependency --action validate` 永远只会看到「没有注册的数据集」或全通过；本轮 I3 那条用例是**绕道 SDK**
 （`DependencyManager(...).add_dependency("src", "ghost", ...)`）才造出可判负的输入。
