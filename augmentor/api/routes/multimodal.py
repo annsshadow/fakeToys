@@ -84,9 +84,12 @@ def _resolve_extensions(image_extensions, audio_extensions):
 
     扩展名的「`.` 开头」语义界住在这一层而不是配置校验里（A138 留的口径：
     `Path.suffix` 带的就是点）——这里统一做小写与补点归一，配置里写 `jpg`
-    与 `.jpg` 等价。`enabled` **不在这里判**：它是管道阶段的开关，
-    住在 `AugmentorPipeline`（与 quality/dedup 同族），端点是调用方**点名要**
-    的独立能力，拿它拒绝一次显式调用不属于「消费配置」而是改契约。
+    与 `.jpg` 等价。`enabled` **不在这里判**：端点是调用方**点名要**的独立能力，
+    拿出厂默认 `false` 的键去拒绝一次显式调用属于改契约而不是消费配置
+    （实测：那样做当场打红 13 支既有集成测试）。顺带记一句本轮量出来的事实——
+    全仓 16 只 `config.*.enabled` 在产品代码里**零读者**，管道阶段真正的开关是
+    调用参数（`use_quality_check` / `use_dedup`），所以这一族键的消费点要从阶段入口
+    重建，见 L215。
     """
     cfg = get_pipeline().config.multimodal
 
