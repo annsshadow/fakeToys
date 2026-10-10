@@ -561,17 +561,23 @@ class EvaluationConfig:
     """模型评估配置"""
     enabled: bool = False
     metrics: list = field(default_factory=lambda: ["bleu", "rouge_l", "similarity"])
+    generated_field: str = "output"
     reference_field: str = "output"
 
     def __post_init__(self):
         """取值判据（A140 余 11 节 / L154）：参考字段名非空、指标是字符串列表。
 
         `reference_field` 写空串 ⇒ 评估器取错字段静默评分（改前四面零反馈，本键亦无
-        产品消费方，属性面普查 L154 / B224）。
+        产品消费方，属性面普查 L154 / B224）。L220 起本节的字段名两键都有产品读者
+        （`/api/dataset/evaluate` 的省略支路），空串的后果从「静默」升级为「取错列」。
+
+        `generated_field` 是 L220 与 `reference_field` 一起补的对称键：只接参考侧会让
+        「生成侧跟硬编码、参考侧跟配置」两种默认并存，而它们在同一条请求模型上。
         """
         _reject_null_fields('evaluation', self)
         require_bool('evaluation.enabled', self.enabled)
         require_string_list('evaluation.metrics', self.metrics)
+        require_string('evaluation.generated_field', self.generated_field)
         require_string('evaluation.reference_field', self.reference_field)
 
 

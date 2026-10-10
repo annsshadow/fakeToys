@@ -217,14 +217,16 @@ class ImpactRequest(BaseModel):
 class EvaluateRequest(BaseModel):
     """生成文本指标评估请求
 
-    两侧默认都取 `output` 字段；用同一份文件的两个字段做对照时，把
+    两侧字段名省略时读 `config.evaluation.generated_field` / `.reference_field`
+    （出厂均 `output`，与旧硬编码默认同值 ⇒ 零漂移；L220 接线，权威序
+    请求参数 > 配置键 > 内置默认）。用同一份文件的两个字段做对照时，把
     `generated_file` 与 `reference_file` 传成同一路径即可。
     `metrics` 留空 ⇒ 取 `config.evaluation.metrics`（出厂值与 SDK 内置默认同值 ⇒ 零漂移；L219 接线）。
     """
     generated_file: str
     reference_file: str
-    generated_field: str = "output"
-    reference_field: str = "output"
+    generated_field: Optional[str] = None
+    reference_field: Optional[str] = None
     metrics: Optional[List[str]] = None
     include_details: bool = True
 
@@ -656,6 +658,13 @@ async def dataset_evaluate(request: EvaluateRequest):
     空清单在这里**出声**而不是往下传：SDK 的 `ModelEvaluator.__init__` 写的是
     `self.metrics = metrics or [内置三只]`，空列表是假值，传下去会被**静默补成三只**——
     配置说「一个指标都不算」而响应里三个指标齐全，是这张表里最容易被读错的一格。
+
+    两侧字段名的权威序同为 **请求参数 > `config.evaluation.generated_field` /
+    `.reference_field` > 内置默认**（L220，A274）。这两个请求字段在接线前把默认写死成
+    `"output"`，与出厂配置同值，于是配置那两键**没有任何可达的消费点**——改成 `Optional`
+    之后省略才落到配置档。空串与省略不可区分（pydantic 层就是 falsy），同样落回配置；
+    配置侧的空串由 `require_string` 在加载期拒，取不存在的字段名由 `_as_column` 逐条
+    带下标报 400，都不静默补空。
     """
     try:
         from augmentor.evaluation import METRIC_FUNCTIONS, ModelEvaluator
@@ -704,8 +713,13 @@ async def dataset_evaluate(request: EvaluateRequest):
                 ),
             )
 
-        generated = _as_column(generated_items, request.generated_field, "生成侧")
-        references = _as_column(reference_items, request.reference_field, "参考侧")
+        # L220（A274）：字段名两侧都走权威序 请求 > 配置 > 内置默认。
+        # 请求侧默认改成 None 之前，`or` 永远落不到配置那一档（旧默认是硬值 `"output"`，
+        # 与出厂配置同值），那只配置键因此没有任何可达的消费点。
+        generated_field = request.generated_field or evaluation_config.generated_field
+        reference_field = request.reference_field or evaluation_config.reference_field
+        generated = _as_column(generated_items, generated_field, "生成侧")
+        references = _as_column(reference_items, reference_field, "参考侧")
         if len(generated) != len(references):
             raise HTTPException(
                 status_code=400,

@@ -266,7 +266,10 @@ evaluation:
     - rouge_l
     - similarity
   
-  # 参考文本字段
+  # 生成文本字段（`/api/dataset/evaluate` 省略 `generated_field` 时的缺省来源，L220）
+  generated_field: output
+
+  # 参考文本字段（`/api/dataset/evaluate` 省略 `reference_field` 时的缺省来源，L220）
   reference_field: output
 
 # 向量数据库配置

@@ -598,7 +598,7 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
 | `POST` | `/api/dataset/features` | 字段特征检测 | 只读。`field_features` 是**列表**（不是 dict），每项一个字段的画像。 |
 | `POST` | `/api/dataset/auto-config` | 自动配置推荐 | 只读。返回推荐配置 + 理由；推荐值不落盘，要 `POST /api/config` 才生效。 |
 | `POST` | `/api/dataset/impact` | 增强前后影响评估 | 只读。`duplicate_rate` 是**增强后**的重复率；语义分数在 `semantic_evaluated=false` 时不参与（API 面拿不到原始问题）。 |
-| `POST` | `/api/dataset/evaluate` | 生成文本指标评估 | 只读。响应键就是 `metrics` / `sample_count` / `details`。请求省略 `metrics` ⇒ 取 `config.evaluation.metrics`（L219 接线，权威序 请求参数 > 配置键 > SDK 内置默认）；生效清单统一过 `METRIC_FUNCTIONS` 白名单，越界名 400，空清单也 400（SDK 的 `metrics or [内置三只]` 会把空值静默补成三项，所以在本层出声）。 |
+| `POST` | `/api/dataset/evaluate` | 生成文本指标评估 | 只读。响应键就是 `metrics` / `sample_count` / `details`。请求省略 `metrics` ⇒ 取 `config.evaluation.metrics`（L219 接线，权威序 请求参数 > 配置键 > SDK 内置默认）；生效清单统一过 `METRIC_FUNCTIONS` 白名单，越界名 400，空清单也 400（SDK 的 `metrics or [内置三只]` 会把空值静默补成三项，所以在本层出声）。两侧字段名 `generated_field` / `reference_field` 同规（L220 接线，配置那两键出厂值与被替换的硬编码默认同为 `output` ⇒ 零漂移）：请求侧默认是 `null` 哨兵，**省略与显式传 `"output"` 从此是两种不同的事**；取不到的列名（含空串）由逐条门口报 400 并带下标，不静默补空。 |
 | `POST` | `/api/dataset/convert` | 格式转换 | **写盘变换类**：必须给 `output_path`，响应只回「写到哪、写了多少」。 |
 | `POST` | `/api/dataset/merge` | 合并数据集 | **写盘变换类**：同上。 |
 | `POST` | `/api/dataset/sample` | 数据集采样 | **写盘变换类**：同上。 |
