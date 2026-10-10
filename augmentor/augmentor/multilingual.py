@@ -142,8 +142,8 @@ class MultilingualSupport:
                         items: List[Dict],
                         target_lang: str = "en",
                         text_key: str = "instruction",
-                        keep_original: bool = True) -> List[Dict]:
-        """批量翻译数据
+                        keep_original: bool = True) -> Dict[str, Any]:
+        """批量翻译数据，并回一份**失败回执**
 
         Args:
             items: 数据列表
@@ -152,7 +152,23 @@ class MultilingualSupport:
             keep_original: 是否保留原文字段
 
         Returns:
-            翻译后的数据列表
+            报告字典：`items`（与输入等长、顺序一致，失败条目回退原文）、`total`、
+            `failed`、`failed_indices`（**本清单内**的 0 起下标，升序）、
+            `errors`（本批**全部**失败记录，`{index, error}`，error 是
+            `异常类名: 消息`）。
+
+        **为什么返回报告而不是清单**：这一族逐条异常过去被
+        `except Exception as e: logger.error(...)` 吞成「回退原文」，返回形状与全部成功时
+        **完全相同**——调用方读到的是「翻译完成」，实际产物里混着原文（L217 实测坐实：
+        后端缺失时端点回 200 + 整份原文）。回退原文这个行为本身保留（长度与顺序对齐是
+        调用方的依赖），但它不再无声。部分失败仍算成功路径：整批失败由
+        `translate` 那条 `ModelNotConfiguredError` 在更早处出声，本层不重复判。
+
+        **本层不截断错误样本**：`batch_translate` 收到的清单长度就是产品侧的批宽
+        （`translate_batch_size`，出厂 25），所以这里的全量失败记录本来就是有界的；把
+        「只给前若干条」放进 SDK 会让 20 这个数字在 SDK 与聚合层各存一份并可能漂移。
+        跨批合并与样本上限归 `augmentor/language.py`，`failed_indices` 才是全量下标的
+        权威来源（`errors` 到了响应侧可能只剩样本）。
         """
         if target_lang not in self.supported_langs:
             raise DataValidationError(
@@ -160,7 +176,8 @@ class MultilingualSupport:
             )
 
         if not items:
-            return []
+            return {"items": [], "total": 0, "failed": 0,
+                    "failed_indices": [], "errors": []}
 
         results: List[Optional[Dict]] = [None] * len(items)
 
@@ -173,24 +190,36 @@ class MultilingualSupport:
             new_item["language"] = target_lang
             return index, new_item
 
+        failures: List[Dict[str, Any]] = []
+
         with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
-            futures = [
-                executor.submit(translate_item, i, item)
-                for i, item in enumerate(items)
-            ]
+            futures = {executor.submit(translate_item, i, item): i
+                       for i, item in enumerate(items)}
 
             for future in as_completed(futures):
                 try:
                     index, new_item = future.result()
                     results[index] = new_item
                 except Exception as e:
+                    index = futures[future]
                     logger.error(f"翻译失败: {e}")
+                    failures.append({"index": index,
+                                     "error": f"{type(e).__name__}: {e}"})
 
-        # 失败项回退为原始数据，保证长度一致
-        return [
-            results[i] if results[i] is not None else dict(items[i])
-            for i in range(len(items))
-        ]
+        # `as_completed` 给的是完成顺序而不是输入顺序，回执要稳定就得自己排。
+        failures.sort(key=lambda record: record["index"])
+        failed_indices = [record["index"] for record in failures]
+
+        return {
+            "items": [
+                results[i] if results[i] is not None else dict(items[i])
+                for i in range(len(items))
+            ],
+            "total": len(items),
+            "failed": len(failures),
+            "failed_indices": failed_indices,
+            "errors": failures,
+        }
 
     def analyze_languages(self, items: List[Dict], text_key: str = "instruction") -> Dict[str, Any]:
         """统计数据集的语言分布

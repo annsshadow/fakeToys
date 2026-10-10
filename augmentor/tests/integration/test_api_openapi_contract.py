@@ -632,8 +632,11 @@ CALLS = {
     ),
     ("POST", "/api/dataset/translate"): _Case(
         request=lambda c: _translate_case(c),
+        # L221（A270）：失败回执四键。这份清单**刻意不从 `TranslateResponse` 实推**——
+        # 契约要抓的是「模型写了但响应里静默丢字段」，两边同源就永远抓不到。
         keys=_keys("total", "batches", "batch_size", "target_lang",
-                   "supported_langs", "items"),
+                   "supported_langs", "items",
+                   "failed", "failed_indices", "errors", "errors_truncated"),
     ),
     # ---------- system（运维 / 治理）----------
     ("GET", "/api/system/dependencies"): _Case(

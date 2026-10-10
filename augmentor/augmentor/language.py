@@ -80,10 +80,18 @@ def translate_dataset(items: List[Dict[str, Any]], *, backend: Any,
         keep_original: 是否保留原文到 `{text_key}_original`
 
     Returns:
-        `total` / `batches` / `batch_size` / `target_lang` / `supported_langs` / `items`
+        `total` / `batches` / `batch_size` / `target_lang` / `supported_langs` / `items` /
+        `failed` / `failed_indices`（**全数据集** 0 起下标，升序）/ `errors`（前 20 条
+        `{index, error}` 样本）/ `errors_truncated`
 
     Raises:
         ModelNotConfiguredError: backend 为 None
+
+    **失败回执在这里跨批合并**：SDK 的 `batch_translate` 只看得见本批，`failed_indices`
+    是批内坐标，所以合并时必须加批起点 `start` 才是全数据集下标——调用方拿到的下标可以直接
+    指回请求里那份 `input_file`。样本上限取 20 落在本层而不是 SDK：只给下标看不出「是不是同
+    一次后端故障」，而跨批合并后的全量错误消息在系统性故障下会撑爆响应；`failed` 走 SDK 的
+    显式计数器而不是 `len(errors)`，这样将来即使样本面收窄，计数也不会跟着失真。
 
     「最终目标语言在不在 `supported_langs` 里」的判据**不在本层**——SDK 的
     `batch_translate` 顶部就有 `DataValidationError` 这道闸，且它在建线程池之前抛，
@@ -95,17 +103,24 @@ def translate_dataset(items: List[Dict[str, Any]], *, backend: Any,
     if backend is None:
         raise ModelNotConfiguredError("翻译需要配置模型后端")
 
+    sample_limit = 20
     support = MultilingualSupport(model_backend=backend, supported_langs=list(supported_langs))
     translated: List[Dict[str, Any]] = []
+    failures: List[Dict[str, Any]] = []
+    failed_total = 0
     for start in range(0, len(items), batch_size):
-        translated.extend(
-            support.batch_translate(
-                items[start:start + batch_size],
-                target_lang=resolved,
-                text_key=text_key,
-                keep_original=keep_original,
-            )
+        report = support.batch_translate(
+            items[start:start + batch_size],
+            target_lang=resolved,
+            text_key=text_key,
+            keep_original=keep_original,
         )
+        translated.extend(report["items"])
+        failed_total += report["failed"]
+        failures.extend({"index": record["index"] + start, "error": record["error"]}
+                        for record in report["errors"])
+
+    failures.sort(key=lambda record: record["index"])
     return {
         "total": len(translated),
         "batches": (len(items) + batch_size - 1) // batch_size if items else 0,
@@ -113,4 +128,8 @@ def translate_dataset(items: List[Dict[str, Any]], *, backend: Any,
         "target_lang": resolved,
         "supported_langs": list(supported_langs),
         "items": translated,
+        "failed": failed_total,
+        "failed_indices": [record["index"] for record in failures],
+        "errors": failures[:sample_limit],
+        "errors_truncated": failed_total > sample_limit,
     }
