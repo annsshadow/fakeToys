@@ -47,6 +47,9 @@
 - [x] **L209** `0778cb240` `feat(augmentor)`：**B265 备注收口 —— `dependency_type` 纳入封闭清单**。实测全仓零分支读取、测试只用过清单成员 ⇒ 收紧无行为影响，所谓「契约变更」的风险在可达面上为零 ⇒ 详见循环日志 L209
 - [x] **L210** `06e253bc9` `docs(augmentor)`：**§3.3 收口 —— dataset/system 两组 27 个端点补人读字段说明**。守卫分两层（总览层全路径集合相等 / 详细层恰好覆盖两组），且守卫自身两次被实测抓出漏洞后修正 ⇒ 详见循环日志 L210
 - [x] **L211** `deb9bb3c9` `feat(augmentor)`：**前端消费面收口 —— 五只未接线服务函数全部接进页面**。KNOWN_UNWIRED 白名单清空；顺带修掉接线守门自身的失查（语料面含 `*.test.tsx`，替身字符串被当成接线）⇒ 详见循环日志 L211
+- [x] **L212** `9abc72c67` `test(augmentor)`：**账本标尺的谱系口径换成全祖先 topo-order**。换序前先逐档重量六档读数全部复现才动刀 ⇒ 详见循环日志 L212（与 L213 同批提交）
+- [x] **L213** `9abc72c67` `test(augmentor)`：**符号链接能力交叉对账**。第一版「按探针分臂」不可证伪，撤掉重写 ⇒ 详见循环日志 L213
+- [x] **L214** `ec0668115 + bccfeff85 + e6b67238a` `feat(augmentor)`：**A138 ②③ 档接线第一批 —— 五只键 / 六条端点支路，判据一律取行为差**。权威序定稿「请求参数 > 配置键 > 内置默认」；`enabled` 三只按实测撤回（端点门 = 改契约），process 的扩展名字段本轮自己造又自己拆；收口批被自己的一句未实测断言推翻 ⇒ 详见循环日志 L214
 
 ## Backlog A — 质量缺口（缺数 / 偏支 / 健壮性）
 
@@ -1715,3 +1718,115 @@
   （上轮 112 → +7），eslint --max-warnings 0 干净，tsc 通过。**
 - 红→绿注入：摘除 5 只接线（修复守门前 0 红 ⇒ 实证守门失查；修复后 5 只全红）/
   把 `.test.tsx` 放回语料面 ⇒ 语料守卫 1 红 / 无害对照 0 红。
+
+### L212（2026-10-10）— 账本标尺的谱系口径换成全祖先 topo-order
+
+- **症状**：换机后首次全量门禁，`tests/unit/test_ledger_hash_slots_l98.py` 交回 16 个 ERROR，
+  全部同一句 `RulerNotProven: first-parent 历史只有 431 笔，不像本仓的真值`（L211 块里记的 429
+  是当时那笔提交之前的读数，两笔差在中间又落了几笔提交 —— 尺子读数按当下重量，不靠回忆）。
+- **根因（实测不是推理）**：本机 main 的历史经 graft 重建（`4f0cf03d1`），origin/augmentor-opt100
+  的那 1582 笔循环提交挂在**合并的第二父链**上，first-parent 一条直线走不到它们。
+  同一棵树换成全祖先 `--topo-order` 现量 **2552 笔**。
+- **为什么允许换**：这一族尺子最容易在换口径时静默失真，所以「六档读数与谱系口径无关」这一格
+  **必须先自证再改**。换序前后逐档重量：带槽行 prog 15 / log 24、两侧一致 15、唯一哈希 69、
+  「只有块」的轮次 9 格**集合相等**、主题白名单 4 格**集合相等** ⇒ 六档逐档复现，才动
+  `git_history()`；下限报错文案同步改成「全祖先历史」，免得下一位读者按 first-parent 去理解那个数。
+- **不削弱强度**：「读不到 git 就不给读数」的 `RulerNotProven` 语义一字未动；能红性由文件里
+  两条既有自证用例承担（带已知答案的合成样本 + monkeypatch 把 R3 换成恒不报破口 ⇒ 自证必抛）。
+  本轮复跑 19 passed。
+- **顺带记一次自己差点踩的坑**：第一版探针读的是 `OPTIMIZATION_LOOP_2.md`，读数 4 / 0 / 4 与
+  钉值全线不符，我差点把「探针读错文件」判成「尺子坏了」。真相是本守卫的 `LEDGER` 常量指向
+  **第一本账** `OPTIMIZATION_LOOP.md`（`REPO_ROOT = parents[2]`）。记这一格的理由：读错文件
+  同样能「证明」任何东西 —— 这条纪律对本仓所有普查型守卫成立。
+
+### L213（2026-10-10）— 符号链接能力交叉对账：第一版不可证伪，撤掉重写
+
+- **症状**：L68 微分支的 `test_rollback_replaces_plain_dir_current` 假红。本机 Windows 无特权、
+  未开开发者模式 ⇒ `Path.symlink_to` 抛 WinError 131，而 `versioning.py` 的 except 支按**设计**
+  回退成把版本 ID 写进 `current.txt`。测试却把符号链接那一臂写死成唯一形状。
+- **处置**：加 `_can_symlink()` 能力探针，并把它与现实**交叉对账**：
+  `assert current.is_symlink() is can`；探针说不能时额外断言 `current` 压根不存在、
+  且 `.txt` 里躺着本轮的 `version_id`。另立一支
+  `test_symlink_failure_falls_back_to_txt_marker`（monkeypatch 让 `symlink_to` 抛 131），
+  让回退分支在**有能力**的机器上也有正牌住户，不再只靠机器环境碰运气。
+- **本轮真正的收获是一次设计失败**：第一版写成「`if _can_symlink(): 断言链接臂 else: 断言回退臂`」。
+  缺陷注入把探针换成说谎（恒 `return False`）之后 **8 passed 全绿** ⇒ 断言跟着探针的话走，
+  而不是跟着现实，那正是不可证伪的形状。改成对账形状才有牙。
+- **剩余不确定（明写，不藏）**：在**这台**无特权机器上，「探针谎称不能」那一注仍然红不了
+  （`False is False` 成立），它只在有能力机器上红；反方向（探针说能而实际没链接成）由另一注
+  注入证明会红。⇒ 这一格的可红性随机器能力变化，本地不可全证，别把它当成两端都已闭合。
+
+### L214（2026-10-10）— A138 ②③ 档接线第一批：五只键 / 六条端点支路，判据一律取行为差
+
+- **缺口**：可写四节（export / vector / rag / multimodal）14 键里 **11 只「只写不读」**：
+  ② 档 6 键只在 `GET /api/config` 回显、③ 档 5 键连回显都没有。L184 把回显面钉死之后，
+  「键在响应里」有守卫、「键有用」仍然零守卫 ⇒ 本轮动的是后者。
+- **权威序定稿**：**请求参数 > 配置键 > 内置默认**。这一格必须先拍，否则每接一只键都要重吵一次谁赢。
+  （本块第一版在这里写过一句「与 `quality.enabled` / `dedup.enabled` 的管道阶段同一口径」——
+  那是没实测就引用的说法，实测证明是错的，订正见下面「本轮写错并被自己推翻的那一句」。）
+- **接线与证据**（新文件 `tests/integration/test_api_config_consumption_l214.py`，13 例）：
+  - `export.formats` → `/api/data/export` 与 `/api/export/batch` 的「省略 formats」支路；
+  - `export.default_format` → `/api/export/preview` 的省略 `format` 支路（响应里的 `format` 是**生效值**）；
+  - `rag.default_format` → `/api/dataset/rag`。这一格刻意不只断言回显字符串，还断言产物形状真的换
+    了（`{id, query, answer}` 是 custom 的形状、`text` 是 langchain 的形状）⇒ echo 骗不过这一档；
+  - `multimodal.image_extensions` / `audio_extensions` → `/api/multimodal/scan` 的识别面与
+    `/api/multimodal/formats` 的清单。最强证据是两臂互证：内置默认认 `.gif` 而出厂配置不认，
+    同一份文件 `total_records` 一边 1 一边 0；请求再点名 `.gif` 盖掉配置时同名 stem 集合只剩 `clip`。
+- **对外行为变更（写进文档，不让它只活在 diff 里）**：HTTP 侧「省略 `formats`」从「导出全部 13 族」
+  变成「导出 `config.export.formats` 那 5 族」。出厂默认是非空清单 ⇒ 收窄对所有省略方真实生效；
+  要旧行为就显式点名或把配置写成 `[]`。管道层 `export_dataset(formats=None)` 的「None = 全部」**不变**，
+  随包 UI 总是点名单只格式所以不受影响 —— 三条都在 API 文档里逐条写明。
+- **两次被实测打回的设计**（都是「改契约」与「消费配置」的边界，判据是现量而不是洁癖）：
+  ① 把 `enabled` 接成端点拒绝门 ⇒ **13 支既有集成测试当场红**（三只 enabled 出厂默认全 false），
+  那等于把随包 API 的三项既有能力关掉。⇒ 挪给 L215 在 `AugmentorPipeline` 的阶段入口上消费，
+  端点面保持不变；② 用 `config.export.formats` 去收窄 `GET /api/export/formats` ⇒ 与既有断言
+  `"csv" in formats` 冲突，而冲突是对的：那只端点报的是**能力清单**，配置那是**导出策略**，
+  两个语义不许混。撤掉代码，把这条区分写进 docstring 与文档。
+- **本轮写错并被自己推翻的那一句（订正，不留原文误导）**：上面这些文字与两处 docstring 都写过
+  「`enabled` 是本仓既有的**管道阶段开关**，住在 `AugmentorPipeline`，与 `quality.enabled` /
+  `dedup.enabled` 同族」。收尾普查时按 `config.<节>.enabled` 全仓搜（扣掉 `config.py` 的校验、
+  `config_validator.py` 的静态规格、`api/routes/config.py` 的回显三处），命中数是 **0**——
+  **16 只 `enabled` 键在产品代码里一只都没有读者**，管道阶段真正的开关从来是调用参数
+  （`augment(use_quality_check=…)` / `augment(use_dedup=…)`），阶段内部不看配置。
+  ⇒ 结论跟着变：接 `enabled` 不是「给既有语义找位置」而是**新建消费路径**，于是必须先按出厂默认
+  分档——`quality` / `dedup` / `versioning` / `visualization` 四节是 `true`，接上零行为漂移；
+  其余十二节是 `false`，接上等于把当前始终在跑的行为关掉 = 对外破坏面，单独拍。
+  **这一格不是新发现的缺陷，是既有账目的复现**：Backlog **B5** 的 AST 尺子早就量出全仓 37 只死键，
+  其中「16 格是各节的启用闸门」与我这次 grep 的 16 只 `enabled` **一字不差**。本轮的病是把 B5 已登记的
+  事实反过来写进文档与 docstring ⇒ 教训与本仓既有纪律同一形：**「听起来合理的语义」不是证据，
+  凡是写进文档的语义断言都必须带一条现量普查**，而且要先查账——L215 按四只 true 键起步，
+  B5 那 37 只键的「读取或显式废弃」是消费面收口的真正前沿。
+- **第三次是本批 commit 落盘之后自己抓自己的**：`ec0668115` 给 `/api/multimodal/process` 的请求体
+  加了 `image_extensions` / `audio_extensions`，实测 `fuse_modalities` 走 `process_image` /
+  `process_audio`，两者按**文件内容**解析、压根不查 `supported_extensions`（那道门只住在
+  `is_supported` / `process_directory`，即扫描侧）⇒ 那是本轮**新造的幽灵面**，正是 A138 的形状。
+  撤销在 `bccfeff85`，并把「接线必须先举出行为差」写进路由 docstring、请求模型 docstring 与
+  API 文档的分档表三处 —— 判据不许只待在这一段散文里。
+- **顺带的两处必要修正**：`GET /api/config` 补回显 multimodal 两只扩展名键（有读者的键不许只活在
+  代码里），`TestConfigEchoReaderSplitL184` 的 ③ 档名单随之 5 → 3，并新增 `test_consumed_keys_are_echoed`
+  从正向钉「有读者 ⇒ 必须可见」，让「名单改了但回显没跟上」这种做一半的改写当场红；账本 A143 那一格
+  指向 `list_export_formats` 的行引用被本轮插行换位、落到空行，由 dead_line 硬 0 档当场抓住 ⇒ 按
+  A127 口径降为名字锚点，普查三档同步重量（`line_refs` 265 → 264、`file_tokens` 1666 → 1667、
+  名不匹配档 149 → 148）。
+- **红→绿注入（收口批重量过一遍，因为本块的③拆掉了 process 那两处读点，注入面对象变了）**：
+  一次摘掉**五处配置读点**（`/api/data/export` 与 `/api/export/batch` 的 `or p.config.export.formats`、
+  preview 的 `or …export.default_format`、rag 的 `or rag_config.default_format`、
+  `_resolve_extensions` 的配置臂、`supported_formats` 的两只处理器构造）⇒ **13 例红 7**。
+  剩下 6 例不红是**形状正确**而不是漏网：它们守的是「请求参数赢」那一档双臂（拆掉配置臂不影响
+  请求臂成立），加上一例在拆配置后仍成立（内置默认本来也认 `.gif`，那一例的对照对象是识别面而不是读者）。
+  逐注都先核对「注入确实落进文件」（打印残留读点数 = 0）再跑，这是本仓 L211 之后立的规矩。
+  恢复后 13 passed，三个被改过的产品文件用 `git status` 逐字节核对无残留。
+- **既有面**：`311 passed`（multimodal/config/openapi/doc 选择集复跑）与本轮改动前的 `618 passed`
+  （integration 全量）都是零用例改动通过。
+- **门禁**：L212/L213 收口后的全量读数是 `8069 passed / 10 skipped / exit 0 / 覆盖率 98.60%`；
+  L214 这批改动之后的全量复跑读数是 **`8083 passed / 10 skipped / 0 failed / 0 errors / exit 0 /
+  覆盖率 99.82% / 191.26s`**。用例数对得上：`8069 + 13`（`test_api_config_consumption_l214.py`）
+  `+ 1`（`test_consumed_keys_are_echoed`）`= 8083`，无凭空多出的通过项。
+- **第一次复跑不干净，读数如实记在这里**：`2 failed / 8081 passed / 10 skipped / 1 error`。
+  两支红是 L214 的代码把两处行引用顶成了死线（账本 A143 的 `api/routes/export.py`
+  `list_export_formats`、`test_doc_line_refs_l79.py` 自己的注释），按 A127 口径降为名字锚点并把普查三档重量之后复绿；
+  A184 硬 0 档抓到的那一处就在同一支测试文件的注释里，是同根因。
+  那一条 `ERROR tests/integration/test_cli_merged_commands.py::TestEnhancedFlagIsRemoved::test_enhanced_flag_is_rejected[stats]`
+  **没有复现**：参数化id `[stats]`，单独复跑该文件 `117 passed`，第二轮全量也是 0 error。
+  ⇒ 记为「一次未能复现的偶发，位置在 CLI 集成链的 stats 用例」，不当成已定位的缺陷立账，
+  也不当作不存在——若后续任何一轮门禁再抓到它，这条要升级为待修项。
