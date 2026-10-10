@@ -2,6 +2,11 @@ import { defineConfig } from 'vite'
 import uni from '@dcloudio/vite-plugin-uni'
 
 // vite 必须锁 5.2.8（@dcloudio/vite-plugin-uni 的 peer 硬锁），见 GAME_DESIGN 目录说明
+// ⚠️ 这条约束有可执行守卫：src/test/toolchain_pin.test.ts。dependabot 在
+// 2026-09-30 / 2026-10-08 两次自动升级（5.2.8→6.4.3→8.3.4）把 type-check
+// （TS2307，vite 8 无根 types 字段而 TS4.9 不读 exports）、build:h5
+// （rolldown 解析不了 pinia 的 vue-demi）、npm install（ERESOLVE）同时打坏。
+// 依赖机器人再动 package.json 的 vite/vitest 两行时，那个测试会先红。
 export default defineConfig({
   plugins: [uni()],
   build: {
