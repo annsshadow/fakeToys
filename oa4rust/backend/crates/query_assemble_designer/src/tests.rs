@@ -937,3 +937,58 @@ async fn table_reload_dynamic_writes_text_update_time_ok() {
         .await
         .unwrap();
 }
+
+/// NOW()→TEXT 类型错配回归（优化二轮 50，续轮49）：x_query_input 的 create_time
+/// 为 TEXT，input_create 原 `VALUES (.., NOW())` 在 PG 无 timestamptz→text 隐式赋值
+/// 转换会 500；修为 to_char 字面量后应成功落库。
+#[tokio::test]
+async fn input_create_writes_text_create_time_ok() {
+    if !shared::testing::is_db_available().await {
+        eprintln!("skipping input_create_writes_text_create_time_ok: DB not reachable");
+        return;
+    }
+    let pool = shared::testing::test_pool();
+    let c = pool.get().await.unwrap();
+    c.execute(
+        "CREATE TABLE IF NOT EXISTS x_query_input (id TEXT PRIMARY KEY, content TEXT, creator TEXT, create_time TEXT, update_time TEXT)",
+        &[],
+    )
+    .await
+    .unwrap();
+    for col in [
+        "ALTER TABLE x_query_input ADD COLUMN IF NOT EXISTS create_time TEXT",
+        "ALTER TABLE x_query_input ADD COLUMN IF NOT EXISTS update_time TEXT",
+    ] {
+        c.execute(col, &[]).await.unwrap();
+    }
+
+    // 修复前：NOW() 赋 TEXT 列 → 报错 500；修复后 to_char 字面量成功
+    let resp = crate::input_create(
+        axum::Extension(pool.clone()),
+        axum::Json(serde_json::json!({"content": "u2-input-body"})),
+    )
+    .await
+    .expect("input_create 不应因 NOW()→TEXT 类型错配而 500");
+    let j = serde_json::to_value(&resp.0).unwrap();
+    assert_eq!(j["type"], "success");
+    let id = j["data"]["id"].as_str().expect("new input id");
+
+    let ct: Option<String> = c
+        .query_one(
+            "SELECT create_time FROM x_query_input WHERE id = $1",
+            &[&id.to_string()],
+        )
+        .await
+        .unwrap()
+        .get("create_time");
+    assert!(
+        !ct.unwrap_or_default().is_empty(),
+        "create_time 应写入字面量时间串"
+    );
+    c.execute(
+        "DELETE FROM x_query_input WHERE id = $1",
+        &[&id.to_string()],
+    )
+    .await
+    .unwrap();
+}
