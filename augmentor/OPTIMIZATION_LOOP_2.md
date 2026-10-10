@@ -55,6 +55,7 @@
 - [x] **L217** `d171524a0` `feat(augmentor)`：**multilingual 四键接进产品入口**（新建 `augmentor/language.py` + 画像/翻译两条端点，`enabled` 闸在读盘之前），并把 B5 那把住在 `Temp/` 的死键尺子升成仓内守卫。普查现量 69 键 / 47 只有读者 / 23 只零读者，`config.*.enabled` 16 → 10 只。顺带撤掉本层那道与 SDK 重复的语言准入闸（注入显示摘掉它全绿 ⇒ 两存必有一盲），SDK 吞异常导致的「失败冒充成功」新立 A270 ⇒ 详见循环日志 L217
 - [x] **L218** `334e94a40` `test(augmentor)`：**死键普查的「理由」补上机器可证伪维**——20 只零读者键逐键挂一条由 `inspect.signature` 与路由模型 AST 验真的旋钮证据（五种形状），外加散文一致性两规则与两把尺子的正控制；实测 L217 那批理由有 **8 条与证据矛盾**（我在提交信息里数成 7 条，那个数本身也是散文数）。据此订正 A271 的旋钮口径、新立 A273（管道构造 `self.expander` / `self.tracker` 之后产品侧从未调用）⇒ 详见循环日志 L218
 - [x] **L219** `fbf5052ec` `feat(augmentor)`：**`evaluation.metrics` 接进 `/api/dataset/evaluate` 的省略支路**（权威序 请求 > 配置 > SDK 默认；出厂值与内置回落值逐字同 ⇒ 零漂移，判据取「改配置 ⇒ 指标集合跟着变」再加一整份字典逐值相等的等价钉）。接线顺带把两格死角第一次变成可达：空清单被 SDK 的 `metrics or [内置三只]` 静默补成三项（本层改 400），白名单过去只判请求侧、现在判生效值。普查现量随档位改：有读者 47 → 48、零读者 23 → 22、归档待处置 20 → 19；同节 `reference_field` **接不动**（请求默认是硬值 `"output"`，`or` 永远落不到配置），立 **A274**；L218 那句假理由计数按机器比对从 7 订正为 **8** ⇒ 详见循环日志 L219
+- [x] **L220** `68b929bb8` `feat(augmentor)`：**A274 的「接不动」用 `None` 哨兵解开——`evaluation.reference_field` 接进 `/api/dataset/evaluate`，并按对称口径新补 `evaluation.generated_field`**（权威序 请求 > 配置 > 内置默认；两只键出厂同为被替换的硬编码值 `output` ⇒ 零漂移，前提本身由三臂机器钉住）。坏字段名两处出声（加载期 `require_string` + 门口逐条带下标 400），请求侧空串与省略不可区分、落回配置，与 L219 的 `metrics` 语义同式。普查现量：schema 69 → **70 键**、有读者 48 → **49**、零读者 22 → **21**、归档待处置 19 → **18**（非闸门键 9 → 8）。既有面五处按现量重钉（含注册表门铃 69 → 70 与两支写死 29 的测试名改为点名归因），注入取证 **八臂全部有牙齿**（5/4/7/2/1/6/4/5 红，其中一臂是普查尺子自己看见读者消失）。门禁 **8224 passed / 11 skipped / 0 failed / 99.80%**，用例增量 `+28` 用「HEAD 临时换入再逐字节复原」的对照跑法逐文件实测。新立 **A275**（README 配置表与 schema 无机器对账）⇒ 详见循环日志 L220
 
 ## Backlog A — 质量缺口（缺数 / 偏支 / 健壮性）
 
@@ -74,10 +75,11 @@
 | A268 | `augmentor/semantic.py`、`config.vector.dimension` | **新立（L216）**：嵌入用的是零依赖的确定性字符二元组哈希，所以 `dimension` 就是配置值本身。接**真模型**嵌入（可选依赖 `sentence-transformers`）时要先回答两件事：① 模型输出宽度与本键冲突怎么收（模型给 384、配置写 768 时是拒配置、忽略配置，还是另开一只 `model_name` 键）；② 本机与 CI 都不装这个包，接上去等于写一条**任何没装它的环境都跑不到**的产品路径——正是本仓在收的「只写不读」形状。所以这条的前置条件是「先有一个装了包的定标环境」，不是先写代码。定级 M，待用户拍。 | M |
 | A269 | `augmentor/vector/chromadb.py`、`augmentor/semantic.py` 的 `EXPLICIT_PERSISTENCE_BACKENDS` | **新立（L216）**：`persist` / `load` 只由 `FAISSDB` 实现，`ChromaDB` 那侧是 `PersistentClient` 自管（构造阶段就 `mkdir` 并注册集合）。L216 把落盘建库与状态读取定义为「有显式 `persist`/`load` 面」的后端专用，chromadb 在**构造之前**拿 400。要让 `vector.backend: chromadb` 真的可用，得先在装了 `chromadb` 的环境里量两件事：① 该后端的「索引是否已存在、多少条」怎么写成可测判据（今天的 `exists` / `count` 语义靠 `load()` 的布尔返回，那侧没有）；② 「GET 不落盘」这条承诺如何与「构造即落盘」的后端共存（要么给它一条只读的探查路径，要么把 `vector-status` 划成 faiss 专用面并回显清楚）。定级 M，待用户拍。 | M |
 | A270 | `augmentor/multilingual.py` 的 `batch_translate` | **新立（L217）**：逐条翻译的异常被 `except Exception as e: logger.error(...)` **吞成「回退原文」**，返回清单与全部成功时**形状完全相同**——没有失败计数、没有逐条状态、没有非零退出信号。L217 接消费层时实测坐实：`model_backend=None` 时端点回 **200 + 整份原文**，调用方读到的是「翻译完成」。本层已在分批之前自保抛 `ModelNotConfiguredError`（后端整体缺失这一档出声了），但**逐条失败**这一档仍然沉默：真后端只对部分条目超时/被限流时，产物里混着原文而无人知道。修法是给 SDK 加**失败回执面**（`failures` 计数 + 索引列表，或逐条 `translation_status`），面一改就要同步 `TranslateResponse`、`test_api_openapi_contract` 与 `test_api_report_keys` 那把键集尺子——所以它是一次产品改动而不是接线。定级 M，待拍。 | M |
-| A271 | `augmentor/config.py` 余 10 只 `config.*.enabled` + 10 只非闸门键 | **新立（L217）**：B5 的前沿现在有了机器名单（`tests/unit/test_config_reader_census_l217.py` 的零读者档，20 键逐键带理由）。两族的处置方向不同，**都不许顺手做**：① 10 只 `enabled`（active_learning / benchmark / context / evaluation / expander / frameworks / multimodal / rag / sampler / tracker）出厂全为 `false`，接进阶段入口等于**关掉当前始终在跑的行为**，是对外破坏面（L214 已实测：接成端点拒绝门当场红 13 支），要拍的是「破坏面要不要开」而不是「怎么接」；② 10 只非闸门键**按旋钮到底在不在分三族**（L218 用 `inspect.signature` 与 `api/routes` 的模型字段逐键验真，本条第一版那句「各自对应的模块确有同名构造参数」是错的，七只键里多数根本没有那种参数）：**请求侧已有同名旋钮** 2 只——`evaluation.metrics` / `evaluation.reference_field` 就在 `/api/dataset/evaluate` 的请求模型上，把它们改成「请求 > 配置 > SDK 默认」的缺省来源多半零漂移（出厂清单与 SDK 回落值同为 `bleu / rouge_l / similarity`）。**这一格 L219 已收一半**：`evaluation.metrics` 接进省略支路（顺带把空清单在门口 400，因为 SDK 那行 `metrics or [内置三只]` 会把空值**静默补成三项**），余 `reference_field` 因请求默认是硬值 `"output"` 而必须先改契约，另立 **A274**；**SDK 有同名旋钮但产品侧没有调用者** 4 只——`active_learning.strategy` / `batch_size` 在 `ActiveLearningLoop.__init__`、`max_iterations` 对应 `run(iterations=...)`（默认 `None` ⇒ 1 轮，与出厂 10 不同，接线即行为变更）、`expander.strategies` 在 `DomainExpander.batch_expand`，但 `ActiveLearningLoop` 全树零实例化、`self.expander` 构造之后从未被用（**A273**），所以要先造消费者再谈接线；**根本没有同名旋钮** 4 只——`frameworks.frameworks`（两个集成类的构造器只收 `text_key` / `answer_key`）、`sampler.dimensions`（`analyze_coverage` 只收 `items`，四个分布硬编码）、`tracker.metrics`（只有逐条 `log_metric(metric_name, value)`）与 `visualization.types`（**A267** 在案，接上去是产物新增不属接线）。前两族是接线、第三族是加功能，逐族拍完再按族批量收，别做半族（L214 的「修了 5 处漏 1 处」教训）。定级 M。 | M |
+| A271 | `augmentor/config.py` 余 10 只 `config.*.enabled` + 10 只非闸门键 | **新立（L217）**：B5 的前沿现在有了机器名单（`tests/unit/test_config_reader_census_l217.py` 的零读者档，20 键逐键带理由）。两族的处置方向不同，**都不许顺手做**：① 10 只 `enabled`（active_learning / benchmark / context / evaluation / expander / frameworks / multimodal / rag / sampler / tracker）出厂全为 `false`，接进阶段入口等于**关掉当前始终在跑的行为**，是对外破坏面（L214 已实测：接成端点拒绝门当场红 13 支），要拍的是「破坏面要不要开」而不是「怎么接」；② 10 只非闸门键**按旋钮到底在不在分三族**（L218 用 `inspect.signature` 与 `api/routes` 的模型字段逐键验真，本条第一版那句「各自对应的模块确有同名构造参数」是错的，七只键里多数根本没有那种参数）：**请求侧已有同名旋钮** 2 只——`evaluation.metrics` / `evaluation.reference_field` 就在 `/api/dataset/evaluate` 的请求模型上，把它们改成「请求 > 配置 > SDK 默认」的缺省来源多半零漂移（出厂清单与 SDK 回落值同为 `bleu / rouge_l / similarity`）。**这一格 L219 已收一半**：`evaluation.metrics` 接进省略支路（顺带把空清单在门口 400，因为 SDK 那行 `metrics or [内置三只]` 会把空值**静默补成三项**），余 `reference_field` 因请求默认是硬值 `"output"` 而必须先改契约，另立 **A274**；**SDK 有同名旋钮但产品侧没有调用者** 4 只——`active_learning.strategy` / `batch_size` 在 `ActiveLearningLoop.__init__`、`max_iterations` 对应 `run(iterations=...)`（默认 `None` ⇒ 1 轮，与出厂 10 不同，接线即行为变更）、`expander.strategies` 在 `DomainExpander.batch_expand`，但 `ActiveLearningLoop` 全树零实例化、`self.expander` 构造之后从未被用（**A273**），所以要先造消费者再谈接线；**根本没有同名旋钮** 4 只——`frameworks.frameworks`（两个集成类的构造器只收 `text_key` / `answer_key`）、`sampler.dimensions`（`analyze_coverage` 只收 `items`，四个分布硬编码）、`tracker.metrics`（只有逐条 `log_metric(metric_name, value)`）与 `visualization.types`（**A267** 在案，接上去是产物新增不属接线）。前两族是接线、第三族是加功能，逐族拍完再按族批量收，别做半族（L214 的「修了 5 处漏 1 处」教训）。定级 M。**· L220 之后第②族只剩「SDK 有旋钮但产品侧无调用者」4 只与「根本没有同名旋钮」4 只**：「请求侧已有同名旋钮」那一格（2 只）已整格收完——`evaluation.metrics` L219、`evaluation.reference_field` L220，并同轮补了原本不存在的 `evaluation.generated_field`（新增键自带读者，未给普查添新账）。现量：schema **70 键**、有读者 **49**、零读者 **21**、归档待处置 **18** = 闸门 `enabled` **10** + 非闸门 **8**（4 只「有旋钮无调用者」+ 4 只「无同名旋钮」）。第①族那 10 只 `enabled` 与 A273 那两个无调用者的属性仍是「要拍」而不是「要写」 | M |
 | A272 | `api/routes/config.py` 的可写四节 / `multilingual` 节 | **新立（L217）**：L217 接的四只键里除 `enabled` 之外，**没有任何一只可以经 `POST /api/config` 改**——可写面至今只有 export / rag / vector / multimodal 四节，`multilingual` 要改只能改 `config.yaml` 重启。要么把 `multilingual` 开成第 5 个可写节（连带 `test_the_two_tiers_partition_the_writable_sections` 的键名单扩员、节内判据已有所以不用补），要么在 `docs/API.md` 与回显面上写明「这节只读」。这是口径决策不是缺陷，所以先立账：现状下翻译的目标语言与批宽在部署期不可调，而 L217 的两条端点恰恰是运行时才消费它们。定级 S，待拍。 | S |
 | A273 | `augmentor/pipeline.py` 的 `self.expander` / `self.tracker` | **新立（L218）**：管道在构造阶段建 `DomainExpander(self.model_backend) if self.model_backend else None`（`pipeline.py:146`）与 `ExperimentTracker()`（`pipeline.py:149`），而**产品树里再没有任何一处引用这两个属性**——grep `self.expander` 与 `self.tracker` 只命中那两行赋值，`api/`、`cli.py`、`augmentor/cli/` 全树对 `expander` / `tracker` 零命中，测试侧只有 `test_pipeline.py:412` 断言「无后端时 `instance.expander is None`」和两处给它塞 `model_backend` 的夹具。于是 `DomainExpander.batch_expand`（收 `strategies`、`topics_per_strategy`、`use_parallel`）与 `ExperimentTracker.log_metric` / `save_experiment` 这些**已写好并单测过的能力今天没有任何产品入口**，也正是 **A271** 里「SDK 有旋钮但没人转」那一族的根因。两条路要拍：① 接消费者（扩展走一条 `/api/dataset/expand` 一类入口、指标随增强结果落到版本面），② 承认死面并把构造删掉——后者会缩 `AugmentorPipeline` 的公开属性面，属对外契约变化，那 3 处测试引用要跟着改。构造本身近乎零成本（`ExperimentTracker` 明写「构造时不建目录，第一次记实验才建」），所以**这是消费条目不是性能条目**，别拿性能理由顺手删。定级 M，待拍。 | M |
-| A274 | `api/routes/dataset_tools.py` 的 `EvaluateRequest.reference_field` / `config.evaluation.reference_field` | **新立（L219）**：L219 接 `evaluation.metrics` 时把同节的 `evaluation.reference_field` 留在原地，原因是它**接不动**。请求模型的默认是硬值 `reference_field: str = "output"`，调用方省略与显式传 `"output"` 在 API 面上是同一个形状，`request.reference_field or config....` 的 `or` 永远不会落到配置那一档——写出来就是一只假接线（配置改了读数不变，且没有任何测试能发现，正是本轮普查在收的形状）。真接法只有一条：把字段改成 `Optional[str] = None` 再走「请求 > 配置 > SDK 默认」，而这会同时改掉 OpenAPI 里该字段的**可空性**（定义上就变，不是推测），动到 `test_api_openapi_contract` 那把字段面尺子时要按现量重钉（尚未实测，故本条只立账不预判红几支），也改掉既有客户端「省略即 `output`」的语义。生成侧 `generated_field` 在配置里**没有对应键**，接完会出现「参考侧跟配置、生成侧跟硬编码」的不对称默认，要不要一起补一只 `evaluation.generated_field` 也是同一个口径决策。定级 S，待拍。 | S |
+| A274 | `api/routes/dataset_tools.py` 的 `EvaluateRequest.reference_field` / `config.evaluation.reference_field` | **新立（L219）**：L219 接 `evaluation.metrics` 时把同节的 `evaluation.reference_field` 留在原地，原因是它**接不动**。请求模型的默认是硬值 `reference_field: str = "output"`，调用方省略与显式传 `"output"` 在 API 面上是同一个形状，`request.reference_field or config....` 的 `or` 永远不会落到配置那一档——写出来就是一只假接线（配置改了读数不变，且没有任何测试能发现，正是本轮普查在收的形状）。真接法只有一条：把字段改成 `Optional[str] = None` 再走「请求 > 配置 > SDK 默认」，而这会同时改掉 OpenAPI 里该字段的**可空性**（定义上就变，不是推测），动到 `test_api_openapi_contract` 那把字段面尺子时要按现量重钉（尚未实测，故本条只立账不预判红几支），也改掉既有客户端「省略即 `output`」的语义。生成侧 `generated_field` 在配置里**没有对应键**，接完会出现「参考侧跟配置、生成侧跟硬编码」的不对称默认，要不要一起补一只 `evaluation.generated_field` 也是同一个口径决策。定级 S，待拍。**· L220 已收口**：两只字段名的请求默认改成 `Optional[str] = None` 哨兵，权威序 请求 > 配置 > 内置默认 才真的可达（省略与显式 `"output"` 从此是两种形状）；对称口径拍的是「补键」而不是留一对不对称默认 ⇒ 新增 `config.evaluation.generated_field`（出厂 `output`，运行时 `require_string` + 规格表 `non_empty` 与兄弟键同规）。零漂移前提不再由散文承担：dataclass 默认、仓库 YAML、规格表形状三臂各自钉住，另加「四列文本两两相似度不同」当地基。坏字段名两处出声（加载期拒空串、门口逐条带下标 400）。OpenAPI 可空性确实改了，但**没有任何一支既有尺子红**（`test_api_openapi_contract` 守的是响应面与端点覆盖，请求字段类型不在它刀口上），所以那把尺子的位置由新章 `TestRequestFieldsAreNowOmissible` 自己钉。⇒ 见循环日志 L220 | S |
+| A275 | `docs/README.md` 的配置段表格 | **新立（L220）**：这张表的「关键项」列与 `AppConfig` 的键清单**没有任何机器对账**——L220 新增 `evaluation.generated_field` 时，`docs/README.md` 与 `config.yaml` 两处全靠人肉同步，而 `test_doc_contract_numbers_l200.py` 只核端点数、导出格式数、页面数那一类数字。这正是 **A266** 那句「契约面数字全靠人肉对账」在配置面上的具体形状，且它比端点面更容易烂：本仓 20 节 70 键每轮接线都在动。修法方向（与 A266 同族、可并表执行）：逐节从 `dataclasses.fields()` 实推键清单，与表格该列**逐节比对相等**，并同时核 `config.yaml` 的节/键集合（三侧同源的三角对账）。定级 S。 | S |
 
 ## Backlog B — 功能增强与体验（价值 ÷ 工作量）
 
@@ -2156,3 +2158,60 @@ L218 把「等价旋钮住在哪」逐键验真之后，这一族里唯一「旋
 - **用例增量对账**：8187 → 8196 的 `+9` = L219 集成 8 支 + 普查守卫里 `_MUST_BE_ALIAS_ONLY` 多出的 1 个参数化
   case。skip 11 一字未动；**l97 / l98 两把参数化棘轮一格未红**（新增 case 的 ids 由字面串自动导出，
   不落在盲面名册里）。
+
+### L220（2026-10-11）— `evaluation` 两侧字段名接进省略支路：A274 那句「接不动」用 `None` 哨兵解开，并按对称口径补一只新键
+
+- **接的是同一格，用的是不同钥匙**：L219 收 `metrics` 时把同节 `reference_field` 判成**接不动**并立 A274，
+  原因是请求默认写死 `"output"`、与出厂配置同值，`request.x or config.x` 的 `or` 永远落在请求那一档。
+  本轮把两只字段名请求默认改成 `Optional[str] = None` 哨兵，权威序 **请求参数 > 配置键 > 内置默认** 才真的可达；
+  这不是「换个写法」，是把 API 面上两种不可区分的形状（省略 / 显式 `"output"`）拆开成两件事。
+- **口径决策：补 `evaluation.generated_field` 而不是留一对不对称默认**：只接参考侧会得到「参考侧跟配置、
+  生成侧跟硬编码」，而这两只字段在同一条请求模型上、语义完全对称。新增键必须有读者，所以它与接线同轮做、
+  与同节兄弟键同规（运行时 `require_string` + 规格表 `non_empty`），不留「写进 schema 却没人读」的新账。
+  `config.*.enabled` 一族本键不涉及，出厂闸仍 `false` 且仍未接（A271 第①族，未动）。
+- **零漂移的前提是逐字同值，不是我的断言**：两只键出厂都是 `"output"`，与它们所替换的那句硬编码默认同值，
+  所以按出厂配置部署的读数一字不变。等价臂（`test_factory_defaults_are_zero_drift`）拿**整份响应**逐值比，
+  而前提本身由 `TestFactoryPremise` 三臂钉住（dataclass 默认、仓库 `config.yaml`、规格表形状），
+  外加 `TestColumnValuesAreDistinguishable` 先核对四列文本两两不同相似度 ⇒ 「配置改了读数不变」这种
+  假绿在这套桩子里没有藏身处。
+- **坏字段名一律出声，两处各管一段**：配置指向取不到的列 ⇒ `_as_column` 逐条带下标 400（`第 0 条没有字段 'nope'`），
+  配置写空串 ⇒ 加载期 `require_string` 拒，绕过加载直接改属性 ⇒ 门口照样 400 并报出 `''`。
+  请求侧空串与省略不可区分（pydantic 层就是 falsy），按权威序落回配置——这条与 L219 给 `metrics: []`
+  定下的语义同式，不是各自发明的两套规矩。
+- **消费路径只有 API 一条**：`augmentor/cli/` 与 `cli.py` 全树对 `ModelEvaluator` / `evaluate` 零命中，
+  `web/src` 也没有打这条端点 ⇒ 本轮不存在「同一判据在两处实现」的第二现场，`web/` 侧零文件改动
+  （所以未复跑前端测试与 `tsc`，属不适用而非漏跑）。
+- **普查档位跟着改**：`evaluation.reference_field` 从第 3 档（零读者）挪出并挂进 `_MUST_BE_ALIAS_ONLY`
+  当别名臂正控制，`evaluation.generated_field` 作为新增键直接进同一档；`_UNREAD` 18 行、
+  `_UNREAD_KNOB` 同步摘一条（配对的机器断言当场逼我改档，不是我主动想起来改的）；
+  「尺子不空转」那支的正控制从两字段扩到三字段（`metrics` / `generated_field` / `reference_field`），
+  并把理由表说明里那句「一张 20 行的对账表」订正成现量 18 行。
+- **现量**：schema 20 节 / **69 → 70 键**，有产品读者 **48 → 49**、零读者 **22 → 21**，
+  归档待处置 **19 → 18**（`config.*.enabled` 仍 10 只未接、非闸门键 9 → **8**）。第一本账 B5 那行按同一读数就地订正。
+- **红→绿注入取证（八臂，全部有牙齿、零空转）**：摘掉 `generated_field` 的 `None` 哨兵 ⇒ **5 红**；
+  摘掉 `reference_field` 的哨兵 ⇒ **4 红**；路由不再读配置那侧的参考字段名 ⇒ **7 红**（其中一支是普查守卫的
+  `test_alias_readers_are_seen[evaluation.reference_field]`，即尺子自己看见读者消失了）；权威序颠倒成
+  配置压过请求 ⇒ **2 红**；把新键出厂值改成 `"answer"` ⇒ **1 红**（前提臂红，等价臂不陪）；
+  摘掉新键的运行时判据 ⇒ **6 红**；删掉新键的规格行 ⇒ **4 红**；反向防腐臂——把已接上读者的键仍留在零读者档 ⇒
+  **5 红**（分区、档位精确相等、理由非占位、证据配对四支一起红）。注入器逐臂只按字节改写、锚点唯一命中先断言、
+  跑完逐字节复原并断言与进入时一致；脚本与备份都写在仓库外（`D:/WORKSPACE/`），用完即删。
+- **既有面登记（新增一只 schema 键的账，全部按现量重钉、没有一把尺子被改松）**：`test_config_gates_l154.py`
+  三处名单（`STR_KEYS` / 合法取值 / 删规格行后运行时仍拒）+ 那支「逐节键数」计数 `evaluation` 3 → 4、
+  总数 29 → 30，并把两支测试名从写死 29 改成点名归因（`test_all_listed_keys_have_static_spec_rows` /
+  `test_the_key_census_is_29_plus_the_l220_key`）；`test_blank_string_l83.py` 的 `ALREADY_SAFE` +1 与并集计数
+  33 → 34；`test_config_validator.py` 的 `non_empty` 精确集合 +1；`test_section_registry_l77.py` 的
+  「新增字段常驻门铃」69 → 70；普查守卫的 `69 只键` 说明文字 → 70。
+- **一次不干净的读数留着**：第一次全量是 **`1 failed / 8223 passed / 11 skipped / 覆盖率 99.80%`**（180.83s），
+  唯一那支红正是 `test_section_registry_l77.py` 的门铃计数（`assert total == 69` 读到 70）——它自己的注释就写着
+  「红的只有这个必须精确相等的计数，它是新增字段的常驻门铃，不是缺陷」，而落地档（真写 YAML、真落进节对象、
+  值与出厂不同那条反空转断言）当场判绿。按现量重钉后复跑 ⇒ **8224 passed / 11 skipped / 0 failed / 99.80%**（186.16s）。
+- **用例增量对账（实测，不是推算）**：8196 → 8224 的 `+28` = L220 集成 17 + `test_config_gates_l154.py` 8
+  （新键逐档 5 支坏值 + 合法取值 + 静态面合法值 + 删规格行后运行时仍拒）+ 普查守卫 2（`_MUST_BE_ALIAS_ONLY`
+  两支参数化各多一只键）+ 注册表门铃 1。对账做法是新的：把 HEAD 版那 7 个文件**临时换入**跑一次全量
+  `--collect-only`，再逐字节复原并断言相等，得到逐文件改前/改后两张计数表（其余文件零差别）；
+  换入前先落一份盘外备份。skip 11 一字未动；l97 / l98 两把参数化棘轮一格未红。
+- **插行这次没有将历史引用平移出代码跨度**：路由文件净增 14 行，`test_comment_refs_a184.py` 与
+  `test_doc_line_refs_l79.py` 当场绿（那把尺子判的是「引用落点是不是代码跨度」，不是逐符号比对），
+  所以不必像 L217 / L219 那样换点。这条不意味着插行安全——L219 的教训仍然成立。
+- **新立 A275**：`docs/README.md` 的配置段表格「关键项」列与 `AppConfig` 的键清单**没有机器对账**，本轮两处文档
+  全靠人肉同步；这正是 A266 那句「契约面数字靠人肉对账」在配置面上的具体形状，方向是从 `fields()` 实推逐节比对。
