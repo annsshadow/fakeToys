@@ -57,18 +57,23 @@ class MultimodalFormatsResponse(BaseModel):
 class MultimodalRequest(BaseModel):
     """多模态处理请求
 
-    `image_extensions` / `audio_extensions` 省略时读 `config.multimodal`（L214，
-    A138 ③ 两键在此获得正牌读者）；请求参数优先。
+    **这里刻意没有 `image_extensions` / `audio_extensions`**（L214 量过之后撤掉的）：
+    `fuse_modalities` 走 `process_image` / `process_audio`，两者按**文件内容**解析、
+    不查 `supported_extensions`——那道门只住在 `is_supported` / `process_directory`，
+    也就是扫描端点。给一条举不出行为差的请求加字段，等于亲手制造下一格 A138 型幽灵面。
     """
     text: str = ""
     image: Optional[str] = None
     audio: Optional[str] = None
-    image_extensions: Optional[List[str]] = None
-    audio_extensions: Optional[List[str]] = None
 
 
 class ScanRequest(BaseModel):
-    """目录扫描请求"""
+    """目录扫描请求
+
+    两只扩展名键省略时读 `config.multimodal`（L214，A138 ③ 两键在此获得正牌读者），
+    请求参数优先。识别面在扫描端点是**有行为差的**：同名 stem 的配对与 `total_records`
+    都跟着它变。
+    """
     directory: str
     image_extensions: Optional[List[str]] = None
     audio_extensions: Optional[List[str]] = None
@@ -127,10 +132,7 @@ async def process_multimodal(request: MultimodalRequest):
         def run():
             from augmentor.data import MultimodalProcessor
 
-            image_exts, audio_exts = _resolve_extensions(
-                request.image_extensions, request.audio_extensions
-            )
-            processor = MultimodalProcessor(image_exts, audio_exts)
+            processor = MultimodalProcessor()
             record = processor.fuse_modalities(payload)
             return record.to_dict()
 
