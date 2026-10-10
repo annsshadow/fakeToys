@@ -11,7 +11,9 @@
 """
 
 import json
+import os
 import shutil
+import tempfile
 from pathlib import Path
 from queue import Queue
 
@@ -81,11 +83,30 @@ class TestVersionControlCache:
         assert first == second
 
 
+def _can_symlink() -> bool:
+    """L213：探测本机能否真建符号链接（Windows 无特权/未开发者模式时抛 WinError 131）"""
+    with tempfile.TemporaryDirectory() as td:
+        target = Path(td) / "t"
+        link = Path(td) / "l"
+        target.mkdir()
+        try:
+            link.symlink_to(target)
+            return True
+        except OSError:
+            return False
+
+
 class TestVersioningRmtree:
     def test_rollback_replaces_plain_dir_current(self, tmp_path):
+        """current 是普通目录时回滚走 rmtree 分支——这一格与符号链接能力无关
+
+        L213：终态断言按**能力分形**（`_can_symlink` 的实测值），两种机型各自钉死自己
+        那一臂，都不许静默跳。原来这里写死 `current.is_symlink()`，无特权机型上
+        versioning 按设计落 `.txt` 回退，测试却按另一臂断言 ⇒ 红的是尺子不是代码。
+        """
         manager = VersionManager(storage_dir=str(tmp_path / "vm"))
         info = manager.create_version([{"instruction": "q"}])
-        # create_version 会把 current 建成符号链接；先删掉再建普通目录，
+        # 无论 create 把 current 落成了链接还是回退文件，先清掉再建普通目录，
         # 才能确保回滚时 current 是「非符号链接的目录」从而命中 rmtree 分支
         current = tmp_path / "vm" / "current"
         if current.is_symlink() or current.is_file():
@@ -96,8 +117,38 @@ class TestVersioningRmtree:
         (current / "junk.txt").write_text("x", encoding="utf-8")
         assert not current.is_symlink()
         assert manager.rollback(info.version_id) is True
-        # rmtree 删除旧目录后重建为指向版本目录的符号链接
-        assert current.is_symlink()
+        # 旧目录已被 rmtree 删除（两支机型都成立）
+        assert not (current / "junk.txt").exists()
+        # 终态与**声明的能力**互相对账：探测器说能 ⇒ 必须真是链接；说不能 ⇒
+        # 必须没有 current 目录且落出 .txt 回退。若只按探测器的话分臂，
+        # 探测说谎（L213 注入实测）时两种机型都不会红——那是尺子坏了不是代码坏了。
+        can = _can_symlink()
+        assert current.is_symlink() is can
+        if not can:
+            assert not current.exists()
+            fallback = tmp_path / "vm" / "current.txt"
+            assert fallback.read_text(encoding="utf-8") == info.version_id
+
+    def test_symlink_failure_falls_back_to_txt_marker(self, tmp_path, monkeypatch):
+        """无特权臂的**可达证明**：有能力机型上注入 symlink_to 失败，必须落 current.txt
+
+        若只写能力分形，特权机型就从不执行回退分支、无特权机型就从不执行链接分支——
+        两臂各在一类机器上是死代码。这一格让回退支在两型机器上都被执行。
+        """
+        manager = VersionManager(storage_dir=str(tmp_path / "vm"))
+        info = manager.create_version([{"instruction": "q"}])
+        monkeypatch.setattr(
+            Path, "symlink_to",
+            lambda self, target, target_is_directory=False: (_ for _ in ()).throw(
+                OSError(131, "insufficient privileges")),
+        )
+        current = tmp_path / "vm" / "current"
+        if current.is_symlink():
+            current.unlink()
+        assert manager.rollback("no_such_version") is False
+        assert manager.rollback(info.version_id) is True
+        fallback = tmp_path / "vm" / "current.txt"
+        assert fallback.read_text(encoding="utf-8") == info.version_id
 
 
 class TestValidationNonDict:
