@@ -4,9 +4,11 @@
 import { describe, expect, it } from 'vitest'
 import {
   O2_ACTIVITY_TYPES,
+  activityName,
   parseProcessDefinition,
   processCreatePayload,
   serializeProcessDefinition,
+  type ProcessCanvasNode,
 } from './process-definition'
 
 describe('O2OA process definition adapter', () => {
@@ -51,6 +53,43 @@ describe('O2OA process definition adapter', () => {
     expect(parsed.canvas.nodes).toHaveLength(nodes.length)
     expect(parsed.canvas.edges[0]).toMatchObject({ from: 'n0', to: 'n1', condition: 'route-0' })
     expect(parsed.canvas.edges[0].waypoints).toEqual([{ x: 0, y: 1 }])
+  })
+
+  describe('activityName 级联（修复：无 label/name 时活动名不得序列化为空）', () => {
+    const base: ProcessCanvasNode = { id: 'n1', type: 'manual', x: 0, y: 0 }
+
+    it('既无 label 又无 name 时回退到活动类型（回归：原 ?? 兜底为死代码致空名）', () => {
+      expect(activityName(base, 'manual')).toBe('manual')
+    })
+
+    it('非空 label 优先于 name 与 type', () => {
+      expect(activityName({ ...base, label: '人工审批' }, 'manual')).toBe('人工审批')
+      expect(activityName({ ...base, label: '人工审批', name: 'N' }, 'manual')).toBe('人工审批')
+    })
+
+    it('label 缺省时用非空 name', () => {
+      expect(activityName({ ...base, name: 'N' }, 'manual')).toBe('N')
+    })
+
+    it('空 label 也应回退（label="" 不得压住 name/type）', () => {
+      expect(activityName({ ...base, label: '', name: 'N' }, 'manual')).toBe('N')
+      expect(activityName({ ...base, label: '' }, 'manual')).toBe('manual')
+    })
+  })
+
+  it('serializeProcessDefinition：无 label/name 的节点序列化为 type 而非空名', () => {
+    const definition = serializeProcessDefinition(
+      {
+        nodes: [
+          { id: 'n0', type: 'manual', x: 0, y: 0 }, // 无 label、无 name
+        ],
+        edges: [],
+      },
+      { id: 'process-x', name: 'P', application: 'app-1' },
+    )
+    const activities = definition.activities as Array<Record<string, unknown>>
+    expect(activities[0].name).toBe('manual') // 修复前为 ''
+    expect(activities[0].type).toBe('manual')
   })
 
   it('processCreatePayload falls back through application → processCategory → "all"', () => {
