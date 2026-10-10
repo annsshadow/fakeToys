@@ -50,6 +50,7 @@
 - [x] **L212** `9abc72c67` `test(augmentor)`：**账本标尺的谱系口径换成全祖先 topo-order**。换序前先逐档重量六档读数全部复现才动刀 ⇒ 详见循环日志 L212（与 L213 同批提交）
 - [x] **L213** `9abc72c67` `test(augmentor)`：**符号链接能力交叉对账**。第一版「按探针分臂」不可证伪，撤掉重写 ⇒ 详见循环日志 L213
 - [x] **L214** `ec0668115 + bccfeff85 + e6b67238a` `feat(augmentor)`：**A138 ②③ 档接线第一批 —— 五只键 / 六条端点支路，判据一律取行为差**。权威序定稿「请求参数 > 配置键 > 内置默认」；`enabled` 三只按实测撤回（端点门 = 改契约），process 的扩展名字段本轮自己造又自己拆；收口批被自己的一句未实测断言推翻 ⇒ 详见循环日志 L214
+- [x] **L215** `2f994fbc7` `feat(augmentor)`：**`enabled` 族第一批 —— 出厂四只 `true` 键接进管道阶段入口**，零读者名单 16 → 12。默认值换成 `None` 哨兵之后调用参数仍是最高一档；顺带把两只新有读者的键接进 `GET /api/config` 的只读回显面 ⇒ 详见循环日志 L215
 
 ## Backlog A — 质量缺口（缺数 / 偏支 / 健壮性）
 
@@ -65,6 +66,7 @@
 | A208 | `docs` | **已关闭（L129）**：API 易混字段词典（9 字段）+ API 面排查 FAQ（6 问） | M |
 | A265 | `OPTIMIZATION_LOOP_2.md` | **新立（L197）**：账本「已完成」清单与循环日志的进度一致性**没有机器守卫**——L194 与 L50 两次漏写清单行都靠人眼发现。修法方向：从循环日志的 `### L\d+` 标题集合推导应有轮次，与清单行对账（防空转断言同 `test_cli_verdict_wiring.py` 的 S1==S2 型式）。**这是第二次同类，按纪律升级为待办而不是再忍一次** | S |
 | A266 | `docs/API.md` / `docs/ARCHITECTURE.md` / augmentor 顶层 README | **新立（L197）**：契约面数字（端点总数、tag 计数、导出格式清单、前端页面数、事件循环守门条数）全靠人肉对账，L197 一次就抓出六处历史遗留错误。修法方向：从 `app.openapi()` / `ExportFormat` 枚举 / 前端页面目录**实推**后与文档断言相等（同 `TestExportFormatSurface` 先例） | M |
+| A267 | `augmentor/visualizer.py`、`augmentor/config.py` 的 `VisualizationConfig.types` | **新立（L215）**：可视化这一族里除 `enabled`（L215 已接）之外还剩一对互证的死面。三条现量：① `visualization.types` 出厂五值 `["wordcloud", "length_distribution", "topic_cluster", "timeline", "quality_distribution"]`，全仓产品读者 **0**（grep 只命中 `config.py` 的定义与 `require_string_list` 校验，配置校验不算读者）；② `DataVisualizer.generate_timeline` 产品读者 **0**，只有 3 支单测调它；③ `generate_all_visualizations` 只出四类图，其中 `quality_distribution` 要 `scores` 形参，而两个产品调用点（`pipeline.visualize_dataset` 与 `cli/commands/analysis.py` 的报告模式）**都不传** ⇒ 出厂配置声称五类、阶段实际最多三类。**为什么 L215 不顺手接**：把 `types` 接成出图清单是一次**行为变更**而非零漂移接线——按出厂值接上，`timeline` 会今天第一次真的生成，产物多出那张图；`quality_distribution` 还要先定「scores 从哪来」。**判据要的是行为差，这里的「行为差」是新增产物而不是消费既有开关**，所以它属功能增强，得单独拍：要么按 `types` 生成（对外产物变化），要么承认清单虚假并从回显/文档降级。定级 M，待用户拍。 | M |
 
 ## Backlog B — 功能增强与体验（价值 ÷ 工作量）
 
@@ -1819,9 +1821,10 @@
 - **既有面**：`311 passed`（multimodal/config/openapi/doc 选择集复跑）与本轮改动前的 `618 passed`
   （integration 全量）都是零用例改动通过。
 - **门禁**：L212/L213 收口后的全量读数是 `8069 passed / 10 skipped / exit 0 / 覆盖率 98.60%`；
-  L214 这批改动之后的全量复跑读数是 **`8083 passed / 10 skipped / 0 failed / 0 errors / exit 0 /
-  覆盖率 99.82% / 191.26s`**。用例数对得上：`8069 + 13`（`test_api_config_consumption_l214.py`）
-  `+ 1`（`test_consumed_keys_are_echoed`）`= 8083`，无凭空多出的通过项。
+  L214 这批改动之后的全量复跑读数：**`8083 passed / 10 skipped / 0 failed / 0 errors / exit 0 / 覆盖率 99.82% / 191.26s`**。
+  用例数对得上：`8069 + 13`（`test_api_config_consumption_l214.py`）`+ 1`（`test_consumed_keys_are_echoed`）
+  `= 8083`，无凭空多出的通过项。（这一格在 L215 轮被重排过一次：反引号代码跨度原本跨在换行上，
+  加粗配对守卫 `test_bold_markers_paired` 当场抓住 —— 订正见 L215 块的「本轮修掉的既有格」。）
 - **第一次复跑不干净，读数如实记在这里**：`2 failed / 8081 passed / 10 skipped / 1 error`。
   两支红是 L214 的代码把两处行引用顶成了死线（账本 A143 的 `api/routes/export.py`
   `list_export_formats`、`test_doc_line_refs_l79.py` 自己的注释），按 A127 口径降为名字锚点并把普查三档重量之后复绿；
@@ -1830,3 +1833,82 @@
   **没有复现**：参数化id `[stats]`，单独复跑该文件 `117 passed`，第二轮全量也是 0 error。
   ⇒ 记为「一次未能复现的偶发，位置在 CLI 集成链的 stats 用例」，不当成已定位的缺陷立账，
   也不当作不存在——若后续任何一轮门禁再抓到它，这条要升级为待修项。
+
+### L215（2026-10-10）— enabled 族第一批：出厂四只 true 键接进管道阶段入口，零读者名单 16 → 12
+
+- **缺口与动手顺序**：L214 的现量普查量出 16 只 `config.<节>.enabled` 在产品代码里一只读者都没有
+  （与 Backlog **B5** 的 AST 尺子一字不差）。既然接 `enabled` 是**新建消费路径**而不是给既有语义找位置，
+  就必须先按出厂默认分档：`quality` / `dedup` / `versioning` / `visualization` 四节出厂是 `true`，接上
+  零行为漂移 ⇒ 本轮做；其余十二节出厂是 `false`，接上等于把当前始终在跑的行为关掉 = 对外破坏面 ⇒ 单独拍。
+- **四只键的落点与判据**（新文件 `tests/integration/test_pipeline_config_consumption_l215.py`，18 例，
+  判据一律取行为差）：
+  - `quality.enabled` / `dedup.enabled` 进 `augment_dataset` 与 `augment_async` 两个入口的默认解析。做法
+    是把 `use_quality_check` / `use_dedup` 的默认从 `True` 换成 `None` 哨兵 ⇒ 权威序仍是「调用参数 >
+    配置 > 内置默认」，而 `None` 是「调用方没点」不是「关掉」。实测：质量关掉 15 条进产物、打开 0 条被滤；
+    去重关掉 5 条、打开 1 条。
+  - `versioning.enabled` 与既有 `auto_snapshot` **串联**而不是互相覆盖：总闸关了还自动打点，等于用户说
+    「版本管理别跑」而代码回答「但自动打点你没关」。实测 1 个快照 vs 0 个，`auto_snapshot=False` 那一臂
+    仍然不打点（既有语义没被顶掉）。
+  - `visualization.enabled` 进出图阶段入口，关掉返回空字典而不是 4xx —— 这一族是**阶段开关**，「关掉」的意思
+    是「这一步别做」，不是「这个能力不存在」，响应形状不变。这正是 L214「把 enabled 接成端点拒绝门 ⇒ 十三支
+    既有集成测试当场红」那条教训的落点。
+  - **两个入口同一道判**：`test_both_entries_agree_on_the_same_config` 钉同一份配置下同步与异步出同一种结果，
+    专防「只接一个入口」这种做一半。
+- **报告面写解析后的值**：`augment` 返回里的 `quality_check` / `dedup` 两键现在回显**解析结果**而不是入参原样
+  ⇒ 既有那些 `is True` 断言仍成立（出厂两键都是 `true`，省略方拿到的解析结果就是 `True`）。
+- **转发面同步收口**：API 请求模型 `use_quality` / `use_dedup` 改 `Optional[bool] = None`（缺席 ≠ 关掉，
+  端点不许自己补 `True`）；CLI 的 `--no-quality` / `--no-dedup` 没点时传 `None`；`GET /api/config` 新增
+  `versioning` / `visualization` 两只**只读**节 ⇒ `test_api_openapi_contract.py` 的段清单与
+  `test_consumed_keys_are_echoed` 的名单（4 → 8 键）同步。**刻意只回显已接上读者的那一只键**，
+  `visualization.types` 零读者不进回显 —— 塞进去就是 A138 的幽灵形状。
+- **本轮不动的那一半，说清楚**：vector 五键（`enabled` / `backend` / `dimension` / `storage_dir` /
+  `collection`）挪 **L216**，它要先定「配置键 vs 请求参数」谁赢；十二只出厂 `false` 的 `enabled` 每一只都是
+  行为移除决策，待用户拍；`visualization.types` 那一对互证死面（声称五类图、阶段最多出三类）新立 **A267**，
+  接上它属功能增强而不是零漂移消费 ⇒ 不在本轮做。
+- **零既有用例改动**：18 例首跑即绿，且本轮没改任何一支既有用例的断言——对既有用例只做两处「追加」
+  （8 键名单、契约段清单）。
+- **红→绿注入取证（本轮全部重跑现量，不引用上一轮的记忆读数）**：
+  - 六个管道读点一起摘 ⇒ **18 例红 6**，红的正是六支各自的对照臂（`test_false_in_config_disables_filtering`
+    / `test_false_in_config_keeps_duplicates` / `test_disabled_creates_no_snapshot` / `test_disabled_skips_stage`
+    / `test_absent_params_follow_config` / `test_both_entries_agree_on_the_same_config`）。
+  - 逐点单摘（每次只摘一处，其余五点保持）：同步质量 2 红、同步去重 2 红、版本闸 1 红、可视化闸 1 红、
+    异步质量 2 红、异步去重 2 红 ⇒ 六个读点各有独立取证对象，不存在「两点互掩」。
+  - 转发臂三注：API 字段默认退回 `True` ⇒ 该臂 2 例红 1；端点自己 `or True` 补默认 ⇒ 同一臂红 2，含
+    `test_explicit_false_is_forwarded_verbatim`（「显式 False 被吃掉」正是这一臂要防的形状）；CLI 旗标退回
+    `not args.no_quality` ⇒ 该臂 2 例红 1。
+  - 回显面一注：`GET /api/config` 两节整体摘掉 ⇒ 该选择集 **163 例红 4**（① / ② 档两处回显面钉子、
+    `test_consumed_keys_are_echoed`、响应模型与领域契约字段一致性那一支）。
+  - 注入器纪律：只按**字节**改写（`read_bytes`/`write_bytes`），改前断言注入面唯一命中、改后断言无 CRLF 混入，
+    跑完逐字节复原并断言与基线相等。
+- **本轮写错、被重测推翻的四处（原文不改口，订正留在这里）**：
+  ① commit `2f994fbc7` 正文写「六个管道读点一起摘 **13 例红 6**」——13 是 L214 那只文件的例数，本轮文件是
+  18 例，实测 **6 failed / 12 passed**。按本仓「优先新 commit、不改已落盘 commit」的规矩，错的正文留着、
+  此处订正，且后续任何引用这个数字处以本块为准。
+  ② 同一段写「回显两节摘掉则契约面红 3 例」，实测 **4 例**。
+  ③ 一次可视化注入的极性写反：给闸门写 `if not False:` 等于「永远跳过」，红的却是
+  `test_enabled_enters_stage`（错的臂）；换成 `if not True:`（= 不门 = L215 之前的行为）才抓到
+  `test_disabled_skips_stage`。两次都记 —— 「红的那支不是我要的那支」本身就是注入器有病的信号。
+  ④ 一次注入器把自己改坏：早先用 `Path.write_text(encoding="utf-8")` 复原时把 `pipeline.py` 整文件刷成
+  CRLF（703 行 diff），且一次 `finally` 里抛 `OSError: [Errno 22] Invalid argument` 中断复原 ⇒ 从备份回灌、
+  按去掉 `\r` 后逐字节核内容等价、核 CRLF 计数归零。另：`api/routes/config.py` 的基线**本来就含 CRLF**，
+  「注入前断言基线无 CRLF」这条过严的断言当场把它拦下、没有误改文件 —— 断言要看被测对象的事实，不看我的假设。
+- **本轮修掉的既有格**：L214 块的「门禁」那一格把反引号代码跨度写在换行处，`test_bold_markers_paired` 在本轮
+  全量里红。已重排该格（代码跨度不跨行）并在原格留一句指向本块。这不是本轮新引入的语义，是 `4d177e3f3`
+  写读数时留下的形状病 —— **根因是我把 8083 读数写进账本后没有复跑守卫就提交**。教训：账本改动本身也要过
+  Markdown 结构守卫，回填数字这一格不能当「只有散文」免检。
+- **既有面**：`web` 侧本轮零改动，回归面复跑 `119 passed`（13 个测试文件）+ `tsc` 退出 0 + `eslint` 退出 0。
+  普查三档：`line_refs` 264 不变、`file_tokens` 1667 → **1668**（新测试文件名进案面多一个文件 token）、
+  `code_but_no_name_match` 148 不变 —— 本轮没动任何行引用，是纯计数位移。
+- **门禁**：补本块**之前**的第一次全量复跑读数如实记在这里：**3 failed / 8098 passed / 10 skipped /
+  覆盖率 99.82% / 201.99s**。三支红逐条对账：两支 `test_ledger_progress_consistency_l203.py`（清单行已写、
+  日志块未补 —— 正是 A265 那把尺子的设计对象，补完本块即复绿），一支上面「本轮修掉的既有格」那条加粗配对，
+  它在 HEAD 上就红、与工作树新增无关（同一把尺子跑 `git show HEAD` 版本复现）。用例数对得上：
+  `8083 + 18 = 8101 = 3 + 8098`，无凭空多出的通过项。补完本块、修好加粗格之后的全量复跑读数见下一段。
+- **收口复跑（本轮最终门禁读数）**：补完本块、修好加粗格之后的定标全量复跑：
+  **`8101 passed / 10 skipped / 0 failed / 覆盖率 99.82% / 186.16s`**。用例数与上一段对得上
+  （`8083 + 18 = 8101`，且 3 红全部转绿），覆盖率语句分母 13976 与 L214 那一轮同口径可比。
+- **覆盖率读数差点写错，根因是命令口径不是仓库口径**：第一次收口复跑我在 `pytest.ini` 的
+  `addopts`（`--cov=augmentor --cov=api --cov=cli`）之外又加了一个**裸 `--cov`**，分母从 13976 语句
+  涨到 54863，读数落到 98.80% —— 看上去像本轮掉了 1 个百分点，实际是口径被我自己改了。
+  按定标命令重跑才拿到 99.82%。**新纪律**：门禁读数只认 `python -m pytest tests -q`（不加任何
+  `--cov` 变体），跨轮比较前必须先核 TOTAL 那一行的语句数是否同分母，不同分母的百分比不许并列写进账本。
