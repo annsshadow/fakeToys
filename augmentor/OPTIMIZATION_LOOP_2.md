@@ -46,6 +46,7 @@
 - [x] **L208** `b949f7929` `feat(augmentor)`：**B266② 追加 JSON 数组改成拒绝**。实测产物 `'[{"a": 1}]{"b": 2}'`（json.loads 报 Extra data）——非法 JSON 而调用方以为写成功了。三条候选都量过，取「拒绝」 ⇒ 详见循环日志 L208
 - [x] **L209** `0778cb240` `feat(augmentor)`：**B265 备注收口 —— `dependency_type` 纳入封闭清单**。实测全仓零分支读取、测试只用过清单成员 ⇒ 收紧无行为影响，所谓「契约变更」的风险在可达面上为零 ⇒ 详见循环日志 L209
 - [x] **L210** `06e253bc9` `docs(augmentor)`：**§3.3 收口 —— dataset/system 两组 27 个端点补人读字段说明**。守卫分两层（总览层全路径集合相等 / 详细层恰好覆盖两组），且守卫自身两次被实测抓出漏洞后修正 ⇒ 详见循环日志 L210
+- [x] **L211** `deb9bb3c9` `feat(augmentor)`：**前端消费面收口 —— 五只未接线服务函数全部接进页面**。KNOWN_UNWIRED 白名单清空；顺带修掉接线守门自身的失查（语料面含 `*.test.tsx`，替身字符串被当成接线）⇒ 详见循环日志 L211
 
 ## Backlog A — 质量缺口（缺数 / 偏支 / 健壮性）
 
@@ -1683,3 +1684,34 @@
   本轮引入的缺陷，**没有去「修」一个不存在的问题**。
 - 红→绿注入 3 模式：删 system 详细表一行 1 红 / 删 dataset 详细表一行 1 红 / 无害对照 0 红。
 - 全量门禁：8075 passed / 3 skipped / exit 0，覆盖率 99.89%。
+
+### L211（2026-10-10）— 前端消费面收口：五只未接线服务函数接进页面 + 守门语料面失查修复
+
+- **缺口**：`api.wiring.test.ts` 的 KNOWN_UNWIRED 白名单长期挂着 5 只函数
+  （`getVersion` / `getVersionData` / `getVersionHistory` / `getCheckpoints` / `visualizeData`）——
+  封装层写好了、后端端点契约都在，页面却没有一个调用点；README 页面表早已承诺
+  断点列表 / 版本历史 / 可视化图表三块，文档与现实不符。
+- **接线取舍**：`GET /api/versions/{id}` 只回元数据、`/{id}/data` 回全量条目——点开一行
+  不该默认付后者的代价，所以 Versions 页拆成「详情」「数据」两个显式入口。
+  Augmentation 加「断点列表」卡（含刷新按钮与空态文案），Analysis 加「可视化图表文件」卡。
+  新增页面测试 7 个（Versions 3 + Augmentation 2 + Analysis 1 + 语料守卫 1）。
+- **本轮最大的发现不是接线，而是守门本身是瞎的**：第一次缺陷注入把 5 只函数从页面源码
+  全部摘除后，接线守门照样 4 passed 全绿。根因：`import.meta.glob('../pages/*.tsx')`
+  把 `*.test.tsx` 也扫进语料面，页面测试里 `vi.mock` 的替身字符串被判定成「已接线」。
+  ⇒ 语料面剔除测试文件，并加一条专属守卫（断言语料面不含 `.test.tsx` 且原始 glob 确实含）
+  防这个修复本身将来被改回去。重注入：五只全被抓住（`expected [ 'getCheckpoints', …(4) ]
+  to deeply equal []`），恢复后转绿。
+- **换机环境的如实读数**：本轮在一台新机器上执行，先重建了开发环境（venv 移到仓库外，
+  避免污染 L79 文档行引用普查）。Python 全量门禁 `1 failed / 8051 passed / 10 skipped /
+  16 errors，覆盖率 99.84%`。逐支归因后三类剩余项全部是本机环境、与 L211 改动零交集：
+  ① 16 个 ERROR 来自 L98 账本标尺守卫的 first-parent 谱系断言——本机 main 的历史经 graft
+  重建，origin/augmentor-opt100 的 1582 笔合并在 first-parent 链之外，`git_history()`
+  只数到 429 笔低于 ≥500 下限而 RulerNotProven（尺子没证明自身可靠时报错，行为正确）；
+  ② 1 个 FAILED 是 L68 微分支的 symlink rmtree 用例——本机无符号链接权限，
+  `versioning.py` 按设计落 `current.txt` 回退，测试却写死符号链接臂；
+  ③ 10 个 skip vs 基线 3：本机未装 chromadb / sentence-transformers 等可选依赖。
+  ①② 各立一轮（L212 标尺谱系适配、L213 符号链接能力探测），均在下一轮以
+  「不削弱断言强度」的方式修复。**Web 门禁本机实测：13 files / 119 tests passed
+  （上轮 112 → +7），eslint --max-warnings 0 干净，tsc 通过。**
+- 红→绿注入：摘除 5 只接线（修复守门前 0 红 ⇒ 实证守门失查；修复后 5 只全红）/
+  把 `.test.tsx` 放回语料面 ⇒ 语料守卫 1 红 / 无害对照 0 红。
