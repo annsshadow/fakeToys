@@ -124,7 +124,12 @@ CEILING = {
     "ambiguous": 300,
     "runtime_ns": 0,
     "scratch": 768,
-    "scratch_missing": 339,
+    # L211 面位移（scratch_missing 339 → 340）：账本补记 L203–L210 八轮时新文字里
+    # 出现 1 条被本判据当成「指向不入仓工件」的反引号形状（`.error` / `.results` /
+    # `.loads` 这类**代码标识符**——`Dependency.to_dict()` / `DataPipeline.run()`
+    # 的属性访问。HEAD 里 `json.loads` 已被同样计入 6 次，属既有粗糙处；判据本身
+    # 的改进另立待办，本轮只按「动案面要重跑普查再改这里」条款重钉。
+    "scratch_missing": 340,
 # L154 面位移：config.py / config_validator.py 插行后 4 条行引用降名字锚（L1 两条 +
 # 架构文档两条），裸名形状入 ambiguous 桶（见下方实测值）；守卫 docstring 与静态面
 # 注释新引 A140 现量房那支普查脚本名，scratch 随之 +1。案面=产品布局变更，按「动
