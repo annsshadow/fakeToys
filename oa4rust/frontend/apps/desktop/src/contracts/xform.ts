@@ -209,11 +209,26 @@ const MODULE_TO_FIELD: Record<string, string> = {
   oocheckgroup: 'checkbox_group',
   attachment: 'file',
   oofiles: 'file',
+  // 文件类模块须映射到文件控件而非退化为 text（与移动端 uiTypeOf 的
+  // attachment/oofiles/file/upload/image/signature→'attachment' 保持一致）。
+  file: 'file',
+  upload: 'file',
+  image: 'image',
+  signature: 'signature',
   org: 'text',
   ooorg: 'text',
   label: 'html',
   html: 'html',
   div: 'section',
+}
+
+/**
+ * O2 模块类型 → 桌面设计器控件类型（纯函数，便于跨端一致性单测）。
+ * 未知类型回退 'text'。文件类模块（image/signature/file/upload/attachment/oofiles）
+ * 不得退化为 text——这是与移动端 uiTypeOf 对齐的跨端不变量。
+ */
+export function moduleToFieldType(type: string): string {
+  return MODULE_TO_FIELD[type.toLowerCase()] ?? 'text'
 }
 
 function parseOptions(value?: string): Array<{ value: string; label: string }> {
@@ -232,7 +247,7 @@ export function definitionToDesignerFields(definition: XformDefinition): Designe
     .map((module) => ({
       ...module,
       id: module.id,
-      type: MODULE_TO_FIELD[module.type.toLowerCase()] ?? 'text',
+      type: moduleToFieldType(module.type),
       label: String(module.label || module.name || module.id),
       key: String(module.key || module.name || module.id),
       placeholder: String(module.placeholder || ''),

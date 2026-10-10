@@ -30,14 +30,21 @@ describe('mobile form parser (parseMobileForm)', () => {
   })
 
   it('attachment-family module types all map to "attachment"', () => {
+    // 跨端一致性（优化二轮 56）：文件类模块 oofiles/file/attachment/image/signature
+    // 移动端一律归 'attachment'；桌面 xform.moduleToFieldType 对同一组映射到文件类
+    // 控件而非 'text'（image→image、signature→signature、file/upload/attachment/oofiles→file）。
     const form = parseMobileForm(
       def({
         m1: { id: 'm1', type: 'oofiles', name: 'attach', label: '证明材料' },
         m2: { id: 'm2', type: 'file', name: 'f', label: 'file' },
         m3: { id: 'm3', type: 'attachment', name: 'a', label: 'attach' },
+        m4: { id: 'm4', type: 'image', name: 'img', label: '图片' },
+        m5: { id: 'm5', type: 'signature', name: 'sig', label: '签字' },
       }),
     )
-    expect(form.fields.map((f) => f.type)).toEqual(['attachment', 'attachment', 'attachment'])
+    expect(form.fields.map((f) => f.type)).toEqual(
+      ['attachment', 'attachment', 'attachment', 'attachment', 'attachment'],
+    )
   })
 
   it('flat form (no layout container) yields a single default group', () => {
