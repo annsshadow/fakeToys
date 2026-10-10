@@ -87,7 +87,6 @@ function Fnv1a64Hex([string]$s) {
   }
   return $hash.ToString('x16')
 }
-$replayHash = Fnv1a64Hex "battle:$($bt.token_id):$($bt.seed):$total"
 $total = 0
 foreach ($w in $bt.level.waves) { foreach ($s in $w.spawns) { $total += $s.count } }
 $replayHash = Fnv1a64Hex "battle:$($bt.token_id):$($bt.seed):$total"

@@ -90,35 +90,22 @@ func toView(a domain.Attacker) AttackerView {
 // 共用同一份读取逻辑：两处各自实现一遍的话，改一处忘另一处就会
 // 让「槽位数」与「攻方加成」对不上，且没有任何测试会发现。
 func (s *Service) loadMasteryEffect(ctx context.Context, userID int64) (domain.MasteryEffect, []int, error) {
-	nodes, err := s.loadMasteryNodes(ctx, userID)
+	nodes, err := s.loadMasteryNodeRows(ctx, userID)
 	if err != nil {
 		return domain.MasteryEffect{}, nil, err
 	}
-	eff := domain.MasteryEffect{}
-	if len(nodes) == 0 {
-		return eff, nodes, nil
-	}
-	selected := make(map[int]bool, len(nodes))
-	for _, n := range nodes {
-		selected[n] = true
-	}
 	points := 0
-	if err := s.pool.QueryRow(ctx,
-		`SELECT mastery_points FROM user_progress WHERE user_id = $1`,
-		userID).Scan(&points); err != nil {
-		points = 0
+	// ⚠️ 与旧实现同一静默语义：点数读不到 = 无加点（0），不让整局打不开。
+	// 只在有节点时才读点数（旧实现在 len(nodes)==0 时提前返回、不读）。
+	if len(nodes) > 0 {
+		if err := s.pool.QueryRow(ctx,
+			`SELECT mastery_points FROM user_progress WHERE user_id = $1`,
+			userID).Scan(&points); err != nil {
+			points = 0
+		}
 	}
-	allNodes := make([]domain.MasteryNode, 0, 96)
-	for _, f := range domain.AllMasteryFamilies() {
-		allNodes = append(allNodes, f.Nodes...)
-	}
-	// ⚠️ EvaluateMastery 出错时**保留零值**而不是返回错误 ——
-	// 专精点数/前置不合法属于玩家侧状态问题，不该让整局战斗打不开。
-	// 零值 = 「无加成」，是最保守也最容易解释的降级。
-	if e, err := domain.EvaluateMastery(allNodes, selected, points); err == nil {
-		eff = e
-	}
-	return eff, nodes, nil
+	// 求值走 build_parts.go 的共享纯函数（与 LoadBuildSnapshot 同一份降级语义）。
+	return masteryEffectFrom(nodes, points), nodes, nil
 }
 
 // ExtraSlots 返回专精「额外插槽」提供的额外槽位数。
@@ -131,137 +118,20 @@ func (s *Service) ExtraSlots(ctx context.Context, userID int64) (int64, error) {
 	if err != nil {
 		return 0, fmt.Errorf("load mastery: %w", err)
 	}
-	if eff.ExtraSlots < 0 {
-		return 0, nil
-	}
-	return eff.ExtraSlots, nil
+	// 取「额外插槽」的判定走 build_parts.go 的共享纯函数（负数按 0）。
+	return extraSlotsFrom(eff), nil
 }
 
+// computeAttacker 从玩家进度与构筑推导攻方属性。
+//
+// 装配逻辑（专精/装备/宝石 → 各乘区 + 封顶）全部在 build_parts.go 的
+// `attackerFromParts` 里 —— 本函数只负责「取」，取完直接走共享纯计算。
+// 这样 `LoadBuildSnapshot`（走 loadBuildParts）与直接调用 computeAttacker
+// 的两条路径算出**同一份**攻方属性，不会出现「两处各算一遍然后漂移」。
 func (s *Service) computeAttacker(ctx context.Context, userID int64) (domain.Attacker, error) {
-	var maxStage int
-	if err := s.pool.QueryRow(ctx,
-		`SELECT COALESCE(MAX(max_stage), 0) FROM user_progress WHERE user_id = $1`,
-		userID).Scan(&maxStage); err != nil {
-		return domain.Attacker{}, fmt.Errorf("load max stage: %w", err)
-	}
-
-	stage := int64(maxStage)
-	if stage < 0 {
-		stage = 0
-	}
-
-	// 专精节点的实际加成。
-	eff, masteryNodes, err := s.loadMasteryEffect(ctx, userID)
+	parts, err := s.loadBuildParts(ctx, userID)
 	if err != nil {
-		return domain.Attacker{}, fmt.Errorf("load mastery: %w", err)
+		return domain.Attacker{}, err
 	}
-
-	mastery := masteryNodes
-
-	a := domain.DefaultAttacker()
-	// 攻击力：每通过 10 关 +200‰，即 1 关 +20‰。第 100 关约 +2000‰。
-	a.Attack += stage * 20
-	// 元素层数上限：每 25 关 +1
-	a.ElementCap += stage / 25
-	// 专精 element_cap 节点：每层 +1
-	if eff.ElementCapBonus > 0 {
-		a.ElementCap += eff.ElementCapBonus
-	}
-	// 这里先钳一次，装配（宝石 element_cap）之后再钳一次 ——
-	// 见函数末尾。两处都用同一个常量。
-	if a.ElementCap > domain.MaxElementCap {
-		a.ElementCap = domain.MaxElementCap
-	}
-	// 元素系数：每个专精节点 +15‰，封顶 +600‰
-	// 这一项刻意强于攻击力成长 —— 它直接放大反应伤害，符合 I-1 的反通胀意图
-	coef := int64(len(mastery)) * 15
-	if coef > 600 {
-		coef = 600
-	}
-	a.ElementCoefPermille += coef
-
-	// ⚠️ 以下四项此前**从未被装配** —— `MasteryEffect` 累加了它们，
-	// 而这里没有把它们加进攻方。于是专精树里：
-	//   第 1/2 层槽 2「热量上限」  8 系 × 2 层 = 16 个节点 → 纯装饰
-	//   第 1 层槽 3「技能伤害」    8 系 × 1 层 =  8 个节点 → 纯装饰
-	//   第 3 层槽 0「额外插槽」    8 系 × 1 层 =  8 个节点 → 纯装饰（见下）
-	//   第 3 层槽 2「护甲」        8 系 × 1 层 =  8 个节点 → 纯装饰
-	//   第 3 层槽 1「机制改造」    8 系 × 1 层 =  8 个节点 → 连 case 都没有
-	// 合计 40/96 个节点是惰性的。
-	if eff.SkillDamageBonus > 0 {
-		// 刻意折进 Attack 而不是单开乘区 ——
-		// Attack 是 I-1 反通胀公式的攻击力侧，单开乘区就绕过了 30‰ 红线。
-		a.Attack += eff.SkillDamageBonus
-	}
-	if eff.HeatCapBonus > 0 {
-		a.HeatCapPermille += eff.HeatCapBonus
-	}
-	if eff.ArmorBonus > 0 {
-		a.ArmorPermille += eff.ArmorBonus
-	}
-	if eff.MechanicBonus > 0 {
-		a.MechanicPermille += eff.MechanicBonus
-	}
-	// ⚠️ eff.ExtraSlots 仍然不装配。
-	//
-	// 「额外插槽」要生效，改的不是攻方属性，而是**技能槽位上限** ——
-	// 它由客户端的 ACTIVE_SLOTS / PASSIVE_SLOT 决定，服务端也需要一份
-	// 并据此校验上报的 equipped 数量。跨端 + 校验两层改动，
-	// 且会改变已有构筑的合法形状，单独作为一个批次做（见 README「未做」）。
-
-	// 反应倍率：来自 reaction_mult 类专精节点，封顶 +800‰（2 倍上限之下）
-	//
-	// ⚠️ 收紧了 domain 侧的 `wE/((1-w)·M)` 上限（见 damage.go），
-	// 所以这里即使给到 2 倍，反应伤害里攻击力的占比也不会越过 30% 红线。
-	// 不收紧上限就放大倍率，等于给专精树开了一扇绕过 I-1 的后门。
-	rm := eff.ReactionMultBonus
-	if rm > 800 {
-		rm = 800
-	}
-	if rm < 0 {
-		rm = 0
-	}
-	a.ReactionMultPermille += rm
-
-	// 反应阶：每 3 个 reaction_mult 节点提升 1 阶，封顶 4 阶
-	// 阶数放大的是「元素侧」（与养成完全无关的那一段），
-	// 所以提高它不会让攻击力占比上升 —— 这是 I-1 允许的成长方向。
-	rt := int64(1) + (rm/domain.MasteryReactionMultPerNode)/3
-	if rt > 4 {
-		rt = 4
-	}
-	a.ReactionTier = rt
-
-	// 暴击率：来自 crit 类专精节点，封顶 +500‰（即总上限 550‰）
-	cp := eff.CritBonus
-	if cp > 500 {
-		cp = 500
-	}
-	if cp < 0 {
-		cp = 0
-	}
-	a.CritPermille = 50 + cp
-	a.CritMultiplierPermille = 1500
-
-	// --- 装备与宝石 ---
-	//
-	// ⚠️ 此前**完全没有这一段**：18 件装备与 8 种宝石对战斗数值零影响。
-	// 它们出现在 `/config`（玩家看得见）与 I-7 构筑评分（分数会变），
-	// 但没有一个数字进到战斗里 —— 玩家花资源升级武器看不到任何变化。
-	//
-	// 封顶在 applyLoadout 里做，且必须在专精贡献**之后** ——
-	// 否则"专精 800‰ + 装备 2000‰"能绕过单一来源的上限。
-	loadout, err := s.loadLoadout(ctx, userID)
-	if err != nil {
-		return domain.Attacker{}, fmt.Errorf("load loadout: %w", err)
-	}
-	applyLoadout(&a, loadout)
-
-	// 元素层数封顶 8 要在装配**之后**再钳一次：
-	// 上面按 stage/25 与专精算完时钳过一次，但宝石的 element_cap 是后加的。
-	if a.ElementCap > domain.MaxElementCap {
-		a.ElementCap = domain.MaxElementCap
-	}
-
-	return a, nil
+	return attackerFromParts(parts), nil
 }

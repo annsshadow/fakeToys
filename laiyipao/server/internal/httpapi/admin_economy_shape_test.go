@@ -7,8 +7,9 @@ import (
 // 第 112 轮：钉住 admin/economy 的**字段名契约**。
 //
 // 后台前端（EconomyView）消费的字段是：
-//   flows 行：reason / currency / count / delta（没有 amount / cnt / updated_at）
-//   shop  行：price(对象 map) / limit_per_day / enabled（没有 currency / limit / on_sale）
+//
+//	flows 行：reason / currency / count / delta（没有 amount / cnt / updated_at）
+//	shop  行：price(对象 map) / limit_per_day / enabled（没有 currency / limit / on_sale）
 //
 // 修前服务端字段一直是这些，**是前端读错了名字**——
 // 净流入 KPI 恒 0、价格列恒 0、上架列恒「否」。

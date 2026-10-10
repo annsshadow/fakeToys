@@ -26,13 +26,13 @@ func TestChallengeSeedStringBounds(t *testing.T) {
 	}{
 		{"0", false},
 		{"1", false},
-		{"9007199254740993", false},      // > 2^53，int64 内合法
-		{"9223372036854775807", false},   // int64 最大
-		{"", true},                        // 空
-		{"-1", true},                      // 负数
-		{"abc", true},                     // 非数字
-		{"1.5", true},                     // 小数
-		{"9223372036854775808", true},     // int64 溢出
+		{"9007199254740993", false},    // > 2^53，int64 内合法
+		{"9223372036854775807", false}, // int64 最大
+		{"", true},                     // 空
+		{"-1", true},                   // 负数
+		{"abc", true},                  // 非数字
+		{"1.5", true},                  // 小数
+		{"9223372036854775808", true},  // int64 溢出
 	}
 	base := ChallengeInput{
 		Seed: "0", Won: true, DurationMs: 60_000, HPLeftPct: 100,
