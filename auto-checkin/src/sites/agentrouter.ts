@@ -31,12 +31,17 @@ export const agentrouterAdapter: SiteAdapter = {
         const shot = await ctx.saveScreenshot(page, "agentrouter-login-fail");
         return fail("登录失败", shot);
       }
-      const beforeQuota = first.user.quota ?? await readKnownQuota(page);
+      const beforeQuota = first.user.quota ?? await readKnownQuota(page, ctx.log);
       if (beforeQuota === null) {
-        ctx.log("领取前余额暂不可读，仍尝试退出并重登以恢复会话");
-      } else {
-        ctx.log(`当前余额 quota=${beforeQuota}，准备退出重登`);
+        // 领取前余额都读不到，后面算不出差值，注定无法判定结果。
+        // 此时退出重登只会再打一轮 OAuth，对被风控的站点是雪上加霜，直接失败。
+        const shot = await ctx.saveScreenshot(page, "agentrouter-balance-unknown");
+        return fail(
+          "AgentRouter 接口读不到余额（疑似阿里云 WAF 人机验证），已跳过退出重登，需人工过一次：npm run login -- agentrouter",
+          shot,
+        );
       }
+      ctx.log(`当前余额 quota=${beforeQuota}，准备退出重登`);
 
       // 2. 退出
       await logout(page, BASE_URL);
@@ -56,11 +61,14 @@ export const agentrouterAdapter: SiteAdapter = {
       }
 
       // 4. 算差值；无法确认前后余额时必须失败，不能把未知状态伪装成 already。
-      const fresh = await fetchSelf(page, BASE_URL);
-      const afterQuota = fresh?.quota ?? second.user?.quota ?? await readKnownQuota(page);
+      const fresh = await fetchSelf(page, BASE_URL, ctx.log);
+      const afterQuota = fresh?.quota ?? second.user?.quota ?? await readKnownQuota(page, ctx.log);
       if (beforeQuota === null || afterQuota === null) {
         const shot = await ctx.saveScreenshot(page, "agentrouter-balance-unknown");
-        return fail("重登后无法确认领取前后余额，未判定签到结果", shot);
+        return fail(
+          "AgentRouter 触发了阿里云 WAF 人机验证（滑块），接口读不到余额，需人工过一次：npm run login -- agentrouter",
+          shot,
+        );
       }
       const disp = quotaToDisplay(afterQuota);
       const delta = afterQuota - beforeQuota;
@@ -83,9 +91,12 @@ export const agentrouterAdapter: SiteAdapter = {
   },
 };
 
-async function readKnownQuota(page: import("playwright").Page): Promise<number | null> {
+async function readKnownQuota(
+  page: import("playwright").Page,
+  log: (m: string) => void,
+): Promise<number | null> {
   for (let attempt = 0; attempt < 3; attempt++) {
-    const user = await fetchSelf(page, BASE_URL);
+    const user = await fetchSelf(page, BASE_URL, log);
     if (user?.quota !== null && user?.quota !== undefined) return user.quota;
     await page.waitForTimeout(1000);
   }

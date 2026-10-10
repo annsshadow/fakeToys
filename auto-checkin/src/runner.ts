@@ -15,8 +15,18 @@ export function isRunning(): boolean {
   return running;
 }
 
-/** 运行单个适配器，落库并返回结果 */
-async function runOne(adapter: SiteAdapter, config: AppConfig): Promise<CheckinResult> {
+/**
+ * 运行单个适配器，落库并返回结果。
+ *
+ * @param existingContext 复用已有浏览器上下文。手动登录流程（login）已经持有
+ *   同一个持久化 profile，此时再开一个会撞 Chromium 的 profile 锁；且 WAF 放行
+ *   窗口只有十几秒，重开上下文会白白过期。
+ */
+async function runOne(
+  adapter: SiteAdapter,
+  config: AppConfig,
+  existingContext?: Awaited<ReturnType<typeof openSiteContext>>,
+): Promise<CheckinResult> {
   const siteLog = createLogger(adapter.id);
   const start = Date.now();
 
@@ -44,10 +54,11 @@ async function runOne(adapter: SiteAdapter, config: AppConfig): Promise<CheckinR
   }
 
   siteLog.info("开始签到…");
-  let context: Awaited<ReturnType<typeof openSiteContext>> | undefined;
+  let context: Awaited<ReturnType<typeof openSiteContext>> | undefined = existingContext;
+  const ownsContext = !existingContext;
   try {
     // 浏览器启动也必须纳入单站故障边界：某一站启动失败不能阻断后续站点。
-    context = await openSiteContext(adapter.id, config);
+    if (!context) context = await openSiteContext(adapter.id, config);
     const out = await adapter.checkin({
       credentials,
       config,
@@ -83,8 +94,22 @@ async function runOne(adapter: SiteAdapter, config: AppConfig): Promise<CheckinR
     addRecord(result);
     return result;
   } finally {
-    if (context) await closeContext(context);
+    if (ownsContext && context) await closeContext(context);
   }
+}
+
+/**
+ * 在已打开的浏览器上下文里跑一次签到，供手动登录流程在过完人机验证后立刻复用。
+ * 调用方负责关闭上下文。
+ */
+export async function runSiteInContext(
+  siteId: string,
+  config: AppConfig,
+  context: Awaited<ReturnType<typeof openSiteContext>>,
+): Promise<CheckinResult | null> {
+  const adapter = getAdapter(siteId);
+  if (!adapter) return null;
+  return runOne(adapter, config, context);
 }
 
 /** 运行全部站点（串行，避免同时开多个浏览器占用资源） */

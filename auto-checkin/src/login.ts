@@ -5,6 +5,7 @@ import { loadConfig } from "./config.js";
 import { openSiteContext, closeContext } from "./browser.js";
 import { fetchSelf } from "./sites/newapi-client.js";
 import { getAdapter } from "./sites/index.js";
+import { runSiteInContext } from "./runner.js";
 import { createLogger } from "./logger.js";
 import { acquireRunLock, releaseRunLock, wasInterrupted } from "./lock.js";
 
@@ -101,10 +102,68 @@ async function main(): Promise<void> {
   }
 
   if (!ok) log.warn("超时未检测到登录。请重试，或确认是在本工具弹出的窗口里登录的。");
+  if (ok) {
+    const cleared = await clearWafGate(page, adapter.baseUrl, log);
+    // WAF 放行窗口实测只有十几秒，拆成"先登录再单独跑签到"两步大概率已经过期，
+    // 所以过完滑块立刻在同一个上下文里把签到做完。
+    if (cleared && process.argv.includes("--checkin")) {
+      log.info("人机验证已通过，立即执行签到（放行窗口很短，不另开浏览器）…");
+      const result = await runSiteInContext(siteId, config, context);
+      if (result) {
+        log.info(`签到结果：${result.status} — ${result.message}`);
+        if (result.status === "failed") ok = false;
+      }
+    }
+  }
   await new Promise((r) => setTimeout(r, 1500));
   await closeContext(context);
   releaseRunLock();
   process.exit(ok && !wasInterrupted() ? 0 : 1);
+}
+
+/**
+ * 打开余额接口地址，让人手动过掉 WAF 人机验证。
+ *
+ * 实测（2026-10，AgentRouter）：/api/user/self 被阿里云 WAF 单点保护，
+ * 页内 fetch 会拿到 200 + 挑战页；直接访问该地址才会看到滑块。
+ * 滑块属于人机验证，不做自动绕过——这里只是把地址打开，请人自己划一次。
+ *
+ * 判定必须用"接口是否还在返回挑战页"，不能用页面文案：
+ * 早期版本匹配 innerText 里的"访问验证/滑块"，结果页面已是 JSON 时仍误判为未通过，
+ * 白等 4 分钟还占着 run 锁。
+ */
+async function clearWafGate(
+  page: import("playwright").Page,
+  baseUrl: string,
+  log: ReturnType<typeof createLogger>,
+  timeoutMs = 4 * 60 * 1000,
+): Promise<boolean> {
+  const apiUrl = `${baseUrl}/api/user/self`;
+  log.info(`正在打开余额接口 ${apiUrl}`);
+  log.info("👉 若出现滑块验证，请手动拖到最右侧；工具会一直等到能读到余额为止。");
+  await page.goto(apiUrl, { waitUntil: "domcontentloaded" }).catch(() => {});
+
+  const deadline = Date.now() + timeoutMs;
+  let tries = 0;
+  while (Date.now() < deadline) {
+    await new Promise((r) => setTimeout(r, 3000));
+    tries++;
+    // 必须真的读到余额才算放行。
+    // fetchSelf 还有一层 localStorage 兜底：接口被 WAF 拦时它照样能返回用户名，
+    // 只判断"非 null"会把被拦截误报成已放行，然后签到立刻又失败。
+    const self = await fetchSelf(page, baseUrl).catch(() => null);
+    if (self && typeof self.quota === "number") {
+      log.info(`✅ 余额接口已放行（quota=${self.quota}），会话可用`);
+      return true;
+    }
+    if (tries % 4 === 0) {
+      log.info(
+        `…余额接口仍被 WAF 拦截（已等 ${Math.round((tries * 3) / 60)} 分钟），请在浏览器窗口里拖动滑块`,
+      );
+    }
+  }
+  log.warn("等待超时，余额接口仍被 WAF 拦截；自动签到将无法确认余额。");
+  return false;
 }
 
 function shortUrl(u: string): string {
