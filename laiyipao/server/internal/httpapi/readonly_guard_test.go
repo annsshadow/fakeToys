@@ -54,6 +54,18 @@ func TestE2EReadonlyGating(t *testing.T) {
 	}
 
 	// --- readonly：读端点保持放行（各 200） ---
+	//
+	// ⚠️ battles/{id} 必须用**本测试自己结算出来的** id，不能写死 1。
+	//
+	// 写死 1 是「夹具落在保护之外」的活例：`go test ./...` 默认并行跑包，
+	// service 包在同一时刻写同一个 laiyipao 库，battle_records 的
+	// sequence 被并发的结算推进（实测全新库首条战报就是 id 29）——
+	// 于是这条断言只在「开发机库里恰好躺着重历史的 battle 1」时通过，
+	// 干净库 / CI（若哪天给 DB 测试接上 PG）上必红。
+	// 门禁要验的是「这个读端点不拦 readonly」，与库里有没有 id=1 无关，
+	// 所以自己造一条。
+	_, roReaderTok := e.newPlayer(t, "roreader")
+	roBattleID := newSettledBattle(t, e, roReaderTok)
 	roReads := []string{
 		"/api/v1/admin/dashboard",
 		"/api/v1/admin/levels",
@@ -62,7 +74,7 @@ func TestE2EReadonlyGating(t *testing.T) {
 		"/api/v1/admin/equipment",
 		"/api/v1/admin/users",
 		"/api/v1/admin/battles",
-		"/api/v1/admin/battles/1",
+		fmt.Sprintf("/api/v1/admin/battles/%d", roBattleID),
 		"/api/v1/admin/defenses",
 		"/api/v1/admin/economy",
 		"/api/v1/admin/announcements",
