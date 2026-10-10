@@ -38,6 +38,7 @@ const spies = vi.hoisted(() => ({
   analyzeData: null as unknown as ReturnType<typeof vi.fn>,
   cleanData: null as unknown as ReturnType<typeof vi.fn>,
   runBenchmark: null as unknown as ReturnType<typeof vi.fn>,
+  visualizeData: null as unknown as ReturnType<typeof vi.fn>,
 }))
 
 vi.mock('../services/api', async (importOriginal) => {
@@ -46,12 +47,14 @@ vi.mock('../services/api', async (importOriginal) => {
   spies.analyzeData = vi.fn()
   spies.cleanData = vi.fn()
   spies.runBenchmark = vi.fn()
+  spies.visualizeData = vi.fn()
   return {
     ...actual,
     getDataFiles: spies.getDataFiles,
     analyzeData: spies.analyzeData,
     cleanData: spies.cleanData,
     runBenchmark: spies.runBenchmark,
+    visualizeData: spies.visualizeData,
   }
 })
 
@@ -160,5 +163,21 @@ describe('Analysis 清洗与基准', () => {
     expect(await screen.findByText('diversity')).toBeInTheDocument()
     // 数值 toFixed(4)
     expect(screen.getByText('0.7321')).toBeInTheDocument()
+  })
+})
+
+describe('Analysis 可视化图表文件（L211 接线）', () => {
+  it('点生成图表文件：visualizeData 收到所选文件，落盘路径渲成表格', async () => {
+    spies.analyzeData.mockResolvedValue(ANALYSIS)
+    spies.visualizeData.mockResolvedValue({
+      charts: { length_distribution: 'visualizations/length.png', topics: 'visualizations/topics.png' },
+    })
+
+    await selectFileAndWait()
+    fireEvent.click(screen.getByRole('button', { name: /生成图表文件/ }))
+
+    await waitFor(() => expect(spies.visualizeData).toHaveBeenCalledWith('seed.json'))
+    expect(await screen.findByText('length_distribution')).toBeInTheDocument()
+    expect(screen.getByText('visualizations/topics.png')).toBeInTheDocument()
   })
 })

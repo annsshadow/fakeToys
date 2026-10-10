@@ -224,10 +224,10 @@ augmentor/
 
 ### 3.1 前端
 
-- [ ] 页面级组件测试（RTL 已就位，`src/test/setup.ts` 已引入 jest-dom，但尚无组件测试）
-- [ ] 5 个历史遗留的未接线服务函数：`getCheckpoints`、`visualizeData`、`getVersion`、`getVersionData`、`getVersionHistory`（已列入 `api.wiring.test.ts` 的显式白名单）
+- [x] 页面级组件测试 → **已完成（L104–L113，A206）**：11 页各一份组件测试
+- [x] 5 个历史遗留的未接线服务函数：`getCheckpoints`、`visualizeData`、`getVersion`、`getVersionData`、`getVersionHistory` → **已收口（L211）**：全部接进对应页面（断点列表 / 图表文件 / 版本详情 / 版本数据 / 操作历史），`api.wiring.test.ts` 的 `KNOWN_UNWIRED` 白名单清空；同轮抓出并修掉守门自身盲区（页面 `*.test.tsx` 的替身表曾被计入「已接线」语料面）
 - [ ] 运行时 schema 校验（如 zod），把「编译期声明」升级为「前后端契约有机器保证」
-- [ ] 前端 bundle 拆分：`antd-vendor`（946 kB）与 `echarts-vendor`（1146 kB）超过 800 kB 告警线
+- [x] 前端 bundle 拆分：`antd-vendor` 与 `echarts-vendor` → **已完成（L128，A207）**：路由懒加载 + 三 vendor 拆分 + `check-dist.mjs` 产物体检
 
 ### 3.2 后端
 

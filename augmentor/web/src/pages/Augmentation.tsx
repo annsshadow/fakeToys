@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Card, Button, Space, Select, Switch, message, Progress, Tag } from 'antd'
-import { RocketOutlined } from '@ant-design/icons'
-import { apiErrorDetail, startAugmentation, getProgress, getDataFiles } from '../services/api'
+import { RocketOutlined, ReloadOutlined } from '@ant-design/icons'
+import { apiErrorDetail, startAugmentation, getProgress, getCheckpoints, getDataFiles } from '../services/api'
 import type { AugmentProgressDetail } from '../types/api'
 
 export default function Augmentation() {
@@ -13,9 +13,11 @@ export default function Augmentation() {
   const [useCheckpoint, setUseCheckpoint] = useState(true)
   const [running, setRunning] = useState(false)
   const [progress, setProgress] = useState<AugmentProgressDetail | null>(null)
+  const [checkpoints, setCheckpoints] = useState<string[]>([])
 
   useEffect(() => {
     loadFiles()
+    loadCheckpoints()
     const interval = setInterval(checkProgress, 2000)
     return () => clearInterval(interval)
   }, [])
@@ -26,6 +28,15 @@ export default function Augmentation() {
       setFiles(result.files.map(f => f.name))
     } catch (err) {
       message.error(apiErrorDetail(err, '加载文件列表失败'))
+    }
+  }
+
+  const loadCheckpoints = async () => {
+    try {
+      const result = await getCheckpoints()
+      setCheckpoints(result.checkpoints)
+    } catch (err) {
+      message.error(apiErrorDetail(err, '加载断点列表失败'))
     }
   }
 
@@ -140,6 +151,26 @@ export default function Augmentation() {
           <div style={{ textAlign: 'center', color: '#999', padding: 40 }}>
             暂无进行中的任务
           </div>
+        )}
+      </Card>
+
+      <Card
+        title="断点列表"
+        style={{ marginTop: 16 }}
+        extra={
+          <Button size="small" icon={<ReloadOutlined />} onClick={loadCheckpoints}>
+            刷新
+          </Button>
+        }
+      >
+        {checkpoints.length > 0 ? (
+          <Space wrap data-testid="checkpoint-list">
+            {checkpoints.map(id => (
+              <Tag key={id}>{id}</Tag>
+            ))}
+          </Space>
+        ) : (
+          <span style={{ color: '#999' }}>暂无断点</span>
         )}
       </Card>
     </div>

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Card, Select, Row, Col, Statistic, Table, Tag, Button, Space, message } from 'antd'
 import ReactECharts from 'echarts-for-react'
-import { apiErrorDetail, getDataFiles, analyzeData, cleanData, runBenchmark } from '../services/api'
+import { apiErrorDetail, getDataFiles, analyzeData, cleanData, runBenchmark, visualizeData } from '../services/api'
 import type { AnalyzeResponse, BenchmarkResponse, CleanResponse } from '../types/api'
 
 export default function Analysis() {
@@ -10,6 +10,7 @@ export default function Analysis() {
   const [analysis, setAnalysis] = useState<AnalyzeResponse | null>(null)
   const [cleaning, setCleaning] = useState<CleanResponse | null>(null)
   const [benchmark, setBenchmark] = useState<BenchmarkResponse | null>(null)
+  const [charts, setCharts] = useState<Record<string, string> | null>(null)
   const [loading, setLoading] = useState(false)
 
   const loadFiles = useCallback(async () => {
@@ -66,6 +67,22 @@ export default function Analysis() {
       setBenchmark(await runBenchmark(selectedFile))
     } catch (err) {
       message.error(apiErrorDetail(err, '基准测试失败'))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleVisualize = async () => {
+    if (!selectedFile) {
+      message.warning('请先选择文件')
+      return
+    }
+    setLoading(true)
+    try {
+      const result = await visualizeData(selectedFile)
+      setCharts(result.charts)
+    } catch (err) {
+      message.error(apiErrorDetail(err, '图表生成失败'))
     } finally {
       setLoading(false)
     }
@@ -221,6 +238,25 @@ export default function Analysis() {
                       typeof value === 'number' ? value.toFixed(4) : String(value)
                   })
                 )}
+              />
+            )}
+          </Card>
+
+          <Card title="可视化图表文件" style={{ marginTop: 16 }}>
+            <Button loading={loading} onClick={handleVisualize}>
+              生成图表文件
+            </Button>
+            {charts && (
+              <Table
+                size="small"
+                style={{ marginTop: 12 }}
+                rowKey="name"
+                pagination={false}
+                columns={[
+                  { title: '图表', dataIndex: 'name', key: 'name' },
+                  { title: '落盘路径', dataIndex: 'path', key: 'path' }
+                ]}
+                dataSource={Object.entries(charts).map(([name, path]) => ({ name, path }))}
               />
             )}
           </Card>

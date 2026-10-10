@@ -11,9 +11,9 @@ import {
   Popconfirm,
   type TableColumnsType,
 } from 'antd'
-import { PlusOutlined, RollbackOutlined, DeleteOutlined, DiffOutlined } from '@ant-design/icons'
-import { apiErrorDetail, getVersions, createVersion, deleteVersion, rollbackVersion, diffVersions, getDataFiles } from '../services/api'
-import type { VersionDiffResponse, VersionInfo } from '../types/api'
+import { PlusOutlined, RollbackOutlined, DeleteOutlined, DiffOutlined, HistoryOutlined, EyeOutlined, DatabaseOutlined } from '@ant-design/icons'
+import { apiErrorDetail, getVersions, createVersion, deleteVersion, rollbackVersion, diffVersions, getDataFiles, getVersion, getVersionData, getVersionHistory } from '../services/api'
+import type { DataItem, VersionDetail, VersionDiffResponse, VersionHistoryEntry, VersionInfo } from '../types/api'
 
 export default function Versions() {
   const [versions, setVersions] = useState<VersionInfo[]>([])
@@ -26,6 +26,11 @@ export default function Versions() {
   const [diffVersion1, setDiffVersion1] = useState('')
   const [diffVersion2, setDiffVersion2] = useState('')
   const [diffResult, setDiffResult] = useState<VersionDiffResponse | null>(null)
+  const [detailModalVisible, setDetailModalVisible] = useState(false)
+  const [detail, setDetail] = useState<VersionDetail | null>(null)
+  const [detailItems, setDetailItems] = useState<DataItem[]>([])
+  const [historyModalVisible, setHistoryModalVisible] = useState(false)
+  const [history, setHistory] = useState<VersionHistoryEntry[]>([])
 
   useEffect(() => {
     loadVersions()
@@ -102,6 +107,42 @@ export default function Versions() {
     }
   }
 
+  // 详情与数据分两个按钮、两个端点：`GET /api/versions/{id}` 只回元数据，
+  // `GET /api/versions/{id}/data` 要整份加载版本文件——点开一行不该默认付后者的代价。
+  const handleShowDetail = async (versionId: string) => {
+    try {
+      const result = await getVersion(versionId)
+      setDetail(result)
+      setDetailItems([])
+      setDetailModalVisible(true)
+    } catch (err) {
+      message.error(apiErrorDetail(err, '加载版本详情失败'))
+    }
+  }
+
+  const handleShowData = async (versionId: string) => {
+    try {
+      const result = await getVersionData(versionId)
+      setDetailItems(result.items)
+      if (!detail || detail.version_id !== versionId) {
+        setDetail(await getVersion(versionId))
+      }
+      setDetailModalVisible(true)
+    } catch (err) {
+      message.error(apiErrorDetail(err, '加载版本数据失败'))
+    }
+  }
+
+  const handleShowHistory = async () => {
+    try {
+      const result = await getVersionHistory(50)
+      setHistory(result.history)
+      setHistoryModalVisible(true)
+    } catch (err) {
+      message.error(apiErrorDetail(err, '加载操作历史失败'))
+    }
+  }
+
   const columns: TableColumnsType<VersionInfo> = [
     {
       title: '版本 ID',
@@ -135,6 +176,8 @@ export default function Versions() {
       key: 'action',
       render: (_, record) => (
         <Space>
+          <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => handleShowDetail(record.version_id)}>详情</Button>
+          <Button type="link" size="small" icon={<DatabaseOutlined />} onClick={() => handleShowData(record.version_id)}>数据</Button>
           <Popconfirm
             title="确定回滚到此版本？"
             onConfirm={() => handleRollback(record.version_id)}
@@ -161,6 +204,9 @@ export default function Versions() {
           </Button>
           <Button icon={<DiffOutlined />} onClick={() => setDiffModalVisible(true)}>
             版本对比
+          </Button>
+          <Button icon={<HistoryOutlined />} onClick={handleShowHistory}>
+            操作历史
           </Button>
         </Space>
       </div>
@@ -251,6 +297,70 @@ export default function Versions() {
             </Card>
           )}
         </Space>
+      </Modal>
+
+      <Modal
+        title={`版本详情：${detail?.version_id ?? ''}`}
+        open={detailModalVisible}
+        onOk={() => setDetailModalVisible(false)}
+        onCancel={() => setDetailModalVisible(false)}
+        width={720}
+        okText="关闭"
+        cancelButtonProps={{ style: { display: 'none' } }}
+      >
+        {detail && (
+          <Space direction="vertical" style={{ width: '100%' }}>
+            <div>标签：{detail.label}</div>
+            <div>描述：{detail.description}</div>
+            <div>创建时间：{detail.created_at}</div>
+            <div>数据条数：<Tag>{detail.item_count}</Tag></div>
+            <div>
+              元数据：
+              <pre data-testid="version-metadata" style={{ maxHeight: 160, overflow: 'auto' }}>
+                {JSON.stringify(detail.metadata, null, 2)}
+              </pre>
+            </div>
+            {detailItems.length > 0 && (
+              <Table
+                size="small"
+                rowKey={(_, index) => String(index)}
+                pagination={{ pageSize: 5 }}
+                columns={[
+                  { title: 'instruction', dataIndex: 'instruction', key: 'instruction', ellipsis: true },
+                  { title: 'output', dataIndex: 'output', key: 'output', ellipsis: true }
+                ]}
+                dataSource={detailItems}
+              />
+            )}
+          </Space>
+        )}
+      </Modal>
+
+      <Modal
+        title="操作历史"
+        open={historyModalVisible}
+        onOk={() => setHistoryModalVisible(false)}
+        onCancel={() => setHistoryModalVisible(false)}
+        width={720}
+        okText="关闭"
+        cancelButtonProps={{ style: { display: 'none' } }}
+      >
+        <Table
+          size="small"
+          rowKey={(_, index) => String(index)}
+          pagination={{ pageSize: 10 }}
+          columns={[
+            { title: '操作', dataIndex: 'action', key: 'action' },
+            { title: '版本 ID', dataIndex: 'version_id', key: 'version_id' },
+            { title: '时间', dataIndex: 'timestamp', key: 'timestamp' },
+            {
+              title: '详情',
+              key: 'detail',
+              render: (_, record: VersionHistoryEntry) => JSON.stringify(record.detail)
+            }
+          ]}
+          dataSource={history}
+        />
       </Modal>
     </div>
   )
