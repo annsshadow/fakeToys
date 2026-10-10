@@ -237,6 +237,7 @@ class TestBatchSizeIsConsumed:
             )
 
     def test_empty_dataset_reports_zero_batches(self):
+        """整份等式是**键集权威**：回执四键的新增/消失都会在这里红，不只是值对得上"""
         backend = CountingBackend()
         result = translate_dataset(
             [], backend=backend, supported_langs=["zh", "en"],
@@ -245,6 +246,7 @@ class TestBatchSizeIsConsumed:
         assert result == {
             "total": 0, "batches": 0, "batch_size": 10, "target_lang": "en",
             "supported_langs": ["zh", "en"], "items": [],
+            "failed": 0, "failed_indices": [], "errors": [], "errors_truncated": False,
         }
         assert backend.calls == 0
 
