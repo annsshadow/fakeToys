@@ -504,6 +504,43 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
 
 ---
 
+### dataset 数据集工具（14）
+
+| 方法 | 路径 | 说明 | 人读字段提示 |
+| --- | --- | --- | --- |
+| `POST` | `/api/dataset/stats` | 数据集统计 | 只读分析。`summary` 是**字符串摘要**（不是 dict）；逐字段统计在 `field_statistics`（列表）。 |
+| `POST` | `/api/dataset/validate` | 数据集验证 | 只读。`is_valid` 对**空数据集恒为 true**（一条问题都没有是因为一条都没看，A92）。它的职责是报告坏数据，所以对坏输入回 200 而不是 4xx。 |
+| `POST` | `/api/dataset/search` | 数据集搜索 | 只读。`total_matches` 是**分页前**的全集口径；`fuzzy_threshold` / `ngram_n` / `filters` 三个旋钮的**生效值**在响应里回显（不传时是 `null`，不是默认值）。 |
+| `POST` | `/api/dataset/compare` | 数据集对比 | 只读。返回质量向 A/B 结论 + 重叠度 + 建议，`diff_datasets` 的成员语义见 §11 排查。 |
+| `POST` | `/api/dataset/features` | 字段特征检测 | 只读。`field_features` 是**列表**（不是 dict），每项一个字段的画像。 |
+| `POST` | `/api/dataset/auto-config` | 自动配置推荐 | 只读。返回推荐配置 + 理由；推荐值不落盘，要 `POST /api/config` 才生效。 |
+| `POST` | `/api/dataset/impact` | 增强前后影响评估 | 只读。`duplicate_rate` 是**增强后**的重复率；语义分数在 `semantic_evaluated=false` 时不参与（API 面拿不到原始问题）。 |
+| `POST` | `/api/dataset/evaluate` | 生成文本指标评估 | 只读。`semantic_evaluated` API 面恒 `false`；`effective_weights` 是**重归一化后**的权重，不是配置原值。 |
+| `POST` | `/api/dataset/convert` | 格式转换 | **写盘变换类**：必须给 `output_path`，响应只回「写到哪、写了多少」。 |
+| `POST` | `/api/dataset/merge` | 合并数据集 | **写盘变换类**：同上。 |
+| `POST` | `/api/dataset/sample` | 数据集采样 | **写盘变换类**：同上。 |
+| `POST` | `/api/dataset/split` | 分割数据集 | **写盘变换类**：同上。`stratify_distribution` 在按 `instruction` 分层时可能有**数千个键**（紧凑 JSON 数百 KB），所以写盘类只回计数不回明细。 |
+| `POST` | `/api/dataset/aggregate` | 多源聚合 | **写盘变换类**：同上。`weighted` 策略下 `target_size` 省略会 400（不让 `None` 溜进算术）。 |
+| `POST` | `/api/dataset/rag` | 转换为 RAG 格式 | **写盘变换类**：同上。 |
+
+### system 运维面（13）
+
+| 方法 | 路径 | 说明 | 人读字段提示 |
+| --- | --- | --- | --- |
+| `GET` | `/api/system/dependencies` | 可选依赖诊断 | 只读。返回已装/缺失两栏 + **降级功能清单**（缺哪个包会导致哪个功能退化）。 |
+| `POST` | `/api/system/validate-config` | 校验配置文件 | 只读。**不传 `path` 时校验服务自己的 `config.yaml`**；显式传 `path` 仍按数据白名单校验（越界 403）。 |
+| `POST` | `/api/system/monitor` | 质量监控快照 | 只读。返回质量监控快照。 |
+| `POST` | `/api/system/auto-test` | 运行数据集自动化测试 | 只读判定。`suite` 走**封闭清单**：未知套件名 400 而不是静默回落 default。 |
+| `POST` | `/api/system/migrate` | 迁移数据集结构 | 只读判定（产物另给 output_path）。`rules` 里未知 id **400 并列出全部合法 id**，不静默丢弃。 |
+| `POST` | `/api/system/stream` | 流式处理数据集 | 只读判定（产物另给 output_path）。JSONL 单行语法错**跳过并告警**；JSON 数组截断**报 400**——两者行为相反，是格式决定的。 |
+| `GET` | `/api/system/dependency/datasets` | 已登记数据集列表 | 只读。`registry_path` 省略时用白名单首个根目录下的 `.dependency_registry`；显式空串仍 400。 |
+| `POST` | `/api/system/dependency/datasets` | 登记数据集 | 只读。`registry_path` 省略时用白名单首个根目录下的 `.dependency_registry`；显式空串仍 400。 |
+| `GET` | `/api/system/dependency/graph` | 数据集依赖图与校验问题 | 只读。同时返回图与**校验问题**（悬空边等）；`dependency` 的 4 个 action 里没有建边入口，边只能由 SDK 的 `add_dependency` 建立。 |
+| `GET` | `/api/system/backups` | 列出备份 | GET 列出 / POST 创建。`backup_dir` 省略时用白名单首个根目录下的 `.backups`。 |
+| `POST` | `/api/system/backups` | 创建备份 | GET 列出 / POST 创建。`backup_dir` 省略时用白名单首个根目录下的 `.backups`。 |
+| `POST` | `/api/system/backups/{backup_id}/restore` | 恢复备份 | 写。备份不存在回 **404**（与 DELETE 同组同码）。 |
+| `DELETE` | `/api/system/backups/{backup_id}` | 删除备份 | 写。同上，404。 |
+
 ## 1. 健康检查
 
 ### `GET /api/health`
