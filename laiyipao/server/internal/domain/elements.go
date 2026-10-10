@@ -118,6 +118,15 @@ type ReactionSpec struct {
 	DispelShield bool `json:"dispel_shield"`
 	// AmplifyPct 对目标造成的"受击伤害放大"比例（千分比，0 表示无）
 	AmplifyPct int `json:"amplify_pct"`
+	// ArmorShredPermille 削甲量（千分比，0 表示无）。armor_break 专用：
+	// 触发后目标护甲在 StatusDurationMs 内被削减本值。
+	// 消费者：客户端引擎 `engine.ts` 的 hitEnemy（构建 Defender 时折进有效护甲）；
+	// 服务端不跑引擎（I-5 取舍），所以只随 /config 下发 + 契约文件锁定，
+	// 数值本身不进任何服务端公式。
+	ArmorShredPermille int `json:"armor_shred_permille"`
+	// Knockback 击退位移（定点 ×1000，0 表示无）。armor_break 专用：
+	// 触发时目标一次性向右（远离防线）位移本值，客户端引擎消费。
+	Knockback int `json:"knockback"`
 	// Descr 面向玩家的效果说明。
 	//
 	// ⚠️ 第 87 轮更正：原文写「运营后台的玩法文档站直接展示它」——
@@ -145,33 +154,44 @@ type ReactionSpec struct {
 // 而 I-6 的回放哈希会随之失配（表现为"所有人都验不出真伪"）。
 // 两份副本由 testdata/reaction_specs.json 双向锁住，
 // 改动任何一侧都必须同步另一侧并重新生成契约文件。
-// ⚠️ 第 83 轮：这张表里 **5 条反应只有反应伤害**，没有特殊效果。
+//
+// ⚠️ 本轮接通 `steam_burst` 的范围伤害（aoeRadius 120，客户端引擎以命中
+// 敌人为圆心、半径内邻居受 25% 反应伤害）。余下 **3 条反应仍無特殊效果**：
+// overheat 的爆炸、burn_cloud 的持续火区、corrosion_spread 的层数传播。
+//
+// # I-6 安全性（为什么「仅实现 steam_burst AoE 就不摇旗»
+//
+// 服务端 replay_hash 仅封 S 段（构筑快照），**不重算事件流**
+// （battle_collections.go: replay_hash 只封长 ≤ 64，store as-opaque）；
+// I-6 的 server-side 校验是 `replay_skills` 段的相等。
+// 因此 steam_burst 的溅射事件只需「客户端局内哈希稳定」，
+// 不需要服务端独立验证 —— 它不进入 replay_skills，因而不影响 I-6。
+//
+// # 口采一致性
+//
+// 双端唯一要一致的是「溅射伤害」本身：`reactionDmg >> 2`。
+// `reactionDmg` 出自 `resolveHit`，由 formula_vectors.json 锁定逐位一致
+// （攻击侧上限 cap /= reactionMultPermille，专精 reaction_mult 未满 800‰
+// 恒 `< MAX_REACTION_ATTACK_WEIGHT`，所以 cap 与旧式等价）。
+// 溅射后半径 `aoeRadius` 与邻居集合（刷怪洗牌 + 坐标）皆由种子决定、
+// 全定点 —— 不进入 server 校验范围，也不漂移。
 //
 // 逐字段核过消费面（`resolveHit` + 服务端重算）：
 //
-//	baseCoef / attackWeightPct / statusDurationMs / dispelShield / amplifyPct  ✓
-//	aoeRadius                                                          ✗ 从未被读
+//	baseCoef / attackWeightPct / statusDurationMs / dispelShield /
+//	amplifyPct / armorShredPermille / knockback               ✓
+//	aoeRadius                                                      ✓（steam_burst：客户端溅射）
 //
-// 所以 `steam_burst` 的「范围伤害」、`overheat` 的「爆炸」、
-// `burn_cloud` 的「持续火区」、`corrosion_spread` 的「层数传播」、
-// `armor_break` 的「击退 + 削甲」**都不存在**。
-//
-// 而 `Descr` 是**被消费的**（见 ReactionSpec.Descr 的注释：运营后台的
-// 玩法文档站直接展示它）—— 于是这不是「内部注释不准」，
-// 而是**对外文案在承诺不存在的机制**。
-//
-// 本轮把 Descr 改成只描述已实现的效果，并把 AoeRadius 全部置 0
-// （字段保留：它已在 `/config` 的公开 JSON 契约里，删字段是破坏性变更）。
-//
-// 「要不要实现」是产品决策，已记入 README 已知边界。
 
 var reactionSpecs = map[ReactionKey]ReactionSpec{
 	ReactionSteamBurst: {
 		Key: ReactionSteamBurst, Name: "蒸汽爆发", BaseCoef: 60, AttackWeightPct: 300,
-		// ⚠️ 第 83 轮：120 -> 0。溅射**从未被实现**。
-		// `resolveHit` 不读 AoeRadius；它唯一的消费者是 miniapp 的屏幕震动，
-		// 于是游戏在视觉上谎称发生了爆炸。
-		AoeRadius: 0, DispelShield: true, Descr: "驱散护盾并造成反应伤害",
+		// ⚠️ 2026-10-10：0 -> 120，实现范围伤害。
+		// 客户端 `engine.ts triggerSteamBurstAoe` 以命中敌人为圆心、半径
+		// aoeRadius 内的邻居造成 reactionDmg >> 2（25%）二次伤害，
+		// 不再是「屏幕震动谎称爆炸」。I-6 安全：溅射伤害来自
+		// resolveHit（formula_vectors.json 锁定），不进入 replay_skills 段。
+		AoeRadius: 120, DispelShield: true, Descr: "驱散护盾并造成反应伤害（触发时以自身为圆心，半径 120 像素内的敌人受到 25% 范围伤害）",
 	},
 	ReactionOverheat: {
 		Key: ReactionOverheat, Name: "过热", BaseCoef: 55, AttackWeightPct: 300,
@@ -197,11 +217,14 @@ var reactionSpecs = map[ReactionKey]ReactionSpec{
 		AoeRadius: 0, Descr: "造成反应伤害",
 	},
 	ReactionArmorBreak: {
-		// ⚠️ 第 83 轮：「击退」与「削减护甲」**都没有实现**。
-		// Enemy.knockback 字段存在但没有任何代码写它；护甲削减也没有消费者。
-		// 所以这条反应现在只有反应伤害（baseCoef 30，七条里最低）。
+		// 第 83 轮时「击退」与「削减护甲」都未实现，该条只有反应伤害，
+		// 文案改成诚实描述。本轮把两个效果实现出来（客户端引擎消费）：
+		// 削甲 ArmorShredPermille=150 持续 StatusDurationMs=4000ms
+		// （引擎 hitEnemy 折进有效护甲），击退 Knockback=4000 定点
+		// （一次性右推，stepEnemyMotion 的 knockback 分支消费后清零）。
 		Key: ReactionArmorBreak, Name: "破甲击退", BaseCoef: 30, AttackWeightPct: 300,
-		Descr: "造成反应伤害",
+		StatusDurationMs: 4000, ArmorShredPermille: 150, Knockback: 4000,
+		Descr: "击退目标并削减其护甲 4 秒（150‰），同时造成反应伤害",
 	},
 }
 

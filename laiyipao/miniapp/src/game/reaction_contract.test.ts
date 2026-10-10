@@ -26,6 +26,8 @@ interface Row {
   aoe_radius: number
   dispel_shield: boolean
   amplify_pct: number
+  armor_shred_permille: number
+  knockback: number
   descr: string
 }
 
@@ -75,6 +77,17 @@ describe('跨端契约：反应链数值表', () => {
       })
       it('受击放大比例一致（千分比）', () => {
         expect(got.amplifyPct).toBe(row.amplify_pct)
+      })
+      it('削甲量一致（千分比）', () => {
+        // armor_break 专用字段：引擎 hitEnemy 在削甲期内折进 Defender 的有效护甲。
+        // 两端漂移会让「破甲击退」在客户端与验真侧重放出不同伤害。
+        expect(got.armorShredPermille).toBe(row.armor_shred_permille)
+        expect(got.armorShredPermille).toBeGreaterThanOrEqual(0)
+      })
+      it('击退位移一致（定点 ×1000）', () => {
+        // armor_break 专用字段：一次性右推，stepEnemyMotion 的 knockback 分支消费。
+        expect(got.knockback).toBe(row.knockback)
+        expect(got.knockback).toBeGreaterThanOrEqual(0)
       })
       it('效果说明一致', () => {
         // descr 是文档站「效果」列的数据源。曾经服务端根本没这个字段，
