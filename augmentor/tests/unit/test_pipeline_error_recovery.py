@@ -65,6 +65,10 @@ class TestProcessErrorsThreadSafety:
         stub = Stub()
         stub.quality_scorer = None
         stub._lock = threading.Lock()
+        # L206：`_process_errors` 改为在 `__init__` 建好、不再惰性首建，
+        # 本用例直接构造 stub，因此这里显式补上初始列表。被测的性质
+        # （并发 append 到同一个 list 不丢记录）一字未变。
+        stub._process_errors = []
         # 用真实方法，不重新实现一遍
         process = AugmentorPipeline._process_single_item
 
@@ -101,4 +105,4 @@ class TestProcessErrorsThreadSafety:
         import inspect
         from augmentor.pipeline import AugmentorPipeline
         src = inspect.getsource(AugmentorPipeline._process_single_item)
-        assert "with self._lock:" in src, "record 分支丢了锁守卫，check-then-act 回到非原子"
+        assert "with self._lock:" in src, "record 分支丢了锁守卫，check-then-act 回到非原子"
