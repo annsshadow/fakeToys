@@ -192,16 +192,23 @@ class TestConfigErrorPaths:
 class TestConfigEchoReaderSplitL184:
     """L184（A138）：可写四节 14 键的「读者分档」钉成机器可查的回显面。
 
-    ③ 档 5 键（vector.dimension / vector.storage_dir / vector.collection /
-    multimodal.image_extensions / multimodal.audio_extensions）**无处消费、也不回显**——
-    谁给它们接了回显或读者，都要先翻这一格并对账（A138 候选①② 未拍，本轮只记档 + 钉面）。
-    ①② 档 7 键是 GET /api/config 的既定回显面，钉住防止被顺手摘掉。
+    **L214 改写了本档的名单，且必须说清旧断言哪里错了**：原 ③ 档 5 键里
+    `multimodal.image_extensions` / `multimodal.audio_extensions` 两只**已有正牌读者**
+    （`/api/multimodal/formats` 的清单、`/api/multimodal/scan` 的识别面，行为差由
+    `test_api_config_consumption_l214.py` 钉），旧格「③ 档键不得出现在 GET /api/config
+    回显里」把它们一起锁成不许回显——那不再是「防止幽灵键」，而是**阻止配置变成可见的
+    生效值**，与「消费能力 100%」直接冲突。⇒ 两键从 ③ 档挪进回显面，③ 档只剩 vector
+    那三只（L215 接）。读者名单的权威序是「请求参数 > 配置键 > 内置默认」（L214 定稿）。
+
+    回显面这一侧的用处不变：钉住既有键防止被顺手摘掉；新增的 `test_consumed_keys_are_echoed`
+    反向钉「有读者的键必须可见」，防止接线之后又只活在代码里。
     """
 
-    _TIER_3_NO_ECHO = ("vector.dimension", "vector.storage_dir", "vector.collection",
-                       "multimodal.image_extensions", "multimodal.audio_extensions")
+    _TIER_3_NO_ECHO = ("vector.dimension", "vector.storage_dir", "vector.collection")
     _TIER_12_ECHO = ("export.default_format", "export.formats", "vector.enabled",
-                     "vector.backend", "rag.enabled", "rag.default_format", "multimodal.enabled")
+                     "vector.backend", "rag.enabled", "rag.default_format",
+                     "multimodal.enabled", "multimodal.image_extensions",
+                     "multimodal.audio_extensions")
 
     def test_tier3_keys_are_not_echoed_by_get_config(self, pipeline, monkeypatch):
         import api.routes.config as cfg
@@ -221,3 +228,18 @@ class TestConfigEchoReaderSplitL184:
         for key in self._TIER_12_ECHO:
             section, _, field = key.partition(".")
             assert field in body.get(section, {}),                 f"{key}（A138 ①/② 档）是既定回显面，不得被顺手摘掉"
+
+    def test_consumed_keys_are_echoed(self, pipeline, monkeypatch):
+        """有读者的键必须可见（L214 新增的那一侧）：接线之后不许只活在代码里
+
+        与上一条的区别不是重复：上一条防「回显被摘」，这一条防「名单改了但回显没跟上」——
+        也即本文件 L214 那次改写本身如果只做一半（把键从 ③ 挪进 `_TIER_12_ECHO` 却没
+        给 GET 加字段），红点会落在这一格而不是别处。
+        """
+        client = _client(monkeypatch)
+        body = client.get("/api/config").json()
+        for key in ("export.formats", "rag.default_format",
+                    "multimodal.image_extensions", "multimodal.audio_extensions"):
+            section, _, field = key.partition(".")
+            assert field in body.get(section, {}), f"{key} 已有正牌读者，GET /api/config 必须回显"
+        assert body["multimodal"]["image_extensions"], "扩展名回显不许是空列表"

@@ -191,10 +191,14 @@ class AggregateRequest(BaseModel):
 
 
 class RagRequest(BaseModel):
-    """RAG 格式转换请求"""
+    """RAG 格式转换请求
+
+    `format` 省略时读 `config.rag.default_format`（L214，A138② 该键在此获得正牌
+    读者）；请求参数优先。
+    """
     input_file: str
     output_file: str
-    format: str = "langchain"
+    format: Optional[str] = None
 
 
 class ImpactRequest(BaseModel):
@@ -879,14 +883,19 @@ async def dataset_rag(request: RagRequest):
             from ..deps import get_pipeline
 
             rag_config = get_pipeline().config.rag
+            # L214（A138② default_format 接线）：请求参数 > config.rag.default_format
+            # > langchain。`enabled` 不在这道判——它是管道阶段的开关，住在
+            # `AugmentorPipeline`（与 quality/dedup 同族）；端点是调用方点名要的
+            # 独立能力，拿配置里的 false 拒绝一次显式调用属于改契约而不是消费配置。
+            fmt = request.format or rag_config.default_format or "langchain"
             records = RAGFormatter(
                 chunk_size=rag_config.chunk_size,
                 chunk_overlap=rag_config.chunk_overlap,
-            ).format(items, request.format)
+            ).format(items, fmt)
             _dump(records, output_path)
             return {
                 "output_file": str(output_path),
-                "format": request.format,
+                "format": fmt,
                 "input_count": len(items),
                 "record_count": len(records),
             }

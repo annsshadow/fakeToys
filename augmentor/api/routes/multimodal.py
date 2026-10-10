@@ -8,7 +8,13 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from ..deps import raise_internal_error, resolve_data_dir, resolve_within_roots, run_in_thread
+from ..deps import (
+    get_pipeline,
+    raise_internal_error,
+    resolve_data_dir,
+    resolve_within_roots,
+    run_in_thread,
+)
 
 router = APIRouter(tags=["multimodal"])
 
@@ -49,15 +55,55 @@ class MultimodalFormatsResponse(BaseModel):
 
 
 class MultimodalRequest(BaseModel):
-    """多模态处理请求"""
+    """多模态处理请求
+
+    `image_extensions` / `audio_extensions` 省略时读 `config.multimodal`（L214，
+    A138 ③ 两键在此获得正牌读者）；请求参数优先。
+    """
     text: str = ""
     image: Optional[str] = None
     audio: Optional[str] = None
+    image_extensions: Optional[List[str]] = None
+    audio_extensions: Optional[List[str]] = None
 
 
 class ScanRequest(BaseModel):
     """目录扫描请求"""
     directory: str
+    image_extensions: Optional[List[str]] = None
+    audio_extensions: Optional[List[str]] = None
+
+
+def _resolve_extensions(image_extensions, audio_extensions):
+    """两级合流：请求参数 > config.multimodal > 处理器内置默认（L214）
+
+    扩展名的「`.` 开头」语义界住在这一层而不是配置校验里（A138 留的口径：
+    `Path.suffix` 带的就是点）——这里统一做小写与补点归一，配置里写 `jpg`
+    与 `.jpg` 等价。`enabled` **不在这里判**：它是管道阶段的开关，
+    住在 `AugmentorPipeline`（与 quality/dedup 同族），端点是调用方**点名要**
+    的独立能力，拿它拒绝一次显式调用不属于「消费配置」而是改契约。
+    """
+    cfg = get_pipeline().config.multimodal
+
+    def merge(request_value, config_value):
+        if request_value:
+            return list(request_value)
+        if config_value:
+            return list(config_value)
+        return None
+
+    return (
+        _normalize_extensions(merge(image_extensions, cfg.image_extensions)),
+        _normalize_extensions(merge(audio_extensions, cfg.audio_extensions)),
+    )
+
+
+def _normalize_extensions(exts):
+    """小写 + 补点归一；None 透传（= 让处理器用自己的内置默认）"""
+    if exts is None:
+        return None
+    return [e if str(e).startswith(".") else f".{e}"
+            for e in (str(x).lower() for x in exts)]
 
 
 @router.post(
@@ -81,7 +127,10 @@ async def process_multimodal(request: MultimodalRequest):
         def run():
             from augmentor.data import MultimodalProcessor
 
-            processor = MultimodalProcessor()
+            image_exts, audio_exts = _resolve_extensions(
+                request.image_extensions, request.audio_extensions
+            )
+            processor = MultimodalProcessor(image_exts, audio_exts)
             record = processor.fuse_modalities(payload)
             return record.to_dict()
 
@@ -105,7 +154,10 @@ async def scan_directory(request: ScanRequest):
         def run():
             from augmentor.data import MultimodalProcessor
 
-            processor = MultimodalProcessor()
+            image_exts, audio_exts = _resolve_extensions(
+                request.image_extensions, request.audio_extensions
+            )
+            processor = MultimodalProcessor(image_exts, audio_exts)
             records = processor.process_directory(str(directory))
             report = processor.generate_report(records)
             report["records"] = [r.to_dict() for r in records]
@@ -126,10 +178,13 @@ async def scan_directory(request: ScanRequest):
     summary="列出支持的多模态格式",
 )
 async def supported_formats():
-    """列出支持的多模态格式"""
+    """列出支持的多模态格式（GET 面无请求参数，读面即配置本身，L214）"""
     from augmentor.data import ImageProcessor, AudioProcessor
 
+    cfg = get_pipeline().config.multimodal
+    image = ImageProcessor(_normalize_extensions(cfg.image_extensions) or None)
+    audio = AudioProcessor(_normalize_extensions(cfg.audio_extensions) or None)
     return {
-        "image_extensions": ImageProcessor().supported_extensions,
-        "audio_extensions": AudioProcessor().supported_extensions
+        "image_extensions": image.supported_extensions,
+        "audio_extensions": audio.supported_extensions
     }
