@@ -180,7 +180,7 @@ pub async fn complex_top(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
 
     let folder_rows = client
         .query(
-            "SELECT id, name, person, superior FROM FILE_FOLDER WHERE superior IS NULL OR superior = '' ORDER BY name LIMIT 10",
+            "SELECT id, name, person, superior FROM FILE_FOLDER WHERE (superior IS NULL OR superior = '') AND deleted_at IS NULL ORDER BY name LIMIT 10",
             &[],
         )
         .await
@@ -215,7 +215,7 @@ pub async fn complex_top(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
 
     let attachment_rows = client
         .query(
-            "SELECT id, name, person, \"referenceType\", extension, length FROM FILE_FILE ORDER BY name LIMIT 10",
+            "SELECT id, name, person, \"referenceType\", extension, length FROM FILE_FILE WHERE deleted_at IS NULL ORDER BY name LIMIT 10",
             &[],
         )
         .await

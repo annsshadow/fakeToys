@@ -756,6 +756,76 @@ mod tests {
             .unwrap();
         assert_ne!(response.status(), StatusCode::NOT_FOUND);
     }
+
+    // 优化二轮 52：complex_top「最新/置顶」展示原漏 `deleted_at IS NULL`，软删的
+    // 文件/文件夹会出现在 top 展示里。修复后须排除软删行。
+    #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
+    async fn test_complex_top_excludes_soft_deleted_rows() {
+        let pool = test_pool();
+        let c = pool.get().await.unwrap();
+        for stmt in [
+            "DELETE FROM FILE_FILE WHERE id IN ('u2-cx-live','u2-cx-dead')",
+            "DELETE FROM FILE_FOLDER WHERE id IN ('u2-cx-flive','u2-cx-fdead')",
+        ] {
+            c.execute(stmt, &[]).await.unwrap();
+        }
+        c.execute(
+            "INSERT INTO FILE_FILE (id, name, person, reference_type, extension, length, deleted_at) \
+             VALUES ('u2-cx-live','00zx-live','u2p','file','png',10,NULL), \
+                    ('u2-cx-dead','00zx-dead','u2p','file','png',10,NOW())",
+            &[],
+        )
+        .await
+        .unwrap();
+        c.execute(
+            "INSERT INTO FILE_FOLDER (id, name, person, superior, deleted_at) \
+             VALUES ('u2-cx-flive','00zf-live','u2p',NULL,NULL), \
+                    ('u2-cx-fdead','00zf-dead','u2p',NULL,NOW())",
+            &[],
+        )
+        .await
+        .unwrap();
+
+        let result = crate::complex_top(Extension(pool.clone())).await;
+        assert!(result.is_ok());
+        let j = serde_json::to_value(&result.unwrap().0).unwrap();
+        let files: Vec<&str> = j["data"]["attachmentList"]
+            .as_array()
+            .map(|a| a.iter().filter_map(|e| e["id"].as_str()).collect())
+            .unwrap_or_default();
+        let folders: Vec<&str> = j["data"]["folderList"]
+            .as_array()
+            .map(|a| a.iter().filter_map(|e| e["id"].as_str()).collect())
+            .unwrap_or_default();
+
+        assert!(files.contains(&"u2-cx-live"), "未删文件应出现在 top 展示");
+        assert!(
+            !files.contains(&"u2-cx-dead"),
+            "软删文件不得出现在 top 展示"
+        );
+        assert!(
+            folders.contains(&"u2-cx-flive"),
+            "未删文件夹应出现在 top 展示"
+        );
+        assert!(
+            !folders.contains(&"u2-cx-fdead"),
+            "软删文件夹不得出现在 top 展示"
+        );
+
+        c.execute(
+            "DELETE FROM FILE_FILE WHERE id IN ('u2-cx-live','u2-cx-dead')",
+            &[],
+        )
+        .await
+        .unwrap();
+        c.execute(
+            "DELETE FROM FILE_FOLDER WHERE id IN ('u2-cx-flive','u2-cx-fdead')",
+            &[],
+        )
+        .await
+        .unwrap();
+    }
 }
 
 #[cfg(test)]
