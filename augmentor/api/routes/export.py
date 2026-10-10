@@ -64,9 +64,13 @@ class BatchExportRequest(BaseModel):
 
 
 class PreviewRequest(BaseModel):
-    """格式预览请求"""
+    """格式预览请求
+
+    `format` 省略时读 `config.export.default_format`（L214）——请求参数优先、
+    配置兜底，与其余消费点同一权威序。
+    """
     input_file: str
-    format: str = "jsonl"
+    format: Optional[str] = None
     size: int = 5
 
 
@@ -83,8 +87,11 @@ async def export_data(request: ExportRequest, _auth: None = Depends(verify_api_k
         output_dir = resolve_data_dir(request.output_dir)
 
         p = get_pipeline()
+        # formats 两级（A138② / L214）：请求点名 > config.export.formats > 导出器
+        # 的「全部格式」旧行为。空列表按「没配」处理，与批导出同一口径。
+        formats = request.formats or p.config.export.formats or None
         results = await run_in_thread(
-            p.export_dataset, str(input_path), str(output_dir), request.formats
+            p.export_dataset, str(input_path), str(output_dir), formats
         )
         return {"success": True, "files": results}
     except HTTPException:
@@ -110,9 +117,13 @@ async def batch_export(request: BatchExportRequest, _auth: None = Depends(verify
             for name, path in request.datasets.items():
                 datasets[name] = load_items(path)
 
-            exporter = Exporter()
+            p = get_pipeline()
+            # formats 与 default_format 都是「请求参数 > config.export」两级（A138② / L214）；
+            # 都没有时才落 Exporter 的内置默认。
+            formats = request.formats or p.config.export.formats or None
+            exporter = Exporter(default_format=p.config.export.default_format)
             return exporter.export_batch(
-                datasets, str(output_dir), request.formats
+                datasets, str(output_dir), formats
             )
 
         results = await run_in_thread(run)
@@ -132,13 +143,17 @@ async def preview_export(request: PreviewRequest):
     """预览导出格式转换结果"""
     try:
         items = await run_in_thread(load_items, request.input_file)
+        # format 省略 ⇒ config.export.default_format（① 档读者在预览面的延伸）⇒
+        # Exporter 内置默认；PreviewGenerator 只实现了六族原生格式，配置里若写了
+        # 别的合法格式名（csv/openai…），这一脚会得到它自己的 400 而不是静默换格式。
+        fmt = request.format or get_pipeline().config.export.default_format
 
         def run():
             from augmentor.preview import PreviewGenerator
 
             return PreviewGenerator(
                 preview_size=request.size
-            ).preview(items, request.format).to_dict()
+            ).preview(items, fmt).to_dict()
 
         return await run_in_thread(run)
     except HTTPException:
@@ -153,7 +168,13 @@ async def preview_export(request: PreviewRequest):
     summary="列出支持的导出格式",
 )
 async def list_export_formats():
-    """列出支持的导出格式"""
+    """列出支持的导出格式
+
+    这是**能力清单**（导出器认得的格式全集），不是策略面：`config.export.formats`
+    管的是「调用方没点名时要导哪几族」（见上面两个导出端点），拿它裁剪能力清单
+    会把 csv/openai 这些合法格式从客户端视野里抹掉（L214 探针实测：默认配置只列
+    五族，而能力全集有 13 族）。
+    """
     try:
         from augmentor.export import Exporter
 

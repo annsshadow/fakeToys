@@ -534,7 +534,13 @@ MEASURED = {
     # 封闭清单判据在 dependency.py 顶部插 9 行，账本与架构文档共 4 处指向
     # `add_dependency` 的行引用被引行换位，dead_line 硬 0 档当场抓住 ⇒ 按
     # A127 口径降级为名字锚点（line_refs −4，其中 −1 让 file_tokens +1）。
-    LEDGER: {"line_refs": 265, "file_tokens": 1666, "code_but_no_name_match": 149},
+    #: L214 面位移（265 → 264、1666 → 1667、149 → 148）：`export.py` 预览节接 `default_format`
+    #: 时插了 4 行注释与取值，账本 A143 那一格指向 `list_export_formats` 的行引用被引行换位、
+    #: 落到空行 —— 同一轮先由 dead_line 硬 0 档报出，再被本档跟着计数。处置沿用 A127 / L209
+    #: 口径：**降成名字锚点**（账本原文已写成「原 N 行，L214 预览节接线后降级名锚」，注释里
+    #: 不抄那个形状 ⇒ A184 不复发）。换锚的一条不再走行匹配档 ⇒ 漂移 −1；它改以文件 token
+    #: 形状留在普查面 ⇒ file_tokens +1。引用总规模不变，是语法搬家。
+    LEDGER: {"line_refs": 264, "file_tokens": 1667, "code_but_no_name_match": 148},
     #: L156 面位移（290 → 285）：streaming.py 插 `StreamConfig.__post_init__` 后，账本 5 条
     #: streaming.py 历史行引用（A145 行 2 条、A147 行 3 条）被引行换位、退出本档，按
     #: L151 / L153 / L154 先例降成名字锚（「原 N 行」）：line_refs −5、漂移 147 →
