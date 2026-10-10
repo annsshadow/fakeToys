@@ -87,7 +87,8 @@ def _resolve_extensions(image_extensions, audio_extensions):
     与 `.jpg` 等价。`enabled` **不在这里判**：端点是调用方**点名要**的独立能力，
     拿出厂默认 `false` 的键去拒绝一次显式调用属于改契约而不是消费配置
     （实测：那样做当场打红 13 支既有集成测试）。顺带记一句本轮量出来的事实——
-    全仓 16 只 `config.*.enabled` 在产品代码里**零读者**，管道阶段真正的开关是
+    全仓 16 只 `config.*.enabled` 在产品代码里**零读者**（那是 L214 的读数；L217 的
+    读者普查还剩 10 只，逐键名单住在 `test_config_reader_census_l217.py`），管道阶段真正的开关是
     调用参数（`use_quality_check` / `use_dedup`），所以这一族键的消费点要从阶段入口
     重建，见 L215。
     """

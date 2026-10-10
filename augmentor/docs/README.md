@@ -290,7 +290,7 @@ npm run dev            # Vite 开发服务器，热更新
 | `dedup` | `threshold` | 相似度高于此值判定为重复，默认 `0.9` |
 | `export` | `default_format` `formats` | 导出格式清单 |
 | `versioning` | `storage_dir` `auto_snapshot` | 版本存储目录与增强后自动快照 |
-| `multilingual` | `default_target_lang` `supported_langs` | 翻译增强 |
+| `multilingual` | `enabled` `supported_langs` `default_target_lang` `translate_batch_size` | 翻译增强；四键自 L217 起由 `augmentor/language.py` 消费，经 `/api/dataset/language-profile` 与 `/api/dataset/translate` 生效（`enabled` 出厂 `false`） |
 | `rag` | `chunk_size` `chunk_overlap` | 分块大小与重叠，要求 `chunk_overlap < chunk_size` |
 | `evaluation` | `metrics` `reference_field` | BLEU / ROUGE-L / 相似度 |
 | `vector` | `backend` `dimension` | `faiss` 或 `chromadb` |

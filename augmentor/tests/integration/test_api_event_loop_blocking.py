@@ -209,6 +209,14 @@ BLOCKING_SITES = [
         None,
     ),
     (
+        # L217：语言画像读整份数据集并逐条跑正则检测；检测虽轻，读取与 stats 那一族同形。
+        "api.routes.language",
+        "/api/dataset/language-profile",
+        lambda env: {"input_file": str(env.data)},
+        1,
+        None,
+    ),
+    (
         # L216：语义检索除了读数据集，还要把整份数据嵌成向量再检索——重活比 stats 那一族
         # 更重（构建 n 条 × dimension 的矩阵），所以读取与建库都必须离线。
         "api.routes.vector",
@@ -380,3 +388,45 @@ def test_stats_analysis_runs_off_the_event_loop(monkeypatch, env):
     assert response.status_code == 200, response.text
     assert len(seen) == 1, f"calculate_statistics 跑了 {len(seen)} 次，预期 1 次（没走到统计？）"
     assert seen[0] != loop_thread, "逐字段统计在事件循环线程上跑，全站请求都要为它停 43 ms"
+
+
+def test_translate_batches_run_off_the_event_loop(monkeypatch, env):
+    """`/api/dataset/translate` 的读取与整轮分批翻译都不能留在循环上
+
+    它是全仓最重的一条同步路径：读整份文件，然后按批打模型（本机用假后端计时也是
+    毫秒级，真实部署里是几十秒）。出厂 `multilingual.enabled=false` 会在读盘之前拒，
+    所以这里必须把 `get_pipeline` 换成开着闸的替身，否则测到的是闸而不是线程。
+    """
+    import api.routes.language as language_routes_module
+    import augmentor.language as language_module
+
+    real = language_module.translate_dataset
+    seen: List[int] = []
+
+    def spy(items, *args, **kwargs):
+        seen.append(threading.current_thread().ident)
+        return real(items, *args, **kwargs)
+
+    monkeypatch.setattr(language_module, "translate_dataset", spy)
+
+    stub_config = SimpleNamespace(
+        multilingual=SimpleNamespace(enabled=True, supported_langs=["zh", "en"],
+                                     default_target_lang="en", translate_batch_size=2),
+    )
+    stub = SimpleNamespace(config=stub_config,
+                           model_backend=SimpleNamespace(generate=lambda prompt: "OK"))
+    monkeypatch.setattr(language_routes_module, "get_pipeline", lambda: stub)
+
+    _reads, loop_thread, response = _hit_off_loop_thread(
+        monkeypatch,
+        "api.routes.language",
+        "/api/dataset/translate",
+        lambda e: {"input_file": str(e.data)},
+        None,
+        env,
+    )
+
+    assert response.status_code == 200, response.text
+    assert _reads, "路由没走到读取"
+    assert all(ident != loop_thread for ident, _ in _reads), "翻译路径在循环线程上读文件"
+    assert len(seen) == 1 and seen[0] != loop_thread, "分批翻译在事件循环线程上跑"
