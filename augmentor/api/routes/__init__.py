@@ -3,7 +3,7 @@
 
 """API 路由模块"""
 
-from . import data, augment, quality, export, version, config, multimodal, privacy, leakage, audit, status, dataset_tools, system_ops
+from . import data, augment, quality, export, version, config, multimodal, privacy, leakage, audit, status, dataset_tools, system_ops, vector
 
 __all__ = [
     "data",
@@ -18,5 +18,6 @@ __all__ = [
     "audit",
     "status",
     "dataset_tools",
-    "system_ops"
+    "system_ops",
+    "vector"
 ]

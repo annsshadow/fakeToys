@@ -37,6 +37,7 @@ from api.routes import (
     quality,
     status,
     system_ops,
+    vector,
     version,
 )
 from api.routes.status import HealthResponse
@@ -167,6 +168,7 @@ app.include_router(privacy.router)
 app.include_router(leakage.router)
 app.include_router(audit.router)
 app.include_router(status.router)
+app.include_router(vector.router)
 app.include_router(system_ops.router)
 
 

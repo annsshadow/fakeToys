@@ -599,6 +599,20 @@ CALLS = {
         ),
         keys=_keys("output_file", "format", "input_count", "record_count"),
     ),
+    # L216：语义索引两条。`results` 里每项的形状住在 `search_similar`，本面只钉
+    # 顶层键不许掉——逐项形状由 test_vector_semantic_consumption_l216.py 现量。
+    ("POST", "/api/dataset/semantic-search"): _Case(
+        request=lambda c: c.post(
+            "/api/dataset/semantic-search",
+            json={"input_file": "data.json", "query": "猫爱吃的食物", "top_k": 2},
+        ),
+        keys=_keys("query", "total", "backend", "dimension", "collection", "results"),
+    ),
+    ("GET", "/api/dataset/vector-status"): _Case(
+        request=lambda c: c.get("/api/dataset/vector-status"),
+        keys=_keys("enabled", "exists", "count", "backend", "dimension",
+                   "collection", "storage_dir"),
+    ),
     # ---------- system（运维 / 治理）----------
     ("GET", "/api/system/dependencies"): _Case(
         request=lambda c: c.get("/api/system/dependencies"),

@@ -959,7 +959,17 @@ class TestTheAuditIsNotSpinning:
         这条是本轮回看段抓到的病：`docs/ARCHITECTURE.md` §3.33 写完后，同一轮内的判据改动
         让「40 处 / 114 处 / 10 例」三个数当场过期，而**没有任何用例能出声**（散文数字在
         守卫的可见范围之外，即 A129）。修法是把数字搬进常量、让用例去比对现量。
+
+        **L216 补上 `require_authoring_tree()`**：常量是在作者树（带 `Temp/` 取证草稿）上量的，
+        而本条判据原先没有那道门，于是在干净克隆里**必然**偏一格——L216 现量：干净树上
+        `docs/ARCHITECTURE.md` 的 `code_but_no_name_match` 是 **33**，`MEASURED` 钉的是 **34**，
+        差的那一格是账本里指向 `Temp/` 快照的行引用（`Temp/` 不在时它落进 `unresolved_source`
+        而不是本档）。归因证据：把 HEAD 的文档文本分别放在 HEAD 树与当前树上跑同一把尺子，
+        **两边都是 33** ⇒ 与本轮的代码改动无关，是这台工作树缺 `Temp/` 底料。
+        同文件其余逐档精确计数的兄弟判据早就带着这道门（见 `authoring_tree_present` 的口径：
+        「本地写作纪律的仪表，而非可移植的 CI 闸门」），本条是同一类判据里唯一漏加的一支。
         """
+        require_authoring_tree()
         index = build_index()
         for doc in DOCS:
             counts, _ = audit((ROOT / doc).read_text(encoding="utf-8"), index)

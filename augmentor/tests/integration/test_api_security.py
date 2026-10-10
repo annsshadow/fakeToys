@@ -1354,6 +1354,12 @@ class TestWriteRouteAuthCoverage:
         ("GET", "/api/config"),
         ("GET", "/api/data/list"),
         ("GET", "/api/data/load/{filename}"),
+        # L216：只读地回显 vector 生效值并 `load()` 已有索引。FAISSDB 的构造与 `load()`
+        # 都不写盘（只有 `persist()` 写），而没有 `persist`/`load` 面的后端（chromadb——
+        # 它的构造阶段就 mkdir 并注册集合）在**构造之前**被 `augmentor/semantic.py` 的
+        # 能力闸拒成 400。闸的位置就是这条承诺的内容：写在构造之后，GET 就会凭空造目录。
+        # 判据见 `test_vector_semantic_consumption_l216.py::TestPersistenceSurfaceIsGated`。
+        ("GET", "/api/dataset/vector-status"),
         ("GET", "/api/demo/data"),
         ("GET", "/api/export/formats"),
         ("GET", "/api/models"),
@@ -1375,6 +1381,8 @@ class TestWriteRouteAuthCoverage:
         ("POST", "/api/dataset/evaluate"),
         ("POST", "/api/dataset/features"),
         ("POST", "/api/dataset/impact"),
+        # L216 只读检索：走内存索引（storage_dir=None，连 chromadb 那侧也只拿临时客户端）。
+        ("POST", "/api/dataset/semantic-search"),
         ("POST", "/api/dataset/search"),
         ("POST", "/api/dataset/stats"),
         ("POST", "/api/dataset/validate"),
