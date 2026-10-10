@@ -96,10 +96,28 @@ export async function gotoWithNavigationRetry(page: Page, url: string): Promise<
 }
 
 /**
+ * 判断响应体是否为阿里云 WAF 的 JS 挑战页（而非接口 JSON）。
+ *
+ * 实测（2026-10）：AgentRouter 的 /api/user/self 会返回 HTTP 200 + text/html，
+ * body 里带 <meta name="aliyun_waf_aa">。页面内 SPA 请求被 WAF 拦下时，
+ * 接口既不报错也不返回 JSON——若不识别就会被误判成"接口读不到余额"。
+ */
+export function isWafChallengeBody(text: string): boolean {
+  return /name=["']aliyun_waf_/i.test(text);
+}
+
+/**
  * 读取当前登录用户信息；未登录返回 null。
  * 兼容两类 new-api 分支：Cookie 会话，以及 localStorage token + 请求头鉴权（如 JustWoker）。
+ *
+ * @param log 可选诊断回调。接口被 WAF 挑战页拦截时会回报原因，避免把"被风控拦截"
+ *            伪装成"余额读不到"。
  */
-export async function fetchSelf(page: Page, baseUrl: string): Promise<NewApiUser | null> {
+export async function fetchSelf(
+  page: Page,
+  baseUrl: string,
+  log?: (m: string) => void,
+): Promise<NewApiUser | null> {
   // 注意：page.evaluate 回调内禁止具名嵌套函数（tsx/esbuild 会注入浏览器端不存在的 __name）
   const result = await page.evaluate(async () => {
     const requestText = async (
@@ -133,17 +151,23 @@ export async function fetchSelf(page: Page, baseUrl: string): Promise<NewApiUser
     const headers: Record<string, string> = {};
     if (token) headers["Authorization"] = "Bearer " + token;
     if (userId) headers["New-Api-User"] = userId;
+    let wafBlocked = false;
 
     // 优先接口（Cookie/token 会话）
     try {
       const r = await requestText("/api/user/self", { credentials: "include", headers });
       const t = r.text;
+      // 注意：evaluate 回调内不能用模块作用域的函数（浏览器端不存在），正则必须内联
+      if (/name=["']aliyun_waf_/i.test(t)) wafBlocked = true;
       if (t.trim().startsWith("{")) {
         const j = JSON.parse(t);
         if (j && j.success === true && j.data) {
           return {
-            quota: typeof j.data.quota === "number" ? j.data.quota : null,
-            username: typeof j.data.username === "string" ? j.data.username : (typeof j.data.display_name === "string" ? j.data.display_name : null),
+            user: {
+              quota: typeof j.data.quota === "number" ? j.data.quota : null,
+              username: typeof j.data.username === "string" ? j.data.username : (typeof j.data.display_name === "string" ? j.data.display_name : null),
+            },
+            wafBlocked,
           };
         }
       }
@@ -162,12 +186,16 @@ export async function fetchSelf(page: Page, baseUrl: string): Promise<NewApiUser
             headers: { Authorization: "Bearer " + at },
           });
           const t2 = r2.text;
+          if (/name=["']aliyun_waf_/i.test(t2)) wafBlocked = true;
           if (t2.trim().startsWith("{")) {
             const j2 = JSON.parse(t2);
             if (j2 && j2.success === true && j2.data) {
               return {
-                quota: typeof j2.data.quota === "number" ? j2.data.quota : null,
-                username: typeof j2.data.username === "string" ? j2.data.username : (typeof j2.data.display_name === "string" ? j2.data.display_name : null),
+                user: {
+                  quota: typeof j2.data.quota === "number" ? j2.data.quota : null,
+                  username: typeof j2.data.username === "string" ? j2.data.username : (typeof j2.data.display_name === "string" ? j2.data.display_name : null),
+                },
+                wafBlocked,
               };
             }
           }
@@ -176,6 +204,8 @@ export async function fetchSelf(page: Page, baseUrl: string): Promise<NewApiUser
     } catch {}
 
     // 兜底：直接从 localStorage 的 user 对象读（绕开 WAF/token 接口，适配 AgentRouter 等）
+    // 只用来确认"是谁登录了"，绝不用于余额计算：这里的 quota 可能是 SPA 初始化时的
+    // 残留值（实测读到过 quota=0），拿它做差值会误报巨额奖励。
     try {
       for (const k of Object.keys(localStorage)) {
         const raw = localStorage.getItem(k) || "";
@@ -183,19 +213,36 @@ export async function fetchSelf(page: Page, baseUrl: string): Promise<NewApiUser
           const obj = JSON.parse(raw);
           const u = obj && typeof obj.username === "string" ? obj : obj.user || obj.data || obj;
           if (u && typeof u.username === "string") {
-            return { quota: typeof u.quota === "number" ? u.quota : null, username: u.username };
+            return { user: { quota: null, username: u.username }, wafBlocked };
           }
         }
       }
     } catch {}
-    return null;
+    return { user: null, wafBlocked };
   });
-  if (!result || !result.username) return null;
-  return { quota: result.quota, username: result.username };
+  if (result?.wafBlocked) {
+    log?.("接口返回阿里云 WAF 挑战页（非 JSON），余额可能被风控拦截");
+  }
+  if (!result?.user?.username) return null;
+  return { quota: result.user.quota, username: result.user.username };
 }
 
 /**
- * 退出登录：服务端退会话 + 清本站 Cookie + 清客户端存储，等价于页面手动退出。
+ * WAF / CDN 的基础设施 cookie 前缀。
+ *
+ * 实测（2026-10，AgentRouter）：站点只在 /api/user/self 上挂了阿里云 WAF 挑战，
+ * 放行凭证是 acw_tc。若连同站点会话一起清掉，重新登录后接口立刻又被挑战，
+ * 导致"领取前余额能读到、领取后读不到"的假失败。
+ * Cloudflare 的 cf_clearance 同理，清掉就得重新做人机验证。
+ */
+const INFRA_COOKIE_PREFIXES = ["acw_", "_c_", "cdn_sec", "cf_"];
+
+function isInfraCookie(name: string): boolean {
+  return INFRA_COOKIE_PREFIXES.some((p) => name.startsWith(p));
+}
+
+/**
+ * 退出登录：服务端退会话 + 清本站会话 Cookie + 清客户端存储，等价于页面手动退出。
  *
  * ⚠️ 三步缺一不可（AgentRouter 奖励在"登录"动作发放，需真正退干净再重登才发）：
  *   1. POST /api/user/logout —— 通知服务端退会话；
@@ -205,6 +252,7 @@ export async function fetchSelf(page: Page, baseUrl: string): Promise<NewApiUser
  *   3. 清 localStorage/sessionStorage —— new-api 把 user（含 quota）与
  *      access_token 缓存于此，残留会让 fetchSelf 从缓存直接读出旧余额误判"仍登录"。
  * 仅清本站域名，不动第三方（GitHub 会话在 github.com 域，保留则重登免密）。
+ * WAF/CDN 的基础设施 cookie 保留（见 INFRA_COOKIE_PREFIXES）。
  */
 export async function logout(page: Page, baseUrl: string): Promise<void> {
   await pagePost(page, "/api/user/logout").catch(() => {});
@@ -212,10 +260,11 @@ export async function logout(page: Page, baseUrl: string): Promise<void> {
     const host = new URL(baseUrl).hostname;
     const ctx = page.context();
     const cookies = await ctx.cookies();
-    const domains = new Set(
-      cookies.map((c) => c.domain).filter((d) => d.replace(/^\./, "").endsWith(host)),
-    );
-    for (const domain of domains) await ctx.clearCookies({ domain });
+    const ours = cookies.filter((c) => c.domain.replace(/^\./, "").endsWith(host));
+    for (const cookie of ours) {
+      if (isInfraCookie(cookie.name)) continue;
+      await ctx.clearCookies({ name: cookie.name, domain: cookie.domain });
+    }
   } catch {}
   await page
     .evaluate(() => {
@@ -410,6 +459,76 @@ export function quotaToDisplay(quota: number | null): { value: number | null; cu
  */
 export type OAuthProvider = "github" | "linuxdo";
 
+/**
+ * OAuth 可能新开弹窗完成（实测 AgentRouter 会 window.open 到 GitHub）。
+ * 返回真正承载 OAuth 流程的页面：弹窗优先，否则回退原页面（同页跳转的站点）。
+ *
+ * @param loginUrl 刚点下按钮时主页面所在的登录页地址。主页面一旦离开它，
+ *                 说明是同页跳转，无需再等弹窗。
+ */
+export async function adoptOAuthPopup(
+  page: Page,
+  knownPages: Set<Page>,
+  loginUrl: string,
+  timeoutMs: number,
+  log: (m: string) => void,
+): Promise<Page> {
+  const parkedAt = normalizeUrl(loginUrl);
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const popup = page
+      .context()
+      .pages()
+      .find((p) => !knownPages.has(p) && !p.isClosed());
+    if (popup) {
+      // window.open 刚建时是 about:blank，随后才跳到第三方授权页。
+      // 立刻返回会拿到空 URL，既认不出授权页也认不出"未登录"页。
+      const settled = await waitForPopupUrl(popup, deadline);
+      if (!settled) {
+        log("OAuth 弹窗已关闭，按原页面继续");
+        if (normalizeUrl(page.url()) !== parkedAt) return page;
+        continue;
+      }
+      log(`检测到 OAuth 弹窗（${safeUrl(popup)}），改为跟踪弹窗`);
+      return popup;
+    }
+    // 弹窗可能瞬间打开又关闭（GitHub 会话有效时授权很快）；
+    // 主页面此时若已离开登录页，按同页跳转处理。
+    // 不能用 /login/ 这类正则判断——GitHub 授权页路径里也含 "login"。
+    if (normalizeUrl(page.url()) !== parkedAt) return page;
+    await page.waitForTimeout(300);
+  }
+  return page;
+}
+
+/** 等弹窗从 about:blank 跳到真实地址；期间被关掉则返回 false。 */
+async function waitForPopupUrl(popup: Page, deadline: number): Promise<boolean> {
+  while (Date.now() < deadline) {
+    if (popup.isClosed()) return false;
+    if (safeUrl(popup) !== "about:blank") return true;
+    await popup.waitForTimeout(200).catch(() => {});
+  }
+  return false;
+}
+
+function safeUrl(p: Page): string {
+  try {
+    return p.url();
+  } catch {
+    return "";
+  }
+}
+
+/** 去掉 query/hash 与尾斜杠，用于比较"是否还停在同一个页面" */
+function normalizeUrl(url: string): string {
+  try {
+    const u = new URL(url);
+    return `${u.origin}${u.pathname}`.replace(/\/$/, "");
+  } catch {
+    return url;
+  }
+}
+
 const PROVIDER_META: Record<OAuthProvider, { label: RegExp; authHost: RegExp; needLogin: RegExp; authorize: RegExp }> = {
   github: {
     label: /GitHub/i,
@@ -441,7 +560,7 @@ export async function oauthLogin(
     // 已登录则直接复用
     await page.goto(baseUrl, { waitUntil: "domcontentloaded" }).catch(() => {});
     await page.waitForTimeout(1500);
-    self = await fetchSelf(page, baseUrl);
+    self = await fetchSelf(page, baseUrl, log);
     if (self) {
       log("已是登录态（复用会话）");
       return { user: self, needManual: false };
@@ -455,7 +574,8 @@ export async function oauthLogin(
   }
 
   // 打开登录页，点第三方登录按钮
-  await gotoWithNavigationRetry(page, `${baseUrl}${loginPath}`);
+  const loginUrl = `${baseUrl}${loginPath}`;
+  await gotoWithNavigationRetry(page, loginUrl);
   await page.waitForTimeout(2500);
   await dismissModals(page);
 
@@ -467,29 +587,39 @@ export async function oauthLogin(
     return { user: null, needManual: false };
   }
   log(`点击「使用 ${provider} 继续」，等待授权跳转…`);
+  // 部分站点（实测 AgentRouter）用 window.open 新开弹窗做 OAuth 往返，
+  // 原页面 URL 全程不动。只盯原 page 会把"弹窗里卡在 GitHub 登录页"误判成流程走完。
+  const knownPages = new Set(page.context().pages());
   await btn.click().catch(() => {});
-  await page.waitForTimeout(5000);
+  await page.waitForTimeout(1500);
+  const target = await adoptOAuthPopup(page, knownPages, loginUrl, 8000, log);
 
   const host = new URL(baseUrl).hostname;
   // 落在第三方授权页则点授权
-  if (meta.authHost.test(page.url())) {
-    const auth = page.getByRole("button", { name: meta.authorize }).first();
+  if (meta.authHost.test(safeUrl(target))) {
+    const auth = target.getByRole("button", { name: meta.authorize }).first();
     if ((await auth.count()) > 0) {
       log(`点击 ${provider} 授权…`);
       await auth.click().catch(() => {});
-      await page.waitForTimeout(5000);
+      await target.waitForTimeout(5000).catch(() => {});
     }
   }
-  // 仍停在第三方登录页 = 未登录该平台，需手动
-  if (meta.needLogin.test(page.url())) {
-    log(`${provider} 未登录，需先运行：npm run login -- <站点>`);
+  // 仍停在第三方登录页 = 该平台会话已过期，需手动。
+  // 这条以前永远命中不了：AgentRouter 的 OAuth 走弹窗，原 page 的 URL 从未离开 /login。
+  if (meta.needLogin.test(safeUrl(target))) {
+    log(`${provider} 会话已过期（停在 ${safeUrl(target).slice(0, 60)}），需先运行：npm run login -- <站点>`);
+    if (target !== page) await target.close().catch(() => {});
     return { user: null, needManual: true };
   }
-  // 等待跳回站点
-  await page.waitForURL((u) => u.hostname.includes(host), { timeout: 15000 }).catch(() => {});
+  // 等待跳回站点（弹窗授权成功后常自行关闭，属正常路径）
+  await target
+    .waitForURL((u) => u.hostname.includes(host), { timeout: 15000 })
+    .catch(() => {});
+  if (target !== page) await target.close().catch(() => {});
+  // 会话 Cookie 写在共享 context 上，回原页面重新加载才能读到
   await page.goto(baseUrl, { waitUntil: "domcontentloaded" }).catch(() => {});
   await page.waitForTimeout(2000);
-  self = await fetchSelf(page, baseUrl);
+  self = await fetchSelf(page, baseUrl, log);
   if (self) log(`登录成功${self.username ? `（${self.username}）` : ""}`);
   else log("OAuth 后仍未获取到用户信息");
   return { user: self, needManual: false };
