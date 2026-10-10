@@ -294,6 +294,10 @@ CALLS = {
         keys=_keys(
             "default_model", "augmentation", "quality", "dedup",
             "export", "vector", "rag", "multimodal",
+            # L215：`versioning.enabled` / `visualization.enabled` 接上管道阶段入口这个
+            # 读者之后必须可见，于是新增两只**只读**节（写入清单不含它们）。
+            # 这份清单不手抄：多一节少一节都会在这里红。
+            "versioning", "visualization",
         ),
     ),
     ("POST", "/api/config"): _Case(

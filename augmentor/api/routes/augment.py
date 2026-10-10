@@ -46,11 +46,17 @@ class AugmentProgressResponse(BaseModel):
 
 
 class AugmentRequest(BaseModel):
-    """增强请求"""
+    """增强请求
+
+    `use_quality` / `use_dedup` 是 `Optional[bool]`（L215）：字段缺席**不等于**关掉，
+    而是「调用方没点」，由 `config.quality.enabled` / `config.dedup.enabled` 定；
+    显式给 `true`/`false` 才是点。出厂两键都是 `true` ⇒ 省略方拿到的结果与改前一致，
+    随包前端（`web/src/services/api.ts` 两只字段总是显式送）也完全不变。
+    """
     input_file: str
     output_file: str
-    use_quality: bool = True
-    use_dedup: bool = True
+    use_quality: Optional[bool] = None
+    use_dedup: Optional[bool] = None
     use_checkpoint: bool = True
 
 
@@ -74,6 +80,10 @@ async def start_augmentation(
         p = get_pipeline()
 
         def run_augment():
+            # L215：这里**不做**任何默认值判断，缺席就是 `None` 原样传下去，
+            # 由 `augment_dataset` 那一层的权威序（调用参数 > 配置 > 内置默认）解析。
+            # 端点若在这里补成 True，配置臂就永远拿不到控制权——那正是要避免的
+            # 「键写在请求模型里、读者却只有代码默认值」的幽灵面。
             p.augment_dataset(
                 str(input_path),
                 str(output_path),
