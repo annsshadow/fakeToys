@@ -1052,6 +1052,7 @@ class TestRuntimeValidatorParity:
             "vector.storage_dir", "vector.collection",
             # L154 / B224：A140 一片的 5 个字符串键（`require_string` 同批）
             "versioning.storage_dir", "multilingual.default_target_lang",
+            "evaluation.generated_field",
             "evaluation.reference_field", "benchmark.baseline_file",
             "active_learning.strategy"}
         # 封闭清单键的每一条都必须有运行时判据兜着：L57 时只有 `logging.level` 一个，

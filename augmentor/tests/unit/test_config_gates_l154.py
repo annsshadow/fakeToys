@@ -57,7 +57,8 @@ BOOL_KEYS = ["%s.enabled" % s for s in SECTIONS] + ["versioning.auto_snapshot"]
 INT_KEYS = ["context.num_turns", "multilingual.translate_batch_size",
             "active_learning.batch_size", "active_learning.max_iterations"]
 STR_KEYS = ["versioning.storage_dir", "multilingual.default_target_lang",
-            "evaluation.reference_field", "benchmark.baseline_file",
+            "evaluation.generated_field", "evaluation.reference_field",
+            "benchmark.baseline_file",
             "active_learning.strategy"]
 LIST_KEYS = ["sampler.dimensions", "expander.strategies", "tracker.metrics",
              "visualization.types", "multilingual.supported_langs",
@@ -94,22 +95,25 @@ class TestTheA140CensusIsInverted:
                          if not hasattr(cls, "__post_init__"))
         assert ungated == [], "A140 名单有节被拆掉运行时判据：%s" % ungated
 
-    def test_all_29_keys_have_static_spec_rows(self):
+    def test_all_listed_keys_have_static_spec_rows(self):
         missing = [k for k in ALL_KEYS if k not in ConfigValidator.KNOWN_FIELDS]
         assert missing == [], "规格表缺行：%s" % missing
 
-    def test_the_key_census_is_still_29(self):
-        """逐节键数现量（A140 行同数）：4+4+3×3+2×5 = 29，防「删键凑数」
+    def test_the_key_census_is_29_plus_the_l220_key(self):
+        """逐节键数现量：A140 那批 29 只 + L220 补的 `evaluation.generated_field` = 30
 
-        改前 `ungated_keys` 现量 29；这里按 `dataclasses.fields` 推导而不是
-        手抄，删掉任何一节的字段本条就红。
+        改前 `ungated_keys` 现量 29（A140 行钉在 Temp/l82q/ungated_census.json）；这里按
+        `dataclasses.fields` 推导而不是手抄，删掉任何一节的字段本条就红。差值单独归因：
+        那只 4 不是 A140 名单被改宽，而是 L220 往 `evaluation` 节新增了一只**有产品读者**
+        的键——凑数用的死键不许进这一档（普查守卫 `test_config_reader_census_l217` 会把它
+        抓到零读者名单里）。
         """
         counts = {s: len(dataclasses.fields(cls)) for s, cls in SECTIONS.items()}
         assert counts == {"context": 2, "versioning": 3, "sampler": 2,
                           "expander": 2, "tracker": 2, "visualization": 2,
-                          "multilingual": 4, "evaluation": 3, "benchmark": 3,
+                          "multilingual": 4, "evaluation": 4, "benchmark": 3,
                           "active_learning": 4, "frameworks": 2}, counts
-        assert sum(counts.values()) == 29
+        assert sum(counts.values()) == 30
 
     def test_every_spec_row_shapes_the_runtime_type(self):
         """规格表与运行时判据**同档**：int 行只声明类型（L157 / B227 起判决维
@@ -189,6 +193,7 @@ class TestStringKeysRefuseEmptyBlankAndNonStr:
     @pytest.mark.parametrize("dotted,value", [
         ("versioning.storage_dir", "data/versions"),
         ("multilingual.default_target_lang", "en"),
+        ("evaluation.generated_field", "output"),
         ("evaluation.reference_field", "output"),
         ("benchmark.baseline_file", "data/benchmark_baseline.json"),
         ("active_learning.strategy", "uncertainty"),
@@ -290,6 +295,7 @@ class TestTheGatesDoNotDependOnTheSpecTable:
         ("multilingual.supported_langs", "zh"),
         ("multilingual.translate_batch_size", 0),
         ("evaluation.metrics", [1]),
+        ("evaluation.generated_field", "   "),
         ("evaluation.reference_field", "   "),
         ("benchmark.baseline_file", ""),
         ("benchmark.metrics", "pass_rate"),

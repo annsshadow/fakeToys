@@ -295,6 +295,7 @@ class ConfigValidator:
         "evaluation": {"type": dict},
         "evaluation.enabled": {"type": bool},
         "evaluation.metrics": {"type": list, "items": str},
+        "evaluation.generated_field": {"type": str, "non_empty": True},
         "evaluation.reference_field": {"type": str, "non_empty": True},
         "benchmark": {"type": dict},
         "benchmark.enabled": {"type": bool},
