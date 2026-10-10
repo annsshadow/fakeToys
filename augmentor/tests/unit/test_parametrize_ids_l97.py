@@ -70,8 +70,8 @@ NS_PREFIXES = frozenset({
 #: l97 的 no-literal-list 桶 +2、l98 的 plain 档同步 +2，CALLS 393 → 395，
 #: READABLE = CALLS − 盲面 ⇒ **287 一格未动**（第一版按「字面量 ⇒ 可读」想当然写成
 #: READABLE +2，实测当场红，已订正）。
-    # L210 回填（CALLS +1、READABLE +1、盲面未动）：test_api_doc_endpoint_coverage_l210.py 新增一处
-    # parametrize，值位是内联字面量列表 ["dataset", "system"] ⇒ 入可读档，盲面 108 一格未动。
+#: L210 回填（CALLS +1、READABLE +1、盲面未动）：test_api_doc_endpoint_coverage_l210.py 新增一处
+#: parametrize，值位是内联字面量列表 ["dataset", "system"] ⇒ 入可读档，盲面 108 一格未动。
 MEASURED_CALLS = 396
 #: （L185：${ENV} 展开语义守卫两支 parametrize（坏形状 5 档 / 非串 4 档，全是字面清单）
 #: ⇒ CALLS 382 → 384、READABLE 281 → 283，盲面 101 一格未动）
