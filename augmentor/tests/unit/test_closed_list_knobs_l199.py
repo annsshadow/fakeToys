@@ -161,9 +161,18 @@ class TestLegalValuesStillWork:
         assert manager.get_dependencies(a.dataset_id) == []
 
     def test_writer_each_mode_and_format(self, tmp_path):
+        """四种 mode × format 组合里三种可用、一种拒绝（L208）
+
+        被拒的那种是 `mode='a' + format='json'`：追加一份已闭合的 JSON 数组
+        只会产出非法 JSON（实测 `[{"a": 1}]{"b": 2}`），所以 L208 起构造期就拒。
+        """
         for mode in WRITER_MODES:
             for fmt in WRITER_FORMATS:
                 path = tmp_path / f"o_{mode}_{fmt}.json"
+                if mode == "a" and fmt == "json":
+                    with pytest.raises(DataValidationError):
+                        StreamWriter(path, mode=mode, format=fmt)
+                    continue
                 with StreamWriter(path, mode=mode, format=fmt) as writer:
                     writer.write_chunk(ITEMS)
                 assert path.exists()

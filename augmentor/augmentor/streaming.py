@@ -478,6 +478,19 @@ class StreamWriter:
                 )
             require_choice(knob, value, choices=choices)
 
+        # L208（B266②）：追加一份**已闭合**的 JSON 数组，任何写法都产不出合法
+        # JSON。实测（Temp l208_probe.py）：第一次 w 写出 '[{"a": 1}]'（合法、
+        # 已闭合），第二次 a 把 '{"b": 2}' 接在后面 ⇒ '[{"a": 1}]{"b": 2}'，
+        # json.loads 报 "Extra data"。候选②（读回原数组、追加后整体重写）是
+        # O(n) 读 + O(n) 写，违背「流式写入器」的初衷，故不做。多批数据进同一个
+        # 文件的正确做法是：一次性写，或用 format='jsonl'（它天生可追加）。
+        if format == "json" and mode == "a":
+            raise DataValidationError(
+                "mode='a' 不能与 format='json' 组合：追加一份已闭合的 "
+                "JSON 数组只会产出非法 JSON（实测 '[{\"a\": 1}]{\"b\": 2}'）。"
+                "要多批写入同一文件，请一次性写，或改用 format='jsonl'"
+            )
+
         self.file_path = Path(file_path)
         self.mode = mode
         self.format = format

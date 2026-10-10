@@ -29,6 +29,7 @@ import pytest
 
 from augmentor.exceptions import StreamError
 from augmentor.streaming import StreamWriter
+from augmentor.exceptions import DataValidationError
 
 
 class Boom:
@@ -97,26 +98,25 @@ class TestHappyPathIsUnchanged:
         lines = out.read_text(encoding="utf-8").splitlines()
         assert [json.loads(x) for x in lines] == [{"a": 1}, {"b": 2}]
 
-    def test_append_mode_is_a_pinned_known_limitation(self, tmp_path):
-        """`mode='a' + format='json'` 至今是坏的，本条**钉住这个事实**而不是放过它
+    def test_append_json_is_refused_rather_than_writing_garbage(self, tmp_path):
+        """`mode='a' + format='json'` 必须**拒绝**，不许静默产出非法 JSON
 
-        追加一途不参与方括号记账：第一次 `w` 已经写了 `]`，第二次 `a` 直接把记录
-        接在后面 ⇒ `'[{"a": 1}]{"b": 2}'`。这是 B266② 的剩余 Scope，本轮只修
-        「写崩的产物伪装成半份合法 JSON」，不动追加语义（动它要先拍「追加 JSON
-        数组」到底该是什么形态，属口径决策）。
+        L201 时这条还是「钉住已知限制」——追加会写出 `'[{"a": 1}]{"b": 2}'`（非法）。
+        L208 拍定口径：追加一份**已闭合**的 JSON 数组，任何写法都产不出合法 JSON，
+        而候选②（读回原数组、追加后整体重写）是 O(n) 读 + O(n) 写、违背「流式写入器」
+        的初衷 ⇒ 索性拒绝。多批数据进同一文件的正确做法是一次性写或用 jsonl。
+        谁把这里改成「能跑了」，先回来改这条。
         """
         out = tmp_path / "app.json"
         with StreamWriter(str(out), format="json", mode="w") as writer:
             writer.write_chunk([{"a": 1}])
-        with StreamWriter(str(out), format="json", mode="a") as writer:
-            writer.write_chunk([{"b": 2}])
-        raw = out.read_text(encoding="utf-8")
-        assert raw == '[{"a": 1}]{"b": 2}', (
-            f"追加形态与登记的不一致：{raw!r} ⇒ 有人动了追加语义，"
-            "先回去改 B266② 的处置再改这条"
+        with pytest.raises(DataValidationError) as exc:
+            StreamWriter(str(out), format="json", mode="a")
+        assert "jsonl" in str(exc.value), (
+            "报错文案要指出替代方案（jsonl 可追加），否则用户只知道不让干"
         )
-        with pytest.raises(json.JSONDecodeError):
-            json.loads(raw)
+        # 盘上那份不许被这次失败的构造破坏
+        assert json.loads(out.read_text(encoding="utf-8")) == [{"a": 1}]
 
     def test_explicit_close_still_writes_the_bracket(self, tmp_path):
         """显式 close = 成功路径，语义不动"""
