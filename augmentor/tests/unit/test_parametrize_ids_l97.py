@@ -65,7 +65,12 @@ NS_PREFIXES = frozenset({
 #: L163（B233）：新增导出原子写守卫文件，两支 parametrize（字面格式清单，
 #: 自带 literal-list）⇒ CALLS 377 → 379、READABLE 276 → 278，盲面（no-literal-list
 #: 桶）101 一格未动。
-MEASURED_CALLS = 393
+#: **L204 回填（CALLS +2、盲面 +2、READABLE 一格未动）**：test_readme_cli_index_l204.py
+#: 新增两处 parametrize，值位是**模块级名字引用** `PROMISED` 而不是内联字面量 ⇒
+#: l97 的 no-literal-list 桶 +2、l98 的 plain 档同步 +2，CALLS 393 → 395，
+#: READABLE = CALLS − 盲面 ⇒ **287 一格未动**（第一版按「字面量 ⇒ 可读」想当然写成
+#: READABLE +2，实测当场红，已订正）。
+MEASURED_CALLS = 395
 #: （L185：${ENV} 展开语义守卫两支 parametrize（坏形状 5 档 / 非串 4 档，全是字面清单）
 #: ⇒ CALLS 382 → 384、READABLE 281 → 283，盲面 101 一格未动）
 #: （L189：验证预设封闭清单守卫一支 parametrize（坏预设 5 档，全字面清单）⇒
@@ -75,7 +80,7 @@ MEASURED_CALLS = 393
 MEASURED_READABLE = 287
 #: L175：搜索方法封闭清单守卫两支 parametrize（坏值 6 档 / 合法 5 档，全是字面
 #: 清单）⇒ CALLS 379 → 381、READABLE 278 → 279，盲面（no-literal-list 桶）101 不动。
-MEASURED_BLIND = 106
+MEASURED_BLIND = 108
 #: 值位含类型对象的那些档（必须全部自带 ids，否则就是本判据的违规）
 KNOWN_TYPED_SITES = frozenset({("tests/unit/test_schema_type_spec_l96.py", "test_label")})
 
