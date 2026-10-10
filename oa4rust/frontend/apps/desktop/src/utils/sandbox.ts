@@ -20,6 +20,7 @@ interface SandboxResult {
 }
 
 let iframe: HTMLIFrameElement | null = null
+let iframeLoaded = false
 let pendingCallback: ((r: SandboxResult) => void) | null = null
 
 /** Lazy-create the sandbox iframe on first use. */
@@ -28,8 +29,15 @@ function getOrCreateFrame(): HTMLIFrameElement {
     iframe = document.createElement('iframe')
     // Strict sandbox: scripts run, but same-origin access is blocked.
     iframe.setAttribute('sandbox', 'allow-scripts')
+    // Load the bootstrap page that registers the __oa4rust_sandbox_code listener.
+    // Without this the iframe stays on about:blank and the code is never executed,
+    // so every runInSandbox call 100% times out.
+    iframe.src = `${import.meta.env.BASE_URL}sandbox.html`
     iframe.style.cssText = 'position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;border:0'
     document.body.appendChild(iframe)
+    iframe.addEventListener('load', () => {
+      iframeLoaded = true
+    })
 
     // Listen for result messages from the sandbox.
     window.addEventListener('message', onSandboxMessage)
@@ -68,8 +76,16 @@ export function runInSandbox(code: string, timeoutMs = 5000): Promise<SandboxRes
 
     pendingCallback = resolve
 
-    // Post a message with the code to execute.
-    frame.contentWindow?.postMessage({ __oa4rust_sandbox_code: code }, window.location.origin)
+    // The sandboxed iframe has an opaque origin (sandbox="allow-scripts" without
+    // allow-same-origin), so it must be posted with targetOrigin '*' — a specific
+    // origin would throw SecurityError. Post only after the bootstrap page has
+    // loaded, otherwise its __oa4rust_sandbox_code listener isn't registered yet
+    // and the code would be silently dropped.
+    const post = () => {
+      frame.contentWindow?.postMessage({ __oa4rust_sandbox_code: code }, '*')
+    }
+    if (iframeLoaded) post()
+    else frame.addEventListener('load', post, { once: true })
 
     // Force-gc the iframe after a while to prevent memory leak if the user
     // navigates away without the message completing.
@@ -102,5 +118,6 @@ export function destroySandbox(): void {
     window.removeEventListener('message', onSandboxMessage)
     iframe.remove()
     iframe = null
+    iframeLoaded = false
   }
 }
