@@ -52,6 +52,7 @@
 - [x] **L214** `ec0668115 + bccfeff85 + e6b67238a` `feat(augmentor)`：**A138 ②③ 档接线第一批 —— 五只键 / 六条端点支路，判据一律取行为差**。权威序定稿「请求参数 > 配置键 > 内置默认」；`enabled` 三只按实测撤回（端点门 = 改契约），process 的扩展名字段本轮自己造又自己拆；收口批被自己的一句未实测断言推翻 ⇒ 详见循环日志 L214
 - [x] **L215** `2f994fbc7` `feat(augmentor)`：**`enabled` 族第一批 —— 出厂四只 `true` 键接进管道阶段入口**，零读者名单 16 → 12。默认值换成 `None` 哨兵之后调用参数仍是最高一档；顺带把两只新有读者的键接进 `GET /api/config` 的只读回显面 ⇒ 详见循环日志 L215
 - [x] **L216** `af03b67b3` `feat(augmentor)`：**A138 ③ 档清空 —— vector 五键接进新建的语义消费层**，两条只读端点 + 出厂 `false` 的自动建库闸 ⇒ 零行为漂移。分区守卫当场抓出 `rag.chunk_*` 是名单历史漏计；读 chromadb 时撞出本轮新造成的 `AttributeError`／GET 落盘缺陷并补能力闸 ⇒ 详见循环日志 L216
+- [x] **L217** `d171524a0` `feat(augmentor)`：**multilingual 四键接进产品入口**（新建 `augmentor/language.py` + 画像/翻译两条端点，`enabled` 闸在读盘之前），并把 B5 那把住在 `Temp/` 的死键尺子升成仓内守卫。普查现量 69 键 / 47 只有读者 / 23 只零读者，`config.*.enabled` 16 → 10 只。顺带撤掉本层那道与 SDK 重复的语言准入闸（注入显示摘掉它全绿 ⇒ 两存必有一盲），SDK 吞异常导致的「失败冒充成功」新立 A270 ⇒ 详见循环日志 L217
 
 ## Backlog A — 质量缺口（缺数 / 偏支 / 健壮性）
 
@@ -70,6 +71,9 @@
 | A267 | `augmentor/visualizer.py`、`augmentor/config.py` 的 `VisualizationConfig.types` | **新立（L215）**：可视化这一族里除 `enabled`（L215 已接）之外还剩一对互证的死面。三条现量：① `visualization.types` 出厂五值 `["wordcloud", "length_distribution", "topic_cluster", "timeline", "quality_distribution"]`，全仓产品读者 **0**（grep 只命中 `config.py` 的定义与 `require_string_list` 校验，配置校验不算读者）；② `DataVisualizer.generate_timeline` 产品读者 **0**，只有 3 支单测调它；③ `generate_all_visualizations` 只出四类图，其中 `quality_distribution` 要 `scores` 形参，而两个产品调用点（`pipeline.visualize_dataset` 与 `cli/commands/analysis.py` 的报告模式）**都不传** ⇒ 出厂配置声称五类、阶段实际最多三类。**为什么 L215 不顺手接**：把 `types` 接成出图清单是一次**行为变更**而非零漂移接线——按出厂值接上，`timeline` 会今天第一次真的生成，产物多出那张图；`quality_distribution` 还要先定「scores 从哪来」。**判据要的是行为差，这里的「行为差」是新增产物而不是消费既有开关**，所以它属功能增强，得单独拍：要么按 `types` 生成（对外产物变化），要么承认清单虚假并从回显/文档降级。定级 M，待用户拍。 | M |
 | A268 | `augmentor/semantic.py`、`config.vector.dimension` | **新立（L216）**：嵌入用的是零依赖的确定性字符二元组哈希，所以 `dimension` 就是配置值本身。接**真模型**嵌入（可选依赖 `sentence-transformers`）时要先回答两件事：① 模型输出宽度与本键冲突怎么收（模型给 384、配置写 768 时是拒配置、忽略配置，还是另开一只 `model_name` 键）；② 本机与 CI 都不装这个包，接上去等于写一条**任何没装它的环境都跑不到**的产品路径——正是本仓在收的「只写不读」形状。所以这条的前置条件是「先有一个装了包的定标环境」，不是先写代码。定级 M，待用户拍。 | M |
 | A269 | `augmentor/vector/chromadb.py`、`augmentor/semantic.py` 的 `EXPLICIT_PERSISTENCE_BACKENDS` | **新立（L216）**：`persist` / `load` 只由 `FAISSDB` 实现，`ChromaDB` 那侧是 `PersistentClient` 自管（构造阶段就 `mkdir` 并注册集合）。L216 把落盘建库与状态读取定义为「有显式 `persist`/`load` 面」的后端专用，chromadb 在**构造之前**拿 400。要让 `vector.backend: chromadb` 真的可用，得先在装了 `chromadb` 的环境里量两件事：① 该后端的「索引是否已存在、多少条」怎么写成可测判据（今天的 `exists` / `count` 语义靠 `load()` 的布尔返回，那侧没有）；② 「GET 不落盘」这条承诺如何与「构造即落盘」的后端共存（要么给它一条只读的探查路径，要么把 `vector-status` 划成 faiss 专用面并回显清楚）。定级 M，待用户拍。 | M |
+| A270 | `augmentor/multilingual.py` 的 `batch_translate` | **新立（L217）**：逐条翻译的异常被 `except Exception as e: logger.error(...)` **吞成「回退原文」**，返回清单与全部成功时**形状完全相同**——没有失败计数、没有逐条状态、没有非零退出信号。L217 接消费层时实测坐实：`model_backend=None` 时端点回 **200 + 整份原文**，调用方读到的是「翻译完成」。本层已在分批之前自保抛 `ModelNotConfiguredError`（后端整体缺失这一档出声了），但**逐条失败**这一档仍然沉默：真后端只对部分条目超时/被限流时，产物里混着原文而无人知道。修法是给 SDK 加**失败回执面**（`failures` 计数 + 索引列表，或逐条 `translation_status`），面一改就要同步 `TranslateResponse`、`test_api_openapi_contract` 与 `test_api_report_keys` 那把键集尺子——所以它是一次产品改动而不是接线。定级 M，待拍。 | M |
+| A271 | `augmentor/config.py` 余 10 只 `config.*.enabled` + 10 只非闸门键 | **新立（L217）**：B5 的前沿现在有了机器名单（`tests/unit/test_config_reader_census_l217.py` 的零读者档，20 键逐键带理由）。两族的处置方向不同，**都不许顺手做**：① 10 只 `enabled`（active_learning / benchmark / context / evaluation / expander / frameworks / multimodal / rag / sampler / tracker）出厂全为 `false`，接进阶段入口等于**关掉当前始终在跑的行为**，是对外破坏面（L214 已实测：接成端点拒绝门当场红 13 支），要拍的是「破坏面要不要开」而不是「怎么接」；② 10 只非闸门键里，`active_learning.strategy` / `batch_size` / `max_iterations`、`evaluation.metrics` / `reference_field`、`expander.strategies`、`frameworks.frameworks`、`sampler.dimensions`、`tracker.metrics` 各自对应的模块**确有同名构造参数**，接线是「把配置值喂进已有旋钮」（多半零漂移，L215/L216 同形），但 `visualization.types` 已由 **A267** 单独在案——它接上去是一次**产物新增**，不属这一族。逐族拍完再按族批量收，别做半族（L214 的「修了 5 处漏 1 处」教训）。定级 M。 | M |
+| A272 | `api/routes/config.py` 的可写四节 / `multilingual` 节 | **新立（L217）**：L217 接的四只键里除 `enabled` 之外，**没有任何一只可以经 `POST /api/config` 改**——可写面至今只有 export / rag / vector / multimodal 四节，`multilingual` 要改只能改 `config.yaml` 重启。要么把 `multilingual` 开成第 5 个可写节（连带 `test_the_two_tiers_partition_the_writable_sections` 的键名单扩员、节内判据已有所以不用补），要么在 `docs/API.md` 与回显面上写明「这节只读」。这是口径决策不是缺陷，所以先立账：现状下翻译的目标语言与批宽在部署期不可调，而 L217 的两条端点恰恰是运行时才消费它们。定级 S，待拍。 | S |
 
 ## Backlog B — 功能增强与体验（价值 ÷ 工作量）
 
@@ -1975,3 +1979,73 @@
   只读白名单那一支是本文件的分内事，报告键集那一支是 L206 那把「键集不许悄悄变」的尺子**按设计生效**：
   `vector_index` 是签字过的新增，处置是登记进名单并在注释里写清「只认逐条签字的新增，不是永远不许变」，
   而不是把尺子改松。
+
+### L217（2026-10-10）— multilingual 四键接进产品入口，并把 B5 那把死键尺子升成仓内守卫
+
+- **缺口的定性与 L216 同形，所以形状照抄已验证的那一条**：`augmentor/multilingual.py` 的
+  `MultilingualSupport` 在产品侧**一个实例都没建过**（`api/`、`augmentor/`、`cli.py` 全树零调用者，
+  只有测试 import），能力早就写好了（语言检测、批量翻译、语言分布），缺的是消费者。于是本轮做**加法**：
+  新建消费层 `augmentor/language.py`（`language_profile` / `translate_dataset` 两面）+ 两条端点
+  （`POST /api/dataset/language-profile`、`POST /api/dataset/translate`），`multilingual.enabled` 那三只
+  出厂 `false` 的兄弟键一个都没碰。**除 multilingual 之外零行为变更**，这是 L214「把 `enabled` 接成端点
+  拒绝门 ⇒ 十三支既有测试当场红」的教训换来的形状。
+- **四只键各取一条行为差**（`tests/integration/test_multilingual_consumption_l217.py`，21 例）：
+  `supported_langs` ⇒ 画像的清单外集合跟着名单变窄而变宽，越界目标语言在**任何模型调用之前**被拒
+  （`backend.calls == 0`）；`default_target_lang` ⇒ 配置写 `ja` 时产物才出现 `ja`，**取 `ja` 而不是 `en`
+  是有意的**——SDK 内置默认就是 `en`，同名值做校验时「写死 en」的缺陷臂与正确实现读到同一个字符串；
+  `translate_batch_size` ⇒ 批长序列 `seen == [7, 7, 7, 4]`，批宽 1 时并发上界真的是 1；`enabled` ⇒
+  闸的位置在**读盘之前**，所以关掉闸的部署不会被一条越界文件名拖着去做白名单解析与整份读盘。
+- **分批的理由是并发上界，不是调用次数**：`MultilingualSupport.batch_translate` 把整份清单一次性 submit 给
+  `ThreadPoolExecutor`，5000 条就在飞行中挂 5000 个 future。本层按批切之后，瞬时并发被压到
+  `min(批宽, max_workers)`；`max_workers` 是 SDK 构造参数、出厂 4，本轮不动它（动它是另一次接线）。
+  **假模型后端的预言机数的是并发峰值而不是调用数**——两种写法调用数一样，只有峰值能区分。
+- **三处期望被真实 SDK 行为否证，全部以实测改判据而不是改产品**：① 原本断言 5 条 ⇒ 实际只打 3 次模型，
+  因为 `translate` 在源语言==目标语言时短路；为此新增全中文清单 `ALL_ZH` 与一支专门钉短路的用例，并发量测
+  面也不许混进英文项（注释里写明了原因）。② 原本断言批宽 5 ⇒ 并发峰值 5，实测 4——`max_workers=4` 封顶，
+  判据改成批宽 3 才量得出「峰值 = 批宽」，这条也写进了 `docs/API.md`。③ 原本断言 `backend=None` 即抛 ⇒
+  实测 **200 回原文**：`batch_translate` 把逐条异常吞成「回退原文」，缺后端在下游根本不出声。
+- **由此发现的真缺陷立账，本层先自保**：SDK 那条吞异常的路径让「一条都没翻成」与「全部翻完」在回执面上
+  不可区分（冒充成功）。本轮在 `translate_dataset` **分批之前**补 `ModelNotConfiguredError`（→ 400），
+  并加了一支「不许冒充成功」的用例；SDK 侧缺的是**失败回执面**（哪些条目回退了原文、为什么），那是产品改动，
+  新立 **A270**。
+- **撤掉一道我自己写的重复闸**：`translate_dataset` 里原本还有一道「目标语言在不在名单内」的闸，与 SDK
+  `batch_translate` 顶部那道同判据。注入取证当场把它判死——**摘掉本层那道闸，21 例全绿**，因为下游那道
+  永远先出声。两存必有一盲，盲的是多余的那道，所以删；按仓库「判据住在 SDK / config 层」的惯例只留 SDK 那道，
+  并把那一臂换成有牙齿的新臂（画像侧丢掉配置名单 ⇒ 红 2 支）。路由与 SDK 的 docstring 同步改了口径，
+  免得注释继续宣称一个已经不在这层的判据。
+- **B5 那把尺子从 Temp/ 搬进仓库**：搬的理由是复现性，不是新奇——`Temp/` 与 `data/` 的取证底料**当前工作树里
+  根本不存在**（`.gitignore` 明写不入仓），所以「37 只死键」这类读数在门禁里**无法复跑**，只能靠人肉重跑探针。
+  `tests/unit/test_config_reader_census_l217.py`（20 例）把尺子入仓，并把它的盲区写进判据而不是留给记忆：
+  三档互斥（直接属性链 / 经别名读到 / 零读者）+ 撞车桶 + **正控制**（有正牌读者的键若看不见，尺子自己红）+
+  引用验真（归档理由里点名的那个文件与那一行，必须真的是读它的那一句）+ 反向防腐（零读者名单不许悄悄少归档一键，
+  也不许悄悄多——接上读者就得改档）。尺子看不见的东西同样立了字面：加载器的鸭子形参装配（`logging` 三键走
+  `_load_section`，属「有装配无判决」，另开一档）、回显面、以及 A84 的 `unread_key_messages`（那是「写了没人读
+  的 YAML 键」，与本尺子的「schema 里的键有没有产品读者」是两个轴，不许混谈）。
+- **现量，替掉 Backlog B5 那行 37/16/12 的旧读数**：schema 共 20 节 / **69 键**，其中 **47 只**有产品读者、
+  **23 只**零读者；23 只里 `logging` 三键属装配面，**真正归档待处置的是 20 只**。`config.*.enabled` 共 16 只，
+  本轮接走 `multilingual.enabled` 之后剩 **10 只**零读者。普查第一版（v2）是错的：别名臂的判据写成
+  `len(seq) >= 2`，而 `ast.walk` 对 `cfg.key` 只返回 `["key"]`，那一支**永不触发**，于是 4 只 vector 键加
+  rag/multilingual 键被误报成死键（假阳性 4 只）。v3 改用「链根是别名 ⇒ 取 `node.attr`」才对。这件事的
+  价值全在那两支正控制上——它把「尺子说死」与「尺子没看见」区分开了。
+- **鉴权分档同样是判断**：画像纯正则、不打模型、不落盘 ⇒ 进只读白名单；翻译逐条按 token 花钱 ⇒ 与
+  `/api/augment/start` 同档挂 `verify_api_key`。判据记的是「会不会替调用方花钱/改状态」，不是 HTTP 动词
+  （本仓早有 POST 只读的先例）。
+- **红→绿注入取证（十臂，全部现量，无空转臂）**：尺子整体失明（别名解析被短路）⇒ **9 红**；尺子偏臂
+  （只认别名、看不见直接链）⇒ 6 红；零读者名单少归档一键 ⇒ 3 红；schema 新增一只无人归档的键 ⇒ 2 红；
+  批尺寸写成一次性全放 ⇒ 3 红；默认目标语言写死 `en` ⇒ 3 红；画像丢掉配置名单 ⇒ 2 红；后端缺失不出声 ⇒
+  2 红；`enabled` 闸摘掉 ⇒ 1 红；路由把批宽写成常量 ⇒ 1 红。注入器逐臂只按字节改写、注入前断言锚点唯一命中、
+  跑完逐字节复原并断言与原文相等；**第一版那条「摘本层准入门」的臂红 0 支，被当成缺陷证据用掉了**（见上面撤闸那条）。
+- **本轮被自己的守卫抓住的第二次机会**：`docs/ARCHITECTURE.md` 的模块树里插两行新模块，把历史账本引用的
+  `ARCHITECTURE.md:1232` 平移进非代码跨度，`test_comment_refs_a184.py` 硬 0 档当场报 2 处。处置按 L148 先例
+  **换点而不是重钉历史行**：改成在既有行上同行追加，`git diff --numstat` 复核净行数为零。
+- **既有面登记**：契约面（`CALLS` 两条新键 × 两支参数化 ⇒ +4 例）、事件循环守门（+1 站点 ×2 支 + 1 支翻译
+  分批离线用例 ⇒ +3 例）、文档端点覆盖规模钉（dataset 16→18）、只读白名单与受保护名单各 +1，全部登记后复跑。
+  `web/` 侧本轮**零文件改动**，故未复跑前端测试与 `tsc`（不适用，不是漏跑）。
+- **门禁**：定标全量跑 `python -m pytest tests -q -p no:cacheprovider` ⇒ **8179 passed / 11 skipped / 0 failed / 覆盖率 99.80%**（179.56s）。
+  用例增量对账，L216 收口 8131 ⇒ 8179 的 `+48` = 普查守卫 20 + l217 集成 21 +
+  契约面 4 + 事件循环 3，逐文件 `--collect-only` 实测非推算。skip 数 11 一字未动。
+- **中间读数留着不美化**：本轮第一次全量是 **`12 failed / 8166 passed / 11 skipped`**，没有一处是产品逻辑坏：
+  7 支是文档契约计数（端点总数 73→75 四处、dataset tag 16→18、router 14→15），3 支是 l97/l98 参数化棘轮
+  （新增 3 处无 ids 参数化 ⇒ `CALLS` 396→399、盲面 108→111、plain 档 54→57、用例名册 103→106），
+  2 支就是上面那条 A184 平移。逐格按各自 docstring 的处方重钉并写明归因，**没有任何一把尺子被改松**。
+  钉值第一次写错过一处：把 `READABLE` 记成 293，实为差值口径 399−111=**288**，重跑当场红、已订正。
