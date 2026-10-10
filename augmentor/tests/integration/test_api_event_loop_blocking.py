@@ -209,6 +209,15 @@ BLOCKING_SITES = [
         None,
     ),
     (
+        # L216：语义检索除了读数据集，还要把整份数据嵌成向量再检索——重活比 stats 那一族
+        # 更重（构建 n 条 × dimension 的矩阵），所以读取与建库都必须离线。
+        "api.routes.vector",
+        "/api/dataset/semantic-search",
+        lambda env: {"input_file": str(env.data), "query": "json"},
+        1,
+        None,
+    ),
+    (
         "api.routes.system_ops",
         "/api/system/monitor",
         lambda env: {"input_file": str(env.data)},

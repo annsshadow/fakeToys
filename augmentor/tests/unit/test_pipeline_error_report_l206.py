@@ -110,6 +110,10 @@ class TestExistingKeysAreUnchanged:
             "task_id", "input_file", "output_file", "input_count",
             "output_count", "quality_check", "dedup", "parallel",
             "errors", "progress", "memory_monitor",
+            # L216 新增：`vector.enabled` 打开时的建库回执（关掉是 null）。
+            # 这一格是「键集只认逐条签字的新增」，不是「永远不许变」——
+            # 新增没在这里签过字的键照样红。
+            "vector_index",
         }
         assert set(report) == expected, (
             f"报告键集变了：少 {expected - set(report)}、"

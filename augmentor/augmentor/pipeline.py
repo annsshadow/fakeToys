@@ -33,6 +33,7 @@ from .sampler import ActiveSampler
 from .expander import DomainExpander
 from .tracker import ExperimentTracker
 from .visualizer import DataVisualizer
+from .semantic import persist_index
 
 logger = logging.getLogger(__name__)
 
@@ -469,7 +470,14 @@ class AugmentorPipeline:
                 label=f"增强数据_{int(time.time())}",
                 description=f"从 {input_file} 增强生成"
             )
-        
+
+        # L216（vector 族）：`vector.enabled` 是「增强结束时自动建语义索引并落盘」的闸。
+        # 出厂值是 `false` ⇒ 默认完全不建，与本轮之前的行为一字不差；建与不建的差别
+        # 只在 `data/vectors` 里有没有那两份 `{collection}_vectors.npy` / `_meta.json`。
+        vector_index = None
+        if self.config.vector.enabled:
+            vector_index = self.build_vector_index(all_results)
+
         # 返回报告
         return {
             "task_id": task_id,
@@ -480,6 +488,8 @@ class AugmentorPipeline:
             "quality_check": use_quality_check,
             "dedup": use_dedup,
             "parallel": use_parallel,
+            # L216：语义索引的落点与规模；`None` 是「配置没让建」，不是「建了但空」。
+            "vector_index": vector_index,
             # L206：失败明细出得来了。放在 progress 之前——报告形键集中在
             # 一起，`progress` / `memory_monitor` 是运行期诊断，错误是结果。
             "errors": list(self._process_errors),
@@ -492,6 +502,31 @@ class AugmentorPipeline:
             }
         }
     
+    def build_vector_index(self, items: List[Dict],
+                           text_key: str = "instruction") -> Dict:
+        """按 `config.vector.*` 的生效值建语义索引并落盘（L216）
+
+        这是 `vector` 节五只键在增强侧的消费点：`backend` 选后端类、`dimension` 定
+        嵌入宽度、`collection` 定文件名与 ID 前缀、`storage_dir` 定落盘目录。
+        返回体就是这些生效值的回执，调用方（报告 / 状态端点）据此可核对「配了什么、建了什么」。
+
+        Args:
+            items: 待入库的数据条目
+            text_key: 参与嵌入的字段名
+
+        Returns:
+            `persist_index` 的回执：`count` / `backend` / `dimension` / `collection` / `storage_dir`
+        """
+        vector = self.config.vector
+        return persist_index(
+            items,
+            backend=vector.backend,
+            dimension=vector.dimension,
+            collection=vector.collection,
+            storage_dir=vector.storage_dir,
+            text_key=text_key
+        )
+
     def augment_seed(self, 
                     seed_item: Dict,
                     use_quality_check: bool = True,
@@ -690,7 +725,12 @@ class AugmentorPipeline:
         atomic_write_json(output_file, all_results)
         
         logger.info(f"异步保存 {len(all_results)} 条数据到 {output_file}")
-        
+
+        # L216：与同步入口同一道判（「只接一个入口」在报告里看不出来，只在产物里看得出来）
+        vector_index = None
+        if self.config.vector.enabled:
+            vector_index = self.build_vector_index(all_results)
+
         return {
             "task_id": f"async_{hashlib.md5(str(input_file).encode()).hexdigest()[:8]}",
             "input_file": input_file,
@@ -699,5 +739,6 @@ class AugmentorPipeline:
             "output_count": len(all_results),
             "async_mode": True,
             "quality_check": use_quality_check,
-            "dedup": use_dedup
+            "dedup": use_dedup,
+            "vector_index": vector_index
         }

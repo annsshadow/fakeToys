@@ -226,30 +226,53 @@ $ python cli.py validate-config --config typo_config.yaml
   守卫：`tests/integration/test_cli_stdio_encoding.py`（真起子进程，`PYTHONIOENCODING=gbk`）
   与 `tests/unit/test_no_locale_text_io.py`（AST 扫产品包，禁止新增不带编码的文本 I/O）。
 
-### 可写四节的「读者分档」（A138，L184 记档 / L214 接线第一批）
+### 可写四节的「读者分档」（A138，L184 记档 / L214 接线第一批 / L216 清空 ③ 档）
 
 上面 L82 段落给 `export` / `vector` / `rag` / `multimodal` 四节 14 键全接上了判据（写坏即 400），
 但「写得进」不等于「有人读」。这 14 键按**现量**分三档，契约面与实现面的落差就摊开在这里：
 
 | 档 | 键 | 读点 | 语义 |
 |----|----|------|------|
-| ① 有行为读者（7） | `export.default_format` | `augmentor/pipeline.py`（导出走默认格式）、`api/routes/export.py`（preview 默认格式、批量导出构造） | 真控行为 |
+| ① 有行为读者（12） | `export.default_format` | `augmentor/pipeline.py`（导出走默认格式）、`api/routes/export.py`（preview 默认格式、批量导出构造） | 真控行为 |
 | | `export.formats` | `api/routes/export.py`（`/api/data/export`、`/api/export/batch` 未点名格式时按它导出） | 真控行为（L214） |
-| | `rag.chunk_size`、`rag.chunk_overlap` | `augmentor/cli/commands/quality.py`（RAG 切块）、`api/routes/dataset_tools.py`（`/api/dataset/rag`） | 真控行为 |
+| | `rag.chunk_size`、`rag.chunk_overlap` | `augmentor/cli/commands/quality.py`（RAG 切块）、`api/routes/dataset_tools.py`（`/api/dataset/rag`） | 真控行为；**本表一直记着它们有读者，缺的是下面那份机器名单**——L216 的分区守卫当场抓出这两键没进 `_TIER_12_ECHO`，于是 `GET /api/config` 也从没回显过它们 |
 | | `rag.default_format` | `api/routes/dataset_tools.py`（请求未点名格式时按它切形） | 真控行为（L214） |
 | | `multimodal.image_extensions`、`multimodal.audio_extensions` | `api/routes/multimodal.py`（`scan` 的识别面、`formats` 的清单）；`process` **不读**——单条融合按文件内容解析，扩展名门只住在扫描侧（L214 量过之后撤掉了那里的字段） | 真控行为（L214） |
-| ② 仅回显（4） | `vector.enabled`、`vector.backend`、`rag.enabled`、`multimodal.enabled` | `GET /api/config` 原样回显，**不改任何行为** | 可见但未消费；这四只都是出厂 `false` 的 `enabled` 或向量库后端键，L215 只接了四只 `true` 键（见下方订正），它们留给 L216 |
-| ③ 连回显都没有（3） | `vector.dimension`、`vector.storage_dir`、`vector.collection` | 无处消费 | 配置了不生效；见 L216 |
+| | `vector.enabled` | `augmentor/pipeline.py`（增强结束时自动建库的闸，同步与异步两个入口同一道判；与既有 `auto_snapshot` 串联） | 真控行为（L216） |
+| | `vector.backend` | `augmentor/semantic.py`（`create_vector_db` 的分派实参；未知值由工厂拒 400；没有 `persist`/`load` 面的后端由 `EXPLICIT_PERSISTENCE_BACKENDS` 在构造前拒 400） | 真控行为（L216） |
+| | `vector.dimension` | `augmentor/semantic.py`（哈希嵌入宽度 ⇒ 相似度分值与排名跟着变） | 真控行为（L216） |
+| | `vector.storage_dir` | `augmentor/semantic.py`（持久化落点，空值时 `persist()` 抛 `VectorError`）、`api/routes/vector.py`（`vector-status` 唯一去读的那份索引） | 真控行为（L216） |
+| | `vector.collection` | `augmentor/semantic.py`（落盘文件名与向量 ID 前缀） | 真控行为（L216） |
+| ② 仅回显（2） | `rag.enabled`、`multimodal.enabled` | `GET /api/config` 原样回显，**不改任何行为** | 可见但未消费：两只都是出厂 `false` 的启用闸门，接成端点拒绝门等于让随包 API 的一项既有能力当场消失（实测 13 支集成测试全红），要单独拍 |
+| ③ 连回显都没有（0） | — | — | **L216 清空**（`vector` 那三只进了 ①）。这一档为空会让「③ 档键不得出现在回显里」退化成循环体为零的永真断言，所以同批把判据换成**分区**：可写四节的每一键必须逐键归入 ①② 或 ③，不重不漏——幽灵键防线从「点名不许出现」升成「新键不许无人归档」 |
 
 **权威口径（L214 定稿）**：① 档那几只键的读取序是**请求参数 &gt; 配置键 &gt; 内置默认**——请求体点名
 了 `formats` / `format` / `image_extensions` 就以它为准，没点名才落到配置，配置也没写才用各处理器自己的
 内置默认。所以「配置里写了什么」只决定**不点名时**的行为，不缩小契约面承诺的能力。
 
-向量库这节要单独提醒（读 ②③ 档时别被骗）：`vector.backend` 回显成 `faiss` 只表示「配置里写了 faiss」，
-**不等于**向量库此刻在用 faiss——真正的后端入口是 `vector.build_vector_db` 的 `backend` 形参与 API 请求体。
-`vector.dimension` 配 768 还是 8 在今天的产物里一字不变（维度由所选嵌入模型决定）。这三键的读者在 L216
-（L214 那轮把它们许给了 L215，L215 实际只做四只出厂 `true` 的 `enabled`——承诺落空要在文档里改口，
-而不是悄悄顺延）。
+向量库这节的提醒**在 L216 之后要改口**（旧文里那句「`vector.dimension` 配 768 还是 8 在今天的产物里一字不变」
+从今天起是错的，先把它划掉再说清楚）：
+- `vector.backend` 回显成 `faiss` 只表示「配置里写了 faiss」，**不等于**引擎此刻就是 faiss——
+  `faiss-cpu` 没装时 `FAISSDB` 退化为 numpy 精确检索，那是依赖层事实，权威住在
+  `/api/system/dependencies`。旧文里「真正的后端入口是 `vector.build_vector_db` 的 `backend` 形参与
+  API 请求体」那半句作废：现在唯一的生产入口是 `augmentor/semantic.py`，它的 `backend` 实参只能来自
+  `config.vector.backend`（`test_configured_backend_reaches_the_factory` 钉，喂进去的是非默认值，
+  否则「写死默认值」这种缺陷与正确实现读到的是同一个字符串）。
+- `backend` 的**落盘面只覆盖有 `persist` / `load` 契约的后端**：`augmentor/vector/chromadb.py` 那侧
+  没有这两个方法，而它的构造阶段就会创建目录并注册集合。因此 `augmentor/semantic.py` 的
+  `EXPLICIT_PERSISTENCE_BACKENDS` 在**构造之前**把 `chromadb` 拒成 400——闸的位置就是这条承诺的内容：
+  写在构造之后，一条 GET 状态查询就能凭空造出目录。现量在
+  `tests/integration/test_vector_semantic_consumption_l216.py::TestPersistenceSurfaceIsGated`。
+- `vector.dimension` **真的改产物**：它是哈希嵌入的宽度，同一查询在 4 维与 1024 维下的相似度分值
+  与排名都不同（`test_dimension_changes_scores_and_ranking` 现量）。旧文那句「维度由所选嵌入
+  模型决定」描述的是**没有嵌入模型参与**时的假想接法——本轮用的是零依赖的确定性哈希嵌入，所以宽度
+  就是配置值。真模型接法（模型维度与本键冲突怎么收）已立账待拍。
+- `vector.storage_dir` / `vector.collection` 决定落盘点与文件名、向量 ID 前缀；`vector.enabled` 决定
+  增强结束时建不建库（两个入口同一道判）。
+
+**L216 接的是阶段闸，不是端点拒绝门**：`vector.enabled` 关掉时 `POST /api/dataset/semantic-search` 与
+`GET /api/dataset/vector-status` **照常可用**（检索走内存索引，与「结束时自动落盘」是两件事），
+所以下面那段「`enabled` 不做成端点拒绝门」的结论对本键同样成立。
 
 **`enabled` 这一族为什么不做成端点拒绝门（L214 实测，并在此订正一句自己写错的话）**：第一版这一段写的是
 「`enabled` 的既有语义是管道阶段开关，住在 `AugmentorPipeline`（与 `quality.enabled` / `dedup.enabled` 同族）」
@@ -270,13 +293,17 @@ $ python cli.py validate-config --config typo_config.yaml
 与本节这次 grep 的 16 只 `enabled` 同一读数 —— 本节写它是因为**文档自己曾经把 B5 已登记的事实写成反话**。）
 
 **分档的机器口径**：`tests/integration/test_api_config_extended.py` 的 `TestConfigEchoReaderSplitL184`
-钉住 ③ 档 3 键**不出现**在 `GET /api/config` 回显里（幽灵键防线）、① /② 档 9 键**必须**回显（防止回显面
-被顺手摘掉），另有 `test_consumed_keys_are_echoed` 反向钉「已有读者的键必须可见」（L215 起名单从 4 键扩到
-8 键：加上 `quality.enabled` / `dedup.enabled` / `versioning.enabled` / `visualization.enabled`）；
+钉三件事。① ① /② 档 **14 键必须**回显（防止回显面被顺手摘掉）；② `test_consumed_keys_are_echoed`
+反向钉「已有读者的键必须可见」（名单 15 只：可写四节里已有读者的那些 + `enabled` 族已接进管道阶段入口的
+四只）；③ L216 新加的 `test_the_two_tiers_partition_the_writable_sections`——可写四节的每一键必须逐键
+归入 ①② 或 ③，不重不漏，键名从 `AppConfig` 的字段**实推**而不抄清单。
+③ 是 ③ 档清空之后幽灵键防线的新形状（旧那条「③ 档键不得出现在回显里」此时循环体为空、恒真），
+并且它**当场抓出一处历史漏计**：`rag.chunk_size` / `rag.chunk_overlap` 一直有读者、本表也一直记着，
+却没进过那份机器名单，于是 `GET /api/config` 也从没回显过它们（L216 补上）。
 ① 档每只键的**行为差**由 `tests/integration/test_api_config_consumption_l214.py` 逐键证明（同一端点、
-只换配置、产物必须不同），`enabled` 四只的行为差由 `tests/integration/test_pipeline_config_consumption_l215.py`
-逐键证明。`GET /api/config` 的**节清单**不手抄：`tests/integration/test_api_openapi_contract.py` 逐键核对，
-L215 新增两只只读节时红点就落在它身上。
+只换配置、产物必须不同），`enabled` 四只由 `tests/integration/test_pipeline_config_consumption_l215.py`，
+`vector` 五只由 `tests/integration/test_vector_semantic_consumption_l216.py`。`GET /api/config` 的**节清单**不手抄：`tests/integration/test_api_openapi_contract.py` 逐键核对，
+L215 新增两只只读节时红点就落在它身上，L216 扩 vector 整节时同样落在它身上。
 
 ### 跨源（CORS）
 
@@ -332,7 +359,7 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
 
 ### 响应契约
 
-**每个端点都声明了 `response_model`**（共 71 个），因此 `/openapi.json` 里不存在
+**每个端点都声明了 `response_model`**（共 73 个），因此 `/openapi.json` 里不存在
 「无 schema 的 200 响应」。这条由 `tests/integration/test_api_openapi_contract.py`
 双向守门：既要每个端点都声明契约，也要**每个已声明契约的端点都真实存在**
 （防止文档里留着一个早就删掉的端点）。
@@ -363,7 +390,7 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
 
 ## 端点总览
 
-按 OpenAPI tag 分组，共 **71** 个端点。
+按 OpenAPI tag 分组，共 **73** 个端点。
 
 ### audit（1）
 
@@ -400,7 +427,7 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
 | `GET` | `/api/demo/data` | 内置演示数据集（**裸数组**） |
 | `GET` | `/api/visualize/{filename}` | 生成可视化图表 |
 
-### dataset（14）
+### dataset（16）
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
@@ -415,12 +442,14 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
 | `POST` | `/api/dataset/rag` | 转换为 RAG 格式 |
 | `POST` | `/api/dataset/sample` | 数据集采样（`method="stratified"` 时按 `stratify_key` 分组） |
 | `POST` | `/api/dataset/search` | 数据集搜索 |
+| `POST` | `/api/dataset/semantic-search` | 语义相似检索（按 `config.vector.*` 生效值） |
 | `POST` | `/api/dataset/split` | 分割数据集（`stratify` 分层 / `stratify_key` 选字段 / `shuffle` 控段内次序） |
 | `POST` | `/api/dataset/stats` | 数据集统计 |
 | `POST` | `/api/dataset/validate` | 数据集验证 |
+| `GET` | `/api/dataset/vector-status` | 向量库状态（是否已建、多少条） |
 
 > `dataset` 分组的约定：**只读分析类**（stats / validate / search / compare /
-> features / auto-config / impact / evaluate）内联返回完整结果；**写盘变换类**（convert / merge /
+> features / auto-config / impact / evaluate / semantic-search / vector-status）内联返回完整结果；**写盘变换类**（convert / merge /
 > sample / split / aggregate / rag）必须给 `output_path`，响应只回传「写到哪、
 > 写了多少」，不回传数据本身。
 >
@@ -445,6 +474,20 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
 > `.xls`（老格式要 `xlwt`，不在依赖表里）、名字是 `.xlsx` 而 `target_format` 不是 Excel（会写出
 > 一份 Excel 打不开的 JSON 文本）、`target_format` 是 Excel 而名字不是 `.xlsx`。`xls` 仍然只在
 > **读边**合法（`source_format`）—— 读写两张表刻意分开，差的恰好只有它。
+>
+> `semantic-search` / `vector-status`（L216）是 `augmentor/vector/` 那一族后端第一次接到产品入口。
+> 两面的参数一律取自 `config.vector.*`，并把**生效值回显**在响应里：`dimension` 改的是哈希嵌入的宽度，
+> 同一查询的分值与排名会跟着变；`collection` 决定持久化文件名与向量 ID 前缀；`storage_dir` 是
+> `vector-status` 唯一去读的那份索引的位置。嵌入用的是**确定性字符二元组哈希**，不依赖
+> `sentence-transformers`——接真模型等于写一条任何没装它的环境都跑不到的产品路径。自动建库的闸是
+> `vector.enabled`（出厂 `false` ⇒ 与 L216 之前的产物一字不差），建库动作住在
+> `AugmentorPipeline.build_vector_index`，回执落在增强报告的 `vector_index` 键里（`null` 的意思是
+> 「配置没让建」，不是「建了但空」）。
+>
+> 两条端点都**不挂鉴权**，这个归类是逐后端核过的而不是按方法名想当然：`semantic-search` 走内存索引
+> （`storage_dir=None`），`vector-status` 走 `load()`，而 `FAISSDB` 的构造与 `load()` 都不写盘。
+> 会写盘的是 `persist()`，它只在 `vector.enabled=true` 的建库阶段跑，而那条路只能由已挂鉴权的增强端点
+> 触发。至于「构造即落盘」的后端（chromadb），它在到达文件系统之前就被能力闸拒成 400。
 
 ### export（4）
 
@@ -533,7 +576,7 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
 
 ---
 
-### dataset 数据集工具（14）
+### dataset 数据集工具（16）
 
 | 方法 | 路径 | 说明 | 人读字段提示 |
 | --- | --- | --- | --- |
@@ -551,6 +594,8 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
 | `POST` | `/api/dataset/split` | 分割数据集 | **写盘变换类**：同上。`stratify_distribution` 在按 `instruction` 分层时可能有**数千个键**（紧凑 JSON 数百 KB），所以写盘类只回计数不回明细。 |
 | `POST` | `/api/dataset/aggregate` | 多源聚合 | **写盘变换类**：同上。`weighted` 策略下 `target_size` 省略会 400（不让 `None` 溜进算术）。 |
 | `POST` | `/api/dataset/rag` | 转换为 RAG 格式 | **写盘变换类**：同上。`format` 省略时落 `config.rag.default_format`（出厂默认 `langchain`），响应里的 `format` 是**生效值**（L214）。 |
+| `POST` | `/api/dataset/semantic-search` | 语义相似检索 | 只读分析（L216）。按 `config.vector.*` 的生效值在**内存**建索引再检索，不落盘；`top_k` 非正整数 400（判据住在 `VectorDB.search`，不在路由里重复一遍）。`text_key` 换的是参与嵌入的字段，默认 `instruction`。 |
+| `GET` | `/api/dataset/vector-status` | 向量库状态 | 只读（L216）。`exists` / `count` 读的是 `config.vector.storage_dir` 里那份持久化索引；`enabled` 是「增强结束时自动建库」那只闸的生效值，两者分开设（`enabled=false` + `exists=true` = 上轮开着建过、这轮关了闸）。`backend` 是配置选择，`faiss-cpu` 没装时的引擎退化看 `/api/system/dependencies`。配 `chromadb` 时回 **400**：那侧没有 `persist`/`load` 面，闸在构造之前，所以既不会 500 也不会凭空建目录。 |
 
 ### system 运维面（13）
 

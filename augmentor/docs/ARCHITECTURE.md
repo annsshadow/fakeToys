@@ -61,6 +61,7 @@ augmentor/
 │   │
 │   ├── quality.py             三维质量评分
 │   ├── dedup.py               向量语义去重
+│   ├── semantic.py            语义嵌入与索引（把 vector/ 的后端接进产品入口，L216）
 │   ├── report.py              质量报告生成
 │   ├── benchmark.py           质量基准与回归对比
 │   ├── preview.py             导出格式预览
@@ -103,7 +104,7 @@ augmentor/
 │   ├── main.py                FastAPI 应用装配（中间件 + 路由 + 静态文件）
 │   ├── deps.py                依赖注入：管道单例、路径白名单、鉴权、异步文件 IO
 │   ├── middleware/            限流、请求日志与耗时统计
-│   └── routes/                按领域拆分的 13 个 router
+│   └── routes/                按领域拆分的 14 个 router
 │       ├── data.py            数据 CRUD / 上传 / 分析 / 可视化
 │       ├── augment.py         增强任务与进度
 │       ├── quality.py         评估 / 去重 / 报告 / 清洗 / 标注 / 基准 / 画像
@@ -116,6 +117,7 @@ augmentor/
 │       ├── leakage.py         数据泄漏检测
 │       ├── privacy.py         隐私风险检测
 │       ├── dataset_tools.py   数据集工具（统计/校验/转换/合并/采样/分割/搜索/对比/…）
+│       ├── vector.py          语义检索与向量库状态（挂 dataset tag，L216）
 │       └── system_ops.py      运维面（依赖诊断/配置校验/监控/迁移/流式/登记/备份）
 │
 ├── web/                       Web UI
