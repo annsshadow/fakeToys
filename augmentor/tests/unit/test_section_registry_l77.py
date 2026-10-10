@@ -384,7 +384,10 @@ class TestEveryWrittenFieldLands:
         # 推，所以新字段的落地档是自动长出来的并已判绿**（`test_written_field_lands` 里
         # `web.max_upload_bytes` 那一条真写了 YAML、真落进节对象、且值与出厂默认不同），
         # 红的只有这个必须精确相等的计数 —— 它是「新增字段」的常驻门铃，不是缺陷。
-        assert total == 69, total
+        # 69 → 70：L220 的 `evaluation.generated_field`（与同节 `reference_field` 对称的
+        # 那只新键）。同一口径：落地档自动长出并判绿（`evaluation.generated_field` 那一条
+        # 真写了 YAML、真落进 `EvaluationConfig`、值与出厂 `"output"` 不同），红的只是计数。
+        assert total == 70, total
         unknown = [(s, f) for s, f, _ in WRITTEN if (s, f) not in {
             (sec, fld.name) for sec, cls in SECTION_CLASSES.items()
             for fld in dataclasses.fields(cls) if fld.init}]

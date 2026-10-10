@@ -68,11 +68,13 @@ STILL_UNGATED = [
 #: 已有的安全键（`''` 与空白都拒）：四条清单键靠 membership、`logging.format` 靠
 #: require_string + renderable、`export.formats` 靠逐项清单。L154 / B224 起 A140
 #: 一片的 13 键（11 节 29 键里的字符串子集）整批移入：`require_string` /
-#: `require_string_list` 两面全拒。
+#: `require_string_list` 两面全拒。L220 另加一只 `evaluation.generated_field`
+#: （不属 A140 那一片，是新增键与同节兄弟键同规）。
 ALREADY_SAFE = [
     "active_learning.strategy",
     "benchmark.baseline_file",
     "benchmark.metrics",
+    "evaluation.generated_field",
     "evaluation.metrics",
     "evaluation.reference_field",
     "expander.strategies",
@@ -377,8 +379,13 @@ class TestTheBoundaryIsThePartition:
             + len(STILL_UNGATED) + len(ALREADY_SAFE), "有键同时不落任何桶或落了两处"
 
     def test_probe_covers_every_key_it_claims(self):
+        """四张清单并集 34 只（L83 立尺时 33，L220 补 `evaluation.generated_field` ⇒ +1）
+
+        钉的是「清单本身没有空集/重名，否则分桶断言只是自等」，不是「永远 33」，
+        所以新增一只有读者的键就按现量加一格，并在 `ALREADY_SAFE` 那里写明归因。
+        """
         assert len(set(HOLES_CLOSED_IN_L83) | set(BLANK_ONLY_KEYS)
-                   | set(STILL_UNGATED) | set(ALREADY_SAFE)) == 33, \
+                   | set(STILL_UNGATED) | set(ALREADY_SAFE)) == 34, \
             "清单本身有空集/重名，分桶断言就只是自等"
 
     def test_no_key_is_unmeasurable(self):

@@ -74,7 +74,9 @@ SCAN_EXCLUDE_PARTS = {"tests", "Temp", "data", "web", "node_modules", ".git",
 
 #: 只能经别名才看得见的读者（别名臂的正控制）
 _MUST_BE_ALIAS_ONLY = (
+    "evaluation.generated_field",
     "evaluation.metrics",
+    "evaluation.reference_field",
     "multilingual.supported_langs",
     "multilingual.translate_batch_size",
     "multimodal.image_extensions",
@@ -111,7 +113,6 @@ _UNREAD = {
     "benchmark.enabled": "基准端点 `/api/quality/benchmark` 无条件可用，不看闸",
     "context.enabled": "`ContextAugmentor` 由管道无条件构造（只读 `num_turns`），这只闸是装饰",
     "evaluation.enabled": "评估端点无条件可用，不看闸",
-    "evaluation.reference_field": "参考侧字段由同一条请求模型的 `reference_field` 提供，默认写死在请求侧",
     "expander.enabled": "扩展器由管道无条件 `DomainExpander(backend)` 构造，不看本节",
     "expander.strategies": "策略清单是 `batch_expand` 的方法形参，而该方法无产品调用者（`self.expander` 构造之后从未被用，见 A273）",
     "frameworks.enabled": "框架导出在产品侧没有入口，这只闸无处可判",
@@ -141,7 +142,6 @@ _UNREAD_KNOB = {
     "benchmark.enabled": ("none", None, None),
     "context.enabled": ("none", None, None),
     "evaluation.enabled": ("none", None, None),
-    "evaluation.reference_field": ("request", "api/routes/dataset_tools.py", "reference_field"),
     "expander.enabled": ("none", None, None),
     "expander.strategies": ("method", "augmentor.expander:DomainExpander.batch_expand", "strategies"),
     "frameworks.enabled": ("none", None, None),
@@ -391,7 +391,7 @@ class TestRulerIsNotBlind:
 
 
 class TestEveryKeyIsArchived:
-    """69 只键必须逐键落进三档之一，且不重不漏"""
+    """70 只键必须逐键落进三档之一，且不重不漏"""
 
     def test_the_three_tiers_partition_the_schema(self):
         census = _census()
@@ -465,7 +465,8 @@ class TestKnobClaimsAreFalsifiable:
     理由与证据成对存放（`_UNREAD` 配 `_UNREAD_KNOB`），证据由解释器（`inspect.signature`）
     和 AST（`api/routes` 的模型字段）验真，两边不一致或证据说谎就红。
 
-    取循环而不是参数化：这一档的失败面是「一张 20 行的对账表」，一次跑完并报出**全部**
+    取循环而不是参数化：这一档的失败面是「一张逐键对账表」（L220 收走
+    `evaluation.reference_field` 之后现量 18 行），一次跑完并报出**全部**
     不一致条目，比逐键一支测试更贴近用途（少一条键就少一次对账），也不给参数化棘轮添新形状。
     """
 
@@ -564,9 +565,9 @@ class TestKnobClaimsAreFalsifiable:
         total = sum(len(v) for v in fields_by_file.values())
         assert total >= 40, f"请求字段面缩到 {total}，扫描臂大概改坏了"
         evaluate_fields = fields_by_file.get("dataset_tools.py", set())
-        assert {"metrics", "reference_field"} <= evaluate_fields, (
-            f"`evaluation.metrics` 的证据说 `/api/dataset/evaluate` 的请求模型有这两个字段，"
-            f"而扫描读不到: {sorted(evaluate_fields)}"
+        assert {"metrics", "generated_field", "reference_field"} <= evaluate_fields, (
+            f"请求字段扫描读不到 `/api/dataset/evaluate` 的那三只字段名/指标键，"
+            f"`request` 档的验真臂在空转: {sorted(evaluate_fields)}"
         )
 
         real_params = _callable_params("augmentor.active_learning:ActiveLearningLoop.__init__")
