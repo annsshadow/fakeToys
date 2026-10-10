@@ -28,15 +28,38 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # ── Go 服务端：构建 + vet + 全量测试 ────────────────────────────────────
-  # go test 全绿（2026-10-06 实测）；部分用例无 PG 时自行跳过，无需 services。
+  # ── Go 服务端：构建 + vet + 全量测试（带真库）────────────────────────────
+  # ⚠️ 2026-10-10 起该 job 接 PostgreSQL service：此前无 PG 时约 259 个
+  # DB 依赖用例整体 Skip，「全绿」里藏着没执行的代码 —— readonly_guard
+  # 的「battles/1 必在」这类只在真实库结构下暴露的缺陷正是这样漏过去的
+  # （全新库里首条战报 id 是 29，写死 1 的断言必红；本地实测已修）。
+  # 库必须**迁移 + 播种**：httpapi/service 的 e2e 夹具直连 laiyipao 库，
+  # 空库会在建号第一步就外键失败（本地实测：23503）。
+  # 超时按 docs/OPERATIONS.md §5.2：11 个包并行打同一个 PG 会到 340s+，
+  # 用 -timeout 1200s 防假性超时。
   server:
-    name: Server build & test
+    name: Server build, vet & test (PostgreSQL)
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 30
     defaults:
       run:
         working-directory: laiyipao/server
+    services:
+      # 测试夹具的默认 DSN 是 postgres://postgres@127.0.0.1:5432/laiyipao
+      # （无密码，见 store_test.go / routes_e2e_test.go 的硬编码缺省），
+      # 因此用 trust 认证而不是密码 —— 与 README 的开发库配置一致。
+      # digest 钉法对齐 oa4rust-ci.yml；18 是本地全量实测过的版本。
+      postgres:
+        image: postgres@sha256:74935e72241653ca55e0414067e6d8763aceb8a810eb51b452253ec3dcfc4336
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - name: Set up Go
@@ -44,12 +67,21 @@ jobs:
         with:
           go-version-file: laiyipao/server/go.mod
           cache-dependency-path: laiyipao/server/go.sum
+      # 建库 + 迁移 + 播种。顺序即 README 快速开始的前三步；
+      # ubuntu 镜像自带 psql 客户端，无需额外安装。
+      - name: Prepare laiyipao database (create + migrate + seed)
+        run: |
+          psql -h 127.0.0.1 -U postgres -c "CREATE DATABASE laiyipao ENCODING 'UTF8';"
+          go run ./cmd/migrate
+          go run ./cmd/seed
+        env:
+          DATABASE_URL: postgres://postgres@127.0.0.1:5432/laiyipao?sslmode=disable
       - name: Build
         run: go build ./...
       - name: Vet
         run: go vet ./...
       - name: Test
-        run: go test ./...
+        run: go test ./... -count=1 -timeout 1200s
 
   # ── admin 管理端（Vue3 + Vite）：类型检查 + 单测 + 构建 ─────────────────
   admin:
