@@ -51,6 +51,7 @@
 - [x] **L213** `9abc72c67` `test(augmentor)`：**符号链接能力交叉对账**。第一版「按探针分臂」不可证伪，撤掉重写 ⇒ 详见循环日志 L213
 - [x] **L214** `ec0668115 + bccfeff85 + e6b67238a` `feat(augmentor)`：**A138 ②③ 档接线第一批 —— 五只键 / 六条端点支路，判据一律取行为差**。权威序定稿「请求参数 > 配置键 > 内置默认」；`enabled` 三只按实测撤回（端点门 = 改契约），process 的扩展名字段本轮自己造又自己拆；收口批被自己的一句未实测断言推翻 ⇒ 详见循环日志 L214
 - [x] **L215** `2f994fbc7` `feat(augmentor)`：**`enabled` 族第一批 —— 出厂四只 `true` 键接进管道阶段入口**，零读者名单 16 → 12。默认值换成 `None` 哨兵之后调用参数仍是最高一档；顺带把两只新有读者的键接进 `GET /api/config` 的只读回显面 ⇒ 详见循环日志 L215
+- [x] **L216** `af03b67b3` `feat(augmentor)`：**A138 ③ 档清空 —— vector 五键接进新建的语义消费层**，两条只读端点 + 出厂 `false` 的自动建库闸 ⇒ 零行为漂移。分区守卫当场抓出 `rag.chunk_*` 是名单历史漏计；读 chromadb 时撞出本轮新造成的 `AttributeError`／GET 落盘缺陷并补能力闸 ⇒ 详见循环日志 L216
 
 ## Backlog A — 质量缺口（缺数 / 偏支 / 健壮性）
 
@@ -67,6 +68,8 @@
 | A265 | `OPTIMIZATION_LOOP_2.md` | **新立（L197）**：账本「已完成」清单与循环日志的进度一致性**没有机器守卫**——L194 与 L50 两次漏写清单行都靠人眼发现。修法方向：从循环日志的 `### L\d+` 标题集合推导应有轮次，与清单行对账（防空转断言同 `test_cli_verdict_wiring.py` 的 S1==S2 型式）。**这是第二次同类，按纪律升级为待办而不是再忍一次** | S |
 | A266 | `docs/API.md` / `docs/ARCHITECTURE.md` / augmentor 顶层 README | **新立（L197）**：契约面数字（端点总数、tag 计数、导出格式清单、前端页面数、事件循环守门条数）全靠人肉对账，L197 一次就抓出六处历史遗留错误。修法方向：从 `app.openapi()` / `ExportFormat` 枚举 / 前端页面目录**实推**后与文档断言相等（同 `TestExportFormatSurface` 先例） | M |
 | A267 | `augmentor/visualizer.py`、`augmentor/config.py` 的 `VisualizationConfig.types` | **新立（L215）**：可视化这一族里除 `enabled`（L215 已接）之外还剩一对互证的死面。三条现量：① `visualization.types` 出厂五值 `["wordcloud", "length_distribution", "topic_cluster", "timeline", "quality_distribution"]`，全仓产品读者 **0**（grep 只命中 `config.py` 的定义与 `require_string_list` 校验，配置校验不算读者）；② `DataVisualizer.generate_timeline` 产品读者 **0**，只有 3 支单测调它；③ `generate_all_visualizations` 只出四类图，其中 `quality_distribution` 要 `scores` 形参，而两个产品调用点（`pipeline.visualize_dataset` 与 `cli/commands/analysis.py` 的报告模式）**都不传** ⇒ 出厂配置声称五类、阶段实际最多三类。**为什么 L215 不顺手接**：把 `types` 接成出图清单是一次**行为变更**而非零漂移接线——按出厂值接上，`timeline` 会今天第一次真的生成，产物多出那张图；`quality_distribution` 还要先定「scores 从哪来」。**判据要的是行为差，这里的「行为差」是新增产物而不是消费既有开关**，所以它属功能增强，得单独拍：要么按 `types` 生成（对外产物变化），要么承认清单虚假并从回显/文档降级。定级 M，待用户拍。 | M |
+| A268 | `augmentor/semantic.py`、`config.vector.dimension` | **新立（L216）**：嵌入用的是零依赖的确定性字符二元组哈希，所以 `dimension` 就是配置值本身。接**真模型**嵌入（可选依赖 `sentence-transformers`）时要先回答两件事：① 模型输出宽度与本键冲突怎么收（模型给 384、配置写 768 时是拒配置、忽略配置，还是另开一只 `model_name` 键）；② 本机与 CI 都不装这个包，接上去等于写一条**任何没装它的环境都跑不到**的产品路径——正是本仓在收的「只写不读」形状。所以这条的前置条件是「先有一个装了包的定标环境」，不是先写代码。定级 M，待用户拍。 | M |
+| A269 | `augmentor/vector/chromadb.py`、`augmentor/semantic.py` 的 `EXPLICIT_PERSISTENCE_BACKENDS` | **新立（L216）**：`persist` / `load` 只由 `FAISSDB` 实现，`ChromaDB` 那侧是 `PersistentClient` 自管（构造阶段就 `mkdir` 并注册集合）。L216 把落盘建库与状态读取定义为「有显式 `persist`/`load` 面」的后端专用，chromadb 在**构造之前**拿 400。要让 `vector.backend: chromadb` 真的可用，得先在装了 `chromadb` 的环境里量两件事：① 该后端的「索引是否已存在、多少条」怎么写成可测判据（今天的 `exists` / `count` 语义靠 `load()` 的布尔返回，那侧没有）；② 「GET 不落盘」这条承诺如何与「构造即落盘」的后端共存（要么给它一条只读的探查路径，要么把 `vector-status` 划成 faiss 专用面并回显清楚）。定级 M，待用户拍。 | M |
 
 ## Backlog B — 功能增强与体验（价值 ÷ 工作量）
 
@@ -1912,3 +1915,63 @@
   涨到 54863，读数落到 98.80% —— 看上去像本轮掉了 1 个百分点，实际是口径被我自己改了。
   按定标命令重跑才拿到 99.82%。**新纪律**：门禁读数只认 `python -m pytest tests -q`（不加任何
   `--cov` 变体），跨轮比较前必须先核 TOTAL 那一行的语句数是否同分母，不同分母的百分比不许并列写进账本。
+
+### L216（2026-10-10）— vector 五键接进新建的语义消费层：A138 ③ 档清空，顺带抓出两只历史漏计键
+
+- **缺口的定性决定了动手形状**：`vector` 那五只键的问题不是「忘了回显」，而是**整个向量子系统没有产品读者**
+  ——`create_vector_db` 的调用者只有测试。所以本轮做**加法**：新建消费层 `augmentor/semantic.py`
+  （`embed_texts` / `build_index` / `search_similar` / `persist_index` / `index_status` 四面）、两条只读端点
+  （`POST /api/dataset/semantic-search`、`GET /api/dataset/vector-status`）、`vector.enabled` 接进增强结束时的
+  自动建库闸。出厂 `false` ⇒ 默认一字不建，改前改后产物相同（零漂移那一档）。L214「把 `enabled` 接成端点拒绝门
+  ⇒ 十三支既有集成测试当场红」的教训在这里同样落地：**`enabled` 只闸自动建库，两条端点与它无关**。
+- **五只键的判据一律取行为差**（`tests/integration/test_vector_semantic_consumption_l216.py`，24 例）：
+  `dimension` ⇒ 哈希嵌入宽度，同一查询在 4 维与 1024 维下分值与排名都不同（`test_dimension_changes_scores_and_ranking`）；
+  `backend` ⇒ 值流到工厂分派 + 未知值被工厂拒 + 无持久化面者被能力闸拒；`collection` ⇒ 落盘文件名
+  `{collection}_vectors.npy` 与向量 ID 前缀；`storage_dir` ⇒ 落点跟着变且另一侧目录保持空；`enabled` ⇒
+  报告里 `vector_index` 是 `null` 还是回执，同步与异步两个入口同一道判。
+- **为什么用确定性哈希嵌入而不是真模型**：`sentence-transformers` 在本机与 CI 都没装，接上模型臂就是写一条
+  **任何没装它的环境都跑不到**的产品路径——正是本仓一路在收的「只写不读」形状。真模型接法（模型输出宽度与
+  本键冲突怎么收）新立 **A268** 待拍。
+- **分区守卫当场抓出历史漏计**：`test_the_two_tiers_partition_the_writable_sections` 要求可写四节每一键逐键归档
+  （键名从 `AppConfig` 字段实推，不抄清单），它第一次跑就报出 `rag.chunk_size` / `rag.chunk_overlap`：
+  这两键**一直有读者**（`cli/commands/quality.py` 与 `/api/dataset/rag`），A138 的人读表也一直记着，
+  缺的是那份**机器名单**，于是 `GET /api/config` 从没回显过它们。本轮补进可见面（回显面 14 键、
+  ① 档名单 15 只）。防线同时从「③ 档键不得出现在回显里」（③ 清空后循环体为空、恒真）升成「新键不许无人归档」。
+- **本轮自己造、又被自己读代码抓出的缺陷**：`persist` / `load` 只由 `FAISSDB` 实现，`ChromaDB` 是
+  `PersistentClient` 自管、**构造阶段**就 `mkdir` 并注册集合。配 `vector.backend: chromadb`（合法取值，清单推导自
+  `SUPPORTED_BACKENDS`）会让新代码撞上 `AttributeError`（→ 500），并让一条只读 GET 凭空建目录。处置是
+  `EXPLICIT_PERSISTENCE_BACKENDS` 能力闸，且**闸的位置就是这条承诺的内容**——写在构造之前才守得住「GET 不落盘」，
+  写在之后等于没守。chromadb 那侧到底怎么表达「索引存在/多少条」新立 **A269**。
+- **鉴权归类是判断，不是登记**：`test_api_security.py` 的只读白名单要求逐后端核过——`semantic-search` 走内存索引
+  （`storage_dir=None`，连 chromadb 那侧也只拿临时客户端），`vector-status` 走 `load()`，`FAISSDB` 的构造与
+  `load()` 都不写盘；会写盘的 `persist()` 只在 `vector.enabled=true` 的建库阶段跑，而那条路只能由已挂鉴权的增强端点
+  触发。结论：两条都属只读，理由写进那两行注释，而不是让白名单变成「名字看起来是 GET/查询就放行」。
+- **红→绿注入取证（七臂 + 三臂，全部本轮现量）**：`dimension` 写死 384 ⇒ **11 红**；`backend` 写死 faiss ⇒ 2 红；
+  `collection` 写死 default ⇒ 2 红；`storage_dir` 不进工厂 ⇒ 6 红；`enabled` 闸两个入口一起摘 ⇒ 1 红
+  （红的正是 `test_disabled_builds_nothing_and_reports_none` 那支对照臂）；`GET /api/config` 摘掉 `vector.dimension`
+  回显 ⇒ 2 红；端点不转发配置维度 ⇒ 1 红。能力闸三臂：摘 `persist_index` 的闸 ⇒ 1 红、摘 `index_status` 的闸 ⇒ 2 红
+  （SDK 面 + 端点面各一）、名单写成两只后端 ⇒ 3 红。注入器只按字节改写、注入前断言唯一命中、跑完逐字节复原并断言相等。
+- **`backend` 判据的第一版偏弱，这条最值得记**：spy 那支原本喂 `backend="faiss"` 再断言工厂收到 `"faiss"`——
+  与「写死默认值」的缺陷臂读到的是**同一个字符串**，所以注入只红 1 支。改成喂非默认值 `chromadb`
+  （spy 替身接住构造，本机没装包时真构造会 `ImportError`）之后红数升到 2。**纪律**：spy / 转发类判据的输入必须与
+  被写死的那个值**可区分**，否则断言的是「值恰好等于默认」而不是「配置被消费」。
+- **本轮写错、被重测或重算推翻的三处**：① 我在类 docstring 里把可写四节写成 16 键，`dataclasses.fields` 实推是
+  **14**（export 2 / rag 4 / vector 5 / multimodal 3）；② `docs/API.md` 引用了一支不存在的测试名
+  （`test_narrow_and_wide_dimensions_score_differently`），真实名是 `test_dimension_changes_scores_and_ranking` ——
+  教训是**写文档前先 grep 真实测试名**，别照记忆拼；③ Backlog A 表第一次插入把 A268/A269 排在 A267 之前，
+  还把 A267 的行首吞进了同一行，重排并按列数复核。
+- **顺带修掉的既有标尺两处**：`api/main.py` 因新 router +1 行，把 `test_api_logging_wiring.py` 模块 docstring 里
+  两条 `api/main.py:NN` 引用顶成死线，`test_comment_refs_a184.py` 当场抓住——按 L154 先例降为名字锚；
+  `test_doc_line_refs_l79.py` 的逐档精确计数判据补上同族通用的 `require_authoring_tree()` 门，证据是同一把尺子跑
+  HEAD 树与当前树同为 33 而钉值是 34，差额来自未入仓的 `augmentor/Temp/` 取证底料在当前工作树缺失（那目录
+  `.gitignore` 明写「不入仓，也不可清」）。
+- **既有面**：`web` 侧本轮**零文件改动**，故未复跑前端测试与 `tsc`（不适用，不是漏跑）。契约面登记两条新端点、
+  事件循环守门登记一条新站点（语义检索的读取与建库都走 `run_in_thread`）。
+- **门禁**：定标全量跑两遍，读数一字不差：**`8131 passed / 11 skipped / 0 failed / 覆盖率 99.79%`**
+  （补本块之前 193.48s，补完之后复跑 177.81s，墙钟差与用例数无关）。用例对象对账：
+  L215 收口 8111 ⇒ 8142，`+31` = 新文件 24 + 契约面两条端点各两支（149→153）+ 事件循环一条站点两支（51→53）+
+  分区判据 1 支（14→15）。skip `10 → 11` 那一支正是 l79 新加的作者树门（同一文件同域跑：HEAD 2 skip ⇒ 当前 3 skip）。
+- **中间读数留着不美化**：本轮第一次全量是 `2 failed / 8125 passed / 11 skipped`。两支红都是新增面未登记——
+  只读白名单那一支是本文件的分内事，报告键集那一支是 L206 那把「键集不许悄悄变」的尺子**按设计生效**：
+  `vector_index` 是签字过的新增，处置是登记进名单并在注释里写清「只认逐条签字的新增，不是永远不许变」，
+  而不是把尺子改松。
