@@ -275,6 +275,23 @@ mod tests {
         assert_eq!(result.message, Some("test error".to_string()));
     }
 
+    // 优化二轮 47：attachment2 列表分页 offset 原 page*size（page=1 跳过首页）
+    // + size 无上限 → 修为 (page-1)*size + size 夹到 1..=200。
+    #[test]
+    fn attachment2_limit_offset_is_one_based_and_clamped() {
+        // page=1 必须 offset=0（修复前为 size）
+        assert_eq!(crate::attachment2_limit_offset("1", "20"), (20, 0));
+        assert_eq!(crate::attachment2_limit_offset("2", "20"), (20, 20));
+        assert_eq!(crate::attachment2_limit_offset("3", "50"), (50, 100));
+        // page<=0 / 非法 → 兜底第一页
+        assert_eq!(crate::attachment2_limit_offset("0", "20"), (20, 0));
+        assert_eq!(crate::attachment2_limit_offset("x", "20"), (20, 0));
+        // size 非法回退 20、上限夹到 200、下限 1
+        assert_eq!(crate::attachment2_limit_offset("1", "bad"), (20, 0));
+        assert_eq!(crate::attachment2_limit_offset("1", "9999"), (200, 0));
+        assert_eq!(crate::attachment2_limit_offset("2", "0"), (1, 1));
+    }
+
     // ── route existence: routes defined in file_assemble_control_router ──────
 
     #[ignore = "requires a running PostgreSQL server"]
@@ -739,6 +756,76 @@ mod tests {
             .unwrap();
         assert_ne!(response.status(), StatusCode::NOT_FOUND);
     }
+
+    // 优化二轮 52：complex_top「最新/置顶」展示原漏 `deleted_at IS NULL`，软删的
+    // 文件/文件夹会出现在 top 展示里。修复后须排除软删行。
+    #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
+    async fn test_complex_top_excludes_soft_deleted_rows() {
+        let pool = test_pool();
+        let c = pool.get().await.unwrap();
+        for stmt in [
+            "DELETE FROM FILE_FILE WHERE id IN ('u2-cx-live','u2-cx-dead')",
+            "DELETE FROM FILE_FOLDER WHERE id IN ('u2-cx-flive','u2-cx-fdead')",
+        ] {
+            c.execute(stmt, &[]).await.unwrap();
+        }
+        c.execute(
+            "INSERT INTO FILE_FILE (id, name, person, reference_type, extension, length, deleted_at) \
+             VALUES ('u2-cx-live','00zx-live','u2p','file','png',10,NULL), \
+                    ('u2-cx-dead','00zx-dead','u2p','file','png',10,NOW())",
+            &[],
+        )
+        .await
+        .unwrap();
+        c.execute(
+            "INSERT INTO FILE_FOLDER (id, name, person, superior, deleted_at) \
+             VALUES ('u2-cx-flive','00zf-live','u2p',NULL,NULL), \
+                    ('u2-cx-fdead','00zf-dead','u2p',NULL,NOW())",
+            &[],
+        )
+        .await
+        .unwrap();
+
+        let result = crate::complex_top(Extension(pool.clone())).await;
+        assert!(result.is_ok());
+        let j = serde_json::to_value(&result.unwrap().0).unwrap();
+        let files: Vec<&str> = j["data"]["attachmentList"]
+            .as_array()
+            .map(|a| a.iter().filter_map(|e| e["id"].as_str()).collect())
+            .unwrap_or_default();
+        let folders: Vec<&str> = j["data"]["folderList"]
+            .as_array()
+            .map(|a| a.iter().filter_map(|e| e["id"].as_str()).collect())
+            .unwrap_or_default();
+
+        assert!(files.contains(&"u2-cx-live"), "未删文件应出现在 top 展示");
+        assert!(
+            !files.contains(&"u2-cx-dead"),
+            "软删文件不得出现在 top 展示"
+        );
+        assert!(
+            folders.contains(&"u2-cx-flive"),
+            "未删文件夹应出现在 top 展示"
+        );
+        assert!(
+            !folders.contains(&"u2-cx-fdead"),
+            "软删文件夹不得出现在 top 展示"
+        );
+
+        c.execute(
+            "DELETE FROM FILE_FILE WHERE id IN ('u2-cx-live','u2-cx-dead')",
+            &[],
+        )
+        .await
+        .unwrap();
+        c.execute(
+            "DELETE FROM FILE_FOLDER WHERE id IN ('u2-cx-flive','u2-cx-fdead')",
+            &[],
+        )
+        .await
+        .unwrap();
+    }
 }
 
 #[cfg(test)]
@@ -795,5 +882,62 @@ mod office_preview_tests {
     fn test_parsers_return_none_for_garbage_bytes() {
         assert!(crate::xlsx_to_html(b"not a zip").is_none());
         assert!(crate::pptx_to_html(b"not a zip").is_none());
+    }
+
+    // 优化二轮 45：附件名搜索 ILIKE 通配符转义。搜索词里的 `_` 必须按字面匹配，
+    // 不得当通配符命中任意单字（否则搜 "_" 近乎列全部附件）。
+    #[ignore = "requires a running PostgreSQL server"]
+    #[tokio::test]
+    async fn attachment_name_search_treats_underscore_as_literal() {
+        let pool = shared::testing::test_pool();
+        let c = pool.get().await.unwrap();
+        c.execute(
+            "CREATE TABLE IF NOT EXISTS FILE_FILE (id VARCHAR(255) PRIMARY KEY, name VARCHAR(500) NOT NULL, person VARCHAR(255) NOT NULL, reference_id VARCHAR(255) DEFAULT '', reference_type VARCHAR(100) DEFAULT 'file', extension VARCHAR(50), length BIGINT DEFAULT 0, mime_type VARCHAR(200), create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP, update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP, deleted_at TIMESTAMP)",
+            &[],
+        )
+        .await
+        .unwrap();
+        c.execute(
+            "DELETE FROM FILE_FILE WHERE id IN ('u2-ff-under','u2-ff-plain')",
+            &[],
+        )
+        .await
+        .unwrap();
+        // name 'a_c' 含字面下划线；'abc' 不含
+        c.execute(
+            "INSERT INTO FILE_FILE (id, name, person) VALUES ('u2-ff-under','a_c','u2p'), ('u2-ff-plain','abc','u2p')",
+            &[],
+        )
+        .await
+        .unwrap();
+
+        let resp = crate::attachment2_list_filter_name(
+            axum::Extension(pool.clone()),
+            axum::extract::Path("_".to_string()),
+        )
+        .await
+        .unwrap();
+        let j = serde_json::to_value(&resp.0).unwrap();
+        let ids: Vec<String> = j["data"]
+            .as_array()
+            .expect("data array")
+            .iter()
+            .map(|r| r["id"].as_str().unwrap_or_default().to_string())
+            .collect();
+        assert!(
+            ids.contains(&"u2-ff-under".to_string()),
+            "应命中含字面下划线的附件名"
+        );
+        assert!(
+            !ids.contains(&"u2-ff-plain".to_string()),
+            "下划线须按字面匹配，不得当通配符命中 'abc'"
+        );
+
+        c.execute(
+            "DELETE FROM FILE_FILE WHERE id IN ('u2-ff-under','u2-ff-plain')",
+            &[],
+        )
+        .await
+        .unwrap();
     }
 }

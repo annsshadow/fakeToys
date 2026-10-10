@@ -103,7 +103,7 @@ augmentor/
 │   ├── main.py                FastAPI 应用装配（中间件 + 路由 + 静态文件）
 │   ├── deps.py                依赖注入：管道单例、路径白名单、鉴权、异步文件 IO
 │   ├── middleware/            限流、请求日志与耗时统计
-│   └── routes/                按领域拆分的 11 个 router
+│   └── routes/                按领域拆分的 13 个 router
 │       ├── data.py            数据 CRUD / 上传 / 分析 / 可视化
 │       ├── augment.py         增强任务与进度
 │       ├── quality.py         评估 / 去重 / 报告 / 清洗 / 标注 / 基准 / 画像
@@ -114,14 +114,16 @@ augmentor/
 │       ├── status.py          健康与依赖诊断
 │       ├── audit.py           数据集审计
 │       ├── leakage.py         数据泄漏检测
-│       └── privacy.py         隐私风险检测
+│       ├── privacy.py         隐私风险检测
+│       ├── dataset_tools.py   数据集工具（统计/校验/转换/合并/采样/分割/搜索/对比/…）
+│       └── system_ops.py      运维面（依赖诊断/配置校验/监控/迁移/流式/登记/备份）
 │
 ├── web/                       Web UI
 │   └── src/
-│       ├── App.tsx            路由与菜单（9 个页面）
+│       ├── App.tsx            路由与菜单（11 个页面）
 │       ├── services/api.ts    后端接口封装
 │       ├── components/        可复用组件（5 个）
-│       └── pages/             页面（9 个）
+│       └── pages/             页面（11 个）
 │
 ├── tests/
 │   ├── conftest.py            共享 fixture
@@ -211,7 +213,7 @@ results = await run_in_thread(p.export_dataset, input_file, output_dir, formats)
 > **异步**的（内部已 `run_in_executor`），而 `load_items` / `save_items` 是**同步**的，
 > 文档串里就写着「供线程内使用」——它们是给 `run_in_thread(run)` 里的那个 `run` 用的。
 >
-> 12 条端点（`/api/quality/*` 8 条 + `/api/audit` + `/api/leakage/check` +
+> 13 条端点（`/api/quality/*` 9 条 + `/api/audit` + `/api/leakage/check` +
 > `/api/privacy/sanitize` + `/api/export/preview`）曾经把**分析**离线了、却把开头那行
 > `items = load_items(request.input_file)` 留在 `async def` 函数体里，于是每个请求都在
 > 事件循环上同步读盘：实测 3.6 MB / 6902 条的 `train_data.json` 要 **15 ms**，这段时间
@@ -2064,7 +2066,7 @@ skip 组成与 L51/L52 逐字相同。语句总数 +5、缺数与 L52 一字不�
 `l53/ab_try.py`，NONCE-L53-AB）⇒ 两序变号，按 L49 的规矩判为不可判定、不引用。
 
 **新立 A90–A92，三条都是本轮做走查时被量出来的**：**A90** = 判负那条支在**纯 CLI 世界不可达** ——
-`dependency` 的四个 action 里没有任何一个能造依赖边（`add_dependency` 只在 `augmentor/dependency.py:186`
+`dependency` 的四个 action 里没有任何一个能造依赖边（`add_dependency` 只在 `augmentor/dependency.py` 的 `add_dependency`
 与模块级 `:335`，`grep -rn` 坐实 `cli.py` / `augmentor/cli/` / `api/` **0 命中**）⇒ CLI 用户跑
 `dependency --action validate` 永远只会看到「没有注册的数据集」或全通过；本轮 I3 那条用例是**绕道 SDK**
 （`DependencyManager(...).add_dependency("src", "ghost", ...)`）才造出可判负的输入。

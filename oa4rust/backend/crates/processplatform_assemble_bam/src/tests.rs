@@ -464,3 +464,254 @@ async fn route_path_arity_matches_handlers() {
     }
     assert!(bad.is_empty(), "{} arity traps remain", bad.len());
 }
+
+// state_summary 9→2 FILTER-aggregate collapse (优化二轮 25): seed known rows and
+// assert the summary buckets move by exactly the seeded deltas, proving the
+// per-table FILTER counts still map to the right output keys. Live DB only.
+#[tokio::test]
+async fn state_summary_filter_buckets_match_seeded_deltas() {
+    if !shared::testing::is_db_available().await {
+        return;
+    }
+    let pool = shared::testing::test_pool();
+    let client = pool.get().await.unwrap();
+
+    async fn summary(pool: &Pool) -> serde_json::Value {
+        let resp = crate::router(pool.clone())
+            .oneshot(
+                Request::builder()
+                    .method(Method::GET)
+                    .uri("/api/processplatform/assemble/bam/state/summary")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), StatusCode::OK);
+        let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        serde_json::from_slice::<serde_json::Value>(&bytes).unwrap()["data"].clone()
+    }
+    let get = |v: &serde_json::Value, k: &str| v[k].as_i64().unwrap();
+
+    let before = summary(&pool).await;
+    // 2 completed + 1 pending + 1 expired works; 1 completed + 1 expired task.
+    for (id, st) in [
+        ("r25-w-c1", "completed"),
+        ("r25-w-c2", "completed"),
+        ("r25-w-p1", "pending"),
+        ("r25-w-e1", "expired"),
+    ] {
+        client
+            .execute(
+                "INSERT INTO x_work (id, title, process, work_status) VALUES ($1, 'r25', 'r25', $2)",
+                &[&id, &st],
+            )
+            .await
+            .unwrap();
+    }
+    for (id, st) in [("r25-t-c1", "completed"), ("r25-t-e1", "expired")] {
+        client
+            .execute(
+                "INSERT INTO x_task (id, work, task_status) VALUES ($1, 'r25-w-c1', $2)",
+                &[&id, &st],
+            )
+            .await
+            .unwrap();
+    }
+    let after = summary(&pool).await;
+
+    assert_eq!(get(&after, "totalWork") - get(&before, "totalWork"), 4);
+    assert_eq!(
+        get(&after, "completedWork") - get(&before, "completedWork"),
+        2
+    );
+    assert_eq!(get(&after, "pendingWork") - get(&before, "pendingWork"), 1);
+    assert_eq!(get(&after, "expiredWork") - get(&before, "expiredWork"), 1);
+    assert_eq!(get(&after, "totalTask") - get(&before, "totalTask"), 2);
+    assert_eq!(
+        get(&after, "completedTask") - get(&before, "completedTask"),
+        1
+    );
+    assert_eq!(get(&after, "expiredTask") - get(&before, "expiredTask"), 1);
+
+    client
+        .execute(
+            "DELETE FROM x_work WHERE id IN ('r25-w-c1','r25-w-c2','r25-w-p1','r25-w-e1')",
+            &[],
+        )
+        .await
+        .unwrap();
+    client
+        .execute(
+            "DELETE FROM x_task WHERE id IN ('r25-t-c1','r25-t-e1')",
+            &[],
+        )
+        .await
+        .unwrap();
+}
+
+// state_running 5→2 FILTER-aggregate collapse (优化二轮 26): same delta-based
+// live assertion as state_summary, for the running-state buckets. Live DB only.
+#[tokio::test]
+async fn state_running_filter_buckets_match_seeded_deltas() {
+    if !shared::testing::is_db_available().await {
+        return;
+    }
+    let pool = shared::testing::test_pool();
+    let client = pool.get().await.unwrap();
+
+    async fn running(pool: &Pool) -> serde_json::Value {
+        let resp = crate::router(pool.clone())
+            .oneshot(
+                Request::builder()
+                    .method(Method::GET)
+                    .uri("/api/processplatform/assemble/bam/state/running")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), StatusCode::OK);
+        let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        serde_json::from_slice::<serde_json::Value>(&bytes).unwrap()["data"].clone()
+    }
+    let get = |v: &serde_json::Value, k: &str| v[k].as_i64().unwrap();
+
+    let before = running(&pool).await;
+    // 1 pending + 1 processing work; 1 pending + 1 processing + 2 started task.
+    for (id, st) in [("r26-w-p1", "pending"), ("r26-w-r1", "processing")] {
+        client
+            .execute(
+                "INSERT INTO x_work (id, title, process, work_status) VALUES ($1, 'r26', 'r26', $2)",
+                &[&id, &st],
+            )
+            .await
+            .unwrap();
+    }
+    for (id, st) in [
+        ("r26-t-p1", "pending"),
+        ("r26-t-r1", "processing"),
+        ("r26-t-s1", "started"),
+        ("r26-t-s2", "started"),
+    ] {
+        client
+            .execute(
+                "INSERT INTO x_task (id, work, task_status) VALUES ($1, 'r26-w-p1', $2)",
+                &[&id, &st],
+            )
+            .await
+            .unwrap();
+    }
+    let after = running(&pool).await;
+
+    assert_eq!(get(&after, "pendingWork") - get(&before, "pendingWork"), 1);
+    assert_eq!(
+        get(&after, "processingWork") - get(&before, "processingWork"),
+        1
+    );
+    assert_eq!(get(&after, "pendingTask") - get(&before, "pendingTask"), 1);
+    assert_eq!(
+        get(&after, "processingTask") - get(&before, "processingTask"),
+        1
+    );
+    assert_eq!(get(&after, "startedTask") - get(&before, "startedTask"), 2);
+
+    client
+        .execute(
+            "DELETE FROM x_work WHERE id IN ('r26-w-p1','r26-w-r1')",
+            &[],
+        )
+        .await
+        .unwrap();
+    client
+        .execute(
+            "DELETE FROM x_task WHERE id IN ('r26-t-p1','r26-t-r1','r26-t-s1','r26-t-s2')",
+            &[],
+        )
+        .await
+        .unwrap();
+}
+
+// state_organization 3 跨表 COUNT → 单条标量子查询 (优化二轮 27): one round-trip
+// instead of three. Seed person/unit/group rows and assert the three totals move
+// by the seeded deltas. Live DB only.
+#[tokio::test]
+async fn state_organization_scalar_subqueries_match_seeded_deltas() {
+    if !shared::testing::is_db_available().await {
+        return;
+    }
+    let pool = shared::testing::test_pool();
+    let client = pool.get().await.unwrap();
+
+    async fn org(pool: &Pool) -> serde_json::Value {
+        let resp = crate::router(pool.clone())
+            .oneshot(
+                Request::builder()
+                    .method(Method::GET)
+                    .uri("/api/processplatform/assemble/bam/state/organization")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), StatusCode::OK);
+        let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        serde_json::from_slice::<serde_json::Value>(&bytes).unwrap()["data"].clone()
+    }
+    let get = |v: &serde_json::Value, k: &str| v[k].as_i64().unwrap();
+
+    let before = org(&pool).await;
+    for (id, name) in [("r27-p1", "r27a"), ("r27-p2", "r27b")] {
+        client
+            .execute(
+                "INSERT INTO x_org_person (id, name) VALUES ($1, $2)",
+                &[&id, &name],
+            )
+            .await
+            .unwrap();
+    }
+    client
+        .execute(
+            "INSERT INTO x_org_unit (id, name) VALUES ('r27-u1', 'r27u')",
+            &[],
+        )
+        .await
+        .unwrap();
+    client
+        .execute(
+            "INSERT INTO x_org_group (id, name) VALUES ('r27-g1', 'r27g')",
+            &[],
+        )
+        .await
+        .unwrap();
+    let after = org(&pool).await;
+
+    assert_eq!(
+        get(&after, "totalPersons") - get(&before, "totalPersons"),
+        2
+    );
+    assert_eq!(get(&after, "totalUnits") - get(&before, "totalUnits"), 1);
+    assert_eq!(get(&after, "totalGroups") - get(&before, "totalGroups"), 1);
+
+    client
+        .execute(
+            "DELETE FROM x_org_person WHERE id IN ('r27-p1','r27-p2')",
+            &[],
+        )
+        .await
+        .unwrap();
+    client
+        .execute("DELETE FROM x_org_unit WHERE id = 'r27-u1'", &[])
+        .await
+        .unwrap();
+    client
+        .execute("DELETE FROM x_org_group WHERE id = 'r27-g1'", &[])
+        .await
+        .unwrap();
+}

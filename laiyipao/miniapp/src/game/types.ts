@@ -162,6 +162,10 @@ export interface Enemy {
   amplifyPermille: bigint
   /** 击退位移（定点） */
   knockback: bigint
+  /** 削甲剩余毫秒（armor_break 反应：护甲被削减的持续时间） */
+  armorShredMs: number
+  /** 当前削甲量（千分比，armorShredMs>0 时生效；hitEnemy 构建 Defender 时折进有效护甲） */
+  armorShredPermille: bigint
   dead: boolean
   /** 出生动画进度 0..1 */
   spawnProgress: number

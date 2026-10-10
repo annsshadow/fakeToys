@@ -140,6 +140,18 @@ function activityType(node: ProcessCanvasNode): O2ActivityType {
     : (NODE_TO_ACTIVITY[node.type] ?? 'manual')
 }
 
+/**
+ * 活动名级联：非空 label → 非空 name → 活动类型兜底（取第一个非空串）。
+ *
+ * 原先内联为 `node.label ?? text(node.name) ?? type`，但 `text()` 恒返回 string
+ * （无 name 时返回 `''`），`?? type` 因此是死代码——画布节点既无 label 又无 name 时
+ * 序列化出**空**活动名（任务中心显示空白任务名）。改用 `||` 级联：空串 label 不会
+ * 压住 name，全部为空时回退到 type。
+ */
+export function activityName(node: ProcessCanvasNode, type: O2ActivityType): string {
+  return node.label || text(node.name) || type
+}
+
 function activityArrays(definition: JsonObject): JsonObject[] {
   const activities = Array.isArray(definition.activities) ? definition.activities.map(object) : []
   if (activities.length) return activities
@@ -248,7 +260,7 @@ export function serializeProcessDefinition(
       id: node.id,
       process: options.id ?? text(options.base?.id),
       type,
-      name: node.label ?? text(node.name) ?? type,
+      name: activityName(node, type),
       position: `${Math.round(node.x)},${Math.round(node.y)}`,
       edition: options.edition ?? text(node.edition),
       routeList: routesByNode.get(node.id) ?? [],

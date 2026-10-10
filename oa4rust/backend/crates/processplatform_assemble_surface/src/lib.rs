@@ -24896,7 +24896,16 @@ pub async fn attachment_u2_get_by_workcompleted(
 // ════════════ plan002 U2 批量第二注册：缺失端点补齐（snap / attachment 域） ════════════
 // o2server 对齐缺口：GET /api/snap/{id}/mockdeletetoget、snap 列表族（application/process 过滤）、
 // attachment 元数据读取与删除族。复用 U2 门禁与列映射基建（u2_check_owner/u2_snap_json/u2_att_json）。
-// 分页约定与既有 sibling handler 一致：LIMIT=size，OFFSET=page。
+// 分页约定与既有 sibling handler 一致：page 为 1 基，LIMIT=size，OFFSET=(page-1)*size。
+
+/// snap 列表分页量计算（纯函数，便于单测）：page 为 1 基，limit 夹到 1..=500，
+/// offset=(page-1)*limit。page<=1 → offset=0（修复原 page*limit 跳过首页 off-by-one，
+/// 对齐同文件 u2_snap_manage_paging/task_list_my/work_list_my 的 (page-1)*size 约定）。
+fn u2_snap_limit_offset(page: i64, size: i64) -> (i64, i64) {
+    let limit = size.clamp(1, 500);
+    let offset = (page.max(1) - 1).saturating_mul(limit);
+    (limit, offset)
+}
 
 #[allow(non_snake_case)]
 pub async fn snap_id_mockdeletetoget(
@@ -24920,8 +24929,7 @@ async fn u2_snap_list_offset(
     size: i64,
     where_extra: Option<(&str, &str)>,
 ) -> Result<Vec<deadpool_postgres::tokio_postgres::Row>, AppError> {
-    let limit = size.clamp(1, 500);
-    let offset = page.clamp(0, i64::MAX / limit.max(1)) * limit;
+    let (limit, offset) = u2_snap_limit_offset(page, size);
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     match where_extra {
         None => {

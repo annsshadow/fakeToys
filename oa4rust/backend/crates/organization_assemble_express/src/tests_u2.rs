@@ -203,5 +203,139 @@ mod u2_tests {
         assert!(result.data.is_some());
     }
 
+    // group_list_object N+1→single-query fold: aggregation of LEFT JOIN rows
+    // (ordered by group id) into group objects. Verifies the single-pass fold
+    // preserves the pre-refactor shape without needing a live database.
+    #[test]
+    fn u2_fold_group_members_aggregates_members_per_group() {
+        use crate::endpoints_org::{fold_group_members, GroupMemberRow};
+        fn row(id: &str, person: Option<&str>) -> GroupMemberRow {
+            GroupMemberRow {
+                id: Some(id.to_string()),
+                name: Some(format!("name-{id}")),
+                type_: Some("custom".to_string()),
+                unit_id: Some("u1".to_string()),
+                person_id: person.map(str::to_string),
+            }
+        }
+        // g1 has two members, g2 has none (LEFT JOIN yields one null-member row).
+        let data = fold_group_members(vec![
+            row("g1", Some("p1")),
+            row("g1", Some("p2")),
+            row("g2", None),
+        ]);
+        assert_eq!(data.len(), 2);
+        assert_eq!(data[0]["id"], serde_json::json!("g1"));
+        assert_eq!(data[0]["personList"], serde_json::json!(["p1", "p2"]));
+        assert_eq!(data[0]["memberCount"], serde_json::json!(2));
+        assert_eq!(data[1]["id"], serde_json::json!("g2"));
+        assert_eq!(data[1]["personList"], serde_json::json!([]));
+        assert_eq!(data[1]["memberCount"], serde_json::json!(0));
+    }
+
+    // Null optional columns are omitted (matches row_to_map's Some-only inserts),
+    // while memberCount is always present even for an empty group.
+    #[test]
+    fn u2_fold_group_members_omits_null_cols_keeps_count() {
+        use crate::endpoints_org::{fold_group_members, GroupMemberRow};
+        let data = fold_group_members(vec![GroupMemberRow {
+            id: Some("g9".to_string()),
+            name: Some("g9".to_string()),
+            type_: None,
+            unit_id: None,
+            person_id: None,
+        }]);
+        assert_eq!(data.len(), 1);
+        let obj = data[0].as_object().unwrap();
+        assert!(!obj.contains_key("type"));
+        assert!(!obj.contains_key("unit_id"));
+        assert_eq!(obj["memberCount"], serde_json::json!(0));
+        assert_eq!(obj["personList"], serde_json::json!([]));
+    }
+
+    // attr_write_values N+1→UNNEST batch: the pure selection helper decides
+    // which values still need inserting. set mode keeps all; append mode drops
+    // case-insensitive matches of existing values.
+    #[test]
+    fn u2_attr_values_to_insert_set_vs_append() {
+        use crate::endpoints_attr::attr_values_to_insert;
+        let values = vec!["Red".to_string(), "green".to_string(), "BLUE".to_string()];
+        let existing = vec!["red".to_string(), "Blue".to_string()];
+        // set mode (append=false): existing ignored, all values selected.
+        let set: Vec<&String> = attr_values_to_insert(&values, &existing, false);
+        assert_eq!(set, vec![&values[0], &values[1], &values[2]]);
+        // append mode: "Red" and "BLUE" match existing case-insensitively → only
+        // "green" remains.
+        let app: Vec<&String> = attr_values_to_insert(&values, &existing, true);
+        assert_eq!(app, vec![&values[1]]);
+        // append with no existing selects all.
+        assert_eq!(attr_values_to_insert(&values, &[], true).len(), 3);
+    }
+
+    // person_detail_flag resolve+fetch merge (优化二轮 28): the merged single
+    // query must resolve the person by BOTH id and name and return its row. Live
+    // DB only (gated); the express router has no auth layer so no session needed.
+    #[tokio::test]
+    async fn u2_person_detail_flag_resolves_by_id_and_name() {
+        if !shared::testing::is_db_available().await {
+            return;
+        }
+        let pool = shared::testing::test_pool();
+        let client = pool.get().await.unwrap();
+        client
+            .execute(
+                "DELETE FROM x_org_person WHERE id = $1",
+                &[&"r28-detail-p1"],
+            )
+            .await
+            .unwrap();
+        client
+            .execute(
+                "INSERT INTO x_org_person (id, name) VALUES ($1, $2)",
+                &[&"r28-detail-p1", &"r28-detail-name"],
+            )
+            .await
+            .unwrap();
+
+        async fn detail(pool: &deadpool_postgres::Pool, flag: &str) -> Value {
+            let resp = express_router(pool.clone())
+                .oneshot(
+                    Request::builder()
+                        .method(axum::http::Method::POST)
+                        .uri(format!("/api/person/detail/{flag}"))
+                        .header("content-type", "application/json")
+                        .body(Body::from("{}"))
+                        .unwrap(),
+                )
+                .await
+                .unwrap();
+            assert_eq!(resp.status(), StatusCode::OK);
+            let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+                .await
+                .unwrap();
+            serde_json::from_slice::<Value>(&bytes).unwrap()["data"].clone()
+        }
+
+        // resolve by id
+        let by_id = detail(&pool, "r28-detail-p1").await;
+        assert_eq!(by_id["id"], Value::String("r28-detail-p1".into()));
+        assert_eq!(by_id["name"], Value::String("r28-detail-name".into()));
+        assert_eq!(
+            by_id["distinguishedName"],
+            Value::String("r28-detail-p1".into())
+        );
+        // resolve by name → same person
+        let by_name = detail(&pool, "r28-detail-name").await;
+        assert_eq!(by_name["id"], Value::String("r28-detail-p1".into()));
+
+        client
+            .execute(
+                "DELETE FROM x_org_person WHERE id = $1",
+                &[&"r28-detail-p1"],
+            )
+            .await
+            .unwrap();
+    }
+
     use serde_json::Value;
 }

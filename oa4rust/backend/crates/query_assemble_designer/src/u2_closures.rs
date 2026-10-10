@@ -1443,7 +1443,7 @@ pub async fn importmodel_get_flag(
     let row = client
         .query_opt(
             "SELECT id, name, model_flag, query_flag, content, creator, create_time \
-             FROM x_query_import_model WHERE id = $1 OR model_flag = $1 AND deleted_at IS NULL LIMIT 1",
+             FROM x_query_import_model WHERE (id = $1 OR model_flag = $1) AND deleted_at IS NULL LIMIT 1",
             &[&flag],
         )
         .await
@@ -1510,7 +1510,7 @@ pub async fn importmodel_edit_flag(
         &session,
         &client,
         "SELECT COALESCE(creator_person, creator, '') AS owner FROM x_query_import_model \
-         WHERE id = $1 OR model_flag = $1 AND deleted_at IS NULL LIMIT 1",
+         WHERE (id = $1 OR model_flag = $1) AND deleted_at IS NULL LIMIT 1",
         &flag,
     )
     .await?;
@@ -1542,7 +1542,7 @@ pub async fn importmodel_edit_flag(
             "UPDATE x_query_import_model \
              SET name = COALESCE(NULLIF($1,''), name), content = COALESCE(NULLIF($2,''), content), \
                  update_time = to_char(NOW(),'YYYY-MM-DD HH24:MI:SS') \
-             WHERE id = $3 OR model_flag = $3",
+             WHERE (id = $3 OR model_flag = $3) AND deleted_at IS NULL",
             &[&name, &content, &flag],
         )
         .await
@@ -1619,7 +1619,7 @@ pub async fn importmodel_permission_set(
         &session,
         &client,
         "SELECT COALESCE(creator_person, creator, '') AS owner FROM x_query_import_model \
-         WHERE id = $1 OR model_flag = $1 AND deleted_at IS NULL LIMIT 1",
+         WHERE (id = $1 OR model_flag = $1) AND deleted_at IS NULL LIMIT 1",
         &flag,
     )
     .await?;
@@ -1636,7 +1636,7 @@ pub async fn importmodel_permission_set(
     let result = client
         .execute(
             "UPDATE x_query_import_model SET permission = $1, update_time = to_char(NOW(),'YYYY-MM-DD HH24:MI:SS') \
-             WHERE id = $2 OR model_flag = $2",
+             WHERE (id = $2 OR model_flag = $2) AND deleted_at IS NULL",
             &[&permission, &flag],
         )
         .await

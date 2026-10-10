@@ -334,10 +334,22 @@ describe('runChallenge', () => {
     // 这是本项目记过多次的形态：**夹具的参数温和度本身就是一种掩盖**。
     // 这里不去改断言（hp_left_pct 必须是 0 的结论仍然正确），
     // 而是让夹具真的「打不完」—— 血量高到 0 攻方 + 4 个技能也清不掉。
+    // ⚠️ 2026-10-10：steam_burst AoE（reactionDmg >> 2，25%）实现后，
+    // 8 只 40000 血的守卫会被火+冰反应的**溅射元素伤害连锁清完**
+    // （元素侧伤害与攻击力无关，0 攻方也能触发 steam_burst 反应伤害）。
+    // 这与第 65 轮「修好弹射/溅射后战斗整体上移」是同一个形态：
+    // 新增一个**攻击力-independent** 的伤害源，就要把 fixture 的血量
+    // 往上调，维持「0 攻方打不完」这个前提。
+    //
+    // 60000 是实测阈下界：扫 8 只敌人（interval 60ms，slow_belt +100
+    // elementCoef，reactionTier 2，elementCoef 1500+100=1600）得到
+    //   hp=40000 → won（全清）   hp=60000 → lost（漏 1）
+    // 5 轮扫描无回退：守住「畸形 base_hp=0 → hp_left_pct 判 0 而非 NaN」
+    // 这条断言的前提。
     const r = runChallenge(view(), {
       ...deps,
       level: { ...level(), base_hp: 0 },
-      enemies: new Map([[1, mkEnemyDef(1, { attack: 0, hp: 40_000 })]]),
+      enemies: new Map([[1, mkEnemyDef(1, { attack: 0, hp: 60_000 })]]),
       myAttacker: { ...attacker(), attack: 0n }, // 保证有怪漏进防线
     })
     expect(r.won).toBe(false)

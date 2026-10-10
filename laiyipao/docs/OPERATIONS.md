@@ -44,7 +44,7 @@
 # 1) 建库
 createdb laiyipao
 
-# 2) 迁移（8 个 goose 迁移，49 张业务表 + 92 个索引）
+# 2) 迁移（13 个 goose 迁移，49 张业务表）
 cd laiyipao/server
 export DATABASE_URL="postgres://postgres@127.0.0.1:5432/laiyipao?sslmode=disable"
 export BOOTSTRAP_ADMIN_PASS="<至少 10 位，缺省会拒绝启动>"
@@ -235,8 +235,13 @@ cd .. && pwsh -NoProfile -File scripts/e2e.ps1
 ### 5.1 检查清单
 
 - [ ] `go test ./... -count=1 -timeout 1200s` 全绿，**且输出里没有 SKIP**
-      （SKIP 被计入 PASS，「全绿」里可能藏着没执行的测试）
+      （SKIP 被计入 PASS，「全绿」里可能藏着没执行的测试。
+      **有 PostgreSQL 在途中**：DB 依赖的测试会自检跳过；CI 无 PG 服务时
+      259 个 DB 测试自然跳过，这属于已知行为，不是回归。
+      本地需 `go test ./... -count=1 -timeout 1200s` 在**有 PG** 的前提下跑，
+      方能进入「零 SKIP」的真门槛。）
 - [ ] `npx vitest run --config vitest.config.ts` 通过
+      （miniapp）；`cd ../admin && npx vitest run` 亦需全绿
 - [ ] 双端 `npx tsc --noEmit` 无错误
 - [ ] `gofmt -l server` 输出为空、`go vet ./...` 无输出
 - [ ] `go run ./cmd/vectors -check` 全 OK

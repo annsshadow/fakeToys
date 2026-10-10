@@ -366,7 +366,8 @@ pub async fn update(
         return Ok(Json(ActionResult::error("person not found")));
     }
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    // 复用上面已取的 client 回读（UPDATE 无显式事务已自动提交，同连接读己之写一致）；
+    // 原先此处再 pool.get() 一次多占一条池连接且无必要。
     let where_clause = format!(
         "SELECT id, unique_id, name, mobile, email, locked FROM auth_person WHERE {} AND deleted_at IS NULL",
         person_flag_clause(1)

@@ -420,6 +420,17 @@ async fn unit_crud_and_hierarchy_routes_registered() {
         .await,
         StatusCode::INTERNAL_SERVER_ERROR
     );
+    // mockputtopost twin shares the (now single-query) unit_list_with_unit_type
+    // handler; assert the POST verb is wired to the same collapsed path.
+    assert_eq!(
+        request(
+            Method::POST,
+            &format!("{BASE}/unit/list/unit/type/mockputtopost"),
+            Some(r#"{"type":"company","unitList":["u1"]}"#)
+        )
+        .await,
+        StatusCode::INTERNAL_SERVER_ERROR
+    );
     assert_eq!(
         request(Method::POST, &format!("{BASE}/unit/list"), Some("{}")).await,
         StatusCode::INTERNAL_SERVER_ERROR
@@ -782,6 +793,130 @@ async fn departments_tree_nests_child_under_parent() {
         .execute(
             "DELETE FROM x_org_unit WHERE id IN ($1, $2)",
             &[&"u2-unit-root", &"u2-unit-child"],
+        )
+        .await
+        .unwrap();
+}
+
+// unit_list_with_unit_type N+1→single-query collapse (优化二轮 20): the batch
+// path now filters `type=$1 AND (id=ANY($2) OR name=ANY($2))` in one query
+// instead of resolving each flag id first. Verifies id-match, name-match, the
+// type filter, and not-in-flags exclusion all hold against a live DB.
+#[tokio::test]
+async fn unit_list_with_unit_type_matches_by_id_and_name_respecting_type() {
+    if !shared::testing::is_db_available().await {
+        return;
+    }
+    let pool = shared::testing::test_pool();
+    let client = pool.get().await.unwrap();
+    // a: company matched by id; b: company matched by name; c: company NOT in
+    // flags (must be excluded); d: in flags by id but wrong type (excluded).
+    for (id, name, ty) in [
+        ("u2-ult-a", "甲公司", "company"),
+        ("u2-ult-b", "乙公司", "company"),
+        ("u2-ult-c", "丙公司", "company"),
+        ("u2-ult-d", "丁部门", "department"),
+    ] {
+        client
+            .execute(
+                "INSERT INTO x_org_unit (id, name, type, parent_id, level) VALUES ($1, $2, $3, NULL, 1)",
+                &[&id, &name, &ty],
+            )
+            .await
+            .unwrap();
+    }
+    let body = r#"{"type":"company","unitList":["u2-ult-a","乙公司","u2-ult-d"]}"#;
+    let response = crate::router(pool.clone())
+        .oneshot(
+            Request::builder()
+                .method(Method::PUT)
+                .uri("/api/organization/assemble/control/unit/list/unit/type")
+                .header("content-type", "application/json")
+                .extension(u2_session())
+                .body(Body::from(body))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    let items = json["data"].as_array().expect("data is array");
+    let ids: Vec<&str> = items.iter().filter_map(|it| it["id"].as_str()).collect();
+    assert!(
+        ids.contains(&"u2-ult-a"),
+        "id match must be listed: {ids:?}"
+    );
+    assert!(
+        ids.contains(&"u2-ult-b"),
+        "name match must be listed: {ids:?}"
+    );
+    assert!(
+        !ids.contains(&"u2-ult-c"),
+        "company not in flags must be excluded: {ids:?}"
+    );
+    assert!(
+        !ids.contains(&"u2-ult-d"),
+        "wrong-type flag must be excluded: {ids:?}"
+    );
+    client
+        .execute(
+            "DELETE FROM x_org_unit WHERE id IN ($1, $2, $3, $4)",
+            &[&"u2-ult-a", &"u2-ult-b", &"u2-ult-c", &"u2-ult-d"],
+        )
+        .await
+        .unwrap();
+}
+
+// units_by_flags 2N→single-query collapse (优化二轮 21): POST /unit/list with a
+// unitList now resolves all flags in one query, assembling in flag order with
+// duplicates preserved. Verifies id-match, name-match, repeated-flag duplicate,
+// and no-match exclusion against a live DB.
+#[tokio::test]
+async fn unit_list_by_body_resolves_flags_in_order_with_duplicates() {
+    if !shared::testing::is_db_available().await {
+        return;
+    }
+    let pool = shared::testing::test_pool();
+    let client = pool.get().await.unwrap();
+    for (id, name) in [("u2-ubf-a", "甲单位"), ("u2-ubf-b", "乙单位")] {
+        client
+            .execute(
+                "INSERT INTO x_org_unit (id, name, parent_id, level) VALUES ($1, $2, NULL, 1)",
+                &[&id, &name],
+            )
+            .await
+            .unwrap();
+    }
+    // flag by id, flag by name, the id flag again (duplicate), and a no-match.
+    let body = r#"{"unitList":["u2-ubf-a","乙单位","u2-ubf-a","nope-xyz"]}"#;
+    let response = crate::router(pool.clone())
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/api/organization/assemble/control/unit/list")
+                .header("content-type", "application/json")
+                .extension(u2_session())
+                .body(Body::from(body))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    let items = json["data"].as_array().expect("data is array");
+    let ids: Vec<&str> = items.iter().filter_map(|it| it["id"].as_str()).collect();
+    // order preserved, duplicate kept, no-match dropped.
+    assert_eq!(ids, vec!["u2-ubf-a", "u2-ubf-b", "u2-ubf-a"], "ids={ids:?}");
+    client
+        .execute(
+            "DELETE FROM x_org_unit WHERE id IN ($1, $2)",
+            &[&"u2-ubf-a", &"u2-ubf-b"],
         )
         .await
         .unwrap();

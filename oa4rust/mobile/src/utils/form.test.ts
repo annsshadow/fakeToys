@@ -30,14 +30,21 @@ describe('mobile form parser (parseMobileForm)', () => {
   })
 
   it('attachment-family module types all map to "attachment"', () => {
+    // 跨端一致性（优化二轮 56）：文件类模块 oofiles/file/attachment/image/signature
+    // 移动端一律归 'attachment'；桌面 xform.moduleToFieldType 对同一组映射到文件类
+    // 控件而非 'text'（image→image、signature→signature、file/upload/attachment/oofiles→file）。
     const form = parseMobileForm(
       def({
         m1: { id: 'm1', type: 'oofiles', name: 'attach', label: '证明材料' },
         m2: { id: 'm2', type: 'file', name: 'f', label: 'file' },
         m3: { id: 'm3', type: 'attachment', name: 'a', label: 'attach' },
+        m4: { id: 'm4', type: 'image', name: 'img', label: '图片' },
+        m5: { id: 'm5', type: 'signature', name: 'sig', label: '签字' },
       }),
     )
-    expect(form.fields.map((f) => f.type)).toEqual(['attachment', 'attachment', 'attachment'])
+    expect(form.fields.map((f) => f.type)).toEqual(
+      ['attachment', 'attachment', 'attachment', 'attachment', 'attachment'],
+    )
   })
 
   it('flat form (no layout container) yields a single default group', () => {
@@ -131,6 +138,16 @@ describe('mobile form group order (computeGroupOrder)', () => {
     ]
     expect(computeGroupOrder(fields, groups)).toEqual(['', '第一组'])
   })
+
+  it('de-dups named groups that share a label across distinct container ids (regression: fields rendered twice)', () => {
+    // 两个不同容器 id 共用同一 label '基本信息'；消费端按 label 匹配字段，
+    // 不去重会产出 ['基本信息','基本信息'] → v-for 同键迭代两次、每次取两容器全部字段，字段整体重复渲染。
+    const groups: MobileFormGroup[] = [
+      { id: 'c1', label: '基本信息' },
+      { id: 'c2', label: '基本信息' },
+    ]
+    expect(computeGroupOrder([], groups)).toEqual(['基本信息'])
+  })
 })
 
 /** 构造一个「定义体藏在 definition / pcData / mobileData 里」的完整后端响应。 */
@@ -216,6 +233,19 @@ describe('mobile form fields — options, grouping, defaults', () => {
     ])
     // 容器不出现在 fields 中
     expect(form.fields.map((f) => f.key)).toEqual(['a', 'b', 'c'])
+  })
+
+  it('unlabeled layout container does not leak its internal id as a group header', () => {
+    // 无 label/name 的布局容器此前回退用 pid 当标题 → start.vue 分组标题显示内部模块 id。
+    // 修复后并入默认组（无标题流式渲染），不暴露 'c0'。
+    const form = parseMobileForm(
+      def({
+        c0: { id: 'c0', type: 'div' },
+        f1: { id: 'f1', type: 'text', name: 'a', label: 'A', pid: 'c0' },
+      }),
+    )
+    expect(form.fields.map((f) => [f.groupId, f.groupLabel])).toEqual([['', '']])
+    expect(form.groups).toEqual([{ id: '', label: '' }])
   })
 
   it('skips hidden modules and non-renderable types (Label/static)', () => {

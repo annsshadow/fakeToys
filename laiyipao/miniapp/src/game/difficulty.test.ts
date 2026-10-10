@@ -240,9 +240,12 @@ describe('跨关卡：星级门槛必须可达', () => {
   }, 300000)
 
   it('最难的关卡 3 星不是白送的（否则星级只是装饰）', () => {
-    // 实测：默认构筑在 99/100 关都能拿 3 星，只有第 97 关拿到 2 星。
-    // 这正是想要的结果 —— 3 星在最难的地方仍然是个**真目标**。
-    const hard = play(levels.find((l) => l.id === 97)!, 1, 40000)
+    // ⚠️ 2026-10-10：steam_burst AoE（reactionDmg >> 2，25%）实现后，
+    // 97 关在默认构筑下也能 3 星（AoE 提供的 attack-independent 伤害
+    // 把分数从 58782 提到 63943，刚好超过 3 星线 63915）。
+    // 改用第 99 关：默认构筑 2 星（score=75094 < 3 星线 80236），
+    // 仍然证明「3 星不是白送」这个性质。
+    const hard = play(levels.find((l) => l.id === 99)!, 1, 40000)
     expect(hard.phase).toBe('won')
     expect(hard.stars).toBeLessThan(3)
   }, 300000)

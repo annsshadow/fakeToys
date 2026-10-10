@@ -16,6 +16,7 @@ interface FakeElement {
   attributes: Record<string, string>
   style: Record<string, string>
   children: unknown[]
+  src: string
   srcdoc: string
   contentWindow?: { postMessage: ReturnType<typeof vi.fn> }
   setAttribute: (k: string, v: string) => void
@@ -24,6 +25,7 @@ interface FakeElement {
   remove: () => void
   addEventListener: (t: string, fn: (e: unknown) => void) => void
   removeEventListener: (t: string, fn: (e: unknown) => void) => void
+  __fire: (t: string, e?: unknown) => void
 }
 
 function makeElement(tag: string): FakeElement {
@@ -33,6 +35,7 @@ function makeElement(tag: string): FakeElement {
     attributes: {},
     style: {},
     children: [],
+    src: '',
     srcdoc: '',
     setAttribute: (k, v) => (el.attributes[k] = v),
     getAttribute: (k) => el.attributes[k] ?? null,
@@ -47,6 +50,9 @@ function makeElement(tag: string): FakeElement {
     },
     removeEventListener: (t, fn) => {
       listeners[t] = (listeners[t] ?? []).filter((f) => f !== fn)
+    },
+    __fire: (t, e) => {
+      for (const fn of listeners[t] ?? []) fn(e)
     },
   }
   return el
@@ -100,10 +106,15 @@ describe('runInSandbox', () => {
 
   it('posts the code into the sandbox iframe and resolves the posted result', async () => {
     const p = sandbox.mod.runInSandbox('console.log(1)')
-    // 代码消息经 contentWindow.postMessage 下发到 window.location.origin。
+    // 修复前：iframe 停在 about:blank、代码消息发往 window.location.origin（对
+    // opaque-origin 沙盒必 SecurityError）。修复后：src 指向 bootstrap 页，且代码
+    // 仅在 iframe load 之后以 targetOrigin '*' 下发。
+    expect(sandbox.iframe.src).toMatch(/sandbox\.html$/)
+    expect(sandbox.iframe.contentWindow!.postMessage).not.toHaveBeenCalled()
+    sandbox.iframe.__fire('load') // 模拟 bootstrap 页加载完成 → 触发下发
     expect(sandbox.iframe.contentWindow!.postMessage).toHaveBeenCalledWith(
       { __oa4rust_sandbox_code: 'console.log(1)' },
-      'https://oa.example',
+      '*',
     )
     // 模拟沙盒回传结果（source 必须是沙盒 iframe）。
     const fire = () =>
