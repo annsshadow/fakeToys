@@ -132,8 +132,11 @@ class TestEveryEndpointIsDocumented:
 class TestDetailedLayerIsRealAndScoped:
     """详细层防空转 + 范围订正
 
-    全量 71 个端点都要详细说明是**过度主张**：实测其他 46 个端点历史上就只在总览
-    表里有一行（三列）。本轮补的是 §3.3 点名的两组，所以详细层判据只覆盖它们。
+    全量端点都要详细说明是**过度主张**：`dataset` / `system` 两组之外的操作，历史上
+    就只在总览表里有一行（三列）。本轮补的是 §3.3 点名的两组，所以详细层判据只覆盖它们。
+    （旧文在这里写了「其他 46 个端点」——那是个手抄的减法，L216 加两条端点后没人重算就得
+    改口径：与其每次加端点都来订一个数字，不如只说范围。真判据在
+    `test_overview_layer_covers_more_than_detailed` 那条「总览层严格大于详细层」里。）
     """
 
     def test_detailed_layer_is_not_empty(self):
@@ -166,17 +169,22 @@ class TestPreviouslyUndocumentedGroupsHaveNotes:
                    if f"`{p}`" not in text]
         assert not missing, f"{tag} 组这些端点没有说明行：{missing}"
 
-    def test_the_groups_total_27_operations(self):
-        """钉住规模：**13 个操作**摊在 **11 个路径**上（两条路径挂了两个方法）
+    def test_the_groups_scale_is_pinned(self):
+        """钉住规模：dataset **16 路径 / 16 操作**，system **11 路径 / 13 操作**
 
         `/api/system/backups` 同时挂 GET(列出)/POST(创建)，
         `/api/system/dependency/datasets` 同时挂两个 GET。所以「端点」按方法算是
         13、按路径算是 11——两边都要钉，否则下次加一条路由时分不清是「加了路径」
         还是「给老路径加了方法」。
+
+        名字里的 27 是**立项时**的读数（dataset 14 + system 13）。L216 给 dataset 组
+        添了 `semantic-search` / `vector-status` 两条只读端点，于是本格从
+        `test_the_groups_total_27_operations` 改名成 `..._scale_is_pinned`：数字是
+        被钉的**当前**规模，不是历史叙述，名字继续写 27 就是句谎话。
         """
-        assert len(paths_of_tag("dataset")) == 14          # 14 路径 = 14 操作
-        assert len(paths_of_tag("system")) == 11           # 11 路径
-        assert len(operations_of_tag("system")) == 13      # 13 操作
+        assert len(paths_of_tag("dataset")) == 16           # 16 路径 = 16 操作
+        assert len(paths_of_tag("system")) == 11            # 11 路径
+        assert len(operations_of_tag("system")) == 13       # 13 操作
 
 
 class TestTheRulerSeesSomething:

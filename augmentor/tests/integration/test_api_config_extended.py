@@ -202,13 +202,28 @@ class TestConfigEchoReaderSplitL184:
 
     回显面这一侧的用处不变：钉住既有键防止被顺手摘掉；新增的 `test_consumed_keys_are_echoed`
     反向钉「有读者的键必须可见」，防止接线之后又只活在代码里。
+
+    **L216 把 ③ 档清空了**：vector 那三只（`dimension` / `storage_dir` / `collection`）
+    从今天起有正牌读者（`augmentor/semantic.py` 的哈希嵌入宽度、持久化落点与文件名，
+    行为差由 `test_vector_semantic_consumption_l216.py` 逐键钉），于是它们必须可见。
+    ③ 档空掉会让「③ 档键不得回显」这一格**循环体为空、永真**，所以同批补一条
+    `test_the_two_tiers_partition_the_writable_sections`：可写四节的键必须逐键归入 ①②/③ 之一且不重不漏
+    —— 幽灵键防线从「点名不许出现」升成「新键不许无人归档」，判据仍然有牙齿。
     """
 
-    _TIER_3_NO_ECHO = ("vector.dimension", "vector.storage_dir", "vector.collection")
+    _TIER_3_NO_ECHO: tuple = ()
     _TIER_12_ECHO = ("export.default_format", "export.formats", "vector.enabled",
                      "vector.backend", "rag.enabled", "rag.default_format",
                      "multimodal.enabled", "multimodal.image_extensions",
-                     "multimodal.audio_extensions")
+                     "multimodal.audio_extensions",
+                     # L216：vector 余下三键，接上读者之后进入回显面
+                     "vector.dimension", "vector.storage_dir", "vector.collection",
+                     # L216：分区守卫抓出的历史漏计——这两键一直有读者
+                     # （cli/commands/quality.py 的 rag 命令），却从来没进过 A138 名单，
+                     # 因此 GET /api/config 也没回显它们。
+                     "rag.chunk_size", "rag.chunk_overlap")
+    #: 可写四节：`POST /api/config` 的写入清单里那四节，也是 A138 的分档范围
+    _WRITABLE_SECTIONS = ("export", "vector", "rag", "multimodal")
 
     def test_tier3_keys_are_not_echoed_by_get_config(self, pipeline, monkeypatch):
         import api.routes.config as cfg
@@ -221,6 +236,34 @@ class TestConfigEchoReaderSplitL184:
         for key in self._TIER_3_NO_ECHO:
             section, _, field = key.partition(".")
             assert field not in body.get(section, {}),                 f"{key}（A138 ③ 档，无处消费）不得出现在 GET /api/config 的 {section} 回显里"
+
+    def test_the_two_tiers_partition_the_writable_sections(self):
+        """两档名单必须正好覆盖可写四节的全部键，且不重不漏（防 ③ 档空转）
+
+        判据从 `AppConfig` 的字段实推，不抄清单：往四节里加一只新键而没归档，
+        本格当场红——这样 ③ 档名单清空之后，「幽灵键防线」仍然有牙齿，
+        而不是退化成一支循环体为空的永真断言。
+        """
+        from dataclasses import fields
+
+        from augmentor.config import AppConfig
+
+        section_factories = {
+            f.name: f.default_factory
+            for f in fields(AppConfig)
+            if f.name in self._WRITABLE_SECTIONS
+        }
+        assert set(section_factories) == set(self._WRITABLE_SECTIONS),             "可写四节的节名与 AppConfig 字段不符"
+
+        actual = {
+            f"{section}.{field.name}"
+            for section, factory in section_factories.items()
+            for field in fields(factory)
+        }
+        declared = set(self._TIER_3_NO_ECHO) | set(self._TIER_12_ECHO)
+        assert set(self._TIER_3_NO_ECHO).isdisjoint(self._TIER_12_ECHO), "同一只键不许同时属于两档"
+        assert not actual - declared,             f"可写四节里有键未归档（既不在 ①② 也不在 ③）: {sorted(actual - declared)}"
+        assert not declared - actual, f"名单里点了并不存在的键: {sorted(declared - actual)}"
 
     def test_tier12_echo_surface_is_pinned(self, pipeline, monkeypatch):
         client = _client(monkeypatch)
@@ -240,13 +283,21 @@ class TestConfigEchoReaderSplitL184:
         已接上管道阶段入口的四只」：`quality.enabled` / `dedup.enabled` 本来就在回显面里
         （从「可见但无人读」升成「可见且真读」），`versioning.enabled` / `visualization.enabled`
         是本轮新添的两只**只读**节。
+
+        L216 再加上 vector 整节五只：`backend` / `dimension` / `storage_dir` / `collection`
+        的读者是 `augmentor/semantic.py`（检索与建库两侧），`enabled` 的读者是管道
+        结束时的自动建库阶段。同批补进 `rag.chunk_size` / `rag.chunk_overlap`：它们的读者
+        （CLI rag 命令）早就存在，缺的只是可见面。
         """
         client = _client(monkeypatch)
         body = client.get("/api/config").json()
         for key in ("export.formats", "rag.default_format",
                     "multimodal.image_extensions", "multimodal.audio_extensions",
                     "quality.enabled", "dedup.enabled",
-                    "versioning.enabled", "visualization.enabled"):
+                    "versioning.enabled", "visualization.enabled",
+                    "vector.enabled", "vector.backend", "vector.dimension",
+                    "vector.storage_dir", "vector.collection",
+                    "rag.chunk_size", "rag.chunk_overlap"):
             section, _, field = key.partition(".")
             assert field in body.get(section, {}), f"{key} 已有正牌读者，GET /api/config 必须回显"
         assert body["multimodal"]["image_extensions"], "扩展名回显不许是空列表"

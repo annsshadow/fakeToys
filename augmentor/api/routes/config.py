@@ -124,13 +124,24 @@ async def get_config():
                 "default_format": p.config.export.default_format,
                 "formats": p.config.export.formats
             },
+            # L216：vector 五键从「两只回显、三只连回显都没有」升成**整节可见**——
+            # 因为它们从今天起都有了正牌读者（`augmentor/semantic.py` 与管道建库阶段）。
             "vector": {
                 "enabled": p.config.vector.enabled,
-                "backend": p.config.vector.backend
+                "backend": p.config.vector.backend,
+                "dimension": p.config.vector.dimension,
+                "storage_dir": p.config.vector.storage_dir,
+                "collection": p.config.vector.collection
             },
             "rag": {
                 "enabled": p.config.rag.enabled,
-                "default_format": p.config.rag.default_format
+                "default_format": p.config.rag.default_format,
+                # L216：这两键**本来就有读者**（`cli/commands/quality.py` 的 rag 命令把
+                # 生效值传给分块器），却从来不在 A138 的分档名单里，因此也没人回显它们。
+                # 分区守卫 `test_the_two_tiers_partition_the_writable_sections` 本轮把这两只
+                # 漏网的键抓了出来——按 L214 定稿的规矩「有读者 ⇒ 必须可见」补进回显面。
+                "chunk_size": p.config.rag.chunk_size,
+                "chunk_overlap": p.config.rag.chunk_overlap
             },
             "multimodal": {
                 "enabled": p.config.multimodal.enabled,
