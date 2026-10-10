@@ -238,7 +238,7 @@ $ python cli.py validate-config --config typo_config.yaml
 | | `rag.chunk_size`、`rag.chunk_overlap` | `augmentor/cli/commands/quality.py`（RAG 切块）、`api/routes/dataset_tools.py`（`/api/dataset/rag`） | 真控行为 |
 | | `rag.default_format` | `api/routes/dataset_tools.py`（请求未点名格式时按它切形） | 真控行为（L214） |
 | | `multimodal.image_extensions`、`multimodal.audio_extensions` | `api/routes/multimodal.py`（`scan` 的识别面、`formats` 的清单）；`process` **不读**——单条融合按文件内容解析，扩展名门只住在扫描侧（L214 量过之后撤掉了那里的字段） | 真控行为（L214） |
-| ② 仅回显（4） | `vector.enabled`、`vector.backend`、`rag.enabled`、`multimodal.enabled` | `GET /api/config` 原样回显，**不改任何行为** | 可见但未消费；`enabled` 三键归管道阶段（见下），vector 两键见 L215 |
+| ② 仅回显（4） | `vector.enabled`、`vector.backend`、`rag.enabled`、`multimodal.enabled` | `GET /api/config` 原样回显，**不改任何行为** | 可见但未消费；`enabled` 属全仓 16 只零读者的一族（见下方订正），vector 两键见 L215 |
 | ③ 连回显都没有（3） | `vector.dimension`、`vector.storage_dir`、`vector.collection` | 无处消费 | 配置了不生效；见 L215 |
 
 **权威口径（L214 定稿）**：① 档那几只键的读取序是**请求参数 &gt; 配置键 &gt; 内置默认**——请求体点名
@@ -249,11 +249,19 @@ $ python cli.py validate-config --config typo_config.yaml
 **不等于**向量库此刻在用 faiss——真正的后端入口是 `vector.build_vector_db` 的 `backend` 形参与 API 请求体。
 `vector.dimension` 配 768 还是 8 在今天的产物里一字不变（维度由所选嵌入模型决定）。这三键的读者在 L215。
 
-**`enabled` 为什么不做成端点拒绝门（L214 实测，不是推理）**：本仓 `enabled` 的既有语义是**管道阶段开关**
-（`quality.enabled` / `dedup.enabled` 同族，住在 `AugmentorPipeline` 里决定某阶段跑不跑），不是「这个
-endpoint 存不存在」。把它接成端点门的后果是具体的：出厂默认里 `vector.enabled` / `rag.enabled` /
-`multimodal.enabled` 全是 `false`，一旦按字面判，随包 API 的这三项既有能力当场消失，13 支集成测试全红——
-那是对外破坏面，不是消费能力。⇒ 三键的消费点是**管道阶段**（L215），端点面保持不变。
+**`enabled` 这一族为什么不做成端点拒绝门（L214 实测，并在此订正一句自己写错的话）**：第一版这一段写的是
+「`enabled` 的既有语义是管道阶段开关，住在 `AugmentorPipeline`（与 `quality.enabled` / `dedup.enabled` 同族）」
+——**那句是没实测就写的，而且是错的**。按 `config.<节>.enabled` 做全仓普查（扣掉 `config.py` 的校验、
+`config_validator.py` 的静态规格与 `api/routes/config.py` 的回显），**16 只 `enabled` 在产品代码里零读者**；
+管道阶段真正的开关是**调用参数**（`AugmentorPipeline.augment` 的 `use_quality_check` / `use_dedup` 两个形参），
+阶段内部从来不看配置。⇒「接 `enabled`」不是给一条既有语义找位置，而是**新建一条消费路径**，
+那就必须先量默认值再动：出厂 config 里 `quality` / `dedup` / `versioning` / `visualization` 四节是 `true`
+（接上即零行为漂移），其余十二节是 `false`（接上等于把当前始终在跑的行为关掉 = 对外破坏面，要单独拍）。
+端点拒绝门那一撤照旧成立，理由不变：`rag.enabled` / `multimodal.enabled` / `vector.enabled` 出厂全是 `false`，
+按字面判则随包 API 的这三项既有能力当场消失，13 支集成测试全红。⇒ 四只 true 键的消费点在 L215 的阶段入口，
+十二只 false 键立账待拍，端点面全部保持不变。
+（这一族不是新发现的病：Backlog **B5** 的 AST 尺子早已量出全仓 37 只死键，其中「16 格是各节的启用闸门」
+与本节这次 grep 的 16 只 `enabled` 同一读数 —— 本节写它是因为**文档自己曾经把 B5 已登记的事实写成反话**。）
 
 **分档的机器口径**：`tests/integration/test_api_config_extended.py` 的 `TestConfigEchoReaderSplitL184`
 钉住 ③ 档 3 键**不出现**在 `GET /api/config` 回显里（幽灵键防线）、① /② 档 9 键**必须**回显（防止回显面
