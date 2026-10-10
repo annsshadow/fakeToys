@@ -2463,7 +2463,7 @@ pub async fn complex_folder_id(
 pub async fn complex_top(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let folder_rows = client
-        .query("SELECT id, name, person, superior FROM FILE_FOLDER WHERE superior IS NULL OR superior = '' ORDER BY name LIMIT 10", &[])
+        .query("SELECT id, name, person, superior FROM FILE_FOLDER WHERE (superior IS NULL OR superior = '') AND deleted_at IS NULL ORDER BY name LIMIT 10", &[])
         .await.map_err(|_| AppError::Internal)?;
     let folder_list: Vec<Value> = folder_rows
         .iter()
@@ -2488,7 +2488,7 @@ pub async fn complex_top(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
         })
         .collect();
     let attachment_rows = client
-        .query("SELECT id, name, person, reference_type, extension, length FROM FILE_FILE ORDER BY name LIMIT 10", &[])
+        .query("SELECT id, name, person, reference_type, extension, length FROM FILE_FILE WHERE deleted_at IS NULL ORDER BY name LIMIT 10", &[])
         .await.map_err(|_| AppError::Internal)?;
     let attachment_list: Vec<Value> = attachment_rows
         .iter()
