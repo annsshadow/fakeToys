@@ -6,6 +6,7 @@ import {
   definitionToDesignerFields,
   formSavePayload,
   initialFormValues,
+  moduleToFieldType,
   parseFormDefinition,
   serializeFormDefinition,
   validateFormValues,
@@ -130,5 +131,34 @@ describe('Xform moduleList contract', () => {
       { id: 'a', children: [{ id: 'b', children: [{ id: 'a' }] }] },
       { id: 'b', children: [{ id: 'a', children: [{ id: 'b' }] }] },
     ])
+  })
+})
+
+describe('moduleToFieldType（跨端一致性：文件类模块不得退化为 text）', () => {
+  // 移动端 uiTypeOf 把 attachment/oofiles/file/upload/image/signature 一律归为
+  // 'attachment'（文件控件）。桌面 MODULE_TO_FIELD 必须对同一组模块产出文件类
+  // 控件类型，而非 ?? 'text' 兜底（修复前 image/signature/file/upload 均退化为 text）。
+  const fileLikeModules = ['attachment', 'oofiles', 'file', 'upload', 'image', 'signature']
+  it.each(fileLikeModules)('模块 %s 映射到文件类控件而非 text', (mod) => {
+    expect(moduleToFieldType(mod)).not.toBe('text')
+  })
+
+  it('image/signature 映射到各自桌面控件类型（设计器调色板一等类型）', () => {
+    expect(moduleToFieldType('Image')).toBe('image')
+    expect(moduleToFieldType('Signature')).toBe('signature')
+    expect(moduleToFieldType('image')).toBe('image') // 大小写归一
+  })
+
+  it('attachment/oofiles/file/upload 归一到文件控件', () => {
+    for (const mod of ['attachment', 'oofiles', 'file', 'upload']) {
+      expect(moduleToFieldType(mod)).toBe('file')
+    }
+  })
+
+  it('已知非文件模块与未知模块行为保持', () => {
+    expect(moduleToFieldType('Textfield')).toBe('text')
+    expect(moduleToFieldType('Number')).toBe('number')
+    expect(moduleToFieldType('Calendar')).toBe('date')
+    expect(moduleToFieldType('UnknownModule')).toBe('text') // 未知仍回退 text
   })
 })
