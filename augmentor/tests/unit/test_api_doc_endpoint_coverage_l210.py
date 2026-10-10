@@ -170,7 +170,7 @@ class TestPreviouslyUndocumentedGroupsHaveNotes:
         assert not missing, f"{tag} 组这些端点没有说明行：{missing}"
 
     def test_the_groups_scale_is_pinned(self):
-        """钉住规模：dataset **16 路径 / 16 操作**，system **11 路径 / 13 操作**
+        """钉住规模：dataset **18 路径 / 18 操作**，system **11 路径 / 13 操作**
 
         `/api/system/backups` 同时挂 GET(列出)/POST(创建)，
         `/api/system/dependency/datasets` 同时挂两个 GET。所以「端点」按方法算是
@@ -180,9 +180,10 @@ class TestPreviouslyUndocumentedGroupsHaveNotes:
         名字里的 27 是**立项时**的读数（dataset 14 + system 13）。L216 给 dataset 组
         添了 `semantic-search` / `vector-status` 两条只读端点，于是本格从
         `test_the_groups_total_27_operations` 改名成 `..._scale_is_pinned`：数字是
-        被钉的**当前**规模，不是历史叙述，名字继续写 27 就是句谎话。
+        被钉的**当前**规模，不是历史叙述，名字继续写 27 就是句谎话。L217 又给 dataset 组
+        添了 `language-profile` / `translate` 两条，于是 16 → 18。
         """
-        assert len(paths_of_tag("dataset")) == 16           # 16 路径 = 16 操作
+        assert len(paths_of_tag("dataset")) == 18           # 18 路径 = 18 操作（L217 +2）
         assert len(paths_of_tag("system")) == 11            # 11 路径
         assert len(operations_of_tag("system")) == 13       # 13 操作
 

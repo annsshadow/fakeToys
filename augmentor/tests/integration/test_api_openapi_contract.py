@@ -44,6 +44,14 @@ def _keys(*names: str) -> FrozenSet[str]:
     return frozenset(names)
 
 
+def _translate_case(client):
+    """开闸再打翻译：`multilingual.enabled` 出厂 false，端点在读盘之前就拒"""
+    import api.deps as deps
+
+    deps._pipeline.config.multilingual.enabled = True
+    return client.post("/api/dataset/translate", json={"input_file": "data.json"})
+
+
 def _gate_report_keys() -> FrozenSet[str]:
     """`gate` 子对象的契约键集 —— 从 SDK 的 `GateReport.to_dict()` **实推**
 
@@ -612,6 +620,20 @@ CALLS = {
         request=lambda c: c.get("/api/dataset/vector-status"),
         keys=_keys("enabled", "exists", "count", "backend", "dimension",
                    "collection", "storage_dir"),
+    ),
+    # L217：多语言两条。画像是只读的，出厂配置就能跑；翻译要先开闸（`enabled` 出厂
+    # false），所以 request 里顺手把那只闸搬正——搬的就是本模块 fixture 钉住的那条管道。
+    ("POST", "/api/dataset/language-profile"): _Case(
+        request=lambda c: c.post(
+            "/api/dataset/language-profile", json={"input_file": "data.json"},
+        ),
+        keys=_keys("total_items", "distribution", "ratios", "outside_supported",
+                   "supported_langs", "default_target_lang"),
+    ),
+    ("POST", "/api/dataset/translate"): _Case(
+        request=lambda c: _translate_case(c),
+        keys=_keys("total", "batches", "batch_size", "target_lang",
+                   "supported_langs", "items"),
     ),
     # ---------- system（运维 / 治理）----------
     ("GET", "/api/system/dependencies"): _Case(

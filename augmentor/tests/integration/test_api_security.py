@@ -1334,6 +1334,9 @@ class TestWriteRouteAuthCoverage:
         ("POST", "/api/dataset/rag"),
         ("POST", "/api/dataset/sample"),
         ("POST", "/api/dataset/split"),
+        # L217：翻译逐条调用 `model_backend.generate`，是一条按 token 计费的路径，与
+        # `/api/augment/start` 同档——判据是「会不会替调用方花钱/改状态」，不是 HTTP 动词。
+        ("POST", "/api/dataset/translate"),
         ("POST", "/api/export/batch"),
         ("POST", "/api/quality/profiling"),
         ("POST", "/api/system/backups"),
@@ -1385,6 +1388,8 @@ class TestWriteRouteAuthCoverage:
         ("POST", "/api/dataset/semantic-search"),
         ("POST", "/api/dataset/search"),
         ("POST", "/api/dataset/stats"),
+        # L217：语言画像是纯正则检测，不打模型、不落盘，与 stats 同档 ⇒ 只读白名单。
+        ("POST", "/api/dataset/language-profile"),
         ("POST", "/api/dataset/validate"),
         ("POST", "/api/export/preview"),
         ("POST", "/api/leakage/check"),

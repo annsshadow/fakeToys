@@ -72,7 +72,11 @@ NS_PREFIXES = frozenset({
 #: READABLE +2，实测当场红，已订正）。
 #: L210 回填（CALLS +1、READABLE +1、盲面未动）：test_api_doc_endpoint_coverage_l210.py 新增一处
 #: parametrize，值位是内联字面量列表 ["dataset", "system"] ⇒ 入可读档，盲面 108 一格未动。
-MEASURED_CALLS = 396
+#: **L217 回填（CALLS +3、盲面 +3、READABLE 一格未动）**：test_config_reader_census_l217.py
+#: 三处 parametrize（正控制两支值位 `_MUST_BE_DIRECT` / `_MUST_BE_ALIAS_ONLY`，
+#: 引用验真一支值位 `_LOADER_CONSUMED`），全都不带 ids ⇒ no-literal-list 桶 +3；
+#: READABLE 是差值口径（总数 − 盲面），两边同增 ⇒ **288 未动**。
+MEASURED_CALLS = 399
 #: （L185：${ENV} 展开语义守卫两支 parametrize（坏形状 5 档 / 非串 4 档，全是字面清单）
 #: ⇒ CALLS 382 → 384、READABLE 281 → 283，盲面 101 一格未动）
 #: （L189：验证预设封闭清单守卫一支 parametrize（坏预设 5 档，全字面清单）⇒
@@ -82,7 +86,9 @@ MEASURED_CALLS = 396
 MEASURED_READABLE = 288
 #: L175：搜索方法封闭清单守卫两支 parametrize（坏值 6 档 / 合法 5 档，全是字面
 #: 清单）⇒ CALLS 379 → 381、READABLE 278 → 279，盲面（no-literal-list 桶）101 不动。
-MEASURED_BLIND = 108
+#: L217：普查守卫三支无 ids parametrize ⇒ 盲面 108 → **111**（与 CALLS +3 同数，
+#: 因为三格全落盲面；l98 的 plain 档同增 3，两边独立闭合）。
+MEASURED_BLIND = 111
 #: 值位含类型对象的那些档（必须全部自带 ids，否则就是本判据的违规）
 KNOWN_TYPED_SITES = frozenset({("tests/unit/test_schema_type_spec_l96.py", "test_label")})
 

@@ -70,7 +70,7 @@ augmentor/
 │   ├── checkpoint.py          断点续传
 │   ├── evaluation.py          BLEU / ROUGE-L / 相似度
 │   ├── active_learning.py     主动学习循环
-│   ├── multilingual.py        多语言翻译增强
+│   ├── multilingual.py        多语言翻译增强（产品入口在 language.py，消费四键，L217）
 │   ├── rag.py                 RAG 格式转换
 │   ├── context.py             多轮对话上下文增强
 │   ├── expander.py            领域主题扩展
@@ -104,7 +104,7 @@ augmentor/
 │   ├── main.py                FastAPI 应用装配（中间件 + 路由 + 静态文件）
 │   ├── deps.py                依赖注入：管道单例、路径白名单、鉴权、异步文件 IO
 │   ├── middleware/            限流、请求日志与耗时统计
-│   └── routes/                按领域拆分的 14 个 router
+│   └── routes/                按领域拆分的 15 个 router
 │       ├── data.py            数据 CRUD / 上传 / 分析 / 可视化
 │       ├── augment.py         增强任务与进度
 │       ├── quality.py         评估 / 去重 / 报告 / 清洗 / 标注 / 基准 / 画像
@@ -117,7 +117,7 @@ augmentor/
 │       ├── leakage.py         数据泄漏检测
 │       ├── privacy.py         隐私风险检测
 │       ├── dataset_tools.py   数据集工具（统计/校验/转换/合并/采样/分割/搜索/对比/…）
-│       ├── vector.py          语义检索与向量库状态（挂 dataset tag，L216）
+│       ├── vector.py          语义检索与向量库状态（挂 dataset tag，L216）；language.py 语言画像与批量翻译（L217）
 │       └── system_ops.py      运维面（依赖诊断/配置校验/监控/迁移/流式/登记/备份）
 │
 ├── web/                       Web UI

@@ -32,6 +32,7 @@ from api.routes import (
     dataset_tools,
     export,
     leakage,
+    language,
     multimodal,
     privacy,
     quality,
@@ -169,6 +170,7 @@ app.include_router(leakage.router)
 app.include_router(audit.router)
 app.include_router(status.router)
 app.include_router(vector.router)
+app.include_router(language.router)
 app.include_router(system_ops.router)
 
 
