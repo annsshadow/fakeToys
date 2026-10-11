@@ -58,6 +58,7 @@
 - [x] **L220** `68b929bb8` `feat(augmentor)`：**A274 的「接不动」用 `None` 哨兵解开——`evaluation.reference_field` 接进 `/api/dataset/evaluate`，并按对称口径新补 `evaluation.generated_field`**（权威序 请求 > 配置 > 内置默认；两只键出厂同为被替换的硬编码值 `output` ⇒ 零漂移，前提本身由三臂机器钉住）。坏字段名两处出声（加载期 `require_string` + 门口逐条带下标 400），请求侧空串与省略不可区分、落回配置，与 L219 的 `metrics` 语义同式。普查现量：schema 69 → **70 键**、有读者 48 → **49**、零读者 22 → **21**、归档待处置 19 → **18**（非闸门键 9 → 8）。既有面五处按现量重钉（含注册表门铃 69 → 70 与两支写死 29 的测试名改为点名归因），注入取证 **八臂全部有牙齿**（5/4/7/2/1/6/4/5 红，其中一臂是普查尺子自己看见读者消失）。门禁 **8224 passed / 11 skipped / 0 failed / 99.80%**，用例增量 `+28` 用「HEAD 临时换入再逐字节复原」的对照跑法逐文件实测。新立 **A275**（README 配置表与 schema 无机器对账）⇒ 详见循环日志 L220
 - [x] **L221** `5d37639ee` `feat(augmentor)`：**A270 收口——逐条翻译失败加回执面**：`batch_translate` 从「返回清单」改成「返回报告」（`failed` / `failed_indices` / 本批全量 `errors`），聚合层把批内下标折算成全数据集坐标并按 20 截样本，`TranslateResponse` 声明回执四键。部分失败**仍是 200**，诚实读数在响应体而不是状态码。普查面零变动（本轮不新增键）；门禁 **8239 passed / 11 skipped / 0 failed / 99.80%**，注入八臂各有牙齿（3/1/1/2/1/7/6/4 红），用例增量 **+15**（三个既有文件逐文件实测计数一字未变）⇒ 详见循环日志 L221
 - [x] **L222** `932c5885a` + `c6209ab67`（归因订正）+（账本批即本条所在提交）`test,docs(augmentor)`：**A275 收口——配置面三侧同源对账守卫落成机器**（`docs/README.md` 配置表 / `fields(AppConfig)` / `config.yaml` 三角互核）。README 表格 16 行 34 键 → **22 行 70 键**，权威只有一份：节与键全从 `fields()` 实推，测试侧唯一手写名单 `META_ROWS`（`models` / `app`）逐员机器验真。`config.yaml` 那一侧的判据被文件自己纠正过一次——不是「与 schema 逐节全等」而是**整节写全或整节注释列全**（`logging` 三键刻意不落地，写出来才装配）。用最终版尺子对 HEAD 那份文档量出的真漂移是 **21 红 / 38 绿**：5 个整节缺席、13 节只列半节、恰好列全的只有 `export` 与 `multilingual`。注入七臂各有牙齿（4/2/3/3/5/2/3 红），A5「schema 新增一只 init 键」复现的正是 L220 那一步的形状。顺带量出一格普查盲区：`config.yaml` 的 `app` 三键既无 `AppConfig` 字段、又被校验器 `META_TOP_SECTIONS` 免检 ⇒ 「只覆盖 schema 键」的死键普查**结构上看不见**它（零读者没有读者这件事仓内三处早有记录，历史处置是降为可选；新的是盲区与处置未立账）⇒ 立 **A276**。l97 / l98 两把参数化棘轮按现量回填（CALLS 399→402、盲面 111→114、plain 57→58、derived 36→38、盲面用例 106→109）。门禁 **8298 passed / 11 skipped / 0 failed / 99.80%**，用例增量 `+59` 与新文件支数吻合 ⇒ 详见循环日志 L222
+- [x] **L223** `6c53d986c` +（账本批即本条所在提交）`test,docs(augmentor)`：**A277 收口（同轮立同轮关）——`docs/API.md` 逐端点「人读字段提示」与 OpenAPI 契约面落成机器对账**（`tests/unit/test_api_doc_field_hints_l223.py`，23 支）。详细表 31 格里提取到 **58** 个标识符形状的字段声称，其中 **40** 个（69%）直接落在该端点的契约面上；其余由四档**有位置的**证据接住（作用域内字面量 / 定义名 / 配置键 / CLI 选项）加一份封闭 JSON 词表。字面量档按「路由文件 + 两跳 import 闭包」限作用域，**两跳这个数字是量的**：一跳会把 `stratify_distribution` 误判成无据，三跳时 convert 的闭包涨到 70 个文件、`output_path` 反而有据 ⇒ 判据失去区分力。尺子首跑报出 3 格无据，**其中 2 格是尺子自己的 bug**（相对导入层级换算写错，`augmentor` 包内部的 `from .x` 一条都没解析进闭包），修完只剩 `output_path` 那一格，也就是本轮要修的真文档缺陷 4 处（总览散文 1 + 详细表 3；字段实为 `output_file`，`split` 是 `output_dir`，`output_path` 只是路由局部变量名）。`docs/README.md` 与 `docs/API.md` 全文再无该名字。注入九臂各有牙齿（2/2/6/1/7/1/3/1/3 红），其中 A1/A2 成对：同一处文档缺陷，作用域退回全仓后**主判据转绿** ⇒ 那档作用域是承重的。本轮**零 parametrize 新增** ⇒ l97 / l98 两把棘轮读数一格未动，未回填。门禁 **8321 passed / 11 skipped / 0 failed / 99.80%**（195.43 s），用例增量 `+23` 与新文件支数吻合。顺带量到 `additionalProperties: true` 的自由子对象（如 `ImpactResponse.before/after`）在契约面上给不出键名 ⇒ 立 **A278** ⇒ 详见循环日志 L223
 
 ## Backlog A — 质量缺口（缺数 / 偏支 / 健壮性）
 
@@ -83,6 +84,8 @@
 | A274 | `api/routes/dataset_tools.py` 的 `EvaluateRequest.reference_field` / `config.evaluation.reference_field` | **新立（L219）**：L219 接 `evaluation.metrics` 时把同节的 `evaluation.reference_field` 留在原地，原因是它**接不动**。请求模型的默认是硬值 `reference_field: str = "output"`，调用方省略与显式传 `"output"` 在 API 面上是同一个形状，`request.reference_field or config....` 的 `or` 永远不会落到配置那一档——写出来就是一只假接线（配置改了读数不变，且没有任何测试能发现，正是本轮普查在收的形状）。真接法只有一条：把字段改成 `Optional[str] = None` 再走「请求 > 配置 > SDK 默认」，而这会同时改掉 OpenAPI 里该字段的**可空性**（定义上就变，不是推测），动到 `test_api_openapi_contract` 那把字段面尺子时要按现量重钉（尚未实测，故本条只立账不预判红几支），也改掉既有客户端「省略即 `output`」的语义。生成侧 `generated_field` 在配置里**没有对应键**，接完会出现「参考侧跟配置、生成侧跟硬编码」的不对称默认，要不要一起补一只 `evaluation.generated_field` 也是同一个口径决策。定级 S，待拍。**· L220 已收口**：两只字段名的请求默认改成 `Optional[str] = None` 哨兵，权威序 请求 > 配置 > 内置默认 才真的可达（省略与显式 `"output"` 从此是两种形状）；对称口径拍的是「补键」而不是留一对不对称默认 ⇒ 新增 `config.evaluation.generated_field`（出厂 `output`，运行时 `require_string` + 规格表 `non_empty` 与兄弟键同规）。零漂移前提不再由散文承担：dataclass 默认、仓库 YAML、规格表形状三臂各自钉住，另加「四列文本两两相似度不同」当地基。坏字段名两处出声（加载期拒空串、门口逐条带下标 400）。OpenAPI 可空性确实改了，但**没有任何一支既有尺子红**（`test_api_openapi_contract` 守的是响应面与端点覆盖，请求字段类型不在它刀口上），所以那把尺子的位置由新章 `TestRequestFieldsAreNowOmissible` 自己钉。⇒ 见循环日志 L220 | S |
 | A275 | `docs/README.md` 的配置段表格 | **新立（L220）**：这张表的「关键项」列与 `AppConfig` 的键清单**没有任何机器对账**——L220 新增 `evaluation.generated_field` 时，`docs/README.md` 与 `config.yaml` 两处全靠人肉同步，而 `test_doc_contract_numbers_l200.py` 只核端点数、导出格式数、页面数那一类数字。这正是 **A266** 那句「契约面数字全靠人肉对账」在配置面上的具体形状，且它比端点面更容易烂：本仓 20 节 70 键每轮接线都在动。修法方向（与 A266 同族、可并表执行）：逐节从 `dataclasses.fields()` 实推键清单，与表格该列**逐节比对相等**，并同时核 `config.yaml` 的节/键集合（三侧同源的三角对账）。定级 S。**· 已关闭（L222）**：三侧对账落成 `tests/unit/test_config_three_side_l222.py`（59 支）。权威只有一份——节清单与键清单全从 `dataclasses.fields()` + `getattr` 实推（与 `test_section_registry_l77.py` 同口径），测试侧唯一手写名单是 `META_ROWS = {models, app}`，且每员要**同时**过两条机器验真（确实不是 dataclass 节 + 确在校验器 `META_TOP_SECTIONS` 白名单里），所以「把一只真节塞进例外名单」蒙不过去。`config.yaml` 那侧的判据不是「与 schema 逐节全等」而是**整节写全或整节注释列全**——这条是被文件自己纠正出来的：`logging` 三键刻意留在注释里（整节不存在时日志一字不变），第一版把它当漂移是我读错了产品口径。README 表格随之从 16 行 34 键补全为 22 行 70 键，并把「哪只键有人读」的权威明确留在普查守卫而不是文档里。对 HEAD 那份文档量出的真漂移 **21 红 / 38 绿**（5 整节缺席、13 节半节、恰好列全 2 节）；注入七臂各有牙齿，其中 A5「给 dataclass 加一只 init 键」复现的正是立账本条的那一步（L220 新增 `evaluation.generated_field`）。本轮量到的 `app` 节是另一码事，另立 **A276**。⇒ 见循环日志 L222 | S |
 | A276 | `config.yaml` 顶部的 `app` 节（`name` / `version` / `debug`） | **新立（L222）**：**形状本身不是新事实**——`OPTIMIZATION_PLAN.md` §2.4 的表、`README.md` 变更说明第 6 条与 `tests/integration/test_cli_validate_config.py` 的 docstring 三处都记着「`AppConfig` 不建模 `app` 段、没有任何代码读它」，而历史上做过一次处置是把它从必填**降为可选**（因为 `save_config` 写出的配置否则必然校验失败）。**本条立的是另一码事：这只死面的*处置*从未进过账，而且它对现有的死键普查尺子结构上不可见**——`AppConfig` 没有 `app` 字段（`dataclasses.fields()` 实测不含它），`ConfigValidator` 又把它列进 `META_TOP_SECTIONS` 免检，于是 B5 那把「只覆盖 schema 键」的普查尺子永远不会把它报成零读者键，它也不会被加载器装配。当前后果：改这三键不影响任何输出，`GET /api/config` 的响应面里也没有它们（该端点逐字段从 `p.config` 即 `AppConfig` 拼装，见 `api/routes/config.py` 的 `get_config`，没有字段就没有格子）。三条处置方向都动得到对外文件，所以先立账：**① 接成节**（新增 `AppMetaConfig` 三键并接进 `/api/config` 与 `--version` 一类读取面 ⇒ schema 70 → 73 键，l77 节注册、规格表、普查尺子与本把三侧尺子都要按现量重钉）、**② 从出厂文件删掉那一段**（改动用户可见的配置面，且 `ConfigValidator.META_TOP_SECTIONS` 要跟着收窄、`save_config` 的「保留未建模顶层键」那条行为也一并失去对象）、**③ 维持现状并把「产品侧零读者」写明**（本轮 `docs/README.md` 表格已按③落了说明，但键本身仍在那儿）。本轮选③而没有顺手删或顺手接：前者是无声地改变出厂形状，后者是一轮做不完的对外契约变化。`META_ROWS` 的验真臂把这个形状钉在明处——白名单成员必须「确实不是节」。定级 S，待拍。 | S |
+| A277 | `docs/API.md` 逐端点的「人读字段提示」列 | **新立并同轮收口（L223）**：这张四列说明表是 68 条端点里 dataset 与 system 两组共 31 条的**字段级承诺**面（哪个字段省略会落配置、哪个键可能几千个键、哪种坏值 400），但仓内此前没有任何机器读过它的字段名——`test_api_doc_endpoint_coverage_l210.py` 只钉「端点路径集合与说明存在性」，`test_doc_contract_numbers_l200.py` 只核数字。缺这一格的直接后果本轮就撞上了：总览散文与三条说明行把写盘类端点的输出字段写成 `output_path`，而真实字段是 `output_file`（`split` 是 `output_dir`），`output_path` 只是路由里的**局部变量名**——文档在教调用方发一个会被 pydantic 拒掉的键。这是 A266 / A275 那句「契约面数字与字段全靠人肉对账」在逐端点说明面上的最后一格，同一族、同一种修法：**权威只有一份**，字段名从 `app.openapi()` 实推（请求体属性递归过 `$ref` / `allOf` / `additionalProperties` / `items`，再加 `parameters[].name`），契约面接不住的名字再要求落进四档有位置的证据（该端点 import 闭包内的字符串字面量、`def` / `class` / 模块名、`fields(AppConfig)` 的键、CLI parser 的选项）。定级 S。**· 已关闭（L223）**：守卫 `tests/unit/test_api_doc_field_hints_l223.py` 23 支，文档 4 处一并订正（全文再无 `output_path`）。两件事值得留在账上而不是埋在日志里：① 字面量档**必须逐格限作用域**，全仓字面量会把 `output_path` 洗白（它确实是 `augmentor/backup.py:188` 与 `augmentor/export_enhanced.py:143` 的返回键），跳数预算由 `test_hop_budget_is_load_bearing` 钉住；② 尺子首跑的 3 格无据里有 2 格是**尺子自己的 bug**（相对导入层级换算错，`augmentor` 包内 `from .x` 全没解析进闭包），判据修好之后才剩下那 1 格真缺陷。⇒ 见循环日志 L223 | S |
+| A278 | OpenAPI 里 `additionalProperties: true` 的自由子对象 | **新立（L223）**：契约面不是全知的。响应模型里凡是 `Dict[str, Any]` 的子对象，在 OpenAPI 上就是 `additionalProperties: true` —— **键名压根不在 schema 里**，机器推不出来。本轮实测的形状：`ImpactResponse.before` 与 `after` 两个子对象（`api/routes/dataset_tools.py:383-384` 声明为 `Dict[str, Any]`，内容是 SDK 那份统计画像的原始 dict），它们内部有哪些键只能由散文说明，新尺子对这类名字只能走「字面量档」，而字面量档是**逐格限作用域**的——一旦某个自由子对象的键来自更深的模块（超过两跳），它就会被报成无据，而那不是文档错。当前后果：客户端只看 OpenAPI 拿不到这些子对象的形状，文档写漏也没有机器兜。两条方向：**① 给自由子对象立最小形状**（哪怕只声明 `count` / `types` 这一类稳定键，其余留在 `additionalProperties` 里），**② 维持自由并由 A277 那把尺子加一档「自由子对象白名单」**，把「这一格只能靠散文」写成可证伪的名单而不是含糊过去。本轮选②的现状（白名单还没立，靠字面量档接住）而没有动形状：改响应模型是对外契约变化。定级 S，待拍。 | S |
 
 ## Backlog B — 功能增强与体验（价值 ÷ 工作量）
 
@@ -2365,3 +2368,52 @@ L218 把「等价旋钮住在哪」逐键验真之后，这一族里唯一「旋
   18 只待处置键（闸门 `enabled` 10 + 非闸门 8）一字未动；**A272**（`multilingual` 要不要开成第 5 个
   可写配置节）与 **A273**（管道构造 `self.expander` / `self.tracker` 之后产品侧从未调用）仍是待拍而不是待写。
   **A275 已收口**，不再占账。
+
+### L223（2026-10-11）— 逐端点字段提示与契约面同源对账：`output_path` 这个名字在路由里是局部变量，在文档里冒充了 4 处字段
+
+- **补的是 A277 那一格**，而且本轮是「立账与收口同一轮」：先按 A275 的修法量了一遍现状，确认
+  `docs/API.md` 的四列说明表里那些反引号字段名**没有任何机器读过**（l210 只核路径集合与说明
+  存在性，l200 只核数字），确认之后才动手，不是先动手再找理由。
+- **权威只有一份**：字段名从 `app.openapi()` 实推，契约面 = 请求体属性（递归过 `$ref` / `allOf` /
+  `additionalProperties` / `items`）+ `parameters[].name` + 响应体属性。现量：详细表 **31** 格
+  （dataset 18 + system 13）、提取到 **58** 个标识符形状的声称、其中 **40** 个（**69%**）直接落在
+  所属端点的契约面上。剩下 18 个不许靠「散文嘛」过关，各自要落进一档**有位置**的证据。
+- **字面量档的作用域是量出来的，不是拍出来的**：`output_path` 确实存在于产品代码，但只是
+  `augmentor/backup.py:188` 与 `augmentor/export_enhanced.py:143` 的返回键加一堆局部变量名；
+  按「全仓字面量」判据它就成了合法，convert 那条文档错永远红不了。于是这一档限定为
+  「路由文件 + 两跳 import 闭包」内的字符串常量。三档跳数都量过：一跳时 convert 闭包 17 个文件，
+  `stratify_distribution`（权威在 `augmentor/data_splitter.py:40`）落不进去 ⇒ 误判；两跳 24 个文件，
+  正解；三跳 70 个文件，`output_path` 反过来进了 ⇒ 判据失去区分力。两跳由
+  `test_hop_budget_is_load_bearing` 两侧同时钉死。
+- **首跑三格无据，其中两格是尺子自己的 bug，这点按原样记**：`stratify_distribution` 与 `mixed`
+  都不是文档错，是我的相对导入层级换算写错了（`[:level - 1]` 应为 `[:len(parts) - (level - 1)]`），
+  于是 `augmentor` 包内部那些 `from .x import y` 一条都没解析进闭包，两跳实际只走成了一跳。
+  判据修好之后无据清单只剩 `output_path` 一格 —— **先排除尺子冤枉文档的可能，再谈文档错**。
+- **真缺陷的定位与修法**：`/api/dataset/convert` 那格写「必须给 `output_path`」，而请求模型字段是
+  `output_file`；`split` 的字段是 `output_dir`；`/api/system/migrate` 与 `/api/system/stream` 两格
+  同名字错。四处一起改（总览散文 1 处 + 详细表 3 处），顺手把「同上」这种在 `split` 行上并不
+  成立的指代改成点名。散文那一处**不在这把尺子的扫描面里**（它只逐格读详细表），所以另补一支
+  整篇文档级判据，防止「表格修干净、注里还写着旧名」。改后 `docs/API.md` 与 `docs/README.md`
+  全文再无 `output_path`（grep 空读数）。
+- **注入九臂各有牙齿**（红数 2 / 2 / 6 / 1 / 7 / 1 / 3 / 1 / 3）：A1 把文档退回旧字段名（2 红：
+  主判据 + 整篇判据）；A2 同一处文档缺陷 **加上** 字面量档退回全仓作用域 ⇒ 主判据**转绿**，
+  这就是那档作用域承重的直接证据，A1/A2 必须成对读；A3 不展开 `$ref`（6 红，契约面塌了大半）；
+  A4 不收 `parameters`（1 红）；A5 路由装饰器索引扫不到文件（7 红）；A6 摘掉封闭 JSON 词表
+  （1 红，`null` 立刻无据）；A7 把局部变量名也算成定义（3 红，正是 `output_path` 当年混进来的路）；
+  A8 提取器不再要求小写蛇形（1 红）；A9 跳数放宽一档（3 红）。九臂之后两份文件逐字节复原，
+  快照一致。
+- **两把参数化棘轮本轮一格未动**：新守卫不用 `parametrize`（31 行的判据按行循环比按行参数化更
+  合适，参数化会把 31 格值位变成派生清单、白添盲面）。l97 的 CALLS 402 / 盲面 114 与 l98 的六档
+  分布一字未改，**没有回填不是因为豁免，是因为读数确实没变**——全量跑过验证了这一点。
+- **新立 A278（自由子对象的盲区）**：响应模型里 `Dict[str, Any]` 的子对象在 OpenAPI 上就是
+  `additionalProperties: true`，键名压根不在 schema 里（本轮实测的形状是
+  `api/routes/dataset_tools.py:383-384` 那对 `before` / `after`）。这类名字只能靠散文或靠限作用域
+  的字面量档接住，一旦来源模块超过两跳就会被误报成无据。方向两条（立最小形状 / 加一档可证伪的
+  白名单）都动得到对外面，所以只立账不顺手做。
+- **门禁**：**8321 passed / 11 skipped / 0 failed / 覆盖率 99.80%**（195.43 s）。用例增量 `+23`
+  与新文件的 23 支正好吻合，既没有别的文件被顺手动过，也没有支数蒸发。账本批写完再复跑同一条
+  命令：8321 passed / 11 skipped / 196.95 s，支数一字未变（覆盖率读数取自前一次运行——本轮
+  账本批只动 `.md`，而覆盖率统计面只有 `.py`）。
+- **仍在账上的邻居**：**A276**（`app` 三键的处置要拍）、**A271** 的 18 只待处置键、**A272**
+  （`multilingual` 要不要开成第 5 个可写节）、**A273**（`self.expander` / `self.tracker` 无消费者）
+  一字未动；**A277 已在本轮收口**，不再占账。
