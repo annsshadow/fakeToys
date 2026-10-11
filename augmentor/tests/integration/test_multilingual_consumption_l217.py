@@ -298,11 +298,19 @@ class TestEndpointProfile:
         assert response.json()["distribution"] == {"zh": 3, "en": 2}
 
     def test_outside_whitelist_input_is_403(self, tmp_path, monkeypatch):
+        # 越界判据必须**平台无关**：把白名单收紧到 tmp_path 本身，任何它
+        # 之外的绝对路径都应 403（与 test_api_security 同款用例同一手法）。
+        #
+        # ⚠️ 曾写 r"D:\Windows\not_a_dataset.json"——那是 Windows 思维：
+        # POSIX 上反斜杠不是分隔符，整串是白名单**内**的一个奇怪相对名，
+        # 走完候选解析后文件不存在 → 404 而不是 403（CI Linux 实测）。
+        # 沙盒本身没被穿透（404 的文件读不到），但端点口径随平台漂移。
+        monkeypatch.setenv("AUGMENTOR_DATA_ROOTS", str(tmp_path))
         config = language_config(tmp_path)
         client = self._client(monkeypatch, config)
         response = client.post(
             "/api/dataset/language-profile",
-            json={"input_file": r"D:\Windows\not_a_dataset.json"},
+            json={"input_file": str(tmp_path.parent / "not_a_dataset.json")},
         )
         assert response.status_code == 403
 

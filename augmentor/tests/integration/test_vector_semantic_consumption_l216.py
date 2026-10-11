@@ -413,10 +413,17 @@ class TestSemanticSearchEndpoint:
         assert response.status_code == 400
 
     def test_outside_whitelist_input_is_403(self, tmp_path, monkeypatch):
+        # 平台无关的越界判据：白名单只留 tmp_path，它之外的绝对路径 → 403。
+        # ⚠️ 不能用 Windows 路径字面量：POSIX 上反斜杠不是分隔符，
+        # "D:\Windows\..." 是白名单内的相对名 → 404 而非 403（CI 实测）。
+        monkeypatch.setenv("AUGMENTOR_DATA_ROOTS", str(tmp_path))
         client = self._client(monkeypatch, vector_config(tmp_path))
         response = client.post(
             "/api/dataset/semantic-search",
-            json={"input_file": r"D:\Windows\not_a_dataset.json", "query": "猫"},
+            json={
+                "input_file": str(tmp_path.parent / "not_a_dataset.json"),
+                "query": "猫",
+            },
         )
         assert response.status_code == 403
 
