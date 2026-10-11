@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 import type {
-  AnalyzeResponse,
+  AggregateResponse, AnalyzeResponse,
   AnnotateResponse,
   AppConfig,
   AuditResponse,
@@ -39,7 +39,7 @@ import type {
   SemanticSearchResponse,
   ProfilingResponse,
   QualityEvaluationResponse,
-  QualityReportResponse,
+  QualityReportResponse, RagResponse, SampleResponse,
   SplitResponse,
   SanitizeResponse,
   SearchResponse,
@@ -879,6 +879,90 @@ export const splitDataset = async (
     stratify: opts.stratify,
     stratify_key: opts.stratifyKey,
     shuffle: opts.shuffle,
+  })
+  return response.data
+}
+
+// ============ 采样 / 聚合 / RAG 转换（A279 第六批接线，L230） ============
+
+/**
+ * `POST /api/dataset/sample`
+ *
+ * 四个可省键一律「不传即不写」，默认全部住在请求模型（`method "random"`、`size None`、
+ * `ratio None`、`seed None`、`stratify_key "instruction"`）。`size` 与 `ratio` 同给时
+ * **size 赢**（实测 `3` 与 `0.9` 同给 ⇒ 出 3 条），所以本层不做二选一，两格都照发。
+ *
+ * 越界的归宿**按 method 分岔**（实测，20 条语料）：`size=-1` 三支一致 400「size 必须是不小于 0
+ * 的整数，当前是 -1」；`ratio=2` 与 `ratio=-0.5` 只有 `random` 支 400，且那句是 CPython 的英文
+ * 原话「Sample larger than population or is negative」，`systematic` / `stratified` 两支照收 ——
+ * `ratio=2` 交全量 20 条，`ratio=-0.5` 走负数切片交出**前 10 条**（分层支交 0 条）。这一档没有
+ * 判据，页面上写明了（**A292**）。
+ */
+export const sampleDataset = async (
+  inputFile: string,
+  outputFile: string,
+  opts: {
+    method?: string
+    size?: number
+    ratio?: number
+    seed?: number
+    stratifyKey?: string
+  } = {}
+): Promise<SampleResponse> => {
+  const response = await api.post('/dataset/sample', {
+    input_file: inputFile,
+    output_file: outputFile,
+    method: opts.method,
+    size: opts.size,
+    ratio: opts.ratio,
+    seed: opts.seed,
+    stratify_key: opts.stratifyKey,
+  })
+  return response.data
+}
+
+/**
+ * `POST /api/dataset/aggregate`
+ *
+ * `datasets` 是「来源名 → 文件」的映射，**名字由调用方起**（契约里没有默认，也不会替你取
+ * 文件名的 stem）；空映射 400「datasets 不能为空」。`target_size` 只对 `weighted` 生效，
+ * 配 union / intersection / consistent 时**完全空转**（实测 `target_size=1` 配 union 仍交 20 条，
+ * 见 **A294**）。SDK 的 `key_fields` / `value_fields` / `random_state` 在这只端点上一个都不可设
+ * （路由是 `DataAggregator()` 无参构造），所以判重恒认 `instruction`、一致性恒认 `output`，
+ * 且 `weighted` 同参两次落盘**不相等**（**A293**）。
+ */
+export const aggregateDatasets = async (
+  datasets: Record<string, string>,
+  outputFile: string,
+  opts: { strategy?: string; targetSize?: number } = {}
+): Promise<AggregateResponse> => {
+  const response = await api.post('/dataset/aggregate', {
+    datasets,
+    output_file: outputFile,
+    strategy: opts.strategy,
+    target_size: opts.targetSize,
+  })
+  return response.data
+}
+
+/**
+ * `POST /api/dataset/rag`
+ *
+ * `format` 省略时那一格读 `config.rag.default_format`（实测 `llamaindex`）；送空串与省略**等价**
+ * （实测两者都回 `llamaindex`），所以本层把页面「服务端默认」那档的空串丢成 `undefined`，线上
+ * 只留一种形状。合法值三项来自 `augmentor/rag.py` 的 `SUPPORTED_FORMATS`，写错 ⇒ 400 且 detail
+ * 里把三项列全。切块的两个旋钮 `chunk_size` / `chunk_overlap` **只从服务端配置读**，请求里多送
+ * 这两格会被静默忽略（实测 200，产物与不送时相同）。
+ */
+export const convertToRag = async (
+  inputFile: string,
+  outputFile: string,
+  opts: { format?: string } = {}
+): Promise<RagResponse> => {
+  const response = await api.post('/dataset/rag', {
+    input_file: inputFile,
+    output_file: outputFile,
+    format: opts.format || undefined,
   })
   return response.data
 }

@@ -87,7 +87,10 @@ SUBSET = ITEMS[:4]
 NATURAL_SUFFIX = {"json": ".json", "jsonl": ".jsonl", "csv": ".csv", "tsv": ".tsv",
                   "excel": ".xlsx", "xlsx": ".xlsx"}
 
-STATE_RE = re.compile(r"const \[(\w+), set\w+\] = useState(?:<[^>]*>)?\((.*?)\)")
+#: 泛型位用 `[^()]*?` 而不是 `[^>]*`：L230 的页面写出了 `useState<Record<string, string>>({})`，
+#: 嵌套的 `>` 会让「非贪婪到第一个尖括号」的读法在泛型位里断掉、进而报「页面里没有这个 state」。
+#: 这一改是**加宽**（多认一种形状），不是放松：原来读得到的那几种一个都没变，本文件 55 支复跑全绿。
+STATE_RE = re.compile(r"const \[(\w+), set\w+\] = useState(?:<[^()]*?>)?\((.*?)\)")
 ENUM_RE = re.compile(r"全部可选目标: ([^）)]+)")
 
 

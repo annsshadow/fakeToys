@@ -14,8 +14,8 @@ import {
   type TableColumnsType,
 } from 'antd'
 import { DownloadOutlined, DeleteOutlined, EditOutlined, UploadOutlined, PlayCircleOutlined } from '@ant-design/icons'
-import { apiErrorDetail, bulkErrorDetail, isTimeoutError, getDataFiles, loadData, updateDataItem, deleteDataItem, exportData, uploadData, getDemoData, convertDataset, mergeDatasets, splitDataset } from '../services/api'
-import type { ConvertResponse, DataFileInfo, DataItem, MergeResponse, SplitResponse } from '../types/api'
+import { apiErrorDetail, bulkErrorDetail, isTimeoutError, getDataFiles, loadData, updateDataItem, deleteDataItem, exportData, uploadData, getDemoData, convertDataset, mergeDatasets, splitDataset, sampleDataset, aggregateDatasets, convertToRag } from '../services/api'
+import type { AggregateResponse, ConvertResponse, DataFileInfo, DataItem, MergeResponse, RagResponse, SampleResponse, SplitResponse } from '../types/api'
 
 /**
  * 上传时可显式声明的源格式
@@ -46,6 +46,32 @@ const CONVERT_TARGET_FORMATS = [
   'json', 'jsonl', 'csv', 'tsv', 'alpaca', 'sharegpt', 'chatml',
   'llama_factory', 'vicuna', 'belle', 'excel', 'xlsx',
 ]
+
+/**
+ * 采样卡的「方法」下拉——权威是 `augmentor/dataset_ops.py` 里 `sample()` 的分发那三支
+ *
+ * 由 `tests/unit/test_sample_aggregate_rag_wiring_l230.py` 用 AST 把分发里逐个字面量抓回来
+ * 与本表**逐项相等**（含顺序）：加一支方法时两端必须一起动，否则那一支红。
+ * 分岔的判据都写在卡上——同一个越界比例，三支的后果不一样（A292）。
+ */
+const SAMPLE_METHODS = ['random', 'systematic', 'stratified']
+
+/**
+ * 聚合卡的「策略」下拉——权威是 `augmentor/aggregator.py` 里 `aggregate()` 的分发那四支
+ *
+ * 同上，由 l230 的守卫用 AST 对账。`target_size` 那一格**只对 `weighted` 生效**，配其余三支
+ * 完全空转（实测 `target_size=1` 配 union 仍交全量，A294），所以卡上把它标成加权专用。
+ */
+const AGGREGATE_STRATEGIES = ['union', 'intersection', 'weighted', 'consistent']
+
+/**
+ * RAG 卡的「格式」下拉——逐项等于 `augmentor/rag.py` 的 `SUPPORTED_FORMATS`
+ *
+ * 这一份只有三项（`llamaindex / langchain / custom`），与转换卡那两张格式表**毫无关系**：
+ * 那边是数据容器格式，这边是检索库的记录格式。空串那档（「服务端默认」）不在这里，由
+ * `<option value="">` 单独给——那一格读的是 `config.rag.default_format`。
+ */
+const RAG_FORMATS = ['llamaindex', 'langchain', 'custom']
 
 export default function DataManagement() {
   const [files, setFiles] = useState<DataFileInfo[]>([])
@@ -278,6 +304,109 @@ export default function DataManagement() {
       }))
     } catch (err) {
       message.error(apiErrorDetail(err, '分割失败'))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // ---- L230 采样 / 聚合 / RAG 三张卡（A279 第六批接线）----
+  // 初值逐个等于请求模型的默认（`method="random"`、`stratify_key="instruction"`、
+  // `strategy="union"`），由 l230 的守卫逐项对账；`size` / `ratio` / `seed` / `target_size`
+  // 的默认都是 `None`、`format` 也是 ⇒ 页面上留空就是「那一格不发」。三个 `output_file`
+  // 在契约里必填，页面**不给默认**，空着就发不出去。
+  const [sampleMethod, setSampleMethod] = useState('random')
+  const [sampleSize, setSampleSize] = useState<number | null>(null)
+  const [sampleRatio, setSampleRatio] = useState<number | null>(null)
+  const [sampleSeed, setSampleSeed] = useState<number | null>(null)
+  const [sampleKey, setSampleKey] = useState('instruction')
+  const [sampleOut, setSampleOut] = useState('')
+  const [sampleResult, setSampleResult] = useState<SampleResponse | null>(null)
+  const [aggSelected, setAggSelected] = useState<string[]>([])
+  const [aggNames, setAggNames] = useState<Record<string, string>>({})
+  const [aggStrategy, setAggStrategy] = useState('union')
+  const [aggTargetSize, setAggTargetSize] = useState<number | null>(null)
+  const [aggOut, setAggOut] = useState('')
+  const [aggResult, setAggResult] = useState<AggregateResponse | null>(null)
+  const [ragFormat, setRagFormat] = useState('')
+  const [ragOut, setRagOut] = useState('')
+  const [ragResult, setRagResult] = useState<RagResponse | null>(null)
+
+  const handleSample = async () => {
+    if (!selectedFile || !sampleOut) {
+      message.warning('采样需要选中源文件并点名输出文件名')
+      return
+    }
+    setLoading(true)
+    try {
+      // 数值格一律 `?? undefined` 而不是 `|| undefined`：`0` 是有意义的档位（实测 `size=0`
+      // ⇒ 200 并在盘上留一份 `[]`），清空输入才是「这一格不发」。
+      setSampleResult(await sampleDataset(selectedFile, sampleOut, {
+        method: sampleMethod,
+        size: sampleSize ?? undefined,
+        ratio: sampleRatio ?? undefined,
+        seed: sampleSeed ?? undefined,
+        stratifyKey: sampleKey,
+      }))
+    } catch (err) {
+      message.error(apiErrorDetail(err, '采样失败'))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const toggleAggSource = (fileName: string, checked: boolean) => {
+    if (!checked) {
+      setAggSelected(aggSelected.filter((name) => name !== fileName))
+      return
+    }
+    // 来源名由**页面**起：契约只收「名字 → 文件」的映射，既没有默认也不会替你取 stem，
+    // 所以这里拿文件名去掉扩展名当初始名，用户可以在输入框里改。
+    setAggNames({ ...aggNames, [fileName]: fileName.replace(/\.[^.]+$/, '') })
+    setAggSelected([...aggSelected, fileName])
+  }
+
+  const handleAggregate = async () => {
+    if (!aggSelected.length || !aggOut) {
+      message.warning('聚合至少要勾一个来源并点名输出文件名')
+      return
+    }
+    const datasets: Record<string, string> = {}
+    for (const fileName of aggSelected) {
+      const sourceName = (aggNames[fileName] ?? '').trim()
+      if (!sourceName) {
+        message.warning(`请给 ${fileName} 起一个来源名`)
+        return
+      }
+      // 重名在映射里互相覆盖 ⇒ 回执的 source_counts 会少一格，那是静默丢源，发之前先拦
+      if (sourceName in datasets) {
+        message.warning(`来源名「${sourceName}」重复：两格会互相覆盖`)
+        return
+      }
+      datasets[sourceName] = fileName
+    }
+    setLoading(true)
+    try {
+      setAggResult(await aggregateDatasets(datasets, aggOut, {
+        strategy: aggStrategy,
+        targetSize: aggTargetSize ?? undefined,
+      }))
+    } catch (err) {
+      message.error(apiErrorDetail(err, '聚合失败'))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleRag = async () => {
+    if (!selectedFile || !ragOut) {
+      message.warning('RAG 转换需要选中源文件并点名输出文件名')
+      return
+    }
+    setLoading(true)
+    try {
+      setRagResult(await convertToRag(selectedFile, ragOut, { format: ragFormat }))
+    } catch (err) {
+      message.error(apiErrorDetail(err, 'RAG 转换失败'))
     } finally {
       setLoading(false)
     }
@@ -606,6 +735,219 @@ export default function DataManagement() {
         {splitResult && (
           <div style={{ marginTop: 4, fontSize: 12 }}>
             目录：{splitResult.output_dir}（输入 {splitResult.input_file}）
+          </div>
+        )}
+      </Card>
+
+      <Card title="采样" size="small" style={{ marginTop: 16 }}>
+        <Space wrap>
+          <label>
+            方法
+            <select
+              value={sampleMethod}
+              onChange={(e) => setSampleMethod(e.target.value)}
+              aria-label="采样方法"
+              style={{ marginLeft: 6, padding: '4px 8px', borderRadius: 4 }}
+            >
+              {SAMPLE_METHODS.map((method) => (
+                <option key={method} value={method}>{method}</option>
+              ))}
+            </select>
+          </label>
+          <label>
+            条数
+            <InputNumber
+              aria-label="采样条数"
+              value={sampleSize}
+              onChange={setSampleSize}
+              style={{ marginLeft: 6, width: 90 }}
+            />
+          </label>
+          <label>
+            比例
+            <InputNumber
+              aria-label="采样比例"
+              value={sampleRatio}
+              onChange={setSampleRatio}
+              step={0.05}
+              style={{ marginLeft: 6, width: 90 }}
+            />
+          </label>
+          <label>
+            seed
+            <InputNumber
+              aria-label="采样随机种子"
+              value={sampleSeed}
+              onChange={setSampleSeed}
+              style={{ marginLeft: 6, width: 90 }}
+            />
+          </label>
+          <label>
+            分层字段
+            <Input
+              aria-label="采样分层字段名"
+              value={sampleKey}
+              onChange={(e) => setSampleKey(e.target.value)}
+              style={{ marginLeft: 6, width: 140 }}
+            />
+          </label>
+          <Input
+            placeholder="输出文件名，如 sampled.json"
+            aria-label="采样输出文件名"
+            value={sampleOut}
+            onChange={(e) => setSampleOut(e.target.value)}
+            style={{ width: 220 }}
+          />
+          <Button onClick={handleSample} loading={loading}>采样选中的文件</Button>
+        </Space>
+        <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75 }}>
+          条数与比例同给时**条数赢**（实测 3 与 0.9 同给 ⇒ 出 3 条）；条数超过总条数会被夹到总条数；
+          条数 0、或比例小到取整归零，都**不报错**——交付一份内容为 <code>[]</code> 的空文件。
+          seed 留空则同一份输入两次采样结果不同（实测三次跑出三份）。
+        </div>
+        <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
+          比例越界**没有判据**，三种方法三种后果：比例 2 与 -0.5 只有 random 支回 400（那句是英文原话，
+          页面照抄不翻译），systematic 支分别交全量与**前 10 条**（负数切片），分层支分别交全量与 0 条（A292）。
+          分层那一档：字段名不存在**不报错**（全部塌成一个分组），而分组键只取字段值的**前 10 个字符**——
+          前 10 个字相同的两条会被当成同一层，配额因此按折叠后的组数摊（A296）。
+        </div>
+        {sampleResult && (
+          <div aria-label="采样回执" style={{ marginTop: 8 }}>
+            {sampleResult.input_count} 条进 / {sampleResult.output_count} 条出 ⇒{' '}
+            {sampleResult.output_file}（源 {sampleResult.input_file}）
+          </div>
+        )}
+      </Card>
+
+      <Card title="多源聚合" size="small" style={{ marginTop: 16 }}>
+        <Space wrap direction="vertical" align="start">
+          <Space wrap>
+            {files.map((file) => (
+              <span key={file.name} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                <Checkbox
+                  aria-label={`聚合来源 ${file.name}`}
+                  checked={aggSelected.includes(file.name)}
+                  onChange={(e) => toggleAggSource(file.name, e.target.checked)}
+                >
+                  {file.name}
+                </Checkbox>
+                {aggSelected.includes(file.name) && (
+                  <Input
+                    aria-label={`来源名 ${file.name}`}
+                    value={aggNames[file.name]}
+                    onChange={(e) => setAggNames({ ...aggNames, [file.name]: e.target.value })}
+                    style={{ width: 120 }}
+                  />
+                )}
+              </span>
+            ))}
+          </Space>
+          <Space wrap>
+            <label>
+              策略
+              <select
+                value={aggStrategy}
+                onChange={(e) => setAggStrategy(e.target.value)}
+                aria-label="聚合策略"
+                style={{ marginLeft: 6, padding: '4px 8px', borderRadius: 4 }}
+              >
+                {AGGREGATE_STRATEGIES.map((strategy) => (
+                  <option key={strategy} value={strategy}>{strategy}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              目标条数（只 weighted 吃这一格）
+              <InputNumber
+                aria-label="聚合目标条数"
+                value={aggTargetSize}
+                onChange={setAggTargetSize}
+                style={{ marginLeft: 6, width: 100 }}
+              />
+            </label>
+            <Input
+              placeholder="输出文件名，如 agg.json"
+              aria-label="聚合输出文件名"
+              value={aggOut}
+              onChange={(e) => setAggOut(e.target.value)}
+              style={{ width: 220 }}
+            />
+            <Button onClick={handleAggregate} loading={loading}>聚合勾选的来源</Button>
+          </Space>
+        </Space>
+        <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75 }}>
+          来源名由**页面**起（初始取文件名去掉扩展名，可改）：契约只收「名字 → 文件」的映射，不替你取名。
+          判重恒认 <code>instruction</code>、一致性恒认 <code>output</code> —— SDK 的 key_fields /
+          value_fields / random_state 在这只端点上一个都不可设，所以同问不同答的两条会被并成一条（留第一条），
+          而 weighted **不可复现**：同一份请求两次跑出的落盘内容不同（A293）。
+        </div>
+        <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
+          目标条数只对 weighted 生效，配其余三支**完全空转**（实测填 1 配 union 仍交全量，A294）；
+          留空时按 SDK 默认 100 走，够不着就交全量。consistent 连**同一个源内部**的不一致也算冲突，
+          冲突的那些条目整份不落盘、只在下面这份回执里留痕（A297）。
+        </div>
+        {aggResult && (
+          <div aria-label="聚合回执" style={{ marginTop: 8 }}>
+            落盘 {aggResult.aggregated_count} 条，去重删掉 {aggResult.removed_duplicates} 条 ⇒{' '}
+            {aggResult.output_file}
+            <div style={{ marginTop: 4, fontSize: 12 }}>
+              各源读入：{Object.entries(aggResult.source_counts)
+                .map(([name, count]) => `${name} ${count} 条`).join(' / ')}
+            </div>
+            {aggResult.conflicts.length > 0 && (
+              <div style={{ marginTop: 4, fontSize: 12 }}>
+                一致性冲突 {aggResult.conflicts.length} 处（这些条目**没有**落盘）：
+                {aggResult.conflicts.map((conflict) => (
+                  <div key={conflict.key}>
+                    「{conflict.key}」各源答案不一致：{conflict.values.join(' / ')}
+                    （来源 {conflict.sources.join(' / ')}）
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </Card>
+
+      <Card title="转成 RAG 检索格式" size="small" style={{ marginTop: 16 }}>
+        <Space wrap>
+          <label>
+            格式
+            <select
+              value={ragFormat}
+              onChange={(e) => setRagFormat(e.target.value)}
+              aria-label="RAG 格式"
+              style={{ marginLeft: 6, padding: '4px 8px', borderRadius: 4 }}
+            >
+              <option value="">服务端默认（config.rag.default_format）</option>
+              {RAG_FORMATS.map((fmt) => (
+                <option key={fmt} value={fmt}>{fmt}</option>
+              ))}
+            </select>
+          </label>
+          <Input
+            placeholder="输出文件名，如 rag.json"
+            aria-label="RAG 输出文件名"
+            value={ragOut}
+            onChange={(e) => setRagOut(e.target.value)}
+            style={{ width: 220 }}
+          />
+          <Button onClick={handleRag} loading={loading}>转成 RAG 格式</Button>
+        </Space>
+        <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75 }}>
+          留空即交回服务端（那一格读 config.rag.default_format，实测 llamaindex），回执报的是**生效**的那一档；
+          送空串与省略实测等价，所以服务层把空串丢成不发这一格。切块的两个旋钮 chunk_size / chunk_overlap
+          **只从服务端配置读**，请求里多送会被静默忽略（实测产物逐字相同）。
+        </div>
+        <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
+          三档的记录数都等于输入条数（短文本不触发切块），但落盘的键集各不相同：langchain 2 键、
+          llamaindex 6 键、custom 5 键。路由里还站着第四份默认字面量 langchain，与 config 和 SDK
+          那两份 llamaindex 都不一致，只在 config 被设成空串时才轮得到它（A295）。
+        </div>
+        {ragResult && (
+          <div aria-label="RAG 回执" style={{ marginTop: 8 }}>
+            按 <code>{ragResult.format}</code> 落 {ragResult.record_count} 条记录
+            （输入 {ragResult.input_count} 条）⇒ {ragResult.output_file}
           </div>
         )}
       </Card>

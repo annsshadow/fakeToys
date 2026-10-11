@@ -123,8 +123,14 @@ beforeEach(() => {
   spies.getDataFiles.mockClear()
 })
 
-/** 三个数字输入框按 JSX 顺序：0 train、1 val、2 test、3 seed */
-const spinbuttons = () => screen.getAllByRole('spinbutton') as HTMLInputElement[]
+/**
+ * 数字输入框按 JSX 顺序取：0 train、1 val、2 test、3 seed
+ *
+ * L230 之后页面上还有 4 个 `InputNumber`（采样条数 / 比例 / seed、聚合目标条数，都在分割卡
+ * **之后**），所以这一段一律 `slice(0, 4)`：分割那四格的位置没动，动的是清单的长度。
+ */
+const spinbuttons = () =>
+  (screen.getAllByRole('spinbutton') as HTMLInputElement[]).slice(0, 4)
 
 /**
  * 按名字点按钮：用**子串**正则而不是精确可及名
@@ -151,7 +157,7 @@ const labeled = (name: string) => document.querySelector(`[aria-label="${name}"]
 /**
  * 等文件列表落地再点按钮
  *
- * `selectedFile` 是 `loadFiles` 里异步设成 `files[0]` 的（`DataManagement.tsx:70`），
+ * `selectedFile` 是 `loadFiles` 里异步设成 `files[0]` 的（`DataManagement.tsx:96`；L230 在文件头加了三张下拉的清单常量，把这一格从 70 平移过来，按现量重钉），
  * 刚 `render()` 那一瞬它是空串——此时点任何按钮只会撞上必填闸，测到的是闸而不是接线。
  * 实测第一轮就是这个原因红 5 支（页面回的是「需要选中源文件并点名输出文件名」）。
  */
