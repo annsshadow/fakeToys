@@ -12,6 +12,10 @@
  * 对应下面两个新 describe：画像的成功/失败两路，评估的必填闸/成功/失败三路。
  * L226 起再加一张「内容检索」（A279 第二批接线），对应 `Analysis 内容检索` 那个
  * describe：闸/成功/换方法/无高亮/零命中/失败六路。
+ * L227 起再加「语义相似检索」与「增强前后影响」（A279 第三批接线），对应最后两个
+ * describe。这一批多了一条判据方向：页面**递出去的是本次生效值**（`top_k`、`text_key`、
+ * `min_scale_gain` 都取自控件当前值而不是初值），回执里那些「改了结果就不同」的字段
+ * （backend/dimension/collection、判决门槛）必须原样出声。
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
@@ -47,6 +51,8 @@ const spies = vi.hoisted(() => ({
   languageProfile: null as unknown as ReturnType<typeof vi.fn>,
   evaluateDataset: null as unknown as ReturnType<typeof vi.fn>,
   searchDataset: null as unknown as ReturnType<typeof vi.fn>,
+  semanticSearch: null as unknown as ReturnType<typeof vi.fn>,
+  assessImpact: null as unknown as ReturnType<typeof vi.fn>,
 }))
 
 vi.mock('../services/api', async (importOriginal) => {
@@ -59,6 +65,8 @@ vi.mock('../services/api', async (importOriginal) => {
   spies.languageProfile = vi.fn()
   spies.evaluateDataset = vi.fn()
   spies.searchDataset = vi.fn()
+  spies.semanticSearch = vi.fn()
+  spies.assessImpact = vi.fn()
   return {
     ...actual,
     getDataFiles: spies.getDataFiles,
@@ -69,6 +77,8 @@ vi.mock('../services/api', async (importOriginal) => {
     languageProfile: spies.languageProfile,
     evaluateDataset: spies.evaluateDataset,
     searchDataset: spies.searchDataset,
+    semanticSearch: spies.semanticSearch,
+    assessImpact: spies.assessImpact,
   }
 })
 
@@ -144,18 +154,26 @@ async function pickInNthSelect(container: HTMLElement, index: number, label: str
 /**
  * 取页面上表头含 header 的那张表的数据行（按列文本）
  *
- * 本页有四张表（关键词 / 基准 / 画像 / 评估），全局 `.ant-table-row` 会串台，
- * 所以按表头文本定位。
+ * 全局 `.ant-table-row` 会串台（本页选中文件后已有 关键词 / 基准 / 画像 / 评估 / 检索高亮 /
+ * 语义命中 / 增益 / 基线侧快照 / 增强后侧快照 多张表），所以按表头文本定位。
  */
-const rowsOfTable = (container: HTMLElement, header: string) => {
-  const table = Array.from(container.querySelectorAll('.ant-table')).find(t =>
+const tablesByHeader = (container: HTMLElement, header: string) => {
+  const tables = Array.from(container.querySelectorAll('.ant-table')).filter(t =>
     t.querySelector('.ant-table-thead')?.textContent?.includes(header)
   )
-  if (!table) throw new Error(`找不到表头含 ${header} 的表格`)
-  return Array.from(table.querySelectorAll('.ant-table-tbody .ant-table-row')).map(row =>
-    Array.from(row.querySelectorAll('td')).map(td => td.textContent)
+  if (tables.length === 0) throw new Error(`找不到表头含 ${header} 的表格`)
+  return tables.map(table =>
+    Array.from(table.querySelectorAll('.ant-table-tbody .ant-table-row')).map(row =>
+      Array.from(row.querySelectorAll('td')).map(td => td.textContent)
+    )
   )
 }
+
+const rowsOfTable = (container: HTMLElement, header: string) => tablesByHeader(container, header)[0]
+
+/** 两个 `InputNumber` 的 input：DOM 序 0=语义检索「前 K 条」，1=影响评估「规模增益门槛」 */
+const numberInputs = (container: HTMLElement) =>
+  Array.from(container.querySelectorAll('.ant-input-number-input'))
 
 afterEach(() => {
   cleanup()
@@ -470,5 +488,262 @@ describe('Analysis 内容检索', () => {
       timeout: 4000,
     })
     expect(screen.queryByText(/^命中 \d+ 条$/)).not.toBeInTheDocument()
+  })
+})
+
+/**
+ * 语义相似检索（L227，A279 第三批接线）
+ *
+ * 钉四件事：① 递出去的是**本次生效值**（`topK` / `textKey` 取自控件当前值，不是初值）；
+ * ② 三个「本次生效值」回显标签（backend / dimension / collection）在**任何**有回执的路径上
+ * 都必须在场，包括 `top_k=0` 那种「只要回显、不要命中」的路径——那一档存在的理由就是核对
+ * 「配了什么、算了什么」，把它渲染成空表等于把这条能力删了；
+ * ③ 相似度是相对排序量，按四位原样给，不折算成百分比；
+ * ④ 空查询必须拦在门口：实测 `query=""` 照样回条目且 `score` 全 0，那是一份退化读数。
+ */
+describe('Analysis 语义相似检索', () => {
+  const SEMANTIC = {
+    query: '租房押金',
+    total: 2,
+    backend: 'faiss',
+    dimension: 384,
+    collection: 'default',
+    results: [
+      // 一条长小数（验 toFixed(4) 的截断），一条整 1（验它渲染成 1.0000 而不是「1」或「100%」）
+      { index: 3, score: 0.8123456, text: '租房合同要写明押金。', item: { instruction: '押金怎么退' } },
+      { index: 0, score: 1, text: '合同里的押金条款', item: { instruction: '租房合同' } },
+    ],
+  }
+
+  it('按默认档位检索：递出 topK=5·textKey=instruction，回显标签与命中表都出声', async () => {
+    spies.analyzeData.mockResolvedValue(ANALYSIS)
+    spies.semanticSearch.mockResolvedValue(SEMANTIC)
+
+    const container = await selectFileAndWait()
+    fireEvent.change(container.querySelector('input[placeholder="查询文本"]')!, {
+      target: { value: '租房押金' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /运行语义检索/ }))
+
+    await waitFor(() =>
+      expect(spies.semanticSearch).toHaveBeenCalledWith('seed.json', '租房押金', {
+        topK: 5,
+        textKey: 'instruction',
+      })
+    )
+    expect(await screen.findByText('命中 2 条')).toBeInTheDocument()
+    expect(screen.getByText('后端 faiss')).toBeInTheDocument()
+    expect(screen.getByText('维度 384')).toBeInTheDocument()
+    expect(screen.getByText('集合 default')).toBeInTheDocument()
+    // 顺序跟随响应而不是按分数重排：排名是后端给的，页面再排一次就是把两份口径叠在一起
+    expect(rowsOfTable(container, '相似度')).toEqual([
+      ['3', '0.8123', '租房合同要写明押金。'],
+      ['0', '1.0000', '合同里的押金条款'],
+    ])
+  })
+
+  it('改前 K 条与编码字段：递出去的是改后的那两个值', async () => {
+    spies.analyzeData.mockResolvedValue(ANALYSIS)
+    spies.semanticSearch.mockResolvedValue({ ...SEMANTIC, total: 1, results: [SEMANTIC.results[0]] })
+
+    const container = await selectFileAndWait()
+    fireEvent.change(container.querySelector('input[placeholder="查询文本"]')!, {
+      target: { value: '押金' },
+    })
+    fireEvent.change(numberInputs(container)[0]!, { target: { value: '2' } })
+    // 本页第四个下拉是「编码字段」（0=待分析文件，1=参照集，2=检索方法）
+    await pickInNthSelect(container, 3, '编码 output')
+    fireEvent.click(screen.getByRole('button', { name: /运行语义检索/ }))
+
+    await waitFor(() =>
+      expect(spies.semanticSearch).toHaveBeenCalledWith('seed.json', '押金', {
+        topK: 2,
+        textKey: 'output',
+      })
+    )
+  })
+
+  it('前 K 条取 0：没有命中，但三个生效值照旧回显（这一档的存在理由就是核对配置）', async () => {
+    spies.analyzeData.mockResolvedValue(ANALYSIS)
+    spies.semanticSearch.mockResolvedValue({ ...SEMANTIC, total: 0, results: [] })
+
+    const container = await selectFileAndWait()
+    fireEvent.change(container.querySelector('input[placeholder="查询文本"]')!, {
+      target: { value: '租房押金' },
+    })
+    fireEvent.change(numberInputs(container)[0]!, { target: { value: '0' } })
+    fireEvent.click(screen.getByRole('button', { name: /运行语义检索/ }))
+
+    await waitFor(() =>
+      expect(spies.semanticSearch).toHaveBeenCalledWith('seed.json', '租房押金', {
+        topK: 0,
+        textKey: 'instruction',
+      })
+    )
+    expect(await screen.findByText(/没有命中/)).toBeInTheDocument()
+    expect(screen.getByText('后端 faiss')).toBeInTheDocument()
+    expect(screen.getByText('维度 384')).toBeInTheDocument()
+    expect(screen.getByText('命中 0 条')).toBeInTheDocument()
+    // 命中表不该在零命中时渲染出来（本页另有表，查的是语义表自己的表头）
+    expect(screen.queryByText('相似度')).not.toBeInTheDocument()
+  })
+
+  it('空查询不发请求', async () => {
+    spies.analyzeData.mockResolvedValue(ANALYSIS)
+
+    await selectFileAndWait()
+    fireEvent.click(screen.getByRole('button', { name: /运行语义检索/ }))
+
+    await waitFor(() => expect(document.body.textContent).toContain('请输入查询文本'))
+    expect(spies.semanticSearch).not.toHaveBeenCalled()
+  })
+
+  it('检索失败时专属文案出声，且不渲染回显标签', async () => {
+    spies.analyzeData.mockResolvedValue(ANALYSIS)
+    spies.semanticSearch.mockRejectedValue(new Error('boom'))
+
+    const container = await selectFileAndWait()
+    fireEvent.change(container.querySelector('input[placeholder="查询文本"]')!, {
+      target: { value: '租房押金' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /运行语义检索/ }))
+
+    await waitFor(() => expect(document.body.textContent).toContain('语义检索失败'), {
+      timeout: 4000,
+    })
+    expect(screen.queryByText('后端 faiss')).not.toBeInTheDocument()
+  })
+})
+
+/**
+ * 增强前后影响（L227，A279 第三批接线）
+ *
+ * 钉四件事：① 双侧必填闸；② 四项增益**按项**渲染并带量纲，遇到响应里新增的键要落
+ * 「未知口径」而不是被 `GAIN_PRESENTATION` 的清单吃掉（后端加一项增益时页面不许静默丢数据）；
+ * ③ 两侧快照必须读出**不同的数**（把 `after` 误写成 `impact.before` 是这类双列布局最常见的错），
+ * 且 `extra` 里出现的新键不进表；④ 判决标签旁边要说清「只看两项」并把**本次门槛**报出来，
+ * 因为门槛现在是用户可调的控件。
+ */
+describe('Analysis 增强前后影响', () => {
+  const IMPACT = {
+    before: {
+      total_items: 4,
+      unique_instructions: 4,
+      avg_length: 12.5,
+      length_std: 2.48746859276655,
+      duplicate_rate: 0,
+      extra: {},
+    },
+    after: {
+      total_items: 8,
+      unique_instructions: 6,
+      avg_length: 14.25,
+      length_std: 3.1,
+      duplicate_rate: 0.05,
+      // 故意给非空：渲染清单里没有 extra，这一档多出来的键必须不落地
+      extra: { novel_metric: 9 },
+    },
+    gains: {
+      scale_gain: 1.0,
+      diversity_gain: 0.5,
+      dedup_gain: -0.06,
+      length_spread_gain: 1.29128784747792,
+      // 清单外的键：页面必须照报（label 退回键名），而不是消失
+      novelty_gain: 0.5,
+    },
+    beneficial: true,
+  }
+
+  it('只选了基线时点评估得到双侧必填 warning，不调服务层', async () => {
+    spies.analyzeData.mockResolvedValue(ANALYSIS)
+
+    await selectFileAndWait()
+    fireEvent.click(screen.getByRole('button', { name: /运行影响评估/ }))
+
+    await waitFor(() =>
+      expect(document.body.textContent).toContain('影响评估需要同时选中基线集与增强后数据集')
+    )
+    expect(spies.assessImpact).not.toHaveBeenCalled()
+  })
+
+  it('两侧齐备：增益逐项带量纲，未知键不丢，两侧快照读出不同的数', async () => {
+    spies.analyzeData.mockResolvedValue(ANALYSIS)
+    spies.assessImpact.mockResolvedValue(IMPACT)
+
+    const container = await selectFileAndWait()
+    await pickInNthSelect(container, 4, 'seed.json')
+    fireEvent.click(screen.getByRole('button', { name: /运行影响评估/ }))
+
+    await waitFor(() =>
+      expect(spies.assessImpact).toHaveBeenCalledWith('seed.json', 'seed.json', {
+        textField: 'instruction',
+        minScaleGain: 0,
+      })
+    )
+    expect(await screen.findByText('判为有增益')).toBeInTheDocument()
+    expect(rowsOfTable(container, '增益项')).toEqual([
+      ['规模增益', 'scale_gain', '比值', '1.0000'],
+      ['多样性增益', 'diversity_gain', '比值（按所选字段的唯一值）', '0.5000'],
+      ['去重增益', 'dedup_gain', '绝对差，正=重复率下降', '-0.0600'],
+      ['长度离散增益', 'length_spread_gain', '绝对差（标准差）', '1.2913'],
+      ['novelty_gain', 'novelty_gain', '未知口径', '0.5000'],
+    ])
+    // 表头含「指标」的表在本页恰好两张（基线侧 / 增强后侧）；先坐实数量，再比内容，
+    // 否则「两张其实渲染了同一侧」这种错会被只查第一张的写法放过去。
+    const snapshots = tablesByHeader(container, '指标')
+    expect(snapshots.length).toBe(2)
+    expect(snapshots[0]).toEqual([
+      ['条目数', '4'],
+      ['唯一值数（按所选字段）', '4'],
+      ['平均长度', '12.5000'],
+      ['长度标准差', '2.4875'],
+      ['重复率', '0.0000'],
+    ])
+    expect(snapshots[1]).toEqual([
+      ['条目数', '8'],
+      ['唯一值数（按所选字段）', '6'],
+      ['平均长度', '14.2500'],
+      ['长度标准差', '3.1000'],
+      ['重复率', '0.0500'],
+    ])
+    // extra 里的新键不进表；计数渲染成 4 而不是 4.0000（假精度）
+    expect(screen.queryByText('novel_metric')).not.toBeInTheDocument()
+    expect(screen.queryByText('4.0000')).not.toBeInTheDocument()
+  })
+
+  it('门槛抬到 0.5 且换看 output：递出生效值，判为无增益时把本次门槛一起说清', async () => {
+    spies.analyzeData.mockResolvedValue(ANALYSIS)
+    spies.assessImpact.mockResolvedValue({ ...IMPACT, beneficial: false })
+
+    const container = await selectFileAndWait()
+    await pickInNthSelect(container, 4, 'seed.json')
+    await pickInNthSelect(container, 5, '看 output')
+    fireEvent.change(numberInputs(container)[1]!, { target: { value: '0.5' } })
+    fireEvent.click(screen.getByRole('button', { name: /运行影响评估/ }))
+
+    await waitFor(() =>
+      expect(spies.assessImpact).toHaveBeenCalledWith('seed.json', 'seed.json', {
+        textField: 'output',
+        minScaleGain: 0.5,
+      })
+    )
+    expect(await screen.findByText('判为无增益')).toBeInTheDocument()
+    // 门槛现在是可调的，所以口径文案必须跟着报本次值而不是出厂默认
+    expect(screen.getByText(/本次 0\.5/)).toBeInTheDocument()
+  })
+
+  it('评估失败时专属文案出声，且不渲染增益表', async () => {
+    spies.analyzeData.mockResolvedValue(ANALYSIS)
+    spies.assessImpact.mockRejectedValue(new Error('boom'))
+
+    const container = await selectFileAndWait()
+    await pickInNthSelect(container, 4, 'seed.json')
+    fireEvent.click(screen.getByRole('button', { name: /运行影响评估/ }))
+
+    await waitFor(() => expect(document.body.textContent).toContain('影响评估失败'), {
+      timeout: 4000,
+    })
+    expect(screen.queryByText('判为有增益')).not.toBeInTheDocument()
+    expect(screen.queryByText('规模增益')).not.toBeInTheDocument()
   })
 })

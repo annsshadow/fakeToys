@@ -22,6 +22,7 @@ import type {
   ExportFormatsResponse,
   ExportPreviewResponse,
   HealthResponse,
+  ImpactResponse,
   LanguageProfileResponse,
   LeakageResponse,
   ModelsResponse,
@@ -31,6 +32,7 @@ import type {
   MutationResponse,
   OutliersResponse,
   PiiPatternsResponse,
+  SemanticSearchResponse,
   ProfilingResponse,
   QualityEvaluationResponse,
   QualityReportResponse,
@@ -686,5 +688,51 @@ export const autoConfigRecommend = async (
   inputFile: string
 ): Promise<AutoConfigResponse> => {
   const response = await api.post('/dataset/auto-config', { input_file: inputFile })
+  return response.data
+}
+
+// ============ 影响评估 / 语义检索（A279 第三批接线，L227） ============
+
+/**
+ * `POST /api/dataset/impact`
+ *
+ * 两个文件都是必填（契约里 `before_file` / `after_file` 都没有默认值）。
+ * `text_field` 与 `min_scale_gain` 走「不传即不写」：权威默认 `instruction` / 0.0 住在
+ * `ImpactRequest`，本层不写第二套。空基线由服务端判 **400**（四项增益的分母是基线，
+ * 空基线算出的 0.0 会被读成「毫无效果」而不是「没有可比的东西」）——这条判决要在页面上
+ * 出声，不在这里替它兜。
+ */
+export const assessImpact = async (
+  beforeFile: string,
+  afterFile: string,
+  opts: { textField?: string; minScaleGain?: number } = {}
+): Promise<ImpactResponse> => {
+  const response = await api.post('/dataset/impact', {
+    before_file: beforeFile,
+    after_file: afterFile,
+    text_field: opts.textField,
+    min_scale_gain: opts.minScaleGain,
+  })
+  return response.data
+}
+
+/**
+ * `POST /api/dataset/semantic-search`
+ *
+ * `top_k` 默认 5 与 `text_key` 默认 `instruction` 都住在 `SemanticSearchRequest`
+ * （`api/routes/vector.py:34`），本层不写第二套。实测 `top_k=0` 是合法的「只要回显、
+ * 不要命中」⇒ 空 `results` 与「库里没有东西」要分开读，所以 `total` 照原样渲染。
+ */
+export const semanticSearch = async (
+  inputFile: string,
+  query: string,
+  opts: { topK?: number; textKey?: string } = {}
+): Promise<SemanticSearchResponse> => {
+  const response = await api.post('/dataset/semantic-search', {
+    input_file: inputFile,
+    query,
+    top_k: opts.topK,
+    text_key: opts.textKey,
+  })
   return response.data
 }
