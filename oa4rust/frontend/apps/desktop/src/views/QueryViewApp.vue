@@ -13,6 +13,7 @@
         <button class="btn-primary" @click="doSearch">搜索</button>
         <button class="btn-primary" @click="loadViews">刷新</button>
         <button class="btn-primary" @click="loadQueryList">查询列表</button>
+        <button class="btn-primary" @click="loadQueryByFlag">按查询取视图</button>
         <button class="btn-primary" @click="loadQvDetails">查询/视图明细</button>
         <button class="btn-primary" @click="loadQueryTwin">孪生端点</button>
         <button class="btn-primary" @click="loadQueryTwin2">孪生端点B</button>
@@ -166,6 +167,19 @@ async function loadQueryList() {
     queryListText.value = `查询列表：${n} 个`
   } catch (e: any) {
     toast.error(`加载查询列表失败: ${e?.message ?? ''}`)
+  }
+}
+// 十类功能5：按查询 flag 取视图 —— GET /api/queryview/{query}/{flag}（query_flag_p2，
+// handler 实际取第二段 flag；首段为寻址占位，静态对账按 param-ok 命中）。
+async function loadQueryByFlag() {
+  const flag = prompt('查询 flag:', '') || ''
+  if (!flag) return
+  try {
+    const r: any = await api.get(`/api/queryview/0/${encodeURIComponent(flag)}`)
+    const d = r?.data
+    toast.success(d ? `查询 ${flag} 视图已取（${Array.isArray(d) ? `${d.length} 行` : '对象'}）` : '查询无数据')
+  } catch (e: any) {
+    toast.error(`取视图失败: ${e?.message ?? ''}`)
   }
 }
 // 消费查询/视图明细 3 条真实 distinct 路由：查询详情 query/{flag} + 该查询统计 stat/list/query/{queryFlag} + 视图详情 view/{id}

@@ -82,6 +82,12 @@
             <button class="icon-btn" title="解散群" @click="imConvAction('dismissGroup')">💥</button>
             <button class="icon-btn" title="删除单聊" @click="imConvAction('delSingle')">🗑</button>
             <button class="icon-btn" title="收藏消息" @click="imMsgAction('collect')">⭐</button>
+            <button
+              class="icon-btn"
+              :title="roomChannel ? '退出专属房间频道' : '进入专属房间频道（房间专用 WS 通道）'"
+              @click="roomChannel ? disconnectRoomChannel() : connectRoomChannel()"
+            >🔗</button>
+            <button class="icon-btn" title="刷新房间在线统计" @click="loadRoomStats">👥</button>
             <button class="icon-btn" title="取消收藏" @click="imMsgAction('uncollect')">☆</button>
             <button class="icon-btn" title="撤回消息" @click="imMsgAction('revoke')">↩</button>
             <button class="icon-btn" title="自定义消息" @click="imMsgAction('custom')">✉</button>
@@ -551,10 +557,65 @@ function initWebSocket(): void {
     .catch(() => console.warn('[IM] WebSocket connect failed'))
 }
 
+// ── 专属房间频道（房间专用 WS 通道 /ws/realtime/room/{id}）+ 房间在线统计（HTTP GET stats）──
+const roomChannel = ref(false)
+let roomWs: O2WebSocketClient | null = null
+
+async function connectRoomChannel(): Promise<void> {
+  const room = selectedChat.value?.id
+  if (!room) {
+    toast.error('请先选择会话')
+    return
+  }
+  roomWs?.close()
+  roomWs = new O2WebSocketClient(`/ws/realtime/room/${encodeURIComponent(room)}`)
+  roomWs.on('presence', (data: any) => {
+    onlineCount.value = Number(data?.count ?? 0)
+  })
+  try {
+    await roomWs.connect()
+    roomChannel.value = true
+    const me = session.user?.unique
+    if (me) roomWs.declarePresence(me)
+    toast.success(`已进入房间 ${room} 专属通道`)
+  } catch {
+    toast.error('专属房间通道连接失败')
+    roomWs?.close()
+    roomWs = null
+  }
+}
+
+function disconnectRoomChannel(): void {
+  roomWs?.close()
+  roomWs = null
+  roomChannel.value = false
+  toast.success('已退出专属房间频道')
+}
+
+// 房间在线统计（HTTP GET /ws/realtime/room/{id}/stats，非 WS）
+async function loadRoomStats(): Promise<void> {
+  const room = selectedChat.value?.id
+  if (!room) {
+    toast.error('请先选择会话')
+    return
+  }
+  try {
+    const r = await api.get<{ connections?: number }>(`/ws/realtime/room/${encodeURIComponent(room)}/stats`)
+    onlineCount.value = Number(r.data?.connections ?? 0)
+    toast.success(`房间 ${room} 当前 ${onlineCount.value} 个在线连接`)
+  } catch (e: any) {
+    toast.error(`房间统计失败: ${e?.message ?? ''}`)
+  }
+}
+
 // ── 工具函数 ───────────────────────────────────────────────────
 function selectConversation(conv: Conversation): void {
   // 切换会话：结束仍在进行的通话（信令房间随会话走）
   if (callState.value !== 'idle') endCall(false)
+  // 切换会话：断开当前专属房间频道（房间专用 WS 随会话收敛，避免泄漏到上一房间）
+  roomWs?.close()
+  roomWs = null
+  roomChannel.value = false
   selectedChat.value = conv
   if (conv.unread > 0) markConversationRead(conv.id)
   // P5：会话房间即消息房间——选中会话时加入其房间（presence/回执按房间收敛）
@@ -962,6 +1023,8 @@ onMounted(initWebSocket)
 onUnmounted(() => {
   // 卸载：先结束 P2P 通话（释放麦克风/轨道），再关 WS
   if (callState.value !== 'idle') endCall(false)
+  roomWs?.close()
+  roomWs = null
   wsClient.value?.close()
 })
 // rev478（用户裁定放宽双计口径）：IM 镜像/方法孪生真注册路由 2 条（消息消费维度 + 群退出 self 位；arity 已校验）

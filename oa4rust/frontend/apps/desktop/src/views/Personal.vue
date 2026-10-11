@@ -89,6 +89,27 @@
       <button class="save-btn ghost" @click="loadPersonalRegistEmpower">人员游标/校验/授权启用</button>
       <button class="save-btn ghost" @click="loadPersonalTwin">孪生端点</button>
       <button class="save-btn ghost" @click="loadPersonalTwin2">孪生端点B</button>
+      <!-- 十类功能1：账号安全中心（两步验证/全设备登出/短信/注册/找回/验证码，用户触发真端点） -->
+      <div class="acct-sec">
+        <span class="muted">账号安全：</span>
+        <button class="save-btn ghost" @click="acctSec('twoFactor')">两步验证登录</button>
+        <button class="save-btn ghost" @click="acctSec('safeLogout')">全设备登出</button>
+        <button class="save-btn ghost" @click="acctSec('smsSend')">发短信验证码</button>
+        <button class="save-btn ghost" @click="acctSec('smsVerify')">校验短信码</button>
+        <button class="save-btn ghost" @click="acctSec('captchaVerify')">校验登录验证码</button>
+        <button class="save-btn ghost" @click="acctSec('secretSet')">设系统密钥</button>
+        <button class="save-btn ghost" @click="acctSec('secretCancel')">取消密钥设定</button>
+        <button class="save-btn ghost" @click="acctSec('regist')">注册用户</button>
+        <button class="save-btn ghost" @click="acctSec('registCheckPwd')">注册口令校验</button>
+        <button class="save-btn ghost" @click="acctSec('registCaptcha')">注册验证码图</button>
+        <button class="save-btn ghost" @click="acctSec('registCode')">取注册短信码</button>
+        <button class="save-btn ghost" @click="acctSec('registCodeMobile')">查注册码</button>
+        <button class="save-btn ghost" @click="acctSec('reset')">重置密码</button>
+        <button class="save-btn ghost" @click="acctSec('resetCheckPwd')">找回口令校验</button>
+        <button class="save-btn ghost" @click="acctSec('resetCode')">取找回码</button>
+        <button class="save-btn ghost" @click="acctSec('resetCheckCred')">校验找回凭据</button>
+        <button class="save-btn ghost" @click="acctSec('resetAnon')">匿名重置</button>
+      </div>
       <span v-if="personalExtraText" class="muted">{{ personalExtraText }}</span>
       <div v-if="authMetaText" class="auth-note">{{ authMetaText }}</div>
       <div v-if="authOAuthText" class="auth-note">{{ authOAuthText }}</div>
@@ -678,6 +699,84 @@ async function personExtra(op: string) {
   }
 }
 
+// 十类功能1：账号安全中心——真实端点（用户触发 prompt+确认，shape 经 handler 源码核实）：
+// 两步验证 two_factor{credential,password}；全设备登出 safe/logout{}；短信 sms/send{phone}·
+// sms/verify{phone,code}；登录验证码 secret/captcha/verify{captcha_id,answer}；系统密钥
+// secret/set{secret}·set/cancel；注册 regist{credential,password,name,mobile,email,code}·
+// regist/check/password{password}·regist/captcha 图·regist/code{mobile}·code/mobile/{m}；
+// 找回 reset{credential,code,password}(PUT)·reset/check/password{password}·code/credential·
+// check/credential·password/anonymous。
+async function acctSec(op: string) {
+  try {
+    if (op === 'twoFactor') {
+      const credential = prompt('账号 (credential):', '') || ''
+      const password = prompt('密码:', '') || ''
+      await api.post('/api/authentication/two_factor', { credential, password })
+    } else if (op === 'safeLogout') {
+      if (!(await confirmMsg('将使当前用户所有登录会话全部过期（批量注销）？'))) return
+      await api.post('/api/authentication/safe/logout', {})
+    } else if (op === 'smsSend') {
+      const phone = prompt('手机号:', '') || ''
+      await api.post('/api/authentication/sms/send', { phone })
+    } else if (op === 'smsVerify') {
+      const phone = prompt('手机号:', '') || ''
+      const code = prompt('验证码:', '') || ''
+      await api.post('/api/authentication/sms/verify', { phone, code })
+    } else if (op === 'captchaVerify') {
+      const cid = prompt('验证码 id (captcha_id):', '') || ''
+      const answer = prompt('答案:', '') || ''
+      await api.post('/api/secret/captcha/verify', { captcha_id: cid, answer })
+    } else if (op === 'secretSet') {
+      const secret = prompt('系统密钥:', '') || ''
+      await api.post('/api/secret/set', { secret })
+    } else if (op === 'secretCancel') {
+      if (!(await confirmMsg('取消系统密钥设定？'))) return
+      await api.get('/api/secret/set/cancel')
+    } else if (op === 'regist') {
+      const credential = prompt('账号 (credential):', '') || ''
+      const password = prompt('密码:', '') || ''
+      const name = prompt('姓名:', '') || ''
+      const mobile = prompt('手机号(可空):', '') || ''
+      const email = prompt('邮箱(可空):', '') || ''
+      const code = prompt('注册码:', '') || ''
+      await api.post('/api/person/regist', { credential, password, name, mobile, email, code })
+    } else if (op === 'registCheckPwd') {
+      const password = prompt('待校验口令:', '') || ''
+      await api.post('/api/person/regist/check/password', { password })
+    } else if (op === 'registCaptcha') {
+      await api.get('/api/person/regist/captcha/width/200/height/50')
+    } else if (op === 'registCode') {
+      const credential = prompt('账号 (credential):', '') || ''
+      await api.post('/api/person/regist/code', { credential })
+    } else if (op === 'registCodeMobile') {
+      const mobile = encodeURIComponent(prompt('手机号:', '') || '')
+      await api.get(`/api/person/regist/code/mobile/${mobile}`)
+    } else if (op === 'reset') {
+      const credential = prompt('账号 (credential):', '') || ''
+      const code = prompt('找回码:', '') || ''
+      const password = prompt('新密码:', '') || ''
+      await api.put('/api/reset', { credential, code, password })
+    } else if (op === 'resetCheckPwd') {
+      const password = prompt('待校验口令:', '') || ''
+      await api.post('/api/reset/check/password', { password })
+    } else if (op === 'resetCode') {
+      const credential = encodeURIComponent(prompt('账号 (credential):', '') || '')
+      await api.get(`/api/reset/code/credential/${credential}`)
+    } else if (op === 'resetCheckCred') {
+      const credential = encodeURIComponent(prompt('账号 (credential):', '') || '')
+      await api.get(`/api/reset/check/credential/${credential}`)
+    } else if (op === 'resetAnon') {
+      const credential = prompt('账号 (credential):', '') || ''
+      const code = prompt('找回码:', '') || ''
+      const password = prompt('新密码:', '') || ''
+      await api.post('/api/reset/password/anonymous', { credential, code, password })
+    }
+    toast.success(`账号安全操作已提交 (${op})`)
+  } catch (err: any) {
+    toast.error(`操作失败: ${err?.message ?? ''}`)
+  }
+}
+
 onMounted(() => {
   if (!user.value) session.init()
 })
@@ -725,4 +824,6 @@ async function loadPersonalTwin2() {
 .sig-mgr-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
 .sig-mgr-chip{padding:2px 10px;border-radius:10px;background:var(--bg-elevated);border:1px solid var(--border-subtle);font-size:12px;color:var(--text-primary)}
 .auth-note{margin-top:8px;padding:6px 12px;border-radius:var(--radius-md);background:var(--bg-elevated);border:1px solid var(--border-subtle);font-size:12px;color:var(--text-secondary);word-break:break-all}
+.acct-sec{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:8px}
+.acct-sec .save-btn.ghost{margin-left:0}
 </style>

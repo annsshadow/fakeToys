@@ -1667,8 +1667,6 @@ async function engineTaskAction(kind: string): Promise<void> {
   }
 }
 // ── 十类功能4：流程协作与归档（附件上传全形态/阅件/快照/模式/催办/信号）──────
-const SB = '/api/processplatform/assemble/surface'
-const SP = '/api/processplatform/service/processing'
 async function collabAction(op: string): Promise<void> {
   if (engineBusy.value) return
   engineBusy.value = true
@@ -1703,7 +1701,7 @@ async function collabAction(op: string): Promise<void> {
         const form = new FormData()
         form.append('file', file, file.name)
         form.append('fileName', file.name)
-        await api.upload(`${SB}/attachment/upload/work/${wid}`, form)
+        await api.upload(`/api/processplatform/assemble/surface/attachment/upload/work/${wid}`, form)
       })
       return
     }
@@ -1714,7 +1712,7 @@ async function collabAction(op: string): Promise<void> {
         const form = new FormData()
         form.append('file', file, file.name)
         form.append('fileName', file.name)
-        await api.upload(`${SB}/attachment/upload/work/${wid}/callback/${cb}`, form)
+        await api.upload(`/api/processplatform/assemble/surface/attachment/upload/work/${wid}/callback/${cb}`, form)
       })
       return
     }
@@ -1725,7 +1723,11 @@ async function collabAction(op: string): Promise<void> {
         const form = new FormData()
         form.append('file', file, file.name)
         form.append('fileName', file.name)
-        await api.upload(`${SB}/attachment/upload/work/${wid}/save/as/${saveAs}`, form, { method: 'PUT' })
+        await api.upload(
+          `/api/processplatform/assemble/surface/attachment/upload/work/${wid}/save/as/${saveAs}`,
+          form,
+          { method: 'PUT' },
+        )
       })
       return
     }
@@ -1735,7 +1737,7 @@ async function collabAction(op: string): Promise<void> {
         const form = new FormData()
         form.append('file', file, file.name)
         form.append('fileName', file.name)
-        await api.upload(`${SB}/attachment/upload/workcompleted/${wcid}`, form)
+        await api.upload(`/api/processplatform/assemble/surface/attachment/upload/workcompleted/${wcid}`, form)
       })
       return
     }
@@ -1745,7 +1747,10 @@ async function collabAction(op: string): Promise<void> {
         const form = new FormData()
         form.append('file', file, file.name)
         form.append('fileName', file.name)
-        await api.upload(`${SB}/attachment/v2/upload/workorworkcompleted/${e(flag)}`, form)
+        await api.upload(
+          `/api/processplatform/assemble/surface/attachment/v2/upload/workorworkcompleted/${e(flag)}`,
+          form,
+        )
       })
       return
     }
@@ -1753,9 +1758,10 @@ async function collabAction(op: string): Promise<void> {
       const flag = e(prompt('work 或 workCompleted ID (flag):', '') || '')
       const content = prompt('文件 base64 内容:', '') || ''
       if (!content) return
-      await api.post(`${SB}/attachment/v2/upload/workorworkcompleted/${flag}/base64`, {
+      // handler 读键为 fileBase64（alias base64）+ fileName；旧写 content 键从未被读取（B 错配）
+      await api.post(`/api/processplatform/assemble/surface/attachment/v2/upload/workorworkcompleted/${flag}/base64`, {
         fileName: 'base64.bin',
-        content,
+        fileBase64: content,
       })
       toast.success('base64 附件已上传')
       engineBusy.value = false
@@ -1768,7 +1774,10 @@ async function collabAction(op: string): Promise<void> {
         const form = new FormData()
         form.append('file', file, file.name)
         form.append('fileName', file.name)
-        await api.upload(`${SB}/attachment/update/${aid}/work/${wid}/callback/done`, form)
+        await api.upload(
+          `/api/processplatform/assemble/surface/attachment/update/${aid}/work/${wid}/callback/done`,
+          form,
+        )
       })
       return
     }
@@ -1777,19 +1786,19 @@ async function collabAction(op: string): Promise<void> {
         const form = new FormData()
         form.append('file', file, file.name)
         form.append('fileName', file.name)
-        await api.upload(`${SB}/attachment/batch/upload/manage`, form)
+        await api.upload(`/api/processplatform/assemble/surface/attachment/batch/upload/manage`, form)
       })
       return
     }
     if (op === 'attWithUrl') {
       const url = prompt('远程文件 URL（SSRF 防护：仅公网 http/https）:', '') || ''
       if (!url) return
-      await api.post(`${SB}/attachment/upload/with/url`, { url, site: 'url-upload' })
+      await api.post(`/api/processplatform/assemble/surface/attachment/upload/with/url`, { url, site: 'url-upload' })
       toast.success('URL 拉取上传已完成')
     } else if (op === 'attCopyWork') {
       const wid = e(prompt('目标工作 ID:', workId(opened.value ?? {}) || '') || '')
       const list = prompt('附件 ID 列表（逗号分隔）:', attachments.value?.map((a: any) => a.id).join(',') ?? '') || ''
-      await api.post(`${SP}/attachment/copy/work/${wid}`, {
+      await api.post(`/api/processplatform/service/processing/attachment/copy/work/${wid}`, {
         attachmentList: list
           .split(',')
           .map((x: string) => x.trim())
@@ -1799,50 +1808,57 @@ async function collabAction(op: string): Promise<void> {
     } else if (op === 'htmlToPdf') {
       const html = prompt('workHtml（HTML 内容，空=「无内容」）:', '') || ''
       const title = prompt('归档标题:', `归档-${new Date().toLocaleDateString('zh-CN')}`) || ''
-      await api.post(`${SB}/attachment/html/to/pdf`, { workHtml: html, title })
+      await api.post(`/api/processplatform/assemble/surface/attachment/html/to/pdf`, { workHtml: html, title })
       toast.success('PDF 归档已生成')
     } else if (op === 'htmlToImage') {
       const html = prompt('workHtml（HTML 内容，空=「无内容」）:', '') || ''
       const title = prompt('归档标题:', `归档-${new Date().toLocaleDateString('zh-CN')}`) || ''
-      await api.post(`${SB}/attachment/html/to/image`, { workHtml: html, title })
+      await api.post(`/api/processplatform/assemble/surface/attachment/html/to/image`, { workHtml: html, title })
       toast.success('图片归档已生成')
     } else if (op === 'reviewWork') {
       const rid = prompt('阅件引用的工作 ID:', workId(opened.value ?? {}) || '') || ''
       if (!rid) return
-      await api.post(`${SB}/review/create/work`, { id: rid })
+      await api.post(`/api/processplatform/assemble/surface/review/create/work`, { id: rid })
       toast.success('阅件记录已创建')
     } else if (op === 'reviewWorkcompleted') {
       const rid = prompt('阅件引用的已办 ID:', '') || ''
       if (!rid) return
-      await api.post(`${SB}/review/create/workcompleted`, { id: rid })
+      await api.post(`/api/processplatform/assemble/surface/review/create/workcompleted`, { id: rid })
       toast.success('已办阅件记录已创建')
     } else if (op === 'modeSave') {
       const mid = prompt('处理模式 ID:', '') || ''
       if (!mid) return
-      await api.post(`${SB}/mode/save`, { id: mid })
+      await api.post(`/api/processplatform/assemble/surface/mode/save`, { id: mid })
       toast.success('处理模式已保存')
     } else if (op === 'modeClearPerson') {
       const person = e(prompt('要清除处理模式的人员:', '') || '')
       if (!person) return
-      await api.get(`${SB}/mode/clear/person/person/${person}`)
+      await api.get(`/api/processplatform/assemble/surface/mode/clear/person/person/${person}`)
       toast.success('个人处理模式已清除')
     } else if (op === 'snapUploadSurface') {
       const job = prompt('快照 job:', `snap-${Date.now()}`) || ''
       const wid = prompt('工作 ID（与已办至少其一）:', workId(opened.value ?? {}) || '') || ''
-      await api.post(`${SB}/snap/upload`, { job, work: wid || undefined, title: '审批快照' })
+      await api.post(`/api/processplatform/assemble/surface/snap/upload`, {
+        job,
+        work: wid || undefined,
+        title: '审批快照',
+      })
       toast.success('快照已上传')
     } else if (op === 'pressCompleted') {
       const cid = prompt('已办 ID (taskCompleted):', '') || ''
       const wid = prompt('工作 ID:', workId(opened.value ?? {}) || '') || ''
       if (!cid || !wid) return
-      await api.post(`${SP}/taskcompleted/press/${e(cid)}/${e(wid)}/${e(wid)}`, {})
+      await api.post(`/api/processplatform/service/processing/taskcompleted/press/${e(cid)}/${e(wid)}/${e(wid)}`, {})
       toast.success('催办已受理')
     } else if (op === 'signalSeries') {
       const wid = e(prompt('工作 ID:', workId(opened.value ?? {}) || '') || '')
       const tid = e(prompt('任务/活动 ID:', effectiveTaskId.value || '') || '')
       const token = e(prompt('activityToken:', '') || '')
       if (!wid || !tid || !token) return
-      await api.post(`${SP}/series/series/activitytoken/processing/signal/${wid}/${tid}/${token}`, {})
+      await api.post(
+        `/api/processplatform/service/processing/series/series/activitytoken/processing/signal/${wid}/${tid}/${token}`,
+        {},
+      )
       toast.success('信号驱动已提交')
     }
     engineBusy.value = false

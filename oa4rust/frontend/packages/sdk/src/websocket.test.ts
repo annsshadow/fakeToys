@@ -90,6 +90,18 @@ describe('connect', () => {
   })
 })
 
+describe('dedicated room channel URL', () => {
+  it('builds a room-scoped wss URL from the custom path (IM 专属房间频道)', async () => {
+    const room = new O2WebSocketClient('/ws/realtime/room/conv-9')
+    const p = room.connect()
+    const ws = FakeWebSocket.instances[0]
+    expect(ws.url).toBe('wss://oa.example/ws/realtime/room/conv-9')
+    ws.simulateOpen()
+    await p
+    expect(room.connected).toBe(true)
+  })
+})
+
 describe('downstream message dispatch', () => {
   it('merges the envelope sender/room into the dispatched data (IM 消息可归因)', async () => {
     await openClient()

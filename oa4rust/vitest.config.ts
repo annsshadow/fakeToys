@@ -21,6 +21,10 @@ export default defineConfig({
     hookTimeout: 15000,
     include: ['**/*.test.ts'],
     exclude: ['node_modules', 'dist', '**/node_modules/**', 'mobile/**'],
+    // 持久化 transform 缓存：全量跑「transforming modules 45s · re-done on every run」占墙钟近半；
+    // 开启 fsModuleCache 后重跑直接命中 node_modules/.vitest-cache，CI（每 job 冷启动）
+    // 与本地反复验证均受益，测试语义不变。
+    fsModuleCache: true,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html', 'json', 'lcov'],
