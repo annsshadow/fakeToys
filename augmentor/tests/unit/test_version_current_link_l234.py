@@ -221,7 +221,16 @@ class TestTheTxtCannotGoStale:
 
     def test_a_stale_txt_is_removed_when_the_link_face_wins(self, manager, tmp_path):
         link, txt = current_paths(tmp_path)
-        manager.create_version(ITEMS, "第一版")   # 本机建不出链接 ⇒ 这一版落在 .txt 上
+        # ⚠️ 第一版必须**确定**落在 .txt 上，所以开头就注入「建不出链接」的替身。
+        #
+        # 曾经的写法是直接 `manager.create_version(...)`，注释写着「本机建不出链接」——
+        # 那是 Windows 无管理员特权时的形状（WinError 1314）。Linux CI 上 `os.symlink`
+        # 照常成功，`current` 格是个真链接、`.txt` 从头到尾不存在，下一行的
+        # `assert txt.is_file()` 当场红（夹具前提不成立）。这正是本项目反复栽的
+        # 「开发机绿、CI 红」：前提依赖运行平台的字节。
+        # 用替身把「建不出链接」钉成夹具的一部分，两个平台同一份判据。
+        manager._current_symlink = FakeCurrent(link, link_ok=False)
+        manager.create_version(ITEMS, "第一版")   # 链接建不出 ⇒ 这一版落在 .txt 上
         assert txt.is_file(), "夹具前提不成立：这一格连 .txt 都没有，后面量不到东西"
         txt.write_text("v_19700101_000000_000000", encoding="utf-8")
 

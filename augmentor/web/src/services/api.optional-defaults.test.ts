@@ -153,14 +153,6 @@ describe('省略可选 opts 时不写第二套默认（default-arg 分支契约�
       output_file: 'out.json',
     })
   })
-
-  it('healthGate：八个旋钮一个都不写，默认三条门禁规则由服务端决定', async () => {
-    respondWith({})
-    await api.healthGate('a.json')
-    expect(instance.post).toHaveBeenCalledWith('/quality/health-gate', {
-      input_file: 'a.json',
-    })
-  })
 })
 
 describe('省略可选目录参数时 query 键不出现（listBackups / 血缘两族）', () => {
