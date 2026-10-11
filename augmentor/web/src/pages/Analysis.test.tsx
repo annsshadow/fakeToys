@@ -16,6 +16,11 @@
  * describe。这一批多了一条判据方向：页面**递出去的是本次生效值**（`top_k`、`text_key`、
  * `min_scale_gain` 都取自控件当前值而不是初值），回执里那些「改了结果就不同」的字段
  * （backend/dimension/collection、判决门槛）必须原样出声。
+ * L228 起再加「字段级统计」「特征普查」「双集对比」（A279 第四批接线），对应末尾三个
+ * describe。这一批的新判据是**候选清单只能来自回执**：实测 `fields` 给一个数据集里没有的
+ * 名字照样回 200 并填整套全零，`key_fields` 给一个两侧都没有的名字更糟——两份毫不相干的
+ * 数据会回 `common_items: 1`、`similarity_score: 1.0`（幽灵匹配键把「毫无重叠」谎报成
+ * 「完全重叠」），所以页面不写死字段名，只在回执给出的键里让用户勾。
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
@@ -53,6 +58,9 @@ const spies = vi.hoisted(() => ({
   searchDataset: null as unknown as ReturnType<typeof vi.fn>,
   semanticSearch: null as unknown as ReturnType<typeof vi.fn>,
   assessImpact: null as unknown as ReturnType<typeof vi.fn>,
+  datasetStats: null as unknown as ReturnType<typeof vi.fn>,
+  detectFeatures: null as unknown as ReturnType<typeof vi.fn>,
+  compareDatasets: null as unknown as ReturnType<typeof vi.fn>,
 }))
 
 vi.mock('../services/api', async (importOriginal) => {
@@ -67,6 +75,9 @@ vi.mock('../services/api', async (importOriginal) => {
   spies.searchDataset = vi.fn()
   spies.semanticSearch = vi.fn()
   spies.assessImpact = vi.fn()
+  spies.datasetStats = vi.fn()
+  spies.detectFeatures = vi.fn()
+  spies.compareDatasets = vi.fn()
   return {
     ...actual,
     getDataFiles: spies.getDataFiles,
@@ -79,6 +90,9 @@ vi.mock('../services/api', async (importOriginal) => {
     searchDataset: spies.searchDataset,
     semanticSearch: spies.semanticSearch,
     assessImpact: spies.assessImpact,
+    datasetStats: spies.datasetStats,
+    detectFeatures: spies.detectFeatures,
+    compareDatasets: spies.compareDatasets,
   }
 })
 
@@ -163,13 +177,38 @@ const tablesByHeader = (container: HTMLElement, header: string) => {
   )
   if (tables.length === 0) throw new Error(`找不到表头含 ${header} 的表格`)
   return tables.map(table =>
-    Array.from(table.querySelectorAll('.ant-table-tbody .ant-table-row')).map(row =>
-      Array.from(row.querySelectorAll('td')).map(td => td.textContent)
-    )
+    dataRowsOf(table).map(row => Array.from(row.querySelectorAll('td')).map(td => td.textContent))
   )
 }
 
+/**
+ * 一张表里的数据行，排除「展开行里内嵌那张表」的行
+ *
+ * 字段对照表与字段统计表都会展开内嵌表（逐条值差异 / 高频取值），内嵌表的行同样带
+ * `.ant-table-row`，不排除会把明细行混进主表行数里。
+ */
+const dataRowsOf = (table: Element) =>
+  Array.from(table.querySelectorAll('.ant-table-tbody .ant-table-row')).filter(
+    row => !row.closest('.ant-table-expanded-row')
+  )
+
 const rowsOfTable = (container: HTMLElement, header: string) => tablesByHeader(container, header)[0]
+
+/**
+ * 取「表格标题（`title` 插槽）含 fragment」的那张表的数据行
+ *
+ * 本页现在有三张表头完全相同的对称表（去重面 / 长度面 / 词汇面，都是 指标 / A 侧 / B 侧），
+ * 按表头定位会三张混成一张；它们的区分量在标题上，所以按标题定位。
+ */
+const rowsOfTitledTable = (container: HTMLElement, fragment: string) => {
+  const table = Array.from(container.querySelectorAll('.ant-table')).find(t =>
+    t.querySelector('.ant-table-title')?.textContent?.includes(fragment)
+  )
+  if (!table) throw new Error(`找不到标题含 ${fragment} 的表格`)
+  return dataRowsOf(table).map(row =>
+    Array.from(row.querySelectorAll('td')).map(td => td.textContent)
+  )
+}
 
 /** 两个 `InputNumber` 的 input：DOM 序 0=语义检索「前 K 条」，1=影响评估「规模增益门槛」 */
 const numberInputs = (container: HTMLElement) =>
@@ -745,5 +784,489 @@ describe('Analysis 增强前后影响', () => {
     })
     expect(screen.queryByText('判为有增益')).not.toBeInTheDocument()
     expect(screen.queryByText('规模增益')).not.toBeInTheDocument()
+  })
+})
+
+/**
+ * 字段级统计（L228 接线）
+ *
+ * 断言强度按实测回执来：`nope` 那一整行全零是**端点真的会发**的形状（幽灵字段），
+ * `novelty` 是清单外的键，两条都必须落地而不是消失。
+ */
+describe('Analysis 字段级统计（L228 接线）', () => {
+  const STATS = {
+    dataset_name: 'p',
+    total_items: 4,
+    summary: "数据集 'p' 共 4 条数据\n包含 2 个字段",
+    field_statistics: {
+      instruction: {
+        field_name: 'instruction',
+        total_count: 4,
+        filled_count: 4,
+        empty_count: 0,
+        fill_rate: 1.0,
+        avg_length: 8.0,
+        min_length: 5,
+        max_length: 11,
+        median_length: 8.0,
+        std_deviation: 2.23606797749979,
+        unique_count: 4,
+        top_values: [['正则怎么用', 1]],
+      },
+      nope: {
+        field_name: 'nope',
+        total_count: 4,
+        filled_count: 0,
+        empty_count: 4,
+        fill_rate: 0.0,
+        avg_length: 0,
+        min_length: 0,
+        max_length: 0,
+        median_length: 0,
+        std_deviation: 0,
+        unique_count: 0,
+        top_values: [],
+      },
+    },
+    content_statistics: {
+      text_length: { avg: 8.0, min: 5, max: 11, total: 32 },
+      vocabulary: { total_words: 28, unique_words: 28, top_words: [['正则怎么用', 1]] },
+    },
+    quality_metrics: { completeness: 1.0, diversity: 1.0, consistency: 1.0, novelty: 0.5 },
+  }
+
+  it('分析成功之前三张新卡根本不出现，所以门口那道必填闸在这三张卡上是够不到的', async () => {
+    render(<Analysis />)
+    await waitFor(() => expect(spies.getDataFiles).toHaveBeenCalled())
+
+    // 三张卡都住在 `{analysis && …}` 里面（沿用本页既有卡片的摆法），未选文件 ⇒ 没有
+    // analysis ⇒ 连按钮都没有。因此 handler 里那句 `!selectedFile` 与 handleClean 的同款
+    // 守卫一样是「与兄弟卡片对齐」的写法，而不是本页可达的用户路径；双集对比的必填闸
+    // 才是真 reachable 的那一道（选了 A 侧没选 B 侧），在下面的对比 describe 里断。
+    expect(screen.queryByRole('button', { name: /运行字段统计/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /运行特征普查/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /运行双集对比/ })).not.toBeInTheDocument()
+    expect(spies.datasetStats).not.toHaveBeenCalled()
+    expect(spies.detectFeatures).not.toHaveBeenCalled()
+    expect(spies.compareDatasets).not.toHaveBeenCalled()
+  })
+
+  it('默认档位一个字段都不发：幽灵字段整行照渲，质量三口径带口径列，未知键不丢', async () => {
+    spies.analyzeData.mockResolvedValue(ANALYSIS)
+    spies.datasetStats.mockResolvedValue(STATS)
+
+    const container = await selectFileAndWait()
+    fireEvent.click(screen.getByRole('button', { name: /运行字段统计/ }))
+
+    // 一个都没勾 ⇒ `fields` 这一档以 undefined 递出去（服务层再把它从 JSON 里丢掉），
+    // 页面不替端点写第二套默认字段清单。
+    await waitFor(() =>
+      expect(spies.datasetStats).toHaveBeenCalledWith('seed.json', { fields: undefined })
+    )
+    expect(await screen.findByText(/数据集 'p' 共 4 条数据/)).toBeInTheDocument()
+    // 可展开的表在第一列前面多一个空的展开图标格，行首那个 '' 就是它
+    expect(rowsOfTable(container, '填充率')).toEqual([
+      ['', 'instruction', '4', '4 / 0', '100.00%', '8', '8', '5 – 11', '2.2361', '4'],
+      // 幽灵字段：端点回的是整套全零，页面不把它摘掉也不补 0
+      ['', 'nope', '4', '0 / 4', '0.00%', '0', '0', '0 – 0', '0', '0'],
+    ])
+    expect(rowsOfTable(container, '质量指标')).toEqual([
+      [
+        '完整性',
+        'completeness',
+        '（instruction 非空数 + output 非空数）÷（2 × 条目数），与 fields 无关',
+        '100.00%',
+      ],
+      [
+        '多样性',
+        'diversity',
+        '唯一 instruction 数 ÷ instruction 非空条数，与 fields 无关',
+        '100.00%',
+      ],
+      [
+        '一致性',
+        'consistency',
+        'instruction 与 output 都非空且互不相等的条数 ÷ 条目数，与 fields 无关',
+        '100.00%',
+      ],
+      ['novelty', 'novelty', '未知口径', '50.00%'],
+    ])
+    expect(rowsOfTitledTable(container, '文本长度面')).toEqual([
+      ['平均长度', '8'],
+      ['最短长度', '5'],
+      ['最长长度', '11'],
+      ['长度合计', '32'],
+    ])
+    expect(screen.getByText('词数合计 28')).toBeInTheDocument()
+    expect(rowsOfTitledTable(container, '高频词')).toEqual([['正则怎么用', '1']])
+  })
+
+  it('候选清单来自回执：勾定 output 后递出去的是勾选值', async () => {
+    spies.analyzeData.mockResolvedValue(ANALYSIS)
+    spies.datasetStats.mockResolvedValue(STATS)
+
+    const container = await selectFileAndWait()
+    fireEvent.click(screen.getByRole('button', { name: /运行字段统计/ }))
+    await waitFor(() => expect(spies.datasetStats).toHaveBeenCalledTimes(1))
+
+    // 第 6 只下拉＝限定字段；它的选项在第一次回执之前是空的（清单只能来自回执）
+    await pickInNthSelect(container, 6, 'instruction')
+    fireEvent.click(screen.getByRole('button', { name: /运行字段统计/ }))
+
+    await waitFor(() =>
+      expect(spies.datasetStats).toHaveBeenLastCalledWith('seed.json', {
+        fields: ['instruction'],
+      })
+    )
+  })
+
+  it('空数据集：三个字典全空时按「无内容」渲染而不补 0', async () => {
+    spies.analyzeData.mockResolvedValue(ANALYSIS)
+    spies.datasetStats.mockResolvedValue({
+      dataset_name: 'e',
+      total_items: 0,
+      summary: "数据集 'e' 共 0 条数据\n包含 0 个字段",
+      field_statistics: {},
+      content_statistics: {},
+      quality_metrics: {},
+    })
+
+    const container = await selectFileAndWait()
+    fireEvent.click(screen.getByRole('button', { name: /运行字段统计/ }))
+
+    expect(await screen.findByText(/空数据集：实测三个统计字典全为/)).toBeInTheDocument()
+    expect(screen.getByText('回执没有质量指标（空数据集实测如此）')).toBeInTheDocument()
+    // 字段表还在（antd 会渲一张带表头的空表 + 「暂无数据」），但零行；文本长度面整张不出现
+    // （`content_statistics` 实测是 `{}`，两个子键一个都没有）——这两种「空」的形状不同，
+    // 分开断言才不会把「空表」和「没表」混为一谈。页面顶部本来就有一张「平均长度」统计卡，
+    // 所以这里只能按容器内容判，不能全局查词。
+    expect(rowsOfTable(container, '填充率')).toEqual([])
+    expect(container.textContent).not.toContain('文本长度面')
+  })
+
+  it('统计失败时专属文案出声，且不渲染字段表', async () => {
+    spies.analyzeData.mockResolvedValue(ANALYSIS)
+    spies.datasetStats.mockRejectedValue(new Error('boom'))
+
+    await selectFileAndWait()
+    fireEvent.click(screen.getByRole('button', { name: /运行字段统计/ }))
+
+    await waitFor(() => expect(document.body.textContent).toContain('字段统计失败'), {
+      timeout: 4000,
+    })
+    expect(screen.queryByText('填充率')).not.toBeInTheDocument()
+  })
+})
+
+describe('Analysis 特征普查（L228 接线）', () => {
+  const FEATURES = {
+    total_items: 4,
+    // 故意让插入序与覆盖率序相反：这样「按覆盖率升序」这条断言才有牙齿
+    field_features: [
+      { name: 'instruction', feature_type: 'text', coverage: 1.0, unique_ratio: 1.0, description: '常规特征' },
+      { name: 'output', feature_type: 'numeric', coverage: 0.75, unique_ratio: 0.5, description: '常规特征' },
+      { name: 'input', feature_type: 'unknown', coverage: 0.0, unique_ratio: 0.0, description: '稀疏特征' },
+      // 清单外的类型值：页面必须原样报而不编一个中文名
+      { name: 'novel', feature_type: 'quantum', coverage: 0.5, unique_ratio: 1.0, description: '常规特征' },
+    ],
+    sparse_fields: ['input'],
+    intent_distribution: { what: 2, how: 1 },
+  }
+
+  it('按覆盖率升序渲五列，稀疏清单与意图条数各自出声', async () => {
+    spies.analyzeData.mockResolvedValue(ANALYSIS)
+    spies.detectFeatures.mockResolvedValue(FEATURES)
+
+    const container = await selectFileAndWait()
+    fireEvent.click(screen.getByRole('button', { name: /运行特征普查/ }))
+
+    await waitFor(() => expect(spies.detectFeatures).toHaveBeenCalledWith('seed.json'))
+    expect(rowsOfTable(container, '推断类型')).toEqual([
+      ['input', '未识别', '0.00%', '0.00%', '稀疏特征'],
+      ['novel', 'quantum', '50.00%', '100.00%', '常规特征'],
+      ['output', '数值', '75.00%', '50.00%', '常规特征'],
+      ['instruction', '文本', '100.00%', '100.00%', '常规特征'],
+    ])
+    expect(screen.getByText('稀疏字段：')).toBeInTheDocument()
+    // 意图这一档是条数而不是占比，页面得把两副口径的关系说清
+    expect(rowsOfTitledTable(container, '意图条数')).toEqual([
+      ['what', '2'],
+      ['how', '1'],
+    ])
+  })
+
+  it('无稀疏字段与空意图分布各自说清，不重述阈值', async () => {
+    spies.analyzeData.mockResolvedValue(ANALYSIS)
+    spies.detectFeatures.mockResolvedValue({
+      total_items: 2,
+      field_features: [
+        { name: 'instruction', feature_type: 'text', coverage: 1.0, unique_ratio: 0.5, description: '常规特征' },
+      ],
+      sparse_fields: [],
+      intent_distribution: {},
+    })
+
+    const container = await selectFileAndWait()
+    fireEvent.click(screen.getByRole('button', { name: /运行特征普查/ }))
+
+    await waitFor(() => expect(spies.detectFeatures).toHaveBeenCalled())
+    expect(screen.getByText('无稀疏字段')).toBeInTheDocument()
+    expect(screen.getByText(/意图分布为空/)).toBeInTheDocument()
+    expect(container.textContent).not.toContain('稀疏字段：')
+  })
+
+  it('普查失败时专属文案出声，且不渲染特征表', async () => {
+    spies.analyzeData.mockResolvedValue(ANALYSIS)
+    spies.detectFeatures.mockRejectedValue(new Error('boom'))
+
+    await selectFileAndWait()
+    fireEvent.click(screen.getByRole('button', { name: /运行特征普查/ }))
+
+    await waitFor(() => expect(document.body.textContent).toContain('特征普查失败'), {
+      timeout: 4000,
+    })
+    expect(screen.queryByText('推断类型')).not.toBeInTheDocument()
+  })
+})
+
+/**
+ * 双集对比（L228 接线）
+ *
+ * 三个死面/形状坑都在这里坐实：① `similarity_to_a` / `similarity_to_b` 全仓无赋值点、
+ * 恒为 0.0（账本 A287），页面不渲它们；② `size_ratio` 在 B 侧 0 条时线上是 `null`
+ * （A288），必须先接住 null；③ `winner` 有三态，`tie` 不是「没有胜者」而是判据本身。
+ */
+describe('Analysis 双集对比（L228 接线）', () => {
+  const COMPARE = {
+    quality_comparison: {
+      dataset_a_name: 'p',
+      dataset_b_name: 'q',
+      dataset_a_count: 4,
+      dataset_b_count: 5,
+      quality_a: {
+        avg_score: 0.6450461160073786,
+        pass_rate: 1.0,
+        min_score: 0.6195121951219512,
+        max_score: 0.68,
+      },
+      quality_b: { avg_score: 0.5760368928059029, pass_rate: 0.8, min_score: 0.3, max_score: 0.68 },
+      quality_diff: {
+        avg_score: -0.06900922320147573,
+        pass_rate: -0.2,
+        min_score: -0.3195121951219512,
+        max_score: 0.0,
+      },
+      dedup_a: { duplication_rate: 0.0, unique_count: 4 },
+      dedup_b: { duplication_rate: 0.2, unique_count: 4 },
+      length_a: { avg: 8.0, min: 5, max: 11, std: 2.23606797749979 },
+      length_b: { avg: 8.6, min: 5, max: 11, std: 2.33238075793812 },
+      vocabulary_a: { unique_chars: 28, total_chars: 32 },
+      vocabulary_b: { unique_chars: 28, total_chars: 43 },
+      similarity_to_a: 0.0,
+      similarity_to_b: 0.0,
+      winner: 'a',
+      summary: '## 数据集对比: p vs q\n- 获胜者: A',
+    },
+    overlap_comparison: {
+      dataset_a_name: 'p',
+      dataset_b_name: 'q',
+      metrics: {
+        size_a: 4,
+        size_b: 5,
+        size_diff: -1,
+        size_ratio: 0.8,
+        common_items: 4,
+        unique_a: 0,
+        unique_b: 0,
+        similarity_score: 1.0,
+        field_overlap: 1.0,
+      },
+      field_comparisons: {
+        instruction: {
+          field_name: 'instruction',
+          in_a_only: 0,
+          in_b_only: 0,
+          in_both: 4,
+          type_mismatches: 0,
+          value_differences: [],
+        },
+        output: {
+          field_name: 'output',
+          in_a_only: 0,
+          in_b_only: 0,
+          in_both: 4,
+          type_mismatches: 0,
+          // 明细条目实测固定三键，第一个永远是 instruction：匹配键不影响这一张表
+          value_differences: [{ instruction: '正则怎么用', value_a: '甲', value_b: '乙' }],
+        },
+      },
+      summary: '## 重叠度\n  相似度: 100.00%',
+      recommendations: ['数据集相似度较高，可考虑合并去重'],
+    },
+  }
+
+  it('只选了 A 侧时点对比得到双侧必填 warning，不调服务层', async () => {
+    spies.analyzeData.mockResolvedValue(ANALYSIS)
+
+    await selectFileAndWait()
+    fireEvent.click(screen.getByRole('button', { name: /运行双集对比/ }))
+
+    await waitFor(() =>
+      expect(document.body.textContent).toContain('双集对比需要同时选中 A 侧与 B 侧')
+    )
+    expect(spies.compareDatasets).not.toHaveBeenCalled()
+  })
+
+  it('默认不发匹配键：三态 winner、分数与率分档、九项指标都出声，恒 0 的死面不落 DOM', async () => {
+    spies.analyzeData.mockResolvedValue(ANALYSIS)
+    spies.compareDatasets.mockResolvedValue(COMPARE)
+
+    const container = await selectFileAndWait()
+    await pickInNthSelect(container, 7, 'seed.json')
+    fireEvent.click(screen.getByRole('button', { name: /运行双集对比/ }))
+
+    await waitFor(() =>
+      expect(spies.compareDatasets).toHaveBeenCalledWith('seed.json', 'seed.json', {
+        keyFields: undefined,
+      })
+    )
+    expect(await screen.findByText('A 侧平均质量分占优')).toBeInTheDocument()
+    expect(screen.getByText('本次匹配键：instruction（请求未发 key_fields，取 SDK 默认）')).toBeInTheDocument()
+    expect(rowsOfTable(container, '质量面指标')).toEqual([
+      [
+        '平均质量分',
+        'avg_score',
+        '单条 total_score 的均值',
+        '0.6450',
+        '0.5760',
+        '-0.0690',
+      ],
+      ['通过率', 'pass_rate', '达阈值（SDK 固定 0.6）条数 ÷ 条目数', '100.00%', '80.00%', '-20.00%'],
+      ['最低分', 'min_score', '单条最低', '0.6195', '0.3000', '-0.3195'],
+      ['最高分', 'max_score', '单条最高', '0.6800', '0.6800', '0'],
+    ])
+    // 通过率渲成百分数而不是「1」——混在一列里会被读成条数
+    expect(rowsOfTitledTable(container, '去重面')).toEqual([
+      ['重复率', '0', '0.2000'],
+      ['唯一条数', '4', '4'],
+    ])
+    expect(rowsOfTitledTable(container, '长度面')).toEqual([
+      ['平均长度', '8', '8.6000'],
+      ['最短长度', '5', '5'],
+      ['最长长度', '11', '11'],
+      ['长度标准差', '2.2361', '2.3324'],
+    ])
+    expect(rowsOfTitledTable(container, '词汇面')).toEqual([
+      ['唯一字符数', '28', '28'],
+      ['字符总数', '32', '43'],
+    ])
+    expect(rowsOfTitledTable(container, '重叠面九项指标')).toEqual([
+      ['A 侧条数', 'size_a', '4'],
+      ['B 侧条数', 'size_b', '5'],
+      ['条数差（A − B）', 'size_diff', '-1'],
+      ['条数比（A ÷ B）', 'size_ratio', '80.0%'],
+      ['匹配键交集条数', 'common_items', '4'],
+      ['仅 A 侧匹配键数', 'unique_a', '0'],
+      ['仅 B 侧匹配键数', 'unique_b', '0'],
+      ['键相似度（交集 ÷ 并集）', 'similarity_score', '100.0%'],
+      ['字段重叠（交集 ÷ 并集）', 'field_overlap', '100.0%'],
+    ])
+    // 两套摘要各自成段（口径不同，合并会把结论混起来）
+    expect(screen.getByText(/质量面摘要/)).toBeInTheDocument()
+    expect(screen.getByText(/重叠面摘要/)).toBeInTheDocument()
+    expect(screen.getByText('数据集相似度较高，可考虑合并去重')).toBeInTheDocument()
+    // A287：恒 0.0 的死面既不渲键也不渲值
+    expect(screen.queryByText('similarity_to_a')).not.toBeInTheDocument()
+    expect(screen.queryByText('similarity_to_b')).not.toBeInTheDocument()
+  })
+
+  it('同一份文件自己比自己：winner 渲成平手而不是「没有胜者」', async () => {
+    spies.analyzeData.mockResolvedValue(ANALYSIS)
+    spies.compareDatasets.mockResolvedValue({
+      quality_comparison: { ...COMPARE.quality_comparison, winner: 'tie' },
+      overlap_comparison: COMPARE.overlap_comparison,
+    })
+
+    const container = await selectFileAndWait()
+    await pickInNthSelect(container, 7, 'seed.json')
+    fireEvent.click(screen.getByRole('button', { name: /运行双集对比/ }))
+
+    expect(await screen.findByText('平手（两侧平均质量分之差 < 0.01）')).toBeInTheDocument()
+    expect(screen.queryByText('A 侧平均质量分占优')).not.toBeInTheDocument()
+    // 平手不是「什么都不渲」：九项指标表照样出声
+    expect(rowsOfTitledTable(container, '重叠面九项指标').length).toBe(9)
+  })
+
+  it('B 侧 0 条时条数比是 null：接住 null 而不是渲成 NaN', async () => {
+    spies.analyzeData.mockResolvedValue(ANALYSIS)
+    spies.compareDatasets.mockResolvedValue({
+      quality_comparison: COMPARE.quality_comparison,
+      overlap_comparison: {
+        ...COMPARE.overlap_comparison,
+        metrics: { ...COMPARE.overlap_comparison.metrics, size_b: 0, size_ratio: null },
+      },
+    })
+
+    const container = await selectFileAndWait()
+    await pickInNthSelect(container, 7, 'seed.json')
+    fireEvent.click(screen.getByRole('button', { name: /运行双集对比/ }))
+
+    expect(await screen.findByText(/—（B 侧 0 条：SDK 存 inf，JSON 面为 null）/)).toBeInTheDocument()
+    expect(container.textContent).not.toContain('NaN')
+    expect(container.textContent).not.toContain('Infinity')
+  })
+
+  it('换匹配键发得出去、候选来自回执字段并集；明细列头按条目键渲，实测就是 instruction 三键', async () => {
+    spies.analyzeData.mockResolvedValue(ANALYSIS)
+    spies.compareDatasets.mockResolvedValue(COMPARE)
+
+    const container = await selectFileAndWait()
+    await pickInNthSelect(container, 7, 'seed.json')
+    fireEvent.click(screen.getByRole('button', { name: /运行双集对比/ }))
+    await waitFor(() => expect(spies.compareDatasets).toHaveBeenCalledTimes(1))
+
+    // 第 8 只下拉＝匹配键，候选是第一次回执的 field_comparisons 键（两侧字段并集）
+    await pickInNthSelect(container, 8, 'output')
+    fireEvent.click(screen.getByRole('button', { name: /运行双集对比/ }))
+    await waitFor(() =>
+      expect(spies.compareDatasets).toHaveBeenLastCalledWith('seed.json', 'seed.json', {
+        keyFields: ['output'],
+      })
+    )
+    expect(screen.getByText('本次匹配键：output')).toBeInTheDocument()
+
+    // 展开有值差异的那一行：明细列头来自条目键而不是写死的字段名
+    const fieldTable = Array.from(container.querySelectorAll('.ant-table')).find(t =>
+      t.querySelector('.ant-table-title')?.textContent?.includes('字段对照')
+    )!
+    const expandableRows = Array.from(fieldTable.querySelectorAll('.ant-table-row'))
+    fireEvent.click(expandableRows[1].querySelector('.ant-table-row-expand-icon')!)
+    await waitFor(() =>
+      expect(fieldTable.querySelectorAll('.ant-table-expanded-row').length).toBe(1)
+    )
+    const detailHeader = Array.from(
+      fieldTable.querySelectorAll('.ant-table-expanded-row .ant-table-thead th')
+    ).map(th => th.textContent)
+    expect(detailHeader).toEqual(['instruction', 'value_a', 'value_b'])
+    expect(rowsOfTitledTable(container, '字段对照')).toEqual([
+      ['', 'instruction', '0', '0', '4', '0', '0'],
+      ['', 'output', '0', '0', '4', '0', '1'],
+    ])
+  })
+
+  it('对比失败时专属文案出声，且不渲染质量面表', async () => {
+    spies.analyzeData.mockResolvedValue(ANALYSIS)
+    spies.compareDatasets.mockRejectedValue(new Error('boom'))
+
+    const container = await selectFileAndWait()
+    // 文件清单只有一份，B 侧选的就是同一只文件：必填闸过了，走「端点报错」那条支路
+    await pickInNthSelect(container, 7, 'seed.json')
+    fireEvent.click(screen.getByRole('button', { name: /运行双集对比/ }))
+
+    await waitFor(() => expect(spies.compareDatasets).toHaveBeenCalled())
+    await waitFor(() => expect(document.body.textContent).toContain('双集对比失败'), {
+      timeout: 4000,
+    })
+    expect(screen.queryByText('质量面指标')).not.toBeInTheDocument()
   })
 })

@@ -11,6 +11,7 @@ import type {
   BenchmarkResponse,
   CheckpointListResponse,
   CleanResponse,
+  CompareResponse,
   CreateVersionResponse,
   DataFileListResponse,
   DataItem,
@@ -21,6 +22,7 @@ import type {
   EvaluateResponse,
   ExportFormatsResponse,
   ExportPreviewResponse,
+  FeaturesResponse,
   HealthResponse,
   ImpactResponse,
   LanguageProfileResponse,
@@ -39,6 +41,7 @@ import type {
   SanitizeResponse,
   SearchResponse,
   StartAugmentResponse,
+  StatisticsResponse,
   StatusResponse,
   UpdateConfigResponse,
   UploadResponse,
@@ -733,6 +736,65 @@ export const semanticSearch = async (
     query,
     top_k: opts.topK,
     text_key: opts.textKey,
+  })
+  return response.data
+}
+
+// ============ 字段级统计 / 特征普查 / 双集对比（A279 第四批接线，L228） ============
+
+/**
+ * `POST /api/dataset/stats`
+ *
+ * `fields` 走「不选即不写」：省略时服务端统计**数据集里全部字段**（实测 `a.json` 回
+ * `instruction` 与 `output` 两格）。实测 `fields: []` 与省略等价，但页面的「没选」应当
+ * 真的是没选，而不是替服务端写一个空清单当默认。
+ * 文件不存在回 **404**（`detail` 是字符串「文件不存在」），字段名给错回 **200 + 全零幽灵字段**
+ * ——后者不会出声，所以页面上的候选只能来自回执。
+ */
+export const datasetStats = async (
+  inputFile: string,
+  opts: { fields?: string[] } = {}
+): Promise<StatisticsResponse> => {
+  const response = await api.post('/dataset/stats', {
+    input_file: inputFile,
+    fields: opts.fields,
+  })
+  return response.data
+}
+
+/**
+ * `POST /api/dataset/features`
+ *
+ * 请求模型 `DatasetFileRequest` 只有 `input_file` 一格（实测多送别的键被静默忽略），
+ * 所以本层没有可省的默认可写；稀疏阈值 0.1 住在 `augmentor/feature_detect.py:59`，
+ * 这只端点不开放调整。
+ */
+export const detectFeatures = async (
+  inputFile: string
+): Promise<FeaturesResponse> => {
+  const response = await api.post('/dataset/features', { input_file: inputFile })
+  return response.data
+}
+
+/**
+ * `POST /api/dataset/compare`
+ *
+ * 两侧文件都必填。`name_a` / `name_b` 省略时由**路由**取文件名的 stem（实测 `a.json` 回 `a`），
+ * 这一格默认不住在本层也不住在请求模型里，所以三个可省键一律「不传即不写」。
+ * `key_fields` 的默认是 SDK 里的 `["instruction"]`（`augmentor/compare_enhanced.py:126`），
+ * 不是请求模型的默认；页面不抄它，见 l228 的对账守卫。
+ */
+export const compareDatasets = async (
+  datasetA: string,
+  datasetB: string,
+  opts: { nameA?: string; nameB?: string; keyFields?: string[] } = {}
+): Promise<CompareResponse> => {
+  const response = await api.post('/dataset/compare', {
+    dataset_a: datasetA,
+    dataset_b: datasetB,
+    name_a: opts.nameA,
+    name_b: opts.nameB,
+    key_fields: opts.keyFields,
   })
   return response.data
 }

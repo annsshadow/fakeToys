@@ -85,7 +85,9 @@ NS_PREFIXES = frozenset({
 #: 实测 CALLS 402 → **404**、READABLE 288 → **290**，l98 侧档位和一字未动。
 #: L227：接线守卫一支 parametrize（两个 state 名，内联**字符串**字面清单）⇒
 #: CALLS 404 → **405**、READABLE 290 → **291**，盲面一格未动。
-MEASURED_CALLS = 405
+#: L228：接线守卫一支 parametrize（两个 state 名，内联**字符串**字面清单，与 L227 同形）⇒
+#: CALLS 405 → **406**、READABLE 291 → **292**，盲面一格未动。
+MEASURED_CALLS = 406
 #: （L185：${ENV} 展开语义守卫两支 parametrize（坏形状 5 档 / 非串 4 档，全是字面清单）
 #: ⇒ CALLS 382 → 384、READABLE 281 → 283，盲面 101 一格未动）
 #: （L189：验证预设封闭清单守卫一支 parametrize（坏预设 5 档，全字面清单）⇒
@@ -93,7 +95,8 @@ MEASURED_CALLS = 405
 #: （L190：leakage min_examples 计数旋钮守卫两支 parametrize（合法 4 档 / 坏形状 8 档，
 #: 全字面清单）⇒ CALLS 385 → 387、READABLE 284 → 286，盲面 101 一格未动）
 #: （L227：接线守卫一支字面清单 parametrize ⇒ CALLS 404 → 405、READABLE 290 → **291**）
-MEASURED_READABLE = 291
+#: （L228：同形一支 ⇒ CALLS 405 → 406、READABLE 291 → **292**）
+MEASURED_READABLE = 292
 #: L175：搜索方法封闭清单守卫两支 parametrize（坏值 6 档 / 合法 5 档，全是字面
 #: 清单）⇒ CALLS 379 → 381、READABLE 278 → 279，盲面（no-literal-list 桶）101 不动。
 #: L217：普查守卫三支无 ids parametrize ⇒ 盲面 108 → **111**（与 CALLS +3 同数，
