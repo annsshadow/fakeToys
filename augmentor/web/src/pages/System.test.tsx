@@ -7,6 +7,11 @@
  * 无则显示「没有功能因依赖缺失而降级」。全空态（尚未加载）四张卡显示占位符。
  *
  * 服务层 `importOriginal` 部分替身（`apiErrorDetail` 留真身）；清场口径承前。
+ *
+ * L225 起本页还会取向量库状态。`spies.getVectorStatus` 在替身工厂里给了默认回执：
+ * 向量面与本页原有三条用例无关，让它们不必逐个显式安排；`clearAllMocks` 不清实现，
+ * 默认值在用例之间留得住。向量面自己的两条用例覆盖「渲染生效值」与「失败时降级成
+ * 警示、且不把整页服务状态一起拖掉」。
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
@@ -33,12 +38,26 @@ window.ResizeObserver = window.ResizeObserver || (RO as unknown as typeof Resize
 
 const spies = vi.hoisted(() => ({
   getServiceStatus: null as unknown as ReturnType<typeof vi.fn>,
+  getVectorStatus: null as unknown as ReturnType<typeof vi.fn>,
 }))
 
 vi.mock('../services/api', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../services/api')>()
   spies.getServiceStatus = vi.fn()
-  return { ...actual, getServiceStatus: spies.getServiceStatus }
+  spies.getVectorStatus = vi.fn().mockResolvedValue({
+    enabled: false,
+    exists: false,
+    count: 0,
+    backend: 'faiss',
+    dimension: 768,
+    collection: 'augmentor',
+    storage_dir: '',
+  })
+  return {
+    ...actual,
+    getServiceStatus: spies.getServiceStatus,
+    getVectorStatus: spies.getVectorStatus,
+  }
 })
 
 import System from './System'
@@ -132,5 +151,66 @@ describe('System 失败路径', () => {
     )
     // status 仍为 null ⇒ 依赖明细整块不渲染
     expect(screen.queryByText('依赖明细')).not.toBeInTheDocument()
+  })
+})
+
+describe('System 向量库状态（L225 接线）', () => {
+  it('闸开、索引存在时四张统计卡与三个标签渲染生效值', async () => {
+    spies.getVectorStatus.mockResolvedValue({
+      enabled: true,
+      exists: true,
+      count: 1200,
+      backend: 'faiss',
+      dimension: 512,
+      collection: 'augmentor_v1',
+      storage_dir: 'data/vector',
+    })
+
+    const { container } = render(<System />)
+
+    await waitFor(() => expect(spies.getVectorStatus).toHaveBeenCalled())
+    expect(await screen.findByText('开')).toBeInTheDocument()
+    expect(screen.getByText('已存在')).toBeInTheDocument()
+    // antd Statistic 给整数加千分位分隔符：渲染的是 1,200 而不是 1200（实测）
+    expect(
+      Array.from(container.querySelectorAll('.ant-statistic-content-value')).map(
+        (el) => el.textContent
+      )
+    ).toEqual(expect.arrayContaining(['1,200', '512']))
+    expect(screen.getByText('backend: faiss')).toBeInTheDocument()
+    expect(screen.getByText('collection: augmentor_v1')).toBeInTheDocument()
+    expect(screen.getByText('storage_dir: data/vector')).toBeInTheDocument()
+  })
+
+  it('未配 storage_dir 时标签回显「未配置」，而不是空串', async () => {
+    spies.getVectorStatus.mockResolvedValue({
+      enabled: false,
+      exists: false,
+      count: 0,
+      backend: 'faiss',
+      dimension: 768,
+      collection: 'augmentor',
+      storage_dir: '',
+    })
+
+    render(<System />)
+
+    expect(await screen.findByText('storage_dir: 未配置')).toBeInTheDocument()
+  })
+
+  it('向量面失败只降级它自己：服务状态照旧渲染，卡内换成警示', async () => {
+    spies.getServiceStatus.mockResolvedValue(HEALTHY)
+    spies.getVectorStatus.mockRejectedValue(new Error('vector down'))
+
+    render(<System />)
+
+    // 两面的取数各自独立发起，向量面失败不该把服务状态一起拖掉
+    expect(await screen.findByText(/必需依赖齐备/)).toBeInTheDocument()
+    await waitFor(
+      () => expect(document.body.textContent).toContain('获取向量库状态失败'),
+      { timeout: 4000 }
+    )
+    expect(screen.getByText('向量库状态未取到')).toBeInTheDocument()
+    expect(screen.queryByText('自动建库')).not.toBeInTheDocument()
   })
 })

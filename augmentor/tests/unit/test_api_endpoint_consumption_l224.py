@@ -10,10 +10,15 @@
 实测缺口是 **32 条操作**，补它是一串功能改动，得按页面分组分批做（与 A138 的
 ②③ 档接线同一个节奏），一轮吞下去只会得到一份「加了三页但没人验证」的产物。
 
+**L225 接了第一批**：A279 优先队列里「web 与 CLI 两边都没入口」的 6 条中先做 3 条
+（`language-profile` / `evaluate` 进分析页，`vector-status` 进系统页），实测缺口
+32 → **29**、已消费 43 → **46**。这把尺子在只改前端的那一步就先红了三次（形状数、
+名单相等、名单规模），这正是它想要的反应。
+
 **两侧权威各只有一份**：
 * 后端面 = `app.openapi()` 里 `(方法, 路径模板)` 的集合（75 条操作 / 71 条路径，
   backups 与 dependency 有同路径多方法）；
-* 前端面 = `web/src/services/api.ts` 里 `api.<verb>('路径')` 的调用形状（43 条），
+* 前端面 = `web/src/services/api.ts` 里 `api.<verb>('路径')` 的调用形状（46 条），
   前缀从同一份源码里的 `baseURL` 读出来，不在测试里写死第二份。
 
 **判据五向**：
@@ -22,8 +27,8 @@
 2. 每一条后端操作要么被前端调到，要么在 `UNCONSUMED` 名单里 —— 名单与实测集合
    **相等**，所以它只会随接线变短，新增一条没接的端点会当场红；
 3. `UNCONSUMED` 每一员要么指到一个**真实存在**的 CLI 子命令（`cli_entry` 的每个名字由
-   parser 的 `add_parser` 名单验真），要么落进 `NO_ENTRY`：那 6 条连 CLI 名字都没有，
-   判据是「路径末段确实不在 CLI 子命令清单里」；
+   parser 的 `add_parser` 名单验真），要么落进 `NO_ENTRY`：L225 之后还剩 **3** 条连 CLI
+   名字都没有，判据是「路径末段确实不在 CLI 子命令清单里」；
 4. query 参数逐键对到该操作的 `in=query` 声明。两处来源都算：写在路径串里的
    `` `/versions/create?filename=${filename}` ``（1 条）与 axios 的 `params: {…}` 对象
    （4 条 / 5 个键）。后者是量出来才补进去的一维 —— `data/load` 的分页三键与
@@ -67,11 +72,10 @@ PARAMS_MAX_GAP = 60
 #: 前端调用形状里的 `${...}` 归一化成的占位符
 PLACEHOLDER = "{}"
 
-#: 实测未被前端消费的操作（2026-10-11：75 条操作里 43 条被调到，余 32 条）。
+#: 实测未被前端消费的操作（L225：75 条操作里 46 条被调到，余 29 条；立账轮 L224 是 32）。
 #: 每员要能在 `CLI_ENTRY` 或 `NO_ENTRY` 里落位；接线一轮就少一格，回填只降不升。
 UNCONSUMED = frozenset({
     "DELETE /api/system/backups/{backup_id}",
-    "GET /api/dataset/vector-status",
     "GET /api/system/backups",
     "GET /api/system/dependencies",
     "GET /api/system/dependency/datasets",
@@ -80,10 +84,8 @@ UNCONSUMED = frozenset({
     "POST /api/dataset/auto-config",
     "POST /api/dataset/compare",
     "POST /api/dataset/convert",
-    "POST /api/dataset/evaluate",
     "POST /api/dataset/features",
     "POST /api/dataset/impact",
-    "POST /api/dataset/language-profile",
     "POST /api/dataset/merge",
     "POST /api/dataset/rag",
     "POST /api/dataset/sample",
@@ -134,14 +136,12 @@ CLI_ENTRY = {
     "POST /api/system/validate-config": "validate-config",
 }
 
-#: 两边都没有入口的 6 条（A279 的优先队列）：判据取「路径末段确实不是 CLI 子命令」
+#: 两边都没有入口的 3 条（A279 的优先队列；L225 已把其中 evaluate / language-profile /
+#: vector-status 接进前端，队列从 6 收到 3）：判据取「路径末段确实不是 CLI 子命令」
 NO_ENTRY = frozenset({
-    "POST /api/dataset/evaluate",
     "POST /api/dataset/impact",
-    "POST /api/dataset/language-profile",
     "POST /api/dataset/semantic-search",
     "POST /api/dataset/translate",
-    "GET /api/dataset/vector-status",
 })
 
 
@@ -330,7 +330,7 @@ class TestRulerSeesTheRealSurface:
 
     def test_frontend_face_scale(self):
         shapes = call_shapes()
-        assert len(shapes) == 43, f"服务层调用形状现量 43，实得 {len(shapes)}"
+        assert len(shapes) == 46, f"服务层调用形状现量 46，实得 {len(shapes)}"
         assert {m for m, _, _ in shapes} <= {"GET", "POST", "PUT", "DELETE", "PATCH"}
 
     def test_http_paths_live_only_in_the_service_layer(self):
@@ -425,7 +425,7 @@ class TestShadowedRoutes:
     """字面量路由与参数化路由同时能吃下同一形状时，绑定只认占位符最少的那一档"""
 
     def test_exactly_one_shape_is_shadowed(self):
-        """43 条形状里实测只有 1 条落在两条操作上：`GET /api/versions/history`"""
+        """46 条形状里实测只有 1 条落在两条操作上：`GET /api/versions/history`"""
         shadowed = [(m, p) for m, p, _ in call_shapes() if len(raw_matches(m, p)) > 1]
         assert shadowed == [("GET", "/api/versions/history")], shadowed
 
@@ -471,9 +471,9 @@ class TestConsumptionRoster:
             f"已接好或已消失 {sorted(set(UNCONSUMED) - measured)}")
 
     def test_roster_scale_is_pinned(self):
-        """缺口 32 / 已消费 43 / 总操作 75：接线一轮就要回填这三个数（只降不升）"""
-        assert len(UNCONSUMED) == 32, len(UNCONSUMED)
-        assert len(consumed_operations()) == 43, len(consumed_operations())
+        """缺口 29 / 已消费 46 / 总操作 75：接线一轮就要回填这三个数（只降不升）"""
+        assert len(UNCONSUMED) == 29, len(UNCONSUMED)
+        assert len(consumed_operations()) == 46, len(consumed_operations())
 
     def test_roster_entries_are_real_operations(self):
         ops = {f"{m} {p}" for m, p in operations()}
@@ -502,11 +502,15 @@ class TestCliEntryClaimsAreReal:
         assert not (set(CLI_ENTRY) & set(NO_ENTRY)), "同一员不能既算有入口又算无入口"
 
     def test_cli_roster_scale(self):
-        """37 个子命令是 L204 钉过的现量；名单 26 条指向其中 21 个不同子命令"""
+        """37 个子命令是 L204 钉过的现量；名单 26 条指向其中 21 个不同子命令
+
+        L225 只动前端，`CLI_ENTRY` 那一半一个数没变（26 条 / 21 个名字）；变的只有
+        `NO_ENTRY`：接好 3 条后从 6 收到 3。
+        """
         assert len(cli_subcommands()) == 37
         assert len(CLI_ENTRY) == 26
         assert len(set(CLI_ENTRY.values())) == 21
-        assert len(NO_ENTRY) == 6
+        assert len(NO_ENTRY) == 3
 
 
 class TestRulerIsNotBlind:
