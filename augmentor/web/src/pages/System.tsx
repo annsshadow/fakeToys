@@ -1,8 +1,46 @@
 import { useEffect, useState } from 'react'
-import { Alert, AutoComplete, Button, Card, Col, Input, Popconfirm, Row, Space, Statistic, Table, Tag, message } from 'antd'
-import { apiErrorDetail, createBackup, deleteBackup, getDataFiles, getDependencyGraph, getServiceStatus, getVectorStatus, listBackups, listDependencyDatasets, registerDependencyDataset, restoreBackup } from '../services/api'
-import type { BackupInfo, DatasetRegistryEntry, DependencyGraphResponse } from '../types/api'
+import { Alert, AutoComplete, Button, Card, Col, Input, InputNumber, Popconfirm, Row, Select, Space, Statistic, Table, Tag, message } from 'antd'
+import { apiErrorDetail, createBackup, deleteBackup, getDataFiles, getDependencyGraph, getServiceStatus, getVectorStatus, listBackups, listDependencyDatasets, migrateDataset, registerDependencyDataset, restoreBackup, runDatasetAutoTest, runQualityMonitor, streamProcess } from '../services/api'
+import type { BackupInfo, DatasetRegistryEntry, DependencyGraphResponse, MigrationResponse, QualitySnapshotResponse, StreamReportResponse, TestSuiteResponse } from '../types/api'
 import type { StatusResponse, VectorStatusResponse } from '../types/api'
+
+/**
+ * `stream` 的 `operation` 档：与 CLI `--operation` 的 choices、与 `/api/system/stream` 认的那
+ * 四档**必须逐项相同**（三向对账由 `tests/unit/test_system_ops_wiring_l234.py` 钉住）。
+ * 空串那一档是「页面不送、由服务端取默认」的哨兵，服务层把它丢成 `undefined`——送空串是
+ * **400**「不支持的 operation: 」（实测），所以这一格不是形状卫生，是躲判决。
+ * L234（A313）之前 CLI 那份写的是 `export`：handler 的 `else` 分支只是原样搬运，名字承诺的
+ * 导出从来没发生过，而 HTTP 侧合法的 `none` 反被 argparse 拒；两端现已同一份清单。
+ */
+const STREAM_OPERATION_OPTIONS = [
+  { value: '', label: '服务端默认（none）' },
+  { value: 'quality', label: 'quality · 按质量分过滤' },
+  { value: 'dedup', label: 'dedup · 去重' },
+  { value: 'clean', label: 'clean · 清洗后保留' },
+  { value: 'none', label: 'none · 原样搬运' },
+]
+
+/**
+ * `stream` 的 `output_format` 档：权威是 `augmentor/streaming.py` 的 `WRITER_FORMATS`
+ * （`("json", "jsonl")`）。parquet 那一档页面不给，因为服务端是 **400**「format 必须是
+ * json / jsonl 之一」（实测）。
+ */
+const STREAM_FORMAT_OPTIONS = [
+  { value: '', label: '服务端默认（jsonl）' },
+  { value: 'json', label: 'json · 一整个数组' },
+  { value: 'jsonl', label: 'jsonl · 逐行' },
+]
+
+/**
+ * `migrate` 的规则档：权威是 `augmentor/migration.py` 的 `BUILTIN_MIGRATION_RULE_IDS`。
+ * 这里**没有**「服务端默认」那一项——一个都不选就是默认（三条全用），placeholder 写着。
+ * 实测 `rules: []` 与省略等价，所以「不选」不是「不迁移」，页面上不能给这一档。
+ */
+const MIGRATION_RULE_OPTIONS = [
+  { value: 'rename_instruction', label: 'rename_instruction · instruction → question' },
+  { value: 'rename_output', label: 'rename_output · output → answer' },
+  { value: 'flatten_conversations', label: 'flatten_conversations · 拍平 conversations' },
+]
 
 /**
  * 系统状态
@@ -25,6 +63,17 @@ import type { StatusResponse, VectorStatusResponse } from '../types/api'
  * 派生，所以标题刻意不叫「依赖」。这一族最要紧的一条实测脾气是：边在产品面上建不出来
  * （没有建边端点，CLI 的 `dependency --action` 也没有），因此这张卡的 `edges` 对纯前端用户
  * 恒为空，页面把这句写在正文里而不是装作画了一张图。
+ *
+ * 第五张卡是监控与自测两只（A279 第九批接线，L234）：`POST /api/system/monitor` 与
+ * `POST /api/system/auto-test`。两支都**不写盘、不挂门禁**，但都是 POST——这一族没有 GET。
+ * 它们最要紧的两条实测脾气写在卡片正文里：`alerts` 为空只说明「这一份没触三个阈值」，
+ * 不是「质量合格」；`total_tests` 恒 5，`suite` 只认 default，所以页面上不给假下拉。
+ *
+ * 第六张卡是迁移与流式两只（同批接线）：`POST /api/system/migrate` 与
+ * `POST /api/system/stream`，**都写盘、都挂鉴权门禁**。这两支的判决面比上面四张卡都硬：
+ * 迁移会改字段名（`instruction` → `question`、`output` → `answer`），输入输出同一个文件时
+ * 就地改写而服务端放行；流式的 `processed` 恒等于 `total_input`，取舍只在 `total_output` 上。
+ * 两句都写在正文里，按钮上另加二次确认。
  */
 export default function System() {
   const [status, setStatus] = useState<StatusResponse | null>(null)
@@ -48,6 +97,20 @@ export default function System() {
   const [dsDesc, setDsDesc] = useState('')
   const [dsTags, setDsTags] = useState('')
   const [dsBusy, setDsBusy] = useState(false)
+  // 第五、六张卡（监控/自测 与 迁移/流式）共用一格 busy：'monitor' | 'auto-test' | 'migrate' | 'stream'
+  const [opsBusy, setOpsBusy] = useState('')
+  const [qaFile, setQaFile] = useState('')
+  const [snapshot, setSnapshot] = useState<QualitySnapshotResponse | null>(null)
+  const [suiteResult, setSuiteResult] = useState<TestSuiteResponse | null>(null)
+  const [wsIn, setWsIn] = useState('')
+  const [migOut, setMigOut] = useState('')
+  const [migRules, setMigRules] = useState<string[]>([])
+  const [migration, setMigration] = useState<MigrationResponse | null>(null)
+  const [stOut, setStOut] = useState('')
+  const [stOp, setStOp] = useState('')
+  const [stChunk, setStChunk] = useState<number | null>(null)
+  const [stFmt, setStFmt] = useState('')
+  const [streamReport, setStreamReport] = useState<StreamReportResponse | null>(null)
 
   const refresh = async () => {
     setLoading(true)
@@ -205,6 +268,94 @@ export default function System() {
       message.error(apiErrorDetail(err, '登记数据集失败'))
     } finally {
       setDsBusy(false)
+    }
+  }
+
+  // 监控与自测都是「读一份数据、回一份判决」，不写盘也不挂门禁，所以共用一格输入、各自报错
+  const handleMonitor = async () => {
+    if (!qaFile) {
+      message.warning('先填要做质量监控的那份服务端数据文件')
+      return
+    }
+    setOpsBusy('monitor')
+    try {
+      setSnapshot(await runQualityMonitor(qaFile))
+    } catch (err) {
+      setSnapshot(null)
+      message.error(apiErrorDetail(err, '质量监控失败'))
+    } finally {
+      setOpsBusy('')
+    }
+  }
+
+  const handleAutoTest = async () => {
+    if (!qaFile) {
+      message.warning('先填要跑自动化测试的那份服务端数据文件')
+      return
+    }
+    setOpsBusy('auto-test')
+    try {
+      const result = await runDatasetAutoTest(qaFile)
+      setSuiteResult(result)
+      message.success(
+        `通过率 ${(result.pass_rate * 100).toFixed(0)}%（${result.passed_tests}/${result.total_tests}）`
+      )
+    } catch (err) {
+      setSuiteResult(null)
+      message.error(apiErrorDetail(err, '自动化测试失败'))
+    } finally {
+      setOpsBusy('')
+    }
+  }
+
+  // 迁移是**破坏性**的：字段被改名，输入输出同一个文件时就地改写（服务端放行）⇒ 二次确认
+  const handleMigrate = async () => {
+    if (!wsIn) {
+      message.warning('先填要迁移的那份服务端数据文件')
+      return
+    }
+    if (!migOut) {
+      message.warning('先填迁移产物的文件名')
+      return
+    }
+    setOpsBusy('migrate')
+    try {
+      const result = await migrateDataset(wsIn, migOut, { rules: migRules })
+      setMigration(result)
+      message.success(
+        `已迁移 ${result.migrated_items}/${result.total_items} 条 ⇒ ${result.target_path}`
+      )
+    } catch (err) {
+      setMigration(null)
+      message.error(apiErrorDetail(err, '迁移数据集失败'))
+    } finally {
+      setOpsBusy('')
+    }
+  }
+
+  const handleStream = async () => {
+    if (!wsIn) {
+      message.warning('先填要流式处理的那份服务端数据文件')
+      return
+    }
+    if (!stOut) {
+      message.warning('先填流式产物的文件名')
+      return
+    }
+    setOpsBusy('stream')
+    try {
+      const report = await streamProcess(wsIn, stOut, {
+        operation: stOp,
+        chunkSize: stChunk ?? undefined,
+        outputFormat: stFmt,
+      })
+      setStreamReport(report)
+      message.success(`读入 ${report.total_input} 条，写出 ${report.total_output} 条`)
+    } catch (err) {
+      setStreamReport(null)
+      message.error(apiErrorDetail(err, '流式处理失败'))
+    } finally {
+      setOpsBusy('')
     }
   }
 
@@ -659,6 +810,307 @@ export default function System() {
           「缺少或无效的 X-API-Key」，那份 key 在「配置管理 → 写操作鉴权」那张卡里存，存了就会
           随每个请求送出去（A302 / A312 已收）。缺必填格时它回的是 FastAPI 的英文 422，其余坏
           参数是中文 400/403/404 —— 两种错误体都要认（A311）。
+        </div>
+      </Card>
+
+      <Card title="质量监控与自测" style={{ marginTop: 16 }}>
+        <Space wrap>
+          <AutoComplete
+            aria-label="监控数据文件"
+            placeholder="服务端数据文件路径"
+            style={{ width: 300 }}
+            value={qaFile}
+            onChange={(value) => setQaFile(value)}
+            options={dataFiles.map((path) => ({ value: path }))}
+          />
+          <Button
+            aria-label="生成质量快照"
+            loading={opsBusy === 'monitor'}
+            onClick={handleMonitor}
+          >
+            质量监控快照
+          </Button>
+          <Button
+            aria-label="运行自动化测试"
+            loading={opsBusy === 'auto-test'}
+            onClick={handleAutoTest}
+          >
+            运行自动化测试
+          </Button>
+        </Space>
+
+        {snapshot && (
+          <>
+            <Row gutter={16} style={{ marginTop: 12 }}>
+              <Col span={6}>
+                <Statistic title="完整度" value={snapshot.metrics.completeness ?? '-'} />
+              </Col>
+              <Col span={6}>
+                <Statistic title="多样性" value={snapshot.metrics.diversity ?? '-'} />
+              </Col>
+              <Col span={6}>
+                <Statistic title="一致性" value={snapshot.metrics.consistency ?? '-'} />
+              </Col>
+              <Col span={6}>
+                <Statistic
+                  title="触发告警"
+                  value={snapshot.alerts.length}
+                  valueStyle={{
+                    color: snapshot.alerts.length > 0 ? '#cf1322' : undefined
+                  }}
+                />
+              </Col>
+            </Row>
+            {snapshot.alerts.length > 0 && (
+              <Alert
+                type="error"
+                showIcon
+                style={{ marginTop: 12 }}
+                message={`快照 ${snapshot.snapshot_id} 触发 ${snapshot.alerts.length} 条告警`}
+                description={
+                  <ul style={{ margin: 0, paddingLeft: 18 }}>
+                    {snapshot.alerts.map((alert) => (
+                      <li key={alert.alert_id}>
+                        <Tag color="red">{alert.severity}</Tag>
+                        {alert.message}
+                      </li>
+                    ))}
+                  </ul>
+                }
+              />
+            )}
+          </>
+        )}
+
+        {suiteResult && (
+          <>
+            <Row gutter={16} style={{ marginTop: 12 }}>
+              <Col span={6}>
+                <Statistic
+                  title="通过率"
+                  value={suiteResult.pass_rate * 100}
+                  precision={0}
+                  suffix="%"
+                  valueStyle={{
+                    color: suiteResult.failed_tests > 0 ? '#cf1322' : undefined
+                  }}
+                />
+              </Col>
+              <Col span={6}>
+                <Statistic title="通过" value={suiteResult.passed_tests} />
+              </Col>
+              <Col span={6}>
+                <Statistic title="失败" value={suiteResult.failed_tests} />
+              </Col>
+              <Col span={6}>
+                <Statistic title="套件" value={suiteResult.name} />
+              </Col>
+            </Row>
+            <Table
+              size="small"
+              style={{ marginTop: 12 }}
+              rowKey="test_id"
+              pagination={false}
+              dataSource={suiteResult.results}
+              columns={[
+                { title: '测试', dataIndex: 'test_name', width: 120 },
+                {
+                  title: '结果',
+                  dataIndex: 'passed',
+                  width: 80,
+                  render: (passed: boolean) =>
+                    passed ? <Tag color="green">通过</Tag> : <Tag color="red">失败</Tag>
+                },
+                { title: '说明', dataIndex: 'message' },
+                {
+                  title: '耗时 ms',
+                  dataIndex: 'execution_time_ms',
+                  width: 100,
+                  render: (ms: number) => ms.toFixed(2)
+                }
+              ]}
+            />
+          </>
+        )}
+
+        <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75 }}>
+          「触发告警」为 0 只说明这一份没触三个阈值（实测 completeness 0.7 / diversity 0.4 /
+          consistency 0.7），**不是「质量合格」**：这一支只比这三个数，字段缺失、重复、长度
+          一概不查——那些要看下面「运行自动化测试」的五条。告警正文是**服务端英文原文**
+          （形如 completeness below threshold: 0.50 &lt; 0.70），没有中文那一份。
+        </div>
+        <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
+          三个指标格不是恒在：数据集是空数组时服务端回 metrics 为**空对象**（实测），这三格
+          显示「-」而不是 0——0 与「没算」是两件事，页面不把它们混成一个读数。
+        </div>
+        <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
+          自动化测试恒为五条（格式检查 / 字段检查 / 质量检查 / 多样性检查 / 重复检查），
+          通过率是 0–1 的小数、这里乘了 100 显示。suite 这一格页面**不送**：服务端只认
+          default，拼错与空串都是 400「未知的测试套件」，省略才走默认，所以给一个只有一项的
+          下拉只是噪音。说明那一列的明细是服务端**截断过的**（实测最多列 5 条，形如
+          「发现 12 个缺失字段: [...]」），列出来的条数不等于总数。
+        </div>
+        <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
+          这两支都不写盘、也**不挂鉴权门禁**（第六张卡那两支挂），但都是 POST 而不是 GET——
+          这一族没有只读 GET。源文件受白名单管：不存在 404「文件不存在」、白名单外 403、
+          带 .. 是 400「路径包含非法组件」、缺必填是 FastAPI 的英文 422（四档实测）。
+        </div>
+      </Card>
+
+      <Card title="迁移与流式处理" style={{ marginTop: 16 }}>
+        <Space wrap>
+          <AutoComplete
+            aria-label="源数据文件"
+            placeholder="服务端数据文件路径（两支共用）"
+            style={{ width: 300 }}
+            value={wsIn}
+            onChange={(value) => setWsIn(value)}
+            options={dataFiles.map((path) => ({ value: path }))}
+          />
+        </Space>
+
+        <Space wrap style={{ marginTop: 8 }}>
+          <AutoComplete
+            aria-label="迁移产物文件"
+            placeholder="迁移产物文件名"
+            style={{ width: 240 }}
+            value={migOut}
+            onChange={(value) => setMigOut(value)}
+            options={dataFiles.map((path) => ({ value: path }))}
+          />
+          <Select
+            aria-label="迁移规则"
+            mode="multiple"
+            style={{ minWidth: 320 }}
+            placeholder="服务端默认（三条全用）"
+            value={migRules}
+            onChange={(value) => setMigRules(value)}
+            options={MIGRATION_RULE_OPTIONS}
+          />
+          <Popconfirm
+            title="迁移会改字段名，产物已存在则整份覆盖"
+            description="instruction → question、output → answer；源与产物填同一个名字就是就地改写。"
+            okText="照改"
+            cancelText="取消"
+            onConfirm={handleMigrate}
+          >
+            <Button type="primary" danger aria-label="迁移数据集结构" loading={opsBusy === 'migrate'}>
+              迁移结构
+            </Button>
+          </Popconfirm>
+        </Space>
+
+        {migration && (
+          <>
+            <Row gutter={16} style={{ marginTop: 12 }}>
+              <Col span={6}>
+                <Statistic title="读入条数" value={migration.total_items} />
+              </Col>
+              <Col span={6}>
+                <Statistic title="迁移条数" value={migration.migrated_items} />
+              </Col>
+              <Col span={6}>
+                <Statistic
+                  title="失败条数"
+                  value={migration.failed_items}
+                  valueStyle={{
+                    color: migration.failed_items > 0 ? '#cf1322' : undefined
+                  }}
+                />
+              </Col>
+              <Col span={6}>
+                <Statistic title="迁移 id" value={migration.migration_id} />
+              </Col>
+            </Row>
+            <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75 }}>
+              用到的规则：{migration.rules_applied.join(' / ') || '（服务端回了一张空清单）'}
+              {' · 产物落在 '}
+              {migration.target_path}
+            </div>
+          </>
+        )}
+
+        <Space wrap style={{ marginTop: 8 }}>
+          <AutoComplete
+            aria-label="流式产物文件"
+            placeholder="流式产物文件名"
+            style={{ width: 240 }}
+            value={stOut}
+            onChange={(value) => setStOut(value)}
+            options={dataFiles.map((path) => ({ value: path }))}
+          />
+          <Select
+            aria-label="流式操作"
+            style={{ width: 220 }}
+            value={stOp}
+            onChange={(value) => setStOp(value)}
+            options={STREAM_OPERATION_OPTIONS}
+          />
+          <Select
+            aria-label="产物格式"
+            style={{ width: 200 }}
+            value={stFmt}
+            onChange={(value) => setStFmt(value)}
+            options={STREAM_FORMAT_OPTIONS}
+          />
+          <InputNumber
+            aria-label="分块大小"
+            min={1}
+            placeholder="分块大小（默认 1000）"
+            style={{ width: 180 }}
+            value={stChunk}
+            onChange={(value) => setStChunk(value)}
+          />
+          <Button type="primary" aria-label="流式处理" loading={opsBusy === 'stream'} onClick={handleStream}>
+            流式处理
+          </Button>
+        </Space>
+
+        {streamReport && (
+          <Row gutter={16} style={{ marginTop: 12 }}>
+            <Col span={8}>
+              <Statistic title="读入条数" value={streamReport.total_input} />
+            </Col>
+            <Col span={8}>
+              <Statistic title="写出条数" value={streamReport.total_output} />
+            </Col>
+            <Col span={8}>
+              <Statistic
+                title="被丢掉"
+                value={streamReport.total_input - streamReport.total_output}
+                valueStyle={{
+                  color:
+                    streamReport.total_input - streamReport.total_output > 0
+                      ? '#cf1322'
+                      : undefined
+                }}
+              />
+            </Col>
+          </Row>
+        )}
+
+        <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75 }}>
+          这两支都**写盘**、都挂鉴权门禁：服务端设了 AUGMENTOR_API_KEY 时会回 401「缺少或无效的
+          X-API-Key」，那份 key 在「配置管理 → 写操作鉴权」那张卡里存（A302 / A312 已收）。
+          产物已存在时**整份覆盖**，没有 409、也没有「已存在」提示（实测同名再写一次字节相同）。
+        </div>
+        <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
+          「被丢掉」是本页自己算的（读入 − 写出）：回执里的 processed **各档实测都等于读入条数**
+          （四档全是 5），它数的是「逐条看过」而不是「改动过」⇒ 不能拿它当取舍读数。同一份
+          5 条夹具上四档的实测取舍是 none 5 / quality 2 / dedup 3 / clean 5 —— clean 那档**一条不丢，改写内容**：它只动 instruction（全角标点换半角、剥首尾空白），output 里的 HTML 标签与空白原样留着。
+        </div>
+        <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
+          产物格式与文件扩展名**不一致时以格式为准、扩展名不改**（实测 format=json 写进
+          .jsonl 文件名里，内容是一整个 JSON 数组）。chunk_size 最小 1：0 与 -1 都是 400
+          「chunk_size 必须是不小于 1 的整数」。这一支**不调模型**（与「数据增强」那支的区别），
+          所以同步返回报告而不是丢进后台任务。
+        </div>
+        <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
+          迁移是**破坏性结构变化**：字段被改名，且规则清单**留空等于三条全用**（实测 rules 为
+          空数组与省略等价），不是「不迁移」——所以那一格没有「不迁移」这一档。
+          flatten_conversations 对没有 conversations 字段的数据**静默无操作**，回执里迁移条数
+          仍等于读入条数、errors 为空，看不出这条规则其实没干成事。回执里的源与产物路径都是
+          服务端 resolve 后的**绝对路径**。
         </div>
       </Card>
     </div>

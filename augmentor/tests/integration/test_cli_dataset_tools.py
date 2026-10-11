@@ -918,7 +918,7 @@ class TestStreamAndAggregateKnobs:
         out = tmp_path / "streamed.jsonl"
         sys.argv = [
             "cli", "stream", "--input", str(dataset),
-            "--output", str(out), "--operation", "export", "--chunk-size", "0",
+            "--output", str(out), "--operation", "none", "--chunk-size", "0",
         ]
         err = io.StringIO()
         with redirect_stderr(err):
@@ -938,7 +938,7 @@ class TestStreamAndAggregateKnobs:
         _, _, code = run_cli(
             [
                 "cli", "stream", "--input", str(dataset),
-                "--output", str(out), "--operation", "export", "--chunk-size", "-8",
+                "--output", str(out), "--operation", "none", "--chunk-size", "-8",
             ]
         )
         assert code == 1
@@ -950,7 +950,7 @@ class TestStreamAndAggregateKnobs:
         _, parsed, code = run_cli(
             [
                 "cli", "stream", "--input", str(dataset),
-                "--output", str(out), "--operation", "export", "--chunk-size", "1",
+                "--output", str(out), "--operation", "none", "--chunk-size", "1",
             ]
         )
         assert code is None

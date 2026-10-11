@@ -140,30 +140,22 @@ PARAMS_MAX_GAP = 60
 #: 前端调用形状里的 `${...}` 归一化成的占位符
 PLACEHOLDER = "{}"
 
-#: 实测未被前端消费的操作（L232：75 条操作里 67 条被调到，余 8 条；立账轮 L224 是 32，
+#: 实测未被前端消费的操作（L234：75 条操作里 72 条被调到，余 3 条；立账轮 L224 是 32，
 #: L225 第一批后是 29，L226 第二批后是 26，L227 第三批后是 24，L228 第四批后是 21，
-#: L229 第五批后是 18，L230 第六批后是 15，L231 第七批后是 11）。
+#: L229 第五批后是 18，L230 第六批后是 15，L231 第七批后是 11，L232 第八批后是 8）。
 #: 每员要能在 `CLI_ENTRY` 或 `NO_ENTRY` 里落位；接线一轮就少一格，回填只降不升。
 UNCONSUMED = frozenset({
     "GET /api/system/dependencies",
     "POST /api/dataset/translate",
     "POST /api/quality/health-gate",
-    "POST /api/system/auto-test",
-    "POST /api/system/migrate",
-    "POST /api/system/monitor",
-    "POST /api/system/stream",
-    "POST /api/system/validate-config",
 })
 
 #: 缺口里「CLI 那条路有入口」的成员 → 子命令名。名字由 `TestCliEntryClaimsAreReal` 验真。
+#: L234 把 monitor / auto-test / migrate / stream / validate-config 五员接进页面后，
+#: 这一格从 7 收到 **2**。
 CLI_ENTRY = {
     "POST /api/quality/health-gate": "health-gate",
-    "POST /api/system/auto-test": "auto-test",
     "GET /api/system/dependencies": "doctor",
-    "POST /api/system/migrate": "migrate",
-    "POST /api/system/monitor": "monitor",
-    "POST /api/system/stream": "stream",
-    "POST /api/system/validate-config": "validate-config",
 }
 
 #: 两边都没有入口的操作，只剩 1 条（A279 的优先队列：L225 把 evaluate / language-profile /
@@ -360,7 +352,7 @@ class TestRulerSeesTheRealSurface:
 
     def test_frontend_face_scale(self):
         shapes = call_shapes()
-        assert len(shapes) == 67, f"服务层调用形状现量 67，实得 {len(shapes)}"
+        assert len(shapes) == 72, f"服务层调用形状现量 72，实得 {len(shapes)}"
         assert {m for m, _, _ in shapes} <= {"GET", "POST", "PUT", "DELETE", "PATCH"}
 
     def test_http_paths_live_only_in_the_service_layer(self):
@@ -514,9 +506,9 @@ class TestConsumptionRoster:
             f"已接好或已消失 {sorted(set(UNCONSUMED) - measured)}")
 
     def test_roster_scale_is_pinned(self):
-        """缺口 8 / 已消费 67 / 总操作 75：接线一轮就要回填这三个数（缺口只降不升）"""
-        assert len(UNCONSUMED) == 8, len(UNCONSUMED)
-        assert len(consumed_operations()) == 67, len(consumed_operations())
+        """缺口 3 / 已消费 72 / 总操作 75：接线一轮就要回填这三个数（缺口只降不升）"""
+        assert len(UNCONSUMED) == 3, len(UNCONSUMED)
+        assert len(consumed_operations()) == 72, len(consumed_operations())
 
     def test_roster_entries_are_real_operations(self):
         ops = {f"{m} {p}" for m, p in operations()}
@@ -570,10 +562,14 @@ class TestCliEntryClaimsAreReal:
         register|list|graph|validate`），于是与 L231 的 `backup` 同形：条目数 10 收到 **7**（减 3）、
         不同子命令 8 收到 **7**（减 1），减完之后条目数与名字数**又相等了**（每名各占一条）；
         `NO_ENTRY`（1）与子命令现量（37）都没动。
+        L234 接的五条（系统那一族）各归**一个自己的子命令**（monitor / auto-test / migrate /
+        stream / validate-config），于是五个名字整名出名单：条目数 7 收到 **2**（减 5）、
+        不同子命令 7 收到 **2**（减 5）—— 一次减掉 5 个名字是现量最大的一批，且条目数与名字数
+        仍然相等（每名各占一条）；`NO_ENTRY`（1）与子命令现量（37）都没动。
         """
         assert len(cli_subcommands()) == 37
-        assert len(CLI_ENTRY) == 7
-        assert len(set(CLI_ENTRY.values())) == 7
+        assert len(CLI_ENTRY) == 2
+        assert len(set(CLI_ENTRY.values())) == 2
         assert len(NO_ENTRY) == 1
 
 

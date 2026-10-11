@@ -12,6 +12,7 @@
  *
  * L226 起本页多了「按数据推荐配置」卡（A279 第二批接线），对应下面 `Settings 按数据推荐配置`。
  * L233 起多了「写操作鉴权」卡（收 A302 / A312），对应下面 `Settings 写操作鉴权（L233）`。
+ * L234 起多了「配置文件校验」卡（A279 第九批接线），对应下面 `Settings 配置文件校验（L234）`。
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
@@ -42,6 +43,7 @@ const spies = vi.hoisted(() => ({
   updateConfig: null as unknown as ReturnType<typeof vi.fn>,
   getDataFiles: null as unknown as ReturnType<typeof vi.fn>,
   autoConfigRecommend: null as unknown as ReturnType<typeof vi.fn>,
+  validateConfigFile: null as unknown as ReturnType<typeof vi.fn>,
 }))
 
 vi.mock('../services/api', async (importOriginal) => {
@@ -53,6 +55,7 @@ vi.mock('../services/api', async (importOriginal) => {
   // 每条老用例都会在 jsdom 里发一次真请求。
   spies.getDataFiles = vi.fn().mockResolvedValue({ files: [{ name: 'seed.json' }] })
   spies.autoConfigRecommend = vi.fn()
+  spies.validateConfigFile = vi.fn()
   return {
     ...actual,
     getConfig: spies.getConfig,
@@ -60,6 +63,7 @@ vi.mock('../services/api', async (importOriginal) => {
     updateConfig: spies.updateConfig,
     getDataFiles: spies.getDataFiles,
     autoConfigRecommend: spies.autoConfigRecommend,
+    validateConfigFile: spies.validateConfigFile,
   }
 })
 
@@ -355,7 +359,7 @@ describe('Settings 写操作鉴权（L233）', () => {
     expect(localStorage.getItem(API_KEY_STORAGE_KEY)).toBeNull()
   })
 
-  it('诚实口径留在卡上：明文存放、影响面 24/21、不是登录、不许说「校验通过」', async () => {
+  it('诚实口径留在卡上：明文存放、影响面 24/23、不是登录、不许说「校验通过」', async () => {
     quietPage()
     render(<Settings />)
     await waitFor(() => expect(spies.getDataFiles).toHaveBeenCalled())
@@ -363,11 +367,154 @@ describe('Settings 写操作鉴权（L233）', () => {
     const text = document.body.textContent || ''
     expect(text).toContain('AUGMENTOR_API_KEY')
     expect(text).toContain('明文')
-    // 影响面是 L233 探针在真契约面上量到的两个数，不是估的
+    // 影响面是 L233 探针在真契约面上量到的两个数，不是估的（L234 复核：接线数 21 → 23）
     expect(text).toContain('75 条操作里有 24 条挂着这道门禁')
-    expect(text).toContain('21 条是页面上已')
+    expect(text).toContain('23 条是页面上已')
     expect(text).toContain('不是登录')
     expect(text).toContain('不替代 HTTPS')
     expect(text).not.toContain('校验通过')
+  })
+})
+
+/**
+ * 配置文件校验那张卡（L234，A279 第九批接线）
+ *
+ * 这一支与本页其余动作有一处根本不同：**校验不通过也回 HTTP 200**，判决只在 body 的
+ * `is_valid` 上 ⇒ 页面不能沿用「没抛错就是成了」，否则一份坏配置会被渲成绿色。四件事
+ * 逐个钉：① 不合法那一档渲成红 Alert + 三个计数 + 逐条 issue；② 合法那一档**不是**
+ * 「没有问题清单」（最小合法配置实测 is_valid 为 true 却带 1 条警告、出厂那份带 5 条）；
+ * ③ 路径留空是一个合法档位，照空串递给服务层、由服务层丢成整键不送（那一半钉在
+ * `api.test.ts`）；④ 403/404 走 catch，页面显示服务端那句判决、结果面回落成「还没有」。
+ * 夹具逐字来自仓外探针（`l234_fixtures.py` / `l234_minvalid.py`，L234 跑完即删）。
+ */
+describe('Settings 配置文件校验（L234）', () => {
+  const quietPage = () => {
+    spies.getConfig.mockResolvedValue(CONFIG)
+    spies.getModels.mockResolvedValue({ models: ['ernie'], default: 'ernie' })
+  }
+
+  /** 一份 YAML 都解析不了的配置：路径那一格是 `yaml`，行号恒为 null（探针逐字） */
+  const BROKEN = {
+    is_valid: false,
+    summary: { errors: 1, warnings: 0, info: 0 },
+    errors: [
+      {
+        path: 'yaml',
+        message:
+          'YAML解析错误: while parsing a flow sequence\n  in "D:\\tmp\\broken.yaml", line 2, column 14',
+        severity: 'error',
+        line: null,
+      },
+    ],
+    warnings: [],
+    info: [],
+  }
+
+  /** 最小合法配置 `models:\n  default: ernie`：is_valid 为 true，却仍带一条警告（探针逐字） */
+  const VALID_WITH_WARNING = {
+    is_valid: true,
+    summary: { errors: 0, warnings: 1, info: 0 },
+    errors: [],
+    warnings: [
+      {
+        path: 'models.default',
+        message: "模型 'ernie' 未配置。可用模型: []",
+        severity: 'warning',
+        line: null,
+      },
+    ],
+    info: [],
+  }
+
+  const pathInput = () => screen.getByLabelText('配置文件路径') as HTMLInputElement
+
+  /** 按标题取统计格：页面上裸数字太多，逐文本找会撞多重匹配 */
+  const stats = (container: HTMLElement) =>
+    Array.from(container.querySelectorAll('.ant-statistic')).map(
+      (box) =>
+        `${box.querySelector('.ant-statistic-title')?.textContent}=` +
+        `${box.querySelector('.ant-statistic-content-value')?.textContent}`
+    )
+
+  beforeEach(() => {
+    spies.validateConfigFile.mockReset()
+  })
+
+  it('不合法那一档：红 Alert、三个计数、逐条 issue，都是服务端那份原文', async () => {
+    quietPage()
+    spies.validateConfigFile.mockResolvedValue(BROKEN)
+    const { container } = render(<Settings />)
+    await waitFor(() => expect(spies.getDataFiles).toHaveBeenCalled())
+
+    fireEvent.change(pathInput(), { target: { value: 'broken.yaml' } })
+    fireEvent.click(screen.getByRole('button', { name: /校验配置/ }))
+
+    await screen.findByText('这份配置不合法——下面逐条列出')
+    expect(spies.validateConfigFile).toHaveBeenCalledWith({ path: 'broken.yaml' })
+    expect(stats(container)).toEqual(['错误=1', '警告=0', '提示=0'])
+    expect(screen.getByText('yaml')).toBeInTheDocument()
+    expect(screen.getByText(/YAML解析错误: while parsing a flow sequence/)).toBeInTheDocument()
+    expect(screen.getByText('error')).toBeInTheDocument()
+    await waitFor(
+      () => expect(document.body.textContent).toContain('这份配置不合法：1 个错误、0 个警告'),
+      { timeout: 4000 }
+    )
+  })
+
+  it('合法那一档：判决照 is_valid 渲成绿的，但警告清单照样列出，且不许说「校验通过」', async () => {
+    quietPage()
+    spies.validateConfigFile.mockResolvedValue(VALID_WITH_WARNING)
+    const { container } = render(<Settings />)
+    await waitFor(() => expect(spies.getDataFiles).toHaveBeenCalled())
+
+    // 路径留空是一个合法档位：照空串递出去，由服务层丢成「整键不送」
+    fireEvent.click(screen.getByRole('button', { name: /校验配置/ }))
+
+    await screen.findByText('这份配置合法（判决是 body 里的 is_valid）')
+    expect(spies.validateConfigFile).toHaveBeenCalledWith({ path: '' })
+    expect(screen.getByText(/不等于没有问题清单/)).toBeInTheDocument()
+    expect(stats(container)).toEqual(['错误=0', '警告=1', '提示=0'])
+    expect(screen.getByText('models.default')).toBeInTheDocument()
+    expect(screen.getByText(/模型 'ernie' 未配置/)).toBeInTheDocument()
+    expect(screen.getByText('warning')).toBeInTheDocument()
+    // L233 那支禁令在这一档同样成立：本层没有能力证明这份 key/配置「对」，只转述服务端判决
+    expect(document.body.textContent).not.toContain('校验通过')
+  })
+
+  it('白名单外那一档（403）：走 catch，页面是服务端那句判决，结果面回落成「还没有」', async () => {
+    quietPage()
+    spies.validateConfigFile.mockRejectedValue({
+      response: { status: 403, data: { detail: '路径超出允许的数据目录范围' } },
+    })
+    const { container } = render(<Settings />)
+    await waitFor(() => expect(spies.getDataFiles).toHaveBeenCalled())
+
+    fireEvent.change(pathInput(), { target: { value: '../../etc/passwd' } })
+    fireEvent.click(screen.getByRole('button', { name: /校验配置/ }))
+
+    await waitFor(
+      () => expect(document.body.textContent).toContain('路径超出允许的数据目录范围'),
+      { timeout: 4000 }
+    )
+    expect(screen.getByText('还没有校验结果')).toBeInTheDocument()
+    expect(container.querySelector('.ant-statistic')).toBeNull()
+  })
+
+  it('诚实口径留在卡上：留空校验谁、三档实测判决、行号恒为空、只读不写', async () => {
+    quietPage()
+    render(<Settings />)
+    await waitFor(() => expect(spies.getDataFiles).toHaveBeenCalled())
+
+    // placeholder 不在 textContent 里，得单独按属性取
+    expect(pathInput().placeholder).toContain('留空 = 校验服务自己正在用的那份')
+    const text = document.body.textContent || ''
+    expect(text).toContain('AUGMENTOR_CONFIG_PATH')
+    expect(text).toContain('不是 404')
+    expect(text).toContain('文件路径 不能为空')
+    expect(text).toContain('恒为空')
+    expect(text).toContain('跳到出错行')
+    expect(text).toContain('只读配置、不写配置')
+    // 这一支的判决通道与本页其余动作不同，卡上必须写着，否则用户会把 200 当成「配置没问题」
+    expect(text).toContain('校验不通过也回 200')
   })
 })
