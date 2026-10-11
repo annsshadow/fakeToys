@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Alert, Button, Card, Col, Row, Select, Space, Statistic, Table, Tag, message } from 'antd'
+import { Alert, Button, Card, Col, Input, Row, Select, Space, Statistic, Table, Tag, message } from 'antd'
 import ReactECharts from 'echarts-for-react'
 import {
   analyzeData,
@@ -9,6 +9,7 @@ import {
   getDataFiles,
   languageProfile,
   runBenchmark,
+  searchDataset,
   visualizeData,
 } from '../services/api'
 import type {
@@ -17,7 +18,23 @@ import type {
   CleanResponse,
   EvaluateResponse,
   LanguageProfileResponse,
+  SearchResponse,
 } from '../types/api'
+
+/**
+ * 检索方法五档（与 `augmentor/search_enhanced.py` 的 `SEARCH_METHODS` 逐项相等）
+ *
+ * 这份字面量与后端常数由 `tests/unit/test_wired_dropdown_choices_l226.py` 双向守卫，
+ * 口径与 `DataManagement.tsx` 的 `UPLOAD_FORMAT_CHOICES` 一致：后端加一档而 UI 不知道，
+ * 用户就永远选不到它，而那条路在 CLI 上是通的。
+ */
+const SEARCH_METHOD_OPTIONS = [
+  { value: 'exact', label: '精确匹配' },
+  { value: 'contains', label: '包含子串' },
+  { value: 'ngram', label: 'N-gram 相似度' },
+  { value: 'fuzzy', label: '模糊匹配' },
+  { value: 'regex', label: '正则' }
+]
 
 export default function Analysis() {
   const [files, setFiles] = useState<string[]>([])
@@ -28,6 +45,10 @@ export default function Analysis() {
   const [benchmark, setBenchmark] = useState<BenchmarkResponse | null>(null)
   const [profile, setProfile] = useState<LanguageProfileResponse | null>(null)
   const [evaluation, setEvaluation] = useState<EvaluateResponse | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
+  // 初值与契约默认同值（`contains`）⇒ 下拉显示的那一档就是发出去的那一档，两边不会各说各话
+  const [searchMethod, setSearchMethod] = useState('contains')
+  const [searchResult, setSearchResult] = useState<SearchResponse | null>(null)
   const [charts, setCharts] = useState<Record<string, string> | null>(null)
   const [loading, setLoading] = useState(false)
 
@@ -138,6 +159,27 @@ export default function Analysis() {
     }
   }
 
+  const handleSearch = async () => {
+    // 空串不发：`query` 在契约里是必填，服务端拿到空串会走「全部命中」那条支路，
+    // 报回来的 total_matches 不是用户想问的问题。
+    if (!selectedFile) {
+      message.warning('请先选择文件')
+      return
+    }
+    if (!searchQuery.trim()) {
+      message.warning('请输入检索词')
+      return
+    }
+    setLoading(true)
+    try {
+      setSearchResult(await searchDataset(selectedFile, searchQuery, { method: searchMethod }))
+    } catch (err) {
+      message.error(apiErrorDetail(err, '内容检索失败'))
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const getQuestionTypeChartOption = () => {
     if (!analysis?.coverage_analysis?.question_type_distribution) return {}
     
@@ -190,6 +232,19 @@ export default function Analysis() {
         count
       }))
     : []
+
+  // 高亮展开成行：一个命中条目可能在多个字段命中，每个字段一行。SDK 给的是固定三段
+  // `[命中前, 命中文本, 命中后]`；`hit` 单列才看得出「命中的究竟是什么」，`context`
+  // 把三段拼回原文给上下文——两列都要，只留 context 等于把高亮退化成再列一遍原文。
+  const highlightRows = (searchResult?.highlights || []).flatMap(entry =>
+    Object.entries(entry.highlights).map(([field, parts]) => ({
+      key: `${entry.index}-${field}`,
+      index: entry.index,
+      field,
+      hit: parts[1] ?? '',
+      context: parts.join('')
+    }))
+  )
 
   return (
     <div>
@@ -386,6 +441,73 @@ export default function Analysis() {
                     value: value.toFixed(4)
                   }))}
                 />
+              </>
+            )}
+          </Card>
+
+          <Card title="内容检索" style={{ marginTop: 16 }}>
+            <Space style={{ marginBottom: 16 }} wrap>
+              <Input
+                style={{ width: 260 }}
+                placeholder="检索词"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                onPressEnter={handleSearch}
+              />
+              <Select
+                style={{ width: 180 }}
+                value={searchMethod}
+                onChange={setSearchMethod}
+                options={SEARCH_METHOD_OPTIONS}
+              />
+              <Button type="primary" loading={loading} onClick={handleSearch}>
+                运行检索
+              </Button>
+            </Space>
+            {searchResult && (
+              <>
+                <Space wrap style={{ marginBottom: 12 }}>
+                  <Tag color="blue">命中 {searchResult.total_matches} 条</Tag>
+                  {/* 命中总数与本次返回条数是两件事：limit 截断时前者大、后者小，
+                      只报一个数会把「还有 900 条没回传」说成「只有 100 条命中」。 */}
+                  <Tag>本次返回 {searchResult.items.length} 条</Tag>
+                  <Tag>方法 {searchResult.method}</Tag>
+                  <Tag>耗时 {searchResult.query_time_ms.toFixed(2)} ms</Tag>
+                  {searchResult.fuzzy_threshold !== null && (
+                    <Tag color="purple">相似度阈值 {searchResult.fuzzy_threshold.toFixed(2)}</Tag>
+                  )}
+                  {searchResult.ngram_n !== null && (
+                    <Tag color="purple">n-gram {searchResult.ngram_n}</Tag>
+                  )}
+                  {searchResult.matches_before_filters !== null && (
+                    <Tag color="orange">过滤前 {searchResult.matches_before_filters} 条</Tag>
+                  )}
+                </Space>
+                {highlightRows.length === 0 && searchResult.total_matches > 0 && (
+                  <Alert
+                    type="info"
+                    showIcon
+                    style={{ marginBottom: 12 }}
+                    message={`方法 ${searchResult.method} 不产出高亮片段，命中数以「命中 N 条」那个计数为准`}
+                  />
+                )}
+                {highlightRows.length === 0 && searchResult.total_matches === 0 && (
+                  <Alert type="warning" showIcon message="没有命中" />
+                )}
+                {highlightRows.length > 0 && (
+                  <Table
+                    size="small"
+                    rowKey="key"
+                    pagination={{ pageSize: 8 }}
+                    columns={[
+                      { title: '条目下标', dataIndex: 'index', width: 100 },
+                      { title: '字段', dataIndex: 'field', width: 120 },
+                      { title: '命中片段', dataIndex: 'hit', width: 160 },
+                      { title: '上下文', dataIndex: 'context', ellipsis: true }
+                    ]}
+                    dataSource={highlightRows}
+                  />
+                )}
               </>
             )}
           </Card>

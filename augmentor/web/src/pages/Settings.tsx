@@ -1,14 +1,39 @@
 import { useState, useEffect } from 'react'
-import { Card, Form, InputNumber, Select, Switch, Button, message, Space } from 'antd'
+import {
+  Alert,
+  Button,
+  Card,
+  Col,
+  Form,
+  InputNumber,
+  Row,
+  Select,
+  Space,
+  Statistic,
+  Switch,
+  Tag,
+  message
+} from 'antd'
 import { SaveOutlined } from '@ant-design/icons'
-import { apiErrorDetail, getConfig, updateConfig, getModels } from '../services/api'
-import type { AppConfig } from '../types/api'
+import {
+  apiErrorDetail,
+  autoConfigRecommend,
+  getConfig,
+  getDataFiles,
+  getModels,
+  updateConfig
+} from '../services/api'
+import type { AppConfig, AutoConfigResponse } from '../types/api'
 
 export default function Settings() {
   const [config, setConfig] = useState<AppConfig | null>(null)
   const [models, setModels] = useState<string[]>([])
   const [defaultModel, setDefaultModel] = useState('')
   const [loading, setLoading] = useState(false)
+  const [files, setFiles] = useState<string[]>([])
+  const [recommendFile, setRecommendFile] = useState('')
+  const [recommendation, setRecommendation] = useState<AutoConfigResponse | null>(null)
+  const [recommending, setRecommending] = useState(false)
 
   /**
    * 局部更新配置
@@ -26,6 +51,7 @@ export default function Settings() {
   useEffect(() => {
     loadConfig()
     loadModels()
+    loadFiles()
   }, [])
 
   const loadConfig = async () => {
@@ -45,6 +71,51 @@ export default function Settings() {
     } catch (err) {
       message.error(apiErrorDetail(err, '加载模型列表失败'))
     }
+  }
+
+  const loadFiles = async () => {
+    try {
+      const result = await getDataFiles()
+      setFiles(result.files.map(f => f.name))
+    } catch {
+      // 只影响「按数据推荐配置」这一张卡：配置表单本身走的是 loadConfig，不受牵连
+      console.error('加载文件列表失败')
+    }
+  }
+
+  const handleRecommend = async () => {
+    // 没选文件就不发：`input_file` 是必填，空串到服务端只会换来一句「文件不存在」，
+    // 而那句话并不说明真正的原因是我们没给用户选文件。
+    if (!recommendFile) {
+      message.warning('请先选择要观测的数据集')
+      return
+    }
+    setRecommending(true)
+    try {
+      setRecommendation(await autoConfigRecommend(recommendFile))
+    } catch (err) {
+      message.error(apiErrorDetail(err, '推荐配置失败'))
+    } finally {
+      setRecommending(false)
+    }
+  }
+
+  /**
+   * 把推荐值填进**表单**，不直接保存
+   *
+   * 故意分两步：`auto-config` 说的是「按这份数据的观测该用哪档」，写盘要过
+   * `POST /api/config`。中间留着「我看了建议、我决定不改」那一步，用户也可以只认
+   * 其中一个阈值再保存。`recommended_sample_size` 不在这里落地——本表单没有对应字段，
+   * 它只作为读数显示。
+   */
+  const applyRecommendation = () => {
+    if (!recommendation) return
+    patch(c => ({
+      ...c,
+      quality: { ...c.quality, threshold: recommendation.quality_threshold },
+      dedup: { ...c.dedup, threshold: recommendation.dedup_threshold }
+    }))
+    message.success('两个阈值已填进表单，确认无误后再点「保存配置」')
   }
 
   const handleSave = async () => {
@@ -157,7 +228,7 @@ export default function Settings() {
       <Card title="智能去重" style={{ marginBottom: 16 }}>
         <Form layout="vertical">
           <Space size="large">
-            <Form.Item label="启用水重">
+            <Form.Item label="启用去重">
               <Switch
                 checked={config?.dedup?.enabled}
                 onChange={(checked) =>
@@ -181,6 +252,70 @@ export default function Settings() {
             </Form.Item>
           </Space>
         </Form>
+      </Card>
+
+      <Card title="按数据推荐配置" style={{ marginBottom: 16 }}>
+        <Space wrap style={{ marginBottom: 12 }}>
+          <Select
+            style={{ width: 300 }}
+            value={recommendFile}
+            onChange={setRecommendFile}
+            placeholder="选择用来观测的数据集"
+            options={files.map(f => ({ value: f, label: f }))}
+          />
+          <Button loading={recommending} onClick={handleRecommend}>
+            取推荐值
+          </Button>
+        </Space>
+        {recommendation ? (
+          <>
+            <Row gutter={16}>
+              <Col span={8}>
+                <Card>
+                  <Statistic title="质量阈值" value={recommendation.quality_threshold} />
+                </Card>
+              </Col>
+              <Col span={8}>
+                <Card>
+                  <Statistic title="去重阈值" value={recommendation.dedup_threshold} />
+                </Card>
+              </Col>
+              <Col span={8}>
+                <Card>
+                  <Statistic
+                    title="建议抽样条数"
+                    value={recommendation.recommended_sample_size}
+                  />
+                </Card>
+              </Col>
+            </Row>
+            <Space wrap style={{ marginTop: 12 }}>
+              {/* `source_stats` 是观测值原样带回，实测 `quality_pass_rate` 可以为 null
+                  （那份夹具没有可判质量的字段）。null 要显式写成「无观测」，
+                  留空或写成 0 都会把「没测出来」报成「测出来是零」。 */}
+              {Object.entries(recommendation.source_stats).map(([key, value]) => (
+                <Tag key={key} color="blue">
+                  {key}: {value === null ? '无观测' : String(value)}
+                </Tag>
+              ))}
+            </Space>
+            {recommendation.reasoning.length > 0 && (
+              <ul>
+                {recommendation.reasoning.map((line, i) => (
+                  <li key={i}>{line}</li>
+                ))}
+              </ul>
+            )}
+            <Button onClick={applyRecommendation}>填进上面的表单（不直接保存）</Button>
+          </>
+        ) : (
+          <Alert
+            type="info"
+            showIcon
+            message="还没有推荐值"
+            description="这一步只读数据、不写配置；取到建议后仍要点「保存配置」才落盘。"
+          />
+        )}
       </Card>
 
       <Card title="配置说明">
