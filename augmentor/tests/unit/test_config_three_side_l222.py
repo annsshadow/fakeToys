@@ -26,11 +26,13 @@ schema↔yaml 会放过「文档少了整整一节」。三条读数各自与 `f
 **同时**过两条机器验真（既不是 dataclass 节、又在 `ConfigValidator.META_TOP_SECTIONS` 白名单里），
 所以「把一个真节塞进例外名单」蒙不过去。
 
-**`app` 那一格是本轮量出来的新事实，不是笔误**：`config.yaml` 顶部写了 `app.name` /
-`app.version` / `app.debug` 三键，`AppConfig` 根本没有 `app` 这个字段，而校验器把它列进
-`META_TOP_SECTIONS` 一并免检——于是它是普查尺子（只覆盖 schema 键）**结构上看不见**的死面。
-本轮不顺手删也不顺手接（那是对外文件的变化），立账 A276，并让 `META_ROWS` 的验真臂把这个
-形状钉在明处：白名单成员必须「确实不是节」，而不是「我们记得它不是节」。
+**`app` 那一格不是本轮发明的分类，也不是新事实**：`app.name` / `app.version` / `app.debug`
+没有产品读者这件事，仓内早记在三处（`OPTIMIZATION_PLAN.md` §2.4、`README.md` 变更说明第 6 条、
+`tests/integration/test_cli_validate_config.py` 的 docstring），历史处置是把它们从必填**降为可选**。
+本轮新增的只有「它对只覆盖 schema 键的死键普查**结构上不可见**」这一格：`AppConfig` 没有 `app`
+字段，而校验器把它列进 `META_TOP_SECTIONS` 免检，于是零读者名单永远数不到它。处置（接成节 /
+删掉 / 维持并写明）另立 A276，本轮不顺手做；本文件的验真臂把这个形状钉在明处：白名单成员必须
+**确实不是节**，而不是「我们记得它不是节」。
 """
 
 import dataclasses
