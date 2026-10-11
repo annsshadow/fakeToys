@@ -78,8 +78,15 @@ class TestPipelineVariantFiltering:
     记档为结构性不可达（需 monkeypatch 注入，本轮不做）。
     """
 
-    def test_malformed_variants_filtered_out(self, tmp_path):
+    def test_malformed_variants_filtered_out(self, tmp_path, monkeypatch):
         from augmentor.pipeline import AugmentorPipeline
+
+        # cwd 必须离开仓库根：AugmentorPipeline 按 config.versioning.storage_dir（出厂默认
+        # 是**相对**路径 data/versions）建 VersionManager，于是 augment_dataset 会往仓库的
+        # data/versions/ 里堆一个 v_* 快照。L234 实测这一支是 47 个「碰管道/版本」的文件、
+        # 1 499 条用例里唯一漏出来的那条，而它堆出来的东西里有过一份 Windows 读不了的
+        # WSL LX 链接（`current`），把整个定标门禁炸成 OSError WinError 1920 —— 见 A314。
+        monkeypatch.chdir(tmp_path)
 
         input_file = tmp_path / "in.json"
         input_file.write_text(

@@ -181,19 +181,19 @@ class VersionManager:
         with open(info_path, 'w', encoding='utf-8') as f:
             json.dump(asdict(version_info), f, ensure_ascii=False, indent=2)
         
-        # 更新 current 符号链接
-        if self._current_symlink.exists():
-            if self._current_symlink.is_symlink():
-                self._current_symlink.unlink()
-            else:
-                shutil.rmtree(self._current_symlink)
+        # 更新 current 符号链接：判存在与清除都住进 _clear_current_link。Windows 上对断链
+        # 调 exists() 会抛 WinError 1920 而不是返回 False —— 本机 data/versions/current 曾是
+        # WSL 在 drvfs 上留下的 LX 链接，is_symlink() 与 os.readlink() 都认不出来，于是
+        # 「那里有没有东西」这个判断自己就能把整个 create_version 炸掉。
+        self._clear_current_link()
         
-        # 创建新的符号链接（Windows 不支持真正的符号链接，使用目录副本）
+        # 创建新的符号链接（Windows 无管理员特权时建不出来，落到下面的 .txt）。目标只写
+        # 版本目录名：链接按自己所在目录解析，写整段相对路径会双重前缀而恒断链。
         try:
-            # 尝试创建符号链接
-            self._current_symlink.symlink_to(version_dir)
+            self._current_symlink.symlink_to(version_dir.name)
         except OSError:
-            # Windows 无管理员权限时，创建 .txt 文件记录当前版本
+            # Windows 无管理员权限时（本机实测 WinError 1314）建不出符号链接，
+            # 创建 .txt 文件记录当前版本 —— 读侧 get_current_version 两条都认
             with open(self._current_symlink.with_suffix('.txt'), 'w', encoding='utf-8') as f:
                 f.write(version_id)
         
@@ -369,16 +369,16 @@ class VersionManager:
             logger.error(f"版本不存在: {version_id}")
             return False
         
-        # 更新 current 符号链接
-        if self._current_symlink.exists():
-            if self._current_symlink.is_symlink():
-                self._current_symlink.unlink()
-            else:
-                shutil.rmtree(self._current_symlink)
+        # 更新 current 符号链接：同 create_version。判存在与清除都住进 _clear_current_link，
+        # 因为断链上 exists() 会抛 WinError 1920；目标同样只写版本目录名，写整段相对路径
+        # 会得到 data/versions/data/versions/… 这种双重前缀的恒断链。
+        self._clear_current_link()
         
         try:
-            self._current_symlink.symlink_to(version_dir)
+            self._current_symlink.symlink_to(version_dir.name)
         except OSError:
+            # 建不出链接（Windows 无管理员特权）时退回 .txt；_clear_current_link 已经把
+            # 上一次那份 .txt 一起清掉了，所以读侧不会停在一个更早的版本上
             with open(self._current_symlink.with_suffix('.txt'), 'w', encoding='utf-8') as f:
                 f.write(version_id)
         
@@ -409,3 +409,28 @@ class VersionManager:
                 for v in versions
             ]
         }
+    
+    def _clear_current_link(self):
+        """清掉 current 那一格：符号链接、跨子系统链接、真实目录，以及配套的 .txt
+        
+        为什么不用 `if exists()` 起头：Windows 上对**断链**调 `Path.exists()` 抛的是
+        WinError 1920（ERROR_CANT_ACCESS_FILE）而不是返回 False；而 WSL 在 drvfs 上建出来的
+        LX 链接连 `is_symlink()` 都认不出来（`os.readlink` 报 not a symbolic link）⇒ 这一格上
+        任何「先看有没有东西」的写法都可能把调用方整个炸掉。所以先 lstat（is_symlink）再
+        stat（exists），stat 抛出来就当作「那里有东西」。
+        
+        清除按「先当文件删、删不掉再当目录删」两步走：unlink 能掉符号链接、LX 链接与 .txt，
+        真目录要走 rmtree。两步都失败就放过 —— 这一格是便利索引而不是数据，建不出新的也不该
+        让 create_version / rollback 失败（随后的 symlink_to 会拿到 FileExistsError，落回 .txt）。
+        """
+        for path in (self._current_symlink, self._current_symlink.with_suffix('.txt')):
+            try:
+                stale = path.is_symlink() or path.exists()
+            except OSError:
+                stale = True
+            if not stale:
+                continue
+            try:
+                path.unlink()
+            except OSError:
+                shutil.rmtree(path, ignore_errors=True)

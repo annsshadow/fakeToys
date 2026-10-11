@@ -17,10 +17,10 @@
 | 全套 + 残留探针（7 063 passed / 3 skipped） | `RESIDUE_COUNT 0` ⇒ 守卫**不需要白名单**，也不撞既有 7 千条用例 |
 | 一条故意留产物的注入用例 | `RESIDUE_COUNT 1 CASES 1`，名单里就是它的 node-id ⇒ 尺子能红 |
 
-守卫的**范围**也在这里钉住（见 `tests/residue_watch.py` 的表格）：只看 `WATCHED` 三处的
-顶层子项，只认「开始前不存在、结束后还在」。所以「建了又删」「改已有文件的内容」
-「删掉一件原有产物」「往更深一层写」都不归它管 —— 那不是漏，是桶的边界，
-越界的那几格各有自己的尺子。
+守卫的**范围**也在这里钉住（见 `tests/residue_watch.py` 的表格与 L234 那段实测）：只看
+`WATCHED` 五处的顶层子项，只认「开始前不存在、结束后还在」。所以「建了又删」「改已有
+文件的内容」「删掉一件原有产物」「往这五处之外更深一层写」都不归它管 —— 那不是漏，是
+桶的边界，越界的那几格各有自己的尺子。
 """
 
 import os
@@ -102,7 +102,7 @@ class TestRulerScope:
         assert leaked(root, before) == []
 
     def test_deeper_paths_are_not_watched(self, tmp_path):
-        """只盯顶层：往 `data/` 更深一层写不算残留（那是产品自己的目录结构）"""
+        """只盯顶层：往 `data/nested/` 这种更深一层写不算残留（那是产品自己的目录结构）"""
         root = str(tmp_path)
         os.makedirs(os.path.join(root, "data", "nested"))
         before = snapshot(root)
@@ -113,8 +113,8 @@ class TestRulerScope:
 
         assert leaked(root, before) == []
 
-    def test_watched_set_is_the_three_documented_dirs(self):
-        assert WATCHED == ("", "data", ".backups")
+    def test_watched_set_is_the_five_documented_dirs(self):
+        assert WATCHED == ("", "data", ".backups", "data/versions", "checkpoints")
 
     def test_snapshot_covers_every_watched_dir(self, tmp_path):
         got = snapshot(str(tmp_path))
@@ -275,3 +275,31 @@ def test_sys_modules_identity_of_conftest():
     assert module is not None, "pytest 未以 tests.conftest 之名加载 conftest"
     assert os.path.realpath(module.__file__) == os.path.realpath(
         os.path.join(REPO_ROOT, "tests", "conftest.py"))
+
+
+def test_the_runtime_dirs_are_watched_one_level_down(tmp_path):
+    """L234 扩的那两处必须真红：`data/versions/` 与 `checkpoints/` 里多一件产物就算残留
+
+    **为什么这一支住在文件末尾**：本文件第 227 行那处子进程调用是
+    `test_subprocess_text_decoding.py` 的 `BYTE_MODE_ALLOWLIST` 按「文件 + 行号」登记的调用点，
+    在它前面插行会把登记指到空处、两条规则同时判红（L234 实测：插 23 行 ⇒ `227 → 250`，
+    `test_every_byte_mode_site_is_registered` 与 `test_registration_still_points_at_a_byte_mode_call`
+    各红一条）。所以扩范围这一支按「换点」而不是「重钉登记」处置，追加在最后。
+    同一轮还踩到另一格：这段说明文里**不许写出那个调用的字面形状**，因为
+    `test_discovery_matches_a_direct_grep_of_the_same_pattern` 是一次纯文本 grep，
+    它只排除判据自己那一份文件，散文里的同名字样会被它当成「AST 漏认的调用点」。
+
+    这一支本身是「扩范围没扩成空话」的棘轮：把 `WATCHED` 改回三处，它当场红。
+    """
+    root = str(tmp_path)
+    os.makedirs(os.path.join(root, "data", "versions"))
+    os.makedirs(os.path.join(root, "checkpoints"))
+    before = snapshot(root)
+    os.makedirs(os.path.join(root, "data", "versions", "v_20261011_000000_000000"))
+    with open(os.path.join(root, "checkpoints", "ckpt.json"), "w", encoding="utf-8") as handle:
+        handle.write("{}")
+
+    assert leaked(root, before) == [
+        "data/versions/v_20261011_000000_000000",
+        "checkpoints/ckpt.json",
+    ], leaked(root, before)
