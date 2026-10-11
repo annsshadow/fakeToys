@@ -1,15 +1,17 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Alert, Button, Card, Col, Input, Row, Select, Space, Statistic, Table, Tag, message } from 'antd'
+import { Alert, Button, Card, Col, Input, InputNumber, Row, Select, Space, Statistic, Table, Tag, message } from 'antd'
 import ReactECharts from 'echarts-for-react'
 import {
   analyzeData,
   apiErrorDetail,
+  assessImpact,
   cleanData,
   evaluateDataset,
   getDataFiles,
   languageProfile,
   runBenchmark,
   searchDataset,
+  semanticSearch,
   visualizeData,
 } from '../services/api'
 import type {
@@ -17,8 +19,11 @@ import type {
   BenchmarkResponse,
   CleanResponse,
   EvaluateResponse,
+  ImpactResponse,
+  ImpactSnapshot,
   LanguageProfileResponse,
   SearchResponse,
+  SemanticSearchResponse,
 } from '../types/api'
 
 /**
@@ -36,6 +41,48 @@ const SEARCH_METHOD_OPTIONS = [
   { value: 'regex', label: '正则' }
 ]
 
+/**
+ * 四项增益的中文名与算法口径（逐条取自 `augmentor/impact.py:82` 的 `evaluate()`）
+ *
+ * 两条不能混：**前两项是比值**（`(after − before) / before`），**后两项是绝对差**
+ * （`before.duplicate_rate − after.duplicate_rate`、`after.length_std − before.length_std`），
+ * 所以 `dedup_gain` 为正表示重复率**下降**。渲染时统一显示原值、按项标口径，
+ * 不折算成「总分」——四种量纲加在一起没有意义。
+ */
+const GAIN_PRESENTATION: Record<string, { label: string; caliber: string }> = {
+  scale_gain: { label: '规模增益', caliber: '比值' },
+  diversity_gain: { label: '多样性增益', caliber: '比值（按所选字段的唯一值）' },
+  dedup_gain: { label: '去重增益', caliber: '绝对差，正=重复率下降' },
+  length_spread_gain: { label: '长度离散增益', caliber: '绝对差（标准差）' },
+}
+
+/** 快照里可渲染的键：`extra` 用类型排除掉，而不是在运行时给它编一个标签 */
+type SnapshotMetricKey = Exclude<keyof ImpactSnapshot, 'extra'>
+
+/**
+ * 两侧快照的渲染清单（`AugmentationMetrics.to_dict()` 六个键里渲染五个）
+ *
+ * `unique_instructions` 这个名字是**历史误名**：`measure()` 里它数的是
+ * `set(texts)`，而 `texts` 取自 `text_field`，所以选了 `output` 时它数的是唯一**回答**数。
+ * 这里按真实口径写标签，不跟着键名说谎。第三元是量纲，见 `formatSnapshotValue`。
+ */
+const SNAPSHOT_PRESENTATION: [SnapshotMetricKey, string, 'count' | 'decimal'][] = [
+  ['total_items', '条目数', 'count'],
+  ['unique_instructions', '唯一值数（按所选字段）', 'count'],
+  ['avg_length', '平均长度', 'decimal'],
+  ['length_std', '长度标准差', 'decimal'],
+  ['duplicate_rate', '重复率', 'decimal'],
+]
+
+/**
+ * 快照读数的格式化
+ *
+ * 长度标准差实测能到 `2.48746859276655` 这种位数，原样渲染会把表格撑破，所以按四位给；
+ * 但条目数与唯一值数是**计数**，渲染成 `4.0000` 是假精度，所以分档。
+ */
+const formatSnapshotValue = (raw: number, kind: 'count' | 'decimal'): string =>
+  kind === 'count' ? String(raw) : raw.toFixed(4)
+
 export default function Analysis() {
   const [files, setFiles] = useState<string[]>([])
   const [selectedFile, setSelectedFile] = useState('')
@@ -49,6 +96,17 @@ export default function Analysis() {
   // 初值与契约默认同值（`contains`）⇒ 下拉显示的那一档就是发出去的那一档，两边不会各说各话
   const [searchMethod, setSearchMethod] = useState('contains')
   const [searchResult, setSearchResult] = useState<SearchResponse | null>(null)
+  // 四档旋钮的初值各自等于契约默认（`top_k=5`、`text_key=instruction`、
+  // `text_field=instruction`、`min_scale_gain=0.0`）⇒ 显示的就是发出去的那一档，
+  // 两边不会各说各话。默认值的权威仍住在请求模型里，见 l227 的对账守卫。
+  const [semanticQuery, setSemanticQuery] = useState('')
+  const [semanticTopK, setSemanticTopK] = useState(5)
+  const [semanticTextKey, setSemanticTextKey] = useState('instruction')
+  const [semanticResult, setSemanticResult] = useState<SemanticSearchResponse | null>(null)
+  const [afterFile, setAfterFile] = useState('')
+  const [impactField, setImpactField] = useState('instruction')
+  const [minScaleGain, setMinScaleGain] = useState(0)
+  const [impact, setImpact] = useState<ImpactResponse | null>(null)
   const [charts, setCharts] = useState<Record<string, string> | null>(null)
   const [loading, setLoading] = useState(false)
 
@@ -175,6 +233,54 @@ export default function Analysis() {
       setSearchResult(await searchDataset(selectedFile, searchQuery, { method: searchMethod }))
     } catch (err) {
       message.error(apiErrorDetail(err, '内容检索失败'))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSemantic = async () => {
+    if (!selectedFile) {
+      message.warning('请先选择文件')
+      return
+    }
+    // 空串必须拦：实测 `query=""` 照样回条目且 `score` 全 0，那是一份退化读数而不是
+    // 「全都相关」。服务端不判空，判据就得住在门口。
+    if (!semanticQuery.trim()) {
+      message.warning('请输入查询文本')
+      return
+    }
+    setLoading(true)
+    try {
+      setSemanticResult(
+        await semanticSearch(selectedFile, semanticQuery, {
+          topK: semanticTopK,
+          textKey: semanticTextKey,
+        })
+      )
+    } catch (err) {
+      message.error(apiErrorDetail(err, '语义检索失败'))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleImpact = async () => {
+    // 两侧都要选：`before_file` 与 `after_file` 在契约里都是必填。允许选同一份文件
+    // （那就是「没有增强」的对照，四项增益应全为 0，这条读数本身有价值）。
+    if (!selectedFile || !afterFile) {
+      message.warning('影响评估需要同时选中基线集与增强后数据集')
+      return
+    }
+    setLoading(true)
+    try {
+      setImpact(
+        await assessImpact(selectedFile, afterFile, {
+          textField: impactField,
+          minScaleGain: minScaleGain,
+        })
+      )
+    } catch (err) {
+      message.error(apiErrorDetail(err, '影响评估失败'))
     } finally {
       setLoading(false)
     }
@@ -508,6 +614,163 @@ export default function Analysis() {
                     dataSource={highlightRows}
                   />
                 )}
+              </>
+            )}
+          </Card>
+
+          <Card title="语义相似检索" style={{ marginTop: 16 }}>
+            <Space style={{ marginBottom: 16 }} wrap>
+              <Input
+                style={{ width: 260 }}
+                placeholder="查询文本"
+                value={semanticQuery}
+                onChange={e => setSemanticQuery(e.target.value)}
+                onPressEnter={handleSemantic}
+              />
+              {/* 下界放 0 而不是 1：实测 `top_k=0` 在后端是合法的「只要回显、不要命中」
+                  （HTTP 200、`total=0`），替它加一条页面规则就是第二套判据。 */}
+              <span>前 K 条</span>
+              <InputNumber
+                min={0}
+                max={50}
+                value={semanticTopK}
+                onChange={value => setSemanticTopK(value ?? 5)}
+              />
+              {/* 被编码字段：这一档改的是「拿什么去算相似度」，命中表里那一列文本也跟着换。
+                  实测只影响回显的 `text`，排序与 `backend`/`dimension` 的回显口径不变。 */}
+              <Select
+                style={{ width: 170 }}
+                value={semanticTextKey}
+                onChange={setSemanticTextKey}
+                options={[
+                  { value: 'instruction', label: '编码 instruction' },
+                  { value: 'output', label: '编码 output' }
+                ]}
+              />
+              <Button type="primary" loading={loading} onClick={handleSemantic}>
+                运行语义检索
+              </Button>
+            </Space>
+            {semanticResult && (
+              <>
+                <Space wrap style={{ marginBottom: 12 }}>
+                  <Tag color="blue">命中 {semanticResult.total} 条</Tag>
+                  {/* 三个「本次生效值」是契约要求回显的东西：dimension 一改排名就变，
+                      不显示就等于让用户猜这一次是用什么算的。 */}
+                  <Tag>后端 {semanticResult.backend}</Tag>
+                  <Tag>维度 {semanticResult.dimension}</Tag>
+                  <Tag>集合 {semanticResult.collection}</Tag>
+                </Space>
+                {semanticResult.results.length === 0 ? (
+                  <Alert type="warning" showIcon message="没有命中（前 K 条取到 0 条或数据面为空）" />
+                ) : (
+                  <Table
+                    size="small"
+                    rowKey="index"
+                    pagination={{ pageSize: 8 }}
+                    columns={[
+                      { title: '条目下标', dataIndex: 'index', width: 100 },
+                      { title: '相似度', dataIndex: 'score', width: 120 },
+                      { title: '命中文本', dataIndex: 'text', ellipsis: true }
+                    ]}
+                    dataSource={semanticResult.results.map(hit => ({
+                      index: hit.index,
+                      // 相似度是相对排序量，不是「匹配了百分之几」，保留四位原样给
+                      score: hit.score.toFixed(4),
+                      text: hit.text
+                    }))}
+                  />
+                )}
+              </>
+            )}
+          </Card>
+
+          <Card title="增强前后影响" style={{ marginTop: 16 }}>
+            <Space style={{ marginBottom: 16 }} wrap>
+              <span>基线：{selectedFile || '未选'}</span>
+              <Select
+                style={{ width: 220 }}
+                placeholder="增强后数据集"
+                value={afterFile || undefined}
+                onChange={setAfterFile}
+                options={files.map(f => ({ value: f, label: f }))}
+              />
+              <Select
+                style={{ width: 180 }}
+                value={impactField}
+                onChange={setImpactField}
+                options={[
+                  { value: 'instruction', label: '看 instruction' },
+                  { value: 'output', label: '看 output' }
+                ]}
+              />
+              {/* 判决门槛：`beneficial` 的两条判据里只有这一条可调（另一条 −0.05 是
+                  SDK 常数，不在这次的面上）。不封顶也不设下界——请求模型没有值域校验，
+                  页面替它编一条判据就是第二套规则。 */}
+              <span>规模增益门槛</span>
+              <InputNumber
+                step={0.05}
+                value={minScaleGain}
+                onChange={value => setMinScaleGain(value ?? 0)}
+              />
+              <Button type="primary" loading={loading} onClick={handleImpact}>
+                运行影响评估
+              </Button>
+            </Space>
+            {impact && (
+              <>
+                <Space wrap style={{ marginBottom: 12 }}>
+                  <Tag color={impact.beneficial ? 'green' : 'red'}>
+                    {impact.beneficial ? '判为有增益' : '判为无增益'}
+                  </Tag>
+                  {/* `is_beneficial` 只看 `scale_gain` 与 `dedup_gain` 两项，另外两项再大
+                      也不参与判定——判决口径要说清，否则用户会把红色标签读成「四项全差」。
+                      门槛是可调的，所以这里报**本次用的那个值**而不是出厂默认。 */}
+                  <Alert
+                    type="info"
+                    showIcon
+                    style={{ width: 'auto' }}
+                    message={`判定只看两项：规模增益不低于门槛（本次 ${minScaleGain}），且去重增益不低于 −0.05`}
+                  />
+                </Space>
+                <Table
+                  size="small"
+                  rowKey="key"
+                  pagination={false}
+                  style={{ marginBottom: 16 }}
+                  columns={[
+                    { title: '增益项', dataIndex: 'label' },
+                    { title: '键', dataIndex: 'key', width: 180 },
+                    { title: '量纲', dataIndex: 'caliber', width: 220 },
+                    { title: '数值', dataIndex: 'value', width: 120 }
+                  ]}
+                  dataSource={Object.entries(impact.gains).map(([key, value]) => ({
+                    key,
+                    label: GAIN_PRESENTATION[key]?.label ?? key,
+                    caliber: GAIN_PRESENTATION[key]?.caliber ?? '未知口径',
+                    value: value.toFixed(4)
+                  }))}
+                />
+                <Row gutter={16}>
+                  {(['before', 'after'] as const).map(side => (
+                    <Col span={12} key={side}>
+                      <Table
+                        size="small"
+                        rowKey="name"
+                        pagination={false}
+                        title={() => (side === 'before' ? '基线侧' : '增强后侧')}
+                        columns={[
+                          { title: '指标', dataIndex: 'name' },
+                          { title: '数值', dataIndex: 'value', width: 120 }
+                        ]}
+                        dataSource={SNAPSHOT_PRESENTATION.map(([key, name, kind]) => ({
+                          name,
+                          value: formatSnapshotValue(impact[side][key], kind),
+                        }))}
+                      />
+                    </Col>
+                  ))}
+                </Row>
               </>
             )}
           </Card>

@@ -769,3 +769,60 @@ export interface AutoConfigResponse {
   reasoning: string[]
   source_stats: Record<string, unknown>
 }
+
+// ============ 影响评估 / 语义检索（A279 第三批接线，L227） ============
+
+/**
+ * `impact` 里 `before` / `after` 两侧的同一份快照
+ *
+ * 六个键逐字来自 `augmentor/impact.py:24` 的 `AugmentationMetrics.to_dict()`。
+ * `extra` 是 SDK 留的开放扩展位（现为空对象），所以不假装知道它有什么。
+ */
+export interface ImpactSnapshot {
+  total_items: number
+  unique_instructions: number
+  avg_length: number
+  length_std: number
+  duplicate_rate: number
+  extra: Record<string, unknown>
+}
+
+/**
+ * `POST /api/dataset/impact`
+ *
+ * `gains` 固定四项（实测：`scale_gain` / `diversity_gain` / `dedup_gain` /
+ * `length_spread_gain`），值可正可负，0.0 的含义随项不同——「规模没涨」与「重复率没降」
+ * 不是一回事，所以页面按项逐个显示，不合并成一个总分。
+ * `beneficial` 是路由替调用方做的判定（口径 `min_scale_gain`），不是四项之一的名字。
+ */
+export interface ImpactResponse {
+  before: ImpactSnapshot
+  after: ImpactSnapshot
+  gains: Record<string, number>
+  beneficial: boolean
+}
+
+/** 语义检索的单条命中：`item` 是原条目整份回带，`text` 是参与编码的那个字段的值 */
+export interface SemanticSearchHit {
+  index: number
+  score: number
+  text: string
+  item: Record<string, unknown>
+}
+
+/**
+ * `POST /api/dataset/semantic-search`
+ *
+ * `backend` / `dimension` / `collection` 是**本次生效值**（取自 `config.vector.*`），
+ * 契约注释写得明说：`dimension` 一改排名就变，不回显生效值就等于让调用方猜 ⇒ 页面要显示。
+ * `total` 实测就是 `results` 的长度（`top_k` 上限收窄后一致），不是「库里总条数」。
+ * 空查询实测**照样回条目且 score 全 0**（退化读数），所以页面必须在门口拦住空串。
+ */
+export interface SemanticSearchResponse {
+  query: string
+  total: number
+  backend: string
+  dimension: number
+  collection: string
+  results: SemanticSearchHit[]
+}
