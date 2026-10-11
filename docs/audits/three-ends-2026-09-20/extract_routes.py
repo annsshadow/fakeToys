@@ -209,6 +209,12 @@ def main():
             for f in files:
                 if not f.endswith(".rs"):
                     continue
+                # 测试桩文件（tests*/testing*，与 regen_endpoints.py 的 is_test_file 同口径）：
+                # shared/src/testing.rs 等含 route-existence 桩注册（如 POST /api/reset "ok"），
+                # 非生产路由，混入分母会造成假缺口。
+                stem = f[: -len(".rs")]
+                if stem.startswith("tests") or stem.startswith("testing"):
+                    continue
                 full = os.path.join(dirpath, f)
                 rel = os.path.relpath(full, ROOT).replace("\\", "/")
                 # 归属 crate / 顶层

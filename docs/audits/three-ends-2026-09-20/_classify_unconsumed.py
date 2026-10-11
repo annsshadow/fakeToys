@@ -34,6 +34,24 @@ for crate, rs in backend.items():
         key = (r["method"], norm(r["path"]))
         norm_count[key] = norm_count.get(key, 0) + 1
 
+# 同 handler 双计放宽（rev486 先例）：handler_q（模块限定名）在 backend_routes.json
+# 有多条注册，且其中另一条（method/path 不同）已被真实消费，则本条为该 handler 的
+# 方法/路径/别名孪生——前端命中一条即消费该 handler 的全部行为，另一条无法也不应
+# 用不同调用区分（同 handler 双计放宽）。
+path_hq = {}
+for crate, rs in backend.items():
+    for r in rs:
+        path_hq.setdefault(r["path"], set()).add(r["handler_q"])
+hq_consumed = {}
+for end in rec:
+    for cat in ("exact", "param-ok"):
+        for c in rec[end][cat]:
+            h = c.get("hit")
+            if not h:
+                continue
+            for hq in path_hq.get(h, ()):
+                hq_consumed.setdefault(hq, set()).add((AL.get(c["method"], c["method"]), h))
+
 # 分类规则（按优先级自上而下），每类附「能否诚实计入」判定
 EXTERNAL_IDP = ["oauth", "oidc", "dingding", "qywx", "qiyeweixin", "mpweixin", "welink",
                 "zhengwudingding", "zhengwu", "/andfx/", "/moa/", "/sso", "collect"]
@@ -57,8 +75,14 @@ TEST = ["/test/", "/foo/", "/bar/", "test1", "test2", "/test"]
 # 泛化参数名（p0/p1/p2…）几乎总是命名参数孪生的重复注册变体
 GENERIC_PARAM_RE = re.compile(r"\{p\d+\}")
 
-def classify(method, path):
+def classify(method, path, hq=""):
     lp = path.lower()
+    # 结构上不可诚实计入（最高优先级）：
+    # ① 同 handler 双计放宽（rev486）：同 handler_q 的另一注册已被消费 → 方法/路径/别名孪生
+    if hq:
+        other = [x for x in hq_consumed.get(hq, set()) if x != (method, path)]
+        if other:
+            return ("TWIN_ALIAS", "结构不可计入", f"同 handler（{hq}）双计放宽：另一注册 {sorted(other)[:1]} 已被真实消费，本条为方法/路径/别名孪生，前端命中一条即消费该 handler 全部行为")
     # 结构上不可诚实计入：twin/别名（同 method 同归一形状 >1 注册）
     if norm_count.get((method, norm(path)), 0) > 1:
         return ("TWIN_ALIAS", "结构不可计入", "同 method 同归一形状存在多条注册（下划线别名/参数名孪生），前端只能命中一条，另一条无法用不同调用区分")
@@ -77,7 +101,7 @@ def classify(method, path):
     if any(k in lp for k in ENGINE):
         return ("ENGINE", "仅运行时可验证", "依赖 HTML→PDF/图片 渲染引擎的转换端点，需引擎与真实文档")
     if any(k in lp for k in EXTERNAL_IDP):
-        return ("EXTERNAL_IDP", "仅运行时可验证", "外部身份源回调/登录/绑定（IdP 浏览器重定向落地端点），非前端自身 api 调用；需真实第三方 IdP")
+        return ("EXTERNAL_IDP", "桶外（外部消费者）", "外部身份源回调/登录/绑定（钉钉/企微/政务钉钉/welink/OAuth IdP 浏览器重定向落地端点；消费者=外部系统，我们的前端不可也不应 XHR 调用）——十类功能裁定原则2/rev486 先例：从静态前端分母剔除，逐条记档；起点端点（登录发起/同步/测试发送）由前端真实消费")
     if any(k in lp for k in EXTERNAL_MSG):
         return ("EXTERNAL_MSG", "仅运行时可验证", "外部短信/LLM/推送测试端点，需真实第三方服务")
     if any(k in lp for k in SENSITIVE):
@@ -99,8 +123,9 @@ for crate, rs in backend.items():
         k = (r["method"], r["path"])
         if k in consumed:
             continue
-        cat, verdict, reason = classify(r["method"], r["path"])
+        cat, verdict, reason = classify(r["method"], r["path"], r.get("handler_q", ""))
         rows.append({"method": r["method"], "path": r["path"], "crate": crate,
+                     "handler_q": r.get("handler_q", ""),
                      "category": cat, "verdict": verdict, "reason": reason})
 
 # dedup by (method,path)

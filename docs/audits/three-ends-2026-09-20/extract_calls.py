@@ -33,6 +33,15 @@ CONST_RE = re.compile(r"\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*(?::[^=\n]*)?
 OBJ_STR_RE = re.compile(r"\b([A-Za-z_$][\w$]*)\s*:\s*([`'\"])(.*?)\2")
 OBJ_FN_RE = re.compile(r"\b([A-Za-z_$][\w$]*)\s*:\s*(?:async\s*)?\([^)]*\)\s*=>\s*([`'\"])(.*?)\2")
 OBJ_BLOCK_RE = re.compile(r"\b([A-Za-z_$][\w$]*)\s*(?::[^={;\n]*)?=\s*\{", re.DOTALL)
+# WS 真实连接识别（十类功能裁定原则1：识别既存真实消费，非放水）。
+# 后端 realtime 以 axum get() 注册 WebSocketUpgrade 路由，WS 握手本质是带 Upgrade 头的
+# GET，故按 GET 记。三处来源：
+#   1) SDK O2WebSocketClient 构造默认 url（useWebSocket() 无参 → 连接该默认路径）
+#   2) useWebSocket('/ws/...') / new O2WebSocketClient('/ws/...') 的显式字面量 URL
+WS_DEFAULT_RE = re.compile(r"\burl\s*:\s*string\s*=\s*([`'\"])(/ws/[^`'\"]+)\1")
+WS_CALL_RE = re.compile(
+    r"\b(?:useWebSocket|new\s+O2WebSocketClient)\s*\(\s*([`'\"])(/ws/[^`'\"]+)\1"
+)
 
 
 def skip_ws(s, i):
@@ -236,6 +245,37 @@ def scan(app_dir, label):
                             "ambiguous": via.startswith("expand:"),
                         }
                     )
+            # ── WS 真实连接识别（十类功能裁定原则1）────────────────────
+            for m in WS_DEFAULT_RE.finditer(src):
+                raw = m.group(2)
+                line = src[: m.start()].count("\n") + 1
+                rows.append(
+                    {
+                        "app": label,
+                        "file": rel,
+                        "line": line,
+                        "method": "GET",
+                        "raw": raw,
+                        "path": normalize(raw),
+                        "via": "ws-default",
+                        "ambiguous": False,
+                    }
+                )
+            for m in WS_CALL_RE.finditer(src):
+                raw = m.group(2)
+                line = src[: m.start()].count("\n") + 1
+                rows.append(
+                    {
+                        "app": label,
+                        "file": rel,
+                        "line": line,
+                        "method": "GET",
+                        "raw": raw,
+                        "path": normalize(raw),
+                        "via": "ws-literal",
+                        "ambiguous": False,
+                    }
+                )
     return rows, unresolved
 
 
