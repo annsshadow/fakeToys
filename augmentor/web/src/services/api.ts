@@ -68,6 +68,50 @@ const api = axios.create({
 })
 
 /**
+ * 写操作鉴权：浏览器存一份 key，由请求拦截器随每个请求送出去
+ *
+ * 为什么这一层必须有：服务端 `api/deps.py` 的 `verify_api_key` 一旦看见环境变量
+ * `AUGMENTOR_API_KEY` 就要求所有写操作带 `X-API-Key`，否则 401「缺少或无效的
+ * X-API-Key」。实测（L233 探针）契约面 **75** 条操作里有 **24** 条挂着它，而这 24 条中
+ * 有 **21** 条是前端已接线的形状 —— 也就是说开了鉴权以后，页面上「保存配置 / 上传 /
+ * 导出 / 启动增强 / 建版本 / 回滚 / 改删单条 / 六只数据集变换 / 备份三只 / 依赖登记 /
+ * 质量画像 / 批量导出」这些动作**一律点不动**（A302）。L231 当时只量了备份那一族的
+ * 3 只，规模被低估了一个量级；依赖登记那只是同一道门禁的第二次回声（A312）。
+ *
+ * 存哪儿：`localStorage`，**明文**、只在这一台浏览器上、不进构建产物也不进仓库。
+ * 这不是保密措施——同源脚本读得到它——它解决的是「服务端开了鉴权时页面还能用」。
+ * 要更强的存放位置就得配后端会话/CSRF 那一整套，超出这一格的范围。
+ *
+ * 留空即**不送这个头**（`setApiKey('')` 走的是 `removeItem`，不存空串）：服务端没设
+ * `AUGMENTOR_API_KEY` 时零配置照旧可用，多送一个空头没有意义。头名的大小写在真链路
+ * 上无关（实测送 `X-Api-Key` 同样放行，HTTP 头名不区分大小写），这里仍与后端
+ * `Header(alias=...)` 逐字一致，免得读代码时以为是两个不同的头。
+ */
+export const API_KEY_HEADER = 'X-API-Key'
+
+/** `localStorage` 的键名 */
+export const API_KEY_STORAGE_KEY = 'augmentor.api_key'
+
+export const getApiKey = (): string => localStorage.getItem(API_KEY_STORAGE_KEY) ?? ''
+
+export const setApiKey = (key: string): void => {
+  const trimmed = key.trim()
+  if (trimmed) {
+    localStorage.setItem(API_KEY_STORAGE_KEY, trimmed)
+  } else {
+    localStorage.removeItem(API_KEY_STORAGE_KEY)
+  }
+}
+
+api.interceptors.request.use(config => {
+  const key = getApiKey()
+  if (key) {
+    config.headers.set(API_KEY_HEADER, key)
+  }
+  return config
+})
+
+/**
  * 大块数据请求的**每请求**超时（毫秒），刻意不动实例默认的 30 s
  *
  * 30 s 对这一类请求是错的，依据是实测而非感觉（A167，取证脚本 `Temp/l99q/upload_timing_l99.py`
@@ -100,22 +144,33 @@ export const BULK_REQUEST_TIMEOUT_MS = 30 * 60 * 1000
  * 两种形状都要处理：400/403/413 的 detail 是字符串，422（校验失败）是
  * `[{ loc, msg, type }]` 数组。`error` 收成 `unknown` 而不是 `any`：本层不解释错误对象
  * 的来历（axios 错误、原生 Error、甚至字符串都可能是），逐层可选访问，取不到就走 fallback。
+ *
+ * **401 单独加一句去处**：后端那句 detail 只说「缺少或无效的 X-API-Key」，它没说 key 该
+ * 填在哪儿，而 21 个页面动作都会撞这一档（见 `API_KEY_HEADER` 那段）。加在 `apiErrorDetail`
+ * 而不是各页面的 `catch` 里，是因为页面全部走这一个漏斗——一处改动，21 个动作同时被指路。
+ * 两种成因要分开说：存着 key 却 401 是「那份与服务端不一致」，没存 key 是「还没填」，
+ * 让用户去对一台自己没填过的输入框是错的方向。
  */
 export const apiErrorDetail = (error: unknown, fallback: string): string => {
-  const detail = (error as { response?: { data?: { detail?: unknown } } })?.response?.data
-    ?.detail
+  const response = (error as { response?: { status?: number; data?: { detail?: unknown } } })
+    ?.response
+  const detail = response?.data?.detail
+  let text = fallback
   if (typeof detail === 'string') {
-    return detail || fallback
-  }
-  if (Array.isArray(detail)) {
+    text = detail || fallback
+  } else if (Array.isArray(detail)) {
     const msgs = detail
       .map((item) => (item as { msg?: unknown })?.msg)
       .filter((msg): msg is string => typeof msg === 'string' && msg.length > 0)
     if (msgs.length > 0) {
-      return msgs.join('；')
+      text = msgs.join('；')
     }
   }
-  return fallback
+  if (response?.status !== 401) {
+    return text
+  }
+  const cause = getApiKey() ? '浏览器里存着的那一份与服务端不一致' : '这台浏览器还没有存 key'
+  return `${text}——${cause}：到「配置管理 → 写操作鉴权」填服务端 AUGMENTOR_API_KEY 的那一份`
 }
 
 /**
@@ -1078,9 +1133,9 @@ export const listDependencyDatasets = async (
  * 空串是 **400**「文件路径 不能为空」，顶层不是 JSON 数组是 **400**「数据文件的顶层必须是
  * JSON 数组，当前是对象」。`dataset_id = md5(name)[:8]`，所以**同名再登记是覆盖**（不留
  * 重复，但 `created_at` 被刷新，A306）。这一支挂鉴权门禁（A312）：服务端设了
- * `AUGMENTOR_API_KEY` 而无那个头就是 **401**，而前端目前**没有**送它的通道，与备份那一族
- * 同一个缺口（A302）。头名逐字只写在系统状态页那张卡的正文里，本层刻意不复述——
- * 「提到这个头名的文件只有一处」是 L231 那条判据的量法，多一处回声就会把它判红。
+ * `AUGMENTOR_API_KEY` 而无那个头就是 **401**。L233 起本层的请求拦截器会把「配置管理」页
+ * 存下的那份 key 随每个请求送出去（A302 / A312 已收），头名的带引号字面量全前端只有
+ * `API_KEY_HEADER` 那一处 —— 多一处就等于多一条各自为政的通道，L233 那条判据会点名。
  */
 export const registerDependencyDataset = async (
   name: string,

@@ -481,7 +481,7 @@ if not x_api_key or not secrets.compare_digest(x_api_key, expected):
     raise HTTPException(status_code=401, ...)
 ```
 
-- 密钥来自环境变量 `AUGMENTOR_API_KEY`，不写入 `config.yaml`，避免随仓库泄漏；
+- 密钥来自环境变量 `AUGMENTOR_API_KEY`，不写入 `config.yaml`，避免随仓库泄漏；前端那一份存在浏览器 localStorage（「配置管理 → 写操作鉴权」卡），由 axios **请求**拦截器随每个请求送出 `X-API-Key`（L233）—— 这只在请求侧挂头，A162「取文案选 helper、不选拦截器」那一拍没被推翻：401 的指路文案仍长在 `apiErrorDetail` 这个漏斗里；
 - 比较使用 `secrets.compare_digest`，不泄漏长度与时序信息；
 - 未配置时 `api/main.py` 在启动阶段打印 WARNING，明确写出「当前无鉴权」，
   让运维在日志里就能看到，而不是靠读文档才知道。

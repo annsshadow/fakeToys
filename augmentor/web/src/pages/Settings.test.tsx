@@ -11,8 +11,9 @@
  * DataManagement.upload.test.tsx（vitest 没开 globals，显式 cleanup + message.destroy）。
  *
  * L226 起本页多了「按数据推荐配置」卡（A279 第二批接线），对应下面 `Settings 按数据推荐配置`。
+ * L233 起多了「写操作鉴权」卡（收 A302 / A312），对应下面 `Settings 写操作鉴权（L233）`。
  */
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { message } from 'antd'
 
@@ -63,6 +64,7 @@ vi.mock('../services/api', async (importOriginal) => {
 })
 
 import Settings from './Settings'
+import { API_KEY_STORAGE_KEY } from '../services/api'
 
 const CONFIG = {
   default_model: 'ernie',
@@ -263,5 +265,109 @@ describe('Settings 按数据推荐配置', () => {
     })
     expect(screen.getByText('还没有推荐值')).toBeInTheDocument()
     expect(container.querySelector('.ant-statistic')).toBeNull()
+  })
+})
+
+/**
+ * 写操作鉴权那张卡（L233，收 A302 / A312）
+ *
+ * 服务层那一半（拦截器挂不挂头、空串等于清除、401 那句指路）钉在 `api.test.ts`；
+ * 这一份钉的是**渲染面上真的能填、填了真的落到 localStorage**。两边都不碰网络：
+ * 「存 / 清」这两个按钮刻意不发请求——服务端只在写操作请求上校验，本层没有能力
+ * 证明这份 key 是对的，所以页面上不许出现「校验通过」这类话（诚实口径那一条钉住）。
+ */
+describe('Settings 写操作鉴权（L233）', () => {
+  const quietPage = () => {
+    spies.getConfig.mockResolvedValue(CONFIG)
+    spies.getModels.mockResolvedValue({ models: ['ernie'], default: 'ernie' })
+  }
+
+  const keyInput = () => screen.getByLabelText('写操作鉴权 API Key') as HTMLInputElement
+
+  beforeEach(() => {
+    localStorage.clear()
+  })
+
+  it('没存过 key 时如实说「没有存」，输入框是空的', async () => {
+    quietPage()
+    render(<Settings />)
+
+    await waitFor(() => expect(spies.getDataFiles).toHaveBeenCalled())
+    expect(screen.getByText('这台浏览器没有存 key')).toBeInTheDocument()
+    expect(keyInput().value).toBe('')
+    expect(localStorage.getItem(API_KEY_STORAGE_KEY)).toBeNull()
+  })
+
+  it('填一份存进去：落 localStorage、状态翻成「已存了一份」', async () => {
+    quietPage()
+    render(<Settings />)
+    await waitFor(() => expect(spies.getDataFiles).toHaveBeenCalled())
+
+    fireEvent.change(keyInput(), { target: { value: '  s3cret  ' } })
+    fireEvent.click(screen.getByRole('button', { name: /存进这台浏览器/ }))
+
+    // trim 后才落盘：存进去的必须是能直接与环境变量比对的那一份
+    expect(localStorage.getItem(API_KEY_STORAGE_KEY)).toBe('s3cret')
+    expect(screen.getByText('这台浏览器已存了一份')).toBeInTheDocument()
+    await waitFor(
+      () => expect(document.body.textContent).toContain('已存进这台浏览器'),
+      { timeout: 4000 }
+    )
+  })
+
+  it('重开页面时输入框反映已经存下的那份（不是空串）', async () => {
+    quietPage()
+    localStorage.setItem(API_KEY_STORAGE_KEY, 'already-here')
+
+    render(<Settings />)
+    await waitFor(() => expect(spies.getDataFiles).toHaveBeenCalled())
+
+    expect(keyInput().value).toBe('already-here')
+    expect(screen.getByText('这台浏览器已存了一份')).toBeInTheDocument()
+  })
+
+  it('清除：localStorage 那一格被摘掉，状态翻回「没有存」', async () => {
+    quietPage()
+    localStorage.setItem(API_KEY_STORAGE_KEY, 'already-here')
+
+    render(<Settings />)
+    await waitFor(() => expect(spies.getDataFiles).toHaveBeenCalled())
+    // antd 的 Button 会给「恰好两个汉字」的文案中间插一个空格（accessible name 成
+    // 了 `清 除`），实测第一次跑就是这么红的 —— 所以这里用 `\s*` 而不是逐字匹配。
+    fireEvent.click(screen.getByRole('button', { name: /清\s*除/ }))
+
+    expect(localStorage.getItem(API_KEY_STORAGE_KEY)).toBeNull()
+    expect(keyInput().value).toBe('')
+    expect(screen.getByText('这台浏览器没有存 key')).toBeInTheDocument()
+  })
+
+  it('空输入点「存」不报假话：说的是「等于清除」，不是「已存进」', async () => {
+    quietPage()
+    render(<Settings />)
+    await waitFor(() => expect(spies.getDataFiles).toHaveBeenCalled())
+
+    fireEvent.click(screen.getByRole('button', { name: /存进这台浏览器/ }))
+
+    await waitFor(
+      () => expect(document.body.textContent).toContain('等于清除'),
+      { timeout: 4000 }
+    )
+    expect(localStorage.getItem(API_KEY_STORAGE_KEY)).toBeNull()
+  })
+
+  it('诚实口径留在卡上：明文存放、影响面 24/21、不是登录、不许说「校验通过」', async () => {
+    quietPage()
+    render(<Settings />)
+    await waitFor(() => expect(spies.getDataFiles).toHaveBeenCalled())
+
+    const text = document.body.textContent || ''
+    expect(text).toContain('AUGMENTOR_API_KEY')
+    expect(text).toContain('明文')
+    // 影响面是 L233 探针在真契约面上量到的两个数，不是估的
+    expect(text).toContain('75 条操作里有 24 条挂着这道门禁')
+    expect(text).toContain('21 条是页面上已')
+    expect(text).toContain('不是登录')
+    expect(text).toContain('不替代 HTTPS')
+    expect(text).not.toContain('校验通过')
   })
 })
