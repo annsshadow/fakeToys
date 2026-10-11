@@ -62,6 +62,7 @@
 - [x] **L224** `08bc4f0c8` +（账本批即本条所在提交）`test,docs(augmentor)`：**A279 立账——后端 75 条操作与前端服务层 43 条调用形状的消费对账落成机器**（`tests/unit/test_api_endpoint_consumption_l224.py`，26 支）。两侧权威各一份：契约面从 `app.openapi()` 实推（**75 条操作 / 71 条路径**），前端面从 `web/src/services/api.ts` 的 `api.<verb>('路径')` 形状实推（**43 条**），路径前缀从同一份源码的 `baseURL` 读，不在测试里写死第二份。**缺口 32 条**落成名单且与实测集合**相等** ⇒ 只会随接线变短，新增一条没接的端点当场红；32 条里 **26 条有 CLI 子命令入口**（映射去重后 **21** 个名字，逐个由 parser 的 `add_parser` 名单验真）、**6 条两边都没有**（`dataset/evaluate`、`impact`、`language-profile`、`semantic-search`、`translate`、`vector-status`）。query 一维量出**两处来源**：写在路径串里的 1 条 + axios `params:` 对象里的 4 条 / 5 个键，只认前者会漏掉 `page_size` 这个「TS 侧改名后的对外名」；归属判据用「最近的前一个调用」，被实测否掉的备选是往后看固定 400 字符（候选从 4 涨到 7，多出三桩冤案）。去歧义同样有实测：43 条形状里恰 1 条（`GET /api/versions/history`）同时落在字面量与参数化两条路由上，绑定只认占位符最少那一档，并拿 `TestClient` 的 200 + 响应体形状证明赢的那条确实是它——依据是运行时行为，不是匹配规则。注入十臂各有牙齿（1/4/6/3/2/2/1/7/2/1 红），其中 A0 只响 1 支：真把两条路由的声明顺序对调，**只有那条运行时判据会响**。本轮**零 parametrize 新增** ⇒ l97 / l98 两把棘轮读数一格未动，未回填。门禁 **8347 passed / 11 skipped / 0 failed / 99.80%**（196.80 s），用例增量 `+26` 与新文件支数吻合。顺手量到 8 个路由文件把下游异常一刀切收敛成 500 ⇒ 立 **A280** ⇒ 详见循环日志 L224
 - [x] **L225** `e7dfa43ab` +（账本批即本条所在提交）`feat,docs(augmentor)`：**A279 第一批接线——6 条「两边都没入口」里先接 3 条，消费面 43 → 46**（`language-profile` 与 `evaluate` 进数据分析页、`vector-status` 进系统状态页；服务层三只 fetchers 加三个响应类型，后端字段名与响应形状一字未改，`include_details` 在页面上显式送 `false`——契约默认是 `true`，见 `api/routes/dataset_tools.py:231`）。守卫按实测回填四格：调用形状 **43 → 46**、缺口名单 **32 → 29**（划掉的正是这三条）、已消费 **43 → 46**、`NO_ENTRY` 队列 **6 → 3**（剩 `impact` / `semantic-search` / `translate`）；`CLI_ENTRY` 的 26 条 / 21 个名字一格未动，因为本轮只动前端。A279 的三件收口判据齐：名单与实测相等且变短、`api.wiring.test.ts` 的 `KNOWN_UNWIRED` 仍为空、每员覆盖成功与失败两路（前端 vitest **13 文件 127 支，+8**，`tsc --noEmit` 与 `eslint --max-warnings 0` 干净）。注入五臂各有牙齿（3/1/3/1/1 红）：A0 把服务层路径拼错 ⇒ 消费守卫响 3 支（幽灵方向 + 名单相等 + 名单规模）；A1 只 import 不调用 ⇒ 接线守门响 1 支；A2 删掉整张向量卡 JSX ⇒ 该页响 3 支且原有 4 支不动；A3 把「双侧必填」削弱成单侧 ⇒ 守卫用例响 1 支；A4 摘掉分布表的 `.sort` ⇒ 排序用例响 1 支。**A4 那一支是先量出假绿才补的**：画像 fixture 的插入序原本恰好与条数序同向，摘掉排序照样绿，改成故意反向之后 A4 才响。顺手量两件事，都按「不动，只立账」处置：**A281**（45 只带类型的 fetchers 里 40 只的 TS 响应类型字段集与契约 200 响应的属性集逐字相等，3 只缺字段——`AppConfig` 少 `versioning` / `visualization`、`UpdateConfigResponse` 少 `ignored_keys`、`StatusResponse` 少 `model_retry_count` / `model_retry_wait_seconds`，方向一致都是「后端在回、前端类型上不存在」）、**A282**（`prettier --check src` 的仓内基线本来就是红的：32 个文件不合规，把本轮碰过的 5 个文件从 `HEAD` 取到仓外用同一份配置复查同样全红 ⇒ 本轮没引入漂移，而 CI 里根本没有 format 门）。本轮**零 parametrize 新增** ⇒ l97 / l98 两把棘轮读数一格未动，未回填；后端用例总数与 L224 持平（**8347 passed / 11 skipped / 0 failed / 99.80%**，198.98 s），增量全在前端那一侧 ⇒ 详见循环日志 L225
 - [x] **L226** `dfb9ab0ae` +（账本批即本条所在提交）`feat,docs(augmentor)`：**A279 第二批接线——`search` / `validate` / `auto-config` 进页面，消费面 46 → 49**（内容检索进数据分析页、结构校验进质量中心新 tab、按数据推荐配置进配置管理页；三只 fetchers + 三只响应类型 + 三处页面入口 + 三页各补成功/失败两路，后端字段名与响应形状一字未改）。守卫按实测回填五格：调用形状与已消费 **46 → 49**、缺口名单 **29 → 26**、`CLI_ENTRY` **26 条/21 名 → 23 条/18 名**、`NO_ENTRY` 仍 **3**。新立跨语言对账守卫 `test_wired_dropdown_choices_l226.py`（23 支）：两张下拉清单与 `SEARCH_METHODS` / `VALIDATION_PRESETS` / `PRESET_RULES` 逐项相等、CLI 的 `--method` choices 首次入尺、label 写死的数字真读规则表验证、端点面回执 5+3 档全 200 与清单外两档回字符串 detail；五档注入臂红 3/1/1/1/4 格，跑完按字节还原。**明确拒接两员并记账**：`GET /api/system/dependencies`（与 `/api/status` 的 dependencies 同数据两面，接了只涨指标）与 `POST /api/dataset/translate`（整份译文只在响应体、无 `output_file` 可落盘 ⇒ 另立 **A283**）。顺手修掉去重卡片「启用水重」错字。census 两把棘轮按实测重钉（CALLS 402→404、READABLE 288→290、盲面 114 未动）。门禁：后端 **8370 passed / 11 skipped / 0 failed / 99.80%**（189.99 s），前端 **13 文件 / 140 支全绿**（+13）、`tsc` 与 `eslint` 均干净 ⇒ 详见循环日志 L226
+- [x] **L227** `835d15d4d` +（账本批即本条所在提交）`feat,docs(augmentor)`：**A279 第三批接线——`impact` / `semantic-search` 进数据分析页，消费面 49 → 51，并把「抄进页面的默认值」钉回请求模型**（`NO_ENTRY` 队列里最后两只「SDK 做完、web 与 CLI 都没人取」的缺口，只动 `web/src`，后端字段名与响应形状一字未改；`translate` 留给 A283）。守卫按实测回填四格：调用形状与已消费 **49 → 51**、缺口名单 **26 → 24**、`NO_ENTRY` **3 → 1**（只剩 `translate`）、`CLI_ENTRY` 的 **23 条 / 18 名一格未动**（本轮只动前端）。新立跨语言对账守卫 `test_impact_semantic_wiring_l227.py`（20 支）：**这两只没有「字段名权威常数」可引**（l226 那种封闭清单在这里不存在，`["instruction", "input", "output"]` 只是 SDK/CLI 里五处手写字面量），权威换成三处来源——请求模型 `model_fields[...].default`、真实回执的 `gains` 键集、`AugmentationMetrics` 的 dataclass 字段；页面四档初值逐个与契约默认同值，服务层不写第二套默认。新暴露两档此前任何产品面都调不到的旋钮（`text_key`、`min_scale_gain`），`前 K 条` 的下界按实测从 1 放宽到 0（`top_k=0` 是合法的「只要回显、不要命中」档，端点 200 且 `results` 为空）。顺手量到 `AugmentationMetrics.unique_instructions` 是误名（`augmentor/impact.py:76` 数的是 `len(set(texts))`，`texts` 取自 `text_field`）⇒ 标签按诚实口径写「唯一值数（按所选字段）」并立 **A284**，那五处重复字面清单立 **A285**。census 按实测重钉（CALLS 404→405、READABLE 290→291、盲面 114 与 l98 档位和未动——本轮唯一新增的 parametrize 值位是内联字符串清单）。注入十二臂各有牙齿（Python 面 2/2/2/3/1/1/3，vitest 面各 1）：**第一批有五臂被取证脚本自己读成「空转」，那是 ANSI 色码截断了汇总行，剥色重跑才是真读数，假读数没有入账**。前端 **13 文件 / 149 支全绿**（+9：Analysis 15 → 24）、`tsc` 与 `eslint` 均干净；门禁：后端 **8390 passed / 11 skipped / 0 failed / 99.80%**（188.88 s，`+20` = 新守卫 20 支）；账本批复跑时 A184 那把注释引用尺子把账本第一版里一个「尚不存在的新模块名」红了两支 ⇒ 改口不指名，阈值一格未动；同轮立 **A286**（比值型计时守卫在负载下会假红：那一次全量 3 failed / 8387 passed、比值 4.38 对阈值 3.0，同条用例隔离复跑四次全绿、整轮 257.50 s 比 188.88 s 高 36%） ⇒ 详见循环日志 L227
 
 ## Backlog A — 质量缺口（缺数 / 偏支 / 健壮性）
 
@@ -89,11 +90,14 @@
 | A276 | `config.yaml` 顶部的 `app` 节（`name` / `version` / `debug`） | **新立（L222）**：**形状本身不是新事实**——`OPTIMIZATION_PLAN.md` §2.4 的表、`README.md` 变更说明第 6 条与 `tests/integration/test_cli_validate_config.py` 的 docstring 三处都记着「`AppConfig` 不建模 `app` 段、没有任何代码读它」，而历史上做过一次处置是把它从必填**降为可选**（因为 `save_config` 写出的配置否则必然校验失败）。**本条立的是另一码事：这只死面的*处置*从未进过账，而且它对现有的死键普查尺子结构上不可见**——`AppConfig` 没有 `app` 字段（`dataclasses.fields()` 实测不含它），`ConfigValidator` 又把它列进 `META_TOP_SECTIONS` 免检，于是 B5 那把「只覆盖 schema 键」的普查尺子永远不会把它报成零读者键，它也不会被加载器装配。当前后果：改这三键不影响任何输出，`GET /api/config` 的响应面里也没有它们（该端点逐字段从 `p.config` 即 `AppConfig` 拼装，见 `api/routes/config.py` 的 `get_config`，没有字段就没有格子）。三条处置方向都动得到对外文件，所以先立账：**① 接成节**（新增 `AppMetaConfig` 三键并接进 `/api/config` 与 `--version` 一类读取面 ⇒ schema 70 → 73 键，l77 节注册、规格表、普查尺子与本把三侧尺子都要按现量重钉）、**② 从出厂文件删掉那一段**（改动用户可见的配置面，且 `ConfigValidator.META_TOP_SECTIONS` 要跟着收窄、`save_config` 的「保留未建模顶层键」那条行为也一并失去对象）、**③ 维持现状并把「产品侧零读者」写明**（本轮 `docs/README.md` 表格已按③落了说明，但键本身仍在那儿）。本轮选③而没有顺手删或顺手接：前者是无声地改变出厂形状，后者是一轮做不完的对外契约变化。`META_ROWS` 的验真臂把这个形状钉在明处——白名单成员必须「确实不是节」。定级 S，待拍。 | S |
 | A277 | `docs/API.md` 逐端点的「人读字段提示」列 | **新立并同轮收口（L223）**：这张四列说明表是 68 条端点里 dataset 与 system 两组共 31 条的**字段级承诺**面（哪个字段省略会落配置、哪个键可能几千个键、哪种坏值 400），但仓内此前没有任何机器读过它的字段名——`test_api_doc_endpoint_coverage_l210.py` 只钉「端点路径集合与说明存在性」，`test_doc_contract_numbers_l200.py` 只核数字。缺这一格的直接后果本轮就撞上了：总览散文与三条说明行把写盘类端点的输出字段写成 `output_path`，而真实字段是 `output_file`（`split` 是 `output_dir`），`output_path` 只是路由里的**局部变量名**——文档在教调用方发一个会被 pydantic 拒掉的键。这是 A266 / A275 那句「契约面数字与字段全靠人肉对账」在逐端点说明面上的最后一格，同一族、同一种修法：**权威只有一份**，字段名从 `app.openapi()` 实推（请求体属性递归过 `$ref` / `allOf` / `additionalProperties` / `items`，再加 `parameters[].name`），契约面接不住的名字再要求落进四档有位置的证据（该端点 import 闭包内的字符串字面量、`def` / `class` / 模块名、`fields(AppConfig)` 的键、CLI parser 的选项）。定级 S。**· 已关闭（L223）**：守卫 `tests/unit/test_api_doc_field_hints_l223.py` 23 支，文档 4 处一并订正（全文再无 `output_path`）。两件事值得留在账上而不是埋在日志里：① 字面量档**必须逐格限作用域**，全仓字面量会把 `output_path` 洗白（它确实是 `augmentor/backup.py:188` 与 `augmentor/export_enhanced.py:143` 的返回键），跳数预算由 `test_hop_budget_is_load_bearing` 钉住；② 尺子首跑的 3 格无据里有 2 格是**尺子自己的 bug**（相对导入层级换算错，`augmentor` 包内 `from .x` 全没解析进闭包），判据修好之后才剩下那 1 格真缺陷。⇒ 见循环日志 L223 | S |
 | A278 | OpenAPI 里 `additionalProperties: true` 的自由子对象 | **新立（L223）**：契约面不是全知的。响应模型里凡是 `Dict[str, Any]` 的子对象，在 OpenAPI 上就是 `additionalProperties: true` —— **键名压根不在 schema 里**，机器推不出来。本轮实测的形状：`ImpactResponse.before` 与 `after` 两个子对象（`api/routes/dataset_tools.py:383-384` 声明为 `Dict[str, Any]`，内容是 SDK 那份统计画像的原始 dict），它们内部有哪些键只能由散文说明，新尺子对这类名字只能走「字面量档」，而字面量档是**逐格限作用域**的——一旦某个自由子对象的键来自更深的模块（超过两跳），它就会被报成无据，而那不是文档错。当前后果：客户端只看 OpenAPI 拿不到这些子对象的形状，文档写漏也没有机器兜。两条方向：**① 给自由子对象立最小形状**（哪怕只声明 `count` / `types` 这一类稳定键，其余留在 `additionalProperties` 里），**② 维持自由并由 A277 那把尺子加一档「自由子对象白名单」**，把「这一格只能靠散文」写成可证伪的名单而不是含糊过去。本轮选②的现状（白名单还没立，靠字面量档接住）而没有动形状：改响应模型是对外契约变化。定级 S，待拍。 | S |
-| A279 | 前端服务层对后端 26 条操作没有入口（接线队列） | **两批共接 6 条（L225 三条 + L226 三条）**：`language-profile` 与 `evaluate` 进了数据分析页、`vector-status` 进了系统状态页，L226 再把 `search` 进分析页、`validate` 进质量中心、`auto-config` 进配置管理。`UNCONSUMED` 32 → 29 → **26**、已消费 43 → 46 → **49**（75 条的 65.3%），`NO_ENTRY` 从 6 收到 **3** 之后一字未动——剩下的 `POST /api/dataset/impact`、`POST /api/dataset/semantic-search`、`POST /api/dataset/translate` 仍是「SDK 做完、三面都没人取」的死面；`CLI_ENTRY` 从 26 条 / 21 个名字收到 **23 条 / 18 个名字**（本轮三条都各有 CLI 入口）。修法照旧按页面分组分批：一批 = 一个页面的 fetchers + 页面入口 + 该页用例。**第一批的收口判据三件全部命中，可以直接复用**——`test_api_endpoint_consumption_l224.py` 的名单与实测集合相等且变短、`web/src/services/api.wiring.test.ts` 的 `KNOWN_UNWIRED` 仍为空、每个新入口覆盖成功与失败两路（外加一条本轮新增的经验：接线改动本身要让消费守卫先红再回填，红的那几次就是证据）。**L226 第二批没有照这个建议做，而是照「按页面分组」重排了队列**：先做 `search` / `validate` / `auto-config`（三只都能落进已有页面的小表与计数面，且 `validate` 的 issues、`search` 的 highlights 都是「后端算好了没人渲染」的现成输出面），把 `translate` 单独拎出来立成 **A283**——它整份数据集回传又没有 `output_file` 可落盘，是契约层问题而不是接线工作量问题；`GET /api/system/dependencies` 则明确拒接，理由是与 `/api/status` 里的 `dependencies` 同一份数据两面渲染，接进来只涨「消费率」这个数、不涨任何用户能力（**这条判据本身值得记住：指标涨而能力不涨的接线一律不做**）。**下一批建议做 `impact` 与 `semantic-search`**：两只的响应都是数组套对象（逐条影响清单 / `results` 命中列表），要的是可滚动列表那种控件形态，与本批的标签卡加小表不是一回事，值得单独一轮；同批可顺带处理 **A281** 里 `AppConfig` 少 `versioning` / `visualization` 两处（配置管理页本轮已有新卡在旁边）。定级 M，待拍。 | M |
+| A279 | 前端服务层对后端 24 条操作没有入口（接线队列） | **三批共接 8 条（L225 三条 + L226 三条 + L227 两条）**：`language-profile` 与 `evaluate` 进了数据分析页、`vector-status` 进了系统状态页；L226 把 `search` 进分析页、`validate` 进质量中心、`auto-config` 进配置管理；L227 把 `impact` 与 `semantic-search` 接进数据分析页（四档旋钮全可调：被编码字段、前 K 条、`text_key`、规模增益门槛）。`UNCONSUMED` 32 → 29 → 26 → **24**、已消费 43 → 46 → 49 → **51**（75 条的 68%），`NO_ENTRY` 从 6 一路收到 **1**（只剩 `POST /api/dataset/translate`，归 A283 的契约缺口）；`CLI_ENTRY` 停在 **23 条 / 18 个名字**——L227 只动前端，没有从 CLI 侧接线。修法照旧按页面分组分批：一批 = 一个页面的 fetchers + 页面入口 + 该页用例。**三件收口判据从第一批起没换过，本轮第三次全部命中**——`test_api_endpoint_consumption_l224.py` 的名单与实测集合相等且变短、`api.wiring.test.ts` 的 `KNOWN_UNWIRED` 仍为空、每员覆盖成功与失败两路（外加一条经验：接线改动本身要让消费守卫先红再回填，红的那几次就是证据）。**L226 立的那条纪律本轮继续生效**：指标涨而能力不涨的接线一律不做——`GET /api/system/dependencies` 依旧拒接，L227 的两员则都是「SDK 做完、页面没人渲染」的真缺口，不是刷数。**下一批建议**：剩 24 员里 23 员各有 CLI 子命令入口（`CLI_ENTRY`），按页面分组继续推；`translate` 等 A283 契约就位后再接；同批可顺带处理 **A281** 里 `AppConfig` 少 `versioning` / `visualization` 两处（配置管理页旁边已有新卡）。定级 M，待拍。 | M |
 | A280 | 8 个路由文件把下游异常一刀切收敛成 500，「资源不存在」拿不到 404 | **新立（L224）**：本轮为核对 `GET /api/versions/history` 的运行时归属顺手实测——`GET /api/versions/v_ghost` 返回 **500** + 固定文案（`api/deps.py` 的 `INTERNAL_ERROR_DETAIL`），而 SDK 抛的是 `VersionError`（`augmentor/exceptions.py:133`，`AugmentorError` + `ValueError` 双继承）；同一份路由文件里三种归宿并存：`/api/versions/create` 源文件缺失 → 404（走 `require_file`）、`POST /api/versions/v_ghost/rollback` → **200 且 `success:false`**、`DELETE /api/versions/v_ghost` → **200 且 `success:true`**（`VersionManager` 静默成功）。**这不是无声 bug，是已被钉死的行为**：`tests/integration/test_api.py:479` 两支用例的 docstring 明写「应返回 500」。普查（按调用点数，不含 import 行）：只用 `to_http_error` 分档的 4 个文件 30 处（dataset_tools 14 / system_ops 12 / language 2 / vector 2），`config.py` 与 `data.py` 两把混用（分档 3 处 + 一刀切 8 处），**只用 `raise_internal_error` 一刀切的 8 个文件 29 处**（quality 9 / export 4 / augment 3 / multimodal 2 / audit 1 / leakage 1 / privacy 1 / version 8）。两条方向：**① 把语义明确的「不存在」类异常接进 `to_http_error(not_found_types=...)`**（`BackupError` 已是这一档的先例，见 `api/routes/system_ops.py`），逐文件收窄——改的是对外状态码，上面那两支钉死 500 的用例要同批改；**② 维持现状并把「除 `FileNotFoundError` 外一律 500」写成契约**，`docs/API.md` 里相应把 404 档从这些端点去掉。本轮选**不动，只立账**：状态码是对外契约，一刀切里混着的另一半（400 档 `to_http_error` 会把 `str(exc)` 原样回传）正是 A155① 盯住的泄漏面，一次改八个文件不是一轮的量。定级 S，待拍。 | S |
 | A281 | 3 只服务层 fetchers 的 TS 响应类型缺契约里已经存在的字段（后端在回、前端读不到） | **新立（L225）**：接线时顺手量了一遍「`web/src/services/api.ts` 里 `Promise<Xxx>` 的字段集，与该操作契约 200 响应的属性集是否相等」（仓外一次性脚本：正则解析类型 + `app.openapi()` 的 `components.schemas`）。45 只带类型标注的 fetchers 里 **40 只逐字相等**（含本轮新增的三只），**3 只缺字段**，另有 **2 只 naive 正则解析不动**。三处缺口的方向完全一致，都是「契约有、TS 没有」：① `AppConfig` 少 `versioning` 与 `visualization` 两节 ⇒ 配置页拿不到这两节的当前值（与 **A276** / **A271** 相关但不等价——那两条问「这些键怎么处置 / 要不要可写」，这一条问「读侧的类型里根本没有」）；② `UpdateConfigResponse` 只有 `success` 与 `message`，少 `ignored_keys` ⇒ 后端明确回了「哪些键被忽略」，页面不显示，用户会以为自己已经写进去了；③ `StatusResponse` 少 `model_retry_count` 与 `model_retry_wait_seconds` ⇒ 系统状态页四张卡看不到重试的生效值。解析不动的那两只不是缺口，而是**这把尺子进仓前必须先解决的两种形状**：`AugmentProgress` 是联合类型别名（`types/api.ts:133`，由 `NoCheckpointProgress` 与 `AugmentProgressDetail` 二选一），`VersionDetail` 用 `extends VersionInfo` 把字段拆进继承（`types/api.ts:218`）——一行一字段的读法对这两只直接失效。修法两步：先补类型（纯前端，零风险），再决定是否真显示（只显示不渲染仍是死面，那要按 A138 的接线档继续走）。**为什么本轮不补**：本轮已含三张新卡与八支新用例，再掺类型改动会把「接线」这条判据的证据链掺浑；且这条测量目前只是仓外脚本，要做成守卫得先定下别名、继承、嵌套对象三条解析口径，并配 `KNOWN_UNMATCHED` 白名单加规模钉（形状与 `api.wiring.test.ts` 同构）——那是一轮的活。定级 S，待拍。 | S |
 | A282 | 前端 `npm run format:check` 的仓内基线是红的，而 CI 里没有这道门 | **新立（L225）**：本轮跑格式检查时实测 `prettier --check src` 报 **32 个文件**不合 `.prettierrc.json`（`semi: false` / `singleQuote: true` / `printWidth: 100` / `trailingComma: all` / `arrowParens: always`），而页面代码普遍是省略箭头函数括号的旧写法。**本轮没有引入漂移**，取证方式是把碰过的 5 个文件用 `git show` 取到仓外临时目录、拿同一份配置复查，`HEAD` 版本同样 5 个全红 ⇒ 跟着周围代码写才是对的选择。CI 侧 `.github/workflows/ai-platform-ci.yml` 的前端 job 只跑 `npm run lint`、`npx tsc --noEmit` 与 vitest，**没有 format 门**，所以这道红可以长期存在而不被任何人看见。两条方向：**① 一次性 `npm run format` 全量重排，并把 `format:check` 加进 CI**——此后 diff 与 IDE 一致；代价是那一个提交会淹没同批的真实改动，且重排要在事后复测一遍行号类文档守卫。**② 承认现状，把 `.prettierrc.json` 改成与仓内实际风格一致**（至少 `arrowParens: "avoid"`），让这道门从「恒红」变成可用。本轮选**不动，只立账**：两种改法都是全仓重排或配置改，与接线一批混在一起只会污染 diff。定级 S，待拍。 | S |
 | A283 | `POST /api/dataset/translate` 把整份译文只放在响应体里，没有任何落盘口，前端接了也留不住 | **新立（L226）**：A279 第二批挑接线对象时实测出来的契约层缺口。① `TranslateResponse`（`api/routes/language.py:88`）里 `items: List[Dict[str, Any]]` 就是**整份翻译后的数据集**，请求模型没有 `output_file`，路由也不调 `_dump`——同仓的写盘变换类端点（`convert` / `merge` / `aggregate` 等）都走 `api/routes/dataset_tools.py` 的 `_dump` 落到白名单数据根，这一只没有；② CLI 侧同样没有 `translate` 子命令（`augmentor/cli/parser.py` 的 `add_parser` 名单里查不到），所以它是 A279 的 `NO_ENTRY` 三员之一，「SDK 做完、web 与 CLI 两边都没人取」；③ 花钱面：这条路径逐条调 `model_backend.generate`，挂了 `verify_api_key`（同文件 13 行的鉴权分档说明），`multilingual.enabled` 出厂 `false`。**为什么因此不接**：UI 若只是「点一下把译文显示出来」，用户刷新页面产物就没了，而每一次点击都在按 token 付费；要做成能用的入口，先得让这次花钱留下东西。修法两步：**① 契约**——给 `TranslateRequest` 加可选 `output_file`，非空时走 `_dump` 落白名单根并让响应带一个可核对的落点字段（与 `convert` 同形，顺带把 `failed_indices` 的「指回 `input_file`」这句话变成可操作的：用户看得见原文也看得见译文）；**② 接线**——契约就位后再进多模态/数据管理那一侧的页面，成功与失败两路各自要有可见读数（`failed` / `errors_truncated` 是 L221 刚补的失败面，只显示 `total` 等于把它再吞一次）。**本轮不做 ①**：它改的是对外请求与响应形状，A279 立项时写死「不改后端字段名或响应形状」，混进接线轮会让「接线」这条判据的证据链掺浑。定级 M，待拍。 | M |
+| A284 | `AugmentationMetrics.unique_instructions` 的键名与实现不符 | **新立（L227）**：`augmentor/impact.py:76` 那一格赋的是 `len(set(texts))`，而 `texts` 取自 `self.text_field`（默认 `instruction`，见同文件 65 行）。换字段就是在数另一个东西，名字却还写着 instructions；`to_dict()`（同文件 24 行，键在 27 行）把它原样送到 API 响应面上，所以这是**契约面上的谎**而不是局部变量名。L227 只做了前端侧的诚实化：页面标签改成「唯一值数（按所选字段）」，并由 `test_impact_semantic_wiring_l227.py` 钉住「标签必须含『字段』、不得含『指令』」，**键名本身没动**——它同时是 SDK dataclass 属性和响应字段，改名是破坏性变更，不属于「接线」这一档工作量。两条候选处置：① 加 `unique_values` 别名 + 弃用旧名，跨版本删；② 只改 `docs/API.md` 的口径说明，把键名当既成契约。判据上的差别是 ①：`_dump` 出来的 JSON 键会变。定级 S，待拍。 | S |
+| A285 | `["instruction", "input", "output"]` 这份字段清单在仓内有五处手写字面量，没有权威常数 | **新立（L227）**：`augmentor/audit.py:68`、`augmentor/privacy.py:76`、`augmentor/cli/parser.py:173 / 405 / 430` 各写一遍，语义都是「默认看这三格」。直接后果是 L227 那把跨语言尺子**建不出来**：`text_field` / `text_key` 的合法取值来自数据集本身，而这份字面量既不是常数也不能代表合法域，引它当权威等于自造一套——所以守卫只能退到「页面发得出的每一档都被端点接受」这种运行时判据（`TestEndpointAcceptsWhatTheUiSends`）。处置建议：抽一份模块级常数（比如叫 `DEFAULT_TEXT_FIELDS`）并把五处改为引用，归属模块待拍——本轮刻意不指名新模块，因为 **A184 那把注释引用尺子会把「指向仓内并不存在的文件」记成 dead_path**（第一版给的就是一个还没建的新模块名，被它当场红两支，这正是这把尺子该有的反应）。常数就位之后，l226 那把「下拉清单 vs 后端封闭清单」的尺子就能复用到这一族字段上，L227 守卫里那档运行时判据也可以升级成逐项对账。定级 S，待拍。 | S |
+| A286 | `tests/unit/test_analytics_performance.py` 的比值型计时守卫在共享工作机上会假红 | **新立（L227）**：全量门禁复跑实测到一次假红——`stays_linear` 那条比值量到 **4.38**（阈值 3.0，线性档实测 2.0–2.5、退化到 O(n²) 实测 3.1–3.9），而同一条用例本轮第一次全量是绿的、之后隔离复跑四次全绿；红那一次整轮耗时 **257.50 s**，比绿那次的 188.88 s 高 36% ⇒ 是并发负载压在小档计时上，不是算法退化。**为什么这条值得立账**：退化档与噪声档在墙钟上是同一个数（4.38 比 O(n²) 档还大），意味着真来一次退化也可能被当成噪声放过。三条候选：**① 每档取 N 次的中位数或最小值**而不是单次；**② 用计数代替墙钟**（数内层重算次数，确定性、与负载无关）；**③ 把两档规模一起放大**让噪声占比下降（文件里已有这条口径：实现变快了就先放大规模，不许放宽比值阈值）。建议 ①+② 一起做——② 才是判据，① 只是让它稳。本轮**既不动阈值也不改实现**。定级 S，待拍。 | S |
 
 ## Backlog B — 功能增强与体验（价值 ÷ 工作量）
 
@@ -2655,3 +2659,86 @@ L218 把「等价旋钮住在哪」逐键验真之后，这一族里唯一「旋
   **A280**（错误分档一刀切）、**A278**（自由子对象的形状 vs 可证伪白名单）、
   **A276**（`app` 三键的处置）、**A271** 的 18 只待处置键、**A272**（`multilingual` 要不要可写）、
   **A273**（`self.expander` / `self.tracker` 的消费者还是删除）。
+
+### L227（2026-10-11）— A279 第三批接线：impact / semantic-search 进数据分析页，消费面 49 → 51
+
+- **这一轮做两件事**：① 把 `NO_ENTRY` 队列里最后两只「SDK 做完、web 与 CLI 都没人取」的操作接进
+  数据分析页（口径同前两批：只动 `web/src`，后端字段名与响应形状一字未改；`translate` 的问题在契约层，
+  留给 A283）；② 新立 `tests/unit/test_impact_semantic_wiring_l227.py`（**20 支**），管住这一批特有的
+  漂移面——**页面把请求模型的默认值抄进了 `useState`**。抄的东西会漂，而它一漂用户不会收到报错，
+  只会拿到一个和契约不一致的「本次生效值」。
+
+- **两张卡各按契约渲染成什么**（每一条都是响应本身的要求，不是审美选择）：
+  语义相似检索：`query=""` 端点回 **200**、`total` 等于条目数、每条 `score` 全 `0.0`——一份「全都相关」的
+  退化读数，所以门口拦空串而不是发出去；`top_k=0` 同样 **200** 且 `results=[]`，是合法的「只要回显、
+  不要命中」那一档，所以 UI 下界从第一版写的 `min={1}` 放宽到 **0**（第一版把 0 挡在门外，等于页面自己的
+  控件推翻了自己注释里的契约口径）；**后端 / 维度 / 集合**三个生效值标签即使 0 命中也照样渲染，
+  否则用户分不清空的是检索面还是数据面。`text_key="nope"` 实测是 **200 + `text` 全空串的静默退化**，
+  这一档只能靠「下拉里只放数据集真有的字段」来防，不能指望后端出声。
+  增强前后影响：`gains` 四项逐项标量纲（比值与绝对差的方向不同，混为一谈就是谎），清单外的键不静默丢而是
+  显式出「未知口径」；判定卡的文案随门槛实时写「本次 `${minScaleGain}`」——门槛可调之后还写死「默认 0.0」
+  就是一句过期话；快照两侧各一张表，整数与小数分开格式化（`formatSnapshotValue`），
+  **条目数渲染成 `4.0000` 是假精度**，第一轮就是这样量出来才改的。
+
+- **为什么不能扩 l226 那把尺子**（本轮最重要的一条判断，写进了文件头）：l226 靠的是 Python 侧有可 import 的
+  封闭清单常数（`SEARCH_METHODS` / `VALIDATION_PRESETS`）。这两只操作**没有**这种清单——`text_field` / `text_key`
+  的合法取值来自数据集本身，而 SDK 里那份 `["instruction", "input", "output"]` 只是 `augmentor/audit.py:68`、
+  `augmentor/privacy.py:76` 与 `augmentor/cli/parser.py:173 / 405 / 430` 的**五处手写字面量**，
+  引其中任何一处当权威就是自造一套。所以权威换成三处：**默认值 → 请求模型 `model_fields[...].default`**；
+  **增益键集 → 真实回执里的 `gains` 键**（双向对账，页面不许漏说明也不许多说）；
+  **快照键集 → `AugmentationMetrics` 的 dataclass 字段**，唯一豁免 `extra`，豁免用
+  `Exclude<keyof ImpactSnapshot, 'extra'>` 由**类型**声明而不是运行时 if。
+  字段名那一档不做清单守卫，改做「页面发得出的每一档都被端点接受」（`TestEndpointAcceptsWhatTheUiSends`）。
+  **没有权威常数就不假装有一把尺子**——这条取舍比多写几支断言更值得记账。
+
+- **新暴露的两档旋钮**：`text_key`（拿哪个字段做向量匹配）与 `min_scale_gain`（抬高 `beneficial` 的门槛）
+  此前在**任何产品面都调不到**——CLI 的 `add_parser` 选项里查不到这两个 flag（实测 grep 零命中），
+  SDK 侧只作为构造参数存在。接线之后它们是页面上可读可改的档位，`beneficial` 的判定口径
+  （规模增益 ≥ 门槛 ∧ 去重增益 ≥ −0.05）也随门槛实时显示，用户看得见自己定的门槛。
+
+- **`unique_instructions` 是误名**（实测，不是推断）：`augmentor/impact.py:76` 那一格赋的是 `len(set(texts))`，
+  而 `texts` 取自 `self.text_field`（默认 `instruction`）；把字段换成 `output`，它数的就是 output 的唯一值，
+  名字却还写着 instructions。本轮**只改标签不改键名**——键名在契约面上，改它就不是接线了。
+  页面标签写「唯一值数（按所选字段）」，守卫钉住「标签必须含『字段』、不得含『指令』」；
+  键名处置另立 **A284**，那五处重复字面清单立 **A285**。
+
+- **守卫回填四格 + census 重钉，全部按实测**（一把尺子都没放松）：
+  `test_api_endpoint_consumption_l224.py` 前端面规模 **49 → 51**、缺口名单 **26 → 24**（划掉这两格）、
+  已消费 **49 → 51**、`NO_ENTRY` **3 → 1**；`CLI_ENTRY` 的 **23 条 / 18 个名字**一格未动，因为本轮只动前端。
+  l97 的 CALLS **404 → 405**、READABLE **290 → 291**、盲面 **114 未动**；l98 的档位和与盲面名册（109 支）
+  实测复跑一字未动。原因是本轮唯一新增的那支 parametrize（`["impactField", "semanticTextKey"]`）
+  值位是内联**字符串**字面清单 ⇒ 只进 CALLS / READABLE 两档，不进盲面——两把尺子各自独立闭合。
+
+- **注入十二臂，逐臂红格数按实测记**（Python 面 7 臂、vitest 面 5 臂）：
+  M1 页面 `top_k` 初值漂到 3 ⇒ **2** 红（契约对账 + 扫描非空转）；M2 门槛初值漂到 1 ⇒ **2**；
+  M3 摘掉 `dedup_gain` 的量纲条目 ⇒ **2**（键覆盖 + 「哪几项是比值」那句宣称）；
+  M4 摘掉快照里的唯一值行 ⇒ **3**；M5 让标签跟着键名说谎 ⇒ **1**；
+  M6 服务层替端点写第二套默认 ⇒ **1**；M9 删掉 `impact` 的服务层调用 ⇒ **3**（幽灵方向 + 名单相等 + 名单规模）。
+  vitest 面每臂各 **1** 红：M7 双侧快照都读 `before`、M8 撤掉空查询门口闸、M9b 语义检索不再递编码字段、
+  M10 门槛变了而口径文案还说默认值、M11 清单外的增益键被静默丢掉。
+  **第一批把 M7 / M8 / M9b / M10 / M11 读成了「空转」，那是取证脚本自己的 bug 而不是结果的 bug**：
+  pytest 与 vitest 的汇总行带 ANSI 色码，正则截到 `Tests 行：1 ` 就断了、用例名的 `×` 也匹配不上；
+  剥色（去掉 ANSI SGR 转义序列）并置 `FORCE_COLOR=0` / `NO_COLOR=1` 重跑，五臂全部各点名为 1 支红。
+  **那条假读数没有入账**。变异前每臂先 `assert count(old) == 1` 保证替换点唯一，跑完按 sha256 逐文件核对还原
+  （十二臂全部字节一致），工作树只剩本轮真实改动。
+
+- **前端面的三件收口判据齐**（沿用 L225 / L226）：名单与实测集合相等且变短、
+  `web/src/services/api.wiring.test.ts` 的 `KNOWN_UNWIRED` 仍为空、每员覆盖成功与失败两路。
+  前端 `vitest run` **13 文件 / 149 支全绿**（基线 140，本轮 **+9**：Analysis 15 → 24），
+  `tsc --noEmit` 与 `eslint .` 均 0 退出。
+  本轮量到的一条 antd 事实：`InputNumber` 的 `addonBefore` 会打 deprecation 警告，而**全仓只有本轮那两只新旋钮在打**
+  ⇒ 按仓内既有写法改成控件前一个 `<span>标签</span>`，警告归零；测试侧为这两只数字框加了 `numberInputs(container)`
+  （index 0 = 前 K 条，1 = 规模增益门槛），因为 `getByRole('spinbutton')` 分不开同页多只。
+
+- **门禁**：后端全量 **8390 passed / 11 skipped / 0 failed / 覆盖率 99.80%**（188.88 s；
+  与 L226 的 8370 相减 `+20` = 新守卫文件 20 支，接线本身零后端用例增量）；
+  账本批之后再同命令复跑一遍，读数不变。
+
+- **两条「尺子咬到我」的实测**（都不放宽阈值，只记账）：① 账本第一版在 A285 的处置建议里写了一个**尚不存在的新模块名**，`tests/unit/test_comment_refs_a184.py` 当场红两支（dead_path 硬零 + 注入臂那支的计数也对不上）⇒ 按这把尺子的口径改口「不指名新模块」，注释引用面重新归零——这是尺子按设计咬住了散文里的想当然。② 全量门禁复跑第一次是 **3 failed / 8387 passed / 11 skipped**：除 ① 的两支，`test_analytics_performance.py` 的 `stays_linear` 比值实测 **4.38**（阈值 3.0）也红。同一条用例本轮第一次全量（8390 全绿）是绿的，之后**隔离复跑四次全绿**，而红那一次整轮 **257.50 s**（比 188.88 s 高 36%）⇒ 判为并发负载下的墙钟噪声而不是算法退化，**阈值一格未动**。这条噪声本身立成 **A286**，因为「退化档与噪声档撞在同一个数上」会让下一次真退化被当成噪声放过。
+- **仍在账上的邻居**：**A279**（剩 24 条，其中 `NO_ENTRY` 1 条 = `translate`，归 A283）、**A283**、
+  **A284**（本轮新立：`unique_instructions` 误名）、**A285**（本轮新立：五处 `["instruction", "input", "output"]`
+  手写字面清单没有权威）、**A286**（比值型计时守卫会假红）、**A281**（3 处响应类型缺字段）、**A282**（format 基线红且 CI 无门）、
+  **A280**（错误分档一刀切）、**A278**（自由子对象的形状 vs 可证伪白名单）、**A276**（`app` 三键的处置）、
+  **A271** 的 18 只待处置键、**A272**（`multilingual` 要不要可写）、**A273**（`self.expander` / `self.tracker`
+  的消费者还是删除）。
+
