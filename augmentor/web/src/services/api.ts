@@ -16,9 +16,11 @@ import type {
   DataPageResponse,
   DatasetExportResponse,
   DedupResponse,
+  EvaluateResponse,
   ExportFormatsResponse,
   ExportPreviewResponse,
   HealthResponse,
+  LanguageProfileResponse,
   LeakageResponse,
   ModelsResponse,
   MultimodalFormatsResponse,
@@ -40,6 +42,7 @@ import type {
   VersionDiffResponse,
   VersionHistoryResponse,
   VersionListResponse,
+  VectorStatusResponse,
   VisualizeResponse,
 } from '../types/api'
 
@@ -573,5 +576,56 @@ export const detectOutliers = async (
 
 export const profileDataset = async (inputFile: string): Promise<ProfilingResponse> => {
   const response = await api.post('/quality/profiling', { input_file: inputFile })
+  return response.data
+}
+
+// ============ 语言画像 / 批量评估 / 向量库状态（A279 第一批接线，L225） ============
+
+/**
+ * `POST /api/dataset/language-profile`
+ *
+ * `textKey` 省略 ⇒ 服务端取模型默认 `instruction`，本层不替它写第二个默认值。
+ */
+export const languageProfile = async (
+  inputFile: string,
+  textKey?: string
+): Promise<LanguageProfileResponse> => {
+  const response = await api.post('/dataset/language-profile', {
+    input_file: inputFile,
+    text_key: textKey
+  })
+  return response.data
+}
+
+/**
+ * `POST /api/dataset/evaluate`
+ *
+ * 两侧字段名（`generated_field` / `reference_field`）与 `metrics` 一律不传，
+ * 让服务端按「请求参数 > 配置键 > 内置默认」那序回落 —— 页面只负责选文件。
+ * `includeDetails` 默认 false：契约默认是 true，但逐条明细在这个页面没有渲染色，
+ * 大数据集上把每条都搬回来只是把响应撑大，所以本层显式关掉。
+ */
+export const evaluateDataset = async (
+  generatedFile: string,
+  referenceFile: string,
+  includeDetails: boolean = false
+): Promise<EvaluateResponse> => {
+  const response = await api.post('/dataset/evaluate', {
+    generated_file: generatedFile,
+    reference_file: referenceFile,
+    include_details: includeDetails
+  })
+  return response.data
+}
+
+/**
+ * `GET /api/dataset/vector-status`
+ *
+ * 只读，无入参。`enabled`（闸门生效值）与 `exists`（磁盘上有没有可读回的索引）
+ * 必须分开渲染 —— 两真两假是四种不同事实，合成一个「向量库正常」会把「配了没跑过」
+ * 报成正常。
+ */
+export const getVectorStatus = async (): Promise<VectorStatusResponse> => {
+  const response = await api.get('/dataset/vector-status')
   return response.data
 }

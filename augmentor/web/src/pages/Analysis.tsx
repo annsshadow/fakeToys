@@ -1,15 +1,33 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Card, Select, Row, Col, Statistic, Table, Tag, Button, Space, message } from 'antd'
+import { Alert, Button, Card, Col, Row, Select, Space, Statistic, Table, Tag, message } from 'antd'
 import ReactECharts from 'echarts-for-react'
-import { apiErrorDetail, getDataFiles, analyzeData, cleanData, runBenchmark, visualizeData } from '../services/api'
-import type { AnalyzeResponse, BenchmarkResponse, CleanResponse } from '../types/api'
+import {
+  analyzeData,
+  apiErrorDetail,
+  cleanData,
+  evaluateDataset,
+  getDataFiles,
+  languageProfile,
+  runBenchmark,
+  visualizeData,
+} from '../services/api'
+import type {
+  AnalyzeResponse,
+  BenchmarkResponse,
+  CleanResponse,
+  EvaluateResponse,
+  LanguageProfileResponse,
+} from '../types/api'
 
 export default function Analysis() {
   const [files, setFiles] = useState<string[]>([])
   const [selectedFile, setSelectedFile] = useState('')
+  const [referenceFile, setReferenceFile] = useState('')
   const [analysis, setAnalysis] = useState<AnalyzeResponse | null>(null)
   const [cleaning, setCleaning] = useState<CleanResponse | null>(null)
   const [benchmark, setBenchmark] = useState<BenchmarkResponse | null>(null)
+  const [profile, setProfile] = useState<LanguageProfileResponse | null>(null)
+  const [evaluation, setEvaluation] = useState<EvaluateResponse | null>(null)
   const [charts, setCharts] = useState<Record<string, string> | null>(null)
   const [loading, setLoading] = useState(false)
 
@@ -83,6 +101,38 @@ export default function Analysis() {
       setCharts(result.charts)
     } catch (err) {
       message.error(apiErrorDetail(err, '图表生成失败'))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleProfile = async () => {
+    if (!selectedFile) {
+      message.warning('请先选择文件')
+      return
+    }
+    setLoading(true)
+    try {
+      setProfile(await languageProfile(selectedFile))
+    } catch (err) {
+      message.error(apiErrorDetail(err, '语言画像失败'))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleEvaluate = async () => {
+    // 两侧都要选：`generated_file` 与 `reference_file` 在契约里都是必填。
+    // 允许选同一份文件（模型注释里写明这是「用同一份文件的两个字段做对照」的合法用法）。
+    if (!selectedFile || !referenceFile) {
+      message.warning('评估需要同时选中生成集与参照集')
+      return
+    }
+    setLoading(true)
+    try {
+      setEvaluation(await evaluateDataset(selectedFile, referenceFile))
+    } catch (err) {
+      message.error(apiErrorDetail(err, '批量评估失败'))
     } finally {
       setLoading(false)
     }
@@ -258,6 +308,85 @@ export default function Analysis() {
                 ]}
                 dataSource={Object.entries(charts).map(([name, path]) => ({ name, path }))}
               />
+            )}
+          </Card>
+
+          <Card title="语言画像" style={{ marginTop: 16 }}>
+            <Button loading={loading} onClick={handleProfile}>
+              运行语言画像
+            </Button>
+            {profile && (
+              <>
+                <Space wrap style={{ margin: '12px 0' }}>
+                  <Tag color="blue">共 {profile.total_items} 条</Tag>
+                  <Tag color="purple">支持 {profile.supported_langs.join('、')}</Tag>
+                  <Tag color="cyan">默认目标语 {profile.default_target_lang}</Tag>
+                </Space>
+                {profile.outside_supported.length > 0 && (
+                  <Alert
+                    type="info"
+                    showIcon
+                    style={{ marginBottom: 12 }}
+                    message={`落在支持清单之外：${profile.outside_supported.join('、')}`}
+                    description="其中 mixed 是检测标签而不是语言码，出现它不构成错误。"
+                  />
+                )}
+                <Table
+                  size="small"
+                  rowKey="label"
+                  pagination={false}
+                  columns={[
+                    { title: '检测标签', dataIndex: 'label' },
+                    { title: '条数', dataIndex: 'count' },
+                    { title: '占比 (%)', dataIndex: 'ratio' }
+                  ]}
+                  dataSource={Object.entries(profile.distribution)
+                    .map(([label, count]) => ({
+                      label,
+                      count,
+                      ratio: ((profile.ratios[label] || 0) * 100).toFixed(1)
+                    }))
+                    .sort((a, b) => b.count - a.count)}
+                />
+              </>
+            )}
+          </Card>
+
+          <Card title="生成集对比评估" style={{ marginTop: 16 }}>
+            <Space style={{ marginBottom: 16 }} wrap>
+              <Select
+                style={{ width: 260 }}
+                value={referenceFile}
+                onChange={setReferenceFile}
+                placeholder="选择参照集"
+              >
+                {files.map(file => (
+                  <Select.Option key={file} value={file}>{file}</Select.Option>
+                ))}
+              </Select>
+              <Button type="primary" loading={loading} onClick={handleEvaluate}>
+                运行批量评估
+              </Button>
+            </Space>
+            {evaluation && (
+              <>
+                <Tag color="blue" style={{ marginBottom: 12 }}>
+                  对齐样本数 {evaluation.sample_count}
+                </Tag>
+                <Table
+                  size="small"
+                  rowKey="metric"
+                  pagination={false}
+                  columns={[
+                    { title: '指标', dataIndex: 'metric' },
+                    { title: '数值', dataIndex: 'value' }
+                  ]}
+                  dataSource={Object.entries(evaluation.metrics).map(([metric, value]) => ({
+                    metric,
+                    value: value.toFixed(4)
+                  }))}
+                />
+              </>
             )}
           </Card>
         </>

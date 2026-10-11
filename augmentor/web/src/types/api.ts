@@ -644,3 +644,53 @@ export interface ProfilingResponse {
   /** 按频次降序 */
   top_keywords: KeywordCount[]
 }
+
+/**
+ * `POST /api/dataset/language-profile`
+ *
+ * `supported_langs` / `default_target_lang` 是**本次生效值**（取自
+ * `config.multilingual.*`），不是常量 —— 换配置就换值，所以渲染时要显出来而不是
+ * 在前端写死一张语言表。`outside_supported` 里出现 `mixed` 不是错误：它是检测标签
+ * 而不是语言码（`api/routes/language.py` 的模型注释）。
+ */
+export interface LanguageProfileResponse {
+  total_items: number
+  /** 检测标签 → 条数 */
+  distribution: Record<string, number>
+  /** 检测标签 → 占比（0~1） */
+  ratios: Record<string, number>
+  outside_supported: string[]
+  supported_langs: string[]
+  default_target_lang: string
+}
+
+/**
+ * `POST /api/dataset/evaluate`
+ *
+ * `details` 在 `include_details=false` 时是**空数组**，而 `sample_count` 仍是真实条数
+ * —— 别看 details 长度判断有没有跑成。契约里那个默认值是 true，是本层显式关掉的
+ * （页面不渲逐条明细）。`metrics` 的键集随配置里的 `evaluation.metrics` 变，
+ * 所以按字典渲染而不是列死。
+ */
+export interface EvaluateResponse {
+  metrics: Record<string, number>
+  sample_count: number
+  details: Record<string, unknown>[]
+}
+
+/**
+ * `GET /api/dataset/vector-status`
+ *
+ * `enabled` 是「增强结束时自动建库」那只闸的**生效值**，`exists` 是磁盘上究竟有没有
+ * 一份可读回的索引。两件事分开看：`enabled=false` 且 `exists=true` 是上一轮建过、
+ * 这一轮关了闸；`enabled=true` 且 `exists=false` 是配了还没跑过。
+ */
+export interface VectorStatusResponse {
+  enabled: boolean
+  exists: boolean
+  count: number
+  backend: string
+  dimension: number
+  collection: string
+  storage_dir: string
+}
