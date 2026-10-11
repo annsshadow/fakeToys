@@ -8615,26 +8615,6 @@ pub async fn script_id(
 }
 
 #[allow(non_snake_case)]
-pub async fn test_test1(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::legacy_success(
-        Value::Array(Vec::new()),
-        0,
-        0,
-    )))
-}
-
-#[allow(non_snake_case)]
-pub async fn test_test2(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::legacy_success(
-        Value::Array(Vec::new()),
-        0,
-        0,
-    )))
-}
-
-#[allow(non_snake_case)]
 pub async fn tokenthreshold_update(
     pool: Extension<Pool>,
     Json(body): Json<Value>,

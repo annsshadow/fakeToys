@@ -79,7 +79,6 @@ use crate::{
     recycle_list,
     share_download_share_shareId_file_fileId,
     share_id,
-    share_id_password_password,
     share_list,
     share_list_att_share_shareId_folder_folderId,
     share_list_folder_share_shareId_folder_folderId,
@@ -106,7 +105,7 @@ use crate::{
     u2_share_create,
     u2_share_delete,
     u2_share_get,
-    u2_share_get_with_password,
+    u2_share_password_verify,
     u2_share_save_to_folder,
     u2_share_shield,
     update_control_config,
@@ -174,7 +173,6 @@ pub fn router(pool: Pool) -> Router {
         .route("/api/file/share/share/shareId/file/fileId/folder/folderId", get(share_share_shareId_file_fileId_folder_folderId))
         .route("/api/file/share/shield/id", get(share_shield_id))
         .route("/api/file/share/{id}", get(share_id))
-        .route("/api/file/share/{id}/password/{password}", get(share_id_password_password))
         .route("/api/attachment2/upload/folder/{folderId}", post(crate::attachment2_upload_folder_folderId))
         .route("/api/attachment/update/{id}", post(crate::attachment_id_update))
         .route("/api/attachment/update/callback/callback/{id}", post(crate::attachment_id_update_callback_callback))
@@ -264,7 +262,7 @@ pub fn router(pool: Pool) -> Router {
         .route("/api/share/share/{shareId}/file/{fileId}/folder/{folderId}", post(u2_share_save_to_folder))
         .route("/api/share/shield/{id}", get(u2_share_shield))
         .route("/api/share/{id}", get(u2_share_get).delete(u2_share_delete))
-        .route("/api/share/{id}/password/{password}", get(u2_share_get_with_password))
+        .route("/api/file/share/password/verify", post(u2_share_password_verify))
         // file 族（裸 GET /api/file/{id} 已被 cms_assemble_control 占用 —— 裁决见 lib.rs；
         // 本族统一挂在模块前缀 /api/file/assemble/control/file 下）
         .route("/api/file/assemble/control/file/list/referencetype", get(u2_file_list_reference_types))

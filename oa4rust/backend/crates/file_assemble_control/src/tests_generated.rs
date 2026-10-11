@@ -1171,15 +1171,15 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_share_id_password_password() {
+    async fn test_u2_share_password_verify() {
         let pool = shared::testing::test_pool();
         let app = crate::router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/api/file/share/id/password/password")
-                    .method("GET")
-                    .body(Body::empty())
+                    .uri("/api/file/share/password/verify")
+                    .method("POST")
+                    .body(Body::from(r#"{"id":"test-id","password":"x"}"#.to_string()))
                     .unwrap(),
             )
             .await
@@ -1187,7 +1187,7 @@ mod tests {
         assert_ne!(
             response.status(),
             StatusCode::NOT_FOUND,
-            "share_id_password_password route should be registered"
+            "u2_share_password_verify route should be registered"
         );
     }
 }
