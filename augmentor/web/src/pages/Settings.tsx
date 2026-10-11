@@ -5,6 +5,7 @@ import {
   Card,
   Col,
   Form,
+  Input,
   InputNumber,
   Row,
   Select,
@@ -18,9 +19,11 @@ import { SaveOutlined } from '@ant-design/icons'
 import {
   apiErrorDetail,
   autoConfigRecommend,
+  getApiKey,
   getConfig,
   getDataFiles,
   getModels,
+  setApiKey,
   updateConfig
 } from '../services/api'
 import type { AppConfig, AutoConfigResponse } from '../types/api'
@@ -34,6 +37,16 @@ export default function Settings() {
   const [recommendFile, setRecommendFile] = useState('')
   const [recommendation, setRecommendation] = useState<AutoConfigResponse | null>(null)
   const [recommending, setRecommending] = useState(false)
+  /**
+   * 写操作鉴权那一格：输入值与「这台浏览器现在存没存」分开记
+   *
+   * 初值取 `getApiKey()`（读 localStorage）而不是空串：页面重开后输入框必须如实反映
+   * 「已经存过」，否则用户会以为每次都要重填。`apiKeyStored` 单独一格是因为输入框是
+   * 密码型、看不见内容，而「存着的那份不对」与「根本没存」在 401 的提示里是两句话
+   * （见 `apiErrorDetail` 的 401 那一支）。
+   */
+  const [apiKeyInput, setApiKeyInput] = useState(getApiKey)
+  const [apiKeyStored, setApiKeyStored] = useState(() => Boolean(getApiKey()))
 
   /**
    * 局部更新配置
@@ -137,6 +150,34 @@ export default function Settings() {
     } finally {
       setLoading(false)
     }
+  }
+
+  /**
+   * 存 / 清 写操作鉴权用的那份 key
+   *
+   * 两个动作都不发请求：`setApiKey` 只写 localStorage，真正被校验是在**下一个**写操作
+   * 请求上（拦截器把这份 key 挂到请求头，服务端 `verify_api_key` 拿它与环境变量
+   * `AUGMENTOR_API_KEY` 做定长比较）。所以这里刻意**不**报「校验通过」——本层没有
+   * 能力证明这份 key 是对的，说「已存进这台浏览器」才是真话；填错了要等第一次写操作
+   * 才 401，那句错误会指回这张卡。
+   */
+  const saveApiKey = () => {
+    const trimmed = apiKeyInput.trim()
+    setApiKey(apiKeyInput)
+    setApiKeyStored(Boolean(trimmed))
+    // 空输入走的是 `removeItem`，这时候说「已存进」就是假话
+    message.success(
+      trimmed
+        ? '已存进这台浏览器（localStorage 明文），后续每个请求都会带上它'
+        : '输入是空的：等于清除，后续请求不再送鉴权头'
+    )
+  }
+
+  const clearApiKey = () => {
+    setApiKey('')
+    setApiKeyInput('')
+    setApiKeyStored(false)
+    message.success('已清除：后续请求不再送鉴权头')
   }
 
   return (
@@ -318,6 +359,41 @@ export default function Settings() {
         )}
       </Card>
 
+      <Card title="写操作鉴权" style={{ marginBottom: 16 }}>
+        <Form layout="vertical">
+          <Form.Item label="API Key">
+            <Space.Compact style={{ width: 520 }}>
+              <Input.Password
+                aria-label="写操作鉴权 API Key"
+                value={apiKeyInput}
+                onChange={e => setApiKeyInput(e.target.value)}
+                placeholder="服务端设了 AUGMENTOR_API_KEY 时才需要填"
+              />
+              <Button type="primary" onClick={saveApiKey}>存进这台浏览器</Button>
+              <Button onClick={clearApiKey}>清除</Button>
+            </Space.Compact>
+          </Form.Item>
+        </Form>
+        <Tag color={apiKeyStored ? 'green' : 'default'}>
+          {apiKeyStored ? '这台浏览器已存了一份' : '这台浏览器没有存 key'}
+        </Tag>
+        <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75 }}>
+          什么时候要填：只有服务端设了环境变量 <code>AUGMENTOR_API_KEY</code> 才校验。没设时
+          留空即可，填了也不会被拒——服务端那一格看见环境变量为空就直接放过。
+        </div>
+        <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
+          影响面（L233 实测）：契约面 75 条操作里有 24 条挂着这道门禁，其中 21 条是页面上已
+          接线的动作——保存配置、上传、导出与批量导出、启动增强、版本创建与回滚、改删单条、
+          六只数据集变换、备份那三只、数据集登记、质量画像。key 不对或没填，它们一律回 401，
+          错误提示会指回这张卡。
+        </div>
+        <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
+          存哪儿：这台浏览器的 localStorage，<strong>明文</strong>。换浏览器、换机器、清站点数据
+          都要重填；同源脚本读得到它，所以它不是保密措施，也不替代 HTTPS。它更不是登录——
+          服务端只做一次定长比较，没有用户身份、没有过期、没有权限分级。
+        </div>
+      </Card>
+
       <Card title="配置说明">
         <p>配置文件位于: <code>config.yaml</code></p>
         <p>修改配置后需要重启服务才能生效。</p>
@@ -326,6 +402,9 @@ export default function Settings() {
           <li><code>BAIDU_API_KEY</code> - 百度 API Key</li>
           <li><code>BAIDU_SECRET_KEY</code> - 百度 Secret Key</li>
           <li><code>OPENAI_API_KEY</code> - OpenAI API Key</li>
+          <li>
+            <code>AUGMENTOR_API_KEY</code> - 写操作鉴权（服务端那一半；填进上面那张卡才生效）
+          </li>
         </ul>
       </Card>
 

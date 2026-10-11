@@ -317,9 +317,12 @@ describe('System 血缘卡的诚实口径', () => {
     expect(screen.getByText(/（A308）/s)).toBeInTheDocument()
     expect(screen.getByText(/把它建出来/s)).toBeInTheDocument()
     expect(screen.getByText(/（A307）/s)).toBeInTheDocument()
-    // A312 / A302：写那一支挂 X-API-Key 而前端没有送头的通道；A311：两种错误体
-    expect(screen.getByText(/登记这一支挂 X-API-Key 门禁（两条 GET 不挂）/s)).toBeInTheDocument()
-    expect(screen.getByText(/前端目前没有送这个头的通道（A302 \/ A312）/s)).toBeInTheDocument()
+    // A312 / A302：写那一支挂鉴权门禁；**L233 起前端有了送头的通道**（key 存在「配置管理」
+    // 页那张卡上，由 `api.ts` 的请求拦截器挂到 X-API-Key）——这两条原先钉的是「没有通道」，
+    // 前提被本轮改掉，按新世界重钉（通道的形状由 test_api_key_channel_l233.py 与 api.test.ts 钉）。
+    expect(screen.getByText(/登记这一支挂鉴权门禁（两条 GET 不挂）/s)).toBeInTheDocument()
+    expect(screen.getAllByText(/配置管理 → 写操作鉴权/s)).toHaveLength(2) // 备份卡与血缘卡各指一次
+    expect(screen.getByText(/（A302 \/ A312 已收）/s)).toBeInTheDocument()
     expect(screen.getByText(/两种错误体都要认/s)).toBeInTheDocument()
   })
 })

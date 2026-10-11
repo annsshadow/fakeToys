@@ -493,9 +493,9 @@ export default function System() {
         </div>
         <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
           服务端设了 AUGMENTOR_API_KEY 时，这一族的三只写操作会回 401「缺少或无效的
-          X-API-Key」——前端目前没有送这个头的通道（A302）。SDK 里还有 clean_old_backups 与
-          verify_backup_integrity 两个函数，HTTP 面没有入口，所以页面上做不到「清理旧备份」
-          与「单独校验一份备份」（A300）。
+          X-API-Key」——到「配置管理 → 写操作鉴权」存一份 key，页面就会随每个请求把它送出去
+          （A302 已收）。SDK 里还有 clean_old_backups 与 verify_backup_integrity 两个函数，
+          HTTP 面没有入口，所以页面上做不到「清理旧备份」与「单独校验一份备份」（A300）。
         </div>
       </Card>
 
@@ -655,10 +655,10 @@ export default function System() {
           （A307），刷一下页面就在服务端留了个空目录。
         </div>
         <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
-          登记这一支挂 X-API-Key 门禁（两条 GET 不挂）：服务端设了 AUGMENTOR_API_KEY 时它会回
-          401「缺少或无效的 X-API-Key」，而前端目前没有送这个头的通道（A302 / A312）。缺必填格
-          时它回的是 FastAPI 的英文 422，其余坏参数是中文 400/403/404 —— 两种错误体都要认
-          （A311）。
+          登记这一支挂鉴权门禁（两条 GET 不挂）：服务端设了 AUGMENTOR_API_KEY 时它会回 401
+          「缺少或无效的 X-API-Key」，那份 key 在「配置管理 → 写操作鉴权」那张卡里存，存了就会
+          随每个请求送出去（A302 / A312 已收）。缺必填格时它回的是 FastAPI 的英文 422，其余坏
+          参数是中文 400/403/404 —— 两种错误体都要认（A311）。
         </div>
       </Card>
     </div>
