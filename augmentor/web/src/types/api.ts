@@ -826,3 +826,178 @@ export interface SemanticSearchResponse {
   collection: string
   results: SemanticSearchHit[]
 }
+
+// ============ 字段级统计 / 特征普查 / 双集对比（A279 第四批接线，L228） ============
+
+/**
+ * `field_statistics` 里单个字段的一行
+ *
+ * 十二个键逐字取自真实回执（`DatasetStatistics` 的字段级统计）。
+ * `top_values` 是 `[值, 次数]` 的**二元组数组**，不是 `{值: 次数}` 的字典——
+ * 这一点与 `content_statistics.vocabulary.top_words` 同形，与
+ * `GET /api/analyze/{file}` 里那个 `top_words` 对象**不同形**，两者不能共用一个渲染器。
+ */
+export interface FieldStatisticsEntry {
+  field_name: string
+  total_count: number
+  filled_count: number
+  empty_count: number
+  fill_rate: number
+  avg_length: number
+  min_length: number
+  max_length: number
+  median_length: number
+  std_deviation: number
+  unique_count: number
+  top_values: [string, number][]
+}
+
+/**
+ * `POST /api/dataset/stats`
+ *
+ * `field_statistics` / `quality_metrics` 在契约面上是 `additionalProperties` 开放的字典，
+ * 键名**来自数据集本身**（实测：`a.json` 回 `instruction` 与 `output`），所以页面按回执的键渲染，
+ * 不在 TSX 里写字段名清单。`summary` 是后端已经排好多行的文本，重排它就是二次说谎的机会。
+ * 实测坑一：`fields` 里给一个数据集没有的键，端点照样回 **200** 并给这一格填全零（幽灵字段），
+ * 所以「可选字段清单」只能来自回执，不能来自猜测。
+ * 实测坑二：空数据集（`[]`）回执是 `total_items: 0` 且 **三个字典全空**——
+ * `field_statistics`、`quality_metrics` 是 `{}`，`content_statistics` 也是 `{}` 而不是
+ * 「有结构但值为零」，两个子键一个都不出现。所以这里把两个子键标成可选，
+ * 页面按「键在不在」分档渲染，而不是替端点编一个 0。
+ */
+export interface StatisticsResponse {
+  dataset_name: string
+  total_items: number
+  summary: string
+  field_statistics: Record<string, FieldStatisticsEntry>
+  content_statistics: {
+    text_length?: { avg: number; min: number; max: number; total: number }
+    vocabulary?: {
+      total_words: number
+      unique_words: number
+      top_words: [string, number][]
+    }
+  }
+  quality_metrics: Record<string, number>
+}
+
+/** 单个字段的特征行；`description` 实测只有「常规特征」与「稀疏特征」两种措辞 */
+export interface FieldFeatureEntry {
+  name: string
+  feature_type: string
+  coverage: number
+  unique_ratio: number
+  description: string
+}
+
+/**
+ * `POST /api/dataset/features`
+ *
+ * 稀疏判据住在 `augmentor/feature_detect.py:59` 的 `min_coverage`（出厂默认 0.1），
+ * **这只端点不接受调用方改它**（请求模型只有 `input_file`，实测多送 `text_field` 会被静默忽略），
+ * 所以页面只读不装旋钮。`feature_type` 是 `_infer_type` 的五档字面量之一
+ * （`numeric` / `text` / `boolean` / `mixed` / `unknown`，实测全空字段落进 `unknown` 且
+ * 同时被标成稀疏特征），后端没有对应常数可引，所以渲染时未知值原样显示而不编标签。
+ * `intent_distribution` 是**条数**（键只包含真出现过的意图），与「覆盖度分析」那张图的
+ * 同一分类器占比是一个数据的两副口径；实测空集与「一句问话都没有」的集都会回 `{}`。
+ */
+export interface FeaturesResponse {
+  total_items: number
+  field_features: FieldFeatureEntry[]
+  sparse_fields: string[]
+  intent_distribution: Record<string, number>
+}
+
+/** 质量面的单集分数与两侧差值共用这一格形状 */
+export interface QualityScoreFace {
+  avg_score: number
+  pass_rate: number
+  min_score: number
+  max_score: number
+}
+
+/**
+ * `compare` 的质量侧（`DatasetComparator.compare().to_dict()`）
+ *
+ * `winner` 实测三态：`"a"` / `"b"` / `"tie"`（同一份文件自己比自己就是 `tie`），
+ * 页面按三态渲染而不是「有 winner 就行」。
+ * `similarity_to_a` / `similarity_to_b` 是**恒为 0.0 的死面**：`augmentor/comparison.py` 里
+ * 只在 dataclass 默认值与 `to_dict()` 出现，全仓没有任何赋值点，实测两份不同数据也照样 0.0
+ * ⇒ 页面不渲染它们（账本 **A287**）。
+ */
+export interface QualityComparisonFace {
+  dataset_a_name: string
+  dataset_b_name: string
+  dataset_a_count: number
+  dataset_b_count: number
+  quality_a: QualityScoreFace
+  quality_b: QualityScoreFace
+  quality_diff: QualityScoreFace
+  dedup_a: { duplication_rate: number; unique_count: number }
+  dedup_b: { duplication_rate: number; unique_count: number }
+  length_a: { avg: number; min: number; max: number; std: number }
+  length_b: { avg: number; min: number; max: number; std: number }
+  vocabulary_a: { unique_chars: number; total_chars: number }
+  vocabulary_b: { unique_chars: number; total_chars: number }
+  similarity_to_a: number
+  similarity_to_b: number
+  winner: string
+  summary: string
+}
+
+/**
+ * 重叠面的单字段行
+ *
+ * 明细条目的形状是**固定的三元组** `{instruction, value_a, value_b}`
+ * （`augmentor/compare_enhanced.py:289`）：`_compare_fields` 压根不接受 `key_fields`，
+ * 逐条配对口径永远是 `instruction`。所以「换匹配键」只动 `metrics` 那一组数，
+ * 这张表的行不会跟着变——这一档不写清就会被读成「明细也跟着我选的键走」。
+ */
+export interface FieldComparisonEntry {
+  field_name: string
+  in_a_only: number
+  in_b_only: number
+  in_both: number
+  type_mismatches: number
+  value_differences: Record<string, unknown>[]
+}
+
+/**
+ * `compare` 的重叠面（`compare_datasets_enhanced`）
+ *
+ * `key_fields` 的默认权威**不在请求模型里**（`CompareRequest.key_fields` 默认 `None`），
+ * 而在 `augmentor/compare_enhanced.py:126` 的 `key_fields or ["instruction"]`。
+ * 实测「同问不同答」的一对数据集（instruction 全同、output 全不同）：默认 ⇒ `common_items 4`、
+ * `similarity_score 1.0`，换成 `output` ⇒ `0` 与 `0.0`——这一档真动重叠面的数，但它**只**动
+ * `metrics`：同一响应里 `field_comparisons` 连同 `value_differences` 逐字节不变（明细永远按
+ * `instruction` 配对，见上一条注）。实测坑：给一个两侧都没有的键 ⇒ `common_items: 1`、
+ * `similarity_score: 1.0`（取键时全部塌成同一个空标识）——幽灵匹配键比幽灵字段名更危险，
+ * 它把「毫无重叠」谎报成「完全重叠」。所以页面的候选只能来自回执的 `field_comparisons` 键。
+ * `size_ratio` 声明是 `float`，但 `compare_enhanced.py:190` 在 B 侧为空时存的是
+ * `float('inf')`，Pydantic 序列化到线上是 **`null`**（实测 `size_b: 0` 那一条）——
+ * 严格 JSON 面是安全的，但 TS 不能把它当纯 `number`，故这里标 `number | null`（账本 **A288**）。
+ */
+export interface OverlapComparisonFace {
+  dataset_a_name: string
+  dataset_b_name: string
+  metrics: {
+    size_a: number
+    size_b: number
+    size_diff: number
+    size_ratio: number | null
+    common_items: number
+    unique_a: number
+    unique_b: number
+    similarity_score: number
+    field_overlap: number
+  }
+  field_comparisons: Record<string, FieldComparisonEntry>
+  summary: string
+  recommendations: string[]
+}
+
+/** `POST /api/dataset/compare`：两个面各自带 `summary`，不是一句话的两半，是两套口径 */
+export interface CompareResponse {
+  quality_comparison: QualityComparisonFace
+  overlap_comparison: OverlapComparisonFace
+}
