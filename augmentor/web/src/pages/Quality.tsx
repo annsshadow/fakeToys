@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import {
+  Alert,
   Card,
   Row,
   Col,
@@ -25,12 +26,14 @@ import {
   annotateData,
   runBenchmark,
   detectOutliers,
-  profileDataset
+  profileDataset,
+  validateDataset
 } from '../services/api'
 import type {
   AnnotateResponse,
   BenchmarkResponse,
   CleanResponse,
+  DatasetValidationResponse,
   DedupResponse,
   OutlierEntry,
   OutliersResponse,
@@ -46,14 +49,21 @@ const OUTLIER_METHODS = [
   { value: 'iqr', label: 'IQR（四分位距）' }
 ]
 
+/** 验证预设三档（与 `DatasetValidator.PRESET_RULES` 的键逐项相等，副标题按该字典的实际规则写） */
+const VALIDATION_PRESET_OPTIONS = [
+  { value: 'basic', label: 'basic（上限 1000 / 5000）' },
+  { value: 'strict', label: 'strict（加长度下限与禁用片段）' },
+  { value: 'chat', label: 'chat（多 history 字段，上限更紧）' }
+]
+
 /**
  * 质量中心
  *
- * 聚合质量评估、去重、清洗、标注、基准、离群点检测与数据画像七项能力，
+ * 聚合质量评估、去重、清洗、标注、基准、离群点检测、数据画像与结构校验八项能力，
  * 对应需求 R5 / R6 / R7 / R12 / R13 / R28。
  *
- * 后两项（离群点 / 画像）与其它五项的区别是：它们**不参与打分**，
- * 只输出「这批数据长什么样」，所以结果单独用 Tab 呈现而不是并入指标卡。
+ * 后三项（离群点 / 画像 / 结构校验）与其它五项的区别是：它们**不参与打分**，
+ * 只输出「这批数据长什么样、哪里不合规则」，所以结果单独用 Tab 呈现而不是并入指标卡。
  */
 export default function Quality() {
   const [file, setFile] = useState('')
@@ -69,6 +79,9 @@ export default function Quality() {
   const [benchmark, setBenchmark] = useState<BenchmarkResponse | null>(null)
   const [outliers, setOutliers] = useState<OutliersResponse | null>(null)
   const [profiling, setProfiling] = useState<ProfilingResponse | null>(null)
+  const [validation, setValidation] = useState<DatasetValidationResponse | null>(null)
+  // 初值与契约默认同值（`basic`）⇒ 与「不传 preset」是同一档，页面上没有第二套默认在暗地里生效
+  const [validationPreset, setValidationPreset] = useState('basic')
 
   /**
    * 跑一个质量任务并把结果交给对应的 setState
@@ -132,6 +145,18 @@ export default function Quality() {
   )
 
   const keywordRows = profiling?.top_keywords || []
+
+  // `issues` 是 SDK 收窄过的**样本**（`ValidationResult.to_dict()` 只取前 100 条），
+  // 而 `error_count` / `warning_count` 按全量算 ⇒ 上面的计数可以大于下面的行数，
+  // 那不是 bug。行 key 用样本内序号：同一条记录上同一字段报两次是合法的，
+  // 拿 `index` 当 key 会撞。
+  const validationRows = (validation?.issues || []).map((issue, i) => ({
+    key: i,
+    severity: issue.severity,
+    field: issue.field,
+    index: issue.index,
+    message: issue.message
+  }))
 
   return (
     <div>
@@ -217,6 +242,21 @@ export default function Quality() {
             onClick={() => run(() => profileDataset(file), setProfiling, '数据画像失败')}
           >
             数据画像
+          </Button>
+          <span>验证预设</span>
+          <Select
+            value={validationPreset}
+            onChange={setValidationPreset}
+            options={VALIDATION_PRESET_OPTIONS}
+            style={{ width: 260 }}
+          />
+          <Button
+            loading={loading}
+            onClick={() =>
+              run(() => validateDataset(file, validationPreset), setValidation, '结构校验失败')
+            }
+          >
+            结构校验
           </Button>
         </Space>
       </Card>
@@ -498,6 +538,96 @@ export default function Quality() {
               </>
             ) : (
               <Card>点击「数据画像」查看字段完整度、长度分布与高频关键词</Card>
+            )
+          },
+          {
+            key: 'validation',
+            label: '结构校验',
+            children: validation ? (
+              <>
+                <Row gutter={16} style={{ marginBottom: 16 }}>
+                  <Col span={6}>
+                    <Card>
+                      <Statistic title="条目总数" value={validation.total_items} />
+                    </Card>
+                  </Col>
+                  <Col span={6}>
+                    <Card>
+                      <Statistic title="合格条目" value={validation.valid_items} />
+                    </Card>
+                  </Col>
+                  <Col span={6}>
+                    <Card>
+                      <Statistic title="错误" value={validation.error_count} />
+                    </Card>
+                  </Col>
+                  <Col span={6}>
+                    <Card>
+                      <Statistic title="警告" value={validation.warning_count} />
+                    </Card>
+                  </Col>
+                </Row>
+                {/* `is_valid` 只判「有没有 error」，警告不会把它翻成 false
+                    （实测 strict 预设下 warning_count=3 而 is_valid 仍为 true）⇒
+                    「通过」和「干净」是两句话，这里分开说。 */}
+                <Alert
+                  style={{ marginBottom: 16 }}
+                  showIcon
+                  type={
+                    validation.is_valid
+                      ? validation.warning_count > 0
+                        ? 'warning'
+                        : 'success'
+                      : 'error'
+                  }
+                  message={
+                    validation.is_valid
+                      ? validation.warning_count > 0
+                        ? `没有错误，但有 ${validation.warning_count} 条警告`
+                        : '全部条目通过校验'
+                      : `校验未通过：${validation.error_count} 条错误`
+                  }
+                  description={
+                    validation.is_valid && validation.warning_count > 0
+                      ? `合格条目 ${validation.valid_items} / ${validation.total_items}：警告不改变 is_valid，只标出不合建议的条目`
+                      : undefined
+                  }
+                />
+                {validationRows.length > 0 ? (
+                  <Card
+                    title={`问题清单（列出 ${validationRows.length} 条；SDK 单次最多回 100 条样本，计数按全量算）`}
+                  >
+                    <Table
+                      size="small"
+                      pagination={{ pageSize: 10 }}
+                      rowKey="key"
+                      columns={[
+                        {
+                          title: '级别',
+                          dataIndex: 'severity',
+                          width: 90,
+                          render: (severity: string) => (
+                            <Tag color={severity === 'error' ? 'red' : 'orange'}>{severity}</Tag>
+                          )
+                        },
+                        { title: '字段', dataIndex: 'field', width: 140 },
+                        {
+                          title: '条目下标',
+                          dataIndex: 'index',
+                          width: 90,
+                          render: (index: number | null) => (index === null ? '-' : index)
+                        },
+                        { title: '说明', dataIndex: 'message' }
+                      ]}
+                      dataSource={validationRows}
+                    />
+                  </Card>
+                ) : (
+                  <Alert type="success" showIcon message="这份文件没有报出任何问题" />
+                )}
+              </>
+            ) : (
+              <Card>点击「结构校验」按预设规则检查必填字段、长度上下限与禁用片段</Card>
             )
           }
         ]}

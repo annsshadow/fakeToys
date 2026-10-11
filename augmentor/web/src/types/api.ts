@@ -694,3 +694,78 @@ export interface VectorStatusResponse {
   collection: string
   storage_dir: string
 }
+
+/**
+ * `POST /api/dataset/search` 的高亮条目
+ *
+ * 值固定是三段 `[命中前, 命中文本, 命中后]`（SDK `_generate_highlights` 用切片拼出），
+ * 这里写成 `string[]` 而不是元组：页面只按位取用，元组类型会让测试里的夹具
+ * 为了迁就类型而少写段数，反而测不出「少一段」这种真实畸形。
+ */
+export interface SearchHighlightItem {
+  /** 命中条目在**整份文件**里的下标，可直接指回 `input_file` */
+  index: number
+  highlights: Record<string, string[]>
+}
+
+/**
+ * `POST /api/dataset/search`
+ *
+ * `highlights` 只在**子串能落进原文**的那几路非空：实测 `method=regex` 时
+ * `total_matches=1` 而 `highlights=[]`。所以「命中条数」与「高亮段数」必须分开渲染
+ * —— 用高亮为空来表示「没搜到」会把 regex 那一档报成零命中。
+ * 后四键只在本次请求真的消费了它时非空（`fuzzy` 才带阈值、`ngram` 才带 n、
+ * 传了 `filters` 才带过滤读数），因此全部可空。
+ */
+export interface SearchResponse {
+  query: string
+  method: string
+  total_matches: number
+  query_time_ms: number
+  items: Record<string, unknown>[]
+  highlights: SearchHighlightItem[]
+  fuzzy_threshold: number | null
+  ngram_n: number | null
+  applied_filters: Record<string, unknown>[] | null
+  matches_before_filters: number | null
+}
+
+/** 一条验证问题（`ValidationIssue.to_dict()` 的键） */
+export interface DatasetValidationIssue {
+  field: string
+  message: string
+  /** 与 SDK `ValidationSeverity` 的三个枚举值一一对应 */
+  severity: 'error' | 'warning' | 'info'
+  index: number | null
+}
+
+/**
+ * `POST /api/dataset/validate`
+ *
+ * `issues` 是 SDK 收窄过的**样本**（`ValidationResult.to_dict()` 取前 100 条），
+ * 而 `error_count` / `warning_count` 按全量算 ⇒ 「警告 137 条、表里只有 100 行」
+ * 是正常读数，页面不能拿样本行数当总数。
+ */
+export interface DatasetValidationResponse {
+  is_valid: boolean
+  total_items: number
+  valid_items: number
+  error_count: number
+  warning_count: number
+  issues: DatasetValidationIssue[]
+}
+
+/**
+ * `POST /api/dataset/auto-config`
+ *
+ * `reasoning` 是**逐条理由的清单**而不是单串文本（实测：`["重复率 0.00 较低，去重阈值下调至 0.85"]`）。
+ * `source_stats` 是观测值原样带回，实测 `quality_pass_rate` 可以为 `null`
+ * （那份夹具没有可判质量的字段）⇒ 渲染必须走空值分支，不能假设一定有数。
+ */
+export interface AutoConfigResponse {
+  quality_threshold: number
+  dedup_threshold: number
+  recommended_sample_size: number
+  reasoning: string[]
+  source_stats: Record<string, unknown>
+}

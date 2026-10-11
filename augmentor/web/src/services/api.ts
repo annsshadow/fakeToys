@@ -6,6 +6,7 @@ import type {
   AppConfig,
   AuditResponse,
   AugmentProgress,
+  AutoConfigResponse,
   BatchExportResponse,
   BenchmarkResponse,
   CheckpointListResponse,
@@ -15,6 +16,7 @@ import type {
   DataItem,
   DataPageResponse,
   DatasetExportResponse,
+  DatasetValidationResponse,
   DedupResponse,
   EvaluateResponse,
   ExportFormatsResponse,
@@ -33,6 +35,7 @@ import type {
   QualityEvaluationResponse,
   QualityReportResponse,
   SanitizeResponse,
+  SearchResponse,
   StartAugmentResponse,
   StatusResponse,
   UpdateConfigResponse,
@@ -627,5 +630,61 @@ export const evaluateDataset = async (
  */
 export const getVectorStatus = async (): Promise<VectorStatusResponse> => {
   const response = await api.get('/dataset/vector-status')
+  return response.data
+}
+
+// ============ 内容检索 / 结构校验 / 配置推荐（A279 第二批接线，L226） ============
+
+/**
+ * `POST /api/dataset/search`
+ *
+ * 可选三键全部「不传即不写」：`method` / `limit` / `offset` 的权威默认在契约里
+ * （`contains` / 100 / 0），本层不替它写第二套默认值。`undefined` 会被 JSON 序列化
+ * 丢掉，所以传 `undefined` 与不传是同一件事——这正是我们要的回落。
+ * `limit=0` 是**合法请求**（实测：`total_matches` 照给、`items` 为空），别在这里
+ * 兜「0 就改成 100」，那会把用户明确要的「只要计数」偷换成一次全量取回。
+ */
+export const searchDataset = async (
+  inputFile: string,
+  query: string,
+  opts: { method?: string; limit?: number; offset?: number } = {}
+): Promise<SearchResponse> => {
+  const response = await api.post('/dataset/search', {
+    input_file: inputFile,
+    query,
+    method: opts.method,
+    limit: opts.limit,
+    offset: opts.offset
+  })
+  return response.data
+}
+
+/**
+ * `POST /api/dataset/validate`
+ *
+ * `preset` 只有 `basic` / `strict` / `chat` 三档（实测自 `DatasetValidator.PRESET_RULES`），
+ * 未知值由路由判 400；下拉的选项从页面给，本层不校验，也不在省略时写第二默认值。
+ */
+export const validateDataset = async (
+  inputFile: string,
+  preset?: string
+): Promise<DatasetValidationResponse> => {
+  const response = await api.post('/dataset/validate', {
+    input_file: inputFile,
+    preset
+  })
+  return response.data
+}
+
+/**
+ * `POST /api/dataset/auto-config`
+ *
+ * 只读推荐，不写配置：它回的是「按这份数据的观测该用哪几档阈值」，
+ * 真要落地仍走 `updateConfig`，两者分开才留得住「我看了建议、我决定不改」这一步。
+ */
+export const autoConfigRecommend = async (
+  inputFile: string
+): Promise<AutoConfigResponse> => {
+  const response = await api.post('/dataset/auto-config', { input_file: inputFile })
   return response.data
 }

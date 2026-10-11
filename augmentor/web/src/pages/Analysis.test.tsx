@@ -10,6 +10,8 @@
  *
  * L225 起本页多了「语言画像」与「生成集对比评估」两张卡（A279 第一批接线），
  * 对应下面两个新 describe：画像的成功/失败两路，评估的必填闸/成功/失败三路。
+ * L226 起再加一张「内容检索」（A279 第二批接线），对应 `Analysis 内容检索` 那个
+ * describe：闸/成功/换方法/无高亮/零命中/失败六路。
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
@@ -44,6 +46,7 @@ const spies = vi.hoisted(() => ({
   visualizeData: null as unknown as ReturnType<typeof vi.fn>,
   languageProfile: null as unknown as ReturnType<typeof vi.fn>,
   evaluateDataset: null as unknown as ReturnType<typeof vi.fn>,
+  searchDataset: null as unknown as ReturnType<typeof vi.fn>,
 }))
 
 vi.mock('../services/api', async (importOriginal) => {
@@ -55,6 +58,7 @@ vi.mock('../services/api', async (importOriginal) => {
   spies.visualizeData = vi.fn()
   spies.languageProfile = vi.fn()
   spies.evaluateDataset = vi.fn()
+  spies.searchDataset = vi.fn()
   return {
     ...actual,
     getDataFiles: spies.getDataFiles,
@@ -64,6 +68,7 @@ vi.mock('../services/api', async (importOriginal) => {
     visualizeData: spies.visualizeData,
     languageProfile: spies.languageProfile,
     evaluateDataset: spies.evaluateDataset,
+    searchDataset: spies.searchDataset,
   }
 })
 
@@ -325,5 +330,145 @@ describe('Analysis 生成集对比评估（L225 接线）', () => {
       timeout: 4000,
     })
     expect(screen.queryByText(/^对齐样本数/)).not.toBeInTheDocument()
+  })
+})
+
+/**
+ * 内容检索（L226，A279 第二批接线）
+ *
+ * 钉四件事：① 递出去的是（文件, 检索词, {method}），method 来自下拉当前值而不是初值；
+ * ② 命中总数与本次返回条数分开渲染（limit 截断时两个数不同，只报一个会把「还有没回传的」
+ * 说成「就这么些」）；③ 高亮行是 `[前, 命中, 后]` 拼出来的，所以「命中片段」列与
+ * 「上下文」列必须不同——两列相同就说明拼接写错了；④ regex 那一路实测
+ * `total_matches>0` 而 `highlights=[]`（L226 探针量到），此时既不能说「没搜到」，
+ * 也不该渲染一张空表。
+ */
+describe('Analysis 内容检索', () => {
+  const SEARCH_HITS = {
+    query: '向量',
+    method: 'contains',
+    total_matches: 12,
+    query_time_ms: 3.5,
+    items: [{ instruction: '请解释什么是向量数据库', output: '按相似度检索。' }],
+    highlights: [
+      {
+        index: 0,
+        highlights: {
+          instruction: ['请解释什么是', '向量', '数据库'],
+          output: ['', '向量', '向量按相似度检索。'],
+        },
+      },
+      { index: 7, highlights: { output: ['上文', '向量', '下文'] } },
+    ],
+    fuzzy_threshold: null,
+    ngram_n: null,
+    applied_filters: null,
+    matches_before_filters: null,
+  }
+
+  it('检索成功：递出方法，命中数与返回数分开，高亮表逐字段一行', async () => {
+    spies.analyzeData.mockResolvedValue(ANALYSIS)
+    spies.searchDataset.mockResolvedValue(SEARCH_HITS)
+
+    const container = await selectFileAndWait()
+    fireEvent.change(container.querySelector('input[placeholder="检索词"]')!, {
+      target: { value: '向量' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /运行检索/ }))
+
+    await waitFor(() =>
+      expect(spies.searchDataset).toHaveBeenCalledWith('seed.json', '向量', { method: 'contains' })
+    )
+    // 12 命中 vs 本次返回 1 条：两个数都必须在场
+    expect(await screen.findByText('命中 12 条')).toBeInTheDocument()
+    expect(screen.getByText('本次返回 1 条')).toBeInTheDocument()
+    expect(screen.getByText('耗时 3.50 ms')).toBeInTheDocument()
+    // 第 0 条在两个字段各命中一行、第 7 条一行 ⇒ 三行，且顺序与响应一致
+    expect(rowsOfTable(container, '条目下标')).toEqual([
+      ['0', 'instruction', '向量', '请解释什么是向量数据库'],
+      ['0', 'output', '向量', '向量向量按相似度检索。'],
+      ['7', 'output', '向量', '上文向量下文'],
+    ])
+  })
+
+  it('换方法真的换：下拉选 regex 后递出去的是 regex', async () => {
+    spies.analyzeData.mockResolvedValue(ANALYSIS)
+    spies.searchDataset.mockResolvedValue({ ...SEARCH_HITS, method: 'regex', highlights: [] })
+
+    const container = await selectFileAndWait()
+    fireEvent.change(container.querySelector('input[placeholder="检索词"]')!, {
+      target: { value: '请.*数据库' },
+    })
+    // 本页第三个下拉是「检索方法」（0=待分析文件，1=参照集）
+    await pickInNthSelect(container, 2, '正则')
+    fireEvent.click(screen.getByRole('button', { name: /运行检索/ }))
+
+    await waitFor(() =>
+      expect(spies.searchDataset).toHaveBeenCalledWith('seed.json', '请.*数据库', {
+        method: 'regex',
+      })
+    )
+  })
+
+  it('regex 有命中但无高亮：说不产出高亮，而不是说没命中', async () => {
+    spies.analyzeData.mockResolvedValue(ANALYSIS)
+    spies.searchDataset.mockResolvedValue({ ...SEARCH_HITS, method: 'regex', highlights: [] })
+
+    const container = await selectFileAndWait()
+    fireEvent.change(container.querySelector('input[placeholder="检索词"]')!, {
+      target: { value: '请.*数据库' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /运行检索/ }))
+
+    expect(await screen.findByText(/不产出高亮片段/)).toBeInTheDocument()
+    expect(screen.getByText('命中 12 条')).toBeInTheDocument()
+    expect(screen.queryByText('没有命中')).not.toBeInTheDocument()
+    // 不能查「页面上有没有 .ant-table」：本页本来就有关键词表。查的是高亮表自己的表头。
+    expect(screen.queryByText('条目下标')).not.toBeInTheDocument()
+  })
+
+  it('零命中才说「没有命中」', async () => {
+    spies.analyzeData.mockResolvedValue(ANALYSIS)
+    spies.searchDataset.mockResolvedValue({
+      ...SEARCH_HITS,
+      total_matches: 0,
+      items: [],
+      highlights: [],
+    })
+
+    const container = await selectFileAndWait()
+    fireEvent.change(container.querySelector('input[placeholder="检索词"]')!, {
+      target: { value: '不存在的词' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /运行检索/ }))
+
+    expect(await screen.findByText('没有命中')).toBeInTheDocument()
+    expect(screen.getByText('命中 0 条')).toBeInTheDocument()
+  })
+
+  it('空检索词不发请求', async () => {
+    spies.analyzeData.mockResolvedValue(ANALYSIS)
+
+    await selectFileAndWait()
+    fireEvent.click(screen.getByRole('button', { name: /运行检索/ }))
+
+    await waitFor(() => expect(document.body.textContent).toContain('请输入检索词'))
+    expect(spies.searchDataset).not.toHaveBeenCalled()
+  })
+
+  it('检索失败时专属文案出声，且不渲染命中读数', async () => {
+    spies.analyzeData.mockResolvedValue(ANALYSIS)
+    spies.searchDataset.mockRejectedValue(new Error('boom'))
+
+    const container = await selectFileAndWait()
+    fireEvent.change(container.querySelector('input[placeholder="检索词"]')!, {
+      target: { value: '向量' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /运行检索/ }))
+
+    await waitFor(() => expect(document.body.textContent).toContain('内容检索失败'), {
+      timeout: 4000,
+    })
+    expect(screen.queryByText(/^命中 \d+ 条$/)).not.toBeInTheDocument()
   })
 })
