@@ -10022,14 +10022,6 @@ pub static GENERATED_ROUTE_DEFS: &[RouteDef] = &[
         body_params: &[],
     },
     RouteDef {
-        tool_name: "legacy_file_assemble_control_file_share_id_password_password",
-        method: HttpMethod::Get,
-        path: "/api/file/share/{id}/password/{password}",
-        description: "share_id_password_password handler",
-        path_params: &["id", "password"],
-        body_params: &[],
-    },
-    RouteDef {
         tool_name: "legacy_file_assemble_control_file_id_download_stream",
         method: HttpMethod::Get,
         path: "/api/file/{id}/download/stream",
@@ -10203,14 +10195,6 @@ pub static GENERATED_ROUTE_DEFS: &[RouteDef] = &[
         path: "/api/share/{id}",
         description: "u2_share_get handler",
         path_params: &["id"],
-        body_params: &[],
-    },
-    RouteDef {
-        tool_name: "legacy_file_assemble_control_share_id_password_password",
-        method: HttpMethod::Get,
-        path: "/api/share/{id}/password/{password}",
-        description: "u2_share_get_with_password handler",
-        path_params: &["id", "password"],
         body_params: &[],
     },
     RouteDef {
@@ -10420,6 +10404,14 @@ pub static GENERATED_ROUTE_DEFS: &[RouteDef] = &[
         description: "update_file_entity handler",
         path_params: &["id"],
         body_params: &[],
+    },
+    RouteDef {
+        tool_name: "legacy_file_assemble_control_file_share_password_verify",
+        method: HttpMethod::Post,
+        path: "/api/file/share/password/verify",
+        description: "u2_share_password_verify handler",
+        path_params: &[],
+        body_params: &["password"],
     },
     RouteDef {
         tool_name: "legacy_file_assemble_control_file_upload_referencetype_reference_scale_callback_referencetype",
@@ -14883,14 +14875,6 @@ pub static GENERATED_ROUTE_DEFS: &[RouteDef] = &[
         path: "/api/organization/assemble/authentication/dingding/info",
         description: "u2::dingding_info handler",
         path_params: &[],
-        body_params: &[],
-    },
-    RouteDef {
-        tool_name: "legacy_organization_assemble_authentication_organization_assemble_authentication_mpweixin_menu_test_send_to_person",
-        method: HttpMethod::Post,
-        path: "/api/organization/assemble/authentication/mpweixin/menu/test/send/to/{person}",
-        description: "mpweixin_menu_test_send_to handler",
-        path_params: &["person"],
         body_params: &[],
     },
     RouteDef {
@@ -33358,22 +33342,6 @@ pub static GENERATED_ROUTE_DEFS: &[RouteDef] = &[
         body_params: &[],
     },
     RouteDef {
-        tool_name: "legacy_program_center_program_center_test_test1",
-        method: HttpMethod::Get,
-        path: "/api/program_center/test/test1",
-        description: "test_test1 handler",
-        path_params: &[],
-        body_params: &[],
-    },
-    RouteDef {
-        tool_name: "legacy_program_center_program_center_test_test2",
-        method: HttpMethod::Get,
-        path: "/api/program_center/test/test2",
-        description: "test_test2 handler",
-        path_params: &[],
-        body_params: &[],
-    },
-    RouteDef {
         tool_name: "legacy_program_center_program_center_unexpectederrorlog_list_id_next_count",
         method: HttpMethod::Get,
         path: "/api/program_center/unexpectederrorlog/list/{id}/next/{count}",
@@ -37336,4 +37304,4 @@ pub static GENERATED_ROUTE_DEFS: &[RouteDef] = &[
 ];
 
 /// 生成的工具总数
-pub const GENERATED_TOOL_COUNT: usize = 4666;
+pub const GENERATED_TOOL_COUNT: usize = 4662;

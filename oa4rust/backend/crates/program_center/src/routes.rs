@@ -221,8 +221,6 @@ use crate::{
     script_update_id,
     // plan002 U2 鏂板绔偣锛圝ava 瀵归綈缂哄彛锛?
     storagemappings_list,
-    test_test1,
-    test_test2,
     tokenthreshold_update,
     u3_agent_file_flag,
     u3_agent_flag_disable,
@@ -532,8 +530,6 @@ pub fn router(pool: Pool) -> Router {
         .route("/api/program_center/schedule/schedule/fire", get(schedule_schedule_fire))
         .route("/api/program_center/script/list", get(script_list))
 
-        .route("/api/program_center/test/test1", get(test_test1))
-        .route("/api/program_center/test/test2", get(test_test2))
         .route("/api/program_center/tokenthreshold/update", post(tokenthreshold_update))
         .route("/api/program_center/validation/meta", get(validation_meta))
         .route("/api/program_center/validation/scripting/benchmark", get(validation_scripting_benchmark))

@@ -298,7 +298,10 @@ pub fn attendance_assemble_control_routes(pool: Pool) -> Router {
         .route("/api/attendance/assemble/control/v2/groupschedule/list/filter", post(crate::v2_groupschedule_list_filter))
         // v2 leave template
         .route("/api/attendance/assemble/control/v2/leave/template", get(crate::v2_leave_template))
-        // v2 mobile（o2server 端 "check/ from/out" 路径含空格：同时注册空格与 %20 形态）
+        // v2 mobile（o2server 端 "check/ from/out" 路径含空格：同时注册空格与 %20 形态。
+        // 运行时 wire 上空格被浏览器编码为 %20，移动端外勤打卡实际命中 %20 形态
+        //（见 tests_u2_legacy u2l_v2_mobile_check_space_path_both_encodings_routed）；
+        // 空格形态为静态分母内的注册残迹，记档桶外）
         .route("/api/attendance/assemble/control/v2/mobile/check/pre", get(crate::v2_mobile_pre_check))
         .route("/api/attendance/assemble/control/v2/mobile/check", post(crate::v2_mobile_check))
         .route("/api/attendance/assemble/control/v2/mobile/check/ from/out", post(crate::v2_mobile_check_from_out))
