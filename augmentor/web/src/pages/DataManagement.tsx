@@ -8,11 +8,14 @@ import {
   Input,
   Pagination,
   Upload,
+  Card,
+  Checkbox,
+  InputNumber,
   type TableColumnsType,
 } from 'antd'
 import { DownloadOutlined, DeleteOutlined, EditOutlined, UploadOutlined, PlayCircleOutlined } from '@ant-design/icons'
-import { apiErrorDetail, bulkErrorDetail, isTimeoutError, getDataFiles, loadData, updateDataItem, deleteDataItem, exportData, uploadData, getDemoData } from '../services/api'
-import type { DataFileInfo, DataItem } from '../types/api'
+import { apiErrorDetail, bulkErrorDetail, isTimeoutError, getDataFiles, loadData, updateDataItem, deleteDataItem, exportData, uploadData, getDemoData, convertDataset, mergeDatasets, splitDataset } from '../services/api'
+import type { ConvertResponse, DataFileInfo, DataItem, MergeResponse, SplitResponse } from '../types/api'
 
 /**
  * 上传时可显式声明的源格式
@@ -21,10 +24,27 @@ import type { DataFileInfo, DataItem } from '../types/api'
  * 由 `tests/unit/test_upload_declared_format_l92.py` 双向守卫（每轮 pytest 全量都跑得到）。
  * 放在页面而不是 api.ts：它是「用户在 UI 上能选什么」，不是服务层契约。
  * 空串那档（「自动」）不在这里，由 `<option value="">` 单独给。
+ *
+ * L229 起它同时是**转换卡「源格式」下拉**的清单：读边只有这一份权威。
  */
 const UPLOAD_FORMAT_CHOICES = [
   'json', 'jsonl', 'csv', 'tsv', 'alpaca', 'sharegpt', 'chatml',
-  'llama_factory', 'vicuna', 'belle', 'excel', 'xlsx', 'xls',
+  'llama_factory', 'vicuna', 'belle',
+  'excel', 'xlsx', 'xls',
+]
+
+/**
+ * 转换卡「目标格式」下拉——与源格式那张表**不是同一份清单**
+ *
+ * 权威是 `augmentor/converter.py` 的 `OUTPUT_FORMAT_CHOICES`，由
+ * `tests/unit/test_transform_wiring_l229.py` 逐项对账。差的那一个是 `xls`：读边认它
+ * （openpyxl 读得了老 BIFF），写边**刻意不认**（写 `.xls` 会得到「扩展名是 xls、字节是
+ * zip」的假容器），所以它只能出现在源下拉里。给 `target_format` 发 `xls` 的回执是 400，
+ * 且 detail 里逐条列出这十二个合法目标——页面不必再自造一份解释。
+ */
+const CONVERT_TARGET_FORMATS = [
+  'json', 'jsonl', 'csv', 'tsv', 'alpaca', 'sharegpt', 'chatml',
+  'llama_factory', 'vicuna', 'belle', 'excel', 'xlsx',
 ]
 
 export default function DataManagement() {
@@ -179,6 +199,90 @@ export default function DataManagement() {
     })
   }
 
+  // ---- L229 写盘型变换三张卡（A279 第五批接线）----
+  // 初值逐个等于请求模型的默认（`target_format="jsonl"`、`source_format=None`、
+  // `deduplicate=True`、`0.8/0.1/0.1`、`seed=None`、`stratify=False`、
+  // `stratify_key="instruction"`、`shuffle=True`），由 l229 的守卫逐项对账；
+  // `output_file` / `output_dir` 在契约里是必填，页面**不给默认**，空着就发不出去。
+  const [convertTarget, setConvertTarget] = useState('jsonl')
+  const [convertSource, setConvertSource] = useState('')
+  const [convertOut, setConvertOut] = useState('')
+  const [convertResult, setConvertResult] = useState<ConvertResponse | null>(null)
+  const [mergeInputs, setMergeInputs] = useState<string[]>([])
+  const [mergeOut, setMergeOut] = useState('')
+  const [mergeDedup, setMergeDedup] = useState(true)
+  const [mergeResult, setMergeResult] = useState<MergeResponse | null>(null)
+  const [splitOutDir, setSplitOutDir] = useState('')
+  const [trainRatio, setTrainRatio] = useState<number | null>(0.8)
+  const [valRatio, setValRatio] = useState<number | null>(0.1)
+  const [testRatio, setTestRatio] = useState<number | null>(0.1)
+  const [splitSeed, setSplitSeed] = useState<number | null>(null)
+  const [splitStratify, setSplitStratify] = useState(false)
+  const [stratifyKey, setStratifyKey] = useState('instruction')
+  const [splitShuffle, setSplitShuffle] = useState(true)
+  const [splitResult, setSplitResult] = useState<SplitResponse | null>(null)
+
+  const handleConvert = async () => {
+    // 两个必填都要有：`input_file` 与 `output_file` 在契约里都没有默认，写哪儿由调用方点名。
+    if (!selectedFile || !convertOut) {
+      message.warning('格式转换需要选中源文件并点名输出文件名')
+      return
+    }
+    setLoading(true)
+    try {
+      // `convertSource` 是空串（「自动」）时服务层会把这一格整个丢掉，
+      // 让「省略」与「显式声明」在 API 面上保持两种形状。
+      setConvertResult(await convertDataset(selectedFile, convertOut, {
+        targetFormat: convertTarget,
+        sourceFormat: convertSource,
+      }))
+    } catch (err) {
+      message.error(apiErrorDetail(err, '格式转换失败'))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleMerge = async () => {
+    if (!mergeInputs.length || !mergeOut) {
+      message.warning('合并至少要勾一个输入文件并点名输出文件名')
+      return
+    }
+    setLoading(true)
+    try {
+      setMergeResult(await mergeDatasets(mergeInputs, mergeOut, { deduplicate: mergeDedup }))
+    } catch (err) {
+      message.error(apiErrorDetail(err, '合并失败'))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSplit = async () => {
+    if (!selectedFile || !splitOutDir) {
+      message.warning('分割需要选中源文件并点名输出目录')
+      return
+    }
+    setLoading(true)
+    try {
+      // 比例用 `?? undefined` 而不是 `|| undefined`：`0` 是有意义的档位
+      // （实测 `1.0/0/0` 回 `6/0/0` 且三段键都在），清空输入才是「交回服务端默认」。
+      setSplitResult(await splitDataset(selectedFile, splitOutDir, {
+        trainRatio: trainRatio ?? undefined,
+        valRatio: valRatio ?? undefined,
+        testRatio: testRatio ?? undefined,
+        seed: splitSeed ?? undefined,
+        stratify: splitStratify,
+        stratifyKey,
+        shuffle: splitShuffle,
+      }))
+    } catch (err) {
+      message.error(apiErrorDetail(err, '分割失败'))
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const columns: TableColumnsType<DataItem> = [
     {
       title: '索引',
@@ -316,6 +420,195 @@ export default function DataManagement() {
           </div>
         )}
       </Modal>
+
+      <Card title="格式转换" size="small" style={{ marginTop: 16 }}>
+        <Space wrap>
+          <label>
+            目标格式
+            <select
+              value={convertTarget}
+              onChange={(e) => setConvertTarget(e.target.value)}
+              aria-label="转换目标格式"
+              style={{ marginLeft: 6, padding: '4px 8px', borderRadius: 4 }}
+            >
+              {CONVERT_TARGET_FORMATS.map((fmt) => (
+                <option key={fmt} value={fmt}>{fmt}</option>
+              ))}
+            </select>
+          </label>
+          <label>
+            源格式
+            <select
+              value={convertSource}
+              onChange={(e) => setConvertSource(e.target.value)}
+              aria-label="转换源格式"
+              style={{ marginLeft: 6, padding: '4px 8px', borderRadius: 4 }}
+            >
+              <option value="">自动（按扩展名）</option>
+              {UPLOAD_FORMAT_CHOICES.map((fmt) => (
+                <option key={fmt} value={fmt}>{fmt}</option>
+              ))}
+            </select>
+          </label>
+          <Input
+            placeholder="输出文件名，如 out.jsonl"
+            aria-label="转换输出文件名"
+            value={convertOut}
+            onChange={(e) => setConvertOut(e.target.value)}
+            style={{ width: 220 }}
+          />
+          <Button onClick={handleConvert} loading={loading}>转换选中的文件</Button>
+        </Space>
+        <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75 }}>
+          源格式那张表比目标格式多一个 <code>xls</code>：读边认它，写边刻意不认（老 BIFF 容器写出来是假的）。
+        </div>
+        {convertResult && (
+          <div aria-label="转换回执" style={{ marginTop: 8 }}>
+            按 <code>{convertResult.source_format}</code> 读入，落成{' '}
+            <code>{convertResult.target_format}</code>：{convertResult.input_count} 条进 /{' '}
+            {convertResult.output_count} 条出 ⇒ {convertResult.output_file}（源 {convertResult.input_file}）
+          </div>
+        )}
+      </Card>
+
+      <Card title="合并数据集" size="small" style={{ marginTop: 16 }}>
+        <Space wrap direction="vertical" align="start">
+          <Space wrap>
+            {files.map((file) => (
+              <Checkbox
+                key={file.name}
+                checked={mergeInputs.includes(file.name)}
+                onChange={(e) => setMergeInputs(
+                  e.target.checked
+                    ? [...mergeInputs, file.name]
+                    : mergeInputs.filter((name) => name !== file.name)
+                )}
+              >
+                {file.name}
+              </Checkbox>
+            ))}
+          </Space>
+          <Space wrap>
+            <Input
+              placeholder="输出文件名，如 merged.json"
+              aria-label="合并输出文件名"
+              value={mergeOut}
+              onChange={(e) => setMergeOut(e.target.value)}
+              style={{ width: 220 }}
+            />
+            <Checkbox checked={mergeDedup} onChange={(e) => setMergeDedup(e.target.checked)}>
+              去重
+            </Checkbox>
+            <Button onClick={handleMerge} loading={loading}>合并勾选的文件</Button>
+          </Space>
+        </Space>
+        <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75 }}>
+          这一档只控「开 / 关」：SDK 里那个宽松 / 保守两档的去重阈值在这只端点上不可调（见账本 A290）。
+        </div>
+        {mergeResult && (
+          <div aria-label="合并回执" style={{ marginTop: 8 }}>
+            {mergeResult.input_files} 份输入共 {mergeResult.total_input} 条 ⇒{' '}
+            {mergeResult.total_output} 条出，其中去重删掉 {mergeResult.removed_duplicates} 条 ⇒{' '}
+            {mergeResult.output_file}
+          </div>
+        )}
+      </Card>
+
+      <Card title="训练 / 验证 / 测试分割" size="small" style={{ marginTop: 16 }}>
+        <Space wrap direction="vertical" align="start">
+          <Space wrap>
+            <Input
+              placeholder="输出目录，如 splits"
+              aria-label="分割输出目录"
+              value={splitOutDir}
+              onChange={(e) => setSplitOutDir(e.target.value)}
+              style={{ width: 180 }}
+            />
+            <label>
+              train
+              <InputNumber
+                aria-label="train 比例"
+                value={trainRatio}
+                onChange={setTrainRatio}
+                step={0.05}
+                style={{ marginLeft: 6, width: 90 }}
+              />
+            </label>
+            <label>
+              val
+              <InputNumber
+                aria-label="val 比例"
+                value={valRatio}
+                onChange={setValRatio}
+                step={0.05}
+                style={{ marginLeft: 6, width: 90 }}
+              />
+            </label>
+            <label>
+              test
+              <InputNumber
+                aria-label="test 比例"
+                value={testRatio}
+                onChange={setTestRatio}
+                step={0.05}
+                style={{ marginLeft: 6, width: 90 }}
+              />
+            </label>
+            <label>
+              seed
+              <InputNumber
+                aria-label="分割随机种子"
+                value={splitSeed}
+                onChange={setSplitSeed}
+                style={{ marginLeft: 6, width: 90 }}
+              />
+            </label>
+          </Space>
+          <Space wrap>
+            <Checkbox checked={splitStratify} onChange={(e) => setSplitStratify(e.target.checked)}>
+              分层
+            </Checkbox>
+            <Input
+              aria-label="分层字段名"
+              value={stratifyKey}
+              onChange={(e) => setStratifyKey(e.target.value)}
+              style={{ width: 160 }}
+            />
+            <Checkbox checked={splitShuffle} onChange={(e) => setSplitShuffle(e.target.checked)}>
+              先打乱
+            </Checkbox>
+            <Button onClick={handleSplit} loading={loading}>分割选中的文件</Button>
+          </Space>
+        </Space>
+        <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75 }}>
+          两条支路的判据不同：比例之和的容差默认支是 0.01、分层支是 1e-6，负数只有分层支会拦（A289）。
+          分层字段给一个不存在的名字**不报错**——它把全部条目塌成一个分组，分段数看起来与用默认键时一样。
+        </div>
+        {splitResult && (
+          <Table
+            aria-label="分割回执"
+            size="small"
+            style={{ marginTop: 8 }}
+            pagination={false}
+            rowKey="name"
+            dataSource={Object.entries(splitResult.splits).map(([name, part]) => ({
+              name,
+              count: part.count,
+              file: part.file.split(/[\\/]/).pop(),
+            }))}
+            columns={[
+              { title: '段名', dataIndex: 'name', key: 'name' },
+              { title: '条数', dataIndex: 'count', key: 'count' },
+              { title: '落盘文件', dataIndex: 'file', key: 'file' },
+            ]}
+          />
+        )}
+        {splitResult && (
+          <div style={{ marginTop: 4, fontSize: 12 }}>
+            目录：{splitResult.output_dir}（输入 {splitResult.input_file}）
+          </div>
+        )}
+      </Card>
     </div>
   )
 }
