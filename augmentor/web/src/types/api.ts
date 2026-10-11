@@ -1057,3 +1057,65 @@ export interface SplitResponse {
   output_dir: string
   splits: Record<string, SplitPart>
 }
+
+// ============ 采样 / 聚合 / RAG 转换（A279 第六批接线，L230） ============
+
+/**
+ * `POST /api/dataset/sample`（与 `DatasetOperations.sample_file()` 的返回键一一对应）
+ *
+ * `output_count` 可以合法地是 **0**：`size=0`，或 `ratio` 小到 `int()` 归零，实测都是
+ * 200 并在盘上留一份内容为 `[]` 的空文件（不是「不落盘」也不是报错）。`input_file` /
+ * `output_file` 都是解析后的绝对路径。这一面**不回**采样方法、seed 或分层键——回执里
+ * 只有「从哪读、写到哪、几条进几条出」，所以页面显示的是自己发出去的那几格。
+ */
+export interface SampleResponse {
+  input_file: string
+  output_file: string
+  input_count: number
+  output_count: number
+}
+
+/**
+ * `POST /api/dataset/aggregate` 回执里 `conflicts` 的一项
+ *
+ * 只有 `strategy="consistent"` 那一档会产出（其余三档实测恒为 `[]`）。三键由
+ * `augmentor/aggregator.py` 的 `aggregate_consistent()` 现造，`values` 与 `sources`
+ * **等长且逐位对应**（同一个源出现两次就报两次，实测 `sources: ["甲","甲","乙","乙"]`）。
+ */
+export interface AggregateConflict {
+  key: string
+  values: string[]
+  sources: string[]
+}
+
+/**
+ * `POST /api/dataset/aggregate`
+ *
+ * `aggregated_count` 是**落盘条数**，`source_counts` 是各源**读进来**的条数，两者不必
+ * 有关系（实测 consistent 单源同问不同答 ⇒ `source_counts {"甲":2}` 而 `aggregated_count 0`：
+ * 两条都被判成冲突整份丢掉）。`conflicts` 是**明细整份上线**，与本组「写盘变换类只回写到哪、
+ * 写了多少」的约定不一致，SDK 的 `to_dict()` 同一件事只报 `conflict_count`（账本 **A293**）。
+ */
+export interface AggregateResponse {
+  output_file: string
+  aggregated_count: number
+  source_counts: Record<string, number>
+  removed_duplicates: number
+  conflicts: AggregateConflict[]
+}
+
+/**
+ * `POST /api/dataset/rag`
+ *
+ * `format` 回的是**生效**的那一档：请求省略（或送空串，两者实测等价）时它给的是
+ * `config.rag.default_format`（实测 `llamaindex`），不是空串 ⇒ 页面照抄回执。
+ * `record_count` 实测三档都等于 `input_count`（短文本不触发切块），但三档落盘的**键集
+ * 各不相同**（langchain 2 键 / llamaindex 6 键 / custom 5 键），所以这一格不能读成
+ * 「条数 = 块数」的保证。
+ */
+export interface RagResponse {
+  output_file: string
+  format: string
+  input_count: number
+  record_count: number
+}

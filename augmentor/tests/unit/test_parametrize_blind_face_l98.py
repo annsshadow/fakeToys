@@ -168,10 +168,15 @@ MEASURED_HAZARD_ROSTER: Dict[Tuple[int, int], frozenset] = {
 #: 互不叠置的用例上 ⇒ 名册 +4，与档位和 114 → 118 独立闭合。
 #: **L229 回填（豁免 17 → 18）**：同文件里「绝对路径 / `..`」那一支的每一支 parametrize
 #: 都写了字面 ids 清单 ⇒ 整支进豁免名册。
+#: **L230：盲面名册 113 与档位和 118 一格未动**——`test_sample_aggregate_rag_wiring_l230.py`
+#: 八支 parametrize 的值位全是内联字面清单，一格都没落盲面（l97 侧 READABLE +8 与此独立闭合）。
+#: **L230 回填（豁免 18 → 23，+5）**：同文件五支用例的每一支 parametrize 都自带字面 ids
+#: 清单（回执键名册、路径判决、越界 ratio 三臂、`target_size` 四策略、TS 面三张回执），
+#: 整支进豁免名册。豁免是「动态面放过」的名单，涨它不等于放松：值位那一维仍逐格判。
 MEASURED_BLIND_TESTS = 113
 MEASURED_BLIND_SEEN = 113
 #: 现量：整支豁免（该用例的每一支 parametrize 都写了字面 ids）的用数
-MEASURED_EXEMPT_SITES = 18
+MEASURED_EXEMPT_SITES = 23
 #: 动态面至少要采到这么多条，否则「没有风险对象」只是没采到（A171 口径：数不到不判干净）
 MIN_COLLECTED_ITEMS = 3000
 

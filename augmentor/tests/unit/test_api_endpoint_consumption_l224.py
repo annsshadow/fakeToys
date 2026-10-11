@@ -45,10 +45,18 @@ CLI 入口 + 1 条没有。这一批的**接线质量**判据不住在这里，�
 `tests/unit/test_transform_wiring_l229.py`（两张格式清单同源、页面初值等于契约默认、
 UI 发得出的每一档在端点上的判决、回执覆盖全部响应键）。
 
+**L230 接了第六批**：`sample` / `aggregate` / `rag` 三条进数据管理页（采样、多源聚合、
+转成 RAG 检索格式三张卡），实测缺口 18 → **15**、已消费 57 → **60**、前端调用形状同涨到
+60。三条各有同名 CLI 子命令，所以动的仍是 `CLI_ENTRY`：17 → **14** 条，不同子命令
+12 → **9** 个；`NO_ENTRY` 仍 **1** 条（`translate`，归 A283）。缺口 15 = 14 条有 CLI 入口
++ 1 条没有。接线质量判据住在 `tests/unit/test_sample_aggregate_rag_wiring_l230.py`
+（三张下拉清单同源于后端分发臂、页面初值等于契约默认、UI 发得出的每一档在端点上的判决、
+回执覆盖全部响应键）；这一批同时量出六条后端判据缺口，立为 A292~A297。
+
 **两侧权威各只有一份**：
 * 后端面 = `app.openapi()` 里 `(方法, 路径模板)` 的集合（75 条操作 / 71 条路径，
   backups 与 dependency 有同路径多方法）；
-* 前端面 = `web/src/services/api.ts` 里 `api.<verb>('路径')` 的调用形状（57 条），
+* 前端面 = `web/src/services/api.ts` 里 `api.<verb>('路径')` 的调用形状（60 条），
   前缀从同一份源码里的 `baseURL` 读出来，不在测试里写死第二份。
 
 **判据五向**：
@@ -102,8 +110,9 @@ PARAMS_MAX_GAP = 60
 #: 前端调用形状里的 `${...}` 归一化成的占位符
 PLACEHOLDER = "{}"
 
-#: 实测未被前端消费的操作（L229：75 条操作里 57 条被调到，余 18 条；立账轮 L224 是 32，
-#: L225 第一批后是 29，L226 第二批后是 26，L227 第三批后是 24，L228 第四批后是 21）。
+#: 实测未被前端消费的操作（L230：75 条操作里 60 条被调到，余 15 条；立账轮 L224 是 32，
+#: L225 第一批后是 29，L226 第二批后是 26，L227 第三批后是 24，L228 第四批后是 21，
+#: L229 第五批后是 18）。
 #: 每员要能在 `CLI_ENTRY` 或 `NO_ENTRY` 里落位；接线一轮就少一格，回填只降不升。
 UNCONSUMED = frozenset({
     "DELETE /api/system/backups/{backup_id}",
@@ -111,9 +120,6 @@ UNCONSUMED = frozenset({
     "GET /api/system/dependencies",
     "GET /api/system/dependency/datasets",
     "GET /api/system/dependency/graph",
-    "POST /api/dataset/aggregate",
-    "POST /api/dataset/rag",
-    "POST /api/dataset/sample",
     "POST /api/dataset/translate",
     "POST /api/quality/health-gate",
     "POST /api/system/auto-test",
@@ -128,9 +134,6 @@ UNCONSUMED = frozenset({
 
 #: 缺口里「CLI 那条路有入口」的成员 → 子命令名。名字由 `TestCliEntryClaimsAreReal` 验真。
 CLI_ENTRY = {
-    "POST /api/dataset/aggregate": "aggregate",
-    "POST /api/dataset/rag": "rag",
-    "POST /api/dataset/sample": "sample",
     "POST /api/quality/health-gate": "health-gate",
     "POST /api/system/auto-test": "auto-test",
     "GET /api/system/backups": "backup",
@@ -341,7 +344,7 @@ class TestRulerSeesTheRealSurface:
 
     def test_frontend_face_scale(self):
         shapes = call_shapes()
-        assert len(shapes) == 57, f"服务层调用形状现量 57，实得 {len(shapes)}"
+        assert len(shapes) == 60, f"服务层调用形状现量 60，实得 {len(shapes)}"
         assert {m for m, _, _ in shapes} <= {"GET", "POST", "PUT", "DELETE", "PATCH"}
 
     def test_http_paths_live_only_in_the_service_layer(self):
@@ -482,9 +485,9 @@ class TestConsumptionRoster:
             f"已接好或已消失 {sorted(set(UNCONSUMED) - measured)}")
 
     def test_roster_scale_is_pinned(self):
-        """缺口 18 / 已消费 57 / 总操作 75：接线一轮就要回填这三个数（只降不升）"""
-        assert len(UNCONSUMED) == 18, len(UNCONSUMED)
-        assert len(consumed_operations()) == 57, len(consumed_operations())
+        """缺口 15 / 已消费 60 / 总操作 75：接线一轮就要回填这三个数（缺口只降不升）"""
+        assert len(UNCONSUMED) == 15, len(UNCONSUMED)
+        assert len(consumed_operations()) == 60, len(consumed_operations())
 
     def test_roster_entries_are_real_operations(self):
         ops = {f"{m} {p}" for m, p in operations()}
@@ -513,7 +516,7 @@ class TestCliEntryClaimsAreReal:
         assert not (set(CLI_ENTRY) & set(NO_ENTRY)), "同一员不能既算有入口又算无入口"
 
     def test_cli_roster_scale(self):
-        """37 个子命令是 L204 钉过的现量；名单 17 条指向其中 12 个不同子命令
+        """37 个子命令是 L204 钉过的现量；名单 14 条指向其中 9 个不同子命令
 
         L225 只动前端，`CLI_ENTRY` 那一半一个数没变（26 条 / 21 个名字）；变的只有
         `NO_ENTRY`：接好 3 条后从 6 收到 3。L226 接的三条都各有 CLI 入口（`search` /
@@ -528,10 +531,12 @@ class TestCliEntryClaimsAreReal:
         L229 接的三条（`convert` / `merge` / `split`）与 L228 同形：各有同名子命令且各自
         只出现一次，`CLI_ENTRY` 20 收到 17，不同子命令 15 收到 12；`NO_ENTRY`（1）与
         子命令现量（37）都没动。
+        L230 接的三条（`sample` / `aggregate` / `rag`）仍是这一形：`CLI_ENTRY` 17 收到 14，
+        不同子命令 12 收到 9；`NO_ENTRY`（1）与子命令现量（37）都没动。
         """
         assert len(cli_subcommands()) == 37
-        assert len(CLI_ENTRY) == 17
-        assert len(set(CLI_ENTRY.values())) == 12
+        assert len(CLI_ENTRY) == 14
+        assert len(set(CLI_ENTRY.values())) == 9
         assert len(NO_ENTRY) == 1
 
 
