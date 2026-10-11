@@ -17,6 +17,7 @@ import type {
   DataItem,
   DataPageResponse,
   DatasetExportResponse,
+  ConvertResponse,
   DatasetValidationResponse,
   DedupResponse,
   EvaluateResponse,
@@ -27,6 +28,7 @@ import type {
   ImpactResponse,
   LanguageProfileResponse,
   LeakageResponse,
+  MergeResponse,
   ModelsResponse,
   MultimodalFormatsResponse,
   MultimodalRecord,
@@ -38,6 +40,7 @@ import type {
   ProfilingResponse,
   QualityEvaluationResponse,
   QualityReportResponse,
+  SplitResponse,
   SanitizeResponse,
   SearchResponse,
   StartAugmentResponse,
@@ -795,6 +798,87 @@ export const compareDatasets = async (
     name_a: opts.nameA,
     name_b: opts.nameB,
     key_fields: opts.keyFields,
+  })
+  return response.data
+}
+
+// ============ 写盘型变换：convert / merge / split（A279 第五批接线，L229） ============
+
+/**
+ * `POST /api/dataset/convert`
+ *
+ * `output_file` 在契约里是**必填**（写哪儿由调用方点名，服务端不猜落名），所以本层不给默认。
+ * `source_format` 省略时由 SDK 按扩展名推断并在回执里回**推断结果**（实测回 `json`）。
+ * 坏值归宿（实测）：目标名写 `xls` ⇒ 400 且 detail 里逐条列出十二个合法目标；写一个不在清单上的
+ * 名字 ⇒ 400「不支持的转换: json -> no_such」；`output_file` 含 `../` ⇒ 400「路径包含非法组件」，
+ * 传绝对路径 ⇒ 403；输入不存在 ⇒ 404。这三档都是**字符串** detail。
+ */
+export const convertDataset = async (
+  inputFile: string,
+  outputFile: string,
+  opts: { targetFormat?: string; sourceFormat?: string } = {}
+): Promise<ConvertResponse> => {
+  const response = await api.post('/dataset/convert', {
+    input_file: inputFile,
+    output_file: outputFile,
+    target_format: opts.targetFormat,
+    source_format: opts.sourceFormat || undefined,
+  })
+  return response.data
+}
+
+/**
+ * `POST /api/dataset/merge`
+ *
+ * `inputs` 一个文件也是合法请求（实测 200，`input_files: 1`），空清单才 400「inputs 不能为空」。
+ * `deduplicate` 的默认 `true` 住在请求模型里，本层不写第二套默认：省略即让服务端说话。
+ * 注意这一档端点只把 `deduplicate` 传给 SDK，`MergeConfig` 的去重阈值等旋钮不可达（**A290**）。
+ */
+export const mergeDatasets = async (
+  inputs: string[],
+  outputFile: string,
+  opts: { deduplicate?: boolean } = {}
+): Promise<MergeResponse> => {
+  const response = await api.post('/dataset/merge', {
+    inputs,
+    output_file: outputFile,
+    deduplicate: opts.deduplicate,
+  })
+  return response.data
+}
+
+/**
+ * `POST /api/dataset/split`
+ *
+ * 六个可省键一律「不传即不写」，默认全部住在请求模型（`0.8 / 0.1 / 0.1`、`stratify false`、
+ * `stratify_key "instruction"`、`shuffle true`、`seed None`）。两条支路的判据**不同**（实测）：
+ * 比例和的容差是默认支 `0.01`、分层支 `1e-6`；负数只有分层支拦（400「比例不能为负数」），
+ * 默认支照收并回 200（**A289**）。`stratify_key` 给一个不存在的字段名**不报错**，它会塌成
+ * 一个分组，分段数与用默认键时看起来一样。
+ */
+export const splitDataset = async (
+  inputFile: string,
+  outputDir: string,
+  opts: {
+    trainRatio?: number
+    valRatio?: number
+    testRatio?: number
+    seed?: number
+    stratify?: boolean
+    stratifyKey?: string
+    shuffle?: boolean
+  } = {}
+): Promise<SplitResponse> => {
+  const response = await api.post('/dataset/split', {
+    input_file: inputFile,
+    output_dir: outputDir,
+    train_ratio: opts.trainRatio,
+    val_ratio: opts.valRatio,
+    test_ratio: opts.testRatio,
+    seed: opts.seed,
+    stratify: opts.stratify,
+    stratify_key: opts.stratifyKey,
+    shuffle: opts.shuffle,
   })
   return response.data
 }

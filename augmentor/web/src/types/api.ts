@@ -1001,3 +1001,59 @@ export interface CompareResponse {
   quality_comparison: QualityComparisonFace
   overlap_comparison: OverlapComparisonFace
 }
+
+// ============ 写盘型数据集变换（A279 第五批接线，L229） ============
+
+/**
+ * `POST /api/dataset/convert`（与 `converter.convert_file()` 的返回键一一对应）
+ *
+ * 两个「名字」键回的都是**实际生效值**：请求省略 `source_format` 时这里给的是推断结果
+ * （实测 `a.json` 回 `json`），不是空串——所以页面显示回执这两格，而不是回显用户的选择。
+ * `input_file` / `output_file` 回的是解析后的**绝对路径**（与导出类端点同一口径，
+ * `docs/API.md` 的 dataset 分组说明里已把「落盘后的绝对路径」当成对外形状写明）。
+ * 读写两侧的合法拼法**不是同一份清单**：读边十三项含 `xls`，写边十二项不含
+ * （`augmentor/converter.py:56` 明确拒写老 BIFF 容器），所以两个下拉各用各的清单。
+ */
+export interface ConvertResponse {
+  input_file: string
+  output_file: string
+  source_format: string
+  target_format: string
+  input_count: number
+  output_count: number
+}
+
+/**
+ * `POST /api/dataset/merge`
+ *
+ * `removed_duplicates` 只在 `deduplicate` 为真时才可能非零（实测同一份文件合并两次：
+ * 开去重 `total_output 5 / removed 5`，关去重 `10 / 0`）。SDK 还另外产出一个
+ * `truncated_by_max_items`（`augmentor/dataset_ops.py:220`），但响应模型没有声明它，
+ * FastAPI 按模型字段过滤 ⇒ 线上永远看不到这一格（账本 **A290**）。
+ */
+export interface MergeResponse {
+  input_files: number
+  output_file: string
+  total_input: number
+  total_output: number
+  removed_duplicates: number
+}
+
+/** `POST /api/dataset/split` 的单支产物：落盘绝对路径 + 条数（**0 条也占一格**） */
+export interface SplitPart {
+  file: string
+  count: number
+}
+
+/**
+ * `POST /api/dataset/split`
+ *
+ * `splits` 恒有 `train` / `val` / `test` 三键（实测 `0.8/0.1/0.1` 打 6 条时 `test` 是
+ * `count: 0` 而**不是缺键**），所以页面按回执的键渲染表格，但不要把「少一段」当成可能形状。
+ * `output_dir` 与每支的 `file` 都是解析后的绝对路径。
+ */
+export interface SplitResponse {
+  input_file: string
+  output_dir: string
+  splits: Record<string, SplitPart>
+}

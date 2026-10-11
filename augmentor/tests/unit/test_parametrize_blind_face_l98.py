@@ -87,15 +87,21 @@ TIER_OPAQUE = "opaque"              # 压根解析不到
 #: parametrize 值位分两族——`sorted(META_ROWS)` 的元素是模块级 frozenset 里的字面串（Scope
 #: 看得见）⇒ plain +1；`sorted(SCHEMA)` 的两个键来自 `schema_keys()` 的返回值（Scope 解析不到
 #: 元素对象）⇒ derived +2。档位和 +3 = 盲面 +3 = l97 的 CALLS +3，三处独立闭合。
+#: **L229 回填（opaque 10 → 11、ids-derived 8 → 11，plain / derived 一格未动）**：
+#: `test_transform_wiring_l229.py` 落盲面的四格分两族——值位是模块级**名字引用**
+#: `OUTPUT_FORMAT_CHOICES` 的那一支 Scope 彻底解析不到 ⇒ opaque +1；另外三支写了 `ids=`
+#: 但 id 由 `arm[0] for arm in ARMS` / `f[0] for f in FACES` 这类推导式现造 ⇒ ids-derived +3。档位和 114 → **118**，
+#: 与 l97 的盲面 +4 独立闭合；那支自带字面 ids 清单的第五格不进盲面，只进豁免名册
+#: （豁免 17 → **18**）。
 MEASURED_TIERS: Dict[str, int] = {
     TIER_PLAIN: 58,
     TIER_DERIVED: 38,
-    TIER_IDS_DERIVED: 8,
-    TIER_OPAQUE: 10,
+    TIER_IDS_DERIVED: 11,
+    TIER_OPAQUE: 11,
 }
 #: 盲面里静态读到类型形状的格（无字面 ids 即违规）：**0 格** —— 这就是 L97 残项的答案
 MEASURED_TYPED_SITES: frozenset = frozenset()
-#: 静态彻底解析不到的 9 格，键为 `文件::用例#该用例上第几个 parametrize`
+#: 静态彻底解析不到的 11 格，键为 `文件::用例#该用例上第几个 parametrize`
 MEASURED_OPAQUE_SITES: frozenset = frozenset({
     "integration/test_cli_dataset_tools.py::test_every_supported_target_really_converts#0",
     "integration/test_cli_merged_commands.py::test_every_cli_choice_actually_exports#0",
@@ -107,8 +113,9 @@ MEASURED_OPAQUE_SITES: frozenset = frozenset({
     "unit/test_model_type_choices_l74.py::test_table_values_are_backends_not_strings#0",
     "unit/test_rag.py::test_supported_formats_dispatch#0",
     "unit/test_python_version_floor_l198.py::test_documented_claim_is_present#0",
+    "unit/test_transform_wiring_l229.py::test_every_target_the_page_offers_is_accepted_by_the_endpoint#0",
 })
-#: `ids=` 写成非字面量的 8 格（同上键形）—— L97 只记「有没有 ids」，这一档是它看不见的
+#: `ids=` 写成非字面量的 11 格（同上键形）—— L97 只记「有没有 ids」，这一档是它看不见的
 MEASURED_IDS_DERIVED_SITES: frozenset = frozenset({
     "integration/test_api_dataset_system_tools.py::test_rejected_with_400#1",
     "unit/test_exceptions.py::test_builtin_compat_contract#0",
@@ -118,6 +125,9 @@ MEASURED_IDS_DERIVED_SITES: frozenset = frozenset({
     "unit/test_model_entry_defaults_l75.py::test_direct_construction_keeps_the_placeholder#0",
     "unit/test_model_entry_defaults_l75.py::test_loader_message_names_the_real_entry#0",
     "unit/test_model_entry_defaults_l75.py::test_none_and_empty_string_reach_the_same_verdict#0",
+    "unit/test_transform_wiring_l229.py::test_every_key_is_read_in_the_page_receipt#0",
+    "unit/test_transform_wiring_l229.py::test_the_initial_value_is_the_contract_default#0",
+    "unit/test_transform_wiring_l229.py::test_ts_face_matches_the_response_model#0",
 })
 #: 动态面**不做豁免**时读到的风险名册，按解释器分档钉住（同一份源码在两版上是两种对象，
 #: 把两版读数写进同一张表才是这条判据的全部信息量；未知解释器直接抛，不给读数）
@@ -154,10 +164,14 @@ MEASURED_HAZARD_ROSTER: Dict[Tuple[int, int], frozenset] = {
 #: `test_this_section_is_either_fully_written_or_fully_commented` /
 #: `test_this_meta_name_is_really_not_a_section`）各一处无 ids 参数化、互不叠置 ⇒ 名册 +3，
 #: 与档位和 +3 独立闭合；动态面同样全数采到，豁免用数 17 一格未动。
-MEASURED_BLIND_TESTS = 109
-MEASURED_BLIND_SEEN = 109
+#: **L229 回填（109 → 113，+4）**：`test_transform_wiring_l229.py` 落盲面的四格各在一支
+#: 互不叠置的用例上 ⇒ 名册 +4，与档位和 114 → 118 独立闭合。
+#: **L229 回填（豁免 17 → 18）**：同文件里「绝对路径 / `..`」那一支的每一支 parametrize
+#: 都写了字面 ids 清单 ⇒ 整支进豁免名册。
+MEASURED_BLIND_TESTS = 113
+MEASURED_BLIND_SEEN = 113
 #: 现量：整支豁免（该用例的每一支 parametrize 都写了字面 ids）的用数
-MEASURED_EXEMPT_SITES = 17
+MEASURED_EXEMPT_SITES = 18
 #: 动态面至少要采到这么多条，否则「没有风险对象」只是没采到（A171 口径：数不到不判干净）
 MIN_COLLECTED_ITEMS = 3000
 

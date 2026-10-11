@@ -87,7 +87,13 @@ NS_PREFIXES = frozenset({
 #: CALLS 404 → **405**、READABLE 290 → **291**，盲面一格未动。
 #: L228：接线守卫一支 parametrize（两个 state 名，内联**字符串**字面清单，与 L227 同形）⇒
 #: CALLS 405 → **406**、READABLE 291 → **292**，盲面一格未动。
-MEASURED_CALLS = 406
+#: **L229 回填（CALLS +5、盲面 +4、READABLE +1）**：`test_transform_wiring_l229.py` 五支
+#: parametrize 实测分两族——一支（绝对路径 / `..` 那支）值位是内联字符串字面清单 ⇒ 入可读档；
+#: 其余四支的值位都是「从两侧权威现造出来的东西」（`OUTPUT_FORMAT_CHOICES` 的引用、
+#: 契约默认值的逐格表、响应模型的字段名册、TS 接口的键名册），静态读不出元素 ⇒
+#: no-literal-list 桶 +4。实测 CALLS 406 → **411**、盲面 114 → **118**，
+#: READABLE 是差值口径 ⇒ **292 → 293**。
+MEASURED_CALLS = 411
 #: （L185：${ENV} 展开语义守卫两支 parametrize（坏形状 5 档 / 非串 4 档，全是字面清单）
 #: ⇒ CALLS 382 → 384、READABLE 281 → 283，盲面 101 一格未动）
 #: （L189：验证预设封闭清单守卫一支 parametrize（坏预设 5 档，全字面清单）⇒
@@ -96,14 +102,18 @@ MEASURED_CALLS = 406
 #: 全字面清单）⇒ CALLS 385 → 387、READABLE 284 → 286，盲面 101 一格未动）
 #: （L227：接线守卫一支字面清单 parametrize ⇒ CALLS 404 → 405、READABLE 290 → **291**）
 #: （L228：同形一支 ⇒ CALLS 405 → 406、READABLE 291 → **292**）
-MEASURED_READABLE = 292
+#: （L229：五支里只有「绝对路径/`..`」那支的值位是内联字面清单 ⇒ READABLE 292 → **293**）
+MEASURED_READABLE = 293
 #: L175：搜索方法封闭清单守卫两支 parametrize（坏值 6 档 / 合法 5 档，全是字面
 #: 清单）⇒ CALLS 379 → 381、READABLE 278 → 279，盲面（no-literal-list 桶）101 不动。
 #: L217：普查守卫三支无 ids parametrize ⇒ 盲面 108 → **111**（与 CALLS +3 同数，
 #: 因为三格全落盲面；l98 的 plain 档同增 3，两边独立闭合）。
 #: L222：三侧对账守卫三支无 ids parametrize ⇒ 盲面 111 → **114**（同样与 CALLS 同数）；
 #: l98 侧档位和 +3（plain +1、derived +2）独立咬合。
-MEASURED_BLIND = 114
+#: **L229 回填（盲面 +4）**：`test_transform_wiring_l229.py` 四支的值位是引用/表达式
+#: （`OUTPUT_FORMAT_CHOICES`、契约默认表、模型字段名册、TS 接口键名册）⇒ **114 → 118**；
+#: l98 侧同四格拆成 opaque +1、ids-derived +3，档位和独立咬合。
+MEASURED_BLIND = 118
 #: 值位含类型对象的那些档（必须全部自带 ids，否则就是本判据的违规）
 KNOWN_TYPED_SITES = frozenset({("tests/unit/test_schema_type_spec_l96.py", "test_label")})
 
