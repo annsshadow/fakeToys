@@ -1,0 +1,3 @@
+# 本机 GNU 工具链二进制（~450MB）不入 git；复现方法见 vendor/README.md
+mingw-bin/
+mingw-gcc/
