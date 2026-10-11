@@ -98,7 +98,12 @@ NS_PREFIXES = frozenset({
 #: 三只端点的路径判决、三张回执面），静态读得出元素 ⇒ 八格全落可读档。实测 CALLS 411 →
 #: **419**、盲面仍 **118**、READABLE 293 → **301**。这一批刻意不引后端那份现造清单当值位
 #: （L229 那四支就是这么进盲面的）：清单同源由 `dispatch_arms()` 读 AST 单独钉，不借 parametrize。
-MEASURED_CALLS = 419
+#: **L232 回填（CALLS +2、READABLE +2、盲面一格未动）**：`test_lineage_wiring_l232.py` 两支
+#: parametrize（`input_file` 四档坏值 / `registry_path` 两档坏值），值位都是内联字符串字面清单
+#: ⇒ 用本文件那把尺子现量两处都落 `plain` 桶（不在 `no-literal-list`），实测 CALLS 419 →
+#: **421**、READABLE 301 → **303**、盲面仍 **118**。读数出自仓外探针 `l232_census.py`
+#: （直接 `import` 本模块的 `param_sites(TESTS)` 逐处打印桶归属），不是按「字面量 ⇒ 可读」推的。
+MEASURED_CALLS = 421
 #: （L185：${ENV} 展开语义守卫两支 parametrize（坏形状 5 档 / 非串 4 档，全是字面清单）
 #: ⇒ CALLS 382 → 384、READABLE 281 → 283，盲面 101 一格未动）
 #: （L189：验证预设封闭清单守卫一支 parametrize（坏预设 5 档，全字面清单）⇒
@@ -109,7 +114,8 @@ MEASURED_CALLS = 419
 #: （L228：同形一支 ⇒ CALLS 405 → 406、READABLE 291 → **292**）
 #: （L229：五支里只有「绝对路径/`..`」那支的值位是内联字面清单 ⇒ READABLE 292 → **293**）
 #: （L230：八支全是内联字面清单 ⇒ READABLE 293 → **301**，与 CALLS 同涨 8）
-MEASURED_READABLE = 301
+#: （L232：两支全是内联字符串字面清单 ⇒ READABLE 301 → **303**，与 CALLS 同涨 2）
+MEASURED_READABLE = 303
 #: L175：搜索方法封闭清单守卫两支 parametrize（坏值 6 档 / 合法 5 档，全是字面
 #: 清单）⇒ CALLS 379 → 381、READABLE 278 → 279，盲面（no-literal-list 桶）101 不动。
 #: L217：普查守卫三支无 ids parametrize ⇒ 盲面 108 → **111**（与 CALLS +3 同数，

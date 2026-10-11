@@ -518,11 +518,12 @@ async def dependency_register(
 
         def run():
             manager = _dependency_manager(registry_path)
-            info = manager.register_dataset(request.name, str(path), len(items))
-            if request.description:
-                info.description = request.description
-            if request.tags:
-                info.tags = list(request.tags)
+            # description / tags 必须随登记一起传下去：`register_dataset` 内部就落盘，
+            # 事后再改返回对象只是改内存（L232 实测：响应回显了这两个字段，而随后 GET
+            # 与磁盘 datasets.json 里都是空 —— 契约声明得进、存不下来）
+            info = manager.register_dataset(
+                request.name, str(path), len(items),
+                description=request.description, tags=list(request.tags or []))
             return info.to_dict()
 
         return await run_in_thread(run)
