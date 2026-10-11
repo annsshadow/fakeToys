@@ -82,6 +82,8 @@ const fx = vi.hoisted(() => {
       createBackup: null as unknown as ReturnType<typeof vi.fn>,
       restoreBackup: null as unknown as ReturnType<typeof vi.fn>,
       deleteBackup: null as unknown as ReturnType<typeof vi.fn>,
+      listDependencyDatasets: null as unknown as ReturnType<typeof vi.fn>,
+      getDependencyGraph: null as unknown as ReturnType<typeof vi.fn>,
     },
   }
 })
@@ -116,6 +118,9 @@ vi.mock('../services/api', async (importOriginal) => {
   s.createBackup = vi.fn().mockResolvedValue(fx.CREATE_OK)
   s.restoreBackup = vi.fn().mockResolvedValue(fx.RESTORE_OK)
   s.deleteBackup = vi.fn().mockResolvedValue({ success: true })
+  // L232 起本页还会取数据集血缘那一面。与本份用例无关，给空回执让它不必逐个显式安排。
+  s.listDependencyDatasets = vi.fn().mockResolvedValue({ datasets: [] })
+  s.getDependencyGraph = vi.fn().mockResolvedValue({ nodes: [], edges: [], issues: [] })
   return {
     ...actual,
     getServiceStatus: s.getServiceStatus,
@@ -125,6 +130,8 @@ vi.mock('../services/api', async (importOriginal) => {
     createBackup: s.createBackup,
     restoreBackup: s.restoreBackup,
     deleteBackup: s.deleteBackup,
+    listDependencyDatasets: s.listDependencyDatasets,
+    getDependencyGraph: s.getDependencyGraph,
   }
 })
 

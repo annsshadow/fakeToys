@@ -1162,3 +1162,75 @@ export interface RestoreBackupResponse {
   output_path: string
   item_count: number
 }
+
+/**
+ * 依赖注册表里的一条数据集登记
+ *
+ * `GET /api/system/dependency/datasets` 的元素，也是 `POST` 同一路径的回执（两侧同为
+ * `DatasetInfo.to_dict()`，实测九键逐字相同）。`dataset_id` 是 **`md5(name)[:8]`**——
+ * 只由名字决定，所以同名再登记一次是**覆盖同一条**（索引与磁盘各 1 条，不留重复），
+ * 但 `created_at` 会被刷新成第二次的时间（账本 A306）。`path` 是服务端 resolve 后的
+ * **绝对路径**，页面照抄显示。`item_count` 是登记时真读文件数出来的。
+ */
+export interface DatasetRegistryEntry {
+  dataset_id: string
+  name: string
+  description: string
+  path: string
+  item_count: number
+  created_at: string
+  updated_at: string
+  tags: string[]
+  metadata: Record<string, unknown>
+}
+
+/** `GET /api/system/dependency/datasets`：注册表不存在时实测回 `{"datasets": []}`，不是 404 */
+export interface DatasetRegistryListResponse {
+  datasets: DatasetRegistryEntry[]
+}
+
+/** 依赖图的一个节点，实测三键 `{id, name, item_count}` */
+export interface DependencyGraphNode {
+  id: string
+  name: string
+  item_count: number
+}
+
+/**
+ * 依赖图的一条边，实测三键 `{source, target, type}`
+ *
+ * `type` 是 `derived` / `merged` / `filtered` 那一族字符串。**边在产品面上建不出来**：
+ * 三条 HTTP 端点里没有建边入口，CLI 的 `dependency --action` 只有 register/list/graph/
+ * validate，所以纯前端用户的 `edges` 恒为空数组（账本 A309）。
+ */
+export interface DependencyGraphEdge {
+  source: string
+  target: string
+  type: string
+}
+
+/**
+ * `validate_dependencies()` 报出的一条问题
+ *
+ * 实测只有 `missing_source` 与 `missing_target` 两种 `type`（源码里也只有这两支），
+ * **没有环检测**：A→B 与 B→A 成环时 `issues` 仍为空，所以「issues 为空」不能读成
+ * 「依赖关系没问题」（账本 A310）。
+ */
+export interface DependencyGraphIssue {
+  type: string
+  dependency: {
+    source_dataset: string
+    target_dataset: string
+    dependency_type: string
+    description: string
+    created_at: string
+  }
+  message: string
+}
+
+/** `GET /api/system/dependency/graph`：三键恒在，空注册表实测 `{"nodes": [], "edges": [], "issues": []}` */
+export interface DependencyGraphResponse {
+  nodes: DependencyGraphNode[]
+  edges: DependencyGraphEdge[]
+  issues: DependencyGraphIssue[]
+}
