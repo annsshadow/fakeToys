@@ -1,9 +1,12 @@
 /**
  * Quality 页的渲染面（L112，A206）
  *
- * 质量中心聚合七项能力，此前零组件测试。四条要点：① `run` 守卫——未选数据集时任一
+ * 质量中心聚合八项能力，此前零组件测试。四条要点：① `run` 守卫——未选数据集时任一
  * 动作都得到 warning、不调服务层；② 质量评估成功后渲染四张统计卡（含通过率百分比）；
  * ③ 去重结果 Tab 渲染四个计数标签；④ 离群点检测把（文件, 方法, 阈值）三参数递给服务层。
+ *
+ * L226 起第八项「结构校验」进本页（A279 第二批接线），对应下面 `Quality 结构校验`：
+ * run 守卫、默认预设、换预设、失败四路。
  *
  * DataList / QualityChart 用替身（后者内含 echarts），服务层 `importOriginal` 部分替身。
  */
@@ -34,6 +37,7 @@ const spies = vi.hoisted(() => ({
   evaluateQuality: null as unknown as ReturnType<typeof vi.fn>,
   dedupData: null as unknown as ReturnType<typeof vi.fn>,
   detectOutliers: null as unknown as ReturnType<typeof vi.fn>,
+  validateDataset: null as unknown as ReturnType<typeof vi.fn>,
 }))
 
 vi.mock('../services/api', async (importOriginal) => {
@@ -41,11 +45,13 @@ vi.mock('../services/api', async (importOriginal) => {
   spies.evaluateQuality = vi.fn()
   spies.dedupData = vi.fn()
   spies.detectOutliers = vi.fn()
+  spies.validateDataset = vi.fn()
   return {
     ...actual,
     evaluateQuality: spies.evaluateQuality,
     dedupData: spies.dedupData,
     detectOutliers: spies.detectOutliers,
+    validateDataset: spies.validateDataset,
   }
 })
 
@@ -152,5 +158,124 @@ describe('Quality 离群点检测', () => {
     await waitFor(() =>
       expect(spies.detectOutliers).toHaveBeenCalledWith('a.json', 'zscore', 3)
     )
+  })
+})
+
+/**
+ * 结构校验（L226，A279 第二批接线）
+ *
+ * 结果在 Tabs 的第八个 pane 里，所以每条用例都要先点 tab 再断言——pane 未激活时
+ * antd 根本不渲染它，「查不到文本」在这里既可能是接线坏了，也可能是忘了切 tab，
+ * 因此成功那条把「切 tab 前查不到、切到后查得到」都钉住，证明文本确实来自这个 pane。
+ */
+describe('Quality 结构校验', () => {
+  const VALIDATION = {
+    is_valid: false,
+    total_items: 200,
+    valid_items: 180,
+    error_count: 20,
+    warning_count: 37,
+    issues: [
+      { field: 'output', message: '字段 output 不能为空', severity: 'error', index: 7 },
+      // 实测 SDK 会回 index=null 的问题（整份文件级的问题没有条目下标），必须渲成 '-'
+      { field: 'instruction', message: '长度不能小于 5', severity: 'warning', index: null },
+    ],
+  }
+
+  const rowsOfIssueTable = (container: HTMLElement) => {
+    const table = Array.from(container.querySelectorAll('.ant-table')).find(t =>
+      t.querySelector('.ant-table-thead')?.textContent?.includes('级别')
+    )
+    if (!table) throw new Error('找不到「级别」表头的 issues 表')
+    return Array.from(table.querySelectorAll('.ant-table-tbody .ant-table-row')).map(row =>
+      Array.from(row.querySelectorAll('td')).map(td => td.textContent)
+    )
+  }
+
+  it('未选数据集就点结构校验得到 warning，不调服务层', async () => {
+    render(<Quality />)
+
+    fireEvent.click(screen.getByRole('button', { name: /结构校验/ }))
+
+    await waitFor(() => expect(document.body.textContent).toContain('请先选择数据集'))
+    expect(spies.validateDataset).not.toHaveBeenCalled()
+  })
+
+  it('默认预设 basic 递出去；统计卡、判决与 issues 表逐列渲染', async () => {
+    spies.validateDataset.mockResolvedValue(VALIDATION)
+
+    const { container } = render(<Quality />)
+    fireEvent.click(screen.getByTestId('pick-file'))
+    fireEvent.click(screen.getByRole('button', { name: /结构校验/ }))
+    await waitFor(() => expect(spies.validateDataset).toHaveBeenCalledWith('a.json', 'basic'))
+
+    // 还没切到那个 pane：这一步让「下面查到了」不可能来自默认 pane
+    expect(screen.queryByText('条目总数')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('tab', { name: /结构校验/ }))
+
+    expect(await screen.findByText('条目总数')).toBeInTheDocument()
+    const stats = Array.from(container.querySelectorAll('.ant-statistic-content-value')).map(
+      el => el.textContent
+    )
+    // 顺序即页面顺序：总数 / 合格 / 错误 / 警告。四个数都来自响应，没有一个是从 issues 行数算的
+    expect(stats).toEqual(['200', '180', '20', '37'])
+    // is_valid=false 时说的是「未通过」，同时把错误条数带在文案里
+    expect(screen.getByText('校验未通过：20 条错误')).toBeInTheDocument()
+    expect(rowsOfIssueTable(container)).toEqual([
+      ['error', 'output', '7', '字段 output 不能为空'],
+      ['warning', 'instruction', '-', '长度不能小于 5'],
+    ])
+  })
+
+  it('换预设真的换：下拉选 strict 后递出去的是 strict', async () => {
+    spies.validateDataset.mockResolvedValue({
+      ...VALIDATION,
+      is_valid: true,
+      error_count: 0,
+      warning_count: 3,
+      issues: [],
+    })
+
+    const { container } = render(<Quality />)
+    fireEvent.click(screen.getByTestId('pick-file'))
+    // 本页两个下拉：0=离群点方法，1=验证预设
+    fireEvent.mouseDown(container.querySelectorAll('.ant-select-selector')[1])
+    await waitFor(() =>
+      expect(container.querySelectorAll('[role=combobox]')[1]).toHaveAttribute(
+        'aria-expanded',
+        'true'
+      )
+    )
+    const dropdown = () => document.querySelectorAll('.ant-select-dropdown')
+    await waitFor(() => expect(dropdown().length).toBeGreaterThanOrEqual(1))
+    const option = Array.from(
+      dropdown()[dropdown().length - 1].querySelectorAll('.ant-select-item-option')
+    ).find(el => el.textContent === 'strict（加长度下限与禁用片段）')
+    if (!option) throw new Error('验证预设下拉里没有 strict')
+    fireEvent.click(option)
+    fireEvent.click(screen.getByRole('button', { name: /结构校验/ }))
+
+    await waitFor(() => expect(spies.validateDataset).toHaveBeenCalledWith('a.json', 'strict'))
+    fireEvent.click(screen.getByRole('tab', { name: /结构校验/ }))
+    // is_valid=true 且有警告：说「没有错误，但有 3 条警告」，不能整句报成「全部条目通过校验」
+    expect(await screen.findByText('没有错误，但有 3 条警告')).toBeInTheDocument()
+    expect(screen.queryByText('全部条目通过校验')).not.toBeInTheDocument()
+    // 零问题时要明确说没问题，而不是留一张空表让人自己猜
+    expect(screen.getByText('这份文件没有报出任何问题')).toBeInTheDocument()
+  })
+
+  it('校验失败时专属文案出声，且不渲染统计卡', async () => {
+    spies.validateDataset.mockRejectedValue(new Error('boom'))
+
+    render(<Quality />)
+    fireEvent.click(screen.getByTestId('pick-file'))
+    fireEvent.click(screen.getByRole('button', { name: /结构校验/ }))
+
+    await waitFor(() => expect(document.body.textContent).toContain('结构校验失败'), {
+      timeout: 4000,
+    })
+    fireEvent.click(screen.getByRole('tab', { name: /结构校验/ }))
+    expect(screen.queryByText('条目总数')).not.toBeInTheDocument()
   })
 })
