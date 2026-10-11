@@ -453,7 +453,8 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
 > `dataset` 分组的约定：**只读分析类**（stats / validate / search / compare /
 > features / auto-config / impact / evaluate / semantic-search / vector-status /
 > language-profile）内联返回完整结果；**写盘变换类**（convert / merge /
-> sample / split / aggregate / rag）必须给 `output_path`，响应只回传「写到哪、
+> sample / split / aggregate / rag）必须给输出路径字段 —— `output_file`，只有
+> `split` 是 `output_dir`；响应只回传「写到哪、
 > 写了多少」，不回传数据本身。
 >
 > `impact` / `evaluate` 的口径细节（哪一侧空算 400、哪一侧空算结论，字段名拼错为什么
@@ -599,10 +600,10 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
 | `POST` | `/api/dataset/auto-config` | 自动配置推荐 | 只读。返回推荐配置 + 理由；推荐值不落盘，要 `POST /api/config` 才生效。 |
 | `POST` | `/api/dataset/impact` | 增强前后影响评估 | 只读。`duplicate_rate` 是**增强后**的重复率；语义分数在 `semantic_evaluated=false` 时不参与（API 面拿不到原始问题）。 |
 | `POST` | `/api/dataset/evaluate` | 生成文本指标评估 | 只读。响应键就是 `metrics` / `sample_count` / `details`。请求省略 `metrics` ⇒ 取 `config.evaluation.metrics`（L219 接线，权威序 请求参数 > 配置键 > SDK 内置默认）；生效清单统一过 `METRIC_FUNCTIONS` 白名单，越界名 400，空清单也 400（SDK 的 `metrics or [内置三只]` 会把空值静默补成三项，所以在本层出声）。两侧字段名 `generated_field` / `reference_field` 同规（L220 接线，配置那两键出厂值与被替换的硬编码默认同为 `output` ⇒ 零漂移）：请求侧默认是 `null` 哨兵，**省略与显式传 `"output"` 从此是两种不同的事**；取不到的列名（含空串）由逐条门口报 400 并带下标，不静默补空。 |
-| `POST` | `/api/dataset/convert` | 格式转换 | **写盘变换类**：必须给 `output_path`，响应只回「写到哪、写了多少」。 |
+| `POST` | `/api/dataset/convert` | 格式转换 | **写盘变换类**：必须给 `output_file`，响应只回「写到哪、写了多少」。 |
 | `POST` | `/api/dataset/merge` | 合并数据集 | **写盘变换类**：同上。 |
 | `POST` | `/api/dataset/sample` | 数据集采样 | **写盘变换类**：同上。 |
-| `POST` | `/api/dataset/split` | 分割数据集 | **写盘变换类**：同上。`stratify_distribution` 在按 `instruction` 分层时可能有**数千个键**（紧凑 JSON 数百 KB），所以写盘类只回计数不回明细。 |
+| `POST` | `/api/dataset/split` | 分割数据集 | **写盘变换类**：输出字段是 `output_dir`（本组其余几条叫 `output_file`）。`stratify_distribution` 在按 `instruction` 分层时可能有**数千个键**（紧凑 JSON 数百 KB），所以写盘类只回计数不回明细。 |
 | `POST` | `/api/dataset/aggregate` | 多源聚合 | **写盘变换类**：同上。`weighted` 策略下 `target_size` 省略会 400（不让 `None` 溜进算术）。 |
 | `POST` | `/api/dataset/rag` | 转换为 RAG 格式 | **写盘变换类**：同上。`format` 省略时落 `config.rag.default_format`（出厂默认 `langchain`），响应里的 `format` 是**生效值**（L214）。 |
 | `POST` | `/api/dataset/semantic-search` | 语义相似检索 | 只读分析（L216）。按 `config.vector.*` 的生效值在**内存**建索引再检索，不落盘；`top_k` 非正整数 400（判据住在 `VectorDB.search`，不在路由里重复一遍）。`text_key` 换的是参与嵌入的字段，默认 `instruction`。 |
@@ -618,8 +619,8 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
 | `POST` | `/api/system/validate-config` | 校验配置文件 | 只读。**不传 `path` 时校验服务自己的 `config.yaml`**；显式传 `path` 仍按数据白名单校验（越界 403）。 |
 | `POST` | `/api/system/monitor` | 质量监控快照 | 只读。返回质量监控快照。 |
 | `POST` | `/api/system/auto-test` | 运行数据集自动化测试 | 只读判定。`suite` 走**封闭清单**：未知套件名 400 而不是静默回落 default。 |
-| `POST` | `/api/system/migrate` | 迁移数据集结构 | 只读判定（产物另给 output_path）。`rules` 里未知 id **400 并列出全部合法 id**，不静默丢弃。 |
-| `POST` | `/api/system/stream` | 流式处理数据集 | 只读判定（产物另给 output_path）。JSONL 单行语法错**跳过并告警**；JSON 数组截断**报 400**——两者行为相反，是格式决定的。 |
+| `POST` | `/api/system/migrate` | 迁移数据集结构 | 只读判定（产物另给 `output_file`）。`rules` 里未知 id **400 并列出全部合法 id**，不静默丢弃。 |
+| `POST` | `/api/system/stream` | 流式处理数据集 | 只读判定（产物另给 `output_file`）。JSONL 单行语法错**跳过并告警**；JSON 数组截断**报 400**——两者行为相反，是格式决定的。 |
 | `GET` | `/api/system/dependency/datasets` | 已登记数据集列表 | 只读。`registry_path` 省略时用白名单首个根目录下的 `.dependency_registry`；显式空串仍 400。 |
 | `POST` | `/api/system/dependency/datasets` | 登记数据集 | 只读。`registry_path` 省略时用白名单首个根目录下的 `.dependency_registry`；显式空串仍 400。 |
 | `GET` | `/api/system/dependency/graph` | 数据集依赖图与校验问题 | 只读。同时返回图与**校验问题**（悬空边等）；`dependency` 的 4 个 action 里没有建边入口，边只能由 SDK 的 `add_dependency` 建立。 |
