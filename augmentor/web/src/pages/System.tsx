@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Alert, Button, Card, Col, Row, Space, Statistic, Table, Tag, message } from 'antd'
-import { apiErrorDetail, getServiceStatus } from '../services/api'
-import type { StatusResponse } from '../types/api'
+import { apiErrorDetail, getServiceStatus, getVectorStatus } from '../services/api'
+import type { StatusResponse, VectorStatusResponse } from '../types/api'
 
 /**
  * 系统状态
@@ -9,10 +9,15 @@ import type { StatusResponse } from '../types/api'
  * 展示 `GET /api/status`：与仪表盘上的 `GET /api/health` 是两件事 ——
  * health 只报存活（给容器探针用，刻意不含可能失败的字段），status 会真的
  * 构造管道并逐个检查可选依赖，因此能回答「当前环境缺什么、哪些功能会降级」。
+ *
+ * 下面那张卡是 `GET /api/dataset/vector-status`：向量库的闸门生效值与磁盘上到底有没有
+ * 一份可读回的索引。它和服务状态是两回事，所以单独取、单独刷新。
  */
 export default function System() {
   const [status, setStatus] = useState<StatusResponse | null>(null)
   const [loading, setLoading] = useState(false)
+  const [vector, setVector] = useState<VectorStatusResponse | null>(null)
+  const [vectorLoading, setVectorLoading] = useState(false)
 
   const refresh = async () => {
     setLoading(true)
@@ -27,6 +32,22 @@ export default function System() {
 
   useEffect(() => {
     refresh()
+  }, [])
+
+  const refreshVector = async () => {
+    setVectorLoading(true)
+    try {
+      setVector(await getVectorStatus())
+    } catch (err) {
+      message.error(apiErrorDetail(err, '获取向量库状态失败'))
+    } finally {
+      setVectorLoading(false)
+    }
+  }
+
+  // 向量库那一面单独取、单独报错：它失败不该把整页服务状态一起拖掉
+  useEffect(() => {
+    refreshVector()
   }, [])
 
   const installedRows = Object.entries(status?.dependencies.installed || {}).map(
@@ -130,6 +151,55 @@ export default function System() {
           </Row>
         </>
       )}
+
+      <Card
+        title="向量库状态"
+        style={{ marginTop: 16 }}
+        extra={
+          <Button onClick={refreshVector} loading={vectorLoading}>
+            刷新
+          </Button>
+        }
+      >
+        {vector ? (
+          <>
+            <Row gutter={16}>
+              <Col span={6}>
+                <Statistic
+                  title="自动建库"
+                  value={vector.enabled ? '开' : '关'}
+                  valueStyle={{ color: vector.enabled ? '#3f8600' : '#cf1322' }}
+                />
+              </Col>
+              <Col span={6}>
+                <Statistic
+                  title="磁盘索引"
+                  value={vector.exists ? '已存在' : '不存在'}
+                  valueStyle={{ color: vector.exists ? '#3f8600' : '#cf1322' }}
+                />
+              </Col>
+              <Col span={6}>
+                <Statistic title="向量条数" value={vector.count} />
+              </Col>
+              <Col span={6}>
+                <Statistic title="维度" value={vector.dimension} />
+              </Col>
+            </Row>
+            <Space wrap style={{ marginTop: 12 }}>
+              <Tag color="blue">backend: {vector.backend}</Tag>
+              <Tag color="purple">collection: {vector.collection}</Tag>
+              <Tag>storage_dir: {vector.storage_dir || '未配置'}</Tag>
+            </Space>
+          </>
+        ) : (
+          <Alert
+            type="warning"
+            showIcon
+            message="向量库状态未取到"
+            description="上面那张服务状态不受影响：两面各自独立取。"
+          />
+        )}
+      </Card>
     </div>
   )
 }
