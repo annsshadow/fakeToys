@@ -59,6 +59,7 @@
 - [x] **L221** `5d37639ee` `feat(augmentor)`：**A270 收口——逐条翻译失败加回执面**：`batch_translate` 从「返回清单」改成「返回报告」（`failed` / `failed_indices` / 本批全量 `errors`），聚合层把批内下标折算成全数据集坐标并按 20 截样本，`TranslateResponse` 声明回执四键。部分失败**仍是 200**，诚实读数在响应体而不是状态码。普查面零变动（本轮不新增键）；门禁 **8239 passed / 11 skipped / 0 failed / 99.80%**，注入八臂各有牙齿（3/1/1/2/1/7/6/4 红），用例增量 **+15**（三个既有文件逐文件实测计数一字未变）⇒ 详见循环日志 L221
 - [x] **L222** `932c5885a` + `c6209ab67`（归因订正）+（账本批即本条所在提交）`test,docs(augmentor)`：**A275 收口——配置面三侧同源对账守卫落成机器**（`docs/README.md` 配置表 / `fields(AppConfig)` / `config.yaml` 三角互核）。README 表格 16 行 34 键 → **22 行 70 键**，权威只有一份：节与键全从 `fields()` 实推，测试侧唯一手写名单 `META_ROWS`（`models` / `app`）逐员机器验真。`config.yaml` 那一侧的判据被文件自己纠正过一次——不是「与 schema 逐节全等」而是**整节写全或整节注释列全**（`logging` 三键刻意不落地，写出来才装配）。用最终版尺子对 HEAD 那份文档量出的真漂移是 **21 红 / 38 绿**：5 个整节缺席、13 节只列半节、恰好列全的只有 `export` 与 `multilingual`。注入七臂各有牙齿（4/2/3/3/5/2/3 红），A5「schema 新增一只 init 键」复现的正是 L220 那一步的形状。顺带量出一格普查盲区：`config.yaml` 的 `app` 三键既无 `AppConfig` 字段、又被校验器 `META_TOP_SECTIONS` 免检 ⇒ 「只覆盖 schema 键」的死键普查**结构上看不见**它（零读者没有读者这件事仓内三处早有记录，历史处置是降为可选；新的是盲区与处置未立账）⇒ 立 **A276**。l97 / l98 两把参数化棘轮按现量回填（CALLS 399→402、盲面 111→114、plain 57→58、derived 36→38、盲面用例 106→109）。门禁 **8298 passed / 11 skipped / 0 failed / 99.80%**，用例增量 `+59` 与新文件支数吻合 ⇒ 详见循环日志 L222
 - [x] **L223** `6c53d986c` +（账本批即本条所在提交）`test,docs(augmentor)`：**A277 收口（同轮立同轮关）——`docs/API.md` 逐端点「人读字段提示」与 OpenAPI 契约面落成机器对账**（`tests/unit/test_api_doc_field_hints_l223.py`，23 支）。详细表 31 格里提取到 **58** 个标识符形状的字段声称，其中 **40** 个（69%）直接落在该端点的契约面上；其余由四档**有位置的**证据接住（作用域内字面量 / 定义名 / 配置键 / CLI 选项）加一份封闭 JSON 词表。字面量档按「路由文件 + 两跳 import 闭包」限作用域，**两跳这个数字是量的**：一跳会把 `stratify_distribution` 误判成无据，三跳时 convert 的闭包涨到 70 个文件、`output_path` 反而有据 ⇒ 判据失去区分力。尺子首跑报出 3 格无据，**其中 2 格是尺子自己的 bug**（相对导入层级换算写错，`augmentor` 包内部的 `from .x` 一条都没解析进闭包），修完只剩 `output_path` 那一格，也就是本轮要修的真文档缺陷 4 处（总览散文 1 + 详细表 3；字段实为 `output_file`，`split` 是 `output_dir`，`output_path` 只是路由局部变量名）。`docs/README.md` 与 `docs/API.md` 全文再无该名字。注入九臂各有牙齿（2/2/6/1/7/1/3/1/3 红），其中 A1/A2 成对：同一处文档缺陷，作用域退回全仓后**主判据转绿** ⇒ 那档作用域是承重的。本轮**零 parametrize 新增** ⇒ l97 / l98 两把棘轮读数一格未动，未回填。门禁 **8321 passed / 11 skipped / 0 failed / 99.80%**（195.43 s），用例增量 `+23` 与新文件支数吻合。顺带量到 `additionalProperties: true` 的自由子对象（如 `ImpactResponse.before/after`）在契约面上给不出键名 ⇒ 立 **A278** ⇒ 详见循环日志 L223
+- [x] **L224** `08bc4f0c8` +（账本批即本条所在提交）`test,docs(augmentor)`：**A279 立账——后端 75 条操作与前端服务层 43 条调用形状的消费对账落成机器**（`tests/unit/test_api_endpoint_consumption_l224.py`，26 支）。两侧权威各一份：契约面从 `app.openapi()` 实推（**75 条操作 / 71 条路径**），前端面从 `web/src/services/api.ts` 的 `api.<verb>('路径')` 形状实推（**43 条**），路径前缀从同一份源码的 `baseURL` 读，不在测试里写死第二份。**缺口 32 条**落成名单且与实测集合**相等** ⇒ 只会随接线变短，新增一条没接的端点当场红；32 条里 **26 条有 CLI 子命令入口**（映射去重后 **21** 个名字，逐个由 parser 的 `add_parser` 名单验真）、**6 条两边都没有**（`dataset/evaluate`、`impact`、`language-profile`、`semantic-search`、`translate`、`vector-status`）。query 一维量出**两处来源**：写在路径串里的 1 条 + axios `params:` 对象里的 4 条 / 5 个键，只认前者会漏掉 `page_size` 这个「TS 侧改名后的对外名」；归属判据用「最近的前一个调用」，被实测否掉的备选是往后看固定 400 字符（候选从 4 涨到 7，多出三桩冤案）。去歧义同样有实测：43 条形状里恰 1 条（`GET /api/versions/history`）同时落在字面量与参数化两条路由上，绑定只认占位符最少那一档，并拿 `TestClient` 的 200 + 响应体形状证明赢的那条确实是它——依据是运行时行为，不是匹配规则。注入十臂各有牙齿（1/4/6/3/2/2/1/7/2/1 红），其中 A0 只响 1 支：真把两条路由的声明顺序对调，**只有那条运行时判据会响**。本轮**零 parametrize 新增** ⇒ l97 / l98 两把棘轮读数一格未动，未回填。门禁 **8347 passed / 11 skipped / 0 failed / 99.80%**（196.80 s），用例增量 `+26` 与新文件支数吻合。顺手量到 8 个路由文件把下游异常一刀切收敛成 500 ⇒ 立 **A280** ⇒ 详见循环日志 L224
 
 ## Backlog A — 质量缺口（缺数 / 偏支 / 健壮性）
 
@@ -86,6 +87,8 @@
 | A276 | `config.yaml` 顶部的 `app` 节（`name` / `version` / `debug`） | **新立（L222）**：**形状本身不是新事实**——`OPTIMIZATION_PLAN.md` §2.4 的表、`README.md` 变更说明第 6 条与 `tests/integration/test_cli_validate_config.py` 的 docstring 三处都记着「`AppConfig` 不建模 `app` 段、没有任何代码读它」，而历史上做过一次处置是把它从必填**降为可选**（因为 `save_config` 写出的配置否则必然校验失败）。**本条立的是另一码事：这只死面的*处置*从未进过账，而且它对现有的死键普查尺子结构上不可见**——`AppConfig` 没有 `app` 字段（`dataclasses.fields()` 实测不含它），`ConfigValidator` 又把它列进 `META_TOP_SECTIONS` 免检，于是 B5 那把「只覆盖 schema 键」的普查尺子永远不会把它报成零读者键，它也不会被加载器装配。当前后果：改这三键不影响任何输出，`GET /api/config` 的响应面里也没有它们（该端点逐字段从 `p.config` 即 `AppConfig` 拼装，见 `api/routes/config.py` 的 `get_config`，没有字段就没有格子）。三条处置方向都动得到对外文件，所以先立账：**① 接成节**（新增 `AppMetaConfig` 三键并接进 `/api/config` 与 `--version` 一类读取面 ⇒ schema 70 → 73 键，l77 节注册、规格表、普查尺子与本把三侧尺子都要按现量重钉）、**② 从出厂文件删掉那一段**（改动用户可见的配置面，且 `ConfigValidator.META_TOP_SECTIONS` 要跟着收窄、`save_config` 的「保留未建模顶层键」那条行为也一并失去对象）、**③ 维持现状并把「产品侧零读者」写明**（本轮 `docs/README.md` 表格已按③落了说明，但键本身仍在那儿）。本轮选③而没有顺手删或顺手接：前者是无声地改变出厂形状，后者是一轮做不完的对外契约变化。`META_ROWS` 的验真臂把这个形状钉在明处——白名单成员必须「确实不是节」。定级 S，待拍。 | S |
 | A277 | `docs/API.md` 逐端点的「人读字段提示」列 | **新立并同轮收口（L223）**：这张四列说明表是 68 条端点里 dataset 与 system 两组共 31 条的**字段级承诺**面（哪个字段省略会落配置、哪个键可能几千个键、哪种坏值 400），但仓内此前没有任何机器读过它的字段名——`test_api_doc_endpoint_coverage_l210.py` 只钉「端点路径集合与说明存在性」，`test_doc_contract_numbers_l200.py` 只核数字。缺这一格的直接后果本轮就撞上了：总览散文与三条说明行把写盘类端点的输出字段写成 `output_path`，而真实字段是 `output_file`（`split` 是 `output_dir`），`output_path` 只是路由里的**局部变量名**——文档在教调用方发一个会被 pydantic 拒掉的键。这是 A266 / A275 那句「契约面数字与字段全靠人肉对账」在逐端点说明面上的最后一格，同一族、同一种修法：**权威只有一份**，字段名从 `app.openapi()` 实推（请求体属性递归过 `$ref` / `allOf` / `additionalProperties` / `items`，再加 `parameters[].name`），契约面接不住的名字再要求落进四档有位置的证据（该端点 import 闭包内的字符串字面量、`def` / `class` / 模块名、`fields(AppConfig)` 的键、CLI parser 的选项）。定级 S。**· 已关闭（L223）**：守卫 `tests/unit/test_api_doc_field_hints_l223.py` 23 支，文档 4 处一并订正（全文再无 `output_path`）。两件事值得留在账上而不是埋在日志里：① 字面量档**必须逐格限作用域**，全仓字面量会把 `output_path` 洗白（它确实是 `augmentor/backup.py:188` 与 `augmentor/export_enhanced.py:143` 的返回键），跳数预算由 `test_hop_budget_is_load_bearing` 钉住；② 尺子首跑的 3 格无据里有 2 格是**尺子自己的 bug**（相对导入层级换算错，`augmentor` 包内 `from .x` 全没解析进闭包），判据修好之后才剩下那 1 格真缺陷。⇒ 见循环日志 L223 | S |
 | A278 | OpenAPI 里 `additionalProperties: true` 的自由子对象 | **新立（L223）**：契约面不是全知的。响应模型里凡是 `Dict[str, Any]` 的子对象，在 OpenAPI 上就是 `additionalProperties: true` —— **键名压根不在 schema 里**，机器推不出来。本轮实测的形状：`ImpactResponse.before` 与 `after` 两个子对象（`api/routes/dataset_tools.py:383-384` 声明为 `Dict[str, Any]`，内容是 SDK 那份统计画像的原始 dict），它们内部有哪些键只能由散文说明，新尺子对这类名字只能走「字面量档」，而字面量档是**逐格限作用域**的——一旦某个自由子对象的键来自更深的模块（超过两跳），它就会被报成无据，而那不是文档错。当前后果：客户端只看 OpenAPI 拿不到这些子对象的形状，文档写漏也没有机器兜。两条方向：**① 给自由子对象立最小形状**（哪怕只声明 `count` / `types` 这一类稳定键，其余留在 `additionalProperties` 里），**② 维持自由并由 A277 那把尺子加一档「自由子对象白名单」**，把「这一格只能靠散文」写成可证伪的名单而不是含糊过去。本轮选②的现状（白名单还没立，靠字面量档接住）而没有动形状：改响应模型是对外契约变化。定级 S，待拍。 | S |
+| A279 | 前端服务层对后端 32 条操作没有入口（接线队列） | **新立（L224）**：「后端有 75 条操作，前端到底调了几条」这句从来没有机器读过，本轮读出**43 条被调 / 32 条未接**，且 32 条里有 **6 条连 CLI 子命令都没有**——那 6 条是整个系统里唯一「SDK 侧做完、三面（web / CLI / API 消费方）都没人取」的死面：`POST /api/dataset/evaluate`、`POST /api/dataset/impact`、`POST /api/dataset/language-profile`、`POST /api/dataset/semantic-search`、`POST /api/dataset/translate`、`GET /api/dataset/vector-status`。其余 26 条有 CLI 入口，属「CLI 能跑、页面看不到」。修法按页面分组分批做，与 **A138** 的 ②③ 档接线同一节奏：一批 = 一个页面的 fetchers + 页面入口 + 该页用例，收口判据是现成的三件——`test_api_endpoint_consumption_l224.py` 的 `UNCONSUMED` 名单变短（名单与实测集合相等，接一条必须划掉一条）、`web/src/services/api.wiring.test.ts` 的 `KNOWN_UNWIRED` 仍为空、页面用例覆盖新入口。**为什么不在立账这一轮就接线**：32 条是一串对外功能改动，塞进同一轮只会得到「加了三页但没人验证」的产物，而这一轮的产出（尺子 + 数 + 队列）本身已经把后续每一步变成可验证的。优先级建议：先 6 条无入口的（其中 `translate` 与 `vector-status` 是 L221 / L216 刚做过消费面的活跃功能），再 backups / dependency 这类运维面，最后 dataset 工具组。定级 M（每批一条页面级改动），待拍。 | M |
+| A280 | 8 个路由文件把下游异常一刀切收敛成 500，「资源不存在」拿不到 404 | **新立（L224）**：本轮为核对 `GET /api/versions/history` 的运行时归属顺手实测——`GET /api/versions/v_ghost` 返回 **500** + 固定文案（`api/deps.py` 的 `INTERNAL_ERROR_DETAIL`），而 SDK 抛的是 `VersionError`（`augmentor/exceptions.py:133`，`AugmentorError` + `ValueError` 双继承）；同一份路由文件里三种归宿并存：`/api/versions/create` 源文件缺失 → 404（走 `require_file`）、`POST /api/versions/v_ghost/rollback` → **200 且 `success:false`**、`DELETE /api/versions/v_ghost` → **200 且 `success:true`**（`VersionManager` 静默成功）。**这不是无声 bug，是已被钉死的行为**：`tests/integration/test_api.py:479` 两支用例的 docstring 明写「应返回 500」。普查（按调用点数，不含 import 行）：只用 `to_http_error` 分档的 4 个文件 30 处（dataset_tools 14 / system_ops 12 / language 2 / vector 2），`config.py` 与 `data.py` 两把混用（分档 3 处 + 一刀切 8 处），**只用 `raise_internal_error` 一刀切的 8 个文件 29 处**（quality 9 / export 4 / augment 3 / multimodal 2 / audit 1 / leakage 1 / privacy 1 / version 8）。两条方向：**① 把语义明确的「不存在」类异常接进 `to_http_error(not_found_types=...)`**（`BackupError` 已是这一档的先例，见 `api/routes/system_ops.py`），逐文件收窄——改的是对外状态码，上面那两支钉死 500 的用例要同批改；**② 维持现状并把「除 `FileNotFoundError` 外一律 500」写成契约**，`docs/API.md` 里相应把 404 档从这些端点去掉。本轮选**不动，只立账**：状态码是对外契约，一刀切里混着的另一半（400 档 `to_http_error` 会把 `str(exc)` 原样回传）正是 A155① 盯住的泄漏面，一次改八个文件不是一轮的量。定级 S，待拍。 | S |
 
 ## Backlog B — 功能增强与体验（价值 ÷ 工作量）
 
@@ -2417,3 +2420,68 @@ L218 把「等价旋钮住在哪」逐键验真之后，这一族里唯一「旋
 - **仍在账上的邻居**：**A276**（`app` 三键的处置要拍）、**A271** 的 18 只待处置键、**A272**
   （`multilingual` 要不要开成第 5 个可写节）、**A273**（`self.expander` / `self.tracker` 无消费者）
   一字未动；**A277 已在本轮收口**，不再占账。
+
+### L224（2026-10-11）— 消费面第一次有数：75 条操作里前端调到 43 条，缺的 32 条落成名单（A279）
+
+- **这一轮的产出是一把尺子、一个数、一条队列，不是三页新功能。** 目标那句「消费能力达到
+  100%」要的是能数出来的数，而此前仓内没有任何机器读过「后端 75 条操作，前端调了几条」。
+  `web/src/services/api.wiring.test.ts`（L211 那批）钉的是「`api.ts` 导出的每个函数都在页面
+  上被引用」——它管封装之后那一环，管不到「服务层压根没写这条调用」。实测 **43 调 / 32 缺**
+  之后，接线本身仍是一串对外功能改动，塞进同一轮只会得到「加了三页但没人验证」的产物；所以
+  缺口立成 **A279**，按页面分组分批做。
+- **两侧权威各只有一份。** 后端面 = `app.openapi()` 的 `(方法, 路径模板)` 集合（75 条操作 /
+  71 条路径，backups 与 dependency 有同路径多方法）；前端面 = `web/src/services/api.ts` 里
+  `api.<verb>('路径')` 的形状（43 条）。`baseURL` 从同一份源码读（且断言它恰好出现一次，
+  A9 注入臂就是往那儿复制一行，当场红），不在测试里写第二份前缀。语料排除 `*.test.*`，
+  与 L211 那条「接线判据不吃测试替身」的教训同口径。
+- **query 那一维是量出来才补进去的，而且补的过程本身被实测纠了一次。** 只认写在路径串里的
+  `?a=${x}` 会漏掉 axios 的 `params: {…}` 对象——现量 4 条 / 5 个键，其中 `data/load` 的分页
+  三键里 `page_size` 恰好是 TS 侧改名（`page_size: pageSize`）后对外的真名；判据必须认冒号
+  左边那一半，否则「有人把键写成 `{ pageSize }`」这一类就会蒙过去（钉在
+  `test_query_judgment_uses_the_contract_name_not_the_ts_name`）。归属规则最初写成「往后看 400
+  字符找 `params:` 块」，被实测否掉：它把 `/versions/history` 的 `limit` 同时算进 rollback 与
+  DELETE version 两条根本没有 params 的调用，候选从 **4 涨到 7**。换成「最近的前一个调用」后
+  收回 4 条。**间隔上限 60 这个数的诚实读数也写在测试里**：放宽到无穷今天一条都不多收（语料里
+  每个 `params:` 块之前都站着另一条调用），收到 3 则把 4 条真归属全判没——所以牙齿在下界，
+  上限守的是尚未出现的那种形状。第一版实现还有个把元组解包写错的 bug（`{k: v for k, v, _, _
+  in ...}` 把路径当成了值），是「带 query 的调用现量 5 条」这条断言把它逼出来的。
+- **一个形状能吃下两条路由时，绑定认运行时而不是认我的匹配规则。** 43 条里恰 1 例：
+  `GET /api/versions/history` 逐段看同时符合 `/api/versions/{version_id}`。不做「占位符最少的
+  那一档」收敛，字面量调用会把参数化路由也算成已消费，缺口往少里报错一格——尺子往松的方向错
+  是最不能接受的方向。为什么字面量那一档是赢的：`api/routes/version.py:156` 的 history 声明在
+  `api/routes/version.py:170` 的参数化路由之前，Starlette 按声明顺序取先命中的路由，
+  `TestClient` 实测 200 且响应体是 `{"history": […]}`。这条判据的依据是运行时行为加声明顺序，
+  不是我的正则；A0 注入臂（把两个路由块整体对调）十臂里红得最少，只响这一支——
+  匹配规则本身是顺序无关的，这正是它必须拿运行时证据的原因。
+- **`21` 这个数字被实测纠正过一次。** 侦察阶段我把手写映射去重读成 20 个名字，首跑断言
+  `21 == 20` 当场红；重数后确认是 **26 条映射 → 21 个不同子命令**（`backup` 4 员共用、
+  `dependency` 3 员共用，我漏算了一员）。钉的是复算过的数，不是记忆里的数——这条和本轮
+  `page_size` 那次是同一件事的两面：凡手写名单，成员与数量都要机器验。
+- **名单的方向性**：`UNCONSUMED`（32 员）与实测未消费集合**相等**，不是子集。所以它只会随接线
+  变短；后端新加一条没接的端点当场红（A5 臂：加一条 `GET /api/dataset/injection-probe`，
+  2 红——面尺寸 + 名单）。`CLI_ENTRY` 每员指向的子命令名逐个由 `augmentor/cli/parser.py` 的
+  `add_parser` 名单验真（A6 臂：把 `aggregate` 改成 `aggregat`，1 红），`NO_ENTRY` 那 6 员的
+  判据取「路径末段确实不在 37 个子命令清单里」，两档并起来正好覆盖 32 员且互不相交。
+- **被实测否掉的第二条判据**（没做，理由是数）：想加「CLI 子命令与该端点做的是同一件事」这一维，
+  做法是比两边的旋钮命名。实测 26 条有 CLI 入口的映射里只有 **15** 条存在 dest/字段名交集
+  （CLI 侧 `--input` / `--output`，API 侧字段 `input_file` / `output_file`），硬做交集会把另外
+  11 条明明有入口的操作错报成无入口。所以本轮只验「名字存在」，「语义等同」留在 A279 的散文里。
+- **注入十臂逐个**：A0 对调两个路由块（1 红，只响运行时那支）、A1 端点名拼错 `/data/list` →
+  `/data/lst`（4 红）、A2 撤掉一条已接的调用（6 红）、A3 params 里塞未声明键（3 红）、
+  A4 params 用 TS 内部名（2 红）、A5 后端新增无人接的操作（2 红）、A6 CLI 名单指向不存在的
+  子命令（1 红）、A7 把字面量路由改名（7 红，最广）、A8 间隔收到 3（2 红）、A9 第二处 `baseURL`
+  （1 红）。十臂各有牙齿，脚本与备份在仓外，跑完逐字节还原并核对快照相等。
+- **顺手量到 A280（错误分档盲区），本轮不动它。** 核对 `versions/history` 运行时行为时撞见
+  `GET /api/versions/v_ghost` → 500，而 SDK 抛的是 `ValueError` 后裔 `VersionError`；普查到
+  仓内 8 个路由文件 29 处一刀切、4 个文件 30 处分档、2 个文件混用，且同一份 version.py 里
+  404 / 500 / 「200 且 success=false」三种归宿并存。**不修的理由不是「不该修」，是「这是对外
+  状态码，且有两支既有用例的 docstring 明写『应返回 500』把现状钉着」**——改它是一批契约变化，
+  得与那两支用例同批做，属于 A280 待拍的范围。
+- **棘轮未回填，且这不是豁免**：本轮零 `@pytest.mark.parametrize` 新增，l97 / l98 两把参数化
+  棘轮的读数（CALLS 402、盲面 114、plain 58、derived 38、盲面用例 109）一格未动。
+- **门禁**：**8347 passed / 11 skipped / 0 failed / 覆盖率 99.80%**（196.80 s）。用例增量
+  `+26` 与新文件支数吻合（上一轮 L223 收口时是 8321）。
+- **仍在账上的邻居**：**A279**（本轮新立的 32 条接线队列，待按批拍）、**A280**（本轮新立的
+  错误分档，待拍）、**A278**（自由子对象的形状 vs 可证伪白名单）、**A276**（`app` 三键的处置）、
+  **A271** 的 18 只待处置键、**A272**（`multilingual` 要不要可写）、**A273**
+  （`self.expander` / `self.tracker` 的消费者还是删除）。
