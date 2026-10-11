@@ -1377,3 +1377,70 @@ export interface ConfigValidationResponse {
   warnings: ConfigValidationIssue[]
   info: ConfigValidationIssue[]
 }
+
+/**
+ * `POST /api/quality/health-gate` 的健康度分项（`HealthMetricsResponse` 的四键）
+ *
+ * 四键恒在、都是 0–1 的小数（实测一份半缺字段的数据集：completeness 0.5 / diversity 1.0 /
+ * quality_balance 0.0 / coverage 1.0）。**`level` 完全由加权总分档**（`healthy` ≥ 0.7、
+ * `moderate` ≥ 0.4、其余 `poor`），而这四个数**一个都不参与门禁判决**——门禁只看
+ * `completeness` / `duplicate_rate` / `pass_rate` 三项（见 `HealthGateReport`）。
+ */
+export interface HealthGateMetrics {
+  completeness: number
+  diversity: number
+  quality_balance: number
+  coverage: number
+}
+
+/**
+ * `POST /api/quality/health-gate` 的健康度评分（`HealthReportResponse` 的五键）
+ *
+ * `weights` 是**这一次实际用的**四个权重（省略时实测回 `[0.25, 0.25, 0.25, 0.25]`，
+ * 顺序对应 completeness / diversity / quality_balance / coverage）。权重**可以为负、也可以
+ * 大于 1**（服务端只校验「4 个元素、之和 ≈ 1.0」）⇒ 实测 `weights=[0,0,0,1]` 时一份
+ * completeness 只有 0.5 的数据集照样得 `health_score` 1.0 / `level` "healthy"，而
+ * `[2.0,-0.5,-0.25,-0.25]` 把同一份数据压到 0.25 / "poor"（账本 A319）⇒ 页面不许把
+ * `level` 渲染成「这批数据能不能用」。
+ */
+export interface HealthGateReport {
+  health_score: number
+  level: string
+  metrics: HealthGateMetrics
+  weights: number[]
+  total_samples: number
+}
+
+/**
+ * `POST /api/quality/health-gate` 的门禁判定（`GateReportResponse` 的六键）
+ *
+ * `verdict` 实测是小写三档 `passed` / `failed` / `warned`，而 **`passed` 对 `warned` 也是
+ * `true`**（只有 `block_on_warning` 打开时 warning 才翻成 `failed`）⇒ 页面上「通过」与
+ * 「干净」是两句话。`failed_rules` 是**算出来了、不达标**，`errored_rules` 是**规则压根
+ * 算不出来**，两种坏该修的东西不同；后者在这一只端点上实测**恒为空**（三条规则的算子与
+ * 指标类型都是固定的浮点比较，走不到求值异常那一支）。`metrics` 是门禁**实际看到**的那份
+ * 指标（健康四项 + `duplicate_rate`，给了 `pass_rate` 时再加一格），用它可复核判决怎么来的。
+ */
+export interface HealthGateVerdict {
+  verdict: string
+  passed: boolean
+  failed_rules: string[]
+  warned_rules: string[]
+  errored_rules: string[]
+  metrics: Record<string, number>
+}
+
+/**
+ * `POST /api/quality/health-gate` 的回执：三键恒在
+ *
+ * `skipped_rules` 是这一支**最容易被读漏的一格**：`pass_rate` 省略（或送 `null`）时，
+ * 那一条规则被**摘掉**并在这里点名（实测 `["pass_rate"]`），而不是判负——因为
+ * `GateRule.evaluate()` 对缺失的指标键返回 `False`，不摘就会把「没算这一项」表达成
+ * 「算出来不及格」。所以「三条规则全过」与「只跑了两条」在 `verdict` 上同形，
+ * 区别只在这一格 ⇒ 页面必须把它渲出来。
+ */
+export interface HealthGateResponse {
+  health: HealthGateReport
+  gate: HealthGateVerdict
+  skipped_rules: string[]
+}
