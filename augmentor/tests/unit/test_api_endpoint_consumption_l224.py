@@ -18,9 +18,9 @@
 **L226 接了第二批**：`search` / `validate` / `auto-config` 三条分别进分析页、质量中心与配置管理，
 实测缺口 29 → **26**、已消费 46 → **49**，前端调用形状同涨到 49。`CLI_ENTRY` 少了 3 条：
 26 → **23**，指向的不同子命令 21 → **18**；`NO_ENTRY` 仍是 **3**，本轮没碰。
-另拒接两员并记账：`GET /api/system/dependencies` 与 `/api/status` 里的 dependencies 是同一份
-数据的两面，接进来只涨指标不涨能力；`POST /api/dataset/translate` 把整份数据集回传又没有
-`output_file` 可落盘，属契约层问题，另立 **A283** 待拍。
+另拒接两员并记账（**这条裁定已由用户在 L234 撤销**，两员都要接、目标 75/75，见下文）：
+`GET /api/system/dependencies` 与 `/api/status` 里的 dependencies 是同一份数据的两面；
+`POST /api/dataset/translate` 把整份数据集回传又没有 `output_file` 可落盘，属契约层问题，另立 **A283** 待拍。
 
 **L227 接了第三批**：`impact` / `semantic-search` 两条进分析页，实测缺口 26 → **24**、
 已消费 49 → **51**、前端调用形状同涨到 51。这一批的形状与 L226 不同：两条都**没有**
@@ -73,14 +73,31 @@ pydantic 模型逐键相等、页面口径与实测判决一致、SDK 那道备�
 （`translate`，归 A283）。缺口 8 = 7 条有 CLI 入口 + 1 条没有。接线质量判据住在
 `tests/unit/test_lineage_wiring_l232.py`；这一批同时量出八条缺口立为 A305~A312，并当场收掉
 一条**静默丢字段**（`POST` 的 `description` / `tags` 此前只在响应里回显、随后 GET 与磁盘上
-都是空，因为端点在 `register_dataset()` 落盘**之后**才改内存对象）。`GET /api/system/dependencies`
-按 L226 的裁定**仍拒接**：它与 `/api/status` 的 `dependencies` 是同一份数据，接它只涨读数不涨能力。
+都是空，因为端点在 `register_dataset()` 落盘**之后**才改内存对象）。
 query 那一维这批再添三条 `registry_path`，`params` 块从 8 条涨到 **11** 条、去重后键名 7 → **8**。
+
+**L234 接了第九批**：系统那一族五条（monitor / auto-test / migrate / stream / validate-config）
+进页面，实测缺口 8 → **3**、已消费 67 → **72**；五个名字整名出 `CLI_ENTRY`（7 收到 2）。
+同轮用户拍板**撤销 L226 那条「指标涨而能力不涨的接线一律不做」的裁定**：
+`GET /api/system/dependencies` 与 `POST /api/dataset/translate` 两员都要接，目标是 75/75
+（`translate` 先收 A283 的契约层问题再接）。所以本节此前写的「仍拒接」不再是现行裁定。
+
+**L235 接了第十批**：`POST /api/quality/health-gate` 进质量中心的「健康门禁」卡，实测缺口
+3 → **2**、已消费 72 → **73**、前端调用形状同涨到 73。它自有同名 CLI 子命令，于是
+`CLI_ENTRY` 2 收到 **1** 条 / **1** 个名字（只剩 `dependencies` → `doctor`），`NO_ENTRY` 仍 **1** 条
+（`translate`，归 A283）。这一条**不带 query 参数**，所以 params 那一维一个数没动
+（仍 11 条 / 8 个键名）。接线质量判据住在 `tests/unit/test_health_gate_wiring_l235.py`；
+这一批同时量出三条新账：**A319**（权重不校验非负与上界，`health_score` 也不钳 [0,1]，
+实测一套和为 1 的负权重把健康分顶到 1.1697 / healthy，而门禁三条规则根本不看权重 ⇒
+「healthy 且 failed」同时为真）、**A320**（权重之和的容差写成 `abs(sum-1.0) > 0.01`，
+恰好 0.01 那一档判不出来：0.99 与 1.01 都 400，1.005 才 200）、**A321**（`text_field`
+送空串或送一个数据集里不存在的键，后端零判决，`duplicate_rate` 回 1.0 —— 与「真的全重复」
+在响应里同形）。三条都写在页面上那句「读这一页之前要知道的六件事」里，不是只写在账本里。
 
 **两侧权威各只有一份**：
 * 后端面 = `app.openapi()` 里 `(方法, 路径模板)` 的集合（75 条操作 / 71 条路径，
   backups 与 dependency 有同路径多方法）；
-* 前端面 = `web/src/services/api.ts` 里 `api.<verb>('路径')` 的调用形状（67 条），
+* 前端面 = `web/src/services/api.ts` 里 `api.<verb>('路径')` 的调用形状（73 条），
   前缀从同一份源码里的 `baseURL` 读出来，不在测试里写死第二份。
 
 **判据五向**：
@@ -140,21 +157,21 @@ PARAMS_MAX_GAP = 60
 #: 前端调用形状里的 `${...}` 归一化成的占位符
 PLACEHOLDER = "{}"
 
-#: 实测未被前端消费的操作（L234：75 条操作里 72 条被调到，余 3 条；立账轮 L224 是 32，
+#: 实测未被前端消费的操作（L235：75 条操作里 73 条被调到，余 2 条；立账轮 L224 是 32，
 #: L225 第一批后是 29，L226 第二批后是 26，L227 第三批后是 24，L228 第四批后是 21，
-#: L229 第五批后是 18，L230 第六批后是 15，L231 第七批后是 11，L232 第八批后是 8）。
+#: L229 第五批后是 18，L230 第六批后是 15，L231 第七批后是 11，L232 第八批后是 8，
+#: L234 第九批后是 3）。
 #: 每员要能在 `CLI_ENTRY` 或 `NO_ENTRY` 里落位；接线一轮就少一格，回填只降不升。
 UNCONSUMED = frozenset({
     "GET /api/system/dependencies",
     "POST /api/dataset/translate",
-    "POST /api/quality/health-gate",
 })
 
 #: 缺口里「CLI 那条路有入口」的成员 → 子命令名。名字由 `TestCliEntryClaimsAreReal` 验真。
-#: L234 把 monitor / auto-test / migrate / stream / validate-config 五员接进页面后，
-#: 这一格从 7 收到 **2**。
+#: L234 把 monitor / auto-test / migrate / stream / validate-config 五员接进页面后收到 **2**；
+#: L235 把 health-gate 接进质量中心后收到 **1**（只剩 `dependencies` → `doctor`，
+#: 那一员按用户拍板要在 L236 一并接掉，不是「指标涨而能力不涨」就永久拒接）。
 CLI_ENTRY = {
-    "POST /api/quality/health-gate": "health-gate",
     "GET /api/system/dependencies": "doctor",
 }
 
@@ -352,7 +369,7 @@ class TestRulerSeesTheRealSurface:
 
     def test_frontend_face_scale(self):
         shapes = call_shapes()
-        assert len(shapes) == 72, f"服务层调用形状现量 72，实得 {len(shapes)}"
+        assert len(shapes) == 73, f"服务层调用形状现量 73，实得 {len(shapes)}"
         assert {m for m, _, _ in shapes} <= {"GET", "POST", "PUT", "DELETE", "PATCH"}
 
     def test_http_paths_live_only_in_the_service_layer(self):
@@ -506,9 +523,9 @@ class TestConsumptionRoster:
             f"已接好或已消失 {sorted(set(UNCONSUMED) - measured)}")
 
     def test_roster_scale_is_pinned(self):
-        """缺口 3 / 已消费 72 / 总操作 75：接线一轮就要回填这三个数（缺口只降不升）"""
-        assert len(UNCONSUMED) == 3, len(UNCONSUMED)
-        assert len(consumed_operations()) == 72, len(consumed_operations())
+        """缺口 2 / 已消费 73 / 总操作 75：接线一轮就要回填这三个数（缺口只降不升）"""
+        assert len(UNCONSUMED) == 2, len(UNCONSUMED)
+        assert len(consumed_operations()) == 73, len(consumed_operations())
 
     def test_roster_entries_are_real_operations(self):
         ops = {f"{m} {p}" for m, p in operations()}
@@ -566,10 +583,13 @@ class TestCliEntryClaimsAreReal:
         stream / validate-config），于是五个名字整名出名单：条目数 7 收到 **2**（减 5）、
         不同子命令 7 收到 **2**（减 5）—— 一次减掉 5 个名字是现量最大的一批，且条目数与名字数
         仍然相等（每名各占一条）；`NO_ENTRY`（1）与子命令现量（37）都没动。
+        L235 接的一条（`health-gate`）自有同名子命令，于是条目数 2 收到 **1**、不同子命令
+        2 收到 **1**；`NO_ENTRY`（1）与子命令现量（37）都没动。名单只剩两员：
+        `dependencies`（→ `doctor`，用户已拍板 L236 接掉）与 `translate`（无入口，归 A283）。
         """
         assert len(cli_subcommands()) == 37
-        assert len(CLI_ENTRY) == 2
-        assert len(set(CLI_ENTRY.values())) == 2
+        assert len(CLI_ENTRY) == 1
+        assert len(set(CLI_ENTRY.values())) == 1
         assert len(NO_ENTRY) == 1
 
 
