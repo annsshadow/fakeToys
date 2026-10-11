@@ -665,6 +665,38 @@ export interface LanguageProfileResponse {
 }
 
 /**
+ * `POST /api/dataset/translate`
+ *
+ * 这是**按 token 计费**的那条路径，所以响应里有两组必须一起读的键：
+ *
+ * * 失败回执四键（`failed` / `failed_indices` / `errors` / `errors_truncated`）——
+ *   `items` 单独读不出失败：没翻成的条目**回退原文**，形状与成功时一模一样。
+ *   `failed_indices` 是全数据集下标（跨批已折算），可直接指回 `input_file`；
+ *   `errors` 只有前 20 条样本，`errors_truncated` 说明样本是否被收窄，而计数与下标不随之收窄。
+ * * `output_file`（A283①，L236 加的落盘口）——请求没给落点时是 `null`，给了就是
+ *   **已 resolve 的绝对路径**。落盘那份与响应里的 `items` 逐格同形，因此**失败条目同样
+ *   以原文躺在产物里**：产物本身不诚实，诚实读数只在回执四键上。
+ */
+export interface TranslateErrorSample {
+  index: number
+  error: string
+}
+
+export interface TranslateResponse {
+  total: number
+  batches: number
+  batch_size: number
+  target_lang: string
+  supported_langs: string[]
+  items: Record<string, unknown>[]
+  output_file: string | null
+  failed: number
+  failed_indices: number[]
+  errors: TranslateErrorSample[]
+  errors_truncated: boolean
+}
+
+/**
  * `POST /api/dataset/evaluate`
  *
  * `details` 在 `include_details=false` 时是**空数组**，而 `sample_count` 仍是真实条数

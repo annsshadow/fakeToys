@@ -69,11 +69,17 @@ class TranslateRequest(BaseModel):
 
     `target_lang` 省略时才落到 `multilingual.default_target_lang`（权威序：
     请求参数 > 配置键 > 内置默认）。取值是否在清单内由 SDK 层判。
+
+    `output_file` 是 A283 的落盘口（L236）：省略时行为与从前逐格相同——整份译文只在
+    响应体里，刷新页面就没了；给了就把译文原子写进白名单数据根，响应回一个可核对的
+    绝对落点。这条路径逐条调模型、按 token 计费，所以「花了钱要不要留下东西」的开关
+    住在这里，不给只读端点也加写口。
     """
     input_file: str
     target_lang: Optional[str] = None
     text_key: str = "instruction"
     keep_original: bool = True
+    output_file: Optional[str] = None
 
 
 class TranslateResponse(BaseModel):
@@ -85,6 +91,11 @@ class TranslateResponse(BaseModel):
     后四只是失败回执面（L221 / A270）：逐条翻译异常过去被吞成「回退原文」，端点回 200 时
     调用方读不出产物里混着原文。`failed_indices` 是全量下标（可直接指回 `input_file`），
     `errors` 是前 20 条样本、`errors_truncated` 说明样本是否收窄——计数与下标不随样本收窄。
+
+    `output_file` 只在请求给了落盘口时才非空，值是**已 resolve 的绝对路径**（与
+    `convert` / `aggregate` 同形）：调用方拿它去核对盘上那一份，而不是把响应体里的
+    `items` 当唯一副本。请求没给时为 `None`——用「键在不在」区分不了「没落盘」与
+    「落了盘但没回显」，所以两态都要在契约里可读。
     """
     total: int
     batches: int
@@ -92,6 +103,7 @@ class TranslateResponse(BaseModel):
     target_lang: str
     supported_langs: List[str]
     items: List[Dict[str, Any]]
+    output_file: Optional[str] = None
     failed: int
     failed_indices: List[int]
     errors: List[Dict[str, Any]]
@@ -138,8 +150,12 @@ async def translate_endpoint(request: TranslateRequest,
     部分失败仍走 200：整批失败（后端缺失）由 SDK 的 `ModelNotConfiguredError` 落 400，
     而「7 条里 1 条没翻成」既不是客户端错误也不是服务端故障，重发整份只会重复花钱。
     它的诚实读数在响应体里（`failed` / `failed_indices`），不在状态码里。
+
+    给了 `output_file` 时多两步，顺序是量过的：**落点先解析、再动模型**——越界落点
+    403 出声时一条模型调用都还没发出，花钱路径上的参数错误不该先花一笔才知道。
     """
     try:
+        from augmentor.atomic_write import atomic_write_json
         from augmentor.language import translate_dataset
 
         p = get_pipeline()
@@ -150,18 +166,29 @@ async def translate_endpoint(request: TranslateRequest,
                 detail="multilingual.enabled 为 false，翻译路径未启用",
             )
         path = resolve_data_path(request.input_file)
-        items = await read_json_file(path)
-        return await run_in_thread(
-            translate_dataset,
-            items,
-            backend=p.model_backend,
-            supported_langs=multilingual.supported_langs,
-            default_target_lang=multilingual.default_target_lang,
-            batch_size=multilingual.translate_batch_size,
-            target_lang=request.target_lang,
-            text_key=request.text_key,
-            keep_original=request.keep_original,
+        output_path = (
+            resolve_data_path(request.output_file, for_write=True)
+            if request.output_file else None
         )
+        items = await read_json_file(path)
+
+        def run():
+            result = translate_dataset(
+                items,
+                backend=p.model_backend,
+                supported_langs=multilingual.supported_langs,
+                default_target_lang=multilingual.default_target_lang,
+                batch_size=multilingual.translate_batch_size,
+                target_lang=request.target_lang,
+                text_key=request.text_key,
+                keep_original=request.keep_original,
+            )
+            if output_path is not None:
+                atomic_write_json(output_path, result["items"])
+                result["output_file"] = str(output_path)
+            return result
+
+        return await run_in_thread(run)
     except HTTPException:
         raise
     except Exception as e:

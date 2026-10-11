@@ -14,8 +14,8 @@ import {
   type TableColumnsType,
 } from 'antd'
 import { DownloadOutlined, DeleteOutlined, EditOutlined, UploadOutlined, PlayCircleOutlined } from '@ant-design/icons'
-import { apiErrorDetail, bulkErrorDetail, isTimeoutError, getDataFiles, loadData, updateDataItem, deleteDataItem, exportData, uploadData, getDemoData, convertDataset, mergeDatasets, splitDataset, sampleDataset, aggregateDatasets, convertToRag } from '../services/api'
-import type { AggregateResponse, ConvertResponse, DataFileInfo, DataItem, MergeResponse, RagResponse, SampleResponse, SplitResponse } from '../types/api'
+import { apiErrorDetail, bulkErrorDetail, isTimeoutError, getDataFiles, loadData, updateDataItem, deleteDataItem, exportData, uploadData, getDemoData, convertDataset, mergeDatasets, splitDataset, sampleDataset, aggregateDatasets, convertToRag, translateDataset } from '../services/api'
+import type { AggregateResponse, ConvertResponse, DataFileInfo, DataItem, MergeResponse, RagResponse, SampleResponse, SplitResponse, TranslateResponse } from '../types/api'
 
 /**
  * 上传时可显式声明的源格式
@@ -330,6 +330,15 @@ export default function DataManagement() {
   const [ragFormat, setRagFormat] = useState('')
   const [ragOut, setRagOut] = useState('')
   const [ragResult, setRagResult] = useState<RagResponse | null>(null)
+  // 翻译卡的四格初值 == 契约默认（`TranslateRequest.model_fields` 逐项对账，见
+  // tests/unit/test_last_two_wiring_l236.py）：页面不写第二套默认，写出来的初值必须与
+  // 后端那一份同值，否则「什么都不改就点一下」的行为会与契约默认分家。
+  const [trOut, setTrOut] = useState('')
+  const [trLang, setTrLang] = useState('')
+  const [trTextKey, setTrTextKey] = useState('instruction')
+  const [trKeep, setTrKeep] = useState(true)
+  const [trAck, setTrAck] = useState(false)
+  const [trResult, setTrResult] = useState<TranslateResponse | null>(null)
 
   const handleSample = async () => {
     if (!selectedFile || !sampleOut) {
@@ -407,6 +416,44 @@ export default function DataManagement() {
       setRagResult(await convertToRag(selectedFile, ragOut, { format: ragFormat }))
     } catch (err) {
       message.error(apiErrorDetail(err, 'RAG 转换失败'))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  /**
+   * 翻译是这一页唯一**按 token 计费**的动作，所以它比同族多三道页面级的闸：
+   * ① 必须点名落盘文件（契约里 `output_file` 是可选的，页面刻意收紧——花了钱却只留在
+   *    响应体里，刷新即失，那不是能用的入口，A283 立项的原话）；
+   * ② 必须勾上计费确认（`trAck`），按钮同时 `disabled`，两处拦的是同一件事的两面；
+   * ③ 翻译字段不许为空——后端这一格**零判决**（A322：空串与不存在的键都回 200、
+   *    模型调用 0 次、`failed=0`，产物里凭空多出两个键），所以这不是「替后端藏判决」，
+   *    是补一个后端根本没有的判决。
+   */
+  const handleTranslate = async () => {
+    if (!selectedFile || !trOut) {
+      message.warning('翻译需要选中源文件并点名输出文件名：这条路径按 token 计费，产物必须留得住')
+      return
+    }
+    if (!trTextKey.trim()) {
+      message.warning('翻译字段不能为空：后端对空字段名零判决，会回一份没翻过的产物（A322）')
+      return
+    }
+    if (!trAck) {
+      message.warning('先勾上「我知道这会逐条调用模型」')
+      return
+    }
+    setLoading(true)
+    try {
+      setTrResult(await translateDataset(selectedFile, {
+        outputFile: trOut,
+        targetLang: trLang,
+        textKey: trTextKey,
+        keepOriginal: trKeep,
+      }))
+    } catch (err) {
+      setTrResult(null)
+      message.error(apiErrorDetail(err, '翻译失败'))
     } finally {
       setLoading(false)
     }
@@ -948,6 +995,76 @@ export default function DataManagement() {
           <div aria-label="RAG 回执" style={{ marginTop: 8 }}>
             按 <code>{ragResult.format}</code> 落 {ragResult.record_count} 条记录
             （输入 {ragResult.input_count} 条）⇒ {ragResult.output_file}
+          </div>
+        )}
+      </Card>
+
+      <Card title="批量翻译（逐条调模型，按 token 计费）" size="small" style={{ marginTop: 16 }}>
+        <Space wrap>
+          <Input
+            placeholder="输出文件名，如 translated.json"
+            aria-label="翻译输出文件名"
+            value={trOut}
+            onChange={(e) => setTrOut(e.target.value)}
+            style={{ width: 220 }}
+          />
+          <Input
+            placeholder="目标语言，留空即服务端默认"
+            aria-label="翻译目标语言"
+            value={trLang}
+            onChange={(e) => setTrLang(e.target.value)}
+            style={{ width: 200 }}
+          />
+          <Input
+            aria-label="翻译字段名"
+            value={trTextKey}
+            onChange={(e) => setTrTextKey(e.target.value)}
+            style={{ width: 140 }}
+          />
+          <Checkbox checked={trKeep} onChange={(e) => setTrKeep(e.target.checked)}>
+            保留原文到 字段_original
+          </Checkbox>
+          <Checkbox checked={trAck} onChange={(e) => setTrAck(e.target.checked)}>
+            我知道这会逐条调用模型、按 token 计费
+          </Checkbox>
+          <Button onClick={handleTranslate} loading={loading} disabled={!trAck}>
+            翻译并落盘
+          </Button>
+        </Space>
+        <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75 }}>
+          落盘口是本轮（L236 / A283①）新加的：输出文件名留空即**不落盘**，整份译文只在本次响应里、
+          刷新页面就没了，所以页面把这一格收成必填。给了就把译文原子写进白名单数据根，回执报的是
+          **已 resolve 的绝对路径**。越界落点回 403 且模型调用 **0** 次——花钱路径上的参数错误先出声。
+          目标语言留空即读 config.multilingual.default_target_lang（实测 en），清单外的值回 400 且
+          detail 把支持清单列全、同样一次模型都不调。multilingual.enabled 出厂 false ⇒ 400
+          「翻译路径未启用」，那道闸在读盘之前。
+        </div>
+        <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
+          翻译字段名这一格后端**零判决**（A322）：送空串或送一个数据集里不存在的键都回 200、
+          failed=0、模型调用 0 次，产物里凭空多出三个键——那一列、它的 _original，还有一个
+          language 目标语言戳（一个字没翻也照盖），而原字段一个字没动。所以页面自己拦下空值，
+          并且**别把「200 且 failed=0」读成翻成了**——先核对产物里那一列。
+        </div>
+        <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
+          失败回执四键（failed / failed_indices / errors / errors_truncated）必须与 items 一起读：
+          没翻成的条目**回退原文**，形状与成功时逐格相同，落盘那份也一样。errors 只有前 20 条样本，
+          errors_truncated 说明样本是否收窄，计数与下标不随之收窄。
+        </div>
+        {trResult && (
+          <div aria-label="翻译回执" style={{ marginTop: 8 }}>
+            共 {trResult.total} 条、分 {trResult.batches} 批（批宽 {trResult.batch_size}）、
+            目标语言 <code>{trResult.target_lang}</code>
+            {trResult.output_file
+              ? ` ⇒ 落盘 ${trResult.output_file}`
+              : ' ⇒ 未落盘（只在本次响应里）'}
+            {trResult.failed > 0 && (
+              <div aria-label="翻译失败回执" style={{ marginTop: 4, color: '#cf1322' }}>
+                {trResult.failed} 条没翻成（下标 {trResult.failed_indices.slice(0, 10).join('、')}
+                {trResult.failed_indices.length > 10 ? ' …' : ''}）——这些条目在产物里是**原文**，
+                形状与成功时相同；错误样本 {trResult.errors.length} 条
+                {trResult.errors_truncated ? '（已收窄，计数与下标不受影响）' : ''}
+              </div>
+            )}
           </div>
         )}
       </Card>

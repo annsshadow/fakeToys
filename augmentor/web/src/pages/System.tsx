@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Alert, AutoComplete, Button, Card, Col, Input, InputNumber, Popconfirm, Row, Select, Space, Statistic, Table, Tag, message } from 'antd'
-import { apiErrorDetail, createBackup, deleteBackup, getDataFiles, getDependencyGraph, getServiceStatus, getVectorStatus, listBackups, listDependencyDatasets, migrateDataset, registerDependencyDataset, restoreBackup, runDatasetAutoTest, runQualityMonitor, streamProcess } from '../services/api'
-import type { BackupInfo, DatasetRegistryEntry, DependencyGraphResponse, MigrationResponse, QualitySnapshotResponse, StreamReportResponse, TestSuiteResponse } from '../types/api'
+import { apiErrorDetail, createBackup, deleteBackup, getDataFiles, getDependencyGraph, getServiceStatus, getVectorStatus, listBackups, listDependencyDatasets, migrateDataset, registerDependencyDataset, restoreBackup, runDatasetAutoTest, runQualityMonitor, streamProcess, systemDependencies } from '../services/api'
+import type { BackupInfo, DatasetRegistryEntry, DependencyDiagnostics, DependencyGraphResponse, MigrationResponse, QualitySnapshotResponse, StreamReportResponse, TestSuiteResponse } from '../types/api'
 import type { StatusResponse, VectorStatusResponse } from '../types/api'
 
 /**
@@ -74,6 +74,13 @@ const MIGRATION_RULE_OPTIONS = [
  * 迁移会改字段名（`instruction` → `question`、`output` → `answer`），输入输出同一个文件时
  * 就地改写而服务端放行；流式的 `processed` 恒等于 `total_input`，取舍只在 `total_output` 上。
  * 两句都写在正文里，按钮上另加二次确认。
+ *
+ * 「依赖诊断」那两张卡（依赖明细 / 降级功能）在 L236 之前是包在服务状态那道整体门里的：
+ * 综合状态拉不动（它要**真构造管道**）就连带看不见「这台机器缺什么」。现在它读
+ * `GET /api/system/dependencies`——那条端点不碰管道（把 `get_pipeline` 换成抛异常的替身
+ * 仍 200，L236 实测），所以依赖诊断能单独取、单独刷新、在综合状态失败时照样显示。
+ * 两面数据**逐字节相同**（同一次实测），因此它涨的是取法不是数据；首载失败时退回综合状态
+ * 里那一份，刷新失败时留着上一次读数——不为了「独立」把已经拿到的东西丢掉。
  */
 export default function System() {
   const [status, setStatus] = useState<StatusResponse | null>(null)
@@ -111,6 +118,9 @@ export default function System() {
   const [stChunk, setStChunk] = useState<number | null>(null)
   const [stFmt, setStFmt] = useState('')
   const [streamReport, setStreamReport] = useState<StreamReportResponse | null>(null)
+  // 依赖诊断自取一面（L236）：与综合状态里那份逐字节相同，但它走的是不碰管道的端点
+  const [deps, setDeps] = useState<DependencyDiagnostics | null>(null)
+  const [depsLoading, setDepsLoading] = useState(false)
 
   const refresh = async () => {
     setLoading(true)
@@ -125,6 +135,22 @@ export default function System() {
 
   useEffect(() => {
     refresh()
+  }, [])
+
+  const refreshDeps = async () => {
+    setDepsLoading(true)
+    try {
+      setDeps(await systemDependencies())
+    } catch (err) {
+      // 不清 deps：留着上一次那份读数，失败由这句 toast 承担（首载失败时渲染面退回综合状态里那一份）
+      message.error(apiErrorDetail(err, '获取依赖诊断失败'))
+    } finally {
+      setDepsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    refreshDeps()
   }, [])
 
   const refreshVector = async () => {
@@ -359,7 +385,10 @@ export default function System() {
     }
   }
 
-  const installedRows = Object.entries(status?.dependencies.installed || {}).map(
+  // 依赖诊断的两个来源：自己那条端点优先（不碰管道），首载失败时退回综合状态里那一份
+  const diag = deps ?? status?.dependencies ?? null
+
+  const installedRows = Object.entries(diag?.installed || {}).map(
     ([name, available]) => ({ name, available })
   )
 
@@ -400,20 +429,37 @@ export default function System() {
         </Row>
       </Card>
 
-      {status && (
-        <>
+      {diag && (
+        <Card
+          title="依赖诊断"
+          style={{ marginBottom: 16 }}
+          extra={
+            <Button onClick={refreshDeps} loading={depsLoading} aria-label="刷新依赖诊断">
+              刷新
+            </Button>
+          }
+        >
+          {!status && (
+            <Alert
+              type="info"
+              showIcon
+              style={{ marginBottom: 16 }}
+              message="综合状态没取到，这份依赖诊断来自不碰管道的那条端点"
+              description="服务状态要真构造管道，所以它比依赖诊断更容易失败（模型没配、依赖缺失都能让它拉不动）。下面这些读数不依赖它。"
+            />
+          )}
           <Alert
-            type={status.dependencies.all_required_present ? 'success' : 'warning'}
+            type={diag.all_required_present ? 'success' : 'warning'}
             showIcon
             style={{ marginBottom: 16 }}
             message={
-              status.dependencies.all_required_present
-                ? `必需依赖齐备（共 ${status.dependencies.available_count} 项可用）`
+              diag.all_required_present
+                ? `必需依赖齐备（共 ${diag.available_count} 项可用）`
                 : '缺少必需依赖，部分功能将不可用'
             }
             description={
-              status.dependencies.all_required_present ? undefined : (
-                <span>缺失：{status.dependencies.missing.join('、') || '未知'}</span>
+              diag.all_required_present ? undefined : (
+                <span>缺失：{diag.missing.join('、') || '未知'}</span>
               )
             }
           />
@@ -444,9 +490,9 @@ export default function System() {
             </Col>
             <Col span={12}>
               <Card title="降级功能">
-                {(status.dependencies.degraded_features || []).length > 0 ? (
+                {(diag.degraded_features || []).length > 0 ? (
                   <Space wrap>
-                    {status.dependencies.degraded_features.map(feature => (
+                    {diag.degraded_features.map(feature => (
                       <Tag key={feature} color="orange">
                         {feature}
                       </Tag>
@@ -458,7 +504,7 @@ export default function System() {
               </Card>
             </Col>
           </Row>
-        </>
+        </Card>
       )}
 
       <Card
