@@ -7,6 +7,8 @@ import type {
   AuditResponse,
   AugmentProgress,
   AutoConfigResponse,
+  BackupInfo,
+  BackupListResponse,
   BatchExportResponse,
   BenchmarkResponse,
   CheckpointListResponse,
@@ -39,7 +41,7 @@ import type {
   SemanticSearchResponse,
   ProfilingResponse,
   QualityEvaluationResponse,
-  QualityReportResponse, RagResponse, SampleResponse,
+  QualityReportResponse, RagResponse, RestoreBackupResponse, SampleResponse,
   SplitResponse,
   SanitizeResponse,
   SearchResponse,
@@ -963,6 +965,82 @@ export const convertToRag = async (
     input_file: inputFile,
     output_file: outputFile,
     format: opts.format || undefined,
+  })
+  return response.data
+}
+
+// ============ 系统 · 数据备份（A279 第七批接线，L231） ============
+
+/**
+ * `GET /api/system/backups`
+ *
+ * `backup_dir` 省略时落点是**白名单首个根目录下的 `.backups`**（出厂即 `data/.backups`），
+ * 显式送空串是 **400**「目录路径 不能为空」、`..` 是 **400**「路径包含非法组件」、白名单外的
+ * 绝对路径是 **403**——所以本层把页面上的空串丢成 `undefined`，这一处哨兵**是躲判决的**
+ * （与 `convertToRag` 那处只做形状卫生的不同）。CLI 的 `--backup-dir` 默认值是 `.backups`
+ * （相对工作目录），与这里的缺省**不是同一个目录**（账本 A301）。
+ */
+export const listBackups = async (backupDir?: string): Promise<BackupListResponse> => {
+  const response = await api.get('/system/backups', {
+    params: { backup_dir: backupDir || undefined },
+  })
+  return response.data
+}
+
+/**
+ * `POST /api/system/backups`
+ *
+ * `name` 就是回执里的 `backup_id`，省略时服务端按秒级时间戳取 `backup_<YYYYmmdd_HHMMSS>`；
+ * 送空串与省略**等价**（`name or …` 那一步把空串读成没给，实测 200 且回时间戳 id）。
+ * 名字里带 `..` 会被拒（**400**「备份名称不能指向备份目录之外」，L231 收的那一格：此前
+ * `name="../../x"` 是 200 且真写到备份目录之外）；带 `/` 的名字仍然放行，它会在备份目录下
+ * 建子目录。源文件不存在是 **404**「文件不存在」。
+ */
+export const createBackup = async (
+  inputFile: string,
+  opts: { name?: string; backupDir?: string } = {}
+): Promise<BackupInfo> => {
+  // 请求体提到上面一行：`params` 块与所属调用的间隔必须在消费对账那把尺子的窗口内
+  // （`test_api_endpoint_consumption_l224.py` 的 `PARAMS_MAX_GAP = 60`），否则这一条调用的
+  // `backup_dir` 就绑不上、query 那一维对它失明（改前实测：这一条是四条里唯一没绑上的）
+  const body = { input_file: inputFile, name: opts.name || undefined }
+  const response = await api.post('/system/backups', body, {
+    params: { backup_dir: opts.backupDir || undefined },
+  })
+  return response.data
+}
+
+/**
+ * `POST /api/system/backups/{backup_id}/restore`
+ *
+ * 目标文件已存在时**整份覆盖**（实测），备份 id 不存在是 **404**「备份不存在」。
+ * 回执的落点键叫 `output_path` 而不是同族其余五只的 `output_file`。
+ */
+export const restoreBackup = async (
+  backupId: string,
+  outputFile: string,
+  backupDir?: string
+): Promise<RestoreBackupResponse> => {
+  const response = await api.post(
+    `/system/backups/${backupId}/restore`,
+    { output_file: outputFile },
+    { params: { backup_dir: backupDir || undefined } }
+  )
+  return response.data
+}
+
+/**
+ * `DELETE /api/system/backups/{backup_id}`
+ *
+ * 删掉的是**索引里所有同 id 的记录**外加那一份文件，所以同名创建两次之后删一次，两条一起
+ * 消失（实测）。id 不存在是 **404**「备份不存在」，与恢复那一支同一个状态码、同一句文案。
+ */
+export const deleteBackup = async (
+  backupId: string,
+  backupDir?: string
+): Promise<MutationResponse> => {
+  const response = await api.delete(`/system/backups/${backupId}`, {
+    params: { backup_dir: backupDir || undefined },
   })
   return response.data
 }

@@ -39,6 +39,8 @@ window.ResizeObserver = window.ResizeObserver || (RO as unknown as typeof Resize
 const spies = vi.hoisted(() => ({
   getServiceStatus: null as unknown as ReturnType<typeof vi.fn>,
   getVectorStatus: null as unknown as ReturnType<typeof vi.fn>,
+  listBackups: null as unknown as ReturnType<typeof vi.fn>,
+  getDataFiles: null as unknown as ReturnType<typeof vi.fn>,
 }))
 
 vi.mock('../services/api', async (importOriginal) => {
@@ -53,10 +55,16 @@ vi.mock('../services/api', async (importOriginal) => {
     collection: 'augmentor',
     storage_dir: '',
   })
+  // L231 起本页还会取备份列表与数据文件候选。两面都给了默认回执：备份面与本页原有
+  // 用例无关，让它们不必逐个显式安排（`clearAllMocks` 不清实现，默认值留得住）。
+  spies.listBackups = vi.fn().mockResolvedValue({ backups: [] })
+  spies.getDataFiles = vi.fn().mockResolvedValue({ files: [] })
   return {
     ...actual,
     getServiceStatus: spies.getServiceStatus,
     getVectorStatus: spies.getVectorStatus,
+    listBackups: spies.listBackups,
+    getDataFiles: spies.getDataFiles,
   }
 })
 

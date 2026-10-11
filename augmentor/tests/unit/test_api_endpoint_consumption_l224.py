@@ -53,10 +53,22 @@ UI 发得出的每一档在端点上的判决、回执覆盖全部响应键）�
 （三张下拉清单同源于后端分发臂、页面初值等于契约默认、UI 发得出的每一档在端点上的判决、
 回执覆盖全部响应键）；这一批同时量出六条后端判据缺口，立为 A292~A297。
 
+**L231 接了第七批**：备份那一族四条（`GET` / `POST /api/system/backups`、
+`POST …/{backup_id}/restore`、`DELETE …/{backup_id}`）进系统状态页的「数据备份」卡，实测
+缺口 15 → **11**、已消费 60 → **64**、前端调用形状同涨到 64。四条都归 CLI 的 `backup`
+一个子命令（`--action create|restore|list|delete`），所以 `CLI_ENTRY` 14 收到 **10** 条、
+不同子命令 9 收到 **8** 个（`backup` 整名出名单）；`NO_ENTRY` 仍 **1** 条（`translate`，
+归 A283）。缺口 11 = 10 条有 CLI 入口 + 1 条没有。接线质量判据住在
+`tests/unit/test_backup_wiring_l231.py`（四条调用形状与契约面逐键对账、TS 响应面与
+pydantic 模型逐键相等、页面口径与实测判决一致、SDK 那道备份名越界闸真的会红）；
+这一批同时量出七条缺口立为 A298~A304，并当场收掉一条**安全缺陷**（`name="../../x"`
+此前是 200 且真写到备份目录之外）。这批还第一次动到 query 那一维：四条都带
+`backup_dir`，`params` 块从 4 条涨到 **8** 条。
+
 **两侧权威各只有一份**：
 * 后端面 = `app.openapi()` 里 `(方法, 路径模板)` 的集合（75 条操作 / 71 条路径，
   backups 与 dependency 有同路径多方法）；
-* 前端面 = `web/src/services/api.ts` 里 `api.<verb>('路径')` 的调用形状（60 条），
+* 前端面 = `web/src/services/api.ts` 里 `api.<verb>('路径')` 的调用形状（64 条），
   前缀从同一份源码里的 `baseURL` 读出来，不在测试里写死第二份。
 
 **判据五向**：
@@ -69,8 +81,11 @@ UI 发得出的每一档在端点上的判决、回执覆盖全部响应键）�
    2 条后剩 **1** 条）：判据是「路径末段确实不在 CLI 子命令清单里」；
 4. query 参数逐键对到该操作的 `in=query` 声明。两处来源都算：写在路径串里的
    `` `/versions/create?filename=${filename}` ``（1 条）与 axios 的 `params: {…}` 对象
-   （4 条 / 5 个键）。后者是量出来才补进去的一维 —— `data/load` 的分页三键与
-   `page_size` 这个「TS 侧改名后的对外名」只有读 params 块才看得见。
+   （L231 之后 8 条 / 去重后 7 个键名）。后者是量出来才补进去的一维 —— `data/load` 的分页三键与
+   `page_size` 这个「TS 侧改名后的对外名」只有读 params 块才看得见。L231 那四条备份调用
+   第一次让这一维撞上归属窗口：`createBackup` 原本把请求体写在调用里、`params` 块离调用
+   超过 60 字符，于是它的 `backup_dir` **绑不上**（实测：四条里唯一漏的一员）。修法是改
+   源码（把请求体提到上一行，间隔收到 14 字符），不是放宽窗口 —— 尺子看不见一格就是看不见。
 5. 一个形状同时落在字面量路由和参数化路由上时（实测 1 例：`GET /api/versions/history`），
    绑定只认占位符最少的那一档，并拿运行时的 200 + 响应体形状证明这一档确实是赢的那条。
    不做这档收敛，字面量调用会把参数化路由也算成已消费，缺口往少里报错一格。
@@ -100,31 +115,30 @@ SUBCOMMAND = re.compile(r"add_parser\(\s*[`'\"]([a-z0-9_\-]+)[`'\"]")
 #: axios 的查询对象 `params: { page, page_size: pageSize }`；块内不许再套花括号
 PARAMS_BLOCK = re.compile(r"params:\s*\{([^{}]*)\}")
 
-#: params 块到所属调用的字符间隔上限。现量 4~14。这一维今天不咬人：把上限放到无穷，
-#: 归属仍是 4 条 —— 语料里每个 `params:` 块之前都站着另一条调用，「最近前一员」自己就
+#: params 块到所属调用的字符间隔上限。现量 4~41（L231 之前是 4~14；`restoreBackup` 那条
+#: 把请求体写在调用里，间隔 41）。这一维今天不咬人：把上限放到无穷，
+#: 归属仍是 8 条 —— 语料里每个 `params:` 块之前都站着另一条调用，「最近前一员」自己就
 #: 收对了。上限守的是另一种还没出现的形状：一个不属于任何调用的 `params:` 块（比如最后
 #: 一条调用之后的配置对象）没有上限就会被记到最后一员头上。下界有牙齿：收到 3 就把
-#: 4 条真归属全判没（见 `TestTheParamsWindowIsScoped`）。
+#: 8 条真归属全判没（见 `TestTheParamsWindowIsScoped`）。
+#: 60 这个数也**真的会咬人**：L231 的 `createBackup` 原本间隔超限 ⇒ `backup_dir`
+#: 绑不上，处置是改源码把请求体提上去，不是放宽这里。
 PARAMS_MAX_GAP = 60
 
 #: 前端调用形状里的 `${...}` 归一化成的占位符
 PLACEHOLDER = "{}"
 
-#: 实测未被前端消费的操作（L230：75 条操作里 60 条被调到，余 15 条；立账轮 L224 是 32，
+#: 实测未被前端消费的操作（L231：75 条操作里 64 条被调到，余 11 条；立账轮 L224 是 32，
 #: L225 第一批后是 29，L226 第二批后是 26，L227 第三批后是 24，L228 第四批后是 21，
-#: L229 第五批后是 18）。
+#: L229 第五批后是 18，L230 第六批后是 15）。
 #: 每员要能在 `CLI_ENTRY` 或 `NO_ENTRY` 里落位；接线一轮就少一格，回填只降不升。
 UNCONSUMED = frozenset({
-    "DELETE /api/system/backups/{backup_id}",
-    "GET /api/system/backups",
     "GET /api/system/dependencies",
     "GET /api/system/dependency/datasets",
     "GET /api/system/dependency/graph",
     "POST /api/dataset/translate",
     "POST /api/quality/health-gate",
     "POST /api/system/auto-test",
-    "POST /api/system/backups",
-    "POST /api/system/backups/{backup_id}/restore",
     "POST /api/system/dependency/datasets",
     "POST /api/system/migrate",
     "POST /api/system/monitor",
@@ -136,10 +150,6 @@ UNCONSUMED = frozenset({
 CLI_ENTRY = {
     "POST /api/quality/health-gate": "health-gate",
     "POST /api/system/auto-test": "auto-test",
-    "GET /api/system/backups": "backup",
-    "POST /api/system/backups": "backup",
-    "DELETE /api/system/backups/{backup_id}": "backup",
-    "POST /api/system/backups/{backup_id}/restore": "backup",
     "GET /api/system/dependencies": "doctor",
     "GET /api/system/dependency/datasets": "dependency",
     "POST /api/system/dependency/datasets": "dependency",
@@ -344,7 +354,7 @@ class TestRulerSeesTheRealSurface:
 
     def test_frontend_face_scale(self):
         shapes = call_shapes()
-        assert len(shapes) == 60, f"服务层调用形状现量 60，实得 {len(shapes)}"
+        assert len(shapes) == 64, f"服务层调用形状现量 64，实得 {len(shapes)}"
         assert {m for m, _, _ in shapes} <= {"GET", "POST", "PUT", "DELETE", "PATCH"}
 
     def test_http_paths_live_only_in_the_service_layer(self):
@@ -380,16 +390,17 @@ class TestNoGhostCalls:
         assert not bad, f"这些调用带了契约里没声明的 query 键：{bad}"
 
     def test_at_least_one_call_carries_a_query_key(self):
-        """query 那一支判据不能空转：两处来源合起来现量 5 条
+        """query 那一支判据不能空转：两处来源合起来现量 9 条
 
-        1 条写在路径串里（`/versions/create?filename=…`），4 条走 `params: {…}` 对象
+        1 条写在路径串里（`/versions/create?filename=…`），8 条走 `params: {…}` 对象
         （`data/load` 3 键、`data/update` 与 `data/delete` 各 `index`、`versions/history`
-        各 `limit`）；去重后 6 个键名。
+        各 `limit`，L231 再添备份那一族四条各 `backup_dir`）；去重后 7 个键名。
         """
         with_query = [s for s in call_shapes() if s[2]]
-        assert len(with_query) == 5, f"带 query 的调用现量 5 条，实得 {len(with_query)} 条"
-        assert len({k for _, _, keys in with_query for k in keys}) == 6
-        assert len(params_bindings()) == 4, "params 对象那一支现量 4 条"
+        assert len(with_query) == 9, f"带 query 的调用现量 9 条，实得 {len(with_query)} 条"
+        assert len({k for _, _, keys in with_query for k in keys}) == 7
+        assert len(params_bindings()) == 8, "params 对象那一支现量 8 条"
+        assert sum(1 for _, _, keys, _ in params_bindings() if keys == {"backup_dir"}) == 4
 
 
 class TestTheParamsWindowIsScoped:
@@ -408,25 +419,28 @@ class TestTheParamsWindowIsScoped:
         assert shapes[("DELETE", "/api/versions/{}")] == ()
 
     def test_the_gap_budget_is_load_bearing(self):
-        """上限的两端都量过：收到 3 判没 4 条，放到无穷今天不多收一条
+        """上限的两端都量过：收到 3 判没 8 条，放到无穷今天不多收一条
 
-        现量最大间隔 14 字符，所以 60 这个数留的是余量而不是判据。真正在收归属的是
+        现量最大间隔 41 字符（`restoreBackup`：请求体写在调用里，把 `params` 块推远了），
+        所以 60 这个数留的是余量而不是判据。真正在收归属的是
         「最近的前一个调用」；上限守的是尚未出现的形状（不属于任何调用的 `params:` 块）。
         这句写在这里是因为不写就会让人以为放宽上限等于放宽判据 —— 实测不是。
+        反方向倒是咬过一次人：`createBackup` 原本间隔超过 60 ⇒ 那条 `backup_dir` 绑不上，
+        处置是改源码（把请求体提到上一行，间隔 14），不是把这里放宽。
         """
         gaps = [gap for _, _, _, gap in params_bindings()]
-        assert len(gaps) == 4 and max(gaps) <= 14, f"归属间隔现量 ≤14，实得 {gaps}"
+        assert len(gaps) == 8 and max(gaps) <= 41, f"归属间隔现量 ≤41，实得 {gaps}"
         original = PARAMS_MAX_GAP
         try:
             globals()["PARAMS_MAX_GAP"] = 3
-            assert params_bindings() == [], "收到 3 应把 4 条真归属全判没"
+            assert params_bindings() == [], "收到 3 应把 8 条真归属全判没"
             globals()["PARAMS_MAX_GAP"] = 10 ** 6
-            assert len(params_bindings()) == 4, "放宽上限今天不多收：语料里每块前面都有调用"
+            assert len(params_bindings()) == 8, "放宽上限今天不多收：语料里每块前面都有调用"
         finally:
             globals()["PARAMS_MAX_GAP"] = original
 
     def test_params_keys_are_checked_against_the_declaration(self):
-        """6 个键逐个能在契约 `in=query` 里找到，一个都不许多"""
+        """7 个键逐个能在契约 `in=query` 里找到，一个都不许多"""
         for method, path, keys, _ in params_bindings():
             bound = bind(method, path)
             assert len(bound) == 1, f"{method} {path} 绑定到 {bound}"
@@ -439,7 +453,11 @@ class TestShadowedRoutes:
     """字面量路由与参数化路由同时能吃下同一形状时，绑定只认占位符最少的那一档"""
 
     def test_exactly_one_shape_is_shadowed(self):
-        """49 条形状里实测只有 1 条落在两条操作上：`GET /api/versions/history`"""
+        """64 条形状里实测只有 1 条落在两条操作上：`GET /api/versions/history`
+
+        L231 那四条备份调用没有再添歧义：`/api/system/backups` 与
+        `/api/system/backups/{backup_id}` 段数不同，逐段匹配撞不上（实测 shadowed 仍是 1 条）。
+        """
         shadowed = [(m, p) for m, p, _ in call_shapes() if len(raw_matches(m, p)) > 1]
         assert shadowed == [("GET", "/api/versions/history")], shadowed
 
@@ -485,9 +503,9 @@ class TestConsumptionRoster:
             f"已接好或已消失 {sorted(set(UNCONSUMED) - measured)}")
 
     def test_roster_scale_is_pinned(self):
-        """缺口 15 / 已消费 60 / 总操作 75：接线一轮就要回填这三个数（缺口只降不升）"""
-        assert len(UNCONSUMED) == 15, len(UNCONSUMED)
-        assert len(consumed_operations()) == 60, len(consumed_operations())
+        """缺口 11 / 已消费 64 / 总操作 75：接线一轮就要回填这三个数（缺口只降不升）"""
+        assert len(UNCONSUMED) == 11, len(UNCONSUMED)
+        assert len(consumed_operations()) == 64, len(consumed_operations())
 
     def test_roster_entries_are_real_operations(self):
         ops = {f"{m} {p}" for m, p in operations()}
@@ -516,7 +534,7 @@ class TestCliEntryClaimsAreReal:
         assert not (set(CLI_ENTRY) & set(NO_ENTRY)), "同一员不能既算有入口又算无入口"
 
     def test_cli_roster_scale(self):
-        """37 个子命令是 L204 钉过的现量；名单 14 条指向其中 9 个不同子命令
+        """37 个子命令是 L204 钉过的现量；名单 10 条指向其中 8 个不同子命令
 
         L225 只动前端，`CLI_ENTRY` 那一半一个数没变（26 条 / 21 个名字）；变的只有
         `NO_ENTRY`：接好 3 条后从 6 收到 3。L226 接的三条都各有 CLI 入口（`search` /
@@ -533,10 +551,14 @@ class TestCliEntryClaimsAreReal:
         子命令现量（37）都没动。
         L230 接的三条（`sample` / `aggregate` / `rag`）仍是这一形：`CLI_ENTRY` 17 收到 14，
         不同子命令 12 收到 9；`NO_ENTRY`（1）与子命令现量（37）都没动。
+        L231 接的四条（备份那一族）都归 `backup` 一个子命令（`--action create|restore|list|delete`），
+        于是这一个名字整名出名单：条目数 14 收到 10（减 4）、不同子命令 9 收到 **8**（减 1）——
+        两个数**不同减**此前也发生过（`dependency` 一名占三条，仍在名单里），但一次减掉 4 条
+        是现量最大的一批；`NO_ENTRY`（1）与子命令现量（37）都没动。
         """
         assert len(cli_subcommands()) == 37
-        assert len(CLI_ENTRY) == 14
-        assert len(set(CLI_ENTRY.values())) == 9
+        assert len(CLI_ENTRY) == 10
+        assert len(set(CLI_ENTRY.values())) == 8
         assert len(NO_ENTRY) == 1
 
 

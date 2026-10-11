@@ -17,7 +17,7 @@
 
 ## 为什么第 2 档必须限作用域
 
-`output_path` 在 `augmentor/backup.py:188` 和 `augmentor/export_enhanced.py:143` **确实是
+`output_path` 在 `augmentor/backup.py:192` 和 `augmentor/export_enhanced.py:143` **确实是
 字面量**。如果按「全仓字面量」判据，它就成了「有据可查」，而 `/api/dataset/convert` 的
 请求字段实为 `output_file`（`api/routes/dataset_tools.py:90`）—— 全局字面量会把一个真
 用户可见的文档缺陷洗白。作用域取「路由文件 + 两跳 import 闭包」，两跳这个数字是量的：
@@ -514,25 +514,39 @@ class TestLiteralScopeIsNotGlobal:
         assert "output_path" in _literal_index(closure_of(route_file, 3))
 
 
+#: 写盘变换族的七条路径：五条落 `output_file`、`split` 落 `output_dir`，而 `output_path`
+#: 一行都不许出现（它是路由里的局部变量名，不是任何一条 dataset 路由的请求字段）。
+#: L231 起这个名字在**另一族**里是真的：备份恢复端点的响应落点键就叫 `output_path`。
+WRITE_SIDE_PATHS = ["/api/dataset/convert", "/api/dataset/merge", "/api/dataset/sample",
+                    "/api/dataset/aggregate", "/api/dataset/rag", "/api/system/migrate",
+                    "/api/system/stream"]
+
+
 class TestTheRealDriftIsFixed:
     """本轮建尺子的起因：`output_path` 不是任何一条 dataset 路由的请求字段"""
 
     def test_doc_never_names_the_ghost_field(self):
-        """整篇 API.md（含总览散文）都不许再出现 `output_path`
+        """整篇 API.md 里 `output_path` 只许出现在 restore 那一行
 
-        尺子只逐格扫详细表，散文注（总览那段「写盘变换类必须给…」）不在格里；
-        这条补上散文那半边，避免「详细表修干净、注里还写着旧名」。
+        原判据是「整篇都不许出现」，立它的起因是 `output_path` 不是任何一条 dataset 路由的
+        请求字段（散文注里还写着旧名）。L231 量出一条**真的同名键**：
+        `POST /api/system/backups/{backup_id}/restore` 的响应落点键就叫 `output_path`
+        （同族其余五条写盘端点叫 `output_file`，`split` 叫 `output_dir`），照实写进文档
+        就撞上那道全文禁令。所以按现量**收窄到逐行点名**而不是把禁令摘掉：dataset 那七条
+        写盘变换族一行都不许出现（原缺陷照旧喊红），全文只许 restore 那一行出现，多一行即红。
         """
         text = API_DOC.read_text(encoding="utf-8")
-        assert "output_path" not in text, [
-            line for line in text.splitlines() if "output_path" in line]
+        hits = [line for line in text.splitlines() if "output_path" in line]
+        assert len(hits) == 1, f"`output_path` 现量只该出现 1 行，实得 {len(hits)} 行：{hits}"
+        assert "/api/system/backups/{backup_id}/restore" in hits[0], hits
+        for path in WRITE_SIDE_PATHS:
+            rows = [line for line in text.splitlines() if f"`{path}`" in line]
+            assert rows, f"API.md 里没有 {path} 这一行 ⇒ 判据空转"
+            assert not any("output_path" in row for row in rows), (path, rows)
 
     def test_write_side_rows_name_their_own_field(self):
         """六条写盘变换类里五条的字段是 `output_file`，`split` 是 `output_dir`"""
-        write_paths = ["/api/dataset/convert", "/api/dataset/merge", "/api/dataset/sample",
-                       "/api/dataset/aggregate", "/api/dataset/rag", "/api/system/migrate",
-                       "/api/system/stream"]
-        for path in write_paths:
+        for path in WRITE_SIDE_PATHS:
             assert "output_file" in face_of("POST", path), path
         assert "output_dir" in face_of("POST", "/api/dataset/split")
         assert "output_file" not in face_of("POST", "/api/dataset/split")
