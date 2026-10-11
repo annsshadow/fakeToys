@@ -92,9 +92,11 @@ func TestChallengeDefenseLocksCountersInAscendingOrder(t *testing.T) {
 	}()
 
 	// 新顺序：owner（较小 id）的计数器行**应当已**被 worker 锁住。
-	// 3s 预算即旧顺序的确定性红灯窗口：旧顺序里 worker 全程等
+	// 预算即旧顺序的确定性红灯窗口：旧顺序里 worker 全程等
 	// attacker 的行，owner 的行永远不会被锁 → 超时报红。
-	waitUntilLocked(t, ts, ctx, "user_daily_challenges", "user_id", owner, 3*time.Second)
+	// 3s→15s：CI runner 高负载时 worker goroutine 可能 3 秒内抢不到
+	// 调度（2026-10-11 实测），同步等待不是性能断言。
+	waitUntilLocked(t, ts, ctx, "user_daily_challenges", "user_id", owner, 15*time.Second)
 
 	// 放开 holder → worker 应当正常走完全程（不是死锁 500）
 	if err := holder.Commit(ctx); err != nil {
