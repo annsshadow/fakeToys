@@ -60,6 +60,8 @@ from tests.unit.test_wired_dropdown_choices_l226 import (
     strip_comments,
 )
 
+from augmentor import excel_write
+
 from api.routes.dataset_tools import (
     ConvertRequest,
     ConvertResponse,
@@ -199,6 +201,12 @@ class TestTheTwoFormatListsAreTheAuthorities:
     def test_every_target_the_page_offers_is_accepted_by_the_endpoint(self, http_with_transforms,
                                                                      target):
         """UI 能选到的每一档目标都真的落得下去，且回执报的是生效的内部格式名"""
+        # 写 Excel 需要 openpyxl（可选依赖，两个 requirements 都没钉）：
+        # 缺库时端点如实回 400「pip install openpyxl」，这一档在本环境
+        # 没有对象可证。与 l85/l91 的 needs_pandas 同一处理——CI 与干净
+        # 克隆都不装可选依赖，「十二档全落下去」在那两档上先天不成立。
+        if target in ("excel", "xlsx") and not excel_write.HAS_OPENPYXL:
+            pytest.skip("写 Excel 需要 openpyxl（可选依赖未安装）")
         http, _root, _outside = http_with_transforms
         suffix = NATURAL_SUFFIX.get(target, ".json")
         resp = http.post("/api/dataset/convert", json={
