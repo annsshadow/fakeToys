@@ -4286,14 +4286,8 @@ pub async fn share_id(
     u2_share_get(pool, axum::extract::Path(id)).await
 }
 
-#[axum::debug_handler]
-#[allow(non_snake_case)]
-pub async fn share_id_password_password(
-    pool: Extension<Pool>,
-    axum::extract::Path((id, password)): axum::extract::Path<(String, String)>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
-    u2_share_get_with_password(pool, axum::extract::Path((id, password))).await
-}
+// share 族 GET /{id}/password/{password}（口令入 URL，泄入访问日志）已按
+// 九类安全重设计先例删除，改由 POST /api/file/share/password/verify 承接。
 
 // ════════════ plan002 U2：file 模块端点全量闭合（o2server o2server 105 端点对齐） ════════════
 // 语义红线（沿用 processplatform_assemble_surface U2-b 先例，禁止假成功壳）：
@@ -5217,13 +5211,19 @@ pub async fn u2_share_shield(
     ))))
 }
 
-/// 密码访问：校验密码与有效期后返回分享信息（不含密码本身）。
+/// 密码访问（POST 版）：body {id, password}，校验密码与有效期后返回分享信息（不含密码本身）。
+/// 安全重设计：旧 GET /{id}/password/{password} 会把口令泄入访问日志/URL，改为 POST body。
 #[axum::debug_handler]
 #[allow(non_snake_case)]
-pub async fn u2_share_get_with_password(
+pub async fn u2_share_password_verify(
     pool: Extension<Pool>,
-    axum::extract::Path((id, password)): axum::extract::Path<(String, String)>,
+    axum::Json(body): axum::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let id = body.get("id").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let password = body.get("password").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    if id.is_empty() {
+        return Ok(Json(ActionResult::error("id is required")));
+    }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(

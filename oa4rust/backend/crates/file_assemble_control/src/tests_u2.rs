@@ -640,7 +640,9 @@ mod u2_tests {
             ("GET", "/api/share/shield/s-1"),
             ("GET", "/api/share/s-1"),
             ("DELETE", "/api/share/s-1"),
-            ("GET", "/api/share/s-1/password/pw-1"),
+            // SENSITIVE 重设计：取密码路由由 GET 路径参数改为 POST body（防日志/URL 泄露），
+            // 旧 GET /api/share/{id}/password/{password} 已移除，现探 POST verify 契约。
+            ("POST", "/api/file/share/password/verify"),
         ] {
             let needs_body = matches!(method, "PUT" | "POST");
             let (headers, body): (&[(&str, &str)], Body) = if needs_body {

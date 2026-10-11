@@ -14,8 +14,10 @@ use tower::util::ServiceExt;
 
 fn routes_json_path() -> PathBuf {
     // crates/mcp_server -> 仓库内 docs/audits/three-ends-2026-09-20/backend_routes.json
+    // CARGO_MANIFEST_DIR = <repo>/oa4rust/backend/crates/mcp_server，仓库根 docs 需上溯 4 级。
+    // （重构提交把 docs/audits 留在仓库根，原 3 级 depth 指向不存在的 oa4rust/docs。）
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../../docs/audits/three-ends-2026-09-20/backend_routes.json")
+        .join("../../../../docs/audits/three-ends-2026-09-20/backend_routes.json")
 }
 
 #[tokio::test]

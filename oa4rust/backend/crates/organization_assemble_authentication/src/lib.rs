@@ -898,16 +898,6 @@ pub async fn mpweixin_bind_code(
         serde_json::json!({"code": code}),
     )))
 }
-// mpweixin_menu_test_send_to
-#[allow(non_snake_case)]
-pub async fn mpweixin_menu_test_send_to(
-    _pool: Extension<Pool>,
-    Path(person): Path<String>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(
-        serde_json::json!({"person": person}),
-    )))
-}
 // qiyeweixin_code
 #[allow(non_snake_case)]
 pub async fn qiyeweixin_code(
@@ -1137,7 +1127,6 @@ pub fn organization_assemble_authentication_router() -> Router {
         .route("/api/organization/assemble/authentication/mpweixin/login/code/{code}", get(mpweixin_login_code))
         .route("/api/organization/assemble/authentication/mpweixin/bind/openid/{openid}", get(mpweixin_bind_openid))
         .route("/api/organization/assemble/authentication/mpweixin/bind/code/{code}", get(mpweixin_bind_code))
-        .route("/api/organization/assemble/authentication/mpweixin/menu/test/send/to/{person}", post(mpweixin_menu_test_send_to))
         .route("/api/organization/assemble/authentication/qiyeweixin/code/{code}", get(qiyeweixin_code))
         .route("/api/organization/assemble/authentication/qiyeweixin/update/person/detail/{code}", get(qiyeweixin_update_person_detail))
         .route("/api/organization/assemble/authentication/welink/code/{code}", get(welink_code))
