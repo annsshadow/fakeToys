@@ -31,6 +31,7 @@
 
 import ast
 import re
+import sys
 from pathlib import Path
 
 import pytest
@@ -97,13 +98,45 @@ class TestProductSyntaxFloor:
         )
 
     def test_floor_probe_is_real(self, tmp_path):
-        """防空转：造一个只有 3.12 才有的语法，floor 必须真被抬起来
+        """防空转：造一个只含新语法的探针，floor 必须真被抬起来
 
         没有这一条，「全部通过 3.8」可能只是因为扫描面是空的。
+
+        ⚠️ 探针语法必须按**运行解释器的版本**选，且必须是**真正的语法门槛**
+        （`feature_version` 能拒绝的那种）——`feature_version` 只能 *拒绝*
+        比它新的语法，没法让老解释器读懂新语法：
+        - 3.11 上 `type Alias = int`（PEP 695）连 parse 都不过，写死它会让
+          每个 minor 都拿到 SyntaxError → 返回 None（CI 实测必红，而开发机
+          3.13 是绿的——典型的「开发机绿、CI 红」）
+        - PEP 604 注解（`x: int | None`）**不是语法门槛**：注解在语法上只是
+          BinOp，3.8 就能 parse（实测），它的 3.10 门槛是运行时语义——
+          所以本文件的静态扫描用例才用正则抓它（见下面那条用例）
+        实测各语法在 feature_version 矩阵下的可 parse 区间：
+        `except*` → 3.11 起、`match/case` → 3.10 起、PEP 695 → 仅 3.12 起。
+        按解释器版本取「刚好高一档」的语法，探针仍然真实。
         """
         probe = tmp_path / "probe_new_syntax.py"
-        probe.write_text("type Alias = int\n", encoding="utf-8")   # PEP 695，3.12
-        assert syntax_floor([probe]) == 12
+        running = sys.version_info[:2]
+        if running >= (3, 12):
+            probe.write_text("type Alias = int\n", encoding="utf-8")  # PEP 695
+            expect = 12
+        elif running >= (3, 11):
+            # except*（PEP 654）：3.11 语法，feature_version=(3,10) 拒绝
+            probe.write_text(
+                "try:\n    pass\nexcept* ValueError:\n    pass\n",
+                encoding="utf-8",
+            )
+            expect = 11
+        elif running >= (3, 10):
+            # match/case：3.10 语法（实测 feature_version=(3,9) 拒绝）
+            probe.write_text(
+                "match x:\n    case 1:\n        pass\n",
+                encoding="utf-8",
+            )
+            expect = 10
+        else:
+            pytest.skip("运行解释器低于 3.10，版本探针无意义")
+        assert syntax_floor([probe]) == expect
 
     def test_no_newer_syntax_constructs_snuck_in(self):
         """静态扫一遍会抬高地板的形状（不依赖 ast.parse 的版本矩阵）"""
