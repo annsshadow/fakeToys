@@ -5,9 +5,9 @@
   "C_read_not_sent": [],
   "D_delegated_unverifiable": [],
   "meta": {
-   "handlers_indexed": 1532,
+   "handlers_indexed": 1533,
    "structs_indexed": 279,
-   "frontend_body_calls": 1805,
+   "frontend_body_calls": 1848,
    "A": 0,
    "B": 0,
    "C": 0,
@@ -652,7 +652,7 @@
     "extract"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "gateway",
     "id",
@@ -843,7 +843,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "id",
     "status",
@@ -888,7 +888,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "id",
     "name",
@@ -1357,7 +1357,7 @@
    "param_gets": [
     "key"
    ],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/attendance_assemble_control/src/lib.rs"
   },
@@ -1470,7 +1470,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "created",
     "employeeName",
@@ -1512,7 +1512,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "created",
     "id",
@@ -1554,7 +1554,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "created",
     "holidayDate",
@@ -1599,7 +1599,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "created",
     "date",
@@ -1642,7 +1642,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "created",
     "docId",
@@ -1686,7 +1686,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "code",
     "created",
@@ -1729,7 +1729,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "created",
     "id"
@@ -1847,7 +1847,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "created",
     "id",
@@ -1908,7 +1908,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "created",
     "groupName",
@@ -1991,7 +1991,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "created",
     "id",
@@ -2076,7 +2076,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "id",
     "shiftName",
@@ -2124,7 +2124,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "created",
     "id",
@@ -2200,7 +2200,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "flag",
     "inserted"
@@ -2240,7 +2240,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "id",
     "name",
@@ -2281,7 +2281,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "id",
     "name",
@@ -2630,7 +2630,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "id",
     "status"
@@ -2863,7 +2863,7 @@
     "default_source"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/attendance_assemble_control/src/lib.rs",
    "delegated_resolved": true
@@ -2912,7 +2912,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "duplicated",
     "id"
@@ -2966,7 +2966,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "duplicated",
     "fromOut",
@@ -3144,7 +3144,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "created",
     "id",
@@ -3233,7 +3233,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/attendance_core_entity/src/lib.rs"
   },
@@ -3310,7 +3310,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/attendance_core_entity/src/lib.rs"
   },
@@ -3550,7 +3550,7 @@
     "req"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "accepted",
     "content",
@@ -3587,7 +3587,7 @@
     "req"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "accepted",
     "content",
@@ -4753,7 +4753,7 @@
     "extract"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "success"
    ],
@@ -4782,12 +4782,13 @@
    ],
    "params": [
     "pool",
+    "session",
     "body",
     "axum",
     "extract"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "createTime",
     "id",
@@ -4816,6 +4817,7 @@
    ],
    "params": [
     "pool",
+    "session",
     "vue",
     "axum",
     "body"
@@ -7487,7 +7489,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "id",
     "name"
@@ -7520,7 +7522,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "description",
     "id",
@@ -7557,7 +7559,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "forumId",
     "id",
@@ -7595,7 +7597,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "description",
     "forumId",
@@ -7670,7 +7672,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "authorId",
     "createTime",
@@ -8051,7 +8053,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "createor",
     "id",
@@ -8097,7 +8099,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "createor",
     "id",
@@ -8132,7 +8134,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/calendar_assemble_control/src/u2.rs"
   },
@@ -8161,7 +8163,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/calendar_assemble_control/src/u2.rs"
   },
@@ -8208,7 +8210,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "calendarId",
     "createor",
@@ -8260,7 +8262,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "calendarId",
     "createor",
@@ -8294,7 +8296,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/calendar_assemble_control/src/u2.rs"
   },
@@ -8323,7 +8325,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/calendar_assemble_control/src/u2.rs"
   },
@@ -8350,7 +8352,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "calendarId",
     "id",
@@ -8382,7 +8384,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "calendarId",
     "id",
@@ -8416,7 +8418,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "calendarId",
     "createor",
@@ -8450,7 +8452,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "calendarId",
     "createor",
@@ -8490,7 +8492,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "updated"
    ],
@@ -8527,7 +8529,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "updated"
    ],
@@ -8561,7 +8563,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "updated"
    ],
@@ -8595,7 +8597,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "updated"
    ],
@@ -8631,7 +8633,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "updated"
    ],
@@ -8667,7 +8669,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "updated"
    ],
@@ -8707,7 +8709,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "updated"
    ],
@@ -8747,7 +8749,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "updated"
    ],
@@ -8784,7 +8786,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "calendarId",
     "id",
@@ -8824,7 +8826,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "calendarId",
     "id",
@@ -8868,7 +8870,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "code",
     "id",
@@ -8911,7 +8913,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "code",
     "id",
@@ -10687,7 +10689,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/cms_assemble_control/src/lib.rs",
    "delegated_resolved": true
@@ -12573,6 +12575,7 @@
    "delegated": true,
    "crud_resolved": false,
    "callees": [
+    "escape_like",
     "from_iter",
     "map_err",
     "success",
@@ -12898,6 +12901,7 @@
    "delegated": true,
    "crud_resolved": false,
    "callees": [
+    "escape_like",
     "map_err",
     "query",
     "u2_body_i64",
@@ -13424,7 +13428,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "id",
     "name",
@@ -13463,7 +13467,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "categoryId",
     "id",
@@ -16150,7 +16154,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "id",
     "name",
@@ -16677,7 +16681,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "id",
     "name",
@@ -16766,6 +16770,37 @@
     "id",
     "shareType"
    ],
+   "file": "crates/file_assemble_control/src/lib.rs"
+  },
+  "file_assemble_control::u2_share_password_verify": {
+   "body_params": [
+    "body"
+   ],
+   "reads": [
+    "id",
+    "password"
+   ],
+   "opt_keys": [
+    "id",
+    "password"
+   ],
+   "alt_groups": [],
+   "opt_alt_groups": [],
+   "delegated": true,
+   "crud_resolved": false,
+   "callees": [
+    "error",
+    "map_err",
+    "query_opt"
+   ],
+   "params": [
+    "pool",
+    "axum",
+    "body"
+   ],
+   "param_gets": [],
+   "consumes_whole": false,
+   "emits": [],
    "file": "crates/file_assemble_control/src/lib.rs"
   },
   "file_assemble_control::u2_config_save_system_config": {
@@ -17910,7 +17945,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "id",
     "mimeType",
@@ -17993,7 +18028,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "amount",
     "date",
@@ -18253,7 +18288,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "application",
     "id",
@@ -18712,7 +18747,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "endTime",
     "id",
@@ -18749,7 +18784,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "added",
     "id",
@@ -18790,7 +18825,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "controlType",
     "enabled",
@@ -18828,7 +18863,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "configKey",
     "configValue",
@@ -18871,7 +18906,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "creator",
     "endTime",
@@ -18915,7 +18950,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "id",
     "saved",
@@ -18950,7 +18985,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "added",
     "id",
@@ -18986,7 +19021,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "checkedIn",
     "id",
@@ -19021,7 +19056,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "deleted",
     "id",
@@ -19055,7 +19090,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "completedTime",
     "id",
@@ -19091,7 +19126,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "id",
     "modified",
@@ -19250,7 +19285,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "id",
     "meetingId",
@@ -19294,7 +19329,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "id",
     "name"
@@ -19538,7 +19573,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "id",
     "name"
@@ -19713,7 +19748,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "endTime",
     "id",
@@ -19756,7 +19791,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "id",
     "saved",
@@ -19837,7 +19872,7 @@
     "req"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "content",
     "conversationId",
@@ -19910,7 +19945,7 @@
     "req"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "created",
     "id",
@@ -20068,7 +20103,7 @@
     "req"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "content",
     "conversationId",
@@ -20305,7 +20340,7 @@
     "req"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "enabled",
     "type"
@@ -20344,7 +20379,7 @@
     "req"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "content",
     "conversationId",
@@ -20386,7 +20421,7 @@
     "req"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "instantId",
     "messages",
@@ -20425,7 +20460,7 @@
     "req"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "value"
    ],
@@ -20554,7 +20589,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "fileVersion",
     "folderId",
@@ -20601,7 +20636,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "id",
     "updated"
@@ -20645,7 +20680,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "id",
     "name",
@@ -20686,7 +20721,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "id",
     "updated"
@@ -20734,7 +20769,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "fileVersion",
     "id",
@@ -20772,7 +20807,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "id",
     "updated"
@@ -20848,7 +20883,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "id",
     "name",
@@ -20879,7 +20914,7 @@
     "req"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "folderId",
     "moved"
@@ -20929,7 +20964,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "creator",
     "fileVersion",
@@ -20982,7 +21017,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "creator",
     "fileVersion",
@@ -21227,7 +21262,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "folderId",
     "id",
@@ -21266,7 +21301,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "description",
     "folderId",
@@ -21308,7 +21343,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "id",
     "name",
@@ -21350,7 +21385,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "description",
     "id",
@@ -21398,7 +21433,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "fileVersion",
     "id",
@@ -21528,7 +21563,7 @@
     "req"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "code"
    ],
@@ -21559,7 +21594,7 @@
     "req"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "code"
    ],
@@ -23814,7 +23849,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "id",
     "value"
@@ -23869,7 +23904,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "id",
     "value"
@@ -23921,7 +23956,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/organization_assemble_control/src/u2_org.rs",
    "delegated_resolved": true
@@ -23971,7 +24006,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/organization_assemble_control/src/u2_org.rs",
    "delegated_resolved": true
@@ -28110,7 +28145,7 @@
    "param_gets": [
     "key"
    ],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/organization_assemble_express/src/endpoints.rs"
   },
@@ -28135,7 +28170,7 @@
    "param_gets": [
     "key"
    ],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/organization_assemble_express/src/endpoints.rs"
   },
@@ -29238,7 +29273,7 @@
    "delegated": true,
    "crud_resolved": false,
    "callees": [
-    "any",
+    "attr_values_to_insert",
     "normalize_flags",
     "or_else",
     "string_field",
@@ -29278,7 +29313,7 @@
    "delegated": true,
    "crud_resolved": false,
    "callees": [
-    "any",
+    "attr_values_to_insert",
     "normalize_flags",
     "or_else",
     "string_field",
@@ -31989,9 +32024,7 @@
    ],
    "param_gets": [],
    "consumes_whole": false,
-   "emits": [
-    "personList"
-   ],
+   "emits": [],
    "file": "crates/organization_assemble_express/src/endpoints_org.rs",
    "delegated_resolved": true
   },
@@ -32021,9 +32054,7 @@
    ],
    "param_gets": [],
    "consumes_whole": false,
-   "emits": [
-    "personList"
-   ],
+   "emits": [],
    "file": "crates/organization_assemble_express/src/endpoints_org.rs",
    "delegated_resolved": true
   },
@@ -34479,7 +34510,7 @@
     "objects"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "unit"
    ],
@@ -34516,7 +34547,7 @@
     "objects"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "unit"
    ],
@@ -34549,7 +34580,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/organization_assemble_express/src/endpoints_unit2.rs",
    "delegated_resolved": true
@@ -34580,7 +34611,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/organization_assemble_express/src/endpoints_unit2.rs",
    "delegated_resolved": true
@@ -34611,7 +34642,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/organization_assemble_express/src/endpoints_unit2.rs",
    "delegated_resolved": true
@@ -34642,7 +34673,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/organization_assemble_express/src/endpoints_unit2.rs",
    "delegated_resolved": true
@@ -34673,7 +34704,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/organization_assemble_express/src/endpoints_unit2.rs",
    "delegated_resolved": true
@@ -34704,7 +34735,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/organization_assemble_express/src/endpoints_unit2.rs",
    "delegated_resolved": true
@@ -34735,7 +34766,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/organization_assemble_express/src/endpoints_unit2.rs",
    "delegated_resolved": true
@@ -34766,7 +34797,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/organization_assemble_express/src/endpoints_unit2.rs",
    "delegated_resolved": true
@@ -35138,7 +35169,7 @@
     "objects"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/organization_assemble_express/src/endpoints_unit2.rs",
    "delegated_resolved": true
@@ -35168,7 +35199,7 @@
     "objects"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/organization_assemble_express/src/endpoints_unit2.rs",
    "delegated_resolved": true
@@ -35195,7 +35226,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/organization_assemble_express/src/endpoints_unit2.rs",
    "delegated_resolved": true
@@ -35222,7 +35253,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/organization_assemble_express/src/endpoints_unit2.rs",
    "delegated_resolved": true
@@ -35249,7 +35280,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/organization_assemble_express/src/endpoints_unit2.rs",
    "delegated_resolved": true
@@ -35276,7 +35307,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/organization_assemble_express/src/endpoints_unit2.rs",
    "delegated_resolved": true
@@ -36910,7 +36941,7 @@
     "req"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "email",
     "id",
@@ -36961,7 +36992,7 @@
     "req"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "email",
     "id",
@@ -37842,7 +37873,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "category",
     "id",
@@ -37947,7 +37978,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "content",
     "id",
@@ -38059,7 +38090,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "content",
     "id",
@@ -38090,7 +38121,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "id",
     "uploaded"
@@ -38123,7 +38154,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "compared",
     "id",
@@ -38159,7 +38190,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "covered",
     "id"
@@ -38221,7 +38252,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "content",
     "id"
@@ -39235,7 +39266,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "id",
     "name",
@@ -39274,7 +39305,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "id",
     "updated"
@@ -39305,7 +39336,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "deleted",
     "id"
@@ -39643,7 +39674,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "icon",
     "id"
@@ -40093,7 +40124,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "id",
     "updated"
@@ -42251,7 +42282,7 @@
     "serde_json"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "id"
    ],
@@ -42368,7 +42399,7 @@
     "serde_json"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "id",
     "recordId",
@@ -42510,7 +42541,7 @@
     "fallback"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/processplatform_service_processing/src/lib.rs"
   },
@@ -42539,7 +42570,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/processplatform_service_processing/src/lib.rs",
    "delegated_resolved": true
@@ -42571,7 +42602,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/processplatform_service_processing/src/lib.rs",
    "delegated_resolved": true
@@ -42611,7 +42642,7 @@
     "serde_json"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "jobId",
     "workId"
@@ -42826,7 +42857,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "id",
     "value"
@@ -42853,7 +42884,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "id",
     "value"
@@ -42883,7 +42914,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "bundle",
     "scope",
@@ -42914,7 +42945,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "bundle",
     "scope",
@@ -42947,7 +42978,7 @@
     "gate_table"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "bundle",
     "scope",
@@ -42980,7 +43011,7 @@
     "gate_table"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "bundle",
     "scope",
@@ -43011,7 +43042,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "bundle",
     "scope",
@@ -43042,7 +43073,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "bundle",
     "scope",
@@ -43072,7 +43103,7 @@
     "create_mode"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "bundle",
     "scope",
@@ -43102,7 +43133,7 @@
     "create_mode"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "bundle",
     "scope",
@@ -43129,7 +43160,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/processplatform_service_processing/src/u2.rs"
   },
@@ -43152,7 +43183,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/processplatform_service_processing/src/u2.rs"
   },
@@ -43174,7 +43205,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/processplatform_service_processing/src/u2.rs"
   },
@@ -43196,7 +43227,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/processplatform_service_processing/src/u2.rs"
   },
@@ -43219,7 +43250,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/processplatform_service_processing/src/u2.rs"
   },
@@ -43242,7 +43273,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/processplatform_service_processing/src/u2.rs"
   },
@@ -43265,7 +43296,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/processplatform_service_processing/src/u2.rs"
   },
@@ -43288,7 +43319,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/processplatform_service_processing/src/u2.rs"
   },
@@ -43310,7 +43341,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/processplatform_service_processing/src/u2.rs"
   },
@@ -43332,7 +43363,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/processplatform_service_processing/src/u2.rs"
   },
@@ -43354,7 +43385,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/processplatform_service_processing/src/u2.rs"
   },
@@ -43376,7 +43407,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/processplatform_service_processing/src/u2.rs"
   },
@@ -43399,7 +43430,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/processplatform_service_processing/src/u2.rs"
   },
@@ -43422,7 +43453,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/processplatform_service_processing/src/u2.rs"
   },
@@ -43444,7 +43475,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/processplatform_service_processing/src/u2.rs"
   },
@@ -43466,7 +43497,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/processplatform_service_processing/src/u2.rs"
   },
@@ -44152,7 +44183,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "duplicated",
     "id",
@@ -44202,7 +44233,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "duplicated",
     "id",
@@ -44251,7 +44282,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/processplatform_service_processing/src/u2.rs",
    "delegated_resolved": true
@@ -44297,7 +44328,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/processplatform_service_processing/src/u2.rs",
    "delegated_resolved": true
@@ -44352,7 +44383,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/processplatform_service_processing/src/u2.rs",
    "delegated_resolved": true
@@ -44407,7 +44438,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/processplatform_service_processing/src/u2.rs",
    "delegated_resolved": true
@@ -44463,7 +44494,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/processplatform_service_processing/src/u2.rs",
    "delegated_resolved": true
@@ -44519,7 +44550,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/processplatform_service_processing/src/u2.rs",
    "delegated_resolved": true
@@ -44974,7 +45005,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "id",
     "version",
@@ -45018,7 +45049,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "id",
     "version",
@@ -46135,7 +46166,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "action",
     "eventType",
@@ -46386,7 +46417,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "threshold"
    ],
@@ -46420,7 +46451,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "action",
     "eventType",
@@ -46523,7 +46554,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "key",
     "value"
@@ -46550,7 +46581,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/program_center/src/lib.rs"
   },
@@ -46574,7 +46605,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/program_center/src/lib.rs"
   },
@@ -46598,7 +46629,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/program_center/src/lib.rs"
   },
@@ -46829,7 +46860,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/program_center/src/lib.rs"
   },
@@ -47168,7 +47199,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/program_center/src/lib.rs"
   },
@@ -47228,7 +47259,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/program_center/src/lib.rs"
   },
@@ -47252,7 +47283,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/program_center/src/lib.rs"
   },
@@ -47276,7 +47307,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/program_center/src/lib.rs"
   },
@@ -47300,7 +47331,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/program_center/src/lib.rs"
   },
@@ -47324,7 +47355,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/program_center/src/lib.rs"
   },
@@ -47348,7 +47379,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/program_center/src/lib.rs"
   },
@@ -47955,7 +47986,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/program_center/src/lib.rs"
   },
@@ -49233,7 +49264,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "compared",
     "id",
@@ -49269,7 +49300,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "covered",
     "id"
@@ -49332,7 +49363,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "content",
     "id"
@@ -49398,7 +49429,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "created",
     "flag",
@@ -49733,7 +49764,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "id",
     "name"
@@ -49782,7 +49813,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "id",
     "name"
@@ -52018,7 +52049,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "data",
     "dimension",
@@ -52073,7 +52104,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "data",
     "dimension",
@@ -53028,7 +53059,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "queryFlag",
     "updated",
@@ -53071,7 +53102,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "queryFlag",
     "updated",
@@ -53173,7 +53204,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/query_assemble_surface/src/u2_closures.rs",
    "delegated_resolved": true
@@ -53207,7 +53238,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/query_assemble_surface/src/u2_closures.rs",
    "delegated_resolved": true
@@ -53241,7 +53272,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/query_assemble_surface/src/u2_closures.rs",
    "delegated_resolved": true
@@ -53275,7 +53306,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/query_assemble_surface/src/u2_closures.rs",
    "delegated_resolved": true
@@ -53309,7 +53340,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/query_assemble_surface/src/u2_closures.rs",
    "delegated_resolved": true
@@ -53343,7 +53374,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/query_assemble_surface/src/u2_closures.rs",
    "delegated_resolved": true
@@ -53377,7 +53408,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/query_assemble_surface/src/u2_closures.rs",
    "delegated_resolved": true
@@ -53411,7 +53442,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/query_assemble_surface/src/u2_closures.rs",
    "delegated_resolved": true
@@ -53445,7 +53476,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/query_assemble_surface/src/u2_closures.rs",
    "delegated_resolved": true
@@ -53479,7 +53510,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/query_assemble_surface/src/u2_closures.rs",
    "delegated_resolved": true
@@ -53513,7 +53544,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/query_assemble_surface/src/u2_closures.rs",
    "delegated_resolved": true
@@ -53547,7 +53578,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/query_assemble_surface/src/u2_closures.rs",
    "delegated_resolved": true
@@ -53585,7 +53616,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "id",
     "updated"
@@ -53626,7 +53657,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "id",
     "updated"
@@ -53664,7 +53695,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/query_assemble_surface/src/u2_closures.rs",
    "delegated_resolved": true
@@ -53699,7 +53730,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/query_assemble_surface/src/u2_closures.rs",
    "delegated_resolved": true
@@ -53734,7 +53765,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/query_assemble_surface/src/u2_closures.rs",
    "delegated_resolved": true
@@ -53769,7 +53800,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/query_assemble_surface/src/u2_closures.rs",
    "delegated_resolved": true
@@ -53804,7 +53835,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/query_assemble_surface/src/u2_closures.rs",
    "delegated_resolved": true
@@ -53839,7 +53870,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/query_assemble_surface/src/u2_closures.rs",
    "delegated_resolved": true
@@ -53874,7 +53905,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/query_assemble_surface/src/u2_closures.rs",
    "delegated_resolved": true
@@ -53909,7 +53940,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/query_assemble_surface/src/u2_closures.rs",
    "delegated_resolved": true
@@ -53944,7 +53975,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/query_assemble_surface/src/u2_closures.rs",
    "delegated_resolved": true
@@ -53979,7 +54010,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/query_assemble_surface/src/u2_closures.rs",
    "delegated_resolved": true
@@ -54014,7 +54045,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/query_assemble_surface/src/u2_closures.rs",
    "delegated_resolved": true
@@ -54049,7 +54080,7 @@
     "body"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [],
    "file": "crates/query_assemble_surface/src/u2_closures.rs",
    "delegated_resolved": true
@@ -54159,7 +54190,7 @@
     "payload"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "creatorId",
     "id",
@@ -54369,9 +54400,12 @@
    ],
    "alt_groups": [],
    "opt_alt_groups": [],
-   "delegated": false,
+   "delegated": true,
    "crud_resolved": false,
-   "callees": [],
+   "callees": [
+    "entry",
+    "filter_map"
+   ],
    "params": [
     "pool",
     "axum",
@@ -54622,7 +54656,7 @@
     "data"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "bundle",
     "id"
@@ -54649,7 +54683,7 @@
     "data"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "bundle",
     "id"
@@ -54675,7 +54709,7 @@
     "data"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "bundle",
     "id",
@@ -54702,7 +54736,7 @@
     "data"
    ],
    "param_gets": [],
-   "consumes_whole": false,
+   "consumes_whole": true,
    "emits": [
     "bundle",
     "id",

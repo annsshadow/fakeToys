@@ -86,3 +86,51 @@ tr = sum(r[3] for r in rows)
 tc = sum(r[4] for r in rows)
 print("-" * 47)
 print(f"真实可消费总计={tr}  已消费={tc}  消费率={tc / tr * 100:.1f}%")
+
+# ── 诚实口径（十类功能裁定原则：桶外 + 结构不可计入 剔除分母，其余须真实消费）──
+# 桶外 = EXTERNAL_IDP（外部身份源回调/登录，消费者为外部系统，前端不可亦不应 XHR）
+# 结构 = TWIN_ALIAS（同 handler 双计放宽 rev486）/ SENSITIVE / MALFORMED / TEST_GARBAGE。
+# 这些在 unconsumed_ledger.json 中已逐条记档裁决，剔除后剩余分母应 100% 真实消费。
+try:
+    ledger = json.load(open(os.path.join(HERE, "unconsumed_ledger.json"), encoding="utf-8"))
+    OUT_OF_BUCKET_VERDICTS = {"桶外（外部消费者）", "结构不可计入"}
+    excluded = {
+        (r["method"], r["path"])
+        for r in ledger.get("routes", [])
+        if r.get("verdict") in OUT_OF_BUCKET_VERDICTS
+    }
+    # 分母 = 真实非 mock 路由；剔除桶外/结构后为「诚实可消费面」
+    all_real = set()
+    for _crate, routes in backend.items():
+        for r in routes:
+            if "mock" in r["path"]:
+                continue
+            all_real.add((r["method"], r["path"]))
+    honest_denom = all_real - excluded
+    # 消费判定须考虑 UPLOAD/DOWNLOAD 动词别名：consumed 集以「前端动词(可含|)」为键，
+    # 后端路由 (method,path) 被消费当且仅当存在 hit==path 且 method ∈ 该键展开的方法集。
+    from collections import defaultdict
+
+    cons_methods_by_path = defaultdict(set)
+    for verb, path in consumed:
+        for m in verb.split("|"):
+            cons_methods_by_path[path].add(m)
+    honest_consumed = {
+        k
+        for k in honest_denom
+        if (lambda m, p: m in cons_methods_by_path.get(p, set()))(*k)
+    }
+    hd = len(honest_denom)
+    hc = len(honest_consumed)
+    print()
+    print("── 诚实口径（剔除桶外+结构记档项）────────────────────────")
+    print(f"桶外/结构记档剔除={len(excluded)}  诚实可消费面={hd}  已消费={hc}")
+    print(f"诚实消费率={hc / hd * 100 if hd else 100:.1f}%")
+    if hc < hd:
+        miss = honest_denom - honest_consumed
+        print(f"仍未消费 {len(miss)} 条（应继续真实接线）:")
+        for m, p in sorted(miss):
+            print(f"  {m} {p}")
+except FileNotFoundError:
+    print()
+    print("（unconsumed_ledger.json 缺失，未计算诚实口径——请先运行 _classify_unconsumed.py）")

@@ -9326,13 +9326,6 @@
    "file": "crates/file_assemble_control/src/routes.rs"
   },
   {
-   "method": "GET",
-   "path": "/api/file/share/{id}/password/{password}",
-   "handler": "share_id_password_password",
-   "handler_q": "share_id_password_password",
-   "file": "crates/file_assemble_control/src/routes.rs"
-  },
-  {
    "method": "POST",
    "path": "/api/attachment2/upload/folder/{folderId}",
    "handler": "attachment2_upload_folder_folderId",
@@ -9998,10 +9991,10 @@
    "file": "crates/file_assemble_control/src/routes.rs"
   },
   {
-   "method": "GET",
-   "path": "/api/share/{id}/password/{password}",
-   "handler": "u2_share_get_with_password",
-   "handler_q": "u2_share_get_with_password",
+   "method": "POST",
+   "path": "/api/file/share/password/verify",
+   "handler": "u2_share_password_verify",
+   "handler_q": "u2_share_password_verify",
    "file": "crates/file_assemble_control/src/routes.rs"
   },
   {
@@ -14006,13 +13999,6 @@
    "path": "/api/organization/assemble/authentication/mpweixin/bind/code/{code}",
    "handler": "mpweixin_bind_code",
    "handler_q": "mpweixin_bind_code",
-   "file": "crates/organization_assemble_authentication/src/lib.rs"
-  },
-  {
-   "method": "POST",
-   "path": "/api/organization/assemble/authentication/mpweixin/menu/test/send/to/{person}",
-   "handler": "mpweixin_menu_test_send_to",
-   "handler_q": "mpweixin_menu_test_send_to",
    "file": "crates/organization_assemble_authentication/src/lib.rs"
   },
   {
@@ -30113,20 +30099,6 @@
    "file": "crates/program_center/src/routes.rs"
   },
   {
-   "method": "GET",
-   "path": "/api/program_center/test/test1",
-   "handler": "test_test1",
-   "handler_q": "test_test1",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/program_center/test/test2",
-   "handler": "test_test2",
-   "handler_q": "test_test2",
-   "file": "crates/program_center/src/routes.rs"
-  },
-  {
    "method": "POST",
    "path": "/api/program_center/tokenthreshold/update",
    "handler": "tokenthreshold_update",
@@ -33857,41 +33829,6 @@
    "handler": "",
    "handler_q": "",
    "file": "crates/shared/src/router.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/health",
-   "handler": "",
-   "handler_q": "",
-   "file": "crates/shared/src/testing.rs"
-  },
-  {
-   "method": "GET",
-   "path": "/api/unit/list",
-   "handler": "",
-   "handler_q": "",
-   "file": "crates/shared/src/testing.rs"
-  },
-  {
-   "method": "POST",
-   "path": "/api/authentication/login",
-   "handler": "",
-   "handler_q": "",
-   "file": "crates/shared/src/testing.rs"
-  },
-  {
-   "method": "POST",
-   "path": "/api/reset",
-   "handler": "",
-   "handler_q": "",
-   "file": "crates/shared/src/testing.rs"
-  },
-  {
-   "method": "POST",
-   "path": "/api/person",
-   "handler": "",
-   "handler_q": "",
-   "file": "crates/shared/src/testing.rs"
   }
  ],
  "signature": [
