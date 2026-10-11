@@ -17,7 +17,7 @@ from datetime import datetime
 
 from .atomic_write import atomic_write_json
 from .validation import require_count
-from .exceptions import BackupError
+from .exceptions import BackupError, DataValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -113,6 +113,10 @@ class DatasetBackup:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         backup_id = name or f"backup_{timestamp}"
         backup_path = self._backup_dir / f"{backup_id}.json"
+        # `name` 直接决定落点，而它来自调用方：`../../x` 会写到备份目录之外
+        # （HTTP 面实测 200 且真落盘）——白名单只管到 backup_dir 那一格。
+        if self._backup_dir.resolve() not in backup_path.resolve().parents:
+            raise DataValidationError(f"备份名称不能指向备份目录之外: {name}")
         
         # 读取源数据
         with open(source, 'r', encoding='utf-8') as f:

@@ -624,10 +624,10 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
 | `GET` | `/api/system/dependency/datasets` | 已登记数据集列表 | 只读。`registry_path` 省略时用白名单首个根目录下的 `.dependency_registry`；显式空串仍 400。 |
 | `POST` | `/api/system/dependency/datasets` | 登记数据集 | 只读。`registry_path` 省略时用白名单首个根目录下的 `.dependency_registry`；显式空串仍 400。 |
 | `GET` | `/api/system/dependency/graph` | 数据集依赖图与校验问题 | 只读。同时返回图与**校验问题**（悬空边等）；`dependency` 的 4 个 action 里没有建边入口，边只能由 SDK 的 `add_dependency` 建立。 |
-| `GET` | `/api/system/backups` | 列出备份 | GET 列出 / POST 创建。`backup_dir` 省略时用白名单首个根目录下的 `.backups`。 |
-| `POST` | `/api/system/backups` | 创建备份 | GET 列出 / POST 创建。`backup_dir` 省略时用白名单首个根目录下的 `.backups`。 |
-| `POST` | `/api/system/backups/{backup_id}/restore` | 恢复备份 | 写。备份不存在回 **404**（与 DELETE 同组同码）。 |
-| `DELETE` | `/api/system/backups/{backup_id}` | 删除备份 | 写。同上，404。 |
+| `GET` | `/api/system/backups` | 列出备份 | GET 列出 / POST 创建。`backup_dir` 省略时用白名单首个根目录下的 `.backups`（**与 CLI `--backup-dir` 的默认 `.backups`、SDK 形参默认 `.backups` 不是同一个目录**，A301）；四档：空串 400「目录路径 不能为空」、`..` 400「路径包含非法组件」、白名单外绝对路径 403、白名单内绝对路径 200。空目录回 **200** `{"backups": []}`，不是 404 也不是 null。索引里可以躺着**两条同 id** 的记录（同名创建两次，`timestamp` 不同而 `backup_path` 逐字相同），列表照实回两行，前端行键因此拼上时间戳（A298）。 |
+| `POST` | `/api/system/backups` | 创建备份 | 回执七键（`backup_id` / `timestamp` / `source_path` / `backup_path` / `item_count` / `file_size` / `checksum`），两条路径都是**服务端绝对路径**。`name` 省略**或给空串**都生成 `backup_<YYYYmmdd_HHMMSS>`（秒级；它和回执 `timestamp` 来自 `backup()` 里**两次** `datetime.now()`，跨秒时对不上，A303）。同名再创建**覆盖磁盘那一份**、索引里却**多一行**，删一次两行一起走（A298）。`name` 带 `/` 放行并在备份目录下建子目录（实测 `sub/deep` ⇒ `.backups/sub/deep.json`），带 `..` 才 400 —— L231 补的那道门：改前 `../../escaped` 实测 **200** 且真写到白名单之外。源文件不存在 404「文件不存在」。本族三只写操作都挂 `verify_api_key`，而 `web/src` 里没有送 `X-API-Key` 的通道 ⇒ 设了 key 就一律 401（A302）。SDK 侧的 `clean_old_backups` / `verify_backup_integrity` **没有 HTTP 入口**（A300）。 |
+| `POST` | `/api/system/backups/{backup_id}/restore` | 恢复备份 | 写。备份不存在回 **404**（与 DELETE 同组同码、同文案「备份不存在」）。回执三键 `{backup_id, output_path, item_count}`，落点键叫 **`output_path`**（本组其余五条写盘端点叫 `output_file`，`split` 叫 `output_dir`）。目标已存在时**整份覆盖，不问**。把备份文件改坏再恢复 ⇒ **200**，只留一句 `WARNING 备份文件校验和不匹配，文件可能已损坏`，交回来的就是改坏的内容 —— checksum 算了、存了、比了，但**从不拦截**（A299）。 |
+| `DELETE` | `/api/system/backups/{backup_id}` | 删除备份 | 写。同上，404。按 id 过滤索引 ⇒ 同 id 的**多行一起消失**，磁盘那一份也删掉；此后同 id 再恢复 / 再删都是 404（A298）。 |
 
 ## 1. 健康检查
 
