@@ -30,6 +30,7 @@ import type {
   ExportFormatsResponse,
   ExportPreviewResponse,
   FeaturesResponse,
+  HealthGateResponse,
   HealthResponse,
   ImpactResponse,
   LanguageProfileResponse,
@@ -1276,6 +1277,56 @@ export const validateConfigFile = async (
 ): Promise<ConfigValidationResponse> => {
   const response = await api.post('/system/validate-config', {
     path: opts.path || undefined,
+  })
+  return response.data
+}
+
+// ============ 质量 · 健康门禁（A279 第十批接线，L235） ============
+
+/**
+ * `POST /api/quality/health-gate`
+ *
+ * 不挂鉴权门禁、只读不写盘：对数据集打健康分（`DatasetHealthScore`），再用默认三条门禁
+ * 规则判定能否放行（pass_rate=error / duplicate_rate=error / completeness=warning）。
+ *
+ * 下面这些哨兵三种动机各不相同，都是量出来的，不是形状卫生：
+ *
+ * * `text_field` 的 `|| undefined` 是**躲判决的**：空串**不报错**，所有条目都取到空值 ⇒
+ *   实测 `duplicate_rate` 变成 1.0、门禁在 `duplicate_rate` 那条上判负（**A321**）。
+ * * 三档阈值与 `block_on_warning` 的 `|| undefined` 是**必须的**：它们不是 `Optional`，
+ *   送 `null` 实测 **422**（英文 `float_type` / `bool_type`）；而 `weights` 与 `pass_rate`
+ *   是 `Optional`，送 `null` 是 200。axios 的 `JSON.stringify` 丢 `undefined` 但留 `null`。
+ * * **`pass_rate` 刻意不用 `|| undefined`**：`0` 是这一格的合法值（区间 [0,1] 闭），而
+ *   `/api/quality/evaluate` 在简化评分下**真的会回 0.0**。用 `||` 会把「算出来是 0」静默
+ *   变成「没算这一项」（进 `skipped_rules`），正是端点 docstring 里写着要避免的那件事：
+ *   `GateRule.evaluate()` 对缺失的指标键返回 False，于是 FAILED 冒充成「不及格」。
+ *
+ * `weights` 不做长度/和值过滤：那两句 400（「权重必须包含 4 个元素」「权重之和必须为 1.0」）
+ * 是该让用户看见的真判决。三档阈值**没有范围闸**（-1.0 / 5.0 / 99.0 实测全 200，判决随阈值
+ * 单调变化），所以页面要自己把口径写明白。这里不写第二套默认值——默认住在后端契约上，
+ * 抄一份进来就有两份真相。
+ */
+export const healthGate = async (
+  inputFile: string,
+  opts: {
+    textField?: string
+    weights?: number[]
+    passRate?: number
+    passRateMin?: number
+    duplicateRateMax?: number
+    completenessMin?: number
+    blockOnWarning?: boolean
+  } = {}
+): Promise<HealthGateResponse> => {
+  const response = await api.post('/quality/health-gate', {
+    input_file: inputFile,
+    text_field: opts.textField || undefined,
+    weights: opts.weights,
+    pass_rate: opts.passRate,
+    pass_rate_min: opts.passRateMin,
+    duplicate_rate_max: opts.duplicateRateMax,
+    completeness_min: opts.completenessMin,
+    block_on_warning: opts.blockOnWarning,
   })
   return response.data
 }
