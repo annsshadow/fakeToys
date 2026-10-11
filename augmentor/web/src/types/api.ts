@@ -1119,3 +1119,46 @@ export interface RagResponse {
   input_count: number
   record_count: number
 }
+
+// ============ 系统 · 数据备份（A279 第七批接线，L231） ============
+
+/**
+ * `GET /api/system/backups` 列表里的一项，也是 `POST /api/system/backups` 的整份回执
+ * （与 `BackupInfo.to_dict()` 的七键逐字相等）
+ *
+ * `backup_id` **就是创建时传的 `name`**（省略时才是 `backup_<YYYYmmdd_HHMMSS>`），所以
+ * 同名创建两次会覆盖同一份文件、并在索引里留下两条同 id 的记录（实测 list 回三条、
+ * 磁盘只有一份），删一次把两条索引项一起清掉（`augmentor/backup.py` 的 delete 按 id 过滤
+ * 全部匹配项）。`source_path` / `backup_path` 是**服务端的绝对路径**，页面照抄显示。
+ * `timestamp` 是 isoformat，而 id 里那个时间戳是**另一次** `datetime.now()`（秒级），
+ * 跨秒时两者会对不上。`checksum` 是备份文件的 sha256——它**只在恢复时写日志**，
+ * 校验和不匹配照样 200 并把改坏的内容交回来（实测），所以这一格不能读成「完整性保证」。
+ */
+export interface BackupInfo {
+  backup_id: string
+  timestamp: string
+  source_path: string
+  backup_path: string
+  item_count: number
+  file_size: number
+  checksum: string
+}
+
+/** `GET /api/system/backups`：空目录实测回 `{"backups": []}`，不是 404 也不是 null */
+export interface BackupListResponse {
+  backups: BackupInfo[]
+}
+
+/**
+ * `POST /api/system/backups/{backup_id}/restore`
+ *
+ * 落点键叫 **`output_path`**，而同族其余五只写盘端点叫 `output_file`（`split` 叫
+ * `output_dir`）——这一格是 SDK `restore()` 的返回键原样上线，不是笔误可改的（账本 A277
+ * 当年订正的正是「文档把这一族一律写成 `output_path`」）。恢复**覆盖**目标文件（实测把
+ * 一份写有别的内容的文件整份换掉），且不做校验和拦截。
+ */
+export interface RestoreBackupResponse {
+  backup_id: string
+  output_path: string
+  item_count: number
+}
