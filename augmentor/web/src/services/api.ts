@@ -14,6 +14,7 @@ import type {
   CheckpointListResponse,
   CleanResponse,
   CompareResponse,
+  ConfigValidationResponse,
   CreateVersionResponse,
   DataFileListResponse,
   DataItem,
@@ -34,6 +35,7 @@ import type {
   LanguageProfileResponse,
   LeakageResponse,
   MergeResponse,
+  MigrationResponse,
   ModelsResponse,
   MultimodalFormatsResponse,
   MultimodalRecord,
@@ -44,13 +46,15 @@ import type {
   SemanticSearchResponse,
   ProfilingResponse,
   QualityEvaluationResponse,
-  QualityReportResponse, RagResponse, RestoreBackupResponse, SampleResponse,
+  QualityReportResponse, QualitySnapshotResponse, RagResponse, RestoreBackupResponse, SampleResponse,
   SplitResponse,
   SanitizeResponse,
   SearchResponse,
   StartAugmentResponse,
   StatisticsResponse,
   StatusResponse,
+  StreamReportResponse,
+  TestSuiteResponse,
   UpdateConfigResponse,
   UploadResponse,
   VersionDataResponse,
@@ -1171,6 +1175,107 @@ export const getDependencyGraph = async (
 ): Promise<DependencyGraphResponse> => {
   const response = await api.get('/system/dependency/graph', {
     params: { registry_path: registryPath || undefined },
+  })
+  return response.data
+}
+
+// ============ 系统 · 监控 / 自测 / 迁移 / 流式 / 配置校验（A279 第九批接线，L234） ============
+
+/**
+ * `POST /api/system/monitor`
+ *
+ * 只读不写盘，但**不是 GET**（同族四只都是 POST 带 body）。`input_file` 必填：缺是 **422**
+ * 英文 `Field required`，不存在是 **404**「文件不存在」，白名单外 **403**，带 `..` **400**
+ * 「路径包含非法组件」——与同族其余写盘端点逐字同一套判决。多送未知键被静默忽略（实测 200）。
+ */
+export const runQualityMonitor = async (inputFile: string): Promise<QualitySnapshotResponse> => {
+  const response = await api.post('/system/monitor', { input_file: inputFile })
+  return response.data
+}
+
+/**
+ * `POST /api/system/auto-test`
+ *
+ * `suite` 只认 `default`（来自 `AUTO_TEST_SUITES`）：拼错是 **400**「未知的测试套件: …
+ * （当前只支持 default；自定义套件需要先由调用方注册，本端点暂无注册入口）」，**空串同样是
+ * 400**（服务端判的是 `suite is not None`，空串算给了一个不认识的名字），而 `null` 与省略
+ * 才走默认 ⇒ 本层把页面「服务端默认」那档的空串丢成 `undefined`，这一处哨兵**是躲判决的**
+ * （与 `listBackups` / `listDependencyDatasets` 同款，不是形状卫生）。
+ */
+export const runDatasetAutoTest = async (
+  inputFile: string,
+  opts: { suite?: string } = {}
+): Promise<TestSuiteResponse> => {
+  const response = await api.post('/system/auto-test', {
+    input_file: inputFile,
+    suite: opts.suite || undefined,
+  })
+  return response.data
+}
+
+/**
+ * `POST /api/system/migrate`
+ *
+ * 挂鉴权门禁（L233 起请求拦截器会把「配置管理 → 写操作鉴权」存下的那份 key 送出去）。
+ * `rules` 省略或**空数组**都等于「三条内置规则全用」（`rename_instruction` /
+ * `rename_output` / `flatten_conversations`），不是「不迁移」⇒ 本层把空数组丢成 `undefined`，
+ * 免得页面上那一档被读成 no-op。未知规则名是 **400**「未知的迁移规则: …（可选 …）」，
+ * 且**先于文件判决**（规则名写错时连 `input_file` 存不存在都不看）。
+ * 这是**破坏性**操作：字段被改名（`instruction` → `question`、`output` → `answer`），
+ * `input_file` 与 `output_file` 相同时就地改写，服务端放行（实测 200）。
+ */
+export const migrateDataset = async (
+  inputFile: string,
+  outputFile: string,
+  opts: { rules?: string[] } = {}
+): Promise<MigrationResponse> => {
+  const response = await api.post('/system/migrate', {
+    input_file: inputFile,
+    output_file: outputFile,
+    rules: opts.rules && opts.rules.length > 0 ? opts.rules : undefined,
+  })
+  return response.data
+}
+
+/**
+ * `POST /api/system/stream`
+ *
+ * 挂鉴权门禁。四档 `operation` 在同一份 5 条夹具上的实测写出条数：`none` 5、`quality` 2、
+ * `dedup` 3、`clean` 5（clean **一条不丢**，改写落在内容里）；未知值与**空串**都是 **400**
+ * 「不支持的 operation: …（可选 quality / dedup / clean / none）」⇒ 空串同样丢成 `undefined`。
+ * `output_format` 只认 json / jsonl（parquet 是 **400**「format 必须是 json / jsonl 之一，
+ * 当前是 'parquet'」），`chunk_size` 0 / -1 是 **400**「chunk_size 必须是不小于 1 的整数，当前是 0」。
+ * 这一支**不调模型**（与 `/api/augment/start` 的区别，路由 docstring 里写着），所以同步返回。
+ */
+export const streamProcess = async (
+  inputFile: string,
+  outputFile: string,
+  opts: { operation?: string; chunkSize?: number; outputFormat?: string } = {}
+): Promise<StreamReportResponse> => {
+  const response = await api.post('/system/stream', {
+    input_file: inputFile,
+    output_file: outputFile,
+    operation: opts.operation || undefined,
+    chunk_size: opts.chunkSize && opts.chunkSize > 0 ? opts.chunkSize : undefined,
+    output_format: opts.outputFormat || undefined,
+  })
+  return response.data
+}
+
+/**
+ * `POST /api/system/validate-config`
+ *
+ * **校验不通过也是 200**，判决在 body 的 `is_valid` 上 ⇒ 页面不能靠 `catch` 判失败。
+ * `path` 省略时校验的是**服务自己**正在用的那份（`AUGMENTOR_CONFIG_PATH`，缺省 `config.yaml`）；
+ * 那份不存在时同样 200 + `is_valid: false` + 「文件不存在: …」。显式 path 走数据白名单：
+ * 白名单外 **403**、不存在 **404**，而**空串是 400**「文件路径 不能为空」⇒ 这一处哨兵
+ * 也是躲判决的，不是形状卫生。
+ */
+export const validateConfigFile = async (
+  opts: { path?: string } = {}
+): Promise<ConfigValidationResponse> => {
+  const response = await api.post('/system/validate-config', {
+    path: opts.path || undefined,
   })
   return response.data
 }

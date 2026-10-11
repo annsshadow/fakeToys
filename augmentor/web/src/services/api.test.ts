@@ -813,3 +813,93 @@ describe('bulkErrorDetail', () => {
     expect(api.bulkErrorDetail(undefined, '导出失败')).toBe('导出失败')
   })
 })
+
+/**
+ * 系统那一族五只 fetchers 的请求体（L234：A279 第九批接线）
+ *
+ * 这一族的特点是**哨兵多**：页面上有四个「服务端默认」档（`suite` / `rules` / `operation`
+ * 与 `output_format` / `path`）加一个空的 `chunk_size`，服务层必须把它们**整键丢掉**而不是
+ * 送空值。丢掉与送空值在真实端点上是两种判决：空串 `operation` 是 400「不支持的
+ * operation: 」、空串 `suite` 是 400「未知的测试套件」、空串 `path` 是 400「文件路径
+ * 不能为空」、`chunk_size: 0` 是 400「chunk_size 必须是不小于 1 的整数」（四档均由
+ * `tests/unit/test_system_ops_wiring_l234.py` 在真端点上量过）。
+ *
+ * 断言用 `JSON.parse(JSON.stringify(body))` 而不是 `toEqual`：axios 发出去的就是这份序列化
+ * 结果，`toEqual` 会把「键在但值是 undefined」与「键不在」判成相等，正好放过这里要拦的形状。
+ */
+describe('系统那一族的请求体与哨兵（L234）', () => {
+  /** 第 n 次 POST 真正发出去的那份 body（按 axios 的序列化口径） */
+  const sent = (n = 0) => JSON.parse(JSON.stringify(instance.post.mock.calls[n][1]))
+  const url = (n = 0) => instance.post.mock.calls[n][0]
+
+  it('monitor 只送 input_file；auto-test 的 suite 空串整键不送，给了才送', async () => {
+    respondWith({})
+
+    await api.runQualityMonitor('mixed.json')
+    await api.runDatasetAutoTest('mixed.json')
+    await api.runDatasetAutoTest('mixed.json', { suite: 'default' })
+
+    expect([url(0), url(1), url(2)]).toEqual([
+      '/system/monitor',
+      '/system/auto-test',
+      '/system/auto-test',
+    ])
+    expect(sent(0)).toEqual({ input_file: 'mixed.json' })
+    expect(sent(1)).toEqual({ input_file: 'mixed.json' })
+    expect(sent(2)).toEqual({ input_file: 'mixed.json', suite: 'default' })
+  })
+
+  it('migrate 的 rules 空数组整键不送（空数组等于三条全用，不是「不迁移」）', async () => {
+    respondWith({})
+
+    await api.migrateDataset('mixed.json', 'mig.json', { rules: [] })
+    await api.migrateDataset('mixed.json', 'mig.json', { rules: ['rename_output'] })
+
+    expect(sent(0)).toEqual({ input_file: 'mixed.json', output_file: 'mig.json' })
+    expect(sent(1)).toEqual({
+      input_file: 'mixed.json',
+      output_file: 'mig.json',
+      rules: ['rename_output'],
+    })
+  })
+
+  it('stream 的三格空档与 chunk_size 0 全都不送，给了才按 snake_case 送出去', async () => {
+    respondWith({})
+
+    // 页面默认档：operation 与 output_format 都是空串，chunk_size 是 null
+    await api.streamProcess('mixed.json', 'out.jsonl', {
+      operation: '',
+      chunkSize: undefined,
+      outputFormat: '',
+    })
+    await api.streamProcess('mixed.json', 'out.jsonl', {
+      operation: 'clean',
+      chunkSize: 250,
+      outputFormat: 'json',
+    })
+    // 0 与负数在服务端都是 400，所以这一格也必须被丢掉（不是原样送上去挨判决）
+    await api.streamProcess('mixed.json', 'out.jsonl', { chunkSize: 0 })
+
+    expect(url(0)).toBe('/system/stream')
+    expect(sent(0)).toEqual({ input_file: 'mixed.json', output_file: 'out.jsonl' })
+    expect(sent(1)).toEqual({
+      input_file: 'mixed.json',
+      output_file: 'out.jsonl',
+      operation: 'clean',
+      chunk_size: 250,
+      output_format: 'json',
+    })
+    expect(sent(2)).toEqual({ input_file: 'mixed.json', output_file: 'out.jsonl' })
+  })
+
+  it('validate-config 的 path 空串不送（省略 = 校验服务自己那份），给了才送', async () => {
+    respondWith({})
+
+    await api.validateConfigFile({ path: '' })
+    await api.validateConfigFile({ path: 'config.yaml' })
+
+    expect(url(0)).toBe('/system/validate-config')
+    expect(sent(0)).toEqual({})
+    expect(sent(1)).toEqual({ path: 'config.yaml' })
+  })
+})

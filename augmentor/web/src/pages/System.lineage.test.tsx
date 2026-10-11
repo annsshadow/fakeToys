@@ -321,8 +321,11 @@ describe('System 血缘卡的诚实口径', () => {
     // 页那张卡上，由 `api.ts` 的请求拦截器挂到 X-API-Key）——这两条原先钉的是「没有通道」，
     // 前提被本轮改掉，按新世界重钉（通道的形状由 test_api_key_channel_l233.py 与 api.test.ts 钉）。
     expect(screen.getByText(/登记这一支挂鉴权门禁（两条 GET 不挂）/s)).toBeInTheDocument()
-    expect(screen.getAllByText(/配置管理 → 写操作鉴权/s)).toHaveLength(2) // 备份卡与血缘卡各指一次
-    expect(screen.getByText(/（A302 \/ A312 已收）/s)).toBeInTheDocument()
+    // 备份卡、血缘卡、迁移与流式卡各指一次（L234 起是 3 处，与 test_api_key_channel_l233.py 的
+    // `page.count(CARD) == 3` 同一份读数）
+    expect(screen.getAllByText(/配置管理 → 写操作鉴权/s)).toHaveLength(3)
+    // 这一格 L234 起页面上有两处（血缘卡与新的迁移/流式卡都写着同一批号），所以按数目钉
+    expect(screen.getAllByText(/（A302 \/ A312 已收）/s)).toHaveLength(2)
     expect(screen.getByText(/两种错误体都要认/s)).toBeInTheDocument()
   })
 })

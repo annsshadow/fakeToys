@@ -1234,3 +1234,146 @@ export interface DependencyGraphResponse {
   edges: DependencyGraphEdge[]
   issues: DependencyGraphIssue[]
 }
+
+// ============ 系统 · 监控 / 自测 / 迁移 / 流式 / 配置校验（A279 第九批接线，L234） ============
+
+/**
+ * `POST /api/system/monitor` 的一条告警（`QualityAlert.to_dict()` 的八键）
+ *
+ * `message` 是**英文原文**（实测逐字 `completeness below threshold: 0.50 < 0.70`），
+ * 服务端没有中文那一份，页面照抄。阈值实测为 completeness 0.7 / diversity 0.4 /
+ * consistency 0.7，`alert_type` 只见到 `below`，`severity` 只见到 `critical`。
+ */
+export interface QualityAlertEntry {
+  alert_id: string
+  metric_name: string
+  current_value: number
+  threshold_value: number
+  alert_type: string
+  severity: string
+  message: string
+  timestamp: string
+}
+
+/**
+ * `POST /api/system/monitor` 的回执：质量快照
+ *
+ * `metrics` 的三个键是 `completeness` / `diversity` / `consistency`，但**不是恒在**：
+ * 数据集是空数组时实测回 `metrics: {}`（空对象，不是三个 0），所以页面必须按「键在不在」
+ * 渲染，不能直接 `metrics.completeness.toFixed(2)`。`alerts` 为空是「这一份没触阈值」，
+ * 不是「监控通过」——它只比三个阈值，别的问题一概不查。
+ */
+export interface QualitySnapshotResponse {
+  snapshot_id: string
+  timestamp: string
+  metrics: Record<string, number>
+  alerts: QualityAlertEntry[]
+}
+
+/**
+ * `POST /api/system/auto-test` 的一条测试结果（`TestResult.to_dict()` 的六键）
+ *
+ * 内置 default 套件实测恒为五条，`test_id` 依次是 `format_check`（格式检查）/
+ * `field_check`（字段检查）/ `quality_check`（质量检查）/ `diversity_check`（多样性检查）/
+ * `duplicate_check`（重复检查）。`message` 里那串明细是**截断过的**（实测最多列 5 条，
+ * 形如「发现 12 个缺失字段: ['第 1 条数据缺少字段: instruction', …]」），条数与列表长度
+ * 不是一回事，页面不许把列表长度当总数显示。
+ */
+export interface DatasetTestResult {
+  test_id: string
+  test_name: string
+  passed: boolean
+  message: string
+  execution_time_ms: number
+  timestamp: string
+}
+
+/**
+ * `POST /api/system/auto-test` 的回执：测试套件结果
+ *
+ * `total_tests` / `passed_tests` / `failed_tests` / `pass_rate` 在 SDK 上是**计算属性**，
+ * 服务端显式列出才有（`TestSuiteResponse` 的 docstring 记着这一格）。`suite` 只认
+ * `default`：拼错与**空串**都是 400「未知的测试套件: …」，而 `null` 与省略才走默认 ⇒
+ * 服务层把页面「服务端默认」那档的空串丢成 `undefined`，这一处哨兵是躲判决的。
+ * `pass_rate` 是 0–1 的小数（实测 0.2 = 1/5），页面自己乘 100 再显示百分号。
+ */
+export interface TestSuiteResponse {
+  name: string
+  description: string
+  total_tests: number
+  passed_tests: number
+  failed_tests: number
+  pass_rate: number
+  results: DatasetTestResult[]
+}
+
+/**
+ * `POST /api/system/migrate` 的回执：迁移结果（`MigrationResult.to_dict()` 的九键）
+ *
+ * `source_path` / `target_path` 是**服务端 resolve 后的绝对路径**，页面照抄显示。
+ * `rules_applied` 默认是三条全用（`rename_instruction` / `rename_output` /
+ * `flatten_conversations`），实测 **`rules: []` 与省略等价**——空数组不是「不迁移」，
+ * 所以页面那一档要写成「服务端默认（三条全用）」而不是「不迁移」。
+ * `flatten_conversations` 对没有 `conversations` 字段的数据**静默无操作**（实测仍回
+ * `migrated_items == total_items`、`errors` 为空），回执看不出「这条规则其实没干成事」。
+ * 迁移是**破坏性结构变化**：`instruction` → `question`、`output` → `answer`；
+ * `input_file` 与 `output_file` 相同时就地改写，服务端放行（实测 200）。
+ */
+export interface MigrationResponse {
+  migration_id: string
+  source_path: string
+  target_path: string
+  total_items: number
+  migrated_items: number
+  failed_items: number
+  rules_applied: string[]
+  errors: Record<string, unknown>[]
+  timestamp: string
+}
+
+/**
+ * `POST /api/system/stream` 的回执：流式处理报告，三键恒在
+ *
+ * **`processed` 各档实测都等于 `total_input`**（none / quality / dedup / clean 四档全是 5），
+ * 它数的是「读进来逐条看过」，不是「被改动过」⇒ 页面不能把它渲染成「已处理 N 条（其余丢弃）」，
+ * 真正的取舍只在 `total_output` 上（实测 5→5 / 5→3 / 5→4 / 5→4）。
+ * `output_format` 只认 json / jsonl（parquet 是 400）；**与 `output_file` 的扩展名不一致时
+ * 以 `output_format` 为准，扩展名不改**（实测 `format=json` 写进 `.jsonl` 文件名里，内容是
+ * 一整个 JSON 数组）。同名再写一次是**整份覆盖**且字节相同（实测幂等）。
+ */
+export interface StreamReportResponse {
+  total_input: number
+  total_output: number
+  processed: number
+}
+
+/**
+ * `POST /api/system/validate-config` 的一条配置问题（`ValidationError.to_dict()` 的四键）
+ *
+ * `line` 实测**恒为 null**（合法/非法两份配置、YAML 解析错都一样），所以页面不许按行号
+ * 排序、也不许承诺「跳到出错行」。`path` 是配置里的点号路径（如 `models.ernie.type`），
+ * YAML 解析失败那一档实测是 `yaml`。
+ */
+export interface ConfigValidationIssue {
+  path: string
+  message: string
+  severity: string
+  line: number | null
+}
+
+/**
+ * `POST /api/system/validate-config` 的回执
+ *
+ * **校验不通过也是 HTTP 200**，判决只在 body 的 `is_valid` 上——所以这一支的失败不能靠
+ * `catch` 抓，页面必须读 `is_valid` 才敢说「配置没问题」。`summary` 是三个桶的计数
+ * （`{errors, warnings, info}`），与三条并列列表的 `length` 实测一致。
+ * `path` 省略时校验的是**服务自己**正在用的那份（`AUGMENTOR_CONFIG_PATH`，缺省
+ * `config.yaml`）；那份文件不存在时也是 200 + `is_valid: false` + 「文件不存在: …」。
+ */
+export interface ConfigValidationResponse {
+  is_valid: boolean
+  summary: Record<string, number>
+  errors: ConfigValidationIssue[]
+  warnings: ConfigValidationIssue[]
+  info: ConfigValidationIssue[]
+}
