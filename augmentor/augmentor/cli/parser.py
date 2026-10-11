@@ -276,8 +276,8 @@ def build_parser() -> argparse.ArgumentParser:
     stream_parser.add_argument("--output", type=str, required=True, help="输出文件路径")
     stream_parser.add_argument("--chunk-size", type=int, default=1000, help="分块大小")
     stream_parser.add_argument("--operation", type=str, required=True,
-                               choices=["quality", "dedup", "clean", "export"],
-                               help="处理操作")
+                               choices=["quality", "dedup", "clean", "none"],
+                               help="处理操作（none = 原样搬运；与 /api/system/stream 同一份清单，A313）")
 
     # 数据集合并命令
     merge_parser = subparsers.add_parser("merge", help="合并多个数据集")

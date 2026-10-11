@@ -11,8 +11,8 @@
 | --- | --- |
 | 契约面操作总数 | **75**（与 l224 同一个家，这里不另钉一份） |
 | 挂 `verify_api_key` 的操作 | **24** |
-| 其中前端**已接线**的形状 | **21** ⇒ 开了鉴权就有 21 个页面动作点不动 |
-| 挂门禁但还没接线的 | **3**（translate / migrate / stream） |
+| 其中前端**已接线**的形状 | **23** ⇒ 开了鉴权就有 23 个页面动作点不动 |
+| 挂门禁但还没接线的 | **1**（translate；L234 把 migrate / stream 接进页面后从 3 降到 1） |
 
 真链路上量到的档位（`TestClient`，白名单根指向临时目录，跑完不留产物）：无头 ⇒ **401**，
 detail 逐字「缺少或无效的 X-API-Key」；错值 ⇒ 同样 **401**；对值 ⇒ 放行（拿「删一个不存在
@@ -23,7 +23,8 @@ detail 逐字「缺少或无效的 X-API-Key」；错值 ⇒ 同样 **401**；�
 
 三面判据，各对应一种真实失效形状：
 
-1. **规模**（`TestGateScale`）：24 / 21 与那 21 条的逐条名单。多挂一条门禁、或前端多接
+1. **规模**（`TestGateScale`）：24 / 23 与那 23 条的逐条名单（L233 定标时是 24 / 21，
+   L234 把 migrate / stream 接进页面后按实测挪到 23）。多挂一条门禁、或前端多接
    一条写操作，都会红 —— 那一格正是「页面上有多少动作会被鉴权掐死」的真值。
 2. **通道形状**（`TestTheChannelShape`）：头名的带引号字面量在前端**只有一处**
    （`api.ts` 的 `API_KEY_HEADER`），拦截器用它、存取用同一个 localStorage 键、空值走
@@ -63,11 +64,11 @@ QUOTED_TOKEN = re.compile(rf"['\"`]{re.escape(TOKEN)}")
 #: 存 key 的那一格在页面上的落点（401 的指路与两张卡的正文都用这个名字）
 CARD = "配置管理 → 写操作鉴权"
 
-#: 探针量到的两个数
+#: 探针量到的两个数（`GATED_CONSUMED` 在 L234 从 21 挪到 23：migrate / stream 接进了页面）
 GATED_TOTAL = 24
-GATED_CONSUMED = 21
+GATED_CONSUMED = 23
 
-#: 那 21 条：前端已接线、且服务端开了鉴权就会 401 的形状（逐条来自探针，不是推的）
+#: 那 23 条：前端已接线、且服务端开了鉴权就会 401 的形状（逐条来自探针，不是推的）
 CONSUMED_AND_GATED = frozenset({
     ("DELETE", "/api/data/delete/{filename}"),
     ("DELETE", "/api/system/backups/{backup_id}"),
@@ -87,16 +88,17 @@ CONSUMED_AND_GATED = frozenset({
     ("POST", "/api/system/backups"),
     ("POST", "/api/system/backups/{backup_id}/restore"),
     ("POST", "/api/system/dependency/datasets"),
+    ("POST", "/api/system/migrate"),
+    ("POST", "/api/system/stream"),
     ("POST", "/api/versions/create"),
     ("POST", "/api/versions/{version_id}/rollback"),
     ("PUT", "/api/data/update/{filename}"),
 })
 
-#: 挂门禁但前端还没接线的 3 条（24 = 21 + 3；接进页面时这一格要跟着挪）
+#: 挂门禁但前端还没接线的尾巴（24 = 23 + 1；L234 把 migrate / stream 接进页面后只剩这一条，
+#: 接 translate 时这一格要跟着清空——清空后本判据仍会响：它比的是集合相等，不是「非空」）
 GATED_NOT_YET_CONSUMED = frozenset({
     ("POST", "/api/dataset/translate"),
-    ("POST", "/api/system/migrate"),
-    ("POST", "/api/system/stream"),
 })
 
 
@@ -188,13 +190,13 @@ class TestGateScale:
     def test_24_of_the_75_operations_are_key_gated(self):
         assert len(gated_operations()) == GATED_TOTAL, sorted(gated_operations())
 
-    def test_21_gated_operations_are_already_wired_into_the_ui(self):
+    def test_23_gated_operations_are_already_wired_into_the_ui(self):
         consumed = consumed_operations()
         assert consumed & gated_operations() == CONSUMED_AND_GATED
         assert len(CONSUMED_AND_GATED) == GATED_CONSUMED
 
-    def test_the_other_three_gated_ones_are_the_unwired_tail(self):
-        """24 = 21 + 3：还没接线的三条也挂着门禁，接进页面时这一格要跟着挪"""
+    def test_the_last_gated_one_is_the_unwired_tail(self):
+        """24 = 23 + 1：L234 把 migrate / stream 接进页面后，尾巴上只剩 translate 这一条"""
         gated = gated_operations()
         assert gated - consumed_operations() == GATED_NOT_YET_CONSUMED
         assert len(gated) == GATED_CONSUMED + len(GATED_NOT_YET_CONSUMED)
@@ -251,8 +253,13 @@ class TestTheChannelShape:
         assert "getApiKey" in code and "setApiKey" in code
         assert "写操作鉴权" in code
         assert 'aria-label="写操作鉴权 API Key"' in code
-        # 本层没有能力证明这份 key 是对的（服务端只在写操作请求上校验）⇒ 不许说「校验通过」
-        assert "校验通过" not in code
+        # 本层没有能力证明这份 key 是对的（服务端只在写操作请求上校验）⇒ 这张卡不许说「校验通过」。
+        # **扫描面收到 key 卡自身那一段**（L234 改的）：同一个文件里另有「配置文件校验」卡，
+        # 那张卡说「这份配置合法」是它真查过的判决，与 key 无关。禁令面是 key 卡，写成整个文件
+        # 的 not in 就会被无关成员判假红 —— 尺子要量的是「key 卡有没有吹牛」，不是「这个文件
+        # 有没有出现过四个字」。
+        card = code.split('<Card title="写操作鉴权"', 1)[1].split("\n      </Card>", 1)[0]
+        assert "校验通过" not in card
 
     @needs_web_src
     def test_the_401_hint_points_at_that_card(self):
@@ -276,11 +283,28 @@ class TestTheHonestProse:
         assert not stale, f"页面上还留着 L233 之前的假话：{stale}"
 
     @needs_web_src
-    def test_both_cards_point_to_where_the_key_is_set(self):
+    def test_every_gated_card_points_to_where_the_key_is_set(self):
+        """L234 起是三次（备份卡 / 血缘卡 / 迁移与流式卡）：页面上每一张含挂门禁写操作的卡，
+        都要指着存 key 的那一格 —— 少指一次，用户在那张卡上撞 401 就没有去处"""
         page = SYSTEM_TSX.read_text(encoding="utf-8")
-        assert page.count(CARD) == 2, (
-            f"备份卡与血缘卡各指一次那张卡，现量 {page.count(CARD)} 次")
+        assert page.count(CARD) == 3, (
+            f"备份卡、血缘卡与迁移流式卡各指一次那张卡，现量 {page.count(CARD)} 次")
         assert TOKEN in page, "401 的判决原文里带着这个头名，页面上要如实引用"
+
+    @needs_web_src
+    def test_the_impact_numbers_on_the_key_card_are_the_measured_ones(self):
+        """卡上那句影响面的两个数必须与本文件在路由上量到的那两个常数同源
+
+        L234 把 migrate / stream 接进页面之后，这一句在 `Settings.tsx` 上仍写着 21 —— 页面上
+        的数字此前没人钉，接线一漂它就成假话；而且漂的方向是「少说了两个点不动的动作」，
+        用户只会觉得提示不准，不会怀疑门禁本身。这里把页面那半句与 `GATED_TOTAL` /
+        `GATED_CONSUMED` 绑死：接线数再变，两处必须一起动。
+        """
+        page = SETTINGS_TSX.read_text(encoding="utf-8")
+        assert f"有 {GATED_TOTAL} 条挂着这道门禁" in page, (
+            f"门禁总数现量是 {GATED_TOTAL}，卡上那句影响面要跟着改")
+        assert f"其中 {GATED_CONSUMED} 条是页面上已" in page, (
+            f"已接线的挂门禁动作现量是 {GATED_CONSUMED} 条（L234 从 21 挪上来），卡上那句要跟着改")
 
     def test_the_docs_no_longer_say_the_frontend_has_no_channel(self):
         stale = []

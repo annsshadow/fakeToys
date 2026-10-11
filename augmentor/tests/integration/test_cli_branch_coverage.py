@@ -124,14 +124,19 @@ class TestStreamOtherOperations:
         report = json.loads(out)
         assert report["total_input"] == 5
 
-    def test_stream_export_passthrough(self, branch_context):
-        """export 操作为直通处理，输出条数 == 输入条数"""
+    def test_stream_none_passthrough(self, branch_context):
+        """none 操作为直通处理，输出条数 == 输入条数
+
+        L234（A313）之前这一档在 CLI 里叫 `export`，而 handler 的 `else` 分支只是原样搬运——
+        名字承诺的导出从来没发生过，同时 HTTP 侧合法的 `none` 被 argparse 直接拒（退出码 2）。
+        两端现在共用同一份清单 `quality / dedup / clean / none`。
+        """
         data, _, tmp = branch_context
         out_file = tmp / "stream_pass.json"
         out, err, code = run_cli(
             [
                 "cli", "stream", "--input", str(data),
-                "--output", str(out_file), "--operation", "export",
+                "--output", str(out_file), "--operation", "none",
             ]
         )
         assert code is None, err
