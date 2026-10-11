@@ -21,7 +21,10 @@ import type {
   DatasetExportResponse,
   ConvertResponse,
   DatasetValidationResponse,
+  DatasetRegistryEntry,
+  DatasetRegistryListResponse,
   DedupResponse,
+  DependencyGraphResponse,
   EvaluateResponse,
   ExportFormatsResponse,
   ExportPreviewResponse,
@@ -1041,6 +1044,78 @@ export const deleteBackup = async (
 ): Promise<MutationResponse> => {
   const response = await api.delete(`/system/backups/${backupId}`, {
     params: { backup_dir: backupDir || undefined },
+  })
+  return response.data
+}
+
+// ============ 系统 · 数据集血缘（A279 第八批接线，L232） ============
+
+/**
+ * `GET /api/system/dependency/datasets`
+ *
+ * `registry_path` 省略时落点是**白名单首个根目录下的 `.dependency_registry`**（出厂即
+ * `data/.dependency_registry`），显式送空串是 **400**「目录路径 不能为空」、`..` 是 **400**
+ * 「路径包含非法组件」、白名单外的绝对路径是 **403**——所以本层把页面上的空串丢成
+ * `undefined`，这一处哨兵**是躲判决的**（与 `listBackups` 同款）。CLI 的 `--registry-path`
+ * 默认值是 `.dependency_registry`（相对工作目录），与这里的缺省**不是同一个目录**（A308）。
+ * 另有一条实测脾气：注册表目录不存在时，这一支**只读端点会把它建出来**（A307）。
+ */
+export const listDependencyDatasets = async (
+  registryPath?: string
+): Promise<DatasetRegistryListResponse> => {
+  const response = await api.get('/system/dependency/datasets', {
+    params: { registry_path: registryPath || undefined },
+  })
+  return response.data
+}
+
+/**
+ * `POST /api/system/dependency/datasets`
+ *
+ * 必填两格 `name` 与 `input_file`；缺 `input_file` 是 **422**（FastAPI 英文 `Field required`），
+ * 而其余坏参数走中文 400/403/404 —— 页面那句错误提示因此不能只认一种错误体（A311）。
+ * `input_file` 不存在是 **404**「文件不存在」，白名单外是 **403**，带 `..` 是 **400**，
+ * 空串是 **400**「文件路径 不能为空」，顶层不是 JSON 数组是 **400**「数据文件的顶层必须是
+ * JSON 数组，当前是对象」。`dataset_id = md5(name)[:8]`，所以**同名再登记是覆盖**（不留
+ * 重复，但 `created_at` 被刷新，A306）。这一支挂鉴权门禁（A312）：服务端设了
+ * `AUGMENTOR_API_KEY` 而无那个头就是 **401**，而前端目前**没有**送它的通道，与备份那一族
+ * 同一个缺口（A302）。头名逐字只写在系统状态页那张卡的正文里，本层刻意不复述——
+ * 「提到这个头名的文件只有一处」是 L231 那条判据的量法，多一处回声就会把它判红。
+ */
+export const registerDependencyDataset = async (
+  name: string,
+  inputFile: string,
+  opts: { description?: string; tags?: string[]; registryPath?: string } = {}
+): Promise<DatasetRegistryEntry> => {
+  // 请求体提到调用之前：`params` 块与所属调用的间隔必须落在消费对账那把尺子的窗口内
+  // （`test_api_endpoint_consumption_l224.py` 的 `PARAMS_MAX_GAP = 60`），否则 `registry_path`
+  // 绑不上、query 那一维对这一条失明——`createBackup` 已经踩过一次（L231）
+  const body = {
+    name,
+    input_file: inputFile,
+    description: opts.description || undefined,
+    tags: opts.tags && opts.tags.length > 0 ? opts.tags : undefined,
+  }
+  const response = await api.post('/system/dependency/datasets', body, {
+    params: { registry_path: opts.registryPath || undefined },
+  })
+  return response.data
+}
+
+/**
+ * `GET /api/system/dependency/graph`
+ *
+ * 三键恒在：`nodes` / `edges` / `issues`。`registry_path` 的档位判决与列表那一支逐字相同。
+ * `issues` 只报**悬空端点**（`missing_source` / `missing_target`），**不查环**：实测 A→B 与
+ * B→A 成环时 `issues` 仍为空，所以这一格不能渲染成「校验通过」（A310）。`edges` 对纯前端
+ * 用户恒为空——三条端点里没有建边入口，CLI 的 `dependency --action` 也只有
+ * register/list/graph/validate，边只能由 SDK 的 `add_dependency` 建立（A309）。
+ */
+export const getDependencyGraph = async (
+  registryPath?: string
+): Promise<DependencyGraphResponse> => {
+  const response = await api.get('/system/dependency/graph', {
+    params: { registry_path: registryPath || undefined },
   })
   return response.data
 }
