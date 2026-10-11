@@ -22,10 +22,19 @@
 数据的两面，接进来只涨指标不涨能力；`POST /api/dataset/translate` 把整份数据集回传又没有
 `output_file` 可落盘，属契约层问题，另立 **A283** 待拍。
 
+**L227 接了第三批**：`impact` / `semantic-search` 两条进分析页，实测缺口 26 → **24**、
+已消费 49 → **51**、前端调用形状同涨到 51。这一批的形状与 L226 不同：两条都**没有**
+CLI 子命令（本轮探针在 `parser.py` 里 `grep impact|semantic` 只命中 `health-gate` 的
+`--text-field`），所以它们一直住在 `NO_ENTRY` 里，接线之后从名单移出 —— `CLI_ENTRY`
+一条没动（仍 **23** 条 / **18** 个不同子命令），`NO_ENTRY` 收到只剩 **1** 条
+（`translate`，归 A283）。缺口 24 = 23 条有 CLI 入口 + 1 条没有，「连 CLI 名字都没有」
+这一档收到只剩一员，判据 3 的验真继续逐条走（`NO_ENTRY` 每一员的末段仍要确认不在
+`add_parser` 名单里，清零之前它都是可判负的形状）。
+
 **两侧权威各只有一份**：
 * 后端面 = `app.openapi()` 里 `(方法, 路径模板)` 的集合（75 条操作 / 71 条路径，
   backups 与 dependency 有同路径多方法）；
-* 前端面 = `web/src/services/api.ts` 里 `api.<verb>('路径')` 的调用形状（49 条），
+* 前端面 = `web/src/services/api.ts` 里 `api.<verb>('路径')` 的调用形状（51 条），
   前缀从同一份源码里的 `baseURL` 读出来，不在测试里写死第二份。
 
 **判据五向**：
@@ -34,8 +43,8 @@
 2. 每一条后端操作要么被前端调到，要么在 `UNCONSUMED` 名单里 —— 名单与实测集合
    **相等**，所以它只会随接线变短，新增一条没接的端点会当场红；
 3. `UNCONSUMED` 每一员要么指到一个**真实存在**的 CLI 子命令（`cli_entry` 的每个名字由
-   parser 的 `add_parser` 名单验真），要么落进 `NO_ENTRY`：L226 之后仍剩 **3** 条连 CLI
-   名字都没有，判据是「路径末段确实不在 CLI 子命令清单里」；
+   parser 的 `add_parser` 名单验真），要么落进 `NO_ENTRY`（L226 时 3 条，L227 接走其中
+   2 条后剩 **1** 条）：判据是「路径末段确实不在 CLI 子命令清单里」；
 4. query 参数逐键对到该操作的 `in=query` 声明。两处来源都算：写在路径串里的
    `` `/versions/create?filename=${filename}` ``（1 条）与 axios 的 `params: {…}` 对象
    （4 条 / 5 个键）。后者是量出来才补进去的一维 —— `data/load` 的分页三键与
@@ -79,8 +88,8 @@ PARAMS_MAX_GAP = 60
 #: 前端调用形状里的 `${...}` 归一化成的占位符
 PLACEHOLDER = "{}"
 
-#: 实测未被前端消费的操作（L226：75 条操作里 49 条被调到，余 26 条；立账轮 L224 是 32，
-#: L225 第一批后是 29）。
+#: 实测未被前端消费的操作（L227：75 条操作里 51 条被调到，余 24 条；立账轮 L224 是 32，
+#: L225 第一批后是 29，L226 第二批后是 26）。
 #: 每员要能在 `CLI_ENTRY` 或 `NO_ENTRY` 里落位；接线一轮就少一格，回填只降不升。
 UNCONSUMED = frozenset({
     "DELETE /api/system/backups/{backup_id}",
@@ -92,11 +101,9 @@ UNCONSUMED = frozenset({
     "POST /api/dataset/compare",
     "POST /api/dataset/convert",
     "POST /api/dataset/features",
-    "POST /api/dataset/impact",
     "POST /api/dataset/merge",
     "POST /api/dataset/rag",
     "POST /api/dataset/sample",
-    "POST /api/dataset/semantic-search",
     "POST /api/dataset/split",
     "POST /api/dataset/stats",
     "POST /api/dataset/translate",
@@ -138,11 +145,11 @@ CLI_ENTRY = {
     "POST /api/system/validate-config": "validate-config",
 }
 
-#: 两边都没有入口的 3 条（A279 的优先队列；L225 已把其中 evaluate / language-profile /
-#: vector-status 接进前端，队列从 6 收到 3）：判据取「路径末段确实不是 CLI 子命令」
+#: 两边都没有入口的操作，只剩 1 条（A279 的优先队列：L225 把 evaluate / language-profile /
+#: vector-status 接进前端，队列从 6 收到 3；L227 把 impact / semantic-search 接进分析页，
+#: 收到 1。剩下的 translate 因契约层问题归 **A283**，不是「再等一轮接线」）
+#: 判据取「路径末段确实不是 CLI 子命令」
 NO_ENTRY = frozenset({
-    "POST /api/dataset/impact",
-    "POST /api/dataset/semantic-search",
     "POST /api/dataset/translate",
 })
 
@@ -332,7 +339,7 @@ class TestRulerSeesTheRealSurface:
 
     def test_frontend_face_scale(self):
         shapes = call_shapes()
-        assert len(shapes) == 49, f"服务层调用形状现量 49，实得 {len(shapes)}"
+        assert len(shapes) == 51, f"服务层调用形状现量 51，实得 {len(shapes)}"
         assert {m for m, _, _ in shapes} <= {"GET", "POST", "PUT", "DELETE", "PATCH"}
 
     def test_http_paths_live_only_in_the_service_layer(self):
@@ -473,9 +480,9 @@ class TestConsumptionRoster:
             f"已接好或已消失 {sorted(set(UNCONSUMED) - measured)}")
 
     def test_roster_scale_is_pinned(self):
-        """缺口 26 / 已消费 49 / 总操作 75：接线一轮就要回填这三个数（只降不升）"""
-        assert len(UNCONSUMED) == 26, len(UNCONSUMED)
-        assert len(consumed_operations()) == 49, len(consumed_operations())
+        """缺口 24 / 已消费 51 / 总操作 75：接线一轮就要回填这三个数（只降不升）"""
+        assert len(UNCONSUMED) == 24, len(UNCONSUMED)
+        assert len(consumed_operations()) == 51, len(consumed_operations())
 
     def test_roster_entries_are_real_operations(self):
         ops = {f"{m} {p}" for m, p in operations()}
@@ -510,11 +517,14 @@ class TestCliEntryClaimsAreReal:
         `NO_ENTRY`：接好 3 条后从 6 收到 3。L226 接的三条都各有 CLI 入口（`search` /
         `validate` / `auto-config`），所以这轮动的正是 `CLI_ENTRY`：26 收到 23，
         不同子命令 21 收到 18；`NO_ENTRY` 这轮一条没动。
+        L227 接的两条（`impact` / `semantic-search`）经探针确认**没有** CLI 子命令
+        （`grep impact|semantic` 在 `parser.py` 只命中 health-gate 的 `--text-field`），
+        所以这轮动的只有 `NO_ENTRY`：3 收到 1，`CLI_ENTRY` 两个数一个没改。
         """
         assert len(cli_subcommands()) == 37
         assert len(CLI_ENTRY) == 23
         assert len(set(CLI_ENTRY.values())) == 18
-        assert len(NO_ENTRY) == 3
+        assert len(NO_ENTRY) == 1
 
 
 class TestRulerIsNotBlind:
