@@ -83,9 +83,13 @@ TIER_OPAQUE = "opaque"              # 压根解析不到
 #: **L217 回填（plain 54 → 57，其余三档未动）**：test_config_reader_census_l217.py 的三处
 #: parametrize 值位全是模块级字面量容器（`_MUST_BE_DIRECT` / `_MUST_BE_ALIAS_ONLY` /
 #: `_LOADER_CONSUMED`，Scope 解析得到元素且皆可见常量）⇒ 三格入 plain；档位和 +3 = 盲面 +3。
+#: **L222 回填（plain 57 → 58、derived 36 → 38）**：test_config_three_side_l222.py 的三处
+#: parametrize 值位分两族——`sorted(META_ROWS)` 的元素是模块级 frozenset 里的字面串（Scope
+#: 看得见）⇒ plain +1；`sorted(SCHEMA)` 的两个键来自 `schema_keys()` 的返回值（Scope 解析不到
+#: 元素对象）⇒ derived +2。档位和 +3 = 盲面 +3 = l97 的 CALLS +3，三处独立闭合。
 MEASURED_TIERS: Dict[str, int] = {
-    TIER_PLAIN: 57,
-    TIER_DERIVED: 36,
+    TIER_PLAIN: 58,
+    TIER_DERIVED: 38,
     TIER_IDS_DERIVED: 8,
     TIER_OPAQUE: 10,
 }
@@ -145,8 +149,13 @@ MEASURED_HAZARD_ROSTER: Dict[Tuple[int, int], frozenset] = {
 #: （`test_direct_chains_are_seen` / `test_alias_readers_are_seen` /
 #: `test_citation_points_at_the_reading_line`）各一处无 ids 参数化、互不叠置 ⇒ 名册 +3，
 #: 与 plain 档 +3 独立闭合。
-MEASURED_BLIND_TESTS = 106
-MEASURED_BLIND_SEEN = 106
+#: **L222 回填（106 → 109，+3）**：test_config_three_side_l222.py 的三支新函数
+#: （`test_this_sections_key_list_is_complete` /
+#: `test_this_section_is_either_fully_written_or_fully_commented` /
+#: `test_this_meta_name_is_really_not_a_section`）各一处无 ids 参数化、互不叠置 ⇒ 名册 +3，
+#: 与档位和 +3 独立闭合；动态面同样全数采到，豁免用数 17 一格未动。
+MEASURED_BLIND_TESTS = 109
+MEASURED_BLIND_SEEN = 109
 #: 现量：整支豁免（该用例的每一支 parametrize 都写了字面 ids）的用数
 MEASURED_EXEMPT_SITES = 17
 #: 动态面至少要采到这么多条，否则「没有风险对象」只是没采到（A171 口径：数不到不判干净）

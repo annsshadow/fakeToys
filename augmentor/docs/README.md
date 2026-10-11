@@ -280,26 +280,38 @@ npm run dev            # Vite 开发服务器，热更新
 
 ## 7. 配置说明
 
-配置文件为 `config.yaml`，通过 `--config` 指定其他路径。主要配置段：
+配置文件为 `config.yaml`，通过 `--config` 指定其他路径。**全部**配置段与逐节键清单如下——
+这张表不是「挑重要的写」：它与 `AppConfig` 的 `fields()`、出厂 `config.yaml` 三侧逐节全等，
+由 `tests/unit/test_config_three_side_l222.py` 常驻对账，新增键忘了同步文档会直接红。
 
-| 配置段 | 关键项 | 说明 |
+| 配置段 | 键清单 | 说明 |
 |--------|--------|------|
-| `models` | `default` | 默认模型后端，可选 `ernie` / `openai` / `ollama` / `claude` / `gemini` |
-| `augmentation` | `variants_per_seed` `num_threads` `auto_save_interval` | 变体数量、并发线程、增量保存间隔 |
-| `quality` | `threshold` `weights` | 质量阈值；权重为 `[语义相似度, 回答相关性, 多样性]`，默认 `[0.3, 0.4, 0.3]` |
-| `dedup` | `threshold` | 相似度高于此值判定为重复，默认 `0.9` |
-| `export` | `default_format` `formats` | 导出格式清单 |
-| `versioning` | `storage_dir` `auto_snapshot` | 版本存储目录与增强后自动快照 |
+| `models` | `default` + 每个后端一条目 | 默认模型后端，可选 `ernie` / `openai` / `ollama` / `claude` / `gemini`；每条目内 `temperature` / `top_p` / `max_output_tokens` / `request_timeout` 的区间住在 `augmentor/config.py` 的常量里 |
+| `app` | `name` `version` `debug` | **出厂文件里写了而产品侧零读者的节**：`AppConfig` 没有对应字段，而校验器按 `META_TOP_SECTIONS` 把它免检，所以它不在死键普查的覆盖面上（机器证据与处置见账本 A276） |
+| `augmentation` | `variants_per_seed` `num_threads` `auto_save_interval` `max_retries` `retry_delay` `max_retry_wait` `retry_jitter` `request_timeout` | 变体数量、并发线程、增量保存间隔；后五只是模型请求的重试与超时档 |
+| `quality` | `enabled` `threshold` `weights` | 质量闸与阈值；权重为 `[语义相似度, 回答相关性, 多样性]`，默认 `[0.3, 0.4, 0.3]` |
+| `dedup` | `enabled` `threshold` | 相似度高于 `threshold`（默认 `0.9`）判定为重复 |
+| `export` | `default_format` `formats` | 导出格式清单与默认档 |
+| `context` | `enabled` `num_turns` | 多轮上下文增强，`num_turns` 是拼装的历史轮数 |
+| `versioning` | `enabled` `storage_dir` `auto_snapshot` | 版本存储目录与增强后自动快照 |
+| `sampler` | `enabled` `dimensions` | 覆盖度采样的开关与分布维度清单 |
+| `expander` | `enabled` `strategies` | 领域扩展的开关与策略清单 |
+| `tracker` | `enabled` `metrics` | 实验追踪的开关与指标名清单 |
+| `visualization` | `enabled` `types` | 出图开关与图表类型清单 |
 | `multilingual` | `enabled` `supported_langs` `default_target_lang` `translate_batch_size` | 翻译增强；四键自 L217 起由 `augmentor/language.py` 消费，经 `/api/dataset/language-profile` 与 `/api/dataset/translate` 生效（`enabled` 出厂 `false`） |
-| `rag` | `chunk_size` `chunk_overlap` | 分块大小与重叠，要求 `chunk_overlap < chunk_size` |
-| `evaluation` | `metrics` `generated_field` `reference_field` | BLEU / ROUGE-L / 相似度；三只键都自 L219/L220 起接进 `/api/dataset/evaluate` 的省略支路（权威序 请求参数 > 配置键 > 内置默认，出厂值与被替换的硬编码默认同值 ⇒ 零漂移）。两侧字段名在接线前写死在请求模型上（`"output"`），所以配置那两只键当时**没有任何可达消费点**，L220 把请求默认改成 `None` 哨兵才接得动 |
-| `vector` | `backend` `dimension` | `faiss` 或 `chromadb` |
-| `multimodal` | `image_extensions` `audio_extensions` | 支持的文件扩展名 |
-| `benchmark` | `baseline_file` `metrics` | 基准文件与指标清单 |
-| `active_learning` | `strategy` `batch_size` `max_iterations` | `uncertainty` / `diversity` / `hybrid` / `random` |
-| `frameworks` | `frameworks` | `langchain` / `llamaindex` |
-| `web` | `host` `port` `static_dir` | Web 服务监听地址与静态目录 |
-| `logging` | `level` `file` | 日志级别与输出文件 |
+| `rag` | `enabled` `default_format` `chunk_size` `chunk_overlap` | 分块大小与重叠，要求 `chunk_overlap < chunk_size`；`default_format` 是切块导出格式 |
+| `evaluation` | `enabled` `metrics` `generated_field` `reference_field` | BLEU / ROUGE-L / 相似度；三只非闸门键自 L219/L220 起接进 `/api/dataset/evaluate` 的省略支路（权威序 请求参数 > 配置键 > 内置默认，出厂值与被替换的硬编码默认同值 ⇒ 零漂移）。两侧字段名在接线前写死在请求模型上（`"output"`），所以配置那两只键当时**没有任何可达消费点**，L220 把请求默认改成 `None` 哨兵才接得动 |
+| `vector` | `enabled` `backend` `dimension` `storage_dir` `collection` | `faiss` 或 `chromadb`；向量库维度、持久化目录与集合名 |
+| `multimodal` | `enabled` `image_extensions` `audio_extensions` | 支持的文件扩展名 |
+| `benchmark` | `enabled` `baseline_file` `metrics` | 基准文件与指标清单 |
+| `active_learning` | `enabled` `strategy` `batch_size` `max_iterations` | `uncertainty` / `diversity` / `hybrid` / `random` |
+| `frameworks` | `enabled` `frameworks` | `langchain` / `llamaindex` |
+| `web` | `host` `port` `static_dir` `data_roots` `cors_origins` `cors_credentials` `max_upload_bytes` `rate_limit_max_requests` `rate_limit_window_seconds` `rate_limit_exempt_paths` | 监听地址与静态目录、可读数据根白名单、CORS 两键、上传体字节闸与限流三键 |
+| `logging` | `level` `file` `format` | 日志级别、输出文件与格式串；这三键的读者在装配面（`augmentor/logging_setup.py`），不在产品树 |
+
+> **本节不复制「哪只键有人读」的结论**：某只键当前是不是只写不读，权威在
+> `tests/unit/test_config_reader_census_l217.py` 的档位名单（逐键带可证伪的证据）。这张表若也写一份，
+> 就成了第二事实来源——这正是本仓一直在收的那族缺陷。
 
 ### 使用 Python API
 
