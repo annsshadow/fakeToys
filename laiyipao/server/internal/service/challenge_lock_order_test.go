@@ -107,6 +107,15 @@ func TestLockChallengeStateAcquiresInAscendingOrder(t *testing.T) {
 	if err != nil {
 		t.Fatalf("开 worker 事务失败：%v", err)
 	}
+	// ⚠️ worker 事务由 goroutine 自己回滚（defer 在 goroutine 内）：
+	// 本测试的 Fatalf 路径（下面的 waitUntilLocked / nowaitLockErr）都会
+	// Goexit，任何写在函数体内的 Rollback 都不会执行。连接漏还后
+	// t.Cleanup(db.Close) 死等 → 20 分钟超时（2026-10-11 CI 实测，
+	// 同文件的 TestLockChallengeStateCountersBeforeWallets 挂过）。
+	// 主协程因此**不**再直接 Rollback worker：pgx.Tx 非线程安全，
+	// 与 goroutine 里仍在跑的查询并发会构成数据竞争。
+	wctx, wcancel := context.WithTimeout(ctx, 60*time.Second)
+	defer wcancel()
 	// ⚠️ 刻意传**逆序** [hi, lo]。
 	//
 	// 我第一版传的是已排好序的 [lo, hi] —— 于是「实现里没有 sort」
@@ -115,7 +124,8 @@ func TestLockChallengeStateAcquiresInAscendingOrder(t *testing.T) {
 	//
 	// 判据必须落在「实现做了功」的那条输入上。
 	go func() {
-		done <- lockChallengeStateOrdered(ctx, worker, []int64{hi, lo})
+		defer func() { _ = worker.Rollback(ctx) }()
+		done <- lockChallengeStateOrdered(wctx, worker, []int64{hi, lo})
 	}()
 
 	// 给它一点时间跑到「卡住」的位置。
@@ -124,7 +134,10 @@ func TestLockChallengeStateAcquiresInAscendingOrder(t *testing.T) {
 	// 「它已经拿到 lo 并在等 hi」，而不是「它跑完了」。
 	// 一个信号量比 sleep 更稳：先确认 lo **还没有**被锁（它还没开始），
 	// 再轮询到 lo 被锁为止。
-	waitUntilLocked(t, ts, ctx, "user_wallets", "user_id", lo, 3*time.Second)
+	//
+	// 预算 3s→15s：CI runner 高负载时 worker goroutine 可能 3 秒内抢不到
+	// 调度（2026-10-11 实测），同步等待不是性能断言，给足余量。
+	waitUntilLocked(t, ts, ctx, "user_wallets", "user_id", lo, 15*time.Second)
 
 	// 第 3 步：确认 lo 确实被 worker 锁住了 —— 这证明它**先于 hi** 处理 lo。
 	probe, err := ts.db.Pool.Begin(ctx)
@@ -142,17 +155,15 @@ func TestLockChallengeStateAcquiresInAscendingOrder(t *testing.T) {
 	if err := holder.Rollback(ctx); err != nil {
 		t.Logf("holder 回滚返回 %v（可忽略）", err)
 	}
+	// worker 的回滚由 goroutine 的 defer 负责（见上）——此处只等它返回。
 	select {
 	case err := <-done:
 		if err != nil {
-			_ = worker.Rollback(ctx)
 			t.Fatalf("worker 返回错误 %v —— 修复后它只应被短暂阻塞，不该失败", err)
 		}
-	case <-time.After(5 * time.Second):
-		_ = worker.Rollback(ctx)
-		t.Fatal("worker 5 秒未返回 —— 它不是在等 hi，而是卡在别处")
+	case <-time.After(15 * time.Second):
+		t.Fatal("worker 15 秒未返回 —— 它不是在等 hi，而是卡在别处")
 	}
-	_ = worker.Rollback(ctx)
 }
 
 // waitUntilLocked 轮询直到目标行被锁住，或超时。
@@ -247,12 +258,30 @@ func TestLockChallengeStateCountersBeforeWallets(t *testing.T) {
 	if err != nil {
 		t.Fatalf("开 worker 失败：%v", err)
 	}
+	// ⚠️ worker 事务的生命周期由 **goroutine 自己**持有（defer 在 goroutine 内）。
+	//
+	// 曾经的写法是在函数末尾 `_ = worker.Rollback(ctx)`——本测试任何一条
+	// Fatalf 路径（waitUntilLocked 预算未命中、probe 开失败）都会 Goexit，
+	// 末尾那行永远不执行：holder 的 defer 会释放锁、worker goroutine 之后
+	// 跑完返回，但**连接永不归还**。openTestService 的 t.Cleanup(db.Close)
+	// 等所有连接归还，于是整个进程挂在收尾上 —— 2026-10-11 CI 实测：
+	// 一次 3 秒同步预算未命中被放大成 20 分钟的 `panic: test timed out`。
+	//
+	// wctx 超时是第二层兜底：万一 holder 的锁没被释放（其回滚失败被忽略），
+	// worker 的阻塞查询也会在 60s 后报错退出，不会永久占着连接。
+	wctx, wcancel := context.WithTimeout(ctx, 60*time.Second)
+	defer wcancel()
+	done := make(chan error, 1)
 	go func() {
-		_ = lockChallengeStateOrdered(ctx, worker, []int64{hi, lo})
+		defer func() { _ = worker.Rollback(ctx) }()
+		done <- lockChallengeStateOrdered(wctx, worker, []int64{hi, lo})
 	}()
 
-	// 等 counters[lo] 被锁上
-	waitUntilLocked(t, ts, ctx, "user_daily_challenges", "user_id", lo, 3*time.Second)
+	// 等 counters[lo] 被锁上（正确顺序下 worker 先锁 lo、再卡在 hi）。
+	//
+	// 预算 3s→15s：CI runner 高负载时 worker goroutine 可能 3 秒内抢不到
+	// 调度（2026-10-11 实测），那是同步等待不是性能断言，给足余量。
+	waitUntilLocked(t, ts, ctx, "user_daily_challenges", "user_id", lo, 15*time.Second)
 
 	probe, err := ts.db.Pool.Begin(ctx)
 	if err != nil {
@@ -270,8 +299,16 @@ func TestLockChallengeStateCountersBeforeWallets(t *testing.T) {
 			"的交错形态，而不是「先全部 counters、再全部 wallets」的全局表顺序", lo)
 	}
 
+	// 放开 hi，worker 应当顺利走完两轮加锁并返回。
+	// 用 select 等 done（goroutine 的 defer 负责回滚 worker），
+	// 不在此处直接 Rollback —— pgx.Tx 非线程安全，主协程回滚会与
+	// goroutine 里可能仍在跑的查询构成数据竞争。
 	_ = holder.Rollback(ctx)
-	_ = worker.Rollback(ctx)
+	select {
+	case <-done:
+	case <-time.After(15 * time.Second):
+		t.Fatal("worker 15 秒未返回 —— 它不是在等 hi，而是卡在别处")
+	}
 }
 
 // TestLockChallengeStateDoesNotTouchOtherRows 确认只锁传入的那些人。
