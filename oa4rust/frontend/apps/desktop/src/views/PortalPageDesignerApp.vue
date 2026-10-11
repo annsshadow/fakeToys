@@ -17,6 +17,11 @@
         <button class="btn-refresh" @click="loadPortalMeta">模板页/门户概要</button>
         <button class="btn-refresh" @click="loadPortalMeta2">分类/输出/门户</button>
         <button class="btn-refresh" @click="loadPortalMeta3">设计器/设计清单/门户列表</button>
+        <!-- 十类功能5：门户布局（save/delete layout，POST/PUT/POST/DELETE 四真实写端点） -->
+        <button class="btn-refresh" @click="layoutOp('savePost')">布局保存(POST)</button>
+        <button class="btn-refresh" @click="layoutOp('savePut')">布局保存(PUT)</button>
+        <button class="btn-refresh" @click="layoutOp('deletePost')">布局删除(POST)</button>
+        <button class="btn-refresh" @click="layoutOp('deleteDel')">布局删除(DELETE)</button>
       </div>
       <div v-if="portalMetaText" class="pm-note">{{ portalMetaText }}</div>
       <div v-if="loading" class="loading-state"><div class="skel" v-for="i in 5" :key="i"></div></div>
@@ -85,6 +90,28 @@ async function loadPortalMeta3() {
     portalMetaText.value = `设计器 ${n(designer)} / 设计清单 ${n(designs)} / 门户 ${n(portals)}`
   } catch (e: any) {
     toast.error(`加载失败: ${e?.message ?? ''}`)
+  }
+}
+
+// 十类功能5：门户布局 保存/删除（save_layout 读 CreateLayoutRequest{name}；delete_layout 读 body{id}；
+// POST/PUT 与 POST/DELETE 为同 handler 双注册，四端点真实消费）。
+async function layoutOp(op: string): Promise<void> {
+  try {
+    if (op === 'savePost' || op === 'savePut') {
+      const name = prompt('布局名称:', '') || ''
+      if (!name) return
+      if (op === 'savePost') await api.post('/api/portal/assemble/surface/save/layout', { name })
+      else await api.put('/api/portal/assemble/surface/save/layout', { name })
+      toast.success(`布局已保存 (${op})`)
+    } else {
+      const id = prompt('布局 ID:', '') || ''
+      if (!id || !(await confirmMsg('确定删除该布局？'))) return
+      if (op === 'deletePost') await api.post('/api/portal/assemble/surface/delete/layout', { id })
+      else await api.delete('/api/portal/assemble/surface/delete/layout', { body: { id } })
+      toast.success(`布局已删除 (${op})`)
+    }
+  } catch (e: any) {
+    toast.error(`布局操作失败: ${e?.message ?? ''}`)
   }
 }
 async function loadPortalMeta2() {

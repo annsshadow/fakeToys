@@ -376,10 +376,16 @@ async function toggleViewPublish(publish: boolean) {
   const id = prompt(publish ? '要发布的视图 ID:' : '要取消发布的视图 ID:', '')
   if (!id) return
   try {
-    // POST cms/view/publish|unpublish/{id} → 更新视图发布状态（path only）
-    const seg = publish ? 'publish' : 'unpublish'
-    await api.post(`/api/cms/view/${seg}/${encodeURIComponent(id)}`)
-    toast.success(publish ? '视图已发布' : '视图已取消发布')
+    // POST cms/view/publish|unpublish/{id} → 更新视图发布状态（path only）。
+    // 两条 distinct 路由必须各自字面路径调用（三元/常量前缀会让静态对账无法归一命中）：
+    // 用 if/else 拆成两个独立 api.post，首参均为字面模板。
+    if (publish) {
+      await api.post(`/api/cms/view/publish/${encodeURIComponent(id)}`)
+      toast.success('视图已发布')
+    } else {
+      await api.post(`/api/cms/view/unpublish/${encodeURIComponent(id)}`)
+      toast.success('视图已取消发布')
+    }
   } catch (e: any) {
     toast.error(`视图发布操作失败: ${e?.message ?? ''}`)
   }

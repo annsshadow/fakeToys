@@ -45,15 +45,30 @@
         <button class="run-btn" @click="manage('unitAttr')">单位属性保存</button>
       </div>
     </div>
+
+    <div class="panel glass-card" v-if="tab === 'auth'">
+      <div class="panel-head"><span class="hint">组织认证台 + 人员口令（会话/写动作，用户触发，逐项确认）</span></div>
+      <div class="manage-row">
+        <button class="run-btn" @click="orgAuth('orgLogin')">组织登录</button>
+        <button class="run-btn" @click="orgAuth('orgLogout')">组织登出</button>
+        <button class="run-btn" @click="orgAuth('orgWho')">当前用户</button>
+        <button class="run-btn" @click="orgAuth('orgSafeLogout')">全设备登出</button>
+        <button class="run-btn" @click="orgAuth('orgSwitchUser')">切换用户</button>
+        <button class="run-btn" @click="orgAuth('orgTwoFactorLogin')">两步验证登录</button>
+        <button class="run-btn" @click="orgAuth('personResetPwd')">重置人员口令</button>
+        <button class="run-btn" @click="orgAuth('personPwdExpired')">设口令有效期</button>
+        <button class="run-btn" @click="orgAuth('personCheckPwd')">校验人员口令</button>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
 import { computed, ref } from 'vue'
-import { toast } from '../utils/toast'
+import { confirmMsg, toast } from '../utils/toast'
 
-type Tab = 'person' | 'unit' | 'identity' | 'group' | 'role' | 'manage'
+type Tab = 'person' | 'unit' | 'identity' | 'group' | 'role' | 'manage' | 'auth'
 const tabs: Array<{ key: Tab; label: string }> = [
   { key: 'person', label: '人员' },
   { key: 'unit', label: '单位' },
@@ -61,6 +76,7 @@ const tabs: Array<{ key: Tab; label: string }> = [
   { key: 'group', label: '群组' },
   { key: 'role', label: '角色/目录' },
   { key: 'manage', label: '成员管理' },
+  { key: 'auth', label: '认证/密码' },
 ]
 const tab = ref<Tab>('person')
 const busy = ref(false)
@@ -76,6 +92,7 @@ const tabHint = computed(
       group: '群组查询：全量 / 按身份·人员 / 子群组·上级群组（直连·嵌套）',
       role: '角色查询 + 部门树 + 用户清单',
       manage: '群组成员增删 / 职务成员更新 / 人员·单位属性保存（先在上方查询，再点下方写动作）',
+      auth: '组织认证台（登录/登出/当前/全设备登出/切换用户/两步验证）+ 人员口令（重置/有效期/校验）',
     })[tab.value] ?? '',
 )
 
@@ -218,6 +235,12 @@ function runUnit(): void {
       await collect('身份类型', await api.post('/api/unit/identity/type/object', {}))
       await collect('单位属性', await api.post('/api/unit/list/unitattribute/object', {}))
       await collect('单位职务', await api.post('/api/unit/list/unitduty/object', {}))
+      // 十类功能2：单位×身份/人员 交叉清单（object 形态，全空体真实读）
+      await collect('单位下身份清单', await api.post('/api/unit/list/identity/object', {}))
+      await collect('单位上级嵌套身份', await api.post('/api/unit/list/identity/sup/nested/object', {}))
+      await collect('单位下人员清单', await api.post('/api/unit/list/person/object', {}))
+      await collect('单位上级嵌套人员', await api.post('/api/unit/list/person/sup/nested/object', {}))
+      await collect('职务×身份×单位名', await api.post('/api/unitduty/list/identity/unit/name/object', {}))
     },
   ])
 }
@@ -310,6 +333,7 @@ const RUNNERS: Record<Tab, () => void> = {
   group: runGroup,
   role: runRole,
   manage: () => toast.info('成员管理为写动作，请使用下方按钮逐项执行'),
+  auth: () => toast.info('认证/密码为会话动作，请使用下方按钮逐项执行'),
 }
 function runCurrentTab(): void {
   rows.value = []
@@ -384,6 +408,67 @@ async function manage(op: string): Promise<void> {
     }
   } catch (e: any) {
     toast.error(`管理动作失败: ${e?.message ?? ''}`)
+  }
+}
+
+// ── 十类功能2：组织认证台 + 人员口令（会话/写动作，用户触发逐项确认）────────
+// 组织认证（auth crate 共享 handler：login{credential,password}·logout·whoami·
+// safe/logout·switchuser{targetUnique}·two/factory/login）；人员口令管理
+// （u2_person：reset/password 按 flag 重置、set/password/expired/time/{date} 设有效期、
+// check/password{password} 校验口令策略）。
+async function orgAuth(op: string): Promise<void> {
+  try {
+    if (op === 'orgLogin') {
+      const credential = prompt('账号 (credential):', '') || ''
+      const password = prompt('密码:', '') || ''
+      if (!credential || !password) return
+      await api.post('/api/organization/assemble/authentication/authentication', { credential, password })
+    } else if (op === 'orgLogout') {
+      if (!(await confirmMsg('登出组织会话？'))) return
+      await api.delete('/api/organization/assemble/authentication/authentication')
+    } else if (op === 'orgWho') {
+      const r: any = await api.get('/api/organization/assemble/authentication/authentication')
+      const u = (r?.data ?? {}) as Record<string, unknown>
+      toast.success(`当前用户: ${u.unique || u.credential || '匿名'}`)
+      return
+    } else if (op === 'orgSafeLogout') {
+      if (!(await confirmMsg('使当前用户所有会话全部过期（批量注销）？'))) return
+      await api.get('/api/organization/assemble/authentication/authentication/safe/logout')
+    } else if (op === 'orgSwitchUser') {
+      const target = prompt('目标用户标识 (targetUnique):', '') || ''
+      if (!target) return
+      if (!(await confirmMsg(`切换到用户 ${target}？（仅管理员）`))) return
+      await api.put('/api/organization/assemble/authentication/authentication/switchuser', { targetUnique: target })
+    } else if (op === 'orgTwoFactorLogin') {
+      const credential = prompt('账号 (credential):', '') || ''
+      const password = prompt('密码:', '') || ''
+      if (!credential || !password) return
+      const r: any = await api.post('/api/organization/assemble/authentication/authentication/two/factory/login', {
+        credential,
+        password,
+      })
+      const phase = (r?.data as any)?.phase ?? (r?.data as any)?.stage
+      toast.success(`两步验证已发起${phase ? `（阶段 ${phase}）` : ''}`)
+      return
+    } else if (op === 'personResetPwd') {
+      const flag = encodeURIComponent(prompt('人员 flag:', '') || '')
+      if (!(await confirmMsg(`重置人员 ${flag} 的口令？`))) return
+      await api.get(`/api/organization/assemble/control/person/${flag}/reset/password`)
+    } else if (op === 'personPwdExpired') {
+      const flag = encodeURIComponent(prompt('人员 flag:', '') || '')
+      const date = prompt('口令过期时间 (yyyy-MM-dd):', '2026-12-31') || '2026-12-31'
+      await api.get(
+        `/api/organization/assemble/control/person/${flag}/set/password/expired/time/${encodeURIComponent(date)}`,
+      )
+    } else if (op === 'personCheckPwd') {
+      const password = prompt('待校验口令:', '') || ''
+      const r: any = await api.post('/api/organization/assemble/control/person/check/password', { password })
+      toast.success(`口令策略校验: ${r?.data?.value === true ? '合格' : '不合格'}`)
+      return
+    }
+    toast.success(`认证/密码操作已提交 (${op})`)
+  } catch (e: any) {
+    toast.error(`操作失败: ${e?.message ?? ''}`)
   }
 }
 </script>

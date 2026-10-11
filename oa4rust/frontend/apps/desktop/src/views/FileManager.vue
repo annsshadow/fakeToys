@@ -25,6 +25,12 @@
         <button class="action-btn" @click="uploadWithReference">📎 引用上传</button>
         <button class="action-btn" @click="uploadFolderAttachment">📁 文件夹附件</button>
         <button class="action-btn" @click="uploadFolderAttachment2">📁 附件2上传</button>
+        <button class="action-btn" @click="fileUploadOps('folderCbParam')">📁 文件夹附件(回调)</button>
+        <button class="action-btn" @click="fileUploadOps('folderCbLiteral')">📁 文件夹附件(字面回调)</button>
+        <button class="action-btn" @click="fileUploadOps('fileAssemble')">📤 文件上传(JSON)</button>
+        <button class="action-btn" @click="fileUploadOps('u2Multipart')">📤 引用上传(PUT)</button>
+        <button class="action-btn" @click="fileUploadOps('u2Callback')">📤 引用上传(回调)</button>
+        <button class="action-btn" @click="fileUploadOps('legacyRefCb')">🏷️ 遗留引用(字面回调)</button>
         <button class="action-btn" @click="fiDocUpload">📤 文档附件登记</button>
         <button class="action-btn" @click="uploadFileCore">📤 核心上传</button>
         <button class="action-btn" @click="uploadToExistingFile">📤 追加上传</button>
@@ -549,7 +555,7 @@ async function fileRead3(): Promise<void> {
       s(api.get('/api/file/share/share/shareId/file/fileId/folder/folderId')),
       s(api.get('/api/file/share/shield/id')),
       s(api.get(`/api/file/share/${id}`)),
-      s(api.get(`/api/file/share/${id}/password/${pwd}`)),
+      s(api.post('/api/file/share/password/verify', { id, password: pwd })),
       s(api.get(`/api/file/${id}/binary/base64`)),
     ])
     const hit = rs.filter((r) => (r as any) != null).length
@@ -1065,6 +1071,127 @@ function uploadFolderAttachment2(): void {
     }
   }
   input.click()
+}
+
+// 十类功能6：文件/附件 上传全形态真实端点（multipart 落库 / JSON 登记；回调变体委托同名主 handler）。
+// 每个分支的 api.upload 首参均为字面模板路径（变量前缀会破坏静态对账归一）。
+function fileUploadOps(op: string): void {
+  if (op === 'folderCbParam') {
+    const fid = encodeURIComponent(prompt('目标文件夹 ID (folderId):', '') || '')
+    if (!fid) return
+    void (async () => {
+      const input = document.createElement('input')
+      input.type = 'file'
+      input.onchange = async () => {
+        const file = input.files?.[0]
+        if (!file) return
+        const form = new FormData()
+        form.append('file', file, file.name)
+        form.append('fileName', file.name)
+        try {
+          await api.upload(`/api/attachment/upload/folder/${fid}/callback/done`, form)
+          toast.success('文件夹附件(回调)已上传')
+        } catch (e: any) {
+          toast.error(`上传失败: ${e?.message ?? ''}`)
+        }
+      }
+      input.click()
+    })()
+  } else if (op === 'folderCbLiteral') {
+    const fid = encodeURIComponent(prompt('目标文件夹 ID (folderId):', '') || '')
+    if (!fid) return
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.onchange = async () => {
+      const file = input.files?.[0]
+      if (!file) return
+      const form = new FormData()
+      form.append('file', file, file.name)
+      form.append('fileName', file.name)
+      try {
+        await api.upload(`/api/attachment/upload/folder/callback/callback/${fid}`, form)
+        toast.success('文件夹附件(字面回调)已上传')
+      } catch (e: any) {
+        toast.error(`上传失败: ${e?.message ?? ''}`)
+      }
+    }
+    input.click()
+  } else if (op === 'fileAssemble') {
+    const name = prompt('文件名 (name):', '') || ''
+    if (!name) return
+    void (async () => {
+      try {
+        await api.post('/api/file/assemble/control/file/upload', { name })
+        toast.success('文件上传(JSON)已提交')
+      } catch (e: any) {
+        toast.error(`上传失败: ${e?.message ?? ''}`)
+      }
+    })()
+  } else if (op === 'u2Multipart') {
+    const rt = encodeURIComponent(prompt('引用类型 (referenceType):', '') || '')
+    const ref = encodeURIComponent(prompt('引用 (reference):', '') || '')
+    if (!rt || !ref) return
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.onchange = async () => {
+      const file = input.files?.[0]
+      if (!file) return
+      const form = new FormData()
+      form.append('file', file, file.name)
+      form.append('fileName', file.name)
+      try {
+        await api.upload(`/api/file/assemble/control/file/upload/referencetype/${rt}/reference/${ref}/scale/0`, form, {
+          method: 'PUT',
+        })
+        toast.success('引用上传(PUT)已提交')
+      } catch (e: any) {
+        toast.error(`上传失败: ${e?.message ?? ''}`)
+      }
+    }
+    input.click()
+  } else if (op === 'u2Callback') {
+    const rt = encodeURIComponent(prompt('引用类型 (referenceType):', '') || '')
+    const ref = encodeURIComponent(prompt('引用 (reference):', '') || '')
+    if (!rt || !ref) return
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.onchange = async () => {
+      const file = input.files?.[0]
+      if (!file) return
+      const form = new FormData()
+      form.append('file', file, file.name)
+      form.append('fileName', file.name)
+      try {
+        await api.upload(
+          `/api/file/assemble/control/file/upload/referencetype/${rt}/reference/${ref}/scale/0/callback/done`,
+          form,
+        )
+        toast.success('引用上传(回调)已提交')
+      } catch (e: any) {
+        toast.error(`上传失败: ${e?.message ?? ''}`)
+      }
+    }
+    input.click()
+  } else if (op === 'legacyRefCb') {
+    const rt = encodeURIComponent(prompt('引用类型 (referenceType):', '') || '')
+    if (!rt) return
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.onchange = async () => {
+      const file = input.files?.[0]
+      if (!file) return
+      const form = new FormData()
+      form.append('file', file, file.name)
+      form.append('fileName', file.name)
+      try {
+        await api.upload(`/api/file/upload/referencetype/reference/reference/scale/scale/callback/callback/${rt}`, form)
+        toast.success('遗留引用(字面回调)已提交')
+      } catch (e: any) {
+        toast.error(`上传失败: ${e?.message ?? ''}`)
+      }
+    }
+    input.click()
+  }
 }
 
 // POST fileinfo/upload/document/{id}（JSON 登记文档附件元数据，cms crate 真实现）

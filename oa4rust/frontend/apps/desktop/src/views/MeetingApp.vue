@@ -32,6 +32,7 @@
       <button class="sb" @click="meetingWrite('sysCfgManage')">系统配置(管理)</button>
       <button class="sb" @click="meetingWrite('attFromPp')">流程附件入会议</button>
       <button class="sb" @click="meetingAttachmentUpload">会议附件上传</button>
+      <button class="sb" @click="meetingAttachmentUploadCallback">会议附件上传(回调)</button>
       <button class="sb" @click="meetingAttachmentUpdate">会议附件更新</button>
       <button class="sb" @click="meetingWrite('reject')">拒绝会议</button>
       <button class="sb" @click="meetingWrite('confirmAllow')">确认允许</button>
@@ -705,6 +706,34 @@ function meetingAttachmentUpload(): void {
       toast.success('会议附件已上传')
     } catch (e: any) {
       toast.error(`会议附件上传失败: ${e?.message ?? ''}`)
+    }
+  }
+  input.click()
+}
+
+// 十类功能6：会议附件上传（带回调）——POST .../upload/{summary}/callback/{callback}（u2_attachment_upload_callback，
+// multipart 落库后执行回调钩子；callback 传 done 即完成态）
+function meetingAttachmentUploadCallback(): void {
+  const mid = prompt('会议 ID (meetingId):', '') || ''
+  if (!mid) return
+  const summary = prompt('是否纪要附件 (true/false):', 'false') || 'false'
+  const callback = prompt('回调标记:', 'done') || 'done'
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.onchange = async () => {
+    const file = input.files?.[0]
+    if (!file) return
+    const fd = new FormData()
+    fd.append('file', file, file.name)
+    fd.append('fileName', file.name)
+    try {
+      await api.upload(
+        `/api/meeting/assemble/control/attachment/meeting/${encodeURIComponent(mid)}/upload/${summary === 'true'}/callback/${encodeURIComponent(callback)}`,
+        fd,
+      )
+      toast.success('会议附件已上传（回调）')
+    } catch (e: any) {
+      toast.error(`会议附件上传(回调)失败: ${e?.message ?? ''}`)
     }
   }
   input.click()

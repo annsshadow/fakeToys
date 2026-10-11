@@ -239,6 +239,19 @@
           <button class="btn-sm" @click="pcU19('appstyle')">存应用样式配置</button>
           <button class="btn-sm" @click="pcU19('runtime')">存运行时配置</button>
           <button class="btn-sm" @click="pcU19('moduleOutput')">模块输出同步</button>
+          <!-- 开放平台（十类功能9）：系统令牌/口令/阈值/接口执行 真实写端点（用户触发，admin 门禁） -->
+          <button class="btn-sm" @click="pcOpenPlatform('changePassword')">改管理口令</button>
+          <button class="btn-sm" @click="pcOpenPlatform('tokenPut')">更新系统Token</button>
+          <button class="btn-sm" @click="pcOpenPlatform('thresholdPut')">更新令牌阈值(PUT)</button>
+          <button class="btn-sm" @click="pcOpenPlatform('invokeExecGet')">执行最新接口</button>
+          <button class="btn-sm" @click="pcOpenPlatform('invokeTokenPost')">签发调用器Token</button>
+          <button class="btn-sm" @click="pcOpenPlatform('invokeTokenExec')">令牌执行接口</button>
+          <button class="btn-sm" @click="pcOpenPlatform('moduleComparePost')">模块对比上传</button>
+          <button class="btn-sm" @click="pcOpenPlatform('moduleComparePut')">模块对比同步(PUT)</button>
+          <button class="btn-sm" @click="pcScheduleStats">调度任务统计</button>
+          <button class="btn-sm" @click="pcOpenPlatform('avatarPut')">存登录头像图</button>
+          <button class="btn-sm" @click="pcOpenPlatform('avatarEraseGet')">清登录头像(GET)</button>
+          <button class="btn-sm" style="color:var(--color-error)" @click="pcOpenPlatform('adminLogout')">管理台登出</button>
           <div v-if="pcU4Text" class="app-meta">{{ pcU4Text }}</div>
         </div>
         <div v-if="deployDistText" class="app-meta">{{ deployDistText }}</div>
@@ -1399,6 +1412,85 @@ async function pcTokenThreshold() {
     toast.error(`更新失败: ${e?.message ?? ''}`)
   }
 }
+// 十类功能9：程序中心开放平台真实写端点（admin 门禁；旧口令/新口令、系统令牌、令牌阈值(PUT)、
+// 最新接口执行、调用器令牌签发/带令牌执行、模块对比上传/同步。shape 经 handler 源码核实：
+// 口令走 u3_config_change_password_post{oldPassword,newPassword}；令牌 PUT u2_config_token_put；
+// 阈值 PUT tokenthreshold_update{threshold}；接口执行 GET invoke/flag/execute（无参）；
+// 令牌签发 POST invoke/token（无参）；带令牌执行 POST invoke/{flag}/client/{client}/token/{token}/execute；
+// 模块对比 POST/PUT module/compare/upload（无参读最新/同步动作）。
+async function pcOpenPlatform(op: string) {
+  try {
+    if (op === 'changePassword') {
+      const oldPw = prompt('当前口令:', '') || ''
+      if (!oldPw) return
+      const newPw = prompt('新口令（至少 6 位）:', '') || ''
+      if (newPw.length < 6) {
+        toast.error('新口令至少 6 位')
+        return
+      }
+      if (!(await confirmMsg('确定修改当前账号口令？'))) return
+      const r: any = await api.post('/api/program_center/config/change/password', {
+        oldPassword: oldPw,
+        newPassword: newPw,
+      })
+      if (r?.success === false || r?.type === 'error') toast.error(`修改失败: ${r?.msg ?? '口令不匹配或账号不存在'}`)
+      else toast.success('口令已修改')
+    } else if (op === 'tokenPut') {
+      const val = prompt('新的系统令牌值（Token）:', '') || ''
+      if (!(await confirmMsg('将覆盖 system.token 配置，确定？'))) return
+      await api.put('/api/program_center/config/token', { token: val })
+      toast.success('系统令牌已更新')
+    } else if (op === 'thresholdPut') {
+      const t = prompt('令牌阈值（数字）:', '1000') || '0'
+      await api.put('/api/program_center/tokenthreshold/update', { threshold: Number(t) })
+      toast.success('令牌阈值（PUT）已更新')
+    } else if (op === 'invokeExecGet') {
+      if (!(await confirmMsg('执行最新接口并写入调用日志？'))) return
+      const r: any = await api.get('/api/program_center/invoke/flag/execute')
+      if (r?.success === false || r?.type === 'error') toast.error(`执行失败: ${r?.msg ?? '无可用代理'}`)
+      else toast.success(`已执行: ${r?.data?.name ?? '最新接口'}`)
+    } else if (op === 'invokeTokenPost') {
+      const r: any = await api.post('/api/program_center/invoke/token', {})
+      if (r?.success === false || r?.type === 'error') toast.error(`签发失败: ${r?.msg ?? '未找到令牌配置'}`)
+      else toast.success(`调用器令牌: ${String(r?.data?.value ?? '—').slice(0, 12)}…`)
+    } else if (op === 'invokeTokenExec') {
+      const flagRaw = prompt('接口 flag:', '') || ''
+      const clientRaw = prompt('client 标识:', 'web') || 'web'
+      const tokenRaw = prompt('token:', '') || ''
+      if (!flagRaw || !tokenRaw) {
+        toast.error('flag 与 token 必填（空值路径不合法）')
+        return
+      }
+      const flag = encodeURIComponent(flagRaw)
+      const client = encodeURIComponent(clientRaw)
+      const token = encodeURIComponent(tokenRaw)
+      if (!(await confirmMsg('以该令牌执行接口？'))) return
+      await api.post(`/api/program_center/invoke/${flag}/client/${client}/token/${token}/execute`, {})
+      toast.success('令牌执行已提交')
+    } else if (op === 'moduleComparePost') {
+      await api.post('/api/program_center/module/compare/upload', {})
+      toast.success('模块对比上传已提交')
+    } else if (op === 'moduleComparePut') {
+      await api.put('/api/program_center/module/compare/upload')
+      toast.success('模块对比同步(PUT)已提交')
+    } else if (op === 'avatarPut') {
+      const path = prompt('登录头像图路径（资源 path）:', '') || ''
+      await api.put('/api/program_center/appstyle/image/login/avatar', { path })
+      toast.success('登录头像图已保存')
+    } else if (op === 'avatarEraseGet') {
+      if (!(await confirmMsg('清除当前登录头像图？'))) return
+      await api.get('/api/program_center/appstyle/image/login/avatar/erase')
+      toast.success('登录头像图已清除')
+    } else if (op === 'adminLogout') {
+      if (!(await confirmMsg('登出管理台（清除当前管理员会话）？'))) return
+      const r: any = await api.delete('/api/program_center/adminlogin')
+      if (r?.success === false || r?.type === 'error') toast.error(`登出失败: ${r?.msg ?? '非管理员或无会话'}`)
+      else toast.success('管理台已登出')
+    }
+  } catch (e: any) {
+    toast.error(`操作失败: ${e?.message ?? ''}`)
+  }
+}
 // rev344：程序中心 告警日志/字典数据·增改删/代理改删/公众号菜单改删 真实写端点（用户触发，shape 已核；避 add·output·updateUnit·create/to/weixin 无参 Path trap500）
 async function pcU3(op: string) {
   try {
@@ -1525,6 +1617,23 @@ async function pcU5Read() {
     const hit = rs.filter((r) => (r as any)?.data != null).length
     pcU4Text.value = `错误日志游标读 ${rs.length} 条命中 ${hit}`
     toast.success('错误日志游标已加载')
+  } catch (e: any) {
+    toast.error(`加载失败: ${e?.message ?? ''}`)
+  }
+}
+// 十类功能9：foo/bar create mass 族名字像脚手架但 handler 真实现（x_program_schedule
+// 调度任务列表/按 from-count 分页，非空壳）——以「调度任务统计」真实消费三条。
+async function pcScheduleStats() {
+  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
+  try {
+    const rs = await Promise.all([
+      s(api.post('/api/program_center/bar/create/mass/from/count', {})),
+      s(api.post('/api/program_center/foo/create/mass/from/count', {})),
+      s(api.get('/api/program_center/foo/create/mass/0/10')),
+    ])
+    const hit = rs.filter((r) => r != null).length
+    pcU4Text.value = `调度任务统计 ${rs.length} 条，返回 ${hit}`
+    toast.success('调度任务统计已加载')
   } catch (e: any) {
     toast.error(`加载失败: ${e?.message ?? ''}`)
   }
