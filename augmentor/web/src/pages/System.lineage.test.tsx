@@ -132,6 +132,9 @@ vi.mock('../services/api', async (importOriginal) => {
   s.getDataFiles = vi.fn().mockResolvedValue(fx.FILES)
   s.listDependencyDatasets = vi.fn().mockResolvedValue(fx.LIST)
   s.getDependencyGraph = vi.fn().mockResolvedValue(fx.GRAPH_EMPTY)
+  // L236 起依赖诊断自取一面（与本页血缘那一族同名不同事）。不给回执 ⇒ 页面退回综合
+  // 状态里那一份，本份用例的渲染结果与 L236 之前逐格相同
+  s.systemDependencies = vi.fn()
   s.registerDependencyDataset = vi.fn().mockResolvedValue(fx.REGISTER_OK)
   return {
     ...actual,
@@ -141,6 +144,7 @@ vi.mock('../services/api', async (importOriginal) => {
     getDataFiles: s.getDataFiles,
     listDependencyDatasets: s.listDependencyDatasets,
     getDependencyGraph: s.getDependencyGraph,
+    systemDependencies: s.systemDependencies,
     registerDependencyDataset: s.registerDependencyDataset,
   }
 })

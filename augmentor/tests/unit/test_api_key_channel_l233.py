@@ -11,8 +11,8 @@
 | --- | --- |
 | 契约面操作总数 | **75**（与 l224 同一个家，这里不另钉一份） |
 | 挂 `verify_api_key` 的操作 | **24** |
-| 其中前端**已接线**的形状 | **23** ⇒ 开了鉴权就有 23 个页面动作点不动 |
-| 挂门禁但还没接线的 | **1**（translate；L234 把 migrate / stream 接进页面后从 3 降到 1） |
+| 其中前端**已接线**的形状 | **24** ⇒ 开了鉴权就有 24 个页面动作点不动（L236 接走 translate 后与门禁总数相等） |
+| 挂门禁但还没接线的 | **0**（L236 接走 translate；此前 L234 把 migrate / stream 接进页面后从 3 降到 1） |
 
 真链路上量到的档位（`TestClient`，白名单根指向临时目录，跑完不留产物）：无头 ⇒ **401**，
 detail 逐字「缺少或无效的 X-API-Key」；错值 ⇒ 同样 **401**；对值 ⇒ 放行（拿「删一个不存在
@@ -23,8 +23,9 @@ detail 逐字「缺少或无效的 X-API-Key」；错值 ⇒ 同样 **401**；�
 
 三面判据，各对应一种真实失效形状：
 
-1. **规模**（`TestGateScale`）：24 / 23 与那 23 条的逐条名单（L233 定标时是 24 / 21，
-   L234 把 migrate / stream 接进页面后按实测挪到 23）。多挂一条门禁、或前端多接
+1. **规模**（`TestGateScale`）：24 / 24 与那 24 条的逐条名单（L233 定标时是 24 / 21，
+   L234 把 migrate / stream 接进页面后挪到 23，L236 接走 translate 后到 24 ⇒ 尾巴清空）。
+   多挂一条门禁、或前端多接
    一条写操作，都会红 —— 那一格正是「页面上有多少动作会被鉴权掐死」的真值。
 2. **通道形状**（`TestTheChannelShape`）：头名的带引号字面量在前端**只有一处**
    （`api.ts` 的 `API_KEY_HEADER`），拦截器用它、存取用同一个 localStorage 键、空值走
@@ -64,11 +65,12 @@ QUOTED_TOKEN = re.compile(rf"['\"`]{re.escape(TOKEN)}")
 #: 存 key 的那一格在页面上的落点（401 的指路与两张卡的正文都用这个名字）
 CARD = "配置管理 → 写操作鉴权"
 
-#: 探针量到的两个数（`GATED_CONSUMED` 在 L234 从 21 挪到 23：migrate / stream 接进了页面）
+#: 探针量到的两个数（`GATED_CONSUMED`：L233 定标 21 → L234 挪到 23（migrate / stream 进页面）
+#: → L236 到 24（translate 进页面）⇒ 与 `GATED_TOTAL` 相等，「挂门禁但没接线」那一档清空）
 GATED_TOTAL = 24
-GATED_CONSUMED = 23
+GATED_CONSUMED = 24
 
-#: 那 23 条：前端已接线、且服务端开了鉴权就会 401 的形状（逐条来自探针，不是推的）
+#: 那 24 条：前端已接线、且服务端开了鉴权就会 401 的形状（逐条来自探针，不是推的）
 CONSUMED_AND_GATED = frozenset({
     ("DELETE", "/api/data/delete/{filename}"),
     ("DELETE", "/api/system/backups/{backup_id}"),
@@ -83,6 +85,7 @@ CONSUMED_AND_GATED = frozenset({
     ("POST", "/api/dataset/rag"),
     ("POST", "/api/dataset/sample"),
     ("POST", "/api/dataset/split"),
+    ("POST", "/api/dataset/translate"),
     ("POST", "/api/export/batch"),
     ("POST", "/api/quality/profiling"),
     ("POST", "/api/system/backups"),
@@ -95,11 +98,9 @@ CONSUMED_AND_GATED = frozenset({
     ("PUT", "/api/data/update/{filename}"),
 })
 
-#: 挂门禁但前端还没接线的尾巴（24 = 23 + 1；L234 把 migrate / stream 接进页面后只剩这一条，
-#: 接 translate 时这一格要跟着清空——清空后本判据仍会响：它比的是集合相等，不是「非空」）
-GATED_NOT_YET_CONSUMED = frozenset({
-    ("POST", "/api/dataset/translate"),
-})
+#: 挂门禁但前端还没接线的尾巴：**空**（L236 接走 translate 后 24 = 24 + 0）。这一格清空之后
+#: 判据仍会响——它比的是集合相等，不是「非空」；往契约面新挂一条门禁而不接线，这里当场多出一员
+GATED_NOT_YET_CONSUMED = frozenset()
 
 
 def walk_api_routes(routes):
@@ -177,7 +178,7 @@ GHOST_BACKUP = "/api/system/backups/20990101_000000_probe"
 
 
 class TestGateScale:
-    """第 1 面：门禁的规模。数字全部现量，24 / 21 两个常数是探针读数的钉子"""
+    """第 1 面：门禁的规模。数字全部现量，24 / 24 两个常数是探针读数的钉子"""
 
     def test_the_walker_is_not_blind(self):
         """反向元断言：走法写错时这里先红，而不是让后面所有交集判据空转成绿"""
@@ -190,13 +191,19 @@ class TestGateScale:
     def test_24_of_the_75_operations_are_key_gated(self):
         assert len(gated_operations()) == GATED_TOTAL, sorted(gated_operations())
 
-    def test_23_gated_operations_are_already_wired_into_the_ui(self):
+    def test_24_gated_operations_are_already_wired_into_the_ui(self):
         consumed = consumed_operations()
         assert consumed & gated_operations() == CONSUMED_AND_GATED
         assert len(CONSUMED_AND_GATED) == GATED_CONSUMED
 
-    def test_the_last_gated_one_is_the_unwired_tail(self):
-        """24 = 23 + 1：L234 把 migrate / stream 接进页面后，尾巴上只剩 translate 这一条"""
+    def test_the_unwired_tail_is_empty(self):
+        """24 = 24 + 0：L236 接走 translate 之后，挂门禁却没接线的形状一个都不剩
+
+        这一格**不是**因为清空就变成恒真——它比的是集合相等：往契约面新挂一条门禁而前端
+        不接线，右边空集合立刻与左边不等；反过来把已接线的一条从 `CONSUMED_AND_GATED` 里
+        删掉，上一支会先红（交集那一格），这一支则照旧绿，所以两支配对才把「多一条 / 少一条」
+        两个方向都堵住。
+        """
         gated = gated_operations()
         assert gated - consumed_operations() == GATED_NOT_YET_CONSUMED
         assert len(gated) == GATED_CONSUMED + len(GATED_NOT_YET_CONSUMED)
@@ -264,7 +271,7 @@ class TestTheChannelShape:
     @needs_web_src
     def test_the_401_hint_points_at_that_card(self):
         code = _code(API_TS)
-        assert "response?.status !== 401" in code, "401 不再单独指路 ⇒ 21 个动作又只剩一句判决原文"
+        assert "response?.status !== 401" in code, "401 不再单独指路 ⇒ 24 个动作又只剩一句判决原文"
         assert CARD in code
         # 两种成因要分开说：存着却 401 是「那份不对」，没存是「还没填」
         assert "浏览器里存着的那一份与服务端不一致" in code

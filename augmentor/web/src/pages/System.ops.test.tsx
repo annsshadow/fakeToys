@@ -195,6 +195,8 @@ vi.mock('../services/api', async (importOriginal) => {
   s.getDataFiles = vi.fn().mockResolvedValue({ files: [{ name: 'mixed.json', path: 'mixed.json' }] })
   s.listDependencyDatasets = vi.fn().mockResolvedValue({ datasets: [] })
   s.getDependencyGraph = vi.fn().mockResolvedValue({ nodes: [], edges: [], issues: [] })
+  // L236 起依赖诊断自取一面。不给回执 ⇒ 页面退回综合状态里那一份，本份用例渲染结果不变
+  s.systemDependencies = vi.fn()
   s.runQualityMonitor = vi.fn().mockResolvedValue(fx.SNAPSHOT_MIXED)
   s.runDatasetAutoTest = vi.fn().mockResolvedValue(fx.SUITE_MIXED)
   s.migrateDataset = vi.fn().mockResolvedValue(fx.MIGRATION)
@@ -207,6 +209,7 @@ vi.mock('../services/api', async (importOriginal) => {
     getDataFiles: s.getDataFiles,
     listDependencyDatasets: s.listDependencyDatasets,
     getDependencyGraph: s.getDependencyGraph,
+    systemDependencies: s.systemDependencies,
     runQualityMonitor: s.runQualityMonitor,
     runDatasetAutoTest: s.runDatasetAutoTest,
     migrateDataset: s.migrateDataset,

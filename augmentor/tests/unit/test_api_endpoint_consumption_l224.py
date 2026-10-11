@@ -94,10 +94,32 @@ query 那一维这批再添三条 `registry_path`，`params` 块从 8 条涨到 
 送空串或送一个数据集里不存在的键，后端零判决，`duplicate_rate` 回 1.0 —— 与「真的全重复」
 在响应里同形）。三条都写在页面上那句「读这一页之前要知道的六件事」里，不是只写在账本里。
 
+**L236 收了最后两员，缺口到 ∅**：`GET /api/system/dependencies` 与 `POST /api/dataset/translate`
+双双接进页面，实测缺口 2 → **0**、已消费 73 → **75**、前端调用形状同涨到 **75** ⇒
+契约面 75 条操作**全数被前端调到**。`CLI_ENTRY` 与 `NO_ENTRY` 同时清空（前者最后一名
+`doctor` 随 `dependencies` 出名单，后者唯一一名 `translate` 在 A283 收口后出名单）。
+这一轮**动了后端契约**：A283 ① 给 `TranslateRequest` 加可选 `output_file`、`TranslateResponse`
+加同名回显字段（给了落点才非空，值是已 resolve 的绝对路径），因为「整份译文只在响应体、
+每一次点击都按 token 付费却留不下东西」是契约层缺口，不先收它就只会接出一个刷新即失的
+假入口——用户拍板要接，所以 A279 那条「不改后端字段名或响应形状」的纪律在**这一员上**豁免，
+豁免写在这里而不是悄悄做。`dependencies` 那一员按实测记账：它与 `/api/status` 里那份诊断
+**逐字节相同**（L226 的拒接理由在数据面上是成立的），接它涨的是**取法**不是数据——它不碰
+管道（把 `get_pipeline` 换成抛异常的替身仍 200），页面也因此能把依赖诊断从 `status &&`
+那道整体门里摘出来单独刷新。两条都**不带 query 参数**，params 那一维一个数没动
+（仍 11 条 / 8 个键名）。接线质量判据住在 `tests/unit/test_last_two_wiring_l236.py`；
+这一批量出一条新账 **A322**（`text_key` 送空串或送数据集里不存在的键，后端零判决：200、
+模型调用 **0** 次、`failed=0`，产物里凭空多出 `''` / `no_such_field` 两键——与 A321 同族，
+但这一条在花钱路径上，而且会写进落盘产物）。
+
+**名单空了不等于尺子钝了**：`UNCONSUMED` 收到 ∅ 之后，判据 3 那两条验真（子命令名存在、
+末段确实不是子命令）的循环体不再执行 ⇒ 单看它们恒真。所以 `TestRulerIsNotBlind` 补了一支
+反证：把服务层的调用形状摘掉一条，实测缺口立刻非空、相等判据当场红——今天这个 0 是
+**量出来的 0**，不是「什么都没扫到」的 0。
+
 **两侧权威各只有一份**：
 * 后端面 = `app.openapi()` 里 `(方法, 路径模板)` 的集合（75 条操作 / 71 条路径，
   backups 与 dependency 有同路径多方法）；
-* 前端面 = `web/src/services/api.ts` 里 `api.<verb>('路径')` 的调用形状（73 条），
+* 前端面 = `web/src/services/api.ts` 里 `api.<verb>('路径')` 的调用形状（75 条），
   前缀从同一份源码里的 `baseURL` 读出来，不在测试里写死第二份。
 
 **判据五向**：
@@ -107,7 +129,8 @@ query 那一维这批再添三条 `registry_path`，`params` 块从 8 条涨到 
    **相等**，所以它只会随接线变短，新增一条没接的端点会当场红；
 3. `UNCONSUMED` 每一员要么指到一个**真实存在**的 CLI 子命令（`cli_entry` 的每个名字由
    parser 的 `add_parser` 名单验真），要么落进 `NO_ENTRY`（L226 时 3 条，L227 接走其中
-   2 条后剩 **1** 条）：判据是「路径末段确实不在 CLI 子命令清单里」；
+   2 条后剩 **1** 条，L236 收口后 **∅**）：判据是「路径末段确实不在 CLI 子命令清单里」。
+   两张名单都空之后这一向的循环体不再执行，牙齿改由 `TestRulerIsNotBlind` 那支反证提供；
 4. query 参数逐键对到该操作的 `in=query` 声明。两处来源都算：写在路径串里的
    `` `/versions/create?filename=${filename}` ``（1 条）与 axios 的 `params: {…}` 对象
    （L232 之后 11 条 / 去重后 8 个键名）。后者是量出来才补进去的一维 —— `data/load` 的分页三键与
@@ -157,31 +180,29 @@ PARAMS_MAX_GAP = 60
 #: 前端调用形状里的 `${...}` 归一化成的占位符
 PLACEHOLDER = "{}"
 
-#: 实测未被前端消费的操作（L235：75 条操作里 73 条被调到，余 2 条；立账轮 L224 是 32，
+#: 实测未被前端消费的操作（L236：75 条操作**全数被调到**，缺口 ∅；立账轮 L224 是 32，
 #: L225 第一批后是 29，L226 第二批后是 26，L227 第三批后是 24，L228 第四批后是 21，
 #: L229 第五批后是 18，L230 第六批后是 15，L231 第七批后是 11，L232 第八批后是 8，
-#: L234 第九批后是 3）。
+#: L234 第九批后是 3，L235 第十批后是 2）。
 #: 每员要能在 `CLI_ENTRY` 或 `NO_ENTRY` 里落位；接线一轮就少一格，回填只降不升。
-UNCONSUMED = frozenset({
-    "GET /api/system/dependencies",
-    "POST /api/dataset/translate",
-})
+#: **空名单不是「不用管了」**：判据是集合相等，所以新接一条没接的端点仍会当场红
+#: （实测由 `TestRulerIsNotBlind` 那支反证钉住，见其 docstring）。
+UNCONSUMED = frozenset()
 
 #: 缺口里「CLI 那条路有入口」的成员 → 子命令名。名字由 `TestCliEntryClaimsAreReal` 验真。
 #: L234 把 monitor / auto-test / migrate / stream / validate-config 五员接进页面后收到 **2**；
-#: L235 把 health-gate 接进质量中心后收到 **1**（只剩 `dependencies` → `doctor`，
-#: 那一员按用户拍板要在 L236 一并接掉，不是「指标涨而能力不涨」就永久拒接）。
-CLI_ENTRY = {
-    "GET /api/system/dependencies": "doctor",
-}
+#: L235 把 health-gate 接进质量中心后收到 **1**（只剩 `dependencies` → `doctor`）；
+#: L236 把 `dependencies` 接进系统状态页后**清空**——那一名 `doctor` 是这条名单上最后
+#: 一员，它的接法按用户拍板做（数据与 `/api/status` 里那份逐字节相同，涨的是取法不是数据，
+#: 实测记账见模块 docstring 的 L236 段）。
+CLI_ENTRY = {}
 
-#: 两边都没有入口的操作，只剩 1 条（A279 的优先队列：L225 把 evaluate / language-profile /
-#: vector-status 接进前端，队列从 6 收到 3；L227 把 impact / semantic-search 接进分析页，
-#: 收到 1。剩下的 translate 因契约层问题归 **A283**，不是「再等一轮接线」）
-#: 判据取「路径末段确实不是 CLI 子命令」
-NO_ENTRY = frozenset({
-    "POST /api/dataset/translate",
-})
+#: 两边都没有入口的操作。L225 把 evaluate / language-profile / vector-status 接进前端，
+#: 队列从 6 收到 3；L227 把 impact / semantic-search 接进分析页，收到 1；L236 收掉最后
+#: 一员 `translate`——它不是「再等一轮接线」，而是先做 A283 ①（给请求加可选 `output_file`、
+#: 响应回显已 resolve 的绝对落点）让这次按 token 付费的请求留下东西，再接进页面。
+#: 判据取「路径末段确实不是 CLI 子命令」；名单空了之后这一向由反证那一支提供牙齿。
+NO_ENTRY = frozenset()
 
 
 def openapi():
@@ -369,7 +390,7 @@ class TestRulerSeesTheRealSurface:
 
     def test_frontend_face_scale(self):
         shapes = call_shapes()
-        assert len(shapes) == 73, f"服务层调用形状现量 73，实得 {len(shapes)}"
+        assert len(shapes) == 75, f"服务层调用形状现量 75，实得 {len(shapes)}"
         assert {m for m, _, _ in shapes} <= {"GET", "POST", "PUT", "DELETE", "PATCH"}
 
     def test_http_paths_live_only_in_the_service_layer(self):
@@ -523,9 +544,15 @@ class TestConsumptionRoster:
             f"已接好或已消失 {sorted(set(UNCONSUMED) - measured)}")
 
     def test_roster_scale_is_pinned(self):
-        """缺口 2 / 已消费 73 / 总操作 75：接线一轮就要回填这三个数（缺口只降不升）"""
-        assert len(UNCONSUMED) == 2, len(UNCONSUMED)
-        assert len(consumed_operations()) == 73, len(consumed_operations())
+        """缺口 0 / 已消费 75 / 总操作 75：接线一轮就要回填这三个数（缺口只降不升）
+
+        L236 收到 ∅ 之后这一格的意义变了：从前它钉的是「还剩几条没接」，现在它钉的是
+        **「不许再退回」**——契约面新增一条端点而服务层没接，`consumed_operations()` 就
+        少于 75、`unconsumed_operations()` 就非空，两个数一起红。
+        """
+        assert len(UNCONSUMED) == 0, len(UNCONSUMED)
+        assert len(consumed_operations()) == 75, len(consumed_operations())
+        assert len(consumed_operations()) == len(operations()), "契约面全数被消费才算收口"
 
     def test_roster_entries_are_real_operations(self):
         ops = {f"{m} {p}" for m, p in operations()}
@@ -586,11 +613,39 @@ class TestCliEntryClaimsAreReal:
         L235 接的一条（`health-gate`）自有同名子命令，于是条目数 2 收到 **1**、不同子命令
         2 收到 **1**；`NO_ENTRY`（1）与子命令现量（37）都没动。名单只剩两员：
         `dependencies`（→ `doctor`，用户已拍板 L236 接掉）与 `translate`（无入口，归 A283）。
+        L236 把这两员一起收掉：`dependencies` 是 `CLI_ENTRY` 的最后一名（`doctor` 整名
+        出名单 ⇒ 条目数 1 收到 **0**、不同子命令 1 收到 **0**），`translate` 是 `NO_ENTRY`
+        的最后一名（先做 A283 ① 的契约再接线 ⇒ 1 收到 **0**）。两张名单同时空掉，
+        而子命令现量（37）一个没动——本轮没给 CLI 加子命令，`translate` 在 CLI 侧仍然
+        没有入口，它出名单是因为**前端接上了**，不是因为多了一条 CLI 路。
         """
         assert len(cli_subcommands()) == 37
-        assert len(CLI_ENTRY) == 1
-        assert len(set(CLI_ENTRY.values())) == 1
-        assert len(NO_ENTRY) == 1
+        assert len(CLI_ENTRY) == 0
+        assert len(set(CLI_ENTRY.values())) == 0
+        assert len(NO_ENTRY) == 0
+
+    def test_the_empty_claims_are_not_a_blind_ruler(self):
+        """两张名单空了之后，上面两条验真的循环体不再执行 ⇒ 这一支替它们保留牙齿
+
+        判据不是「名单为空」，而是「**实测**为空且尺子仍能看见东西」：
+        ① parser 那 37 个子命令仍被逐名解析出来（尺子没瞎）；
+        ② 契约面 75 条操作**每一条**都在服务层有对应调用形状（缺口是量出来的 0）；
+        ③ 反证：把任一员的调用形状摘掉，`unconsumed_operations()` 立刻非空 ——
+           空集相等这条判据仍会响，不是恒真。摘法走 monkeypatch 换掉 `call_shapes`
+           的返回值，不改磁盘上一个字节。
+        """
+        assert len(cli_subcommands()) == 37, "parser 一个子命令都读不到 ⇒ 判据坏了"
+        assert unconsumed_operations() == set()
+        assert len(consumed_operations()) == len(operations()) == 75
+
+    def test_unwiring_one_operation_turns_the_empty_roster_red(self, monkeypatch):
+        """③ 的反证臂：摘掉 `translate` 的调用形状，缺口必须立刻点名它"""
+        real = call_shapes()
+        dropped = {s for s in real if s[1] != "/api/dataset/translate"}
+        assert len(dropped) == len(real) - 1, "摘的那一条不在语料里 ⇒ 反证无效"
+        monkeypatch.setattr(sys.modules[__name__], "call_shapes", lambda: dropped)
+        assert unconsumed_operations() == {"POST /api/dataset/translate"}
+        assert set(UNCONSUMED) != unconsumed_operations(), "相等判据在缺口非空时必须红"
 
 
 class TestRulerIsNotBlind:

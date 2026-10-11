@@ -84,6 +84,7 @@ const fx = vi.hoisted(() => {
       deleteBackup: null as unknown as ReturnType<typeof vi.fn>,
       listDependencyDatasets: null as unknown as ReturnType<typeof vi.fn>,
       getDependencyGraph: null as unknown as ReturnType<typeof vi.fn>,
+      systemDependencies: null as unknown as ReturnType<typeof vi.fn>,
     },
   }
 })
@@ -121,6 +122,9 @@ vi.mock('../services/api', async (importOriginal) => {
   // L232 起本页还会取数据集血缘那一面。与本份用例无关，给空回执让它不必逐个显式安排。
   s.listDependencyDatasets = vi.fn().mockResolvedValue({ datasets: [] })
   s.getDependencyGraph = vi.fn().mockResolvedValue({ nodes: [], edges: [], issues: [] })
+  // L236 起依赖诊断自取一面。与本份用例无关：**不给回执**（resolved undefined）⇒ 页面
+  // 退回综合状态里那一份，渲染结果与 L236 之前逐格相同
+  s.systemDependencies = vi.fn()
   return {
     ...actual,
     getServiceStatus: s.getServiceStatus,
@@ -132,6 +136,7 @@ vi.mock('../services/api', async (importOriginal) => {
     deleteBackup: s.deleteBackup,
     listDependencyDatasets: s.listDependencyDatasets,
     getDependencyGraph: s.getDependencyGraph,
+    systemDependencies: s.systemDependencies,
   }
 })
 
