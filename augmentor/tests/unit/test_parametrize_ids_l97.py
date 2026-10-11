@@ -76,7 +76,10 @@ NS_PREFIXES = frozenset({
 #: 三处 parametrize（正控制两支值位 `_MUST_BE_DIRECT` / `_MUST_BE_ALIAS_ONLY`，
 #: 引用验真一支值位 `_LOADER_CONSUMED`），全都不带 ids ⇒ no-literal-list 桶 +3；
 #: READABLE 是差值口径（总数 − 盲面），两边同增 ⇒ **288 未动**。
-MEASURED_CALLS = 399
+#: **L222 回填（CALLS +3、盲面 +3、READABLE 一格未动）**：test_config_three_side_l222.py
+#: 三处无 ids parametrize（两支逐节判据值位 `sorted(SCHEMA)`，例外名单验真一支值位
+#: `sorted(META_ROWS)`）⇒ no-literal-list 桶 +3；三格全落盲面，差值口径下 **288 未动**。
+MEASURED_CALLS = 402
 #: （L185：${ENV} 展开语义守卫两支 parametrize（坏形状 5 档 / 非串 4 档，全是字面清单）
 #: ⇒ CALLS 382 → 384、READABLE 281 → 283，盲面 101 一格未动）
 #: （L189：验证预设封闭清单守卫一支 parametrize（坏预设 5 档，全字面清单）⇒
@@ -88,7 +91,9 @@ MEASURED_READABLE = 288
 #: 清单）⇒ CALLS 379 → 381、READABLE 278 → 279，盲面（no-literal-list 桶）101 不动。
 #: L217：普查守卫三支无 ids parametrize ⇒ 盲面 108 → **111**（与 CALLS +3 同数，
 #: 因为三格全落盲面；l98 的 plain 档同增 3，两边独立闭合）。
-MEASURED_BLIND = 111
+#: L222：三侧对账守卫三支无 ids parametrize ⇒ 盲面 111 → **114**（同样与 CALLS 同数）；
+#: l98 侧档位和 +3（plain +1、derived +2）独立咬合。
+MEASURED_BLIND = 114
 #: 值位含类型对象的那些档（必须全部自带 ids，否则就是本判据的违规）
 KNOWN_TYPED_SITES = frozenset({("tests/unit/test_schema_type_spec_l96.py", "test_label")})
 
