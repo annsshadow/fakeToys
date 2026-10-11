@@ -57,6 +57,7 @@
 - [x] **L219** `fbf5052ec` `feat(augmentor)`：**`evaluation.metrics` 接进 `/api/dataset/evaluate` 的省略支路**（权威序 请求 > 配置 > SDK 默认；出厂值与内置回落值逐字同 ⇒ 零漂移，判据取「改配置 ⇒ 指标集合跟着变」再加一整份字典逐值相等的等价钉）。接线顺带把两格死角第一次变成可达：空清单被 SDK 的 `metrics or [内置三只]` 静默补成三项（本层改 400），白名单过去只判请求侧、现在判生效值。普查现量随档位改：有读者 47 → 48、零读者 23 → 22、归档待处置 20 → 19；同节 `reference_field` **接不动**（请求默认是硬值 `"output"`，`or` 永远落不到配置），立 **A274**；L218 那句假理由计数按机器比对从 7 订正为 **8** ⇒ 详见循环日志 L219
 - [x] **L220** `68b929bb8` `feat(augmentor)`：**A274 的「接不动」用 `None` 哨兵解开——`evaluation.reference_field` 接进 `/api/dataset/evaluate`，并按对称口径新补 `evaluation.generated_field`**（权威序 请求 > 配置 > 内置默认；两只键出厂同为被替换的硬编码值 `output` ⇒ 零漂移，前提本身由三臂机器钉住）。坏字段名两处出声（加载期 `require_string` + 门口逐条带下标 400），请求侧空串与省略不可区分、落回配置，与 L219 的 `metrics` 语义同式。普查现量：schema 69 → **70 键**、有读者 48 → **49**、零读者 22 → **21**、归档待处置 19 → **18**（非闸门键 9 → 8）。既有面五处按现量重钉（含注册表门铃 69 → 70 与两支写死 29 的测试名改为点名归因），注入取证 **八臂全部有牙齿**（5/4/7/2/1/6/4/5 红，其中一臂是普查尺子自己看见读者消失）。门禁 **8224 passed / 11 skipped / 0 failed / 99.80%**，用例增量 `+28` 用「HEAD 临时换入再逐字节复原」的对照跑法逐文件实测。新立 **A275**（README 配置表与 schema 无机器对账）⇒ 详见循环日志 L220
 - [x] **L221** `5d37639ee` `feat(augmentor)`：**A270 收口——逐条翻译失败加回执面**：`batch_translate` 从「返回清单」改成「返回报告」（`failed` / `failed_indices` / 本批全量 `errors`），聚合层把批内下标折算成全数据集坐标并按 20 截样本，`TranslateResponse` 声明回执四键。部分失败**仍是 200**，诚实读数在响应体而不是状态码。普查面零变动（本轮不新增键）；门禁 **8239 passed / 11 skipped / 0 failed / 99.80%**，注入八臂各有牙齿（3/1/1/2/1/7/6/4 红），用例增量 **+15**（三个既有文件逐文件实测计数一字未变）⇒ 详见循环日志 L221
+- [x] **L222** `932c5885a` + `c6209ab67`（归因订正）+（账本批即本条所在提交）`test,docs(augmentor)`：**A275 收口——配置面三侧同源对账守卫落成机器**（`docs/README.md` 配置表 / `fields(AppConfig)` / `config.yaml` 三角互核）。README 表格 16 行 34 键 → **22 行 70 键**，权威只有一份：节与键全从 `fields()` 实推，测试侧唯一手写名单 `META_ROWS`（`models` / `app`）逐员机器验真。`config.yaml` 那一侧的判据被文件自己纠正过一次——不是「与 schema 逐节全等」而是**整节写全或整节注释列全**（`logging` 三键刻意不落地，写出来才装配）。用最终版尺子对 HEAD 那份文档量出的真漂移是 **21 红 / 38 绿**：5 个整节缺席、13 节只列半节、恰好列全的只有 `export` 与 `multilingual`。注入七臂各有牙齿（4/2/3/3/5/2/3 红），A5「schema 新增一只 init 键」复现的正是 L220 那一步的形状。顺带量出一格普查盲区：`config.yaml` 的 `app` 三键既无 `AppConfig` 字段、又被校验器 `META_TOP_SECTIONS` 免检 ⇒ 「只覆盖 schema 键」的死键普查**结构上看不见**它（零读者没有读者这件事仓内三处早有记录，历史处置是降为可选；新的是盲区与处置未立账）⇒ 立 **A276**。l97 / l98 两把参数化棘轮按现量回填（CALLS 399→402、盲面 111→114、plain 57→58、derived 36→38、盲面用例 106→109）。门禁 **8298 passed / 11 skipped / 0 failed / 99.80%**，用例增量 `+59` 与新文件支数吻合 ⇒ 详见循环日志 L222
 
 ## Backlog A — 质量缺口（缺数 / 偏支 / 健壮性）
 
@@ -80,7 +81,8 @@
 | A272 | `api/routes/config.py` 的可写四节 / `multilingual` 节 | **新立（L217）**：L217 接的四只键里除 `enabled` 之外，**没有任何一只可以经 `POST /api/config` 改**——可写面至今只有 export / rag / vector / multimodal 四节，`multilingual` 要改只能改 `config.yaml` 重启。要么把 `multilingual` 开成第 5 个可写节（连带 `test_the_two_tiers_partition_the_writable_sections` 的键名单扩员、节内判据已有所以不用补），要么在 `docs/API.md` 与回显面上写明「这节只读」。这是口径决策不是缺陷，所以先立账：现状下翻译的目标语言与批宽在部署期不可调，而 L217 的两条端点恰恰是运行时才消费它们。定级 S，待拍。 | S |
 | A273 | `augmentor/pipeline.py` 的 `self.expander` / `self.tracker` | **新立（L218）**：管道在构造阶段建 `DomainExpander(self.model_backend) if self.model_backend else None`（`pipeline.py:146`）与 `ExperimentTracker()`（`pipeline.py:149`），而**产品树里再没有任何一处引用这两个属性**——grep `self.expander` 与 `self.tracker` 只命中那两行赋值，`api/`、`cli.py`、`augmentor/cli/` 全树对 `expander` / `tracker` 零命中，测试侧只有 `test_pipeline.py:412` 断言「无后端时 `instance.expander is None`」和两处给它塞 `model_backend` 的夹具。于是 `DomainExpander.batch_expand`（收 `strategies`、`topics_per_strategy`、`use_parallel`）与 `ExperimentTracker.log_metric` / `save_experiment` 这些**已写好并单测过的能力今天没有任何产品入口**，也正是 **A271** 里「SDK 有旋钮但没人转」那一族的根因。两条路要拍：① 接消费者（扩展走一条 `/api/dataset/expand` 一类入口、指标随增强结果落到版本面），② 承认死面并把构造删掉——后者会缩 `AugmentorPipeline` 的公开属性面，属对外契约变化，那 3 处测试引用要跟着改。构造本身近乎零成本（`ExperimentTracker` 明写「构造时不建目录，第一次记实验才建」），所以**这是消费条目不是性能条目**，别拿性能理由顺手删。定级 M，待拍。 | M |
 | A274 | `api/routes/dataset_tools.py` 的 `EvaluateRequest.reference_field` / `config.evaluation.reference_field` | **新立（L219）**：L219 接 `evaluation.metrics` 时把同节的 `evaluation.reference_field` 留在原地，原因是它**接不动**。请求模型的默认是硬值 `reference_field: str = "output"`，调用方省略与显式传 `"output"` 在 API 面上是同一个形状，`request.reference_field or config....` 的 `or` 永远不会落到配置那一档——写出来就是一只假接线（配置改了读数不变，且没有任何测试能发现，正是本轮普查在收的形状）。真接法只有一条：把字段改成 `Optional[str] = None` 再走「请求 > 配置 > SDK 默认」，而这会同时改掉 OpenAPI 里该字段的**可空性**（定义上就变，不是推测），动到 `test_api_openapi_contract` 那把字段面尺子时要按现量重钉（尚未实测，故本条只立账不预判红几支），也改掉既有客户端「省略即 `output`」的语义。生成侧 `generated_field` 在配置里**没有对应键**，接完会出现「参考侧跟配置、生成侧跟硬编码」的不对称默认，要不要一起补一只 `evaluation.generated_field` 也是同一个口径决策。定级 S，待拍。**· L220 已收口**：两只字段名的请求默认改成 `Optional[str] = None` 哨兵，权威序 请求 > 配置 > 内置默认 才真的可达（省略与显式 `"output"` 从此是两种形状）；对称口径拍的是「补键」而不是留一对不对称默认 ⇒ 新增 `config.evaluation.generated_field`（出厂 `output`，运行时 `require_string` + 规格表 `non_empty` 与兄弟键同规）。零漂移前提不再由散文承担：dataclass 默认、仓库 YAML、规格表形状三臂各自钉住，另加「四列文本两两相似度不同」当地基。坏字段名两处出声（加载期拒空串、门口逐条带下标 400）。OpenAPI 可空性确实改了，但**没有任何一支既有尺子红**（`test_api_openapi_contract` 守的是响应面与端点覆盖，请求字段类型不在它刀口上），所以那把尺子的位置由新章 `TestRequestFieldsAreNowOmissible` 自己钉。⇒ 见循环日志 L220 | S |
-| A275 | `docs/README.md` 的配置段表格 | **新立（L220）**：这张表的「关键项」列与 `AppConfig` 的键清单**没有任何机器对账**——L220 新增 `evaluation.generated_field` 时，`docs/README.md` 与 `config.yaml` 两处全靠人肉同步，而 `test_doc_contract_numbers_l200.py` 只核端点数、导出格式数、页面数那一类数字。这正是 **A266** 那句「契约面数字全靠人肉对账」在配置面上的具体形状，且它比端点面更容易烂：本仓 20 节 70 键每轮接线都在动。修法方向（与 A266 同族、可并表执行）：逐节从 `dataclasses.fields()` 实推键清单，与表格该列**逐节比对相等**，并同时核 `config.yaml` 的节/键集合（三侧同源的三角对账）。定级 S。 | S |
+| A275 | `docs/README.md` 的配置段表格 | **新立（L220）**：这张表的「关键项」列与 `AppConfig` 的键清单**没有任何机器对账**——L220 新增 `evaluation.generated_field` 时，`docs/README.md` 与 `config.yaml` 两处全靠人肉同步，而 `test_doc_contract_numbers_l200.py` 只核端点数、导出格式数、页面数那一类数字。这正是 **A266** 那句「契约面数字全靠人肉对账」在配置面上的具体形状，且它比端点面更容易烂：本仓 20 节 70 键每轮接线都在动。修法方向（与 A266 同族、可并表执行）：逐节从 `dataclasses.fields()` 实推键清单，与表格该列**逐节比对相等**，并同时核 `config.yaml` 的节/键集合（三侧同源的三角对账）。定级 S。**· 已关闭（L222）**：三侧对账落成 `tests/unit/test_config_three_side_l222.py`（59 支）。权威只有一份——节清单与键清单全从 `dataclasses.fields()` + `getattr` 实推（与 `test_section_registry_l77.py` 同口径），测试侧唯一手写名单是 `META_ROWS = {models, app}`，且每员要**同时**过两条机器验真（确实不是 dataclass 节 + 确在校验器 `META_TOP_SECTIONS` 白名单里），所以「把一只真节塞进例外名单」蒙不过去。`config.yaml` 那侧的判据不是「与 schema 逐节全等」而是**整节写全或整节注释列全**——这条是被文件自己纠正出来的：`logging` 三键刻意留在注释里（整节不存在时日志一字不变），第一版把它当漂移是我读错了产品口径。README 表格随之从 16 行 34 键补全为 22 行 70 键，并把「哪只键有人读」的权威明确留在普查守卫而不是文档里。对 HEAD 那份文档量出的真漂移 **21 红 / 38 绿**（5 整节缺席、13 节半节、恰好列全 2 节）；注入七臂各有牙齿，其中 A5「给 dataclass 加一只 init 键」复现的正是立账本条的那一步（L220 新增 `evaluation.generated_field`）。本轮量到的 `app` 节是另一码事，另立 **A276**。⇒ 见循环日志 L222 | S |
+| A276 | `config.yaml` 顶部的 `app` 节（`name` / `version` / `debug`） | **新立（L222）**：**形状本身不是新事实**——`OPTIMIZATION_PLAN.md` §2.4 的表、`README.md` 变更说明第 6 条与 `tests/integration/test_cli_validate_config.py` 的 docstring 三处都记着「`AppConfig` 不建模 `app` 段、没有任何代码读它」，而历史上做过一次处置是把它从必填**降为可选**（因为 `save_config` 写出的配置否则必然校验失败）。**本条立的是另一码事：这只死面的*处置*从未进过账，而且它对现有的死键普查尺子结构上不可见**——`AppConfig` 没有 `app` 字段（`dataclasses.fields()` 实测不含它），`ConfigValidator` 又把它列进 `META_TOP_SECTIONS` 免检，于是 B5 那把「只覆盖 schema 键」的普查尺子永远不会把它报成零读者键，它也不会被加载器装配。当前后果：改这三键不影响任何输出，`GET /api/config` 的响应面里也没有它们（该端点逐字段从 `p.config` 即 `AppConfig` 拼装，见 `api/routes/config.py` 的 `get_config`，没有字段就没有格子）。三条处置方向都动得到对外文件，所以先立账：**① 接成节**（新增 `AppMetaConfig` 三键并接进 `/api/config` 与 `--version` 一类读取面 ⇒ schema 70 → 73 键，l77 节注册、规格表、普查尺子与本把三侧尺子都要按现量重钉）、**② 从出厂文件删掉那一段**（改动用户可见的配置面，且 `ConfigValidator.META_TOP_SECTIONS` 要跟着收窄、`save_config` 的「保留未建模顶层键」那条行为也一并失去对象）、**③ 维持现状并把「产品侧零读者」写明**（本轮 `docs/README.md` 表格已按③落了说明，但键本身仍在那儿）。本轮选③而没有顺手删或顺手接：前者是无声地改变出厂形状，后者是一轮做不完的对外契约变化。`META_ROWS` 的验真臂把这个形状钉在明处——白名单成员必须「确实不是节」。定级 S，待拍。 | S |
 
 ## Backlog B — 功能增强与体验（价值 ÷ 工作量）
 
@@ -2275,3 +2277,91 @@ L218 把「等价旋钮住在哪」逐键验真之后，这一族里唯一「旋
 - **仍在账上的邻居**：**A272**（`multilingual` 要不要开成第 5 个可写配置节——本轮明确回答了「样本上限」那半边：
   它不该成为键，但 `default_target_lang` 等四键是否运行时可改仍是待拍项）；以及 L220 之后量到的
   「**32 个端点没有前端调用者**」这一消费面缺口，`/api/dataset/translate` 本身就在其中。
+
+### L222（2026-10-11）— 配置面三侧同源对账：README 表格、`AppConfig`、`config.yaml` 三角互核，权威只有一份
+
+- **补的是 A275 那一格**，而且是它自己立的账被自己的尺子量了一遍：L220 新增
+  `evaluation.generated_field` 时 `docs/README.md` 与 `config.yaml` 全靠人肉同步，当时我在日志里
+  写了「没有机器守」，本轮把这句话落成 59 支守卫。**用最终版尺子对 HEAD 那份文档的读数是
+  21 红 / 38 绿**（取证脚本 `evidence_l222.py` 在仓库外跑）：表里只有 16 行，schema 节只覆盖 34 只键，
+  `context` / `expander` / `sampler` / `tracker` / `visualization` **5 个整节缺席**，13 节的键清单只写了一半上下，
+  恰好列全的只有 `export` 与 `multilingual` 两节。也就是说 A275 那句「容易烂」不是推测，是量出来的。
+- **权威只有一份，是本轮最重要的一条判据**：节清单与键清单全部从 `dataclasses.fields(AppConfig)` 与
+  `getattr` 出来的节实例实推（与 `test_section_registry_l77.py` 同一口径），`init=False` 的键按定义写不进
+  文件所以不算清单。测试侧唯一手写的名单是 `META_ROWS = {models, app}`，而它每一员要**同时**过两条机器验真
+  （确实不是 dataclass 节 + 确在校验器 `ConfigValidator.META_TOP_SECTIONS` 白名单里）⇒ 把一只真节塞进例外名单
+  来绕开逐节比对，这条路是堵的（注入 A6 当场红 2 支，其中一支就是验真臂）。
+- **三侧而不是两两**：只比 README↔schema 会放过「文档说有了而文件里没有」，只比 schema↔yaml 会放过
+  「文档少了整整一节」。三条读数各自与 `fields()` 推出来的那份 70 键集合相等，两两自然一致，所以
+  `TestThreeSidesAgree` 那两条是合成读数而不是第三条独立刀口——它红得比前两类的组合更晚，是设计如此。
+- **`config.yaml` 那一侧教本尺子改了一次判据，如实记**：第一版把「文件里没有 `logging` 节」当成漂移，
+  被文件自己那段注释推翻——整节不存在时 CLI 与 API 的日志一字不变，写出来才装配，那是**刻意的产品决策**。
+  于是 yaml 侧判据从「与 schema 逐节全等」换成**「整节写全，或整节注释列全」**：一节可以整个不落地，
+  但不许只写半节（A4 红 3 支）、不许写幽灵节（A3 的形状在 yaml 侧同判）、也不许新增一只键而文件里
+  连提都没提。为了让「整节注释」这一档不是靠人记得那段注释，另加两臂：`commented_section_keys()`
+  扫描器自己有正控制（抹掉一行注释就少一键，A7 红 3 支），以及缺席节必须在文件里有一句说明它缺席时
+  行为是什么的判据。
+- **尺子自己也有前提臂**：`len(SCHEMA) >= 20` 且键和 == 70（A5 一加键就红，正是这条在替「70」这个数字
+  守着）、README 与 yaml 两侧解析出的成员数各设下限，防的是「解析器一行没解析出来，两侧都是空集于是
+  等式恒成立」这一族空转（A171 口径：数不到不判干净）。
+- **第一版我自己写坏过两处，都是没读代码就下判**：① 把 `models` 当成「不是 `AppConfig` 字段」——
+  它**是**字段（一个 dict），待在 `META_ROWS` 的理由是「它的键不住在 dataclass 里」而不是「它不是节」，
+  验真臂对它的判据因此必须是「不是 dataclass 节」这一条而不是「不是字段」；② 前提臂写成
+  `len(README) >= 20`，把「修好的文档形状」当成了尺子的前提——真漂移状态下这条本该红的臂反而先炸给我看。
+  两处都在本轮改掉，且改后对 HEAD 文档的读数（21 红）是重量的，不是沿用第一版那个被推翻的数。
+- **既有面迁移（按现量，没有一把尺子被改松）**：`tests/unit/test_parametrize_ids_l97.py`
+  CALLS 399 → **402**、盲面 111 → **114**（READABLE 288 是差值口径，未动）；
+  `tests/unit/test_parametrize_blind_face_l98.py` 六档 plain 57 → **58**、derived 36 → **38**、
+  盲面用例 106 → **109**（`MEASURED_BLIND_SEEN` 同步、豁免 17 未动）。第一次全量门禁就是这 4 支红
+  （`test_census_agrees_with_the_l97_ruler` / `test_tier_counts_are_pinned` /
+  `test_the_dynamic_face_sees_every_blind_site_by_name` / `test_census_totals_match_this_rounds_measurement`），
+  归因清楚：新文件三支无 ids 的 `parametrize` 全落盲面。档位不是猜的——用 l98 的 `static_rows()`
+  单独对本文件量过：`sorted(META_ROWS)` 入 **plain**（frozenset 里的字面串看得见），
+  两支 `sorted(SCHEMA)` 入 **derived**（元素来自函数返回值，Scope 看不见）⇒ 1 + 2 = 3 与档位和、
+  盲面、CALLS 三处独立闭合。
+- **门禁读数**：**8298 passed / 11 skipped / 0 failed / 覆盖率 99.80%**（末次 182.27s，账本合并后重量一遍）。
+  与 L221 的 8239 相减
+  `+59`，正好等于新文件 `tests/unit/test_config_three_side_l222.py` 单独跑出来的 59 支，
+  即本轮除两把参数化棘轮改常量之外**没有既有测试改形状**。skip 11 一字未动。
+- **注入七臂（每臂单点改、锚点唯一命中先断言、跑完逐字节复原并断言与进入时一致）**：
+  A1 README 少一整行 **4 红** / A2 README 键名改名 **2 红** / A3 README 多写幽灵键 **3 红** /
+  A4 `config.yaml` 少一只键（半节） **3 红** / A5 schema 新增一只 init 键 **5 红** /
+  A6 例外名单塞进真节名 **2 红** / A7 注释扫描器少读一键 **3 红**。
+  A5 是这一族的靶心：它复现的正是立 A275 的那一步（L220 给 dataclass 加 `generated_field`），
+  五红分别落在前提档的 70 键和、README 逐节臂、yaml 逐节臂、三侧合成读数、两两差值——
+  也就是「加一只键而三处文档/文件没人跟着动」在这把尺子下**不可能无声通过**。
+  A2 只红 2 支是诚实读数：改名不影响行数，所以逐节存在性臂不参与，红的是逐节键清单与两两差值。
+  脚本与备份都在仓库外（`D:/WORKSPACE/probe_l222.py`、`probe_backup_l222/`），用完即删。
+- **文档同步**：`docs/README.md` §7 的配置表从 16 行重排为 22 行，列名「关键项」改成「键清单」——
+  旧列名是这轮漂移的语义挡箭牌（「关键项」天然允许挑着写，而逐节比对要求列全）。表格上方另加一句
+  明确「本节不复制『哪只键有人读』的结论」，读者身份权威仍住在
+  `test_config_reader_census_l217.py`，免得两处各写一份结论（A266 那一族的第二个事实来源）。
+  `app` 那一格按本轮量到的事实写明「出厂文件里写了而产品侧零读者」，并把处置指向 A276。
+- **新立 A276，但第一版把它写成了「本轮量到的新事实」——这句是本轮的第二次口径错，订正如下**：
+  `app` 那三键**没有读者**这件事仓内早就记着三处（`OPTIMIZATION_PLAN.md` §2.4 的
+  「`AppConfig` 不建模 `app` 段、`load_config` 从不读它 → 写出的配置必然不合法」、`README.md`
+  变更说明第 6 条「由必填降为可选」、`tests/integration/test_cli_validate_config.py` 的 docstring
+  「也没有任何代码读它们」），历史上的那次处置是**降为可选**而不是接上读者。本条真正新的只有两格：
+  ① 它对 B5 那把「只覆盖 schema 键」的死键普查尺子**结构上不可见**（没有字段就没有格子，
+  校验器又按 `META_TOP_SECTIONS` 免检），所以零读者名单里从来数不到它；
+  ② 这只死面的**处置**（接成节 / 从出厂文件删掉 / 维持现状并写明）从未立过账。
+  本轮只做了「立账 + 文档写明 + 验真臂钉住形状」，没有顺手删那一段（动对外文件）也没有顺手接成节
+  （schema 70 → 73 键，节注册 / 规格表 / 两把普查尺子 / 本把三侧尺子四处要重钉，一轮做不完）。
+  `api/routes/config.py` 里那段写入清单注释本来就把 `app` / `models` 叫「两个元节」，
+  与本轮 README 表格的 22 行（20 节 + 2 元节）同一口径——这条不是我发明的分类，是仓内既有说法。
+- **配置普查本轮零变动**：没有新增、删除或接线任何配置键，现量仍是 schema **70 键** / 有读者 **49** /
+  零读者 **21** / 归档待处置 **18**。本轮动的是「文档与出厂文件怎么描述这 70 键」，不是这 70 键本身。
+- **插行与引用**：`docs/README.md` §7 表格净增 12 行（+29 / −17），而 `test_doc_line_refs_l79.py`
+  的扫描面是 `docs/ARCHITECTURE.md` 与本账本这两份活文档，README 不在刀口上；本轮代码文件一行未动，
+  所以历史 `file:line` 引用不会被平移——`test_comment_refs_a184.py` 与 l79 在全量里当场绿。
+  **反过来，账本这一侧是它的刀口，而且本轮真的被它红过一次**：新写的 A276 行我在散文里换了行，
+  于是那条表格行被劈成两行，`test_docs_markdown_structure.py::test_tables_have_consistent_column_count`
+  在全量里报 `1 failed, 8297 passed`（列数 3 对表头 5）。这是本账本自身的形状缺陷，不是尺子过严，
+  修法是把那一行并回单行（GFM 与这把尺子都要求一行一格）。合并后同批守卫 **134 passed / 8 skipped**。
+  本日志块不写任何 `` `path:行号` `` 形式的定位引用；仓外取证脚本与备份目录在本块里以反引号名出现，
+  实测 l79 不把它们算成断链（改前我担心这一格会红，跑出来 59 passed / 3 skipped —— 这一条是量过的，
+  不是推测的）。
+- **仍在账上的邻居**：**A276**（本轮新立，`app` 那三键的三条处置方向都要拍，见上）；**A271** 的
+  18 只待处置键（闸门 `enabled` 10 + 非闸门 8）一字未动；**A272**（`multilingual` 要不要开成第 5 个
+  可写配置节）与 **A273**（管道构造 `self.expander` / `self.tracker` 之后产品侧从未调用）仍是待拍而不是待写。
+  **A275 已收口**，不再占账。
