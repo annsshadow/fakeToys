@@ -24,7 +24,7 @@ import type {
   DatasetValidationResponse,
   DatasetRegistryEntry,
   DatasetRegistryListResponse,
-  DedupResponse,
+  DedupResponse, DependencyDiagnostics,
   DependencyGraphResponse,
   EvaluateResponse,
   ExportFormatsResponse,
@@ -55,7 +55,7 @@ import type {
   StatisticsResponse,
   StatusResponse,
   StreamReportResponse,
-  TestSuiteResponse,
+  TestSuiteResponse, TranslateResponse,
   UpdateConfigResponse,
   UploadResponse,
   VersionDataResponse,
@@ -1327,6 +1327,66 @@ export const healthGate = async (
     duplicate_rate_max: opts.duplicateRateMax,
     completeness_min: opts.completenessMin,
     block_on_warning: opts.blockOnWarning,
+  })
+  return response.data
+}
+
+/**
+ * `GET /api/system/dependencies`
+ *
+ * 与 `/api/status` 里那份 `dependencies` 是**同一份数据的两面**（实测两条端点回的诊断
+ * 逐字节相等），所以这一只的价值不在数据，在**取法**：它不碰管道——把 `get_pipeline()`
+ * 整个换成抛异常的替身，它照样 200（实测 `available_count` 仍是 3），而 status 那条虽然
+ * 也 catch 住了异常、却必须先跑完一次综合状态（`model_default` 退成 `unknown`）。
+ *
+ * 页面用它把「依赖诊断」从 `status &&` 那道整体门里摘出来单独刷新：从前 status 这一个
+ * 请求失败，依赖明细与降级功能两块会**一起**消失，而这两块恰好是「为什么某项功能不可用」
+ * 的第一手读数。挂鉴权与否实测为**否**（只读、不打模型、不落盘，与 `language-profile`
+ * 同档），所以这一只不需要 key 通道。
+ */
+export const systemDependencies = async (): Promise<DependencyDiagnostics> => {
+  const response = await api.get('/system/dependencies')
+  return response.data
+}
+
+/**
+ * `POST /api/dataset/translate`
+ *
+ * **这是按 token 计费的那条路径**（逐条调 `model_backend.generate`，挂 `X-API-Key`，
+ * 且受 `multilingual.enabled` 闸控制——出厂 `false` ⇒ 400，闸在读盘之前）。所以本层
+ * 的每一个哨兵都要回答同一句话：它有没有替用户省下一笔不该花的钱，或者有没有把一次
+ * 真判决藏起来。四格逐个是量出来的：
+ *
+ * * `target_lang` 的 `|| undefined` **不藏判决**：空串与省略实测**等价**（两者都回
+ *   `target_lang='en'`，即落 `multilingual.default_target_lang`），而清单外的值照样
+ *   400 且 detail 把 `supported_langs` 列全、模型调用 **0** 次——语言闸在花钱之前。
+ * * `output_file` 的 `|| undefined` 同理：空串与省略实测都回 `output_file=null`
+ *   （后端那格是 falsy 判断），而越界落点是 **403 且模型调用 0 次**。
+ * * `text_key` **刻意不做归一**：空串与幽灵键都**不报错**（实测 200、模型调用 **0** 次、
+ *   `failed=0`，产物里凭空多出 `''` / `no_such_field` 两键），所以这一格没有「后端判决」
+ *   可暴露——它是 **A322** 的案面，页面必须自己把口径写明，别让用户以为翻了。
+ * * `keep_original` **直传**：它不是 `Optional`，送 `null` 实测 **422**（`bool_type`），
+ *   而 `false` 是合法值 ⇒ 不能用 `||`（会把「不要原文」静默变成「要原文」）。
+ *
+ * 失败回执四键（`failed` / `failed_indices` / `errors` / `errors_truncated`）必须与
+ * `items` 一起读：没翻成的条目**回退原文**，形状与成功时逐格相同。落盘那份也一样——
+ * `output_file` 只是让这次花钱留下东西，它不会把失败条目挑出来。
+ */
+export const translateDataset = async (
+  inputFile: string,
+  opts: {
+    outputFile?: string
+    targetLang?: string
+    textKey?: string
+    keepOriginal?: boolean
+  } = {}
+): Promise<TranslateResponse> => {
+  const response = await api.post('/dataset/translate', {
+    input_file: inputFile,
+    output_file: opts.outputFile || undefined,
+    target_lang: opts.targetLang || undefined,
+    text_key: opts.textKey,
+    keep_original: opts.keepOriginal,
   })
   return response.data
 }

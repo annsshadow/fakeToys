@@ -8,13 +8,17 @@
  *
  * 服务层 `importOriginal` 部分替身（`apiErrorDetail` 留真身）；清场口径承前。
  *
+ * L236 起依赖诊断改读 `GET /api/system/dependencies`（不碰管道那条），因此「status 拉不动
+ * ⇒ 明细整块不渲染」不再是通则：只有两面都空才不渲染。替身里 `systemDependencies` 默认
+ * **不给回执**，让既有三组用例继续走综合状态里那一份（两面数据逐字节相同，L236 实测）。
+ *
  * L225 起本页还会取向量库状态。`spies.getVectorStatus` 在替身工厂里给了默认回执：
  * 向量面与本页原有三条用例无关，让它们不必逐个显式安排；`clearAllMocks` 不清实现，
  * 默认值在用例之间留得住。向量面自己的两条用例覆盖「渲染生效值」与「失败时降级成
  * 警示、且不把整页服务状态一起拖掉」。
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { message } from 'antd'
 
 window.matchMedia =
@@ -43,6 +47,7 @@ const spies = vi.hoisted(() => ({
   getDataFiles: null as unknown as ReturnType<typeof vi.fn>,
   listDependencyDatasets: null as unknown as ReturnType<typeof vi.fn>,
   getDependencyGraph: null as unknown as ReturnType<typeof vi.fn>,
+  systemDependencies: null as unknown as ReturnType<typeof vi.fn>,
 }))
 
 vi.mock('../services/api', async (importOriginal) => {
@@ -64,6 +69,10 @@ vi.mock('../services/api', async (importOriginal) => {
   // L232 起本页还会取数据集血缘那一面（列表 + 图）。与本份用例无关，给空回执即可。
   spies.listDependencyDatasets = vi.fn().mockResolvedValue({ datasets: [] })
   spies.getDependencyGraph = vi.fn().mockResolvedValue({ nodes: [], edges: [], issues: [] })
+  // L236 起依赖诊断自取一面。**默认不给回执**（resolved undefined）⇒ 页面 `deps` 落空 ⇒
+  // 渲染面退回 `status.dependencies` 那一份，上面三组既有用例的语义一字未变；
+  // 独立取数那几条用例自己显式安排回执。
+  spies.systemDependencies = vi.fn()
   return {
     ...actual,
     getServiceStatus: spies.getServiceStatus,
@@ -72,6 +81,7 @@ vi.mock('../services/api', async (importOriginal) => {
     getDataFiles: spies.getDataFiles,
     listDependencyDatasets: spies.listDependencyDatasets,
     getDependencyGraph: spies.getDependencyGraph,
+    systemDependencies: spies.systemDependencies,
   }
 })
 
@@ -155,7 +165,7 @@ describe('System 依赖缺失态', () => {
 })
 
 describe('System 失败路径', () => {
-  it('获取状态失败时看得见专属文案且不渲染明细区', async () => {
+  it('综合状态与依赖诊断都拉不动时才不渲染明细区', async () => {
     spies.getServiceStatus.mockRejectedValue(new Error('boom'))
 
     render(<System />)
@@ -164,8 +174,68 @@ describe('System 失败路径', () => {
       () => expect(document.body.textContent).toContain('获取服务状态失败'),
       { timeout: 4000 }
     )
-    // status 仍为 null ⇒ 依赖明细整块不渲染
+    // L236 起门是 diag（自取一面 ?? 综合状态里那份）：这一格两面都空 ⇒ 整块不渲染
     expect(screen.queryByText('依赖明细')).not.toBeInTheDocument()
+  })
+})
+
+describe('System 依赖诊断独立取数（L236 接线）', () => {
+  const DIAG = {
+    installed: { pandas: true, faiss: false },
+    missing: ['faiss'],
+    degraded_features: ['向量检索'],
+    all_required_present: false,
+    available_count: 1,
+  }
+
+  // `clearAllMocks` 不清实现：本组安排的 DIAG 回执会漏进后面的用例（实测把向量面那条
+  // 「必需依赖齐备」判成缺失态 ⇒ 1 支红）。这一面在替身工厂里的默认就是「不给回执」，
+  // 所以 mockReset 恰好还原成默认，不会顺手清掉别人的默认值
+  afterEach(() => {
+    spies.systemDependencies.mockReset()
+  })
+
+  it('综合状态失败时明细照旧渲染，并说明这份读数不来自它', async () => {
+    spies.getServiceStatus.mockRejectedValue(new Error('pipeline down'))
+    spies.systemDependencies.mockResolvedValue(DIAG)
+
+    render(<System />)
+
+    // L236 之前这一格是「status 为 null ⇒ 依赖明细整块不渲染」；现在依赖诊断走的是
+    // 不碰管道的那条端点，所以它必须还在，而且要说清自己不是从综合状态里读的
+    expect(await screen.findByText('依赖明细')).toBeInTheDocument()
+    expect(screen.getByText(/这份依赖诊断来自不碰管道的那条端点/)).toBeInTheDocument()
+    expect(screen.getByText(/缺失：faiss/)).toBeInTheDocument()
+  })
+
+  it('综合状态正常时不重复那句话（两面数据相同，只有取法不同）', async () => {
+    spies.getServiceStatus.mockResolvedValue(HEALTHY)
+    spies.systemDependencies.mockResolvedValue({
+      ...HEALTHY.dependencies,
+    })
+
+    render(<System />)
+
+    expect(await screen.findByText(/必需依赖齐备/)).toBeInTheDocument()
+    expect(
+      screen.queryByText(/这份依赖诊断来自不碰管道的那条端点/)
+    ).not.toBeInTheDocument()
+  })
+
+  it('卡上那颗刷新只打依赖诊断那条端点，不再重取综合状态', async () => {
+    spies.getServiceStatus.mockResolvedValue(HEALTHY)
+    spies.systemDependencies.mockResolvedValue(DIAG)
+
+    render(<System />)
+    await screen.findByText('依赖明细')
+    spies.getServiceStatus.mockClear()
+    spies.systemDependencies.mockClear()
+
+    // 按钮跑过一轮之后会残留 loading 图标，可及名变成「loading刷新依赖诊断」⇒ 只能按正则取
+    fireEvent.click(screen.getByRole('button', { name: /刷新依赖诊断/ }))
+
+    await waitFor(() => expect(spies.systemDependencies).toHaveBeenCalledTimes(1))
+    expect(spies.getServiceStatus).not.toHaveBeenCalled()
   })
 })
 

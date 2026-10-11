@@ -634,8 +634,10 @@ CALLS = {
         request=lambda c: _translate_case(c),
         # L221（A270）：失败回执四键。这份清单**刻意不从 `TranslateResponse` 实推**——
         # 契约要抓的是「模型写了但响应里静默丢字段」，两边同源就永远抓不到。
+        # L236（A283①）加 `output_file`：请求给了落盘口才非空，没给时是 `None`——键恒在，
+        # 所以这一格无论哪条路径都该被声明，少声明就是「落了盘却读不出落在哪」。
         keys=_keys("total", "batches", "batch_size", "target_lang",
-                   "supported_langs", "items",
+                   "supported_langs", "items", "output_file",
                    "failed", "failed_indices", "errors", "errors_truncated"),
     ),
     # ---------- system（运维 / 治理）----------
