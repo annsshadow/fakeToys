@@ -44,7 +44,7 @@
   `.backups`（出厂 `data/.backups`）。端点总是显式传目录 ⇒ SDK 那份默认在 HTTP 面上不可达，
   但 CLI 与页面看的**不是同一个目录**（**A301**）。
 * 三只写操作都挂 `Depends(verify_api_key)`，`GET` 那一只没挂；`AUGMENTOR_API_KEY` 一旦设上，
-  前端**没有任何送 `X-API-Key` 的通道**（`web/src` 全文零命中）⇒ 页面上这三只一律 401（**A302**）。
+  页面上这三只一律 401（**A302**）。当时量到「前端零通道」，**L233 已补上那条通道**。
 * `backup()` 里有**两次** `datetime.now()`：一次取秒级时间戳进 id，一次取 isoformat 进
   `timestamp` ⇒ 跨秒时两者对不上（**A303**）；`name` 本身不在回执里，它就是 `backup_id`。
 * `/api/data/list` 只列白名单根目录下名为 `train_data*.json` 的文件（探针放了 `p.json` /
@@ -433,13 +433,15 @@ class TestTheEntriesThatAreStillMissing:
         assert default_backup_dir() == root / ".backups"
         assert str(default_backup_dir()) != ".backups"
 
-    def test_three_write_ops_are_key_gated_and_the_frontend_has_no_key_channel(self):
-        """A302：三只写操作挂 `verify_api_key`，`GET` 那一只没挂，而前端没有送 key 的通道
+    def test_three_write_ops_are_key_gated(self):
+        """A302 的**后端那一半**：三只写操作挂 `verify_api_key`，`GET` 那一只没挂
 
-        「没有通道」这一维只认**带引号的字面量**：页面里那句「前端目前没有送 X-API-Key 的
-        通道（A302）」是 JSX 老实文案，它是这条缺口在界面上的回声而不是通道本身；真有通道
-        时那个头名必然写在 `headers: { 'X-API-Key': … }` 的字符串位上。早先按「全文零处
-        出现」量，实测被这句文案判红 —— 尺子把回声当成了信号。
+        这一支原先还钉着「前端没有送 key 的通道」两维（提到该头名的文件恰好一处、带引号的
+        字面量全文零处）。**L233 把那个前提改掉了**：用户拍板「先补 key 通道，再继续接线」，
+        `services/api.ts` 现在有一个请求拦截器，把「配置管理」页存进 localStorage 的那份 key
+        挂到 `X-API-Key` 上 ⇒「零处」那一维当场成了假话。通道本身改由
+        `test_api_key_channel_l233.py`（规模与形状）与 `web/src/services/api.test.ts`（行为）
+        钉，这里只留后端事实，不各钉一份。
         """
         from api.routes.system_ops import router
 
@@ -460,17 +462,6 @@ class TestTheEntriesThatAreStillMissing:
             ("DELETE", "/api/system/backups/{backup_id}"),
         }, sorted(seen)
         assert gated == seen - {("GET", "/api/system/backups")}, sorted(gated)
-        corpus = [p for p in SRC.rglob("*")
-                  if p.is_file() and p.suffix in {".ts", ".tsx"} and ".test." not in p.name]
-        assert corpus, "前端语料为空 ⇒ 这条判据空转"
-        token = "X-API-Key"
-        prose = [p for p in corpus if token in p.read_text(encoding="utf-8")]
-        assert prose == [SRC / "pages" / "System.tsx"], (
-            f"提到这个头名的文件现量只有 System.tsx 一处，实得 {[str(p) for p in prose]}")
-        hits = [f"{p.name}:{line.strip()[:70]}"
-                for p in corpus for line in p.read_text(encoding="utf-8").splitlines()
-                if re.search(rf"['\"`]{re.escape(token)}", line)]
-        assert not hits, f"前端出现了送 key 的通道，这条缺口要重新量：{hits}"
 
     def test_the_id_timestamp_and_the_receipt_timestamp_come_from_two_calls(self):
         """A303：`backup()` 里两次 `datetime.now()`，秒级 id 与微秒级 timestamp 可以跨秒对不上"""

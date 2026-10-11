@@ -311,7 +311,7 @@ describe('System 备份卡的诚实口径（L231 实测）', () => {
     expect(text).toContain('HTTP 面没有入口')
     // A301：CLI 与页面的「默认目录」不是同一个
     expect(text).toContain('不是同一个目录')
-    // A302：设了 API Key 就 401，前端没有送头的通道
+    // A302：设了 API Key 就 401（key 存进「配置管理」页那张卡后由拦截器送出去，L233）
     expect(text).toContain('X-API-Key')
     // 白名单三档与候选口径
     expect(text).toContain('路径包含非法组件')

@@ -381,7 +381,7 @@ tar czf backup-$(date +%F).tar.gz \
 - 原始种子数据含业务敏感信息，勿对外暴露；生产环境务必启用 HTTPS
 - API 内置**一层**鉴权：设置 `AUGMENTOR_API_KEY` 后，写操作（改配置 / 删数据 / 上传 /
   导出 / 回滚版本）要求请求头 `X-API-Key`，读接口仍匿名可访问。**不设置该变量时启动会打
-  WARNING，写操作完全无鉴权**，因此这一层不能替代 Nginx Basic Auth、API 网关或内网访问控制
+  WARNING，写操作完全无鉴权**，因此这一层不能替代 Nginx Basic Auth、API 网关或内网访问控制；前端那份 key 在「配置管理 → 写操作鉴权」卡上存进浏览器的 localStorage，由请求拦截器随每个请求送出（L233）
 - `POST /api/data/upload` 把上传内容落成 JSON 数据集，落点由 `web.data_roots`（出厂默认
   `data/`）圈住：`..` 按 400、越界绝对路径按 403 拒收，裸文件名落在白名单根目录里，
   **不写当前工作目录**；单份体积上限是 `web.max_upload_bytes`（见上面 nginx 模板那一节）

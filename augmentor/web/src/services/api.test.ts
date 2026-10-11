@@ -16,6 +16,12 @@ const mocks = vi.hoisted(() => {
     post: vi.fn(),
     put: vi.fn(),
     delete: vi.fn(),
+    // `api.ts` 在模块加载时就往实例上挂请求拦截器（写操作鉴权，L233）。替身没有这一格
+    // 的话，import 那一刻就 TypeError —— 而这类失败会被读成「测试环境坏了」。
+    interceptors: {
+      request: { use: vi.fn() },
+      response: { use: vi.fn() },
+    },
   }
   return { instance, create: vi.fn(() => instance) }
 })
@@ -30,6 +36,13 @@ const { instance } = mocks
 // `api.ts` 在模块加载时就调用了 axios.create，那一刻的实参在任何
 // clearAllMocks 之前先取下来，否则会被清掉。
 const createArgs = mocks.create.mock.calls[0]
+// 同理：拦截器也是模块加载时注册的。**mock 的调用历史在每个测试开跑前会被清掉**
+// （实测：`mocks.create.mock.calls.length` 在测试里读是 0，而 `createArgs` 是模块加载
+// 那一刻取的、照常对得上），所以「注册过几次」这一格也只能在模块作用域取下来。
+type Interceptor = (config: { headers: { set: (name: string, value: string) => void } }) => unknown
+const interceptorRegistrations = mocks.instance.interceptors.request.use.mock.calls.length
+const requestInterceptor = mocks.instance.interceptors.request.use.mock
+  .calls[0][0] as Interceptor
 
 /** 让下一次请求返回给定的 data */
 function respondWith(data: unknown) {
@@ -50,6 +63,79 @@ beforeEach(() => {
 describe('axios 实例契约', () => {
   it('baseURL 为 /api、超时 30 秒', () => {
     expect(createArgs).toEqual([{ baseURL: '/api', timeout: 30000 }])
+  })
+})
+
+/**
+ * 写操作鉴权那一格（L233，收 A302 / A312）
+ *
+ * 判据不是「拦截器注册过」（那只会证明我调了 axios 的 API），而是**行为**：存了 key
+ * 才挂头、没存就一个头都不加、空输入等于清除。后端那一半（24 条操作挂
+ * `verify_api_key`、401 的 detail 逐字是「缺少或无效的 X-API-Key」、头名大小写无关）
+ * 由 `tests/unit/test_api_key_channel_l233.py` 在真链路上量，两边各钉一半。
+ */
+describe('写操作鉴权（L233）', () => {
+  beforeEach(() => {
+    localStorage.clear()
+  })
+
+  it('模块加载时挂了一个请求拦截器', () => {
+    expect(interceptorRegistrations).toBe(1)
+    expect(typeof requestInterceptor).toBe('function')
+  })
+
+  it('存了 key 就把它挂到 X-API-Key 上', () => {
+    api.setApiKey('s3cret')
+    const headers = { set: vi.fn() }
+
+    requestInterceptor({ headers })
+
+    expect(headers.set).toHaveBeenCalledWith('X-API-Key', 's3cret')
+  })
+
+  it('没存 key 就一个头都不加（服务端没开鉴权时零配置照旧可用）', () => {
+    const headers = { set: vi.fn() }
+
+    requestInterceptor({ headers })
+
+    expect(headers.set).not.toHaveBeenCalled()
+  })
+
+  it('setApiKey 去掉首尾空白；空串等于清除，而不是存一个空值', () => {
+    api.setApiKey('  s3cret  ')
+    expect(localStorage.getItem(api.API_KEY_STORAGE_KEY)).toBe('s3cret')
+    expect(api.getApiKey()).toBe('s3cret')
+
+    api.setApiKey('   ')
+    expect(localStorage.getItem(api.API_KEY_STORAGE_KEY)).toBeNull()
+    expect(api.getApiKey()).toBe('')
+  })
+
+  it('401 的提示指到那张卡，并把「没存」与「存的那份不对」分开说', () => {
+    const err = { response: { status: 401, data: { detail: '缺少或无效的 X-API-Key' } } }
+
+    expect(api.apiErrorDetail(err, '删除失败')).toBe(
+      '缺少或无效的 X-API-Key——这台浏览器还没有存 key：' +
+        '到「配置管理 → 写操作鉴权」填服务端 AUGMENTOR_API_KEY 的那一份'
+    )
+
+    api.setApiKey('wrong-one')
+    expect(api.apiErrorDetail(err, '删除失败')).toContain(
+      '浏览器里存着的那一份与服务端不一致'
+    )
+  })
+
+  it('401 但后端没给 detail 时，那句指路仍然在（fallback 打头）', () => {
+    expect(api.apiErrorDetail({ response: { status: 401, data: {} } }, '删除失败')).toBe(
+      '删除失败——这台浏览器还没有存 key：' +
+        '到「配置管理 → 写操作鉴权」填服务端 AUGMENTOR_API_KEY 的那一份'
+    )
+  })
+
+  it('非 401 的档位一个字都不加（403 仍然是后端那句判决原文）', () => {
+    const err = { response: { status: 403, data: { detail: '路径超出允许的数据目录范围' } } }
+
+    expect(api.apiErrorDetail(err, '失败')).toBe('路径超出允许的数据目录范围')
   })
 })
 
