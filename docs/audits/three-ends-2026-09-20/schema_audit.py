@@ -196,9 +196,11 @@ MACRO_ENDPOINT_READS = {
     "person_unit_endpoint": "unitList",  # person_of_units
 }
 MACRO_ENDPOINT_RE = re.compile(r"\b(\w+_endpoint)!\s*\(\s*([A-Za-z_]\w*)\s*,")
-# 整体消费请求体：serde_json::to_string/to_value(&body) 直接落库/转发（schema-free 行存储、
-# 透传代理），语义为"接受任意键"——不参与 A/B/C/D 判定，缺省读不到任何具名键不是错配。
+# 整体消费请求体：serde_json::to_string/to_value(&body) 或 方法式 body.to_string()/to_value()
+# 直接落库/转发（schema-free 行存储、透传代理），语义为"接受任意键"——不参与 A/B/C/D 判定，
+# 缺省读不到任何具名键不是错配。
 WHOLE_BODY_RE = re.compile(r"serde_json\s*::\s*to_(?:string|value|vec)\s*\(\s*&?\s*([A-Za-z_]\w*)\s*\)")
+WHOLE_BODY_METHOD_RE = re.compile(r"\b([A-Za-z_]\w*)\s*\.\s*to_(?:string|value|vec)\s*\(")
 # fn 签名参数名（绑定名）：`mut body: Value` / `Json(body): Json<Value>` / `Path(flag): Path<String>`
 FN_PARAM_NAME_RE = re.compile(r"(?:Json\s*\(\s*|Path\s*\(\s*)?([A-Za-z_]\w*)\s*\)?\s*:")
 # receiver.get(PARAM) —— 读取键由函数参数命名（param-templated read），调用点绑定字面量后可知。
@@ -658,6 +660,8 @@ def scan_rust_index():
                                 param_gets.append(hm.group(3))
                     consumes_whole = any(
                         wm.group(1) in receivers for wm in WHOLE_BODY_RE.finditer(body_orig)
+                    ) or any(
+                        wm.group(1) in receivers for wm in WHOLE_BODY_METHOD_RE.finditer(body_orig)
                     )
                     rec = {
                         "body_params": body_params,
@@ -728,6 +732,11 @@ def scan_rust_index():
                 extra_opt_alts.extend(target.get("opt_alt_groups", []))
                 if target.get("crud_resolved"):
                     h["crud_resolved"] = True
+                # 整体消费传播：被调 helper 对 body 做 serde_json::to_string/value（schema-free
+                # 行存储/透传）时，调用方即整体消费请求体——否则委托链末端会漏判 D 假红
+                # （如 u2_config_token_put → u2_config_domain_put 存 body.to_string()）。
+                if target.get("consumes_whole"):
+                    h["consumes_whole"] = True
                 # 调用点字面量绑定：被调 helper 以 .get(参数名) 参数化读键、调用点在同
                 # 一位置传字符串字面量（如 sup_nested_of_units(pool, "identityList",
                 # .., body)）→ 该字面量即调用方读取键。位置绑定，误绑风险低。
@@ -1037,6 +1046,11 @@ def main():
     by_name = {}
     for (hc, hn), rec in handlers.items():
         by_name.setdefault(hn, []).append(hc)
+    # 跨 crate 挂接：路由在 A crate 注册、handler_q 为外部 crate 限定名（如 org_auth 挂
+    # auth::login）。精确键 (A, "auth::login") 必然未命中——把 <outer_crate>:: 前缀解析为
+    # (outer_crate, 余下限定名) 精确索引，避免同名（auth::login vs bbs::login）跨 crate 串味。
+    crate_dir = os.path.join(RUST, "crates")
+    crate_names = set(os.listdir(crate_dir)) if os.path.isdir(crate_dir) else set()
     endpoint = {}
     for crate, rs in routes.items():
         for r in rs:
@@ -1045,6 +1059,12 @@ def main():
             # 无限定名或限定键未命中时回退裸名，再回退跨 crate 单一定义。
             hq = r.get("handler_q") or ""
             hi = handlers.get((crate, hq)) if hq else None
+            if hi is None and hq and "::" in hq:
+                # 外部 crate 限定名（auth::login / auth::two_factor::two_factor_login）：
+                # 首段为已知 crate 名时，精确解析到 (该 crate, 余下限定名)。
+                outer, rest = hq.split("::", 1)
+                if outer in crate_names:
+                    hi = handlers.get((outer, rest))
             if hi is None:
                 hi = handlers.get((crate, h))
                 if hi is None and len(by_name.get(h, [])) == 1:
