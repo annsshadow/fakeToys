@@ -1184,12 +1184,12 @@ export interface RagResponse {
  * （与 `BackupInfo.to_dict()` 的七键逐字相等）
  *
  * `backup_id` **就是创建时传的 `name`**（省略时才是 `backup_<YYYYmmdd_HHMMSS>`），所以
- * 同名创建两次会覆盖同一份文件、并在索引里留下两条同 id 的记录（实测 list 回三条、
- * 磁盘只有一份），删一次把两条索引项一起清掉（`augmentor/backup.py` 的 delete 按 id 过滤
- * 全部匹配项）。`source_path` / `backup_path` 是**服务端的绝对路径**，页面照抄显示。
- * `timestamp` 是 isoformat，而 id 里那个时间戳是**另一次** `datetime.now()`（秒级），
- * 跨秒时两者会对不上。`checksum` 是备份文件的 sha256——它**只在恢复时写日志**，
- * 校验和不匹配照样 200 并把改坏的内容交回来（实测），所以这一格不能读成「完整性保证」。
+ * 同名创建两次会覆盖同一份文件，索引里那一行跟着更新成新读数（**A298 已于 L250 收口**；
+ * 改前按次追加 ⇒ 列表两行而磁盘只有一份）。`source_path` / `backup_path` 是**服务端的绝对
+ * 路径**，页面照抄显示。`timestamp` 是 isoformat，且与 id 里那个秒级时间戳来自**同一次**
+ * `datetime.now()`（**A303 已于 L250 收口**，改前是两次调用、跨秒对不上）。`checksum` 是备份
+ * 文件的 sha256，恢复前重算比对、对不上就抛（**A299 已于 L243 收口**），所以它不是「历史的
+ * 完整性保证」，而是「这一次恢复会不会拦」。
  */
 export interface BackupInfo {
   backup_id: string

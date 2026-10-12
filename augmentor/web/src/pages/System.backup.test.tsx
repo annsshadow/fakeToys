@@ -3,8 +3,8 @@
  *
  * 存在理由与 L229 / L230 那两份同构：Python 侧的 `test_backup_wiring_l231.py` 只能证明
  * **源码写了**那六个调用形状与那几句口径，证不出渲染面上真的看得见。这一份钉八件事：
- * ① 列表按服务端回的**原样**渲染，包括索引里两条同 id 的记录（同名创建两次的真实产物）
- *    ——所以行键不能拿 `backup_id` 当唯一键；
+ * ① 列表按服务端回的**原样**渲染，包括索引里两条同 id 的记录（**L250 之前的存量索引**回这种
+ *    形状；写侧自 L250 起按 id 收敛）——所以行键继续拼时间戳，不拿 `backup_id` 当唯一键；
  * ② 创建的必填闸、成功回执、失败判决三路各有可见读数，失败时用户看见的是服务端那句
  *    判决原话（403「路径超出允许的数据目录范围」），不是页面自己编的「失败了」；
  * ③ 恢复的必填闸与成功回执，且回执里出现的是 **`output_path`** 那一格的值；
@@ -55,9 +55,9 @@ const fx = vi.hoisted(() => {
     checksum: CHECKSUM,
   }
   const NAMED = { ...STAMPED, backup_id: 'mybak', backup_path: 'D:\\data\\.backups\\mybak.json' }
-  // 同名创建两次之后列表的真实形状：三条记录、两条同 id，而磁盘上只有一份 mybak.json。
-  // 两条同 id 的 timestamp 是**两次不同的** `datetime.now()`（探针量到 .991804 与 .997820），
-  // 页面的行键正是拼了这一格——夹具若把两条写成逐字相同，就测不出行键会不会撞。
+  // 存量索引（**L250 之前**写出的 `index.json`）的真实形状：三条记录、两条同 id，而磁盘上只有
+  // 一份 mybak.json——写侧自 L250 起按 id 收敛，端点上造不出这个形状，所以这里继续手工喂。
+  // 两条同 id 的 timestamp 逐字不同（那一版每写一行读一次钟），行键正是拼了这一格。
   const NAMED_2 = { ...NAMED, timestamp: '2026-10-11T17:58:33.997820' }
   const LIST_DUP = {
     backups: [{ ...NAMED, timestamp: '2026-10-11T17:58:33.991804' }, NAMED_2, STAMPED],
@@ -228,7 +228,7 @@ describe('System 备份列表渲染', () => {
     render(<System />)
 
     await waitBackups()
-    // 同名创建两次的真实产物：三条记录里 `mybak` 出现两次
+    // 存量索引的形状：三条记录里 `mybak` 出现两次（L250 起新写出的索引不会）
     expect(screen.getAllByText('mybak')).toHaveLength(2)
     expect(screen.getByText('backup_20261011_175833')).toBeInTheDocument()
   })
@@ -349,9 +349,10 @@ describe('System 备份卡的诚实口径（L231 实测，L243 两面翻正）',
     await waitBackups()
 
     const text = document.body.textContent || ''
-    // A298：同名覆盖 + 索引两条 + 删除按 id 清全部
+    // A298（L250 收成 ①）：同名覆盖 + 索引那一行跟着更新 + 删除按 id 全清（遗留多行也在内）
     expect(text).toContain('覆盖同一份文件')
-    expect(text).toContain('删一次两条一起消失')
+    expect(text).toContain('一次全清')
+    expect(text).not.toContain('删一次两条一起消失')
     // A299：L243 之前这一格写的是「不拦截恢复」，现在翻面成会拦 409。
     // 旧话在页面上已不存在，所以钉新话；顺带钉「一个字节都不写」——那是这一档的
     // 第二维（库里在覆盖输出文件之前抛），只钉 409 会把「拦下了但还是写盘」放过去。
