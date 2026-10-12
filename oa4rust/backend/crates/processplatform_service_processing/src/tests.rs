@@ -419,6 +419,44 @@ mod u2_contract {
         (status, v)
     }
 
+    /// 2026-10 安全审计：touch 维护作业 handler 要求登录会话（Option<Extension<Session>>）。
+    /// 注入一个会话再发请求，模拟 auth_middleware 已认证的等价路径。
+    async fn send_with_session(method: Method, uri: &str, body: Option<Value>) -> (StatusCode, Value) {
+        let session = shared::session::Session {
+            token: "test-token".to_string(),
+            person_unique: "test-person".to_string(),
+            created_at: chrono::Utc::now().naive_utc(),
+            expires_at: chrono::Utc::now().naive_utc() + chrono::Duration::hours(1),
+        };
+        let req = match body {
+            Some(v) => Request::builder()
+                .uri(uri)
+                .method(method)
+                .header("content-type", "application/json")
+                .body(Body::from(v.to_string()))
+                .unwrap(),
+            None => Request::builder()
+                .uri(uri)
+                .method(method)
+                .body(Body::empty())
+                .unwrap(),
+        };
+        let resp = app().layer(axum::Extension(session)).oneshot(req).await.unwrap();
+        let status = resp.status();
+        let raw = axum::body::to_bytes(resp.into_body(), usize::MAX)
+            .await
+            .unwrap()
+            .to_vec();
+        assert_eq!(
+            status,
+            StatusCode::OK,
+            "business errors are HTTP 200 per ActionResult contract; body={}",
+            String::from_utf8_lossy(&raw)
+        );
+        let v: Value = serde_json::from_slice(&raw).unwrap();
+        (status, v)
+    }
+
     async fn count(pool: &Pool, sql: &str) -> i64 {
         let c = pool.get().await.unwrap();
         c.query_one(sql, &[]).await.unwrap().get::<_, i64>("c")
@@ -1041,7 +1079,8 @@ mod u2_contract {
             c.execute("INSERT INTO x_record (id, work_id, record_type, content) VALUES ('ev-new','w','event','x')", &[]).await.unwrap();
         }
         let url = "/api/processplatform/service/processing/touch/cleanevent";
-        let (_, v) = send(Method::GET, url, None).await;
+        // 2026-10 安全审计：touch 维护作业要求登录会话，注入会话后调用
+        let (_, v) = send_with_session(Method::GET, url, None).await;
         assert_eq!(v["type"], "success");
         let old_gone = count(
             &pool,

@@ -272,11 +272,9 @@ impl PermissionRegistry {
             "/api/processplatform/assemble/surface/application/list",
             PermissionLevel::Public,
         );
-        registry.register_prefix(
-            "/api/processplatform/assemble/surface/attachment/batch/delete/manage",
-            PermissionLevel::Public,
-        );
-        registry.register_prefix("/api/program_center/adminlogin", PermissionLevel::Public);
+        // 破坏性写（batch delete attachments）：o2server 对齐虽列 Public，但 Rust 侧
+        // handler 以 require_admin 门禁，故降为 Authenticated（登录用户 + admin 校验）。
+        registry.register_prefix("/api/program_center/adminlogin", PermissionLevel::Authenticated);
         registry.register_prefix("/api/program_center/applications", PermissionLevel::Public);
         registry.register_prefix(
             "/api/program_center/center/applications",
@@ -306,25 +304,29 @@ impl PermissionRegistry {
             "/api/processplatform/assemble/surface/sign/list",
             PermissionLevel::Public,
         );
+        // surface touch/*（超期/超期通过/催办 控制表时间戳写）：handler 要求登录会话，
+        // 故从 Public 降为 Authenticated。
         registry.register_prefix(
             "/api/processplatform/assemble/surface/touch/expire",
-            PermissionLevel::Public,
+            PermissionLevel::Authenticated,
         );
         registry.register_prefix(
             "/api/processplatform/assemble/surface/touch/passexpired",
-            PermissionLevel::Public,
+            PermissionLevel::Authenticated,
         );
         registry.register_prefix(
             "/api/processplatform/assemble/surface/touch/touchdetained",
-            PermissionLevel::Public,
+            PermissionLevel::Authenticated,
         );
         registry.register_prefix(
             "/api/processplatform/assemble/surface/work/count",
             PermissionLevel::Public,
         );
+        // service/processing touch/mergeitem（去重删 x_attachment 破坏性批作业）：
+        // handler 以 require_admin 门禁，降为 Authenticated。
         registry.register_prefix(
             "/api/processplatform/service/processing/touch/mergeitem",
-            PermissionLevel::Public,
+            PermissionLevel::Authenticated,
         );
         // program_center 查询端点
         registry.register_prefix("/api/program_center/datastructure", PermissionLevel::Public);
@@ -332,9 +334,10 @@ impl PermissionRegistry {
             "/api/program_center/dingding/get/callback",
             PermissionLevel::Public,
         );
+        // jest clear cache（写 x_program_sync_log）：handler 以 require_admin 门禁。
         registry.register_prefix(
             "/api/program_center/jest/clear/cache",
-            PermissionLevel::Public,
+            PermissionLevel::Authenticated,
         );
         registry.register_prefix(
             "/api/program_center/market/cloud/unit/is/vip",
@@ -345,9 +348,13 @@ impl PermissionRegistry {
             PermissionLevel::Public,
         );
         // 剩余 program_center 查询/管理端点
-        registry.register_prefix("/api/program_center/appstyle", PermissionLevel::Public);
-        registry.register_prefix("/api/program_center/cachedispatch", PermissionLevel::Public);
-        registry.register_prefix("/api/ai/chat/delete", PermissionLevel::Public);
+        // appstyle：图片读/擦除/上传全部仅管理控制台消费（无未认证读），
+        // 移出豁免后由 auth 层要求会话，写操作在 handler 内 require_admin。
+        registry.register_prefix("/api/program_center/appstyle", PermissionLevel::Authenticated);
+        // cachedispatch / ai chat delete：破坏性写，handler 已 require_admin / require_owner，
+        // 降为 Authenticated（需登录会话）。
+        registry.register_prefix("/api/program_center/cachedispatch", PermissionLevel::Authenticated);
+        registry.register_prefix("/api/ai/chat/delete", PermissionLevel::Authenticated);
         registry.register_prefix(
             "/api/calendar/assemble/control/calendar/follow",
             PermissionLevel::Public,
@@ -726,5 +733,53 @@ mod tests {
         assert_eq!(cache.get("u-2"), Some(false));
         // 同一请求内重复查 admin 命中缓存，避免重复 DB 查询。
         assert_eq!(cache.get("u-1"), Some(true));
+    }
+}
+
+#[cfg(test)]
+mod security_audit_registry_tests {
+    use super::*;
+
+    /// 破坏性写端点在权限注册表中不得再是 Public（2026-10 安全审计）：
+    /// 它们落到模块级 Authenticated 前缀，配合 handler 内 admin/owner 门禁。
+    #[test]
+    fn destructive_write_paths_are_not_public() {
+        let reg = PermissionRegistry::with_defaults();
+        let paths = [
+            "/api/processplatform/service/processing/touch/mergeitem",
+            "/api/processplatform/assemble/surface/touch/expire",
+            "/api/processplatform/assemble/surface/touch/passexpired",
+            "/api/processplatform/assemble/surface/touch/touchdetained",
+            "/api/program_center/jest/clear/cache/source",
+            "/api/program_center/cachedispatch",
+            "/api/program_center/appstyle/image/application/top/erase",
+            "/api/program_center/adminlogin",
+            "/api/processplatform/assemble/surface/attachment/batch/delete/manage",
+            "/api/ai/chat/delete/some-clue",
+        ];
+        for path in paths {
+            assert_ne!(
+                reg.get_permission(path),
+                Some(PermissionLevel::Public),
+                "破坏性写端点 {path} 不得注册为 Public"
+            );
+        }
+    }
+
+    /// 只读端点保持 Public（o2server 对齐），防止过度收紧破坏未登录读。
+    #[test]
+    fn readonly_paths_remain_public() {
+        let reg = PermissionRegistry::with_defaults();
+        for path in [
+            "/api/person/list/all",
+            "/api/program_center/datastructure",
+            "/health",
+        ] {
+            assert_eq!(
+                reg.get_permission(path),
+                Some(PermissionLevel::Public),
+                "只读端点 {path} 应保持 Public"
+            );
+        }
     }
 }
