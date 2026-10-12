@@ -639,8 +639,8 @@ pnpm vitest run src/test/contract_coverage.test.ts
 
 | 项 | 状态 |
 |---|---|
-| Go 测试 | **11 个包全绿**（2026-10-12 实测：Go 1.26.3 + PostgreSQL 18.6；`internal/service` 单独跑，其余包并发跑） |
-| TS 测试 | miniapp **1004**（+2 端到端需起服务）· admin **250** 全绿 |
+| Go 测试 | **12 个包全绿**（2026-10-13 实测：Go 1.26.3 + PostgreSQL 18.6）。`internal/service` 连续两轮全绿且**跑完残留测试库 0 个**（此前 15–278，且残留会让下一轮开始失败） |
+| TS 测试 | miniapp **1014**（+2 端到端需起服务）· admin **250** 全绿 |
 | `go vet` / `gofmt -l` | 干净 |
 | `vue-tsc`（admin + miniapp） | 0 error |
 | `e2e.ps1` 19 步 | 全通过 |
