@@ -77,6 +77,7 @@
 - [x] **L239** `1c5cdb0b6` +（账本批即本条所在提交）`test,docs(augmentor)`：**A286 收口 + 3.12 解释器名册现量钉版 + 性能热点现量入账（零对外行为变化的一轮）**：① `test_parametrize_blind_face_l98` 的 `MEASURED_HAZARD_ROSTER` 补 `(3, 12)` 档，按 uv 托管 cpython **3.12.14 整跑 8813 条采集现量**钉版——读数与该版上 `dynamic_risky` 的整跑逐字相同，且与 `(3, 13)` 那格**同串**（`typing._UnionGenericAlias:Union`）⇒ 原来那句「同一份源码在两版上读数一样就是有把尺子失效了」只对 **(3,13) vs (3,14)** 成立，劈叉发生在 3.14（PEP 604 之后别名换了类型名），据此把 `test_hazard_roster_is_pinned_per_interpreter` 的 docstring 从「两版」改成「逐版」、并把那条「不许两两相同」的推断显式限死在 3.13/3.14 之间；3.12 上那格 skip 消掉 ⇒ **skipped 11 → 10**。② **A286**：比值型计时守卫按立案时给的处方 ② 收口——「数内层重算次数」取代墙钟比值，`_calculate_diversity_score()` 整趟 `builtins.sum` 调用数在 n=1000/2000/10000/20000 **四档同为 2**（`MEASURED_SUM_CALLS`），判据不再看这台机器此刻给不给 CPU；`RATIO_CEILING`、`MIN_MEANINGFUL_MS` 与那条把阈值冻成断言的用例一并退役（**撤下不是放宽**：统计判据换成精确判据），保留 20 倍松的绝对兜底与「计时把手」自检；牙齿三支：复刻退化档现量 `n+1`（5001/10001）、空档早退 0 次、替身必复原。三臂字节级注入取证全部点名喊红且逐字节复原（`analytics.py` 进出 sha `13e78b589e8d` 一致）。③ 20k 合成条性能现量入账并立 **A325 / A326 / A327**（最大一格是 `LeakageDetector.detect` **45.4 s**，41.0 s 落在 `_collections._count_elements` 的 9988 次调用上），以及 einsum 向量化**量化后否决**（快 3.73× 但产物不位相同）。前端三门禁**不适用**（`web/` 零改动）。⇒ 详见循环日志 L239
 - [x] **L240** `807a2beec` +（账本批即本条所在提交）`perf,test,docs(augmentor)`：**A325 收口——泄漏近似计数加一条「按代价选路 + numpy 0/1 矩阵乘法」稠密档，判决逐条不变**：10k×10k 塌缩档从 **48 929.0 ms** 降到 **1 742.1 ms**（同一次运行内 auto vs 强制倒排 **28.1×**），六档形状的报告 `to_dict()` 与倒排**逐字节相同**；选路判据照 `dedup.py` 的「两条独立账」纯整数（时间账 摊平次数 × 单价 1000 vs 乘加格数、内存账 n_train × vocab × 4 ≤ 64 MiB），判决链条靠「`ov` 是 float32 精确整数 + `best >= t` 等价于 ∃候选 J ≥ t ⇒ 剪枝不承重 + argmax 在 float64 选 + 最终 J 仍由 `_jaccard_from_counts` 现算」四步。A325 原案处方 ①（长度带剪枝）实测只省 **53.7%** ⇒ 量化后否决，走处方 ③；铺开档（random5）自然判负给倒排、判负之后仍慢 **8%**（块化簿记是两条路共用的代价，如实入账）。新增守卫 `test_leakage_dense_route_l240.py` 29 支（**全计数判据，不看墙钟**）；两支 l95 尺子（内存上界、剪枝牙齿）被新判据路由成空转，按本轮点名被测路线强制倒排、阈值一字未动。八臂字节级注入取证 **7 臂红**（去剪枝 / 判据恒真 / 恒假 / 旁路权威算式 / 错位回填 / 块大小不看列数 / 删内存账），A6「argmax 换 float32」**不红**——float64 那一手只管并列选择、不承重，如实记为阴性臂并把真正把手换成「稠密不许旁路 `_jaccard_from_counts`」的计数钉子。普查按现量重钉 CALLS 426→429、READABLE 308→311、盲面 118 未动；`leakage.py` 净 +196 行把卷一 L55 的 `leakage.py:124` 平移，按处方 3 重钉为 `leakage.py:352` 并写明归因。全量门禁 **8835 passed / 0 failed / 10 skipped、99.84%**（= L239 基准 + 本轮新立 29 支）。前端三门禁**不适用**（`web/` 零改动）。⇒ 详见循环日志 L240
 - [x] **L241** `9d417eda7` +（账本批即本条所在提交）`test,docs(augmentor)`：**代价预言机选路家族入册——文档 §3.34 + 跨家族机械守卫 24 支，零对外行为变化**：`docs/ARCHITECTURE.md` 新增 §3.34（两条独立账的定义与四个单价常数、收益 8.1×~32.0× / 10k×10k **28.1×**、铺开档判负之后仍慢 8% 如实入账、「一条从注入里长出来的纪律」）与 §7.1 第四颗子弹（性能判据一律计数，L239 负载差 46% / L240 −18% 两轮正面证据）；新守卫 `tests/unit/test_cost_oracle_routing_l241.py` 24 支钉五件事——文档 §3.34 反引号点名的预言机名与 AST 实推集合**两个方向精确相等**（刻意不用 L76/L77 那套只降不升的棘轮，否则「新增路线却不写文档」那一半被放过）、三条独立通道（名字形状 / 比较式里的 `*_COST` / `-> bool` + 乘法比较 + 同模块 `if`-test 消费）各自实推必须给出同一集合、判据本体零浮点/零调用/零属性访问、每支预言机的调用点坐在 `if` 的 test 位且两侧生产者同住一个函数、每支都在 tests 树里有把它焊死的 `setattr` / `patch` 接缝。第三通道先量过误伤面（全包只命中那两支）才采用。六臂真文件注入取证**全部按预期红**，逐字节复原后复验哈希。普查按现量重钉 l97 CALLS 429→430、READABLE 311→312、盲面 118 未动；l98 豁免用数 23→24（涨它不等于放松：四档 58/38/11/11、盲面 118 与名册 113 一格未动）。产品码一字未改 ⇒ 契约数字守卫一格未动、前端三门禁不适用；全量门禁 **8859 passed / 0 failed / 10 skipped、99.84%**（= L240 基准 8835 + 本轮新立 24 支）。⇒ 详见循环日志 L241
+- [x] **L242** `16b5bf4c6` +（账本批即本条所在提交）`test,docs(augmentor)`：**Backlog 表关闭标记与进度声明面对账——量出 20 笔「说收了却没标」、补标 17 格、新守卫 24 支、新立 A328（定级 M 待拍）**：A265 那把尺子管「一轮写两遍自己」，账本的第三面（Backlog 表定级格）此前**没有任何机械通道**——开工前实测欠账 20 笔 = 17 真漏标 + 3 合法半程。口径全部现量选出：ID 认到一位数（三档读数 gap 11 / 20 / 20，账目面 190 / 234 / 247 行）、声明面只收清单行与日志标题行（宽窄口径同 gap）、「全清」与划掉的数字一律不算标记（A298 / A176 现场反例）、判据写成**名册精确相等**而不是棘轮。同轮重钉 `test_doc_line_refs_l79` 的结案口径 **107 → 119**（+12 归因：14 格里 2 格行内本已含删除线；行首口径 87 未动，差值 20 → 32）。本轮零对外行为变化：产品码一字未动，改动面 = 1 支新守卫 + 1 处重钉 + `docs/ARCHITECTURE.md` +2 行 + 两卷账本 18 格。
 
 ## Backlog A — 质量缺口（缺数 / 偏支 / 健壮性）
 
@@ -90,8 +91,8 @@
 | A206 | `web/src/pages` | **已关闭（L104–L113）**：10 页各建组件测试，前端全量 13 文件 112 例全绿 | L |
 | A207 | `web` | **已关闭（L128）**：路由懒加载 + 三 vendor 拆分本体已就位，补 `check-dist.mjs` 六格产物体检 + `npm run build:check` 入口 | M |
 | A208 | `docs` | **已关闭（L129）**：API 易混字段词典（9 字段）+ API 面排查 FAQ（6 问） | M |
-| A265 | `OPTIMIZATION_LOOP_2.md` | **新立（L197）**：账本「已完成」清单与循环日志的进度一致性**没有机器守卫**——L194 与 L50 两次漏写清单行都靠人眼发现。修法方向：从循环日志的 `### L\d+` 标题集合推导应有轮次，与清单行对账（防空转断言同 `test_cli_verdict_wiring.py` 的 S1==S2 型式）。**这是第二次同类，按纪律升级为待办而不是再忍一次** | S |
-| A266 | `docs/API.md` / `docs/ARCHITECTURE.md` / augmentor 顶层 README | **新立（L197）**：契约面数字（端点总数、tag 计数、导出格式清单、前端页面数、事件循环守门条数）全靠人肉对账，L197 一次就抓出六处历史遗留错误。修法方向：从 `app.openapi()` / `ExportFormat` 枚举 / 前端页面目录**实推**后与文档断言相等（同 `TestExportFormatSurface` 先例） | M |
+| A265 | `OPTIMIZATION_LOOP_2.md` | **新立（L197）**：账本「已完成」清单与循环日志的进度一致性**没有机器守卫**——L194 与 L50 两次漏写清单行都靠人眼发现。修法方向：从循环日志的 `### L\d+` 标题集合推导应有轮次，与清单行对账（防空转断言同 `test_cli_verdict_wiring.py` 的 S1==S2 型式）。**这是第二次同类，按纪律升级为待办而不是再忍一次** | ~~S~~ **已收口（L203）**：清单行与日志块三条不变量有机器守卫，进度声明面不再靠人眼 |
+| A266 | `docs/API.md` / `docs/ARCHITECTURE.md` / augmentor 顶层 README | **新立（L197）**：契约面数字（端点总数、tag 计数、导出格式清单、前端页面数、事件循环守门条数）全靠人肉对账，L197 一次就抓出六处历史遗留错误。修法方向：从 `app.openapi()` / `ExportFormat` 枚举 / 前端页面目录**实推**后与文档断言相等（同 `TestExportFormatSurface` 先例） | ~~M~~ **已收口（L200）**：端点总数 / tag 计数 / 导出格式清单 / 前端页面数一律从实推对象对账 |
 | A267 | `augmentor/visualizer.py`、`augmentor/config.py` 的 `VisualizationConfig.types` | **新立（L215）**：可视化这一族里除 `enabled`（L215 已接）之外还剩一对互证的死面。三条现量：① `visualization.types` 出厂五值 `["wordcloud", "length_distribution", "topic_cluster", "timeline", "quality_distribution"]`，全仓产品读者 **0**（grep 只命中 `config.py` 的定义与 `require_string_list` 校验，配置校验不算读者）；② `DataVisualizer.generate_timeline` 产品读者 **0**，只有 3 支单测调它；③ `generate_all_visualizations` 只出四类图，其中 `quality_distribution` 要 `scores` 形参，而两个产品调用点（`pipeline.visualize_dataset` 与 `cli/commands/analysis.py` 的报告模式）**都不传** ⇒ 出厂配置声称五类、阶段实际最多三类。**为什么 L215 不顺手接**：把 `types` 接成出图清单是一次**行为变更**而非零漂移接线——按出厂值接上，`timeline` 会今天第一次真的生成，产物多出那张图；`quality_distribution` 还要先定「scores 从哪来」。**判据要的是行为差，这里的「行为差」是新增产物而不是消费既有开关**，所以它属功能增强，得单独拍：要么按 `types` 生成（对外产物变化），要么承认清单虚假并从回显/文档降级。定级 M，待用户拍。 | M |
 | A268 | `augmentor/semantic.py`、`config.vector.dimension` | **新立（L216）**：嵌入用的是零依赖的确定性字符二元组哈希，所以 `dimension` 就是配置值本身。接**真模型**嵌入（可选依赖 `sentence-transformers`）时要先回答两件事：① 模型输出宽度与本键冲突怎么收（模型给 384、配置写 768 时是拒配置、忽略配置，还是另开一只 `model_name` 键）；② 本机与 CI 都不装这个包，接上去等于写一条**任何没装它的环境都跑不到**的产品路径——正是本仓在收的「只写不读」形状。所以这条的前置条件是「先有一个装了包的定标环境」，不是先写代码。定级 M，待用户拍。 | M |
 | A269 | `augmentor/vector/chromadb.py`、`augmentor/semantic.py` 的 `EXPLICIT_PERSISTENCE_BACKENDS` | **新立（L216）**：`persist` / `load` 只由 `FAISSDB` 实现，`ChromaDB` 那侧是 `PersistentClient` 自管（构造阶段就 `mkdir` 并注册集合）。L216 把落盘建库与状态读取定义为「有显式 `persist`/`load` 面」的后端专用，chromadb 在**构造之前**拿 400。要让 `vector.backend: chromadb` 真的可用，得先在装了 `chromadb` 的环境里量两件事：① 该后端的「索引是否已存在、多少条」怎么写成可测判据（今天的 `exists` / `count` 语义靠 `load()` 的布尔返回，那侧没有）；② 「GET 不落盘」这条承诺如何与「构造即落盘」的后端共存（要么给它一条只读的探查路径，要么把 `vector-status` 划成 faiss 专用面并回显清楚）。定级 M，待用户拍。 | M |
@@ -157,6 +158,8 @@
 
 | A327 | `QualityScorer._calculate_diversity` 每选一个候选都重算一遍已有向量集合的**逐行范数**：FakeModel 顶上 n=4000 实测 28.5 ms ≈ 整个向量侧的 18% | **新立（L239）**：同轮 quality 探针（`Temp/l239_quality.py`，FakeModel 用 `zlib.crc32` 顶掉 sentence-transformers，每轮重置 `_embedding_cache` 以免 `hasattr` 短路让第二次跑白捡缓存）。`batch_score` n=4000 best **156.9 ms**，其中 `encode` 只被调 **3 次 / 8030 行**⇒ 惰性批量编码那层（L231 收的重复编码）确实生效、没有重复编码；剩余可定位成本是 `_calculate_diversity` 里对 `_existing_embeddings` 每次候选重算 `np.linalg.norm(..., axis=1)`，单点插桩 **28.5 ms**。顺手量了同族的另一刀并**量化后否决**：语义相似度那个逐元素 `np.dot(a[i], b[i])` 循环换成 `np.einsum("ij,ij->i")` 快 **3.73×**（14.26 ms → 3.82 ms），但**产物不位相同**——float32 最大差 **2.98e-07**、float64 最大差 **8.88e-16** ⇒ 按本仓「性能改动必须产物逐字节相同」的口径不予采纳。**为什么值得立账**：1–2% 的端到端收益在真实语义模型（n×dim 更大）下会放大成可观常数，而行范数缓存是纯内部改动、可零对外行为变化。**为什么 L239 不动手**：收益量级（真模型下端到端 1–2%）撑不起一次改动——`quality.py` 身上挂着**十余处** `quality.py:NNN` 历史行号引用（417-433、312、133/153、85-89、81、80 等），任一处插行都要重钉一串历史引用；本轮先把读数钉进账，动手留给能同时把「缓存失效边界」（`_embedding_cache` 与 `_existing_embeddings` 的寿命）说清楚的那一轮。定级 **L**，待拍。 | L |
 
+| A328 | 两卷 Backlog 表的关闭标记词汇与轮号可追溯性 | **新立（L242）**：本轮那把守卫只钉「进度声明面说收了 ⇒ 表行有标记」这一个方向。反方向（表行有标记 ⇒ 标记里的轮号能在**同一卷**的进度声明面查到）**本轮没钉**，现量三条：①补标之后 132 行有标记，按严格式「左括号 + L + 数字」解析轮号，有 **10 行**解析不出（限定词插在括号与轮号之间，例如卷一 A122 写作「已关闭 + 第二本账 + 轮号」的形状），另有 **3 行**（A46 / A130 / A138）解析得出但那一轮不在本卷——跨卷语义本身是对的，只是同一卷查不到；②放宽到行内任意轮号则 132 行全部「可查」，但那量的已经不是标记里的轮号而是行内任一提及，不足以当判据；③标记词汇形状现量 **7 种**且**没有封闭清单**（五个动词「已关闭 / 已收口 / 关闭 / 收口 / 已修」各配一个括号加轮号，再加两种划掉的定级字母 S 与 M），换一种新写法（例如未来的「已了结 + 轮号」）对守卫结构性失明。**本行自己就撞上过一次**：初稿把七种形状逐字写进格子里，于是那一格被标记判据当成「已关闭」，现量从 132 涨到 133——这就是形状失明方向的证据。修法方向：先给标记词汇立封闭清单（与 A77 单一权威口径同族），再把轮号查找做成「括号后允许限定词」的可解析式并跨卷对账。定级 M，待拍。 | M |
+
 ## Backlog B — 功能增强与体验（价值 ÷ 工作量）
 
 | # | 内容 | 证据 | 量级 |
@@ -186,7 +189,7 @@
 | B223 | **已关闭（L153，收口第一本账 A124）**：`quality.weights` 的形状判据权威住组件（`QualityScorer` 两行手抄只判长度与和）——配置层只判 null，两面对同一键不同判；三档洞：`'abc'` 长度恰 3 死在 `sum()` 的 TypeError、`[-1.0, 2.0, 0.0]` 静默放行（权重符号反了排序整个反过来不出声）、`[True, True, False]` 被 sum 当 `[1,1,0]` | 判据权威搬进 validation 族（新族员 `require_ratio_list`：逐项 bool/NaN/越界 + 长度 + 和=1±0.01），配置层 / 组件层 / 静态回放三面共引同一份（A77）；`quality.weights` 进静态规格表、L76 的「唯一豁免」钉子按 docstring 红字约定翻转为「规格在场 + 坏值两面同拒 + 合法 6/6 两面放行」；`[]` 由静默回落默认改为即拒。新增 6 条组件层守卫 + 翻转 1 条，改前红/改后绿 | M |
 | B224 | **已关闭（L154，收口第一本账 A140）**：A140 余 11 节 29 键（context / versioning / sampler / expander / tracker / visualization / multilingual / evaluation / benchmark / active_learning / frameworks）四面零反馈——运行时零判据（一个节内判据都没有）、静态规格表零行、不可经 API 写入 ⇒ 坏值全静默进加载面；三节有真读者（pipeline 直读 num_turns / storage_dir / auto_snapshot，CLI 基准子命令读 metrics / baseline_file），假零 / 字符串假真 / 标量拆字符等档症状要到消费日才出声 | 11 节整批接节（同式同族一批收掉，A140 原框「单节约等于 S」）：节内判据引 validation 族既有成员（12 布尔键、4 计数键取正、5 字符串键、8 清单键、null 全拒），不新造判据不新造常数；静态面补 11 节 dict 行 + 29 键规格行与运行时同档；加载面构造器自动吃到。新守卫 8 类（普查名单翻转 + 坏值 × 面矩阵 + 合法反向 + 删规格行独立性 + 加载面 + 消费面）；l83 分档 13 键移档、validator 两计数扩员、l73 棘轮第三次翻空 + 1 用例按其 docstring 明文处方退役（假臂无来源 ⇒ B225 留档）；行引用 4 条降名锚 + L79 / A184 / l97 逐格重钉 | M |
 | B225 | **已关闭（L155，留防御支 + 钉死其契约）**：`apply_section_update` 的假臂（节无节内判据时「写直通、不复查」那一支）自 L154 全 20 节接上判据起仓内无来源 | 处置二选一拍定为「留」：写入路径拿到的是任意 dataclass 节对象，无判据节（含用户自定义节）是合法入参，删臂 = 对外行为变更；l73 新增 `TestTheUngatedWriteThroughIsAPinnedContract`（2 例）把「写直通、不吞键、不做判决（有判据节会拒的 0 / 负数照落）」钉成契约，谁删臂或顺手接判据就红。测试-only 一轮，产品码零改动、无行引用位移 | S |
-| B265 | **新立（L197 立案，未开工）**：**封闭清单族还剩 6 处 SDK 直构面漏网**——与 L175/L176/L189/L192/L193/L194 同族，全部实测过症状：① `visualize_enhanced.visualize_dataset(format=)` 未知值静默走 text 支还按 text 落盘（`"txt"` / `"JSON"` / `"json "` / `None` 全中）；② `indexer.DatasetIndexer.search(method=)` 未知值静默回落 contains，而 `QueryResult.index_used` 回显 `"regex:instruction,output"` —— **结果主动谎报实际方法**（比静默默默更糟，读结果的人无法自证）；③ `validation.DataSanitizer.remove_duplicates(keep=)` 的 `"Last"` / `"firts"` 静默按 first 走（B205/L135 两轮优化过这条路径的复杂度，却没补判据）；④ `dependency.DependencyManager.get_dependencies(direction=)` 未知值三条分支全不命中 ⇒ 返回 `[]`，用户读到的是「这个数据集没有任何依赖」这个**正面论断**；同文件 `add_dependency(dependency_type=)` 同样零判据；⑤ `streaming.StreamWriter(mode=, format=)` 两个字符串形参各只与一个字面量比一次 ⇒ `format="csv"` 把 JSON 数组写进用户声称为 csv 的产物、`mode='a' + format='json'` 写出无括号的半份 JSON；⑥ `quality_gate` 的 `rule.severity == "warning"` 漏网 ⇒ `"warn"`（少个 ing）静默升级为 error 级门禁阻断流水线。另 `indexer.DatasetView` 的 `format=`（:499）同形 | 一律接 `validation.require_choice`，合法值清单立为 A77 单一权威并与 API 面共引（L175/L189/L193 先例）。**建议一批收掉：同族同式，分开做会出现「修了 5 处漏 1 处」的 L194 型二次欠账** | M |
+| B265 | **新立（L197 立案，未开工）**：**封闭清单族还剩 6 处 SDK 直构面漏网**——与 L175/L176/L189/L192/L193/L194 同族，全部实测过症状：① `visualize_enhanced.visualize_dataset(format=)` 未知值静默走 text 支还按 text 落盘（`"txt"` / `"JSON"` / `"json "` / `None` 全中）；② `indexer.DatasetIndexer.search(method=)` 未知值静默回落 contains，而 `QueryResult.index_used` 回显 `"regex:instruction,output"` —— **结果主动谎报实际方法**（比静默默默更糟，读结果的人无法自证）；③ `validation.DataSanitizer.remove_duplicates(keep=)` 的 `"Last"` / `"firts"` 静默按 first 走（B205/L135 两轮优化过这条路径的复杂度，却没补判据）；④ `dependency.DependencyManager.get_dependencies(direction=)` 未知值三条分支全不命中 ⇒ 返回 `[]`，用户读到的是「这个数据集没有任何依赖」这个**正面论断**；同文件 `add_dependency(dependency_type=)` 同样零判据；⑤ `streaming.StreamWriter(mode=, format=)` 两个字符串形参各只与一个字面量比一次 ⇒ `format="csv"` 把 JSON 数组写进用户声称为 csv 的产物、`mode='a' + format='json'` 写出无括号的半份 JSON；⑥ `quality_gate` 的 `rule.severity == "warning"` 漏网 ⇒ `"warn"`（少个 ing）静默升级为 error 级门禁阻断流水线。另 `indexer.DatasetView` 的 `format=`（:499）同形 | 一律接 `validation.require_choice`，合法值清单立为 A77 单一权威并与 API 面共引（L175/L189/L193 先例）。**建议一批收掉：同族同式，分开做会出现「修了 5 处漏 1 处」的 L194 型二次欠账** | ~~M~~ **已收口（L199 七站点 + L209 把立案不做的 dependency_type 也纳入清单）** |
 | B266 | **部分关闭（L201 收 StreamWriter 那一处；其余仍在案）**：C 族「except 后继续用半成品状态」——`streaming.StreamWriter.__exit__` 不看 `exc_type` 无条件补 `]`，而 `write_chunk` 又先写 `,` 再 `json.dumps`，一条记录序列化失败时产物是 `[{"a": 1},]`，**非法 JSON 却看起来像写到一半**（探针实测 `json.loads` 报 Illegal trailing comma）——**L201 已修**（先序列化再写分隔符 + 异常时不补闭合括号，注入逐半退回都红）；`mode='a' + format='json'` 不参与方括号记账，追加写出 `[{"a": 1}]{"b": 2}`（已写成一条**钉住已知限制**的用例而非假装它合法）；`quality_gate` 把「规则算不出来」（TypeError）与「算出来不及格」塞进同一个 `failed_rules`，`verdict=FAILED` 可能来自一条坏规则而不是坏数据；`pipeline._process_errors` 收进状态却**零读者**（`augment_dataset` 返回报告里没有 `errors` 键）且跨调用累积；`data_pipeline` 的 `stop_on_failure` 默认 False，阶段 B 抛异常时阶段 C 拿到的是**阶段 A 的输出**，整条管道少跑一环却照常跑完 | **订正一条原记录**：`context.batch_generate`「并行支吞失败、串行支抛异常」**经复核不是活缺陷**——`generate_multi_turn` 内部已捕获后端异常并降级返回空历史（`test_parallel_failure_does_not_drop_other_items` 钉的正是这个），并行支的 `except` 对后端错误不可达；原记录是「读到 except 就算缺陷」没追到上一层。**其余处置前提**：quality_gate 要同时改 SDK 的 `GateReport` / `api/routes/quality.py` 的 `GateReportResponse` / 守卫三面——只改 SDK 那一面会让新键被 FastAPI 按 `response_model` 静默裁掉（L27 记过的坑）；追加语义要先拍「追加 JSON 数组」的形态（口径决策）；`_process_errors` 要往返回报告加键（改 API 响应面） | M |
 | B267 | **新立（L197 立案，未开工）**：`preview.PreviewGenerator` 的缓存两个问题——① 命中后把 `ExportPreview` **就地改后按引用返回**，同实例所有调用方共享同一可变对象；② 缓存键只哈希 `sample[:min(5, len(sample))]`，`preview_size > 5` 时「前 5 条相同、后续不同」的两个数据集**撞键**，第二个调用方拿到第一个数据集的 `original_data` / `converted_data`（只有两个计数被刷新）。L127 的注释自称「三者缺一即换键」，但数据因子被截断到 5 条 | 键改整份 `sample`（或加长度 + 全量哈希）；命中时返回 `dataclasses.replace(cached, format_info={...})` 的副本 | S |
 
@@ -3541,3 +3544,63 @@ A284 / A285 / A287~A289 / A282 / A280 / A278 / A276 / A271 / A272 / A273）与 A
   **如实补一句因果顺序**：本格这九行写在复跑**之后** ⇒ 它们不在这份读数里；写完之后单独复跑六把账本与文档
   守卫（markdown 结构 / l98 哈希槽 / l203 进度一致性 / a184 注释引用 / l79 文档行号 / l200 契约数字），
   **149 passed / 8 skipped** 与账本批之前那一次逐格相同，而本轮产品码与 tests 目录零改动 ⇒ 用例数不可能动。
+
+### L242（2026-10-12）— 把账本的第三面接上电：进度声明面说「收了」，Backlog 表那一格必须有标记
+
+**本轮定义（动手前拍的）**：**零对外行为变化**——产品码一字不动，本轮只做「量出双写漏的第三面 + 逐格补标 +
+立一把精确相等的对账守卫」。待拍名单（A324 / A323 / A316~A318 / A298~A301 / A303 / A304 / A306~A311 /
+A284 / A285 / A287~A289 / A282 / A280 / A278 / A276 / A271 / A272 / A273）与 A326 / A327 一律不动。
+另把 L241 遗留在工作树的 `docs/ARCHITECTURE.md` 两句 §3.34 六臂取证随代码提交入册——那两行插在 §7.1
+引用行**之下**，不平移任何历史行号引用。
+本轮**新立 1 格（A328，定级 M 待拍）、补标 17 格、半程豁免 3 格**——三个数字在清单行与本块同形。
+
+- **① 为什么是「第三面」**：L203 那把尺子（`test_ledger_progress_consistency_l203`）钉的是清单行 ⇄ 日志块
+  两面互查，而账本还有第三面——两卷 Backlog 表里每个 `Axxx` / `Bxxx` 行的定级格。一轮收掉一笔账却只写前两遍，
+  后来人顺表读到的是「这笔还没做」，而且**没有任何机械通道会出声**。本轮先把全集量出来：开工前账目面
+  **247 行**、声明面点到且表里仍有行的 **116** 个 ID，其中带标记 **96** 个、无标记 **20** 个——
+  那 20 笔就是欠账（`MEASURED_GAP_BEFORE` = 17 真漏标 + 3 合法半程）。补标之后：账目面 248 行、
+  标记面 **115 → 132**、无标记 **20 → 3**（剩下的 3 笔即半程豁免名册）。
+- **② 口径是一条一条现量选出来的，不是抄的**：
+  ⑴ **ID 宽度三档对照**：只认三位 ⇒ 账目面 190 行、gap **11**；认到两位 ⇒ 234 行、gap **20**；再认到一位 ⇒
+  247 行、gap 仍是 **20**。多出的 13 行（A1–A8、B1 / B2 / B5 / B7 / B8）不改变名册，但少认一位就是让这 13 行
+  在对账里**永久隐身**，所以取最宽档。尾部加 `(?!\d)` 防贪心（否则 `A1234` 被切成 `A123` 凭空造 ID）。
+  ⑵ **声明面只收两个形状**（清单行 `- [x] **L` 与日志标题 `### L`），日志块正文不收：宽口径实测多收 6 个 ID
+  而**全都已标**⇒ 窄口径没漏真欠账；正文里满是「未收口」「判负」这类带否定与条件的叙述，收进来只造假欠账。
+  这一条由 `test_wide_scope_would_give_the_same_gap` 现场复验，不是写在纸上自证。
+  ⑶ **对账只在「表里还有行」的面上做**：声明面点到而表里已裁撤的 ID 现量 **46** 个（`MEASURED_PHANTOM`），
+  记成现量而不是假装不存在。
+  ⑷ **弱词与划掉的数字都不算标记**：现量反例两条——卷一 A298 行内写「按 id 全清」而那笔账至今待拍、A176 行内
+  写着划掉的「6 处」同样待拍。把它们算成标记会让待拍的账永久隐身，所以 `TestWeakTokensAreNotMarks` 把两条都钉住。
+  ⑸ **区间展开按自然位数，不补零**：补零会造出 `A08` 这种表里不存在的假 ID，污染 phantom 那一格。
+- **③ 判据是「精确相等」而不是棘轮**（承 L241 同一条理由）：`declared ∩ rows − marked` 必须**恰好等于**
+  `PARTIAL = {A45, A127, A156}`。写成「≤ 某数」的话，本轮补标的 17 格里任何一格回退成无标记，只要总数不超上限
+  就照样绿——那是把尺子调成看不见缺陷。`PARTIAL` 不是白名单：三格各自有点名用例，各自要求「声明带限定词
+  （前半 / 一半 / 只关 ①）+ 表行自己没有标记」两条同时成立。
+- **④ 新守卫 24 支、零 parametrize**：刻意不参数化，免得动 l97（CALLS 430 / READABLE 312 / BLIND 118）与
+  l98（档位 58/38/11/11、EXEMPT_SITES 24）的现量档位。反空转三格（声明面 116 / 标记面 132 / 双卷双贡献）、
+  表行唯一性 + 行数 248、结构自检（行首 `| ID | ` 行尾 ` |`，列数交给 markdown 守卫不重复）、
+  八臂合成注入（拆标记必进 gap、加标记必进 marked、删声明行 declared 缩小、**加声明句必变红**、
+  斜杠/顿号/区间展开、括号断口、行首才算表行）——全部走内存合成，零写入磁盘。
+- **⑤ 同轮重钉的尺子只有一把**：`test_doc_line_refs_l79.BACKLOG_A_CLOSED` **107 → 119**。归因：卷一 14 格补标
+  划掉定级字母，其中 2 格行内本已含删除线 ⇒ +12；行首结案口径 **87 一格未动**（补标改的是定级格不是行首），
+  两口径差值 20 → 32 全部来自这一族。**没有任何一把尺子被改松**：l79 的判据本体、markdown 结构、l98 哈希槽、
+  l203 进度一致性、a184 注释引用、l200 契约数字逐格按各自 docstring 的处方重钉或原样通过。
+- **⑥ A328（新立，定级 M 待拍）**：本守卫只钉「声明 ⇒ 表行有标记」这一个方向。反方向没钉，现量三条写在表行里。
+  **本行自己就撞上过一次失明**：初稿把 7 种标记形状逐字列进格子，那一格立刻被标记判据认成「已关闭」，
+  现量从 132 涨到 **133**——这就是「形状没有封闭清单」最直白的证据，也解释了为什么 A328 要求先立封闭清单
+  （与 A77 单一权威口径同族）再谈反方向对账。
+- **⑦ 中间读数与事故，原样入册不美化**：
+  ⑴ 新守卫第一版定向读数 **7 failed / 17 passed**，七支失败全部由「账本被外部打回」导致，不是判据本身错。
+  ⑵ ID 宽度改了三遍（三位 ⇒ 两位 ⇒ 一位），`expand` 补零造出假 ID 一版，注入臂打错面一版
+  （把「加声明句」写成改表行——表行不在声明面，gap 当然不动，臂空转），`test_every_row_has_four_cells`
+  把「竖线数 == 3」当判据一版（实测分布 5/6/7/15，行内码就带竖线），动态取样写死 A31 一版
+  （A31 有标记但不含轮号，既不是 gap 也不是干净的正例）。
+  ⑶ **工作树事故**：本轮账本改动曾被同一工作树的外部 `git stash` + `git reset` 打回，而那一笔 stash 随后被 drop
+  ⇒ `git stash list` 与 stash reflog 双双为空。找回路径：`git fsck --lost-found` 里的不可达对象
+  `82f4a4cab3e86d66abc06ac9cb60b7a87532144a`（提交名 `WIP on optimism20261012`，含他会话 40+ 个文件），
+  本轮只按显式路径取回自己的三个文件，**没有 pop**、没有触碰 laiyipao / oa4rust / mobile 那一片。
+  ⑷ `git checkout <blob> --` 把卷二 L241 日志块里那个历史游离 CR 摘掉了，摘后卷二变成「3543 个 LF + 1 个 CRLF」
+  的混用形状，`test_docs_markdown_structure` 的行尾维当场红。本轮顺势把卷二收成**统一 LF**（代价：账本提交里
+  多一行**不可见的行尾改动**，那一行文本内容一字未变），同时把 A328 行从「A326 之后」搬到「A327 之后、独立成块」——
+  夹在 A326 与空行之间会凑出 2 行连续竖线，`find_tables` 认 ≥2 行即为表并要求第二行是分隔行 ⇒ 结构守卫红。
+  ⑸ 前端面（`web/`）**不适用**：本轮零改动，不是漏跑。
