@@ -17,11 +17,11 @@
   （`backup_id` / `timestamp` / `source_path` / `backup_path` / `item_count` / `file_size` /
   `checksum`），`source_path` 与 `backup_path` 都是**服务端绝对路径**，`checksum` 是备份文件的
   sha256，实测 `item_count 5` / `file_size 231`。
-* 同名创建两次（`name=mybak`）⇒ 列表回**三条**（时间戳 id 一条 + `mybak` 两条），磁盘上只有
-  **一份** `mybak.json`；两条 `mybak` 的 `timestamp` 不同（`.991804` 与 `.997820`），
-  `backup_path` 逐字相同（**A298**）。
-* 删一次 ⇒ 索引里**两条同 id 记录一起消失**（delete 按 id 过滤全部匹配项），之后再恢复 / 再删
-  都是 **404**「备份不存在」（**A298**）。
+* 同名创建两次（`name=mybak`）**改前实测**：列表回**三条**（时间戳 id 一条 + `mybak` 两条），
+  磁盘上只有**一份** `mybak.json`，两条 `mybak` 的 `timestamp` 不同而 `backup_path` 逐字相同
+  ⇒ **A298 已于 L250 收口**：`backup()` 落索引前按 `backup_id` 摘掉旧行，同名只留一行。
+* 删一次 ⇒ 索引里**同 id 的行全部消失**（delete 按 id 过滤全部匹配项；L250 之后新建的同名备份
+  本来也只有一行，多行只剩存量索引），之后再恢复 / 再删都是 **404**「备份不存在」。
 * 恢复 ⇒ 回执三键 `{backup_id, output_path, item_count}`，落点键叫 **`output_path`**（同族其余
   五只写盘端点叫 `output_file`，`split` 叫 `output_dir`）；目标已存在时**整份覆盖**，不问。
 * 把备份文件改坏再恢复 ⇒ **L231 当时是 200**，只在日志里留一句 `WARNING 备份文件校验和不匹配，
@@ -50,8 +50,8 @@
   **L243 加进 cleanup 之后是四只写 / 六只端点**（`test_three_write_ops_are_key_gated` 已重钉）。
   `AUGMENTOR_API_KEY` 一旦设上，页面上这几只写操作一律 401（**A302**）。当时量到「前端零通道」，
   **L233 已补上那条通道**。
-* `backup()` 里有**两次** `datetime.now()`：一次取秒级时间戳进 id，一次取 isoformat 进
-  `timestamp` ⇒ 跨秒时两者对不上（**A303**）；`name` 本身不在回执里，它就是 `backup_id`。
+* `backup()` 原先有**两次** `datetime.now()`（秒级 id 与微秒级 `timestamp` 跨秒对不上）⇒
+  **A303 已于 L250 收口**：现在只取一次 `now()` 两处复用；`name` 仍不在回执里，它就是 `backup_id`。
 * `/api/data/list` 只列白名单根目录下名为 `train_data*.json` 的文件（探针放了 `p.json` /
   `train_data1.json` / `train_dataX.json` 三份，回执只有后两份）⇒ 备份源的候选口径**窄于**
   白名单，页面因此用可输入下拉而不是纯下拉（**A304**）。
@@ -214,8 +214,10 @@ class TestThePageCarriesTheFourOperations:
     def test_candidates_come_from_the_data_list_endpoint(self):
         assert "getDataFiles(" in _page()
 
-    def test_the_row_key_does_not_treat_backup_id_as_unique(self):
-        """同 id 两行是**实测形状**（A298），所以行键必须拼上别的一格"""
+    def test_the_row_key_still_hedges_for_legacy_duplicate_ids(self):
+        """**A298 已于 L250 收口**，但行键继续拼时间戳：收口只改写边，存量索引里那些同名多行
+        仍然存在（`index.json` 不迁移），读取面照旧会把它们交给页面。
+        """
         page = _page()
         found = re.search(r"rowKey=\{(.*?)\}\n", page)
         assert found, "备份表没有 rowKey ⇒ 同 id 两行会撞 React key"
@@ -225,7 +227,7 @@ class TestThePageCarriesTheFourOperations:
         page = _page()
         for phrase in (
             "覆盖同一份文件",           # A298：同名覆盖
-            "删一次两条一起消失",       # A298：删除按 id 清全部
+            "一次全清",                 # A298（L250 收口后）：删除按 id 清全部匹配行
             "它现在**会拦**",           # A299：L243 把「不拦截恢复」收成 409（这句原话已不在页面上）
             "output_path",              # 回执落点键名
             "现已有 HTTP 入口",         # A300：L243 给两员加了端点，口径从「没有入口」翻面
@@ -262,23 +264,39 @@ class TestMeasuredEndpointBehavior:
         assert pathlib.Path(got["backup_path"]).is_absolute()
         assert (root / ".backups" / f"{got['backup_id']}.json").is_file()
 
-    def test_same_name_twice_leaves_two_index_rows_and_one_file(self, http_with_backups):
-        """A298 的前半：索引按次追加，文件按名覆盖"""
+    def test_same_name_twice_leaves_one_index_row_and_one_file(self, http_with_backups):
+        """A298 的前半（**L250 收成 ①**）：文件按名覆盖，索引那一行跟着更新 ⇒ 两面数得上
+
+        改前这一支断言的是「索引按次追加、列表出两行」，而磁盘只有一份文件——那两行里旧的一条
+        指向已被覆盖的内容，它的 `checksum` 从此对不上，是一行死账。
+        """
         http, root, *_ = http_with_backups
-        for _ in range(2):
-            assert http.post(
-                "/api/system/backups", json={"input_file": "p.json", "name": "mybak"}
-            ).status_code == 200
+        first = http.post(
+            "/api/system/backups", json={"input_file": "p.json", "name": "mybak"}
+        ).json()
+        (root / "big.json").write_text(json.dumps(ITEMS * 2, ensure_ascii=False), encoding="utf-8")
+        second = http.post(
+            "/api/system/backups", json={"input_file": "big.json", "name": "mybak"}
+        ).json()
+
         rows = http.get("/api/system/backups").json()["backups"]
         named = [b for b in rows if b["backup_id"] == "mybak"]
-        assert len(named) == 2, rows
-        assert named[0]["backup_path"] == named[1]["backup_path"]
-        assert named[0]["timestamp"] != named[1]["timestamp"], "两条时间戳相同 ⇒ 行键会撞"
+        assert len(named) == 1, rows
+        assert named[0] == second, "留下的那一行不是最新的那份备份"
+        assert named[0]["backup_path"] == first["backup_path"]
+        assert named[0]["item_count"] == 10 and first["item_count"] == 5
         assert sorted(p.name for p in (root / ".backups").glob("*.json")) == [
             "index.json", "mybak.json"]
+        # 行数与磁盘份数一一对应（本轮立的不变量：索引不再谎报份数）
+        assert len(rows) == len([p for p in (root / ".backups").rglob("*.json")
+                                 if p.name != "index.json"])
 
     def test_one_delete_clears_every_row_with_that_id(self, http_with_backups):
-        """A298 的后半：删一次两条索引项一起消失，之后恢复与删除都是 404"""
+        """A298 的后半：删一次把同 id 的行清干净，之后恢复与删除都是 404
+
+        L250 之后端点上造不出「同名两行」（写侧已收敛），存量索引里的多行由
+        `tests/unit/test_backup_index_collapse_l250.py` 手工塞进去再量「全清」那一格。
+        """
         http, root, *_ = http_with_backups
         for _ in range(2):
             http.post("/api/system/backups", json={"input_file": "p.json", "name": "mybak"})
@@ -484,16 +502,46 @@ class TestTheEntriesThatAreStillMissing:
         }, sorted(seen)
         assert gated == {p for p in seen if p[0] != "GET"}, sorted(gated)
 
-    def test_the_id_timestamp_and_the_receipt_timestamp_come_from_two_calls(self):
-        """A303：`backup()` 里两次 `datetime.now()`，秒级 id 与微秒级 timestamp 可以跨秒对不上"""
+    def test_the_id_and_the_receipt_timestamp_come_from_one_clock_read(self):
+        """A303（**L250 收成 ①**）：`backup()` 只取一次 `datetime.now()`，id 与 timestamp 同源
+
+        这一支只钉 AST 那一维（改前现量 2，收成 1）；AST 单独会被绕过去——把那次读数挪进
+        被调用的 helper 里，`backup()` 体内照样只剩 1 次调用而跨秒对不上又回来了，所以同处
+        另有一支 `test_a_second_clock_read_would_change_the_answer` 用假钟跑真备份。
+        """
         tree = ast.parse(BACKUP_PY.read_text(encoding="utf-8"))
         fn = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == "DatasetBackup")
         backup_fn = next(n for n in fn.body if isinstance(n, ast.FunctionDef) and n.name == "backup")
         calls = [n for n in ast.walk(backup_fn)
                  if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)
                  and n.func.attr == "now"]
-        assert len(calls) == 2, f"backup() 里 datetime.now() 现量 2 次，实得 {len(calls)}"
+        assert len(calls) == 1, f"backup() 里 datetime.now() 现量 1 次，实得 {len(calls)}"
         assert "%Y%m%d_%H%M%S" in BACKUP_PY.read_text(encoding="utf-8")
+
+    def test_a_second_clock_read_would_change_the_answer(self, tmp_path, monkeypatch):
+        """行为面：假钟只许被读一次，读第二次当场响；id 里的秒与 `timestamp` 必须对齐"""
+        import augmentor.backup as bk
+
+        real = bk.datetime
+        frozen = real(2026, 10, 11, 17, 58, 59, 900000)
+        read = []
+
+        class OnceOnly:
+            @classmethod
+            def now(cls):
+                read.append(len(read))
+                assert len(read) == 1, f"`now()` 被读了 {len(read)} 次 ⇒ 秒级 id 与 timestamp 不同源"
+                return frozen
+
+        source = tmp_path / "s.json"
+        source.write_text(json.dumps(ITEMS, ensure_ascii=False), encoding="utf-8")
+        monkeypatch.setattr(bk, "datetime", OnceOnly)
+        info = bk.DatasetBackup(str(tmp_path / "b")).backup(str(source))
+
+        assert info.backup_id == "backup_20261011_175859", info.backup_id
+        assert info.timestamp == "2026-10-11T17:58:59.900000", info.timestamp
+        assert info.backup_id[-6:] == info.timestamp[11:19].replace(":", "")
+        assert len(read) == 1
 
     def test_the_candidate_list_is_narrower_than_the_whitelist(self, http_with_backups):
         """A304：根目录里三份 json，`/api/data/list` 只回两份 `train_data*.json`"""

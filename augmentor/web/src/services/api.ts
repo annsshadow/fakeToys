@@ -1095,8 +1095,8 @@ export const restoreBackup = async (
 /**
  * `DELETE /api/system/backups/{backup_id}`
  *
- * 删掉的是**索引里所有同 id 的记录**外加那一份文件，所以同名创建两次之后删一次，两条一起
- * 消失（实测）。id 不存在是 **404**「备份不存在」，与恢复那一支同一个状态码、同一句文案。
+ * 删掉的是**索引里所有同 id 的记录**外加那一份文件（同名多行只剩 L250 之前写出的存量索引，
+ * 新建的同名只留一行）。id 不存在是 **404**「备份不存在」，与恢复那一支同码同文案。
  */
 export const deleteBackup = async (
   backupId: string,
