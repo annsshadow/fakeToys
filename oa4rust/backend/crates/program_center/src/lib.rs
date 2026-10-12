@@ -803,7 +803,9 @@ pub async fn appstyle_image_application_top(
 #[allow(non_snake_case)]
 pub async fn appstyle_image_application_top_erase(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -882,7 +884,9 @@ pub async fn appstyle_image_launch_logo(
 #[allow(non_snake_case)]
 pub async fn appstyle_image_launch_logo_erase(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -961,7 +965,9 @@ pub async fn appstyle_image_login_avatar(
 #[allow(non_snake_case)]
 pub async fn appstyle_image_login_avatar_erase(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -1040,7 +1046,9 @@ pub async fn appstyle_image_menu_logo_blur(
 #[allow(non_snake_case)]
 pub async fn appstyle_image_menu_logo_blur_erase(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -1119,7 +1127,9 @@ pub async fn appstyle_image_menu_logo_focus(
 #[allow(non_snake_case)]
 pub async fn appstyle_image_menu_logo_focus_erase(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -1198,7 +1208,9 @@ pub async fn appstyle_image_process_default(
 #[allow(non_snake_case)]
 pub async fn appstyle_image_process_default_erase(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -1277,7 +1289,9 @@ pub async fn appstyle_image_setup_about_logo(
 #[allow(non_snake_case)]
 pub async fn appstyle_image_setup_about_logo_erase(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -5505,7 +5519,9 @@ pub async fn jest_center_list() -> Result<Json<ActionResult<Value>>, AppError> {
 #[allow(non_snake_case)]
 pub async fn jest_clear_cache_source(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -9105,6 +9121,20 @@ async fn require_admin(pool: &Pool, session: &shared::session::Session) -> Resul
     }
 }
 
+/// 运维管理写操作门禁（可选会话版）：无会话返回 Unauthorized，非 admin 返回 Forbidden。
+///
+/// appstyle image/*erase（DELETE 全量删除 x_program_deploy_resource）、jest
+/// clear cache 等路由挂在 o2server 行为对齐的公共/豁免前缀下（登录页图片读取
+/// 需未认证可达），破坏性写 handler 因此以 Option 会话 + admin 双门禁拦截：
+/// 未认证 401、非 admin 403，杜绝匿名批量删除。
+async fn require_admin_opt(
+    pool: &Pool,
+    session: Option<&shared::session::Session>,
+) -> Result<(), AppError> {
+    let session = session.ok_or(AppError::Unauthorized)?;
+    require_admin(pool, session).await
+}
+
 fn json_str(payload: &Value, key: &str) -> String {
     payload
         .get(key)
@@ -11142,8 +11172,10 @@ pub async fn u3_invoke_file_put(
 #[allow(non_snake_case)]
 pub async fn u3_jest_clear_cache_source(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(source): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
     client
@@ -12329,4 +12361,57 @@ pub async fn script_delete_id(
             ("deleted".to_string(), Value::Bool(true)),
         ]),
     ))))
+}
+
+#[cfg(test)]
+mod security_gate_tests {
+    use super::*;
+
+    /// 安全审计回归（2026-10）：appstyle 头像资源全表删除与 jest 清缓存日志
+    /// 均为 admin 运维操作。无会话必须 Unauthorized；非 admin 会话
+    /// （无 DB 时 is_admin fail-closed 返回 false）必须 Forbidden。
+    fn build_session(person_unique: &str) -> shared::session::Session {
+        shared::session::Session {
+            token: "t".to_string(),
+            person_unique: person_unique.to_string(),
+            created_at: chrono::NaiveDateTime::from_timestamp(0, 0),
+            expires_at: chrono::NaiveDateTime::from_timestamp(3600, 0),
+        }
+    }
+
+    #[tokio::test]
+    async fn appstyle_erase_requires_session() {
+        let pool = shared::testing::test_pool();
+        let res = appstyle_image_application_top_erase(Extension(pool), None).await;
+        assert!(
+            matches!(res, Err(AppError::Unauthorized)),
+            "无会话调用 appstyle erase 必须 401",
+        );
+    }
+
+    #[tokio::test]
+    async fn appstyle_erase_forbidden_for_non_admin() {
+        let pool = shared::testing::test_pool();
+        let res =
+            appstyle_image_application_top_erase(Extension(pool), Some(Extension(build_session("u-nonadmin"))))
+                .await;
+        assert!(
+            matches!(res, Err(AppError::Forbidden)),
+            "非 admin 会话调用 appstyle erase 必须 403",
+        );
+    }
+
+    #[tokio::test]
+    async fn jest_clear_cache_requires_session() {
+        let pool = shared::testing::test_pool();
+        let res = jest_clear_cache_source(Extension(pool.clone()), None).await;
+        assert!(matches!(res, Err(AppError::Unauthorized)));
+        let res = u3_jest_clear_cache_source(
+            Extension(pool.clone()),
+            None,
+            axum::extract::Path("jest".to_string()),
+        )
+        .await;
+        assert!(matches!(res, Err(AppError::Unauthorized)));
+    }
 }

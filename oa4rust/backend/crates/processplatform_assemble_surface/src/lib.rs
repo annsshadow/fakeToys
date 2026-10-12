@@ -19906,7 +19906,11 @@ pub async fn taskcompleted_id_reference_control(
 }
 
 #[allow(non_snake_case)]
-pub async fn touch_expire(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn touch_expire(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_require_touch_auth(&pool, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let count = client
         .execute("UPDATE pp_c_touch_expire SET xupdatetime = NOW()", &[])
@@ -19924,7 +19928,9 @@ pub async fn touch_expire(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
 #[allow(non_snake_case)]
 pub async fn touch_passexpired(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_require_touch_auth(&pool, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let count = client
         .execute("UPDATE pp_c_touch_passexpired SET xupdatetime = NOW()", &[])
@@ -19942,7 +19948,9 @@ pub async fn touch_passexpired(
 #[allow(non_snake_case)]
 pub async fn touch_touchdetained(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_require_touch_auth(&pool, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let count = client
         .execute("UPDATE pp_c_touch_detained SET xupdatetime = NOW()", &[])
@@ -24282,6 +24290,19 @@ async fn u2_require_admin(pool: &Pool, session: &shared::session::Session) -> Re
     } else {
         Err(AppError::Forbidden)
     }
+}
+
+/// 运维维护作业门禁（touch/* 面）：无会话返回 Unauthorized。
+///
+/// surface touch/expire|passexpired|touchdetained 只写控制表 xupdatetime
+///（超期/超期通过/催办开关时间戳），普通用户在流程中心「触发」按钮使用，
+/// 故仅要求已认证（任意登录会话）；豁免清单/rbac Public 移除后未认证 401，
+/// 保留普通用户功能不受影响。
+async fn u2_require_touch_auth(
+    _pool: &Pool,
+    session: Option<&shared::session::Session>,
+) -> Result<(), AppError> {
+    session.map(|_| ()).ok_or(AppError::Unauthorized)
 }
 
 fn u2_s(row: &deadpool_postgres::tokio_postgres::Row, col: &str) -> Value {

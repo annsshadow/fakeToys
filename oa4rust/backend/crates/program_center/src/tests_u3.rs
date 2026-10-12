@@ -401,9 +401,11 @@ mod u3_tests {
 
     #[tokio::test]
     async fn u3_market_module_family_reachable() {
+        // 2026-10 安全审计：jest 清缓存降为需会话（admin 门禁），无会话先 401，
+        // 不再直通 DB 层 500。
         assert_eq!(
             status_of("GET", "/api/program_center/jest/clear/cache/es").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::UNAUTHORIZED
         );
         assert_eq!(
             status_of("GET", "/api/program_center/market/m-1").await,
@@ -665,10 +667,13 @@ mod u3_tests {
         assert!(matches!(r, Err(shared::error::AppError::Internal)));
         let r = u3_jest_clear_cache_source(
             Extension(pool.clone()),
+            Some(Extension(test_session())),
             axum::extract::Path("es".to_string()),
         )
         .await;
-        assert!(matches!(r, Err(shared::error::AppError::Internal)));
+        // 2026-10 安全审计：jest 清缓存降为 admin 门禁；非 admin 会话（无 DB 时
+        // is_admin 查询失败 fail-closed）返回 Forbidden，不再直通写库。
+        assert!(matches!(r, Err(shared::error::AppError::Forbidden)));
         let r = u3_qiyeweixin_create(Extension(pool.clone()), Extension(test_session())).await;
         assert!(matches!(r, Err(shared::error::AppError::Internal)));
     }
