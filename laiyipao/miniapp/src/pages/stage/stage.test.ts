@@ -1,4 +1,4 @@
-// @vitest-environment jsdom
+﻿// @vitest-environment jsdom
 /**
  * 选关页（stage.vue）组件测试。
  * 覆盖：章节切换、关卡选择与详情卡、startLabel 四种文案、startBattle 的
@@ -16,7 +16,7 @@ import { makeConfig, makeLevel } from '../../test/fixtures'
 
 vi.mock('@/api/client', () => ({
   guestLogin: vi.fn(),
-  fetchConfig: vi.fn(),
+  fetchConfigIfVersion: vi.fn(),
   fetchWallet: vi.fn(),
   fetchMe: vi.fn(),
   fetchLoadout: vi.fn(),
@@ -39,8 +39,9 @@ beforeEach(() => {
     user: { id: 7, nickname: '我', avatar_url: '', is_guest: true, status: 1 },
   })
   // 带地形与 BOSS 标记的关卡，驱动关卡格 class 分支
-  mockApi.fetchConfig.mockResolvedValue(
-    makeConfig({
+  mockApi.fetchConfigIfVersion.mockResolvedValue({
+    status: 'modified',
+    config: makeConfig({
       levels: [
         makeLevel({ id: 1, chapter: 1 }),
         makeLevel({ id: 2, chapter: 1, terrain: [{ kind: 'oil_drum', x: 600, y: 600, param: 50 }] }),
@@ -48,8 +49,9 @@ beforeEach(() => {
         makeLevel({ id: 4, chapter: 2, terrain: [{ kind: 'alien_kind' as any, x: 1, y: 1, param: 1 }] }),
       ],
     }),
-  )
-  mockApi.fetchWallet.mockResolvedValue({ coin: 1, gem: 2, energy: 30, keys: 4 })
+    serverTimeMs: 0,
+  })
+  mockApi.fetchWallet.mockResolvedValue({ coin: 1, gem: 2, energy: 30, keys: 4, tokens: {} })
   mockApi.fetchMe.mockResolvedValue({ user_id: 7, build: null, build_rating: null, power: 9 } as any)
   mockApi.diagnose.mockResolvedValue({
     stage: 'mid_game',

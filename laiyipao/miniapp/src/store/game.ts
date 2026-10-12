@@ -15,6 +15,51 @@ import { defaultAttacker, type Attacker } from '@/game/damage'
 import type { EnemyDef, GeneratedLevel, SkillDef } from '@/game/types'
 import type { Element } from '@/game/elements'
 
+// ---- 配置持久化（第 150 轮）----
+//
+// 配置包实测未压缩约 168KB，`levels` 一个字段就占 123KB（74%）。
+// 加上 storage 后，冷启动先用本地副本点亮界面，再用条件请求确认版本 ——
+// 内容没变时服务端只回 304，**零字节载荷**。
+//
+// ⚠️ 存储键带 `_v1` 后缀：将来若缓存结构变了（比如拆成多个键），
+// 改后缀就能让旧缓存自然失效，不需要写迁移代码。
+const CONFIG_CACHE_KEY = 'lyp_config_cache_v1'
+
+interface ConfigCache {
+  version: string
+  config: GameConfig
+}
+
+/**
+ * 读持久化配置。
+ *
+ * 任何不完整/不可解析的缓存都返回 null（宁可重拉）：
+ * 半份配置会让界面显示**部分**内容，而那看起来像是服务端数据不全，
+ * 会把人引向完全错误的排查方向。
+ */
+function readConfigCache(): ConfigCache | null {
+  try {
+    const raw = uni.getStorageSync(CONFIG_CACHE_KEY)
+    if (typeof raw !== 'string' || !raw) return null
+    const parsed = JSON.parse(raw) as ConfigCache | null
+    if (!parsed || typeof parsed.version !== 'string' || !parsed.config) return null
+    return parsed
+  } catch {
+    return null
+  }
+}
+
+function writeConfigCache(version: string, cfg: GameConfig): void {
+  try {
+    uni.setStorageSync(
+      CONFIG_CACHE_KEY,
+      JSON.stringify({ version, config: cfg } satisfies ConfigCache),
+    )
+  } catch {
+    /* 存储不可用时退化为只缓存内存（本次会话有效）—— 与令牌存取同一策略 */
+  }
+}
+
 export const useGameStore = defineStore('game', () => {
   // ---- 账号 ----
   const userId = ref<number>(0)
@@ -36,7 +81,16 @@ export const useGameStore = defineStore('game', () => {
   let serverTimeReceivedAtMs = 0
 
   // ---- 钱包与进度 ----
-  const wallet = ref({ coin: 0, gem: 0, energy: 0, keys: 0 })
+  // tokens 是道具余额（第 150 轮起由 /wallet 下发）。
+  // 初值为空对象而不是不发：消费方用 `tokens['mastery_reset'] ?? 0`，
+  // 两种缺省都指向 0，语义一致。
+  const wallet = ref<{
+    coin: number
+    gem: number
+    energy: number
+    keys: number
+    tokens: Record<string, number>
+  }>({ coin: 0, gem: 0, energy: 0, keys: 0, tokens: {} })
   const maxStage = ref(0)
   const power = ref(0)
   const buildRating = ref<any>(null)
@@ -163,22 +217,68 @@ export const useGameStore = defineStore('game', () => {
     }
   }
 
+  /**
+   * 加载配置。
+   *
+   * 原来这里只有 `if (config.value) return` 一个**内存内**缓存，
+   * 于是每次冷启动都实打实拉一次 168KB（gzip 后 24KB），
+   * 且 `config.version` 在整个客户端零引用 ——
+   * 「版本没变就不用刷新」这个判断从来没被实现过。
+   *
+   * 第 150 轮接上完整闭环（服务端注释里早已写明需要这三件事一起做）：
+   *   a. 服务端 `version` 改成内容哈希；
+   *   b. 客户端把配置持久化到 storage；
+   *   c. 拿持久化的 version 与服务端比对，相同就不替换、不重新解析。
+   *
+   * 于是冷启动变成：先用本地副本点亮界面（零等待、可按需离线），
+   * 再带 `?if_version=` 问服务端 —— 内容没变时只回 304，**零载荷**。
+   *
+   * ⚠️ 这条路径能成立的前提是「配置真的是静态的」：关卡内容由生成器决定
+   * （`domain.GenerateLevel` 纯函数，不查库），由服务端
+   * `level_authority_test.go` 钉住玩家路径与 `levels` 表无关。
+   */
   async function loadConfig(): Promise<void> {
     if (config.value) return // 已加载
     configLoading.value = true
     try {
-      const cfg = await api.fetchConfig()
-      config.value = cfg
-      // 记下服务端时钟基准：响应里的 server_time + 收到响应的本地时刻。
-      // 本地时钟偏移由后续 estimateServerNowMs() 抵消。
-      const t = Date.parse(cfg.server_time ?? '')
-      if (Number.isFinite(t)) {
-        serverTimeMs = t
-        serverTimeReceivedAtMs = Date.now()
+      // ① 先用持久化副本点亮界面 —— 冷启动不再白屏等 168KB。
+      const cached = readConfigCache()
+      if (cached) {
+        config.value = cached.config
+        calibrateServerClock(Date.parse(cached.config.server_time ?? ''))
       }
+      // ② 带 version 问服务端：没变 → 304，变了 → 200 全量。
+      const res = await api.fetchConfigIfVersion(cached?.version ?? '')
+      if (res.status === 'unmodified') {
+        // 内容没变：本地副本就是真相。不替换、不重新 JSON.parse。
+        // 时钟仍要校准 —— 304 没有响应体，只能靠 Date 头。
+        calibrateServerClock(res.serverTimeMs)
+        return
+      }
+      config.value = res.config
+      writeConfigCache(res.config.version, res.config)
+      // 200 路径优先用响应体 server_time（纳秒精度），
+      // serverTimeMs 就是由它派生的；取不到时再回退到解析 config.server_time ——
+      // 两层都失败就保持现有基准，不猜。
+      calibrateServerClock(res.serverTimeMs || Date.parse(res.config.server_time ?? ''))
     } finally {
       configLoading.value = false
     }
+  }
+
+  /**
+   * 用服务端时钟校准本地偏移。
+   *
+   * 接受**毫秒时间戳**（不是字符串），因为 304 路径拿不到响应体 ——
+   * 那时服务端时间来自 HTTP 标准 `Date` 头（秒粒度）。
+   *
+   * 解析失败时**不覆盖**已有基准：宁可保留上一次的，也不要退化成
+   * 本地时钟 —— 后者会让「护盾是否生效」的判断静默改变答案。
+   */
+  function calibrateServerClock(serverNowMs: number): void {
+    if (!Number.isFinite(serverNowMs) || serverNowMs <= 0) return
+    serverTimeMs = serverNowMs
+    serverTimeReceivedAtMs = Date.now()
   }
 
   /**
@@ -201,7 +301,7 @@ export const useGameStore = defineStore('game', () => {
   async function refreshProfile(): Promise<void> {
     try {
       const [w, me] = await Promise.all([api.fetchWallet(), api.fetchMe()])
-      wallet.value = w
+      wallet.value = { ...w, tokens: w.tokens ?? {} }
       power.value = me.power
       buildRating.value = me.build_rating
       build.value = me.build
@@ -217,7 +317,10 @@ export const useGameStore = defineStore('game', () => {
 
   async function refreshWallet(): Promise<void> {
     try {
-      wallet.value = await api.fetchWallet()
+      // tokens ?? {} 是对**旧版服务端**的兜底（没这个字段时不该让页面崩），
+      // 不是对当前契约的容忍 —— 契约由 /wallet 的类型定义表达。
+      const fresh = await api.fetchWallet()
+      wallet.value = { ...fresh, tokens: fresh.tokens ?? {} }
     } catch {
       /* 忽略 */
     }

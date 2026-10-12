@@ -97,7 +97,9 @@ export function makeMasteryFamily(over: Partial<MasteryFamily> = {}): MasteryFam
 /** 页面/store 共用的最小 GameConfig。over 深度覆盖顶层字段即可。 */
 export function makeConfig(over: Partial<GameConfig> = {}): GameConfig {
   return {
-    version: 1,
+    // version 是服务端下发的**内容哈希**（16 位十六进制），不是自增序号。
+    // 测试里用固定值即可 —— 消费方只做字符串比对，不做运算。
+    version: 'fixture0000000001',
     levels: [makeLevel(), makeLevel({ id: 2, chapter: 1 }), makeLevel({ id: 3, chapter: 2 })],
     enemies: [makeEnemy()],
     skills: [makeSkill(), makeSkill({ id: 2, code: 'frost', name: '冰霜弹', element: 'ice' as Element, family: 'frost' })],

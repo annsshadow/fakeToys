@@ -1,4 +1,4 @@
-// @vitest-environment jsdom
+﻿// @vitest-environment jsdom
 /**
  * 战斗页（battle.vue）组件测试 —— 只测页面自身逻辑。
  *
@@ -24,7 +24,7 @@ import { makeConfig, makeLevel } from '../../test/fixtures'
 
 vi.mock('@/api/client', () => ({
   guestLogin: vi.fn(),
-  fetchConfig: vi.fn(),
+  fetchConfigIfVersion: vi.fn(),
   fetchWallet: vi.fn(),
   fetchMe: vi.fn(),
   fetchLoadout: vi.fn(),
@@ -187,8 +187,8 @@ beforeEach(() => {
     expires_at: '',
     user: { id: 7, nickname: '我', avatar_url: '', is_guest: true, status: 1 },
   })
-  mockApi.fetchConfig.mockResolvedValue(makeConfig())
-  mockApi.fetchWallet.mockResolvedValue({ coin: 1, gem: 2, energy: 30, keys: 4 })
+  mockApi.fetchConfigIfVersion.mockResolvedValue({ status: 'modified', config: makeConfig(), serverTimeMs: 0 })
+  mockApi.fetchWallet.mockResolvedValue({ coin: 1, gem: 2, energy: 30, keys: 4, tokens: {} })
   mockApi.fetchMe.mockResolvedValue({ user_id: 7, build: null, build_rating: null, power: 9 } as any)
   mockApi.startBattle.mockResolvedValue(startBattleResp as any)
   mockApi.settleBattle.mockResolvedValue({

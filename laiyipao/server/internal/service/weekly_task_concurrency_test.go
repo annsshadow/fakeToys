@@ -209,14 +209,79 @@ func TestConcurrentClaimOnWeeklyTaskIsAlsoOnce(t *testing.T) {
 
 	// daily 那一行**必须仍然不存在** —— 若代码某处把 day 写成 daily，
 	// 会凭空多出一行 progress=0 的 daily 记录。
-	var dailyRows int
-	if err := ts.pool.QueryRow(ctx,
-		`SELECT COUNT(*) FROM user_tasks
-		  WHERE user_id = $1 AND task_id = $2 AND task_date = $3`,
-		uid, taskID, periodStart(time.Now(), "daily")).Scan(&dailyRows); err != nil {
-		t.Fatal(err)
+	//
+	// ⚠️ **这条断言在「周一」不可判定**（第 150 轮发现：本包长期红的原因）。
+	//
+	// `periodStart(now,"weekly")` 是本周一，`periodStart(now,"daily")` 是今天。
+	// 两者在**周一完全相等** —— 于是本用例自己插进去的那一行 weekly 记录，
+	// 也正好是下面这条 SQL 找的那一行 daily 记录。
+	// 结论：`dailyRows != 0` 是**必然成立**的，与代码有没有写死 daily 无关。
+	//
+	// 这就是「一个测不出区别的断言」：它每天在周一红，其余 6 天绿，
+	// 于是 CI 上看起来像"偶发失败"，被当成 flake 重试掉。
+	// （实测：README 记录的「全绿」那天是 10-10，周六。）
+	//
+	// 修法不是删掉断言，而是**只在两者不等时**判定 ——
+	// 周一那天的"是否写死 daily"确实无法从数据库状态观测出来，
+	// 这条断言本来就观察不到它。
+	dailyDay := periodStart(time.Now(), "daily")
+	weeklyDay := periodStart(time.Now(), "weekly")
+	if dailyDay.Equal(weeklyDay) {
+		t.Logf("今天是周一：daily 与 weekly 的 periodStart 相同（%s），"+
+			"「不存在 daily 行」不可判定 —— 跳过这一条，其余断言仍有效",
+			dailyDay.Format("2006-01-02"))
+	} else {
+		var dailyRows int
+		if err := ts.pool.QueryRow(ctx,
+			`SELECT COUNT(*) FROM user_tasks
+			  WHERE user_id = $1 AND task_id = $2 AND task_date = $3`,
+			uid, taskID, dailyDay).Scan(&dailyRows); err != nil {
+			t.Fatal(err)
+		}
+		if dailyRows != 0 {
+			t.Errorf("daily 那一行被凭空写出来了（%d 行）—— 代码里还有地方把 day 写死成 daily", dailyRows)
+		}
 	}
-	if dailyRows != 0 {
-		t.Errorf("daily 那一行被凭空写出来了（%d 行）—— 代码里还有地方把 day 写死成 daily", dailyRows)
+}
+
+// TestPeriodStartWeeklyNeverCollapsesToDaily 把「weekly 与 daily 的周期起点不同」
+// 这件事本身钉成不变量，而不是让它散落在各处的调用方心里。
+//
+// 这条**直接**排除掉第 150 轮那个「周一必然红」的前提：
+// 在**非周一**的时间点上，weekly 起点必须严格早于 daily 起点。
+//
+// 为什么用函数指针注入时间：`periodStart` 读的是传进来的 `t`，
+// 所以这里根本不需要改生产代码签名 ——
+// 直接给一个固定的周二即可，连时钟都不用 mock。
+func TestPeriodStartWeeklyNeverCollapsesToDaily(t *testing.T) {
+	// 覆盖一整周七天，逐日断言而不只看今天 ——
+	// 只测「今天」的话，周一那天必然漏掉（那正是原缺陷藏身的地方）。
+	base := time.Date(2026, 10, 12, 13, 45, 0, 0, time.UTC) // 周一
+	for d := 0; d < 7; d++ {
+		now := base.AddDate(0, 0, d)
+		daily := periodStart(now, "daily")
+		weekly := periodStart(now, "weekly")
+		if weekly.After(daily) {
+			t.Errorf("%s（周%s）：weekly 起点 %s 晚于 daily 起点 %s",
+				now.Format("2006-01-02"), now.Weekday(), weekly, daily)
+		}
+		if d == 0 {
+			// 周一：两者**必须**相等 —— 这正是原缺陷成立的条件。
+			// 把它写成断言（而不是只写注释），是为了让"周一相等"这条事实
+			// 在有人改动 periodStart 时立刻响，而不是悄悄变成另一种形态。
+			if !weekly.Equal(daily) {
+				t.Errorf("周一的 weekly/daily 起点应相等，实际 %s vs %s", weekly, daily)
+			}
+		} else {
+			if weekly.Equal(daily) {
+				t.Errorf("%s（周%s）：weekly 起点与 daily 起点相同 —— "+
+					"「daily 行不存在」类断言在这一天不可判定", now.Format("2006-01-02"), now.Weekday())
+			}
+			// weekly 必须落在**之前**的某个周一
+			if diff := daily.Sub(weekly); diff <= 0 || diff > 7*24*time.Hour {
+				t.Errorf("%s：weekly 起点 %s 与 daily 相差 %v，不在 (0, 7天] 内",
+					now.Format("2006-01-02"), weekly, diff)
+			}
+		}
 	}
 }
