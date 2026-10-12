@@ -623,7 +623,7 @@ class TestStreamingGrouping:
                 emb[c] = emb[base]
 
         dedup = Deduplicator(threshold=0.9)
-        monkeypatch.setattr(dedup, "_batch_encode", lambda texts: emb)
+        monkeypatch.setattr(dedup, "_batch_encode", lambda texts, vocab=None: emb)
 
         texts = ["t%d" % i for i in range(n)]
         expected = self._naive_groups(
@@ -643,7 +643,7 @@ class TestStreamingGrouping:
         emb[20] = emb[15]
 
         dedup = Deduplicator(threshold=0.85)
-        monkeypatch.setattr(dedup, "_batch_encode", lambda texts: emb)
+        monkeypatch.setattr(dedup, "_batch_encode", lambda texts, vocab=None: emb)
 
         texts = ["t%d" % i for i in range(n)]
         expected = self._naive_groups(
@@ -717,7 +717,7 @@ class TestStreamingGrouping:
         from augmentor.dedup import _MAX_BLOCK_CELLS
 
         dedup = Deduplicator(threshold=0.99)
-        monkeypatch.setattr(dedup, "_batch_encode", lambda texts: emb)
+        monkeypatch.setattr(dedup, "_batch_encode", lambda texts, vocab=None: emb)
 
         shapes = []
         original = dedup._iter_similarity_row_blocks
@@ -760,7 +760,7 @@ class TestStreamingGrouping:
         emb = np.random.default_rng(3).random((n, dim), dtype=np.float32)
 
         dedup = Deduplicator(threshold=0.99)
-        monkeypatch.setattr(dedup, "_batch_encode", lambda texts: emb)
+        monkeypatch.setattr(dedup, "_batch_encode", lambda texts, vocab=None: emb)
 
         tracemalloc.start()
         try:
