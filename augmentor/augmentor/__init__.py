@@ -124,7 +124,7 @@ from .exceptions import (
     StreamError,
     VersionError,
     PipelineError,
-    BackupError,
+    BackupError, BackupIntegrityError,
     VectorError
 )
 
@@ -346,7 +346,7 @@ __all__ = [
     "StreamError",
     "VersionError",
     "PipelineError",
-    "BackupError",
+    "BackupError", "BackupIntegrityError",
     "VectorError"
 ]
 

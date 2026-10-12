@@ -90,9 +90,13 @@ CHECK_LINE = re.compile(r"^- \[x\] \*\*L\d+")
 LOG_HEAD = re.compile(r"^### L\d+")
 
 #: 现量读数（本轮补标之后）。**精确相等**，理由见模块 docstring。
-MEASURED_ROWS = 248
+#: **L243 重量**：表行 248 → **251**（新立 A329 / A330 / A331 三行，全是待拍、不带标记），
+#: 有标记 132 → **134**（A299 与 A300 各带一格 `~~X~~ 已收口（L243）`）。声明面 **116 一格未动**
+#: ——本轮清单行刻意把三条新账写成「Axxx（限定词）」的括号形状（口径 5 的断口），所以既没有新增
+#: 声明、也没有造出假欠账；这一格由 `test_gap_equals_partial_roster` 现场证明，不靠自述。
+MEASURED_ROWS = 251
 MEASURED_DECLARED = 116
-MEASURED_MARKED = 132
+MEASURED_MARKED = 134
 #: 声明面点到、但表里已经没有行的 ID 数（口径 2，历史行被裁撤）。
 MEASURED_PHANTOM = 46
 #: 本轮开工前实测的欠账笔数：17 笔补标 + 3 笔半程。

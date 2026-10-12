@@ -5,7 +5,7 @@
 
 补齐 CLI 里属于「运维 / 治理」而非「数据变换」的独有能力：依赖诊断、配置验证、
 质量监控、自动化测试、数据迁移、流式处理、数据集依赖登记，以及备份的
-创建 / 列表 / 恢复 / 删除。
+创建 / 列表 / 恢复 / 删除 / 完整性校验 / 清理旧备份。
 
 这些能力此前只在命令行可用，Web 端因此无法回答「当前环境缺什么依赖」
 「这份配置合不合法」「数据集之间是什么依赖关系」这类问题。
@@ -17,7 +17,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 
-from augmentor.exceptions import BackupError
+from augmentor.exceptions import BackupError, BackupIntegrityError
 from augmentor.migration import BUILTIN_MIGRATION_RULE_IDS
 from augmentor.auto_test import DEFAULT_SUITE_NAME
 
@@ -633,6 +633,11 @@ async def restore_backup_endpoint(
     保持一致 —— 同一个「备份不存在」在同一组路由里不该有两种状态码。
     ``BackupError`` 在库里只有一个抛出点（「备份不存在: xxx」），因此可以
     安全地整体映射成 404。
+
+    校验和与索引里那一格不匹配时返回 **409**：备份文件在、ID 也在，坏的是内容本身，
+    与「资源不存在」在客户面上是相反的两件事。库里 ``BackupIntegrityError`` 在覆盖
+    输出路径**之前**抛出，所以 409 这一档**一个字节都不写**（A299 收口的正是
+    「改坏的备份照样恢复成 200」那一格）。
     """
     try:
         from augmentor.backup import restore_backup
@@ -644,6 +649,8 @@ async def restore_backup_endpoint(
         )
     except HTTPException:
         raise
+    except BackupIntegrityError as e:
+        raise HTTPException(status_code=409, detail=str(e)) from e
     except Exception as e:
         raise to_http_error(
             e, not_found="备份不存在", not_found_types=(BackupError,)
@@ -669,6 +676,110 @@ async def delete_backup_endpoint(
         if not success:
             raise HTTPException(status_code=404, detail="备份不存在")
         return {"success": True}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise to_http_error(e) from e
+
+
+# ============ 备份完整性（L243 新立：A299 / A300）============
+
+
+class BackupVerifyEntryResponse(BaseModel):
+    """一只备份的完整性读数（与 `verify_backup_integrity()` 每格的键一一对应，另附 `backup_id`）
+
+    SDK 那份返回是「以 `backup_id` 为键的字典」，这里摊成列表并把键名写成字段：
+    动态键在 OpenAPI 里是 `additionalProperties: true` 的自由字典（A278 那一族），
+    客户与页面都拿不到稳定的字段名。顺序沿用 SDK 与索引文件的顺序，不额外排序。
+    """
+    backup_id: str
+    exists: bool
+    checksum_match: bool
+    item_count: int
+    timestamp: str
+
+
+class BackupVerifyResponse(BaseModel):
+    """`GET /api/system/backups/verify` 的回执（目录不存在时是空列表，不是 404）"""
+    results: List[BackupVerifyEntryResponse]
+
+
+class BackupCleanupRequest(BaseModel):
+    """清理请求体。`max_backups` 是**保留份数**，不是删除份数"""
+    max_backups: int = 10
+
+
+class BackupCleanupResponse(BaseModel):
+    """清理回执：实际删掉几条，以及按哪一档保留"""
+    deleted_count: int
+    max_backups: int
+
+
+@router.get(
+    "/api/system/backups/verify",
+    response_model=BackupVerifyResponse,
+    summary="校验备份完整性",
+)
+async def verify_backups_endpoint(
+    backup_id: Optional[str] = Query(
+        None, description="只校验这一只备份；缺省时校验目录下的全部备份"
+    ),
+    backup_dir: Optional[str] = Query(None, description=BACKUP_DIR_DESC),
+):
+    """逐只重算备份文件的 sha256，与索引里登记的那一格比对
+
+    这是 `POST …/{backup_id}/restore` 那道 409 闸的**主动查**版本：恢复只在覆盖输出
+    路径之前拦一次，而这一只端点让用户在按「恢复」之前就知道哪一份是坏的（A299 的
+    第三条修法方向，与 A300 是同一件事）。
+
+    两个刻意与同族不同的口径：
+
+    * **目录不存在时回空列表，且不把目录建出来**：`DatasetBackup` 的构造会 `mkdir`
+      并落一份 `index.json`，而这是一只只读端点（A307 盯的正是「只读端点写盘」）。
+    * **逐只哈希要在 `run_in_thread` 里跑**：这是本路由里最慢的一只读操作（读全部
+      备份文件并做 sha256），留在事件循环上等于让每个并发请求排队等磁盘。
+
+    `backup_id` 给一个索引里没有的名字 ⇒ 回空列表而不是 404：这一只端点的语义是
+    「报告目录里哪些备份是坏的」，而不存在的 ID 既不是坏的也不是好的，报告不了任何事。
+    """
+    try:
+        from augmentor.backup import verify_backup_integrity
+
+        resolved = _resolve_backup_dir(backup_dir)
+        if not resolved.exists():
+            return {"results": []}
+        results = await run_in_thread(verify_backup_integrity, str(resolved), backup_id)
+        return {"results": [{"backup_id": key, **value} for key, value in results.items()]}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise to_http_error(e) from e
+
+
+@router.post(
+    "/api/system/backups/cleanup",
+    response_model=BackupCleanupResponse,
+    summary="清理旧备份",
+    dependencies=[Depends(verify_api_key)],
+)
+async def cleanup_backups_endpoint(
+    request: BackupCleanupRequest,
+    backup_dir: Optional[str] = Query(None, description=BACKUP_DIR_DESC),
+):
+    """按 `timestamp` 保留最新 `max_backups` 份，其余删除
+
+    破坏性写操作，因此挂 `verify_api_key`（与创建 / 恢复 / 删除同档）。`max_backups`
+    由库里的 `require_count` 判参：**0 与负数一律 400**——「保留 0 份」与手滑想打 10
+    无从分辨，而按 HEAD 那套删除算术，负数等于把目录里的备份全删光。
+    """
+    try:
+        from augmentor.backup import clean_old_backups
+
+        resolved = _resolve_backup_dir(backup_dir)
+        deleted = await run_in_thread(
+            clean_old_backups, str(resolved), request.max_backups
+        )
+        return {"deleted_count": deleted, "max_backups": request.max_backups}
     except HTTPException:
         raise
     except Exception as e:

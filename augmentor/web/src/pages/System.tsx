@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Alert, AutoComplete, Button, Card, Col, Input, InputNumber, Popconfirm, Row, Select, Space, Statistic, Table, Tag, message } from 'antd'
-import { apiErrorDetail, createBackup, deleteBackup, getDataFiles, getDependencyGraph, getServiceStatus, getVectorStatus, listBackups, listDependencyDatasets, migrateDataset, registerDependencyDataset, restoreBackup, runDatasetAutoTest, runQualityMonitor, streamProcess, systemDependencies } from '../services/api'
-import type { BackupInfo, DatasetRegistryEntry, DependencyDiagnostics, DependencyGraphResponse, MigrationResponse, QualitySnapshotResponse, StreamReportResponse, TestSuiteResponse } from '../types/api'
+import { apiErrorDetail, cleanupBackups, createBackup, deleteBackup, getDataFiles, getDependencyGraph, getServiceStatus, getVectorStatus, listBackups, listDependencyDatasets, migrateDataset, registerDependencyDataset, restoreBackup, runDatasetAutoTest, runQualityMonitor, streamProcess, systemDependencies, verifyBackups } from '../services/api'
+import type { BackupInfo, BackupVerifyEntry, DatasetRegistryEntry, DependencyDiagnostics, DependencyGraphResponse, MigrationResponse, QualitySnapshotResponse, StreamReportResponse, TestSuiteResponse } from '../types/api'
 import type { StatusResponse, VectorStatusResponse } from '../types/api'
 
 /**
@@ -93,6 +93,8 @@ export default function System() {
   const [sourceFile, setSourceFile] = useState('')
   const [backupName, setBackupName] = useState('')
   const [restoreTarget, setRestoreTarget] = useState('')
+  const [verifyRows, setVerifyRows] = useState<BackupVerifyEntry[] | null>(null)
+  const [keepCount, setKeepCount] = useState(10)
   // 一格 busy 同时管三只写操作：'create' 或某个 backup_id，避免同一行被点两次
   const [busy, setBusy] = useState('')
   const [datasets, setDatasets] = useState<DatasetRegistryEntry[] | null>(null)
@@ -171,6 +173,8 @@ export default function System() {
 
   const refreshBackups = async () => {
     setBackupsLoading(true)
+    // 列表一变，上一次逐只哈希的读数就可能是关于已被删掉的备份 ⇒ 一起清掉，不留旧判决
+    setVerifyRows(null)
     try {
       setBackups((await listBackups()).backups)
     } catch (err) {
@@ -237,6 +241,44 @@ export default function System() {
       await refreshBackups()
     } catch (err) {
       message.error(apiErrorDetail(err, '删除备份失败'))
+    } finally {
+      setBusy('')
+    }
+  }
+
+  /**
+   * 完整性是「点一次查一次」，不随列表自动刷：这一只端点要把目录下每份文件读一遍并算
+   * sha256（本路由里最慢的读操作），不该在每次进页面时替用户付这笔钱。查完的结果留在
+   * `verifyRows` 里，直到下一次刷新列表或清理动作把它清掉——留着旧读数比假装它在动更好。
+   */
+  const handleVerify = async () => {
+    setBusy('verify')
+    try {
+      const result = await verifyBackups()
+      setVerifyRows(result.results)
+      const broken = result.results.filter((item) => !item.checksum_match)
+      if (broken.length) {
+        message.warning(`${broken.length} 只备份的校验和对不上，恢复它们会拿 409`)
+      } else {
+        message.success(`已校验 ${result.results.length} 只备份，全部对得上`)
+      }
+    } catch (err) {
+      setVerifyRows(null)
+      message.error(apiErrorDetail(err, '校验备份完整性失败'))
+    } finally {
+      setBusy('')
+    }
+  }
+
+  const handleCleanup = async () => {
+    setBusy('cleanup')
+    try {
+      const result = await cleanupBackups({ maxBackups: keepCount })
+      message.success(`已删除 ${result.deleted_count} 只旧备份，保留最新 ${result.max_backups} 只`)
+      setVerifyRows(null)
+      await refreshBackups()
+    } catch (err) {
+      message.error(apiErrorDetail(err, '清理旧备份失败'))
     } finally {
       setBusy('')
     }
@@ -635,6 +677,29 @@ export default function System() {
           </span>
         </Space>
 
+        <Space wrap style={{ marginTop: 12 }}>
+          <Button aria-label="校验备份完整性" loading={busy === 'verify'} onClick={handleVerify}>
+            校验完整性
+          </Button>
+          <InputNumber
+            aria-label="保留备份份数"
+            min={1}
+            precision={0}
+            style={{ width: 96 }}
+            value={keepCount}
+            onChange={(value) => setKeepCount(value ?? 1)}
+          />
+          <Popconfirm
+            title={`只保留最新 ${keepCount} 份备份？`}
+            description="按索引里的时间戳从新到旧排，多出来的那些会连文件一起删掉"
+            onConfirm={handleCleanup}
+          >
+            <Button danger aria-label="清理旧备份" loading={busy === 'cleanup'}>
+              清理旧备份
+            </Button>
+          </Popconfirm>
+        </Space>
+
         {backups ? (
           <Table
             size="small"
@@ -694,6 +759,39 @@ export default function System() {
           />
         )}
 
+        {verifyRows ? (
+          <Table
+            size="small"
+            style={{ marginTop: 12 }}
+            rowKey={(row) => `${row.backup_id}#${row.timestamp}`}
+            dataSource={verifyRows}
+            pagination={false}
+            columns={[
+              { title: '备份 id', dataIndex: 'backup_id' },
+              { title: '时间', dataIndex: 'timestamp', width: 190 },
+              { title: '条数', dataIndex: 'item_count', width: 70 },
+              {
+                title: '文件在不在',
+                dataIndex: 'exists',
+                width: 110,
+                render: (exists: boolean) =>
+                  exists ? <Tag>在</Tag> : <Tag color="red">文件丢了</Tag>
+              },
+              {
+                title: '校验和',
+                dataIndex: 'checksum_match',
+                width: 110,
+                render: (match: boolean, row: BackupVerifyEntry) =>
+                  match ? (
+                    <Tag color="green">对得上</Tag>
+                  ) : (
+                    <Tag color="red">{row.exists ? '对不上' : '没法比'}</Tag>
+                  )
+              }
+            ]}
+          />
+        ) : null}
+
         <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75 }}>
           源文件与恢复目标都受**同一份白名单**管：白名单外的绝对路径是 403「路径超出允许的数据
           目录范围」，带 .. 的是 400「路径包含非法组件」，恢复目标为空串是 400「文件路径 不能为
@@ -707,8 +805,15 @@ export default function System() {
           而删除是按 id 过滤的 ⇒ 删一次两条一起消失（A298）。
         </div>
         <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
-          checksum 是备份文件的 sha256，但它**只在恢复时写日志、不拦截恢复**：把备份文件改坏再
-          恢复照样 200，交回来的就是改坏的内容（A299）。别把这一格读成完整性保证。
+          checksum 是备份文件的 sha256。它现在**会拦**：恢复前对不上就回 409，且一个字节都不写
+          ——库是在覆盖输出文件**之前**抛的，所以坏备份不会再把自己灌进你的目标路径（A299 已收）。
+          上面那只「校验完整性」就是把这一格逐份读一遍算哈希，不必等恢复才发现。
+        </div>
+        <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
+          「校验完整性」按目录里**索引登记的每一行**逐只哈希，这是本路由最慢的读操作，所以做成
+          点一次查一次、不随列表自动刷；结果留在下面那张小表里。「文件在不在」那一格判的是
+          「存在**且非空**」，零字节文件也算丢。索引里两条同 id 的记录在这里只会出**一行**
+          （结果以备份 id 为键，后一条覆盖前一条），和列表那张能出两行不一样（A298 的另一面）。
         </div>
         <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
           恢复的回执里落点键叫 output_path，而同族其余五只写盘端点叫 output_file（split 叫
@@ -720,10 +825,13 @@ export default function System() {
           不是同一个目录**（A301）。
         </div>
         <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
-          服务端设了 AUGMENTOR_API_KEY 时，这一族的三只写操作会回 401「缺少或无效的
+          服务端设了 AUGMENTOR_API_KEY 时，这一族的写操作会回 401「缺少或无效的
           X-API-Key」——到「配置管理 → 写操作鉴权」存一份 key，页面就会随每个请求把它送出去
-          （A302 已收）。SDK 里还有 clean_old_backups 与 verify_backup_integrity 两个函数，
-          HTTP 面没有入口，所以页面上做不到「清理旧备份」与「单独校验一份备份」（A300）。
+          （A302 已收）。「清理旧备份」与「校验完整性」现已有 HTTP 入口（A300 已收）：前者是
+          写操作，跟着这一族一起挂鉴权；后者只读，不鉴权。「保留份数」下面那只数字框送的是
+          **保留几条**而不是删除几条，0 与负数在服务端是 400，所以页面把下限钉在 1；这一格数的是
+          **索引里的行数**，同名两条会占掉两个名额却只删一次文件（A298）。CLI 的
+          backup 仍是 create / restore / list / delete 四档，没有这两档（A329）。
         </div>
       </Card>
 

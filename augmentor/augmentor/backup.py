@@ -17,7 +17,7 @@ from datetime import datetime
 
 from .atomic_write import atomic_write_json
 from .validation import require_count
-from .exceptions import BackupError, DataValidationError
+from .exceptions import BackupError, BackupIntegrityError, DataValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -175,7 +175,7 @@ class DatasetBackup:
         # 验证校验和
         current_checksum = self._calculate_checksum(str(backup_path))
         if current_checksum != backup_info["checksum"]:
-            logger.warning("备份文件校验和不匹配，文件可能已损坏")
+            raise BackupIntegrityError(f"备份文件校验和不匹配，文件可能已损坏，未执行恢复: {backup_id}")
         
         # 读取备份数据
         with open(backup_path, 'r', encoding='utf-8') as f:

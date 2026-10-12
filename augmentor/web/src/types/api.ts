@@ -1212,12 +1212,43 @@ export interface BackupListResponse {
  * 落点键叫 **`output_path`**，而同族其余五只写盘端点叫 `output_file`（`split` 叫
  * `output_dir`）——这一格是 SDK `restore()` 的返回键原样上线，不是笔误可改的（账本 A277
  * 当年订正的正是「文档把这一族一律写成 `output_path`」）。恢复**覆盖**目标文件（实测把
- * 一份写有别的内容的文件整份换掉），且不做校验和拦截。
+ * 一份写有别的内容的文件整份换掉），但**校验和不匹配会拦**：库里在覆盖输出路径之前抛
+ * `BackupIntegrityError`，端点回 **409**、一个字节都不写（账本 A299，L243 收口）。
  */
 export interface RestoreBackupResponse {
   backup_id: string
   output_path: string
   item_count: number
+}
+
+/**
+ * 一只备份的完整性读数：`GET /api/system/backups/verify` 的列表元素
+ *
+ * SDK 侧那份返回是「以 `backup_id` 为键的字典」，端点把它摊成列表并把键名写成字段
+ * （动态键在 OpenAPI 里落进 `additionalProperties: true` 的自由字典，客户拿不到稳定
+ * 字段名，账本 A278）。`checksum_match` 是**重算 sha256 与索引里那一格比**的结果；
+ * 文件不在或长度为 0 时 `exists` 与 `checksum_match` 同为 false（实测形状）。
+ */
+export interface BackupVerifyEntry {
+  backup_id: string
+  exists: boolean
+  checksum_match: boolean
+  item_count: number
+  timestamp: string
+}
+
+/**
+ * `GET /api/system/backups/verify`：目录不存在时回 **空列表**（200），不是 404，
+ * 也不会把目录建出来；`backup_id` 给一个索引里没有的名字同样回空列表
+ */
+export interface BackupVerifyResponse {
+  results: BackupVerifyEntry[]
+}
+
+/** `POST /api/system/backups/cleanup`：`max_backups` 是**保留份数**，0 与负数一律 400 */
+export interface BackupCleanupResponse {
+  deleted_count: number
+  max_backups: number
 }
 
 /**
