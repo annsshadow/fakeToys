@@ -109,7 +109,12 @@ NS_PREFIXES = frozenset({
 #: ⇒ 五格全落可读档。实测 CALLS 421 → **426**、READABLE 303 → **308**、盲面仍 **118**，
 #: l98 侧四档和（58+11+38+11=118）一字未动；读数出自仓外探针 `l238_census.py`
 #: （`static_rows(TESTS_ROOT)` 逐处打印 `literal` 归属），不是按「字面量 ⇒ 可读」推的。
-MEASURED_CALLS = 426
+#: **L240 回填（CALLS +3、READABLE +3、盲面一格未动）**：`test_leakage_dense_route_l240.py` 三支
+#: parametrize（判据零/负侧五档 / 阈值与示例数边角三档 / 两条路线各一支）值位全是内联字面清单
+#: ⇒ 现量三格都落 `plain` 桶。实测 CALLS 426 → **429**、READABLE 308 → **311**、盲面仍 **118**，
+#: l98 侧四档和一字未动；读数出自仓外探针（直接 `import` 本模块的 `param_sites(TESTS_ROOT)`
+#: 逐处打印桶归属：303/346/455 三行全 `plain`），不是按「字面量 ⇒ 可读」推的。
+MEASURED_CALLS = 429
 #: （L185：${ENV} 展开语义守卫两支 parametrize（坏形状 5 档 / 非串 4 档，全是字面清单）
 #: ⇒ CALLS 382 → 384、READABLE 281 → 283，盲面 101 一格未动）
 #: （L189：验证预设封闭清单守卫一支 parametrize（坏预设 5 档，全字面清单）⇒
@@ -122,7 +127,8 @@ MEASURED_CALLS = 426
 #: （L230：八支全是内联字面清单 ⇒ READABLE 293 → **301**，与 CALLS 同涨 8）
 #: （L232：两支全是内联字符串字面清单 ⇒ READABLE 301 → **303**，与 CALLS 同涨 2）
 #: （L238：五支全是内联字面清单 ⇒ READABLE 303 → **308**，与 CALLS 同涨 5，盲面不动）
-MEASURED_READABLE = 308
+#: （L240：三支全是内联字面清单 ⇒ READABLE 308 → **311**，与 CALLS 同涨 3，盲面不动）
+MEASURED_READABLE = 311
 #: L175：搜索方法封闭清单守卫两支 parametrize（坏值 6 档 / 合法 5 档，全是字面
 #: 清单）⇒ CALLS 379 → 381、READABLE 278 → 279，盲面（no-literal-list 桶）101 不动。
 #: L217：普查守卫三支无 ids parametrize ⇒ 盲面 108 → **111**（与 CALLS +3 同数，
