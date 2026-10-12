@@ -73,7 +73,7 @@ class PiiSanitizer:
         """
         # L188: falsy-zero guard — 显式空容器（[] / {}）是「零元素」的合法意图，不是「没传」；
         # 旧写法 `x or default` 把空容器读成没传而悄悄套上默认，脱敏范围/字段面被无声放大。
-        self.fields = fields if fields is not None else ["instruction", "input", "output"]
+        self.fields = fields if fields is not None else list(DEFAULT_TEXT_FIELDS)
         self.patterns = patterns if patterns is not None else DEFAULT_PATTERNS
         self.placeholders = placeholders if placeholders is not None else {
             name: f"[{name.upper()}]" for name in self.patterns
@@ -172,3 +172,22 @@ def sanitize_pii(items: List[Dict[str, Any]],
     if include_extra:
         patterns.update(EXTRA_PATTERNS)
     return PiiSanitizer(fields=fields, patterns=patterns).sanitize_dataset(items)
+
+
+# 缺省文本面的唯一权威（A285 / L257）：「不给字段时看哪三格」此前在仓内手写五遍——
+# 本模块的 PiiSanitizer 与 audit.DatasetAuditor 各一遍，CLI 的 clean / sanitize /
+# audit 三条 --fields 各一遍。五份字面量语义是同一句话，抄五份的代价是任何一处改动
+# 就让五面各说各话，而 l227 那把「页面发得出的每一档都被端点接受」的尺子在没有权威
+# 常数时只能退到运行时判据（升级成逐项对账的前提就是这一格存在）。
+# 同场另有两条 --fields 不属这一族：analyze 的默认面是 instruction + output 两格，
+# check-leakage 只比 instruction 一格——它们各有权威，不由这一格收编。
+#
+# 为什么定义在文件末尾而不是紧挨 DEFAULT_PATTERNS：账本与 l227 / l228 两把守卫的模块
+# docstring 把本模块第 76 行和 audit.py 第 68 行钉成活引用，在它们之上插任何一行都会
+# 把落点平移成上一行——那正是 A337 / A338 那一族「行号还在、指的已不是那句」的形状。
+# 取用点在第 76 行（`__init__` 运行时才查这个名字），所以定义住在尾部既能保持五格引用
+# 逐字不漂，又仍然只有一份字面量。
+#
+# 为什么是元组而不是列表：模块级可变列表被多处共引，任何一处就地 append 会无声改掉
+# 其余各处的默认面。需要列表的调用点自己 list() 一份。
+DEFAULT_TEXT_FIELDS = ("instruction", "input", "output")

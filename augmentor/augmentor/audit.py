@@ -18,7 +18,7 @@ from typing import Any, Dict, List, Optional
 
 from .dedup import Deduplicator
 from .leakage import detect_leakage
-from .privacy import PiiSanitizer
+from .privacy import DEFAULT_TEXT_FIELDS, PiiSanitizer
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +65,7 @@ class DatasetAuditor:
             duplicate_threshold: 去重相似度阈值
             pii_free_required: 是否要求零 PII 才判定就绪
         """
-        self.fields = fields or ["instruction", "input", "output"]
+        self.fields = fields or list(DEFAULT_TEXT_FIELDS)
         self.duplicate_threshold = duplicate_threshold
         self.pii_free_required = pii_free_required
 
