@@ -88,8 +88,9 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 VOLUMES = ("OPTIMIZATION_LOOP.md", "OPTIMIZATION_LOOP_2.md")
 
 #: 区段边界（L254 / A337 修法③）。**只认这一形**：卷一的日志块标题不是 `### LNNN` 而是别的写法，
-#: 用 `### L` 当边界会让卷一整个日志区留在「Backlog」里——现量核对过：卷一的 `## 循环日志` 在第 349 行、
-#: 卷二在第 225 行，两卷的这一形各只出现一次（由 `test_the_boundary_is_unique_per_volume` 钉住）。
+#: 用 `### L` 当边界会让卷一整个日志区留在「Backlog」里——现量：卷一的这一形恰 1 处，卷二也恰 1 处，
+#: 由 `test_the_boundary_is_unique_per_volume` 现场验。**不在这条注释里钉行号**：Backlog 区每长一行
+#: 它就漂一格，而「本账第 NNN 行」那一形没有尺子量（A333 / A338 的账）。
 LOG_SECTION = "## 循环日志"
 
 #: 口径 3：早轮有一位数与两位数账号（A1–A8、A45…），只认三位会让整个早轮面失明。
