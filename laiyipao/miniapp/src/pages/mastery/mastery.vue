@@ -10,6 +10,22 @@
           每层只能选 2 个节点（4 选 2），且第 2、3 层必须先点亮前一层 ——
           专精点不够点满任何一系，<b>必须做方向选择</b>。这是"专精点有限"之外的第二重约束。
         </text>
+        <!-- 重铸入口（第 150 轮）。
+             没有它，`mastery_reset` 就是商店里一件「买了不知道干嘛」的商品 ——
+             服务端这个端点从第 74 轮起就存在，客户端从来没接过。 -->
+        <view class="reset-row">
+          <text class="dim">重铸道具 {{ resetTokens }}</text>
+          <text
+            class="link"
+            :class="{ 'link-off': resetting || selected.length === 0 || resetTokens <= 0 }"
+            @click="resetMastery"
+          >
+            {{ resetting ? '重铸中…' : '重铸' }}
+          </text>
+        </view>
+        <text class="muted" style="display: block; margin-top: 8rpx">
+          重铸清空全部已点亮节点，<b>点数不变</b> —— 点错方向后唯一的改向途径。
+        </text>
       </view>
 
       <scroll-view scroll-x class="tab-scroll" :show-scrollbar="false">
@@ -65,6 +81,9 @@ const store = useGameStore()
 const points = ref(0)
 const selected = ref<number[]>([])
 const curFamily = ref('flame')
+/** mastery_reset 道具余额（服务端 /wallet 的 tokens 下发） */
+const resetTokens = computed(() => store.wallet.tokens?.['mastery_reset'] ?? 0)
+const resetting = ref(false)
 
 const families = computed(() => store.config?.mastery_families ?? [])
 
@@ -131,9 +150,46 @@ async function load() {
   }
 }
 
+/**
+ * 重铸专精。
+ *
+ * 三条前置判断都在本地先挡掉，但**真正的裁定始终在服务端**：
+ * 道具够不够、节点有没有，服务端说了算。本地挡只是为了
+ * 「没有道具时不要把按钮做成可点的样子」。
+ *
+ * 成功之后用回执里的状态直接刷 UI —— 回执回显的就是清完之后的真实状态，
+ * 再拉一次 `GET /mastery` 是白跑一趟，而且会有一个中间闪烁。
+ */
+async function resetMastery() {
+  if (resetting.value) return // 防连点：道具扣完第二次必失败，但失败提示很吵
+  if (resetTokens.value <= 0) {
+    uni.showToast({ title: '没有重铸道具（商城可购）', icon: 'none' })
+    return
+  }
+  if (selected.value.length === 0) {
+    uni.showToast({ title: '当前没有已点亮的节点', icon: 'none' })
+    return
+  }
+  resetting.value = true
+  try {
+    const res = await api.resetMastery()
+    points.value = res.points
+    selected.value = res.nodes ?? []
+    // 道具余额以服务端为准：本地减 1 在并发购买时会让余额短暂不准。
+    await store.refreshWallet()
+    await store.refreshProfile()
+    uni.showToast({ title: `已重铸，清掉 ${res.reset_cleared} 个节点`, icon: 'none' })
+  } catch (e) {
+    const msg = (e as any)?.error?.message ?? (e as Error).message
+    uni.showToast({ title: msg, icon: 'none', duration: 2500 })
+  } finally {
+    resetting.value = false
+  }
+}
+
 onMounted(async () => {
   if (!store.loggedIn) await store.login()
-  await load()
+  await Promise.all([load(), store.refreshWallet()])
 })
 </script>
 
@@ -180,6 +236,19 @@ onMounted(async () => {
   height: 10rpx;
   border-radius: 50%;
   background: var(--ok);
+}
+
+.reset-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 16rpx;
+}
+
+.link-off {
+  color: var(--muted) !important;
+  pointer-events: none;
 }
 
 .layer {
