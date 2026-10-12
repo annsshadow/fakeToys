@@ -1291,8 +1291,8 @@ export const validateConfigFile = async (
  *
  * 下面这些哨兵三种动机各不相同，都是量出来的，不是形状卫生：
  *
- * * `text_field` 的 `|| undefined` 是**躲判决的**：空串**不报错**，所有条目都取到空值 ⇒
- *   实测 `duplicate_rate` 变成 1.0、门禁在 `duplicate_rate` 那条上判负（**A321**）。
+ * * `text_field` 的 `|| undefined` 改前是**躲判决的**（A321：空串不报错、`duplicate_rate`
+ *   顶成 1.0）；L238 起后端判空串 / 纯空白 / 幽灵键一律 400 ⇒ 这一格只剩「不填走默认」。
  * * 三档阈值与 `block_on_warning` 的 `|| undefined` 是**必须的**：它们不是 `Optional`，
  *   送 `null` 实测 **422**（英文 `float_type` / `bool_type`）；而 `weights` 与 `pass_rate`
  *   是 `Optional`，送 `null` 是 200。axios 的 `JSON.stringify` 丢 `undefined` 但留 `null`。
@@ -1362,9 +1362,9 @@ export const systemDependencies = async (): Promise<DependencyDiagnostics> => {
  *   400 且 detail 把 `supported_langs` 列全、模型调用 **0** 次——语言闸在花钱之前。
  * * `output_file` 的 `|| undefined` 同理：空串与省略实测都回 `output_file=null`
  *   （后端那格是 falsy 判断），而越界落点是 **403 且模型调用 0 次**。
- * * `text_key` **刻意不做归一**：空串与幽灵键都**不报错**（实测 200、模型调用 **0** 次、
- *   `failed=0`，产物里凭空多出 `''` / `no_such_field` 两键），所以这一格没有「后端判决」
- *   可暴露——它是 **A322** 的案面，页面必须自己把口径写明，别让用户以为翻了。
+ * * `text_key` **刻意不做归一**：这一格自 L238 起**有判决了**——空串与数据集里没有的键一律
+ *   **400**，且判在模型与写盘之前（改前实测 200、模型调用 **0** 次、`failed=0`，产物里凭空
+ *   多出 `''` / `no_such_field` 两键，那是 **A322** 的案面）⇒ 页面那道必填闸只剩省一个来回。
  * * `keep_original` **直传**：它不是 `Optional`，送 `null` 实测 **422**（`bool_type`），
  *   而 `false` 是合法值 ⇒ 不能用 `||`（会把「不要原文」静默变成「要原文」）。
  *
