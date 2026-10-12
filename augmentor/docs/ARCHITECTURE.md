@@ -2695,7 +2695,7 @@ tests 树里被写进某处 `setattr` / `patch` 的目标位——上一段那�
 `DEFAULT_TARGET_SIZE` 读，因为 API 的 `Optional[int]` 字段会把「没填」原样传成 `None`），
 **判参先于数据短路**（空输入配坏参数仍要报参数错，否则坏参数会被空结果掩护掉），
 **判参先于副作用**（`backup.clean_old_backups` 的守卫排在 `DatasetBackup(backup_dir)`
-之前，因为构造本身会 mkdir 并写一份 `index.json`；`streaming` 的守卫排在 `StreamReader`
+之前，因为构造曾经会 mkdir 并写一份 `index.json`（L249 收 A332 / A307 后读面零副作用，这条先后由 `test_readonly_no_disk_writes_l249.py` 的 AST 那一档继续钉住）；`streaming` 的守卫排在 `StreamReader`
 构造的第一行，所以坏步长在 `StreamAugmentor.__init__` 就报，不必等一份数据读完——
 注意实测 `StreamWriter.__init__` 并不落盘（`open()` 发生在 `__enter__`），
 「先建 reader 才不留空产物」不成立，可证的只有「构造期即拒且磁盘无产物」），
