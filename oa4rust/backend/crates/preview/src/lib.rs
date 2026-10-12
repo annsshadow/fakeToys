@@ -246,6 +246,22 @@ impl LibreOfficePreview {
         }
     }
 
+    /// 文件名安全归一（2026-10 安全审计）：只取路径末段，剥离目录/`..` 成分，
+    /// 防止 `../../etc/cron.d/x` 这类穿越把 `temp_dir.join(file_name)` 写到沙箱外。
+    /// 空名、纯 `.`/`..`、含 NUL 一律返回 None。
+    fn safe_base_name(file_name: &str) -> Option<String> {
+        if file_name.is_empty() || file_name.contains('\0') {
+            return None;
+        }
+        let base = std::path::Path::new(file_name)
+            .file_name()
+            .and_then(|s| s.to_str())?;
+        if base.is_empty() || base == "." || base == ".." {
+            return None;
+        }
+        Some(base.to_string())
+    }
+
     fn detect_target_format(file_name: &str) -> &'static str {
         let ext = PathBuf::from(file_name)
             .extension()
@@ -272,6 +288,18 @@ impl LibreOfficePreview {
     ) -> PreviewResult<PathBuf> {
         let output_dir = self.temp_dir.join("output");
         tokio::fs::create_dir_all(&output_dir).await?;
+
+        // 2026-10 安全审计：target_format 会被拼进输出文件名与 libreoffice
+        // --convert-to 参数，限定纯字母数字，杜绝 ../ 穿越与畸形过滤器名。
+        if !target_format
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric())
+            || target_format.is_empty()
+        {
+            return Err(PreviewError::ConversionFailed(
+                "invalid target format".to_string(),
+            ));
+        }
 
         let output_path = output_dir.join(format!(
             "{}.{}",
@@ -312,10 +340,9 @@ impl PreviewService for LibreOfficePreview {
         let _converted = self.convert(file_data, file_name, target).await?;
         let output_path = self.temp_dir.join("output").join(format!(
             "{}.{}",
-            std::path::Path::new(file_name)
-                .file_stem()
-                .and_then(|s| s.to_str())
-                .unwrap_or("output"),
+            Self::safe_base_name(file_name)
+                .and_then(|b| std::path::Path::new(&b).file_stem().map(|s| s.to_string_lossy().into_owned()))
+                .unwrap_or_else(|| "output".to_string()),
             target
         ));
         let file_url = format!("file://{}", output_path.display());
@@ -334,8 +361,11 @@ impl PreviewService for LibreOfficePreview {
         file_name: &str,
         target_format: &str,
     ) -> PreviewResult<Vec<u8>> {
+        // 2026-10 安全审计：文件名校验，防路径穿越写到沙箱外
+        let base = Self::safe_base_name(file_name)
+            .ok_or_else(|| PreviewError::ConversionFailed("invalid file name".to_string()))?;
         tokio::fs::create_dir_all(&self.temp_dir).await?;
-        let input_path = self.temp_dir.join(file_name);
+        let input_path = self.temp_dir.join(&base);
         tokio::fs::write(&input_path, file_data).await?;
 
         let output_path = self.convert_locally(&input_path, target_format).await?;
@@ -344,12 +374,15 @@ impl PreviewService for LibreOfficePreview {
     }
 
     async fn upload(&self, file_data: &[u8], file_name: &str) -> PreviewResult<UploadedFile> {
+        // 2026-10 安全审计：文件名校验，防路径穿越写到沙箱外
+        let base = Self::safe_base_name(file_name)
+            .ok_or_else(|| PreviewError::UploadFailed("invalid file name".to_string()))?;
         tokio::fs::create_dir_all(&self.temp_dir).await?;
-        let file_url = format!("file://{}/{}", self.temp_dir.display(), file_name);
-        tokio::fs::write(self.temp_dir.join(file_name), file_data).await?;
+        let file_url = format!("file://{}/{}", self.temp_dir.display(), base);
+        tokio::fs::write(self.temp_dir.join(&base), file_data).await?;
         Ok(UploadedFile {
             file_url,
-            file_name: file_name.to_string(),
+            file_name: base.clone(),
             file_type: "application/octet-stream".to_string(),
             size: file_data.len() as u64,
         })
@@ -360,7 +393,21 @@ impl PreviewService for LibreOfficePreview {
         if path.is_empty() {
             return Err(PreviewError::DownloadFailed("invalid file url".to_string()));
         }
-        Ok(std::fs::read(path)?)
+        // 2026-10 安全审计：只允许读取沙箱（temp_dir）内的文件，防 file:// 穿越读任意文件
+        let p = std::path::Path::new(path);
+        if !p.starts_with(&self.temp_dir) {
+            return Err(PreviewError::DownloadFailed(
+                "file url escapes preview sandbox".to_string(),
+            ));
+        }
+        for seg in p.components() {
+            if matches!(seg, std::path::Component::ParentDir) {
+                return Err(PreviewError::DownloadFailed(
+                    "file url escapes preview sandbox".to_string(),
+                ));
+            }
+        }
+        Ok(std::fs::read(p)?)
     }
 }
 
@@ -529,3 +576,28 @@ mod tests {
 
 #[cfg(test)]
 mod tests_generated;
+
+#[cfg(test)]
+mod security_preview_tests {
+    use super::*;
+
+    /// 2026-10 安全审计：路径穿越必须被 safe_base_name 拦截。
+    #[test]
+    fn safe_base_name_blocks_traversal() {
+        assert_eq!(LibreOfficePreview::safe_base_name("a.docx").as_deref(), Some("a.docx"));
+        assert_eq!(
+            LibreOfficePreview::safe_base_name("../../etc/cron.d/x").as_deref(),
+            Some("x"),
+            "目录段必须被剥离，只保留末段"
+        );
+        assert_eq!(
+            LibreOfficePreview::safe_base_name(r"..\..\windows\system.ini").as_deref(),
+            Some("system.ini"),
+            "Windows 反斜杠穿越同样剥离"
+        );
+        assert_eq!(LibreOfficePreview::safe_base_name(".."), None);
+        assert_eq!(LibreOfficePreview::safe_base_name("."), None);
+        assert_eq!(LibreOfficePreview::safe_base_name(""), None);
+        assert_eq!(LibreOfficePreview::safe_base_name("bad\0name.doc"), None);
+    }
+}
