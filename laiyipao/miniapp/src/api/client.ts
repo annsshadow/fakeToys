@@ -9,7 +9,16 @@ const BASE_URL = 'http://127.0.0.1:8080/api/v1'
 
 /** GameConfig 与服务端 /api/v1/config 的响应结构对应。 */
 export interface GameConfig {
-  version: number
+  /**
+   * 配置**内容哈希**（服务端 SHA-256 前 16 位十六进制）。
+   *
+   * 语义：只在这一包内容**真的变了**时才变。
+   * 客户端据此判断本地持久化副本还能不能用。
+   *
+   * ⚠️ 它曾经是 `time.Now() % 100000`（每秒都变），于是「版本没变就不用刷新」
+   * 这个判断从来没被实现过。现在两端都按它做真判断。
+   */
+  version: string
   levels: import('@/game/types').GeneratedLevel[]
   enemies: import('@/game/types').EnemyDef[]
   skills: import('@/game/types').SkillDef[]
@@ -309,11 +318,100 @@ export function guestLogin(nickname = ''): Promise<TokenPair> {
 }
 
 export function fetchWallet() {
-  return request<{ coin: number; gem: number; energy: number; keys: number }>('/wallet')
+  // tokens 是道具余额（mastery_reset / revive_token / gem_wash_token）。
+  // 消费端用它判断「重铸按钮该不该亮」。
+  return request<{
+    coin: number
+    gem: number
+    energy: number
+    keys: number
+    tokens: Record<string, number>
+  }>('/wallet')
 }
 
-export function fetchConfig() {
-  return request<GameConfig>('/config', { auth: false })
+/**
+ * 带条件请求的配置拉取。
+ *
+ * ## 为什么不用通用的 `request()`
+ *
+ * 这里要处理 **304 Not Modified**：通用包装把一切非 2xx 都当失败，
+ * 而 304 在本场景里是**成功**（「你已经是最新的了」）。
+ *
+ * ## 这个端点的存在意义
+ *
+ * `version` 是内容哈希，客户端把它存在本地。带上它去问服务端：
+ * 内容没变 → 服务端只回一个 304（**零字节载荷**），
+ * 内容变了 → 正常 200 带全量。
+ *
+ * 省下的是每次冷启动的 24KB gzip 传输，加上客户端 168KB 的 JSON 解析。
+ *
+ * ## 304 时 `server_time` 从哪来
+ *
+ * 304 没有响应体，但客户端仍要校准本地时钟（`estimateServerNowMs`）。
+ * 用 HTTP 标准 `Date` 响应头 —— 它每一跳都会刷新，且粒度 1 秒，
+ * 对「护盾还剩几小时」这种判断完全够。
+ *
+ * ⚠️ 不能「304 就不校准」：那会让时钟偏移随着缓存存在时间一起漂移，
+ * 而症状是**过期的护盾显示为生效中**（或反过来），
+ * 且只在长时间未更新配置的老玩家身上复现。
+ */
+export type ConfigFetchResult =
+  | { status: 'modified'; config: GameConfig; serverTimeMs: number }
+  | { status: 'unmodified'; version: string; serverTimeMs: number }
+
+export function fetchConfigIfVersion(haveVersion = ''): Promise<ConfigFetchResult> {
+  return new Promise<ConfigFetchResult>((resolve, reject) => {
+    const url = haveVersion
+      ? `${BASE_URL}/config?if_version=${encodeURIComponent(haveVersion)}`
+      : `${BASE_URL}/config`
+    uni.request({
+      url,
+      method: 'GET',
+      header: { 'Content-Type': 'application/json' },
+      timeout: 20000,
+      success: (res) => {
+        const headers = (res.header ?? {}) as Record<string, unknown>
+        const serverTimeMs = headerTimeMs(
+          headers,
+          (res.data as GameConfig | undefined)?.server_time,
+        )
+        if (res.statusCode === 304) {
+          resolve({ status: 'unmodified', version: haveVersion, serverTimeMs })
+          return
+        }
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          resolve({ status: 'modified', config: res.data as GameConfig, serverTimeMs })
+          return
+        }
+        reject(
+          new ApiError(res.statusCode, 'http_error', `配置拉取失败 HTTP ${res.statusCode}`),
+        )
+      },
+      fail: (e) => reject(new ApiError(0, 'network_error', `无法连接服务器：${e.errMsg}`)),
+    })
+  })
+}
+
+/**
+ * 从响应头取服务端时间（毫秒时间戳）。
+ *
+ * `Date` 是 HTTP 标准头，代理/CDN 每一跳都会重写它，
+ * 所以它反映的是「离客户端最近那一跳的服务端时钟」。
+ * 解析失败时回退到响应体里的 `server_time`，再失败回退 0
+ * —— 由调用方决定怎么处理 0（store 里会用本地时钟诚实兜底）。
+ */
+function headerTimeMs(headers: Record<string, unknown>, bodyServerTime?: string): number {
+  // 大小写两路都试：uni-app 在 H5 与小程序两端对 header 键的处理不一致。
+  const raw = headers['Date'] ?? headers['date']
+  if (typeof raw === 'string') {
+    const t = Date.parse(raw)
+    if (Number.isFinite(t)) return t
+  }
+  if (typeof bodyServerTime === 'string') {
+    const t = Date.parse(bodyServerTime)
+    if (Number.isFinite(t)) return t
+  }
+  return 0
 }
 
 /** 服务端下发的构筑快照（结构与 game/replay.ts 的 BuildSnapshot 一致） */
@@ -407,6 +505,30 @@ export function fetchMastery() {
 
 export function allocateMastery(nodeId: number) {
   return request<any>('/mastery/allocate', { method: 'POST', body: { node_id: nodeId } })
+}
+
+/**
+ * 重铸专精：消耗 1 件 `mastery_reset` 道具，清空全部已点亮节点。
+ *
+ * **点数预算不变** —— 只清「已选节点」，玩家重选一遍仍受同样的点数约束。
+ *
+ * ⚠️ 它存在的理由：`AllocateMastery` 是**只插不删**的，点错方向后
+ * 没有任何改向途径。没有这个端点，`mastery_reset` 就只是商店里一件
+ * 「买了不知道干嘛」的商品。
+ *
+ * 回执回显**清完之后的真实状态**（points / nodes / total_slots），
+ * 外加 `reset_cleared`（本次清掉几个节点）—— 所以调用方不需要
+ * 再发一次 `GET /mastery`。
+ */
+export function resetMastery() {
+  return request<{
+    reset_cleared: number
+    points: number
+    nodes: number[]
+    layer_limit: number
+    base_slots: number
+    total_slots: number
+  }>('/mastery/reset', { method: 'POST' })
 }
 
 export function fetchTasks(scope = 'daily') {

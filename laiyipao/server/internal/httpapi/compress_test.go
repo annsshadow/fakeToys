@@ -166,13 +166,14 @@ func TestCompressedPayloadIsByteIdenticalToPlain(t *testing.T) {
 	// 第一版就是这么写的，红了。失败信息其实已经把真相说出来了：
 	// 解压后 167,124 字节 vs 未压缩 167,124 字节 —— **长度相同但内容不同**。
 	//
-	// 原因是 `/config` 里有两个易变字段：
-	//   `server_time` = time.Now()
-	//   `version`     = time.Now().Unix() % 100000
+	// 原因是 `/config` 里有一个易变字段：`server_time` = time.Now()。
 	// 也就是说**两次请求的响应本来就不该相同**，跟压缩无关。
-	// （这本身也是个发现：配置不是确定性的，客户端因此无法按内容缓存它。）
 	//
-	// 所以判据改成：剔除这两个字段后**深比较**。
+	// 第 150 轮起 `version` 改成了**内容哈希**，所以它不再易变，
+	// `volatile` 里只剩 `server_time` 一个。这也正是客户端现在能
+	// 按 version 复用本地缓存的原因（见 service.go 的 LoadGameConfig）。
+	//
+	// 所以判据改成：剔除这个字段后**深比较**。
 	// 守的仍然是「压缩不能改变载荷」，只是承认了配置里确实有随时间变的部分。
 	var a, b map[string]any
 	if err := json.Unmarshal(plain, &a); err != nil {
@@ -181,7 +182,7 @@ func TestCompressedPayloadIsByteIdenticalToPlain(t *testing.T) {
 	if err := json.Unmarshal(back, &b); err != nil {
 		t.Fatalf("解压后不是合法 JSON：%v", err)
 	}
-	volatile := []string{"server_time", "version"}
+	volatile := []string{"server_time"}
 	// 先确认易变字段确实在响应里 —— 否则上面的「剔除」就成了无意义的仪式。
 	var rawPlain map[string]any
 	if err := json.Unmarshal(plain, &rawPlain); err != nil {
@@ -232,4 +233,74 @@ func TestConfigVolumeIsKnown(t *testing.T) {
 		t.Errorf("config 未压缩体积 %d 字节，超过已知量级（实测 167,124 / 阈值 350,000）—— "+
 			"若是有意扩充数据，请同步更新这个阈值与 service.go 里的注释", len(n))
 	}
+}
+
+// TestConfigConditionalRequest 钉住 `?if_version=` 条件请求。
+//
+// 这是 `version` 字段唯一的使用方式，也是每轮冷启动能省下
+// 24KB gzip 传输的原因。三条判据各守一半：
+//
+//	① version 对得上 → 304 且**零载荷**（不是 200 带一份重复内容）；
+//	② version 对不上（含空串/乱码）→ 200 带全量；
+//	③ 304 路径绝不泄漏响应体 —— 否则客户端会解析出一个空 config，
+//	   而症状是「界面空白但不是网络错误」，极难排查。
+func TestConfigConditionalRequest(t *testing.T) {
+	app := newConfigApp()
+
+	// 先拿一次真实响应，取出里面的 version 当作"客户端已有的版本"
+	first := fetchConfig(t, app, "")
+	raw, err := io.ReadAll(first.Body)
+	first.Body.Close()
+	if err != nil {
+		t.Fatalf("读配置失败：%v", err)
+	}
+	var body map[string]any
+	if err := json.Unmarshal(raw, &body); err != nil {
+		t.Fatalf("配置不是合法 JSON：%v", err)
+	}
+	version, _ := body["version"].(string)
+	if version == "" {
+		t.Fatal("配置里没有 version（内容哈希）—— 条件请求无从比起")
+	}
+
+	t.Run("version 匹配 → 304 零载荷", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/config?if_version="+version, nil)
+		resp, err := app.Test(req, 20000)
+		if err != nil {
+			t.Fatalf("请求执行失败：%v", err)
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != http.StatusNotModified {
+			b, _ := io.ReadAll(resp.Body)
+			t.Fatalf("version 匹配应返回 304，实际 %d（body %.120s）", resp.StatusCode, b)
+		}
+		b, err := io.ReadAll(resp.Body)
+		if err != nil {
+			t.Fatalf("读 304 响应体失败：%v", err)
+		}
+		if len(b) != 0 {
+			t.Errorf("304 响应体应为空，实际 %d 字节 —— 客户端会把它当成一份空配置", len(b))
+		}
+	})
+
+	t.Run("version 不匹配 → 200 全量", func(t *testing.T) {
+		for _, v := range []string{"", "deadbeefdeadbeef", "not-a-real-version"} {
+			req := httptest.NewRequest(http.MethodGet, "/api/v1/config?if_version="+v, nil)
+			resp, err := app.Test(req, 20000)
+			if err != nil {
+				t.Fatalf("请求执行失败：%v", err)
+			}
+			b, err := io.ReadAll(resp.Body)
+			resp.Body.Close()
+			if err != nil {
+				t.Fatalf("读响应失败：%v", err)
+			}
+			if resp.StatusCode != 200 {
+				t.Errorf("if_version=%q 应返回 200，实际 %d", v, resp.StatusCode)
+			}
+			if len(b) == 0 {
+				t.Errorf("if_version=%q 返回了空响应体 —— 客户端会当成本地缓存就是最新", v)
+			}
+		}
+	})
 }

@@ -4,10 +4,14 @@ package service
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -18,6 +22,20 @@ import (
 	"github.com/laiyipao/server/internal/domain"
 	"github.com/laiyipao/server/internal/store"
 )
+
+// mustMarshalJSON 序列化一个「结构上不可能失败」的值。
+//
+// GameConfig 全是 string/number/bool/数组/map，json.Marshal 不可失败。
+// 这里仍然 panic 而不是忽略错误：哈希的输入若是悄悄的空字节串，
+// 所有配置都会算出同一个 version，缓存判断从此失效 —— 而那种失效
+// **不报任何错**。宁可崩在第一次请求，也不要静默给出错误答案。
+func mustMarshalJSON(v any) []byte {
+	b, err := json.Marshal(v)
+	if err != nil {
+		panic(fmt.Sprintf("service: 静态配置不可序列化（哈希输入无效）: %v", err))
+	}
+	return b
+}
 
 // Errors 是服务层返回给上层的语义化错误。
 var (
@@ -304,12 +322,25 @@ func (s *Service) ResolveUser(ctx context.Context, token string) (int64, error) 
 // --- 钱包 ---
 
 // Wallet 是玩家钱包快照。
+// Wallet 是玩家的钱包。
+//
+// Tokens 是**道具**余额（第 74 轮起走独立的 user_tokens 表）。
+//
+// 为什么必须随钱包一起下发：道具要有消费闭环，
+// 「客户端能看到自己有几个」是这个闭环的第一环。
+// 第 150 轮之前只有 `TokenBalance` 这个 service 方法，而 HTTP 层
+// 没有任何端点读它 —— 于是 `mastery_reset` 买了却不知道买了几个，
+// 重铸按钮也就无从判断该不该亮。
+//
+// ⚠️ 只下发 `walletTokens` 白名单里的道具（显式名单，不是"全表"）：
+// 新道具必须先在这里声明，顺便回答「它被谁消费」。
 type Wallet struct {
-	Coin            int64     `json:"coin"`
-	Gem             int64     `json:"gem"`
-	Energy          int64     `json:"energy"`
-	Keys            int64     `json:"keys"`
-	EnergyUpdatedAt time.Time `json:"energy_updated_at"`
+	Coin            int64            `json:"coin"`
+	Gem             int64            `json:"gem"`
+	Energy          int64            `json:"energy"`
+	Keys            int64            `json:"keys"`
+	EnergyUpdatedAt time.Time        `json:"energy_updated_at"`
+	Tokens          map[string]int64 `json:"tokens"`
 }
 
 // grantWallet 在事务内增减货币并写流水。
@@ -599,14 +630,46 @@ func (s *Service) LoadWallet(ctx context.Context, userID int64) (Wallet, error) 
 	if err != nil {
 		return Wallet{}, fmt.Errorf("load wallet: %w", err)
 	}
+	// 道具余额：未持有过的补 0（TokenBalance 内部按传入列表补齐）。
+	//
+	// 为什么 0 也要出现：客户端要靠「键在不在」区分「0 个」与
+	// 「这个道具不存在」，而后者只可能是服务端漏了下发。
+	w.Tokens, err = s.TokenBalance(ctx, userID, WalletTokenKinds)
+	if err != nil {
+		return Wallet{}, err
+	}
 	return w, nil
 }
+
+// WalletTokenKinds 是随钱包下发的道具白名单。
+//
+// 从 `walletTokens` 派生而不是再抄一份名单：两处名单一旦漂移，
+// 商店里能买到的东西在钱包里看不到，而**没有任何测试会红**。
+//
+// 排序只为让下发顺序稳定（客户端落缓存时字节可比对），不承载语义。
+var WalletTokenKinds = func() []string {
+	out := make([]string, 0, len(walletTokens))
+	for k := range walletTokens {
+		out = append(out, k)
+	}
+	sort.Strings(out)
+	return out
+}()
 
 // --- 配置下发 ---
 
 // GameConfig 是客户端一次拉取所需的全部内容。
+//
+// ⚠️ **Version 与 ServerTime 语义相反，别混**：
+//   - `Version` 是**内容哈希**，只在配置内容真的变了才变。
+//     客户端据此判断本地缓存还能不能用（见 LoadGameConfig 的注释）。
+//   - `ServerTime` 每次请求都可能不同（服务端当时挂钟），
+//     客户端拿它校准本地时钟偏移。
+//
+// 曾经 `Version` 是 `time.Now().Unix() % 100000` —— 每秒都在变，
+// 「版本没变就不用刷新」这个判断从来没被实现过。现在是 SHA-256 前 16 位十六进制。
 type GameConfig struct {
-	Version   int                     `json:"version"`
+	Version   string                  `json:"version"`
 	Levels    []domain.GeneratedLevel `json:"levels"`
 	Enemies   []domain.SeedEnemy      `json:"enemies"`
 	Skills    []domain.SeedSkill      `json:"skills"`
@@ -663,20 +726,49 @@ type ChapterInfo struct {
 // `TestConfigVolumeIsKnown` 守着。
 //
 // 传输侧由 `middleware/compress` 兜住：gzip 后 23,964 字节（14.3%）。
-// LoadGameConfig 组装下发给客户端的静态配置。
 //
-// ⚠️ 第 102 轮移除了 `ctx` 参数 —— 它从未被使用。
+// ## 第 150 轮：`version` 从「每秒都变的时间戳」改成「内容哈希」
 //
-// 本函数是**纯静态数据组装**（关卡表 / 敌人表 / 技能表 / 分数规则 …），
-// **一次库都不查**，所以传 ctx 没有意义。
+// 原实现是 `int(time.Now().Unix() % 100000)`，于是：
 //
-// 与 `computeRating`（确实读 `user_progress`）的对照见 `computePower` 的注释。
-// 那三个函数的签名曾经长得一模一样，而只有 `computeRating` 真的用 ctx ——
-// 后来的人会照着它以为传进去的 ctx 在这里生效。
+//  1. 它**从不稳定**，客户端无法据此判断「内容变没变」；
+//  2. 客户端**根本不读它**（`store/game.ts` 的 `loadConfig()` 只有
+//     `if (config.value) return` 这个内存内缓存，`config.version` 全仓库零引用）——
+//     也就是说「版本没变就不用刷新」这个判断从来没被实现过；
+//  3. 配置里还有 `server_time: time.Now()`，两次响应本来就不相同。
 //
-// 将来若真的要加 DB 缓存，**那时再加回来** ——
-// 现在加是投机，而投机出来的参数没人会记得它是干什么的。
+// 现在三件事一起做了（只做 a 是「只写不读」，还会给最热的端点
+// 加上「marshal 167KB + 哈希」的每请求 CPU，所以这里连缓存一起做）：
+//
+//	a. `version` = 静态内容的 SHA-256 前 16 位十六进制（哈希时
+//	   `version`/`server_time` 取零值，天然被排除）；
+//	b. 静态部分进程内只组装一次（`staticConfig`）——
+//	   原来每个请求都重跑 `GenerateAllLevels()`，那是白花的 CPU；
+//	c. 客户端把配置**持久化**（`uni.setStorageSync`）并按 version 比对，
+//	   条件请求见 `httpapi.getConfig` 的 `?if_version=`。
+//
+// 返回的 GameConfig 是**浅拷贝**：slice 头指向缓存里的同一批数据。
+// 因此调用方必须把它当只读（`/config` 的 handler 只 marshal）。
+// 若将来有调用方要改配置内容，必须先改成深拷贝 —— 否则会污染缓存，
+// 而且症状是「配置在运行中慢慢变了」，极难排查。
 func (s *Service) LoadGameConfig() GameConfig {
+	cfg := staticConfig()
+	// 唯一每请求不同的字段：服务端当时挂钟，客户端拿它校准本地时钟偏移。
+	cfg.ServerTime = time.Now()
+	return cfg
+}
+
+// staticConfig 是 /config 的静态部分，进程内只组装一次。
+//
+// 它 99% 的内容与请求无关（100 关由 LCG 生成 + 22 敌人 + 42 技能
+// + 18 配方 + 18 装备 + 8 宝石 + 6 皮肤 + 96 专精节点 + 5 反应），
+// 而 /config 是最热的端点（每次冷启动一次，H5 刷新页面也是）。
+// 原来每个请求都重新生成一遍 —— 那是纯浪费。
+//
+// 用 `sync.OnceValue` 而不是 `Service` 的字段：本函数一次库都不查、
+// 一个配置项都不读，是**全局静态数据**，与 Service 实例无关。
+// 挂在字段上还得处理「Service 被拷贝时 Once 被一起拷」的问题。
+var staticConfig = sync.OnceValue(func() GameConfig {
 	cfg := GameConfig{
 		Levels: domain.GenerateAllLevels(),
 		// ⚠️ 分数规则必须下发，不能让客户端自己写死
@@ -696,7 +788,6 @@ func (s *Service) LoadGameConfig() GameConfig {
 		Reactions:  domain.AllReactionSpecs(),
 		RatingW:    domain.DefaultRatingWeights(),
 		SkillRules: domain.DefaultSkillRules(),
-		ServerTime: time.Now(),
 	}
 	for _, q := range domain.GemQualities {
 		cfg.Qualities = append(cfg.Qualities, QualityInfo{q.Name, q.Count, q.Mult})
@@ -707,33 +798,27 @@ func (s *Service) LoadGameConfig() GameConfig {
 			Terrain: c.TerrainKind, BossEnemy: c.BossEnemyID,
 		})
 	}
-	// 版本号：客户端据此判断是否需要刷新配置。
-	//
-	// ⚠️ **当前这个机制是死的**，而且死因不止一处。查证结果：
-	//
-	//  1. 这里是**时间戳取模**，不是内容哈希 —— 每秒都在变。
-	//  2. 客户端**根本没有读它**：`miniapp/src/store/game.ts` 的
-	//     `loadConfig()` 只有 `if (config.value) return` 这个**内存内**缓存，
-	//     `config.version` 在整个客户端代码里**零引用**。
-	//     也就是说「版本没变就不用刷新」这个判断**从来没被实现过**。
-	//  3. 配置里还有 `server_time: time.Now()`，所以**同一个配置在两次请求里
-	//     本来就不相同** —— 客户端无法按内容做任何缓存。
-	//     （`internal/httpapi` 的 `TestCompressedPayloadIsByteIdenticalToPlain`
-	//     一开始就栽在这上面：它以为两次响应该逐字节相同，结果红了。）
-	//
-	// 因此每次冷启动都会实打实拉一次全量配置（163KB，gzip 后 24KB）。
-	//
-	// ## 要真正做缓存，需要三件事一起做
-	//
-	//   a. `version` 改成**内容哈希**（哈希时排除 `server_time`/`version` 自己）；
-	//   b. 客户端把配置**持久化**（`uni.setStorageSync`），而不是只存内存；
-	//   c. 客户端拿持久化的 `version` 与响应里的比对，相同就不更新。
-	//
-	// 只做 a 是「只写不读」—— 仍然没人读它，还给最热的端点加上
-	// 「marshal 167KB + 哈希」的每请求 CPU。所以这里**故意保持现状**，
-	// 只把事实记录下来。传输侧的成本已由 `middleware/compress` 压到 14.3%。
-	cfg.Version = int(time.Now().Unix() % 100000)
+	// 内容哈希：Version 与 ServerTime 都还是零值，所以「哈希时排除它们」
+	// 这件事由零值天然完成，不需要额外构造一份剔除后的拷贝。
+	cfg.Version = configVersionHash(cfg)
 	return cfg
+})
+
+// configVersionHash 对配置内容取内容哈希。
+//
+// `GameConfig.Version` 与 `ServerTime` 在调用点都必须是零值 ——
+// 它们是唯一随时间变的两个字段，零值即「被排除」。
+//
+// ⚠️ 这个函数是 `version` 语义的全部：一旦有人在里面加入
+// 时间戳/随机数/指针地址，「版本没变就不用刷新」立刻失效，
+// 而失效方式是**客户端永远拿到新版本**（性能回归）。
+// `TestConfigVersionIsStableAndContentDerived` 分别钉住这两半边。
+func configVersionHash(cfg GameConfig) string {
+	// 取 16 位十六进制而不是全文：64 位空间下，配置内容从「发布一次」
+	// 变成「不同」的概率可以忽略；而短版本号在日志/客户端缓存里可读。
+	// 判断口径是**字符串全等**，所以位数短不影响正确性。
+	sum := sha256.Sum256(mustMarshalJSON(cfg))
+	return hex.EncodeToString(sum[:8])
 }
 
 // orEmptyMap 把 nil map 换成空 map。

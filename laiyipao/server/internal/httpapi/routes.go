@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -299,9 +300,33 @@ func (s *Server) wallet(c *fiber.Ctx) error {
 	return c.JSON(w)
 }
 
+// getConfig 下发全量配置，支持按 version 做条件请求。
+//
+// `?if_version=<客户端已有的 version>`：内容没变时只回 304（零载荷）。
+//
+// ## 为什么用查询参数而不是 `If-None-Match` / ETag
+//
+// 两条都是真实原因，不是风格偏好：
+//
+//  1. **自定义请求头会触发 CORS 预检**。H5 端的 cors 中间件目前只放行
+//     `Content-Type,Authorization`；加一个头就得同步改预检白名单，
+//     而忘改的症状是「整批请求发不出去」，很难和网络故障区分。
+//  2. **ETag 会让浏览器自作主张缓存**。响应一旦带上 ETag，
+//     H5 的 XHR 会拿到浏览器缓存里的旧响应体 ——
+//     里面的 `server_time` 是上一次拉取时的时间，
+//     而 `estimateServerNowMs()` 会把它当成「服务端当前时间」。
+//     不设 ETag 则两端行为一致：每次都真的走到服务端，
+//     由 `if_version` 显式决定要不要载荷。
+//
+// ⚠️ 用 304 而不是 204：304 在 HTTP 语义里就是「条件 GET 未修改」，
+// 客户端一眼能看懂，也和浏览器/中间件的既有约定相容。
 func (s *Server) getConfig(c *fiber.Ctx) error {
-	// LoadGameConfig 纯内存构造、恒不失败，签名没有 error 返回值
-	return c.JSON(s.Svc.LoadGameConfig())
+	cfg := s.Svc.LoadGameConfig()
+	if v := strings.TrimSpace(c.Query("if_version")); v != "" && v == cfg.Version {
+		// 不写响应体。fiber 的 304 会自带 Content-Length: 0。
+		return c.Status(fiber.StatusNotModified).Send(nil)
+	}
+	return c.JSON(cfg)
 }
 
 func (s *Server) getLevel(c *fiber.Ctx) error {
