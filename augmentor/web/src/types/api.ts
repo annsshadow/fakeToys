@@ -469,12 +469,26 @@ export interface AppConfig {
   vector: {
     enabled: boolean
     backend: string
+    dimension: number
+    storage_dir: string
+    collection: string
   }
   rag: {
     enabled: boolean
     default_format: string
+    chunk_size: number
+    chunk_overlap: number
   }
   multimodal: {
+    enabled: boolean
+    image_extensions: string[]
+    audio_extensions: string[]
+  }
+  /** 只读节：不在 `POST /api/config` 的写入清单里（`WRITABLE_SECTIONS` 七节），改了要重启 */
+  versioning: {
+    enabled: boolean
+  }
+  visualization: {
     enabled: boolean
   }
 }
@@ -483,6 +497,11 @@ export interface AppConfig {
 export interface UpdateConfigResponse {
   success: boolean
   message: string
+  /**
+   * 请求里**没有写进配置**的键清单；`success` 恒为 true，落没落盘要看这一格与文案主干。
+   * 形状两种：`section.key`（节内未知子键）与 `section`（整节不在写入清单里或节名拼错）。
+   */
+  ignored_keys?: string[]
 }
 
 export interface ModelsResponse {
@@ -523,6 +542,12 @@ export interface StatusResponse {
   version: string
   model_default: string
   model_available: boolean
+  /**
+   * 管道缺失（或没有模型后端）时两键为 `null`，与「后端在、重试过 0 次」不是一回事，
+   * 渲染面不能把 `null` 折成 `0`。
+   */
+  model_retry_count: number | null
+  model_retry_wait_seconds: number | null
   dependencies: DependencyDiagnostics
 }
 

@@ -86,12 +86,22 @@ vi.mock('../services/api', async (importOriginal) => {
 })
 
 import System from './System'
+import type { StatusResponse } from '../types/api'
 
-const HEALTHY = {
+/**
+ * 两只夹具都标了 `: StatusResponse`
+ *
+ * 契约里 `model_retry_count` / `model_retry_wait_seconds` 是**必填**（管道缺失时回 `null`，
+ * 不是省掉这一键），所以夹具必须带上；标了类型之后少一键当场 typecheck 红，
+ * 不会等到渲染面上出现一只空格子才发现。
+ */
+const HEALTHY: StatusResponse = {
   status: 'ok',
   version: '3.0.0',
   model_default: 'ernie',
   model_available: true,
+  model_retry_count: 0,
+  model_retry_wait_seconds: 0,
   dependencies: {
     installed: { pandas: true, chromadb: true },
     missing: [],
@@ -101,11 +111,13 @@ const HEALTHY = {
   },
 }
 
-const DEGRADED = {
+const DEGRADED: StatusResponse = {
   status: 'ok',
   version: '3.0.0',
   model_default: 'ernie',
   model_available: false,
+  model_retry_count: null,
+  model_retry_wait_seconds: null,
   dependencies: {
     installed: { pandas: true, faiss: false },
     missing: ['faiss'],
@@ -161,6 +173,51 @@ describe('System 依赖缺失态', () => {
     render(<System />)
 
     await waitFor(() => expect(screen.getByText('否')).toBeInTheDocument())
+  })
+})
+
+/**
+ * 两只重试读数（L237 / A281）
+ *
+ * 这两格唯一容易做错的地方是 `null` 与 `0` 折叠成一档：后端在管道缺失时回 `null`，
+ * 在「后端在、没重试过」时回 `0`，两句话在页面上必须长得不一样。所以两档各测一次，
+ * 而不是只测有值那一档。
+ */
+describe('System 模型重试读数（L237 补渲染）', () => {
+  const statistic = (container: HTMLElement, title: string) =>
+    Array.from(container.querySelectorAll('.ant-statistic')).find(
+      (s) => s.querySelector('.ant-statistic-title')?.textContent === title
+    )?.querySelector('.ant-statistic-content-value')?.textContent
+
+  it('后端在、重试过 0 次时两格显示 0（不是「无后端」）', async () => {
+    spies.getServiceStatus.mockResolvedValue(HEALTHY)
+
+    const { container } = render(<System />)
+
+    await waitFor(() => expect(statistic(container, '模型重试次数')).toBe('0'))
+    expect(statistic(container, '重试等待（秒）')).toBe('0')
+    expect(screen.queryAllByText('无后端')).toHaveLength(0)
+  })
+
+  it('管道缺失（两键为 null）时两格显示「无后端」，不折成 0', async () => {
+    spies.getServiceStatus.mockResolvedValue(DEGRADED)
+
+    const { container } = render(<System />)
+
+    await waitFor(() => expect(statistic(container, '模型重试次数')).toBe('无后端'))
+    expect(statistic(container, '重试等待（秒）')).toBe('无后端')
+    expect(statistic(container, '模型重试次数')).not.toBe('0')
+  })
+
+  it('卡上写明这两键只在 status 上、health 刻意不含', async () => {
+    spies.getServiceStatus.mockResolvedValue(HEALTHY)
+
+    render(<System />)
+
+    await waitFor(() =>
+      expect(document.body.textContent).toContain('「无后端」是 null，不是 0')
+    )
+    expect(document.body.textContent).toContain('/api/health')
   })
 })
 
