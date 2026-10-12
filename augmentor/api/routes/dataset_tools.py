@@ -122,9 +122,9 @@ class SampleRequest(BaseModel):
 class SplitRequest(BaseModel):
     """分割请求
 
-    三个比例之和必须为 1，否则 `SplitConfig` 会拒绝。
-    `stratify=True` 时走分层支路（委托 `DataSplitter`），`stratify_key` 是分组字段，
-    空值报 400；此时比例校验改用被委托方的严口径（见 `docs/ARCHITECTURE.md` §3.16）。
+    三个比例之和必须为 1（±0.01 含端点）；判据只住 `validation.require_ratio_list` 一处
+    （A324 / L256）。`stratify=True` 时走分层支路（委托 `DataSplitter`），`stratify_key` 是分组
+    字段，空值报 400；两条支路对同一个 `ratios` 给出同一句判决，不再各有自己的容差（§3.16）。
     `shuffle` 在两条支路上的口径**不同**（实测，20 条语料 0.5/0.25/0.25）：分层支路只把
     每段成员按输入的原始相对顺序回排，成员与条数都不变，`seed` 仍决定谁进哪段；默认支路
     是「先整份打乱再按位置切片」，所以 False 会连同成员一起改变，且三段恒为输入的前

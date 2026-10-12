@@ -90,11 +90,13 @@ def items():
 
 class TestInit:
     def test_rejects_ratio_sum_not_one(self):
-        with pytest.raises(ValueError, match="比例之和"):
+        """和偏离 1.0 超出家族容差 ⇒ 判据来自 `validation.require_ratio_list`（A324 / L256）"""
+        with pytest.raises(ValueError, match="之和必须是 1.0"):
             DataSplitter(train_ratio=0.5, val_ratio=0.5, test_ratio=0.5)
 
     def test_rejects_negative_ratio(self):
-        with pytest.raises(ValueError, match="负数"):
+        """越界逐项点名（改前只判「负数」一句，1.5 那一格反而漏过）"""
+        with pytest.raises(ValueError, match="必须在 0.0 到 1.0 之间"):
             DataSplitter(train_ratio=1.5, val_ratio=-0.5, test_ratio=0.0)
 
     def test_accepts_zero_split(self):

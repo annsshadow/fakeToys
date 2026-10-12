@@ -1309,7 +1309,7 @@ class TestDatasetSplit:
             },
         )
         assert response.status_code == 400, response.text
-        assert "分割比例之和" in response.json()["detail"]
+        assert "ratios 之和必须是 1.0" in response.json()["detail"]
 
     def test_small_val_slice_is_not_rounded_away(self, tools_env):
         """7 条按 0.8/0.1/0.1 分割：val 名义 0.7 条，不能被抹平成 0

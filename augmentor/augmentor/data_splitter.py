@@ -11,7 +11,7 @@ import logging
 import random
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Sequence, Tuple
-from .exceptions import DataValidationError
+from .validation import require_ratio_list
 from .allocation import largest_remainder
 
 logger = logging.getLogger(__name__)
@@ -59,13 +59,13 @@ class DataSplitter:
             seed: 随机种子
             stratify_field: 分层字段（可选）
         """
-        total = train_ratio + val_ratio + test_ratio
-        if abs(total - 1.0) > 1e-6:
-            raise DataValidationError(
-                f"比例之和必须为 1.0，实际为 {total:.4f}"
-            )
-        if any(r < 0 for r in (train_ratio, val_ratio, test_ratio)):
-            raise DataValidationError("比例不能为负数")
+        # 判据只住 `validation.require_ratio_list` 一处（A324 / L256）：改前这里手抄 ±1e-6 再另判
+        # 负数，与 `DatasetOperations.split` 那套「±0.01 不含端点」是两份账，于是同一份
+        # (0.4, 0.3, 0.295) 在默认支路通过、在分层支路被判红——一个无关旋钮换一次判决。统一到家族
+        # 容差（±0.01 含端点、量化 9 位）不破坏配额不变量：`largest_remainder` 按 share/weight_sum
+        # 归一化摊派，三段之和恒等于条目数。逐项的 bool / NaN / 非数值 / 越界判据同时到位（原先只判
+        # 负数一种），而 `ratios` 的长度此前在两条支路上都不判，4 个元素会过校验后死在下游 unpack。
+        require_ratio_list("比例", (train_ratio, val_ratio, test_ratio))
 
         self.train_ratio = train_ratio
         self.val_ratio = val_ratio

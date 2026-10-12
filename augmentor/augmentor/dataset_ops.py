@@ -16,7 +16,7 @@ from .atomic_write import atomic_write_json
 from dataclasses import dataclass
 import hashlib
 from .exceptions import DataValidationError
-from .validation import require_count
+from .validation import require_count, require_ratio_list
 from .allocation import largest_remainder
 from .data_splitter import DataSplitter
 
@@ -422,10 +422,10 @@ class DatasetOperations:
         """
         config = config or SplitConfig()
         
-        # 验证比例
-        total_ratio = sum(config.ratios)
-        if abs(total_ratio - 1.0) > 0.01:
-            raise DataValidationError(f"分割比例之和必须为1.0，当前为 {total_ratio}")
+        # 验证比例：判据只住 `validation.require_ratio_list` 一处（A324 / L256）。改前那三行手抄
+        # `abs(total_ratio - 1.0) > 0.01`——不含端点，于是最自然的「留两位凑 1.0」被误拒（实测
+        # 0.4/0.3/0.29 判「当前为 0.99」，A320 已判过的浮点噪声形状），且不判长度与逐项类型。
+        require_ratio_list("ratios", config.ratios)
         
         if config.stratify:
             # 分层的算法口径只有 `DataSplitter` 那一份，这里只接线（见 `_stratified`）

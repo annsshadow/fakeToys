@@ -640,21 +640,41 @@ class TestStratifiedSplitWiring:
 
     @pytest.mark.parametrize("ratios", [
         (1.5, -0.5, 0.0),
-        (0.8, 0.1, 0.105),
-    ], ids=["negative", "sum_within_loose_tolerance"])
-    def test_strict_ratio_rules_apply_on_the_stratified_path(self, ratios):
-        """分层支路沿用 `DataSplitter` 的严口径（±1e-6 且不许负数）
+        (0.8, 0.1, 0.3),
+    ], ids=["out_of_range", "sum_over_tolerance"])
+    def test_both_branches_reject_the_same_illegal_ratios(self, ratios):
+        """两条支路共引一份判据（A324 / L256 收掉 A289 立的那格分歧）
 
-        默认路径只要求比例和落在 ±0.01 内、也不查负数，所以同一份配置在两条支路上
-        的**可接受域**不同：这是接线方式带来的既有分歧（两处校验本就不一致，另立
-        Backlog 统一），本轮先把它钉成事实，免得日后有人当成新引入的回归。
+        改前这里是「一面放行一面判红」：默认路径只要求比例和落在 ±0.01 内、也不查负数，
+        分层支路用 `DataSplitter` 的 ±1e-6 加「只判负数」，于是同一份配置在两条支路上的
+        **可接受域**随一个无关旋钮变（`-0.8/0.1/1.7` 在默认支当时把全部条目塞进测试段还
+        回 200）。判据收进 `validation.require_ratio_list` 之后两侧同走一条，本支要求两
+        条支路给出**同一句判决**，而不是「红了就满意」。
         """
         ops = DatasetOperations()
-        plain = ops.split(CORPUS, SplitConfig(ratios=ratios, seed=1))
-        assert len(plain[0]) + len(plain[1]) + len(plain[2]) == len(CORPUS)
-        with pytest.raises(DataValidationError):
+        rule = "必须在 0.0 到 1.0 之间|之和必须是 1.0"
+        with pytest.raises(DataValidationError, match=rule):
+            ops.split(CORPUS, SplitConfig(ratios=ratios, seed=1))
+        with pytest.raises(DataValidationError, match=rule):
             ops.split(CORPUS, SplitConfig(ratios=ratios, seed=1, stratify=True,
                                           stratify_key="intent"))
+
+    def test_the_two_decimal_and_float_noise_sums_split_on_both_branches(self):
+        """「留两位凑 1.0」与容差内的和，两条支路同答且三段之和等于全体（A324 ① / A320 同形）
+
+        钉的是收口之后的新事实：`(0.4, 0.3, 0.29)` 改前在门口就被判「当前为 0.99」，
+        `(0.4, 0.3, 0.295)` 与 `(0.8, 0.1, 0.105)` 改前只在分层支判红。容差统一到家族的
+        ±0.01（含端点、量化 9 位）之所以安全，是因为 `largest_remainder` 按
+        `share / weight_sum` 归一化摊派，配额之和恒等于条目数（那条归一化在
+        `augmentor/allocation.py` 的 `largest_remainder` 里）。
+        """
+        ops = DatasetOperations()
+        for ratios in [(0.4, 0.3, 0.29), (0.4, 0.3, 0.295), (0.8, 0.1, 0.105)]:
+            plain = ops.split(CORPUS, SplitConfig(ratios=ratios, seed=1))
+            strat = ops.split(CORPUS, SplitConfig(ratios=ratios, seed=1, stratify=True,
+                                                  stratify_key="intent"))
+            for face in (plain, strat):
+                assert sum(len(x) for x in face) == len(CORPUS), (ratios, face)
 
     @pytest.mark.parametrize("config", [
         SplitConfig(ratios=(0.8, 0.1, 0.1), seed=7),
