@@ -390,12 +390,13 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     # 备份命令
-    backup_parser = subparsers.add_parser("backup", help="数据备份")
-    backup_parser.add_argument("--action", type=str, required=True, choices=["create", "restore", "list", "delete"], help="操作类型")
+    backup_parser = subparsers.add_parser("backup", help="数据备份（verify 查到损坏时退出码 1）")
+    backup_parser.add_argument("--action", type=str, required=True, choices=["create", "restore", "list", "delete", "verify", "cleanup"], help="操作类型")
     backup_parser.add_argument("--input", type=str, help="输入文件路径")
     backup_parser.add_argument("--output", type=str, help="输出文件路径")
     backup_parser.add_argument("--name", type=str, help="备份名称")
     backup_parser.add_argument("--backup-dir", type=str, default=".backups", help="备份目录")
+    backup_parser.add_argument("--max-backups", type=int, default=10, help="cleanup 保留的最新份数（不小于 1）")
 
     # PII 脱敏命令
     sanitize_parser = subparsers.add_parser("sanitize", help="PII 脱敏")
