@@ -929,9 +929,9 @@ export const mergeDatasets = async (
  * `POST /api/dataset/split`
  *
  * 六个可省键一律「不传即不写」，默认全部住在请求模型（`0.8 / 0.1 / 0.1`、`stratify false`、
- * `stratify_key "instruction"`、`shuffle true`、`seed None`）。两条支路的判据**不同**（实测）：
- * 比例和的容差是默认支 `0.01`、分层支 `1e-6`；负数只有分层支拦（400「比例不能为负数」），
- * 默认支照收并回 200（**A289**）。`stratify_key` 给一个不存在的字段名**不报错**，它会塌成
+ * `stratify_key "instruction"`、`shuffle true`、`seed None`）。比例判据只住一处（**A324 / L256**
+ * 收掉 A289 那格分歧）：两条支路共引 `validation.require_ratio_list`——±0.01 含端点、逐项 0..1、
+ * 长度 3，同一个 `ratios` 两侧同码同答。`stratify_key` 给一个不存在的字段名**不报错**，它会塌成
  * 一个分组，分段数与用默认键时看起来一样。
  */
 export const splitDataset = async (
