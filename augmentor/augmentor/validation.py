@@ -235,12 +235,23 @@ def require_ratio(name: str, value: Any,
     return value
 
 
+#: 「权重族之和的容差」的唯一权威（A320，L238）。三元（`quality.weights` 的配置层与
+#: 组件层）与四元（`DatasetHealthScore` 的健康分权重）都取这一个值——判据分抄两处，
+#: 同一份 YAML 就会在一面能加载、在另一面被判拒。
+WEIGHT_SUM_TOLERANCE = 0.01
+#: 判和之前先把浮点噪声量化掉的位数（A320 的现场）。留两位小数凑 1.0 是最自然的用法，
+#: 而 `[0.24, 0.25, 0.25, 0.25]` 的十进制差是 0.01、IEEE-754 求和之后是
+#: **0.010000000000000009** —— 直接比 `> 0.01` 就把这一档最该有的用法判红。
+#: 量化到 9 位之后，「±0.01（含端点）算 1.0」这句才真的是它的尺子。
+WEIGHT_SUM_QUANTIZE_DIGITS = 9
+
+
 def require_ratio_list(name: str, value: Any,
                        length: int = 3,
                        minimum: float = 0.0,
                        maximum: float = 1.0,
-                       sum_tolerance: float = 0.01) -> Optional[Any]:
-    """校验「权重列表」旋钮（A124，L153）：逐项 bool/NaN/越界 + 长度 + 和为 1±容差。
+                       sum_tolerance: float = WEIGHT_SUM_TOLERANCE) -> Optional[Any]:
+    """校验「权重列表」旋钮（A124，L153）：逐项 bool/NaN/越界 + 长度 + 和为 1±容差（含端点）。
 
     `require_ratio` 的列表形：单旋钮判一道，权重族判三件套（每项、长度、总和）。
     改前这道判据的权威住在 `QualityScorer.__init__` 的两行手抄（只判长度与和），
@@ -277,11 +288,44 @@ def require_ratio_list(name: str, value: Any,
                 f"{name}[{i}] 必须在 {minimum} 到 {maximum} 之间，当前是 {w}"
             )
     total = sum(float(w) for w in value)
-    if abs(total - 1.0) > sum_tolerance:
+    if round(abs(total - 1.0), WEIGHT_SUM_QUANTIZE_DIGITS) > sum_tolerance:
         raise DataValidationError(
-            f"{name} 之和必须是 1.0（容差 {sum_tolerance}），当前 {total}"
+            f"{name} 之和必须是 1.0（容差 {sum_tolerance}，含端点），当前 {total}"
         )
     return value
+
+
+def require_item_field(name: str, items: Any, field: Any, label: str = "数据集") -> str:
+    """校验「这个字段名在数据集里真的存在」，返回字段名（A321 / A322，L238）。
+
+    下游那些按字段取文本的评分器一律写成 `item.get(field, "")`：字段名整体拼错时
+    **每条都取到空串**，于是「唯一值 = 1、重复率 = 100%」——一份根本没被读过的数据
+    被报告成「多样性极差」，而这条假判决与「数据真的全重复」在响应里逐字节同形
+    （L235 实测：`text_field` 送空串、纯空白、`no_such_field`、`Instruction` 四种都回
+    **200**，`duplicate_rate` 全是 **1.0**，`failed_rules` 全含 `duplicate_rate`）。
+    静默降级比报错危险，所以在门口拦下。
+
+    两刀各有分工，缺一不可：
+
+    1. `require_string` 管「这个名字本身不成立」——空串、纯空白、非字符串；报错点名
+       **参数名**（`name`），调用方一看就知道是哪一格写错了。
+    2. 存在性管「名字成立但这里没有这一列」——报错带上**首条实际字段**，因为拼错的人
+       真正需要的是「那一份里到底有什么」。
+
+    存在性判的是「**至少一条**含该字段」而不是「每条都含」：数据集异构是常态（增强与
+    合并的产物天然多列，见 `augmentor/converter.py` 那条注释），逐条要求会把合法数据判死；
+    而取不到那一列的条目由下游按各自口径处理（评估一侧另有逐条带下标的 `_as_column`）。
+
+    Raises:
+        DataValidationError: 字段名不是非空字符串，或整个数据集没有一条含该字段
+    """
+    require_string(name, field)
+    if items and not any(field in item for item in items):
+        raise DataValidationError(
+            f"{label} 里没有任何一条含字段 '{field}'（大概率是字段名拼错了）；"
+            f"首条实际字段: {', '.join(sorted(items[0])) or '（无）'}"
+        )
+    return field
 
 
 def require_bool(name: str, value: Any) -> Optional[bool]:

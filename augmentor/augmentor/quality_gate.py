@@ -251,7 +251,7 @@ def gate_dataset_health(items: List[Dict[str, Any]],
 
     Args:
         items: 数据集条目
-        text_field: 计算重复率所用的文本字段
+        text_field: 计算重复率所用的文本字段，必须是**数据集里真的存在**的一列
         weights: 健康分权重，None 用 `DatasetHealthScore` 默认值
         pass_rate: 质量通过率（由 `QualityScorer` 那侧算好后传入）
         pass_rate_min: pass_rate 规则的最低阈值
@@ -261,14 +261,29 @@ def gate_dataset_health(items: List[Dict[str, Any]],
 
     Returns:
         `{"health": ..., "gate": ..., "skipped_rules": [...]}`
+
+    Raises:
+        DataValidationError: 数据集为空；`text_field` 不是非空字符串或整个数据集没有
+            一条含该字段（A321，L238）；`weights` 形状不对（转自
+            `DatasetHealthScore`，A319 / A320）
+
+    **字段名的判决住在本层，不住在端点**（A321 的修法）：`ImpactEvaluator.measure()` 用
+    `item.get(text_field, "")` 取文本，字段名拼错时每条都取到空串 ⇒ `duplicate_rate`
+    变 **1.0**、`failed_rules` 含 `duplicate_rate`，而这份**假判决**与「数据真的全重复」
+    在响应里逐字节同形（L235 实测：空串 / 纯空白 / `no_such_field` / `Instruction` 四种
+    都回 200）。判在 SDK 而不是判在路由，是因为 CLI 与 API 共用本函数——判在路由等于
+    只有一面有声。
     """
     from .health_score import DatasetHealthScore
     from .impact import ImpactEvaluator
+    from .validation import require_item_field
 
     if not items:
         # 空数据集上每项指标都是 0.0：duplicate_rate 规则会以「0 ≤ 上限」通过，
         # 于是门禁给出一份本身为空的文件放行——正是门禁最不该犯的错。宁可报错。
         raise DataValidationError("数据集为空，门禁无法给出有意义的判定")
+
+    require_item_field("text_field", items, text_field)
 
     health = DatasetHealthScore(weights=weights).score(items)
 

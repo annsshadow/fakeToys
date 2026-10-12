@@ -370,7 +370,10 @@ describe('Quality 健康门禁 · 回执渲染', () => {
     expect(text).toContain('先怀疑字段名')
     expect(text).toContain('1.17')
     expect(text).toContain('超过 1')
-    expect(text).toContain('0.99 与 1.01')
+    // L238 起那一档不再是「400 但容差含糊」：钳制、含端点、放行与拒的四值都写进了页面
+    expect(text).toContain('钳进 [0, 1]')
+    expect(text).toContain('0.99 / 1.005 / 1.01 都放行')
+    expect(text).toContain('0.98 与 1.02 才拒')
     expect(text).toContain('三个阈值没有范围闸')
     expect(text).toContain('恒空')
   })
