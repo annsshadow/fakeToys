@@ -31,9 +31,9 @@
   的硬接线。
 * **名字与格式不匹配是判决而不是假容器**：`target_format=excel` 配 `bad.json` ⇒ 400，detail 把两种
   处置都点名（改名为 `.xlsx`，或换目标格式）。
-* **两条支路的判据不是同一套（A289）**：默认支容差 0.01、分层支 1e-6；负数只有分层支拦（默认支
-  `-0.8/0.1/1.7` 实测 **200**，三段变成 `0/0/6`）。两句拒绝的文案也不同：「分割比例之和必须为1.0，
-  当前为 0.8999999999999999」对「比例之和必须为 1.0，实际为 1.0050」。
+* **两条支路共引同一份判据（A289 立账、A324 / L256 收口）**：改前默认支判「±0.01 不含端点」且不查
+  逐项越界、分层支判 1e-6 加「只判负数」，`-0.8/0.1/1.7` 在默认支当时实测 **200**、三段 `0/0/6`，
+  两句拒绝文案也不同；现在两侧都落到 `validation.require_ratio_list`，同一份 ratios 得到同一句判决。
 * **幽灵分层键静默**：`stratify_key="nope"` ⇒ **200**，全部条目塌成一个分组，三段数与用默认键时
   **逐格相同**（5/1/0）。这一档不写清就会被读成「分层生效了」，所以页面把那句印在卡上。
 * **合并的四档只接了一档（A290）**：`MergeConfig` 有 `deduplicate` / `dedup_threshold` /
@@ -327,32 +327,47 @@ class TestEveryArmTheUiCanSend:
         assert resp.status_code == 400
         assert resp.json()["detail"] == "inputs 不能为空"
 
-    def test_ratio_tolerance_and_negative_guard_differ_between_the_two_branches(
+    def test_both_branches_give_the_same_verdict_for_the_same_ratios(
             self, http_with_transforms):
-        """A289 的实测两面：+0.005 默认支过、分层支拒；负数默认支过、分层支拒
+        """A289 立的那格分歧已收（A324 / L256）：四档 ratios 在两条支路上同码同答
 
-        两句拒绝的文案不同，所以判据不能写成「400 就满意」，要逐支点名落在哪一条支路上。
+        改前这里是「默认支放行、分层支判红」的两面：`0.805/0.1/0.1`（和 1.005）默认支 **200**
+        而分层支 400「实际为 1.0050」；`-0.8/0.1/1.7` 默认支 **200** 且把 6 条全塞进 test 段
+        （`0/0/6`）而分层支 400「比例不能为负数」。判据统一后两档负数与超容差和两侧都判红、
+        两档落在容差内的形状两侧都判绿——本支钉的是**同答**：入口那道门先答，两支共引同一条
+        判据，所以连判决里的参数名都逐字节相同。
         """
         http, _root, _outside = http_with_transforms
-        skewed = {"input_file": "p.json", "train_ratio": 0.805,
-                  "val_ratio": 0.1, "test_ratio": 0.1}
-        assert http.post("/api/dataset/split", json={
-            **skewed, "output_dir": "d1"}).status_code == 200
-        stratified = http.post("/api/dataset/split", json={
-            **skewed, "output_dir": "d2", "stratify": True, "stratify_key": "instruction"})
-        assert stratified.status_code == 400
-        assert "实际为 1.0050" in stratified.json()["detail"]
 
-        negative = {"input_file": "p.json", "train_ratio": -0.8,
-                    "val_ratio": 0.1, "test_ratio": 1.7}
-        loose = http.post("/api/dataset/split", json={**negative, "output_dir": "d3"})
-        assert loose.status_code == 200
-        assert [loose.json()["splits"][k]["count"]
-                for k in ("train", "val", "test")] == [0, 0, 6]
-        strict = http.post("/api/dataset/split", json={
-            **negative, "output_dir": "d4", "stratify": True, "stratify_key": "instruction"})
-        assert strict.status_code == 400
-        assert strict.json()["detail"] == "比例不能为负数"
+        def both(body, d):
+            loose = http.post("/api/dataset/split", json={**body, "output_dir": d + "1"})
+            strict = http.post("/api/dataset/split", json={
+                **body, "output_dir": d + "2", "stratify": True,
+                "stratify_key": "instruction"})
+            return loose, strict
+
+        for body, d in (
+            ({"input_file": "p.json", "train_ratio": -0.8, "val_ratio": 0.1,
+              "test_ratio": 1.7}, "n"),
+            ({"input_file": "p.json", "train_ratio": 0.8, "val_ratio": 0.1,
+              "test_ratio": 0.3}, "s"),
+        ):
+            loose, strict = both(body, d)
+            assert (loose.status_code, strict.status_code) == (400, 400), body
+            assert strict.json()["detail"] == loose.json()["detail"], body
+
+        for body, d in (
+            ({"input_file": "p.json", "train_ratio": 0.4, "val_ratio": 0.3,
+              "test_ratio": 0.29}, "t"),
+            ({"input_file": "p.json", "train_ratio": 0.805, "val_ratio": 0.1,
+              "test_ratio": 0.1}, "f"),
+        ):
+            loose, strict = both(body, d)
+            assert (loose.status_code, strict.status_code) == (200, 200), body
+            for face in (loose, strict):
+                counts = [face.json()["splits"][k]["count"]
+                          for k in ("train", "val", "test")]
+                assert sum(counts) == 6, (body, counts)
 
     def test_the_sum_verdict_carries_the_float_artifact_of_the_actual_sum(
             self, http_with_transforms):
@@ -361,7 +376,7 @@ class TestEveryArmTheUiCanSend:
         detail = http.post("/api/dataset/split", json={
             "input_file": "p.json", "output_dir": "d5",
             "train_ratio": 0.7, "val_ratio": 0.1, "test_ratio": 0.1}).json()["detail"]
-        assert detail == "分割比例之和必须为1.0，当前为 0.8999999999999999"
+        assert detail == "ratios 之和必须是 1.0（容差 0.01，含端点），当前 0.8999999999999999"
 
     def test_a_ghost_stratify_key_silently_collapses_everything_into_one_group(
             self, http_with_transforms):

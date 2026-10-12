@@ -131,13 +131,15 @@ class TestOneAuthorityPerRuler:
 
         assert api_tools.require_item_field is require_item_field
 
-    def test_no_hand_copied_sum_rule_survives_in_the_two_callers(self):
+    def test_no_hand_copied_sum_rule_survives_in_the_four_callers(self):
         """门口与评分器都不许再写 `if abs(...)`：改前这里有两行逐字节相同的手抄
 
         判的是**代码行**（`if` 紧跟 `abs(`），不是散文——两份 docstring 都还在叙述「改前
         是 `abs(sum - 1.0) > 0.01`」，那是历史记录不是实现，把它们算进来会把尺子量歪。
+        分割比例那两面（`dataset_ops` / `data_splitter`）由 A324 / L256 收进同一张名册。
         """
-        for module_name in ("augmentor/health_score.py", "api/routes/quality.py"):
+        for module_name in ("augmentor/health_score.py", "api/routes/quality.py",
+                            "augmentor/dataset_ops.py", "augmentor/data_splitter.py"):
             src = _src(module_name)
             assert not re.search(r"^\s*if\s+abs\(", src, re.M), module_name
             assert "require_ratio_list(" in src, module_name
