@@ -3210,6 +3210,13 @@ L218 把「等价旋钮住在哪」逐键验真之后，这一族里唯一「旋
   80% reached`，用时 210.67 s；六把账本与文档守卫 ⇒ 149 passed / 8 skipped；前端三门禁如上。**门禁运行
   期间没有编辑任何被守卫读取的文件**（账本批的写入全部在两次全量之外）。**本轮没有跑带 `--ignore` 的任何
   读数。** 覆盖产物 `coverage.xml` 每轮重写、不参与对账。
+  **账本批（`9eb75f6a8`）之后同一条命令复跑** ⇒ **8802 passed / 0 failed / 11 skipped / 覆盖率 99.83%**，
+  与账本批之前的四格逐格相同、**无偏差**（`skipped` 的三条老理由一字未动：8 支作者工作树档 +
+  `test_config_gates_l82:573` + `test_upload_ceiling_l87:580`，另加本轮新那一格
+  `test_parametrize_blind_face_l98.py:641` 的解释器名册档——它是换代的结果，不是回归）；
+  `TOTAL` 行 14223 语句 / 8 未覆盖 / 3922 分支 / 22 未覆盖分支、`Required test coverage of 80% reached`；
+  用时 210.67 s → 268.10 s 是同一台机器上的负载差，不是读数差。覆盖产物 `coverage.xml` 每轮重写、
+  不参与对账。**这份复跑读数就是 L238 的终态基准，也是下一轮（L239）要比对的那一格。**
 
 - **待拍口径**：**A319 / A320 / A321 / A322 四条已收口（L238）**，各留了一半没做的面写进对应 Backlog 行
   （A319 的 `score_is_unclamped`、A321 的 `text_field_found` / `errored_rules` 恒空、A322 的 `language`
