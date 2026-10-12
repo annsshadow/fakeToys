@@ -43,6 +43,13 @@ r"""L242 守卫：进度声明面说「收了」，Backlog 表那一格就必须
    **L253 重量**：A328 本轮收了，那一行现在自己就是标记 ⇒ 样本换成 A274（卷二，定级格是裸 S、正文写着
    「L220 已收口」但不带轮号括弧）。换代由该支自己的红读数逼出（`MARK.search` 在 A328 那行开了火），
    与 L250 那次同一处置：改样本不改尺子。
+8. **表行面按区段过滤（L254 / A337 修法③）**：`## 循环日志` 之下的 `| Axxx |` **不算** Backlog 表行。
+   日志块里的名册表格（46 行：A1–A8 是注入臂名册、B226–B263 是某一轮收口清单）此前混在这一格里，
+   于是「表行数」的含义不唯一，而那 38 只从未有 Backlog 行的 ID 还在「声明 ⇒ 表行有标记」里充当
+   自己的证据。过滤后各格现量：表行 **212**、留在册的声明面 **91**、有标记 **109**（与 l253 的整行
+   那一面同数，两把尺子对上）、phantom **84** = 历史裁撤 46 + 日志名册 38（两族各有专支点名）。
+   **判据本身一格未动**：过滤前后 `declared ∩ rows − marked` 都是 `PARTIAL` 三格，所以这次改的是
+   「哪一行算表行」这一面的定义，不是松紧。
 
 **判据是「精确相等」而不是「棘轮」**（承 L241 的同一条理由）：`declared ∩ rows − marked` 必须
 **恰好等于** `PARTIAL`。写成「≤ 某数」的话，本轮补标的 17 格里任何一格回退成无标记，只要总数没
@@ -71,10 +78,19 @@ r"""L242 守卫：进度声明面说「收了」，Backlog 表那一格就必须
 import pathlib
 import re
 
+from tests.unit import test_backlog_mark_vocab_l253 as other
+
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 
-#: 两卷账本。卷一与卷二都是纯 LF（本轮摘掉了卷二里那一个历史游离 CR），读取仍按字节再归一。
+#: 两卷账本。**无 CRLF 行尾**（L253 订正：不是「纯 LF」——卷二正文里有一处字面 CR 字节，那一格在讲
+#: 行尾守卫写的是反引号包的 CR，是内容不是行尾）。这一格由 `test_line_endings_are_the_documented_shape`
+#: 按字节现场验（CRLF 恒 0、卷二的游离 CR 恒恰 1 处），不写在注释里当自述。
 VOLUMES = ("OPTIMIZATION_LOOP.md", "OPTIMIZATION_LOOP_2.md")
+
+#: 区段边界（L254 / A337 修法③）。**只认这一形**：卷一的日志块标题不是 `### LNNN` 而是别的写法，
+#: 用 `### L` 当边界会让卷一整个日志区留在「Backlog」里——现量核对过：卷一的 `## 循环日志` 在第 349 行、
+#: 卷二在第 225 行，两卷的这一形各只出现一次（由 `test_the_boundary_is_unique_per_volume` 钉住）。
+LOG_SECTION = "## 循环日志"
 
 #: 口径 3：早轮有一位数与两位数账号（A1–A8、A45…），只认三位会让整个早轮面失明。
 #: `(?!\d)` 是必需的：没有它，`A1234` 会被贪心切成 `A123`，凭空造出没行的 ID。
@@ -118,15 +134,22 @@ LOG_HEAD = re.compile(r"^### L\d+")
 #: （A334 收成 `~~M~~ 已收口（L247）`）、声明面 119 → **120**（L247 清单行开头的「收 A334——」与
 #: 日志标题同名一次）。phantom 46 与 `PARTIAL` 三格均未动。两格由本轮红读数当场逼出
 #: （`assert 120 == 119` / `assert 138 == 137`），与账本里写的预测值逐格相同，仍以红读数为准。
-MEASURED_ROWS = 257  # **L253 重量**：256 → **257**（新立 A337 一行：收 A328 时把标记判据从整行收到定级格，同场量到的「定级格裸字母而正文写着闭合语」44 行两格差 + 日志块那 46 行污染表行面，独立待拍、不带标记）。红读数 `assert 257 == 256`。**L252 重量**：255 → **256**（新立 A336 一行：收 A330 时同场量到的反方向缺口——不带请求体的三员被框架自动声明 422 而构造不出，独立待拍、不带标记）。红读数 `assert 256 == 255`。**L250 重量**：254 → **255**（新立 A335 一行：A303 的修法② 那一半拆出来独立待拍，不带标记）。红读数 `assert 255 == 254`。**L251 一格未动**：本轮只收 A304 那一格的原地改写，不收新账
-MEASURED_DECLARED = 128  # **L253 重量**：127 → **128**（A328 第一次进声明面：L253 清单行开头的「收 A328——」与日志标题「收 A328：」各点一次，同一只 ID 只算一笔；A337 按口径 5 写成「新立 **A337**（……）」的括号形状，不进声明面 ⇒ `test_gap_equals_partial_roster` 没有多出假欠账，那一支本轮实测未红）。红读数 `assert 128 == 127`。**L252 重量**：126 → **127**（A330 第一次进声明面：L252 清单行开头的「收 A330——」与日志标题「收 A330：」各点一次，同一只 ID 只算一笔；A336 按口径 5 写成「新立 **A336**（……）」的括号形状，不进声明面 ⇒ `test_gap_equals_partial_roster` 没有多出假欠账，那一支本轮实测未红）。红读数 `assert 127 == 126`。**L251 重量**：125 → **126**（A304 第一次进声明面：L251 清单行开头的「收 A304——」与日志标题「收 A304：」各点一次，同一只 ID 只算一笔）。红读数 `assert 126 == 125`。**L250 重量**：123 → 125（+2：A298 与 A303 双双第一次进声明面——L250 清单行开头的「收 A298 + A303——」与句中的「同轮 A303 收口」、日志标题各点一次，两个 ID 各算一笔；A335 按口径 5 写成「新立 **A335**（……）」的括号形状，不进声明面）。红读数 `assert 125 == 123`
-MEASURED_MARKED = 146  # **L253 重量**：145 → **146**（A328 那一格收成 `~~M~~` 已收口（L253）；A337 是新账不带标记。卷一 A31 那一格本轮补的是**轮号**，而它早就带划掉字母 ⇒ 宽面计数一格未动，这一笔只由 A328 贡献）。红读数 `assert 146 == 145`。**L252 重量**：144 → **145**（A330 那一格收成 `~~M~~` 已收口（L252）；A336 是新账不带标记）。phantom 46、`PARTIAL` 与表行那一格本轮跟着新账走（见上），弱词档未动。红读数 `assert 145 == 144`。**L251 重量**：143 → **144**（A304 那一格收成 `~~S~~` 已收口（L251）；A280 那一行原地补的是现量，定级格未动所以不算标记）。红读数 `assert 144 == 143`。**L250 重量**：141 → 143（A298 / A303 各收成 `~~M~~` / `~~S~~` 已收口（L250））。三格由本轮红读数当场逼出（`assert 256 == 255` / `assert 127 == 126` / `assert 145 == 144`），与清单行里写的预测值逐格相同，仍以红读数为准
-#: 声明面点到、但表里已经没有行的 ID 数（口径 2，历史行被裁撤）。
-MEASURED_PHANTOM = 46
+MEASURED_ROWS = 212  # **L254 重量（口径变了，不是数字变了）**：257 → **212**。这一格从「两卷所有行首 `| Axxx |`」收成「Backlog 区的行首 `| Axxx |`」——`## 循环日志` 之下的 46 行名册表格不再算表行（A337 修法③）。46 = A1–A8（注入臂名册）+ B226–B263（某一轮收口清单），由 `test_the_filtered_out_rows_are_the_named_forty_six` 逐格点名。**L253 重量**：256 → **257**（新立 A337 一行：收 A328 时把标记判据从整行收到定级格，同场量到的「定级格裸字母而正文写着闭合语」44 行两格差 + 日志块那 46 行污染表行面，独立待拍、不带标记）。红读数 `assert 257 == 256`。**L252 重量**：255 → **256**（新立 A336 一行：收 A330 时同场量到的反方向缺口——不带请求体的三员被框架自动声明 422 而构造不出，独立待拍、不带标记）。红读数 `assert 256 == 255`。**L250 重量**：254 → **255**（新立 A335 一行：A303 的修法② 那一半拆出来独立待拍，不带标记）。红读数 `assert 255 == 254`。**L251 一格未动**：本轮只收 A304 那一格的原地改写，不收新账
+MEASURED_DECLARED = 91  # **L254 重量**：128 → **91**。两件事叠在这一格：区段过滤把 B226–B263 那 38 只「只在日志块名册里出现、从未有 Backlog 行」的 ID 请出留在册的声明面（128 → 90），本轮 A337 第一次进声明面（90 → 91）。**不过滤的那一面由 `test_the_unfiltered_face_still_pairs_with_the_filtered_one` 继续钉**（现量 129），所以下界从 100 降到 85 不是把尺子放松，是面本身缩了而两面都有数。**L253 重量**：127 → **128**（A328 第一次进声明面：L253 清单行开头的「收 A328——」与日志标题「收 A328：」各点一次，同一只 ID 只算一笔；A337 按口径 5 写成「新立 **A337**（……）」的括号形状，不进声明面 ⇒ `test_gap_equals_partial_roster` 没有多出假欠账，那一支本轮实测未红）。红读数 `assert 128 == 127`。**L252 重量**：126 → **127**（A330 第一次进声明面：L252 清单行开头的「收 A330——」与日志标题「收 A330：」各点一次，同一只 ID 只算一笔；A336 按口径 5 写成「新立 **A336**（……）」的括号形状，不进声明面 ⇒ `test_gap_equals_partial_roster` 没有多出假欠账，那一支本轮实测未红）。红读数 `assert 127 == 126`。**L251 重量**：125 → **126**（A304 第一次进声明面：L251 清单行开头的「收 A304——」与日志标题「收 A304：」各点一次，同一只 ID 只算一笔）。红读数 `assert 126 == 125`。**L250 重量**：123 → 125（+2：A298 与 A303 双双第一次进声明面——L250 清单行开头的「收 A298 + A303——」与句中的「同轮 A303 收口」、日志标题各点一次，两个 ID 各算一笔；A335 按口径 5 写成「新立 **A335**（……）」的括号形状，不进声明面）。红读数 `assert 125 == 123`
+MEASURED_MARKED = 109  # **L254 重量**：146 → **109**。过滤请掉 38 格（B226–B263 那 38 行日志块名册行**带着标记**——它们是某一轮收口清单里的表格，标记写的是那一轮的账，不是 Backlog 的账），本轮 A337 补上一格 ⇒ 146 − 38 + 1 = **109**。这一格现在与 l253 那把尺子的「整行带闭合标记的 Backlog 行数」同面同数（108 + 1 = 109），两把独立尺子在同一只面上对上数 ⇒ 由 `test_the_other_ruler_counts_the_same_wide_face` 现场钉。**L253 重量**：145 → **146**（A328 那一格收成 `~~M~~` 已收口（L253）；A337 是新账不带标记。卷一 A31 那一格本轮补的是**轮号**，而它早就带划掉字母 ⇒ 宽面计数一格未动，这一笔只由 A328 贡献）。红读数 `assert 146 == 145`。**L252 重量**：144 → **145**（A330 那一格收成 `~~M~~` 已收口（L252）；A336 是新账不带标记）。phantom 46、`PARTIAL` 与表行那一格本轮跟着新账走（见上），弱词档未动。红读数 `assert 145 == 144`。**L251 重量**：143 → **144**（A304 那一格收成 `~~S~~` 已收口（L251）；A280 那一行原地补的是现量，定级格未动所以不算标记）。红读数 `assert 144 == 143`。**L250 重量**：141 → 143（A298 / A303 各收成 `~~M~~` / `~~S~~` 已收口（L250））。三格由本轮红读数当场逼出（`assert 256 == 255` / `assert 127 == 126` / `assert 145 == 144`），与清单行里写的预测值逐格相同，仍以红读数为准
+#: 声明面点到、但 Backlog 表里没有行的 ID 数（口径 2）。**L254 起这一格有两种归因**：46 只是
+#: 「历史行被裁撤」那一族，区段过滤之后另有 **38** 只是「日志块名册里的 ID 从来没有 Backlog 行」
+#: （B226–B263，本轮请出表行面之后第一次现形）。两族名册分别由 `test_phantom_count_matches_measured`
+#: 与 `test_the_thirty_eight_never_had_a_backlog_row` 点名。
+MEASURED_PHANTOM = 84
+MEASURED_PHANTOM_LOG_ROSTER = 38
 #: 本轮开工前实测的欠账笔数：17 笔补标 + 3 笔半程。
 MEASURED_GAP_BEFORE = 20
 #: 反空转下界：解析器退化到看不见东西时先在这里响，不等集合断言。
-MIN_DECLARED = 100
+#: **L254 重量**：100 → **85**。区段过滤把留在册的声明面从 128 缩到 91，下界必须跟着面走，
+#: 否则这一格会在口径变更当场变成「假阳性红」。放松的担心由另一面挡着：不过滤的那一面
+#: （现量 129）与日志块正文那一面各有独立断言，解析器一旦退化到看不见东西，三面里至少两面响。
+MIN_DECLARED = 85
 
 #: 允许「宣称收口而表行不标」的 ID——必须是半程收口，且每格有各自的点名用例。
 PARTIAL = frozenset({"A127", "A156", "A45"})
@@ -156,13 +179,22 @@ def expand(blob):
     return out
 
 
-def table_rows(volumes):
-    """`{ID: [(卷, 行号, 整行)]}` —— 只有行首的 `| Axxx |` 才算表行，散文里点名不算"""
+def table_rows(volumes, backlog_only=True):
+    """`{ID: [(卷, 行号, 整行)]}` —— 只有行首的 `| Axxx |` 才算表行，散文里点名不算。
+
+    **L254 加的区段过滤（A337 修法③）**：`## 循环日志` 之下的同名行**不算 Backlog 表行**——
+    日志块里的名册表格（卷二 46 行：A1–A8 是注入臂名册、B226–B263 是某一轮收口清单）此前也被
+    这一格数进去，于是「表行数」的含义不唯一，而 B226–B263 那 38 只从未有过 Backlog 行却在
+    「声明 ⇒ 表行有标记」这一判据里充当自己的证据。`backlog_only=False` 只留给对照臂用。
+    """
     rows = {}
     for name, lines in volumes.items():
+        in_log = False
         for i, line in enumerate(lines, 1):
+            if line.startswith(LOG_SECTION):
+                in_log = True
             hit = ROW.match(line)
-            if hit:
+            if hit and not (backlog_only and in_log):
                 rows.setdefault(hit.group(1), []).append((name, i, line))
     return rows
 
@@ -265,6 +297,81 @@ class TestTableIsAPureFunction:
                 if not (line.startswith(f"| {ident} | ") and line.endswith(" |")):
                     bad.append((name, i, line[:50]))
         assert not bad, f"表行形状不合：{bad[:4]}"
+
+
+class TestTheSectionBoundary:
+    """口径 8（L254 / A337 修法③）：`## 循环日志` 之下的名册表格不算 Backlog 表行"""
+
+    def test_the_boundary_is_unique_per_volume(self):
+        """边界只认 `## 循环日志` 这一形：卷一的日志块标题不是 `### LNNN`，拿它当边界会让
+        卷一整个日志区留在「Backlog」里——那正是 A337 说含义不唯一的来源之一"""
+        for name, lines in load_volumes().items():
+            hits = [i for i, ln in enumerate(lines, 1) if ln.startswith(LOG_SECTION)]
+            assert len(hits) == 1, (name, hits)
+
+    def test_the_filtered_out_rows_are_the_named_forty_six(self):
+        volumes = load_volumes()
+        off = table_rows(volumes, backlog_only=False)
+        on = table_rows(volumes)
+        dropped = sorted(set(off) - set(on))
+        assert dropped == sorted(
+            [f"A{n}" for n in range(1, 9)] + [f"B{n}" for n in range(226, 264)]
+        ), dropped
+        assert len(dropped) == 46
+        assert len(off) == MEASURED_ROWS + 46
+        assert len(on) == MEASURED_ROWS
+        # 被过滤掉的每一格都必须在边界之下，不是靠 ID 形状挑出来的
+        for name, lines in load_volumes().items():
+            edge = next(i for i, ln in enumerate(lines, 1) if ln.startswith(LOG_SECTION))
+            for ident in dropped:
+                for vol, line_no, _ in off.get(ident, []):
+                    if vol == name:
+                        assert line_no > edge, (name, ident, line_no, edge)
+
+    def test_the_gap_is_the_same_on_both_faces(self):
+        """核心判据没被这次过滤改松：开与关两侧的欠账名册都是 PARTIAL 三格"""
+        volumes = load_volumes()
+        on = table_rows(volumes)
+        off = table_rows(volumes, backlog_only=False)
+        assert set(declared(volumes, on)) - marked(on) == PARTIAL
+        assert set(declared(volumes, off)) - marked(off) == PARTIAL
+
+    def test_the_unfiltered_face_still_pairs_with_the_filtered_one(self):
+        """反空转的另一半：留在册的声明面 91，不过滤那一面 91 + 38 = 129 也照样有数"""
+        volumes = load_volumes()
+        off = table_rows(volumes, backlog_only=False)
+        assert len(declared(volumes, off)) == (
+            MEASURED_DECLARED + MEASURED_PHANTOM_LOG_ROSTER
+        )
+        assert len(marked(off)) == MEASURED_MARKED + MEASURED_PHANTOM_LOG_ROSTER
+
+    def test_the_thirty_eight_never_had_a_backlog_row(self):
+        """B226–B263 是某一轮收口清单里的表格行，从未进过 Backlog 表——过滤之后它们改归
+        phantom 那一族，且另一族（历史裁撤 46）的读数一格未动"""
+        volumes = load_volumes()
+        rows = table_rows(volumes)
+        phantoms = set(declared(volumes)) - set(rows)
+        roster = {f"B{n}" for n in range(226, 264)}
+        assert phantoms & roster == roster, sorted(roster - phantoms)
+        assert len(phantoms) == MEASURED_PHANTOM
+        assert len(phantoms) - len(roster) == 46
+
+    def test_the_other_ruler_counts_the_same_wide_face(self):
+        """两把独立尺子在同一只面上对上数：l253 的「整行带闭合标记的 Backlog 行」= 本守卫
+        过滤后的有标记名册。定级格那一面（权威面）严格小于它——那 44 行差是 A338 的账"""
+        wide, narrow = other.faces(other.load_volumes())
+        mine = marked(table_rows(load_volumes()))
+        assert mine == wide, sorted(mine ^ wide)
+        assert narrow < wide, sorted(narrow - wide)
+
+    def test_line_endings_are_the_documented_shape(self):
+        """订正历轮自述：两卷是「无 CRLF 行尾」而不是「纯 LF」——卷二正文里有一处字面 CR
+        字节（讲行尾守卫那一格反引号包的那个），它是内容不是行尾，须原样留着"""
+        for name in VOLUMES:
+            data = (ROOT / name).read_bytes()
+            assert b"\r\n" not in data, name
+        assert (ROOT / VOLUMES[0]).read_bytes().count(b"\r") == 0
+        assert (ROOT / VOLUMES[1]).read_bytes().count(b"\r") == 1
 
 
 class TestRulerIsNotIdle:
