@@ -3097,6 +3097,10 @@ L218 把「等价旋钮住在哪」逐键验真之后，这一族里唯一「旋
   作者工作树档，历史既有）。前端三门禁：`tsc --noEmit` rc=0、`eslint . --max-warnings 0` rc=0、
   `vitest run` **22 文件 / 299 支**（287 + 12 = 新 `Settings.readonly.test.tsx` 9 支 + `System.test.tsx` 3 支；
   文件 21 → 22）。census 三数一格未动（新守卫零 `parametrize`）。**本轮没有跑带 `--ignore` 的任何读数。**
+  **账本批（`e6718f828`）之后同一条命令复跑** ⇒ **8762 passed / 0 failed / 10 skipped / 覆盖率 99.83%**，与账本批之前的四格逐格相同、
+  **无偏差**（`skipped` 的三条理由一字未动：8 支作者工作树档 + `test_config_gates_l82:573` + `test_upload_ceiling_l87:580`；
+  `TOTAL` 行 14210 语句 / 8 未覆盖 / 3932 分支 / 22 未覆盖分支、`Required test coverage of 80% reached`）；
+  用时 204.28 s → 299.37 s 是同一台机器上的负载差，不是读数差。覆盖产物 `coverage.xml` 每轮重写、不参与对账。
 
 - **待拍口径**：**A281 已收口（L237）**。本轮新立 **A323**（toast 不读后端 `message`）待拍；**A319 / A320 / A321 / A322**
   （同一族「判决缺失面」，**下一轮建议**：L238 按用户已拍的顺序收这一族四条，它们要改对外状态码与响应值域，
