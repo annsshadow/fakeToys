@@ -151,7 +151,13 @@ class TestPruneIsAdmissible:
                                    _char_trigrams("abcdefghij")) == 0.8
 
     def test_prune_skips_something_it_should(self, monkeypatch):
-        """剪枝必须**真的在剪**：候选全比的写法与不剪同义，那这条优化就没有守卫"""
+        """剪枝必须**真的在剪**：候选全比的写法与不剪同义，那这条优化就没有守卫
+
+        L240 之后本尺子必须点名倒排那条：同一份语料（n_train=60、vocab≈375、单行摊平
+        ≈950 次）在新增的代价判据下自然判给稠密，而稠密每条只比一次 ⇒ 把 `need` 剪枝
+        整段删掉，`calls` 从 1 变 1，注入臂 A1 当场空转绿。这里按 L95 立尺原意把路线焊回
+        倒排，断言与阈值一字未动；稠密那条的牙齿见 test_leakage_dense_route_l240。
+        """
         calls = {"n": 0}
         real = _jaccard_from_counts
 
@@ -160,6 +166,8 @@ class TestPruneIsAdmissible:
             return real(inter, sa, sb)
 
         monkeypatch.setattr("augmentor.leakage._jaccard_from_counts", spy)
+        monkeypatch.setattr("augmentor.leakage._dense_route_wins",
+                            lambda block_rows, n_train, vocab_size, flatten_adds: False)
         train = [{"instruction": f"共享前缀 与各自不同的尾部 {i:03d} 号"} for i in range(60)]
         test = [{"instruction": "共享前缀 与各自不同的尾部 007 号呀"}]
         detector = LeakageDetector(fuzzy_threshold=0.8)
@@ -308,9 +316,18 @@ class _OpCounter(set):
 class TestPeakMemoryIsBounded:
     """峰值内存：旧版为每个训练签名另存一份三元组集合，重写后只剩「个数」"""
 
-    def test_peak_mib_under_ceiling(self):
+    def test_peak_mib_under_ceiling(self, monkeypatch):
+        """**倒排那条**的峰值上限：L95 那次重写把「每个训练签名另存一份三元组集合」删掉，
+        本支钉的就是那份回退（同语料 HEAD 3.30 MiB → 1.23 MiB）。
+
+        L240 加了按代价换路的稠密档，同语料会走稠密、峰值变成 16.4 MiB（numpy 视图 +
+        块级临时数组，读数见 `test_leakage_dense_route_l240.py` 的内存账）。所以这里把
+        被测对象点名：判据焊死成「不走稠密」，本支的量才还是 L95 那一笔账。
+        """
         import tracemalloc
 
+        monkeypatch.setattr("augmentor.leakage._dense_route_wins",
+                            lambda block_rows, n_train, vocab_size, flatten_adds: False)
         train = [{"instruction": f"训练样本编号 {i:05d} 号的问题描述文本"}
                  for i in range(1200)]
         test = [{"instruction": f"测试样本编号 {j:05d} 号的问题描述文本"}
