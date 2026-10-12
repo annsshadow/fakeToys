@@ -14,18 +14,23 @@
 `block_on_warning` 下可以是空的、`skipped_rules` 与 `failed_rules` 是相反的意思、
 `errored_rules` 实测恒空。接线只让 l224 的数涨一格，读错一格用户就会把「没算」当「不及格」。
 
-**接线时量出来的三条产品缺陷，本轮立账不修**（改的是判定语义，得单独拍）：
+**接线时量出来的三条产品缺陷，L235 立账、L238 全部收口**（改的是判定语义与对外状态码，
+所以按用户拍板单独走一轮）：
 
-* **A319** 权重不校验非负与上界、`health_score` 也不钳进 [0,1]：同一份数据默认权重下
-  0.893 / healthy，`[0,0,0,1]` 变 1.0，`[2.0,-0.5,-0.25,-0.25]` 变 **1.17**；而门禁三条
-  规则一条都不看权重 ⇒ 这三档的 verdict 全是 failed，「健康分 healthy」与「门禁阻断」
-  同时为真。
-* **A320** `abs(sum(weights) - 1.0) > 0.01` 在恰好 0.01 那一档是假的：0.99 与 1.01 的差
-  实测都是 `0.010000000000000009 > 0.01` ⇒ 400，而 1.005 放行；docstring 写的「之和 ≈ 1.0」
-  与 `HealthGateRequest` 注释里的「4 个元素、之和 ≈ 1.0」都不是它实际的那把尺子。
-* **A321** `text_field` 是空串或数据集里不存在的键时**一句判决都没有**：所有条目取到空值，
-  实测 `duplicate_rate` 变成 **1.0**，门禁于是在 `duplicate_rate` 那条上判负 —— 一次
-  彻头彻尾的假判决，而且它与「数据真的全重复」在响应里长得一模一样。
+* **A319**（已收，L238）权重不校验非负与上界、`health_score` 也不钳进 [0,1]：同一份数据
+  默认权重下 0.893 / healthy，`[0,0,0,1]` 变 1.0，改前 `[2.0,-0.5,-0.25,-0.25]` 变
+  **1.17**；而门禁三条规则一条都不看权重 ⇒ 「健康分 healthy」与「门禁 failed」同时为真。
+  现在逐项必须是 [0,1] 内的数值、健康分出口钳进 [0,1]；那两半都仍然成立的是**第 ④ 条**
+  （健康分不参与门禁判决），这一族由 `TestTheHonestProse` 与卡片正文一起钉住。
+* **A320**（已收，L238）改前 `abs(sum(weights) - 1.0) > 0.01` 在恰好 0.01 那一档是假的：
+  0.99 与 1.01 的差实测都是 `0.010000000000000009 > 0.01` ⇒ 400，而 1.005 放行。现在判和
+  之前先把浮点噪声量化到 9 位 ⇒ 0.99 / 1.005 / 1.01 都 200、0.98 / 1.02 才 400，且 400 的
+  detail 带上**实测和**与**容差**（`WEIGHT_SUM_TOLERANCE` 是可引常数，不是文案里的字面）。
+* **A321**（已收，L238）改前 `text_field` 是空串 / 纯空白 / 数据集里不存在的键时**一句判决
+  都没有**：所有条目取到空值，实测 `duplicate_rate` 变成 **1.0**，门禁在那条规则上判负——
+  一次彻头彻尾的假判决，而且它与「数据真的全重复」在响应里长得一模一样。现在四档一律 400，
+  detail 带上首条实际字段；判据住在 `gate_dataset_health`（CLI 与 API 共用那一层），与
+  `/api/dataset/impact` 的 `_require_any_field` 共引同一份 `validation.require_item_field`。
 
 五面判据，各对应一种真实失效形状：
 
@@ -71,6 +76,7 @@ from api.routes.quality import (
 )
 from api.routes.quality import HealthGateResponse as PyHealthGateResponse
 from augmentor.quality_gate import GateVerdict
+from augmentor.validation import WEIGHT_SUM_TOLERANCE
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 SRC = ROOT / "web" / "src"
@@ -105,8 +111,6 @@ DUP_GATE_METRICS = {
     "coverage": 1.0, "duplicate_rate": 0.5,
 }
 SPARSE_HEALTH_SCORE = 0.6250000833333056
-#: A319 的现场：权重换掉之后健康分能**超过 1**（同一份数据、同一份 verdict）
-WEIGHTS_OVER_ONE = 1.1697944143478562
 
 #: `HealthGateRequest` 的字段默认（这一份由 pydantic 自己说，不在测试里抄第二遍）
 FIELD_DEFAULTS = {name: field.default for name, field in HealthGateRequest.model_fields.items()}
@@ -385,41 +389,84 @@ class TestTheVerdictsAreWhatThePageSays:
         assert body["gate"]["passed"] is True
         assert body["gate"]["failed_rules"] == [] and body["gate"]["warned_rules"] == []
 
-    def test_a319_weights_can_push_the_score_over_one_without_touching_the_verdict(self, http):
+    def test_a319_is_closed_weights_are_gated_per_item_and_the_score_is_clamped(self, http):
+        """A319 已收（L238）：负权重与上界越界 400 点名到元素下标；健康分出口钳进 [0, 1]
+
+        两半各有一支「不恒真」的牙齿：越界档逐条点名判据的**下标**（判错了元素就会红），
+        钳制档先把没钳的那个数算出来（`raw > 1.0`）——这一档若哪天不再越界，钳制臂就
+        该红着提醒换权重，而不是悄悄变成「1.0 == 1.0」的空转。
+        """
         client, _ = http
         baseline = gate(client).json()
-        all_coverage = gate(client, weights=[0.0, 0.0, 0.0, 1.0]).json()
-        negative = gate(client, weights=[2.0, -0.5, -0.25, -0.25]).json()
-        assert all_coverage["health"]["health_score"] == pytest.approx(1.0)
-        assert negative["health"]["health_score"] == pytest.approx(WEIGHTS_OVER_ONE)
-        assert negative["health"]["health_score"] > 1.0, "A319：健康分没有上界钳制"
-        for body in (baseline, all_coverage, negative):
-            assert body["health"]["level"] == "healthy"
-            assert body["gate"]["verdict"] == GateVerdict.FAILED
-            assert body["gate"]["metrics"]["duplicate_rate"] == 0.5
+        for weights, idx in (((2.0, -0.5, -0.25, -0.25), 0),
+                             ((-0.25, 0.25, 0.25, 0.75), 0),
+                             ((1.0, 1.0, -0.5, -0.5), 2)):
+            r = gate(client, weights=list(weights))
+            assert r.status_code == 400, (weights, r.text[:200])
+            assert r.json()["detail"].startswith(
+                f"weights[{idx}] 必须在 0.0 到 1.0 之间"), weights
+        one_hot = gate(client, weights=[0.0, 0.0, 0.0, 1.0])
+        assert one_hot.status_code == 200, "「只看覆盖率」是合法用法，不在被拒之列"
+        assert one_hot.json()["health"]["health_score"] == pytest.approx(1.0)
+        edge = gate(client, weights=[1.0, 0.005, 0.005, 0.0]).json()
+        m = edge["health"]["metrics"]
+        raw = (1.0 * m["completeness"] + 0.005 * m["diversity"]
+               + 0.005 * m["quality_balance"] + 0.0 * m["coverage"])
+        assert raw > 1.0, f"这一档没越过 1（{raw}）⇒ 钳制臂空转，换权重再来"
+        assert edge["health"]["health_score"] == 1.0
+        assert edge["health"]["level"] == "healthy"
+        # A319④ 仍然成立，而且是**该成立**：门禁三条规则一条都不看权重
+        assert edge["gate"]["verdict"] == baseline["gate"]["verdict"] == GateVerdict.FAILED
+        assert edge["gate"]["metrics"]["duplicate_rate"] == 0.5
 
-    def test_a320_the_sum_tolerance_is_not_what_the_docstring_says(self, http):
-        """0.99 与 1.01 都被拒（浮点差是 0.010000000000000009 > 0.01），1.005 放行"""
+    def test_a320_is_closed_the_tolerance_is_inclusive_and_quantized(self, http):
+        """A320 已收（L238）：0.99 / 1.01 放行，0.98 / 1.02 拒，且文案带实测和与容差
+
+        留两位小数凑 1.0 是最自然的用法，改前恰恰是它被拒（浮点差 0.010000000000000009）。
+        现在放行靠的是**判之前先量化到 9 位**，不是把容差改大——所以那一支浮点断言必须
+        还成立，否则这条臂就在量一件没发生的事。
+        """
         client, _ = http
-        for weights in ([0.24, 0.25, 0.25, 0.25], [0.26, 0.25, 0.25, 0.25]):
+        for weights in ([0.24, 0.25, 0.25, 0.25], [0.26, 0.25, 0.25, 0.25],
+                        [0.255, 0.25, 0.25, 0.25]):
+            assert gate(client, weights=weights).status_code == 200, weights
+        assert abs(sum([0.24, 0.25, 0.25, 0.25]) - 1.0) > WEIGHT_SUM_TOLERANCE
+        for weights, total in (([0.23, 0.25, 0.25, 0.25], 0.98),
+                               ([0.27, 0.25, 0.25, 0.25], 1.02)):
             r = gate(client, weights=weights)
             assert r.status_code == 400, (weights, r.text[:200])
-            assert r.json()["detail"] == "权重之和必须为 1.0"
-        assert abs(sum([0.24, 0.25, 0.25, 0.25]) - 1.0) > 0.01
-        assert gate(client, weights=[0.255, 0.25, 0.25, 0.25]).status_code == 200
+            assert r.json()["detail"] == (
+                f"weights 之和必须是 1.0（容差 {WEIGHT_SUM_TOLERANCE}，含端点），当前 {total}"
+            )
         r = gate(client, weights=[0.25, 0.25, 0.25])
-        assert r.status_code == 400 and r.json()["detail"] == "权重必须包含 4 个元素"
+        assert r.status_code == 400
+        assert r.json()["detail"] == "weights 必须是 4 个元素，当前 3 个"
 
-    def test_a321_a_ghost_text_field_produces_a_fake_duplicate_verdict(self, http):
-        """空串与幽灵键都不报错，duplicate_rate 一律 1.0 ⇒ 与「真的全重复」长得一样"""
+    def test_a321_is_closed_a_ghost_text_field_is_a_400_that_names_the_real_fields(self, http):
+        """A321 已收（L238）：空串 / 纯空白 / 幽灵键 / 大小写错位一律 400，且带上首条实际字段
+
+        改前这四档全部 200、`duplicate_rate` 一律 1.0，与「数据真的全重复」逐字节同形。
+        判据在 `gate_dataset_health`（CLI 与 API 共用那一层），所以同一条臂要**两面都量**：
+        直调 SDK 必须落同一个 `DataValidationError`，否则「一面有声、一面静默」就又回来了。
+        """
         client, _ = http
-        for text_field in ("", "no_such_field"):
-            body = gate(client, text_field=text_field).json()
-            assert body["gate"]["metrics"]["duplicate_rate"] == 1.0, text_field
-            assert body["gate"]["failed_rules"] == ["duplicate_rate"]
-            assert body["health"]["metrics"]["completeness"] == 1.0, "健康分那四项不看 text_field"
+        for text_field, why in (("", "text_field 不能是空字符串"),
+                                ("   ", "text_field 不能是纯空白字符串"),
+                                ("no_such_field", "里没有任何一条含字段 'no_such_field'"),
+                                ("Instruction", "大概率是字段名拼错了")):
+            r = gate(client, text_field=text_field)
+            assert r.status_code == 400, (text_field, r.text[:200])
+            assert why in r.json()["detail"], (text_field, r.json()["detail"])
+        detail = gate(client, text_field="no_such_field").json()["detail"]
+        assert "首条实际字段: instruction, output" in detail, detail
         real = gate(client, text_field="output").json()
         assert real["gate"]["metrics"]["duplicate_rate"] == 0.5
+        from augmentor.exceptions import DataValidationError
+        from augmentor.quality_gate import gate_dataset_health
+
+        for text_field in ("", "   ", "no_such_field"):
+            with pytest.raises(DataValidationError):
+                gate_dataset_health(DUP_ITEMS, text_field=text_field)
 
     def test_the_three_thresholds_have_no_range_gate(self, http):
         """负数与大于 1 的值全收，判决随阈值单调变化 ⇒ 页面刻意不给这三个框设 min/max"""
@@ -470,7 +517,8 @@ class TestTheVerdictsAreWhatThePageSays:
             {"input_file": "dup.json"},
             {"input_file": "dup.json", "pass_rate": 0.0},
             {"input_file": "dup.json", "weights": [0.0, 0.0, 0.0, 1.0]},
-            {"input_file": "dup.json", "text_field": ""},
+            # L238 起 `text_field` 的坏值走 400，不进评分器 ⇒ 这一档换成合法的另一列
+            {"input_file": "dup.json", "text_field": "output"},
             {"input_file": "dup.json", "duplicate_rate_max": 99.0},
             {"input_file": "sparse.json", "block_on_warning": True},
         ]
@@ -503,12 +551,18 @@ class TestTheHonestProse:
 
     def test_the_page_states_the_measured_numbers(self):
         page = _page()
-        # A319：健康分能超过 1（实测 1.17）
-        assert "1.17" in page and "超过 1" in page
-        # A320：容差不是字面那个 0.01
-        assert "0.99 与 1.01" in page and "1.005" in page
-        # A321：幽灵字段 ⇒ duplicate_rate 1.0
+        # A319 改前的读数仍写在页面上，但说的是「今天那是 400」
+        assert "1.17（超过 1）" in page and "今天那一档是 400" in page
+        # A319 的钳制 + A320 的含端点容差：页面给的界必须和后端判的界同族
+        assert "钳进 [0, 1]" in page and "含端点" in page
+        assert "0.99 / 1.005 / 1.01 都放行" in page and "0.98 与 1.02 才拒" in page
+        # 权重输入框自带 [0,1] 的闸（后端逐项判同一件事）
+        start = page.index("<span>健康分权重</span>")
+        region = page[start:page.index("{gateWeightsPartial && (")]
+        assert "min={0} max={1}" in region, region
+        # A321：幽灵字段现在是 400，而「先怀疑字段名」这句仍然留着（dup=1.0 还有别的来源）
         assert "duplicate_rate 变成 1.0" in page and "先怀疑字段名" in page
+        assert "一律 400" in page and "带着首条实际字段" in page
         # block_on_warning：failed_rules 空
         assert "failed_rules 是空的" in page
         # skipped 与 failed 是相反的意思
