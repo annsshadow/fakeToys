@@ -1,16 +1,21 @@
 /**
- * `System` 的数据备份面（L231：A279 第七批接线）
+ * `System` 的数据备份面（L231：A279 第七批接线；L243：A299 校验和闸 + A300 两员入口）
  *
  * 存在理由与 L229 / L230 那两份同构：Python 侧的 `test_backup_wiring_l231.py` 只能证明
- * **源码写了**那四个调用形状与那几句口径，证不出渲染面上真的看得见。这一份钉六件事：
+ * **源码写了**那六个调用形状与那几句口径，证不出渲染面上真的看得见。这一份钉八件事：
  * ① 列表按服务端回的**原样**渲染，包括索引里两条同 id 的记录（同名创建两次的真实产物）
  *    ——所以行键不能拿 `backup_id` 当唯一键；
  * ② 创建的必填闸、成功回执、失败判决三路各有可见读数，失败时用户看见的是服务端那句
  *    判决原话（403「路径超出允许的数据目录范围」），不是页面自己编的「失败了」；
  * ③ 恢复的必填闸与成功回执，且回执里出现的是 **`output_path`** 那一格的值；
  * ④ 删除走 Popconfirm，确认之后才真发；
- * ⑤ 六条实测过的**诚实口径**留在卡上（A298 / A299 / A300 / A301 / A302 与白名单三档）；
- * ⑥ 备份面与候选面各自失败只降级自己，不把服务状态与向量库状态一起拖掉。
+ * ⑤ 卡上那几句**诚实口径**逐条留在 DOM 里（A298 / A299 / A300 / A301 / A302 与白名单三档）
+ *    ——L243 把其中两句翻了面，所以钉的是新话，旧话（「不拦截恢复」「HTTP 面没有入口」）
+ *    在页面上已经不存在了；
+ * ⑥ 备份面与候选面各自失败只降级自己，不把服务状态与向量库状态一起拖掉；
+ * ⑦ L243 的「校验完整性」三形状（对得上 / 对不上 / 文件丢了）逐格分开显示，且它**点一次
+ *    查一次**：挂载时不发，列表一刷新就把上一轮的读数清掉；
+ * ⑧ L243 的「清理旧备份」同样走 Popconfirm，送出去的是**保留份数**，下限 10（出厂默认）。
  *
  * 夹具里的 checksum、item_count、file_size 逐字来自探针在真实端点上量到的回执，不是编的。
  * 服务层用 `importOriginal` 做部分替身，`apiErrorDetail` 留真身，理由同前两份用例。
@@ -63,6 +68,35 @@ const fx = vi.hoisted(() => {
     output_path: 'D:\\data\\r.json',
     item_count: 5,
   }
+  // L243：完整性读数的三种真实形状。夹具逐键抄 `verify_backup_integrity` 的返回：
+  // `exists` 判的是「存在且非空」，所以第三条（文件丢了）的 `checksum_match` 必然是
+  // false 且无从比 —— 页面把这两种 false 分开显示，不能塌成同一种红。
+  const VERIFY_OK = {
+    results: [
+      {
+        backup_id: 'backup_20261011_175833',
+        timestamp: '2026-10-11T17:58:33.985322',
+        item_count: 5,
+        exists: true,
+        checksum_match: true,
+      },
+      {
+        backup_id: 'mybak',
+        timestamp: '2026-10-11T17:58:33.991804',
+        item_count: 5,
+        exists: true,
+        checksum_match: false,
+      },
+      {
+        backup_id: 'gone',
+        timestamp: '2026-10-11T17:58:34.000000',
+        item_count: 3,
+        exists: false,
+        checksum_match: false,
+      },
+    ],
+  }
+  const CLEANUP_OK = { deleted_count: 2, max_backups: 1 }
   const FILES = {
     files: [
       { name: 'train_data1.json', path: 'D:\\data\\train_data1.json', size: 2 },
@@ -73,6 +107,8 @@ const fx = vi.hoisted(() => {
     LIST_DUP,
     CREATE_OK,
     RESTORE_OK,
+    VERIFY_OK,
+    CLEANUP_OK,
     FILES,
     spies: {
       getServiceStatus: null as unknown as ReturnType<typeof vi.fn>,
@@ -82,6 +118,8 @@ const fx = vi.hoisted(() => {
       createBackup: null as unknown as ReturnType<typeof vi.fn>,
       restoreBackup: null as unknown as ReturnType<typeof vi.fn>,
       deleteBackup: null as unknown as ReturnType<typeof vi.fn>,
+      verifyBackups: null as unknown as ReturnType<typeof vi.fn>,
+      cleanupBackups: null as unknown as ReturnType<typeof vi.fn>,
       listDependencyDatasets: null as unknown as ReturnType<typeof vi.fn>,
       getDependencyGraph: null as unknown as ReturnType<typeof vi.fn>,
       systemDependencies: null as unknown as ReturnType<typeof vi.fn>,
@@ -121,6 +159,8 @@ vi.mock('../services/api', async (importOriginal) => {
   s.createBackup = vi.fn().mockResolvedValue(fx.CREATE_OK)
   s.restoreBackup = vi.fn().mockResolvedValue(fx.RESTORE_OK)
   s.deleteBackup = vi.fn().mockResolvedValue({ success: true })
+  s.verifyBackups = vi.fn().mockResolvedValue(fx.VERIFY_OK)
+  s.cleanupBackups = vi.fn().mockResolvedValue(fx.CLEANUP_OK)
   // L232 起本页还会取数据集血缘那一面。与本份用例无关，给空回执让它不必逐个显式安排。
   s.listDependencyDatasets = vi.fn().mockResolvedValue({ datasets: [] })
   s.getDependencyGraph = vi.fn().mockResolvedValue({ nodes: [], edges: [], issues: [] })
@@ -136,6 +176,8 @@ vi.mock('../services/api', async (importOriginal) => {
     createBackup: s.createBackup,
     restoreBackup: s.restoreBackup,
     deleteBackup: s.deleteBackup,
+    verifyBackups: s.verifyBackups,
+    cleanupBackups: s.cleanupBackups,
     listDependencyDatasets: s.listDependencyDatasets,
     getDependencyGraph: s.getDependencyGraph,
     systemDependencies: s.systemDependencies,
@@ -144,7 +186,7 @@ vi.mock('../services/api', async (importOriginal) => {
 
 import System from './System'
 
-const { CHECKSUM, LIST_DUP, CREATE_OK, RESTORE_OK, FILES, spies } = fx
+const { CHECKSUM, LIST_DUP, CREATE_OK, RESTORE_OK, VERIFY_OK, CLEANUP_OK, FILES, spies } = fx
 
 afterEach(() => {
   cleanup()
@@ -155,6 +197,8 @@ afterEach(() => {
   spies.createBackup.mockClear().mockResolvedValue(CREATE_OK)
   spies.restoreBackup.mockClear().mockResolvedValue(RESTORE_OK)
   spies.deleteBackup.mockClear().mockResolvedValue({ success: true })
+  spies.verifyBackups.mockClear().mockResolvedValue(VERIFY_OK)
+  spies.cleanupBackups.mockClear().mockResolvedValue(CLEANUP_OK)
 })
 
 /** 等备份列表落地（挂载即取，所以只需等第一次回执渲染出来） */
@@ -299,8 +343,8 @@ describe('System 恢复与删除', () => {
   })
 })
 
-describe('System 备份卡的诚实口径（L231 实测）', () => {
-  it('六条实测脾气逐条留在卡上', async () => {
+describe('System 备份卡的诚实口径（L231 实测，L243 两面翻正）', () => {
+  it('卡上那句句脾气逐条留在 DOM 里', async () => {
     render(<System />)
     await waitBackups()
 
@@ -308,14 +352,23 @@ describe('System 备份卡的诚实口径（L231 实测）', () => {
     // A298：同名覆盖 + 索引两条 + 删除按 id 清全部
     expect(text).toContain('覆盖同一份文件')
     expect(text).toContain('删一次两条一起消失')
-    // A299：checksum 不拦恢复
-    expect(text).toContain('不拦截恢复')
-    expect(text).toContain('别把这一格读成完整性保证')
+    // A299：L243 之前这一格写的是「不拦截恢复」，现在翻面成会拦 409。
+    // 旧话在页面上已不存在，所以钉新话；顺带钉「一个字节都不写」——那是这一档的
+    // 第二维（库里在覆盖输出文件之前抛），只钉 409 会把「拦下了但还是写盘」放过去。
+    expect(text).toContain('会拦')
+    expect(text).toContain('一个字节都不写')
+    expect(text).not.toContain('不拦截恢复')
     // 落点键名（A277 当年订正过文档）
     expect(text).toContain('output_path')
-    // A300：SDK 有函数、HTTP 面无入口
-    expect(text).toContain('clean_old_backups')
-    expect(text).toContain('HTTP 面没有入口')
+    // A300：SDK 那两员自 L243 起有 HTTP 入口；旧话「HTTP 面没有入口」同样已不在页面上
+    expect(text).toContain('现已有 HTTP 入口')
+    expect(text).not.toContain('HTTP 面没有入口')
+    // A300 的另一半：CLI 那一面仍只有四档，页面不许把它说成也有这两档
+    expect(text).toContain('create / restore / list / delete')
+    // L243：verify 的读数面（逐行哈希、点一次查一次）与份数下限
+    expect(text).toContain('索引登记的每一行')
+    expect(text).toContain('点一次查一次')
+    expect(text).toContain('页面把下限钉在 1')
     // A301：CLI 与页面的「默认目录」不是同一个
     expect(text).toContain('不是同一个目录')
     // A302：设了 API Key 就 401（key 存进「配置管理」页那张卡后由拦截器送出去，L233）
@@ -323,6 +376,139 @@ describe('System 备份卡的诚实口径（L231 实测）', () => {
     // 白名单三档与候选口径
     expect(text).toContain('路径包含非法组件')
     expect(text).toContain('train_data*.json')
+  })
+})
+
+describe('System 校验完整性（L243，A299 的读数面）', () => {
+  // 这一只按钮的 accessible name 来自 `aria-label="校验备份完整性"`，不是可见文字
+  // 「校验完整性」——`getByRole({ name })` 认前者，所以按可见文字取会撞「找不到元素」。
+  // 「清理旧备份」那只恰好两者同名，取法不受影响。
+  it('挂载时不发这只请求——它是点一次查一次，不随列表自动刷', async () => {
+    render(<System />)
+    await waitBackups()
+
+    expect(spies.verifyBackups).not.toHaveBeenCalled()
+    expect(screen.queryByText('文件丢了')).not.toBeInTheDocument()
+  })
+
+  it('三形状分开显示：对得上 / 对不上 / 文件丢了（后者是「没法比」而不是同一种红）', async () => {
+    render(<System />)
+    await waitBackups()
+
+    fireEvent.click(screen.getByRole('button', { name: '校验备份完整性' }))
+
+    await waitFor(() => expect(spies.verifyBackups).toHaveBeenCalledTimes(1))
+    // 回执那句要 waitFor：同步读 `document.body.textContent` 实测拿不到它，
+    // 而表格那一格已经在了（同族前例：`已备份 5 条 ⇒ mybak` 也是这么等的）。
+    await waitFor(() =>
+      expect(document.body.textContent).toContain('2 只备份的校验和对不上，恢复它们会拿 409')
+    )
+    const text = document.body.textContent || ''
+    // 好 / 坏 / 文件丢了：三只 id 都在，判决三格各就各位
+    expect(screen.getByText('gone')).toBeInTheDocument()
+    expect(text).toContain('对得上')
+    expect(text).toContain('对不上')
+    expect(text).toContain('文件丢了')
+    // exists=false 时 checksum_match 的 false 无从比 ⇒ 页面单列成「没法比」
+    expect(text).toContain('没法比')
+    expect(screen.getAllByText('对得上')).toHaveLength(1)
+    expect(screen.getAllByText('对不上')).toHaveLength(1)
+    expect(screen.getAllByText('没法比')).toHaveLength(1)
+  })
+
+  it('全部对得上时回执换成功那一档', async () => {
+    spies.verifyBackups.mockResolvedValue({
+      results: [{ ...VERIFY_OK.results[0], checksum_match: true }],
+    })
+    render(<System />)
+    await waitBackups()
+
+    fireEvent.click(screen.getByRole('button', { name: '校验备份完整性' }))
+
+    await waitFor(() =>
+      expect(document.body.textContent).toContain('已校验 1 只备份，全部对得上')
+    )
+  })
+
+  it('取不到时只报这一句，备份列表照旧渲染', async () => {
+    spies.verifyBackups.mockRejectedValue({
+      response: { status: 500, data: { detail: '备份目录读不了' } },
+    })
+    render(<System />)
+    await waitBackups()
+
+    fireEvent.click(screen.getByRole('button', { name: '校验备份完整性' }))
+
+    await waitFor(() => expect(document.body.textContent).toContain('备份目录读不了'))
+    // 失败不留半张表：verifyRows 回到 null
+    expect(screen.queryByText('gone')).not.toBeInTheDocument()
+    expect(screen.getByText('backup_20261011_175833')).toBeInTheDocument()
+  })
+
+  it('列表一刷新就把上一轮的读数清掉，不留着旧判决', async () => {
+    render(<System />)
+    await waitBackups()
+
+    fireEvent.click(screen.getByRole('button', { name: '校验备份完整性' }))
+    await waitFor(() => expect(screen.getByText('gone')).toBeInTheDocument())
+
+    fireEvent.change(sourceInput(), { target: { value: 'data/p.json' } })
+    fireEvent.click(screen.getByRole('button', { name: '创建备份' }))
+
+    await waitFor(() => expect(spies.createBackup).toHaveBeenCalled())
+    // 创建成功后重取列表 ⇒ 走 refreshBackups ⇒ 旧的完整性读数作废
+    await waitFor(() => expect(spies.listBackups.mock.calls.length).toBeGreaterThan(1))
+    expect(screen.queryByText('gone')).not.toBeInTheDocument()
+  })
+})
+
+describe('System 清理旧备份（L243，A300 的写面）', () => {
+  it('要先在 Popconfirm 上确认，确认之后才发，送的是保留份数', async () => {
+    render(<System />)
+    await waitBackups()
+    const callsBefore = spies.listBackups.mock.calls.length
+
+    fireEvent.click(screen.getByRole('button', { name: '清理旧备份' }))
+    expect(spies.cleanupBackups).not.toHaveBeenCalled()
+
+    fireEvent.click(screen.getByRole('button', { name: 'OK' }))
+
+    // 数字框初值 10 = 服务端默认，页面不送 backup_dir（落点由服务端白名单首根决定）
+    await waitFor(() => expect(spies.cleanupBackups).toHaveBeenCalledWith({ maxBackups: 10 }))
+    await waitFor(() =>
+      expect(document.body.textContent).toContain('已删除 2 只旧备份，保留最新 1 只')
+    )
+    // 删完必须重取列表，否则页面上还挂着已被删掉的那几条
+    await waitFor(() =>
+      expect(spies.listBackups.mock.calls.length).toBeGreaterThan(callsBefore)
+    )
+  })
+
+  it('确认框上写的就是当前那格份数', async () => {
+    render(<System />)
+    await waitBackups()
+
+    fireEvent.change(screen.getByLabelText('保留备份份数'), { target: { value: '3' } })
+    fireEvent.click(screen.getByRole('button', { name: '清理旧备份' }))
+
+    expect(await screen.findByText('只保留最新 3 份备份？')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'OK' }))
+    await waitFor(() => expect(spies.cleanupBackups).toHaveBeenCalledWith({ maxBackups: 3 }))
+  })
+
+  it('被判 401 时页面上是服务端那句判决原话', async () => {
+    spies.cleanupBackups.mockRejectedValue({
+      response: { status: 401, data: { detail: '缺少或无效的 X-API-Key' } },
+    })
+    render(<System />)
+    await waitBackups()
+
+    fireEvent.click(screen.getByRole('button', { name: '清理旧备份' }))
+    fireEvent.click(screen.getByRole('button', { name: 'OK' }))
+
+    await waitFor(() =>
+      expect(document.body.textContent).toContain('缺少或无效的 X-API-Key')
+    )
   })
 })
 

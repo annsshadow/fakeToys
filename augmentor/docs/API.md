@@ -359,7 +359,7 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
 
 ### 响应契约
 
-**每个端点都声明了 `response_model`**（共 75 个），因此 `/openapi.json` 里不存在
+**每个端点都声明了 `response_model`**（共 77 个），因此 `/openapi.json` 里不存在
 「无 schema 的 200 响应」。这条由 `tests/integration/test_api_openapi_contract.py`
 双向守门：既要每个端点都声明契约，也要**每个已声明契约的端点都真实存在**
 （防止文档里留着一个早就删掉的端点）。
@@ -390,7 +390,7 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
 
 ## 端点总览
 
-按 OpenAPI tag 分组，共 **75** 个端点。
+按 OpenAPI tag 分组，共 **77** 个端点。
 
 ### audit（1）
 
@@ -555,7 +555,7 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
 > `health` 刻意只报存活，不含可能失败的字段；`status` 会真的构造管道并检查
 > 可选依赖，因此能回答「当前环境缺什么、哪些功能会降级」，也可能更慢或失败。它另带 `model_retry_count` 与 `model_retry_wait_seconds` 两只后端重试统计（`health` 刻意不含这两键）：**管道缺失时它们是 `null` 而不是 0**——「没有后端」与「后端重试过 0 次」是两句话，折叠成一个数字就丢掉了前半句。前端自 L237 起在系统状态页按这两档分别渲染（`null` ⇒ 「无后端」）。
 
-### system（13）
+### system（15）
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
@@ -564,6 +564,8 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
 | `POST` | `/api/system/backups` | 创建备份 |
 | `DELETE` | `/api/system/backups/{backup_id}` | 删除备份 |
 | `POST` | `/api/system/backups/{backup_id}/restore` | 恢复备份 |
+| `GET` | `/api/system/backups/verify` | 校验备份完整性 |
+| `POST` | `/api/system/backups/cleanup` | 清理旧备份 |
 | `GET` | `/api/system/dependencies` | 可选依赖诊断 |
 | `GET` | `/api/system/dependency/datasets` | 已登记数据集列表 |
 | `POST` | `/api/system/dependency/datasets` | 登记数据集 |
@@ -625,9 +627,11 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
 | `POST` | `/api/system/dependency/datasets` | 登记数据集 | **写**（落 `datasets.json`），改前那行「只读」是错的。挂 `verify_api_key`：服务端设了 `AUGMENTOR_API_KEY` 而无 `X-API-Key` 头就是 401「缺少或无效的 X-API-Key」；前端那份 key 在「配置管理 → 写操作鉴权」卡上存，由请求拦截器随每个请求送出（A312 已收，与备份族缺口 A302 同源）。回执九键（`dataset_id` / `name` / `description` / `path` / `item_count` / `created_at` / `updated_at` / `tags` / `metadata`），`dataset_id = md5(name)[:8]` 只由名字算 ⇒ **同名再登记是覆盖**，无 409 也无任何提示，`created_at` 被刷新，第二次送空 `description`/`tags` 会把旧值**抹成空**（A306；与备份族「覆盖磁盘、索引多一行」的形状不同，这里索引也只留 1 条）。`description`/`tags` 改前**回显即丢**：端点在 `register_dataset()`（内部已落盘）**之后**才改返回对象，改的是内存 —— 响应带着这两格而随后的 GET 与磁盘上都是空；L232 把两格随登记一起传下去，三处一致（A305）。`input_file` 五档：不存在 404「文件不存在」、白名单外 403、带 `..` 400「路径包含非法组件」、空串 400「文件路径 不能为空」、顶层不是 JSON 数组 400「数据文件的顶层必须是 JSON 数组，当前是对象」；缺 `name`/`input_file` 则是 FastAPI 英文 **422** `Field required` ⇒ 两种错误体都要认（A311）。登记过的数据集在产品面上**删不掉**：无 DELETE、无注销，SDK 也没有注销数据集的方法（A309）。`registry_path` 同 GET 那四档。 |
 | `GET` | `/api/system/dependency/graph` | 数据集依赖图与校验问题 | 只读**但同样会建注册表目录**（A307）。回 `{nodes: [{id, name, item_count}], edges: [{source, target, type}], issues: […]}`，空注册表 ⇒ **200** 三个空数组。`issues` 只报悬空两端（`missing_source` / `missing_target`，元素 `{type, dependency{五键}, message}`），**不查环**：实测用 SDK 直写 A→B（merged）与 B→A（filtered）成环后读图，`issues` 仍只有悬空那 1 条 ⇒「issues 为空」不能读成「依赖关系没问题」（A310）。边没有 HTTP 也没有 CLI 创建入口（`dependency` 的 4 个 action 里没有建边，`add_dependency`/`remove_dependency`/`get_dependencies`/`validate_dependencies` 四个 SDK 方法一个都没上线），只能由 SDK 的 `add_dependency` 建立 ⇒ 纯前端用户的 `edges` 恒为空（A309）。`registry_path` 同 GET 列表四档。 |
 | `GET` | `/api/system/backups` | 列出备份 | GET 列出 / POST 创建。`backup_dir` 省略时用白名单首个根目录下的 `.backups`（**与 CLI `--backup-dir` 的默认 `.backups`、SDK 形参默认 `.backups` 不是同一个目录**，A301）；四档：空串 400「目录路径 不能为空」、`..` 400「路径包含非法组件」、白名单外绝对路径 403、白名单内绝对路径 200。空目录回 **200** `{"backups": []}`，不是 404 也不是 null。索引里可以躺着**两条同 id** 的记录（同名创建两次，`timestamp` 不同而 `backup_path` 逐字相同），列表照实回两行，前端行键因此拼上时间戳（A298）。 |
-| `POST` | `/api/system/backups` | 创建备份 | 回执七键（`backup_id` / `timestamp` / `source_path` / `backup_path` / `item_count` / `file_size` / `checksum`），两条路径都是**服务端绝对路径**。`name` 省略**或给空串**都生成 `backup_<YYYYmmdd_HHMMSS>`（秒级；它和回执 `timestamp` 来自 `backup()` 里**两次** `datetime.now()`，跨秒时对不上，A303）。同名再创建**覆盖磁盘那一份**、索引里却**多一行**，删一次两行一起走（A298）。`name` 带 `/` 放行并在备份目录下建子目录（实测 `sub/deep` ⇒ `.backups/sub/deep.json`），带 `..` 才 400 —— L231 补的那道门：改前 `../../escaped` 实测 **200** 且真写到白名单之外。源文件不存在 404「文件不存在」。本族三只写操作都挂 `verify_api_key`，`web/src` 自 L233 起由请求拦截器送 `X-API-Key`，key 在「配置管理 → 写操作鉴权」卡上存 ⇒ 设了 key 而浏览器里没存（或存的不一致）就一律 401（A302 已收）。SDK 侧的 `clean_old_backups` / `verify_backup_integrity` **没有 HTTP 入口**（A300）。 |
-| `POST` | `/api/system/backups/{backup_id}/restore` | 恢复备份 | 写。备份不存在回 **404**（与 DELETE 同组同码、同文案「备份不存在」）。回执三键 `{backup_id, output_path, item_count}`，落点键叫 **`output_path`**（本组其余五条写盘端点叫 `output_file`，`split` 叫 `output_dir`）。目标已存在时**整份覆盖，不问**。把备份文件改坏再恢复 ⇒ **200**，只留一句 `WARNING 备份文件校验和不匹配，文件可能已损坏`，交回来的就是改坏的内容 —— checksum 算了、存了、比了，但**从不拦截**（A299）。 |
+| `POST` | `/api/system/backups` | 创建备份 | 回执七键（`backup_id` / `timestamp` / `source_path` / `backup_path` / `item_count` / `file_size` / `checksum`），两条路径都是**服务端绝对路径**。`name` 省略**或给空串**都生成 `backup_<YYYYmmdd_HHMMSS>`（秒级；它和回执 `timestamp` 来自 `backup()` 里**两次** `datetime.now()`，跨秒时对不上，A303）。同名再创建**覆盖磁盘那一份**、索引里却**多一行**，删一次两行一起走（A298）。`name` 带 `/` 放行并在备份目录下建子目录（实测 `sub/deep` ⇒ `.backups/sub/deep.json`），带 `..` 才 400 —— L231 补的那道门：改前 `../../escaped` 实测 **200** 且真写到白名单之外。源文件不存在 404「文件不存在」。本族三只写操作都挂 `verify_api_key`，`web/src` 自 L233 起由请求拦截器送 `X-API-Key`，key 在「配置管理 → 写操作鉴权」卡上存 ⇒ 设了 key 而浏览器里没存（或存的不一致）就一律 401（A302 已收）。SDK 侧的 `clean_old_backups` / `verify_backup_integrity` 自 **L243** 起有 HTTP 入口（A300 已收），见下面 `…/cleanup` 与 `…/verify` 两行。 |
+| `POST` | `/api/system/backups/{backup_id}/restore` | 恢复备份 | 写。备份不存在回 **404**（与 DELETE 同组同码、同文案「备份不存在」）。回执三键 `{backup_id, output_path, item_count}`，落点键叫 **`output_path`**（本组其余五条写盘端点叫 `output_file`，`split` 叫 `output_dir`）。目标已存在时**整份覆盖，不问**。把备份文件改坏再恢复 ⇒ **409**「备份文件校验和不匹配，文件可能已损坏，未执行恢复: <backup_id>」，且**一个字节都不写**：库里在覆盖输出路径之前抛 `BackupIntegrityError`（**A299 已于 L243 收口**；改前这一档是 200 加一句警告日志，交回来的就是改坏的内容）。想不等恢复就知道哪份坏了，用下面那只只读的 `…/verify`。 |
 | `DELETE` | `/api/system/backups/{backup_id}` | 删除备份 | 写。同上，404。按 id 过滤索引 ⇒ 同 id 的**多行一起消失**，磁盘那一份也删掉；此后同 id 再恢复 / 再删都是 404（A298）。 |
+| `GET` | `/api/system/backups/verify` | 校验备份完整性 | 只读，**不挂鉴权**（同族另一只 GET 一样不挂）。逐只重读备份文件算 sha256 并与索引登记值比对，回执 `results` 一键，每项五键（`backup_id` / `exists` / `checksum_match` / `item_count` / `timestamp`）。`backup_id` 给一个索引里没有的名字 ⇒ **200 空列表**而不是 404：这只端点报的是「目录里哪些备份是坏的」，不存在的 id 既不坏也好，报不了任何事。目录不存在 ⇒ **200 `{"results": []}` 且不把目录建出来**（构造 `DatasetBackup` 会 mkdir 落 index.json，而这是只读面，A307 那一族）。`exists` 判的是「存在**且非空**」，零字节文件也算丢，此时 `checksum_match` 为 false 且无从比。结果以 `backup_id` 为键 ⇒ 索引里两条同 id 记录在这里只出**一行**（后一条覆盖前一条，A298 的另一面，与列表那张能出两行不同）。`backup_dir` 四档与 `GET /api/system/backups` 相同。 |
+| `POST` | `/api/system/backups/cleanup` | 清理旧备份 | 写，挂 `verify_api_key`（本族第四只写操作，走 A302 那条通道）。请求体 `max_backups` 是**保留份数**而不是删除份数，出厂默认 10；0 与负数一律 **400**「max_backups 必须是不小于 1 的整数，当前是 0」——按库里的删除算术，负数等于把目录里的备份全删光，而「保留 0 份」与手滑想打 10 无从分辨，所以判参排在构造**之前**（构造会 mkdir 落盘）。按索引 `timestamp` 从旧到新排，多出来的连文件一起删；不足保留数时删 0 只并回 **200** `{deleted_count: 0, max_backups: 10}`。回执两键 `deleted_count` / `max_backups`。**两格实测口径**：其一，保留数按**索引行数**算而不是按磁盘文件数算，而同 id 的两行会占掉两个删除名额却只删一次（`delete_backup` 按 id 清全部匹配项），所以 `deleted_count` 可以小于「行数 − 保留数」——4 行索引 3 个文件保留 1 实测回 2；其二，目录不存在时这只**写**端点会把目录建出来并落一份空 `index.json`（`DatasetBackup` 构造即 mkdir），与上面 verify 的「不建目录」相反，因为判据在构造之后。`backup_dir` 走 query，四档同上。 |
 
 ## 1. 健康检查
 

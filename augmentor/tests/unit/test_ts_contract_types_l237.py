@@ -15,6 +15,10 @@
 | 机器对账的守卫 | **没有**（A281 立账时只是一份仓外一次性脚本） | 本文件 |
 | 页面上看得见这些值 | 看不见 | 系统状态页两格重试读数、配置页一张只读回显卡 + 一张保存回执卡 |
 
+上面这张表是 **L237 那一轮**的改前/改后，数字冻在那一轮。fetcher 只数后来动过：**L243** 给
+备份完整性加了两员 ⇒ 现在按现量钉的是 **77 只**（见 `test_the_measured_scale_is_pinned`），
+那两员一上线就带着 `Promise<T>` 标注，第一层尺子直接把它们纳入逐只对账。
+
 **为什么是两层尺子，一层不够**：`ConfigResponse` 的九节在契约里全是
 `{"type": "object", "additionalProperties": true}` 的自由字典 ⇒ 节内键**根本不进契约**，
 「TS 属性集 == 契约属性集」这把尺子在节名那一层就停了。改前那 9 处缺口里只有 2 处
@@ -447,14 +451,16 @@ class TestTheRulerStandsUpFirst:
         assert ts.props("DataItem[]") == ts.props("DataItem") is not None
 
     def test_the_fetcher_scan_is_not_vacuous(self, face):
-        """扫描面要有量：83 只 `export const` 里 75 只是 fetcher，一只都不能少扫
+        """扫描面要有量：85 只 `export const` 里 77 只是 fetcher，一只都不能少扫
 
-        数字与改前实测同值——本轮只补类型与渲染，服务层一只 fetcher 未增未减。
+        L237 立账时是「83 只里 75 只」，那一轮一只 fetcher 未增未减；**L243** 给备份完整性
+        加了两员（`verifyBackups` / `cleanupBackups`），所以三格同涨 2。这一支管的是「尺子没瞎」，
+        不是「fetcher 数量不许变」。
         """
         src = strip_comments(SERVICES_TS.read_text(encoding="utf-8"))
-        assert len(EXPORT_CONST.findall(src)) == 83
-        assert len(API_CALL.findall(src)) == 75
-        assert len(face["rows"]) + len(face["unannotated"]) + len(face["unresolved"]) == 75
+        assert len(EXPORT_CONST.findall(src)) == 85
+        assert len(API_CALL.findall(src)) == 77
+        assert len(face["rows"]) + len(face["unannotated"]) + len(face["unresolved"]) == 77
         assert face["multi_call"] == []
         names = {r["name"] for r in face["rows"]}
         assert {"getConfig", "updateConfig", "getServiceStatus", "getDemoData"} <= names
@@ -467,7 +473,7 @@ class TestTheRulerStandsUpFirst:
 
 @needs_web_src
 class TestEveryFetcherMatchesItsOwnOperation:
-    """第一层尺子：静态、零运行，75 只逐只对账"""
+    """第一层尺子：静态、零运行，77 只逐只对账"""
 
     def test_no_fetcher_field_set_differs_from_its_contract(self, face):
         """名单相等（空集）。改前这里有 3 员，逐格是 A281 立账那三只"""
@@ -489,8 +495,8 @@ class TestEveryFetcherMatchesItsOwnOperation:
         assert face["unresolved"] == []
 
     def test_the_measured_scale_is_pinned(self, face):
-        """规模钉：75 只对账、75 只相等。多一只少一只都要在这里响"""
-        assert len(face["rows"]) == 75
+        """规模钉：77 只对账、0 只缺口。多一只少一只都要在这里响（L237 立账时是 75）"""
+        assert len(face["rows"]) == 77
         assert len(face["mismatched"]) == 0
 
     def test_the_three_a281_targets_are_now_whole(self, face):

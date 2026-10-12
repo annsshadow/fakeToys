@@ -364,10 +364,14 @@ class TestRulerSeesTheRealSurface:
     """尺子先要看得见真实现场，否则后面的绿没有意义"""
 
     def test_detailed_rows_parse(self):
-        """行数与 (方法, 路径) 集合按现量钉死：dataset 18 操作 + system 13 操作"""
+        """行数与 (方法, 路径) 集合按现量钉死：dataset 18 操作 + system 15 操作
+
+        立账轮（L223）是 18 + 13 = 31 行；**L243** 给备份完整性添了两条带说明的端点
+        （`GET …/backups/verify`、`POST …/backups/cleanup`），system 侧 13 → 15。
+        """
         rows = hint_rows()
-        assert len(rows) == 31, (
-            f"详细说明表解析到 {len(rows)} 行，现量应为 dataset 18 + system 13 = 31")
+        assert len(rows) == 33, (
+            f"详细说明表解析到 {len(rows)} 行，现量应为 dataset 18 + system 15 = 33")
         pairs = [(m, p) for m, p, _ in rows]
         assert len(set(pairs)) == len(pairs), "说明表里有重复的 (方法, 路径)"
         assert set(pairs) == set(operations_of_tag("dataset")) | set(operations_of_tag("system"))

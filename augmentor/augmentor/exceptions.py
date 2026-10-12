@@ -143,7 +143,19 @@ class PipelineError(AugmentorError, ValueError):
 # ---------- 运维 ----------
 
 class BackupError(AugmentorError, ValueError):
-    """备份相关异常（备份不存在、恢复失败）"""
+    """备份不存在"""
+    pass
+
+
+class BackupIntegrityError(AugmentorError, ValueError):
+    """备份文件存在但内容坏掉：校验和与索引里登记的那一格不匹配
+
+    与 :class:`BackupError` 刻意**平级而不是父子**：路由把 ``BackupError`` 整体映射成
+    404（「备份不存在」），判据正是「它在库里只有一个抛出点」。恢复一份损坏的备份会
+    用坏内容覆盖用户的输出文件，语义是「资源状态冲突」而不是「资源不存在」，所以
+    必须是另一个类型；若让它继承 ``BackupError``，那只端点上的 404 映射会顺手把
+    409 吞成 404，而这两件事在客户面上完全相反。
+    """
     pass
 
 

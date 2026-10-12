@@ -24,8 +24,10 @@
   都是 **404**「备份不存在」（**A298**）。
 * 恢复 ⇒ 回执三键 `{backup_id, output_path, item_count}`，落点键叫 **`output_path`**（同族其余
   五只写盘端点叫 `output_file`，`split` 叫 `output_dir`）；目标已存在时**整份覆盖**，不问。
-* 把备份文件改坏再恢复 ⇒ **200**，只在日志里留一句 `WARNING 备份文件校验和不匹配，文件可能已损坏`，
-  交回来的就是改坏的内容（实测 `item_count 1`）⇒ checksum 算了、存了、比了，但**从不拦截**（**A299**）。
+* 把备份文件改坏再恢复 ⇒ **L231 当时是 200**，只在日志里留一句 `WARNING 备份文件校验和不匹配，
+  文件可能已损坏`，交回来的就是改坏的内容（实测 `item_count 1`）⇒ checksum 算了、存了、比了，
+  但**从不拦截**（**A299**）。**L243 已收这一格**：库里改成抛 `BackupIntegrityError`，端点回
+  **409** 且**一个字节都不写**（闸在覆盖输出文件之前），下面那一支断言跟着重钉。
 * 幽灵 id ⇒ 恢复与删除都 **404**「备份不存在」（同一个状态码、同一句文案）。
 * 源文件不存在 ⇒ **404**「文件不存在」；`name=""` ⇒ **200** 且回时间戳 id（`name or …` 把空串
   读成没给）。
@@ -38,13 +40,16 @@
   带 `..` 的名字被本轮那道闸拦下（闸**不是一刀切禁分隔符**，见 `TestTheTraversalGateDiscriminates`）。
 * `clean_old_backups` 与 `verify_backup_integrity` 在 SDK 里都存在且可调用，而
   `GET /api/system/backups/ck/verify` ⇒ **404**（没有这只端点）⇒ 页面上做不到「清理旧备份」与
-  「单独校验一份备份」（**A300**）。
+  「单独校验一份备份」（**A300**）。**L243 已收**：契约面这两族从 4 只变 **6** 只，下面
+  `TestTheEntriesThatAreStillMissing` 里那一支跟着从「没有入口」重钉成「入口的形状」。
 * 「默认备份目录」在仓内有**三份**：CLI 的 `--backup-dir` 默认 `.backups`（相对工作目录）、SDK
   四个模块级函数的形参默认也是 `.backups`、端点走 `default_backup_dir()`＝白名单首个根目录下的
   `.backups`（出厂 `data/.backups`）。端点总是显式传目录 ⇒ SDK 那份默认在 HTTP 面上不可达，
   但 CLI 与页面看的**不是同一个目录**（**A301**）。
-* 三只写操作都挂 `Depends(verify_api_key)`，`GET` 那一只没挂；`AUGMENTOR_API_KEY` 一旦设上，
-  页面上这三只一律 401（**A302**）。当时量到「前端零通道」，**L233 已补上那条通道**。
+* 写操作都挂 `Depends(verify_api_key)`，`GET` 那两只没挂；L231 当时是「三只写 / 四只端点」，
+  **L243 加进 cleanup 之后是四只写 / 六只端点**（`test_three_write_ops_are_key_gated` 已重钉）。
+  `AUGMENTOR_API_KEY` 一旦设上，页面上这几只写操作一律 401（**A302**）。当时量到「前端零通道」，
+  **L233 已补上那条通道**。
 * `backup()` 里有**两次** `datetime.now()`：一次取秒级时间戳进 id，一次取 isoformat 进
   `timestamp` ⇒ 跨秒时两者对不上（**A303**）；`name` 本身不在回执里，它就是 `backup_id`。
 * `/api/data/list` 只列白名单根目录下名为 `train_data*.json` 的文件（探针放了 `p.json` /
@@ -141,7 +146,8 @@ class TestTheFourFetchersMatchTheContract:
     def test_nothing_else_in_the_service_layer_touches_the_backup_family(self):
         hits = re.findall(r"api\.(?:get|post|put|delete|patch)\([^)]*?/system/backups",
                           _api_ts().replace("\n", " "))
-        assert len(hits) == 4, f"备份一族的调用现量 4 处，实得 {len(hits)}：{hits}"
+        # L231 收四员（list/create/restore/delete），L243 再加两员（verify/cleanup）⇒ 现量 6
+        assert len(hits) == 6, f"备份一族的调用现量 6 处，实得 {len(hits)}：{hits}"
 
     def test_backup_dir_is_a_query_param_and_never_a_body_key(self):
         for name in ("listBackups", "createBackup", "restoreBackup", "deleteBackup"):
@@ -220,10 +226,9 @@ class TestThePageCarriesTheFourOperations:
         for phrase in (
             "覆盖同一份文件",           # A298：同名覆盖
             "删一次两条一起消失",       # A298：删除按 id 清全部
-            "不拦截恢复",               # A299：checksum 不闸恢复
+            "它现在**会拦**",           # A299：L243 把「不拦截恢复」收成 409（这句原话已不在页面上）
             "output_path",              # 回执落点键名
-            "clean_old_backups",        # A300：SDK 有函数
-            "HTTP 面没有入口",          # A300：端点没有
+            "现已有 HTTP 入口",         # A300：L243 给两员加了端点，口径从「没有入口」翻面
             "不是同一个目录",           # A301：两个默认目录
             "X-API-Key",                # A302：设了 key 就 401
             "路径包含非法组件",         # 白名单三档之一
@@ -301,17 +306,21 @@ class TestMeasuredEndpointBehavior:
         assert r.json()["item_count"] == 5
         assert json.loads((root / "r.json").read_text(encoding="utf-8")) == ITEMS
 
-    def test_a_corrupted_backup_still_restores_200(self, http_with_backups):
-        """A299：checksum 只在日志里出声，不闸恢复 —— 交回来的就是改坏的内容"""
+    def test_a_corrupted_backup_is_refused_with_409_and_writes_nothing(self, http_with_backups):
+        """A299 已于 **L243** 收口：checksum 不匹配 ⇒ 409，输出路径一个字节都不写
+
+        这一支原先是 `test_a_corrupted_backup_still_restores_200`，断言的是「改了坏内容照样
+        恢复成功、交回来的就是坏的那份」。库里那道闸现在在**覆盖输出文件之前**抛
+        `BackupIntegrityError`，所以判据换成两维：判决是 409，且目标文件根本没被创建。
+        """
         http, root, *_ = http_with_backups
         http.post("/api/system/backups", json={"input_file": "p.json", "name": "ck"})
         (root / ".backups" / "ck.json").write_text(
             json.dumps([{"instruction": "被改坏的内容"}], ensure_ascii=False), encoding="utf-8")
         r = http.post("/api/system/backups/ck/restore", json={"output_file": "r4.json"})
-        assert r.status_code == 200, r.text
-        assert r.json()["item_count"] == 1
-        assert json.loads((root / "r4.json").read_text(encoding="utf-8")) == [
-            {"instruction": "被改坏的内容"}]
+        assert r.status_code == 409, r.text
+        assert "校验和不匹配" in r.json()["detail"] and "ck" in r.json()["detail"], r.text
+        assert not (root / "r4.json").exists(), "拦下了还落盘 ⇒ 409 只是装饰"
 
     def test_missing_source_is_404_and_empty_name_is_ignored(self, http_with_backups):
         http, *_ = http_with_backups
@@ -397,10 +406,15 @@ class TestTheTraversalGateDiscriminates:
 
 
 class TestTheEntriesThatAreStillMissing:
-    """A300 / A301 / A302 / A303 / A304：五条缺口各自的**现量**形状钉在这里"""
+    """A300 / A301 / A302 / A303 / A304：五条缺口各自的**现量**形状钉在这里
 
-    def test_two_sdk_functions_have_no_http_entry(self):
-        """A300：函数在、可调用，而契约面一个都不认
+    **A300 已于 L243 收口**，那一支从「契约面一个都不认」重钉成「入口的形状」；名字仍叫
+    `TestTheEntriesThatAreStillMissing` 不改，因为 A301 到 A304 这四条**至今仍在**，改类名会把
+    这段历史从 pytest 的输出里抹掉。
+    """
+
+    def test_two_sdk_functions_now_have_http_entries(self):
+        """A300（**L243 已收**）：两员进了契约面，判决与形状由 `test_backup_integrity_l243` 钉
 
         判据读 `app.openapi()` 而不是 `app.routes`：这版 Starlette 的 `app.routes` 不展平
         （included router 是占位对象），拿它当语料会得到一份空名单，尺子就瞎了。
@@ -419,6 +433,8 @@ class TestTheEntriesThatAreStillMissing:
             ("GET", "/api/system/backups"), ("POST", "/api/system/backups"),
             ("POST", "/api/system/backups/{backup_id}/restore"),
             ("DELETE", "/api/system/backups/{backup_id}"),
+            ("GET", "/api/system/backups/verify"),
+            ("POST", "/api/system/backups/cleanup"),
         }, sorted(ops)
 
     def test_three_defaults_for_the_backup_dir(self, http_with_backups):
@@ -433,8 +449,11 @@ class TestTheEntriesThatAreStillMissing:
         assert default_backup_dir() == root / ".backups"
         assert str(default_backup_dir()) != ".backups"
 
-    def test_three_write_ops_are_key_gated(self):
-        """A302 的**后端那一半**：三只写操作挂 `verify_api_key`，`GET` 那一只没挂
+    def test_four_write_ops_are_key_gated(self):
+        """A302 的**后端那一半**：写操作挂 `verify_api_key`，两只 `GET` 没挂
+
+        L231 钉的是「四只端点 / 三只写」，**L243 加进 `POST /cleanup` 之后是六只 / 四只写**，
+        两个集合都按现量重钉；`verify` 是只读，刻意不挂鉴权（页面进卡就能查，不必先存 key）。
 
         这一支原先还钉着「前端没有送 key 的通道」两维（提到该头名的文件恰好一处、带引号的
         字面量全文零处）。**L233 把那个前提改掉了**：用户拍板「先补 key 通道，再继续接线」，
@@ -460,8 +479,10 @@ class TestTheEntriesThatAreStillMissing:
             ("POST", "/api/system/backups"),
             ("POST", "/api/system/backups/{backup_id}/restore"),
             ("DELETE", "/api/system/backups/{backup_id}"),
+            ("GET", "/api/system/backups/verify"),
+            ("POST", "/api/system/backups/cleanup"),
         }, sorted(seen)
-        assert gated == seen - {("GET", "/api/system/backups")}, sorted(gated)
+        assert gated == {p for p in seen if p[0] != "GET"}, sorted(gated)
 
     def test_the_id_timestamp_and_the_receipt_timestamp_come_from_two_calls(self):
         """A303：`backup()` 里两次 `datetime.now()`，秒级 id 与微秒级 timestamp 可以跨秒对不上"""
