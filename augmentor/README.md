@@ -189,7 +189,7 @@ export GOOGLE_API_KEY=<your_api_key>
 | `augment` | 增强数据集 | ✅ |
 | `auto-config` | 推荐数据管线参数 |  |
 | `auto-test` | 自动化测试（带 --gate 且有失败用例时退出码为 1） |  |
-| `backup` | 数据备份 | ✅ |
+| `backup` | 数据备份（verify 查到损坏时退出码 1） | ✅ |
 | `benchmark` | 数据质量基准 | ✅ |
 | `check-leakage` | 训练/测试集泄漏检测（带 --gate 且检出泄漏时退出码为 1） |  |
 | `clean` | 数据清洗 | ✅ |
@@ -346,6 +346,8 @@ python cli.py backup --action create --input data.json --name my_backup
 python cli.py backup --action list
 python cli.py backup --action restore --name my_backup --output restored.json
 python cli.py backup --action delete --name my_backup
+python cli.py backup --action verify
+python cli.py backup --action cleanup --max-backups 10
 
 # 搜索（exact / contains / ngram / fuzzy / regex，支持 --offset 分页）
 python cli.py search --input data.json --query "租房" --method contains

@@ -1114,7 +1114,7 @@ export const deleteBackup = async (
  * 逐只重算备份文件的 sha256 并与索引里那一格比对，是恢复那道 **409** 闸的主动查版本。
  * 三个实测口径：目录不存在 ⇒ **200** `{"results": []}`（且**不会**把目录建出来，因为这是
  * 只读端点）；`backup_id` 给一个索引里没有的名字 ⇒ 同样是空列表，**不是 404**；这一只端点
- * 没有 CLI 动作（`backup --action` 的 choices 仍是 create / restore / list / delete，账本 A329）。
+ * 自 L244 起有 CLI 动作（`backup --action verify`，查到损坏时退出码 1，A329 已收）。
  */
 export const verifyBackups = async (
   opts: { backupId?: string; backupDir?: string } = {}

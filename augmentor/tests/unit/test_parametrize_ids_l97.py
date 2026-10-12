@@ -122,7 +122,12 @@ NS_PREFIXES = frozenset({
 #: 一支 parametrize（`cleanup` 保留份数的坏值两档 `zero` / `negative`，值位是内联字面清单，
 #: 没有 `ids=`）⇒ 现量落 `plain` 桶。探针逐字：`test_backup_integrity_l243.py:322
 #: bucket=plain ids=False`，桶分布 `plain 312 / no-literal-list 118 / type-valued 1`。
-MEASURED_CALLS = 431
+#: **L244 回填（CALLS +1、READABLE +1、盲面一格未动）**：`test_cli_backup_actions_l244.py` 只
+#: 一支 parametrize（`cleanup` 保留份数的坏值两档 `zero` / `negative`，值位是内联字面清单，
+#: 没有 `ids=`）⇒ 现量落 `plain` 桶。探针逐字：`test_cli_backup_actions_l244.py:338
+#: bucket=plain ids=False`，桶分布 `plain 313 / no-literal-list 118 / type-valued 1`；l98 侧
+#: `blind_rows` 仍 118、档位和一字未动（同那一格不进盲面名册，元素静态可见）。
+MEASURED_CALLS = 432
 #: （L185：${ENV} 展开语义守卫两支 parametrize（坏形状 5 档 / 非串 4 档，全是字面清单）
 #: ⇒ CALLS 382 → 384、READABLE 281 → 283，盲面 101 一格未动）
 #: （L189：验证预设封闭清单守卫一支 parametrize（坏预设 5 档，全字面清单）⇒
@@ -138,7 +143,8 @@ MEASURED_CALLS = 431
 #: （L240：三支全是内联字面清单 ⇒ READABLE 308 → **311**，与 CALLS 同涨 3，盲面不动）
 #: （L241：一支内联字面清单 ⇒ READABLE 311 → **312**，与 CALLS 同涨 1，盲面不动）
 #: （L243：一支内联字面清单 ⇒ READABLE 312 → **313**，与 CALLS 同涨 1，盲面不动）
-MEASURED_READABLE = 313
+#: （L244：一支内联字面清单 ⇒ READABLE 313 → **314**，与 CALLS 同涨 1，盲面不动）
+MEASURED_READABLE = 314
 #: L175：搜索方法封闭清单守卫两支 parametrize（坏值 6 档 / 合法 5 档，全是字面
 #: 清单）⇒ CALLS 379 → 381、READABLE 278 → 279，盲面（no-literal-list 桶）101 不动。
 #: L217：普查守卫三支无 ids parametrize ⇒ 盲面 108 → **111**（与 CALLS +3 同数，
@@ -153,6 +159,7 @@ MEASURED_READABLE = 313
 #: 同源仍靠 AST 读分发臂单独钉，与 L230 同一处置）。
 #: **L241：盲面仍 118**（新那支自带内联字面清单与 ids；l98 侧档位和同样一字未动）。
 #: **L243：盲面仍 118**（新那支也是内联字面清单；l98 侧档位和一字未动，探针 Counter 见上）。
+#: **L244：盲面仍 118**（新那支同样是内联字面清单；l98 侧 `blind_rows` 与档位和一字未动）。
 MEASURED_BLIND = 118
 #: 值位含类型对象的那些档（必须全部自带 ids，否则就是本判据的违规）
 KNOWN_TYPED_SITES = frozenset({("tests/unit/test_schema_type_spec_l96.py", "test_label")})

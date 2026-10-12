@@ -4,6 +4,7 @@
 """CLI `version` 组命令（由 cli.py 拆出，逻辑未改）"""
 
 from ..io import _load_items, _print, _save_items
+from ..verdict import verdict_exit
 import sys
 
 
@@ -109,7 +110,14 @@ def run_version(args, config):
 # ============ 数据备份 ============
 def run_backup(args, config):
     """`backup` 子命令"""
-    from augmentor.backup import create_backup, restore_backup, list_backups, delete_backup
+    from augmentor.backup import (
+        clean_old_backups,
+        create_backup,
+        delete_backup,
+        list_backups,
+        restore_backup,
+        verify_backup_integrity,
+    )
 
     if args.action == "create":
         if not args.input:
@@ -148,3 +156,30 @@ def run_backup(args, config):
             print(f"删除成功: {args.name}")
         else:
             print(f"删除失败: 备份不存在 {args.name}")
+
+    elif args.action == "verify":
+        results = verify_backup_integrity(args.backup_dir, args.name)
+        if not results:
+            # 与 HTTP 面同档：索引里没有匹配项既不好也不坏，报告不了任何事 ⇒ 不判负
+            print("没有找到备份" + ("" if args.name is None else f"（索引里没有 {args.name}）"))
+            return
+        for backup_id in sorted(results):
+            entry = results[backup_id]
+            if entry["checksum_match"]:
+                state = "完好"
+            elif not entry["exists"]:
+                state = "文件丢失或为空"
+            else:
+                state = "校验和不匹配"
+            print(f"  - {backup_id}: {state}（{entry['item_count']} 条，{entry['timestamp']}）")
+        broken = sorted(key for key, value in results.items() if not value["checksum_match"])
+        print(
+            f"{len(results)} 个备份全部完好"
+            if not broken
+            else f"{len(results)} 个备份里 {len(broken)} 个不正常: {', '.join(broken)}"
+        )
+        verdict_exit(not broken)
+
+    elif args.action == "cleanup":
+        deleted = clean_old_backups(args.backup_dir, args.max_backups)
+        print(f"清理完成: 删除 {deleted} 个，保留最新 {args.max_backups} 个")
