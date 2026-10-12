@@ -27,6 +27,20 @@
    探针）。代价一并写清：点号右边那一截不验证，只按「点号左边打得开一个真模块」放行外部主张
    （`re._compile` 与 `str.isspace` 这类标准库形状本仓代码里不会调用，逐条 getattr 既慢又要
    在测试里 import 任意模块）。
+5. **内容维（A331，本轮补）**：`dead_line` 只问「落点在不在代码跨度里」，问不到「落点对、内容错」。
+   本轮普查现量 **12 条**这种引用（搜索那侧的 fuzzy 函数已经搬到 183 行之下、日志装配的入口搬到
+   31 行之下，而两把尺子全程绿 ⇒ 见 `anchor_state`）。判法取本仓自己写主张的那一种形状：
+   引用**紧跟的后括弧**、或**所在的「不含嵌套」外括弧**里，**第一个**反引号跨度必须是裸标识符，
+   且它是目标文件里某个 def/class 的名字 ⇒ 落点跨度必须**完整落在**该符号的某一个跨度之内，
+   否则进 `dead_anchor`（硬 0 档）。
+   为什么把归因收成「括弧首那一个名」：探针逐档量出来的，不是先验。整行归因把 3 229 个反引号
+   标识符平摊给同一行的每一条引用，产品注释面「全部命中」只剩 15 支；句内归因又把一个括弧里讲
+   三件事的句子判成失配（点名 save_config / ValueError / grep 那 **6 条全是假红**）。
+   一支引用只有一个主语，所以这里判得起硬 0。
+   三条**判不到**的边界（不是「判错」，是压根不进主张档）：点号形状的主张（类名加点加方法名）、
+   括弧首是散文的主张、不带文件名的裸行号。本轮按内容重钉时人眼撞见三处这类假句（架构文档里
+   那两个类名归属行号、本账 A105 那条的 95、A76 那个裸调用点行号），一并按现量改了引用，
+   但尺子仍然判不到它们 ⇒ 另立 A333。
 
 **两条本轮新拍的口径**（L79 没面对过，因为它只读两份 augmentor 相对书写的文档）：
 
@@ -44,7 +58,7 @@
 
 **判据一律「只降不升、精确相等」**（承 L76 / L77 / L79 的棘轮口径）：`CEILING` 每条都是等值断言，
 所以「顺手清掉一条歧义」同样会让用例红 —— 那是设计，它逼着清账的人留一句「谁清的、清完剩多少」。
-可证失效三档（dead path / dead line / dead symbol）硬 0，不进棘轮、不许混桶。
+可证失效四档（dead path / dead line / dead symbol / dead anchor）硬 0，不进棘轮、不许混桶。
 
 **本文件的注释与文档里不写反引号路径引用**：它自己就属于扫描面，写一条等于给自己造一条要维护
 的引用（本轮普查数出来的 15 条失效里有 4 条正是守卫自己的案面写的）。需要引用形状的测试数据
@@ -102,6 +116,12 @@ _SYM = r"[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*"
 #: 当符号，普查当场数出 220 条假缺陷：逻辑运算符、文件名、键名全进了死档。
 SYM_CALL = re.compile(r"`(" + _SYM + r")\(\)`")
 SYM_PAREN = re.compile(r"`(" + _SYM + r")`\(")
+#: 内容维（A331 / L245）：引用**紧跟的后括弧**——`\s*[（(] … [）)]`，中间不许再套括弧
+TAIL_PAREN = re.compile(r"\s*[（(]([^（()）]*)[）)]")
+#: 主张括弧的**正文开头**必须正好是一个裸标识符的反引号跨度才算点了名。用 `match` 而不是
+#: `search`：括弧里先写散文再写名字（「新增 X，见某行」那种）不算主张，见口径 5。
+BARE_TICK = re.compile(r"`([A-Za-z_][A-Za-z0-9_]*)`")
+CLOSE_PAREN = re.compile(r"[）)]")
 #: 注释标记按**被指向文件**的语言取：`#` 在 Markdown/YAML 里是内容，只有 Python 里才是注释。
 #: 这一条是本轮 selftest 抓出来的（第一版照抄 L79 的 `#`，于是把 README 的标题行读成注释）。
 COMMENT_MARKERS = {".py": ("#",), ".ts": ("//", "*"), ".tsx": ("//", "*"),
@@ -109,7 +129,8 @@ COMMENT_MARKERS = {".py": ("#",), ".ts": ("//", "*"), ".tsx": ("//", "*"),
 
 #: 现量基线（扫描面 = 476 份文件的注释与自有文档、3 794 条定位引用、326 条符号主张；
 #: 逐档读数就是下面这份常量，动文件布局或动案面文字都要重跑普查再改这里）。**只降不升**。
-#: 前三档 = 可证失效，硬 0；后四档 = 已记账的歧义欠账 + 运行期示例路径 + 指向不入仓工件
+#: 可证失效四档硬 0（dead_path / dead_line / symbol_dead 与 **L245 新加的 dead_anchor**）；
+#: 其余四档 = 已记账的歧义欠账 + 运行期示例路径 + 指向不入仓工件
 #: （scratch 两档合起来就是 A128 那块地盘的注释面读数）。
 #: **2026-09-28 数据集搬家那一趟的三格位移**（四种「正文 × 布局」组合都现量跑过，逐格归因）：
 #: `ambiguous` 328 → **327** = 案面改动 —— 删掉的那条指向工作目录根的整路径引用，在旧布局下
@@ -120,6 +141,8 @@ COMMENT_MARKERS = {".py": ("#",), ".ts": ("//", "*"), ".tsx": ("//", "*"),
 CEILING = {
     "dead_path": 0,
     "dead_line": 0,
+    # 内容维（A331 / L245）：立档时案面现量 12 条红（逐条按内容重钉之后回 0），见本账 L245 块
+    "dead_anchor": 0,
     "symbol_dead": 0,
     "ambiguous": 300,
     "runtime_ns": 0,
@@ -152,16 +175,20 @@ CEILING = {
 # 只量已入仓案面，对 data//bak/ 的磁盘运行期漂移免疫。
 }
 
-#: 反空转下界：这三个数**不是缺陷计数**，而是「普查真的看见了多大一片」的证据。
+#: 反空转下界：这几个数**不是缺陷计数**，而是「普查真的看见了多大一片」的证据。
 #: 删引用是改进，不该被下界卡住；它只负责证明扫描没空转 —— 路径拼错、跳过清单写歪、
 #: git ls-files 返回空，三种事故都会让「全部死档为 0」靠「什么都没扫到」拿到手。
-FLOOR = {"files": 400, "refs": 3000, "symbol_live": 300}
+#: `anchor_claims`（L245）是内容维的同一格保险：现量 24 条主张，归因正则写歪、括弧形状改成
+#: 别的写法，都会让 `dead_anchor` 靠「一条主张都没看见」伪造成绿。
+FLOOR = {"files": 400, "refs": 3000, "symbol_live": 300, "anchor_claims": 20}
 
 #: 判据能产出的**全部桶名**（词汇表，与 `reference_state` 的返回集 + 两档符号 + dead_line 对齐）。
-#: `live` 与 `symbol_live` 是好引用，不进 `CEILING`；`dead_line` 只能由 `span_state` 产出，
-#: 所以它不在 `_LIVE_ORDER` 里却必须在词汇表里。
-BUCKETS = frozenset({"live", "ambiguous", "dead_path", "dead_line", "runtime_ns",
-                     "scratch", "scratch_missing", "symbol_live", "symbol_dead"})
+#: `live` 与 `symbol_live` 是好引用，不进 `CEILING`；`dead_line` 只能由 `span_state` 产出、
+#: `dead_anchor` 只能由 `anchor_state` 产出，所以这两档不在 `_LIVE_ORDER` 里却必须在词汇表里。
+#: `anchor_claims` **不是桶**（它是「看见多少条主张」的反空转计数），所以它不进这张词汇表。
+BUCKETS = frozenset({"live", "ambiguous", "dead_path", "dead_line", "dead_anchor",
+                     "runtime_ns", "scratch", "scratch_missing", "symbol_live",
+                     "symbol_dead"})
 
 #: 两系别合并的优先级就是口径，顺序即结论（每一档为什么排在这个位置见 `reference_state`）。
 #: `dead_path` 排在工件两档之前：Temp 里站着 HEAD 快照与历史副本，排在后面等于允许一份不入仓
@@ -395,6 +422,74 @@ def span_state(rel, start, end):
     return "dead" if "code" not in kinds else "live"
 
 
+@functools.lru_cache(maxsize=None)
+def def_spans(rel):
+    """目标文件里 def/class 的跨度名册 `{名字: ((起, 止), ...)}` —— 内容维的坐标系
+
+    与 `symbol_universe` 同源但**带行号**：符号档只问「名字在不在代码宇宙里」，内容维要问
+    「这一行在不在它的身子里」，所以必须回到 AST 跨度。非 Python、读不出、语法错都回空表，
+    那些文件里的引用压根不进主张档（判不到，不是判绿）。
+    """
+    if pathlib.PurePath(rel).suffix != ".py":
+        return {}
+    lines = lines_of(rel)
+    if lines is None:
+        return {}
+    try:
+        tree = ast.parse("\n".join(lines))
+    except SyntaxError:
+        return {}
+    out = collections.defaultdict(list)
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            out[node.name].append((node.lineno, node.end_lineno or node.lineno))
+    return {k: tuple(sorted(v)) for k, v in out.items()}
+
+
+def claim_paren(text, start, end):
+    """引用（字符跨度 `[start, end)`）的主张括弧正文；两种形状都没有则 None
+
+    先问**后括弧**（本仓写主张的正形：路径带行号之后紧跟一个括弧点名），再问**外括弧**
+    （把名字写在前面、引用写在同一个括弧里的那种）。外括弧只认不含嵌套的最内层，否则一句里
+    几个括弧会互相冒名。
+    """
+    tail = TAIL_PAREN.match(text[end:end + 200])
+    if tail:
+        return tail.group(1)
+    open_at = max(text.rfind("（", 0, start), text.rfind("(", 0, start))
+    if open_at == -1:
+        return None
+    close = CLOSE_PAREN.search(text, open_at)
+    if close is None or close.start() < end:
+        return None
+    inner = text[open_at + 1:close.start()]
+    return None if ("（" in inner or "(" in inner) else inner
+
+
+def anchor_state(target, start, end, text, tick_start, tick_end):
+    """一条「文件活着、落点是代码」的引用 → 内容维读数 `(主张型, 结论, 点名, 现量跨度)`
+
+    三种读数（口径 5）：
+    - `(False, None, None, ())` —— **判不到**：没有主张括弧、括弧首不是裸标识符、或那个名
+      不是目标文件里的 def/class（键名、属性名、别的文件的名都落这一档）。
+    - `(True, "ok", 名, 跨度)` —— 主张成立：落点确实整个在那个符号的身子里。
+    - `(True, "red", 名, 跨度)` —— 可证失效：落点是代码，但**不在**所点名的那个 def/class 里
+      ⇒ 这就是 `dead_line` 量不到的那一格「落点对、内容错」。
+    """
+    inner = claim_paren(text, tick_start, tick_end)
+    if inner is None:
+        return False, None, None, ()
+    named = BARE_TICK.match(inner)
+    if named is None:
+        return False, None, None, ()
+    name = named.group(1)
+    spans = def_spans(target).get(name, ())
+    if not spans:
+        return False, None, None, ()
+    inside = any(lo <= start and end <= hi for lo, hi in spans)
+    return True, "ok" if inside else "red", name, spans
+
+
 def reference_state(ref, dirs, index, src):
     """一条引用 → `(结论, 唯一活路径)`；两系别各判一次，合并优先级就是口径
 
@@ -454,10 +549,21 @@ def audit(items, index, src, dirs, universe):
                 if state == "dead_path":
                     dead.append((rel, lineno, match.group(0), "dead_path", note))
                 elif start is not None and state == "live":
-                    if span_state(live, int(start),
-                                  int(end) if end else None) == "dead":
+                    span_end = int(end) if end else int(start)
+                    if span_state(live, int(start), span_end) == "dead":
                         counts["dead_line"] += 1
                         dead.append((rel, lineno, match.group(0), "dead_line", note))
+                    else:
+                        # 落点是代码 ⇒ 接着问内容维（口径 5）：这一行是不是它自称的那个符号
+                        claimed, verdict, name, spans = anchor_state(
+                            live, int(start), span_end, text, match.start(), match.end())
+                        if claimed:
+                            counts["anchor_claims"] += 1
+                            if verdict == "red":
+                                counts["dead_anchor"] += 1
+                                dead.append((rel, lineno, match.group(0), "dead_anchor",
+                                             "%s 点名 %s 现量跨度 %s"
+                                             % (note, name, list(spans))))
             if rel in NO_SYM_SCAN:
                 continue
             seen = set()
@@ -518,6 +624,8 @@ class TestCensusIsProven:
         assert counts["files_seen"] >= FLOOR["files"], counts["files_seen"]
         assert counts["refs_total"] >= FLOOR["refs"], counts["refs_total"]
         assert counts["symbol_live"] >= FLOOR["symbol_live"], counts["symbol_live"]
+        # 内容维的反空转：主张条数掉到下界之下 = 归因那一跳断了，硬 0 就成了假绿
+        assert counts["anchor_claims"] >= FLOOR["anchor_claims"], counts["anchor_claims"]
 
     def test_the_index_is_not_python_only(self):
         """A184 的失明点就在这三格：YAML / TS / Markdown 都要能被解析成唯一活路径
@@ -559,7 +667,7 @@ class TestCensusIsProven:
 
 
 class TestHardZero:
-    """可证失效 = 0：三档各自硬判，失败信息点名到文件与行"""
+    """可证失效 = 0：四档各自硬判，失败信息点名到文件与行"""
 
     @staticmethod
     def _named(rows, kind):
@@ -573,6 +681,11 @@ class TestHardZero:
     def test_no_line_reference_lands_on_a_non_code_span(self):
         counts, rows, _ = census()
         assert counts["dead_line"] == CEILING["dead_line"], self._named(rows, "dead_line")
+
+    def test_no_line_reference_claims_a_symbol_it_does_not_land_in(self):
+        """内容维（A331 / L245）：落点是代码但不是所点名那个 def/class 的家里 ⇒ 红"""
+        counts, rows, _ = census()
+        assert counts["dead_anchor"] == CEILING["dead_anchor"], self._named(rows, "dead_anchor")
 
     def test_no_symbol_claim_points_at_an_absent_name(self):
         counts, _, rows = census()
@@ -641,6 +754,84 @@ class TestRedCapability:
             assert counts[bucket] == real[bucket], bucket
 
 
+class TestContentDimension:
+    """内容维（A331 / L245）：括弧里点名的 def/class 必须真的把落点包住
+
+    五档合起来才证明这把尺子不是恒真：① 落点在符号里 ⇒ 绿；② 落点在符号外 ⇒ 红（这一格正是
+    `dead_line` 量不到的「落点对、内容错」）；③ 点号形状**不判**；④ 括弧首是散文**不判**；
+    ⑤ 落点压根不是代码时只归 `dead_line`，内容维**不重复开火**（两档不许抢同一个红）。
+    靶子的行号全部由 AST 与 `first_line_of` 现量取，不硬写 —— 硬写的行号下一轮就不是那一行。
+    这四支都不叫 `require_authoring_tree()`：判据是**增量**对账（合成语料并进真身普查再比差），
+    与 Temp 底料在不在场无关，加了反而在干净克隆里把自己跳过、注入取证白做。
+    """
+
+    #: 靶子按现量选：文件名唯一、且里面有跨多行的 def/class（本文件属于扫描面，所以这个名字
+    #: 只能写成不带反引号的字符串，运行期由 `tick()` 拼成形）
+    ANCHOR_TARGET = "augmentor/search_enhanced.py"
+
+    @classmethod
+    def arms(cls):
+        """`(点名符号, 符号里那一行, 符号外那一行)` —— 全从目标文件的 AST 现量取"""
+        single = {n: s[0] for n, s in def_spans(cls.ANCHOR_TARGET).items() if len(s) == 1}
+        assert len(single) >= 3, single
+        name, (lo, hi) = max(single.items(), key=lambda kv: kv[1][1] - kv[1][0])
+        markers = COMMENT_MARKERS[".py"]
+        outside = next(i for i, raw in enumerate(lines_of(cls.ANCHOR_TARGET), 1)
+                       if raw.strip() and not raw.strip().startswith(markers)
+                       and not lo <= i <= hi)
+        return name, lo, outside
+
+    def _notes(self, name, inside_line, outside_line):
+        ref = lambda line: tick(self.ANCHOR_TARGET + ":", str(line))
+        claim = lambda line, token: ref(line) + "（" + token + "）"
+        return (("tests/unit/_a184_anchor_probe.py", (
+            (1, "in " + claim(inside_line, tick(name))),
+            (2, "out " + claim(outside_line, tick(name))),
+            (3, "dotted " + claim(outside_line, tick(name + ".method"))),
+            (4, "prose " + ref(outside_line) + "（散文 " + tick(name) + "）"),
+        )),)
+
+    def _notes_blank(self, name, blank_line):
+        return (("tests/unit/_a184_anchor_probe.py",
+                 ((1, "blank " + tick(self.ANCHOR_TARGET + ":", str(blank_line))
+                   + "（" + tick(name) + "）"),)),)
+
+    def test_only_the_two_landing_lines_are_claims_and_exactly_one_is_red(self):
+        name, lo, outside = self.arms()
+        counts, rows, _sym, real, real_rows, _rsym = probe(self._notes(name, lo, outside))
+        assert counts["anchor_claims"] - real["anchor_claims"] == 2, counts["anchor_claims"]
+        assert counts["dead_anchor"] - real["dead_anchor"] == 1, rows
+        # 名册按**增量**比：案面本来就该是 0 格（硬 0 档），但注入判据不许依赖这一点——
+        # 别轮若留下 12 格真红，这一格仍要精确交出「合成语料只造了 1 格」
+        real_anchor = len([r for r in real_rows if r[3] == "dead_anchor"])
+        anchor_rows = [r for r in rows if r[3] == "dead_anchor"]
+        assert len(anchor_rows) - real_anchor == 1, anchor_rows
+        assert anchor_rows[0][2] == tick(self.ANCHOR_TARGET + ":", str(outside)), anchor_rows
+        # 落点在同一符号里的那一支不但不红，连「红」的邻居都不当：dead_line 一格不多
+        assert counts["dead_line"] == real["dead_line"], real["dead_line"]
+        assert not any(r[2] == tick(self.ANCHOR_TARGET + ":", str(lo)) for r in rows), lo
+
+    def test_the_two_excluded_shapes_are_not_claims_at_all(self):
+        """③④ 两档证明「判不到」是真判不到，而不是碰巧也绿：主张数一格都不多"""
+        name, lo, outside = self.arms()
+        notes = self._notes(name, lo, outside)[0][1]
+        counts, _, _, real, _, _ = probe(self._notes(name, lo, outside))
+        assert counts["anchor_claims"] - real["anchor_claims"] == 2, counts["anchor_claims"]
+        # 单独喂 ③④ 这两支 ⇒ 主张增量为 0（混在 ①② 一批里看不出这一格）
+        c2, _, _, _, _, _ = probe((("tests/unit/_a184_anchor_probe.py", notes[2:]),))
+        assert c2["anchor_claims"] == real["anchor_claims"], c2["anchor_claims"]
+        assert c2["dead_anchor"] == real["dead_anchor"], c2["dead_anchor"]
+
+    def test_a_blank_landing_fires_dead_line_only_never_twice(self):
+        """⑤ 同一支引用不许同时开火两档：落点是空行 ⇒ `dead_line` +1、内容维 +0"""
+        name, _lo, _outside = self.arms()
+        blank = first_line_of(self.ANCHOR_TARGET, True)
+        counts, rows, _, real, _rr, _ = probe(self._notes_blank(name, blank))
+        assert counts["dead_line"] - real["dead_line"] == 1, rows
+        assert counts["anchor_claims"] == real["anchor_claims"], counts["anchor_claims"]
+        assert counts["dead_anchor"] == real["dead_anchor"], counts["dead_anchor"]
+
+
 class TestRulerProvesItself:
     """判据自己得认得已知答案 —— 已知形状逐格验；方向写反的判据永远红（承 L98 的教训）"""
 
@@ -670,3 +861,20 @@ class TestRulerProvesItself:
     def test_span_judgement_follows_the_target_files_language(self):
         assert span_state("README.md", 1, 1) == "live"          # Markdown 的 `#` 是内容
         assert span_state("README.md", 99999, 99999) == "dead"  # 越界不是代码
+
+    def test_the_content_dimension_answers_the_two_known_landing_lines(self):
+        """已知答案逐格验（承 L98 那条「方向写反的判据永远红」）：家里 ok、门外 red、散文不判"""
+        name, lo, outside = TestContentDimension.arms()
+        target = TestContentDimension.ANCHOR_TARGET
+        for line, want in ((lo, "ok"), (outside, "red")):
+            ref = tick(target + ":", str(line))
+            text = "落点 " + ref + "（" + tick(name) + "）"
+            at = text.index(ref)
+            claimed, verdict, got, spans = anchor_state(target, line, line, text,
+                                                        at, at + len(ref))
+            assert (claimed, verdict, got) == (True, want, name), (line, claimed, verdict, got)
+            assert spans == def_spans(target)[name], spans
+        # 括弧首是散文 ⇒ 整条不进主张档。「判不到」与「判绿」在读数上同形，所以这一格必须点名
+        ref = tick(target + ":", str(outside))
+        text = ref + "（散文 " + tick(name) + "）"
+        assert anchor_state(target, outside, outside, text, 0, len(ref))[0] is False
