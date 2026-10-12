@@ -105,15 +105,15 @@ def _safe_data_path(filename: str) -> Path:
 
 
 @router.get("/api/data/list", response_model=DataFileListResponse, summary="列出数据文件")
-async def list_data_files():
-    """列出白名单根目录下的 `train_data*.json`
+async def list_data_files(all_files: bool = False):
+    """列出白名单根目录下的 JSON 文件（默认只列 `train_data*.json`）
 
     扫描范围**必须**与 `allowed_data_roots` 同源：这里曾写死 `Path(".")`，
     于是出厂默认收紧到 `["data"]` 之后，列表会把工作目录里的文件端给用户，而用户一点
-    就是 403——列表能给的，路由必须能读。
-
-    `name` 是裸文件名而 `{filename}` 只匹配单个路径段，所以它可加载的前提是
-    `resolve_within_roots` 会在白名单根目录内查找相对路径（见 `deps` 的说明）。
+    就是 403——列表能给的，路由必须能读。`all_files=true`（A304）只放开**名字**这道闸，
+    扫描范围一字未动，所以宽出来的那几份同样读得到。`name` 是裸文件名而 `{filename}`
+    只匹配单个路径段，所以它可加载的前提是 `resolve_within_roots` 会在白名单根目录内
+    查找相对路径（见 `deps` 的说明）。
     """
     loop = asyncio.get_event_loop()
 
@@ -125,7 +125,7 @@ async def list_data_files():
         # 反而是一条永远不会走到的分支。
         for root in allowed_data_roots():
             for f in sorted(root.glob("*.json")):
-                if not f.name.startswith("train_data"):
+                if not all_files and not f.name.startswith("train_data"):
                     continue
                 resolved = f.resolve()
                 if resolved in seen:  # 多个根目录互相嵌套时去重

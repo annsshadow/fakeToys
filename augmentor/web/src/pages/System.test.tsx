@@ -44,7 +44,7 @@ const spies = vi.hoisted(() => ({
   getServiceStatus: null as unknown as ReturnType<typeof vi.fn>,
   getVectorStatus: null as unknown as ReturnType<typeof vi.fn>,
   listBackups: null as unknown as ReturnType<typeof vi.fn>,
-  getDataFiles: null as unknown as ReturnType<typeof vi.fn>,
+  getBackupSourceCandidates: null as unknown as ReturnType<typeof vi.fn>,
   listDependencyDatasets: null as unknown as ReturnType<typeof vi.fn>,
   getDependencyGraph: null as unknown as ReturnType<typeof vi.fn>,
   systemDependencies: null as unknown as ReturnType<typeof vi.fn>,
@@ -65,7 +65,7 @@ vi.mock('../services/api', async (importOriginal) => {
   // L231 起本页还会取备份列表与数据文件候选。两面都给了默认回执：备份面与本页原有
   // 用例无关，让它们不必逐个显式安排（`clearAllMocks` 不清实现，默认值留得住）。
   spies.listBackups = vi.fn().mockResolvedValue({ backups: [] })
-  spies.getDataFiles = vi.fn().mockResolvedValue({ files: [] })
+  spies.getBackupSourceCandidates = vi.fn().mockResolvedValue({ files: [] })
   // L232 起本页还会取数据集血缘那一面（列表 + 图）。与本份用例无关，给空回执即可。
   spies.listDependencyDatasets = vi.fn().mockResolvedValue({ datasets: [] })
   spies.getDependencyGraph = vi.fn().mockResolvedValue({ nodes: [], edges: [], issues: [] })
@@ -78,7 +78,7 @@ vi.mock('../services/api', async (importOriginal) => {
     getServiceStatus: spies.getServiceStatus,
     getVectorStatus: spies.getVectorStatus,
     listBackups: spies.listBackups,
-    getDataFiles: spies.getDataFiles,
+    getBackupSourceCandidates: spies.getBackupSourceCandidates,
     listDependencyDatasets: spies.listDependencyDatasets,
     getDependencyGraph: spies.getDependencyGraph,
     systemDependencies: spies.systemDependencies,

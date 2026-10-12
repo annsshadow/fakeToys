@@ -148,6 +148,16 @@ describe('数据管理', () => {
     expect(instance.get).toHaveBeenCalledWith('/data/list')
   })
 
+  // A304 / L251：宽档只有备份源那一格在用，所以钉的是「query 挂在路径串上、没有 params 对象」
+  it('getBackupSourceCandidates 走 all_files=true 档，且不再传 params', async () => {
+    const payload = [{ name: 'p.json' }]
+    respondWith(payload)
+
+    await expect(api.getBackupSourceCandidates()).resolves.toBe(payload)
+    expect(instance.get).toHaveBeenCalledWith('/data/list?all_files=true')
+    expect(instance.get.mock.calls[0]).toHaveLength(1)
+  })
+
   it('loadData 把 pageSize 映射为 page_size，并带上 search', async () => {
     respondWith({ items: [] })
 

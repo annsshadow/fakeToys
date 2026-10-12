@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Alert, AutoComplete, Button, Card, Col, Input, InputNumber, Popconfirm, Row, Select, Space, Statistic, Table, Tag, message } from 'antd'
-import { apiErrorDetail, cleanupBackups, createBackup, deleteBackup, getDataFiles, getDependencyGraph, getServiceStatus, getVectorStatus, listBackups, listDependencyDatasets, migrateDataset, registerDependencyDataset, restoreBackup, runDatasetAutoTest, runQualityMonitor, streamProcess, systemDependencies, verifyBackups } from '../services/api'
+import { apiErrorDetail, cleanupBackups, createBackup, deleteBackup, getBackupSourceCandidates, getDependencyGraph, getServiceStatus, getVectorStatus, listBackups, listDependencyDatasets, migrateDataset, registerDependencyDataset, restoreBackup, runDatasetAutoTest, runQualityMonitor, streamProcess, systemDependencies, verifyBackups } from '../services/api'
 import type { BackupInfo, BackupVerifyEntry, DatasetRegistryEntry, DependencyDiagnostics, DependencyGraphResponse, MigrationResponse, QualitySnapshotResponse, StreamReportResponse, TestSuiteResponse } from '../types/api'
 import type { StatusResponse, VectorStatusResponse } from '../types/api'
 
@@ -188,10 +188,10 @@ export default function System() {
     refreshBackups()
   }, [])
 
-  // 备份源是**服务端上的路径**，不是浏览器里的文件；候选来自 /api/data/list。
+  // 本页六处候选都是**服务端上的路径**，不是浏览器里的文件；宽档一次取回六处共用（A304 / L251）。
   // 这一面失败只影响候选，不该连带把备份列表也判死，所以只清候选并报一句。
   useEffect(() => {
-    getDataFiles()
+    getBackupSourceCandidates()
       .then((result) => setDataFiles(result.files.map((file) => file.path)))
       .catch((err) => {
         setDataFiles([])
@@ -795,9 +795,9 @@ export default function System() {
         <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75 }}>
           源文件与恢复目标都受**同一份白名单**管：白名单外的绝对路径是 403「路径超出允许的数据
           目录范围」，带 .. 的是 400「路径包含非法组件」，恢复目标为空串是 400「文件路径 不能为
-          空」（三档实测）。下拉里的候选来自 /api/data/list，而那一只端点**只列白名单根目录下
-          名为 train_data*.json 的文件**——别的文件要手填路径，这也是这一格用可输入下拉而不是
-          纯下拉的原因。
+          空」（三档实测）。本页六处候选下拉共用一只 fetcher，取自 /api/data/list 的
+          all_files=true 那一档，口径与白名单同宽（A304 已于 L251 收口）；同一只端点的默认档
+          仍只列 train_data*.json，其余页面的清单没有变宽，这一格也仍是可输入下拉。
         </div>
         <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
           备份 id 就是创建时填的名称，留空才由服务端取 backup_&lt;时间戳&gt;。同一个名称创建两次

@@ -52,9 +52,9 @@
   **L233 已补上那条通道**。
 * `backup()` 原先有**两次** `datetime.now()`（秒级 id 与微秒级 `timestamp` 跨秒对不上）⇒
   **A303 已于 L250 收口**：现在只取一次 `now()` 两处复用；`name` 仍不在回执里，它就是 `backup_id`。
-* `/api/data/list` 只列白名单根目录下名为 `train_data*.json` 的文件（探针放了 `p.json` /
-  `train_data1.json` / `train_dataX.json` 三份，回执只有后两份）⇒ 备份源的候选口径**窄于**
-  白名单，页面因此用可输入下拉而不是纯下拉（**A304**）。
+* `/api/data/list` 默认只列根目录下名为 `train_data*.json` 的文件（探针放了 `p.json` /
+  `train_data1.json` / `train_dataX.json` 三份，回执只有后两份）⇒ **A304 已于 L251 收口**：端点
+  加了 `all_files=true` 那一档，系统页六处候选改走宽档，口径与白名单同宽（判据在 l251 那份守卫）。
 
 跑法：`python -m pytest tests/unit/test_backup_wiring_l231.py -q --no-cov`
 """
@@ -212,7 +212,8 @@ class TestThePageCarriesTheFourOperations:
             assert f"{name}(" in page, f"System.tsx 里没有调用 {name}"
 
     def test_candidates_come_from_the_data_list_endpoint(self):
-        assert "getDataFiles(" in _page()
+        """L251 换了名：候选面改走 `all_files=true` 那一档（A304 收口），判据跟着换 fetcher"""
+        assert "getBackupSourceCandidates(" in _page()
 
     def test_the_row_key_still_hedges_for_legacy_duplicate_ids(self):
         """**A298 已于 L250 收口**，但行键继续拼时间戳：收口只改写边，存量索引里那些同名多行
@@ -543,9 +544,20 @@ class TestTheEntriesThatAreStillMissing:
         assert info.backup_id[-6:] == info.timestamp[11:19].replace(":", "")
         assert len(read) == 1
 
-    def test_the_candidate_list_is_narrower_than_the_whitelist(self, http_with_backups):
-        """A304：根目录里三份 json，`/api/data/list` 只回两份 `train_data*.json`"""
+    def test_the_default_candidate_list_is_narrower_than_the_whitelist(self, http_with_backups):
+        """A304 的**默认档**：根目录里三份 json，不带参数只回两份 `train_data*.json`
+
+        L251 收了 A304，收法是**加档不改默认**：这一格仍是 L231 立账时那份现量，
+        其余 8 处页面选择器读的就是它（宽档那一支见下一格与 `test_data_list_all_files_l251.py`）。
+        """
         http, *_ = http_with_backups
         names = [f["name"] for f in http.get("/api/data/list").json()["files"]]
         assert names == ["train_data1.json", "train_dataX.json"], names
         assert "p.json" not in names
+
+    def test_the_wide_candidate_list_is_as_wide_as_the_whitelist(self, http_with_backups):
+        """A304 收口那一档：`all_files=true` 把 `p.json` 端出来，而根外的 `secret.json` 进不来"""
+        http, *_ = http_with_backups
+        names = [f["name"] for f in http.get("/api/data/list?all_files=true").json()["files"]]
+        assert names == ["p.json", "train_data1.json", "train_dataX.json"], names
+        assert "secret.json" not in names
