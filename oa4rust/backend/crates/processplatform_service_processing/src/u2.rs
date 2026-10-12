@@ -40,6 +40,27 @@ fn biz_err(msg: impl Into<String>) -> H {
     Ok(Json(ActionResult::error(msg.into())))
 }
 
+/// 运维维护作业门禁（仅会话）：touch/* 批量维护作业原本要求登录会话
+/// （o2server 对齐：Authenticated，任意登录用户可触发）；无会话时 401 而非放行执行。
+async fn require_session_opt(session: Option<&shared::session::Session>) -> Result<(), AppError> {
+    session.map(|_| ()).ok_or(AppError::Unauthorized)
+}
+
+/// 运维维护作业门禁（admin）：touch/mergeitem 曾是 Public + 认证豁免
+/// （未认证即可触发 DELETE x_attachment 去重删库），2026-10 安全审计后
+/// 收紧为 admin 触发；无会话 401，非 admin 403。
+async fn require_admin_opt(
+    pool: &Pool,
+    session: Option<&shared::session::Session>,
+) -> Result<(), AppError> {
+    let session = session.ok_or(AppError::Unauthorized)?;
+    if shared::middleware::is_admin(pool, &session.person_unique).await {
+        Ok(())
+    } else {
+        Err(AppError::Forbidden)
+    }
+}
+
 fn opt_str(row: &Row, col: &str) -> String {
     row.get::<_, Option<String>>(col).unwrap_or_default()
 }
@@ -1465,7 +1486,11 @@ pub async fn taskcompleted_update_next_identity(
 
 /// GET touch/cleanevent：清理超过 24h 的陈旧事件记录
 #[allow(non_snake_case)]
-pub async fn touch_clean_event(pool: Extension<Pool>) -> H {
+pub async fn touch_clean_event(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+) -> H {
+    require_session_opt(session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let n = client
         .execute(
@@ -1480,7 +1505,11 @@ pub async fn touch_clean_event(pool: Extension<Pool>) -> H {
 
 /// GET touch/deletedraft：清理已结束工作的草稿
 #[allow(non_snake_case)]
-pub async fn touch_delete_draft(pool: Extension<Pool>) -> H {
+pub async fn touch_delete_draft(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+) -> H {
+    require_session_opt(session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let n = client
         .execute(
@@ -1496,7 +1525,11 @@ pub async fn touch_delete_draft(pool: Extension<Pool>) -> H {
 
 /// GET touch/handoverjob：把无主 job 移交其工作创建者
 #[allow(non_snake_case)]
-pub async fn touch_handover_job(pool: Extension<Pool>) -> H {
+pub async fn touch_handover_job(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+) -> H {
+    require_session_opt(session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let n = client
         .execute(
@@ -1517,7 +1550,11 @@ pub async fn touch_handover_job(pool: Extension<Pool>) -> H {
 /// INSERT」的写 N+1（命中行数无上限，滞留越多越慢）。NOT EXISTS 已在语句内
 /// 完成每日去重，RETURNING 回填 workList。
 #[allow(non_snake_case)]
-pub async fn touch_log_long_detained(pool: Extension<Pool>) -> H {
+pub async fn touch_log_long_detained(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+) -> H {
+    require_session_opt(session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -1549,7 +1586,11 @@ pub async fn touch_log_long_detained(pool: Extension<Pool>) -> H {
 /// 内层 DISTINCT + NOT EXISTS 复刻原逐行查重；`COALESCE(t.work,'')` 复刻原
 /// `unwrap_or_default()` 的空串归属。
 #[allow(non_snake_case)]
-pub async fn touch_delay(pool: Extension<Pool>) -> H {
+pub async fn touch_delay(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+) -> H {
+    require_session_opt(session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -1579,7 +1620,11 @@ pub async fn touch_delay(pool: Extension<Pool>) -> H {
 /// 同族写 N+1 折叠：原逐行 `record_exists`（work+type+content，无日期）去重，
 /// 这里以内层 DISTINCT + 外层 NOT EXISTS（同谓词）等价复刻为单条语句。
 #[allow(non_snake_case)]
-pub async fn touch_urge(pool: Extension<Pool>) -> H {
+pub async fn touch_urge(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+) -> H {
+    require_session_opt(session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -1607,7 +1652,11 @@ pub async fn touch_urge(pool: Extension<Pool>) -> H {
 
 /// GET touch/merge：合并同 work 的重复 workcompleted（保留最早一条）
 #[allow(non_snake_case)]
-pub async fn touch_merge(pool: Extension<Pool>) -> H {
+pub async fn touch_merge(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+) -> H {
+    require_session_opt(session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let n = client
         .execute(
@@ -1624,7 +1673,11 @@ pub async fn touch_merge(pool: Extension<Pool>) -> H {
 
 /// GET touch/mergeitem：合并同名重复附件（同一归属下保留最早一条）
 #[allow(non_snake_case)]
-pub async fn touch_merge_item(pool: Extension<Pool>) -> H {
+pub async fn touch_merge_item(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+) -> H {
+    require_admin_opt(&pool, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let n = client
         .execute(
@@ -2189,4 +2242,59 @@ pub async fn wc_rollback_flag(pool: Extension<Pool>, Path(flag): Path<String>) -
     .await?;
     tx.commit().await.map_err(|_| AppError::Internal)?;
     ok(json!({ "id": flag, "work": work_id, "rolledBack": true }))
+}
+
+#[cfg(test)]
+mod security_gate_tests {
+    use super::*;
+
+    /// 安全审计回归（2026-10）：touch 批处理维护作业全部写库，
+    /// 无会话必须 Unauthorized（不执行删除逻辑），非 admin 会话
+    /// （无 DB 时 is_admin 查询失败 fail-closed）必须 Forbidden。
+    fn build_session(person_unique: &str) -> shared::session::Session {
+        shared::session::Session {
+            token: "t".to_string(),
+            person_unique: person_unique.to_string(),
+            created_at: chrono::NaiveDateTime::from_timestamp(0, 0),
+            expires_at: chrono::NaiveDateTime::from_timestamp(3600, 0),
+        }
+    }
+
+    #[tokio::test]
+    async fn touch_merge_item_requires_session() {
+        let pool = shared::testing::test_pool();
+        let res = touch_merge_item(Extension(pool), None).await;
+        assert!(
+            matches!(res, Err(AppError::Unauthorized)),
+            "无会话调用 touch/mergeitem 必须 401"
+        );
+    }
+
+    #[tokio::test]
+    async fn touch_merge_item_forbidden_for_non_admin() {
+        let pool = shared::testing::test_pool();
+        let res = touch_merge_item(Extension(pool), Some(Extension(build_session("u-nonadmin"))))
+            .await;
+        assert!(
+            matches!(res, Err(AppError::Forbidden)),
+            "非 admin 会话调用 touch/mergeitem 必须 403"
+        );
+    }
+
+    #[tokio::test]
+    async fn all_touch_jobs_require_session() {
+        let pool = shared::testing::test_pool();
+        let p = Extension(pool.clone());
+        for res in [
+            touch_clean_event(p, None).await,
+            touch_delete_draft(Extension(pool.clone()), None).await,
+            touch_handover_job(Extension(pool.clone()), None).await,
+            touch_log_long_detained(Extension(pool.clone()), None).await,
+            touch_delay(Extension(pool.clone()), None).await,
+            touch_urge(Extension(pool.clone()), None).await,
+            touch_merge(Extension(pool.clone()), None).await,
+        ] {
+            assert!(matches!(res, Err(AppError::Unauthorized)));
+        }
+    }
 }

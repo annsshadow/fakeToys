@@ -1209,9 +1209,9 @@ async fn test_vote_submit_record_and_count_are_atomic() {
         client
             .execute(
                 "INSERT INTO x_bbs_topic (id, title, author_id, creator, section_id, vote_count) \
-                 VALUES ($1,'t',$2,$2,'sec-u2',0) \
+                 VALUES ($1,'t',$2,$3,'sec-u2',0) \
                  ON CONFLICT (id) DO UPDATE SET deleted_at = NULL, vote_count = 0",
-                &[&topic_id, &voter],
+                &[&topic_id, &voter, &voter],
             )
             .await
             .expect("seed topic");

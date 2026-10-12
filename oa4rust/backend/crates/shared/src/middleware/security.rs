@@ -231,6 +231,22 @@ fn force_https() -> bool {
     })
 }
 
+/// FORCE_HTTPS 下重定向的 host：生产固定用 APP_PUBLIC_ORIGIN 的 host。
+/// 直接拼请求 Host 头会允许攻击者经 `Host: evil.com` 制造 307 开放重定向
+///（受害者浏览器被送往攻击者站点）；单源部署下固定配置源即正确行为。
+/// 开发环境（未配置或 http 源）回退请求 Host 保持本地直连可用。
+fn force_https_host() -> Option<String> {
+    static HOST: OnceLock<Option<String>> = OnceLock::new();
+    HOST.get_or_init(|| {
+        std::env::var("APP_PUBLIC_ORIGIN")
+            .ok()
+            .and_then(|v| url::Url::parse(&v).ok())
+            .filter(|u| u.scheme() == "https")
+            .and_then(|u| u.host_str().map(|h| h.to_string()))
+    })
+    .clone()
+}
+
 fn https_redirect(request: &Request<Body>) -> Option<Response> {
     let proto = request
         .headers()
@@ -241,7 +257,10 @@ fn https_redirect(request: &Request<Body>) -> Option<Response> {
         return None;
     }
 
-    let host = request.headers().get(header::HOST)?.to_str().ok()?;
+    let host = match force_https_host() {
+        Some(h) => h,
+        None => request.headers().get(header::HOST)?.to_str().ok()?.to_string(),
+    };
     let path = request
         .uri()
         .path_and_query()
@@ -283,7 +302,10 @@ pub async fn security_headers_middleware(request: Request<Body>, next: Next) -> 
     // Strict Content-Security-Policy (enforced, not report-only).
     // - script-src allows 'unsafe-eval' for ECharts/CodeMirror runtime compilation.
     // - style-src allows 'unsafe-inline' for Vue dynamic styles and Chart.js injection.
-    // - connect-src allows WebSocket (ws://*) and API calls.
+    // - connect-src allows same-origin XHR/fetch plus dev WebSocket on loopback.
+    //   生产 https 部署下同域 wss 由 'self' 覆盖；前端 realtime 仅连同域
+    //   （sdk/websocket.ts: window.location.host），无需 `wss://*` 通配——
+    //   通配会给任何脚本打开到任意 wss 端点的 WS 外泄通道。
     // - frame-src/object-src blocked; base-uri/form-action restricted.
     response.headers_mut().insert(
         header::CONTENT_SECURITY_POLICY,
@@ -292,7 +314,7 @@ pub async fn security_headers_middleware(request: Request<Body>, next: Next) -> 
              script-src 'self' 'unsafe-eval'; \
              style-src 'self' 'unsafe-inline'; \
              img-src 'self' data: blob:; \
-             connect-src 'self' ws://localhost:* wss://* ws:*; \
+             connect-src 'self' ws://localhost:* ws://127.0.0.1:*; \
              font-src 'self'; \
              object-src 'none'; \
              frame-src 'none'; \
@@ -314,4 +336,65 @@ pub async fn security_headers_middleware(request: Request<Body>, next: Next) -> 
 // ──────────────────────────────────────────────────────────────────────────────
 pub async fn error_handler(err: AppError, _request: Request<Body>) -> Response {
     err.into_response()
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// 安全审计回归测试（2026-10）
+//
+// 钉死两类事实，防止破坏性写端点被误改回匿名可达：
+// 1. 破坏性写端点（批量删附件/清缓存/登出/头像资源删除/控制表写）必须要求会话；
+// 2. 只读批量查询端点保持匿名可达（o2server 行为对齐 R401J200）。
+// ──────────────────────────────────────────────────────────────────────────────
+#[cfg(test)]
+mod security_audit_tests {
+    use super::is_auth_exempt;
+
+    /// 这些端点会写库（DELETE/UPDATE/INSERT 全表或批处理维护），
+    /// 必须要求登录会话，不得匿名可达。若任一被改回豁免即测试失败。
+    #[test]
+    fn destructive_write_endpoints_require_session() {
+        let destructive = [
+            // 批量维护作业：删重复附件 / 控制表时间戳写
+            "/api/processplatform/service/processing/touch/mergeitem",
+            "/api/processplatform/assemble/surface/touch/expire",
+            "/api/processplatform/assemble/surface/touch/passexpired",
+            "/api/processplatform/assemble/surface/touch/touchdetained",
+            // program_center 运维写：清缓存 / 缓存分发 / 头像资源全删 / 注销
+            "/api/program_center/jest/clear/cache/source",
+            "/api/program_center/cachedispatch",
+            "/api/program_center/appstyle/image/application/top/erase",
+            "/api/program_center/adminlogin",
+            // 批量删附件（管理）
+            "/api/processplatform/assemble/surface/attachment/batch/delete/manage",
+            // AI 线索删除（owner 门禁）
+            "/api/ai/chat/delete/some-clue",
+        ];
+        for path in destructive {
+            assert!(
+                !is_auth_exempt(path),
+                "破坏性写端点 {path} 不得匿名可达（须要求会话）"
+            );
+        }
+    }
+
+    /// 这些是 o2server 对齐的只读批量查询，保持匿名可达（前端未登录态使用）。
+    #[test]
+    fn readonly_batch_queries_stay_exempt() {
+        let readonly = [
+            "/api/person/list/all",
+            "/api/unit/list/all",
+            "/api/person/nick/name",
+            "/api/calendar/assemble/control/calendar/follow",
+            "/api/attendance/assemble/control/dingdingstatistic",
+            "/api/meeting/assemble/control/config/system",
+            "/api/person/icon/u-1",
+            "/health",
+        ];
+        for path in readonly {
+            assert!(
+                is_auth_exempt(path),
+                "只读端点 {path} 应保持匿名可达（o2server 对齐）"
+            );
+        }
+    }
 }
