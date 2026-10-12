@@ -205,7 +205,7 @@ export const useGameStore = defineStore('game', () => {
     loginError.value = ''
     try {
       const tp = await api.guestLogin()
-      setTokenInternal(tp.access_token, tp.refresh_token)
+      setTokenInternal(tp.access_token, tp.refresh_token, tp.expires_at)
       userId.value = tp.user.id
       nickname.value = tp.user.nickname
       isGuest.value = tp.user.is_guest
@@ -304,6 +304,13 @@ export const useGameStore = defineStore('game', () => {
     try {
       const [w, me] = await Promise.all([api.fetchWallet(), api.fetchMe()])
       wallet.value = { ...w, tokens: w.tokens ?? {} }
+      // 第 150 轮：以 /me 的 user_id 为身份权威。
+      // 此前 userId 只在 login() 里从 TokenPair.user.id 赋值，于是
+      // **只要没走过 login() 就是 0** —— 排行榜页「高亮我自己那一行」
+      // （rank.vue 比的是 it.user_id === store.userId）会静默失效。
+      // /me 是当前登录态的权威快照，每次 refreshProfile 都会打，
+      // 拿它回填比依赖「登录过一次」这个隐含前提可靠。
+      if (typeof me.user_id === 'number' && me.user_id > 0) userId.value = me.user_id
       power.value = me.power
       buildRating.value = me.build_rating
       build.value = me.build

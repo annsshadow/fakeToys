@@ -232,9 +232,22 @@ func DSN(t *testing.T, prefix string) string {
 	t.Cleanup(func() {
 		dropCtx, dropCancel := context.WithTimeout(context.Background(), 60*time.Second)
 		defer dropCancel()
-		_, _ = p.Exec(dropCtx,
+		// ⚠️ 不能复用上面那个池：`defer p.Close()` 在 DSN() 返回时就执行了，
+		// 而 t.Cleanup 是**之后**才跑的 —— 到这里 p 早已关闭，
+		// 每次 DROP 都会返回 `closed pool`，于是**每个库都留成孤儿**。
+		//
+		// 这个 bug 极隐蔽：清理「看起来写了」、Sweep 也在跑，
+		// 只是残留量悄悄回到几百个 —— 正好是这个包要根治的那个症状。
+		// 是新加的失败日志把它喊出来的（`[scratchdb] 删除 ... 失败：closed pool`）。
+		dp, err := pool(dropCtx)
+		if err != nil {
+			t.Logf("[scratchdb] 连不上管理库，无法删除 %s（下轮 TestMain 会清）：%v", name, err)
+			return
+		}
+		defer dp.Close()
+		_, _ = dp.Exec(dropCtx,
 			`SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = $1`, name)
-		if _, err := p.Exec(dropCtx, `DROP DATABASE IF EXISTS `+quoteIdent(name)); err != nil {
+		if _, err := dp.Exec(dropCtx, `DROP DATABASE IF EXISTS `+quoteIdent(name)); err != nil {
 			// 不吞：DROP 失败意味着这个库会留成孤儿，而孤儿库是**累积性**故障
 			//（跑得越多越红）。TestMain 的 Sweep 是兜底，不是这条路径的替代品，
 			// 所以这里必须让它可见 —— 否则「测试全绿但库越堆越多」又变成一个

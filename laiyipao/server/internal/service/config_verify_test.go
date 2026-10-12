@@ -142,7 +142,37 @@ func TestConfigVersionIsStableAndContentDerived(t *testing.T) {
 	// 这一半是**构造性**的（不是只跑一次看看绿）：任何一类内容被漏算，
 	// 对应的那条就会红。只断言「可变」不断言「每类都变」的测试，
 	// 会在加字段时悄悄失效。
-	base := func() GameConfig { return zeroed }
+	// 全局内容表的快照：mutation 跑完之后必须逐字不变。
+	//
+	// 这条断言是刻意加的 —— 上面那条「深拷贝」的失败症状远在几百行之外，
+	// 而这里当场红。测试污染全局状态是这个仓库反复吃的一类亏
+	//（工程约束 8：测试要验证意图，不是留下地雷）。
+	globalRecipeOutput := domain.SeedRecipes[0].Output
+	globalEnemyHP := domain.ScaleAllEnemies()[0].HP
+
+	base := func() GameConfig {
+		// ⚠️ 必须**深拷贝**。
+		//
+		// GameConfig 的切片字段（Levels/Enemies/Recipes/…）在 LoadGameConfig 里是
+		// 直接别名包级内容表的（`Recipes: domain.SeedRecipes`），
+		// 浅拷贝会让下面每一条 mutation 改写**进程全局状态**：
+		//
+		//	recipes[0].Output 31 → 32，于是 SeedRecipes 里有两个 Output=32，
+		//	播种时两条都算出 id = 32*10 = 320 → 23505 撞 skill_recipes 主键。
+		//
+		// 症状离病因极远：不是这条测试红，而是**上百个跟内容毫无关系的用例**
+		// 在 seeder.Run 那一步集体红，且只在该测试跑过之后才出现。
+		// 第 150 轮就是这么排查了很久才定位到这里。
+		var g GameConfig
+		raw, err := json.Marshal(zeroed)
+		if err != nil {
+			t.Fatalf("深拷贝 GameConfig 失败（marshal）：%v", err)
+		}
+		if err := json.Unmarshal(raw, &g); err != nil {
+			t.Fatalf("深拷贝 GameConfig 失败（unmarshal）：%v", err)
+		}
+		return g
+	}
 	mutations := []struct {
 		name string
 		fn   func(g *GameConfig)
@@ -170,6 +200,21 @@ func TestConfigVersionIsStableAndContentDerived(t *testing.T) {
 			t.Errorf("改 %s 后 version 没变 —— 哈希漏算了这一类内容，"+
 				"客户端会把改动当成没改", m.name)
 		}
+	}
+
+	// 收尾：mutation 不许留下任何全局痕迹。
+	//
+	// 断言放在这里而不是逐条中间，是为了让失败信息一次说清「改了什么」，
+	// 而不是第一条就炸、后面 14 条再也跑不到。
+	if got := domain.SeedRecipes[0].Output; got != globalRecipeOutput {
+		t.Fatalf("mutation 改写了 domain.SeedRecipes[0].Output（%d → %d）——"+
+			"base() 的深拷贝没生效。这些改动会污染同进程后续所有测试："+
+			"播种时两条配方算出同一个 id，直接撞 skill_recipes 主键。",
+			globalRecipeOutput, got)
+	}
+	if got := domain.ScaleAllEnemies()[0].HP; got != globalEnemyHP {
+		t.Fatalf("mutation 改写了敌人血量（%d → %d）——同上，深拷贝没生效",
+			globalEnemyHP, got)
 	}
 }
 

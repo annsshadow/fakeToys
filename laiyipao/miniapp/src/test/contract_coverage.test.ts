@@ -22,6 +22,18 @@
  * 豁免必须写进 `KNOWN_UNCONSUMED` 并附理由，且理由必须具体
  *（不能是「暂时没用」这种会永久烂掉的措辞）。
  * 豁免条目在上方常量里，`TestNoSilentUnconsumedField` 会逐条核对。
+ *
+ * ## 这条守卫查不到什么（别高估它）
+ *
+ * 它匹配的是**字段名**（`.recipes` / `'recipes'`），不是「哪个结构的哪个字段」。
+ * 同一个名字在别处出现一次就能满足它 —— 例如 `/me` 的 `user_id`
+ * 与排行榜条目的 `user_id` 同名，把前者的消费点删掉、只要后者还在，它照样绿。
+ *
+ * 它能抓住的是「**整个字段名在全仓库消失**」这一类真缺口
+ * （第 150 轮实测：`version` / `recipes` / `gem_qualities` / `skins` /
+ * `rating_weights` 五个都是这样漏掉的），抓不到「读错结构」的那一类。
+ * 后者要靠类型系统与各自的业务断言 —— 那也是为什么本文件之外
+ * 仍有大量按行为写的测试。
  */
 import { describe, it, expect } from 'vitest'
 import { readFileSync, readdirSync, statSync } from 'node:fs'
@@ -51,13 +63,40 @@ const CONFIG_FIELDS = [
 ] as const
 
 /**
+ * 登录态与个人资料端点的字段（`TokenPair` 与 `/me` 的 json 字段）。
+ *
+ * 与 `CONFIG_FIELDS` 同一条纪律，但覆盖另一类契约 ——
+ * 这些字段的共同特点是「**只影响身份**」：
+ * 一个没人读的 `user_id` 会让排行榜不再高亮当前玩家，
+ * 一个没人读的 `expires_at` 会让每次息屏回来都白吃一次 401。
+ * 症状都不是报错，而是某个功能**静默失效**。
+ */
+const AUTH_FIELDS = [
+  'access_token',
+  'refresh_token',
+  // 第 150 轮：此前零消费，现已用于「发请求前主动续期」
+  'expires_at',
+  'nickname',
+  'is_guest',
+  'user_id',
+  'build_rating',
+  'power',
+  'avatar_url',
+] as const
+
+/**
  * 允许「零消费」的字段及其**具体**理由。
  *
- * 空数组 = 全部字段都必须有消费方。
+ * 空对象 = 全部字段都必须有消费方。
  * 新增条目时必须回答：为什么它在服务端存在却不能被消费？
  * 一个说不出具体理由的条目等于把缺口永久合法化。
  */
-const KNOWN_UNCONSUMED: Record<string, string> = {}
+const KNOWN_UNCONSUMED: Record<string, string> = {
+  avatar_url:
+    '服务端从无任何写入方：users.avatar_url 只有 DEFAULT 空串（migrations/00001_core.sql:12），' +
+    '全仓库没有任何 UPDATE 或 INSERT 给它赋值，所以它恒为空。展示它等于在页面上加一个永远不显示的分支。' +
+    '真正的闭合方式是补「设置头像」（需要对象存储 + 上传鉴权），属独立需求，不在本轮范围。',
+}
 
 function walk(dir: string, out: string[] = []): string[] {
   for (const name of readdirSync(dir)) {
@@ -99,6 +138,22 @@ describe('跨端消费面（第 150 轮）', () => {
     ).toEqual([])
   })
 
+  it('登录态与个人资料端点的每个字段都有消费方，或有写明理由的豁免', () => {
+    const { text } = productSource()
+    const orphans: string[] = []
+    for (const f of AUTH_FIELDS) {
+      if (KNOWN_UNCONSUMED[f]) continue
+      const re = new RegExp(`\\.${f}\\b|['"\`]${f}['"\`]`)
+      if (!re.test(text)) orphans.push(f)
+    }
+    expect(
+      orphans,
+      `这些登录态/资料字段在全仓库没有任何消费方：\n  ${orphans.join('\n  ')}\n\n` +
+        '身份类字段没人读的症状不是报错，而是功能**静默失效**：' +
+        '排行榜不高亮当前玩家、每次息屏回来白吃一次 401。',
+    ).toEqual([])
+  })
+
   it('KNOWN_UNCONSUMED 里没有已经有人消费的字段（豁免会过期）', () => {
     const { text } = productSource()
     const stale = Object.keys(KNOWN_UNCONSUMED).filter((f) =>
@@ -113,8 +168,9 @@ describe('跨端消费面（第 150 轮）', () => {
 
   it('豁免条目必须写具体理由，且指向真实文件', () => {
     const { files } = productSource()
+    const known: readonly string[] = [...CONFIG_FIELDS, ...AUTH_FIELDS]
     for (const [field, why] of Object.entries(KNOWN_UNCONSUMED)) {
-      expect((CONFIG_FIELDS as readonly string[]).includes(field), `豁免了不存在的字段 ${field}`).toBe(true)
+      expect(known, `豁免了不存在的字段 ${field}`).toContain(field)
       expect(
         why.length,
         `字段 ${field} 的豁免理由太短（${why.length} 字）。` +
