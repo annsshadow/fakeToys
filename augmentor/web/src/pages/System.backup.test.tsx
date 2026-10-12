@@ -97,6 +97,8 @@ vi.mock('../services/api', async (importOriginal) => {
     version: '3.0.0',
     model_default: 'ernie',
     model_available: true,
+    model_retry_count: 0,
+    model_retry_wait_seconds: 0,
     dependencies: {
       installed: { pandas: true },
       missing: [],

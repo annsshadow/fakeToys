@@ -27,7 +27,16 @@ import {
   updateConfig,
   validateConfigFile
 } from '../services/api'
-import type { AppConfig, AutoConfigResponse, ConfigValidationResponse } from '../types/api'
+import type { AppConfig, AutoConfigResponse, ConfigValidationResponse, UpdateConfigResponse } from '../types/api'
+
+/**
+ * 本页**做了输入控件**的三节
+ *
+ * 剩下那些节走只读回显卡。这份名单刻意写成「有表单的」而不是「只读的」：后端往
+ * `ConfigResponse` 里加一节，那一节会自动落进回显卡而不是静默消失——反过来写就得
+ * 记得回来补名单，而那正是「后端在回、前端读不到」这一族缺陷的形状。
+ */
+const FORM_SECTIONS = ['augmentation', 'quality', 'dedup']
 
 export default function Settings() {
   const [config, setConfig] = useState<AppConfig | null>(null)
@@ -57,6 +66,13 @@ export default function Settings() {
    */
   const [apiKeyInput, setApiKeyInput] = useState(getApiKey)
   const [apiKeyStored, setApiKeyStored] = useState(() => Boolean(getApiKey()))
+  /**
+   * 上一次保存的回执原样留一份
+   *
+   * 不能只弹一句 toast 就丢掉：`success` 两边都是 `true`（它只表示「请求被正常处理」），
+   * 落没落盘要读 `ignored_keys` 与后端那句 `message` 的主干，而这两格都是用户要能回头核对的。
+   */
+  const [saveResult, setSaveResult] = useState<UpdateConfigResponse | null>(null)
 
   /**
    * 局部更新配置
@@ -172,7 +188,7 @@ export default function Settings() {
   const handleSave = async () => {
     setLoading(true)
     try {
-      await updateConfig({
+      const result = await updateConfig({
         default_model: defaultModel,
         augmentation: config?.augmentation,
         quality: config?.quality,
@@ -182,6 +198,7 @@ export default function Settings() {
         rag: config?.rag,
         multimodal: config?.multimodal
       })
+      setSaveResult(result)
       message.success('配置已保存到 config.yaml，部分配置需要重启服务生效')
     } catch (err) {
       message.error(apiErrorDetail(err, '保存配置失败'))
@@ -217,6 +234,12 @@ export default function Settings() {
     setApiKeyStored(false)
     message.success('已清除：后续请求不再送鉴权头')
   }
+
+  const readonlySections = config
+    ? (Object.keys(config) as (keyof AppConfig)[])
+        .filter(k => k !== 'default_model' && !FORM_SECTIONS.includes(k))
+        .map(k => [k, config[k] as Record<string, unknown>] as const)
+    : []
 
   return (
     <div>
@@ -331,6 +354,34 @@ export default function Settings() {
             </Form.Item>
           </Space>
         </Form>
+      </Card>
+
+      <Card title="其余节的生效值（本页只读）" style={{ marginBottom: 16 }}>
+        <Alert
+          type="info"
+          showIcon
+          style={{ marginBottom: 12 }}
+          message="这些键本页只能看、不能改"
+          description={
+            'export / vector / rag / multimodal 四节在 POST /api/config 的写入清单里，但本页没给它们做输入控件——点「保存配置」是把 GET 取回的原值回送，所以值不会变，要改得直接编辑 config.yaml 再重启。versioning / visualization 两节根本不在写入清单里，送进去只会落进 ignored_keys。这张卡的内容是从 GET 的响应键里扣掉上面三张表单卡之后剩下的，所以后端往响应里加一节会自动出现在这里，不会静默消失。'
+          }
+        />
+        {readonlySections.length === 0 ? (
+          <div style={{ fontSize: 12, opacity: 0.75 }}>
+            还没取到配置（加载失败时这张卡是空的）。
+          </div>
+        ) : (
+          readonlySections.map(([section, values]) => (
+            <div key={section} style={{ marginBottom: 8 }}>
+              <Tag>{section}</Tag>
+              {Object.entries(values).map(([key, value]) => (
+                <Tag key={key} color="blue">
+                  {key}: {Array.isArray(value) ? value.join(' / ') : String(value)}
+                </Tag>
+              ))}
+            </div>
+          ))
+        )}
       </Card>
 
       <Card title="按数据推荐配置" style={{ marginBottom: 16 }}>
@@ -530,6 +581,42 @@ export default function Settings() {
             <code>AUGMENTOR_API_KEY</code> - 写操作鉴权（服务端那一半；填进上面那张卡才生效）
           </li>
         </ul>
+      </Card>
+
+      <Card title="上次保存的回执" style={{ marginBottom: 16 }}>
+        {saveResult ? (
+          <>
+            <Alert
+              type={(saveResult.ignored_keys ?? []).length === 0 ? 'success' : 'warning'}
+              showIcon
+              message={saveResult.message}
+              description={
+                '这一句是 POST /api/config 真回的 message，不是本页拼的。success 两边都是 true（它只表示「请求被正常处理」），落没落盘要看这句的主干与下面的 ignored_keys。'
+              }
+            />
+            <div style={{ marginTop: 8 }}>
+              <Tag color={(saveResult.ignored_keys ?? []).length === 0 ? 'green' : 'orange'}>
+                ignored_keys: {(saveResult.ignored_keys ?? []).length} 个
+              </Tag>
+              {(saveResult.ignored_keys ?? []).map(key => (
+                <Tag key={key} color="orange">
+                  <code>{key}</code>
+                </Tag>
+              ))}
+            </div>
+            <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
+              形状两种：<code>section.key</code> 是节内未知子键（被 <code>hasattr</code> 丢回去的那些），
+              <code>section</code> 是整节不在写入清单里或节名拼错——按有没有那个点就能分开看。
+            </div>
+          </>
+        ) : (
+          <Alert
+            type="info"
+            showIcon
+            message="还没保存过"
+            description="点「保存配置」之后，这一格显示后端真回的那份回执（message 与 ignored_keys）。"
+          />
+        )}
       </Card>
 
       <div style={{ marginTop: 16, textAlign: 'right' }}>
