@@ -137,25 +137,59 @@ ASCII 字母数字。附 `security_preview_tests`。
   mp-weixin 双平台构建 + desktop 生产构建通过（vue 3.5.42 override 后）。
 - 既有断言适配 2 处：`tests_u3`（jest 500→401）、`tests.rs`（cleanevent 注入会话）。
 
-### 与本次改动无关的既有失败（留档，不在安全范围内处理）
+**审计后补记（同轮收口）**：
 
-`cargo test --workspace --lib`（本地共享 PG）暴露 4 个失败，均位于
-**本次未触碰**的 crate（`git status` 干净），且这些测试走裸 router（不含我改的
-auth/rbac 中间件），与依赖面/代码面安全修复无因果。逐个单跑（`-- --exact`）
-**均确定性失败**，根因为本地共享库的种子残留 / schema 漂移，非安全缺陷：
+- 穷尽扫查补齐：对全部 crate 的注入（format!/拼接 SQL、命令执行）、文件穿越、
+  SSRF、弱加密四族 pattern 逐一人工过完（3 个子代理因配额失败后手动完成）——
+  **未发现新的真实安全漏洞**。所有 `format!` SQL 位均为静态字面表名/列名、
+  参数走 bind；`Command` 仅 shell/console 展示；SSRF 面仅管理员配置的
+  AI/MCP URL 与环境变量；遗留 md5/DES 校验路径仅 o2server 兼容 + 登录即升级
+  bcrypt；wechat SHA1 为协议要求；session token 为 HMAC-SHA256 签名 UUID。
+- 4 个既有失败的精确根因取证（见上节）：qsp 输入契约与 org person_detail
+  SQL 拼接为**真实功能缺陷**，已在审计后以独立提交修复；bam 2 个 state
+  测试为测试卫生（非幂等 + 并发 delta 干扰），留档未动。
+- 补修后复验：`query_service_processing` 23/23、`organization_assemble_express`
+  42/42 全绿；`processplatform_assemble_bam` 干净库 + 串行 30/30 全绿（并发
+  `--test-threads` 默认下 2 个 state 测试仍会因互相干扰挂，属既有测试卫生，
+  非本次回归）。
 
-- `processplatform_assemble_bam::tests::state_summary|state_running_filter_buckets_
-  match_seeded_deltas`（2 个）—— 重跑时 `INSERT x_work (id='r25-w-c1')` 撞
-  `x_work_pkey` 唯一键（`duplicate key … already exists`）：固定种子 id 未被
-  前序运行清理，本地共享库残留。
-- `query_service_processing::tests::u2_contract::u2_batch_process_prefetches_
-  and_preserves_order` —— 同类固定种子残留。
-- `organization_assemble_express::u2_person_detail_flag_resolves_by_id_and_name`
-  —— 确定性 500：handler 级联查 `x_org_identity/unit/duty/group/role/attribute`
-  多表，而测试仅种 `x_org_person`，本地库 schema 与测试期望不一致。
+### 与本次改动无关的既有失败（已根因取证：2 个真实功能缺陷已修，2 个为测试卫生）
 
-处置：这些属**既有测试卫生 / schema 漂移**，与安全无关，不并入本次提交；
-CI 用独立 DB 实例（无跨运行残留）时按 CI 基线判定。如需收口，单独立项
-（种子改用可清理的随机 id + 建库即齐 schema）。
+初版审计将 `cargo test --workspace --lib`（本地共享 PG）暴露的 4 个失败笼统记为
+「种子残留 / schema 漂移」。后续用一次性本地探针（`examples/db_security_probe.rs`，
+跑完即删，不进 git）做了**精确根因取证**，结论修正如下——4 个失败**均与本次
+安全改动无因果**（全在未触碰 crate，走裸 router、不经 auth/rbac 中间件），但根因
+比初版记录更精确，其中 2 个是**真实的功能缺陷**（已在审计后修复提交中修掉）：
+
+1. **`organization_assemble_express::u2_person_detail_flag_resolves_by_id_and_name`
+   —— 真实 SQL 字符串 bug（已修）**：`endpoints_person2.rs` 的 `person_detail_flag`
+   群组 CTE 中 `… AND m.person_id = $1\` 行尾反斜杠（Rust 字符串换行续接符）吃掉了
+   换行与下一行缩进，拼出 `…$1UNION`。任何**存在的** person 走到该 CTE 必触发
+   PG `E42601: trailing junk after parameter at or near "$1UNION"` → 端点恒 500。
+   探针端点级复现（存在 person → 500，不存在 → 200 早退）+ 临时在 8 处
+   `map_err` 打点抓到确切 SQL 错误后定位。修复：`$1` 后补空格。全库扫描
+   「行尾 `\` 前为非空格字符」同类隐患仅此 1 处。修复后该 crate 42/42 全绿。
+2. **`query_service_processing::u2_batch_process_prefetches_and_preserves_order`
+   —— 真实输入契约 bug（已修）**：`QueryRequest` 按 snake_case `query_type`
+   反序列化，但同一端点的响应字段与 o2server Java 契约均为 camelCase `queryType`。
+   请求体里的 `"queryType"` 全部落空 → batch 每项都返回 `query_type is required`
+   → 测试断言 `results[0]["id"]` 得 `Null`。探针端点级复现确认（5 项全落空分支）。
+   修复：`#[serde(rename = "queryType")]`（`params`/`options` 单词不受影响；两个
+   mock 池 500 断言测试与字段命名无关，不受影响）。修复后该 crate 23/23 全绿。
+3. **`processplatform_assemble_bam` 的 `state_summary|state_running_filter_buckets_
+   match_seeded_deltas`（2 个）—— 测试卫生问题（未动，留档）**，非种子残留那么简单：
+   - **非幂等**：固定种子 id（`r25-*`/`r26-*`）无前置 DELETE，失败路径不清理
+     （清理只在成功尾段），前序失败运行留下残留 → 后续 `INSERT` 撞
+     `x_work_pkey`/`x_task_pkey` 唯一键。清库后单跑即通过。
+   - **并发不互斥**：两测试共享 `x_work`/`x_task` 且都按「before/after 计数差」
+     断言；`cargo test` 默认多线程并发跑时互相往对方计数窗口里种行 → 差值断言
+     必挂（复现签名 `left: 2, right: 1`）。干净库 + `--test-threads=1` 串行
+     30/30 全绿。
+
+处置与边界：#1 #2 是**既有功能缺陷**（可用性/契约层面，非可利用的安全漏洞），
+已在审计后以独立提交修复并全绿；#3 属测试卫生（共享库 delta 断言 + 固定种子），
+与安全无关，未并入安全提交，留档备查——如需收口可单独立项（种子改随机 id +
+前置 DELETE + 两测试加进程内互斥或改串行）。CI 用独立 DB 实例时，#3 在
+`--test-threads=1` 或独立库下同样可绿。
 
 
