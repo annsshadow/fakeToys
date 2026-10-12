@@ -16,6 +16,10 @@ pub mod u2;
 
 #[derive(Debug, Deserialize)]
 pub struct QueryRequest {
+    // 与响应字段 / o2server Java 契约一致用 camelCase（本端点响应输出即 "queryType"）；
+    // 此前按 snake_case 反序列化，请求体里的 "queryType" 全部落空、
+    // batch 全数返回 "query_type is required"。
+    #[serde(rename = "queryType")]
     pub query_type: Option<String>,
     pub params: Option<Value>,
     pub options: Option<Value>,
