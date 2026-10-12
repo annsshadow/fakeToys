@@ -17,7 +17,7 @@
 「export 操作为直通处理」）；反过来 HTTP 侧合法的 `none` 在 CLI 里被 argparse 直接拒（退出码 2）。
 修法是把 CLI 那份字面改成与端点同一份，并由本文件 `TestTheClosedListsAreOnePerFace` 做三向
 对账。**没有新插 Python 常数**：把权威搬进 `augmentor/streaming.py` 会在 `WRITER_FORMATS`
-之后插行，平移账本 A147 那条活引用 `augmentor/streaming.py:274`（`read_chunks`）；仓内既有
+之后插行，平移账本 A147 那条活引用 `augmentor/streaming.py:296`（`read_chunks`）；仓内既有
 惯例（l226 / l175 / l189）也是「CLI 留字面、守卫对账」，故沿用。
 
 五面判据，各对应一种真实失效形状：

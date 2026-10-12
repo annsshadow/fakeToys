@@ -1160,7 +1160,7 @@ A58 是 L41 接线时自带的一笔代价（`shuffle=False` 时每段各整份�
 **不为纳秒级的绝对量牺牲入参校验**。
 
 **顺带挖出的三笔「契约面有旋钮、实现面不消费」**（与 §3.16 的 A54 同构，见账本 A64–A66）：
-~~`ModelConfig.max_retries` / `retry_delay`~~ **`AugmentationConfig.max_retries` / `retry_delay`**（L45 校正类名归属：`ModelConfig` 在 `augmentor/config.py:15` 且没有重试字段，两个旋钮属于 `:28` 的 `AugmentationConfig`）全仓 0 个消费者，而 `models/base.py` 另有一副写死的
+~~`ModelConfig.max_retries` / `retry_delay`~~ **`AugmentationConfig.max_retries` / `retry_delay`**（L45 校正类名归属：`ModelConfig` 在 `augmentor/config.py:176` 且没有重试字段，两个旋钮属于 `augmentor/config.py:249` 的 `AugmentationConfig`）全仓 0 个消费者，而 `models/base.py` 另有一副写死的
 `Retry(total=3)` 在~~传输层独立生效（⇒ 一次 `generate()` 最坏请求数上界 `attempts × (1+3)`，
 此数按代码推得、未实测）~~ **传输层从不生效（L45 实测校正，见 §3.20）**；`compute_delay` 的 `jitter` / `rng` 没有任何调用路径能传进去
 （`with_retries` 不接也不透传）⇒ 真实重试链上抖动恒为 0；`RetryStats` 回到 `generate`
@@ -2401,7 +2401,7 @@ NONCE-L57-COST，head/工作树交替三轮）。根因不在判据而在它被�
 每次都要对着真 record 试渲染默认串。计数是**直接包装 `logging.LogRecord.__init__` 数出来的**
 （Temp `l57/rec.txt` / `rec_prememo.txt` NONCE-L57-REC）：修前 2 条/次加载、修后
 无节 0 条、写出 `format` 1 条（剩下的是装配真要用的那个 Formatter）。修法是缓存
-「已通过」的格式串（`assert_format_renderable`，`logging_setup.py:95`），**判据一条不省**：
+「已通过」的格式串（`assert_format_renderable`，`logging_setup.py:108`），**判据一条不省**：
 缓存只收 `build_formatter` 通过之后的串，坏串永远走真判据。修后同一读数是
 `−1.1 / +6.6 / +5.5 µs`、**不再同号** ⇒ 按口径不进主张；还站得住的只有
 `AppConfig()` 纯构造 **+0.4~+0.7 µs（同号）**。两条变异坐实这组用例不是摆设：删掉缓存短路
