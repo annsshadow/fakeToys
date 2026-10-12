@@ -41,7 +41,7 @@ beforeEach(() => {
   mockApi.guestLogin.mockResolvedValue({
     access_token: 'acc-1',
     refresh_token: 'ref-1',
-    expires_at: '',
+    expires_at: '2099-01-01T00:00:00Z',
     user: { id: 7, nickname: '游客7', avatar_url: '', is_guest: true, status: 1 },
   })
   mockApi.fetchConfigIfVersion.mockResolvedValue({ status: 'modified', config: makeConfig(), serverTimeMs: 0 })
@@ -61,7 +61,13 @@ describe('login（单飞 + 全流程）', () => {
   it('成功：写令牌、账号态置位、拉配置与档案', async () => {
     const ok = await store.login()
     expect(ok).toBe(true)
-    expect(mockApi.setTokenInternal).toHaveBeenCalledWith('acc-1', 'ref-1')
+    // 第 150 轮：第三个参数是 TokenPair.expires_at。store 必须把它透传给 api 层 ——
+    // 不透传的话客户端拿不到过期时刻，只能等服务端回 401 才发现令牌到期。
+    expect(mockApi.setTokenInternal).toHaveBeenCalledWith(
+      'acc-1',
+      'ref-1',
+      '2099-01-01T00:00:00Z',
+    )
     expect(store.userId).toBe(7)
     expect(store.nickname).toBe('游客7')
     expect(store.isGuest).toBe(true)

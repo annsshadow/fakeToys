@@ -510,7 +510,7 @@ Go:  if resElement == "" { resElement = dominant(def) } // '' 回退   → 真�
 - **miniapp**：9 页面（首页/关卡/战斗/背包/专精/签到/排行/验真/我的）+ TS 战斗内核 + Canvas 渲染层
 - **admin**：11 视图 + 玩法文档站；登录守卫、审计日志、货币净流入监控、胜率异常告警
 
-### 18. **「存在」与「被消费」是两件事，只有后者有意义 —— 而它们必须能被机器查出来（第 150 轮）**
+### 这一轮的复盘：「存在」不等于「有意义」，而「有意义」必须能被机器查出来（第 150 轮）
 
 这一轮把「消费面」从**人肉记账**变成**可执行不变量**。起因是一次穷尽扫描：
 
@@ -521,12 +521,12 @@ Go:  if resElement == "" { resElement = dominant(def) } // '' 回退   → 真�
 | **B 字段** | `TokenBalance` 这个 service 方法**没有任何 HTTP 端点读它** | `mastery_reset` 买得到、看不见、也点不动 |
 | **C 道具** | `revive_token` / `gem_wash_token` 买得到但无消费端点 | 商城里两件「买了不知道干嘛」的商品 |
 
-修完之后加了两条守卫，让这件事**不再依赖谁记得看一眼**：
+修完之后加了两条守卫，让这件事**不再依赖谁记得看一眼**。
+A 口径（服务端侧，每条路由都要有客户端调用方）与 B 口径（客户端侧，
+`/config` 每个字段都要有消费方，或有写明理由的豁免）分别是：
 
 ```bash
-# A 口径：每条路由都要有客户端调用方
 go test ./internal/httpapi/ -run TestEveryRouteHasClientCaller
-# B 口径：/config 每个字段都要有消费方，或有写明理由的豁免
 pnpm vitest run src/test/contract_coverage.test.ts
 ```
 
@@ -565,7 +565,7 @@ pnpm vitest run src/test/contract_coverage.test.ts
 的读取会因「忘了判空」在运行时炸；类型层面分开，**编译期**就会把
 「谁需要完整关卡」逼出来（`stage.vue` 就是这样被立刻指出来的）。
 
-### 19. **「测试全绿」与「测试有效」之间的距离（本轮亲手踩了两脚）**
+### 同一轮的复盘：「测试全绿」与「测试有效」之间的距离
 
 19. **每周一必红的既有断言** —— `periodStart(now,"weekly")` 与
     `periodStart(now,"daily")` 在**周一完全相等**，而
@@ -597,7 +597,7 @@ pnpm vitest run src/test/contract_coverage.test.ts
 
     > 这条与「消费面」同源：**它坏的方式都是「让测试看起来比实际更可信」**。
 
-### 20. **`version` 从「每秒都变的时间戳」改成内容哈希（第 150 轮）**
+### 同一轮的复盘：`version` 从「每秒都变的时间戳」改成内容哈希
 
 `/config` 的 `version` 曾经是 `int(time.Now().Unix() % 100000)`，于是：
 

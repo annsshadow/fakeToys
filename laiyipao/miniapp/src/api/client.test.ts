@@ -188,6 +188,86 @@ describe('request：基础分支', () => {
 })
 
 describe('request：401 刷新与重试', () => {
+  // ---- 第 150 轮：expires_at 的主动续期 ----
+  //
+  // 此前 expires_at 下发了却从没人读，令牌到期只能等 401 才发现 ——
+  // 于是「息屏很久后回来看一眼」必然浪费一次往返。
+  describe('expires_at 主动续期', () => {
+    /** 距今 n 毫秒后的 RFC3339。 */
+    function inMs(n: number): string {
+      return new Date(Date.now() + n).toISOString()
+    }
+
+    it('已知快过期 → 发请求前先刷新，主请求不再吃 401', async () => {
+      setTokenInternal('old', 'refresh-1', inMs(5_000))
+      queueResponses([
+        {
+          statusCode: 200,
+          data: { access_token: 'fresh-acc', refresh_token: 'fresh-ref', expires_at: inMs(3_600_000) },
+        }, // /auth/refresh
+        { statusCode: 200, data: { ok: true } }, // 主请求，一次成功
+      ])
+      await expect(request('/me')).resolves.toEqual({ ok: true })
+
+      // 关键断言：**第一个**发出去的就是刷新，不是业务请求
+      expect(callOf(0).url).toBe(`${BASE_URL}/auth/refresh`)
+      expect(callOf(1).url).toBe(`${BASE_URL}/me`)
+      expect(callOf(1).header.Authorization).toBe('Bearer fresh-acc')
+      expect(callOf(1).data).toBeUndefined()
+    })
+
+    it('过期时间还早 → 不刷新，直接发主请求（不白花一次 refresh）', async () => {
+      setTokenInternal('good', 'refresh-1', inMs(3_600_000))
+      queueResponses([{ statusCode: 200, data: { ok: true } }])
+      await expect(request('/me')).resolves.toEqual({ ok: true })
+      expect(callOf(0).url).toBe(`${BASE_URL}/me`)
+      expect(callOf(0).header.Authorization).toBe('Bearer good')
+    })
+
+    it('没有过期信息（旧版本登录）→ 保持旧行为，等 401 再说', async () => {
+      setTokenInternal('old', 'refresh-1') // 不带 expires_at
+      queueResponses([{ statusCode: 200, data: { ok: true } }])
+      await expect(request('/me')).resolves.toEqual({ ok: true })
+      expect(callOf(0).url).toBe(`${BASE_URL}/me`)
+    })
+
+    it('expires_at 解析不了 → 不猜，照旧走 401 兜底（不因脏数据拒绝登录）', async () => {
+      setTokenInternal('old', 'refresh-1', 'not-a-timestamp')
+      queueResponses([{ statusCode: 200, data: { ok: true } }])
+      await expect(request('/me')).resolves.toEqual({ ok: true })
+      expect(callOf(0).url).toBe(`${BASE_URL}/me`)
+    })
+
+    it('主动刷新失败 → 不阻断，仍发主请求并由既有 401 兜底处理', async () => {
+      setTokenInternal('old', 'refresh-1', inMs(1_000))
+      queueResponses([
+        { errMsg: 'request:fail abort' }, // 刷新直接网络失败
+        { statusCode: 200, data: { ok: true } }, // 主请求（此时令牌已被清掉）
+      ])
+      await expect(request('/me')).resolves.toEqual({ ok: true })
+      expect(callOf(1).url).toBe(`${BASE_URL}/me`)
+      // 刷新失败 → 令牌被清 → 主请求不带 Authorization
+      expect(callOf(1).header.Authorization).toBeUndefined()
+    })
+
+    it('免鉴权请求不触发主动续期（/config 热路径不该被令牌状态拖累）', async () => {
+      setTokenInternal('old', 'refresh-1', inMs(1_000))
+      queueResponses([{ statusCode: 200, data: { ok: true } }])
+      await expect(request('/config', { auth: false })).resolves.toEqual({ ok: true })
+      expect(callOf(0).url).toBe(`${BASE_URL}/config`)
+      expect(callOf(0).header.Authorization).toBeUndefined()
+    })
+
+    it('clearTokens 后过期信息一并清掉（不留脏状态）', async () => {
+      setTokenInternal('old', 'refresh-1', inMs(1_000))
+      clearTokens()
+      queueResponses([{ statusCode: 200, data: { ok: true } }])
+      await expect(request('/me')).resolves.toEqual({ ok: true })
+      expect(callOf(0).url).toBe(`${BASE_URL}/me`)
+      expect(callOf(0).header.Authorization).toBeUndefined()
+    })
+  })
+
   it('401 → 刷新成功 → 用新令牌重试成功', async () => {
     setTokenInternal('expired', 'refresh-1')
     queueResponses([
