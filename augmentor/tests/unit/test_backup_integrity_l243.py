@@ -19,12 +19,12 @@ A300 那两员进契约面之后，`test_backup_wiring_l231.py` 里那一支只�
 
 **四档「与直觉不同」的实测**，逐档都有对应用例，写在这里免得日后被人当缺陷改回去：
 
-1. **缺目录时 verify 不建目录，cleanup 会建**。`DatasetBackup` 的构造无条件
-   `mkdir(parents=True, exist_ok=True)` 并落一份 `index.json`，所以 cleanup（写端点）在
-   `backup_dir=newdir` 下回 `{"deleted_count": 0, "max_backups": 5}` **且目录出现、里面只有
-   index.json**；verify 是只读端点，靠路由里那道 `if not resolved.exists(): return
-   {"results": []}` 挡在构造之前（A307 盯的正是「只读端点写盘」），同一个 `backup_dir`
-   换成 `nodir` 之后目录**不在场**。
+1. **缺目录时 verify 与 cleanup 都不建目录**（L243 当时是「verify 不建、cleanup 建」，
+   差在 `DatasetBackup` 的构造无条件 `mkdir(parents=True, exist_ok=True)` 并落一份
+   `index.json`：cleanup 走构造所以留垃圾，verify 靠路由里那道 `if not resolved.exists()`
+   挡在构造之前）。L249 收 A332 / A307 时把副作用从构造里摘掉，六只只读面与「无债可清的
+   清理」现在同源：**请求前后目录都不在场**，而响应仍是 200 空结果，两面口径差异随之消失
+   （A307 盯的正是「只读端点写盘」）。
 2. **同 id 两条索引记录在 verify 里塌成一行**（SDK 那份结果以 `backup_id` 为键），而且留下
    的是**索引里后出现的那一条**的 timestamp（探针把 dup 追加到末尾并写成 2020 ⇒ 回执里就是
    2020）。这是 A298 的另一面：列表出两行、完整性出那一行。
@@ -376,12 +376,13 @@ class TestCleanupKeepsTheNewestByIndexRows:
         assert r.json() == {"deleted_count": 0, "max_backups": 100}
         assert sorted(p.name for p in bd.iterdir()) == files_before
 
-    def test_a_missing_dir_is_created_because_this_is_a_write_endpoint(self, tmp_path, monkeypatch):
-        """与 verify 相反的口径，且**是刻意的**：cleanup 是写操作，`DatasetBackup` 构造就 mkdir
+    def test_a_missing_dir_stays_absent_even_for_this_write_endpoint(self, tmp_path, monkeypatch):
+        """L249 收 A332 之后 cleanup 与 verify 同口径：没活可干就不建目录
 
-        探针量到 `backup_dir=newdir` 回 200 `{0, 5}`、目录出现、里面只有 `index.json`。
-        这一支钉住它，免得日后有人拿「只读端点不建目录」那条口径把写端点也一起改掉——
-        那会让「清理一个还不存在的目录」从 200 变成 500。
+        改前实测：`backup_dir=newdir` 回 200 `{0, 5}`、目录出现、里面只有 index.json，
+        因为 `DatasetBackup` 构造即 mkdir 并落默认索引，而判据排在构造之后。摘掉构造的
+        副作用之后，「清理一个还不存在的目录」仍然是 **200**（读盘交回内存空账，不炸），
+        只是不再留一份空目录加一份空索引当垃圾。这一支钉的是新口径。
         """
         client, root, _bd = _client(tmp_path, monkeypatch)
 
@@ -390,9 +391,7 @@ class TestCleanupKeepsTheNewestByIndexRows:
 
         assert r.status_code == 200, r.text
         assert r.json() == {"deleted_count": 0, "max_backups": 5}
-        created = root / "newdir"
-        assert created.is_dir()
-        assert sorted(p.name for p in created.iterdir()) == ["index.json"]
+        assert not (root / "newdir").exists(), "无债可清的清理留下了目录 ⇒ 写面又提前落盘"
 
 
 class TestTheAuthSplitMeasured:

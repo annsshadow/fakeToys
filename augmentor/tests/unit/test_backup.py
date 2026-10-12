@@ -36,12 +36,13 @@ class TestDatasetBackup:
     """DatasetBackup 测试"""
     
     def test_init(self, tmp_path):
-        """测试初始化"""
+        """测试初始化（L249 收 A332 之后构造不落盘：目录与索引等第一次真写）"""
         backup_dir = tmp_path / "backups"
         manager = DatasetBackup(str(backup_dir))
         
-        assert backup_dir.exists()
-        assert manager._index_file.exists()
+        assert not backup_dir.exists()
+        assert not manager._index_file.exists()
+        assert manager.list_backups() == []
     
     def test_backup(self, tmp_path, sample_file):
         """测试创建备份"""

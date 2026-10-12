@@ -987,8 +987,8 @@ export default function System() {
           registry_path 这一格页面不送，落点由服务端决定：白名单首个根目录下的
           .dependency_registry（出厂 data/.dependency_registry）。CLI 的 --registry-path 默认值
           是 .dependency_registry（**相对工作目录**），两边不是同一份，所以 CLI 登记的数据集在
-          这张卡上看不见（A308）。另外这两支只读端点在注册表目录不存在时会**把它建出来**
-          （A307），刷一下页面就在服务端留了个空目录。
+          这张卡上看不见（A308）。这两支只读端点曾经会把不存在的注册表目录建出来
+          （A307），L249 起构造不再碰磁盘，刷页面不留东西了。
         </div>
         <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
           登记这一支挂鉴权门禁（两条 GET 不挂）：服务端设了 AUGMENTOR_API_KEY 时它会回 401

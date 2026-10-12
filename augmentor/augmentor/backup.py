@@ -53,13 +53,13 @@ class DatasetBackup:
     """
     
     def __init__(self, backup_dir: str = ".backups"):
-        """初始化备份管理器
+        """初始化备份管理器（构造不落磁盘副作用，目录与索引等第一次真写去建）
         
         Args:
             backup_dir: 备份目录
         """
         self._backup_dir = Path(backup_dir)
-        self._backup_dir.mkdir(parents=True, exist_ok=True)
+        # 构造不碰磁盘（A332 / L249）：旧写法在这里 mkdir，只读面每探活一次就多一个目录
         self._index_file = self._backup_dir / "index.json"
         self._index = self._load_index()
     
@@ -68,11 +68,11 @@ class DatasetBackup:
         if self._index_file.exists():
             with open(self._index_file, 'r', encoding='utf-8') as f:
                 return json.load(f)
-        # 创建默认索引（L162 收原子写：本方法无 except 且在 __init__ 必调，
-        # 旧写法的半份索引窗口会让第二个实例构造当场崩）
-        default_index = {"backups": []}
-        atomic_write_json(self._index_file, default_index)
-        return default_index
+        # 索引不在场就是「还没有备份」：交回内存里的空账，**不落盘**（A332 / L249）。
+        # 首次落盘延后到 _save_index，那一只仍走 atomic_write_json（父目录由它自己建），
+        # 所以 L162 的原子写判据没有松动——写边从两条收成一条，而读边现在是零写。
+        # 本方法无 except 且在 __init__ 必调：读到半份索引仍然响亮抛给调用方。
+        return {"backups": []}
     
     def _save_index(self):
         """保存索引文件（L162 收原子写——读侧 _load_index 无 except，坏索引
@@ -317,9 +317,11 @@ def clean_old_backups(backup_dir: str = ".backups", max_backups: int = 10) -> in
     Returns:
         删除的备份数量
     """
-    # 判参必须排在 `DatasetBackup(backup_dir)` **之前**：构造本身会 mkdir 并落一份
-    # index.json（副作用），而 HEAD 的删除算术 `sorted[:len - max_backups]` 在 -1 / -999
-    # 上等于 `sorted[:len+k]` → **删光全部备份**，日志却写「保留最新 -1 个」
+    # 判参必须排在 `DatasetBackup(backup_dir)` **之前**：坏参数不许在磁盘上留下任何东西
+    # （L44 立的口径；构造自 L249 起本身已零副作用，这条先后仍然算数，见
+    # `tests/unit/test_readonly_no_disk_writes_l249.py` 的 AST 那一档），而 HEAD 的删除
+    # 算术 `sorted[:len - max_backups]` 在 -1 / -999 上等于 `sorted[:len+k]` → **删光全部
+    # 备份**，日志却写「保留最新 -1 个」
     # （Temp 沙箱 5 个备份实测：-1 → 剩 0 个，与 0 无差别）。0 同样不放行：
     # 「保留 0 个备份」与手滑想打 10 无从分辨，而后果是不可逆删档。
     require_count("max_backups", max_backups, minimum=1)
