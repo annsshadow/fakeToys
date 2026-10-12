@@ -40,9 +40,9 @@ A300 那两员进契约面之后，`test_backup_wiring_l231.py` 里那一支只�
 带**错** key 也 ⇒ **200**（只读面压根不读那个头）；`POST …/cleanup` 无 key ⇒ **401**
 「缺少或无效的 X-API-Key」、带对 key ⇒ **200**。
 
-**契约面看不到判决**：备份一族六员声明的响应码全是 `{200, 422}`——409、401、403、404 这些
-运行时判决**都不在 OpenAPI 里**（探针逐个量过，见 `TestTheContractDeclaresOnlyTwoCodes`）。
-这不是本轮引入的不一致，而是全家族既有口径，本轮把它量成数字立成 **A330** 待裁。
+**契约面看得见判决了（A330 已于 L252 收口）**：L243 立账时六员一律只声明 `{200, 422}`，那是当时的
+现状事实；L252 走它写下的修法①，按实测给六员补齐 400 / 401 / 403 / 404 / 409。逐档实证（29 个真请求）
+与「声明的错误档 == 实测的错误档」的对账住在 `tests/unit/test_backup_contract_error_codes_l252.py`。
 
 跑法：`python -m pytest tests/unit/test_backup_integrity_l243.py -q --no-cov`
 """
@@ -417,15 +417,15 @@ class TestTheAuthSplitMeasured:
         assert allowed.status_code == 200, allowed.text
 
 
-class TestTheContractDeclaresOnlyTwoCodes:
-    """A330（本轮立账）：判决全在运行时，契约面只有 200 与 422
+class TestTheContractAdmitsTheRuntimeVerdicts:
+    """A330 的两面：L243 钉的是「契约只有 200 与 422」那个现状，L252 补齐之后重钉为现量
 
-    探针逐个量过备份一族六员：`responses` 都是 `{200, 422}`。也就是说只看 OpenAPI 的客户端
-    **无从知道**恢复会被 409 拦、写操作会被 401 挡。本轮不收这一格（收它要动全家族的
-    `responses=`，与「两员入口」不是一个改动面），先把事实钉成数字。
+    这一支删不掉也不该删——它管的正是本轮新长出来的那一格：补齐的声明不许再缩回两只。
+    六员逐档的实证与「声明的错误档集合 == 实测的错误档集合」由
+    `tests/unit/test_backup_contract_error_codes_l252.py` 逐员守着，这里只钉 L243 那两员新端的读数。
     """
 
-    def test_the_two_new_entries_admit_only_two_and_422(self):
+    def test_the_two_new_entries_now_admit_the_measured_verdicts(self):
         from api.main import app
 
         paths = app.openapi()["paths"]
@@ -437,7 +437,10 @@ class TestTheContractDeclaresOnlyTwoCodes:
             for op, spec in paths["/api/system/backups/cleanup"].items()
         }
 
-        assert got == {"GET": ["200", "422"], "POST": ["200", "422"]}, got
+        assert got == {
+            "GET": ["200", "400", "403", "422"],
+            "POST": ["200", "400", "401", "403", "422"],
+        }, got
 
 
 class TestTheTwoEntriesAreModelledAndServed:
