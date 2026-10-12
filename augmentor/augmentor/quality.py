@@ -347,23 +347,23 @@ class QualityScorer:
         generateds = [item.get("generated", "") for item in items]
         outputs = [item.get("output", "") for item in items]
         
-        # 批量编码优化：缓存已编码文本（避免重复计算相同文本嵌入）
-        if not hasattr(self, '_embedding_cache'):
-            self._embedding_cache = {}
+        # 批量编码优化：缓存已编码文本（避免重复计算相同文本嵌入），驻留上限见下面的有界 FIFO
+        self._embedding_cache = getattr(self, '_embedding_cache', {})
         
         def cached_encode(texts, batch_key):
-            # 缓存键就是「被缓存的那份输入」本身（batch_key + 元组化的文本列表），
-            # 不做内容指纹。两个理由：
-            # ①指纹不忠实：原实现用 md5("\x00".join(texts))，`["a", "b\x00c"]` 与
-            #   `["a\x00b", "c"]` 拼出同一个串——等长时新批次会静默拿到旧批次的
-            #   向量（实测语义分 0.7189/0.8174，真值 0.8104/0.8486），变长时直接
-            #   IndexError。
-            # ②更便宜：1500 条真实文本，join+md5 是 646 µs/查，元组键 4.3 µs。
-            # 元组键只多持有一份指针数组（1500 条约 12 KB），相对于它所保护的
-            # 整批向量（float32×1500×模型维度，数 MB 级）可忽略。
+            # 缓存键就是「被缓存的那份输入」本身（batch_key + 元组化的文本列表），不做内容指纹：
+            # ①指纹不忠实——原实现用 md5("\x00".join(texts))，`["a", "b\x00c"]` 与 `["a\x00b", "c"]`
+            #   拼出同一个串，等长时新批次会静默拿到旧批次的向量（实测语义分 0.7189/0.8174，
+            #   真值 0.8104/0.8486），变长时直接 IndexError；
+            # ②更便宜——1500 条真实文本 join+md5 是 646 µs/查，元组键 4.3 µs；它多持的那份指针
+            #   数组（约 12 KB）相对所保护的整批向量（float32×1500×模型维度，数 MB 级）可忽略。
             cache_key = (batch_key, tuple(texts))
             if cache_key in self._embedding_cache:
                 return self._embedding_cache[cache_key]
+            # 有界 FIFO（A334 / L247）：一次 batch_score 最多插 orig/gen 两个键，上限 2 就等于
+            # 「只留最近一批」；不设界则逐 chunk 的流式调用会把历史批次向量一直挂在实例上。
+            while len(self._embedding_cache) >= 2:
+                self._embedding_cache.pop(next(iter(self._embedding_cache)))
             embeddings = self._model.encode(texts, show_progress_bar=False, batch_size=32)
             self._embedding_cache[cache_key] = embeddings
             return embeddings
