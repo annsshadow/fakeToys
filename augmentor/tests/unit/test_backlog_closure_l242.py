@@ -110,9 +110,13 @@ LOG_HEAD = re.compile(r"^### L\d+")
 #: 形状，不进声明面，故 `test_gap_equals_partial_roster` 这一格**没有**多出假欠账）。phantom 46 与
 #: `PARTIAL` 三格均未动。三格由本轮红读数当场逼出（`assert 254 == 253` / `assert 119 == 118` /
 #: `assert 137 == 136`），写在账本里的预测值 254 / 137 / 119 与红读数逐格相同，仍以红读数为准。
+#: **L247 重量**：表行 254 **未动**（本轮不收新账，A334 那一行已在册）、有标记 137 → **138**
+#: （A334 收成 `~~M~~ 已收口（L247）`）、声明面 119 → **120**（L247 清单行开头的「收 A334——」与
+#: 日志标题同名一次）。phantom 46 与 `PARTIAL` 三格均未动。两格由本轮红读数当场逼出
+#: （`assert 120 == 119` / `assert 138 == 137`），与账本里写的预测值逐格相同，仍以红读数为准。
 MEASURED_ROWS = 254
-MEASURED_DECLARED = 119
-MEASURED_MARKED = 137
+MEASURED_DECLARED = 120
+MEASURED_MARKED = 138
 #: 声明面点到、但表里已经没有行的 ID 数（口径 2，历史行被裁撤）。
 MEASURED_PHANTOM = 46
 #: 本轮开工前实测的欠账笔数：17 笔补标 + 3 笔半程。
