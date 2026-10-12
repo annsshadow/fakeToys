@@ -17,6 +17,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import { message } from 'antd'
+import type { AppConfig } from '../types/api'
 
 // antd v5 的主题与响应式 hook 依赖这两个浏览器 API，jsdom 不提供。
 window.matchMedia =
@@ -76,16 +77,28 @@ vi.mock('../components/VersionTimeline', () => ({
 
 import Dashboard from './Dashboard'
 
-/** AppConfig 的合法最小实例：页面只读 default_model / quality / dedup / augmentation */
-const CONFIG = {
+/** AppConfig 的合法实例：页面只读 default_model / quality / dedup / augmentation，但类型面十节都要在 */
+const CONFIG: AppConfig = {
   default_model: 'ernie',
   augmentation: { variants_per_seed: 3, num_threads: 4 },
   quality: { enabled: true, threshold: 0.7 },
   dedup: { enabled: true, threshold: 0.85 },
   export: { default_format: 'jsonl', formats: ['jsonl'] },
-  vector: { enabled: false, backend: 'chromadb' },
-  rag: { enabled: false, default_format: 'jsonl' },
-  multimodal: { enabled: false },
+  vector: {
+    enabled: false,
+    backend: 'chromadb',
+    dimension: 384,
+    storage_dir: 'data/vectors',
+    collection: 'default',
+  },
+  rag: { enabled: false, default_format: 'jsonl', chunk_size: 512, chunk_overlap: 64 },
+  multimodal: {
+    enabled: false,
+    image_extensions: ['.jpg', '.png'],
+    audio_extensions: ['.wav', '.mp3'],
+  },
+  versioning: { enabled: true },
+  visualization: { enabled: true },
 }
 
 afterEach(() => {

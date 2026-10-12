@@ -69,16 +69,35 @@ vi.mock('../services/api', async (importOriginal) => {
 
 import Settings from './Settings'
 import { API_KEY_STORAGE_KEY } from '../services/api'
+import type { AppConfig } from '../types/api'
 
-const CONFIG = {
+/**
+ * `AppConfig` 的完整实例：十节逐键都在，形状取自 `GET /api/config` 的真响应
+ *
+ * 标了 `: AppConfig` 而不是裸字面量，这样类型面一改（少一节、键改名）这里当场
+ * typecheck 红——夹具跟着契约漂，而不是各写各的。
+ */
+const CONFIG: AppConfig = {
   default_model: 'ernie',
   augmentation: { variants_per_seed: 3, num_threads: 4 },
   quality: { enabled: true, threshold: 0.7 },
   dedup: { enabled: true, threshold: 0.85 },
   export: { default_format: 'jsonl', formats: ['jsonl'] },
-  vector: { enabled: false, backend: 'chromadb' },
-  rag: { enabled: false, default_format: 'jsonl' },
-  multimodal: { enabled: false },
+  vector: {
+    enabled: false,
+    backend: 'chromadb',
+    dimension: 384,
+    storage_dir: 'data/vectors',
+    collection: 'default',
+  },
+  rag: { enabled: false, default_format: 'jsonl', chunk_size: 512, chunk_overlap: 64 },
+  multimodal: {
+    enabled: false,
+    image_extensions: ['.jpg', '.png'],
+    audio_extensions: ['.wav', '.mp3'],
+  },
+  versioning: { enabled: true },
+  visualization: { enabled: true },
 }
 
 afterEach(() => {

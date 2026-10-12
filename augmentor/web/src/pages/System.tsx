@@ -427,6 +427,37 @@ export default function System() {
             />
           </Col>
         </Row>
+        <Row gutter={16} style={{ marginTop: 16 }}>
+          <Col span={6}>
+            <Statistic
+              title="模型重试次数"
+              value={
+                status
+                  ? status.model_retry_count === null
+                    ? '无后端'
+                    : status.model_retry_count
+                  : '-'
+              }
+            />
+          </Col>
+          <Col span={6}>
+            <Statistic
+              title="重试等待（秒）"
+              value={
+                status
+                  ? status.model_retry_wait_seconds === null
+                    ? '无后端'
+                    : status.model_retry_wait_seconds
+                  : '-'
+              }
+            />
+          </Col>
+        </Row>
+        <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75 }}>
+          「无后端」是 <code>null</code>，不是 0：管道拉不动或没有模型后端时这两键回 <code>null</code>，
+          与「后端在、重试过 0 次」是两句话，所以这里不把 <code>null</code> 折成 0。它们只住在
+          <code>/api/status</code>——<code>/api/health</code> 刻意不含（容器探针依赖那一条，明令不加可能失败的字段）。
+        </div>
       </Card>
 
       {diag && (
