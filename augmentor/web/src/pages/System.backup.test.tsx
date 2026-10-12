@@ -114,7 +114,7 @@ const fx = vi.hoisted(() => {
       getServiceStatus: null as unknown as ReturnType<typeof vi.fn>,
       getVectorStatus: null as unknown as ReturnType<typeof vi.fn>,
       listBackups: null as unknown as ReturnType<typeof vi.fn>,
-      getDataFiles: null as unknown as ReturnType<typeof vi.fn>,
+      getBackupSourceCandidates: null as unknown as ReturnType<typeof vi.fn>,
       createBackup: null as unknown as ReturnType<typeof vi.fn>,
       restoreBackup: null as unknown as ReturnType<typeof vi.fn>,
       deleteBackup: null as unknown as ReturnType<typeof vi.fn>,
@@ -155,7 +155,7 @@ vi.mock('../services/api', async (importOriginal) => {
     storage_dir: '',
   })
   s.listBackups = vi.fn().mockResolvedValue(fx.LIST_DUP)
-  s.getDataFiles = vi.fn().mockResolvedValue(fx.FILES)
+  s.getBackupSourceCandidates = vi.fn().mockResolvedValue(fx.FILES)
   s.createBackup = vi.fn().mockResolvedValue(fx.CREATE_OK)
   s.restoreBackup = vi.fn().mockResolvedValue(fx.RESTORE_OK)
   s.deleteBackup = vi.fn().mockResolvedValue({ success: true })
@@ -172,7 +172,7 @@ vi.mock('../services/api', async (importOriginal) => {
     getServiceStatus: s.getServiceStatus,
     getVectorStatus: s.getVectorStatus,
     listBackups: s.listBackups,
-    getDataFiles: s.getDataFiles,
+    getBackupSourceCandidates: s.getBackupSourceCandidates,
     createBackup: s.createBackup,
     restoreBackup: s.restoreBackup,
     deleteBackup: s.deleteBackup,
@@ -193,7 +193,7 @@ afterEach(() => {
   message.destroy()
   // `clearAllMocks` 不清实现，所以逐只把默认回执重新钉回去
   spies.listBackups.mockClear().mockResolvedValue(LIST_DUP)
-  spies.getDataFiles.mockClear().mockResolvedValue(FILES)
+  spies.getBackupSourceCandidates.mockClear().mockResolvedValue(FILES)
   spies.createBackup.mockClear().mockResolvedValue(CREATE_OK)
   spies.restoreBackup.mockClear().mockResolvedValue(RESTORE_OK)
   spies.deleteBackup.mockClear().mockResolvedValue({ success: true })
@@ -532,7 +532,7 @@ describe('System 备份面的失败只降级自己', () => {
   })
 
   it('候选取不到时只报候选那一句，备份列表照旧渲染', async () => {
-    spies.getDataFiles.mockRejectedValue({
+    spies.getBackupSourceCandidates.mockRejectedValue({
       response: { status: 500, data: {} },
     })
 

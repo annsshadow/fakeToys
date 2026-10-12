@@ -131,7 +131,7 @@ vi.mock('../services/api', async (importOriginal) => {
     storage_dir: '',
   })
   s.listBackups = vi.fn().mockResolvedValue({ backups: [] })
-  s.getDataFiles = vi.fn().mockResolvedValue(fx.FILES)
+  s.getBackupSourceCandidates = vi.fn().mockResolvedValue(fx.FILES)
   s.listDependencyDatasets = vi.fn().mockResolvedValue(fx.LIST)
   s.getDependencyGraph = vi.fn().mockResolvedValue(fx.GRAPH_EMPTY)
   // L236 起依赖诊断自取一面（与本页血缘那一族同名不同事）。不给回执 ⇒ 页面退回综合
@@ -143,7 +143,7 @@ vi.mock('../services/api', async (importOriginal) => {
     getServiceStatus: s.getServiceStatus,
     getVectorStatus: s.getVectorStatus,
     listBackups: s.listBackups,
-    getDataFiles: s.getDataFiles,
+    getBackupSourceCandidates: s.getBackupSourceCandidates,
     listDependencyDatasets: s.listDependencyDatasets,
     getDependencyGraph: s.getDependencyGraph,
     systemDependencies: s.systemDependencies,

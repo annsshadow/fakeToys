@@ -47,7 +47,7 @@ python api/main.py             # 读配置：web.host / web.port / web.static_di
 | resolve 后（含跟随符号链接）不在白名单内 | **403** |
 | 在白名单内但文件不存在 | 404 |
 
-`GET /api/data/list` 的扫描范围与白名单同源，因此它列出的文件一定都读得到。
+`GET /api/data/list` 的扫描范围与白名单同源（默认档与 `all_files=true` 都一样），所以它列出的文件一定都读得到。
 
 **目录类参数的缺省值也在白名单内**。`/api/system/dependency/*` 的 `registry_path`
 与 `/api/system/backups*` 的 `backup_dir` 都是可选参数；留空时分别使用白名单首个根目录下
@@ -701,9 +701,9 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
 
 ### `GET /api/data/list`
 
-扫描**路径白名单**各根目录下以 `train_data` 开头的 JSON 文件（出厂默认即 `data/`）。
-`name` 是文件名，`path` 是服务端拼接出来的完整路径 —— 两者都可以直接喂给
-`/api/data/load/{filename}`。
+扫描**路径白名单**各根目录（出厂默认即 `data/`）下以 `train_data` 开头的 JSON 文件；
+`?all_files=true` 那一档只放开**名字**这道闸，列出根目录下全部 JSON，扫描范围一字未动（A304 / L251）。
+`name` 是文件名，`path` 是服务端拼出来的完整路径 —— 两者都能直接喂给 `/api/data/load/{filename}`。
 
 ```json
 {

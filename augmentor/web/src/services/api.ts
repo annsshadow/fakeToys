@@ -227,6 +227,19 @@ export const getDataFiles = async (): Promise<DataFileListResponse> => {
   return response.data
 }
 
+/**
+ * 备份源候选：走 `all_files=true` 档，候选口径与白名单同宽（A304 / L251）。
+ *
+ * 与 `getDataFiles()` 分成两只函数，是为了让其余 7 处数据文件选择器继续吃默认档
+ * （只列 `train_data*.json`）；只有「源文件」这一格要的是「白名单里有什么就列什么」。
+ * query 写在路径串里而不是 `params` 对象里，因为消费对账那把尺子（l224）把两种来源
+ * 都算，而 `params` 对象要靠字符间隔绑回调用，同一路径两员调用时它分辨不了。
+ */
+export const getBackupSourceCandidates = async (): Promise<DataFileListResponse> => {
+  const response = await api.get('/data/list?all_files=true')
+  return response.data
+}
+
 export const loadData = async (
   filename: string,
   page: number,
