@@ -109,9 +109,8 @@ class DatasetBackup:
         if not source.exists():
             raise FileNotFoundError(f"源文件不存在: {source_path}")
         
-        # 生成备份ID和路径
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        backup_id = name or f"backup_{timestamp}"
+        now = datetime.now()  # A303 / L250：只读一次钟 ⇒ 秒级 id 与 timestamp 同源
+        backup_id = name or f"backup_{now.strftime('%Y%m%d_%H%M%S')}"
         backup_path = self._backup_dir / f"{backup_id}.json"
         # `name` 直接决定落点，而它来自调用方：`../../x` 会写到备份目录之外
         # （HTTP 面实测 200 且真落盘）——白名单只管到 backup_dir 那一格。
@@ -133,7 +132,7 @@ class DatasetBackup:
         # 创建备份信息
         info = BackupInfo(
             backup_id=backup_id,
-            timestamp=datetime.now().isoformat(),
+            timestamp=now.isoformat(),
             source_path=str(source_path),
             backup_path=str(backup_path),
             item_count=len(items),
@@ -141,8 +140,9 @@ class DatasetBackup:
             checksum=checksum
         )
         
-        # 更新索引
-        self._index["backups"].append(info.to_dict())
+        # 更新索引（A298 / L250）：同名再备份先摘掉同 backup_id 的旧行 ⇒ 行数与磁盘份数一一对应
+        rows = [b for b in self._index["backups"] if b.get("backup_id") != backup_id]
+        self._index["backups"] = rows + [info.to_dict()]
         self._save_index()
         
         logger.info(f"备份创建成功: {backup_id}")

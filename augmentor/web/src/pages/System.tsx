@@ -54,8 +54,8 @@ const MIGRATION_RULE_OPTIONS = [
  *
  * 第三张卡是备份那一族四只端点（A279 第七批接线，L231）：`GET` / `POST /api/system/backups`、
  * `POST …/{backup_id}/restore`、`DELETE …/{backup_id}`。它同样自取、自报错——备份面挂了不该
- * 把上面两张卡一起拖掉。这一族的实测脾气（同名覆盖留两条索引、校验和不拦恢复、落点键叫
- * `output_path`）写在卡片正文里，别处不复述。
+ * 把上面两张卡一起拖掉。这一族的实测脾气（同名覆盖时索引只更新那一行、校验和不匹配就拦、落点键
+ * 叫 `output_path`）写在卡片正文里，别处不复述。
  *
  * 第四张卡是数据集血缘那一族三条（A279 第八批接线，L232）：`GET` / `POST
  * /api/system/dependency/datasets` 与 `GET /api/system/dependency/graph`。它跟上面那张
@@ -704,8 +704,8 @@ export default function System() {
           <Table
             size="small"
             style={{ marginTop: 12 }}
-            // 索引里可以有两条同 id 的记录（同名创建两次，实测时间戳不同），所以行键
-            // 拼上时间戳；不用 antd 那个 `index` 形参——它已被标记 deprecated
+            // L250 之前写出的索引可以有两行同 id（同名创建两次时旧行也留着），所以行键继续拼
+            // 时间戳兜住存量形状；不用 antd 那个 `index` 形参——它已被标记 deprecated
             rowKey={(row) => `${row.backup_id}#${row.timestamp}`}
             dataSource={backups}
             pagination={false}
@@ -801,8 +801,8 @@ export default function System() {
         </div>
         <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
           备份 id 就是创建时填的名称，留空才由服务端取 backup_&lt;时间戳&gt;。同一个名称创建两次
-          会**覆盖同一份文件**、并在索引里留下两条同 id 记录（实测：列表回三条、磁盘只有一份），
-          而删除是按 id 过滤的 ⇒ 删一次两条一起消失（A298）。
+          会**覆盖同一份文件**，索引里那一行也跟着更新成新内容（列表条数与磁盘份数一致，A298
+          已于 L250 收口）；删除按 id 过滤 ⇒ 同 id 的行——含旧索引里遗留的多行——一次全清。
         </div>
         <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
           checksum 是备份文件的 sha256。它现在**会拦**：恢复前对不上就回 409，且一个字节都不写
@@ -812,8 +812,8 @@ export default function System() {
         <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
           「校验完整性」按目录里**索引登记的每一行**逐只哈希，这是本路由最慢的读操作，所以做成
           点一次查一次、不随列表自动刷；结果留在下面那张小表里。「文件在不在」那一格判的是
-          「存在**且非空**」，零字节文件也算丢。索引里两条同 id 的记录在这里只会出**一行**
-          （结果以备份 id 为键，后一条覆盖前一条），和列表那张能出两行不一样（A298 的另一面）。
+          「存在**且非空**」，零字节文件也算丢。结果以备份 id 为键 ⇒ 旧索引里若还躺着同名多行，
+          这里只出一行；自 L250 起同名备份本身也只留一行，两面因此对得上（A298 的另一面已收）。
         </div>
         <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
           恢复的回执里落点键叫 output_path，而同族其余五只写盘端点叫 output_file（split 叫
@@ -830,7 +830,7 @@ export default function System() {
           （A302 已收）。「清理旧备份」与「校验完整性」现已有 HTTP 入口（A300 已收）：前者是
           写操作，跟着这一族一起挂鉴权；后者只读，不鉴权。「保留份数」下面那只数字框送的是
           **保留几条**而不是删除几条，0 与负数在服务端是 400，所以页面把下限钉在 1；这一格数的是
-          **索引里的行数**，同名两条会占掉两个名额却只删一次文件（A298）。CLI 自 L244 起也是六档
+          **索引里的行数**（自 L250 起这个数与磁盘份数一致）。CLI 自 L244 起也是六档
           （补上 verify 与 cleanup，后者带 --max-backups，前者查到损坏时退出码 1；A329 已收）。
         </div>
       </Card>
