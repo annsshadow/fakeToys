@@ -363,8 +363,12 @@ describe('System 备份卡的诚实口径（L231 实测，L243 两面翻正）',
     // A300：SDK 那两员自 L243 起有 HTTP 入口；旧话「HTTP 面没有入口」同样已不在页面上
     expect(text).toContain('现已有 HTTP 入口')
     expect(text).not.toContain('HTTP 面没有入口')
-    // A300 的另一半：CLI 那一面仍只有四档，页面不许把它说成也有这两档
-    expect(text).toContain('create / restore / list / delete')
+    // A300 的另一半：CLI 那一面自 L244 起补齐六档，页面要说的是「也是六档 + verify 判负退 1」，
+    // 旧话「CLI 仍只有四档、没有这两档」不许再出现在页面上（那是 A329 的原文案）
+    expect(text).toContain('CLI 自 L244 起也是六档')
+    expect(text).toContain('退出码 1')
+    expect(text).not.toContain('create / restore / list / delete')
+    expect(text).not.toContain('没有这两档')
     // L243：verify 的读数面（逐行哈希、点一次查一次）与份数下限
     expect(text).toContain('索引登记的每一行')
     expect(text).toContain('点一次查一次')
