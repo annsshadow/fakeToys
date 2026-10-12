@@ -4139,3 +4139,20 @@ l97 / l98 的普查读数一格未动（本轮零新 `parametrize` 调用点，4
 补上路由与判决读数后才发现，遂改 `{"instruction": t}` 重跑。探针另有一次把 `\n` 写进替换串，
 把格式串拆成 unterminated string literal 的 SyntaxError。R 档形状两次踩坑（见 ⑥）。
 ㈠ 臂恒绿是本轮最大的一次「尺子虚报」，处置见 ⑦。第一版的峰值回退见 ⑤。
+
+⑭ **账本批之后复跑记账**（代码批 `9ed11b369` + 账本批之后的整跑，命令逐字照抄定标门禁）：
+**exit=0 / 8 973 passed / 0 failed / 10 skipped / 6 warnings / 398.15 s**、**99.84 %**、
+`112 files skipped due to complete coverage`。`coverage.xml` 根节点逐格读数为
+`lines-covered 14 355 / lines-valid 14 363`（⇒ Miss **8**）与
+`branches-covered 3 946 / branches-valid 3 968`（⇒ BrPart **22**），与 ⑪ 那一格
+（`TOTAL` **14 363 / 8 / 3 968 / 22**）**四格全同**——本轮终态即 ⑪ 那一格。
+377.38 s → 398.15 s（+20.77 s）：同机同产品码（账本批只动 `.md` 与 l242 的注释加两个整数常量，
+产品语句数未变，`14 363` 逐格相同就是这条的闭合证据），按 L239 / L240 两轮量过的负载差档算噪声，
+不作任何结论；判据一律是计数，wall 只作背景。**散文自指那一格复核**：本轮日志块的追加与 ⑩ 那次
+换行全部落在文件尾部，第 **791** 行实测仍在原位（`sed -n '791p'` 打出的正是那句 `docs/API.md:1139`），
+L232 清单行里 790 → 791 的重钉没有被这次追加再平移。**账本批净行数逐处核对**（按 `git show --numstat` 真值）：
+`OPTIMIZATION_LOOP_2.md` 93/2 ⇒ 净 **+91**（清单行 +1、日志块 +89、⑩ 那一处把一行说明拆成两行 +1），
+`docs/ARCHITECTURE.md` 1/1 ⇒ 净 **0**（§3.34 第 4 条同行追加），
+`tests/unit/test_backlog_closure_l242.py` 3/3 ⇒ 净 **0**（三行常量原地换值 + 行尾注释），
+`OPTIMIZATION_LOOP.md` 1/1 ⇒ 净 **0**（A38 那格行内换数字，已随代码批提交）。
+七把账本与文档守卫在账本批之后复跑 **178 passed / 0 failed / 8 skipped**（本机 `Temp/` 底料不在场那 8 格）。
