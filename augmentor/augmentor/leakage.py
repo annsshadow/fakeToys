@@ -7,12 +7,14 @@
 避免同一问题同时出现在训练与评测两侧导致指标虚高。
 
 设计原则：
-- 纯 Python 实现，无外部依赖，离线可用；
+- 本地离线实现，不依赖任何服务；近似计数的稠密路线用 numpy（仓内硬依赖）；
 - 精确匹配基于归一化签名，近似匹配基于字符三元组 Jaccard 相似度；
 - 倒排索引把候选集缩到「共享至少一个三元组」的训练签名，并按可采纳剪枝
   `I >= t*|a|` 进一步收窄；相似度由「共享三元组个数 + 两侧基数」直接算出，
-  热路径不做任何集合运算 ⇒ 实测规模翻倍比 ×2.3~×2.8（改写前 ×4.0，即两两全比），
-  仍随候选规模增长但不再等于全量 O(n*m) 比较；
+  热路径不做任何集合运算 ⇒ 规模翻倍时增长是线性的，不再等于全量两两比对；
+- posting 塌缩档（词表小、子串共享率高 ⇒ 每条测试样本摊平几乎整份索引）按
+  :func:`_dense_route_wins` 的代价账改走 numpy 0/1 矩阵乘法，逐条判决与倒排
+  **完全相同**（实测见 `tests/unit/test_leakage_dense_route_l240.py`）；
 - 输出可审计报告，附泄漏示例与处置建议。
 """
 
@@ -21,7 +23,9 @@ import re
 from collections import Counter
 from dataclasses import dataclass, field
 from itertools import chain
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set, Tuple
+
+import numpy as np
 
 from augmentor.validation import DataValidationError, require_count, require_ratio
 
@@ -29,6 +33,33 @@ logger = logging.getLogger(__name__)
 
 # 归一化用：仅保留字母数字与中文，丢弃空白与标点
 _NORM_RE = re.compile(r"[\u4e00-\u9fff0-9a-z]")
+
+#: 稠密路线时间账的单价：一次「摊平 posting 累加」折算多少次 matmul 乘加。
+#: 两侧实测（Temp/l240_leakprobe8.py，同一台机器、同一条 24 词模板语料与一条 48 词变体）：
+#: 判赢侧最差一档是 48 词 4000×4000 —— 摊平 3.61 亿次 vs 乘加 98.2 亿次，比值 27.2，
+#: 而那一档倒排 55.7 s / 稠密 0.72 s（稠密贵 77 倍）；判负侧唯一一档是随机五字母词
+#: 4000×4000 —— 摊平 1.06 千万次 vs 乘加 2810 亿次，比值 26,500，那一档倒排 0.52 s /
+#: 稠密 0.97 s（倒排赢 1.9 倍）。取 1000 落在两档之间且偏向保守：判赢的最差档离它 37 倍，
+#: 判负的那档离它 26 倍，两侧都不会因为比值小幅抖动换队。
+_DENSE_ADD_COST = 1000
+
+#: 稠密视图 `vocab × n_train` 的 float32 字节硬上限。时间账管不到「词表宽 *且* posting
+#: 也宽」的形状（那种档比值照样判赢，但要物化几十 GB），所以内存单独封顶。
+#: 实测两侧：10k×10k 模板档视图 26.7 MB（走稠密，端到端见 L240 账本读数），随机词档
+#: 281 MB（走倒排，那一档稠密本来就被时间账判负）。取 64 MiB ⇒ 与单块临时数组
+#: （:data:`_DENSE_MAX_CELLS` × 24 B ≈ 24 MB）合起来把一次检测的稠密侧峰值压在
+#: 约 90 MB 以内，同时给 10k×10k 那一档留 2.4 倍余量。
+_DENSE_MAX_BYTES = 64 * 1024 * 1024
+
+#: 单块最多处理多少条测试签名。块越大 BLAS 越划算，但峰值临时数组正比于 `行 × n_train`，
+#: 所以块大小由 :data:`_DENSE_MAX_CELLS` 反推，这里只是上限（小训练集时不必把整份测试集
+#: 堵在一个块里，也保证倒排档的摊平记账不失控）。
+_DENSE_MAX_ROWS = 1024
+
+#: 单块 matmul 结果的最大格数（行 × n_train）。一格在判决里最多活三次（float32 累加、
+#: float64 商、float64 并集），所以峰值临时内存 ≈ 该格数 × 24 B。取 100 万格 ⇒ 约 24 MB，
+#: 在 10k×10k 那一档给出 102 行一块。
+_DENSE_MAX_CELLS = 1_000_000
 
 
 def _normalize(text: str) -> str:
@@ -91,6 +122,156 @@ def _jaccard(a: Set[str], b: Set[str]) -> float:
     if not a or not b:
         return 0.0
     return _jaccard_from_counts(len(a & b), len(a), len(b))
+
+
+def _dense_block_rows(n_train: int) -> int:
+    """行块大小：只由训练侧条数反推，纯整数运算，不看墙钟（A286 同口径）
+
+    Args:
+        n_train: 去重后的训练签名条数
+
+    Returns:
+        每块最多处理多少条测试签名（>= 1）
+    """
+    if n_train <= 0:
+        return _DENSE_MAX_ROWS
+    return max(1, min(_DENSE_MAX_ROWS, _DENSE_MAX_CELLS // n_train))
+
+
+def _dense_route_wins(block_rows: int, n_train: int, vocab_size: int,
+                      flatten_adds: int) -> bool:
+    """这个块的近似计数该走 numpy 稠密矩阵乘法，还是沿用摊平倒排
+
+    两条独立的账，与 `dedup.py` 的选路判据同族：
+
+    1. **时间**——倒排要做 `flatten_adds` 次 Python 级「把 posting 元素喂进计数器」，
+       稠密要做 `block_rows × n_train × vocab_size` 次乘加；一次 Python 累加按实测
+       折算 :data:`_DENSE_ADD_COST` 次乘加，只有倒排那份更贵才换路。
+    2. **内存**——稠密要物化 `n_train × vocab_size` 的 float32 视图，
+       超过 :data:`_DENSE_MAX_BYTES` 就不许走（时间账管不到「词表宽且 posting 宽」）。
+
+    任何一侧为 0（没测试样本、没训练签名、没词表、摊平次数为零）都不换路：走倒排那条
+    空转即可，而且稠密视图在 `n_train` 或 `vocab` 为 0 时压根选不出 argmax。
+
+    Args:
+        block_rows: 本块里非精确匹配的测试签名条数
+        n_train: 去重后的训练签名条数
+        vocab_size: 三元组词表大小，即稠密视图的行数
+        flatten_adds: 倒排方案在本块必须摊平的 posting 元素总数
+
+    Returns:
+        True 表示本块走稠密计数
+    """
+    if block_rows <= 0 or n_train <= 0 or vocab_size <= 0 or flatten_adds <= 0:
+        return False
+    if n_train * vocab_size * 4 > _DENSE_MAX_BYTES:
+        return False
+    return flatten_adds * _DENSE_ADD_COST >= block_rows * n_train * vocab_size
+
+
+def _inverted_flags(rows: List[Set[str]],
+                    gram_index: Dict[str, Set[int]],
+                    sig_gram_counts: List[int],
+                    threshold: float) -> List[bool]:
+    """摊平倒排计数：逐条测试签名把自己全部三元组的 posting 串起来数出现次数
+
+    Args:
+        rows: 块内非精确匹配测试签名的三元组集合，按测试顺序
+        gram_index: 三元组 → 训练签名序号集合
+        sig_gram_counts: 训练签名序号 → 该签名三元组个数
+        threshold: Jaccard 阈值
+
+    Returns:
+        与 rows 同序的布尔列表，True 表示判为近似泄漏
+    """
+    flags: List[bool] = []
+    for grams in rows:
+        size_a = len(grams)
+        # 剪枝：J = I/U 且 U >= |a| ⇒ J >= t 蕴含 I >= t*|a|。取整用 int()（向零
+        # 截断）而不是 ceil：浮点误差只会**少剪**，不会把该比的对误剪掉（L30 平局教训）。
+        need = int(threshold * size_a)
+        shared = Counter(chain.from_iterable(
+            gram_index.get(gram, ()) for gram in grams))
+        best = max(
+            (_jaccard_from_counts(overlap, size_a, sig_gram_counts[sid])
+             for sid, overlap in shared.items() if overlap >= need),
+            # 旧版在这里从 best=0.0 起算，所以「阈值 <= 0 且无可比候选」也判 fuzzy；
+            # 这条 default 就是那一份口径，不许顺手改掉
+            default=0.0,
+        )
+        flags.append(best >= threshold)
+    return flags
+
+
+def _dense_view(gram_index: Dict[str, Set[int]],
+                sig_gram_counts: List[int]) -> Tuple[Dict[str, int], np.ndarray, np.ndarray]:
+    """把倒排 posting 铺成 `(词表 × 训练条数)` 的 0/1 float32 视图
+
+    行序 = `gram_index` 的插入序（即训练侧首次出现序），与 :func:`_dense_flags` 里
+    查列号用的 `gram_ids` 同源，所以两者必须一起建、一起用。
+
+    Args:
+        gram_index: 三元组 → 训练签名序号集合
+        sig_gram_counts: 训练签名序号 → 该签名三元组个数
+
+    Returns:
+        `(三元组 → 行号, 视图, 每列基数)`，最后一项是 float64 整数值的数组
+    """
+    gram_ids = {gram: row for row, gram in enumerate(gram_index)}
+    mat = np.zeros((len(gram_ids), len(sig_gram_counts)), dtype=np.float32)
+    for row, sids in enumerate(gram_index.values()):
+        line = mat[row]
+        for sid in sids:
+            line[sid] = 1.0
+    size_b = np.fromiter(sig_gram_counts, dtype=np.float64, count=len(sig_gram_counts))
+    return gram_ids, mat, size_b
+
+
+def _dense_flags(rows: List[Set[str]],
+                 gram_ids: Dict[str, int],
+                 gram_mat: np.ndarray,
+                 size_b: np.ndarray,
+                 threshold: float) -> List[bool]:
+    """稠密计数：一次 float32 矩阵乘法出整块「共享三元组数」，判决仍回权威算式
+
+    与 :func:`_inverted_flags` **逐条判决相同**——这不是近似，可证的链条是：
+
+    1. `ov` 是整数（0/1 矩阵乘法的值 ≤ min(|a|, |b|) < 2^24 ⇒ float32 精确表示），
+       等于该条与每个训练签名的三元组交集基数；
+    2. 判据 `best >= t`（`best` 为 max，且 t > 0 由构造器保证）等价于「存在一个候选
+       使 J >= t」，所以剪枝剪不剪都不改判决；
+    3. argmax 在 float64 下选，两个整数在 float64 里的商与 Python 的 `int / int`
+       逐位相同（同为 IEEE 754 正确舍入）⇒ 选出的就是倒排那条算出的同一个 `best`；
+    4. 最终 J 由 :func:`_jaccard_from_counts` 现算，稠密这条路不引入第二套相似度算式。
+
+    Args:
+        rows: 块内非精确匹配测试签名的三元组集合
+        gram_ids: 三元组 → 视图行号
+        gram_mat: :func:`_dense_view` 的视图
+        size_b: :func:`_dense_view` 的每列基数
+        threshold: Jaccard 阈值
+
+    Returns:
+        与 rows 同序的布尔列表，True 表示判为近似泄漏
+    """
+    size_a = np.fromiter((len(gs) for gs in rows), dtype=np.float64, count=len(rows))
+    test_mat = np.zeros((len(rows), gram_mat.shape[0]), dtype=np.float32)
+    for r, grams in enumerate(rows):
+        line = test_mat[r]
+        for gram in grams:
+            row = gram_ids.get(gram)
+            if row is not None:
+                line[row] = 1.0
+    ov = (test_mat @ gram_mat).astype(np.float64)
+    # union 恒 >= max(|a|, |b|) >= 1：签名非空才有三元组进这里，所以不写除零分支
+    union = size_a[:, None] + size_b[None, :] - ov
+    arg = (ov / union).argmax(axis=1)
+    return [
+        _jaccard_from_counts(int(ov[r, arg[r]]),
+                             int(size_a[r]),
+                             int(size_b[arg[r]])) >= threshold
+        for r in range(len(rows))
+    ]
 
 
 @dataclass
@@ -217,31 +398,46 @@ class LeakageDetector:
                 gram_index.setdefault(gram, set()).add(sid)
 
         threshold = self.fuzzy_threshold
-        for test_item in test_items:
-            sig = self._signature(test_item)
-            kind: Optional[str] = None
-
-            if sig:
+        n_train = len(sig_gram_counts)
+        vocab_size = len(gram_index)
+        block_rows = _dense_block_rows(n_train)
+        # 稠密视图按代价账现建，且只建一次；全程走倒排的档位一个 numpy 数组都不碰
+        view: Optional[Tuple[Dict[str, int], np.ndarray, np.ndarray]] = None
+        kinds: List[Optional[str]] = []
+        for start in range(0, len(test_items), block_rows):
+            chunk_kinds: List[Optional[str]] = []
+            rows: List[Set[str]] = []
+            positions: List[int] = []
+            flatten_adds = 0
+            for test_item in test_items[start:start + block_rows]:
+                sig = self._signature(test_item)
+                if not sig:
+                    chunk_kinds.append(None)
+                    continue
                 if sig in sig_ids:
-                    kind = "exact"
+                    chunk_kinds.append("exact")
+                    continue
+                grams = _char_trigrams(sig)
+                chunk_kinds.append(None)
+                positions.append(len(chunk_kinds) - 1)
+                rows.append(grams)
+                # 代价账的输入：倒排那条要把这些 posting 元素逐个摊进计数器，
+                # 这里只数长度、不碰集合，所以记账本身不进热路径成本
+                for gram in grams:
+                    posting = gram_index.get(gram)
+                    flatten_adds += len(posting) if posting is not None else 0
+            if rows:
+                if _dense_route_wins(len(rows), n_train, vocab_size, flatten_adds):
+                    if view is None:
+                        view = _dense_view(gram_index, sig_gram_counts)
+                    flags = _dense_flags(rows, view[0], view[1], view[2], threshold)
                 else:
-                    test_grams = _char_trigrams(sig)
-                    size_a = len(test_grams)
-                    # 剪枝：J = I/U 且 U >= |a| ⇒ J >= t 蕴含 I >= t*|a|。取整用 int()（向零
-                    # 截断）而不是 ceil：浮点误差只会**少剪**，不会把该比的对误剪掉（L30 平局教训）。
-                    need = int(threshold * size_a)
-                    shared = Counter(chain.from_iterable(
-                        gram_index.get(gram, ()) for gram in test_grams))
-                    best = max(
-                        (_jaccard_from_counts(overlap, size_a, sig_gram_counts[sid])
-                         for sid, overlap in shared.items() if overlap >= need),
-                        # 旧版在这里从 best=0.0 起算，所以「阈值 <= 0 且无可比候选」也判 fuzzy；
-                        # 这条 default 就是那一份口径，不许顺手改掉
-                        default=0.0,
-                    )
-                    if best >= threshold:
-                        kind = "fuzzy"
+                    flags = _inverted_flags(rows, gram_index, sig_gram_counts, threshold)
+                for pos, flag in zip(positions, flags):
+                    chunk_kinds[pos] = "fuzzy" if flag else None
+            kinds.extend(chunk_kinds)
 
+        for test_item, kind in zip(test_items, kinds):
             if kind == "exact":
                 report.exact_leaks += 1
                 report.leaked_examples.append({
