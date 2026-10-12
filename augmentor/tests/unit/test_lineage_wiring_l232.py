@@ -230,7 +230,8 @@ class TestThePageCarriesTheThreeOperations:
         assert 'title="依赖明细"' in page
 
     def test_candidates_come_from_the_data_list_endpoint(self):
-        assert "getDataFiles(" in _page()
+        """L251 换了名：系统页六处候选共用一只宽档 fetcher（A304 收口），这一页的血缘登记也在其中"""
+        assert "getBackupSourceCandidates(" in _page()
 
     def test_the_measured_caveats_stay_on_the_card(self):
         page = _page()

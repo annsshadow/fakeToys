@@ -194,7 +194,7 @@ vi.mock('../services/api', async (importOriginal) => {
     storage_dir: '',
   })
   s.listBackups = vi.fn().mockResolvedValue({ backups: [] })
-  s.getDataFiles = vi.fn().mockResolvedValue({ files: [{ name: 'mixed.json', path: 'mixed.json' }] })
+  s.getBackupSourceCandidates = vi.fn().mockResolvedValue({ files: [{ name: 'mixed.json', path: 'mixed.json' }] })
   s.listDependencyDatasets = vi.fn().mockResolvedValue({ datasets: [] })
   s.getDependencyGraph = vi.fn().mockResolvedValue({ nodes: [], edges: [], issues: [] })
   // L236 起依赖诊断自取一面。不给回执 ⇒ 页面退回综合状态里那一份，本份用例渲染结果不变
@@ -208,7 +208,7 @@ vi.mock('../services/api', async (importOriginal) => {
     getServiceStatus: s.getServiceStatus,
     getVectorStatus: s.getVectorStatus,
     listBackups: s.listBackups,
-    getDataFiles: s.getDataFiles,
+    getBackupSourceCandidates: s.getBackupSourceCandidates,
     listDependencyDatasets: s.listDependencyDatasets,
     getDependencyGraph: s.getDependencyGraph,
     systemDependencies: s.systemDependencies,
@@ -298,7 +298,7 @@ function statValue(container: HTMLElement, title: string): string {
 /** 挂上页面并等文件列表落地（两张新卡的下拉选项都来自它） */
 async function mount() {
   const view = render(<System />)
-  await waitFor(() => expect(spies.getDataFiles).toHaveBeenCalled())
+  await waitFor(() => expect(spies.getBackupSourceCandidates).toHaveBeenCalled())
   expect(await screen.findByText('质量监控与自测')).toBeInTheDocument()
   return view.container
 }

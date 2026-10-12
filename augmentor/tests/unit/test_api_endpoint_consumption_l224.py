@@ -395,8 +395,16 @@ class TestRulerSeesTheRealSurface:
         assert len({p for _, p in ops}) == 73, "路径数现量 73"
 
     def test_frontend_face_scale(self):
+        """形状数现量 **78**：L251 起它第一次比操作数（77）多一格
+
+        多出来的那一格是 `GET /api/data/list` 的两档调用（默认档裸路径 + 宽档把
+        `all_files=true` 写在路径串里）。两侧的对账判据走的是「每条形状能不能绑到一条操作」
+        与「每条操作有没有被绑到」，都不要求形状数与操作数相等，所以这一格差 1 不是缺口，
+        而是这张表第一次出现「一只操作、两种吃法」。它钉在这里是因为不钉的话，下一个加档的人
+        会把 78 当成漂移改回来。
+        """
         shapes = call_shapes()
-        assert len(shapes) == 77, f"服务层调用形状现量 77，实得 {len(shapes)}"
+        assert len(shapes) == 78, f"服务层调用形状现量 78，实得 {len(shapes)}"
         assert {m for m, _, _ in shapes} <= {"GET", "POST", "PUT", "DELETE", "PATCH"}
 
     def test_http_paths_live_only_in_the_service_layer(self):
@@ -432,17 +440,17 @@ class TestNoGhostCalls:
         assert not bad, f"这些调用带了契约里没声明的 query 键：{bad}"
 
     def test_at_least_one_call_carries_a_query_key(self):
-        """query 那一支判据不能空转：两处来源合起来现量 14 条
+        """query 那一支判据不能空转：两处来源合起来现量 **15** 条
 
-        1 条写在路径串里（`/versions/create?filename=…`），13 条走 `params: {…}` 对象
-        （`data/load` 3 键、`data/update` 与 `data/delete` 各 `index`、`versions/history`
-        各 `limit`，L231 添备份那一族四条各 `backup_dir`，L232 再添数据集血缘那一族三条
-        各 `registry_path`，**L243 添备份完整性的两员**：`cleanup` 一只 `backup_dir`、
-        `verify` 一只 `{backup_id, backup_dir}`）；去重后 9 个键名。
+        **2 条写在路径串里**（`/versions/create?filename=…`，L251 又添 `/data/list?all_files=true`），
+        13 条走 `params: {…}` 对象（`data/load` 3 键、`data/update` 与 `data/delete` 各 `index`、
+        `versions/history` 各 `limit`，L231 添备份那一族四条各 `backup_dir`，L232 再添数据集血缘
+        那一族三条各 `registry_path`，**L243 添备份完整性的两员**：`cleanup` 一只 `backup_dir`、
+        `verify` 一只 `{backup_id, backup_dir}`）；去重后 **10** 个键名（L251 添 `all_files`）。
         """
         with_query = [s for s in call_shapes() if s[2]]
-        assert len(with_query) == 14, f"带 query 的调用现量 14 条，实得 {len(with_query)} 条"
-        assert len({k for _, _, keys in with_query for k in keys}) == 9
+        assert len(with_query) == 15, f"带 query 的调用现量 15 条，实得 {len(with_query)} 条"
+        assert len({k for _, _, keys in with_query for k in keys}) == 10
         assert len(params_bindings()) == 13, "params 对象那一支现量 13 条"
         assert sum(1 for _, _, keys, _ in params_bindings() if keys == {"backup_dir"}) == 5
         # L232 那三条：两条 GET 的间隔是 8，POST 那条因为请求体先提成 `const body` 是 14
@@ -458,11 +466,20 @@ class TestTheParamsWindowIsScoped:
         这条是「窗口收紧」的牙齿：按「调用之后 400 字符」那种取法实测会多出 3 桩冤案
         （`/data/list` 白得 3 个键、rollback 与 DELETE version 各白得一个 `limit`），
         候选从 4 涨到 7。收紧到「最近前一员 + 间隔 ≤ 60 字符」后实测 4 条，最大间隔 14。
+
+        **L251 把判据从合并面挪到归属面**：宽档那次改动让 `/api/data/list` 这一条路径上
+        同时存在两员调用（默认档裸调用 + 宽档把 query 写在路径串里），`call_shapes()` 是集合，
+        `{(m, p): keys for …}` 这一格取到 `()` 还是 `('all_files',)` 取决于集合迭代顺序，而顺序
+        带 hash 随机化 ⇒ 同一份代码在 `PYTHONHASHSEED=0/1` 绿、`2/3/7/11` 红（六档实测）。
+        冤案判据量的本来是「`params` 块有没有被错绑」，那就直接读归属来源，不读合并后的字典。
         """
-        shapes = {(m, p): keys for m, p, keys in call_shapes()}
-        assert shapes[("GET", "/api/data/list")] == ()
-        assert shapes[("POST", "/api/versions/{}/rollback")] == ()
-        assert shapes[("DELETE", "/api/versions/{}")] == ()
+        bound = {(m, p) for m, p, _, _ in params_bindings()}
+        for shape in (("GET", "/api/data/list"), ("POST", "/api/versions/{}/rollback"),
+                      ("DELETE", "/api/versions/{}")):
+            assert shape not in bound, f"这条裸调用白得了别人的 params 块：{shape}"
+        # 合并面继续钉，但钉成集合而不是「同一路径的最后一格」：两档都在，各回各的键
+        listed = {keys for m, p, keys in call_shapes() if (m, p) == ("GET", "/api/data/list")}
+        assert listed == {(), ("all_files",)}, listed
 
     def test_the_gap_budget_is_load_bearing(self):
         """上限的两端都量过：收到 3 判没 13 条，放到无穷今天不多收一条
