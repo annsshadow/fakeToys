@@ -288,14 +288,13 @@ class TestCliVerifyVerdict:
         assert code is None
         assert out == "没有找到备份（索引里没有 ghost）\n"
 
-    def test_a_missing_dir_is_created_and_reports_no_backup(self, tmp_path, monkeypatch):
-        """实测：CLI 的只读档**会**建目录并落一份 index.json，与 HTTP 面的 verify 相反
+    def test_a_missing_dir_stays_absent_and_reports_no_backup(self, tmp_path, monkeypatch):
+        """L249 收 A332：CLI 的只读档不再把备份目录建出来，与 HTTP 面同源
 
-        HTTP 那一侧靠路由里的 `if not resolved.exists()` 挡板挡在构造之前，CLI 这一侧没有
-        那道挡板，而 `DatasetBackup` 的构造无条件 mkdir ⇒ 同一次「查一下有没有坏的」在两面
-        留下**不同的磁盘状态**。既有的 `--action list` 一直就是这个形状（同一只构造），
-        所以本轮不是新引入的缺陷，而是量到了三面里的一处真实不对称。不擅自改（改它等于给
-        SDK 加一只「只读构造」，是另一轮的面），把现量钉住并另立一条待拍账（A332）。
+        改前实测：CLI 这一侧没有路由那道 `if not resolved.exists()` 挡板，而
+        `DatasetBackup` 的构造无条件 mkdir 并落一份 index.json ⇒ 同一次「查一下有没有
+        坏的」在 CLI 与 HTTP 两面留下**不同的磁盘状态**。修法不是给 CLI 加挡板，而是把
+        副作用从构造里摘掉（A307 那一族同批受益），所以三面现在都由库里同源。
         """
         bd = tmp_path / "nodir"
         monkeypatch.chdir(tmp_path)
@@ -304,8 +303,8 @@ class TestCliVerifyVerdict:
 
         assert code is None
         assert out == "没有找到备份\n"
-        assert bd.is_dir(), "改前实测会建；哪天它不建了，这一支要响并同步改 A332 那一格"
-        assert sorted(p.name for p in bd.iterdir()) == ["index.json"]
+        assert not bd.exists(), "只读的 verify 把备份目录建出来了 ⇒ A332 又犯"
+        assert list(tmp_path.iterdir()) == [], "只读的一趟在别处留下了东西"
 
 
 class TestCliCleanup:

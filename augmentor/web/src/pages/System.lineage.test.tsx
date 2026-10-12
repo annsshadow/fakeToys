@@ -318,10 +318,10 @@ describe('System 血缘卡的诚实口径', () => {
     // A305：描述与标签曾回显即丢，本轮已修
     expect(screen.getByText(/回显即丢/s)).toBeInTheDocument()
     expect(screen.getByText(/随登记一起写下去（A305）/s)).toBeInTheDocument()
-    // A308：三份默认注册表不是同一份；A307：只读端点会建目录
+    // A308：三份默认注册表不是同一份；A307：只读端点建目录那一格 L249 已收口
     expect(screen.getByText(/两边不是同一份/s)).toBeInTheDocument()
     expect(screen.getByText(/（A308）/s)).toBeInTheDocument()
-    expect(screen.getByText(/把它建出来/s)).toBeInTheDocument()
+    expect(screen.getByText(/构造不再碰磁盘/s)).toBeInTheDocument()
     expect(screen.getByText(/（A307）/s)).toBeInTheDocument()
     // A312 / A302：写那一支挂鉴权门禁；**L233 起前端有了送头的通道**（key 存在「配置管理」
     // 页那张卡上，由 `api.ts` 的请求拦截器挂到 X-API-Key）——这两条原先钉的是「没有通道」，

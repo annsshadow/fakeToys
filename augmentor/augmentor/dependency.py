@@ -93,7 +93,7 @@ class DependencyManager:
             registry_path: 注册表路径
         """
         self._registry_path = Path(registry_path)
-        self._registry_path.mkdir(parents=True, exist_ok=True)
+        # 构造不碰磁盘（A307 / L249）：读面曾把注册表目录建出来，父目录由写侧自建
         
         self._datasets_file = self._registry_path / "datasets.json"
         self._dependencies_file = self._registry_path / "dependencies.json"
