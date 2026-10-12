@@ -239,36 +239,30 @@ class TestTheLandingPort:
 
 @needs_web_src
 class TestAThreeTwoTwo:
-    """第 3 面：A322 —— `text_key` 后端零判决，页面补的那道闸是唯一判决"""
+    """第 3 面：A322 —— `text_key` 自 L238 起有判决，且判在模型与写盘之前
 
-    def test_empty_text_key_is_a_silent_no_op(self, http):
-        """空串 ⇒ 200 / 模型 0 次 / `failed=0` / 产物凭空多三键，而原字段一个字没动
+    改前这一格的后端读数是「200 / 模型 0 次 / 回执四键全零 / 产物凭空多三键」，
+    与真成功逐字节同形（L236 的原话，留在这里以便回看是谁在哪一轮改的）。现在三档
+    坏字段名一律 **400**，而这一族最难自证的不是状态码，是那两格**没发生**的事：
+    模型调用 0 次、磁盘上不多出半个文件——后者必须显式断言，否则「先写盘再报错」
+    这种一半成功的产物不会有任何一支测试响。
+    """
 
-        第三键是**这一格最难看见的部分**（本文件首跑量出来的，探针当时只报了多两键）：
-        `augmentor/multilingual.py` 无条件盖 `new_item["language"] = target_lang`，于是一份
-        一个字都没翻的产物上照样写着 `language: en`。回执四键全零 + 产物带语言戳 ⇒ 从任何
-        一面都读不出「这次什么都没发生」。
-        """
+    def test_empty_text_key_is_a_400_before_any_model_call(self, http):
+        """空串 ⇒ 400 / 模型 0 次 / 不落盘，detail 点名参数名而不是含糊的「非法」"""
         backend = SelectiveBackend()
         client = http.build(backend)
 
         resp = client.post("/api/dataset/translate", json={
             "input_file": "p.json", "text_key": "", "output_file": "empty_key.json"})
 
-        assert resp.status_code == 200, resp.text
-        body = resp.json()
+        assert resp.status_code == 400, resp.text
+        assert resp.json()["detail"] == "text_key 不能是空字符串"
         assert backend.calls == 0
-        assert body["failed"] == 0
-        assert body["failed_indices"] == []
-        assert body["errors"] == []
-        on_disk = http.landed("empty_key.json")
-        assert set(on_disk[0]) == {"instruction", "output", "", "_original", "language"}
-        assert on_disk[0]["instruction"] == "猫喜欢吃什么食物0"
-        assert on_disk[0]["language"] == "en"
-        assert on_disk[0][""] == ""
+        assert not (http.root / "empty_key.json").exists(), "判 400 却落了盘 = 半份产物没人知道"
 
-    def test_ghost_text_key_is_a_silent_no_op(self, http):
-        """不存在的键同档：200 / 0 次 / 回执全零，产物多 `no_such_field`、它的 `_original` 与语言戳"""
+    def test_ghost_text_key_is_a_400_that_names_the_real_fields(self, http):
+        """不存在的键同档，但 detail 要给的是「那一份里到底有什么」而不是报错本身"""
         backend = SelectiveBackend()
         client = http.build(backend)
 
@@ -276,21 +270,47 @@ class TestAThreeTwoTwo:
             "input_file": "p.json", "text_key": "no_such_field",
             "output_file": "ghost_key.json"})
 
-        assert resp.status_code == 200, resp.text
+        assert resp.status_code == 400, resp.text
+        detail = resp.json()["detail"]
+        assert "里没有任何一条含字段 'no_such_field'" in detail, detail
+        assert "首条实际字段: instruction, output" in detail, detail
         assert backend.calls == 0
-        assert resp.json()["failed"] == 0
-        on_disk = http.landed("ghost_key.json")
-        assert set(on_disk[0]) == {
-            "instruction", "output", "no_such_field", "no_such_field_original", "language"}
-        assert on_disk[0]["instruction"] == "猫喜欢吃什么食物0"
-        assert on_disk[0]["no_such_field"] == ""
+        assert not (http.root / "ghost_key.json").exists()
 
-    def test_the_page_gate_is_the_only_judgement_and_says_so(self):
-        """页面拦空值 + 卡上写明这一格后端零判决；改了后端那天这两句要一起动"""
+    def test_pure_whitespace_key_is_a_400_too(self, http):
+        """纯空白与空串是同一件事，只是它**看起来**有值（A142 那一族的第三面）"""
+        backend = SelectiveBackend()
+        client = http.build(backend)
+
+        resp = client.post("/api/dataset/translate", json={
+            "input_file": "p.json", "text_key": "   "})
+
+        assert resp.status_code == 400, resp.text
+        assert "不能是纯空白字符串" in resp.json()["detail"]
+        assert backend.calls == 0
+
+    def test_a_real_other_column_still_translates(self, http):
+        """闸不能收成恒真：把 `text_key` 换成数据集里真有的 `output`，一切照旧"""
+        backend = SelectiveBackend()
+        client = http.build(backend)
+
+        resp = client.post("/api/dataset/translate", json={
+            "input_file": "p.json", "text_key": "output"})
+
+        assert resp.status_code == 200, resp.text
+        body = resp.json()
+        assert backend.calls > 0, "换了真字段却一次模型都没调 ⇒ 那道闸收成恒真了"
+        assert body["failed"] == 0
+        assert {"output", "output_original", "language"} <= set(body["items"][0])
+
+    def test_the_page_gate_is_now_a_shortcut_and_says_so(self):
+        """页面仍拦空值，但卡上写的是「后端会回 400」而不是「后端零判决」"""
         page = _page()
         assert "if (!trTextKey.trim())" in page
         assert "A322" in page
         assert "别把「200 且 failed=0」读成翻成了" in page
+        assert "后端判三档" in page and "一次模型都不调" in page
+        assert "后端这一格**零判决**" not in page
 
 
 @needs_web_src

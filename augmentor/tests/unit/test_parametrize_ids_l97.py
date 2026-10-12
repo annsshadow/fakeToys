@@ -103,7 +103,13 @@ NS_PREFIXES = frozenset({
 #: ⇒ 用本文件那把尺子现量两处都落 `plain` 桶（不在 `no-literal-list`），实测 CALLS 419 →
 #: **421**、READABLE 301 → **303**、盲面仍 **118**。读数出自仓外探针 `l232_census.py`
 #: （直接 `import` 本模块的 `param_sites(TESTS)` 逐处打印桶归属），不是按「字面量 ⇒ 可读」推的。
-MEASURED_CALLS = 421
+#: **L238 回填（CALLS +5、READABLE +5、盲面一格未动）**：`test_decision_gates_l238.py` 四支
+#: parametrize（容差三档放行 / 两档拒 / `text_field` 四档两面同文 / 逐项界两档两面同句）与
+#: `test_health_score.py` 同轮补的一支（`weights, idx` 四档，点名被拒下标）值位全是内联字面清单
+#: ⇒ 五格全落可读档。实测 CALLS 421 → **426**、READABLE 303 → **308**、盲面仍 **118**，
+#: l98 侧四档和（58+11+38+11=118）一字未动；读数出自仓外探针 `l238_census.py`
+#: （`static_rows(TESTS_ROOT)` 逐处打印 `literal` 归属），不是按「字面量 ⇒ 可读」推的。
+MEASURED_CALLS = 426
 #: （L185：${ENV} 展开语义守卫两支 parametrize（坏形状 5 档 / 非串 4 档，全是字面清单）
 #: ⇒ CALLS 382 → 384、READABLE 281 → 283，盲面 101 一格未动）
 #: （L189：验证预设封闭清单守卫一支 parametrize（坏预设 5 档，全字面清单）⇒
@@ -115,7 +121,8 @@ MEASURED_CALLS = 421
 #: （L229：五支里只有「绝对路径/`..`」那支的值位是内联字面清单 ⇒ READABLE 292 → **293**）
 #: （L230：八支全是内联字面清单 ⇒ READABLE 293 → **301**，与 CALLS 同涨 8）
 #: （L232：两支全是内联字符串字面清单 ⇒ READABLE 301 → **303**，与 CALLS 同涨 2）
-MEASURED_READABLE = 303
+#: （L238：五支全是内联字面清单 ⇒ READABLE 303 → **308**，与 CALLS 同涨 5，盲面不动）
+MEASURED_READABLE = 308
 #: L175：搜索方法封闭清单守卫两支 parametrize（坏值 6 档 / 合法 5 档，全是字面
 #: 清单）⇒ CALLS 379 → 381、READABLE 278 → 279，盲面（no-literal-list 桶）101 不动。
 #: L217：普查守卫三支无 ids parametrize ⇒ 盲面 108 → **111**（与 CALLS +3 同数，
@@ -126,6 +133,8 @@ MEASURED_READABLE = 303
 #: （`OUTPUT_FORMAT_CHOICES`、契约默认表、模型字段名册、TS 接口键名册）⇒ **114 → 118**；
 #: l98 侧同四格拆成 opaque +1、ids-derived +3，档位和独立咬合。
 #: **L230：盲面 118 一格未动**（八支新 parametrize 全落可读档，见 MEASURED_CALLS 那一段）。
+#: **L238：盲面仍 118**（新五支全带内联字面清单；本轮没有把值位换成「从权威现造的名册」，
+#: 同源仍靠 AST 读分发臂单独钉，与 L230 同一处置）。
 MEASURED_BLIND = 118
 #: 值位含类型对象的那些档（必须全部自带 ids，否则就是本判据的违规）
 KNOWN_TYPED_SITES = frozenset({("tests/unit/test_schema_type_spec_l96.py", "test_label")})

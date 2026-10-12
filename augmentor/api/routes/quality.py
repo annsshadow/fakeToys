@@ -9,6 +9,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from ..deps import raise_internal_error, load_items, resolve_data_path, run_in_thread, verify_api_key
+from augmentor.exceptions import DataValidationError
+from augmentor.validation import require_ratio_list
 
 router = APIRouter(tags=["quality"])
 
@@ -433,6 +435,14 @@ class HealthGateRequest(BaseModel):
     `pass_rate` 时那条规则会被判为「不满足」，门禁于是给出 FAILED——把「没算这一项」
     伪装成「算出来不及格」，而这两种情况对下游的意义完全相反。所以这里显式跳过该规则，
     并在响应的 `skipped_rules` 里报出来。
+
+    `weights`（L238 起）与 `text_field` 都有判决：权重逐项必须是 [0, 1] 内的数值
+    （布尔不算）、必须 4 个、四项之和落在 1.0 ± 0.01 **含端点**（`[0.24, 0.25, 0.25,
+    0.25]` 与 `[0.26, 0.25, 0.25, 0.25]` 都放行——判之前先把浮点噪声量化到 9 位）；
+    `text_field` 必须是非空字符串且**数据集里至少一条含该字段**，否则 400 并带上首条
+    实际字段。两道的判据都不在本模型里抄第二份：权重共引
+    `validation.require_ratio_list`（与 `quality.weights` 那两面同一份），字段名共引
+    `validation.require_item_field`（与 `/api/dataset/impact` 同一份）。
     """
     input_file: str
     text_field: str = "instruction"
@@ -453,7 +463,7 @@ class HealthMetricsResponse(BaseModel):
 
 
 class HealthReportResponse(BaseModel):
-    """健康度评分（与 `DatasetHealthScore.score()` 的返回键一致）"""
+    """健康度评分（与 `DatasetHealthScore.score()` 的返回键一致；`health_score` 值域 [0, 1]）"""
     health_score: float
     level: str
     metrics: HealthMetricsResponse
@@ -494,14 +504,21 @@ def _validate_health_gate(request: HealthGateRequest) -> None:
     1. `DatasetHealthScore` 对权重的校验抛 `DataValidationError`。若等到评分阶段
        才失败，路由的兜底 `except Exception` 会把它报成 500——可这是纯参数错误，
        而且那时文件已经读完了。
-    2. 校验规则与评分器内部保持一一对应（4 个元素、之和 ≈ 1.0），不额外发明
-       更严的约束，否则门口能过而评分器拒绝、或反之。
+    2. 门口与评分器**共引同一份**判据（`validation.require_ratio_list`，A77），
+       而不是各抄一行。改前这里是两行手抄（`len != 4` 与 `abs(sum-1.0) > 0.01`），
+       于是负权重与大于 1 的权重**两面都放行**、`'abc'` 这类非数值元素在直构面死在
+       `sum()` 的 `TypeError` 上（API 面则由 pydantic 拦成 422，三面三判），而
+       A320 那句「±0.01 算 1.0」在恰好 0.01 那一档是假话。共引之后「门口能过而评分器
+       拒绝、或反之」这一族不再有实现空间：同一函数、同一判据、同一份报错文案。
+
+    `text_field` 的存在性**不在这里判**——它要读数据集才知道，门口没有那份数据；
+    判在 `gate_dataset_health`（CLI 与 API 共用那一层），由路由的 `except ValueError`
+    落 400，消息原样可行动。
     """
-    if request.weights is not None:
-        if len(request.weights) != 4:
-            raise HTTPException(status_code=400, detail="权重必须包含 4 个元素")
-        if abs(sum(request.weights) - 1.0) > 0.01:
-            raise HTTPException(status_code=400, detail="权重之和必须为 1.0")
+    try:
+        require_ratio_list("weights", request.weights, length=4)
+    except DataValidationError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
     if request.pass_rate is not None and not 0.0 <= request.pass_rate <= 1.0:
         raise HTTPException(status_code=400, detail="pass_rate 必须在 [0, 1] 区间内")
 

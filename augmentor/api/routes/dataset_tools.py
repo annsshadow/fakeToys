@@ -56,7 +56,7 @@ router = APIRouter(tags=["dataset"])
 # tests/integration/test_api.py（`/api/quality/outliers` 的未知 method 也是 400）。
 # L175/L189: 清单权威住 SDK 层，本路由的 400 判据共引同一份（A77）
 from augmentor.search_enhanced import SEARCH_METHODS
-from augmentor.validation import DatasetValidator
+from augmentor.validation import DatasetValidator, require_item_field
 VALIDATION_PRESETS = tuple(DatasetValidator.PRESET_RULES)
 
 
@@ -564,14 +564,14 @@ def _require_any_field(items: List[dict], field_name: str, label: str) -> None:
     取到空串，于是「唯一指令数 = 1、重复率 = 100%」——一份**根本没被读过**的数据集会
     被报告成「多样性极差」。静默降级比报错危险，所以在门口拦下。
     """
-    if items and not any(field_name in item for item in items):
-        raise HTTPException(
-            status_code=400,
-            detail=(
-                f"{label} 里没有任何一条含字段 '{field_name}'（大概率是字段名拼错了）；"
-                f"首条实际字段: {', '.join(sorted(items[0])) or '（无）'}"
-            ),
-        )
+    # 判据只有一份（L238 / A321）：本函数是 `validation.require_item_field` 的一层 HTTP 外衣，
+    # 与健康门禁、批量翻译共引它——抄两份正是 A321 那次假判决的形状。空串这一档的措辞因此
+    # 从「没有任何一条含字段 ''」改成「不能是空字符串」：同一个 400，但后者说的是真凶。
+    from augmentor.exceptions import DataValidationError
+    try:
+        require_item_field("text_field", items, field_name, label)
+    except DataValidationError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 def _as_column(items: List[dict], field_name: str, label: str) -> List[str]:

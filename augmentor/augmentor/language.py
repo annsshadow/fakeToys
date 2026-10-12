@@ -76,7 +76,7 @@ def translate_dataset(items: List[Dict[str, Any]], *, backend: Any,
             下界由 `MultilingualConfig.__post_init__` 的 `require_count` 守住，
             这里不重复校验
         target_lang: 请求侧的目标语言，给了就赢过配置键
-        text_key: 参与翻译的字段名
+        text_key: 参与翻译的字段名，必须是**数据集里真的存在**的一列
         keep_original: 是否保留原文到 `{text_key}_original`
 
     Returns:
@@ -86,6 +86,8 @@ def translate_dataset(items: List[Dict[str, Any]], *, backend: Any,
 
     Raises:
         ModelNotConfiguredError: backend 为 None
+        DataValidationError: `text_key` 不是非空字符串，或整个数据集没有一条含该字段
+            （A322，L238）
 
     **失败回执在这里跨批合并**：SDK 的 `batch_translate` 只看得见本批，`failed_indices`
     是批内坐标，所以合并时必须加批起点 `start` 才是全数据集下标——调用方拿到的下标可以直接
@@ -98,10 +100,21 @@ def translate_dataset(items: List[Dict[str, Any]], *, backend: Any,
     所以越界语言一条模型调用都不会发出。本层曾重复写过一道同判据的闸，摘掉它之后
     测试仍全绿，即两存必有一盲（注入取证见账本 L217），按仓库「判据住在 SDK/config 层」
     的惯例只留下游那一道。
+
+    **`text_key` 的判决住在分批之前**（A322，L238）：下游按 `item.get(text_key, "")` 取
+    原文，字段名拼错或送空串时**每条都取到空串**，而 SDK 的 `batch_translate` 对空文本直接
+    「回退原文」并计入成功 ⇒ 端点回 **200** 且 `failed=0` / `failed_indices=[]` /
+    `errors=[]`，回执四键全是「全成功」的形状；产物里却凭空多出三键（那一列、它的
+    `_original`，还有一个无条件盖上的 `language` 目标语言戳）。这条判据走在模型之前，
+    所以拼错字段名**一次模型调用都不发**——与 `backend is None` 那道闸同一条纪律：花钱
+    路径上的参数错误不该先花一笔才知道。
     """
+    from .validation import require_item_field
+
     resolved = target_lang or default_target_lang
     if backend is None:
         raise ModelNotConfiguredError("翻译需要配置模型后端")
+    require_item_field("text_key", items, text_key)
 
     sample_limit = 20
     support = MultilingualSupport(model_backend=backend, supported_langs=list(supported_langs))

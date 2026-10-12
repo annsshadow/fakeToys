@@ -426,9 +426,8 @@ export default function DataManagement() {
    * ① 必须点名落盘文件（契约里 `output_file` 是可选的，页面刻意收紧——花了钱却只留在
    *    响应体里，刷新即失，那不是能用的入口，A283 立项的原话）；
    * ② 必须勾上计费确认（`trAck`），按钮同时 `disabled`，两处拦的是同一件事的两面；
-   * ③ 翻译字段不许为空——后端这一格**零判决**（A322：空串与不存在的键都回 200、
-   *    模型调用 0 次、`failed=0`，产物里凭空多出两个键），所以这不是「替后端藏判决」，
-   *    是补一个后端根本没有的判决。
+   * ③ 翻译字段不许为空——后端自 L238 起对空串 / 纯空白 / 数据集里不存在的键一律 400
+   *    且模型调用 0 次（A322 改前那一档回的是 200），页面这道闸只是让用户少跑一个来回。
    */
   const handleTranslate = async () => {
     if (!selectedFile || !trOut) {
@@ -436,7 +435,7 @@ export default function DataManagement() {
       return
     }
     if (!trTextKey.trim()) {
-      message.warning('翻译字段不能为空：后端对空字段名零判决，会回一份没翻过的产物（A322）')
+      message.warning('翻译字段不能为空：后端会回 400 并且一次模型都不调（A322）')
       return
     }
     if (!trAck) {
@@ -1040,10 +1039,11 @@ export default function DataManagement() {
           「翻译路径未启用」，那道闸在读盘之前。
         </div>
         <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
-          翻译字段名这一格后端**零判决**（A322）：送空串或送一个数据集里不存在的键都回 200、
-          failed=0、模型调用 0 次，产物里凭空多出三个键——那一列、它的 _original，还有一个
-          language 目标语言戳（一个字没翻也照盖），而原字段一个字没动。所以页面自己拦下空值，
-          并且**别把「200 且 failed=0」读成翻成了**——先核对产物里那一列。
+          翻译字段名这一格后端判三档（A322，L238 起）：空串、纯空白、以及数据集里根本不存在
+          的键都回 **400**，detail 带上首条实际字段，且**一次模型都不调、一个字节都不落盘**。
+          改前这一档回的是 200：failed=0、模型 0 次，产物里凭空多出三个键——那一列、它的
+          _original，还有一个 language 目标语言戳（一个字没翻也照盖）。留心的仍是同一件事：
+          **别把「200 且 failed=0」读成翻成了**，没翻成的条目回退原文，形状与成功时相同。
         </div>
         <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
           失败回执四键（failed / failed_indices / errors / errors_truncated）必须与 items 一起读：

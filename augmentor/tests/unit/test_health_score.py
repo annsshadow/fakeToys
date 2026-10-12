@@ -41,12 +41,58 @@ class TestDatasetHealthScoreInit:
         assert scorer.weights == [0.1, 0.3, 0.3, 0.3]
     
     def test_invalid_weights_length_raises(self):
-        with pytest.raises(ValueError, match="权重必须包含 4 个元素"):
+        with pytest.raises(ValueError, match="weights 必须是 4 个元素，当前 2 个"):
             DatasetHealthScore(weights=[0.5, 0.5])
     
+    def test_empty_weights_list_is_not_silently_defaulted(self):
+        """改前 `weights or 默认` 把 [] 读成「未设置」而静默回落，与 QualityScorer 不同判"""
+        with pytest.raises(ValueError, match="weights 必须是 4 个元素，当前 0 个"):
+            DatasetHealthScore(weights=[])
+
     def test_weights_not_sum_to_one_raises(self):
-        with pytest.raises(ValueError, match="权重之和必须为 1.0"):
+        with pytest.raises(ValueError, match="weights 之和必须是 1"):
             DatasetHealthScore(weights=[0.1, 0.1, 0.1, 0.1])
+
+    @pytest.mark.parametrize("weights, idx", [
+        ([2.0, -0.5, -0.25, -0.25], 0),
+        ([0.25, -0.25, 0.5, 0.5], 1),
+        ([0.25, 0.25, 1.5, -0.5], 2),
+        ([0.25, 0.25, 0.25, -0.5], 3),
+    ])
+    def test_each_weight_must_be_a_ratio(self, weights, idx):
+        """A319（L238）：逐项 [0, 1]，判错哪个下标就点名哪个——不判符号也就挡不住排序反转"""
+        with pytest.raises(ValueError, match=f"weights\\[{idx}\\] 必须在 0.0 到 1.0 之间"):
+            DatasetHealthScore(weights=weights)
+
+    def test_non_numeric_weight_raises_instead_of_typeerror(self):
+        """改前 `'abc'` 死在 `sum()` 的 TypeError 上（500 的形状），现在是可行动的 400 文案"""
+        with pytest.raises(ValueError, match="必须是数值"):
+            DatasetHealthScore(weights=["abc", 0.25, 0.25, 0.25])
+
+    def test_bool_weight_is_rejected_by_name(self):
+        """`True` 是 `int` 的子类，会被当成 1.0 满权重 ⇒ 布尔必须点名拒（直构面才测得到）"""
+        with pytest.raises(ValueError, match="不能是布尔"):
+            DatasetHealthScore(weights=[True, False, 0.5, 0.5])
+
+    def test_sum_tolerance_is_inclusive(self):
+        """A320（L238）：0.99 与 1.01 都在容差内（判前先量化到 9 位），0.98 才拒"""
+        assert DatasetHealthScore(weights=[0.24, 0.25, 0.25, 0.25]).weights[-1] == 0.25
+        assert DatasetHealthScore(weights=[0.26, 0.25, 0.25, 0.25]).weights[0] == 0.26
+        with pytest.raises(ValueError, match="weights 之和必须是 1"):
+            DatasetHealthScore(weights=[0.23, 0.25, 0.25, 0.25])
+
+    def test_score_is_clamped_into_unit_interval(self, healthy_items, poor_items):
+        """A319（L238）：出口钳进 [0, 1]。分量各自在界内，唯一越界来源是「和的容差」——
+        1.005 份权重乘满分分量就是 1.005，而 `level` 判的正是这个数。"""
+        for items in (healthy_items, poor_items):
+            for weights in ([0.25] * 4, [1.0, 0.005, 0.005, 0.0], [0.0, 0.0, 0.0, 1.0]):
+                result = DatasetHealthScore(weights=weights).score(items)
+                assert 0.0 <= result["health_score"] <= 1.0, (weights, result)
+        m = DatasetHealthScore().score(healthy_items)["metrics"]
+        raw = 1.0 * m["completeness"] + 0.005 * m["diversity"] + 0.005 * m["quality_balance"]
+        assert raw > 1.0, "夹具不再越过 1 ⇒ 上面那圈的钳制断言是空转，换夹具再来"
+        assert DatasetHealthScore(weights=[1.0, 0.005, 0.005, 0.0]).score(
+            healthy_items)["health_score"] == 1.0
 
 
 class TestDatasetHealthScoreMetrics:

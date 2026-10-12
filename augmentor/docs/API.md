@@ -598,7 +598,7 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
 | `POST` | `/api/dataset/compare` | 数据集对比 | 只读。返回质量向 A/B 结论 + 重叠度 + 建议，`diff_datasets` 的成员语义见 §11 排查。 |
 | `POST` | `/api/dataset/features` | 字段特征检测 | 只读。`field_features` 是**列表**（不是 dict），每项一个字段的画像。 |
 | `POST` | `/api/dataset/auto-config` | 自动配置推荐 | 只读。返回推荐配置 + 理由；推荐值不落盘，要 `POST /api/config` 才生效。 |
-| `POST` | `/api/dataset/impact` | 增强前后影响评估 | 只读。`duplicate_rate` 是**增强后**的重复率；语义分数在 `semantic_evaluated=false` 时不参与（API 面拿不到原始问题）。 |
+| `POST` | `/api/dataset/impact` | 增强前后影响评估 | 只读。`duplicate_rate` 是**增强后**的重复率；语义分数在 `semantic_evaluated=false` 时不参与（API 面拿不到原始问题）。`text_field` 空串 / 纯空白 / 那两份数据里根本没有这一列都回 400，detail 带首条实际字段（L238 / A321，与健康门禁、批量翻译共引 `validation.require_item_field`）；空串这一档的措辞从「没有任何一条含字段 ''」改成「`text_field` 不能是空字符串」——同一个 400，但后者说的是真凶。 |
 | `POST` | `/api/dataset/evaluate` | 生成文本指标评估 | 只读。响应键就是 `metrics` / `sample_count` / `details`。请求省略 `metrics` ⇒ 取 `config.evaluation.metrics`（L219 接线，权威序 请求参数 > 配置键 > SDK 内置默认）；生效清单统一过 `METRIC_FUNCTIONS` 白名单，越界名 400，空清单也 400（SDK 的 `metrics or [内置三只]` 会把空值静默补成三项，所以在本层出声）。两侧字段名 `generated_field` / `reference_field` 同规（L220 接线，配置那两键出厂值与被替换的硬编码默认同为 `output` ⇒ 零漂移）：请求侧默认是 `null` 哨兵，**省略与显式传 `"output"` 从此是两种不同的事**；取不到的列名（含空串）由逐条门口报 400 并带下标，不静默补空。 |
 | `POST` | `/api/dataset/convert` | 格式转换 | **写盘变换类**：必须给 `output_file`，响应只回「写到哪、写了多少」。 |
 | `POST` | `/api/dataset/merge` | 合并数据集 | **写盘变换类**：同上。 |
@@ -609,7 +609,7 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
 | `POST` | `/api/dataset/semantic-search` | 语义相似检索 | 只读分析（L216）。按 `config.vector.*` 的生效值在**内存**建索引再检索，不落盘；`top_k` 非正整数 400（判据住在 `VectorDB.search`，不在路由里重复一遍）。`text_key` 换的是参与嵌入的字段，默认 `instruction`。 |
 | `GET` | `/api/dataset/vector-status` | 向量库状态 | 只读（L216）。`exists` / `count` 读的是 `config.vector.storage_dir` 里那份持久化索引；`enabled` 是「增强结束时自动建库」那只闸的生效值，两者分开设（`enabled=false` + `exists=true` = 上轮开着建过、这轮关了闸）。`backend` 是配置选择，`faiss-cpu` 没装时的引擎退化看 `/api/system/dependencies`。配 `chromadb` 时回 **400**：那侧没有 `persist`/`load` 面，闸在构造之前，所以既不会 500 也不会凭空建目录。 |
 | `POST` | `/api/dataset/language-profile` | 语言分布画像 | 只读分析（L217）。纯正则检测，**不打模型、不落盘**，所以 `multilingual.enabled` 关掉也照常可用（闸只管花钱那条路）。`supported_langs` / `default_target_lang` 回显的是生效值；`outside_supported` 里出现 `mixed` 不是错误——它是检测标签而非语言码。 |
-| `POST` | `/api/dataset/translate` | 批量翻译数据集 | **挂鉴权**（L217）：逐条调用模型后端，按 token 计费，与 `/api/augment/start` 同档——判据是「会不会替调用方花钱」，不是 HTTP 动词。`multilingual.enabled=false`（出厂值）直接 400，且闸在**读盘之前**。`target_lang` 省略时落 `default_target_lang`；`batches` / `batch_size` 一起才看得出分批确实发生（飞行中的翻译任务数被压到 `min(批宽, max_workers)` 以内）。**失败回执**（L221）：`failed` 是逐条失败的计数，`failed_indices` 是全量下标（可直接指回 `input_file`，跨批也已折算成全局坐标），`errors` 是前 20 条 `{index, error}` 样本、`errors_truncated` 说明样本是否收窄。部分失败仍回 200——它既不是客户端错误也不是服务端故障，重发整份只会重复花钱；诚实读数在响应体里，不在状态码里。只读 `items` 读不出这件事：失败条目回退原文，形状与成功一致。**落盘口**（L236 / A283①）：`output_file` 可选——省略时整份译文只在响应体里（刷新即失），给了就把 `items` 原子写进白名单数据根、响应回一个**已 resolve 的绝对路径**（键恒在，没给时为 `null`；用「键在不在」区分不了「没落盘」与「落了盘没回显」）。顺序是量过的：**落点先解析、再动模型**，越界落点 403 出声时模型调用 **0** 次。**`text_key` 那一格零判决**（A322，本轮立账、后端未改）：送空串或送一个数据集里不存在的键都回 200、模型调用 0 次、回执四键全零，产物里凭空多出 `<key>`、`<key>_original` 与 `language` 三键而原字段一个字没动——`language` 是无条件盖上的目标语言戳，所以「200 且 failed=0」读不出「翻成了」，得核对产物里那一列。 |
+| `POST` | `/api/dataset/translate` | 批量翻译数据集 | **挂鉴权**（L217）：逐条调用模型后端，按 token 计费，与 `/api/augment/start` 同档——判据是「会不会替调用方花钱」，不是 HTTP 动词。`multilingual.enabled=false`（出厂值）直接 400，且闸在**读盘之前**。`target_lang` 省略时落 `default_target_lang`；`batches` / `batch_size` 一起才看得出分批确实发生（飞行中的翻译任务数被压到 `min(批宽, max_workers)` 以内）。**失败回执**（L221）：`failed` 是逐条失败的计数，`failed_indices` 是全量下标（可直接指回 `input_file`，跨批也已折算成全局坐标），`errors` 是前 20 条 `{index, error}` 样本、`errors_truncated` 说明样本是否收窄。部分失败仍回 200——它既不是客户端错误也不是服务端故障，重发整份只会重复花钱；诚实读数在响应体里，不在状态码里。只读 `items` 读不出这件事：失败条目回退原文，形状与成功一致。**落盘口**（L236 / A283①）：`output_file` 可选——省略时整份译文只在响应体里（刷新即失），给了就把 `items` 原子写进白名单数据根、响应回一个**已 resolve 的绝对路径**（键恒在，没给时为 `null`；用「键在不在」区分不了「没落盘」与「落了盘没回显」）。顺序是量过的：**落点先解析、再动模型**，越界落点 403 出声时模型调用 **0** 次。**`text_key` 判三档**（A322，L238 收口）：空串、纯空白、数据集里不存在的键都在**动模型之前**回 400（detail 带首条实际字段），模型调用 0 次且一个字节都不落盘。改前这一档回的是 200、回执四键全零，产物里凭空多出 `<key>`、`<key>_original` 与 `language` 三键而原字段一个字没动——`language` 是无条件盖上的目标语言戳，所以「200 且 failed=0」本来就读不出「翻成了」，仍得核对产物里那一列。 |
 
 ### system 运维面（13）
 
@@ -969,9 +969,9 @@ JSONL 进料交给转换器的读边解析成规范记录（`instruction` / `inp
 }
 ```
 
-`weights` 是健康分四项（完整性 / 多样性 / 质量分布均衡性 / 覆盖率）的权重，必须 4 个
-且之和为 1.0，省略则各 0.25；非法值在**读文件之前**就返回 400。`text_field` 决定重复率
-按哪个字段算（默认 `instruction`）。
+`weights` 是健康分四项（完整性 / 多样性 / 质量分布均衡性 / 覆盖率）的权重：必须 4 个、逐项必须是
+[0, 1] 内的数值（布尔不算、NaN 不算）、四项之和落在 1.0 ± 0.01 **含端点**（判和之前先把浮点噪声量化到 9 位，所以 0.99 与 1.01 放行、0.98 与 1.02 才拒；L238 / A320），省略则各 0.25。非法值在**读文件之前**就返回 400，detail 点名到 `weights`
+的下标或实测和；`text_field` 决定重复率按哪个字段算（默认 `instruction`），空串 / 纯空白 / 数据集里不存在的键一律 400 且带上首条实际字段（L238 / A321：改前这一档一句判决都没有，所有条目取到空值、`duplicate_rate` 静默变成 1.0 并在那条规则上判负）。`health_score` 的值域是 [0, 1]（出口钳制；越界只可能来自那 0.01 的容差）。
 
 ```json
 {
