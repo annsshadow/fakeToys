@@ -131,6 +131,80 @@ type GeneratedLevel struct {
 	MaxScore int64 `json:"max_score"`
 }
 
+// LevelSummary 是关卡在**列表场景**下的形状：去掉 `waves`。
+//
+// # 为什么 /config 不再下发 waves（第 150 轮）
+//
+// 实测 `/config` 未压缩 167,558 字节，其中 `levels` 占 123,712（74%），
+// 而 `waves` 占 levels 的 **75.4%**（93,338 字节）——
+// 也就是说整个配置包的 **56%** 是「100 关的刷怪排布」。
+//
+// 客户端到底读不读它？逐个消费点核过，答案是**只有一处**：
+// 防线挑战用第 1 关当标准战场（`me.vue` 的 `challengeLevel()`），
+// 而战斗局需要 `waves` 才能开局。其余全部只读元数据：
+//
+//	- 选关页：章节 / 名称 / 难度 / 体力 / 星级门槛 / 地形
+//	- 战斗页：**关卡来自 `/battle/token`**（本来就带完整 waves）
+//	- 验真页：关卡来自 `/battle/:id/replay`
+//
+// 所以：列表走摘要，波次按需取。
+// 那一处改调 `GET /api/v1/levels/:id` ——
+// 那个端点本来就存在（与 /config 同一生成器输出），此前零消费。
+//
+// # 为什么是「单独的类型」而不是 json:"-" / omitempty
+//
+//   - `omitempty` 会影响**所有**下发路径，包括 `/battle/token` 与
+//     `/battle/:id/replay` —— 那两处恰恰必须有 waves。
+//   - 手写摘要类型会有字段漂移风险，用
+//     `TestLevelSummaryCoversEveryGeneratedLevelField`（反射逐字段对拍）钉死。
+type LevelSummary struct {
+	ID              int                `json:"id"`
+	Chapter         int                `json:"chapter"`
+	Name            string             `json:"name"`
+	Seed            int64              `json:"seed"`
+	BaseHP          int64              `json:"base_hp"`
+	WaveCount       int                `json:"wave_count"`
+	Difficulty      int                `json:"difficulty"`
+	EnergyCost      int                `json:"energy_cost"`
+	StarTargets     []int64            `json:"star_targets"`
+	Terrain         []TerrainPlacement `json:"terrain"`
+	IsBoss          bool               `json:"is_boss"`
+	ElementCap      int64              `json:"element_cap"`
+	ArmorPermille   int64              `json:"armor_permille"`
+	MaxReactionTier int64              `json:"max_reaction_tier"`
+	MaxScore        int64              `json:"max_score"`
+}
+
+// Summarize 把生成器输出转成列表摘要（丢弃 `waves`）。
+func Summarize(gl GeneratedLevel) LevelSummary {
+	return LevelSummary{
+		ID:              gl.ID,
+		Chapter:         gl.Chapter,
+		Name:            gl.Name,
+		Seed:            gl.Seed,
+		BaseHP:          gl.BaseHP,
+		WaveCount:       gl.WaveCount,
+		Difficulty:      gl.Difficulty,
+		EnergyCost:      gl.EnergyCost,
+		StarTargets:     gl.StarTargets,
+		Terrain:         gl.Terrain,
+		IsBoss:          gl.IsBoss,
+		ElementCap:      gl.ElementCap,
+		ArmorPermille:   gl.ArmorPermille,
+		MaxReactionTier: gl.MaxReactionTier,
+		MaxScore:        gl.MaxScore,
+	}
+}
+
+// SummarizeAll 批量转换。
+func SummarizeAll(levels []GeneratedLevel) []LevelSummary {
+	out := make([]LevelSummary, 0, len(levels))
+	for _, gl := range levels {
+		out = append(out, Summarize(gl))
+	}
+	return out
+}
+
 // ScoreRules 是分数规则。**两端共用同一份数值。**
 //
 // ⚠️ 这些常量曾经只有 Go 这一份定义，而客户端引擎把同样的数字
