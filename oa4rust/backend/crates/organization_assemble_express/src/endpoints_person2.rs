@@ -323,7 +323,7 @@ pub async fn person_detail_flag(
                 "WITH RECURSIVE hit AS (\
                      SELECT g.id, g.parent_id FROM x_org_group g \
                      JOIN x_org_group_member m ON m.group_id = g.id \
-                     WHERE g.deleted_at IS NULL AND m.person_id = $1\
+                     WHERE g.deleted_at IS NULL AND m.person_id = $1 \
                      UNION \
                      SELECT pg.id, pg.parent_id FROM x_org_group pg \
                      JOIN hit h ON h.parent_id = pg.id WHERE pg.deleted_at IS NULL) \
