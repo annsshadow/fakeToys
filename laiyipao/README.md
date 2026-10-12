@@ -522,11 +522,13 @@ Go:  if resElement == "" { resElement = dominant(def) } // '' 回退   → 真�
 | **C 道具** | `revive_token` / `gem_wash_token` 买得到但无消费端点 | 商城里两件「买了不知道干嘛」的商品 |
 
 修完之后加了两条守卫，让这件事**不再依赖谁记得看一眼**。
-A 口径（服务端侧，每条路由都要有客户端调用方）与 B 口径（客户端侧，
-`/config` 每个字段都要有消费方，或有写明理由的豁免）分别是：
+A 口径（服务端侧，每条路由都要有客户端调用方）、B 口径（客户端侧，
+`/config` 每个字段都要有消费方，或有写明理由的豁免）与 C 口径
+（每种上架道具必须要么有 `spendToken` 扣减点、要么登记为待接通并写明前置条件）分别是：
 
 ```bash
 go test ./internal/httpapi/ -run TestEveryRouteHasClientCaller
+go test ./internal/service/ -run TestEveryWalletTokenIsSpendableOrRegistered
 pnpm vitest run src/test/contract_coverage.test.ts
 ```
 
