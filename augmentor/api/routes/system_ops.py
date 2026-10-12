@@ -570,10 +570,41 @@ def _resolve_backup_dir(backup_dir: Optional[str]):
     return default_backup_dir() if backup_dir is None else resolve_data_dir(backup_dir)
 
 
+# 备份一族的错误档（A330）。每一档都由一个真请求实测到过，判据见
+# tests/unit/test_backup_contract_error_codes_l252.py；没实测到的码一律不写。
+# 响应体永远是 HTTPException 那一句 `{"detail": "…"}`。
+ERROR_DETAIL_CONTENT = {
+    "application/json": {
+        "schema": {
+            "type": "object",
+            "properties": {"detail": {"type": "string"}},
+            "required": ["detail"],
+        }
+    }
+}
+
+
+def _error_responses(*cases: tuple) -> dict:
+    """把 `(状态码, 触发条件)` 铺成 FastAPI 的 `responses=` 字典"""
+    return {
+        code: {"description": text, "content": ERROR_DETAIL_CONTENT}
+        for code, text in cases
+    }
+
+
+NO_KEY_DESC = "缺少或无效的 `X-API-Key` 请求头"
+DIR_EMPTY_DESC = "`backup_dir` 显式传了空串"
+DIR_OUT_DESC = "`backup_dir` 落在数据目录白名单之外"
+
+
 @router.get(
     "/api/system/backups",
     response_model=BackupListResponse,
     summary="列出备份",
+    responses=_error_responses(
+        (400, DIR_EMPTY_DESC),
+        (403, DIR_OUT_DESC),
+    ),
 )
 async def list_backups_endpoint(
     backup_dir: Optional[str] = Query(None, description=BACKUP_DIR_DESC),
@@ -595,6 +626,12 @@ async def list_backups_endpoint(
     response_model=BackupInfoResponse,
     summary="创建备份",
     dependencies=[Depends(verify_api_key)],
+    responses=_error_responses(
+        (400, "`input_file` 为空或含 `..`、`name` 指向备份目录之外，或 " + DIR_EMPTY_DESC),
+        (401, NO_KEY_DESC),
+        (403, "源文件 `input_file` 或 `backup_dir` 落在数据目录白名单之外"),
+        (404, "`input_file` 在白名单内，但那份数据文件不存在"),
+    ),
 )
 async def create_backup_endpoint(
     request: CreateBackupRequest,
@@ -621,6 +658,13 @@ async def create_backup_endpoint(
     response_model=RestoreBackupResponse,
     summary="恢复备份",
     dependencies=[Depends(verify_api_key)],
+    responses=_error_responses(
+        (400, "`output_file` 为空或含 `..`，或 " + DIR_EMPTY_DESC),
+        (401, NO_KEY_DESC),
+        (403, "恢复目标 `output_file` 或 `backup_dir` 落在数据目录白名单之外"),
+        (404, "`backup_id` 不在备份索引里"),
+        (409, "备份文件与索引记录的校验和不匹配：恢复被拒绝，目标文件与索引都未被改写"),
+    ),
 )
 async def restore_backup_endpoint(
     backup_id: str,
@@ -662,6 +706,12 @@ async def restore_backup_endpoint(
     response_model=SuccessResponse,
     summary="删除备份",
     dependencies=[Depends(verify_api_key)],
+    responses=_error_responses(
+        (400, DIR_EMPTY_DESC),
+        (401, NO_KEY_DESC),
+        (403, DIR_OUT_DESC),
+        (404, "`backup_id` 不在备份索引里；索引有条目而备份文件已丢不算这一档，仍回 200"),
+    ),
 )
 async def delete_backup_endpoint(
     backup_id: str,
@@ -715,10 +765,16 @@ class BackupCleanupResponse(BaseModel):
     max_backups: int
 
 
+# verify 是只读面，不挂 `verify_api_key` 那道闸；幽灵 backup_id 与坏备份都回 200 的逐行
+# 读数（A299 的闸只在 restore 出声），所以这里只有目录两档，不虚声明 401 / 404 / 409。
 @router.get(
     "/api/system/backups/verify",
     response_model=BackupVerifyResponse,
     summary="校验备份完整性",
+    responses=_error_responses(
+        (400, DIR_EMPTY_DESC),
+        (403, DIR_OUT_DESC),
+    ),
 )
 async def verify_backups_endpoint(
     backup_id: Optional[str] = Query(
@@ -762,6 +818,12 @@ async def verify_backups_endpoint(
     response_model=BackupCleanupResponse,
     summary="清理旧备份",
     dependencies=[Depends(verify_api_key)],
+    responses=_error_responses(
+        (400, "`max_backups` 小于 1（它是整数但过不了下限判据；不是整数那一档走 422），或 "
+              + DIR_EMPTY_DESC),
+        (401, NO_KEY_DESC),
+        (403, DIR_OUT_DESC),
+    ),
 )
 async def cleanup_backups_endpoint(
     request: BackupCleanupRequest,
