@@ -134,26 +134,30 @@ class Deduplicator:
         
         return intersection / union if union > 0 else 0.0
     
-    def _batch_encode(self, texts: List[str]) -> np.ndarray:
+    def _batch_encode(self, texts: List[str], vocab: Dict[str, int] = None) -> np.ndarray:
         """批量编码文本
         
         Args:
             texts: 文本列表
+            vocab: **只有 fallback 那条读它**——选路那一趟扫描建好的列号表，稠密路
+                接过来就少扫一遍字符（A326 / L248）；语义模型忽略这一格。
         
         Returns:
             embeddings 矩阵
         """
         if self._model == "fallback":
             # fallback: 使用 n-gram 向量化
-            return self._fallback_encode(texts)
+            return self._fallback_encode(texts, vocab)
         
         return self._model.encode(texts, show_progress_bar=False, batch_size=64)
     
-    def _fallback_encode(self, texts: List[str]) -> np.ndarray:
+    def _fallback_encode(self, texts: List[str],
+                         vocab: Dict[str, int] = None) -> np.ndarray:
         """fallback 编码方法
         
         Args:
             texts: 文本列表
+            vocab: 外部给好的列号表；给了就**不再自己扫第一遍**（A326 / L248）
         
         Returns:
             向量矩阵
@@ -175,12 +179,16 @@ class Deduplicator:
         # 在 dtype 不符时是整份再复制一遍，所以 float64 还额外多出 0.64 GB。
         # TF 值是「某二元组在该文档里出现几次」，个位数量级，float32 在 2^24
         # 以内精确表示整数，计数不会有任何损失。
-        vocab: Dict[str, int] = {}
-        for text in texts:
-            for i in range(len(text) - 1):
-                ngram = text[i:i + 2]
-                if ngram not in vocab:
-                    vocab[ngram] = len(vocab)
+        if vocab is None:
+            # 没人给列号表才自己扫这一遍。列号按**首次出现顺序**编，而 `_ngram_scan`
+            # 那趟扫的是同一批 `texts`、同一套 `text[j:j+2]`、同一个顺序 ⇒ 两张表逐键
+            # 相同，所以复用不改变任何数值（A326 / L248）。
+            vocab = {}
+            for text in texts:
+                for i in range(len(text) - 1):
+                    ngram = text[i:i + 2]
+                    if ngram not in vocab:
+                        vocab[ngram] = len(vocab)
 
         vectors = np.zeros((len(texts), len(vocab)), dtype=np.float32)
         for i, text in enumerate(texts):
@@ -200,16 +208,13 @@ class Deduplicator:
 
         return vectors
 
-    def _ngram_entries(self, texts: List[str]) -> Tuple[np.ndarray, np.ndarray, np.ndarray, int]:
-        """一遍扫描字符二元组，产出稀疏 TF 三元组 (文档号, 词条号, 出现次数)
+    def _ngram_scan(self, texts: List[str]) -> Tuple[np.ndarray, np.ndarray, Dict[str, int]]:
+        """一遍扫描字符二元组，产出 (文档号, 词条号, 列号表)
 
-        词表定义与 :meth:`_fallback_encode` 逐字相同（`text[j:j+2]`，长度 < 2
-        的文本不产词条；同一篇里重复的二元组计多次），所以两条路算出的向量
-        可以逐元素对照。词条按首次出现顺序编号，而**编号本身不参与语义**——
+        这一趟是**两条路共用的**那一趟：选路要的 `vocab_size` 从列号表来，稠密那条
+        的矩阵列号也从同一张表来（A326 / L248 接的就是这条边），于是稠密路总共只付
+        「这一趟 + 填矩阵那一趟」。列号按首次出现顺序编，**编号本身不参与语义**——
         相似度是点积，对维度的任意排列不变。
-
-        Returns:
-            (docs, terms, counts, vocab_size)，三者等长、按 (文档, 词条) 升序
         """
         vocab: Dict[str, int] = {}
         docs: List[int] = []
@@ -222,15 +227,30 @@ class Deduplicator:
                     column = vocab[ngram] = len(vocab)
                 docs.append(i)
                 terms.append(column)
+        return np.asarray(docs, dtype=np.int64), np.asarray(terms, dtype=np.int64), vocab
 
+    def _ngram_entries(self, texts: List[str]) -> Tuple[np.ndarray, np.ndarray, np.ndarray, int]:
+        """一遍扫描字符二元组，产出稀疏 TF 三元组 (文档号, 词条号, 出现次数)
+
+        词表定义与 :meth:`_fallback_encode` 逐字相同（`text[j:j+2]`，长度 < 2
+        的文本不产词条；同一篇里重复的二元组计多次），所以两条路算出的向量
+        可以逐元素对照。词条按首次出现顺序编号，而**编号本身不参与语义**——
+        相似度是点积，对维度的任意排列不变。
+
+        Returns:
+            (docs, terms, counts, vocab_size)，三者等长、按 (文档, 词条) 升序
+        """
+        return self._entries_from_scan(*self._ngram_scan(texts))
+
+    @staticmethod
+    def _entries_from_scan(doc_arr: np.ndarray, term_arr: np.ndarray,
+                           vocab: Dict[str, int]) -> Tuple[np.ndarray, np.ndarray, np.ndarray, int]:
+        """把 :meth:`_ngram_scan` 的产物折成按 (文档, 词条) 升序的稀疏三元组"""
         vocab_size = len(vocab)
         if vocab_size == 0:
             # 全部文本短于 2 个字符：没有任何词条，稠密矩阵会是 n×0
             empty = np.zeros(0, dtype=np.int64)
             return empty, empty.copy(), np.zeros(0, dtype=np.float32), 0
-
-        doc_arr = np.asarray(docs, dtype=np.int64)
-        term_arr = np.asarray(terms, dtype=np.int64)
         # 「某词条在某篇出现几次」= 按 (文档, 词条) 复合键数 occurrences。
         # 复合键用 doc × vocab_size + term 编码，真实 6902 条数据 nnz 只有
         # 19.4 万，一次 np.unique 就够。对照：:meth:`_fallback_encode` 用两遍
@@ -240,7 +260,8 @@ class Deduplicator:
         counts = np.bincount(inverse).astype(np.float32)
         return uniq // vocab_size, uniq % vocab_size, counts, vocab_size
 
-    def _inverted_view(self, texts: List[str]) -> _InvertedNgrams:
+    def _inverted_view(self, texts: List[str],
+                       scan: Tuple[np.ndarray, np.ndarray, Dict[str, int]] = None) -> _InvertedNgrams:
         """把 :meth:`_ngram_entries` 折成倒排视图，值已按整篇 L2 范数归一化
 
         范数在**全部**词条上求，包括只在该篇出现一次的——「只出现在一篇里的
@@ -248,7 +269,8 @@ class Deduplicator:
         这是倒排块与稠密块逐元素相等的前提。
         """
         doc_count = len(texts)
-        docs, terms, counts, vocab_size = self._ngram_entries(texts)
+        docs, terms, counts, vocab_size = (self._entries_from_scan(*scan) if scan is not None
+                                           else self._ngram_entries(texts))
 
         # 行范数：bincount 的平方和走 float64 累加再开方，最后降回 float32——
         # 与稠密路径的 einsum(float32) 差在最后一位，量级 1e-7。
@@ -462,21 +484,28 @@ class Deduplicator:
             chunk_size: 期望的行块大小
         """
         block_rows = self._row_block_size(len(texts), chunk_size)
+        vocab = None
 
         if self._model == "fallback":
-            inverted = self._inverted_view(texts)
+            doc_arr, term_arr, vocab = self._ngram_scan(texts)
+            inverted = self._inverted_view(texts, scan=(doc_arr, term_arr, vocab))
+            doc_arr = term_arr = None
             if self._inverted_blocks_win(inverted.doc_count, inverted.vocab_size,
                                          inverted.pair_adds, block_rows):
+                # 倒排那条既不读列号表也不读逐趟数组，判完路立刻松手（A326 / L248）
+                vocab = None
                 yield from self._iter_inverted_similarity_row_blocks(inverted, block_rows)
                 return
             # 判负就立刻松手：稠密那条要独吞 n×vocab 大矩阵（真实数据 0.64 GB），
-            # 别让只为选路而建的 postings 陪它一起活。
+            # 别让只为选路而建的 postings 陪它一起活。唯独**列号表留下**——它正是
+            # 稠密那条第一遍要建的东西，交过去就少扫一遍字符，峰值仍是「一个矩阵 +
+            # 一份词表」，与 L10 那条护栏同形。
             inverted = None
 
         # 批量编码。dtype 已是 float32 时 np.asarray 不复制，所以这份矩阵归
         # 本生成器所有；就地归一化省掉的正是「再养一份 n×vocab」——真实 6902 条
         # 数据的稠密编码矩阵有 0.64 GB，复制一次的峰值直接翻倍。
-        embeddings = np.asarray(self._batch_encode(texts), dtype=np.float32)
+        embeddings = np.asarray(self._batch_encode(texts, vocab=vocab), dtype=np.float32)
         self._normalize_inplace(embeddings)
         yield from self._iter_similarity_row_blocks(embeddings, block_rows)
 
