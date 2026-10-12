@@ -132,6 +132,13 @@ MEASURED_IDS_DERIVED_SITES: frozenset = frozenset({
 #: 动态面**不做豁免**时读到的风险名册，按解释器分档钉住（同一份源码在两版上是两种对象，
 #: 把两版读数写进同一张表才是这条判据的全部信息量；未知解释器直接抛，不给读数）
 MEASURED_HAZARD_ROSTER: Dict[Tuple[int, int], frozenset] = {
+    #: **L239 现量（uv 托管 cpython 3.12.14，整跑 8813 条采集）**：这一格的读数与 (3, 13)
+    #: **逐字相同**——`Union` 在 3.12/3.13 上都是 `typing._UnionGenericAlias`、靠 `__name__`
+    #: 现造出 `Union` 这个 id 段；劈叉发生在 3.14（PEP 604 之后那个别名换了类型名）。
+    #: 所以「两版读数一模一样 ⇒ 有把尺子失效了」那句只对 **(3,13) vs (3,14)** 成立，
+    #: 对 (3,12) 不成立；下面那支断言也据此只比这两档，别把它改成「表内两两不同」。
+    (3, 12): frozenset({
+        "unit/test_schema_type_spec_l96.py::test_label<-value:typing._UnionGenericAlias:Union"}),
     (3, 13): frozenset({
         "unit/test_schema_type_spec_l96.py::test_label<-value:typing._UnionGenericAlias:Union"}),
     (3, 14): frozenset({
@@ -635,7 +642,7 @@ class TestDynamicIdMakerFace:
     """动态面：读 pytest 真正拿去造 id 的对象，不看表达式形状"""
 
     def test_hazard_roster_is_pinned_per_interpreter(self, collected):
-        """同一份源码在两版解释器上是两种对象 ⇒ 两版读数分别钉死，未知版本显式跳过（不许猜）"""
+        """同一份源码在各版解释器上是不同对象 ⇒ 逐版读数分别钉死，未知版本显式跳过（不许猜）"""
         version = sys.version_info[:2]
         if version not in MEASURED_HAZARD_ROSTER:
             pytest.skip(f"解释器 {version} 没有现量读数：名册按 {sorted(MEASURED_HAZARD_ROSTER)} "
