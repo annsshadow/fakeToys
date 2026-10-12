@@ -378,7 +378,7 @@ describe('Settings 写操作鉴权（L233）', () => {
     expect(localStorage.getItem(API_KEY_STORAGE_KEY)).toBeNull()
   })
 
-  it('诚实口径留在卡上：明文存放、影响面 24/24、不是登录、不许说「校验通过」', async () => {
+  it('诚实口径留在卡上：明文存放、影响面 25/25、不是登录、不许说「校验通过」', async () => {
     quietPage()
     render(<Settings />)
     await waitFor(() => expect(spies.getDataFiles).toHaveBeenCalled())
@@ -386,9 +386,10 @@ describe('Settings 写操作鉴权（L233）', () => {
     const text = document.body.textContent || ''
     expect(text).toContain('AUGMENTOR_API_KEY')
     expect(text).toContain('明文')
-    // 影响面是 L233 探针在真契约面上量到的两个数，不是估的（L234：21 → 23；L236 接走 translate ⇒ 24，尾巴清空）
-    expect(text).toContain('75 条操作里有 24 条挂着这道门禁')
-    expect(text).toContain('24 条是页面上已')
+    // 影响面是 L233 探针在真契约面上量到的两个数，不是估的（L234：21 → 23；L236 接走 translate ⇒ 24，尾巴清空；
+    // L243 给清理旧备份加了一只挂门禁的端点 ⇒ 25 / 25，未接线那一档仍为空）
+    expect(text).toContain('77 条操作里有 25 条挂着这道门禁')
+    expect(text).toContain('25 条是页面上已')
     expect(text).toContain('不是登录')
     expect(text).toContain('不替代 HTTPS')
     expect(text).not.toContain('校验通过')

@@ -8,7 +8,7 @@ import type {
   AugmentProgress,
   AutoConfigResponse,
   BackupInfo,
-  BackupListResponse,
+  BackupListResponse, BackupVerifyResponse, BackupCleanupResponse,
   BatchExportResponse,
   BenchmarkResponse,
   CheckpointListResponse,
@@ -1104,6 +1104,41 @@ export const deleteBackup = async (
 ): Promise<MutationResponse> => {
   const response = await api.delete(`/system/backups/${backupId}`, {
     params: { backup_dir: backupDir || undefined },
+  })
+  return response.data
+}
+
+/**
+ * `GET /api/system/backups/verify`（A299 / A300，L243 接线）
+ *
+ * 逐只重算备份文件的 sha256 并与索引里那一格比对，是恢复那道 **409** 闸的主动查版本。
+ * 三个实测口径：目录不存在 ⇒ **200** `{"results": []}`（且**不会**把目录建出来，因为这是
+ * 只读端点）；`backup_id` 给一个索引里没有的名字 ⇒ 同样是空列表，**不是 404**；这一只端点
+ * 没有 CLI 动作（`backup --action` 的 choices 仍是 create / restore / list / delete，账本 A329）。
+ */
+export const verifyBackups = async (
+  opts: { backupId?: string; backupDir?: string } = {}
+): Promise<BackupVerifyResponse> => {
+  const response = await api.get('/system/backups/verify', {
+    params: { backup_id: opts.backupId || undefined, backup_dir: opts.backupDir || undefined },
+  })
+  return response.data
+}
+
+/**
+ * `POST /api/system/backups/cleanup`（A300，L243 接线）
+ *
+ * 破坏性写操作，与创建 / 恢复 / 删除同档挂鉴权。`max_backups` 是**保留份数**：库里
+ * `require_count` 把 0 与负数一律判 **400**（「保留 0 份」与手滑想打 10 无从分辨，而负数在
+ * 按时间戳排序的删除算术里等于把整目录删光）。缺省 10 与 SDK 形参默认同值，页面把它做成可
+ * 输入框，因为「清理」的后果不可逆。
+ */
+export const cleanupBackups = async (
+  opts: { maxBackups?: number; backupDir?: string } = {}
+): Promise<BackupCleanupResponse> => {
+  const body = { max_backups: opts.maxBackups ?? 10 }
+  const response = await api.post('/system/backups/cleanup', body, {
+    params: { backup_dir: opts.backupDir || undefined },
   })
   return response.data
 }

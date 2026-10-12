@@ -1,7 +1,7 @@
 # Copyright (C) 2026 annsshadow
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-"""后端 75 条操作与前端服务层调用面的消费对账（A279 立账轮）
+"""后端 77 条操作与前端服务层调用面的消费对账（A279 立账轮）
 
 **为什么建这把尺子**：`web/src/services/api.wiring.test.ts`（L211 那批）钉的是「`api.ts`
 导出的每个函数都在页面上被引用」，它管的是**封装之后**那一环；而「后端有 75 条操作，
@@ -111,15 +111,21 @@ query 那一维这批再添三条 `registry_path`，`params` 块从 8 条涨到 
 模型调用 **0** 次、`failed=0`，产物里凭空多出 `''` / `no_such_field` 两键——与 A321 同族，
 但这一条在花钱路径上，而且会写进落盘产物）。
 
+**L243 又抬高两员，两侧一起跟着走**：备份完整性那一族加了 `GET /api/system/backups/verify`
+与 `POST /api/system/backups/cleanup`（A300 收口），同轮接进系统状态页 ⇒ 契约面 75 → **77**、
+路径 71 → **73**、调用形状 75 → **77**、`UNCONSUMED` 仍 ∅（新两条一上线就被消费，没留缺口）。
+params 那一维**动了**：11 → **13** 条绑定、去重键名 8 → **9**（新键 `backup_id`）——与 L236
+那句「params 一个数没动」是两轮各自的现量，不是同一格的两种说法。
+
 **名单空了不等于尺子钝了**：`UNCONSUMED` 收到 ∅ 之后，判据 3 那两条验真（子命令名存在、
 末段确实不是子命令）的循环体不再执行 ⇒ 单看它们恒真。所以 `TestRulerIsNotBlind` 补了一支
 反证：把服务层的调用形状摘掉一条，实测缺口立刻非空、相等判据当场红——今天这个 0 是
 **量出来的 0**，不是「什么都没扫到」的 0。
 
 **两侧权威各只有一份**：
-* 后端面 = `app.openapi()` 里 `(方法, 路径模板)` 的集合（75 条操作 / 71 条路径，
+* 后端面 = `app.openapi()` 里 `(方法, 路径模板)` 的集合（77 条操作 / 73 条路径，
   backups 与 dependency 有同路径多方法）；
-* 前端面 = `web/src/services/api.ts` 里 `api.<verb>('路径')` 的调用形状（75 条），
+* 前端面 = `web/src/services/api.ts` 里 `api.<verb>('路径')` 的调用形状（77 条），
   前缀从同一份源码里的 `baseURL` 读出来，不在测试里写死第二份。
 
 **判据五向**：
@@ -385,12 +391,12 @@ class TestRulerSeesTheRealSurface:
 
     def test_backend_face_scale(self):
         ops = operations()
-        assert len(ops) == 75, f"契约操作数现量 75，实得 {len(ops)}"
-        assert len({p for _, p in ops}) == 71, "路径数现量 71"
+        assert len(ops) == 77, f"契约操作数现量 77，实得 {len(ops)}"
+        assert len({p for _, p in ops}) == 73, "路径数现量 73"
 
     def test_frontend_face_scale(self):
         shapes = call_shapes()
-        assert len(shapes) == 75, f"服务层调用形状现量 75，实得 {len(shapes)}"
+        assert len(shapes) == 77, f"服务层调用形状现量 77，实得 {len(shapes)}"
         assert {m for m, _, _ in shapes} <= {"GET", "POST", "PUT", "DELETE", "PATCH"}
 
     def test_http_paths_live_only_in_the_service_layer(self):
@@ -426,18 +432,19 @@ class TestNoGhostCalls:
         assert not bad, f"这些调用带了契约里没声明的 query 键：{bad}"
 
     def test_at_least_one_call_carries_a_query_key(self):
-        """query 那一支判据不能空转：两处来源合起来现量 12 条
+        """query 那一支判据不能空转：两处来源合起来现量 14 条
 
-        1 条写在路径串里（`/versions/create?filename=…`），11 条走 `params: {…}` 对象
+        1 条写在路径串里（`/versions/create?filename=…`），13 条走 `params: {…}` 对象
         （`data/load` 3 键、`data/update` 与 `data/delete` 各 `index`、`versions/history`
         各 `limit`，L231 添备份那一族四条各 `backup_dir`，L232 再添数据集血缘那一族三条
-        各 `registry_path`）；去重后 8 个键名。
+        各 `registry_path`，**L243 添备份完整性的两员**：`cleanup` 一只 `backup_dir`、
+        `verify` 一只 `{backup_id, backup_dir}`）；去重后 9 个键名。
         """
         with_query = [s for s in call_shapes() if s[2]]
-        assert len(with_query) == 12, f"带 query 的调用现量 12 条，实得 {len(with_query)} 条"
-        assert len({k for _, _, keys in with_query for k in keys}) == 8
-        assert len(params_bindings()) == 11, "params 对象那一支现量 11 条"
-        assert sum(1 for _, _, keys, _ in params_bindings() if keys == {"backup_dir"}) == 4
+        assert len(with_query) == 14, f"带 query 的调用现量 14 条，实得 {len(with_query)} 条"
+        assert len({k for _, _, keys in with_query for k in keys}) == 9
+        assert len(params_bindings()) == 13, "params 对象那一支现量 13 条"
+        assert sum(1 for _, _, keys, _ in params_bindings() if keys == {"backup_dir"}) == 5
         # L232 那三条：两条 GET 的间隔是 8，POST 那条因为请求体先提成 `const body` 是 14
         assert sum(1 for _, _, keys, _ in params_bindings() if keys == {"registry_path"}) == 3
 
@@ -458,7 +465,7 @@ class TestTheParamsWindowIsScoped:
         assert shapes[("DELETE", "/api/versions/{}")] == ()
 
     def test_the_gap_budget_is_load_bearing(self):
-        """上限的两端都量过：收到 3 判没 11 条，放到无穷今天不多收一条
+        """上限的两端都量过：收到 3 判没 13 条，放到无穷今天不多收一条
 
         现量最大间隔 41 字符（`restoreBackup`：请求体写在调用里，把 `params` 块推远了），
         所以 60 这个数留的是余量而不是判据。真正在收归属的是
@@ -468,15 +475,17 @@ class TestTheParamsWindowIsScoped:
         处置是改源码（把请求体提到上一行，间隔 14），不是把这里放宽。L232 的
         `registerDependencyDataset` 请求体有四个键、比 `createBackup` 更长，所以照同一处方
         先把 body 提成 `const body`，实测间隔 14 —— 这次是**先躲开**而不是先踩再修。
+        **L243 的 `cleanupBackups` 走同一条处方**（请求体先提成 `const body`，间隔 14），
+        没有重踩一遍 `createBackup` 那只坑。
         """
         gaps = [gap for _, _, _, gap in params_bindings()]
-        assert len(gaps) == 11 and max(gaps) <= 41, f"归属间隔现量 ≤41，实得 {gaps}"
+        assert len(gaps) == 13 and max(gaps) <= 41, f"归属间隔现量 ≤41，实得 {gaps}"
         original = PARAMS_MAX_GAP
         try:
             globals()["PARAMS_MAX_GAP"] = 3
-            assert params_bindings() == [], "收到 3 应把 11 条真归属全判没"
+            assert params_bindings() == [], "收到 3 应把 13 条真归属全判没"
             globals()["PARAMS_MAX_GAP"] = 10 ** 6
-            assert len(params_bindings()) == 11, "放宽上限今天不多收：语料里每块前面都有调用"
+            assert len(params_bindings()) == 13, "放宽上限今天不多收：语料里每块前面都有调用"
         finally:
             globals()["PARAMS_MAX_GAP"] = original
 
@@ -548,10 +557,10 @@ class TestConsumptionRoster:
 
         L236 收到 ∅ 之后这一格的意义变了：从前它钉的是「还剩几条没接」，现在它钉的是
         **「不许再退回」**——契约面新增一条端点而服务层没接，`consumed_operations()` 就
-        少于 75、`unconsumed_operations()` 就非空，两个数一起红。
+        少于 77、`unconsumed_operations()` 就非空，两个数一起红。
         """
         assert len(UNCONSUMED) == 0, len(UNCONSUMED)
-        assert len(consumed_operations()) == 75, len(consumed_operations())
+        assert len(consumed_operations()) == 77, len(consumed_operations())
         assert len(consumed_operations()) == len(operations()), "契约面全数被消费才算收口"
 
     def test_roster_entries_are_real_operations(self):
@@ -636,7 +645,7 @@ class TestCliEntryClaimsAreReal:
         """
         assert len(cli_subcommands()) == 37, "parser 一个子命令都读不到 ⇒ 判据坏了"
         assert unconsumed_operations() == set()
-        assert len(consumed_operations()) == len(operations()) == 75
+        assert len(consumed_operations()) == len(operations()) == 77
 
     def test_unwiring_one_operation_turns_the_empty_roster_red(self, monkeypatch):
         """③ 的反证臂：摘掉 `translate` 的调用形状，缺口必须立刻点名它"""

@@ -1341,6 +1341,8 @@ class TestWriteRouteAuthCoverage:
         ("POST", "/api/quality/profiling"),
         ("POST", "/api/system/backups"),
         ("POST", "/api/system/backups/{backup_id}/restore"),
+        # L243（A300）：清理旧备份会删文件并改写索引，与创建 / 恢复 / 删除同档。
+        ("POST", "/api/system/backups/cleanup"),
         ("POST", "/api/system/dependency/datasets"),
         ("POST", "/api/system/migrate"),
         ("POST", "/api/system/stream"),
@@ -1370,6 +1372,9 @@ class TestWriteRouteAuthCoverage:
         ("GET", "/api/privacy/patterns"),
         ("GET", "/api/status"),
         ("GET", "/api/system/backups"),
+        # L243（A300 的另一半）：校验只读地把索引逐份哈希，一个字节都不写；目录不存在时
+        # 它连目录都不建（与清理那一档相反，两侧各有守卫点名，见 test_backup_integrity_l243）。
+        ("GET", "/api/system/backups/verify"),
         ("GET", "/api/system/dependencies"),
         ("GET", "/api/system/dependency/datasets"),
         ("GET", "/api/system/dependency/graph"),

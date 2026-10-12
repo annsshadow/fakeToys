@@ -56,6 +56,8 @@ def test_snapshot_edge_stays_exempt_because_reads_fail_loud(tmp_path):
     """快照写边的豁免条件机器化：校验和不匹配要出声 + 坏内容读侧响亮失败。"""
     import pathlib
 
+    from augmentor.exceptions import BackupIntegrityError
+
     mgr = _manager(tmp_path)
     mgr.backup(_source(tmp_path), name="b1")
     backup_file = tmp_path / "bk" / "b1.json"
@@ -64,9 +66,12 @@ def test_snapshot_edge_stays_exempt_because_reads_fail_loud(tmp_path):
     info = mgr.get_backup_info("b1")
     real = pathlib.Path(tmp_path / "bk" / "b1.json").read_bytes()
     assert len(real) > 0
-    # 读侧响亮失败（JSONDecodeError 冒泡，不被吞成空数据）
-    with pytest.raises(json.JSONDecodeError):
+    # 读侧响亮失败，不被吞成空数据。L243（A299）把校验和闸接回来之后，冒泡的那一只换成
+    # `BackupIntegrityError`：它同样是 `ValueError` 的子类，且排在解析与写盘**之前**，
+    # 所以「响亮失败」与「可恢复档不收」这两条判据一字未动，只是哨兵换了个名字。
+    with pytest.raises(BackupIntegrityError):
         mgr.restore("b1", str(tmp_path / "out.json"))
+    assert not (tmp_path / "out.json").exists(), "闸若排在写盘之后，豁免条件当场作废"
 
 
 def test_the_index_edges_are_no_longer_open_w_plus_dump_pairs():

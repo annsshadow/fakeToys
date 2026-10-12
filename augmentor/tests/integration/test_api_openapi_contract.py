@@ -725,6 +725,16 @@ CALLS = {
         request=_delete_backup,
         keys=_keys("success"),
     ),
+    # L243（A300）新增的两员。两只是**目录级**操作，不需要现场造一个备份：
+    # verify 在空目录上回 `{"results": []}`（且刻意不建目录），cleanup 在少于保留数时删 0 只。
+    ("GET", "/api/system/backups/verify"): _Case(
+        request=lambda c: c.get("/api/system/backups/verify"),
+        keys=_keys("results"),
+    ),
+    ("POST", "/api/system/backups/cleanup"): _Case(
+        request=lambda c: c.post("/api/system/backups/cleanup", json={"max_backups": 10}),
+        keys=_keys("deleted_count", "max_backups"),
+    ),
 }
 
 

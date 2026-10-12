@@ -22,6 +22,7 @@ import pytest
 from augmentor.exceptions import (
     AugmentorError,
     BackupError,
+    BackupIntegrityError,
     CheckpointError,
     ConfigError,
     DataError,
@@ -62,6 +63,9 @@ BUILTIN_COMPAT = {
     VersionError: ValueError,
     PipelineError: ValueError,
     BackupError: ValueError,
+    # L243（A299）新立：恢复坏备份时抛的那一只。刻意与 BackupError **平级**，见下面
+    # test_backup_integrity_error_is_a_sibling_not_a_child
+    BackupIntegrityError: ValueError,
     VectorError: ValueError,
     # 中间层抽象类不带内置基类，只作分类用
     ModelError: None,
@@ -99,6 +103,19 @@ def test_unsupported_format_error_is_an_export_error():
     """格式不受支持属于导出错误的特例，层级必须成立"""
     assert issubclass(UnsupportedFormatError, ExportError)
     assert issubclass(VectorError, DataError)
+
+
+def test_backup_integrity_error_is_a_sibling_not_a_child():
+    """L243（A299）：`BackupIntegrityError` 必须与 `BackupError` **平级**，不是它的子类
+
+    这不是层级洁癖，是一条判决依赖：`api/routes/system_ops.py` 把 `BackupError` 整体映射成
+    **404**「备份不存在」，判据是「它在库里只有一个抛出点」。若 `BackupIntegrityError`
+    继承它，那只 `except BackupError → 404` 会顺手把「文件坏了」的 **409** 吞成「文件不在」
+    ——两件事在调用方面上完全相反（一个要你去看路径，一个要你别覆盖输出）。
+    """
+    assert issubclass(BackupIntegrityError, AugmentorError)
+    assert not issubclass(BackupIntegrityError, BackupError)
+    assert not issubclass(BackupError, BackupIntegrityError)
 
 
 def test_catching_root_covers_all_concrete_exceptions():

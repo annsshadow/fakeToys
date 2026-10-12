@@ -10,6 +10,7 @@ from augmentor.backup import (
     DatasetBackup, BackupInfo,
     create_backup, restore_backup, list_backups, delete_backup
 )
+from augmentor.exceptions import BackupIntegrityError
 
 
 @pytest.fixture
@@ -205,7 +206,12 @@ class TestBackupEdgeCases:
             manager.restore("nonexistent", str(tmp_path / "output.json"))
 
     def test_restore_checksum_mismatch(self, tmp_path, sample_file):
-        """校验和不匹配时应发出警告但仍恢复"""
+        """校验和不匹配时**拦下恢复**，且一个字节都不写（账本 A299，L243 收口）
+
+        这一支原先断言的是「应发出警告但仍恢复」——那正是 A299 记下的缺陷：库里算了 sha256、
+        存进了索引、恢复时也逐字比了，比对上只写一句 `logger.warning` 就照常覆盖输出文件。
+        改成两维：抛的是 `BackupIntegrityError`，且输出路径**不存在**。
+        """
         backup_dir = tmp_path / "backups"
         manager = DatasetBackup(str(backup_dir))
         
@@ -217,9 +223,10 @@ class TestBackupEdgeCases:
                 b["checksum"] = "tampered"
         
         output_path = tmp_path / "restored.json"
-        result = manager.restore("test_backup", str(output_path))
-        
-        assert output_path.exists()
+        with pytest.raises(BackupIntegrityError):
+            manager.restore("test_backup", str(output_path))
+
+        assert not output_path.exists(), "拦下了还落盘 ⇒ 这道闸只是装饰"
 
     def test_delete_nonexistent_backup(self, tmp_path):
         """删除不存在的备份应返回 False"""

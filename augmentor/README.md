@@ -18,7 +18,7 @@
 - **泄漏检测**: 训练集/测试集之间的完全重复与模糊重复检测
 - **就绪审计**: 把脱敏、重复、空字段、泄漏信号合成一个 go / no-go 判定
 - **数据画像与离群点**: 字段完整度、长度分布、高频关键词；Z-Score / IQR 长度离群检测
-- **HTTP API + Web 界面**: 75 个 REST 端点，全部声明响应契约；React 前端 11 个功能页
+- **HTTP API + Web 界面**: 77 个 REST 端点，全部声明响应契约；React 前端 11 个功能页
 
 ## 数据格式
 
@@ -70,10 +70,10 @@ npm test         # vitest run
 
 ## HTTP API
 
-FastAPI 提供 **75 个端点**，全部声明 `response_model` —— `/openapi.json` 里
+FastAPI 提供 **77 个端点**，全部声明 `response_model` —— `/openapi.json` 里
 不存在「无 schema 的 200 响应」。契约由
 `tests/integration/test_api_openapi_contract.py` 双向守门：既要每个端点都声明
-契约，也要每个已声明契约的端点都真实存在。消费面同样对账到底：75 条操作**全部**有入口（`tests/unit/test_api_endpoint_consumption_l224.py`；L236 收掉最后两员——`POST /api/dataset/translate` 与 `GET /api/system/dependencies`——之后，`UNCONSUMED`、`CLI_ENTRY`、`NO_ENTRY` 三个名单都是空集，且那把尺子带两支「空集也会响」的牙齿）。
+契约，也要每个已声明契约的端点都真实存在。消费面同样对账到底：77 条操作**全部**有入口（`tests/unit/test_api_endpoint_consumption_l224.py`；L236 收掉最后两员——`POST /api/dataset/translate` 与 `GET /api/system/dependencies`——之后，`UNCONSUMED`、`CLI_ENTRY`、`NO_ENTRY` 三个名单都是空集，且那把尺子带两支「空集也会响」的牙齿）。
 
 ```bash
 uvicorn api.main:app --host 0.0.0.0 --port 8000
