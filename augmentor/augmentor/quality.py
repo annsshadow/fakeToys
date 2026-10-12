@@ -94,8 +94,8 @@ class QualityScorer:
         self._model = None
         self._cross_encoder = None
         # 两份参照集缓存都用「上一轮真正缓存的那一段列表」本身作失效判据，
-        # 不做内容指纹——理由见 :meth:`_calculate_diversity`。
-        self._existing_embeddings = []  # 缓存已有文本的 embeddings
+        # 不做内容指纹——理由见 :meth:`_calculate_diversity`；行范数是 embeddings 的纯函数，不另设判据，只随那一次编码同处刷新（A327 / L246）。
+        self._existing_embeddings, self._existing_norms = [], []  # 已有文本的 embeddings 与其行范数
         self._existing_texts: List[str] = []  # 向量侧缓存对应的参照切片
         # n-gram 侧的参照集缓存**独立于向量侧**：两份缓存装的是同一段文本的不同
         # 表示，共用一份判据的话，`_model` 一旦变化（测试与降级路径都会）就会让
@@ -225,10 +225,10 @@ class QualityScorer:
             # 入口 :181 已保证 existing_texts 非空、diversity_sample_size 判据最低 1，
             # sample_texts 恒非空，原恒真守卫已在 L126 删除（偏支 222->230 随之消失）
             self._existing_embeddings = self._model.encode(
-                sample_texts,
-                show_progress_bar=False,
-                batch_size=32
+                sample_texts, show_progress_bar=False, batch_size=32
             )
+            # 行范数与向量同批刷新：逐条候选重算这份 sample_size×dim 的平方和，n=4000 实测占全程 5.1%~13.5%（A327 / L246，现量见账）
+            self._existing_norms = np.linalg.norm(self._existing_embeddings, axis=1)
             self._existing_texts = sample_texts
         
         if len(self._existing_embeddings) == 0:
@@ -236,7 +236,7 @@ class QualityScorer:
         
         # 计算与所有已有文本的最大相似度
         similarities = np.dot(self._existing_embeddings, text_embedding) / (
-            np.linalg.norm(self._existing_embeddings, axis=1) * np.linalg.norm(text_embedding)
+            self._existing_norms * np.linalg.norm(text_embedding)
         )
         max_similarity = float(np.max(similarities))
         
@@ -245,7 +245,7 @@ class QualityScorer:
     
     def reset_cache(self):
         """重置缓存"""
-        self._existing_embeddings = []
+        self._existing_embeddings, self._existing_norms = [], []
         self._existing_texts = []
         self._existing_ngrams = []
         self._existing_ngram_texts = []
