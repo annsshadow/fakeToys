@@ -95,6 +95,8 @@ export interface GameConfig {
 /** 本地存储的键。微信小程序与 H5 都用 uni.getStorageSync 抽象。 */
 const TOKEN_KEY = 'lyp_token'
 const REFRESH_KEY = 'lyp_refresh'
+/** access token 的过期时刻（RFC3339 原文）。第 150 轮新增。 */
+const TOKEN_EXP_KEY = 'lyp_token_exp'
 const GUEST_KEY = 'lyp_guest'
 
 export class ApiError extends Error {
@@ -148,15 +150,23 @@ export function setGuestToken(t: string): void {
  *
  * 放在 api 层而不是 store 里，是为了避免 store 反向依赖 api 的内部状态 ——
  * 令牌存取是 api 层的事，store 只调 login() 并读结果。
+ *
+ * `expiresAt` 是 `TokenPair.expires_at`（RFC3339）。此前它下发到了客户端
+ * 却**从未被读过**：令牌到期只能等服务端回 401 才发现，
+ * 于是每次「息屏很久后回来看一眼」都必然浪费一次往返（请求 → 401 → 刷新 → 重发）。
+ * 记下过期时刻就能在**发请求之前**先换好，省掉那一跳。
  */
-export function setTokenInternal(access: string, refresh: string): void {
+export function setTokenInternal(access: string, refresh: string, expiresAt = ''): void {
   set(TOKEN_KEY, access)
   set(REFRESH_KEY, refresh)
+  if (expiresAt) set(TOKEN_EXP_KEY, expiresAt)
+  else del(TOKEN_EXP_KEY)
 }
 
 export function clearTokens(): void {
   del(TOKEN_KEY)
   del(REFRESH_KEY)
+  del(TOKEN_EXP_KEY)
 }
 
 interface RequestOptions {
@@ -176,79 +186,120 @@ interface ApiPayload {
  *
  * 401 时自动用 refresh token 换新 access token 并重试一次；
  * 刷新也失败则清除令牌，让上层重新登录（而不是无限重试）。
+ *
+ * 第 150 轮：发请求**之前**先看 `TokenPair.expires_at`，
+ * 已知快过期就先换新（`ensureFreshToken`），省掉一次必然 401 的往返。
  */
 export function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
   const method = opts.method ?? 'GET'
   const auth = opts.auth !== false
-  return new Promise<T>((resolve, reject) => {
-    const header: Record<string, string> = { 'Content-Type': 'application/json' }
-    if (auth) {
-      const t = getToken()
-      if (t) header.Authorization = `Bearer ${t}`
-    }
-    uni.request({
-      url: `${BASE_URL}${path}`,
-      method,
-      data: opts.body as Record<string, unknown> | undefined,
-      header,
-      timeout: 20000,
-      success: async (res) => {
-        const status = res.statusCode
-        // uni.request 的 data 类型被声明为 string | AnyObject | ArrayBuffer，
-        // 直接访问 .error 会报类型错误。统一收敛成结构化响应。
-        const data = (res.data ?? {}) as ApiPayload
-        if (status >= 200 && status < 300) {
-          resolve(data as T)
-          return
+  return ensureFreshToken(auth).then(
+    () =>
+      new Promise<T>((resolve, reject) => {
+        const header: Record<string, string> = { 'Content-Type': 'application/json' }
+        if (auth) {
+          const t = getToken()
+          if (t) header.Authorization = `Bearer ${t}`
         }
-        // 401：尝试刷新一次
-        if (status === 401 && auth) {
-          try {
-            await refreshAccessToken()
-            // 重试
-            const retryHeader: Record<string, string> = { 'Content-Type': 'application/json' }
-            const t = getToken()
-            if (t) retryHeader.Authorization = `Bearer ${t}`
-            uni.request({
-              url: `${BASE_URL}${path}`,
-              method,
-              data: opts.body as Record<string, unknown> | undefined,
-              header: retryHeader,
-              timeout: 20000,
-              success: (r2) => {
-                const d2 = (r2.data ?? {}) as ApiPayload
-                if (r2.statusCode >= 200 && r2.statusCode < 300) {
-                  resolve(d2 as T)
-                } else {
-                  reject(
-                    new ApiError(
-                      r2.statusCode,
-                      d2.error?.code ?? 'http_error',
-                      d2.error?.message ?? `HTTP ${r2.statusCode}`,
-                    ),
-                  )
-                }
-              },
-              fail: (e) => reject(new ApiError(0, 'network_error', e.errMsg)),
-            })
-            return
-          } catch {
-            clearTokens()
-            reject(new ApiError(401, 'unauthorized', '登录已过期，请重新进入'))
-            return
-          }
-        }
-        reject(
-          new ApiError(
-            status,
-            data.error?.code ?? 'http_error',
-            data.error?.message ?? `请求失败 HTTP ${status}`,
-          ),
-        )
-      },
-      fail: (e) => reject(new ApiError(0, 'network_error', `无法连接服务器：${e.errMsg}`)),
-    })
-  })
+        uni.request({
+          url: `${BASE_URL}${path}`,
+          method,
+          data: opts.body as Record<string, unknown> | undefined,
+          header,
+          timeout: 20000,
+          success: async (res) => {
+            const status = res.statusCode
+            // uni.request 的 data 类型被声明为 string | AnyObject | ArrayBuffer，
+            // 直接访问 .error 会报类型错误。统一收敛成结构化响应。
+            const data = (res.data ?? {}) as ApiPayload
+            if (status >= 200 && status < 300) {
+              resolve(data as T)
+              return
+            }
+            // 401：尝试刷新一次
+            if (status === 401 && auth) {
+              try {
+                await refreshAccessToken()
+                // 重试
+                const retryHeader: Record<string, string> = { 'Content-Type': 'application/json' }
+                const t = getToken()
+                if (t) retryHeader.Authorization = `Bearer ${t}`
+                uni.request({
+                  url: `${BASE_URL}${path}`,
+                  method,
+                  data: opts.body as Record<string, unknown> | undefined,
+                  header: retryHeader,
+                  timeout: 20000,
+                  success: (r2) => {
+                    const d2 = (r2.data ?? {}) as ApiPayload
+                    if (r2.statusCode >= 200 && r2.statusCode < 300) {
+                      resolve(d2 as T)
+                    } else {
+                      reject(
+                        new ApiError(
+                          r2.statusCode,
+                          d2.error?.code ?? 'http_error',
+                          d2.error?.message ?? `HTTP ${r2.statusCode}`,
+                        ),
+                      )
+                    }
+                  },
+                  fail: (e) => reject(new ApiError(0, 'network_error', e.errMsg)),
+                })
+                return
+              } catch {
+                clearTokens()
+                reject(new ApiError(401, 'unauthorized', '登录已过期，请重新进入'))
+                return
+              }
+            }
+            reject(
+              new ApiError(
+                status,
+                data.error?.code ?? 'http_error',
+                data.error?.message ?? `请求失败 HTTP ${status}`,
+              ),
+            )
+          },
+          fail: (e) => reject(new ApiError(0, 'network_error', `无法连接服务器：${e.errMsg}`)),
+        })
+      }),
+  )
+}
+
+/** 提前多少毫秒认为「快过期了」。留出网络往返 + 服务端时钟偏差的余量。 */
+const TOKEN_EXPIRY_SKEW_MS = 30_000
+
+/**
+ * 令牌是否已知「马上要过期」。
+ *
+ * ⚠️ 用的是**本地时钟**（`Date.now`），不是服务端校准过的时钟 ——
+ * api 层不该反向依赖 store 的 `estimateServerNowMs`。
+ * 设备时钟错了会怎样？两个方向都安全：
+ *
+ *   - 钟走快了 → 误判为「快过期」→ 多刷一次。浪费一次 refresh，不影响正确性。
+ *   - 钟走慢了 → 误判为「还早」→ 不主动刷 → 退回原来的 401 兜底路径。
+ *
+ * 所以这里刻意**不做**时钟校正 —— 那会让一个纯优化引入「钟错导致拒绝登录」的新风险。
+ */
+function tokenExpiringSoon(): boolean {
+  const raw = get(TOKEN_EXP_KEY)
+  if (!raw) return false // 不知道过期时刻（旧版本登录/被清过）→ 保持旧行为
+  const at = Date.parse(raw)
+  if (Number.isNaN(at)) return false // 解析不了也不猜，照旧走 401 兜底
+  return at - Date.now() <= TOKEN_EXPIRY_SKEW_MS
+}
+
+/**
+ * 发请求前的主动续期。
+ *
+ * 失败**不阻断**：清掉令牌后继续发，下面照常收到 401 并走既有兜底。
+ * 这里抢跑只是为了省一次往返，不该把错误处理的责任从原路径搬过来。
+ */
+function ensureFreshToken(auth: boolean): Promise<void> {
+  if (!auth) return Promise.resolve()
+  if (!tokenExpiringSoon()) return Promise.resolve()
+  return refreshAccessToken().catch(() => clearTokens())
 }
 
 /**
