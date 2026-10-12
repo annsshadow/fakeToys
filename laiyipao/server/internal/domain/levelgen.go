@@ -143,9 +143,9 @@ type GeneratedLevel struct {
 // 防线挑战用第 1 关当标准战场（`me.vue` 的 `challengeLevel()`），
 // 而战斗局需要 `waves` 才能开局。其余全部只读元数据：
 //
-//	- 选关页：章节 / 名称 / 难度 / 体力 / 星级门槛 / 地形
-//	- 战斗页：**关卡来自 `/battle/token`**（本来就带完整 waves）
-//	- 验真页：关卡来自 `/battle/:id/replay`
+//   - 选关页：章节 / 名称 / 难度 / 体力 / 星级门槛 / 地形
+//   - 战斗页：**关卡来自 `/battle/token`**（本来就带完整 waves）
+//   - 验真页：关卡来自 `/battle/:id/replay`
 //
 // 所以：列表走摘要，波次按需取。
 // 那一处改调 `GET /api/v1/levels/:id` ——

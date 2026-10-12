@@ -31,6 +31,7 @@ vi.mock('@/api/client', () => ({
   fetchDefenses: vi.fn(),
   saveDefense: vi.fn(),
   challengeDefense: vi.fn(),
+  fetchLevel: vi.fn(),
 }))
 
 vi.mock('@/game/defense', async (importOriginal) => {
@@ -99,6 +100,9 @@ beforeEach(() => {
   } as any)
   mockApi.saveDefense.mockResolvedValue({ defense: defenseView({ snapshot_hash: 'feedface1234' }) } as any)
   mockApi.challengeDefense.mockResolvedValue({ stolen: { coin: 10, gem: 2, keys: 1, energy: 3, vip: 9 } })
+  // 标准战场（第 1 关，含 waves）。第 150 轮起它走 GET /api/v1/levels/:1 按需取 ——
+  // /config 的关卡是摘要，没有 waves，而引擎开局必须读它。
+  mockApi.fetchLevel.mockResolvedValue(makeLevel({ id: 1, waves: [{ wave_index: 0, spawns: [] }] }) as any)
   runChallengeMock.mockReturnValue(outcome())
 })
 
@@ -393,13 +397,16 @@ describe('me.vue 我的页', () => {
     await flushPromises()
     expect(um.mock.showToast).toHaveBeenCalledWith({ title: '请先到「背包」页装备出战技能', icon: 'none' })
 
-    // 无关卡数据：config 置空后技能也不为空 → 先撞"关卡未加载"守卫
-    store.config = null
+    // ⚠️ 第 150 轮：旧用例里「无关卡数据」（store.config 置空 → 提示
+    // 「关卡数据未加载完成」）这条守卫**已不存在**：标准战场改走
+    // GET /levels/:1，config 置空不再影响它。留着它就是钉一个假行为。
+    // 等价的新断言是「战场一律来自端点」，已由上面那三个用例覆盖。
     store.equippedSkillIds = [1]
     await btn().trigger('click')
     await new Promise((r) => setTimeout(r, 60))
     await flushPromises()
-    expect(um.mock.showToast).toHaveBeenCalledWith({ title: '关卡数据未加载完成', icon: 'none' })
+    expect(mockApi.fetchLevel).toHaveBeenCalledTimes(1)
+    expect(runChallengeMock).toHaveBeenCalled()
 
     // can_challenge=false → challenge_blocked 文案（按钮态由 disabled 样式承担，逻辑仍守卫）
     ;(wrapper.vm as any).challenge(defenseView({ can_challenge: false, challenge_blocked: '今天已挑战过' }))
@@ -459,30 +466,54 @@ describe('me.vue 我的页', () => {
     )
   })
 
-  it('challengeLevel 三级回退：levelMap 未命中 → levels[0] → null', async () => {
-    const { wrapper, store } = mountPage(Me)
+  it('challengeLevel 走 /levels/:id 按需取标准战场，且**不回退**到 config 的关卡', async () => {
+    const { wrapper } = mountPage(Me)
     await flushPromises()
     const btn = () => wrapper.findAll('.cand .btn')[0]!
 
-    // levelMap 无 1 号关 → 回退 config.levels[0]（id=2）。
-    // 直接替换 store.config（onShow 不重新 loadConfig）
-    store.config = makeConfig({ levels: [makeLevel({ id: 2 })] })
-    await flushPromises()
+    // 关卡来自 GET /levels/1，而不是 /config 里的摘要
+    expect(mockApi.fetchLevel).not.toHaveBeenCalled()
     await btn().trigger('click')
     await new Promise((r) => setTimeout(r, 60))
     await flushPromises()
+    expect(mockApi.fetchLevel).toHaveBeenCalledWith(1)
     expect(runChallengeMock).toHaveBeenCalledWith(
       expect.anything(),
-      expect.objectContaining({ level: expect.objectContaining({ id: 2 }) }),
+      expect.objectContaining({ level: expect.objectContaining({ id: 1 }) }),
       expect.any(Number),
     )
 
-    // config 无 levels → null → toast 守卫
-    store.config = {} as any
+    // ⚠️ 旧实现是「levelMap 未命中 → config.levels[0]」，也就是**换一个关卡**去模拟。
+    // I-5 要求双方在同一张图上比构筑，所以这条回退被去掉了。
+    // 这里断言它真的去调了端点，而不是悄悄拿摘要/别的关卡顶上。
+    expect(mockApi.fetchLevel).toHaveBeenCalledTimes(1)
+  })
+
+  it('标准战场拉取失败 → toast 说明原因，且不发起模拟', async () => {
+    mockApi.fetchLevel.mockRejectedValue(new Error('关卡数据不可用'))
+    const { wrapper } = mountPage(Me)
+    await flushPromises()
+    await wrapper.findAll('.cand .btn')[0]!.trigger('click')
+    await new Promise((r) => setTimeout(r, 60))
+    await flushPromises()
+    expect(runChallengeMock).not.toHaveBeenCalled()
+    expect(um.mock.showToast).toHaveBeenCalledWith({
+      title: '关卡数据加载失败：关卡数据不可用',
+      icon: 'none',
+    })
+  })
+
+  it('标准战场在本次会话内只取一次（第二次挑战复用缓存）', async () => {
+    const { wrapper } = mountPage(Me)
+    await flushPromises()
+    const btn = () => wrapper.findAll('.cand .btn')[0]!
     await btn().trigger('click')
     await new Promise((r) => setTimeout(r, 60))
     await flushPromises()
-    expect(um.mock.showToast).toHaveBeenCalledWith({ title: '关卡数据未加载完成', icon: 'none' })
+    await btn().trigger('click')
+    await new Promise((r) => setTimeout(r, 60))
+    await flushPromises()
+    expect(mockApi.fetchLevel).toHaveBeenCalledTimes(1)
   })
 
   it('上报响应缺 stolen → 窃取文案为空', async () => {

@@ -510,12 +510,137 @@ Go:  if resElement == "" { resElement = dominant(def) } // '' 回退   → 真�
 - **miniapp**：9 页面（首页/关卡/战斗/背包/专精/签到/排行/验真/我的）+ TS 战斗内核 + Canvas 渲染层
 - **admin**：11 视图 + 玩法文档站；登录守卫、审计日志、货币净流入监控、胜率异常告警
 
+### 18. **「存在」与「被消费」是两件事，只有后者有意义 —— 而它们必须能被机器查出来（第 150 轮）**
+
+这一轮把「消费面」从**人肉记账**变成**可执行不变量**。起因是一次穷尽扫描：
+
+| 层 | 缺口 | 后果 |
+|---|---|---|
+| **A 端点** | `POST /mastery/reset`（第 74 轮就有）、`GET /levels/:id` | 前者让**点亮的专精节点永远无法取消**（`AllocateMastery` 只插不删），后者零调用 |
+| **B 字段** | `/config` 的 17 个字段里 **5 个零消费**：`version` / `recipes` / `gem_qualities` / `skins` / `rating_weights` | 运营改了它们，游戏里**看不到任何反应**，且不报任何错 |
+| **B 字段** | `TokenBalance` 这个 service 方法**没有任何 HTTP 端点读它** | `mastery_reset` 买得到、看不见、也点不动 |
+| **C 道具** | `revive_token` / `gem_wash_token` 买得到但无消费端点 | 商城里两件「买了不知道干嘛」的商品 |
+
+修完之后加了两条守卫，让这件事**不再依赖谁记得看一眼**：
+
+```bash
+# A 口径：每条路由都要有客户端调用方
+go test ./internal/httpapi/ -run TestEveryRouteHasClientCaller
+# B 口径：/config 每个字段都要有消费方，或有写明理由的豁免
+pnpm vitest run src/test/contract_coverage.test.ts
+```
+
+两条守卫的设计要点，都是被变异测试逼出来的：
+
+- **豁免必须写具体理由**（≥40 字，且锚点可核对）。写「暂时没空」等于把缺口永久合法化，
+  而没有任何测试会再提醒 —— `TestEveryExemptionIsJustified` 专治这一条。
+- **匹配必须带终止符**。第一版只判断「路径片段出现在客户端源码里」，
+  于是 `/redeem` 的调用方 `'/redeem'` 会**顺带**满足 `/redeem/never-called`：
+  **把路由改成任何更深的路径，守卫照样绿**。变异实测确认后才补上终止符。
+  那是这条守卫最坏的失效方式：看起来在守着，实际什么也没守。
+- **扫源码而不是扫测试**。测试里的 URL 拼装不算「有人用这个端点」——
+  那恰好是「写了测试但线上没人调」最常见的伪装。
+
+#### 顺带拆掉的性能债：配置包砍掉 56%
+
+实测 `/config` 未压缩 167,558 字节，其中 `levels` 占 123,712（74%），
+而 `waves` 占 `levels` 的 **75.4%**（93,338 字节）—— 整个配置包 **56%**
+是「100 关的刷怪排布」。
+
+逐个消费点核过，客户端**只有一处**真的读它：防线挑战用第 1 关当标准战场
+（`me.vue` 的 `challengeLevel()`）。其余全部只读元数据：
+战斗页的关卡来自 `/battle/token`，验真页来自 `/battle/:id/replay`。
+
+于是列表走摘要（`domain.LevelSummary`），波次按需取 `GET /levels/:id` ——
+那个端点本来就存在（与 `/config` 同一生成器输出），此前零消费。
+
+**为什么是「单独的类型」而不是 `json:"waves,omitempty"`**：
+`omitempty` 会影响**所有**下发路径，包括 `/battle/token` 与 `/battle/:id/replay`
+—— 那两处恰恰必须有 waves。手写摘要类型会有字段漂移风险，用
+`TestLevelSummaryCoversEveryGeneratedLevelField`（反射逐字段对拍）钉死。
+变异实测：往 `GeneratedLevel` 单向加一个字段，守卫当场红。
+
+客户端侧同样拆成 `LevelSummary` / `GeneratedLevel extends LevelSummary` 两个类型。
+**写成一个 `waves?:` 可选字段是不行的** —— 那样引擎里三处 `cfg.level.waves`
+的读取会因「忘了判空」在运行时炸；类型层面分开，**编译期**就会把
+「谁需要完整关卡」逼出来（`stage.vue` 就是这样被立刻指出来的）。
+
+### 19. **「测试全绿」与「测试有效」之间的距离（本轮亲手踩了两脚）**
+
+19. **每周一必红的既有断言** —— `periodStart(now,"weekly")` 与
+    `periodStart(now,"daily")` 在**周一完全相等**，而
+    `weekly_task_concurrency_test.go` 断言「daily 那一行不存在」，
+    而它自己插入的 weekly 行正好被那条 SQL 命中。于是 `dailyRows != 0`
+    是**必然成立**的，与代码有没有写死 daily 无关。
+    修法不是删断言，而是**只在两者不等时**判定（周一那条确实观察不到），
+    并新增 `TestPeriodStartWeeklyNeverCollapsesToDaily` 逐日钉住这个前提。
+    README 原先记录的「全绿」实测日 10-10 是周六。
+
+20. **孤儿测试库把整套 DB 用例拖垮（累计性故障）** —— `docs/audits/coverage-2026-09-28.md`
+    §6 记过「曾残留 1049 个孤儿库」，当时只做了一次性清理，**没留下机制**，于是必然复发。
+    本轮实测 406 个残留 → `CREATE DATABASE` 超时 → 种子 `INSERT` 撞主键（SQLSTATE 23505）
+    → 几十个用例红。根因有三条，每条都在代码里留了痕：
+
+    | 根因 | 旧写法 | 症状 |
+    |---|---|---|
+    | 库名每秒重复 | `time.Now().UnixNano()%1_000_000_000` —— 取的是**最后 9 位**（秒以下），每秒绕回一次 | 两个用例拿到同名库，一个的 `Cleanup` 把另一个正在用的库删掉 |
+    | DROP 超时留孤儿 | `t.Cleanup` 里 10 秒预算，库一多就超时 | 孤儿累积 → 下次跑测在资源耗尽处失败 |
+    | 建库失败静默跳过 | 任何 CREATE 失败都 `t.Skipf("无权创建测试库")` | **「测试全绿」与「一半用例根本没跑」无法区分** |
+
+    修法：抽出 `internal/testutil/scratchdb`（原先 5 个包各抄一份），
+    库名用 `前缀 + PID + 进程内计数器`，各包 `TestMain` 在跑测试前按**自己的前缀**清理
+    （只清自己是因为 `go test ./...` 并行跑多个包，跨前缀清理会删掉别人正在用的库），
+    CREATE 失败**分类**处理 —— 确实没权限才 Skip，其余一律 `Fatal`。
+    另有三条结构性守卫：`TestNoScratchNameUsesTimeModulo`（扫源码禁掉时间取模）、
+    `TestEveryScratchPrefixIsRegistered`（漏登记就在本轮红）、
+    `TestNameIsUniqueWithinProcess`。
+
+    > 这条与「消费面」同源：**它坏的方式都是「让测试看起来比实际更可信」**。
+
+### 20. **`version` 从「每秒都变的时间戳」改成内容哈希（第 150 轮）**
+
+`/config` 的 `version` 曾经是 `int(time.Now().Unix() % 100000)`，于是：
+
+1. 它**从不稳定**，客户端无法据此判断「内容变没变」；
+2. 客户端**根本不读它** —— `loadConfig()` 只有 `if (config.value) return` 这个
+   内存内缓存，`config.version` 在全仓库**零引用**；
+3. 配置里还有 `server_time: time.Now()`，两次响应本来就不相同。
+
+也就是说「版本没变就不用刷新」这个判断**从来没被实现过**。
+代码注释里早就写明了要哪三件事，但只记了事实、没做实现 ——
+而**只做内容哈希这一件是「只写不读」**，还会给最热的端点加上「marshal 167KB + 哈希」的每请求 CPU。
+
+现在三件一起做了：
+
+- `version` = 静态内容的 SHA-256 前 8 字节（易变字段取零值，天然被排除）；
+- **静态部分进程内只组装一次**（原来每个请求都重跑 `GenerateAllLevels()`，纯浪费）；
+- 客户端把配置**持久化**到 storage，冷启动先用本地副本点亮界面，
+  再带 `?if_version=` 问服务端 —— 内容没变时只回 **304，零载荷**。
+
+实测：`/api/v1/config` 无参 200 / **167,558 字节**；带同 version **304 / 0 字节**。
+
+#### 为什么用查询参数而不是 `If-None-Match` / ETag
+
+两条都是真实原因：
+
+1. **自定义请求头会触发 CORS 预检**。H5 端的 cors 中间件目前只放行
+   `Content-Type,Authorization`；加一个头就得同步改预检白名单，
+   而忘改的症状是「整批请求发不出去」，很难和网络故障区分。
+2. **ETag 会让浏览器自作主张缓存**。响应一旦带上 ETag，H5 的 XHR 会拿到
+   浏览器缓存里的旧响应体 —— 里面的 `server_time` 是上一次拉取时的时间，
+   而 `estimateServerNowMs()` 会把它当成「服务端当前时间」。
+   不设 ETag 则两端行为一致：每次都真的走到服务端。
+
+304 没有响应体，但客户端仍要校准本地时钟 —— 用 HTTP 标准 `Date` 响应头。
+**不能「304 就不校准」**：那会让时钟偏移随着缓存存在时间一起漂移，
+症状是**过期的护盾显示为生效中**（或反过来），且只在老玩家身上复现。
+
 ### 验证状态
 
 | 项 | 状态 |
 |---|---|
-| Go 测试 | **11 个包全绿**（2026-10-10 实测：Go 1.26.3 + PostgreSQL 18，621 个测试函数全部执行、零跳过；CI 无 PG 时 DB 依赖用例自行跳过，详见§3） |
-| TS 测试 | **1226** 用例全绿（miniapp 976 + admin 250，+2 端到端需起服务；另 2 例跳过） |
+| Go 测试 | **11 个包全绿**（2026-10-12 实测：Go 1.26.3 + PostgreSQL 18.6；`internal/service` 单独跑，其余包并发跑） |
+| TS 测试 | miniapp **1004**（+2 端到端需起服务）· admin **250** 全绿 |
 | `go vet` / `gofmt -l` | 干净 |
 | `vue-tsc`（admin + miniapp） | 0 error |
 | `e2e.ps1` 19 步 | 全通过 |
@@ -523,6 +648,12 @@ Go:  if resElement == "" { resElement = dominant(def) } // '' 回退   → 真�
 | 构建 | miniapp H5 ✓ / mp-weixin ✓ / admin ✓ |
 | 工具链 pin 守卫 | `miniapp/src/test/toolchain_pin.test.ts` —— vite 必须锁 `@dcloudio/vite-plugin-uni` 的 peer 硬锁 `5.2.8`、vitest 留 `^2.1.9`。dependabot 两次自动升级（→6.4.3→8.3.4）曾把 `npm install`（ERESOLVE）/ `type-check`（TS2307）/ `build:h5`（Rolldown 解析不了 vue-demi）同时打坏，此守卫让漂移直接变红 |
 | **全 100 关** | **won 100 / lost 0，零死锁、零难度回归**，平均 280s、最长 594s |
+
+> ⚠️ **这一行原本写着「2026-10-10 实测：621 个测试函数全部执行、零跳过」。**
+> 2026-10-12 复查时发现该结论**只在非周一成立** ——
+> `weekly_task_concurrency_test.go` 有一条按星期几相关的断言，
+> 周一必然红，与代码对错无关（详见工程约束 19）。10-10 是周六，所以那天确实是绿的。
+> 这正是「测试全绿」与「测试有效」之间的距离：**绿的那天和红的那些天可能都是对的**。
 
 验证 I-6 闭环（需先起服务）：
 
@@ -1058,16 +1189,33 @@ cd admin && npm run build && npm run size:check  # 超预算则退出码 1
     写一条 `wallet_flows` 消费流水 + 一条 `admin_audit_logs` 审计。
     行为由 `mastery_reset_test.go`（3 例，含「扣光后第二次必失败」防免费重铸）钉住。
 
+    **✅ 客户端接入（第 150 轮）**：服务端这个端点从 2026-10-09 起就存在，
+    但 `client.ts` 里**没有对应函数**、专精页**没有入口** ——
+    也就是说它是一个「逻辑完整、还测到了，但线上没人走」的端点。
+    本轮接上：`resetMastery()` + 专精页重铸入口
+    （按钮按道具数与已选数置灰、防连点、成功后用回执直接刷 UI）。
+    同时补上 `/wallet` 的 `tokens` 字段 —— `TokenBalance` 这个 service 方法
+    **此前没有任何 HTTP 端点读它**，于是道具「买得到但看不见」。
+    现由 `WalletTokenKinds`（从 `walletTokens` 派生，不抄第二份名单）下发自明白名单。
+    背包页新增「道具」卡片，逐条写明**现在到底能不能用** ——
+    这不是文案洁癖：玩家在商城买了道具却在任何地方都找不到自己的存货，
+    是最容易被当成 bug 报上来的状态。
+
     **⚠️ 仍未做（诚实边界）**：
     - `gem_wash_token`（洗宝石）：`user_gems`（玩家持有的宝石实例）**没有任何获取途径**
       —— 全仓库没有 `INSERT INTO user_gems`，玩家手里根本没有宝石可洗。
       先做「洗」等于给一条死路修门。需先补宝石获取（掉落/兑换）再谈洗练。
+      第 150 轮把背包页那句「词条可洗练（消耗钻石）」**改成了实话**
+      （明确写出玩家拿不到宝石实例）—— 承诺一个玩不到的东西比不承诺更糟。
     - `revive_token`（复活币）：局内复活要在引擎里续命并重演，
       这动 `replay_hash` 的锚点与 I-6 可重放性（见 §4），属核心战斗公式改动，
-      不能顺手补。
+      不能顺手补。同样已在背包页标注为「目前无法使用」。
 
-    `TokenBalance` 提供了道具读取面。`mastery_reset` 现在有了消费端点，
-    后两个仍「只能看不能用」。
+    > **`user_skins` 更彻底**：`skins` 内容表有 6 款皮肤，`user_skins` 表建了，
+    > 但**全仓库没有任何一行读写它**，而 `SeedSkin.Passive` 从不被读。
+    > 第 150 轮把 `skins` 接到背包页作**图鉴展示**，并明写「无获取途径、
+    > 词条未接入战斗结算」—— 与当年处理装备 `Element`（纯风味）用的是同一条标准：
+    > **要么真接上，要么诚实降级文案，不留悬空承诺**。
 
 17. **战报复现与验真的「读不到别人的」只到第 75 轮为止** ——
     `GET /battle/:id/replay` 与 `POST /battle/verify` 此前都只按

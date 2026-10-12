@@ -39,13 +39,16 @@
           <text class="score mono">{{ store.buildRating?.total ?? 0 }}</text>
         </view>
 
-        <!-- 五维进度条：明确告诉玩家"缺什么" -->
+        <!-- 五维进度条：明确告诉玩家"缺什么"。
+             每行尾部的「权重」是服务端 rating_weights 下发的份额（第 150 轮），
+             让玩家知道补哪一维对总分的边际收益最大。 -->
         <view v-for="d in dims" :key="d.label" class="dim-row">
           <text class="dim-label">{{ d.label }}</text>
           <view class="bar">
             <view class="bar-fill" :style="{ width: d.pct + '%', background: d.color }" />
           </view>
           <text class="dim-value mono">{{ d.value }}</text>
+          <text v-if="d.weightPct > 0" class="dim-weight mono">权重 {{ d.weightPct }}%</text>
         </view>
 
         <!-- 短板提示：这是 I-7 真正想做的事 -->
@@ -114,45 +117,76 @@ const menus = [
   { path: '/pages/me/me', label: '我的', icon: '👤' },
 ]
 
-/** 构筑评分五维进度。短板用醒目色，直接引导玩家去补。
- * 分母必须与服务端 BuildRating 各维上界一致（domain/power.go）：
- *   元素 0..5 / 反应 0..7 / 专精 0..8 / 装备契合 0..18 / 机制深度 0..8。
+/**
+ * 构筑评分五维进度。短板用醒目色，直接引导玩家去补。
+ *
+ * 分母来自服务端 `domain.BuildRating` 的各维上界：
+ * 元素 0..5 / 反应 0..7 / 专精 0..8 / 装备契合 0..18 / 机制深度 0..8。
  * 第 138 轮修：① 此前只有 4 维（漏 mechanic_depth）；② equipment_synergy
- * 分母误写 6（真实上界 18），导致契合度条形永远虚高（6/18 就显示满格）。 */
+ * 分母误写 6（真实上界 18），导致契合度条形永远虚高（6/18 就显示满格）。
+ *
+ * ⚠️ 第 150 轮：`rating_weights` 此前**下发但零消费**。
+ * 它是服务端 `domain.DefaultRatingWeights()` 唯一的跨端载体
+ * （total = Σ(维度 × 权重)）。之前五维权重只存在于服务端，
+ * 客户端把「维度值 ÷ 硬编码上界」画成进度条 —— 上界是注释里的常量，
+ * 而权重一个都没用上。于是运营在后台调权重时，
+ * 玩家看到的五维条形**完全不动**：那是一个真实存在却接了半根线的字段。
+ *
+ * 现在权重也消费掉：每维展示它在 total 里占的**权重份额**，
+ * 于是「哪一维更值钱」与「我这一维差多少」都能从同一处看出来。
+ */
 const dims = computed(() => {
   const r = store.buildRating
+  const w = store.config?.rating_weights
+  const wOf = (k: keyof NonNullable<typeof w>): number => Number(w?.[k] ?? 0)
+  const weightSum =
+    wOf('element_coverage') +
+    wOf('reaction_coverage') +
+    wOf('mastery_done') +
+    wOf('equipment_synergy') +
+    wOf('mechanic_depth')
+
   return [
     {
       label: '元素覆盖',
       value: `${r?.element_coverage ?? 0}/5`,
       pct: ((r?.element_coverage ?? 0) / 5) * 100,
       color: '#58a6ff',
+      weight: wOf('element_coverage'),
     },
     {
       label: '反应链',
       value: `${r?.reaction_coverage ?? 0}/7`,
       pct: ((r?.reaction_coverage ?? 0) / 7) * 100,
       color: '#7ee787',
+      weight: wOf('reaction_coverage'),
     },
     {
       label: '专精投入',
       value: `${r?.mastery_done ?? 0}/8`,
       pct: ((r?.mastery_done ?? 0) / 8) * 100,
       color: '#c9a7ff',
+      weight: wOf('mastery_done'),
     },
     {
       label: '装备契合',
       value: `${r?.equipment_synergy ?? 0}/18`,
       pct: Math.min(100, ((r?.equipment_synergy ?? 0) / 18) * 100),
       color: '#ffd33d',
+      weight: wOf('equipment_synergy'),
     },
     {
       label: '机制深度',
       value: `${r?.mechanic_depth ?? 0}/8`,
       pct: ((r?.mechanic_depth ?? 0) / 8) * 100,
       color: '#ff7b72',
+      weight: wOf('mechanic_depth'),
     },
-  ]
+  ].map((d) => ({
+    ...d,
+    /** 权重份额（%）。权重全为 0 或 config 未到时给 0，不做除零兜底成假数字。 */
+    weightPct: weightSum > 0 ? Math.round((d.weight / weightSum) * 100) : 0,
+  }))
 })
 
 const weaknesses = computed<string[]>(() => store.buildRating?.weaknesses ?? [])
@@ -278,6 +312,14 @@ onShow(async () => {
   text-align: right;
   font-size: 22rpx;
   color: var(--muted);
+}
+
+.dim-weight {
+  width: 120rpx;
+  text-align: right;
+  font-size: 20rpx;
+  color: var(--muted);
+  opacity: 0.8;
 }
 
 .weakness-box {
