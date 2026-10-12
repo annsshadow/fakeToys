@@ -183,7 +183,11 @@ MEASURED_HAZARD_ROSTER: Dict[Tuple[int, int], frozenset] = {
 MEASURED_BLIND_TESTS = 113
 MEASURED_BLIND_SEEN = 113
 #: 现量：整支豁免（该用例的每一支 parametrize 都写了字面 ids）的用数
-MEASURED_EXEMPT_SITES = 23
+#: **L241 回填（23 → 24）**：`test_cost_oracle_routing_l241.py` 的
+#: `test_no_float_no_call_no_attribute` 那一支 parametrize 自带字面 ids 清单（`dedup` / `leakage`）
+#: ⇒ 整支进豁免名册。豁免是「动态面放过」的名单，涨它不等于放松：值位那一维仍逐格判，
+#: 且本轮档位四档（58/38/11/11）与盲面 118 一格未动，两边独立闭合。
+MEASURED_EXEMPT_SITES = 24
 #: 动态面至少要采到这么多条，否则「没有风险对象」只是没采到（A171 口径：数不到不判干净）
 MIN_COLLECTED_ITEMS = 3000
 
