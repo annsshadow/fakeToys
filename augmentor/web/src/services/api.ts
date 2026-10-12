@@ -1153,7 +1153,7 @@ export const cleanupBackups = async (
  * 「路径包含非法组件」、白名单外的绝对路径是 **403**——所以本层把页面上的空串丢成
  * `undefined`，这一处哨兵**是躲判决的**（与 `listBackups` 同款）。CLI 的 `--registry-path`
  * 默认值是 `.dependency_registry`（相对工作目录），与这里的缺省**不是同一个目录**（A308）。
- * 另有一条实测脾气：注册表目录不存在时，这一支**只读端点会把它建出来**（A307）。
+ * 另有一条口径：注册表目录不存在时这两支只读端点**不会**把它建出来（A307，L249 收口）。
  */
 export const listDependencyDatasets = async (
   registryPath?: string

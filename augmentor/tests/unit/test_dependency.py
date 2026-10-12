@@ -29,9 +29,9 @@ class TestDependencyManager:
     """DependencyManager 测试"""
     
     def test_init(self, tmp_path):
-        """测试初始化"""
+        """测试初始化：构造不落盘（A307 / L249），目录等第一次真写去建"""
         manager = DependencyManager(str(tmp_path / "registry"))
-        assert (tmp_path / "registry").exists()
+        assert not (tmp_path / "registry").exists() and manager.list_datasets() == []
     
     def test_register_dataset(self, manager):
         """测试注册数据集"""

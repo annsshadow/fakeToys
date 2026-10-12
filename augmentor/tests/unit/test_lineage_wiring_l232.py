@@ -14,8 +14,9 @@
 
 * 注册表不存在时 `GET …/datasets` ⇒ **200** `{"datasets": []}`，不是 404 也不是 null；
   `GET …/graph` ⇒ **200** `{"nodes": [], "edges": [], "issues": []}`。
-* 这两支**只读端点会把注册表目录建出来**（构造函数 `mkdir(parents=True)`）：探针量到请求之前
-  目录不存在、请求之后存在（空目录，此时还没有 `datasets.json`）⇒ 读面写盘（**A307**）。
+* 这两支**只读端点原本会把注册表目录建出来**（构造函数 `mkdir(parents=True)`）：探针量到
+  请求之前目录不存在、请求之后存在（空目录，此时还没有 `datasets.json`）⇒ 读面写盘
+  （**A307**，L249 已把构造的副作用摘掉，现在请求前后目录都不在场）。
 * `POST` 最小体 `{name, input_file}` ⇒ 200，回执九键（`dataset_id` / `name` / `description` /
   `path` / `item_count` / `created_at` / `updated_at` / `tags` / `metadata`），与随后 `GET` 的
   元素**逐键相同**（两侧同为 `DatasetInfo.to_dict()`）。`dataset_id` 是 **`md5(name)[:8]`**
@@ -244,7 +245,7 @@ class TestThePageCarriesTheThreeOperations:
             "created_at 会被刷新",        # A306
             "回显即丢",                  # A305：本轮收掉的那条
             "不是同一份",                # A308：三份默认目录
-            "把它建出来",                # A307：只读端点建目录
+            "构造不再碰磁盘",              # A307：只读端点建目录，L249 收口
             "两种错误体都要认",           # A311：422 英文 vs 中文 4xx
             "白名单外是 403",             # 白名单档位
             "数据文件的顶层必须是 JSON 数组",  # 这一族独有的那档判决原文
@@ -273,15 +274,15 @@ class TestMeasuredEndpointBehavior:
         r = http.get("/api/system/dependency/datasets")
         assert r.status_code == 200 and r.json() == {"datasets": []}
 
-    def test_the_two_read_endpoints_create_the_registry_dir(self, http_with_registry):
-        """A307：读面写盘 —— 注册表目录不存在时，两支 GET 都会把它建出来"""
+    def test_the_two_read_endpoints_leave_no_registry_dir(self, http_with_registry):
+        """A307 收口（L249）：读面不再写盘 —— 两支 GET 之后注册表目录仍不在场"""
         http, root, *_ = http_with_registry
         registry = root / ".dependency_registry"
         assert not registry.exists()
         assert http.get("/api/system/dependency/datasets").status_code == 200
-        assert registry.is_dir(), "GET 列表没有把注册表目录建出来 ⇒ 这条口径要重写"
-        assert not (registry / "datasets.json").exists(), "此时还不该有 datasets.json"
+        assert not registry.exists(), "GET 列表把注册表目录建出来了 ⇒ 读面又写盘了"
         assert http.get("/api/system/dependency/graph").status_code == 200
+        assert not registry.exists(), "GET 依赖图把注册表目录建出来了 ⇒ 读面又写盘了"
 
     def test_empty_graph_has_the_three_keys(self, http_with_registry):
         http, *_ = http_with_registry
@@ -401,7 +402,7 @@ class TestMeasuredEndpointBehavior:
         reg2 = root / "reg2"
         r = http.get("/api/system/dependency/datasets", params={"registry_path": str(reg2)})
         assert r.status_code == 200 and r.json() == {"datasets": []}
-        assert reg2.is_dir(), "白名单内那一档也会把目录建出来（A307 同形）"
+        assert not reg2.exists(), "白名单内那一档也不该被一次 GET 建出来（A307，L249 收口）"
 
     def test_an_explicit_registry_is_invisible_to_the_default_one(self, http_with_registry):
         """A308 的行为面：两份注册表互不可见"""
