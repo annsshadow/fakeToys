@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 小程序端 API 客户端。
  *
  * 目标平台是微信小程序，但需要同时能在 H5 跑通（用于本机验证）。
@@ -19,7 +19,7 @@ export interface GameConfig {
    * 这个判断从来没被实现过。现在两端都按它做真判断。
    */
   version: string
-  levels: import('@/game/types').GeneratedLevel[]
+  levels: import('@/game/types').LevelSummary[]
   enemies: import('@/game/types').EnemyDef[]
   skills: import('@/game/types').SkillDef[]
   composite_skills: import('@/game/types').SkillDef[]
@@ -412,6 +412,18 @@ function headerTimeMs(headers: Record<string, unknown>, bodyServerTime?: string)
     if (Number.isFinite(t)) return t
   }
   return 0
+}
+
+/**
+ * 单关完整数据（含 `waves`）。
+ *
+ * ⚠️ `/config` 里的 `levels` 是**摘要**，没有波次 ——
+ * 因为 100 关的刷怪排布占了整个配置包 56% 的体积，
+ * 而客户端只有「防线挑战的标准战场」一处需要它。
+ * 那一处走这里按需取；战斗页则用 `/battle/token` 下发的关卡（本来就带波次）。
+ */
+export function fetchLevel(id: number) {
+  return request<import('@/game/types').GeneratedLevel>(`/levels/${id}`)
 }
 
 /** 服务端下发的构筑快照（结构与 game/replay.ts 的 BuildSnapshot 一致） */

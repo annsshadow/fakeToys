@@ -669,20 +669,25 @@ var WalletTokenKinds = func() []string {
 // 曾经 `Version` 是 `time.Now().Unix() % 100000` —— 每秒都在变，
 // 「版本没变就不用刷新」这个判断从来没被实现过。现在是 SHA-256 前 16 位十六进制。
 type GameConfig struct {
-	Version   string                  `json:"version"`
-	Levels    []domain.GeneratedLevel `json:"levels"`
-	Enemies   []domain.SeedEnemy      `json:"enemies"`
-	Skills    []domain.SeedSkill      `json:"skills"`
-	Composite []domain.SeedSkill      `json:"composite_skills"`
-	Recipes   []domain.SeedRecipe     `json:"recipes"`
-	Equipment []domain.SeedEquipment  `json:"equipment"`
-	Gems      []domain.SeedGem        `json:"gems"`
-	Qualities []QualityInfo           `json:"gem_qualities"`
-	Skins     []domain.SeedSkin       `json:"skins"`
-	Mastery   []domain.MasteryFamily  `json:"mastery_families"`
-	Reactions []domain.ReactionSpec   `json:"reactions"`
-	Chapters  []ChapterInfo           `json:"chapters"`
-	RatingW   domain.RatingWeights    `json:"rating_weights"`
+	Version string `json:"version"`
+	// Levels 是**列表摘要**（不含 waves）。
+	//
+	// 为什么不是 GeneratedLevel：`waves` 占这个字段的 75%（实测 93,338 字节），
+	// 而客户端只有「防线挑战的标准战场」一处要它 —— 那一处走
+	// `GET /api/v1/levels/:id` 按需取。详见 domain.LevelSummary 的注释。
+	Levels    []domain.LevelSummary  `json:"levels"`
+	Enemies   []domain.SeedEnemy     `json:"enemies"`
+	Skills    []domain.SeedSkill     `json:"skills"`
+	Composite []domain.SeedSkill     `json:"composite_skills"`
+	Recipes   []domain.SeedRecipe    `json:"recipes"`
+	Equipment []domain.SeedEquipment `json:"equipment"`
+	Gems      []domain.SeedGem       `json:"gems"`
+	Qualities []QualityInfo          `json:"gem_qualities"`
+	Skins     []domain.SeedSkin      `json:"skins"`
+	Mastery   []domain.MasteryFamily `json:"mastery_families"`
+	Reactions []domain.ReactionSpec  `json:"reactions"`
+	Chapters  []ChapterInfo          `json:"chapters"`
+	RatingW   domain.RatingWeights   `json:"rating_weights"`
 	// ScoreRules 是分数规则。客户端引擎的加分逻辑必须用这一份，
 	// 不能自己硬编码 500/5000/100 —— 漂移了星级就会与实际表现不符，
 	// 而两端各自都「自洽」，没有任何测试会发现。
@@ -770,7 +775,7 @@ func (s *Service) LoadGameConfig() GameConfig {
 // 挂在字段上还得处理「Service 被拷贝时 Once 被一起拷」的问题。
 var staticConfig = sync.OnceValue(func() GameConfig {
 	cfg := GameConfig{
-		Levels: domain.GenerateAllLevels(),
+		Levels: domain.SummarizeAll(domain.GenerateAllLevels()),
 		// ⚠️ 分数规则必须下发，不能让客户端自己写死
 		ScoreRules: domain.DefaultScoreRules(),
 		// 平衡缩放在这里统一应用（见 content.go 的 EnemyHpScale /

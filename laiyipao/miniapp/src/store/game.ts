@@ -12,7 +12,7 @@ import * as api from '@/api/client'
 import type { GameConfig } from '@/api/client'
 import { setTokenInternal } from '@/api/client'
 import { defaultAttacker, type Attacker } from '@/game/damage'
-import type { EnemyDef, GeneratedLevel, SkillDef } from '@/game/types'
+import type { EnemyDef, LevelSummary, SkillDef } from '@/game/types'
 import type { Element } from '@/game/elements'
 
 // ---- 配置持久化（第 150 轮）----
@@ -121,7 +121,9 @@ export const useGameStore = defineStore('game', () => {
   })
 
   const levelMap = computed(() => {
-    const m = new Map<number, GeneratedLevel>()
+    // 值是**摘要**（无 waves）：/config 不再下发波次 —— 它占整个配置包 56%，
+    // 而客户端只有防线挑战一处需要。那一处走 `api.fetchLevel()`。
+    const m = new Map<number, LevelSummary>()
     for (const l of config.value?.levels ?? []) m.set(l.id, l)
     return m
   })

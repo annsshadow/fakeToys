@@ -97,10 +97,70 @@
             <text class="dim">{{ g.descr }}</text>
           </view>
         </view>
+        <!-- 品质表（第 150 轮）：改读服务端下发的 gem_qualities。
+             此前这里把「灰/蓝/紫/红/金」与倍率**硬编码**在文案里，
+             而服务端 content.go 的 GemQualities 用的是 gray/blue/... + 真实倍率。
+             两份各自自洽 —— 运营改品质表时这段文案不会跟着变，
+             而它恰恰是玩家判断「这颗宝石值不值」的唯一依据。 -->
+        <view v-if="gemQualities.length" style="margin-top: 16rpx">
+          <text class="dim" style="display: block; margin-bottom: 8rpx">品质档位</text>
+          <view class="gem-row">
+            <view v-for="q in gemQualities" :key="q.name" class="gem-chip">
+              <text class="gem-name">{{ q.name }} · ×{{ (q.mult / 1000).toFixed(2) }}</text>
+              <text class="dim">{{ q.affix_count }} 条词条</text>
+            </view>
+          </view>
+        </view>
         <text class="muted" style="display: block; margin-top: 12rpx">
-          品质分灰/蓝/紫/红/金五档，词条可洗练（消耗钻石）。
-          注意「元素石」提高元素系数 —— 它是反应伤害的核心，比堆攻击力更划算。
+          ⚠️ 宝石**实例**目前无法获得：全仓库没有任何把宝石发到玩家账上的途径，
+          所以它的词条不会计入你的构筑。洗练功能（消耗宝石洗练券）同样未接通 ——
+          这里不再承诺一个玩不到的东西。
         </text>
+      </view>
+
+      <!-- 合成配方（第 150 轮）：recipes 此前从不下发到客户端，
+           玩家看到「合成技能」却完全不知道它由哪两个技能合成。
+           配方是内容表的一部分，缺了它就是一个悬空的词条。 -->
+      <view v-if="recipes.length" class="card">
+        <text class="card-title">合成配方</text>
+        <text class="muted" style="display: block; margin-bottom: 12rpx">
+          合成技能由两个基础技能组合而来；配方来自服务端，与实际可合成的组合逐字一致。
+        </text>
+        <view v-for="r in recipes" :key="r.output" class="recipe-row">
+          <text class="dim">{{ skillNameOf(r.a) }} + {{ skillNameOf(r.b) }}</text>
+          <text class="dim">→</text>
+          <text class="skill-name">{{ skillNameOf(r.output) }}</text>
+          <text class="dim">T{{ r.out_tier }}</text>
+        </view>
+      </view>
+
+      <!-- 皮肤（第 150 轮） -->
+      <view v-if="skins.length" class="card">
+        <text class="card-title">皮肤</text>
+        <text class="muted" style="display: block; margin-bottom: 12rpx">
+          皮肤是**机制词条**而非数值加成。
+          ⚠️ 但当前版本还没有任何途径获得它们（无掉落 / 无兑换），
+          词条也**未接入战斗结算** —— 所以这里只作图鉴展示。
+        </text>
+        <view v-for="s in skins" :key="s.id" class="equip-row">
+          <view class="flex-1">
+            <text class="skill-name">{{ s.name }}</text>
+            <text class="dim" style="display: block">{{ s.descr }}</text>
+          </view>
+          <text class="dim">{{ s.rarity }}</text>
+        </view>
+      </view>
+
+      <!-- 道具（第 150 轮）：/wallet 的 tokens 首次有了消费方。 -->
+      <view class="card">
+        <text class="card-title">道具</text>
+        <view v-for="t in tokenRows" :key="t.kind" class="equip-row">
+          <view class="flex-1">
+            <text class="skill-name">{{ t.label }}</text>
+            <text class="dim" style="display: block">{{ t.status }}</text>
+          </view>
+          <text class="dim">×{{ t.count }}</text>
+        </view>
       </view>
     </view>
   </view>
@@ -127,6 +187,60 @@ const allSkills = computed<SkillDef[]>(() => {
 
 const equipment = computed<any[]>(() => store.config?.equipment ?? [])
 const gems = computed<any[]>(() => store.config?.gems ?? [])
+
+/**
+ * 宝石品质档位（服务端 /config 的 `gem_qualities`）。
+ *
+ * ⚠️ 此前这段是**硬编码文案**（"灰/蓝/紫/红/金"），而服务端 content.go 的
+ * `GemQualities` 用的是 gray/blue/purple/red/gold + 真实倍率。
+ * 两份各自自洽：运营改品质表，玩家看到的档位说明不会变 ——
+ * 而这恰恰是玩家判断「这颗宝石值不值」的唯一依据。
+ */
+const gemQualities = computed<{ name: string; affix_count: number; mult: number }[]>(
+  () => (store.config?.gem_qualities ?? []) as any[],
+)
+
+/** 合成配方（`recipes`）：A + B → output(out_tier)。 */
+const recipes = computed<{ output: number; a: number; b: number; out_tier: number }[]>(
+  () => store.config?.recipes ?? [],
+)
+
+/** 技能名查表：配方两端都是技能 id，界面要显示名字。 */
+function skillNameOf(id: number): string {
+  return allSkills.value.find((s) => s.id === id)?.name ?? `#${id}`
+}
+
+const skins = computed<any[]>(() => store.config?.skins ?? [])
+
+/**
+ * 道具清单（`/wallet` 的 `tokens`，第 150 轮才有消费方）。
+ *
+ * 每条都写明**现在到底能不能用**。这不是文案洁癖：
+ * `revive_token` 与 `gem_wash_token` 买得到却没有消费端点，
+ * 而界面此前根本不显示它们 —— 玩家在商城买了之后
+ * 在任何地方都找不到自己的道具，那是最容易被当成 bug 报上来的一种状态。
+ */
+const tokenRows = computed(() => {
+  const tokens = store.wallet.tokens ?? {}
+  const catalog: { kind: string; label: string; status: string }[] = [
+    {
+      kind: 'mastery_reset',
+      label: '专精重铸券',
+      status: '清空全部已点亮的专精节点，点数不变 → 专精页点「重铸」使用。',
+    },
+    {
+      kind: 'revive_token',
+      label: '复活币',
+      status: '⚠️ 战斗内复活尚未接入，目前无法使用（购买不会退回）。',
+    },
+    {
+      kind: 'gem_wash_token',
+      label: '宝石洗练券',
+      status: '⚠️ 洗练尚未接入（且玩家暂无宝石实例可洗），目前无法使用。',
+    },
+  ]
+  return catalog.map((c) => ({ ...c, count: tokens[c.kind] ?? 0 }))
+})
 
 // ── 技能升级 ────────────────────────────────────────────────
 //
@@ -403,5 +517,13 @@ onMounted(async () => {
   font-size: 24rpx;
   font-weight: 600;
   display: block;
+}
+
+.recipe-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10rpx;
+  padding: 8rpx 0;
 }
 </style>

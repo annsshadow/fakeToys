@@ -29,6 +29,7 @@ import (
 	"github.com/laiyipao/server/internal/config"
 	"github.com/laiyipao/server/internal/seeder"
 	"github.com/laiyipao/server/internal/store"
+	"github.com/laiyipao/server/internal/testutil/scratchdb"
 )
 
 // e2eAdminDSN 返回连到 postgres 系统库的 DSN（CREATE/DROP DATABASE 用）。
@@ -49,36 +50,37 @@ func e2eWithDBName(dsn, name string) string {
 	return u.String()
 }
 
-// e2eScratchDB 建一次性库、迁移到顶，并让 newE2E 连它。
+// e2eScratchPrefix 是本包一次性库的命名前缀。
+// 改动必须同步登记到 scratchdb.Prefixes（见 scratchdb 的文档注释）。
+const e2eScratchPrefix = "laiyipao_httpapi_e2e_"
+
+// TestMain 跑测试前清掉本包前缀下的残留库。
+//
+// 没有它，孤儿库会**累积**：单次跑测留下的孤儿让下一次跑测开始失败，
+// 于是「跑得越多越红」。docs/audits/coverage-2026-09-28.md §6 记过这件事
+// （曾残留 1049 个），但当时只做了一次性清理，没留下机制，必然复发。
+func TestMain(m *testing.M) {
+	if n, err := scratchdb.SweepPrefix(e2eScratchPrefix); err != nil {
+		fmt.Fprintf(os.Stderr, "[scratchdb] 清理残留库失败（不阻断）：%v\n", err)
+	} else if n > 0 {
+		fmt.Fprintf(os.Stderr, "[scratchdb] 已清理 %d 个残留测试库（前缀 %s）\n", n, e2eScratchPrefix)
+	}
+	os.Exit(m.Run())
+}
+
+// e2eScratchDB 建一次性库、迁移到顶、灌种子，并让 newE2E 连它。
 func e2eScratchDB(t *testing.T) {
 	t.Helper()
-	admin := e2eAdminDSN()
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
-	cfg := config.Load()
-	cfg.DatabaseURL = admin
-	db, err := store.Open(ctx, cfg)
-	if err != nil {
-		t.Skipf("连不上管理库，跳过：%v", err)
-	}
-	name := fmt.Sprintf("laiyipao_httpapi_e2e_%d", time.Now().UnixNano()%1_000_000_000)
-	if _, err := db.Pool.Exec(ctx, `CREATE DATABASE `+name); err != nil {
-		db.Close()
-		t.Skipf("无权创建测试库，跳过：%v", err)
-	}
-	dsn := e2eWithDBName(admin, name)
-	t.Cleanup(func() {
-		dropCtx, dropCancel := context.WithTimeout(context.Background(), 15*time.Second)
-		defer dropCancel()
-		_, _ = db.Pool.Exec(dropCtx,
-			`SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = $1`, name)
-		_, _ = db.Pool.Exec(dropCtx, `DROP DATABASE IF EXISTS `+name)
-		db.Close()
-	})
+	// 第 150 轮：建库/清理收敛到 internal/testutil/scratchdb。
+	// 旧实现用 `UnixNano()%1e9` 当库名 —— 每秒重复，两个 e2e 用例会拿到
+	// 同名库并互删（症状是随机的「查询失败」，与真实缺陷无关）。
+	dsn := scratchdb.DSN(t, e2eScratchPrefix)
 
 	// 迁移 scratch 库到顶（e2e 假定 schema 已存在，不做迁移）。
-	// 必须用指向 scratch 库的**独立连接**迁移，绝不能拿 admin 连接迁移
+	// 必须用指向 scratch 库的连接迁移，绝不能拿管理库连接迁移
 	// —— 那会把系统库 postgres 迁到最新版本。
 	scratchCfg := config.Load()
 	scratchCfg.DatabaseURL = dsn
