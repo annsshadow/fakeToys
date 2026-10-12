@@ -36,9 +36,10 @@ r"""L242 守卫：进度声明面说「收了」，Backlog 表那一格就必须
    卷二早期行把「已关闭（Lxxx）」写在说明格开头，近期行把 `~~X~~ 已收口（Lxxx）` 写在定级格，
    两支都要认。
 7. **`全清` / `清零` / `永久记档` 不算标记**，**划掉的数字也不算标记**（口径 7 由
-   `TestWeakTokensAreNotMarks` 现场证伪）：现量证据是卷一的 A298 行内写着「按 id 全清」而那笔账
-   至今待拍，A176 行内写着 `~~6 处~~`（划掉一个旧读数）而它同样待拍。若把这两种形状算成标记，
-   待拍的账就在对账里永久隐身。
+   `TestWeakTokensAreNotMarks` 现场证伪）：现量证据原是卷二的 A298 行内写着「按 id 全清」而那笔账
+   当时待拍，A176 行内写着 `~~6 处~~`（划掉一个旧读数）而它同样待拍。若把这两种形状算成标记，
+   待拍的账就在对账里永久隐身。**L250 重量**：A298 本轮收了 ⇒ live 样本换成 A328（那一行引用标记
+   词汇本身而没有轮号括弧），「全清」那一形由同支的 `test_grade_strikethrough_and_verb_both_mark` 继续钉。
 
 **判据是「精确相等」而不是「棘轮」**（承 L241 的同一条理由）：`declared ∩ rows − marked` 必须
 **恰好等于** `PARTIAL`。写成「≤ 某数」的话，本轮补标的 17 格里任何一格回退成无标记，只要总数没
@@ -114,9 +115,9 @@ LOG_HEAD = re.compile(r"^### L\d+")
 #: （A334 收成 `~~M~~ 已收口（L247）`）、声明面 119 → **120**（L247 清单行开头的「收 A334——」与
 #: 日志标题同名一次）。phantom 46 与 `PARTIAL` 三格均未动。两格由本轮红读数当场逼出
 #: （`assert 120 == 119` / `assert 138 == 137`），与账本里写的预测值逐格相同，仍以红读数为准。
-MEASURED_ROWS = 254  # **L249 重量**：表行未动（本轮收 A332 + A307 两笔既有账，零新立 ⇒ 254 逐格不变）
-MEASURED_DECLARED = 123  # **L249 重量**：121 → 123（+2：A332 与 A307 双双第一次进声明面——L249 清单行开头的「收 A332 + A307——」与日志标题各点一次，两个 ID 各算一笔，与 L248 那种 +1 的形状不同）
-MEASURED_MARKED = 141  # **L249 重量**：139 → 141（A332 / A307 各收成 `~~S~~ 已收口（L249）`）。phantom 46 与 `PARTIAL` 三格均未动；两格由本轮红读数当场逼出（`assert 123 == 121` / `assert 141 == 139`），与清单行里写的预测值同格，仍以红读数为准
+MEASURED_ROWS = 255  # **L250 重量**：254 → **255**（新立 A335 一行：A303 的修法② 那一半拆出来独立待拍，不带标记）。红读数 `assert 255 == 254`
+MEASURED_DECLARED = 125  # **L250 重量**：123 → 125（+2：A298 与 A303 双双第一次进声明面——L250 清单行开头的「收 A298 + A303——」与句中的「同轮 A303 收口」、日志标题各点一次，两个 ID 各算一笔；A335 按口径 5 写成「新立 **A335**（……）」的括号形状，不进声明面 ⇒ `test_gap_equals_partial_roster` 没有多出假欠账，那一支本轮实测未红）。红读数 `assert 125 == 123`
+MEASURED_MARKED = 143  # **L250 重量**：141 → 143（A298 / A303 各收成 `~~M~~` / `~~S~~` 已收口（L250））。phantom 46 与 `PARTIAL` 三格均未动。三格由本轮红读数当场逼出（`assert 255 == 254` / `assert 125 == 123` / `assert 143 == 141`），与清单行里写的预测值逐格相同，仍以红读数为准
 #: 声明面点到、但表里已经没有行的 ID 数（口径 2，历史行被裁撤）。
 MEASURED_PHANTOM = 46
 #: 本轮开工前实测的欠账笔数：17 笔补标 + 3 笔半程。
@@ -323,11 +324,11 @@ def is_log_body(line, in_log):
 class TestWeakTokensAreNotMarks:
     """口径 7 的可证伪面：弱词与划掉的数字都不算关闭标记"""
 
-    def test_quanqing_alone_does_not_mark_a_row(self):
+    def test_mark_verb_quoted_as_prose_does_not_mark_a_row(self):
         volumes = load_volumes()
-        row = table_rows(volumes)["A298"][0][2]
-        assert "全清" in row, "A298 那行不再含「全清」，本用例的样本失效，换一个真实形状"
-        assert not MARK.search(row), "「全清」被当成关闭标记了——待拍的账会永久隐身"
+        row = table_rows(volumes)["A328"][0][2]
+        assert "已收口" in row, "A328 那行不再引用标记词汇本身，本用例的样本失效，换一个真实形状"
+        assert not MARK.search(row), "行内引用标记词汇被当成关闭标记了——待拍的账会永久隐身（L250 之前的 live 样本是 A298 的「全清」，那一形改由下面的合成断言钉）"
 
     def test_strikethrough_numbers_do_not_mark_a_row(self):
         volumes = load_volumes()
