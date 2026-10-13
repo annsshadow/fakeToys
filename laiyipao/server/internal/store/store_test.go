@@ -22,10 +22,10 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/laiyipao/server/migrations"
 
 	"github.com/laiyipao/server/internal/config"
+	"github.com/laiyipao/server/internal/testutil/scratchdb"
 )
 
 // adminDSN 返回连到 postgres 系统库的 DSN（用于 CREATE/DROP DATABASE）。
@@ -48,36 +48,33 @@ func withDBName(dsn, name string) string {
 	return u.String()
 }
 
+// scratchPrefix 是本包一次性库的命名前缀。
+// 改动必须同步登记到 scratchdb.Prefixes（见 scratchdb 的文档注释）。
+const scratchPrefix = "laiyipao_store_test_"
+
+// TestMain 跑测试前清掉本包前缀下的残留库。
+//
+// 没有它，孤儿库会**累积**：单次跑测留下的孤儿让下一次跑测开始失败，
+// 于是「跑得越多越红」。docs/audits/coverage-2026-09-28.md §6 记过这件事
+// （曾残留 1049 个），但当时只做了一次性清理，没留下机制，必然复发。
+func TestMain(m *testing.M) {
+	if n, err := scratchdb.SweepPrefix(scratchPrefix); err != nil {
+		fmt.Fprintf(os.Stderr, "[scratchdb] 清理残留库失败（不阻断）：%v\n", err)
+	} else if n > 0 {
+		fmt.Fprintf(os.Stderr, "[scratchdb] 已清理 %d 个残留测试库（前缀 %s）\n", n, scratchPrefix)
+	}
+	os.Exit(m.Run())
+}
+
 // scratchDB 建一个一次性数据库并返回它的 DSN。
-// 名字带纳秒时间戳，避免并行会话/上次残留撞名。
+//
+// 第 150 轮收敛到 internal/testutil/scratchdb。
+// 旧注释写「名字带纳秒时间戳，避免撞名」—— **那是不成立的**：
+// `UnixNano()%1e9` 取的是秒以下部分，每秒绕回一次，恰恰是会撞名的写法。
+// 详见 scratchdb 的文档注释。
 func scratchDB(t *testing.T) string {
 	t.Helper()
-	admin := adminDSN()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	pool, err := pgxpool.New(ctx, admin)
-	if err != nil {
-		t.Skipf("连不上管理库，跳过：%v", err)
-	}
-	defer pool.Close()
-	if err := pool.Ping(ctx); err != nil {
-		t.Skipf("管理库不可达，跳过：%v", err)
-	}
-
-	name := fmt.Sprintf("laiyipao_store_test_%d", time.Now().UnixNano()%1_000_000_000)
-	if _, err := pool.Exec(ctx, `CREATE DATABASE `+name); err != nil {
-		t.Skipf("无权创建测试库，跳过：%v", err)
-	}
-	t.Cleanup(func() {
-		dropCtx, dropCancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer dropCancel()
-		// DROP 需要独占：先掐断可能残留的连接
-		_, _ = pool.Exec(dropCtx,
-			`SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = $1`, name)
-		_, _ = pool.Exec(dropCtx, `DROP DATABASE IF EXISTS `+name)
-	})
-	return withDBName(admin, name)
+	return scratchdb.DSN(t, scratchPrefix)
 }
 
 // openCfg 组装指向指定 DSN 的配置。

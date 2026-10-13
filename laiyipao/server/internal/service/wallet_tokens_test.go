@@ -95,7 +95,12 @@ func scanShopKeys(t *testing.T, ts *testService) []shopKey {
 				_, isCol := walletColumns[k]
 				out = append(out, shopKey{
 					Code: code, Field: field, Key: k, ItemID: id,
-					Allowed: isCol || isWalletToken(k),
+					// `gem_instance` 是**保留的非货币键**：它要造的是一颗
+					// 带随机词条的宝石实体，而不是钱包里的一列数字。
+					// 直接引用生产代码的常量 —— 写死字符串的话，
+					// 两边拼错的表现是「买了什么都没发生」，
+					// 而那恰好是最难排查的一类症状。
+					Allowed: isCol || isWalletToken(k) || k == gemInstanceKey,
 				})
 			}
 		}

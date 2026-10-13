@@ -34,6 +34,12 @@
       }
     },
     {
+      "path": "pages/shop/shop",
+      "style": {
+        "navigationBarTitleText": "商城"
+      }
+    },
+    {
       "path": "pages/signin/signin",
       "style": {
         "navigationBarTitleText": "签到"
