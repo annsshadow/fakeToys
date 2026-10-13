@@ -7,6 +7,11 @@
 // It has NO access to window.document, window.localStorage, or fetch().
 // Only safe JS globals are available: console, Math, JSON, Array, Object, etc.
 window.addEventListener('message', (e) => {
+  // 安全审计（2026-10）：仅接受来自 window.parent 的指令。sandbox.html 运行在
+  // opaque-origin iframe（sandbox="allow-scripts"，无 allow-same-origin），只有
+  // 直接打开它的父页 window 能与它 postMessage；其他同源页/脚本伪造 e.source
+  // 也无法通过此检查。拒绝非 parent 源消息，杜绝跨源/伪造指令注入 eval。
+  if (e.source !== window.parent) return
   if (!e.data?.__oa4rust_sandbox_code) return;
   var code = e.data.__oa4rust_sandbox_code;
   var start = performance.now();

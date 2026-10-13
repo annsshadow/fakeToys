@@ -33,7 +33,9 @@ export async function openApp(
   const path = `/app/${appId}${query}`
 
   if (options?.newWindow) {
-    window.open(path, '_blank')
+    // 安全审计（2026-10）：noopener,noreferrer 防止新窗口经 window.opener 反向
+    // 操作本页（tab-nabbing / 焦点劫持）。
+    window.open(path, '_blank', 'noopener,noreferrer')
     return
   }
 
