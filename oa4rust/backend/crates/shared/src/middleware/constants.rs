@@ -62,15 +62,6 @@ pub const AUTH_EXEMPT_PATHS: &[&str] = &[
     "/api/secret/set/cancel",
     // 注册（匿名访问）
     "/api/person/regist",
-    // 行为对比测试：o2server 侧无需认证/管理权限的只读查询端点（Rust 应豁免）
-    // attendance assemble control
-    "/api/attendance/assemble/control/dingding/all",
-    "/api/attendance/assemble/control/qywx/all",
-    "/api/attendance/assemble/control/statistic/do",
-    "/api/attendance/assemble/control/attendancestatisticalcycle",
-    // document / file
-    "/api/document/batch/{id}",
-    "/api/file/assemble/control/file/referencetype/{referenceType}/reference/{reference}",
     // group queries
     "/api/group/has/role",
     "/api/group/list",
@@ -88,8 +79,6 @@ pub const AUTH_EXEMPT_PATHS: &[&str] = &[
     "/api/group/list/object",
     "/api/group/list/person",
     "/api/group/list/person/object",
-    // meeting
-    "/api/meeting/assemble/control/config",
     // person queries
     "/api/person/custom/{name}",
     "/api/person/custom/manager/person/{person}/name/{name}",
@@ -132,8 +121,6 @@ pub const AUTH_EXEMPT_PATHS: &[&str] = &[
     "/api/role/list/object",
     "/api/role/list/person",
     "/api/role/list/person/object",
-    // script
-    "/api/script/list/manager",
     // unit queries
     "/api/unit/check/unit/has/identity",
     "/api/unit/check/unit/has/person",
@@ -160,10 +147,6 @@ pub const AUTH_EXEMPT_PATHS: &[&str] = &[
     "/api/unit/list/unitduty/object",
     // R401J200 豁免扩展：只读查询端点
     // attendance 只读查询（无需认证）
-    "/api/attendance/assemble/control/dingding/all",
-    "/api/attendance/assemble/control/qywx/all",
-    "/api/attendance/assemble/control/statistic/do",
-    "/api/attendance/assemble/control/attendancestatisticalcycle",
     "/api/attendance/assemble/control/attendanceworkplancalendar",
     "/api/attendance/assemble/control/attendanceworkplancalendar/list",
     "/api/attendance/assemble/control/attendanceconfig",

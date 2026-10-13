@@ -74,6 +74,21 @@ pub async fn test_sea_orm_pool() -> Result<DatabaseConnection, String> {
     Database::connect(options).await.map_err(|e| e.to_string())
 }
 
+/// 构造测试用会话（固定 token、person_unique 自定义），用于 handler 级安全
+/// 门禁回归（无 DB 时 is_admin fail-closed，非 admin 会话断言 403）。
+/// 各 crate security_gate_tests 统一入口，避免重复构造 Session 字面量。
+pub fn test_session(person_unique: &str) -> crate::session::Session {
+    use chrono::NaiveDateTime;
+    crate::session::Session {
+        token: "test-token".to_string(),
+        person_unique: person_unique.to_string(),
+        created_at: NaiveDateTime::parse_from_str("1970-01-01 00:00:00", "%Y-%m-%d %H:%M:%S")
+            .unwrap(),
+        expires_at: NaiveDateTime::parse_from_str("1970-01-01 01:00:00", "%Y-%m-%d %H:%M:%S")
+            .unwrap(),
+    }
+}
+
 pub fn test_app_with(state: SecurityState, pool: Pool) -> Router {
     use axum::middleware;
     use axum::routing::{get, post};

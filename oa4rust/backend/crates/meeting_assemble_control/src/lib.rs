@@ -19,6 +19,8 @@ mod tests;
 mod tests_generated;
 #[cfg(test)]
 mod tests_u2;
+#[cfg(test)]
+mod security_gate_tests;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -655,8 +657,13 @@ pub async fn config_system_config(
 #[allow(non_snake_case)]
 pub async fn config_system_config_manage(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 安全审计（2026-10 二轮）：系统会议配置写（UPDATE x_meeting_config）为管理操作。
+    // 路由前缀 /config/system 须保持匿名可达（o2server 对齐的未登录读），故在
+    // handler 内拦截：未认证 401、非 admin 403，杜绝匿名篡改会议模块全局配置。
+    u2_require_admin_opt(&pool, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let config_key = payload
@@ -2960,6 +2967,17 @@ async fn u2_require_admin(pool: &Pool, session: &shared::session::Session) -> Re
     } else {
         Err(AppError::Forbidden)
     }
+}
+
+/// 可选会话版 admin 门禁：无会话 401、非 admin 403。
+/// 用于挂在 o2server 对齐豁免前缀下的破坏性写 handler（前缀须保持匿名可达供
+/// 只读端点使用，写操作只能在 handler 内拦截，未认证请求拿不到会话即 401）。
+async fn u2_require_admin_opt(
+    pool: &Pool,
+    session: Option<&shared::session::Session>,
+) -> Result<(), AppError> {
+    let session = session.ok_or(AppError::Unauthorized)?;
+    u2_require_admin(pool, session).await
 }
 
 /// 归一化查重键：trim + 小写 + 折叠内部空白。同名不同形视为冲突。
