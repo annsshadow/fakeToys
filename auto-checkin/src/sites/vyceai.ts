@@ -125,7 +125,14 @@ async function ensureLogin(page: Page, ctx: AdapterContext): Promise<boolean> {
   await page.waitForTimeout(3000);
   await page.getByRole("textbox", { name: "you@example.com" }).fill(ctx.credentials.email).catch(() => {});
   await page.getByRole("textbox", { name: "••••••••" }).fill(ctx.credentials.password).catch(() => {});
-  await page.getByRole("button", { name: "Login", exact: true }).click().catch(() => {});
+  // 站点按浏览器 locale/IP 输出中英文 UI：登录按钮可访问名为 "Login" 或 "登录"。
+  // 选择器不命中时必须留痕，否则会被下面的 catch 吞掉、表现为"填了表但没提交"。
+  const loginBtn = page.getByRole("button", { name: /^(Login|登录)$/ });
+  if (await loginBtn.count()) {
+    await loginBtn.click().catch(() => {});
+  } else {
+    ctx.log("未找到登录按钮（名称既非 Login 也非 登录），登录页结构可能已变更");
+  }
   // PoW 求解 + 登录需要几秒，轮询等待最多 ~30s
   for (let i = 0; i < 12; i++) {
     await page.waitForTimeout(2500);
