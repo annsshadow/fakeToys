@@ -592,7 +592,7 @@ export function clientDeviceToken(): string {
     token = ''
   }
   if (!token) {
-    token = `h5-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
+    token = `h5-${generateRandomSuffix()}`
     try {
       uni.setStorageSync(KEY, token)
     } catch {
@@ -600,6 +600,22 @@ export function clientDeviceToken(): string {
     }
   }
   return token
+}
+
+/**
+ * 生成设备标识随机后缀。
+ * 安全审计（2026-10）：设备推送 token 属可被重放的凭据，须用密码学安全随机数
+ * （Web Crypto `getRandomValues`，H5 环境可用）；原生/小程序目标无 Web Crypto 时
+ * 降级 `Math.random`+时间戳（非安全关键路径，仅作注册标识）。
+ */
+function generateRandomSuffix(): string {
+  const g = globalThis as unknown as { crypto?: { getRandomValues?: (a: Uint8Array) => void } }
+  if (g.crypto?.getRandomValues) {
+    const buf = new Uint8Array(16)
+    g.crypto.getRandomValues(buf)
+    return Array.from(buf, (b) => b.toString(16).padStart(2, '0')).join('')
+  }
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
 }
 
 // ─────────────────────────────────────────────────────────────
