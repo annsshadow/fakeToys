@@ -473,6 +473,41 @@ function headerTimeMs(headers: Record<string, unknown>, bodyServerTime?: string)
  * 而客户端只有「防线挑战的标准战场」一处需要它。
  * 那一处走这里按需取；战斗页则用 `/battle/token` 下发的关卡（本来就带波次）。
  */
+/** 玩家持有的一颗宝石实例（第 150 轮新增）。 */
+export interface OwnedGem {
+  id: number
+  gem_id: number
+  code: string
+  name: string
+  descr: string
+  /** 品质名：gray / blue / purple / red / gold，与 `/config` 的 gem_qualities 同源。 */
+  quality: string
+  /** 词条，形如 `[{affix:"crit", value:42}]`。 */
+  affixes: { affix: string; value: number }[]
+  /** 已装备的槽位；空串表示未装备。 */
+  equipped_slot: string
+}
+
+/**
+ * 列出玩家持有的宝石。
+ *
+ * 此前 `user_gems` 只有服务端内部读取（计入攻击者派生属性），
+ * **没有任何面向玩家的读取面** —— 玩家买了也看不见自己有什么。
+ */
+export function fetchGems() {
+  return request<{ gems: OwnedGem[] }>('/me/gems')
+}
+
+/**
+ * 洗练一颗宝石：消耗 1 枚洗练券，重新 roll 词条（品质不变）。
+ *
+ * 为什么要玩家点一下而不是自动洗：词条是**构筑选择**，
+ * 自动洗等于替玩家做决定。
+ */
+export function washGem(gemId: number) {
+  return request<{ gem: OwnedGem }>(`/me/gems/${gemId}/wash`, { method: 'POST' })
+}
+
 export function fetchLevel(id: number) {
   return request<import('@/game/types').GeneratedLevel>(`/levels/${id}`)
 }

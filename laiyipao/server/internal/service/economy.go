@@ -566,12 +566,24 @@ func (s *Service) Buy(ctx context.Context, userID, itemID int64) (map[string]int
 
 		grant := map[string]int64{}
 		for k, v := range payload {
-			if v > 0 {
-				grant[k] = int64(v)
+			if v <= 0 {
+				continue
 			}
+			// ⚠️ `gem_instance` 不是货币：它要造一颗**带随机词条的宝石实体**，
+			// 走 grantWallet 会被判成「未知货币」而整笔回滚。
+			// 宝石此前拿不到，就是因为没有任何路径能发出它。
+			if k == gemInstanceKey {
+				if _, _, err := s.mintGem(ctx, tx, userID); err != nil {
+					return err
+				}
+				continue
+			}
+			grant[k] = int64(v)
 		}
-		if err := s.grantWallet(ctx, tx, userID, grant, "shop_buy", itemID); err != nil {
-			return err
+		if len(grant) > 0 {
+			if err := s.grantWallet(ctx, tx, userID, grant, "shop_buy", itemID); err != nil {
+				return err
+			}
 		}
 		if _, err := tx.Exec(ctx,
 			`INSERT INTO user_purchases (user_id, item_id, purchase_date, price) VALUES ($1,$2,$3,$4)`,

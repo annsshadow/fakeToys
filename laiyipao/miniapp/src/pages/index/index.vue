@@ -110,6 +110,9 @@ const elements = ELEMENT_ORDER.map((k) => ({
 const menus = [
   { path: '/pages/stage/stage', label: '关卡', icon: '🎯' },
   { path: '/pages/bag/bag', label: '背包', icon: '🎒' },
+  // 商城（第 151 轮）。此前三种道具唯一的发放途径就是商城，
+  // 而这里没有入口 —— 服务端扣减逻辑齐全，玩家却拿不到道具。
+  { path: '/pages/shop/shop', label: '商城', icon: '🛒' },
   { path: '/pages/mastery/mastery', label: '专精', icon: '🌲' },
   { path: '/pages/signin/signin', label: '签到', icon: '📅' },
   { path: '/pages/rank/rank', label: '排行', icon: '🏆' },
