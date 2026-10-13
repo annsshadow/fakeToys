@@ -37,11 +37,17 @@ var spendCallRe = regexp.MustCompile(`spendToken\(\s*[\w.]+\s*,\s*[\w.]+\s*,\s*[
 //
 // 理由必须具体到能核对（指明前置条件 / 改动面），且 ≥40 字 ——
 // 「暂时没空」这种写法等于把缺口永久合法化，没有任何测试会再提醒。
-var PENDING_TOKENS = map[string]string{
-	"gem_wash_token": "洗练的前提是先有可洗的宝石实例，而全仓库没有任何 INSERT INTO user_gems：" +
-		"玩家手里一颗宝石都没有。先做「洗」等于给一条死路修门。" +
-		"需先补宝石获取途径（掉落或兑换），那是独立的一轮改动。",
-}
+// 第 150 轮起为空：三种道具全部接通了消费端点。
+//
+//	revive_token   → StartBattle 开战扣 1 枚 + 本关 base_hp 加成
+//	mastery_reset  → POST /mastery/reset
+//	gem_wash_token → POST /me/gems/:id/wash
+//
+// 空表本身不是「完成」的证明 —— `TestEveryWalletTokenIsSpendableOrRegistered`
+// 会逐个核对 walletTokens，而 `TestShopDoesNotSellUnspendableTokens`
+// 保证「待接通」与「在售」互斥。下一个人往 walletTokens 加新道具时，
+// 会被当场要求二选一。
+var PENDING_TOKENS = map[string]string{}
 
 // tokensSpentInSource 扫出所有被 spendToken 扣减过的道具名。
 func tokensSpentInSource(t *testing.T) map[string][]string {
@@ -126,21 +132,24 @@ func TestPendingTokensAreRealTokens(t *testing.T) {
 
 // TestShopDoesNotSellUnspendableTokens 商城**不得**出售待接通的道具。
 //
-// 为什么能写成断言了（第 150 轮下架之后）：
+// 为什么能写成断言了（第 150 轮下架机制之后）：
 // 此前复活币与洗练石一边「没有消费端点」一边在商城里卖，唯一的处理是
 // 在界面文案上说「目前无法使用」—— 那只是**告知**，不是**约束**：
 // 后台照样能上架，运营照样能买，玩家照样会投诉。
 //
-// 现在 `seedShop` 里有 `delisted` 标记把它们 enabled 置 false，
-// 于是「待接通」与「在售」变成了互斥状态，可以被机器判定。
-// 哪天有人给 revive_token 接上消费端点，这条会因为
-// 「它仍在 PENDING_TOKENS 里却已下架」而红 —— 提醒把两边一起翻过来。
+// `seedShop` 里的 `delisted` 标记把它们 enabled 置 false，
+// 于是「待接通」与「在售」变成互斥状态，可以被机器判定。
 //
-// 判据扫的是**种子源码**里 `delisted: true` 的那些行发的是什么道具。
+// ⚠️ 本守卫是**双向**的，且两条方向的失败都是真缺口：
+//   - 待接通却在售 → 玩家花钱买了用不了
+//   - 已下架却不待接通 → 要么它其实能用（该上架），要么豁免没登记
+//
+// 自检只要求「扫到商品种子」，**不要求扫到下架项** ——
+// 下架数为 0 恰恰是目标状态，拿它当判据会在全部接通后误报。
 func TestShopDoesNotSellUnspendableTokens(t *testing.T) {
-	delisted := delistedShopTokens(t)
-	if len(delisted) == 0 {
-		t.Fatal("一条下架商品都没扫到 —— 判据失效了（seedShop 的写法变了吗？）")
+	delisted, sold := shopTokensByState(t)
+	if len(sold)+len(delisted) == 0 {
+		t.Fatal("一条商品都没扫到 —— 判据失效了（seedShop 的写法变了吗？）")
 	}
 	for token := range delisted {
 		if _, pending := PENDING_TOKENS[token]; !pending {
@@ -148,15 +157,47 @@ func TestShopDoesNotSellUnspendableTokens(t *testing.T) {
 				"要么它其实能用（那就该上架），要么该补上待接通理由", token)
 		}
 	}
-	// 反向：待接通的道具必须都已下架。
 	for token := range PENDING_TOKENS {
-		if !delisted[token] {
+		if sold[token] {
 			t.Errorf("道具 %q 还没有消费端点，却仍在商城出售 —— "+
 				"玩家花钱买了却用不了。要么在 seedShop 里给它加 delisted，"+
 				"要么把它的消费端点接上。", token)
 		}
 	}
 }
+
+// shopTokensByState 按「是否下架」把商城发放的道具分成两组。
+func shopTokensByState(t *testing.T) (delisted, sold map[string]bool) {
+	t.Helper()
+	raw, err := os.ReadFile(filepath.Join("..", "seeder", "seed.go"))
+	if err != nil {
+		t.Fatalf("读 seeder/seed.go 失败：%v", err)
+	}
+	delisted, sold = map[string]bool{}, map[string]bool{}
+	for _, line := range strings.Split(string(raw), "\n") {
+		line = strings.TrimSpace(line)
+		if !strings.HasPrefix(line, "{") {
+			continue
+		}
+		isDelisted := delistedTailRe.MatchString(line)
+		if !isDelisted && !soldItemRe.MatchString(line) {
+			continue
+		}
+		for _, g := range shopGrantRe.FindAllStringSubmatch(line, -1) {
+			if walletTokens[g[1]] {
+				if isDelisted {
+					delisted[g[1]] = true
+				} else {
+					sold[g[1]] = true
+				}
+			}
+		}
+	}
+	return delisted, sold
+}
+
+// soldItemRe 匹配商品定义行**末尾**的 `, false},`（即在售）。
+var soldItemRe = regexp.MustCompile(`,\s*false\},?\s*$`)
 
 // shopGrantRe 匹配商品定义里的发放列，例如 `"revive_token": 1}`。
 var shopGrantRe = regexp.MustCompile(`"([a-z_]+)":\s*\d+\}`)
@@ -170,25 +211,3 @@ var shopGrantRe = regexp.MustCompile(`"([a-z_]+)":\s*\d+\}`)
 // （下面那条 `len(delisted) == 0` 的自检就是为这个而留的）。
 // 行尾的 `, true},` 则是 delisted 这个字段**本身**的标记，与顺序无关。
 var delistedTailRe = regexp.MustCompile(`,\s*true\},?\s*$`)
-
-// delistedShopTokens 扫出「已被下架」的商品发出的道具。
-func delistedShopTokens(t *testing.T) map[string]bool {
-	t.Helper()
-	raw, err := os.ReadFile(filepath.Join("..", "seeder", "seed.go"))
-	if err != nil {
-		t.Fatalf("读 seeder/seed.go 失败：%v", err)
-	}
-	out := map[string]bool{}
-	for _, line := range strings.Split(string(raw), "\n") {
-		line = strings.TrimSpace(line)
-		if !strings.HasPrefix(line, "{") || !delistedTailRe.MatchString(line) {
-			continue
-		}
-		for _, g := range shopGrantRe.FindAllStringSubmatch(line, -1) {
-			if walletTokens[g[1]] {
-				out[g[1]] = true
-			}
-		}
-	}
-	return out
-}

@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <view class="page-root">
     <view class="pad">
       <!-- 技能槽配置 -->
@@ -112,10 +112,37 @@
           </view>
         </view>
         <text class="muted" style="display: block; margin-top: 12rpx">
-          ⚠️ 宝石**实例**目前无法获得：全仓库没有任何把宝石发到玩家账上的途径，
-          所以它的词条不会计入你的构筑。洗练功能（消耗宝石洗练券）同样未接通 ——
-          这里不再承诺一个玩不到的东西。
+          宝石实例可以在商城买到（随机品质与词条），洗练消耗洗练券重掷词条、品质不变。
+          词条会计入你的攻击者派生属性。
         </text>
+
+        <!-- 我持有的宝石（第 150 轮）。此前这里只有一段「拿不到宝石」的说明 ——
+             `user_gems` 只有服务端内部读取，玩家在界面上看不到自己有什么。 -->
+        <view style="margin-top: 16rpx">
+          <text class="dim" style="display: block; margin-bottom: 8rpx">我的宝石</text>
+          <text v-if="ownedGems.length === 0" class="dim">还没有宝石，去商城买一颗。</text>
+          <view
+            v-for="g in ownedGems"
+            :key="g.id"
+            class="equip-row owned-gem"
+          >
+            <view class="flex-1">
+              <text class="skill-name">
+                {{ g.name }}
+                <text class="dim">· {{ qualityName(g.quality) }}</text>
+              </text>
+              <text class="dim" style="display: block">{{ affixText(g.affixes) }}</text>
+            </view>
+            <view class="skill-act">
+              <text v-if="washingId === g.id" class="dim">洗练中…</text>
+              <text
+                v-else
+                class="link"
+                @click="doWash(g)"
+              >洗练</text>
+            </view>
+          </view>
+        </view>
       </view>
 
       <!-- 合成配方（第 150 轮）：recipes 此前从不下发到客户端，
@@ -172,6 +199,7 @@ import { useGameStore } from '@/store/game'
 import * as api from '@/api/client'
 import { ELEMENT_NAME, type Element } from '@/game/elements'
 import { skillBaseDamageAtLevel } from '@/game/skill'
+import type { OwnedGem } from '@/api/client'
 import type { SkillDef } from '@/game/types'
 
 const store = useGameStore()
@@ -211,6 +239,78 @@ function skillNameOf(id: number): string {
 }
 
 const skins = computed<any[]>(() => store.config?.skins ?? [])
+
+/** 品质中文名；未知品质原样返回（不要吞掉后端新增的档位）。 */
+const QUALITY_CN: Record<string, string> = {
+  gray: '灰',
+  blue: '蓝',
+  purple: '紫',
+  red: '红',
+  gold: '金',
+}
+
+const QUALITY_AFFIX_CN: Record<string, string> = {
+  attack: '攻击',
+  skill_damage: '技能伤害',
+  armor: '护甲',
+  crit: '暴击',
+  element_coef: '元素系数',
+  element_cap: '元素上限',
+  reaction_mult: '反应倍率',
+  heat_cap: '热量上限',
+}
+
+function qualityName(q: string): string {
+  return QUALITY_CN[q] ?? q
+}
+
+/** 词条渲染成「暴击 +42 · 护甲 +18」。未知词条名原样显示。 */
+function affixText(affixes: { affix: string; value: number }[]): string {
+  if (!affixes || affixes.length === 0) return '（无词条）'
+  return affixes.map((a) => `${QUALITY_AFFIX_CN[a.affix] ?? a.affix} +${a.value}`).join(' · ')
+}
+
+/** 我持有的宝石实例（第 150 轮新增读取面）。 */
+const ownedGems = ref<OwnedGem[]>([])
+/** 正在洗练的宝石 id；非 0 时该行禁用，防连点连扣券。 */
+const washingId = ref(0)
+
+async function loadGems() {
+  try {
+    const r = await api.fetchGems()
+    ownedGems.value = r.gems ?? []
+  } catch {
+    // 拉不到就当没有：这一段是附加信息，不该让整页白屏。
+    ownedGems.value = []
+  }
+}
+
+/**
+ * 洗练一颗宝石。
+ *
+ * 失败不静默：券是玩家花钱买的，扣了却没生效是最容易被当成 bug 报上来的状态，
+ * 所以要么 toast 原因、要么明确成功。
+ */
+async function doWash(g: OwnedGem) {
+  if (washingId.value !== 0) return
+  if ((store.wallet.tokens?.gem_wash_token ?? 0) < 1) {
+    uni.showToast({ title: '没有洗练券', icon: 'none' })
+    return
+  }
+  washingId.value = g.id
+  try {
+    const r = await api.washGem(g.id)
+    const i = ownedGems.value.findIndex((x) => x.id === g.id)
+    if (i >= 0 && r.gem) ownedGems.value.splice(i, 1, r.gem)
+    // 余额以服务端为准：本地那份在这笔扣减前是旧的。
+    await store.refreshProfile()
+    uni.showToast({ title: '洗练完成', icon: 'none' })
+  } catch (e) {
+    uni.showToast({ title: (e as Error).message, icon: 'none' })
+  } finally {
+    washingId.value = 0
+  }
+}
 
 /**
  * 道具清单（`/wallet` 的 `tokens`，第 150 轮才有消费方）。
@@ -422,11 +522,11 @@ async function clearSlot(idx: number) {
 
 onMounted(async () => {
   if (!store.loggedIn) await store.login()
-  // 槽位以服务端为准；技能等级/升级花费同以服务端 build（owned skills 快照）为准。
   // 第 145 轮：修前只 loadLoadout 不 refreshProfile —— 已登录态直接进背包时
   // （未先经过 index/battle/me）store.build 为 null 或陈旧，levelOf 恒 0、
   // 升级花费恒按 1 级算，与玩家真实养成不符。两者并发拉取，互不阻塞。
-  await Promise.all([store.loadLoadout(), store.refreshProfile()])
+  // 宝石（第 150 轮）与它们并发：它只影响下面那块「我的宝石」，不参与槽位逻辑。
+  await Promise.all([store.loadLoadout(), store.refreshProfile(), loadGems()])
   selected.value = [...store.loadout]
   while (selected.value.length < 4) selected.value.push(0)
 })
