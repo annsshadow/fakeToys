@@ -6,7 +6,6 @@ use axum::{
     response::{IntoResponse, Response},
     Json,
 };
-use base64::Engine;
 use chrono::{Duration, Utc};
 use deadpool_postgres::Pool;
 use serde::{Deserialize, Serialize};
@@ -15,7 +14,7 @@ use shared::error::AppError;
 use shared::response::ActionResult;
 use shared::session::SessionManager;
 
-use crate::password::{des3_decrypt_ede2, des3_encrypt_ede2};
+use crate::password::{sso_decrypt_payload, sso_encrypt_payload, legacy_compat_from_env};
 
 // ──────────────────────────────────────────────────────────────────────────────
 // sso — 单点登录（3DES EDE2 加密 token）
@@ -107,9 +106,9 @@ pub async fn sso_encrypt(
     }
     let now = Utc::now();
     let payload = format!("{}#{}", req.credential, now.timestamp_millis());
-    let encrypted = des3_encrypt_ede2(&payload, &req.key)
-        .map_err(|_| AppError::BadRequest("invalid key length".to_string()))?;
-    let token = base64::engine::general_purpose::URL_SAFE.encode(&encrypted);
+    // 新 token 一律走 AES-GCM-256（取代 3DES-ECB）；旧 3DES 仅在解密兼容开关开启时回退。
+    let token = sso_encrypt_payload(&payload, &req.key)
+        .map_err(|_| AppError::BadRequest("encryption failed".to_string()))?;
     Ok(Json(ActionResult::success(serde_json::json!({
         "client": req.client,
         "token": token,
@@ -121,7 +120,7 @@ pub async fn sso_encrypt(
 // Internal helpers
 // ──────────────────────────────────────────────────────────────────────────────
 
-/// 从 sso_client 表查找 client_name 对应的 3DES key
+/// 从 sso_client 表查找 client_name 对应的密钥（格式无关：AES-GCM 派生或 3DES 均用同列）。
 async fn lookup_sso_key(pool: &Pool, client: &str) -> Result<String, AppError> {
     let client_row = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client_row
@@ -138,10 +137,7 @@ async fn lookup_sso_key(pool: &Pool, client: &str) -> Result<String, AppError> {
 }
 
 fn decrypt_sso_token(token: &str, key: &str) -> Result<Vec<u8>, AppError> {
-    let decoded = base64::engine::general_purpose::URL_SAFE
-        .decode(token)
-        .map_err(|_| AppError::BadRequest("invalid token encoding".to_string()))?;
-    des3_decrypt_ede2(&decoded, key)
+    sso_decrypt_payload(token, key, legacy_compat_from_env())
         .map_err(|_| AppError::BadRequest("decryption failed".to_string()))
 }
 

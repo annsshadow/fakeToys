@@ -116,17 +116,30 @@ fn validate_and_remove_pkce(state: &str, code_verifier: &str) -> bool {
 // ──────────────────────────────────────────────────────────────────────────────
 
 /// 验证微信签名
-/// 算法：将 token、timestamp、nonce 按字典序排序后拼接，计算 SHA1 哈希，与 signature 对比
+/// 算法：将 token、timestamp、nonce 按字典序排序后拼接，计算 SHA1 哈希，与 signature 对比。
+/// SHA1 为微信回调协议固定算法不可变更；比较改为常量时间，防计时侧信道。
 pub fn verify_wechat_signature(token: &str, signature: &str, timestamp: &str, nonce: &str) -> bool {
     let mut items = [token, timestamp, nonce];
     items.sort();
     let text = items.concat();
     let hash = format!("{:x}", sha1::Sha1::digest(text.as_bytes()));
-    hash == signature
+    // 常量时间比较，防计时侧信道（signature 来自不可信请求体）。
+    if hash.len() != signature.len() {
+        return false;
+    }
+    let mut acc = 0u8;
+    for (a, b) in hash.bytes().zip(signature.bytes()) {
+        acc |= a ^ b;
+    }
+    acc == 0
 }
 
 /// 验证钉钉签名
-/// 算法：密钥 + 换行 + timestamp，计算 HMAC-SHA256，与 signature 对比
+/// 算法：HMAC-SHA256(secret + timestamp) → hex，与 signature 对比（常量时间）。
+///
+/// 注：钉钉文档算法为 `sign = base64(hmac_sha256(timestamp\napp_secret))`。此实现用
+/// `hex(hmac_sha256(app_secret + timestamp))`，与 o2server 历史约定保持一致；
+/// 如需对接钉钉新版回调请参考钉钉官方文档调整 message 编码。比较改为常量时间。
 pub fn verify_dingtalk_signature(
     app_secret: &str,
     signature: &str,
@@ -137,9 +150,15 @@ pub fn verify_dingtalk_signature(
     let mut mac = Hmac::<Sha256>::new_from_slice(app_secret.as_bytes())
         .expect("HMAC can take key of any size");
     mac.update(key.as_bytes());
-    let result = mac.finalize();
-    let hex = hex::encode(result.into_bytes());
-    hex == signature
+    let hex = hex::encode(mac.finalize().into_bytes());
+    if hex.len() != signature.len() {
+        return false;
+    }
+    let mut acc = 0u8;
+    for (a, b) in hex.bytes().zip(signature.bytes()) {
+        acc |= a ^ b;
+    }
+    acc == 0
 }
 
 // ──────────────────────────────────────────────────────────────────────────────

@@ -3,7 +3,6 @@
 
 use axum::response::{IntoResponse, Response};
 use axum::{extract::Extension, extract::Path, Json};
-use base64::Engine;
 use chrono::{Duration, Utc};
 use deadpool_postgres::Pool;
 use serde::Serialize;
@@ -11,7 +10,7 @@ use shared::error::AppError;
 use shared::response::ActionResult;
 use shared::session::SessionManager;
 
-use crate::password::des3_decrypt_ede2;
+use crate::password::{sso_decrypt_payload, legacy_compat_from_env};
 
 // ──────────────────────────────────────────────────────────────────────────────
 // andfx — 移动办公 MOA SSO（Android/iOS）
@@ -117,10 +116,7 @@ pub async fn andfx_moa_sso(
 // ──────────────────────────────────────────────────────────────────────────────
 
 fn decrypt_andfx_token(token: &str, key: &str) -> Result<Vec<u8>, AppError> {
-    let decoded = base64::engine::general_purpose::URL_SAFE
-        .decode(token)
-        .map_err(|_| AppError::BadRequest("invalid token encoding".to_string()))?;
-    des3_decrypt_ede2(&decoded, key)
+    sso_decrypt_payload(token, key, legacy_compat_from_env())
         .map_err(|_| AppError::BadRequest("decryption failed".to_string()))
 }
 
