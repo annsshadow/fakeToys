@@ -468,13 +468,38 @@ async fn route_path_arity_matches_handlers() {
 // state_summary 9→2 FILTER-aggregate collapse (优化二轮 25): seed known rows and
 // assert the summary buckets move by exactly the seeded deltas, proving the
 // per-table FILTER counts still map to the right output keys. Live DB only.
+//
+// 测试卫生（2026-10-13 二轮收口）：两个 delta 测试（本测试 + state_running）对
+// x_work/x_task 全表计数做 before/after 差值断言——默认并发下互相污染计数窗口
+// （前序失败运行还会因固定种子 id 无前置清理而残留，INSERT 撞唯一键）。故：
+//   1) 用进程内互斥锁把两个 delta 测试串行化（互斥仅约束本 crate 内并发）；
+//   2) 每次开跑前置 DELETE 本测试固定种子行（幂等，失败运行不留残留）。
+static STATE_DELTA_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
 #[tokio::test]
 async fn state_summary_filter_buckets_match_seeded_deltas() {
     if !shared::testing::is_db_available().await {
         return;
     }
+    let _delta_guard = STATE_DELTA_LOCK.lock().unwrap_or_else(|p| p.into_inner());
     let pool = shared::testing::test_pool();
     let client = pool.get().await.unwrap();
+
+    // 前置清理：幂等 + 防前序失败残留（固定种子 id）。
+    client
+        .execute(
+            "DELETE FROM x_task WHERE id IN ('r25-t-c1','r25-t-e1')",
+            &[],
+        )
+        .await
+        .unwrap();
+    client
+        .execute(
+            "DELETE FROM x_work WHERE id IN ('r25-w-c1','r25-w-c2','r25-w-p1','r25-w-e1')",
+            &[],
+        )
+        .await
+        .unwrap();
 
     async fn summary(pool: &Pool) -> serde_json::Value {
         let resp = crate::router(pool.clone())
@@ -559,8 +584,26 @@ async fn state_running_filter_buckets_match_seeded_deltas() {
     if !shared::testing::is_db_available().await {
         return;
     }
+    // 与 state_summary delta 测试串行化 + 前置清理（测试卫生，见 STATE_DELTA_LOCK）。
+    let _delta_guard = STATE_DELTA_LOCK.lock().unwrap_or_else(|p| p.into_inner());
     let pool = shared::testing::test_pool();
     let client = pool.get().await.unwrap();
+
+    // 前置清理：幂等 + 防前序失败残留（固定种子 id）。
+    client
+        .execute(
+            "DELETE FROM x_task WHERE id IN ('r26-t-p1','r26-t-r1','r26-t-s1','r26-t-s2')",
+            &[],
+        )
+        .await
+        .unwrap();
+    client
+        .execute(
+            "DELETE FROM x_work WHERE id IN ('r26-w-p1','r26-w-r1')",
+            &[],
+        )
+        .await
+        .unwrap();
 
     async fn running(pool: &Pool) -> serde_json::Value {
         let resp = crate::router(pool.clone())
