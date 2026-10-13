@@ -16,7 +16,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from fastapi import Header, HTTPException
 
-from augmentor import AugmentorPipeline, load_config
+from augmentor import AugmentorPipeline, DataValidationError, load_config
 from augmentor.atomic_write import atomic_write_json
 from augmentor.config import WebConfig
 
@@ -709,3 +709,22 @@ def save_items(filename: str, items: List[dict]):
         items: 数据列表
     """
     _sync_write_json(resolve_data_path(filename, for_write=True), items)
+
+
+def raise_boundary_error(exc: Exception) -> None:
+    """SDK 那把门口判据（``DataValidationError``）落 **400**，其余照旧收敛 500
+
+    与 `raise_internal_error` 的差别只有一格，而这一格是**语义**的：
+    `augmentor/validation.require_within_dir` 拦的是「调用方把一个名字当路径片段用、
+    而它拼出了自己的目录之外」（版本 ID / 任务 ID / 数据集名 / 分片前缀），那是
+    **请求方的错**，客户端必须拿到那句判决，而不是「服务器内部错误」这种把参数缺陷
+    伪装成服务端故障的答案。反过来，`VersionError`（同为 ``ValueError`` 子类）与其余
+    未分类异常**不在本函数放行之列** —— 一刀切把它们改成 400 会动到对外状态码契约
+    （A280 那一族，待拍），所以这里按**类型**放行而不是按「是不是 ValueError」放行。
+
+    文案取 `str(exc)` 与 400 档同口径（`to_http_error` 的 ValueError 支同样回原文）；
+    `require_within_dir` 的文案刻意只含名字与目录标签，不含解析后的绝对落点。
+    """
+    if isinstance(exc, DataValidationError):
+        raise HTTPException(status_code=400, detail=str(exc))
+    raise_internal_error(exc)

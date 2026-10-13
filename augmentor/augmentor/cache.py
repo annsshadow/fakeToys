@@ -330,9 +330,10 @@ class DiskCache:
         return True
     
     def clear(self):
-        """清空缓存"""
+        """清空缓存：只删**本缓存自己记账的**条目，目录里别人的 `*.json` 一律不碰"""
+        owned = {hashlib.md5(k.encode()).hexdigest() for k in self._metadata}
         for file in self._cache_dir.glob("*.json"):
-            if file.name != "_metadata.json":
+            if file.stem in owned:
                 file.unlink()
         self._metadata.clear()
         self._save_metadata()
