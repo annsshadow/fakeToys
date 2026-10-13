@@ -31,6 +31,9 @@ self.addEventListener('fetch', (event) => {
 })
 
 // Message: handle skip waiting
+// 安全审计（2026-10 二轮）：纵深防御——仅接受来自同源（本 SW 注册源）页面的
+// 消息，防同域既有 XSS 借 SKIP_WAITING 强制激活 pending SW（版本错位降级面）。
 self.addEventListener('message', (event) => {
+  if (event.origin !== self.location.origin) return
   if (event.data?.type === 'SKIP_WAITING') self.skipWaiting()
 })
