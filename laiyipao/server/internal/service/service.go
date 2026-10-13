@@ -547,10 +547,16 @@ var walletColumns = map[string]string{
 //	货币（user_wallets 列）：coin / gem / energy / keys
 //	道具（user_tokens 行）  ：revive_token / mastery_reset / gem_wash_token
 //
-// 消费面（2026-10 轮起）：
+// 消费面（2026-10 第 148–151 轮全部接通）：
+//
 //   - mastery_reset     → POST /mastery/reset（ResetMastery 清空专精，spendToken 扣 1）
-//   - gem_wash_token    → 无（user_gems 无获取途径，先补宝石获取再接洗练，见 README 边界 16）
-//   - revive_token      → 无（局内复活动 I-6 重放锚点，属核心战斗改动，见 README 边界 16）
+//   - revive_token      → StartBattle 开战扣 1 枚，本关 base_hp ×1500‰
+//     （**战前加成**，不是局内复活：复活要动战斗结算的重放锚点 I-6）
+//   - gem_wash_token    → POST /me/gems/:id/wash（重 roll 词条，品质不变）
+//
+// 发放面：三者的**唯一**途径都是商城 `shop_items`（签到/任务/成就/兑换码都不发）。
+// 客户端此前没有商城页，所以「服务端有扣减逻辑」不等于「玩家能用」——
+// 第 151 轮补上 `pages/shop` 后这三条才是真正的机制闭环。
 var walletTokens = map[string]bool{
 	"revive_token":   true,
 	"mastery_reset":  true,

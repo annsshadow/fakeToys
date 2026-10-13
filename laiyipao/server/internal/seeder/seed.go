@@ -17,11 +17,15 @@ import (
 
 // Seed 写入全部游戏内容。返回各类实体的写入条数。
 type SeedResult struct {
-	Enemies    int
-	Skills     int
-	Recipes    int
-	Equipment  int
-	Gems       int
+	Enemies   int
+	Skills    int
+	Recipes   int
+	Equipment int
+	Gems      int
+	// GemAffixes 是宝石候选词条池的条数（第 150 轮新增）。
+	// 单独计数而不是并进 Gems：它决定「洗练能不能 roll 出东西」，
+	// 与「有没有宝石种类」是两件事，混在一起就看不出是哪一环断了。
+	GemAffixes int
 	Skins      int
 	Mastery    int
 	Levels     int
@@ -174,12 +178,31 @@ func seedEquipmentAndGems(ctx context.Context, tx pgx.Tx, res *SeedResult) error
 	}
 	for _, g := range domain.SeedGems {
 		if _, err := tx.Exec(ctx, `
-			INSERT INTO gems (id, code, name, attr) VALUES ($1,$2,$3,$4)
-			ON CONFLICT (id) DO UPDATE SET code=EXCLUDED.code, name=EXCLUDED.name, attr=EXCLUDED.attr`,
-			g.ID, g.Code, g.Name, g.Attr); err != nil {
+			INSERT INTO gems (id, code, name, attr, descr) VALUES ($1,$2,$3,$4,$5)
+			ON CONFLICT (id) DO UPDATE SET
+				code=EXCLUDED.code, name=EXCLUDED.name, attr=EXCLUDED.attr, descr=EXCLUDED.descr`,
+			g.ID, g.Code, g.Name, g.Attr, g.Descr); err != nil {
 			return fmt.Errorf("insert gem %d: %w", g.ID, err)
 		}
 		res.Gems++
+	}
+	// 第 150 轮：补上宝石的**候选词条池**。
+	//
+	// 此前 `gem_affixes` 表建好了却是**空的**（0 行），于是洗练没有可 roll 的来源 ——
+	// 这比「玩家没有宝石」更靠底层：就算凭空给他一颗，也洗不出任何东西。
+	//
+	// 唯一约束是 (gem_id, affix)：同一种宝石里同名词条只能有一条，
+	// 否则 roll 出来的两条会重复加值，而玩家看到的是「两条一样的词条」。
+	for _, a := range domain.SeedGemAffixes {
+		if _, err := tx.Exec(ctx, `
+			INSERT INTO gem_affixes (gem_id, affix, min_value, max_value)
+			VALUES ($1,$2,$3,$4)
+			ON CONFLICT (gem_id, affix) DO UPDATE SET
+				min_value=EXCLUDED.min_value, max_value=EXCLUDED.max_value`,
+			a.GemID, a.Affix, a.MinValue, a.MaxValue); err != nil {
+			return fmt.Errorf("insert gem affix %d/%s: %w", a.GemID, a.Affix, err)
+		}
+		res.GemAffixes++
 	}
 	return nil
 }
@@ -375,9 +398,13 @@ func seedShop(ctx context.Context, tx pgx.Tx, res *SeedResult) error {
 		{5, "shop_retry", "重试符", "boost", map[string]int{"coin": 5000}, map[string]int{"revive_token": 1}, 5, false},
 		{6, "shop_mastery_reset", "专精点重置", "boost", map[string]int{"gem": 80}, map[string]int{"mastery_reset": 1}, 0, false},
 		{7, "shop_firstpay", "首充礼包", "starter", map[string]int{"coin": 0}, map[string]int{"gem": 300, "coin": 50000, "energy": 50}, 1, false},
-		// ⚠️ 同上：洗练券的前置是「玩家得有宝石实例」，而全仓库没有任何
-		// INSERT INTO user_gems —— 玩家手里一颗都没有，洗了也没得洗。
-		{8, "shop_gem_wash", "洗练石", "boost", map[string]int{"coin": 20000}, map[string]int{"gem_wash_token": 1}, 3, true},
+		// 洗练券：已接通 POST /me/gems/:id/wash，恢复上架。
+		// 定价提到 120,000 金币（原价 20,000）：原价比一个金币袋还便宜，
+		// 会让玩家「买一颗灰宝石反复洗」，宝石退化成洗练券的附赠品。
+		{8, "shop_gem_wash", "洗练石", "boost", map[string]int{"coin": domain.GemWashPrice}, map[string]int{"gem_wash_token": 1}, 3, false},
+		// 第 150 轮：宝石本体。payload 用保留键 `gem_instance` ——
+		// 它要造的是一颗**带随机词条的实体**，不是某种货币。
+		{9, "shop_gem", "随机宝石", "gem", map[string]int{"gem": domain.GemShopPrice}, map[string]int{"gem_instance": 1}, 3, false},
 	}
 	for _, it := range items {
 		priceRaw, err := json.Marshal(it.price)

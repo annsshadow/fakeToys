@@ -81,6 +81,11 @@ func (s *Server) Register(app *fiber.App) {
 	// 鉴权不是这个端点的细节，是它的全部意义。
 	me.Post("/skills/:id/upgrade", s.upgradeSkill)
 
+	// 第 150 轮：宝石。第 133 轮的权益扫描要求「宝石要有装备/卸下入口」，
+	// 那条只覆盖了 equipped_slot；这里补的是**看得见**与**洗得动**。
+	me.Get("/gems", s.listGems)
+	me.Post("/gems/:id/wash", s.washGem)
+
 	wallet := v1.Group("/wallet", requireUser(s.Svc))
 	wallet.Get("/", s.wallet)
 
@@ -367,6 +372,31 @@ func (s *Server) settleBattle(c *fiber.Ctx) error {
 		return failErr(c, err)
 	}
 	return c.JSON(resp)
+}
+
+// listGems 列出玩家持有的全部宝石实例。
+//
+// 这是宝石从「库里躺着没人看得见」变成「玩家能看到、能洗」的那一步 ——
+// 此前 `user_gems` 只有两处内部读取（计入攻击者），没有任何面向玩家的读取面。
+func (s *Server) listGems(c *fiber.Ctx) error {
+	gems, err := s.Svc.ListGems(c.Context(), userIDFrom(c))
+	if err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(fiber.Map{"gems": gems})
+}
+
+// washGem 消耗 1 枚洗练券，重 roll 这颗宝石的词条（品质不变）。
+func (s *Server) washGem(c *fiber.Ctx) error {
+	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
+	if err != nil || id < 1 {
+		return fail(c, fiber.StatusBadRequest, "bad_input", "宝石 ID 非法")
+	}
+	g, err := s.Svc.WashGem(c.Context(), userIDFrom(c), id)
+	if err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(fiber.Map{"gem": g})
 }
 
 func (s *Server) getReplay(c *fiber.Ctx) error {

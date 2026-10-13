@@ -31,7 +31,7 @@ cd laiyipao/server
 export DATABASE_URL="postgres://postgres@127.0.0.1:5432/laiyipao?sslmode=disable"
 export BOOTSTRAP_ADMIN_PASS="admin12345"   # 少于 10 位会被拒绝引导
 
-go run ./cmd/migrate   # 建表（13 个 goose 迁移，49 张业务表）
+go run ./cmd/migrate   # 建表（14 个 goose 迁移，49 张业务表）
 go run ./cmd/seed      # 写入游戏内容（首次必须执行）
 go run ./cmd/api       # 监听 :8080
 ```
@@ -641,8 +641,8 @@ pnpm vitest run src/test/contract_coverage.test.ts
 
 | 项 | 状态 |
 |---|---|
-| Go 测试 | **12 个包全绿**（2026-10-13 实测：Go 1.26.3 + PostgreSQL 18.6）。`internal/service` 连续两轮全绿且**跑完残留测试库 0 个**（此前 15–278，且残留会让下一轮开始失败） |
-| TS 测试 | miniapp **1014**（+2 端到端需起服务）· admin **250** 全绿 |
+| Go 测试 | **12 个包全绿**（2026-10-13 实测：Go 1.26.3 + PostgreSQL 18.6）。`internal/service` 全套约 163s；孤儿库残留 **0 个**；开发库测试不再写入 |
+| TS 测试 | miniapp **1031**（+2 端到端需起服务）· admin **250** 全绿 |
 | `go vet` / `gofmt -l` | 干净 |
 | `vue-tsc`（admin + miniapp） | 0 error |
 | `e2e.ps1` 19 步 | 全通过 |
@@ -1176,72 +1176,38 @@ cd admin && npm run build && npm run size:check  # 超预算则退出码 1
 14. ~~元素系数的惩罚区间在 200~800‰~~ **假设已被否证，改为「严格单调 + 1000‰ 后是纯浪费」** —— 原先写着「元素 DoT 打在已过防线的敌人身上就浪费掉了」，并据此把「改 DoT 结算时机」列为核心系统待办。**代码里没有这个机制**：`damage.ts:resolveHit` 算出的 `elementDmg` 在**同一次调用内**折进 `critPart` → `total` → 立刻扣 `def.hp`，没有延迟队列、没有「下个 tick 才结算」、没有与漏怪阈值的交互。第二条假设「降系数 → 反应变弱 → 冻结/眩晕变少 → 更多敌人走到防线」同样被否证：`engine.ts:1022` 的时长取自**反应表常量** `spec.statusDurationMs`，与 `elementCoefPermille` 无关。**实测曲线是严格单调的**（前 40 关，默认构筑）：200‰→869 漏、400‰→378、700‰→60、1000‰→19、1500‰→1、1800‰→0。没有凹陷、没有惩罚区间 —— 「惩罚区间」这个说法把「低于基准就是更差」误述成了「存在特殊坏区间」，会误导人去改机制。**真实存在的浪费是另一种形态：过量伤害。** 反推总伤害（`score = totalDamage/100 + kills*500`）在 1000‰→3000‰ 之间涨 39%，而**击杀数饱和在 818→820→820 不动** —— 1000‰ 之后元素系数买到的几乎全是打在已死敌人身上的伤害，而 `score` 照样计分。**这一条已完整实现并回滚。** 理由：收益已被现有机制覆盖 —— 结算时 `scoreCapFor` 把分数裁到 `gl.MaxScore`，而 `MaxScore = Σ(击杀分 + (hp+shield)/100)`，**恰好就是「只算有效伤害」口径的天花板**。实测第 50 关满配 v1 得 25496 而上限是 25348：**v1 本来就打出了超过理论满分的分数，然后被服务端截断**。玩家从「多打一点」那里拿不到额外分数，裁剪器就是那道闸。代价却是实打实的：计分版本号机制 + 战报新列 + 跨端下发 + 重放按记录选口径，以及**平衡回归**（第 50/57 关「满配 3 星 → 2 星」—— 被驱散的护盾在「只算吸收量」的口径下一分不给，而驱散是奖励、让它扣分是反的）。**不做。** 守卫见 `elem_coef_shape.test.ts`（6 用例：单调性、控制效果可达性、过量伤害事实）与 `score_cap_guard_test.go`（把「裁剪已覆盖 v2 的收益」这个前提钉成不变式：若有人放宽 `scoreCapFor`，它会红）。
 
 15. **5 个集合类上报字段此前完全无界** —— `elements_used` / `reactions_used` / `terrain_used` / `card_picks` / `replay_hash` 既无长度/取值上界，也不参与任何奖励计算，却**直接落进 battle_records**，其中 `reactions_used` 还会被运营看板的 `GROUP BY` 读走。一个 4096 键的 map 就能把战报行撑到不可用，而塞进 `"fake_reaction": 999` 会让看板上的「反应分布」变成客户端说了算的东西。**「不参与奖励计算」不等于「不需要校验」** —— 不校验它，它就进了数据库、进了报表、进了别人基于它做的决策。已补：键白名单、负计数拒绝、`elements_used` 合计 ≤ `shots × 该关怪数`、`reactions_used` 合计 ≤ `reactions`、`terrain_used` ⊆ 该关地形种类且不重复、`card_picks` 长度 ≤ 波数且每项 ≥ -1、`replay_hash` ≤ 64 字符。并加**反射式覆盖率守卫**（`settle_coverage_test.go`）：`SettleInput` 新增字段若既无边界又未显式豁免（豁免必须写明理由），测试立刻红 —— 这类缺陷不是被测出来的，是**根本没被想过**。跨端由 `settle_bounds_parity.test.ts` 保证服务端的新边界**接受真实引擎的上报**。**边界不是拍出来的**：`elements_used` 的上界曾是 `hits`，而 parity 实测发现真实引擎的元素合计 / hits 最大 **1.214**（AoE 与链式走 `hitEnemy` 却不计入 `hits`）—— 那个界会**拒绝几乎所有正常对局**。顺带确认：`terrain_used` 合法长度**最多是 1**（`generateTerrain` 产出的地形全是同一个 kind，且 100 关里 75 关没有地形），该字段信息量约等于「这一关有没有触发地形」；`stats.go` 若按它做按关的「地形触发率」，分辨率只有 0/1。**未做**：给关卡配多种地形属内容设计改动。
-16. **三个道具里 `mastery_reset` 已接通消费，`gem_wash_token` / `revive_token` 仍无消费端点（第 74 轮发现，本轮接通 1/3）** ——
-    三个道具现在**买得到了**（此前 `Buy` 的 `grantWallet` 只认 `walletColumns`，
-    这三件商品每次购买都在事务里失败并回滚，客户端只看到「未知货币 "revive_token"」的 400）。
-    修法是新增 `user_tokens` 表 + `walletTokens` 白名单。
+16. **三种道具已全部接通消费端点，但「有扣减逻辑」不等于「玩家能用」——这条边界记录的是后半个问题**（2026-10-09 起，至第 151 轮收口）
 
-    **✅ `mastery_reset` 已实现**（2026-10-09）：`POST /api/v1/mastery/reset`
-    消耗 1 件 `mastery_reset` 道具，清空该玩家全部 `user_mastery_nodes`（专精重铸）。
-    之所以值得接通：`AllocateMastery` 是**只插不删**，玩家点错方向后没有任何
-    改向途径，`mastery_reset` 是唯一的「重铸」入口。语义决策：点数预算
-    （`user_progress.mastery_points`，由 `level_exp` 派生）**不变**，只清空已选节点；
-    事务内**先扣道具再清节点**（不足则整批回滚，避免白送重铸）；
-    消费走条件 UPDATE（`balance >= 1` 才扣，`ErrNoRows` → 可读 400，不靠 CHECK 兜底）；
-    写一条 `wallet_flows` 消费流水 + 一条 `admin_audit_logs` 审计。
-    行为由 `mastery_reset_test.go`（3 例，含「扣光后第二次必失败」防免费重铸）钉住。
+    最初 `walletTokens` 有 3 种道具（`revive_token` / `mastery_reset` / `gem_wash_token`），
+    而 `Buy` → `grantWallet` 只认 `walletColumns`（货币列）。商品只要发道具就整笔失败，
+    客户端还只收到「未知货币 "revive_token"」的 400。三步缺一不可：
+    建表 + `walletTokens` 登记 + 消费端点。
 
-    **✅ 客户端接入（第 150 轮）**：服务端这个端点从 2026-10-09 起就存在，
-    但 `client.ts` 里**没有对应函数**、专精页**没有入口** ——
-    也就是说它是一个「逻辑完整、还测到了，但线上没人走」的端点。
-    本轮接上：`resetMastery()` + 专精页重铸入口
-    （按钮按道具数与已选数置灰、防连点、成功后用回执直接刷 UI）。
-    同时补上 `/wallet` 的 `tokens` 字段 —— `TokenBalance` 这个 service 方法
-    **此前没有任何 HTTP 端点读它**，于是道具「买得到但看不见」。
-    现由 `WalletTokenKinds`（从 `walletTokens` 派生，不抄第二份名单）下发自明白名单。
-    背包页新增「道具」卡片，逐条写明**现在到底能不能用** ——
-    这不是文案洁癖：玩家在商城买了道具却在任何地方都找不到自己的存货，
-    是最容易被当成 bug 报上来的状态。
+    **现状（2026-10-13，第 151 轮）**：三种道具各有消费端点，
+    **且三者的唯一发放途径（商城）在客户端有了页面** —— 见下方第 25 条。
 
-    **⚠️ `gem_wash_token` 仍未做，且已从商城下架（第 150 轮）**：
+    | 道具 | 消费端点 | 效果 |
+    |---|---|---|
+    | `mastery_reset` | `POST /mastery/reset` | 清空 `user_mastery_nodes`，专精点回池子 |
+    | `revive_token` | `StartBattle`（开战时） | 扣 1 枚，本关 `base_hp` ×1500‰ |
+    | `gem_wash_token` | `POST /me/gems/:id/wash` | 重 roll 词条，**品质不变** |
 
-    > 「告知玩家用不了」只是文案，「不卖」才是约束。
-    > 此前这两件一边没有消费端点、一边在商城里卖：玩家花钱买了，
-    > 却翻遍全应用都找不到能用的地方 —— 那是最容易被当成 bug 报上来的一种状态。
-    > 复活币随后在同轮接通了消费端点并恢复上架（见下）；只有洗练石保持下架。`seedShop` 的
-> 商品定义加了 `delisted` 标记，把 `enabled`
-    > **幂等地**压成 false（注意：上面的 upsert **刻意不碰** `enabled`，
-    > 以保住「后台手动上下架能扛住重新灌种子」这个约定，所以下架必须另写一次 UPDATE）。
-    > 商品行保留 —— 后台看得见「曾经有这个商品」，玩家已购记录
-    > `user_purchases.item_id` 的外键也不会悬空；功能补齐后去掉 `delisted` 即可上架。
-    > 由 `TestShopDoesNotSellUnspendableTokens` 盯住：待接通与在售互斥。
+    `revive_token` 刻意做成**战前加成**而不是局内复活：局内复活要动战斗结算的
+    重放锚点 I-6（`replay_hash` 会变），那是对抗校验的核心而非道具功能。
+    扣币与体力在 `StartBattle` 的**同一事务**里 —— 两处分开会出现
+    「扣了体力没扣币」或反之。
 
-    - `gem_wash_token`（洗宝石）：`user_gems`（玩家持有的宝石实例）**没有任何获取途径**
-      —— 全仓库没有 `INSERT INTO user_gems`，玩家手里根本没有宝石可洗。
-      先做「洗」等于给一条死路修门。需先补宝石获取（掉落/兑换）再谈洗练。
-      第 150 轮把背包页那句「词条可洗练（消耗钻石）」**改成了实话**
-      （明确写出玩家拿不到宝石实例）—— 承诺一个玩不到的东西比不承诺更糟。
-    - `revive_token`（复活币）：**✅ 第 150 轮接通**。
-      形态是「战前加成」而不是「局内复活」：开战时自动扣 1 枚，
-      本关基础血量 ×`domain.ReviveBaseHPMultPermille`（当前 1500‰ = +50%）。
-      扣币时机与体力完全一致（同事务、同时机），没有币时静默降级为普通战斗。
-      客户端**零改动** —— 它本来就用服务端下发的 `base_hp`。
+    `gem_wash_token` 的前置是三件事按序做完：① `gem_affixes` 灌种子
+    （此前表建好了却是 **0 行**）；② 宝石有获取途径（商城 60 钻石随机一颗）；
+    ③ 洗练端点。缺任何一件，玩家手里就是空壳。
 
-      > **更正一个此前的错误判断**：当时写的是「局内复活动 `replay_hash`
-      > 锚点、会破坏 I-6 可重放性」。核实后不成立：`replayHash()` 的 prefix
-      > 只含 `L${level.id}` + 攻击者派生属性 + 技能段，其后接完整事件流；
-      > 只要加成后的 `base_hp` 由服务端在签发令牌时一并下发，
-      > 重放拿到的就是同一份输入，跑出同一条时间线，哈希自然相等。
-      >
-      > 真正会破坏 I-6 的只有一种做法：**结算时按客户端上报的复活次数扣币**。
-      > 本实现不涉及。
+    守卫：`TestEveryWalletTokenIsSpendableOrRegistered`（每种道具要么有 `spendToken`
+    调用、要么登记在 `PENDING_TOKENS`）+ `TestShopDoesNotSellUnspendableTokens`
+    （「待接通」与「在售」互斥，且**双向**判定）+ `TestPendingTokensHaveNoSpendCall`。
+    三条都经变异实测能红。
 
-    > **`user_skins` 更彻底**：`skins` 内容表有 6 款皮肤，`user_skins` 表建了，
-    > 但**全仓库没有任何一行读写它**，而 `SeedSkin.Passive` 从不被读。
-    > 第 150 轮把 `skins` 接到背包页作**图鉴展示**，并明写「无获取途径、
-    > 词条未接入战斗结算」—— 与当年处理装备 `Element`（纯风味）用的是同一条标准：
-    > **要么真接上，要么诚实降级文案，不留悬空承诺**。
-
+    ⚠️ **`PENDING_TOKENS` 现在是空表。** 空表本身不是「完成」的证明 ——
+    往 `walletTokens` 加新道具时会被守卫当场要求二选一。
 17. **战报复现与验真的「读不到别人的」只到第 75 轮为止** ——
     `GET /battle/:id/replay` 与 `POST /battle/verify` 此前都只按
     `br.id = $1` 查（连续 BIGSERIAL，任何注册用户可遍历），
@@ -1391,6 +1357,36 @@ cd admin && npm run build && npm run size:check  # 超预算则退出码 1
     守卫：`miniapp/src/game/reaction_descr.test.ts` 8 条
     （文案不承诺未被消费的机制 + `aoeRadius` 恒 0 +
     它不得在 `elements.ts` 之外被引用 + 没有反应完全空转）。
+
+25. **「服务端有扣减逻辑」不等于「玩家能用」——闭环要数到发放侧**（2026-10-13，第 151 轮）
+
+    道具的完整闭环是**三段**：消费端点 + 发放途径 + 客户端入口。
+    补第一段最容易被当成「做完了」，因为它有测试、代码完整、接口能通。
+
+    本轮的真实案例：`revive_token` / `mastery_reset` / `gem_wash_token` 的
+    消费端点第 148–150 轮就补齐了，但三者的**唯一**发放途径是商城，
+    而 miniapp 没有商城页 —— `fetchShop` / `buyItem` 两个函数**没有任何页面调用方**。
+    玩家打开客户端，看到的是「续战令」和「专精点重置」，永远拿不到。
+
+    **判据**：往 `walletTokens` 加新道具时，除了问「谁扣它」，还要问
+    「玩家从哪个界面拿到它」。答不上来就不是闭环。
+    顺带修正一处此前的**高估**：第 148–150 轮汇报的「C 口径 100%」
+    只覆盖了消费侧，没覆盖发放侧 —— 那是错的，本条就是记下这个教训。
+
+26. **新增保留键/枚举/类目时，先找已有的守卫问它认不认**（2026-10-13，第 151 轮）
+
+    本轮加 `gem_instance` 这个「商城 payload 里的保留非货币键」时，
+    `TestEveryShopPayloadKeyIsSpendable` 直接红了 —— 它核对每个 key
+    是否在 `walletColumns ∪ walletTokens` 里。
+
+    正确做法是让守卫**引用生产代码的常量**（`k == gemInstanceKey`），
+    而不是把字符串抄进守卫：抄两遍时拼错的表现是「买了什么都没发生」，
+    而那是最难排查的一类症状 —— 种子写得对、守卫也绿，只有玩家看得见。
+
+    同类：`gem_affixes` 表建好了却是 0 行、且**没有 `(gem_id, affix)` 唯一约束**，
+    于是播种里的 `ON CONFLICT (gem_id, affix)` 会直接报错，
+    症状是「整个种子跑不起来」而真实原因在很前面一行。
+    对策是迁移 `00014`，而不是把 `ON CONFLICT` 改成无条件 `DO UPDATE`。
 
 24. **性能：`LoadBuildSnapshot` 一趟查齐，串行往返 12 → 6（2026-10-09）** ——
     它挂在 `/battle/token` 与 `/battle/settle` 两条最热路径上（结算还会再

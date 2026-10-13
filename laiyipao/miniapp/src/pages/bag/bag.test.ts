@@ -20,6 +20,8 @@ vi.mock('@/api/client', () => ({
   fetchMe: vi.fn(),
   fetchLoadout: vi.fn(),
   saveLoadout: vi.fn(),
+  fetchGems: vi.fn(),
+  washGem: vi.fn(),
   setTokenInternal: vi.fn(),
 }))
 
@@ -58,6 +60,9 @@ beforeEach(() => {
   mockApi.fetchWallet.mockResolvedValue({ coin: 1, gem: 2, energy: 3, keys: 4, tokens: {} })
   mockApi.fetchMe.mockResolvedValue({ user_id: 7, build: null, build_rating: null, power: 9 } as any)
   mockApi.fetchLoadout.mockResolvedValue({ skill_ids: [1, 2] })
+  // 宝石默认空：用例需要时各自覆盖。不设默认的话 loadGems 会靠 catch 兜住
+  // undefined，那条路径能跑但是在测「拉到 undefined」，不是测「拉到空列表」。
+  mockApi.fetchGems.mockResolvedValue({ gems: [] })
   mockApi.saveLoadout.mockImplementation((ids: number[]) =>
     Promise.resolve({ skill_ids: ids }),
   )
@@ -118,6 +123,132 @@ describe('bag.vue 背包页', () => {
     const { wrapper } = mountPage(Bag)
     await flushPromises()
     expect(wrapper.text()).not.toContain('词条可洗练')
+  })
+
+  describe('我的宝石（第 150 轮）', () => {
+    it('列出持有的宝石：品质中文化、词条可读、空态有引导', async () => {
+      mockApi.fetchGems.mockResolvedValue({
+        gems: [
+          {
+            id: 7,
+            gem_id: 3,
+            code: 'gem_crit',
+            name: '暴击石',
+            descr: '暴击率提升',
+            quality: 'gold',
+            affixes: [
+              { affix: 'crit', value: 120 },
+              { affix: 'attack', value: 70 },
+            ],
+            equipped_slot: '',
+          },
+        ],
+      })
+      const { wrapper } = mountPage(Bag)
+      await flushPromises()
+      const text = wrapper.text()
+      expect(text).toContain('我的宝石')
+      expect(text).toContain('暴击石')
+      // 品质名走中文映射，且未知档位不能被吞
+      expect(text).toContain('金')
+      // 词条可读：名字映射 + 数值
+      expect(text).toContain('暴击 +120')
+      expect(text).toContain('攻击 +70')
+    })
+
+    it('没有宝石时给出引导文案，而不是空白', async () => {
+      mockApi.fetchGems.mockResolvedValue({ gems: [] })
+      const { wrapper } = mountPage(Bag)
+      await flushPromises()
+      expect(wrapper.text()).toContain('还没有宝石')
+    })
+
+    it('洗练：成功后就地替换该颗宝石并刷新余额（以服务端为准）', async () => {
+      mockApi.fetchGems.mockResolvedValue({
+        gems: [
+          {
+            id: 7, gem_id: 3, code: 'gem_crit', name: '暴击石', descr: '暴击率提升',
+            quality: 'gold', affixes: [{ affix: 'crit', value: 100 }], equipped_slot: '',
+          },
+        ],
+      })
+      mockApi.fetchWallet.mockResolvedValue({
+        coin: 1, gem: 2, energy: 3, keys: 4, tokens: { gem_wash_token: 1 },
+      })
+      mockApi.washGem.mockResolvedValue({
+        gem: {
+          id: 7, gem_id: 3, code: 'gem_crit', name: '暴击石', descr: '暴击率提升',
+          quality: 'gold', affixes: [{ affix: 'crit', value: 155 }], equipped_slot: '',
+        },
+      })
+      const { wrapper } = mountPage(Bag)
+      await flushPromises()
+      expect(wrapper.text()).toContain('暴击 +100')
+
+      await wrapper.find('.owned-gem')!.find('.link')!.trigger('click')
+      await flushPromises()
+      await flushPromises()
+
+      expect(mockApi.washGem).toHaveBeenCalledWith(7)
+      // 词条被就地替换 —— 不是追加一行
+      expect(wrapper.text()).toContain('暴击 +155')
+      expect(wrapper.text()).not.toContain('暴击 +100')
+      // 余额以服务端为准：扣券后必须重拉，否则下次进来还显示 1
+      expect(mockApi.fetchWallet.mock.calls.length).toBeGreaterThanOrEqual(2)
+      expect(um.mock.showToast).toHaveBeenCalledWith({ title: '洗练完成', icon: 'none' })
+    })
+
+    it('洗练失败 → toast 原因，不静默（券是花钱买的）', async () => {
+      mockApi.fetchGems.mockResolvedValue({
+        gems: [
+          {
+            id: 7, gem_id: 3, code: 'gem_crit', name: '暴击石', descr: '',
+            quality: 'gray', affixes: [{ affix: 'crit', value: 10 }], equipped_slot: '',
+          },
+        ],
+      })
+      mockApi.fetchWallet.mockResolvedValue({
+        coin: 1, gem: 2, energy: 3, keys: 4, tokens: { gem_wash_token: 1 },
+      })
+      mockApi.washGem.mockRejectedValue(new Error('洗练券不足'))
+
+      const { wrapper } = mountPage(Bag)
+      await flushPromises()
+      await wrapper.find('.owned-gem')!.find('.link')!.trigger('click')
+      await flushPromises()
+      await flushPromises()
+
+      expect(um.mock.showToast).toHaveBeenCalledWith({ title: '洗练券不足', icon: 'none' })
+    })
+
+    it('没有洗练券时点洗练：先本地拦下，不发请求', async () => {
+      mockApi.fetchGems.mockResolvedValue({
+        gems: [
+          {
+            id: 7, gem_id: 3, code: 'gem_crit', name: '暴击石', descr: '',
+            quality: 'gray', affixes: [{ affix: 'crit', value: 10 }], equipped_slot: '',
+          },
+        ],
+      })
+      mockApi.fetchWallet.mockResolvedValue({
+        coin: 1, gem: 2, energy: 3, keys: 4, tokens: {},
+      })
+      const { wrapper } = mountPage(Bag)
+      await flushPromises()
+      await wrapper.find('.owned-gem')!.find('.link')!.trigger('click')
+      await flushPromises()
+
+      expect(mockApi.washGem).not.toHaveBeenCalled()
+      expect(um.mock.showToast).toHaveBeenCalledWith({ title: '没有洗练券', icon: 'none' })
+    })
+
+    it('拉不到宝石时不当成「没有宝石」以外的任何结论：页面照常渲染', async () => {
+      mockApi.fetchGems.mockRejectedValue(new Error('网络炸了'))
+      const { wrapper } = mountPage(Bag)
+      await flushPromises()
+      // 背包页其余部分不受影响
+      expect(wrapper.findAll('.slot').length).toBe(4)
+    })
   })
 
   it('挂载后同步服务端槽位并渲染技能库/装备/宝石（含名称映射与穿透/溅射标记）', async () => {
