@@ -89,6 +89,7 @@ func (s *Service) StartBattle(ctx context.Context, userID int64, levelID int) (B
 
 	expires := time.Now().Add(s.Cfg.BattleTokenTTL)
 	var tokenID int64
+	usedRevive := false
 	err = s.DB.Tx(ctx, func(tx pgx.Tx) error {
 		if err := tx.QueryRow(ctx,
 			`INSERT INTO battle_tokens (user_id, level_id, seed, expires_at) VALUES ($1,$2,$3,$4)
@@ -99,10 +100,37 @@ func (s *Service) StartBattle(ctx context.Context, userID int64, levelID int) (B
 			map[string]int64{"energy": -int64(gl.EnergyCost)}, "battle_start", tokenID); err != nil {
 			return err
 		}
+		// 复活币：与体力**同一事务、同一时机**（开战即扣）。
+		//
+		// 为什么在开战扣而不是结算扣：结算时才知道有没有真的用到，
+		// 而「有没有用到」只有客户端知道 —— 那就成了伪造入口。
+		// 开战扣的代价是「进战斗页又退出也扣」，但这与体力的既有模型一致，
+		// 玩家本来就接受「开战消耗资源」。
+		//
+		// 没有币时**静默跳过**而不是报错：复活是可选增益，不是入场券。
+		var bal int64
+		balErr := tx.QueryRow(ctx,
+			`SELECT balance FROM user_tokens WHERE user_id = $1 AND token = 'revive_token'`,
+			userID).Scan(&bal)
+		switch {
+		case balErr != nil && !errors.Is(balErr, pgx.ErrNoRows):
+			return fmt.Errorf("read revive balance: %w", balErr)
+		case bal >= 1:
+			if err := spendToken(ctx, tx, userID, "revive_token", "battle_start", tokenID); err != nil {
+				return err
+			}
+			usedRevive = true
+		}
 		return nil
 	})
 	if err != nil {
 		return BattleTokenResp{}, err
+	}
+
+	// 加成只改**下发的那一份**关卡副本，domain 的生成器输出保持纯函数语义。
+	level := gl
+	if usedRevive {
+		level = domain.WithReviveBonus(gl)
 	}
 
 	build, err := s.LoadBuildSnapshot(ctx, userID)
@@ -113,8 +141,15 @@ func (s *Service) StartBattle(ctx context.Context, userID int64, levelID int) (B
 		TokenID:   tokenID,
 		Seed:      strconv.FormatInt(seed, 10),
 		ExpiresAt: expires,
-		Level:     NewLevelResp(gl),
+		Level:     NewLevelResp(level),
 		Build:     build,
+		// 显式告诉客户端「这一战用了复活币」——
+		// 否则玩家只会看到血量莫名变多，不知道道具被消耗在哪。
+		//
+		// ⚠️ `Revived` 这个字段此前就存在但**从未被赋值**，
+		// 于是它恒为 false、客户端也从不读 —— 一个「存在但零消费」的空字段。
+		// 复活币落地时它终于有了用途，这里是它第一次被写。
+		Revived: usedRevive,
 	}, nil
 }
 
