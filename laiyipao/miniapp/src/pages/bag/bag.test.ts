@@ -69,6 +69,41 @@ afterEach(() => {
 })
 
 describe('bag.vue 背包页', () => {
+  it('道具卡片逐条标明能不能用，下架的写「已下架」', async () => {
+    // 第 150 轮。`tokens` 是 `/wallet` 首次有了消费方的那批字段。
+    //
+    // 断言的重点不是「有文字」，而是**下架那两件不能写成「无法使用」**：
+    // 商城侧已经把它们 enabled=false 了（seedShop 的 delisted），
+    // 界面如果还写「目前无法使用」，就是在描述一个已经不存在的购买行为 ——
+    // 而玩家点进商城找不到商品时，第一反应就是「这是个 bug」。
+    mockApi.fetchWallet.mockResolvedValue({
+      coin: 1, gem: 2, energy: 3, keys: 4,
+      tokens: { revive_token: 2, gem_wash_token: 1, mastery_reset: 3 },
+    })
+    const { wrapper } = mountPage(Bag)
+    await flushPromises()
+
+    const text = wrapper.text()
+    expect(text).toContain('专精重铸券')
+    expect(text).toContain('复活币')
+    expect(text).toContain('宝石洗练券')
+
+    // 可用的那件：写明用法
+    expect(text).toContain('清空全部已点亮的专精节点')
+
+    // 下架的两件：必须写「已下架」，且说明已购余额怎么办
+    expect(text).toContain('已从商城下架')
+    expect(text).toContain('已购余额暂时无法使用')
+  })
+
+  it('背包页不再承诺「词条可洗练」—— 玩家拿不到宝石实例', async () => {
+    // 「承诺一个玩不到的东西」比不承诺更糟：
+    // 它把一个内部未完成项变成了对外的产品说明。
+    const { wrapper } = mountPage(Bag)
+    await flushPromises()
+    expect(wrapper.text()).not.toContain('词条可洗练')
+  })
+
   it('挂载后同步服务端槽位并渲染技能库/装备/宝石（含名称映射与穿透/溅射标记）', async () => {
     const { wrapper } = mountPage(Bag)
     await flushPromises()
