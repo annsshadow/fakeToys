@@ -19,7 +19,7 @@ from queue import Queue
 
 from .config import (REQUEST_TIMEOUT_RANGE, AppConfig, load_config,
                      get_model_config)
-from .validation import require_count, require_ratio, require_seconds
+from .validation import require_count, require_ratio, require_seconds, require_within_dir
 from .retry import MAX_RETRY_AFTER
 from .models import create_model_backend, extract_json_array
 from .quality import QualityScorer
@@ -595,7 +595,7 @@ class AugmentorPipeline:
                 # 归一化为字符串：ExportFormat 成员直接进 f-string 会渲染成
                 # "ExportFormat.OPENAI"，把枚举类名写进文件名与返回值的键。
                 name = fmt.value if isinstance(fmt, ExportFormat) else fmt
-                output_path = Path(output_dir) / f"train_data_{name}.json"
+                output_path = require_within_dir("导出格式名", f"train_data_{name}.json", Path(output_dir))
                 self.exporter.export(items, str(output_path), name)
                 results[name] = str(output_path)
             return results
