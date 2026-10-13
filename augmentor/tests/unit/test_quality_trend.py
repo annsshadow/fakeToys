@@ -160,3 +160,70 @@ class TestCorruptHistoryQuarantine:
         t.record_quality_metrics("ds", {"quality": 0.5})
         assert p.read_text(encoding="utf-8") == original
         assert len(t._trend_history) == 1  # 内存历史仍在（功能不丢），仅不落盘
+
+    @staticmethod
+    def _freeze_the_quarantine_second(monkeypatch) -> str:
+        """把备份名的时间戳冻成固定一秒，返回那一秒的 `%Y%m%d%H%M%S`
+
+        防撞那一档（`while backup.exists():` 的循环体）此前只有「两次隔离恰好落在同一秒」才会
+        被执行到，而备份名是秒粒度 ⇒ 全量门禁的缺数读数按墙上时钟抖动（L259 记账实测：同一条
+        命令连跑两轮 TOTAL 差 2 格，翻动的正是 `quality_trend.py:66-67`）。冻住之后这一档
+        每轮必到，读数才可比。
+        """
+        import augmentor.quality_trend as qt
+        from datetime import datetime as RealDatetime
+
+        instant = RealDatetime(2026, 1, 1, 12, 0, 0)
+
+        class Frozen:
+            @staticmethod
+            def now():
+                return instant
+
+        monkeypatch.setattr(qt, "datetime", Frozen)
+        return instant.strftime("%Y%m%d%H%M%S")
+
+    def test_second_quarantine_in_one_second_does_not_eat_the_first_backup(
+            self, tmp_path, monkeypatch):
+        """已有当秒备份 ⇒ 第二次的坏文件落到 `-<stamp>-1`，第一份逐字节不动"""
+        stamp = self._freeze_the_quarantine_second(monkeypatch)
+        first = tmp_path / f"trend.json.corrupt-{stamp}"
+        first.write_text("{first-sentinel", encoding="utf-8")
+
+        p = tmp_path / "trend.json"
+        p.write_text("{second-corrupt", encoding="utf-8")
+        t = QualityTrendTracker(storage_path=str(p))
+
+        assert t._trend_history == []
+        assert t._corrupt_unquarantined is False
+        assert first.read_text(encoding="utf-8") == "{first-sentinel"
+        assert (tmp_path / f"trend.json.corrupt-{stamp}-1").read_text(
+            encoding="utf-8") == "{second-corrupt"
+        assert not p.exists()
+        assert len(list(tmp_path.glob("trend.json.corrupt-*"))) == 2
+
+    def test_third_collision_in_one_second_appends_minus_two(
+            self, tmp_path, monkeypatch):
+        """连撞两格 ⇒ 循环走两圈落到 `-2`；把 `while` 换成 `if` 就当场红
+
+        上一支只走一圈，`while` 与 `if` 在那一支同形（都只加一个 `-1`）⇒ 单靠它不足以证明
+        防撞是「一直让到位」而不是「让一格」，所以这一支预置 `-<stamp>` 与 `-<stamp>-1` 两份
+        取证，断言第三份只能落到 `-2`，且前两份逐字未动。
+        """
+        stamp = self._freeze_the_quarantine_second(monkeypatch)
+        kept = {}
+        for suffix, body in (("", "{keep-0"), ("-1", "{keep-1")):
+            path = tmp_path / f"trend.json.corrupt-{stamp}{suffix}"
+            path.write_text(body, encoding="utf-8")
+            kept[suffix] = body
+
+        p = tmp_path / "trend.json"
+        p.write_text("{keep-2", encoding="utf-8")
+        QualityTrendTracker(storage_path=str(p))
+
+        for suffix, body in kept.items():
+            assert (tmp_path / f"trend.json.corrupt-{stamp}{suffix}").read_text(
+                encoding="utf-8") == body
+        assert (tmp_path / f"trend.json.corrupt-{stamp}-2").read_text(
+            encoding="utf-8") == "{keep-2"
+        assert len(list(tmp_path.glob("trend.json.corrupt-*"))) == 3
