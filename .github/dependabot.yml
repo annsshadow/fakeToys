@@ -94,12 +94,18 @@ updates:
       # 守卫里显式登记了这一条例外，见 toolchain_pin.test.ts。
       - dependency-name: "@dcloudio/types"
 
-      # ── 语言/运行时大版本 ─────────────────────────────────────
-      # TS 4.9 的 moduleResolution: Node(node10) 是历史踩坑的前提，
-      # TS 7 跨三个大版本且是原生重写，双构建未验证过。
-      - dependency-name: "typescript"
-      # pinia 3.x 与 vue-demi 的解析语义未验证（vite 8 那次就是在
-      # Rolldown 解析 vue-demi 时炸的）。
+      # ── @vitejs/plugin-vue：6.x 是 ESM-only ─────────────────────
+      # vitest.config.ts 被打包成 CJS（package.json 无 "type": "module"），
+      # require() 不了 ESM-only 的包：
+      #   [plugin externalize-deps] "@vitejs/plugin-vue" resolved to an ESM file.
+      # 要上 6.x 得先把配置文件改成 .mts —— 那是独立一轮改动。
+      - dependency-name: "@vitejs/plugin-vue"
+
+      # ── pinia：与 dcloudio 强制的 vue 版本互斥 ──────────────────
+      # pinia 2.3.1 与 3.0.4 的 peer 都是 `vue ^3.5.11`，
+      # 而 dcloudio 钉死 `vue == 3.4.21`。**升 pinia 解决不了**，
+      # 因为两个版本线要的 vue 一样高。本项目选 dcloudio 一侧
+      # （它在构建路径上），代价是留一个 pinia 的 unmet peer 警告。
       - dependency-name: "pinia"
 
   # ── 其余 npm 依赖树：保持默认行为，不做任何限制 ──────────────────
