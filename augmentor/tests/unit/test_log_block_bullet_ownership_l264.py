@@ -13,7 +13,7 @@
 
 - 解析不到提交 ⇒ `not_a_commit`。账本里这一档全是 **sha256 摘要**（注入器逐臂验盘用的前缀，
   例如 `8b17a662`、`da10bb97b864`），它们不是提交，本来就不该拿轮号去问。
-- 解析得到而主题是 `WIP on ` / `index on ` 开头 ⇒ `stash_or_wip`。本轮量到唯一一只：L242 那块记录的
+- 解析得到而主题是 `WIP on ` / `index on ` 开头 ⇒ `stash_or_wip`。现量两处而同一枚哈希：L242 那块记录的
   **共享工作树 stash 事故**——stash 被 drop 之后靠 `git fsck --lost-found` 找回的那枚不可达对象
   `82f4a4cab3e86d66abc06ac9cb60b7a87532144a`。账本点名它是**事故现场本身**（同行已写「提交名 `WIP on optimism20261012`，
   含他会话 40+ 个文件」），不是某一轮的三批 hash。它天然不可归档回轮号：主题里那个 `L241` 是从被 stash 的 HEAD
@@ -135,14 +135,14 @@ def names(rows, kind):
     return {(r["block"], r["hash"]) for r in rows if r["kind"] == kind}
 
 
-#: ---- 现量（L264 补注两处轮号、并按实量分出 stash 档之后）----
+#: ---- 现量（L264 账本批落盘之后：新写的日志块自己也进了面）----
 #: 站点面只有一卷出数：卷一的日志块里一处反引号 hex 都没有（`test_volume_one_contributes_no_site_at_all` 钉住），
 #: 所以名册一律写成 `(块轮号, hash)` 而不带卷名。
-MEASURED_SITES = 76
-MEASURED_COUNTS = {SAME: 41, NAMED: 7, UNNAMED: 0, NOROUND: 6, NOTCOMMIT: 21, STASH: 1}
-#: 合法的跨轮叙述：`L117（4c979939e）` 那一族标签形，与本轮补注的两格。
-MEASURED_NAMED = {(114, "87174e26b"), (116, "4c979939e"), (116, "0bf96fbec"), (116, "2fd83c9b2"),
-                  (215, "4d177e3f3"), (238, "29b715600"), (263, "486c4f6ec")}
+MEASURED_SITES = 79
+MEASURED_COUNTS = {SAME: 41, NAMED: 9, UNNAMED: 0, NOROUND: 6, NOTCOMMIT: 21, STASH: 2}
+#: 合法的跨轮叙述：`L117（4c979939e）` 那一族标签形、本轮补注的两格，与 L264 块 ⑥ 把同两枚哈希重提一次。
+MEASURED_NAMED = {(114, "87174e26b"), (116, "4c979939e"), (116, "0bf96fbec"), (116, "2fd83c9b2"), (215, "4d177e3f3"),
+                  (238, "29b715600"), (263, "486c4f6ec"), (264, "4d177e3f3"), (264, "29b715600")}
 #: 主题不带轮号的提交：四只跨项目（`test(web)` / `fix(augmentor): merge…` / `chore: restore…` / `fix(ai-platform)`）。
 #: `8041df804` 在同一行里被点名三次 ⇒ 处数 6 而唯一名册 4 只，那一维由 `test_the_repeat_is_a_single_line_triple_mention` 闭合。
 MEASURED_NOROUND = {(104, "284d89e29"), (144, "cf35b5984"), (212, "4f0cf03d1"), (236, "8041df804")}
@@ -156,9 +156,9 @@ MEASURED_NOTCOMMIT = {(229, "da10bb97b864"), (229, "b0d77707eb37"), (229, "89877
                       (240, "df54edca9a61"), (246, "798206eed79354a5"), (246, "21745677c1d0"),
                       (247, "6f405bf0099ef1e9"), (248, "e9722a89d092ebf6"), (248, "be6c8ac9275a4737"),
                       (248, "76aeace0d4096f26"), (248, "58b568468a3c4978"), (260, "51ca546db")}
-#: 唯一的 stash 引用：L242 那块记录共享工作树 stash 事故时点名的那枚 `git fsck` 不可达对象。
+#: stash 引用现量**两处**：L242 那块记录共享工作树事故时点名那枚 `git fsck` 不可达对象，L264 块 ⑤ 重提同一枚。
 #: 它不是任何一轮的三批 hash，也不该被归档回轮号——单独一档钉住，将来对象消失就掉进 `not_a_commit` 而红。
-MEASURED_STASH = {(242, "82f4a4cab3e86d66abc06ac9cb60b7a87532144a")}
+MEASURED_STASH = {(242, "82f4a4cab3e86d66abc06ac9cb60b7a87532144a"), (264, "82f4a4cab3e86d66abc06ac9cb60b7a87532144a")}
 #: 卷一的日志块里一处反引号 hex 都没有 ⇒ 这一档是量出来的空集，不是没写
 MEASURED_VOLUME_ONE_SITES = 0
 
@@ -186,13 +186,13 @@ class TestTheOwnershipFace:
         assert names(sites(), NOTCOMMIT) == MEASURED_NOTCOMMIT
 
     def test_the_stash_reference_is_the_measured_one(self):
-        """账本引用一枚 stash 是本轮量到的事实：恰好一只，多一只少一只都红"""
+        """账本引用 stash 是本轮量到的事实：恰好两处（同一枚被两个块点名），多一处少一处都红"""
         assert names(sites(), STASH) == MEASURED_STASH
 
     def test_the_stash_tier_is_what_keeps_that_site_out_of_the_defect_tier(self):
-        """档间分流不是笔误：`stash_or_wip` 这一档存在的**唯一后果**就是把 L242 那枚 40 位从
-        `cross_unnamed` 里摘出去。收掉判据（内存里把 `WIP_HEADS` 清空，零落盘）⇒ 缺陷档立刻 1 格、
-        stash 档归 0 —— 所以「那一格不算缺陷」是有承重判据的判决，不是我为了变绿临时加的豁免。"""
+        """档间分流不是笔误：`stash_or_wip` 这一档存在的**唯一后果**就是把 L242 与 L264 两块点名的同一枚 40 位从
+        `cross_unnamed` 里摘出去。收掉判据（内存里把 `WIP_HEADS` 清空，零落盘）⇒ 缺陷档立刻涨到 stash 名册的格数、
+        stash 档归 0 —— 所以「那些格不算缺陷」是有承重判据的判决，不是我为了变绿临时加的豁免。"""
         import tests.unit.test_log_block_bullet_ownership_l264 as me
         saved = me.WIP_HEADS
         me.WIP_HEADS = ()
@@ -200,7 +200,7 @@ class TestTheOwnershipFace:
             got = tally(sites())
         finally:
             me.WIP_HEADS = saved
-        assert got[STASH] == 0 and got[UNNAMED] == 1, got
+        assert got[STASH] == 0 and got[UNNAMED] == len(MEASURED_STASH), got
         assert got[SAME] == MEASURED_COUNTS[SAME], "摘 stash 档不该动到本块引用"
 
     def test_the_repeat_is_a_single_line_triple_mention(self):
