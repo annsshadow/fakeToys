@@ -91,9 +91,25 @@ describe('bag.vue 背包页', () => {
     // 可用的那件：写明用法
     expect(text).toContain('清空全部已点亮的专精节点')
 
-    // 下架的两件：必须写「已下架」，且说明已购余额怎么办
+    // 下架的那件：必须写「已下架」，并说明已购余额怎么办
     expect(text).toContain('已从商城下架')
     expect(text).toContain('已购余额暂时无法使用')
+  })
+
+  it('复活币接通消费端点后必须写成「可用」，不能还留着「已下架」', async () => {
+    // 第 150 轮续：服务端已在 StartBattle 接通复活币（开战扣 1 枚 + 血量加成），
+    // 商品也恢复了上架。界面如果还写「已下架」，就是在陈述一个已经不成立的
+    // 事实 —— 玩家会以为自己买了却用不了，而实际上开战就自动生效了。
+    mockApi.fetchWallet.mockResolvedValue({
+      coin: 1, gem: 2, energy: 3, keys: 4,
+      tokens: { revive_token: 2 },
+    })
+    const { wrapper } = mountPage(Bag)
+    await flushPromises()
+    const text = wrapper.text()
+    expect(text).toContain('复活币')
+    expect(text).toContain('开战时自动消耗 1 枚')
+    expect(text).toContain('+50%')
   })
 
   it('背包页不再承诺「词条可洗练」—— 玩家拿不到宝石实例', async () => {

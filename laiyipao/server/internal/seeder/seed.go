@@ -370,9 +370,9 @@ func seedShop(ctx context.Context, tx pgx.Tx, res *SeedResult) error {
 		{2, "shop_coin_big", "金币箱", "currency", map[string]int{"gem": 50}, map[string]int{"coin": 120000}, 1, false},
 		{3, "shop_energy", "体力补给", "currency", map[string]int{"gem": 20}, map[string]int{"energy": 30}, 2, false},
 		{4, "shop_keys", "钥匙串", "currency", map[string]int{"gem": 30}, map[string]int{"keys": 3}, 1, false},
-		// ⚠️ 第 150 轮下架：复活币没有任何消费端点（局内复活动 replay_hash
-		// 锚点与 I-6 可重放性）。卖一件玩家永远用不了的东西，比不卖更糟。
-		{5, "shop_retry", "重试符", "boost", map[string]int{"coin": 5000}, map[string]int{"revive_token": 1}, 5, true},
+		// 复活币：第 150 轮从下架恢复 —— 消费端点已在 StartBattle 接通
+		// （开战扣 1 枚 + 本关 base_hp × domain.ReviveBaseHPMultPermille）。
+		{5, "shop_retry", "重试符", "boost", map[string]int{"coin": 5000}, map[string]int{"revive_token": 1}, 5, false},
 		{6, "shop_mastery_reset", "专精点重置", "boost", map[string]int{"gem": 80}, map[string]int{"mastery_reset": 1}, 0, false},
 		{7, "shop_firstpay", "首充礼包", "starter", map[string]int{"coin": 0}, map[string]int{"gem": 300, "coin": 50000, "energy": 50}, 1, false},
 		// ⚠️ 同上：洗练券的前置是「玩家得有宝石实例」，而全仓库没有任何

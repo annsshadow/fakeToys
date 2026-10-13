@@ -220,9 +220,9 @@ const skins = computed<any[]>(() => store.config?.skins ?? [])
  * 玩家在商城买了之后在任何地方都找不到自己的道具，
  * 那是最容易被当成 bug 报上来的一种状态。
  *
- * 第 150 轮补的下架：两件商品已在 `seedShop` 里标记 `delisted`（enabled=false），
- * 不再可买 —— 「告知玩家用不了」只是文案，「不卖」才是约束。
- * 所以这里的状态也从「目前无法使用」改成「已下架」，并说明已购余额的处理。
+ * 第 150 轮：复活币接上了消费端点（开战扣 1 枚 + 本关基础血量 +50%），
+ * 从下架恢复；洗练石仍无消费端点（且玩家拿不到宝石实例），保持下架并在
+ * 这里写明。界面文案跟着服务端状态走 —— 「已下架」与「可用」不能各说各话。
  */
 const tokenRows = computed(() => {
   const tokens = store.wallet.tokens ?? {}
@@ -235,7 +235,7 @@ const tokenRows = computed(() => {
     {
       kind: 'revive_token',
       label: '复活币',
-      status: '⚠️ 局内复活尚未接入，已从商城下架。已购余额暂时无法使用。',
+      status: '开战时自动消耗 1 枚，本关基础血量 +50%（扣币时机与体力一致）。',
     },
     {
       kind: 'gem_wash_token',
