@@ -239,7 +239,7 @@
 
           <!-- 图片附件（picture/list） -->
           <div v-if="topicPics.length" class="pic-gallery">
-            <img v-for="(u, i) in topicPics" :key="i" :src="u" class="pic-thumb" alt="附图" />
+            <img v-for="(u, i) in topicPics" :key="i" :src="u" class="pic-thumb" alt="附图" referrerpolicy="no-referrer" />
           </div>
 
           <!-- 版主管理工具栏（owner/admin 门禁；失败提示无权限） -->
@@ -737,6 +737,30 @@ function formatContent(content?: string): string {
   return content
 }
 
+// 安全审计（2026-10 二轮）：BBS 图片 URL 白名单。
+// topicPics 来自帖子正文抽取的图片 URL（用户可控）——未过滤时攻击者可把
+// http://attacker/pixel 写进正文，受害者打开详情时浏览器跨源抓取（跟踪像素 +
+// Referrer 外泄）。仅放行：同源相对路径、同源/本机回环 http(s)；拒绝
+// javascript:/data:/vbscript:/file:/blob: 与异源 http(s)。
+function isSafePicUrl(u: string): boolean {
+  if (!u) return false
+  const s = u.replace(/[\u0000-\u0020]/g, '').toLowerCase()
+  if (/^(javascript|vbscript|file|data|blob):/.test(s)) return false
+  // 相对路径（/… ./…）= 同源
+  if (/^\/|^\.\//.test(s)) return true
+  // http(s)：仅同源或本机回环
+  const m = s.match(/^https?:\/\/([^/]+)/)
+  if (m) {
+    const host = m[1]
+    if (typeof location !== 'undefined' && host === location.host) return true
+    if (/^(localhost|127\.0\.0\.1|::1)(:\d+)?$/.test(host)) return true
+    return false
+  }
+  // 无 scheme 的裸相对路径（a.png / images/x.png）= 同源
+  if (!/^[a-z][a-z0-9+.-]*:/.test(s)) return true
+  return false
+}
+
 // ── 帖子详情深化（rev101）：图片附件 + 回复权限 + 版主管理 ─────────────
 // 均为事件触发（打开详情时/点击按钮时），非 mounted useQuery，规避 autoquery-prune 守卫。
 const topicPics = ref<string[]>([])
@@ -774,7 +798,7 @@ async function loadTopicExtras(subjectId: string): Promise<void> {
   const pd = (pics as { data?: unknown } | null)?.data
   topicPics.value = (
     Array.isArray(pd) ? pd : Array.isArray((pd as { data?: unknown })?.data) ? (pd as { data: unknown[] }).data : []
-  ).map(String)
+  ).map(String).filter(isSafePicUrl)
   const gd = (gate as { data?: unknown } | null)?.data
   replyGate.value = gate
     ? gd === true || (gd as { replyPublishable?: boolean })?.replyPublishable
