@@ -82,4 +82,67 @@ describe('工具链 pin 守卫（dependabot 两次打破过，勿删）', () => 
       'coverage-v8 必须与 vitest 同为 2.x 线（2.1.9 的 peer 就是 vitest 2.1.9）。',
     ).toBe('2.1.9')
   })
+
+  // ── 第 2 轮复查（2026-10-13）新增 ──────────────────────────────────
+  //
+  // 起因：`git ls-remote --heads origin | grep dependabot` 显示 miniapp
+  // 还有 5 个未处理的 dependabot 分支，其中三个是
+  //   @dcloudio/uni-mp-{harmony,lark,weixin} → 3.0.0-5020620260917001
+  // 而 package.json 里另外 17 个 @dcloudio/* 仍在 3.0.0-5020420260813003。
+  //
+  // **版本分裂**。这不是「有点风险」，是必然坏：uni-app 这一族是**成套发布**的，
+  // 互相按精确版本引用（`@dcloudio/uni-app` 的依赖写死 `@dcloudio/uni-h5@同一个版本号`），
+  // 单独抬升其中几个等于让它们互相找不到。dependabot 没有「按发布列车升级」
+  // 的概念 —— 它只看单个包的版本区间。
+  //
+  // 这条守卫的价值在于：**它比 dependabot 配置更根本**。配置只是让机器人别提，
+  // 而这条断言保证「即使有人手改了 package.json，只改了一个」也会当场红。
+  it('@dcloudio/* 必须成套同版本：分裂的发布列车装不出可用的 uni-app', () => {
+    const all: Record<string, string> = {
+      ...(pkg.dependencies as Record<string, string>),
+      ...(pkg.devDependencies as Record<string, string>),
+    }
+    const dcloudio = Object.entries(all).filter(([k]) => k.startsWith('@dcloudio/'))
+
+    // 先确认结构没变。数量变了说明 dcloudio 增删了包，本守卫的分组前提要重新确认。
+    expect(
+      dcloudio.length,
+      `package.json 里的 @dcloudio/* 从 21 个变成了 ${dcloudio.length} 个 —— ` +
+        'dcloudio 增删了包。本守卫按「成套发布」分组，先确认新包属于哪一列，再改这里。',
+    ).toBe(21)
+
+    // 发布列车 = 精确版本。dcloudio 的版本号带构建后缀
+    // （`3.0.0-5020420260813003`，预发布标识 + 构建号），所以不能只写
+    // `^\d+\.\d+\.\d+$` —— 那会把**全部 20 个**误判成「不在列车上」。
+    // 判据是「有没有版本区间符号」：`^` / `~` / `x` / `*` 才算不在列车内。
+    const TRAIN = /^(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)$/
+    const train: Record<string, string> = {}
+    const outside: string[] = []
+    for (const [name, range] of dcloudio) {
+      const m = TRAIN.exec(range)
+      if (m) train[name] = m[1]
+      else outside.push(`${name}@${range}`)
+    }
+
+    // 列车外的包必须显式登记，避免「悄悄多了一批不受约束的包」。
+    expect(
+      outside,
+      `这些 @dcloudio/* 不在精确发布列车上：${outside.join(', ')}。\n` +
+        'dcloudio 的发布列车是精确版本；出现区间/通配说明有人给它加了 ^ 或 ~，' +
+        '那会让「本守卫只管列车内」这个前提失效。若确认某个包该独立升级，' +
+        '把它移进这里显式列出，别让它默认逃出约束。',
+    ).toEqual(['@dcloudio/types@^3.4.8'])
+
+    const versions = [...new Set(Object.values(train))]
+    expect(
+      versions.length,
+      `@dcloudio/* 发布列车出现 ${versions.length} 个版本：${versions.join(' / ')}。\n` +
+        `分裂的是：\n` +
+        Object.entries(train).map(([n, v]) => `  ${n} = ${v}`).join('\n') +
+        '\n\ndependabot 只看单个包的版本区间，没有「按发布列车升级」的概念 —— ' +
+        '所以它会提出只升其中几个的 PR。uni-app 这一族互相按精确版本引用，' +
+        '版本分裂后彼此找不到，mini-app 构建必坏。正确动作：整族一起升，' +
+        '并在升之前重跑 build:h5 + build:mp-weixin 双构建。',
+    ).toBe(1)
+  })
 })

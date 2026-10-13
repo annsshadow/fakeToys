@@ -1,56 +1,108 @@
 # Dependabot 配置
 #
-# # 为什么这个文件存在（而不是只加三条 ignore）
+# # 一、miniapp 为什么不交给机器人管
 #
-# ## 一、miniapp 的三个包必须钉死
+# 本文件存在的唯一理由：**dcloudio 与工具链这条线，dependabot 升一次就坏一次。**
+# 不是「可能有风险」，是有四次记录：
 #
-# `@dcloudio/vite-plugin-uni@3.0.0-5020420260813003` 的 peer 依赖写的是
-# **`"vite": "5.2.8"`** —— 一个**精确值，不是范围**。所以：
+# | 时间 | 机器人提的升级 | 打坏了什么 |
+# |---|---|---|
+# | 2026-09-30 | vite 5.2.8 → 6.4.3 | `npm install` ERESOLVE |
+# | 2026-10-08 | vite → 8.3.4 | 追加 TS2307 + Rolldown 解析 vue-demi 失败 |
+# | 2026-10-11 | vite 6.4.3 + vitest 3.2.6（PR #41） | 同上第一条；已关 |
+# | 2026-10-13 | `@dcloudio/uni-mp-{harmony,lark,weixin}` → `3.0.0-5020620260917001` | **版本分裂** —— 其余 17 个 @dcloudio/* 仍在 `...5020420260813003` |
 #
-#   - vite 升到 6.x → `npm install` 直接 ERESOLVE（peer 冲突）
-#   - vitest 3.x 的 peer 要求 `vite ^6.4.0 || ^7 || ^8`，与上一条死锁
+# 最后一条是**必然坏**而不是「有风险」：uni-app 这一族成套发布、互相按精确版本
+# 引用，单独抬升其中几个等于让它们互相找不到。dependabot 没有「按发布列车升级」
+# 的概念 —— 它只看单个包的版本区间。
 #
-# 这不是新问题：PR #41（dependabot）以及更早一次 6.4.3/8.3.4 的自动升级
-# 都触发过同样三连坏：`npm install` ERESOLVE、`type-check` TS2307、
-# `build:h5` 的 Rolldown 报 vue-demi 损坏。
+# ## 第二道防线：守卫
 #
-# 守卫：`laiyipao/miniapp/src/test/toolchain_pin.test.ts`
-# 断言 package.json 的 pin 与 dcloudio 声明的 peer **精确一致**，
-# 任何一侧漂移都会红。ignore 是第二道防线，守卫才是第一道。
+# ignore 只是「让机器人别提」。真正的防线是
+# `laiyipao/miniapp/src/test/toolchain_pin.test.ts`，它断言：
 #
-# ## 二、为什么列了这么多目录
+#   1. `vite` pin 与 `@dcloudio/vite-plugin-uni` 的 peer **逐字相等**
+#   2. `vitest` / `@vitest/coverage-v8` 留在 2.x 线
+#   3. **20 个精确 pin 的 `@dcloudio/*` 共享同一个版本号**（发布列车不分裂）
+#      且只有 `@dcloudio/types` 显式登记为独立版本线
+#
+# 配置挡机器人，守卫挡手改。两者都要在。
+#
+# ## 什么时候可以放开
+#
+# 放开任一条之前，必须重跑 `build:h5` **和** `build:mp-weixin` 双构建
+# + 全量测试。README 验证状态表里「构建 miniapp H5 ✓」一度是假的
+# （PR checks 没设 required，破坏被直接合进 main）。
+#
+# # 二、为什么列了这么多目录
 #
 # **Dependabot 的规则是「配置里没提到的目录就不管」。** 没有这个文件时
-# 它用默认值，覆盖全仓库；一旦有了这个文件，默认行为就被**替换**成这里写的。
-# 所以这里必须把当前所有依赖树都列全，否则「加个配置防 PR #41」
-# 会顺手把 oa4rust / augmentor / admin / server 的更新全部关掉 ——
-# 那是一个没人要求的副作用。
+# 它用默认值覆盖全仓库；一旦有了这个文件，默认行为就被**替换**成这里写的。
+# 所以必须把当前所有依赖树都列全，否则「加个配置防 PR #41」会顺手把
+# oa4rust / augmentor / admin / server 的更新全部关掉 —— 一个没人要求的副作用。
 #
 # 目录按 lockfile 判定（没有 lockfile 的目录不是真正的依赖树）：
-#   npm   · / · /augmentor/web · /auto-checkin · /laiyipao/admin
-#         · /laiyipao/miniapp · /oa4rust（含 pnpm workspace 的子包）
-#   pip   · /augmentor · /llm-lab
-#   gomod · /laiyipao/server
-#   cargo · /oa4rust/backend（workspace root，自动覆盖 crates/*）
+#   npm   · 仓库根 · augmentor/web · auto-checkin · laiyipao/admin
+#         · laiyipao/miniapp · oa4rust（含 pnpm workspace 的子包）
+#   pip   · augmentor · llm-lab
+#   gomod · laiyipao/server
+#   cargo · oa4rust/backend（workspace root，自动覆盖 crates/*）
 #
 # 加新依赖树时要记得在这里补一条，否则它会静默失去更新。
 version: 2
 
 updates:
-  # ── miniapp：vite/vitest/@vitest/mocker 三个钉死 ──────────────────────
+  # ── miniapp：整族交给人工 ─────────────────────────────────────────
   - package-ecosystem: "npm"
     directory: "/laiyipao/miniapp"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
     ignore:
-      # 见文件头①。peer 是精确值 5.2.8，不是范围。
+      # ── vite 线 ────────────────────────────────────────────────
+      # `@dcloudio/vite-plugin-uni` 的 peerDependencies.vite 是**精确值**
+      # "5.2.8"，npm 严格执行 peer → 升 6.x 直接 ERESOLVE。
+      # 而 vitest 3.x 的 peer 要求 vite ^6.4.0 || ^7 || ^8，与上一条死锁。
       - dependency-name: "vite"
-      # 见文件头①。vitest 3.x 要求 vite ^6.4，与上面那条死锁。
       - dependency-name: "vitest"
       - dependency-name: "@vitest/mocker"
 
-  # ── 其余 npm 依赖树：保持默认行为，不做任何限制 ──────────────────────
+      # ── dcloudio 发布列车（20 个必须成套升级）──────────────────
+      # dependabot 只看单个包的版本区间，没有「按发布列车升级」的概念。
+      # 下面每一个都必须与其它 19 个**逐字同版本**。
+      - dependency-name: "@dcloudio/uni-app"
+      - dependency-name: "@dcloudio/uni-app-harmony"
+      - dependency-name: "@dcloudio/uni-app-plus"
+      - dependency-name: "@dcloudio/uni-automator"
+      - dependency-name: "@dcloudio/uni-cli-shared"
+      - dependency-name: "@dcloudio/uni-components"
+      - dependency-name: "@dcloudio/uni-h5"
+      - dependency-name: "@dcloudio/uni-mp-alipay"
+      - dependency-name: "@dcloudio/uni-mp-baidu"
+      - dependency-name: "@dcloudio/uni-mp-harmony"
+      - dependency-name: "@dcloudio/uni-mp-jd"
+      - dependency-name: "@dcloudio/uni-mp-kuaishou"
+      - dependency-name: "@dcloudio/uni-mp-lark"
+      - dependency-name: "@dcloudio/uni-mp-qq"
+      - dependency-name: "@dcloudio/uni-mp-toutiao"
+      - dependency-name: "@dcloudio/uni-mp-weixin"
+      - dependency-name: "@dcloudio/uni-mp-xhs"
+      - dependency-name: "@dcloudio/uni-quickapp-webview"
+      - dependency-name: "@dcloudio/uni-stacktracey"
+      - dependency-name: "@dcloudio/vite-plugin-uni"
+      # 同厂商但走独立版本线（^3.4.8，不参与发布列车）。
+      # 守卫里显式登记了这一条例外，见 toolchain_pin.test.ts。
+      - dependency-name: "@dcloudio/types"
+
+      # ── 语言/运行时大版本 ─────────────────────────────────────
+      # TS 4.9 的 moduleResolution: Node(node10) 是历史踩坑的前提，
+      # TS 7 跨三个大版本且是原生重写，双构建未验证过。
+      - dependency-name: "typescript"
+      # pinia 3.x 与 vue-demi 的解析语义未验证（vite 8 那次就是在
+      # Rolldown 解析 vue-demi 时炸的）。
+      - dependency-name: "pinia"
+
+  # ── 其余 npm 依赖树：保持默认行为，不做任何限制 ──────────────────
   - package-ecosystem: "npm"
     directories:
       - "/"
@@ -62,21 +114,21 @@ updates:
       interval: "weekly"
     open-pull-requests-limit: 5
 
-  # ── Go 服务端 ────────────────────────────────────────────────────────
+  # ── Go 服务端 ──────────────────────────────────────────────────────
   - package-ecosystem: "gomod"
     directory: "/laiyipao/server"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
 
-  # ── Rust 工作区 ──────────────────────────────────────────────────────
+  # ── Rust 工作区 ─────────────────────────────────────────────────────
   - package-ecosystem: "cargo"
     directory: "/oa4rust/backend"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
 
-  # ── Python ───────────────────────────────────────────────────────────
+  # ── Python ─────────────────────────────────────────────────────────
   - package-ecosystem: "pip"
     directories:
       - "/augmentor"
