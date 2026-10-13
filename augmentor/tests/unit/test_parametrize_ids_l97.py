@@ -127,7 +127,7 @@ NS_PREFIXES = frozenset({
 #: 没有 `ids=`）⇒ 现量落 `plain` 桶。探针逐字：`test_cli_backup_actions_l244.py:338
 #: bucket=plain ids=False`，桶分布 `plain 313 / no-literal-list 118 / type-valued 1`；l98 侧
 #: `blind_rows` 仍 118、档位和一字未动（同那一格不进盲面名册，元素静态可见）。
-MEASURED_CALLS = 437  # **L259 重量**：436 → **437**（新守卫 `test_name_path_containment_l259.py` 那一支值位引用模块级常数字典 `MEASURED_CALL_SITES` 的 parametrize ⇒ 与 BLIND 同涨 1；读数出自本轮全量的红读数 `assert 437 == 436`，非推断）。L258 那一步：434 → **436**（新守卫 `test_name_path_containment_l258.py` 两支 parametrize：`sorted(MEASURED_CALL_SITES)` 的值位引用模块级常数字典 ⇒ 落盲面 plain 档；`("method,url", [...])` 是内联字面清单 ⇒ 落可读档。读数出自仓外探针 `Temp/l258_census.py` 直接 `import` 本模块 `param_sites(TESTS_ROOT)` 现量，非推断。L257 那一步：432 → **434**（新守卫 `test_default_text_fields_l257.py` 两支 parametrize：CLI 三档那支的值位是模块级常数 `CLI_TRIO_SUBCOMMANDS` 引用 ⇒ 落盲面 plain 档；族外默认值那支是内联字面清单 ⇒ 落可读档。与 l98 侧档位和 +1（plain 58 → 59）独立咬合）
+MEASURED_CALLS = 438  # **L262 重量**：437 → **438**（新守卫 `test_empty_container_defaults_l262.py` 那一支按 A 族十格实例化的 parametrize：值位是模块级常数 `CASES`、ids 写成推导式 `f"{c}.{a}"` ⇒ l97 记「有 ids」进可读档、l98 记进 `ids-derived` 档。读数出自本轮全量的红读数 `assert 438 == 437` 与 `assert 12 == 11`，非推断）。L259 重量：436 → **437**（新守卫 `test_name_path_containment_l259.py` 那一支值位引用模块级常数字典 `MEASURED_CALL_SITES` 的 parametrize ⇒ 与 BLIND 同涨 1；读数出自本轮全量的红读数 `assert 437 == 436`，非推断）。L258 那一步：434 → **436**（新守卫 `test_name_path_containment_l258.py` 两支 parametrize：`sorted(MEASURED_CALL_SITES)` 的值位引用模块级常数字典 ⇒ 落盲面 plain 档；`("method,url", [...])` 是内联字面清单 ⇒ 落可读档。读数出自仓外探针 `Temp/l258_census.py` 直接 `import` 本模块 `param_sites(TESTS_ROOT)` 现量，非推断。L257 那一步：432 → **434**（新守卫 `test_default_text_fields_l257.py` 两支 parametrize：CLI 三档那支的值位是模块级常数 `CLI_TRIO_SUBCOMMANDS` 引用 ⇒ 落盲面 plain 档；族外默认值那支是内联字面清单 ⇒ 落可读档。与 l98 侧档位和 +1（plain 58 → 59）独立咬合）
 #: （L185：${ENV} 展开语义守卫两支 parametrize（坏形状 5 档 / 非串 4 档，全是字面清单）
 #: ⇒ CALLS 382 → 384、READABLE 281 → 283，盲面 101 一格未动）
 #: （L189：验证预设封闭清单守卫一支 parametrize（坏预设 5 档，全字面清单）⇒
@@ -144,7 +144,7 @@ MEASURED_CALLS = 437  # **L259 重量**：436 → **437**（新守卫 `test_name
 #: （L241：一支内联字面清单 ⇒ READABLE 311 → **312**，与 CALLS 同涨 1，盲面不动）
 #: （L243：一支内联字面清单 ⇒ READABLE 312 → **313**，与 CALLS 同涨 1，盲面不动）
 #: （L244：一支内联字面清单 ⇒ READABLE 313 → **314**，与 CALLS 同涨 1，盲面不动）
-MEASURED_READABLE = 316  # **L258 重量**：315 → **316**（`test_name_path_containment_l258.py` 那支内联字面清单的 parametrize，与 CALLS 同涨 1；仓外探针现量 316）
+MEASURED_READABLE = 317  # **L262 重量**：316 → **317**（新守卫那支 parametrize 带 `ids=` ⇒ 进可读档，盲面 `MEASURED_BLIND` 121 一格未动，`317 + 121 == 438` 闭合）。L258 重量：315 → **316**（`test_name_path_containment_l258.py` 那支内联字面清单的 parametrize，与 CALLS 同涨 1；仓外探针现量 316）
 #: L175：搜索方法封闭清单守卫两支 parametrize（坏值 6 档 / 合法 5 档，全是字面
 #: 清单）⇒ CALLS 379 → 381、READABLE 278 → 279，盲面（no-literal-list 桶）101 不动。
 #: L217：普查守卫三支无 ids parametrize ⇒ 盲面 108 → **111**（与 CALLS +3 同数，

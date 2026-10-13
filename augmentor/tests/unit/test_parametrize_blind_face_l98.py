@@ -187,7 +187,7 @@ MEASURED_BLIND_SEEN = 116  # **L259 重量**：115 → **116**（新那支盲面
 #: `test_no_float_no_call_no_attribute` 那一支 parametrize 自带字面 ids 清单（`dedup` / `leakage`）
 #: ⇒ 整支进豁免名册。豁免是「动态面放过」的名单，涨它不等于放松：值位那一维仍逐格判，
 #: 且本轮档位四档（58/38/11/11）与盲面 118 一格未动，两边独立闭合。
-MEASURED_EXEMPT_SITES = 24
+MEASURED_EXEMPT_SITES = 25  # **L262 重量**：24 → **25**（`test_empty_container_defaults_l262.py::test_empty_list_is_swallowed_into_the_default` 那一支把 parametrize 的值位与 `ids=` 两串都写成内联字面量 ⇒ 整支进豁免名册）。红读数 `assert 25 == 24`，同一次全量里盲面用例 116、BLIND_SEEN 116、四档（61/38/11/11）与 l97 那三格（438/317/121）各自未动 ⇒ 豁免名单变长只是「动态面放过」的那一格多了新成员，值位那一维仍逐格判，尺子没有放松。
 #: 动态面至少要采到这么多条，否则「没有风险对象」只是没采到（A171 口径：数不到不判干净）
 MIN_COLLECTED_ITEMS = 3000
 
