@@ -39,7 +39,7 @@
     "@dcloudio/uni-cli-shared": "3.0.0-5020420260813003",
     "@dcloudio/uni-stacktracey": "3.0.0-5020420260813003",
     "@dcloudio/vite-plugin-uni": "3.0.0-5020420260813003",
-    "@types/node": "^20.19.9",
+    "@types/node": "^26.6.5",
     "@vitejs/plugin-vue": "^5.2.4",
     "@vitest/coverage-v8": "2.1.9",
     "@vue/runtime-core": "3.4.21",
