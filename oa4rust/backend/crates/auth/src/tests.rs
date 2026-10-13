@@ -233,26 +233,37 @@ mod tests {
 
     #[test]
     fn test_verify_password_md5() {
+        // 遗留 MD5 仅在 legacy_compat=true 时接受（一次性迁移期）。
         let password = "admin123";
         let md5_hash = format!("{:x}", md5::compute(password.as_bytes()));
-        assert!(verify_password(password, &md5_hash, "", None));
+        assert!(verify_password(password, &md5_hash, "", true, None));
+    }
+
+    #[test]
+    fn test_verify_password_md5_rejected_without_compat() {
+        // 安全审计（2026-10）：默认（legacy_compat=false）拒绝无盐 MD5。
+        let password = "admin123";
+        let md5_hash = format!("{:x}", md5::compute(password.as_bytes()));
+        assert!(!verify_password(password, &md5_hash, "", false, None));
     }
 
     #[test]
     fn test_verify_password_des() {
+        // 遗留 DES 仅在 legacy_compat=true 时接受（一次性迁移期）。
         let password = "admin123";
         let key = "testkey123";
         let encrypted = des_encrypt_for_test(password, key);
         let base64 = base64::engine::general_purpose::URL_SAFE.encode(encrypted);
         let url_encoded = urlencoding::encode(&base64);
-        assert!(verify_password(password, &url_encoded, key, None));
+        assert!(verify_password(password, &url_encoded, key, true, None));
+        assert!(!verify_password(password, &url_encoded, key, false, None));
     }
 
     #[test]
     fn test_verify_password_wrong() {
         let password = "admin123";
         let wrong_hash = "wrong_hash";
-        assert!(!verify_password(password, wrong_hash, "", None));
+        assert!(!verify_password(password, wrong_hash, "", false, None));
     }
 
     #[test]
@@ -262,7 +273,7 @@ mod tests {
         let encrypted = des_encrypt_for_test(password, key);
         let base64 = base64::engine::general_purpose::URL_SAFE.encode(encrypted);
         let url_encoded = urlencoding::encode(&base64);
-        assert!(!verify_password(password, &url_encoded, "wrongkey", None));
+        assert!(!verify_password(password, &url_encoded, "wrongkey", true, None));
     }
 
     #[test]
@@ -502,12 +513,15 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_oidc_get_or_create_person_inserts() {
+    async fn test_oidc_get_or_create_person_inserts_from_tests_mod() {
+        // 与 oidc::tests::test_oidc_get_or_create_person_inserts 同语义，但用独立
+        // unique_id（oidc_test_create_user_101），避免并发运行两测试对同一行做
+        // DELETE+INSERT 的竞争（此前用同名同 unique_id 导致偶发 "Internal" 失败）。
         use shared::testing::is_db_available;
 
         if !is_db_available().await {
             eprintln!(
-                "skipping test_oidc_get_or_create_person_inserts: DATABASE_URL not reachable"
+                "skipping test_oidc_get_or_create_person_inserts_from_tests_mod: DATABASE_URL not reachable"
             );
             return;
         }
@@ -519,18 +533,18 @@ mod tests {
             let _ = c
                 .execute(
                     "DELETE FROM auth_person WHERE unique_id = $1",
-                    &[&"oidc_test_create_user_001"],
+                    &[&"oidc_test_create_user_101"],
                 )
                 .await;
         }
 
-        let result = crate::oidc::get_or_create_person(&pool, "test_create_user_001")
+        let result = crate::oidc::get_or_create_person(&pool, "test_create_user_101")
             .await
             .expect("get_or_create_person should succeed");
 
         assert_eq!(
             result.get("unique_id").and_then(|v| v.as_str()),
-            Some("oidc_test_create_user_001")
+            Some("oidc_test_create_user_101")
         );
         assert!(
             result.get("id").and_then(|v| v.as_str()).is_some(),

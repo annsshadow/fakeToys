@@ -264,18 +264,21 @@ pub async fn login(
         Ok(r) => r,
         Err(e) => return Err(e), // LDAP 连接错误：不静默回退
     };
+    // 遗留 MD5/DES/3DES 兼容开关（2026-10 安全审计后默认关闭，一次性迁移期由
+    // AUTH_LEGACY_COMPAT=true 显式开启；登录/SSO 热路径只读一次 env）。
+    let legacy_compat = password::legacy_compat_from_env();
     let valid = match ldap_result {
         Some(ldap_auth::LdapAuthOutcome::Success) => true, // LDAP 认证成功
         Some(ldap_auth::LdapAuthOutcome::Failed) => {
             // LDAP 凭据无效，回退到数据库密码校验
-            password::verify_password(&req.password, &password_hash, "", None)
+            password::verify_password(&req.password, &password_hash, "", legacy_compat, None)
         }
         None => {
             // LDAP 未启用（Disabled 或 from_env 返回 None），走数据库密码校验
-            password::verify_password(&req.password, &password_hash, "", None)
+            password::verify_password(&req.password, &password_hash, "", legacy_compat, None)
         }
         // Error 和 Disabled 已通过 Err/None 路径处理，此处为防御性分支
-        Some(_) => password::verify_password(&req.password, &password_hash, "", None),
+        Some(_) => password::verify_password(&req.password, &password_hash, "", legacy_compat, None),
     };
     if !valid {
         return Ok(
