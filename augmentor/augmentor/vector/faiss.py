@@ -17,7 +17,7 @@ import numpy as np
 from .base import VectorDB, normalize_vectors
 from ..cache import MemoryCache
 from ..exceptions import VectorError
-from ..validation import require_count
+from ..validation import require_count, require_within_dir
 
 logger = logging.getLogger(__name__)
 
@@ -287,14 +287,21 @@ class FAISSDB(VectorDB):
 
         Raises:
             VectorError: 未配置 storage_dir
+            DataValidationError: 集合名拼出的文件名落到 `storage_dir` 之外
         """
         if self.storage_dir is None:
             raise VectorError("未配置 storage_dir，无法持久化")
 
+        # 判在 mkdir 之前：坏集合名不该在盘上留下一个空目录。
+        vectors_path = require_within_dir(
+            "集合名称", f"{self.collection}_vectors.npy", self.storage_dir)
+        meta_path = require_within_dir(
+            "集合名称", f"{self.collection}_meta.json", self.storage_dir)
+
         self.storage_dir.mkdir(parents=True, exist_ok=True)
 
-        np.save(self.storage_dir / f"{self.collection}_vectors.npy", self._vectors)
-        with open(self.storage_dir / f"{self.collection}_meta.json", 'w', encoding='utf-8') as f:
+        np.save(vectors_path, self._vectors)
+        with open(meta_path, 'w', encoding='utf-8') as f:
             json.dump(
                 {"ids": self._ids, "metadata": self._metadata, "dimension": self.dimension},
                 f, ensure_ascii=False
@@ -307,12 +314,17 @@ class FAISSDB(VectorDB):
 
         Returns:
             是否加载成功
+
+        Raises:
+            DataValidationError: 集合名拼出的文件名落到 `storage_dir` 之外
         """
         if self.storage_dir is None:
             return False
 
-        vectors_path = self.storage_dir / f"{self.collection}_vectors.npy"
-        meta_path = self.storage_dir / f"{self.collection}_meta.json"
+        vectors_path = require_within_dir(
+            "集合名称", f"{self.collection}_vectors.npy", self.storage_dir)
+        meta_path = require_within_dir(
+            "集合名称", f"{self.collection}_meta.json", self.storage_dir)
 
         if not vectors_path.exists() or not meta_path.exists():
             return False

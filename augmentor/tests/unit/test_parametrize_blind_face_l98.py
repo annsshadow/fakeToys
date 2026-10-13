@@ -94,7 +94,7 @@ TIER_OPAQUE = "opaque"              # 压根解析不到
 #: 与 l97 的盲面 +4 独立闭合；那支自带字面 ids 清单的第五格不进盲面，只进豁免名册
 #: （豁免 17 → **18**）。
 MEASURED_TIERS: Dict[str, int] = {
-    TIER_PLAIN: 60,  # **L258 重量**：59 → **60**（`test_name_path_containment_l258.py` 那支值位引用 `sorted(MEASURED_CALL_SITES)` 的 parametrize，无 ids ⇒ plain）。L257 那一步：58 → **59**（新守卫那支值位引用 `CLI_TRIO_SUBCOMMANDS` 的 parametrize，无 ids ⇒ plain）
+    TIER_PLAIN: 61,  # **L259 重量**：60 → **61**（`test_name_path_containment_l259.py` 那支值位引用 `sorted(MEASURED_CALL_SITES)` 的 parametrize，无 ids ⇒ plain）。L258 那一步：59 → **60**（`test_name_path_containment_l258.py` 那支值位引用 `sorted(MEASURED_CALL_SITES)` 的 parametrize，无 ids ⇒ plain）。L257 那一步：58 → **59**（新守卫那支值位引用 `CLI_TRIO_SUBCOMMANDS` 的 parametrize，无 ids ⇒ plain）
     TIER_DERIVED: 38,
     TIER_IDS_DERIVED: 11,
     TIER_OPAQUE: 11,
@@ -180,8 +180,8 @@ MEASURED_HAZARD_ROSTER: Dict[Tuple[int, int], frozenset] = {
 #: **L230 回填（豁免 18 → 23，+5）**：同文件五支用例的每一支 parametrize 都自带字面 ids
 #: 清单（回执键名册、路径判决、越界 ratio 三臂、`target_size` 四策略、TS 面三张回执），
 #: 整支进豁免名册。豁免是「动态面放过」的名单，涨它不等于放松：值位那一维仍逐格判。
-MEASURED_BLIND_TESTS = 115  # **L258 重量**：114 → **115**（`test_each_guarded_module_imports_the_authority_not_a_local_copy` 按名进盲面名册）
-MEASURED_BLIND_SEEN = 115  # **L258 重量**：114 → **115**（新那支盲面站点被动态面真采到，与盲面用例名册同数 ⇒ 覆盖面没有掉队）
+MEASURED_BLIND_TESTS = 116  # **L259 重量**：115 → **116**（`test_each_guarded_module_imports_the_authority_not_a_local_copy` 按名进盲面名册，本轮那支的九档逐档真跑）。L258 那一步：114 → **115**（`test_each_guarded_module_imports_the_authority_not_a_local_copy` 按名进盲面名册）
+MEASURED_BLIND_SEEN = 116  # **L259 重量**：115 → **116**（新那支盲面站点被动态面真采到，与盲面用例名册同数 ⇒ 覆盖面没有掉队）。L258 那一步：114 → **115**（新那支盲面站点被动态面真采到，与盲面用例名册同数 ⇒ 覆盖面没有掉队）
 #: 现量：整支豁免（该用例的每一支 parametrize 都写了字面 ids）的用数
 #: **L241 回填（23 → 24）**：`test_cost_oracle_routing_l241.py` 的
 #: `test_no_float_no_call_no_attribute` 那一支 parametrize 自带字面 ids 清单（`dedup` / `leakage`）
