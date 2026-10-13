@@ -127,45 +127,69 @@ func TestPendingTokensAreRealTokens(t *testing.T) {
 	}
 }
 
-// TestShopDoesNotSellUnspendableTokens 商城里的道具必须是「可花」集合里的。
+// TestShopDoesNotSellUnspendableTokens 商城**不得**出售待接通的道具。
 //
-// 这条与上面两条互补：上面查「上架的道具能不能用」，这条查
-// 「可用的道具是不是真的在上架」—— 方向反了也是缺口。
-// 已知豁免：复活币与洗练石**确实在卖**，但那是 PENDING_TOKENS 里
-// 已登记的产品缺口，不是这里能判定的错误，因此本条不覆盖它们。
+// 为什么能写成断言了（第 150 轮下架之后）：
+// 此前复活币与洗练石一边「没有消费端点」一边在商城里卖，唯一的处理是
+// 在界面文案上说「目前无法使用」—— 那只是**告知**，不是**约束**：
+// 后台照样能上架，运营照样能买，玩家照样会投诉。
+//
+// 现在 `seedShop` 里有 `delisted` 标记把它们 enabled 置 false，
+// 于是「待接通」与「在售」变成了互斥状态，可以被机器判定。
+// 哪天有人给 revive_token 接上消费端点，这条会因为
+// 「它仍在 PENDING_TOKENS 里却已下架」而红 —— 提醒把两边一起翻过来。
+//
+// 判据扫的是**种子源码**里 `delisted: true` 的那些行发的是什么道具。
 func TestShopDoesNotSellUnspendableTokens(t *testing.T) {
-	sold := shopTokenGrants(t)
-	for token := range sold {
-		if !walletTokens[token] {
-			t.Errorf("商城在发 %q，但它不在 walletTokens 里 —— "+
-				"Buy 会因「未知货币」回滚，玩家永远买不到", token)
+	delisted := delistedShopTokens(t)
+	if len(delisted) == 0 {
+		t.Fatal("一条下架商品都没扫到 —— 判据失效了（seedShop 的写法变了吗？）")
+	}
+	for token := range delisted {
+		if _, pending := PENDING_TOKENS[token]; !pending {
+			t.Errorf("商城下架了 %q，但它并不在 PENDING_TOKENS 里 —— "+
+				"要么它其实能用（那就该上架），要么该补上待接通理由", token)
 		}
 	}
-	if len(sold) == 0 {
-		t.Fatal("一条商城道具都没扫到 —— 判据失效了（seedShop 的写法变了吗？）")
+	// 反向：待接通的道具必须都已下架。
+	for token := range PENDING_TOKENS {
+		if !delisted[token] {
+			t.Errorf("道具 %q 还没有消费端点，却仍在商城出售 —— "+
+				"玩家花钱买了却用不了。要么在 seedShop 里给它加 delisted，"+
+				"要么把它的消费端点接上。", token)
+		}
 	}
 }
 
-// shopTokenGrants 扫出商城种子实际发放的道具。
-var shopGrantRe = regexp.MustCompile(`map\[string\]int\{"([a-z_]+)":\s*\d+\}`)
+// shopGrantRe 匹配商品定义里的发放列，例如 `"revive_token": 1}`。
+var shopGrantRe = regexp.MustCompile(`"([a-z_]+)":\s*\d+\}`)
 
-func shopTokenGrants(t *testing.T) map[string]bool {
+// delistedTailRe 匹配 seedShop 里商品定义行**末尾**的 `, true},`。
+//
+// 为什么只看行尾而不解析整个结构体字面量：
+// 商品表的字段顺序（id / code / … / limit / delisted）是个纯排版约定，
+// 任何人加一列中间字段都会让按位置的正则当场失效 ——
+// 而「失效」的表现是扫不到、于是判定整体挂掉
+// （下面那条 `len(delisted) == 0` 的自检就是为这个而留的）。
+// 行尾的 `, true},` 则是 delisted 这个字段**本身**的标记，与顺序无关。
+var delistedTailRe = regexp.MustCompile(`,\s*true\},?\s*$`)
+
+// delistedShopTokens 扫出「已被下架」的商品发出的道具。
+func delistedShopTokens(t *testing.T) map[string]bool {
 	t.Helper()
-	// 商城种子在 internal/seeder 包里；从 service 看不到源码。
-	// 改为直接读 seeder 包的源码文件（同 module，路径固定）。
 	raw, err := os.ReadFile(filepath.Join("..", "seeder", "seed.go"))
 	if err != nil {
 		t.Fatalf("读 seeder/seed.go 失败：%v", err)
 	}
 	out := map[string]bool{}
-	// 只取 grant 那一列（倒数第二列）—— 用「同行出现 walletTokens 里的名字」判定
 	for _, line := range strings.Split(string(raw), "\n") {
-		if !strings.Contains(line, "shop_") {
+		line = strings.TrimSpace(line)
+		if !strings.HasPrefix(line, "{") || !delistedTailRe.MatchString(line) {
 			continue
 		}
-		for _, m := range shopGrantRe.FindAllStringSubmatch(line, -1) {
-			if walletTokens[m[1]] {
-				out[m[1]] = true
+		for _, g := range shopGrantRe.FindAllStringSubmatch(line, -1) {
+			if walletTokens[g[1]] {
+				out[g[1]] = true
 			}
 		}
 	}

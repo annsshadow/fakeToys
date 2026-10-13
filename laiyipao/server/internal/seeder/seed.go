@@ -352,15 +352,32 @@ func seedShop(ctx context.Context, tx pgx.Tx, res *SeedResult) error {
 		code, name, category string
 		price, grant         map[string]int
 		limit                int
+		// delisted 的商品**行保留、enabled 置 false**。
+		//
+		// 为什么不是「从种子里删掉」：
+		//   - seeder 是 upsert，删行只对**全新库**有效，已有库里的行还在；
+		//   - 而这些行是玩家已购记录（user_purchases.item_id）的外键目标，
+		//     直接消失会让历史流水悬空；
+		//   - 后台也要看得见「曾经有这个商品、为什么没了」。
+		//
+		// 为什么用 UPDATE 而不是把 enabled 放进 upsert：
+		// 下面的 ON CONFLICT **刻意不碰 enabled** —— 后台手动上下架必须
+		// 能扛得住重新灌种子。把 enabled 写进 upsert 会把这个约定砸掉。
+		// 所以拆成两步：upsert 管内容，下架管「这个 code 必须关着」。
+		delisted bool
 	}{
-		{1, "shop_coin_small", "金币袋", "currency", map[string]int{"gem": 10}, map[string]int{"coin": 20000}, 3},
-		{2, "shop_coin_big", "金币箱", "currency", map[string]int{"gem": 50}, map[string]int{"coin": 120000}, 1},
-		{3, "shop_energy", "体力补给", "currency", map[string]int{"gem": 20}, map[string]int{"energy": 30}, 2},
-		{4, "shop_keys", "钥匙串", "currency", map[string]int{"gem": 30}, map[string]int{"keys": 3}, 1},
-		{5, "shop_retry", "重试符", "boost", map[string]int{"coin": 5000}, map[string]int{"revive_token": 1}, 5},
-		{6, "shop_mastery_reset", "专精点重置", "boost", map[string]int{"gem": 80}, map[string]int{"mastery_reset": 1}, 0},
-		{7, "shop_firstpay", "首充礼包", "starter", map[string]int{"coin": 0}, map[string]int{"gem": 300, "coin": 50000, "energy": 50}, 1},
-		{8, "shop_gem_wash", "洗练石", "boost", map[string]int{"coin": 20000}, map[string]int{"gem_wash_token": 1}, 3},
+		{1, "shop_coin_small", "金币袋", "currency", map[string]int{"gem": 10}, map[string]int{"coin": 20000}, 3, false},
+		{2, "shop_coin_big", "金币箱", "currency", map[string]int{"gem": 50}, map[string]int{"coin": 120000}, 1, false},
+		{3, "shop_energy", "体力补给", "currency", map[string]int{"gem": 20}, map[string]int{"energy": 30}, 2, false},
+		{4, "shop_keys", "钥匙串", "currency", map[string]int{"gem": 30}, map[string]int{"keys": 3}, 1, false},
+		// ⚠️ 第 150 轮下架：复活币没有任何消费端点（局内复活动 replay_hash
+		// 锚点与 I-6 可重放性）。卖一件玩家永远用不了的东西，比不卖更糟。
+		{5, "shop_retry", "重试符", "boost", map[string]int{"coin": 5000}, map[string]int{"revive_token": 1}, 5, true},
+		{6, "shop_mastery_reset", "专精点重置", "boost", map[string]int{"gem": 80}, map[string]int{"mastery_reset": 1}, 0, false},
+		{7, "shop_firstpay", "首充礼包", "starter", map[string]int{"coin": 0}, map[string]int{"gem": 300, "coin": 50000, "energy": 50}, 1, false},
+		// ⚠️ 同上：洗练券的前置是「玩家得有宝石实例」，而全仓库没有任何
+		// INSERT INTO user_gems —— 玩家手里一颗都没有，洗了也没得洗。
+		{8, "shop_gem_wash", "洗练石", "boost", map[string]int{"coin": 20000}, map[string]int{"gem_wash_token": 1}, 3, true},
 	}
 	for _, it := range items {
 		priceRaw, err := json.Marshal(it.price)
@@ -373,13 +390,24 @@ func seedShop(ctx context.Context, tx pgx.Tx, res *SeedResult) error {
 		}
 		if _, err := tx.Exec(ctx, `
 			INSERT INTO shop_items (id, code, name, category, price, payload, limit_per_day, sort_order, enabled)
-			VALUES ($1,$2,$3,$4,$5,$6,$7,$8,TRUE)
+			VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
 			ON CONFLICT (id) DO UPDATE SET
 				name=EXCLUDED.name, category=EXCLUDED.category, price=EXCLUDED.price,
 				payload=EXCLUDED.payload, limit_per_day=EXCLUDED.limit_per_day,
 				sort_order=EXCLUDED.sort_order`,
-			it.id, it.code, it.name, it.category, priceRaw, grantRaw, it.limit, it.id); err != nil {
+			it.id, it.code, it.name, it.category, priceRaw, grantRaw, it.limit, it.id, !it.delisted); err != nil {
 			return fmt.Errorf("insert shop item %d: %w", it.id, err)
+		}
+		if it.delisted {
+			// 幂等地把下架状态压回去。
+			//
+			// 上面 INSERT 的 ON CONFLICT 分支**不包含 enabled**，所以对一个
+			// 已经被人工打开过的旧库行，重新灌种子不会把它关回去。
+			// 那正是我们要保留的语义 —— 所以下架必须在这里显式写一次。
+			if _, err := tx.Exec(ctx,
+				`UPDATE shop_items SET enabled = FALSE, updated_at = now() WHERE code = $1`, it.code); err != nil {
+				return fmt.Errorf("delist shop item %s: %w", it.code, err)
+			}
 		}
 		res.ShopItems++
 	}
