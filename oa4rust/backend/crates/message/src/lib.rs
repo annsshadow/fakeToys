@@ -9,6 +9,19 @@ use uuid::Uuid;
 
 use shared::{error::AppError, response::ActionResult};
 
+#[cfg(test)]
+mod security_gate_tests;
+
+/// 系统消息发布门禁（安全审计 2026-10 二轮）：x_msg_message 为全员可见的系统
+/// 通知，任意登录用户可 INSERT 伪造系统消息 → 仅 admin 可发布。
+async fn require_admin(pool: &Pool, session: &shared::session::Session) -> Result<(), AppError> {
+    if shared::middleware::is_admin(pool, &session.person_unique).await {
+        Ok(())
+    } else {
+        Err(AppError::Forbidden)
+    }
+}
+
 #[derive(Debug, Deserialize)]
 pub struct ConsumeListRequest {
     pub consume: String,
@@ -123,8 +136,11 @@ pub async fn update_single(
 
 pub async fn custom_create(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Json(req): Json<CreateMessageRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 系统消息发布仅 admin（安全审计 2026-10 二轮）。
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = Uuid::new_v4().to_string();
     let title = req.title.unwrap_or_default();

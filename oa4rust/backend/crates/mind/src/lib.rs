@@ -16,6 +16,30 @@ pub mod routes;
 mod tests;
 #[cfg(test)]
 mod tests_generated;
+#[cfg(test)]
+mod security_gate_tests;
+
+/// 属主资源门禁（安全审计 2026-10 二轮）：思维导图/文件夹写操作仅属主/admin。
+/// 命中行时按 creator 列校验；行不存在则放行（后续 UPDATE/DELETE 命中 0 行，
+/// 统一回 not found，语义不变）。table 为调用侧静态字面量（FI-002 约定）。
+#[allow(non_snake_case)]
+async fn mind_owner_gate(
+    pool: &Pool,
+    client: &deadpool_postgres::Object,
+    session: &shared::session::Session,
+    table: &str,
+    id: &str,
+) -> Result<(), AppError> {
+    let row = client
+        .query_opt(&format!("SELECT creator FROM {table} WHERE id = $1"), &[&id])
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if let Some(row) = row {
+        let owner: String = row.get::<_, Option<String>>("creator").unwrap_or_default();
+        shared::middleware::require_owner(pool, session, &owner).await?;
+    }
+    Ok(())
+}
 
 pub fn mind_router() -> Router {
     Router::new().merge(routes::mind_routes())
@@ -253,6 +277,7 @@ pub async fn list_versions_with_mind_id(
 #[allow(non_snake_case)]
 pub async fn create_mind(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -275,11 +300,8 @@ pub async fn create_mind(
         .get("description")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string());
-    let creator = payload
-        .get("creator")
-        .and_then(|v| v.as_str())
-        .unwrap_or("system")
-        .to_string();
+    // 属主以会话登录人为事实源（客户端 creator 可伪造，安全审计 2026-10 二轮）。
+    let creator = session.person_unique.clone();
     let creator_unit = payload
         .get("creatorUnit")
         .and_then(|v| v.as_str())
@@ -320,10 +342,13 @@ pub async fn create_mind(
 #[allow(non_snake_case)]
 pub async fn update_mind(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Path(id): Path<String>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    // 属主门禁：仅属主/admin 可改他人思维导图（安全审计 2026-10 二轮）。
+    mind_owner_gate(&pool, &client, &session, "mind_base_info", &id).await?;
     let row = client
         .query_one(
             "SELECT name, folder_id, icon, description, shared, file_version FROM mind_base_info WHERE id = $1",
@@ -387,9 +412,12 @@ pub async fn update_mind(
 #[allow(non_snake_case)]
 pub async fn delete_mind(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    // 属主门禁：仅属主/admin 可删他人思维导图（安全审计 2026-10 二轮）。
+    mind_owner_gate(&pool, &client, &session, "mind_base_info", &id).await?;
     let count = client
         .execute("DELETE FROM mind_base_info WHERE id = $1", &[&id])
         .await
@@ -414,6 +442,7 @@ pub async fn delete_mind(
 #[allow(non_snake_case)]
 pub async fn create_folder(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -435,11 +464,8 @@ pub async fn create_folder(
         .get("description")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string());
-    let creator = payload
-        .get("creator")
-        .and_then(|v| v.as_str())
-        .unwrap_or("system")
-        .to_string();
+    // 属主以会话登录人为事实源（客户端 creator 可伪造，安全审计 2026-10 二轮）。
+    let creator = session.person_unique.clone();
     let creator_unit = payload
         .get("creatorUnit")
         .and_then(|v| v.as_str())
@@ -470,10 +496,13 @@ pub async fn create_folder(
 #[allow(non_snake_case)]
 pub async fn update_folder(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Path(id): Path<String>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    // 属主门禁：仅属主/admin 可改他人文件夹（安全审计 2026-10 二轮）。
+    mind_owner_gate(&pool, &client, &session, "mind_folder_info", &id).await?;
     let row = client
         .query_one(
             "SELECT name, parent_id, order_number, description FROM mind_folder_info WHERE id = $1",
@@ -528,9 +557,12 @@ pub async fn update_folder(
 #[allow(non_snake_case)]
 pub async fn delete_folder(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    // 属主门禁：仅属主/admin 可删他人文件夹（安全审计 2026-10 二轮）。
+    mind_owner_gate(&pool, &client, &session, "mind_folder_info", &id).await?;
     let count = client
         .execute("DELETE FROM mind_folder_info WHERE id = $1", &[&id])
         .await
@@ -555,6 +587,7 @@ pub async fn delete_folder(
 #[allow(non_snake_case)]
 pub async fn create_version(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -564,6 +597,10 @@ pub async fn create_version(
         .and_then(|v| v.as_str())
         .unwrap_or_default()
         .to_string();
+    // 版本挂在思维导图下：仅属主/admin 可为他人思维导图建版本（安全审计 2026-10 二轮）。
+    if !mind_id.is_empty() {
+        mind_owner_gate(&pool, &client, &session, "mind_base_info", &mind_id).await?;
+    }
     let name = payload
         .get("name")
         .and_then(|v| v.as_str())
@@ -578,11 +615,8 @@ pub async fn create_version(
         .get("description")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string());
-    let creator = payload
-        .get("creator")
-        .and_then(|v| v.as_str())
-        .unwrap_or("system")
-        .to_string();
+    // 属主以会话登录人为事实源（客户端 creator 可伪造，安全审计 2026-10 二轮）。
+    let creator = session.person_unique.clone();
     let creator_unit = payload
         .get("creatorUnit")
         .and_then(|v| v.as_str())

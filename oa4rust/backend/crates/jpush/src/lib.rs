@@ -83,15 +83,14 @@ pub async fn device_get(
 #[allow(non_snake_case)]
 pub async fn device_create(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Json(req): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let user_id = req
-        .get("userId")
-        .and_then(|v| v.as_str())
-        .unwrap_or("")
-        .to_string();
+    // 推送设备归属以会话登录人为事实源：客户端 userId 可伪造，替他人注册推送设备
+    // 即推送劫持面（安全审计 2026-10 二轮）。
+    let user_id = session.person_unique.clone();
     let platform = req
         .get("platform")
         .and_then(|v| v.as_str())
@@ -192,3 +191,5 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
 mod tests;
 #[cfg(test)]
 mod tests_generated;
+#[cfg(test)]
+mod security_gate_tests;
