@@ -235,6 +235,7 @@ pub async fn collect_list(
 #[allow(non_snake_case)]
 pub async fn collect_add(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Json(req): Json<CollectAddRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -242,8 +243,9 @@ pub async fn collect_add(
     let id = uuid::Uuid::new_v4().to_string();
     let title = req.title.unwrap_or_default();
     let url = req.url.unwrap_or_default();
-    let person_id = req.person_id.unwrap_or_default();
-    let creator = req.creator.unwrap_or_else(|| "system".to_string());
+    // 归属以会话登录人为事实源：客户端 personId/creator 可伪造（替别人收藏/冒名归属）
+    let person_id = session.person_unique.clone();
+    let creator = session.person_unique.clone();
 
     client
         .execute(
@@ -3679,8 +3681,10 @@ pub async fn config_proxy(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
 #[allow(non_snake_case)]
 pub async fn config_save(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Json(req): Json<ConfigSaveRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -4147,8 +4151,10 @@ pub async fn deploy_server_resource(
 #[allow(non_snake_case)]
 pub async fn deploy_web_resource_as_new_asNew(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Path(as_new): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -4508,19 +4514,38 @@ pub async fn dict_dictFlag_path_data_mockdeletetoget(
 #[allow(non_snake_case)]
 pub async fn dict_dictFlag_data_post(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Path(dict_flag): Path<String>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    dict_dictFlag_path_data_mockputtopost(pool, Path((dict_flag, String::new())), Json(body)).await
+    dict_dictFlag_path_data_mockputtopost(pool, session, Path((dict_flag, String::new())), Json(body))
+        .await
 }
 
 #[allow(non_snake_case)]
 pub async fn dict_dictFlag_path_data_mockputtopost(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Path((dict_flag, _path)): Path<(String, String)>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    // IDOR 门禁：命中行存在时按 creator_person 校验属主/管理员（与 dict_delete_id 一致）；
+    // 不存在则放行，UPDATE 命中 0 行后统一回 "dict not found"，不改既有语义。
+    if let Some(row) = client
+        .query_opt(
+            "SELECT creator_person FROM x_program_dict WHERE flag = $1",
+            &[&dict_flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?
+    {
+        let owner: String = row
+            .get::<_, Option<String>>("creator_person")
+            .unwrap_or_default();
+        shared::middleware::require_owner(&pool, &session, &owner).await?;
+    }
 
     let data_str = match body {
         Value::String(s) => s,
@@ -7771,8 +7796,10 @@ pub struct ApplicationCreateRequest {
 #[allow(non_snake_case)]
 pub async fn application_create(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Json(req): Json<ApplicationCreateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -7844,8 +7871,10 @@ pub async fn application_get_by_id(
 #[allow(non_snake_case)]
 pub async fn application_delete(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM x_applications WHERE id = $1", &[&id])
@@ -7871,9 +7900,11 @@ pub struct ApplicationSaveRequest {
 #[allow(non_snake_case)]
 pub async fn application_save(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Path(id): Path<String>,
     Json(req): Json<ApplicationSaveRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -7971,8 +8002,10 @@ pub struct AgentCreateRequest {
 #[allow(non_snake_case)]
 pub async fn agent_create(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Json(req): Json<AgentCreateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -8015,9 +8048,11 @@ pub struct AgentSaveRequest {
 #[allow(non_snake_case)]
 pub async fn agent_save(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Path(id): Path<String>,
     Json(req): Json<AgentSaveRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -8285,10 +8320,12 @@ pub async fn schedule_report(pool: Extension<Pool>) -> Result<Json<ActionResult<
 #[allow(non_snake_case)]
 pub async fn schedule_schedule_fire(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     // 前端 ProgramCenterApp.vue: api.post('.../schedule/schedule/fire', { id } | {}) —— 无路径参数，
     // 从体读 id（此前误声明 Path 致 0 槽路由恒 arity-500）。
     axum::Json(body): axum::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
     let schedule_id = body
         .get("id")
         .and_then(|v| v.as_str())
@@ -8633,8 +8670,10 @@ pub async fn script_id(
 #[allow(non_snake_case)]
 pub async fn tokenthreshold_update(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let threshold = body
@@ -11036,8 +11075,10 @@ fn invoke_spec() -> shared::crud::CrudSpec {
 #[allow(non_snake_case)]
 pub async fn invoke_create(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     body: Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
     let id = shared::crud_create(&pool, &invoke_spec(), &body.0).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -11051,9 +11092,11 @@ pub async fn invoke_create(
 #[allow(non_snake_case)]
 pub async fn invoke_save(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Path(id): Path<String>,
     body: Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
     let saved = shared::crud_save(&pool, &invoke_spec(), &id, &body.0).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -11067,8 +11110,10 @@ pub async fn invoke_save(
 #[allow(non_snake_case)]
 pub async fn invoke_delete(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
     let deleted = shared::crud_delete(&pool, &invoke_spec(), &id).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -12090,11 +12135,27 @@ pub async fn dict_create(
 
 async fn dict_data_write(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     dict_flag: String,
     path: String,
     body: Value,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    // IDOR 门禁：命中行存在时按 creator_person 校验属主/管理员（与 dict_delete_id 一致）。
+    if let Some(row) = client
+        .query_opt(
+            "SELECT creator_person FROM x_program_dict WHERE flag = $1 AND deleted_at IS NULL",
+            &[&dict_flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?
+    {
+        let owner: String = row
+            .get::<_, Option<String>>("creator_person")
+            .unwrap_or_default();
+        shared::middleware::require_owner(&pool, &session, &owner).await?;
+    }
 
     let data_str = match body {
         Value::String(s) => s,
@@ -12124,18 +12185,34 @@ async fn dict_data_write(
 #[allow(non_snake_case)]
 pub async fn dict_data_save_put(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Path((dict_flag, path)): Path<(String, String)>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    dict_data_write(pool, dict_flag, path, body).await
+    dict_data_write(pool, session, dict_flag, path, body).await
 }
 
 #[allow(non_snake_case)]
 pub async fn dict_data_delete_path(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Path((dict_flag, path)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    // IDOR 门禁：命中行存在时按 creator_person 校验属主/管理员（与 dict_delete_id 一致）。
+    if let Some(row) = client
+        .query_opt(
+            "SELECT creator_person FROM x_program_dict WHERE flag = $1 AND deleted_at IS NULL",
+            &[&dict_flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?
+    {
+        let owner: String = row
+            .get::<_, Option<String>>("creator_person")
+            .unwrap_or_default();
+        shared::middleware::require_owner(&pool, &session, &owner).await?;
+    }
     let n = client
         .execute(
             "UPDATE x_program_dict SET app_data = '', update_time = NOW() WHERE flag = $1 AND deleted_at IS NULL",
@@ -12413,5 +12490,194 @@ mod security_gate_tests {
         )
         .await;
         assert!(matches!(res, Err(AppError::Unauthorized)));
+    }
+
+    /// 安全审计回归（2026-10）：program_center 运维写端点越权修复。
+    /// 这些 handler 不在中间件 ADMIN_WRITE_PREFIXES 内，门禁只能落在 handler 体内；
+    /// 修复前任何登录人即可改写全局配置/应用/代理/调用/阈值/调度/部署资源。
+    /// 非 admin 会话（无 DB 时 is_admin fail-closed 返回 false）一律必须 Forbidden。
+    #[tokio::test]
+    async fn program_center_admin_writes_forbidden_for_non_admin() {
+        let pool = shared::testing::test_pool();
+        let sess = || Extension(build_session("u-nonadmin"));
+
+        assert!(
+            matches!(
+                config_save(
+                    Extension(pool.clone()),
+                    sess(),
+                    axum::Json(ConfigSaveRequest {
+                        key: "system.token".to_string(),
+                        value: Some("x".to_string()),
+                        category: None,
+                        creator: None,
+                    })
+                )
+                .await,
+                Err(AppError::Forbidden)
+            ),
+            "config_save 非 admin 必须 403"
+        );
+
+        assert!(
+            matches!(
+                application_create(
+                    Extension(pool.clone()),
+                    sess(),
+                    axum::Json(ApplicationCreateRequest {
+                        name: Some("n".to_string()),
+                        app_id: None,
+                        description: None,
+                        creator: None,
+                    })
+                )
+                .await,
+                Err(AppError::Forbidden)
+            ),
+            "application_create 非 admin 必须 403"
+        );
+
+        assert!(
+            matches!(
+                application_delete(
+                    Extension(pool.clone()),
+                    sess(),
+                    axum::extract::Path("id1".to_string())
+                )
+                .await,
+                Err(AppError::Forbidden)
+            ),
+            "application_delete 非 admin 必须 403"
+        );
+
+        assert!(
+            matches!(
+                application_save(
+                    Extension(pool.clone()),
+                    sess(),
+                    axum::extract::Path("id1".to_string()),
+                    axum::Json(ApplicationSaveRequest {
+                        name: None,
+                        app_id: None,
+                        description: None,
+                        disable: None,
+                    })
+                )
+                .await,
+                Err(AppError::Forbidden)
+            ),
+            "application_save 非 admin 必须 403"
+        );
+
+        assert!(
+            matches!(
+                agent_create(
+                    Extension(pool.clone()),
+                    sess(),
+                    axum::Json(AgentCreateRequest {
+                        name: Some("n".to_string()),
+                        flag: None,
+                        description: None,
+                        creator: None,
+                    })
+                )
+                .await,
+                Err(AppError::Forbidden)
+            ),
+            "agent_create 非 admin 必须 403"
+        );
+
+        assert!(
+            matches!(
+                agent_save(
+                    Extension(pool.clone()),
+                    sess(),
+                    axum::extract::Path("id1".to_string()),
+                    axum::Json(AgentSaveRequest {
+                        name: None,
+                        flag: None,
+                        description: None,
+                    })
+                )
+                .await,
+                Err(AppError::Forbidden)
+            ),
+            "agent_save 非 admin 必须 403"
+        );
+
+        assert!(
+            matches!(
+                invoke_create(Extension(pool.clone()), sess(), axum::Json(serde_json::json!({})))
+                    .await,
+                Err(AppError::Forbidden)
+            ),
+            "invoke_create 非 admin 必须 403"
+        );
+
+        assert!(
+            matches!(
+                invoke_save(
+                    Extension(pool.clone()),
+                    sess(),
+                    axum::extract::Path("id1".to_string()),
+                    axum::Json(serde_json::json!({}))
+                )
+                .await,
+                Err(AppError::Forbidden)
+            ),
+            "invoke_save 非 admin 必须 403"
+        );
+
+        assert!(
+            matches!(
+                invoke_delete(
+                    Extension(pool.clone()),
+                    sess(),
+                    axum::extract::Path("id1".to_string())
+                )
+                .await,
+                Err(AppError::Forbidden)
+            ),
+            "invoke_delete 非 admin 必须 403"
+        );
+
+        assert!(
+            matches!(
+                tokenthreshold_update(
+                    Extension(pool.clone()),
+                    sess(),
+                    axum::Json(serde_json::json!({"threshold": 1}))
+                )
+                .await,
+                Err(AppError::Forbidden)
+            ),
+            "tokenthreshold_update 非 admin 必须 403"
+        );
+
+        assert!(
+            matches!(
+                schedule_schedule_fire(
+                    Extension(pool.clone()),
+                    sess(),
+                    axum::Json(serde_json::json!({}))
+                )
+                .await,
+                Err(AppError::Forbidden)
+            ),
+            "schedule_schedule_fire 非 admin 必须 403"
+        );
+
+        assert!(
+            matches!(
+                deploy_web_resource_as_new_asNew(
+                    Extension(pool.clone()),
+                    sess(),
+                    axum::extract::Path("new".to_string())
+                )
+                .await,
+                Err(AppError::Forbidden)
+            ),
+            "deploy_web_resource_as_new_asNew 非 admin 必须 403"
+        );
     }
 }
