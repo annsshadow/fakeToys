@@ -30,11 +30,19 @@ type BattleTokenResp struct {
 	TokenID int64 `json:"token_id"`
 	// Seed 必须是字符串：int64 超过 2^53 后 JSON number 在 JS 侧解析即失精，
 	// 客户端拿到的种子与库里那个不是同一个数 → 回放哈希必然对不上（I-6 失效）。
-	Seed      string         `json:"seed"`
-	ExpiresAt time.Time      `json:"expires_at"`
-	Level     LevelResp      `json:"level"`
-	Revived   bool           `json:"revived"`
-	Build     map[string]any `json:"build"`
+	Seed      string    `json:"seed"`
+	ExpiresAt time.Time `json:"expires_at"`
+	Level     LevelResp `json:"level"`
+	Revived   bool      `json:"revived"`
+	// ExtraBaseHP 是复活的**额外当前血量**（绝对值，未复活为 0）。
+	//
+	// ⚠️ 它是客户端**唯一能撑住血量的非关卡来源**，所以必须进
+	// `replayHash()` 的 prefix（`miniapp/src/game/engine.ts` 的 `|X` 段）——
+	// 否则改本地这一行就能白扛无数次漏怪，而服务端不重算 hash（只存）。
+	// 这与 `base_hp` 不在 prefix 里并不矛盾：`base_hp` 由 `level.id`
+	// 唯一确定，而这个字段不在关卡里。
+	ExtraBaseHP int64          `json:"extra_base_hp"`
+	Build       map[string]any `json:"build"`
 }
 
 // LevelResp 是关卡下发结构。与 domain.GeneratedLevel 字段一致，
@@ -127,10 +135,20 @@ func (s *Service) StartBattle(ctx context.Context, userID int64, levelID int) (B
 		return BattleTokenResp{}, err
 	}
 
-	// 加成只改**下发的那一份**关卡副本，domain 的生成器输出保持纯函数语义。
+	// 关卡本体是**原样下发**的。
+	//
+	// 第 152 轮之前这里会改 `base_hp`（× `domain.ReviveBaseHPMultPermille`），
+	// 实测证明**任何倍率都不生效**：漏怪伤害以 `baseHpMax` 为分母
+	// （`engine.ts` 的 `baseHpMax / LeakDamageDivisor`），血量与漏怪伤害
+	// 同步放大，比值不变，见 domain/revive.go 文件头与
+	// `miniapp/src/game/revive_bonus_is_inert.test.ts`。
+	//
+	// 现在改为下发**额外当前血量**：它加在 `baseHp` 上而**不动 `baseHpMax`**，
+	// 这才是「多扛 N 次漏怪」。
 	level := gl
+	extraBaseHP := int64(0)
 	if usedRevive {
-		level = domain.WithReviveBonus(gl)
+		extraBaseHP = domain.ReviveExtraBaseHP(gl)
 	}
 
 	build, err := s.LoadBuildSnapshot(ctx, userID)
@@ -150,6 +168,12 @@ func (s *Service) StartBattle(ctx context.Context, userID int64, levelID int) (B
 		// 于是它恒为 false、客户端也从不读 —— 一个「存在但零消费」的空字段。
 		// 复活币落地时它终于有了用途，这里是它第一次被写。
 		Revived: usedRevive,
+		// 复活的额外血量（绝对值，未复活时为 0）。
+		//
+		// 单列一个字段而不是塞进 `level.base_hp`：漏怪伤害以 `baseHpMax`
+		// 为分母，改 `base_hp` 会同步抬高漏怪伤害，把加成整个抵掉
+		// （第 148–152 轮踩过的坑，见 domain/revive.go）。
+		ExtraBaseHP: extraBaseHP,
 	}, nil
 }
 

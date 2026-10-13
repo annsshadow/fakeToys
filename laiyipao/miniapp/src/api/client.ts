@@ -578,6 +578,15 @@ export interface BattleTokenResp {
   seed: string
   expires_at: string
   level: import('@/game/types').GeneratedLevel & { seed_str: string }
+  /** 本局是否消耗了复活币。 */
+  revived?: boolean
+  /**
+   * 复活的额外当前血量（绝对值，未复活为 0）。
+   *
+   * 直接喂给引擎的 `BattleConfig.extraBaseHp`，**不要**加到 `level.base_hp` 上 ——
+   * 漏怪伤害以 `baseHpMax` 为分母，一起抬高就把加成抵掉了。
+   */
+  extra_base_hp?: number
   build: any
 }
 

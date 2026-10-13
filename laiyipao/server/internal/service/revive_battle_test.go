@@ -36,8 +36,18 @@ func reviveBalance(t *testing.T, ts *testService, ctx context.Context, uid int64
 	return bal
 }
 
-// TestReviveTokenBoostsBaseHPAndIsSpent 有币开战：扣 1 枚 + 下发加成的 base_hp。
-func TestReviveTokenBoostsBaseHPAndIsSpent(t *testing.T) {
+// TestReviveTokenGrantsExtraBaseHPAndIsSpent 开战花 1 枚，给**额外当前血量**。
+//
+// 断言拆成三半，缺一不可：
+//
+//	ExtraBaseHP > 0        —— 确实给了东西
+//	Level.BaseHP == 原值   —— **没有**去改关卡血量上限
+//	ExtraBaseHP == N 次漏怪的伤害 —— 语义没漂移
+//
+// 第二条是第 148–152 轮那个无效实现的根因：抬高 `base_hp` 会同步抬高
+// `baseHpMax`，而漏怪伤害以 `baseHpMax` 为分母，加成被整个抵掉
+// （实测 100 关 0 关翻盘）。**只断言第一条的话，那个无效实现照样能通过。**
+func TestReviveTokenGrantsExtraBaseHPAndIsSpent(t *testing.T) {
 	ts := openTestService(t)
 	ctx := context.Background()
 	uid := ts.newUser(t, ctx)
@@ -51,15 +61,25 @@ func TestReviveTokenBoostsBaseHPAndIsSpent(t *testing.T) {
 		t.Fatalf("开战失败：%v", err)
 	}
 	if !resp.Revived {
-		t.Error("有复活币时 Revived 应为 true —— 否则客户端不知道道具被用在哪")
+		t.Error("有币时 Revived 应为 true —— 否则客户端不知道要不要提示玩家")
 	}
-	want := base * domain.ReviveBaseHPMultPermille / 1000
-	if resp.Level.BaseHP != want {
-		t.Errorf("下发的基础血量 = %d，期望 %d（原值 %d × %d‰）",
-			resp.Level.BaseHP, want, base, domain.ReviveBaseHPMultPermille)
+
+	wantExtra := domain.ReviveExtraBaseHP(domain.GenerateLevel(1))
+	if resp.ExtraBaseHP != wantExtra {
+		t.Errorf("额外血量 = %d，期望 %d（= %d 次漏怪的伤害）",
+			resp.ExtraBaseHP, wantExtra, domain.ReviveExtraLeakCount)
+	}
+	if resp.ExtraBaseHP <= 0 {
+		t.Errorf("额外血量 = %d —— 玩家花了币却什么也没拿到", resp.ExtraBaseHP)
+	}
+	// 关键：关卡本体必须原样下发。
+	if resp.Level.BaseHP != base {
+		t.Errorf("下发关卡的 base_hp = %d，已被改成 %d —— "+
+			"抬高它会同步抬高漏怪伤害（分母是 baseHpMax），加成被抵掉",
+			resp.Level.BaseHP, base)
 	}
 	if got := reviveBalance(t, ts, ctx, uid); got != 1 {
-		t.Errorf("复活币余额 = %d，期望 1（开战扣 1 枚）", got)
+		t.Errorf("续战令余额 = %d，期望 1（开战扣 1 枚）", got)
 	}
 }
 
