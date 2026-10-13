@@ -153,7 +153,13 @@ pub async fn captcha_login(
     }
 
     let stored_hash: String = row.get("password_hash");
-    if !auth::password::verify_password(&req.password, &stored_hash, "", None) {
+    if !auth::password::verify_password(
+        &req.password,
+        &stored_hash,
+        "",
+        auth::password::legacy_compat_from_env(),
+        None,
+    ) {
         return Ok(Json(ActionResult::error("invalid credentials")));
     }
 

@@ -65,7 +65,13 @@ pub async fn change(
     let person_id: String = row.get("id");
     let stored_hash: String = row.get("password_hash");
 
-    let valid = verify_password(&req.old_password, &stored_hash, "", None);
+    let valid = verify_password(
+        &req.old_password,
+        &stored_hash,
+        "",
+        auth::password::legacy_compat_from_env(),
+        None,
+    );
     if !valid {
         return Ok(Json(ActionResult::error("old password mismatch")));
     }

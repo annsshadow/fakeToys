@@ -118,9 +118,10 @@ mod tests {
             "new-secret",
             &hash,
             "",
+            false,
             None
         ));
-        assert!(!auth::password::verify_password("wrong", &hash, "", None));
+        assert!(!auth::password::verify_password("wrong", &hash, "", false, None));
     }
 
     #[test]
