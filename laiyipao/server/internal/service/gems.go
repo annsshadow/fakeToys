@@ -142,10 +142,19 @@ func rollGemAffixes(gemID int, count int) ([]gemAffixRow, error) {
 // 放在 roll 之后单独一步（而不是在 roll 里直接乘）是为了让
 // 「基准区间」保持可读、可对照：gem_affixes 里存的是 20–60 这种数，
 // 玩家在后台看到金宝石 ×2.0 就能自己推算出 40–120。
+//
+// ⚠️ `UnscaledGemAffixes` 里的词条**跳过**放大。`element_cap` 是
+// 「堆叠到顶就停止累积」的天花板（`domain.MaxElementCap = 8`），
+// ×2 只会把总值推过 8 再被下游 clamp 静默吃掉 ——
+// 玩家看到「+4 元素上限」，实际一点伤害都没多。
 func scaleAffixesByQuality(rows []gemAffixRow, quality string) []gemAffixRow {
 	mult := domain.GemQualityMult(quality)
 	out := make([]gemAffixRow, 0, len(rows))
 	for _, r := range rows {
+		if domain.UnscaledGemAffixes[r.Affix] {
+			out = append(out, r)
+			continue
+		}
 		out = append(out, gemAffixRow{Affix: r.Affix, Value: r.Value * mult / 1000})
 	}
 	return out

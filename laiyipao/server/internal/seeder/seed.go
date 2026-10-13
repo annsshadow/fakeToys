@@ -393,9 +393,21 @@ func seedShop(ctx context.Context, tx pgx.Tx, res *SeedResult) error {
 		{2, "shop_coin_big", "金币箱", "currency", map[string]int{"gem": 50}, map[string]int{"coin": 120000}, 1, false},
 		{3, "shop_energy", "体力补给", "currency", map[string]int{"gem": 20}, map[string]int{"energy": 30}, 2, false},
 		{4, "shop_keys", "钥匙串", "currency", map[string]int{"gem": 30}, map[string]int{"keys": 3}, 1, false},
-		// 复活币：第 150 轮从下架恢复 —— 消费端点已在 StartBattle 接通
-		// （开战扣 1 枚 + 本关 base_hp × domain.ReviveBaseHPMultPermille）。
-		{5, "shop_retry", "重试符", "boost", map[string]int{"coin": 5000}, map[string]int{"revive_token": 1}, 5, false},
+		// 复活币：第 152 轮**重新下架**。第 150 轮把它当成「已接通」放了出来，
+		// 但实测（`miniapp/src/game/revive_bonus_is_inert.test.ts`，100 关全跑）证明
+		// 「+X% 基础血量」**几乎不产生任何效果**：
+		//
+		//	普通怪漏怪伤害 = baseHpMax / LeakDamageDivisor，与血量同步缩放
+		//	→ 可承受漏怪数 = baseHpMax / (baseHpMax/10) = 10，与倍率无关
+		//
+		// 100 关里只有 1 关漏怪数差 1（L96，两局都是 lost），
+		// 差值来自 `baseHpMax*attack/3600` 的整数截断，属噪声。
+		// 没有任何一关因此翻盘。
+		//
+		// 让玩家花 5,000 金币买一个没有效果的东西，比不卖更糟。
+		// 真修法要改「不随 baseHpMax 缩放」的那一项（护甲 / 漏怪豁免 / 绝对血量），
+		// 那是独立一轮的服务端↔客户端契约改动。
+		{5, "shop_retry", "重试符", "boost", map[string]int{"coin": 5000}, map[string]int{"revive_token": 1}, 5, true},
 		{6, "shop_mastery_reset", "专精点重置", "boost", map[string]int{"gem": 80}, map[string]int{"mastery_reset": 1}, 0, false},
 		{7, "shop_firstpay", "首充礼包", "starter", map[string]int{"coin": 0}, map[string]int{"gem": 300, "coin": 50000, "energy": 50}, 1, false},
 		// 洗练券：已接通 POST /me/gems/:id/wash，恢复上架。
