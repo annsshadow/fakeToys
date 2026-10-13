@@ -19,6 +19,47 @@ pub mod routes;
 mod tests;
 #[cfg(test)]
 mod tests_generated;
+#[cfg(test)]
+mod security_gate_tests;
+
+/// 管理写操作门禁：本 crate 的系统配置/组织架构参考数据（维护模式、注册开关、
+/// 考勤范围、地区、安全等级、全局控制行）为管理台数据，仅 admin 可写。
+/// o2server 侧该族端点受管理员过滤器约束；Rust 侧 rbac 兜底 Authenticated，
+/// 故门禁落在 handler 体内（先例：program_center 5fe82f1e7、meeting assemble U2）。
+#[allow(non_snake_case)]
+async fn require_admin(pool: &Pool, session: &shared::session::Session) -> Result<(), AppError> {
+    if shared::middleware::is_admin(pool, &session.person_unique).await {
+        Ok(())
+    } else {
+        Err(AppError::Forbidden)
+    }
+}
+
+/// 属主资源门禁：先取记录属主列（creator），命中行时 require_owner；
+/// 行不存在则放行（后续 UPDATE/DELETE 命中 0 行，统一回 not found，语义不变）。
+/// table/column 均为调用侧静态字面量（FI-002 约定），无请求输入拼接。
+#[allow(non_snake_case)]
+async fn owner_gate(
+    pool: &Pool,
+    client: &deadpool_postgres::Object,
+    session: &shared::session::Session,
+    table: &str,
+    owner_column: &str,
+    id: &str,
+) -> Result<(), AppError> {
+    let row = client
+        .query_opt(
+            &format!("SELECT {owner_column} FROM {table} WHERE id = $1"),
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if let Some(row) = row {
+        let owner: String = row.get::<_, Option<String>>(owner_column).unwrap_or_default();
+        shared::middleware::require_owner(pool, session, &owner).await?;
+    }
+    Ok(())
+}
 
 #[allow(non_snake_case)]
 pub async fn get_general_control_status(
@@ -162,8 +203,11 @@ fn general_control_spec() -> shared::crud::CrudSpec {
 #[allow(non_snake_case)]
 pub async fn general_control_create(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 全局控制配置行（维护模式/注册开关）为系统数据：admin 可写（安全审计 2026-10 二轮）。
+    require_admin(&pool, &session).await?;
     let id = shared::crud_create(&pool, &general_control_spec(), &payload).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -177,9 +221,11 @@ pub async fn general_control_create(
 #[allow(non_snake_case)]
 pub async fn general_control_save(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
     let saved = shared::crud_save(&pool, &general_control_spec(), &id, &payload).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -193,8 +239,10 @@ pub async fn general_control_save(
 #[allow(non_snake_case)]
 pub async fn general_control_delete(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
     let deleted = shared::crud_delete(&pool, &general_control_spec(), &id).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -207,8 +255,11 @@ pub async fn general_control_delete(
 #[allow(non_snake_case)]
 pub async fn update_general_control_status(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 全局维护模式/注册开关：任一登录用户可写 = 全员系统可用性面（安全审计 2026-10 二轮）。
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let maintenance_mode: bool = payload
@@ -418,8 +469,10 @@ pub async fn attendscope_get(
 #[allow(non_snake_case)]
 pub async fn attendscope_create(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Json(req): Json<AttendScopeCreateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -448,9 +501,11 @@ pub async fn attendscope_create(
 #[allow(non_snake_case)]
 pub async fn attendscope_save(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(req): Json<AttendScopeCreateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let name = req.name.unwrap_or_default();
@@ -481,8 +536,10 @@ pub async fn attendscope_save(
 #[allow(non_snake_case)]
 pub async fn attendscope_delete(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -796,8 +853,10 @@ pub async fn area_list_province_province_city_city_district_district(
 #[allow(non_snake_case)]
 pub async fn area_create(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -928,9 +987,11 @@ pub async fn area_get(
 #[allow(non_snake_case)]
 pub async fn area_update(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let name = payload
@@ -988,8 +1049,10 @@ pub async fn area_update(
 #[allow(non_snake_case)]
 pub async fn area_delete(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -1210,6 +1273,7 @@ pub async fn excel_result_flag(
 #[allow(non_snake_case)]
 pub async fn excel_upload(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -1225,11 +1289,8 @@ pub async fn excel_upload(
         .and_then(|v| v.as_str())
         .unwrap_or("")
         .to_string();
-    let creator = payload
-        .get("creator")
-        .and_then(|v| v.as_str())
-        .unwrap_or("system")
-        .to_string();
+    // 归属以会话登录人为事实源（客户端 creator 可伪造）。
+    let creator = session.person_unique.clone();
     let flag = uuid::Uuid::new_v4().to_string();
 
     client
@@ -1253,6 +1314,7 @@ pub async fn excel_upload(
 #[allow(non_snake_case)]
 pub async fn excel_upload_with_url(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -1268,11 +1330,8 @@ pub async fn excel_upload_with_url(
         .and_then(|v| v.as_str())
         .unwrap_or("")
         .to_string();
-    let creator = payload
-        .get("creator")
-        .and_then(|v| v.as_str())
-        .unwrap_or("system")
-        .to_string();
+    // 归属以会话登录人为事实源（客户端 creator 可伪造）。
+    let creator = session.person_unique.clone();
     let flag = uuid::Uuid::new_v4().to_string();
 
     client
@@ -1448,6 +1507,7 @@ pub async fn generalfile_flag_flag_binary_base64(
 #[allow(non_snake_case)]
 pub async fn invoice_create(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -1464,11 +1524,8 @@ pub async fn invoice_create(
         .and_then(|v| v.as_str())
         .unwrap_or("draft")
         .to_string();
-    let creator = payload
-        .get("creator")
-        .and_then(|v| v.as_str())
-        .unwrap_or("system")
-        .to_string();
+    // 归属以会话登录人为事实源：客户端 creator 可伪造（冒名归属，IDOR 面）。
+    let creator = session.person_unique.clone();
 
     client
         .execute(
@@ -1492,9 +1549,13 @@ pub async fn invoice_create(
 #[allow(non_snake_case)]
 pub async fn invoice_delete_id(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    // IDOR 门禁：属主列 creator（admin 旁路）；行不存在则后续 DELETE 命中 0 行。
+    owner_gate(&pool, &client, &session, "x_general_assemble_invoice", "creator", &id).await?;
 
     let result = client
         .execute(
@@ -1691,10 +1752,14 @@ pub async fn invoice_list_paging_page_size_size(
 #[allow(non_snake_case)]
 pub async fn invoice_update_apply_status_id(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    // IDOR 门禁：审批状态变更仅限属主/admin（安全审计 2026-10 二轮）。
+    owner_gate(&pool, &client, &session, "x_general_assemble_invoice", "creator", &id).await?;
 
     let status = payload
         .get("status")
@@ -1726,10 +1791,14 @@ pub async fn invoice_update_apply_status_id(
 #[allow(non_snake_case)]
 pub async fn invoice_update_id(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    // IDOR 门禁：属主列 creator（admin 旁路）；行不存在则后续 UPDATE 命中 0 行。
+    owner_gate(&pool, &client, &session, "x_general_assemble_invoice", "creator", &id).await?;
 
     let name = payload
         .get("name")
@@ -2115,9 +2184,13 @@ pub async fn qrcode_get(
 #[allow(non_snake_case)]
 pub async fn qrcode_delete(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    // IDOR 门禁：属主列 creator（admin 旁路）。
+    owner_gate(&pool, &client, &session, "x_general_assemble_qrcode", "creator", &id).await?;
 
     let result = client
         .execute(
@@ -2142,8 +2215,11 @@ pub async fn qrcode_delete(
 #[allow(non_snake_case)]
 pub async fn securityclearance_enable(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 安全等级体系开关：影响全局鉴权行为，仅 admin（安全审计 2026-10 二轮）。
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let enabled = payload
@@ -2272,8 +2348,10 @@ pub async fn securityclearance_system(
 #[allow(non_snake_case)]
 pub async fn securityclearance_create(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -2388,9 +2466,11 @@ pub async fn securityclearance_get(
 #[allow(non_snake_case)]
 pub async fn securityclearance_update(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let name = payload
@@ -2442,8 +2522,10 @@ pub async fn securityclearance_update(
 #[allow(non_snake_case)]
 pub async fn securityclearance_delete(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -2958,6 +3040,7 @@ pub async fn worktime_minutesofworkday(
 #[allow(non_snake_case)]
 pub async fn generalfile_create(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -2966,10 +3049,8 @@ pub async fn generalfile_create(
     let flag = req.get("flag").and_then(|v| v.as_str()).unwrap_or("");
     let content = req.get("content").and_then(|v| v.as_str()).unwrap_or("");
     let size = req.get("size").and_then(|v| v.as_i64()).unwrap_or(0);
-    let creator = req
-        .get("creator")
-        .and_then(|v| v.as_str())
-        .unwrap_or("system");
+    // 归属以会话登录人为事实源（客户端 creator 可伪造）。
+    let creator = session.person_unique.clone();
     client
         .execute(
             "INSERT INTO x_general_assemble_general_file (id, name, flag, content, size, creator, create_time) VALUES ($1, $2, $3, $4, $5, $6, NOW())",
@@ -2985,6 +3066,7 @@ pub async fn generalfile_create(
 #[allow(non_snake_case)]
 pub async fn qrcode_create(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -2993,10 +3075,8 @@ pub async fn qrcode_create(
     let height = req.get("height").and_then(|v| v.as_i64()).unwrap_or(200);
     let text = req.get("text").and_then(|v| v.as_str()).unwrap_or("");
     let content = req.get("content").and_then(|v| v.as_str()).unwrap_or("");
-    let creator = req
-        .get("creator")
-        .and_then(|v| v.as_str())
-        .unwrap_or("system");
+    // 归属以会话登录人为事实源（客户端 creator 可伪造）。
+    let creator = session.person_unique.clone();
     client
         .execute(
             "INSERT INTO x_general_assemble_qrcode (id, width, height, text, content, creator, create_time) VALUES ($1, $2, $3, $4, $5, $6, NOW())",

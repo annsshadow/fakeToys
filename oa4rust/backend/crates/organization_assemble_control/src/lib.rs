@@ -16,6 +16,9 @@ mod u2_org;
 mod u2_person;
 mod u2_router;
 
+#[cfg(test)]
+mod security_gate_tests;
+
 #[derive(Debug, Deserialize)]
 pub struct PersonLikeRequest {
     pub name: Option<String>,
@@ -1072,8 +1075,12 @@ pub async fn group_flag(
 #[allow(non_snake_case)]
 pub async fn group_flag_add_member(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 安全审计（2026-10 二轮）：组成员变更 = 组织结构写，仅 admin（原任一登录用户
+    // 可把任何人加进任意组，借群组-角色体系提权）。
+    crate::u2_helpers::require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let person_id = flag.clone();
@@ -1093,8 +1100,11 @@ pub async fn group_flag_add_member(
 #[allow(non_snake_case)]
 pub async fn group_flag_add_member_mockputtopost(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 同 group_flag_add_member：组织结构写仅 admin（安全审计 2026-10 二轮）。
+    crate::u2_helpers::require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let person_id = flag.clone();
@@ -1114,8 +1124,11 @@ pub async fn group_flag_add_member_mockputtopost(
 #[allow(non_snake_case)]
 pub async fn group_flag_delete_member(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 同 group_flag_add_member：组织结构写仅 admin（安全审计 2026-10 二轮）。
+    crate::u2_helpers::require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let person_id = flag.clone();
@@ -1135,8 +1148,11 @@ pub async fn group_flag_delete_member(
 #[allow(non_snake_case)]
 pub async fn group_flag_delete_member_mockputtopost(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 同 group_flag_add_member：组织结构写仅 admin（安全审计 2026-10 二轮）。
+    crate::u2_helpers::require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let person_id = flag.clone();
@@ -1156,8 +1172,11 @@ pub async fn group_flag_delete_member_mockputtopost(
 #[allow(non_snake_case)]
 pub async fn group_flag_mockdeletetoget(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 群组软删 = 组织结构写仅 admin（安全审计 2026-10 二轮）。
+    crate::u2_helpers::require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
@@ -1553,8 +1572,11 @@ pub async fn identity_flag(
 #[allow(non_snake_case)]
 pub async fn identity_flag_mockdeletetoget(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 身份软删 = 组织结构写仅 admin（安全审计 2026-10 二轮）。
+    crate::u2_helpers::require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
@@ -1820,8 +1842,11 @@ pub async fn permissionsetting_flag(
 #[allow(non_snake_case)]
 pub async fn permissionsetting_flag_mockdeletetoget(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 权限配置软删 = 组织结构写仅 admin（安全审计 2026-10 二轮）。
+    crate::u2_helpers::require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
@@ -1945,8 +1970,11 @@ pub async fn personattribute_flag(
 #[allow(non_snake_case)]
 pub async fn personattribute_flag_mockdeletetoget(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 人员属性软删 = 组织结构写仅 admin（安全审计 2026-10 二轮）。
+    crate::u2_helpers::require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
@@ -2270,8 +2298,11 @@ pub async fn personcard_flag(
 #[allow(non_snake_case)]
 pub async fn personcard_flag_mockdeletetoget(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 人员记录软删 = 组织结构写仅 admin（安全审计 2026-10 二轮）。
+    crate::u2_helpers::require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
@@ -2529,8 +2560,11 @@ pub async fn role_list_pinyininitial_mockputtopost(
 #[allow(non_snake_case)]
 pub async fn role_flag_mockdeletetoget(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 角色软删 = 组织结构写仅 admin（安全审计 2026-10 二轮）。
+    crate::u2_helpers::require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
@@ -2660,8 +2694,11 @@ pub async fn unitattribute_flag(
 #[allow(non_snake_case)]
 pub async fn unitattribute_flag_mockdeletetoget(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 单位属性软删 = 组织结构写仅 admin（安全审计 2026-10 二轮）。
+    crate::u2_helpers::require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
@@ -2779,8 +2816,11 @@ pub async fn unitduty_distinct_name(
 #[allow(non_snake_case)]
 pub async fn unitduty_flag_mockputtopost(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 职务排序写 = 组织结构写仅 admin（安全审计 2026-10 二轮）。
+    crate::u2_helpers::require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -2799,8 +2839,11 @@ pub async fn unitduty_flag_mockputtopost(
 #[allow(non_snake_case)]
 pub async fn unitduty_flag_mockdeletetoget(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 职务删除 = 组织结构写仅 admin（安全审计 2026-10 二轮）。
+    crate::u2_helpers::require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -3808,8 +3851,11 @@ pub async fn personcard_listPersonalVCf_idList(
 #[allow(non_snake_case)]
 pub async fn personcard_createQR_cardId(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(card_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 对任意人员记录写 qr_code = 越权 IDOR 面，仅 admin（安全审计 2026-10 二轮）。
+    crate::u2_helpers::require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     // QR 图像渲染未实现：落自描述校验 payload（此前误写 api.example.com 占位
@@ -3866,8 +3912,11 @@ pub async fn personcard_createQR_cardId(
 #[allow(non_snake_case)]
 pub async fn personcard_createCode_cardId(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(card_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 对任意人员记录写 card_code = 越权 IDOR 面，仅 admin（安全审计 2026-10 二轮）。
+    crate::u2_helpers::require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let code = uuid::Uuid::new_v4().to_string();
@@ -4181,8 +4230,11 @@ pub async fn inputperson_result_flag_flag(
 #[allow(non_snake_case)]
 pub async fn identity_flag_order_before_followFlag(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path((flag, follow_flag)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 身份排序写 = 组织结构写仅 admin（安全审计 2026-10 二轮）。
+    crate::u2_helpers::require_admin(&pool, &session).await?;
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let identity_row = client
