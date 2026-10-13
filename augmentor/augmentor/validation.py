@@ -983,6 +983,47 @@ class DataSanitizer:
         return result
 
 
+def require_within_dir(label: str, value: Any, base: Path) -> Path:
+    """把调用方给的**名字**限制在 `base` 目录之内，返回已 resolve 的落点。
+
+    这一族判据要钉的是「名字被当成路径片段用」的形状：版本 ID、任务 ID、数据
+    集名称、分片前缀都会拼进 `base / f"{name}..."`，而 `pathlib` 对 `..` 与绝对
+    路径是**照字面拼**的 —— 实测 `VersionManager(storage_dir=<tmp>/versions)
+    .delete_version("../victim/important")` 返回 `None`（成功）并把版本根之外
+    那个整目录 `shutil.rmtree` 掉，`load_version("../secrets")` 交出目录外的
+    `data.json`，`CheckpointManager.create_checkpoint("../../escape", 3)` 把断点
+    文件写到 `checkpoint_dir` 之外，`DiskCache(cache_dir=<数据目录>).clear()`
+    连目录里别人的 `*.json` 一起 unlink。
+
+    与 `api/deps.py` 的 `resolve_within_roots` 是同一条口径的两个尺度：那一把
+    管「HTTP 传入的路径只能落在数据白名单之内」，这一把管「一个**名字**不许
+    逃出它自己的目录」。SDK 面必须自带这一把，因为 CLI 与直接调用 SDK 的
+    调用方**不经过** HTTP 那道闸。
+
+    Returns:
+        `base / value` 规范化之后的绝对路径（恒在 `base` 之内）
+
+    Raises:
+        DataValidationError: 名字为空、是绝对路径、含 `..` 组件，或规范化之后
+            落到 `base` 之外（符号链接逃逸）。错误文案**只含名字与目录标签，
+            不含解析后的绝对落点** —— 那是 `INTERNAL_ERROR_DETAIL` 那一族要防的
+            部署路径外泄面。
+    """
+    # 「必须是非空字符串」这一维不重抄：交回同族的 `require_string`。自己写
+    # `not isinstance(value, str)` 会把 `5` 判成「不能为空」——那是句假话。
+    value = require_string(label, value)
+
+    candidate = Path(value.strip())
+    if candidate.is_absolute() or ".." in candidate.parts:
+        raise DataValidationError(f"{label} 不能指向 {base.name} 目录之外")
+
+    root = Path(base).resolve()
+    resolved = (root / candidate).resolve()
+    if resolved != root and root not in resolved.parents:
+        raise DataValidationError(f"{label} 不能指向 {base.name} 目录之外")
+    return resolved
+
+
 def validate_dataset(file_path: str, preset: str = "basic") -> Dict:
     """验证数据集文件
     
