@@ -135,11 +135,11 @@ def names(rows, kind):
     return {(r["block"], r["hash"]) for r in rows if r["kind"] == kind}
 
 
-#: ---- 现量（L264 账本批落盘之后：新写的日志块自己也进了面）----
+#: ---- 现量（L264 账本批与记账批落盘之后：两批写的日志块自身都进了面）----
 #: 站点面只有一卷出数：卷一的日志块里一处反引号 hex 都没有（`test_volume_one_contributes_no_site_at_all` 钉住），
 #: 所以名册一律写成 `(块轮号, hash)` 而不带卷名。
-MEASURED_SITES = 79
-MEASURED_COUNTS = {SAME: 41, NAMED: 9, UNNAMED: 0, NOROUND: 6, NOTCOMMIT: 21, STASH: 2}
+MEASURED_SITES = 80
+MEASURED_COUNTS = {SAME: 42, NAMED: 9, UNNAMED: 0, NOROUND: 6, NOTCOMMIT: 21, STASH: 2}
 #: 合法的跨轮叙述：`L117（4c979939e）` 那一族标签形、本轮补注的两格，与 L264 块 ⑥ 把同两枚哈希重提一次。
 MEASURED_NAMED = {(114, "87174e26b"), (116, "4c979939e"), (116, "0bf96fbec"), (116, "2fd83c9b2"), (215, "4d177e3f3"),
                   (238, "29b715600"), (263, "486c4f6ec"), (264, "4d177e3f3"), (264, "29b715600")}
