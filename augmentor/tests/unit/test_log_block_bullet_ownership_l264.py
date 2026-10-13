@@ -138,8 +138,8 @@ def names(rows, kind):
 #: ---- 现量（L265 账本批与记账批落盘之后：该块 ⑩⑪⑯ 三条要点把四枚哈希写进了面）----
 #: 站点面只有一卷出数：卷一的日志块里一处反引号 hex 都没有（`test_volume_one_contributes_no_site_at_all` 钉住），
 #: 所以名册一律写成 `(块轮号, hash)` 而不带卷名。
-MEASURED_SITES = 97  # **L265 记账批第二跑重量**：86 → **97**（⑰ 把分支真值写进面：点着 L265 的四枚在 265 块内共 11 处（`1094b0696` ×4、`58a1f9987` ×3、`b2af89396` ×2、`ee133fc40` ×2）⇒ `same_round` +9，主题不带轮号的 `d9578f87b`（reset 之后重做的那枚）与 `b9d3ad7b1`（改写我账本批的第一次 amend）⇒ `no_round_subject` +2。第一跑的 80 → 86 那段留着不美化：`1094b0696` 账本批与 `58a1f9987` 代码修正批的主题都点着 L265 ⇒ `same_round` +2；`930e31f74`（被并行会话提交吞走的那枚代码批，在 ⑪ 与 ⑯ 各点名一次）、`b7b7f0b94` 与 `adc0df075`（⑯ 为「HEAD 被谁推进」留证而点名）三枚主题不带轮号 ⇒ `no_round_subject` 处数 +4。红读数 `assert 86 == 80`。）
-MEASURED_COUNTS = {SAME: 53, NAMED: 9, UNNAMED: 0, NOROUND: 12, NOTCOMMIT: 21, STASH: 2}  # **L265 第二跑重量**：`SAME` 44 → 53、`NOROUND` 10 → 12，其余四档一格未动（红读数 `assert 53 == 44`、`assert 12 == 10`；第一跑曾是 `assert 44 == 42` 与 `assert 10 == 6`）
+MEASURED_SITES = 113  # **L265 记账批第三跑重量**：97 → **113**（⑱ 逐枚点名三批真身与六格 off-branch ⇒ `same_round` +12、`no_round_subject` +4）。红读数 `assert 113 == 97`。第二跑：86 → **97**（⑰ 把分支真值写进面：点着 L265 的四枚在 265 块内共 11 处（`1094b0696` ×4、`58a1f9987` ×3、`b2af89396` ×2、`ee133fc40` ×2）⇒ `same_round` +9，主题不带轮号的 `d9578f87b`（reset 之后重做的那枚）与 `b9d3ad7b1`（改写我账本批的第一次 amend）⇒ `no_round_subject` +2。第一跑的 80 → 86 那段留着不美化：`1094b0696` 账本批与 `58a1f9987` 代码修正批的主题都点着 L265 ⇒ `same_round` +2；`930e31f74`（被并行会话提交吞走的那枚代码批，在 ⑪ 与 ⑯ 各点名一次）、`b7b7f0b94` 与 `adc0df075`（⑯ 为「HEAD 被谁推进」留证而点名）三枚主题不带轮号 ⇒ `no_round_subject` 处数 +4。红读数 `assert 86 == 80`。）
+MEASURED_COUNTS = {SAME: 65, NAMED: 9, UNNAMED: 0, NOROUND: 16, NOTCOMMIT: 21, STASH: 2}  # **L265 第三跑重量**：`SAME` 53 → 65、`NOROUND` 12 → 16，其余四档一格未动（红读数 `assert 65 == 53`、`assert 16 == 12`）。第二跑：`SAME` 44 → 53、`NOROUND` 10 → 12，其余四档一格未动（红读数 `assert 53 == 44`、`assert 12 == 10`；第一跑曾是 `assert 44 == 42` 与 `assert 10 == 6`）
 #: 合法的跨轮叙述：`L117（4c979939e）` 那一族标签形、本轮补注的两格，与 L264 块 ⑥ 把同两枚哈希重提一次。
 MEASURED_NAMED = {(114, "87174e26b"), (116, "4c979939e"), (116, "0bf96fbec"), (116, "2fd83c9b2"), (215, "4d177e3f3"),
                   (238, "29b715600"), (263, "486c4f6ec"), (264, "4d177e3f3"), (264, "29b715600")}
@@ -204,11 +204,11 @@ class TestTheOwnershipFace:
         assert got[SAME] == MEASURED_COUNTS[SAME], "摘 stash 档不该动到本块引用"
 
     def test_the_repeat_is_a_single_line_triple_mention(self):
-        """处数 10 而唯一名册 7 只（**L265 重量**，原 6 / 4）：差三笔 = `8041df804` 同一行点名三次（+2）与 `930e31f74` 在 L265 块 ⑪ 与 ⑯ 各一次（+1）"""
+        """处数 16 而唯一名册 9 只（**L265 第三跑重量**，原 10 / 7、更早 6 / 4）：重复名册现为 `8041df804`×3、`930e31f74`×3、`b9d3ad7b1`×3、`adc0df075`×2——后三枚都落在 265 块，⑯ 点一次而 ⑰/⑱ 各点一次；`8041df804` 那一枚仍是单行三名"""
         rows = [r for r in sites() if r["kind"] == NOROUND]
         assert len(rows) == MEASURED_COUNTS[NOROUND] and len({(r["block"], r["hash"]) for r in rows}) == MEASURED_NOROUND_UNIQUE
         rep = {h: sum(1 for r in rows if r["hash"] == h) for h in {r["hash"] for r in rows}}
-        assert {h: c for h, c in rep.items() if c > 1} == {"8041df804": 3, "930e31f74": 2}, rep
+        assert {h: c for h, c in rep.items() if c > 1} == {"8041df804": 3, "930e31f74": 3, "adc0df075": 2, "b9d3ad7b1": 3}, rep
         assert len({r["line"] for r in rows if r["hash"] == "8041df804"}) == 1, "三笔必须同一行 ⇒ 单行三次点名同一枚跨项目提交"
 
     def test_volume_one_contributes_no_site_at_all(self):
