@@ -3,21 +3,28 @@
 # 各自的本地门禁（coverage 100%/93.7%）只靠会话内手工跑，回归无法在
 # PR 上暴露。本文件对齐仓库既有约定（见 oa4rust-ci.yml / ai-platform-ci.yml）：
 #   - 文件名 <子项目>-<用途>.yml，放在仓库根 .github/workflows/
-#   - paths 过滤限定到子项目目录 + 工作流自身
 #   - 动作一律 pin 到 commit SHA（与全仓一致，checkout/setup-node 同 SHA 复用）
+#
+# ⚠️ paths 过滤已移除（2026-10-13）。这不是风格偏好，是**设 required 闸门的前提**：
+#
+#   GitHub 的 required status check 是**按分支无条件**判定的。
+#   若本工作流带 `paths: laiyipao/**`，那么一个只改 augmentor/ 的 PR
+#   不会触发它 —— GitHub 看到的不是「通过」也不是「失败」，而是
+#   **「Expected — waiting for status」**，PR 永远无法合并。
+#
+#   也就是��：`paths` 过滤与 required check 互斥。
+#
+#   代价是每个 PR 都会跑一遍 laiyipao 的三端（约 6~8 分钟，含双构建）。
+#   oa4rust 那边没有改 —— 97 个 crate 全量跑太贵，先只用 laiyipao 做闸门。
+#   若日后要把 ai-platform / oa4rust 的 job 也设为 required，
+#   必须**先**去掉它们的 paths，否则会把仓库锁死。
 name: laiyipao CI
 
 on:
   push:
     branches: [main, master]
-    paths:
-      - "laiyipao/**"
-      - ".github/workflows/laiyipao-ci.yml"
   pull_request:
     branches: [main, master]
-    paths:
-      - "laiyipao/**"
-      - ".github/workflows/laiyipao-ci.yml"
   workflow_dispatch:
 
 permissions:
