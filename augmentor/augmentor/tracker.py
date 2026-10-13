@@ -10,6 +10,7 @@ from dataclasses import dataclass, asdict
 from pathlib import Path
 
 from .atomic_write import atomic_write_json
+from .validation import require_within_dir
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
@@ -49,8 +50,11 @@ class ExperimentTracker:
         
         Returns:
             实验文件路径
+
+        Raises:
+            DataValidationError: 实验 ID 拼出的文件名落到 `storage_dir` 之外
         """
-        return self.storage_dir / f"{experiment_id}.json"
+        return require_within_dir("实验 ID", f"{experiment_id}.json", self.storage_dir)
     
     def start_experiment(self,
                         experiment_id: str,

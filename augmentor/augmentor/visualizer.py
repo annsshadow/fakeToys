@@ -69,7 +69,16 @@ class DataVisualizer:
         建目录排在这里而不是构造函数：`matplotlib.savefig` 不会自己建父目录，所以真写图
         时必须有它，而「只是 new 一个可视化器」不该在盘上留下东西 —— 管道构造时会带上这
         一族对象，用户没跑过任何一图，工作目录就已经多了三个空目录。
+
+        Raises:
+            DataValidationError: 输出文件名落到 `output_dir` 之外
         """
+        # 延迟导入：本文件第 27 行被账本 A137 按行号点名，顶层加一行会把它平移出跨度。
+        from .validation import require_within_dir
+
+        # 判在 mkdir 之前：坏文件名不该在盘上留下目录。返回值保持 `output_dir / 名字`
+        # 的原形状（只借那句判决），不把相对路径改成绝对落点。
+        require_within_dir("输出文件名", output_file, self.output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
         return self.output_dir / output_file
     

@@ -127,7 +127,7 @@ NS_PREFIXES = frozenset({
 #: 没有 `ids=`）⇒ 现量落 `plain` 桶。探针逐字：`test_cli_backup_actions_l244.py:338
 #: bucket=plain ids=False`，桶分布 `plain 313 / no-literal-list 118 / type-valued 1`；l98 侧
 #: `blind_rows` 仍 118、档位和一字未动（同那一格不进盲面名册，元素静态可见）。
-MEASURED_CALLS = 436  # **L258 重量**：434 → **436**（新守卫 `test_name_path_containment_l258.py` 两支 parametrize：`sorted(MEASURED_CALL_SITES)` 的值位引用模块级常数字典 ⇒ 落盲面 plain 档；`("method,url", [...])` 是内联字面清单 ⇒ 落可读档。读数出自仓外探针 `Temp/l258_census.py` 直接 `import` 本模块 `param_sites(TESTS_ROOT)` 现量，非推断。L257 那一步：432 → **434**（新守卫 `test_default_text_fields_l257.py` 两支 parametrize：CLI 三档那支的值位是模块级常数 `CLI_TRIO_SUBCOMMANDS` 引用 ⇒ 落盲面 plain 档；族外默认值那支是内联字面清单 ⇒ 落可读档。与 l98 侧档位和 +1（plain 58 → 59）独立咬合）
+MEASURED_CALLS = 437  # **L259 重量**：436 → **437**（新守卫 `test_name_path_containment_l259.py` 那一支值位引用模块级常数字典 `MEASURED_CALL_SITES` 的 parametrize ⇒ 与 BLIND 同涨 1；读数出自本轮全量的红读数 `assert 437 == 436`，非推断）。L258 那一步：434 → **436**（新守卫 `test_name_path_containment_l258.py` 两支 parametrize：`sorted(MEASURED_CALL_SITES)` 的值位引用模块级常数字典 ⇒ 落盲面 plain 档；`("method,url", [...])` 是内联字面清单 ⇒ 落可读档。读数出自仓外探针 `Temp/l258_census.py` 直接 `import` 本模块 `param_sites(TESTS_ROOT)` 现量，非推断。L257 那一步：432 → **434**（新守卫 `test_default_text_fields_l257.py` 两支 parametrize：CLI 三档那支的值位是模块级常数 `CLI_TRIO_SUBCOMMANDS` 引用 ⇒ 落盲面 plain 档；族外默认值那支是内联字面清单 ⇒ 落可读档。与 l98 侧档位和 +1（plain 58 → 59）独立咬合）
 #: （L185：${ENV} 展开语义守卫两支 parametrize（坏形状 5 档 / 非串 4 档，全是字面清单）
 #: ⇒ CALLS 382 → 384、READABLE 281 → 283，盲面 101 一格未动）
 #: （L189：验证预设封闭清单守卫一支 parametrize（坏预设 5 档，全字面清单）⇒
@@ -160,7 +160,7 @@ MEASURED_READABLE = 316  # **L258 重量**：315 → **316**（`test_name_path_c
 #: **L241：盲面仍 118**（新那支自带内联字面清单与 ids；l98 侧档位和同样一字未动）。
 #: **L243：盲面仍 118**（新那支也是内联字面清单；l98 侧档位和一字未动，探针 Counter 见上）。
 #: **L244：盲面仍 118**（新那支同样是内联字面清单；l98 侧 `blind_rows` 与档位和一字未动）。
-MEASURED_BLIND = 120  # **L258 重量**：119 → **120**（那支值位引用模块级常数字典 `MEASURED_CALL_SITES` 的新 parametrize ⇒ 与 CALLS 同涨 1；l98 侧同一格只进 plain 档，档位和独立闭合）。L257 那一步：118 → **119**（那支值位引用模块级常数 `CLI_TRIO_SUBCOMMANDS` 的新 parametrize ⇒ 与 CALLS 同涨 1）
+MEASURED_BLIND = 121  # **L259 重量**：120 → **121**（同一支 parametrize：值位是模块级常数引用、无 ids ⇒ 落盲面，且 `MEASURED_READABLE` 316 一字未动，`316 + 121 == 437` 闭合）。L258 那一步：119 → **120**（那支值位引用模块级常数字典 `MEASURED_CALL_SITES` 的新 parametrize ⇒ 与 CALLS 同涨 1；l98 侧同一格只进 plain 档，档位和独立闭合）。L257 那一步：118 → **119**（那支值位引用模块级常数 `CLI_TRIO_SUBCOMMANDS` 的新 parametrize ⇒ 与 CALLS 同涨 1）
 #: 值位含类型对象的那些档（必须全部自带 ids，否则就是本判据的违规）
 KNOWN_TYPED_SITES = frozenset({("tests/unit/test_schema_type_spec_l96.py", "test_label")})
 
