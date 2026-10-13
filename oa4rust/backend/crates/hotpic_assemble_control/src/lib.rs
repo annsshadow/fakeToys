@@ -18,6 +18,18 @@ pub mod routes;
 mod tests;
 #[cfg(test)]
 mod tests_generated;
+#[cfg(test)]
+mod security_gate_tests;
+
+/// 内容管理写门禁（安全审计 2026-10 二轮）：轮播图（x_hotpic）与控制配置为
+/// 管理台内容，此前 creator 恒写 "system" 且无角色校验，任一登录用户可增删改。
+async fn require_admin(pool: &Pool, session: &shared::session::Session) -> Result<(), AppError> {
+    if shared::middleware::is_admin(pool, &session.person_unique).await {
+        Ok(())
+    } else {
+        Err(AppError::Forbidden)
+    }
+}
 
 pub fn hotpic_assemble_control_router(pool: Pool) -> axum::Router {
     routes::router(pool)
@@ -92,8 +104,11 @@ pub async fn list_control_panels(
 #[allow(non_snake_case)]
 pub async fn update_control_config(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 轮播控制配置写：仅 admin（安全审计 2026-10 二轮）。
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let config = body.0;
     tracing::info!("Updating hotpic assemble control config: {:?}", config);
@@ -264,13 +279,17 @@ pub async fn get_hotpic(
 #[allow(non_snake_case)]
 pub async fn create_hotpic(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Json(req): Json<HotpicRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 轮播图 = 管理台内容，仅 admin 可建（安全审计 2026-10 二轮）。
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
     let title = req.title.unwrap_or_default();
     let image_url = req.imageUrl.unwrap_or_default();
-    let creator = "system";
+    // 属主以会话登录人为事实源（原恒写 "system"，属主列形同虚设）。
+    let creator = session.person_unique.clone();
 
     client
         .execute(
@@ -293,9 +312,12 @@ pub async fn create_hotpic(
 #[allow(non_snake_case)]
 pub async fn save_hotpic(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(req): Json<HotpicRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 轮播图改 = 管理台内容写：仅 admin（安全审计 2026-10 二轮）。
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let title = req.title.unwrap_or_default();
     let image_url = req.imageUrl.unwrap_or_default();
@@ -326,8 +348,11 @@ pub async fn save_hotpic(
 #[allow(non_snake_case)]
 pub async fn delete_hotpic(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 轮播图删 = 管理台内容写：仅 admin（安全审计 2026-10 二轮）。
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(

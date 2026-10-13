@@ -17,6 +17,21 @@ use shared::{error::AppError, response::ActionResult};
 
 pub mod routes;
 
+/// 门户内容管理写门禁（安全审计 2026-10 二轮）：surface/layout/dict 为门户
+/// 管理台内容，此前 /api/portal 不在 ADMIN_WRITE_PREFIXES（已废弃列表），中间件
+/// 兜底仅 Authenticated，任一登录用户可增删改门户内容与发布开关。
+#[allow(non_snake_case)]
+async fn require_admin(pool: &Pool, session: &shared::session::Session) -> Result<(), AppError> {
+    if shared::middleware::is_admin(pool, &session.person_unique).await {
+        Ok(())
+    } else {
+        Err(AppError::Forbidden)
+    }
+}
+
+#[cfg(test)]
+mod security_gate_tests;
+
 #[derive(Debug, Deserialize)]
 pub struct CreateSurfaceRequest {
     pub name: Option<String>,
@@ -98,8 +113,11 @@ pub async fn get_surface(
 #[allow(non_snake_case)]
 pub async fn create_surface(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Json(req): Json<CreateSurfaceRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 门户内容创建仅 admin（安全审计 2026-10 二轮）。
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -107,7 +125,8 @@ pub async fn create_surface(
     let template = req.template.unwrap_or_default();
     let category = "default".to_string();
     let html = "<div></div>".to_string();
-    let creator = "system";
+    // 属主以会话登录人为事实源（原恒写 "system"，安全审计 2026-10 二轮）。
+    let creator = session.person_unique.clone();
 
     client
         .execute(
@@ -237,8 +256,11 @@ pub async fn preview_surface(
 #[allow(non_snake_case)]
 pub async fn publish_surface(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 门户发布开关仅 admin（安全审计 2026-10 二轮）。
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -383,8 +405,11 @@ pub async fn surface_preview(
 #[allow(non_snake_case)]
 pub async fn surface_publish(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 门户发布开关仅 admin（安全审计 2026-10 二轮）。
+    require_admin(&pool, &session).await?;
     let id = body
         .get("id")
         .and_then(|v| v.as_str())
@@ -435,8 +460,11 @@ pub async fn surface_publish(
 #[allow(non_snake_case)]
 pub async fn page_id_delete(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 门户页面物理删除仅 admin（安全审计 2026-10 二轮）。
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM x_portal_page WHERE id = $1", &[&id])
@@ -637,15 +665,19 @@ pub async fn list_layouts(
 #[allow(non_snake_case)]
 pub async fn create_layout(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Json(req): Json<CreateLayoutRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 门户布局创建仅 admin（安全审计 2026-10 二轮）。
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let name = req.name.unwrap_or_default();
     let category = req.category.unwrap_or_default();
     let content = req.content.unwrap_or_default();
-    let creator = "system";
+    // 属主以会话登录人为事实源（原恒写 "system"，安全审计 2026-10 二轮）。
+    let creator = session.person_unique.clone();
 
     client
         .execute(
@@ -669,8 +701,11 @@ pub async fn create_layout(
 #[allow(non_snake_case)]
 pub async fn save_layout(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Json(req): Json<CreateLayoutRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 门户布局写仅 admin（安全审计 2026-10 二轮）。
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let name = req.name.unwrap_or_default();
@@ -729,8 +764,11 @@ pub async fn save_layout(
 #[allow(non_snake_case)]
 pub async fn delete_layout(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 门户布局物理删除仅 admin（安全审计 2026-10 二轮）。
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = req
@@ -1002,9 +1040,12 @@ pub async fn dict_dictFlag_portal_portalFlag_path_data_mockdeletetoget(
 #[allow(non_snake_case)]
 pub async fn dict_dictFlag_portal_portalFlag_path_data_mockputtopost(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Path((dict_flag, portal_flag, _path)): Path<(String, String, String)>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 门户字典写仅 admin（安全审计 2026-10 二轮）。
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let data_str = match body {

@@ -15,6 +15,19 @@ pub mod routes;
 mod tests;
 #[cfg(test)]
 mod tests_generated;
+#[cfg(test)]
+mod security_gate_tests;
+
+/// 组件管理写门禁（安全审计 2026-10 二轮）：x_component 内容与系统配置此前
+/// 无角色校验，任一登录用户可增删改或全表软删组件、改组件控制配置。
+#[allow(non_snake_case)]
+async fn require_admin(pool: &Pool, session: &shared::session::Session) -> Result<(), AppError> {
+    if shared::middleware::is_admin(pool, &session.person_unique).await {
+        Ok(())
+    } else {
+        Err(AppError::Forbidden)
+    }
+}
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
@@ -112,8 +125,11 @@ pub async fn list_control_categories(
 #[allow(non_snake_case)]
 pub async fn update_control_config(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 组件控制配置写仅 admin（安全审计 2026-10 二轮）。
+    require_admin(&pool, &session).await?;
     let config = body.0;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -275,14 +291,18 @@ pub async fn get_component(
 #[allow(non_snake_case)]
 pub async fn create_component(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Json(req): Json<ComponentRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 组件创建仅 admin（安全审计 2026-10 二轮）。
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let name = req.name.unwrap_or_default();
     let component_type = req.component_type.unwrap_or_default();
-    let creator = "system";
+    // 属主以会话登录人为事实源（原恒写 "system"，安全审计 2026-10 二轮）。
+    let creator = session.person_unique.clone();
 
     client
         .execute(
@@ -305,9 +325,12 @@ pub async fn create_component(
 #[allow(non_snake_case)]
 pub async fn save_component(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(req): Json<ComponentRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 组件写仅 admin（安全审计 2026-10 二轮）。
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let name = req.name.unwrap_or_default();
@@ -339,8 +362,11 @@ pub async fn save_component(
 #[allow(non_snake_case)]
 pub async fn delete_component(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 组件删除仅 admin（安全审计 2026-10 二轮）。
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -368,7 +394,10 @@ pub async fn delete_component(
 #[allow(non_snake_case)]
 pub async fn component_delete_all(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 组件全表软删仅 admin（安全审计 2026-10 二轮）。
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
