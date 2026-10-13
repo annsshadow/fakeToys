@@ -53,6 +53,18 @@ let refreshPromise: Promise<void> | null = null
 /** 设置后端绝对地址（原生 App / 小程序目标）。H5 目标走同源代理，保持默认空串即可。 */
 export function setApiBase(base: string): void {
   apiBase = base.replace(/\/+$/, '')
+  // 安全审计（2026-10）：明文 http:// 绝对地址会在生产环境传输登录凭据/会话 cookie。
+  // 仅允许 localhost/127.0.0.1 形式的 dev 地址走 http；其余一律告警提示改用 https。
+  if (
+    apiBase.startsWith('http://') &&
+    !/^http:\/\/(localhost|127\.0\.0\.1)(:|$)/.test(apiBase)
+  ) {
+    console.warn(
+      '[oa4rust-mobile] insecure http:// API base detected:',
+      apiBase,
+      '— use https:// in production to protect credentials and session cookies',
+    )
+  }
 }
 
 export function getApiBase(): string {
