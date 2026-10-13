@@ -281,6 +281,32 @@ export interface BattleConfig {
   attacker: Attacker
   seed: number | bigint
   /**
+   * 复活币给的**额外当前血量**（绝对值，未复活为 0n）。
+   *
+   * ## 为什么单列一个字段，而不是改 `level.base_hp`
+   *
+   * 漏怪伤害以 `baseHpMax` 为分母：
+   *
+   * ```
+   * 普通怪：leakDamage = baseHpMax / LeakDamageDivisor
+   * 攻击怪：leakDamage = baseHpMax * attack / LeakAttackerDivisor
+   * ```
+   *
+   * 所以把 `base_hp` 抬到 1.5 倍时，血量 1.5B、每次漏怪扣 1.5B/10，
+   * **可承受漏怪数恒为 LeakDamageDivisor**，加成被整个抵掉。
+   * ��� 148–152 轮复活币一直是这么做的，实测 100 关里 0 关翻盘
+   * （`revive_bonus_is_inert.test.ts`）。
+   *
+   * `baseHp`（当前）与 `baseHpMax`（上限）本来就是两个字段，
+   * 加在 `baseHp` 上而**不动 `baseHpMax`**，才是真的「多扛 N 次漏怪」。
+   *
+   * ## ⚠️ 它进了 `replayHash()` 的 prefix（`|X` 段）
+   *
+   * 服务端**不重算** hash（只存），所以客户端改本地这一行就能白扛无数次漏怪。
+   * 必须在 prefix 里 —— 与 `base_hp` 不同，它不在关卡里、也不由 `level.id` 决定。
+   */
+  extraBaseHp?: bigint
+  /**
    * 可用的主动技能槽位数。
    *
    * ⚠️ 缺省必须等于 `ACTIVE_SLOTS`（4），**不得改变**。
@@ -454,8 +480,11 @@ export class BattleEngine {
     // 上报用的 S 段在这里冻结 —— 早于任何 applyCard（第 64 轮）。
     this.buildSnapshotSkills = replaySkillsSegmentOf(this.skills)
 
-    this.baseHp = BigInt(cfg.level.base_hp)
     this.baseHpMax = BigInt(cfg.level.base_hp)
+    // 复活币：加在**当前**血量上，`baseHpMax` 保持关卡原值。
+    // 反过来写（抬高 baseHpMax）会把漏怪伤害一起抬高，等于什么都没给 ——
+    // 理由见 BattleConfig.extraBaseHp 的注释。
+    this.baseHp = this.baseHpMax + (cfg.extraBaseHp ?? 0n)
     this.baseArmorPermille = BigInt(cfg.level.armor_permille || 0)
 
     let total = 0
@@ -624,7 +653,13 @@ export class BattleEngine {
       `L${this.cfg.level.id}` +
       `|A${a.attack}.${a.critPermille}.${a.critMultiplierPermille}` +
       `.${a.reactionMultPermille}.${a.elementCap}.${a.reactionTier}.${a.elementCoefPermille}` +
-      `|S${skills}`
+      `|S${skills}` +
+      // 复活的额外血量。它是唯一能撑血又不属于关卡的量，
+      // 不进 prefix 就能改本地这一行白扛无数次漏怪（服务端只存 hash、不重算）。
+      //
+      // 未复活时写 `|X0` 而不是省略整段：省略会让「有前缀」与「无前缀」
+      // 两种 prefix 长度不同，将来再加字段时容易把两者混淆。
+      `|X${this.cfg.extraBaseHp ?? 0n}`
 
     // 事件序列编码成紧凑文本，保证跨端一致
     const parts: string[] = [prefix]

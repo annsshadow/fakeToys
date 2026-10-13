@@ -125,20 +125,3 @@ func TestGemQualityWeightsAreComplete(t *testing.T) {
 		}
 	}
 }
-
-// TestWithReviveBonusIsPure 加成不污染生成器输出。
-//
-// 理由：domain 的生成器是纯函数，就地改会污染同进程后续所有调用 ——
-// 第 150 轮那次 skill_recipes 23505 就是这一类（浅拷贝改到了全局内容表）。
-func TestWithReviveBonusIsPure(t *testing.T) {
-	orig := GenerateLevel(1)
-	before := orig.BaseHP
-	_ = WithReviveBonus(orig)
-	if GenerateLevel(1).BaseHP != before {
-		t.Errorf("WithReviveBonus 之后 GenerateLevel(1).BaseHP 从 %d 变成 %d —— "+
-			"生成器必须保持纯函数", before, GenerateLevel(1).BaseHP)
-	}
-	if want := before * ReviveBaseHPMultPermille / 1000; WithReviveBonus(orig).BaseHP != want {
-		t.Errorf("加成后基础血量 = %d，期望 %d", WithReviveBonus(orig).BaseHP, want)
-	}
-}
