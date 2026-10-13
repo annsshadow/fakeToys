@@ -1,4 +1,4 @@
-// @vitest-environment jsdom
+﻿// @vitest-environment jsdom
 /**
  * 专精页（mastery.vue）组件测试。
  * 覆盖：三层节点的锁定规则（前层未点亮 / 本层已满 2）、
@@ -16,7 +16,7 @@ import type { MasteryFamily } from '@/game/types'
 
 vi.mock('@/api/client', () => ({
   guestLogin: vi.fn(),
-  fetchConfig: vi.fn(),
+  fetchConfigIfVersion: vi.fn(),
   fetchWallet: vi.fn(),
   fetchMe: vi.fn(),
   fetchLoadout: vi.fn(),
@@ -24,6 +24,7 @@ vi.mock('@/api/client', () => ({
   setTokenInternal: vi.fn(),
   fetchMastery: vi.fn(),
   allocateMastery: vi.fn(),
+  resetMastery: vi.fn(),
 }))
 
 const mockApi = vi.mocked(api, true)
@@ -55,11 +56,12 @@ beforeEach(() => {
     expires_at: '',
     user: { id: 7, nickname: '我', avatar_url: '', is_guest: true, status: 1 },
   })
-  mockApi.fetchConfig.mockResolvedValue(makeConfig({ mastery_families: [threeLayerFamily()] }))
-  mockApi.fetchWallet.mockResolvedValue({ coin: 1, gem: 2, energy: 3, keys: 4 })
+  mockApi.fetchConfigIfVersion.mockResolvedValue({ status: 'modified', config: makeConfig({ mastery_families: [threeLayerFamily()] }), serverTimeMs: 0 })
+  mockApi.fetchWallet.mockResolvedValue({ coin: 1, gem: 2, energy: 3, keys: 4, tokens: {} })
   mockApi.fetchMe.mockResolvedValue({ user_id: 7, build: null, build_rating: null, power: 9 } as any)
   mockApi.fetchMastery.mockResolvedValue({ points: 3, nodes: [] })
   mockApi.allocateMastery.mockResolvedValue({ points: 2, nodes: [11] })
+  mockApi.resetMastery.mockResolvedValue({ reset_cleared: 1, points: 3, nodes: [], layer_limit: 2, base_slots: 4, total_slots: 4 })
 })
 
 afterEach(() => {
@@ -202,12 +204,114 @@ describe('mastery.vue 专精页', () => {
   })
 
   it('未知名族：树体隐藏，标题回退为家族键名（?? curFamily 分支）', async () => {
-    mockApi.fetchConfig.mockResolvedValue(makeConfig({ mastery_families: [] }))
+    mockApi.fetchConfigIfVersion.mockResolvedValue({ status: 'modified', config: makeConfig({ mastery_families: [] }), serverTimeMs: 0 })
     const { wrapper } = mountPage(Mastery)
     await flushPromises()
     // curNodes 为空 → 树卡片不渲染（v-if 分支）
     expect(wrapper.text()).not.toContain('专精树')
     // curName ?? curFamily：找不到家族时显示默认家族键（模板不渲染树所以通过页面状态验证）
     expect(wrapper.text()).not.toContain('烈焰')
+  })
+})
+
+// 第 150 轮：重铸（POST /mastery/reset）的客户端接入。
+//
+// 这个端点从第 74 轮起就在服务端存在，`mastery_reset` 也买得到，
+// 但客户端从来没有接过 —— 于是它是商店里一件「买了不知道干嘛」的商品，
+// 而点亮的节点**永远无法取消**（`AllocateMastery` 只插不删）。
+describe('mastery.vue 重铸（POST /mastery/reset）', () => {
+  /** 打开重铸按钮的前置：有道具 + 有已点亮节点 */
+  async function readyWithTokens(tokens: number, nodes: number[] = [11]) {
+    mockApi.fetchWallet.mockResolvedValue({
+      coin: 1,
+      gem: 2,
+      energy: 3,
+      keys: 4,
+      tokens: { mastery_reset: tokens },
+    })
+    mockApi.fetchMastery.mockResolvedValue({ points: 3, nodes })
+    const mounted = mountPage(Mastery)
+    await flushPromises()
+    return mounted
+  }
+
+  it('道具余额来自 /wallet 的 tokens，显示在重铸入口上', async () => {
+    const { wrapper } = await readyWithTokens(2)
+    expect(wrapper.text()).toContain('重铸道具 2')
+  })
+
+  it('没有道具 → 按钮置灰，点它只提示不发请求', async () => {
+    const { wrapper } = await readyWithTokens(0)
+    const link = wrapper.find('.reset-row .link')
+    expect(link.classes()).toContain('link-off')
+    await link.trigger('click')
+    await flushPromises()
+    expect(mockApi.resetMastery).not.toHaveBeenCalled()
+  })
+
+  it('没有已点亮节点 → 按钮置灰（重铸没有意义）', async () => {
+    const { wrapper } = await readyWithTokens(1, [])
+    expect(wrapper.find('.reset-row .link').classes()).toContain('link-off')
+  })
+
+  it('成功：按回执刷新点数/已选、刷新钱包余额、提示清掉几个', async () => {
+    mockApi.resetMastery.mockResolvedValue({
+      reset_cleared: 2,
+      points: 3,
+      nodes: [],
+      layer_limit: 2,
+      base_slots: 4,
+      total_slots: 4,
+    })
+    const { wrapper } = await readyWithTokens(1, [11, 13])
+    await wrapper.find('.reset-row .link').trigger('click')
+    await flushPromises()
+    expect(mockApi.resetMastery).toHaveBeenCalledTimes(1)
+    // 回执里的状态直接刷 UI：节点清空、点数回到 3
+    expect(wrapper.findAll('.node.on').length).toBe(0)
+    expect(wrapper.text()).toContain('专精点')
+    expect(um.mock.showToast).toHaveBeenCalledWith({
+      title: '已重铸，清掉 2 个节点',
+      icon: 'none',
+    })
+    // 余额必须以服务端为准（不能本地 -1）
+    expect(mockApi.fetchWallet).toHaveBeenCalled()
+  })
+
+  it('服务端拒绝（道具已被并发用掉）→ 展示服务端 error.message，UI 不变', async () => {
+    mockApi.resetMastery.mockRejectedValue({ error: { message: '重铸道具不足' } })
+    const { wrapper } = await readyWithTokens(1, [11])
+    await wrapper.find('.reset-row .link').trigger('click')
+    await flushPromises()
+    expect(um.mock.showToast).toHaveBeenCalledWith(
+      { title: '重铸道具不足', icon: 'none', duration: 2500 },
+    )
+    // 节点仍在（没有把 UI 清成"已重铸"的假象）
+    expect(wrapper.findAll('.node.on').length).toBe(1)
+  })
+
+  it('异常对象没有 error.message → 退回 e.message', async () => {
+    mockApi.resetMastery.mockRejectedValue(new Error('网络断开'))
+    const { wrapper } = await readyWithTokens(1, [11])
+    await wrapper.find('.reset-row .link').trigger('click')
+    await flushPromises()
+    expect(um.mock.showToast).toHaveBeenLastCalledWith({
+      title: '网络断开',
+      icon: 'none',
+      duration: 2500,
+    })
+  })
+
+  it('并发点击：只发一次请求（道具扣完第二次必失败，重复提示很吵）', async () => {
+    let release!: (v: any) => void
+    mockApi.resetMastery.mockImplementation(() => new Promise((res) => { release = res }))
+    const { wrapper } = await readyWithTokens(1, [11])
+    const link = wrapper.find('.reset-row .link')
+    await link.trigger('click')
+    await flushPromises() // 进入 resetting=true
+    await wrapper.find('.reset-row .link').trigger('click')
+    release({ reset_cleared: 1, points: 3, nodes: [], layer_limit: 2, base_slots: 4, total_slots: 4 })
+    await flushPromises()
+    expect(mockApi.resetMastery).toHaveBeenCalledTimes(1)
   })
 })

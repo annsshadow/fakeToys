@@ -24,6 +24,7 @@ import (
 	"github.com/laiyipao/server/internal/config"
 	"github.com/laiyipao/server/internal/domain"
 	"github.com/laiyipao/server/internal/store"
+	"github.com/laiyipao/server/internal/testutil/scratchdb"
 )
 
 // 测试库 DSN：TEST_DATABASE_URL 可覆盖，缺省连本机管理库。
@@ -51,35 +52,28 @@ func withDBName(dsn, name string) string {
 	return dsn
 }
 
-// scratchDSN 建一次性库并返回其 DSN。
-// 与 store 包的 helper 逻辑相同但独立一份 —— 测试辅助不能跨包导入。
+// scratchPrefix 是本包一次性库的命名前缀。
+// 改动必须同步登记到 scratchdb.Prefixes（见 scratchdb 的文档注释）。
+const scratchPrefix = "laiyipao_seed_test_"
+
+// TestMain 跑测试前清掉本包前缀下的残留库。
+//
+// 没有它，孤儿库会**累积**：单次跑测留下的孤儿让下一次跑测开始失败，
+// 于是「跑得越多越红」。docs/audits/coverage-2026-09-28.md §6 记过这件事
+// （曾残留 1049 个），但当时只做了一次性清理，没留下机制，必然复发。
+func TestMain(m *testing.M) {
+	if n, err := scratchdb.SweepPrefix(scratchPrefix); err != nil {
+		fmt.Fprintf(os.Stderr, "[scratchdb] 清理残留库失败（不阻断）：%v\n", err)
+	} else if n > 0 {
+		fmt.Fprintf(os.Stderr, "[scratchdb] 已清理 %d 个残留测试库（前缀 %s）\n", n, scratchPrefix)
+	}
+	os.Exit(m.Run())
+}
+
+// scratchDSN 建一次性库并返回其 DSN（第 150 轮收敛到 internal/testutil/scratchdb）。
 func scratchDSN(t *testing.T) string {
 	t.Helper()
-	admin := testAdminDSN()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	pool, err := pgxpool.New(ctx, admin)
-	if err != nil {
-		t.Skipf("连不上管理库，跳过：%v", err)
-	}
-	defer pool.Close()
-	if err := pool.Ping(ctx); err != nil {
-		t.Skipf("管理库不可达，跳过：%v", err)
-	}
-
-	name := fmt.Sprintf("laiyipao_seed_test_%d", time.Now().UnixNano()%1_000_000_000)
-	if _, err := pool.Exec(ctx, `CREATE DATABASE `+name); err != nil {
-		t.Skipf("无权创建测试库，跳过：%v", err)
-	}
-	t.Cleanup(func() {
-		dropCtx, dropCancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer dropCancel()
-		_, _ = pool.Exec(dropCtx,
-			`SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = $1`, name)
-		_, _ = pool.Exec(dropCtx, `DROP DATABASE IF EXISTS `+name)
-	})
-	return withDBName(admin, name)
+	return scratchdb.DSN(t, scratchPrefix)
 }
 
 // openScratch 打开一个已完成迁移的 scratch 库，返回连接池与其 DSN。

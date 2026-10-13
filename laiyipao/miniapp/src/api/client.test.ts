@@ -1,4 +1,4 @@
-/**
+﻿/**
  * API 客户端单元测试（node 环境，mock 全局 uni）。
  *
  * 覆盖目标：
@@ -20,7 +20,7 @@ import {
   clearTokens,
   guestLogin,
   fetchWallet,
-  fetchConfig,
+  fetchConfigIfVersion,
   fetchMe,
   fetchLoadout,
   saveLoadout,
@@ -31,6 +31,7 @@ import {
   verifyReplay,
   fetchMastery,
   allocateMastery,
+  resetMastery,
   fetchTasks,
   claimTask,
   signIn,
@@ -187,6 +188,86 @@ describe('request：基础分支', () => {
 })
 
 describe('request：401 刷新与重试', () => {
+  // ---- 第 150 轮：expires_at 的主动续期 ----
+  //
+  // 此前 expires_at 下发了却从没人读，令牌到期只能等 401 才发现 ——
+  // 于是「息屏很久后回来看一眼」必然浪费一次往返。
+  describe('expires_at 主动续期', () => {
+    /** 距今 n 毫秒后的 RFC3339。 */
+    function inMs(n: number): string {
+      return new Date(Date.now() + n).toISOString()
+    }
+
+    it('已知快过期 → 发请求前先刷新，主请求不再吃 401', async () => {
+      setTokenInternal('old', 'refresh-1', inMs(5_000))
+      queueResponses([
+        {
+          statusCode: 200,
+          data: { access_token: 'fresh-acc', refresh_token: 'fresh-ref', expires_at: inMs(3_600_000) },
+        }, // /auth/refresh
+        { statusCode: 200, data: { ok: true } }, // 主请求，一次成功
+      ])
+      await expect(request('/me')).resolves.toEqual({ ok: true })
+
+      // 关键断言：**第一个**发出去的就是刷新，不是业务请求
+      expect(callOf(0).url).toBe(`${BASE_URL}/auth/refresh`)
+      expect(callOf(1).url).toBe(`${BASE_URL}/me`)
+      expect(callOf(1).header.Authorization).toBe('Bearer fresh-acc')
+      expect(callOf(1).data).toBeUndefined()
+    })
+
+    it('过期时间还早 → 不刷新，直接发主请求（不白花一次 refresh）', async () => {
+      setTokenInternal('good', 'refresh-1', inMs(3_600_000))
+      queueResponses([{ statusCode: 200, data: { ok: true } }])
+      await expect(request('/me')).resolves.toEqual({ ok: true })
+      expect(callOf(0).url).toBe(`${BASE_URL}/me`)
+      expect(callOf(0).header.Authorization).toBe('Bearer good')
+    })
+
+    it('没有过期信息（旧版本登录）→ 保持旧行为，等 401 再说', async () => {
+      setTokenInternal('old', 'refresh-1') // 不带 expires_at
+      queueResponses([{ statusCode: 200, data: { ok: true } }])
+      await expect(request('/me')).resolves.toEqual({ ok: true })
+      expect(callOf(0).url).toBe(`${BASE_URL}/me`)
+    })
+
+    it('expires_at 解析不了 → 不猜，照旧走 401 兜底（不因脏数据拒绝登录）', async () => {
+      setTokenInternal('old', 'refresh-1', 'not-a-timestamp')
+      queueResponses([{ statusCode: 200, data: { ok: true } }])
+      await expect(request('/me')).resolves.toEqual({ ok: true })
+      expect(callOf(0).url).toBe(`${BASE_URL}/me`)
+    })
+
+    it('主动刷新失败 → 不阻断，仍发主请求并由既有 401 兜底处理', async () => {
+      setTokenInternal('old', 'refresh-1', inMs(1_000))
+      queueResponses([
+        { errMsg: 'request:fail abort' }, // 刷新直接网络失败
+        { statusCode: 200, data: { ok: true } }, // 主请求（此时令牌已被清掉）
+      ])
+      await expect(request('/me')).resolves.toEqual({ ok: true })
+      expect(callOf(1).url).toBe(`${BASE_URL}/me`)
+      // 刷新失败 → 令牌被清 → 主请求不带 Authorization
+      expect(callOf(1).header.Authorization).toBeUndefined()
+    })
+
+    it('免鉴权请求不触发主动续期（/config 热路径不该被令牌状态拖累）', async () => {
+      setTokenInternal('old', 'refresh-1', inMs(1_000))
+      queueResponses([{ statusCode: 200, data: { ok: true } }])
+      await expect(request('/config', { auth: false })).resolves.toEqual({ ok: true })
+      expect(callOf(0).url).toBe(`${BASE_URL}/config`)
+      expect(callOf(0).header.Authorization).toBeUndefined()
+    })
+
+    it('clearTokens 后过期信息一并清掉（不留脏状态）', async () => {
+      setTokenInternal('old', 'refresh-1', inMs(1_000))
+      clearTokens()
+      queueResponses([{ statusCode: 200, data: { ok: true } }])
+      await expect(request('/me')).resolves.toEqual({ ok: true })
+      expect(callOf(0).url).toBe(`${BASE_URL}/me`)
+      expect(callOf(0).header.Authorization).toBeUndefined()
+    })
+  })
+
   it('401 → 刷新成功 → 用新令牌重试成功', async () => {
     setTokenInternal('expired', 'refresh-1')
     queueResponses([
@@ -331,7 +412,7 @@ describe('接口封装：URL / method / body 拼装', () => {
     { name: 'guestLogin 默认匿名', call: () => guestLogin(), url: '/auth/guest', method: 'POST', data: { guest_token: '', nickname: '' }, noAuth: true },
     { name: 'guestLogin 带昵称与游客令牌', call: () => { setGuestToken('gt-1'); return guestLogin('小明') }, url: '/auth/guest', method: 'POST', data: { guest_token: 'gt-1', nickname: '小明' }, noAuth: true },
     { name: 'fetchWallet', call: () => fetchWallet(), url: '/wallet', method: 'GET' },
-    { name: 'fetchConfig 免鉴权', call: () => fetchConfig(), url: '/config', method: 'GET', noAuth: true },
+    { name: 'fetchConfigIfVersion 免鉴权', call: () => fetchConfigIfVersion(), url: '/config', method: 'GET', noAuth: true },
     { name: 'fetchMe', call: () => fetchMe(), url: '/me', method: 'GET' },
     { name: 'fetchLoadout', call: () => fetchLoadout(), url: '/me/loadout', method: 'GET' },
     { name: 'saveLoadout', call: () => saveLoadout([1, 2, 3]), url: '/me/loadout', method: 'PUT', data: { skill_ids: [1, 2, 3] } },
@@ -342,6 +423,7 @@ describe('接口封装：URL / method / body 拼装', () => {
     { name: 'verifyReplay', call: () => verifyReplay(9, 'abc'), url: '/battle/verify', method: 'POST', data: { battle_id: 9, replay_hash: 'abc' } },
     { name: 'fetchMastery', call: () => fetchMastery(), url: '/mastery', method: 'GET' },
     { name: 'allocateMastery', call: () => allocateMastery(4), url: '/mastery/allocate', method: 'POST', data: { node_id: 4 } },
+    { name: 'resetMastery', call: () => resetMastery(), url: '/mastery/reset', method: 'POST' },
     { name: 'fetchTasks 默认 daily', call: () => fetchTasks(), url: '/tasks?scope=daily', method: 'GET' },
     { name: 'fetchTasks 指定 scope', call: () => fetchTasks('weekly'), url: '/tasks?scope=weekly', method: 'GET' },
     { name: 'claimTask', call: () => claimTask(2), url: '/tasks/2/claim', method: 'POST' },
@@ -374,4 +456,79 @@ describe('接口封装：URL / method / body 拼装', () => {
       if (c.noAuth) expect(req.header.Authorization).toBeUndefined()
     })
   }
+})
+
+// 条件请求 `fetchConfigIfVersion` 的 URL 拼装与 304 语义。
+//
+// 为什么要单独测：它是**唯一**不退化成 ApiError 的非 2xx 路径。
+// 通用的 `request()` 把一切非 2xx 当失败，而这里 304 是**成功** ——
+// 一旦哪天有人把它并回 `request()`，症状是每次冷启动都报「配置拉取失败」
+// 并永远拉不到配置（而不是省下的流量没省到）。
+describe('fetchConfigIfVersion：条件请求', () => {
+  it('有本地 version → URL 带 if_version，且对 version 做 URL 编码', async () => {
+    um.mock.request.mockImplementation((opts: any) => {
+      opts.success({ statusCode: 200, data: { version: 'abc', server_time: '' }, header: {} })
+    })
+    await fetchConfigIfVersion('a b&c=d')
+    expect(callOf(0).url).toBe(`${BASE_URL}/config?if_version=a%20b%26c%3Dd`)
+  })
+
+  it('没有本地 version → 不带查询串（首次冷启动拉全量）', async () => {
+    um.mock.request.mockImplementation((opts: any) => {
+      opts.success({ statusCode: 200, data: { version: 'abc', server_time: '' }, header: {} })
+    })
+    await fetchConfigIfVersion()
+    expect(callOf(0).url).toBe(`${BASE_URL}/config`)
+  })
+
+  it('200 → 解析成 modified，server_time 从响应体取', async () => {
+    um.mock.request.mockImplementation((opts: any) => {
+      opts.success({
+        statusCode: 200,
+        data: { version: 'v2', server_time: '2026-05-01T00:00:00Z' },
+        header: {},
+      })
+    })
+    const r = await fetchConfigIfVersion('v1')
+    expect(r.status).toBe('modified')
+    if (r.status !== 'modified') throw new Error('should be modified')
+    expect(r.config.version).toBe('v2')
+    expect(r.serverTimeMs).toBe(Date.parse('2026-05-01T00:00:00Z'))
+  })
+
+  it('304 → 解析成 unmodified，**不抛错**，server_time 从 Date 头取', async () => {
+    um.mock.request.mockImplementation((opts: any) => {
+      opts.success({
+        statusCode: 304,
+        data: undefined,
+        header: { Date: 'Fri, 12 Oct 2026 00:00:00 GMT' },
+      })
+    })
+    const r = await fetchConfigIfVersion('v1')
+    expect(r.status).toBe('unmodified')
+    expect(r.serverTimeMs).toBe(Date.parse('2026-10-12T00:00:00Z'))
+  })
+
+  it('Date 头缺失/不可解析 → serverTimeMs 为 0，由 store 决定怎么兜底', async () => {
+    um.mock.request.mockImplementation((opts: any) => {
+      opts.success({ statusCode: 304, data: undefined, header: {} })
+    })
+    const r = await fetchConfigIfVersion('v1')
+    expect(r.status).toBe('unmodified')
+    expect(r.serverTimeMs).toBe(0)
+  })
+
+  it('非 2xx 且非 304 → 抛 ApiError（不能被当成成功）', async () => {
+    um.mock.request.mockImplementation((opts: any) => {
+      opts.success({ statusCode: 500, data: {}, header: {} })
+    })
+    await expect(fetchConfigIfVersion('v1')).rejects.toThrow(ApiError)
+  })
+
+  it('网络失败 → 抛 ApiError', async () => {
+    um.mock.request.mockImplementation((opts: any) => {
+      opts.fail({ errMsg: 'request:fail' })
+    })
+    await expect(fetchConfigIfVersion()).rejects.toThrow('无法连接服务器')
+  })
 })

@@ -17,11 +17,15 @@ import (
 
 // Seed 写入全部游戏内容。返回各类实体的写入条数。
 type SeedResult struct {
-	Enemies    int
-	Skills     int
-	Recipes    int
-	Equipment  int
-	Gems       int
+	Enemies   int
+	Skills    int
+	Recipes   int
+	Equipment int
+	Gems      int
+	// GemAffixes 是宝石候选词条池的条数（第 150 轮新增）。
+	// 单独计数而不是并进 Gems：它决定「洗练能不能 roll 出东西」，
+	// 与「有没有宝石种类」是两件事，混在一起就看不出是哪一环断了。
+	GemAffixes int
 	Skins      int
 	Mastery    int
 	Levels     int
@@ -174,12 +178,31 @@ func seedEquipmentAndGems(ctx context.Context, tx pgx.Tx, res *SeedResult) error
 	}
 	for _, g := range domain.SeedGems {
 		if _, err := tx.Exec(ctx, `
-			INSERT INTO gems (id, code, name, attr) VALUES ($1,$2,$3,$4)
-			ON CONFLICT (id) DO UPDATE SET code=EXCLUDED.code, name=EXCLUDED.name, attr=EXCLUDED.attr`,
-			g.ID, g.Code, g.Name, g.Attr); err != nil {
+			INSERT INTO gems (id, code, name, attr, descr) VALUES ($1,$2,$3,$4,$5)
+			ON CONFLICT (id) DO UPDATE SET
+				code=EXCLUDED.code, name=EXCLUDED.name, attr=EXCLUDED.attr, descr=EXCLUDED.descr`,
+			g.ID, g.Code, g.Name, g.Attr, g.Descr); err != nil {
 			return fmt.Errorf("insert gem %d: %w", g.ID, err)
 		}
 		res.Gems++
+	}
+	// 第 150 轮：补上宝石的**候选词条池**。
+	//
+	// 此前 `gem_affixes` 表建好了却是**空的**（0 行），于是洗练没有可 roll 的来源 ——
+	// 这比「玩家没有宝石」更靠底层：就算凭空给他一颗，也洗不出任何东西。
+	//
+	// 唯一约束是 (gem_id, affix)：同一种宝石里同名词条只能有一条，
+	// 否则 roll 出来的两条会重复加值，而玩家看到的是「两条一样的词条」。
+	for _, a := range domain.SeedGemAffixes {
+		if _, err := tx.Exec(ctx, `
+			INSERT INTO gem_affixes (gem_id, affix, min_value, max_value)
+			VALUES ($1,$2,$3,$4)
+			ON CONFLICT (gem_id, affix) DO UPDATE SET
+				min_value=EXCLUDED.min_value, max_value=EXCLUDED.max_value`,
+			a.GemID, a.Affix, a.MinValue, a.MaxValue); err != nil {
+			return fmt.Errorf("insert gem affix %d/%s: %w", a.GemID, a.Affix, err)
+		}
+		res.GemAffixes++
 	}
 	return nil
 }
@@ -352,15 +375,48 @@ func seedShop(ctx context.Context, tx pgx.Tx, res *SeedResult) error {
 		code, name, category string
 		price, grant         map[string]int
 		limit                int
+		// delisted 的商品**行保留、enabled 置 false**。
+		//
+		// 为什么不是「从种子里删掉」：
+		//   - seeder 是 upsert，删行只对**全新库**有效，已有库里的行还在；
+		//   - 而这些行是玩家已购记录（user_purchases.item_id）的外键目标，
+		//     直接消失会让历史流水悬空；
+		//   - 后台也要看得见「曾经有这个商品、为什么没了」。
+		//
+		// 为什么用 UPDATE 而不是把 enabled 放进 upsert：
+		// 下面的 ON CONFLICT **刻意不碰 enabled** —— 后台手动上下架必须
+		// 能扛得住重新灌种子。把 enabled 写进 upsert 会把这个约定砸掉。
+		// 所以拆成两步：upsert 管内容，下架管「这个 code 必须关着」。
+		delisted bool
 	}{
-		{1, "shop_coin_small", "金币袋", "currency", map[string]int{"gem": 10}, map[string]int{"coin": 20000}, 3},
-		{2, "shop_coin_big", "金币箱", "currency", map[string]int{"gem": 50}, map[string]int{"coin": 120000}, 1},
-		{3, "shop_energy", "体力补给", "currency", map[string]int{"gem": 20}, map[string]int{"energy": 30}, 2},
-		{4, "shop_keys", "钥匙串", "currency", map[string]int{"gem": 30}, map[string]int{"keys": 3}, 1},
-		{5, "shop_retry", "重试符", "boost", map[string]int{"coin": 5000}, map[string]int{"revive_token": 1}, 5},
-		{6, "shop_mastery_reset", "专精点重置", "boost", map[string]int{"gem": 80}, map[string]int{"mastery_reset": 1}, 0},
-		{7, "shop_firstpay", "首充礼包", "starter", map[string]int{"coin": 0}, map[string]int{"gem": 300, "coin": 50000, "energy": 50}, 1},
-		{8, "shop_gem_wash", "洗练石", "boost", map[string]int{"coin": 20000}, map[string]int{"gem_wash_token": 1}, 3},
+		{1, "shop_coin_small", "金币袋", "currency", map[string]int{"gem": 10}, map[string]int{"coin": 20000}, 3, false},
+		{2, "shop_coin_big", "金币箱", "currency", map[string]int{"gem": 50}, map[string]int{"coin": 120000}, 1, false},
+		{3, "shop_energy", "体力补给", "currency", map[string]int{"gem": 20}, map[string]int{"energy": 30}, 2, false},
+		{4, "shop_keys", "钥匙串", "currency", map[string]int{"gem": 30}, map[string]int{"keys": 3}, 1, false},
+		// 复活币：第 153 轮**第二次恢复上架** —— 这次是真的有效。
+		// 第 152 轮实测（`miniapp/src/game/revive_bonus_is_inert.test.ts`，100 关全跑）证明
+		// 「+X% 基础血量」**几乎不产生任何效果**：
+		//
+		//	普通怪漏怪伤害 = baseHpMax / LeakDamageDivisor，与血量同步缩放
+		//	→ 可承受漏怪数 = baseHpMax / (baseHpMax/10) = 10，与倍率无关
+		//
+		// 100 关里只有 1 关漏怪数差 1（L96，两局都是 lost），
+		// 差值来自 `baseHpMax*attack/3600` 的整数截断，属噪声。
+		// 没有任何一关因此翻盘。
+		//
+		// 让玩家花 5,000 金币买一个没有效果的东西，比不卖更糟。
+		// 真修法要改「不随 baseHpMax 缩放」的那一项（护甲 / 漏怪豁免 / 绝对血量），
+		// 那是独立一轮的服务端↔客户端契约改动。
+		{5, "shop_retry", "重试符", "boost", map[string]int{"coin": 5000}, map[string]int{"revive_token": 1}, 5, false},
+		{6, "shop_mastery_reset", "专精点重置", "boost", map[string]int{"gem": 80}, map[string]int{"mastery_reset": 1}, 0, false},
+		{7, "shop_firstpay", "首充礼包", "starter", map[string]int{"coin": 0}, map[string]int{"gem": 300, "coin": 50000, "energy": 50}, 1, false},
+		// 洗练券：已接通 POST /me/gems/:id/wash，恢复上架。
+		// 定价提到 120,000 金币（原价 20,000）：原价比一个金币袋还便宜，
+		// 会让玩家「买一颗灰宝石反复洗」，宝石退化成洗练券的附赠品。
+		{8, "shop_gem_wash", "洗练石", "boost", map[string]int{"coin": domain.GemWashPrice}, map[string]int{"gem_wash_token": 1}, 3, false},
+		// 第 150 轮：宝石本体。payload 用保留键 `gem_instance` ——
+		// 它要造的是一颗**带随机词条的实体**，不是某种货币。
+		{9, "shop_gem", "随机宝石", "gem", map[string]int{"gem": domain.GemShopPrice}, map[string]int{"gem_instance": 1}, 3, false},
 	}
 	for _, it := range items {
 		priceRaw, err := json.Marshal(it.price)
@@ -373,13 +429,24 @@ func seedShop(ctx context.Context, tx pgx.Tx, res *SeedResult) error {
 		}
 		if _, err := tx.Exec(ctx, `
 			INSERT INTO shop_items (id, code, name, category, price, payload, limit_per_day, sort_order, enabled)
-			VALUES ($1,$2,$3,$4,$5,$6,$7,$8,TRUE)
+			VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
 			ON CONFLICT (id) DO UPDATE SET
 				name=EXCLUDED.name, category=EXCLUDED.category, price=EXCLUDED.price,
 				payload=EXCLUDED.payload, limit_per_day=EXCLUDED.limit_per_day,
 				sort_order=EXCLUDED.sort_order`,
-			it.id, it.code, it.name, it.category, priceRaw, grantRaw, it.limit, it.id); err != nil {
+			it.id, it.code, it.name, it.category, priceRaw, grantRaw, it.limit, it.id, !it.delisted); err != nil {
 			return fmt.Errorf("insert shop item %d: %w", it.id, err)
+		}
+		if it.delisted {
+			// 幂等地把下架状态压回去。
+			//
+			// 上面 INSERT 的 ON CONFLICT 分支**不包含 enabled**，所以对一个
+			// 已经被人工打开过的旧库行，重新灌种子不会把它关回去。
+			// 那正是我们要保留的语义 —— 所以下架必须在这里显式写一次。
+			if _, err := tx.Exec(ctx,
+				`UPDATE shop_items SET enabled = FALSE, updated_at = now() WHERE code = $1`, it.code); err != nil {
+				return fmt.Errorf("delist shop item %s: %w", it.code, err)
+			}
 		}
 		res.ShopItems++
 	}

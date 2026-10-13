@@ -274,9 +274,30 @@ async function toggleShield() {
   }
 }
 
-/** 挑战用的标准战场：第 1 关（I-5 规定双方在同一张图上比构筑） */
-function challengeLevel(): GeneratedLevel | null {
-  return store.levelMap.get(1) ?? store.config?.levels?.[0] ?? null
+/**
+ * 挑战用的标准战场：第 1 关（I-5 规定双方在同一张图上比构筑）。
+ *
+ * ⚠️ 第 150 轮：`store.levelMap` 现在是**摘要**（没有 `waves`），
+ * 而引擎开局必须读 `level.waves`。所以这里走 `GET /api/v1/levels/:id`
+ * 按需取完整关卡 —— 那正是 `/config` 把波次剔除后省下的 56% 体积。
+ *
+ * 为什么不是「进页面就预取」：绝大多数玩家根本不挑战防线，
+ * 为他们每次进「我的」页都多发一个请求是白花的流量。
+ * 第一次点挑战时取一次，之后在本次会话内复用（关卡是静态生成器产物，
+ * 配置版本没变它就不会变）。
+ */
+const challengeLevelCache = ref<GeneratedLevel | null>(null)
+
+async function challengeLevel(): Promise<GeneratedLevel | null> {
+  if (challengeLevelCache.value) return challengeLevelCache.value
+  try {
+    const lv = await api.fetchLevel(1)
+    challengeLevelCache.value = lv
+    return lv
+  } catch (e) {
+    uni.showToast({ title: `关卡数据加载失败：${(e as Error).message}`, icon: 'none' })
+    return null
+  }
 }
 
 function myEquipped(): EquippedSkill[] {
@@ -316,14 +337,9 @@ function myEquipped(): EquippedSkill[] {
     }))
 }
 
-function challenge(target: DefenseView) {
+async function challenge(target: DefenseView) {
   if (!target.can_challenge) {
     uni.showToast({ title: target.challenge_blocked || '暂时无法挑战', icon: 'none' })
-    return
-  }
-  const level = challengeLevel()
-  if (!level) {
-    uni.showToast({ title: '关卡数据未加载完成', icon: 'none' })
     return
   }
   const equipped = myEquipped()
@@ -331,6 +347,11 @@ function challenge(target: DefenseView) {
     uni.showToast({ title: '请先到「背包」页装备出战技能', icon: 'none' })
     return
   }
+  // 战场要按需取（第 150 轮）：/config 的关卡是摘要，没有 waves。
+  // 放在技能检查**之后** —— 没有技能时本来就打不了，
+  // 没必要先为一个用不上的战场发请求。
+  const level = await challengeLevel()
+  if (!level) return // challengeLevel 已经 toast 过原因
 
   simulating.value = target.id
   // 让按钮先进入「模拟中」状态再跑同步模拟

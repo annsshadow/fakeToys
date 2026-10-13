@@ -13,7 +13,7 @@ import { mountPage } from '../../test/page'
 
 vi.mock('@/api/client', () => ({
   guestLogin: vi.fn(),
-  fetchConfig: vi.fn(),
+  fetchConfigIfVersion: vi.fn(),
   fetchWallet: vi.fn(),
   fetchMe: vi.fn(),
   fetchLoadout: vi.fn(),
@@ -34,7 +34,7 @@ beforeEach(() => {
     expires_at: '',
     user: { id: 7, nickname: '我', avatar_url: '', is_guest: true, status: 1 },
   })
-  mockApi.fetchConfig.mockResolvedValue({} as any)
+  mockApi.fetchConfigIfVersion.mockResolvedValue({ status: 'modified', config: {} as any, serverTimeMs: 0 })
   mockApi.fetchLeaderboard.mockResolvedValue({
     items: [
       { user_id: 1, nickname: '第一名', score: 100 },

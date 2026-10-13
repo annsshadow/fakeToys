@@ -14,52 +14,32 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/laiyipao/server/internal/config"
+	"github.com/laiyipao/server/internal/testutil/scratchdb"
 )
 
-// scratchDSN 建一次性库并返回其 DSN（与 store 包同思路，夹具不能跨包导入）。
+// scratchPrefix 是本包一次性库的命名前缀。
+// 改动必须同步登记到 scratchdb.Prefixes（见 scratchdb 的文档注释）。
+const scratchPrefix = "laiyipao_mig_test_"
+
+// TestMain 跑测试前清掉本包前缀下的残留库（否则孤儿库累积，
+// 症状是「跑得越多越红」，而那与真实缺陷无关）。
+func TestMain(m *testing.M) {
+	if n, err := scratchdb.SweepPrefix(scratchPrefix); err != nil {
+		fmt.Fprintf(os.Stderr, "[scratchdb] 清理残留库失败（不阻断）：%v\n", err)
+	} else if n > 0 {
+		fmt.Fprintf(os.Stderr, "[scratchdb] 已清理 %d 个残留测试库（前缀 %s）\n", n, scratchPrefix)
+	}
+	os.Exit(m.Run())
+}
+
+// scratchDSN 建一次性库并返回其 DSN。
+//
+// 第 150 轮收敛到 `internal/testutil/scratchdb`：本仓库原先在 5 个包里
+// 各抄一份，抄出了「库名每秒重复 / DROP 超时留孤儿 / 建库失败静默跳过」
+// 三个真实故障。
 func scratchDSN(t *testing.T) string {
 	t.Helper()
-	admin := "postgres://postgres@127.0.0.1:5432/postgres?sslmode=disable"
-	if dsn := os.Getenv("TEST_DATABASE_URL"); dsn != "" {
-		if i := strings.LastIndex(dsn, "/"); i >= 0 {
-			if j := strings.Index(dsn[i+1:], "?"); j >= 0 {
-				admin = dsn[:i+1] + "postgres" + dsn[i+1+j:]
-			} else {
-				admin = dsn[:i+1] + "postgres"
-			}
-		}
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	pool, err := pgxpool.New(ctx, admin)
-	if err != nil {
-		t.Skipf("连不上管理库，跳过：%v", err)
-	}
-	defer pool.Close()
-	if err := pool.Ping(ctx); err != nil {
-		t.Skipf("管理库不可达，跳过：%v", err)
-	}
-
-	name := fmt.Sprintf("laiyipao_mig_test_%d", time.Now().UnixNano()%1_000_000_000)
-	if _, err := pool.Exec(ctx, `CREATE DATABASE `+name); err != nil {
-		t.Skipf("无权创建测试库，跳过：%v", err)
-	}
-	t.Cleanup(func() {
-		dropCtx, dropCancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer dropCancel()
-		_, _ = pool.Exec(dropCtx,
-			`SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = $1`, name)
-		_, _ = pool.Exec(dropCtx, `DROP DATABASE IF EXISTS `+name)
-	})
-
-	if i := strings.LastIndex(admin, "/"); i >= 0 {
-		if j := strings.Index(admin[i+1:], "?"); j >= 0 {
-			return admin[:i+1] + name + admin[i+1+j:]
-		}
-		return admin[:i+1] + name
-	}
-	return admin
+	return scratchdb.DSN(t, scratchPrefix)
 }
 
 func testCfg(dsn string) config.Config {
