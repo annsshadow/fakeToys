@@ -1025,7 +1025,9 @@ async function bbsLogin() {
   try {
     const r = await api.post('/api/bbs/assemble/control/login', { credential, password })
     const token = String((r.data as any)?.token ?? '')
-    toast.success(token ? `论坛会话已建立（token ${token.slice(0, 8)}…）` : '论坛登录已受理')
+    // 安全审计（2026-10）：不在 UI 提示中泄露 token 前缀（即便截断 8 字符仍降低
+    // 离线爆破与日志采集面）；仅确认会话建立成功。
+    toast.success(token ? '论坛会话已建立' : '论坛登录已受理')
   } catch (e: any) {
     toast.error(`论坛登录失败: ${e?.message ?? ''}`)
   }

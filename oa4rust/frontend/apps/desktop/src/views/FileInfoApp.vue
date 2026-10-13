@@ -78,7 +78,9 @@ function formatSize(bytes?: number) {
 async function downloadFile(f: FileInfo) {
   try {
     const r = await api.get(`/api/fileinfo/download/document/${f.id}`)
-    if (r.data?.url) window.open(r.data.url, '_blank')
+    // 安全审计（2026-10）：noopener,noreferrer 防止新窗口经 window.opener 反向
+    // 操作本页（tab-nabbing / 焦点劫持），即便 URL 由后端签发。
+    if (r.data?.url) window.open(r.data.url, '_blank', 'noopener,noreferrer')
     else toast.info('下载链接未生成')
   } catch (e: any) {
     toast.error(`下载失败: : ${e?.message ?? ''}`)

@@ -41,7 +41,10 @@ export function renderWidget(
     console.error(`[oa4rust-sdk] Widget "${name}" not found`)
     return
   }
-  container.innerHTML = ''
+  // 安全审计（2026-10）：清空容器时走 textContent 而非 innerHTML=''。两者本例都
+  // 只清空自身子结点，但 textContent 明确不解析/注入 HTML，杜绝未来误把
+  // 不可信字符串赋给 innerHTML 引入 XSS 的退化路径（见 security.test.ts 守护）。
+  container.textContent = ''
   const app = createApp(widget.component, {
     ...widget.options,
     ...options,
