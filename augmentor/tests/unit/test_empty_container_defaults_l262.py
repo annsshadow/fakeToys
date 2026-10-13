@@ -213,20 +213,31 @@ def test_no_site_in_the_census_uses_the_fixed_shape():
 class TestEmptyIsIndistinguishableFromUnset:
     """A 族十格逐格实例化：传 `[]` 与传 `None` 得到同一个非空默认 ⇒ 空清单这一档没有语义"""
 
-    CASES = [
-        ("augmentor.aggregator", "DataAggregator", "key_fields"),
-        ("augmentor.aggregator", "DataAggregator", "value_fields"),
-        ("augmentor.audit", "DatasetAuditor", "fields"),
-        ("augmentor.benchmark", "QualityBenchmark", "metrics"),
-        ("augmentor.data.audio", "AudioProcessor", "supported_extensions"),
-        ("augmentor.data.image", "ImageProcessor", "supported_extensions"),
-        ("augmentor.evaluation", "ModelEvaluator", "metrics"),
-        ("augmentor.leakage", "LeakageDetector", "fields"),
-        ("augmentor.multilingual", "MultilingualSupport", "supported_langs"),
-        ("augmentor.report", "ReportGenerator", "buckets"),
-    ]
-
-    @pytest.mark.parametrize("mod,cls_name,attr", CASES, ids=[f"{c}.{a}" for _m, c, a in CASES])
+    # argvalues 与 ids 都写成装饰器里的内联字面量：l97 只记「有没有 ids」，l98 还把「值位不是
+    # 字面 list」当盲面口径、把「ids 由名字/推导式现造」单独算一档 ⇒ 内联字面量让这一支既不进
+    # 盲面也不进 ids-derived 档；两串数量不等时 pytest 在收集期当场报错，不需要另造对账用例。
+    @pytest.mark.parametrize(
+        "mod,cls_name,attr",
+        [
+            ("augmentor.aggregator", "DataAggregator", "key_fields"),
+            ("augmentor.aggregator", "DataAggregator", "value_fields"),
+            ("augmentor.audit", "DatasetAuditor", "fields"),
+            ("augmentor.benchmark", "QualityBenchmark", "metrics"),
+            ("augmentor.data.audio", "AudioProcessor", "supported_extensions"),
+            ("augmentor.data.image", "ImageProcessor", "supported_extensions"),
+            ("augmentor.evaluation", "ModelEvaluator", "metrics"),
+            ("augmentor.leakage", "LeakageDetector", "fields"),
+            ("augmentor.multilingual", "MultilingualSupport", "supported_langs"),
+            ("augmentor.report", "ReportGenerator", "buckets"),
+        ],
+        ids=[
+            "DataAggregator.key_fields", "DataAggregator.value_fields",
+            "DatasetAuditor.fields", "QualityBenchmark.metrics",
+            "AudioProcessor.supported_extensions", "ImageProcessor.supported_extensions",
+            "ModelEvaluator.metrics", "LeakageDetector.fields",
+            "MultilingualSupport.supported_langs", "ReportGenerator.buckets",
+        ],
+    )
     def test_empty_list_is_swallowed_into_the_default(self, mod, cls_name, attr):
         import importlib
 
