@@ -12448,12 +12448,7 @@ mod security_gate_tests {
     /// 均为 admin 运维操作。无会话必须 Unauthorized；非 admin 会话
     /// （无 DB 时 is_admin fail-closed 返回 false）必须 Forbidden。
     fn build_session(person_unique: &str) -> shared::session::Session {
-        shared::session::Session {
-            token: "t".to_string(),
-            person_unique: person_unique.to_string(),
-            created_at: chrono::NaiveDateTime::from_timestamp(0, 0),
-            expires_at: chrono::NaiveDateTime::from_timestamp(3600, 0),
-        }
+        shared::testing::test_session(person_unique)
     }
 
     #[tokio::test]
