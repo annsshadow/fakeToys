@@ -32,6 +32,7 @@ package scratchdb
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -201,6 +202,10 @@ func quoteIdent(s string) string {
 	return `"` + strings.ReplaceAll(s, `"`, `""`) + `"`
 }
 
+// ErrNoPermission 表示当前账号没有 CREATEDB 权限 —— 这是「本机没条件跑 DB 用例」，
+// 与「真故障」必须分开，否则资源耗尽会伪装成「测试全绿、用例全跳过」。
+var ErrNoPermission = errors.New("没有 CREATEDB 权限")
+
 // DSN 建一次性库并返回指向它的 DSN。
 //
 // 失败语义（③）：
@@ -209,31 +214,62 @@ func quoteIdent(s string) string {
 //   - 其它任何失败 → `t.Fatal`（这是真故障，静默跳过等于假装测过了）
 func DSN(t *testing.T, prefix string) string {
 	t.Helper()
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	dsn, cleanup, err := Open(prefix)
+	if err != nil {
+		if errors.Is(err, ErrNoPermission) {
+			t.Skip(err.Error())
+		}
+		t.Fatalf("建一次性库失败：%v", err)
+	}
+	t.Cleanup(cleanup)
+	return dsn
+}
+
+// Open 是 DSN 的**无 testing 依赖**版本，供 `TestMain` 构造「整包共用」的库。
+//
+// 为什么需要它：包级 `TestMain` 里拿不到 `*testing.T`，而造一个伪 T
+// 会把 Skip/Fatal 的语义搅浑 —— 所以底层只返回 error 与 cleanup，
+// 由调用点自己决定怎么表达失败。
+//
+// 典型用法（`internal/service` 用它替掉「打开发库当测试库」）：
+//
+//	var pkgDSN string
+//	func TestMain(m *testing.M) {
+//	    dsn, cleanup, err := scratchdb.Open(scratchPrefix + "shared")
+//	    if err == nil {
+//	        pkgDSN = dsn
+//	        defer cleanup()
+//	    }
+//	    os.Exit(m.Run())
+//	}
+//
+// 每轮跑测于是都从一张**干净**的库开始，而不是在开发库上层层堆积。
+func Open(prefix string) (string, func(), error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
 	p, err := pool(ctx)
 	if err != nil {
-		t.Skipf("连不上管理库，跳过：%v", err)
+		return "", nil, err
 	}
 	defer p.Close()
 
 	name := Name(prefix)
 	if _, err := p.Exec(ctx, `CREATE DATABASE `+quoteIdent(name)); err != nil {
 		// 分清「本机没条件」与「真故障」。旧实现一律 Skip，
-		// 于是「孤儿库把 PG 压垮」这种真故障会伪装成
-		// 「测试全绿、用例全跳过」。
+		// 于是「孤儿库把 PG 压垮」这种真故障会伪装成「测试全绿、用例全跳过」。
 		if !canCreateDatabases(ctx, p) {
-			t.Skip("当前账号没有 CREATEDB 权限，跳过需要一次性库的用例")
+			return "", nil, ErrNoPermission
 		}
-		t.Fatalf("创建一次性库 %s 失败：%v —— 这是真故障（不是权限问题）。"+
-			"请先跑 TestMain 的残留库清理：%v", name, err, cleanupHint(prefix))
+		return "", nil, fmt.Errorf("创建一次性库 %s 失败：%w —— %s",
+			name, err, cleanupHint(prefix))
 	}
-	t.Cleanup(func() {
+
+	cleanup := func() {
 		dropCtx, dropCancel := context.WithTimeout(context.Background(), 60*time.Second)
 		defer dropCancel()
-		// ⚠️ 不能复用上面那个池：`defer p.Close()` 在 DSN() 返回时就执行了，
-		// 而 t.Cleanup 是**之后**才跑的 —— 到这里 p 早已关闭，
+		// ⚠️ 不能复用上面那个池：`defer p.Close()` 在函数返回时就执行了，
+		// 而清理是**之后**才跑的 —— 到这里 p 早已关闭，
 		// 每次 DROP 都会返回 `closed pool`，于是**每个库都留成孤儿**。
 		//
 		// 这个 bug 极隐蔽：清理「看起来写了」、Sweep 也在跑，
@@ -241,21 +277,23 @@ func DSN(t *testing.T, prefix string) string {
 		// 是新加的失败日志把它喊出来的（`[scratchdb] 删除 ... 失败：closed pool`）。
 		dp, err := pool(dropCtx)
 		if err != nil {
-			t.Logf("[scratchdb] 连不上管理库，无法删除 %s（下轮 TestMain 会清）：%v", name, err)
+			fmt.Fprintf(os.Stderr,
+				"[scratchdb] 连不上管理库，无法删除 %s（下轮 TestMain 会清）：%v\n", name, err)
 			return
 		}
 		defer dp.Close()
 		_, _ = dp.Exec(dropCtx,
 			`SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = $1`, name)
 		if _, err := dp.Exec(dropCtx, `DROP DATABASE IF EXISTS `+quoteIdent(name)); err != nil {
-			// 不吞：DROP 失败意味着这个库会留成孤儿，而孤儿库是**累积性**故障
-			//（跑得越多越红）。TestMain 的 Sweep 是兜底，不是这条路径的替代品，
-			// 所以这里必须让它可见 —— 否则「测试全绿但库越堆越多」又变成一个
-			// 只有几百个库之后才显形、且没人查得到原因的问题。
-			t.Logf("[scratchdb] 删除 %s 失败（下轮 TestMain 会清）：%v", name, err)
+			// 不吞：残留是**累积性**故障（跑得越多越红）。Sweep 是兜底，
+			// 不是这条路径的替代品，所以这里必须让它可见 ——
+			// 否则「测试全绿但库越堆越多」又变成一个几百个库之后
+			// 才显形、且没人查得到原因的问题。
+			fmt.Fprintf(os.Stderr,
+				"[scratchdb] 删除 %s 失败（下轮 TestMain 会清）：%v\n", name, err)
 		}
-	})
-	return swapDB(AdminDSN(), name)
+	}
+	return swapDB(AdminDSN(), name), cleanup, nil
 }
 
 func cleanupHint(prefix string) string {
