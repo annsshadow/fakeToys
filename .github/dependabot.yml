@@ -1,0 +1,86 @@
+# Dependabot 配置
+#
+# # 为什么这个文件存在（而不是只加三条 ignore）
+#
+# ## 一、miniapp 的三个包必须钉死
+#
+# `@dcloudio/vite-plugin-uni@3.0.0-5020420260813003` 的 peer 依赖写的是
+# **`"vite": "5.2.8"`** —— 一个**精确值，不是范围**。所以：
+#
+#   - vite 升到 6.x → `npm install` 直接 ERESOLVE（peer 冲突）
+#   - vitest 3.x 的 peer 要求 `vite ^6.4.0 || ^7 || ^8`，与上一条死锁
+#
+# 这不是新问题：PR #41（dependabot）以及更早一次 6.4.3/8.3.4 的自动升级
+# 都触发过同样三连坏：`npm install` ERESOLVE、`type-check` TS2307、
+# `build:h5` 的 Rolldown 报 vue-demi 损坏。
+#
+# 守卫：`laiyipao/miniapp/src/test/toolchain_pin.test.ts`
+# 断言 package.json 的 pin 与 dcloudio 声明的 peer **精确一致**，
+# 任何一侧漂移都会红。ignore 是第二道防线，守卫才是第一道。
+#
+# ## 二、为什么列了这么多目录
+#
+# **Dependabot 的规则是「配置里没提到的目录就不管」。** 没有这个文件时
+# 它用默认值，覆盖全仓库；一旦有了这个文件，默认行为就被**替换**成这里写的。
+# 所以这里必须把当前所有依赖树都列全，否则「加个配置防 PR #41」
+# 会顺手把 oa4rust / augmentor / admin / server 的更新全部关掉 ——
+# 那是一个没人要求的副作用。
+#
+# 目录按 lockfile 判定（没有 lockfile 的目录不是真正的依赖树）：
+#   npm   · / · /augmentor/web · /auto-checkin · /laiyipao/admin
+#         · /laiyipao/miniapp · /oa4rust（含 pnpm workspace 的子包）
+#   pip   · /augmentor · /llm-lab
+#   gomod · /laiyipao/server
+#   cargo · /oa4rust/backend（workspace root，自动覆盖 crates/*）
+#
+# 加新依赖树时要记得在这里补一条，否则它会静默失去更新。
+version: 2
+
+updates:
+  # ── miniapp：vite/vitest/@vitest/mocker 三个钉死 ──────────────────────
+  - package-ecosystem: "npm"
+    directory: "/laiyipao/miniapp"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    ignore:
+      # 见文件头①。peer 是精确值 5.2.8，不是范围。
+      - dependency-name: "vite"
+      # 见文件头①。vitest 3.x 要求 vite ^6.4，与上面那条死锁。
+      - dependency-name: "vitest"
+      - dependency-name: "@vitest/mocker"
+
+  # ── 其余 npm 依赖树：保持默认行为，不做任何限制 ──────────────────────
+  - package-ecosystem: "npm"
+    directories:
+      - "/"
+      - "/augmentor/web"
+      - "/auto-checkin"
+      - "/laiyipao/admin"
+      - "/oa4rust"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+
+  # ── Go 服务端 ────────────────────────────────────────────────────────
+  - package-ecosystem: "gomod"
+    directory: "/laiyipao/server"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+
+  # ── Rust 工作区 ──────────────────────────────────────────────────────
+  - package-ecosystem: "cargo"
+    directory: "/oa4rust/backend"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+
+  # ── Python ───────────────────────────────────────────────────────────
+  - package-ecosystem: "pip"
+    directories:
+      - "/augmentor"
+      - "/llm-lab"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
