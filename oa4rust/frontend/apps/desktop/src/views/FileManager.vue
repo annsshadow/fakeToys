@@ -893,7 +893,8 @@ async function deleteFile(f: FileItem): void {
 }
 
 function downloadFile(f: FileItem): void {
-  window.open(`/api/file/core/entity/file/${f.id}/download`)
+  // 安全审计（2026-10）：noopener,noreferrer 防止新窗口经 window.opener 反向操作本页。
+  window.open(`/api/file/core/entity/file/${f.id}/download`, '_blank', 'noopener,noreferrer')
 }
 
 function shareFile(_f: FileItem): void {
