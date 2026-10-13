@@ -135,18 +135,18 @@ def names(rows, kind):
     return {(r["block"], r["hash"]) for r in rows if r["kind"] == kind}
 
 
-#: ---- 现量（L264 账本批与记账批落盘之后：两批写的日志块自身都进了面）----
+#: ---- 现量（L265 账本批与记账批落盘之后：该块 ⑩⑪⑯ 三条要点把四枚哈希写进了面）----
 #: 站点面只有一卷出数：卷一的日志块里一处反引号 hex 都没有（`test_volume_one_contributes_no_site_at_all` 钉住），
 #: 所以名册一律写成 `(块轮号, hash)` 而不带卷名。
-MEASURED_SITES = 80
-MEASURED_COUNTS = {SAME: 42, NAMED: 9, UNNAMED: 0, NOROUND: 6, NOTCOMMIT: 21, STASH: 2}
+MEASURED_SITES = 97  # **L265 记账批第二跑重量**：86 → **97**（⑰ 把分支真值写进面：点着 L265 的四枚在 265 块内共 11 处（`1094b0696` ×4、`58a1f9987` ×3、`b2af89396` ×2、`ee133fc40` ×2）⇒ `same_round` +9，主题不带轮号的 `d9578f87b`（reset 之后重做的那枚）与 `b9d3ad7b1`（改写我账本批的第一次 amend）⇒ `no_round_subject` +2。第一跑的 80 → 86 那段留着不美化：`1094b0696` 账本批与 `58a1f9987` 代码修正批的主题都点着 L265 ⇒ `same_round` +2；`930e31f74`（被并行会话提交吞走的那枚代码批，在 ⑪ 与 ⑯ 各点名一次）、`b7b7f0b94` 与 `adc0df075`（⑯ 为「HEAD 被谁推进」留证而点名）三枚主题不带轮号 ⇒ `no_round_subject` 处数 +4。红读数 `assert 86 == 80`。）
+MEASURED_COUNTS = {SAME: 53, NAMED: 9, UNNAMED: 0, NOROUND: 12, NOTCOMMIT: 21, STASH: 2}  # **L265 第二跑重量**：`SAME` 44 → 53、`NOROUND` 10 → 12，其余四档一格未动（红读数 `assert 53 == 44`、`assert 12 == 10`；第一跑曾是 `assert 44 == 42` 与 `assert 10 == 6`）
 #: 合法的跨轮叙述：`L117（4c979939e）` 那一族标签形、本轮补注的两格，与 L264 块 ⑥ 把同两枚哈希重提一次。
 MEASURED_NAMED = {(114, "87174e26b"), (116, "4c979939e"), (116, "0bf96fbec"), (116, "2fd83c9b2"), (215, "4d177e3f3"),
                   (238, "29b715600"), (263, "486c4f6ec"), (264, "4d177e3f3"), (264, "29b715600")}
-#: 主题不带轮号的提交：四只跨项目（`test(web)` / `fix(augmentor): merge…` / `chore: restore…` / `fix(ai-platform)`）。
-#: `8041df804` 在同一行里被点名三次 ⇒ 处数 6 而唯一名册 4 只，那一维由 `test_the_repeat_is_a_single_line_triple_mention` 闭合。
-MEASURED_NOROUND = {(104, "284d89e29"), (144, "cf35b5984"), (212, "4f0cf03d1"), (236, "8041df804")}
-MEASURED_NOROUND_UNIQUE = 4
+#: 主题不带轮号的提交：四只跨项目（`test(web)` / merge / restore / `fix(ai-platform)`）加 L265 三枚——`930e31f74` 是并行会话把本仓暂存区一并带走的 oa4rust 安全批（⑪ 与 ⑯ 各点名一次），`b7b7f0b94` 与 `adc0df075` 是 ⑯ 为「共享工作树里 HEAD 被谁推进」留证点名的两枚 ⇒ 账本没错、主题自己没写轮号。
+#: `8041df804` 在同一行里被点名三次、`930e31f74` 在两块里各一次 ⇒ 处数 10 而唯一名册 7 只，那一维由 `test_the_repeat_is_a_single_line_triple_mention` 闭合。
+MEASURED_NOROUND = {(104, "284d89e29"), (144, "cf35b5984"), (212, "4f0cf03d1"), (236, "8041df804"), (265, "930e31f74"), (265, "b7b7f0b94"), (265, "adc0df075"), (265, "b9d3ad7b1"), (265, "d9578f87b")}
+MEASURED_NOROUND_UNIQUE = 9  # **L265 第二跑重量**：4 → 7 → **9**（红读数 `assert 9 == 7`；新增两枚仍是主题不带轮号的跨项目提交，不是错账；12 处对 9 只的重复维仍只有 `8041df804` ×3 与 `930e31f74` ×2）
 #: git 里查不到的 hex 全是 sha256 摘要（注入器逐臂验盘用的前缀或全文），不是提交
 MEASURED_NOTCOMMIT = {(229, "da10bb97b864"), (229, "b0d77707eb37"), (229, "89877d7bdbbf"),
                       (230, "8b17a662"), (234, "cc1a80b8"),
@@ -204,12 +204,12 @@ class TestTheOwnershipFace:
         assert got[SAME] == MEASURED_COUNTS[SAME], "摘 stash 档不该动到本块引用"
 
     def test_the_repeat_is_a_single_line_triple_mention(self):
-        """处数 6 而唯一名册 4 只，差的那两笔必须是同一行点名同一枚跨项目提交"""
+        """处数 10 而唯一名册 7 只（**L265 重量**，原 6 / 4）：差三笔 = `8041df804` 同一行点名三次（+2）与 `930e31f74` 在 L265 块 ⑪ 与 ⑯ 各一次（+1）"""
         rows = [r for r in sites() if r["kind"] == NOROUND]
-        assert len(rows) == MEASURED_COUNTS[NOROUND]
-        assert len({(r["block"], r["hash"]) for r in rows}) == MEASURED_NOROUND_UNIQUE
-        triple = [r for r in rows if sum(1 for x in rows if x["line"] == r["line"]) == 3]
-        assert len(triple) == 3 and len({r["hash"] for r in triple}) == 1
+        assert len(rows) == MEASURED_COUNTS[NOROUND] and len({(r["block"], r["hash"]) for r in rows}) == MEASURED_NOROUND_UNIQUE
+        rep = {h: sum(1 for r in rows if r["hash"] == h) for h in {r["hash"] for r in rows}}
+        assert {h: c for h, c in rep.items() if c > 1} == {"8041df804": 3, "930e31f74": 2}, rep
+        assert len({r["line"] for r in rows if r["hash"] == "8041df804"}) == 1, "三笔必须同一行 ⇒ 单行三次点名同一枚跨项目提交"
 
     def test_volume_one_contributes_no_site_at_all(self):
         got = {s["volume"] for s in sites()}
@@ -309,7 +309,16 @@ class TestRulerIsProven:
                               capture_output=True, text=True,
                               encoding="utf-8", errors="replace").stdout.strip()
         assert subject(head), "git 解析不了 HEAD ⇒ 整把尺子在空转"
-        assert int(ROUNDS.findall(subject(head))[0]) >= 200, subject(head)
+        # **L265 重量（判据取错了观测量，不是数字变了）**：这一支原写作「HEAD 的主题必须点着轮号」，
+        # 而共享工作树里 HEAD 由并行会话推进——本仓一轮写完，别的项目随手几枚提交就压在下面，
+        # 于是「git 侧活着」被当成「最近一枚提交属于本仓」，并行会话一动就凭空红（L265 实测两次）。
+        # 改按本守卫自己声明的意图取数：HEAD 要解析得到主题（上一行），且近 40 枚主题里读得到本账的轮号。
+        # git 坏掉时两格同时空 ⇒ 牙齿一格未削，只是不再把「谁最后提交」当成判据。
+        back = subprocess.run(["git", "-C", str(ROOT), "log", "-n", "40", "--format=%s"],
+                              capture_output=True, text=True,
+                              encoding="utf-8", errors="replace").stdout
+        assert [int(m) for m in ROUNDS.findall(back) if int(m) >= 200], \
+            "近 40 枚提交主题里读不到 ≥200 的轮号 ⇒ git 侧是死的（HEAD 由并行会话推进不作判据）"
 
     def test_the_code_commit_of_this_round_is_resolvable(self):
         """L263 代码批在案：它必须解析得到且主题点着 L263——名册里的历史证据不靠记忆"""
