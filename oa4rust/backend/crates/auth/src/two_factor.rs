@@ -74,6 +74,8 @@ pub async fn two_factor_login(
         return Ok(Json(ActionResult::error("invalid credentials")));
     }
 
+    // 遗留格式兼容开关只读一次 env（2026-10 安全审计：默认关闭）。
+    let legacy_compat = crate::password::legacy_compat_from_env();
     let valid = match ldap_auth::try_ldap_authenticate(&req.credential, &req.password).await {
         Ok(Some(ldap_auth::LdapAuthOutcome::Success)) => true,
         Ok(Some(ldap_auth::LdapAuthOutcome::Failed)) => {
@@ -81,10 +83,10 @@ pub async fn two_factor_login(
                 "LDAP auth failed for two_factor user {}, falling back to DB",
                 req.credential
             );
-            password::verify_password(&req.password, &password_hash, "", None)
+            password::verify_password(&req.password, &password_hash, "", legacy_compat, None)
         }
         Ok(None) | Ok(Some(ldap_auth::LdapAuthOutcome::Disabled)) => {
-            password::verify_password(&req.password, &password_hash, "", None)
+            password::verify_password(&req.password, &password_hash, "", legacy_compat, None)
         }
         Err(_) => {
             return Ok(Json(ActionResult::error("invalid credentials")));

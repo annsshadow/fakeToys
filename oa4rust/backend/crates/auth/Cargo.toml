@@ -38,3 +38,4 @@ hex.workspace = true
 hmac.workspace = true
 ring = "0.17"
 cookie = "0.18"
+aes-gcm.workspace = true
