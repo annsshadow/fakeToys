@@ -265,6 +265,10 @@ async function setup() {
       attacker: store.attacker,
       // seed 服务端以字符串下发（避免 JSON number 精度损失），转 bigint 供 PRNG 用
       seed: BigInt(bt.seed),
+      // 复活币的额外血量（第 153 轮）。**只加当前血量、不动 baseHpMax** ——
+      // 漏怪伤害以 baseHpMax 为分母，改 level.base_hp 会把加成整个抵掉
+      // （第 148–152 轮踩过的坑，见 domain/revive.go）。
+      extraBaseHp: BigInt(bt.extra_base_hp ?? 0),
       // 可用槽位数同样由服务端权威下发（基础 5 槽 + 专精「额外插槽」）。
       //
       // ⚠️ 缺省绝不能变：绝大多数战报是 4 槽的，

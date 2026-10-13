@@ -38,19 +38,19 @@ var spendCallRe = regexp.MustCompile(`spendToken\(\s*[\w.]+\s*,\s*[\w.]+\s*,\s*[
 // 理由必须具体到能核对（指明前置条件 / 改动面），且 ≥40 字 ——
 // 「暂时没空」这种写法等于把缺口永久合法化，没有任何测试会再提醒。
 //
-// 第 152 轮起只剩 revive_token 一个：
+// 第 153 轮起为空表：三种道具都真正生效了。
 //
-//	revive_token   → 消费端点在 StartBattle（扣币），但**加成无效**，
-//	                  所以重新下架。实测（miniapp revive_bonus_is_inert.test.ts，
-//	                  100 关全跑）：漏怪伤害 = baseHpMax/10，与血量同步缩放，
-//	                  可承受漏怪数恒为 10；100 关里仅 1 关差 1 次漏怪，
-//	                  且两局都 lost。真修法要改「不随 baseHpMax 缩放」的量。
-//	mastery_reset  → POST /mastery/reset（第 148 轮接通）
-//	gem_wash_token → POST /me/gems/:id/wash（第 150–151 轮接通）
+//	revive_token   → StartBattle 扣 1 枚 + 下发 extra_base_hp（**多扛 3 次漏怪**）
+//	mastery_reset  → POST /mastery/reset
+//	gem_wash_token → POST /me/gems/:id/wash
 //
-// ⚠️ 注意本表只管「有没有扣减端点」，**管不了「扣减之后有没有效果」**。
-// revive_token 曾经正是这么漏过去的：有 spendToken 调用、端点能通、测试全绿，
-// 而玩家拿到的是「多漏一次怪也照样死」。那种情况归 `INEFFECTIVE_TOKENS`。
+// ⚠️ 这张表只管「有没有扣减端点」，**不管「扣减之后有没有效果」**。
+// revive_token 曾经在这里漏过去过：有 spendToken 调用、端点能通、测试全绿，
+// 而玩家拿到的是「多漏一次怪也照样死」—— 因为加的是 `base_hp`，
+// 而漏怪伤害以 `baseHpMax` 为分母，加成被抵掉了。
+// 那种情况归 `INEFFECTIVE_TOKENS`；两条守卫一起把「有端点」和「有效果」分开管。
+//
+// 下一个人往 walletTokens 加新道具时，会被当场要求二选一。
 var PENDING_TOKENS = map[string]string{}
 
 // INEFFECTIVE_TOKENS 是「**有**扣减端点、但效果不成立」的道具及理由。
@@ -63,17 +63,7 @@ var PENDING_TOKENS = map[string]string{}
 //
 //	PENDING     → 写一个扣减端点即可
 //	INEFFECTIVE → 端点已经在写了，得改**效果本身**（往往要动引擎）
-//
-// 实测证据（miniapp revive_bonus_is_inert.test.ts，100 关全跑）：
-// 漏怪伤害 = baseHpMax / LeakDamageDivisor，与血量同步缩放，
-// 所以可承受漏怪数恒为 LeakDamageDivisor（=10），与任何倍率无关。
-var INEFFECTIVE_TOKENS = map[string]string{
-	"revive_token": "消费端点在 StartBattle（扣 1 枚 + 本关 base_hp ×1500‰），但加成无效：" +
-		"漏怪伤害与 baseHpMax 成正比，可承受漏怪数不随倍率变化；100 关里 0 关因此翻盘" +
-		"（仅 1 关差 1 次漏怪，源于整数截断，两局都 lost）。已重新下架。" +
-		"修法要作用在不随 baseHpMax 缩放的量上：护甲（applyArmor 是乘法）、" +
-		"漏怪豁免、或绝对血量缓冲；三者都要动服务端↔客户端契约",
-}
+var INEFFECTIVE_TOKENS = map[string]string{}
 
 // tokensSpentInSource 扫出所有被 spendToken 扣减过的道具名。
 func tokensSpentInSource(t *testing.T) map[string][]string {
