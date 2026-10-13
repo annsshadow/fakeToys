@@ -6,7 +6,6 @@ use axum::{
     extract::{Extension, Path},
     Json, Router,
 };
-use bcrypt::verify;
 use chrono::Utc;
 use deadpool_postgres::Pool;
 use serde::{Deserialize, Serialize};
@@ -141,12 +140,16 @@ fn row_to_reply(row: &deadpool_postgres::tokio_postgres::Row) -> ReplyRow {
 }
 
 fn verify_person_password(plain: &str, stored: &str) -> bool {
-    const BCRYPT_PREFIX: &str = "{bcrypt}";
-    if let Some(bcrypt_hash) = stored.strip_prefix(BCRYPT_PREFIX) {
-        return verify(plain, bcrypt_hash).unwrap_or(false);
-    }
-    let md5_hash = format!("{:x}", md5::compute(plain.as_bytes()));
-    md5_hash == stored
+    // 安全审计（2026-10）：委托 auth::password 统一校验。bcrypt 前缀走 bcrypt；
+    // 遗留 MD5/DES 仅在 AUTH_LEGACY_COMPAT 开启（legacy_compat=true）时接受，
+    // 默认关闭即 fail-closed，杜绝本模块绕过 auth 主链路的无盐 MD5 登录。
+    auth::password::verify_password(
+        plain,
+        stored,
+        "",
+        auth::password::legacy_compat_from_env(),
+        None,
+    )
 }
 
 fn now_iso() -> String {

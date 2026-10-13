@@ -38,6 +38,15 @@ async fn main() -> anyhow::Result<()> {
     let auth_config = shared::config::AuthConfig::from_env()
         .context("invalid browser authentication configuration")?;
 
+    // 安全审计（2026-10）：AUTH_LEGACY_COMPAT 开启后密码验证与 SSO 解密会接受
+    // 旧 MD5/DES/3DES 格式（一次性迁移期用途）。生产环境若开启须在日志留痕。
+    if auth::password::legacy_compat_from_env() {
+        tracing::warn!(
+            "AUTH_LEGACY_COMPAT=true: legacy MD5/DES password hashes and 3DES SSO tokens accepted. \
+             This is a one-time migration setting and should be disabled once data is migrated."
+        );
+    }
+
     let args: Vec<String> = env::args().collect();
     let http_flag = args.iter().any(|a| a == "--http");
     let migrate_only = args.iter().any(|a| a == "--migrate-only");
