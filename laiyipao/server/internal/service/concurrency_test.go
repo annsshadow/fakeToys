@@ -40,16 +40,37 @@ type testService struct {
 // openTestService 连库。失败时 Skip。
 func openTestService(t *testing.T) *testService {
 	t.Helper()
-	dsn := os.Getenv("TEST_DATABASE_URL")
+	// 第 150 轮：优先用「本轮共用的干净库」，不再打开发库。
+	//
+	// 此前它连的是 `laiyipao` —— 而那**同时也是本机开发用的库**，
+	// 于是每轮跑测都往里塞数据且从不清理。实测后果：
+	//   - 82 个幽灵用户、123 颗假宝石堆在开发库里
+	//   - `TestLeaderboardKinds`（断言「三个榜的前 50 里有我」）被拖红：
+	//     前 50 是被历次跑测留下的所有用户瓜分的，库越脏越容易掉出去
+	//
+	// 现在 `TestMain` 给整包建一个每轮一次性的共用库（迁移 + 种子）。
+	// 用例之间仍然共享状态（与此前一致），但每轮都从干净的表开始，
+	// 跑完整个库被删掉 —— 开发库不再被测试污染。
+	//
+	// 退化路径保留：共用库建不起来时退回 `TEST_DATABASE_URL`，再退回开发库，
+	// 也就是 CI 无 PG 时 DB 用例仍按 README 约定自行跳过。
+	dsn := packageDSN
 	if dsn == "" {
-		dsn = "postgres://postgres@127.0.0.1:5432/laiyipao?sslmode=disable"
+		dsn = os.Getenv("TEST_DATABASE_URL")
+	}
+	if dsn == "" {
+		dsn = legacyDevDSN
 	}
 	cfg := config.Load()
 	cfg.DatabaseURL = dsn
 	// 短 TTL，避免测试签发的令牌在库里堆积
 	cfg.AccessTTL = 5 * time.Minute
+	// 共用库被上百个用例依次打开，每个池只要够用即可；
+	// 默认值（可能十几条）在这种模式下纯属浪费连接槽。
+	cfg.DBMaxConns = 4
+	cfg.DBMinConns = 1
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	db, err := store.Open(ctx, cfg)
 	if err != nil {

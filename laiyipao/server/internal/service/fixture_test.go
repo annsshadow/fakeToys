@@ -65,18 +65,82 @@ func openScratchService(t *testing.T) *testService {
 // 改动必须同步登记到 scratchdb.Prefixes（见 scratchdb 的文档注释）。
 const scratchPrefix = "laiyipao_svc_test_"
 
-// TestMain 跑测试前清掉本包前缀下的残留库。
+// legacyDevDSN 是退化路径：共用库建不起来时的兜底。
 //
-// 没有它，孤儿库会**累积**：单次跑测留下的孤儿让下一次跑测开始失败，
-// 于是「跑得越多越红」。docs/audits/coverage-2026-09-28.md §6 记过这件事
-// （曾残留 1049 个），但当时只做了一次性清理，没留下机制，必然复发。
+// ⚠️ 它同时也是**本机开发用的库** —— 所以只该在「没有 PG 可用」时落到这里，
+// 而不是像第 150 轮之前那样把开发库当成默认测试库。
+const legacyDevDSN = "postgres://postgres@127.0.0.1:5432/laiyipao?sslmode=disable"
+
+// packageDSN 是本轮跑测共用的「健康库」。
+//
+// 空串 = 共用库没建起来，各用例会退到 `TEST_DATABASE_URL` / `legacyDevDSN`。
+var packageDSN string
+
+// TestMain 在任何测试跑之前做两件事：
+//
+//  1. 清掉本包前缀下的残留库（否则孤儿库累积，「跑得越多越红」）
+//  2. 建一个**每轮一次性**的共用库并迁移 + 种子，供 `openTestService` 使用
+//
+// 第 2 点的原因见 `openTestService` 的注释：一句话是「别再往开发库里塞测试数据」。
 func TestMain(m *testing.M) {
 	if n, err := scratchdb.SweepPrefix(scratchPrefix); err != nil {
+		// 清理失败不阻断跑测，但必须**说出来** —— 否则本轮结束后
+		// 「为什么下一次这么慢」又变成一个查不到原因的问题。
 		fmt.Fprintf(os.Stderr, "[scratchdb] 清理残留库失败（不阻断）：%v\n", err)
 	} else if n > 0 {
 		fmt.Fprintf(os.Stderr, "[scratchdb] 已清理 %d 个残留测试库（前缀 %s）\n", n, scratchPrefix)
 	}
-	os.Exit(m.Run())
+
+	// 共用库用独立前缀：它必须能与「每个用例各建一个」的库被分别清掉，
+	// 否则前缀重叠时，一次清理会把另一个正在用的库删掉。
+	sharedPrefix := scratchPrefix + "shared"
+	if n, err := scratchdb.SweepPrefix(sharedPrefix); err == nil && n > 0 {
+		fmt.Fprintf(os.Stderr, "[scratchdb] 已清理 %d 个残留共用库（前缀 %s）\n", n, sharedPrefix)
+	}
+
+	dsn, cleanup, err := scratchdb.Open(sharedPrefix)
+	if err != nil {
+		fmt.Fprintf(os.Stderr,
+			"[fixture] 共用库建不起来，openTestService 将退回 %s / %s：%v\n",
+			os.Getenv("TEST_DATABASE_URL"), legacyDevDSN, err)
+		os.Exit(m.Run())
+	}
+
+	if err := migrateAndSeed(dsn); err != nil {
+		// 库能建但灌不进去 → 本包所有 DB 用例都没有意义。说清楚再退化。
+		fmt.Fprintf(os.Stderr, "[fixture] 共用库迁移/种子失败，本包将退回退化路径：%v\n", err)
+		cleanup()
+		os.Exit(m.Run())
+	}
+
+	packageDSN = dsn
+	fmt.Fprintf(os.Stderr, "[fixture] 本轮共用库已就绪：%s\n", dsn)
+	// os.Exit 会跳过 defer，所以这里必须显式顺序执行。
+	code := m.Run()
+	cleanup()
+	os.Exit(code)
+}
+
+// migrateAndSeed 把一张空库升到最新并灌上内容种子。
+func migrateAndSeed(dsn string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 180*time.Second)
+	defer cancel()
+	cfg := config.Load()
+	cfg.DatabaseURL = dsn
+	cfg.DBMaxConns = 4
+	cfg.DBMinConns = 1
+	db, err := store.Open(ctx, cfg)
+	if err != nil {
+		return fmt.Errorf("打开共用库：%w", err)
+	}
+	defer db.Close()
+	if err := db.Migrate(ctx); err != nil {
+		return fmt.Errorf("迁移共用库：%w", err)
+	}
+	if _, err := seeder.Run(ctx, db.Pool); err != nil {
+		return fmt.Errorf("种子共用库：%w", err)
+	}
+	return nil
 }
 
 // scratchDSN 建一次性库并返回其 DSN（第 150 轮收敛到 internal/testutil/scratchdb）。
