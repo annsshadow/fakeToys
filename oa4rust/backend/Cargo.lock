@@ -4309,7 +4309,7 @@ dependencies = [
  "deadpool-postgres",
  "dotenvy",
  "sea-orm",
- "sea-query 0.30.7",
+ "sea-query",
  "serde",
  "serde_json",
  "shared",
@@ -5856,7 +5856,7 @@ dependencies = [
  "pgvector",
  "rust_decimal",
  "sea-orm-macros",
- "sea-query 0.32.7",
+ "sea-query",
  "sea-query-binder",
  "serde",
  "serde_json",
@@ -5885,16 +5885,6 @@ dependencies = [
 
 [[package]]
 name = "sea-query"
-version = "0.30.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4166a1e072292d46dc91f31617c2a1cdaf55a8be4b5c9f4bf2ba248e3ac4999b"
-dependencies = [
- "inherent",
- "sea-query-derive",
-]
-
-[[package]]
-name = "sea-query"
 version = "0.32.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8a5d1c518eaf5eda38e5773f902b26ab6d5e9e9e2bb2349ca6c64cf96f80448c"
@@ -5904,6 +5894,7 @@ dependencies = [
  "inherent",
  "ordered-float 4.6.0",
  "rust_decimal",
+ "sea-query-derive",
  "serde_json",
  "time 0.3.55",
  "uuid",
@@ -5918,7 +5909,7 @@ dependencies = [
  "bigdecimal",
  "chrono",
  "rust_decimal",
- "sea-query 0.32.7",
+ "sea-query",
  "serde_json",
  "sqlx",
  "time 0.3.55",
