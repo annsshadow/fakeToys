@@ -89,7 +89,7 @@ import { onLoad } from '@dcloudio/uni-app'
 import { useGameStore } from '@/store/game'
 import * as api from '@/api/client'
 import { TERRAIN_NAME } from '@/game/terrain'
-import type { GeneratedLevel, TerrainKind } from '@/game/types'
+import type { LevelSummary, TerrainKind } from '@/game/types'
 
 const store = useGameStore()
 
@@ -100,12 +100,14 @@ const diagnoseInfo = ref<any>(null)
 
 const chapters = computed(() => store.config?.chapters ?? [])
 
-const chapterLevels = computed<GeneratedLevel[]>(() => {
+const chapterLevels = computed<LevelSummary[]>(() => {
   const all = store.config?.levels ?? []
   return all.filter((l) => l.chapter === curChapter.value)
 })
 
-const selected = computed<GeneratedLevel | null>(() => {
+// 选关页只读元数据（章节/名称/难度/体力/星级/地形），**不需要 waves** ——
+// 所以这里用摘要类型就够，不必为此把完整关卡拉回来。
+const selected = computed<LevelSummary | null>(() => {
   if (selectedId.value) return store.levelMap.get(selectedId.value) ?? null
   return chapterLevels.value.find((l) => l.id === store.unlockedLevel) ?? null
 })

@@ -1,4 +1,4 @@
-// @vitest-environment jsdom
+﻿// @vitest-environment jsdom
 /**
  * 验真页（verify.vue）组件测试。
  * 覆盖：复现信息拉取与校验、构筑/攻方属性的展示分支、
@@ -15,7 +15,7 @@ import { makeConfig } from '../../test/fixtures'
 
 vi.mock('@/api/client', () => ({
   guestLogin: vi.fn(),
-  fetchConfig: vi.fn(),
+  fetchConfigIfVersion: vi.fn(),
   fetchWallet: vi.fn(),
   fetchMe: vi.fn(),
   fetchLoadout: vi.fn(),
@@ -65,8 +65,8 @@ beforeEach(() => {
     expires_at: '',
     user: { id: 7, nickname: '我', avatar_url: '', is_guest: true, status: 1 },
   })
-  mockApi.fetchConfig.mockResolvedValue(makeConfig())
-  mockApi.fetchWallet.mockResolvedValue({ coin: 1, gem: 2, energy: 3, keys: 4 })
+  mockApi.fetchConfigIfVersion.mockResolvedValue({ status: 'modified', config: makeConfig(), serverTimeMs: 0 })
+  mockApi.fetchWallet.mockResolvedValue({ coin: 1, gem: 2, energy: 3, keys: 4, tokens: {} })
   mockApi.fetchMe.mockResolvedValue({ user_id: 7, build: null, build_rating: null, power: 9 } as any)
   mockApi.getReplay.mockResolvedValue(replayInfoFixture as any)
   mockApi.verifyReplay.mockResolvedValue({

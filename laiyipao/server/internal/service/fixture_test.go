@@ -20,11 +20,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jackc/pgx/v5/pgxpool"
-
 	"github.com/laiyipao/server/internal/config"
 	"github.com/laiyipao/server/internal/seeder"
 	"github.com/laiyipao/server/internal/store"
+	"github.com/laiyipao/server/internal/testutil/scratchdb"
 )
 
 // openBrokenService 返回一个底层连接池已关闭的 Service。
@@ -62,52 +61,95 @@ func openScratchService(t *testing.T) *testService {
 	return &testService{Service: New(db, cfg), db: db}
 }
 
-// scratchDSN 建一次性库并返回其 DSN（与 seeder/store 包同思路，测试夹具不能跨包）。
+// scratchPrefix 是本包一次性库的命名前缀。
+// 改动必须同步登记到 scratchdb.Prefixes（见 scratchdb 的文档注释）。
+const scratchPrefix = "laiyipao_svc_test_"
+
+// legacyDevDSN 是退化路径：共用库建不起来时的兜底。
+//
+// ⚠️ 它同时也是**本机开发用的库** —— 所以只该在「没有 PG 可用」时落到这里，
+// 而不是像第 150 轮之前那样把开发库当成默认测试库。
+const legacyDevDSN = "postgres://postgres@127.0.0.1:5432/laiyipao?sslmode=disable"
+
+// packageDSN 是本轮跑测共用的「健康库」。
+//
+// 空串 = 共用库没建起来，各用例会退到 `TEST_DATABASE_URL` / `legacyDevDSN`。
+var packageDSN string
+
+// TestMain 在任何测试跑之前做两件事：
+//
+//  1. 清掉本包前缀下的残留库（否则孤儿库累积，「跑得越多越红」）
+//  2. 建一个**每轮一次性**的共用库并迁移 + 种子，供 `openTestService` 使用
+//
+// 第 2 点的原因见 `openTestService` 的注释：一句话是「别再往开发库里塞测试数据」。
+func TestMain(m *testing.M) {
+	if n, err := scratchdb.SweepPrefix(scratchPrefix); err != nil {
+		// 清理失败不阻断跑测，但必须**说出来** —— 否则本轮结束后
+		// 「为什么下一次这么慢」又变成一个查不到原因的问题。
+		fmt.Fprintf(os.Stderr, "[scratchdb] 清理残留库失败（不阻断）：%v\n", err)
+	} else if n > 0 {
+		fmt.Fprintf(os.Stderr, "[scratchdb] 已清理 %d 个残留测试库（前缀 %s）\n", n, scratchPrefix)
+	}
+
+	// 共用库用独立前缀：它必须能与「每个用例各建一个」的库被分别清掉，
+	// 否则前缀重叠时，一次清理会把另一个正在用的库删掉。
+	sharedPrefix := scratchPrefix + "shared"
+	if n, err := scratchdb.SweepPrefix(sharedPrefix); err == nil && n > 0 {
+		fmt.Fprintf(os.Stderr, "[scratchdb] 已清理 %d 个残留共用库（前缀 %s）\n", n, sharedPrefix)
+	}
+
+	dsn, cleanup, err := scratchdb.Open(sharedPrefix)
+	if err != nil {
+		fmt.Fprintf(os.Stderr,
+			"[fixture] 共用库建不起来，openTestService 将退回 %s / %s：%v\n",
+			os.Getenv("TEST_DATABASE_URL"), legacyDevDSN, err)
+		os.Exit(m.Run())
+	}
+
+	if err := migrateAndSeed(dsn); err != nil {
+		// 库能建但灌不进去 → 本包所有 DB 用例都没有意义。说清楚再退化。
+		fmt.Fprintf(os.Stderr, "[fixture] 共用库迁移/种子失败，本包将退回退化路径：%v\n", err)
+		cleanup()
+		os.Exit(m.Run())
+	}
+
+	packageDSN = dsn
+	fmt.Fprintf(os.Stderr, "[fixture] 本轮共用库已就绪：%s\n", dsn)
+	// os.Exit 会跳过 defer，所以这里必须显式顺序执行。
+	code := m.Run()
+	cleanup()
+	os.Exit(code)
+}
+
+// migrateAndSeed 把一张空库升到最新并灌上内容种子。
+func migrateAndSeed(dsn string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 180*time.Second)
+	defer cancel()
+	cfg := config.Load()
+	cfg.DatabaseURL = dsn
+	cfg.DBMaxConns = 4
+	cfg.DBMinConns = 1
+	db, err := store.Open(ctx, cfg)
+	if err != nil {
+		return fmt.Errorf("打开共用库：%w", err)
+	}
+	defer db.Close()
+	if err := db.Migrate(ctx); err != nil {
+		return fmt.Errorf("迁移共用库：%w", err)
+	}
+	if _, err := seeder.Run(ctx, db.Pool); err != nil {
+		return fmt.Errorf("种子共用库：%w", err)
+	}
+	return nil
+}
+
+// scratchDSN 建一次性库并返回其 DSN（第 150 轮收敛到 internal/testutil/scratchdb）。
+//
+// 本仓库原先在 5 个包里各抄了一份，抄出了三个真实故障：
+// 库名每秒重复、DROP 超时留孤儿、建库失败静默跳过。详见该包的文档注释。
 func scratchDSN(t *testing.T) string {
 	t.Helper()
-	admin := "postgres://postgres@127.0.0.1:5432/postgres?sslmode=disable"
-	if dsn := os.Getenv("TEST_DATABASE_URL"); dsn != "" {
-		if i := strings.LastIndex(dsn, "/"); i >= 0 {
-			if j := strings.Index(dsn[i+1:], "?"); j >= 0 {
-				admin = dsn[:i+1] + "postgres" + dsn[i+1+j:]
-			} else {
-				admin = dsn[:i+1] + "postgres"
-			}
-		}
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	// 借用一个临时池来 CREATE/DROP DATABASE
-	pool, err := pgxpool.New(ctx, admin)
-	if err != nil {
-		t.Skipf("连不上管理库，跳过：%v", err)
-	}
-	defer pool.Close()
-	if err := pool.Ping(ctx); err != nil {
-		t.Skipf("管理库不可达，跳过：%v", err)
-	}
-
-	name := fmt.Sprintf("laiyipao_svc_test_%d", time.Now().UnixNano()%1_000_000_000)
-	if _, err := pool.Exec(ctx, `CREATE DATABASE `+name); err != nil {
-		t.Skipf("无权创建测试库，跳过：%v", err)
-	}
-	t.Cleanup(func() {
-		dropCtx, dropCancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer dropCancel()
-		_, _ = pool.Exec(dropCtx,
-			`SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = $1`, name)
-		_, _ = pool.Exec(dropCtx, `DROP DATABASE IF EXISTS `+name)
-	})
-
-	if i := strings.LastIndex(admin, "/"); i >= 0 {
-		if j := strings.Index(admin[i+1:], "?"); j >= 0 {
-			return admin[:i+1] + name + admin[i+1+j:]
-		}
-		return admin[:i+1] + name
-	}
-	return admin
+	return scratchdb.DSN(t, scratchPrefix)
 }
 
 // (ts) renameTable 临时把表改名。scratch 库专用 —— 不恢复，

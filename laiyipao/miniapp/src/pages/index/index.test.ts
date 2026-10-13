@@ -1,4 +1,4 @@
-// @vitest-environment jsdom
+﻿// @vitest-environment jsdom
 /**
  * 首页（index.vue）组件测试。
  *
@@ -18,7 +18,7 @@ import { makeConfig } from '../../test/fixtures'
 
 vi.mock('@/api/client', () => ({
   guestLogin: vi.fn(),
-  fetchConfig: vi.fn(),
+  fetchConfigIfVersion: vi.fn(),
   fetchWallet: vi.fn(),
   fetchMe: vi.fn(),
   fetchLoadout: vi.fn(),
@@ -47,8 +47,8 @@ beforeEach(() => {
     expires_at: '',
     user: { id: 7, nickname: '游客7', avatar_url: '', is_guest: true, status: 1 },
   })
-  mockApi.fetchConfig.mockResolvedValue(makeConfig())
-  mockApi.fetchWallet.mockResolvedValue({ coin: 10, gem: 20, energy: 30, keys: 40 })
+  mockApi.fetchConfigIfVersion.mockResolvedValue({ status: 'modified', config: makeConfig(), serverTimeMs: 0 })
+  mockApi.fetchWallet.mockResolvedValue({ coin: 10, gem: 20, energy: 30, keys: 40, tokens: {} })
   mockApi.fetchMe.mockResolvedValue({
     user_id: 7,
     build: null,
@@ -83,8 +83,12 @@ describe('index.vue 首页', () => {
     expect(wrapper.text()).toContain('4/8') // mechanic_depth=4 → 4/8
     // 装备契合分母是 18（服务端上界），不是误写的 6
     expect(wrapper.text()).toContain('6/18')
-    // 7 个功能入口
-    expect(wrapper.findAll('.grid-item').length).toBe(7)
+    // 功能入口：不写死个数与位置（第 151 轮加商城后，写死 7 的断言
+    // 在这里无关地红了 —— 它盯的是排版，不是行为）。
+    const labels = wrapper.findAll('.grid-item .grid-label').map((el) => el.text())
+    expect(labels).toContain('商城')
+    expect(labels).toContain('专精')
+    expect(labels).toContain('背包')
     // 5 种元素说明
     expect(wrapper.findAll('.elem-chip').length).toBe(5)
   })
@@ -163,7 +167,8 @@ describe('index.vue 首页', () => {
   it('点击功能入口 → uni.navigateTo 携带对应路径', async () => {
     mountPage()
     await flushPromises()
-    await wrapper.findAll('.grid-item')[2]!.trigger('click')
+    const item = wrapper.findAll('.grid-item').find((el) => el.text().includes('专精'))!
+    await item.trigger('click')
     expect(um.mock.navigateTo).toHaveBeenCalledWith({ url: '/pages/mastery/mastery' })
   })
 

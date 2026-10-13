@@ -82,7 +82,18 @@ export interface TerrainPlacement {
   param: number
 }
 
-export interface GeneratedLevel {
+/**
+ * 关卡**摘要**：`/config` 的 `levels` 就是这个形状 —— 比完整关卡少 `waves`。
+ *
+ * ⚠️ 与 `GeneratedLevel` 是**两个类型**不是同一个类型的可选字段。
+ * 理由：`waves` 一旦写成可选（`waves?: Wave[]`），引擎里那三处
+ * `cfg.level.waves` 的读取就会因为「忘了判空」而在运行时炸；
+ * 而在类型层面分开，**编译期**就会把「谁需要完整关卡」逼出来。
+ *
+ * 跨端对拍：Go 侧 `domain.LevelSummary`，由
+ * `TestLevelSummaryCoversEveryGeneratedLevelField` 反射逐字段钉住。
+ */
+export interface LevelSummary {
   id: number
   chapter: number
   name: string
@@ -98,7 +109,7 @@ export interface GeneratedLevel {
    * 理论满分（1000‰）。star_targets 是它按 [600, 850, 980]‰ 取的三个档。
    *
    * ⚠️ 必须与 star_targets 分开下发：服务端结算裁剪的上界锚定在**这个值**上，
-   * 而���是 star_targets[2]。早期版本拿 3 星门槛当裁剪上限（= 理论满分的 75%），
+   * 而不是 star_targets[2]。早期版本拿 3 星门槛当裁剪上限（= 理论满分的 75%），
    * 于是每一次干净通关的分数都被裁掉（实测关 1：本地 19842 → 结算 14656），
    * 而且 Clamped 在几乎每次正常胜利上都为真，把这个本该用于发现伪造的信号变成了噪声。
    */
@@ -106,6 +117,15 @@ export interface GeneratedLevel {
   is_boss: boolean
   star_targets: number[]
   terrain: TerrainPlacement[]
+}
+
+/**
+ * 关卡**完整**形状：摘要 + 波次排布。
+ *
+ * 三条下发路径给的是它：`/battle/token`、`/battle/:id/replay`、`/levels/:id`。
+ * **引擎只认这个类型** —— 战斗局必须能拿到 waves 才能开局。
+ */
+export interface GeneratedLevel extends LevelSummary {
   waves: Wave[]
 }
 

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 全局 store（Pinia）单元测试。
  *
  * mock 掉 @/api/client 这个边界（网络不可达也不影响逻辑验证），
@@ -14,10 +14,11 @@ import { useGameStore } from './game'
 import * as api from '@/api/client'
 import { defaultAttacker } from '@/game/damage'
 import { makeConfig } from '../test/fixtures'
+import { installUniMock } from '../test/uni-mock'
 
 vi.mock('@/api/client', () => ({
   guestLogin: vi.fn(),
-  fetchConfig: vi.fn(),
+  fetchConfigIfVersion: vi.fn(),
   fetchWallet: vi.fn(),
   fetchMe: vi.fn(),
   fetchLoadout: vi.fn(),
@@ -29,8 +30,10 @@ const mockApi = vi.mocked(api, true)
 
 let store: ReturnType<typeof useGameStore>
 let warnSpy: ReturnType<typeof vi.spyOn>
+let um: ReturnType<typeof installUniMock>
 
 beforeEach(() => {
+  um = installUniMock()
   setActivePinia(createPinia())
   store = useGameStore()
   warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
@@ -38,11 +41,11 @@ beforeEach(() => {
   mockApi.guestLogin.mockResolvedValue({
     access_token: 'acc-1',
     refresh_token: 'ref-1',
-    expires_at: '',
+    expires_at: '2099-01-01T00:00:00Z',
     user: { id: 7, nickname: '游客7', avatar_url: '', is_guest: true, status: 1 },
   })
-  mockApi.fetchConfig.mockResolvedValue(makeConfig())
-  mockApi.fetchWallet.mockResolvedValue({ coin: 10, gem: 20, energy: 30, keys: 40 })
+  mockApi.fetchConfigIfVersion.mockResolvedValue({ status: 'modified', config: makeConfig(), serverTimeMs: 0 })
+  mockApi.fetchWallet.mockResolvedValue({ coin: 10, gem: 20, energy: 30, keys: 40, tokens: {} })
   mockApi.fetchMe.mockResolvedValue({ user_id: 7, build: null, build_rating: null, power: 123 } as any)
   mockApi.fetchLoadout.mockResolvedValue({ skill_ids: [1, 2] })
   mockApi.saveLoadout.mockResolvedValue({ skill_ids: [1, 2] })
@@ -50,6 +53,7 @@ beforeEach(() => {
 
 afterEach(() => {
   warnSpy.mockRestore()
+  vi.unstubAllGlobals()
   vi.clearAllMocks()
 })
 
@@ -57,13 +61,19 @@ describe('login（单飞 + 全流程）', () => {
   it('成功：写令牌、账号态置位、拉配置与档案', async () => {
     const ok = await store.login()
     expect(ok).toBe(true)
-    expect(mockApi.setTokenInternal).toHaveBeenCalledWith('acc-1', 'ref-1')
+    // 第 150 轮：第三个参数是 TokenPair.expires_at。store 必须把它透传给 api 层 ——
+    // 不透传的话客户端拿不到过期时刻，只能等服务端回 401 才发现令牌到期。
+    expect(mockApi.setTokenInternal).toHaveBeenCalledWith(
+      'acc-1',
+      'ref-1',
+      '2099-01-01T00:00:00Z',
+    )
     expect(store.userId).toBe(7)
     expect(store.nickname).toBe('游客7')
     expect(store.isGuest).toBe(true)
     expect(store.loggedIn).toBe(true)
     expect(store.loginError).toBe('')
-    expect(mockApi.fetchConfig).toHaveBeenCalledTimes(1)
+    expect(mockApi.fetchConfigIfVersion).toHaveBeenCalledTimes(1)
     expect(mockApi.fetchWallet).toHaveBeenCalledTimes(1)
     expect(mockApi.fetchMe).toHaveBeenCalledTimes(1)
     expect(store.config).not.toBeNull()
@@ -76,7 +86,7 @@ describe('login（单飞 + 全流程）', () => {
     expect(ok).toBe(false)
     expect(store.loggedIn).toBe(false)
     expect(store.loginError).toBe('无法连接服务器')
-    expect(mockApi.fetchConfig).not.toHaveBeenCalled()
+    expect(mockApi.fetchConfigIfVersion).not.toHaveBeenCalled()
   })
 
   it('并发调用单飞：onLoad 与 onMounted 同时触发也只登录一次', async () => {
@@ -111,21 +121,21 @@ describe('loadConfig（缓存 + loading 态）', () => {
   it('已加载后直接返回，不重复请求（if (config.value) 分支）', async () => {
     await store.login()
     await store.loadConfig()
-    expect(mockApi.fetchConfig).toHaveBeenCalledTimes(1)
+    expect(mockApi.fetchConfigIfVersion).toHaveBeenCalledTimes(1)
   })
 
   it('请求期间 configLoading 为 true，结束后（无论成败）复位', async () => {
     let resolve!: (v: any) => void
-    mockApi.fetchConfig.mockImplementation(() => new Promise((res) => { resolve = res }))
+    mockApi.fetchConfigIfVersion.mockImplementation(() => new Promise((res) => { resolve = res }))
     const p = store.loadConfig()
     expect(store.configLoading).toBe(true)
-    resolve(makeConfig())
+    resolve({ status: 'modified', config: makeConfig(), serverTimeMs: 0 })
     await p
     expect(store.configLoading).toBe(false)
   })
 
   it('加载失败：异常向上抛（调用方决定怎么提示），configLoading 仍复位', async () => {
-    mockApi.fetchConfig.mockRejectedValue(new Error('config failed'))
+    mockApi.fetchConfigIfVersion.mockRejectedValue(new Error('config failed'))
     await expect(store.loadConfig()).rejects.toThrow('config failed')
     expect(store.configLoading).toBe(false)
   })
@@ -136,10 +146,10 @@ describe('服务端时钟基准 estimateServerNowMs（第 140 轮）', () => {
     vi.useFakeTimers()
     try {
       vi.setSystemTime(Date.parse('2026-09-01T00:00:00Z')) // 本地时钟
-      mockApi.fetchConfig.mockResolvedValue({
+      mockApi.fetchConfigIfVersion.mockResolvedValue({ status: 'modified', config: {
         ...makeConfig(),
         server_time: '2026-05-01T00:00:00Z', // 服务端时钟比本地早 4 个月
-      })
+      }, serverTimeMs: 0 })
       await store.loadConfig()
       const est = store.estimateServerNowMs()
       // 估算值跟住服务端时钟（收到响应至今的漂移在秒级）
@@ -152,13 +162,137 @@ describe('服务端时钟基准 estimateServerNowMs（第 140 轮）', () => {
   })
 
   it('server_time 不可解析 → 诚实回退本地时钟', async () => {
-    mockApi.fetchConfig.mockResolvedValue({ ...makeConfig(), server_time: 'not-a-date' })
+    mockApi.fetchConfigIfVersion.mockResolvedValue({ status: 'modified', config: { ...makeConfig(), server_time: 'not-a-date' }, serverTimeMs: 0 })
     await store.loadConfig()
     expect(Math.abs(store.estimateServerNowMs() - Date.now())).toBeLessThan(5000)
   })
 
   it('config 未加载 → 回退本地时钟', () => {
     expect(Math.abs(store.estimateServerNowMs() - Date.now())).toBeLessThan(5000)
+  })
+})
+
+// 第 150 轮：`version` 的消费闭环。
+//
+// 这几条守的是「缓存真的被用上了」，而不是「代码里有持久化」——
+// 后者是本轮之前的状态：`fetchConfig` 存在、storage 根本没接、
+// `config.version` 全仓库零引用，于是每次冷启动都实打实拉 168KB。
+describe('loadConfig 的 version 消费闭环（第 150 轮）', () => {
+  const CACHE_KEY = 'lyp_config_cache_v1'
+
+  /** 装一份持久化缓存，模拟上一次冷启动落盘的内容。 */
+  function seedCache(version: string, serverTime = '2026-05-01T00:00:00Z'): void {
+    uni.setStorageSync(
+      CACHE_KEY,
+      JSON.stringify({ version, config: { ...makeConfig(), version, server_time: serverTime } }),
+    )
+  }
+
+  it('本地有缓存 → 第一次 loadConfig 就带着持久化 version 去问服务端', async () => {
+    seedCache('cached-abc')
+    await store.loadConfig()
+    expect(mockApi.fetchConfigIfVersion).toHaveBeenCalledWith('cached-abc')
+    // 缓存键钉死：改名会让所有老客户端一次性失效（那本身可接受），
+    // 但「旧键残留 + 新键写入」会多占一倍存储，且没有任何测试会发现。
+    expect([...um.storage.keys()]).toEqual([CACHE_KEY])
+  })
+
+  it('本地没有缓存 → 不带 version 请求（首次冷启动拉全量）', async () => {
+    await store.loadConfig()
+    expect(mockApi.fetchConfigIfVersion).toHaveBeenCalledWith('')
+  })
+
+  it('冷启动先用本地副本点亮界面，不等 168KB 响应回来', async () => {
+    seedCache('cached-abc')
+    let release!: () => void
+    mockApi.fetchConfigIfVersion.mockImplementation(
+      () =>
+        new Promise((res) => {
+          release = () => res({ status: 'modified', config: makeConfig(), serverTimeMs: 0 })
+        }),
+    )
+    const p = store.loadConfig()
+    await Promise.resolve() // 让 loadConfig 跑到 await 之前
+    // 响应还没回来，但界面已经有内容可渲染
+    expect(store.config).not.toBeNull()
+    release()
+    await p
+  })
+
+  it('服务端 304（内容没变）→ 不替换 config、不重新落盘', async () => {
+    seedCache('cached-abc')
+    mockApi.fetchConfigIfVersion.mockResolvedValue({
+      status: 'unmodified',
+      version: 'cached-abc',
+      serverTimeMs: 0,
+    })
+    await store.loadConfig()
+    await store.loadConfig() // 第二次：内存缓存已在，直接返回
+    expect(mockApi.fetchConfigIfVersion).toHaveBeenCalledTimes(1)
+    // 内容没有被 304 覆盖成一个空对象
+    expect(store.config!.levels.length).toBeGreaterThan(0)
+    // 落盘内容仍是旧缓存（没有被写成空/半份）
+    const persisted = JSON.parse(uni.getStorageSync(CACHE_KEY) as string)
+    expect(persisted.version).toBe('cached-abc')
+  })
+
+  it('服务端 200 且 version 变了 → 替换 config 并把新版本落盘', async () => {
+    seedCache('cached-abc')
+    mockApi.fetchConfigIfVersion.mockResolvedValue({
+      status: 'modified',
+      config: { ...makeConfig(), version: 'fresh-def' },
+      serverTimeMs: 0,
+    })
+    await store.loadConfig()
+    expect(store.config!.version).toBe('fresh-def')
+    const persisted = JSON.parse(uni.getStorageSync(CACHE_KEY) as string)
+    expect(persisted.version).toBe('fresh-def')
+    expect(persisted.config.version).toBe('fresh-def')
+  })
+
+  it('落盘内容能被下一次冷启动读回来（round-trip）', async () => {
+    mockApi.fetchConfigIfVersion.mockResolvedValue({
+      status: 'modified',
+      config: { ...makeConfig(), version: 'rt-123' },
+      serverTimeMs: 0,
+    })
+    await store.loadConfig()
+    // 模拟冷启动：同一份 storage 上重建 store
+    setActivePinia(createPinia())
+    const fresh = useGameStore()
+    mockApi.fetchConfigIfVersion.mockResolvedValue({
+      status: 'unmodified',
+      version: 'rt-123',
+      serverTimeMs: 0,
+    })
+    await fresh.loadConfig()
+    expect(mockApi.fetchConfigIfVersion).toHaveBeenLastCalledWith('rt-123')
+    expect(fresh.config!.version).toBe('rt-123')
+  })
+
+  it('坏缓存（缺 version / 不是合法 JSON）→ 当不存在，重拉全量', async () => {
+    uni.setStorageSync(CACHE_KEY, '{"config":{"levels":[]}}') // 缺 version
+    await store.loadConfig()
+    expect(mockApi.fetchConfigIfVersion).toHaveBeenCalledWith('')
+
+    setActivePinia(createPinia())
+    const fresh = useGameStore()
+    uni.setStorageSync(CACHE_KEY, 'not json at all')
+    await fresh.loadConfig()
+    expect(mockApi.fetchConfigIfVersion).toHaveBeenLastCalledWith('')
+  })
+
+  it('304 路径仍用 Date 头校准时钟（缓存存在数小时也不会让护盾判断漂移）', async () => {
+    seedCache('cached-abc')
+    mockApi.fetchConfigIfVersion.mockResolvedValue({
+      status: 'unmodified',
+      version: 'cached-abc',
+      serverTimeMs: Date.parse('2026-05-01T00:00:00Z'),
+    })
+    await store.loadConfig()
+    expect(
+      Math.abs(store.estimateServerNowMs() - Date.parse('2026-05-01T00:00:00Z')),
+    ).toBeLessThan(5000)
   })
 })
 
@@ -172,7 +306,7 @@ describe('档案与钱包刷新', () => {
       power: 555,
     } as any)
     await store.refreshProfile()
-    expect(store.wallet).toEqual({ coin: 10, gem: 20, energy: 30, keys: 40 })
+    expect(store.wallet).toEqual({ coin: 10, gem: 20, energy: 30, keys: 40, tokens: {} })
     expect(store.power).toBe(555)
     expect(store.buildRating).toEqual({ total: 42 })
     // ref 会把对象包成响应式代理，这里比较的是内容而非同一引用
@@ -187,13 +321,13 @@ describe('档案与钱包刷新', () => {
   })
 
   it('refreshWallet 成功 / 失败都不抛', async () => {
-    mockApi.fetchWallet.mockResolvedValue({ coin: 1, gem: 1, energy: 1, keys: 1 })
+    mockApi.fetchWallet.mockResolvedValue({ coin: 1, gem: 1, energy: 1, keys: 1, tokens: {} })
     await store.refreshWallet()
-    expect(store.wallet).toEqual({ coin: 1, gem: 1, energy: 1, keys: 1 })
+    expect(store.wallet).toEqual({ coin: 1, gem: 1, energy: 1, keys: 1, tokens: {} })
 
     mockApi.fetchWallet.mockRejectedValue(new Error('net'))
     await expect(store.refreshWallet()).resolves.toBeUndefined()
-    expect(store.wallet).toEqual({ coin: 1, gem: 1, energy: 1, keys: 1 })
+    expect(store.wallet).toEqual({ coin: 1, gem: 1, energy: 1, keys: 1, tokens: {} })
   })
 })
 
