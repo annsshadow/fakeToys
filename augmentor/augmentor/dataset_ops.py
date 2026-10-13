@@ -16,7 +16,7 @@ from .atomic_write import atomic_write_json
 from dataclasses import dataclass
 import hashlib
 from .exceptions import DataValidationError
-from .validation import require_count, require_ratio_list
+from .validation import require_count, require_ratio_list, require_within_dir
 from .allocation import largest_remainder
 from .data_splitter import DataSplitter
 
@@ -504,7 +504,7 @@ class DatasetOperations:
         # 保存各部分
         results = {}
         for prefix, data in zip(prefixes, [train, val, test]):
-            file_path = output_path / f"{prefix}.json"
+            file_path = require_within_dir("分片前缀", f"{prefix}.json", output_path)
             atomic_write_json(file_path, data)
             results[prefix] = {
                 "file": str(file_path),

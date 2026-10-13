@@ -17,7 +17,7 @@ from dataclasses import dataclass, asdict
 from pathlib import Path
 from datetime import datetime
 from .exceptions import VersionError
-from .validation import require_count
+from .validation import require_count, require_within_dir
 
 logger = logging.getLogger(__name__)
 
@@ -122,7 +122,7 @@ class VersionManager:
         Returns:
             版本目录路径
         """
-        return self.storage_dir / version_id
+        return require_within_dir("版本 ID", version_id, self.storage_dir)
     
     def _generate_version_id(self) -> str:
         """生成版本 ID

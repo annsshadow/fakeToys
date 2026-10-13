@@ -13,6 +13,7 @@ from pathlib import Path
 from datetime import datetime
 
 from augmentor.atomic_write import atomic_write_json
+from augmentor.validation import require_within_dir
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +68,7 @@ class CheckpointManager:
         Returns:
             断点文件路径
         """
-        return self.checkpoint_dir / f"{task_id}_checkpoint.json"
+        return require_within_dir("任务 ID", f"{task_id}_checkpoint.json", self.checkpoint_dir)
     
     def _get_delta_path(self, task_id: str) -> Path:
         """获取增量文件路径（append-only JSONL，一行为一批）
@@ -78,7 +79,7 @@ class CheckpointManager:
         Returns:
             增量文件路径
         """
-        return self.checkpoint_dir / f"{task_id}_delta.jsonl"
+        return require_within_dir("任务 ID", f"{task_id}_delta.jsonl", self.checkpoint_dir)
 
     def _get_legacy_delta_path(self, task_id: str) -> Path:
         """旧格式增量文件路径：整份是**一个** JSON 文档的 `_delta.json`
@@ -86,7 +87,7 @@ class CheckpointManager:
         写侧不再产出它（A144：每次自动保存整读整写 ⇒ 总代价 O(N²/interval)），
         但读侧必须继续认，否则升级会把用户已有任务的中途进度判成不存在。
         """
-        return self.checkpoint_dir / f"{task_id}_delta.json"
+        return require_within_dir("任务 ID", f"{task_id}_delta.json", self.checkpoint_dir)
     
     def create_checkpoint(self, 
                          task_id: str,

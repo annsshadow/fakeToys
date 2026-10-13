@@ -14,6 +14,7 @@ import json
 import csv
 
 from .atomic_write import atomic_write_json, atomic_write_text
+from .validation import require_within_dir
 import logging
 from typing import List, Dict, Optional
 from pathlib import Path
@@ -304,7 +305,7 @@ class Exporter:
         
         def export_single(fmt):
             ext = _FORMAT_EXTENSIONS.get(fmt.value, ".json")
-            output_path = output_dir / f"{base_name}_{fmt.value}{ext}"
+            output_path = require_within_dir("导出基础名", f"{base_name}_{fmt.value}{ext}", output_dir)
             self.export(items, str(output_path), fmt.value)
             return fmt.value, str(output_path)
         
@@ -354,7 +355,7 @@ class Exporter:
 
         def export_single(name: str, items: List[Dict], fmt: str):
             ext = _FORMAT_EXTENSIONS.get(fmt, ".json")
-            output_path = output_dir_path / f"{name}_{fmt}{ext}"
+            output_path = require_within_dir("数据集名称", f"{name}_{fmt}{ext}", output_dir_path)
             self.export(items, str(output_path), fmt)
             return name, fmt, str(output_path)
 

@@ -27,6 +27,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 
 from .atomic_write import atomic_write_json
+from .validation import require_within_dir
 
 logger = logging.getLogger(__name__)
 
@@ -169,7 +170,7 @@ class DatasetVersionManager:
         version_id = f"v{version_number}"
         
         # 创建版本目录
-        version_dir = self._versions_dir / version_id
+        version_dir = require_within_dir("版本 ID", version_id, self._versions_dir)
         version_dir.mkdir(exist_ok=True)
         
         # 保存数据
@@ -258,7 +259,7 @@ class DatasetVersionManager:
         Returns:
             数据列表
         """
-        version_dir = self._versions_dir / version_id
+        version_dir = require_within_dir("版本 ID", version_id, self._versions_dir)
         data_file = version_dir / "data.json"
         
         if not data_file.exists():
@@ -320,7 +321,7 @@ class DatasetVersionManager:
             return False
         
         # 删除版本目录
-        version_dir = self._versions_dir / version_id
+        version_dir = require_within_dir("版本 ID", version_id, self._versions_dir)
         if version_dir.exists():
             import shutil
             shutil.rmtree(version_dir)
