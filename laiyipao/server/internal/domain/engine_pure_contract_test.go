@@ -245,6 +245,57 @@ type pureVectors struct {
 			} `json:"trace"`
 		} `json:"rows"`
 	} `json:"terrain"`
+
+	// Wave 是 Block B（波次与刷怪）的对齐数据。
+	Wave struct {
+		Consts struct {
+			TickMs            int `json:"TICK_MS"`
+			SpawnProgressFull int `json:"SPAWN_PROGRESS_FULL"`
+			SpawnProgressStep int `json:"SPAWN_PROGRESS_STEP"`
+		} `json:"consts"`
+		Rows []struct {
+			Label   string `json:"label"`
+			LevelID int    `json:"level_id"`
+			Seed    string `json:"seed"`
+			Ticks   int    `json:"ticks"`
+			// LevelWaves 是关卡的波次定义（输入回显）。
+			// ⚠️ 必须带进文件：Go 侧要重建同样的刷怪组才能跑，
+			// 而「delay/interval 是毫秒」正是最容易写错的那处换算。
+			LevelWaves []struct {
+				Index  int `json:"wave_index"`
+				Spawns []struct {
+					EnemyID  int   `json:"enemy_id"`
+					Count    int   `json:"count"`
+					Interval int64 `json:"interval"`
+					Delay    int64 `json:"delay"`
+				} `json:"spawns"`
+			} `json:"level_waves"`
+			Trace []struct {
+				Tick       int64  `json:"tick"`
+				Phase      string `json:"phase"`
+				ElapsedMs  int64  `json:"elapsed_ms"`
+				SpawnQueue []struct {
+					EnemyID int   `json:"enemy_id"`
+					AtTick  int64 `json:"at_tick"`
+					UID     int64 `json:"uid"`
+				} `json:"spawn_queue"`
+				Enemies []struct {
+					UID           int64  `json:"uid"`
+					DefID         int    `json:"def_id"`
+					X             string `json:"x"`
+					Y             string `json:"y"`
+					HP            string `json:"hp"`
+					Shield        string `json:"shield"`
+					ArmorPermille string `json:"armor_permille"`
+					SpawnProgress int    `json:"spawn_progress"`
+					Dead          bool   `json:"dead"`
+					Resist        string `json:"resist"`
+				} `json:"enemies"`
+				Replay []string `json:"replay"`
+				Events []string `json:"events"`
+			} `json:"trace"`
+		} `json:"rows"`
+	} `json:"wave"`
 }
 
 func loadPureVectors(t *testing.T) *pureVectors {

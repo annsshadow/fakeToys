@@ -269,7 +269,13 @@ type BattleConfig struct {
 // 那些字段在 B~F 才被读写。保留它们是为了：后续块不需要改结构体形状，
 // 而结构体一改形状，A 阶段验过的排序不变量就要重跑。
 type BattleEngine struct {
-	Cfg   BattleConfig
+	Cfg BattleConfig
+	// Rng 是战斗 RNG。⚠️ **必须在构造时由 cfg.Seed 一次性定下** ——
+	//
+	//	它的状态决定刷怪洗牌、敌人 y 坐标、卡牌抽取……
+	//	任何「用到时才构造」或「每次调用重建」的写法都会让重放不可复现，
+	//	症状是「同一个种子重放两次得到不同哈希」。
+	Rng   *LCG
 	Heat  HeatSystem
 	Deck  CardDeck
 	Buffs Buffs
@@ -317,6 +323,9 @@ type BattleEngine struct {
 	ReplayScript    []int
 	ReplayScriptPos int
 	cardSelectDone  bool
+	// discardedThisWave 标记「本波弃过牌」——
+	// 编码只对**当前波**的 card_picks 项有意义。
+	discardedThisWave bool
 
 	// TotalEnemies 是本关总怪数（结算上限校验用）。
 	TotalEnemies int
@@ -330,14 +339,34 @@ type BattleEngine struct {
 //	只由 cfg 决定，与调用时刻、调用次数、宿主语言都无关。
 //	任何「构造时偷跑一次 RNG」都会让重放不可复现。
 func NewBattleEngine(cfg BattleConfig) *BattleEngine {
+	// ⚠️ `cfg.Equipped` 必须**复制**：
+	//
+	//	F 块的 `applyCard` 会给技能升格（改 BaseDamage），
+	//	若共享同一批结构体，调用方持有的配置会被就地污染 ——
+	//	于是「同一个配置跑第二局」的结果与第一局不同。
+	//
+	//	这类污染的表现极难查：第一次跑是对的，第二次开始错，
+	//	而「我用的是同一个配置」恰好是所有人都会做的假设。
+	skills := make([]EquippedSkill, len(cfg.Equipped))
+	copy(skills, cfg.Equipped)
+	for i := range skills {
+		// 运行时副本的冷却必须归零：
+		// 配置里的 cooldownRemaining 恒为 0，但复制过来后必须显式写 0 ——
+		// 否则将来有人往配置里塞了个值，它就会静默生效。
+		skills[i].CooldownRemaining = 0
+	}
 	return &BattleEngine{
-		Cfg:           cfg,
-		Heat:          NewHeatSystem(),
-		Deck:          NewCardDeck(),
-		Buffs:         NewBuffs(),
-		Phase:         PhasePrepare,
+		Cfg:   cfg,
+		Rng:   newLCG(cfg.Seed),
+		Heat:  NewHeatSystem(),
+		Deck:  NewCardDeck(),
+		Buffs: NewBuffs(),
+		Phase: PhasePrepare,
+		// ⚠️ `ElementsUsed` / `ReactionsUsed` 必须是**新 map**：
+		// 直接复用 Cfg 里的（若将来加了）会导致两次运行共享统计。
 		ElementsUsed:  map[string]int64{},
 		ReactionsUsed: map[string]int64{},
+		Skills:        skills,
 		uidSeq:        1,
 	}
 }
@@ -529,17 +558,13 @@ func (e *BattleEngine) nextUID() int64 {
 	return id
 }
 
-// --- 以下是 B~F 的空实现 ---
+// --- 以下是 C~F 的空实现 ---
 //
 // ⚠️ 刻意集中在这里，并在每个上面写清「由哪一块替换」。
 //   分散到各处会让「哪些还没搬」这件事看不出来 ——
 //   而一个看不出完成度的移植，最容易在半成品状态下被人当成完成品。
-
-// BeginWave 开第 index 波（B 块实现）。
-func (e *BattleEngine) BeginWave(index int) {}
-
-// updateSpawns 处理刷怪队列（B 块实现）。
-func (e *BattleEngine) updateSpawns() {}
+//
+// B 块（波次与刷怪）已实现在 `engine_wave.go`，故此处不再有空壳。
 
 // updateEnemies 推进敌人（C 块实现）。
 func (e *BattleEngine) updateEnemies() {}
@@ -569,8 +594,10 @@ func (e *BattleEngine) updateFloats() {
 	e.Floats = kept
 }
 
-// checkWaveEnd 判定波次结束（B 波次分支 / F 卡牌分支）。
-func (e *BattleEngine) checkWaveEnd() {}
+// checkWaveEndUnused 是被 B 块取代的空壳，保留一个转发会让
+//
+//	「实现在哪个文件」这件事有两个答案。
+func (e *BattleEngine) checkWaveEndUnused() {}
 
 // applyReplayDecision 按注入的脚本决策取牌（F 块实现）。
 func (e *BattleEngine) applyReplayDecision() {}
