@@ -435,6 +435,22 @@ A4 开放问题：① F1 是否 o2server 侧本就以 job/document 创建者为�
 | 缺陷 22 见证重钉（**见证过时 ≠ 判据退化**） | 同上 见证段 | 原正向 3 条钉「必须挂 K 桶」，代码修好之后它们出列 ⇒ 尺子当场退 1、喊「缺口 2 处」。这不是判据被摘，是见证把**读数**钉死了：改成钉「必须仍带写证据」（`indirectWrites` 成员断言），并把已加门的 3 把转成反向见证（不许被误判成 GET 写面）。run L 那次红是有效信号，按「见证钉判据、不钉读数」返工 |
 
 
+### 三.15 第十五批（surface 的 mock 动词别名 GET 写族 22 把补归属门，纯代码轴）
+
+第十四批把 cms 的同一族收掉后，surface 这格的理由用完了（当时写的是「尺子已量不出新东西，纯代码轴」）。
+本批按**同一问句**选题：`mockdeletetoget` / `mockputtopost` 两条别名将 DELETE/PUT 语义挂在 GET 上，
+而 `csrf_middleware` 与 `requires_admin` 只看方法 ⇒ GET 侧落在**双盲区**；这 22 把 handler 在 HEAD 上
+体内直接 `DELETE` / `UPDATE … xupdateTime = NOW()`，**一个会话都不读**。
+
+| 项 | 文件 | 内容 |
+| --- | --- | --- |
+| 22 把别名 handler 补会话参数并把门插在第一句 `pool.get()` **之前** | `crates/processplatform_assemble_surface/src/lib.rs`（22 处签名 + 22 处门，+68 行） | 形状一律 `session: Option<Extension<shared::session::Session>>` + 首行判门 ⇒ 无会话先 401，**不触库、离线可证**（与第十/十一批同法）。档位按「行上到底有没有可认的属主列」定，不是按表名猜 |
+| 新增 helper `u4_require_ppc_person` | 同上 `:92-115` | 本 crate 的条目表（待阅 / 已阅 / 待办 / 已办 / 草稿 / 流水号 / 签核）**没有 `xcreatorPerson`**，行上属主列是 `xperson`（同 crate 的待办待阅列表本来就按 `WHERE xperson = <person_unique>` 过滤，lib.rs:592 / :631 为证）。口径与 `u4_require_ppc_actor` 同锁：无会话 401 → 归属非空则本人或 admin → 归属为空或行不存在只允许 admin |
+| 定档依据 = information_schema 探针，不靠类比 | 探针日志 `/d/tmp/b15_probe.log` | `xperson` **11** 把（DRAFT 1 / READ 2 / READCOMPLETED 1 / SERIALNUMBER 2 / DOC_SIGN 2 / TASK 2 / TASKCOMPLETED 1）走新 helper；`xcreatorPerson` **3** 把（REVIEW 1 / WORKCOMPLETED 2）走 `u4_require_ppc_actor`；`PP_C_WORK` **6** 把走 `u4_require_work_actor`；**`PP_C_RECORD` 2 把走 `require_admin_opt`** |
+| 新档：`PP_C_RECORD` 无属主列 ⇒ 只能 admin 档 | 同上 `:13670` / `:13732` | 探针实测该表列为 create_time / creator / creator_person / deleted_at / id / order_number / sequence / update_person / update_time / xcreateTime / xid / xjob / xtitle / xupdateTime / xwork，`xperson` 与 `xcreatorPerson` **都不存在** ⇒ 「按行上属主放行」这一档在此表**不可表达**，本批收 admin。测试侧把这条升成证伪格（见 §四 第十五批读数臂②） |
+| 新发现（**本批只记账不修**）14 把 | 同上 各 `mockdeletetoget` 体 | 体内把**同一条 `DELETE … WHERE xid = $1` 连执行两次**：第二次必 0 行 ⇒ 走 `if result == 0` 分支 ⇒ **删成功也恒回 `ActionResult::error("… not found")`**。与第十四批 `templateform` 那格同族（旧体是 68 行手写副本、回读恒 not found）。改返回体形状要先核调用面，属另一批 |
+| 尺子轴：**本批一字未动** | `scripts/audit_write_gating.mjs` | 真落笔 −22、GET 面 −22 全部来自代码，不像第十三/十四批那样掺尺子轴的假阳回收。R1/R2/R3 只是注入取证，未入库；R2 顺手暴露 `GATE_RE` 里 `require_actor` 是**无独立见证的冗余词**（详见 §四 注入臂那格），删词要连见证一起改，故本批不擅动 |
+
 ## 四、验证
 
 
@@ -1003,6 +1019,63 @@ cd oa4rust/backend && cargo test --lib -p <crate>
     （`lib.rs` / `security_gate_tests.rs` / `audit_write_gating.mjs` / 6 张产物）。
 
 
+- **第十五批读数（纯代码轴，run R → S）**：
+  - 基线（HEAD＝第十四批 run N/P 存档 `/d/tmp/b14_md5_Q15.txt`）：真落笔 **494**、GET 无门禁 **178**
+    （K1 5 / K2 11 / K3 162）、只读挂写 766、间接写 223、间接门禁 234。
+  - run R（只改产品码）＝ run S（七臂注入全部复原后干净重跑，`/d/tmp/b15_S_ruler.log`）：
+    真落笔 **472**（R4 5 / R6 135 / R7 332）、GET 无门禁 **156**（K1 5 / K2 11 / **K3 140**）、
+    只读挂写 **766 不变**、间接写 **223 不变**、间接门禁 **234 不变**、`判据见证 … 缺口 0 处`、EXIT=0。
+    15 张在册产物只有 **3 张**变（`write_routes_get_writes` / `write_routes_matrix` / `write_routes_ungated`），
+    `md5sum -c` 逐张 **15/15 OK** 等于 run R 存档。
+  - **单轴归因，逐条点名**：拿 `git show HEAD~1:…write_routes_matrix.tsv`（含表头 2 238 行＝数据 2 237 条）
+    与当前矩阵做键（crate+method+path）级 diff ⇒ **0 消失、0 新增、22 迁移，且 22 条全部 R7→R5**
+    （逐条名单见 `/d/tmp/b15_diff2.mjs` 输出，22 条注册点全在 POST 侧键上）。GET 面 −22 同向等量：
+    `write_routes_get_writes.tsv` 179→157 行（−22、0 新增）、`write_routes_ungated.tsv` 1105→1083 行（−22）。
+    **本批没有第十三/十四批那种「尺子轴的假阳回收」混进来**——尺子一字未动，所以 −22 全是真收口的洞，
+    引用行动面时也不必注明代次差（仍是第十四批那把尺）。
+  - 22 把 × 2 条注册点＝**44 格**全部有测试点名（`MOCK_ALIAS_ARMS` 由 `D:/tmp/b15_emit_arms.mjs` 机械生成自
+    `routes.rs`，臂①另把 `regs == 44` 与 `len == 22` 两枚计数钉死：少一格删档、多一格长档都会先红在计数上）。
+- **门禁测试（`crates/processplatform_assemble_surface/src/security_gate_tests.rs`，1 014 行 / 9 臂 → 1 312 行 / 12 臂）**：
+  离线臂 `surface_mock_alias_writes_reject_anonymous`＝44 格无会话一律 401（门在 `pool.get()` 之前，缺库也证得了）；
+  真库臂 `surface_mock_alias_owner_gate_lands`＝逐把跑「他人 403 **且未落笔** → 放行侧成功 **且真落笔**」两半，
+  放行凭据按形状分两族：`del` 族认**行是否还在**、`touch` 族认 `xupdateTime` 是否脱离 `'r51-before'` 哨兵
+  （handler 未命中行也回 200，状态码在放行侧不是凭据）；record 档另加一格证伪——**被 seed 的那个人也 403 且未落笔**，
+  因为 `PP_C_RECORD` 行上根本没有可认的属主列，「改成归属档」在此表不可表达；
+  真库臂 `surface_mock_alias_gate_covers_both_verbs`＝他人会话打满 44 格（含 POST 侧）一律 403，钉「门不挑动词」。
+  读数：`cargo test --lib -p processplatform_assemble_surface` **610 passed / 0 failed / 9 ignored**；
+  `-- --ignored` 整族 **9 passed / 0 failed**；两支新真库臂**连跑两遍幂等**（`/d/tmp/b15_run1.log` = `b15_run2.log`，
+  都 2 passed）；注入复原后再各跑一遍复绿（`/d/tmp/b15_full_after.log` / `b15_ignored_after.log`）。
+  **第一轮红的不是门是 seed**：`seed_mock_row` 起初按「admin 档也把值写进 `xcreatorPerson`」设计，
+  PostgreSQL 报 **42703**（`column "xcreatorPerson" of relation "pp_c_record" does not exist`，中文即「该列不存在」）——
+  兜底建表的列假设来自同族表类比，而探针早就给出 record 无此列。改成 `owner_col` 为空就**只插 id/xid/xupdateTime**，
+  并把「列缺失」这条实测事实升成上文的证伪格（若有人把 record 改回归属档，门会去读不存在的列 ⇒ 500，臂②点名红）。
+- **注入臂取证（通道 B，本机无 Python，Node 注入器 `D:/tmp/inject_arm.mjs`；七臂日志 `D:/tmp/b15_E*.log` / `b15_R*.log`）**：
+  - **E1** 摘掉 `draft_id_mockdeletetoget` 一格的门 → 离线臂退 101，失败信息**逐格点名**
+    `draft_id_mockdeletetoget POST/… 期望 401，实际 200 OK` 与 GET 侧同档 ⇒ 单把门被摘会当场红，不是靠别的档兜。
+    首跑**判废并如实记**：`--cmd` 里带了 `| tail -20`，管道把退出码变成 tail 的 0，注入器按 `--expect red` 误报「恒真」（退 4）——
+    「不信管道退出码」这条纪律在注入器上同样成立，改成 `--quiet` 让 cargo 自己定退出码才是有效臂。
+  - **E2** `u4_require_ppc_person` 的归属判定改成恒 `Ok(())`（会话门仍留首位）→ 两支真库臂**同时红**、离线臂不受影响
+    ⇒ 「401 侧与 403 侧各由不同格盯住」得到证明。锚点首跑命中 2 处被注入器中止（`u4_require_ppc_actor` 体内同形），
+    补上前一行的 `xperson` 读取才收成唯一命中——锚点唯一性在这里是**防串味**的，不是形式主义。
+  - **E3** record 档由 `require_admin_opt` 改成归属档（`u4_require_ppc_actor(…, "PP_C_RECORD", …)`）→
+    两支真库臂红（`security_gate_tests.rs:1290` / `:1320`）⇒ §三.15 那格「record 只能 admin」有牙。
+  - **E4** helper 的属主列认错（`SELECT xperson` → `SELECT xcreatorPerson`）→ 两支真库臂红 ⇒ 列名选择是承重的。
+  - **E0（无害对照）** 只在两个 helper 各插一句注释（`--hits 2`）→ 仍绿 ⇒ 上面的红是注入造成的。
+  - **R1（尺子轴）** 从 `GATE_RE` 摘掉 `u4_require` → 真落笔 **472→513**、GET 面 **156→172**、间接门禁 **234→291**
+    ⇒ 本批 20 把（person/creator/work）的门确实靠这个词作证，词有独立见证。
+  - **R3（尺子轴）** 摘掉 `require_admin` → 尺子**非零退出**且自证先喊红：`判据见证 … 缺口 3 处`，逐条点名
+    缺陷 20 的 `delete_admin_record` 两条 + 缺陷 22 的反向见证（organization `person/{flag}/mockdeletetoget`）；
+    同跑读数 R6 含写 135→225、GET 面 156→184 ⇒ record 那 2 把所在的 admin 档由这条词表承重。
+  - **R2（如实记成恒真臂，单独点名不混进通过里）** 摘掉 `require_actor` → **六格读数与 run R 全等、缺口 0**。
+    读法：摘掉这个词后**全仓没有任何一档掉进无门禁面**，说明它在词表里只是一条**快捷路径**——
+    现存的档全部还被别的词作证，所以这个词**没有独立见证**，与第十四批 E7（`u2_check_owner`）同族。
+    （机制侧未逐条查证：到底是哪几个词覆盖了它们，本批不下结论，只认「摘了不红」这个读数事实。）
+    本批不给它补见证、也不删词：要钉的命题是「几条入口至少认一条」，R1/R3 已各自证明被摘时会红；
+    真要收这格，得把词表改成「两条入口都不许同时摘」的合取见证（记进 §五 下一批方法学缺口）。
+  - 每臂 `finally` 逐字节复原并断言读回哈希等于进入时哈希；复原后 run S 干净重跑 EXIT=0、缺口 0、
+    15 张产物与注入前存档逐张 md5 全等；`git status --porcelain` 只剩本批 3 类在册改动
+    （`lib.rs` / `security_gate_tests.rs` / 3 张产物）。
+
 ## 五、处置与遗留（下一轮入口）
 
 - 已修并验证：N1、N4-01、N2、preview 加固、F3、F6、F9（离线 403/会话权威断言）、F2（编译与既有测试绿，真门 `#[ignore]` 待 PG）、**A2-F12、A3-N1、A3-N2、A3-N3**（第二批读数见 §四）、**A3-N6（program_init 7 把写收 admin + 匿名 init 判定改 fail-closed）、R4-6、R4-1 全 13 把**（第三批：§三.3 改法、§四 读数，其中 processing/core_express/program_init 的 DB 臂已按 `--ignored --nocapture` 真跑取证）、**R4-2 批 1 + 批 2a 共 29 把**（第四批：§三.4 / §四第四批）、**R4-7**（第五批：§三.5 / §四第五批，含尺子两处计量缺陷 + 门禁词表缺陷的自修）、**R4-2 批 3：processing 两把 touch + surface 四把 touch 路由**（第六批：§三.6 / §四第六批，DB 臂已 `--ignored --nocapture` 真跑取到「闯入者 403 且零留痕、发起人放行且 creator 落本人」的行为差）。
@@ -1417,3 +1490,53 @@ cd oa4rust/backend && cargo test --lib -p <crate>
   run Q 与 run P 的**在册 15 张产物逐张 md5 全等**、`cargo test --lib -p cms_assemble_control`
   336 passed / 0 failed / 4 ignored 与 `-- --ignored` 4 passed 复绿之后才提交。
   共享工作树上并行会话的在制品未被本批收走。**本轮未 push**。
+
+### 第十五批收口后的刷新（§三.15 / §四 第十五批读数 / §五 名单）
+
+- **已修并验证（纯代码轴单轴）**：surface 的 mock 动词别名写族 **22 把**补门（person 11 / creator 3 / work 6 / admin 2），
+  真落笔 **494 → 472**、GET 无门禁 **178 → 156**（K3 162 → 140，K1 5 / K2 11 不动）、只读挂写 766 / 间接写 223 /
+  间接门禁 234 **三格不变**、`判据见证 … 缺口 0 处`，EXIT=0。矩阵键级 diff 逐条点名：0 消失 / 0 新增 / 22 迁移全 R7→R5。
+  **本批尺子一字未动**，所以 −22 全是真收口的洞，不像第十三、十四批那样掺「原来量不到的假阳」——
+  行动面引用仍可只用一把尺的代次：**621（十一批）/ 498（十二批）/ 512（十三批）/ 494（十四批）/ 472（十五批）**。
+- **surface 那格剩余量按实测改写**（第十四批写的是「79 条，R6 25 / R7 54」）：现读矩阵内 R4/R6/R7 **293 行**
+  （R4 1 / R6 33 / R7 259），减掉同表只读挂写 **236 行** ⇒ 含写 SQL 的行动面 **57 行** ＝ 79 − 22，两批口径对得上；
+  另有 GET 面 **16 条**（`*_list_count_*` 12 把 + handover / draft_id_start / mode_id_delete）属双盲区，与写方法面不同轴。
+- **下一批（代码轴）首选**，GET 面（双盲区）现读 **156** 条，按 crate 实测切片：
+  1. **`processplatform_service_processing` 27 条**——本批之后 GET 面最大的一块，27 条**全挂 K3**（已认证无会话无门禁）。
+     按 handler 名机械切片（`D:/tmp/b15_ppsvc_slice.mjs`）：**snap 族 10 / task 族 12 / `work_v2_*_p2` 3 / 其余 2**
+     （`workcompleted_flag_rollback`、`wc_merge_flag`）。这一族要的归属列（`xcreatorPerson` / `xperson`）
+     在 PP_C_WORK / PP_C_JOB / PP_C_WORKCOMPLETED 上现成，**可直接复用本批 surface 的三档 helper**，
+     不必像 cms 那样先造 SQL 门；snap 族 10 条同处一个宏/模块，一处改动收多把。
+     注意该 crate 还挂着「16 把宏未绑段 + 43 条整张模板」的旧账，选题时先按产物切片读数，
+     别拿上一批的浮出数当本批工作量（第十三批那格的教训）。
+  2. `program_center` **21** 条（全 K3）/ `query_service_processing` **18** 条（全 K3，其中 **12 条**是
+     `high_freq` / `low_freq` × work / workcompleted / document 的 touch+reset 族，宏生成、一处改动收多把；
+     这 12 条同时挂在 `route_handler_unresolved_refs.tsv` 的 `u2h::` 未绑段旧账上，动手前先复核宏段）/
+     `query_assemble_designer` **14** 条 / `attendance_assemble_control` **9** 条（四 crate 也全挂 K3）。
+  3. **新立的一格优先度高于上面 2**：`mockdeletetoget` 族 **14 把**体内把同一条 `DELETE … WHERE xid = $1`
+     连执行两次 ⇒ 第二次恒 0 行 ⇒ **删成功也恒回 `ActionResult::error("… not found")`**（§三.15 末格）。
+     这一族与第十四批 `templateform` / `design_appdict` 两把同形，属「返回体形状」一条线，
+     改前要核调用面（第十四批那格的核法可照抄：前端 + openapi 契约 + parity 三处）。
+  4. `cms_core_entity` 12 条元数据写（登录即可删任意列 / 索引 / 模块定义），需先读该 crate 的门禁口径定拍。
+- **本批新增的方法学缺口两格**：
+  1. **词表冗余 = 无独立见证**（R2 实测，与第十四批 E7 同族、第二次发生）：`GATE_RE` 里 `require_actor`
+     摘掉后全仓六格读数与 run R **全等**、缺口 0。两次同族说明这不是个别词的事，是词表缺一条
+     「每个词要么设独立见证、要么写明只是快捷路径」的自检。下次动尺子时把它做成合取见证
+     （两条入口不许同时摘）或做成逐词摘除的全臂自证，别再靠人工注入偶发发现。
+  2. **真库臂的 seed 假设必须来自探针**：`seed_mock_row` 第一轮红（42703）源于按同族表类比假设 `pp_c_record`
+     有 `xcreatorPerson`。新增真库臂一律先跑 information_schema 探针再写 seed；探针输出的列清单要贴进账本或注释，
+     别只留「实测无此列」的结论——本批 §三.15 那格就把清单原文写进去了。
+  3. **沿用的注入纪律补一条**：注入臂的 `--cmd` **不许带管道**（E1 首跑因 `| tail -20` 把退出码变成 tail 的 0，
+     被注入器判成「恒真」退 4）。要截输出就用 `--quiet` / 让被测命令自己决定退出码。
+- **沿用的待拍格**：A1 真匿名写 9 条属限流族、24 条死档 needs 独立守卫、只读挂写现读 **766**
+  （沿用「读挂回 GET 或写方法显式 405」）、`NOW()` 写进 TEXT 列 79 处、门禁入口两族并存、
+  `shared/src/crud.rs` CrudSpec 无归属、`assert_eq!(status, 500)` 断言族 272 处、correlation 读侧 IDOR、
+  F5 / F7 / F8 / F10、N4-02 / N4-03。
+- **提交落点**：本批代码轴（`crates/processplatform_assemble_surface/src/lib.rs` 22 把加门 + `u4_require_ppc_person`、
+  `crates/processplatform_assemble_surface/src/security_gate_tests.rs` 3 臂 + 22 档表、3 张刷新产物）为
+  ``54509d26a``，与本文档（§三.15 / §四 第十五批读数 / 本节）分两笔，本节即第二笔并回填该 hash。
+  第二笔提交前用干净工作树重跑尺子（run S：EXIT=0、真落笔 472、GET 写 156、只读挂写 766、
+  间接写 223 / 间接门禁 234、缺口 0），15 张在册产物与 run R 存档逐张 md5 全等、七臂注入逐臂复原、
+  `cargo test --lib -p processplatform_assemble_surface` 610 passed / 0 failed / 9 ignored 与
+  `-- --ignored` 9 passed 复绿后才提交。共享工作树上并行会话的在制品未被本批收走。**本轮未 push**。
+
