@@ -1209,6 +1209,7 @@ def save_config(config: AppConfig, config_path: str = "config.yaml") -> None:
         config_path: 配置文件路径
     """
     import dataclasses
+    from .atomic_write import atomic_write_text
 
     def _to_dict(obj):
         if dataclasses.is_dataclass(obj):
@@ -1261,8 +1262,17 @@ def save_config(config: AppConfig, config_path: str = "config.yaml") -> None:
             else:
                 model_conf.pop(secret, None)
 
-    with open(config_path, "w", encoding="utf-8") as f:
-        yaml.safe_dump(data, f, allow_unicode=True, sort_keys=False)
+    # 原子替换（L269）：旧写法是 `open(path, 'w')` 整份截断直写，写窗口里盘上那份
+    # `config.yaml` 是半份，而读侧把坏内容读成**一个错误答案** —— `api/deps.py` 加载时对
+    # `OSError / YAMLError` 的那一档直接回落成「文件里什么都没有」，于是下次装配拿到的是
+    # 出厂默认而不是用户配置。按 `atomic_write` 的判据口径（只看读侧拿到截断内容时的行为，
+    # 「变成错误答案」那档必收，见该模块 docstring 与账本 A182），这一边必收。
+    # A182 的逐面收之所以漏掉它，是因为那把普查尺数的是「`open(...,'w')` 紧跟 `json.dump`」，
+    # 而配置写的是 YAML —— 同一条边在 `json` 面之外，本轮把它接进同一把工具。
+    # 行尾形状逐字节照旧：旧写法走 text 模式，每个 `\n` 由平台翻成行尾（Windows 是 `\r\n`），
+    # 而 `atomic_write_text` 用 `newline=""` 不翻译，所以这里显式按 `os.linesep` 展开。
+    text = yaml.safe_dump(data, allow_unicode=True, sort_keys=False)
+    atomic_write_text(Path(config_path), text.replace("\n", os.linesep))
 
 
 def apply_section_update(section: Any, updates: Dict[str, Any]) -> list:
