@@ -243,7 +243,7 @@ ActionResult::java_success(data, count, size)
 **Dependencies:** U1-U5
 
 **Files:**
-- Modify: `docs/audits/final-coverage-sweep.md`（§六追加信封统一小节）
+- Modify: `docs/audits/2026-08-24-002-final-coverage-sweep.md`（§六追加信封统一小节）
 - Test: `cargo test --test behavior_compare` 全量
 
 **Appro:**

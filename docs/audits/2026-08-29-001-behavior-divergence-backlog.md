@@ -189,8 +189,8 @@ portal(5), general(4), program_center(4), file(4), personal(4), meeting(3), 其�
 
 ## 相关文档
 
-- `docs/audits/bam-alignment-gap.md` — BAM 模块差异清单
+- `docs/audits/2026-08-29-002-bam-alignment-gap.md` — BAM 模块差异清单
 - `tests/behavior_comparison/allowlist.yaml` — 已收容差异清单
-- `docs/audits/final-coverage-sweep.md` — 端点对齐终扫
+- `docs/audits/2026-08-24-002-final-coverage-sweep.md` — 端点对齐终扫
 - `oa4rust/scripts/cluster_behavior_diffs.py` — 差异聚类工具
 - `docs/REPLACEABLE-oa4rust-2026-08-29.md` — 可替代判定声明（最新）

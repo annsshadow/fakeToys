@@ -247,8 +247,8 @@ W6 后端路由 ─┼─► W3 ProcessDesigner 契约 ─► W4 Form 运行时 
 ## 八、相关文档
 
 - `docs/REPLACEABLE-oa4rust-2026-09-01.md` — 后端端点级可替代判定
-- `docs/audits/final-coverage-sweep.md` — 端点对齐终扫 + 行为实跑（1212/836/1996）
-- `docs/audits/behavior-divergence-backlog.md` — 后端语义差异分类
+- `docs/audits/2026-08-24-002-final-coverage-sweep.md` — 端点对齐终扫 + 行为实跑（1212/836/1996）
+- `docs/audits/2026-08-29-001-behavior-divergence-backlog.md` — 后端语义差异分类
 - `docs/brainstorms/2026-08-25-oa4rust-o2server-residual-gaps-requirements.md` — 后端残差需求 R1–R10（R1 在 v2 中降级为非必需）
 - `oa4rust/tests/behavior_comparison/`（`seeds/`、`fail_baseline`、`behavior_compare.rs:324`）— 无影子流量下的主验证通道
 - `oa4rust/migrations/056_seed_process_definition_test_data.sql` — 流程种子原为 `'{}'` 占位；rev8 已由 `091_seed_real_process_definition.sql` upsert 真实 activities/form 种子覆盖

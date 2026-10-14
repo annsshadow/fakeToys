@@ -381,7 +381,7 @@ Path((a, b)): Path<(String, String)>,
 
 - 基线报告: `oa4rust/target/debug/behavior-report.md` (2026-08-27T09:27:20)
 - 主计划: `docs/plans/2026-08-26-002-oa4rust-fail-closure-master-plan.md`
-- 深层缺口清单: `docs/audits/behavior-divergence-backlog.md`
+- 深层缺口清单: `docs/audits/2026-08-29-001-behavior-divergence-backlog.md`
 - 中间件常量: `crates/shared/src/middleware/constants.rs`
 - 权限注册表: `crates/shared/src/middleware/rbac.rs`
 - 对比测试: `tests/behavior_compare.rs`, `tests/behavior_comparison/comparator.rs`

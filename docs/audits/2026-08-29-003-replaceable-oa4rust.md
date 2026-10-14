@@ -5,7 +5,7 @@
 - **迭代说明**：plan006（全残差闭环总计划）执行进展更新
 - **签核对象**：技术负责人（A3）
 - **判定性质**：**有条件判定** —— 端点级与模块级"可接管"成立；**完全接管（关闭 Java 侧）需先满足 R1 生产影子流量前提**。
-- **权威依据**：`docs/audits/final-coverage-sweep.md`（端点对齐终态基准，generated_at=2026-08-23）、`docs/solutions/best-practices/oa4rust-o2server-parity-closure-campaign-2026-08-25.md`、`docs/brainstorms/2026-08-25-oa4rust-o2server-residual-gaps-requirements.md`
+- **权威依据**：`docs/audits/2026-08-24-002-final-coverage-sweep.md`（端点对齐终态基准，generated_at=2026-08-23）、`docs/solutions/best-practices/oa4rust-o2server-parity-closure-campaign-2026-08-25.md`、`docs/brainstorms/2026-08-25-oa4rust-o2server-residual-gaps-requirements.md`
 
 ---
 
@@ -35,7 +35,7 @@
 
 ### 2.1 基线口径
 
-依据权威终扫 `docs/audits/final-coverage-sweep.md`：
+依据权威终扫 `docs/audits/2026-08-24-002-final-coverage-sweep.md`：
 - **唯一端点口径**：Java 3092 个，已覆盖 3085 个，**覆盖率 99.77%**。
 - **达到 100% 的模块**：28 / 30。
 - 匹配口径：路径参数归一化为 `{}`；`method + 全路径 exact` 计入覆盖；终扫以**唯一端点口径**为权威。
@@ -77,7 +77,7 @@
 - Java 参考面 73 个 `.java` 文件 / 131 个 `@Path` 注解 / 45 个独立完整路径。
 - Rust 侧已注册 **91 条 `.route(`**，**Java → Rust 覆盖：100%**（45/45）。
 - **Rust 增量端点**（45 条）：BAM 配置 CRUD、带 `{start}` 参数的时间段查询、`state/applicationtstubs/trigger` 等。
-- 详细对照表见 `docs/audits/bam-alignment-gap.md`。
+- 详细对照表见 `docs/audits/2026-08-29-002-bam-alignment-gap.md`。
 - **写端点所有权**：IDOR 防护强制适用（`require_owner` + `creator_person` 取自 Session）。
 
 ---

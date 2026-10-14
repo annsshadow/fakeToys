@@ -26,7 +26,7 @@ applies_when:
 
 The `docs/plans/` directory accumulated 11 plan documents over 10 days of sprint work. By 2026-08-10, 5 plans had stale status markers: 3 still marked `active` despite being fully replaced by later plans, and 2 completed plans not updated. This created confusion about which plan was the source of truth.
 
-> **刷新（2026-08-25）：** 截至本日 `docs/plans/` 已增至 20 份；2026-08-25 审计将最后 5 份历史 `active` 计划翻为 `completed`，仅余 `docs/plans/2026-08-21-002-feat-remaining-work-consolidation-plan.md` 因 U3 外部阻塞保持 `active`。当前权威端点对齐状态见 `docs/audits/final-coverage-sweep.md`（99.77%）。
+> **刷新（2026-08-25）：** 截至本日 `docs/plans/` 已增至 20 份；2026-08-25 审计将最后 5 份历史 `active` 计划翻为 `completed`，仅余 `docs/plans/2026-08-21-002-feat-remaining-work-consolidation-plan.md` 因 U3 外部阻塞保持 `active`。当前权威端点对齐状态见 `docs/audits/2026-08-24-002-final-coverage-sweep.md`（99.77%）。
 
 ## Guidance
 
