@@ -631,9 +631,18 @@ mod u2_contract {
         }
         let url = "/api/processplatform/service/processing/attachment/copy/work/att-dst-w";
         let body = json!({"attachmentList": ["att-src-a"]});
-        let (_, v1) = send(Method::POST, url, Some(body.clone())).await;
+        // R4-2：往他人工作复制附件按目标 work 的发起人判定（本臂 seed 为 system）
+        let (status, v1) = send_raw_as(Method::POST, url, Some(body.clone()), "system").await;
+        assert_eq!(status, StatusCode::OK, "发起人向自己的 work 复制附件应放行");
         assert_eq!(v1["data"]["successList"][0]["copied"], true);
-        let (_, v2) = send(Method::POST, url, Some(body)).await;
+        let (s_stranger, _) =
+            send_raw_as(Method::POST, url, Some(body.clone()), "att-stranger").await;
+        assert_eq!(
+            s_stranger,
+            StatusCode::FORBIDDEN,
+            "非目标 work 发起人不得往里复制附件"
+        );
+        let (_, v2) = send_raw_as(Method::POST, url, Some(body), "system").await;
         assert_eq!(v2["data"]["successList"][0]["copied"], false);
         assert_eq!(v2["data"]["successList"][0]["reason"], "already exist");
         let n = count(
@@ -682,7 +691,9 @@ mod u2_contract {
             .unwrap();
         }
         let url = "/api/processplatform/service/processing/attachment/att-x/work/w-other";
-        let (_, v) = send(Method::DELETE, url, None).await;
+        // 附件×work 的 IDOR 门排在上传者门之前：跨 work 引用仍以业务错误拒绝（200 信封）
+        let (status, v) = send_raw_as(Method::DELETE, url, None, "att-other-person").await;
+        assert_eq!(status, StatusCode::OK, "业务错误按 ActionResult 契约仍走 200");
         assert_eq!(v["type"], "error", "附件不属于该 work 时必须拒绝");
         let n = count(
             &pool,
@@ -775,7 +786,9 @@ mod u2_contract {
             .unwrap();
         }
         let url = "/api/processplatform/service/processing/read/read-mv/processing";
-        let (_, v) = send(Method::PUT, url, None).await;
+        // R4-2：标记已读按该待阅记录的阅读人判定，需本人会话（bob@P）
+        let (status, v) = send_raw_as(Method::PUT, url, None, "bob@P").await;
+        assert_eq!(status, StatusCode::OK, "阅读人标记自己的待阅应放行");
         assert_eq!(v["type"], "success");
         assert!(v["data"]["readCompletedId"].as_str().is_some());
         let active = count(
@@ -868,11 +881,27 @@ mod u2_contract {
             .unwrap();
         }
         let url = "/api/processplatform/service/processing/documentversion/work/dv-w";
-        let (_, v1) = send(Method::POST, url, Some(json!({}))).await;
-        let (_, v2) = send(Method::POST, url, Some(json!({}))).await;
+        // R4-2：文档版本写按父 work 发起人判定，且版本作者取会话权威（不再取请求体 / system）
+        let (status, v1) = send_raw_as(Method::POST, url, Some(json!({ "creator": "u42-spoof" })), "system").await;
+        assert_eq!(status, StatusCode::OK, "发起人给自己的 work 建文档版本应放行");
+        let (s_stranger, _) = send_raw_as(Method::POST, url, Some(json!({})), "dv-stranger").await;
+        assert_eq!(s_stranger, StatusCode::FORBIDDEN, "非发起人不得为他人 work 建版本");
+        let (_, v2) = send_raw_as(Method::POST, url, Some(json!({})), "system").await;
         let s1 = v1["data"]["version"].as_i64().unwrap();
         let s2 = v2["data"]["version"].as_i64().unwrap();
         assert_eq!(s2, s1 + 1, "版本号必须严格递增");
+        let creator: String = pool
+            .get()
+            .await
+            .unwrap()
+            .query_one(
+                "SELECT creator FROM x_document_version WHERE work_id='dv-w' ORDER BY version LIMIT 1",
+                &[],
+            )
+            .await
+            .unwrap()
+            .get("creator");
+        assert_eq!(creator, "system", "版本作者必须是会话身份，不能是请求体传值");
         let c = pool.get().await.unwrap();
         c.execute("DELETE FROM x_document_version WHERE work_id='dv-w'", &[])
             .await
@@ -913,7 +942,14 @@ mod u2_contract {
             .unwrap();
         }
         // 共享同一 pool（max_size=5）使两请求真正并发执行
-        let app = crate::router(pool.clone());
+        // R4-2：该写现按父 work 发起人（seed 为 system）判定，两并发请求带同一会话
+        let session = shared::session::Session {
+            token: "test-token".to_string(),
+            person_unique: "system".to_string(),
+            created_at: chrono::Utc::now().naive_utc(),
+            expires_at: chrono::Utc::now().naive_utc() + chrono::Duration::hours(1),
+        };
+        let app = crate::router(pool.clone()).layer(axum::Extension(session));
         let make_req = || {
             Request::builder()
                 .uri("/api/processplatform/service/processing/documentversion/work/dv-race")
@@ -1351,8 +1387,22 @@ mod u2_contract {
             c.execute("INSERT INTO x_process_definition (id,name) VALUES ('pd-boot','pd-boot-name') ON CONFLICT (id) DO NOTHING", &[]).await.unwrap();
         }
         let url = "/api/processplatform/service/processing/work/process/pd-boot/name/boot/serial";
-        let (_, v) = send(Method::POST, url, Some(json!({}))).await;
+        // R4-2：发起人以会话为权威——请求体里的 creator / person 不再能决定 x_work.creator
+        let (status, v) = send_raw_as(
+            Method::POST,
+            url,
+            Some(json!({ "creator": "u42-victim" })),
+            "u42-booter",
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "有效会话创建工作应放行");
         assert_eq!(v["type"], "success");
+        let as_own = count(
+            &pool,
+            "SELECT COUNT(*) AS c FROM x_work WHERE process='pd-boot' AND creator='u42-booter'",
+        )
+        .await;
+        assert_eq!(as_own, 1, "新建 work 的 creator 必须是会话本人，不得替他人建单");
         assert!(
             v["data"]["taskId"].as_str().is_some(),
             "创建工作必须同步产生首个任务"

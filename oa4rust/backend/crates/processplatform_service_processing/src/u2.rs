@@ -79,6 +79,7 @@ enum U4Res {
     Task,
     Record,
     Review,
+    Read,
     Attachment,
     ReadCompleted,
 }
@@ -89,6 +90,7 @@ fn u4_actor_sql(res: U4Res) -> &'static str {
         U4Res::Task => "SELECT person AS actor FROM x_task WHERE id = $1",
         U4Res::Record => "SELECT creator AS actor FROM x_record WHERE id = $1",
         U4Res::Review => "SELECT reviewer AS actor FROM x_review WHERE id = $1",
+        U4Res::Read => "SELECT person AS actor FROM x_read WHERE id = $1",
         U4Res::Attachment => "SELECT creator AS actor FROM x_attachment WHERE id = $1",
         U4Res::ReadCompleted => "SELECT person AS actor FROM x_readcompleted WHERE id = $1",
     }
@@ -662,12 +664,14 @@ pub async fn att_delete_id(
 #[allow(non_snake_case)]
 pub async fn att_delete_with_work(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path((id, work_id)): Path<(String, String)>,
 ) -> H {
+    let session = crate::u4_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT work_id FROM x_attachment WHERE id = $1 AND deleted_at IS NULL",
+            "SELECT work_id, creator FROM x_attachment WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
         )
         .await
@@ -679,6 +683,9 @@ pub async fn att_delete_with_work(
     if owner != work_id {
         return biz_err("attachment does not belong to work");
     }
+    // 既有 IDOR 门只保证「附件属于该 work」，任一登录用户仍能删他人附件；补上传者归属门
+    let actor = opt_str(&row, "creator");
+    u4_require_actor_of(&pool.0, &session, Some(&actor)).await?;
     let n = client
         .execute(
             "UPDATE x_attachment SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
@@ -693,12 +700,14 @@ pub async fn att_delete_with_work(
 #[allow(non_snake_case)]
 pub async fn att_delete_with_workcompleted(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path((id, wc_id)): Path<(String, String)>,
 ) -> H {
+    let session = crate::u4_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT workcompleted_id FROM x_attachment WHERE id = $1 AND deleted_at IS NULL",
+            "SELECT workcompleted_id, creator FROM x_attachment WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
         )
         .await
@@ -710,6 +719,8 @@ pub async fn att_delete_with_workcompleted(
     if owner.is_empty() || owner != wc_id {
         return biz_err("attachment does not belong to workcompleted");
     }
+    let actor = opt_str(&row, "creator");
+    u4_require_actor_of(&pool.0, &session, Some(&actor)).await?;
     let n = client
         .execute(
             "UPDATE x_attachment SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
@@ -794,9 +805,11 @@ pub async fn att_edit_text(
 #[allow(non_snake_case)]
 pub async fn att_copy_to_work(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(work_id): Path<String>,
     Json(body): Json<Value>,
 ) -> H {
+    let session = crate::u4_session(session)?;
     let list = body_str_list(&body, &["attachmentList"]);
     if work_id.trim().is_empty() {
         return biz_err("workId is required");
@@ -805,9 +818,11 @@ pub async fn att_copy_to_work(
         return biz_err("attachmentList is required");
     }
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
-    if !entity_exists(&client, "x_work", &work_id).await? {
+    let creator = u4_actor_of(&client, U4Res::Work, &work_id).await?;
+    if creator.is_none() {
         return biz_err("work not found");
     }
+    u4_require_actor_of(&pool.0, &session, creator.as_deref()).await?;
     // 批量化：源件一次 ANY 查回、目标已有重名一次查回（原逐条 SELECT+COUNT 为 3N+1）；
     // 写入包同一事务。同请求内重复 id/同名经 map/set 回填保持原逐条判重语义。
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
@@ -989,8 +1004,17 @@ pub async fn read_create_with_workcompleted(
 
 /// DELETE read/{id}：软删除
 #[allow(non_snake_case)]
-pub async fn read_delete(pool: Extension<Pool>, Path(id): Path<String>) -> H {
+pub async fn read_delete(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Path(id): Path<String>,
+) -> H {
+    let session = crate::u4_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let Some(actor) = u4_actor_of(&client, U4Res::Read, &id).await? else {
+        return biz_err("read not found");
+    };
+    u4_require_actor_of(&pool.0, &session, Some(&actor)).await?;
     let n = client
         .execute(
             "UPDATE x_read SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
@@ -1006,7 +1030,12 @@ pub async fn read_delete(pool: Extension<Pool>, Path(id): Path<String>) -> H {
 
 /// PUT read/{id}/processing：标记已读——事务内迁移至 x_readcompleted 并软删源记录
 #[allow(non_snake_case)]
-pub async fn read_processing(pool: Extension<Pool>, Path(id): Path<String>) -> H {
+pub async fn read_processing(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Path(id): Path<String>,
+) -> H {
+    let session = crate::u4_session(session)?;
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     let row = tx
@@ -1020,6 +1049,8 @@ pub async fn read_processing(pool: Extension<Pool>, Path(id): Path<String>) -> H
     let Some(row) = row else {
         return biz_err("read not found");
     };
+    let actor = opt_str(&row, "person");
+    u4_require_actor_of(&pool.0, &session, Some(&actor)).await?;
     let rc_id = Uuid::new_v4().to_string();
     tx.execute(
         "INSERT INTO x_readcompleted (id, work_id, person) VALUES ($1, $2, $3)",
@@ -1045,14 +1076,20 @@ pub async fn read_processing(pool: Extension<Pool>, Path(id): Path<String>) -> H
 #[allow(non_snake_case)]
 pub async fn read_replace(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
     Json(body): Json<Value>,
 ) -> H {
+    let session = crate::u4_session(session)?;
     let person = body_str(&body, &["person"]);
     if person.is_empty() {
         return biz_err("person is required");
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let Some(actor) = u4_actor_of(&client, U4Res::Read, &id).await? else {
+        return biz_err("read not found");
+    };
+    u4_require_actor_of(&pool.0, &session, Some(&actor)).await?;
     let n = client
         .execute(
             "UPDATE x_read SET person = $2 WHERE id = $1 AND deleted_at IS NULL",
@@ -1070,11 +1107,17 @@ pub async fn read_replace(
 #[allow(non_snake_case)]
 pub async fn read_reset(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
     Json(body): Json<Value>,
 ) -> H {
+    let session = crate::u4_session(session)?;
     let person = body_str(&body, &["person"]);
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let Some(actor) = u4_actor_of(&client, U4Res::Read, &id).await? else {
+        return biz_err("read not found");
+    };
+    u4_require_actor_of(&pool.0, &session, Some(&actor)).await?;
     let n = if person.is_empty() {
         client
             .execute("UPDATE x_read SET deleted_at = NULL WHERE id = $1", &[&id])
@@ -1843,21 +1886,25 @@ pub async fn touch_merge_item(
 #[allow(non_snake_case)]
 pub async fn documentversion_create(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(work): Path<String>,
     Json(body): Json<Value>,
 ) -> H {
+    let session = crate::u4_session(session)?;
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     // 行锁父 work：MAX+1 是读-改-写序号分配，无锁时两并发创建对同一 work 读到
     // 相同 MAX 而插入重复版本号；锁父行串行化后后者的 MAX 读到前者已提交的行。
     // 锁同时兼作存在性检查（不存在则无行可锁）。
     let locked = tx
-        .query_opt("SELECT id FROM x_work WHERE id = $1 FOR UPDATE", &[&work])
+        .query_opt("SELECT creator FROM x_work WHERE id = $1 FOR UPDATE", &[&work])
         .await
         .map_err(|_| AppError::Internal)?;
-    if locked.is_none() {
+    let Some(locked_row) = locked else {
         return biz_err("work not found");
-    }
+    };
+    let work_creator = opt_str(&locked_row, "creator");
+    u4_require_actor_of(&pool.0, &session, Some(&work_creator)).await?;
     let next: i32 = tx
         .query_one(
             "SELECT COALESCE(MAX(version), 0) + 1 AS v FROM x_document_version WHERE work_id = $1",
@@ -1868,14 +1915,7 @@ pub async fn documentversion_create(
         .get("v");
     let id = Uuid::new_v4().to_string();
     let content_val = body.get("content").cloned().unwrap_or(json!({}));
-    let creator = {
-        let c = body_str(&body, &["creator", "person"]);
-        if c.is_empty() {
-            "system".to_string()
-        } else {
-            c
-        }
-    };
+    let creator = session.person_unique.clone();
     tx.execute(
         "INSERT INTO x_document_version (id, work_id, version, content, creator) \
          VALUES ($1, $2, $3, ($4::text)::jsonb, $5)",
@@ -1891,28 +1931,37 @@ pub async fn documentversion_create(
 
 /// POST work：按流程标识创建工作实例（事务内建 work + 首个任务）
 #[allow(non_snake_case)]
-pub async fn work_create(pool: Extension<Pool>, Json(body): Json<Value>) -> H {
+pub async fn work_create(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Json(body): Json<Value>,
+) -> H {
+    let session = crate::u4_session(session)?;
     let process_id = body_str(&body, &["process", "processId"]);
-    work_start_impl(pool, process_id, None, body).await
+    work_start_impl(pool, process_id, None, body, &session.person_unique).await
 }
 
 /// POST work/process/{processId}：流程标识取自路径
 #[allow(non_snake_case)]
 pub async fn work_create_for_process(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(process_id): Path<String>,
     Json(body): Json<Value>,
 ) -> H {
-    work_start_impl(pool, process_id, None, body).await
+    let session = crate::u4_session(session)?;
+    work_start_impl(pool, process_id, None, body, &session.person_unique).await
 }
 
 /// POST work/process/{processId}/name/{name}/serial：按名称创建，流水号服务端生成（同流程现有工作数+1）
 #[allow(non_snake_case)]
 pub async fn work_create_with_serial(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path((process_id, name)): Path<(String, String)>,
     Json(body): Json<Value>,
 ) -> H {
+    let session = crate::u4_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let n: i64 = client
         .query_one(
@@ -1924,7 +1973,7 @@ pub async fn work_create_with_serial(
         .get("c");
     drop(client);
     let title = format!("{name}-{next}", next = n + 1);
-    work_start_impl(pool, process_id, Some(title), body).await
+    work_start_impl(pool, process_id, Some(title), body, &session.person_unique).await
 }
 
 async fn work_start_impl(
@@ -1932,6 +1981,7 @@ async fn work_start_impl(
     process_id: String,
     title_override: Option<String>,
     body: Value,
+    person: &str,
 ) -> H {
     let process_id = process_id.trim().to_string();
     let title = title_override.unwrap_or_else(|| {
@@ -1959,14 +2009,9 @@ async fn work_start_impl(
         return biz_err("process not found");
     }
     let id = Uuid::new_v4().to_string();
-    let creator = {
-        let c = body_str(&body, &["creator", "person"]);
-        if c.is_empty() {
-            "system".to_string()
-        } else {
-            c
-        }
-    };
+    // 发起人以会话为权威：原取请求体 creator / person，任一登录用户可替他人建 work 并
+    // 把首个待办塞给对方
+    let creator = person.to_string();
     tx.execute(
         "INSERT INTO x_work (id, title, process, application, work_status, creator, create_time, start_time) \
          VALUES ($1, $2, $3, '', 'pending', $4, NOW(), NOW())",
@@ -2223,14 +2268,16 @@ async fn record_insert_tx(
 #[allow(non_snake_case)]
 pub async fn work_processing_signal(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path((id, series, activity_token)): Path<(String, String, String)>,
 ) -> H {
     let _ = series;
+    let session = crate::u4_session(session)?;
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     let row = tx
         .query_opt(
-            "SELECT id FROM x_task \
+            "SELECT id, person FROM x_task \
              WHERE work = $1 AND activity_token = $2 AND deleted_at IS NULL FOR UPDATE",
             &[&id, &activity_token],
         )
@@ -2240,6 +2287,8 @@ pub async fn work_processing_signal(
         return biz_err("task not found by activityToken");
     };
     let task_id: String = row.get("id");
+    let assignee = opt_str(&row, "person");
+    u4_require_actor_of(&pool.0, &session, Some(&assignee)).await?;
     tx.execute(
         "UPDATE x_task SET task_status = 'completed', end_time = NOW() WHERE id = $1",
         &[&task_id],
@@ -2251,7 +2300,7 @@ pub async fn work_processing_signal(
         &id,
         "signal",
         &format!("activityToken:{activity_token}"),
-        "system",
+        &session.person_unique,
     )
     .await?;
     tx.commit().await.map_err(|_| AppError::Internal)?;
@@ -2262,9 +2311,11 @@ pub async fn work_processing_signal(
 #[allow(non_snake_case)]
 pub async fn work_add_identity_matrix(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
     Json(body): Json<Value>,
 ) -> H {
+    let session = crate::u4_session(session)?;
     let identities = body_str_list(&body, &["identityList", "identityMatrix", "identities"]);
     if identities.is_empty() {
         return biz_err("identityList is required");
@@ -2273,7 +2324,7 @@ pub async fn work_add_identity_matrix(
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     let row = tx
         .query_opt(
-            "SELECT id, title FROM x_work WHERE id = $1 FOR UPDATE",
+            "SELECT id, title, creator FROM x_work WHERE id = $1 FOR UPDATE",
             &[&id],
         )
         .await
@@ -2282,6 +2333,9 @@ pub async fn work_add_identity_matrix(
         return biz_err("work not found");
     };
     let title: String = row.get("title");
+    // 往他人工作里批量插待办属改写流程，按发起人判定
+    let work_creator = opt_str(&row, "creator");
+    u4_require_actor_of(&pool.0, &session, Some(&work_creator)).await?;
     let mut created = Vec::new();
     for identity in identities {
         let task_id = Uuid::new_v4().to_string();
