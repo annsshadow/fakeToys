@@ -1011,4 +1011,312 @@ mod security_gate_tests {
             "admin 打 36 档 workcompleted/job 别名不得被门拒绝：{bad:?}"
         );
     }
+
+    // ── R4 第十五批：mock 动词别名写族 22 把 / 44 条注册点 ─────────────────────────
+    // 这一族把**物理删除**（`mockdeletetoget`）和 **touch 改写时间戳**（`mockputtopost`）挂在
+    // GET 上（GET 既不过 csrf 也不过 requires_admin），改前体内不取会话、不校归属：
+    // 任一有效会话按 xid 就能删他人的待办 / 已办 / 待阅 / 已阅 / 草稿 / 流水号 / 签核 / 圈阅 /
+    // 流程实例。门按「这一行属于谁」定三档，判据来自库里的真实列（本轮用 information_schema 逐表验过）：
+    //   xperson        —— 行上属主列是 xperson：pp_c_draft / pp_c_read / pp_c_readcompleted /
+    //                      pp_c_task / pp_c_taskcompleted / pp_c_serialnumber / pp_c_doc_sign /
+    //                      pp_c_review。本 crate 的待办待阅列表本来就按 `WHERE xperson = <本人>`
+    //                      过滤（lib.rs:592 / :631 为证），所以「谁的和谁删」同锁。
+    //   xcreatorPerson —— 行上属主列是 xcreatorPerson：pp_c_work（发起人）/ pp_c_workcompleted（办结人），
+    //                      与第十、十一批的 data/work 族同一口径。
+    //   ""（admin 档） —— pp_c_record 两列都没有（探针点名：xperson=false creatorPerson=false），
+    //                      按「无属主的系统级数据 = admin」收，与 §三.4 / §三.8 同档；
+    //                      本批不给它编一个库里不存在的属主列，也不把「空归属」洗成「人人可删」。
+    // 每条目 = (handler, 表, 属主列, 落笔形状, 注册点1, 注册点2)。
+    type MockAliasArm = (
+        &'static str,
+        &'static str,
+        &'static str,
+        &'static str,
+        (&'static str, &'static str),
+        (&'static str, &'static str),
+    );
+    const MOCK_ALIAS_ARMS: &[MockAliasArm] = &[
+        ( "draft_id_mockdeletetoget", "pp_c_draft", "xperson", "del", ("POST", "/api/processplatform/assemble/surface/draft/mockdeletetoget/{id}"), ("GET", "/api/processplatform/assemble/surface/draft/{id}/mockdeletetoget") ),
+        ( "read_id_manage_mockdeletetoget", "pp_c_read", "xperson", "del", ("POST", "/api/processplatform/assemble/surface/read/manage/mockdeletetoget/{id}"), ("GET", "/api/processplatform/assemble/surface/read/{id}/manage/mockdeletetoget") ),
+        ( "readcompleted_id_manage_mockdeletetoget", "pp_c_readcompleted", "xperson", "del", ("POST", "/api/processplatform/assemble/surface/readcompleted/manage/mockdeletetoget/{id}"), ("GET", "/api/processplatform/assemble/surface/readcompleted/{id}/manage/mockdeletetoget") ),
+        ( "record_id_manage_mockdeletetoget", "pp_c_record", "", "del", ("POST", "/api/processplatform/assemble/surface/record/manage/mockdeletetoget/{id}"), ("GET", "/api/processplatform/assemble/surface/record/{id}/manage/mockdeletetoget") ),
+        ( "review_id_application_applicationFlag_manage_mockdeletetoget", "pp_c_review", "xcreatorPerson", "del", ("POST", "/api/processplatform/assemble/surface/review/application/manage/mockdeletetoget/{id}/{applicationFlag}"), ("GET", "/api/processplatform/assemble/surface/review/{id}/application/{applicationFlag}/manage/mockdeletetoget") ),
+        ( "serialnumber_id_mockdeletetoget", "pp_c_serialnumber", "xperson", "del", ("POST", "/api/processplatform/assemble/surface/serialnumber/mockdeletetoget/{id}"), ("GET", "/api/processplatform/assemble/surface/serialnumber/{id}/mockdeletetoget") ),
+        ( "sign_task_taskId_mockdeletetoget", "pp_c_doc_sign", "xperson", "del", ("POST", "/api/processplatform/assemble/surface/sign/task/mockdeletetoget/{taskId}"), ("GET", "/api/processplatform/assemble/surface/sign/task/{taskId}/mockdeletetoget") ),
+        ( "sign_id_mockdeletetoget", "pp_c_doc_sign", "xperson", "del", ("POST", "/api/processplatform/assemble/surface/sign/mockdeletetoget/{id}"), ("GET", "/api/processplatform/assemble/surface/sign/{id}/mockdeletetoget") ),
+        ( "task_id_manage_mockdeletetoget", "pp_c_task", "xperson", "del", ("POST", "/api/processplatform/assemble/surface/task/manage/mockdeletetoget/{id}"), ("GET", "/api/processplatform/assemble/surface/task/{id}/manage/mockdeletetoget") ),
+        ( "taskcompleted_id_manage_mockdeletetoget", "pp_c_taskcompleted", "xperson", "del", ("POST", "/api/processplatform/assemble/surface/taskcompleted/manage/mockdeletetoget/{id}"), ("GET", "/api/processplatform/assemble/surface/taskcompleted/{id}/manage/mockdeletetoget") ),
+        ( "work_id_mockdeletetoget", "pp_c_work", "xcreatorPerson", "del", ("POST", "/api/processplatform/assemble/surface/work/mockdeletetoget/{id}"), ("GET", "/api/processplatform/assemble/surface/work/{id}/mockdeletetoget") ),
+        ( "work_id_relative_manage_mockdeletetoget", "pp_c_work", "xcreatorPerson", "del", ("POST", "/api/processplatform/assemble/surface/work/relative/manage/mockdeletetoget/{id}"), ("GET", "/api/processplatform/assemble/surface/work/{id}/relative/manage/mockdeletetoget") ),
+        ( "work_id_single_manage_mockdeletetoget", "pp_c_work", "xcreatorPerson", "del", ("POST", "/api/processplatform/assemble/surface/work/single/manage/mockdeletetoget/{id}"), ("GET", "/api/processplatform/assemble/surface/work/{id}/single/manage/mockdeletetoget") ),
+        ( "workcompleted_id_delete_manage_mockdeletetoget", "pp_c_workcompleted", "xcreatorPerson", "del", ("POST", "/api/processplatform/assemble/surface/workcompleted/delete/manage/mockdeletetoget/{id}"), ("GET", "/api/processplatform/assemble/surface/workcompleted/{id}/delete/manage/mockdeletetoget") ),
+        ( "read_id_mockputtopost", "pp_c_read", "xperson", "touch", ("GET", "/api/processplatform/assemble/surface/read/mockputtopost/{id}"), ("POST", "/api/processplatform/assemble/surface/read/{id}/mockputtopost") ),
+        ( "record_id_manage_mockputtopost", "pp_c_record", "", "touch", ("GET", "/api/processplatform/assemble/surface/record/manage/mockputtopost/{id}"), ("POST", "/api/processplatform/assemble/surface/record/{id}/manage/mockputtopost") ),
+        ( "serialnumber_id_mockputtopost", "pp_c_serialnumber", "xperson", "touch", ("GET", "/api/processplatform/assemble/surface/serialnumber/mockputtopost/{id}"), ("POST", "/api/processplatform/assemble/surface/serialnumber/{id}/mockputtopost") ),
+        ( "task_id_mockputtopost", "pp_c_task", "xperson", "touch", ("GET", "/api/processplatform/assemble/surface/task/mockputtopost/{id}"), ("POST", "/api/processplatform/assemble/surface/task/{id}/mockputtopost") ),
+        ( "work_v2_id_reroute_mockputtopost", "pp_c_work", "xcreatorPerson", "touch", ("GET", "/api/processplatform/assemble/surface/work/v2/reroute/mockputtopost/{id}"), ("POST", "/api/processplatform/assemble/surface/work/v2/{id}/reroute/mockputtopost") ),
+        ( "work_v2_id_retract_mockputtopost", "pp_c_work", "xcreatorPerson", "touch", ("GET", "/api/processplatform/assemble/surface/work/v2/retract/mockputtopost/{id}"), ("POST", "/api/processplatform/assemble/surface/work/v2/{id}/retract/mockputtopost") ),
+        ( "work_v2_id_rollback_mockputtopost", "pp_c_work", "xcreatorPerson", "touch", ("GET", "/api/processplatform/assemble/surface/work/v2/rollback/mockputtopost/{id}"), ("POST", "/api/processplatform/assemble/surface/work/v2/{id}/rollback/mockputtopost") ),
+        ( "workcompleted_flag_rollback_mockputtopost", "pp_c_workcompleted", "xcreatorPerson", "touch", ("GET", "/api/processplatform/assemble/surface/workcompleted/rollback/mockputtopost/{flag}"), ("POST", "/api/processplatform/assemble/surface/workcompleted/{flag}/rollback/mockputtopost") ),
+    ];
+
+    fn mock_uri_at(xid: &str, tpl: &str) -> String {
+        let u = tpl
+            .replace("{id}", xid)
+            .replace("{taskId}", xid)
+            .replace("{flag}", xid)
+            .replace("{applicationFlag}", "r51-app");
+        assert!(!u.contains('{') && !u.contains('}'), "模板残留未替换：{u}");
+        u
+    }
+
+    fn verb_of(v: &str) -> Method {
+        match v {
+            "GET" => Method::GET,
+            "POST" => Method::POST,
+            other => panic!("名单里出现未点名的动词：{other}"),
+        }
+    }
+
+    async fn call_mock(xid: &str, verb: &str, tpl: &str, person: Option<&str>) -> StatusCode {
+        let uri = mock_uri_at(xid, tpl);
+        let mut app = app();
+        if let Some(p) = person {
+            app = app.layer(axum::Extension(shared::testing::test_session(p)));
+        }
+        app.oneshot(
+            Request::builder()
+                .uri(&uri)
+                .method(verb_of(verb))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap()
+        .status()
+    }
+
+    /// 名单里那条 GET 注册（双盲区那一侧）。缺 GET 说明名单与 routes.rs 脱钩，当场红。
+    fn alias_get_reg(a: &MockAliasArm) -> (&'static str, &'static str) {
+        for r in [a.4, a.5] {
+            if r.0 == "GET" {
+                return r;
+            }
+        }
+        panic!("别名档缺 GET 注册点：{}", a.0);
+    }
+
+    /// 造一行并写入属主。`owner_col` 为空串（admin 档）**什么都不写**——探针实测
+    /// `pp_c_record` 的列是 create_time / creator / creator_person / deleted_at / id / order_number /
+    /// sequence / update_person / update_time / xcreateTime / xid / xjob / xtitle / xupdateTime / xwork，
+    /// `xperson` 与 `xcreatorPerson` 都不存在。所以「行上没有可认的属主列」是这张表的实测事实：
+    /// 臂②里「被 seed 的那个人也 403」证的正是「把 record 改成归属档」不可行——
+    /// 改回去要么全拒（假收口），要么 42703 变 500，两种都会在臂②当场红。
+    /// 兜底建表只在裸库生效（真库里这些 o2server 表已存在，CREATE IF NOT EXISTS 是无操作）。
+    async fn seed_mock_row(pool: &deadpool_postgres::Pool, table: &str, xid: &str, owner_col: &str, owner: &str) {
+        let c = pool.get().await.unwrap();
+        c.execute(
+            format!(
+                "CREATE TABLE IF NOT EXISTS \"{table}\" (\"id\" TEXT PRIMARY KEY, \"xid\" TEXT, \
+                 \"xcreatorPerson\" TEXT, xperson TEXT, \"xcreateTime\" TEXT, \"xupdateTime\" TEXT)"
+            )
+            .as_str(),
+            &[],
+        )
+        .await
+        .unwrap();
+        if owner_col.is_empty() {
+            c.execute(
+                format!(
+                    "INSERT INTO \"{table}\" (\"id\", \"xid\", \"xupdateTime\") VALUES ($1, $1, 'r51-before') \
+                     ON CONFLICT (\"id\") DO UPDATE SET \"xupdateTime\" = 'r51-before'"
+                )
+                .as_str(),
+                &[&xid.to_string()],
+            )
+            .await
+            .unwrap();
+        } else {
+            c.execute(
+                format!(
+                    "INSERT INTO \"{table}\" (\"id\", \"xid\", \"{owner_col}\", \"xupdateTime\") VALUES ($1, $1, $2, 'r51-before') \
+                     ON CONFLICT (\"id\") DO UPDATE SET \"{owner_col}\" = EXCLUDED.\"{owner_col}\", \"xupdateTime\" = 'r51-before'"
+                )
+                .as_str(),
+                &[&xid.to_string(), &owner.to_string()],
+            )
+            .await
+            .unwrap();
+        }
+    }
+
+    async fn mock_row_exists(pool: &deadpool_postgres::Pool, table: &str, xid: &str) -> bool {
+        let c = pool.get().await.unwrap();
+        c.query(
+            format!("SELECT 1 FROM \"{table}\" WHERE xid = $1").as_str(),
+            &[&xid.to_string()],
+        )
+        .await
+        .unwrap()
+        .len()
+            > 0
+    }
+
+    async fn delete_mock_row(pool: &deadpool_postgres::Pool, table: &str, xid: &str) {
+        let c = pool.get().await.unwrap();
+        c.execute(
+            format!("DELETE FROM \"{table}\" WHERE xid = $1").as_str(),
+            &[&xid.to_string()],
+        )
+        .await
+        .unwrap();
+    }
+
+    /// 臂①（离线）：44 条注册点无会话一律 401。22 把逐条点名 + 注册点计数钉死 44，
+    /// 少一格（有人删了别名注册）或多一格（又长出一把别名）都会先红在计数上。
+    #[tokio::test]
+    async fn surface_mock_alias_writes_reject_anonymous() {
+        assert_eq!(MOCK_ALIAS_ARMS.len(), 22, "本批 22 把别名 handler 必须逐条点名");
+        let mut bad: Vec<String> = Vec::new();
+        let mut regs = 0usize;
+        for a in MOCK_ALIAS_ARMS {
+            for r in [a.4, a.5] {
+                regs += 1;
+                let s = call_mock("r51-anon", r.0, r.1, None).await;
+                if s != StatusCode::UNAUTHORIZED {
+                    bad.push(format!("{} {}/{} -> 期望 401，实际 {s}", a.0, r.0, r.1));
+                }
+            }
+        }
+        assert_eq!(regs, 44, "22 把 × 2 条注册点 = 44 格，一格不许少");
+        assert!(bad.is_empty(), "mock 动词别名写缺 401（门缺失或门晚于取会话）：{bad:?}");
+    }
+
+    /// 臂②（真库）：逐把打「拒绝侧 + 放行侧」两半，落笔形状分别用**行是否还在**（del 族）
+    /// 和 `xupdateTime` 是否脱离哨兵（touch 族）作证——handler 未命中行也回 200，
+    /// 状态码不足以证明写发生了，所以放行侧只认落库差。
+    /// 三档各自的证伪格：
+    ///   归属档（col 非空）：他人 403 且未落笔 → 本人 200 且落笔 → admin 200 且落笔（门不许把 admin 夹死）；
+    ///   admin 档（record，col 为空）：他人 403 → **归属列里那个人也 403 且未落笔**（这一格证伪
+    ///   「把 record 改成归属档就算收口」，因为行上根本没有属主列）→ admin 200 且落笔。
+    #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
+    async fn surface_mock_alias_owner_gate_lands() {
+        if !shared::testing::is_db_available().await {
+            eprintln!("skip: surface_mock_alias_owner_gate_lands (no DATABASE_URL)");
+            return;
+        }
+        let pool = shared::testing::test_pool();
+        let tag = uuid::Uuid::new_v4().simple().to_string();
+        let owner = format!("u-r51-owner-{tag}");
+        let stranger = format!("u-r51-stranger-{tag}");
+        let admin = seed_admin(&pool, &tag).await;
+        let mut bad: Vec<String> = Vec::new();
+
+        /// 放行侧凭据：del 族要求行已消失，touch 族要求时间戳脱离哨兵。
+        async fn landed(pool: &deadpool_postgres::Pool, table: &str, xid: &str, shape: &str) -> bool {
+            match shape {
+                "del" => !mock_row_exists(pool, table, xid).await,
+                _ => ppc_update_time(pool, table, xid)
+                    .await
+                    .map(|u| u != "r51-before")
+                    .unwrap_or(false),
+            }
+        }
+
+        for a in MOCK_ALIAS_ARMS {
+            let (table, col, shape, name) = (a.1, a.2, a.3, a.0);
+            let (_, get_tpl) = alias_get_reg(a);
+            let xid = format!("r51-{name}-{tag}");
+            seed_mock_row(&pool, table, &xid, col, &owner).await;
+
+            // ① 他人会话：403 且未落笔
+            let s = call_mock(&xid, "GET", get_tpl, Some(&stranger)).await;
+            if s != StatusCode::FORBIDDEN {
+                bad.push(format!("{name}: 他人会话期望 403，实际 {s}"));
+            } else if !mock_row_exists(&pool, table, &xid).await {
+                bad.push(format!("{name}: 403 之后行已消失，门晚于 SQL"));
+            } else if shape == "touch"
+                && ppc_update_time(&pool, table, &xid)
+                    .await
+                    .as_deref()
+                    != Some("r51-before")
+            {
+                bad.push(format!("{name}: 403 之后 xupdateTime 被改写，门晚于 SQL"));
+            }
+
+            if col.is_empty() {
+                // ② admin 档：归属列里那个人也照样拒，且未落笔
+                let s = call_mock(&xid, "GET", get_tpl, Some(&owner)).await;
+                if s != StatusCode::FORBIDDEN {
+                    bad.push(format!(
+                        "{name}: record 行上没有属主列，非 admin 会话期望 403，实际 {s}"
+                    ));
+                } else if shape == "touch"
+                    && ppc_update_time(&pool, table, &xid)
+                        .await
+                        .as_deref()
+                        != Some("r51-before")
+                {
+                    bad.push(format!("{name}: 非 admin 走了 touch 落笔，admin 档被写成归属档"));
+                } else if shape == "del" && !mock_row_exists(&pool, table, &xid).await {
+                    bad.push(format!("{name}: 非 admin 真删了 record 行，admin 档被写成归属档"));
+                }
+            } else {
+                // ② 归属档：本人放行且真落笔
+                let s = call_mock(&xid, "GET", get_tpl, Some(&owner)).await;
+                if s != StatusCode::OK {
+                    bad.push(format!("{name}: 本人期望 200，实际 {s}"));
+                }
+                if !landed(&pool, table, &xid, shape).await {
+                    bad.push(format!("{name}: 本人放行后写未落库（{shape} 族）"));
+                }
+            }
+
+            // ③ admin 放行侧：另起一行，免得与 ② 的落笔互相污染读数
+            let axid = format!("r51adm-{name}-{tag}");
+            seed_mock_row(&pool, table, &axid, col, &owner).await;
+            let s = call_mock(&axid, "GET", get_tpl, Some(&admin)).await;
+            if s == StatusCode::UNAUTHORIZED || s == StatusCode::FORBIDDEN {
+                bad.push(format!("{name}: admin 被门夹死，实际 {s}"));
+            }
+            if !landed(&pool, table, &axid, shape).await {
+                bad.push(format!("{name}: admin 放行后写未落库（{shape} 族）"));
+            }
+
+            delete_mock_row(&pool, table, &xid).await;
+            delete_mock_row(&pool, table, &axid).await;
+        }
+        assert!(bad.is_empty(), "mock 动词别名归属门不符：{bad:?}");
+    }
+
+    /// 臂④（真库）：他人会话打 44 条注册点（含 POST 侧）一律 403，钉「门不挑动词」。
+    #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
+    async fn surface_mock_alias_gate_covers_both_verbs() {
+        if !shared::testing::is_db_available().await {
+            eprintln!("skip: surface_mock_alias_gate_covers_both_verbs (no DATABASE_URL)");
+            return;
+        }
+        let pool = shared::testing::test_pool();
+        let tag = uuid::Uuid::new_v4().simple().to_string();
+        let owner = format!("u-r51o-{tag}");
+        let stranger = format!("u-r51s-{tag}");
+        let mut bad: Vec<String> = Vec::new();
+        let mut regs = 0usize;
+        for a in MOCK_ALIAS_ARMS {
+            let xid = format!("r51bv-{name}-{tag}", name = a.0);
+            seed_mock_row(&pool, a.1, &xid, a.2, &owner).await;
+            for r in [a.4, a.5] {
+                regs += 1;
+                let s = call_mock(&xid, r.0, r.1, Some(&stranger)).await;
+                if s != StatusCode::FORBIDDEN {
+                    bad.push(format!("{} {} -> 期望 403，实际 {s}", a.0, r.0));
+                }
+            }
+            delete_mock_row(&pool, a.1, &xid).await;
+        }
+        assert_eq!(regs, 44, "两动词同门必须打满 44 条注册点");
+        assert!(bad.is_empty(), "mock 别名门漏了 POST 侧（或反过来）：{bad:?}");
+    }
 }
