@@ -345,6 +345,69 @@ func (s *Server) adminBattles(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"items": items, "total": total})
 }
 
+// adminRecomputes 结算重算审计台账（R1）。
+//
+// 运营要在这里回答的是一个二元问题：**这批不符是引擎漂移还是玩家作弊？**
+// 答案不在单行里，在**按关卡聚合**的分布上：
+// 集中在少数关卡 → 引擎某段算错（回滚）；均匀在一个号上 → 作弊（封号）。
+// 所以本端点与下面那个 /stats 必须成对存在 —— 只有列表的话，
+// 运营只能逐行人肉扫，既看不出分布也看不出闸门有没有在拦。
+func (s *Server) adminRecomputes(c *fiber.Ctx) error {
+	limit, err := queryInt(c, "limit", 50)
+	if err != nil {
+		return failErr(c, err)
+	}
+	offset, err := queryInt(c, "offset", 0)
+	if err != nil {
+		return failErr(c, err)
+	}
+	userID, err := queryInt(c, "user_id", 0)
+	if err != nil {
+		return failErr(c, err)
+	}
+	levelID, err := queryInt(c, "level_id", 0)
+	if err != nil {
+		return failErr(c, err)
+	}
+	onlyMismatch := c.Query("only_mismatch") == "1" || c.Query("only_mismatch") == "true"
+	items, total, err := s.Svc.AdminListRecomputes(c.Context(), service.RecomputeFilter{
+		OnlyMismatch: onlyMismatch,
+		LevelID:      levelID,
+		UserID:       int64(userID),
+		Limit:        limit,
+		Offset:       offset,
+	})
+	if err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(fiber.Map{"items": items, "total": total})
+}
+
+// adminRecomputeStats 重算总账 + 按关卡分布 + **闸门当前状态**。
+//
+// ⚠️ `hours` 是**时间窗**而不是固定范围：熔断看的是 10 分钟窗口，
+//
+//	而「最近一天有没有一批新出现的集中不符」要看得更远。
+//	缺省 24 小时，上限 30 天 —— 再远就要落聚合表了，
+//	那不是这张原始台账该承担的事。
+func (s *Server) adminRecomputeStats(c *fiber.Ctx) error {
+	hours, err := queryInt(c, "hours", 24)
+	if err != nil {
+		return failErr(c, err)
+	}
+	if hours <= 0 {
+		hours = 24
+	}
+	if hours > 24*30 {
+		hours = 24 * 30
+	}
+	sum, err := s.Svc.AdminRecomputeSummary(c.Context(), time.Now().Add(-time.Duration(hours)*time.Hour), 20)
+	if err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(sum)
+}
+
 func (s *Server) adminBattleDetail(c *fiber.Ctx) error {
 	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
 	if err != nil {

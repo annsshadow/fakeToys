@@ -2,9 +2,9 @@
  * AdminLayout.vue 测试。
  *
  * 布局壳承担三个契约：
- * 1. 侧边栏 9 个入口分组与顺序（「路由表 ↔ 菜单」一一对应的另一半）；
+ * 1. 侧边栏 10 个入口分组与顺序（「路由表 ↔ 菜单」一一对应的另一半）；
  * 2. 顶栏标题跟随路由 meta.title，缺失时回退品牌名；
- * 3. **10 个图标都真的画出来了**。
+ * 3. **11 个图标都真的画出来了**。
  *
  * ## 关于第 3 条：这里原本有一份替身列表，等于把缺陷写成了「环境限制」
  *
@@ -65,7 +65,7 @@ async function mountLayout(initial: string) {
 }
 
 describe('AdminLayout 侧边栏', () => {
-  it('渲染 4 个分组共 9 个后台入口，顺序与产品信息架构一致', async () => {
+  it('渲染 4 个分组共 10 个后台入口，顺序与产品信息架构一致', async () => {
     const { wrapper } = await mountLayout('/admin/dashboard')
     const groups = wrapper.findAll('.nav-group')
     expect(groups.map((g) => g.find('.nav-group-title').text())).toEqual([
@@ -75,7 +75,9 @@ describe('AdminLayout 侧边栏', () => {
       '商业化与运营',
     ])
     const items = wrapper.findAll('.nav-item')
-    expect(items).toHaveLength(9)
+    // ⚠️ 这里的数字是「路由表 ↔ 菜单」一一对应契约的一部分。
+    //   加了页面忘了改这里，红的就是这条 —— 这是它该有的行为。
+    expect(items).toHaveLength(10)
     expect(items.map((i) => i.text())).toEqual([
       '数据看板',
       '关卡配置',
@@ -83,6 +85,7 @@ describe('AdminLayout 侧边栏', () => {
       '装备宝石皮肤',
       '用户管理',
       '战斗记录与验真',
+      '结算重算审计',
       '防线值守',
       '经济与商城',
       '公告与兑换码',
@@ -106,7 +109,7 @@ describe('AdminLayout 侧边栏', () => {
     expect(link.text()).toContain('玩家玩法文档站')
   })
 
-  it('10 个图标全部真的画出来了（9 个导航项 + 1 个文档站入口）', async () => {
+  it('11 个图标全部真的画出来了（10 个导航项 + 1 个文档站入口）', async () => {
     // 这条守的是「图标解析失败 → 退化成 <data-line>/<reading> 空元素」这个形状。
     //
     // 判据选 **`<svg>` 计数**而不是「有没有警告」：
@@ -117,15 +120,20 @@ describe('AdminLayout 侧边栏', () => {
     //
     // 顺带钉住「不许再有降级残留」：Vue 把未解析组件渲染成小写标签，
     // 修复前实测有 1 个 `<reading>`。
+    //
+    // ⚠️ 尤其要看新增的 `Warning`：它是本轮新引入的名字，
+    //   而「图标名写错」在这个项目里栽过一次（`Shield` 根本不存在，
+    //   而当时的替身列表让它永远绿）。这条是它唯一的防线。
     const { wrapper } = await mountLayout('/admin/dashboard')
 
-    expect(wrapper.findAll('.nav-item')).toHaveLength(9)
-    expect(wrapper.findAll('.el-icon')).toHaveLength(10)
-    // 9 个导航项 + 底部文档站链接各一个图标
-    expect(wrapper.findAll('svg')).toHaveLength(10)
+    expect(wrapper.findAll('.nav-item')).toHaveLength(10)
+    expect(wrapper.findAll('.el-icon')).toHaveLength(11)
+    // 10 个导航项 + 底部文档站链接各一个图标
+    expect(wrapper.findAll('svg')).toHaveLength(11)
     // 未解析的组件名会被降级成小写自定义元素，这里必须一个都没有
     expect(wrapper.findAll('reading')).toHaveLength(0)
     expect(wrapper.findAll('data-line')).toHaveLength(0)
+    expect(wrapper.findAll('warning')).toHaveLength(0)
   })
 })
 

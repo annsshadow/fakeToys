@@ -20,6 +20,7 @@ const routes: RouteRecordRaw[] = [
       { path: 'equipment', name: 'equipment', component: () => import('@/views/EquipmentView.vue'), meta: { title: '装备宝石皮肤' } },
       { path: 'users', name: 'users', component: () => import('@/views/UsersView.vue'), meta: { title: '用户管理' } },
       { path: 'battles', name: 'battles', component: () => import('@/views/BattlesView.vue'), meta: { title: '战斗记录与验真' } },
+      { path: 'recomputes', name: 'recomputes', component: () => import('@/views/RecomputesView.vue'), meta: { title: '结算重算审计' } },
       { path: 'defenses', name: 'defenses', component: () => import('@/views/DefensesView.vue'), meta: { title: '防线值守' } },
       { path: 'economy', name: 'economy', component: () => import('@/views/EconomyView.vue'), meta: { title: '经济与商城' } },
       { path: 'content', name: 'content', component: () => import('@/views/ContentView.vue'), meta: { title: '公告与兑换码' } },
