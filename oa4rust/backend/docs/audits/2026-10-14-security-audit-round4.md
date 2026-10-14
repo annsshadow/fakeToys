@@ -512,6 +512,26 @@ A4 开放问题：① F1 是否 o2server 侧本就以 job/document 创建者为�
 | 新增 2 支离线臂，**逐把点名 18** | `src/tests.rs:788`（`mod security_gate_tests`）、`:799` / `:925`（两支臂）、断言在 `:917-918` 与 `:1044` | `r418_get_writes_reject_without_session`（`mock_pool()` + 无会话 ⇒ 必须全 401）与 `r418_get_writes_forbidden_before_touching_db`（非 admin 会话 ⇒ 必须全 403，且失败消息把「出现 Internal」直接写成「门插在读库之后」）。两支都带 `assert_eq!(cases.len(), 18, "本批 18 把必须逐把点名，少一把即漏门")`；宏那 12 把在臂里**逐个具名调用**（`u2::high_freq_work_touch(..)` 等），不是靠宏展开顺带覆盖 |
 | 尺子轴：**本批一字未动** | `scripts/audit_write_gating.mjs` | GET 无门禁 −18 全部来自代码。**R 轴增量为 0**：这 18 条注册全是 GET，`write_routes_matrix.tsv` 只收写方法 ⇒ 矩阵与 ungated 两张产物 md5 一字不差，只有 `write_routes_get_writes.tsv` 变了。GET 轴与 R 轴是两条账，本批正是「−18 与 0 同时成立」的那格，与批 17 的「−19 与 −8」互为对照 |
 
+### 三.19 第十九批（surface 的 GET 面 16 把 handler 补归属门，纯代码轴）
+
+第十八批 §五 首选那格按实测收掉：`processplatform_assemble_surface` 在 GET 写档面挂 **16 条 K3 / 16 把 handler**——
+`{read|readcompleted|task|taskcompleted|work|workcompleted}/list/count/application/{applicationFlag}/process`
+的 base 与 `_p2` 共 12 把，加 `draft/{id}/start`、`handover/{id}/cancel`、`handover/{id}/process`、`mode/{id}/delete` 共 4 把。
+这一格与批 17/18 的**根本差别在档位**：批 18 已预告「surface 那 16 把不能整格收 admin」，本批逐把读体核实了这句话，
+并把它落成**归属档**——16 把一支不收 admin。helper 也全是批 15 的既有资产，本批**一个新门 helper 都没建**。
+
+| 项 | 文件 | 内容 |
+| --- | --- | --- |
+| 16 把 handler 补会话参数、门插在函数体第一句 | `src/lib.rs:7686 / 8460 / 8516 / 8966 / 9755 / 9765 / 11837 / 11847 / 16041 / 16051 / 18627 / 18637 / 20593 / 20603 / 23449 / 23459`（净增 32 行 = 16 句门 + 16 行参数） | 形状一律 `session: Option<Extension<shared::session::Session>>` 置于 `pool` 之后、`Path` 之前（`_p2` 那 6 把的 `Path` 是二元组 `(String, String)`，参数位次一样）；门先于 `pool.get()` ⇒ 无会话 401 且**不触库、离线可证**（与第十/十一/十五~十八批同法）。计数那 12 把保持「wrapper 加门 + 原逻辑留 `*_core`」的最小改动，`_core` 一行未动 |
+| **不新建 helper**，两档门按「行上到底哪一列是属主」分工 | `src/lib.rs:97`（`u4_require_ppc_person`）、`:65`（`u4_require_ppc_actor`），两者都是**第十五批**已有资产 | **12 把走 `u4_require_ppc_person`**：`PP_C_READ` ×2、`PP_C_READCOMPLETED` ×2、`PP_C_TASK` ×2、`PP_C_TASKCOMPLETED` ×2、`PP_C_DRAFT`、`PP_C_HANDOVER` ×2、`PP_C_TASK_PROCESS_MODE`——条目表没有 `xcreatorPerson`，行上属主列是 `xperson`，与本 crate 待办/待阅列表本来就 `WHERE xperson = <person_unique>` 过滤同源；**4 把走 `u4_require_ppc_actor`**：`PP_C_WORK` ×2、`PP_C_WORKCOMPLETED` ×2——WORK 族行上**没有** `xperson`，属主列是 `"xcreatorPerson"`，给它编一个库里不存在的属主列就是假门禁。两档口径同锁：无会话 401 → 归属非空则本人或 admin → 归属为空或行不存在**只允许 admin**（四轮定下的严格口径，不用「空归属 = 人人可写」把数据缺陷洗成权限放行） |
+| 档位定归属的证据：这 12 把是「读形状写」，收 admin 直接打断终端用户 | `src/lib.rs:9696-9719`（`read_list_count_..._core`）为代表 | 12 把计数 handler 的函数体只有一句 `UPDATE <表> SET "xupdateTime" = NOW() WHERE xid = $1` 加同 ID 回读 createTime/updateTime——路径叫「list/count」，落笔却是 touch 时间戳，属批 16/18 立的「只读挂写 / 读形状写」同族。真打它们的是所有人的待阅、待办计数刷新，收 admin 即把桌面端主流程打断 ⇒ 只能按「谁的和谁能 touch」收 |
+| 新增 2 支臂，**逐把点名 16** | `src/security_gate_tests.rs:1340`（`mod r419_gate_tests`）、`:1578` / `:1597`（两支臂）、断言在 `:1590` / `:1611` / `:1629` / `:1640` | `r419_get_writes_reject_without_session`（`mock_pool()` + 无会话 ⇒ 必须全 401，失败消息直接把「出现 Internal」写成「门插在读库之后」的判据）与 `r419_get_writes_owner_gate_lands`（真库三段：他人会话按 ID touch 他人条目行必须 403 **且不落笔**、本人会话放行、空归属行只允许 admin）。两支都带 `assert_eq!(cases.len(), 16, "本批 16 把必须逐把点名，少一把即漏门")`；`call_all`（`:1364`）是 **16 次具名 handler 直调**（`one` / `two` 两个 Path 构造闭包），不靠 `ROWS` 表长顺带覆盖 |
+| 真库臂造数与自清：两遍幂等 + 零残留行 | `src/security_gate_tests.rs:1350`（`ROWS`：9 张表 × 属主列 × `r419-*` 主键）、`:1513 / :1530 / :1540 / :1553`（`seed_rows` / `clear_actor` / `unseed` / `seed_admin_role`） | seed 与 admin 角色链一律 `ON CONFLICT DO NOTHING / DO UPDATE`，臂体首尾各 `unseed`；本轮按纪律连跑两遍，两遍读数一致（不是「第二遍靠上一遍留下的数据才绿」），收口后再按 `xid LIKE 'r419-%'` 逐表数过 `PP_C_READ / PP_C_WORK / PP_C_DRAFT / PP_C_HANDOVER` **全 0 行**。`seed_admin_role` 走 `is_admin` 的真实口径造 `auth_role / auth_person / auth_person_role`，不造假列 |
+| 真缺陷①：**`draft/{id}/start` 必然 500**（早于本批存在，本批只加门不修） | `src/lib.rs:7689-7694` | SQL 是 `UPDATE PP_C_DRAFT SET xstatus = $1, "xupdateTime" = NOW() WHERE xid = $2`，参数却只绑一个 `&[&id]` ⇒ 报 `there is no parameter $2`；另外真库 `pp_c_draft` **没有 `xstatus` 这一列**（42703）。两个**互相独立**的成因，任一修掉另一个还在。真库臂因此对该把**明列豁免**：断言写成 `assert_eq!(broke, vec!["draft_id_start"], …)`（`:1626` 的失败消息把这条例外点名写死），既不放水成「整臂 skip」，也不让它的 `Internal` 冒充「门失效」 |
+| 真缺陷②：**`handover/{id}/cancel` 与 `handover/{id}/process` 函数体逐字全同** | `src/lib.rs:8455-8475` 与 `:8511-8531` | 两把都只做 `UPDATE PP_C_HANDOVER SET "xupdateTime" = NOW() WHERE xid = $1` 加回读时间 ⇒ 「取消交权」和「处理交权」在 Rust 侧**没有任何区别**（o2server 里是两个不同动作，一个撤销、一个接受）。本批的门两把都覆盖，行为缺陷单列待拍 |
+| 旧账口径**订正**：`NOW()` 写进 TEXT 列**不报错**，touch 族真落笔 | 真库探针（`information_schema` 核列 + 事务内 `UPDATE` 后回滚） | §五 里那句「`NOW()` 写进 TEXT 列 79 处」原本按**可用性**缺陷记（预期撞 42804）。本轮探针证明 PostgreSQL 对赋值走 assignment I/O coercion，`NOW()` 写得进 TEXT、语句照落笔 ⇒ 那 79 处是**数据形状**缺陷（时间戳存成文本、精度/时区口径不保），不是「端点跑不通」。**这条订正直接决定本批门禁的定性**：touch 既然真改得动，未认证/他人请求就不是「只探到 500」而是**真的伪造了审计时间戳** |
+| 尺子轴：**本批一字未动** | `scripts/audit_write_gating.mjs` | GET 无门禁 −16 全部来自代码。**R 轴同步受益 4 行**：`draft/start/{id}`、`handover/{id}/cancel`、`handover/{id}/process`、`mode/delete/{id}` 这 4 把的 **POST 别名**从 R7 搬进 R5——`write_routes_matrix.tsv` 恰 4 行改桶、0 行丢失、0 行新增，`write_routes_ungated.tsv` −4，真落笔 461→**457**。两条判据必须分开记账：GET −16 是本批修的漏洞，R −4 是同一把 handler 双方法注册的镜像读数，**不是**又发现了 4 条新漏洞消失（与批 17 的「−19 与 −8 同源」、批 18 的「−18 与 0 并存」构成第三种形状） |
+
 ## 四、验证
 
 
@@ -1824,4 +1844,90 @@ cd oa4rust/backend && cargo test --lib -p <crate>
   与本文档（§三.18 / 本节）分两笔，本节即第二笔并回填该 hash。第二笔提交前已在还原树重跑尺子
   （run T / T2 全等、EXIT=0、真落笔 461、GET 写 92、只读挂写 766、间接写 223 / 间接门禁 234、缺口 0）
   并复跑门禁 25 / 0 / 0 / 0。共享工作树上并行会话的在制品未被本批收走。**本轮未 push**。
+
+### 第十九批收口后的刷新（§三.19 / §四 第十九批读数 / §五 名单）
+
+- **尺子读数（代码轴，`scripts/audit_write_gating.mjs` 一字未动）**：
+  | 判据 | 上批收口 | 本批 | 增量 | 归因 |
+  | --- | --- | --- | --- | --- |
+  | GET 体内无门禁 | 92 | **76** | **−16** | `write_routes_get_writes.tsv` 里 `processplatform_assemble_surface` 由 16 行降到 **0** 行（HEAD 与工作树两处逐行数过），出列 16 行全是 K3 ⇒ **16 把 handler / 16 条 GET 注册**两个数相等 |
+  | K1 / K2 / K3 | 5 / 11 / 76 | 5 / 11 / **60** | K3 −16 | 匿名可达档与会读会话档一支没动——本批 16 把全在 K3，且收完之后 K1/K2 的名单逐条核看过，没有一把被顺手挪档 |
+  | 真落笔（R4+R6+R7 含写 SQL） | 461 | **457** | **−4** | R4 5 / R6 135 / R7 **317**（上批 321）。这 −4 **不是** GET 轴的那 16 把，而是 4 把动作/删除 handler（`draft/start/{id}`、`handover/{id}/cancel`、`handover/{id}/process`、`mode/delete/{id}`）的 **POST 别名**从 R7 搬进 R5。两条判据分立记账：GET −16 是本批修的漏洞，R −4 是双方法注册的镜像，**谁也不许替谁作证**；与批 17「−19 与 −8 同源」、批 18「−18 与 0 并存」构成第三种形状 |
+  | ungated 明细 / R5 | 1071 / 849 | **1067 / 853** | −4 / +4 | 与上一格同源：4 行改桶、0 行丢失、0 行新增（`diff` 逐行数过）。文件行数含表头 1072→1068 |
+  | 只读挂写 | 766 | 766 | 0 | 本批 16 把**都含真写 SQL**（`UPDATE … SET "xupdateTime" = NOW()`），不属这族——这也正是「`NOW()` 写得进 TEXT、touch 真落笔」那条订正的反证：若它们只读，这格会 −16 |
+  | 间接写 / 间接门禁 | 223 / 234 | 223 / 234 | 0 | `u4_require_ppc_person` / `u4_require_ppc_actor` 都是**门**（不带写 SQL）且早在批 15 就已在册；`*_core` 6 把本来就在间接写名单里各挂 2 条。名单零新增成员 |
+  | 写 handler 矩阵 / 全 8 桶 | 991 / 2237 | 991 / 2237 | 0 | 只有桶标签变（R7→R5），行数一根毫毛未动 |
+  | 判据见证（缺陷 16–23） | 缺口 0 | **缺口 0** | — | 尺子 EXIT=0，25 个函数动态表名全部判为写面、15 条转义引号表名零漏量 |
+
+- **产物幂等与逐张对账**：15 张 artifact 中 **12 张 md5 与上批收口态一字不差**，恰 **3 张**变化
+  （`write_routes_get_writes.tsv` −16 行、`write_routes_matrix.tsv` 4 行改桶、`write_routes_ungated.tsv` −4 行）。
+  注入取证（五臂）跑完之后，在**还原树**重跑尺子（run T → T2），15 张 md5 与注入前快照 `diff` **逐张全等**
+  （不是挑三张比，是 15/15 比），尺子读数同样复现 76 / 457 / 766 / 223 / 234 ⇒ 本轮所有读数变化完全由代码解释。
+- **测试门禁**：`cargo test --lib -p processplatform_assemble_surface` → **612 passed / 0 failed / 9 ignored / 0 filtered out**
+  （基线 **610**，+2 臂；610 这个读数是 §四 第十五批段给本 crate 记的）；`-- --ignored` → **9 passed / 0 failed / 612 filtered out**。
+  ⚠️ **如实说明一支臂的档位**：`mod r419_gate_tests` 这**两支臂都没有 `#[ignore]`**（本文件里 `#[ignore]` 计数为 0，
+  那 9 支 ignored 属于同 crate 别的 mod），真库那支靠体内 `is_db_available()` 早退——照纪律这是**弱形状**（无库机器上会静默早退成假绿），
+  本轮沿用批 18 的同 crate 先例没另立规矩，但**执行与否有独立凭据**：D2 / D3 两支注入能把 `r419_get_writes_owner_gate_lands` 打红
+  并逐把点名（`=> None` 的归属判定只有真库才拿得到），若它早退则注入不可能让它红 ⇒ 本轮这支臂**确实跑进了库**。
+  真库臂两遍幂等、收口后 `xid LIKE 'r419-%'` 在 `PP_C_READ / PP_C_WORK / PP_C_DRAFT / PP_C_HANDOVER` 四表逐表数过**全 0 行**。
+- **注入取证五臂**（通道 B 的 Node 移植 `/d/tmp/b17arms/inject_arm.mjs`，目标 `crates/processplatform_assemble_surface/src/lib.rs`；
+  基线绿 → 逐臂点名红 → 复原后复绿三段齐全；每臂 `RESTORE hash_ok=true`；驱动 `/d/tmp/b17/run_b19_arms.sh`，
+  `--cmd` 里带 `grep -q 'error\[E' … && exit 9` 以挡住「编译错冒充臂证据」——批 18 的 C6 教训本轮生效，五臂零返工）：
+
+  | 臂 | 注入 | 点名读数（实际红在哪一句） | 判定 |
+  | --- | --- | --- | --- |
+  | D0 无害对照 | `require_admin_opt(` 前多一个空格（行为全同） | `2 passed` → 注入后仍 `2 passed` | 臂成立：红由注入造成，环境本来稳 |
+  | D1 摘一把具名门 | `work_list_count_..._process`（base）整句门 → `let _ = session;` | **两支臂同时红**（2 failed）：401 臂点名**只** `["work_list_count_..._process => Some(Internal)"]`，403 臂点名同一把但读数是 `=> None` | 臂成立：单把摘除即被单把点名；`_p2` 那把（同 `_core`、门在各自 handler）**不在名单里** ⇒ 「门在 wrapper 不在 core」的形状被证伪成功；两读数一 `Internal` 一 `None` 还额外分开证了「无会话放行即触库」与「放行即不再拒他人」是两种失败 |
+  | D2 摘 person 档归属判定 | `u4_require_ppc_person` 尾部 `require_actor_opt(pool, &session, owner)` → `Ok(())`（无会话拒仍在） | **只有 403 臂红**（1 passed / 1 failed），点名**恰 12 把**：`handover_id_cancel / handover_id_process / draft_id_start / mode_id_delete` + `{read,readcompleted,task,taskcompleted}×{base,_p2}` 8 把，全部 `=> None`（`draft_id_start` 例外读到 `Some(Internal)`）；401 臂 `1 passed` 仍绿 | 臂成立，且 12 这个数字**就是**「12 把走 `u4_require_ppc_person`」的直接作证；401 臂绿是职责分开（本臂只破坏归属判定、不破坏「无会话即拒」），不是覆盖缺口。`draft_id_start` 的 `Internal` 是它**本身必 500**（§三.19 真缺陷①），与门无关——真库臂把它明列豁免，注入臂也没让它混进「放行名单」 |
+  | D3 摘 actor 档归属判定 | `u4_require_ppc_actor` 同一位置 → `Ok(())` | **只有 403 臂红**，点名**恰 4 把**：`{work,workcompleted}×{base,_p2}`，全部 `=> None`；401 臂仍绿 | 臂成立，与 D2 互斥成对：**两档 helper 的覆盖面用「点名集合」而非计数分开钉住**——12 与 4 相加正好等于本批 16，谁也不冒充谁 |
+  | D4 门插到读库之后 | `mode_id_delete` 内门与 `pool.get()` 两句顺序颠倒 | **只有 401 臂红**，点名**只** `["mode_id_delete => Some(Internal)"]`；403 臂绿 | 臂成立：「门必须在读库之前」继续由断言消息里的 `Internal` 判据钉住（与批 17 B4、批 18 C6b 同法）。403 臂绿是**真绿**：门后移后非 admin 仍被拒（只是先取了连接），所以这一臂专门管「无会话不得触库」，不管 admin 判定 |
+
+  ⚠️ **一处如实披露的取证边界**：D2 / D3 摘的是 `u4_require_ppc_person` / `u4_require_ppc_actor` 这两个**与第十五批共用**的
+  helper 体内判定，波及面天然比本批宽（批 15 的 `PP_C_JOB` 9 把、`PP_C_WORKCOMPLETED` 9 把别名写族也走同一扇门）；
+  注入跑的命令筛的是 `r419_` 前缀，所以**批 15 那些臂本轮没跟着复跑**。这两臂的结论只用于作证「本批这 16 把落在哪一档」，
+  不许读成「批 15 的门也被复验过」。跨批次波及面由还原树上的全量门禁（612 那轮跑的是干净码）兜。
+
+  收尾：`git status --porcelain` 在注入全程只含本批 5 个在范围内文件（2 源 + 3 产物），复原后基线复绿、尺子复现（见上两格）。
+
+- **下一批（代码轴）入口，按现读 76 条改写**：GET 面无门禁 **76**（K1 5 / K2 11 / K3 60），按 crate 降序：
+  `query_assemble_designer` **14**、`attendance_assemble_control` **9**、`auth` **6**、`processplatform_assemble_designer` 5、
+  `message_assemble_communicate` 5、`cms_assemble_control` 5、`meeting_assemble_control` 4、`jpush_assemble_control` 4、
+  `ai_assemble_control` 4、`hotpic_assemble_control` / `file_assemble_control` 各 3，其余 **9 个 crate 各 ≤2**
+  （`processplatform_assemble_surface` 与 `query_service_processing` 本批后归零，`program_center` 只剩 2 条待拍）。
+  1. **优先度最高的一格仍是批 16 立的**：`crates/shared/src/response.rs:17-48` `row_to_json` 对 JSONB / JSON /
+     DATE / TIMESTAMPTZ / NUMERIC 一律 `_ => None` **静默丢列**。本批不新增证据也不动它，但它压着所有响应形状类结论。
+  2. `query_assemble_designer` 那 14 条是下一个整格：`QueryManagerDeep.vue:702-722` 真在打它的 neural / table 面，
+     **动档前先核前端消费**，别照批 18 的探针豁免口径套。
+  3. `auth` 那 6 条里 **4 条是 K1 匿名可达**（`oauth/login/{qywx,dingding,name}`、`oauth/bind/name/...`，全在登录/绑定链上）
+     ⇒ 与 program_center 的 captcha / code 同一格待拍，收 admin 直接打断认证，只能按「第三方 code 换会话」语义另定；
+     余 2 条 K3 里 `qiyeweixin/update/person/detail/{code}` 与批 17 组织回调族同性质（零验签 + 改他人档案），可与「路径参数不消费」普查并做。
+  4. K2 那 **11 条**是另一种形状（体内读了会话、但无判定）：`{document|comment}/{id}/(un)commend` 4 条、
+     `meeting/{id}/(accept|checkin)` 2 条、`im/conversation/.../group/quit/self`、`single/mockdeletetoget`、
+     `mind/restore/{id}`、`ai_assemble_control/chat/delete/{clueId}`、`calendar/follow/{id}/cancel`——
+     这批多数**本来就该按归属收**，与批 16/19 同锁，是「加门不改语义」最省的一格，可考虑与 `query_assemble_designer` 并批。
+  5. 存量老格：ppsvc **R7 写面 49 条** + 「16 把宏未绑段 + 43 条整张模板」旧账、`mockdeletetoget` 14 把、
+     `cms_core_entity` 12 条元数据写、A1 真匿名写 9 条。
+- **新增待拍（本批记账，未修）**：
+  1. `{read|readcompleted|task|taskcompleted|work|workcompleted}/list/count/application/{applicationFlag}/process` 12 把
+     **路径段名与实际语义不符**：`_core` 把 `applicationFlag` 直接绑进 `WHERE xid = $1`，「按应用计数」实际是「按行 ID touch 时间戳」。
+     与「路径参数不消费」族**相邻但不同**（这里参数被消费了，只是消费错了维度），要不要按 o2server 的 list/count 语义重写属产品决策。
+  2. `handover/{id}/cancel` 与 `handover/{id}/process` **函数体逐字全同**：两个不同业务动作在 Rust 侧无区别，属**行为缺陷**，
+     门已覆盖但语义未补。
+  3. `draft/{id}/start` **必然 500**（`there is no parameter $2` + `pp_c_draft` 无 `xstatus` 列，两个独立成因）。
+     归入 `assert_eq!(status, 500)` 断言族与 schema drift 族一起处理；真库臂里的明列豁免跟着撤。
+- **口径订正（不是新增，是把旧账改对）**：§五 的「`NOW()` 写进 TEXT 列 79 处」从**可用性**缺陷改记为**数据形状**缺陷——
+  PostgreSQL 对赋值走 assignment I/O coercion，`NOW()` 写得进 TEXT、语句照落笔。订正后本批门禁定性才成立：
+  未认证/他人请求不是「只探到 500」，而是**真的改得动审计时间戳**。往后任何「这条写会不会因为类型不匹配自己失败」的判断，
+  一律先探针再看读数，不许凭直觉抵账。
+- **沿用的待拍格**：program_center **2 把**（captcha / code）与其 `creator='system'` 冒名 3 处
+  （`lib.rs:1691 / 1844 / 8722`）、第三方回调**零验签**族、A1 真匿名写 9 条属限流族、24 条死档 needs 独立守卫、
+  只读挂写现读 **766**、门禁入口两族并存、`shared/src/crud.rs` CrudSpec 无归属、correlation 读侧 IDOR
+  （含批 18 新记的 `neural_list_calculate_with_work`）、F5 / F7 / F8 / F10、N4-02 / N4-03、
+  `GATE_RE` 里 `require_actor` 无独立见证的冗余词、路径参数不消费族（全仓普查未做）、
+  program_center schema drift 42703 族与 `assert_eq!(status, 500)` 断言族 272 处、`query_service_processing` 5 条 POST 写面。
+- **提交落点**：本批代码轴（`crates/processplatform_assemble_surface/src/lib.rs` 16 把补归属门、
+  `src/security_gate_tests.rs` `mod r419_gate_tests` 逐把点名两臂、3 张刷新产物）为 `d44685d74`，
+  与本文档（§三.19 / 本节）分两笔，本节即第二笔并回填该 hash。第二笔提交前已在还原树重跑尺子
+  （15/15 张产物 md5 与注入前全等、EXIT=0、真落笔 457、GET 写 76、只读挂写 766、间接写 223 / 间接门禁 234、缺口 0）
+  并复跑门禁 612 / 0 / 9 与 `--ignored` 9 / 0。共享工作树上并行会话的在制品未被本批收走。**本轮未 push**。
 
