@@ -381,6 +381,29 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
 // Work operations
 // ──────────────────────────────────────────────────────────────────────────────
 
+/// 四轮 R4-1：引擎运行面的状态/归属写（task 认领·完成·退回·转办、work 终止·撤销）
+/// 此前既不取 Session 也不校归属，任一登录用户可按 ID 办理他人待办并落审批记录。
+/// 无会话一律 401，不落到 SQL。
+fn u4_session(
+    session: Option<Extension<shared::session::Session>>,
+) -> Result<shared::session::Session, AppError> {
+    session.map(|ext| ext.0).ok_or(AppError::Unauthorized)
+}
+
+/// 归属门：负责人 / 发起人非空 → 本人或 admin（`require_owner`，无 DB 时 fail-closed）；
+/// 为空的历史行只要求有效会话，避免把数据缺陷伪装成权限问题、也保住未指派任务的认领语义。
+/// 注意引擎 Start Event 任务的 person 写成 "system"，收紧后该类任务只有 admin 能代办。
+async fn u4_require_actor(
+    pool: &Pool,
+    session: &shared::session::Session,
+    actor: &str,
+) -> Result<(), AppError> {
+    if actor.trim().is_empty() {
+        return Ok(());
+    }
+    shared::middleware::require_owner(pool, session, actor).await
+}
+
 #[allow(non_snake_case)]
 pub async fn work_id_processing(
     pool: Extension<Pool>,
@@ -407,10 +430,22 @@ pub async fn work_id_processing(
 #[allow(non_snake_case)]
 pub async fn work_v2_id_terminate(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = u4_session(session)?;
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    // 归属门先于状态写：终止是「发起人终止自己的单据」，原实现按 ID 可终止任意 work。
+    let creator: Option<String> = tx
+        .query_opt(
+            "SELECT creator FROM x_work WHERE id = $1 FOR UPDATE",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?
+        .and_then(|row| row.get::<_, Option<String>>("creator"));
+    u4_require_actor(&pool.0, &session, creator.as_deref().unwrap_or("")).await?;
     tx.execute(
         "UPDATE x_work SET work_status = $1, end_time = NOW() WHERE id = $2",
         &[&"terminated", &id],
@@ -420,7 +455,7 @@ pub async fn work_v2_id_terminate(
     let id2 = Uuid::new_v4().to_string();
     tx.execute(
             "INSERT INTO x_record (id, work_id, record_type, content, creator, create_time) VALUES ($1, $2, $3, $4, $5, NOW())",
-            &[&id2, &id, &"terminate", &"workflow terminated", &"system"],
+            &[&id2, &id, &"terminate", &"workflow terminated", &session.person_unique],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -438,12 +473,23 @@ pub async fn work_v2_id_terminate(
 #[allow(non_snake_case)]
 pub async fn work_v2_id_retract(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = u4_session(session)?;
     // 撤销 = work 置 retracted + 该 work 全部 task 置 cancelled，两写必须原子：
     // 中途失败会留「流程已撤销但任务仍 active 可继续审批」的矛盾态。
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let creator: Option<String> = tx
+        .query_opt(
+            "SELECT creator FROM x_work WHERE id = $1 FOR UPDATE",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?
+        .and_then(|row| row.get::<_, Option<String>>("creator"));
+    u4_require_actor(&pool.0, &session, creator.as_deref().unwrap_or("")).await?;
     tx.execute(
         "UPDATE x_work SET work_status = $1 WHERE id = $2",
         &[&"retracted", &id],
@@ -3049,16 +3095,24 @@ pub async fn workcompleted_flag_rollback(
 #[allow(non_snake_case)]
 pub async fn work_v3_retract(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = u4_session(session)?;
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_one(
-            "SELECT id, title, process, application, work_status FROM x_work WHERE id = $1",
+            "SELECT id, title, process, application, work_status, creator FROM x_work WHERE id = $1",
             &[&id],
         )
         .await
         .map_err(|_| AppError::Internal)?;
+    u4_require_actor(
+        &pool.0,
+        &session,
+        &row.get::<_, Option<String>>("creator").unwrap_or_default(),
+    )
+    .await?;
     // 同 work_v2_id_retract：状态对写原子化，防「已撤销但任务仍 active」。
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     tx.execute(
@@ -3187,8 +3241,10 @@ pub async fn work_complete(
 #[allow(non_snake_case)]
 pub async fn task_claim(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = u4_session(session)?;
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     let row = tx
@@ -3198,6 +3254,12 @@ pub async fn task_claim(
         )
         .await
         .map_err(|_| AppError::Internal)?;
+    u4_require_actor(
+        &pool.0,
+        &session,
+        &row.get::<_, Option<String>>("person").unwrap_or_default(),
+    )
+    .await?;
     let task_status: String = row
         .get::<_, Option<String>>("task_status")
         .unwrap_or_default();
@@ -3218,7 +3280,7 @@ pub async fn task_claim(
     let work_id: String = row.get("work");
     tx.execute(
             "INSERT INTO x_record (id, work_id, task_id, record_type, content, creator, create_time) VALUES ($1, $2, $3, $4, $5, $6, NOW())",
-            &[&id2, &work_id, &id, &"claim", &"task claimed", &"system"],
+            &[&id2, &work_id, &id, &"claim", &"task claimed", &session.person_unique],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -3264,9 +3326,11 @@ fn completion_record_fields(
 #[allow(non_snake_case)]
 pub async fn task_complete(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
     body: Option<Json<Value>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = u4_session(session)?;
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     let row = tx
@@ -3276,6 +3340,12 @@ pub async fn task_complete(
         )
         .await
         .map_err(|_| AppError::Internal)?;
+    u4_require_actor(
+        &pool.0,
+        &session,
+        &row.get::<_, Option<String>>("person").unwrap_or_default(),
+    )
+    .await?;
     let task_status: String = row
         .get::<_, Option<String>>("task_status")
         .unwrap_or_default();
@@ -3362,9 +3432,11 @@ pub async fn task_complete(
 #[allow(non_snake_case)]
 pub async fn task_reject(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
     body: Option<Json<Value>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = u4_session(session)?;
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     let row = tx
@@ -3374,6 +3446,12 @@ pub async fn task_reject(
         )
         .await
         .map_err(|_| AppError::Internal)?;
+    u4_require_actor(
+        &pool.0,
+        &session,
+        &row.get::<_, Option<String>>("person").unwrap_or_default(),
+    )
+    .await?;
     let task_status: String = row
         .get::<_, Option<String>>("task_status")
         .unwrap_or_default();
@@ -3435,8 +3513,10 @@ pub async fn task_reject(
 #[allow(non_snake_case)]
 pub async fn task_transfer(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((id, new_person)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = u4_session(session)?;
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     let row = tx
@@ -3446,6 +3526,12 @@ pub async fn task_transfer(
         )
         .await
         .map_err(|_| AppError::Internal)?;
+    u4_require_actor(
+        &pool.0,
+        &session,
+        &row.get::<_, Option<String>>("person").unwrap_or_default(),
+    )
+    .await?;
     let task_status: String = row
         .get::<_, Option<String>>("task_status")
         .unwrap_or_default();
@@ -3822,6 +3908,8 @@ pub async fn cancel_timer(
     ))))
 }
 
+#[cfg(test)]
+mod security_gate_tests;
 #[cfg(test)]
 #[cfg(test)]
 #[allow(clippy::module_inception)]
