@@ -178,7 +178,10 @@ class TestParallelQualityFilter:
             use_quality_check=False, use_dedup=False,
         )
         assert report["output_count"] == 0
-        assert len(pipeline._process_errors) == 3
+        # L275：明细出在本批报告里，且共享实例属性一格不落——并发跑第二个任务时
+        # 两边互相看得见对方的错就是这个形状（改前实测 A 的报告 139 笔全属对方）。
+        assert len(report["errors"]) == 3
+        assert pipeline._process_errors == []
 
 
 class TestTaskId:
