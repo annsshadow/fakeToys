@@ -52,16 +52,24 @@ type Service struct {
 	Cfg  config.Config
 	JWT  *auth.Signer
 	pool *pgxpool.Pool
+
+	// gate 是结算重算闸门（R1）。
+	//
+	// 由 initRecomputeGate 在 New 里回填，而不是直接内联构造 ——
+	// 因为它的不符率回调要查库，而 s 在构造过程中还不存在。
+	gate *RecomputeGate
 }
 
 // New 构造服务。
 func New(db *store.DB, cfg config.Config) *Service {
-	return &Service{
+	s := &Service{
 		DB:   db,
 		Cfg:  cfg,
 		JWT:  auth.NewSigner(cfg.JWTSecret, cfg.AccessTTL),
 		pool: db.Pool,
 	}
+	s.initRecomputeGate()
+	return s
 }
 
 // --- 账号 ---
