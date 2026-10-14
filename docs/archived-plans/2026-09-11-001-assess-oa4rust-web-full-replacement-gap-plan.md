@@ -1,9 +1,21 @@
 ---
 title: "assess: oa4rust + oa4rust-web 能否完全替代 oa/o2server + oa/o2web —— 全面对比与缺口闭环计划"
 type: assessment-and-plan
-status: active
+status: completed
+closed: 2026-10-14
 date: 2026-09-11
-rev: 15  # v15：S4 真实流量 gate 彻底移除——无旧系统（o2server/o2web 从未上线），不需要真实流量，改好即上线；
+rev: 16 # rev16（2026-10-14 状态校准收官）：本计划全部验收项闭环——项 1/2/3/5 已于 rev13-rev15 达成，
+      # 项 4（S4）按 rev15 正式移除；2026-09-15 批次闭环 27 后端缺口家族（KNOWN_BACKEND_GAPS 52→0，
+      # 契约守卫 fixture 4090 路由全量）+ 44 桌面壳视图数据驱动化（W13 manifest 33 implemented）+
+      # IM 完整协议（realtime crate：WS 5 IM 事件 + presence/roster + receipt 回执，16 单测 + 401 握手守卫）+
+      # 移动端复杂控件 + FILE_FILE 附件落点；三端门禁 cargo test 7436 ok / vitest 105→953 / typecheck 6 工程 /
+      # desktop+mobile build / biome 0 error。后续长期消费率推进移交 2026-09-20-001 三端计划（rev120）。
+      # 保留 rev15 边界声明：不宣布「100% 逐字节完全替代并可下线旧栈」（136 残余行为差异 + 2029 SKIP +
+      # 书面范围外 IM 完整协议/历史迁移客观存在）；上线判据 = 静态门禁全绿 + 仓内 live E2E + 常态监控。
+      # 代码位置漂移说明：`oa4rust-web/` 与 `oa4rust/crates/` 已重组为 `oa4rust/frontend/`（84 视图）与
+      # `oa4rust/backend/crates/`（96 crates），本文引用路径按新结构理解。
+      # ── 历史修订留档 ──
+      # v15（2026-09-15，用户指令：不需要真实流量，改好即上线，没有旧系统）：S4 真实流量 gate 彻底移除——无旧系统（o2server/o2web 从未上线），不需要真实流量，改好即上线；
       # 上线判据 = 静态门禁全绿 + 仓内 live E2E + 上线后常态监控（非前置）；
       # 已删 pilot-gate workflow / shadow-traffic.sh / java-drill conf / rollback-playbook / s4-pilot-canary-runbook；
       # pilot_gate.py 降级为可选离线观测工具（非门禁）；REALIZE_RUNBOOK §4.2 口径同步改写
@@ -182,6 +194,8 @@ Minder 无画布编辑器（仅列表）；`service_AgentDesigner`/`ServiceManag
 - **W14（A6｜长尾视图）**：Minder 画布、`service_*Designer`、`AppMarketV2`、`Forum*` 按需补齐或书面排除。
 
 ### 实施状态总表（rev13，2026-09-14 S3 E2E 实跑全绿）
+
+> **rev16（2026-10-14）**：本计划已整体收官（`status: completed`），下表全部条目 ✅（含 rev15 批次的 27 缺口家族清零 / 44 壳视图数据驱动化 / IM 完整协议 / 移动端复杂控件 / FILE_FILE 落点）；长期消费率推进移交 `2026-09-20-001` 三端计划（rev120，609/4638=13.1%）。最终边界声明不变：「功能可替换」已达成，不宣布「100% 逐字节完全替代」。
 
 | 项 | 状态 | 证据 |
 |---|---|---|

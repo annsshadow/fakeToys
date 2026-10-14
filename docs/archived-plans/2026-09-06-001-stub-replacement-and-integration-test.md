@@ -3,9 +3,16 @@ module: oa4rust + oa4rust-web
 tags: [frontend, stub-cleanup, integration-test, parity, o2web-migration, full-replacement]
 problem_type: large-scale-refactor
 created: 2026-09-06
-status: in_progress
+status: completed
+closed: 2026-10-14
 updated: 2026-09-06
 ---
+
+> **收官注记（2026-10-14 状态校准）**：本计划三项工作的终态——
+> **P0 stub 清理**：✅ 100%（2,194/2,194，执行记录见文末「执行记录（2026-09-06）」；2026-10-14 复核前端无 `async function api_/call_` 残留）。
+> **P1 parity 37 个失败**：✅ 关闭——当时判定为环境/数据问题，其「防回归」意图已由 `2026-09-11-001` 评估计划 S2 承接并制度化：双侧全种子 behavior_compare + `fail_baseline`=170 固化门禁（`oa4rust/backend/tests/behavior_comparison/fail_baseline`，165 过/175 拦实测），parity 注册测试（4,130+）与 `parity_runner`/`parity_suite` 均在档。
+> **P2 corpus 扩展 / P3 行为语义验证**：✅ 由 S1/S2/S3 承接落地——`scripts/seed_java.py --init --process-form` 双侧播种、迁移 091 真实 activities/form 种子、`oa4rust/e2e/`（designer-roundtrip / workflow-runtime / oa-flows-live / app-coverage 四个 spec）实跑闭环。跨系统对齐确认按 09-11 计划 rev15 口径转为「门禁级功能等价 + 136 残余差异留档」，不再要求逐字节 corpus diff。
+> 综合替代度按 09-11 rev15 结论收口：代码层 100% 路由/stub 清零、门禁无回归、E2E 闭环 5/5。
 
 # 100% 替代 o2server + o2web — 实施计划（2026-09-06 最终版）
 

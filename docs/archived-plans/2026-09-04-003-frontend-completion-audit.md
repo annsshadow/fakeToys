@@ -1,7 +1,17 @@
+---
+title: "audit: OA4Rust 100% 替代 o2web — 完成度审计报告"
+type: audit
+status: superseded
+date: 2026-09-04
+superseded_by: docs/plans/2026-09-11-001-assess-oa4rust-web-full-replacement-gap-plan.md
+---
+
 # OA4Rust 100% 替代 o2web — 完成度审计报告
 
 **日期**: 2026-09-04
 **最新提交**: 8f786400
+
+> **时效声明（2026-10-14）**：本文档是绑定 2026-09-04 代码的**时效快照**，其「功能深度 ~8%」结论已被 `2026-09-11-001` 评估计划 §三 的重审取代（ProcessDesigner 807→11,807 行、FormDesigner 418→2,839、QueryStatementDesigner 329→2,698，且设计器↔引擎契约已于 rev8/rev15 全部闭环）。保留本文档仅作历史审计链；当前口径以 09-11 计划 rev15 与 `2026-09-20-001` 三端计划 rev120 为准。
 
 ---
 

@@ -1443,3 +1443,14 @@ Phase 0 (P0 止血)  ──→  Phase 1 (工程质量)  ──→  Phase 2 (多�
 | F9 / T1.15 | 该误用会让「生成报告」直接白屏（`histogram.values` 恒为 `undefined`） | 修复前 `QualityChart` 的 `histogram.values.map(...)`；`grep -rn "score_histogram" web/src` 确认全仓只此一处 |
 | F9 / T1.15 | 三门禁在类型层落地后复跑仍全绿 | `cd augmentor/web && npm run lint && npm run test:coverage && npm run build` |
 | F13 | `json.dumps({"passed": np.False_})` → `TypeError` | `type(np.False_)` + `isinstance(..., bool)` |
+
+---
+
+## 2026-10-14 定期复核（计划保持 active）
+
+Phase 0 / Phase 1 结论与代码一致，仍 `status: active`，新增事实：
+
+- **Phase 2（T2.1-T2.5 能力清单）确认未启动**：`augmentor/augmentor/capabilities.py` 与 `docs/CAPABILITY_MATRIX.md` 均不存在（2026-10-14 实测）——这是本计划唯一未开工阶段，保持待办。
+- **审计后增量**：`web/src/pages/` 在审计基线（9 页）之上新增 `Security.tsx` / `System.tsx`（含 backup/lineage/ops 测试文件），即 backup 等 P0 能力的 Web 入口已在审计后补齐部分；`tests/` 规模持续增长。
+- **文档位置漂移**：`docs/ARCHITECTURE.md` 等实际位于仓库根 `docs/augmentor/`（ARCHITECTURE/API/API_CORE/DEPLOYMENT/README/USAGE_EXAMPLES 均在档），非 augmentor 项目内 `docs/`。
+- **下次复核建议触发点**：Phase 2 启动时；或 T1.14（冗余数据文件 `git rm --cached`，约 11.5 MB）获用户确认执行时。

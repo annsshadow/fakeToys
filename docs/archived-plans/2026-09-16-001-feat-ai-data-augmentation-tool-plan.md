@@ -1,10 +1,18 @@
 ---
 title: "feat: AI 训练数据增强工具全面升级"
 type: feat
-status: active
+status: completed
+closed: 2026-10-14
 date: 2026-09-16
 origin: docs/brainstorms/ai-data-augmentation-tool-requirements.md
 ---
+
+> **收官注记（2026-10-14 状态校准）**：U1-U13 全部模块已在 `augmentor/augmentor/` 包内验证在档（2026-10-14 实测）——
+> `models/`（base/ernie/openai_model/**ollama**/factory）、`quality.py`、`dedup.py`、`export.py`、**`context.py`**（多轮对话）、
+> `checkpoint.py`（断点续传）、`versioning.py`、`sampler.py`、`expander.py`、`tracker.py`、`visualizer.py`、
+> `pipeline.py`、`config.py`、`api/main.py`（FastAPI 499 行）、`web/`（React 前端）。CLI 已进一步拆为 `augmentor/cli/` 包（44→36 子命令归一化，见 `2026-09-21-001` 计划 T1.6/T1.7）。
+> 测试规模：3,100+ 测试、语句覆盖率 99.50% / 分支 98.63%（2026-09-21 审计后口径）。
+> 布局漂移说明：计划中的 `ai/` 前缀实际落地为仓库根 `augmentor/` 项目（包内再嵌套 `augmentor/`），实质等价。
 
 # AI 训练数据增强工具全面升级
 

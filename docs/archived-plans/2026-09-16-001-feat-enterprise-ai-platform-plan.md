@@ -1,10 +1,20 @@
 ---
 title: "feat: Enterprise AI Training Data Platform"
 type: feat
-status: active
+status: completed
+closed: 2026-10-14
 date: 2026-09-16
 origin: docs/brainstorms/enterprise-ai-training-data-platform-requirements.md
 ---
+
+> **收官注记（2026-10-14 状态校准）**：U1-U18 全部落地（2026-10-14 实测核对）——
+> 模型后端含 **claude.py / gemini.py**（U2）；`benchmark.py` + `performance_benchmark.py`（U18）；`preview.py` / `report.py`（U4/U3）；
+> `data/` 子包（清洗/标注/多模态，U5/U9）；`multilingual.py` / `rag.py` / `evaluation.py`（U6）；`vector/`（FAISS/ChromaDB，U7）；
+> `active_learning.py`（U8）；Web UI 11 页面（计划 9 页 + 审计后新增 Security/System，U10）；`cli.py` 薄入口 + `augmentor/cli/` 包（U11）；
+> REST API 44 路由 11 router（U12，含质量/导出/多模态端点）；`frameworks/`（LangChain/LlamaIndex，U13）；
+> 测试 unit/integration/e2e 三层（U14）；文档 `docs/augmentor/`（README/API/ARCHITECTURE/DEPLOYMENT，U15）；
+> `docker/`（U16）；`.github/workflows/ai-platform-ci.yml + ai-platform-cd.yml`（U17）。
+> 已知余项（不在本计划范围）：多端能力清单 `capabilities.py` 与 CAPABILITY_MATRIX.md 未建——由 `2026-09-21-001` 审计计划 Phase 2 承接（该计划仍 active）。
 
 # 企业级 AI 训练数据平台 - 实现计划
 

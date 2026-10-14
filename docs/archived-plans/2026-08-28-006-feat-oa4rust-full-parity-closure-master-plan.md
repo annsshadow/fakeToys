@@ -1,10 +1,28 @@
 ---
 title: "feat: OA4Rust 100% 替代 o2server 全残差闭环总计划"
 type: feat
-status: active
+status: superseded
 date: 2026-08-28
 origin: docs/brainstorms/2026-08-25-oa4rust-o2server-residual-gaps-requirements.md
+superseded_by:
+  - docs/plans/2026-09-11-001-assess-oa4rust-web-full-replacement-gap-plan.md   # FAIL 收敛/上线判据/S4 移除（rev15 收官）
+  - docs/plans/2026-09-20-001-audit-oa4rust-three-ends-completeness-plan.md     # 三端契约/消费率长期推进（rev120 进行中）
 ---
+
+> **状态校准注记（2026-10-14）**：本总计划的执行已由上述两份后续计划接管，逐项终态如下（fail loud，含未达成项）：
+>
+> | 目标 | 终态 | 证据 |
+> |------|------|------|
+> | R9 FAIL 806 → ≤400 | ✅ 超额达成（136 FAIL / 1877 PASS，2026-09-14 干净双栈复验） | `oa4rust/backend/tests/behavior_comparison/fail_baseline`=170 固化门禁（165 过/175 拦实测）；收敛轨迹 193→158→153→136 见 09-11 计划 rev9-rev13 |
+> | R1 生产影子流量切流 | ⛔ 按 09-11 计划 rev15 正式移除（现场无旧系统，无影子/切流前提） | `oa4rust/backend/deploy/` 下 shadow-traffic.sh / rollback-playbook.md 已删；pilot_gate.py 降级为可选离线观测工具 |
+> | R2 「可替代」判定声明 | ✅ 迭代至 2026-09-01 版在档 | `docs/audits/2026-09-01-001-replaceable-oa4rust.md` |
+> | R-test-coverage 15% → ≥95% | ❌ **未达成** | 前端总体 42.97%（`docs/solutions/testing/final-achieve-95-coverage-report.md` 2026-09-18 明确「未达成」）；Rust crate 覆盖率无 95% 证据（三端计划 rev15 记 cargo test 7436 ok，但非覆盖率口径）。**该目标当前无活跃承接计划，如需继续须另立计划** |
+> | R-bam BAM 深度对齐 | ✅ P0 闭合、差异清单在档 | `docs/audits/2026-08-29-002-bam-alignment-gap.md`；BamApp.vue 持续消费 BAM 路由（三端计划 rev113-115） |
+> | R-attachment 4 端点 | ✅ 已验收 | 09-11 计划 rev8：091 迁移真实 activities/form 种子 + 双侧实跑纳入门禁 |
+> | R-infrastructure 生成器/CI/聚类工具 | ✅ 全部落地 | 根 `.github/workflows/`（oa4rust-ci / oa4rust-supply-chain / oa4rust-web / three-ends-contract）；fail_baseline 门禁；聚类产物入 CI |
+> | U13-U16 测试覆盖率冲刺 | ⚠️ 部分（零测试 crate 已清零、测试总量大幅提升；≥95% 未达成，见上） | 同上「未达成」行 |
+> | U19 部署剧本演练 | ⛔ 随 R1 一并移除（无旧系统后剧本作废） | deploy/ 现存 toggle_module.sh + auth-rollback-drill.sh |
+> | U20/U21/U22 文档收口 | ✅ 由 09-11 计划 rev15 批次闭环 | W13 manifest（`docs/audits/w13-w14-repository-closure.manifest.json`）+ campaign doc 口径已刷新 |
 
 # OA4Rust 100% 替代 o2server 全残差闭环总计划
 
