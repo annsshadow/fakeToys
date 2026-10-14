@@ -1955,4 +1955,166 @@ mod security_gate_tests {
             .unwrap();
         unseed_admin(&pool, &admin, &role_id).await;
     }
+
+    // ══ 四轮 R4-10 第三批：`data/delete/{work}/{id}` 与 `data/path/delete/{work}/{id}` ══
+    //
+    // 这两把 POST 此前**既不取会话也不校归属**：未认证请求按 ID 就能
+    // `UPDATE x_work SET deleted_at = NOW()`（软删流程实例），或按 work 批量把
+    // `x_task.task_status` 改成 deleted / `x_review.deleted_at` 落下。
+    // 门沿用本 crate 的 `u4_session`（无会话 401，先于任何 SQL）+ 发起人归属，
+    // 并取 destructive 口径：**空发起人只允许 admin**（比 `u4_require_actor`
+    // 的「空归属放行任意会话」更严，因为这里是删除而不是认领）。
+
+    /// 离线臂：两把删除路由都必须无会话 401，且 401 发生在 `pool.get()` 之前。
+    #[tokio::test]
+    async fn data_delete_routes_reject_without_session() {
+        let pool = shared::testing::test_pool();
+        let work_id = "r410-w-no-session".to_string();
+        let a = crate::data_work_id_delete(
+            Extension(pool.clone()),
+            None,
+            axum::extract::Path(("w-ignored".to_string(), work_id.clone())),
+        )
+        .await
+        .map(|_| ());
+        assert!(
+            matches!(a, Err(AppError::Unauthorized)),
+            "data/delete 无会话必须 401（实际 {a:?}）——它是按 ID 软删他人 work 的入口"
+        );
+        let b = crate::data_work_id_path_delete(
+            Extension(pool.clone()),
+            None,
+            axum::extract::Path((work_id, "tasks".to_string())),
+        )
+        .await
+        .map(|_| ());
+        assert!(
+            matches!(b, Err(AppError::Unauthorized)),
+            "data/path/delete 无会话必须 401（实际 {b:?}）"
+        );
+    }
+
+    /// DB 臂：① 他人会话 403 且 `deleted_at` / `task_status` 一格都不许动；
+    /// ② 发起人放行且软删确实落库；③ 空发起人行不得被「人人可删」洗白——
+    /// 普通会话 403、admin 200。
+    #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
+    async fn data_delete_routes_require_work_creator_and_land() {
+        if !shared::testing::is_db_available().await {
+            eprintln!("skip: PG unavailable");
+            return;
+        }
+        let pool = shared::testing::test_pool();
+        let tag = uuid::Uuid::new_v4().simple().to_string();
+        let work_id = format!("r410-w-{tag}");
+        let task_id = format!("r410-t-{tag}");
+        let creator = format!("u-r410-creator-{tag}");
+        let intruder = format!("u-r410-intruder-{tag}");
+        seed_work(&pool, &work_id, &creator).await;
+        seed_task(&pool, &task_id, &work_id, "u-r410-assignee", "active").await;
+
+        // ① 他人会话打两把删除 → 403，且不留任何写痕迹
+        let r = crate::data_work_id_delete(
+            Extension(pool.clone()),
+            Some(Extension(sess(&intruder))),
+            axum::extract::Path(("w-ignored".to_string(), work_id.clone())),
+        )
+        .await
+        .map(|_| ());
+        assert!(
+            matches!(r, Err(AppError::Forbidden)),
+            "非发起人按 ID 软删他人 work 必须 403（实际 {r:?}）"
+        );
+        let r = crate::data_work_id_path_delete(
+            Extension(pool.clone()),
+            Some(Extension(sess(&intruder))),
+            axum::extract::Path((work_id.clone(), "tasks".to_string())),
+        )
+        .await
+        .map(|_| ());
+        assert!(
+            matches!(r, Err(AppError::Forbidden)),
+            "非发起人按 work 批量软删其下任务必须 403（实际 {r:?}）"
+        );
+        let client = pool.get().await.unwrap();
+        let not_deleted: bool = client
+            .query_one(
+                "SELECT (deleted_at IS NULL) AS a FROM x_work WHERE id = $1",
+                &[&work_id.clone()],
+            )
+            .await
+            .unwrap()
+            .get("a");
+        assert!(not_deleted, "403 之后 work 的 deleted_at 必须仍为空");
+        let status: String = client
+            .query_one(
+                "SELECT task_status FROM x_task WHERE id = $1",
+                &[&task_id.clone()],
+            )
+            .await
+            .unwrap()
+            .get::<_, Option<String>>("task_status")
+            .unwrap_or_default();
+        assert_eq!(status, "active", "403 之后其下任务状态一格都不许改");
+
+        // ② 发起人 → 放行且软删落库
+        let ok = crate::data_work_id_delete(
+            Extension(pool.clone()),
+            Some(Extension(sess(&creator))),
+            axum::extract::Path(("w-ignored".to_string(), work_id.clone())),
+        )
+        .await
+        .map(|_| ());
+        assert!(
+            ok.is_ok(),
+            "发起人软删自己的 work 应放行（实际 {ok:?}）"
+        );
+        let deleted: bool = client
+            .query_one(
+                "SELECT (deleted_at IS NOT NULL) AS d FROM x_work WHERE id = $1",
+                &[&work_id.clone()],
+            )
+            .await
+            .unwrap()
+            .get("d");
+        assert!(deleted, "放行臂必须真的把 deleted_at 写进去（未命中行也会回 ok，落库才是凭据）");
+
+        // ③ 空发起人：普通会话 403、admin 200
+        let orphan = format!("r410-w-{tag}-orphan");
+        seed_work(&pool, &orphan, "").await;
+        let r = crate::data_work_id_delete(
+            Extension(pool.clone()),
+            Some(Extension(sess(&intruder))),
+            axum::extract::Path(("w-ignored".to_string(), orphan.clone())),
+        )
+        .await
+        .map(|_| ());
+        assert!(
+            matches!(r, Err(AppError::Forbidden)),
+            "空发起人 work 不得对普通会话开放删除（实际 {r:?}）"
+        );
+        let (admin, role_id) = seed_admin(&pool, &tag).await;
+        let ok = crate::data_work_id_path_delete(
+            Extension(pool.clone()),
+            Some(Extension(sess(&admin))),
+            axum::extract::Path((orphan.clone(), "tasks".to_string())),
+        )
+        .await
+        .map(|_| ());
+        assert!(
+            ok.is_ok(),
+            "admin 打空发起人 work 的批量删除应放行（实际 {ok:?}）"
+        );
+        unseed_admin(&pool, &admin, &role_id).await;
+        client
+            .execute("DELETE FROM x_task WHERE id = $1", &[&task_id])
+            .await
+            .unwrap();
+        for w in [work_id, orphan] {
+            client
+                .execute("DELETE FROM x_work WHERE id = $1", &[&w])
+                .await
+                .unwrap();
+        }
+    }
 }

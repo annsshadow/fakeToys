@@ -426,6 +426,37 @@ async fn u4_require_actor(
     shared::middleware::require_owner(pool, session, actor).await
 }
 
+/// 四轮 R4-10 第三批：`data/delete/{work}/{id}` 与 `data/path/delete/{work}/{id}`
+/// 两把 POST 此前不取会话、不校归属，未认证请求按 ID 就能软删他人 work
+/// （`x_work.deleted_at`）或批量改写其下 task/review 状态。 destructive 写按
+/// surface 同口径收紧：无会话 401（先于任何 SQL，离线可证）；发起人非空 → 本人或 admin，
+/// 发起人为空/行不存在 → 只允许 admin。
+async fn u4_require_work_owner(
+    pool: &Pool,
+    session: Option<Extension<shared::session::Session>>,
+    work_id: &str,
+) -> Result<(), AppError> {
+    let session = u4_session(session)?;
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let creator = client
+        .query_opt("SELECT creator FROM x_work WHERE id = $1", &[&work_id])
+        .await
+        .map_err(|_| AppError::Internal)?
+        .and_then(|r| r.get::<_, Option<String>>("creator"))
+        .map(|c| c.trim().to_string())
+        .filter(|c| !c.is_empty());
+    match creator.as_deref() {
+        Some(c) => shared::middleware::require_owner(pool, &session, c).await,
+        None => {
+            if shared::middleware::is_admin(pool, &session.person_unique).await {
+                Ok(())
+            } else {
+                Err(AppError::Forbidden)
+            }
+        }
+    }
+}
+
 #[allow(non_snake_case)]
 pub async fn work_id_processing(
     pool: Extension<Pool>,
@@ -1965,8 +1996,10 @@ pub async fn data_work_id(
 #[allow(non_snake_case)]
 pub async fn data_work_id_delete(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((_s0, id)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_work_owner(&pool.0, session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     client
         .execute(
@@ -2214,8 +2247,10 @@ pub async fn process_id_complex(
 #[allow(non_snake_case)]
 pub async fn data_work_id_path_delete(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((id, _path)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_work_owner(&pool.0, session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     match _path.as_str() {
         "tasks" => {

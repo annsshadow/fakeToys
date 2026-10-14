@@ -1,0 +1,13 @@
+crate	method	path	handler	gate_helper
+attendance_assemble_control	POST	/api/attendance/assemble/control/v2/record/import	v2_record_import	import_checkin_rows
+attendance_assemble_control	POST	/api/attendance/assemble/control/v2/record/import/daily	v2_record_import_daily	import_checkin_rows
+cms_express	POST	/api/cms/view/publish/{id}	view_publish	check_cms_publish
+cms_express	POST	/api/cms/view/unpublish/{id}	view_unpublish	check_cms_publish
+empower	GET	/api/person/empower/{id}/disable	disable	check_owner
+empower	GET	/api/person/empower/{id}/enable	enable	check_owner
+empower	POST	/api/person/empower/{id}/disable	disable	check_owner
+empower	POST	/api/person/empower/{id}/enable	enable	check_owner
+empower	PUT	/api/person/empower/{id}	update	check_owner
+meeting_assemble_control	DELETE	/api/meeting/assemble/control/attachment/{id}	u2_attachment_delete	u2_attachment_guard
+processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/attachment/{id}/work/{workId}/change/ordernumber/{orderNumber}	attachment_u2b_change_order_number	u2_gate_att_or_business_error
+processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/attachment/{id}/work/{workId}/change/site/{site}	attachment_u2b_change_site	u2_gate_att_or_business_error

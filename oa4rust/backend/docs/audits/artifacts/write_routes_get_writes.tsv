@@ -27,8 +27,6 @@ cms_assemble_control	GET	/api/file/{flag}/appInfo/{appInfoFlag}	file_copy_u3	K3-
 cms_assemble_control	GET	/api/fileinfo/{id}/doc/{docId}/change/seqnumber/{seqNumber}	fileinfo_id_doc_docId_change_seqnumber_seqNumber	K3-已认证无会话无门禁
 cms_assemble_control	GET	/api/form/{id}/mockdeletetoget	form_id_mockdeletetoget	K3-已认证无会话无门禁
 cms_assemble_control	GET	/api/permission/management/refresh/category/{categoryId}	permission_management_refresh_category_categoryId	K3-已认证无会话无门禁
-empower	GET	/api/person/empower/{id}/enable	enable	K3-已认证无会话无门禁
-empower	GET	/api/person/empower/{id}/disable	disable	K3-已认证无会话无门禁
 file_assemble_control	GET	/api/file/clean/unused/referencetype/cmsdocument/manage	file_clean_unused_referencetype_cmsdocument_manage	K3-已认证无会话无门禁
 file_assemble_control	GET	/api/file/copy/attachment/{p0}/referencetype/{p1}/reference/{p2}/scale/{p3}	file_copy_attachment_attachmentId_referencetype_referenceType_reference_reference_scale_scale	K3-已认证无会话无门禁
 file_assemble_control	GET	/api/file/assemble/control/file/copy/attachment/{attachmentId}/referencetype/{referenceType}/reference/{reference}/scale/{scale}	file_copy_attachment_attachmentId_referencetype_referenceType_reference_reference_scale_scale	K3-已认证无会话无门禁
@@ -70,7 +68,6 @@ processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/data/
 processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4/path5/mockputtopost	data_job_job_path0_path1_path2_path3_path4_path5_mockputtopost	K3-已认证无会话无门禁
 processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4/path5/path6/mockputtopost	data_job_job_path0_path1_path2_path3_path4_path5_path6_mockputtopost	K3-已认证无会话无门禁
 processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4/path5/path6/path7/mockputtopost	data_job_job_path0_path1_path2_path3_path4_path5_path6_path7_mockputtopost	K3-已认证无会话无门禁
-processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/data/work/mockputtopost/{id}	data_work_id_mockputtopost	K3-已认证无会话无门禁
 processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/data/workcompleted/mockputtopost/{id}	data_workcompleted_id_mockputtopost	K3-已认证无会话无门禁
 processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/draft/mockputtopost	draft_mockputtopost	K3-已认证无会话无门禁
 processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/handover/cancel/{id}	handover_id_cancel	K3-已认证无会话无门禁
@@ -85,14 +82,6 @@ processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/work/
 processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/work/v2/retract/mockputtopost/{id}	work_v2_id_retract_mockputtopost	K3-已认证无会话无门禁
 processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/work/v2/rollback/mockputtopost/{id}	work_v2_id_rollback_mockputtopost	K3-已认证无会话无门禁
 processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/workcompleted/rollback/mockputtopost/{flag}	workcompleted_flag_rollback_mockputtopost	K3-已认证无会话无门禁
-processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/data/mockdeletetoget	applicationdict_applicationDictFlag_application_applicationFlag_path0_data_mockdeletetoget	K3-已认证无会话无门禁
-processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/{path1}/data/mockdeletetoget	applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_data_mockdeletetoget	K3-已认证无会话无门禁
-processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/{path1}/{path2}/data/mockdeletetoget	applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_data_mockdeletetoget	K3-已认证无会话无门禁
-processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/{path1}/{path2}/{path3}/{path4}/data/mockdeletetoget	applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_data_mockdeletetoget	K3-已认证无会话无门禁
-processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/data/mockdeletetoget	applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_path5_data_mockdeletetoget	K3-已认证无会话无门禁
-processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}/data/mockdeletetoget	applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_path5_path6_data_mockdeletetoget	K3-已认证无会话无门禁
-processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}/{path7}/data/mockdeletetoget	applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_path5_path6_path7_data_mockdeletetoget	K3-已认证无会话无门禁
-processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/data/work/{id}/mockdeletetoget	data_work_id_mockdeletetoget	K3-已认证无会话无门禁
 processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/draft/{id}/mockdeletetoget	draft_id_mockdeletetoget	K3-已认证无会话无门禁
 processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/draft/{id}/start	draft_id_start	K3-已认证无会话无门禁
 processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/read/{id}/manage/mockdeletetoget	read_id_manage_mockdeletetoget	K3-已认证无会话无门禁
@@ -109,14 +98,6 @@ processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/work/
 processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/work/{id}/single/manage/mockdeletetoget	work_id_single_manage_mockdeletetoget	K3-已认证无会话无门禁
 processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/work/{id}/relative/manage/mockdeletetoget	work_id_relative_manage_mockdeletetoget	K3-已认证无会话无门禁
 processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/workcompleted/{id}/delete/manage/mockdeletetoget	workcompleted_id_delete_manage_mockdeletetoget	K3-已认证无会话无门禁
-processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/data/work/{id}/{path0}/mockdeletetoget	data_work_id_path0_mockdeletetoget	K3-已认证无会话无门禁
-processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/mockdeletetoget	data_work_id_path0_path1_mockdeletetoget	K3-已认证无会话无门禁
-processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/mockdeletetoget	data_work_id_path0_path1_path2_mockdeletetoget	K3-已认证无会话无门禁
-processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}/mockdeletetoget	data_work_id_path0_path1_path2_path3_mockdeletetoget	K3-已认证无会话无门禁
-processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/mockdeletetoget	data_work_id_path0_path1_path2_path3_path4_mockdeletetoget	K3-已认证无会话无门禁
-processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/mockdeletetoget	data_work_id_path0_path1_path2_path3_path4_path5_mockdeletetoget	K3-已认证无会话无门禁
-processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}/mockdeletetoget	data_work_id_path0_path1_path2_path3_path4_path5_path6_mockdeletetoget	K3-已认证无会话无门禁
-processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}/{path7}/mockdeletetoget	data_work_id_path0_path1_path2_path3_path4_path5_path6_path7_mockdeletetoget	K3-已认证无会话无门禁
 processplatform_service_processing	GET	/api/processplatform/service/processing/snap/restore/{id}	snap_id_restore	K3-已认证无会话无门禁
 processplatform_service_processing	GET	/api/processplatform/service/processing/snap/abandoned/{work}/{workId}/{type}	snap_work_workId_type_abandoned	K3-已认证无会话无门禁
 processplatform_service_processing	GET	/api/processplatform/service/processing/snap/suspend/{work}/{workId}/{type}	snap_work_workId_type_suspend	K3-已认证无会话无门禁
