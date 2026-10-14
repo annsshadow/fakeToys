@@ -164,13 +164,11 @@ cms_assemble_control	POST	/api/comment/list/{page}/size/{size}/mockputtopost	com
 cms_assemble_control	POST	/api/fileinfo/list/filter	fileinfo_u2_filter	R7
 cms_assemble_control	POST	/api/form/submit	form_submit	R7
 cms_assemble_control	POST	/api/designer/search	designer_u2_search	R7
-cms_assemble_control	DELETE	/api/appinfo/erase/app/{id}	appinfo_erase_app_id	R7
 cms_assemble_control	PUT	/api/appinfo/filter/list/{id}/next/{count}	appinfo_filter_list_id_next_count	R7
 cms_assemble_control	POST	/api/appinfo/filter/list/{id}/next/{count}/mockputtopost	appinfo_filter_list_id_next_count_mockputtopost	R7
 cms_assemble_control	PUT	/api/appinfo/filter/list/{id}/prev/{count}	appinfo_filter_list_id_prev_count	R7
 cms_assemble_control	POST	/api/appinfo/filter/list/{id}/prev/{count}/mockputtopost	appinfo_filter_list_id_prev_count_mockputtopost	R7
 cms_assemble_control	POST	/api/appinfo/{id}/icon/size/{size}	appinfo_appId_icon_size_size	R7
-cms_assemble_control	DELETE	/api/categoryinfo/erase/category/{id}	categoryinfo_erase_category_id	R7
 cms_assemble_control	PUT	/api/categoryinfo/bind/{categoryId}/view	categoryinfo_bind_categoryId_view	R7
 cms_assemble_control	POST	/api/categoryinfo/bind/{categoryId}/view/mockputtopost	categoryinfo_bind_categoryId_view_mockputtopost	R7
 cms_assemble_control	PUT	/api/categoryinfo/filter/list/{page}/size/{size}	categoryinfo_filter_list_page_size_size	R7
