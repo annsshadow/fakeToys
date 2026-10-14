@@ -4,9 +4,10 @@
 """账本里「本账第 N 行」那一形自指主张第一次有尺子（A333 的形状 ③ / L268）
 
 **这一轮收的是哪一格**：A333 立账时点名三种 a184 内容维判不到的形状，其中 ③ 是**不带文件名的裸行号**
-——账本散文写「所以本账第 832 行那条 `docs/API.md:1139` 引用仍指得准」，主张的是**本卷自己的行号**。
+——账本散文写「所以本账第 835 行那条 `docs/API.md:1139` 引用仍指得准」，主张的是**本卷自己的行号**。
 a184 量的是 `file.py:NNN` / `FILE.md:NNN` 这类**带文件名**的落点，裸行号它结构性看不见，所以历轮每次插行
-把那一格平移一次，全靠人眼重钉；L267 的账本批就当场错过一次（先钉成 833，复盘行号是 832，同句改回）。
+把那一格平移一次，全靠人眼重钉；L267 的账本批就当场错过一次（先钉成 833，复盘行号是 832，同句改回），
+而本轮（L268）的账本批落下 3 行 ⇒ 名册里那一格由 832 走到 **835**，这是本守卫第一次咬到自己。
 本守卫把这一形钉成三面闭合的现量名册。
 
 **面怎么定义**：站点 = 匹配 `本账第 (\\d+) 行` 的物理行，一行多处按多处算。卷一的「本账第 6 次」那一族
@@ -28,6 +29,10 @@ a184 量的是 `file.py:NNN` / `FILE.md:NNN` 这类**带文件名**的落点，�
 **牙齿**：`TestRulerBites` 五臂全部内存改写、零落盘——operative 的数字 off-by-one ⇒ `LIVE` 掉到 0；
 在它之上插一行（就是「上一轮插行把自指平移」那一形）⇒ `LIVE` 掉到 0；把锚那一格的内容改掉 ⇒
 `LIVE` 掉到 0；新增一条无锚自指 ⇒ 面 +1 而名册红；把序数那一形喂进来 ⇒ 面**不**动（判据不是「凡本账第都算」）。
+**臂的锚与下标按内容定位器现读**：off-by-one 臂要改的数字、scrub 臂要改的行下标都由
+`locate_operative_target` 现算，写死会让每一轮凭空多出两处重钉点（L268 记账批首跑三支臂红，两支就是
+这个原因）——臂的牙齿是「改一位就掉档」，不是「旧数字恰好还在」。名册里 operative 那一格**仍然写死**：
+那是刻意的每轮代价（见上一段），把它改成派生就等于把「散文没重钉」这一格从名册面上抹掉。
 
 **为什么零 parametrize**：`test_parametrize_ids_l97`（438 / 317）与 `test_parametrize_blind_face_l98`
 （盲面 116 / 四档 61-38-11-11 / 豁免 25）把全仓 parametrize 三面冻成现量数。本守卫的逐格断言走名册
@@ -64,11 +69,13 @@ BLIND = "BLIND"
 MEASURED_SITES = 13
 #: 三档闭合：1 + 5 + 7 = 13。`LIVE` 那一格就是 operative 自指，其余是历史读数与无锚主张。
 MEASURED_TIERS = {LIVE: 1, STALE: 5, BLIND: 7}
-#: 名册：`(卷, 区段, 轮号, 主张的那一行)`。`("OPTIMIZATION_LOOP_2.md", "checklist", 232, 832)` 是
-#: operative 那一格——L267 复盘现量 832（先钉成 833 的那一格同批改回，见 L267 块 ⑮）。
+#: 名册：`(卷, 区段, 轮号, 主张的那一行)`。`("OPTIMIZATION_LOOP_2.md", "checklist", 232, 835)` 是
+#: operative 那一格——L267 复盘现量 832（先钉成 833 的那一格同批改回，见 L267 块 ⑮），**L268 的账本批在
+#: 它之上落 3 行 ⇒ 按 ⑤ 的内容定位器重钉为 835**，这一格由 `test_the_roster_is_exact` 的红读数当场逼出
+#: （`assert ('...', 232, 835) == ('...', 232, 832)`），不是算术推的。
 ROSTER = frozenset(
     {
-        ("OPTIMIZATION_LOOP_2.md", "checklist", 232, 832),
+        ("OPTIMIZATION_LOOP_2.md", "checklist", 232, 835),
         ("OPTIMIZATION_LOOP_2.md", "checklist", 243, 734),
         ("OPTIMIZATION_LOOP_2.md", "checklist", 252, 795),
         ("OPTIMIZATION_LOOP_2.md", "log", 232, 773),
@@ -243,7 +250,7 @@ class TestTheOperative:
         assert live == {OPERATIVE}, live
 
     def test_the_operative_number_matches_the_independent_locator(self):
-        """散文写的行号 == 按内容独立定位的行号（现量 832）"""
+        """散文写的行号 == 按内容独立定位的行号（L268 账本批之后现量 835）"""
         volumes = other.load_volumes()
         site = next(
             s
@@ -257,11 +264,16 @@ class TestRulerBites:
     """五臂自证：全部内存改写，仓库文件一格未动"""
 
     def test_arm_off_by_one_drops_the_live_tier(self):
-        """L267 真实撞过的那一格：operative 先钉成 833 ⇒ `LIVE` 掉到 0"""
+        """L267 真实撞过的那一格（832 写成 833）：数字挪一位 ⇒ `LIVE` 掉到 0。
+        锚文字按 `locate_operative_target` 现读而不是写死旧值——臂的牙齿是「挪一位就掉档」，
+        写死数字只会让每一轮多两处要重钉（L268 记账批第一次红就红在写死的锚与下标上）。"""
+        volumes = other.load_volumes()
+        op = locate_operative_target(volumes["OPTIMIZATION_LOOP_2.md"])
+        old, new = f"所以本账第 {op} 行", f"所以本账第 {op + 1} 行"
         volumes = patched(
-            other.load_volumes(),
+            volumes,
             "OPTIMIZATION_LOOP_2.md",
-            lambda ls: [ln.replace("所以本账第 832 行", "所以本账第 833 行") for ln in ls],
+            lambda ls: [ln.replace(old, new) for ln in ls],
         )
         got = tier_counts(self_claims(volumes))
         assert got[LIVE] == 0, got
@@ -277,12 +289,16 @@ class TestRulerBites:
         assert got[LIVE] == 0, got
 
     def test_arm_removing_the_anchor_from_the_target_breaks_the_live_tier(self):
-        """锚那一格的内容被改写（引用被删）⇒ 同一数字也不再为真，判据读的是内容不是数字"""
+        """锚那一格的内容被改写（引用被删）⇒ 同一数字也不再为真，判据读的是内容不是数字。
+        下标同样按内容定位器现读，不写死物理行号。"""
+        volumes = other.load_volumes()
+        idx = locate_operative_target(volumes["OPTIMIZATION_LOOP_2.md"]) - 1
+
         def scrub(lines):
-            lines[831] = lines[831].replace("docs/API.md:1139", "另一条引用")
+            lines[idx] = lines[idx].replace("docs/API.md:1139", "另一条引用")
             return lines
 
-        got = tier_counts(self_claims(patched(other.load_volumes(), "OPTIMIZATION_LOOP_2.md", scrub)))
+        got = tier_counts(self_claims(patched(volumes, "OPTIMIZATION_LOOP_2.md", scrub)))
         assert got[LIVE] == 0, got
 
     def test_arm_a_new_blind_self_claim_grows_the_face(self):
