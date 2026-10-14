@@ -152,7 +152,7 @@ class ConfigValidator:
         # （`config.REQUEST_TIMEOUT_RANGE`，A77 口径）：下界 1 是实测硬界 ——
         # `requests` 对 `timeout=0` 直接抛 `ValueError`，而那发生在第一次真实
         # 调用上，「校验绿、跑时炸」正是本仓逐轮封死的那道缝；上界 600 对齐
-        # `docs/DEPLOYMENT.md` 的 nginx `proxy_read_timeout 600s`。
+        # `docs/augmentor/DEPLOYMENT.md` 的 nginx `proxy_read_timeout 600s`。
         # 每模型的覆盖档 `models.<名字>.request_timeout` 的规格住在下面那张
         # `MODEL_ENTRY_FIELDS`（L72 补的，同一条界同一个常数）：本表表达不了
         # 「任意键名下的一种子键」，所以按 `models.*.<键>` 归一后去那张表查。

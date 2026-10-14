@@ -1,7 +1,7 @@
 # 运行平台所需的最小依赖集合
 #
 # 用于 Docker 默认镜像与轻量部署：不含 sentence-transformers / chromadb /
-# langchain 等重型可选依赖。缺失的可选能力会自动降级（见 docs/ARCHITECTURE.md）。
+# langchain 等重型可选依赖。缺失的可选能力会自动降级（见 docs/augmentor/ARCHITECTURE.md）。
 #
 # 需要全部能力时改用 requirements.txt。
 

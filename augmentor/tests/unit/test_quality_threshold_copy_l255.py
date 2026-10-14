@@ -5,7 +5,7 @@
 r"""L255 守卫（收 A316）：页面与文档里那句「三个阈值」必须等于 SDK 当下真的在用的那三个
 
 **为什么立这一条**：`completeness 0.7 / diversity 0.4 / consistency 0.7` 这一串数出现在**三个面**
-（前端卡片正文、前端类型注释、`docs/API.md` 那一行），而它的权威住在
+（前端卡片正文、前端类型注释、`docs/augmentor/API.md` 那一行），而它的权威住在
 `augmentor/quality_monitor.py` 的 `_setup_default_thresholds()` 里——那里是**构造实参**而不是可引
 常数，改一个数不会让任何测试红。L234 把这三个数写进文案时是用探针量的，量完之后**没有任何尺子回头
 看过它**：SDK 调档 ⇒ 三处文案同时变成假话，而「触发告警为 0」这句判决恰恰是页面替用户读告警的唯一
@@ -86,7 +86,7 @@ def claims_in(text):
     return [m.groups() for m in CLAIM.finditer(text)]
 
 
-#: `docs/API.md` 里那一处连写的原文（臂 B3 与「换写法」那一支都要先断言它确实改得动）
+#: `docs/augmentor/API.md` 里那一处连写的原文（臂 B3 与「换写法」那一支都要先断言它确实改得动）
 API_SENTENCE = "completeness 0.7 / diversity 0.4 / consistency 0.7"
 
 

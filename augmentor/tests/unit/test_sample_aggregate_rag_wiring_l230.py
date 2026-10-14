@@ -44,7 +44,7 @@
   `conflict_count`、多出 `output_file`），conflicts 明细两侧都整份上线——与本组「写盘变换类只回
   写到哪、写了多少」的成文约定相反（实测那份 conflicts 明细 133 字节，四计数响应的十几倍）。
 * **`target_size` 只对 weighted 生效（A294）**：实测 `target_size=1` 配 union ⇒ **20 条**、
-  配 consistent ⇒ **20 条**、配 weighted ⇒ **1 条**。请求模型与 `docs/API.md` 都没写这件事，
+  配 consistent ⇒ **20 条**、配 weighted ⇒ **1 条**。请求模型与 `docs/augmentor/API.md` 都没写这件事，
   所以页面把那一格标成「只 weighted 吃这一格」。`target_size=0` 是合法档（200 交空产物），
   `-1` 才是 400「target_size 必须是不小于 0 的整数，当前是 -1」；不给时走 SDK 的
   `DEFAULT_TARGET_SIZE = 100`（`augmentor/aggregator.py:22`），够不着就交全量。
@@ -607,7 +607,7 @@ class TestEveryArmTheUiCanSendForAggregate:
         `aggregated_count`、`conflict_count` 在线上被丢掉、`output_file` 只在线上有）。
         判据因此写成「逐键列出两份、点名差在哪」，而不是「一边有明细一边没有」。
 
-        明细整份上线这一格与 `docs/API.md` 给 dataset 那组定的「写盘变换类只回写到哪、
+        明细整份上线这一格与 `docs/augmentor/API.md` 给 dataset 那组定的「写盘变换类只回写到哪、
         写了多少」相反，所以页面把每条冲突逐字渲出来（不藏），同时在卡上写明它偏了约定。
         """
         sdk_keys = set(AggregationResult(aggregated=[], source_counts={}).to_dict())
@@ -850,7 +850,7 @@ def doc_row(path: pathlib.Path, needle: str) -> str:
 
 
 class TestTheDocRowsSayWhatTheEndpointDoes:
-    """`docs/API.md` 那两行散文注必须与实测同口径——本轮订正过两处，判据住在这里防回潮
+    """`docs/augmentor/API.md` 那两行散文注必须与实测同口径——本轮订正过两处，判据住在这里防回潮
 
     **改前实测**（L230 收口时逐条量，两句话都与端点行为不符）：
 

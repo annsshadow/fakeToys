@@ -130,7 +130,7 @@ class TestTransportRetrySingleSource:
     `_get_session` 还挂了第二层 urllib3 `Retry(total=3, status_forcelist=[429,...])`，
     但它对**本仓库的 6 个调用点一个都不生效**（全部是 POST，而 urllib3 默认只重
     idempotent 方法），只会让读代码的人误判「最坏请求数」。删除它的理由是契约诚实，
-    不是性能（实测差异在噪声内，见 docs/ARCHITECTURE.md §3.20）。
+    不是性能（实测差异在噪声内，见 docs/augmentor/ARCHITECTURE.md §3.20）。
 
     本组测试钉住三件事：
     1. 传输层重试为 0 —— 若有人重新挂上 Retry，这里必须连同口径文档一起改；
