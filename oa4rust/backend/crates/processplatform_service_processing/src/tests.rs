@@ -1086,7 +1086,10 @@ mod u2_contract {
             c.execute("INSERT INTO x_work (id,title,process,work_status,creator) VALUES ('sus-w','t','p','processing','system')", &[]).await.unwrap();
         }
         let url = "/api/processplatform/service/processing/snap/work/sus-w/type/suspend";
-        let (_, v) = send(Method::GET, url, None).await;
+        // 第十六批：本把 GET 上挂快照写，收紧为「发起人或 admin」；种子行 creator='system'，
+        // 故以 system 会话调用。无会话 401 / 陌生会话 403 由 security_gate_tests 取证。
+        let (status, v) = send_raw_as(Method::GET, url, None, "system").await;
+        assert_eq!(status, StatusCode::OK);
         assert_eq!(v["type"], "success");
         let n = count(
             &pool,
@@ -1135,7 +1138,9 @@ mod u2_contract {
             c.execute("INSERT INTO x_task (id,title,work,person,task_status) VALUES ('tk-exp','t','tk-work','p@P','active')", &[]).await.unwrap();
         }
         let url = "/api/processplatform/service/processing/task/tk-exp/expire";
-        let (_, v) = send(Method::GET, url, None).await;
+        // 第十六批：task 族状态写按「负责人 / 发起人 / admin」放行，此处取负责人 p@P。
+        let (status, v) = send_raw_as(Method::GET, url, None, "p@P").await;
+        assert_eq!(status, StatusCode::OK);
         assert_eq!(v["type"], "success");
         let st: String = {
             let c = pool.get().await.unwrap();
@@ -1172,22 +1177,48 @@ mod u2_contract {
                 .await
                 .unwrap();
             c.execute(
-                "DELETE FROM x_record WHERE work_id='tc-w' AND record_type='press'",
+                "DELETE FROM x_record WHERE work_id IN ('tc-w','tc-other') AND record_type='press'",
                 &[],
             )
             .await
             .unwrap();
+            for w in ["tc-w", "tc-other"] {
+                c.execute("DELETE FROM x_work WHERE id = $1", &[&w.to_string()])
+                    .await
+                    .unwrap();
+            }
+            // 两把 work 同属 p@P：让「跨 work 催办」这一支先过归属门、再由 IDOR 等值校验拒绝。
+            // 若 tc-other 不存在或属他人，读到的 403 会被误当成 IDOR 的读数——两道门各自可证。
+            for w in ["tc-w", "tc-other"] {
+                c.execute(
+                    "INSERT INTO x_work (id,title,process,work_status,creator) VALUES ($1,'t','p','completed','p@P')",
+                    &[&w.to_string()],
+                )
+                .await
+                .unwrap();
+            }
             c.execute("INSERT INTO x_readcompleted (id, work_id, person) VALUES ('tc-press','tc-w','p@P')", &[]).await.unwrap();
         }
         let wrong =
             "/api/processplatform/service/processing/taskcompleted/tc-press/press/work/tc-other";
-        let (_, v) = send(Method::GET, wrong, None).await;
+        let (status, v) = send_raw_as(Method::GET, wrong, None, "p@P").await;
+        assert_eq!(status, StatusCode::OK, "归属门放行后，跨 work 由业务错误信封返回");
         assert_eq!(v["type"], "error", "IDOR：记录不属于该 work 时必须拒绝催办");
         let right =
             "/api/processplatform/service/processing/taskcompleted/tc-press/press/work/tc-w";
-        let (_, v1) = send(Method::GET, right, None).await;
+        // 第十六批：流程之外的会话按 ID 催办他人已完成项，归属门 403 且零留痕。
+        let (s403, _) = send_raw_as(Method::GET, right, None, "x@X").await;
+        assert_eq!(s403, StatusCode::FORBIDDEN, "非发起人催办必须 403");
+        let after_intruder = count(
+            &pool,
+            "SELECT COUNT(*) AS c FROM x_record WHERE work_id='tc-w' AND record_type='press'",
+        )
+        .await;
+        assert_eq!(after_intruder, 0, "403 之后不得留下任何催办记录");
+        let (status1, v1) = send_raw_as(Method::GET, right, None, "p@P").await;
+        assert_eq!(status1, StatusCode::OK);
         assert_ne!(v1["data"]["duplicated"], true);
-        let (_, v2) = send(Method::GET, right, None).await;
+        let (_, v2) = send_raw_as(Method::GET, right, None, "p@P").await;
         assert_eq!(v2["data"]["duplicated"], true);
         let n = count(
             &pool,
@@ -1200,11 +1231,16 @@ mod u2_contract {
             .await
             .unwrap();
         c.execute(
-            "DELETE FROM x_record WHERE work_id='tc-w' AND record_type='press'",
+            "DELETE FROM x_record WHERE work_id IN ('tc-w','tc-other') AND record_type='press'",
             &[],
         )
         .await
         .unwrap();
+        for w in ["tc-w", "tc-other"] {
+            c.execute("DELETE FROM x_work WHERE id = $1", &[&w.to_string()])
+                .await
+                .unwrap();
+        }
     }
 
     #[tokio::test]
@@ -1348,6 +1384,17 @@ mod u2_contract {
             c.execute("DELETE FROM x_workcompleted WHERE work_id='mrg-w'", &[])
                 .await
                 .unwrap();
+            c.execute("DELETE FROM x_work WHERE id='mrg-w'", &[])
+                .await
+                .unwrap();
+            // 第十六批：合并是「按 work 物理删 x_workcompleted 其余重复项」的 destructive 写。
+            // 完成记录行本身 creator 为空，归属从 x_work.creator hop 取得，故必须建出该 work。
+            c.execute(
+                "INSERT INTO x_work (id,title,process,work_status,creator) VALUES ('mrg-w','t','p','completed','p@P')",
+                &[],
+            )
+            .await
+            .unwrap();
             for id in ["mrg-keep", "mrg-drop"] {
                 c.execute(
                     "INSERT INTO x_workcompleted (id, work_id) VALUES ($1,'mrg-w')",
@@ -1358,7 +1405,8 @@ mod u2_contract {
             }
         }
         let url = "/api/processplatform/service/processing/workcompleted/mrg-keep/merge";
-        let (_, v) = send(Method::GET, url, None).await;
+        let (status, v) = send_raw_as(Method::GET, url, None, "p@P").await;
+        assert_eq!(status, StatusCode::OK);
         assert_eq!(v["type"], "success");
         assert_eq!(v["data"]["merged"], 1);
         let kept = count(
@@ -1374,6 +1422,9 @@ mod u2_contract {
         assert_eq!((kept, dropped), (1, 0), "合并后仅保留 flag 指定项");
         let c = pool.get().await.unwrap();
         c.execute("DELETE FROM x_workcompleted WHERE work_id='mrg-w'", &[])
+            .await
+            .unwrap();
+        c.execute("DELETE FROM x_work WHERE id='mrg-w'", &[])
             .await
             .unwrap();
     }
@@ -1514,7 +1565,7 @@ mod u2_contract {
                 .await
                 .unwrap();
             c.execute(
-                "INSERT INTO x_work (id, title, process, work_status) VALUES ('r32-work','t','p','completed')",
+                "INSERT INTO x_work (id, title, process, work_status, creator) VALUES ('r32-work','t','p','completed','p@P')",
                 &[],
             )
             .await
@@ -1527,7 +1578,9 @@ mod u2_contract {
             .unwrap();
         }
         let url = "/api/processplatform/service/processing/workcompleted/rollback/r32-wc";
-        let (_, v) = send(Method::GET, url, None).await;
+        // 第十六批：回滚会删完成记录并把 work 拉回 pending，按发起人放行。
+        let (status, v) = send_raw_as(Method::GET, url, None, "p@P").await;
+        assert_eq!(status, StatusCode::OK);
         assert_eq!(v["type"], "success");
         // 终态：work 已恢复 pending
         let pending = count(

@@ -457,6 +457,75 @@ async fn u4_require_work_owner(
     }
 }
 
+/// 第十六批：本 crate GET 面 27 条注册 / 22 把 handler 的归属门。
+/// 键 → (整句字面量 SQL, 归属列名)；SQL 常量集中在此，调用点只给键与 ID，不做拼接。
+/// WorkCompleted / Snap 两把键 hop 到 `x_work.creator`：快照行自身没有可用属主——
+/// migration 033 虽然给 x_snap 加了 creator / person，本 crate 的写入路径从不填它们，
+/// 全是 NULL，按「空归属」算等于没有。
+enum U4ActorKey {
+    Task,
+    WorkCompleted,
+    Snap,
+}
+
+fn u4_actor_key_sql(key: U4ActorKey) -> (&'static str, &'static [&'static str]) {
+    match key {
+        U4ActorKey::Task => (
+            "SELECT t.person AS person, w.creator AS work_creator \
+             FROM x_task t LEFT JOIN x_work w ON w.id = t.work WHERE t.id = $1",
+            &["person", "work_creator"],
+        ),
+        U4ActorKey::WorkCompleted => (
+            "SELECT wc.creator AS wc_creator, w.creator AS work_creator \
+             FROM x_workcompleted wc LEFT JOIN x_work w ON w.id = wc.work_id WHERE wc.id = $1",
+            &["wc_creator", "work_creator"],
+        ),
+        U4ActorKey::Snap => (
+            "SELECT w.creator AS work_creator FROM x_snap s \
+             LEFT JOIN x_work w ON w.id = s.work_id WHERE s.id = $1",
+            &["work_creator"],
+        ),
+    }
+}
+
+/// 严格归属门（多列版，与 `u4_require_work_owner` 同口径）：任一非空归属列等于本人
+/// → 放行；否则只允许 admin；行不存在 / 归属列全空 → admin only，不用「空归属 =
+/// 人人可写」把数据缺陷洗成权限放行。
+/// task 族为什么要两列：催办、过期、暂停这些动作的合法操作人本来就是流程双方——
+/// 发起人催别人手里的办，负责人转办·暂停自己的办。只校其中一侧会把另一侧的正常
+/// 流程判成越权；本批要关的是「双方之外的陌生会话按 ID 就能办他人待办」。
+async fn u4_require_actors(
+    pool: &Pool,
+    session: &shared::session::Session,
+    key: U4ActorKey,
+    id: &str,
+) -> Result<(), AppError> {
+    let (sql, cols) = u4_actor_key_sql(key);
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(sql, &[&id])
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let me = session.person_unique.as_str();
+    if let Some(r) = row.as_ref() {
+        for col in cols {
+            let actor = r
+                .try_get::<_, Option<String>>(*col)
+                .map_err(|_| AppError::Internal)?
+                .unwrap_or_default();
+            let actor = actor.trim();
+            if !actor.is_empty() && actor == me {
+                return Ok(());
+            }
+        }
+    }
+    if shared::middleware::is_admin(pool, me).await {
+        Ok(())
+    } else {
+        Err(AppError::Forbidden)
+    }
+}
+
 #[allow(non_snake_case)]
 pub async fn work_id_processing(
     pool: Extension<Pool>,
@@ -621,8 +690,10 @@ pub async fn work_v2_id_goback(
 #[allow(non_snake_case)]
 pub async fn work_v2_id_goback_p2(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((_work, id)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_work_owner(&pool.0, session, &id).await?;
     work_v2_id_goback_core(pool, id).await
 }
 
@@ -633,7 +704,7 @@ async fn work_v2_id_rollback_core(
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let snap_row = client
         .query_opt(
-            "SELECT id, work_id, snap_type, snap_data FROM x_snap WHERE work_id = $1 ORDER BY create_time DESC LIMIT 1",
+            "SELECT id, work_id, snap_type, snap_data::text AS snap_data FROM x_snap WHERE work_id = $1 ORDER BY create_time DESC LIMIT 1",
             &[&id],
         )
         .await
@@ -672,8 +743,10 @@ pub async fn work_v2_id_rollback(
 #[allow(non_snake_case)]
 pub async fn work_v2_id_rollback_p2(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((_work, id)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_work_owner(&pool.0, session, &id).await?;
     work_v2_id_rollback_core(pool, id).await
 }
 
@@ -769,8 +842,10 @@ pub async fn work_v2_id_reroute(
 #[allow(non_snake_case)]
 pub async fn work_v2_id_reroute_p2(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((_work, id)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_work_owner(&pool.0, session, &id).await?;
     work_v2_id_reroute_core(pool, id).await
 }
 
@@ -1048,8 +1123,11 @@ pub async fn task_id_processing(
 #[allow(non_snake_case)]
 pub async fn task_id_urge(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = u4_session(session)?;
+    u4_require_actors(&pool.0, &session, U4ActorKey::Task, &id).await?;
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     tx.execute(
@@ -1079,8 +1157,11 @@ pub async fn task_id_urge(
 #[allow(non_snake_case)]
 pub async fn task_id_replace(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = u4_session(session)?;
+    u4_require_actors(&pool.0, &session, U4ActorKey::Task, &id).await?;
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     let row = tx
@@ -1117,8 +1198,11 @@ pub async fn task_id_replace(
 #[allow(non_snake_case)]
 pub async fn task_id_press(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = u4_session(session)?;
+    u4_require_actors(&pool.0, &session, U4ActorKey::Task, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     client
         .execute(
@@ -1140,8 +1224,11 @@ pub async fn task_id_press(
 #[allow(non_snake_case)]
 pub async fn task_id_expire(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = u4_session(session)?;
+    u4_require_actors(&pool.0, &session, U4ActorKey::Task, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     client
         .execute(
@@ -1163,8 +1250,11 @@ pub async fn task_id_expire(
 #[allow(non_snake_case)]
 pub async fn task_id_pass_expired(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = u4_session(session)?;
+    u4_require_actors(&pool.0, &session, U4ActorKey::Task, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     client
         .execute(
@@ -1218,8 +1308,11 @@ pub async fn task_v2_id(
 #[allow(non_snake_case)]
 pub async fn task_v2_id_pause(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = u4_session(session)?;
+    u4_require_actors(&pool.0, &session, U4ActorKey::Task, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     client
         .execute(
@@ -1264,8 +1357,11 @@ pub async fn task_v2_id_reset(
 #[allow(non_snake_case)]
 pub async fn task_v2_id_resume(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = u4_session(session)?;
+    u4_require_actors(&pool.0, &session, U4ActorKey::Task, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     client
         .execute(
@@ -1428,7 +1524,7 @@ pub async fn snap_upload(
     let snap_data = req.get("data").cloned().unwrap_or(serde_json::json!({}));
     client
         .execute(
-            "INSERT INTO x_snap (id, work_id, snap_type, snap_data, create_time) VALUES ($1, $2, $3, $4, NOW())",
+            "INSERT INTO x_snap (id, work_id, snap_type, snap_data, create_time) VALUES ($1, $2, $3, ($4::text)::jsonb, NOW())",
             &[&id, &work_id, &snap_type, &snap_data.to_string()],
         )
         .await
@@ -1441,13 +1537,15 @@ pub async fn snap_upload(
 #[allow(non_snake_case)]
 pub async fn snap_work_workId_type_abandoned(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((_s0, work_id, _s2)): axum::extract::Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_work_owner(&pool.0, session, &work_id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = Uuid::new_v4().to_string();
     client
         .execute(
-            "INSERT INTO x_snap (id, work_id, snap_type, snap_data, create_time) VALUES ($1, $2, $3, $4, NOW())",
+            "INSERT INTO x_snap (id, work_id, snap_type, snap_data, create_time) VALUES ($1, $2, $3, ($4::text)::jsonb, NOW())",
             &[&id, &work_id, &"abandoned", &"null"],
         )
         .await
@@ -1479,13 +1577,15 @@ pub async fn snap_work_workId_type_snap(
 #[allow(non_snake_case)]
 pub async fn snap_work_workId_type_suspend(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((_s0, work_id, _s2)): axum::extract::Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_work_owner(&pool.0, session, &work_id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = Uuid::new_v4().to_string();
     client
         .execute(
-            "INSERT INTO x_snap (id, work_id, snap_type, snap_data, create_time) VALUES ($1, $2, $3, $4, NOW())",
+            "INSERT INTO x_snap (id, work_id, snap_type, snap_data, create_time) VALUES ($1, $2, $3, ($4::text)::jsonb, NOW())",
             &[&id, &work_id, &"suspend", &"null"],
         )
         .await
@@ -1498,8 +1598,17 @@ pub async fn snap_work_workId_type_suspend(
 #[allow(non_snake_case)]
 pub async fn snap_workcompleted_workCompletedId_type_abandonedworkcompleted(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((work_completed_id, _type)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = u4_session(session)?;
+    u4_require_actors(
+        &pool.0,
+        &session,
+        U4ActorKey::WorkCompleted,
+        &work_completed_id,
+    )
+    .await?;
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     let id = Uuid::new_v4().to_string();
@@ -1512,7 +1621,7 @@ pub async fn snap_workcompleted_workCompletedId_type_abandonedworkcompleted(
         .map_err(|_| AppError::Internal)?;
     let work_id: String = work_id_row.get("work_id");
     tx.execute(
-            "INSERT INTO x_snap (id, work_id, snap_type, snap_data, create_time) VALUES ($1, $2, $3, $4, NOW())",
+            "INSERT INTO x_snap (id, work_id, snap_type, snap_data, create_time) VALUES ($1, $2, $3, ($4::text)::jsonb, NOW())",
             &[&id, &work_id, &"abandonedworkcompleted", &"null"],
         )
         .await
@@ -1572,13 +1681,16 @@ pub async fn snap_id(
 #[allow(non_snake_case)]
 pub async fn snap_id_restore(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = u4_session(session)?;
+    u4_require_actors(&pool.0, &session, U4ActorKey::Snap, &id).await?;
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     let snap_row = tx
         .query_one(
-            "SELECT id, work_id, snap_type, snap_data FROM x_snap WHERE id = $1",
+            "SELECT id, work_id, snap_type, snap_data::text AS snap_data FROM x_snap WHERE id = $1",
             &[&id],
         )
         .await
@@ -3129,8 +3241,11 @@ pub async fn workcompleted_flag_merge(
 #[allow(non_snake_case)]
 pub async fn workcompleted_flag_rollback(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = u4_session(session)?;
+    u4_require_actors(&pool.0, &session, U4ActorKey::WorkCompleted, &id).await?;
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     // 回滚=原子地「x_work 恢复 pending」+「删除完成记录」，二写须同事务：否则中途失败
     // 会留下 work 既 pending 又仍存在完成记录的自相矛盾态（孪生 wc_rollback_flag 已事务化）。
@@ -3157,7 +3272,7 @@ pub async fn workcompleted_flag_rollback(
     // 回滚提交后再读快照（复用同一 client，无需再取连接）。
     let snap_row = client
         .query_opt(
-            "SELECT id, snap_data FROM x_snap WHERE work_id = $1 ORDER BY create_time DESC LIMIT 1",
+            "SELECT id, snap_data::text AS snap_data FROM x_snap WHERE work_id = $1 ORDER BY create_time DESC LIMIT 1",
             &[&work_id],
         )
         .await
