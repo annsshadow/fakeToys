@@ -103,7 +103,7 @@ date: 2026-08-06
 
 ## Related
 
-- [Single Source of Truth: Migration Status](best-practices/single-source-of-truth-migration-status.md)
+- [Single Source of Truth: Migration Status](../best-practices/single-source-of-truth-migration-status.md)
 - [Strangler Fig Migration Pattern](../architecture-patterns/strangler-fig-migration-pattern.md)
 - **Campaign retrospective:** `docs/solutions/best-practices/oa4rust-o2server-parity-closure-campaign-2026-08-25.md`
 - **Active plan:** `docs/plans/2026-08-21-002-feat-remaining-work-consolidation-plan.md`

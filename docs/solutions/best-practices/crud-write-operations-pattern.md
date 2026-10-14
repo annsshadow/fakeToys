@@ -157,9 +157,9 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
 
 ## Related
 
-- [IDOR Vulnerability in Write Handlers](security-issues/idor-vulnerability-write-handlers.md)
-- [Input Validation Pattern](best-practices/input-validation-pattern.md)
-- [Nested Tokio Runtime Panic](integration-issues/nested-tokio-runtime-panic.md)
+- [IDOR Vulnerability in Write Handlers](../security-issues/idor-vulnerability-write-handlers.md)
+- [Input Validation Pattern](input-validation-pattern.md)
+- [Nested Tokio Runtime Panic](../integration-issues/nested-tokio-runtime-panic.md)
 - **Impl:** `oa4rust/crates/program_center_core_entity/src/lib.rs`
 - **Migration:** `oa4rust/migrations/012_add_creator_person.sql`
 - **Plan:** `docs/plans/2026-08-10-001-prod-readiness-plan.md` (U2, U3)

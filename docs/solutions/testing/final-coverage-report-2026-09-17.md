@@ -182,5 +182,5 @@ statements: 50
 ## 附件
 - [test-coverage-summary.md](test-coverage-summary.md) - 初始分析
 - [test-coverage-95-target-plan.md](test-coverage-95-target-plan.md) - 完整提升计划
-- [coverage/lcov-report/index.html](coverage/lcov-report/index.html) - 当前覆盖率报告
-- [packages/apis/src/api-with-sdk.test.ts](./packages/apis/src/api-with-sdk.test.ts) - API 集成测试
+- `coverage/lcov-report/index.html` - 当前覆盖率报告（覆盖率命令的构建产物，不入版本控制）
+- [packages/apis/src/api-with-sdk.test.ts](../../../oa4rust/frontend/packages/apis/src/api-with-sdk.test.ts) - API 集成测试

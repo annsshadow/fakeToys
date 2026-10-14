@@ -196,4 +196,4 @@ thresholds: {
 - [test-coverage-summary.md](test-coverage-summary.md) - 初始覆盖率分析
 - [test-coverage-95-target-plan.md](test-coverage-95-target-plan.md) - 完整提升计划
 - [coverage-achievement-analysis-2026-09-18.md](coverage-achievement-analysis-2026-09-18.md) - 技术分析
-- [coverage/lcov-report/index.html](coverage/lcov-report/index.html) - 当前覆盖率报告
+- `coverage/lcov-report/index.html` - 当前覆盖率报告（覆盖率命令的构建产物，不入版本控制）
