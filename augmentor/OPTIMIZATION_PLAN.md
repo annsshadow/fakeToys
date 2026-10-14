@@ -38,11 +38,11 @@ augmentor/
 | 维度 | 现状 |
 |------|------|
 | 版本 | **3.0.0**（`augmentor.__version__` 是全仓唯一声明） |
-| 测试 | **3668 个**（3668 passed / 3 skipped），覆盖率 **98.55%**（门槛 80%） |
+| 测试 | **8298+ passed / 覆盖率 99.8%**（OPTIMIZATION_LOOP_2 最新轮门禁读数；静态统计 376 个测试文件 / 6735 个测试函数，门槛 80%） |
 | 版本一致性 | FastAPI 元数据 / `web/package.json` / `docker-compose.yml` 默认 tag 三处均由测试锁定 |
-| HTTP API | **68 个端点 / 13 个 tag**，全部声明 `response_model`，无「无 schema 的 200 响应」；23 条写/删路由挂 `verify_api_key`，由动态发现的路由清单守门 |
+| HTTP API | **77 个端点 / 13 个 tag**（2026-10-14 复核），全部声明 `response_model`，无「无 schema 的 200 响应」；写/删路由挂 `verify_api_key`，由动态发现的路由清单守门 |
 | 路径白名单 | 出厂默认 `web.data_roots` = **`["data"]`**（原 `["."]` 放行整个工作目录）；三处默认值由字面量钉住并交叉比对。`/api/data/list` 扫描范围与白名单同源；相对路径**先在根目录内查已存在的文件**、工作目录兜底，写入需显式 `data/x.json` |
-| 前端 | **11 个功能页**，服务层 43 个函数；契约测试 + 接线守门共 45 个用例 |
+| 前端 | **11 个功能页**，服务层 86 个导出（2026-10-14 复核）；契约测试 + 接线守门常驻 |
 | 模型后端 | ERNIE、OpenAI、Ollama、Claude、Gemini |
 | 导出格式 | 以 `ExportFormat` 枚举为准（13 种，含 `raw`）；CLI `--format` 与转换图的支持面由 `TestExportFormatSurface` / `TestConvertFormatSurface` 双向锁定 |
 

@@ -117,7 +117,7 @@ docker compose up -d
 
 `docker-compose.yml` 会：
 
-- 把宿主机的 `8000` 端口映射到容器；
+- 把宿主机端口映射到容器的 `8000`（宿主侧端口由 `${API_PORT:-8000}` 控制，默认 `8000`，可在 `.env` 覆盖）；
 - 从 `.env` 文件（若存在）或当前 shell 环境读取模型密钥；
 - 挂载 `./data` 用于持久化数据、断点、版本与向量库；
 - 配置健康检查（`GET /api/health`）。
@@ -132,7 +132,7 @@ curl http://localhost:8000/api/health
 
 ### 2.4 环境变量
 
-在 `augmentor/docker/` 下创建 `.env`：
+在 `augmentor/docker/` 下创建 `.env`（模板见同目录 `.env.example`）：
 
 ```bash
 BAIDU_API_KEY=your_api_key
@@ -142,7 +142,15 @@ ANTHROPIC_API_KEY=your_anthropic_key
 GOOGLE_API_KEY=your_google_key
 ```
 
-未配置的后端在构造时会报错，配置了至少一个即可正常使用。
+除模型密钥外，`.env.example` 还提供三个部署参数：
+
+| 变量 | 默认 | 说明 |
+|------|------|------|
+| `API_PORT` | `8000` | 宿主机侧映射端口（容器内固定 `8000`） |
+| `IMAGE_TAG` | `3.0.0`（compose 默认） | 构建出的镜像标签 |
+| `INSTALL_OPTIONAL` | `0` | 设 `1` 构建时安装全部可选依赖 |
+
+未配置密钥的后端在构造时会报错，配置了至少一个即可正常使用。
 
 ### 2.5 停止与清理
 
@@ -270,6 +278,8 @@ sudo certbot --nginx -d your-domain.com
 
 ## 4. 环境变量清单
 
+### 模型密钥
+
 | 变量 | 必需 | 说明 |
 |------|------|------|
 | `BAIDU_API_KEY` | 使用 ERNIE 时必需 | 百度智能云 API Key |
@@ -288,6 +298,14 @@ models:
     api_key: ${BAIDU_API_KEY}
     secret_key: ${BAIDU_SECRET_KEY}
 ```
+
+### 运行时变量
+
+| 变量 | 必需 | 说明 |
+|------|------|------|
+| `AUGMENTOR_API_KEY` | 生产推荐 | 设置后写操作（改配置 / 删数据 / 上传 / 导出 / 回滚版本）要求请求头 `X-API-Key`；不设置时启动打 WARNING、写操作无鉴权（见 §5.7） |
+| `AUGMENTOR_CONFIG_PATH` | 否 | 指定服务使用的配置文件路径；未设置时用工作目录下的 `config.yaml`（`POST /api/system/validate-config` 留空时校验的就是它） |
+| `AUGMENTOR_DATA_ROOTS` | 否 | 数据路径白名单根目录（`os.pathsep` 分隔），优先级高于 `config.yaml` 的 `web.data_roots`；都不设时出厂默认 `["data"]` |
 
 ---
 
