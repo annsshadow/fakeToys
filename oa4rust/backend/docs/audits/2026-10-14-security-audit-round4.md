@@ -655,3 +655,26 @@ cd oa4rust/backend && cargo test --lib -p <crate>
   最小语法复原（`processplatform_service_processing`、`portal_assemble_designer`），**未**提交进我的批，
   仍留在他们自己的未提交改动集里。本轮未 push。
 
+### 第七批补充（尺子缺陷 10 + 一次「误判成解析回归」的取证，代码 `81ac87eb4`）
+
+- **缺陷 10**：R2/R3/R4 的匿名判据仍只看第一把锁（`isAuthExempt`），与 F1 之后的 auth 层语义脱节——
+  只命中豁免表的写路由其实**要求有效会话**。改为双锁判据后用注入臂量了迁移：
+  **R2 6→3、R3 4→0、R5 518→521、R6 276→280，而 R4 与 R7 一字不动**。
+  这反过来定性了一件事：长期被当成「匿名可写行动面」的 **R4 那 14 条本来就两把锁同开**（真匿名），
+  此前 §三.7 说「旧读数虚高行动面」只对 R2/R3 那 7 条成立，对 R4 不成立——账本口径据此更正，
+  不要把「双锁修复」也写成 R4 的缩水理由。
+- **一次自我纠偏（值得留档的取证纪律）**：拿 `write_routes_ungated.tsv` 做新旧对账时得到
+  「93 出 / 70 条 `(crate,method,path)` 整行消失」，第一反应是**解析回归**。实际原因是该产物
+  **只写 R4 与 R7 两桶**，那 70 条是 R7→R5 搬家（第六批 `GATE_RE` 改前缀匹配后认出它们体内确有门），
+  抽查 `cms_assemble_control::dict_create` 证实体内 `u2_require_admin(&pool, &session)`。
+  修法不是改口径而是**补产物**：新增 `write_routes_matrix.tsv`（全 7 桶逐条 + 按 crate 的 R7 集中度），
+  从此「换桶」与「漏解析」两种迁移可机械区分。**教训**：对账前先确认产物的列/桶覆盖面对不对得上
+  被比较的判据，否则一把只量两个桶的尺子会把「搬家」读成「失踪」。
+- **按新分母复称的 R4-2 余量**（读 `write_routes_matrix.tsv`，R7 = 已认证 + 体内无会话无门禁）：
+  `processplatform_service_processing` **81 条路由 / 68 个 handler 名**——与 §五 旧数**完全一致**，
+  即双锁改造与缺陷 9/10 的修正没有改变这一族的分母，旧数可继续引用（此前挂着「要重量」的待办就此收掉）。
+  同表读出的更大面是 **`processplatform_assemble_surface` 356 条 / 275 名**（全仓第一）、
+  `cms_assemble_control` 164 / 152、`query_assemble_designer` 69、`query_assemble_surface` 58、
+  `attendance_assemble_control` 56、`program_center` 55。下一轮的选题按这张表排，不再按 crate 名字顺序猜。
+- 提交落点补充：`81ac87eb4`（尺子缺陷 10 + 全 7 桶矩阵产物 + 本补充段的前两条读数）。
+
