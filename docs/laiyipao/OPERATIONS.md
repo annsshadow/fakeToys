@@ -44,7 +44,7 @@
 # 1) 建库
 createdb laiyipao
 
-# 2) 迁移（13 个 goose 迁移，49 张业务表）
+# 2) 迁移（14 个 goose 迁移，49 张业务表）
 cd laiyipao/server
 export DATABASE_URL="postgres://postgres@127.0.0.1:5432/laiyipao?sslmode=disable"
 export BOOTSTRAP_ADMIN_PASS="<至少 10 位，缺省会拒绝启动>"
