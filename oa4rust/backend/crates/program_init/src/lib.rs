@@ -29,6 +29,20 @@ use shared::{error::AppError, response::ActionResult};
 /// secret_config 单行逻辑表的固定主键
 const SECRET_ROW_ID: &str = "init-secret";
 
+/// 四轮 A3-N6：外部数据源 / 恢复 / 进程控制写族此前只要求「有会话」，任一登录用户即可
+/// 把外部数据库 host/port/账密写进 init_external_datasource、触发 restore 落盘或直接停服。
+/// 按二轮 S5 口径收 admin（无 DB 时 is_admin fail-closed）。
+async fn require_admin(
+    pool: &Pool,
+    session: &shared::session::Session,
+) -> Result<(), AppError> {
+    if shared::middleware::is_admin(pool, &session.person_unique).await {
+        Ok(())
+    } else {
+        Err(AppError::Forbidden)
+    }
+}
+
 // --- 应用级 AES-GCM 加密 ---
 
 #[derive(Debug, Clone)]
@@ -156,9 +170,8 @@ pub async fn set(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)
-        .map(|row| row.get("exists"))
-        .unwrap_or(false);
+        .map_err(|_| AppError::Internal)?
+        .get::<_, bool>("exists");
 
     if has_person {
         return Ok(Json(ActionResult::error(
@@ -192,9 +205,8 @@ pub async fn set_cancel(pool: Extension<Pool>) -> Result<Json<ActionResult<Value
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)
-        .map(|row| row.get("exists"))
-        .unwrap_or(false);
+        .map_err(|_| AppError::Internal)?
+        .get::<_, bool>("exists");
 
     if has_person {
         return Ok(Json(ActionResult::error(
@@ -340,8 +352,10 @@ pub async fn external_datasources_list(
 #[allow(non_snake_case)]
 pub async fn external_datasources_set(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Json(req): Json<ExternalDataSourcesRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool.0, &session).await?;
     if req.external_data_sources.is_empty() {
         return Ok(Json(ActionResult::error(
             "externalDataSources cannot be empty",
@@ -394,7 +408,9 @@ pub async fn external_datasources_set(
 #[allow(non_snake_case)]
 pub async fn external_datasources_set_cancel(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool.0, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let affected = client
         .execute(
@@ -411,8 +427,11 @@ pub async fn external_datasources_set_cancel(
 /// POST /api/externaldatasources/validate —— 逐个数据源做真实 TCP 连通性探测
 #[allow(non_snake_case)]
 pub async fn external_datasources_validate(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Json(req): Json<ExternalDataSourcesRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool.0, &session).await?;
     use std::time::Duration;
     use tokio::net::TcpStream;
     use tokio::time::timeout;
@@ -490,8 +509,10 @@ const RESTORE_MAX_BYTES: usize = 200 * 1024 * 1024;
 #[allow(non_snake_case)]
 pub async fn restore_upload(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     body: axum::body::Bytes,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool.0, &session).await?;
     if body.is_empty() {
         return Ok(Json(ActionResult::error("upload body is empty")));
     }
@@ -530,7 +551,9 @@ pub async fn restore_upload(
 #[allow(non_snake_case)]
 pub async fn restore_upload_cancel(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool.0, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let affected = client
         .execute(
@@ -550,7 +573,11 @@ pub async fn restore_upload_cancel(
 
 /// GET /api/server/execute —— 落实待执行的初始化状态并记录命令
 #[allow(non_snake_case)]
-pub async fn server_execute(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn server_execute(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool.0, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let ds_applied = client
@@ -655,7 +682,11 @@ pub async fn server_license(pool: Extension<Pool>) -> Result<Json<ActionResult<V
 
 /// GET /api/server/stop —— 记录停机命令（进程停机由宿主接线执行）
 #[allow(non_snake_case)]
-pub async fn server_stop(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn server_stop(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool.0, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     client
         .execute(
@@ -718,5 +749,7 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
 #[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;
+#[cfg(test)]
+mod security_gate_tests;
 #[cfg(test)]
 mod tests_generated;
