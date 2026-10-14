@@ -1366,4 +1366,593 @@ mod security_gate_tests {
             .await
             .unwrap();
     }
+
+    /// 四轮 N-01 活口（第八批）：`review/create/work`、`review/create/workcompleted`、
+    /// `review/init/review` 三把 `x_review` 写既不取会话也不校归属，reviewer 由请求体
+    /// 任意指定——任一匿名/登录用户可给任意 work 挂评审人（伪造审批人，且该 (work,person)
+    /// 之后永久去重、真人无法再入列）。审批链按系统级数据收 admin：无会话 401、非 admin 403。
+    #[tokio::test]
+    async fn review_chain_writes_reject_without_admin() {
+        let pool = shared::testing::test_pool();
+        let body = || Json(serde_json::json!({ "work": "w1", "personList": ["p1"] }));
+
+        let anon_cases: [(&str, Result<(), AppError>); 4] = [
+            (
+                "u2::review_create_work",
+                crate::u2::review_create_work(Extension(pool.clone()), None, body())
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "u2::review_create_workcompleted",
+                crate::u2::review_create_workcompleted(
+                    Extension(pool.clone()),
+                    None,
+                    Json(serde_json::json!({ "workCompleted": "w1", "personList": ["p1"] })),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "u2::review_init_for_view",
+                crate::u2::review_init_for_view(Extension(pool.clone()), None)
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "review_init_review",
+                crate::review_init_review(
+                    Extension(pool.clone()),
+                    None,
+                    axum::extract::Path("r1".to_string()),
+                )
+                .await
+                .map(|_| ()),
+            ),
+        ];
+        for (name, res) in &anon_cases {
+            assert!(
+                matches!(res, Err(AppError::Unauthorized)),
+                "{name} 无会话必须 401（先于任何 SQL），实际 {res:?}"
+            );
+        }
+
+        let nonadmin_cases: [(&str, Result<(), AppError>); 3] = [
+            (
+                "u2::review_create_work",
+                crate::u2::review_create_work(
+                    Extension(pool.clone()),
+                    Some(Extension(sess("u-r48-nonadmin"))),
+                    body(),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "u2::review_create_workcompleted",
+                crate::u2::review_create_workcompleted(
+                    Extension(pool.clone()),
+                    Some(Extension(sess("u-r48-nonadmin"))),
+                    Json(serde_json::json!({ "workCompleted": "w1", "personList": ["p1"] })),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "u2::review_init_for_view",
+                crate::u2::review_init_for_view(
+                    Extension(pool.clone()),
+                    Some(Extension(sess("u-r48-nonadmin"))),
+                )
+                .await
+                .map(|_| ()),
+            ),
+        ];
+        for (name, res) in &nonadmin_cases {
+            assert!(
+                matches!(res, Err(AppError::Forbidden)),
+                "{name} 非 admin 必须 403（无库时 is_admin fail-closed），实际 {res:?}"
+            );
+        }
+    }
+
+    /// DB 臂：非 admin 触发评审补齐必须 403 **且 x_review 一行都不增**；
+    /// admin 触发才真正建行，臂末清理。
+    #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
+    async fn review_init_for_view_requires_admin_and_lands_no_rows_otherwise() {
+        if !shared::testing::is_db_available().await {
+            eprintln!("skip: review_init_for_view_requires_admin_and_lands_no_rows_otherwise (no DATABASE_URL)");
+            return;
+        }
+        let pool = shared::testing::test_pool();
+        let tag = uuid::Uuid::new_v4().simple().to_string();
+        let work = format!("r48-{tag}-work");
+        let assignee = format!("u-r48-{tag}-assignee");
+        seed_work(&pool, &work, "u-r48-creator").await;
+        seed_task(&pool, &format!("r48-{tag}-task"), &work, &assignee, "active").await;
+
+        let before: i64 = pool
+            .get()
+            .await
+            .unwrap()
+            .query_one("SELECT COUNT(*) AS c FROM x_review", &[])
+            .await
+            .unwrap()
+            .get("c");
+
+        let intruder = crate::u2::review_init_for_view(
+            Extension(pool.clone()),
+            Some(Extension(sess("u-r48-nonadmin"))),
+        )
+        .await;
+        assert!(
+            matches!(intruder, Err(AppError::Forbidden)),
+            "非 admin 触发全表评审补齐必须 403"
+        );
+        let after: i64 = pool
+            .get()
+            .await
+            .unwrap()
+            .query_one("SELECT COUNT(*) AS c FROM x_review", &[])
+            .await
+            .unwrap()
+            .get("c");
+        assert_eq!(before, after, "拒绝路径不得新建任何 x_review 行");
+
+        let (admin, role_id) = seed_admin(&pool, &tag).await;
+        let okres = crate::u2::review_init_for_view(
+            Extension(pool.clone()),
+            Some(Extension(sess(&admin))),
+        )
+        .await
+        .map(|_| ());
+        assert!(okres.is_ok(), "admin 触发应放行，实际 {okres:?}");
+        let landed: i64 = pool
+            .get()
+            .await
+            .unwrap()
+            .query_one(
+                "SELECT COUNT(*) AS c FROM x_review WHERE work_id = $1 AND reviewer = $2",
+                &[&work.to_string(), &assignee.to_string()],
+            )
+            .await
+            .unwrap()
+            .get("c");
+        assert_eq!(landed, 1, "admin 臂应确实为 (work, assignee) 建出评审行");
+
+        let c = pool.get().await.unwrap();
+        c.execute("DELETE FROM x_review WHERE work_id = $1", &[&work.to_string()])
+            .await
+            .unwrap();
+        unseed_admin(&pool, &admin, &role_id).await;
+        c.execute("DELETE FROM x_task WHERE work_id = $1", &[&work.to_string()])
+            .await
+            .unwrap();
+        c.execute("DELETE FROM x_work WHERE id = $1", &[&work.to_string()])
+            .await
+            .unwrap();
+    }
+
+    // 四轮 §三.9：宏 `dict_data_fns!` 生成的 16 把 applicationdict 深度路径写
+    // （dict_set_1..8 注册在 POST+PUT、dict_del_1..8 注册在 DELETE，共 24 条写路由）
+    // 模板里既不取 Session 也不校任何门——任一登录用户按 `/{id}/{p0}…/data` 就能改写或摘除
+    // 任意应用的 `x_application_dict.data`。x_application_dict 按本 crate §applicationdict
+    // 口径属系统级数据 → admin 档，与 dict_edit 复用同一把 require_admin_opt。
+    // 这族洞此前量不到，是尺子缺陷 12/13（宏生成的 handler 没有字面 fn → 体内读成空串）造成的。
+    #[tokio::test]
+    async fn dict_depth_writes_reject_without_admin() {
+        let pool = shared::testing::test_pool();
+        let id = "r49-dict-gate";
+        let v = || serde_json::json!({ "value": 1 });
+
+        // 无会话 → 401（不触库，可离线证）
+        let anon: Vec<(&str, Result<(), AppError>)> = vec![
+            (
+                "dict_set_1",
+                crate::u2::dict_set_1(
+                    Extension(pool.clone()),
+                    None,
+                    axum::extract::Path((id.to_string(), "p0".to_string())),
+                    Json(v()),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "dict_set_2",
+                crate::u2::dict_set_2(
+                    Extension(pool.clone()),
+                    None,
+                    axum::extract::Path((id.to_string(), "p0".to_string(), "p1".to_string())),
+                    Json(v()),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "dict_set_3",
+                crate::u2::dict_set_3(
+                    Extension(pool.clone()),
+                    None,
+                    axum::extract::Path((
+                        id.to_string(),
+                        "p0".to_string(),
+                        "p1".to_string(),
+                        "p2".to_string(),
+                    )),
+                    Json(v()),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "dict_set_4",
+                crate::u2::dict_set_4(
+                    Extension(pool.clone()),
+                    None,
+                    axum::extract::Path((
+                        id.to_string(),
+                        "p0".to_string(),
+                        "p1".to_string(),
+                        "p2".to_string(),
+                        "p3".to_string(),
+                    )),
+                    Json(v()),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "dict_set_5",
+                crate::u2::dict_set_5(
+                    Extension(pool.clone()),
+                    None,
+                    axum::extract::Path((
+                        id.to_string(),
+                        "p0".to_string(),
+                        "p1".to_string(),
+                        "p2".to_string(),
+                        "p3".to_string(),
+                        "p4".to_string(),
+                    )),
+                    Json(v()),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "dict_set_6",
+                crate::u2::dict_set_6(
+                    Extension(pool.clone()),
+                    None,
+                    axum::extract::Path((
+                        id.to_string(),
+                        "p0".to_string(),
+                        "p1".to_string(),
+                        "p2".to_string(),
+                        "p3".to_string(),
+                        "p4".to_string(),
+                        "p5".to_string(),
+                    )),
+                    Json(v()),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "dict_set_7",
+                crate::u2::dict_set_7(
+                    Extension(pool.clone()),
+                    None,
+                    axum::extract::Path((
+                        id.to_string(),
+                        "p0".to_string(),
+                        "p1".to_string(),
+                        "p2".to_string(),
+                        "p3".to_string(),
+                        "p4".to_string(),
+                        "p5".to_string(),
+                        "p6".to_string(),
+                    )),
+                    Json(v()),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "dict_set_8",
+                crate::u2::dict_set_8(
+                    Extension(pool.clone()),
+                    None,
+                    axum::extract::Path((
+                        id.to_string(),
+                        "p0".to_string(),
+                        "p1".to_string(),
+                        "p2".to_string(),
+                        "p3".to_string(),
+                        "p4".to_string(),
+                        "p5".to_string(),
+                        "p6".to_string(),
+                        "p7".to_string(),
+                    )),
+                    Json(v()),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "dict_del_1",
+                crate::u2::dict_del_1(
+                    Extension(pool.clone()),
+                    None,
+                    axum::extract::Path((id.to_string(), "p0".to_string())),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "dict_del_2",
+                crate::u2::dict_del_2(
+                    Extension(pool.clone()),
+                    None,
+                    axum::extract::Path((id.to_string(), "p0".to_string(), "p1".to_string())),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "dict_del_3",
+                crate::u2::dict_del_3(
+                    Extension(pool.clone()),
+                    None,
+                    axum::extract::Path((
+                        id.to_string(),
+                        "p0".to_string(),
+                        "p1".to_string(),
+                        "p2".to_string(),
+                    )),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "dict_del_4",
+                crate::u2::dict_del_4(
+                    Extension(pool.clone()),
+                    None,
+                    axum::extract::Path((
+                        id.to_string(),
+                        "p0".to_string(),
+                        "p1".to_string(),
+                        "p2".to_string(),
+                        "p3".to_string(),
+                    )),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "dict_del_5",
+                crate::u2::dict_del_5(
+                    Extension(pool.clone()),
+                    None,
+                    axum::extract::Path((
+                        id.to_string(),
+                        "p0".to_string(),
+                        "p1".to_string(),
+                        "p2".to_string(),
+                        "p3".to_string(),
+                        "p4".to_string(),
+                    )),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "dict_del_6",
+                crate::u2::dict_del_6(
+                    Extension(pool.clone()),
+                    None,
+                    axum::extract::Path((
+                        id.to_string(),
+                        "p0".to_string(),
+                        "p1".to_string(),
+                        "p2".to_string(),
+                        "p3".to_string(),
+                        "p4".to_string(),
+                        "p5".to_string(),
+                    )),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "dict_del_7",
+                crate::u2::dict_del_7(
+                    Extension(pool.clone()),
+                    None,
+                    axum::extract::Path((
+                        id.to_string(),
+                        "p0".to_string(),
+                        "p1".to_string(),
+                        "p2".to_string(),
+                        "p3".to_string(),
+                        "p4".to_string(),
+                        "p5".to_string(),
+                        "p6".to_string(),
+                    )),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "dict_del_8",
+                crate::u2::dict_del_8(
+                    Extension(pool.clone()),
+                    None,
+                    axum::extract::Path((
+                        id.to_string(),
+                        "p0".to_string(),
+                        "p1".to_string(),
+                        "p2".to_string(),
+                        "p3".to_string(),
+                        "p4".to_string(),
+                        "p5".to_string(),
+                        "p6".to_string(),
+                        "p7".to_string(),
+                    )),
+                )
+                .await
+                .map(|_| ()),
+            ),
+        ];
+        assert_eq!(anon.len(), 16, "宏生成的 16 把深度写必须逐条点名");
+        let bad: Vec<&str> = anon
+            .iter()
+            .filter(|(_, r)| !matches!(r, Err(AppError::Unauthorized)))
+            .map(|(n, _)| *n)
+            .collect();
+        assert!(bad.is_empty(), "无会话必须 401，实际不是的：{bad:?}");
+
+        // 有会话但非 admin → 403（DB 不可达时 is_admin 兜底为 false，同样离线可证）
+        let nonadmin: Vec<(&str, Result<(), AppError>)> = vec![
+            (
+                "dict_set_1",
+                crate::u2::dict_set_1(
+                    Extension(pool.clone()),
+                    Some(Extension(sess("u-r49-nonadmin"))),
+                    axum::extract::Path((id.to_string(), "p0".to_string())),
+                    Json(v()),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "dict_del_1",
+                crate::u2::dict_del_1(
+                    Extension(pool.clone()),
+                    Some(Extension(sess("u-r49-nonadmin"))),
+                    axum::extract::Path((id.to_string(), "p0".to_string())),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "dict_set_8",
+                crate::u2::dict_set_8(
+                    Extension(pool.clone()),
+                    Some(Extension(sess("u-r49-nonadmin"))),
+                    axum::extract::Path((
+                        id.to_string(),
+                        "p0".to_string(),
+                        "p1".to_string(),
+                        "p2".to_string(),
+                        "p3".to_string(),
+                        "p4".to_string(),
+                        "p5".to_string(),
+                        "p6".to_string(),
+                        "p7".to_string(),
+                    )),
+                    Json(v()),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "dict_del_8",
+                crate::u2::dict_del_8(
+                    Extension(pool.clone()),
+                    Some(Extension(sess("u-r49-nonadmin"))),
+                    axum::extract::Path((
+                        id.to_string(),
+                        "p0".to_string(),
+                        "p1".to_string(),
+                        "p2".to_string(),
+                        "p3".to_string(),
+                        "p4".to_string(),
+                        "p5".to_string(),
+                        "p6".to_string(),
+                        "p7".to_string(),
+                    )),
+                )
+                .await
+                .map(|_| ()),
+            ),
+        ];
+        assert_eq!(nonadmin.len(), 4, "深度首末两档（1 段 / 8 段）各证一把写与删");
+        let bad2: Vec<&str> = nonadmin
+            .iter()
+            .filter(|(_, r)| !matches!(r, Err(AppError::Forbidden)))
+            .map(|(n, _)| *n)
+            .collect();
+        assert!(bad2.is_empty(), "非 admin 必须 403，实际不是的：{bad2:?}");
+    }
+
+    // DB 臂：证「拒的是门禁、不是缺库」——非 admin 403 且零落行，admin 放行且确实落行/删段。
+    #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
+    async fn dict_depth_write_lands_only_for_admin() {
+        if !shared::testing::is_db_available().await {
+            eprintln!("skip: dict_depth_write_lands_only_for_admin (no DATABASE_URL)");
+            return;
+        }
+        async fn dict_row_count(pool: &Pool, id: &str) -> i64 {
+            pool.get()
+                .await
+                .unwrap()
+                .query_one(
+                    "SELECT COUNT(*) AS c FROM x_application_dict WHERE id = $1",
+                    &[&id.to_string()],
+                )
+                .await
+                .unwrap()
+                .get::<_, i64>("c")
+        }
+
+        let pool = shared::testing::test_pool();
+        let tag = uuid::Uuid::new_v4().simple().to_string();
+        let id = format!("r49-{tag}");
+
+        let intruder = crate::u2::dict_set_1(
+            Extension(pool.clone()),
+            Some(Extension(sess("u-r49-nonadmin"))),
+            axum::extract::Path((id.clone(), "p0".to_string())),
+            Json(serde_json::json!({ "value": 1 })),
+        )
+        .await
+        .map(|_| ());
+        assert!(
+            matches!(intruder, Err(AppError::Forbidden)),
+            "非 admin 写字典必须 403，实际 {intruder:?}"
+        );
+        assert_eq!(dict_row_count(&pool, &id).await, 0, "拒绝路径不得新建 x_application_dict 行");
+
+        let (admin, role_id) = seed_admin(&pool, &tag).await;
+        let okres = crate::u2::dict_set_1(
+            Extension(pool.clone()),
+            Some(Extension(sess(&admin))),
+            axum::extract::Path((id.clone(), "p0".to_string())),
+            Json(serde_json::json!({ "value": 1 })),
+        )
+        .await
+        .map(|_| ());
+        assert!(okres.is_ok(), "admin 写字典应放行，实际 {okres:?}");
+        assert_eq!(dict_row_count(&pool, &id).await, 1, "admin 臂应确实落出字典行");
+
+        let delres = crate::u2::dict_del_1(
+            Extension(pool.clone()),
+            Some(Extension(sess(&admin))),
+            axum::extract::Path((id.clone(), "p0".to_string())),
+        )
+        .await
+        .map(|_| ());
+        assert!(delres.is_ok(), "admin 删字典段应放行，实际 {delres:?}");
+
+        let c = pool.get().await.unwrap();
+        c.execute("DELETE FROM x_application_dict WHERE id = $1", &[&id])
+            .await
+            .unwrap();
+        unseed_admin(&pool, &admin, &role_id).await;
+    }
 }

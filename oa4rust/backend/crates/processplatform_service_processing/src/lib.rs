@@ -1854,8 +1854,13 @@ pub async fn review_create_workcompleted(
 #[allow(non_snake_case)]
 pub async fn review_init_review(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 四轮审计 N-01 收口：review 状态写此前无会话/归属门，任一登录用户可把任意
+    // review 置为 initiated（审批链篡改面）。复用 R4-1 的 u4_session/u4_require_actor：
+    // 无会话 401；reviewer 非空时须本人或 admin，空的历史行保留仅会话语义。
+    let session = u4_session(session)?;
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     let row = tx
@@ -1865,6 +1870,8 @@ pub async fn review_init_review(
         )
         .await
         .map_err(|_| AppError::Internal)?;
+    let reviewer = row.get::<_, Option<String>>("reviewer").unwrap_or_default();
+    u4_require_actor(&pool.0, &session, &reviewer).await?;
     tx.execute(
         "UPDATE x_review SET status = $1 WHERE id = $2",
         &[&"initiated", &id],

@@ -42,8 +42,10 @@ pub struct SavePageRequest {
 #[allow(non_snake_case)]
 pub async fn create_design(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Json(req): Json<CreatePortalRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    crate::require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
     let name = req.name.unwrap_or_default();
@@ -173,9 +175,11 @@ pub async fn list_designs(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
 #[allow(non_snake_case)]
 pub async fn save_design(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    crate::require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let content = body
         .get("content")
@@ -314,8 +318,10 @@ pub async fn get_page(
 #[allow(non_snake_case)]
 pub async fn create_page(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Json(req): Json<CreatePageRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    crate::require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -348,9 +354,11 @@ pub async fn create_page(
 #[allow(non_snake_case)]
 pub async fn save_page(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(req): Json<SavePageRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    crate::require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let content = req
@@ -382,8 +390,10 @@ pub async fn save_page(
 #[allow(non_snake_case)]
 pub async fn delete_page(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    crate::require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -421,8 +431,10 @@ pub async fn design_get(
 #[allow(non_snake_case)]
 pub async fn design_save(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    crate::require_admin(&pool, &session).await?;
     let id = body
         .get("id")
         .and_then(|v| v.as_str())
@@ -452,6 +464,20 @@ pub async fn design_save(
             ("content".to_string(), Value::String(content.to_string())),
         ]),
     ))))
+}
+
+/// 四轮审计 N-03：门户设计器写（design/page/portal/widget/dict/templatepage/permission）此前 0 门禁，
+/// 任一登录用户可改写系统级门户内容与权限（S5 只门禁了 surface 双胞胎）。
+/// 无属主系统数据按前两轮先例统一 admin 门（无会话 401 由中间件兜底，非 admin 403）。
+pub(crate) async fn require_admin(
+    pool: &deadpool_postgres::Pool,
+    session: &shared::session::Session,
+) -> Result<(), shared::error::AppError> {
+    if shared::middleware::is_admin(pool, &session.person_unique).await {
+        Ok(())
+    } else {
+        Err(shared::error::AppError::Forbidden)
+    }
 }
 
 pub fn portal_assemble_designer_router() -> Router {
@@ -1361,9 +1387,11 @@ pub async fn file_id_download(
 #[allow(non_snake_case)]
 pub async fn file_id_upload(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Path(id): Path<String>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    crate::require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let content = body
@@ -1467,8 +1495,10 @@ pub async fn input_compare(
 #[allow(non_snake_case)]
 pub async fn input_cover(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    crate::require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let input_id = body.get("id").and_then(|v| v.as_str()).unwrap_or_default();
@@ -1501,8 +1531,10 @@ pub async fn input_cover(
 #[allow(non_snake_case)]
 pub async fn input_create(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    crate::require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -1561,8 +1593,10 @@ pub async fn input_prepare_cover(
 #[allow(non_snake_case)]
 pub async fn input_prepare_create(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    crate::require_admin(&pool, &session).await?;
     let id = uuid::Uuid::new_v4().to_string();
     let content = body
         .get("content")
@@ -3028,8 +3062,10 @@ pub async fn widget_id(
 #[allow(non_snake_case)]
 pub async fn create_portal(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Json(req): Json<CreatePortalRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    crate::require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let name = req.name.clone().unwrap_or_default();
     let description = req.description.clone().unwrap_or_default();
@@ -3071,8 +3107,10 @@ pub async fn create_portal(
 #[allow(non_snake_case)]
 pub async fn delete_portal(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    crate::require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -3095,9 +3133,11 @@ pub async fn delete_portal(
 #[allow(non_snake_case)]
 pub async fn update_portal(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    crate::require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let name = body
         .get("name")
@@ -3140,9 +3180,11 @@ pub async fn update_portal(
 #[allow(non_snake_case)]
 pub async fn update_portal_icon(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    crate::require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let logo = body
         .get("logo")
@@ -3170,9 +3212,11 @@ pub async fn update_portal_icon(
 #[allow(non_snake_case)]
 pub async fn portal_id_permission_post(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    crate::require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let permission = serde_json::to_string(&body).map_err(|_| AppError::Internal)?;
     let result = client
@@ -3196,8 +3240,10 @@ pub async fn portal_id_permission_post(
 #[allow(non_snake_case)]
 pub async fn create_templatepage(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    crate::require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let name = body
         .get("name")
@@ -3295,8 +3341,10 @@ pub async fn update_templatepage_category(
 #[allow(non_snake_case)]
 pub async fn delete_templatepage(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    crate::require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -3319,8 +3367,10 @@ pub async fn delete_templatepage(
 #[allow(non_snake_case)]
 pub async fn create_widget(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    crate::require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let name = body
         .get("name")
@@ -3375,8 +3425,10 @@ pub async fn create_widget(
 #[allow(non_snake_case)]
 pub async fn delete_widget(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    crate::require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -3399,9 +3451,11 @@ pub async fn delete_widget(
 #[allow(non_snake_case)]
 pub async fn update_widget(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    crate::require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let name = body
         .get("name")
@@ -3508,8 +3562,10 @@ fn dict_spec() -> shared::crud::CrudSpec {
 #[allow(non_snake_case)]
 pub async fn dict_create(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     body: Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    crate::require_admin(&pool, &session).await?;
     let id = shared::crud_create(&pool, &dict_spec(), &body.0).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -3523,9 +3579,11 @@ pub async fn dict_create(
 #[allow(non_snake_case)]
 pub async fn dict_save(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Path(id): Path<String>,
     body: Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    crate::require_admin(&pool, &session).await?;
     let saved = shared::crud_save(&pool, &dict_spec(), &id, &body.0).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -3539,8 +3597,10 @@ pub async fn dict_save(
 #[allow(non_snake_case)]
 pub async fn dict_delete(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    crate::require_admin(&pool, &session).await?;
     let deleted = shared::crud_delete(&pool, &dict_spec(), &id).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -3695,8 +3755,10 @@ fn widget_spec() -> shared::crud::CrudSpec {
 #[allow(non_snake_case)]
 pub async fn widget_create(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     body: Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    crate::require_admin(&pool, &session).await?;
     let id = shared::crud_create(&pool, &widget_spec(), &body.0).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -3710,9 +3772,11 @@ pub async fn widget_create(
 #[allow(non_snake_case)]
 pub async fn widget_save(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Path(id): Path<String>,
     body: Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    crate::require_admin(&pool, &session).await?;
     let saved = shared::crud_save(&pool, &widget_spec(), &id, &body.0).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -3726,8 +3790,10 @@ pub async fn widget_save(
 #[allow(non_snake_case)]
 pub async fn widget_delete(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    crate::require_admin(&pool, &session).await?;
     let deleted = shared::crud_delete(&pool, &widget_spec(), &id).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([

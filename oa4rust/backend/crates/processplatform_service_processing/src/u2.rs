@@ -330,16 +330,22 @@ macro_rules! dict_data_fns {
     ($set:ident, $del:ident ($($p:ident : $t:ty),+)) => {
         pub async fn $set(
             pool: Extension<Pool>,
+            session: Option<Extension<shared::session::Session>>,
             Path(($($p),+)): Path<($($t),+)>,
             Json(body): Json<Value>,
         ) -> H {
+            // x_application_dict 是系统级数据（本文件 §applicationdict 口径：dict 表 = admin 档），
+            // 深度路径写与 dict_edit 同一把门。
+            require_admin_opt(&pool.0, session.as_deref()).await?;
             dict_set(&pool, &[$($p.to_string()),+], body).await
         }
 
         pub async fn $del(
             pool: Extension<Pool>,
+            session: Option<Extension<shared::session::Session>>,
             Path(($($p),+)): Path<($($t),+)>,
         ) -> H {
+            require_admin_opt(&pool.0, session.as_deref()).await?;
             dict_del(&pool, &[$($p.to_string()),+]).await
         }
     };
@@ -1359,22 +1365,43 @@ async fn review_create_batch(pool: &Pool, work_id: &str, body: Value, gate_table
 }
 
 /// POST review/create/work
+///
+/// 四轮审计 N-01 活口：`x_review` 是审批链行，reviewer 由请求体任意指定且 creator 不落真人，
+/// 此前整族不取会话——任一匿名/登录用户都能给任意 work 挂评审人（伪造审批人、抢先占位后
+/// 该 (work,person) 永久去重拒绝真人入列）。按「审批链 = 系统级数据」档收 admin。
 #[allow(non_snake_case)]
-pub async fn review_create_work(pool: Extension<Pool>, Json(body): Json<Value>) -> H {
+pub async fn review_create_work(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Json(body): Json<Value>,
+) -> H {
+    require_admin_opt(&pool.0, session.as_ref().map(|e| &e.0)).await?;
     let work = body_str(&body, &["work", "workId"]);
     review_create_batch(&pool, &work, body, "x_work").await
 }
 
 /// POST review/create/workcompleted
 #[allow(non_snake_case)]
-pub async fn review_create_workcompleted(pool: Extension<Pool>, Json(body): Json<Value>) -> H {
+pub async fn review_create_workcompleted(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Json(body): Json<Value>,
+) -> H {
+    require_admin_opt(&pool.0, session.as_ref().map(|e| &e.0)).await?;
     let work = body_str(&body, &["workCompleted", "workCompletedId", "work"]);
     review_create_batch(&pool, &work, body, "x_workcompleted").await
 }
 
 /// POST review/init/review：为所有有任务的工作补齐缺失评审（幂等批量）
+///
+/// 全表扫描 + 批量 INSERT，一次调用能给库内所有 work 造评审行，属运维维护作业，
+/// 与 touch/mergeitem 同档收 admin。
 #[allow(non_snake_case)]
-pub async fn review_init_for_view(pool: Extension<Pool>) -> H {
+pub async fn review_init_for_view(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+) -> H {
+    require_admin_opt(&pool.0, session.as_ref().map(|e| &e.0)).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
