@@ -1320,3 +1320,333 @@ mod security_gate_tests {
         assert!(bad.is_empty(), "mock 别名门漏了 POST 侧（或反过来）：{bad:?}");
     }
 }
+
+/// 第十九批：GET 面上「按 ID touch 他人流程条目行」的 16 把归属门。
+///
+/// 这些测试编码业务意图：
+///  1. `{read|readcompleted|task|taskcompleted|work|workcompleted}/list/…/process` 的名字是
+///     「列表计数」，函数体第一句却是 `UPDATE PP_C_* SET "xupdateTime" = NOW() WHERE xid = $1`
+///     ——按 ID 改**他人**条目的审计时间戳。注册在 GET 上 ⇒ csrf 与 requires_admin 两道中间件门
+///     都够不着，原先任一登录用户可逐 ID 伪造他人的待办 / 待阅 / 单据时间。
+///  2. 门按「行上到底有没有可认的属主列」定档：READ / READCOMPLETED / TASK / TASKCOMPLETED /
+///     DRAFT / HANDOVER / TASK_PROCESS_MODE 取 `xperson`（本 crate 的列表本来就按 xperson 过滤），
+///     WORK / WORKCOMPLETED 行上没有 xperson，取 `"xcreatorPerson"`。口径与 `u4_require_ppc_*` 同锁：
+///     无会话先 401（不触库、离线可证）；归属非空 → 本人或 admin；归属为空或行不存在 → 只允许 admin。
+///  3. `draft/{id}/start` 本批**只加门、不修**它的既有坏状态：真库探针（事务内跑完回滚）证
+///     `pp_c_draft` **没有 xstatus 列**（42703），且 `SET xstatus = $1 … WHERE xid = $2` 只绑了
+///     一个参数（`there is no parameter $2`）⇒ 谁调都 500。归属门插在 SQL 之前，所以本人身份
+///     也救不了它——这条由下面的 owner 臂**逐把点名**，不许被读成门的缺口。
+#[cfg(test)]
+mod r419_gate_tests {
+    use axum::extract::{Extension, Path};
+    use shared::error::AppError;
+    use shared::testing::{is_db_available, mock_pool, test_pool, test_session};
+
+    const OWNER: &str = "u-r419-owner";
+    const OTHER: &str = "u-r419-other";
+    const ADMIN: &str = "u-r419-admin";
+
+    /// (表, 归属列, 行 id)——id 与 `call_all` 里的路径参数一一对应，改一处必须改另一处。
+    const ROWS: &[(&str, &str, &str)] = &[
+        ("PP_C_READ", "xperson", "r419-read"),
+        ("PP_C_READCOMPLETED", "xperson", "r419-readcompleted"),
+        ("PP_C_TASK", "xperson", "r419-task"),
+        ("PP_C_TASKCOMPLETED", "xperson", "r419-taskcompleted"),
+        ("PP_C_WORK", "\"xcreatorPerson\"", "r419-work"),
+        ("PP_C_WORKCOMPLETED", "\"xcreatorPerson\"", "r419-workcompleted"),
+        ("PP_C_DRAFT", "xperson", "r419-draft"),
+        ("PP_C_HANDOVER", "xperson", "r419-handover"),
+        ("PP_C_TASK_PROCESS_MODE", "xperson", "r419-mode"),
+    ];
+
+    /// 16 把 handler 逐个具名调用。`person = None` 即「无会话」；表长本身就是本批覆盖面，
+    /// 由 `assert_eq!(cases.len(), 16)` 钉住——少一把（或门漏一把）都会红。
+    async fn call_all(
+        pool: &deadpool_postgres::Pool,
+        person: Option<&str>,
+    ) -> Vec<(&'static str, Result<(), AppError>)> {
+        let p = || Extension(pool.clone());
+        let s = || person.map(|x| Extension(test_session(x)));
+        let one = |v: &str| Path(v.to_string());
+        let two = |v: &str| Path(("0".to_string(), v.to_string()));
+        vec![
+            (
+                "handover_id_cancel",
+                crate::handover_id_cancel(p(), s(), one("r419-handover"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "handover_id_process",
+                crate::handover_id_process(p(), s(), one("r419-handover"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "draft_id_start",
+                crate::draft_id_start(p(), s(), one("r419-draft"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "mode_id_delete",
+                crate::mode_id_delete(p(), s(), one("r419-mode"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "read_list_count_application_applicationFlag_process",
+                crate::read_list_count_application_applicationFlag_process(
+                    p(),
+                    s(),
+                    one("r419-read"),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "read_list_count_application_applicationFlag_process_p2",
+                crate::read_list_count_application_applicationFlag_process_p2(
+                    p(),
+                    s(),
+                    two("r419-read"),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "readcompleted_list_count_application_applicationFlag_process",
+                crate::readcompleted_list_count_application_applicationFlag_process(
+                    p(),
+                    s(),
+                    one("r419-readcompleted"),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "readcompleted_list_count_application_applicationFlag_process_p2",
+                crate::readcompleted_list_count_application_applicationFlag_process_p2(
+                    p(),
+                    s(),
+                    two("r419-readcompleted"),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "task_list_count_application_applicationFlag_process",
+                crate::task_list_count_application_applicationFlag_process(p(), s(), one("r419-task"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "task_list_count_application_applicationFlag_process_p2",
+                crate::task_list_count_application_applicationFlag_process_p2(
+                    p(),
+                    s(),
+                    two("r419-task"),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "taskcompleted_list_count_application_applicationFlag_process",
+                crate::taskcompleted_list_count_application_applicationFlag_process(
+                    p(),
+                    s(),
+                    one("r419-taskcompleted"),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "taskcompleted_list_count_application_applicationFlag_process_p2",
+                crate::taskcompleted_list_count_application_applicationFlag_process_p2(
+                    p(),
+                    s(),
+                    two("r419-taskcompleted"),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "work_list_count_application_applicationFlag_process",
+                crate::work_list_count_application_applicationFlag_process(p(), s(), one("r419-work"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "work_list_count_application_applicationFlag_process_p2",
+                crate::work_list_count_application_applicationFlag_process_p2(
+                    p(),
+                    s(),
+                    two("r419-work"),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "workcompleted_list_count_application_applicationFlag_process",
+                crate::workcompleted_list_count_application_applicationFlag_process(
+                    p(),
+                    s(),
+                    one("r419-workcompleted"),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "workcompleted_list_count_application_applicationFlag_process_p2",
+                crate::workcompleted_list_count_application_applicationFlag_process_p2(
+                    p(),
+                    s(),
+                    two("r419-workcompleted"),
+                )
+                .await
+                .map(|_| ()),
+            ),
+        ]
+    }
+
+    /// 表名 / 列名只取本文件 `ROWS` 里的字面量，ID 与人员走参数绑定。
+    async fn seed_rows(person: &str) {
+        let c = test_pool().get().await.unwrap();
+        for (t, col, id) in ROWS {
+            c.execute(
+                format!(
+                    "INSERT INTO {t} (id, xid, {col}) VALUES ($1, $1, $2) \
+                     ON CONFLICT (id) DO UPDATE SET xid = EXCLUDED.xid, {col} = EXCLUDED.{col}"
+                )
+                .as_str(),
+                &[&id.to_string(), &person.to_string()],
+            )
+            .await
+            .unwrap();
+        }
+    }
+
+    /// 空归属（xperson = ''）——用来校「归属为空只允许 admin」那半口径。
+    async fn clear_actor() {
+        let c = test_pool().get().await.unwrap();
+        c.execute(
+            "UPDATE PP_C_READ SET xperson = '' WHERE id = $1",
+            &[&"r419-read".to_string()],
+        )
+        .await
+        .unwrap();
+    }
+
+    async fn unseed() {
+        let c = test_pool().get().await.unwrap();
+        for (t, _, id) in ROWS {
+            c.execute(
+                format!("DELETE FROM {t} WHERE id = $1").as_str(),
+                &[&id.to_string()],
+            )
+            .await
+            .unwrap();
+        }
+    }
+
+    /// 按 `is_admin` 的真实口径（auth_role.name='admin' ∧ 未删未禁）幂等造 admin。
+    async fn seed_admin_role() {
+        let c = test_pool().get().await.unwrap();
+        c.execute(
+            "INSERT INTO auth_role (id, name, disable) VALUES ('r419-role-admin', 'admin', false) ON CONFLICT (id) DO NOTHING",
+            &[],
+        )
+        .await
+        .unwrap();
+        c.execute(
+            "INSERT INTO auth_person (id, unique_id, name, password_hash) VALUES ($1, $1, 'r419 admin', 'x') ON CONFLICT (id) DO NOTHING",
+            &[&ADMIN.to_string()],
+        )
+        .await
+        .unwrap();
+        c.execute(
+            "INSERT INTO auth_person_role (person_id, role_id, unit_id) VALUES ($1, 'r419-role-admin', 'r419-unit') ON CONFLICT DO NOTHING",
+            &[&ADMIN.to_string()],
+        )
+        .await
+        .unwrap();
+    }
+
+    /// 无会话 → 401，且**先于任何读库**：`mock_pool()` 连不上库，读数里出现 `Internal`
+    /// 就说明门插在了 `pool.get()` 之后。
+    #[tokio::test]
+    async fn r419_get_writes_reject_without_session() {
+        let pool = mock_pool();
+        let cases = call_all(&pool, None).await;
+        let bad: Vec<String> = cases
+            .iter()
+            .filter(|(_, r)| !matches!(r, Err(AppError::Unauthorized)))
+            .map(|(k, r)| format!("{k} => {:?}", r.as_ref().err()))
+            .collect();
+        assert!(
+            bad.is_empty(),
+            "以下 GET touch 面无会话未回 401（出现 Internal 就是门插在读库之后）：{bad:?}"
+        );
+        assert_eq!(cases.len(), 16, "本批 16 把必须逐把点名，少一把即漏门");
+    }
+
+    /// 他人会话 → 16 把全 403；本人会话 → 恰好 15 把放行、只有 `draft_id_start` 因既有
+    /// schema drift 落 `Internal`；空归属行 → 他人 403、admin 放行。三段合起来才证明
+    /// 门不是「恒 403」的摆设，也不是「谁都能 touch」的漏门。
+    #[tokio::test]
+    async fn r419_get_writes_owner_gate_lands() {
+        if !is_db_available().await {
+            eprintln!("skipping r419_get_writes_owner_gate_lands: DATABASE_URL not reachable");
+            return;
+        }
+        seed_admin_role().await;
+        seed_rows(OWNER).await;
+        let pool = test_pool();
+        let bad: Vec<String> = call_all(&pool, Some(OTHER))
+            .await
+            .iter()
+            .filter(|(_, r)| !matches!(r, Err(AppError::Forbidden)))
+            .map(|(k, r)| format!("{k} => {:?}", r.as_ref().err()))
+            .collect();
+        assert!(
+            bad.is_empty(),
+            "他人会话按 ID touch 他人条目行必须 403，不得落笔：{bad:?}"
+        );
+
+        let owner = call_all(&pool, Some(OWNER)).await;
+        let ok: Vec<&str> = owner.iter().filter(|(_, r)| r.is_ok()).map(|(k, _)| *k).collect();
+        let broke: Vec<&str> = owner
+            .iter()
+            .filter(|(_, r)| matches!(r, Err(AppError::Internal)))
+            .map(|(k, _)| *k)
+            .collect();
+        assert_eq!(
+            broke,
+            vec!["draft_id_start"],
+            "除 draft/{{id}}/start（pp_c_draft 无 xstatus + 少绑一个参数，本批只加门不修）之外，\
+             本人调用不该触库失败：{broke:?}｜放行 {ok:?}"
+        );
+        assert_eq!(ok.len(), 15, "本人 15 把必须逐把放行，实际放行 {ok:?}");
+
+        clear_actor().await;
+        let r = crate::read_list_count_application_applicationFlag_process(
+            Extension(pool.clone()),
+            Some(Extension(test_session(OTHER))),
+            Path("r419-read".to_string()),
+        )
+        .await;
+        assert!(
+            matches!(r, Err(AppError::Forbidden)),
+            "空归属行只允许 admin，不得把数据缺陷洗成权限放行：{:?}",
+            r.as_ref().err()
+        );
+        let a = crate::read_list_count_application_applicationFlag_process(
+            Extension(pool.clone()),
+            Some(Extension(test_session(ADMIN))),
+            Path("r419-read".to_string()),
+        )
+        .await;
+        assert!(a.is_ok(), "admin 应能在空归属行上放行：{:?}", a.err());
+        unseed().await;
+    }
+}
