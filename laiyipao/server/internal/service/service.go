@@ -209,6 +209,41 @@ func (s *Service) issueTokens(ctx context.Context, userID int64, u User) (TokenP
 	}, nil
 }
 
+// Logout 吊销该用户的全部未过期 refresh token，返回吊销条数。
+//
+// # 为什么必须有它（本轮审计新增）
+//
+// 此前**没有任何登出端点**，后果不是「体验差一点」而是：
+//
+//   - 玩家换手机 / 令牌被读走 → 攻击者持有 refresh token 可续命
+//     **30 天**（默认 RefreshTTL），服务端**没有**任何切断手段。
+//   - 唯一会吊销 refresh token 的既有路径是「封禁玩家」
+//     （`AdminSetUserStatus`），而那会把正常玩家一起踢下线 ——
+//     用「封号」当「登出」，代价与意图完全不成比例。
+//
+// access token 在 TTL（默认 2h）内本就无法单条吊销，这是 JWT 的固有性质；
+// 真正必须切断的是那条**长期**的 refresh token。
+//
+// # 为什么吊销「全部」而不是「本次这一条」
+//
+// 客户端把令牌存在本地，登出的语义是「这个人不信任了」。
+// 只吊销一条 = 被盗的那条依然有效 30 天。
+// 全部吊销的最坏后果是「重新登一次」，而那正是登出的定义。
+//
+// # 为什么是幂等的
+//
+// 没有未过期令牌时返回 (0, nil) 而不是报错：重复点两次登出
+// 不应该报错，且**不能**让「令牌已失效」与「吊销失败」在响应上可区分。
+func (s *Service) Logout(ctx context.Context, userID int64) (int64, error) {
+	tag, err := s.pool.Exec(ctx,
+		`UPDATE refresh_tokens SET revoked_at = now()
+		  WHERE user_id = $1 AND revoked_at IS NULL`, userID)
+	if err != nil {
+		return 0, fmt.Errorf("logout: %w", err)
+	}
+	return tag.RowsAffected(), nil
+}
+
 // initNewUser 为新账号铺设初始数据（钱包、进度、签到记录、离线记录）。
 // 用 ON CONFLICT DO NOTHING 保证幂等 —— 重复调用不会重置玩家进度。
 func (s *Service) initNewUser(ctx context.Context, userID int64) error {
@@ -404,42 +439,81 @@ func (s *Service) grantWallet(ctx context.Context, tx pgx.Tx, userID int64, delt
 
 // grantToken 增减一件道具（第 74 轮）。
 //
-// # 与货币路径的三处**刻意**差异
+// # 发放 / 扣减走**两条不同**的语句（审计轮修复）
 //
-//  1. **UPSERT 而非 UPDATE** —— 货币四列都有 DEFAULT 0、注册时就有行；
-//     道具是稀疏的，第一次拿到时行还不存在。
-//     用 `INSERT ... ON CONFLICT DO UPDATE` 一条语句解决，
-//     不必先 SELECT 再分支。
+// 原实现只有一条 UPSERT，对 `delta` 不区分正负：
 //
-//  2. **扣减不靠 WHERE 余额判定** —— 货币那条 `WHERE coin >= $3`
-//     返回 `pgx.ErrNoRows`，上层据此报「不足」。
-//     道具侧没有 `ErrNoRows` 这条线索（UPSERT 永远成功），
-//     所以余额判定放到 CHECK 约束 + 显式回读：
-//     违反时整批失败，报的是 PG 的 check violation。
+//	INSERT INTO user_tokens (…) VALUES ($1,$2,$3)
+//	ON CONFLICT (user_id, token) DO UPDATE SET balance = balance + $3
 //
-//     ⚠️ 这是本函数**唯一**不如货币路径干净的地方，如实标注。
-//     `grantToken` 目前只被 `grantWallet` 以 `delta > 0` 的方式调用
-//     （pay 侧只接受货币，因为道具的花费语义还没定），
-//     所以这条分支当前**不可达**。一旦有消费端点接上，必须先补余额判定。
+// 扣减时它**必然**撞上 `CHECK (balance >= 0)` —— CHECK 在语句级判定，
+// 于是整笔事务带着 **SQLSTATE 23514** 回滚，`ErrBadInput` 那个可读分支
+// （`if balance < 0`）**永远执行不到**。而 23514 不在
+// `isSettleRejection` 名单里，`failErr` 兜底成 500「服务内部错误」。
 //
-//  3. **余额也写 wallet_flows** —— 运营看板与「货币流水」查询
-//     按 currency 聚合，道具的进出必须出现在同一条流里，
-//     否则看板会显示「道具收入 0」而实际有进账。
+// # 为什么原注释说「这条分支当前不可达」—— 它当时确实不可达，**现在不是了**
+//
+// 修复前那句话说对了一半：`grantToken` 过去确实只被 `delta > 0` 调用。
+// 但第 148~151 轮接上了道具消费端点（`spendToken`）**并且**
+// `AdminUpdateShopItem` 的 `validWalletCurrency` **明确允许**把道具名
+// 写进商品 `price`。于是 `Buy` 的 `deduct` 就会带上负的道具 delta，
+// 「不可达」变成了「运营改个价就能踩到」。
+//
+// 实测两条可达路径（都不是理论问题）：
+//
+//	POST /admin/users/:id/grant  {"currency":"revive_token","amount":-1}
+//	  → ERROR: violates check constraint "chk_user_tokens_nonneg" (23514) → 500
+//	运营把某商品 price 改成 {"mastery_reset":5}，玩家点购买
+//	  → 同上 → 该商品**永久** 500，且钱已经扣了（事务回滚，钱没扣）
+//
+// # 修法：与货币路径、`spendToken` 完全对称
+//
+// 扣减改成**条件 UPDATE**（`balance >= $3 RETURNING balance`）：
+// 余额不够时匹配不到行 → `pgx.ErrNoRows` → 可读的「道具不足」400。
+// 这与 `grantWallet` 的货币负数分支、`spendToken` 是同一个模式。
+//
+// UPSERT 保留给 `delta > 0`：道具是稀疏的（没买过的连行都没有），
+// UPSERT 一次搞定，不必先 SELECT 再分支。
 func grantToken(ctx context.Context, tx pgx.Tx, userID int64, token string, delta int64, reason string, refID int64) error {
-	var balance int64
-	q := `INSERT INTO user_tokens (user_id, token, balance)
-	      VALUES ($1, $2, $3)
-	      ON CONFLICT (user_id, token)
-	      DO UPDATE SET balance = user_tokens.balance + EXCLUDED.balance, updated_at = now()
-	      RETURNING balance`
-	if err := tx.QueryRow(ctx, q, userID, token, delta).Scan(&balance); err != nil {
-		return fmt.Errorf("grant token %s: %w", token, err)
+	if delta == 0 {
+		return nil
 	}
-	if balance < 0 {
-		// UPSERT 之后余额为负只可能是扣减超额。
-		// CHECK 约束其实会先拦下来（整批失败，报 PG 的 check violation），
-		// 这里的显式判断是**第二道**——它给出的是可读的中文错误。
-		return fmt.Errorf("%w: %s 不足（需要 %d）", ErrBadInput, token, -delta)
+	var balance int64
+	if delta > 0 {
+		// 发放：UPSERT（道具行可能还不存在）。
+		err := tx.QueryRow(ctx,
+			`INSERT INTO user_tokens (user_id, token, balance)
+			      VALUES ($1, $2, $3)
+			      ON CONFLICT (user_id, token)
+			      DO UPDATE SET balance = user_tokens.balance + EXCLUDED.balance, updated_at = now()
+			      RETURNING balance`,
+			userID, token, delta).Scan(&balance)
+		if err != nil {
+			return fmt.Errorf("grant token %s: %w", token, err)
+		}
+	} else {
+		// 扣减：条件 UPDATE，余额不足即无行（与货币负数分支同构）。
+		//
+		// ⚠️ $3 传的是**要扣掉的绝对值 need**，SQL 写成 `balance - $3`。
+		// 我第一版写的是 `balance + $3` 且直接传 delta（负数）——
+		// 于是条件变成 `balance >= -4`，余额 3 也满足，扣成 -1，
+		// 照样撞 CHECK。**判据必须落在「扣掉多少」而不是「变化了多少」上**：
+		//   - `balance + (-4)` 与 `balance - 4` 数值上等价，
+		//     但参与比较的一边符号相反，于是守卫条件完全失效。
+		// 这个错误是 `TestGrantTokenPartialDebitWorks` 抓到的 ——
+		// 只测「余额 0 时扣 1」的用例会让它绿。
+		need := -delta
+		err := tx.QueryRow(ctx,
+			`UPDATE user_tokens SET balance = balance - $3, updated_at = now()
+			  WHERE user_id = $1 AND token = $2 AND balance >= $3
+			  RETURNING balance`,
+			userID, token, need).Scan(&balance)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return fmt.Errorf("%w: %s 不足（需要 %d）", ErrBadInput, token, need)
+			}
+			return fmt.Errorf("grant token %s: %w", token, err)
+		}
 	}
 	if _, err := tx.Exec(ctx,
 		`INSERT INTO wallet_flows (user_id, currency, delta, balance, reason, ref_id)

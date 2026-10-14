@@ -41,6 +41,13 @@ export const router = createRouter({
  *
  * 不做这个守卫的话，未登录用户会进入后台壳并看到一整页 401 报错 ——
  * 那种体验既不专业也会让人误以为后端挂了。
+ *
+ * ⚠️ 这里**只管「有没有令牌」，不管「令牌还有效吗」**。
+ * 有效性检测在 `api/client.ts` 的 401 分支（handleUnauthorized）——
+ * 本轮之前那个分支**根本不存在**，而这段注释却一直声称它在，
+ * 于是「令牌失效兜底」实际是个虚构的安全网。
+ * 守卫拦得住「从没登录」，拦不住「登录过但令牌过期」；
+ * 后者只能由 api 层清掉令牌后重新触发本守卫。
  */
 router.beforeEach((to) => {
   if (to.path === '/admin/login') return true
@@ -50,8 +57,11 @@ router.beforeEach((to) => {
 })
 
 /**
- * 令牌失效兜底：api 层抛 401 时把令牌清掉并送回登录页。
- * 这里只做「一旦发现没有令牌就清理」，真正的 401 检测在 api/client 抛出。
+ * 兜底清理：一旦发现没有令牌就清掉 localStorage 里那枚空/旧的。
+ *
+ * 真正的「令牌已失效」检测在 api 层（见 client.ts 的 handleUnauthorized）——
+ * 那里清掉令牌并改 hash 后，本守卫会在下一次导航时生效。
+ * 这里只负责「已经是无令牌状态，别留垃圾」这一半。
  */
 router.afterEach(() => {
   if (router.currentRoute.value.path !== '/admin/login' && !getToken()) {

@@ -26,7 +26,7 @@ func TestAuditDetailMarshalFailure(t *testing.T) {
 
 	// chan 无法被 json.Marshal —— 必进失败分支，不依赖机型
 	chanDetail := make(chan int)
-	ts.Audit(ctx, adminID, "audit_honesty_act", "tgt-1", chanDetail)
+	ts.Audit(ctx, adminID, "audit_honesty_act", "tgt-1", "10.0.0.1", chanDetail)
 
 	var detail, action, target, username string
 	if err := ts.pool.QueryRow(ctx,
@@ -66,7 +66,7 @@ func TestAuditDetailNilPreserved(t *testing.T) {
 	ctx := context.Background()
 	adminID, _, _ := ts.newAdminFixture(t, "auditnil", 1)
 
-	ts.Audit(ctx, adminID, "audit_nil_act", "tgt-0", nil)
+	ts.Audit(ctx, adminID, "audit_nil_act", "tgt-0", "10.0.0.1", nil)
 
 	var detailText string
 	if err := ts.pool.QueryRow(ctx,
@@ -87,7 +87,7 @@ func TestAuditDetailNormalRoundTrip(t *testing.T) {
 	ctx := context.Background()
 	adminID, _, _ := ts.newAdminFixture(t, "auditok", 1)
 
-	ts.Audit(ctx, adminID, "audit_ok_act", "tgt-2", map[string]any{"k": "v"})
+	ts.Audit(ctx, adminID, "audit_ok_act", "tgt-2", "10.0.0.1", map[string]any{"k": "v"})
 
 	// ⚠️ 不用 `detail::text` 比对：Postgres JSONB 输出会**规范化**空白
 	// （`{"k":"v"}` → `{"k": "v"}`），只能按 JSONB 取值断。

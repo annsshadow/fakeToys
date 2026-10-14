@@ -115,6 +115,16 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Type-check
         run: pnpm type-check
+      - name: Type-check must actually fail on a type error
+        run: |
+          set -euo pipefail
+          probe=src/api/__typecheck_probe.ts
+          echo 'export const __probe: number = "not a number"' > "$probe"
+          trap 'rm -f "$probe"' EXIT
+          if pnpm type-check >/dev/null 2>&1; then
+            echo "::error::type-check 在存在类型错误时仍然退出 0 —— 它没有真的在检查。"
+            exit 1
+          fi
       - name: Run Vitest tests
         run: pnpm test
       - name: Build (vue-tsc + vite)
@@ -146,6 +156,35 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Type-check
         run: pnpm type-check
+      # ⚠️ 「type-check 必须真的会检查」——2026-10-14 安全审计轮新增。
+      #
+      # 实测：miniapp 的 `vue-tsc` 曾锁在 2.0.22，而它与 TS 5.9 不兼容
+      # （volar 2 靠 patch TypeScript 内部）。症状**不是**报错，而是
+      #
+      #     Search string not found: "/supportedTSExtensions = .*(?=;)/"
+      #
+      # 然后**退出码 0** —— 一个什么都没检查、却报告成功的 type-check。
+      # 上面那步 `pnpm type-check` 跑的就是这个空操作，所以 miniapp 的类型
+      # 检查在 CI 里**一直是假绿**，README 验证状态表那一行也跟着是假的。
+      #
+      # 修法是把 vue-tsc 升到 2.2.12。但版本会被 dependabot 再动一次，
+      # 而这次的失效形态恰恰是「安静地不检查」——没有任何别的门禁会发现它。
+      # 所以这一步才是真正的守卫：故意注入类型错误，断言 type-check **必须失败**。
+      #
+      # 为什么放 CI 而不是写成 vitest：它要真起一次 vue-tsc（约 30s），
+      # 放进单测套会让每次本地跑测都多 30s，且失败原因与业务无关、难定位。
+      - name: Type-check must actually fail on a type error
+        run: |
+          set -euo pipefail
+          probe=src/api/__typecheck_probe.ts
+          echo 'export const __probe: number = "not a number"' > "$probe"
+          trap 'rm -f "$probe"' EXIT
+          if pnpm type-check >/dev/null 2>&1; then
+            echo "::error::type-check 在存在类型错误时仍然退出 0 —— 它没有真的在检查。"
+            echo "最可能的原因：vue-tsc 与 typescript 版本不兼容（volar 2 的 TS patch 失效）。"
+            echo "自查：npx vue-tsc --noEmit 2>&1 | grep -i 'search string not found'"
+            exit 1
+          fi
       - name: Run Vitest tests
         run: pnpm test
       - name: Build H5
