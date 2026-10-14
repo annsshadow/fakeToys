@@ -1,8 +1,0 @@
-{
- "A": 0,
- "B": 0,
- "C": 0,
- "D": 0,
- "E_total": 2,
- "_note": "rev11 基线：阶段 F 契约全对齐 + 提取器升级后达成 A=B=C=D=0（E_total=2 为合法 SQL 内引号，非缺陷）。提取器升级（跟随多层间接引用）：① 修 `let mut` 捕获并排除 DB/IO 结果变量作接收者（消除 login/switchuser 把 auth_person 列名当请求键的假读）；② 捕获单字面量键 helper json_str/u2_body_str(recv,\"k\")；③ 解析 CrudSpec（NAME_spec()/内联 columns）委派读取键，D 类落地结论；④ 读取键必填/可选分类（.ok_or→必填，.unwrap_or*/会话/Path/CrudSpec/结构体字段/闭包默认→可选），C 仅计必填；⑤ 支持 `Json(bp): Json<Struct>` 解构签名的结构体字段解析 + 字段级 #[serde(rename/alias)]；⑥ 本地取值闭包 `let get=|k| body.get(k)` + `get(\"lit\")`。真实契约修复：login 补 captcha 校验(可选)、switchuser targetUnique 别名、CreateDesignerRequest sql 别名、ChatCompletionRequest 接受 message/title/clueId、role create/update 发 description、FindDesigner/Homepage config→query/content、QueryDesigner runQuery 改走 execute、task complete/reject 仅发 opinion。此基线为硬 0：任何新增 A/B/C/D 或 E>2 均判失败。"
-}
