@@ -61,6 +61,71 @@ async fn require_admin_opt(
     }
 }
 
+
+// ── 第四轮 R4-2：工作流实体写的归属门 ───────────────────────────────────────
+//
+// 本模块的 work / task / record / review / attachment / draft 写原本「登录即可」：
+// 任何有效会话都能改或删别人的工作流数据（水平越权，含 work_delete 的级联物理删库），
+// 既不取会话也不校归属。本轮按两档收紧：
+// - admin 档（dict_edit / job_delete / snap_delete）：字典表与引擎内部 job / snap 属
+//   系统级数据，复用既有 require_admin_opt（无会话 401，非 admin 403）；
+// - 归属档：按资源行的发起人 / 负责人 / 作者列走 require_owner（本人或 admin）。
+// 归属档取「严格」口径：归属列为空的历史脏行、孤儿草稿只允许 admin 动，不用
+// 「空归属 = 人人可写」把数据缺陷洗成权限放行。
+
+/// 归属列取法（每个资源各写一条 SQL 字面量，不做字符串拼接）。
+enum U4Res {
+    Work,
+    Task,
+    Record,
+    Review,
+    Attachment,
+    ReadCompleted,
+}
+
+fn u4_actor_sql(res: U4Res) -> &'static str {
+    match res {
+        U4Res::Work => "SELECT creator AS actor FROM x_work WHERE id = $1",
+        U4Res::Task => "SELECT person AS actor FROM x_task WHERE id = $1",
+        U4Res::Record => "SELECT creator AS actor FROM x_record WHERE id = $1",
+        U4Res::Review => "SELECT reviewer AS actor FROM x_review WHERE id = $1",
+        U4Res::Attachment => "SELECT creator AS actor FROM x_attachment WHERE id = $1",
+        U4Res::ReadCompleted => "SELECT person AS actor FROM x_readcompleted WHERE id = $1",
+    }
+}
+
+/// 取该资源行的归属人；行不存在返回 None（由调用方保住原有 not-found 语义）。
+async fn u4_actor_of(
+    client: &Client,
+    res: U4Res,
+    id: &str,
+) -> Result<Option<String>, AppError> {
+    let row = client
+        .query_opt(u4_actor_sql(res), &[&id])
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(row.map(|r| opt_str(&r, "actor")))
+}
+
+/// 严格归属门：非空 → 本人或 admin（require_owner，无 DB 时 fail-closed）；
+/// 空或 None（脏行 / 孤儿行）→ 仅 admin。
+async fn u4_require_actor_of(
+    pool: &Pool,
+    session: &shared::session::Session,
+    actor: Option<&str>,
+) -> Result<(), AppError> {
+    match actor.map(str::trim).filter(|a| !a.is_empty()) {
+        Some(a) => shared::middleware::require_owner(pool, session, a).await,
+        None => {
+            if shared::middleware::is_admin(pool, &session.person_unique).await {
+                Ok(())
+            } else {
+                Err(AppError::Forbidden)
+            }
+        }
+    }
+}
+
 fn opt_str(row: &Row, col: &str) -> String {
     row.get::<_, Option<String>>(col).unwrap_or_default()
 }
@@ -144,9 +209,11 @@ async fn record_exists(
 #[allow(non_snake_case)]
 pub async fn dict_edit(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
     Json(body): Json<Value>,
 ) -> H {
+    require_admin_opt(&pool.0, session.as_deref()).await?;
     let id = id.trim().to_string();
     if id.is_empty() {
         return biz_err("id is required");
@@ -566,8 +633,17 @@ pub async fn data_wc_update_path(
 
 /// DELETE attachment/{id}：软删除
 #[allow(non_snake_case)]
-pub async fn att_delete_id(pool: Extension<Pool>, Path(id): Path<String>) -> H {
+pub async fn att_delete_id(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Path(id): Path<String>,
+) -> H {
+    let session = crate::u4_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let Some(actor) = u4_actor_of(&client, U4Res::Attachment, &id).await? else {
+        return biz_err("attachment not found");
+    };
+    u4_require_actor_of(&pool.0, &session, Some(&actor)).await?;
     let n = client
         .execute(
             "UPDATE x_attachment SET deleted_at = NOW() \
@@ -648,14 +724,20 @@ pub async fn att_delete_with_workcompleted(
 #[allow(non_snake_case)]
 pub async fn att_edit_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
     Json(body): Json<Value>,
 ) -> H {
+    let session = crate::u4_session(session)?;
     let name = body_str(&body, &["name", "fileName"]);
     if name.is_empty() {
         return biz_err("name is required");
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let Some(actor) = u4_actor_of(&client, U4Res::Attachment, &id).await? else {
+        return biz_err("attachment not found");
+    };
+    u4_require_actor_of(&pool.0, &session, Some(&actor)).await?;
     let n = client
         .execute(
             "UPDATE x_attachment SET name = $2 WHERE id = $1 AND deleted_at IS NULL",
@@ -680,14 +762,20 @@ pub async fn att_edit_id(
 #[allow(non_snake_case)]
 pub async fn att_edit_text(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
     Json(body): Json<Value>,
 ) -> H {
+    let session = crate::u4_session(session)?;
     let text = body_str(&body, &["text", "content"]);
     if text.is_empty() {
         return biz_err("text is required");
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let Some(actor) = u4_actor_of(&client, U4Res::Attachment, &id).await? else {
+        return biz_err("attachment not found");
+    };
+    u4_require_actor_of(&pool.0, &session, Some(&actor)).await?;
     let n = client
         .execute(
             "UPDATE x_attachment SET content = $2 WHERE id = $1 AND deleted_at IS NULL",
@@ -779,7 +867,12 @@ pub async fn att_copy_to_work(
 
 /// DELETE job/{job}：结束 job 及其运行任务
 #[allow(non_snake_case)]
-pub async fn job_delete(pool: Extension<Pool>, Path(job): Path<String>) -> H {
+pub async fn job_delete(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Path(job): Path<String>,
+) -> H {
+    require_admin_opt(&pool.0, session.as_deref()).await?;
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     let n = tx
@@ -1006,8 +1099,17 @@ pub async fn read_reset(
 
 /// DELETE readcompleted/{id}
 #[allow(non_snake_case)]
-pub async fn readcompleted_delete(pool: Extension<Pool>, Path(id): Path<String>) -> H {
+pub async fn readcompleted_delete(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Path(id): Path<String>,
+) -> H {
+    let session = crate::u4_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let Some(actor) = u4_actor_of(&client, U4Res::ReadCompleted, &id).await? else {
+        return biz_err("readcompleted not found");
+    };
+    u4_require_actor_of(&pool.0, &session, Some(&actor)).await?;
     let n = client
         .execute("DELETE FROM x_readcompleted WHERE id = $1", &[&id])
         .await
@@ -1089,17 +1191,16 @@ pub async fn record_work_terminate(pool: Extension<Pool>, Json(body): Json<Value
 #[allow(non_snake_case)]
 pub async fn record_edit(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
     Json(body): Json<Value>,
 ) -> H {
+    let session = crate::u4_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let row = client
-        .query_opt("SELECT id FROM x_record WHERE id = $1", &[&id])
-        .await
-        .map_err(|_| AppError::Internal)?;
-    if row.is_none() {
+    let Some(actor) = u4_actor_of(&client, U4Res::Record, &id).await? else {
         return biz_err("record not found");
-    }
+    };
+    u4_require_actor_of(&pool.0, &session, Some(&actor)).await?;
     if let Some(t) = body.get("recordType").or_else(|| body.get("type")) {
         if let Some(t) = t.as_str() {
             client
@@ -1134,8 +1235,17 @@ pub async fn record_edit(
 
 /// DELETE record/{id}：物理删除（o2server Record delete 语义）
 #[allow(non_snake_case)]
-pub async fn record_delete(pool: Extension<Pool>, Path(id): Path<String>) -> H {
+pub async fn record_delete(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Path(id): Path<String>,
+) -> H {
+    let session = crate::u4_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let Some(actor) = u4_actor_of(&client, U4Res::Record, &id).await? else {
+        return biz_err("record not found");
+    };
+    u4_require_actor_of(&pool.0, &session, Some(&actor)).await?;
     let n = client
         .execute("DELETE FROM x_record WHERE id = $1", &[&id])
         .await
@@ -1255,8 +1365,17 @@ pub async fn review_init_for_view(pool: Extension<Pool>) -> H {
 
 /// DELETE review/{id}：软删除
 #[allow(non_snake_case)]
-pub async fn review_delete(pool: Extension<Pool>, Path(id): Path<String>) -> H {
+pub async fn review_delete(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Path(id): Path<String>,
+) -> H {
+    let session = crate::u4_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let Some(actor) = u4_actor_of(&client, U4Res::Review, &id).await? else {
+        return biz_err("review not found");
+    };
+    u4_require_actor_of(&pool.0, &session, Some(&actor)).await?;
     let n = client
         .execute(
             "UPDATE x_review SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
@@ -1274,7 +1393,12 @@ pub async fn review_delete(pool: Extension<Pool>, Path(id): Path<String>) -> H {
 
 /// DELETE snap/{id}
 #[allow(non_snake_case)]
-pub async fn snap_delete(pool: Extension<Pool>, Path(id): Path<String>) -> H {
+pub async fn snap_delete(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Path(id): Path<String>,
+) -> H {
+    require_admin_opt(&pool.0, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let n = client
         .execute("DELETE FROM x_snap WHERE id = $1", &[&id])
@@ -1394,8 +1518,17 @@ pub async fn snap_wc_type_snap(pool: Extension<Pool>, Path(wc_id): Path<String>)
 
 /// DELETE task/{id}：软删除待办
 #[allow(non_snake_case)]
-pub async fn task_delete(pool: Extension<Pool>, Path(id): Path<String>) -> H {
+pub async fn task_delete(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Path(id): Path<String>,
+) -> H {
+    let session = crate::u4_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let Some(actor) = u4_actor_of(&client, U4Res::Task, &id).await? else {
+        return biz_err("task not found");
+    };
+    u4_require_actor_of(&pool.0, &session, Some(&actor)).await?;
     let n = client
         .execute(
             "UPDATE x_task SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
@@ -1413,8 +1546,17 @@ pub async fn task_delete(pool: Extension<Pool>, Path(id): Path<String>) -> H {
 
 /// DELETE taskcompleted/{id}：物理删除已完成任务
 #[allow(non_snake_case)]
-pub async fn taskcompleted_delete(pool: Extension<Pool>, Path(id): Path<String>) -> H {
+pub async fn taskcompleted_delete(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Path(id): Path<String>,
+) -> H {
+    let session = crate::u4_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let Some(actor) = u4_actor_of(&client, U4Res::ReadCompleted, &id).await? else {
+        return biz_err("taskcompleted not found");
+    };
+    u4_require_actor_of(&pool.0, &session, Some(&actor)).await?;
     let n = client
         .execute("DELETE FROM x_readcompleted WHERE id = $1", &[&id])
         .await
@@ -1887,14 +2029,20 @@ pub async fn work_get(pool: Extension<Pool>, Path(id): Path<String>) -> H {
 #[allow(non_snake_case)]
 pub async fn work_edit(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
     Json(body): Json<Value>,
 ) -> H {
+    let session = crate::u4_session(session)?;
     let title = body_str(&body, &["title"]);
     if title.is_empty() {
         return biz_err("title is required");
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let Some(actor) = u4_actor_of(&client, U4Res::Work, &id).await? else {
+        return biz_err("work not found");
+    };
+    u4_require_actor_of(&pool.0, &session, Some(&actor)).await?;
     let n = client
         .execute("UPDATE x_work SET title = $2 WHERE id = $1", &[&id, &title])
         .await
@@ -1914,9 +2062,24 @@ pub async fn work_edit(
 
 /// DELETE work/{id}：物理删除工作及其任务（o2server delete 级联语义，事务内执行）
 #[allow(non_snake_case)]
-pub async fn work_delete(pool: Extension<Pool>, Path(id): Path<String>) -> H {
+pub async fn work_delete(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Path(id): Path<String>,
+) -> H {
+    let session = crate::u4_session(session)?;
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    // 级联物理删 x_work / x_task / x_draft 之前先锁行取发起人，
+    // 非发起人 / 非 admin 退回时事务不进入任何 DELETE
+    let row = tx
+        .query_opt("SELECT creator FROM x_work WHERE id = $1 FOR UPDATE", &[&id])
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let Some(creator) = row.map(|r| opt_str(&r, "creator")) else {
+        return biz_err("work not found");
+    };
+    u4_require_actor_of(&pool.0, &session, Some(&creator)).await?;
     let n = tx
         .execute("DELETE FROM x_work WHERE id = $1", &[&id])
         .await
@@ -1936,8 +2099,15 @@ pub async fn work_delete(pool: Extension<Pool>, Path(id): Path<String>) -> H {
 
 /// DELETE work/{id}/draft：删除该工作的全部草稿；无草稿报错（o2server ExceptionDeleteDraft）
 #[allow(non_snake_case)]
-pub async fn work_draft_delete(pool: Extension<Pool>, Path(work): Path<String>) -> H {
+pub async fn work_draft_delete(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Path(work): Path<String>,
+) -> H {
+    let session = crate::u4_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let creator = u4_actor_of(&client, U4Res::Work, &work).await?;
+    u4_require_actor_of(&pool.0, &session, creator.as_deref()).await?;
     let n = client
         .execute("DELETE FROM x_draft WHERE work_id = $1", &[&work])
         .await
@@ -1982,13 +2152,26 @@ pub async fn work_manual_after(pool: Extension<Pool>, Json(body): Json<Value>) -
 
 /// POST work/v3/retract：按 body.work 撤回（状态机迁移 + 任务取消，事务内）
 #[allow(non_snake_case)]
-pub async fn work_v3_retract_body(pool: Extension<Pool>, Json(body): Json<Value>) -> H {
+pub async fn work_v3_retract_body(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Json(body): Json<Value>,
+) -> H {
+    let session = crate::u4_session(session)?;
     let work = body_str(&body, &["work", "workId"]);
     if work.is_empty() {
         return biz_err("work is required");
     }
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let row = tx
+        .query_opt("SELECT creator FROM x_work WHERE id = $1 FOR UPDATE", &[&work])
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let Some(creator) = row.map(|r| opt_str(&r, "creator")) else {
+        return biz_err("work not found");
+    };
+    u4_require_actor_of(&pool.0, &session, Some(&creator)).await?;
     let n = tx
         .execute(
             "UPDATE x_work SET work_status = 'retracted' WHERE id = $1",
@@ -2006,7 +2189,7 @@ pub async fn work_v3_retract_body(pool: Extension<Pool>, Json(body): Json<Value>
     )
     .await
     .map_err(|_| AppError::Internal)?;
-    record_insert_tx(&tx, &work, "retract", "v3 retract", "system").await?;
+    record_insert_tx(&tx, &work, "retract", "v3 retract", &session.person_unique).await?;
     tx.commit().await.map_err(|_| AppError::Internal)?;
     ok(json!({ "id": work, "value": true }))
 }
