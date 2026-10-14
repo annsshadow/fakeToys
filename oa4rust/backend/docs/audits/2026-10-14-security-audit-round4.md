@@ -122,9 +122,80 @@ A5 判为干净（附取证口径）：命令执行仅 `console`/`preview`，白
 
 **A5 对前三处待提交修复的复核结论**：`is_safe_avatar_rel` 正确且完备（拒空/NUL/`\`/前导 `/`，要求 `data/avatar/` 精确前缀 + 单段文件名，写侧 `data/avatar/{uuid}.{ext}` 恒放行）；`preview::safe_base_name` 正确（双分隔符 rsplit、拒 `.`/`..`/NUL/空，且 `download()` 另有 `starts_with(temp_dir)` + `ParentDir` 栅栏；注意 preview crate 未挂主服务，属纵深防御）；`docx_to_html` 上限对 docx 正确但**同族漏了 XLSX/PPTX**（即 N4-01），且 `DOCX_MAX_PARAGRAPHS=200` 会把长文静默截断到前 200 段——预览可接受，但未向调用方标注。
 
-### 二.3 / 二.4 CMS+查询族、中量 crate 分诊
+### 二.3 CMS + 查询族越权/写门禁（A2，已完成：候选 201 行 → 14 条发现）
 
-（A2 / A3 代理仍在跑，收齐后填写；R7=1131 的人工定性依赖这两份报告。）
+匿名可达写端点 0（cms/query 的豁免项全为只读）。下表「复核」列写 **已验** 的才是我逐行读过代码确认的；
+其余为代理给出的 file:line 证据，本批未逐条二次取证（下一批入口）。
+
+| id | 级别 | 落点 | 攻击面 | 复核 | 修法 |
+| --- | --- | --- | --- | --- | --- |
+| A2-F1 | 高 | `query_assemble_surface:223/262`、`query_assemble_designer:506/544/618/685` | 按 IDOR 覆写/删除他人查询设计与 surface | 未复核 | 复用同 crate `guard_write` / `require_admin_gate` |
+| A2-F2 | 高 | `query_assemble_surface:2261` + `u2_closures:725/752/782/812` | `table/row/delete/all/{tableFlag}` **物理清空**任意数据表全部行 | 未复核 | 表属主 `guard_write` + 改软删 |
+| A2-F3 | 高 | `query_assemble_designer:154/203/231`（路由 `:862`） | 任意用户触发建表/加列 DDL（标识符已校验，权限错位） | 未复核 | `require_admin` |
+| A2-F4 | 高 | `cms_assemble_control:5881/5902`（GET 路由 `:477/:701`） | GET 全表软删权限缓存 → 权限判定消费者失效 + 绕 CSRF | 未复核 | `u2_require_admin` + 移出 GET |
+| A2-F5 | 高 | cms 遗留 CRUD 与 `mock*` 写族（20+ 处） | 无 session 无门禁写/软删 cms 内容表，含 GET 变体 | 未复核 | `u2_require_admin` / `u2_check_owner` |
+| A2-F6 | 中高 | `cms_assemble_control:165 update_control_config` | 任意用户翻 `allow_anonymous`，把只读豁免面自行扩大 | 未复核 | `require_admin`（hotpic S5 先例） |
+| A2-F7 | 中 | `cms:4030 file_id_upload` + `file_copy_u3` / `fileinfo_upload_with_url_u3` | 按任意 id upsert `x_cms_file`（含 content_base64）→ 文件内容替换 | 未复核 | `fileinfo_u2_doc_gate` |
+| A2-F8 | 中 | `cms:10113/10162 correlation_create_u3/update_u3` | 与已门禁的 `correlation_u2_doc_delete` 自相矛盾 | 未复核 | `u2_gate_by_sql` |
+| A2-F9 | 中 | `cms:7556/7585 input_create_impl/input_cover_impl` | 绕开 `appinfo_u2_create` 的 admin 门直接写 `x_cms_appinfo` | 未复核 | `u2_require_admin` |
+| A2-F10 | 中 | `query_service_processing:254 reset_service` 等运维/重建类写 | 无 admin 判定 | 未复核 | `require_admin` |
+| A2-F11 | 中 | designer/surface 共 9 处 `creator` 硬编码 "system" | create 无门禁 → 无限建对象；而 edit/delete 走 `require_owner` 时普通用户永不可自管 | 未复核 | creator 会话化 + create 加门 |
+| **A2-F12** | **高** | `query_core_express:27 execute_query`（`POST /api/query/core/express/execute`） | **任意认证用户读全库任意表**：仅判 `Statement::Query`，行级过滤靠列名拼接，自带 `x_identity`/`x_unit_id` 别名即贯穿；**且 `get_permission_filters` 取不到身份/单位时 `where_clause` 为空 → 原样执行未过滤 SQL**（`:79-83` 的 else 分支） | **已验** | **本轮已修**：admin 门 + 谓词为空即拒（§三） |
+| A2-F13 | 低中 | `query_core_entity:208`、cms 点赞/密文发布、`cms_core_entity:558/573/589` | 署名取自 body/path；`x_cms_column_manager` 全仓无消费方（仅 migration 093），故不构成实际提权 | 部分已验（列管理表无读者） | 身份会话化 + owner gate |
+| A2-F14 | 低中 | cms 7 处 `*_u2_create` | 向他人应用注入表单/脚本/视图设计 | 未复核 | `u2_gate_by_sql`（`x_cms_appinfo.manager`） |
+
+A2 开放问题的取证结果见 §二.7（注册表 Public 与中间件兜底的实际关系）。
+
+### 二.4 中量 crate 越权/写门禁（A3，已完成：候选 306 行 → 13 条发现）
+
+| id | 级别 | 落点 | 攻击面 | 复核 | 修法 |
+| --- | --- | --- | --- | --- | --- |
+| **A3-N1** | **高** | `portal_assemble_designer/u2_script.rs:38 create`、`:85 update`、`:141 delete`（路由 `lib.rs:564-569`） | 脚本正文由 portal surface 读回渲染，CSP 允许 `script-src 'self' 'unsafe-eval'` → 覆写他人脚本 = 在受害者门户执行存储型 JS；`delete` **连 session 都不取** | **已验**（并更正代理表述：create/update 其实已取 session，缺的是**归属/角色门**而非身份） | **本轮已修**：三把写收 crate-local `require_admin`（§三） |
+| **A3-N2** | **高** | `portal_assemble_surface:2625/2648/2718 dict_*_data_delete/post/put`、`:2808 script_portal_portal_name_post` | 二轮 S5 只门了同族兄弟，这 4 把漏网：任一登录用户删/覆写任意 `portal_flag` 字典数据、往任意门户插脚本 | **已验**（顺带取证：同 crate 的 `dict_*_data_mockdeletetoget` 名字带 delete、实际只 SELECT，非写） | **本轮已修**：复用同 crate 既有 `require_admin` |
+| **A3-N3** | **高** | `meeting_assemble_control:2237 accept`、`:2361/:2384 confirm_allow/deny`、`:2292 checkin`、`:2260 add_invite`、`:2094 create` / `:2151 save` | 完全不取 session：任意批准/驳回会议、以他人身份打卡、任意塞受邀人、creator 冒名；accept/confirm/checkin **还注册为 GET**（`routes.rs:112` 等）→ 跨站 GET 可驱动他人审批 | **已验** | **本轮已修**：写族要求会话；状态/归属类走 `require_owner`（先读 `x_meeting.creator`）；creator/person 改会话权威 |
+| A3-N4 | 中高 | `attendance_assemble_control` 规则/全局配置/申诉/详情签收 9 处 | 任意用户翻模块配置与申诉状态；`personId` 取 body 可代他人「签收」考勤 | 未复核 | 规则/配置 `require_admin`，签收 owner-or-admin |
+| A3-N5 | 中高 | `jpush_assemble_control` 全 crate 0 门禁（`:354` 解绑全部、`:859 message_send`、`:105` 配置） | 推送劫持 / 伪造 "system" 推送 / 推送 DoS；多处 GET+POST 双注册 | 未复核 | `u2_require_admin_opt` + creator 会话化 + 撤 GET |
+| A3-N6 | 中高 | `program_init:341/395/491/531/553/658` | 任意登录用户写入外部数据源 **host/port/user/password** 并置 applied；`server_execute`/`server_stop` 为 GET；`restore_upload` 落 ≤200 MB 临时文件；`external_datasources_validate` 用裸 `tokio::net::TcpStream` 探任意 host:port（**绕过 `shared::netguard`** = 内网端口扫描） | 未复核 | 全族 `require_admin` + 出站走 netguard |
+| A3-N7 | 中 | `mind_assemble_control:227/257/309/413` + `u2.rs:399-424` | u2 侧正确使用 `person_can_manage_mind`，lib.rs 文件夹族无 session 即按 id 改名/移动/软删他人脑图 | 未复核 | 复用 `person_can_manage_mind` |
+| A3-N8 | 中 | `ai_assemble_control:1326/1808/1886/1511/1288` | `DELETE FROM x_ai_file/x_ai_index WHERE id=$1` 无归属判定 → 销毁他人知识库 | 未复核（同族 `chat_delete_clue_id` 确有 owner 门，代理已排除） | `require_owner` + 同步类 `require_admin` |
+| A3-N9 | 中 | `personal_extend/personal.rs:328/343/359` 经 `shared/crud.rs:35/76/115` | **任意用户创建/覆写/软删他人 `x_person_face` 生物特征行**；`CrudSpec` 通用写本身无 owner 谓词，波及 11 个 crate | 未复核（危害最大的一条通用面，优先级高） | `CrudSpec` 增 owner 列或 face 写 `require_admin` |
+| A3-N10 | 中 | `file:723 permission_set`、`:557/656/713/282` | 任意 upsert `FILE_PERMISSION`（本仓暂无读者 = 潜在 ACL 绕过）、按 id 改名/软删他人文件夹 | 未复核 | owner / admin 门 |
+| A3-N11 | 中低 | `bbs:318`、`calendar:100`、`jpush:105`、`mind:73` 的 `update_control_config` | 模块级全局开关（含 `allowAnonymous`）任意登录用户可翻 | 未复核 | `require_admin`（S5 先例） |
+| A3-N12 | 中低 | GET 注册的写端点跨切族（calendar/jpush 配置、meeting accept/confirm/checkin、attendance 两处） | 同时绕开 csrf（只覆盖 POST/PUT/PATCH/DELETE）与 `requires_admin`（`matches!(method, POST\|PUT\|DELETE)`） | **已验**（csrf 与 requires_admin 的方法口径本轮两处独立复核） | 改 POST/PUT/DELETE；若 o2server 对齐必须保留 GET，则 handler 层门 |
+| A3-N13 | 低 | `general_assemble_control:1837/1875/1913 invoice_upload*` | creator 取请求体 → 冒名归属 | 未复核 | `session.person_unique`（S2 先例） |
+
+### 二.7 一条新的**跨切机制缺陷**：注册表 Public 早退吞掉中间件 admin 兜底（本轮自查 + 尺子升级取证）
+
+取证链（三段都能在代码里逐字对上）：
+
+1. `authorize_middleware`（`shared/src/middleware/rbac.rs:535-541`）在 `get_permission(path)` 命中
+   `Public` 时 **`return next.run(request)` 提前放行**，根本不再调 `check_permission`。
+2. 而 `requires_admin`（中间件 admin 兜底）**只有 `check_permission` 一个调用点**
+   （`rbac.rs:451`，全仓 grep 无第二个），即那把兜底长在早退路径的下游。
+3. `get_permission` 的前缀匹配是裸 `path.starts_with(prefix)`，**没有段边界**
+   （`rbac.rs:412`），所以 `/api/person/custom` 这条 Public 会把 `/api/person/customX/...` 一并吞进去。
+
+结论与边界（避免误读）：
+
+- **不构成匿名可达**：`auth_middleware`（`token.rs:135-154`）在 `authorize` 之外层，非豁免路径
+  无会话仍是 401。所以 Public ≠ 匿名，A2 关于「`/api/document/batch` 注册 Public 是否有意」的疑问，
+  答案是「 Public 只影响 authorize 的 Admin 判定，不影响认证」。
+- **构成兜底缺失**：`ADMIN_WRITE_PREFIXES`（6 条）与注册表 34 条 Public 前缀的交集有 **15 条**
+  （`/api/person/{icon,list,detail,has/role,custom,definition,nick/name,list/all}`、
+  `/api/group/{list,has/role}`、`/api/role/list`、`/api/unit/{list,check,identity,list/all}`），
+  落在这 15 条之下的写路由**没有中间件 admin 兜底，handler 层是唯一门禁**。
+- 尺子已按该口径升级（新增 `registryPublic()` 复刻段无边界前缀匹配），分桶读数：
+  **G-Public早退吞掉admin兜底且无体内门禁 = 4**、H（有体内门禁）= 1、A（真兜底）= 27、
+  B（匿名且无门）= 7、C = 2、D（登录即可写且无门）与 F/E 不变。
+- **G 的 4 行逐条取证后均为「按会话本人」的自助写，判为良性**：
+  `personal/u2.rs:238 custom_edit`、`:280 custom_delete`、`:441 definition_edit` 三处都先
+  `resolve_current_person_unique(...)`；`personal_extend/avatar.rs:53 upload` 走
+  `validate_session` 后只写本人 `auth_person.icon`。故 G 当前不是漏洞，而是**兜底缺失的暴露面**：
+  一旦同前缀下新增不带归属判定的写 handler，中间件不会兜住。建议下一轮加守卫：
+  「`ADMIN_WRITE_PREFIXES` ∩ 注册表 Public 的差集必须逐条点名，且新增者必须有体内归属门」。
+- 同一尺子新出的 B 行里 `program_init:139/186 /api/secret/set(+/cancel)` 落在
+  `AUTH_EXEMPT_PREFIXES` 的 `/api/secret` 之下 = **匿名可写系统初始化面**，与 A3-N6 同族，
+  已并入 §五 待修（这是本轮唯一「真匿名写」新增格）。
 
 ### 二.6 越权/写门禁 · 长尾 crate（A4，已完成：53 行 / 15 crate）
 
@@ -166,7 +237,17 @@ A4 开放问题：① F1 是否 o2server 侧本就以 job/document 创建者为�
 | N4-01 | `crates/file_assemble_control/src/lib.rs` | `read_zip_entry` 加 `ZIP_ENTRY_MAX_BYTES`(4 MiB)；回归 `test_read_zip_entry_caps_decompressed_size`（9 MiB 条目必须恰好截断在 4 MiB） |
 | N2 | `crates/personal_extend/src/avatar.rs` | 头像读侧 `is_safe_avatar_rel` fail-closed 守卫 + 回归；**测试里的 Windows 路径字面量改 raw string**（`"C:\windows\..."`、`"data/avatar\..\..\evil"` 是非法 Rust 转义，原写法整个 crate 测试目标编译不过） |
 | 加固 | `crates/preview/src/lib.rs` | `safe_base_name` 同时按 `/` 与 `\` 取末段，剥离契约不再依赖构建平台的 `Path::file_name()` 语义 + 跨平台断言 |
-| 工具 | `scripts/audit_write_gating.mjs` | 新增确定性接线尺（§二.0） |
+| 工具 | `scripts/audit_write_gating.mjs` | 新增确定性接线尺（§二.0）；**本轮再升级**：复刻 `PermissionRegistry` 的 Public 段无边界前缀匹配，新增 G/H 两桶（§二.7） |
+
+
+### 三.2 第二批（A2/A3 收口，代码）
+
+| 项 | 文件 | 内容 |
+| --- | --- | --- |
+| **A2-F12** | `crates/query_core_express/src/lib.rs` + `security_gate_tests.rs` | `execute_query` 加 admin 门并把 `where_clause` 为空那一支从「原样执行未过滤 SQL」改成 `Err(Forbidden)`；`cache_query_result` 补 session + admin 门，`creator` 由硬写 "system" 改会话权威。离线回归两支：非 admin 双 403 + `build_where_clause(&None,&None)` 必为空（钉住 fail-closed 的触发条件本身） |
+| **A3-N1** | `crates/portal_assemble_designer/src/u2_script.rs` + `security_gate_tests.rs` | 该 crate 零门禁引用：`create/update/delete` 三把脚本写加 crate-local `require_admin`（`is_admin` 无 DB fail-closed），`delete` 补 `Extension<Session>`。存储型 JS 面（surface 读回 + CSP `unsafe-eval`） |
+| **A3-N2** | `crates/portal_assemble_surface/src/lib.rs` + `security_gate_tests.rs` | S5 漏收的 4 把（dict data delete/post/put + script post）复用同 crate 既有 `require_admin`；新增 4 支 403 断言。附带取证更正：`dict_*_data_mockdeletetoget` 名为 delete 实为 SELECT |
+| **A3-N3** | `crates/meeting_assemble_control/src/lib.rs` + `security_gate_tests.rs` | 新增 `u2_meeting_owner_gate`（读 `x_meeting.creator` → `require_owner`，行不存在放行保 not-found）；`save_meeting`/`confirm_allow`/`confirm_deny`/`add_invite` 接归属门，`create_meeting` 的 creator 与 `checkin` 的 person 改会话权威，`accept` 至少要求有效会话（会议级状态翻转的产品口径留 §五 待拍）。GET 注册本批未撤（前端自检面板在用，改方法需同批改前端） |
 | **F3** | `crates/portal/src/lib.rs` + `security_gate_tests.rs` | `save_page` / `delete_page`（后者是物理 `DELETE FROM x_portal_page`）加 crate-local `require_admin`（`shared::middleware::is_admin`，无 DB fail-closed）；离线回归 `portal_page_writes_forbidden_for_non_admin` 断言两把 403 |
 | **F6** | `crates/ai/src/index.rs` + `crates/ai/src/tests_generated.rs` | `index_delete` 加 `Extension<Session>` + `is_admin` 门（ownerless 系统数据，按 S5 裁决收 admin）；原直调测试 `_result` 弃读改成 403 断言（离线，无 DB 时 fail-closed）。路由仍挂 GET——改 HTTP 方法需前端同批，列为跨切项不做单边改动 |
 | **F9** | `crates/bbs/src/subject.rs` | 发帖 `author_id` 由「完全取请求体」改为以会话身份为权威（`session.person_unique`），杜绝任意 person 冒名发帖；既有 `test_subject_create` 走 oneshot 无会话→仍 500，不掩盖变更 |
@@ -195,12 +276,52 @@ cd oa4rust/backend && cargo test --lib -p <crate>
 
 - 尺子读数与明细落盘：`docs/audits/artifacts/write_handlers.tsv`（函数级矩阵 991 行）、`write_gating_residual.tsv`、`write_routes_ungated.tsv`（R4 13 条 + R7 1131 条），复跑命令 `node scripts/audit_write_gating.mjs`。
 
+第二批（§三.2）读数：
+
+- `cargo test --lib -p query_core_express`：**13 passed / 0 failed**，含新增
+  `query_express_writes_and_raw_sql_forbidden_for_non_admin`（execute/cache 双 403）与
+  `empty_permission_predicate_is_not_a_free_pass`。
+- `cargo test --lib -p portal_assemble_designer`：**25 passed / 0 failed / 1 ignored**，按名复核
+  `designer_script_writes_forbidden_for_non_admin` = ok。
+- `cargo test --lib -p portal_assemble_surface`：**26 passed / 0 failed**，按名复核
+  `portal_dict_and_script_writes_forbidden_for_non_admin` = ok；既有 `soft_delete_lifecycle_tests`
+  两支 DB 生命周期测试改为需 `OA4RUST_TEST_ADMIN_PERSON` 才跑（A3-N2 后这 4 把写仅 admin，
+  未配置 admin 人选即显式 skip，不伪装成绿）。
+- `cargo test --lib -p meeting_assemble_control`：**60 passed / 0 failed / 25 ignored**，
+  二轮既有 `config_manage_requires_session` / `config_manage_forbidden_for_non_admin` 两支仍在册并绿，
+  新增 `meeting_state_writes_forbidden_for_non_owner_non_admin`（`#[ignore]`，需真 PG）。
+- 尺子升级后分桶：G=4（逐条取证为会话本人自助写，良性，见 §二.7）、H=1、A=27、B=7、C=2；
+  B 里新增真匿名写格 `program_init /api/secret/set(+/cancel)`。
+
+本轮两处自伤（记下来防止再犯）：
+
+- **管道假绿**：`cargo test ... | tail -40` 的退出码是 `tail` 的，两处「exit 0」实际是编译红
+  （meeting 模块重复声明、surface 既有 DB 测试旧元数）。此后一律 grep 出 `^error` 与
+  `test result` 行，或直接 `; echo EXIT=${PIPESTATUS[0]}`。
+- **按名复核不可省**：`cargo test -p meeting ... security_gate` 一度筛出 **0 命中 / 82 filtered out**，
+  暴露我在消除重复 `mod security_gate_tests;` 时把原声明一起删了——整族门禁测试静默不参与编译。
+  补回声明后同一过滤命中 3 支。**测试「存在」不等于测试「在跑」**，收口必须按名过滤复核一次。
+- **Write 覆盖既有文件**：`meeting_assemble_control/src/security_gate_tests.rs` 本已存在（二轮
+  2 支 config 门测试），我的 Write 直接盖掉，随后 `git checkout HEAD --` 复原并把新测试追加进
+  同一 mod（`git diff --stat` 复核为 +69/-0）。规矩：**已存在的文件先 Read 再 Edit**。
+
 
 
 ## 五、处置与遗留（下一轮入口）
 
-- 已修并验证：N1、N4-01、N2、preview 加固、F3、F6、F9（离线 403/会话权威断言）、F2（编译与既有测试绿，真门 `#[ignore]` 待 PG）——读数见 §四。
+- 已修并验证：N1、N4-01、N2、preview 加固、F3、F6、F9（离线 403/会话权威断言）、F2（编译与既有测试绿，真门 `#[ignore]` 待 PG）、**A2-F12、A3-N1、A3-N2、A3-N3**（第二批读数见 §四）。
 - 待修（有明确落点与修法，按 §二.1 的 R4-1…R4-6 与 §二.6 的 F1…F10 顺序收口；processplatform 族因 `ADMIN_WRITE_DEPRECATED_PREFIXES` 已撤销中间件兜底，handler 层是唯一门禁，优先级最高；F5 与 §二.1 的 R4-3/R4-5 同为「ownerless 系统数据写 = admin」一族，可一把收）：R4-1 / R4-2 / R4-3 / R4-4 / R4-5 / R4-6、F1 / F4 / F5 / F7 / F8 / F10、N4-02、N4-03。
+- **第二批新增待修（按危害排序，均有 file:line 证据，明细见 §二.3 / §二.4 / §二.7）**：
+  1. `program_init` 全族（A3-N6 + §二.7 新出的 B 格 `/api/secret/set`、`/api/secret/set/cancel` 是**匿名可达写**）：外部数据源 host/port/账密写入 + GET `server_execute`/`server_stop` + `restore_upload` 落盘 200 MB + 裸 `TcpStream` 探任意 host:port 绕过 `shared::netguard`。
+  2. `shared/src/crud.rs` 的 `CrudSpec` 通用写无 owner 谓词（A3-N9，波及 11 crate，含他人 `x_person_face` 生物特征行的增改软删）。
+  3. `query_assemble_*` 写族（A2-F1/F2/F3）：IDOR 覆写删除设计对象、`table/row/delete/all/{tableFlag}` 物理清空任意表、DDL 执行权错位。
+  4. `cms_assemble_control` 遗留 CRUD 与 `mock*` 写族 + `update_control_config`（A2-F4/F5/F6，含 GET 注册与 `allow_anonymous` 自翻）。
+  5. 模块级 `update_control_config` 家族（A3-N11：bbs/calendar/jpush/mind）、`jpush`（A3-N5）、`attendance`（A3-N4）、`mind`（A3-N7）、`ai_assemble_control`（A3-N8）、`file`（A3-N10）。
+  6. 归属冒名残留：A2-F11（`creator` 硬编码 "system" 9 处）、A3-N13（invoice 三把）、A2-F13 / F14。
+- 建议再加两把守卫（本轮取证出的是**机制性缺口**，不是单点漏洞）：
+  - **GET 写禁令**：`csrf_middleware` 只覆盖 POST/PUT/PATCH/DELETE（`token.rs:70-74`），`requires_admin` 同样只认这三个方法（`security.rs:129`）；凡 `.route("...", get(handler))` 且 handler 体内含 `INSERT/UPDATE/DELETE` 即应红。已知落点：`hotpic routes.rs:53`、`ai routes.rs:47`、`message routes.rs:19`、meeting accept/confirm/checkin、calendar 与 jpush 的 `update/control/config`、attendance 两处、`processplatform_core_express`。撤 GET 需同批改前端（`MeetingApp.vue` 自检面板仍在用 GET）。
+  - **Public 兜底吞掉点名**：`ADMIN_WRITE_PREFIXES` ∩ 注册表 Public 的 15 条交集必须逐条点名，落在此集合内新增的写 handler 必须有体内归属/角色门（§二.7）。
+- 产品口径待拍：`meeting_id_accept` 的会议级状态翻转谁能做（被邀请人 / 属主 / admin）——本批只加了有效会话要求，未加归属判定。
 - 建议统一修法（沿用本仓既有先例，避免新抽象）：引擎运行面按一轮 V2/V4 口径至少加 `require_session_opt`；改变归属/状态/删他人行的走 `shared::middleware::require_owner`（admin 旁路、行不存在放行以保 not-found 语义）；设计态（script/flow/form/xform/dict/item-access/portal）比照同 crate `guard_write` 或二轮 S5 先例加 admin/属主门；GET 状态变更改 POST。每 crate 补 `security_gate_tests`（无 DB 的 401/403 各一）。
 - 提交落点：`a14b84348`（返工三处「已修未编译」+ docx/zip 上限 + 接线尺）、`be07ecac8`（本文档）、`e4d6af0f6`（F2/F3/F6/F9 越权门）。分支 `oa4rust-vuln-audit-r4`，本轮未 push。
 
