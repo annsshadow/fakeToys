@@ -327,7 +327,35 @@ A4 开放问题：① F1 是否 o2server 侧本就以 job/document 创建者为�
    同批把「顺手删」的 `let _ = client.execute(...)` 兜底改成**失败即响**的残留断言——
    会议臂本应 400 不落行，一旦真落行必须先红，而不是被静默的 `let _ =` 抹掉证据。
 
+### 三.8 第八批（元数据 / 设计器 / 身份关联 / 评审链四族 + 尺子缺陷 11、12，代码）
+
+本批按「**creator 恒写 `system` 的即系统级数据 → admin 档**」这条既有口径，把四个 crate 的
+「登录即可写」元数据面收成 admin；同时被两把尺子缺陷挡在视野外的东西第一次出列（见下）。
+
+| 项 | 文件 | 内容 |
+| --- | --- | --- |
+| cms 元数据写 17 把 | `crates/cms_assemble_control/src/lib.rs` | `update_control_config`、`permission_management_refresh_all`、`dict`/`form`/`xform`/`view`/`templateform` 各族 `create`/`save`/`delete`（共 15 把）加 `Extension<Session>` + `u2_require_admin(&pool, &session).await?`。这族写的是「表单/视图/字典的结构定义」，不是某人的业务单据——改一条 `form` 定义会作用于该应用全部在跑的 work，任一登录用户即可 |
+| portal 设计器写 26 把 | `crates/portal_assemble_designer/src/lib.rs` | 页面/门户设计器全 26 把写走 `crate::require_admin`（lib.rs:472）。判据同上：这些 handler 的 `creator` 一律硬编码 `"system"`，按 §二.3 定的分类法属「无属主的系统级数据」 |
+| correlation 身份关联写 10 把 | `crates/correlation_service_processing/src/lib.rs`、`src/u2.rs` | 该 crate 原先没有 admin 助手，新增 `pub(crate) async fn require_admin(pool, session)`（走 `shared::middleware::is_admin`，DB 不可达即 fail-closed 403）；`lib.rs` 4 把 + `u2.rs` 6 把（`create_pp`/`create_cms`/`update_pp`/`update_cms`/`delete_pp`/`delete_cms`）全部先门后 SQL。`x_correlation` 是**身份关联表**——谁都能插一条「A 与 B 等价」，等于把别人的身份映射改掉 |
+| pp 评审链活路由 3 把 | `crates/processplatform_service_processing/src/u2.rs` | `review_create_work`、`review_create_workcompleted`、`review_init_for_view` 走 `require_admin_opt`（无会话 401、非 admin 403）。评审链是「谁给谁打分」的记录面，属系统级数据 |
+| 同名的**死 handler** | `crates/processplatform_service_processing/src/lib.rs` | `review_init_review` 与上面三把同族，但 `routes.rs` 注册的是 `u2::review_init_for_view`——lib.rs 那把根本不可达。本批给它也补了门（防御性，将来有人注册不至于裸奔），并在账里记死「**handler 存在 ≠ 路由可达**」：只看 handler 会以为修完，实测读数纹丝不动，正是这条把尺子缺陷 11 顶出来的 |
+| 生产缺陷：`r#"…"#` 里混进字面反斜杠 | `crates/correlation_service_processing/src/lib.rs:243` | `create_correlation` 的 INSERT 语句里有孤立的 `\`，raw string 不做转义 ⇒ 发给 PostgreSQL 的 SQL 文本自带反斜杠，写路径**必 500**。这条不是加门加出来的，是一直在：本批加门后 DB 取证的 admin 臂（真放行那一路）才第一次把它撞红。修法=删掉那个 `\`。全仓用 `/d/tmp/rawsql.mjs` 扫过同类模式，仅此 1 处、现已归零 |
+| 尺子缺陷 11（限定符被剥掉） | `scripts/audit_write_gating.mjs` | 见 §四 第八批：注册写的是 `post(u2::review_create_work)`，入表时 `.split("::").pop()` 把 `u2::` 丢了，取体内信号又按「遍历 crate 命中的**第一个**同名 fn」⇒ pp 的 `lib.rs` 里那把同名死 handler 先命中，已修的两条路由继续报 R7。**双向错**：也能把真漏洞报成已修。修法：保留 `handlerRef`，带限定符的按 Rust 模块路径解析到 `src/<mod>.rs` / `src/<mod>/mod.rs`，再过一层 `use X as Y;` 别名表与「限定符首段是另一个 crate」的跨 crate 解析；裸名维持旧口径不动（否则整张矩阵无谓搬家，把真实迁移淹在噪音里） |
+| 尺子缺陷 12（宏生成 handler 读成空 body） | `scripts/audit_write_gating.mjs` | `macro_rules!` 展开出的 handler 在全 crate **没有字面 `fn <name>`**，取体返回空串，旧尺把空串一律读成「体内无会话无门禁」→ 落 R7 行动面 = 把「看不见」冒充成「有漏洞」；反向同样漏（空 body 让 GET-写探测恒假）。修法：新增 R8 桶「体内不可解析，本尺不背书」+ 名单落盘 `write_routes_unparsable.tsv`。归桶顺序上先判 R1（中间件 admin）与 R2-R4（匿名可达）再判 R8——首版把 `!body` 放在 exempt 之前，实测吞掉 2 条 R4，已改回 |
+
+### 三.9 第九批（applicationdict 深度路径 24 条写收 admin + 尺子缺陷 13，代码）
+
+缺陷 12 只是**承认**看不见；缺陷 13 把「看不见」变成「读得见」，本批的真洞正是这么冒出来的：
+
+| 项 | 文件 | 内容 |
+| --- | --- | --- |
+| 尺子缺陷 13（宏模板取证） | `scripts/audit_write_gating.mjs` | 解析一级宏生成：收集本 crate 内模板文本含 `fn $` 的 `macro_rules! X`，再找 `X!` 的平衡实参组，组内出现该 handler 裸标识符即认定由此宏生成，取**宏模板全文**作体内信号；每条都记入 `write_routes_macro_resolved.tsv`（121 条）逐条可枚举，靠模板得到的门禁必须能被点名，不许混进普通 R5。R8 从 98 条降到 1 条（余 `organization_assemble_authentication POST /authentication/code`） |
+| GATE_RE 追加 5 个宏模板里的门 | `scripts/audit_write_gating.mjs` | `gate_doc_writer`、`gate_topic_owner`、`gate_reply_owner`、`gate_attachment_owner`、`gate_appdict_writer`。**写成闭集点名、绝不写 `\bgate_` 前缀**：全仓 `gate_` 标识符普查共 6 个，其中 `gate_sql`(12 处)、`gate_table`(8 处) 是变量名不是门，收前缀会把两者当成门禁信号 |
+| pp 字典深度路径写 24 条 | `crates/processplatform_service_processing/src/u2.rs` | `dict_data_fns!` 宏（`dict_set_1..8` 注册在 POST+PUT、`dict_del_1..8` 注册在 DELETE，共 24 条写路由）的模板里**既不取 Session 也不校任何门**：任一登录用户按 `/applicationdict/{id}/{p0}…/{p7}/data` 就能改写或摘除任意应用的 `x_application_dict.data`。按本文件 §applicationdict 既有口径（字典表 = admin 档，与 `dict_edit` 同档）收口：模板两把 handler 各加 `session: Option<Extension<Session>>` + `require_admin_opt(&pool.0, session.as_deref()).await?`，置于任何 SQL 之前 |
+| 宏模板 R6 41 条按族抽查（不是漏洞，记账防重复劳动） | `crates/cms_assemble_control/src/lib.rs`、`crates/processplatform_assemble_surface` | 30 条 `surface_appdict_*_data_{post,put,delete}` → 模板只 `session` 入参，门在 `appdict_data_write`（lib.rs:6599 `gate_appdict_writer`）；6 条 `permission_save_{manager,publisher,viewer}_{app,category}_u3` → 门在 `u3_save_scope_permissions`（lib.rs:9962 `u3_can_manage_scope`）；5 条 `read/task/taskcompleted/review/readcompleted_u2_filter_attribute_post` → POST 上挂的读，无写面。三者都属本尺声明不扫的「helper 内部门禁」，落 R6 是口径而非洞 |
+
 ## 四、验证
+
 
 
 本机 host 是 `x86_64-pc-windows-gnu` 且 rustup 不自带 mingw；`oa4rust/vendor/mingw-{bin,gcc}` 是 gitignore 的仅本机产物（见 `oa4rust/vendor/README.md`），worktree 里没有。把主工作区的 vendor 工具链加进 PATH 后即可原生编译：
@@ -555,6 +583,65 @@ cd oa4rust/backend && cargo test --lib -p <crate>
   `portal_assemble_designer/src/lib.rs` 文档注释第二行丢 `///` 前缀（补回）。
   两处都留在并行会话自己的未提交改动集里，**没有**被本批 commit 收走。
 
+第八批（§三.8）+ 第九批（§三.9）读数：
+
+- **同尺对账**（这把尺子改了三处才算数，所以基准也必须用**改后的尺**重跑，否则「搬家」会被读成「失踪」）：
+  把 HEAD 的干净副本放在 `/d/tmp/r48base/oa4rust/backend`，只把工作树里修好的
+  `scripts/audit_write_gating.mjs` 复制过去跑：
+  **R1 145 / R2 3 / R4 14 / R5 491 / R6 315 / R7 1268 / R8 1**（写路由 2237、全路由 4806）；
+  工作树（两批加门之后）读 **R1 145 / R2 3 / R4 14 / R5 592 / R6 315 / R7 1167 / R8 1**。
+  净迁移 **101 条 R7→R5**，按 crate 逐格可点名：`portal_assemble_designer` 37、`cms_assemble_control` 27、
+  `processplatform_service_processing` 27（评审 3 + 字典深度 24）、`correlation_service_processing` 10。
+  按 `(crate, method, path, handler)` 配对做键集对账：**keyDiff=0**（两侧 2233 个键完全同号）——
+  所以这 101 条是**换桶**，不是消失，也不是我改了分母。
+- **尺子自身的读数链**（与交付分开记，因为它每改一次都会整体搬家）：
+  缺陷 11 修后（工作树代码、第八批进行中）R5 524 / R6 280 / R7 1271；
+  缺陷 12 首版把 `!body` 排在 exempt 判据之前 → **R4 14→12、R8 100**（实测吞掉 2 条真匿名面，改回顺序后 R8 98）；
+  缺陷 13 宏模板取证（98 条 R8 读得见，逐格去向：R5 +38、R6 +35、R7 +24、R8 仅剩 1）
+  → R5 568 / R6 315 / R7 1191 / R8 1。
+  **R7 反而 +24 不是坏消息**：那 24 条正是被「看不见」掩盖的真洞（pp 字典深度写族），
+  加门之后才回到 1167。**宏模板读出的门禁必须逐条点名**，产物 `write_routes_macro_resolved.tsv`（121 行）。
+- **缺陷 13 的注入自证**（`/d/tmp/inject_d13.mjs`，字节级注入 + `finally` 复原 + 哈希断言）：
+  摘掉 `dict_data_fns!` 模板里的两行 `require_admin_opt`（命中行号 339 / 348，断言恰好 2 处），
+  尺子当场读回 **R5 592→568、R6 315→339，R7 1167 一字不动**，24 条 `service_processing/applicationdict/*/data`
+  逐格从 R5 变 R6（不是 R7——模板里 `session` 抽取器还在，正是「读会话但无门」的定义）；
+  复原后 sha256 `d4fec82bbfe5…` 与进入时逐字节一致，读数回到 592 / 315 / 1167。
+  同一臂顺带量出一件新事：**同路径形状的 `processplatform_assemble_surface` applicationdict 族在两态下都读 R7**
+  （注入不动它 ⇒ 尺子没在自我实现），已列 §五 第十批选题。
+- **测试读数**（一律 grep `test result`，不信管道退出码）：
+  `correlation_service_processing` **61 passed / 0 failed / 2 ignored**，`-- --ignored` **2 passed / 0 failed / 无 `skip:`**；
+  `processplatform_service_processing` **66 passed / 0 failed / 13 ignored**，`-- --ignored` **13 passed / 0 failed**；
+  `cms_assemble_control` **334 passed / 0 failed**、`portal_assemble_designer` **26 passed / 0 failed**；
+  `parity` **4143 passed / 0 failed**——两批加门未破路由存在性对账。
+  按名复核：`cms -- security_gate` 2 支（`cms_metadata_writes_forbidden_for_non_admin`、
+  `gate_is_what_rejects_not_the_missing_database`）、`portal -- security_gate` 2 支、
+  `pp -- security_gate` 命中 **24 支**（12 在跑 / 12 DB 臂在册，含 `dict_depth_writes_reject_without_admin` 离线臂 +
+  `dict_depth_write_lands_only_for_admin` DB 臂）、`correlation -- security_gate` 3 支，全部在册。
+- **一处「按名复核」反噬自己的取证纪律**（必须留档）：上一轮我用 `-- --ignored <名字>` 跑 pp 的 DB 臂，
+  得到「13 passed / 0 failed」就以为 correlation 也安全；实际 correlation 整族 `-- --ignored` 不带过滤跑出来是
+  **1 passed / 2 failed**。过滤跑法只用于**取证某支**，不能当收口判据——收口必须整族跑一遍，
+  否则「我改了这个 crate」与「这个 crate 的旧断言还绿不绿」是两件事。红的那两条见下。
+- **两处旧契约断言按新姿态改写（不是削门）**：
+  1. `tests::test_unlink_service_route_exists`（原断言「匿名打通报 200」）改为注入一支**非 admin 会话**断言 **403**。
+     403 而不是 404 ⇒ 路由仍在注册表可匹配；403 而不是 500 ⇒ `is_admin` 在池连不上时 fail-closed
+     且门禁排在 `pool.get()` 之前——**因此这支不需要真库，摘掉 `#[ignore]` 常驻在跑**。
+  2. `tests::test_unlink_service_route_ok` 改成 admin 端到端 DB 臂：先经 SQL 建一行，再用 seeded admin
+     打真路由解除，最后数行 **1→0**。判据不看状态码，因为 `unlink_service` 未命中行时同样返回 200
+     （`ActionResult::error`），只看 200 会把「门夹死了放行侧」读成绿。
+  3. pp 的 `u2_dict_path_set_then_delete_roundtrip`（PUT/DELETE 往返）两条腿改走 `seed_u2_admin()` 会话并断言 200，
+     中间那腿「非 admin 403」原样保留——加门之后旧往返用例的**语义**变了，改断言而不是改门槛。
+- **helper 上提**：`ensure_schema` / `app_with` / `seed_admin_session` 从 `mod u2_contract` 上提到父 `mod tests`
+  （`tests.rs:16-118`，附为什么上提的注释），legacy 写路由臂与 u2 契约臂共用同一套「最小 DDL + 按 `is_admin`
+  真实口径造 admin + 带会话层的 Router」，复制两份必然漂移；`u2_contract` 经 `use super::*` 引用，调用点零改动。
+- **新发现但本批未修的策略不一致（列 §五）**：本批 4 个 crate 用了**两族**门禁入口——
+  强制 `Extension<Session>`（correlation / cms / portal）与 `Option<Extension<Session>>` + `require_admin_opt`（pp）。
+  前者在**没有会话层的裸 router** 上由 axum 0.6 回 `MissingExtension` ⇒ **HTTP 500**，后者给出 **401**。
+  生产路径有 auth 中间件兜底，匿名根本打不到 handler，所以不是可利用漏洞；但它让**契约臂的姿态不可比**
+  （同一件事：「匿名进不去」——两个 crate 测出两个码），也让 §四 那条 272 处 `assert_eq!(status, 500)`
+  断言族更难收。统一法要么全用 `Option` + `require_*_opt`（401 显式），要么在 crate 级测试里统一注入会话层。
+
+
+
 本轮两处自伤（记下来防止再犯）：
 
 - **管道假绿**：`cargo test ... | tail -40` 的退出码是 `tail` 的，两处「exit 0」实际是编译红
@@ -677,4 +764,49 @@ cd oa4rust/backend && cargo test --lib -p <crate>
   `cms_assemble_control` 164 / 152、`query_assemble_designer` 69、`query_assemble_surface` 58、
   `attendance_assemble_control` 56、`program_center` 55。下一轮的选题按这张表排，不再按 crate 名字顺序猜。
 - 提交落点补充：`81ac87eb4`（尺子缺陷 10 + 全 7 桶矩阵产物 + 本补充段的前两条读数）。
+
+### 第八、九批收口后的刷新（§三.8 / §三.9 / §四 两批读数）
+
+- **已修并验证**：**第八批 77 把**（`cms_assemble_control` 元数据写 17、`portal_assemble_designer` 设计器写 26、
+  `correlation_service_processing` 身份关联写 10 + 新增 `require_admin`、`processplatform_service_processing`
+  评审链活路由 3）与**第九批 24 把**（`dict_data_fns!` 宏族 `dict_set_1..8` / `dict_del_1..8` 深度路径写收 admin），
+  同尺净迁移 R7 1268 → R7 1167 / R5 491 → R5 592，键集零差；测试见 §四 两批读数。
+  顺带收掉两个非加门缺陷：`correlation` 里 `r#"…"#` 中的孤立反斜杠（写路径必 500，全仓同类扫描归零）、
+  以及 pp 同名**死 handler** 造成的「handler 存在 ≠ 路由可达」误判（尺子缺陷 11 由它顶出）。
+- **尺子三处缺陷的账**（修尺 ≠ 修洞，两条线分记账）：**11 限定符被剥掉**（双向错，能把已修报成漏洞、
+  也能把漏洞报成已修）、**12 宏生成 handler 读成空 body**（新 R8 桶「本尺不背书」+ `write_routes_unparsable.tsv`）、
+  **13 宏模板取证**（`write_routes_macro_resolved.tsv` 121 行逐条点名）。
+  归桶顺序教训：**R1 与 R2-R4 必须先于 R8**，否则匿名可达面被「看不见」桶吞掉（实测 R4 14→12）。
+  附带效果：GET 写面无门禁读数 **165 → 169**（K1 1 / K2 15→16 中的宏族被认出后 K2 16→15、K3 148→153），
+  因为宏模板同样让 GET-写探测第一次看得见那 4 条——引用旧数请按本节为准。
+- **R4-2 余量重称（覆盖 §五 旧的「81 条 / 68 名」）**：`processplatform_service_processing` 的 R7 现读 **54 条**
+  （两批共收 27 条：评审 3 + 字典深度 24）。全仓 R7 集中度前四改为
+  `processplatform_assemble_surface` **351**、`cms_assemble_control` 96、`query_assemble_designer` 67、
+  `query_assemble_surface` 58——下一轮选题按这张表排。
+- **第十批首选（本批注入臂顺手量到的真洞，已回源码复核）**：
+  `processplatform_assemble_surface` 的 applicationdict 深度路径族两态恒读 R7，逐 handler 定性分三类
+  （合计 **33 条写路由 + 7 条 GET 写**）：
+  ①`applicationdict_…_path{0..7}_data` 共 **24 条**（8 档 arity × POST/PUT/DELETE），但 handler 本体
+  （`lib.rs:1241`）只有一句 `SELECT … FROM PP_E_APPLICATIONDICT`——**同一把只读 handler 挂在三个写方法上**。
+  这不是越权洞，是「假阳性形状」：收法是把读挂回 GET、写方法显式拒绝，而不是给它加门。
+  ②`…_mockdeletetoget` **物理删面 8 档**：1 档注册在 DELETE（`lib.rs:1287`，`path3`），其余 7 档注册在 **GET**
+  （落 `write_routes_get_writes.tsv` 的 K3，正是 §五「GET 写禁令」那一族）；handler 体内
+  `DELETE FROM PP_E_APPLICATIONDICT WHERE xid = $1` **且同一条删两次**，无 Session、无任何门禁——
+  登录即可（GET 那 7 档连写方法都不需要）按任意 xid 物理删系统元数据，**属真洞、优先级最高**。
+  ③`…_mockputtopost`（**8 条**，`lib.rs:1357` 起）体内 `UPDATE … SET "xupdateTime" = NOW()`，同为无会话无门写。
+  该 crate `routes.rs` 里 `mockdeletetoget` 字样出现 93 次，即②的形状是全仓一族，不是孤例；
+  修法沿用 §五「建议统一修法」：字典/元数据写走 admin 门，`mock*` 别名族与正式路由同锁。
+- **新开两格策略性待修**：①**门禁入口两族并存**——强制 `Extension<Session>`（裸 router 回 500）与
+  `Option<Extension<Session>>` + `require_admin_opt`（401）在同一 worktree 并存，生产有中间件兜底故非漏洞，
+  但契约臂姿态不可比、也与 §五 那 272 处 `assert_eq!(status, 500)` 断言族纠缠；收法建议统一走 `Option` + `require_*_opt`。
+  ②**correlation 读侧 IDOR 未动**：`list_correlations`（`/list/{personId}`）、`get_link`、`get_correlation`
+  仍是「任一登录用户按 id 读他人身份关联映射」，写侧本批收了 admin，读侧没收——身份关联表的可读性本身就是
+  情报面，下一批与②同题收。
+- **产物卫生**：`write_handlers.tsv`（函数级旧产物）与本批矩阵有 215 行双向差、来源不可追，已删除；
+  本批新增 3 张尺子产物（`route_handler_unresolved_refs.tsv` / `write_routes_unparsable.tsv` /
+  `write_routes_macro_resolved.tsv`）与矩阵、ungated、get_writes 一并入册，均为 `node scripts/audit_write_gating.mjs`
+  的确定性输出（同码重跑逐字节一致，注入臂的复原步已顺带验证过一次）。
+- 提交落点：`618ef840a`（第八批 + 第九批代码 + 尺子缺陷 11/12/13 + 三张新产物与矩阵/ungated/get_writes 刷新 +
+  契约返工）；本段与 §三.8 / §三.9 / §四 两批读数为「账本」随后一笔。共享工作树上并行会话的在制品未被本批收走。
+  本轮未 push。
 
