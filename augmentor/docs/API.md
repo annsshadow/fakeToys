@@ -596,7 +596,7 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
 | --- | --- | --- | --- |
 | `POST` | `/api/dataset/stats` | 数据集统计 | 只读分析。`summary` 是**字符串摘要**（不是 dict）；逐字段统计在 `field_statistics`（列表）。 |
 | `POST` | `/api/dataset/validate` | 数据集验证 | 只读。`is_valid` 对**空数据集恒为 true**（一条问题都没有是因为一条都没看，A92）。它的职责是报告坏数据，所以对坏输入回 200 而不是 4xx。 |
-| `POST` | `/api/dataset/search` | 数据集搜索 | 只读。`total_matches` 是**分页前**的全集口径；`fuzzy_threshold` / `ngram_n` / `filters` 三个旋钮的**生效值**在响应里回显（不传时是 `null`，不是默认值）。 |
+| `POST` | `/api/dataset/search` | 数据集搜索 | 只读。`total_matches` 是**分页前**的全集口径；`fuzzy_threshold` / `ngram_n` / `filters` 三个旋钮的**生效值**在响应里回显（不传时是 `null`，不是默认值）。`method="regex"` 的模式串由调用方给出：编译不过回 **400** 并点名坏模式与位置（`无效的正则表达式 …（位置 N）`），**不是** 200 配 `total_matches: 0`——那是把参数错读成语料里没有（L267）。 |
 | `POST` | `/api/dataset/compare` | 数据集对比 | 只读。返回质量向 A/B 结论 + 重叠度 + 建议，`diff_datasets` 的成员语义见 §11 排查。 |
 | `POST` | `/api/dataset/features` | 字段特征检测 | 只读。`field_features` 是**列表**（不是 dict），每项一个字段的画像。 |
 | `POST` | `/api/dataset/auto-config` | 自动配置推荐 | 只读。返回推荐配置 + 理由；推荐值不落盘，要 `POST /api/config` 才生效。 |
