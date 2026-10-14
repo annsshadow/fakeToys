@@ -1,0 +1,8 @@
+bucket	crate	file	line	handler	route	tables
+B-匿名可达且无体内门禁	auth	lib.rs	200	login	POST /api/authentication (+1 处)	auth_person
+B-匿名可达且无体内门禁	general_assemble_control	lib.rs	1508	invoice_create	POST /api/general/assemble/control/invoice/create	x_general_assemble_invoice
+B-匿名可达且无体内门禁	general_assemble_control	lib.rs	1837	invoice_upload	POST /api/general/assemble/control/invoice/upload	x_general_assemble_invoice
+B-匿名可达且无体内门禁	meeting	lib.rs	244	create_meeting	POST /api/meeting/assemble/control/meeting/create (+1 处)	x_meeting
+B-匿名可达且无体内门禁	meeting_assemble_control	lib.rs	2094	create_meeting	POST /api/meeting/assemble/control/meeting/create (+1 处)	x_meeting
+B-匿名可达且无体内门禁	program_init	lib.rs	139	set	POST /api/secret/set	secret_config
+B-匿名可达且无体内门禁	program_init	lib.rs	186	set_cancel	GET /api/secret/set/cancel	secret_config
