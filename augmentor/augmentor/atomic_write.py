@@ -30,9 +30,10 @@
 import json
 import os
 import secrets
+import threading
 import time
 from pathlib import Path
-from typing import Any, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 # 同名并发替换在 Windows 上会撞到瞬时的 `ERROR_ACCESS_DENIED`：两支线程同时把各自的临时件
 # 换到同一个目标时，后到的那支会被拒绝（L99 的并发守卫实测：8 支线程同一时刻写同一文件，
@@ -109,3 +110,48 @@ def atomic_write_text(file_path: Path, text: str):
     finally:
         if tmp.exists():
             tmp.unlink()
+
+
+# ============ 读-改-写的互斥（L273） ============
+
+#: 按「规范化后的绝对路径」登记的进程内互斥锁。第二把尺子管的是本模块 docstring
+#: 没覆盖的那一半承诺：`os.replace` 保证**读者**看不见半份，它保证不了**写者**不互相
+#: 覆盖 —— 两个写者各自先读整份、各自改自己那一格、各自整份写回，后写的那一份带着
+#: 旧快照，把前一次改动凭空抹掉，而两边都回了 `success: true`。
+#: 实测（Temp 沙箱，`probe_race.py` / `probe1_guard.py` / `probe3_versions.py`）：
+#: 同一份 200 条数据集上 20 支并发 `PUT /api/data/update` ⇒ 落盘 1 处、丢 19 处，
+#: 全部 200；50 支时另有 3 支 500（读侧撞 Windows 的瞬时拒绝访问）；并发 `DELETE` 20 支
+#: ⇒ 只删掉 1 条，丢 19 次删除；备份索引 20 次创建 ⇒ 索引 1 行、盘上 20 份文件，
+#: 那 19 份对 `list` / `restore` / `delete` / `clean_old_backups` 全部不可见。
+_PATH_LOCKS: Dict[str, threading.RLock] = {}
+_PATH_LOCKS_REGISTRY = threading.Lock()
+
+
+def path_lock(file_path: Any) -> threading.RLock:
+    r"""取（并记住）`file_path` 这一把锁 —— 同一个文件路径的读-改-写共用一把
+
+    为什么是 `RLock` 不是 `Lock`：锁按路径建键之后，「外层罩住整段读-改-写」与「内层
+    那个读写同一份文件的辅助方法自保」会**套在同一把锁上**（`version_control._load_index`
+    被 `create_version` 在锁内调用就是这一形）。普通锁同线程重入会当场自锁死，可重入锁
+    让两处各自成立、合起来仍然是一趟。
+
+    键取 `normcase(abspath(...))`：同一份文件被写成相对与绝对两种形状时必须是同一把锁，
+    否则锁就只是装饰。Windows 上 `normcase` 顺带折叠大小写（盘符路径本就不区分大小写）。
+
+    锁表按路径单调增长，不在场就回收：一个进程碰过的文件数量是有界的（数据集名、
+    备份索引、版本目录），比「每次调用新建一把锁」要对——那样两把锁互不相识，等于没锁。
+
+    Args:
+        file_path: 目标文件路径（`str` 或 `Path`）
+
+    Returns:
+        该路径专属的 `threading.RLock`
+    """
+    key = os.path.normcase(os.path.abspath(str(file_path)))
+    with _PATH_LOCKS_REGISTRY:
+        lock = _PATH_LOCKS.get(key)
+        if lock is None:
+            lock = threading.RLock()
+            _PATH_LOCKS[key] = lock
+        return lock
+

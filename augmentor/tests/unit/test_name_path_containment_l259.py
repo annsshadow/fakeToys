@@ -107,7 +107,7 @@ MEASURED_CALL_SITES = {
 
 #: 现量（L259）：SDK 包内**没有**走权威的「目录 / 名字」拼接，逐处点名与其处置理由。
 MEASURED_RESIDUAL_JOINS = {
-    "augmentor/backup.py:114": "L231 给备份名落下的手判（`.parents` 那一档），与权威同口径",
+    "augmentor/backup.py:117": "L231 给备份名落下的手判（`.parents` 那一档），与权威同口径",
     "augmentor/cache.py:219": "键是 md5 十六进制摘要，形状上不含分隔符与 `..` ⇒ 惰性",
     "augmentor/validation.py:1021": "权威自己那一行 `root / candidate`（判完才拼）",
     "augmentor/visualizer.py:83": "返回的那句拼接：上一行刚刚用权威判过同一个 `output_file`",
