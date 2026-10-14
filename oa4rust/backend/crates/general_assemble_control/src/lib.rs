@@ -1836,6 +1836,7 @@ pub async fn invoice_update_id(
 #[allow(non_snake_case)]
 pub async fn invoice_upload(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -1847,11 +1848,10 @@ pub async fn invoice_upload(
         .unwrap_or("")
         .to_string();
     let flag = uuid::Uuid::new_v4().to_string();
-    let creator = payload
-        .get("creator")
-        .and_then(|v| v.as_str())
-        .unwrap_or("system")
-        .to_string();
+    // 四轮 §三.7：这三把 upload 家族在 R4-2 批里补过尺子门禁但 creator 仍取请求体，
+    // 而双锁修复让它们从「对所有人 401 死态」变成登录可达——冒名归属面随之打开，
+    // 故与 `invoice_create` 同口径：归属以会话登录人为事实源。
+    let creator = session.person_unique.clone();
 
     client
         .execute(
@@ -1874,6 +1874,7 @@ pub async fn invoice_upload(
 #[allow(non_snake_case)]
 pub async fn invoice_upload_for_create(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -1885,11 +1886,8 @@ pub async fn invoice_upload_for_create(
         .unwrap_or("")
         .to_string();
     let flag = uuid::Uuid::new_v4().to_string();
-    let creator = payload
-        .get("creator")
-        .and_then(|v| v.as_str())
-        .unwrap_or("system")
-        .to_string();
+    // 同 `invoice_upload`：归属以会话登录人为事实源，客户端 creator 可伪造。
+    let creator = session.person_unique.clone();
 
     client
         .execute(
@@ -1912,6 +1910,7 @@ pub async fn invoice_upload_for_create(
 #[allow(non_snake_case)]
 pub async fn invoice_upload_with_url(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -1923,11 +1922,8 @@ pub async fn invoice_upload_with_url(
         .unwrap_or("")
         .to_string();
     let flag = uuid::Uuid::new_v4().to_string();
-    let creator = payload
-        .get("creator")
-        .and_then(|v| v.as_str())
-        .unwrap_or("system")
-        .to_string();
+    // 同 `invoice_upload`：归属以会话登录人为事实源，客户端 creator 可伪造。
+    let creator = session.person_unique.clone();
 
     client
         .execute(
