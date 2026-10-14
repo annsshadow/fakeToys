@@ -114,6 +114,61 @@ type pureVectors struct {
 			Hex   string `json:"hex"`
 		} `json:"rows"`
 	} `json:"fnv"`
+
+	// Heat 用「脚本 + 状态轨迹」而不是逐函数取值。
+	//
+	// 热量那类缺陷（吸收态、余数截断）单看一个函数的返回值看不出来，
+	// 要连续跑若干步才现形。
+	Heat struct {
+		Consts struct {
+			ActiveSlots        int    `json:"ACTIVE_SLOTS"`
+			PassiveSlot        int    `json:"PASSIVE_SLOT"`
+			TotalSlots         int    `json:"TOTAL_SLOTS"`
+			HeatMax            string `json:"HEAT_MAX"`
+			OverheatDurationMs int    `json:"OVERHEAT_DURATION_MS"`
+			HeatDecayPerSec    string `json:"HEAT_DECAY_PER_SEC"`
+			DiscardPerWave     int    `json:"DISCARD_PER_WAVE"`
+			DiscardHeatRefund  string `json:"DISCARD_HEAT_REFUND"`
+		} `json:"consts"`
+		Rows []struct {
+			Label    string `json:"label"`
+			CapBonus string `json:"cap_bonus"`
+			Trace    []struct {
+				Op string `json:"op"`
+				// 输入参数（每种 op 只有一个非 nil）
+				Cost  *string  `json:"cost"`
+				N     *string  `json:"n"`
+				DtMs  *float64 `json:"dt_ms"`
+				Costs []string `json:"costs"`
+				// 输出与状态（**每步之后**的值）
+				Heat              string `json:"heat"`
+				Overheated        bool   `json:"overheated"`
+				OverheatRemaining int    `json:"overheat_remaining"`
+				Cap               string `json:"cap"`
+				MaxHeat           string `json:"max_heat"`
+				// ⚠️ 衰减余数必须进向量：只比 heat 的话，
+				// 「四舍五入」与「截断」在短脚本里给出同一个整数衰减，
+				// 守卫就证明不了任何东西（实测：去掉 math.Round 测试没红）。
+				DecayRemainder string `json:"decay_remainder"`
+				Result         *bool  `json:"result"`
+			} `json:"trace"`
+		} `json:"rows"`
+	} `json:"heat"`
+
+	Deck struct {
+		Rows []struct {
+			Label string `json:"label"`
+			Trace []struct {
+				Op           string   `json:"op"`
+				Hand         []string `json:"hand"`
+				Size         int      `json:"size"`
+				DiscardsLeft int      `json:"discards_left"`
+				OK           *bool    `json:"ok"`
+				Refund       *string  `json:"refund"`
+				ID           string   `json:"id"`
+			} `json:"trace"`
+		} `json:"rows"`
+	} `json:"deck"`
 }
 
 func loadPureVectors(t *testing.T) *pureVectors {
@@ -518,7 +573,219 @@ func TestSnapshotElementsMatchesCrossEnd(t *testing.T) {
 	}
 }
 
-// --- 摘要 ---
+// --- 热量系统 ---
+
+// TestHeatConstantsMatchCrossEnd 断言热量常量两端一致。
+//
+// 这些常量进结算上限校验（`MaxReportedHeat` 的推导），漂移会让
+// 服务端按一个客户端根本产生不出的上界去放宽校验。
+func TestHeatConstantsMatchCrossEnd(t *testing.T) {
+	v := loadPureVectors(t)
+	c := v.Heat.Consts
+	pairs := []struct {
+		name     string
+		got, exp int
+	}{
+		{"ACTIVE_SLOTS", ActiveSlots, c.ActiveSlots},
+		{"PASSIVE_SLOT", PassiveSlot, c.PassiveSlot},
+		{"TOTAL_SLOTS", TotalSlots, c.TotalSlots},
+		{"HEAT_MAX", int(HeatMax), int(mustInt64(t, c.HeatMax))},
+		{"OVERHEAT_DURATION_MS", OverheatDurationMs, c.OverheatDurationMs},
+		{"HEAT_DECAY_PER_SEC", int(HeatDecayPerSec), int(mustInt64(t, c.HeatDecayPerSec))},
+		{"DISCARD_PER_WAVE", DiscardPerWave, c.DiscardPerWave},
+		{"DISCARD_HEAT_REFUND", int(DiscardHeatRefund), int(mustInt64(t, c.DiscardHeatRefund))},
+	}
+	for _, p := range pairs {
+		if p.got != p.exp {
+			t.Errorf("%s = %d，TS 期望 %d", p.name, p.got, p.exp)
+		}
+	}
+}
+
+// TestHeatScriptsMatchCrossEnd 重放热量脚本并**逐步**比对状态。
+//
+// # 判据为什么是逐步比对而不是只比最终状态
+//
+// 只比最终状态的话，中间若干步算错了又绕回来的实现能全绿。
+// 逐步比对让「第 37 帧的衰减余数不对」这种偏移立刻暴露 ——
+// 而热量偏移一点点 → 过热时机差 → 事件流差 → 哈希差。
+func TestHeatScriptsMatchCrossEnd(t *testing.T) {
+	v := loadPureVectors(t)
+	for _, script := range v.Heat.Rows {
+		t.Run(script.Label, func(t *testing.T) {
+			h := NewHeatSystem()
+			h.CapBonus = mustInt64(t, script.CapBonus)
+
+			for i, step := range script.Trace {
+				switch step.Op {
+				case "setHeat":
+					h.Heat = mustInt64(t, step.Heat)
+				case "cast":
+					ok := h.TryCast(needInt64(t, step.Cost, "cost"))
+					if !matchBool(step.Result, ok) {
+						t.Fatalf("第 %d 步 cast(%s) = %v，TS 期望 %s",
+							i, *step.Cost, ok, showBool(step.Result))
+					}
+				case "refund":
+					h.RefundHeat(needInt64(t, step.N, "n"))
+				case "checkOverheat":
+					ok := h.CheckOverheat()
+					if !matchBool(step.Result, ok) {
+						t.Fatalf("第 %d 步 checkOverheat = %v，TS 期望 %s", i, ok, showBool(step.Result))
+					}
+				case "forceOverheat":
+					ok := h.ForceOverheat()
+					if !matchBool(step.Result, ok) {
+						t.Fatalf("第 %d 步 forceOverheat = %v，TS 期望 %s", i, ok, showBool(step.Result))
+					}
+				case "absorbOverheat":
+					h.AbsorbOverheat()
+				case "isStuckFor":
+					costs := make([]int64, 0, len(step.Costs))
+					for _, c := range step.Costs {
+						costs = append(costs, mustInt64(t, c))
+					}
+					ok := h.IsStuckFor(costs)
+					if !matchBool(step.Result, ok) {
+						t.Fatalf("第 %d 步 isStuckFor(%v) = %v，TS 期望 %s",
+							i, costs, ok, showBool(step.Result))
+					}
+				case "update":
+					if step.DtMs == nil {
+						t.Fatalf("第 %d 步 update 缺少 dt_ms", i)
+					}
+					// ⚠️ 传**原始小数**，不要在测试里先取整。
+					//
+					//   我第一版写了 `h.Update(int(math.Round(*step.DtMs)))`，
+					//   结果变异验证把实现里的取整换成截断时**测试没红** ——
+					//   因为取整已经发生在测试里，实现拿到的永远是整数，
+					//   它内部取整还是截断都一样。
+					//
+					//   取整规则必须留在被测代码内部（Update 的签名收 float64
+					//   就是为此），测试只负责把输入原样递进去。
+					h.Update(*step.DtMs)
+				default:
+					// ⚠️ 显式失败而不是跳过：跳过会让向量里的新 op
+					// 被无声忽略，而这条会继续显示为「通过」。
+					t.Fatalf("向量里有本文件未实现的 op %q（第 %d 步）", step.Op, i)
+				}
+
+				// 逐步比对状态
+				if got := strconv.FormatInt(h.Heat, 10); got != step.Heat {
+					t.Fatalf("第 %d 步（%s）后 heat = %s，TS 期望 %s", i, step.Op, got, step.Heat)
+				}
+				if h.Overheated != step.Overheated {
+					t.Fatalf("第 %d 步（%s）后 overheated = %v，TS 期望 %v",
+						i, step.Op, h.Overheated, step.Overheated)
+				}
+				if h.OverheatRemaining != step.OverheatRemaining {
+					t.Fatalf("第 %d 步（%s）后 overheatRemaining = %d，TS 期望 %d",
+						i, step.Op, h.OverheatRemaining, step.OverheatRemaining)
+				}
+				if got := strconv.FormatInt(h.Cap(), 10); got != step.Cap {
+					t.Fatalf("第 %d 步（%s）后 cap = %s，TS 期望 %s", i, step.Op, got, step.Cap)
+				}
+				if got := strconv.FormatInt(h.MaxHeatThisBattle, 10); got != step.MaxHeat {
+					t.Fatalf("第 %d 步（%s）后 maxHeat = %s，TS 期望 %s", i, step.Op, got, step.MaxHeat)
+				}
+				// 衰减余数：单步就能分辨「四舍五入」与「截断」
+				if got := strconv.FormatInt(h.DecayRemainder, 10); got != step.DecayRemainder {
+					t.Fatalf("第 %d 步（%s）后 decayRemainder = %s，TS 期望 %s —— "+
+						"这里通常意味着 dtMs 的取整方式不一致（JS Math.round vs 直接截断）",
+						i, step.Op, got, step.DecayRemainder)
+				}
+			}
+		})
+	}
+}
+
+// needInt64 读一个必需的字符串字段。
+func needInt64(t *testing.T, p *string, what string) int64 {
+	t.Helper()
+	if p == nil {
+		t.Fatalf("向量缺少 %s 字段", what)
+	}
+	return mustInt64(t, *p)
+}
+
+func matchBool(want *bool, got bool) bool {
+	return want != nil && *want == got
+}
+
+func showBool(b *bool) string {
+	if b == nil {
+		return "<nil>"
+	}
+	return strconv.FormatBool(*b)
+}
+
+// --- 手牌 ---
+
+func TestDeckScriptsMatchCrossEnd(t *testing.T) {
+	v := loadPureVectors(t)
+	for _, script := range v.Deck.Rows {
+		t.Run(script.Label, func(t *testing.T) {
+			if len(script.Trace) == 0 {
+				t.Fatal("手牌脚本的轨迹为空 —— 生成器坏了")
+			}
+			// 第 0 步是 setHand，从它的 hand 里读初始手牌
+			d := NewCardDeck()
+			for _, id := range script.Trace[0].Hand {
+				d.Hand = append(d.Hand, Card{ID: id})
+			}
+			for i, step := range script.Trace {
+				if i == 0 {
+					continue // setHand
+				}
+				switch step.Op {
+				case "newWave":
+					d.NewWave()
+				case "discard":
+					got := d.Discard(step.ID)
+					if !matchBool(step.OK, got.OK) {
+						t.Fatalf("第 %d 步 discard(%q).ok = %v，TS 期望 %s",
+							i, step.ID, got.OK, showBool(step.OK))
+					}
+					if step.Refund == nil || mustInt64(t, *step.Refund) != got.Refund {
+						want := "<nil>"
+						if step.Refund != nil {
+							want = *step.Refund
+						}
+						t.Fatalf("第 %d 步 discard(%q).refund = %d，TS 期望 %s",
+							i, step.ID, got.Refund, want)
+					}
+				case "drop":
+					got := d.Drop(step.ID)
+					if !matchBool(step.OK, got) {
+						t.Fatalf("第 %d 步 drop(%q) = %v，TS 期望 %s",
+							i, step.ID, got, showBool(step.OK))
+					}
+				default:
+					t.Fatalf("向量里有本文件未实现的 op %q（第 %d 步）", step.Op, i)
+				}
+				// 逐步比对手牌与次数 —— 只比最终值会让中途绕回来的实现全绿
+				if got := strings.Join(cardIDs(d.Hand), ","); got != strings.Join(step.Hand, ",") {
+					t.Fatalf("第 %d 步后手牌 = [%s]，TS 期望 [%s]", i, got, strings.Join(step.Hand, ","))
+				}
+				if d.Size() != step.Size {
+					t.Fatalf("第 %d 步 size = %d，TS 期望 %d", i, d.Size(), step.Size)
+				}
+				if d.DiscardsLeft != step.DiscardsLeft {
+					t.Fatalf("第 %d 步 discardsLeft = %d，TS 期望 %d",
+						i, d.DiscardsLeft, step.DiscardsLeft)
+				}
+			}
+		})
+	}
+}
+
+func cardIDs(cards []Card) []string {
+	out := make([]string, 0, len(cards))
+	for _, c := range cards {
+		out = append(out, c.ID)
+	}
+	return out
+}
 
 func TestSnapshotDigestMatchesCrossEnd(t *testing.T) {
 	v := loadPureVectors(t)

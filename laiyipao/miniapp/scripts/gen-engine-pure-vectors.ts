@@ -49,6 +49,7 @@ import {
   isShieldActive,
 } from '../src/game/defense'
 import { hex16, fnv1a64 } from '../src/game/lcg'
+import { HeatSystem, CardDeck, ACTIVE_SLOTS, PASSIVE_SLOT, TOTAL_SLOTS, HEAT_MAX, OVERHEAT_DURATION_MS, HEAT_DECAY_PER_SEC, DISCARD_PER_WAVE, DISCARD_HEAT_REFUND, type Card } from '../src/game/heatmap'
 import type { DefenseSnapshot, DefenseView } from '../src/game/defense'
 import type { Attacker } from '../src/game/damage'
 
@@ -385,6 +386,397 @@ const fnvRows: Array<{ input: string; hex: string }> = [
   { input: '升甲水','hex': hex16(fnv1a64('升甲水')) },
 ]
 
+// ── 热量系统 ─────────────────────────────────────────────────
+/**
+ * 热量是纯状态机：一个脚本能完整重放「若干步操作 + 若干帧推进」，
+ * 每一步之后记录状态。这样期望值覆盖的是**状态迁移序列**，
+ * 而不是单个函数 —— 吸收态那类缺陷正是要连续几步才暴露。
+ *
+ * ⚠️ 脚本刻意包含两条会互相咬住的路径：
+ *   1. `cap_bonus` 很大时 cap 涨到 HEAT_MAX×N，看上限是不是当成绝对值加了
+ *   2. 「热量停在 cap-1、放不出也过热不了」的**死区**，
+ *      然后连跑很多帧看衰减能不能把它拉出来
+ *
+ * 第 2 条特别重要：把衰减写成 `(rate*dt)/1000` 时每帧衰减 0，
+ * 于是这个状态**永远**出不来，而单测一个 update() 调用看不出来 ——
+ * 要连跑够多帧才现形。
+ */
+interface HeatScript {
+  label: string
+  capBonus: bigint
+  steps: Array<
+    | { op: 'cast'; cost: bigint }
+    | { op: 'refund'; n: bigint }
+    | { op: 'checkOverheat' }
+    | { op: 'forceOverheat' }
+    | { op: 'absorbOverheat' }
+    | { op: 'isStuckFor'; costs: bigint[] }
+    | { op: 'update'; dtMs: number }
+    | { op: 'setHeat'; v: bigint }
+  >
+}
+
+const HEAT_SCRIPTS: HeatScript[] = [
+  {
+    label: 'plain_cast_to_cap',
+    capBonus: 0n,
+    steps: [
+      { op: 'cast', cost: 30n },
+      { op: 'cast', cost: 40n },
+      { op: 'cast', cost: 30n },
+      { op: 'checkOverheat' },
+    ],
+  },
+  {
+    label: 'cast_one_over_cap_rejected',
+    capBonus: 0n,
+    steps: [
+      { op: 'setHeat', v: 90n },
+      { op: 'cast', cost: 20n }, // 90+20 > 100 → 失败
+      { op: 'cast', cost: 10n }, // 90+10 == 100 → 成功（允许正好到上限）
+      { op: 'checkOverheat' },
+    ],
+  },
+  {
+    // ⚠️ 上限是**千分比**：capBonus=1000‰ 时 cap 应为 200，不是 1100。
+    //   写成 `HEAT_MAX + capBonus` 就是 1100，两者差 5 倍。
+    label: 'cap_bonus_is_permille',
+    capBonus: 1000n,
+    steps: [
+      { op: 'cast', cost: 200n },
+      { op: 'checkOverheat' },
+    ],
+  },
+  {
+    label: 'cap_bonus_200_permille',
+    capBonus: 200n,
+    steps: [{ op: 'setHeat', v: 119n }, { op: 'checkOverheat' }],
+  },
+  {
+    label: 'negative_cap_bonus_falls_back_to_base',
+    capBonus: -500n,
+    steps: [{ op: 'setHeat', v: 100n }, { op: 'checkOverheat' }],
+  },
+  {
+    label: 'refund_floors_at_zero',
+    capBonus: 0n,
+    steps: [
+      { op: 'setHeat', v: 5n },
+      { op: 'refund', n: 10n },
+      { op: 'refund', n: 1n },
+    ],
+  },
+  {
+    label: 'overheat_blocks_cast_and_cooldown',
+    capBonus: 0n,
+    steps: [
+      { op: 'forceOverheat' },
+      { op: 'forceOverheat' }, // 已在过热 → false
+      { op: 'cast', cost: 1n }, // 过热中 → 失败
+      { op: 'update', dtMs: 1999 },
+      { op: 'update', dtMs: 1 }, // 恰好归零 → 退出过热并清空热量
+    ],
+  },
+  {
+    // 死区：heat = 99，放不下 20 成本的技能，但 heat < cap 所以不过热。
+    //
+    // ⚠️ 必须跑**够久**才能看出衰减在工作。
+    //   我第一版只跑 10 帧（0.5 秒 → 衰减 5 点 → heat=94），
+    //   结尾的 isStuckFor 仍是 true —— 注释却写着「1 秒后应脱困」，
+    //   而 94+20=114 仍放不下。注释与实际不符，属于自己骗自己。
+    //
+    //   真正脱困需要 heat ≤ cap - cost = 80，即至少衰减 19 点 ≈ 1.9 秒。
+    //   下面跑 4 秒（80 帧 × 50ms → 衰减 40 点 → heat=59），
+    //   59+20=79 ≤ 100，确实脱困。
+    //
+    //   而若把衰减写成 `(rate*dt)/1000`，每帧衰减 0，
+    //   跑 80 帧后 heat 仍是 99 —— 这条向量会立刻分出高下。
+    label: 'deadzone_recovered_by_decay',
+    capBonus: 0n,
+    steps: [
+      { op: 'setHeat', v: 99n },
+      { op: 'isStuckFor', costs: [20n] },
+      { op: 'checkOverheat' }, // false（99 < 100）
+      ...Array.from({ length: 80 }, () => ({ op: 'update' as const, dtMs: 50 })),
+      { op: 'isStuckFor', costs: [20n] }, // 4 秒后应脱困
+      { op: 'cast', cost: 20n }, // 且真的放得下
+    ],
+  },
+  {
+    // ⚠️ dtMs 是**小数**的情形。
+    //   引擎用 16.666ms 之类的步长，`Math.round(16.666) = 17`。
+    //   Go 侧少这一步取整，衰减总量在长局里会与 TS 差一点。
+    label: 'fractional_dt_uses_round',
+    capBonus: 0n,
+    steps: [
+      { op: 'setHeat', v: 100n },
+      { op: 'update', dtMs: 16.666 },
+      { op: 'update', dtMs: 16.666 },
+      { op: 'update', dtMs: 16.666 },
+      { op: 'update', dtMs: 16.666 },
+      { op: 'update', dtMs: 16.666 },
+      { op: 'update', dtMs: 16.666 },
+      { op: 'update', dtMs: 16.666 },
+      { op: 'update', dtMs: 16.666 },
+      { op: 'update', dtMs: 16.666 },
+      { op: 'update', dtMs: 16.666 },
+      { op: 'update', dtMs: 16.666 },
+      { op: 'update', dtMs: 16.666 },
+      { op: 'update', dtMs: 16.666 },
+      { op: 'update', dtMs: 16.666 },
+      { op: 'update', dtMs: 16.666 },
+      { op: 'update', dtMs: 16.666 },
+      { op: 'update', dtMs: 16.666 },
+      { op: 'update', dtMs: 16.666 },
+      { op: 'update', dtMs: 16.666 },
+      { op: 'update', dtMs: 16.666 },
+      { op: 'update', dtMs: 16.666 },
+      { op: 'update', dtMs: 16.666 },
+      { op: 'update', dtMs: 16.666 },
+      { op: 'update', dtMs: 16.666 },
+      { op: 'update', dtMs: 16.666 },
+      { op: 'update', dtMs: 16.666 },
+      { op: 'update', dtMs: 16.666 },
+      { op: 'update', dtMs: 16.666 },
+      { op: 'update', dtMs: 16.666 },
+      { op: 'update', dtMs: 16.666 },
+      { op: 'update', dtMs: 16.666 },
+      { op: 'update', dtMs: 16.666 },
+      { op: 'update', dtMs: 16.666 },
+      { op: 'update', dtMs: 16.666 },
+      { op: 'update', dtMs: 16.666 },
+      { op: 'update', dtMs: 16.666 },
+      { op: 'update', dtMs: 16.666 },
+      { op: 'update', dtMs: 16.666 },
+      { op: 'update', dtMs: 16.666 },
+      { op: 'update', dtMs: 16.666 },
+      { op: 'update', dtMs: 16.666 },
+      { op: 'update', dtMs: 16.666 },
+      { op: 'update', dtMs: 16.666 },
+      { op: 'update', dtMs: 16.666 },
+      { op: 'update', dtMs: 16.666 },
+      { op: 'update', dtMs: 16.666 },
+      { op: 'update', dtMs: 16.666 },
+    ],
+  },
+  {
+    label: 'absorb_overheat_clears_heat',
+    capBonus: 0n,
+    steps: [
+      { op: 'setHeat', v: 50n },
+      { op: 'forceOverheat' },
+      { op: 'absorbOverheat' },
+      { op: 'cast', cost: 10n },
+      { op: 'update', dtMs: 100 },
+    ],
+  },
+  {
+    label: 'is_stuck_empty_costs_false',
+    capBonus: 0n,
+    steps: [{ op: 'setHeat', v: 99n }, { op: 'isStuckFor', costs: [] }],
+  },
+  {
+    label: 'is_stuck_free_skill_not_stuck',
+    capBonus: 0n,
+    steps: [
+      { op: 'setHeat', v: 99n },
+      { op: 'isStuckFor', costs: [20n, 0n] },
+      { op: 'isStuckFor', costs: [20n, 20n] },
+    ],
+  },
+  {
+    label: 'overheat_ends_clears_heat',
+    capBonus: 0n,
+    steps: [
+      { op: 'setHeat', v: 80n },
+      { op: 'forceOverheat' },
+      { op: 'update', dtMs: 1000 },
+      { op: 'update', dtMs: 1000 },
+      { op: 'update', dtMs: 10 },
+    ],
+  },
+]
+
+const heatRows = HEAT_SCRIPTS.map((s) => {
+  const h = new HeatSystem()
+  h.capBonus = s.capBonus
+  const trace: Array<Record<string, unknown>> = []
+  const snap = (op: string, extra: Record<string, unknown> = {}) => {
+    trace.push({
+      op,
+      heat: h.heat.toString(),
+      overheated: h.overheated,
+      overheat_remaining: h.overheatRemaining,
+      cap: h.cap.toString(),
+      max_heat: h.maxHeatThisBattle.toString(),
+      // ⚠️ `decayRemainder` 虽是 private，但**必须**进向量。
+      //
+      //   只比 heat 的话，四舍五入与否在短脚本里看不出差别：
+      //   dt=16.666 时 round→17、截断→16，每步差 10/1000 点，
+      //   要累计 100 步才落到一个整数点上。
+      //   我第一版没记它，变异验证把 `math.Round` 去掉后**测试没红** ——
+      //   守卫证明不了任何东西。
+      //
+      //   记下来之后单步就能分辨：第 1 步 remainder 就是 170 vs 160。
+      decay_remainder: (h as unknown as { decayRemainder: bigint }).decayRemainder.toString(),
+      ...extra,
+    })
+  }
+  for (const step of s.steps) {
+    switch (step.op) {
+      case 'cast': {
+        const ok = h.tryCast(step.cost)
+        snap('cast', { cost: step.cost.toString(), result: ok })
+        break
+      }
+      case 'refund':
+        h.refundHeat(step.n)
+        snap('refund', { n: step.n.toString() })
+        break
+      case 'checkOverheat':
+        snap('checkOverheat', { result: h.checkOverheat() })
+        break
+      case 'forceOverheat':
+        snap('forceOverheat', { result: h.forceOverheat() })
+        break
+      case 'absorbOverheat':
+        h.absorbOverheat()
+        snap('absorbOverheat')
+        break
+      case 'isStuckFor':
+        snap('isStuckFor', {
+          costs: step.costs.map((c) => c.toString()),
+          result: h.isStuckFor(step.costs),
+        })
+        break
+      case 'update':
+        h.update(step.dtMs)
+        snap('update', { dt_ms: step.dtMs })
+        break
+      case 'setHeat':
+        // 直接写 heat 只为构造起点，不走任何 API —— 刻意如此：
+        // 若为了「纯粹」而用 cast 累加出来，某些起点就构造不出来。
+        h.heat = step.v
+        snap('setHeat', { v: step.v.toString() })
+        break
+    }
+  }
+  return { label: s.label, cap_bonus: s.capBonus.toString(), trace }
+})
+
+// ── 手牌 ─────────────────────────────────────────────────────
+/**
+ * 弃牌脚本。要覆盖：
+ *   - 正常弃（成功 + 返还）
+ *   - 弃不存在的牌（失败，**且不消耗次数**）
+ *   - 次数用完（失败）
+ *   - drop 不消耗次数（跳过语义）
+ *   - 取牌后手牌顺序（.splice 的语义）
+ */
+interface DeckScript {
+  label: string
+  hand: string[]
+  ops: Array<
+    | { op: 'discard'; id: string }
+    | { op: 'drop'; id: string }
+    | { op: 'newWave' }
+  >
+}
+
+const DECK_SCRIPTS: DeckScript[] = [
+  {
+    label: 'discard_then_exhausted',
+    hand: ['a', 'b', 'c'],
+    ops: [
+      { op: 'discard', id: 'b' },
+      { op: 'discard', id: 'a' },
+    ],
+  },
+  {
+    // ⚠️ 弃不存在的牌**不能**消耗次数，否则玩家会在手牌没变少时耗尽机会。
+    label: 'discard_missing_keeps_charge',
+    hand: ['a', 'b'],
+    ops: [
+      { op: 'discard', id: 'zzz' },
+      { op: 'discard', id: 'a' },
+    ],
+  },
+  {
+    label: 'new_wave_resets',
+    hand: ['a', 'b'],
+    ops: [
+      { op: 'discard', id: 'a' },
+      { op: 'newWave' },
+      { op: 'discard', id: 'b' },
+    ],
+  },
+  {
+    // drop 与 discard 的区别就在「不消耗次数」
+    label: 'drop_does_not_consume',
+    hand: ['a', 'b', 'c'],
+    ops: [
+      { op: 'drop', id: 'a' },
+      { op: 'drop', id: 'b' },
+      { op: 'discard', id: 'c' },
+    ],
+  },
+  {
+    label: 'drop_missing',
+    hand: ['a'],
+    ops: [{ op: 'drop', id: 'nope' }],
+  },
+  {
+    label: 'discard_all_then_hand_empty',
+    hand: ['x', 'y'],
+    ops: [
+      { op: 'discard', id: 'x' },
+      { op: 'discard', id: 'y' },
+      { op: 'discard', id: 'x' },
+    ],
+  },
+]
+
+const deckRows = DECK_SCRIPTS.map((s) => {
+  const d = new CardDeck()
+  d.setHand(s.hand.map((id) => ({ id, kind: 'skill', rarity: 'common', name: id, descr: '' }) as Card))
+  const trace: Array<Record<string, unknown>> = []
+  const snap = (op: string, extra: Record<string, unknown> = {}) => {
+    trace.push({
+      op,
+      hand: d.hand.map((c) => c.id),
+      size: d.size,
+      discards_left: d.discardsLeft,
+      ...extra,
+    })
+  }
+  snap('setHand')
+  for (const step of s.ops) {
+    if (step.op === 'discard') {
+      const r = d.discard(step.id)
+      snap('discard', { id: step.id, ok: r.ok, refund: r.refund.toString() })
+    } else if (step.op === 'drop') {
+      const ok = d.drop(step.id)
+      snap('drop', { id: step.id, ok })
+    } else {
+      d.newWave()
+      snap('newWave')
+    }
+  }
+  return { label: s.label, trace }
+})
+
+// 顺带把卡牌系统的常量也钉进契约 —— 它们进结算上限校验
+const heatConsts = {
+  ACTIVE_SLOTS,
+  PASSIVE_SLOT,
+  TOTAL_SLOTS,
+  HEAT_MAX: HEAT_MAX.toString(),
+  OVERHEAT_DURATION_MS,
+  HEAT_DECAY_PER_SEC: HEAT_DECAY_PER_SEC.toString(),
+  DISCARD_PER_WAVE,
+  DISCARD_HEAT_REFUND: DISCARD_HEAT_REFUND.toString(),
+}
+
 const doc = {
   _comment:
     '引擎**纯函数**的跨端契约向量。由 miniapp/scripts/gen-engine-pure-vectors.ts 从真实 TS 实现产出。' +
@@ -425,6 +817,14 @@ const doc = {
   elements: { rows: elementRows },
   digest: { rows: digestRows },
   fnv: { rows: fnvRows },
+  heat: {
+    consts: heatConsts,
+    // ⚠️ 用**脚本 + 状态轨迹**而不是逐函数取值。
+    //   热量那类缺陷（吸收态、余数截断）单看一个函数的返回值看不出来，
+    //   要连续跑若干步才现形。
+    rows: heatRows,
+  },
+  deck: { rows: deckRows },
 }
 
 const outPath = resolve(serverRoot, 'testdata/engine_pure_vectors.json')
@@ -432,3 +832,4 @@ writeFileSync(outPath, JSON.stringify(doc, null, 2) + '\n', 'utf8')
 console.log(`写入 ${outPath}`)
 console.log(`  技能行 ${skillRows.length} / 装置行 ${workRows.length} / 种子行 ${seedRows.length}`)
 console.log(`  校验行 ${snapshotRows.length} / 护盾行 ${shieldRows.length} / 摘要行 ${digestRows.length}`)
+console.log(`  热量脚本 ${heatRows.length}（轨迹步 ${heatRows.reduce((a, r) => a + r.trace.length, 0)}） / 手牌脚本 ${deckRows.length}`)
