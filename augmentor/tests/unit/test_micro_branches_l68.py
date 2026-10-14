@@ -197,7 +197,7 @@ class TestPipelineSlidingWindow:
         seed = _seed(tmp_path, 3)
         out = tmp_path / "out.json"
 
-        def big_single(idx, item, use_quality_check, q: Queue):
+        def big_single(idx, item, use_quality_check, q: Queue, errors=None):
             q.put((idx, True, [{"instruction": f"big-{i}"} for i in range(400)]))
 
         monkeypatch.setattr(pipeline, "_process_single_item", big_single)
