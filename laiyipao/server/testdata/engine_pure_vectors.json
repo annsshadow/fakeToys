@@ -1,0 +1,1217 @@
+{
+  "_comment": "引擎**纯函数**的跨端契约向量。由 miniapp/scripts/gen-engine-pure-vectors.ts 从真实 TS 实现产出。期望值不由 Go 侧生成（纯函数没有运行时状态，用实现产出即定义）。Go 侧 domain/engine_pure_contract_test.go 只断言与本文件一致。明确不含 runChallenge —— 它需要整个 BattleEngine，Go 侧尚未移植。",
+  "version": 1,
+  "skill": {
+    "rules": {
+      "maxLevel": 10,
+      "coefPermille": 50,
+      "baseCost": 100
+    },
+    "int_width_note": "level>=2 时若 base 接近 2^63，base*coef 这个**中间乘积**就会超出 int64（最终结果 base*coef/1000 可能仍装得下，但 Go 侧是先乘后除，中间已经溢出）。TS 用 BigInt 没有这个问题。等级 1 系数恰为 1000‰、走恒等快路径不做乘法，所以 2^63-1 只在 level=1 出现，且两端逐位一致。实际底伤来自 skills.base_damage（内容表里的小整数），离该边界有数个数量级的余量。",
+    "rows": [
+      {
+        "level": 1,
+        "base": "0",
+        "clamped_level": 1,
+        "coef_permille": 1000,
+        "base_damage_at_level": "0",
+        "upgrade_cost": 100,
+        "is_max_level": false
+      },
+      {
+        "level": 1,
+        "base": "1",
+        "clamped_level": 1,
+        "coef_permille": 1000,
+        "base_damage_at_level": "1",
+        "upgrade_cost": 100,
+        "is_max_level": false
+      },
+      {
+        "level": 1,
+        "base": "33",
+        "clamped_level": 1,
+        "coef_permille": 1000,
+        "base_damage_at_level": "33",
+        "upgrade_cost": 100,
+        "is_max_level": false
+      },
+      {
+        "level": 1,
+        "base": "100",
+        "clamped_level": 1,
+        "coef_permille": 1000,
+        "base_damage_at_level": "100",
+        "upgrade_cost": 100,
+        "is_max_level": false
+      },
+      {
+        "level": 1,
+        "base": "999",
+        "clamped_level": 1,
+        "coef_permille": 1000,
+        "base_damage_at_level": "999",
+        "upgrade_cost": 100,
+        "is_max_level": false
+      },
+      {
+        "level": 1,
+        "base": "123456",
+        "clamped_level": 1,
+        "coef_permille": 1000,
+        "base_damage_at_level": "123456",
+        "upgrade_cost": 100,
+        "is_max_level": false
+      },
+      {
+        "level": 1,
+        "base": "4503599627370496",
+        "clamped_level": 1,
+        "coef_permille": 1000,
+        "base_damage_at_level": "4503599627370496",
+        "upgrade_cost": 100,
+        "is_max_level": false
+      },
+      {
+        "level": 1,
+        "base": "9223372036854775807",
+        "clamped_level": 1,
+        "coef_permille": 1000,
+        "base_damage_at_level": "9223372036854775807",
+        "upgrade_cost": 100,
+        "is_max_level": false
+      },
+      {
+        "level": 2,
+        "base": "0",
+        "clamped_level": 2,
+        "coef_permille": 1050,
+        "base_damage_at_level": "0",
+        "upgrade_cost": 200,
+        "is_max_level": false
+      },
+      {
+        "level": 2,
+        "base": "1",
+        "clamped_level": 2,
+        "coef_permille": 1050,
+        "base_damage_at_level": "1",
+        "upgrade_cost": 200,
+        "is_max_level": false
+      },
+      {
+        "level": 2,
+        "base": "33",
+        "clamped_level": 2,
+        "coef_permille": 1050,
+        "base_damage_at_level": "34",
+        "upgrade_cost": 200,
+        "is_max_level": false
+      },
+      {
+        "level": 2,
+        "base": "100",
+        "clamped_level": 2,
+        "coef_permille": 1050,
+        "base_damage_at_level": "105",
+        "upgrade_cost": 200,
+        "is_max_level": false
+      },
+      {
+        "level": 2,
+        "base": "999",
+        "clamped_level": 2,
+        "coef_permille": 1050,
+        "base_damage_at_level": "1048",
+        "upgrade_cost": 200,
+        "is_max_level": false
+      },
+      {
+        "level": 2,
+        "base": "123456",
+        "clamped_level": 2,
+        "coef_permille": 1050,
+        "base_damage_at_level": "129628",
+        "upgrade_cost": 200,
+        "is_max_level": false
+      },
+      {
+        "level": 2,
+        "base": "4503599627370496",
+        "clamped_level": 2,
+        "coef_permille": 1050,
+        "base_damage_at_level": "4728779608739020",
+        "upgrade_cost": 200,
+        "is_max_level": false
+      },
+      {
+        "level": 3,
+        "base": "0",
+        "clamped_level": 3,
+        "coef_permille": 1100,
+        "base_damage_at_level": "0",
+        "upgrade_cost": 300,
+        "is_max_level": false
+      },
+      {
+        "level": 3,
+        "base": "1",
+        "clamped_level": 3,
+        "coef_permille": 1100,
+        "base_damage_at_level": "1",
+        "upgrade_cost": 300,
+        "is_max_level": false
+      },
+      {
+        "level": 3,
+        "base": "33",
+        "clamped_level": 3,
+        "coef_permille": 1100,
+        "base_damage_at_level": "36",
+        "upgrade_cost": 300,
+        "is_max_level": false
+      },
+      {
+        "level": 3,
+        "base": "100",
+        "clamped_level": 3,
+        "coef_permille": 1100,
+        "base_damage_at_level": "110",
+        "upgrade_cost": 300,
+        "is_max_level": false
+      },
+      {
+        "level": 3,
+        "base": "999",
+        "clamped_level": 3,
+        "coef_permille": 1100,
+        "base_damage_at_level": "1098",
+        "upgrade_cost": 300,
+        "is_max_level": false
+      },
+      {
+        "level": 3,
+        "base": "123456",
+        "clamped_level": 3,
+        "coef_permille": 1100,
+        "base_damage_at_level": "135801",
+        "upgrade_cost": 300,
+        "is_max_level": false
+      },
+      {
+        "level": 3,
+        "base": "4503599627370496",
+        "clamped_level": 3,
+        "coef_permille": 1100,
+        "base_damage_at_level": "4953959590107545",
+        "upgrade_cost": 300,
+        "is_max_level": false
+      },
+      {
+        "level": 5,
+        "base": "0",
+        "clamped_level": 5,
+        "coef_permille": 1200,
+        "base_damage_at_level": "0",
+        "upgrade_cost": 500,
+        "is_max_level": false
+      },
+      {
+        "level": 5,
+        "base": "1",
+        "clamped_level": 5,
+        "coef_permille": 1200,
+        "base_damage_at_level": "1",
+        "upgrade_cost": 500,
+        "is_max_level": false
+      },
+      {
+        "level": 5,
+        "base": "33",
+        "clamped_level": 5,
+        "coef_permille": 1200,
+        "base_damage_at_level": "39",
+        "upgrade_cost": 500,
+        "is_max_level": false
+      },
+      {
+        "level": 5,
+        "base": "100",
+        "clamped_level": 5,
+        "coef_permille": 1200,
+        "base_damage_at_level": "120",
+        "upgrade_cost": 500,
+        "is_max_level": false
+      },
+      {
+        "level": 5,
+        "base": "999",
+        "clamped_level": 5,
+        "coef_permille": 1200,
+        "base_damage_at_level": "1198",
+        "upgrade_cost": 500,
+        "is_max_level": false
+      },
+      {
+        "level": 5,
+        "base": "123456",
+        "clamped_level": 5,
+        "coef_permille": 1200,
+        "base_damage_at_level": "148147",
+        "upgrade_cost": 500,
+        "is_max_level": false
+      },
+      {
+        "level": 5,
+        "base": "4503599627370496",
+        "clamped_level": 5,
+        "coef_permille": 1200,
+        "base_damage_at_level": "5404319552844595",
+        "upgrade_cost": 500,
+        "is_max_level": false
+      },
+      {
+        "level": 9,
+        "base": "0",
+        "clamped_level": 9,
+        "coef_permille": 1400,
+        "base_damage_at_level": "0",
+        "upgrade_cost": 900,
+        "is_max_level": false
+      },
+      {
+        "level": 9,
+        "base": "1",
+        "clamped_level": 9,
+        "coef_permille": 1400,
+        "base_damage_at_level": "1",
+        "upgrade_cost": 900,
+        "is_max_level": false
+      },
+      {
+        "level": 9,
+        "base": "33",
+        "clamped_level": 9,
+        "coef_permille": 1400,
+        "base_damage_at_level": "46",
+        "upgrade_cost": 900,
+        "is_max_level": false
+      },
+      {
+        "level": 9,
+        "base": "100",
+        "clamped_level": 9,
+        "coef_permille": 1400,
+        "base_damage_at_level": "140",
+        "upgrade_cost": 900,
+        "is_max_level": false
+      },
+      {
+        "level": 9,
+        "base": "999",
+        "clamped_level": 9,
+        "coef_permille": 1400,
+        "base_damage_at_level": "1398",
+        "upgrade_cost": 900,
+        "is_max_level": false
+      },
+      {
+        "level": 9,
+        "base": "123456",
+        "clamped_level": 9,
+        "coef_permille": 1400,
+        "base_damage_at_level": "172838",
+        "upgrade_cost": 900,
+        "is_max_level": false
+      },
+      {
+        "level": 9,
+        "base": "4503599627370496",
+        "clamped_level": 9,
+        "coef_permille": 1400,
+        "base_damage_at_level": "6305039478318694",
+        "upgrade_cost": 900,
+        "is_max_level": false
+      },
+      {
+        "level": 10,
+        "base": "0",
+        "clamped_level": 10,
+        "coef_permille": 1450,
+        "base_damage_at_level": "0",
+        "upgrade_cost": 0,
+        "is_max_level": true
+      },
+      {
+        "level": 10,
+        "base": "1",
+        "clamped_level": 10,
+        "coef_permille": 1450,
+        "base_damage_at_level": "1",
+        "upgrade_cost": 0,
+        "is_max_level": true
+      },
+      {
+        "level": 10,
+        "base": "33",
+        "clamped_level": 10,
+        "coef_permille": 1450,
+        "base_damage_at_level": "47",
+        "upgrade_cost": 0,
+        "is_max_level": true
+      },
+      {
+        "level": 10,
+        "base": "100",
+        "clamped_level": 10,
+        "coef_permille": 1450,
+        "base_damage_at_level": "145",
+        "upgrade_cost": 0,
+        "is_max_level": true
+      },
+      {
+        "level": 10,
+        "base": "999",
+        "clamped_level": 10,
+        "coef_permille": 1450,
+        "base_damage_at_level": "1448",
+        "upgrade_cost": 0,
+        "is_max_level": true
+      },
+      {
+        "level": 10,
+        "base": "123456",
+        "clamped_level": 10,
+        "coef_permille": 1450,
+        "base_damage_at_level": "179011",
+        "upgrade_cost": 0,
+        "is_max_level": true
+      },
+      {
+        "level": 10,
+        "base": "4503599627370496",
+        "clamped_level": 10,
+        "coef_permille": 1450,
+        "base_damage_at_level": "6530219459687219",
+        "upgrade_cost": 0,
+        "is_max_level": true
+      },
+      {
+        "level": 11,
+        "base": "0",
+        "clamped_level": 10,
+        "coef_permille": 1450,
+        "base_damage_at_level": "0",
+        "upgrade_cost": 0,
+        "is_max_level": true
+      },
+      {
+        "level": 11,
+        "base": "1",
+        "clamped_level": 10,
+        "coef_permille": 1450,
+        "base_damage_at_level": "1",
+        "upgrade_cost": 0,
+        "is_max_level": true
+      },
+      {
+        "level": 11,
+        "base": "33",
+        "clamped_level": 10,
+        "coef_permille": 1450,
+        "base_damage_at_level": "47",
+        "upgrade_cost": 0,
+        "is_max_level": true
+      },
+      {
+        "level": 11,
+        "base": "100",
+        "clamped_level": 10,
+        "coef_permille": 1450,
+        "base_damage_at_level": "145",
+        "upgrade_cost": 0,
+        "is_max_level": true
+      },
+      {
+        "level": 11,
+        "base": "999",
+        "clamped_level": 10,
+        "coef_permille": 1450,
+        "base_damage_at_level": "1448",
+        "upgrade_cost": 0,
+        "is_max_level": true
+      },
+      {
+        "level": 11,
+        "base": "123456",
+        "clamped_level": 10,
+        "coef_permille": 1450,
+        "base_damage_at_level": "179011",
+        "upgrade_cost": 0,
+        "is_max_level": true
+      },
+      {
+        "level": 11,
+        "base": "4503599627370496",
+        "clamped_level": 10,
+        "coef_permille": 1450,
+        "base_damage_at_level": "6530219459687219",
+        "upgrade_cost": 0,
+        "is_max_level": true
+      },
+      {
+        "level": 0,
+        "base": "0",
+        "clamped_level": 1,
+        "coef_permille": 1000,
+        "base_damage_at_level": "0",
+        "upgrade_cost": 100,
+        "is_max_level": false
+      },
+      {
+        "level": 0,
+        "base": "1",
+        "clamped_level": 1,
+        "coef_permille": 1000,
+        "base_damage_at_level": "1",
+        "upgrade_cost": 100,
+        "is_max_level": false
+      },
+      {
+        "level": 0,
+        "base": "33",
+        "clamped_level": 1,
+        "coef_permille": 1000,
+        "base_damage_at_level": "33",
+        "upgrade_cost": 100,
+        "is_max_level": false
+      },
+      {
+        "level": 0,
+        "base": "100",
+        "clamped_level": 1,
+        "coef_permille": 1000,
+        "base_damage_at_level": "100",
+        "upgrade_cost": 100,
+        "is_max_level": false
+      },
+      {
+        "level": 0,
+        "base": "999",
+        "clamped_level": 1,
+        "coef_permille": 1000,
+        "base_damage_at_level": "999",
+        "upgrade_cost": 100,
+        "is_max_level": false
+      },
+      {
+        "level": 0,
+        "base": "123456",
+        "clamped_level": 1,
+        "coef_permille": 1000,
+        "base_damage_at_level": "123456",
+        "upgrade_cost": 100,
+        "is_max_level": false
+      },
+      {
+        "level": 0,
+        "base": "4503599627370496",
+        "clamped_level": 1,
+        "coef_permille": 1000,
+        "base_damage_at_level": "4503599627370496",
+        "upgrade_cost": 100,
+        "is_max_level": false
+      },
+      {
+        "level": -1,
+        "base": "0",
+        "clamped_level": 1,
+        "coef_permille": 1000,
+        "base_damage_at_level": "0",
+        "upgrade_cost": 100,
+        "is_max_level": false
+      },
+      {
+        "level": -1,
+        "base": "1",
+        "clamped_level": 1,
+        "coef_permille": 1000,
+        "base_damage_at_level": "1",
+        "upgrade_cost": 100,
+        "is_max_level": false
+      },
+      {
+        "level": -1,
+        "base": "33",
+        "clamped_level": 1,
+        "coef_permille": 1000,
+        "base_damage_at_level": "33",
+        "upgrade_cost": 100,
+        "is_max_level": false
+      },
+      {
+        "level": -1,
+        "base": "100",
+        "clamped_level": 1,
+        "coef_permille": 1000,
+        "base_damage_at_level": "100",
+        "upgrade_cost": 100,
+        "is_max_level": false
+      },
+      {
+        "level": -1,
+        "base": "999",
+        "clamped_level": 1,
+        "coef_permille": 1000,
+        "base_damage_at_level": "999",
+        "upgrade_cost": 100,
+        "is_max_level": false
+      },
+      {
+        "level": -1,
+        "base": "123456",
+        "clamped_level": 1,
+        "coef_permille": 1000,
+        "base_damage_at_level": "123456",
+        "upgrade_cost": 100,
+        "is_max_level": false
+      },
+      {
+        "level": -1,
+        "base": "4503599627370496",
+        "clamped_level": 1,
+        "coef_permille": 1000,
+        "base_damage_at_level": "4503599627370496",
+        "upgrade_cost": 100,
+        "is_max_level": false
+      },
+      {
+        "level": 99,
+        "base": "0",
+        "clamped_level": 10,
+        "coef_permille": 1450,
+        "base_damage_at_level": "0",
+        "upgrade_cost": 0,
+        "is_max_level": true
+      },
+      {
+        "level": 99,
+        "base": "1",
+        "clamped_level": 10,
+        "coef_permille": 1450,
+        "base_damage_at_level": "1",
+        "upgrade_cost": 0,
+        "is_max_level": true
+      },
+      {
+        "level": 99,
+        "base": "33",
+        "clamped_level": 10,
+        "coef_permille": 1450,
+        "base_damage_at_level": "47",
+        "upgrade_cost": 0,
+        "is_max_level": true
+      },
+      {
+        "level": 99,
+        "base": "100",
+        "clamped_level": 10,
+        "coef_permille": 1450,
+        "base_damage_at_level": "145",
+        "upgrade_cost": 0,
+        "is_max_level": true
+      },
+      {
+        "level": 99,
+        "base": "999",
+        "clamped_level": 10,
+        "coef_permille": 1450,
+        "base_damage_at_level": "1448",
+        "upgrade_cost": 0,
+        "is_max_level": true
+      },
+      {
+        "level": 99,
+        "base": "123456",
+        "clamped_level": 10,
+        "coef_permille": 1450,
+        "base_damage_at_level": "179011",
+        "upgrade_cost": 0,
+        "is_max_level": true
+      },
+      {
+        "level": 99,
+        "base": "4503599627370496",
+        "clamped_level": 10,
+        "coef_permille": 1450,
+        "base_damage_at_level": "6530219459687219",
+        "upgrade_cost": 0,
+        "is_max_level": true
+      }
+    ]
+  },
+  "works": {
+    "base_attacker": {
+      "attack": "100",
+      "crit_permille": "1500",
+      "crit_multiplier_permille": "1500",
+      "reaction_mult_permille": "1000",
+      "element_cap": "8",
+      "reaction_tier": "1",
+      "element_coef_permille": "1000"
+    },
+    "rows": [
+      {
+        "label": "empty",
+        "works": [],
+        "element_coef_permille": "1000",
+        "element_cap": "8",
+        "reaction_mult_permille": "1000"
+      },
+      {
+        "label": "slow_belt",
+        "works": [
+          "slow_belt"
+        ],
+        "element_coef_permille": "1100",
+        "element_cap": "8",
+        "reaction_mult_permille": "1000"
+      },
+      {
+        "label": "block_wall",
+        "works": [
+          "block_wall"
+        ],
+        "element_coef_permille": "1000",
+        "element_cap": "9",
+        "reaction_mult_permille": "1000"
+      },
+      {
+        "label": "tesla_grid",
+        "works": [
+          "tesla_grid"
+        ],
+        "element_coef_permille": "1000",
+        "element_cap": "8",
+        "reaction_mult_permille": "1200"
+      },
+      {
+        "label": "all_three",
+        "works": [
+          "slow_belt",
+          "block_wall",
+          "tesla_grid"
+        ],
+        "element_coef_permille": "1100",
+        "element_cap": "9",
+        "reaction_mult_permille": "1200"
+      },
+      {
+        "label": "duplicate_slow_belt",
+        "works": [
+          "slow_belt",
+          "slow_belt"
+        ],
+        "element_coef_permille": "1200",
+        "element_cap": "8",
+        "reaction_mult_permille": "1000"
+      },
+      {
+        "label": "unknown_code_mixed",
+        "works": [
+          "tesla_grid",
+          "block_welt",
+          "slow_belt"
+        ],
+        "element_coef_permille": "1100",
+        "element_cap": "8",
+        "reaction_mult_permille": "1200"
+      },
+      {
+        "label": "only_unknown",
+        "works": [
+          "turbo_laser"
+        ],
+        "element_coef_permille": "1000",
+        "element_cap": "8",
+        "reaction_mult_permille": "1000"
+      },
+      {
+        "label": "undefined",
+        "works": null,
+        "element_coef_permille": "1000",
+        "element_cap": "8",
+        "reaction_mult_permille": "1000"
+      }
+    ]
+  },
+  "challenge_seed": {
+    "rows": [
+      {
+        "defense_id": 0,
+        "now_ms": 1700000000000,
+        "minute_bucket": 28333333,
+        "seed": "28333333"
+      },
+      {
+        "defense_id": 0,
+        "now_ms": 1700000000001,
+        "minute_bucket": 28333333,
+        "seed": "28333333"
+      },
+      {
+        "defense_id": 0,
+        "now_ms": 1700000059999,
+        "minute_bucket": 28333334,
+        "seed": "28333334"
+      },
+      {
+        "defense_id": 0,
+        "now_ms": 1700000060000,
+        "minute_bucket": 28333334,
+        "seed": "28333334"
+      },
+      {
+        "defense_id": 0,
+        "now_ms": 1700000060001,
+        "minute_bucket": 28333334,
+        "seed": "28333334"
+      },
+      {
+        "defense_id": 0,
+        "now_ms": 1700003600000,
+        "minute_bucket": 28333393,
+        "seed": "28333393"
+      },
+      {
+        "defense_id": 1,
+        "now_ms": 1700000000000,
+        "minute_bucket": 28333333,
+        "seed": "29333336"
+      },
+      {
+        "defense_id": 1,
+        "now_ms": 1700000000001,
+        "minute_bucket": 28333333,
+        "seed": "29333336"
+      },
+      {
+        "defense_id": 1,
+        "now_ms": 1700000059999,
+        "minute_bucket": 28333334,
+        "seed": "29333337"
+      },
+      {
+        "defense_id": 1,
+        "now_ms": 1700000060000,
+        "minute_bucket": 28333334,
+        "seed": "29333337"
+      },
+      {
+        "defense_id": 1,
+        "now_ms": 1700000060001,
+        "minute_bucket": 28333334,
+        "seed": "29333337"
+      },
+      {
+        "defense_id": 1,
+        "now_ms": 1700003600000,
+        "minute_bucket": 28333393,
+        "seed": "29333396"
+      },
+      {
+        "defense_id": 7,
+        "now_ms": 1700000000000,
+        "minute_bucket": 28333333,
+        "seed": "35333354"
+      },
+      {
+        "defense_id": 7,
+        "now_ms": 1700000000001,
+        "minute_bucket": 28333333,
+        "seed": "35333354"
+      },
+      {
+        "defense_id": 7,
+        "now_ms": 1700000059999,
+        "minute_bucket": 28333334,
+        "seed": "35333355"
+      },
+      {
+        "defense_id": 7,
+        "now_ms": 1700000060000,
+        "minute_bucket": 28333334,
+        "seed": "35333355"
+      },
+      {
+        "defense_id": 7,
+        "now_ms": 1700000060001,
+        "minute_bucket": 28333334,
+        "seed": "35333355"
+      },
+      {
+        "defense_id": 7,
+        "now_ms": 1700003600000,
+        "minute_bucket": 28333393,
+        "seed": "35333414"
+      },
+      {
+        "defense_id": 1000,
+        "now_ms": 1700000000000,
+        "minute_bucket": 28333333,
+        "seed": "1028336333"
+      },
+      {
+        "defense_id": 1000,
+        "now_ms": 1700000000001,
+        "minute_bucket": 28333333,
+        "seed": "1028336333"
+      },
+      {
+        "defense_id": 1000,
+        "now_ms": 1700000059999,
+        "minute_bucket": 28333334,
+        "seed": "1028336334"
+      },
+      {
+        "defense_id": 1000,
+        "now_ms": 1700000060000,
+        "minute_bucket": 28333334,
+        "seed": "1028336334"
+      },
+      {
+        "defense_id": 1000,
+        "now_ms": 1700000060001,
+        "minute_bucket": 28333334,
+        "seed": "1028336334"
+      },
+      {
+        "defense_id": 1000,
+        "now_ms": 1700003600000,
+        "minute_bucket": 28333393,
+        "seed": "1028336393"
+      },
+      {
+        "defense_id": 4294967,
+        "now_ms": 1700000000000,
+        "minute_bucket": 28333333,
+        "seed": "4295008218234"
+      },
+      {
+        "defense_id": 4294967,
+        "now_ms": 1700000000001,
+        "minute_bucket": 28333333,
+        "seed": "4295008218234"
+      },
+      {
+        "defense_id": 4294967,
+        "now_ms": 1700000059999,
+        "minute_bucket": 28333334,
+        "seed": "4295008218235"
+      },
+      {
+        "defense_id": 4294967,
+        "now_ms": 1700000060000,
+        "minute_bucket": 28333334,
+        "seed": "4295008218235"
+      },
+      {
+        "defense_id": 4294967,
+        "now_ms": 1700000060001,
+        "minute_bucket": 28333334,
+        "seed": "4295008218235"
+      },
+      {
+        "defense_id": 4294967,
+        "now_ms": 1700003600000,
+        "minute_bucket": 28333393,
+        "seed": "4295008218294"
+      },
+      {
+        "defense_id": 9007199254740992,
+        "now_ms": 1700000000000,
+        "minute_bucket": 28333333,
+        "seed": "5215168368523367701"
+      },
+      {
+        "defense_id": 9007199254740992,
+        "now_ms": 1700000000001,
+        "minute_bucket": 28333333,
+        "seed": "5215168368523367701"
+      },
+      {
+        "defense_id": 9007199254740992,
+        "now_ms": 1700000059999,
+        "minute_bucket": 28333334,
+        "seed": "5215168368523367702"
+      },
+      {
+        "defense_id": 9007199254740992,
+        "now_ms": 1700000060000,
+        "minute_bucket": 28333334,
+        "seed": "5215168368523367702"
+      },
+      {
+        "defense_id": 9007199254740992,
+        "now_ms": 1700000060001,
+        "minute_bucket": 28333334,
+        "seed": "5215168368523367702"
+      },
+      {
+        "defense_id": 9007199254740992,
+        "now_ms": 1700003600000,
+        "minute_bucket": 28333393,
+        "seed": "5215168368523367761"
+      }
+    ]
+  },
+  "snapshot_validation": {
+    "rows": [
+      {
+        "label": "ok",
+        "now_ms": 1700000000000,
+        "ok": true,
+        "reason": ""
+      },
+      {
+        "label": "no_snapshot",
+        "now_ms": 1700000000000,
+        "ok": false,
+        "reason": "未获取到对方防线快照，无法模拟挑战"
+      },
+      {
+        "label": "empty_skills",
+        "now_ms": 1700000000000,
+        "ok": false,
+        "reason": "对方快照里没有任何技能，无法模拟"
+      },
+      {
+        "label": "empty_skills_beats_missing_hash",
+        "now_ms": 1700000000000,
+        "ok": false,
+        "reason": "对方快照里没有任何技能，无法模拟"
+      },
+      {
+        "label": "missing_hash",
+        "now_ms": 1700000000000,
+        "ok": false,
+        "reason": "对方快照缺少哈希，无法确认挑战的是同一份构筑"
+      },
+      {
+        "label": "shield_future",
+        "now_ms": 1700000000000,
+        "ok": false,
+        "reason": "对方护盾尚未过期"
+      },
+      {
+        "label": "shield_past",
+        "now_ms": 1700000000000,
+        "ok": true,
+        "reason": ""
+      },
+      {
+        "label": "shield_exactly_now",
+        "now_ms": 1700000000000,
+        "ok": true,
+        "reason": ""
+      },
+      {
+        "label": "shield_unparseable",
+        "now_ms": 1700000000000,
+        "ok": true,
+        "reason": ""
+      },
+      {
+        "label": "no_shield_field",
+        "now_ms": 1700000000000,
+        "ok": true,
+        "reason": ""
+      }
+    ]
+  },
+  "shield": {
+    "rows": [
+      {
+        "label": "undefined",
+        "until": null,
+        "now_ms": 1700000000000,
+        "active": false
+      },
+      {
+        "label": "empty_string",
+        "until": "",
+        "now_ms": 1700000000000,
+        "active": false
+      },
+      {
+        "label": "future",
+        "until": "2023-11-14T22:13:20.001Z",
+        "now_ms": 1700000000000,
+        "active": true
+      },
+      {
+        "label": "exactly_now",
+        "until": "2023-11-14T22:13:20.000Z",
+        "now_ms": 1700000000000,
+        "active": false
+      },
+      {
+        "label": "past",
+        "until": "2023-11-14T22:13:19.999Z",
+        "now_ms": 1700000000000,
+        "active": false
+      },
+      {
+        "label": "garbage",
+        "until": "nonsense",
+        "now_ms": 1700000000000,
+        "active": false
+      },
+      {
+        "label": "numeric_string",
+        "until": "1700000000000",
+        "now_ms": 1700000000000,
+        "active": false
+      }
+    ]
+  },
+  "elements": {
+    "rows": [
+      {
+        "label": "mixed_valid_and_invalid",
+        "elements": [
+          "fire",
+          "ice",
+          "kinetic"
+        ]
+      }
+    ]
+  },
+  "digest": {
+    "rows": [
+      {
+        "label": "empty",
+        "works": [],
+        "skills": [],
+        "digest": "af63f14c8602103b"
+      },
+      {
+        "label": "simple",
+        "works": [
+          "slow_belt"
+        ],
+        "skills": [
+          1,
+          2,
+          3
+        ],
+        "digest": "b96801850f4a25dc"
+      },
+      {
+        "label": "unsorted_skills",
+        "works": [
+          "slow_belt"
+        ],
+        "skills": [
+          3,
+          1,
+          2
+        ],
+        "digest": "b96801850f4a25dc"
+      },
+      {
+        "label": "sorted_skills_same_set",
+        "works": [
+          "slow_belt"
+        ],
+        "skills": [
+          1,
+          2,
+          3
+        ],
+        "digest": "b96801850f4a25dc"
+      },
+      {
+        "label": "unsorted_works",
+        "works": [
+          "tesla_grid",
+          "slow_belt",
+          "block_wall"
+        ],
+        "skills": [
+          1
+        ],
+        "digest": "19a1395d531033eb"
+      },
+      {
+        "label": "sorted_works_same_set",
+        "works": [
+          "block_wall",
+          "slow_belt",
+          "tesla_grid"
+        ],
+        "skills": [
+          1
+        ],
+        "digest": "19a1395d531033eb"
+      },
+      {
+        "label": "multi_digit",
+        "works": [
+          "slow_belt"
+        ],
+        "skills": [
+          10,
+          9,
+          100,
+          2
+        ],
+        "digest": "e9e695bfa1ce7e7f"
+      },
+      {
+        "label": "negative_skills",
+        "works": [],
+        "skills": [
+          -1,
+          5,
+          -20
+        ],
+        "digest": "57ac8c0a651d3501"
+      },
+      {
+        "label": "dup_skills",
+        "works": [],
+        "skills": [
+          1,
+          1,
+          2
+        ],
+        "digest": "f76628c29cc271e3"
+      }
+    ]
+  },
+  "fnv": {
+    "rows": [
+      {
+        "input": "",
+        "hex": "cbf29ce484222325"
+      },
+      {
+        "input": "a",
+        "hex": "af63dc4c8601ec8c"
+      },
+      {
+        "input": "foobar",
+        "hex": "85944171f73967e8"
+      },
+      {
+        "input": "1,2,3|",
+        "hex": "519e3acacb537c11"
+      },
+      {
+        "input": "升甲水",
+        "hex": "584569a2e1ef1d3b"
+      }
+    ]
+  }
+}
