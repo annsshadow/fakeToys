@@ -288,6 +288,42 @@ type pureVectors struct {
 			Trace []waveTraceStep `json:"trace"`
 		} `json:"rows"`
 	} `json:"wave"`
+
+	// Battle 是 Block D（开火与弹道）的对齐数据。
+	Battle struct {
+		Rows []struct {
+			Label       string         `json:"label"`
+			LevelID     int            `json:"level_id"`
+			Seed        string         `json:"seed"`
+			Ticks       int            `json:"ticks"`
+			SampleEvery int            `json:"sample_every"`
+			Equipped    []int          `json:"equipped"`
+			LevelWaves  []waveLevelDef `json:"level_waves"`
+			LevelBaseHP int64          `json:"level_base_hp"`
+
+			LevelArmorPermille int64 `json:"level_armor_permille"`
+			// ⚠️ ElementCap / MaxReactionTier 必须带进文件：
+			//   它们是 currentAttacker() 的直接输入（关卡优先于攻方）。
+			//   漏带的话 Go 侧拿到 0，而 0 在 currentAttacker 里
+			//   **表示「关卡没给，用攻方的」** ——
+			//   于是整个反应层在两端用了不同的上限，且不报任何错。
+			LevelElementCap      int64 `json:"level_element_cap"`
+			LevelMaxReactionTier int64 `json:"level_max_reaction_tier"`
+			Attacker             struct {
+				Attack                 string `json:"attack"`
+				CritPermille           string `json:"crit_permille"`
+				CritMultiplierPermille string `json:"crit_multiplier_permille"`
+				ReactionMultPermille   string `json:"reaction_mult_permille"`
+				ElementCap             string `json:"element_cap"`
+				ReactionTier           string `json:"reaction_tier"`
+				ElementCoefPermille    string `json:"element_coef_permille"`
+				HeatCapPermille        string `json:"heat_cap_permille"`
+				ArmorPermille          string `json:"armor_permille"`
+				MechanicPermille       string `json:"mechanic_permille"`
+			} `json:"attacker"`
+			Trace []battleStep `json:"trace"`
+		} `json:"rows"`
+	} `json:"battle"`
 }
 
 func loadPureVectors(t *testing.T) *pureVectors {

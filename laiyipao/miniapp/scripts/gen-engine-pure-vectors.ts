@@ -142,7 +142,7 @@ const DEFAULT_RULES = DEFAULT_SKILL_RULES
 //
 // 7 项全覆盖（对应 replay_hash 的 A 段），刻意从**非零**起步：
 // 全 0 的攻方会让「装置把它改成什么」这件事看不出来。
-const BASE_ATTACKER: Attacker = {
+const COMBAT_ATTACKER: Attacker = {
   attack: 100n,
   critPermille: 1500n,
   critMultiplierPermille: 1500n,
@@ -238,7 +238,7 @@ const workRows = WORKS_CASES.map(({ works, label }) => {
   // 的 TestApplyWorksMatchesDocumentedMapping），把「三���装置各加多少」
   // 钉成**独立于本文件**的断言。若两端映射表真的不一致，
   // 至少有一处会红。
-  const a: Attacker = { ...BASE_ATTACKER }
+  const a: Attacker = { ...COMBAT_ATTACKER }
   for (const code of works ?? []) {
     switch (code) {
       case 'slow_belt':
@@ -1507,6 +1507,359 @@ const waveRows = WAVE_SCENARIOS.map((s) => {
     trace,
   }
 })
+/**
+ * Block D（开火与弹道）的场景：在 B/C 的基础上**带上构筑**。
+ *
+ * # 为什么这一块是里程碑
+ *
+ * B/C 的场景是**空构筑** —— 敌人只会被「抵达防线」处理掉。
+ * D 第一次让引擎真的开火、命中、结算伤害、触发反应、击杀，
+ * 于是**整局 `replay_hash`** 第一次可以被服务端自行计算。
+ *
+ * # ⚠️ 必须剥离 `terrain`
+ *
+ * TS 的 `updateProjectiles` 里有一段「弹丸被掩体挡住」的判定，
+ * 而那块地形逻辑属于 E 块。Go 侧 D 阶段**不做**它 ——
+ * 半接的后果是「地形记了触发事件却从不结算效果」，
+ * 表现为「玩家看到油桶被点燃但没有任何作用」。
+ *
+ * 所以场景里把 `level.terrain` 清空：这不是「造了个假关卡」，
+ * 而是把 E 的输入从这个场景里摘出去。
+ * ⚠️ 只摘 terrain；`element_cap` 与 `max_reaction_tier` 必须保留 ——
+ *   它们是 `currentAttacker()` 的直接输入，摘掉就等于在验一个假攻方。
+ *
+ * 实测这个选择是必需的：第 1 关**带一个 `oil_drum`**，
+ * 而 TS 会真的对它做 `withinTerrain(t.x, t.y, 100, ...)` 判定。
+ *
+ * # 构筑怎么选
+ *
+ * 每个构筑覆盖一条**独立的代码路径**：
+ *
+ * | 构筑 | 覆盖 |
+ * |---|---|
+ * | fire_aoe      | 溅射（aoe>0） + fire/ice 配对反应 |
+ * | kinetic_pierce | 高穿透（pierce=8） + `hits<=shots` 约束 |
+ * | lightning_chain | 弹射（chain=4） + 「弹射当场结算」 |
+ * | mixed_4slot   | 真实玩家构筑：热量上限 + 冷却 + 多元素 |
+ *
+ * 全部用**真实技能 id**（取自 `fixture.skills`，与线上同一张表）。
+ */
+
+interface BuildScenario {
+  label: string
+  levelID: number
+  seed: string
+  ticks: number
+  sampleEvery: number
+  /** 技能 id 列表，槽位 = 下标 */
+  skillIDs: number[]
+  /** 攻方（全部非零，以便 currentAttacker 的每一项都被读到） */
+  attacker: {
+    attack: bigint
+    critPermille: bigint
+    critMultiplierPermille: bigint
+    reactionMultPermille: bigint
+    elementCap: bigint
+    reactionTier: bigint
+    elementCoefPermille: bigint
+    heatCapPermille: bigint
+    armorPermille: bigint
+    mechanicPermille: bigint
+  }
+}
+
+/**
+ * 攻方基线。
+ *
+ * ⚠️ 每项都**非零**：`currentAttacker()` 是「相加 + 夹取」的结构，
+ *   全零会让「加 0」与「漏加」观察不到差别。
+ *   而每一项都参与重放哈希 —— 漏加一项就是哈希不符。
+ *
+ * `critPermille: 150`（15%）而不是 1000：
+ * 夹取那条路径（`min(crit, 1000)`）需要一个**不会触发夹取**的值，
+ *   否则「加法」与「夹取」两段里只有一段被验到。
+ *   夹取那条另有一个专测（`TestCurrentAttackerClampsCritPermille`）。
+ */
+const BUILD_ATTACKER: BuildScenario['attacker'] = {
+  attack: 100n,
+  critPermille: 150n,
+  critMultiplierPermille: 1500n,
+  reactionMultPermille: 1200n,
+  elementCap: 3n,
+  reactionTier: 1n,
+  elementCoefPermille: 1000n,
+  heatCapPermille: 0n,
+  armorPermille: 200n,
+  mechanicPermille: 1000n,
+}
+
+/**
+ * 把夹具里的技能定义映射成引擎要的 `EquippedSkill`。
+ *
+ * # ⚠️⚠️ 这不是「顺手转一下字段名」，是一个**必须显式做**的映射
+ *
+ * 夹具（`smoke_levels.json`，与线上同一份内容表）是 **snake_case + JSON number**：
+ *
+ *   base_damage, heat_cost, cooldown_ms, aoe_radius, apply_element, ...
+ *
+ * 而 `EquippedSkill` 是 **camelCase + BigInt**：
+ *
+ *   baseDamage, heatCost, cooldownMs, aoeRadius, applyElement, ...
+ *
+ * 直接 `{ ...def }` 的话：
+ *   - `heatCost` 是 undefined -> `isStuckFor` 里 `heat + undefined` **抛错**
+ *   - `baseDamage` 是 undefined -> 伤害恒 0
+ *   - `slot` 是 undefined -> `s.slot >= activeSlots` 恒 false（全部当主动）
+ *
+ * 前两个会当场抛错（好找），第三个**不会** ——
+ * 它表现为「所有技能都被当成主动槽」，而对 4 槽构筑来说结果一样，
+ * 于是「槽位映射错了」这件事在 4 槽场景里完全观察不到。
+ * 到 5 槽或 2 槽构筑时才会暴露，而那时已经没人记得这个映射了。
+ *
+ * 所以：逐字段显式列出，不做 `...def` 展开。
+ * 展开的写法在「多一个字段」时是便利，在「少一个字段」时是静默 undefined。
+ */
+function toEquippedSkill(def: any, slot: number) {
+  return {
+    skillId: def.id as number,
+    name: def.name as string,
+    element: def.element as never,
+    kind: def.kind as never,
+    heatCost: BigInt(def.heat_cost),
+    cooldownMs: def.cooldown_ms as number,
+    pierce: def.pierce as number,
+    aoeRadius: def.aoe_radius as number,
+    baseDamage: BigInt(def.base_damage),
+    applyElement: (def.apply_element ?? '') as never,
+    applyStacks: BigInt(def.apply_stacks ?? 0),
+    projectileSpeed: def.projectile_speed as number,
+    chain: def.chain as number,
+    // ⚠️ slot = **列表下标**，不是技能 id。
+    //   内容表 id 是全局递增的（1..42），直接拿 id 当 slot 的话
+    //   全部技能都 >= activeSlots = 4，一发都放不出来。
+    slot,
+    cooldownRemaining: 0,
+  }
+}
+
+/**
+ * 按键排序后序列化计数 map。
+ *
+ * # ⚠️ 必须两端都排序，不能靠「序列化结果碰巧一致」
+ *
+ * `JSON.stringify` 按**插入序**输出，而 `engine.elementsUsed` 是
+ * 「首次使用时插入」—— 也就是「玩家实际开火的元素顺序」。
+ * Go 侧的 `map[string]int64` 按**升序**输出（Go 1.12+ 的 map 迭代随机，
+ * `encoding/json` 会显式排序）。
+ *
+ * 于是同一份统计在两端会序列化成不同顺序的字符串：
+ *
+ *   TS: {"fire":2,"lightning":8}     （先打 fire 后打 lightning）
+ *   Go: {"lightning":8,"fire":2}     （升序）
+ *
+ * 值完全相同，只是顺序不同 —— 而顺序恰好是「这个玩家先用了哪个元素」
+ * 的信息，**它本身不该进哈希比对**。
+ * 所以两边都排序，让比对只针对「各元素各用了多少次」。
+ *
+ * ⚠️ 代价：顺序信息在这个守卫里被丢掉了。
+ *   若将来某个 bug 让「元素使用顺序」影响战果，它抓不到。
+ *   但那种 bug 也会体现在 score / hits / replay 上 ——
+ *   而那些是**逐条**比对的。
+ */
+function sortedJSON(m: Record<string, number>): string {
+  const keys = Object.keys(m).sort()
+  return '{' + keys.map((k) => JSON.stringify(k) + ':' + String(m[k])).join(',') + '}'
+}
+const BUILD_SCENARIOS: BuildScenario[] = [
+  {
+    label: 'fire_aoe',
+    levelID: 25,
+    seed: '-4611686018427387904',
+    ticks: 4000,
+    sampleEvery: 25,
+    // 2=napalm(aoe140) + 5=hail(aoe160, ice) + 6=glacier(pierce3) + 1=ember(aoe60)
+    skillIDs: [2, 5, 6, 1],
+    attacker: BUILD_ATTACKER,
+  },
+  {
+    label: 'kinetic_pierce',
+    levelID: 25,
+    seed: '7046029255919282421',
+    ticks: 4000,
+    sampleEvery: 25,
+    // 13=laser(pierce6) + 14=ray(pierce8) + 12=siege(pierce4) + 11=shrapnel(aoe200)
+    skillIDs: [13, 14, 12, 11],
+    attacker: BUILD_ATTACKER,
+  },
+  {
+    label: 'lightning_chain',
+    levelID: 25,
+    seed: '1234567890123456789',
+    ticks: 4000,
+    sampleEvery: 25,
+    // 9=stormgrid(chain4) + 7=arc(chain2) + 8=thunderlance(pierce2,chain1)
+    skillIDs: [9, 7, 8, 3],
+    attacker: BUILD_ATTACKER,
+  },
+  {
+    label: 'mixed_4slot',
+    levelID: 25,
+    seed: '-1',
+    ticks: 4000,
+    sampleEvery: 25,
+    // 真实玩家构筑：fire/fire/fire/ice —— 与引擎注释里那个例子一致
+    skillIDs: [1, 2, 3, 5],
+    attacker: BUILD_ATTACKER,
+  },
+  {
+    label: 'corrosion_steam',
+    levelID: 25,
+    seed: '0',
+    ticks: 4000,
+    sampleEvery: 25,
+    // 腐蚀 + 冰 = steam_burst（唯一有 aoeRadius 的反应）
+    skillIDs: [16, 17, 4, 18],
+    attacker: BUILD_ATTACKER,
+  },
+]
+
+/** 战斗场景与 B/C 的波次场景共用一份快照函数。 */
+function makeTracer(engine: any, sampleEvery: number) {
+  const trace: Array<Record<string, unknown>> = []
+  let replayCursor = 0
+  const snap = () => {
+    const replayAll = engine.replay as any[]
+    const fresh = replayAll.slice(replayCursor).map((r: any) => `${r.t}|${r.type}|${r.a}|${r.b}|${r.c}`)
+    replayCursor = replayAll.length
+    trace.push({
+      tick: engine.tick,
+      phase: engine.phase,
+      elapsed_ms: engine.elapsedMs,
+      projectiles: (engine.projectiles as any[]).map((p: any) => ({
+        uid: p.uid,
+        skill_id: p.skillId,
+        x: p.x.toString(),
+        y: p.y.toString(),
+        vx: p.vx.toString(),
+        vy: p.vy.toString(),
+        pierce_left: p.pierceLeft,
+        chain_left: p.chainLeft,
+        hit_set: [...p.hitSet].sort((a: any, b: any) => Number(a) - Number(b)).join(','),
+        aoe_radius: p.aoeRadius,
+        dead: p.dead,
+      })),
+      enemies: (engine.enemies as any[]).map((e: any) => ({
+        uid: e.uid,
+        def_id: e.defId,
+        x: e.x.toString(),
+        y: e.y.toString(),
+        hp: e.hp.toString(),
+        shield: e.shield.toString(),
+        spawn_progress: e.spawnProgress,
+        dead: e.dead,
+        attack_cooldown: e.attackCooldown.toString(),
+        // 元素层数：跨元素反应的全部状态都挂在这里
+        stacks: (['fire', 'ice', 'lightning', 'corrosion', 'kinetic'] as const)
+          .map((el) => `${el}:${(e.stacks.get(el) ?? 0n).toString()}`)
+          .join('|'),
+        frozen_ms: e.frozenMs,
+        stunned_ms: e.stunnedMs,
+        slowed_ms: e.slowedMs,
+        armor_shred_ms: e.armorShredMs,
+        armor_shred_permille: e.armorShredPermille.toString(),
+        knockback: e.knockback.toString(),
+        amplify_permille: e.amplifyPermille.toString(),
+        hit_flash_ms: e.hitFlashMs,
+      })),
+      replay: fresh,
+      events: engine.drainEvents().map((ev: any) => `${ev.type}:${ev.damage ?? ''}`),
+      base_hp: engine.baseHp.toString(),
+      leaked: engine.leaked,
+      kills: engine.kills,
+      shots: engine.shots,
+      hits: engine.hits,
+      reactions: engine.reactionsCount,
+      score: engine.score.toString(),
+      heat: engine.heat.heat.toString(),
+      heat_cap: engine.heat.cap.toString(),
+      overheated: engine.heat.overheated,
+      cooldowns: (engine.skills as any[]).map((s: any) => s.cooldownRemaining.toString()),
+      elements_used: sortedJSON(engine.elementsUsed),
+      reactions_used: sortedJSON(engine.reactionsUsed),
+    })
+  }
+  return { trace, snap }
+}
+
+const buildRows = BUILD_SCENARIOS.map((s) => {
+  const raw = fixture.levels.find((l: any) => l.id === s.levelID)
+  if (!raw) throw new Error(`夹具里没有第 ${s.levelID} 关`)
+  // ⚠️ 摘掉 terrain（E 块的范围），其余原样保留。
+  const level = { ...raw, terrain: [] }
+
+  const enemyDefs = new Map<number, any>((fixture.enemies as any[]).map((e) => [e.id, e]))
+  const skillDefs = new Map<number, any>(
+    [...(fixture.skills as any[]), ...(fixture.composite_skills as any[])].map((x) => [x.id, x]),
+  )
+
+  const equippedFixed = s.skillIDs.map((id, i) => {
+    const def = skillDefs.get(id)
+    if (!def) throw new Error(`技能 id ${id} 不在夹具里`)
+    return toEquippedSkill(def, i)
+  })
+
+  const engine = new BattleEngine({
+    level: level as never,
+    enemies: enemyDefs,
+    skills: skillDefs,
+    equipped: equippedFixed as never,
+    attacker: s.attacker as never,
+    seed: BigInt(s.seed),
+    scoreRules: scoreRulesFromFixture(),
+    activeSlots: 4,
+  } as never)
+
+  engine.start()
+  const { trace, snap } = makeTracer(engine, s.sampleEvery)
+  snap()
+  for (let i = 0; i < s.ticks; i++) {
+    if (engine.phase !== 'wave' && engine.phase !== 'prepare') break
+    const before = (engine as any).replay.length
+    engine.step()
+    if (engine.tick % s.sampleEvery === 0 || (engine as any).replay.length > before) snap()
+  }
+  if (trace[trace.length - 1].tick !== engine.tick) snap()
+
+  return {
+    label: s.label,
+    level_id: s.levelID,
+    seed: s.seed,
+    ticks: s.ticks,
+    sample_every: s.sampleEvery,
+    level_waves: level.waves,
+    level_base_hp: level.base_hp,
+    level_armor_permille: level.armor_permille ?? 0,
+    level_element_cap: level.element_cap ?? 0,
+    level_max_reaction_tier: level.max_reaction_tier ?? 1,
+    // ⚠️ 构筑**必须带进文件**：Go 侧要重建同样的技能与槽位。
+    //   只存 skillIDs 不够 —— Go 侧还要从内容表取属性，
+    //   而「取哪张表」本身就是个可能出错的地方。
+    equipped: s.skillIDs,
+    attacker: {
+      attack: s.attacker.attack.toString(),
+      crit_permille: s.attacker.critPermille.toString(),
+      crit_multiplier_permille: s.attacker.critMultiplierPermille.toString(),
+      reaction_mult_permille: s.attacker.reactionMultPermille.toString(),
+      element_cap: s.attacker.elementCap.toString(),
+      reaction_tier: s.attacker.reactionTier.toString(),
+      element_coef_permille: s.attacker.elementCoefPermille.toString(),
+      heat_cap_permille: s.attacker.heatCapPermille.toString(),
+      armor_permille: s.attacker.armorPermille.toString(),
+      mechanic_permille: s.attacker.mechanicPermille.toString(),
+    },
+    trace,
+  }
+})
 const doc = {
   _comment:    '引擎**纯函数**的跨端契约向量。由 miniapp/scripts/gen-engine-pure-vectors.ts 从真实 TS 实现产出。' +
     '期望值不由 Go 侧生成（纯函数没有运行时状态，用实现产出即定义）。' +
@@ -1530,13 +1883,13 @@ const doc = {
   },
   works: {
     base_attacker: {
-      attack: BASE_ATTACKER.attack.toString(),
-      crit_permille: BASE_ATTACKER.critPermille.toString(),
-      crit_multiplier_permille: BASE_ATTACKER.critMultiplierPermille.toString(),
-      reaction_mult_permille: BASE_ATTACKER.reactionMultPermille.toString(),
-      element_cap: BASE_ATTACKER.elementCap.toString(),
-      reaction_tier: BASE_ATTACKER.reactionTier.toString(),
-      element_coef_permille: BASE_ATTACKER.elementCoefPermille.toString(),
+      attack: COMBAT_ATTACKER.attack.toString(),
+      crit_permille: COMBAT_ATTACKER.critPermille.toString(),
+      crit_multiplier_permille: COMBAT_ATTACKER.critMultiplierPermille.toString(),
+      reaction_mult_permille: COMBAT_ATTACKER.reactionMultPermille.toString(),
+      element_cap: COMBAT_ATTACKER.elementCap.toString(),
+      reaction_tier: COMBAT_ATTACKER.reactionTier.toString(),
+      element_coef_permille: COMBAT_ATTACKER.elementCoefPermille.toString(),
     },
     rows: workRows,
   },
@@ -1586,6 +1939,9 @@ const doc = {
     },
     rows: waveRows,
   },
+  battle: {
+    rows: buildRows,
+  },
 }
 
 const outPath = resolve(serverRoot, 'testdata/engine_pure_vectors.json')
@@ -1596,3 +1952,4 @@ console.log(`  校验行 ${snapshotRows.length} / 护盾行 ${shieldRows.length}
 console.log(`  热量脚本 ${heatRows.length}（轨迹步 ${heatRows.reduce((a, r) => a + r.trace.length, 0)}） / 手牌脚本 ${deckRows.length}`)
 console.log(`  地形脚本 ${terrainRows.length}（轨迹步 ${terrainRows.reduce((a, r) => a + r.trace.length, 0)}）`)
 console.log(`  波次场景 ${waveRows.length}（轨迹步 ${waveRows.reduce((a, r) => a + r.trace.length, 0)}）`)
+console.log(`  战斗场景 ${buildRows.length}（轨迹步 ${buildRows.reduce((a, r) => a + r.trace.length, 0)}）`)
