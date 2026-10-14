@@ -1,10 +1,19 @@
 ---
 title: "fix: 剩余 FAIL 端点系统性修复（R500/R401/R200J200/R403）"
 type: fix
-status: active
+status: completed
 date: 2026-08-28
+closed: 2026-10-14
 origin: 对话上下文 + docs/plans/2026-08-26-002-oa4rust-fail-closure-master-plan.md
 ---
+
+> **收官注记（2026-10-14 状态校准）**：本计划目标 R6（FAIL ≤ 400）已达成。
+> 证据：`docs/plans/2026-08-28-006-execution-progress.md` 实测基线 1298 PASS / 738 FAIL 经
+> comparator 七项容忍改进 + U4/U5/U8 修复后收敛至 **1821 PASS / 193 FAIL / 2030 SKIP**（FAIL -73.9%），
+> R500J200=0、R401J200 已豁免、R200J415=0；剩余 193 条 FAIL（missing_rust 72 / array_length 60 /
+> type_differs 45 / missing_java 16）的收敛转入 `2026-08-28-006` 总计划 U9-U11 及后续
+> `2026-09-11-001` 评估计划 W12 轨道（截至该计划 rev13 已降至 136 FAIL ≤ 固化基线 170）。
+> 排除项（R200J500 / R500J500 / 数据不对称类）按原 Scope Boundaries 未纳入，保持留档。
 
 # 剩余 FAIL 端点系统性修复计划
 
