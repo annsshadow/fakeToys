@@ -124,8 +124,8 @@ return Err(AppError::BadRequest("name is required".to_string()));
 
 ## Related
 
-- [SeaORM Dual-Pool Coexistence](architecture-patterns/seaorm-dual-pool-coexistence.md)
-- [Input Validation Pattern](best-practices/input-validation-pattern.md)
+- [SeaORM Dual-Pool Coexistence](seaorm-dual-pool-coexistence.md)
+- [Input Validation Pattern](../best-practices/input-validation-pattern.md)
 - **Source:** `oa/o2web/source/x_init/src/common/action.js` (frontend consumer)
 - **Struct:** `oa4rust/crates/shared/src/response.rs`
 - **Behavior compare:** `oa4rust/tests/behavior_compare.rs` (+ `behavior-compare` job in `oa4rust/.github/workflows/ci.yml`); route inventory 4,573 registrations / 4,155 unique paths per `docs/audits/final-coverage-sweep.md`

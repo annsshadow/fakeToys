@@ -109,8 +109,8 @@ orm_entity! {
 
 ## Related
 
-- [SeaORM Dual-Pool Coexistence](architecture-patterns/seaorm-dual-pool-coexistence.md)
-- [Nested Tokio Runtime Panic](integration-issues/nested-tokio-runtime-panic.md)
+- [SeaORM Dual-Pool Coexistence](../architecture-patterns/seaorm-dual-pool-coexistence.md)
+- [Nested Tokio Runtime Panic](../integration-issues/nested-tokio-runtime-panic.md)
 - **Migration:** `oa4rust/migrations/011_normalize_schema.sql`
 - **Audit script:** `oa4rust/scripts/audit_uppercase_tables.py`
 - **Plan:** `docs/plans/2026-08-09-001-refact-oa4rust-orm-migration-plan.md` (U2)

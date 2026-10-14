@@ -181,5 +181,5 @@ describe('API comprehensive coverage', () => {
 ## 文档引用
 
 - [OA4Rust 测试覆盖率总结](test-coverage-summary.md)
-- [OA4Rust API 测试生成器](../../scripts/generate-api-tests.ts)
-- [E2E 测试指南](../e2e/app-coverage.spec.ts)
+- [OA4Rust API 测试生成器](../../../oa4rust/scripts/generate-api-tests.ts)
+- [E2E 测试指南](../../../oa4rust/e2e/app-coverage.spec.ts)
