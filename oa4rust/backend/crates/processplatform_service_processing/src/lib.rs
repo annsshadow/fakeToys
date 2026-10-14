@@ -219,10 +219,21 @@ pub async fn list_processes(
 #[allow(non_snake_case)]
 pub async fn execute_process(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = u4_session(session)?;
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let creator: Option<String> = tx
+        .query_opt(
+            "SELECT creator FROM x_work WHERE id = $1 FOR UPDATE",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?
+        .and_then(|row| row.get::<_, Option<String>>("creator"));
+    u4_require_actor(&pool.0, &session, creator.as_deref().unwrap_or("")).await?;
     tx.execute(
         "UPDATE x_work SET work_status = $1 WHERE id = $2",
         &[&"processing", &id],
@@ -353,9 +364,20 @@ pub async fn get_process_instance(
 #[allow(non_snake_case)]
 pub async fn cancel_process_instance(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(execution_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = u4_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let creator: Option<String> = client
+        .query_opt(
+            "SELECT creator FROM x_work WHERE id = $1",
+            &[&execution_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?
+        .and_then(|row| row.get::<_, Option<String>>("creator"));
+    u4_require_actor(&pool.0, &session, creator.as_deref().unwrap_or("")).await?;
     client
         .execute(
             "UPDATE x_work SET work_status = $1, end_time = NOW() WHERE id = $2",
@@ -407,8 +429,10 @@ async fn u4_require_actor(
 #[allow(non_snake_case)]
 pub async fn work_id_processing(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = u4_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_one(
@@ -417,6 +441,12 @@ pub async fn work_id_processing(
         )
         .await
         .map_err(|_| AppError::Internal)?;
+    u4_require_actor(
+        &pool.0,
+        &session,
+        &row.get::<_, Option<String>>("creator").unwrap_or_default(),
+    )
+    .await?;
     client
         .execute(
             "UPDATE x_work SET work_status = $1 WHERE id = $2",
@@ -3138,17 +3168,25 @@ pub async fn work_v3_retract(
 #[allow(non_snake_case)]
 pub async fn work_start(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = u4_session(session)?;
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     let row = tx
         .query_one(
-            "SELECT id, title, process, application, work_status FROM x_work WHERE id = $1 FOR UPDATE",
+            "SELECT id, title, process, application, work_status, creator FROM x_work WHERE id = $1 FOR UPDATE",
             &[&id],
         )
         .await
         .map_err(|_| AppError::Internal)?;
+    u4_require_actor(
+        &pool.0,
+        &session,
+        &row.get::<_, Option<String>>("creator").unwrap_or_default(),
+    )
+    .await?;
     let status: String = row
         .get::<_, Option<String>>("work_status")
         .unwrap_or_default();
@@ -3188,8 +3226,10 @@ pub async fn work_start(
 #[allow(non_snake_case)]
 pub async fn work_complete(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = u4_session(session)?;
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     let row = tx
@@ -3199,6 +3239,12 @@ pub async fn work_complete(
         )
         .await
         .map_err(|_| AppError::Internal)?;
+    u4_require_actor(
+        &pool.0,
+        &session,
+        &row.get::<_, Option<String>>("creator").unwrap_or_default(),
+    )
+    .await?;
     let status: String = row
         .get::<_, Option<String>>("work_status")
         .unwrap_or_default();
@@ -3570,10 +3616,21 @@ pub async fn task_transfer(
 #[allow(non_snake_case)]
 pub async fn gateway_join(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((work_id, activity_token)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = u4_session(session)?;
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let creator: Option<String> = tx
+        .query_opt(
+            "SELECT creator FROM x_work WHERE id = $1 FOR UPDATE",
+            &[&work_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?
+        .and_then(|row| row.get::<_, Option<String>>("creator"));
+    u4_require_actor(&pool.0, &session, creator.as_deref().unwrap_or("")).await?;
     let rows = tx
         .query(
             "SELECT id, task_status FROM x_task WHERE work = $1 AND activity_token = $2",
@@ -3600,7 +3657,7 @@ pub async fn gateway_join(
     let id2 = Uuid::new_v4().to_string();
     tx.execute(
             "INSERT INTO x_record (id, work_id, record_type, content, creator, create_time) VALUES ($1, $2, $3, $4, $5, NOW())",
-            &[&id2, &work_id, &"gateway_join", &format!("gateway {} joined", activity_token), &"system"],
+            &[&id2, &work_id, &"gateway_join", &format!("gateway {} joined", activity_token), &session.person_unique],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -3617,8 +3674,15 @@ pub async fn gateway_join(
 #[allow(non_snake_case)]
 pub async fn gateway_fork(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(gateway_instance_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = u4_session(session)?;
+    // 并行网关 fork 一次按 gateway 实例批量插任务，跨多个 work、无单一属主可校，
+    // 且业务上不该由前端直接触发（现仅运维自检面板调用）→ 比照二轮 S5 收 admin。
+    if !shared::middleware::is_admin(&pool.0, &session.person_unique).await {
+        return Err(AppError::Forbidden);
+    }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let transitions = client
         .query(
