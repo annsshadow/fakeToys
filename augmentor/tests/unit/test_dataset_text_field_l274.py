@@ -35,6 +35,15 @@
 与空数据集（`empty`）**仍按改前交 200**：本轮只拒「在场且非字符串」，把「缺列」一并
 拒掉会把一批现在就成功的请求改成 400，那是 A292 / A354 那一维要拍的事。
 
+**覆盖面不是只手挑的**：Temp `probe7.py` 按 `app.openapi()` 自动枚举全部 POST/GET 端点、
+**每格新立一份语料文件**（`probe5.py` 第一版把 `input_file` 与 `output_file` 填成同一个名字，
+前一支把语料吃掉，后一支量到的是「文件格式不对」——同一轮 `compare.py` 撞过的键冲突形状），
+146 格里这一族仍 500 的只剩一枚：`POST /api/versions/diff` 的不存在 id。它与本轮那一形不同
+（异常是 `VersionError`，`raise_boundary_error` 的放行名单按 `DataValidationError` 判），
+`TestResidualMembersOfTheSameFunnel` 把它按观测行为钉成现量而不顺手改——拍「哪一类域错误进 400」
+是 **A280** 的事。同一类里另一格是 `dataset_filter` 那一臂：那条路径上没有端点，非 GET 的码
+由静态挂载决定（见 `PHANTOM_CODE` 的注释），所以它按 `app.routes` 现算而不是抄 405。
+
 **为什么零 parametrize**：`test_parametrize_ids_l97` 与 `test_parametrize_blind_face_l98`
 把全仓 parametrize 三面冻成现量数，本守卫走名册字典循环，那两把尺子一格未动。
 
@@ -98,6 +107,13 @@ BLIND_ROSTER = {
         "的另一半，本轮不改口径",
 }
 
+#: `POST /api/dataset/filter` 不是这一族的端点，而是「本轮一格未动」那一档的锚：`/api/dataset/*`
+#: 上压根没有 `filter` 这一条，非 GET 请求拿到的码由 `api/main.py:216` 那条静态挂载决定——挂载在
+#: （`web/dist` 存在）⇒ `StaticFiles` 部分匹配给出 405，挂载不在 ⇒ 404。把 405 写成常数等于把
+#: 「作者机构建过前端」写进判据，干净克隆里会自己变红，所以这一格按 `app.routes` 现算而不是抄读数。
+STATIC_MOUNTED = any(type(route).__name__ == "Mount" for route in app.routes)
+PHANTOM_CODE = "405" if STATIC_MOUNTED else "404"
+
 #: 现量表：`(探针臂名) -> (方法, 路径模板, 退化那一形的期望码, 合法那一形的期望码, 点名字段)`。
 #: 路径模板里的 `{fn}` 换成语料文件名。退化那一形 = 在场且非字符串（四份语料），
 #: 合法那一形 = 好数据 / 缺列 / 空数据集（三份语料，按改前形状钉住）。
@@ -113,7 +129,7 @@ FACE = {
     "visualize": ("get", "/api/visualize/{fn}", "200", "200", None),
     "dataset_sample": ("post", "/api/dataset/sample", "200", "200", None),
     "sample_stratified": ("post", "/api/dataset/sample", "200", "200", None),
-    "dataset_filter": ("post", "/api/dataset/filter", "405", "405", None),
+    "dataset_filter": ("post", "/api/dataset/filter", PHANTOM_CODE, PHANTOM_CODE, None),
     "auto_test": ("post", "/api/system/auto-test", "200", "200", None),
     "profiling": ("post", "/api/quality/profiling", "200", "200", None),
 }
@@ -563,3 +579,46 @@ class TestBlindSpotsAreRealOnTheCliFace:
             "/api/dataset/impact", json={"before_file": "before.json",
                                          "after_file": "after.json"})
         assert resp.status_code == 200, resp.text[:200]
+
+
+class TestResidualMembersOfTheSameFunnel:
+    """同一只咽喉上「本轮一格未动」的两格：按观测行为钉成现量，不顺手改（与 A280 同批待拍）
+
+    自动普查（Temp `probe7.py`，逐格独立语料，146 格）之后仍剩一枚 **500**：
+    `POST /api/versions/diff` 拿不存在的版本 id。它的异常是 `VersionError`——
+    **`ValueError` 的子孙，但不是 `DataValidationError`**，而 `raise_boundary_error`
+    放行名单按后者判，于是它落到 `raise_internal_error`。本轮不动它：拍「哪一类域错误进 400」
+    是 A280 那一格的事，本轮只把新成员与它的判据维钉住。
+    """
+
+    @pytest.fixture(autouse=True)
+    def _roots_and_client(self, monkeypatch, tmp_path):
+        monkeypatch.setenv("AUGMENTOR_DATA_ROOTS", str(tmp_path))
+        _write_corpora(tmp_path)
+        self.client = TestClient(app, raise_server_exceptions=False)
+
+    def test_the_phantom_arm_reads_its_code_from_the_app(self, tmp_path):
+        """`/api/dataset/filter` 与「任何不存在的 POST 路径」同码 ⇒ 那一格量的不是判决而是挂载形状"""
+        phantom = self.client.post("/api/dataset/filter", json={"input_file": "numeric.json"})
+        unknown = self.client.post("/api/definitely-not-a-path-xyz", json={})
+        assert phantom.status_code == unknown.status_code == int(PHANTOM_CODE)
+        assert _send(self.client, tmp_path, "dataset_filter", "numeric")[0] == PHANTOM_CODE
+
+    def test_versions_diff_with_unknown_ids_is_still_500(self):
+        """A280 的新成员（本轮不动）：不存在的版本 id ⇒ 500 固定文案，且不回显调用方给的那两个名字"""
+        resp = self.client.post("/api/versions/diff",
+                                json={"version1": "nope-1", "version2": "nope-2"})
+        assert resp.status_code == 500
+        assert resp.json()["detail"] == INTERNAL_ERROR_DETAIL
+        assert "nope-1" not in resp.text
+
+    def test_version_error_is_a_value_error_yet_answered_500(self):
+        """判据维钉死：门口按 `DataValidationError` 放行而不是按 `ValueError` ⇒ A280 要拍的正是这一维"""
+        from augmentor.exceptions import VersionError
+        assert issubclass(VersionError, ValueError)
+        assert not issubclass(VersionError, DataValidationError)
+        with pytest.raises(HTTPException) as caught:
+            raise_boundary_error(VersionError("版本不存在: nope-1"))
+        assert caught.value.status_code == 500
+        assert caught.value.detail == INTERNAL_ERROR_DETAIL
+        assert "nope-1" not in caught.value.detail
