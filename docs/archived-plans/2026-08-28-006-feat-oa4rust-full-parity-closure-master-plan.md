@@ -5,8 +5,8 @@ status: superseded
 date: 2026-08-28
 origin: docs/brainstorms/2026-08-25-oa4rust-o2server-residual-gaps-requirements.md
 superseded_by:
-  - docs/plans/2026-09-11-001-assess-oa4rust-web-full-replacement-gap-plan.md   # FAIL 收敛/上线判据/S4 移除（rev15 收官）
-  - docs/plans/2026-09-20-001-audit-oa4rust-three-ends-completeness-plan.md     # 三端契约/消费率长期推进（rev120 进行中）
+  - docs/archived-plans/2026-09-11-001-assess-oa4rust-web-full-replacement-gap-plan.md   # FAIL 收敛/上线判据/S4 移除（rev15 收官）
+  - docs/archived-plans/2026-09-20-001-audit-oa4rust-three-ends-completeness-plan.md     # 三端契约/消费率长期推进（rev120 进行中）
 ---
 
 > **状态校准注记（2026-10-14）**：本总计划的执行已由上述两份后续计划接管，逐项终态如下（fail loud，含未达成项）：
@@ -761,10 +761,10 @@ superseded_by:
 - **权威基线**：[docs/audits/2026-08-24-002-final-coverage-sweep.md](docs/audits/2026-08-24-002-final-coverage-sweep.md) (99.77%, 2026-08-23)
 - **行为基线**：`oa4rust/target/debug/behavior-report.md` (V4, 1242/806/1996)
 - **已完成计划**：
-  - [docs/plans/2026-08-25-001-oa4rust-residual-gaps-closure-plan.md](docs/plans/2026-08-25-001-oa4rust-residual-gaps-closure-plan.md) (completed)
-  - [docs/plans/2026-08-26-001-feat-parity-convergence-phase2-plan.md](docs/plans/2026-08-26-001-feat-parity-convergence-phase2-plan.md) (completed)
-  - [docs/plans/2026-08-26-002-oa4rust-fail-closure-master-plan.md](docs/plans/2026-08-26-002-oa4rust-fail-closure-master-plan.md) (completed)
-  - [docs/plans/2026-08-28-005-fix-residual-fail-endpoints-plan.md](docs/plans/2026-08-28-005-fix-residual-fail-endpoints-plan.md) (active)
+  - [docs/archived-plans/2026-08-25-001-oa4rust-residual-gaps-closure-plan.md](docs/archived-plans/2026-08-25-001-oa4rust-residual-gaps-closure-plan.md) (completed)
+  - [docs/archived-plans/2026-08-26-001-feat-parity-convergence-phase2-plan.md](docs/archived-plans/2026-08-26-001-feat-parity-convergence-phase2-plan.md) (completed)
+  - [docs/archived-plans/2026-08-26-002-oa4rust-fail-closure-master-plan.md](docs/archived-plans/2026-08-26-002-oa4rust-fail-closure-master-plan.md) (completed)
+  - [docs/archived-plans/2026-08-28-005-fix-residual-fail-endpoints-plan.md](docs/archived-plans/2026-08-28-005-fix-residual-fail-endpoints-plan.md) (active)
 - **方法论沉淀**：[docs/solutions/best-practices/oa4rust-o2server-parity-closure-campaign-2026-08-25.md](docs/solutions/best-practices/oa4rust-o2server-parity-closure-campaign-2026-08-25.md)
 - **机构学习**：
   - `docs/solutions/security-issues/idor-vulnerability-write-handlers.md`

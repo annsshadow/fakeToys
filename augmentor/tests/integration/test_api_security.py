@@ -3,7 +3,7 @@
 
 """API 安全与正确性回归测试
 
-对应 docs/plans/2026-09-21-001-audit-augmentor-fullstack-optimization-plan.md 的 Phase 0：
+对应 docs/archived-plans/2026-09-21-001-audit-augmentor-fullstack-optimization-plan.md 的 Phase 0：
 
 - F1  质量评分语义维度退化：无关答案也曾判 pass
 - F3  任意文件读写：路径穿越与绝对路径逃逸

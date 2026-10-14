@@ -106,4 +106,4 @@ In each migrated crate's documentation or code comments, explicitly declare whic
 - [SeaORM Dual-Pool Coexistence](seaorm-dual-pool-coexistence.md)
 - [Nested Tokio Runtime Panic](../integration-issues/nested-tokio-runtime-panic.md)
 - **Reference:** `oa4rust/crates/control/src/person.rs` (person_flag_clause)
-- **Decision:** `docs/plans/2026-08-09-001-refact-oa4rust-orm-migration-plan.md` (Key Technical Decisions)
+- **Decision:** `docs/archived-plans/2026-08-09-001-refact-oa4rust-orm-migration-plan.md` (Key Technical Decisions)

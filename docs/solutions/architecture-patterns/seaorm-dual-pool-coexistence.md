@@ -147,5 +147,5 @@ pub async fn person_by_flag(pool: Extension<Pool>, flag: String) -> Result<Json<
 - [Nested Tokio Runtime Panic](../integration-issues/nested-tokio-runtime-panic.md)
 - [Dynamic SQL Retains SQLx](dynamic-sql-retains-sqlx.md)
 - **Origin:** `docs/brainstorms/2026-08-09-oa4rust-orm-migration-and-write-ops-requirements.md`
-- **Plan:** `docs/plans/2026-08-09-001-refact-oa4rust-orm-migration-plan.md` (U1-U3)
+- **Plan:** `docs/archived-plans/2026-08-09-001-refact-oa4rust-orm-migration-plan.md` (U1-U3)
 - **Status (2026-08-25):** dual-pool is sustained; SQLx removal vetoed (sea-orm depends on sqlx). Current endpoint-parity state: `docs/audits/2026-08-24-002-final-coverage-sweep.md` (99.77% as of 2026-08-23). The 2026-08-08 migration-status brainstorm is a historical snapshot.

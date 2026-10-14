@@ -134,4 +134,4 @@ impl ApplicationCreateRequest {
 - [CRUD Write Operations Pattern](crud-write-operations-pattern.md)
 - [ActionResult<T> 9-Field Contract](../architecture-patterns/actionresult-9-field-contract.md)
 - **Fix commits:** `869188d9`, `0f66c101`
-- **Plan:** `docs/plans/2026-08-10-001-prod-readiness-plan.md` (U2, R4, R5)
+- **Plan:** `docs/archived-plans/2026-08-10-001-prod-readiness-plan.md` (U2, R4, R5)

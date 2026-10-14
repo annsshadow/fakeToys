@@ -821,7 +821,7 @@ git diff --stat -- oa4rust oa4rust-web .github docs
 - 新增 `oa4rust/docs/security/rustsec-audit.md`：工具/DB版本、在线离线命令、例外和 daily流程。
 - 更新 `oa4rust/README.md`：链接安全运行手册和最小验证命令。
 - 更新 `.env` examples：公开 Origin、Cookie Secure、TTL、CORS。
-- 对 `docs/plans/2026-09-04-001-feat-oa4rust-frontend-o2web-next.md` 增加关联说明，修订“前端设置 Cookie”和旧 Biome 决策；不整体标记 superseded。
+- 对 `docs/archived-plans/2026-09-04-001-feat-oa4rust-frontend-o2web-next.md` 增加关联说明，修订“前端设置 Cookie”和旧 Biome 决策；不整体标记 superseded。
 - 完工时更新本计划 `status: completed`；若被新计划完整替代，则改 `superseded` 并写替代路径。
 
 ## Final Acceptance Checklist

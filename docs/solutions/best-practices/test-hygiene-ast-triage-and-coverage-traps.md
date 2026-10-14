@@ -83,7 +83,7 @@ F1/F2/F3 每条修复的回归测试，必须验证「`git stash` 掉修复后�
 
 ## Related
 
-- 计划：`docs/plans/2026-09-21-001-audit-augmentor-fullstack-optimization-plan.md`（F2/F6/F7/F10/F13、Phase 0/1 全部偏差登记）
+- 计划：`docs/archived-plans/2026-09-21-001-audit-augmentor-fullstack-optimization-plan.md`（F2/F6/F7/F10/F13、Phase 0/1 全部偏差登记）
 - 变异测试：`../testing/mutation-testing-operational-pitfalls.md`
 - API 安全：`../security-issues/api-path-whitelist-and-write-authz.md`
 - 机器审计方法：`../development-workflow/machine-audit-extraction-methodology.md`

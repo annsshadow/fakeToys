@@ -4,11 +4,11 @@ type: fix
 status: completed
 date: 2026-08-28
 closed: 2026-10-14
-origin: 对话上下文 + docs/plans/2026-08-26-002-oa4rust-fail-closure-master-plan.md
+origin: 对话上下文 + docs/archived-plans/2026-08-26-002-oa4rust-fail-closure-master-plan.md
 ---
 
 > **收官注记（2026-10-14 状态校准）**：本计划目标 R6（FAIL ≤ 400）已达成。
-> 证据：`docs/plans/2026-08-28-006-execution-progress.md` 实测基线 1298 PASS / 738 FAIL 经
+> 证据：`docs/archived-plans/2026-08-28-006-execution-progress.md` 实测基线 1298 PASS / 738 FAIL 经
 > comparator 七项容忍改进 + U4/U5/U8 修复后收敛至 **1821 PASS / 193 FAIL / 2030 SKIP**（FAIL -73.9%），
 > R500J200=0、R401J200 已豁免、R200J415=0；剩余 193 条 FAIL（missing_rust 72 / array_length 60 /
 > type_differs 45 / missing_java 16）的收敛转入 `2026-08-28-006` 总计划 U9-U11 及后续
@@ -389,7 +389,7 @@ Path((a, b)): Path<(String, String)>,
 ## Sources & References
 
 - 基线报告: `oa4rust/target/debug/behavior-report.md` (2026-08-27T09:27:20)
-- 主计划: `docs/plans/2026-08-26-002-oa4rust-fail-closure-master-plan.md`
+- 主计划: `docs/archived-plans/2026-08-26-002-oa4rust-fail-closure-master-plan.md`
 - 深层缺口清单: `docs/audits/2026-08-29-001-behavior-divergence-backlog.md`
 - 中间件常量: `crates/shared/src/middleware/constants.rs`
 - 权限注册表: `crates/shared/src/middleware/rbac.rs`

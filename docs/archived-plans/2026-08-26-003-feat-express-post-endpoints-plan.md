@@ -3,8 +3,8 @@ title: "feat: Express 模块 POST list 端点补全"
 type: feat
 status: superseded
 date: 2026-08-26
-origin: docs/plans/2026-08-26-001-feat-parity-convergence-phase2-plan.md
-superseded_by: docs/plans/2026-08-26-002-oa4rust-fail-closure-master-plan.md
+origin: docs/archived-plans/2026-08-26-001-feat-parity-convergence-phase2-plan.md
+superseded_by: docs/archived-plans/2026-08-26-002-oa4rust-fail-closure-master-plan.md
 ---
 
 # Express 模块 POST list 端点补全

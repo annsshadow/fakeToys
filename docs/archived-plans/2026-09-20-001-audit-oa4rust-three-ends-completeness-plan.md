@@ -1375,6 +1375,6 @@ packages/apis/src/index.ts:216    ['"conversationId"']: data.conversationId
 ## 附：相关文档
 
 - `docs/audits/three-ends-2026-09-20/` —— 本次审计脚本与机器产物（可复现）
-- `docs/plans/2026-09-11-001-assess-oa4rust-web-full-replacement-gap-plan.md` —— 前序"能否完全替代 o2web"评估（本计划是其**执行层细化**，聚焦三端接线与字段）
+- `docs/archived-plans/2026-09-11-001-assess-oa4rust-web-full-replacement-gap-plan.md` —— 前序"能否完全替代 o2web"评估（本计划是其**执行层细化**，聚焦三端接线与字段）
 - `docs/audits/2026-08-12-002-o2server-parity-report.md` —— 端点级 parity 基线（2026-08-12）
 - `oa4rust/tests/designer_route_match.rs` —— 既有的设计器路由死链回归测试（E1 可复用其形态）

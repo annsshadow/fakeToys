@@ -29,29 +29,29 @@ tags:
 
 ## Context
 
-oa4rust（Rust 重写）长期以"crate 个数 / handler 数 / 测试通过率"作为替代 o2server（Java 参考实现）的进度信号，但这些信号存在系统性失真：同名路由 ≠ 同等功能，且"测试通过"在无 PostgreSQL 环境下只验证路由已注册、不验证数据与逻辑（证据：`docs/plans/2026-08-13-002-oa4rust-o2server-parity-analysis.md` §1.5；`docs/plans/2026-08-13-003-oa4rust-completion-plan.md` Phase 1）。同时，18 份历史计划的 frontmatter `status` 与代码库实际状态脱节（16 份中有 4 份仍标 `active`，2 份无 frontmatter），遗留工作散落在各计划的 Deferred 小节与 `docs/todo.md` 中，没有统一真相源（证据：`docs/plans/2026-08-21-001-feat-plans-status-audit-plan.md` Problem Frame）。这导致"能否替代"这一决策长期无法被书面、可验证地回答。
+oa4rust（Rust 重写）长期以"crate 个数 / handler 数 / 测试通过率"作为替代 o2server（Java 参考实现）的进度信号，但这些信号存在系统性失真：同名路由 ≠ 同等功能，且"测试通过"在无 PostgreSQL 环境下只验证路由已注册、不验证数据与逻辑（证据：`docs/archived-plans/2026-08-13-002-oa4rust-o2server-parity-analysis.md` §1.5；`docs/archived-plans/2026-08-13-003-oa4rust-completion-plan.md` Phase 1）。同时，18 份历史计划的 frontmatter `status` 与代码库实际状态脱节（16 份中有 4 份仍标 `active`，2 份无 frontmatter），遗留工作散落在各计划的 Deferred 小节与 `docs/todo.md` 中，没有统一真相源（证据：`docs/archived-plans/2026-08-21-001-feat-plans-status-audit-plan.md` Problem Frame）。这导致"能否替代"这一决策长期无法被书面、可验证地回答。
 
 本战役的根本约束来自参考实现规模：o2server/o2web 合计约 **1M LOC / 8588 文件**，纯人工重写不可行，必须走"辅助 + 拆分"路线（session history：7/30 规模度量 `scale-measurements.md` 标记 oa 为"辅助/拆分"）。战役早期决策是"先文档化 Java 侧 → 再驱动 Rust 对齐"：2026-07-30 向 `feat/systems-documentation` 提交 780 个 Java 系统文档文件（`oa/o2web` 489 + `oa/o2server` 291），把 Java 侧结构作为对齐的单一事实来源基础（session history）。
 
 ## Guidance
 
 **1. 端点对齐度量方法论（endpoint-alignment measurement）**
-- 用 Java `@Path` 注解与 `@GET/@POST/@PUT/@DELETE` 方法静态提取 Java 端点，与 Rust 侧 `tests/behavior_comparison/endpoints.rs`（初版 1012 个端点由 `scripts/extract_endpoints.py` 生成；`gen_openapi_paths.py` 实际产出的是 openapi crate 的 lib.rs；`14def34e` 起改由 `scripts/regen_endpoints.py` 直写该清单；2026-08-25 修复其三类缺陷（扫描面扩至全 `crates/*/src/**/*.rs`、转义引号路径、`axum::routing::` 全限定写法）后重生成，清单 4687 条、全注册面复验 REAL-MOUNTED missing=0 / extra=0）及 `crates/*/src/**/*.rs` 的 `.route(` 注册做交叉比对（证据：`docs/plans/2026-08-20-001-feat-oa4rust-remaining-gap-closure-plan.md` U4；`docs/audits/2026-08-24-002-final-coverage-sweep.md` 第 4 行）。
+- 用 Java `@Path` 注解与 `@GET/@POST/@PUT/@DELETE` 方法静态提取 Java 端点，与 Rust 侧 `tests/behavior_comparison/endpoints.rs`（初版 1012 个端点由 `scripts/extract_endpoints.py` 生成；`gen_openapi_paths.py` 实际产出的是 openapi crate 的 lib.rs；`14def34e` 起改由 `scripts/regen_endpoints.py` 直写该清单；2026-08-25 修复其三类缺陷（扫描面扩至全 `crates/*/src/**/*.rs`、转义引号路径、`axum::routing::` 全限定写法）后重生成，清单 4687 条、全注册面复验 REAL-MOUNTED missing=0 / extra=0）及 `crates/*/src/**/*.rs` 的 `.route(` 注册做交叉比对（证据：`docs/archived-plans/2026-08-20-001-feat-oa4rust-remaining-gap-closure-plan.md` U4；`docs/audits/2026-08-24-002-final-coverage-sweep.md` 第 4 行）。
 - **路径参数归一化为 `{}`**，匹配口径为 `method + 全路径 exact（允许 Rust 侧更长前缀） ∪ casefold` 计入覆盖（证据：`docs/audits/2026-08-24-002-final-coverage-sweep.md` 第 5 行）。
 - **两类诊断项只诊断、不计入覆盖率**：`verb_mismatch`（路径存在但缺某 HTTP 方法变体）与 `literal_shift`（同段数形变候选，影子副本会真实 404）。原因：它们会产生"虚假未覆盖"噪声，不应拉低真实覆盖数字（证据：`docs/audits/2026-08-24-002-final-coverage-sweep.md` 第 5 行、§五.1、§五.6）。
-- **双分母报告，不混用**：注解口径（含变体与自有端点，约 4510/4386 ≈ 102.8%，见 `docs/plans/2026-08-21-002-feat-remaining-work-consolidation-plan.md` U2 行）与唯一端点口径（模块内去重，3085/3092 ≈ 99.77%，见 `docs/audits/2026-08-24-002-final-coverage-sweep.md` §一）。两口径不可直接相比，终扫用唯一端点口径作为权威。
+- **双分母报告，不混用**：注解口径（含变体与自有端点，约 4510/4386 ≈ 102.8%，见 `docs/archived-plans/2026-08-21-002-feat-remaining-work-consolidation-plan.md` U2 行）与唯一端点口径（模块内去重，3085/3092 ≈ 99.77%，见 `docs/audits/2026-08-24-002-final-coverage-sweep.md` §一）。两口径不可直接相比，终扫用唯一端点口径作为权威。
 - **权威收口文件**：`docs/audits/2026-08-24-002-final-coverage-sweep.md`（generated_at=2026-08-23）是端点对齐的终态基准，后续不再重新生成度量（证据：`docs/brainstorms/2026-08-25-oa4rust-o2server-residual-gaps-requirements.md` Scope Boundaries、Key Decisions）。
-- **行为对比 CI 职位**：`BEHAVIOR_COMPARE=1` 环境变量控制 `oa4rust/.github/workflows/ci.yml` 的 `behavior-compare` job，拉起 o2server 容器 + 1000s 就绪探针 + postgres + u2_probe 冒烟；Java 不可达时 SKIP，Rust 不可达时 FAIL（证据：`docs/plans/2026-08-21-002-feat-remaining-work-consolidation-plan.md` U9；`docs/plans/2026-08-20-001-feat-oa4rust-remaining-gap-closure-plan.md` R2/R3）。
+- **行为对比 CI 职位**：`BEHAVIOR_COMPARE=1` 环境变量控制 `oa4rust/.github/workflows/ci.yml` 的 `behavior-compare` job，拉起 o2server 容器 + 1000s 就绪探针 + postgres + u2_probe 冒烟；Java 不可达时 SKIP，Rust 不可达时 FAIL（证据：`docs/archived-plans/2026-08-21-002-feat-remaining-work-consolidation-plan.md` U9；`docs/archived-plans/2026-08-20-001-feat-oa4rust-remaining-gap-closure-plan.md` R2/R3）。
 
 **2. 缺口收口战役编排模式（campaign orchestration）**
 四大阶段顺次推进，前序产出是后序输入：
-- **审计（audit）**：对 18 份计划逐实施单元做静态验证（文件存在性、路由挂载、测试文件、git 历史、反向索引），原地更新三态 `status` 并追加"实现情况"小节——以代码实测为准修正状态（证据：`docs/plans/2026-08-21-001-feat-plans-status-audit-plan.md` U1–U3、Key Technical Decisions）。
-- **汇总（consolidate）**：把三批审计发现的未竟单元 + 各 Deferred 小节 + `docs/todo.md` 项去重收敛为**一份**含 U1–U12 单一真相源的计划，每条标注来源计划与原始单元编号（证据：`docs/plans/2026-08-21-002-feat-remaining-work-consolidation-plan.md` U4、图例与口径、总览表）。
+- **审计（audit）**：对 18 份计划逐实施单元做静态验证（文件存在性、路由挂载、测试文件、git 历史、反向索引），原地更新三态 `status` 并追加"实现情况"小节——以代码实测为准修正状态（证据：`docs/archived-plans/2026-08-21-001-feat-plans-status-audit-plan.md` U1–U3、Key Technical Decisions）。
+- **汇总（consolidate）**：把三批审计发现的未竟单元 + 各 Deferred 小节 + `docs/todo.md` 项去重收敛为**一份**含 U1–U12 单一真相源的计划，每条标注来源计划与原始单元编号（证据：`docs/archived-plans/2026-08-21-002-feat-remaining-work-consolidation-plan.md` U4、图例与口径、总览表）。
 - **执行（execute）**：按模块分批闭环——先 P0（对齐/测试基线），再 P1（生产切换类），后 P2/P3（增强/文档），每批以可验证证据关闭（证据：`docs/plans/2026-08-21-002` 各单元"执行结论"小节）。
 - **收口扫描（closeout sweep）**：用 `docs/audits/2026-08-24-002-final-coverage-sweep.md` 做最终静态度量，输出权威覆盖率与剩余缺口清单（证据：`docs/audits/2026-08-24-002-final-coverage-sweep.md`）。
 
 **3. 残差缺口分类与处置（residual-gap taxonomy）**
-每类残差用不同处置策略，避免一刀切（证据：`docs/plans/2026-08-21-002-feat-remaining-work-consolidation-plan.md` 实现情况更新 §残差、`docs/brainstorms/2026-08-25-oa4rust-o2server-residual-gaps-requirements.md` Requirements）：
+每类残差用不同处置策略，避免一刀切（证据：`docs/archived-plans/2026-08-21-002-feat-remaining-work-consolidation-plan.md` 实现情况更新 §残差、`docs/brainstorms/2026-08-25-oa4rust-o2server-residual-gaps-requirements.md` Requirements）：
 - **外部阻塞（external-blocked）**：影子流量灰度验证与切流（U3）——脚本就绪，需生产环境 + ≥2 周观察期，唯一真正阻断"可替代"判定宣告的项。
 - **微小代码缺口（tiny code gaps，已闭环）**：原 3 条真实缺失端点（processplatform_assemble_surface 2 条、bbs_assemble_control 1 条），逐条仿现有 handler 补齐，已于 U1 闭环（证据：`docs/audits/2026-08-24-002-final-coverage-sweep.md` §四）。
 - **框架平台限制（framework platform-limit，已消解）**：原 4 条 axum 单段多参数 `{}.{}` 路由（attachment/download/*/{}.{}）经 U1 用整段 `Path<String>` 捕获模式闭环（commit 62fdf48d），不再记为"不实现"；axum 单段多参数客观限制仍作为表达受限例外留档，不影响"可替代"判定（证据：`docs/audits/2026-08-24-002-final-coverage-sweep.md` 附录）。
@@ -60,7 +60,7 @@ oa4rust（Rust 重写）长期以"crate 个数 / handler 数 / 测试通过率"�
 - **人工/独立工程（human/standalone engineering）**：Linux 文档翻译校正 266+ 处、7 语种 `?` 损坏，需逐文件对照 kernel.org 上游 RST，作为独立轨道不与替代判定耦合（证据：`docs/plans/2026-08-21-002` U11、L11.1/L11.2）。
 
 **4. 关键决策及其理由（key decisions）**
-- **Value::Null 字面归零指标作废（VOIDED）**：残留 15 处经逐点核实 = 测试断言×7 + 文档注释/Option 序列化 helper×5 + 可选 content 列解析（DB NULL→JSON null）×3，无一处为静默空数据桩；继续压低计数会破坏测试与 API 契约，故实质目标达成后作废该代理指标（证据：`docs/plans/2026-08-21-002-feat-remaining-work-consolidation-plan.md` U1 执行结论）。
+- **Value::Null 字面归零指标作废（VOIDED）**：残留 15 处经逐点核实 = 测试断言×7 + 文档注释/Option 序列化 helper×5 + 可选 content 列解析（DB NULL→JSON null）×3，无一处为静默空数据桩；继续压低计数会破坏测试与 API 契约，故实质目标达成后作废该代理指标（证据：`docs/archived-plans/2026-08-21-002-feat-remaining-work-consolidation-plan.md` U1 执行结论）。
 - **SQLx 完全移除被否决（VETOED）**：workspace 直接依赖已清零，但 sea-orm 核心依赖 sqlx，移除底层等于重写 ORM；故仅追求直接依赖清零（证据：`docs/plans/2026-08-21-002` U8）。
 - **IM 完整协议排除 v1**：避免范围蔓延，Rust 侧保留 WebSocket 基础广播与 ImAction×33 端点作为部分能力而非完整协议替代（证据：`docs/brainstorms/2026-08-25-oa4rust-o2server-residual-gaps-requirements.md` Key Decisions、R6）。
 - **BAM 选择补齐而非挂起**：决策人确认 v1 接管范围包含 BAM 监控，缺口按核心监控端点补齐闭合（证据：`docs/brainstorms/2026-08-25` R4、Key Decisions）。
@@ -106,7 +106,7 @@ oa4rust（Rust 重写）长期以"crate 个数 / handler 数 / 测试通过率"�
 - `docs/solutions/best-practices/single-source-of-truth-migration-status.md` — 单一真相源迁移状态纪律（本战役"汇总"支柱的底层支撑）；注意其示例表为 2026-08-10 时点快照（"81 crate 100% / 0 桩代码"），当前权威状态以 `docs/audits/2026-08-24-002-final-coverage-sweep.md` 的 99.77% + 残差清单为准，该 snapshot 可能需刷新（见下"待办"）
 - `docs/solutions/architecture-patterns/strangler-fig-migration-pattern.md` — 无停机渐进迁移架构模式（本 gap-closure 战役是其收尾阶段，解决角度不同，不重复）
 - `docs/audits/2026-08-24-002-final-coverage-sweep.md` — 端点对齐终态基准（唯一端点口径 99.77%）
-- `docs/plans/2026-08-21-002-feat-remaining-work-consolidation-plan.md` — 单一真相源汇总计划（U1–U12）
+- `docs/archived-plans/2026-08-21-002-feat-remaining-work-consolidation-plan.md` — 单一真相源汇总计划（U1–U12）
 - `docs/brainstorms/2026-08-25-oa4rust-o2server-residual-gaps-requirements.md` — 残差缺口闭环需求（BAM 已决议补齐）
 
 **待办（已处理，2026-08-25）**：`single-source-of-truth-migration-status.md` 的"100% 完成"示例已刷新——标记示例为 2026-08-10 历史快照，并将 "Current doc" 改指 `docs/audits/2026-08-24-002-final-coverage-sweep.md`（99.77%）作为当前权威来源（见该文 2026-08-25 刷新注记）。

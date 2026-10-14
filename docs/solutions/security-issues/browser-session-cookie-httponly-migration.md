@@ -86,6 +86,6 @@ HttpOnly 迁移的失败模式不是"安全功能没生效"而是"登录全挂"�
 
 ## Related
 
-- 计划：`docs/plans/2026-09-09-001-refactor-httponly-cookie-cargo-audit-rustsec-db-biome-2-5-11-plan.md`（U2-U5、U12、Local Closure Evidence）
+- 计划：`docs/archived-plans/2026-09-09-001-refactor-httponly-cookie-cargo-audit-rustsec-db-biome-2-5-11-plan.md`（U2-U5、U12、Local Closure Evidence）
 - 回滚演练证据：`oa4rust/backend/docs/ops/`（auth-rollback-drill-2026-09-10）
 - 前端 SPA 壳层路由陷阱：`../integration-issues/vue-spa-shell-routing-pitfalls.md`
