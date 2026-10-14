@@ -538,7 +538,14 @@ function indexCrateFns(crate) {
   crateFnIndex.set(crate, idx);
   return idx;
 }
-// 调用点的拒绝是否向上传播：`)` 之后紧跟 `.await?`
+// 调用点的拒绝是否向上传播。两种形态都算（尺子缺陷 17，第十一批修）：
+//   ① `f(...).await?` —— 旧判据只认这一种；
+//   ② `f(...).await` 且它整个表达式是函数体的**尾表达式**（`.await` 之后到闭括号为空）——
+//     helper 的 `Err` 直接成为 handler 的返回值，拒绝同样传播，只是不写 `?`。
+// 现场：cms `surface_appdict_*_data_delete` 45+11 条注册点整体转发给 `appdict_data_write`，
+// 那把 helper 体内 `gate_appdict_writer(...).await?` 且拒时 `return Err(AppError::Forbidden)`；
+// 旧判据因缺 ② 认不出这道门，把已加门的写面读成 R6「读会话无门禁」的行动面。
+// 反向风险（helper 里只查存在性、不拒人）由条件 B 与逐条落盘兜住。
 function callPropagates(body, name) {
   const re = new RegExp(`\\b${name}\\s*\\(`, "g");
   let m;
@@ -552,20 +559,26 @@ function callPropagates(body, name) {
       i++;
     }
     if (depth !== 0) continue;
-    if (body.slice(i, i + 40).replace(/\s+/g, "").startsWith(".await?")) return true;
+    const tail = body.slice(i, i + 40).replace(/\s+/g, "");
+    if (tail.startsWith(".await?")) return true;
+    // 尾表达式：`.await` 之后（可有换行/缩进与一个 `;` 之外的空白）就是函数体的闭括号
+    if (tail.startsWith(".await") && /^\s*\}/.test(body.slice(i + 6))) return true;
   }
   return false;
 }
-// 返回 false（无门禁）或作证的 helper 名（间接门禁）
-function gateEvidence(crate, body) {
+// 返回 false（无门禁）、true（本体内直接命中门禁）、或作证的 helper 名（间接门禁）。
+// 递归至多 3 层：门常写在「转发 helper」的下一层（handler → data_write → gate_writer）。
+function gateEvidence(crate, body, depth = 0) {
   if (!body) return false;
   if (GATE_RE.test(body)) return true;
+  if (depth >= 3) return false;
   const idx = indexCrateFns(crate);
-  for (const m of body.matchAll(/\b([a-z_]\w*)\s*\(/g)) {
+  for (const m of body.matchAll(/(?<![.\w:])([a-z_]\w*)\s*\(/g)) {
     const n = m[1];
     const hb = idx.get(n);
-    if (!hb || !GATE_RE.test(hb) || !/AppError::(Forbidden|Unauthorized)/.test(hb)) continue;
-    if (callPropagates(body, n)) return n;
+    if (!hb || hb === body || !/AppError::(Forbidden|Unauthorized)/.test(hb)) continue;
+    if (!callPropagates(body, n)) continue;
+    if (gateEvidence(crate, hb, depth + 1) !== false) return n;
   }
   return false;
 }
@@ -596,6 +609,117 @@ const NO_BODY_BY_BUCKET = new Map(); // bucket -> 体内取不到的条数
 const WRITE_SQL_RE = /\b(INSERT\s+INTO|UPDATE\s+\x5C?["\x60]?[A-Za-z_]\w*|DELETE\s+FROM)/i;
 // 定向自证用：只要体内出现「转义引号表名」写法，WRITE_SQL_RE 就必须判它是写语句
 const ESCAPED_TABLE_RE = /(UPDATE|DELETE\s+FROM|INSERT\s+INTO)\s+\x5C["\x60][A-Za-z_]/i;
+// 尺子缺陷 16（第十一批抓到并修）：写 SQL 落在同 crate 的 helper（`*_core` 一类）里，
+// handler 本体只是转发调用，旧判据（只看本函数体）于是把真落笔的路由读成「只读挂写方法」，
+// GET 段同样漏量。现场：surface `workcompleted_list_count_application_*` 注册在 **GET** 上、
+// 本体内一条 SQL 都没有，转调的 `..._core` 体内是
+// `UPDATE PP_C_WORKCOMPLETED SET "xupdateTime" = NOW() WHERE xid = $1`。
+// 判据与缺陷 15 同形，两条件同时成立才算：A. 调用点以 `.await?` 传播（`callPropagates`）；
+// B. 被调 helper 体内判为写。递归至多 3 层（helper 再转调 helper），明细逐条落盘。
+const indirectWrites = [];
+// 调用点是否真把 helper 跑起来：`)` 之后紧跟 `.await`（带不带 `?` 都算）。
+// 与缺陷 15 的 `callPropagates` 有意不同：门要「拒径向上传播」才算作证，
+// 而写 SQL 只要函数被 await 跑起来就已落笔，`let _ = f().await` 同样拦不住。
+function awaitCall(body, name) {
+  const re = new RegExp(`\\b${name}\\s*\\(`, "g");
+  let m;
+  while ((m = re.exec(body))) {
+    let depth = 1;
+    let i = m.index + m[0].length;
+    while (i < body.length && depth > 0) {
+      const c = body[i];
+      if (c === "(") depth++;
+      else if (c === ")") depth--;
+      i++;
+    }
+    if (depth !== 0) continue;
+    if (body.slice(i, i + 40).replace(/\s+/g, "").startsWith(".await")) return true;
+  }
+  return false;
+}
+function writeEvidence(crate, body, depth = 0) {
+  if (!body) return false;
+  if (WRITE_SQL_RE.test(body)) return true;
+  if (depth >= 3) return false;
+  const idx = indexCrateFns(crate);
+  for (const m of body.matchAll(/(?<![.\w:])([a-z_]\w*)\s*\(/g)) {
+    const n = m[1];
+    const hb = idx.get(n);
+    if (!hb || hb === body || !awaitCall(body, n)) continue;
+    if (writeEvidence(crate, hb, depth + 1)) return n;
+  }
+  return false;
+}
+// 尺子缺陷 18（第十一批抓到并修）：注册路径的**参数段数少于 handler 签名里 `Path<…>` 需要的段数**
+// 时，axum 在进入函数体之前就抛「Wrong number of path arguments for `Path`」，函数体一条语句都不执行
+// ——SQL 够不着，门禁也用不上。旧判据只看「方法 + 体内有无写 SQL」，把这类**死档**算成活的写面：
+// 本批实测 9 条 `GET /…/data/job/job[/pathN…]/mockputtopost`（注册时把 `{job}` 槽写成字面量 `job`、
+// 又缺 `{id}` 段），据此「GET 写面」虚高 9 条。反向同样危险：一旦有人给死档补上参数段，它立刻变活，
+// 所以判据必须可机器复算，不能靠名单。
+// 口径：need = **签名**（第一个 `{` 之前）里形如 `: Path<…>` 的参数标注中泛型实参按顶层逗号切段后的非空段数，
+// 取各处的最大值；pathParams = 路径里 `{…}` 段数。含 `*` 通配尾段的路径本尺不判（段数语义不同）。
+// 两道收窄是踩过坑加的：① 只看签名——body 里 `Vec<u8>`、`impl Future<Output=…>` 这类尖括号
+// 会让「找不到闭合 `>`」的前扫一路吞掉十几处逗号，实测把 paging 族读成「需要 16 个参数」；
+// ② 括号不计入深度、抽出实参后剥掉 `(` `)` 再数逗号——`Path<(String, String)>` 的元组括号
+// 若算深度，元组档会被数成 1，反向漏报。
+function pathParamCount(p) {
+  return (p.match(/\{[^}]*\}/g) || []).length;
+}
+function fnSignature(text) {
+  const i = text.indexOf("{");
+  return i < 0 ? text : text.slice(0, i);
+}
+function pathExtractArity(sig) {
+  let max = 0;
+  for (const m of sig.matchAll(/:\s*(?:axum::)?extract::Path\s*<|:\s*Path\s*<\(/g)) {
+    const start = m.index + m[0].length - 1; // 指向 `<`
+    let depth = 0;
+    let end = -1;
+    for (let i = start; i < sig.length; i++) {
+      const c = sig[i];
+      if (c === "<") depth++;
+      else if (c === ">") {
+        depth--;
+        if (depth === 0) { end = i; break; }
+      }
+    }
+    if (end < 0) continue;
+    const arg = sig.slice(start + 1, end).replace(/[()]/g, "");
+    // 按顶层逗号切段后**丢掉空段**再计数：rustfmt 会把长元组类型拆成
+    // `Path<(\n String,\n String,\n)>`，尾巴上那个逗号若按「逗号数 + 1」算会多出一档，
+    // 实测把 152 条活路由误判成死档（本尺第一版就栽在这里）。
+    let d = 0;
+    const parts = [""];
+    for (const c of arg) {
+      if (c === "<" || c === "[") d++;
+      else if (c === ">" || c === "]") d--;
+      else if (c === "," && d === 0) parts.push("");
+      else parts[parts.length - 1] += c;
+    }
+    max = Math.max(max, parts.filter((s) => s.trim() !== "").length || 1);
+  }
+  return max;
+}
+const deadRows = new Set();
+function isDeadAlias(r, body) {
+  if (!body || r.path.includes("*")) return false;
+  const need = pathExtractArity(fnSignature(body));
+  if (need === 0) return false;
+  return pathParamCount(r.path) < need;
+}
+const deadAliasLines = [];
+for (const r of routes) {
+  const b = fnBody(r.crate, r.handlerRef);
+  const need = pathExtractArity(fnSignature(b || ""));
+  if (!isDeadAlias(r, b)) continue;
+  deadRows.add(`${r.crate}\t${r.method}\t${r.path}`);
+  deadAliasLines.push(
+    `${r.crate}\t${r.method}\t${r.path}\t${r.handler}\tpath参数段 ${pathParamCount(r.path)} < 签名需要 ${need}`,
+  );
+}
+console.log(`\n死档路由（Path 段数不足，进不到函数体，缺陷 18）：${deadAliasLines.length} 条`);
+console.log(deadAliasLines.join("\n"));
+
 for (const r of writeRoutes) {
   const body = fnBody(r.crate, r.handlerRef);
   const admin = mwAdmin(r.method, r.path);
@@ -605,6 +729,14 @@ for (const r of writeRoutes) {
   if (typeof gateEv === "string") indirectGated.push(`${r.crate}\t${r.method}\t${r.path}\t${r.handler}\t${gateEv}`);
   const sess = SESSION_RE.test(body);
   let bucket;
+  // 缺陷 18：死档先出列——它的门禁/写 SQL 读数都无意义（函数体根本不执行），
+  // 但仍要在矩阵里点名，免得「从分母消失」无法对账。
+  if (deadRows.has(`${r.crate}\t${r.method}\t${r.path}`)) {
+    const dl = `${r.crate}\t${r.method}\t${r.path}\t${r.handler}`;
+    rb.set("R9-死档（Path 段数不足，进不到函数体）", (rb.get("R9-死档（Path 段数不足，进不到函数体）") || 0) + 1);
+    routeMatrix.push(`${dl}\tR9-死档`);
+    continue;
+  }
   // 顺序口径：R1（中间件 admin）与 R2-R4（匿名可达）先判——**不能**让「体内不可解析」
   // 把匿名可达的路由从 R4 行动面里摘走（首版把 !body 放在 exempt 之前，实测吞掉 2 条 R4）。
   if (admin) bucket = "R1-中间件 admin";
@@ -620,9 +752,12 @@ for (const r of writeRoutes) {
   routeMatrix.push(`${line}\t${bucket}`);
   // 只切「无门禁」三桶（R4/R6/R7）——R5 已放行侧达标，分它没有行动意义
   if (body && ["R4-匿名可达+体内无门禁", "R6-已认证+读会话无门禁", "R7-已认证+体内无会话无门禁"].includes(bucket)) {
-    if (!WRITE_SQL_RE.test(body)) {
+    const wEv = writeEvidence(r.crate, body);
+    if (wEv === false) {
       if (!READ_ONLY_ON_WRITE.has(bucket)) READ_ONLY_ON_WRITE.set(bucket, []);
       READ_ONLY_ON_WRITE.get(bucket).push(line);
+    } else if (typeof wEv === "string") {
+      indirectWrites.push(`${line}\t${bucket.slice(0, 2)}\t${wEv}`);
     }
   }
   if (!body) NO_BODY_BY_BUCKET.set(bucket, (NO_BODY_BY_BUCKET.get(bucket) || 0) + 1);
@@ -664,7 +799,7 @@ console.log(
   `R7 无会话无门禁写面按 crate 集中度（前 10）：` +
   [...r7byCrate].sort((a, b) => b[1] - a[1]).slice(0, 10).map(([k, v]) => `${k} ${v}`).join("、")
 );
-console.log(`全 7 桶矩阵 ${routeMatrix.length} 行已写 write_routes_matrix.tsv`);
+console.log(`全 ${rb.size} 桶矩阵 ${routeMatrix.length} 行已写 write_routes_matrix.tsv`);
 
 // ── 4b. 无门禁三桶的「体内有写 SQL / 只读挂写方法」拆分 ──────────────────────
 // 写进 R7 的 1158 条里，有多少是 handler 体内根本不落笔的只读档？不分这一刀，
@@ -698,7 +833,7 @@ for (const name of ["R4-匿名可达+体内无门禁", "R6-已认证+读会话�
   if (real + lines.length + noBody !== total)
     throw new Error(`拆分不闭合：${name} 总数 ${total} ≠ 写SQL ${real} + 只读 ${lines.length} + 不可解析 ${noBody}`);
   console.log(
-    `${name.slice(0, 2)} 拆分：体内含写 SQL ${real} 条 / 只读挂写方法 ${lines.length} 条 / 体内不可解析 ${noBody} 条（合计 ${total}）`
+    `${name.slice(0, 2)} 拆分：含写 SQL（本体内或经 helper 转调）${real} 条 / 只读挂写方法 ${lines.length} 条 / 体内不可解析 ${noBody} 条（合计 ${total}）`
   );
   readOnlyLines.push(...lines.map((l) => `${l}\t${name.slice(0, 2)}`));
 }
@@ -717,8 +852,13 @@ console.log(`只读挂写方法 ${readOnlyLines.length} 条已写 write_routes_r
 const getWrites = [];
 for (const r of routes) {
   if (["POST", "PUT", "DELETE", "PATCH"].includes(r.method)) continue;
+  // 缺陷 18：死档 GET 不算 GET 写面（函数体进不去，SQL 永不执行）
+  if (deadRows.has(`${r.crate}\t${r.method}\t${r.path}`)) continue;
   const body = fnBody(r.crate, r.handlerRef);
-  if (!WRITE_SQL_RE.test(body)) continue;
+  const wEv = writeEvidence(r.crate, body);
+  if (wEv === false) continue;
+  if (typeof wEv === "string")
+    indirectWrites.push(`${r.crate}\t${r.method}\t${r.path}\t${r.handler}\tK\t${wEv}`);
   const gEv = gateEvidence(r.crate, body);
   if (gEv !== false) {
     if (typeof gEv === "string") indirectGated.push(`${r.crate}\t${r.method}\t${r.path}\t${r.handler}\t${gEv}`);
@@ -769,7 +909,7 @@ for (const r of routes) {
   const eatenBy = exemptCollisions(r.path);
   if (!eatenBy.length) continue;
   const body = fnBody(r.crate, r.handlerRef);
-  const write = WRITE_SQL_RE.test(body);
+  const write = writeEvidence(r.crate, body) !== false;
   const gate = gateEvidence(r.crate, body) !== false;
   const sess = SESSION_RE.test(body);
   const bucket = write
@@ -815,7 +955,7 @@ for (const r of routes) {
   const state = anonState(r.path);
   if (!state) continue;
   const body = fnBody(r.crate, r.handlerRef);
-  const write = WRITE_SQL_RE.test(body);
+  const write = writeEvidence(r.crate, body) !== false;
   const guarded = gateEvidence(r.crate, body) !== false || SESSION_RE.test(body);
   const bucket = write && !guarded
     ? `A1-${state}+体内写 SQL 且无门禁无会话`
@@ -839,10 +979,21 @@ console.log("明细已写 anonymous_write_routes.tsv");
 // 红到有人把它显式写进名单（并说明为什么可以公开），名单里的条目被修掉时也必须红一次。
 // `GET /api/secret/set/cancel` 曾因不在 `SECRET_INIT_PATHS` 里落进这一格（补锁后转条件匿名），
 // 就是这个名单要盯的形状。
+// 缺陷 16 修好后本名单从 3 条涨到 9 条：新增 6 条全部来自「写 SQL 在 helper 里、
+// handler 本体只做转发」的匿名入口（OAuth 三方登录 4 条经 `provider_login`/`oauth_code_store`，
+// 密码重置 2 条经 `apply_reset`）。它们**是否算洞**要单独定拍（匿名可达本身是业务要求，
+// 要盯的是「能否无界建行」与「重置 token 是否可被第三方读取」），本断言只保证
+// 「匿名落笔面不许悄悄变多」——多一条就要有人显式写进名单并说明为什么可以公开。
 const A1_UNCONDITIONAL_WRITE = [
   "auth\tPOST\t/api/authentication",
   "auth\tPOST\t/api/authentication/login",
+  "auth\tGET\t/api/authentication/oauth/login/qywx/code/{code}",
+  "auth\tGET\t/api/authentication/oauth/login/dingding/code/{code}",
+  "auth\tGET\t/api/authentication/oauth/login/name/{name}/code/{code}/redirecturi/{redirectUri}",
+  "auth\tGET\t/api/authentication/oauth/bind/name/{name}/code/{code}/redirecturi/{redirectUri}",
   "personal\tPOST\t/api/person/regist",
+  "personal\tPUT\t/api/reset",
+  "personal\tPOST\t/api/reset/password/anonymous",
 ];
 const a1Now = anonWrites
   .filter((l) => l.includes("\tA1-真匿名+体内写 SQL 且无门禁无会话"))
@@ -886,7 +1037,7 @@ for (const r of routes) {
   const who = EXEMPT_PATHS.find((pat) => pathMatches(r.path, pat))
     || `prefix:${EXEMPT_PREFIXES.find((pre) => segPrefix(r.path, pre))}`;
   const body = fnBody(r.crate, r.handlerRef);
-  const write = WRITE_SQL_RE.test(body);
+  const write = writeEvidence(r.crate, body) !== false;
   const bucket = secret
     ? "D3-条件豁免（仅初始化窗口），窗口外需 token"
     : write
@@ -954,4 +1105,86 @@ console.log("明细已写 write_routes_macro_resolved.tsv");
     [...helpers].sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${v}`).join("、") +
     `；明细已写 write_routes_indirect_gated.tsv`
   );
+}
+
+// 缺陷 16 的落盘（同样必须在所有分桶段之后）：经 helper 转调落笔的路由逐条点名，
+// 记的是哪把 helper 体内有写 SQL——「只读」名单不许再靠「本体内看不见」背书。
+{
+  const helpers = new Map();
+  for (const l of indirectWrites) {
+    const h = l.split("\t")[5];
+    helpers.set(h, (helpers.get(h) || 0) + 1);
+  }
+  fs.writeFileSync(
+    path.join(ARTIFACTS, "write_routes_indirect_writes.tsv"),
+    ["crate\tmethod\tpath\thandler\tstage\twrite_helper", ...indirectWrites.sort()].join("\n") + "\n",
+  );
+  console.log(
+    `\n间接写 SQL ${indirectWrites.length} 条（缺陷 16，helper 体内落笔）：` +
+    [...helpers].sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${v}`).join("、") +
+    "；明细已写 write_routes_indirect_writes.tsv"
+  );
+}
+
+// 缺陷 18 的落盘（同样排在所有分桶段之后）：死档逐条点名 + 段数对照，
+// 「这条 GET 别名是不是真能落笔」从此可复核，不必再靠人肉数 `{}`。
+fs.writeFileSync(
+  path.join(ARTIFACTS, "routes_dead_alias.tsv"),
+  ["crate\tmethod\tpath\thandler\tarity", ...deadAliasLines.sort()].join("\n") + "\n",
+);
+console.log(
+  `\n死档 ${deadAliasLines.length} 条（缺陷 18）已从 R1-R8 与 GET 写面出列，改记 R9；明细已写 routes_dead_alias.tsv`
+);
+
+// ── 缺陷 16 / 17 / 18 的见证名单（非恒真自证）────────────────────────────────
+// 这三条判据都是「看不见 → 看得见」型的修复，只看一次读数无法证明判据本身成立：
+// 把 `awaitCall` 摘掉、把 `gateEvidence` 的递归压回一层、把 `isDeadAlias` 恒假，
+// 分母照样能跑完、退出码照样是 0，只有见证名单会空。所以在这里点名，注入即红。
+// 每条都取自本轮真实产物，且分属不同 crate，避免「一把 helper 撑满三格」。
+const WRITE_HELPER_WITNESSES = [
+  "appdict_data_write", // cms：写 SQL 在 helper 里，56 条路由靠它作证
+  "workcompleted_list_count_application_applicationFlag_process_core", // surface：GET 上挂的 helper 落笔
+  "provider_login", // auth：匿名 OAuth 的写经 helper 转调
+];
+const GATE_HELPER_WITNESSES = [
+  "set_topic_flag", // bbs：门禁在 helper 体内且拒绝经 `.await?` 传播
+  "check_owner", // 递归层内作证
+  "u2_attachment_guard", // file：同族间接门禁
+];
+const DEAD_ALIAS_WITNESSES = [
+  "processplatform_assemble_surface\tGET\t/api/processplatform/assemble/surface/data/job/job/mockputtopost",
+  "processplatform_assemble_surface\tGET\t/api/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4/path5/path6/path7/mockputtopost",
+  "processplatform_assemble_surface\tGET\t/api/processplatform/assemble/surface/draft/mockputtopost",
+  "portal_assemble_surface\tPOST\t/api/portal/assemble/surface/dict/portal/path/data/mockputtopost/{dictFlag}/{portalFlag}",
+  "program_center\tDELETE\t/api/program_center/dict/dictFlag/path/data/mockdeletetoget",
+  "file_assemble_control\tGET\t/api/file/share/shield/id",
+];
+const witnessGaps = [];
+// 反方向同样要能红：段数判据若把「逗号数 + 1」当成元组长度（rustfmt 换行后的尾逗号会被数成一段），
+// 活路由会被误判成死档，行动面凭空缩小。这里点名几把**必须保持可达**的档，多判即红。
+const LIVE_ALIAS_WITNESSES = [
+  "processplatform_assemble_surface\tPOST\t/api/processplatform/assemble/surface/data/job/{job}/mockputtopost",
+  "processplatform_assemble_surface\tPOST\t/api/processplatform/assemble/surface/data/workcompleted/{id}/mockputtopost",
+  "processplatform_assemble_surface\tGET\t/api/processplatform/assemble/surface/data/work/{id}",
+  "correlation_service_processing\tPOST\t/api/correlation/service/processing/unlink/{sourceType}/{sourceId}/{targetType}/{targetId}",
+];
+const helperNamesOf = (lines, col) => new Set(lines.map((l) => l.split("\t")[col]));
+const wHelpers = helperNamesOf(indirectWrites, 5);
+const gHelpers = helperNamesOf(indirectGated, 4);
+for (const w of WRITE_HELPER_WITNESSES)
+  if (!wHelpers.has(w)) witnessGaps.push(`缺陷 16 见证缺失（间接写 SQL 未见 ${w}）`);
+for (const w of GATE_HELPER_WITNESSES)
+  if (!gHelpers.has(w)) witnessGaps.push(`缺陷 17 见证缺失（间接门禁未见 ${w}）`);
+for (const w of DEAD_ALIAS_WITNESSES)
+  if (!deadRows.has(w)) witnessGaps.push(`缺陷 18 见证缺失（死档未认出 ${w}）`);
+for (const w of LIVE_ALIAS_WITNESSES)
+  if (deadRows.has(w)) witnessGaps.push(`缺陷 18 反向见证失效（活档被误判成死档 ${w}）`);
+console.log(
+  `\n判据见证：缺陷 16 ${WRITE_HELPER_WITNESSES.length} 条 / 缺陷 17 ${GATE_HELPER_WITNESSES.length} 条 / ` +
+  `缺陷 18 正向 ${DEAD_ALIAS_WITNESSES.length} 条 + 反向 ${LIVE_ALIAS_WITNESSES.length} 条，缺口 ${witnessGaps.length} 处`
+);
+for (const g of witnessGaps) console.error(`  ${g}`);
+if (witnessGaps.length) {
+  console.error("判据见证不齐——某条「修尺子」的判据被摘掉或退化，读数不可信");
+  process.exitCode = 1;
 }
