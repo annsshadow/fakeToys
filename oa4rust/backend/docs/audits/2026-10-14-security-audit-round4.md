@@ -105,6 +105,10 @@
 | R4-5 | 中 | 同 crate `create_surface:81`（creator 硬编码 `"system"`，未会话化）/ `publish_surface:295` / `delete_surface:366` / `save_surface:430` | 任意改删 `x_process_surface` 应用门户配置 |
 | R4-6 | 中 | `processplatform_core_express/src/lib.rs:16 work_terminate` | 注册为 **GET** `/api/processplatform/work/terminate/{id}`：无 Session 终止任意 work；GET 状态变更同时绕过 CSRF 中间件（只覆盖 POST/PUT/PATCH/DELETE），SameSite=Lax 下仍有顶层导航触发面 |
 
+**第三批收口状态**：R4-1 的 13 把与 R4-6 的 1 把已全部补「会话 + 归属」双门并在真 PG 实测
+（改法见 §三.3、读数见 §四）；R4-2（`u2.rs` 47 处写）、R4-3（designer 的脚本 / flow / form / xform /
+item-access 四族）、R4-4（surface `*_mockdeletetoget` 物理删族）、R4-5（surface 应用门户配置写）待收。
+
 A1 同时核实**无需重报**的部分：bam `create_bam`（有 admin 门）、surface `touch_expire/passexpired/touchdetained`、`attachment_u2b_batch_delete_manage`、`serialnumber_u2_create`、`handover_u2_create`、`snap_u2_upload`（一轮 V2/V4 已修属实）、`snap_u2_delete/restore`、`attachment_u2_delete_by_work`、`attachment_id`、`attachment_u2b_delete_by_workcompleted`、`work_u2_v3_retract`（均有 `u2_check_owner`/已办持有校验）、designer 的 11 个 `guard_write` handler（`application_id_update/icon/permission`、`applicationdict_id_delete`、`mapping_id_update/delete`、`mergeitemplan_id_update/delete`、`process_id_update/permission_save/edition_delete`）、processing 8 个 `touch/*`；`u2_att_store_new`/`general_file_store`/`doc_to_word_for_job` 为内部 helper，公开包装器均传 `session.person_unique`。
 → 结论：designer 是「部分修复后遗留旁路」（11 个已走 `guard_write`，脚本/flow/form/xform/item-access 四族被漏），非全 crate 空白。
 
@@ -253,6 +257,16 @@ A4 开放问题：① F1 是否 o2server 侧本就以 job/document 创建者为�
 | **F9** | `crates/bbs/src/subject.rs` | 发帖 `author_id` 由「完全取请求体」改为以会话身份为权威（`session.person_unique`），杜绝任意 person 冒名发帖；既有 `test_subject_create` 走 oneshot 无会话→仍 500，不掩盖变更 |
 | **F2** | `crates/portal_core_entity/src/lib.rs` + `security_gate_tests.rs` | 同表另一条写路径 `page_create`（**函数级索引漏收**，路由级尺子收到）/ `page_update` / `page_remove` 同加 `require_admin`。本 crate 走 sea-orm `DatabaseConnection`、拿不到 deadpool `Pool`（router 收下 `_pool` 却从未 layer 注入），故按 `is_admin` 同一条 SQL 就地判 admin 并 fail-closed；门禁回归需真实 PG，标 `#[ignore]` 并在文件头写明跑法 |
 
+### 三.3 第三批（A3-N6 / R4-6 / R4-1，代码）
+
+| 项 | 文件 | 内容 |
+| --- | --- | --- |
+| **A3-N6 + §二.7 新 B 格** | `crates/program_init/src/lib.rs` + `security_gate_tests.rs` | 外部数据源 host/port/账密写（`external_datasources_set` / `_set_cancel` / `_validate`）、`restore_upload` / `_cancel`（200 MB 落盘）、GET `server_execute` / `server_stop`（停服）7 把全部补 `Extension<Session>` + crate-local `require_admin`。`/api/secret/set(+cancel)` 按引导流程**保持匿名**，但「已初始化」探测原为 `.map_err(\|_\| Internal).map(...).unwrap_or(false)`——查询一出错就当作「未初始化」放行，DB 抖动时匿名可重写引导密钥，两处均改 `?` 传播（fail-closed）。回归 `program_init_ops_writes_forbidden_for_non_admin` 断 5 把 403。**未收**：`external_datasources_validate` 的裸 `TcpStream` 探任意 host:port 仍绕过 `shared::netguard`（需改走 netguard 的出站口径，留 §五） |
+| **R4-6** | `crates/processplatform_core_express/src/lib.rs` + `security_gate_tests.rs` | GET `/api/processplatform/work/terminate/{id}` 原不取会话不校归属。改 `Option<Extension<Session>>`（无会话 401）+ 读 `x_work.creator` 走 `require_owner`；行不存在放行以保 not-found 语义。同文件的 `work_retract` 名为 retract 实为只读 SELECT（同 `mockdeletetoget` 一族），不在门禁面内。离线两支（路由级 + handler 级 401），DB 一支 `#[ignore]` |
+| **R4-1（processing，13 把）** | `crates/processplatform_service_processing/src/lib.rs` + `security_gate_tests.rs` + `tests.rs` | 新增两把局部门 `u4_session`（无会话 401，先于任何 SQL）与 `u4_require_actor`（负责人 / 发起人非空 → `shared::middleware::require_owner`，admin 旁路、无库 fail-closed；为空的历史行只要求有效会话）。接门：`task_claim` / `task_complete` / `task_reject` / `task_transfer`（按 `x_task.person`）、`work_v2_id_terminate` / `work_v2_id_retract` / `work_v3_retract` / `work_start` / `work_complete` / `work_id_processing` / `execute_process` / `cancel_process_instance` / `gateway_join`（按 `x_work.creator`）。`gateway_fork` 一次按 gateway 实例跨多个 work 批量插任务、无单一属主，且只有运维面板调用 → 比照二轮 S5 收 **admin**。冒名同批收口：`task_claim` / `work_v2_id_terminate` / `gateway_join` 的 `x_record.creator` 由硬写 `"system"` 改 `session.person_unique` |
+| **R4-1 的旧断言返工** | `crates/processplatform_service_processing/src/tests.rs` | 加门后 3 条既有用例点名变红，逐条按修复后口径改写而非删除：`test_execute_process_route_exists` / `test_cancel_process_instance_route_exists` 原以 **500** 为「路由存在」的证据（无会话直穿到 DB 层），现断 401；`test_work_start_status_transition_db_connected` 原走 router 断 200（router 只 layer Pool，必然 401），改按 handler 直调 + 同名会话取放行分支，并补验 `work_status` 真落库与 Start Event 任务确实创建（收尾删净）。**教训**：`route_exists` 型断言把状态码钉死在某个具体值上，任何门禁收紧都会打到它——改写方向应是「门拒绝」而不是「放行」 |
+| **R4-1 的行为副作用（需观察）** | 同上 | 引擎 `work_start` 创建的 Start Event 任务 `person` 写成 `"system"`，收紧后该类任务只有 admin（或字面为 `system` 的会话）能代办。已在 `u4_require_actor` 文件头点名。若后续发现真实流程依赖普通用户代办 Start Event，应按「引擎内部推进」补专用路径，而不是放宽归属门 |
+
 
 ## 四、验证
 
@@ -293,6 +307,38 @@ cd oa4rust/backend && cargo test --lib -p <crate>
 - 尺子升级后分桶：G=4（逐条取证为会话本人自助写，良性，见 §二.7）、H=1、A=27、B=7、C=2；
   B 里新增真匿名写格 `program_init /api/secret/set(+/cancel)`。
 
+第三批（§三.3）读数——**本机 PostgreSQL 可达，故本轮 DB 臂全部实测而非 skip**：
+
+- `cargo test --lib -p program_init`：**24 passed / 0 failed / 0 ignored**，按名复核
+  `program_init_ops_writes_forbidden_for_non_admin` = ok；
+  `cargo test --lib -p parity program_init`：**15 passed / 0 failed / 4128 filtered out**（加门未破路由存在性对账）。
+- `cargo test --lib -p processplatform_core_express`：**8 passed / 0 failed / 1 ignored**，
+  路由级与 handler 级两支离线 401 按名 ok；`-- --ignored` 实跑属主臂：闯入者 403、属主放行、
+  `work_status` 落 `terminated`。
+- `cargo test --lib -p processplatform_service_processing`：**60 passed / 0 failed / 4 ignored**。
+  三支离线臂按名 ok：`engine_runtime_writes_reject_without_session`（task 4 + work 3 共 7 把 401）、
+  `instance_progression_writes_reject_without_session`（execute/cancel/processing/start/complete/
+  gateway join·fork 共 7 把 401）、`gateway_fork_forbidden_for_non_admin`（403）。
+  `-- --ignored --nocapture security_gate_tests`：**3 passed**——实测非负责人退回 403、负责人放行且
+  `x_record.creator` 落负责人本人、非发起人撤销 403 且 work 状态**未变**（拒绝路径不留半写）、
+  发起人撤销后 `work_status=retracted` 且其 in-flight task 连带 `cancelled`、发起人启动后
+  `work_status=processing` 且 Start Event 任务确实创建。
+  `cargo test --lib -p parity processplatform_service_processing`：**184 passed / 0 failed**。
+- **本轮新增取证纪律**：`#[ignore]` 的 DB 臂内部仍带 `is_db_available()` 显式 skip 分支，
+  所以「1 passed」并不等于「真跑了」——必须 `-- --ignored --nocapture` 复跑并确认输出中**没有**
+  `skip:` 才能把该臂记成实测。上一条 portal_core_entity 的 F2 读数当时只跑到 `-- --ignored`，
+  严格说那是「通过」而非「已证」；本轮三处 processing/core_express 读数均已按此口径补证。
+- **尺子复跑（本批收口后）**：`node scripts/audit_write_gating.mjs` 会重新扫描 handler 体，
+  新加的 `session` 参数与门禁调用会被识别，因此游离名单是**活读数**而非静态快照。
+  **函数级**矩阵 991 行，分桶 7 B-匿名可达且无体内门禁 / 4 G-Public 早退吞掉 admin 兜底且无体内门禁
+  / 1 H-Public 早退但体内有门禁（残余待取证 11 行 = B+G，写 `write_gating_residual.tsv`）；
+  **路由级**写路由 1689 条，本轮 R4 由 13 → 11、R7 由 1131 → 1095（共 27 行出列）。
+  离场的两条 R4 是 `meeting_assemble_control`
+  `POST /api/meeting/assemble/control/meeting[/{id}] create_meeting`（A3-N3 后 creator 取会话权威）。
+  R4(11) + R7(1095) 明细已写 `docs/audits/artifacts/write_routes_ungated.tsv`。
+  **口径提醒**：同一把 `create_meeting` 在函数级仍计 B、在路由级已出列——两把尺子的门禁信号源不同，
+  引用读数时必须写明是哪一级。
+
 本轮两处自伤（记下来防止再犯）：
 
 - **管道假绿**：`cargo test ... | tail -40` 的退出码是 `tail` 的，两处「exit 0」实际是编译红
@@ -309,19 +355,31 @@ cd oa4rust/backend && cargo test --lib -p <crate>
 
 ## 五、处置与遗留（下一轮入口）
 
-- 已修并验证：N1、N4-01、N2、preview 加固、F3、F6、F9（离线 403/会话权威断言）、F2（编译与既有测试绿，真门 `#[ignore]` 待 PG）、**A2-F12、A3-N1、A3-N2、A3-N3**（第二批读数见 §四）。
-- 待修（有明确落点与修法，按 §二.1 的 R4-1…R4-6 与 §二.6 的 F1…F10 顺序收口；processplatform 族因 `ADMIN_WRITE_DEPRECATED_PREFIXES` 已撤销中间件兜底，handler 层是唯一门禁，优先级最高；F5 与 §二.1 的 R4-3/R4-5 同为「ownerless 系统数据写 = admin」一族，可一把收）：R4-1 / R4-2 / R4-3 / R4-4 / R4-5 / R4-6、F1 / F4 / F5 / F7 / F8 / F10、N4-02、N4-03。
+- 已修并验证：N1、N4-01、N2、preview 加固、F3、F6、F9（离线 403/会话权威断言）、F2（编译与既有测试绿，真门 `#[ignore]` 待 PG）、**A2-F12、A3-N1、A3-N2、A3-N3**（第二批读数见 §四）、**A3-N6（program_init 7 把写收 admin + 匿名 init 判定改 fail-closed）、R4-6、R4-1 全 13 把**（第三批：§三.3 改法、§四 读数，其中 processing/core_express/program_init 的 DB 臂已按 `--ignored --nocapture` 真跑取证）。
+- 待修（有明确落点与修法，按 §二.1 与 §二.6 顺序收口；processplatform 族因 `ADMIN_WRITE_DEPRECATED_PREFIXES` 已撤销中间件兜底，handler 层是唯一门禁，优先级最高；F5 与 §二.1 的 R4-3/R4-5 同为「ownerless 系统数据写 = admin」一族，可一把收）：**R4-2 / R4-3 / R4-4 / R4-5**、F1 / F4 / F5 / F7 / F8 / F10、N4-02、N4-03。
 - **第二批新增待修（按危害排序，均有 file:line 证据，明细见 §二.3 / §二.4 / §二.7）**：
-  1. `program_init` 全族（A3-N6 + §二.7 新出的 B 格 `/api/secret/set`、`/api/secret/set/cancel` 是**匿名可达写**）：外部数据源 host/port/账密写入 + GET `server_execute`/`server_stop` + `restore_upload` 落盘 200 MB + 裸 `TcpStream` 探任意 host:port 绕过 `shared::netguard`。
+  1. ~~`program_init` 写族~~（A3-N6 + §二.7 的匿名 B 格）——**本批已收 7 把写 + init 判定 fail-closed**（§三.3）。
+     `/api/secret/set` / `/api/secret/set/cancel` 按首次引导流程**保留匿名**（收 admin 会打断初始化），
+     改为只堵「探测出错即当作未初始化放行」那一格。**残留未收**：`external_datasources_validate`
+     仍用裸 `TcpStream` 探任意 host:port，未经 `shared::netguard`（SSRF 面），`restore_upload`
+     的落盘目标路径与 200 MB 上限也还需复核。
   2. `shared/src/crud.rs` 的 `CrudSpec` 通用写无 owner 谓词（A3-N9，波及 11 crate，含他人 `x_person_face` 生物特征行的增改软删）。
   3. `query_assemble_*` 写族（A2-F1/F2/F3）：IDOR 覆写删除设计对象、`table/row/delete/all/{tableFlag}` 物理清空任意表、DDL 执行权错位。
   4. `cms_assemble_control` 遗留 CRUD 与 `mock*` 写族 + `update_control_config`（A2-F4/F5/F6，含 GET 注册与 `allow_anonymous` 自翻）。
   5. 模块级 `update_control_config` 家族（A3-N11：bbs/calendar/jpush/mind）、`jpush`（A3-N5）、`attendance`（A3-N4）、`mind`（A3-N7）、`ai_assemble_control`（A3-N8）、`file`（A3-N10）。
   6. 归属冒名残留：A2-F11（`creator` 硬编码 "system" 9 处）、A3-N13（invoice 三把）、A2-F13 / F14。
-- 建议再加两把守卫（本轮取证出的是**机制性缺口**，不是单点漏洞）：
+- 建议再加三把守卫（本轮取证出的是**机制性缺口**，不是单点漏洞）：
   - **GET 写禁令**：`csrf_middleware` 只覆盖 POST/PUT/PATCH/DELETE（`token.rs:70-74`），`requires_admin` 同样只认这三个方法（`security.rs:129`）；凡 `.route("...", get(handler))` 且 handler 体内含 `INSERT/UPDATE/DELETE` 即应红。已知落点：`hotpic routes.rs:53`、`ai routes.rs:47`、`message routes.rs:19`、meeting accept/confirm/checkin、calendar 与 jpush 的 `update/control/config`、attendance 两处、`processplatform_core_express`。撤 GET 需同批改前端（`MeetingApp.vue` 自检面板仍在用 GET）。
   - **Public 兜底吞掉点名**：`ADMIN_WRITE_PREFIXES` ∩ 注册表 Public 的 15 条交集必须逐条点名，落在此集合内新增的写 handler 必须有体内归属/角色门（§二.7）。
+  - **测试在册 ≠ 测试在跑**：6 个 crate 的 `src/tests.rs` 是游离文件——文件在，`lib.rs` 没有
+    `mod tests;`，里面的断言一条都不参与编译（`console` / `ldap` / `openapi` / `orm` /
+    `processplatform_assemble_surface` / `processplatform_core_express`）。core_express 那份尤其刺眼：
+    `test_work_terminate_returns_success` 断言「无会话 GET 也返回 200」，钉住的正是 R4-6 漏洞本身
+    （本批已把该断言改写为 401，但文件仍未注册，注册时才真正生效）。注册需两处返工：
+    嵌套 `mod tests { use super::* }` 的 `super` 指向文件模块本身（须改 `use crate::*`），
+    以及 DB 依赖臂补 `is_db_available()` 显式 skip。守卫写法：凡 `crates/*/src/tests*.rs` 存在，
+    其模块路径必须在同 crate 的 `lib.rs` 有对应 `mod` 声明。
 - 产品口径待拍：`meeting_id_accept` 的会议级状态翻转谁能做（被邀请人 / 属主 / admin）——本批只加了有效会话要求，未加归属判定。
 - 建议统一修法（沿用本仓既有先例，避免新抽象）：引擎运行面按一轮 V2/V4 口径至少加 `require_session_opt`；改变归属/状态/删他人行的走 `shared::middleware::require_owner`（admin 旁路、行不存在放行以保 not-found 语义）；设计态（script/flow/form/xform/dict/item-access/portal）比照同 crate `guard_write` 或二轮 S5 先例加 admin/属主门；GET 状态变更改 POST。每 crate 补 `security_gate_tests`（无 DB 的 401/403 各一）。
-- 提交落点：`a14b84348`（返工三处「已修未编译」+ docx/zip 上限 + 接线尺）、`be07ecac8`（本文档）、`e4d6af0f6`（F2/F3/F6/F9 越权门）。分支 `oa4rust-vuln-audit-r4`，本轮未 push。
+- 提交落点：`a14b84348`（返工三处「已修未编译」+ docx/zip 上限 + 接线尺）、`be07ecac8`（本文档）、`e4d6af0f6`（F2/F3/F6/F9 越权门）、`4931b351f`（第二批 A2-F12 / A3-N1 / N2 / N3）、`055dbb6d5`（尺子复刻注册表 Public 早退、G/H 两桶）、`95af154ad`（第二批账本）、`52ad4944e`（A3-N6 program_init 写族 + init 判定 fail-closed）、`494a93e40`（R4-6 work_terminate）、`c32bcbb64`（R4-1 首批 7 把）、`47d01df8d`（R4-1 次批 7 把 + 旧断言返工）。分支 `oa4rust-vuln-audit-r4`，本轮未 push。
 
