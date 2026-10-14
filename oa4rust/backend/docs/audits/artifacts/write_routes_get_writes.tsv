@@ -8,7 +8,6 @@ attendance_assemble_control	GET	/api/attendance/assemble/control/attendancedetai
 attendance_assemble_control	GET	/api/attendance/assemble/control/attendancesetting/enable/type	attendancesetting_enable_type	K3-已认证无会话无门禁
 attendance_assemble_control	GET	/api/attendance/assemble/control/v2/group/{id}/refresh/participate	v2_group_refresh_participate	K3-已认证无会话无门禁
 attendance_assemble_control	GET	/api/attendance/assemble/control/v2/appeal/{id}/reset/status	v2_appeal_reset_status	K2-读会话无门禁
-auth	GET	/api/mpweixin/bind/code/{code}	mpweixin_bind_code	K3-已认证无会话无门禁
 cms_assemble_control	GET	/api/cms_assemble_control/update/control/config	update_control_config	K3-已认证无会话无门禁
 cms_assemble_control	GET	/api/document/{id}/view/count	document_id_view_count	K3-已认证无会话无门禁
 cms_assemble_control	GET	/api/fileinfo/{id}/mockdeletetoget	fileinfo_id_mockdeletetoget	K3-已认证无会话无门禁
@@ -77,7 +76,6 @@ processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/work/
 processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/work/v2/retract/mockputtopost/{id}	work_v2_id_retract_mockputtopost	K3-已认证无会话无门禁
 processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/work/v2/rollback/mockputtopost/{id}	work_v2_id_rollback_mockputtopost	K3-已认证无会话无门禁
 processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/workcompleted/rollback/mockputtopost/{flag}	workcompleted_flag_rollback_mockputtopost	K3-已认证无会话无门禁
-processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/application/list/complex/manage/{person}	application_list_complex_manage_person	K1-匿名可达无门禁
 processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/data/mockdeletetoget	applicationdict_applicationDictFlag_application_applicationFlag_path0_data_mockdeletetoget	K3-已认证无会话无门禁
 processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/{path1}/data/mockdeletetoget	applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_data_mockdeletetoget	K3-已认证无会话无门禁
 processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/applicationdict/{applicationDictFlag}/application/{applicationFlag}/{path0}/{path1}/{path2}/data/mockdeletetoget	applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_data_mockdeletetoget	K3-已认证无会话无门禁
@@ -122,7 +120,6 @@ processplatform_service_processing	GET	/api/processplatform/service/processing/t
 processplatform_service_processing	GET	/api/processplatform/service/processing/task/replace/{id}	task_id_replace	K3-已认证无会话无门禁
 processplatform_service_processing	GET	/api/processplatform/service/processing/task/urge/{id}	task_id_urge	K3-已认证无会话无门禁
 processplatform_service_processing	GET	/api/processplatform/service/processing/task/v2/pause/{id}	task_v2_id_pause	K3-已认证无会话无门禁
-processplatform_service_processing	GET	/api/processplatform/service/processing/v3/retract/{work}	work_v3_retract	K2-读会话无门禁
 processplatform_service_processing	GET	/api/processplatform/service/processing/workcompleted/rollback/{flag}	workcompleted_flag_rollback	K3-已认证无会话无门禁
 processplatform_service_processing	GET	/api/processplatform/service/processing/snap/{id}/restore	snap_id_restore	K3-已认证无会话无门禁
 processplatform_service_processing	GET	/api/processplatform/service/processing/task/{id}/expire	task_id_expire	K3-已认证无会话无门禁
@@ -132,17 +129,13 @@ processplatform_service_processing	GET	/api/processplatform/service/processing/t
 processplatform_service_processing	GET	/api/processplatform/service/processing/task/v2/{id}/pause	task_v2_id_pause	K3-已认证无会话无门禁
 processplatform_service_processing	GET	/api/processplatform/service/processing/task/v2/{id}/resume	task_v2_id_resume	K3-已认证无会话无门禁
 processplatform_service_processing	GET	/api/processplatform/service/processing/touch/merge	touch_merge	K3-已认证无会话无门禁
-processplatform_service_processing	GET	/api/processplatform/service/processing/touch/mergeitem	touch_merge_item	K2-读会话无门禁
 processplatform_service_processing	GET	/api/processplatform/service/processing/touch/urge	touch_urge	K3-已认证无会话无门禁
-processplatform_service_processing	GET	/api/processplatform/service/processing/work/{id}/series/{series}/activitytoken/{activityToken}/processing/signal	work_processing_signal	K2-读会话无门禁
-processplatform_service_processing	GET	/api/processplatform/service/processing/work/v2/{id}/terminate	work_v2_id_terminate	K2-读会话无门禁
 processplatform_service_processing	GET	/api/processplatform/service/processing/workcompleted/{flag}/merge	wc_merge_flag	K3-已认证无会话无门禁
 program_center	GET	/api/program_center/andfx/pull/sync	andfx_pull_sync	K3-已认证无会话无门禁
 program_center	GET	/api/program_center/dingding/pull/sync	dingding_pull_sync	K3-已认证无会话无门禁
 program_center	GET	/api/program_center/dingding/request/pull/sync	dingding_request_pull_sync	K3-已认证无会话无门禁
 program_center	GET	/api/program_center/dingding/sync/organization/callback	dingding_sync_organization_callback	K3-已认证无会话无门禁
 program_center	GET	/api/program_center/invoke/flag/execute	invoke_flag_execute	K3-已认证无会话无门禁
-program_center	GET	/api/program_center/jest/clear/cache/source	jest_clear_cache_source	K2-读会话无门禁
 program_center	GET	/api/program_center/market/install/offline	market_install_offline	K3-已认证无会话无门禁
 program_center	GET	/api/program_center/market/flag/install/or/update	market_flag_install_or_update	K3-已认证无会话无门禁
 program_center	GET	/api/program_center/market/flag/uninstall	market_flag_uninstall	K3-已认证无会话无门禁
@@ -155,7 +148,6 @@ program_center	GET	/api/program_center/captcha/v2/create/width/{width}/height/{h
 program_center	GET	/api/program_center/code/create/mobile/{mobile}	code_create_mobile_mobile	K3-已认证无会话无门禁
 program_center	GET	/api/program_center/dingding/sync/organization/register/callback/{enable}	dingding_sync_organization_register_callback_enable	K3-已认证无会话无门禁
 program_center	GET	/api/program_center/invoke/{flag}/execute/get	invoke_flag_execute_get	K3-已认证无会话无门禁
-program_center	GET	/api/program_center/jest/clear/cache/{source}	u3_jest_clear_cache_source	K2-读会话无门禁
 program_center	GET	/api/program_center/market/{flag}/install/or/update	market_flag_install_or_update	K3-已认证无会话无门禁
 program_center	GET	/api/program_center/market/{flag}/uninstall	market_flag_uninstall	K3-已认证无会话无门禁
 program_center	GET	/api/program_center/validation/timeout/{timeout}	validation_timeout_timeout	K3-已认证无会话无门禁

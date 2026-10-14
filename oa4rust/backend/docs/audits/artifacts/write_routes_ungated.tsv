@@ -1,11 +1,9 @@
 crate	method	path	handler	bucket
-auth	POST	/api/authentication/bind/meta/{meta}	bind_confirm	R4
 auth	POST	/api/authentication/captcha/width/{width}/height/{height}	verify	R4
 auth	POST	/api/authentication	login	R4
 auth	DELETE	/api/authentication	logout	R4
 auth	POST	/api/authentication/login	login	R4
 auth	POST	/api/authentication/logout	logout	R4
-auth	POST	/api/authentication/refresh	refresh	R4
 auth	POST	/api/authentication/code	code	R4
 general_assemble_control	POST	/api/general/assemble/control/invoice/upload	invoice_upload	R4
 personal	POST	/api/reset/check/credential/{credential}	check_password	R4
@@ -77,7 +75,6 @@ attendance_core_entity	POST	/api/attendance/core/entity/record/create	record_cre
 attendance_core_entity	POST	/api/attendance/core/entity/record/create	record_update	R7
 attendance_core_entity	POST	/api/attendance/core/entity/rule/create	rule_create	R7
 auth	POST	/api/authentication/two_factor	two_factor_login	R7
-auth	POST	/api/authentication/two_factor	safe_logout	R7
 auth	POST	/api/authentication/two_factor	sso_post_login	R7
 auth	POST	/api/authentication/sso/encrypt	sso_encrypt	R7
 auth	POST	/api/authentication/sms/send	sms_send_handler	R7
@@ -519,7 +516,6 @@ organization_core_entity	DELETE	/api/organization/identity/{id}	identity_delete	
 organization_core_entity	PUT	/api/organization/custom/{id}	custom_update	R7
 organization_core_entity	DELETE	/api/organization/custom/{id}	custom_delete	R7
 organization_core_entity	POST	/api/organization/bind	bind_create	R7
-personal_extend	PUT	/api/personal/update	update_info	R7
 personal_extend	POST	/api/personal/face/create	face_create	R7
 personal_extend	PUT	/api/personal/face/save/{id}	face_save	R7
 personal_extend	POST	/api/personal/face/save/{id}	face_save	R7
