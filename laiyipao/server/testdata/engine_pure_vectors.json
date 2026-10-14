@@ -1213,5 +1213,2057 @@
         "hex": "584569a2e1ef1d3b"
       }
     ]
+  },
+  "heat": {
+    "consts": {
+      "ACTIVE_SLOTS": 4,
+      "PASSIVE_SLOT": 4,
+      "TOTAL_SLOTS": 5,
+      "HEAT_MAX": "100",
+      "OVERHEAT_DURATION_MS": 2000,
+      "HEAT_DECAY_PER_SEC": "10",
+      "DISCARD_PER_WAVE": 1,
+      "DISCARD_HEAT_REFUND": "1"
+    },
+    "rows": [
+      {
+        "label": "plain_cast_to_cap",
+        "cap_bonus": "0",
+        "trace": [
+          {
+            "op": "cast",
+            "heat": "30",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "30",
+            "decay_remainder": "0",
+            "cost": "30",
+            "result": true
+          },
+          {
+            "op": "cast",
+            "heat": "70",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "70",
+            "decay_remainder": "0",
+            "cost": "40",
+            "result": true
+          },
+          {
+            "op": "cast",
+            "heat": "100",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "100",
+            "decay_remainder": "0",
+            "cost": "30",
+            "result": true
+          },
+          {
+            "op": "checkOverheat",
+            "heat": "100",
+            "overheated": true,
+            "overheat_remaining": 2000,
+            "cap": "100",
+            "max_heat": "100",
+            "decay_remainder": "0",
+            "result": true
+          }
+        ]
+      },
+      {
+        "label": "cast_one_over_cap_rejected",
+        "cap_bonus": "0",
+        "trace": [
+          {
+            "op": "setHeat",
+            "heat": "90",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "v": "90"
+          },
+          {
+            "op": "cast",
+            "heat": "90",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "cost": "20",
+            "result": false
+          },
+          {
+            "op": "cast",
+            "heat": "100",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "100",
+            "decay_remainder": "0",
+            "cost": "10",
+            "result": true
+          },
+          {
+            "op": "checkOverheat",
+            "heat": "100",
+            "overheated": true,
+            "overheat_remaining": 2000,
+            "cap": "100",
+            "max_heat": "100",
+            "decay_remainder": "0",
+            "result": true
+          }
+        ]
+      },
+      {
+        "label": "cap_bonus_is_permille",
+        "cap_bonus": "1000",
+        "trace": [
+          {
+            "op": "cast",
+            "heat": "200",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "200",
+            "max_heat": "200",
+            "decay_remainder": "0",
+            "cost": "200",
+            "result": true
+          },
+          {
+            "op": "checkOverheat",
+            "heat": "200",
+            "overheated": true,
+            "overheat_remaining": 2000,
+            "cap": "200",
+            "max_heat": "200",
+            "decay_remainder": "0",
+            "result": true
+          }
+        ]
+      },
+      {
+        "label": "cap_bonus_200_permille",
+        "cap_bonus": "200",
+        "trace": [
+          {
+            "op": "setHeat",
+            "heat": "119",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "120",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "v": "119"
+          },
+          {
+            "op": "checkOverheat",
+            "heat": "119",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "120",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "result": false
+          }
+        ]
+      },
+      {
+        "label": "negative_cap_bonus_falls_back_to_base",
+        "cap_bonus": "-500",
+        "trace": [
+          {
+            "op": "setHeat",
+            "heat": "100",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "v": "100"
+          },
+          {
+            "op": "checkOverheat",
+            "heat": "100",
+            "overheated": true,
+            "overheat_remaining": 2000,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "result": true
+          }
+        ]
+      },
+      {
+        "label": "refund_floors_at_zero",
+        "cap_bonus": "0",
+        "trace": [
+          {
+            "op": "setHeat",
+            "heat": "5",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "v": "5"
+          },
+          {
+            "op": "refund",
+            "heat": "0",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "n": "10"
+          },
+          {
+            "op": "refund",
+            "heat": "0",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "n": "1"
+          }
+        ]
+      },
+      {
+        "label": "overheat_blocks_cast_and_cooldown",
+        "cap_bonus": "0",
+        "trace": [
+          {
+            "op": "forceOverheat",
+            "heat": "0",
+            "overheated": true,
+            "overheat_remaining": 2000,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "result": true
+          },
+          {
+            "op": "forceOverheat",
+            "heat": "0",
+            "overheated": true,
+            "overheat_remaining": 2000,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "result": false
+          },
+          {
+            "op": "cast",
+            "heat": "0",
+            "overheated": true,
+            "overheat_remaining": 2000,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "cost": "1",
+            "result": false
+          },
+          {
+            "op": "update",
+            "heat": "0",
+            "overheated": true,
+            "overheat_remaining": 1,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "dt_ms": 1999
+          },
+          {
+            "op": "update",
+            "heat": "0",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "dt_ms": 1
+          }
+        ]
+      },
+      {
+        "label": "deadzone_recovered_by_decay",
+        "cap_bonus": "0",
+        "trace": [
+          {
+            "op": "setHeat",
+            "heat": "99",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "v": "99"
+          },
+          {
+            "op": "isStuckFor",
+            "heat": "99",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "costs": [
+              "20"
+            ],
+            "result": true
+          },
+          {
+            "op": "checkOverheat",
+            "heat": "99",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "result": false
+          },
+          {
+            "op": "update",
+            "heat": "99",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "500",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "98",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "98",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "500",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "97",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "97",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "500",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "96",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "96",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "500",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "95",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "95",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "500",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "94",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "94",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "500",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "93",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "93",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "500",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "92",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "92",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "500",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "91",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "91",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "500",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "90",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "90",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "500",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "89",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "89",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "500",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "88",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "88",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "500",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "87",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "87",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "500",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "86",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "86",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "500",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "85",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "85",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "500",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "84",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "84",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "500",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "83",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "83",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "500",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "82",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "82",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "500",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "81",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "81",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "500",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "80",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "80",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "500",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "79",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "79",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "500",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "78",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "78",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "500",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "77",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "77",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "500",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "76",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "76",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "500",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "75",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "75",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "500",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "74",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "74",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "500",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "73",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "73",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "500",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "72",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "72",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "500",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "71",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "71",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "500",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "70",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "70",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "500",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "69",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "69",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "500",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "68",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "68",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "500",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "67",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "67",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "500",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "66",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "66",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "500",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "65",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "65",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "500",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "64",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "64",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "500",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "63",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "63",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "500",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "62",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "62",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "500",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "61",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "61",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "500",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "60",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "60",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "500",
+            "dt_ms": 50
+          },
+          {
+            "op": "update",
+            "heat": "59",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "dt_ms": 50
+          },
+          {
+            "op": "isStuckFor",
+            "heat": "59",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "costs": [
+              "20"
+            ],
+            "result": false
+          },
+          {
+            "op": "cast",
+            "heat": "79",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "79",
+            "decay_remainder": "0",
+            "cost": "20",
+            "result": true
+          }
+        ]
+      },
+      {
+        "label": "fractional_dt_uses_round",
+        "cap_bonus": "0",
+        "trace": [
+          {
+            "op": "setHeat",
+            "heat": "100",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "v": "100"
+          },
+          {
+            "op": "update",
+            "heat": "100",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "170",
+            "dt_ms": 16.666
+          },
+          {
+            "op": "update",
+            "heat": "100",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "340",
+            "dt_ms": 16.666
+          },
+          {
+            "op": "update",
+            "heat": "100",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "510",
+            "dt_ms": 16.666
+          },
+          {
+            "op": "update",
+            "heat": "100",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "680",
+            "dt_ms": 16.666
+          },
+          {
+            "op": "update",
+            "heat": "100",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "850",
+            "dt_ms": 16.666
+          },
+          {
+            "op": "update",
+            "heat": "99",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "20",
+            "dt_ms": 16.666
+          },
+          {
+            "op": "update",
+            "heat": "99",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "190",
+            "dt_ms": 16.666
+          },
+          {
+            "op": "update",
+            "heat": "99",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "360",
+            "dt_ms": 16.666
+          },
+          {
+            "op": "update",
+            "heat": "99",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "530",
+            "dt_ms": 16.666
+          },
+          {
+            "op": "update",
+            "heat": "99",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "700",
+            "dt_ms": 16.666
+          },
+          {
+            "op": "update",
+            "heat": "99",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "870",
+            "dt_ms": 16.666
+          },
+          {
+            "op": "update",
+            "heat": "98",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "40",
+            "dt_ms": 16.666
+          },
+          {
+            "op": "update",
+            "heat": "98",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "210",
+            "dt_ms": 16.666
+          },
+          {
+            "op": "update",
+            "heat": "98",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "380",
+            "dt_ms": 16.666
+          },
+          {
+            "op": "update",
+            "heat": "98",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "550",
+            "dt_ms": 16.666
+          },
+          {
+            "op": "update",
+            "heat": "98",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "720",
+            "dt_ms": 16.666
+          },
+          {
+            "op": "update",
+            "heat": "98",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "890",
+            "dt_ms": 16.666
+          },
+          {
+            "op": "update",
+            "heat": "97",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "60",
+            "dt_ms": 16.666
+          },
+          {
+            "op": "update",
+            "heat": "97",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "230",
+            "dt_ms": 16.666
+          },
+          {
+            "op": "update",
+            "heat": "97",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "400",
+            "dt_ms": 16.666
+          },
+          {
+            "op": "update",
+            "heat": "97",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "570",
+            "dt_ms": 16.666
+          },
+          {
+            "op": "update",
+            "heat": "97",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "740",
+            "dt_ms": 16.666
+          },
+          {
+            "op": "update",
+            "heat": "97",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "910",
+            "dt_ms": 16.666
+          },
+          {
+            "op": "update",
+            "heat": "96",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "80",
+            "dt_ms": 16.666
+          },
+          {
+            "op": "update",
+            "heat": "96",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "250",
+            "dt_ms": 16.666
+          },
+          {
+            "op": "update",
+            "heat": "96",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "420",
+            "dt_ms": 16.666
+          },
+          {
+            "op": "update",
+            "heat": "96",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "590",
+            "dt_ms": 16.666
+          },
+          {
+            "op": "update",
+            "heat": "96",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "760",
+            "dt_ms": 16.666
+          },
+          {
+            "op": "update",
+            "heat": "96",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "930",
+            "dt_ms": 16.666
+          },
+          {
+            "op": "update",
+            "heat": "95",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "100",
+            "dt_ms": 16.666
+          },
+          {
+            "op": "update",
+            "heat": "95",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "270",
+            "dt_ms": 16.666
+          },
+          {
+            "op": "update",
+            "heat": "95",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "440",
+            "dt_ms": 16.666
+          },
+          {
+            "op": "update",
+            "heat": "95",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "610",
+            "dt_ms": 16.666
+          },
+          {
+            "op": "update",
+            "heat": "95",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "780",
+            "dt_ms": 16.666
+          },
+          {
+            "op": "update",
+            "heat": "95",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "950",
+            "dt_ms": 16.666
+          },
+          {
+            "op": "update",
+            "heat": "94",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "120",
+            "dt_ms": 16.666
+          },
+          {
+            "op": "update",
+            "heat": "94",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "290",
+            "dt_ms": 16.666
+          },
+          {
+            "op": "update",
+            "heat": "94",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "460",
+            "dt_ms": 16.666
+          },
+          {
+            "op": "update",
+            "heat": "94",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "630",
+            "dt_ms": 16.666
+          },
+          {
+            "op": "update",
+            "heat": "94",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "800",
+            "dt_ms": 16.666
+          },
+          {
+            "op": "update",
+            "heat": "94",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "970",
+            "dt_ms": 16.666
+          },
+          {
+            "op": "update",
+            "heat": "93",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "140",
+            "dt_ms": 16.666
+          },
+          {
+            "op": "update",
+            "heat": "93",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "310",
+            "dt_ms": 16.666
+          },
+          {
+            "op": "update",
+            "heat": "93",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "480",
+            "dt_ms": 16.666
+          },
+          {
+            "op": "update",
+            "heat": "93",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "650",
+            "dt_ms": 16.666
+          },
+          {
+            "op": "update",
+            "heat": "93",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "820",
+            "dt_ms": 16.666
+          },
+          {
+            "op": "update",
+            "heat": "93",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "990",
+            "dt_ms": 16.666
+          }
+        ]
+      },
+      {
+        "label": "absorb_overheat_clears_heat",
+        "cap_bonus": "0",
+        "trace": [
+          {
+            "op": "setHeat",
+            "heat": "50",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "v": "50"
+          },
+          {
+            "op": "forceOverheat",
+            "heat": "50",
+            "overheated": true,
+            "overheat_remaining": 2000,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "result": true
+          },
+          {
+            "op": "absorbOverheat",
+            "heat": "0",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0"
+          },
+          {
+            "op": "cast",
+            "heat": "10",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "10",
+            "decay_remainder": "0",
+            "cost": "10",
+            "result": true
+          },
+          {
+            "op": "update",
+            "heat": "9",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "10",
+            "decay_remainder": "0",
+            "dt_ms": 100
+          }
+        ]
+      },
+      {
+        "label": "is_stuck_empty_costs_false",
+        "cap_bonus": "0",
+        "trace": [
+          {
+            "op": "setHeat",
+            "heat": "99",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "v": "99"
+          },
+          {
+            "op": "isStuckFor",
+            "heat": "99",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "costs": [],
+            "result": false
+          }
+        ]
+      },
+      {
+        "label": "is_stuck_free_skill_not_stuck",
+        "cap_bonus": "0",
+        "trace": [
+          {
+            "op": "setHeat",
+            "heat": "99",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "v": "99"
+          },
+          {
+            "op": "isStuckFor",
+            "heat": "99",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "costs": [
+              "20",
+              "0"
+            ],
+            "result": false
+          },
+          {
+            "op": "isStuckFor",
+            "heat": "99",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "costs": [
+              "20",
+              "20"
+            ],
+            "result": true
+          }
+        ]
+      },
+      {
+        "label": "overheat_ends_clears_heat",
+        "cap_bonus": "0",
+        "trace": [
+          {
+            "op": "setHeat",
+            "heat": "80",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "v": "80"
+          },
+          {
+            "op": "forceOverheat",
+            "heat": "80",
+            "overheated": true,
+            "overheat_remaining": 2000,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "result": true
+          },
+          {
+            "op": "update",
+            "heat": "80",
+            "overheated": true,
+            "overheat_remaining": 1000,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "dt_ms": 1000
+          },
+          {
+            "op": "update",
+            "heat": "0",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "dt_ms": 1000
+          },
+          {
+            "op": "update",
+            "heat": "0",
+            "overheated": false,
+            "overheat_remaining": 0,
+            "cap": "100",
+            "max_heat": "0",
+            "decay_remainder": "0",
+            "dt_ms": 10
+          }
+        ]
+      }
+    ]
+  },
+  "deck": {
+    "rows": [
+      {
+        "label": "discard_then_exhausted",
+        "trace": [
+          {
+            "op": "setHand",
+            "hand": [
+              "a",
+              "b",
+              "c"
+            ],
+            "size": 3,
+            "discards_left": 1
+          },
+          {
+            "op": "discard",
+            "hand": [
+              "a",
+              "c"
+            ],
+            "size": 2,
+            "discards_left": 0,
+            "id": "b",
+            "ok": true,
+            "refund": "1"
+          },
+          {
+            "op": "discard",
+            "hand": [
+              "a",
+              "c"
+            ],
+            "size": 2,
+            "discards_left": 0,
+            "id": "a",
+            "ok": false,
+            "refund": "0"
+          }
+        ]
+      },
+      {
+        "label": "discard_missing_keeps_charge",
+        "trace": [
+          {
+            "op": "setHand",
+            "hand": [
+              "a",
+              "b"
+            ],
+            "size": 2,
+            "discards_left": 1
+          },
+          {
+            "op": "discard",
+            "hand": [
+              "a",
+              "b"
+            ],
+            "size": 2,
+            "discards_left": 1,
+            "id": "zzz",
+            "ok": false,
+            "refund": "0"
+          },
+          {
+            "op": "discard",
+            "hand": [
+              "b"
+            ],
+            "size": 1,
+            "discards_left": 0,
+            "id": "a",
+            "ok": true,
+            "refund": "1"
+          }
+        ]
+      },
+      {
+        "label": "new_wave_resets",
+        "trace": [
+          {
+            "op": "setHand",
+            "hand": [
+              "a",
+              "b"
+            ],
+            "size": 2,
+            "discards_left": 1
+          },
+          {
+            "op": "discard",
+            "hand": [
+              "b"
+            ],
+            "size": 1,
+            "discards_left": 0,
+            "id": "a",
+            "ok": true,
+            "refund": "1"
+          },
+          {
+            "op": "newWave",
+            "hand": [
+              "b"
+            ],
+            "size": 1,
+            "discards_left": 1
+          },
+          {
+            "op": "discard",
+            "hand": [],
+            "size": 0,
+            "discards_left": 0,
+            "id": "b",
+            "ok": true,
+            "refund": "1"
+          }
+        ]
+      },
+      {
+        "label": "drop_does_not_consume",
+        "trace": [
+          {
+            "op": "setHand",
+            "hand": [
+              "a",
+              "b",
+              "c"
+            ],
+            "size": 3,
+            "discards_left": 1
+          },
+          {
+            "op": "drop",
+            "hand": [
+              "b",
+              "c"
+            ],
+            "size": 2,
+            "discards_left": 1,
+            "id": "a",
+            "ok": true
+          },
+          {
+            "op": "drop",
+            "hand": [
+              "c"
+            ],
+            "size": 1,
+            "discards_left": 1,
+            "id": "b",
+            "ok": true
+          },
+          {
+            "op": "discard",
+            "hand": [],
+            "size": 0,
+            "discards_left": 0,
+            "id": "c",
+            "ok": true,
+            "refund": "1"
+          }
+        ]
+      },
+      {
+        "label": "drop_missing",
+        "trace": [
+          {
+            "op": "setHand",
+            "hand": [
+              "a"
+            ],
+            "size": 1,
+            "discards_left": 1
+          },
+          {
+            "op": "drop",
+            "hand": [
+              "a"
+            ],
+            "size": 1,
+            "discards_left": 1,
+            "id": "nope",
+            "ok": false
+          }
+        ]
+      },
+      {
+        "label": "discard_all_then_hand_empty",
+        "trace": [
+          {
+            "op": "setHand",
+            "hand": [
+              "x",
+              "y"
+            ],
+            "size": 2,
+            "discards_left": 1
+          },
+          {
+            "op": "discard",
+            "hand": [
+              "y"
+            ],
+            "size": 1,
+            "discards_left": 0,
+            "id": "x",
+            "ok": true,
+            "refund": "1"
+          },
+          {
+            "op": "discard",
+            "hand": [
+              "y"
+            ],
+            "size": 1,
+            "discards_left": 0,
+            "id": "y",
+            "ok": false,
+            "refund": "0"
+          },
+          {
+            "op": "discard",
+            "hand": [
+              "y"
+            ],
+            "size": 1,
+            "discards_left": 0,
+            "id": "x",
+            "ok": false,
+            "refund": "0"
+          }
+        ]
+      }
+    ]
   }
 }
