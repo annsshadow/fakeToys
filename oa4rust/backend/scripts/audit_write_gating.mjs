@@ -359,12 +359,20 @@ function fnBody(crate, handler) {
   return body;
 }
 const writeRoutes = routes.filter((r) => ["POST", "PUT", "DELETE", "PATCH"].includes(r.method));
+// 尺子缺陷 10（本批修）：R2/R3/R4 的「匿名可达」旧写法只看第一把锁 `isAuthExempt`，
+// 与 F1 之后的 auth 层实际判据不符——现在匿名打得通必须是「豁免 ∧ 注册表 Public」两把锁同开，
+// 只命中豁免表的路由其实**要求有效会话**，应当落进 R5/R6/R7 那一族。
+// 不修的话 R4 会把「需登录但体内无门禁」（可修的行动面）和「中间件已兜住登录」混成一张名单。
+function anonReach(method, p) {
+  return isAuthExempt(method, p) && registryPublic(p);
+}
 const rb = new Map();
 const rAnon = [], rAuthNoSession = [];
+const routeMatrix = []; // 全 7 桶逐条留档，见下方 write_routes_matrix.tsv 的说明
 for (const r of writeRoutes) {
   const body = fnBody(r.crate, r.handler);
   const admin = mwAdmin(r.method, r.path);
-  const exempt = isAuthExempt(r.method, r.path);
+  const exempt = anonReach(r.method, r.path);
   const gate = GATE_RE.test(body);
   const sess = SESSION_RE.test(body);
   let bucket;
@@ -377,6 +385,7 @@ for (const r of writeRoutes) {
   else bucket = "R7-已认证+体内无会话无门禁";
   rb.set(bucket, (rb.get(bucket) || 0) + 1);
   const line = `${r.crate}\t${r.method}\t${r.path}\t${r.handler}`;
+  routeMatrix.push(`${line}\t${bucket}`);
   if (bucket === "R4-匿名可达+体内无门禁") rAnon.push(line);
   if (bucket === "R7-已认证+体内无会话无门禁") rAuthNoSession.push(line);
 }
@@ -392,6 +401,26 @@ fs.writeFileSync(
     ...rAuthNoSession.map((l) => `${l}\tR7`)].join("\n") + "\n",
 );
 console.log(`\nR4(${rAnon.length}) + R7(${rAuthNoSession.length}) 明细已写 write_routes_ungated.tsv`);
+
+// `write_routes_ungated.tsv` 只留 R4/R7 两桶（行动面），所以**桶间迁移无法从产物对账**：
+// 上一批把 GATE_RE 改成前缀匹配、本批把「匿名可达」改成双锁判据时，几百条路由在 R5/R6/R7 之间
+// 搬家，而产物里只看得到 R7 的进出——据此一度误判成「70 条路由从分母里消失」。
+// 全 7 桶逐条留档，迁移才能被机械核对（同一 `(crate, method, path)` 在两版产物里换桶 = 重分类；
+// 整行消失 = 解析回归，必须当场查）。
+fs.writeFileSync(
+  path.join(ARTIFACTS, "write_routes_matrix.tsv"),
+  ["crate\tmethod\tpath\thandler\tbucket", ...routeMatrix.sort()].join("\n") + "\n",
+);
+const r7byCrate = new Map();
+for (const l of rAuthNoSession) {
+  const c = l.split("\t")[0];
+  r7byCrate.set(c, (r7byCrate.get(c) || 0) + 1);
+}
+console.log(
+  `R7 无会话无门禁写面按 crate 集中度（前 10）：` +
+  [...r7byCrate].sort((a, b) => b[1] - a[1]).slice(0, 10).map(([k, v]) => `${k} ${v}`).join("、")
+);
+console.log(`全 7 桶矩阵 ${routeMatrix.length} 行已写 write_routes_matrix.tsv`);
 
 // ── 5. GET 上挂的写（A3-N12 跨切族的活读数）─────────────────────────────────
 // csrf_middleware 与 requires_admin 只认 POST/PUT/PATCH/DELETE，本段的 R4/R7 分母
