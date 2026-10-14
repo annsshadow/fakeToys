@@ -101,7 +101,7 @@
 | R4-1 | 高 | `processplatform_service_processing/src/lib.rs`：`task_complete:3265` / `task_reject:3363` / `task_transfer:3436` / `task_claim:3188` / `work_start:3085` / `work_complete:3135` / `work_id_processing:385` / `work_v2_id_terminate:408` / `work_v2_id_retract:439` / `execute_process:220` / `cancel_process_instance:354` / `gateway_join:3485` / `gateway_fork:3532` | 不取 Session、不校身份：完成/退回**他人**待办并把 `x_record` 的 creator 写成任务负责人（= 冒名伪造审批、推进他人流程）；转办任意任务给任意人；启停/终止/撤销任意 work。这批路由挂在 `/api/work`、`/api/task`、`/api/gateway`，连 `/api/processplatform` 前缀规则都不覆盖 |
 | R4-2 | 高 | 同 crate `src/u2.rs`（47 处写 SQL，除 8 个一轮已修的 `touch/*` 外全部无 Session）：`work_delete:1917`（级联物理删 `x_work`+`x_task`+`x_draft`）/ `work_edit:1888` / `data_work_create|update|delete|delete_path:489-536` / `data_wc_update*:538,552` / `job_delete:782` / `task_delete:1397` / `taskcompleted_delete:1416` / `read_delete:899` / `review_delete:1258` / `record_delete:1137` / `record_edit:1090` / `snap_delete:1277` / `wc_rollback_flag:2209` / `wc_merge_flag:2122` / `wc_shift_time:2179` / `work_v3_retract_body:1985` / `dict_edit:145`、`dict_set_N`/`dict_del_N`(宏 262/270) / `att_delete_id:569`、`att_edit_id:649`、`att_edit_text:681`、`att_copy_to_work:707` / `lib.rs:2223 event_add_update_table` | 按 ID 整体覆写/物理删除**任意他人**流程实例的表单数据 JSON、附件、记录；`event_add_update_table` 可向任意 work 插伪造 `x_record` |
 | R4-3 | 高 | `processplatform_assemble_designer`：`save_flow:289`（POST `/designer/save/{id}`，无 Session，整体重写 `x_process_definition.process_definition` 流程 JSON=审批人/环节全可改）/ `delete_flow:332`（物理删流程定义）/ `u2_script.rs:67 update`（有 Session 但仅用作 creator 记录，UPDATE 只按 `xid=$1`→任意改**任意脚本 xcode**，脚本是引擎执行单元，等价 RCE 面）/ `u2_script.rs:120 delete`（软删任意脚本）/ 经 `shared::crud`（`crates/shared/src/crud.rs:76,115`，无属主概念）的 `form_save:5010`/`form_delete:5026`/`xform_save:5136`/`xform_delete:5152`/`dict_save:4894`/`dict_delete:4910` / `item_access_delete_process_processId_path_path:1565` / `item_access_bach_save:4032` | 设计态篡改→提权链：改流程定义/改脚本代码/改表单与字段权限配置 |
-| R4-7（**本轮修尺子后新露出**） | `processplatform_assemble_surface/src/lib.rs:697 application_list_complex_manage_person`，注册为 `GET /api/processplatform/assemble/surface/application/list/complex/manage/{person}`（`routes.rs`，链式同路由的第二个方法） | **真匿名可达的 GET 写**：路径落在 `AUTH_EXEMPT_PREFIXES`（`shared/src/middleware/constants.rs:434-435`），handler 不取 Session，函数体第一条 SQL 即 `UPDATE PP_E_APPLICATION SET "xupdateTime" = NOW() WHERE xid = $1`，随后回读该行 createTime/updateTime 返回。匿名按 ID 改任意应用元数据时间戳（审计字段伪造）+ 任意应用存在性与时间信息泄漏。此前对两把中间件与路由级尺子同时隐形（GET + 链式），修法见 §三.4 后「第四批收口自查」 |
+| R4-7（**本轮修尺子后新露出**） | `processplatform_assemble_surface/src/lib.rs:697 application_list_complex_manage_person`，注册为 `GET /api/processplatform/assemble/surface/application/list/complex/manage/{person}`（`routes.rs`，链式同路由的第二个方法） | **真匿名可达的 GET 写**：路径落在 `AUTH_EXEMPT_PREFIXES`（`shared/src/middleware/constants.rs:434-435`），handler 不取 Session，函数体第一条 SQL 即 `UPDATE PP_E_APPLICATION SET "xupdateTime" = NOW() WHERE xid = $1`，随后回读该行 createTime/updateTime 返回。匿名按 ID 改任意应用元数据时间戳（审计字段伪造）+ 任意应用存在性与时间信息泄漏。此前对两把中间件与路由级尺子同时隐形（GET + 链式）。**本批已修**：收会话 + admin，改法与读数见 §三.5 / §四第五批 |
 | R4-4 | 中-高 | `processplatform_assemble_surface`：约 20 个 `*_mockdeletetoget`（routes.rs:419/430/470/505/529/542/558/566/569/574/622/657…）+ `correlation_job_job_delete:2778` + `mode_id_delete:8694` | 无 Session、按 xid **物理 DELETE** `PP_C_WORK`/`PP_C_TASK`/`PP_C_WORKCOMPLETED`/`PP_C_DRAFT`/`PP_C_JOB`/`PP_C_DOC_SIGN`/`PP_C_READ` 等；其中 8 个 `data_work_id_path*_mockdeletetoget`(4252 起) 本应只删数据键却整行删 `PP_C_WORK`，8 个 `applicationdict_*_mockdeletetoget`(1237 起) 物理删设计字典 |
 | R4-5 | 中 | 同 crate `create_surface:81`（creator 硬编码 `"system"`，未会话化）/ `publish_surface:295` / `delete_surface:366` / `save_surface:430` | 任意改删 `x_process_surface` 应用门户配置 |
 | R4-6 | 中 | `processplatform_core_express/src/lib.rs:16 work_terminate` | 注册为 **GET** `/api/processplatform/work/terminate/{id}`：无 Session 终止任意 work；GET 状态变更同时绕过 CSRF 中间件（只覆盖 POST/PUT/PATCH/DELETE），SameSite=Lax 下仍有顶层导航触发面 |
@@ -279,6 +279,13 @@ A4 开放问题：① F1 是否 o2server 侧本就以 job/document 创建者为�
 | **allow 侧真取证** | `security_gate_tests.rs` 的 `seed_admin` / `unseed_admin` | admin 档不能只断「非 admin 403」——那是半边证明。`dict_edit_allowed_for_admin_and_lands` 往 `auth_role`(`name='admin'`) / `auth_person` / `auth_person_role` 插**真实** admin 行，跑通放行并验证数据落库，收尾清理。 |
 | **已知行为副作用（沿用 §三.3 那条，未放宽）** | 同上 | 引擎自建行（Start Event 任务 `person="system"`、空 creator 的历史/孤儿 work）在严格口径下变成 admin-only。 remedy 方向已记：补「引擎内部推进」专用路径，而不是放宽归属门。`work_processing_signal` 与 `work_start_impl` 同承此风险 |
 
+### 三.5 第五批（R4-7 + 尺子缺陷 3，代码）
+
+| 项 | 文件 | 内容 |
+| --- | --- | --- |
+| **R4-7** | `crates/processplatform_assemble_surface/src/lib.rs`（新增 crate-local `require_admin_opt` + handler 加 `Option<Extension<Session>>`）、`routes.rs`（别名路由闭包透传会话）、`security_gate_tests.rs`（**新建并在 lib.rs 注册 `mod`**，两支离线臂） | 见 §二.1 R4-7。按应用管理面收 admin：无会话 401（先于 `pool.get()`，可离线证）、非 admin 403（`is_admin` 无库 fail-closed）。**已知行为差**：桌面 `ProcessWork.vue:2345` 的运维控制台按钮（弹窗手输人员）非 admin 会改判 401/403；该调用不是终端用户流程，按 §三.4 admin 档处理，若产品要求「本人 touch 自己的应用」再按 self-service 档改 |
+| **尺子缺陷 3（门禁词表不全）** | `scripts/audit_write_gating.mjs` | `GATE_RE` 旧写法 `\b(require_admin|…)\b` 匹配不到 `require_admin_opt(`：`require_admin` 之后紧跟 `_` 仍是词字符，尾部 `\b` 落空。后果是**加了门的 handler 仍被计成无门禁**——本批 surface 那格修完还留在 K1，靠这条读数才发现词表问题。改为按完整标识符匹配，补 `require_admin_opt / require_owner_opt / require_actor / u4_require_actor(_of) / u4_session / require_owner / validate_session / extract_token_from_headers` 等 |
+
 ## 四、验证
 
 
@@ -426,6 +433,24 @@ cd oa4rust/backend && cargo test --lib -p <crate>
   + 任意应用的存在性与时间信息泄漏。修法按 §三.4 口径：`Option<Extension<Session>>` 无会话 401，
   再收 crate-local `require_admin_opt`（设计态/运维面 touch，比照字典 / job / 快照收 admin）。
 
+第五批（§三.5）读数：
+
+- `cargo test --lib -p processplatform_assemble_surface`：**604 passed / 0 failed / 0 ignored**。
+  两支新臂按名复核各 1 passed（`r47_manage_touch_rejects_without_session` 0.03s、
+  `r47_manage_touch_forbidden_for_non_admin` 0.07s，均为离线断言）。
+  `cargo test --lib -p parity processplatform_assemble_surface`：**945 passed / 0 failed**。
+- **尺子复跑（缺陷 3 修正后）**：函数级矩阵仍 991 行 / 残余 11 行；路由级 R1 102 / R2 6 / R3 3 /
+  **R4 14** / R5 369 / R6 258 / **R7 1171**；GET 写无门禁 **165** = K1 匿名 **1** + K2 读会话 16 + K3 无会话 148。
+  与上一条（第四批）对比：R4 16 → 14（`auth bind_confirm`、`auth refresh` 原被误计，
+  它们走 `extract_token_from_headers` + `validate_session` 的手工会话路）、
+  R5 317 → 369 / R6 308 → 258（processing 本批已加门的 handler 从 R6 正确落到 R5）、
+  GET 写 173 → 165。**K1 现只剩 1 条**：`program_init GET /api/secret/set/cancel set_cancel`——
+  这是 §三.3 为不打断首次引导而**有意保留匿名**的那格，属待定性而非待修残留。
+- 取证纪律的第三次自证：**「尺子读数出列」不等于「代码修好了」**。本批 surface 那格代码已修、
+  测试已绿，读数却仍挂着 K1——不是修复无效，而是尺子的门禁词表认不出新加的 `require_admin_opt`。
+  反向同理：词表补全后 R4/R7 会同时把「真漏洞」与「只是没被认出」两类混在一起变化，
+  所以每次改词表都要按上面的桶间迁移逐条对账，不能只看总数下降。
+
 本轮两处自伤（记下来防止再犯）：
 
 - **管道假绿**：`cargo test ... | tail -40` 的退出码是 `tail` 的，两处「exit 0」实际是编译红
@@ -442,8 +467,11 @@ cd oa4rust/backend && cargo test --lib -p <crate>
 
 ## 五、处置与遗留（下一轮入口）
 
-- 已修并验证：N1、N4-01、N2、preview 加固、F3、F6、F9（离线 403/会话权威断言）、F2（编译与既有测试绿，真门 `#[ignore]` 待 PG）、**A2-F12、A3-N1、A3-N2、A3-N3**（第二批读数见 §四）、**A3-N6（program_init 7 把写收 admin + 匿名 init 判定改 fail-closed）、R4-6、R4-1 全 13 把**（第三批：§三.3 改法、§四 读数，其中 processing/core_express/program_init 的 DB 臂已按 `--ignored --nocapture` 真跑取证）。
-- 待修（有明确落点与修法，按 §二.1 与 §二.6 顺序收口；processplatform 族因 `ADMIN_WRITE_DEPRECATED_PREFIXES` 已撤销中间件兜底，handler 层是唯一门禁，优先级最高；F5 与 §二.1 的 R4-3/R4-5 同为「ownerless 系统数据写 = admin」一族，可一把收）：**R4-2（剩 18 把 / 47，批 1+2a 已收 29，明细见 §三.4 与 §四第四批）/ R4-3 / R4-4 / R4-5 / R4-7**、F1 / F4 / F5 / F7 / F8 / F10、N4-02、N4-03。
+- 已修并验证：N1、N4-01、N2、preview 加固、F3、F6、F9（离线 403/会话权威断言）、F2（编译与既有测试绿，真门 `#[ignore]` 待 PG）、**A2-F12、A3-N1、A3-N2、A3-N3**（第二批读数见 §四）、**A3-N6（program_init 7 把写收 admin + 匿名 init 判定改 fail-closed）、R4-6、R4-1 全 13 把**（第三批：§三.3 改法、§四 读数，其中 processing/core_express/program_init 的 DB 臂已按 `--ignored --nocapture` 真跑取证）、**R4-2 批 1 + 批 2a 共 29 把**（第四批：§三.4 / §四第四批）、**R4-7**（第五批：§三.5 / §四第五批，含尺子两处计量缺陷 + 门禁词表缺陷的自修）。
+- 待修（有明确落点与修法，按 §二.1 与 §二.6 顺序收口；processplatform 族因 `ADMIN_WRITE_DEPRECATED_PREFIXES` 已撤销中间件兜底，handler 层是唯一门禁，优先级最高；F5 与 §二.1 的 R4-3/R4-5 同为「ownerless 系统数据写 = admin」一族，可一把收）：**R4-2（批 1+2a 已收 29 把；本 crate 路由级现余 83 条 / 41 个 handler 名，含
+  `dict_set_1..8` / `dict_del_1..8` 宏族 16 条、`data_*` 内容族、`attachment_copy_*` 与
+  `attachment_edit_id_text` 等别名/mock 族——逐条明细读 `write_routes_ungated.tsv`，
+  **不要**再引用「47 处」这个函数级旧数）/ R4-3 / R4-4 / R4-5**、F1 / F4 / F5 / F7 / F8 / F10、N4-02、N4-03。
 - **修尺子后新开的两格**：①**GET 写族有了活读数**——`write_routes_get_writes.tsv` 首次量出
   **173 条**「非写方法路由 + 体内写 SQL + 体内无门禁」（K1 匿名 2 / K2 读会话 22 / K3 无会话 149），
   集中度前三 `processplatform_assemble_surface` 60、`processplatform_service_processing` 24、
@@ -451,6 +479,13 @@ cd oa4rust/backend && cargo test --lib -p <crate>
   ②**尺子缺陷 3：门禁信号词表不全**——`extract_token_from_headers` + `validate_session` 这一路
   手工会话校验不被 `SESSION_RE`/`GATE_RE` 识别，`auth bind_confirm` 被误计成匿名无门禁；
   补词表前先别把 R4 名单当漏洞名单用。
+- **第五批收口后的刷新（覆盖上一条的两个数字）**：①已修——R4-7 那格（surface 匿名 GET 写）收
+  会话 + admin，两支离线臂 + parity 945 绿（§三.5 / §四第五批）；②已修——`GATE_RE` 改按完整标识符
+  匹配。**GET 写活读数现为 165 条**（K1 匿名仅剩 `program_init GET /api/secret/set/cancel` 一格，
+  属 §三.3 有意保留匿名的引导族、待产品定性；K2 读会话 16 / K3 无会话 148），路由级现读
+  R4 14 / R7 1171。**下一格按 K3 的 148 条按 crate 递减收**，首选
+  `processplatform_assemble_surface`——它与 R4-4 的 `*_mockdeletetoget` 物理删族高度重叠，
+  一把收完可同时出两格。
 - **第二批新增待修（按危害排序，均有 file:line 证据，明细见 §二.3 / §二.4 / §二.7）**：
   1. ~~`program_init` 写族~~（A3-N6 + §二.7 的匿名 B 格）——**本批已收 7 把写 + init 判定 fail-closed**（§三.3）。
      `/api/secret/set` / `/api/secret/set/cancel` 按首次引导流程**保留匿名**（收 admin 会打断初始化），
@@ -475,5 +510,14 @@ cd oa4rust/backend && cargo test --lib -p <crate>
     其模块路径必须在同 crate 的 `lib.rs` 有对应 `mod` 声明。
 - 产品口径待拍：`meeting_id_accept` 的会议级状态翻转谁能做（被邀请人 / 属主 / admin）——本批只加了有效会话要求，未加归属判定。
 - 建议统一修法（沿用本仓既有先例，避免新抽象）：引擎运行面按一轮 V2/V4 口径至少加 `require_session_opt`；改变归属/状态/删他人行的走 `shared::middleware::require_owner`（admin 旁路、行不存在放行以保 not-found 语义）；设计态（script/flow/form/xform/dict/item-access/portal）比照同 crate `guard_write` 或二轮 S5 先例加 admin/属主门；GET 状态变更改 POST。每 crate 补 `security_gate_tests`（无 DB 的 401/403 各一）。
-- 提交落点：`a14b84348`（返工三处「已修未编译」+ docx/zip 上限 + 接线尺）、`be07ecac8`（本文档）、`e4d6af0f6`（F2/F3/F6/F9 越权门）、`4931b351f`（第二批 A2-F12 / A3-N1 / N2 / N3）、`055dbb6d5`（尺子复刻注册表 Public 早退、G/H 两桶）、`95af154ad`（第二批账本）、`52ad4944e`（A3-N6 program_init 写族 + init 判定 fail-closed）、`494a93e40`（R4-6 work_terminate）、`c32bcbb64`（R4-1 首批 7 把）、`47d01df8d`（R4-1 次批 7 把 + 旧断言返工）、`c452d634c`（三批收口账本 + 尺子读数口径）、`2728b2c07`（R4-2 批 1：u2 实体写 16 把）、`36f613a98`（R4-2 批 2a：阅读回执 / 附件复制 / 建单与版本族 13 把）。第四批账本 + 尺子两处缺陷修复（链式方法枚举、GET 写枚举）+ 三张产物 TSV 同批提交。分支 `oa4rust-vuln-audit-r4`，本轮未 push。
+- 提交落点：`a14b84348`（返工三处「已修未编译」+ docx/zip 上限 + 接线尺）、`be07ecac8`（本文档）、`e4d6af0f6`（F2/F3/F6/F9 越权门）、`4931b351f`（第二批 A2-F12 / A3-N1 / N2 / N3）、`055dbb6d5`（尺子复刻注册表 Public 早退、G/H 两桶）、`95af154ad`（第二批账本）、`52ad4944e`（A3-N6 program_init 写族 + init 判定 fail-closed）、`494a93e40`（R4-6 work_terminate）、`c32bcbb64`（R4-1 首批 7 把）、`47d01df8d`（R4-1 次批 7 把 + 旧断言返工）、`c452d634c`（三批收口账本 + 尺子读数口径）、`2728b2c07`（R4-2 批 1：u2 实体写 16 把）、`36f613a98`（R4-2 批 2a：阅读回执 / 附件复制 / 建单与版本族 13 把）。第四批账本 + 尺子两处计量缺陷修复（链式方法枚举 `5dd1957bc`、GET 写枚举同批）+ 三张产物 TSV 同批提交；`f5d758d75`（R4-7 匿名 GET 写收口 + 尺子门禁词表缺陷 3 + 产物刷新）。
+- **一处读数矛盾已当场定性（并暴露尺子缺陷 4）**：`service_work_id_touch` /
+  `service_work_id_touch_p2` 在 R7 名单里，而一轮记录写「touch 维护作业 handler 要求登录会话」。
+  回源码复核（`lib.rs:2598 / 2606 / 2574`）：路由挂的是**薄封装**，本体只有一行
+  `service_work_id_touch_core(pool, id).await`，而 core 既不取 `Session` 也无门禁，函数体直接
+  `SELECT … FROM x_work` + `INSERT`。所以 **R7 这条是真阳性**（一轮那句说的是另外 8 把 touch），
+  同时暴露尺子的第 4 个口径局限：**`fnBody` 只看路由层 handler 的前 200 行 / 到首个 `\n}` 为止，
+  不跟进「薄封装 → core」的委托**——委托型门禁会一律被判成无门禁（假红方向，偏保守可用），
+  而反方向（core 有门、wrapper 无门）也确实是真实缺陷，因为门根本不会被执行。引用某条 R7 前，
+  凡是 body 只有一行 `.await` 转发的 handler，都要人工看一眼 core。分支 `oa4rust-vuln-audit-r4`，本轮未 push。
 
