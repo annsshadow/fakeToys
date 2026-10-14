@@ -101,6 +101,7 @@
 | R4-1 | 高 | `processplatform_service_processing/src/lib.rs`：`task_complete:3265` / `task_reject:3363` / `task_transfer:3436` / `task_claim:3188` / `work_start:3085` / `work_complete:3135` / `work_id_processing:385` / `work_v2_id_terminate:408` / `work_v2_id_retract:439` / `execute_process:220` / `cancel_process_instance:354` / `gateway_join:3485` / `gateway_fork:3532` | 不取 Session、不校身份：完成/退回**他人**待办并把 `x_record` 的 creator 写成任务负责人（= 冒名伪造审批、推进他人流程）；转办任意任务给任意人；启停/终止/撤销任意 work。这批路由挂在 `/api/work`、`/api/task`、`/api/gateway`，连 `/api/processplatform` 前缀规则都不覆盖 |
 | R4-2 | 高 | 同 crate `src/u2.rs`（47 处写 SQL，除 8 个一轮已修的 `touch/*` 外全部无 Session）：`work_delete:1917`（级联物理删 `x_work`+`x_task`+`x_draft`）/ `work_edit:1888` / `data_work_create|update|delete|delete_path:489-536` / `data_wc_update*:538,552` / `job_delete:782` / `task_delete:1397` / `taskcompleted_delete:1416` / `read_delete:899` / `review_delete:1258` / `record_delete:1137` / `record_edit:1090` / `snap_delete:1277` / `wc_rollback_flag:2209` / `wc_merge_flag:2122` / `wc_shift_time:2179` / `work_v3_retract_body:1985` / `dict_edit:145`、`dict_set_N`/`dict_del_N`(宏 262/270) / `att_delete_id:569`、`att_edit_id:649`、`att_edit_text:681`、`att_copy_to_work:707` / `lib.rs:2223 event_add_update_table` | 按 ID 整体覆写/物理删除**任意他人**流程实例的表单数据 JSON、附件、记录；`event_add_update_table` 可向任意 work 插伪造 `x_record` |
 | R4-3 | 高 | `processplatform_assemble_designer`：`save_flow:289`（POST `/designer/save/{id}`，无 Session，整体重写 `x_process_definition.process_definition` 流程 JSON=审批人/环节全可改）/ `delete_flow:332`（物理删流程定义）/ `u2_script.rs:67 update`（有 Session 但仅用作 creator 记录，UPDATE 只按 `xid=$1`→任意改**任意脚本 xcode**，脚本是引擎执行单元，等价 RCE 面）/ `u2_script.rs:120 delete`（软删任意脚本）/ 经 `shared::crud`（`crates/shared/src/crud.rs:76,115`，无属主概念）的 `form_save:5010`/`form_delete:5026`/`xform_save:5136`/`xform_delete:5152`/`dict_save:4894`/`dict_delete:4910` / `item_access_delete_process_processId_path_path:1565` / `item_access_bach_save:4032` | 设计态篡改→提权链：改流程定义/改脚本代码/改表单与字段权限配置 |
+| R4-7（**本轮修尺子后新露出**） | `processplatform_assemble_surface/src/lib.rs:697 application_list_complex_manage_person`，注册为 `GET /api/processplatform/assemble/surface/application/list/complex/manage/{person}`（`routes.rs`，链式同路由的第二个方法） | **真匿名可达的 GET 写**：路径落在 `AUTH_EXEMPT_PREFIXES`（`shared/src/middleware/constants.rs:434-435`），handler 不取 Session，函数体第一条 SQL 即 `UPDATE PP_E_APPLICATION SET "xupdateTime" = NOW() WHERE xid = $1`，随后回读该行 createTime/updateTime 返回。匿名按 ID 改任意应用元数据时间戳（审计字段伪造）+ 任意应用存在性与时间信息泄漏。此前对两把中间件与路由级尺子同时隐形（GET + 链式），修法见 §三.4 后「第四批收口自查」 |
 | R4-4 | 中-高 | `processplatform_assemble_surface`：约 20 个 `*_mockdeletetoget`（routes.rs:419/430/470/505/529/542/558/566/569/574/622/657…）+ `correlation_job_job_delete:2778` + `mode_id_delete:8694` | 无 Session、按 xid **物理 DELETE** `PP_C_WORK`/`PP_C_TASK`/`PP_C_WORKCOMPLETED`/`PP_C_DRAFT`/`PP_C_JOB`/`PP_C_DOC_SIGN`/`PP_C_READ` 等；其中 8 个 `data_work_id_path*_mockdeletetoget`(4252 起) 本应只删数据键却整行删 `PP_C_WORK`，8 个 `applicationdict_*_mockdeletetoget`(1237 起) 物理删设计字典 |
 | R4-5 | 中 | 同 crate `create_surface:81`（creator 硬编码 `"system"`，未会话化）/ `publish_surface:295` / `delete_surface:366` / `save_surface:430` | 任意改删 `x_process_surface` 应用门户配置 |
 | R4-6 | 中 | `processplatform_core_express/src/lib.rs:16 work_terminate` | 注册为 **GET** `/api/processplatform/work/terminate/{id}`：无 Session 终止任意 work；GET 状态变更同时绕过 CSRF 中间件（只覆盖 POST/PUT/PATCH/DELETE），SameSite=Lax 下仍有顶层导航触发面 |
@@ -268,7 +269,18 @@ A4 开放问题：① F1 是否 o2server 侧本就以 job/document 创建者为�
 | **R4-1 的行为副作用（需观察）** | 同上 | 引擎 `work_start` 创建的 Start Event 任务 `person` 写成 `"system"`，收紧后该类任务只有 admin（或字面为 `system` 的会话）能代办。已在 `u4_require_actor` 文件头点名。若后续发现真实流程依赖普通用户代办 Start Event，应按「引擎内部推进」补专用路径，而不是放宽归属门 |
 
 
+### 三.4 第四批（R4-2 前两 tranche：`u2` 实体写 16 + 13 把，代码）
+
+| 项 | 文件 | 内容 |
+| --- | --- | --- |
+| **R4-2 批 1（16 把）** | `crates/processplatform_service_processing/src/u2.rs` + `security_gate_tests.rs` + `tests.rs` | `work_edit` / `work_delete`（事务内 `SELECT creator … FOR UPDATE`，含级联物理删 x_task / x_draft）/ `work_draft_delete` / `work_v3_retract_body` / `task_delete` / `taskcompleted_delete` / `readcompleted_delete` / `record_edit` / `record_delete` / `review_delete` / `att_delete_id` / `att_edit_id` / `att_edit_text` 走归属档；`dict_edit` / `job_delete` / `snap_delete` 属引擎运维面、行上无属主（`x_snap` 连 creator 列都没有），收 admin 档。新增三把局部工具：`u4_actor_sql`（按实体取归属列）、`u4_actor_of`（读归属）、`u4_require_actor_of`。**严格口径**：归属非空 → `require_owner`（admin 旁路）；归属**为空或缺失 → 只允许 admin**，不用「空归属 = 人人可写」把数据缺陷洗成权限放行。`work_v3_retract_body` 的 `x_record.creator` 由 `"system"` 改会话权威 |
+| **R4-2 批 2a（13 把）** | 同上 | `att_delete_with_work` / `att_delete_with_workcompleted`：在**原有 IDOR 等值校验之后**再校 `x_attachment.creator`，两道门都在。<br>`att_copy_to_work`：复制是往目标写，校**目标 work 发起人**，并把 `entity_exists` 换成读 creator 的归属查询（不存在仍报 `work not found`）。<br>`read_delete` / `read_processing` / `read_replace` / `read_reset`：按 `x_read.person` 严格校。<br>`documentversion_create` / `work_add_identity_matrix` / `work_processing_signal`：事务内锁 work（或 `x_task` 的 `person`）后校归属，留痕 creator 取会话权威。<br>建单三只 `work_create` / `work_create_for_process` / `work_create_with_serial`：`work_start_impl` 现收 `person` 参数，creator 不再取请求体——冒名建单（body 写受害者身份）失效 |
+| **旧断言返工（批 1 + 2a 共 8 支）** | `crates/processplatform_service_processing/src/tests.rs` | 共享 `send()` 助手前置断言「HTTP 必 200」（ActionResult 契约：业务错也 200），而新门返回真 401/403，故 8 支用例点名变红。逐条按修复后口径改写、不删不 ignore：新增 `send_raw_as(method, uri, body, person)` 注入指定身份会话且不前置断言；`u2_work_v3_retract_…` 另断 `record.creator == 发起人本人`；`u2_dict_path_…` 的改名步改断 403（放行侧由 `dict_edit_allowed_for_admin_and_lands` 真跑取证的 admin 臂覆盖）；`u2_attachment_copy_dedups_by_name` 补闯入者 403 + 目标 work 零写入；`u2_documentversion_…` 两支断 body 的 `creator` 被忽略、入库仍为会话身份；`u2_work_create_via_process_path_…` 断 `x_work.creator='u42-booter'`（而非 body 里的 `u42-victim`） |
+| **allow 侧真取证** | `security_gate_tests.rs` 的 `seed_admin` / `unseed_admin` | admin 档不能只断「非 admin 403」——那是半边证明。`dict_edit_allowed_for_admin_and_lands` 往 `auth_role`(`name='admin'`) / `auth_person` / `auth_person_role` 插**真实** admin 行，跑通放行并验证数据落库，收尾清理。 |
+| **已知行为副作用（沿用 §三.3 那条，未放宽）** | 同上 | 引擎自建行（Start Event 任务 `person="system"`、空 creator 的历史/孤儿 work）在严格口径下变成 admin-only。 remedy 方向已记：补「引擎内部推进」专用路径，而不是放宽归属门。`work_processing_signal` 与 `work_start_impl` 同承此风险 |
+
 ## 四、验证
+
 
 本机 host 是 `x86_64-pc-windows-gnu` 且 rustup 不自带 mingw；`oa4rust/vendor/mingw-{bin,gcc}` 是 gitignore 的仅本机产物（见 `oa4rust/vendor/README.md`），worktree 里没有。把主工作区的 vendor 工具链加进 PATH 后即可原生编译：
 
@@ -339,6 +351,81 @@ cd oa4rust/backend && cargo test --lib -p <crate>
   **口径提醒**：同一把 `create_meeting` 在函数级仍计 B、在路由级已出列——两把尺子的门禁信号源不同，
   引用读数时必须写明是哪一级。
 
+第四批（§三.4，R4-2 批 1 + 批 2a）读数——同口径，DB 臂一律 `--ignored --nocapture` 真跑：
+
+- `cargo test --lib -p processplatform_service_processing`：**63 passed / 0 failed / 10 ignored**。
+  ignored 名单逐只点名可对账（`-- --ignored --list`）：9 只 `security_gate_tests` DB 臂
+  （`work_start_requires_work_creator`、`task_reject_requires_task_assignee_and_pins_real_actor`、
+  `work_retract_requires_work_creator`、`work_delete_requires_work_creator`、
+  `task_delete_requires_task_person`、`record_delete_requires_record_creator`、
+  `work_edit_with_empty_creator_requires_admin`、`dict_edit_allowed_for_admin_and_lands`、
+  `att_copy_requires_target_work_creator`）+ 1 只既有
+  `tests_generated::tests::test_gateway_join`。即 4（三批收口时）→ 9 → 10，增行全部来自本批新增，
+  没有来路不明的空过臂。
+- 五支离线拒绝臂按名各跑一次 ok：`u2_entity_writes_reject_without_session`（批 1 的 16 把 401）、
+  `u2_admin_writes_forbidden_for_non_admin`（字典 / job / 快照 403）、
+  `u2_read_copy_and_create_writes_reject_without_session`（批 2a 的 13 把 401）、
+  以及三批既有的 `engine_runtime_writes_reject_without_session` /
+  `instance_progression_writes_reject_without_session`。
+- `-- --ignored --nocapture security_gate_tests`：**9 passed / 0 failed，0.09s，输出中无 `skip:` 行**
+  ——按上一条纪律这 9 只记为实测。关键行为差：闯入者 403 且 `x_work` 行仍在、`deleted_at` 仍 NULL、
+  目标 work 未收到复制的附件；属主 / 真 admin 放行且写落库；空 creator 的 work 非 admin 一律 403。
+- 6 支既有 DB 用例按新口径改写后按名复核各 1 passed：`u2_work_v3_retract_cancels_active_tasks_transactionally`、
+  `u2_dict_path_set_then_delete_roundtrip`、`u2_attachment_copy_dedups_by_name`、
+  `u2_attachment_delete_with_wrong_work_is_idor_rejected`、`u2_read_processing_moves_row_into_completed_exactly_once`、
+  `u2_documentversion_…`（两支）、`u2_work_create_via_process_path_bootstraps_instance`。
+- `cargo test --lib -p parity processplatform_service_processing`：**184 passed / 0 failed**（加门未破路由存在性对账）。
+- **尺子复跑（第四批收口后）**：函数级矩阵仍 991 行、残余待取证仍 11 行（本批 29 把原在
+  「已认证+无门禁」桶，不在 B/G/H 残余内）；路由级 **R4 仍 11 条**（同上，u2 这批不是匿名格）、
+  **R7 由 1095 → 1071，出列 24 行**，且 24 行逐行均属 `processplatform_service_processing`
+  （`git diff` 明细核对）。这 24 = 批 1 的 12 条 + 批 2a 的 12 条写路由。
+  **口径差新证据**：批 2a 的 `work_processing_signal` 注册在 **GET**
+  `/…/work/{id}/series/{series}/activitytoken/{activityToken}/processing/signal` 上，路由级尺子只扫
+  POST/PUT/PATCH/DELETE，所以它永远不会出现在 R7 名单里——这正是 §五「GET 写禁令」守卫要补的盲区。
+  同样地，`work_edit`（PUT）/ `work_delete`（DELETE）/ `att_edit_id`（PUT）三把不在出列名单里——
+  原因见下一条「尺子缺陷 1」：它们与 `work_get` 链式挂在同一条 `.route()` 上，旧解析器只取首方法，
+  这三把**从未进过路由级分母**（既不是 R6 也不是 R7）。**R4(11) + R7(1071)** 明细已重写
+  `docs/audits/artifacts/write_routes_ungated.tsv`。
+
+第四批收口时自查出**尺子本身的两个计量缺陷**（比单点漏洞更要紧：它让账面进度好看）：
+
+- **缺陷 1：链式方法只取首个**。`ROUTE_RE` 抓到 `.route("p", …)` 的体内，只用 `HANDLER_RE` 取
+  第一个方法-handler 对，于是 `.route("…/work/{id}", get(work_get).put(work_edit).delete(work_delete))`
+  只计 GET 一条，**两把写路由从未进过任何分母**；`attachment/{id}` 的 `.put(att_edit_id)`、
+  `record/{id}` 的 `.delete(record_delete)`、`applicationdict/{id}/{p0}/data` 的
+  `.put/.post/.delete` 宏族 24 条同被吞掉。解析器级取证：只改这一处，
+  `processplatform_service_processing/routes.rs` 的路由条目 **184 → 207**。
+- **缺陷 2：路由级只扫 POST/PUT/PATCH/DELETE**。这与 `csrf_middleware` / `requires_admin`
+  的覆盖面一致，也就与它们的**盲区**一致——GET 上挂的状态写（A3-N12 / `mockdeletetoget` 族）
+  对尺子和对两把中间件同时隐形。新增第 5 段单独枚举「非写方法路由 + handler 体内含写 SQL + 体内无门禁」。
+- **修好之后的活读数（口径断裂，与上文任何数字都不可直接比）**：写路由 1689 → **1923**，
+  全路由 3844 → **4202**；R1 102 / R2 4 / R3 3 / **R4 16** / R5 317 / R6 308 / **R7 1173**。
+  R4 新露出的 5 条也全部是链式吞掉的：`auth POST /api/authentication/bind/meta/{meta}`、
+  `auth POST /api/authentication/captcha/width/{width}/height/{height}`、
+  `personal POST|PUT /api/reset/check/credential/{credential}`（check_password / reset_password）、
+  `personal POST /api/reset/password/anonymous register`。
+  **但这 5 条不等于 5 个漏洞**，逐条取证：`bind_confirm` 其实是 gated 的——它不走 axum 的
+  `Extension<Session>` 而是手工 `extract_token_from_headers` + `session_manager.validate_session`
+  （`auth/src/bind.rs:134-146`），尺子的 `SESSION_RE` / `GATE_RE` 词表没有这一路，于是把它误计成
+  「匿名可达且体内无门禁」；这是**缺陷 3：门禁信号词表不全**（与 §二.7 的注册表早退同性质，
+  都是尺子口径问题而非代码问题）。其余 4 条落在登录 / 验证码 / 匿名改密这一族**设计上就必须匿名**
+  的引导入口，需逐格定性，不能一把收成 admin。
+  函数级矩阵仍 991 行 / 残余 11 行（那一层本就逐函数扫描，不受链式影响）。
+- **GET 写新面（首次可见）**：体内无门禁 **173 条** = K1 匿名可达 2 + K2 读会话 22 + K3 已认证无会话 149；
+  按 crate 集中度高的是 `processplatform_assemble_surface` 60、`processplatform_service_processing` 24、
+  `program_center` 23、`cms_assemble_control` 15。明细写
+  `docs/audits/artifacts/write_routes_get_writes.tsv`（新增产物）。
+- **由缺陷 1/2 直接长出的一格真漏洞（记 §二.1 R4-7）**：
+  `processplatform_assemble_surface` 的
+  `GET /api/processplatform/assemble/surface/application/list/complex/manage/{person}`
+  （`lib.rs:697 application_list_complex_manage_person`）**不取会话**，且落在
+  `AUTH_EXEMPT_PREFIXES`（`shared/src/middleware/constants.rs:434-435` 的
+  `/api/processplatform/assemble/surface/application/list`）里——**真匿名可达**，
+  函数体第一条 SQL 就是 `UPDATE PP_E_APPLICATION SET "xupdateTime" = NOW() WHERE xid = $1`，
+  随后回读并返回该行的 createTime/updateTime。即匿名按 ID 改任意应用元数据时间戳（审计字段伪造）
+  + 任意应用的存在性与时间信息泄漏。修法按 §三.4 口径：`Option<Extension<Session>>` 无会话 401，
+  再收 crate-local `require_admin_opt`（设计态/运维面 touch，比照字典 / job / 快照收 admin）。
+
 本轮两处自伤（记下来防止再犯）：
 
 - **管道假绿**：`cargo test ... | tail -40` 的退出码是 `tail` 的，两处「exit 0」实际是编译红
@@ -356,7 +443,14 @@ cd oa4rust/backend && cargo test --lib -p <crate>
 ## 五、处置与遗留（下一轮入口）
 
 - 已修并验证：N1、N4-01、N2、preview 加固、F3、F6、F9（离线 403/会话权威断言）、F2（编译与既有测试绿，真门 `#[ignore]` 待 PG）、**A2-F12、A3-N1、A3-N2、A3-N3**（第二批读数见 §四）、**A3-N6（program_init 7 把写收 admin + 匿名 init 判定改 fail-closed）、R4-6、R4-1 全 13 把**（第三批：§三.3 改法、§四 读数，其中 processing/core_express/program_init 的 DB 臂已按 `--ignored --nocapture` 真跑取证）。
-- 待修（有明确落点与修法，按 §二.1 与 §二.6 顺序收口；processplatform 族因 `ADMIN_WRITE_DEPRECATED_PREFIXES` 已撤销中间件兜底，handler 层是唯一门禁，优先级最高；F5 与 §二.1 的 R4-3/R4-5 同为「ownerless 系统数据写 = admin」一族，可一把收）：**R4-2 / R4-3 / R4-4 / R4-5**、F1 / F4 / F5 / F7 / F8 / F10、N4-02、N4-03。
+- 待修（有明确落点与修法，按 §二.1 与 §二.6 顺序收口；processplatform 族因 `ADMIN_WRITE_DEPRECATED_PREFIXES` 已撤销中间件兜底，handler 层是唯一门禁，优先级最高；F5 与 §二.1 的 R4-3/R4-5 同为「ownerless 系统数据写 = admin」一族，可一把收）：**R4-2（剩 18 把 / 47，批 1+2a 已收 29，明细见 §三.4 与 §四第四批）/ R4-3 / R4-4 / R4-5 / R4-7**、F1 / F4 / F5 / F7 / F8 / F10、N4-02、N4-03。
+- **修尺子后新开的两格**：①**GET 写族有了活读数**——`write_routes_get_writes.tsv` 首次量出
+  **173 条**「非写方法路由 + 体内写 SQL + 体内无门禁」（K1 匿名 2 / K2 读会话 22 / K3 无会话 149），
+  集中度前三 `processplatform_assemble_surface` 60、`processplatform_service_processing` 24、
+  `program_center` 23；这正是 §五「GET 写禁令」守卫的靶面，守卫现在可以直接建在这段尺子上。
+  ②**尺子缺陷 3：门禁信号词表不全**——`extract_token_from_headers` + `validate_session` 这一路
+  手工会话校验不被 `SESSION_RE`/`GATE_RE` 识别，`auth bind_confirm` 被误计成匿名无门禁；
+  补词表前先别把 R4 名单当漏洞名单用。
 - **第二批新增待修（按危害排序，均有 file:line 证据，明细见 §二.3 / §二.4 / §二.7）**：
   1. ~~`program_init` 写族~~（A3-N6 + §二.7 的匿名 B 格）——**本批已收 7 把写 + init 判定 fail-closed**（§三.3）。
      `/api/secret/set` / `/api/secret/set/cancel` 按首次引导流程**保留匿名**（收 admin 会打断初始化），
@@ -381,5 +475,5 @@ cd oa4rust/backend && cargo test --lib -p <crate>
     其模块路径必须在同 crate 的 `lib.rs` 有对应 `mod` 声明。
 - 产品口径待拍：`meeting_id_accept` 的会议级状态翻转谁能做（被邀请人 / 属主 / admin）——本批只加了有效会话要求，未加归属判定。
 - 建议统一修法（沿用本仓既有先例，避免新抽象）：引擎运行面按一轮 V2/V4 口径至少加 `require_session_opt`；改变归属/状态/删他人行的走 `shared::middleware::require_owner`（admin 旁路、行不存在放行以保 not-found 语义）；设计态（script/flow/form/xform/dict/item-access/portal）比照同 crate `guard_write` 或二轮 S5 先例加 admin/属主门；GET 状态变更改 POST。每 crate 补 `security_gate_tests`（无 DB 的 401/403 各一）。
-- 提交落点：`a14b84348`（返工三处「已修未编译」+ docx/zip 上限 + 接线尺）、`be07ecac8`（本文档）、`e4d6af0f6`（F2/F3/F6/F9 越权门）、`4931b351f`（第二批 A2-F12 / A3-N1 / N2 / N3）、`055dbb6d5`（尺子复刻注册表 Public 早退、G/H 两桶）、`95af154ad`（第二批账本）、`52ad4944e`（A3-N6 program_init 写族 + init 判定 fail-closed）、`494a93e40`（R4-6 work_terminate）、`c32bcbb64`（R4-1 首批 7 把）、`47d01df8d`（R4-1 次批 7 把 + 旧断言返工）。分支 `oa4rust-vuln-audit-r4`，本轮未 push。
+- 提交落点：`a14b84348`（返工三处「已修未编译」+ docx/zip 上限 + 接线尺）、`be07ecac8`（本文档）、`e4d6af0f6`（F2/F3/F6/F9 越权门）、`4931b351f`（第二批 A2-F12 / A3-N1 / N2 / N3）、`055dbb6d5`（尺子复刻注册表 Public 早退、G/H 两桶）、`95af154ad`（第二批账本）、`52ad4944e`（A3-N6 program_init 写族 + init 判定 fail-closed）、`494a93e40`（R4-6 work_terminate）、`c32bcbb64`（R4-1 首批 7 把）、`47d01df8d`（R4-1 次批 7 把 + 旧断言返工）、`c452d634c`（三批收口账本 + 尺子读数口径）、`2728b2c07`（R4-2 批 1：u2 实体写 16 把）、`36f613a98`（R4-2 批 2a：阅读回执 / 附件复制 / 建单与版本族 13 把）。第四批账本 + 尺子两处缺陷修复（链式方法枚举、GET 写枚举）+ 三张产物 TSV 同批提交。分支 `oa4rust-vuln-audit-r4`，本轮未 push。
 
