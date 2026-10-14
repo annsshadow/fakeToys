@@ -888,8 +888,6 @@ program_center	PUT	/api/program_center/collect/validate/password	collect_validat
 program_center	POST	/api/program_center/command/execute	command_execute	R7
 program_center	POST	/api/program_center/deploy/server/o2	deploy_server_o2	R7
 program_center	POST	/api/program_center/designer/search	designer_search	R7
-program_center	POST	/api/program_center/dingding/request/pull/sync	dingding_request_pull_sync	R7
-program_center	POST	/api/program_center/dingding/sync/organization/callback	dingding_sync_organization_callback	R7
 program_center	POST	/api/program_center/foo/create/mass/from/count	foo_create_mass_from_count	R7
 program_center	POST	/api/program_center/input/compare	input_compare	R7
 program_center	PUT	/api/program_center/input/compare	input_compare	R7
@@ -902,9 +900,6 @@ program_center	PUT	/api/program_center/input/prepare/cover	input_prepare_cover	R
 program_center	POST	/api/program_center/input/prepare/create	input_prepare_create	R7
 program_center	PUT	/api/program_center/input/prepare/create	input_prepare_create	R7
 program_center	POST	/api/program_center/invoke/token	invoke_token	R7
-program_center	POST	/api/program_center/market/install/offline	market_install_offline	R7
-program_center	POST	/api/program_center/market/flag/install/or/update	market_flag_install_or_update	R7
-program_center	PUT	/api/program_center/market/flag/install/or/update	market_flag_install_or_update	R7
 program_center	POST	/api/program_center/module/compare/upload	module_compare_upload	R7
 program_center	POST	/api/program_center/module/output	module_output	R7
 program_center	POST	/api/program_center/module/output/structure	module_output_structure	R7
@@ -913,9 +908,7 @@ program_center	POST	/api/program_center/mpweixin/media/add/forever	mpweixin_medi
 program_center	POST	/api/program_center/mpweixin/menu/add	mpweixin_menu_add	R7
 program_center	POST	/api/program_center/mpweixin/menu/create/to/weixin	mpweixin_menu_create_to_weixin	R7
 program_center	POST	/api/program_center/output/list	output_list	R7
-program_center	POST	/api/program_center/qiyeweixin/send/getprivateinfo/message	qiyeweixin_send_getprivateinfo_message	R7
 program_center	POST	/api/program_center/schedule/report	schedule_report	R7
-program_center	POST	/api/program_center/zhengwudingding/sync/organization/callback	zhengwudingding_sync_organization_callback	R7
 program_center	PUT	/api/program_center/appstyle/current/update	appstyle_current_update	R7
 program_center	PUT	/api/program_center/collect/updateUnit	collect_updateUnit	R7
 program_center	POST	/api/program_center/code/list/paging/{page}/size/{size}	code_list_paging_page_size_size	R7
@@ -923,7 +916,6 @@ program_center	POST	/api/program_center/deploy/list/paging/{page}/size/{size}	de
 program_center	POST	/api/program_center/dict/list/paging/{page}/size/{size}	dict_list_paging_page_size_size	R7
 program_center	POST	/api/program_center/invoke/{flag}/execute	u3_invoke_execute	R7
 program_center	POST	/api/program_center/invoke/{flag}/client/{client}/token/{token}/execute	u3_invoke_execute_with_token	R7
-program_center	PUT	/api/program_center/market/{flag}/install/or/update	market_flag_install_or_update	R7
 program_center	POST	/api/program_center/market/list/install/log/paging/{page}/size/{size}	u3_market_install_log_paging_post	R7
 program_center	POST	/api/program_center/market/list/paging/{page}/size/{size}	u3_market_list_paging_post	R7
 program_center	DELETE	/api/program_center/module/remove/structure/{id}	module_remove_structure_id	R7
