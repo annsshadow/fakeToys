@@ -17,7 +17,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from fastapi import Header, HTTPException
 
-from augmentor import AugmentorPipeline, DataValidationError, load_config
+from augmentor import AugmentorPipeline, DataValidationError, DatasetTextError, load_config
 from augmentor.atomic_write import atomic_write_json, path_lock
 from augmentor.config import WebConfig
 
@@ -564,7 +564,16 @@ def raise_internal_error(exc: Exception) -> None:
     L271 的例外：``is_rejected_path_name`` 为真时 raise 的是 400 而不是 500——
     操作系统对名字形状的判词（errno 22 / 36）不是服务端故障，与 to_http_error 同一判据、
     住同一处。
+
+    L274 的第二条例外：``DatasetTextError``（数据集里「被当作文本用的字段」装了非字符串
+    值）也 raise 400，文案取 `str(exc)`——那句判决点名**第几条、哪个字段、实际是什么类型**，
+    是调用方修自己那份文件唯一需要的信息，而 `to_http_error` 的 ``ValueError`` 支本来就
+    原文照回同一句话（A77 一条判据住一处）。放行**按这个具名子类**而不是按父类
+    ``DataValidationError``：后者在 ``raise_internal_error`` 里的归宿由 L272 按 **A280**
+    （待拍，状态码是对外契约）逐格钉死，按父类放行会把那些格子一起改掉。
     """
+    if isinstance(exc, DatasetTextError):
+        raise HTTPException(status_code=400, detail=str(exc))
     if is_rejected_path_name(exc):
         raise HTTPException(status_code=400, detail=INVALID_PATH_NAME_DETAIL)
     logger.exception("未分类异常收敛为 500，原文仅留服务端日志、不转发客户端")
