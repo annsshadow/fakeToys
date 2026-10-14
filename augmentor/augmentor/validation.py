@@ -218,7 +218,7 @@ def require_ratio(name: str, value: Any,
         `require_seconds` / `require_positive` 一致，由调用点自己决定回落哪个默认值。
 
     Raises:
-        DataValidationError: 值不是数值（`bool` 也不算）、是 NaN，或不在闭区间内
+        DataValidationError: 值不是数值（`bool` 也不算）、是 NaN 或无穷，或不在闭区间内
     """
     if value is None:
         return None
@@ -226,8 +226,8 @@ def require_ratio(name: str, value: Any,
         raise DataValidationError(
             f"{name} 必须是数值，当前是 {value!r}（{type(value).__name__}）"
         )
-    if math.isnan(value):
-        raise DataValidationError(f"{name} 不能是 NaN")
+    if not math.isfinite(value):
+        raise DataValidationError(f"{name} 必须是有限数值，当前是 {'NaN' if math.isnan(value) else '无穷'}")
     if not minimum <= value <= maximum:
         raise DataValidationError(
             f"{name} 必须是 {minimum} 到 {maximum} 之间的比例，当前是 {value}"

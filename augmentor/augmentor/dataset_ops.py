@@ -16,7 +16,7 @@ from .atomic_write import atomic_write_json
 from dataclasses import dataclass
 import hashlib
 from .exceptions import DataValidationError
-from .validation import require_count, require_ratio_list, require_within_dir
+from .validation import require_count, require_ratio, require_ratio_list, require_within_dir
 from .allocation import largest_remainder
 from .data_splitter import DataSplitter
 
@@ -294,7 +294,7 @@ class DatasetOperations:
         # `is not None` 而非 falsy：ratio=0 语义是「采 0 条」，写成 `if config.ratio`
         # 会把 0 读成「未设置」而采全量（L149，B219；下游 0 条由下面的短路守卫接住）
         elif config.ratio is not None:
-            sample_size = int(len(items) * config.ratio)
+            sample_size = int(len(items) * require_ratio("ratio", config.ratio))
         else:
             sample_size = len(items)
 
