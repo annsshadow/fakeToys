@@ -69,7 +69,7 @@ BLIND = "BLIND"
 MEASURED_SITES = 13
 #: 三档闭合：1 + 5 + 7 = 13。`LIVE` 那一格就是 operative 自指，其余是历史读数与无锚主张。
 MEASURED_TIERS = {LIVE: 1, STALE: 5, BLIND: 7}
-#: 名册：`(卷, 区段, 轮号, 主张的那一行)`。`("OPTIMIZATION_LOOP_2.md", "checklist", 232, 871)` 是
+#: 名册：`(卷, 区段, 轮号, 主张的那一行)`。`("OPTIMIZATION_LOOP_2.md", "checklist", 232, 880)` 是
 #: operative 那一格——L267 复盘现量 832（先钉成 833 的那一格同批改回，见 L267 块 ⑮），L268 的账本批在它之上
 #: 落 3 行 ⇒ 重钉 835，L269 的账本批又在其上落 3 行（清单行 +1 与 A347 连带分隔空行 +2）⇒ 838，
 #: **L270 的账本批在其上落 7 行（清单行 +1 与新立 A348 / A349 / A350 三笔连带它们的分隔空行 +6）⇒ 按 ⑤ 的内容
@@ -84,7 +84,7 @@ MEASURED_TIERS = {LIVE: 1, STALE: 5, BLIND: 7}
 #: `` `modified_count  # 修改数量`）与 docs/augmentor/API.md:1139``（含前导反引号与中文括号，实测 `count == 1`）。
 ROSTER = frozenset(
     {
-        ("OPTIMIZATION_LOOP_2.md", "checklist", 232, 871),
+        ("OPTIMIZATION_LOOP_2.md", "checklist", 232, 880),
         ("OPTIMIZATION_LOOP_2.md", "checklist", 243, 734),
         ("OPTIMIZATION_LOOP_2.md", "checklist", 252, 795),
         ("OPTIMIZATION_LOOP_2.md", "log", 232, 773),
