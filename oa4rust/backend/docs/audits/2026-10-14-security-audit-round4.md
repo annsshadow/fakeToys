@@ -451,6 +451,26 @@ A4 开放问题：① F1 是否 o2server 侧本就以 job/document 创建者为�
 | 新发现（**本批只记账不修**）14 把 | 同上 各 `mockdeletetoget` 体 | 体内把**同一条 `DELETE … WHERE xid = $1` 连执行两次**：第二次必 0 行 ⇒ 走 `if result == 0` 分支 ⇒ **删成功也恒回 `ActionResult::error("… not found")`**。与第十四批 `templateform` 那格同族（旧体是 68 行手写副本、回读恒 not found）。改返回体形状要先核调用面，属另一批 |
 | 尺子轴：**本批一字未动** | `scripts/audit_write_gating.mjs` | 真落笔 −22、GET 面 −22 全部来自代码，不像第十三/十四批那样掺尺子轴的假阳回收。R1/R2/R3 只是注入取证，未入库；R2 顺手暴露 `GATE_RE` 里 `require_actor` 是**无独立见证的冗余词**（详见 §四 注入臂那格），删词要连见证一起改，故本批不擅动 |
 
+### 三.16 第十六批（ppsvc 的 GET 面 22 把 handler 补归属门 + 两类真缺陷顺带修正，纯代码轴）
+
+第十五批 §五 首选那格按实测收掉：`processplatform_service_processing` 的 GET 面 **27 条注册 / 22 把 handler**，
+**全部挂 K3**（已认证、无会话参数、无门禁）——`GET snap/work/{workId}/type/*`、`GET snap/workcompleted/{id}/type/*`、
+`GET snap/{id}/restore`、`GET workcompleted/rollback/{id}`、`GET work/v2/{id}/goback|rollback|reroute/{p2}`、
+`GET task/{id}/urge|replace|press|expire|pass_expired`、`GET task/v2/{id}/pause|resume`，以及 `u2` 面同名快照 / 催办族。
+任一登录用户按 ID 即可暂停 / 恢复 / 转办 / 催办 / 过期他人待办、给他人单据落 abandoned / suspend 快照、
+回滚他人的完成记录。选这批前按批 15 的提醒先核了宏段旧账：这 22 把**全是手写的具名 handler**，不在
+「16 把宏未绑段 + 43 条整张模板」那格上，可以直接按 handler 切片动工。
+
+| 项 | 文件 | 内容 |
+| --- | --- | --- |
+| 22 把 handler 补会话参数、门插在函数体第一句 | `src/lib.rs` 15 把 + `src/u2.rs` 7 把（签名 + 门，lib.rs +129 行 / u2.rs +53 行） | 形状一律 `session: Option<Extension<shared::session::Session>>` 置于 `pool` 之后、判门先于 `pool.get()` ⇒ 无会话 401 且**不触库、离线可证**（与第十/十一/十五批同法）。`taskcompleted_press` 的门插在**原有 IDOR 等值校验之前**——先看是不是你的单据，再看是不是这个 work 的 |
+| 新增 helper `u4_require_actors` + 键表 `u4_actor_key_sql` | `src/lib.rs:465-527` | 键 → **(整句字面量 SQL, 归属列名数组)** 的集中表：SQL 常量只写在这里，调用点只给键与 ID，**不做拼接**。多列口径与 `u4_require_work_owner` 同锁：逐列取非空且等于 `person_unique` 即放行，全不匹配 / 行不存在 → `is_admin` 兜底，否则 403（空归属的脏行只允许 admin，不把数据缺陷洗成权限放行） |
+| 三档归属，按「行上到底有没有可认的属主列」定档（22 把逐档点名，合计与 §四 的格数互校：work 9 + task 7 + workcompleted 5 + snap 1 = 22） | 同上 | **work 键 9 把**（3 把 `work_v2_*_p2` + 2 把 `snap_work_*` + `u2` 的 3 把 `snap_type_*` 与 `taskcompleted_press`）沿用 `u4_require_work_owner` 严格校 `x_work.creator`；**task 键 7 把**（urge/replace/press/expire/pass_expired/pause/resume）取 `x_task.person` 与 `x_work.creator` **两列 OR**——催办、过期、暂停的合法操作人本来就是流程双方（发起人催别人手里的办，负责人转办 / 暂停自己的办）；**workcompleted 键 5 把 / snap 键 1 把** hop 到 `x_work.creator`：migration 033 虽给 `x_snap` 加了 creator / person，本 crate 写入路径从不填、全是 NULL，按「空归属」算等于没有 |
+| **顺带修正的真缺陷①**（键写错，不是权限问题） | `src/u2.rs` `snap_take_for_wc` | 完成项快照把 **`x_workcompleted` 的 ID 写进了 `x_snap.work_id`**，而读回侧（`snap/workcompleted/{id}/type/snapworkcompleted`、rollback 取最新快照）一律按真实 work_id 查 ⇒ 这些快照**存进去就再也读不到**。改法：先 `SELECT work_id FROM x_workcompleted` 再拿真 work_id 落快照。注入臂无——它由 §四 第十六批臂②的「按 work_id 数快照」判据直接见证 |
+| **顺带修正的真缺陷②**（JSONB / TEXT 双向错配 7 处） | `src/lib.rs` 写 4 处 + 读 3 处 | `x_snap.snap_data` 是 **JSONB**（migration 020），写入侧 4 条 INSERT 直接塞 TEXT 参数 ⇒ PostgreSQL 42804 类型不匹配、**必 500**；读回侧 3 处 `get::<String>` 读 JSONB ⇒ `error deserializing column`。改法沿用 u2.rs 既有 cast 口径：写 `($n::text)::jsonb`、读 `snap_data::text AS snap_data`。这 7 处**本批动手前就在**，是加门后真库臂第一次真落笔才暴露的——权限门与数据形状两条账要分开记 |
+| 新发现（**本批只记账不修**）：`row_to_json` 静默丢列 | `crates/shared/src/response.rs:17-48` | 匹配臂只覆盖 BOOL / INT* / FLOAT* / TEXT / VARCHAR / NAME / BPCHAR，`_ => None` ⇒ JSONB / JSON / DATE / TIMESTAMPTZ / NUMERIC 一律**不进响应**且不报错。上面那条读回缺陷正是靠显式 `::text` 绕开，但根因在跨 crate 的公共序列化口，改它要连所有调用面的响应形状一起核，属另一批 |
+| 尺子轴：**本批一字未动** | `scripts/audit_write_gating.mjs` | GET 面 −27、真落笔 −3 全部来自代码。矩阵里另有 **3 条 POST 行**同键从 R7 搬进 R5——同一把 handler 也挂在 POST 上，加门之后两行注册同步受益，不是新漏洞消失（见 §四 键级 diff 那格） |
+
 ## 四、验证
 
 
@@ -1539,4 +1559,80 @@ cd oa4rust/backend && cargo test --lib -p <crate>
   间接写 223 / 间接门禁 234、缺口 0），15 张在册产物与 run R 存档逐张 md5 全等、七臂注入逐臂复原、
   `cargo test --lib -p processplatform_assemble_surface` 610 passed / 0 failed / 9 ignored 与
   `-- --ignored` 9 passed 复绿后才提交。共享工作树上并行会话的在制品未被本批收走。**本轮未 push**。
+
+### 第十六批收口后的刷新（§三.16 / §四 第十六批读数 / §五 名单）
+
+- **已修并验证（纯代码轴单轴）**：ppsvc 的 GET 面 **22 把 handler**（注册 27 条）补归属门
+  （work 键 9 / task 键 7 / workcompleted 键 5 / snap 键 1，四档合计 22 与 §三.16 逐档点名互校），
+  GET 无门禁 **156 → 129**（K3 140 → **113**，K1 5 / K2 11 **不动**）、
+  真落笔 **472 → 469**（R4 含写 5 / R6 135 / R7 329）、只读挂写 766 / 间接写 223 / 间接门禁 234
+  **三格不变**、`判据见证 … 缺口 0 处`，EXIT=0。行动面代次链：**621（十一）/ 498（十二）/ 512（十三）/
+  494（十四）/ 472（十五）/ 469（十六）**。**本批尺子一字未动**，−27 全是真收口的洞。
+  ppsvc 这一格从 GET 面名单**整块消失**（27 → 0），不是减量。
+- **两条与权限轴分开记的账**（都是加门后真库臂第一次真落笔才暴露的既有缺陷，不是本批引入）：
+  ①`x_snap.work_id` 被写成 `x_workcompleted` 的 ID ⇒ 完成项快照存进去再也读不到；
+  ②`snap_data` 是 JSONB 而 4 处 INSERT 塞 TEXT、3 处 `get::<String>` 读 JSONB ⇒ 一侧必 42804 / 500、
+  一侧必 `error deserializing column`。两条都有独立见证（②见注入臂 E4）。
+- **产物对账**：15 张在册产物，与前批基线（run R 存档 `/d/tmp/b16_md5_R.txt`）比 **12 张全等、3 张按预期变化**
+  （`write_routes_get_writes.tsv` −27 行、`write_routes_ungated.tsv` −3 行、`write_routes_matrix.tsv` 改 3 行档位）。
+  尺子在复原后的干净树**连跑两次**（run T / T2，均 EXIT=0），3 张变化产物逐张 md5 全等 ⇒ 读数幂等。
+  `write_gating_residual.tsv` 等其余 12 张一字节未动，说明本批没顺手改动别的桶。
+- **矩阵键级 diff（vs `git show HEAD`）**：**3 迁移 / 0 丢失 / 0 新增**，全为
+  `R7-已认证+体内无会话无门禁 → R5-已认证+体内门禁`，逐条点名：
+  `ppsvc|POST|/task/press/{id}|task_id_press`、`ppsvc|POST|/task/v2/resume/{id}|task_v2_id_resume`、
+  `ppsvc|POST|/task/{id}/replace|task_id_replace`。这 3 把 handler 同挂 GET 与 POST，加 POST 侧那行的注册
+  因此同步改档——**是同一处改动跨方法受益，不是又收掉 3 条新洞**，记账时别把它算进 −27。
+- **测试门禁**：`cargo test --lib -p processplatform_service_processing` **68 passed / 0 failed / 17 ignored**；
+  `-- --ignored` 族**整族**跑 **17 passed / 0 failed**，且 `skip: PG unavailable` 计数 **0**（沿用「不靠时长推断、
+  逐支数过」的口径）。本批新增 4 臂（1 离线 + 3 真库）全部入册，其中离线臂带
+  `assert_eq!(cases.len(), 22, "本批 22 把必须逐把点名，少一把即漏门")`——**加门数本身可证伪**。
+- **注入取证五臂**（通道 B，`/d/tmp/b16arms/inject_arm.mjs`，基线绿 → 逐臂点名红 → 复原后复绿三段齐全）：
+
+  | 臂 | 注入 | 点名读数（实际红在哪一句） | 判定 |
+  | --- | --- | --- | --- |
+  | E0 无害对照 | `fn u4_actor_key_sql` → 多一个空格（行为全同） | 基线 `3 passed` → 注入后仍 `3 passed` | 臂成立：证明红由注入造成，不是环境本来就不稳 |
+  | E1 摘门 | 删掉两把 `u4_require_work_owner(&pool.0, session, &work_id).await?;` | 离线臂 `security_gate_tests.rs:2316` 点名 `["snap_work_workId_type_abandoned", "snap_work_workId_type_suspend"]` | 臂成立：401 判据逐把点名，不是只数失败 |
+  | E2 兜底恒真 | `is_admin(pool, me).await` → `true \|\| is_admin(...)` | `:2348`「流程之外的会话按 ID 办他人待办必须 403（实际 Ok(())）」、`:2717`「陌生会话给他人完成项打放弃快照必须 403（实际 Ok(())）」，2 failed | 臂成立，**但覆盖面要说清**：work 键那一档走 `require_owner` 的兜底、不在本注入面，故 `ppsvc_get_work_writes_*` 臂仍绿——本臂只证 `u4_require_actors` 一族的 admin 兜底有独立见证，不许写成「所有兜底都被见证」 |
+  | E3 键表收成单列 | `&["person", "work_creator"]` → `&["person"]` | `:2377`「发起人催办自己单据上的待办应放行（实际 Err(Forbidden)）」 | 臂成立：两列 OR 的设计（发起人 vs 负责人双方）有独立见证，不是随手多写一列 |
+  | E4 撤回读回 cast | `snap_data::text AS snap_data` → `snap_data` | `lib.rs:1699` `error retrieving column snap_data: error deserializing column 3` | 臂成立：JSONB 读回 cast 不是「防御性写法」，摘掉必红 |
+
+  收尾：`git status --porcelain` 只含本批 7 个在范围内文件（4 源 + 3 产物），复原后两条基线**分别复跑复绿**
+  （DB 族 `3 passed`、离线 `1 passed`）。
+- **本批新增的方法学缺口三格**：
+  1. **本机没有可用的 Python**：`python` / `python3` 都解析到 Windows Store 桩（`WindowsApps\python.exe`），
+     首次五臂跑全部 EXIT=49「Python was not found」——**一次注入都没发生**、磁盘从头到尾干净，但那一轮取证等于没做。
+     改法：用 Qoder 自带运行时（`ELECTRON_RUN_AS_NODE=1` + `…\0.4.7\Qoder.exe`）把通道 B 的字节级纪律
+     （读 bytes、混合行尾拒、LF 归一做锚点并断言命中数、bytes 写回后读回比哈希、`finally` 复原 + 哈希等值 +
+     `git status` 复验、退出码 0/2/3/4）移植成 `inject_arm.mjs`。**以后在这台机器上取注入证据直接用 Node 版**。
+  2. **`spawnSync(shell:true)` 在 Windows 上是 cmd.exe**：首跑五臂「基线 exit=1 / 无 test result 行」的真因是
+     `grep` 不存在，不是测试红。显式传 `shell: "D:/software/Git/bin/bash.exe"`。
+  3. **判据的 grep 期望值要先实测**：把 `-- --ignored` 加进 DB 臂命令后仍按「4 passed」断言（离线那把不带
+     ignore，被 `--ignored` 排除，实读 3 passed），导致基线判不绿而中止。这次是 **fail-loud 生效**（宁可中止也没
+     产生假绿），但根子在于没先实测过滤串匹到几把——补的规矩：**写 `--cmd` 前先手跑一次并记下 `test result` 原文**。
+     同批另补一条：`--cmd` 里加 `grep -q 'error\[E' … && exit 9`，注入器把 9 当**中止**而非红——
+     「因为编译不过而红」不算臂成立。
+- **下一批（代码轴）入口，按实测切片改写**：GET 面无门禁现读 **129** 条（K1 5 / K2 11 / K3 113），
+  按 crate 降序：`program_center` **21**、`query_service_processing` **18**（含 12 条 `u2h::` 宏未绑段旧账，
+  动手前先复核宏段）、`processplatform_assemble_surface` **16**、`query_assemble_designer` **14**、
+  `attendance_assemble_control` **9**、`auth` **6**、`cms_assemble_control` 5、`message_assemble_communicate` 5、
+  `processplatform_assemble_designer` 5、`ai_assemble_control` 4、`jpush_assemble_control` 4、
+  `meeting_assemble_control` 4，其余 8 个 crate 各 ≤3。
+  1. **优先度最高的一格是本批新立的**：`shared/src/response.rs:17-48` `row_to_json` 对 JSONB / JSON / DATE /
+     TIMESTAMPTZ / NUMERIC 一律 `_ => None` **静默丢列**——跨 crate 的系统性响应缺陷，改前先核所有调用面
+     的响应形状（与 openapi 契约 + 前端 TS 类型两层对账，可照 `ts-openapi-contract-guard` 的口径）。
+  2. ppsvc **R7 写面仍 49 条**（尺子集中度行实测，本批只动了 GET 那 27 条注册），加上旧账
+     「16 把宏未绑段 + 43 条整张模板」，这格剩余量按产物切片读数、别拿上批浮出数当工作量。
+  3. `mockdeletetoget` 双 DELETE ⇒ 删成功也恒回 not found 的 **14 把**（第十五批 §三.15 末格），与第十四批
+     `templateform` / `design_appdict` 同形，属「返回体形状」一条线。
+  4. `cms_core_entity` 12 条元数据写（登录即可删任意列 / 索引 / 模块定义），需先读该 crate 门禁口径定拍。
+- **沿用的待拍格**：A1 真匿名写 9 条属限流族、24 条死档 needs 独立守卫、只读挂写现读 **766**、
+  `NOW()` 写进 TEXT 列 79 处、门禁入口两族并存、`shared/src/crud.rs` CrudSpec 无归属、
+  `assert_eq!(status, 500)` 断言族 272 处、correlation 读侧 IDOR、F5 / F7 / F8 / F10、N4-02 / N4-03、
+  `GATE_RE` 里 `require_actor` 无独立见证的冗余词。
+- **提交落点**：本批代码轴（`src/lib.rs` 15 把加门 + `u4_require_actors` / `u4_actor_key_sql` + 7 处 JSONB cast、
+  `src/u2.rs` 7 把加门 + `snap_take_for_wc` 键修正、`src/security_gate_tests.rs` 4 臂 + 22 把点名格、
+  `src/tests.rs` 5 把既有测试改按属主会话、3 张刷新产物）为 ``8e96ac04c``，与本文档（§三.16 / §四 第十六批读数 / 本节）
+  分两笔，本节即第二笔并回填该 hash。第二笔提交前已在干净树重跑尺子（run T / T2 全等、EXIT=0、真落笔 469、
+  GET 写 129、只读挂写 766、间接写 223 / 间接门禁 234、缺口 0）、15 张产物逐张对账、五臂注入逐臂复原并复跑双基线复绿。
+  共享工作树上并行会话的在制品未被本批收走。**本轮未 push**。
 
