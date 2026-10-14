@@ -289,6 +289,12 @@ class ActiveSampler:
                     elif value == "long" and len(text) >= 30:
                         recommended_seeds.append(item)
                         break
+                else:
+                    # 类别名单由 identify_underrepresented 封闭成两类，落到这里说明有人
+                    # 加了第三类却没接分支：静默少推一颗种子，覆盖率报告照常出。
+                    from .exceptions import DataValidationError
+                    raise DataValidationError(
+                        f"{ur_type} 的类别 {category} 没有对应的种子分支")
         
         # 生成建议
         recommendations = []

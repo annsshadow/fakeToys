@@ -833,10 +833,10 @@ class ConfigValidator:
                     try:
                         _require_mapping(entry, "models.%s" % name)
                     except ConfigError as exc:
-                        where = "models.%s" % name
-                        if where not in err_paths:
-                            result.add_error(where, str(exc))
-                            err_paths.add(where)
+                        # 改前这里有一道 `if where not in err_paths` 去重，而 `models.<名字>`
+                        # 这一段（两段点分）在本函数内只有下面这一处产地，条目名是 dict 键、
+                        # 互不相同，别的 pass 只产三段路径 ⇒ 那一支永远不走，收成直报。
+                        result.add_error("models.%s" % name, str(exc))
                     continue
                 kwargs = {k: v for k, v in entry.items() if k in model_entry_names}
                 if "type" not in kwargs:

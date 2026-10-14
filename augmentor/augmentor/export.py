@@ -274,8 +274,15 @@ class Exporter:
                     writer = csv.DictWriter(f, fieldnames=data[0].keys())
                     writer.writeheader()
                     writer.writerows(data)
-        
-        # ExportFormat 六个成员均已在上方分支处理，无其他可能值
+        else:
+            # 上面那道闸门只放过 NATIVE_FORMATS 的成员，走到这里说明有人给那个元组
+            # 加了员却没接分支。改前这一档静默不写任何文件、照样返回成功（A343 族），
+            # 现在出声：原生实现与 NATIVE_FORMATS 必须同批改。
+            from .exceptions import UnsupportedFormatError
+            raise UnsupportedFormatError(
+                f"{export_format} 在 NATIVE_FORMATS 里，却没有原生导出分支")
+
+        # 六个原生成员在上方链里各命中一支，链尾 else 只剩「清单与分支脱节」那一档
         logger.info(f"导出 {len(items)} 条数据到 {output_path}，格式: {export_format.value}")
         return export_format.value
     
