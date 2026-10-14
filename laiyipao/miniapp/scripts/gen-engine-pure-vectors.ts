@@ -50,6 +50,18 @@ import {
 } from '../src/game/defense'
 import { hex16, fnv1a64 } from '../src/game/lcg'
 import { HeatSystem, CardDeck, ACTIVE_SLOTS, PASSIVE_SLOT, TOTAL_SLOTS, HEAT_MAX, OVERHEAT_DURATION_MS, HEAT_DECAY_PER_SEC, DISCARD_PER_WAVE, DISCARD_HEAT_REFUND, type Card } from '../src/game/heatmap'
+import {
+  Terrain,
+  FIELD_W,
+  FIELD_H,
+  BASE_X,
+  BASE_Y,
+  OIL_BURN_MS,
+  ROTOR_RADIUS,
+  ROTOR_DIR_1000,
+  type TerrainContext,
+} from '../src/game/terrain'
+import type { Enemy, Projectile } from '../src/game/types'
 import type { DefenseSnapshot, DefenseView } from '../src/game/defense'
 import type { Attacker } from '../src/game/damage'
 
@@ -777,9 +789,428 @@ const heatConsts = {
   DISCARD_HEAT_REFUND: DISCARD_HEAT_REFUND.toString(),
 }
 
+// ── 地形 ─────────────────────────────────────────────────────
+/**
+ * 地形契约用**「记录型 ctx」**而不是真实引擎。
+ *
+ * # 为什么可以这样
+ *
+ * 地形与引擎的耦合面只有 6 个方法（enemies / projectiles / terrainTick /
+ * elementCap / within / enemiesInRadius / onKill）。把它们换成
+ * 「记录调用并返回预设敌人」的假实现之后，契约断言的仍然是
+ * **真实的东西**：
+ *
+ *   - 地形自己的状态迁移（burning→idle、open↔closed、charge 阈值）
+ *   - 地形向引擎**要什么**（半径 90？半径 260？elementCap 传了多少？）
+ *   - 地形对敌人**做什么**（扣多少血、叠几层、是否触发 onKill）
+ *
+ * 这些都不是「我复刻得对」，而是 TS 的真实行为。
+ *
+ * 真正的引擎实体（Enemy/Projectile）不在契约范围内 ——
+ * 那些要等引擎移植后单独验。现在假装能验，就是自己骗自己。
+ *
+ * ⚠️ 假实现必须**足够真**：敌人要有真实 hp / armorPermille，
+ *   否则 applyArmor 的效果测不出来（全都 armor=0 时减伤恒为 1 倍）。
+ */
+interface MockEnemy {
+  id: string
+  hp: bigint
+  armorPermille: bigint
+  x: number
+  y: number
+  dead: boolean
+  hitFlashMs: number
+  elements: Array<{ element: string; layers: bigint }>
+}
+
+interface MockProjectile {
+  id: string
+  x: bigint
+  y: bigint
+  vx: bigint
+  vy: bigint
+}
+
+class RecordingCtx implements TerrainContext {
+  calls: string[] = []
+  constructor(
+    public enemies: MockEnemy[],
+    public projectiles: MockProjectile[],
+    public terrainTick: bigint,
+    public elementCap: bigint,
+  ) {}
+
+  within(terrainX: number, terrainY: number, r: number, x: bigint, y: bigint): boolean {
+    const dx = x - BigInt(Math.round(terrainX * 1000))
+    const dy = y - BigInt(Math.round(terrainY * 1000))
+    const rr = BigInt(Math.round(r * 1000))
+    return dx * dx + dy * dy <= rr * rr
+  }
+
+  enemiesInRadius(x: number, y: number, r: number): any[] {
+    this.calls.push(`enemiesInRadius(${x},${y},${r})`)
+    const cx = Math.round(x * 1000)
+    const cy = Math.round(y * 1000)
+    const rr = r * 1000
+    return this.enemies.filter((e) => {
+      const dx = e.x * 1000 - cx
+      const dy = e.y * 1000 - cy
+      return dx * dx + dy * dy <= rr * rr
+    }) as any[]
+  }
+
+  onKill(e: any): void {
+    this.calls.push(`onKill(${e.id})`)
+  }
+
+  onTerrainTrigger(kind: string): void {
+    // 记录下来是为了**验证它不会被调用** ——
+    // TS 里它是死接口，Go 侧根本没有它。
+    this.calls.push(`onTerrainTrigger(${kind})`)
+  }
+
+  /** 快照当前敌人状态，供契约比对。 */
+  enemyState() {
+    return this.enemies.map((e) => ({
+      id: e.id,
+      hp: e.hp.toString(),
+      armor_permille: e.armorPermille.toString(),
+      dead: e.dead,
+      hit_flash_ms: e.hitFlashMs,
+      elements: e.elements.map((x) => `${x.element}:${x.layers.toString()}`).join('|'),
+    }))
+  }
+
+  projectileState() {
+    return this.projectiles.map((p) => `${p.id}:${p.vx.toString()},${p.vy.toString()}`)
+  }
+}
+
+function mkEnemy(id: string, hp: bigint, armor: bigint, x: number, y: number): MockEnemy {
+  return {
+    id,
+    hp,
+    armorPermille: armor,
+    x,
+    y,
+    dead: false,
+    hitFlashMs: 0,
+    elements: [],
+    applyElement(element: string, layers: bigint, cap: bigint) {
+      const cur = this.elements.find((e) => e.element === element)
+      const now = (cur?.layers ?? 0n) + layers
+      if (cur) cur.layers = now > cap ? cap : now
+      else this.elements.push({ element, layers: now > cap ? cap : now })
+    },
+  } as unknown as MockEnemy
+}
+
+function mkProjectile(id: string, x: number, y: number, vx = 0n, vy = 0n): MockProjectile {
+  return {
+    id,
+    x: BigInt(Math.round(x * 1000)),
+    y: BigInt(Math.round(y * 1000)),
+    vx,
+    vy,
+    addVelocity(dx: bigint, dy: bigint) {
+      this.vx += dx
+      this.vy += dy
+    },
+  } as unknown as MockProjectile
+}
+
+interface TerrainStep {
+  op: 'update' | 'onHit' | 'onKillCharging'
+  dtMs?: number
+  element?: string
+  damage?: string
+  hitX?: number
+  hitY?: number
+  cap?: string
+}
+
+interface TerrainScript {
+  label: string
+  placement: { kind: string; x: number; y: number; param: number }
+  enemies: Array<{ id: string; hp: string; armor: string; x: number; y: number }>
+  projectiles?: Array<{ id: string; x: number; y: number; vx?: string; vy?: string }>
+  terrainTick: string
+  elementCap: string
+  steps: TerrainStep[]
+}
+
+const TERRAIN_SCRIPTS: TerrainScript[] = [
+  {
+    // 油桶：焰元素近处命中达阈值 → 引燃
+    label: 'oil_drum_ignites_on_fire',
+    placement: { kind: 'oil_drum', x: 500, y: 500, param: 3 },
+    enemies: [
+      { id: 'e1', hp: '1000', armor: '200', x: 500, y: 500 },
+      { id: 'far', hp: '1000', armor: '0', x: 900, y: 900 },
+    ],
+    terrainTick: '100',
+    elementCap: '5',
+    steps: [
+      { op: 'onHit', element: 'fire', damage: '150', hitX: 500000, hitY: 500000 },
+      { op: 'onHit', element: 'fire', damage: '150', hitX: 500000, hitY: 500000 },
+      { op: 'onHit', element: 'fire', damage: '150', hitX: 500000, hitY: 500000 },
+    ],
+  },
+  {
+    // 非焰元素不得引燃；远处命中也不得
+    label: 'oil_drum_rejects_non_fire_and_far',
+    placement: { kind: 'oil_drum', x: 500, y: 500, param: 1 },
+    enemies: [{ id: 'e1', hp: '1000', armor: '0', x: 500, y: 500 }],
+    terrainTick: '100',
+    elementCap: '5',
+    steps: [
+      { op: 'onHit', element: 'ice', damage: '9999', hitX: 500000, hitY: 500000 },
+      { op: 'onHit', element: 'fire', damage: '9999', hitX: 800000, hitY: 500000 },
+    ],
+  },
+  {
+    // 引燃后火区伤害：护甲必须生效、元素必须叠层、死亡必须回调
+    label: 'oil_drum_fire_zone_damage',
+    placement: { kind: 'oil_drum', x: 500, y: 500, param: 1 },
+    enemies: [
+      { id: 'tank', hp: '1000', armor: '500', x: 500, y: 500 },
+      { id: 'soft', hp: '1000', armor: '0', x: 505, y: 505 },
+      { id: 'doomed', hp: '50', armor: '0', x: 502, y: 502 },
+      { id: 'away', hp: '1000', armor: '0', x: 900, y: 900 },
+    ],
+    terrainTick: '100',
+    elementCap: '3',
+    steps: [
+      { op: 'onHit', element: 'fire', damage: '200', hitX: 500000, hitY: 500000 },
+      { op: 'update', dtMs: 100 },
+      { op: 'update', dtMs: 100 },
+    ],
+  },
+  {
+    // 火区到时熄灭
+    label: 'oil_drum_burn_expires',
+    placement: { kind: 'oil_drum', x: 500, y: 500, param: 1 },
+    enemies: [{ id: 'e1', hp: '100000', armor: '0', x: 500, y: 500 }],
+    terrainTick: '1',
+    elementCap: '3',
+    steps: [
+      { op: 'onHit', element: 'fire', damage: '200', hitX: 500000, hitY: 500000 },
+      { op: 'update', dtMs: OIL_BURN_MS },
+      { op: 'update', dtMs: 100 },
+    ],
+  },
+  {
+    // 潮汐闸：周期开合
+    label: 'tidal_gate_cycles',
+    placement: { kind: 'tidal_gate', x: 300, y: 700, param: 1000 },
+    enemies: [],
+    terrainTick: '100',
+    elementCap: '3',
+    steps: [
+      { op: 'update', dtMs: 500 },
+      { op: 'update', dtMs: 500 },
+      { op: 'update', dtMs: 1000 },
+      { op: 'update', dtMs: 2500 },
+    ],
+  },
+  {
+    // period 为 0 或负 → 必须夹到 1，否则 while 循环死转
+    label: 'tidal_gate_period_clamped',
+    placement: { kind: 'tidal_gate', x: 300, y: 700, param: 0 },
+    enemies: [],
+    terrainTick: '100',
+    elementCap: '3',
+    steps: [
+      { op: 'update', dtMs: 1 },
+      { op: 'update', dtMs: 2 },
+      { op: 'update', dtMs: 3 },
+    ],
+  },
+  {
+    // 旋转风障：角度与偏转量
+    label: 'rotor_vane_deflects',
+    placement: { kind: 'rotor_vane', x: 500, y: 500, param: 100 },
+    enemies: [],
+    projectiles: [
+      { id: 'inside', x: 500, y: 500 },
+      { id: 'edge', x: 700, y: 500 },
+      { id: 'outside', x: 900, y: 500 },
+    ],
+    terrainTick: '100',
+    elementCap: '3',
+    steps: [
+      { op: 'update', dtMs: 50 },
+      { op: 'update', dtMs: 50 },
+      { op: 'update', dtMs: 3600 },
+    ],
+  },
+  {
+    // 崩塌掩体：动能 ×3、其他元素 ×1
+    label: 'collapse_wall_kinetic_triple',
+    placement: { kind: 'collapse_wall', x: 400, y: 600, param: 10 },
+    enemies: [],
+    terrainTick: '100',
+    elementCap: '3',
+    steps: [
+      { op: 'onHit', element: 'ice', damage: '500', hitX: 400000, hitY: 600000 },
+      { op: 'onHit', element: 'ice', damage: '500', hitX: 400000, hitY: 600000 },
+      { op: 'onHit', element: 'ice', damage: '500', hitX: 400000, hitY: 600000 },
+      { op: 'onHit', element: 'kinetic', damage: '500', hitX: 400000, hitY: 600000 },
+    ],
+  },
+  {
+    // 崩塌后不再阻挡，且 onHit 直接 false
+    label: 'collapse_wall_after_collapse',
+    placement: { kind: 'collapse_wall', x: 400, y: 600, param: 3 },
+    enemies: [],
+    terrainTick: '100',
+    elementCap: '3',
+    steps: [
+      { op: 'update', dtMs: 50 },
+      { op: 'onHit', element: 'kinetic', damage: '900', hitX: 400000, hitY: 600000 },
+      { op: 'update', dtMs: 50 },
+      { op: 'onHit', element: 'kinetic', damage: '900', hitX: 400000, hitY: 600000 },
+    ],
+  },
+  {
+    // 远处命中不得给掩体充能
+    label: 'collapse_wall_ignores_far_hits',
+    placement: { kind: 'collapse_wall', x: 400, y: 600, param: 1 },
+    enemies: [],
+    terrainTick: '100',
+    elementCap: '3',
+    steps: [{ op: 'onHit', element: 'kinetic', damage: '999999', hitX: 900000, hitY: 900000 }],
+  },
+  {
+    // 蓄能塔：击杀累积到 param 才触发
+    label: 'charge_tower_accumulates_kills',
+    placement: { kind: 'charge_tower', x: 250, y: 750, param: 3 },
+    enemies: [{ id: 'e1', hp: '1000', armor: '0', x: 250, y: 750 }],
+    terrainTick: '100',
+    elementCap: '4',
+    steps: [
+      { op: 'onKillCharging', element: 'fire', cap: '4' },
+      { op: 'onKillCharging', element: 'fire', cap: '4' },
+      { op: 'onKillCharging', element: 'fire', cap: '4' },
+      { op: 'onKillCharging', element: 'fire', cap: '4' },
+    ],
+  },
+  {
+    // 非 charge_tower 收到 onKillCharging 必须无副作用
+    label: 'on_kill_charging_ignores_other_kinds',
+    placement: { kind: 'oil_drum', x: 500, y: 500, param: 1 },
+    enemies: [{ id: 'e1', hp: '1000', armor: '0', x: 500, y: 500 }],
+    terrainTick: '100',
+    elementCap: '4',
+    steps: [{ op: 'onKillCharging', element: 'fire', cap: '4' }],
+  },
+  {
+    // ⚠️ 未知地形类型：必须退化成「什么都不做」而不是崩
+    label: 'unknown_kind_is_noop',
+    placement: { kind: 'lava_pool', x: 500, y: 500, param: 5 },
+    enemies: [{ id: 'e1', hp: '1000', armor: '0', x: 500, y: 500 }],
+    projectiles: [{ id: 'p1', x: 500, y: 500 }],
+    terrainTick: '100',
+    elementCap: '3',
+    steps: [
+      { op: 'update', dtMs: 50 },
+      { op: 'onHit', element: 'fire', damage: '9999', hitX: 500000, hitY: 500000 },
+    ],
+  },
+]
+
+const terrainRows = TERRAIN_SCRIPTS.map((s) => {
+  const t = new Terrain({
+    kind: s.placement.kind as never,
+    x: s.placement.x,
+    y: s.placement.y,
+    param: s.placement.param,
+  } as never)
+  const enemies = s.enemies.map((e) =>
+    mkEnemy(e.id, BigInt(e.hp), BigInt(e.armor), e.x, e.y),
+  )
+  const projectiles = (s.projectiles ?? []).map((p) =>
+    mkProjectile(p.id, p.x, p.y, BigInt(p.vx ?? '0'), BigInt(p.vy ?? '0')),
+  )
+  const ctx = new RecordingCtx(enemies, projectiles, BigInt(s.terrainTick), BigInt(s.elementCap))
+
+  const trace: Array<Record<string, unknown>> = []
+  const snap = (op: string, extra: Record<string, unknown> = {}) => {
+    trace.push({
+      op,
+      state: t.state,
+      timer: t.timer,
+      charge: t.charge,
+      angle: t.angle,
+      triggered: t.triggered,
+      serialize: t.serialize(),
+      enemies: ctx.enemyState(),
+      projectiles: ctx.projectileState(),
+      calls: [...ctx.calls],
+      ...extra,
+    })
+  }
+
+  snap('init')
+  for (const step of s.steps) {
+    if (step.op === 'update') {
+      const eff = t.update(step.dtMs ?? 0, ctx)
+      snap('update', { dt_ms: step.dtMs ?? 0, blocked: eff.blocked })
+    } else if (step.op === 'onHit') {
+      const r = t.onHit(step.element as never, BigInt(step.damage ?? '0'), BigInt(step.hitX ?? 0), BigInt(step.hitY ?? 0))
+      snap('onHit', {
+        element: step.element,
+        damage: step.damage,
+        hit_x: step.hitX,
+        hit_y: step.hitY,
+        result: r,
+      })
+    } else {
+      const r = t.onKillCharging(step.element as never, BigInt(step.cap ?? '0'), ctx)
+      snap('onKillCharging', { element: step.element, cap: step.cap, result: r })
+    }
+  }
+  return {
+    label: s.label,
+    placement: s.placement,
+    // ⚠️ 输入**必须**带进文件：Go 侧要重建同样的场景才能跑脚本。
+    //   只存 trace 的话，Go 只能猜一个场景 —— 而「猜错了但两边都没报错」
+    //   正是契约最坏的失效形态（heat 那批已经踩过一次 now_ms 的坑）。
+    //
+    //   弹丸要**归一化**：脚本里 vx/vy 是可选的，直接回显会让缺省项
+    //   在 JSON 里消失，Go 侧拿到空串 —— 而空串解析成 0 恰好是对的，
+    //   于是「缺省」与「显式 0」变得不可区分。
+    //   显式补 "0" 让两者在文件里长得一样，这是有意的。
+    enemies: s.enemies,
+    projectiles: (s.projectiles ?? []).map((p) => ({
+      id: p.id,
+      x: p.x,
+      y: p.y,
+      vx: p.vx ?? '0',
+      vy: p.vy ?? '0',
+    })),
+    terrain_tick: s.terrainTick,
+    element_cap: s.elementCap,
+    trace,
+  }
+})
+
+/**
+ * 方向表的抽样下标。
+ *
+ * 覆盖 0°/90°/180°/270° 四个正交方向及其 +1°（抓角度错位）、
+ * 四个对角、以及末项。
+ *
+ * ⚠️ 全量 720 个数塞进 JSON 没人会 review ——
+ *   而没人看的契约等于没有契约。抽样 + Go 侧的「全表模长」性质守卫
+ *   组合起来才是完整的：抽样抓「错在哪」，性质守卫抓「有没有错」。
+ */
+const ROTOR_SAMPLE_IDX = [
+  0, 1, 90, 91, 180, 181, 270, 271, 45, 46, 135, 136, 225, 226, 315, 316, 359, 718, 719,
+]
+
 const doc = {
-  _comment:
-    '引擎**纯函数**的跨端契约向量。由 miniapp/scripts/gen-engine-pure-vectors.ts 从真实 TS 实现产出。' +
+  _comment:    '引擎**纯函数**的跨端契约向量。由 miniapp/scripts/gen-engine-pure-vectors.ts 从真实 TS 实现产出。' +
     '期望值不由 Go 侧生成（纯函数没有运行时状态，用实现产出即定义）。' +
     'Go 侧 domain/engine_pure_contract_test.go 只断言与本文件一致。' +
     '明确不含 runChallenge —— 它需要整个 BattleEngine，Go 侧尚未移植。',
@@ -825,6 +1256,31 @@ const doc = {
     rows: heatRows,
   },
   deck: { rows: deckRows },
+  terrain: {
+    consts: {
+      FIELD_W,
+      FIELD_H,
+      BASE_X,
+      BASE_Y,
+      OIL_BURN_MS,
+      ROTOR_RADIUS,
+      ROTOR_DIR_LEN: ROTOR_DIR_1000.length,
+      /**
+       * ⚠️ 方向表**抽样**而不是全量 720 个数。
+       *
+       * 全量塞进 JSON 很难被人 review —— 而没人看的契约等于没有契约
+       * （这是选关卡向量时的同一条理由）。
+       * 抽样覆盖：0°/90°/180°/270° 四个正交方向、
+       * 两个对角、以及几个任意角度，足以抓住符号错与角度错位。
+       *
+       * 全表的性质（模长 ≈ 1000、长度 720）由 Go 侧
+       * `TestRotorDirIsUnitVector` 守住。
+       */
+      ROTOR_DIR_SAMPLE_IDX: ROTOR_SAMPLE_IDX,
+      ROTOR_DIR_SAMPLE: ROTOR_SAMPLE_IDX.map((i) => ROTOR_DIR_1000[i]),
+    },
+    rows: terrainRows,
+  },
 }
 
 const outPath = resolve(serverRoot, 'testdata/engine_pure_vectors.json')
@@ -833,3 +1289,4 @@ console.log(`写入 ${outPath}`)
 console.log(`  技能行 ${skillRows.length} / 装置行 ${workRows.length} / 种子行 ${seedRows.length}`)
 console.log(`  校验行 ${snapshotRows.length} / 护盾行 ${shieldRows.length} / 摘要行 ${digestRows.length}`)
 console.log(`  热量脚本 ${heatRows.length}（轨迹步 ${heatRows.reduce((a, r) => a + r.trace.length, 0)}） / 手牌脚本 ${deckRows.length}`)
+console.log(`  地形脚本 ${terrainRows.length}（轨迹步 ${terrainRows.reduce((a, r) => a + r.trace.length, 0)}）`)
