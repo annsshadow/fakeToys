@@ -265,7 +265,7 @@ def gate_dataset_health(items: List[Dict[str, Any]],
     Raises:
         DataValidationError: 数据集为空；`text_field` 不是非空字符串或整个数据集没有
             一条含该字段（A321，L238）；`weights` 形状不对（转自
-            `DatasetHealthScore`，A319 / A320）
+            `DatasetHealthScore`，A319 / A320）；三只阈值不是 [0, 1] 内的有限比例（L272）
 
     **字段名的判决住在本层，不住在端点**（A321 的修法）：`ImpactEvaluator.measure()` 用
     `item.get(text_field, "")` 取文本，字段名拼错时每条都取到空串 ⇒ `duplicate_rate`
@@ -276,7 +276,7 @@ def gate_dataset_health(items: List[Dict[str, Any]],
     """
     from .health_score import DatasetHealthScore
     from .impact import ImpactEvaluator
-    from .validation import require_item_field
+    from .validation import require_item_field, require_ratio
 
     if not items:
         # 空数据集上每项指标都是 0.0：duplicate_rate 规则会以「0 ≤ 上限」通过，
@@ -284,6 +284,9 @@ def gate_dataset_health(items: List[Dict[str, Any]],
         raise DataValidationError("数据集为空，门禁无法给出有意义的判定")
 
     require_item_field("text_field", items, text_field)
+    require_ratio("pass_rate_min", pass_rate_min)
+    require_ratio("duplicate_rate_max", duplicate_rate_max)
+    require_ratio("completeness_min", completeness_min)
 
     health = DatasetHealthScore(weights=weights).score(items)
 
