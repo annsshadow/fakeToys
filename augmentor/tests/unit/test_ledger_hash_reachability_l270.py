@@ -190,19 +190,23 @@ def defect_cells(rows):
 
 
 #: ---- 现量（L270 立尺；记账批按账本批与 ⑬ 落盘后的红读数重钉）----
-#: 站点总数 = 卷一 389（清单区 112 + 日志区 277）+ 卷二 254（清单区 121 + 日志区 133）。
+#: 站点总数 = 卷一 389（清单区 112 + 日志区 277）+ 卷二 260（清单区 124 + 日志区 136）。
 #: **L270 记账批重量**：634 → 642 → **643**（账本批的清单行点名代码批那一枚 ⇒ 卷二清单区 120 → 121，
 #: L270 块 ⑤ 逐枚点名七枚不可达对象 ⇒ 卷二日志区 125 → 132，记账批 ⑬ 再点名账本批那一枚 ⇒ 133。
 #: 立尺当场的红读数 `assert 643 == 634` 留着，账本批落盘后首跑那一次是 `assert 642 == 634`）。
-MEASURED_SITES = 643
-#: 五档闭合：461 + 32 + 3 + 147 + 0 = 643。
-MEASURED_TIERS = {REACHABLE: 461, DANGLING: 32, STASH: 3, NOTCOMMIT: 147, AMBIGUOUS: 0}
+#: **L271 记账批重量**：643 → 648 → **649**（卷二清单区 +3：L271 清单行点名代码批 `c2735dd69`、
+#: A352 表行点名搬迁方两枚 `e4ce1ae36` / `94f7f05cc`；卷二日志区 +3：L271 块 ⑩ 把同两枚再点一次、
+#: 块 ⑬ 点名账本批 `cd47d9845`。四枚全是可达对象 ⇒ 只动 `reachable` 一档。红读数 `assert 649 == 643`）。
+MEASURED_SITES = 649
+#: 五档闭合：467 + 32 + 3 + 147 + 0 = 649。
+MEASURED_TIERS = {REACHABLE: 467, DANGLING: 32, STASH: 3, NOTCOMMIT: 147, AMBIGUOUS: 0}
 MEASURED_REGIONS = {("OPTIMIZATION_LOOP.md", "checklist"): 112,
                     ("OPTIMIZATION_LOOP.md", "log"): 277,
-                    ("OPTIMIZATION_LOOP_2.md", "checklist"): 121,
-                    ("OPTIMIZATION_LOOP_2.md", "log"): 133}
-#: 唯一 hex 只数（381 枚），与站点数（643 处）是两个维：同一枚被多行重提是账本常态。
-MEASURED_UNIQUE_HEX = 381
+                    ("OPTIMIZATION_LOOP_2.md", "checklist"): 124,
+                    ("OPTIMIZATION_LOOP_2.md", "log"): 136}
+#: 唯一 hex 只数（385 枚），与站点数（649 处）是两个维：同一枚被多行重提是账本常态。
+#: **L271 记账批重量**：381 → **385**（新点名四只：本账代码批与账本批各一枚 + 搬迁方两枚）。红读数 `assert 385 == 381`。
+MEASURED_UNIQUE_HEX = 385
 #: 不可达对象只数：6 枚游离 + 1 枚 stash = 7 枚（L265 记账批 ⑱ 量的那批，本轮按全账两卷重量）
 MEASURED_UNIQUE_DANGLING = 6
 #: 名册外的游离格必须恰好为空集——多一处就红，这一条是整把尺子的牙齿所在
@@ -215,7 +219,7 @@ MEASURED_NOTCOMMIT_REGIONS = {("OPTIMIZATION_LOOP.md", "checklist"): 15,
 #: l264 的面在本尺子里是真子集；差集现量 282 处 = 卷一日志区 277（那卷的日志块标题不是 `### Lnnn` 形状，
 #: 那把尺子一格都开不出块）+ 卷二五个块标题行（l264 见到标题就 `continue`；那五枚逐枚点名在
 #: `MEASURED_OUTSIDE_L264_VOLUME_TWO`，本账插行会平移它们的物理行号，所以这里钉哈希而不是钉行号）。
-MEASURED_L264_SITES = 128
+MEASURED_L264_SITES = 131  # **L271 记账批重量**：128 → 130 → **131**（L271 块 ⑩ 那两枚 + 块 ⑬ 那枚，与 l264 同批对上）。红读数 `assert 131 == 128`。
 MEASURED_OUTSIDE_L264 = 282
 MEASURED_OUTSIDE_L264_VOLUME_ONE = 277
 MEASURED_OUTSIDE_L264_VOLUME_TWO = frozenset(
@@ -309,13 +313,14 @@ class TestTheReachabilityFace:
         assert ref_dangling == by_head
 
     def test_l98_reads_only_volume_one(self):
-        """A344 说「全账无人量」的前提：管哈希槽与 git 真值对账那把尺子只读卷一，所以卷二清单区这 121 处一直没人问"""
+        """A344 说「全账无人量」的前提：管哈希槽与 git 真值对账那把尺子只读卷一，所以卷二清单区这 124 处一直没人问
+        （**L271 记账批重量**：121 → **124**，随 `MEASURED_REGIONS` 同批，红读数 `assert 124 == 121`）"""
         from tests.unit import test_ledger_hash_slots_l98 as l98
         assert l98.LEDGER_PATH.name == other.VOLUMES[0]
-        assert MEASURED_REGIONS[("OPTIMIZATION_LOOP_2.md", "checklist")] == 121
+        assert MEASURED_REGIONS[("OPTIMIZATION_LOOP_2.md", "checklist")] == 124
 
     def test_l264s_face_is_a_strict_subset_of_mine(self):
-        """与 l264 的分工：它那 128 处全在我的面里，我多出的 282 处是它按「`### Lnnn` 开块 + 标题行不算站点」
+        """与 l264 的分工：它那 131 处全在我的面里，我多出的 282 处是它按「`### Lnnn` 开块 + 标题行不算站点」
         的分区口径看不见的（卷一整片日志区 + 卷二五个标题行）。对账按**处**算而不是按去重后的格算，
         同一行重提同一枚哈希在两把尺子里都各算两处。"""
         rows = [r for r in sites() if r["region"] == "log"]
