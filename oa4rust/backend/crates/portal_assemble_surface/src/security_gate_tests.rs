@@ -105,4 +105,66 @@ mod security_gate_tests {
             "delete_layout 非 admin 必须 403"
         );
     }
+
+    /// 四轮 A3-N2：同 crate 的 dict 数据写族 + script 写族（S5 时漏收的四把，
+    /// 当时连 session 都不取，任一登录用户可删/覆写任意 portal_flag 的字典数据、
+    /// 往任意门户插入脚本）。
+    #[tokio::test]
+    async fn portal_dict_and_script_writes_forbidden_for_non_admin() {
+        let pool = shared::testing::test_pool();
+        let sess = build_session("u-nonadmin");
+        let path3 = || axum::extract::Path(("d1".to_string(), "p1".to_string(), "x".to_string()));
+
+        assert!(
+            matches!(
+                crate::dict_dictFlag_portal_portalFlag_path_data_delete(
+                    Extension(pool.clone()),
+                    Extension(sess.clone()),
+                    path3(),
+                )
+                .await,
+                Err(AppError::Forbidden)
+            ),
+            "dict data delete 非 admin 必须 403"
+        );
+        assert!(
+            matches!(
+                crate::dict_dictFlag_portal_portalFlag_path_data_post(
+                    Extension(pool.clone()),
+                    Extension(sess.clone()),
+                    path3(),
+                    axum::Json(serde_json::json!({ "v": 1 })),
+                )
+                .await,
+                Err(AppError::Forbidden)
+            ),
+            "dict data post 非 admin 必须 403"
+        );
+        assert!(
+            matches!(
+                crate::dict_dictFlag_portal_portalFlag_path_data_put(
+                    Extension(pool.clone()),
+                    Extension(sess.clone()),
+                    path3(),
+                    axum::Json(serde_json::json!({ "v": 1 })),
+                )
+                .await,
+                Err(AppError::Forbidden)
+            ),
+            "dict data put 非 admin 必须 403"
+        );
+        assert!(
+            matches!(
+                crate::script_portal_portal_name_post(
+                    Extension(pool.clone()),
+                    Extension(sess.clone()),
+                    axum::extract::Path(("p1".to_string(), "s1".to_string())),
+                    axum::Json(serde_json::json!({ "content": "eval('x')" })),
+                )
+                .await,
+                Err(AppError::Forbidden)
+            ),
+            "script portal name post 非 admin 必须 403"
+        );
+    }
 }
