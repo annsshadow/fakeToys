@@ -294,7 +294,7 @@ class DatasetOperations:
         # `is not None` 而非 falsy：ratio=0 语义是「采 0 条」，写成 `if config.ratio`
         # 会把 0 读成「未设置」而采全量（L149，B219；下游 0 条由下面的短路守卫接住）
         elif config.ratio is not None:
-            sample_size = int(len(items) * require_ratio("ratio", config.ratio))
+            sample_size = int(len(items) * require_ratio("ratio", config.ratio, -float("inf"), float("inf")))
         else:
             sample_size = len(items)
 
