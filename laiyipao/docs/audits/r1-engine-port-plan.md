@@ -118,12 +118,72 @@ F 块里 (1)(2) 的可观测症状是**选牌索引序列错乱**（TS 注释记
 |---|---|
 | A 骨架 + tick 序 | ✅ `engine.go` + `engine_block_a_test.go`（13 条守卫） |
 | B 波次与刷怪 | ✅ `engine_wave.go` + `engine_wave_contract_test.go`（**首次跨端逐事件对齐**，5 场景 / 685 轨迹步） |
-| C 敌人移动与元素 | ⬜ 下一步 |
+| C 敌人推进与漏怪 | OK engine_enemy.go + engine_enemy_test.go（12 条纯逻辑） |
+| D 开火与弹道 | ⬜ 下一步 —— **里程碑：拿到整局 eplay_hash** |
 | D 开火与弹道 | ⬜ |
 | E 地形接线 | ⬜ |
 | F 卡牌 | ⬜ |
 | G 结算与哈希 | ⬜ |
 
+### C 块的完成度（诚实口径）
+
+实现 `engine_enemy.go`：`updateEnemies` / `leakDamage` / `leakDamageFor` /
+`defenseArmorPermille` / `breachDamage` / `withinEnemy` / `filterAliveEnemies`，
+以及 `NewBattleEngine` 里此前缺失的初始化（`BaseHP` / `BaseHPMax` /
+`BaseArmorPermille` / `TotalEnemies` / `ActiveSlots` / 热量上限加成）。
+
+**跨端对齐**：9 场景全绿，两个 leak 伤害分支都被覆盖
+（第 1 关走 `breachDamage`：1000 底血掉到 700/820/925，对应护甲 0/400/750‰；
+第 25 关走 `attack > 0`：1760 底血掉到 1426，167 = 1760×342/3600）。
+
+**B 块的两条已知差异已消除**：`x` 与 `spawn_progress` 现在真正参与比对。
+`knownCrossEndDivergences` 清空，`TestCrossEndCoversMotionFields`
+额外确认这两个字段的比对**不是死的**（跑一遍场景，若它们全程不变就红）——
+只删登记、不加比对的话，「表为空」那条会绿而字段又被静默跳过。
+
+**对齐抓不到、靠构造用例补上的 5 个**：
+射程与抵达的互斥、射程边界 `<=`、冷却边界 `<= 0`、钻地/零攻击/零射程
+三个前置条件、护甲三项相加（真实场景里永远只有一项非零）、负攻击力走
+`breachDamage` 档（写成 `=== 0` 会掉进乘除分支得到负伤害，而 `applyArmor`
+对负数原样返回 = 加血）。
+
+**变异实测 10 处，2 处首轮存活**：
+- MUT-C1 删掉 `x > BaseX` 互斥守卫 → **首轮存活**。原因是我把血池配成
+  「一次就打空」，`if baseHP <= 0 { finish(); return }` 立刻短路，
+  第二个分支根本没机会执行。改成 attack=36（单次 1000）、血池 100000 后
+  精准命中：leaked=2、血 98000、两条 leak 事件、两条重放事件。
+- MUT-C6~C10（射程边界、冷却边界、不剔除死者、忽略 burrow、半径去掉
+  flyHeight）首轮全红。
+- 另有 C2 除数、C3 护甲符号、C4 兜底 0、C5 事件 a/b 写反，首轮全红。
+
+**教训（与 B 同源，但更隐蔽一层）**：
+构造守卫的夹具必须按「要观测的现象**能发生**」来配。
+漏怪守卫按「一次就死」配血池，它在结构上就观测不到「第二次」。
+
+### 对齐终止条件：为什么停在 `card_select`
+
+第 2 波必须先解掉卡牌选择，那要过 `rollWaveCards`（消耗 RNG，于是后续
+所有波次的刷怪洗牌都会变）与 `skipCards` / `finishCardSelect` ——
+三者都属于 F 块。
+
+第一版让长场景硬跑满 22000 tick，结果 224 个采样点里 216 个是
+`phase: card_select` 的死空间：向量大 4 倍，什么也没多验。
+现在两端都在 `card_select` 停下（判据是「既不是 wave 也不是 prepare」，
+这样将来新增终局状态不必改这里），第 2 波的 `atTick` 偏移由
+`TestBeginWaveAtLaterIndex` 直接单测覆盖 —— 那个 bug 在第 1 波不可见，
+因为那时 `e.Tick` 恒为 0，把 `+ e.Tick` 写成常量 0 也能全绿。
+
+### 向量文件大小的教训
+
+`replay` 是**累积**数组，逐步全量存 = O(n²)。
+第一版让长场景逐步全记，向量直接变成 **42 MB** —— 没人会 review 42 MB，
+没人看的契约等于没有契约。改成「replay 存本步新增」+「按 `sampleEvery`
+抽样并对有事件的步强制采样」后是 **1.0 MB**。
+
+抽样判据必须**两端各自可算**（`tick % sampleEvery == 0 || 本步新增重放事件`），
+不能照抄 trace 的下标 —— 照抄下标等于「Go 跑到第 k 个采样点就断言第 k 个
+期望值」，两端之间没有任何时序约束，退化成逐点查表，
+「Go 少跑了两步」这类错误永远抓不到。
 ### B 块的完成度（诚实口径）
 
 **已验证（跨端逐事件对齐）**：5 个真实场景 × 逐 tick 比对
