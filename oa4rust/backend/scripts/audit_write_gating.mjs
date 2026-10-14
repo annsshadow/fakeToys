@@ -40,20 +40,43 @@ const ADMIN_WRITE_PREFIXES = readConstList(csrc, "ADMIN_WRITE_PREFIXES");
 // 注意 get_permission 的前缀匹配是裸 starts_with（无段边界），这里按同一口径复刻。
 const RBAC = path.join(CRATES, "shared/src/middleware/rbac.rs");
 const rsrc = fs.readFileSync(RBAC, "utf8");
-const PUBLIC_EXACT = [
-  ...rsrc.matchAll(/registry\.register\("([^"]+)",\s*PermissionLevel::Public\)/g),
-].map((m) => m[1]);
-const PUBLIC_PREFIXES = [
-  ...rsrc.matchAll(/registry\.register_prefix\("([^"]+)",\s*PermissionLevel::Public\)/g),
-].map((m) => m[1]);
+// 缺陷 9 修正（四轮 §三.7）：注册表原本按 `registry.register("…", PermissionLevel::Public)`
+// 一条正则读，而 rbac.rs 里实际有三种注册口——`register_exact` / `register_prefix` /
+// `register`，并且大量调用是**跨行**书写（`register_prefix(\n  "…",\n  PermissionLevel::Public,\n)`）。
+// 于是 Public 集合被系统性读漏，直接产出两类错：真匿名面（A）偏低、「豁免 ∧ ¬Public」的
+// 死豁免面（D）偏高——首跑把 `/api/queryview/list`、`/api/person/regist`、登录元数据路径
+// 这些生产明明活着的路由报成死路由。现按 `get_permission` 的真实语义复刻：
+// exact 表优先命中，否则取 `starts_with` 命中的**最长**前缀（裸 starts_with，无段边界）。
+const EXACT_LEVELS = new Map();
+const PREFIX_LEVELS = [];
+for (const m of rsrc.matchAll(
+  /registry\.register(_exact|_prefix)?\s*\(\s*"([^"]+)"\s*,\s*PermissionLevel::(\w+)/g
+)) {
+  const [, kind, p, level] = m;
+  if (kind === "_prefix") PREFIX_LEVELS.push([p, level]);
+  else EXACT_LEVELS.set(p, level); // `register` 在 Rust 侧不存在，出现即按 exact 处理
+}
 function registryPublic(p) {
-  if (PUBLIC_EXACT.includes(p)) return p;
+  if (EXACT_LEVELS.get(p) === "Public") return `exact:${p}`;
   let best = null;
-  for (const pre of PUBLIC_PREFIXES) {
+  for (const [pre, level] of PREFIX_LEVELS) {
+    if (level !== "Public") continue;
     if (p.startsWith(pre) && (!best || pre.length > best.length)) best = pre;
   }
-  return best;
+  return best ? `prefix:${best}` : null;
 }
+// 复刻 get_permission 的完整判定（含非 Public 级别），用于给 D 桶点名「两份权威互相打架」
+function registryLevel(p) {
+  if (EXACT_LEVELS.has(p)) return `exact:${EXACT_LEVELS.get(p)}`;
+  let best = null;
+  for (const [pre, level] of PREFIX_LEVELS) {
+    if (p.startsWith(pre) && (!best || pre.length > best[0].length)) best = [pre, level];
+  }
+  return best ? `prefix:${best[0]}→${best[1]}` : "未注册（默认需 Session）";
+}
+console.log(
+  `注册表自证：解析到 ${EXACT_LEVELS.size} 条 exact + ${PREFIX_LEVELS.length} 条 prefix 注册（含跨行与 register_exact/register_prefix 三种写法）`
+);
 
 const segs = (p) => p.split("/").filter(Boolean);
 // 复刻 shared/middleware/security.rs 的 path_matches：段数相等，模式段 {x} 通配
@@ -87,23 +110,114 @@ function walk(dir, out = []) {
   }
   return out;
 }
-const ROUTE_RE = /\.route\(\s*"([^"]+)"\s*,\s*([\s\S]{0,400}?)\)\s*\)/g;
-// 一次 .route() 可链式挂多个方法（`.route("p", delete(a).put(b))`）。必须逐个枚举：
-// 只取首方法的旧写法会让「链上第二个方法」从分母里静默消失——四轮取证实测漏掉
-// processing 的 work_edit / work_delete / att_edit_id 三把（它们从未进过任何残余名单）。
+// 缺陷 7 + 8 修正（四轮 §三.7）：路由表原本是**一条正则**，先天量不了两类事实：
+// ① 正则内层写成裸 `[\s\S]{0,400}?`，会跨过相邻 `.route()` 的边界去找第一个 `)\s*\)`，
+//    于是把下一条路由的 handler 配到本条路径上（实测 `register` 被配成
+//    `POST /api/reset/password/anonymous`，它真实注册在 `/api/person/regist`），
+//    而被吞掉的那条 `.route()` 因 lastIndex 已越过，整条不再入分母；
+// ② 终止符 `)\s*\)` 不容忍 Rust 尾逗号，rustfmt 常见的多行 `.route("p", get(a),)`
+//    根本匹配不上——全仓 `.route(` 出现 4723 处，旧正则只匹配 3870 处
+//    （`bbs_assemble_control` 132 处只匹配 6、`calendar_assemble_control` 34→1、
+//    `hotpic_assemble_control` 35→4、`jpush_assemble_control` 30→10）。
+// ③ 更麻烦的是「路径由表达式算出来」的注册：`&fmt("user/role/{id}")`（前缀常量拼接，46 处）
+//    与 `format!("{p}/design/search").as_str()`（let 绑定前缀，24 处）首参不是字面量，
+//    正则直接跳过——这两族的写路由**从来没有进过任何分母**。
+// 现在改成按实参扫描：读第一个顶层实参（容忍字符串转义与嵌套括号）解析成路径，
+// 再在第二个实参上逐个枚举链式方法（`.route("p", delete(a).put(b))` 只取首方法的
+// 旧写法会让链上第二个方法静默消失——四轮实测漏掉 processing 的 work_edit /
+// work_delete / att_edit_id 三把）。解析不出来的首参**单独点名计数**，不静默丢弃。
 const METHOD_CHAIN_RE = /(?:^|[^A-Za-z0-9_])(get|post|put|delete|patch|head|options)\s*\(\s*((?:[A-Za-z_][A-Za-z0-9_]*::)*[A-Za-z_][A-Za-z0-9_]*)/gi;
 const routes = []; // {crate, file, line, path, method, handler}
 const seenRouteFiles = [];
+const unresolvedPaths = [];
+
+// 文件级常量表：`const API_BASE`、`let/const p = "..."`，用于把拼接路径还原成真实 URI
+function fileCtx(src) {
+  const base = /const\s+API_BASE\s*:\s*&str\s*=\s*"([^"]+)"/.exec(src);
+  const binds = new Map();
+  for (const m of src.matchAll(/\b(?:let|const)\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?::\s*&?str\s*)?=\s*"([^"]+)"/g)) {
+    binds.set(m[1], m[2]);
+  }
+  return { base: base ? base[1] : null, binds };
+}
+// 复刻 bbs 的 fmt()/normalize_legacy_path()：去空段 + 去相邻重复段，再挂到 API_BASE 下
+function legacyJoin(base, rel) {
+  const segs = [];
+  for (const s of `${base}/${rel}`.split("/")) {
+    if (!s || segs[segs.length - 1] === s) continue;
+    segs.push(s);
+  }
+  return `/${segs.join("/")}`;
+}
+function resolvePath(raw, ctx) {
+  const arg = raw.trim();
+  const lit = /^"([^"]*)"$/.exec(arg);
+  if (lit) return lit[1];
+  const fm = /^&?fmt\(\s*"([^"]+)"\s*\)$/.exec(arg);
+  if (fm && ctx.base) return legacyJoin(ctx.base, fm[1]);
+  const fstr = /^format!\(\s*"([^"]+)"\s*\)(?:\.as_str\(\))?$/.exec(arg);
+  if (fstr) {
+    // Rust 的 `format!` 里 `{{`/`}}` 是字面花括号（`/table/{{flag}}/insert` → 路径段 `{flag}`），
+    // 只有单花括号才是插值。顺序：先把 `{{`/`}}` 保护成哨兵，再换绑已知变量，
+    // 残留的 `{x}` 就是解不出的前缀 → 返回 null；最后把哨兵还原成 `{`/`}`。
+    const LB = "\u0000", RB = "\u0001";
+    let s = fstr[1].replace(/\{\{/g, LB).replace(/\}\}/g, RB);
+    s = s.replace(/\{(\w+)\}/g, (m, k) => (ctx.binds.has(k) ? ctx.binds.get(k) : m));
+    if (/\{\w+\}/.test(s)) return null;
+    return s.replace(new RegExp(LB, "g"), "{").replace(new RegExp(RB, "g"), "}");
+  }
+  return null;
+}
+// 读 `.route(` 之后的一个顶层实参：尊重字符串转义与嵌套括号，深度 0 的逗号/闭括号分隔，
+// 并跳过 Rust 行注释与块注释（`personal/src/lib.rs` 将说明注释直接写在 `.route(` 的参数区里，
+// 不跳会把注释当成路径的一部分）。
+function readArg(src, i) {
+  let depth = 0, inStr = false, esc = false, arg = "";
+  for (; i < src.length; i++) {
+    const c = src[i], d = src[i + 1];
+    if (inStr) {
+      arg += c;
+      if (esc) esc = false;
+      else if (c === "\\") esc = true;
+      else if (c === '"') inStr = false;
+      continue;
+    }
+    if (c === "/" && d === "/") { const n = src.indexOf("\n", i); i = n < 0 ? src.length : n - 1; continue; }
+    if (c === "/" && d === "*") { const n = src.indexOf("*/", i + 2); i = n < 0 ? src.length : n + 1; continue; }
+    if (c === '"') { inStr = true; arg += c; continue; }
+    if (c === "(" || c === "[" || c === "{") { depth++; arg += c; continue; }
+    if (c === ")" || c === "]" || c === "}") {
+      if (depth === 0) return [arg, i + 1, true];
+      depth--; arg += c; continue;
+    }
+    if (c === "," && depth === 0) return [arg, i + 1, false];
+    arg += c;
+  }
+  return [arg, i, false];
+}
+const URI_SHAPE = /^\/[A-Za-z0-9_./{}:%~ -]*$/; // 允许空格/百分号：attendance 确有
+// `/…/check/ from/out` 与 `/…/check/%20from/out` 这种带空格的注册路径（见该文件说明注释）
 for (const file of walk(CRATES)) {
   const src = fs.readFileSync(file, "utf8");
   if (!src.includes(".route(")) continue;
   seenRouteFiles.push(file);
   const crate = path.relative(CRATES, file).split(path.sep)[0];
-  for (const m of src.matchAll(ROUTE_RE)) {
-    const rpath = m[1];
-    const inner = m[2];
-    const line = src.slice(0, m.index).split("\n").length;
-    for (const cm of inner.matchAll(METHOD_CHAIN_RE)) {
+  const ctx = fileCtx(src);
+  let at = 0;
+  while ((at = src.indexOf(".route(", at)) >= 0) {
+    const line = src.slice(0, at).split("\n").length;
+    // 站点本身在行注释/文档注释里（如 attendance routes.rs 的动词对齐说明）→ 不是注册
+    if (src.slice(src.lastIndexOf("\n", at) + 1, at).includes("//")) { at += 7; continue; }
+    const [rawPath, afterPath] = readArg(src, at + 7);
+    const [rawHandlers] = readArg(src, afterPath);
+    at = afterPath;
+    const rpath = resolvePath(rawPath, ctx);
+    // 形状不合法（含注释/字符串残片）或前缀变量解不出 → 单独点名，绝不入表也不静默丢
+    if (rpath === null || !URI_SHAPE.test(rpath)) {
+      unresolvedPaths.push(`${crate}\t${path.basename(file)}:${line}\t${rawPath.trim().replace(/\s+/g, " ").slice(0, 80)}`);
+      continue;
+    }
+    for (const cm of rawHandlers.matchAll(METHOD_CHAIN_RE)) {
       routes.push({
         crate,
         file,
@@ -116,9 +230,23 @@ for (const file of walk(CRATES)) {
   }
 }
 
+// 分母自证：注册点总数（去掉注释行）与入表条数、以及「首参解析不了」的残留必须当面说出来
+const rawRouteSites = seenRouteFiles.reduce(
+  (n, f) =>
+    n +
+    fs
+      .readFileSync(f, "utf8")
+      .split("\n")
+      .filter((l) => l.includes(".route(") && !l.trimStart().startsWith("//")).length,
+  0
+);
+console.log(
+  `\n路由表自证：注册点 ${rawRouteSites} 处 → 入表 ${routes.length} 条（方法级），首参解析不了 ${unresolvedPaths.length} 处`
+);
+if (unresolvedPaths.length) console.log(unresolvedPaths.join("\n"));
+
 // handler 名 → 路由（同名 handler 可能被多个 crate/路径复用）
-const byHandler = new Map();
-for (const r of routes) {
+const byHandler = new Map();for (const r of routes) {
   if (!byHandler.has(r.handler)) byHandler.set(r.handler, []);
   byHandler.get(r.handler).push(r);
 }
@@ -209,7 +337,7 @@ const SESSION_RE = /Extension\s*<\s*(?:crate::)?(?:shared::)?session::Session|Ex
 // 改成前缀匹配，凡 `require_admin*` / `require_owner*` / `require_actor*` / `require_session*`
 // / `u4_*` / `u2_require*` / `guard_write*` 等都算体内门禁。
 const GATE_RE =
-  /\b(?:require_admin|require_owner|require_actor|require_session|u4_session|u4_require|u2_require|u2_check_owner|owner_gate|is_admin|check_permission|assert_admin|require_role|guard_write|validate_session|extract_token_from_headers)/;
+  /\b(?:require_admin|require_owner|require_actor|require_session|u4_session|u4_require|u2_require|u2_check_owner|owner_gate|is_admin|check_permission|assert_admin|require_role|guard_write|validate_session|extract_token_from_headers|resolve_current_person)/;
 const fnCache = new Map();
 function fnBody(crate, handler) {
   const key = `${crate}::${handler}`;
@@ -293,4 +421,169 @@ fs.writeFileSync(
   ["crate\tmethod\tpath\thandler\tbucket", ...getWrites].join("\n") + "\n",
 );
 console.log("明细已写 write_routes_get_writes.tsv");
+
+// ── 6. 豁免通配段碰撞普查（AUTH_EXEMPT_PATHS 的 {param} 吞掉同层字面量路由）────
+// 中间件只对**实际请求路径**做段匹配（security.rs `path_matches`：段数相等 + 模式段
+// 以 `{` 开头即通配），它并不知道也不想这条路由注册时那段是字面量。
+// 于是「为只读详情写的豁免 `/api/x/invoice/{id}`」会把 `/api/x/invoice/upload`
+// 整条匿名放行——本批 R4 里的 `invoice_upload`（匿名 INSERT + creator 取 body）就是这么来的。
+// 这里按同一口径复刻，只点名「豁免命中里至少有一个通配段正对着路由的字面量段」的碰撞，
+// 并按体内是否含写 SQL / 是否读会话 / 是否有门禁分三档。
+function exemptCollisions(p) {
+  const a = segs(p);
+  const out = [];
+  for (const pat of EXEMPT_PATHS) {
+    const b = segs(pat);
+    if (a.length !== b.length || !pathMatches(p, pat)) continue;
+    const eaten = [];
+    for (let i = 0; i < a.length; i++) {
+      if (b[i].startsWith("{") && !a[i].startsWith("{")) eaten.push(`${b[i]}→${a[i]}`);
+    }
+    if (eaten.length) out.push(`${pat} [${eaten.join(", ")}]`);
+  }
+  return out;
+}
+const collisions = [];
+const cb = new Map();
+for (const r of routes) {
+  const eatenBy = exemptCollisions(r.path);
+  if (!eatenBy.length) continue;
+  const body = fnBody(r.crate, r.handler);
+  const write = WRITE_SQL_RE.test(body);
+  const gate = GATE_RE.test(body);
+  const sess = SESSION_RE.test(body);
+  const bucket = write
+    ? gate || sess
+      ? "W2-碰撞豁免+含写 SQL 但体内读会话或有门禁"
+      : "W1-碰撞豁免+含写 SQL 且体内无会话无门禁"
+    : "W3-碰撞豁免+只读";
+  cb.set(bucket, (cb.get(bucket) || 0) + 1);
+  collisions.push(
+    `${r.crate}\t${r.method}\t${r.path}\t${r.handler}\t${bucket}\t${eatenBy.join(" ; ")}`
+  );
+}
+console.log(`\n豁免通配段碰撞：${collisions.length} 条路由被「本意给只读详情的 {param} 豁免」匿名放行`);
+for (const [k, v] of [...cb].sort((a, b) => a[0].localeCompare(b[0]))) console.log(`  ${String(v).padStart(4)}  ${k}`);
+console.log(collisions.filter((l) => l.includes("W1")).join("\n"));
+fs.writeFileSync(
+  path.join(ARTIFACTS, "auth_exempt_wildcard_collisions.tsv"),
+  ["crate\tmethod\tpath\thandler\tbucket\teaten_by", ...collisions].join("\n") + "\n",
+);
+console.log("明细已写 auth_exempt_wildcard_collisions.tsv");
+
+// 6b. 真匿名面：双锁模型（缺陷 5 修正）
+// 旧口径把「auth 层豁免」当成「匿名可达」，但请求还要过 `authorize_middleware`：
+// 它只在**注册表判定为 Public** 时早退放行，否则无 Session 一律 401
+// （rbac.rs `authorize_middleware`：`level == Some(Public)` → next.run，否则取
+// `request.extensions()::<Session>`，取不到就 `Unauthorized`）。
+// 所以「匿名可达」= `is_auth_exempt(path)` **∧** 注册表命中 Public，两把锁都要开。
+// `AUTH_EXEMPT_PATHS` 只开了第一把，之前 R4/K1 里那些「只读详情豁免被通配段吞掉」的
+// 写路由其实被第二把锁兜住了（`invoice_upload` 实测 401，见 §三.7）——旧读数把两类混在一起报，
+// 既虚高了行动面，也掩盖了真正两把锁同开的少数几条。
+// 另有 `SECRET_INIT_PATHS` 的条件锁：命中它且系统已初始化时，auth 层不再豁免（token.rs:142-147）。
+const SECRET_INIT = readConstList(csrc, "SECRET_INIT_PATHS");
+function anonState(p) {
+  const exempt = isAuthExempt(null, p);
+  const pub = registryPublic(p);
+  const secret = SECRET_INIT.some((q) => pathMatches(p, q));
+  if (!exempt || !pub) return null;
+  return secret ? "条件匿名（仅未初始化窗口）" : "真匿名";
+}
+const anonWrites = [];
+const ab = new Map();
+for (const r of routes) {
+  const state = anonState(r.path);
+  if (!state) continue;
+  const body = fnBody(r.crate, r.handler);
+  const write = WRITE_SQL_RE.test(body);
+  const guarded = GATE_RE.test(body) || SESSION_RE.test(body);
+  const bucket = write && !guarded
+    ? `A1-${state}+体内写 SQL 且无门禁无会话`
+    : write
+      ? `A2-${state}+体内写 SQL 但读会话或有门禁`
+      : `A3-${state}+只读`;
+  ab.set(bucket, (ab.get(bucket) || 0) + 1);
+  anonWrites.push(`${r.crate}\t${r.method}\t${r.path}\t${r.handler}\t${bucket}`);
+}
+console.log(`\n真匿名可达面（auth 豁免 ∧ 注册表 Public）：${anonWrites.length} 条`);
+for (const [k, v] of [...ab].sort((a, b) => a[0].localeCompare(b[0]))) console.log(`  ${String(v).padStart(4)}  ${k}`);
+console.log(anonWrites.filter((l) => l.includes("\tA1-")).join("\n"));
+fs.writeFileSync(
+  path.join(ARTIFACTS, "anonymous_write_routes.tsv"),
+  ["crate\tmethod\tpath\thandler\tbucket", ...anonWrites].join("\n") + "\n",
+);
+console.log("明细已写 anonymous_write_routes.tsv");
+
+// A1 里「真匿名（不受初始化窗口约束）+ 体内写 SQL + 无门禁无会话」是匿名侧唯一真能落笔的
+// 行动面，必须逐条点名。断言写成**集合相等**而非「数量 ≤ N」：新增一条匿名写路由时尺子必须
+// 红到有人把它显式写进名单（并说明为什么可以公开），名单里的条目被修掉时也必须红一次。
+// `GET /api/secret/set/cancel` 曾因不在 `SECRET_INIT_PATHS` 里落进这一格（补锁后转条件匿名），
+// 就是这个名单要盯的形状。
+const A1_UNCONDITIONAL_WRITE = [
+  "auth\tPOST\t/api/authentication",
+  "auth\tPOST\t/api/authentication/login",
+  "personal\tPOST\t/api/person/regist",
+];
+const a1Now = anonWrites
+  .filter((l) => l.includes("\tA1-真匿名+体内写 SQL 且无门禁无会话"))
+  .map((l) => l.split("\t").slice(0, 3).join("\t"));
+const a1Extra = a1Now.filter((k) => !A1_UNCONDITIONAL_WRITE.includes(k));
+const a1Gone = A1_UNCONDITIONAL_WRITE.filter((k) => !a1Now.includes(k));
+console.log(
+  `\nA1 真匿名写行动面（点名名单）：实测 ${a1Now.length} 条 / 名单 ${A1_UNCONDITIONAL_WRITE.length} 条`
+);
+for (const k of a1Extra) console.log(`  未登记的新匿名写面：${k.replace(/\t/g, " ")}`);
+for (const k of a1Gone) console.log(`  名单里已消失的条目：${k.replace(/\t/g, " ")}`);
+if (a1Extra.length || a1Gone.length) {
+  console.error("A1 真匿名写行动面与点名名单不一致——要么新增匿名写路由，要么有一条被修掉却没更新名单");
+  process.exitCode = 1;
+}
+
+// ── 6c. 两份权威的差集（auth 豁免 ∧ ¬注册表 Public）──────────────────────────
+// 这一桶的**含义取决于 token.rs 的 auth 层是否只按豁免表早退**，所以尺子自己把这个
+// 事实从代码里读出来（`F1_WIRED`），而不是把某一种语义钉死在桶名上：
+//  · 未接线（四轮 §三.7 的旧态）：auth 命中豁免就早退且**不插 Session**，authorize 又只
+//    在注册表 Public 时放行（rbac.rs:538-544）⇒ 半开的双锁，这批路由对**已登录的 admin
+//    也永久 401**（实测：带真会话打 `POST /api/general/assemble/control/invoice/create`）。
+//    可用性缺陷，不是安全兜底。
+//  · 已接线（现况，F1）：auth 层要求「豁免 ∧ 注册表 Public」才早退 ⇒ 差集里的豁免条目
+//    是**惰性条目**（豁免了个寂寞），路由回归「需登录」；`tests/exempt_authorize_parity.rs`
+//    逐条实测这局面成立（红名单 0 条）。
+// 真正的残留风险变成组合式的：哪天有人把这些路径（或其前缀）标成 Public，惰性条目会
+// 瞬间变成匿名可达——所以 D1（体内写 SQL）那批仍是需要盯的名单，只是定性从"缺陷"变"引信"。
+// （`SECRET_INIT_PATHS` 命中的按设计只算初始化窗口，单列 D3。）
+const TOKEN = path.join(CRATES, "shared/src/middleware/token.rs");
+const F1_WIRED = /is_auth_exempt\(&path\)\s*&&[\s\S]{0,240}?is_registry_public/.test(
+  fs.readFileSync(TOKEN, "utf8"),
+);
+const deadLabel = F1_WIRED ? "惰性豁免条目（需登录，豁免本身失效）" : "死态：所有用户（含已登录）不可达";
+const deadExempt = [];
+const db = new Map();
+for (const r of routes) {
+  if (!isAuthExempt(r.method, r.path)) continue;
+  if (registryPublic(r.path)) continue;
+  const secret = SECRET_INIT.some((q) => pathMatches(r.path, q));
+  const who = EXEMPT_PATHS.find((pat) => pathMatches(r.path, pat))
+    || `prefix:${EXEMPT_PREFIXES.find((pre) => segPrefix(r.path, pre))}`;
+  const body = fnBody(r.crate, r.handler);
+  const write = WRITE_SQL_RE.test(body);
+  const bucket = secret
+    ? "D3-条件豁免（仅初始化窗口），窗口外需 token"
+    : write
+      ? `D1-${deadLabel}+体内写 SQL`
+      : `D2-${deadLabel}+只读`;
+  db.set(bucket, (db.get(bucket) || 0) + 1);
+  deadExempt.push(
+    `${r.crate}\t${r.method}\t${r.path}\t${r.handler}\t${bucket}\t${who}\t${registryLevel(r.path)}`
+  );
+}
+console.log(
+  `\n豁免 ∧ ¬Public 差集（F1 接线自证：${F1_WIRED ? "已接线 → 差集=惰性豁免条目" : "未接线 → 差集=全员 401 死态"}）：${deadExempt.length} 条`
+);
+for (const [k, v] of [...db].sort((a, b) => a[0].localeCompare(b[0]))) console.log(`  ${String(v).padStart(4)}  ${k}`);
+fs.writeFileSync(
+  path.join(ARTIFACTS, "dead_exempt_routes.tsv"),
+  ["crate\tmethod\tpath\thandler\tbucket\teaten_by\tregistry_level", ...deadExempt].join("\n") + "\n",
+);
+console.log("明细已写 dead_exempt_routes.tsv");
 

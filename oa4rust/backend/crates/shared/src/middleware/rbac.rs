@@ -196,6 +196,12 @@ impl PermissionRegistry {
         registry.register_prefix("/api/reset", PermissionLevel::Public);
         registry.register_prefix("/api/secret/check", PermissionLevel::Public);
         registry.register_prefix("/api/secret/set", PermissionLevel::Public);
+        // 四轮 §三.7 双锁一致性修复：这两条已在 `AUTH_EXEMPT_PATHS` 里显式列为匿名前置
+        // 端点（登录验证码校验、注册），但注册表没有对应 Public 条目，被兜底的
+        // `/api`→Authenticated 判成需会话，而 auth 层豁免又不插 Session ⇒ 实测对任何人
+        // 都 401（`tests/exempt_authorize_parity.rs` 匿名臂）。注册表补齐设计意图。
+        registry.register_exact("/api/secret/captcha/verify", PermissionLevel::Public);
+        registry.register_exact("/api/person/regist", PermissionLevel::Public);
         // organization_assemble_authentication: 认证前置端点（登录模式、验证码密钥、登出）
         registry.register_prefix(
             "/api/organization/assemble/authentication/authentication",
@@ -430,6 +436,17 @@ impl Default for PermissionRegistry {
 fn permission_registry() -> &'static PermissionRegistry {
     static REGISTRY: OnceLock<PermissionRegistry> = OnceLock::new();
     REGISTRY.get_or_init(PermissionRegistry::with_defaults)
+}
+
+/// 路径在权限注册表上是否命中 `Public`（四轮 §三.7 的「第二把锁」）。
+///
+/// 供 `auth_middleware` 做双锁一致性判定：豁免表早退时不插 Session，而 authorize
+/// 只在 Public 时放行，所以「豁免 ∧ ¬Public」= 对所有用户（含合法会话）401 死态。
+pub(crate) fn is_registry_public(path: &str) -> bool {
+    matches!(
+        permission_registry().get_permission(path),
+        Some(PermissionLevel::Public)
+    )
 }
 
 /// 检查当前用户是否具备所需权限（集成 Role / Group / Owner 数据库查询）。
