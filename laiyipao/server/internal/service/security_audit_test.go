@@ -223,12 +223,12 @@ func TestLogoutRevokesAllRefreshTokens(t *testing.T) {
 	// 而心算正是这类测试最容易写错的地方（我第一版就写错了）。
 	// 本条只关心安全后果（别人的令牌再也换不出 access token），
 	// 条数一致性由下一条 `TestLogoutRevokesAllRefreshTokens_Counts` 单独守。
-	n, err := ts.Service.Logout(ctx, tp1.User.ID)
+	res, err := ts.Service.Logout(ctx, tp1.User.ID)
 	if err != nil {
 		t.Fatalf("Logout: %v", err)
 	}
-	if n != 2 {
-		t.Errorf("两次登录 = 两条未吊销令牌，应吊销 2 条，实际 = %d", n)
+	if res.RevokedTokens != 2 {
+		t.Errorf("两次登录 = 两条未吊销令牌，应吊销 2 条，实际 = %d", res.RevokedTokens)
 	}
 
 	for _, tok := range []string{tp1.RefreshToken, tp2.RefreshToken} {
@@ -260,12 +260,153 @@ func TestLogoutRevokesAllRefreshTokens_Counts(t *testing.T) {
 		t.Fatalf("Refresh: %v", err)
 	}
 	// Refresh 消费旧的、换发新的 → 未吊销的仍然是 1 条，不是 0 也不是 2。
-	n, err := ts.Service.Logout(ctx, tp.User.ID)
+	res, err := ts.Service.Logout(ctx, tp.User.ID)
 	if err != nil {
 		t.Fatalf("Logout: %v", err)
 	}
-	if n != 1 {
-		t.Errorf("Refresh 换发后未吊销令牌应为 1 条，实际 = %d", n)
+	if res.RevokedTokens != 1 {
+		t.Errorf("Refresh 换发后未吊销令牌应为 1 条，实际 = %d", res.RevokedTokens)
+	}
+}
+
+// --- 游客凭证轮换（R3）---
+
+// TestLogoutRotatesGuestToken 守住凭证轮换。
+//
+// # 为什么这是独立的一条而不是上面那条的附带断言
+//
+// 旧 guest_token 与口令同级：给出它调 `POST /auth/guest` 就能拿到该账号的
+// access + refresh token（`TestGuestTokenIsABearerCredential` 证明这一点）。
+//
+// 它此前**永远不变、没有任何吊销手段** —— 所以「登出」对持有旧凭证的人
+// 毫无意义。若把这条只写成上面那条的附带断言，将来有人把轮换单独删掉
+// （理由可能是「重装后进度没了」）时，那条仍会绿。
+func TestLogoutRotatesGuestToken(t *testing.T) {
+	ts := openTestService(t)
+	ctx := context.Background()
+	guest := uniqueGuestToken()
+
+	tp, err := ts.Service.GuestLogin(ctx, guest, "rotate")
+	if err != nil {
+		t.Fatalf("GuestLogin: %v", err)
+	}
+	res, err := ts.Service.Logout(ctx, tp.User.ID)
+	if err != nil {
+		t.Fatalf("Logout: %v", err)
+	}
+	if res.GuestToken == "" {
+		t.Fatal("登出必须返回轮换后的 guest_token")
+	}
+	if res.GuestToken == guest {
+		t.Fatal("登出后 guest_token 没有变 —— 旧凭证仍然可用，登出等于没做")
+	}
+
+	// 关键判据是**账号归属**，不是「有没有报错」。
+	//
+	// ⚠️ 我第一版断言的是「旧凭证登录必须报错」—— 那是错的：
+	//   `GuestLogin` 对**未知** guest_token 的语义是**建一个新号**
+	//   （ON CONFLICT ... RETURNING id，无匹配则 INSERT）。
+	//   所以它永远不会因凭证作废而报错，而是安静地返回一个**空账号**。
+	//
+	//   两种断言的差别很要紧：
+	//     - 「必须报错」→ 描述的是一个**不存在**的行为
+	//     - 「必须不回到受害者账号」→ 描述的是**安全后果**
+	//
+	//   而这个形态本身值得写进文档：**凭证轮换之后，
+	//   拿旧凭证来的人不会看到任何异常，只会得到一个空号。**
+	//   这正是客户端必须在登出后**立刻存下新凭证**的原因 ——
+	//   否则受害者自己也走这条路，进度凭空消失且毫无报错。
+	stolen, err := ts.Service.GuestLogin(ctx, guest, "attacker")
+	if err != nil {
+		t.Fatalf("用未知凭证登录应建新号而非报错，实际 = %v", err)
+	}
+	if stolen.User.ID == tp.User.ID {
+		t.Fatal("旧 guest_token 仍回到了受害者账号 —— 轮换没生效")
+	}
+
+	// 更强的一条：那个新号必须是**空的**。
+	// 「不同的账号」+「带着受害者的金币」两件事同时发生的话，
+	// 说明服务端把数据复制了过去 —— 那是比凭证没轮换更糟的情况。
+	var coin int64
+	if err := ts.pool.QueryRow(ctx,
+		`SELECT coin FROM user_wallets WHERE user_id = $1`, stolen.User.ID).Scan(&coin); err != nil {
+		t.Fatalf("读新号钱包失败：%v", err)
+	}
+	if coin != 2000 {
+		t.Errorf("用旧凭证建出的新号金币 = %d，应为新号初始值 2000 —— "+
+			"说明受害者数据被复制过去了", coin)
+	}
+
+	// 而新凭证必须恢复**同一个账号** —— 轮换不等于换号。
+	again, err := ts.Service.GuestLogin(ctx, res.GuestToken, "rotate")
+	if err != nil {
+		t.Fatalf("新凭证应能登录：%v", err)
+	}
+	if again.User.ID != tp.User.ID {
+		t.Errorf("新凭证恢复了另一个账号（%d ≠ %d）—— 轮换把玩家换号了",
+			again.User.ID, tp.User.ID)
+	}
+}
+
+// TestGuestTokenIsABearerCredential 把「guest_token 与口令同级」这件事
+// 写成可执行事实。
+//
+// 为什么值得单独一条：它是上面那条的**依据**。
+// 若将来 guest_token 变成「不可单独登录的随机 id」，
+// TestLogoutRotatesGuestToken 的「旧凭证登不进去」会因为**别的原因**通过
+// （本来就登不进去），于是那条守卫失去意义 —— 而这里会先红，
+// 提醒「依据变了，上面那条要重写」。
+func TestGuestTokenIsABearerCredential(t *testing.T) {
+	ts := openTestService(t)
+	ctx := context.Background()
+	guest := uniqueGuestToken()
+
+	tp, err := ts.Service.GuestLogin(ctx, guest, "owner")
+	if err != nil {
+		t.Fatalf("GuestLogin: %v", err)
+	}
+	// 任何持有该凭证的人都能拿到可用的 access token —— 没有任何第二因素。
+	stolen, err := ts.Service.GuestLogin(ctx, guest, "someone-else")
+	if err != nil {
+		t.Fatalf("重入应成功：%v", err)
+	}
+	if stolen.AccessToken == "" || stolen.User.ID != tp.User.ID {
+		t.Fatalf("持有 guest_token 应能取回同一账号的令牌，实际 user=%d",
+			stolen.User.ID)
+	}
+}
+
+// TestAdminSearchNeverMatchesGuestToken 守住「凭证不可检索」这条不变式。
+//
+// 为什么值得单独一条：把 guest_token 从后台搜索里去掉是**功能删减**，
+// 而删减的东西最容易被下一个人「加回来」——
+// 因为「按凭证找人」听起来像个合理需求。
+//
+// 判据落在**行为**上：拿一个只可能命中 guest_token 的关键词去搜，
+// 结果必须是 0 条。
+func TestAdminSearchNeverMatchesGuestToken(t *testing.T) {
+	ts := openScratchService(t)
+	ctx := context.Background()
+
+	// 一个昵称与关键词**毫无关系**的用户；关键词只可能命中它的 guest_token。
+	const gt = "R3SEARCHONLYguesttokenvalue"
+	const nick = "昵称完全无关的用户"
+	ts.exec(t,
+		`INSERT INTO users (guest_token, nickname, is_guest, status)
+		 VALUES ($1,$2,TRUE,1)`, gt, nick)
+
+	if _, total, err := ts.AdminListUsers(ctx, gt, 200, 0); err != nil {
+		t.Fatalf("搜索失败：%v", err)
+	} else if total != 0 {
+		t.Errorf("按 guest_token 搜到了 %d 个用户 —— 凭证又回到了检索面。\n"+
+			"guest_token 与口令同级，后台一旦可检索它，\n"+
+			"后台账号被盗即等于「批量导出所有玩家凭证」", total)
+	}
+	// 反向：昵称仍然可搜（别把功能删过头）
+	if _, total, err := ts.AdminListUsers(ctx, nick, 200, 0); err != nil {
+		t.Fatalf("按昵称搜索失败：%v", err)
+	} else if total != 1 {
+		t.Errorf("按昵称应仍能搜到 1 个，实际 %d —— 功能删过头了", total)
 	}
 }
 

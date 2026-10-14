@@ -224,30 +224,52 @@ export function clearTokens(): void {
 }
 
 /**
- * 登出：吊销服务端该账号的全部 refresh token，再清本地令牌。
+ * 登出：吊销服务端该账号的全部 refresh token、轮换游客凭证，再清本地令牌。
  *
  * # 为什么「登出」必须调服务端，不能只清本地
  *
  * 本地 `clearTokens()` 只是让**这台设备**不再用它。
- * 而 refresh token 的有效期是 30 天（服务端 `REFRESH_TTL`），
- * 在这期间它**仍然是有效的凭证** —— 手机丢了 / 令牌被读走之后，
- * 玩家在设置里点「退出登录」，攻击者手里的那份照样能换出新令牌。
+ * 而 refresh token 的有效期是 30 天（服务端 `REFRESH_TTL`）、
+ * `guest_token` 更是**永久有效** —— 在这期间它们**仍然是有效凭证**。
+ * 手机丢了 / 令牌被读走之后，玩家在设置里点「退出登录」，
+ * 攻击者手里的那份照样能换出新会话。
  *
- * 这是服务端「唯一能批量吊销 refresh token 的路径此前只有封禁」那个
- * 缺陷的客户端那一半。
+ * # ⚠️ `guest_token` 的顺序是本函数里最容易写错的一处
  *
- * ⚠️ **失败也必须清本地**：网络不通时服务端那一份没吊销，
- *   但用户的意图是「我现在不信任这台设备」，此时把有效令牌留在
- *   localStorage 是违背意图的。
- *   代价是「服务端那份可能还活着」—— 所以 UI 要如实告知用户
- *   「已在本机退出，但未能通知服务端」，而不是谎称已完全登出。
+ * 服务端登出会**轮换** `guest_token`（旧的那枚立即作废）。
+ * 所以必须把响应里的新 token **存下来** ——
+ *
+ * 不存 → 下一次冷启动带着已作废的旧 token 调 GuestLogin
+ *      → 匹配不到任何账号 → 服务端建出一个**新号**
+ *      → 玩家的金币、关卡进度、专精全部「凭空消失」
+ *
+ * 那比「凭证没轮换」更糟：凭证问题静默，丢进度会被立刻发现并当成
+ * 一个无法解释的 bug。所以这里 `setGuestToken` 在 `clearTokens` **之前**，
+ * 且失败路径（网络不通）也要处理 —— 见下面那条注释。
  */
 export async function logout(): Promise<{ serverNotified: boolean }> {
   try {
-    await request<{ ok: boolean }>('/me/logout', { method: 'POST' })
+    const res = await request<{ revoked: number; guest_token: string }>('/me/logout', {
+      method: 'POST',
+    })
+    // ⚠️ 先存新凭证再清令牌：clearTokens 只删 access/refresh 两枚，
+    //   顺序理论上无关，但写成「先写后清」让「凭证一定被更新过」
+    //   成为一个可以从代码上直接看出的性质，而不是依赖两条语句互不干扰。
+    //
+    //   ⚠️ 为什么必须判空：服务端若在轮换前就返回（不该发生，但空串兜底），
+    //   setGuestToken('') 会**清掉**本地凭证 → 下次冷启动变成新号。
+    //   「什么都不存」是安全的一侧：它退回到「这次登出没生效」，
+    //   而不是「进度丢了」。
+    if (res?.guest_token) setGuestToken(res.guest_token)
     clearTokens()
     return { serverNotified: true }
   } catch {
+    // 网络不通：服务端那两份没吊销。
+    // 但用户的意图是「我现在不信任这台设备」，此时把有效 access token
+    // 留在 localStorage 是违背意图的 —— 所以本地照清。
+    //
+    // ⚠️ 这里**不**动 guest_token：服务端没轮换它，本地那份仍然有效，
+    //   清掉反而会让玩家丢进度（见上面的顺序注释）。
     clearTokens()
     return { serverNotified: false }
   }

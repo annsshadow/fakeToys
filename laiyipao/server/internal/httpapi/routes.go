@@ -283,16 +283,17 @@ func (s *Server) me(c *fiber.Ctx) error {
 	})
 }
 
-// logout 吊销该用户的全部 refresh token。
+// logout 吊销该账号的全部 refresh token，并**轮换**游客凭证。
 //
-// 响应恒为 200 且不带任何信息量（`{"ok":true}`）：
-// 「令牌本来就不存在」与「已吊销」没有区别，对调用方也没有意义。
+// ⚠️ 客户端必须把响应里的 `guest_token` 存下来：旧凭证已作废，
+//
+//	不存的话下一次冷启动会建出一个**新号**，玩家的进度看起来凭空消失。
 func (s *Server) logout(c *fiber.Ctx) error {
-	n, err := s.Svc.Logout(c.Context(), userIDFrom(c))
+	res, err := s.Svc.Logout(c.Context(), userIDFrom(c))
 	if err != nil {
 		return failErr(c, err)
 	}
-	return c.JSON(fiber.Map{"ok": true, "revoked": n})
+	return c.JSON(res)
 }
 
 // getLoadout 返回当前出战槽位。
