@@ -115,4 +115,4 @@
 | 安全审计 | `backend/docs/audits/2026-10-*.md` | 依赖（RustSec advisory-db 全量比对）+ 代码级复验 |
 | RustSec 例外 | `backend/security/rustsec-exceptions.toml` + `rustsec-db.rev` | 例外清单与 advisory-db 固定版本（审计可复现） |
 | 性能基线 | `backend/docs/performance-baseline.md`、`tests/perf_baseline.rs`、压测脚本 | 端点延迟/发布 profile 基准 |
-| 灰度与回滚 | `backend/deploy/`、`backend/docs/gray-release-playbook.md`、`ops/auth-rollback-drill-*.md` | 模块切流、回滚演练（RTO 5 分钟） |
+| 部署与演练资产 | `backend/deploy/`、`backend/docs/ops/auth-rollback-drill-2026-09-10.md` | nginx 反代模板；auth Cookie 功能矩阵演练记录（早期灰度切流脚本已归档，现口径无旧系统可切） |

@@ -110,21 +110,13 @@ handler（file_assemble_control，94 handler）
 
 回滚：手工执行对应 `*_rollback.sql`（设计上启动不自动回滚）。
 
-## 8. 灰度发布流（Rust 替换 Java 模块）
+## 8. 部署与回滚流（Rust 版本内）
 
-完整手册：`backend/docs/gray-release-playbook.md`（U9：attendance / control / express / meeting 四模块）。
+**口径（2026-10-14 定案）**：本项目从未上线、无 Java 存量系统——不存在"从 o2server 切流 / 回切 Java"的运维动作。上线判据见 `backend/docs/ops/REALIZE_RUNBOOK.md` §4.2：全部静态门禁 + 仓内 live E2E 通过即上线。
 
-| 阶段 | Rust 流量 | 观察期 | 入口标准 |
-| --- | --- | --- | --- |
-| 0 影子流量 | 100%（复制到 Java 比对） | 1 周 | Java 健康 |
-| 1 | 10% | ≥2 周 | 影子无差异 |
-| 2 | 50% | ≥2 周 | 10% 指标正常 |
-| 3 | 90% | ≥2 周 | 50% 指标正常 |
-| 4 | 100% | 持续 | 90% 指标正常 |
-
-- 切流工具：`deploy/nginx.conf`（按模块 upstream 分流）+ `deploy/toggle_module.sh`。
-- 回滚：RTO 5 分钟；演练记录 `docs/ops/auth-rollback-drill-2026-09-10.*`；nginx 配置模板 `nginx-auth-routes.conf`（Rust 路由版）。
-- 差异比对：`tests/parity/` 行为对齐套件 + 影子流量响应一致性。
+- **部署**：`cargo build --release` 单二进制 + `pnpm build` 前端产物；`backend/deploy/nginx.conf` 为反代模板（按需自改）。`deploy/` 下其余切流脚本为早期灰度方案遗留，仅作归档参考。
+- **回滚**：回退到**上一 Rust 版本**的二进制 + 对应迁移回滚脚本（手工执行 `*_rollback.sql`），无跨系统回滚。
+- 历史灰度手册 `backend/docs/gray-release-playbook.md` 与演练记录 `backend/docs/ops/auth-rollback-drill-2026-09-10.md` 属早期方案档案，不再作为部署流程依据。
 
 ## 9. 三端契约对齐流
 

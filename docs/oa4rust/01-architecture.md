@@ -4,9 +4,9 @@
 
 OA4Rust 是 **O2OA 开源办公平台（Java 版 o2server）的 Rust 重写项目**，同时配套重写桌面 Web 端与移动端。核心定位：
 
-1. **后端替换**：以 Rust（axum + tokio）逐模块重写 o2server 的各个 Java web 应用（war），最终用单个 Rust 二进制替换整个 Java 集群。
-2. **行为对齐**：API 路径、请求/响应信封与 o2server v9（Gson 序列化）保持一致，使存量前端（o2 官方 Web / 三方集成）**无感切换**。对齐结论来自行为对比实跑（基准 o2server v9 Gson 实测，见 `oa4rust/backend/crates/shared/src/response.rs` 注释）。
-3. **灰度迁移**：通过 nginx 影子流量 + 分模块切流（影子 → 10% → 50% → 90% → 100%）安全迁移，RTO 目标 5 分钟（见 `oa4rust/backend/docs/gray-release-playbook.md`）。
+1. **后端替换**：以 Rust（axum + tokio）逐模块重写 o2server 的各个 Java web 应用（war），最终以单个 Rust 二进制交付完整 OA 能力。
+2. **行为对齐**：API 路径、请求/响应信封与 o2server v9（Gson 序列化）保持一致，使 O2OA 生态的存量前端（o2 官方 Web / 三方集成）可**无感接入**。对齐结论来自行为对比实跑（基准 o2server v9 Gson 实测，见 `oa4rust/backend/crates/shared/src/response.rs` 注释）。
+3. **独立交付**：本项目**从未上线、无 Java 存量系统、无迁移切换包袱**；与 o2server 的关联仅存在于开发期——接口契约对齐与 parity 行为测试基准（见 §6）。
 
 **现状（2026-10）**：90 个业务 crate 中 88 个已完成真实化（无 stub 桩、无 `Value::Null` 桩），真实 handler 共 2645 个；待迁移仅剩 2 个（`sms`、`captcha_store` 等基础设施级 crate，见端点清单汇总）。
 
@@ -39,9 +39,9 @@ OA4Rust 是 **O2OA 开源办公平台（Java 版 o2server）的 Rust 重写项�
    │  经方言抽象兼容） │   │ 限流 / PubSub 总线│   │  storage_from_env）  │
    └──────────────────┘   └──────────────────┘   └──────────────────────┘
               ▲
-              │ 影子流量 / 灰度切流（nginx，迁移期并存）
+              │ 行为对齐（开发期 parity 基准，非生产依赖）
    ┌──────────┴─────────┐
-   │ o2server (Java)     │  legacy 服务 :20020 / docker :18080
+   │ o2server (Java)     │  基准容器（docker :18080；本机直跑 :20020）
    └────────────────────┘
 ```
 
@@ -51,7 +51,7 @@ OA4Rust 是 **O2OA 开源办公平台（Java 版 o2server）的 Rust 重写项�
 
 | 端 | 技术 | 位置 | 职责 |
 | --- | --- | --- | --- |
-| 后端 | Rust 1.75+ / axum / tokio / deadpool-postgres / utoipa | `oa4rust/backend/` | 全部业务 API、WebSocket、MCP、静态托管 |
+| 后端 | Rust 1.85+ / axum / tokio / deadpool-postgres / utoipa | `oa4rust/backend/` | 全部业务 API、WebSocket、MCP、静态托管 |
 | 桌面 Web | Vue 3.5 + Vite 8 + naive-ui + pinia + vue-query + unocss | `oa4rust/frontend/apps/desktop/` | 完整 OA 桌面端（98 个视图文件） |
 | 共享包 | TypeScript | `oa4rust/frontend/packages/{apis,sdk,ui,locales}/` | API 转发层 / 传输与状态 SDK / 组件与主题 / 多语言 |
 | 移动端 | uni-app（Vue3 + Vite + TS） | `oa4rust/mobile/` | H5 / 微信小程序 / 原生 App，16 页面 |
@@ -100,8 +100,9 @@ crates/bbs_assemble_control/src/
 | 迁移内嵌启动 | 启动时自动跑幂等迁移（`NNN_desc.sql`，忽略 `*_rollback.sql` 与 `archive/`），支持 `--migrate-only` | `shared/src/migrate.rs` |
 | 桩零容忍 | 迁移完成度用脚本静态扫描（stub_/Null 桩计数），产物即"单一信息源"文档 | `backend/docs/brainstorms/oa4rust-endpoint-inventory.md` |
 
-## 6. 与 legacy o2server 的关系
+## 6. 与 O2OA（o2server）的关系
 
-- **迁移期并存**：nginx 按模块把流量在 Rust 与 Java 之间切换（`backend/deploy/nginx.conf`、`toggle_module.sh`）。
-- **对齐验证**：`backend/tests/parity/` + `parity_suite.rs` 与 Java 基准做行为比对（本地 PG 全量迁移 379 表后 parity 4143/4143 通过）。
-- **一次性迁移开关**：`AUTH_LEGACY_COMPAT=true` 时接受旧 MD5/DES 密码哈希与 3DES SSO 令牌（启动时打 warn 日志，数据迁移完成后必须关闭）。
+- **定位**：O2OA 是本项目重写所参照的上游（AGPL-3.0 归属见仓库根 README）。本项目**独立部署、从未与 Java 版并存上线**，不存在切流 / 回切 Java 的运维动作。
+- **对齐验证（开发期质量手段）**：`backend/tests/parity/` + `parity_suite.rs` 与 o2server v9 基准容器做行为比对（本地 PG 全量迁移 379 表后 parity 4143/4143 通过）。
+- **存量数据兼容开关**：导入旧 O2OA 数据时设 `AUTH_LEGACY_COMPAT=true` 接受旧 MD5/DES 密码哈希与 3DES SSO 令牌（启动打 warn 日志，导入完成后必须关闭）。
+- `backend/deploy/` 下的 nginx 分流模板与 `toggle_module.sh` 为早期灰度方案遗留，现口径下无切流对象，保留仅作归档参考。
