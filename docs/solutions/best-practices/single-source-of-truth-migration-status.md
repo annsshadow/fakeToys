@@ -112,8 +112,8 @@ Select-String -Path "crates/*/src/*.rs" -Pattern "assert!\(true\)" | Select-Obje
 
 ## Related
 
-- [Plan Document Lifecycle Management](development-workflow/plan-status-lifecycle.md)
-- [SeaORM Dual-Pool Coexistence](architecture-patterns/seaorm-dual-pool-coexistence.md)
+- [Plan Document Lifecycle Management](../development-workflow/plan-status-lifecycle.md)
+- [SeaORM Dual-Pool Coexistence](../architecture-patterns/seaorm-dual-pool-coexistence.md)
 - **Historical source (2026-08-08 snapshot):** `docs/brainstorms/oa4rust-migration-status-2026-08-08.md`
 - **Current authoritative parity source:** `docs/audits/final-coverage-sweep.md` (99.77% as of 2026-08-23)
 - **Campaign retrospective:** `docs/solutions/best-practices/oa4rust-o2server-parity-closure-campaign-2026-08-25.md`

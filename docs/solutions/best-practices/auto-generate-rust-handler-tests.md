@@ -160,6 +160,6 @@ async fn test_get_user() {
 - Effective coverage: 25.3% of testable handlers (limited by internal-function architecture)
 
 ## Related
-- [sea-orm Dual Pool Coexistence](architecture-patterns/seaorm-dual-pool-coexistence.md) — `test_sea_orm_pool()` design
-- [Nested Tokio Runtime Panic](integration-issues/nested-tokio-runtime-panic.md) — test runtime considerations
-- [OA4Rust Handler Test Coverage Plan](../../../oa4rust/docs/plans/2026-08-13-001-feat-handler-test-coverage-99-plan.md) — full implementation plan
+- [sea-orm Dual Pool Coexistence](../architecture-patterns/seaorm-dual-pool-coexistence.md) — `test_sea_orm_pool()` design
+- [Nested Tokio Runtime Panic](../integration-issues/nested-tokio-runtime-panic.md) — test runtime considerations
+- [OA4Rust Handler Test Coverage Plan](../../archived-plans/2026-08-13-001-feat-handler-test-coverage-99-plan.md) — full implementation plan

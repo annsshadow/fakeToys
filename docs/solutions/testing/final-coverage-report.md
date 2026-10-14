@@ -124,5 +124,5 @@ thresholds: {
 ## 附件
 - [test-coverage-summary.md](test-coverage-summary.md) - 初始分析
 - [test-coverage-95-target-plan.md](test-coverage-95-target-plan.md) - 完整提升计划
-- [api-coverage-generated.test.ts](../../packages/apis/src/api-coverage-generated.test.ts) - 自动生成测试
-- [scripts/generate-api-tests.ts](../../scripts/generate-api-tests.ts) - 测试生成器
+- [api-coverage-generated.test.ts](../../../oa4rust/frontend/packages/apis/src/api-coverage-generated.test.ts) - 自动生成测试
+- [scripts/generate-api-tests.ts](../../../oa4rust/scripts/generate-api-tests.ts) - 测试生成器
