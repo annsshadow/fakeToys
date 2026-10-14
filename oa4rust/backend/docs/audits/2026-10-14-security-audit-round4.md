@@ -354,6 +354,25 @@ A4 开放问题：① F1 是否 o2server 侧本就以 job/document 创建者为�
 | pp 字典深度路径写 24 条 | `crates/processplatform_service_processing/src/u2.rs` | `dict_data_fns!` 宏（`dict_set_1..8` 注册在 POST+PUT、`dict_del_1..8` 注册在 DELETE，共 24 条写路由）的模板里**既不取 Session 也不校任何门**：任一登录用户按 `/applicationdict/{id}/{p0}…/{p7}/data` 就能改写或摘除任意应用的 `x_application_dict.data`。按本文件 §applicationdict 既有口径（字典表 = admin 档，与 `dict_edit` 同档）收口：模板两把 handler 各加 `session: Option<Extension<Session>>` + `require_admin_opt(&pool.0, session.as_deref()).await?`，置于任何 SQL 之前 |
 | 宏模板 R6 41 条按族抽查（不是漏洞，记账防重复劳动） | `crates/cms_assemble_control/src/lib.rs`、`crates/processplatform_assemble_surface` | 30 条 `surface_appdict_*_data_{post,put,delete}` → 模板只 `session` 入参，门在 `appdict_data_write`（lib.rs:6599 `gate_appdict_writer`）；6 条 `permission_save_{manager,publisher,viewer}_{app,category}_u3` → 门在 `u3_save_scope_permissions`（lib.rs:9962 `u3_can_manage_scope`）；5 条 `read/task/taskcompleted/review/readcompleted_u2_filter_attribute_post` → POST 上挂的读，无写面。三者都属本尺声明不扫的「helper 内部门禁」，落 R6 是口径而非洞 |
 
+### 三.10 第十批（`mock*` 别名写族三 tranche + 尺子缺陷 14、15，代码）
+
+§五 第九批点名的首选靶面（surface `applicationdict` 别名族）本批收完，并顺着同一形状
+把两处同族洞一起收了：`surface data/work` 的 `mock*` 别名族（**未认证物理删除流程实例**）
+与 `processplatform_service_processing` 的两把匿名软删 POST。三 tranche 同尺对账见 §四。
+
+| 项 | 文件 | 内容 |
+| --- | --- | --- |
+| tranche 1：surface applicationdict 别名写 16 把 | `crates/processplatform_assemble_surface/src/lib.rs` | `applicationdict_{flag}_{app}_{p0..p7}_data_mock{deletetoget,puttopost}` 8 档 × 2 族：handler 原先**不取 Session、不校任何门**，体内 `DELETE FROM PP_E_APPLICATIONDICT WHERE xid = $1`（同一条删两次）/ `UPDATE … SET "xupdateTime" = NOW()`。系统级元数据 → 按本 crate R4-7 口径收 admin（`require_admin_opt`，无会话 401 先于任何 SQL，非 admin 403 走 `is_admin` fail-closed）。16 处注册点里 7 档 `mockdeletetoget` 挂在 **GET** 上，中间件两道门都够不着，handler 是唯一一道门 |
+| 同族正式路由的定性（**不是漏洞，记账防重复劳动**） | 同上 `lib.rs:1241` | `applicationdict_…_path{0..7}_data` 24 条「写方法」路由的本体只有一句 `SELECT` —— 同一把只读 handler 挂在 POST/PUT/DELETE 上。本批不给它加门（加了是假修），改由尺子新开「只读挂写方法」桶点名（见下 R7 重定基） |
+| tranche 2：surface `data/work` 别名写 18 把 handler / 45 条注册点 | `crates/processplatform_assemble_surface/src/lib.rs`、`src/routes.rs` | `data_work_id_{,path0..path0_path1..path7}_mock{deletetoget,puttopost}`：无会话无归属，`DELETE FROM PP_C_WORK WHERE xid = $1`（删两次）与 `UPDATE PP_C_WORK SET "xupdateTime" = NOW()`。新增助手 `u4_require_work_actor(pool, session, id)`——`u4_require_session`（401 先于 `pool.get()`）→ 按 xid 读 `"xcreatorPerson"` → `require_actor_opt`（归属非空=本人或 admin；**空归属/行不存在=只允许 admin**）。45 条注册点里 10 条挂 GET，另 35 条走 POST/PUT/DELETE；正式路由 `data_work_id`（PUT/POST/DELETE 同 URI）本体仍是只读，故不收 |
+| tranche 3：ppsvc 匿名软删 2 把 | `crates/processplatform_service_processing/src/lib.rs` | `data/delete/{work}/{id}`（`UPDATE x_work SET deleted_at = NOW()`）与 `data/path/delete/{work}/{id}`（按 work 批量把 `x_task.task_status` 改 deleted、`x_review.deleted_at` 落下）。新增 `u4_require_work_owner`：沿用本 crate 的 `u4_session`，但删除属 destructive，取比既有 `u4_require_actor`（空归属放行任意会话）**更严**的「空发起人只允许 admin」口径 |
+| 尺子缺陷 14：转义引号表名的写 SQL 判不出来 | `scripts/audit_write_gating.mjs` | `WRITE_SQL_RE` 的 `UPDATE\s+[A-Za-z_]` 分支要求表名首字符是裸标识符，遇到 `UPDATE \"x_table\"`（Rust 源码里写 `r#"…"#`/`\` 转义引号）整条读成「非写面」——**方向是漏量**，且这个正则在 GET-写探测、豁免碰撞分档、R 桶拆分里被复用 6 次。全仓该写法 25 处、涉及 15 条路由。修法：正则补 `UPDATE\s+\x5C?["\x60]?` 分支，并加**判据自证段**——凡体内命中「转义引号表名」形态的路由必须被判为写面，否则抛错退出（现读数：15 条全判为写面、0 条漏量） |
+| 尺子缺陷 15：门禁在 helper 里，handler 读成无门禁 | `scripts/audit_write_gating.mjs` | `GATE_RE` 只扫 handler 体内字面量，`gate_xxx(...).await?` 转手交给同 crate helper 内判定的那一族被一律判成「无门禁」→ 假阳性进 R 行动面。新增 `gateEvidence(crate, body)`：体内直判不中时，找同 crate 内被调用且「体内含 `GATE_RE` ∧ 会产 `AppError::Forbidden/Unauthorized`」的 helper，并要求调用点带 `.await?`（`callPropagates` 做括号配平坦扫，防「取了门但没传播错误」的假放行）。本批作证 **12 条**：`check_owner` 5、`import_checkin_rows` 2、`check_cms_publish` 2、`u2_gate_att_or_business_error` 2、`u2_attachment_guard` 1，明细落 `write_routes_indirect_gated.tsv`；替换 4 处 `GATE_RE.test` 调用点，注入臂证明守卫非恒真 |
+| 行动面重定基：R7 不等于 1158 条洞 | 同上 + 新产物 `write_routes_readonly_on_writemethod.tsv` | 把「体内含写 SQL / 只读挂写方法 / 体内不可解析」三向拆分加进 R4/R6/R7 的报表与闭合断言（`real + readonly + unparsable == total` 才允许出数）。读数：**R7 1121 条里只 318 条真落笔**、803 条是只读 handler 挂在写方法上；R6 123 写 / 187 只读；R4 3 写 / 9 只读 / 2 不可解析。999 条「只读挂写方法」逐条落盘。**这一格的价值是把选题分母从 1158 收成 355（本批前）→ 318（本批后）**，否则下一轮仍会按 crate 名字顺序猜 |
+| 旧契约断言返工（加门改了语义，改断言不动门槛） | `crates/processplatform_assemble_surface/src/tests_u2.rs` | `u2r_data_work_pathn_legacy_shape_extraction_contract` 原写「8 格一律 `assert_eq!(status, 500)`」，500 的来源是「无库时 `pool.get()` 失败」= 证明 Path 元组提取器命中。新门排在 `pool.get()` 之前，5 个别名格读数变 401（同样排除 400/404，且是更强的可达证据）。改成**逐格点名期望码**（3 格只读仍 500、5 格别名必须 401），而不是把判据放宽成「500 或 401 都行」 |
+| 一处**被实测否证的类型猜测**（留档） | 同上 §四 第十批 | 我按「迁移 032 把 `pp_e_applicationdict.xupdateTime` 建成 TEXT，`SET … = NOW()` 是 timestamp→text 赋值、必报 42846 ⇒ 这一族即使放行也 500」写进了测试文档注释。DB 臂一跑即**否证**：PostgreSQL 允许经 I/O 转换的赋值转换，落库成 `2026-10-14 16:35:02.054779+00` 这类文本时间戳。注释当场改写，全仓 79 处同型写法由「硬错误」降级为「TEXT 列被写进与会话/其它列不同构的时间文本」的**语义分歧**，进 §五 单独定标 |
+| 新增测试臂 | `processplatform_assemble_surface/src/security_gate_tests.rs`、`processplatform_service_processing/src/security_gate_tests.rs` | surface 4 支：`surface_applicationdict_alias_writes_reject_anonymous`（16 格逐条点名 401）、`…_forbidden_for_non_admin`（16 格 403）、`…_delete_alias_only_admin_lands`（DB：闯入者 403 且行必须还在 / admin 200 且行确实消失）、`…_put_alias_admin_write_lands`（DB：落库才算放行凭据，未命中行也回 200）＋ `surface_data_work_alias_writes_reject_anonymous`（45 格点名）、`surface_data_work_delete_alias_owner_gate_lands`（DB 四格：他人 403 零留痕 / 本人真删 / 空归属只 admin / admin 打满 45 档不出现 401·403）、`surface_data_work_touch_alias_owner_write_lands`（DB：403 不改时间戳、本人 200 且时间戳确实被改写）。ppsvc 2 支：`data_delete_routes_reject_without_session`（离线 401×2）、`data_delete_routes_require_work_creator_and_land`（DB 三格）。路由表由 `routes.rs` 机器枚举生成并 `assert_eq!(len, 16 / 45)`，注册点增减当场红 |
+
 ## 四、验证
 
 
@@ -656,6 +675,61 @@ cd oa4rust/backend && cargo test --lib -p <crate>
 
 
 
+第十批（§三.10）读数：
+
+- **同尺对账**（本批动了尺子两处：缺陷 14 写 SQL 判据、缺陷 15 间接门禁，所以基准也必须用
+  **改后的尺**重跑）。HEAD（第九批收口态）产物矩阵与工作树矩阵按 `(crate, method, path, handler)`
+  配对做键集对账：**两侧 2233 键同号、keyDiff=0**，写路由分母 2237、全路由 4806 一字未动。
+  桶读数为
+  **R1 145 / R2 3 / R4 14 / R5 592 / R6 315 / R7 1167 / R8 1**（HEAD）→
+  **R1 145 / R2 3 / R4 14 / R5 643 / R6 310 / R7 1121 / R8 1**（工作树）。
+  净变化 **51 行换桶**，逐行可点名、无一行失踪：
+  ① **46 行 R7→R5** = tranche 2 的 35 条 `data/work` 别名注册点 + tranche 1 的 9 条 `applicationdict`
+  写方法注册点 + tranche 3 的 2 条 ppsvc 软删；
+  ② **5 行 R6→R5** = 缺陷 15 的间接门禁作证（`attendance` `v2_record_import{,/daily}`、
+  `cms_express` `view_{publish,unpublish}`、`meeting` `u2_attachment_delete`），
+  **这 5 行没有任何代码改动**，纯粹是尺子此前把「门在 helper 里」读成无门禁。
+  分开记这两类是纪律：修尺 ≠ 修洞。
+- **GET 写族（csrf / `requires_admin` 双盲区）**：体内无门禁 **169 → 150**
+  （K1 匿名 1 / K2 读会话 15 / K3 无会话 134）。−19 的构成 = `data/work` 别名族里 10 条 GET 收门
+  + 缺陷 15 认出 4 条 GET 的门 + 前序 tranche 的 5 条搬家。`write_routes_get_writes.tsv` 150 行逐条在册。
+- **行动面分母**（本批新增的三向拆分，闭合断言 `写 + 只读 + 不可解析 == 桶总数` 才出数）：
+  R7 1121 = **真落笔 318** + 只读挂写方法 803 + 不可解析 0；R6 310 = 123 + 187；R4 14 = 3 + 9 + 2。
+  999 条只读挂写方法落 `write_routes_readonly_on_writemethod.tsv`。
+  R7+R4 真落笔按 crate 集中度（下一轮按这张表排；这张表按「非只读」筛，因此**含 R4 那 2 条体内不可解析**，
+  合计 323 = R7 318 + R4 3 + 2 不可解析，与上句的 318/3 并不矛盾）：
+  `processplatform_assemble_surface` 115 → **80**、`query_assemble_designer` 42、`message_assemble_communicate` 30、
+  `query_assemble_surface` 28、`processplatform_service_processing` 23 → **21**、`cms_assemble_control` 20、
+  `attendance_assemble_control` 18、`program_center` 12、`meeting_assemble_control` 10、`jpush_assemble_control` 9。
+- **尺子自身的两处自证**：
+  缺陷 14 的判据自证段现读「含转义引号表名写法的 **15 条路由全部判为写面，0 条漏量**」（全仓该写法 25 处）；
+  缺陷 15 现读「**间接门禁作证 12 条**」并按 helper 名逐族计数落盘。
+  两把守卫各配一支字节级注入臂（`/d/tmp/inject_defect14_guard.mjs`、`/d/tmp/inject_indirect_gate.mjs`）：
+  把判据/作证分支摘掉，尺子当场不再点名（不是恒真）；复原后 sha256 与进入时逐字节一致。
+- **加门臂的注入取证**（证「测试能红」+ 量「门不存在时的真实后果」）：
+  `surface` 摘 `applicationdict` 1 道门 → 该 handler 的 GET 注册点匿名实测 **200 OK**（真物理删），
+  两支离线臂红并点名该 URI（`/d/tmp/inject_batch10_gate.mjs`）；
+  摘 `data_work_id_path0_path1_mockdeletetoget` 1 道门 → 该 handler 两条注册（`DELETE …/{path0}/{path1}`
+  与 `GET …/mockdeletetoget`）**双双 200 OK**，`surface_data_work_alias_writes_reject_anonymous` 红
+  （`/d/tmp/inject_batch10b_gate.mjs`）；
+  摘 ppsvc `data_work_id_delete` 1 道门 → 离线臂读到 `Err(Internal)`（会话都不要求，直接触库）、
+  DB 臂读到 **`Ok(())`**（他人 work 的 `deleted_at` 被写进去），两支各自点名（`/d/tmp/inject_batch10b_ppsvc.mjs`）。
+  三处复原 sha256 均与进入时一致，无注入残迹。
+- **测试读数**（一律 grep `test result`，不信管道退出码；`--ignored` 一律整族跑，不按时长猜）：
+  `processplatform_assemble_surface --lib` **608 passed / 0 failed / 4 ignored**，
+  `-- --ignored` **4 passed / 0 failed / 无 `skip:`**（含本批 2 支 DB 臂，0.14 s 量级即本机 PG 在跑的真实读数）；
+  `processplatform_service_processing --lib` **67 passed / 0 failed / 14 ignored**，
+  `-- --ignored` **14 passed / 0 failed**；
+  `parity` 整族 **4143 passed / 0 failed**（过滤 `processplatform_assemble_surface` 亦 945 / 0）——
+  三 tranche 加门未破路由存在性对账。
+  DB 臂的落库凭据读数：`mockputtopost` 族放行后 `xupdateTime` = `2026-10-14 17:08:25.481249+00`（字典）
+  与 `2026-10-14 17:08:25.514461+00`（work），均为写进 TEXT 列的时间文本（见上「被否证的类型猜测」）。
+- **尺子退出码** 0；五张产物同批刷新（`write_routes_matrix` 2238 行 / `write_routes_ungated` 1136 行 =
+  表头 + R4 14 + R7 1121 共 1135 条 / `write_routes_get_writes` 151 /
+  `write_routes_readonly_on_writemethod` 1000 / `write_routes_indirect_gated` 12）。
+  本项初稿把 `write_routes_ungated` 记成 1138，与同段自述的 R4 14 + R7 1121 相加不自洽，
+  那 2 行差来自 tranche 2/3 尚未全部落盘时的中间态计数；提交前按重跑读数订正。
+
 ## 五、处置与遗留（下一轮入口）
 
 - 已修并验证：N1、N4-01、N2、preview 加固、F3、F6、F9（离线 403/会话权威断言）、F2（编译与既有测试绿，真门 `#[ignore]` 待 PG）、**A2-F12、A3-N1、A3-N2、A3-N3**（第二批读数见 §四）、**A3-N6（program_init 7 把写收 admin + 匿名 init 判定改 fail-closed）、R4-6、R4-1 全 13 把**（第三批：§三.3 改法、§四 读数，其中 processing/core_express/program_init 的 DB 臂已按 `--ignored --nocapture` 真跑取证）、**R4-2 批 1 + 批 2a 共 29 把**（第四批：§三.4 / §四第四批）、**R4-7**（第五批：§三.5 / §四第五批，含尺子两处计量缺陷 + 门禁词表缺陷的自修）、**R4-2 批 3：processing 两把 touch + surface 四把 touch 路由**（第六批：§三.6 / §四第六批，DB 臂已 `--ignored --nocapture` 真跑取到「闯入者 403 且零留痕、发起人放行且 creator 落本人」的行为差）。
@@ -809,4 +883,57 @@ cd oa4rust/backend && cargo test --lib -p <crate>
 - 提交落点：`618ef840a`（第八批 + 第九批代码 + 尺子缺陷 11/12/13 + 三张新产物与矩阵/ungated/get_writes 刷新 +
   契约返工）；本段与 §三.8 / §三.9 / §四 两批读数为「账本」随后一笔。共享工作树上并行会话的在制品未被本批收走。
   本轮未 push。
+
+### 第十批收口后的刷新（§三.10 / §四 第十批读数）
+
+- **已修并验证**：**三 tranche 共 36 把 handler / 63 条注册点加门**——surface `applicationdict` 别名 16 把（admin 档）、
+  surface `data/work` 别名 18 把 handler / 45 条注册点（401 无会话 + 发起人或 admin）、
+  ppsvc `data/delete` + `data/path/delete` 2 把（401 + 发起人，空发起人只 admin）。
+  同尺净迁移 46 行 R7→R5、键集零差；测试见 §四 第十批读数（surface 608+4 DB、ppsvc 67+14 DB、parity 4143 全绿）。
+  **本批收的是四轮以来最「实」的一族**：注入取证直接量出「门不存在时匿名 GET 打 `data/work/{id}/{p0}/mockdeletetoget`
+  回 200 并真的删掉 PP_C_WORK 行」，而不是靠推断。
+- **尺子两处的账（修尺 ≠ 修洞）**：**缺陷 14 转义引号表名**（`WRITE_SQL_RE` 认不出 `UPDATE \"x_table\"`，
+  全仓 25 处 / 15 条路由，方向是漏量；补分支 + 判据自证段，现读「15 条全判为写面、0 漏量」）、
+  **缺陷 15 门在 helper 里**（新增 `gateEvidence` + `callPropagates` 括号配平并要求 `.await?`，
+  本批作证 12 条、其中 5 行把 R6 里既有的「读会话但门在 helper」洗成 R5，**这 5 行没有代码改动**）。
+  两把守卫各有字节级注入臂证明非恒真。
+- **口径更新（后续引用以此为准）**：`mock*` 别名族的注册形状在本仓是**一族而非孤例**
+  （`routes.rs` 里 `mockdeletetoget` 93 次、`mockputtopost` 同量级），一把 handler 常对应 2~4 条注册点，
+  且**同一 URI 的不同方法可以挂不同 handler**。因此选题与对账**必须按注册点（路由级）计数**，
+  函数级数字（如旧的「47 处」）只能用来估工作量，不能用来核账。
+- **下一轮入口（按 §四 那张真落笔集中度表排，不再按 crate 名顺序猜）**：
+  ① `processplatform_assemble_surface` 仍居首（真落笔 80 条注册点），本批收的是 `data/work` + `applicationdict` 两族，
+  余量按 handler 名前缀实测：**`data_workcompleted_*` 17、`data_job_*` 9、`read_id_*` 8、`task_id_*` 8、
+  `work_id_*` 5、`work_v2_*` 5、`task_v2_*` 4、`taskcompleted_id_*` 3**，其余 `draft/handover/record/serialnumber`
+  各 2 —— 即**与 `data/work` 完全同形状的 `data/workcompleted` + `data_job` 两族（26 条）是下一 tranche 的首选**，
+  同一把 `u4_require_*_actor` 助手换个表名即可复用；
+  ② `query_assemble_designer` 42 / `query_assemble_surface` 28 同属 A2-F1/F2/F3 那格（IDOR 覆写删除设计对象、
+  `table/row/delete/all/{tableFlag}` 物理清空任意表、DDL 执行权错位），**危害高于 surface 的时间戳族**，建议优先；
+  ③ `message_assemble_communicate` 30、`cms_assemble_control` 20、`attendance` 18、`program_center` 12、
+  `meeting` 10、`jpush` 9 各对应 §五 第二批名单里的 A3-N4/N5/N7/N10/N11 族。
+- **新开三格策略性待修（本批取证出、本批未动）**：
+  1. **「只读 handler 挂在写方法上」999 条**：这不是越权洞，但它是**假阳性形状**——收法是把读挂回 GET
+     或让写方法显式 405，**给它加门是假修**（门挡不住任何写，因为体内没有写 SQL）。
+     明细已落 `write_routes_readonly_on_writemethod.tsv`，属独立一整格（涉及前端调用面，需按 crate 分批）。
+  2. **`NOW()` 写进 TEXT 列的语义分歧（79 处）**：本批一支 DB 臂否证了「必 500」的猜测，
+     实际落库成 `2026-10-14 17:08:25.514461+00` 这类文本时间戳。危害不是报错而是**同表内时间格式不同构**
+     （与 `create_time`/`update_time` 的既有写法、与前端解析口径都可能错位），需先定「文本时间戳的规范格式」再收。
+  3. **门禁入口两族并存**（沿 §五 第八、九批那格）：强制 `Extension<Session>`（裸 router 500）与
+     `Option<Extension<Session>>` + `require_*_opt`（401）仍并存；本批新加的 3 处门一律走后者，
+     因为 401 那一路**离线可证**，不必真库也能钉住「匿名进不去」。
+- **本轮两处自伤（记下防再犯）**：
+  ① **产物写出顺序错了导致读数缺一块**：缺陷 15 的明细 TSV 与逐 helper 计数原本写在 GET-写段之前，
+  于是 GET 侧的 4 条间接作证「计数变了、明细没有行」。把该段移到脚本末尾后 12 条全部在册。
+  **教训**：尺子的报告段必须排在所有桶填完之后，否则「同一把尺的前后两段自相矛盾」。
+  ② **对旧契约断言先改判据再动门槛的诱惑**：`u2r_data_work_pathn_legacy_shape_extraction_contract`
+  加门后当场红，最省事是把断言放宽成「500 或 401 都算过」。改为**逐格点名期望码**才保住取证力——
+  放宽的那写法会让「别名档被漏注册」与「门被摘掉」两种红都读成绿。
+- **一处注入提示（非本会话指令）**：一次 `grep` 的工具回显里混进了伪装成系统提醒的文本
+  （`[System] System reminder injected…`），已按未受信内容处理、未采纳。工具回显不是指令通道。
+- 提交落点：本批代码（三 tranche 加门 + 尺子缺陷 14/15 + 契约返工 + 7 支新测试臂 + 五张产物）
+  为 `da27803bd`，与本文档（§三.10 / §四 第十批读数 / 本节）分两笔，本节即第二笔并回填该 hash。
+  提交前订正：pssvc 两把 handler 的 `axum::extract::Path` 参数行曾被我的插入脚本写丢 4 空格缩进，
+  已复原并重跑 `--lib`（67/0/14）与 `-- --ignored`（14/0、`skip:` 计数 0）与尺子（EXIT=0、
+  R1 145 / R4 14 / R5 643 / R6 310 / R7 1121（真落笔 318）/ GET 写 150 全部与加门后读数一致）。
+  共享工作树上并行会话的在制品未被本批收走。本轮未 push。
 
