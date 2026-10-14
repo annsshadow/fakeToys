@@ -92,4 +92,46 @@ mod security_gate_tests {
             "别名路由同口径"
         );
     }
+
+    /// 四轮 R4-2 追加：`service_work_id_touch` / `service_work_id_touch_mockputtopost`
+    /// 四把路由（PUT/POST × 正式/别名）原先不取会话，任一有效会话按 work ID 就能
+    /// `UPDATE PP_C_WORK."xupdateTime"` 并回读时间字段。无会话必须 401，且发生在
+    /// `pool.get()` 之前——所以本支不碰库，离线可证。
+    #[tokio::test]
+    async fn surface_touch_writes_reject_without_session() {
+        for (method, uri) in [
+            (
+                Method::POST,
+                "/api/processplatform/assemble/surface/service/work/touch/r47-work",
+            ),
+            (
+                Method::POST,
+                "/api/processplatform/assemble/surface/service/work/touch/mockputtopost/r47-work",
+            ),
+            (
+                Method::PUT,
+                "/api/processplatform/assemble/surface/service/work/r47-work/touch",
+            ),
+            (
+                Method::POST,
+                "/api/processplatform/assemble/surface/service/work/r47-work/touch/mockputtopost",
+            ),
+        ] {
+            let resp = app()
+                .oneshot(
+                    Request::builder()
+                        .uri(uri)
+                        .method(method.clone())
+                        .body(Body::empty())
+                        .unwrap(),
+                )
+                .await
+                .unwrap();
+            assert_eq!(
+                resp.status(),
+                StatusCode::UNAUTHORIZED,
+                "无会话的 touch 写必须 401（门在取连接之前）: {method} {uri}"
+            );
+        }
+    }
 }
