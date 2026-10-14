@@ -521,7 +521,18 @@ mod u2_contract {
         ensure_schema(&pool).await;
         let base = "/api/processplatform/service/processing/applicationdict";
         let body = json!({"k1": {"k2": "v"}});
-        let (_, v) = send(Method::PUT, &format!("{base}/dic-rt/p0/data"), Some(body)).await;
+        // 四轮 §三.9：dict_set_N / dict_del_N 宏生成体收 admin（x_application_dict 属系统级数据）。
+        // 本臂改用真实 admin 会话，钉「admin 放行 + 路径寻址写入」；
+        // 无会话 401 / 非 admin 403 由 security_gate_tests::dict_depth_writes_reject_without_admin 钉。
+        let admin = seed_u2_admin().await;
+        let (status, v) = send_raw_as(
+            Method::PUT,
+            &format!("{base}/dic-rt/p0/data"),
+            Some(body),
+            &admin,
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "admin 写深度路径字典应放行，实际 {status}");
         assert_eq!(v["type"], "success");
         assert_eq!(v["data"]["value"]["p0"]["k1"]["k2"], "v", "\u{8def}\u{5f84}\u{5bfb}\u{5740}\u{5199}\u{5165}\u{5e94}\u{6302}\u{5728} p0 \u{952e}\u{4e0b}");
         // R4-2：PUT applicationdict/{id}（写 name / 整只 data）收紧为仅 admin。
@@ -535,7 +546,14 @@ mod u2_contract {
         )
         .await;
         assert_eq!(status, StatusCode::FORBIDDEN, "非 admin 写字典名必须 403");
-        let (_, v) = send(Method::DELETE, &format!("{base}/dic-rt/p0/data"), None).await;
+        let (status, v) = send_raw_as(
+            Method::DELETE,
+            &format!("{base}/dic-rt/p0/data"),
+            None,
+            &admin,
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "admin 删深度路径字典段应放行，实际 {status}");
         assert_eq!(v["type"], "success");
         let n = count(&pool, "SELECT COUNT(*) AS c FROM x_application_dict WHERE id='dic-rt' AND data::text LIKE '%p0%' OR data::text LIKE '%k1%'").await;
         assert_eq!(n, 0, "删除后键 k1 不得残留");
@@ -707,6 +725,34 @@ mod u2_contract {
             .unwrap();
     }
 
+    /// 按 `is_admin` 的真实口径（auth_role.name='admin' ∧ 未删未禁，经 auth_person_role
+    /// 关联）幂等造一个 admin，返回其 unique_id 供 `send_raw_as` 注入会话。
+    async fn seed_u2_admin() -> String {
+        let person = "u-r48-review-admin";
+        let c = test_pool().get().await.unwrap();
+        c.execute(
+            "INSERT INTO auth_role (id, name, disable) VALUES ('r48-role-admin', 'admin', false) ON CONFLICT (id) DO NOTHING",
+            &[],
+        )
+        .await
+        .unwrap();
+        c.execute(
+            "INSERT INTO auth_person (id, unique_id, name, password_hash) VALUES ($1, $1, 'r48 admin', 'x') ON CONFLICT (id) DO NOTHING",
+            &[&person.to_string()],
+        )
+        .await
+        .unwrap();
+        c.execute(
+            "INSERT INTO auth_person_role (person_id, role_id, unit_id) VALUES ($1, 'r48-role-admin', 'r48-unit') ON CONFLICT DO NOTHING",
+            &[&person.to_string()],
+        )
+        .await
+        .unwrap();
+        person.to_string()
+    }
+
+    /// review/create/work 的 upsert 去重语义：同 (work, reviewer) 第二次调用必须进
+    /// failureList 而不是重复建行。四轮 N-01 收 admin 后本用例先钉授权口径。
     #[tokio::test]
     async fn u2_review_create_dedups_same_reviewer_per_work() {
         if !is_db_available().await {
@@ -736,9 +782,31 @@ mod u2_contract {
         }
         let url = "/api/processplatform/service/processing/review/create/work";
         let body = json!({"work": "rev-w", "personList": ["alice@P"]});
-        let (_, v1) = send(Method::POST, url, Some(body.clone())).await;
+
+        // 四轮 N-01 活口：`x_review` 审批链写收 admin（reviewer 由请求体任意指定，
+        // 且同 (work,person) 一旦写入便永久去重）。先钉住授权口径，再谈 upsert 语义。
+        let (forbidden, _) =
+            send_raw_as(Method::POST, url, Some(body.clone()), "u-r48-review-nonadmin").await;
+        assert_eq!(
+            forbidden,
+            StatusCode::FORBIDDEN,
+            "非 admin 给他人 work 挂评审人必须 403"
+        );
+        assert_eq!(
+            count(
+                &pool,
+                "SELECT COUNT(*) AS c FROM x_review WHERE work_id='rev-w' AND reviewer='alice@P'",
+            )
+            .await,
+            0,
+            "拒绝路径不得建出评审行"
+        );
+
+        let admin = seed_u2_admin().await;
+        let (status, v1) = send_raw_as(Method::POST, url, Some(body.clone()), &admin).await;
+        assert_eq!(status, StatusCode::OK, "admin 放行后才是业务 200 信封");
         assert_eq!(v1["data"]["successList"].as_array().unwrap().len(), 1);
-        let (_, v2) = send(Method::POST, url, Some(body)).await;
+        let (_, v2) = send_raw_as(Method::POST, url, Some(body), &admin).await;
         assert_eq!(v2["data"]["failureList"][0]["reason"], "already exist");
         let n = count(
             &pool,

@@ -224,7 +224,10 @@ for (const file of walk(CRATES)) {
         line,
         path: rpath,
         method: cm[1].toUpperCase(),
+        // 缺陷 11：`handler` 只用于与 write_handlers.tsv 的短名对账和产物展示；
+        // 取体内信号必须用**带模块限定符**的 `handlerRef`（见 fnBody）。
         handler: cm[2].split("::").pop(),
+        handlerRef: cm[2],
       });
     }
   }
@@ -336,24 +339,173 @@ const SESSION_RE = /Extension\s*<\s*(?:crate::)?(?:shared::)?session::Session|Ex
 // u4_require_actor_of …），写全名单必然慢半拍——本批就出现过「代码已修、读数仍挂 R6」两轮。
 // 改成前缀匹配，凡 `require_admin*` / `require_owner*` / `require_actor*` / `require_session*`
 // / `u4_*` / `u2_require*` / `guard_write*` 等都算体内门禁。
+// 缺陷 13 补的词：宏模板里的属主/写者门（gate_doc_writer / gate_topic_owner / …）。
+// 全仓 `gate_` 前缀普查只有 6 个标识符，其中 gate_sql / gate_table 是**变量名不是门**，
+// 所以这里绝不写 `\bgate_` 前缀，只逐个点名（闭集，新增须同步）。
 const GATE_RE =
-  /\b(?:require_admin|require_owner|require_actor|require_session|u4_session|u4_require|u2_require|u2_check_owner|owner_gate|is_admin|check_permission|assert_admin|require_role|guard_write|validate_session|extract_token_from_headers|resolve_current_person)/;
+  /\b(?:require_admin|require_owner|require_actor|require_session|u4_session|u4_require|u2_require|u2_check_owner|owner_gate|is_admin|check_permission|assert_admin|require_role|guard_write|validate_session|extract_token_from_headers|resolve_current_person|gate_doc_writer|gate_topic_owner|gate_reply_owner|gate_attachment_owner|gate_appdict_writer)/;
 const fnCache = new Map();
-function fnBody(crate, handler) {
-  const key = `${crate}::${handler}`;
+// 尺子缺陷 11（本批修）：注册点写的是 `post(u2::review_create_work)`，旧实现入表时把 `u2::`
+// 限定符 `.split("::").pop()` 剥掉，`fnBody` 再按「遍历 crates/<crate>/src 命中的**第一个**同名 fn」
+// 取体内信号。processplatform_service_processing 的 lib.rs 里躺着一把同名、未注册、未加门的
+// 死 handler，且先被遍历命中——于是真实加了门的 /review/create/work 与 /review/create/workcompleted
+// 两条路由仍被计成 R7「体内无门禁」。这一族错是双向的：既能把已修报成漏洞（本批实测两条），
+// 也能把真漏洞报成已修（同名加门的那个先命中时）。
+// 修法：带限定符的引用按 Rust 模块路径直接解析到 `src/<mod>.rs` 或 `src/<mod>/mod.rs`；
+// 裸名**维持**旧的全 crate 扫描口径（否则整张矩阵会无谓搬家，掩盖真实迁移）。
+// 限定符解不出对应文件时不静默：计入 unresolvedRefs 在末尾当面点名，同时回落旧扫描保证读数不缺席。
+const unresolvedRefs = [];
+const noBodyRefs = [];
+// Rust 允许 `use u2 as u2h;` 给模块起别名（query_service_processing 的 routes 就是这么引的），
+// 所以限定符首段还要过一次 crate 内的别名表，否则又会退回「第一个同名 fn」的旧口径。
+const aliasCache = new Map();
+function moduleAliases(crate) {
+  if (aliasCache.has(crate)) return aliasCache.get(crate);
+  const m = new Map();
+  const dir = path.join(CRATES, crate, "src");
+  if (fs.existsSync(dir))
+    for (const f of walk(dir))
+      for (const am of fs.readFileSync(f, "utf8").matchAll(
+        /\buse\s+(?:crate::|self::|super::)?([A-Za-z_][\w]*(?:::[A-Za-z_][\w]*)*)\s+as\s+([A-Za-z_][\w]*)\s*;/g
+      ))
+        m.set(am[2], am[1].split("::").pop());
+  aliasCache.set(crate, m);
+  return m;
+}
+// 尺子缺陷 13（本批修）：缺陷 12 承认了「宏生成的 handler 看不见体内」，但「看不见」不等于「没有」——
+// cms 的 data_path_write_handlers!（68 条）、pp 的 dict_set_*/dict_del_*、bbs 的 topic_toggle_endpoints!
+// 这三族把 body 写在 macro_rules! 模板里。现按 Rust 语义补一级解析：
+// ① 收集本 crate 内模板文本含 `fn $` 的 `macro_rules! X`（只挑会生成函数项的宏）；
+// ② 找 `X!` 之后第一个平衡实参组，组内出现裸标识符 <handler> 即认定该 handler 由该宏生成；
+// ③ 取宏模板全文作为体内文本，并把这条 (crate, ref) 记入 macroBodies 单独落盘——
+//    读数从此可审：靠模板得到的门禁信号必须能被点名，不能混进普通 R5。
+const macroBodies = new Set();
+function balancedGroup(src, open) {
+  const close = { "(": ")", "[": "]", "{": "}" }[src[open]];
+  if (!close) return null;
+  let depth = 0, inStr = false, esc = false;
+  for (let i = open; i < src.length; i++) {
+    const c = src[i];
+    if (inStr) {
+      if (esc) esc = false;
+      else if (c === "\\") esc = true;
+      else if (c === '"') inStr = false;
+      continue;
+    }
+    if (c === '"' || c === "'") { inStr = true; continue; }
+    if (c === "(" || c === "[" || c === "{") depth++;
+    else if (c === ")" || c === "]" || c === "}") {
+      depth--;
+      if (depth === 0) return src.slice(open + 1, i);
+    }
+  }
+  return null;
+}
+const macroCache = new Map();
+function macroTemplateFor(crate, name) {
+  if (macroCache.has(crate)) {
+    for (const [def, argGroups] of macroCache.get(crate)) {
+      if (argGroups.some((g) => new RegExp(`\\b${name}\\b`).test(g))) return def;
+    }
+    return null;
+  }
+  const defs = [];
+  const dir = path.join(CRATES, crate, "src");
+  if (fs.existsSync(dir))
+    for (const f of walk(dir)) {
+      const src = fs.readFileSync(f, "utf8");
+      for (const m of src.matchAll(/macro_rules!\s*([A-Za-z_][\w]*)\s*\{/g)) {
+        // 定义体：从 `{` 起取平衡块（同一把尺的 readArg 只吃 `.route(` 的实参，这里另起一臂）
+        const open = m.index + m[0].length - 1;
+        let depth = 0, end = -1;
+        for (let i = open; i < src.length; i++) {
+          if (src[i] === "{") depth++;
+          else if (src[i] === "}") { depth--; if (depth === 0) { end = i; break; } }
+        }
+        if (end < 0) continue;
+        const defText = src.slice(m.index, end + 1);
+        if (!/\bfn\s+\$/.test(defText)) continue; // 不生成函数项的宏与本尺无关
+        const groups = [];
+        const inv = new RegExp(`\\b${m[1]}!\\s*[([{]`, "g");
+        for (const im of src.matchAll(inv)) groups.push(balancedGroup(src, im.index + im[0].length - 1) || "");
+        defs.push([defText, groups]);
+      }
+    }
+  macroCache.set(crate, defs);
+  for (const [def, groups] of defs)
+    if (groups.some((g) => new RegExp(`\\b${name}\\b`).test(g))) return def;
+  return null;
+}
+const sliceFn = (src, name) => {  const m = new RegExp(`\\b(?:pub(?:\\([^)]*\\))?\\s+)?(?:async\\s+)?fn ${name}\\s*\\(`).exec(src);
+  if (!m) return null;
+  const tail = src.slice(m.index);
+  const end = tail.indexOf("\n}");
+  return end > 0 ? tail.slice(0, end + 2) : tail.slice(0, 20000);
+};
+function fnBody(crate, ref) {
+  const key = `${crate}::${ref}`;
   if (fnCache.has(key)) return fnCache.get(key);
   let body = "";
   const dir = path.join(CRATES, crate, "src");
-  if (fs.existsSync(dir)) {
+  const parts = String(ref).split("::").filter(Boolean);
+  const name = parts[parts.length - 1];
+  const mods = parts.slice(0, -1).filter((p) => p !== "crate" && p !== "self");
+  const scanAll = () => {
     for (const file of walk(dir)) {
-      const src = fs.readFileSync(file, "utf8");
-      const m = new RegExp(`\\b(?:pub(?:\\([^)]*\\))?\\s+)?(?:async\\s+)?fn ${handler}\\s*\\(`).exec(src);
-      if (!m) continue;
-      const tail = src.slice(m.index);
-      const end = tail.indexOf("\n}");
-      body = end > 0 ? tail.slice(0, end + 2) : tail.slice(0, 20000);
-      break;
+      const b = sliceFn(fs.readFileSync(file, "utf8"), name);
+      if (b) return b;
     }
+    return "";
+  };
+  if (fs.existsSync(dir)) {
+    if (!mods.length) {
+      body = scanAll();
+    } else {
+      const al = moduleAliases(crate);
+      const variants = [
+        ...new Set([
+          mods.join("::"),
+          mods.map((p) => al.get(p) || p).join("::"),
+          // 限定符首段可能就是**另一个 crate**（如 `shared::…::handler`）：按 crate 名换根目录
+          ...(fs.existsSync(path.join(CRATES, mods[0], "src")) ? [`@${mods.join("::")}`] : []),
+        ]),
+      ];
+      const tried = [];
+      for (const v of variants) {
+        const cross = v.startsWith("@");
+        const parts = (cross ? v.slice(1) : v).split("::");
+        const root = cross ? path.join(CRATES, parts.shift(), "src") : dir;
+        for (const f of [path.join(root, ...parts) + ".rs", path.join(root, ...parts, "mod.rs")]) {
+          if (!fs.existsSync(f)) continue;
+          tried.push(path.relative(BACKEND, f));
+          const b = sliceFn(fs.readFileSync(f, "utf8"), name);
+          if (b) {
+            body = b;
+            break;
+          }
+        }
+        if (body) break;
+      }
+      if (!body) {
+        unresolvedRefs.push(
+          `${crate}\t${ref}\t${tried.length ? `${tried.join(" / ")} 内无该 fn` : "限定符（含别名）无对应模块文件"}`
+        );
+        body = scanAll();
+      }
+    }
+  }
+  // 尺子缺陷 12（本批修）：宏生成的 handler（`macro_rules!` 展开出 `pub async fn $name`，
+  // 实测 bbs 的 18 把 topic toggle、pp 的 16 把、query_service_processing 的 12 把）在全 crate
+  // 里**没有字面 fn**，scanAll 也只能返回空串。旧尺子把空 body 一律读成「体内无会话无门禁」→
+  // 落进 R7 行动面，等于把「看不见」冒充成「有漏洞」——反向也会漏报（空 body 让 GET-写探测恒假）。
+  // 现单独成桶 R8 并落盘点名：本尺对这类路由不背书，只能人工取证。
+  if (!body) {
+    // 缺陷 13：先试宏模板，仍取不到才承认「体内不可解析」
+    const tpl = macroTemplateFor(crate, name);
+    if (tpl) {
+      body = tpl;
+      macroBodies.add(`${crate}\t${ref}`);
+    } else noBodyRefs.push(`${crate}\t${ref}`);
   }
   fnCache.set(key, body);
   return body;
@@ -367,19 +519,22 @@ function anonReach(method, p) {
   return isAuthExempt(method, p) && registryPublic(p);
 }
 const rb = new Map();
-const rAnon = [], rAuthNoSession = [];
+const rAnon = [], rAuthNoSession = [], rUnparsable = [], rMacro = [];
 const routeMatrix = []; // 全 7 桶逐条留档，见下方 write_routes_matrix.tsv 的说明
 for (const r of writeRoutes) {
-  const body = fnBody(r.crate, r.handler);
+  const body = fnBody(r.crate, r.handlerRef);
   const admin = mwAdmin(r.method, r.path);
   const exempt = anonReach(r.method, r.path);
   const gate = GATE_RE.test(body);
   const sess = SESSION_RE.test(body);
   let bucket;
+  // 顺序口径：R1（中间件 admin）与 R2-R4（匿名可达）先判——**不能**让「体内不可解析」
+  // 把匿名可达的路由从 R4 行动面里摘走（首版把 !body 放在 exempt 之前，实测吞掉 2 条 R4）。
   if (admin) bucket = "R1-中间件 admin";
   else if (exempt && gate) bucket = "R2-匿名可达+体内门禁";
   else if (exempt && sess) bucket = "R3-匿名可达+读会话";
   else if (exempt) bucket = "R4-匿名可达+体内无门禁";
+  else if (!body) bucket = "R8-已认证+体内不可解析（宏生成/跨 crate，本尺不背书）";
   else if (gate) bucket = "R5-已认证+体内门禁";
   else if (sess) bucket = "R6-已认证+读会话无门禁";
   else bucket = "R7-已认证+体内无会话无门禁";
@@ -388,6 +543,10 @@ for (const r of writeRoutes) {
   routeMatrix.push(`${line}\t${bucket}`);
   if (bucket === "R4-匿名可达+体内无门禁") rAnon.push(line);
   if (bucket === "R7-已认证+体内无会话无门禁") rAuthNoSession.push(line);
+  // 缺陷 12 名单：凡体内取不到（含被 R4 抢先归桶的匿名可达路由）一律点名，按桶不重不漏
+  if (!body) rUnparsable.push(`${line}\t${bucket.slice(0, 2)}\t${path.basename(r.file)}:${r.line}`);
+  // 缺陷 13：靠宏模板得到的读数单独点名，R5 里哪几条是「模板作证」必须可枚举
+  if (macroBodies.has(`${r.crate}\t${r.handlerRef}`)) rMacro.push(`${line}\t${bucket}\t${r.handlerRef}`);
 }
 console.log(`\n路由级：写路由 ${writeRoutes.length} 条（全路由 ${routes.length}）`);
 for (const [k, v] of [...rb].sort((a, b) => a[0].localeCompare(b[0]))) console.log(`  ${String(v).padStart(4)}  ${k}`);
@@ -430,7 +589,7 @@ const WRITE_SQL_RE = /\b(INSERT\s+INTO|UPDATE\s+\w+|DELETE\s+FROM)\b/i;
 const getWrites = [];
 for (const r of routes) {
   if (["POST", "PUT", "DELETE", "PATCH"].includes(r.method)) continue;
-  const body = fnBody(r.crate, r.handler);
+  const body = fnBody(r.crate, r.handlerRef);
   if (!WRITE_SQL_RE.test(body)) continue;
   if (GATE_RE.test(body)) continue;
   const sess = SESSION_RE.test(body);
@@ -477,7 +636,7 @@ const cb = new Map();
 for (const r of routes) {
   const eatenBy = exemptCollisions(r.path);
   if (!eatenBy.length) continue;
-  const body = fnBody(r.crate, r.handler);
+  const body = fnBody(r.crate, r.handlerRef);
   const write = WRITE_SQL_RE.test(body);
   const gate = GATE_RE.test(body);
   const sess = SESSION_RE.test(body);
@@ -523,7 +682,7 @@ const ab = new Map();
 for (const r of routes) {
   const state = anonState(r.path);
   if (!state) continue;
-  const body = fnBody(r.crate, r.handler);
+  const body = fnBody(r.crate, r.handlerRef);
   const write = WRITE_SQL_RE.test(body);
   const guarded = GATE_RE.test(body) || SESSION_RE.test(body);
   const bucket = write && !guarded
@@ -594,7 +753,7 @@ for (const r of routes) {
   const secret = SECRET_INIT.some((q) => pathMatches(r.path, q));
   const who = EXEMPT_PATHS.find((pat) => pathMatches(r.path, pat))
     || `prefix:${EXEMPT_PREFIXES.find((pre) => segPrefix(r.path, pre))}`;
-  const body = fnBody(r.crate, r.handler);
+  const body = fnBody(r.crate, r.handlerRef);
   const write = WRITE_SQL_RE.test(body);
   const bucket = secret
     ? "D3-条件豁免（仅初始化窗口），窗口外需 token"
@@ -615,4 +774,34 @@ fs.writeFileSync(
   ["crate\tmethod\tpath\thandler\tbucket\teaten_by\tregistry_level", ...deadExempt].join("\n") + "\n",
 );
 console.log("明细已写 dead_exempt_routes.tsv");
+
+// ── 缺陷 11 自证（限定符解析）─────────────────────────────────────────────────
+// 带限定符的注册引用有多少、有没有回落，必须当面读数：回落=0 才算这一族解析全部命中模块文件。
+const qualified = routes.filter((r) => r.handlerRef.includes("::"));
+console.log(
+  `\n限定符解析自证（缺陷 11）：${routes.length} 条路由中 ${qualified.length} 条注册引用带模块限定符` +
+    `（去重 ${new Set(qualified.map((r) => `${r.crate}::${r.handlerRef}`)).size} 个），` +
+    `解不出模块文件而回落全 crate 扫描 ${unresolvedRefs.length} 处`
+);
+if (unresolvedRefs.length) console.log(unresolvedRefs.join("\n"));
+// 落盘点名：回落清单不留在 stdout 里 evaporate，后续批次要能机械核对它是否变短。
+fs.writeFileSync(
+  path.join(ARTIFACTS, "route_handler_unresolved_refs.tsv"),
+  "crate\thandler_ref\twhy_fell_back\n" + unresolvedRefs.sort().join("\n") + "\n",
+);
+console.log("回落明细已写 route_handler_unresolved_refs.tsv");
+// 缺陷 12：R8 名单同样落盘——这些写路由的体内信号本尺看不见，只能逐条人工取证。
+console.log(`\nR8 体内不可解析（缺陷 12，宏生成/跨 crate）：${rUnparsable.length} 条（含被 R1-R4 抢先归桶的 ${rUnparsable.filter((l) => !l.includes("\tR8")).length} 条，按桶点名）`);
+fs.writeFileSync(
+  path.join(ARTIFACTS, "write_routes_unparsable.tsv"),
+  "crate\tmethod\tpath\thandler\tbucket\troute_site\n" + rUnparsable.sort().join("\n") + "\n",
+);
+console.log("明细已写 write_routes_unparsable.tsv");
+// 缺陷 13 自证：宏模板作证的写路由逐条落盘（读数可枚举，不许混进普通 R5）
+console.log(`\n宏模板取证（缺陷 13）：${rMacro.length} 条写路由的体内信号取自 macro_rules! 模板`);
+fs.writeFileSync(
+  path.join(ARTIFACTS, "write_routes_macro_resolved.tsv"),
+  "crate\tmethod\tpath\thandler\tbucket\thandler_ref\n" + rMacro.sort().join("\n") + "\n",
+);
+console.log("明细已写 write_routes_macro_resolved.tsv");
 

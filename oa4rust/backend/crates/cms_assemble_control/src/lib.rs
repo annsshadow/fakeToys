@@ -24,6 +24,8 @@ mod tests_generated;
 mod tests_u2;
 #[cfg(test)]
 mod tests_u3;
+#[cfg(test)]
+mod security_gate_tests;
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
@@ -164,8 +166,10 @@ pub async fn list_control_sections(
 #[allow(non_snake_case)]
 pub async fn update_control_config(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let enabled = body
@@ -909,8 +913,10 @@ fn templateform_spec() -> shared::crud::CrudSpec {
 #[allow(non_snake_case)]
 pub async fn dict_create(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     body: Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_require_admin(&pool, &session).await?;
     let id = shared::crud_create(&pool, &dict_spec(), &body.0).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -924,9 +930,11 @@ pub async fn dict_create(
 #[allow(non_snake_case)]
 pub async fn dict_save(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
     body: Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_require_admin(&pool, &session).await?;
     let saved = shared::crud_save(&pool, &dict_spec(), &id, &body.0).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -940,8 +948,10 @@ pub async fn dict_save(
 #[allow(non_snake_case)]
 pub async fn dict_delete(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_require_admin(&pool, &session).await?;
     let deleted = shared::crud_delete(&pool, &dict_spec(), &id).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -955,8 +965,10 @@ pub async fn dict_delete(
 #[allow(non_snake_case)]
 pub async fn form_create(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     body: Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_require_admin(&pool, &session).await?;
     let id = shared::crud_create(&pool, &form_spec(), &body.0).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -970,9 +982,11 @@ pub async fn form_create(
 #[allow(non_snake_case)]
 pub async fn form_save(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
     body: Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_require_admin(&pool, &session).await?;
     let saved = shared::crud_save(&pool, &form_spec(), &id, &body.0).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -986,8 +1000,10 @@ pub async fn form_save(
 #[allow(non_snake_case)]
 pub async fn form_delete(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_require_admin(&pool, &session).await?;
     let deleted = shared::crud_delete(&pool, &form_spec(), &id).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1001,8 +1017,10 @@ pub async fn form_delete(
 #[allow(non_snake_case)]
 pub async fn xform_create(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     body: Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_require_admin(&pool, &session).await?;
     let id = shared::crud_create(&pool, &xform_spec(), &body.0).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1016,9 +1034,11 @@ pub async fn xform_create(
 #[allow(non_snake_case)]
 pub async fn xform_save(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
     body: Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_require_admin(&pool, &session).await?;
     let saved = shared::crud_save(&pool, &xform_spec(), &id, &body.0).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1032,8 +1052,10 @@ pub async fn xform_save(
 #[allow(non_snake_case)]
 pub async fn xform_delete(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_require_admin(&pool, &session).await?;
     let deleted = shared::crud_delete(&pool, &xform_spec(), &id).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1047,8 +1069,10 @@ pub async fn xform_delete(
 #[allow(non_snake_case)]
 pub async fn view_create(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     body: Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_require_admin(&pool, &session).await?;
     let id = shared::crud_create(&pool, &view_spec(), &body.0).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1062,9 +1086,11 @@ pub async fn view_create(
 #[allow(non_snake_case)]
 pub async fn view_save(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
     body: Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_require_admin(&pool, &session).await?;
     let saved = shared::crud_save(&pool, &view_spec(), &id, &body.0).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1078,8 +1104,10 @@ pub async fn view_save(
 #[allow(non_snake_case)]
 pub async fn view_delete(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_require_admin(&pool, &session).await?;
     let deleted = shared::crud_delete(&pool, &view_spec(), &id).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1093,8 +1121,10 @@ pub async fn view_delete(
 #[allow(non_snake_case)]
 pub async fn templateform_create(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     body: Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_require_admin(&pool, &session).await?;
     let id = shared::crud_create(&pool, &templateform_spec(), &body.0).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1108,9 +1138,11 @@ pub async fn templateform_create(
 #[allow(non_snake_case)]
 pub async fn templateform_save(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
     body: Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_require_admin(&pool, &session).await?;
     let saved = shared::crud_save(&pool, &templateform_spec(), &id, &body.0).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1124,8 +1156,10 @@ pub async fn templateform_save(
 #[allow(non_snake_case)]
 pub async fn templateform_delete(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_require_admin(&pool, &session).await?;
     let deleted = shared::crud_delete(&pool, &templateform_spec(), &id).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -5880,7 +5914,9 @@ pub async fn permission_categoryInfo_id_manageable(
 #[allow(non_snake_case)]
 pub async fn permission_management_refresh_all(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let affected = client
         .execute(

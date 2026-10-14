@@ -12,8 +12,6 @@ attendance_assemble_control	GET	/api/attendance/assemble/control/attendancesetti
 attendance_assemble_control	GET	/api/attendance/assemble/control/v2/group/{id}/refresh/participate	v2_group_refresh_participate	K3-已认证无会话无门禁
 attendance_assemble_control	GET	/api/attendance/assemble/control/v2/appeal/{id}/reset/status	v2_appeal_reset_status	K2-读会话无门禁
 auth	GET	/api/qiyeweixin/update/person/detail/{code}	qiyeweixin_update_person_detail	K3-已认证无会话无门禁
-bbs_assemble_control	GET	/api/bbs/assemble/control/user/subject/acceptreply/{id}/{replyId}	u2_subject_accept_reply	K2-读会话无门禁
-bbs_assemble_control	GET	/api/bbs/assemble/control/user/subject/unacceptreply/{id}	u2_subject_unaccept_reply	K2-读会话无门禁
 calendar_assemble_control	GET	/api/calendar_assemble_control/update/control/config	update_control_config	K3-已认证无会话无门禁
 calendar_assemble_control	GET	/api/calendar_assemble_control/calendar/follow/{id}/cancel	calendar_follow_cancel	K2-读会话无门禁
 cms_assemble_control	GET	/api/document/{id}/view/count	document_id_view_count	K3-已认证无会话无门禁
@@ -136,8 +134,6 @@ processplatform_service_processing	GET	/api/processplatform/service/processing/t
 processplatform_service_processing	GET	/api/processplatform/service/processing/task/{id}/urge	task_id_urge	K3-已认证无会话无门禁
 processplatform_service_processing	GET	/api/processplatform/service/processing/task/v2/{id}/pause	task_v2_id_pause	K3-已认证无会话无门禁
 processplatform_service_processing	GET	/api/processplatform/service/processing/task/v2/{id}/resume	task_v2_id_resume	K3-已认证无会话无门禁
-processplatform_service_processing	GET	/api/processplatform/service/processing/touch/merge	touch_merge	K3-已认证无会话无门禁
-processplatform_service_processing	GET	/api/processplatform/service/processing/touch/urge	touch_urge	K3-已认证无会话无门禁
 processplatform_service_processing	GET	/api/processplatform/service/processing/workcompleted/{flag}/merge	wc_merge_flag	K3-已认证无会话无门禁
 program_center	GET	/api/program_center/andfx/pull/sync	andfx_pull_sync	K3-已认证无会话无门禁
 program_center	GET	/api/program_center/dingding/pull/sync	dingding_pull_sync	K3-已认证无会话无门禁
