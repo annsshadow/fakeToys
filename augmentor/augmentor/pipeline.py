@@ -215,7 +215,8 @@ class AugmentorPipeline:
                             idx: int, 
                             item: Dict, 
                             use_quality_check: bool,
-                            result_queue: Queue):
+                            result_queue: Queue,
+                            errors: Optional[List[Dict]] = None):
         """处理单条数据（线程安全）
         
         Args:
@@ -223,6 +224,8 @@ class AugmentorPipeline:
             item: 数据项
             use_quality_check: 是否使用质量检查
             result_queue: 结果队列
+            errors: 失败明细的落点。`augment_dataset` 传的是**本批局部清单**（L275）；
+                `None` 留给直接调用本方的旧调用方，那时仍落实例属性
         """
         try:
             variants = self._generate_variants(item)
@@ -271,7 +274,10 @@ class AugmentorPipeline:
             with self._lock:
                 # L206：列表在 __init__ 就建好，这里只 append（仍持锁：
                 # 多工作线程并发 append 到同一个 list）。
-                self._process_errors.append(error_info)
+                # L275：落点优先是 `augment_dataset` 传下来的本批清单。改前两个任务
+                # 共用这一个 pipeline 实例时都往 `self._process_errors` 写，实测 A 的
+                # 报告里 139 笔明细**全部**来自对方。不传才落实例属性。
+                (errors if errors is not None else self._process_errors).append(error_info)
             result_queue.put((idx, False, []))
     
     def augment_dataset(self,
@@ -311,6 +317,11 @@ class AugmentorPipeline:
 
         # L206：每次运行前清空。改前不清 ⇒ 同一个实例跑第二批时，第一批的
         # 错误记录还留在里面，报告于是混进与本次无关的错。
+        # L275：本批明细住在局部清单里，`self._process_errors` 只留作直接调用方
+        # （不传 `errors=` 的旧写法）的默认出口。改前「同时跑两批」时这一格是共享的：
+        # B 的 start 会把 A 已记录的错抹掉，A 的报告反过来全是 B 的错。
+        errors: List[Dict] = []
+        ckpt = None
         with self._lock:
             self._process_errors = []
 
@@ -324,11 +335,15 @@ class AugmentorPipeline:
         task_id = self.build_task_id(input_file)
         
         # 创建或恢复断点
+        # L275：把**本运行自己那一份**断点对象握在手里，之后每一笔进度与收尾都显式
+        # 交给它。改前这些调用不带断点，落到 `CheckpointManager._current_checkpoint`
+        # 这一格共享环境态上 ⇒ 两个任务同时在跑时，后加载的一方决定所有进度写进谁的
+        # 文件（实测 230 笔里 170 笔写错对象）。
         if use_checkpoint:
-            resumed = self.checkpoint_manager.load_checkpoint(task_id)
-            if resumed is None:
-                self.checkpoint_manager.create_checkpoint(task_id, len(items))
-            remaining_indices = self.checkpoint_manager.get_remaining_indices()
+            ckpt = self.checkpoint_manager.load_checkpoint(task_id)
+            if ckpt is None:
+                ckpt = self.checkpoint_manager.create_checkpoint(task_id, len(items))
+            remaining_indices = self.checkpoint_manager.get_remaining_indices(ckpt)
             skipped = len(items) - len(remaining_indices)
             if skipped > 0:
                 logger.info(f"检测到断点，跳过 {skipped} 条已完成数据")
@@ -373,7 +388,7 @@ class AugmentorPipeline:
                     item = items[idx]
                     future = executor.submit(
                         self._process_single_item,
-                        idx, item, use_quality_check, result_queue
+                        idx, item, use_quality_check, result_queue, errors
                     )
                     futures[future] = idx
                 
@@ -390,14 +405,16 @@ class AugmentorPipeline:
                             existing_generated = existing_generated[-max_existing_window:]
                         
                         if use_checkpoint:
-                            self.checkpoint_manager.update_progress(idx, True)
+                            self.checkpoint_manager.update_progress(idx, True,
+                                                                    checkpoint=ckpt)
                         
                         processed += 1
                         if processed % 10 == 0:
                             logger.info(f"已处理 {processed}/{len(remaining_indices)}")
                     else:
                         if use_checkpoint:
-                            self.checkpoint_manager.update_progress(idx, False)
+                            self.checkpoint_manager.update_progress(idx, False,
+                                                                    checkpoint=ckpt)
         else:
             # 串行处理
             for idx in remaining_indices:
@@ -419,7 +436,8 @@ class AugmentorPipeline:
                     
                     # 更新断点
                     if use_checkpoint:
-                        self.checkpoint_manager.update_progress(idx, True)
+                        self.checkpoint_manager.update_progress(idx, True,
+                                                                checkpoint=ckpt)
                     
                     logger.info(f"生成 {len(variants)} 个变体")
                     
@@ -428,19 +446,21 @@ class AugmentorPipeline:
                     # L206：串行支路此前只打日志、**不记 `_process_errors`** ⇒
                     # `use_parallel=False`（或只剩一条数据）时 `errors` 恒为空，
                     # 「失败明细有出口」这件事只在并行档成立。两支出同一份明细。
-                    with self._lock:
-                        self._process_errors.append({
-                            "index": idx,
-                            "error_type": type(e).__name__,
-                            "message": str(e),
-                            "item_preview": str(item)[:100] if item else "",
-                        })
+                    # L275 之后这一支不持锁：写的是本运行自己的 `errors`，而一次运行
+                    # 只走串行或并行其中一支，串行这一支只有调用方那一个线程在 append。
+                    errors.append({
+                        "index": idx,
+                        "error_type": type(e).__name__,
+                        "message": str(e),
+                        "item_preview": str(item)[:100] if item else "",
+                    })
                     if use_checkpoint:
-                        self.checkpoint_manager.update_progress(idx, False)
+                        self.checkpoint_manager.update_progress(idx, False,
+                                                                checkpoint=ckpt)
         
         # 合并增量并落盘，确保中断后可恢复
         if use_checkpoint:
-            self.checkpoint_manager.save_checkpoint()
+            self.checkpoint_manager.save_checkpoint(ckpt)
         
         # 去重
         if use_dedup and all_results:
@@ -492,8 +512,9 @@ class AugmentorPipeline:
             "vector_index": vector_index,
             # L206：失败明细出得来了。放在 progress 之前——报告形键集中在
             # 一起，`progress` / `memory_monitor` 是运行期诊断，错误是结果。
-            "errors": list(self._process_errors),
-            "progress": self.checkpoint_manager.get_progress() if use_checkpoint else None,
+            # L275：取本批局部清单，不再取共享的实例属性。
+            "errors": list(errors),
+            "progress": self.checkpoint_manager.get_progress(ckpt) if use_checkpoint else None,
             "memory_monitor": {
                 "peak_usage_mb": memory_monitor.get_peak_usage_mb(),
                 "trend": memory_monitor.get_trend(),
