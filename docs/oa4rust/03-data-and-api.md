@@ -11,7 +11,7 @@
   "type": "success",
   "message": "",            // 成功时为空串（与 o2server 一致）
   "date": "2026-10-14 12:00:00",  // 服务器时间 yyyy-MM-dd HH:mm:ss
-  "spent": 0,               // 耗时 ms（此处恒 0，精确值属影子流量 R1 范畴）
+  "spent": 0,               // 耗时 ms（此处恒 0；精确耗时尚未实现，保持对齐 o2server v9 的信封行为）
   "size": 0,
   "count": 0,
   "position": 0
@@ -123,7 +123,7 @@
 
 ## 8. 数据库迁移约定
 
-- 目录：`oa4rust/backend/migrations/`（206 个文件，编号至 108）。
+- 目录：`oa4rust/backend/migrations/`（顶层 205 个 `.sql` 文件，编号至 108；历史归档在 `archive/`）。
 - 命名：正向 `NNN_description.sql`；回滚 `NNN_description_rollback.sql`（启动时**忽略**）；历史归档 `archive/`（忽略）。
 - 执行：启动自动幂等执行（`run_migrations`），无需手工 SQL；`--migrate-only` 仅跑迁移后退出（CI/部署流水线用）。
 - **成对约定**：新增正向迁移必须同时提供 `*_rollback.sql`（历史迁移均为成对文件）。
