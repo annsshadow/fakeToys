@@ -50,6 +50,29 @@ type Config struct {
 	// 需要跨域（后台与 H5 不同域名）就显式配置 —— 那是一个需要人做的决定。
 	CORSAllowOrigins []string
 
+	// SettleRecomputeMode 是服务端重算的处置档位：off / shadow / enforce。
+	//
+	// ⚠️ 默认 **enforce**，这是刻意的，也是本轮改过一次的地方。
+	//
+	// 第一版默认值定的是 `off`，理由是「引擎会漂移，enforce 会误伤」。
+	// 现有测试立刻把它打红了 —— `replay_skills_e2e_test.go` 断言伪造的
+	// `replay_skills` **必须**被拒。而那条校验早就在生产上跑着。
+	//
+	// 那个理由把两类重算混为一谈了：
+	//
+	//   - 整局引擎（尚未移植）：不符**有歧义**，可能是漂移 → 所以要先 shadow。
+	//   - S 段 replay_skills（已在跑）：不符**无歧义**就是作弊 —— 服务端与
+	//     客户端读同一份 DB 数据，中间没有第二个实现，不存在「算错」这一说。
+	//
+	// 对第二类默认 off 等于**新装部署出厂即关闭反作弊校验**。
+	// 「尚未启用的功能」和「已在运行的防护」不能共用一个默认值。
+	//
+	// 所以：默认 enforce（保持现状），引擎接进来时再**主动**切到 shadow 观察。
+	// 「先观察再收紧」是接入引擎时的动作，不是新装部署的默认状态。
+	//
+	// 切档**不需要发版**：改环境变量重启即可。
+	SettleRecomputeMode string
+
 	// 战斗结算上限校验
 	BattleTokenTTL    time.Duration
 	MinBattleDuration time.Duration
@@ -161,6 +184,8 @@ func Load() Config {
 		BattleTokenTTL:    envDuration("BATTLE_TOKEN_TTL", 30*time.Minute),
 		MinBattleDuration: envDuration("MIN_BATTLE_DURATION", 15*time.Second),
 		MaxScorePerSecond: int64(envInt("MAX_SCORE_PER_SECOND", 40_000)),
+
+		SettleRecomputeMode: env("SETTLE_RECOMPUTE_MODE", "enforce"),
 
 		OfflineCapHours: envInt("OFFLINE_CAP_HOURS", 12),
 
