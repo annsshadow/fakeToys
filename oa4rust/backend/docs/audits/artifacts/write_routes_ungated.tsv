@@ -838,11 +838,9 @@ processplatform_service_processing	POST	/api/processplatform/service/processing/
 processplatform_service_processing	POST	/api/processplatform/service/processing/attachment/edit/text/{id}	attachment_edit_id_text	R7
 processplatform_service_processing	POST	/api/processplatform/service/processing/record/task/processing	record_task_processing	R7
 processplatform_service_processing	POST	/api/processplatform/service/processing/record/processing/{work}	record_work_processing	R7
-processplatform_service_processing	POST	/api/processplatform/service/processing/task/press/{id}	task_id_press	R7
 processplatform_service_processing	POST	/api/processplatform/service/processing/task/processing/{id}	task_id_processing	R7
 processplatform_service_processing	POST	/api/processplatform/service/processing/task/will/{id}	task_id_will	R7
 processplatform_service_processing	POST	/api/processplatform/service/processing/task/v2/reset/{id}	task_v2_id_reset	R7
-processplatform_service_processing	POST	/api/processplatform/service/processing/task/v2/resume/{id}	task_v2_id_resume	R7
 processplatform_service_processing	POST	/api/processplatform/service/processing/task/v3/add/{id}	task_v3_id_add	R7
 processplatform_service_processing	POST	/api/processplatform/service/processing/taskcompleted/press/{id}/{work}/{work}	taskcompleted_id_press_work_work	R7
 processplatform_service_processing	POST	/api/processplatform/service/processing/series/series/activitytoken/processing/signal/{work}/{id}/{activityToken}	work_id_series_series_activitytoken_activityToken_processing_signal	R7
@@ -867,7 +865,6 @@ processplatform_service_processing	POST	/api/processplatform/service/processing/
 processplatform_service_processing	POST	/api/processplatform/service/processing/record/work/terminate	record_work_terminate	R7
 processplatform_service_processing	POST	/api/processplatform/service/processing/snap/upload	snap_upload	R7
 processplatform_service_processing	PUT	/api/processplatform/service/processing/task/{id}/processing	task_id_processing	R7
-processplatform_service_processing	POST	/api/processplatform/service/processing/task/{id}/replace	task_id_replace	R7
 processplatform_service_processing	PUT	/api/processplatform/service/processing/task/v2/{id}	task_v2_id	R7
 processplatform_service_processing	PUT	/api/processplatform/service/processing/task/v2/{id}/reset	task_v2_id_reset	R7
 processplatform_service_processing	POST	/api/processplatform/service/processing/task/v3/{id}/add	task_v3_id_add	R7
