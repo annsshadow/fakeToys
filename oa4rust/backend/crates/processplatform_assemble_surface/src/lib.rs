@@ -29,6 +29,33 @@ async fn require_admin_opt(
     }
 }
 
+/// 无会话先 401（在任何 `pool.get()` 之前，离线可证）。
+fn u4_require_session(
+    session: Option<Extension<shared::session::Session>>,
+) -> Result<shared::session::Session, AppError> {
+    session.map(|ext| ext.0).ok_or(AppError::Unauthorized)
+}
+
+/// 归属档：行上归属非空 → 本人或 admin（`require_owner`，无库 fail-closed）；
+/// 归属为空或行不存在 → **只允许 admin**。后者是四轮定下的严格口径：
+/// 不用「空归属 = 人人可写」把数据缺陷洗成权限放行。
+async fn require_actor_opt(
+    pool: &Pool,
+    session: &shared::session::Session,
+    actor: Option<&str>,
+) -> Result<(), AppError> {
+    match actor.map(str::trim).filter(|a| !a.is_empty()) {
+        Some(a) => shared::middleware::require_owner(pool, session, a).await,
+        None => {
+            if shared::middleware::is_admin(pool, &session.person_unique).await {
+                Ok(())
+            } else {
+                Err(AppError::Forbidden)
+            }
+        }
+    }
+}
+
 #[derive(Debug, Deserialize)]
 pub struct CreateSurfaceRequest {
     pub name: Option<String>,
@@ -15093,8 +15120,21 @@ pub async fn serialnumber_id_mockputtopost(
 pub async fn service_work_id_touch(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = u4_require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    // 四轮 R4-2：按 ID 直接 UPDATE PP_C_WORK."xupdateTime" 的 touch，原先不取会话也不校归属，
+    // 任一有效会话可 touch 他人 work 并回读其 create/updateTime。先读发起人再校归属。
+    let owner = client
+        .query_opt(
+            "SELECT \"xcreatorPerson\" FROM PP_C_WORK WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?
+        .map(|r| r.get::<_, Option<String>>("xcreatorPerson").unwrap_or_default());
+    require_actor_opt(&pool.0, &session, owner.as_deref()).await?;
     let result = client
         .execute(
             "UPDATE PP_C_WORK SET \"xupdateTime\" = NOW() WHERE xid = $1",
@@ -15147,8 +15187,20 @@ pub async fn service_work_id_touch(
 pub async fn service_work_id_touch_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = u4_require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    // 与 service_work_id_touch 同一 handler 的 mockputtopost 别名，同批同口径收归属门。
+    let owner = client
+        .query_opt(
+            "SELECT \"xcreatorPerson\" FROM PP_C_WORK WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?
+        .map(|r| r.get::<_, Option<String>>("xcreatorPerson").unwrap_or_default());
+    require_actor_opt(&pool.0, &session, owner.as_deref()).await?;
     let result = client
         .execute(
             "UPDATE PP_C_WORK SET \"xupdateTime\" = NOW() WHERE xid = $1",

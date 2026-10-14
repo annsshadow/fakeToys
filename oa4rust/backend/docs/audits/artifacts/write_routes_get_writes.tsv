@@ -96,9 +96,6 @@ processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/sign/
 processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/task/{id}/manage/mockdeletetoget	task_id_manage_mockdeletetoget	K3-已认证无会话无门禁
 processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/taskcompleted/{id}/manage/mockdeletetoget	taskcompleted_id_manage_mockdeletetoget	K3-已认证无会话无门禁
 processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/mode/{id}/delete	mode_id_delete	K3-已认证无会话无门禁
-processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/touch/expire	touch_expire	K2-读会话无门禁
-processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/touch/passexpired	touch_passexpired	K2-读会话无门禁
-processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/touch/touchdetained	touch_touchdetained	K2-读会话无门禁
 processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/work/{id}/mockdeletetoget	work_id_mockdeletetoget	K3-已认证无会话无门禁
 processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/work/{id}/single/manage/mockdeletetoget	work_id_single_manage_mockdeletetoget	K3-已认证无会话无门禁
 processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/work/{id}/relative/manage/mockdeletetoget	work_id_relative_manage_mockdeletetoget	K3-已认证无会话无门禁

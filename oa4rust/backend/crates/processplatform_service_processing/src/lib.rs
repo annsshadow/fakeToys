@@ -2574,6 +2574,7 @@ pub async fn record_id(
 async fn service_work_id_touch_core(
     pool: Extension<Pool>,
     id: String,
+    session: &shared::session::Session,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -2583,11 +2584,16 @@ async fn service_work_id_touch_core(
         )
         .await
         .map_err(|_| AppError::Internal)?;
+    // 四轮 R4-2 追加：两把 touch 注册在 PUT/POST 上但原先不取会话，
+    // 任一有效会话按 work ID 就能往别人的 work 插 x_record 留痕（审计流水污染），
+    // 且留痕 creator 硬写 "system"。按 work 发起人校归属，留痕写真实操作人。
+    let creator: String = row.get::<_, Option<String>>("creator").unwrap_or_default();
+    u4_require_actor(&pool.0, session, &creator).await?;
     let id2 = Uuid::new_v4().to_string();
     client
         .execute(
             "INSERT INTO x_record (id, work_id, record_type, content, creator, create_time) VALUES ($1, $2, $3, $4, $5, NOW())",
-            &[&id2, &id, &"touch", &"work touched", &"system"],
+            &[&id2, &id, &"touch", &"work touched", &session.person_unique],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -2598,16 +2604,20 @@ async fn service_work_id_touch_core(
 pub async fn service_work_id_touch(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    service_work_id_touch_core(pool, id).await
+    let session = u4_session(session)?;
+    service_work_id_touch_core(pool, id, &session).await
 }
 
 #[allow(non_snake_case)]
 pub async fn service_work_id_touch_p2(
     pool: Extension<Pool>,
     axum::extract::Path((_work, id)): axum::extract::Path<(String, String)>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    service_work_id_touch_core(pool, id).await
+    let session = u4_session(session)?;
+    service_work_id_touch_core(pool, id, &session).await
 }
 
 #[allow(non_snake_case)]
