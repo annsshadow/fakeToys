@@ -729,9 +729,16 @@ const NO_BODY_BY_BUCKET = new Map(); // bucket -> 体内取不到的条数
 // 全仓实测这种写法 25 处（集中在 surface lib.rs 23 处），本批 strict/wide 自证当场喊红抓到 5 条路由。
 // 修法是让表名位允许「可选反斜杠 + 可选引号」前缀，仍要求后面跟标识符首字符，
 // 免得把散文里的 "update " 也算成写语句。
-const WRITE_SQL_RE = /\b(INSERT\s+INTO|UPDATE\s+\x5C?["\x60]?[A-Za-z_]\w*|DELETE\s+FROM)/i;
+// 尺子缺陷 22（第十三批抓到并修）：表名走 `format!` 插值时写作 `UPDATE {} SET deleted_at = NOW()`，
+// `{` 不是标识符首字符 ⇒ 旧判据认不出。这类写法集中在「表名当参数传」的 helper（cms
+// `soft_delete_by_id(pool, table, id)` 一类，全仓 14 个函数这样落笔），handler 体内只有转调，
+// 于是连「含写 SQL」都读不到：真落笔少算 14 条、GET 无门禁面少算 10 条（方向是**漏量**）。
+// 修法：UPDATE 的表名位再允许一条 `{` 前缀（`{}` 与 `{ident}` 同形状）。
+const WRITE_SQL_RE = /\b(INSERT\s+INTO|UPDATE\s+(?:\x5C?["\x60]?[A-Za-z_]\w*|\{)|DELETE\s+FROM)/i;
 // 定向自证用：只要体内出现「转义引号表名」写法，WRITE_SQL_RE 就必须判它是写语句
 const ESCAPED_TABLE_RE = /(UPDATE|DELETE\s+FROM|INSERT\s+INTO)\s+\x5C["\x60][A-Za-z_]/i;
+// 定向自证用（缺陷 22）：体内出现 `format!` 动态表名的写语句，同样必须判它是写语句
+const DYNAMIC_TABLE_RE = /(UPDATE|DELETE\s+FROM|INSERT\s+INTO)\s+\{/i;
 // 尺子缺陷 16（第十一批抓到并修）：写 SQL 落在同 crate 的 helper（`*_core` 一类）里，
 // handler 本体只是转发调用，旧判据（只看本函数体）于是把真落笔的路由读成「只读挂写方法」，
 // GET 段同样漏量。现场：surface `workcompleted_list_count_application_*` 注册在 **GET** 上、
@@ -946,6 +953,28 @@ const readOnlyLines = [];
     );
   console.log(
     `写 SQL 判据自证：含转义引号表名写法的 ${escapedSites} 条路由全部判为写面，0 条漏量`
+  );
+}
+// 刀口自证（缺陷 22 的守卫）：判据要量在 **helper 层**——动态表名写语句几乎都藏在
+// 「表名当参数传」的 helper 里（`soft_delete_by_id` 一类），handler 体内只有转调，
+// 所以沿 handler 扫既扫不到、也容易随名单漂移。这里直接扫全仓 fn 索引：
+// 凡体内出现 `(UPDATE|DELETE FROM|INSERT INTO) {` 的函数，WRITE_SQL_RE 必须判它是写面。
+{
+  const disagree = [];
+  let dynamicSites = 0;
+  for (const crate of new Set(routes.map((r) => r.crate))) {
+    for (const [n, b] of indexCrateFns(crate)) {
+      if (!DYNAMIC_TABLE_RE.test(b)) continue;
+      dynamicSites++;
+      if (!WRITE_SQL_RE.test(b)) disagree.push(`${crate}\t${n}`);
+    }
+  }
+  if (disagree.length)
+    throw new Error(
+      `写 SQL 判据漏量 ${disagree.length} 处（format! 动态表名被判成只读）：\n${disagree.slice(0, 10).join("\n")}`
+    );
+  console.log(
+    `写 SQL 判据自证（缺陷 22）：含 format! 动态表名写法的 ${dynamicSites} 个函数全部判为写面，0 处漏量`
   );
 }
 for (const name of ["R4-匿名可达+体内无门禁", "R6-已认证+读会话无门禁", "R7-已认证+体内无会话无门禁"]) {
@@ -1377,6 +1406,30 @@ for (const key of [
 ])
   if (!gatedByRoute.has(key))
     witnessGaps.push(`缺陷 21 见证缺失（宏模板写档切段后失去作证）：${key.replace(/\t/g, " ")}`);
+// 缺陷 22：表名走 `format!` 插值（`UPDATE {} SET deleted_at = NOW()`）的写语句必须判为写面。
+// cms `soft_delete_by_id(pool, table, id)` 一类 helper 全仓被 14 个函数这样落笔，
+// 修前这些 handler 连「含写 SQL」都读不到 ⇒ 既不进 R 行动面，也不进 GET 面（GET 面最危险，
+// csrf / requires_admin 双盲区）。摘掉表名位的 `\{` 分支，下面三条当场从名单里消失。
+const kRoutes = new Set(getWrites.map(routeKeyOf));
+for (const key of [
+  "cms_assemble_control\tGET\t/api/appinfo/{id}/mockdeletetoget\tappinfo_id_mockdeletetoget",
+  "cms_assemble_control\tGET\t/api/comment/{id}/mockdeletetoget\tcomment_id_mockdeletetoget",
+  "cms_assemble_control\tGET\t/api/viewfieldconfig/{id}/mockdeletetoget\tviewfieldconfig_id_mockdeletetoget",
+]) {
+  if (!kRoutes.has(key))
+    witnessGaps.push(`缺陷 22 见证缺失（动态表名的 GET 写档未进 GET 面）：${key.replace(/\t/g, " ")}`);
+}
+if (!wHelpers.has("soft_delete_by_id"))
+  witnessGaps.push("缺陷 22 见证缺失（间接写 SQL 名单未见 soft_delete_by_id）");
+// 反向：判据放宽到 `{` 之后，同族里**确实有门**的档不许被拖进 GET 面（防「把有门洗成无门」）。
+for (const key of [
+  "cms_assemble_control\tGET\t/api/data/document/{id}/mockdeletetoget\tdata_document_id_mockdeletetoget",
+  "cms_assemble_control\tGET\t/api/appinfo/{id}/control\tappinfo_id_control",
+  "organization_assemble_control\tGET\t/api/organization/assemble/control/person/{flag}/mockdeletetoget\tperson_mock_delete_to_get",
+]) {
+  if (kRoutes.has(key))
+    witnessGaps.push(`缺陷 22 反向见证失效（有门或只读档被误判成 GET 写面）：${key.replace(/\t/g, " ")}`);
+}
 for (const w of WRITE_HELPER_WITNESSES)
   if (!wHelpers.has(w)) witnessGaps.push(`缺陷 16 见证缺失（间接写 SQL 未见 ${w}）`);
 for (const w of GATE_HELPER_WITNESSES)
@@ -1388,7 +1441,8 @@ for (const w of LIVE_ALIAS_WITNESSES)
 console.log(
   `\n判据见证：缺陷 16 ${WRITE_HELPER_WITNESSES.length} 条 / 缺陷 17 ${GATE_HELPER_WITNESSES.length} 条 / ` +
   `缺陷 18 正向 ${DEAD_ALIAS_WITNESSES.length} 条 + 反向 ${LIVE_ALIAS_WITNESSES.length} 条 / ` +
-  `缺陷 19 正向 4 条 + 缺陷 20 正向 2 条 + 反向 3 条 / 缺陷 21 反向 2 条 + 正向 1 条，` +
+  `缺陷 19 正向 4 条 + 缺陷 20 正向 2 条 + 反向 3 条 / 缺陷 21 反向 2 条 + 正向 1 条 / ` +
+  `缺陷 22 正向 3 条 + helper 1 条 + 反向 3 条，` +
   `缺口 ${witnessGaps.length} 处`
 );
 for (const g of witnessGaps) console.error(`  ${g}`);
