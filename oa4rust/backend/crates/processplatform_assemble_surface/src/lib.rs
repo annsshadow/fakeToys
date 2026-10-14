@@ -11,6 +11,24 @@ use shared::{error::AppError, response::ActionResult};
 pub mod routes;
 pub mod u2_render;
 
+// ── 第四轮 R4-7：匿名可达的 GET 写 ──────────────────────────────────────────
+//
+// 本 crate 的一批状态写注册在 GET 上（A3-N12 / mockdeletetoget 族）。GET 既不过
+// csrf_middleware 也不过 requires_admin，路径又落在 AUTH_EXEMPT_PREFIXES 里，
+// 于是「中间件层完全没有门禁」：handler 自己是唯一一道门。
+// 门按两档取：无会话 401（不触库，可离线证），非 admin 403（is_admin 无库 fail-closed）。
+async fn require_admin_opt(
+    pool: &Pool,
+    session: Option<&shared::session::Session>,
+) -> Result<(), AppError> {
+    let session = session.ok_or(AppError::Unauthorized)?;
+    if shared::middleware::is_admin(pool, &session.person_unique).await {
+        Ok(())
+    } else {
+        Err(AppError::Forbidden)
+    }
+}
+
 #[derive(Debug, Deserialize)]
 pub struct CreateSurfaceRequest {
     pub name: Option<String>,
@@ -697,7 +715,12 @@ pub async fn application_list_complex(
 pub async fn application_list_complex_manage_person(
     pool: Extension<Pool>,
     axum::extract::Path(person): axum::extract::Path<String>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // R4-7：路径在 AUTH_EXEMPT_PREFIXES 内、注册在 GET 上，中间件层两道门都够不着，
+    // 而函数体首条 SQL 就是按 ID 的 UPDATE——匿名可按 ID 改任意应用的时间戳并回读其
+    // create/updateTime。这是应用管理面（桌面侧仅运维控制台调用），收 admin。
+    require_admin_opt(&pool.0, session.as_ref().map(|Extension(s)| s)).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -28297,6 +28320,9 @@ mod tests_generated;
 
 #[cfg(test)]
 mod tests_u2;
+
+#[cfg(test)]
+mod security_gate_tests;
 
 #[allow(non_snake_case)]
 pub async fn task_list_date_hour_exclude_draft_manage(

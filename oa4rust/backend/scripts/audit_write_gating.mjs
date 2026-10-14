@@ -200,7 +200,12 @@ console.log("\n全量残余已写 write_gating_residual.tsv");
 // 逐条判定中间件级 admin、匿名豁免、handler 体内的会话/门禁信号，
 // 并把「匿名可达 + 体内无门禁」与「已认证可达 + 无会话读取」两张残余清单落盘。
 const SESSION_RE = /Extension\s*<\s*(?:crate::)?(?:shared::)?session::Session|Extension<Session>|session\s*:\s*Option<Extension/;
-const GATE_RE = /\b(require_admin|require_owner|owner_gate|u2_require_admin_opt|is_admin|check_permission|assert_admin|require_role|u2_check_owner|guard_write|require_session_opt|require_session)\b/;
+// 缺陷 3 修正（四轮 §四）：词表按「完整标识符」匹配。旧写法 `\b(require_admin|…)\b` 认不出
+// `require_admin_opt(` —— `require_admin` 后面紧跟 `_`（仍是词字符），尾部 `\b` 落空，
+// 于是加了门的 handler 仍被计成「无门禁」。同时补入手工会话校验那一族
+// （`extract_token_from_headers` + `validate_session`，auth/bind.rs 走的就是这条路）。
+const GATE_RE =
+  /\b(?:require_admin|require_admin_opt|require_owner|require_owner_opt|require_actor|u4_require_actor|u4_require_actor_of|u4_session|owner_gate|u2_require_admin_opt|u2_check_owner|is_admin|check_permission|assert_admin|require_role|guard_write|require_session|require_session_opt|validate_session|extract_token_from_headers)\b/;
 const fnCache = new Map();
 function fnBody(crate, handler) {
   const key = `${crate}::${handler}`;
