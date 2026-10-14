@@ -296,7 +296,10 @@ class TestTheWriteEdgeIsAFilterNotAnAppend:
         guarded = [cond for cond in conditions if any(
             isinstance(n, ast.Name) and n.id == "backup_id" for n in ast.walk(cond))]
         assert guarded, "backup() 里没有「以 backup_id 为条件」的过滤 ⇒ 收敛不在写边上"
-        assigns = [n for n in body.body if isinstance(n, (ast.Assign, ast.AugAssign))]
+        # L273 之后写点不再躺在函数体顶层：整段读-改-写罩在 `with path_lock(...)` 里，
+        # 所以按 `body.body` 只取顶层语句会数到 0。判据本身一字未动——**恰好一处**对
+        # `self._index[...]` 的赋值，多一处（例如又按次追加）照样红。
+        assigns = [n for n in ast.walk(body) if isinstance(n, (ast.Assign, ast.AugAssign))]
         written = [n for n in assigns if any(
             isinstance(t, ast.Subscript) and isinstance(t.value, ast.Attribute)
             and t.value.attr == "_index" for t in getattr(n, "targets", []))]
