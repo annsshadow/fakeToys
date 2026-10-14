@@ -48,13 +48,13 @@ def verify_api_key(x_api_key: Optional[str] = Header(None, alias="X-API-Key")) -
         x_api_key: 请求头 X-API-Key
 
     Raises:
-        HTTPException: 401 未提供或密钥不匹配
+        HTTPException: 401 未提供或密钥不匹配；比较走 UTF-8 字节档，因为 str 档只认纯 ASCII
     """
     expected = os.environ.get(API_KEY_ENV, "").strip()
     if not expected:
         return
 
-    if not x_api_key or not secrets.compare_digest(x_api_key, expected):
+    if not x_api_key or not secrets.compare_digest(x_api_key.encode(), expected.encode()):
         raise HTTPException(status_code=401, detail="缺少或无效的 X-API-Key")
 
 
