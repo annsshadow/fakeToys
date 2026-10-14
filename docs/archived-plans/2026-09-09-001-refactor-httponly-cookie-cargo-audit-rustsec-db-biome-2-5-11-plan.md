@@ -959,6 +959,20 @@ the application-list literal routes returned 500 against the local DB:
 Verified: all five endpoints return 200 (counts 0, empty lists) and the
 dashboard renders with zero server 500s.
 
+## 2026-10-14 定期复核（计划保持 active）
+
+例行状态校准，仍为 `status: active`（外部未闭合项未变），新增事实如下：
+
+- **RustSec 例外治理正常运行**：`oa4rust/backend/security/rustsec-exceptions.toml` 两个例外均有效——
+  `RUSTSEC-2023-0071 (rsa 0.9.10)` 已于 **2026-10-09 再分类并续期 30 天至 2026-11-08**（理由：sqlx-mysql 0.8.x 仍拉 rsa 0.9.x，上游无 patched 版；rsa 仅存在于 dev-dependency MySQL 测试驱动，生产 OIDC/PDF 签名已迁离）；
+  `RUSTSEC-2026-0187 (lopdf 0.26.0, genpdf 链)` 2026-09-28 建档，**2026-10-28 到期**，到期前必须再分类（替换 genpdf 或下线导出特性）。
+  `rustsec-db.rev`（pinned DB）在档。下次复核触发点：**2026-10-28 前**。
+- **代码漂移核对**：SDK `session.ts` 仅存 legacy key 清理循环（line 16），无 token 持久化/注入 ✅；
+  `oa4rust/biome.json` schema 固定 2.5.11 ✅；根 `.github/workflows/oa4rust-supply-chain.yml` 在档 ✅。
+- **外部未闭合项（不变）**：GitHub ruleset required checks 需 push 后配置；真实 OAuth provider E2E 缺凭据；
+  Bearer 零阈值观测需真实流量窗口；Java↔Rust session 互操作——按 `2026-09-11-001` rev15 口径现场**无旧系统**，该项实质失效，改记为「不适用」而非「阻塞」。
+- 目录结构漂移：计划中的 `oa4rust-web/`、`oa4rust/crates/` 已重组为 `oa4rust/frontend/`、`oa4rust/backend/crates/`（96 crates），引用路径按新结构理解。
+
 ## Sources and References
 
 ### Repository guidance
