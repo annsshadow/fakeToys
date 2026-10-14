@@ -167,6 +167,11 @@ A4 开放问题：① F1 是否 o2server 侧本就以 job/document 创建者为�
 | N2 | `crates/personal_extend/src/avatar.rs` | 头像读侧 `is_safe_avatar_rel` fail-closed 守卫 + 回归；**测试里的 Windows 路径字面量改 raw string**（`"C:\windows\..."`、`"data/avatar\..\..\evil"` 是非法 Rust 转义，原写法整个 crate 测试目标编译不过） |
 | 加固 | `crates/preview/src/lib.rs` | `safe_base_name` 同时按 `/` 与 `\` 取末段，剥离契约不再依赖构建平台的 `Path::file_name()` 语义 + 跨平台断言 |
 | 工具 | `scripts/audit_write_gating.mjs` | 新增确定性接线尺（§二.0） |
+| **F3** | `crates/portal/src/lib.rs` + `security_gate_tests.rs` | `save_page` / `delete_page`（后者是物理 `DELETE FROM x_portal_page`）加 crate-local `require_admin`（`shared::middleware::is_admin`，无 DB fail-closed）；离线回归 `portal_page_writes_forbidden_for_non_admin` 断言两把 403 |
+| **F6** | `crates/ai/src/index.rs` + `crates/ai/src/tests_generated.rs` | `index_delete` 加 `Extension<Session>` + `is_admin` 门（ownerless 系统数据，按 S5 裁决收 admin）；原直调测试 `_result` 弃读改成 403 断言（离线，无 DB 时 fail-closed）。路由仍挂 GET——改 HTTP 方法需前端同批，列为跨切项不做单边改动 |
+| **F9** | `crates/bbs/src/subject.rs` | 发帖 `author_id` 由「完全取请求体」改为以会话身份为权威（`session.person_unique`），杜绝任意 person 冒名发帖；既有 `test_subject_create` 走 oneshot 无会话→仍 500，不掩盖变更 |
+| **F2** | `crates/portal_core_entity/src/lib.rs` + `security_gate_tests.rs` | 同表另一条写路径 `page_create`（**函数级索引漏收**，路由级尺子收到）/ `page_update` / `page_remove` 同加 `require_admin`。本 crate 走 sea-orm `DatabaseConnection`、拿不到 deadpool `Pool`（router 收下 `_pool` 却从未 layer 注入），故按 `is_admin` 同一条 SQL 就地判 admin 并 fail-closed；门禁回归需真实 PG，标 `#[ignore]` 并在文件头写明跑法 |
+
 
 ## 四、验证
 
@@ -183,12 +188,19 @@ cd oa4rust/backend && cargo test --lib -p <crate>
 - `cargo test --lib -p preview -p personal_extend`：**EXIT=0**，`preview` 18 passed / 0 failed（含 `security_preview_tests::safe_base_name_blocks_traversal` 的跨平台新断言），`personal_extend` 5 passed / 0 failed（含 `avatar_read_side_guard_rejects_unsafe_rel`）。
 - 关键取证：进入本轮时那 3 处「已修」代码**从未编译通过**——`personal_extend` 测试目标 5 个 `error: unknown character escape`、`file_assemble_control` 的 `f.take()` 报 ``ZipFile<'_> is not an iterator``。上一轮把它们记成了已完成，本轮按红读数逐格返工。
 - `cargo test --lib -p file_assemble_control`：**91 passed / 0 failed / 27 ignored**（含本轮新增 `test_docx_to_html_caps_paragraph_count`、`test_docx_to_html_caps_decompressed_size`、`test_read_zip_entry_caps_decompressed_size`）。
+- `cargo test --lib -p portal`：**13 passed / 0 failed**，含新增 `security_gate_tests::portal_page_writes_forbidden_for_non_admin`（F3 离线 403 双断言）。
+- `cargo test --lib -p ai`：**51 passed / 0 failed**，其中 F6 的 `test_index_delete` 由「弃读 `_result`」改成 `Err(AppError::Forbidden)` 断言。
+- `cargo test --lib -p bbs`：**7 passed / 0 failed**（F9 改会话权威后既有 oneshot 测试仍绿）。
+- `cargo test --lib -p portal_core_entity`：**18 passed / 0 failed / 1 ignored**（F2 首跑编译断裂两处——sea-orm 1.1.20 的 `QueryResult::try_get::<T>(pre, col)` 需要两参，已按 `try_get::<bool>("", "is_admin")` 返工；`ignored` 即 `portal_page_entity_writes_forbidden_for_non_admin`，需真实 PG，跑法 `cargo test --lib -p portal_core_entity -- --ignored`）。
+
 - 尺子读数与明细落盘：`docs/audits/artifacts/write_handlers.tsv`（函数级矩阵 991 行）、`write_gating_residual.tsv`、`write_routes_ungated.tsv`（R4 13 条 + R7 1131 条），复跑命令 `node scripts/audit_write_gating.mjs`。
+
 
 
 ## 五、处置与遗留（下一轮入口）
 
-- 已修并验证：N1、N4-01、N2、preview 加固（读数见 §四）。
-- 待修（有明确落点与修法，按 §二.1 的 R4-1…R4-6 与 §二.6 的 F1…F10 顺序收口；processplatform 族因 `ADMIN_WRITE_DEPRECATED_PREFIXES` 已撤销中间件兜底，handler 层是唯一门禁，优先级最高；F2/F3/F5 与 §二.1 的 R4-3/R4-5 同为「ownerless 系统数据写 = admin」一族，可一把收）：R4-1 / R4-2 / R4-3 / R4-4 / R4-5 / R4-6、F1 / F2 / F3 / F4 / F5 / F6 / F7 / F8 / F9 / F10、N4-02、N4-03。
+- 已修并验证：N1、N4-01、N2、preview 加固、F3、F6、F9（离线 403/会话权威断言）、F2（编译与既有测试绿，真门 `#[ignore]` 待 PG）——读数见 §四。
+- 待修（有明确落点与修法，按 §二.1 的 R4-1…R4-6 与 §二.6 的 F1…F10 顺序收口；processplatform 族因 `ADMIN_WRITE_DEPRECATED_PREFIXES` 已撤销中间件兜底，handler 层是唯一门禁，优先级最高；F5 与 §二.1 的 R4-3/R4-5 同为「ownerless 系统数据写 = admin」一族，可一把收）：R4-1 / R4-2 / R4-3 / R4-4 / R4-5 / R4-6、F1 / F4 / F5 / F7 / F8 / F10、N4-02、N4-03。
 - 建议统一修法（沿用本仓既有先例，避免新抽象）：引擎运行面按一轮 V2/V4 口径至少加 `require_session_opt`；改变归属/状态/删他人行的走 `shared::middleware::require_owner`（admin 旁路、行不存在放行以保 not-found 语义）；设计态（script/flow/form/xform/dict/item-access/portal）比照同 crate `guard_write` 或二轮 S5 先例加 admin/属主门；GET 状态变更改 POST。每 crate 补 `security_gate_tests`（无 DB 的 401/403 各一）。
+- 提交落点：`a14b84348`（返工三处「已修未编译」+ docx/zip 上限 + 接线尺）、`be07ecac8`（本文档）、`e4d6af0f6`（F2/F3/F6/F9 越权门）。分支 `oa4rust-vuln-audit-r4`，本轮未 push。
 
