@@ -294,6 +294,39 @@ A4 开放问题：① F1 是否 o2server 侧本就以 job/document 创建者为�
 | **surface 四把 touch 路由** | `crates/processplatform_assemble_surface/src/lib.rs` + `security_gate_tests.rs` | `service_work_id_touch` / `_mockputtopost`（PUT/POST × 正式/别名 = 4 条路由）按 ID 直接 `UPDATE PP_C_WORK."xupdateTime"` 并回读时间字段，原先不取会话。新增 crate-local `u4_require_session`（无会话 401 先于取连接）与 `require_actor_opt`（归属非空 → 本人或 admin；**空归属 / 行缺失 → 只允许 admin**，沿用 §三.4 严格口径），写前先 `SELECT "xcreatorPerson" FROM PP_C_WORK WHERE xid=$1` 取归属再校。离线臂 `surface_touch_writes_reject_without_session` 逐条断四把 401 |
 | **尺子缺陷 3 的复发修正** | `scripts/audit_write_gating.mjs` | 上一批把 `GATE_RE` 改成「完整标识符全名单」，本批新长出的 `require_actor_opt` / `u4_require_session` 又不在名单里，**同一类假红第二轮复现**（代码已修、读数仍挂 R6）。改为**前缀匹配**：`require_admin*` / `require_owner*` / `require_actor*` / `require_session*` / `u4_*` / `u2_require*` / `guard_write*` / `owner_gate*` 等一律算体内门禁，从此不需要每次改名同步。**没被收成恒真**的反证：R7 仍 1165、函数级仍 991 行 / 残余 11 行完全不动，只有 R6 262→228、R5 371→405、GET 写 165→162（K2 16→13）在变 |
 
+### 三.7 第七批（豁免/注册表双锁收口 + 初始化密钥销毁侧同锁 + 尺子缺陷 9，代码）
+
+本批的入口不是「又找到一条漏洞」，而是**上一批那句结论说反了**。§三.5/§四 曾把
+「写路由被同层 `{id}` 通配豁免吞掉」记成「还有注册表第二把锁兜着，实测 401，所以不是匿名面」——
+把请求真打一遍之后这个口径整体倒转：**豁免早退时不插 Session，而 authorize 只在注册表 Public 时放行**，
+于是「豁免 ∧ ¬Public」这条组合对**带合法会话的 admin 也是 401**。它不是安全兜底，是**半开的双锁 = 全员不可达的可用性死态**；
+而且「修好它」会顺带**打开**一批此前被死态掩盖的写面，所以必须与归属权威同批做。
+
+| 项 | 文件 | 内容 |
+| --- | --- | --- |
+| **F1 双锁一致性** | `crates/shared/src/middleware/token.rs` | auth 层的豁免早退由「只看豁免表」改为 `is_auth_exempt(&path) && (init_window \|\| (!secret_hit && is_registry_public(&path)))`：两把锁必须同开才允许匿名，`SECRET_INIT_PATHS` 的初始化窗口保持原有严格性不变。**为什么改 auth 侧而不是把 19 条路径逐个补进注册表**：注册表是「这条路由公开吗」的唯一权威，让 auth 层单方面按豁免表放行等于把同一个问题留了两份答案——只要两份表还可能各自演化，就会反复长出死态或漏放行 |
+| **F2 登录前置流程显式公开** | `crates/shared/src/middleware/rbac.rs` | 新增 `is_registry_public()` 供 auth 层判；`with_defaults()` 补两条 `register_exact`：`/api/person/regist`、`/api/secret/captcha/verify`（注册与验证码是登录前置流程，按设计必须匿名可达，此前只在豁免表里，落在差集里 = 死态） |
+| **F3 公开即限流** | `crates/shared/src/middleware/constants.rs`（`AUTH_RATE_LIMIT_EXACT`） | 上面两条同时进认证族限流名单。`rate_limit_middleware` 对「豁免且未列限流」直接跳过，所以「公开但不限流」= 匿名无上限批量建号 + 验证码暴力枚举；限流是 F2 的前置条件，不是配套 |
+| **F4 初始化密钥销毁侧同锁** | `crates/shared/src/middleware/constants.rs`（`SECRET_INIT_PATHS`） | 补 `/api/secret/set/cancel`。`path_matches` 要求**段数相等**，`/api/secret/set` 不吞 `/api/secret/set/cancel`，所以 `set` 只在未初始化窗口匿名、`set/cancel` 却**永久匿名可达**——一个匿名 GET 就能 `DELETE FROM secret_config WHERE id='init-secret'`。handler 体内 `has_person` 是唯一一道锁，而它在「全库用户被锁定 / 软删」的维护态下同样失效。§四 曾把这条记成 K1「待定性」，本批定性与收口一并做掉。**顺带验真**：`AUTH_RATE_LIMIT_PREFIXES` 里的 `/api/secret/cancel` 是打不中任何路由的死键，但真实路径已由 `/api/secret/set` 前缀（段边界匹配）覆盖，故限流面不缺口，那条死键留给死键普查批处理 |
+| **F5 冒名归属面随死态打开而收口** | `crates/general_assemble_control/src/lib.rs` | `invoice_upload` / `invoice_upload_for_create` / `invoice_upload_with_url` 三把的 `creator` 由「取请求体、缺省 `system`」改为 `session.person_unique`（与同 crate `invoice_create` 同口径），handler 加 `Extension<Session>`。**这批必须和 F1 同批**：F1 让这几条从「谁都打不通」变成「登录可达」，如果 creator 仍取请求体，修一条可用性就开一个「任意登录用户把单据挂到别人名下」的写面 |
+| **尺子缺陷 9（注册表建模只认一种写法）** | `scripts/audit_write_gating.mjs` | 建模时只复刻 `registry.register(...)`，漏掉 `register_exact` / `register_prefix` 与跨行写法 ⇒ 大量在册注册被当成「没注册」，`registryPublic` 假阴。6c 首跑因此报 57 条（含生产显然活的 `/api/queryview/list`），修解析后 19 条、真匿名面同时 132→170。**新旧读数口径断裂，不可直接比**；另补「解析到 N 条 exact + M 条 prefix」的自证行，让尺子下次少解析时会自己喊 |
+| **6c 新桶 + 读数自校准** | `scripts/audit_write_gating.mjs`、`docs/audits/artifacts/dead_exempt_routes.tsv` | 新增「auth 豁免 ∧ ¬注册表 Public」差集（7 列，带 `eaten_by` 与 `registry_level`）。桶名**不写死**：脚本自己去 `token.rs` 读 F1 是否接线（`F1_WIRED`），未接线读作「死态：所有用户不可达」，已接线读作「惰性豁免条目（需登录，豁免本身失效）」——回退 F1 时读数会自动改口径，不会继续把真死态报成噪音 |
+| **A1 匿名写行动面改为点名门禁** | `scripts/audit_write_gating.mjs` | 「真匿名 + 体内写 SQL + 无门禁无会话」是匿名侧唯一真能落笔的面，写成**集合相等**（现名单 3 条：`auth POST /api/authentication`、`auth POST /api/authentication/login`、`personal POST /api/person/regist`）而非「数量 ≤ N」：新增匿名写路由要多打一条，名单里的条目被修掉也要多划一条，两个方向都必须红。注入臂取证见 §四 |
+| **两把全栈守卫** | `tests/anonymous_write_guard.rs`、`tests/exempt_authorize_parity.rs`（均新建） | 见 §四 第七批读数。前者按「匿名请求 → 状态码 + 库面行数 + 文件系统面」三重判据打真实全栈；后者只量可达性下限（带合法会话不得 401、设计上匿名的不得 401），逐臂打印状态码与响应体 |
+
+本批另记三条**推翻自己先前假设**的取证，避免下一轮再顺着旧口径走：
+
+1. **「匿名可在门禁前消耗请求体」被证伪**：axum 0.8.9 的 `Multipart::from_request` 只 parse boundary、
+   不读体，且默认体限 2MB——`icon/upload` 那类上传面不会因为豁免而变成匿名资源消耗面。
+   副作用发现：`MAX_FILE_SIZE = 5MB` 在 2MB 默认限下是**死代码**（fail-closed 的策略不一致，待拍是否让二者对齐）。
+2. **「content-type 不对所以 400」不是门禁有效**：icon 臂首跑 400 而非 401，查下来是我的 multipart 构造
+   被 content-type 校验拒了；改成发真 PNG magic 的文件，让 401 由门禁给出，才量到该量的东西。
+3. **修可用性会自己造出残留**：`invoice_upload` 的 creator 走 body 缺省 `system` 时，按 `creator=会话人`
+   过滤的清场漏删它落的空名行；一次性清扫真跑到并删除 1 行（`create_time` 在该表是 TEXT，
+   不能和 `timestamptz` 直接比，改按 `to_char` 前缀做字典序窗口），清扫测试用完即从文件删除。
+   同批把「顺手删」的 `let _ = client.execute(...)` 兜底改成**失败即响**的残留断言——
+   会议臂本应 400 不落行，一旦真落行必须先红，而不是被静默的 `let _ =` 抹掉证据。
+
 ## 四、验证
 
 
@@ -471,6 +504,57 @@ cd oa4rust/backend && cargo test --lib -p <crate>
 - 尺子：`service_work_id_touch*` 在 `write_routes_ungated.tsv` 的命中数 **6 → 0**（含 surface 四条
   别名/正式路由）。路由级 R4 仍 14、R7 1165、GET 写无门禁 162；函数级 991 行 / 残余 11 行不变。
 
+第七批（§三.7）读数：
+
+- `cargo test --test exempt_authorize_parity -- --ignored --nocapture`：**12 臂全活 / 红名单 0 条**，
+  输出无 `skip:`。逐臂：`invoice_create`、`invoice_upload` 200（修前为带合法会话仍 401 的死态）；
+  `meeting_create_alias` / `meeting_create_root` 400 `title is required`（**到了 handler 的业务校验**）；
+  `meeting_get_by_id` / `queryview_view_by_id` 200 + `not found`；`queryview_list` /
+  `surface_task_list_work` / `surface_attachment_list_work` 200 空列表；
+  `captcha_verify`、`person_regist`（匿名臂）422——422 是 handler 侧抽取/校验，不是 401，
+  即「双锁已开」。同臂打印 `creator 权威臂：invoice_upload 落库 creator=Some("admin")（会话人=admin）`，
+  证明请求体里伪造的 `r48-spoofed-actor` 没有落库。
+- `cargo test --test anonymous_write_guard -- --ignored --nocapture`：**1 passed / 0 failed**，无 `skip:`。
+  `invoice/upload`、`invoice/create`、`meeting/create`、`PUT /api/person/custom/*`、
+  `POST /api/person/icon/upload`、`PUT /api/person/icon`、`POST /api/secret/set` 全 401 且零行零文件；
+  `POST /api/reset/password/anonymous` 设计上匿名可达、由验证码挡下（`验证码不存在`）；
+  **`GET /api/secret/set/cancel` 修后 401**。三层仪器自证都在：行数尺 1→0、头像目录 0→1→0、
+  放行正控（admin 会话打 `invoice/create` 200 且 creator=admin）——没有正控，前面所有
+  「匿名 401 + 零行」都可能只是「这条路由本来就写不进测试库」的假绿。
+- **红绿对账（F4）**：临时把 `SECRET_INIT_PATHS` 改回两条再跑同一支测试 →
+  `GET /api/secret/set/cancel` 读数变 **HTTP 200**、body 是 handler 的
+  `cannot cancel secret when system is already initialized with users`，断言按名喊红
+  （「必须与 set 同锁，实测 200 OK」），退出码 1。这条红同时钉住两件事：**该路径修前确实永久匿名可达**，
+  且 handler 体内 `has_person` 是当时唯一一道锁。复原常量后复跑转绿。
+  同一批把「密钥行存在与否」做成可读判据：测试库通常没有 `init-secret` 行（逐字比较会退化成
+  `None == None` 恒真），故本臂插入哨兵行 `r48-cancel-sentinel` 让「被删」读得到，打完删掉复原；
+  红跑那次因 panic 跳过收尾、把哨兵留下 1 行，下一轮的**预清扫**把它收掉并打印来源，
+  使这一臂对自己中途退出产生的残留也是自愈的。
+- **尺子**（`node scripts/audit_write_gating.mjs`，退出码 0）：注册表解析自证「入表 4806（未解析 3）」；
+  函数级 991 行 / 残余 11 行（本批未动）；W 碰撞 6 条（W2 3 / W3 3）；真匿名面 **172**
+  （A1 真匿名+写 3、A1 条件匿名+写 1、A2 13、A3 只读 153 + 条件 1）；豁免 ∧ ¬Public 差集 **17**
+  （D1 惰性豁免+写 SQL 7、D2 惰性豁免+只读 10），桶名带「F1 接线自证：已接线」字样。
+  口径链：修缺陷 9 前 6c 报 57（假阳）、修后 19；F2 让 `regist` / `captcha_verify` 离开差集 → 17；
+  F4 让 `set/cancel` 从 A1 真匿名写迁入 A1 条件匿名 → A1 真匿名写 4→3。
+- **A1 点名门禁的注入臂**：把副本脚本名单里的 `/api/person/regist` 改成 `/api/person/registX` 后跑，
+  尺子**两个方向同时红**（「未登记的新匿名写面：personal POST /api/person/regist」+
+  「名单里已消失的条目：…registX」）并 `EXIT=1`；副本随后删除。证明这条门禁不是恒真断言。
+- **回归波及面**：`cargo test -p shared --lib` → **151 passed / 0 failed / 11 ignored**（F1 改的是 auth 层语义，
+  这一族中间件测试全绿；其中 2 支限流测试是既有 `#[ignore]`「redis mock not configured」，非本批新增静默跳过）。
+- **必须点名的一次「不绿但不该记在我批」**：`cargo test -p general_assemble_control -- --ignored` →
+  **33 passed / 2 failed**，红的是 `test_status_route_accessible` 与 `test_permissions_route_accessible`
+  （实际 200、断言 500）。归因证据：这两条路由的 handler 与 `src/tests.rs` 都不在我的 diff 里
+  （`git diff` 对这两处为空 ⇒ 与 HEAD 逐字相同），故与本批的 invoice 三把改动无关。
+  真因是**一支环境耦合的断言族**：全库 272 处 `assert_eq!(response.status(), INTERNAL_SERVER_ERROR)`
+  分布在 58 个 crate 的 `tests.rs`，它们把「测试库连不上 ⇒ handler 取不到 pool ⇒ 500」当成了路由可达性判据，
+  一旦本机 PostgreSQL 真的在跑就整体转红。这是 §四 早已记过的「测试在册 ≠ 测试在跑」的另一面：
+  **这些测试只在库坏掉时才跑绿**。本批不吞掉这 2 条红、也不去改那 272 处（改法是断言「非 404」= 路由匹配，
+  属独立一整格工作），列进 §五 待修。
+- **共享工作树的编译被打断两次**（均由并行会话的在制品造成，本会话只做**最小语法复原**、不动其语义）：
+  `processplatform_service_processing/src/lib.rs` 的 `row.as_ref().and_then(...)`（改为 `row.get(...)`）、
+  `portal_assemble_designer/src/lib.rs` 文档注释第二行丢 `///` 前缀（补回）。
+  两处都留在并行会话自己的未提交改动集里，**没有**被本批 commit 收走。
+
 本轮两处自伤（记下来防止再犯）：
 
 - **管道假绿**：`cargo test ... | tail -40` 的退出码是 `tail` 的，两处「exit 0」实际是编译红
@@ -540,4 +624,34 @@ cd oa4rust/backend && cargo test --lib -p <crate>
   不跟进「薄封装 → core」的委托**——委托型门禁会一律被判成无门禁（假红方向，偏保守可用），
   而反方向（core 有门、wrapper 无门）也确实是真实缺陷，因为门根本不会被执行。引用某条 R7 前，
   凡是 body 只有一行 `.await` 转发的 handler，都要人工看一眼 core。分支 `oa4rust-vuln-audit-r4`，本轮未 push。
+
+### 第七批收口后的刷新（§三.7 / §四 第七批）
+
+- **已修并验证**：F1 双锁一致性（`token.rs`）、F2 登录前置流程显式 Public（`rbac.rs`）、
+  F3 公开即限流（`constants.rs`）、**F4 初始化密钥销毁侧同锁**（`SECRET_INIT_PATHS` 补
+  `/api/secret/set/cancel`，红绿两跑取证）、F5 invoice upload 三把 creator 会话权威。
+  顺带把 §五 旧名单里的 **A3-N13（invoice 三把冒名）收掉**——它此前被记成「creator 取请求体」的
+  归属缺陷，但真因是这三把当时谁都打不通，修归属必须与修可达性同批，否则会新开冒名面。
+- **新待修（本批取证出来的两类，都不是单点漏洞）**：
+  1. **17 条惰性豁免条目**（`dead_exempt_routes.tsv`，7 写 + 10 读）：豁免表里有、注册表不 Public，
+     F1 之后不再致死人路，但「豁免」本身失效。**这是引信不是噪音**——哪天有人把这些路径或其前缀
+     标成 `Public`，条目立刻变成匿名可达写面。收法二选一：从 `AUTH_EXEMPT_PATHS` 删掉这些条目，
+     或在注册表点名它们该是什么级别；建议一把守卫把「豁免表条目必须被注册表识别」钉成集合关系。
+  2. **272 处 `assert_eq!(status, 500)` 断言族（58 个 crate）**：判据写的是「测试库连不上时 handler
+     取不到 pool」，所以**只在数据库坏掉时才绿**；本机 PG 在跑时 `general_assemble_control` 稳定红 2 条
+     （见 §四 归因证据：那两条路由与 `tests.rs` 都不在我的 diff 里）。改法是把这些「route_accessible」
+     类断言收成「非 404 = 路由匹配」，属独立一整格，需要按 crate 分批跑绿再收。
+- **新发现但未修的策略不一致**：`MAX_FILE_SIZE = 5MB` 与 axum 默认体限 2MB 并存——上传面在 2MB 就被
+  框架拒掉，5MB 那条上限是死代码。fail-closed（实际更严），所以不是漏洞；要么把默认体限调到 5MB，
+  要么把常量降到与框架一致，属产品口径。
+- **待拍产品口径（本批择了保守侧，可回退）**：`/api/queryview/*` 6 条与 3 条 processplatform surface 读
+  在豁免表里按「公开」写、在注册表判 `Authenticated`，F1 之后统一变成**仅登录可达**。
+  若这些只读列表本意允许匿名（门户/看板嵌入场景），需要产品明确后才把对应路径标 `Public`——
+  注意标 `Public` 会连带打开同前缀下现被死锁掩盖的写面，必须按 A1 点名门禁逐条过。
+  另：首次引导窗口内 `secret` 族（`check` / `set` / `set/cancel`）匿名是设计使然，本批只把三者锁到
+  同一窗口；「公网部署时首次引导要不要网络侧声明」仍归部署口径。
+- **提交落点**：`7a95789d3`（§三.7 全部代码 + 尺子 + 两把守卫 + 7 张产物 TSV）。
+  本文档（§三.7 / §四 第七批 / 本节）为账本随后一笔。共享工作树上并行会话的在制品我只做了两处
+  最小语法复原（`processplatform_service_processing`、`portal_assemble_designer`），**未**提交进我的批，
+  仍留在他们自己的未提交改动集里。本轮未 push。
 
