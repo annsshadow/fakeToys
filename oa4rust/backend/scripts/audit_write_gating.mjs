@@ -380,6 +380,7 @@ function moduleAliases(crate) {
 // ③ 取宏模板全文作为体内文本，并把这条 (crate, ref) 记入 macroBodies 单独落盘——
 //    读数从此可审：靠模板得到的门禁信号必须能被点名，不能混进普通 R5。
 const macroBodies = new Set();
+const macroBoundBodies = new Set(); // 缺陷 21：其中「拿到自己那一段」的（其余是整张模板，须单独点名）
 function balancedGroup(src, open) {
   const close = { "(": ")", "[": "]", "{": "}" }[src[open]];
   if (!close) return null;
@@ -402,38 +403,128 @@ function balancedGroup(src, open) {
   return null;
 }
 const macroCache = new Map();
-function macroTemplateFor(crate, name) {
-  if (macroCache.has(crate)) {
-    for (const [def, argGroups] of macroCache.get(crate)) {
-      if (argGroups.some((g) => new RegExp(`\\b${name}\\b`).test(g))) return def;
+// ── 尺子缺陷 21（第十二批抓到并修）：宏模板体必须**按生成函数切段**再绑定给 handler ──────
+// 缺陷 13 的旧做法是「取整张 `macro_rules!` 模板文本当体内」。模板里每写一个 `pub async fn $x`
+// 就生成一把 handler，而一把宏常常一次生成 **5 把**（cms `appdict_depth_family!` 的
+// `$anon_read / $auth_read / $put / $post / $del`、`data_path_write_handlers!` 的
+// `$mockdel / $del / $put / $create / $mockput`）。整张模板当体内有两个方向的错：
+// ① 假绿（致命）：读档 `$anon_read` 借了同模板 `$put` 的门禁信号，被读成「已加门的写面」而退出 K 名单；
+// ② 虚报：读档借了 `$del` 的写 SQL，被算进「GET 上挂写」行动面。
+// 本批实测 67 条 GET 路由靠 `appdict_data_write` 作证，全部是 ①。
+// 修法：把模板按 `fn $param` 切成段，再用「matcher 的 `$` 形参表 × 调用点的顶层实参表」
+// 做位置绑定，handler 只拿自己那一段。matcher 含重复展开 `$(` 的宏（bbs `topic_toggle_endpoints`、
+// query `touch_endpoints`、org_express 三族）**只生成一种 fn 形状**，整张模板等价于该段，
+// 维持旧读法但单独计数，不许混进「段内取证」。绑不上的一律当面点名，不静默回落。
+function splitTopLevel(group) {
+  const out = [];
+  let depth = 0, cur = "";
+  for (const c of group) {
+    if (c === "(" || c === "[" || c === "{") depth++;
+    else if (c === ")" || c === "]" || c === "}") depth--;
+    if ((c === "," || c === ";") && depth === 0) {
+      if (cur.trim()) out.push(cur.trim());
+      cur = "";
+      continue;
     }
-    return null;
+    cur += c;
   }
-  const defs = [];
-  const dir = path.join(CRATES, crate, "src");
-  if (fs.existsSync(dir))
-    for (const f of walk(dir)) {
-      const src = fs.readFileSync(f, "utf8");
-      for (const m of src.matchAll(/macro_rules!\s*([A-Za-z_][\w]*)\s*\{/g)) {
-        // 定义体：从 `{` 起取平衡块（同一把尺的 readArg 只吃 `.route(` 的实参，这里另起一臂）
-        const open = m.index + m[0].length - 1;
-        let depth = 0, end = -1;
-        for (let i = open; i < src.length; i++) {
-          if (src[i] === "{") depth++;
-          else if (src[i] === "}") { depth--; if (depth === 0) { end = i; break; } }
-        }
-        if (end < 0) continue;
-        const defText = src.slice(m.index, end + 1);
-        if (!/\bfn\s+\$/.test(defText)) continue; // 不生成函数项的宏与本尺无关
-        const groups = [];
-        const inv = new RegExp(`\\b${m[1]}!\\s*[([{]`, "g");
-        for (const im of src.matchAll(inv)) groups.push(balancedGroup(src, im.index + im[0].length - 1) || "");
-        defs.push([defText, groups]);
-      }
+  if (cur.trim()) out.push(cur.trim());
+  return out;
+}
+function matcherParams(matcher) {
+  if (matcher.includes("$(")) return null; // 重复展开族：单形状模板，整张即该段
+  return [...matcher.matchAll(/\$([a-z_]\w*)/g)].map((m) => m[1]);
+}
+function templateSegments(defText) {
+  const segs = [];
+  for (const m of defText.matchAll(/\bfn\s+\$([a-z_]\w*)/g)) {
+    const paren = defText.indexOf("(", m.index);
+    if (paren < 0) continue;
+    let i = paren + 1, depth = 1;
+    while (i < defText.length && depth > 0) {
+      if (defText[i] === "(") depth++;
+      else if (defText[i] === ")") depth--;
+      i++;
     }
-  macroCache.set(crate, defs);
-  for (const [def, groups] of defs)
-    if (groups.some((g) => new RegExp(`\\b${name}\\b`).test(g))) return def;
+    if (depth !== 0) continue;
+    const brace = defText.indexOf("{", i);
+    if (brace < 0) continue;
+    let b = brace, bd = 0, end = -1;
+    while (b < defText.length) {
+      if (defText[b] === "{") bd++;
+      else if (defText[b] === "}") { bd--; if (bd === 0) { end = b; break; } }
+      b++;
+    }
+    if (end < 0) continue;
+    segs.push({ param: m[1], text: defText.slice(m.index, end + 1) });
+  }
+  return segs;
+}
+const macroAmbiguous = [];
+// 返回 `{ text, bound }`：bound=true 表示拿到的是该 handler 自己那一段。
+function macroTemplateFor(crate, name) {
+  if (!macroCache.has(crate)) {
+    const defs = [];
+    const dir = path.join(CRATES, crate, "src");
+    if (fs.existsSync(dir))
+      for (const f of walk(dir)) {
+        const src = fs.readFileSync(f, "utf8");
+        for (const m of src.matchAll(/macro_rules!\s*([A-Za-z_][\w]*)\s*\{/g)) {
+          // 定义体：从 `{` 起取平衡块（同一把尺的 readArg 只吃 `.route(` 的实参，这里另起一臂）
+          const open = m.index + m[0].length - 1;
+          let depth = 0, end = -1;
+          for (let i = open; i < src.length; i++) {
+            if (src[i] === "{") depth++;
+            else if (src[i] === "}") { depth--; if (depth === 0) { end = i; break; } }
+          }
+          if (end < 0) continue;
+          const defText = src.slice(m.index, end + 1);
+          if (!/\bfn\s+\$/.test(defText)) continue; // 不生成函数项的宏与本尺无关
+          const arrow = defText.indexOf("=>");
+          const params = matcherParams(arrow > 0 ? defText.slice(open - m.index + 1, arrow) : "");
+          const segments = templateSegments(defText);
+          const bindings = [];
+          let wholeTemplate = false; // 该宏一次调用只生成一种 fn 形状 → 整张模板即体内
+          const inv = new RegExp(`\\b${m[1]}!\\s*[([{]`, "g");
+          for (const im of src.matchAll(inv)) {
+            const g = balancedGroup(src, im.index + im[0].length - 1);
+            if (g == null) continue;
+            const toks = splitTopLevel(g);
+            // 位置绑定按 **matcher 的形参顺序**（不是模板里 `fn $x` 的出现顺序）——
+            // `$arity` 可能排在最前（appdict_depth_family）也可能排在最后（data_path_write_handlers），
+            // 按段序 +1 偏移会在后者上整体错一档，把写档绑成读档。
+            if (params && params.length === toks.length) {
+              const map = new Map();
+              params.forEach((p, ix) => map.set(p, toks[ix]));
+              bindings.push(map);
+            } else {
+              const names = [];
+              for (const t of toks) for (const mm of String(t).matchAll(/\b([a-z_]\w*)\b/gi)) names.push(mm[1]);
+              bindings.push(names);
+              wholeTemplate = wholeTemplate || segments.length <= 1;
+            }
+          }
+          defs.push({ defText, segments, bindings, params, wholeTemplate, macro: m[1] });
+        }
+      }
+    macroCache.set(crate, defs);
+  }
+  for (const d of macroCache.get(crate)) {
+    const hit = (list) => list.some((v) => new RegExp(`\\b${name}\\b`).test(String(v)));
+    if (d.bindings.length === 0 || !hit(d.bindings.flatMap((b) => (Array.isArray(b) ? b : [...b.values()]))))
+      continue;
+    if (d.segments.length === 1 || d.wholeTemplate) return { text: d.defText, bound: false };
+    for (const b of d.bindings) {
+      if (Array.isArray(b)) continue;
+      for (const [param, concrete] of b)
+        if (concrete === name) {
+          const seg = d.segments.find((s) => s.param === param);
+          if (seg) return { text: seg.text, bound: true };
+        }
+    }
+    macroAmbiguous.push(`${crate}\t${name}\t${d.macro}`);
+    return { text: d.defText, bound: false };
+  }
   return null;
 }
 const sliceFn = (src, name) => {  const m = new RegExp(`\\b(?:pub(?:\\([^)]*\\))?\\s+)?(?:async\\s+)?fn ${name}\\s*\\(`).exec(src);
@@ -503,8 +594,9 @@ function fnBody(crate, ref) {
     // 缺陷 13：先试宏模板，仍取不到才承认「体内不可解析」
     const tpl = macroTemplateFor(crate, name);
     if (tpl) {
-      body = tpl;
+      body = tpl.text;
       macroBodies.add(`${crate}\t${ref}`);
+      if (tpl.bound) macroBoundBodies.add(`${crate}\t${ref}`);
     } else noBodyRefs.push(`${crate}\t${ref}`);
   }
   fnCache.set(key, body);
@@ -559,15 +651,46 @@ function callPropagates(body, name) {
       i++;
     }
     if (depth !== 0) continue;
-    const tail = body.slice(i, i + 40).replace(/\s+/g, "");
-    if (tail.startsWith(".await?")) return true;
-    // 尾表达式：`.await` 之后（可有换行/缩进与一个 `;` 之外的空白）就是函数体的闭括号
-    if (tail.startsWith(".await") && /^\s*\}/.test(body.slice(i + 6))) return true;
+    // 尺子缺陷 19（第十二批修）：旧写法先把 40 字符窗口 `.replace(/\s+/g, "")` 再判
+    // `tail.startsWith(".await")`，然后用 **未剥离** 的原串按 `i + 6` 切片去找闭括号。
+    // rustfmt 会把长参数调用折行成 `)\n            .await\n        }`，
+    // 此时 `)` 与 `.await` 之间已有 12 个以上空白字符，`i + 6` 仍落在空白里，
+    // `/^\s*\}/` 面对的是 `.await…` 而非 `}` → 尾表达式臂恒假。
+    // 现场：cms `surface_appdict_*_data{,_mockputtopost}` 32 条注册点整体转发给
+    // `appdict_data_write`（体内 `gate_appdict_writer(...).await?` 且拒时 `return Err(Forbidden)`），
+    // 缺陷 17 补的 ② 一条也没作证，读数仍挂 R6 行动面。
+    // 修法：两个臂都在**原始文本**上用同一条正则判，空白位置由 `\s*` 自己吃掉，不再做位置切片。
+    const after = body.slice(i, i + 80);
+    if (/^\s*\.await\s*\?/.test(after)) return true;
+    // 尾表达式：`.await` 之后（可有换行/缩进）就是函数体的闭括号
+    if (/^\s*\.await\s*\}/.test(after)) return true;
   }
   return false;
 }
 // 返回 false（无门禁）、true（本体内直接命中门禁）、或作证的 helper 名（间接门禁）。
 // 递归至多 3 层：门常写在「转发 helper」的下一层（handler → data_write → gate_writer）。
+//
+// 尺子缺陷 20（第十二批抓到并修）：旧写法要求「作证的 helper 体内必须字面含
+// `AppError::Forbidden|Unauthorized`」才算它有拒绝能力。现场：attendance 的
+// `delete_admin_record` 体内是 `require_admin(pool, session).await?`、
+// `delete_owned_record` 体内是 `shared::middleware::require_owner(...).await?`——
+// **拒绝由门自己产出并经 `?` 上抛，helper 本体一行 Forbidden 字面量都不写**。
+// 于是这 2 把 helper 覆盖的 12+ 张表 292 条注册点整体被读成 R6「读会话无门禁」的行动面，
+// 其中 39 条进了本批的「真落笔」队列——照这张表去加门就是白加。
+// 修法：把「有拒绝能力」改成两条并列——① 旧的字面量分支（保留，别把已认出的读数赶走）；
+// ② helper 体内存在「匹配门词表的调用点且拒绝会向上传播」（`?` 或尾表达式）。
+// ② 仍要求传播，所以 `let ok = is_admin(…).await;` 这种「读了标志却照样落笔」不作证。
+function propagatesGateName(body) {
+  for (const m of body.matchAll(/([A-Za-z_]\w*)\s*\(/g)) {
+    const n = m[1];
+    if (!GATE_RE.test(n)) continue;
+    if (callPropagates(body, n)) return n;
+  }
+  return null;
+}
+function helperCanReject(hb) {
+  return /AppError::(Forbidden|Unauthorized)/.test(hb) || propagatesGateName(hb) !== null;
+}
 function gateEvidence(crate, body, depth = 0) {
   if (!body) return false;
   if (GATE_RE.test(body)) return true;
@@ -576,7 +699,7 @@ function gateEvidence(crate, body, depth = 0) {
   for (const m of body.matchAll(/(?<![.\w:])([a-z_]\w*)\s*\(/g)) {
     const n = m[1];
     const hb = idx.get(n);
-    if (!hb || hb === body || !/AppError::(Forbidden|Unauthorized)/.test(hb)) continue;
+    if (!hb || hb === body || !helperCanReject(hb)) continue;
     if (!callPropagates(body, n)) continue;
     if (gateEvidence(crate, hb, depth + 1) !== false) return n;
   }
@@ -1082,6 +1205,15 @@ fs.writeFileSync(
 console.log("明细已写 write_routes_unparsable.tsv");
 // 缺陷 13 自证：宏模板作证的写路由逐条落盘（读数可枚举，不许混进普通 R5）
 console.log(`\n宏模板取证（缺陷 13）：${rMacro.length} 条写路由的体内信号取自 macro_rules! 模板`);
+{
+  const bound = rMacro.filter((l) => macroBoundBodies.has(`${l.split("\t")[0]}\t${l.split("\t")[5]}`)).length;
+  console.log(
+    `  其中按生成函数切段取证（缺陷 21）${bound} 条 / 整张模板取证（单形状宏，等价）${rMacro.length - bound} 条`
+  );
+  if (macroAmbiguous.length)
+    console.log(`  绑不上段的宏生成 handler ${macroAmbiguous.length} 把（回落整张模板，须人工复核）：` +
+      [...new Set(macroAmbiguous.map((l) => l.split("\t")[0] + "/" + l.split("\t")[2]))].join("、"));
+}
 fs.writeFileSync(
   path.join(ARTIFACTS, "write_routes_macro_resolved.tsv"),
   "crate\tmethod\tpath\thandler\tbucket\thandler_ref\n" + rMacro.sort().join("\n") + "\n",
@@ -1171,6 +1303,80 @@ const LIVE_ALIAS_WITNESSES = [
 const helperNamesOf = (lines, col) => new Set(lines.map((l) => l.split("\t")[col]));
 const wHelpers = helperNamesOf(indirectWrites, 5);
 const gHelpers = helperNamesOf(indirectGated, 4);
+const routeKeyOf = (l) => l.split("\t").slice(0, 4).join("\t");
+const bucketByKey = new Map(routeMatrix.map((l) => { const p = l.split("\t"); return [p.slice(0, 4).join("\t"), p[4]]; }));
+const gatedByRoute = new Map(indirectGated.map((l) => [routeKeyOf(l), l.split("\t")[4]]));
+// 缺陷 19 正向：`)` 与 `.await` 之间有折行空白（rustfmt 折行 / 宏模板里的多参转调）时，
+// 「helper 的 Err 直接成为 handler 返回值」这一路必须仍然作证。摘掉 ② 臂，这四条整体退回 R6。
+for (const [key, helper] of [
+  ["cms_assemble_control\tDELETE\t/api/surface/appdict/{appDictFlag}/appInfo/{appInfoFlag}/{path0}/data\tsurface_appdict_appDictFlag_appInfo_appInfoFlag_path0_data_delete", "appdict_data_write"],
+  ["cms_assemble_control\tPUT\t/api/surface/appdict/{appDictFlag}/appInfo/{appInfoFlag}/{path0}/{path1}/data\tsurface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_data_put", "appdict_data_write"],
+  ["cms_assemble_control\tPOST\t/api/surface/appdict/{appDictFlag}/appInfo/{appInfoFlag}/{path0}/data\tsurface_appdict_appDictFlag_appInfo_appInfoFlag_path0_data_post", "appdict_data_write"],
+  ["cms_assemble_control\tDELETE\t/api/surface/appdict/{appDictFlag}/appInfo/{appInfoFlag}/{path0}/{path1}/{path2}/data\tsurface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_data_delete", "appdict_data_write"],
+])
+  if (gatedByRoute.get(key) !== helper)
+    witnessGaps.push(`缺陷 19 见证缺失（尾表达式转调未被 ${helper} 作证）：${key.replace(/\t/g, " ")}`);
+// 缺陷 20 正向：门在 helper 里、helper 本体不写 `AppError::Forbidden` 字面量
+// （`require_admin(...).await?` / `shared::middleware::require_owner(...).await?` 把拒绝直接上抛）。
+// 把 `helperCanReject` 压回「只认字面量」，这两条当场退回 R6。
+for (const [key, helper] of [
+  ["attendance_assemble_control\tDELETE\t/api/attendance/assemble/control/attendanceadmin/{id}\tattendanceadmin_delete", "delete_admin_record"],
+  ["attendance_assemble_control\tDELETE\t/api/attendance/assemble/control/attendancedetail/{id}\tattendancedetail_delete", "delete_owned_record"],
+]) {
+  if (gatedByRoute.get(key) !== helper)
+    witnessGaps.push(`缺陷 20 见证缺失（无字面量拒绝分支的 helper 未作证 ${helper}）：${key.replace(/\t/g, " ")}`);
+  if (!gHelpers.has(helper))
+    witnessGaps.push(`缺陷 20 见证缺失（间接门禁名单未见 helper ${helper}）`);
+}
+// 缺陷 20 的**独立反证尺**：逐条复核「被拿来作证的 helper 真的有拒绝能力」。
+// 这里的判据是故意**重新写一遍**的字面量 + 传播两条，不调用 `helperCanReject`——
+// 若有人把它放宽成恒真（本批注入臂 T20c 实测：全仓 0 条自然样本会被误证，
+// 所以三条点名式反向见证抓不住那次放松），这张尺会因为「作证的 helper 体内既无拒绝字面量、
+// 也没有传播的门禁调用」而当场喊红。恒真型放松只能靠独立判据兜，不能靠样本兜。
+const LITERAL_REJECT_RE = /AppError::(Forbidden|Unauthorized)/;
+for (const l of indirectGated) {
+  const p = l.split("\t");
+  const hb = indexCrateFns(p[0]).get(p[4]) || "";
+  if (!hb) {
+    witnessGaps.push(`缺陷 20 独立反证：作证的 helper ${p[0]}::${p[4]} 体内取不到`);
+    continue;
+  }
+  let propagatesGate = false;
+  for (const g of hb.matchAll(/([A-Za-z_]\w*)\s*\(/g)) {
+    if (!GATE_RE.test(g[1])) continue;
+    if (callPropagates(hb, g[1])) { propagatesGate = true; break; }
+  }
+  if (!LITERAL_REJECT_RE.test(hb) && !propagatesGate)
+    witnessGaps.push(`缺陷 20 独立反证：${p[0]} ${p[1]} ${p[2]} 被 ${p[4]} 作证，但该 helper 无拒绝能力`);
+}
+// 缺陷 19/20 的点名式反向见证：这三条体内确无门禁，读数必须停在 R6/R7，
+// 也不许出现在间接门禁名单里（防「把真洞洗成已修」）。
+for (const key of [
+  "query_assemble_designer\tDELETE\t/api/query/assemble/designer/delete\tdelete_designer_bare",
+  "processplatform_assemble_surface\tPOST\t/api/processplatform/assemble/surface/attachment/doc/to/word/work/{workId}\tattachment_u2b_doc_to_word",
+  "message_assemble_communicate\tDELETE\t/api/message/assemble/communicate/im/conversation/{id}/group/mockdeletetoget\tim_conversation_id_group_mockdeletetoget",
+]) {
+  if (gatedByRoute.has(key))
+    witnessGaps.push(`缺陷 19/20 反向见证失效（无门路由被误作证 ${gatedByRoute.get(key)}）：${key.replace(/\t/g, " ")}`);
+  if (/^R5/.test(bucketByKey.get(key) || ""))
+    witnessGaps.push(`缺陷 19/20 反向见证失效（无门路由被误判成 R5）：${key.replace(/\t/g, " ")}`);
+}
+// 缺陷 21：宏模板按生成函数切段之后，**读档不许借同模板写档的门禁/写 SQL 作证**。
+// cms `appdict_depth_family!` 一次生成 5 把（anon_read / auth_read / put / post / del），
+// 旧做法取整张模板当体内 → 67 条 anonymous/auth 的 GET 读档被 `appdict_data_write` 读成「已加门的写面」。
+// 切段生效后这几条必须从间接门禁名单里消失。
+for (const key of [
+  "cms_assemble_control\tGET\t/api/anonymous/surface/appdict/{appDictFlag}/appInfo/{appInfoFlag}/{path0}/data\tanonymous_surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_data",
+  "cms_assemble_control\tGET\t/api/surface/appdict/{appDictFlag}/appInfo/{appInfoFlag}/{path0}/data\tsurface_appdict_appDictFlag_appInfo_appInfoFlag_path0_data",
+])
+  if (gatedByRoute.has(key))
+    witnessGaps.push(`缺陷 21 见证缺失（宏模板读档仍被写档 ${gatedByRoute.get(key)} 借证）：${key.replace(/\t/g, " ")}`);
+// 缺陷 21 正向：写档切段后仍要拿到自己那一段，不许因为换段而丢证。
+for (const key of [
+  "cms_assemble_control\tDELETE\t/api/surface/appdict/{appDictFlag}/appInfo/{appInfoFlag}/{path0}/data\tsurface_appdict_appDictFlag_appInfo_appInfoFlag_path0_data_delete",
+])
+  if (!gatedByRoute.has(key))
+    witnessGaps.push(`缺陷 21 见证缺失（宏模板写档切段后失去作证）：${key.replace(/\t/g, " ")}`);
 for (const w of WRITE_HELPER_WITNESSES)
   if (!wHelpers.has(w)) witnessGaps.push(`缺陷 16 见证缺失（间接写 SQL 未见 ${w}）`);
 for (const w of GATE_HELPER_WITNESSES)
@@ -1181,7 +1387,9 @@ for (const w of LIVE_ALIAS_WITNESSES)
   if (deadRows.has(w)) witnessGaps.push(`缺陷 18 反向见证失效（活档被误判成死档 ${w}）`);
 console.log(
   `\n判据见证：缺陷 16 ${WRITE_HELPER_WITNESSES.length} 条 / 缺陷 17 ${GATE_HELPER_WITNESSES.length} 条 / ` +
-  `缺陷 18 正向 ${DEAD_ALIAS_WITNESSES.length} 条 + 反向 ${LIVE_ALIAS_WITNESSES.length} 条，缺口 ${witnessGaps.length} 处`
+  `缺陷 18 正向 ${DEAD_ALIAS_WITNESSES.length} 条 + 反向 ${LIVE_ALIAS_WITNESSES.length} 条 / ` +
+  `缺陷 19 正向 4 条 + 缺陷 20 正向 2 条 + 反向 3 条 / 缺陷 21 反向 2 条 + 正向 1 条，` +
+  `缺口 ${witnessGaps.length} 处`
 );
 for (const g of witnessGaps) console.error(`  ${g}`);
 if (witnessGaps.length) {
