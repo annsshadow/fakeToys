@@ -88,7 +88,10 @@ function walk(dir, out = []) {
   return out;
 }
 const ROUTE_RE = /\.route\(\s*"([^"]+)"\s*,\s*([\s\S]{0,400}?)\)\s*\)/g;
-const HANDLER_RE = /^\s*(?:(?:[a-z_][a-z0-9_]*::)*(?:get|post|put|delete|patch|head|options))\s*\(\s*((?:[A-Za-z_][A-Za-z0-9_]*::)*[A-Za-z_][A-Za-z0-9_]*)/i;
+// 一次 .route() 可链式挂多个方法（`.route("p", delete(a).put(b))`）。必须逐个枚举：
+// 只取首方法的旧写法会让「链上第二个方法」从分母里静默消失——四轮取证实测漏掉
+// processing 的 work_edit / work_delete / att_edit_id 三把（它们从未进过任何残余名单）。
+const METHOD_CHAIN_RE = /(?:^|[^A-Za-z0-9_])(get|post|put|delete|patch|head|options)\s*\(\s*((?:[A-Za-z_][A-Za-z0-9_]*::)*[A-Za-z_][A-Za-z0-9_]*)/gi;
 const routes = []; // {crate, file, line, path, method, handler}
 const seenRouteFiles = [];
 for (const file of walk(CRATES)) {
@@ -99,19 +102,18 @@ for (const file of walk(CRATES)) {
   for (const m of src.matchAll(ROUTE_RE)) {
     const rpath = m[1];
     const inner = m[2];
-    const hm = HANDLER_RE.exec(inner);
-    if (!hm) continue;
-    const method = /^(?:(?:[a-z_][a-z0-9_]*::)*)(get|post|put|delete|patch|head|options)\s*\(/i
-      .exec(inner)[1].toUpperCase();
     const line = src.slice(0, m.index).split("\n").length;
-    for (const h of handlersFromRouteBody(crate, inner)) {
-      routes.push({ crate, file, line, path: rpath, method, handler: (h || hm[1]).split("::").pop() });
+    for (const cm of inner.matchAll(METHOD_CHAIN_RE)) {
+      routes.push({
+        crate,
+        file,
+        line,
+        path: rpath,
+        method: cm[1].toUpperCase(),
+        handler: cm[2].split("::").pop(),
+      });
     }
   }
-}
-// 一个 route 体里可能挂路由层/多 handler；只取首个具名 handler（axum 常见形态）
-function handlersFromRouteBody() {
-  return [null];
 }
 
 // handler 名 → 路由（同名 handler 可能被多个 crate/路径复用）
@@ -253,4 +255,33 @@ fs.writeFileSync(
     ...rAuthNoSession.map((l) => `${l}\tR7`)].join("\n") + "\n",
 );
 console.log(`\nR4(${rAnon.length}) + R7(${rAuthNoSession.length}) 明细已写 write_routes_ungated.tsv`);
+
+// ── 5. GET 上挂的写（A3-N12 跨切族的活读数）─────────────────────────────────
+// csrf_middleware 与 requires_admin 只认 POST/PUT/PATCH/DELETE，本段的 R4/R7 分母
+// 同样只扫这四个方法：于是注册在 GET 上的状态写对两把中间件和尺子同时隐形。
+// 这里单独枚举「GET/HEAD/OPTIONS 路由 + handler 体内含写 SQL」，只点名无门禁的那些。
+const WRITE_SQL_RE = /\b(INSERT\s+INTO|UPDATE\s+\w+|DELETE\s+FROM)\b/i;
+const getWrites = [];
+for (const r of routes) {
+  if (["POST", "PUT", "DELETE", "PATCH"].includes(r.method)) continue;
+  const body = fnBody(r.crate, r.handler);
+  if (!WRITE_SQL_RE.test(body)) continue;
+  if (GATE_RE.test(body)) continue;
+  const sess = SESSION_RE.test(body);
+  const bucket = isAuthExempt(r.method, r.path)
+    ? "K1-匿名可达无门禁"
+    : sess
+      ? "K2-读会话无门禁"
+      : "K3-已认证无会话无门禁";
+  getWrites.push(`${r.crate}\t${r.method}\t${r.path}\t${r.handler}\t${bucket}`);
+}
+const kb = new Map();
+for (const l of getWrites) kb.set(l.split("\t")[4], (kb.get(l.split("\t")[4]) || 0) + 1);
+console.log(`\nGET 写（csrf / requires_admin 双盲区）：体内无门禁 ${getWrites.length} 条`);
+for (const [k, v] of [...kb].sort((a, b) => a[0].localeCompare(b[0]))) console.log(`  ${String(v).padStart(4)}  ${k}`);
+fs.writeFileSync(
+  path.join(ARTIFACTS, "write_routes_get_writes.tsv"),
+  ["crate\tmethod\tpath\thandler\tbucket", ...getWrites].join("\n") + "\n",
+);
+console.log("明细已写 write_routes_get_writes.tsv");
 
