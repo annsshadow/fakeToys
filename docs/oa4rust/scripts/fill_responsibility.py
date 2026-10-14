@@ -5,7 +5,7 @@ import re
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-MODULES_DIR = REPO_ROOT / "docs/oa/modules/o2server"
+MODULES_DIR = REPO_ROOT / "docs/oa4rust/modules/o2server"
 
 # Responsibility descriptions by module name
 RESPONSIBILITY = {

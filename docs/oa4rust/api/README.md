@@ -4,7 +4,7 @@ Auto-generated API documentation for all o2server modules.
 
 ## Generation
 
-Run `python docs/oa/scripts/generate_api_docs.py` to regenerate.
+Run `python docs/oa4rust/scripts/generate_api_docs.py` to regenerate.
 
 ## Modules
 

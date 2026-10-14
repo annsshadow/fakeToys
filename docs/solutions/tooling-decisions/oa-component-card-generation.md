@@ -2,7 +2,7 @@
 title: "OA Component Card Generation from Source Metadata"
 date: 2026-08-10
 category: tooling-decisions
-module: docs/oa/scripts
+module: docs/oa4rust/scripts
 problem_type: tooling_decision
 component: tooling
 severity: medium
@@ -14,10 +14,10 @@ root_cause: missing_tooling
 resolution_type: tooling_addition
 tags: [documentation, component-cards, code-generation, oa-documentation]
 related_components:
-  - docs/oa/scripts/generate_cards.py
-  - docs/oa/scripts/fill_responsibility.py
-  - docs/oa/templates/module-card.md
-  - docs/oa/templates/component-card.md
+  - docs/oa4rust/scripts/generate_cards.py
+  - docs/oa4rust/scripts/fill_responsibility.py
+  - docs/oa4rust/templates/module-card.md
+  - docs/oa4rust/templates/component-card.md
 applies_when:
   - "Generating documentation for a large number of similar components"
   - "Documentation needs to stay in sync with source code"
@@ -28,7 +28,7 @@ applies_when:
 
 ## Context
 
-The `docs/oa/` documentation project needed 55 o2server module cards and 86 o2web component cards, each with a `Responsibility` field describing what the module/component does. Manually writing these would take days. The solution was a code-driven generation pipeline: extract metadata from source code, generate card skeletons, then fill Responsibility fields programmatically based on component name and API dependencies.
+The `docs/oa4rust/` documentation project needed 55 o2server module cards and 86 o2web component cards, each with a `Responsibility` field describing what the module/component does. Manually writing these would take days. The solution was a code-driven generation pipeline: extract metadata from source code, generate card skeletons, then fill Responsibility fields programmatically based on component name and API dependencies.
 
 ## Guidance
 
@@ -55,7 +55,7 @@ Generated from `oa/o2web/source/x_component_*/`:
 ### Generation Script
 
 ```python
-# docs/oa/scripts/generate_cards.py
+# docs/oa4rust/scripts/generate_cards.py
 import os, re, json
 
 source_dir = r'D:\WORKSPACE\fakeToys\oa\o2web\source'
@@ -97,11 +97,11 @@ def get_responsibility(name, title, actions):
 
 ```bash
 # Check all cards have non-empty Responsibility
-Select-String -Path "docs/oa/modules/o2web\*.md" -Pattern "## Responsibility" | Measure-Object | Select-Object -ExpandProperty Count
+Select-String -Path "docs/oa4rust/modules/o2web\*.md" -Pattern "## Responsibility" | Measure-Object | Select-Object -ExpandProperty Count
 # Expected: 86 (one per card)
 
 # Check no card has empty Responsibility
-Get-ChildItem docs/oa/modules/o2web/*.md | ForEach-Object { 
+Get-ChildItem docs/oa4rust/modules/o2web/*.md | ForEach-Object { 
     $c = Get-Content $_.FullName -Raw
     if ($c -match "## Responsibility\s*\n\s*\n") { $_.Name } 
 }
@@ -147,7 +147,7 @@ Get-ChildItem docs/oa/modules/o2web/*.md | ForEach-Object {
 
 ## Related
 
-- **Script:** `docs/oa/scripts/generate_cards.py`
-- **Template:** `docs/oa/templates/component-card.md`
+- **Script:** `docs/oa4rust/scripts/generate_cards.py`
+- **Template:** `docs/oa4rust/templates/component-card.md`
 - **Plan:** `docs/plans/2026-08-03-001-feat-oa-project-documentation-plan.md` (U3, U4)
 - **Completion:** `docs/plans/2026-08-10-001-prod-readiness-plan.md` (U4, U5)

@@ -85,7 +85,7 @@ origin: docs/brainstorms/2026-08-25-oa4rust-o2server-residual-gaps-requirements.
 - **BAM crate**：`crates/processplatform_assemble_bam/`（lib.rs / routes.rs / tests.rs / tests_generated.rs），`processplatform_assemble_bam_router()` 已注册 80+ 路由，Java 参考面在 `oa/o2server/x_processplatform_assemble_bam/`（约 90 个 .java）。R4 在此 crate 上核验闭合。
 - **行为对比框架**：`tests/behavior_compare.rs` 驱动 `tests/behavior_comparison/`（`endpoints.rs` 的 `ENDPOINTS: &[EndpointDef]` 数组、`comparator.rs`、`allowlist.yaml`）。新端点通过向 `ENDPOINTS` 追加 `EndpointDef` 纳入比对；CI job 在 `oa4rust/.github/workflows/ci.yml:86`，`BEHAVIOR_COMPARE=1` 控制、Java 不可达时 SKIP。
 - **生成器与 gitignore**：根 `.gitignore` 规则 `oa4rust/scripts/**` 整体忽略，但 `!oa4rust/scripts/gen_openapi_paths.py` 强制纳入；该生成器产出 `tests/behavior_comparison/endpoints.rs`（约 1012 端点）与 OpenAPI `securitySchemes` 注入。R8 核验其余生成器并加 CI 守卫。
-- **模块卡片**：`docs/oa/modules/o2server/`（55）、`docs/oa/modules/o2web/`（86）；生成/抽取脚本在 `docs/oa/scripts/`（`generate_cards.py`、`fill_responsibility.py`）；卡片实际含 5 节（Responsibility / Core Classes / Key Flows / Dependencies / REST Endpoints）。
+- **模块卡片**：`docs/oa4rust/modules/o2server/`（55）、`docs/oa4rust/modules/o2web/`（86）；生成/抽取脚本在 `docs/oa4rust/scripts/`（`generate_cards.py`、`fill_responsibility.py`）；卡片实际含 5 节（Responsibility / Core Classes / Key Flows / Dependencies / REST Endpoints）。
 - **影子流量 playbook**：`oa4rust/deploy/shadow-traffic.sh`（enable/disable/run/compare/report/status）、`oa4rust/deploy/toggle_module.sh`（set/gray/rollback/reset）。默认 `TEST_MODULES`/`DEFAULT_GRAY_MODULES` 暂不含 processplatform/bam，需补登记。
 
 ### Institutional Learnings
@@ -254,23 +254,23 @@ origin: docs/brainstorms/2026-08-25-oa4rust-o2server-residual-gaps-requirements.
 
 ### U5. 模块卡片深度填充（R10）
 
-**Goal:** 为 `docs/oa/modules/o2server/`（55）与 `docs/oa/modules/o2web/`（86）卡片填充 Key Flows / Dependencies 字段。
+**Goal:** 为 `docs/oa4rust/modules/o2server/`（55）与 `docs/oa4rust/modules/o2web/`（86）卡片填充 Key Flows / Dependencies 字段。
 
 **Requirements:** R10, AE8
 
 **Dependencies:** None
 
 **Files:**
-- Modify: `docs/oa/modules/o2server/*.md`, `docs/oa/modules/o2web/*.md`
-- Modify: `docs/oa/scripts/fill_responsibility.py` 或抽取脚本（如适用）
+- Modify: `docs/oa4rust/modules/o2server/*.md`, `docs/oa4rust/modules/o2web/*.md`
+- Modify: `docs/oa4rust/scripts/fill_responsibility.py` 或抽取脚本（如适用）
 
 **Approach:**
-- 复用 `docs/oa/scripts/generate_cards.py` / `fill_responsibility.py` 的抽取逻辑，从对应 crate 源码提取 Key Flows（核心 handler 调用链）与 Dependencies（Rust 侧依赖）。
+- 复用 `docs/oa4rust/scripts/generate_cards.py` / `fill_responsibility.py` 的抽取逻辑，从对应 crate 源码提取 Key Flows（核心 handler 调用链）与 Dependencies（Rust 侧依赖）。
 - 逐卡片填充，沿用实际卡片 5 节结构（含 Key Flows），非空且与所述 crate 一致。
 
 **Test expectation:** none —— 文档填充。
 
-**Verification:** 抽样卡片 Key Flows/Dependencies 非空且与代码一致；`docs/oa/README.md` 链接可解析。
+**Verification:** 抽样卡片 Key Flows/Dependencies 非空且与代码一致；`docs/oa4rust/README.md` 链接可解析。
 
 ---
 
@@ -401,7 +401,7 @@ origin: docs/brainstorms/2026-08-25-oa4rust-o2server-residual-gaps-requirements.
 - BAM crate: `crates/processplatform_assemble_bam/src/routes.rs`
 - 行为对比: `tests/behavior_compare.rs`, `tests/behavior_comparison/endpoints.rs`, `oa4rust/.github/workflows/ci.yml:86`
 - 生成器/忽略: `oa4rust/scripts/gen_openapi_paths.py`, 根 `.gitignore`
-- 模块卡片: `docs/oa/modules/o2server/`, `docs/oa/modules/o2web/`, `docs/oa/scripts/`
+- 模块卡片: `docs/oa4rust/modules/o2server/`, `docs/oa4rust/modules/o2web/`, `docs/oa4rust/scripts/`
 - 影子流量: `oa4rust/deploy/shadow-traffic.sh`, `oa4rust/deploy/toggle_module.sh`
 - 机构学习: `docs/solutions/security-issues/idor-vulnerability-write-handlers.md`, `architecture-patterns/actionresult-9-field-contract.md`, `architecture-patterns/seaorm-dual-pool-coexistence.md`, `integration-issues/nested-tokio-runtime-panic.md`, `best-practices/auto-generate-rust-handler-tests.md`
 - 冲突源: `docs/solutions/best-practices/oa4rust-o2server-parity-closure-campaign-2026-08-25.md`, `docs/audits/final-coverage-sweep.md`

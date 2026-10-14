@@ -5,7 +5,7 @@ from pathlib import Path
 
 REPO = Path(r"D:\WORKSPACE\fakeToys")
 SRC_ROOT = REPO / "oa/o2web/source"
-CARDS = REPO / "docs/oa/modules/o2web"
+CARDS = REPO / "docs/oa4rust/modules/o2web"
 
 EXCLUDE = ("node_modules", "dist", "build", ".git", "o2_lib", "public", "lp")
 SKIP_EXT = {".png", ".jpg", ".jpeg", ".gif", ".ico", ".css", ".map", ".woff",

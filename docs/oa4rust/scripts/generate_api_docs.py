@@ -7,7 +7,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 SVC_DIR = REPO_ROOT / "oa/o2web/source/o2_core/o2/xAction/services"
-OUT_DIR = REPO_ROOT / "docs/oa/api/auto"
+OUT_DIR = REPO_ROOT / "docs/oa4rust/api/auto"
 O2SERVER_DIR = REPO_ROOT / "oa/o2server"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -107,7 +107,7 @@ def main():
     print(f"Total: {len(generated) + len(skeletons)} modules in {OUT_DIR}")
 
     # Update README
-    readme_path = REPO_ROOT / "docs/oa/api/README.md"
+    readme_path = REPO_ROOT / "docs/oa4rust/api/README.md"
     existing = readme_path.read_text(encoding="utf-8") if readme_path.exists() else ""
 
     module_list = "\n".join(f"- [{m}](auto/{m}.md)" for m in all_modules)
@@ -117,7 +117,7 @@ Auto-generated API documentation for all o2server modules.
 
 ## Generation
 
-Run `python docs/oa/scripts/generate_api_docs.py` to regenerate.
+Run `python docs/oa4rust/scripts/generate_api_docs.py` to regenerate.
 
 ## Modules
 
