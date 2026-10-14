@@ -26841,7 +26841,7 @@ pub async fn attachment_u2b_get_by_wc_mockdeletetoget(
 }
 
 // ═════════ plan002 U2-c：POST filter 族真缺失闭合（28 条） ═════════
-// 对照 docs/audits/alignment-reconciliation.md §2.4 真缺失清单（28 条 = 32 exact
+// 对照 docs/audits/2026-08-23-001-alignment-reconciliation.md §2.4 真缺失清单（28 条 = 32 exact
 // − 2 casefold(invoice) − 2 literal_shift(task/list date|person exclude/draft)）：
 //   snap manage 过滤族×4、filter attribute POST 变体×5、review v2 search×1、
 //   draft/keylock/serialnumber 写族×6、snap upload/download×2、attachment 扩展名下载×4、

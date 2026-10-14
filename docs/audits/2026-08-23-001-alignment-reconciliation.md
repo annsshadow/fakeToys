@@ -27,7 +27,7 @@
 
 ### 1.2 "57/106" 差异根因：两份报告口径混用
 
-"57" 出自 `docs/audits/o2server-parity-report.md`（2026-08-12，scripts/o2server_parity_audit_v2.py 生成）：
+"57" 出自 `docs/audits/2026-08-12-002-o2server-parity-report.md`（2026-08-12，scripts/o2server_parity_audit_v2.py 生成）：
 
 > | x_bbs_assemble_control | bbs_assemble_control | **57** | 354 | 10 | 部分实现 |
 

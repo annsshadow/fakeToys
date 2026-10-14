@@ -161,7 +161,7 @@ evidence: docs/audits/o2server-parity-report.{md,json}, docs/brainstorms/oa4rust
 
 ### 已验证完成
 
-- 本计划为纯分析文档，交付物 `docs/audits/o2server-parity-report.md` 与 `.json` 实测存在，后续承接计划 `2026-08-13-003-oa4rust-completion-plan.md` 在档
+- 本计划为纯分析文档，交付物 `docs/audits/2026-08-12-002-o2server-parity-report.md` 与 `.json` 实测存在，后续承接计划 `2026-08-13-003-oa4rust-completion-plan.md` 在档
 - 分析所列缺口的后续落地情况：P0 编译/迁移器已修复（提交 1d866b66 等）；Value::Null 由 201 降至 15 处；认证生态（LDAP/企微/钉钉/政务钉钉/验证码/短信）已全量落地；全文检索 migration 058 在档；IM/PDF 签章/Redis session/MySQL 集成测试均有对应提交
 
 ### 未完成 / 遗留 → 待汇入剩余工作汇总计划

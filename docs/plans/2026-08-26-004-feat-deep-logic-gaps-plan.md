@@ -266,7 +266,7 @@ Phase 2 U6 backlog 分析识别了215个深层逻辑缺口，其中~50个在 Exp
 **Dependencies:** U1-U5
 
 **Files:**
-- Modify: `docs/audits/final-coverage-sweep.md`
+- Modify: `docs/audits/2026-08-24-002-final-coverage-sweep.md`
 - Test: `cargo test --test behavior_compare` 全量
 
 **Verification:**
@@ -288,6 +288,6 @@ Phase 2 U6 backlog 分析识别了215个深层逻辑缺口，其中~50个在 Exp
 
 ## Sources & References
 
-- `docs/audits/behavior-divergence-backlog.md`（完整端点清单）
+- `docs/audits/2026-08-29-001-behavior-divergence-backlog.md`（完整端点清单）
 - `oa4rust/target/debug/behavior-report.md`（FAIL 证据）
 - 各 crate 的 `src/lib.rs`（现有 handler 实现）

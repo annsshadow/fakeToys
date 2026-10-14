@@ -248,7 +248,7 @@ origin: docs/brainstorms/2026-08-21-plans-status-audit-and-consolidation-require
 ### 终态结论（合并时）
 
 - U1–U2、U4–U12 全部关闭（见各单元 08-21 执行结论 + 08-24 终扫）
-- U2 收官由 `docs/audits/final-coverage-sweep.md`（2026-08-24，清单 generated_at=2026-08-23）定稿：总覆盖 **99.77%**（3085/3092 唯一端点），28/30 模块 100%
+- U2 收官由 `docs/audits/2026-08-24-002-final-coverage-sweep.md`（2026-08-24，清单 generated_at=2026-08-23）定稿：总覆盖 **99.77%**（3085/3092 唯一端点），28/30 模块 100%
 - U9 Java 行为对比接入 CI：`oa4rust/.github/workflows/ci.yml` 新增 `behavior-compare` job（o2server 容器 + 1000s 就绪探针 + postgres + u2_probe 冒烟，`BEHAVIOR_COMPARE=1` 条件执行，Java 不可达时 SKIP）
 
 ### oa4rust 仍不能完全替代 o2server 的残差（截至 2026-08-25）

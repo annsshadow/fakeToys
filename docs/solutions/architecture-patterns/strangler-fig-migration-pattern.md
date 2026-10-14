@@ -127,4 +127,4 @@ nginx -s reload
 - **Rollback plan:** `docs/plans/2026-08-10-001-prod-readiness-plan.md` (deferred: rollback playbook)
 - **Campaign retrospective:** `docs/solutions/best-practices/oa4rust-o2server-parity-closure-campaign-2026-08-25.md`
 - **Residual gaps:** `docs/brainstorms/2026-08-25-oa4rust-o2server-residual-gaps-requirements.md`
-- **Current parity state:** `docs/audits/final-coverage-sweep.md` (99.77% as of 2026-08-23)
+- **Current parity state:** `docs/audits/2026-08-24-002-final-coverage-sweep.md` (99.77% as of 2026-08-23)

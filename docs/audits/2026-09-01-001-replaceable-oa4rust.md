@@ -30,7 +30,7 @@
 
 ## 三、端点对齐度
 
-依据 `docs/audits/final-coverage-sweep.md`：
+依据 `docs/audits/2026-08-24-002-final-coverage-sweep.md`：
 - Java 3092 个唯一端点，Rust 覆盖 3085 个
 - 30 个有端点的 Java 模块组中 28 个达 100%，2 个残留已于 2026-08-25 闭环
 - 4 条 `{}.{}` 单段多参数端点按 axum 平台限制排除

@@ -6,7 +6,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 # oa4rust 三端全面优化 100 轮账本·第二本（2026-10-06 启动）
 
 > 目标：oa4rust 三端（Rust 后端 + desktop + mobile）的**功能扩展**与**性能质量提升**全面优化第二轮 100 轮。
-> 承接第一本（`docs/audits/three-ends-optimization-100.md`，2026-10-01 收官 100/100）。
+> 承接第一本（`docs/audits/2026-09-28-002-three-ends-optimization-100.md`，2026-10-01 收官 100/100）。
 > 每轮 = 真实扫描 → 处置 → 验证 → 记账。结果三类：**FEAT**（功能扩展）、**FIX**（发现并修复）、
 > **PERF/IMPROVE**（性能/不改行为的质量提升）。
 > 节奏：每轮轻量门禁（biome lint + tsc + 受影响测试）；每 10 轮中型门禁（全量 vitest + 双端 build）；

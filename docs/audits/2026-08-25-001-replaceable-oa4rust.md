@@ -5,7 +5,7 @@
 - **迭代说明**：plan006（全残差闭环总计划）执行进展更新
 - **签核对象**：技术负责人（A3）
 - **判定性质**：**有条件判定** —— 端点级与模块级"可接管"成立；**完全接管（关闭 Java 侧）需先满足 R1 生产影子流量前提**。
-- **权威依据**：`docs/audits/final-coverage-sweep.md`（端点对齐终态基准，generated_at=2026-08-23，2026-08-25 复核收口）、`docs/solutions/best-practices/oa4rust-o2server-parity-closure-campaign-2026-08-25.md`、`docs/brainstorms/2026-08-25-oa4rust-o2server-residual-gaps-requirements.md`
+- **权威依据**：`docs/audits/2026-08-24-002-final-coverage-sweep.md`（端点对齐终态基准，generated_at=2026-08-23，2026-08-25 复核收口）、`docs/solutions/best-practices/oa4rust-o2server-parity-closure-campaign-2026-08-25.md`、`docs/brainstorms/2026-08-25-oa4rust-o2server-residual-gaps-requirements.md`
 - **当前代码基线**：仓库 HEAD = `a4aeb065`（parity 计划合并时基于 `950a18e1` 的 99.77% 口径，后续复核已闭合其 3 个残留缺口）
 
 ---
@@ -36,7 +36,7 @@
 
 ### 2.1 基线口径
 
-依据权威终扫 `docs/audits/final-coverage-sweep.md`（生成于 2026-08-23 23:17，扫描 `crates/*/src/**/*.rs` 共 4573 条 `.route(` 注册、4155 条唯一归一化路径）：
+依据权威终扫 `docs/audits/2026-08-24-002-final-coverage-sweep.md`（生成于 2026-08-23 23:17，扫描 `crates/*/src/**/*.rs` 共 4573 条 `.route(` 注册、4155 条唯一归一化路径）：
 
 - **唯一端点口径**（模块内去重合计）：Java 3092 个，已覆盖 3085 个，**覆盖率 99.77%**。
 - **达到 100% 的模块**：28 / 30（30 为含 JAXRS 端点的 Java 模块组）。
@@ -86,7 +86,7 @@
 ## 四、BAM 业务活动监控模块（R4 核验闭合）
 
 - `x_processplatform_assemble_bam`（Java 参考面 73 个 `.java` 文件 / 131 个 `@Path` 注解 / 45 个独立完整路径）在 Rust 侧 `crates/processplatform_assemble_bam/` 当前已注册 **91 条 `.route(`**（lib.rs，`processplatform_assemble_bam_router()`）。
-- **Java → Rust 覆盖：100%**（45/45 独立完整路径已全部实现），详见 `docs/audits/bam-alignment-gap.md`。
+- **Java → Rust 覆盖：100%**（45/45 独立完整路径已全部实现），详见 `docs/audits/2026-08-29-002-bam-alignment-gap.md`。
 - **Rust 增量端点**（45 条）：BAM 配置 CRUD（get/create/delete/list）、带 `{start}` 参数的时间段查询、`state/applicationtstubs/trigger` 等，Java 侧不存在对应端点，为 Rust 增量实现。
 - **写端点所有权**：R4 写端点强制适用 IDOR 防护（`docs/solutions/security-issues/idor-vulnerability-write-handlers.md`，critical）——用户自有资源写 handler 必须 `require_owner` + `creator_person` 取自 Session，否则 P0 阻断合并。
 
@@ -94,7 +94,7 @@
 
 ## 五、handler 行为语义一致性（R9 现状与留档）
 
-> **2026-08-25 实跑更新**：本节原为静态推断（"行为对比框架持续比对范畴，尚未实跑"）。同日本地全链路实跑已完成，R9 首次获得真实量化结论——详见 `docs/audits/final-coverage-sweep.md` §六「本地全链路实跑」。
+> **2026-08-25 实跑更新**：本节原为静态推断（"行为对比框架持续比对范畴，尚未实跑"）。同日本地全链路实跑已完成，R9 首次获得真实量化结论——详见 `docs/audits/2026-08-24-002-final-coverage-sweep.md` §六「本地全链路实跑」。
 
 - **路由层**：cms 等模块路由层面已 100%（cms 437/437），终扫无"cms 语义不匹配"排除项（留档明细为空）。
 - **深层语义层（2026-08-25 实跑终态）**：在专用库 + o2server v9 容器的本地全链路对比中，4044 个去重端点的结构对比经五轮收敛至 **1212 PASS / 836 FAIL / 1996 SKIP**（真实基线 686 PASS 起，+77%）。信封层（ActionResult 9 字段结构、Gson 省略 null 序列化、错误信封形状、认证层语义）与列表包装模式均已对齐并经实测验证；剩余 FAIL 经逐类分诊属**业务级语义差异**（业务状态不对称——两侧空库所致；深层业务逻辑缺口如工作流引擎分支；Java 各 war 错误 prompt 不一致），证据与处置建议已按类留档于 `tests/behavior_comparison/allowlist.yaml`（2026-08-25 小节）与终扫 §六。
@@ -155,7 +155,7 @@
 
 ### 6.2 文档口径（U8）
 
-- **权威口径已刷新**：`docs/solutions/best-practices/single-source-of-truth-migration-status.md` 于 2026-08-25 刷新，将"当前权威端点对齐状态"改指 `docs/audits/final-coverage-sweep.md`（99.77% 基线 + 残差清单），其 2026-08-10 "81 crate 100%" 示例标记为历史快照不再引用。
+- **权威口径已刷新**：`docs/solutions/best-practices/single-source-of-truth-migration-status.md` 于 2026-08-25 刷新，将"当前权威端点对齐状态"改指 `docs/audits/2026-08-24-002-final-coverage-sweep.md`（99.77% 基线 + 残差清单），其 2026-08-10 "81 crate 100%" 示例标记为历史快照不再引用。
 - `final-coverage-sweep.md` 为唯一端点对齐收口文件，后续不再重新生成度量（见 parity-closure-campaign doc "权威收口文件"）。
 - 若后续按 3.1 说明补齐 attachment 4 条，应以 U8 同步刷新相关 docs 的"平台限制"分类，保持口径一致。
 
@@ -180,7 +180,7 @@
 - `processplatform`（流程平台，含 surface/bam/designer）
 - `bam`（业务活动监控）
 
-> 上述为 harness 内已登记的首批验证面；`docs/audits/final-coverage-sweep.md` 覆盖的其余 28/30 模块同样需在 R1 切流前纳入影子流量比对范围。R1 完成并归档后方可宣布"完全接管、可关闭 Java 侧"。
+> 上述为 harness 内已登记的首批验证面；`docs/audits/2026-08-24-002-final-coverage-sweep.md` 覆盖的其余 28/30 模块同样需在 R1 切流前纳入影子流量比对范围。R1 完成并归档后方可宣布"完全接管、可关闭 Java 侧"。
 
 ---
 

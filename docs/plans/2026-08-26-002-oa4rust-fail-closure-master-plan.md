@@ -70,7 +70,7 @@ ActionResult::java_success(data, count, size)
 - `tests/behavior_comparison/comparator.rs`：比较规则（冻结不变）
 - `tests/behavior_comparison/endpoints.rs`：4688条自动生成端点定义
 - `tests/behavior_comparison/allowlist.yaml`：26+65条字段映射 allowlist
-- `docs/audits/behavior-divergence-backlog.md`：215条深层缺口完整清单
+- `docs/audits/2026-08-29-001-behavior-divergence-backlog.md`：215条深层缺口完整清单
 
 ### Institutional Learnings
 
@@ -573,7 +573,7 @@ ActionResult::java_success(data, count, size)
 **Dependencies:** A1-A5, B1-B3, C1-C5
 
 **Files:**
-- Modify: `docs/audits/final-coverage-sweep.md`（§六追加闭环小节）
+- Modify: `docs/audits/2026-08-24-002-final-coverage-sweep.md`（§六追加闭环小节）
 - Test: `cargo test --test behavior_compare` 全量
 
 **Approach:**
@@ -639,5 +639,5 @@ Track A (信封统一)          Track B (Express POST)      Track C (深层逻�
 - Phase 2 plan: `docs/plans/2026-08-26-001-feat-parity-convergence-phase2-plan.md`
 - 包装模式战役: `docs/solutions/best-practices/oa4rust-o2server-parity-closure-campaign-2026-08-25.md`
 - ActionResult 契约: `docs/solutions/architecture-patterns/actionresult-9-field-contract.md`
-- 深层缺口清单: `docs/audits/behavior-divergence-backlog.md`
+- 深层缺口清单: `docs/audits/2026-08-29-001-behavior-divergence-backlog.md`
 - 信封分析数据: `oa4rust/target/debug/behavior-report.md`（2026-08-26 运行）
