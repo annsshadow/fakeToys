@@ -193,6 +193,11 @@ func (s *Server) Register(app *fiber.App) {
 	adm.Get("/battles", s.adminBattles)
 	adm.Get("/battles/:id", s.adminBattleDetail)
 	adm.Post("/battles/:id/verify", requireWritable(), s.adminVerifyBattle)
+	// 结算重算审计（R1）。两个端点成对：列表看单条，stats 看分布与闸门状态。
+	// ⚠️ /stats 必须挂在 /recomputes 之后且**不是** `/recomputes/:id` ——
+	//   后者一旦存在就会把 /stats 当成 id 匹配掉。
+	adm.Get("/recomputes", s.adminRecomputes)
+	adm.Get("/recomputes/stats", s.adminRecomputeStats)
 	adm.Get("/defenses", s.adminDefenses)
 	adm.Get("/economy", s.adminEconomy)
 	adm.Put("/shop/:id", requireWritable(), s.adminUpdateShop)

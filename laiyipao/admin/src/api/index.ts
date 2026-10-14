@@ -243,6 +243,108 @@ export function verifyBattle(id: number, replayHash: string) {
   return api.post<VerifyResult>(`/admin/battles/${id}/verify`, { replay_hash: replayHash })
 }
 
+// ---------- 结算重算审计（R1）----------
+
+/**
+ * 上报值与重算值的一边。
+ *
+ * ⚠️ `recomputed` 侧允许整体缺失（`RecomputedRecomputeSide | null`）：
+ *   引擎未接入时服务端没有重算值，这**不是**「重算结果是 0」。
+ *   合法战斗里分数不可能算成 0，所以两者必须能区分 ——
+ *   用同一个 `RecomputeSide` 类型会让界面把「没算」画成「0 分」，
+ *   而后者是最强的可疑信号。
+ */
+export interface RecomputeSide {
+  score: number
+  kills: number
+  duration_ms: number
+  hash: string
+}
+
+export interface AdminRecompute {
+  id: number
+  /**
+   * 关联的战报 id。
+   *
+   * ⚠️ **`0` 不是「战报 #0」，而是「没有战报」**：
+   * `replay_skills` 不符发生在写战报**之前**，所以那批拒绝没有战报 id。
+   * 界面上必须显示成「—」而不是 `0` ——
+   * 显示 0 会让人去查一条不存在的战报。
+   */
+  battle_id: number
+  user_id: number
+  nickname: string
+  level_id: number
+  reported: RecomputeSide
+  recomputed: RecomputeSide | null
+  /** 不符的具体字段：`score` / `kills` / `duration` / `hash` / `replay_skills` */
+  mismatched_fields: string[]
+  /** 记录时的**实际生效**档位，可能已被熔断降级 */
+  mode: string
+  /** 这一次到底有没有真的拒发奖励 */
+  rejected: boolean
+  engine_version: string
+  created_at: string
+}
+
+export function fetchRecomputes(
+  params: {
+    user_id?: number
+    level_id?: number
+    limit?: number
+    offset?: number
+    only_mismatch?: boolean
+  } = {},
+) {
+  const q = new URLSearchParams()
+  if (params.user_id) q.set('user_id', String(params.user_id))
+  if (params.level_id) q.set('level_id', String(params.level_id))
+  if (params.only_mismatch) q.set('only_mismatch', '1')
+  q.set('limit', String(params.limit ?? 50))
+  if (params.offset) q.set('offset', String(params.offset))
+  return api.get<{ items: AdminRecompute[]; total: number }>(`/admin/recomputes?${q}`)
+}
+
+export interface RecomputeLevelStat {
+  level_id: number
+  total: number
+  mismatched: number
+  rate_permille: number
+  /** 单个玩家在这一关的不符次数上限 —— 区分漂移与作弊的关键列 */
+  max_user_mismatches: number
+}
+
+export interface RecomputeSummary {
+  /** **实际生效**的档位（可能已被熔断降级） */
+  mode: string
+  /** 配置值。用来区分「本来就配的 shadow」与「被熔断了」 */
+  configured_mode: string
+  /** 为真 = enforce 已被熔断降级，**本该拒发的奖励正在放行** */
+  demoted: boolean
+  demoted_reason: string
+  since: string
+  breaker_rate_permille: number
+  breaker_min_samples: number
+  totals: {
+    total: number
+    mismatched: number
+    rejected: number
+    rate_permille: number
+  }
+  levels: RecomputeLevelStat[]
+}
+
+/**
+ * 取总账 + 按关卡分布 + 闸门状态。
+ *
+ * ⚠️ `hours` 是**时间窗**，缺省 24 小时、服务端上限 30 天。
+ *   熔断看的是 10 分钟窗口，而「最近是否出现一批新的集中不符」要看更长 ——
+ *   这两个尺度问的是不同的问题，所以由调用方选。
+ */
+export function fetchRecomputeStats(hours = 24) {
+  return api.get<RecomputeSummary>(`/admin/recomputes/stats?hours=${hours}`)
+}
+
 /**
  * 反应表（key + 中文名 + 各档数值），直接对应服务端的 `domain.AllReactionSpecs()`。
  *
