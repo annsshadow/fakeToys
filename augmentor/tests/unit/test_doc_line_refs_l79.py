@@ -45,8 +45,12 @@ FILE_TOKEN = re.compile(r"`([A-Za-z0-9_/\\.\-]*[A-Za-z0-9_]\.py)`")
 LINE_REF = re.compile(r"`([A-Za-z0-9_/\\.\-]*[A-Za-z0-9_]\.py):(\d+)(?:-(\d+))?`")
 BARE_REF = re.compile(r"`:(\d+)(?:-(\d+))?`")
 
-ARCH = "docs/ARCHITECTURE.md"
-LEDGER = "OPTIMIZATION_LOOP.md"
+#: 两卷取**绝对路径**：下面大量 `(ROOT / doc)` 的写法在 pathlib 语义下对绝对右操作数
+#: 直接让路，故文档汇总到仓库根 `docs/augmentor/`（2026-10-14）只需改这一处定义，
+#: 不动下面各读取点。账本仍住在 augmentor/ 内。
+REPO = ROOT.parent
+ARCH = REPO / "docs" / "augmentor" / "ARCHITECTURE.md"
+LEDGER = ROOT / "OPTIMIZATION_LOOP.md"
 DOCS = (ARCH, LEDGER)
 
 #: L79 就地清账后的基线。键是 `audit()` 的桶名；**只降不升**，见模块 docstring。

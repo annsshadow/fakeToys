@@ -54,12 +54,14 @@ import re
 from augmentor.quality_monitor import QualityMonitor, QualityThreshold
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
+#: 子项目文档已于 2026-10-14 汇总到仓库根 `docs/augmentor/`；本文件自持这一真源
+DOCS_DIR = ROOT.parent / "docs" / "augmentor"
 
 #: 三面（现量各 1 处）。相对仓库内 augmentor 根目录。
 FACES = (
     pathlib.Path("web") / "src" / "pages" / "System.tsx",
     pathlib.Path("web") / "src" / "types" / "api.ts",
-    pathlib.Path("docs") / "API.md",
+    DOCS_DIR / "API.md",
 )
 
 #: 连写形状：三个指标名 + `数 / 数 / 数`，允许跨行与注释里的 `*`（两处前端文案都换行，
@@ -135,14 +137,26 @@ def as_dict(group):
     return dict(zip(MEASURED_METRICS, group))
 
 
+def face_id(face):
+    """面的稳定标识：落在 augmentor 树内的用其相对路径，汇总到仓库根的文档用仓库根相对路径
+
+    2026-10-14 文档汇总后第三面已不在 `ROOT` 之下，`face.as_posix()` 会变成机器相关的
+    绝对路径 ⇒ 名册断言的键不再可移植，故统一走本函数。
+    """
+    for base in (ROOT, ROOT.parent):
+        if face.is_relative_to(base):
+            return face.relative_to(base).as_posix()
+    return face.as_posix()
+
+
 class TestTheThreeFacesQuoteTheSameNumbers:
     def test_the_site_roster_is_the_measured_three(self):
         """三面各恰好 1 处，且文件名逐格对上（删面 / 加面都会在这里红，不会静默）"""
-        roster = {face.as_posix(): len(claims_in(read(face))) for face in FACES}
+        roster = {face_id(face): len(claims_in(read(face))) for face in FACES}
         assert roster == {
             "web/src/pages/System.tsx": 1,
             "web/src/types/api.ts": 1,
-            "docs/API.md": 1,
+            "docs/augmentor/API.md": 1,
         }
         assert sum(roster.values()) == MEASURED_SITES
 
