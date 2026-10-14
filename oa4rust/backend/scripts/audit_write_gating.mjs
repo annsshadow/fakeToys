@@ -510,6 +510,66 @@ function fnBody(crate, ref) {
   fnCache.set(key, body);
   return body;
 }
+// ── 尺子缺陷 15（第十批抓到并修）：门禁在同 crate 的 helper 里，单函数体判据看不见 ──────
+// 现场：surface `attachment_u2b_change_order_number` / `_change_site` 已按属主收口
+// （`u2_gate_att_or_business_error(...).await?`，该 helper 体内 `u2_check_owner` 且拒时
+// `return Err(AppError::Forbidden)`），但旧判据只看 handler 本体的字面量，把这两条读成
+// 「读会话无门禁」的行动面。反向风险同样存在：helper 里只查存在性、不拒人，也会被误当门。
+// 因此间接作证要**两个条件同时成立**，并把作证的 helper 名逐条落盘（与 macroBodies 同口径）：
+//   A. handler 体内以 `.await?` 形式调用它（拒绝会向上传播，不是调了不理返回值）；
+//   B. 该 helper 自己体内命中 GATE_RE，且含 `AppError::Forbidden|Unauthorized` 的拒径。
+// 只在**同 crate**内解析 helper（跨 crate 限定名不在注册表里出现，留给缺陷 11 的限定符路径）。
+const crateFnIndex = new Map();
+function indexCrateFns(crate) {
+  if (crateFnIndex.has(crate)) return crateFnIndex.get(crate);
+  const idx = new Map();
+  const dir = path.join(CRATES, crate, "src");
+  if (fs.existsSync(dir)) {
+    for (const file of walk(dir)) {
+      const src = fs.readFileSync(file, "utf8");
+      for (const m of src.matchAll(/\b(?:pub\s+)?(?:async\s+)?fn\s+([A-Za-z_]\w*)/g)) {
+        const n = m[1];
+        if (idx.has(n)) continue;
+        const b = sliceFn(src, n);
+        if (b) idx.set(n, b);
+      }
+    }
+  }
+  crateFnIndex.set(crate, idx);
+  return idx;
+}
+// 调用点的拒绝是否向上传播：`)` 之后紧跟 `.await?`
+function callPropagates(body, name) {
+  const re = new RegExp(`\\b${name}\\s*\\(`, "g");
+  let m;
+  while ((m = re.exec(body))) {
+    let depth = 1;
+    let i = m.index + m[0].length;
+    while (i < body.length && depth > 0) {
+      const c = body[i];
+      if (c === "(") depth++;
+      else if (c === ")") depth--;
+      i++;
+    }
+    if (depth !== 0) continue;
+    if (body.slice(i, i + 40).replace(/\s+/g, "").startsWith(".await?")) return true;
+  }
+  return false;
+}
+// 返回 false（无门禁）或作证的 helper 名（间接门禁）
+function gateEvidence(crate, body) {
+  if (!body) return false;
+  if (GATE_RE.test(body)) return true;
+  const idx = indexCrateFns(crate);
+  for (const m of body.matchAll(/\b([a-z_]\w*)\s*\(/g)) {
+    const n = m[1];
+    const hb = idx.get(n);
+    if (!hb || !GATE_RE.test(hb) || !/AppError::(Forbidden|Unauthorized)/.test(hb)) continue;
+    if (callPropagates(body, n)) return n;
+  }
+  return false;
+}
+const indirectGated = [];
 const writeRoutes = routes.filter((r) => ["POST", "PUT", "DELETE", "PATCH"].includes(r.method));
 // 尺子缺陷 10（本批修）：R2/R3/R4 的「匿名可达」旧写法只看第一把锁 `isAuthExempt`，
 // 与 F1 之后的 auth 层实际判据不符——现在匿名打得通必须是「豁免 ∧ 注册表 Public」两把锁同开，
@@ -521,11 +581,28 @@ function anonReach(method, p) {
 const rb = new Map();
 const rAnon = [], rAuthNoSession = [], rUnparsable = [], rMacro = [];
 const routeMatrix = []; // 全 7 桶逐条留档，见下方 write_routes_matrix.tsv 的说明
+// R 桶按**注册方法**分母（POST/PUT/DELETE/PATCH），所以「handler 体内只有 SELECT、
+// 却被挂在写方法上」的 o2server 只读详情档也算 R7——它们是信息面，不是落笔面。
+// 本段按体内是否含写 SQL 再切一刀，把 R4/R6/R7 的**真行动面**与「只读挂写方法」分开计数，
+// 免得待修队列被虚报（第十批 surface applicationdict 正式路由 24 条就是这么被算进 R7 的）。
+// 保守口径：只看本函数体内 SQL，经 helper/跨函数落笔不在此判据内（故只读名单要抽查后才销账）。
+const READ_ONLY_ON_WRITE = new Map(); // bucket -> [line]
+const NO_BODY_BY_BUCKET = new Map(); // bucket -> 体内取不到的条数
+// 尺子缺陷 14（第十批抓到并修）：旧判据 `UPDATE\s+\w+` 认不出 Rust 字符串里的**转义引号表名**
+// `UPDATE \x5C"pp_c_attachment\x5C"`（反斜杠不是 \w），于是把真落笔的写 handler 判成「只读」。
+// 全仓实测这种写法 25 处（集中在 surface lib.rs 23 处），本批 strict/wide 自证当场喊红抓到 5 条路由。
+// 修法是让表名位允许「可选反斜杠 + 可选引号」前缀，仍要求后面跟标识符首字符，
+// 免得把散文里的 "update " 也算成写语句。
+const WRITE_SQL_RE = /\b(INSERT\s+INTO|UPDATE\s+\x5C?["\x60]?[A-Za-z_]\w*|DELETE\s+FROM)/i;
+// 定向自证用：只要体内出现「转义引号表名」写法，WRITE_SQL_RE 就必须判它是写语句
+const ESCAPED_TABLE_RE = /(UPDATE|DELETE\s+FROM|INSERT\s+INTO)\s+\x5C["\x60][A-Za-z_]/i;
 for (const r of writeRoutes) {
   const body = fnBody(r.crate, r.handlerRef);
   const admin = mwAdmin(r.method, r.path);
   const exempt = anonReach(r.method, r.path);
-  const gate = GATE_RE.test(body);
+  const gateEv = gateEvidence(r.crate, body);
+  const gate = gateEv !== false;
+  if (typeof gateEv === "string") indirectGated.push(`${r.crate}\t${r.method}\t${r.path}\t${r.handler}\t${gateEv}`);
   const sess = SESSION_RE.test(body);
   let bucket;
   // 顺序口径：R1（中间件 admin）与 R2-R4（匿名可达）先判——**不能**让「体内不可解析」
@@ -541,6 +618,14 @@ for (const r of writeRoutes) {
   rb.set(bucket, (rb.get(bucket) || 0) + 1);
   const line = `${r.crate}\t${r.method}\t${r.path}\t${r.handler}`;
   routeMatrix.push(`${line}\t${bucket}`);
+  // 只切「无门禁」三桶（R4/R6/R7）——R5 已放行侧达标，分它没有行动意义
+  if (body && ["R4-匿名可达+体内无门禁", "R6-已认证+读会话无门禁", "R7-已认证+体内无会话无门禁"].includes(bucket)) {
+    if (!WRITE_SQL_RE.test(body)) {
+      if (!READ_ONLY_ON_WRITE.has(bucket)) READ_ONLY_ON_WRITE.set(bucket, []);
+      READ_ONLY_ON_WRITE.get(bucket).push(line);
+    }
+  }
+  if (!body) NO_BODY_BY_BUCKET.set(bucket, (NO_BODY_BY_BUCKET.get(bucket) || 0) + 1);
   if (bucket === "R4-匿名可达+体内无门禁") rAnon.push(line);
   if (bucket === "R7-已认证+体内无会话无门禁") rAuthNoSession.push(line);
   // 缺陷 12 名单：凡体内取不到（含被 R4 抢先归桶的匿名可达路由）一律点名，按桶不重不漏
@@ -581,17 +666,64 @@ console.log(
 );
 console.log(`全 7 桶矩阵 ${routeMatrix.length} 行已写 write_routes_matrix.tsv`);
 
+// ── 4b. 无门禁三桶的「体内有写 SQL / 只读挂写方法」拆分 ──────────────────────
+// 写进 R7 的 1158 条里，有多少是 handler 体内根本不落笔的只读档？不分这一刀，
+// 「还剩 1158 条要修」就是虚报——修法只有对真落笔面才成立。
+const readOnlyLines = [];
+// 刀口自证（缺陷 14 的守卫）：体内凡出现「转义引号表名」写 SQL 的路由，判据必须认它是写面。
+// 这条不变式一旦被新写法破坏（比如换成了本判据没覆盖的第三种 quoting），就当场喊红，
+// 而不是留下一个「只读挂写方法 = 803」的虚高数字让后续批次照着修错队列。
+{
+  const disagree = [];
+  let escapedSites = 0;
+  for (const r of routes) {
+    const b = fnBody(r.crate, r.handlerRef);
+    if (!b || !ESCAPED_TABLE_RE.test(b)) continue;
+    escapedSites++;
+    if (!WRITE_SQL_RE.test(b)) disagree.push(`${r.crate}\t${r.method}\t${r.path}`);
+  }
+  if (disagree.length)
+    throw new Error(
+      `写 SQL 判据漏量 ${disagree.length} 条（转义引号表名被判成只读）：\n${disagree.slice(0, 10).join("\n")}`
+    );
+  console.log(
+    `写 SQL 判据自证：含转义引号表名写法的 ${escapedSites} 条路由全部判为写面，0 条漏量`
+  );
+}
+for (const name of ["R4-匿名可达+体内无门禁", "R6-已认证+读会话无门禁", "R7-已认证+体内无会话无门禁"]) {
+  const total = rb.get(name) || 0;
+  const lines = READ_ONLY_ON_WRITE.get(name) || [];
+  const noBody = NO_BODY_BY_BUCKET.get(name) || 0;
+  const real = total - lines.length - noBody;
+  if (real + lines.length + noBody !== total)
+    throw new Error(`拆分不闭合：${name} 总数 ${total} ≠ 写SQL ${real} + 只读 ${lines.length} + 不可解析 ${noBody}`);
+  console.log(
+    `${name.slice(0, 2)} 拆分：体内含写 SQL ${real} 条 / 只读挂写方法 ${lines.length} 条 / 体内不可解析 ${noBody} 条（合计 ${total}）`
+  );
+  readOnlyLines.push(...lines.map((l) => `${l}\t${name.slice(0, 2)}`));
+}
+fs.writeFileSync(
+  path.join(ARTIFACTS, "write_routes_readonly_on_writemethod.tsv"),
+  ["crate\tmethod\tpath\thandler\tbucket", ...readOnlyLines.sort()].join("\n") + "\n",
+);
+console.log(`只读挂写方法 ${readOnlyLines.length} 条已写 write_routes_readonly_on_writemethod.tsv`);
+// 间接门禁的落盘在脚本末尾（缺陷 15）：GET 段（§5）也往里加条目，写早了会静默丢读数。
+
 // ── 5. GET 上挂的写（A3-N12 跨切族的活读数）─────────────────────────────────
 // csrf_middleware 与 requires_admin 只认 POST/PUT/PATCH/DELETE，本段的 R4/R7 分母
 // 同样只扫这四个方法：于是注册在 GET 上的状态写对两把中间件和尺子同时隐形。
 // 这里单独枚举「GET/HEAD/OPTIONS 路由 + handler 体内含写 SQL」，只点名无门禁的那些。
-const WRITE_SQL_RE = /\b(INSERT\s+INTO|UPDATE\s+\w+|DELETE\s+FROM)\b/i;
+// `WRITE_SQL_RE` 已在 4. 路由级分桶处定义（第十批为 R 桶拆分上提），此处复用。
 const getWrites = [];
 for (const r of routes) {
   if (["POST", "PUT", "DELETE", "PATCH"].includes(r.method)) continue;
   const body = fnBody(r.crate, r.handlerRef);
   if (!WRITE_SQL_RE.test(body)) continue;
-  if (GATE_RE.test(body)) continue;
+  const gEv = gateEvidence(r.crate, body);
+  if (gEv !== false) {
+    if (typeof gEv === "string") indirectGated.push(`${r.crate}\t${r.method}\t${r.path}\t${r.handler}\t${gEv}`);
+    continue;
+  }
   const sess = SESSION_RE.test(body);
   const bucket = isAuthExempt(r.method, r.path)
     ? "K1-匿名可达无门禁"
@@ -638,7 +770,7 @@ for (const r of routes) {
   if (!eatenBy.length) continue;
   const body = fnBody(r.crate, r.handlerRef);
   const write = WRITE_SQL_RE.test(body);
-  const gate = GATE_RE.test(body);
+  const gate = gateEvidence(r.crate, body) !== false;
   const sess = SESSION_RE.test(body);
   const bucket = write
     ? gate || sess
@@ -684,7 +816,7 @@ for (const r of routes) {
   if (!state) continue;
   const body = fnBody(r.crate, r.handlerRef);
   const write = WRITE_SQL_RE.test(body);
-  const guarded = GATE_RE.test(body) || SESSION_RE.test(body);
+  const guarded = gateEvidence(r.crate, body) !== false || SESSION_RE.test(body);
   const bucket = write && !guarded
     ? `A1-${state}+体内写 SQL 且无门禁无会话`
     : write
@@ -805,3 +937,21 @@ fs.writeFileSync(
 );
 console.log("明细已写 write_routes_macro_resolved.tsv");
 
+// 缺陷 15 的落盘（必须在所有分桶段之后）：间接门禁逐条点名，作证的是哪把 helper 必须可查——
+// 这一层的读数不许靠「尺子说它有门」背书。
+{
+  const helpers = new Map();
+  for (const l of indirectGated) {
+    const h = l.split("\t")[4];
+    helpers.set(h, (helpers.get(h) || 0) + 1);
+  }
+  fs.writeFileSync(
+    path.join(ARTIFACTS, "write_routes_indirect_gated.tsv"),
+    ["crate\tmethod\tpath\thandler\tgate_helper", ...indirectGated.sort()].join("\n") + "\n",
+  );
+  console.log(
+    `间接门禁作证 ${indirectGated.length} 条（缺陷 15，helper 体内判定）：` +
+    [...helpers].sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${v}`).join("、") +
+    `；明细已写 write_routes_indirect_gated.tsv`
+  );
+}
