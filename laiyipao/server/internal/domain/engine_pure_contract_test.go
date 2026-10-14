@@ -169,6 +169,82 @@ type pureVectors struct {
 			} `json:"trace"`
 		} `json:"rows"`
 	} `json:"deck"`
+
+	Terrain struct {
+		Consts struct {
+			FieldW            int   `json:"FIELD_W"`
+			FieldH            int   `json:"FIELD_H"`
+			BaseX             int   `json:"BASE_X"`
+			BaseY             int   `json:"BASE_Y"`
+			OilBurnMs         int   `json:"OIL_BURN_MS"`
+			RotorRadius       int   `json:"ROTOR_RADIUS"`
+			RotorDirLen       int   `json:"ROTOR_DIR_LEN"`
+			RotorDirSampleIdx []int `json:"ROTOR_DIR_SAMPLE_IDX"`
+			RotorDirSample    []int `json:"ROTOR_DIR_SAMPLE"`
+		} `json:"consts"`
+		Rows []struct {
+			Label     string `json:"label"`
+			Placement struct {
+				Kind  string `json:"kind"`
+				X     int    `json:"x"`
+				Y     int    `json:"y"`
+				Param int    `json:"param"`
+			} `json:"placement"`
+			TerrainTick string `json:"terrain_tick"`
+			ElementCap  string `json:"element_cap"`
+			Enemies     []struct {
+				ID string `json:"id"`
+				HP string `json:"hp"`
+				// armor 存字符串：向量里的整数一律走字符串，
+				// 避免 2^53 以上的值在 JSON number 里失精。
+				Armor string `json:"armor"`
+				X     int    `json:"x"`
+				Y     int    `json:"y"`
+			} `json:"enemies"`
+			Projectiles []struct {
+				ID string `json:"id"`
+				X  int    `json:"x"`
+				Y  int    `json:"y"`
+				VX string `json:"vx"`
+				VY string `json:"vy"`
+			} `json:"projectiles"`
+			Trace []struct {
+				Op string `json:"op"`
+				// ⚠️ tag 必须是 `dt_ms`（snake_case，与向量文件一致）。
+				//   写成 `dtMs` 时 JSON 反序列化**静默得到 0** ——
+				//   于是一切 update 都用 dt=0 跑，看起来像「状态机不对」，
+				//   而真正的原因是字段名拼错。
+				//   这是我写这份契约时踩到的，记下来以免重犯。
+				DtMs      int64  `json:"dt_ms"`
+				Blocked   *bool  `json:"blocked"`
+				State     string `json:"state"`
+				Timer     int64  `json:"timer"`
+				Charge    int    `json:"charge"`
+				Angle     int    `json:"angle"`
+				Triggered bool   `json:"triggered"`
+				Element   string `json:"element"`
+				Damage    string `json:"damage"`
+				HitX      int64  `json:"hit_x"`
+				HitY      int64  `json:"hit_y"`
+				Cap       string `json:"cap"`
+				Result    *bool  `json:"result"`
+				// 敌人快照。向量里是对象数组，这里渲染成单行字符串
+				// 以便与 Go 侧的 enemySnapshots 逐字比对。
+				Enemies []struct {
+					ID            string `json:"id"`
+					HP            string `json:"hp"`
+					ArmorPermille string `json:"armor_permille"`
+					Dead          bool   `json:"dead"`
+					HitFlashMs    int64  `json:"hit_flash_ms"`
+					Elements      string `json:"elements"`
+				} `json:"enemies"`
+				Projectiles []string `json:"projectiles"`
+				// ctx 调用序列。存数组而不是拼接字符串：
+				// 报错时能指明「第几次调用不对」，而不只是「整串不一样」。
+				Calls []string `json:"calls"`
+			} `json:"trace"`
+		} `json:"rows"`
+	} `json:"terrain"`
 }
 
 func loadPureVectors(t *testing.T) *pureVectors {

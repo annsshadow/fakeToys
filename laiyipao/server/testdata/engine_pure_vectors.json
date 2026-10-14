@@ -3265,5 +3265,1776 @@
         ]
       }
     ]
+  },
+  "terrain": {
+    "consts": {
+      "FIELD_W": 1000,
+      "FIELD_H": 1000,
+      "BASE_X": 60,
+      "BASE_Y": 880,
+      "OIL_BURN_MS": 8000,
+      "ROTOR_RADIUS": 260,
+      "ROTOR_DIR_LEN": 720,
+      "ROTOR_DIR_SAMPLE_IDX": [
+        0,
+        1,
+        90,
+        91,
+        180,
+        181,
+        270,
+        271,
+        45,
+        46,
+        135,
+        136,
+        225,
+        226,
+        315,
+        316,
+        359,
+        718,
+        719
+      ],
+      "ROTOR_DIR_SAMPLE": [
+        1000,
+        0,
+        707,
+        707,
+        0,
+        1000,
+        -707,
+        707,
+        375,
+        921,
+        921,
+        375,
+        927,
+        -391,
+        391,
+        -927,
+        17,
+        1000,
+        -17
+      ]
+    },
+    "rows": [
+      {
+        "label": "oil_drum_ignites_on_fire",
+        "placement": {
+          "kind": "oil_drum",
+          "x": 500,
+          "y": 500,
+          "param": 3
+        },
+        "enemies": [
+          {
+            "id": "e1",
+            "hp": "1000",
+            "armor": "200",
+            "x": 500,
+            "y": 500
+          },
+          {
+            "id": "far",
+            "hp": "1000",
+            "armor": "0",
+            "x": 900,
+            "y": 900
+          }
+        ],
+        "projectiles": [],
+        "terrain_tick": "100",
+        "element_cap": "5",
+        "trace": [
+          {
+            "op": "init",
+            "state": "idle",
+            "timer": 0,
+            "charge": 0,
+            "angle": 0,
+            "triggered": false,
+            "serialize": {
+              "kind": "oil_drum",
+              "x": 500,
+              "y": 500,
+              "state": "idle",
+              "triggered": false
+            },
+            "enemies": [
+              {
+                "id": "e1",
+                "hp": "1000",
+                "armor_permille": "200",
+                "dead": false,
+                "hit_flash_ms": 0,
+                "elements": ""
+              },
+              {
+                "id": "far",
+                "hp": "1000",
+                "armor_permille": "0",
+                "dead": false,
+                "hit_flash_ms": 0,
+                "elements": ""
+              }
+            ],
+            "projectiles": [],
+            "calls": []
+          },
+          {
+            "op": "onHit",
+            "state": "idle",
+            "timer": 0,
+            "charge": 1,
+            "angle": 0,
+            "triggered": false,
+            "serialize": {
+              "kind": "oil_drum",
+              "x": 500,
+              "y": 500,
+              "state": "idle",
+              "triggered": false
+            },
+            "enemies": [
+              {
+                "id": "e1",
+                "hp": "1000",
+                "armor_permille": "200",
+                "dead": false,
+                "hit_flash_ms": 0,
+                "elements": ""
+              },
+              {
+                "id": "far",
+                "hp": "1000",
+                "armor_permille": "0",
+                "dead": false,
+                "hit_flash_ms": 0,
+                "elements": ""
+              }
+            ],
+            "projectiles": [],
+            "calls": [],
+            "element": "fire",
+            "damage": "150",
+            "hit_x": 500000,
+            "hit_y": 500000,
+            "result": false
+          },
+          {
+            "op": "onHit",
+            "state": "idle",
+            "timer": 0,
+            "charge": 2,
+            "angle": 0,
+            "triggered": false,
+            "serialize": {
+              "kind": "oil_drum",
+              "x": 500,
+              "y": 500,
+              "state": "idle",
+              "triggered": false
+            },
+            "enemies": [
+              {
+                "id": "e1",
+                "hp": "1000",
+                "armor_permille": "200",
+                "dead": false,
+                "hit_flash_ms": 0,
+                "elements": ""
+              },
+              {
+                "id": "far",
+                "hp": "1000",
+                "armor_permille": "0",
+                "dead": false,
+                "hit_flash_ms": 0,
+                "elements": ""
+              }
+            ],
+            "projectiles": [],
+            "calls": [],
+            "element": "fire",
+            "damage": "150",
+            "hit_x": 500000,
+            "hit_y": 500000,
+            "result": false
+          },
+          {
+            "op": "onHit",
+            "state": "burning",
+            "timer": 8000,
+            "charge": 3,
+            "angle": 0,
+            "triggered": true,
+            "serialize": {
+              "kind": "oil_drum",
+              "x": 500,
+              "y": 500,
+              "state": "burning",
+              "triggered": true
+            },
+            "enemies": [
+              {
+                "id": "e1",
+                "hp": "1000",
+                "armor_permille": "200",
+                "dead": false,
+                "hit_flash_ms": 0,
+                "elements": ""
+              },
+              {
+                "id": "far",
+                "hp": "1000",
+                "armor_permille": "0",
+                "dead": false,
+                "hit_flash_ms": 0,
+                "elements": ""
+              }
+            ],
+            "projectiles": [],
+            "calls": [],
+            "element": "fire",
+            "damage": "150",
+            "hit_x": 500000,
+            "hit_y": 500000,
+            "result": true
+          }
+        ]
+      },
+      {
+        "label": "oil_drum_rejects_non_fire_and_far",
+        "placement": {
+          "kind": "oil_drum",
+          "x": 500,
+          "y": 500,
+          "param": 1
+        },
+        "enemies": [
+          {
+            "id": "e1",
+            "hp": "1000",
+            "armor": "0",
+            "x": 500,
+            "y": 500
+          }
+        ],
+        "projectiles": [],
+        "terrain_tick": "100",
+        "element_cap": "5",
+        "trace": [
+          {
+            "op": "init",
+            "state": "idle",
+            "timer": 0,
+            "charge": 0,
+            "angle": 0,
+            "triggered": false,
+            "serialize": {
+              "kind": "oil_drum",
+              "x": 500,
+              "y": 500,
+              "state": "idle",
+              "triggered": false
+            },
+            "enemies": [
+              {
+                "id": "e1",
+                "hp": "1000",
+                "armor_permille": "0",
+                "dead": false,
+                "hit_flash_ms": 0,
+                "elements": ""
+              }
+            ],
+            "projectiles": [],
+            "calls": []
+          },
+          {
+            "op": "onHit",
+            "state": "idle",
+            "timer": 0,
+            "charge": 0,
+            "angle": 0,
+            "triggered": false,
+            "serialize": {
+              "kind": "oil_drum",
+              "x": 500,
+              "y": 500,
+              "state": "idle",
+              "triggered": false
+            },
+            "enemies": [
+              {
+                "id": "e1",
+                "hp": "1000",
+                "armor_permille": "0",
+                "dead": false,
+                "hit_flash_ms": 0,
+                "elements": ""
+              }
+            ],
+            "projectiles": [],
+            "calls": [],
+            "element": "ice",
+            "damage": "9999",
+            "hit_x": 500000,
+            "hit_y": 500000,
+            "result": false
+          },
+          {
+            "op": "onHit",
+            "state": "idle",
+            "timer": 0,
+            "charge": 0,
+            "angle": 0,
+            "triggered": false,
+            "serialize": {
+              "kind": "oil_drum",
+              "x": 500,
+              "y": 500,
+              "state": "idle",
+              "triggered": false
+            },
+            "enemies": [
+              {
+                "id": "e1",
+                "hp": "1000",
+                "armor_permille": "0",
+                "dead": false,
+                "hit_flash_ms": 0,
+                "elements": ""
+              }
+            ],
+            "projectiles": [],
+            "calls": [],
+            "element": "fire",
+            "damage": "9999",
+            "hit_x": 800000,
+            "hit_y": 500000,
+            "result": false
+          }
+        ]
+      },
+      {
+        "label": "oil_drum_fire_zone_damage",
+        "placement": {
+          "kind": "oil_drum",
+          "x": 500,
+          "y": 500,
+          "param": 1
+        },
+        "enemies": [
+          {
+            "id": "tank",
+            "hp": "1000",
+            "armor": "500",
+            "x": 500,
+            "y": 500
+          },
+          {
+            "id": "soft",
+            "hp": "1000",
+            "armor": "0",
+            "x": 505,
+            "y": 505
+          },
+          {
+            "id": "doomed",
+            "hp": "50",
+            "armor": "0",
+            "x": 502,
+            "y": 502
+          },
+          {
+            "id": "away",
+            "hp": "1000",
+            "armor": "0",
+            "x": 900,
+            "y": 900
+          }
+        ],
+        "projectiles": [],
+        "terrain_tick": "100",
+        "element_cap": "3",
+        "trace": [
+          {
+            "op": "init",
+            "state": "idle",
+            "timer": 0,
+            "charge": 0,
+            "angle": 0,
+            "triggered": false,
+            "serialize": {
+              "kind": "oil_drum",
+              "x": 500,
+              "y": 500,
+              "state": "idle",
+              "triggered": false
+            },
+            "enemies": [
+              {
+                "id": "tank",
+                "hp": "1000",
+                "armor_permille": "500",
+                "dead": false,
+                "hit_flash_ms": 0,
+                "elements": ""
+              },
+              {
+                "id": "soft",
+                "hp": "1000",
+                "armor_permille": "0",
+                "dead": false,
+                "hit_flash_ms": 0,
+                "elements": ""
+              },
+              {
+                "id": "doomed",
+                "hp": "50",
+                "armor_permille": "0",
+                "dead": false,
+                "hit_flash_ms": 0,
+                "elements": ""
+              },
+              {
+                "id": "away",
+                "hp": "1000",
+                "armor_permille": "0",
+                "dead": false,
+                "hit_flash_ms": 0,
+                "elements": ""
+              }
+            ],
+            "projectiles": [],
+            "calls": []
+          },
+          {
+            "op": "onHit",
+            "state": "burning",
+            "timer": 8000,
+            "charge": 1,
+            "angle": 0,
+            "triggered": true,
+            "serialize": {
+              "kind": "oil_drum",
+              "x": 500,
+              "y": 500,
+              "state": "burning",
+              "triggered": true
+            },
+            "enemies": [
+              {
+                "id": "tank",
+                "hp": "1000",
+                "armor_permille": "500",
+                "dead": false,
+                "hit_flash_ms": 0,
+                "elements": ""
+              },
+              {
+                "id": "soft",
+                "hp": "1000",
+                "armor_permille": "0",
+                "dead": false,
+                "hit_flash_ms": 0,
+                "elements": ""
+              },
+              {
+                "id": "doomed",
+                "hp": "50",
+                "armor_permille": "0",
+                "dead": false,
+                "hit_flash_ms": 0,
+                "elements": ""
+              },
+              {
+                "id": "away",
+                "hp": "1000",
+                "armor_permille": "0",
+                "dead": false,
+                "hit_flash_ms": 0,
+                "elements": ""
+              }
+            ],
+            "projectiles": [],
+            "calls": [],
+            "element": "fire",
+            "damage": "200",
+            "hit_x": 500000,
+            "hit_y": 500000,
+            "result": true
+          },
+          {
+            "op": "update",
+            "state": "burning",
+            "timer": 7900,
+            "charge": 1,
+            "angle": 0,
+            "triggered": true,
+            "serialize": {
+              "kind": "oil_drum",
+              "x": 500,
+              "y": 500,
+              "state": "burning",
+              "triggered": true
+            },
+            "enemies": [
+              {
+                "id": "tank",
+                "hp": "950",
+                "armor_permille": "500",
+                "dead": false,
+                "hit_flash_ms": 120,
+                "elements": "fire:1"
+              },
+              {
+                "id": "soft",
+                "hp": "900",
+                "armor_permille": "0",
+                "dead": false,
+                "hit_flash_ms": 120,
+                "elements": "fire:1"
+              },
+              {
+                "id": "doomed",
+                "hp": "0",
+                "armor_permille": "0",
+                "dead": true,
+                "hit_flash_ms": 120,
+                "elements": "fire:1"
+              },
+              {
+                "id": "away",
+                "hp": "1000",
+                "armor_permille": "0",
+                "dead": false,
+                "hit_flash_ms": 0,
+                "elements": ""
+              }
+            ],
+            "projectiles": [],
+            "calls": [
+              "enemiesInRadius(500,500,90)",
+              "onKill(doomed)"
+            ],
+            "dt_ms": 100,
+            "blocked": false
+          },
+          {
+            "op": "update",
+            "state": "burning",
+            "timer": 7800,
+            "charge": 1,
+            "angle": 0,
+            "triggered": true,
+            "serialize": {
+              "kind": "oil_drum",
+              "x": 500,
+              "y": 500,
+              "state": "burning",
+              "triggered": true
+            },
+            "enemies": [
+              {
+                "id": "tank",
+                "hp": "900",
+                "armor_permille": "500",
+                "dead": false,
+                "hit_flash_ms": 120,
+                "elements": "fire:2"
+              },
+              {
+                "id": "soft",
+                "hp": "800",
+                "armor_permille": "0",
+                "dead": false,
+                "hit_flash_ms": 120,
+                "elements": "fire:2"
+              },
+              {
+                "id": "doomed",
+                "hp": "0",
+                "armor_permille": "0",
+                "dead": true,
+                "hit_flash_ms": 120,
+                "elements": "fire:2"
+              },
+              {
+                "id": "away",
+                "hp": "1000",
+                "armor_permille": "0",
+                "dead": false,
+                "hit_flash_ms": 0,
+                "elements": ""
+              }
+            ],
+            "projectiles": [],
+            "calls": [
+              "enemiesInRadius(500,500,90)",
+              "onKill(doomed)",
+              "enemiesInRadius(500,500,90)",
+              "onKill(doomed)"
+            ],
+            "dt_ms": 100,
+            "blocked": false
+          }
+        ]
+      },
+      {
+        "label": "oil_drum_burn_expires",
+        "placement": {
+          "kind": "oil_drum",
+          "x": 500,
+          "y": 500,
+          "param": 1
+        },
+        "enemies": [
+          {
+            "id": "e1",
+            "hp": "100000",
+            "armor": "0",
+            "x": 500,
+            "y": 500
+          }
+        ],
+        "projectiles": [],
+        "terrain_tick": "1",
+        "element_cap": "3",
+        "trace": [
+          {
+            "op": "init",
+            "state": "idle",
+            "timer": 0,
+            "charge": 0,
+            "angle": 0,
+            "triggered": false,
+            "serialize": {
+              "kind": "oil_drum",
+              "x": 500,
+              "y": 500,
+              "state": "idle",
+              "triggered": false
+            },
+            "enemies": [
+              {
+                "id": "e1",
+                "hp": "100000",
+                "armor_permille": "0",
+                "dead": false,
+                "hit_flash_ms": 0,
+                "elements": ""
+              }
+            ],
+            "projectiles": [],
+            "calls": []
+          },
+          {
+            "op": "onHit",
+            "state": "burning",
+            "timer": 8000,
+            "charge": 1,
+            "angle": 0,
+            "triggered": true,
+            "serialize": {
+              "kind": "oil_drum",
+              "x": 500,
+              "y": 500,
+              "state": "burning",
+              "triggered": true
+            },
+            "enemies": [
+              {
+                "id": "e1",
+                "hp": "100000",
+                "armor_permille": "0",
+                "dead": false,
+                "hit_flash_ms": 0,
+                "elements": ""
+              }
+            ],
+            "projectiles": [],
+            "calls": [],
+            "element": "fire",
+            "damage": "200",
+            "hit_x": 500000,
+            "hit_y": 500000,
+            "result": true
+          },
+          {
+            "op": "update",
+            "state": "idle",
+            "timer": 0,
+            "charge": 1,
+            "angle": 0,
+            "triggered": true,
+            "serialize": {
+              "kind": "oil_drum",
+              "x": 500,
+              "y": 500,
+              "state": "idle",
+              "triggered": true
+            },
+            "enemies": [
+              {
+                "id": "e1",
+                "hp": "100000",
+                "armor_permille": "0",
+                "dead": false,
+                "hit_flash_ms": 0,
+                "elements": ""
+              }
+            ],
+            "projectiles": [],
+            "calls": [],
+            "dt_ms": 8000,
+            "blocked": false
+          },
+          {
+            "op": "update",
+            "state": "idle",
+            "timer": 0,
+            "charge": 1,
+            "angle": 0,
+            "triggered": true,
+            "serialize": {
+              "kind": "oil_drum",
+              "x": 500,
+              "y": 500,
+              "state": "idle",
+              "triggered": true
+            },
+            "enemies": [
+              {
+                "id": "e1",
+                "hp": "100000",
+                "armor_permille": "0",
+                "dead": false,
+                "hit_flash_ms": 0,
+                "elements": ""
+              }
+            ],
+            "projectiles": [],
+            "calls": [],
+            "dt_ms": 100,
+            "blocked": false
+          }
+        ]
+      },
+      {
+        "label": "tidal_gate_cycles",
+        "placement": {
+          "kind": "tidal_gate",
+          "x": 300,
+          "y": 700,
+          "param": 1000
+        },
+        "enemies": [],
+        "projectiles": [],
+        "terrain_tick": "100",
+        "element_cap": "3",
+        "trace": [
+          {
+            "op": "init",
+            "state": "idle",
+            "timer": 0,
+            "charge": 0,
+            "angle": 0,
+            "triggered": false,
+            "serialize": {
+              "kind": "tidal_gate",
+              "x": 300,
+              "y": 700,
+              "state": "idle",
+              "triggered": false
+            },
+            "enemies": [],
+            "projectiles": [],
+            "calls": []
+          },
+          {
+            "op": "update",
+            "state": "idle",
+            "timer": 500,
+            "charge": 0,
+            "angle": 0,
+            "triggered": false,
+            "serialize": {
+              "kind": "tidal_gate",
+              "x": 300,
+              "y": 700,
+              "state": "idle",
+              "triggered": false
+            },
+            "enemies": [],
+            "projectiles": [],
+            "calls": [],
+            "dt_ms": 500,
+            "blocked": false
+          },
+          {
+            "op": "update",
+            "state": "open",
+            "timer": 0,
+            "charge": 0,
+            "angle": 0,
+            "triggered": false,
+            "serialize": {
+              "kind": "tidal_gate",
+              "x": 300,
+              "y": 700,
+              "state": "open",
+              "triggered": false
+            },
+            "enemies": [],
+            "projectiles": [],
+            "calls": [],
+            "dt_ms": 500,
+            "blocked": false
+          },
+          {
+            "op": "update",
+            "state": "closed",
+            "timer": 0,
+            "charge": 0,
+            "angle": 0,
+            "triggered": false,
+            "serialize": {
+              "kind": "tidal_gate",
+              "x": 300,
+              "y": 700,
+              "state": "closed",
+              "triggered": false
+            },
+            "enemies": [],
+            "projectiles": [],
+            "calls": [],
+            "dt_ms": 1000,
+            "blocked": true
+          },
+          {
+            "op": "update",
+            "state": "closed",
+            "timer": 500,
+            "charge": 0,
+            "angle": 0,
+            "triggered": false,
+            "serialize": {
+              "kind": "tidal_gate",
+              "x": 300,
+              "y": 700,
+              "state": "closed",
+              "triggered": false
+            },
+            "enemies": [],
+            "projectiles": [],
+            "calls": [],
+            "dt_ms": 2500,
+            "blocked": true
+          }
+        ]
+      },
+      {
+        "label": "tidal_gate_period_clamped",
+        "placement": {
+          "kind": "tidal_gate",
+          "x": 300,
+          "y": 700,
+          "param": 0
+        },
+        "enemies": [],
+        "projectiles": [],
+        "terrain_tick": "100",
+        "element_cap": "3",
+        "trace": [
+          {
+            "op": "init",
+            "state": "idle",
+            "timer": 0,
+            "charge": 0,
+            "angle": 0,
+            "triggered": false,
+            "serialize": {
+              "kind": "tidal_gate",
+              "x": 300,
+              "y": 700,
+              "state": "idle",
+              "triggered": false
+            },
+            "enemies": [],
+            "projectiles": [],
+            "calls": []
+          },
+          {
+            "op": "update",
+            "state": "open",
+            "timer": 0,
+            "charge": 0,
+            "angle": 0,
+            "triggered": false,
+            "serialize": {
+              "kind": "tidal_gate",
+              "x": 300,
+              "y": 700,
+              "state": "open",
+              "triggered": false
+            },
+            "enemies": [],
+            "projectiles": [],
+            "calls": [],
+            "dt_ms": 1,
+            "blocked": false
+          },
+          {
+            "op": "update",
+            "state": "open",
+            "timer": 0,
+            "charge": 0,
+            "angle": 0,
+            "triggered": false,
+            "serialize": {
+              "kind": "tidal_gate",
+              "x": 300,
+              "y": 700,
+              "state": "open",
+              "triggered": false
+            },
+            "enemies": [],
+            "projectiles": [],
+            "calls": [],
+            "dt_ms": 2,
+            "blocked": false
+          },
+          {
+            "op": "update",
+            "state": "closed",
+            "timer": 0,
+            "charge": 0,
+            "angle": 0,
+            "triggered": false,
+            "serialize": {
+              "kind": "tidal_gate",
+              "x": 300,
+              "y": 700,
+              "state": "closed",
+              "triggered": false
+            },
+            "enemies": [],
+            "projectiles": [],
+            "calls": [],
+            "dt_ms": 3,
+            "blocked": true
+          }
+        ]
+      },
+      {
+        "label": "rotor_vane_deflects",
+        "placement": {
+          "kind": "rotor_vane",
+          "x": 500,
+          "y": 500,
+          "param": 100
+        },
+        "enemies": [],
+        "projectiles": [
+          {
+            "id": "inside",
+            "x": 500,
+            "y": 500,
+            "vx": "0",
+            "vy": "0"
+          },
+          {
+            "id": "edge",
+            "x": 700,
+            "y": 500,
+            "vx": "0",
+            "vy": "0"
+          },
+          {
+            "id": "outside",
+            "x": 900,
+            "y": 500,
+            "vx": "0",
+            "vy": "0"
+          }
+        ],
+        "terrain_tick": "100",
+        "element_cap": "3",
+        "trace": [
+          {
+            "op": "init",
+            "state": "idle",
+            "timer": 0,
+            "charge": 0,
+            "angle": 0,
+            "triggered": false,
+            "serialize": {
+              "kind": "rotor_vane",
+              "x": 500,
+              "y": 500,
+              "state": "idle",
+              "triggered": false
+            },
+            "enemies": [],
+            "projectiles": [
+              "inside:0,0",
+              "edge:0,0",
+              "outside:0,0"
+            ],
+            "calls": []
+          },
+          {
+            "op": "update",
+            "state": "idle",
+            "timer": 0,
+            "charge": 0,
+            "angle": 5,
+            "triggered": false,
+            "serialize": {
+              "kind": "rotor_vane",
+              "x": 500,
+              "y": 500,
+              "state": "idle",
+              "triggered": false
+            },
+            "enemies": [],
+            "projectiles": [
+              "inside:79,6",
+              "edge:79,6",
+              "outside:0,0"
+            ],
+            "calls": [],
+            "dt_ms": 50,
+            "blocked": false
+          },
+          {
+            "op": "update",
+            "state": "idle",
+            "timer": 0,
+            "charge": 0,
+            "angle": 10,
+            "triggered": false,
+            "serialize": {
+              "kind": "rotor_vane",
+              "x": 500,
+              "y": 500,
+              "state": "idle",
+              "triggered": false
+            },
+            "enemies": [],
+            "projectiles": [
+              "inside:157,19",
+              "edge:157,19",
+              "outside:0,0"
+            ],
+            "calls": [],
+            "dt_ms": 50,
+            "blocked": false
+          },
+          {
+            "op": "update",
+            "state": "idle",
+            "timer": 0,
+            "charge": 0,
+            "angle": 10,
+            "triggered": false,
+            "serialize": {
+              "kind": "rotor_vane",
+              "x": 500,
+              "y": 500,
+              "state": "idle",
+              "triggered": false
+            },
+            "enemies": [],
+            "projectiles": [
+              "inside:235,32",
+              "edge:235,32",
+              "outside:0,0"
+            ],
+            "calls": [],
+            "dt_ms": 3600,
+            "blocked": false
+          }
+        ]
+      },
+      {
+        "label": "collapse_wall_kinetic_triple",
+        "placement": {
+          "kind": "collapse_wall",
+          "x": 400,
+          "y": 600,
+          "param": 10
+        },
+        "enemies": [],
+        "projectiles": [],
+        "terrain_tick": "100",
+        "element_cap": "3",
+        "trace": [
+          {
+            "op": "init",
+            "state": "idle",
+            "timer": 0,
+            "charge": 0,
+            "angle": 0,
+            "triggered": false,
+            "serialize": {
+              "kind": "collapse_wall",
+              "x": 400,
+              "y": 600,
+              "state": "idle",
+              "triggered": false
+            },
+            "enemies": [],
+            "projectiles": [],
+            "calls": []
+          },
+          {
+            "op": "onHit",
+            "state": "idle",
+            "timer": 0,
+            "charge": 5,
+            "angle": 0,
+            "triggered": false,
+            "serialize": {
+              "kind": "collapse_wall",
+              "x": 400,
+              "y": 600,
+              "state": "idle",
+              "triggered": false
+            },
+            "enemies": [],
+            "projectiles": [],
+            "calls": [],
+            "element": "ice",
+            "damage": "500",
+            "hit_x": 400000,
+            "hit_y": 600000,
+            "result": false
+          },
+          {
+            "op": "onHit",
+            "state": "collapsed",
+            "timer": 0,
+            "charge": 10,
+            "angle": 0,
+            "triggered": true,
+            "serialize": {
+              "kind": "collapse_wall",
+              "x": 400,
+              "y": 600,
+              "state": "collapsed",
+              "triggered": true
+            },
+            "enemies": [],
+            "projectiles": [],
+            "calls": [],
+            "element": "ice",
+            "damage": "500",
+            "hit_x": 400000,
+            "hit_y": 600000,
+            "result": true
+          },
+          {
+            "op": "onHit",
+            "state": "collapsed",
+            "timer": 0,
+            "charge": 10,
+            "angle": 0,
+            "triggered": true,
+            "serialize": {
+              "kind": "collapse_wall",
+              "x": 400,
+              "y": 600,
+              "state": "collapsed",
+              "triggered": true
+            },
+            "enemies": [],
+            "projectiles": [],
+            "calls": [],
+            "element": "ice",
+            "damage": "500",
+            "hit_x": 400000,
+            "hit_y": 600000,
+            "result": false
+          },
+          {
+            "op": "onHit",
+            "state": "collapsed",
+            "timer": 0,
+            "charge": 10,
+            "angle": 0,
+            "triggered": true,
+            "serialize": {
+              "kind": "collapse_wall",
+              "x": 400,
+              "y": 600,
+              "state": "collapsed",
+              "triggered": true
+            },
+            "enemies": [],
+            "projectiles": [],
+            "calls": [],
+            "element": "kinetic",
+            "damage": "500",
+            "hit_x": 400000,
+            "hit_y": 600000,
+            "result": false
+          }
+        ]
+      },
+      {
+        "label": "collapse_wall_after_collapse",
+        "placement": {
+          "kind": "collapse_wall",
+          "x": 400,
+          "y": 600,
+          "param": 3
+        },
+        "enemies": [],
+        "projectiles": [],
+        "terrain_tick": "100",
+        "element_cap": "3",
+        "trace": [
+          {
+            "op": "init",
+            "state": "idle",
+            "timer": 0,
+            "charge": 0,
+            "angle": 0,
+            "triggered": false,
+            "serialize": {
+              "kind": "collapse_wall",
+              "x": 400,
+              "y": 600,
+              "state": "idle",
+              "triggered": false
+            },
+            "enemies": [],
+            "projectiles": [],
+            "calls": []
+          },
+          {
+            "op": "update",
+            "state": "idle",
+            "timer": 0,
+            "charge": 0,
+            "angle": 0,
+            "triggered": false,
+            "serialize": {
+              "kind": "collapse_wall",
+              "x": 400,
+              "y": 600,
+              "state": "idle",
+              "triggered": false
+            },
+            "enemies": [],
+            "projectiles": [],
+            "calls": [],
+            "dt_ms": 50,
+            "blocked": true
+          },
+          {
+            "op": "onHit",
+            "state": "collapsed",
+            "timer": 0,
+            "charge": 27,
+            "angle": 0,
+            "triggered": true,
+            "serialize": {
+              "kind": "collapse_wall",
+              "x": 400,
+              "y": 600,
+              "state": "collapsed",
+              "triggered": true
+            },
+            "enemies": [],
+            "projectiles": [],
+            "calls": [],
+            "element": "kinetic",
+            "damage": "900",
+            "hit_x": 400000,
+            "hit_y": 600000,
+            "result": true
+          },
+          {
+            "op": "update",
+            "state": "collapsed",
+            "timer": 0,
+            "charge": 27,
+            "angle": 0,
+            "triggered": true,
+            "serialize": {
+              "kind": "collapse_wall",
+              "x": 400,
+              "y": 600,
+              "state": "collapsed",
+              "triggered": true
+            },
+            "enemies": [],
+            "projectiles": [],
+            "calls": [],
+            "dt_ms": 50,
+            "blocked": false
+          },
+          {
+            "op": "onHit",
+            "state": "collapsed",
+            "timer": 0,
+            "charge": 27,
+            "angle": 0,
+            "triggered": true,
+            "serialize": {
+              "kind": "collapse_wall",
+              "x": 400,
+              "y": 600,
+              "state": "collapsed",
+              "triggered": true
+            },
+            "enemies": [],
+            "projectiles": [],
+            "calls": [],
+            "element": "kinetic",
+            "damage": "900",
+            "hit_x": 400000,
+            "hit_y": 600000,
+            "result": false
+          }
+        ]
+      },
+      {
+        "label": "collapse_wall_ignores_far_hits",
+        "placement": {
+          "kind": "collapse_wall",
+          "x": 400,
+          "y": 600,
+          "param": 1
+        },
+        "enemies": [],
+        "projectiles": [],
+        "terrain_tick": "100",
+        "element_cap": "3",
+        "trace": [
+          {
+            "op": "init",
+            "state": "idle",
+            "timer": 0,
+            "charge": 0,
+            "angle": 0,
+            "triggered": false,
+            "serialize": {
+              "kind": "collapse_wall",
+              "x": 400,
+              "y": 600,
+              "state": "idle",
+              "triggered": false
+            },
+            "enemies": [],
+            "projectiles": [],
+            "calls": []
+          },
+          {
+            "op": "onHit",
+            "state": "idle",
+            "timer": 0,
+            "charge": 0,
+            "angle": 0,
+            "triggered": false,
+            "serialize": {
+              "kind": "collapse_wall",
+              "x": 400,
+              "y": 600,
+              "state": "idle",
+              "triggered": false
+            },
+            "enemies": [],
+            "projectiles": [],
+            "calls": [],
+            "element": "kinetic",
+            "damage": "999999",
+            "hit_x": 900000,
+            "hit_y": 900000,
+            "result": false
+          }
+        ]
+      },
+      {
+        "label": "charge_tower_accumulates_kills",
+        "placement": {
+          "kind": "charge_tower",
+          "x": 250,
+          "y": 750,
+          "param": 3
+        },
+        "enemies": [
+          {
+            "id": "e1",
+            "hp": "1000",
+            "armor": "0",
+            "x": 250,
+            "y": 750
+          }
+        ],
+        "projectiles": [],
+        "terrain_tick": "100",
+        "element_cap": "4",
+        "trace": [
+          {
+            "op": "init",
+            "state": "idle",
+            "timer": 0,
+            "charge": 0,
+            "angle": 0,
+            "triggered": false,
+            "serialize": {
+              "kind": "charge_tower",
+              "x": 250,
+              "y": 750,
+              "state": "idle",
+              "triggered": false
+            },
+            "enemies": [
+              {
+                "id": "e1",
+                "hp": "1000",
+                "armor_permille": "0",
+                "dead": false,
+                "hit_flash_ms": 0,
+                "elements": ""
+              }
+            ],
+            "projectiles": [],
+            "calls": []
+          },
+          {
+            "op": "onKillCharging",
+            "state": "idle",
+            "timer": 0,
+            "charge": 1,
+            "angle": 0,
+            "triggered": false,
+            "serialize": {
+              "kind": "charge_tower",
+              "x": 250,
+              "y": 750,
+              "state": "idle",
+              "triggered": false
+            },
+            "enemies": [
+              {
+                "id": "e1",
+                "hp": "1000",
+                "armor_permille": "0",
+                "dead": false,
+                "hit_flash_ms": 0,
+                "elements": ""
+              }
+            ],
+            "projectiles": [],
+            "calls": [],
+            "element": "fire",
+            "cap": "4",
+            "result": false
+          },
+          {
+            "op": "onKillCharging",
+            "state": "idle",
+            "timer": 0,
+            "charge": 2,
+            "angle": 0,
+            "triggered": false,
+            "serialize": {
+              "kind": "charge_tower",
+              "x": 250,
+              "y": 750,
+              "state": "idle",
+              "triggered": false
+            },
+            "enemies": [
+              {
+                "id": "e1",
+                "hp": "1000",
+                "armor_permille": "0",
+                "dead": false,
+                "hit_flash_ms": 0,
+                "elements": ""
+              }
+            ],
+            "projectiles": [],
+            "calls": [],
+            "element": "fire",
+            "cap": "4",
+            "result": false
+          },
+          {
+            "op": "onKillCharging",
+            "state": "idle",
+            "timer": 0,
+            "charge": 0,
+            "angle": 0,
+            "triggered": true,
+            "serialize": {
+              "kind": "charge_tower",
+              "x": 250,
+              "y": 750,
+              "state": "idle",
+              "triggered": true
+            },
+            "enemies": [
+              {
+                "id": "e1",
+                "hp": "1000",
+                "armor_permille": "0",
+                "dead": false,
+                "hit_flash_ms": 0,
+                "elements": "fire:1"
+              }
+            ],
+            "projectiles": [],
+            "calls": [],
+            "element": "fire",
+            "cap": "4",
+            "result": true
+          },
+          {
+            "op": "onKillCharging",
+            "state": "idle",
+            "timer": 0,
+            "charge": 1,
+            "angle": 0,
+            "triggered": true,
+            "serialize": {
+              "kind": "charge_tower",
+              "x": 250,
+              "y": 750,
+              "state": "idle",
+              "triggered": true
+            },
+            "enemies": [
+              {
+                "id": "e1",
+                "hp": "1000",
+                "armor_permille": "0",
+                "dead": false,
+                "hit_flash_ms": 0,
+                "elements": "fire:1"
+              }
+            ],
+            "projectiles": [],
+            "calls": [],
+            "element": "fire",
+            "cap": "4",
+            "result": false
+          }
+        ]
+      },
+      {
+        "label": "on_kill_charging_ignores_other_kinds",
+        "placement": {
+          "kind": "oil_drum",
+          "x": 500,
+          "y": 500,
+          "param": 1
+        },
+        "enemies": [
+          {
+            "id": "e1",
+            "hp": "1000",
+            "armor": "0",
+            "x": 500,
+            "y": 500
+          }
+        ],
+        "projectiles": [],
+        "terrain_tick": "100",
+        "element_cap": "4",
+        "trace": [
+          {
+            "op": "init",
+            "state": "idle",
+            "timer": 0,
+            "charge": 0,
+            "angle": 0,
+            "triggered": false,
+            "serialize": {
+              "kind": "oil_drum",
+              "x": 500,
+              "y": 500,
+              "state": "idle",
+              "triggered": false
+            },
+            "enemies": [
+              {
+                "id": "e1",
+                "hp": "1000",
+                "armor_permille": "0",
+                "dead": false,
+                "hit_flash_ms": 0,
+                "elements": ""
+              }
+            ],
+            "projectiles": [],
+            "calls": []
+          },
+          {
+            "op": "onKillCharging",
+            "state": "idle",
+            "timer": 0,
+            "charge": 0,
+            "angle": 0,
+            "triggered": false,
+            "serialize": {
+              "kind": "oil_drum",
+              "x": 500,
+              "y": 500,
+              "state": "idle",
+              "triggered": false
+            },
+            "enemies": [
+              {
+                "id": "e1",
+                "hp": "1000",
+                "armor_permille": "0",
+                "dead": false,
+                "hit_flash_ms": 0,
+                "elements": ""
+              }
+            ],
+            "projectiles": [],
+            "calls": [],
+            "element": "fire",
+            "cap": "4",
+            "result": false
+          }
+        ]
+      },
+      {
+        "label": "unknown_kind_is_noop",
+        "placement": {
+          "kind": "lava_pool",
+          "x": 500,
+          "y": 500,
+          "param": 5
+        },
+        "enemies": [
+          {
+            "id": "e1",
+            "hp": "1000",
+            "armor": "0",
+            "x": 500,
+            "y": 500
+          }
+        ],
+        "projectiles": [
+          {
+            "id": "p1",
+            "x": 500,
+            "y": 500,
+            "vx": "0",
+            "vy": "0"
+          }
+        ],
+        "terrain_tick": "100",
+        "element_cap": "3",
+        "trace": [
+          {
+            "op": "init",
+            "state": "idle",
+            "timer": 0,
+            "charge": 0,
+            "angle": 0,
+            "triggered": false,
+            "serialize": {
+              "kind": "lava_pool",
+              "x": 500,
+              "y": 500,
+              "state": "idle",
+              "triggered": false
+            },
+            "enemies": [
+              {
+                "id": "e1",
+                "hp": "1000",
+                "armor_permille": "0",
+                "dead": false,
+                "hit_flash_ms": 0,
+                "elements": ""
+              }
+            ],
+            "projectiles": [
+              "p1:0,0"
+            ],
+            "calls": []
+          },
+          {
+            "op": "update",
+            "state": "idle",
+            "timer": 0,
+            "charge": 0,
+            "angle": 0,
+            "triggered": false,
+            "serialize": {
+              "kind": "lava_pool",
+              "x": 500,
+              "y": 500,
+              "state": "idle",
+              "triggered": false
+            },
+            "enemies": [
+              {
+                "id": "e1",
+                "hp": "1000",
+                "armor_permille": "0",
+                "dead": false,
+                "hit_flash_ms": 0,
+                "elements": ""
+              }
+            ],
+            "projectiles": [
+              "p1:0,0"
+            ],
+            "calls": [],
+            "dt_ms": 50,
+            "blocked": false
+          },
+          {
+            "op": "onHit",
+            "state": "idle",
+            "timer": 0,
+            "charge": 0,
+            "angle": 0,
+            "triggered": false,
+            "serialize": {
+              "kind": "lava_pool",
+              "x": 500,
+              "y": 500,
+              "state": "idle",
+              "triggered": false
+            },
+            "enemies": [
+              {
+                "id": "e1",
+                "hp": "1000",
+                "armor_permille": "0",
+                "dead": false,
+                "hit_flash_ms": 0,
+                "elements": ""
+              }
+            ],
+            "projectiles": [
+              "p1:0,0"
+            ],
+            "calls": [],
+            "element": "fire",
+            "damage": "9999",
+            "hit_x": 500000,
+            "hit_y": 500000,
+            "result": false
+          }
+        ]
+      }
+    ]
   }
 }
