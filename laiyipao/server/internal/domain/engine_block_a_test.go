@@ -35,17 +35,37 @@ import (
 	"testing"
 )
 
-// newProbeEngine 造一个不启动任何战斗逻辑的引擎。
+// newProbeEngine 造一个**停留在 wave 阶段**的引擎。
 //
-// ⚠️ 直接构造而不调 Start()：A 阶段 BeginWave 是空实现，
+// # 为什么必须让 `spawnQueue` 非空
 //
-//	调它只是多一个「什么都没发生」的步骤，反而掩盖真正的断言。
+// `Step` 末尾会调 `checkWaveEnd`，而它的第一条判定是
+// 「刷怪队列为空 → 本波结束」。空队列 + 空场上 ⇒ **第一个 `Step`
+// 就把战斗判结束**，于是「tick 怎么长」这类断言在第 1 步就失去意义
+// —— 我第一次跑就撞上了这个：
+//
+//	TestStepAdvancesTickAndElapsed: 第 1 次 Step 后 tick = 1
+//
+// 原因不是断言写错了，而是 B 块落地后 `checkWaveEnd` 成了真实实现，
+// 而夹具仍按「A 阶段它什么也不做」的假设搭的。
+//
+// 所以这里放一个**很久之后**才到期的刷怪项：
+// 它在 2^40 tick 之前都不会兑现，因此对被测的时间线无影响，
+// 却足以让引擎停在 wave 阶段。
+//
+// # 为什么不调 Start()
+//
+// Start 会走 `BeginWave(0)`，那会把刷怪队列**换成关卡真实的数据**，
+// 于是这个夹具不再是「受控的时间线」，而是被关卡内容决定。
+// 本文件验的是 tick 时序，不该被关卡内容影响。
 func newProbeEngine() *BattleEngine {
-	return NewBattleEngine(BattleConfig{
+	e := NewBattleEngine(BattleConfig{
 		Level:       GenerateLevel(1),
 		ActiveSlots: 4,
 		ScoreRules:  DefaultScoreRules(),
 	})
+	e.spawnQueue = []SpawnItem{{EnemyID: -1, AtTick: 1 << 40, UID: 1}}
+	return e
 }
 
 // TestStepAdvancesTickAndElapsed 守住 tick 节奏。

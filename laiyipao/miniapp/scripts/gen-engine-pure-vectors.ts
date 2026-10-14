@@ -30,7 +30,7 @@
  *   cd miniapp && npx tsx scripts/gen-engine-pure-vectors.ts
  *   cd ../server && go test ./internal/domain/ -run TestEnginePureContract
  */
-import { writeFileSync } from 'node:fs'
+import { readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, resolve } from 'node:path'
 
@@ -64,9 +64,66 @@ import {
 import type { Enemy, Projectile } from '../src/game/types'
 import type { DefenseSnapshot, DefenseView } from '../src/game/defense'
 import type { Attacker } from '../src/game/damage'
+import { BattleEngine, TICK_MS, SPAWN_PROGRESS_FULL, SPAWN_PROGRESS_STEP } from '../src/game/engine'
+import { scoreRulesFromServer } from '../src/game/score'
+import type { EnemyDef, SkillDef } from '../src/game/types'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const serverRoot = resolve(here, '../../server')
+
+/**
+ * 服务端夹具：100 个关卡 + 敌人/技能内容表。
+ *
+ * ⚠️ 它是**契约向量的输入源**，不是「随便挑的测试数据」——
+ *   刷怪的 delay/interval、关卡波数、敌人属性全从这里取，
+ *   两端跑的是同一份真实关卡数据。换成合成关卡就测不到
+ *   「毫秒→tick 向上取整」这个最容易写错的换算。
+ */
+const fixture = JSON.parse(
+  readFileSync(resolve(serverRoot, 'testdata/smoke_levels.json'), 'utf8'),
+)
+
+const enemies = new Map<number, EnemyDef>(
+  (fixture.enemies as any[]).map((e) => [e.id, e as EnemyDef]),
+)
+const skills = new Map<number, SkillDef>(
+  [...(fixture.skills as any[]), ...(fixture.composite_skills as any[])].map((s) => [
+    s.id,
+    s as SkillDef,
+  ]),
+)
+
+/**
+ * 从夹具取分数规则。
+ *
+ * ⚠️ 必须走 `scoreRulesFromServer`，不能把 JSON 直接塞进去。
+ *
+ * `ScoreRules` 内部是 **BigInt**，而 JSON 解析出来的是 `number`。
+ * 直接传 `fixture.score_rules`，运行时会报
+ * `TypeError: Cannot mix BigInt and other types` ——
+ * 而且**只在跑到第一次伤害时才炸**（`damageScore` 里除法那行），
+ * 前面几十行配置全部正常通过。
+ *
+ * 那是��很坏的报错位置：如果向量里选的关卡一波都没开火，
+ * 这个类型错误会**完全不出现**，生成器照常产出「合法」的向量文件，
+ * 而文件里的分数规则是错的。
+ *
+ * `JSON.parse` 的结果是 `any`，所以 TypeScript **不会**替我们抓到这里。
+ */
+function scoreRulesFromFixture() {
+  const raw = fixture.score_rules
+  if (!raw) {
+    // 夹具缺这一段时**必须炸**，不能静默回落到 DEFAULT ——
+    // 回落后生成的是「用默认规则算的哈希」，而线上用的是服务端下发的规则，
+    // 两者一旦漂移就是全体玩家被误判。夹具坏了要立刻知道。
+    throw new Error(
+      '夹具缺 score_rules —— 绝不能回落到 DEFAULT_SCORE_RULES：' +
+        '那会产出「用默认规则算的哈希」，与线上服务端下发的规则可能不同，' +
+        '一旦不同就是全体玩家被误判成作弊。',
+    )
+  }
+  return scoreRulesFromServer(raw)
+}
 
 /**
  * 契约用的技能规则取**客户端离线兜底常量**。
@@ -1209,6 +1266,135 @@ const ROTOR_SAMPLE_IDX = [
   0, 1, 90, 91, 180, 181, 270, 271, 45, 46, 135, 136, 225, 226, 315, 316, 359, 718, 719,
 ]
 
+// ── Block B：波次与刷怪 ───────────────────────────────────────
+/**
+ * 第一次真正的**跨端逐事件对齐**。
+ *
+ * # 为什么这个场景是「空构筑跑到本波清空」
+ *
+ * B 块只搬了波次与刷怪，`updateEnemies`（C）/ `updateAutoFire`（D）仍是空实现。
+ * 所以这一局里敌人**不会移动也不会被击杀**，但：
+ *   - 刷怪队列会按 tick 逐个兑现 → 覆盖 `ceilDivMsToTicks` 与 `updateSpawns`
+ *   - 洗牌会消耗 RNG → 覆盖 Fisher-Yates
+ *   - 敌人 y 坐标来自 RNG → 覆盖 `600 + rng.intn(340)`
+ *   - `wave_start` / `wave` 重放事件 → 覆盖 `beginWave` 的记录
+ *
+ * ⚠️ **刻意不用合成关卡**，而是真跑第 1 关：
+ *   刷怪组的 delay/interval 是 levelgen 真实产出的毫秒值
+ *   （第 1 关第一波 delay=1012ms）。用拍出来的数字就测不到
+ *   「毫秒→tick 向上取整」这个最容易写错的换算。
+ *
+ * # 断言强度
+ *
+ * 逐 tick 记录：`tick` / `phase` / 场上敌人数 / 刷怪队列长度 /
+ * 每个敌人的 (uid, x, y, hp, spawnProgress) / 全部重放事件。
+ * 逐步比对而不是只比最终值 —— 中间错了又绕回来的实现能骗过最终值。
+ */
+interface WaveScenario {
+  label: string
+  levelID: number
+  seed: string
+  /** 跑多少个 tick */
+  ticks: number
+}
+
+const WAVE_SCENARIOS: WaveScenario[] = [
+  { label: 'lvl1_first_wave', levelID: 1, seed: '7046029255919282421', ticks: 120 },
+  // 第二个种子：RNG 路径不同 → 不同的洗牌结果与 y 坐标。
+  // 只用一个种子的话，「洗牌算法恰好对」与「洗牌算法错但那个种子下恰好相同」
+  // 区分不开。
+  { label: 'lvl1_alt_seed', levelID: 1, seed: '1234567890123456789', ticks: 120 },
+  // 负种子：INIT_XOR 与 asUintN 的对齐在这里最容易被写错。
+  { label: 'lvl1_negative_seed', levelID: 1, seed: '-1', ticks: 90 },
+  { label: 'lvl1_zero_seed', levelID: 1, seed: '0', ticks: 90 },
+  // 第 25 关：波数更多、刷怪组更多 → 覆盖「一 tick 内刷多只」的路径。
+  { label: 'lvl25_multi_group', levelID: 25, seed: '-4611686018427387904', ticks: 260 },
+]
+
+const waveRows = WAVE_SCENARIOS.map((s) => {
+  const level = fixture.levels.find((l: any) => l.id === s.levelID)
+  if (!level) throw new Error(`夹具里没有第 ${s.levelID} 关`)
+  const enemyDefs = new Map<number, any>((fixture.enemies as any[]).map((e) => [e.id, e]))
+  const skillDefs = new Map<number, any>(
+    [...(fixture.skills as any[]), ...(fixture.composite_skills as any[])].map((x) => [
+      x.id,
+      x,
+    ]),
+  )
+
+  const engine = new BattleEngine({
+    level: level as never,
+    enemies: enemyDefs,
+    skills: skillDefs,
+    // ⚠️ 空构筑：B 块不该被 D 块的开火影响，
+    // 而空构筑保证「没有技能冷却」与「没有自动开火」两个变量。
+    equipped: [],
+    attacker: {
+      attack: 100n,
+      critPermille: 1500n,
+      critMultiplierPermille: 1500n,
+      reactionMultPermille: 1000n,
+      elementCap: 3n,
+      reactionTier: 1n,
+      elementCoefPermille: 1000n,
+      heatCapPermille: 0n,
+      armorPermille: 0n,
+      mechanicPermille: 0n,
+    } as never,
+    seed: BigInt(s.seed),
+    scoreRules: scoreRulesFromFixture(),
+  } as never)
+
+  engine.start()
+
+  const trace: Array<Record<string, unknown>> = []
+  const snap = () => {
+    trace.push({
+      tick: engine.tick,
+      phase: engine.phase,
+      elapsed_ms: engine.elapsedMs,
+      spawn_queue: (engine as any).spawnQueue.map((q: any) => ({
+        enemy_id: q.enemyId,
+        at_tick: q.atTick,
+        uid: q.uid,
+      })),
+      enemies: engine.enemies.map((e) => ({
+        uid: e.uid,
+        def_id: e.defId,
+        x: e.x.toString(),
+        y: e.y.toString(),
+        hp: e.hp.toString(),
+        shield: e.shield.toString(),
+        armor_permille: e.armorPermille.toString(),
+        spawn_progress: e.spawnProgress,
+        dead: e.dead,
+        resist: (['fire', 'ice', 'lightning', 'corrosion', 'kinetic'] as const)
+          .map((el) => `${el}:${(e.resist.get(el) ?? 0n).toString()}`)
+          .join('|'),
+      })),
+      replay: (engine as any).replay.map((r: any) => `${r.t}|${r.type}|${r.a}|${r.b}|${r.c}`),
+      events: engine.drainEvents().map((ev: any) => ev.type),
+    })
+  }
+
+  snap()
+  for (let i = 0; i < s.ticks; i++) {
+    if (engine.phase === 'won' || engine.phase === 'lost') break
+    engine.step()
+    snap()
+  }
+
+  return {
+    label: s.label,
+    level_id: s.levelID,
+    seed: s.seed,
+    ticks: s.ticks,
+    // 关卡刷怪组（输入回显）：Go 侧要重建同样的场景
+    level_waves: level.waves,
+    trace,
+  }
+})
+
 const doc = {
   _comment:    '引擎**纯函数**的跨端契约向量。由 miniapp/scripts/gen-engine-pure-vectors.ts 从真实 TS 实现产出。' +
     '期望值不由 Go 侧生成（纯函数没有运行时状态，用实现产出即定义）。' +
@@ -1257,8 +1443,7 @@ const doc = {
   },
   deck: { rows: deckRows },
   terrain: {
-    consts: {
-      FIELD_W,
+    consts: {      FIELD_W,
       FIELD_H,
       BASE_X,
       BASE_Y,
@@ -1281,6 +1466,14 @@ const doc = {
     },
     rows: terrainRows,
   },
+  wave: {
+    consts: {
+      TICK_MS,
+      SPAWN_PROGRESS_FULL,
+      SPAWN_PROGRESS_STEP,
+    },
+    rows: waveRows,
+  },
 }
 
 const outPath = resolve(serverRoot, 'testdata/engine_pure_vectors.json')
@@ -1290,3 +1483,4 @@ console.log(`  技能行 ${skillRows.length} / 装置行 ${workRows.length} / �
 console.log(`  校验行 ${snapshotRows.length} / 护盾行 ${shieldRows.length} / 摘要行 ${digestRows.length}`)
 console.log(`  热量脚本 ${heatRows.length}（轨迹步 ${heatRows.reduce((a, r) => a + r.trace.length, 0)}） / 手牌脚本 ${deckRows.length}`)
 console.log(`  地形脚本 ${terrainRows.length}（轨迹步 ${terrainRows.reduce((a, r) => a + r.trace.length, 0)}）`)
+console.log(`  波次场景 ${waveRows.length}（轨迹步 ${waveRows.reduce((a, r) => a + r.trace.length, 0)}）`)

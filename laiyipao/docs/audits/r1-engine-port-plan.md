@@ -116,13 +116,44 @@ F 块里 (1)(2) 的可观测症状是**选牌索引序列错乱**（TS 注释记
 
 | 块 | 状态 |
 |---|---|
-| A 骨架 + tick 序 | ✅ 已完成（`server/internal/domain/engine.go` + `engine_block_a_test.go`，13 条守卫） |
-| B 波次与刷怪 | ⬜ 下一步 |
-| C 敌人移动与元素 | ⬜ |
+| A 骨架 + tick 序 | ✅ `engine.go` + `engine_block_a_test.go`（13 条守卫） |
+| B 波次与刷怪 | ✅ `engine_wave.go` + `engine_wave_contract_test.go`（**首次跨端逐事件对齐**，5 场景 / 685 轨迹步） |
+| C 敌人移动与元素 | ⬜ 下一步 |
 | D 开火与弹道 | ⬜ |
 | E 地形接线 | ⬜ |
 | F 卡牌 | ⬜ |
 | G 结算与哈希 | ⬜ |
+
+### B 块的完成度（诚实口径）
+
+**已验证（跨端逐事件对齐）**：5 个真实场景 × 逐 tick 比对
+`tick` / `phase` / `elapsed_ms` / 刷怪队列（长度+顺序+三字段）/ 每个敌人的
+`uid`/`defId`/`y`/`hp`/`shield`/`armor`/`resist`/`dead` / 全部重放事件 / 全部渲染事件。
+
+场景覆盖 4 个种子（含负种子与 0，抓 `INIT_XOR` 与 `asUintN` 的对齐）
+与第 1、25 关（单刷怪组 / 多刷怪组）。
+
+**已知差异（`blockBDivergences`，由 C 块消除）**：
+`x` 与 `spawn_progress` —— 两者都由 `StepEnemyMotion` 驱动，
+而它只被 `updateEnemies`（C 块）调用。向量由**完整** TS 引擎产出，
+所以 TS 会推进、Go 侧此刻静止。
+
+`TestBlockBDivergencesAreStillReal` **反向盯着这张表**：一旦 Go 侧开始动
+（C 已落地），那条测试立刻红，并提示把比对改成真的、删掉对应条目。
+静默跳过会变成没人记得的债。
+
+**B 块的跨端对齐抓不到的两个 bug**（靠构造场景的针对性测试补上）：
+
+1. `updateSpawns` 改成**正序**遍历 —— 五个真实场景**全部照样绿**。
+   因为真实关卡把 `atTick` 拉开了，同 tick 到期的通常只有一只，
+   而「删元素后跳过紧邻项」只在「一次删多项」时发生。
+   由 `TestUpdateSpawnsHandlesMultipleDueInOneTick` 覆盖。
+2. 空关卡判成胜利 —— 五个场景的 `waves` 都非空，抓不到。
+   由 `TestEmptyLevelIsNotAutoWin` 覆盖。
+
+**这两条是本轮最值得记的教训**：跨端对齐证明的是「在真实数据上两端一致」，
+**不覆盖「代码想处理的形状」**。后者要靠构造用例。
+
 
 ### A 块的完成度（诚实口径）
 
