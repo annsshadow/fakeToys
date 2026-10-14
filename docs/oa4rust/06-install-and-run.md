@@ -117,7 +117,7 @@ cargo audit                       # 对 security/rustsec-db.rev 固定的 adviso
 1. `cargo build --release` 产出单二进制；`pnpm build` 产出 `frontend/dist/web`。
 2. 同机部署时二进制相对路径 `../../../frontend/dist/web` 可直接命中；否则设 `OA4RUST_WEB_DIST` 绝对路径。
 3. 生产环境变量硬性要求：`RUST_ENV=production`、`APP_PUBLIC_ORIGIN=https://<公开域名>`、`AUTH_COOKIE_SECURE=true`、Redis 可达。
-4. nginx 反代模板：`backend/deploy/nginx.conf`；迁移期灰度按 `gray-release-playbook.md` 分模块切流（影子 → 10% → 50% → 90% → 100%）。
+4. nginx 反代模板：`backend/deploy/nginx.conf`（按需自改）。本项目独立部署、无旧系统切流环节；`deploy/` 下其余脚本为早期灰度方案遗留归档。
 5. 数据库变更走内嵌迁移（启动自动）或预执行 `--migrate-only`。
 
 ## 6. 常用启动组合速查

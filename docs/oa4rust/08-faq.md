@@ -46,7 +46,7 @@
 
 ### Q9：想回滚某次迁移
 
-启动逻辑**不做自动回滚**。手工执行对应的 `NNN_description_rollback.sql`（所有历史迁移均成对提供）。生产回滚属高危操作，先在影子/灰度环境演练。
+启动逻辑**不做自动回滚**。手工执行对应的 `NNN_description_rollback.sql`（所有历史迁移均成对提供）。生产回滚属高危操作，先在测试环境演练。
 
 ### Q10：MySQL 兼容报 SQL 语法错
 
@@ -75,7 +75,7 @@
 
 ### Q15：为何部分响应 `spent` 恒为 0、字段像"默认值"
 
-**定性**：信封对齐 o2server v9 Gson 的刻意决策（`response.rs` 详注）——`None` 跳过序列化、元数据恒填，保证存量前端无感切换。精确耗时属影子流量（R1）范畴，勿在 handler 里自行造元数据。
+**定性**：信封对齐 o2server v9 Gson 的刻意决策（`response.rs` 详注）——`None` 跳过序列化、元数据恒填，保证 O2OA 生态存量前端无感接入。精确耗时尚未实现（保持信封行为一致），勿在 handler 里自行造元数据。
 
 ### Q16：`AUTH_EXEMPT_PATHS` 能否随便加路径
 
@@ -95,7 +95,7 @@
 
 | 症状 | 常见误判 | 实际 |
 | --- | --- | --- |
-| 端口 81/8001 混淆 | — | 与本项目无关（那是 BMP 门禁链路的坑）；oa4rust 固定 **:3000**，legacy o2server :20020 / docker :18080 |
+| 端口 81/8001 混淆 | — | 与本项目无关（那是 BMP 门禁链路的坑）；oa4rust 固定 **:3000**，o2server 基准容器（开发期 parity 用）docker :18080 |
 | `migrations: 0 applied, 108 skipped` | 以为迁移坏了 | 幂等：已应用即跳过，属正常 |
 | `/openapi.json` 打不开 Swagger UI | 以为有网页 | 当前仅暴露 JSON 端点（utoipa ApiDoc）；Swagger UI zip 已在 backend 目录备用但未挂载 |
 | 移动端接口 401 | 以为 token 通道坏了 | 现状 Cookie 模型，原生/小程序通道未补齐（见 Q7） |

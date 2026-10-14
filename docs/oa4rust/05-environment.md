@@ -6,7 +6,7 @@
 
 | 依赖 | 版本要求 | 说明 |
 | --- | --- | --- |
-| Rust 工具链 | **1.75+**（`[workspace.package] rust-version`） | CI 供应链扫描固定用 Rust 1.88.0（与应用最低版本是两个独立约束） |
+| Rust 工具链 | **1.85+**（`[workspace.package] rust-version = "1.85"`） | CI 供应链扫描固定用 Rust 1.88.0（与应用最低版本是两个独立约束） |
 | PostgreSQL | **14+**（docker-compose 用 postgres:14） | 主库；生产另有 PostgreSQL 17 实测记录 |
 | MySQL 8（可选） | 8.x | 多数据库兼容验证用（`SqlDialect` + rewriter） |
 | Redis（可选但推荐） | 7.x（redis:7-alpine） | 会话存储与分布式限流的**默认后端**；不可达自动降级内存+DB |
@@ -30,6 +30,7 @@
 | 变量 | 必填 | 默认/示例 | 说明 |
 | --- | --- | --- | --- |
 | `DATABASE_URL` | ✅ | `postgres://o2server:password@localhost:5432/oa4rust` | PostgreSQL 连接串 |
+| `DB_DIALECT` | 否 | `postgres` | SQL 方言选择：`postgres`（默认）/ `mysql`（经 `SqlDialect` + PG→MySQL rewriter 兼容，见 `shared/src/db/dialect.rs`） |
 | `REDIS_URL` | 推荐 | `redis://127.0.0.1:6379` | 会话/限流/PubSub；不可达自动降级 |
 | `RUST_ENV` | ✅（生产） | `development` | `production` 时强制校验认证配置 |
 | `APP_PUBLIC_ORIGIN` | ✅ | `http://localhost:3000` | **必须等于浏览器请求 API 的 origin**；不一致 → CSRF 403。Vite 代理开发时为 `http://localhost:5173` |
@@ -48,7 +49,7 @@
 | postgres | postgres:14 | 5432 | 主库（o2server/password，库 oa4rust，带健康检查） |
 | mysql | mysql:8 | 3306 | 多数据库兼容测试 |
 | redis | redis:7-alpine | 6379 | 会话/限流 |
-| o2server | o2oa/o2server:latest | 18080→80 | **legacy Java 基准**（行为对齐 / parity 基准；启动期最长 300s） |
+| o2server | o2oa/o2server:latest | 18080→80 | O2OA v9 行为对齐基准容器（开发期 parity 测试可选依赖；启动期最长 300s） |
 
 ```bash
 cd oa4rust/backend && docker compose up -d
@@ -56,7 +57,7 @@ cd oa4rust/backend && docker compose up -d
 
 ## 4. 数据库迁移
 
-- 目录：`oa4rust/backend/migrations/`（206 个文件，编号 001–108 + `archive/`）。
+- 目录：`oa4rust/backend/migrations/`（顶层 205 个 `.sql`，编号 001–108 + `archive/` 归档）。
 - **启动自动幂等执行**，无需手工 SQL；`--migrate-only` 供流水线单独跑迁移。
 - 全量迁移后约 **379 张表**（parity 全量测试的实测基准）。
 
@@ -85,7 +86,7 @@ cd oa4rust/backend && docker compose up -d
 
 | 文件 | 用途 |
 | --- | --- |
-| `nginx.conf` | 全量反代模板（Rust/Java 按模块分流） |
-| `nginx-auth-routes.conf` / `nginx-auth-routes-rust-drill.conf` | auth 模块路由切换（现网/演练版） |
-| `toggle_module.sh` | 模块级切流脚本 |
-| `auth-rollback-drill.sh` | 回滚演练脚本（RTO 5 分钟验证） |
+| `nginx.conf` | nginx 反代模板（按需自改） |
+| `nginx-auth-routes.conf` / `nginx-auth-routes-rust-drill.conf` | 早期灰度方案遗留（历史归档） |
+| `toggle_module.sh` | 早期模块切流脚本（无旧系统可切，历史归档） |
+| `auth-rollback-drill.sh` | auth Cookie 功能矩阵演练脚本（功能回归用途，与旧系统无关） |
