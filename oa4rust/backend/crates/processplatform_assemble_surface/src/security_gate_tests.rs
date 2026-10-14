@@ -134,4 +134,541 @@ mod security_gate_tests {
             );
         }
     }
+
+    // ── 四轮第十批 T1：applicationdict 深度路径的别名写族 ──────────────────────
+    //
+    // 16 条注册点：`…/data/mockputtopost` 8 档全注册在 POST，
+    // `…/data/mockdeletetoget` 只有 4 参那档注册在 DELETE、其余 7 档注册在 **GET**——
+    // GET 既不过 csrf_middleware 也不过 requires_admin（两者只认 POST/PUT/PATCH/DELETE），
+    // 中间件层两道门都够不着，handler 自己是唯一一道门。而这些 handler 原先**既不取会话、
+    // 也不校任何门**，体内直接 `UPDATE PP_E_APPLICATIONDICT` / `DELETE FROM PP_E_APPLICATIONDICT`
+    // （后者同一条删两次）。系统级元数据 → 按本 crate R4-7 口径收 admin。
+
+    /// handler 体内 SQL 的 `$1` 取的是**首段** `applicationDictFlag`，不是末尾的 `data` 段，
+    /// 所以 DB 臂要落库必须把唯一标签写进 flag（见 `dict_uri_at`）。
+    fn dict_uri_at(flag: &str, arity: usize, suffix: &str) -> String {
+        let mut u = format!(
+            "/api/processplatform/assemble/surface/applicationdict/{flag}/application/r48-app"
+        );
+        for i in 0..arity {
+            u.push_str(&format!("/r48-p{i}"));
+        }
+        u.push_str("/data/");
+        u.push_str(suffix);
+        u
+    }
+
+    fn dict_uri(arity: usize, suffix: &str) -> String {
+        dict_uri_at("r48-dict", arity, suffix)
+    }
+
+    /// 与 `routes.rs` 注册面逐格对应：8 把 POST 别名 + 7 把 GET 删除别名 + 1 把 DELETE 删除别名。
+    fn dict_alias_routes() -> Vec<(Method, String)> {
+        let mut v: Vec<(Method, String)> = (1..=8)
+            .map(|k| (Method::POST, dict_uri(k, "mockputtopost")))
+            .collect();
+        for k in 1..=8 {
+            let m = if k == 4 { Method::DELETE } else { Method::GET };
+            v.push((m, dict_uri(k, "mockdeletetoget")));
+        }
+        assert_eq!(v.len(), 16, "本族注册点恰好 16 条，多一条/少一条都要先红在这里");
+        v
+    }
+
+    async fn call_dict_route(method: Method, uri: &str, person: Option<&str>) -> StatusCode {
+        let mut app = app();
+        if let Some(p) = person {
+            app = app.layer(axum::Extension(shared::testing::test_session(p)));
+        }
+        app.oneshot(
+            Request::builder()
+                .uri(uri)
+                .method(method.clone())
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap()
+        .status()
+    }
+
+    /// 无会话必须 401，且发生在 `pool.get()` 之前——本支不碰库，离线可证。
+    /// 16 条注册点逐条点名（少一条就是门只盖住了部分入口）。
+    #[tokio::test]
+    async fn surface_applicationdict_alias_writes_reject_anonymous() {
+        let mut bad: Vec<String> = Vec::new();
+        for (method, uri) in dict_alias_routes() {
+            let status = call_dict_route(method.clone(), &uri, None).await;
+            if status != StatusCode::UNAUTHORIZED {
+                bad.push(format!("{method} {uri} -> {status}"));
+            }
+        }
+        assert!(
+            bad.is_empty(),
+            "16 把别名写必须全部无会话 401，异常格：{bad:?}"
+        );
+    }
+
+    /// 有效会话但非 admin 必须 403。用一个绝不会被授予角色的唯一身份，
+    /// 因此该断言与测试库里是否恰好有 admin 数据无关；`is_admin` 无库也 fail-closed。
+    #[tokio::test]
+    async fn surface_applicationdict_alias_writes_forbidden_for_non_admin() {
+        let mut bad: Vec<String> = Vec::new();
+        for (method, uri) in dict_alias_routes() {
+            let status =
+                call_dict_route(method.clone(), &uri, Some("r48-plain-person-no-role")).await;
+            if status != StatusCode::FORBIDDEN {
+                bad.push(format!("{method} {uri} -> {status}"));
+            }
+        }
+        assert!(
+            bad.is_empty(),
+            "16 把别名写必须全部非 admin 403，异常格：{bad:?}"
+        );
+    }
+
+    /// 按 `is_admin` 的真实口径幂等造一个 admin，返回其会话人 unique_id。
+    async fn seed_admin(pool: &deadpool_postgres::Pool, tag: &str) -> String {
+        let c = pool.get().await.unwrap();
+        let person = format!("u-r48s-admin-{tag}");
+        c.execute(
+            "INSERT INTO auth_role (id, name, disable) VALUES ($1, 'admin', false) ON CONFLICT (id) DO NOTHING",
+            &[&format!("r48s-role-{tag}")],
+        )
+        .await
+        .unwrap();
+        c.execute(
+            "INSERT INTO auth_person (id, unique_id, name, password_hash) VALUES ($1, $1, 'r48s admin', 'x') ON CONFLICT (id) DO NOTHING",
+            &[&person],
+        )
+        .await
+        .unwrap();
+        c.execute(
+            "INSERT INTO auth_person_role (person_id, role_id, unit_id) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING",
+            &[&person, &format!("r48s-role-{tag}"), &format!("r48s-unit-{tag}")],
+        )
+        .await
+        .unwrap();
+        person
+    }
+
+    async fn dict_row_count(pool: &deadpool_postgres::Pool, xid: &str) -> i64 {
+        let c = pool.get().await.unwrap();
+        c.query_one(
+            "SELECT COUNT(*) AS c FROM \"pp_e_applicationdict\" WHERE \"xid\" = $1",
+            &[&xid.to_string()],
+        )
+        .await
+        .unwrap()
+        .get::<_, i64>("c")
+    }
+
+    /// 本臂用到的三列都按迁移 032 的口径存在：`id` 是 `TEXT PRIMARY KEY`（NOT NULL），
+    /// `xid`/`xupdateTime` 是 TEXT。表已由迁移建好时 CREATE 是无操作，
+    /// 只有裸库才走这条兜底，两种情况下 INSERT 都能成功。
+    async fn seed_dict_row(pool: &deadpool_postgres::Pool, xid: &str, update_time: &str) {
+        let c = pool.get().await.unwrap();
+        c.execute(
+            "CREATE TABLE IF NOT EXISTS \"pp_e_applicationdict\" \
+             (\"id\" TEXT PRIMARY KEY, \"xid\" TEXT, \"xcreateTime\" TEXT, \"xupdateTime\" TEXT)",
+            &[],
+        )
+        .await
+        .unwrap();
+        c.execute(
+            "INSERT INTO \"pp_e_applicationdict\" (\"id\", \"xid\", \"xupdateTime\") VALUES ($1, $2, $3)",
+            &[&format!("r48s-row-{xid}"), &xid.to_string(), &update_time.to_string()],
+        )
+        .await
+        .unwrap();
+    }
+
+    async fn dict_update_time(pool: &deadpool_postgres::Pool, xid: &str) -> Option<String> {
+        let c = pool.get().await.unwrap();
+        c.query_opt(
+            "SELECT \"xupdateTime\" FROM \"pp_e_applicationdict\" WHERE \"xid\" = $1",
+            &[&xid.to_string()],
+        )
+        .await
+        .unwrap()
+        .and_then(|row| row.get::<_, Option<String>>("xupdateTime"))
+    }
+
+    /// DB 臂（行为差）：闯入者按 DELETE 档解除必须 403 **且行还在**；
+    /// admin 才真的删掉。只看状态码不够——本族 handler 未命中行时也回 200。
+    #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
+    async fn surface_applicationdict_delete_alias_only_admin_lands() {
+        if !shared::testing::is_db_available().await {
+            eprintln!("skip: surface_applicationdict_delete_alias_only_admin_lands (no DATABASE_URL)");
+            return;
+        }
+        let pool = shared::testing::test_pool();
+        let tag = uuid::Uuid::new_v4().simple().to_string();
+        let xid = format!("r48s-dict-{tag}");
+        seed_dict_row(&pool, &xid, "r48s-before").await;
+        // routes.rs 里 4 参那档的删除别名注册在 DELETE 方法上
+        let uri = dict_uri_at(&xid, 4, "mockdeletetoget");
+        let intruder = call_dict_route(Method::DELETE, &uri, Some("r48s-intruder-no-role")).await;
+        assert_eq!(
+            intruder,
+            StatusCode::FORBIDDEN,
+            "闯入者解除系统字典必须 403"
+        );
+        assert_eq!(
+            dict_row_count(&pool, &xid).await,
+            1,
+            "拒绝路径不得留下「行已被删」的证据"
+        );
+
+        let admin = seed_admin(&pool, &tag).await;
+        let ok = call_dict_route(Method::DELETE, &uri, Some(&admin)).await;
+        assert_eq!(
+            ok,
+            StatusCode::OK,
+            "admin 经 DELETE 档解除应放行（若 401/403 说明门夹死了放行侧）"
+        );
+        assert_eq!(
+            dict_row_count(&pool, &xid).await,
+            0,
+            "放行臂必须真的删掉那一行"
+        );
+    }
+
+    /// DB 臂（放行侧的行为差 + 一处**类型猜测被实测否证**的读数）：
+    /// admin 打 `mockputtopost` 必须放行**且 UPDATE 真的落库**——只看「不是 401/403」不够，
+    /// 本族 handler 未命中行时也回 200（`applicationdict not found`），那条路上 SQL 根本没执行。
+    ///
+    /// 我在写本臂前按「迁移 032 把 `xupdateTime` 建成 TEXT，`SET … = NOW()` 是 timestamp→text
+    /// 赋值、必报 42846 所以整族会 500」预测过缺陷，**实测否证**：PG 允许经 I/O 转换的赋值转换，
+    /// 落库成 `2026-10-14 16:32:23.456789+00` 这种文本时间戳。故全仓那 79 处同型写法不是
+    /// 「报错」缺陷，而是「TEXT 列被写进与会话/其它列不同构的时间文本」的语义分歧，
+    /// 归 §五 单独定标；此处只把读数钉在臂的输出里。
+    #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
+    async fn surface_applicationdict_put_alias_admin_write_lands() {
+        if !shared::testing::is_db_available().await {
+            eprintln!(
+                "skip: surface_applicationdict_put_alias_admin_write_lands (no DATABASE_URL)"
+            );
+            return;
+        }
+        let pool = shared::testing::test_pool();
+        let tag = uuid::Uuid::new_v4().simple().to_string();
+        let xid = format!("r48s-dict-{tag}");
+        let admin = seed_admin(&pool, &tag).await;
+        seed_dict_row(&pool, &xid, "r48s-before").await;
+
+        let uri = dict_uri_at(&xid, 1, "mockputtopost");
+        let status = call_dict_route(Method::POST, &uri, Some(&admin)).await;
+        assert_eq!(
+            status,
+            StatusCode::OK,
+            "admin 放行臂应命中已存在的字典行（{uri}）"
+        );
+        let stored = dict_update_time(&pool, &xid).await;
+        println!("mockputtopost 放行后 xupdateTime 落库读数：{stored:?}");
+        assert_ne!(
+            stored.as_deref(),
+            Some("r48s-before"),
+            "SQL 未执行也会回 200（not found 分支），落库才是放行侧的真凭据"
+        );
+
+        // 其余 7 档同样必须放行：门若把某一档夹死，本臂负责变红
+        let mut bad: Vec<String> = Vec::new();
+        for k in 2..=8 {
+            let uri = dict_uri_at(&xid, k, "mockputtopost");
+            let status = call_dict_route(Method::POST, &uri, Some(&admin)).await;
+            if status == StatusCode::UNAUTHORIZED || status == StatusCode::FORBIDDEN {
+                bad.push(format!("{uri} -> {status}"));
+            }
+        }
+        assert!(bad.is_empty(), "admin 打 2..=8 档别名不得被门拒绝：{bad:?}");
+
+        pool.get()
+            .await
+            .unwrap()
+            .execute(
+                "DELETE FROM \"pp_e_applicationdict\" WHERE \"xid\" = $1",
+                &[&xid.to_string()],
+            )
+            .await
+            .unwrap();
+    }
+
+    // ══ 四轮 R4-10 第三批：`data/work/{id}` 的 mock* 别名族（18 把 handler / 45 条注册点）══
+    //
+    // 这一族原先**既不取会话、也不校归属**，体内直接
+    // `UPDATE PP_C_WORK SET "xupdateTime" = NOW() WHERE xid = $1` /
+    // `DELETE FROM PP_C_WORK WHERE xid = $1`（删除族同一条 SQL 执行两次）。
+    // 于是未认证请求按 work ID 就能物理删除流程实例或伪造其更新时间。
+    // 45 条注册点里有 10 条挂在 **GET** 上——csrf_middleware 与 requires_admin
+    // 都只认 POST/PUT/PATCH/DELETE，中间件两道门对这 10 条同时够不着。
+    // 门与本 crate 已定的口径同锁（`service_work_id_touch` 用的那两把）：
+    // 无会话 401（先于 `pool.get()`，离线可证）；有会话先读 `"xcreatorPerson"` 再校归属，
+    // 归属非空 → 本人或 admin，归属为空/行不存在 → 只允许 admin。
+    //
+    /// 把注册模板里的 `{id}` 换成实际 xid、`{pathN}` 换成固定哨兵段。
+    /// handler 体内 SQL 的 `$1` 绑的是 `Path((id, _path0, …))` 的**首段** `id`，
+    /// 所以 DB 臂要命中行必须把 xid 写在 `{id}` 的位置上。
+    fn work_uri_at(xid: &str, tpl: &str) -> String {
+        let mut u = tpl.replace("{id}", xid);
+        for i in 0..8usize {
+            u = u.replace(&format!("{{path{i}}}"), &format!("r49-p{i}"));
+        }
+        assert!(!u.contains('{') && !u.contains('}'), "模板残留未替换：{u}");
+        u
+    }
+
+    /// 与 `routes.rs` 注册面逐格对应（下表由 routes.rs 机器枚举生成，45 条）。
+    fn work_alias_routes() -> Vec<(Method, &'static str)> {
+        let v: Vec<(Method, &'static str)> = vec![
+            // ← data_work_id_mockdeletetoget
+            (Method::GET, "/api/processplatform/assemble/surface/data/work/{id}/mockdeletetoget"),
+            (Method::POST, "/api/processplatform/assemble/surface/data/work/mockdeletetoget/{id}"),
+            // ← data_work_id_mockputtopost
+            (Method::POST, "/api/processplatform/assemble/surface/data/work/{id}/mockputtopost"),
+            (Method::GET, "/api/processplatform/assemble/surface/data/work/mockputtopost/{id}"),
+            // ← data_work_id_path0_mockdeletetoget
+            (Method::DELETE, "/api/processplatform/assemble/surface/data/work/{id}/{path0}"),
+            (Method::GET, "/api/processplatform/assemble/surface/data/work/{id}/{path0}/mockdeletetoget"),
+            // ← data_work_id_path0_mockputtopost
+            (Method::POST, "/api/processplatform/assemble/surface/data/work/{id}/{path0}"),
+            (Method::PUT, "/api/processplatform/assemble/surface/data/work/{id}/{path0}"),
+            (Method::POST, "/api/processplatform/assemble/surface/data/work/{id}/{path0}/mockputtopost"),
+            // ← data_work_id_path0_path1_mockdeletetoget
+            (Method::DELETE, "/api/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}"),
+            (Method::GET, "/api/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/mockdeletetoget"),
+            // ← data_work_id_path0_path1_mockputtopost
+            (Method::POST, "/api/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}"),
+            (Method::PUT, "/api/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}"),
+            (Method::PUT, "/api/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/mockputtopost"),
+            (Method::POST, "/api/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/mockputtopost"),
+            // ← data_work_id_path0_path1_path2_mockdeletetoget
+            (Method::DELETE, "/api/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}"),
+            (Method::GET, "/api/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/mockdeletetoget"),
+            // ← data_work_id_path0_path1_path2_mockputtopost
+            (Method::POST, "/api/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}"),
+            (Method::PUT, "/api/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}"),
+            (Method::POST, "/api/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/mockputtopost"),
+            // ← data_work_id_path0_path1_path2_path3_mockdeletetoget
+            (Method::DELETE, "/api/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}"),
+            (Method::GET, "/api/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}/mockdeletetoget"),
+            // ← data_work_id_path0_path1_path2_path3_mockputtopost
+            (Method::POST, "/api/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}"),
+            (Method::PUT, "/api/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}"),
+            (Method::POST, "/api/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}/mockputtopost"),
+            // ← data_work_id_path0_path1_path2_path3_path4_mockdeletetoget
+            (Method::DELETE, "/api/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}/{path4}"),
+            (Method::GET, "/api/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/mockdeletetoget"),
+            // ← data_work_id_path0_path1_path2_path3_path4_mockputtopost
+            (Method::POST, "/api/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}/{path4}"),
+            (Method::PUT, "/api/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}/{path4}"),
+            (Method::POST, "/api/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/mockputtopost"),
+            // ← data_work_id_path0_path1_path2_path3_path4_path5_mockdeletetoget
+            (Method::DELETE, "/api/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}"),
+            (Method::GET, "/api/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/mockdeletetoget"),
+            // ← data_work_id_path0_path1_path2_path3_path4_path5_mockputtopost
+            (Method::POST, "/api/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}"),
+            (Method::PUT, "/api/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}"),
+            (Method::POST, "/api/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/mockputtopost"),
+            // ← data_work_id_path0_path1_path2_path3_path4_path5_path6_mockdeletetoget
+            (Method::DELETE, "/api/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}"),
+            (Method::GET, "/api/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}/mockdeletetoget"),
+            // ← data_work_id_path0_path1_path2_path3_path4_path5_path6_mockputtopost
+            (Method::POST, "/api/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}"),
+            (Method::PUT, "/api/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}"),
+            (Method::POST, "/api/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}/mockputtopost"),
+            // ← data_work_id_path0_path1_path2_path3_path4_path5_path6_path7_mockdeletetoget
+            (Method::DELETE, "/api/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}/{path7}"),
+            (Method::GET, "/api/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}/{path7}/mockdeletetoget"),
+            // ← data_work_id_path0_path1_path2_path3_path4_path5_path6_path7_mockputtopost
+            (Method::POST, "/api/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}/{path7}"),
+            (Method::PUT, "/api/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}/{path7}"),
+            (Method::POST, "/api/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}/{path7}/mockputtopost"),
+        ];
+        assert_eq!(
+            v.len(),
+            45,
+            "本族注册点恰好 45 条（18 把 handler），多一条/少一条都要先红在这里"
+        );
+        v
+    }
+
+    async fn call_work_as(xid: &str, method: Method, tpl: &str, person: Option<&str>) -> StatusCode {
+        let uri = work_uri_at(xid, tpl);
+        let mut app = app();
+        if let Some(p) = person {
+            app = app.layer(axum::Extension(shared::testing::test_session(p)));
+        }
+        app.oneshot(
+            Request::builder()
+                .uri(&uri)
+                .method(method.clone())
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap()
+        .status()
+    }
+
+    /// 无会话必须 401，且发生在 `pool.get()` 之前——本支不碰库，离线可证。
+    /// 45 条注册点逐条点名（少一条就是门只盖住了部分入口）。
+    #[tokio::test]
+    async fn surface_data_work_alias_writes_reject_anonymous() {
+        let mut bad: Vec<String> = Vec::new();
+        for (method, tpl) in work_alias_routes() {
+            let status = call_work_as("r49-anon-target", method.clone(), tpl, None).await;
+            if status != StatusCode::UNAUTHORIZED {
+                bad.push(format!("{method} {tpl} -> {status}"));
+            }
+        }
+        assert!(
+            bad.is_empty(),
+            "45 把 data/work 别名写必须全部无会话 401，异常格：{bad:?}"
+        );
+    }
+
+    /// 造一行 `pp_c_work`：`id` 是 TEXT PRIMARY KEY（NOT NULL），`xid`/`xcreatorPerson`/
+    /// `xupdateTime` 均为 TEXT（迁移 032 口径）。表已存在时 CREATE 是无操作，裸库才走兜底；
+    /// `creator` 传空串即造「空归属」行。
+    async fn seed_work_row(pool: &deadpool_postgres::Pool, xid: &str, creator: &str) {
+        let c = pool.get().await.unwrap();
+        c.execute(
+            "CREATE TABLE IF NOT EXISTS \"pp_c_work\" (\"id\" TEXT PRIMARY KEY, \"xid\" TEXT, \
+             \"xcreatorPerson\" TEXT, \"xcreateTime\" TEXT, \"xupdateTime\" TEXT)",
+            &[],
+        )
+        .await
+        .unwrap();
+        c.execute(
+            "INSERT INTO \"pp_c_work\" (\"id\", \"xid\", \"xcreatorPerson\", \"xupdateTime\") \
+             VALUES ($1, $1, $2, 'r49-before') ON CONFLICT (\"id\") DO UPDATE SET \
+             \"xcreatorPerson\" = EXCLUDED.\"xcreatorPerson\", \"xupdateTime\" = 'r49-before'",
+            &[&xid.to_string(), &creator.to_string()],
+        )
+        .await
+        .unwrap();
+    }
+
+    /// 返回该 work 行的 `xupdateTime`；行不存在 → None。
+    async fn work_update_time(pool: &deadpool_postgres::Pool, xid: &str) -> Option<String> {
+        let c = pool.get().await.unwrap();
+        c.query_opt(
+            "SELECT \"xupdateTime\" AS u FROM pp_c_work WHERE xid = $1",
+            &[&xid.to_string()],
+        )
+        .await
+        .unwrap()
+        .and_then(|row| row.get::<_, Option<String>>("u"))
+    }
+
+    async fn delete_work_row(pool: &deadpool_postgres::Pool, xid: &str) {
+        let c = pool.get().await.unwrap();
+        c.execute("DELETE FROM pp_c_work WHERE xid = $1", &[&xid.to_string()])
+            .await
+            .unwrap();
+    }
+
+    const DEL_TPL: &str = "/api/processplatform/assemble/surface/data/work/{id}/mockdeletetoget";
+    const DEL_POST_TPL: &str =
+        "/api/processplatform/assemble/surface/data/work/mockdeletetoget/{id}";
+    const TOUCH_GET_TPL: &str =
+        "/api/processplatform/assemble/surface/data/work/mockputtopost/{id}";
+
+    /// 删除族（真洞本体：匿名可按 ID 物理删除流程实例）的四格：
+    /// ① 他人会话 403 且行必须还在；② 本人 200 且行确实被删；
+    /// ③ 空归属行不得被「人人可删」洗白——普通会话 403、admin 200；
+    /// ④ admin 逐一打 45 档不得出现 401/403（门夹死放行侧就是本批的回归）。
+    #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
+    async fn surface_data_work_delete_alias_owner_gate_lands() {
+        if !shared::testing::is_db_available().await {
+            eprintln!("skip: surface_data_work_delete_alias_owner_gate_lands (no DATABASE_URL)");
+            return;
+        }
+        let pool = shared::testing::test_pool();
+        let tag = uuid::Uuid::new_v4().simple().to_string();
+        let creator = format!("u-r49s-creator-{tag}");
+        let intruder = format!("u-r49s-intruder-{tag}");
+
+        let xid = format!("r49s-work-{tag}-own");
+        seed_work_row(&pool, &xid, &creator).await;
+        let s = call_work_as(&xid, Method::GET, DEL_TPL, Some(&intruder)).await;
+        assert_eq!(s, StatusCode::FORBIDDEN, "他人会话删他人 work 必须 403");
+        assert!(
+            work_update_time(&pool, &xid).await.is_some(),
+            "403 路径不得留下「行已被删」的证据"
+        );
+
+        // handler 未命中行时也回 200（error 分支），所以行数才是放行侧的真凭据
+        let s = call_work_as(&xid, Method::GET, DEL_TPL, Some(&creator)).await;
+        assert_eq!(s, StatusCode::OK, "本人删除应放行");
+        assert!(
+            work_update_time(&pool, &xid).await.is_none(),
+            "放行臂必须真的删掉那一行"
+        );
+
+        let orphan = format!("r49s-work-{tag}-orphan");
+        seed_work_row(&pool, &orphan, "").await;
+        let s = call_work_as(&orphan, Method::POST, DEL_POST_TPL, Some(&intruder)).await;
+        assert_eq!(
+            s,
+            StatusCode::FORBIDDEN,
+            "空归属 work 不得对普通会话开放删除"
+        );
+        let admin = seed_admin(&pool, &tag).await;
+        let s = call_work_as(&orphan, Method::GET, DEL_TPL, Some(&admin)).await;
+        assert_eq!(s, StatusCode::OK, "admin 删空归属 work 应放行");
+        assert!(work_update_time(&pool, &orphan).await.is_none());
+
+        let arity = format!("r49s-work-{tag}-arity");
+        seed_work_row(&pool, &arity, &creator).await;
+        let mut bad: Vec<String> = Vec::new();
+        for (method, tpl) in work_alias_routes() {
+            let status = call_work_as(&arity, method.clone(), tpl, Some(&admin)).await;
+            if status == StatusCode::UNAUTHORIZED || status == StatusCode::FORBIDDEN {
+                bad.push(format!("{method} {tpl} -> {status}"));
+            }
+        }
+        assert!(bad.is_empty(), "admin 打 45 档别名不得被门拒绝：{bad:?}");
+        delete_work_row(&pool, &arity).await;
+    }
+
+    /// touch 族（`UPDATE PP_C_WORK."xupdateTime"`）的归属门 + 落库行为差：
+    /// 他人 403 且时间戳不变，本人 200 且时间戳确实被改写。
+    #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
+    async fn surface_data_work_touch_alias_owner_write_lands() {
+        if !shared::testing::is_db_available().await {
+            eprintln!("skip: surface_data_work_touch_alias_owner_write_lands (no DATABASE_URL)");
+            return;
+        }
+        let pool = shared::testing::test_pool();
+        let tag = uuid::Uuid::new_v4().simple().to_string();
+        let creator = format!("u-r49s-creator-{tag}");
+        let intruder = format!("u-r49s-intruder-{tag}");
+        let xid = format!("r49s-work-{tag}-touch");
+        seed_work_row(&pool, &xid, &creator).await;
+
+        let s = call_work_as(&xid, Method::GET, TOUCH_GET_TPL, Some(&intruder)).await;
+        assert_eq!(s, StatusCode::FORBIDDEN, "他人会话 touch 他人 work 必须 403");
+        assert_eq!(
+            work_update_time(&pool, &xid).await.as_deref(),
+            Some("r49-before"),
+            "403 路径不得改写时间戳"
+        );
+
+        let s = call_work_as(&xid, Method::GET, TOUCH_GET_TPL, Some(&creator)).await;
+        assert_eq!(s, StatusCode::OK, "本人 touch 应放行");
+        let stored = work_update_time(&pool, &xid).await;
+        println!("work mockputtopost 放行后 xupdateTime 落库读数：{stored:?}");
+        assert_ne!(
+            stored.as_deref(),
+            Some("r49-before"),
+            "SQL 未执行也会回 200（not found 分支），落库才是放行侧的真凭据"
+        );
+        delete_work_row(&pool, &xid).await;
+    }
 }

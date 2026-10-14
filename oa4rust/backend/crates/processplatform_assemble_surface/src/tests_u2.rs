@@ -901,20 +901,40 @@ mod u2b_tests {
     #[tokio::test]
     async fn u2r_data_work_pathn_legacy_shape_extraction_contract() {
         // 鏂█ 500锛堣€岄潪 400/404锛夎瘉鏄庯細o2server 褰㈢姸璺敱瀛樺湪涓?N 鍏冪粍 Path 鎻愬彇鍣ㄥ尮閰嶃€?
+        // 四轮 R4-10：本族 8 格里 5 格是 mock* 别名写，现已加归属门。
+        // 门在 Path 提取之后、`pool.get()` 之前，所以「形状契约」仍成立，只是读数
+        // 从 500（无库时触库失败）换成 401（无会话被门拦）——两者都排除 400/404。
+        // 逐格点名期望码：别名格必须 401，只读格必须仍是 500。
         let base = "/api/processplatform/assemble/surface/data/work";
-        for (method, path) in [
-            ("GET", &format!("{base}/w-1/p0")),
-            ("GET", &format!("{base}/w-1/p0/p1/p2/p3")),
-            ("GET", &format!("{base}/w-1/p0/p1/p2/p3/p4/p5/p6/p7")),
-            ("GET", &format!("{base}/w-1/p0/mockdeletetoget")),
-            ("PUT", &format!("{base}/w-1/p0")),
-            ("PUT", &format!("{base}/w-1/p0/p1/p2")),
-            ("POST", &format!("{base}/w-1/p0/p1/mockputtopost")),
-            ("DELETE", &format!("{base}/w-1/p0/p1/p2")),
+        for (method, path, expect) in [
+            ("GET", &format!("{base}/w-1/p0"), StatusCode::INTERNAL_SERVER_ERROR),
+            (
+                "GET",
+                &format!("{base}/w-1/p0/p1/p2/p3"),
+                StatusCode::INTERNAL_SERVER_ERROR,
+            ),
+            (
+                "GET",
+                &format!("{base}/w-1/p0/p1/p2/p3/p4/p5/p6/p7"),
+                StatusCode::INTERNAL_SERVER_ERROR,
+            ),
+            ("GET", &format!("{base}/w-1/p0/mockdeletetoget"), StatusCode::UNAUTHORIZED),
+            ("PUT", &format!("{base}/w-1/p0"), StatusCode::UNAUTHORIZED),
+            ("PUT", &format!("{base}/w-1/p0/p1/p2"), StatusCode::UNAUTHORIZED),
+            (
+                "POST",
+                &format!("{base}/w-1/p0/p1/mockputtopost"),
+                StatusCode::UNAUTHORIZED,
+            ),
+            (
+                "DELETE",
+                &format!("{base}/w-1/p0/p1/p2"),
+                StatusCode::UNAUTHORIZED,
+            ),
         ] {
             assert_eq!(
                 status_of(method, path).await,
-                StatusCode::INTERNAL_SERVER_ERROR,
+                expect,
                 "work pathN tuple extraction failed: {path}"
             );
         }

@@ -56,6 +56,28 @@ async fn require_actor_opt(
     }
 }
 
+/// 第四轮 R4-10：`data/work/{id}` 的 mock* 别名族（18 把）在**无会话**条件下
+/// 物理删除 / touch 流程实例 PP_C_WORK。口径与正式路由同锁（§五 统一修法）：
+/// 无会话在任何 SQL 之前 401（离线可证）；有会话先按 xid 读发起人再校归属——
+/// 归属非空 → 本人或 admin，归属为空或行不存在 → 只允许 admin。
+async fn u4_require_work_actor(
+    pool: &Pool,
+    session: Option<Extension<shared::session::Session>>,
+    id: &str,
+) -> Result<(), AppError> {
+    let session = u4_require_session(session)?;
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let owner = client
+        .query_opt(
+            "SELECT \"xcreatorPerson\" FROM PP_C_WORK WHERE xid = $1",
+            &[&id.to_string()],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?
+        .map(|r| r.get::<_, Option<String>>("xcreatorPerson").unwrap_or_default());
+    require_actor_opt(pool, &session, owner.as_deref()).await
+}
+
 #[derive(Debug, Deserialize)]
 pub struct CreateSurfaceRequest {
     pub name: Option<String>,
@@ -1286,12 +1308,17 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
 #[allow(non_snake_case)]
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_data_mockdeletetoget(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((applicationDictFlag, _applicationFlag, _path0)): axum::extract::Path<(
         String,
         String,
         String,
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 四轮第十批：系统级元数据 PP_E_APPLICATIONDICT 的别名写族。mockdeletetoget 有 7 档注册在
+    // GET 上，csrf_middleware 与 requires_admin 两道中间件都只认写方法，够不着这条路；
+    // handler 自己是唯一一道门，故与本 crate R4-7（lib.rs:750）同口径收 admin。
+    require_admin_opt(&pool.0, session.as_ref().map(|Extension(s)| s)).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -1356,12 +1383,17 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
 #[allow(non_snake_case)]
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_data_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((applicationDictFlag, _applicationFlag, _path0)): axum::extract::Path<(
         String,
         String,
         String,
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 四轮第十批：系统级元数据 PP_E_APPLICATIONDICT 的别名写族。mockdeletetoget 有 7 档注册在
+    // GET 上，csrf_middleware 与 requires_admin 两道中间件都只认写方法，够不着这条路；
+    // handler 自己是唯一一道门，故与本 crate R4-7（lib.rs:750）同口径收 admin。
+    require_admin_opt(&pool.0, session.as_ref().map(|Extension(s)| s)).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -1456,8 +1488,13 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
 #[allow(non_snake_case)]
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_data_mockdeletetoget(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((applicationDictFlag, _applicationFlag, _path0, _path1)): axum::extract::Path<(String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 四轮第十批：系统级元数据 PP_E_APPLICATIONDICT 的别名写族。mockdeletetoget 有 7 档注册在
+    // GET 上，csrf_middleware 与 requires_admin 两道中间件都只认写方法，够不着这条路；
+    // handler 自己是唯一一道门，故与本 crate R4-7（lib.rs:750）同口径收 admin。
+    require_admin_opt(&pool.0, session.as_ref().map(|Extension(s)| s)).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -1522,8 +1559,13 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
 #[allow(non_snake_case)]
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_data_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((applicationDictFlag, _applicationFlag, _path0, _path1)): axum::extract::Path<(String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 四轮第十批：系统级元数据 PP_E_APPLICATIONDICT 的别名写族。mockdeletetoget 有 7 档注册在
+    // GET 上，csrf_middleware 与 requires_admin 两道中间件都只认写方法，够不着这条路；
+    // handler 自己是唯一一道门，故与本 crate R4-7（lib.rs:750）同口径收 admin。
+    require_admin_opt(&pool.0, session.as_ref().map(|Extension(s)| s)).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -1618,8 +1660,13 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
 #[allow(non_snake_case)]
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_data_mockdeletetoget(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((applicationDictFlag, _applicationFlag, _path0, _path1, _path2)): axum::extract::Path<(String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 四轮第十批：系统级元数据 PP_E_APPLICATIONDICT 的别名写族。mockdeletetoget 有 7 档注册在
+    // GET 上，csrf_middleware 与 requires_admin 两道中间件都只认写方法，够不着这条路；
+    // handler 自己是唯一一道门，故与本 crate R4-7（lib.rs:750）同口径收 admin。
+    require_admin_opt(&pool.0, session.as_ref().map(|Extension(s)| s)).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -1684,8 +1731,13 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
 #[allow(non_snake_case)]
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_data_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((applicationDictFlag, _applicationFlag, _path0, _path1, _path2)): axum::extract::Path<(String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 四轮第十批：系统级元数据 PP_E_APPLICATIONDICT 的别名写族。mockdeletetoget 有 7 档注册在
+    // GET 上，csrf_middleware 与 requires_admin 两道中间件都只认写方法，够不着这条路；
+    // handler 自己是唯一一道门，故与本 crate R4-7（lib.rs:750）同口径收 admin。
+    require_admin_opt(&pool.0, session.as_ref().map(|Extension(s)| s)).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -1780,8 +1832,13 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
 #[allow(non_snake_case)]
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_data_mockdeletetoget(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((applicationDictFlag, _applicationFlag, _path0, _path1, _path2, _path3)): axum::extract::Path<(String, String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 四轮第十批：系统级元数据 PP_E_APPLICATIONDICT 的别名写族。mockdeletetoget 有 7 档注册在
+    // GET 上，csrf_middleware 与 requires_admin 两道中间件都只认写方法，够不着这条路；
+    // handler 自己是唯一一道门，故与本 crate R4-7（lib.rs:750）同口径收 admin。
+    require_admin_opt(&pool.0, session.as_ref().map(|Extension(s)| s)).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -1846,8 +1903,13 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
 #[allow(non_snake_case)]
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_data_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((applicationDictFlag, _applicationFlag, _path0, _path1, _path2, _path3)): axum::extract::Path<(String, String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 四轮第十批：系统级元数据 PP_E_APPLICATIONDICT 的别名写族。mockdeletetoget 有 7 档注册在
+    // GET 上，csrf_middleware 与 requires_admin 两道中间件都只认写方法，够不着这条路；
+    // handler 自己是唯一一道门，故与本 crate R4-7（lib.rs:750）同口径收 admin。
+    require_admin_opt(&pool.0, session.as_ref().map(|Extension(s)| s)).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -1950,6 +2012,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
 #[allow(non_snake_case)]
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_data_mockdeletetoget(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((
         applicationDictFlag,
         _applicationFlag,
@@ -1960,6 +2023,10 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
         _path4,
     )): axum::extract::Path<(String, String, String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 四轮第十批：系统级元数据 PP_E_APPLICATIONDICT 的别名写族。mockdeletetoget 有 7 档注册在
+    // GET 上，csrf_middleware 与 requires_admin 两道中间件都只认写方法，够不着这条路；
+    // handler 自己是唯一一道门，故与本 crate R4-7（lib.rs:750）同口径收 admin。
+    require_admin_opt(&pool.0, session.as_ref().map(|Extension(s)| s)).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -2024,6 +2091,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
 #[allow(non_snake_case)]
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_data_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((
         applicationDictFlag,
         _applicationFlag,
@@ -2034,6 +2102,10 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
         _path4,
     )): axum::extract::Path<(String, String, String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 四轮第十批：系统级元数据 PP_E_APPLICATIONDICT 的别名写族。mockdeletetoget 有 7 档注册在
+    // GET 上，csrf_middleware 与 requires_admin 两道中间件都只认写方法，够不着这条路；
+    // handler 自己是唯一一道门，故与本 crate R4-7（lib.rs:750）同口径收 admin。
+    require_admin_opt(&pool.0, session.as_ref().map(|Extension(s)| s)).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -2146,6 +2218,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
 #[allow(non_snake_case)]
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_path5_data_mockdeletetoget(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((
         applicationDictFlag,
         _applicationFlag,
@@ -2166,6 +2239,10 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
         String,
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 四轮第十批：系统级元数据 PP_E_APPLICATIONDICT 的别名写族。mockdeletetoget 有 7 档注册在
+    // GET 上，csrf_middleware 与 requires_admin 两道中间件都只认写方法，够不着这条路；
+    // handler 自己是唯一一道门，故与本 crate R4-7（lib.rs:750）同口径收 admin。
+    require_admin_opt(&pool.0, session.as_ref().map(|Extension(s)| s)).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -2230,6 +2307,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
 #[allow(non_snake_case)]
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_path5_data_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((
         applicationDictFlag,
         _applicationFlag,
@@ -2250,6 +2328,10 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
         String,
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 四轮第十批：系统级元数据 PP_E_APPLICATIONDICT 的别名写族。mockdeletetoget 有 7 档注册在
+    // GET 上，csrf_middleware 与 requires_admin 两道中间件都只认写方法，够不着这条路；
+    // handler 自己是唯一一道门，故与本 crate R4-7（lib.rs:750）同口径收 admin。
+    require_admin_opt(&pool.0, session.as_ref().map(|Extension(s)| s)).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -2364,6 +2446,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
 #[allow(non_snake_case)]
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_path5_path6_data_mockdeletetoget(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((
         applicationDictFlag,
         _applicationFlag,
@@ -2386,6 +2469,10 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
         String,
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 四轮第十批：系统级元数据 PP_E_APPLICATIONDICT 的别名写族。mockdeletetoget 有 7 档注册在
+    // GET 上，csrf_middleware 与 requires_admin 两道中间件都只认写方法，够不着这条路；
+    // handler 自己是唯一一道门，故与本 crate R4-7（lib.rs:750）同口径收 admin。
+    require_admin_opt(&pool.0, session.as_ref().map(|Extension(s)| s)).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -2450,6 +2537,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
 #[allow(non_snake_case)]
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_path5_path6_data_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((
         applicationDictFlag,
         _applicationFlag,
@@ -2472,6 +2560,10 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
         String,
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 四轮第十批：系统级元数据 PP_E_APPLICATIONDICT 的别名写族。mockdeletetoget 有 7 档注册在
+    // GET 上，csrf_middleware 与 requires_admin 两道中间件都只认写方法，够不着这条路；
+    // handler 自己是唯一一道门，故与本 crate R4-7（lib.rs:750）同口径收 admin。
+    require_admin_opt(&pool.0, session.as_ref().map(|Extension(s)| s)).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -2588,6 +2680,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
 #[allow(non_snake_case)]
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_path5_path6_path7_data_mockdeletetoget(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((
         applicationDictFlag,
         _applicationFlag,
@@ -2612,6 +2705,10 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
         String,
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 四轮第十批：系统级元数据 PP_E_APPLICATIONDICT 的别名写族。mockdeletetoget 有 7 档注册在
+    // GET 上，csrf_middleware 与 requires_admin 两道中间件都只认写方法，够不着这条路；
+    // handler 自己是唯一一道门，故与本 crate R4-7（lib.rs:750）同口径收 admin。
+    require_admin_opt(&pool.0, session.as_ref().map(|Extension(s)| s)).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -2676,6 +2773,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
 #[allow(non_snake_case)]
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_path5_path6_path7_data_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((
         applicationDictFlag,
         _applicationFlag,
@@ -2700,6 +2798,10 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
         String,
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 四轮第十批：系统级元数据 PP_E_APPLICATIONDICT 的别名写族。mockdeletetoget 有 7 档注册在
+    // GET 上，csrf_middleware 与 requires_admin 两道中间件都只认写方法，够不着这条路；
+    // handler 自己是唯一一道门，故与本 crate R4-7（lib.rs:750）同口径收 admin。
+    require_admin_opt(&pool.0, session.as_ref().map(|Extension(s)| s)).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -4138,7 +4240,9 @@ pub async fn data_work_id(
 pub async fn data_work_id_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_work_actor(&pool.0, session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM PP_C_WORK WHERE xid = $1", &[&id])
@@ -4198,7 +4302,9 @@ pub async fn data_work_id_mockdeletetoget(
 pub async fn data_work_id_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_work_actor(&pool.0, session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -4302,7 +4408,9 @@ pub async fn data_work_id_path0(
 pub async fn data_work_id_path0_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path((id, _path0)): axum::extract::Path<(String, String)>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_work_actor(&pool.0, session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM PP_C_WORK WHERE xid = $1", &[&id])
@@ -4362,7 +4470,9 @@ pub async fn data_work_id_path0_mockdeletetoget(
 pub async fn data_work_id_path0_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path((id, _path0)): axum::extract::Path<(String, String)>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_work_actor(&pool.0, session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -4466,7 +4576,9 @@ pub async fn data_work_id_path0_path1(
 pub async fn data_work_id_path0_path1_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path((id, _path0, _path1)): axum::extract::Path<(String, String, String)>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_work_actor(&pool.0, session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM PP_C_WORK WHERE xid = $1", &[&id])
@@ -4526,7 +4638,9 @@ pub async fn data_work_id_path0_path1_mockdeletetoget(
 pub async fn data_work_id_path0_path1_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path((id, _path0, _path1)): axum::extract::Path<(String, String, String)>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_work_actor(&pool.0, session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -4640,7 +4754,9 @@ pub async fn data_work_id_path0_path1_path2_mockdeletetoget(
         String,
         String,
     )>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_work_actor(&pool.0, session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM PP_C_WORK WHERE xid = $1", &[&id])
@@ -4705,7 +4821,9 @@ pub async fn data_work_id_path0_path1_path2_mockputtopost(
         String,
         String,
     )>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_work_actor(&pool.0, session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -4821,7 +4939,9 @@ pub async fn data_work_id_path0_path1_path2_path3_mockdeletetoget(
         String,
         String,
     )>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_work_actor(&pool.0, session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM PP_C_WORK WHERE xid = $1", &[&id])
@@ -4887,7 +5007,9 @@ pub async fn data_work_id_path0_path1_path2_path3_mockputtopost(
         String,
         String,
     )>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_work_actor(&pool.0, session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -5005,7 +5127,9 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_mockdeletetoget(
         String,
         String,
     )>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_work_actor(&pool.0, session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM PP_C_WORK WHERE xid = $1", &[&id])
@@ -5072,7 +5196,9 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_mockputtopost(
         String,
         String,
     )>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_work_actor(&pool.0, session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -5180,7 +5306,9 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_mockdeletetoget(
     axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4, _path5)): axum::extract::Path<
         (String, String, String, String, String, String, String),
     >,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_work_actor(&pool.0, session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM PP_C_WORK WHERE xid = $1", &[&id])
@@ -5242,7 +5370,9 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_mockputtopost(
     axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4, _path5)): axum::extract::Path<
         (String, String, String, String, String, String, String),
     >,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_work_actor(&pool.0, session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -5346,7 +5476,9 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6(
 pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4, _path5, _path6)): axum::extract::Path<(String, String, String, String, String, String, String, String)>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_work_actor(&pool.0, session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM PP_C_WORK WHERE xid = $1", &[&id])
@@ -5406,7 +5538,9 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_mockdeleteto
 pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4, _path5, _path6)): axum::extract::Path<(String, String, String, String, String, String, String, String)>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_work_actor(&pool.0, session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -5510,7 +5644,9 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_path7(
 pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_path7_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4, _path5, _path6, _path7)): axum::extract::Path<(String, String, String, String, String, String, String, String, String)>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_work_actor(&pool.0, session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM PP_C_WORK WHERE xid = $1", &[&id])
@@ -5570,7 +5706,9 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_path7_mockde
 pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_path7_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4, _path5, _path6, _path7)): axum::extract::Path<(String, String, String, String, String, String, String, String, String)>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_work_actor(&pool.0, session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
