@@ -417,6 +417,24 @@ A4 开放问题：① F1 是否 o2server 侧本就以 job/document 创建者为�
 | 刀口自证改打在 **helper 层** | 同上 `:959-981` | 缺陷 14 那条自证扫的是 handler 本体，这一族漏量全在 helper 里，照旧写法扫不到东西（等于恒真）。新增 `DYNAMIC_TABLE_RE`，直接扫 `indexCrateFns` 的**全部函数体**：凡体内出现 `(UPDATE\|DELETE FROM\|INSERT INTO)\s+\{` 都必须被 `WRITE_SQL_RE` 判为写面，否则当场 throw 并逐处点名函数名。现读「14 个函数全部判为写面，0 处漏量」 |
 | 判据见证（正向 3 + helper 1 + 反向 3） | 同上 见证段 | 正向钉三条 GET 档必须进 GET 面（cms `appinfo` / `comment` / `viewfieldconfig` 的 `{id}/mockdeletetoget`）+ `soft_delete_by_id` 必须在间接写 SQL 名单；反向钉三条**不许**被拖进 GET 面（`data_document_id_mockdeletetoget` 有门走 `delete_doc_fields_base`、`appinfo_id_control` 真只读、organization `person/{flag}/mockdeletetoget` 已有门）——反向那一把同时兜住缺陷 21 切段与缺陷 22 放宽的合谋退化 |
 
+### 三.14 第十四批（cms 的 GET 动词别名写族 27 把加门 + 尺子缺陷 23，代码轴）
+
+第十三批浮出的那张名单在本批收口：27 把 handler 改动 = **22 把 `mockdeletetoget` 别名 + 2 把无门正档 +
+3 把非别名的 GET 写**；同批立起尺子缺陷 **23**。选题理由照第十三批那格的问句回答——这一族处在
+`csrf_middleware` 与 `requires_admin` 的**双盲区**（两道中间件只看方法，GET 一律放行），比 surface 那 79 条
+「已认证才能碰」的面更靠前。
+
+| 项 | 文件 | 内容 |
+| --- | --- | --- |
+| 宏 `$mockdel` 段收成与 `$del` 同一条路径（一处宏改动收 8 把） | `crates/cms_assemble_control/src/lib.rs:2943+`（`data_path_write_handlers!` 宏体） | 段签名补 `Extension<Session>`，体内改判为 `write_doc_field_path(&pool, &session, doc_id, rest.to_vec(), None, PathWriteMode::Remove)` ⇒ 8 把 `GET /api/data/document/{id}/{path0…path7}/mockdeletetoget` 与同宏 DELETE 档共用**文档写者门**。**返回体形状按第十三批那格先拍后改**：旧段删完立刻用带 `deleted_at IS NULL` 的回读，永远吐 `ActionResult::error("field not found")`（连成功也报没找到）；改后是 `{docId, fieldName, deleted:true}`。核对调用面——前端只在 `ProcessWork.vue` 的**注释**里提到 `mockdeletetoget`，`DocumentApp.vue` 仅按状态码 smoke 探测，openapi 契约是空 stub，parity 只断言路由存在 ⇒ 没有调用方在判那枚恒 error |
+| `soft_delete_by_id` 族 14 把别名 + 2 把正档补归属门 | 同上（`appinfo` / `categoryinfo` / `comment` / `file` / `fileinfo` / `form` / `script` / `view` / `viewcategory` / `viewfieldconfig` 各档） | 判据一律**照抄同表正档**：`x_cms_appinfo.manager`、`x_cms_comment.person_id`、`x_cms_fileinfo.upload_person`、`x_cms_file.creator`、`form` / `script` / `view` / `viewcategory` 的 `creator`；两张派生表走 SQL 门（`U2_CATEGORY_OWNER_SQL` 经所属应用 manager、`U2_VIEW_FIELD_OWNER_SQL` 经所属视图 creator）。`appinfo_erase_app_id`、`categoryinfo_erase_category_id` 两把**正档**同批补门（本批矩阵里那 2 条 R7→R5 就是它们）。两处旧体顺手改掉的分叉：`fileinfo_id_mockdeletetoget` / `form_id_mockdeletetoget` 原来是手写 `UPDATE … RETURNING *`，`file_flag_mockdeletetoget` 原来删完还按**不带** `deleted_at IS NULL` 的回读把整行（含 `contentBase64`）吐回去 |
+| 新增形状 helper，正档与别名不再各写一份三态 | 同上 `:503-522` | `soft_delete_after_gate(pool, gate, table, id, not_found)`：Forbidden→403、NotFound→200+error、Allowed→`soft_delete_by_id` 后回 `{deleted:true}`。**只作形状、不作证**：`gateEvidence` 对「拒绝型 helper」只做预筛（缺陷 20 那格），所以没把它的名字塞进 `GATE_RE`——塞了会把「传入 `Allowed` 的调用者」也一起洗成有门 |
+| admin 档 3 把 | 同上 | `templateform_id_mockdeletetoget`（删的是 **`x_cms_form_v2`**，与 `templateform_u2_delete` 的 `x_cms_templateform` **不是同一张表** ⇒ 按表定级 admin）、`design_appdict_id_mockdeletetoget`（旧体是一份 68 行手写副本，且回读恒 `appdict not found`，给不出可用响应体）、`permission_management_refresh_category_categoryId`（GET 语义 = 软删该分类下**全部**权限行，与 `…_refresh_all` 同档）。三把一律 `u2_require_admin`，另两把非别名写（`file_copy_u3`、`fileinfo_…_seqnumber`）按 owner / 文档写者档 |
+| 定拍**不修** 5 把 | 同上 | `document_id_view_count`（只加浏览计数）、`document_u2_commend` / `document_u2_uncommend` / `comment_commend_u3` / `comment_uncommend_u3`（只动**本人** `person_id` 行）——按 o2server 语义任意已认证用户都可为，故留在原档不动 |
+| 尺子缺陷 23：`GATE_RE` 词表缺 `u2_gate_by_sql` | `scripts/audit_write_gating.mjs:352` | 该词缺席 ⇒ 凡**直接**用 `u2_gate_by_sql` 定门的档一律读成「无门」。两个方向都错过：`DELETE /api/categoryinfo/{id}`、`DELETE /api/viewfieldconfig/{id}` 在 HEAD 上长期挂 **R6 假阳**（本批矩阵迁移逐条证实，见 §四 第十四批读数），本批新加门的 3 把别名又一度挂 **K 桶假阴**（只 relabel 成 K2 而不出列）。修法补词 + 3 正向 / 1 反向见证，反向钉 `GET /api/document/{id}/view/count` 不许被拖进 GET 面。另查清：全 crate 15 处 `u2_gate_by_sql` 命中**没有一处只在注释里**（`grep` 计数 0），故本轮不存在「词表被散文喂假绿」的第四条缺陷 |
+| 缺陷 22 见证重钉（**见证过时 ≠ 判据退化**） | 同上 见证段 | 原正向 3 条钉「必须挂 K 桶」，代码修好之后它们出列 ⇒ 尺子当场退 1、喊「缺口 2 处」。这不是判据被摘，是见证把**读数**钉死了：改成钉「必须仍带写证据」（`indirectWrites` 成员断言），并把已加门的 3 把转成反向见证（不许被误判成 GET 写面）。run L 那次红是有效信号，按「见证钉判据、不钉读数」返工 |
+
+
 ## 四、验证
 
 
@@ -917,6 +935,74 @@ cd oa4rust/backend && cargo test --lib -p <crate>
 - **本批未跑 cargo 族**：改动仍在尺子上，零产品码；T22b 顺手暴露的那批新档（cms 18 把 GET 别名写档）
   正是下一批代码轴的活，届时必须补 `--lib` 与 `-- --ignored` 读数。
 
+- **第十四批读数（代码轴 + 尺子轴，run K → L → M → N/P）**：
+  - 基线（HEAD，第十三批那把尺，run K 存档 `/d/tmp/b14_get_before.tsv` + `b14_matrix_head.tsv`）：
+    真落笔 **512**、GET 无门禁 **203**（K1 5 / K2 11 / K3 187）、只读挂写 766、间接写 221、间接门禁 217。
+  - run L（**只改产品码**，`/d/tmp/b14_L_ruler.log`）：尺子 **EXIT=1、缺口 2 处**——红因是缺陷 22 的见证过时
+    （`appinfo` / `comment` 两把别名修好后出了 K 桶），按上面那格重钉；同跑 GET 面 181、R6 合计 175（含写 152）、
+    真落笔 511、间接门禁 225、间接写 232。**这一跑不改尺子的读数是无效的**，只用来把「尺子轴」和「代码轴」分开。
+  - run M（代码 + 缺陷 23，`/d/tmp/b14_M_ruler.log`）＝ run N/P（注入全部复原后干净重跑）：
+    真落笔 **494**（R4 5 / R6 135 / R7 354）、GET 无门禁 **178**（K1 5 / K2 11 / K3 162）、只读挂写 **766 不变**、
+    间接门禁 **234**、间接写 **223**、`判据见证 … 缺口 0 处`、EXIT=0。
+    在册产物 15 张里 **6 张**变了（`write_routes_get_writes` / `write_routes_indirect_gated` /
+    `write_routes_indirect_writes` / `write_routes_macro_resolved` / `write_routes_matrix` / `write_routes_ungated`），
+    两次干净跑逐张 md5 全等（`/d/tmp/b14_md5_N1.txt` = `/d/tmp/b14_md5_P.txt`）。
+  - **两轴分开归因，逐条点名不是估的**：拿 `git show HEAD~1:…write_routes_matrix.tsv`（含表头 2 238 行 = 数据
+    2 237 条）与当前矩阵（同样 2 237 条）做键级
+    diff ⇒ **0 条消失、0 条新增、18 条迁移**，而真落笔正好 −18（512→494）。这 18 条里
+    **16 条 R6→R5 属尺子轴**——除 `categoryinfo_u2_delete`（本批只把它手写的 gate SQL 抽成
+    `U2_CATEGORY_OWNER_SQL`，门语义不变）之外，**15 条函数体逐字节未变**（`viewfieldconfig_u2_delete` /
+    `categoryinfo_u2_create` / `viewfieldconfig_u2_create` / `viewfieldconfig_u2_update` /
+    `categoryinfo_ext_content_save_u3` / `correlation_u2_doc_delete` / `fileinfo_u2_copy_to_doc` /
+    `fileinfo_u2_replace_to_doc` / `script_post_nested_u3` + `u3_permission_save_handler!` 生成的 6 把
+    `permission_save_*`，它们在 HEAD 就带门，宏体里读 `u2_gate_by_sql`）
+    ⇒ **HEAD 那 512 里有 16 条是假阳**，即「真落笔」一直把这 16 把算成没门；
+    另 **2 条 R7→R5 属代码轴**（`appinfo_erase_app_id`、`categoryinfo_erase_category_id`）。
+    GET 面 203→178 = −25 同样逐条点名：22 把 `mockdeletetoget` 别名 + `file_copy_u3` +
+    `fileinfo_id_doc_docId_change_seqnumber_seqNumber` + `permission_management_refresh_category_categoryId`，
+    **0 条桶迁移、0 条新增进面**。其中 `categoryinfo_id` / `categoryinfo_erase_category_id` /
+    `viewfieldconfig_id` 三把别名必须「代码加门 **且** 尺子认门」才出列——单轴时它们只是 relabel 成 K2、
+    仍留在 GET 面上（run L 的现场）。
+- **门禁测试（`crates/cms_assemble_control/src/security_gate_tests.rs`，170 行 / 2 臂 → 6 臂）**：
+  离线两臂＝`soft_delete_after_gate` 三态真值表（Forbidden→403、NotFound→200+error+回显文案、
+  Allowed→**必须 `Internal`**，这一格就是「403 来自门、不来自缺库」的反证）+ admin 档 3 把逐把点名 403
+  （`is_admin` 无库判假，而路径上任何一次真落笔都会先变成 500 ⇒ 「403 而非 500」本身就是门在写之前的顺序证明）。
+  真库四臂一律 `#[ignore]`（与 surface 的 R4-8 / R4-10 / R4-11 同法，不用运行时守卫——那会把「没起库」的静默跳过
+  伪装成通过）：owner/派生档 **14 把**（12 别名 + 2 正档）逐把跑「他人会话 403 **且行未被软删** → 属主会话成功
+  **且 `deleted_at` 真落库**」两半，宏 `$mockdel` **8 把**逐把跑同一形状（判据换成字段行按 `doc_id` 存活/消失），
+  `file_copy_u3` 按 `app_id` 计数增量（先钉 0，否则增量断言恒真），`fileinfo_…_seqnumber` 按 `create_time::text`
+  逐字节相等钉住「403 之后没落笔」。
+  读数：`cargo test --lib -p cms_assemble_control` **336 passed / 0 failed / 4 ignored**；
+  `-- --ignored` 整族 **4 passed / 0 failed**（两族都不按时长猜，一律读 `test result` 行）。
+  真库臂**第二轮才可信**：第一轮绿是因为库里恰好没残留，第二轮直接撞 `x_cms_data_document_field` 主键——
+  `wipe_alias_rows` 按 `id` 回擦擦不到挂在 `doc_id` 上的字段行。补 `DELETE … WHERE doc_id = $1` 之后连跑两遍幂等全绿。
+- **注入臂取证（通道 B，本机无 Python，用 Node 版注入器 `D:/tmp/inject_arm.mjs`；八臂日志 `D:/tmp/b14_L_*.log`）**：
+  - **E1b** `comment_id_mockdeletetoget` 的门恒放行（实参 `gate` → `U2Gate::Allowed`）→ `--ignored` 退 **101**，
+    **恰好一支红**并点名 `cms_get_alias_owner_arms_forbid_stranger_and_land_for_owner`，失败信息
+    `comment_id_mockdeletetoget：他人会话未被 403`。
+  - **E2** `gate_doc_writer` 改成恒 `Ok(U2Gate::Allowed)` → **双红**：
+    `cms_data_document_path_alias_gate_lands` + `cms_fileinfo_seqnumber_alias_gate_lands`（这两把的门只存在于共享
+    helper 里，此臂证的是 helper 作证链没断）。
+  - **E3** `u2_require_admin` 里 `is_admin(...)` 短路成 `true || is_admin(...)` → admin 档离线臂红，
+    **并连带第八批两臂**（`cms_metadata_writes_forbidden_for_non_admin`、
+    `gate_is_what_rejects_not_the_missing_database`）一起红 ⇒ 新 3 把与旧 17 把共用同一道门，不是各写一份。
+  - **E4** 把形状 helper 的 NotFound 格改成 `Err(AppError::Forbidden)` → 三态真值表臂红
+    （`soft_delete_after_gate_three_states_are_distinct`）⇒ 「NotFound 不许伪装成 403」这一格有人看。
+  - **E8** 只摘 `appinfo_erase_app_id` **正档**的门（拿带注释行的长锚点把命中数从 3 收成 1）→ 退 101 且点名
+    `appinfo_erase_app_id：他人会话未被 403` ⇒ 新增那 2 条正档格子不是搭别名便车。
+  - **E5（尺子轴）** 从 `GATE_RE` 摘掉 `u2_gate_by_sql|` → 尺子退 **1**、**缺口 3 处**，逐条点名缺陷 23 的三条正向
+    见证（两条 DELETE 落回 `R6-已认证+读会话无门禁`、一条别名落回 `K`）⇒ 词表这一格有牙。
+  - **E7（如实记成一失败臂）** 从 `GATE_RE` 摘掉 `u2_check_owner|` → **注入后仍绿、缺口 0，注入器按 `--expect red`
+    判为恒真（退 4）**。读法：`u2_check_owner` 在词表里只是**快捷路径**，摘掉后 `gateEvidence` 走递归分支
+    （helper 体内 `u2_gate_by_sql` 命中词表）照样作证 ⇒ 桶读数不变。所以这个词**没有**独立见证，本批也不给它补：
+    要钉的命题是「这两条入口至少认一条」，E5 已证明另一条被摘时会红。**单独点名，不混进通过里**。
+  - **E6（无害对照）** 只改 `soft_delete_after_gate` 的 doc 注释 → 4 passed / 仍绿 ⇒ 上面几支红是注入造成的，
+    不是环境本来就不稳。
+  - 每臂 `finally` 逐字节复原并断言读回哈希等于进入时哈希；复原后 run N/P 干净重跑 EXIT=0、
+    6 张变化产物与注入前存档逐张 md5 全等；`git status --porcelain` 只剩本批 4 类在册改动
+    （`lib.rs` / `security_gate_tests.rs` / `audit_write_gating.mjs` / 6 张产物）。
+
+
 ## 五、处置与遗留（下一轮入口）
 
 - 已修并验证：N1、N4-01、N2、preview 加固、F3、F6、F9（离线 403/会话权威断言）、F2（编译与既有测试绿，真门 `#[ignore]` 待 PG）、**A2-F12、A3-N1、A3-N2、A3-N3**（第二批读数见 §四）、**A3-N6（program_init 7 把写收 admin + 匿名 init 判定改 fail-closed）、R4-6、R4-1 全 13 把**（第三批：§三.3 改法、§四 读数，其中 processing/core_express/program_init 的 DB 臂已按 `--ignored --nocapture` 真跑取证）、**R4-2 批 1 + 批 2a 共 29 把**（第四批：§三.4 / §四第四批）、**R4-7**（第五批：§三.5 / §四第五批，含尺子两处计量缺陷 + 门禁词表缺陷的自修）、**R4-2 批 3：processing 两把 touch + surface 四把 touch 路由**（第六批：§三.6 / §四第六批，DB 臂已 `--ignored --nocapture` 真跑取到「闯入者 403 且零留痕、发起人放行且 creator 落本人」的行为差）。
@@ -1289,4 +1375,45 @@ cd oa4rust/backend && cargo test --lib -p <crate>
   `write_routes_readonly_on_writemethod`）为 `f751858c1`，与本文档（§三.13 / §四 第十三批读数 / 本节）分两笔，
   本节即第二笔并回填该 hash。第二笔提交前用干净工作树重跑尺子（run K：EXIT=0、真落笔 512、GET 写 203、
   只读挂写 766、间接写 221 / 间接门禁 217、缺口 0），十五张在册产物与 run J 存档逐张 md5 全等后才提交。
+  共享工作树上并行会话的在制品未被本批收走。**本轮未 push**。
+
+### 第十四批收口后的刷新（§三.14 / §四 第十四批读数 / §五 名单）
+
+- **已修并验证（代码轴 + 尺子轴一起）**：cms 的 GET 动词别名写族 27 把加门（22 别名 + 2 正档 + 3 非别名 GET 写）
+  与尺子缺陷 **23**。真落笔 **512 → 494**、GET 无门禁 **203 → 178**、只读挂写 766 不变、
+  间接门禁 217 → 234、间接写 221 → 223；`判据见证 … 缺口 0 处`，EXIT=0。
+  **其中 16 条「真落笔减少」不是修好的洞，是原来量不到的假阳**（HEAD 就带门，`GATE_RE` 认不出）——
+  真实收口的洞是 GET 面 22 把别名 + 2 把正档 + 3 把非别名 = **27 把**。
+  引用行动面时请一并说明尺的代次：**621（十一批）/ 498（十二批）/ 512（十三批）/ 494（十四批）**。
+- **第十三批那张名单的账按实测改写**：它写「cms 的 GET 动词别名写档 **18 把**」，实测 cms 的 GET 写面是
+  **30 行**（22 把 `mockdeletetoget` + 3 把非别名 + 4 把 K2 + 1 把计数）；「14 条新浮出写方法档」里
+  `categoryinfo` / `viewfieldconfig` 两把正档是**尺子假阳**（本批已证），`erase` 两把本批补了门，
+  所以那一格只剩 **`cms_core_entity` 12 条**（5 张核心元数据表 × `DELETE` 与 `POST …/delete/{id}`）。
+  教训照旧：**名单行数要实测，别拿上一批的浮出数当本批的工作量**。
+- **下一批（代码轴）首选，按「双盲区优先、同处改动收多把」排序**：
+  1. **GET 面无门禁还剩 178 条**（K1 5 / K2 11 / K3 162）。本批只吃了 cms 的 25 条，K3 那 162 条是
+     当前最大的一块，且和这批准则同族（ csrf / `requires_admin` 双盲）。选题时先按 crate 切片读数，
+     不要再按「动词别名」猜。
+  2. `processplatform_assemble_surface` **79** 条（R6 25 / R7 54，`attachment_u2b` 20）——尺子已量不出新东西，
+     纯代码轴；本批没动它是因为别名族在双盲区更靠前，这格的理由现在用完了。
+  3. `cms_core_entity` 12 条元数据写（登录即可删任意列 / 索引 / 模块定义），需先读该 crate 的门禁口径定拍。
+  4. `ppsvc/dict_data_fns` 16 把宏未绑段 + 其余 43 条整张模板**仍未逐条复核**（沿用第十二批那格）。
+- **本批新增的两格方法学缺口**：
+  1. **词表冗余 = 见证盲区**（E7 实测）：`GATE_RE` 里 `u2_check_owner` 与「递归经 `u2_gate_by_sql`」是两条
+     并行入口，摘前者读数不变。以后给词表补词时，要么承认某词只是快捷路径并**写明它不设独立见证**，
+     要么把它改成「两条入口都不许同时摘」的合取见证；别再默认「进了词表就有臂钉着」。
+  2. **真库臂的第一轮绿不可信**：`wipe` 按 `id` 回擦擦不到挂在 `doc_id` 上的子行，第二轮才撞主键。
+     新增真库臂一律**连跑两遍验幂等**，并把「按外键列擦」写进 cleanup；`#[ignore]` 臂跑完要在账本里
+     留 `test result` 原文而不是「大致通过」。
+- **沿用的待拍格**：A1 真匿名写 9 条属限流族、24 条死档 needs 独立守卫、只读挂写现读 **766**
+  （沿用「读挂回 GET 或写方法显式 405」）、`NOW()` 写进 TEXT 列 79 处、门禁入口两族并存、
+  `shared/src/crud.rs` CrudSpec 无归属、`assert_eq!(status, 500)` 断言族 272 处、correlation 读侧 IDOR、
+  F5 / F7 / F8 / F10、N4-02 / N4-03。
+- **提交落点**：本批代码轴 + 尺子轴（`crates/cms_assemble_control/src/lib.rs` 27 把加门 + 形状 helper、
+  `crates/cms_assemble_control/src/security_gate_tests.rs` 6 臂、`scripts/audit_write_gating.mjs` 缺陷 23 +
+  缺陷 22 见证重钉、6 张刷新产物）为 ``07d426ae6``，与本文档（§三.14 / §四 第十四批读数 / 本节）分两笔，
+  本节即第二笔并回填该 hash。第二笔提交前再取一次干净读数（run Q：EXIT=0、真落笔 494、GET 写 178、
+  只读挂写 766、间接写 223 / 间接门禁 234、缺口 0），8 臂注入逐臂复原后与 run M 读数一致，
+  run Q 与 run P 的**在册 15 张产物逐张 md5 全等**、`cargo test --lib -p cms_assemble_control`
+  336 passed / 0 failed / 4 ignored 与 `-- --ignored` 4 passed 复绿之后才提交。
   共享工作树上并行会话的在制品未被本批收走。**本轮未 push**。
