@@ -34,6 +34,27 @@ const EXEMPT_PATHS = readConstList(csrc, "AUTH_EXEMPT_PATHS");
 const EXEMPT_PREFIXES = readConstList(csrc, "AUTH_EXEMPT_PREFIXES");
 const ADMIN_WRITE_PREFIXES = readConstList(csrc, "ADMIN_WRITE_PREFIXES");
 
+// rbac.rs 注册表：`authorize_middleware` 命中 Public 会**提前 return**，
+// 从而跳过 `check_permission` 里 `Authenticated + requires_admin → is_admin` 那把中间件兜底。
+// 所以「Public 前缀 ⊇ 某写路由」= 该写路由的 admin 兜底被吞，handler 层是唯一门禁。
+// 注意 get_permission 的前缀匹配是裸 starts_with（无段边界），这里按同一口径复刻。
+const RBAC = path.join(CRATES, "shared/src/middleware/rbac.rs");
+const rsrc = fs.readFileSync(RBAC, "utf8");
+const PUBLIC_EXACT = [
+  ...rsrc.matchAll(/registry\.register\("([^"]+)",\s*PermissionLevel::Public\)/g),
+].map((m) => m[1]);
+const PUBLIC_PREFIXES = [
+  ...rsrc.matchAll(/registry\.register_prefix\("([^"]+)",\s*PermissionLevel::Public\)/g),
+].map((m) => m[1]);
+function registryPublic(p) {
+  if (PUBLIC_EXACT.includes(p)) return p;
+  let best = null;
+  for (const pre of PUBLIC_PREFIXES) {
+    if (p.startsWith(pre) && (!best || pre.length > best.length)) best = pre;
+  }
+  return best;
+}
+
 const segs = (p) => p.split("/").filter(Boolean);
 // 复刻 shared/middleware/security.rs 的 path_matches：段数相等，模式段 {x} 通配
 function pathMatches(path, pattern) {
@@ -125,16 +146,25 @@ for (const row of rows) {
     const exempt = isAuthExempt(r.method, r.path);
     const admin = mwAdmin(r.method, r.path);
     const gated = row.gate === "G";
-    if (admin) bucket = "A-中间件 admin";
+    const pub = registryPublic(r.path);
+    if (admin && pub && !gated) bucket = "G-Public早退吞掉admin兜底且无体内门禁";
+    else if (admin && pub) bucket = "H-Public早退但体内有门禁";
+    else if (admin) bucket = "A-中间件 admin";
     else if (exempt && !gated) bucket = "B-匿名可达且无体内门禁";
     else if (exempt) bucket = "C-匿名可达但有体内门禁";
     else if (!row.session && !gated) bucket = "D-登录即可写且无体内门禁";
     else bucket = "F-已认证+有门禁信号";
-    note = `${r.method} ${r.path}${use.length > 1 ? ` (+${use.length - 1} 处)` : ""}`;
+    note = `${r.method} ${r.path}${use.length > 1 ? ` (+${use.length - 1} 处)` : ""}${
+      pub ? ` [Public 命中 ${pub}]` : ""
+    }`;
   }
   const key = bucket;
   buckets.set(key, (buckets.get(key) || 0) + 1);
-  if (bucket === "B-匿名可达且无体内门禁" || bucket === "D-登录即可写且无体内门禁") {
+  if (
+    bucket === "B-匿名可达且无体内门禁" ||
+    bucket === "D-登录即可写且无体内门禁" ||
+    bucket === "G-Public早退吞掉admin兜底且无体内门禁"
+  ) {
     residual.push({ ...row, route: note, bucket });
   }
 }
