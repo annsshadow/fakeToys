@@ -31,6 +31,24 @@
 //! （不用「空归属 = 人人可写」把数据缺陷洗成权限放行）；
 //! `work_v3_retract_body` 的留痕 creator 同样由 `"system"` 改会话权威。
 //!
+//! 四轮 R4-2 第二批追加：同面再 13 把写（前缀均为
+//! `/api/processplatform/service/processing`）——
+//! `DELETE attachment/{id}/work/{workId}`、`DELETE attachment/{id}/workcompleted/{workCompletedId}`、
+//! `POST attachment/copy/work/{workId}`、
+//! `DELETE read/{id}`、`PUT read/{id}/processing`、`POST read/{id}/replace`、`POST read/{id}/reset`、
+//! `POST documentversion/work/{work}`、
+//! `GET work/{id}/series/{series}/activitytoken/{activityToken}/processing/signal`（GET 上挂状态写，属 A3-N12 族，本批先补归属门）、
+//! `POST work/v2/{id}/add/manual/task/identity/matrix`、
+//! `POST work`、`POST work/process/{processId}`、
+//! `POST work/process/{processId}/name/{name}/serial`——
+//! 原为「登录即可」，任一会话可按 ID 删他人附件、把他人已读回执搬进 completed、
+//! 给他人 work 造版本行或插身份矩阵。
+//! 现在：附件按 `x_attachment.creator` 校归属，且**在原有 IDOR 等值校验之后**再校，
+//! 两道门都在；`attachment/copy` 校**目标** work 的发起人（复制是往目标写）；
+//! 已读族按 `x_read.person` 严格校；版本 / 身份矩阵 / 运行信号在事务内
+//! `SELECT … FOR UPDATE` 锁行后校归属；建单三只的 creator 由 body 传入改会话权威
+//! （`work_start_impl` 现收 `person`，冒名建单不再生效）。
+//!
 //! DB 依赖臂需真实 PostgreSQL：
 //! `cargo test --lib -p processplatform_service_processing -- --ignored`
 #[cfg(test)]
@@ -1012,5 +1030,237 @@ mod security_gate_tests {
             .await
             .unwrap();
         unseed_admin(&pool, &admin, &role_id).await;
+    }
+
+    /// R4-2 第二批离线臂：阅读回执 / 附件复制 / 文档版本 / 信号与建单族 13 把，
+    /// 无会话一律 401 且在取连接之前就退回。
+    #[tokio::test]
+    async fn u2_read_copy_and_create_writes_reject_without_session() {
+        let pool = shared::testing::test_pool();
+        let s = Json(serde_json::json!({ "person": "someone" }));
+        let cases: Vec<(&str, Result<(), AppError>)> = vec![
+            (
+                "att_delete_with_work",
+                crate::u2::att_delete_with_work(
+                    Extension(pool.clone()),
+                    None,
+                    axum::extract::Path(("a1".to_string(), "w1".to_string())),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "att_delete_with_workcompleted",
+                crate::u2::att_delete_with_workcompleted(
+                    Extension(pool.clone()),
+                    None,
+                    axum::extract::Path(("a1".to_string(), "wc1".to_string())),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "att_copy_to_work",
+                crate::u2::att_copy_to_work(
+                    Extension(pool.clone()),
+                    None,
+                    axum::extract::Path("w1".to_string()),
+                    Json(serde_json::json!({ "attachmentList": ["a1"] })),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "read_delete",
+                crate::u2::read_delete(Extension(pool.clone()), None, axum::extract::Path("r1".to_string()))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "read_processing",
+                crate::u2::read_processing(Extension(pool.clone()), None, axum::extract::Path("r1".to_string()))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "read_replace",
+                crate::u2::read_replace(
+                    Extension(pool.clone()),
+                    None,
+                    axum::extract::Path("r1".to_string()),
+                    s.clone(),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "read_reset",
+                crate::u2::read_reset(
+                    Extension(pool.clone()),
+                    None,
+                    axum::extract::Path("r1".to_string()),
+                    s.clone(),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "documentversion_create",
+                crate::u2::documentversion_create(
+                    Extension(pool.clone()),
+                    None,
+                    axum::extract::Path("w1".to_string()),
+                    s.clone(),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "work_processing_signal",
+                crate::u2::work_processing_signal(
+                    Extension(pool.clone()),
+                    None,
+                    axum::extract::Path((
+                        "w1".to_string(),
+                        "s1".to_string(),
+                        "t1".to_string(),
+                    )),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "work_add_identity_matrix",
+                crate::u2::work_add_identity_matrix(
+                    Extension(pool.clone()),
+                    None,
+                    axum::extract::Path("w1".to_string()),
+                    Json(serde_json::json!({ "identityList": ["p@P"] })),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "work_create",
+                crate::u2::work_create(Extension(pool.clone()), None, s.clone())
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "work_create_for_process",
+                crate::u2::work_create_for_process(
+                    Extension(pool.clone()),
+                    None,
+                    axum::extract::Path("p1".to_string()),
+                    s.clone(),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "work_create_with_serial",
+                crate::u2::work_create_with_serial(
+                    Extension(pool.clone()),
+                    None,
+                    axum::extract::Path(("p1".to_string(), "n1".to_string())),
+                    s,
+                )
+                .await
+                .map(|_| ()),
+            ),
+        ];
+        for (name, res) in cases {
+            assert!(
+                matches!(res, Err(AppError::Unauthorized)),
+                "{name} 无会话必须 401"
+            );
+        }
+    }
+
+    /// DB 臂：非目标 work 发起人不得复制附件进去（403 且零写入）；
+    /// 发起人放行后 `x_attachment.work_id` 落到目标 work。
+    #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
+    async fn att_copy_requires_target_work_creator() {
+        if !shared::testing::is_db_available().await {
+            eprintln!("skip: PG unavailable");
+            return;
+        }
+        let pool = shared::testing::test_pool();
+        let src_work = format!("r42c-src-{}", uuid::Uuid::new_v4());
+        let dst_work = format!("r42c-dst-{}", uuid::Uuid::new_v4());
+        let src_att = format!("r42c-a-{}", uuid::Uuid::new_v4());
+        let owner = "u-r42c-owner";
+        seed_work(&pool, &src_work, "u-r42c-other").await;
+        seed_work(&pool, &dst_work, owner).await;
+        {
+            let client = pool.get().await.unwrap();
+            client
+                .execute(
+                    "INSERT INTO x_attachment (id, work_id, name, creator) VALUES ($1, $2, $3, $4)",
+                    &[
+                        &src_att,
+                        &src_work,
+                        &"r42c.pdf".to_string(),
+                        &"u-r42c-other".to_string(),
+                    ],
+                )
+                .await
+                .unwrap();
+        }
+
+        let stranger = crate::u2::att_copy_to_work(
+            Extension(pool.clone()),
+            Some(Extension(sess("u-r42c-stranger"))),
+            axum::extract::Path(dst_work.clone()),
+            Json(serde_json::json!({ "attachmentList": [src_att.clone()] })),
+        )
+        .await;
+        assert!(
+            matches!(stranger, Err(AppError::Forbidden)),
+            "非目标 work 发起人不得往里复制附件"
+        );
+        let client = pool.get().await.unwrap();
+        let landed: i64 = client
+            .query_one(
+                "SELECT COUNT(*) AS c FROM x_attachment WHERE work_id = $1",
+                &[&dst_work],
+            )
+            .await
+            .unwrap()
+            .get("c");
+        assert_eq!(landed, 0, "403 之后目标 work 不得多出附件");
+
+        let ok_res = crate::u2::att_copy_to_work(
+            Extension(pool.clone()),
+            Some(Extension(sess(owner))),
+            axum::extract::Path(dst_work.clone()),
+            Json(serde_json::json!({ "attachmentList": [src_att.clone()] })),
+        )
+        .await;
+        assert!(ok_res.is_ok(), "目标 work 发起人复制附件应放行");
+        let landed: i64 = client
+            .query_one(
+                "SELECT COUNT(*) AS c FROM x_attachment WHERE work_id = $1",
+                &[&dst_work],
+            )
+            .await
+            .unwrap()
+            .get("c");
+        assert_eq!(landed, 1, "放行侧须真落库");
+
+        client
+            .execute(
+                "DELETE FROM x_attachment WHERE work_id = ANY($1)",
+                &[&vec![src_work.clone(), dst_work.clone()]],
+            )
+            .await
+            .unwrap();
+        for w in [src_work, dst_work] {
+            client
+                .execute("DELETE FROM x_work WHERE id = $1", &[&w])
+                .await
+                .unwrap();
+        }
     }
 }
