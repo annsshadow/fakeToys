@@ -46,6 +46,8 @@ from augmentor.config import AppConfig
 from augmentor.config_validator import ConfigValidator
 
 AI_DIR = Path(__file__).resolve().parent.parent.parent
+#: 子项目文档已于 2026-10-14 汇总到仓库根 `docs/augmentor/`；本文件自持这一真源
+DOCS_DIR = AI_DIR.parent / "docs" / "augmentor"
 
 #: 不是 dataclass 节、但确实出现在 README 表格与 `config.yaml` 里的顶格名字。
 #: 每一员由 `TestMetaRosterIsNotAnEscapeHatch` 机器验真，见模块 docstring。
@@ -145,7 +147,7 @@ def _diff(a: dict, b: dict) -> dict:
 
 
 SCHEMA = schema_keys()
-README = readme_rows((AI_DIR / "docs" / "README.md").read_text(encoding="utf-8"))
+README = readme_rows((DOCS_DIR / "README.md").read_text(encoding="utf-8"))
 RAW_TEXT = (AI_DIR / "config.yaml").read_text(encoding="utf-8")
 RAW_YAML = yaml.safe_load(RAW_TEXT)
 YAML = yaml_sections(RAW_YAML)
