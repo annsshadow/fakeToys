@@ -330,13 +330,15 @@ mod u3_tests {
             StatusCode::NOT_FOUND
         );
 
+        // 第十七批安全审计：钉钉组织注册回调开关（GET 上挂状态写）收 admin 档，
+        // 门在读库之前 → 无会话 401，不再直通 DB 层 500。
         assert_eq!(
             status_of(
                 "GET",
                 "/api/program_center/dingding/sync/organization/register/callback/true"
             )
             .await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::UNAUTHORIZED
         );
         assert_eq!(
             status_of("GET", "/api/program_center/deploy/d-1").await,
@@ -380,9 +382,10 @@ mod u3_tests {
             status_of("GET", "/api/program_center/invoke/list/with/category/cms").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
+        // 第十七批安全审计：invoke 执行（GET 面）收 admin 档，无会话先 401。
         assert_eq!(
             status_of("GET", "/api/program_center/invoke/i-1/execute/get").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::UNAUTHORIZED
         );
         for uri in [
             "/api/program_center/invoke/i-1/execute",
@@ -435,9 +438,11 @@ mod u3_tests {
             status_of("GET", "/api/program_center/market/m-1/installed/version").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
+        // 第十七批安全审计：market 卸载（GET /market/{flag}/uninstall）收 admin 档，
+        // 无会话先 401。同一 handler 的 install/or/update（上方两条 assert_ne）同样被门拦住。
         assert_eq!(
             status_of("GET", "/api/program_center/market/m-1/uninstall").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::UNAUTHORIZED
         );
         assert_ne!(
             status_of("POST", "/api/program_center/market/list/paging/1/size/20").await,
@@ -582,13 +587,15 @@ mod u3_tests {
             StatusCode::NOT_FOUND
         );
 
+        // 第十七批安全审计：validation/timeout 与 welink 同步（均 GET 上挂写）收 admin 档，
+        // 无会话先 401；POST /welink/request/pull/sync 属写面另一批，仍直通 DB 层 500。
         assert_eq!(
             status_of("GET", "/api/program_center/validation/timeout/30000").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::UNAUTHORIZED
         );
         assert_eq!(
             status_of("GET", "/api/program_center/welink/pull/sync").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::UNAUTHORIZED
         );
         assert_eq!(
             status_of("POST", "/api/program_center/welink/request/pull/sync").await,
@@ -662,9 +669,13 @@ mod u3_tests {
     #[tokio::test]
     async fn u3_db_backed_reads_fail_internal_without_db() {
         let pool = mock_pool();
-        // 同步日志型端点：无 DB 连接 → Internal
-        let r = u3_welink_pull_sync(Extension(pool.clone())).await;
-        assert!(matches!(r, Err(shared::error::AppError::Internal)));
+        // 同步日志型端点：第十七批收 admin 档后，门插在 pool.get() **之前**，
+        // 因此这一族不再能走到「连不上库 → Internal」——无会话 401、非 admin 403。
+        // 这条断言由 Internal 改成两格门禁读数，改动本身就是门生效的证据。
+        let r = u3_welink_pull_sync(Extension(pool.clone()), None).await;
+        assert!(matches!(r, Err(shared::error::AppError::Unauthorized)));
+        let r = u3_welink_pull_sync(Extension(pool.clone()), Some(Extension(test_session()))).await;
+        assert!(matches!(r, Err(shared::error::AppError::Forbidden)));
         let r = u3_jest_clear_cache_source(
             Extension(pool.clone()),
             Some(Extension(test_session())),

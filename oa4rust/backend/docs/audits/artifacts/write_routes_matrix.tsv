@@ -1953,8 +1953,8 @@ program_center	POST	/api/program_center/dict/list/paging/{page}/size/{size}	dict
 program_center	POST	/api/program_center/dict/{dictFlag}/data	dict_dictFlag_data_post	R5-已认证+体内门禁
 program_center	POST	/api/program_center/dict/{dictFlag}/{path}/data	dict_data_save_put	R5-已认证+体内门禁
 program_center	POST	/api/program_center/dict/{dictFlag}/{path}/data/mockputtopost	dict_dictFlag_path_data_mockputtopost	R5-已认证+体内门禁
-program_center	POST	/api/program_center/dingding/request/pull/sync	dingding_request_pull_sync	R7-已认证+体内无会话无门禁
-program_center	POST	/api/program_center/dingding/sync/organization/callback	dingding_sync_organization_callback	R7-已认证+体内无会话无门禁
+program_center	POST	/api/program_center/dingding/request/pull/sync	dingding_request_pull_sync	R5-已认证+体内门禁
+program_center	POST	/api/program_center/dingding/sync/organization/callback	dingding_sync_organization_callback	R5-已认证+体内门禁
 program_center	POST	/api/program_center/foo/create/mass/from/count	foo_create_mass_from_count	R7-已认证+体内无会话无门禁
 program_center	POST	/api/program_center/input/compare	input_compare	R7-已认证+体内无会话无门禁
 program_center	POST	/api/program_center/input/cover	input_cover	R7-已认证+体内无会话无门禁
@@ -1968,8 +1968,8 @@ program_center	POST	/api/program_center/invoke/save/{id}	invoke_save	R5-已认�
 program_center	POST	/api/program_center/invoke/token	invoke_token	R7-已认证+体内无会话无门禁
 program_center	POST	/api/program_center/invoke/{flag}/client/{client}/token/{token}/execute	u3_invoke_execute_with_token	R7-已认证+体内无会话无门禁
 program_center	POST	/api/program_center/invoke/{flag}/execute	u3_invoke_execute	R7-已认证+体内无会话无门禁
-program_center	POST	/api/program_center/market/flag/install/or/update	market_flag_install_or_update	R7-已认证+体内无会话无门禁
-program_center	POST	/api/program_center/market/install/offline	market_install_offline	R7-已认证+体内无会话无门禁
+program_center	POST	/api/program_center/market/flag/install/or/update	market_flag_install_or_update	R5-已认证+体内门禁
+program_center	POST	/api/program_center/market/install/offline	market_install_offline	R5-已认证+体内门禁
 program_center	POST	/api/program_center/market/list/install/log/paging/{page}/size/{size}	u3_market_install_log_paging_post	R7-已认证+体内无会话无门禁
 program_center	POST	/api/program_center/market/list/paging/{page}/size/{size}	u3_market_list_paging_post	R7-已认证+体内无会话无门禁
 program_center	POST	/api/program_center/module/compare/upload	module_compare_upload	R7-已认证+体内无会话无门禁
@@ -1985,7 +1985,7 @@ program_center	POST	/api/program_center/output/list	output_list	R7-已认证+体
 program_center	POST	/api/program_center/prompterrorlog	u3_prompterrorlog_create	R6-已认证+读会话无门禁
 program_center	POST	/api/program_center/qiyeweixin	u3_qiyeweixin_create	R6-已认证+读会话无门禁
 program_center	POST	/api/program_center/qiyeweixin/request/pull/sync	u3_qiyeweixin_request_pull_sync_post	R7-已认证+体内无会话无门禁
-program_center	POST	/api/program_center/qiyeweixin/send/getprivateinfo/message	qiyeweixin_send_getprivateinfo_message	R7-已认证+体内无会话无门禁
+program_center	POST	/api/program_center/qiyeweixin/send/getprivateinfo/message	qiyeweixin_send_getprivateinfo_message	R5-已认证+体内门禁
 program_center	POST	/api/program_center/schedule/report	schedule_report	R7-已认证+体内无会话无门禁
 program_center	POST	/api/program_center/schedule/schedule/fire	u3_schedule_fire_post	R5-已认证+体内门禁
 program_center	POST	/api/program_center/script	script_create	R6-已认证+读会话无门禁
@@ -1996,7 +1996,7 @@ program_center	POST	/api/program_center/tokenthreshold/update	tokenthreshold_upd
 program_center	POST	/api/program_center/unexpectederrorlog	u3_unexpectederrorlog_create	R6-已认证+读会话无门禁
 program_center	POST	/api/program_center/warnlog	warnlog_create	R6-已认证+读会话无门禁
 program_center	POST	/api/program_center/welink/request/pull/sync	u3_welink_request_pull_sync_post	R7-已认证+体内无会话无门禁
-program_center	POST	/api/program_center/zhengwudingding/sync/organization/callback	zhengwudingding_sync_organization_callback	R7-已认证+体内无会话无门禁
+program_center	POST	/api/program_center/zhengwudingding/sync/organization/callback	zhengwudingding_sync_organization_callback	R5-已认证+体内门禁
 program_center	PUT	/api/program_center/agent/save/{id}	agent_save	R5-已认证+体内门禁
 program_center	PUT	/api/program_center/agent/{flag}	u3_agent_update_flag	R5-已认证+体内门禁
 program_center	PUT	/api/program_center/agent/{flag}/file	u3_agent_file_flag	R5-已认证+体内门禁
@@ -2037,8 +2037,8 @@ program_center	PUT	/api/program_center/input/prepare/create	input_prepare_create
 program_center	PUT	/api/program_center/invoke/save/{id}	invoke_save	R5-已认证+体内门禁
 program_center	PUT	/api/program_center/invoke/{flag}	u2_invoke_update	R5-已认证+体内门禁
 program_center	PUT	/api/program_center/invoke/{flag}/file	u3_invoke_file_put	R5-已认证+体内门禁
-program_center	PUT	/api/program_center/market/flag/install/or/update	market_flag_install_or_update	R7-已认证+体内无会话无门禁
-program_center	PUT	/api/program_center/market/{flag}/install/or/update	market_flag_install_or_update	R7-已认证+体内无会话无门禁
+program_center	PUT	/api/program_center/market/flag/install/or/update	market_flag_install_or_update	R5-已认证+体内门禁
+program_center	PUT	/api/program_center/market/{flag}/install/or/update	market_flag_install_or_update	R5-已认证+体内门禁
 program_center	PUT	/api/program_center/module/compare/upload	u3_module_compare_upload_put	R6-已认证+读会话无门禁
 program_center	PUT	/api/program_center/module/list	u3_module_list_put	R6-已认证+读会话无门禁
 program_center	PUT	/api/program_center/module/output	u3_module_output_put	R6-已认证+读会话无门禁
