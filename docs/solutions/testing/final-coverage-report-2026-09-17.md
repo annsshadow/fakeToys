@@ -1,4 +1,5 @@
 ---
+category: testing
 module: oa4rust-test-coverage
 tags: [testing, coverage, performance-review]
 problem_type: documentation
@@ -179,7 +180,7 @@ statements: 50
 3. **最后**：合并覆盖率报告得到最终 95% 目标
 
 ## 附件
-- [coverage-summary.md](coverage-summary.md) - 初始分析
+- [test-coverage-summary.md](test-coverage-summary.md) - 初始分析
 - [test-coverage-95-target-plan.md](test-coverage-95-target-plan.md) - 完整提升计划
 - [coverage/lcov-report/index.html](coverage/lcov-report/index.html) - 当前覆盖率报告
 - [packages/apis/src/api-with-sdk.test.ts](./packages/apis/src/api-with-sdk.test.ts) - API 集成测试

@@ -1,4 +1,5 @@
 ---
+category: testing
 module: oa4rust-test-coverage
 tags: [testing, coverage, performance-review]
 problem_type: documentation
