@@ -695,24 +695,43 @@ type RecomputeLevelStat struct {
 }
 
 // AdminRecomputeStatsByLevel 按关卡聚合，返回不符率最高的前 N 关。
+//
+// # 内层聚合为什么**不能**把 mismatched_fields 放进 GROUP BY
+//
+// 第一版写的是 `GROUP BY level_id, mismatched_fields, user_id`，
+// 那样 `per_user` 量到的是「该玩家在这一关、这一种不符字段组合下的行数」，
+// 而不是「该玩家在这一关的不符行数」。
+//
+// 具体坏在哪：某玩家在第 3 关有 50 局相符 + 3 局不符，
+// 分组后得到 per_user=50（相符那组）与 per_user=3（不符那组），
+// `MAX(per_user)` 取到 **50** —— 于是「单玩家不符次数」显示成 50。
+//
+// 而这一列正是区分漂移与作弊的关键：漂移是**每个**玩家都中，
+// 作弊是**某一个**玩家反复中。把它算错，两者就长得一样。
+//
+// 正确形状：先按 (level, user) 归并，在同一个组内同时数出
+// 总行数与不符行数，外层再对关卡求和 / 取最大。
 func (s *Service) AdminRecomputeStatsByLevel(ctx context.Context, since time.Time, limit int) ([]RecomputeLevelStat, error) {
 	if limit <= 0 || limit > 200 {
 		limit = 20
 	}
 	rows, err := s.pool.Query(ctx, `
 		SELECT level_id,
-		       COUNT(*) AS total,
-		       COUNT(*) FILTER (WHERE mismatched_fields <> '{}') AS mismatched,
-		       COALESCE(MAX(per_user), 0) AS max_user
+		       SUM(per_user_total)::bigint AS total,
+		       SUM(per_user_mism)::bigint  AS mismatched,
+		       COALESCE(MAX(per_user_mism), 0) AS max_user
 		FROM (
-		    SELECT level_id, mismatched_fields, user_id, COUNT(*) AS per_user
+		    SELECT level_id, user_id,
+		           COUNT(*) AS per_user_total,
+		           COUNT(*) FILTER (WHERE mismatched_fields <> '{}') AS per_user_mism
 		    FROM settle_recomputes
 		    WHERE created_at >= $1
-		    GROUP BY level_id, mismatched_fields, user_id
+		    GROUP BY level_id, user_id
 		) t
 		GROUP BY level_id
-		ORDER BY (COUNT(*) FILTER (WHERE t.mismatched_fields <> '{}'))::float
-		         / GREATEST(COUNT(*), 1) DESC
+		ORDER BY (SUM(per_user_mism))::float
+		         / GREATEST(SUM(per_user_total), 1) DESC,
+		         level_id
 		LIMIT $2`, since, limit)
 	if err != nil {
 		return nil, fmt.Errorf("recompute stats: %w", err)
@@ -722,13 +741,101 @@ func (s *Service) AdminRecomputeStatsByLevel(ctx context.Context, since time.Tim
 	out := []RecomputeLevelStat{}
 	for rows.Next() {
 		var v RecomputeLevelStat
-		if err := rows.Scan(&v.LevelID, &v.Total, &v.Mismatched, &v.MaxUserMismatches); err != nil {
+		var total, mismatched int64
+		if err := rows.Scan(&v.LevelID, &total, &mismatched, &v.MaxUserMismatches); err != nil {
 			return nil, err
 		}
+		v.Total = int(total)
+		v.Mismatched = int(mismatched)
 		if v.Total > 0 {
 			v.RatePermille = v.Mismatched * 1000 / v.Total
 		}
 		out = append(out, v)
 	}
 	return out, rows.Err()
+}
+
+// RecomputeTotals 是窗口内的总账。
+type RecomputeTotals struct {
+	Total        int `json:"total"`
+	Mismatched   int `json:"mismatched"`
+	Rejected     int `json:"rejected"`
+	RatePermille int `json:"rate_permille"`
+}
+
+// RecomputeSummary 是给后台看的「一句话现状」。
+//
+// # 为什么**必须**带闸门状态，而不只是统计数字
+//
+// 统计数字回答不了运营真正要问的那个问题：
+// **「现在还在拦吗？」**
+//
+// 熔断触发后，系统状态变成「仍在重算、仍在记录，但**不再拒发**」。
+// 这时台账里的不符行数可能完全正常（甚至因为不拒发而上升），
+// 而单看数字的人会以为「防护开着」。
+//
+// `demoted` 就是为了让「我们正在放过本该拒掉的东西」无法被忽略。
+type RecomputeSummary struct {
+	// Mode 是**实际生效**的档位（可能已被熔断降级）。
+	Mode string `json:"mode"`
+	// ConfiguredMode 是配置值，用于区分「本来配的就是 shadow」与「被熔断了」。
+	ConfiguredMode string `json:"configured_mode"`
+	// Demoted 为真表示 enforce 已被熔断降级 —— 此时**奖励在放行**。
+	Demoted bool `json:"demoted"`
+	// DemotedReason 为空表示未降级。
+	DemotedReason string `json:"demoted_reason"`
+	// Since 是统计窗口起点。
+	Since string `json:"since"`
+	// BreakerRatePermille 是熔断阈值（‰），让界面上能标出「离熔断还有多远」。
+	BreakerRatePermille int `json:"breaker_rate_permille"`
+	// BreakerMinSamples 是熔断所需的最小样本量。
+	BreakerMinSamples int `json:"breaker_min_samples"`
+
+	Totals RecomputeTotals      `json:"totals"`
+	Levels []RecomputeLevelStat `json:"levels"`
+}
+
+// AdminRecomputeSummary 汇总窗口内的总账 + 按关卡分布 + 闸门当前状态。
+func (s *Service) AdminRecomputeSummary(ctx context.Context, since time.Time, levelLimit int) (RecomputeSummary, error) {
+	sum := RecomputeSummary{
+		Since:               since.UTC().Format(time.RFC3339),
+		BreakerRatePermille: MaxBreakerRate,
+		BreakerMinSamples:   MinBreakerSamples,
+		Levels:              []RecomputeLevelStat{},
+		ConfiguredMode:      RecomputeOff,
+		Mode:                RecomputeOff,
+	}
+	if s.gate != nil {
+		sum.ConfiguredMode = s.gate.Mode()
+		// 这里读的是**引擎**侧状态：S 段永不降级（见 RecomputeScope），
+		// 所以「被降级了」这件事本身就直接说明是引擎在放行。
+		demoted, reason, _ := s.gate.Demoted(ScopeEngine)
+		sum.Demoted = demoted
+		sum.DemotedReason = reason
+		// 实际生效档位 = 配置档位，除非被熔断降到更松的那档。
+		eff, _ := s.recomputeVerdict(ctx, ScopeEngine)
+		sum.Mode = eff
+	}
+
+	var rejected int
+	err := s.pool.QueryRow(ctx, `
+		SELECT COUNT(*),
+		       COUNT(*) FILTER (WHERE mismatched_fields <> '{}'),
+		       COUNT(*) FILTER (WHERE rejected)
+		FROM settle_recomputes WHERE created_at >= $1`, since).
+		Scan(&sum.Totals.Total, &sum.Totals.Mismatched, &rejected)
+	if err != nil {
+		return sum, fmt.Errorf("recompute totals: %w", err)
+	}
+	sum.Totals.Rejected = rejected
+	if sum.Totals.Total > 0 {
+		sum.Totals.RatePermille = sum.Totals.Mismatched * 1000 / sum.Totals.Total
+	}
+
+	levels, err := s.AdminRecomputeStatsByLevel(ctx, since, levelLimit)
+	if err != nil {
+		return sum, err
+	}
+	sum.Levels = levels
+	return sum, nil
 }
