@@ -391,6 +391,20 @@ A4 开放问题：① F1 是否 o2server 侧本就以 job/document 创建者为�
 | 旧契约断言返工（改判据不动门槛） | `crates/processplatform_assemble_surface/src/tests_u2.rs` | `u2r_data_job_pathn_extraction_contract` 写档改成逐格点名：`POST /j-1/mockputtopost` 必须 401（活档＋门在 SQL 前），`GET /job/mockputtopost` 必须 500（死档，且在注释里写明它 500 不是门失效而是入口到不了）。`u2r_data_workcompleted_pathn_legacy_shape_extraction_contract` 两格只读 500、三格别名 401。放宽成「500 或 401 都算过」会让「别名漏注册」「门被摘掉」两种红同时读成绿，故拒绝 |
 | 新增测试臂 4 支 | `crates/processplatform_assemble_surface/src/security_gate_tests.rs` | 注册点由 `routes.rs` 机器枚举成 36 行 `ppc_alias_routes()` 并 `assert_eq!(v.len(), 36)`（增减当场红，注释按 handler 分组）。① `surface_ppc_alias_writes_reject_anonymous`：27 活格 401 + 9 死格 500 + `dead == 9`；② `surface_data_workcompleted_touch_alias_owner_gate_lands`、③ `surface_data_job_touch_alias_owner_gate_lands`（DB：他人 403 且 `xupdateTime` 哨兵 `'r50-before'` 不变 / 本人 200 且哨兵确实被改写 / 空归属行普通会话 403、admin 200）；④ `surface_ppc_alias_admin_passes_all_registrations`（admin 打 36 档不得出现 401·403，防门夹死放行侧）。造行按迁移 032 兜底建表（两张表 `"id" TEXT PRIMARY KEY` + `xid/xcreatorPerson/xcreateTime/xupdateTime` 全 TEXT，handler 放行后回读 `xcreateTime`，建表漏它就测不到那条回读） |
 
+### 三.12 第十二批（尺子缺陷 19、20、21——纯尺子轴，本批零产品码）
+
+第十一批 §五 把「先修尺子再动 cms」写成了硬前置：cms 86 条真落笔里 `surface_appdict` 一族占 32，
+若这 32 条其实是「有门但尺子不认」，动手加门就是白加 32 道门。本批只做尺子轴，一次补掉三处**看不见**，
+并把行动面读数从 621 修到 **498**——全部净差来自「尺子多认了 127 条已存在的门」，**本批没有修掉一个洞**。
+
+| 项 | 文件 | 内容 |
+| --- | --- | --- |
+| 尺子缺陷 19：`callPropagates` 的尾表达式臂在折行代码上恒假 | `scripts/audit_write_gating.mjs:645-670` | 旧写法先把 `)` 后 40 字符 `\s+`→`""` 压平去认 `.await`，再拿**未压平**的原串按 `i + 6` 切片去找闭括号。rustfmt 把长参数调用折成 `)\n            .await\n        }` 时，`)` 与 `.await` 之间已有 12 个以上空白，`i + 6` 仍落在空白里 ⇒ `/^\s*\}/` 面对的是 `.await…` 而非 `}` ⇒ **尾表达式转调永远不作证**。改成同一段原始文本上两条正则并存：`/^\s*\.await\s*\?/`（传播）与 `/^\s*\.await\s*\}/`（整个表达式是函数体尾值）。这是缺陷 20 的前置——不先修切片，`propagatesGateName` 在 helper 体内同样认不出 |
+| 尺子缺陷 20：`helperCanReject` 只认 `AppError::Forbidden` 字面量 | 同上 `:672-695` | `shared::middleware::require_admin(pool, session).await?` / `require_owner(…).await?` 这一族门**由 shared 内部产错误**，helper 体内一个字面量都没有，旧判据一律读成「helper 不会拒绝」⇒ 已加门的档位掉进 R6 无门禁面（**方向是虚报行动面**）。新增 `propagatesGateName(body)`：helper 体内找 `GATE_RE` 命中的门禁调用 ∧ 调用点经 `callPropagates` 传播，两者同时成立才算会拒绝；仍要求传播，所以 `let ok = is_admin(…).await;` 这种「读了标志却照样落笔」不作证。现场：attendance `delete_admin_record`（体内 `require_admin`）、`delete_owned_record`（体内 `require_owner`） |
+| 尺子缺陷 21：宏模板未按「生成函数」切段，读档借写档的门禁与落笔 | 同上 `:700-780`、`:macroTemplateFor` | 缺陷 13 只解决「体内信号取自 `macro_rules!` 模板」，但取的是**整张模板**。`appdict_depth_family!` 一次生成 5 把（匿名读、认证读、PUT、POST、DELETE），整张模板里既有写 SQL 又有 `appdict_data_write` ⇒ 两把读档借走邻居段的门禁（假绿、GET 面漏量）也借到落笔信号（假红、算进真落笔）。新增 `templateSegments`：按 `fn $param` 取平衡块切段，位置绑定**按 matcher 形参顺序**映射实参（`params.forEach((p, ix) => map.set(p, toks[ix]))`）——第一版按段序 `toks[ix+1]` 绑定，因 `$arity` 在不同 matcher 里可能在前也可能在后，会把整表偏移一档；`matcherParams` 遇到含 `$(` 的复数展开返回 `null`，该宏**回落整张模板**并在报告里当面点名。现读 121 条宏写路由 = 切段 62 + 整张 59，回落名单 `processplatform_service_processing/dict_data_fns` **16 把须人工复核** |
+| 判据见证扩充 + 一支**独立反证尺** | 同上 见证段 | 缺陷 19 正向 4 条（cms `surface_appdict` PUT/POST/DELETE×2，helper `appdict_data_write`）、缺陷 20 正向 2 条 + 反向 3 条（`query_assemble_designer/delete_designer_bare`、`surface/attachment_u2b_doc_to_word`、`message/…/group/mockdeletetoget` 三条**不得**被作证）、缺陷 21 反向 2 条（两把 appdict 读档不得被 `appdict_data_write` 借证）+ 正向 1 条。**缺陷 20 的恒真放松点不到名**：临时探针在自然语料里实测 0 条「放松后新误证」的样本（`/d/tmp/probe_nonenforcing.cjs`），点名式反向见证否决不了它，故另写一支**不调用 `helperCanReject`、自己重写一遍「字面量 or 传播门禁」判据**的独立反证尺去扫全量 `indirectGated`；两支尺同读才计分 |
+| 本批顺手量到的**真洞**（未修码，进 §五 首选） | `crates/cms_assemble_control/src/lib.rs:2742-2765` | 切段之后，`data_path_write_handlers!` 的 `$mockdel` 段（8 把 `GET /api/data/document/{id}/{path0…path7}/mockdeletetoget`）从「借邻居段门禁的假绿」里出列，落回 `K3-已认证无会话无门禁`：该段签名**根本不取 `Session`**，体内第一条语句就是 `UPDATE x_cms_data_document_field SET deleted_at = NOW() WHERE doc_id=$1 AND field_name=$2`，而同宏的 `$del`/`$put`/`$create` 三段一律走 `write_doc_field_path(&pool, &session, …)` 带归属门 ⇒ 同一条软删逻辑存在「有门的 DELETE」与「无门的 GET 别名」两份实现。本批**未动码**：改法是让 `$mockdel` 委托 `write_doc_field_path(… PathWriteMode::Remove)`，但返回体形状（现读 `ActionResult::success(row)`）与前端调用面需先核对 |
+
 ## 四、验证
 
 
@@ -817,6 +831,50 @@ cd oa4rust/backend && cargo test --lib -p <crate>
   `anonymous_write_routes` 173。
   落盘顺序按第十批教训排：间接写、间接门禁、死档三段都在所有分桶段之后，GET 段往里追加的条目不会再丢。
 
+- **第十二批读数（尺子轴三跑：C / D / G·H）**——本批**零产品码改动**，故只有尺子一条轴，
+  但仍按前三批的规矩取三态，让「谁贡献了多少」可复算：
+
+  | 跑 | 码 | 尺 | R5 | R6 | 只读挂写 | GET 写无门禁 | 间接门禁作证 | 间接写 SQL | 真落笔 | 见证缺口 |
+  | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+  | C | 工作树码（= HEAD） | HEAD（缺陷 16/17/18） | 671 | 301 | 784 | 227 | 37 | 319 | **621** | 0 |
+  | D | 同上 | + 缺陷 19、20 | 798 | 174 | 780 | 185 | 208 | 212 | **498** | 段未加 |
+  | G·H | 同上 | + 缺陷 21 + 全部见证段 + 反证尺 | 798 | 174 | 780 | **193** | 216 | 196 | **498** | **0** |
+
+  C→D 的 **−123 全部在 R6 含写格**（272→149）：缺陷 20 认出「门在 helper 体内且不写 `AppError::Forbidden` 字面量」这一族之后，
+  **127 行 R6→R5**（其中 123 含写、4 只读），R7 一律未动。D→G 的净差只在 GET 面（**185→193，+8**）与间接名单归属，
+  真落笔计数不变——缺陷 21 影响的是 GET 写面与「谁给谁作证」，不改 R4/R6/R7 的落笔判定。
+  **记账缺口（不粉饰）**：D 那一跑是在缺陷 19、20 都改完之后才跑的，**19 与 20 各自的净贡献本批未拆开**，
+  只能给合并差 −123；两臂的点名红（下方 T19a、T20a）证明两处都承重，但「摘掉 19 只留 20 会读成多少」没有读数。
+- **注入臂取证（通道 B 字节级，`/d/tmp/inject_arm.mjs`；每臂一进程、跑完逐字节复原并断言 sha256 与进入时一致）**：
+  `基线读数 → 逐臂点名红 → 复原后基线复绿` 三段齐：
+  - **T19a** 把 `/^\s*\.await\s*\}/` 改成永不相交的 `/^\s*\.await\s*@@\}/` → 尺子退 1，**缺口 10 处**，
+    点名 4 条「缺陷 19 见证缺失（尾表达式转调未被 `appdict_data_write` 作证）」（cms `surface_appdict` 的 DELETE/PUT/POST/DELETE）+ 6 处级联。
+  - **T20a** 摘掉 `helperCanReject` 的新分支（只留字面量判据）→ 尺子退 1，**缺口恰 4 处**、全部标缺陷 20：
+    `attendanceadmin_delete → delete_admin_record` 与 `attendancedetail_delete → delete_owned_record` 各两条（见证 + 间接门禁名单）。
+  - **T20c** 把 `helperCanReject` 整体放宽成 `return true`（恒真放松）→ 尺子退 1，
+    **13 条「缺陷 20 独立反证：… 该 helper 无拒绝能力」**逐条点名（`u2_is_admin` 族、`attachment_u2b_*` 族、`u2_att_update_meta/text`），
+    即恒真放松被那支不调用被测函数的第二把尺抓住——这格是 T20a 给不了的，点名式反向见证在自然语料里量不到（实测 0 条）。
+  - **T21a** 摘掉切段（回落整张模板）→ 尺子退 1，点名 **2 条「宏模板读档仍被写档 `appdict_data_write` 借证」**
+    （`anonymous_surface_appdict_…_path0_data`、`surface_appdict_…_path0_data`）。
+  - **CTRL**（无害改动）→ 退 0、仍绿、缺口 0。四臂全部「注入即红」，对照臂不红，证明这三处修的是判据而不是读数。
+  - **一次假成功已纠**：T20c 首次跑用 `for` 循环 + `|` 作字段分隔传参，`--find` 里的 `||` 被切坏，注入后尺子报
+    `SyntaxError: Unexpected token ')'`、退出码 1，被注入器读成「臂成立」。红因不对即判废，改用单条命令 + 单引号字面量重跑才有上方读数。
+    **教训**：注入臂的「退 1」不等于取证成立，必须读日志确认红是**见证点名**还是**语法炸**——前者才是判据承重。
+- **复原后基线（run G·H，干净工作树）**：尺子 EXIT=0，桶计数 R1 145 / R2 3 / R4 14 / R5 798 / R6 174 / R7 1092 / R8 1 / R9 10 = 2237，
+  GET 写无门禁 193（K1 5 / K2 11 / K3 177）、只读挂写 780、真落笔 **498**（R4 5 + R6 149 + R7 344）、宏模板 121（切段 62 + 整张 59）、
+  死档 24、A1 实测 9 / 名单 9、`判据见证 … 缺口 0 处`。**十五张在册产物与 run E 存档逐张 md5 全等**，注入零残留
+  （本批再次踩到第十一批发过的那条纪律：注入跑会重写产物，提交前必须干净重跑再逐张比哈希）。
+- **本批未跑 cargo 族**：改动全部落在 `scripts/audit_write_gating.mjs` 一张尺上，零产品码、零测试码，
+  没有可验的 Rust 增量；尺子的可验面由上方五支注入臂承担。下一批动码时必须补 `--lib` 与 `-- --ignored` 读数。
+- **按 crate 排的真落笔无门禁面（run H，去重后 497 / 矩阵计 498，多的 1 行是同一 `crate+method+path` 的重注关键）**：
+  `processplatform_assemble_surface` **79**、`cms_assemble_control` **48**、`query_assemble_designer` 44、
+  `processplatform_service_processing` 43、`message_assemble_communicate` 37、`program_center` **29**、
+  `query_assemble_surface` 28、`file_assemble_control` 20、`meeting_assemble_control` 20、`attendance_assemble_control` **19**，
+  其后 `cms_core_entity` 15、`processplatform_assemble_designer` 15、`calendar_assemble_control` 13、`mind_assemble_control` 13、
+  `general_assemble_control` 11，余 22 个 crate 共 63 条（长尾首列 `bbs` 9、`jpush` 9、`ai_assemble_control` 6）。
+  对照 §五 第十一批那张 621 的表：**cms 86→48、program_center 53→29、attendance 39→19**，
+  `query_assemble_designer` / `ppsvc` / `message` 三族一字未动——它们是下一批的活，不是尺子能修掉的。
+
 ## 五、处置与遗留（下一轮入口）
 
 - 已修并验证：N1、N4-01、N2、preview 加固、F3、F6、F9（离线 403/会话权威断言）、F2（编译与既有测试绿，真门 `#[ignore]` 待 PG）、**A2-F12、A3-N1、A3-N2、A3-N3**（第二批读数见 §四）、**A3-N6（program_init 7 把写收 admin + 匿名 init 判定改 fail-closed）、R4-6、R4-1 全 13 把**（第三批：§三.3 改法、§四 读数，其中 processing/core_express/program_init 的 DB 臂已按 `--ignored --nocapture` 真跑取证）、**R4-2 批 1 + 批 2a 共 29 把**（第四批：§三.4 / §四第四批）、**R4-7**（第五批：§三.5 / §四第五批，含尺子两处计量缺陷 + 门禁词表缺陷的自修）、**R4-2 批 3：processing 两把 touch + surface 四把 touch 路由**（第六批：§三.6 / §四第六批，DB 臂已 `--ignored --nocapture` 真跑取到「闯入者 403 且零留痕、发起人放行且 creator 落本人」的行为差）。
@@ -1095,3 +1153,52 @@ cd oa4rust/backend && cargo test --lib -p <crate>
   后才提交——这一步揪出了上格 ①：注入跑曾把 `routes_dead_alias.tsv` 写成只剩表头。
   共享工作树上并行会话的在制品未被本批收走。本轮未 push。
 
+### 第十二批收口后的刷新（§三.12 / §四 第十二批读数）
+
+- **已修并验证（尺子轴）**：缺陷 **19**（`callPropagates` 尾表达式在折行代码上恒假）、**20**（`helperCanReject`
+  只认 `AppError::Forbidden` 字面量，看不见 `require_admin` / `require_owner(...).await?` 型门）、
+  **21**（宏模板未按生成函数切段，读档借写档的门禁与落笔）。判据见证段扩到缺陷 16/17/18/19/20/21，
+  并为缺陷 20 另配一支**独立反证尺**。真落笔读数 **621 → 498**，`判据见证 … 缺口 0 处`，EXIT=0。
+  **本批一个洞都没修**：−123 全是「尺子多认了 127 条已存在的门」，引用「未门禁写面」时按 §四 那张三跑表说明用的是哪把尺。
+- **第十一轮那格「先修尺子再动 cms」已兑现**：`cms_assemble_control` 86 → **48**，其中 `surface_appdict` 一族 32 条
+  现读 **R5-已认证+体内门禁**（`appdict_data_write` 作证，`/api/surface/appdict/{…}/{pathN}/data` 的 PUT/POST/DELETE 逐条在册）。
+  也就是说那 32 道门**早就加了**，是尺子不认——若按第十一轮的名单动手，就是白加 32 道门并破一次契约。
+- **下一批首选（代码轴，按 §四 run H 那张 498 表排）**：
+  1. **cms `data_path_write_handlers!` 的 `$mockdel` 段——本批刚浮出的 8 条真洞**：
+     `GET /api/data/document/{id}/{path0…path7}/mockdeletetoget` 不取 `Session`、体内直接软删
+     `x_cms_data_document_field`，而同宏 `$del`/`$put`/`$create` 走 `write_doc_field_path(&pool, &session, …)` 带归属门。
+     改法是让 `$mockdel` 也委托 `write_doc_field_path(… Remove)`，**先核对返回体形状与前端调用面**再动；
+     另需注意它是 GET 上的写档（csrf / `requires_admin` 双盲区），加门之后仍要判「GET 该不该继续挂写」。
+  2. `processplatform_assemble_surface` **79**（R6 25 / R7 54）内部形状：`attachment_u2b` **20**、`read_id` 8、`task_id` 8、
+     `work_id` 5、`work_v2` 5、`task_v2` 4、`taskcompleted_id` 3，其余 20 余个前缀各 1~2。
+     最大族仍是 `attachment_u2b`（第十、十一批未覆盖的那半）。
+  3. `query_assemble_designer` 44 / `processplatform_service_processing` 43 / `message_assemble_communicate` 37 三族
+     **本批读数一字未动**，是纯粹没碰过的活面。
+- **待拍与新增方法学缺口（本批评证出、本批未动）**：
+  1. **`processplatform_service_processing/dict_data_fns` 16 把回落整张模板，须人工复核**：该 matcher 含复数展开，
+     `templateSegments` 绑不出段，尺子按「整张模板」作证——与缺陷 21 修前同风险（读档可能借邻居门禁）。
+     尺子已当面点名不静默放行，但**要么给这个宏补一条按形状的白名单切段，要么逐把读源码定性**，不能长期停在回落档。
+  2. **其余 43 条整张模板取证的宏写路由未逐条复核**（121 = 切段 62 + 整张 59，其中 59 条里 ppsvc 占 16）。
+     回落判据是「matcher 形参与段数绑不上」，不是「已知不安全」，需要一次专门抽查确认没有第二处 `dict_data_fns`。
+  3. **C→D 未拆缺陷 19 与 20 各自贡献**（见 §四 那格记账缺口）：若要精确归因，需在修好 20 的前提下单独摘掉 19 再跑一态；
+     本批只有「合并 −123」和「两臂各自点名红」两条证据，没有归因读数。
+  4. **独立反证尺只覆盖 `indirectGated` 一族**：缺陷 16/17/18/19/21 仍只靠点名式正反向见证，
+     尚无第二把尺重写判据。哪一条下次被量出「自然语料里点不到名」（如 T20c 之于缺陷 20），就照反证尺的办法补一支。
+  5. **沿用第十一轮四格、本批未动**：A1 真匿名写 9 条属限流/验证码族而非门禁族（定拍仍待拍）；
+     24 条死档 needs 一支独立守卫（现只 surface 匿名臂 `assert_eq!(dead, 9)` 覆盖本族）；
+     **只读挂写方法 784 → 780**（沿用「把读挂回 GET 或让写方法显式 405」，涉前端调用面需按 crate 分批）；
+     `NOW()` 写进 TEXT 列 79 处、门禁入口两族并存、`shared/src/crud.rs` CrudSpec 无归属、
+     `assert_eq!(status, 500)` 断言族 272 处、correlation 读侧 IDOR、F5 / F7 / F8 / F10、N4-02 / N4-03。
+- **本批两处自伤与教训（记下防再犯）**：
+  ① **注入臂「退 1」不等于取证成立**：T20c 首次跑被 bash 的 `|` 字段分隔符切坏 `--find`，尺子读的是
+  `SyntaxError: Unexpected token ')'` 的红，注入器却按退出码判成「臂成立」。红因必须回到日志读——
+  **只有「见证点名」那种红才算判据承重，语法炸、模块找不到、写盘失败都算废臂**。
+  同时把 skill 那条老教训又踩了一遍：锚点一律用单引号字面量单条命令传，不要图省事拼 `for` 循环 + 分隔符。
+  ② **恒真放松不能靠点名式反向见证否决**：探针实测自然语料 0 条样本（`/d/tmp/probe_nonenforcing.cjs`），
+  即「把判据改成 `return true`」在既有见证名单里可能一处都不触发。**凡新增一条「放宽型」判据，
+  要么配一支不调用被测函数的反证尺，要么明确记「本格无法自证恒真」**，不能拿正向见证冒充双向证明。
+- 提交落点：本批**仅尺子轴**（`scripts/audit_write_gating.mjs` 缺陷 19/20/21 + 见证扩充 + 独立反证尺，
+  与六张刷新产物）为 `aa2c87435`，与本文档（§三.12 / §四 第十二批读数 / 本节）分两笔，本节即第二笔并回填该 hash。
+  第二笔提交前用干净工作树重跑尺子（run H：EXIT=0、R5 798 / R6 174 / R7 1092 / 真落笔 498 / GET 写 193 /
+  只读挂写 780 / 宏模板 62+59 / 缺口 0），十五张在册产物与 run E 存档逐张 md5 全等后才提交。
+  本批未动产品码，故无 cargo 读数；共享工作树上并行会话的在制品未被本批收走。**本轮未 push**。
