@@ -7680,8 +7680,10 @@ pub async fn draft_id_mockdeletetoget(
 #[allow(non_snake_case)]
 pub async fn draft_id_start(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_person(&pool.0, session, "PP_C_DRAFT", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -8452,8 +8454,10 @@ pub async fn handover_id(
 #[allow(non_snake_case)]
 pub async fn handover_id_cancel(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_person(&pool.0, session, "PP_C_HANDOVER", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -8506,8 +8510,10 @@ pub async fn handover_id_cancel(
 #[allow(non_snake_case)]
 pub async fn handover_id_process(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_person(&pool.0, session, "PP_C_HANDOVER", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -8954,8 +8960,10 @@ pub async fn mode_save(
 #[allow(non_snake_case)]
 pub async fn mode_id_delete(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_person(&pool.0, session, "PP_C_TASK_PROCESS_MODE", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
@@ -9741,16 +9749,20 @@ async fn read_list_count_application_applicationFlag_process_core(
 #[allow(non_snake_case)]
 pub async fn read_list_count_application_applicationFlag_process(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(applicationFlag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_person(&pool.0, session, "PP_C_READ", &applicationFlag).await?;
     read_list_count_application_applicationFlag_process_core(pool, applicationFlag).await
 }
 
 #[allow(non_snake_case)]
 pub async fn read_list_count_application_applicationFlag_process_p2(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((_s0, applicationFlag)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_person(&pool.0, session, "PP_C_READ", &applicationFlag).await?;
     read_list_count_application_applicationFlag_process_core(pool, applicationFlag).await
 }
 
@@ -11819,16 +11831,20 @@ async fn readcompleted_list_count_application_applicationFlag_process_core(
 #[allow(non_snake_case)]
 pub async fn readcompleted_list_count_application_applicationFlag_process(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(applicationFlag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_person(&pool.0, session, "PP_C_READCOMPLETED", &applicationFlag).await?;
     readcompleted_list_count_application_applicationFlag_process_core(pool, applicationFlag).await
 }
 
 #[allow(non_snake_case)]
 pub async fn readcompleted_list_count_application_applicationFlag_process_p2(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((_s0, applicationFlag)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_person(&pool.0, session, "PP_C_READCOMPLETED", &applicationFlag).await?;
     readcompleted_list_count_application_applicationFlag_process_core(pool, applicationFlag).await
 }
 
@@ -16019,16 +16035,20 @@ async fn task_list_count_application_applicationFlag_process_core(
 #[allow(non_snake_case)]
 pub async fn task_list_count_application_applicationFlag_process(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(applicationFlag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_person(&pool.0, session, "PP_C_TASK", &applicationFlag).await?;
     task_list_count_application_applicationFlag_process_core(pool, applicationFlag).await
 }
 
 #[allow(non_snake_case)]
 pub async fn task_list_count_application_applicationFlag_process_p2(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((_s0, applicationFlag)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_person(&pool.0, session, "PP_C_TASK", &applicationFlag).await?;
     task_list_count_application_applicationFlag_process_core(pool, applicationFlag).await
 }
 
@@ -18601,16 +18621,20 @@ async fn taskcompleted_list_count_application_applicationFlag_process_core(
 #[allow(non_snake_case)]
 pub async fn taskcompleted_list_count_application_applicationFlag_process(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(applicationFlag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_person(&pool.0, session, "PP_C_TASKCOMPLETED", &applicationFlag).await?;
     taskcompleted_list_count_application_applicationFlag_process_core(pool, applicationFlag).await
 }
 
 #[allow(non_snake_case)]
 pub async fn taskcompleted_list_count_application_applicationFlag_process_p2(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((_s0, applicationFlag)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_person(&pool.0, session, "PP_C_TASKCOMPLETED", &applicationFlag).await?;
     taskcompleted_list_count_application_applicationFlag_process_core(pool, applicationFlag).await
 }
 
@@ -20563,16 +20587,20 @@ async fn work_list_count_application_applicationFlag_process_core(
 #[allow(non_snake_case)]
 pub async fn work_list_count_application_applicationFlag_process(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(applicationFlag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_actor(&pool.0, session, "PP_C_WORK", &applicationFlag).await?;
     work_list_count_application_applicationFlag_process_core(pool, applicationFlag).await
 }
 
 #[allow(non_snake_case)]
 pub async fn work_list_count_application_applicationFlag_process_p2(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((_s0, applicationFlag)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_actor(&pool.0, session, "PP_C_WORK", &applicationFlag).await?;
     work_list_count_application_applicationFlag_process_core(pool, applicationFlag).await
 }
 
@@ -23415,16 +23443,20 @@ async fn workcompleted_list_count_application_applicationFlag_process_core(
 #[allow(non_snake_case)]
 pub async fn workcompleted_list_count_application_applicationFlag_process(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(applicationFlag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_actor(&pool.0, session, "PP_C_WORKCOMPLETED", &applicationFlag).await?;
     workcompleted_list_count_application_applicationFlag_process_core(pool, applicationFlag).await
 }
 
 #[allow(non_snake_case)]
 pub async fn workcompleted_list_count_application_applicationFlag_process_p2(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((_s0, applicationFlag)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_actor(&pool.0, session, "PP_C_WORKCOMPLETED", &applicationFlag).await?;
     workcompleted_list_count_application_applicationFlag_process_core(pool, applicationFlag).await
 }
 
