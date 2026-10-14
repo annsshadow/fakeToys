@@ -671,4 +671,344 @@ mod security_gate_tests {
         );
         delete_work_row(&pool, &xid).await;
     }
+
+    // ═══ 第十一批：data/workcompleted 与 data/job 的 mockputtopost 别名写族 ═══
+    // 18 把 handler / 36 条注册点。形状与上一批 data/work 同锁：handler 只按「xid = $1」
+    // touch 一行「"xupdateTime"」，取 Path 的**首段**当 xid，且原先一条门都不上——
+    // 任一登录会话（甚至匿名，因为有 10 条挂在 GET 上）都能改写他人流程实例的更新时间。
+    // 本批口径与 u4_require_ppc_actor 一致：无会话 401（先于 pool.get()，离线可证）；
+    // 有会话先读「"xcreatorPerson"」再校归属，归属为空或行不存在 → 只允许 admin。
+    // 门夹在 SQL 之前还会改变既有契约测试的期望码（500 → 401），那一处返工在 tests_u2.rs。
+
+    /// 注册模板里的「{id}」「{job}」换成实际 xid、「{pathN}」换成固定哨兵段。
+    /// 注意 job 族还有一档 GET 别名写成字面量「/data/job/job/mockputtopost」（o2server 的
+    /// {job} 位被写死成 "job"），它没有占位符可替换——SQL 绑到的 xid 就是字符串 "job"，
+    /// 所以那一档只用于「门有没有盖住这条注册点」，不用于 DB 落库取证。
+    fn ppc_uri_at(xid: &str, tpl: &str) -> String {
+        let mut u = tpl.replace("{id}", xid).replace("{job}", xid);
+        for i in 0..8usize {
+            u = u.replace(&format!("{{path{i}}}"), &format!("r50-p{i}"));
+        }
+        assert!(!u.contains('{') && !u.contains('}'), "模板残留未替换：{u}");
+        u
+    }
+
+    /// 与 routes.rs 注册面逐格对应（下表由 routes.rs 机器枚举生成，36 条 / 18 把 handler）。
+    fn ppc_alias_routes() -> Vec<(Method, &'static str)> {
+        let v: Vec<(Method, &'static str)> = vec![
+            // ← data_job_job_mockputtopost
+            (Method::GET, "/api/processplatform/assemble/surface/data/job/job/mockputtopost"),
+            // ← data_job_job_path0_mockputtopost
+            (Method::GET, "/api/processplatform/assemble/surface/data/job/job/path0/mockputtopost"),
+            // ← data_job_job_path0_path1_mockputtopost
+            (Method::GET, "/api/processplatform/assemble/surface/data/job/job/path0/path1/mockputtopost"),
+            // ← data_job_job_path0_path1_path2_mockputtopost
+            (Method::GET, "/api/processplatform/assemble/surface/data/job/job/path0/path1/path2/mockputtopost"),
+            // ← data_job_job_path0_path1_path2_path3_mockputtopost
+            (Method::GET, "/api/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/mockputtopost"),
+            // ← data_job_job_path0_path1_path2_path3_path4_mockputtopost
+            (Method::GET, "/api/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4/mockputtopost"),
+            // ← data_job_job_path0_path1_path2_path3_path4_path5_mockputtopost
+            (Method::GET, "/api/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4/path5/mockputtopost"),
+            // ← data_job_job_path0_path1_path2_path3_path4_path5_path6_mockputtopost
+            (Method::GET, "/api/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4/path5/path6/mockputtopost"),
+            // ← data_job_job_path0_path1_path2_path3_path4_path5_path6_path7_mockputtopost
+            (Method::GET, "/api/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4/path5/path6/path7/mockputtopost"),
+            // ← data_workcompleted_id_mockputtopost
+            (Method::GET, "/api/processplatform/assemble/surface/data/workcompleted/mockputtopost/{id}"),
+            // ← data_job_job_mockputtopost
+            (Method::POST, "/api/processplatform/assemble/surface/data/job/{job}/mockputtopost"),
+            // ← data_job_job_path0_mockputtopost
+            (Method::POST, "/api/processplatform/assemble/surface/data/job/{job}/{path0}/mockputtopost"),
+            // ← data_job_job_path0_path1_mockputtopost
+            (Method::POST, "/api/processplatform/assemble/surface/data/job/{job}/{path0}/{path1}/mockputtopost"),
+            // ← data_job_job_path0_path1_path2_mockputtopost
+            (Method::POST, "/api/processplatform/assemble/surface/data/job/{job}/{path0}/{path1}/{path2}/mockputtopost"),
+            // ← data_job_job_path0_path1_path2_path3_mockputtopost
+            (Method::POST, "/api/processplatform/assemble/surface/data/job/{job}/{path0}/{path1}/{path2}/{path3}/mockputtopost"),
+            // ← data_job_job_path0_path1_path2_path3_path4_mockputtopost
+            (Method::POST, "/api/processplatform/assemble/surface/data/job/{job}/{path0}/{path1}/{path2}/{path3}/{path4}/mockputtopost"),
+            // ← data_job_job_path0_path1_path2_path3_path4_path5_mockputtopost
+            (Method::POST, "/api/processplatform/assemble/surface/data/job/{job}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/mockputtopost"),
+            // ← data_job_job_path0_path1_path2_path3_path4_path5_path6_mockputtopost
+            (Method::POST, "/api/processplatform/assemble/surface/data/job/{job}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}/mockputtopost"),
+            // ← data_job_job_path0_path1_path2_path3_path4_path5_path6_path7_mockputtopost
+            (Method::POST, "/api/processplatform/assemble/surface/data/job/{job}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}/{path7}/mockputtopost"),
+            // ← data_workcompleted_id_mockputtopost
+            (Method::POST, "/api/processplatform/assemble/surface/data/workcompleted/{id}/mockputtopost"),
+            // ← data_workcompleted_id_path0_mockputtopost
+            (Method::POST, "/api/processplatform/assemble/surface/data/workcompleted/{id}/{path0}/mockputtopost"),
+            // ← data_workcompleted_id_path0_path1_mockputtopost
+            (Method::POST, "/api/processplatform/assemble/surface/data/workcompleted/{id}/{path0}/{path1}/mockputtopost"),
+            // ← data_workcompleted_id_path0_path1_path2_mockputtopost
+            (Method::POST, "/api/processplatform/assemble/surface/data/workcompleted/{id}/{path0}/{path1}/{path2}/mockputtopost"),
+            // ← data_workcompleted_id_path0_path1_path2_path3_mockputtopost
+            (Method::POST, "/api/processplatform/assemble/surface/data/workcompleted/{id}/{path0}/{path1}/{path2}/{path3}/mockputtopost"),
+            // ← data_workcompleted_id_path0_path1_path2_path3_path4_mockputtopost
+            (Method::POST, "/api/processplatform/assemble/surface/data/workcompleted/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/mockputtopost"),
+            // ← data_workcompleted_id_path0_path1_path2_path3_path4_path5_mockputtopost
+            (Method::POST, "/api/processplatform/assemble/surface/data/workcompleted/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/mockputtopost"),
+            // ← data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_mockputtopost
+            (Method::POST, "/api/processplatform/assemble/surface/data/workcompleted/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}/mockputtopost"),
+            // ← data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_path7_mockputtopost
+            (Method::POST, "/api/processplatform/assemble/surface/data/workcompleted/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}/{path7}/mockputtopost"),
+            // ← data_workcompleted_id_path0_mockputtopost
+            (Method::PUT, "/api/processplatform/assemble/surface/data/workcompleted/{id}/{path0}"),
+            // ← data_workcompleted_id_path0_path1_mockputtopost
+            (Method::PUT, "/api/processplatform/assemble/surface/data/workcompleted/{id}/{path0}/{path1}"),
+            // ← data_workcompleted_id_path0_path1_path2_mockputtopost
+            (Method::PUT, "/api/processplatform/assemble/surface/data/workcompleted/{id}/{path0}/{path1}/{path2}"),
+            // ← data_workcompleted_id_path0_path1_path2_path3_mockputtopost
+            (Method::PUT, "/api/processplatform/assemble/surface/data/workcompleted/{id}/{path0}/{path1}/{path2}/{path3}"),
+            // ← data_workcompleted_id_path0_path1_path2_path3_path4_mockputtopost
+            (Method::PUT, "/api/processplatform/assemble/surface/data/workcompleted/{id}/{path0}/{path1}/{path2}/{path3}/{path4}"),
+            // ← data_workcompleted_id_path0_path1_path2_path3_path4_path5_mockputtopost
+            (Method::PUT, "/api/processplatform/assemble/surface/data/workcompleted/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}"),
+            // ← data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_mockputtopost
+            (Method::PUT, "/api/processplatform/assemble/surface/data/workcompleted/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}"),
+            // ← data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_path7_mockputtopost
+            (Method::PUT, "/api/processplatform/assemble/surface/data/workcompleted/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}/{path7}"),
+        ];
+        assert_eq!(
+            v.len(),
+            36,
+            "本族注册点恰好 36 条（18 把 handler），多一条/少一条都要先红在这里"
+        );
+        v
+    }
+
+    async fn call_ppc_as(
+        xid: &str,
+        method: Method,
+        tpl: &str,
+        person: Option<&str>,
+    ) -> StatusCode {
+        let uri = ppc_uri_at(xid, tpl);
+        let mut app = app();
+        if let Some(p) = person {
+            app = app.layer(axum::Extension(shared::testing::test_session(p)));
+        }
+        app.oneshot(
+            Request::builder()
+                .uri(&uri)
+                .method(method.clone())
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap()
+        .status()
+    }
+
+    /// 无会话必须 401，且发生在 pool.get() 之前——本支不碰库，离线可证。
+    /// 36 条注册点分两族逐格点名：
+    /// ① 路径里带 `{}` 的 27 条是**活**别名，必须撞在会话门上（401）；
+    /// ② `GET /data/job/job[/pathN…]/mockputtopost` 这 9 条是**死档**——注册时把 `{job}`
+    ///    槽写成了字面量 `job`、又没给 `{id}` 段，路径零参数而 handler 取 `Path<String>`，
+    ///    axum 在进入函数体之前就抛 500「Wrong number of path arguments」。
+    ///    判据用「模板里有几个 `{}` 段」而不是硬编码行数，是因为这条规则可机器复核：
+    ///    一旦有人把死档补上参数段，它会立刻从 ② 落到 ① 并要求 401，而不是悄悄留在 500。
+    ///    本支不把 ② 放宽成「401 或 500 都算过」——那样「别名被补活却忘了加门」也读成绿。
+    #[tokio::test]
+    async fn surface_ppc_alias_writes_reject_anonymous() {
+        let mut bad: Vec<String> = Vec::new();
+        let mut dead = 0usize;
+        for (method, tpl) in ppc_alias_routes() {
+            let live = tpl.contains('{');
+            let want = if live {
+                StatusCode::UNAUTHORIZED
+            } else {
+                dead += 1;
+                StatusCode::INTERNAL_SERVER_ERROR
+            };
+            let status = call_ppc_as("r50-anon-target", method.clone(), tpl, None).await;
+            if status != want {
+                bad.push(format!("{method} {tpl} -> 期望 {want}，实际 {status}"));
+            }
+        }
+        assert!(bad.is_empty(), "workcompleted/job 别名写门禁不符：{bad:?}");
+        assert_eq!(dead, 9, "死档别名恰好 9 条（GET job 字面量族）");
+    }
+
+    /// 造一行 pp_c_workcompleted / pp_c_job。迁移 032 里这两张表的 id 是 TEXT PRIMARY KEY，
+    /// xid / xcreatorPerson / xcreateTime / xupdateTime 均为 TEXT；handler 放行后还会
+    /// SELECT xcreateTime，所以兜底建表必须带上它。表已存在时 CREATE 是无操作，裸库才走兜底；
+    /// creator 传空串即造「空归属」行。
+    async fn seed_ppc_row(pool: &deadpool_postgres::Pool, table: &str, xid: &str, creator: &str) {
+        let c = pool.get().await.unwrap();
+        c.execute(
+            format!(
+                "CREATE TABLE IF NOT EXISTS \"{table}\" (\"id\" TEXT PRIMARY KEY, \"xid\" TEXT, \
+                 \"xcreatorPerson\" TEXT, \"xcreateTime\" TEXT, \"xupdateTime\" TEXT)"
+            )
+            .as_str(),
+            &[],
+        )
+        .await
+        .unwrap();
+        c.execute(
+            format!(
+                "INSERT INTO \"{table}\" (\"id\", \"xid\", \"xcreatorPerson\", \"xupdateTime\") \
+                 VALUES ($1, $1, $2, 'r50-before') ON CONFLICT (\"id\") DO UPDATE SET \
+                 \"xcreatorPerson\" = EXCLUDED.\"xcreatorPerson\", \"xupdateTime\" = 'r50-before'"
+            )
+            .as_str(),
+            &[&xid.to_string(), &creator.to_string()],
+        )
+        .await
+        .unwrap();
+    }
+
+    async fn ppc_update_time(
+        pool: &deadpool_postgres::Pool,
+        table: &str,
+        xid: &str,
+    ) -> Option<String> {
+        let c = pool.get().await.unwrap();
+        c.query_opt(
+            format!("SELECT \"xupdateTime\" AS u FROM \"{table}\" WHERE xid = $1").as_str(),
+            &[&xid.to_string()],
+        )
+        .await
+        .unwrap()
+        .and_then(|row| row.get::<_, Option<String>>("u"))
+    }
+
+    async fn delete_ppc_row(pool: &deadpool_postgres::Pool, table: &str, xid: &str) {
+        let c = pool.get().await.unwrap();
+        c.execute(
+            format!("DELETE FROM \"{table}\" WHERE xid = $1").as_str(),
+            &[&xid.to_string()],
+        )
+        .await
+        .unwrap();
+    }
+
+    const WC_TPL: &str =
+        "/api/processplatform/assemble/surface/data/workcompleted/{id}/mockputtopost";
+    const WC_PUT_TPL: &str =
+        "/api/processplatform/assemble/surface/data/workcompleted/{id}/{path0}";
+    const JOB_TPL: &str = "/api/processplatform/assemble/surface/data/job/{job}/mockputtopost";
+
+    /// touch 族的归属门 + 落库行为差（workcompleted 一臂）：
+    /// ① 闯入者 403 且时间戳仍为哨兵；② 本人 200 且时间戳确实被改写（handler 未命中行时
+    /// 也回 200，所以落库才是放行侧凭据）；③ 空归属行普通会话 403、admin 放行。
+    #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
+    async fn surface_data_workcompleted_touch_alias_owner_gate_lands() {
+        if !shared::testing::is_db_available().await {
+            eprintln!(
+                "skip: surface_data_workcompleted_touch_alias_owner_gate_lands (no DATABASE_URL)"
+            );
+            return;
+        }
+        let pool = shared::testing::test_pool();
+        let tag = uuid::Uuid::new_v4().simple().to_string();
+        let creator = format!("u-r50s-creator-{tag}");
+        let intruder = format!("u-r50s-intruder-{tag}");
+        let xid = format!("r50s-wc-{tag}-touch");
+        seed_ppc_row(&pool, "pp_c_workcompleted", &xid, &creator).await;
+
+        let s = call_ppc_as(&xid, Method::POST, WC_TPL, Some(&intruder)).await;
+        assert_eq!(
+            s,
+            StatusCode::FORBIDDEN,
+            "他人会话 touch 他人 workcompleted 必须 403"
+        );
+        assert_eq!(
+            ppc_update_time(&pool, "pp_c_workcompleted", &xid)
+                .await
+                .as_deref(),
+            Some("r50-before"),
+            "403 路径不得改写时间戳"
+        );
+
+        let s = call_ppc_as(&xid, Method::POST, WC_TPL, Some(&creator)).await;
+        assert_eq!(s, StatusCode::OK, "本人 touch 应放行");
+        let stored = ppc_update_time(&pool, "pp_c_workcompleted", &xid).await;
+        println!("workcompleted mockputtopost 放行后 xupdateTime 落库读数：{stored:?}");
+        assert_ne!(
+            stored.as_deref(),
+            Some("r50-before"),
+            "SQL 未执行也会回 200（not found 分支），落库才是放行侧的真凭据"
+        );
+
+        let orphan = format!("r50s-wc-{tag}-orphan");
+        seed_ppc_row(&pool, "pp_c_workcompleted", &orphan, "").await;
+        let s = call_ppc_as(&orphan, Method::PUT, WC_PUT_TPL, Some(&intruder)).await;
+        assert_eq!(
+            s,
+            StatusCode::FORBIDDEN,
+            "空归属 workcompleted 不得对普通会话开放改写"
+        );
+        let admin = seed_admin(&pool, &tag).await;
+        let s = call_ppc_as(&orphan, Method::POST, WC_TPL, Some(&admin)).await;
+        assert_eq!(s, StatusCode::OK, "admin 改写空归属 workcompleted 应放行");
+
+        delete_ppc_row(&pool, "pp_c_workcompleted", &xid).await;
+        delete_ppc_row(&pool, "pp_c_workcompleted", &orphan).await;
+    }
+
+    /// job 一臂同锁（表 pp_c_job，xcreatorPerson 是流程实例发起人）。
+    #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
+    async fn surface_data_job_touch_alias_owner_gate_lands() {
+        if !shared::testing::is_db_available().await {
+            eprintln!(
+                "skip: surface_data_job_touch_alias_owner_gate_lands (no DATABASE_URL)"
+            );
+            return;
+        }
+        let pool = shared::testing::test_pool();
+        let tag = uuid::Uuid::new_v4().simple().to_string();
+        let creator = format!("u-r50s-creator-{tag}");
+        let intruder = format!("u-r50s-intruder-{tag}");
+        let xid = format!("r50s-job-{tag}-touch");
+        seed_ppc_row(&pool, "pp_c_job", &xid, &creator).await;
+
+        let s = call_ppc_as(&xid, Method::POST, JOB_TPL, Some(&intruder)).await;
+        assert_eq!(s, StatusCode::FORBIDDEN, "他人会话 touch 他人 job 必须 403");
+        assert_eq!(
+            ppc_update_time(&pool, "pp_c_job", &xid).await.as_deref(),
+            Some("r50-before"),
+            "403 路径不得改写时间戳"
+        );
+
+        let s = call_ppc_as(&xid, Method::POST, JOB_TPL, Some(&creator)).await;
+        assert_eq!(s, StatusCode::OK, "本人 touch 应放行");
+        let stored = ppc_update_time(&pool, "pp_c_job", &xid).await;
+        println!("job mockputtopost 放行后 xupdateTime 落库读数：{stored:?}");
+        assert_ne!(
+            stored.as_deref(),
+            Some("r50-before"),
+            "SQL 未执行也会回 200（not found 分支），落库才是放行侧的真凭据"
+        );
+        delete_ppc_row(&pool, "pp_c_job", &xid).await;
+    }
+
+    /// 放行侧不得被门夹死：admin 逐一打 36 档，任何一格出现 401/403 都是本批的回归。
+    /// 9 条 GET job 字面量档是「Path 参数段缺失」的死档，带会话也进不到函数体（500），
+    /// 本支刻意只盯 401/403——死档不是放行侧的凭据，放行侧的真凭据由上面两支落库差给出。
+    #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
+    async fn surface_ppc_alias_admin_passes_all_registrations() {
+        if !shared::testing::is_db_available().await {
+            eprintln!("skip: surface_ppc_alias_admin_passes_all_registrations (no DATABASE_URL)");
+            return;
+        }
+        let pool = shared::testing::test_pool();
+        let tag = uuid::Uuid::new_v4().simple().to_string();
+        let admin = seed_admin(&pool, &tag).await;
+        let mut bad: Vec<String> = Vec::new();
+        for (method, tpl) in ppc_alias_routes() {
+            let status = call_ppc_as("r50s-any", method.clone(), tpl, Some(&admin)).await;
+            if status == StatusCode::UNAUTHORIZED || status == StatusCode::FORBIDDEN {
+                bad.push(format!("{method} {tpl} -> {status}"));
+            }
+        }
+        assert!(
+            bad.is_empty(),
+            "admin 打 36 档 workcompleted/job 别名不得被门拒绝：{bad:?}"
+        );
+    }
 }

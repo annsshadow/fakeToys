@@ -56,26 +56,37 @@ async fn require_actor_opt(
     }
 }
 
-/// 第四轮 R4-10：`data/work/{id}` 的 mock* 别名族（18 把）在**无会话**条件下
-/// 物理删除 / touch 流程实例 PP_C_WORK。口径与正式路由同锁（§五 统一修法）：
+/// 第四轮 R4-10/R4-11：o2server 形状别名写族（`data/work`、`data/workcompleted`、
+/// `data/job` 的 mock* 档）在**无会话**条件下 touch / 物理删除流程实例行。
+/// 口径与正式路由同锁（§五 统一修法）：
 /// 无会话在任何 SQL 之前 401（离线可证）；有会话先按 xid 读发起人再校归属——
 /// 归属非空 → 本人或 admin，归属为空或行不存在 → 只允许 admin。
-async fn u4_require_work_actor(
+/// `table` 取 `&'static str`：SQL 表名不能参数绑定，只允许内部字面量调用点。
+async fn u4_require_ppc_actor(
     pool: &Pool,
     session: Option<Extension<shared::session::Session>>,
+    table: &'static str,
     id: &str,
 ) -> Result<(), AppError> {
     let session = u4_require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let owner = client
         .query_opt(
-            "SELECT \"xcreatorPerson\" FROM PP_C_WORK WHERE xid = $1",
+            format!("SELECT \"xcreatorPerson\" FROM {table} WHERE xid = $1").as_str(),
             &[&id.to_string()],
         )
         .await
         .map_err(|_| AppError::Internal)?
         .map(|r| r.get::<_, Option<String>>("xcreatorPerson").unwrap_or_default());
     require_actor_opt(pool, &session, owner.as_deref()).await
+}
+
+async fn u4_require_work_actor(
+    pool: &Pool,
+    session: Option<Extension<shared::session::Session>>,
+    id: &str,
+) -> Result<(), AppError> {
+    u4_require_ppc_actor(pool, session, "PP_C_WORK", id).await
 }
 
 #[derive(Debug, Deserialize)]
@@ -3281,8 +3292,10 @@ pub async fn data_job_job_array_data(
 #[allow(non_snake_case)]
 pub async fn data_job_job_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_actor(&pool.0, session, "PP_C_JOB", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -3385,8 +3398,10 @@ pub async fn data_job_job_path0(
 #[allow(non_snake_case)]
 pub async fn data_job_job_path0_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((id, _path0)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_actor(&pool.0, session, "PP_C_JOB", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -3489,8 +3504,10 @@ pub async fn data_job_job_path0_path1(
 #[allow(non_snake_case)]
 pub async fn data_job_job_path0_path1_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((id, _path0, _path1)): axum::extract::Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_actor(&pool.0, session, "PP_C_JOB", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -3598,6 +3615,7 @@ pub async fn data_job_job_path0_path1_path2(
 #[allow(non_snake_case)]
 pub async fn data_job_job_path0_path1_path2_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((id, _path0, _path1, _path2)): axum::extract::Path<(
         String,
         String,
@@ -3605,6 +3623,7 @@ pub async fn data_job_job_path0_path1_path2_mockputtopost(
         String,
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_actor(&pool.0, session, "PP_C_JOB", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -3713,6 +3732,7 @@ pub async fn data_job_job_path0_path1_path2_path3(
 #[allow(non_snake_case)]
 pub async fn data_job_job_path0_path1_path2_path3_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((id, _path0, _path1, _path2, _path3)): axum::extract::Path<(
         String,
         String,
@@ -3721,6 +3741,7 @@ pub async fn data_job_job_path0_path1_path2_path3_mockputtopost(
         String,
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_actor(&pool.0, session, "PP_C_JOB", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -3830,6 +3851,7 @@ pub async fn data_job_job_path0_path1_path2_path3_path4(
 #[allow(non_snake_case)]
 pub async fn data_job_job_path0_path1_path2_path3_path4_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4)): axum::extract::Path<(
         String,
         String,
@@ -3839,6 +3861,7 @@ pub async fn data_job_job_path0_path1_path2_path3_path4_mockputtopost(
         String,
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_actor(&pool.0, session, "PP_C_JOB", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -3943,10 +3966,12 @@ pub async fn data_job_job_path0_path1_path2_path3_path4_path5(
 #[allow(non_snake_case)]
 pub async fn data_job_job_path0_path1_path2_path3_path4_path5_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4, _path5)): axum::extract::Path<
         (String, String, String, String, String, String, String),
     >,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_actor(&pool.0, session, "PP_C_JOB", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -4049,8 +4074,10 @@ pub async fn data_job_job_path0_path1_path2_path3_path4_path5_path6(
 #[allow(non_snake_case)]
 pub async fn data_job_job_path0_path1_path2_path3_path4_path5_path6_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4, _path5, _path6)): axum::extract::Path<(String, String, String, String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_actor(&pool.0, session, "PP_C_JOB", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -4153,8 +4180,10 @@ pub async fn data_job_job_path0_path1_path2_path3_path4_path5_path6_path7(
 #[allow(non_snake_case)]
 pub async fn data_job_job_path0_path1_path2_path3_path4_path5_path6_path7_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4, _path5, _path6, _path7)): axum::extract::Path<(String, String, String, String, String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_actor(&pool.0, session, "PP_C_JOB", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -5911,8 +5940,10 @@ pub async fn data_workcompleted_id_from_item(
 #[allow(non_snake_case)]
 pub async fn data_workcompleted_id_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_actor(&pool.0, session, "PP_C_WORKCOMPLETED", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -6015,8 +6046,10 @@ pub async fn data_workcompleted_id_path0(
 #[allow(non_snake_case)]
 pub async fn data_workcompleted_id_path0_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((id, _path0)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_actor(&pool.0, session, "PP_C_WORKCOMPLETED", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -6119,8 +6152,10 @@ pub async fn data_workcompleted_id_path0_path1(
 #[allow(non_snake_case)]
 pub async fn data_workcompleted_id_path0_path1_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((id, _path0, _path1)): axum::extract::Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_actor(&pool.0, session, "PP_C_WORKCOMPLETED", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -6228,6 +6263,7 @@ pub async fn data_workcompleted_id_path0_path1_path2(
 #[allow(non_snake_case)]
 pub async fn data_workcompleted_id_path0_path1_path2_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((id, _path0, _path1, _path2)): axum::extract::Path<(
         String,
         String,
@@ -6235,6 +6271,7 @@ pub async fn data_workcompleted_id_path0_path1_path2_mockputtopost(
         String,
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_actor(&pool.0, session, "PP_C_WORKCOMPLETED", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -6343,6 +6380,7 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3(
 #[allow(non_snake_case)]
 pub async fn data_workcompleted_id_path0_path1_path2_path3_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((id, _path0, _path1, _path2, _path3)): axum::extract::Path<(
         String,
         String,
@@ -6351,6 +6389,7 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_mockputtopost(
         String,
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_actor(&pool.0, session, "PP_C_WORKCOMPLETED", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -6460,6 +6499,7 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4(
 #[allow(non_snake_case)]
 pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4)): axum::extract::Path<(
         String,
         String,
@@ -6469,6 +6509,7 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_mockputtopost(
         String,
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_actor(&pool.0, session, "PP_C_WORKCOMPLETED", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -6573,10 +6614,12 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5(
 #[allow(non_snake_case)]
 pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4, _path5)): axum::extract::Path<
         (String, String, String, String, String, String, String),
     >,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_actor(&pool.0, session, "PP_C_WORKCOMPLETED", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -6679,8 +6722,10 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6(
 #[allow(non_snake_case)]
 pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4, _path5, _path6)): axum::extract::Path<(String, String, String, String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_actor(&pool.0, session, "PP_C_WORKCOMPLETED", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -6783,8 +6828,10 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_pat
 #[allow(non_snake_case)]
 pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_path7_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4, _path5, _path6, _path7)): axum::extract::Path<(String, String, String, String, String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_actor(&pool.0, session, "PP_C_WORKCOMPLETED", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
