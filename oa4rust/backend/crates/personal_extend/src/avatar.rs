@@ -222,9 +222,26 @@ async fn load_icon_for_unique(
     }
 }
 
+/// 2026-10 安全审计（四轮 N2，纵深防御）：头像读路径只接受写侧
+/// （upload 的 `data/avatar/{uuid}.{ext}`，见 :116）产出的严格形状——
+/// 相对路径、无盘符/反斜杠/NUL、位于 `data/avatar/` 下且为单段文件名。
+/// 若 `auth_person.icon` 列值经 DB 直写/迁移/他渠道被改为含 `..`、绝对路径
+/// 或额外目录段，读侧一律按「无头像」处理，杜绝任意相对文件读。
+fn is_safe_avatar_rel(rel: &str) -> bool {
+    if rel.is_empty() || rel.contains('\0') || rel.contains('\\') || rel.starts_with('/') {
+        return false;
+    }
+    let rest = rel.strip_prefix(AVATAR_DIR).unwrap_or("");
+    !rest.is_empty()
+        && rest.starts_with('/')
+        && !rest[1..].contains('/')
+}
+
 /// 读取存储文件并以 base64 返回；无头像或文件缺失时返回 exists=false
 async fn render_icon(icon: Option<String>) -> Json<ActionResult<Value>> {
-    let rel_path = icon.filter(|s| !s.is_empty());
+    let rel_path = icon
+        .filter(|s| !s.is_empty())
+        .filter(|s| is_safe_avatar_rel(s));
     match rel_path {
         Some(rel) => match tokio::fs::read(&rel).await {
             Ok(bytes) => {
@@ -287,5 +304,30 @@ pub(crate) fn get_extension(mime: &str, filename: &Option<String>) -> String {
             }
             "bin".to_string()
         }
+    }
+}
+
+#[cfg(test)]
+mod avatar_security_tests {
+    use super::*;
+
+    /// 四轮安全审计 N2 回归：头像读侧路径守卫必须对一切偏离写侧形状的
+    /// `auth_person.icon` 值 fail-closed（无头像），杜绝任意相对文件读。
+    #[test]
+    fn avatar_read_side_guard_rejects_unsafe_rel() {
+        // 写侧合法形状（data/avatar/{uuid}.{ext}）放行
+        assert!(is_safe_avatar_rel(
+            "data/avatar/6f1c2a9e-1111-2222-3333-444455556666.jpg"
+        ));
+        // 绝对路径 / 盘符 / 反斜杠 / 额外目录段 / .. / NUL / 空 / 目录本身：全拒
+        assert!(!is_safe_avatar_rel("/etc/passwd"));
+        assert!(!is_safe_avatar_rel(r"C:\windows\system.ini"));
+        assert!(!is_safe_avatar_rel(r"data/avatar\..\..\evil"));
+        assert!(!is_safe_avatar_rel("data/avatar/sub/x.png"));
+        assert!(!is_safe_avatar_rel("data/avatar/../secret"));
+        assert!(!is_safe_avatar_rel("data/avatar"));
+        assert!(!is_safe_avatar_rel("other/x.png"));
+        assert!(!is_safe_avatar_rel(""));
+        assert!(!is_safe_avatar_rel("data/avatar/a\0b.png"));
     }
 }

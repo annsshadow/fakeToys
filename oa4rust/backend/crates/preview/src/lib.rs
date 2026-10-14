@@ -253,10 +253,15 @@ impl LibreOfficePreview {
         if file_name.is_empty() || file_name.contains('\0') {
             return None;
         }
-        let base = std::path::Path::new(file_name)
-            .file_name()
-            .and_then(|s| s.to_str())?;
-        if base.is_empty() || base == "." || base == ".." {
+        // 2026-10 安全审计（四轮加固）：同时把 Unix('/') 与 Windows('\\') 当作
+        // 目录分隔符，只取最后一个非空段。「剥离目录/.. 成分」的契约不再依赖
+        // 构建平台的 Path::file_name() 语义——Linux 下反斜杠是普通文件名字符，
+        // 若按平台 Path 解析则 `..\..\evil` 会被整体当作末段原样保留，削弱契约。
+        // 跨平台统一剥离后，该串在 Windows 与 Linux 上都无法穿越出沙箱。
+        let base = file_name
+            .rsplit(|c: char| c == '/' || c == '\\')
+            .find(|seg| !seg.is_empty())?;
+        if base == "." || base == ".." {
             return None;
         }
         Some(base.to_string())
@@ -599,5 +604,21 @@ mod security_preview_tests {
         assert_eq!(LibreOfficePreview::safe_base_name("."), None);
         assert_eq!(LibreOfficePreview::safe_base_name(""), None);
         assert_eq!(LibreOfficePreview::safe_base_name("bad\0name.doc"), None);
+        // 四轮加固：剥离行为跨平台一致（不依赖构建平台的 Path 分隔符语义）
+        assert_eq!(
+            LibreOfficePreview::safe_base_name(r"a\b\c.docx").as_deref(),
+            Some("c.docx"),
+            "反斜杠目录段跨平台剥离"
+        );
+        assert_eq!(
+            LibreOfficePreview::safe_base_name(r"dir\..\..").as_deref(),
+            None,
+            "末段为 .. 时拒绝（跨平台）"
+        );
+        assert_eq!(
+            LibreOfficePreview::safe_base_name("x/").as_deref(),
+            Some("x"),
+            "尾部斜杠取末段"
+        );
     }
 }
