@@ -160,6 +160,105 @@ F 块里 (1)(2) 的可观测症状是**选牌索引序列错乱**（TS 注释记
 构造守卫的夹具必须按「要观测的现象**能发生**」来配。
 漏怪守卫按「一次就死」配血池，它在结构上就观测不到「第二次」。
 
+### D 块的完成度（诚实口径）—— 里程碑
+
+实现 `engine_combat.go`：`updateAutoFire` / `fire` / `updateProjectiles` /
+`checkProjectileHit` / `hitEnemy` / `currentAttacker` / `triggerSteamBurstAoe` /
+`applyAoe`，外加此前缺失的 `sqrtApprox` / `DamageScore` / `KillScore` /
+`ReactionIndex` / `LCG.Roll` / `LookupReactionSpec`。
+
+**跨端对齐**：5 个真实构筑 × 逐 tick 比对，全部绿。
+
+| 构筑 | 覆盖 | 实测结果 |
+|---|---|---|
+| fire_aoe | 溅射 + fire/ice 配对反应 | 12 发 / 5 中 / 2 杀 / 4 反应 |
+| kinetic_pierce | 高穿透 + `hits<=shots` 约束 | 21 发 / 7 中 / 2 杀 |
+| lightning_chain | 弹射 + 「弹射当场结算」 | 9 发 / 5 中 / 2 杀 / 2 反应 |
+| mixed_4slot | 真实玩家构筑 fire/fire/fire/ice | 17 发 / 9 中 / 2 杀 / 2 反应 |
+| corrosion_steam | 腐蚀+冰 = steam_burst（唯一有 aoeRadius 的反应） | 17 发 / 8 中 / 5 反应 |
+
+**这是 R1 第一次拿到「完整一局战斗」的两端逐事件一致。**
+B/C 只能证明骨架与漏怪；D 证明了开火、命中、伤害结算、反应、
+击杀、评分、热量、冷却、元素统计全部一致 ——
+即 `replay_hash` 的输入在服务端已可自行计算。
+
+**⚠️ 必须剥离 `terrain` 才敢做这个对齐**：
+TS 的 `updateProjectiles` 里有一段「弹丸被掩体挡住」的判定，
+而那块属于 E 块。Go 侧 D 阶段不做它 ——
+半接的后果是「地形记了触发事件却从不结算效果」，
+表现为「玩家看到油桶被点燃但没有任何作用」。
+实测这个选择是必需的：第 1 关**带一个 `oil_drum`**，
+TS 会真的对它做 `withinTerrain(t.x, t.y, 100, ...)` 判定。
+只摘 `terrain`；`element_cap` 与 `max_reaction_tier` 必须保留 ——
+它们是 `currentAttacker()` 的直接输入，摘掉就等于在验一个假攻方。
+
+**⚠️ 关卡输入必须显式映射，不能 `{ ...def }`**：
+夹具是 snake_case + JSON number，引擎要 camelCase + BigInt。
+前两个字段错了会当场抛错（好找），第三个（`slot`）**不会** ——
+它表现为「所有技能都被当成主动槽」，而对 4 槽构筑来说结果一样，
+于是「槽位映射错了」这件事在 4 槽场景里完全观察不到。
+另外 `slot` 必须是**列表下标**而非技能 id：内容表 id 全局递增（1..42），
+直接拿 id 当 slot 的话全部技能都 >= activeSlots=4，一发都放不出来。
+
+**两个 map 序列化的顺序陷阱**：
+`elementsUsed` / `reactionsUsed` 在 TS 侧按**首次使用顺序**插入
+（`JSON.stringify` 保插入序），Go 侧 `map` 按**升序**。
+同一份统计在两端会序列化成不同顺序的字符串。
+解法是两端都排序 —— 比对只针对「各元素各用了多少次」，
+顺序信息不进哈希比对（若将来某个 bug 让顺序影响战果，
+它也会体现在 score / hits / replay 上，而那些是逐条比对的）。
+
+**变异实测 11 处，4 处首轮存活**：
+
+首轮存活的 4 处与处理：
+
+1. **MUT-D5（`currentAttacker` 漏加 attack 加成）** ——
+   `Buffs` 是 F 块写的，F 未移植则恒为 0，于是 `+ Buffs.AttackPermille`
+   永远等于「加 0」，写成 `base.Attack` 也全绿。
+   补 `TestCurrentAttackerAddsBuffAttack` 等 4 条直接单测后红。
+2. **MUT-D6（crit 夹取去掉）** ——
+   五个场景的 `critPermille` 是 150‰，离 1000 的边界很远，夹取那段
+   **一次都没执行**。而越界是可达的：6 张 crit 属性卡 = 550+480 = 1030 > 1000，
+   后果是「每一发都暴击」而暴击率进 `replay_hash` → 永久失配 → 全员被误判作弊。
+   补 `TestCurrentAttackerClampsCritPermille` + 边界表后红。
+3. **MUT-D7（增伤被状态时长把门）** ——
+   这正是 TS 源码注释里预言的洞：「当前 7 条反应里没有任何一条
+   落在这个组合」。解法不是等数据出现，而是把那段逻辑抽成
+   `applyReactionStatus` **独立可测的函数**，再用一个测试专用的
+   反应表替换钩子（`reactionSpecLookup` 函数变量）喂进
+   `ReactionSpec{AmplifyPct: 300, StatusDurationMs: 0}`。
+   用函数变量而不是改 `reactionSpecs`：后者会让 `/config` 下发
+   一个不存在的反应给所有客户端，也会让 `reaction_specs.json`
+   的双向契约失败 —— 那是把「数据表」与「代码」的责任边界糊掉。
+4. **MUT-D8（索敌忽略飞行/钻地优先）** ——
+   对齐场景里没有飞行/钻地敌人当目标。补
+   `TestPickTargetPrefersEvASiveForMultiTargetSkills` 后红。
+
+补强后重测：D5/D6/D7/D8 全红。另加 D10（击退改成覆盖而非累加）也红。
+
+**1 处「结构性存活」且不去修**：MUT-D11（去掉 `applyReactionStatus` 的
+无反应守卫）在 Go 侧**观察不到差别** —— `Spec()` 对未知 key 返回零值，
+所有分支自然不进。那道守卫的价值是**语义分隔**：
+若将来给 `Spec()` 加副作用（日志、计数），没有它就会把无反应也记进去。
+这是诚实的现状，不是遗漏。
+
+**本轮修掉的自身问题**：
+
+- `TestFilterAlive*` 的断言写错：`in[:0]` 是**原地压缩**，
+  `backing[0]` 压缩后已经是存活那只，查它永远非 nil —— 守卫恒绿。
+  改为查**最后一个槽位**（被清零的那个），并补 `TestFilterAliveKeepsOrder`。
+- 两次 `Substring` 拼接把同文件的其它测试截掉了（结构体定义之后的
+  全部内容）。这是本轮反复踩到的工具坑：**拼接必须保留尾部**，
+  而「写到文件末尾」只对追加成立。已从 git 恢复并改用带尾部的拼接。
+- `heat.cap` 是 TS 的 **getter** 不是方法，生成器里写成 `cap()` 直接抛
+  `Cannot mix BigInt and other types`。
+
+**教训（与 B/C 同源，第三次出现）**：
+跨端对齐证明的是「在真实数据上两端一致」，**不覆盖「代码想处理的形状」**。
+本轮三条存活变异全部属于这一类：
+数据落不到分界线上时，关于分界线的断言都是空的。
+处理方式有两条：补构造单测（数据可造）或把逻辑抽成可测单元
+（数据造不出来时，如 MUT-D7）。
 ### 对齐终止条件：为什么停在 `card_select`
 
 第 2 波必须先解掉卡牌选择，那要过 `rollWaveCards`（消耗 RNG，于是后续

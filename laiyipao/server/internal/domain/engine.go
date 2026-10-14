@@ -622,12 +622,7 @@ func (e *BattleEngine) nextUID() int64 {
 //
 // B 块（波次与刷怪）已实现在 `engine_wave.go`，故此处不再有空壳。
 // C 块（敌人推进与漏怪）已实现在 `engine_enemy.go`，故此处不再有空壳。
-
-// updateAutoFire 尝试开火（D 块实现）。
-func (e *BattleEngine) updateAutoFire() {}
-
-// updateProjectiles 推进弹道（D 块实现）。
-func (e *BattleEngine) updateProjectiles() {}
+// D 块（开火与弹道）已实现在 `engine_combat.go`，故此处不再有空壳。
 
 // updateTerrain 推进地形（E 块实现）。
 func (e *BattleEngine) updateTerrain() {}
