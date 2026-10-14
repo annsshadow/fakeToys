@@ -67,8 +67,16 @@ pub async fn index_cms_doc_with_app(
 #[axum::debug_handler]
 pub async fn index_delete(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 安全审计 2026-10 四轮 F6：`x_ai_index` 是 AI 知识索引、无 creator 列可依据属主，
+    // 此前该 handler 既不取会话也无门禁 → 任一登录用户可按 id 销毁索引条目。
+    // 收口为 admin（对齐二轮 S5「ownerless 系统数据写 = admin」裁决）。
+    // 注：路由仍注册为 GET（改方法需前端同批，另列 §五 跨切项）。
+    if !shared::middleware::is_admin(&pool, &session.person_unique).await {
+        return Err(AppError::Forbidden);
+    }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM x_ai_index WHERE id = $1", &[&flag])
