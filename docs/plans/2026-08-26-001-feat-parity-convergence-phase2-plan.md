@@ -15,7 +15,7 @@ date: 2026-08-26
 
 ## Problem Frame
 
-上一阶段（R1–R10 收官 + 行为对比首次实跑）建立了真实基线 **1212 PASS / 836 FAIL / 1996 SKIP**，并将剩余失败归因到三层：业务数据不对称（已建种子基建但首轮持平）、**字段形状层**（本轮主攻）、深层业务逻辑缺口（backlog）。三个结构性问题仍未解决：(1) CI 的 behavior-compare job 因历史缺陷从未产出真实对比，基线无守护；(2) 字段差异散落在报告中，无系统性聚类与入库通道；(3) Java 侧旗标解析语义未核实，种子命中率存在盲区。详见 `docs/audits/final-coverage-sweep.md` §六（含种子轮三层归因）。
+上一阶段（R1–R10 收官 + 行为对比首次实跑）建立了真实基线 **1212 PASS / 836 FAIL / 1996 SKIP**，并将剩余失败归因到三层：业务数据不对称（已建种子基建但首轮持平）、**字段形状层**（本轮主攻）、深层业务逻辑缺口（backlog）。三个结构性问题仍未解决：(1) CI 的 behavior-compare job 因历史缺陷从未产出真实对比，基线无守护；(2) 字段差异散落在报告中，无系统性聚类与入库通道；(3) Java 侧旗标解析语义未核实，种子命中率存在盲区。详见 `docs/audits/2026-08-24-002-final-coverage-sweep.md` §六（含种子轮三层归因）。
 
 ---
 
@@ -70,7 +70,7 @@ date: 2026-08-26
 - **聚类脚本只产候选、不动 allowlist**：种子轮教训（盲目对齐会粉饰真实差异）制度化——脚本输出 TSV/Markdown 候选与证据摘录，入库前必须经评审（人或代理）逐条确认；脚本自身保持只读分析工具定位。
 - **flag 语义以 o2server 源码为准**：黑盒 curl 只做验证，解析链结论必须落到对应 Action 类源码（如按 id→unique→name 的实际顺序），杜绝猜测性补种。
 - **演练发现即处置**：U5 发现的脚本缺陷若为 ≤10 行级修复则当场修，否则记入演练记录交运维，不在本计划内展开。
-- **backlog 单文件制**：集中 `docs/audits/behavior-divergence-backlog.md`，按出现频率排序，避免散落多个文档难以排期。
+- **backlog 单文件制**：集中 `docs/audits/2026-08-29-001-behavior-divergence-backlog.md`，按出现频率排序，避免散落多个文档难以排期。
 
 ---
 
@@ -258,7 +258,7 @@ graph TB
 **Dependencies:** U3（一轮重测后的最新报告为数据源）
 
 **Files:**
-- Create: `docs/audits/behavior-divergence-backlog.md`
+- Create: `docs/audits/2026-08-29-001-behavior-divergence-backlog.md`
 
 **Approach:**
 - 筛选口径：Rust 错误而 Java 成功（`prompt: missing in Java + data: missing in Rust` 方向）且 U3 评审未归入改名/投影修正的端点，加上其他结构性差异残留。
@@ -296,7 +296,7 @@ graph TB
 
 ## Documentation / Operational Notes
 
-- U3/U6 完成后在 `docs/audits/final-coverage-sweep.md` §六追加收敛数字与小节（延续既有惯例）。
+- U3/U6 完成后在 `docs/audits/2026-08-24-002-final-coverage-sweep.md` §六追加收敛数字与小节（延续既有惯例）。
 - U5 演练记录即运维交接物，R1 排期会议可直接引用。
 - 若 U1 使 CI 首次产出真实数字，预期首跑 FAIL 高于本地值（无 Java 种子），需在 PR 描述中预防性说明。
 
@@ -304,7 +304,7 @@ graph TB
 
 ## Sources & References
 
-- 证据基座：`docs/audits/final-coverage-sweep.md` §六（实跑终态 1212/836/1996 + 种子轮三层归因）
+- 证据基座：`docs/audits/2026-08-24-002-final-coverage-sweep.md` §六（实跑终态 1212/836/1996 + 种子轮三层归因）
 - 方法论沉淀：`docs/solutions/best-practices/oa4rust-o2server-parity-closure-campaign-2026-08-25.md`
 - 种子资产：`oa4rust/tests/behavior_comparison/seeds/`（提交 37307ac9）
 - 实跑框架：提交 611e0e1a / 9d81b8ca / b201144f 及其对话记录

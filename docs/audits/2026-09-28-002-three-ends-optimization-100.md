@@ -13,12 +13,12 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 ## 前置资产（如实记档，不计入本轮 100 轮）
 
-- **审计优化循环 100 轮**（`docs/audits/optimization-loop-100.md`，2026-09-27 收官）：FIX 14 /
+- **审计优化循环 100 轮**（`docs/audits/2026-09-27-001-optimization-loop-100.md`，2026-09-27 收官）：FIX 14 /
   IMPROVE 3 / CLEAN 其余，新增真实现 html→image，501 桩全仓清零，终态门禁 8/8 绿。
 - **2026-09-27 审计批次** 7 提交：契约物漂移清零、63 表 xid 索引、42 缺列 + 50 个 500 修复、zip×3 真实现。
 - **2026-09-28 性能增量** 7 提交：`[profile.release]` thin-LTO/strip、发布档/延迟 A/B 基准脚本与实测、
   CPU 微基准、clippy 门禁（--all-targets -D warnings）落地、前端 lint 收紧 --error-on-warnings。
-- 真实消费收官（`docs/audits/three-ends-2026-09-20/REAL_CONSUMPTION_CLOSURE.md`）：216 条未消费路由
+- 真实消费收官（`docs/audits/2026-09-20-001-real-consumption-closure.md`）：216 条未消费路由
   三类裁决（116 仅运行时可验证 / 73 仅真实用户写动作 / 27 结构不可计入），名义接桩已被用户否决并 revert。
 
 ## 状态：已完成（轮 100/100，2026-10-01 收官）

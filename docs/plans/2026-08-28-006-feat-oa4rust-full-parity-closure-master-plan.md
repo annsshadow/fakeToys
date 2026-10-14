@@ -62,7 +62,7 @@ origin: docs/brainstorms/2026-08-25-oa4rust-o2server-residual-gaps-requirements.
 
 ### 权威基线与历史状态
 
-- **端点对齐终扫**：`docs/audits/final-coverage-sweep.md`（generated_at=2026-08-23，3085/3092 = 99.77%，28/30 模块 100%）
+- **端点对齐终扫**：`docs/audits/2026-08-24-002-final-coverage-sweep.md`（generated_at=2026-08-23，3085/3092 = 99.77%，28/30 模块 100%）
 - **行为对比基线 V4**：`oa4rust/target/debug/behavior-report.md`（2026-08-27T09:27:20，1242 PASS / 806 FAIL / 1996 SKIP）
 - **已完成计划**：
   - `2026-08-25-001-oa4rust-residual-gaps-closure-plan.md`（R3-R10 收官，completed）
@@ -538,7 +538,7 @@ origin: docs/brainstorms/2026-08-25-oa4rust-o2server-residual-gaps-requirements.
 
 **Patterns**：既有 BAM handler 风格：`Path<(String,...)>` + `Extension<Pool>` + `ActionResult<Value>` + `require_owner`（写端点）
 
-**Verification**：P0 端点 behavior_compare PASS；差异清单文档化入 `docs/audits/bam-alignment-gap.md`
+**Verification**：P0 端点 behavior_compare PASS；差异清单文档化入 `docs/audits/2026-08-29-002-bam-alignment-gap.md`
 
 ---
 
@@ -617,7 +617,7 @@ origin: docs/brainstorms/2026-08-25-oa4rust-o2server-residual-gaps-requirements.
 
 **Files**：
 - Modify: `docs/solutions/best-practices/oa4rust-o2server-parity-closure-campaign-2026-08-25.md`
-- Modify: `docs/audits/final-coverage-sweep.md`
+- Modify: `docs/audits/2026-08-24-002-final-coverage-sweep.md`
 
 **Approach**：
 1. campaign doc：将"4 条 axum 平台限制不实现"改为"已用整段 `Path<String>` 捕获模式闭环（U1/U18）"
@@ -637,7 +637,7 @@ origin: docs/brainstorms/2026-08-25-oa4rust-o2server-residual-gaps-requirements.
 
 **Dependencies**：U3、U9、U11（各轮重测后最新报告为数据源）
 
-**Files**：Create: `docs/audits/behavior-divergence-backlog.md`
+**Files**：Create: `docs/audits/2026-08-29-001-behavior-divergence-backlog.md`
 
 **Approach**：
 1. 筛选口径：Rust 错误而 Java 成功且 U3/U9 评审未归入改名/投影修正的端点，加上其他结构性差异残留
@@ -728,11 +728,11 @@ origin: docs/brainstorms/2026-08-25-oa4rust-o2server-residual-gaps-requirements.
 
 | 文档 | 更新时机 | 内容 |
 |------|----------|------|
-| `docs/audits/behavior-divergence-backlog.md` | U22 创建，季度更新 | 深层逻辑缺口清单与治理 |
-| `docs/audits/bam-alignment-gap.md` | U17 创建 | BAM 模块差异清单与 P0/P1/P2 分类 |
+| `docs/audits/2026-08-29-001-behavior-divergence-backlog.md` | U22 创建，季度更新 | 深层逻辑缺口清单与治理 |
+| `docs/audits/2026-08-29-002-bam-alignment-gap.md` | U17 创建 | BAM 模块差异清单与 P0/P1/P2 分类 |
 | `docs/REPLACEABLE-oa4rust-2026-08-25.md` | U20 阶段性更新 | "可替代"判定声明迭代 |
 | `docs/solutions/best-practices/oa4rust-o2server-parity-closure-campaign-2026-08-25.md` | U21 刷新 | 消除"平台限制"误分类 |
-| `docs/audits/final-coverage-sweep.md` | U21 刷新 | 端点覆盖率口径一致性 |
+| `docs/audits/2026-08-24-002-final-coverage-sweep.md` | U21 刷新 | 端点覆盖率口径一致性 |
 | `oa4rust/deploy/rollback-playbook.md` | U19 追加 | 部署剧本本地演练记录 |
 
 ---
@@ -740,7 +740,7 @@ origin: docs/brainstorms/2026-08-25-oa4rust-o2server-residual-gaps-requirements.
 ## Sources & References
 
 - **源需求**：[docs/brainstorms/2026-08-25-oa4rust-o2server-residual-gaps-requirements.md](docs/brainstorms/2026-08-25-oa4rust-o2server-residual-gaps-requirements.md)
-- **权威基线**：[docs/audits/final-coverage-sweep.md](docs/audits/final-coverage-sweep.md) (99.77%, 2026-08-23)
+- **权威基线**：[docs/audits/2026-08-24-002-final-coverage-sweep.md](docs/audits/2026-08-24-002-final-coverage-sweep.md) (99.77%, 2026-08-23)
 - **行为基线**：`oa4rust/target/debug/behavior-report.md` (V4, 1242/806/1996)
 - **已完成计划**：
   - [docs/plans/2026-08-25-001-oa4rust-residual-gaps-closure-plan.md](docs/plans/2026-08-25-001-oa4rust-residual-gaps-closure-plan.md) (completed)

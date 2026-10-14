@@ -93,7 +93,7 @@ topic: oa4rust-o2server-residual-gaps
 
 - R3. 补齐 3 条真实缺失端点（processplatform_assemble_surface 2 条、bbs_assemble_control 1 条），逐条仿现有 handler 实现并注册，纳入行为对比清单。
 - R4. 补齐 BAM 业务活动监控模块缺口（Java 131 @Path vs Rust 5 路由）：实现核心监控端点闭合该模块，使 v1 接管范围包含 BAM 监控能力。分阶段验收：核心监控端点优先补齐、低频可后补（具体清单在计划阶段从 o2server 源码与流量重要性评估）。
-- R5. 补齐 4 条 `attachment/download/*/{}.{}` 端点（`processplatform_assemble_surface` 共 4 条，见 `docs/audits/final-coverage-sweep.md` 附录）：原归类为 axum「单段多参数不可表达」的端点，实际可用 `Path<String>` 捕获含 `.` 的整段后按最后一个 `.` 拆分为文件名/扩展名（或自定义提取器）实现；段数变体（`stream/{}.{}` 与 `{}.{}`）需分别注册路由。升级为可补齐项，纳入行为对比清单。
+- R5. 补齐 4 条 `attachment/download/*/{}.{}` 端点（`processplatform_assemble_surface` 共 4 条，见 `docs/audits/2026-08-24-002-final-coverage-sweep.md` 附录）：原归类为 axum「单段多参数不可表达」的端点，实际可用 `Path<String>` 捕获含 `.` 的整段后按最后一个 `.` 拆分为文件名/扩展名（或自定义提取器）实现；段数变体（`stream/{}.{}` 与 `{}.{}`）需分别注册路由。升级为可补齐项，纳入行为对比清单。
 
 **已确认的平台与范围限制**
 
@@ -124,7 +124,7 @@ topic: oa4rust-o2server-residual-gaps
 ## Success Criteria
 
 - 人类结果：可明确回答"oa4rust 现在能否替代 o2server"——是（在 PDF 签章、IM 基础能力、CMS/流程/认证等核心 OA 范围内），且对剩余限制有书面、被决策人接受的说明。
-- 下游代理：ce-plan 无需发明替代范围或验收口径；本需求文档 + `docs/audits/final-coverage-sweep.md` 可直接驱动执行，不依赖重复审计。
+- 下游代理：ce-plan 无需发明替代范围或验收口径；本需求文档 + `docs/audits/2026-08-24-002-final-coverage-sweep.md` 可直接驱动执行，不依赖重复审计。
 - 范围完整性：原散落未统管的"可实现项"（生成器纳管、语义一致性、卡片填充、attachment 端点）均已纳入，避免后续规划遗漏或重复发现。
 
 ---
@@ -138,7 +138,7 @@ topic: oa4rust-o2server-residual-gaps
 - IM/XMPP/WebRTC 完整协议不实现（部分能力保留）
 - Linux 文档校正（R7）可作为独立轨道，不阻塞"可替代"判定
 - 生成器脚本纳管（R8）、handler 行为语义一致性（R9）、模块卡片深度填充（R10）均在本需求范围内
-- 端点对齐度终态以 `docs/audits/final-coverage-sweep.md`（99.77%）为准，不重复扫描
+- 端点对齐度终态以 `docs/audits/2026-08-24-002-final-coverage-sweep.md`（99.77%）为准，不重复扫描
 
 ---
 
@@ -156,7 +156,7 @@ topic: oa4rust-o2server-residual-gaps
 ## Dependencies / Assumptions
 
 - 依赖生产环境 + ≥2 周观察窗口（U3 外部阻塞，非代码层可关闭）
-- 依赖 `docs/audits/final-coverage-sweep.md` 作为缺口基准（generated_at=2026-08-23）
+- 依赖 `docs/audits/2026-08-24-002-final-coverage-sweep.md` 作为缺口基准（generated_at=2026-08-23）
 - 假设 3 条缺失端点补齐成本低（零星 handler，仿现有模式）
 - 假设 BAM 监控类低频，分阶段验收不影响核心 OA 替代判定
 - 假设 Linux 文档校正与"可替代"判定无功能耦合，可独立排期
@@ -189,5 +189,5 @@ topic: oa4rust-o2server-residual-gaps
 ## Related
 
 - **Campaign retrospective:** `docs/solutions/best-practices/oa4rust-o2server-parity-closure-campaign-2026-08-25.md`
-- **Current parity state:** `docs/audits/final-coverage-sweep.md` (99.77% as of 2026-08-23)
+- **Current parity state:** `docs/audits/2026-08-24-002-final-coverage-sweep.md` (99.77% as of 2026-08-23)
 - **Active plan:** `docs/plans/2026-08-21-002-feat-remaining-work-consolidation-plan.md`

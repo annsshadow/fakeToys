@@ -178,7 +178,7 @@ oa4rust 有 2,623 个业务 handler 但仅 735 个测试（~15% 覆盖率）。5
 
 **Files:**
 - Create: `scripts/compare_endpoints.py`
-- Create: `docs/audits/o2server-parity-report.md`
+- Create: `docs/audits/2026-08-12-002-o2server-parity-report.md`
 - Create: `docs/audits/o2server-parity-report.json`
 
 **Approach:**
@@ -496,7 +496,7 @@ oa4rust 有 2,623 个业务 handler 但仅 735 个测试（~15% 覆盖率）。5
 
 ## Documentation / Operational Notes
 
-- 审计报告写入 `docs/audits/o2server-parity-report.md`
+- 审计报告写入 `docs/audits/2026-08-12-002-o2server-parity-report.md`
 - 端点基线数据写入 `docs/audits/o2server-parity-report.json`
 - 更新 `docs/brainstorms/oa4rust-migration-status.md` 反映测试覆盖进展
 
@@ -517,7 +517,7 @@ oa4rust 有 2,623 个业务 handler 但仅 735 个测试（~15% 覆盖率）。5
 
 ### 已验证完成
 
-- M1 接口审计（U1-U3）：`docs/audits/o2server-parity-report.md` 与 `.json` 实测存在；`scripts/o2server_parity_audit.py`/`_v2.py` 在档（正文 Completion Status 表中"M1 未开始"已过时）
+- M1 接口审计（U1-U3）：`docs/audits/2026-08-12-002-o2server-parity-report.md` 与 `.json` 实测存在；`scripts/o2server_parity_audit.py`/`_v2.py` 在档（正文 Completion Status 表中"M1 未开始"已过时）
 - U4 P0 级接口差距修复：由后续多个 gap-closure 计划承接完成
 - U5-U11 测试补全：90 个 `tests_generated.rs` 实测在档，`scripts/generate_handler_tests.py` 在档
 - 原 partially_completed 的未竟部分已被后续工作覆盖

@@ -95,11 +95,11 @@ origin: docs/brainstorms/2026-08-25-oa4rust-o2server-residual-gaps-requirements.
 - `architecture-patterns/seaorm-dual-pool-coexistence.md` + `dynamic-sql-retains-sqlx.md`：双池为持续架构；动态 SQL 走 `Extension<Pool>`（SQLx），标准 CRUD 走 `Extension<DatabaseConnection>`（SeaORM）。
 - `integration-issues/nested-tokio-runtime-panic.md`（critical）：router 工厂为 sync `fn`，SeaORM 连接须 `catch_unwind` 包裹 `block_on`。
 - `best-practices/auto-generate-rust-handler-tests.md`：**含 Session 的 handler 被测试生成器跳过**（105 个），R3/R4 写端点需补 router-based 或手测覆盖所有权逻辑。
-- `best-practices/single-source-of-truth-migration-status.md`：状态汇报以 `docs/audits/final-coverage-sweep.md`（99.77%）为权威，勿引用 81-crate-100% 历史快照。
+- `best-practices/single-source-of-truth-migration-status.md`：状态汇报以 `docs/audits/2026-08-24-002-final-coverage-sweep.md`（99.77%）为权威，勿引用 81-crate-100% 历史快照。
 
 ### 冲突与一致性
 
-- ⚠️ **R5 与既有文档冲突**：`docs/solutions/best-practices/oa4rust-o2server-parity-closure-campaign-2026-08-25.md` 与 `docs/audits/final-coverage-sweep.md` 附录将 4 条 attachment 端点归类为"axum 平台限制、不实现"。R5 落地后用 U8 刷新这两处，把"不实现"改为"已用既有整段捕获模式闭环"。
+- ⚠️ **R5 与既有文档冲突**：`docs/solutions/best-practices/oa4rust-o2server-parity-closure-campaign-2026-08-25.md` 与 `docs/audits/2026-08-24-002-final-coverage-sweep.md` 附录将 4 条 attachment 端点归类为"axum 平台限制、不实现"。R5 落地后用 U8 刷新这两处，把"不实现"改为"已用既有整段捕获模式闭环"。
 - BAM（R4）在 campaign doc 已"决策补齐闭合"，与本研究发现的"已 80+ 路由"一致，无冲突。
 
 ---
@@ -328,7 +328,7 @@ origin: docs/brainstorms/2026-08-25-oa4rust-o2server-residual-gaps-requirements.
 
 **Files:**
 - Modify: `docs/solutions/best-practices/oa4rust-o2server-parity-closure-campaign-2026-08-25.md`
-- Modify: `docs/audits/final-coverage-sweep.md`
+- Modify: `docs/audits/2026-08-24-002-final-coverage-sweep.md`
 
 **Approach:**
 - 将 campaign doc 中"4 条 axum 平台限制不实现"改为"已用整段 `Path<String>` 捕获模式闭环（U1）"。
@@ -388,7 +388,7 @@ origin: docs/brainstorms/2026-08-25-oa4rust-o2server-residual-gaps-requirements.
 
 ## Documentation / Operational Notes
 
-- 状态汇报统一以 `docs/audits/final-coverage-sweep.md` 为权威；本计划收官后其口径为：行为对比清单 4687 条、真实挂载 missing=0、可实施端点覆盖率 100%。
+- 状态汇报统一以 `docs/audits/2026-08-24-002-final-coverage-sweep.md` 为权威；本计划收官后其口径为：行为对比清单 4687 条、真实挂载 missing=0、可实施端点覆盖率 100%。
 - U8 完成后建议运行 `/ce-compound` 将"整段 `Path<String>` 捕获推翻 attachment 平台限制"作为新学习回填 `docs/solutions/`。
 - 本计划为 `docs/plans/` 在归档 `2026-08-21-002` 后的新活跃计划；需求文档 Related 中"Active plan"链接指向已归档的旧计划，U8 或后续可一并修正。
 
@@ -404,4 +404,4 @@ origin: docs/brainstorms/2026-08-25-oa4rust-o2server-residual-gaps-requirements.
 - 模块卡片: `docs/oa4rust/modules/o2server/`, `docs/oa4rust/modules/o2web/`, `docs/oa4rust/scripts/`
 - 影子流量: `oa4rust/deploy/shadow-traffic.sh`, `oa4rust/deploy/toggle_module.sh`
 - 机构学习: `docs/solutions/security-issues/idor-vulnerability-write-handlers.md`, `architecture-patterns/actionresult-9-field-contract.md`, `architecture-patterns/seaorm-dual-pool-coexistence.md`, `integration-issues/nested-tokio-runtime-panic.md`, `best-practices/auto-generate-rust-handler-tests.md`
-- 冲突源: `docs/solutions/best-practices/oa4rust-o2server-parity-closure-campaign-2026-08-25.md`, `docs/audits/final-coverage-sweep.md`
+- 冲突源: `docs/solutions/best-practices/oa4rust-o2server-parity-closure-campaign-2026-08-25.md`, `docs/audits/2026-08-24-002-final-coverage-sweep.md`
