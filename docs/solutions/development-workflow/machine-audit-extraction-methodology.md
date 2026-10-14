@@ -75,6 +75,6 @@ related_components:
 
 ## Related
 
-- 计划：`docs/plans/2026-09-20-001-audit-oa4rust-three-ends-completeness-plan.md`（§〇 方法与可复现性、§6.8 提取器缺陷、§九 rev6/rev11-12/rev116）
+- 计划：`docs/archived-plans/2026-09-20-001-audit-oa4rust-three-ends-completeness-plan.md`（§〇 方法与可复现性、§6.8 提取器缺陷、§九 rev6/rev11-12/rev116）
 - 绿地切流判据：`../architecture-patterns/greenfield-cutover-replaceability-criteria.md`
 - 门禁红绿验证思想同 `../best-practices/test-hygiene-ast-triage-and-coverage-traps.md`

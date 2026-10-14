@@ -80,6 +80,6 @@ Rust 引擎把流程定义存 JSONB 并按 **`activities`** 键解析——这�
 
 ## Related
 
-- 计划：`docs/plans/2026-09-11-001-assess-oa4rust-web-full-replacement-gap-plan.md`（§〇 判据重定义、§三 P0、§四 横切缺口、§六 W3-W14、§七 验收总纲 rev13-rev16）
+- 计划：`docs/archived-plans/2026-09-11-001-assess-oa4rust-web-full-replacement-gap-plan.md`（§〇 判据重定义、§三 P0、§四 横切缺口、§六 W3-W14、§七 验收总纲 rev13-rev16）
 - 行为门禁：`../testing/behavior-compare-tolerance-and-evidence-discipline.md`
 - 机器审计方法：`../development-workflow/machine-audit-extraction-methodology.md`

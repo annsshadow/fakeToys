@@ -197,7 +197,7 @@ GET 类命中宽路由即"静默影子误路由"，生产带 DB 会返 200 错�
 cd oa4rust && cargo test --test designer_route_match -- --nocapture
 ```
 - 修复某条设计器路由后，把该 case 的 `Expect` 由当前档改为目标态（通常 `Matched`）并补真实语义；
-- 详见 `docs/plans/2026-09-11-001-assess-oa4rust-web-full-replacement-gap-plan.md` §9.4 对账表与 W6。
+- 详见 `docs/archived-plans/2026-09-11-001-assess-oa4rust-web-full-replacement-gap-plan.md` §9.4 对账表与 W6。
 - 判据：命令退出 0（全绿）= 当前快照与实测一致；若某 case 失败，说明路由被改动或分类需回写 §9.4。
 
 ---

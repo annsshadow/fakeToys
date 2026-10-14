@@ -77,5 +77,5 @@ related_components:
 
 ## Related
 
-- 计划：`docs/plans/2026-09-09-001-refactor-httponly-cookie-cargo-audit-rustsec-db-biome-2-5-11-plan.md`（U6-U8、Completion Evidence、2026-10-14 定期复核）
+- 计划：`docs/archived-plans/2026-09-09-001-refactor-httponly-cookie-cargo-audit-rustsec-db-biome-2-5-11-plan.md`（U6-U8、Completion Evidence、2026-10-14 定期复核）
 - 能力清单/版本单一来源思想同 `../best-practices/test-hygiene-ast-triage-and-coverage-traps.md`（F10 版本号漂移）

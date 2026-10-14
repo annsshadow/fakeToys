@@ -1,8 +1,8 @@
 # OA4Rust Phase 2 现实盘点（纠正 002 分析文档的过时前提）
 
 - **日期**：2026-08-15
-- **依据规划**：`docs/plans/2026-08-13-003-oa4rust-completion-plan.md`
-- **纠正对象**：`docs/plans/2026-08-13-002-oa4rust-o2server-parity-analysis.md`（已严重过时）
+- **依据规划**：`docs/archived-plans/2026-08-13-003-oa4rust-completion-plan.md`
+- **纠正对象**：`docs/archived-plans/2026-08-13-002-oa4rust-o2server-parity-analysis.md`（已严重过时）
 
 ## 0. 结论摘要
 

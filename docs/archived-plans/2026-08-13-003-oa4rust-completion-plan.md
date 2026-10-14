@@ -3,7 +3,7 @@ title: OA4Rust 补全 oa/o2server 的可落地分阶段实施方案
 type: plan
 status: completed
 date: 2026-08-13
-depends_on: docs/plans/2026-08-13-002-oa4rust-o2server-parity-analysis.md
+depends_on: docs/archived-plans/2026-08-13-002-oa4rust-o2server-parity-analysis.md
 scope: 将 oa4rust 从"70% 壳"推进到可生产接管 oa/o2server 的分阶段路线
 ---
 
@@ -187,7 +187,7 @@ scope: 将 oa4rust 从"70% 壳"推进到可生产接管 oa/o2server 的分阶段
 
 **更新基准：** 工作树 HEAD 950a18e1（2026-08-25 合并 PR #18 / feat/remaining-work-consolidation）；判定状态由 active 改为 completed。
 
-08-21 审计时遗留的 4 项，已全部由 `docs/plans/2026-08-21-002-feat-remaining-work-consolidation-plan.md` 执行闭环：
+08-21 审计时遗留的 4 项，已全部由 `docs/archived-plans/2026-08-21-002-feat-remaining-work-consolidation-plan.md` 执行闭环：
 
 - Value::Null 残留 15 处 → 计划002 U1 结论："实质目标已达成，字面归零标准作废"（15 处 = 测试断言 / 文档注释 / 可选列解析，无静默空数据桩）
 - U2.6 query/portal 抽样深度审计 → 计划002 U5 结论：query 96.6%、portal 100% 查库，无浅层桩，单元关闭

@@ -239,7 +239,7 @@ status: completed
 **Dependencies:** U1, U2, U3, U4
 
 **Files:**
-- `docs/plans/2026-07-30-001-refactor-zero-secret-migration-plan.md` — 更新验证结果
+- `docs/archived-plans/2026-07-30-001-refactor-zero-secret-migration-plan.md` — 更新验证结果
 - `docs/systems/cool.md` — 更新密钥管理说明（迁移后可反映真实机制）
 
 **Approach:**

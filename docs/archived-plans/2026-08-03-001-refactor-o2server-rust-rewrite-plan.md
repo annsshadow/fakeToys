@@ -3,7 +3,7 @@ title: refactor: O2OA 后端 Rust 改写
 type: refactor
 status: superseded
 date: 2026-08-03
-<!-- Superseded by: docs/plans/2026-08-07-001-feat-oa4rust-4wave-realization-plan.md -->
+<!-- Superseded by: docs/archived-plans/2026-08-07-001-feat-oa4rust-4wave-realization-plan.md -->
 origin: docs/brainstorms/2026-08-03-o2server-rust-rewrite-requirements.md
 ---
 
@@ -84,7 +84,7 @@ origin: docs/brainstorms/2026-08-03-o2server-rust-rewrite-requirements.md
 
 仓库中无 `docs/solutions/` 目录。相关历史文档包括：
 - `docs/brainstorms/2026-08-03-oa-project-documentation-requirements.md` — OA 项目文档建设需求
-- `docs/plans/2026-07-30-001-refactor-zero-secret-migration-plan.md` — 密钥迁移计划（环境变量注入模式可作为参考）
+- `docs/archived-plans/2026-07-30-001-refactor-zero-secret-migration-plan.md` — 密钥迁移计划（环境变量注入模式可作为参考）
 
 ### External References
 
@@ -366,7 +366,7 @@ Axum Router
 ```
 
 **Patterns to follow:**
-- `docs/plans/2026-07-30-001-refactor-zero-secret-migration-plan.md` 中的幂等迁移模式
+- `docs/archived-plans/2026-07-30-001-refactor-zero-secret-migration-plan.md` 中的幂等迁移模式
 
 **Test scenarios:**
 - Happy path: 迁移脚本成功将 100 条用户记录从 MySQL 导入 PostgreSQL，校验脚本确认行数一致
@@ -468,4 +468,4 @@ location /api/ {
 - **Origin document:** [docs/brainstorms/2026-08-03-o2server-rust-rewrite-requirements.md](../brainstorms/2026-08-03-o2server-rust-rewrite-requirements.md)
 - Related code: `oa/o2server/pom.xml`, `oa/o2server/x_organization_assemble_control/`, `oa/o2web/source/x_init/src/common/action.js`
 - Related docs: `docs/oa/architecture.md`, `docs/oa/deployment/linux.md`
-- Related plans: `docs/plans/2026-07-30-001-refactor-zero-secret-migration-plan.md`
+- Related plans: `docs/archived-plans/2026-07-30-001-refactor-zero-secret-migration-plan.md`

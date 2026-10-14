@@ -266,7 +266,7 @@ W6 后端路由 ─┼─► W3 ProcessDesigner 契约 ─► W4 Form 运行时 
 - `docs/brainstorms/2026-08-25-oa4rust-o2server-residual-gaps-requirements.md` — 后端残差需求 R1–R10（R1 在 v2 中降级为非必需）
 - `oa4rust/tests/behavior_comparison/`（`seeds/`、`fail_baseline`、`behavior_compare.rs:324`）— 无影子流量下的主验证通道
 - `oa4rust/migrations/056_seed_process_definition_test_data.sql` — 流程种子原为 `'{}'` 占位；rev8 已由 `091_seed_real_process_definition.sql` upsert 真实 activities/form 种子覆盖
-- `docs/plans/2026-09-04-003-frontend-completion-audit.md` — 前端旧口径（~8%，已被本计划 §三取代）
+- `docs/archived-plans/2026-09-04-003-frontend-completion-audit.md` — 前端旧口径（~8%，已被本计划 §三取代）
 - `docs/plans/2026-09-09-001-...httponly-cookie-cargo-audit-rustsec-db-biome-plan.md` — 安全/工具链加固（正交轨道）
 - ~~`docs/ops/s4-pilot-canary-runbook.md`~~ — 项 4（S4 金丝雀）交接 runbook；**rev15 起已删除**（S4 真实流量 gate 移除，无旧系统/无真实流量前提）
 

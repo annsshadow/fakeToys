@@ -311,7 +311,7 @@ oa4rust 已完成 95 个 crate 的真实化和 7624+ 条路由注册，`cargo te
 
 - **Origin document:** [docs/brainstorms/2026-08-20-oa4rust-remaining-gap-closure-requirements.md](../brainstorms/2026-08-20-oa4rust-remaining-gap-closure-requirements.md)
 - Related code: `src/main.rs`, `tests/behavior_compare.rs`, `tests/behavior_comparison/endpoints.rs`, `crates/empower/src/router.rs`
-- Related plans: `docs/plans/2026-08-10-002-fix-oa4rust-gap-closure-plan.md`, `docs/plans/2026-08-12-001-fix-oa4rust-final-gap-closure-plan.md`
+- Related plans: `docs/archived-plans/2026-08-10-002-fix-oa4rust-gap-closure-plan.md`, `docs/archived-plans/2026-08-12-001-fix-oa4rust-final-gap-closure-plan.md`
 - External docs: 无
 
 ---

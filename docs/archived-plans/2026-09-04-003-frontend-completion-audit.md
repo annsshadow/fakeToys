@@ -3,7 +3,7 @@ title: "audit: OA4Rust 100% 替代 o2web — 完成度审计报告"
 type: audit
 status: superseded
 date: 2026-09-04
-superseded_by: docs/plans/2026-09-11-001-assess-oa4rust-web-full-replacement-gap-plan.md
+superseded_by: docs/archived-plans/2026-09-11-001-assess-oa4rust-web-full-replacement-gap-plan.md
 ---
 
 # OA4Rust 100% 替代 o2web — 完成度审计报告

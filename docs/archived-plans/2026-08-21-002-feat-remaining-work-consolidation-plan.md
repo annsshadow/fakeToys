@@ -62,7 +62,7 @@ origin: docs/brainstorms/2026-08-21-plans-status-audit-and-consolidation-require
 
 ### U1. Value::Null 与 CMS stub 清零（P0）
 
-**来源：** `docs/plans/2026-08-19-001-fix-close-all-blocking-gaps-plan.md` U2/U5；`docs/plans/2026-08-19-002-unified-completion-plan.md` U-A1/U-A3；`docs/plans/2026-08-13-003-oa4rust-completion-plan.md` Phase 1
+**来源：** `docs/archived-plans/2026-08-19-001-fix-close-all-blocking-gaps-plan.md` U2/U5；`docs/archived-plans/2026-08-19-002-unified-completion-plan.md` U-A1/U-A3；`docs/archived-plans/2026-08-13-003-oa4rust-completion-plan.md` Phase 1
 
 **现状：** Value::Null 由 201 降至 15 处；CMS `Value::Bool(true)` 由 96 降至 17 处。两份前序计划的验收标准均为归零，未达成。
 
@@ -76,7 +76,7 @@ origin: docs/brainstorms/2026-08-21-plans-status-audit-and-consolidation-require
 
 ### U2. Java-Rust 端点对齐度提升至 ≥70%（P0）
 
-**来源：** `docs/plans/2026-08-20-001-feat-oa4rust-remaining-gap-closure-plan.md` U4（唯一未竟单元）；`docs/plans/2026-08-10-001-feat-oa4rust-gap-audit-plan.md` Deferred「流程平台深度功能」
+**来源：** `docs/archived-plans/2026-08-20-001-feat-oa4rust-remaining-gap-closure-plan.md` U4（唯一未竟单元）；`docs/archived-plans/2026-08-10-001-feat-oa4rust-gap-audit-plan.md` Deferred「流程平台深度功能」
 
 **现状：** 最新提交实测约 36.6%（314c7a75），距 08-20-001 U4 验证标准 ≥70% 尚远。
 
@@ -88,7 +88,7 @@ origin: docs/brainstorms/2026-08-21-plans-status-audit-and-consolidation-require
 
 ### U3. 影子流量灰度验证与切流执行（P1）
 
-**来源：** `docs/plans/2026-08-13-003-oa4rust-completion-plan.md` U4.3；`docs/plans/2026-08-13-001-feat-oa4rust-seaorm-entity-parity.md` Remaining Work #6
+**来源：** `docs/archived-plans/2026-08-13-003-oa4rust-completion-plan.md` U4.3；`docs/archived-plans/2026-08-13-001-feat-oa4rust-seaorm-entity-parity.md` Remaining Work #6
 
 **现状：** 灰度脚手架全部就绪（`deploy/nginx.conf`、`toggle_module.sh`、`shadow-traffic.sh`、`rollback-playbook.md`、`gray-release-playbook.md`），但影子流量观察与切流从未实际执行。
 
@@ -100,7 +100,7 @@ origin: docs/brainstorms/2026-08-21-plans-status-audit-and-consolidation-require
 
 ### U4. Tantivy 全文检索集成（P1）
 
-**来源：** `docs/plans/2026-08-19-002-unified-completion-plan.md` U-B1
+**来源：** `docs/archived-plans/2026-08-19-002-unified-completion-plan.md` U-B1
 
 **现状：** 全仓 0 处 tantivy 引用；search crate 仍为 PG `to_tsvector`（6 处）；前序因 crates.io 网络阻塞搁置。
 
@@ -114,7 +114,7 @@ origin: docs/brainstorms/2026-08-21-plans-status-audit-and-consolidation-require
 
 ### U5. query/portal 抽样深度审计与浅层补齐（P1）
 
-**来源：** `docs/plans/2026-08-13-003-oa4rust-completion-plan.md` U2.6
+**来源：** `docs/archived-plans/2026-08-13-003-oa4rust-completion-plan.md` U2.6
 
 **现状：** 未逐项核验。query(67+59)、portal(56+48) handler 的真实度未经系统审计。
 
@@ -129,9 +129,9 @@ origin: docs/brainstorms/2026-08-21-plans-status-audit-and-consolidation-require
 ### U6. 存储后端三项（P2）
 
 **来源：**
-- 文件实际物理存储后端（文件系统/对象存储）：`docs/plans/2026-08-11-002-feat-oa4rust-core-modules-gap-closure-plan.md` Deferred
-- BBS 图片附件完整文件存储：同上 + `docs/plans/2026-08-11-003-feat-oa4rust-api-gap-closure-plan.md` Deferred
-- Office 预览 .xlsx/.pptx 支持：`docs/plans/2026-08-11-004-feat-oa4rust-remaining-gap-closure-plan.md` Deferred（.docx HTML 已落地）
+- 文件实际物理存储后端（文件系统/对象存储）：`docs/archived-plans/2026-08-11-002-feat-oa4rust-core-modules-gap-closure-plan.md` Deferred
+- BBS 图片附件完整文件存储：同上 + `docs/archived-plans/2026-08-11-003-feat-oa4rust-api-gap-closure-plan.md` Deferred
+- Office 预览 .xlsx/.pptx 支持：`docs/archived-plans/2026-08-11-004-feat-oa4rust-remaining-gap-closure-plan.md` Deferred（.docx HTML 已落地）
 
 **Approach:** 抽象存储 trait（本地盘/对象存储两实现）；BBS 附件与 Office 预览复用同一存储层。
 
@@ -143,8 +143,8 @@ origin: docs/brainstorms/2026-08-21-plans-status-audit-and-consolidation-require
 
 **来源：**
 - LDAP 用户自动同步与增量更新：`docs/plans/2026-08-11-002-...` Deferred（ldap crate 当前仅认证绑定）
-- 微信模板消息异步发送队列：`docs/plans/2026-08-12-001-fix-oa4rust-final-gap-closure-plan.md` Deferred
-- DB 池 multi-instance 分布式限流：`docs/plans/2026-08-10-002-fix-oa4rust-gap-closure-plan.md` Deferred
+- 微信模板消息异步发送队列：`docs/archived-plans/2026-08-12-001-fix-oa4rust-final-gap-closure-plan.md` Deferred
+- DB 池 multi-instance 分布式限流：`docs/archived-plans/2026-08-10-002-fix-oa4rust-gap-closure-plan.md` Deferred
 
 **Verification:** LDAP 目录变更增量同步测试；模板消息经队列异步发送；多实例部署限流一致。
 
@@ -166,7 +166,7 @@ origin: docs/brainstorms/2026-08-21-plans-status-audit-and-consolidation-require
 
 **来源：**
 - 行为对比测试 Java 侧服务容器化：`docs/plans/2026-08-20-001-...` Deferred
-- handler 级测试覆盖率提升至 99% / 内部服务函数可测性改造：`docs/plans/2026-08-20-001-...` Deferred + `docs/plans/2026-08-13-001-feat-handler-test-coverage-99-plan.md` 后续建议（1,856 个未导出内部函数）
+- handler 级测试覆盖率提升至 99% / 内部服务函数可测性改造：`docs/plans/2026-08-20-001-...` Deferred + `docs/archived-plans/2026-08-13-001-feat-handler-test-coverage-99-plan.md` 后续建议（1,856 个未导出内部函数）
 - 代码行覆盖率测量（grcov/tarpaulin）：`docs/plans/2026-08-12-002-...`、`2026-08-13-001-...` Deferred
 - 并发/超时/数据完整性深度测试：`docs/plans/2026-08-12-002-...` Deferred
 
@@ -213,7 +213,7 @@ origin: docs/brainstorms/2026-08-21-plans-status-audit-and-consolidation-require
 
 ### U12. 模块卡片文档深度填充（P3）
 
-**来源：** `docs/plans/2026-08-20-001-feat-oa4rust-remaining-gap-closure-plan.md` Deferred
+**来源：** `docs/archived-plans/2026-08-20-001-feat-oa4rust-remaining-gap-closure-plan.md` Deferred
 
 **内容：**
 - `docs/oa/modules/o2server/` 55 张模块卡片的 Key Flows、Dependencies 等字段深度填充（REST Endpoints 已于 62d67e1d 填充）
@@ -235,7 +235,7 @@ origin: docs/brainstorms/2026-08-21-plans-status-audit-and-consolidation-require
 ## Sources & References
 
 - **Origin document:** [docs/brainstorms/2026-08-21-plans-status-audit-and-consolidation-requirements.md](../brainstorms/2026-08-21-plans-status-audit-and-consolidation-requirements.md)
-- **审计执行计划:** [docs/plans/2026-08-21-001-feat-plans-status-audit-plan.md](2026-08-21-001-feat-plans-status-audit-plan.md)
+- **审计执行计划:** [docs/archived-plans/2026-08-21-001-feat-plans-status-audit-plan.md](2026-08-21-001-feat-plans-status-audit-plan.md)
 - 来源计划：`docs/plans/` 下 18 份（详见各条目标注）
   - 相关经验：`docs/solutions/best-practices/single-source-of-truth-migration-status.md`
   - 收官复盘：`docs/solutions/best-practices/oa4rust-o2server-parity-closure-campaign-2026-08-25.md`
