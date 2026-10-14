@@ -152,7 +152,7 @@ Register-ScheduledTask -TaskName AutoCheckin -Xml (Get-Content .\AutoCheckin.xml
 | --- | --- | --- |
 | `MultipleInstancesPolicy` | `Queue` | 默认 `IgnoreNew` 会让 09:00 的任务在补跑还在跑时被**静默丢弃**。队列化才能排队执行。 |
 | `StartWhenAvailable` | `true` | 机器关机/睡眠错过 09:00 时，开机后补跑。**实测有效但有边界**：连续错过 3 天（10/04–10/06）时并未补跑，需确认目标机器不会长期离线。 |
-| `RestartOnFailure` | 3 次 / 5 分钟 | 浏览器或网络瞬时失败时自动重来。 |
+| `RestartOnFailure` | 参考机 3 次 / 5 分钟 | 浏览器或网络瞬时失败时自动重来。**本机（dragonpro）改为 0 次**：AgentRouter 余额接口被阿里云 WAF 单点保护，无人值守必然失败（非瞬时故障），保留重试会导致每天 09:00 + 09:05/09:10/09:15 共 4 次 WAF 请求，反而抬高风控并撞手动登录的 run 锁。浏览器瞬时故障仍有 `run-once.bat` 内的 `repair:browser` 自愈兜底。 |
 | `ExecutionTimeLimit` | `PT2H` | 默认 72 小时太长，卡死的进程会一直占着 run 锁。 |
 | `DisallowStartIfOnBatteries` / `StopIfGoingOnBatteries` | `false` | 笔记本接电/用电池都能跑。 |
 | `RunLevel` | `HighestAvailable` | 避免权限不足导致浏览器起不来。 |
