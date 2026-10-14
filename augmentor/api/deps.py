@@ -7,6 +7,7 @@
 """
 
 import asyncio
+import errno
 import json
 import logging
 import os
@@ -462,6 +463,33 @@ def resolve_data_dir(name: str) -> Path:
 #: 原文只落服务端日志（``logger.exception``），客户端拿到的是这一份不含实现细节的固定话术。
 INTERNAL_ERROR_DETAIL = "服务器内部错误，详情见服务端日志"
 
+#: 400 档固定响应文案（L271 / A351）：客户端传入的路径名被操作系统判死时用的话术。
+#: 与 A155① 同一口径——**不转发** ``str(exc)``，因为 ``OSError`` 的原文带着部署根绝对路径
+#: （实测 ``[Errno 22] Invalid argument: 'D:\\deploy\\root\\a\nb.json'``）。
+INVALID_PATH_NAME_DETAIL = "文件路径含当前系统不接受的字符或超出长度上限"
+
+#: 这两个 errno 的含义是「这个名字在任何账户下都不可能成立」，与磁盘满 / 权限缺失一类
+#: 服务端状态不同： EINVAL 是名字里有系统禁止的字符，ENAMETOOLONG 是名字过长。
+#: 实测 Windows 把「名字里有控制符」与「名字 5000 字符」都折成 errno 22，Linux 的
+#: 对应物是 22 与 36，所以两支并收（``errno`` 常量按平台取值，不在本机重钉数字）。
+_OS_REJECTED_NAME_ERRNOS = frozenset({errno.EINVAL, errno.ENAMETOOLONG})
+
+
+def is_rejected_path_name(exc: BaseException) -> bool:
+    """异常是不是「操作系统拒绝这个名字」那一档（400 而不是 500）
+
+    ``FileNotFoundError`` / ``PermissionError`` 等虽然也是 ``OSError`` 子类，但它们的
+    errno 不在这一格里，仍由各分支或 500 兜底处理；errno 为 ``None`` 的注入型
+    ``OSError("磁盘读失败")`` 同样不进这一档——判据只认操作系统自己填的 errno。
+
+    Args:
+        exc: 下游抛出的异常
+
+    Returns:
+        True 表示这是客户端名字形状的错，应当回 400 固定文案
+    """
+    return isinstance(exc, OSError) and exc.errno in _OS_REJECTED_NAME_ERRNOS
+
 
 def to_http_error(
     exc: Exception,
@@ -477,7 +505,11 @@ def to_http_error(
     2. ``JSONDecodeError`` → 400，且**不转发 json 模块的英文原文**；
     3. 其余 ``ValueError`` → 400（参数或数据不合法，原文可行动、照回），其它 → 500
        且**只回固定文案** ``INTERNAL_ERROR_DETAIL``、原文落 ``logger.exception``（不转发
-       部署路径 / 文件系统状态，A155①）。
+       部署路径 / 文件系统状态，A155①）；
+    4. ``is_rejected_path_name``（L271）→ 400 且用固定文案 ``INVALID_PATH_NAME_DETAIL``：
+       errno 22 / 36 是操作系统对**名字形状**的判词（控制符、超长），与 NUL 那一形
+       （操作系统抛 ``ValueError``，走第 3 支拿 400）同属「参数非法」，不收进这一档
+       就会出现「同一类输入两种码」。
 
     顺序有讲究：``JSONDecodeError`` 是 ``ValueError`` 的子类，必须先判。
     ``HTTPException`` **不**在这里处理 —— 它应当由调用方原样抛出，否则会被
@@ -511,6 +543,11 @@ def to_http_error(
         )
     if isinstance(exc, ValueError):
         return HTTPException(status_code=400, detail=str(exc))
+    if is_rejected_path_name(exc):
+        # L271：操作系统对「这个名字不可能成立」的判词（errno 22 / 36）不是服务端故障。
+        # 同族的 NUL 输入在这一档之前已经由 ValueError 支拿到 400，收齐这一形才不再
+        # 「同一类输入两种码」。文案固定：原文带部署根绝对路径（A155①）。
+        return HTTPException(status_code=400, detail=INVALID_PATH_NAME_DETAIL)
     # 500 档（A155①）：原文只落服务端日志、不进响应体，防部署路径与文件系统状态外泄。
     logger.exception("未分类异常收敛为 500，原文仅留服务端日志、不转发客户端")
     return HTTPException(status_code=500, detail=INTERNAL_ERROR_DETAIL)
@@ -523,7 +560,13 @@ def raise_internal_error(exc: Exception) -> None:
     绝对路径与文件系统状态（磁盘满 / 权限缺失等可被利用的探测信号），一律降级为服务端
     日志，客户端只拿 ``INTERNAL_ERROR_DETAIL``。与 to_http_error 的 500 支同一口径
     （A77 一条 500 泄漏判据住一处），区别只是这里直接 raise、供路由 except 分支调用。
+
+    L271 的例外：``is_rejected_path_name`` 为真时 raise 的是 400 而不是 500——
+    操作系统对名字形状的判词（errno 22 / 36）不是服务端故障，与 to_http_error 同一判据、
+    住同一处。
     """
+    if is_rejected_path_name(exc):
+        raise HTTPException(status_code=400, detail=INVALID_PATH_NAME_DETAIL)
     logger.exception("未分类异常收敛为 500，原文仅留服务端日志、不转发客户端")
     raise HTTPException(status_code=500, detail=INTERNAL_ERROR_DETAIL)
 
