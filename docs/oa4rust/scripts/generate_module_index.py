@@ -239,7 +239,7 @@ def generate_markdown(modules, dependencies, scores, output_path):
     output.append('---')
     output.append('')
     output.append('*生成时间：* 2026-08-03')
-    output.append('*生成脚本：* docs/oa/scripts/generate_module_index.py')
+    output.append('*生成脚本：* docs/oa4rust/scripts/generate_module_index.py')
     
     # Write to file
     with open(output_path, 'w', encoding='utf-8') as f:
