@@ -162,3 +162,21 @@ class BackupIntegrityError(AugmentorError, ValueError):
 class VectorError(DataError, ValueError):
     """向量库相关异常（维度不匹配、ID 冲突/重复、持久化未配置）"""
     pass
+
+
+class DatasetTextError(DataValidationError):
+    """数据集条目里「被当作文本用的字段」装着非字符串值（A358 / L274）
+
+    单独立一个类型而不是复用 :class:`DataValidationError`，是因为门口那三个收敛函数对
+    「SDK 已经判出来的参数错误」给了两种归宿：`to_http_error`（``ValueError`` 支）与
+    `raise_boundary_error`（按类型放行）落 **400**，而 `raise_internal_error` 把其余
+    一切收敛成 **500** 固定文案。数据集是调用方自己给的文件，它的一条 `instruction`
+    是整数时，服务端回答的是「服务器内部错误」——可这是参数缺陷，不是故障。
+
+    把 `DataValidationError` 整体在 `raise_internal_error` 放行会顺带动到 L272 钉住的
+    **A280** 那一族（非有限浮点旋钮、`dedup` / `benchmark` 四形全部 500，状态码是对外
+    契约、待拍），所以这里按**具名窄口**放行：只有本类的实例换归宿，父类其他成员
+    的归宿一字不变。与 :class:`BackupIntegrityError` 刻意与 `BackupError` 平级同族
+    ——都是「映射的形状决定必须新立类型」。
+    """
+    pass

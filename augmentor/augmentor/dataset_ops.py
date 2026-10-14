@@ -16,7 +16,7 @@ from .atomic_write import atomic_write_json
 from dataclasses import dataclass
 import hashlib
 from .exceptions import DataValidationError
-from .validation import require_count, require_ratio, require_ratio_list, require_within_dir
+from .validation import require_count, require_item_text, require_ratio, require_ratio_list, require_within_dir
 from .allocation import largest_remainder
 from .data_splitter import DataSplitter
 
@@ -253,7 +253,7 @@ class DatasetOperations:
         seen_loose = set()
         unique_items = []
         
-        for item in items:
+        for item in require_item_text(items, "instruction"):
             # 使用instruction字段生成哈希
             text = item.get("instruction", "")
             item_hash = hashlib.md5(text.encode('utf-8')).hexdigest()

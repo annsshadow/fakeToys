@@ -9,7 +9,7 @@ from dataclasses import dataclass
 import numpy as np
 from .model_manager import model_manager
 from .exceptions import QualityError, DataValidationError
-from .validation import require_count, require_ratio, require_ratio_list
+from .validation import require_count, require_item_text, require_ratio, require_ratio_list
 from .config import QUALITY_THRESHOLD_RANGE
 
 logger = logging.getLogger(__name__)
@@ -343,7 +343,7 @@ class QualityScorer:
         weights = self.effective_weights(include_semantic)
         
         # 提取文本
-        originals = [item.get("original", "") for item in items]
+        originals = [item.get("original", "") for item in require_item_text(items, "original", "generated", "output")]
         generateds = [item.get("generated", "") for item in items]
         outputs = [item.get("output", "") for item in items]
         

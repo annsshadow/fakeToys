@@ -157,11 +157,11 @@ async def load_data(filename: str, page: int = 1, page_size: int = 20, search: s
         items = await read_json_file(file_path)
 
         if search:
+            from augmentor.validation import require_item_text
             search_lower = search.lower()
             items = [
-                item for item in items
-                if search_lower in item.get("instruction", "").lower()
-                or search_lower in item.get("output", "").lower()
+                item for item in require_item_text(items, "instruction", "output")
+                if search_lower in item.get("instruction", "").lower() or search_lower in item.get("output", "").lower()
             ]
 
         total = len(items)
