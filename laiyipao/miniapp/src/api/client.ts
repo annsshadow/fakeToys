@@ -5,7 +5,61 @@
  * uni.request 在两端 API 同构，因此直接用它，不引入额外 HTTP 库。
  */
 
-const BASE_URL = 'http://127.0.0.1:8080/api/v1'
+/**
+ * 解析后端地址。
+ *
+ * ⚠️ 它曾经是**写死的字面量** `'http://127.0.0.1:8080/api/v1'` ——
+ * 也就是说打出来的包只能连用户自己设备的回环地址，生产环境根本不可用，
+ * 而「唯一的修法」是回去改这个源码常量。
+ *
+ * 那条修改路径上没有任何东西阻止人把 `http://` 换成真实域名保留下来，
+ * 于是最自然的修补就是「照抄，只把地址换掉」——
+ * 而那会让 `access_token` / `refresh_token`（有效期默认 30 天）
+ * **以明文过网**。微信小程序对非 HTTPS 域名有白名单限制，
+ * 但 H5 端没有任何东西挡着。
+ *
+ * 所以这里做两件事，缺一不可：
+ *  1. 从环境变量取地址（与 admin 的 `VITE_API_BASE` 同一套机制）；
+ *  2. **非回环主机必须以 https:// 开头，否则启动即抛**。
+ *
+ * 判据为什么是「回环」而不是「localhost」字面量：
+ * 回环地址（127.0.0.1 / localhost / ::1）在真机上指向手机自己，
+ * 抓包也只能看到本机流量，明文无所谓。
+ * 而**局域网 IP**（192.168.x.x / 10.x.x.x）虽然用于真机调试，
+ * 它同样是明文 —— 但它是开发场景，且微信开发者工具本身就在
+ * 「不校验合法域名」模式下运行，硬拦会挡住正常开发。
+ * 因此对局域网 IP 只警告不抛，对**公网域名**才硬拦。
+ */
+function resolveBaseURL(): string {
+  const configured =
+    (typeof import.meta !== 'undefined' &&
+      (import.meta as { env?: Record<string, string | undefined> }).env?.VITE_API_BASE) ||
+    ''
+  const raw = (configured || 'http://127.0.0.1:8080/api/v1').trim()
+
+  const isLoopback = /^http:\/\/(127\.0\.0\.1|localhost|\[::1\])(:|\/|$)/i.test(raw)
+  const isPrivateLAN = /^http:\/\/(192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\.)/i.test(raw)
+  const isPlainHTTP = /^http:\/\//i.test(raw)
+
+  if (isPlainHTTP && !isLoopback) {
+    if (isPrivateLAN) {
+      // 开发场景：真机连本机局域网。只警告。
+      console.warn(
+        '[api] 后端地址走明文 HTTP 的局域网地址：' +
+          '真机调试可用，但令牌会明文过网，仅限开发环境。',
+      )
+    } else {
+      // 公网域名 + 明文 = 长期有效的令牌裸奔。硬拦。
+      throw new Error(
+        `api: 生产后端地址必须是 HTTPS（当前 ${raw}）。` +
+          '请设置 VITE_API_BASE=https://your.domain/api/v1。',
+      )
+    }
+  }
+  return raw.replace(/\/+$/, '')
+}
+
+const BASE_URL = resolveBaseURL()
 
 /** GameConfig 与服务端 /api/v1/config 的响应结构对应。 */
 export interface GameConfig {
@@ -167,6 +221,36 @@ export function clearTokens(): void {
   del(TOKEN_KEY)
   del(REFRESH_KEY)
   del(TOKEN_EXP_KEY)
+}
+
+/**
+ * 登出：吊销服务端该账号的全部 refresh token，再清本地令牌。
+ *
+ * # 为什么「登出」必须调服务端，不能只清本地
+ *
+ * 本地 `clearTokens()` 只是让**这台设备**不再用它。
+ * 而 refresh token 的有效期是 30 天（服务端 `REFRESH_TTL`），
+ * 在这期间它**仍然是有效的凭证** —— 手机丢了 / 令牌被读走之后，
+ * 玩家在设置里点「退出登录」，攻击者手里的那份照样能换出新令牌。
+ *
+ * 这是服务端「唯一能批量吊销 refresh token 的路径此前只有封禁」那个
+ * 缺陷的客户端那一半。
+ *
+ * ⚠️ **失败也必须清本地**：网络不通时服务端那一份没吊销，
+ *   但用户的意图是「我现在不信任这台设备」，此时把有效令牌留在
+ *   localStorage 是违背意图的。
+ *   代价是「服务端那份可能还活着」—— 所以 UI 要如实告知用户
+ *   「已在本机退出，但未能通知服务端」，而不是谎称已完全登出。
+ */
+export async function logout(): Promise<{ serverNotified: boolean }> {
+  try {
+    await request<{ ok: boolean }>('/me/logout', { method: 'POST' })
+    clearTokens()
+    return { serverNotified: true }
+  } catch {
+    clearTokens()
+    return { serverNotified: false }
+  }
 }
 
 interface RequestOptions {

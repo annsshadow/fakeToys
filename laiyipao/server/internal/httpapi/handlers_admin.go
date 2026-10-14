@@ -129,7 +129,7 @@ func (s *Server) adminUpdateLevel(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	s.Svc.Audit(c.Context(), adminIDFrom(c), "update_level", strconv.Itoa(id), patch)
+	s.Svc.Audit(c.Context(), adminIDFrom(c), "update_level", strconv.Itoa(id), c.IP(), patch)
 	return c.JSON(fiber.Map{"level": lvl})
 }
 
@@ -138,7 +138,7 @@ func (s *Server) adminRegenerateLevels(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	s.Svc.Audit(c.Context(), adminIDFrom(c), "regenerate_levels", "", fiber.Map{"count": n})
+	s.Svc.Audit(c.Context(), adminIDFrom(c), "regenerate_levels", "", c.IP(), fiber.Map{"count": n})
 	return c.JSON(fiber.Map{"generated": n})
 }
 
@@ -163,7 +163,7 @@ func (s *Server) adminUpdateSkill(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	s.Svc.Audit(c.Context(), adminIDFrom(c), "update_skill", strconv.Itoa(id), patch)
+	s.Svc.Audit(c.Context(), adminIDFrom(c), "update_skill", strconv.Itoa(id), c.IP(), patch)
 	// 第 120 轮：回读行作为响应（后台契约 { skill: AdminSkill }），
 	// 不再整个重列 adminSkills（那样 res.skill 恒 undefined，
 	// 后台改完技能表行停旧值却弹「已保存」）。
@@ -266,7 +266,7 @@ func (s *Server) adminBanUser(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	s.Svc.Audit(c.Context(), adminIDFrom(c), "ban_user", strconv.FormatInt(id, 10), body)
+	s.Svc.Audit(c.Context(), adminIDFrom(c), "ban_user", strconv.FormatInt(id, 10), c.IP(), body)
 	return c.JSON(fiber.Map{"user": u})
 }
 
@@ -279,7 +279,7 @@ func (s *Server) adminUnbanUser(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	s.Svc.Audit(c.Context(), adminIDFrom(c), "unban_user", strconv.FormatInt(id, 10), nil)
+	s.Svc.Audit(c.Context(), adminIDFrom(c), "unban_user", strconv.FormatInt(id, 10), c.IP(), nil)
 	return c.JSON(fiber.Map{"user": u})
 }
 
@@ -306,7 +306,8 @@ func (s *Server) adminGrantUser(c *fiber.Ctx) error {
 		evt = "revoke_currency"
 	}
 	s.Svc.Audit(c.Context(), adminIDFrom(c), evt,
-		strconv.FormatInt(id, 10), fiber.Map{"currency": body.Currency, "amount": body.Amount})
+		strconv.FormatInt(id, 10), c.IP(),
+		fiber.Map{"currency": body.Currency, "amount": body.Amount})
 	return c.JSON(fiber.Map{"wallet": wallet})
 }
 
@@ -417,7 +418,7 @@ func (s *Server) adminVerifyBattle(c *fiber.Ctx) error {
 		return failErr(c, err)
 	}
 	// 验真是一次**管理动作**，审计轨迹要独立于统计表存在。
-	s.Svc.Audit(c.Context(), adminID, "battle_verify", strconv.FormatInt(id, 10),
+	s.Svc.Audit(c.Context(), adminID, "battle_verify", strconv.FormatInt(id, 10), c.IP(),
 		service.AuditVerificationDetail(res))
 	return c.JSON(res)
 }
@@ -456,7 +457,7 @@ func (s *Server) adminUpdateShop(c *fiber.Ctx) error {
 		return failErr(c, err)
 	}
 	s.Svc.Audit(c.Context(), adminIDFrom(c), "update_shop_item",
-		strconv.FormatInt(id, 10), patch)
+		strconv.FormatInt(id, 10), c.IP(), patch)
 	return c.JSON(fiber.Map{"item": item})
 }
 
@@ -484,7 +485,7 @@ func (s *Server) adminCreateAnnouncement(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	s.Svc.Audit(c.Context(), adminIDFrom(c), "create_announcement", body.Title, nil)
+	s.Svc.Audit(c.Context(), adminIDFrom(c), "create_announcement", body.Title, c.IP(), nil)
 	return c.JSON(fiber.Map{"item": item})
 }
 
@@ -531,7 +532,7 @@ func (s *Server) adminCreateRedeemCode(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	s.Svc.Audit(c.Context(), adminIDFrom(c), "create_redeem_code", body.Code, body)
+	s.Svc.Audit(c.Context(), adminIDFrom(c), "create_redeem_code", body.Code, c.IP(), body)
 	return c.JSON(fiber.Map{"item": item})
 }
 
