@@ -133,6 +133,13 @@ def run_dependency(args, config):
         # 与 validate / validate-config 同一口径：报了问题就得让退出码跟着判负
         verdict_exit(not issues)
 
+    else:
+        # 链尾不该静默落空：动作表由 parser 的 choices 封闭，但 run_dependency 也能被
+        # 直接调用，漏接一档时「什么都不做 + 退出 0」最难查。
+        print(f"错误: {args.action} 没有对应的 dependency 分支（choices 与分支表脱节）",
+              file=sys.stderr)
+        sys.exit(1)
+
 
 # ============ 数据迁移 ============
 def run_migrate(args, config):
