@@ -83,10 +83,10 @@ def run_quality_report(args, config):
         status = "[通过]" if metric.passed else "[未通过]"
         print(f"  {status} {metric.name}: {metric.value:.2f} ({metric.description})")
 
-    if report.recommendations:
-        print("\n改进建议:")
-        for rec in report.recommendations:
-            print(f"  - {rec}")
+    # 建议恒非空：报告生成器在零建议时兜底追加一条，所以这里不必再判（判了那一支永远不走）
+    print("\n改进建议:")
+    for rec in report.recommendations:
+        print(f"  - {rec}")
 
     if args.output:
         save_quality_report(report, args.output, args.format)

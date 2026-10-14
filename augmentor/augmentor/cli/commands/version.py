@@ -106,6 +106,13 @@ def run_version(args, config):
             print(f"删除失败: 版本不存在 {args.version}", file=sys.stderr)
             sys.exit(1)
 
+    else:
+        # 链尾不该静默落空：action 由 parser 的 choices 封闭，但 run_version 也能被
+        # 直接调用（测试与脚本都走这条路），漏接一档时「什么都不做 + 退出 0」最难查。
+        print(f"错误: {action} 没有对应的 version 分支（choices 与分支表脱节）",
+              file=sys.stderr)
+        sys.exit(1)
+
 
 # ============ 数据备份 ============
 def run_backup(args, config):
@@ -183,3 +190,10 @@ def run_backup(args, config):
     elif args.action == "cleanup":
         deleted = clean_old_backups(args.backup_dir, args.max_backups)
         print(f"清理完成: 删除 {deleted} 个，保留最新 {args.max_backups} 个")
+
+    else:
+        # 同 run_version：链尾静默落空＝「什么都不做且退出 0」，直接调用方拼错一档时
+        # 比 argparse 的 2 号usage 错误安静得多。
+        print(f"错误: {args.action} 没有对应的 backup 分支（choices 与分支表脱节）",
+              file=sys.stderr)
+        sys.exit(1)

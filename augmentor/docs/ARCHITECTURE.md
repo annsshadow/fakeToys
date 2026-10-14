@@ -2242,7 +2242,7 @@ A91 的症状写着「口径只活在文档里，零守卫」。本轮开工第�
 | `check-leakage` | `report.is_clean` | 0 | 检出泄漏 ⇒ 1 | `cli/commands/security.py:52` |
 | `doctor` | `report.all_required_present` | 0 | 缺必需依赖 ⇒ 1 | `cli/commands/ops.py:31` |
 | `auto-test` | `suite.failed_tests == 0` | 0 | 有失败用例 ⇒ 1 | `cli/commands/ops.py:54` |
-| `migrate` | `result.failed_items == 0` | 0 | 有失败条目 ⇒ 1 | `cli/commands/ops.py:159` |
+| `migrate` | `result.failed_items == 0` | 0 | 有失败条目 ⇒ 1 | `cli/commands/ops.py:166` |
 | 已有四条改走同一出口 | `is_valid` / `issues` / `gate.passed` | — | 判负 ⇒ 1（无 `--gate`，恒判） | `data_ops.py:78` / `:114`、`ops.py:134`、`augmentor/cli/commands/quality.py:210` |
 
 **唯一出口 = `augmentor/cli/verdict.py:verdict_exit(passed, enforce=True)`**。退出码从此只有三种形状，

@@ -214,25 +214,25 @@ def with_retries(func: Callable[..., Any],
                     attempt + 1, type(exc).__name__,
                 )
                 break
-            if attempt >= max_retries:
-                break
+            if attempt < max_retries:
+                # 最后一搏失败就地收手：旧写法在这里 `break`，于是「range 自然耗尽」那一支
+                # 永远走不到，终止权威写了两个。
+                # 两支的封顶不同，且这是刻意的：服务端指令一支只归 `max_retry_wait` 管，
+                # **不夹 `max_delay`** —— 把「90 秒后再来」夹成 30 s 等于提前 3 倍敲门。
+                if suggested is not None:
+                    delay = min(max_retry_wait, max(0.0, float(suggested)))
+                else:
+                    delay = compute_delay(attempt + 1, base_delay, factor, max_delay,
+                                          jitter=jitter, rng=rng)
 
-            # 两支的封顶不同，且这是刻意的：服务端指令一支只归 `max_retry_wait` 管，
-            # **不夹 `max_delay`** —— 把「90 秒后再来」夹成 30 s 等于提前 3 倍敲门。
-            if suggested is not None:
-                delay = min(max_retry_wait, max(0.0, float(suggested)))
-            else:
-                delay = compute_delay(attempt + 1, base_delay, factor, max_delay,
-                                      jitter=jitter, rng=rng)
-
-            stats.delays.append(delay)
-            logger.warning(
-                "第 %d 次调用失败（%s），%.2fs 后重试",
-                attempt + 1, type(exc).__name__, delay,
-            )
-            if on_retry:
-                on_retry(attempt + 1, exc, delay)
-            sleeper(delay)
+                stats.delays.append(delay)
+                logger.warning(
+                    "第 %d 次调用失败（%s），%.2fs 后重试",
+                    attempt + 1, type(exc).__name__, delay,
+                )
+                if on_retry:
+                    on_retry(attempt + 1, exc, delay)
+                sleeper(delay)
 
     raise last_exc
 

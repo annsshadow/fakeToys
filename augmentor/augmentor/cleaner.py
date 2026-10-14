@@ -162,12 +162,12 @@ class DatasetCleaner:
         
         # 应用规则
         for rule_name in rules:
-            if rule_name in self._default_rules:
-                rule_func = self._default_rules[rule_name]
-                cleaned_items, was_modified = rule_func(cleaned_items, fields)
-                if was_modified:
-                    applied_rules.append(rule_name)
-                    modified_count += 1
+            # 闸在上面：rules 已被封闭清单校验成 _default_rules 的键，再判一次存在性等于把静默跳过藏回闸后
+            rule_func = self._default_rules[rule_name]
+            cleaned_items, was_modified = rule_func(cleaned_items, fields)
+            if was_modified:
+                applied_rules.append(rule_name)
+                modified_count += 1
         
         # 应用自定义规则
         for rule_func in self._custom_rules:
