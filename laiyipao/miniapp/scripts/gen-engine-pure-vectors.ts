@@ -1266,29 +1266,41 @@ const ROTOR_SAMPLE_IDX = [
   0, 1, 90, 91, 180, 181, 270, 271, 45, 46, 135, 136, 225, 226, 315, 316, 359, 718, 719,
 ]
 
-// ── Block B：波次与刷怪 ───────────────────────────────────────
 /**
- * 第一次真正的**跨端逐事件对齐**。
+ * Block B / C 的**跨端逐事件对齐**场景。
  *
- * # 为什么这个场景是「空构筑跑到本波清空」
+ * # 这是 R1 移植过程中第一次真正的跨端对齐
  *
- * B 块只搬了波次与刷怪，`updateEnemies`（C）/ `updateAutoFire`（D）仍是空实现。
- * 所以这一局里敌人**不会移动也不会被击杀**，但：
- *   - 刷怪队列会按 tick 逐个兑现 → 覆盖 `ceilDivMsToTicks` 与 `updateSpawns`
- *   - 洗牌会消耗 RNG → 覆盖 Fisher-Yates
- *   - 敌人 y 坐标来自 RNG → 覆盖 `600 + rng.intn(340)`
- *   - `wave_start` / `wave` 重放事件 → 覆盖 `beginWave` 的记录
+ * A 块只能验排序不变量（`BeginWave` 还是空实现，事件流必然不一致）。
+ * B 块把它换成真实实现之后，「同一关 + 同一种子 + 同一空构筑」下，
+ * 两端的**每一个 tick** 的 `tick` / `phase` / 刷怪队列 / 每个敌人的全部字段 /
+ * 全部重放事件 / 全部渲染事件 都必须逐条相同。
  *
- * ⚠️ **刻意不用合成关卡**，而是真跑第 1 关：
- *   刷怪组的 delay/interval 是 levelgen 真实产出的毫秒值
- *   （第 1 关第一波 delay=1012ms）。用拍出来的数字就测不到
- *   「毫秒→tick 向上取整」这个最容易写错的换算。
+ * ⚠️ **刻意用真关卡而非合成关卡**：刷怪组的 delay/interval 是 levelgen
+ * 真实产出的毫秒值（第 1 关第一波 delay=1012ms）。用拍出来的数字就测不到
+ * 「毫秒→tick 向上取整」这个最容易写错的换算。
  *
- * # 断言强度
+ * # 为什么逐步比对而不是只比最终状态
  *
- * 逐 tick 记录：`tick` / `phase` / 场上敌人数 / 刷怪队列长度 /
- * 每个敌人的 (uid, x, y, hp, spawnProgress) / 全部重放事件。
- * 逐步比对而不是只比最终值 —— 中间错了又绕回来的实现能骗过最终值。
+ * 只比最终值的话，中间若干 tick 错了又绕回来的实现能全绿。
+ * 而刷怪队列的长度是「非增」的，中间的错误很容易被后续追平。
+ *
+ * # ⚠️⚠️ 为什么长场景要采样而不是逐步记
+ *
+ * 敌人从 x=960 走到 x=60（防线）要 900 秒 = **18000 tick**，
+ * 所以「让漏怪分支真的进一次」必然是万级 tick 的场景。
+ *
+ * 逐步全量记会让文件爆到 42 MB（我第一版就是这么写的）：
+ *   - `replay` 是**累积**数组，每 tick 存全量 = O(n²)
+ *   - 每 tick 存全量敌人列表 = 18000 × 4 只 × 200 字节 ≈ 14 MB
+ *
+ * 两处都改成增量：
+ *   - `replay` 只存**本步新增**的（游标式）
+ *   - 快照按 `sampleEvery` 抽样，并**对有事件的步强制采样**
+ *
+ * 抽样的判据必须两端**同样可算**，否则 Go 不知道该在哪几步快照。
+ * 这里用 `tick % sampleEvery === 0 || 本步有事件` ——
+ * 两端都能各自算出「这一步要不要记」，不依赖任何单侧信息。
  */
 interface WaveScenario {
   label: string
@@ -1296,20 +1308,76 @@ interface WaveScenario {
   seed: string
   /** 跑多少个 tick */
   ticks: number
+  /**
+   * 每隔多少 tick 记一次快照。1 = 逐步全记。
+   *
+   * ⚠️ 1 只用在短场景上：长场景用 1 会产出 42 MB 的文件，
+   * 而没人会去 review 42 MB —— 没人看的契约等于没有契约。
+   */
+  sampleEvery: number
+  /**
+   * 攻方的护甲千分比。undefined = 全零攻方。
+   *
+   * ⚠️ 需要单独的场景来盖「攻方护甲」这条路径：
+   *   `defenseArmorPermille()` 是三项相加，而前两项
+   *   （关卡 armor_permille 与 buffs）在这批场景里都恒为 0。
+   *   不给一个非零值的话，`+ Cfg.Attacker.ArmorPermille` 那一项
+   *   就永远是「加 0」—— 把它写成减号也照样全绿。
+   */
+  armorPermille?: number
 }
 
 const WAVE_SCENARIOS: WaveScenario[] = [
-  { label: 'lvl1_first_wave', levelID: 1, seed: '7046029255919282421', ticks: 120 },
+  // ── 短场景：逐步全记（B 块验刷怪，C 块验位移与出场进度）──
+  { label: 'lvl1_first_wave', levelID: 1, seed: '7046029255919282421', ticks: 120, sampleEvery: 1 },
   // 第二个种子：RNG 路径不同 → 不同的洗牌结果与 y 坐标。
   // 只用一个种子的话，「洗牌算法恰好对」与「洗牌算法错但那个种子下恰好相同」
   // 区分不开。
-  { label: 'lvl1_alt_seed', levelID: 1, seed: '1234567890123456789', ticks: 120 },
+  { label: 'lvl1_alt_seed', levelID: 1, seed: '1234567890123456789', ticks: 120, sampleEvery: 1 },
   // 负种子：INIT_XOR 与 asUintN 的对齐在这里最容易被写错。
-  { label: 'lvl1_negative_seed', levelID: 1, seed: '-1', ticks: 90 },
-  { label: 'lvl1_zero_seed', levelID: 1, seed: '0', ticks: 90 },
+  { label: 'lvl1_negative_seed', levelID: 1, seed: '-1', ticks: 90, sampleEvery: 1 },
+  { label: 'lvl1_zero_seed', levelID: 1, seed: '0', ticks: 90, sampleEvery: 1 },
   // 第 25 关：波数更多、刷怪组更多 → 覆盖「一 tick 内刷多只」的路径。
-  { label: 'lvl25_multi_group', levelID: 25, seed: '-4611686018427387904', ticks: 260 },
+  { label: 'lvl25_multi_group', levelID: 25, seed: '-4611686018427387904', ticks: 260, sampleEvery: 1 },
+
+  // ── 长场景：抽样记（跑到漏怪分支真的进为止）──
+  // 全零攻方：盖「关卡护甲 + 卡牌护甲」两项为 0 时的裸漏怪伤害。
+  { label: 'lvl1_reach_base', levelID: 1, seed: '7046029255919282421', ticks: 22000, sampleEvery: 100 },
+  // 攻方护甲 400‰：盖 `defenseArmorPermille` 的第三项。
+  { label: 'lvl1_armor400', levelID: 1, seed: '7046029255919282421', ticks: 22000, sampleEvery: 100, armorPermille: 400 },
+  // 攻方护甲 750‰（封顶）：盖 `applyArmor` 的夹取边界。
+  { label: 'lvl1_armor750', levelID: 1, seed: '7046029255919282421', ticks: 22000, sampleEvery: 100, armorPermille: 750 },
+  // 第 25 关：波次内敌人**有攻击力** -> 盖 `attack > 0` 那条漏怪路径。
+  //   （第 1 关第一波全是零攻击力杂兵，只盖 `breachDamage` 那档。）
+  { label: 'lvl25_full', levelID: 25, seed: '-4611686018427387904', ticks: 22000, sampleEvery: 100 },
 ]
+
+/**
+ * 场景的「攻方」配置。
+ *
+ * ⚠️ **刻意取全零**而不是一个像样的玩家。
+ *
+ *   有构筑时开火（D 块）与卡牌（F 块）会介入，
+ *   于是对齐结果里混进「这发打中了吗」的噪声。
+ *   空构筑保证「没有任何东西伤害敌人」——
+ *   于是敌人只会被「抵达防线」这一条路径处理掉，
+ *   C 块要验的行为就是唯一行为。
+ *
+ * `heatCapPermille` 必须显式给 0：它是 BigInt，
+ * 不给就是 `undefined`，而构造器里 `undefined` 赋给数值字段会变 NaN。
+ */
+const ZERO_ATTACKER = {
+  attack: 0n,
+  critPermille: 0n,
+  critMultiplierPermille: 0n,
+  reactionMultPermille: 1000n,
+  elementCap: 3n,
+  reactionTier: 1n,
+  elementCoefPermille: 1000n,
+  heatCapPermille: 0n,
+  armorPermille: 0n,
+  mechanicPermille: 0n,
+} as never
 
 const waveRows = WAVE_SCENARIOS.map((s) => {
   const level = fixture.levels.find((l: any) => l.id === s.levelID)
@@ -1326,20 +1394,10 @@ const waveRows = WAVE_SCENARIOS.map((s) => {
     level: level as never,
     enemies: enemyDefs,
     skills: skillDefs,
-    // ⚠️ 空构筑：B 块不该被 D 块的开火影响，
-    // 而空构筑保证「没有技能冷却」与「没有自动开火」两个变量。
     equipped: [],
     attacker: {
-      attack: 100n,
-      critPermille: 1500n,
-      critMultiplierPermille: 1500n,
-      reactionMultPermille: 1000n,
-      elementCap: 3n,
-      reactionTier: 1n,
-      elementCoefPermille: 1000n,
-      heatCapPermille: 0n,
-      armorPermille: 0n,
-      mechanicPermille: 0n,
+      ...ZERO_ATTACKER,
+      armorPermille: BigInt(s.armorPermille ?? 0),
     } as never,
     seed: BigInt(s.seed),
     scoreRules: scoreRulesFromFixture(),
@@ -1348,7 +1406,13 @@ const waveRows = WAVE_SCENARIOS.map((s) => {
   engine.start()
 
   const trace: Array<Record<string, unknown>> = []
+  /** replay 游标：只把「新增的」写进 trace（见上面的 O(n²) 说明）。 */
+  let replayCursor = 0
+
   const snap = () => {
+    const replayAll = (engine as any).replay as any[]
+    const fresh = replayAll.slice(replayCursor).map((r: any) => `${r.t}|${r.type}|${r.a}|${r.b}|${r.c}`)
+    replayCursor = replayAll.length
     trace.push({
       tick: engine.tick,
       phase: engine.phase,
@@ -1371,30 +1435,78 @@ const waveRows = WAVE_SCENARIOS.map((s) => {
         resist: (['fire', 'ice', 'lightning', 'corrosion', 'kinetic'] as const)
           .map((el) => `${el}:${(e.resist.get(el) ?? 0n).toString()}`)
           .join('|'),
+        // C 块新增：远程怪的攻击冷却。
+        // ⚠️ 必须记：漏怪伤害取决于「冷却何时归零」，
+        //   而冷却只在这一步递减 —— 不记就抓不到「冷却递减差一 tick」这类错误。
+        attack_cooldown: e.attackCooldown.toString(),
+        attack_range: e.attackRange.toString(),
       })),
-      replay: (engine as any).replay.map((r: any) => `${r.t}|${r.type}|${r.a}|${r.b}|${r.c}`),
-      events: engine.drainEvents().map((ev: any) => ev.type),
+      replay: fresh,
+      events: engine.drainEvents().map((ev: any) => `${ev.type}:${ev.damage ?? ''}`),
+      // C 块：防线状态。⚠️ 逐步记录 base_hp 是必需的 ——
+      // `leaked` 只在最后比对的话，「同一 tick 漏两只」与
+      // 「两个 tick 各漏一只」会得到同样的终值，而那是两种完全不同的战斗。
+      base_hp: (engine as any).baseHp.toString(),
+      leaked: (engine as any).leaked,
     })
   }
 
   snap()
   for (let i = 0; i < s.ticks; i++) {
-    if (engine.phase === 'won' || engine.phase === 'lost') break
+    // ⚠️ `card_select` 是**对齐的终点**，不是可以硬跑过去的空闲状态。
+    //
+    //   要进入第 2 波必须解掉卡牌选择，而那要过 `rollWaveCards`
+    //   （它会消耗 RNG，于是后续所有波次的刷怪洗牌都会变）
+    //   与 `skipCards` / `finishCardSelect` —— 三者都属于 F 块。
+    //
+    //   所以这里停在 `card_select`，而不是硬跑满 22000 tick。
+    //   我第一版让它继续跑，结果 224 个采样点里 216 个是
+    //   `phase: card_select` 的死空间 —— 向量大 4 倍，却什么也没多验。
+    //
+    //   第 2 波及以后的覆盖由 Go 侧的直接单测承担
+    //   （`TestBeginWaveAtLaterIndex`）。
+    //
+    // ⚠️ 条件写成「**既不是 wave 也不是 prepare**」而不是
+    //   「是 won 或 lost」：前者能自动涵盖将来新增的任何终局状态，
+    //   后者需要每加一个终局就改一次 —— 而漏改的后果是
+    //   「在终局状态下继续 step，跑到一个不存在的状态上去」。
+    if (engine.phase !== 'wave' && engine.phase !== 'prepare') break
+    const before = (engine as any).replay.length
     engine.step()
-    snap()
+    const replayGrew = (engine as any).replay.length > before
+    // ⚠️ 「本步是否记快照」的判据必须**两端各自可算**。
+    //   这里用 `tick % sampleEvery === 0 || 本步新增了 replay 事件`：
+    //   `tick` 两端都有，replay 长度变化两端也都能数出来。
+    if (engine.tick % s.sampleEvery === 0 || replayGrew) snap()
   }
+  // ⚠️ 收尾必须再 snap 一次：最后一步可能既不是 sampleEvery 的倍数、
+  //   也没产生 replay 事件（只产生了渲染事件，比如 float 过期）。
+  //   而 Go 侧靠 `phase` 判定终局后**不再 step**，
+  //   若这里不补，Go 侧那一步就没有对应的期望值可比。
+  if (trace[trace.length - 1].tick !== engine.tick) snap()
 
   return {
     label: s.label,
     level_id: s.levelID,
     seed: s.seed,
     ticks: s.ticks,
-    // 关卡刷怪组（输入回显）：Go 侧要重建同样的场景
+    sample_every: s.sampleEvery,
+    // 攻方护甲（输入回显）：用 0 表示全零攻方。
+    // ⚠️ 必须写成数字而不是透传 undefined ——
+    //   `JSON.stringify` 会**丢掉**值为 undefined 的键，
+    //   Go 侧就分不清「没给」与「给了 undefined」，而两者应当等价。
+    attacker_armor_permille: s.armorPermille ?? 0,
+    // 关卡刷怪组 + 血量 + 护甲（输入回显）：Go 侧要重建同样的场景。
+    // ⚠️ base_hp 与 armor_permille **必须**带过来：
+    //   它们是漏怪伤害的分母与护甲基线，而 `buildWaveEngine` 只手工拼 Waves ——
+    //   不带的话 Go 侧拿到 base_hp=0，于是 `breachDamage` 走 100 的兜底分支，
+    //   整条漏怪伤害都算错而**看不出**为什么。
     level_waves: level.waves,
+    level_base_hp: level.base_hp,
+    level_armor_permille: level.armor_permille ?? 0,
     trace,
   }
 })
-
 const doc = {
   _comment:    '引擎**纯函数**的跨端契约向量。由 miniapp/scripts/gen-engine-pure-vectors.ts 从真实 TS 实现产出。' +
     '期望值不由 Go 侧生成（纯函数没有运行时状态，用实现产出即定义）。' +

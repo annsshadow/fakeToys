@@ -258,42 +258,34 @@ type pureVectors struct {
 			LevelID int    `json:"level_id"`
 			Seed    string `json:"seed"`
 			Ticks   int    `json:"ticks"`
+			// SampleEvery 是快照抽样间隔。
+			// ⚠️ Go 侧**按它自己算**「哪几步要快照」，
+			//   而不是照抄 trace 的下标 —— 照抄下标就等于
+			//   「Go 跑到第 k 个采样点就断言第 k 个期望值」，
+			//   两端之间没有任何时序约束，退化成逐点查表。
+			SampleEvery int `json:"sample_every"`
+			// AttackerArmorPermille 是攻方护甲（输入回显）。
+			//
+			// ⚠️ 必须带进文件：`defenseArmorPermille` 是三项相加，
+			//   前两项（关卡护甲、卡牌护甲）在这批场景里恒为 0，
+			//   不显式给一个非零值的话，第三项永远等于「加 0」——
+			//   把它写成减号也照样全绿。
+			AttackerArmorPermille int64 `json:"attacker_armor_permille"`
+			// LevelBaseHP / LevelArmorPermille 是关卡的血与护甲。
+			// ⚠️ 必须带进文件：漏怪伤害 = base_hp × attack / 3600，
+			//   拿不到 base_hp 就只能走 100 的兜底，
+			//   整条漏怪伤害都算错而**看不出**为什么。
+			LevelBaseHP        int64 `json:"level_base_hp"`
+			LevelArmorPermille int64 `json:"level_armor_permille"`
 			// LevelWaves 是关卡的波次定义（输入回显）。
 			// ⚠️ 必须带进文件：Go 侧要重建同样的刷怪组才能跑，
 			// 而「delay/interval 是毫秒」正是最容易写错的那处换算。
-			LevelWaves []struct {
-				Index  int `json:"wave_index"`
-				Spawns []struct {
-					EnemyID  int   `json:"enemy_id"`
-					Count    int   `json:"count"`
-					Interval int64 `json:"interval"`
-					Delay    int64 `json:"delay"`
-				} `json:"spawns"`
-			} `json:"level_waves"`
-			Trace []struct {
-				Tick       int64  `json:"tick"`
-				Phase      string `json:"phase"`
-				ElapsedMs  int64  `json:"elapsed_ms"`
-				SpawnQueue []struct {
-					EnemyID int   `json:"enemy_id"`
-					AtTick  int64 `json:"at_tick"`
-					UID     int64 `json:"uid"`
-				} `json:"spawn_queue"`
-				Enemies []struct {
-					UID           int64  `json:"uid"`
-					DefID         int    `json:"def_id"`
-					X             string `json:"x"`
-					Y             string `json:"y"`
-					HP            string `json:"hp"`
-					Shield        string `json:"shield"`
-					ArmorPermille string `json:"armor_permille"`
-					SpawnProgress int    `json:"spawn_progress"`
-					Dead          bool   `json:"dead"`
-					Resist        string `json:"resist"`
-				} `json:"enemies"`
-				Replay []string `json:"replay"`
-				Events []string `json:"events"`
-			} `json:"trace"`
+			LevelWaves []waveLevelDef `json:"level_waves"`
+			// Trace 用**具名类型** waveTraceStep（定义在 engine_wave_contract_test.go）。
+			// ⚠️ 必须是具名的：匿名结构体与具名结构体之间不能隐式转换，
+			// 而跨文件共享一个形状时匿名写法每次都要逐字复制一遍 tag ——
+			// 复制过程中改错一个 tag 就是「静默得到零值」。
+			Trace []waveTraceStep `json:"trace"`
 		} `json:"rows"`
 	} `json:"wave"`
 }

@@ -200,14 +200,20 @@ type ReplayEvent struct {
 // 而重放事件**只记「影响战果的事实」**。
 // 混在一起会让渲染层的任何改动都影响哈希。
 type BattleEvent struct {
-	Type  string
-	X     int64
-	Y     int64
-	Score int64
-	Stars int
-	Text  string
-	Color string
-	Size  int
+	Type string
+	X    int64
+	Y    int64
+	// Damage 是漏怪事件的伤害值（C 块）。
+	//
+	// ⚠️ 它**只在 replay 里**，不在渲染事件里 ——
+	//   漏怪的实际扣血已由 `BaseHP` 记录，渲染层再带一份就成了
+	//   「同一个事实在两处各有一份」，而两处可能不同步。
+	Damage int64
+	Score  int64
+	Stars  int
+	Text   string
+	Color  string
+	Size   int
 }
 
 // 渲染/重放事件类型。
@@ -279,6 +285,12 @@ type BattleEngine struct {
 	Heat  HeatSystem
 	Deck  CardDeck
 	Buffs Buffs
+
+	// ActiveSlots 是主动插槽数（缺省 4，由 NewBattleEngine 定下）。
+	//
+	// ⚠️ 缺省必须是 4：改它会让所有 4 槽战报的重放哈希失配，
+	//	而绝大多数战报都是 4 槽的。
+	ActiveSlots int
 
 	Phase     string
 	Tick      int64
@@ -355,10 +367,45 @@ func NewBattleEngine(cfg BattleConfig) *BattleEngine {
 		// 否则将来有人往配置里塞了个值，它就会静默生效。
 		skills[i].CooldownRemaining = 0
 	}
+	// ⚠️ 复活币加在**当前**血量上，`BaseHPMax` 保持关卡原值。
+	//
+	//	反过来写（抬高 BaseHPMax）会把漏怪伤害一起抬高，等于什么都没给 ——
+	//	漏怪代价是 `baseHpMax / LeakDamageDivisor`，抬高分母就是抬高代价。
+	baseHPMax := cfg.Level.BaseHP
+
+	// ⚠️ 总怪数必须**从关卡数出来**，不能由调用方传入。
+	//
+	//	它是三个判定共用的分母：`checkWaveEnd` 的「空关卡不秒胜」、
+	//	结算的 `kills + leaked >= total`、以及上限校验。
+	//	让调用方自己填的话，任何一处忘记填或填错都是「静默放宽」——
+	//	比如 total=0 会让 `kills(0) >= 0` 成立，也就是发钱。
+	total := 0
+	for _, w := range cfg.Level.Waves {
+		for _, sp := range w.Spawns {
+			total += sp.Count
+		}
+	}
+
+	// ⚠️ 缺省必须是 4（ActiveSlots）—— 改这个默认值会让所有 4 槽战报的
+	// 重放哈希失配（绝大多数战报都是 4 槽的）。
+	// 只有玩家在专精树点了「额外插槽」时才会 > 4，
+	// 那个值由服务端 `/mastery` 的 `total_slots` 下发。
+	activeSlots := cfg.ActiveSlots
+	if activeSlots == 0 {
+		activeSlots = ActiveSlots
+	}
+
+	heat := NewHeatSystem()
+	// 热量上限加成（专精 heat_cap + 宝石 gem_heat）。
+	//
+	// ⚠️ 放在构造时注入一次而不是每次读 cap 时加：
+	// heat_cap 是本局常量，而 Heat 的 capBonus 是可变状态。
+	heat.CapBonus = cfg.Attacker.HeatCapPermille
+
 	return &BattleEngine{
 		Cfg:   cfg,
 		Rng:   newLCG(cfg.Seed),
-		Heat:  NewHeatSystem(),
+		Heat:  heat,
 		Deck:  NewCardDeck(),
 		Buffs: NewBuffs(),
 		Phase: PhasePrepare,
@@ -367,7 +414,16 @@ func NewBattleEngine(cfg BattleConfig) *BattleEngine {
 		ElementsUsed:  map[string]int64{},
 		ReactionsUsed: map[string]int64{},
 		Skills:        skills,
-		uidSeq:        1,
+		BaseHP:        baseHPMax,
+		BaseHPMax:     baseHPMax,
+		// ⚠️ `|| 0` 而不是直接取值：level 是**网络数据**，
+		// 缺 armor_permille 时 TS 的 `|| 0` 给出 0，
+		// 而 Go 的零值本来就是 0 —— 语义一致，但显式写出来是为了
+		// 说明「这里故意不做校验，畸形数据不该崩掉整场战斗」。
+		BaseArmorPermille: cfg.Level.ArmorPermille,
+		TotalEnemies:      total,
+		ActiveSlots:       activeSlots,
+		uidSeq:            1,
 	}
 }
 
@@ -565,9 +621,7 @@ func (e *BattleEngine) nextUID() int64 {
 //   而一个看不出完成度的移植，最容易在半成品状态下被人当成完成品。
 //
 // B 块（波次与刷怪）已实现在 `engine_wave.go`，故此处不再有空壳。
-
-// updateEnemies 推进敌人（C 块实现）。
-func (e *BattleEngine) updateEnemies() {}
+// C 块（敌人推进与漏怪）已实现在 `engine_enemy.go`，故此处不再有空壳。
 
 // updateAutoFire 尝试开火（D 块实现）。
 func (e *BattleEngine) updateAutoFire() {}
