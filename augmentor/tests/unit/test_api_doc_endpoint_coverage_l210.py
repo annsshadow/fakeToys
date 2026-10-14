@@ -23,7 +23,9 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
-API_DOC = ROOT / "docs" / "API.md"
+#: 子项目文档已于 2026-10-14 汇总到仓库根 `docs/augmentor/`；本文件自持这一真源
+DOCS_DIR = ROOT.parent / "docs" / "augmentor"
+API_DOC = DOCS_DIR / "API.md"
 
 #: API.md 里形如 `POST` | `/api/xxx` 的表格行
 DOC_ROW = re.compile(

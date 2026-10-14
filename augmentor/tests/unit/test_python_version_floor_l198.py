@@ -37,6 +37,9 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
+#: 仓库根 / 汇总之下的文档目录（2026-10-14 从 `augmentor/docs/` 迁出）
+REPO = ROOT.parent
+DOCS_DIR = REPO / "docs" / "augmentor"
 
 #: 产品码（不含测试）：测试面的地板另算，见 MODULE_PEP604_SITES
 PRODUCT_ROOTS = (ROOT / "augmentor", ROOT / "api")
@@ -45,9 +48,9 @@ PRODUCT_FILES = [ROOT / "cli.py"]
 #: 文档里的版本主张：路径 → 该处必须出现的统一口径（按各文件真实写法给，
 #: 不硬套一个模板 —— 表格行与散文行的形状本来就不一样）
 DOCS = {
-    "README.md": "**Python 3.10+**",
-    "docs/README.md": "| Python | 3.10+",
-    "docs/DEPLOYMENT.md": "python:3.11-slim",
+    "augmentor/README.md": "**Python 3.10+**",
+    "docs/augmentor/README.md": "| Python | 3.10+",
+    "docs/augmentor/DEPLOYMENT.md": "python:3.11-slim",
 }
 
 #: 统一口径的核心数字，三处都必须出现（独立于上面各文件的具体形状）
@@ -164,7 +167,7 @@ class TestDocsAgreeOnOneNumber:
 
     @pytest.mark.parametrize("rel, snippet", sorted(DOCS.items()))
     def test_documented_claim_is_present(self, rel, snippet):
-        text = (ROOT / rel).read_text(encoding="utf-8")
+        text = (REPO / rel).read_text(encoding="utf-8")
         assert snippet in text, (
             f"{rel} 里找不到统一口径「{snippet}」——三处文档必须写同一件事"
         )
@@ -180,7 +183,7 @@ class TestDocsAgreeOnOneNumber:
         """
         lower = re.compile(r"Python\s*\*{0,2}3\.[0-9](?!\d)")
         offenders = []
-        for md in [ROOT / "README.md"] + sorted((ROOT / "docs").glob("*.md")):
+        for md in [ROOT / "README.md"] + sorted(DOCS_DIR.glob("*.md")):
             for lineno, line in enumerate(md.read_text(encoding="utf-8").splitlines(), 1):
                 if lower.search(line):
                     offenders.append(f"{md.name}:{lineno}: {line.strip()[:70]}")
@@ -191,13 +194,13 @@ class TestDocsAgreeOnOneNumber:
     @pytest.mark.parametrize("stale", STALE)
     def test_stale_readings_are_gone(self, stale):
         for rel in DOCS:
-            assert stale not in (ROOT / rel).read_text(encoding="utf-8"), (
+            assert stale not in (REPO / rel).read_text(encoding="utf-8"), (
                 f"{rel} 里还留着过期读数「{stale}」"
             )
 
     def test_deployment_pin_is_at_least_the_minimum(self):
         """部署镜像钉的版本不许低于声称的下限（否则「最低 3.10」是空话）"""
-        text = (ROOT / "docs" / "DEPLOYMENT.md").read_text(encoding="utf-8")
+        text = (DOCS_DIR / "DEPLOYMENT.md").read_text(encoding="utf-8")
         m = re.search(r"python:3\.(\d+)-slim", text)
         assert m, "DEPLOYMENT.md 里找不到 python:3.x-slim 镜像钉"
         assert int(m.group(1)) >= 10, (

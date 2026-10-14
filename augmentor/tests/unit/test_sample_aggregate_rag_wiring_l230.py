@@ -834,7 +834,10 @@ class TestHonestyCopyOnTheThreeCards:
 # ------------------------------------------------------------------ 文档那一侧
 # 这两条路径常量放在使用点旁边：本文件其余常量都在头部，但这一段是 L230 收口时
 # 追加的「文档与实测对账」，与前面的接线判据是两回事。
-API_MD = ROOT / "docs" / "API.md"
+#: 子项目文档已于 2026-10-14 汇总到仓库根 `docs/augmentor/`；本文件自持这一真源
+DOCS_DIR = ROOT.parent / "docs" / "augmentor"
+
+API_MD = DOCS_DIR / "API.md"
 README_MD = ROOT / "README.md"
 
 
