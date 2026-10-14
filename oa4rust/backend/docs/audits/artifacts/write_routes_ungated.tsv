@@ -575,8 +575,6 @@ processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/crea
 processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/save/{id}	save_surface	R7
 processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/publish/{id}	publish_surface	R7
 processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/delete/{id}	delete_surface	R7
-processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/draft/start/{id}	draft_id_start	R7
-processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/mode/delete/{id}	mode_id_delete	R7
 processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/mode/save	mode_save	R7
 processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/read/opinion/manage/{id}	read_id_opinion_manage	R7
 processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/read/opinion/manage/mockputtopost/{id}	read_id_opinion_manage_mockputtopost	R7
@@ -701,8 +699,6 @@ processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/draf
 processplatform_assemble_surface	DELETE	/api/processplatform/assemble/surface/draft/{id}	draft_id	R7
 processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/draft/list/my/paging/{page}/size/{size}	draft_list_my_paging_page_size_size	R7
 processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/handover/list/paging/{page}/size/{size}	handover_list_paging_page_size_size	R7
-processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/handover/{id}/cancel	handover_id_cancel	R7
-processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/handover/{id}/process	handover_id_process	R7
 processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/process/list/application/{applicationFlag}/filter	process_list_application_applicationFlag_filter	R7
 processplatform_assemble_surface	DELETE	/api/processplatform/assemble/surface/process/{flag}/{onlyRemoveNotCompleted}	process_flag_onlyRemoveNotCompleted	R7
 processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/read/{id}/processing	read_id_processing	R7
