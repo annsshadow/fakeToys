@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/laiyipao/server/internal/auth"
@@ -209,7 +210,25 @@ func (s *Service) issueTokens(ctx context.Context, userID int64, u User) (TokenP
 	}, nil
 }
 
-// Logout 吊销该用户的全部未过期 refresh token，返回吊销条数。
+// LogoutResult 是登出的结果。
+type LogoutResult struct {
+	// RevokedTokens 是被吊销的 refresh token 条数。
+	RevokedTokens int64 `json:"revoked"`
+	// GuestToken 是**轮换后**的游客凭证。
+	//
+	// 为什么登出要连它一起换：guest_token 与口令同级 ——
+	// 实测给出同一个 guest_token 调 GuestLogin 就能拿到该账号的
+	// access + refresh token。而它此前**永远不变、无法吊销**，
+	// 于是「登出」对持有旧凭证的人毫无意义（30 天有效期 × 永久有效）。
+	//
+	// 客户端必须把这一枚**存下来**：不存的话，下一次冷启动会带着
+	// 已作废的旧 token 去 GuestLogin → 匹配不到 → **建出一个新号**，
+	// 玩家的进度看起来凭空消失了。
+	// 那是比「凭证没轮换」更糟的后果，所以这一条必须与客户端改动同时上线。
+	GuestToken string `json:"guest_token"`
+}
+
+// Logout 吊销该用户的全部未过期 refresh token，并**轮换**其游客凭证。
 //
 // # 为什么必须有它（本轮审计新增）
 //
@@ -222,7 +241,7 @@ func (s *Service) issueTokens(ctx context.Context, userID int64, u User) (TokenP
 //     用「封号」当「登出」，代价与意图完全不成比例。
 //
 // access token 在 TTL（默认 2h）内本就无法单条吊销，这是 JWT 的固有性质；
-// 真正必须切断的是那条**长期**的 refresh token。
+// 真正必须切断的是那条**长期**的 refresh token与那个**永久**的 guest_token。
 //
 // # 为什么吊销「全部」而不是「本次这一条」
 //
@@ -232,16 +251,71 @@ func (s *Service) issueTokens(ctx context.Context, userID int64, u User) (TokenP
 //
 // # 为什么是幂等的
 //
-// 没有未过期令牌时返回 (0, nil) 而不是报错：重复点两次登出
-// 不应该报错，且**不能**让「令牌已失效」与「吊销失败」在响应上可区分。
-func (s *Service) Logout(ctx context.Context, userID int64) (int64, error) {
-	tag, err := s.pool.Exec(ctx,
-		`UPDATE refresh_tokens SET revoked_at = now()
-		  WHERE user_id = $1 AND revoked_at IS NULL`, userID)
+// 没有未过期令牌时返回 0 条而不是报错：重复点两次登出不应该报错，
+// 且**不能**让「令牌已失效」与「吊销失败」在响应上可区分。
+//
+// # 为什么轮换在**同一事务**里
+//
+// 「吊销 refresh token」与「换掉 guest_token」必须同时成功或同时失败 ——
+// 只做了前者的话，旧凭证仍能换出新会话，这次登出等于没做；
+// 只做了后者的话，被盗的 refresh token 还活着。
+// 两者同生共死才是「登出」这个语义。
+func (s *Service) Logout(ctx context.Context, userID int64) (LogoutResult, error) {
+	// 先备好新凭证：它在事务内才写，但在事务外生成 ——
+	// crypto/rand 失败的话不应该先把事务开起来。
+	fresh, err := auth.NewGuestToken()
 	if err != nil {
-		return 0, fmt.Errorf("logout: %w", err)
+		return LogoutResult{}, err
 	}
-	return tag.RowsAffected(), nil
+
+	var out LogoutResult
+	err = s.DB.Tx(ctx, func(tx pgx.Tx) error {
+		tag, err := tx.Exec(ctx,
+			`UPDATE refresh_tokens SET revoked_at = now()
+			  WHERE user_id = $1 AND revoked_at IS NULL`, userID)
+		if err != nil {
+			return fmt.Errorf("logout revoke tokens: %w", err)
+		}
+		out.RevokedTokens = tag.RowsAffected()
+
+		// ⚠️ UNIQUE(guest_token) 可能撞车：极低概率（24 字节随机），
+		//   但撞上了就是 500。撞了就重试，而不是把罕见错误当不可能。
+		//   上限 5 次足以把概率压到可以忽略；仍失败则如实报错。
+		for attempt := 0; attempt < 5; attempt++ {
+			_, err := tx.Exec(ctx,
+				`UPDATE users SET guest_token = $2 WHERE id = $1`, userID, fresh)
+			if err == nil {
+				out.GuestToken = fresh
+				return nil
+			}
+			if !isUniqueViolation(err) {
+				return fmt.Errorf("logout rotate guest token: %w", err)
+			}
+			// 撞车了：换一枚再来
+			next, gerr := auth.NewGuestToken()
+			if gerr != nil {
+				return gerr
+			}
+			fresh = next
+		}
+		return fmt.Errorf("logout: 生成游客凭证连续 5 次撞唯一键（概率上不可能，视为故障）")
+	})
+	if err != nil {
+		return LogoutResult{}, err
+	}
+	return out, nil
+}
+
+// isUniqueViolation 报告 err 是否是 PostgreSQL 的 23505。
+//
+// ⚠️ 为什么不直接 `errors.As(err, &pgErr)` 再比 Code：
+//
+//	那样写更啰嗦，且**每次都要断言类型**。这里给个具名函数，
+//	顺带把「只认 23505、不认其它约束」这件事写在一处 ——
+//	签到路径（economy.go）也判过同一个码，两处应当看同一个函数。
+func isUniqueViolation(err error) bool {
+	var pgErr *pgconn.PgError
+	return errors.As(err, &pgErr) && pgErr.Code == "23505"
 }
 
 // initNewUser 为新账号铺设初始数据（钱包、进度、签到记录、离线记录）。
