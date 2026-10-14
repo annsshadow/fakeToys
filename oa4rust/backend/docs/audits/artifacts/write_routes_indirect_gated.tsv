@@ -149,6 +149,7 @@ mind	POST	/api/mind/mind/{id}	update_mind	mind_owner_gate
 mind	POST	/api/mind/version	create_version	mind_owner_gate
 organization_assemble_control	GET	/api/organization/assemble/control/person/{flag}/mockdeletetoget	person_mock_delete_to_get	person_delete
 organization_assemble_control	GET	/api/organization/assemble/control/person/{flag}/reserve/mockdeletetoget	person_reserve_mock_delete_to_get	person_reserve_delete
+organization_assemble_control	GET	/api/organization/assemble/control/unit/{flag}/mockdeletetoget	unit_mock_delete_to_get	unit_delete
 organization_assemble_control	POST	/api/organization/assemble/control/group/{flag}/add/member/mockputtopost	group_add_member_mock_put_to_post	group_add_member
 organization_assemble_control	POST	/api/organization/assemble/control/group/{flag}/delete/member/mockputtopost	group_delete_member_mock_put_to_post	group_delete_member
 organization_assemble_control	POST	/api/organization/assemble/control/group/{flag}/mockputtopost	group_mock_put_to_post	group_edit
