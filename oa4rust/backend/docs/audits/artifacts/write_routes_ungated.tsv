@@ -6,8 +6,6 @@ auth	POST	/api/authentication/logout	logout	R4
 auth	POST	/api/authentication/refresh	refresh	R4
 auth	POST	/api/authentication/code	code	R4
 general_assemble_control	POST	/api/general/assemble/control/invoice/upload	invoice_upload	R4
-meeting_assemble_control	POST	/api/meeting/assemble/control/meeting/create	create_meeting	R4
-meeting_assemble_control	POST	/api/meeting/assemble/control/meeting	create_meeting	R4
 personal	POST	/api/reset/password/anonymous	reset_password_anonymous	R4
 processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/application/list/range	application_list_range	R4
 program_init	POST	/api/secret/set	set	R4
@@ -335,12 +333,6 @@ jpush_core_entity	POST	/api/jpush/core/entity/device/create	device_create	R7
 mcp_server	POST	/mcp	mcp_http_handler	R7
 meeting	POST	/api/meeting/{meetingId}/participant/add	add_participant	R7
 meeting_assemble_control	POST	/api/meeting/assemble/control/create	create_meeting_control	R7
-meeting_assemble_control	POST	/api/meeting/assemble/control/meeting/save/{id}	save_meeting	R7
-meeting_assemble_control	POST	/api/meeting/assemble/control/meeting/{id}/accept	meeting_id_accept	R7
-meeting_assemble_control	POST	/api/meeting/assemble/control/meeting/{id}/add/invite	meeting_id_add_invite	R7
-meeting_assemble_control	POST	/api/meeting/assemble/control/meeting/{id}/checkin	meeting_id_checkin	R7
-meeting_assemble_control	POST	/api/meeting/assemble/control/meeting/{id}/confirm/allow	meeting_id_confirm_allow	R7
-meeting_assemble_control	POST	/api/meeting/assemble/control/meeting/{id}/confirm/deny	meeting_id_confirm_deny	R7
 meeting_assemble_control	POST	/api/meeting/assemble/control/meeting/{id}/delete/invite	meeting_id_delete_invite	R7
 meeting_assemble_control	POST	/api/meeting/assemble/control/meeting/{id}/manual/completed	meeting_id_manual_completed	R7
 meeting_assemble_control	POST	/api/meeting/assemble/control/meeting/{id}/modify/completedtime	meeting_id_modify_completedtime	R7
@@ -349,8 +341,6 @@ meeting_assemble_control	POST	/api/meeting/assemble/control/meeting/{id}/reject	
 meeting_assemble_control	POST	/api/meeting/assemble/control/meeting/checkin/code/{id}	meeting_id_checkin_code	R7
 meeting_assemble_control	POST	/api/meeting/assemble/control/meeting/list/manage/{page}/{size}/{size}	meeting_list_page_size_size_manage_p3	R7
 meeting_assemble_control	DELETE	/api/meeting/assemble/control/meeting/{id}/delete/invite	meeting_id_delete_invite	R7
-meeting_assemble_control	PUT	/api/meeting/assemble/control/meeting/save/{id}	save_meeting	R7
-meeting_assemble_control	PUT	/api/meeting/assemble/control/meeting/{id}/add/invite	meeting_id_add_invite	R7
 meeting_assemble_control	PUT	/api/meeting/assemble/control/meeting/{id}/delete/invite	meeting_id_delete_invite	R7
 meeting_assemble_control	PUT	/api/meeting/assemble/control/meeting/{id}/modify/completedtime	meeting_id_modify_completedtime	R7
 meeting_assemble_control	PUT	/api/meeting/assemble/control/meeting/{id}/modify/starttime	meeting_id_modify_starttime	R7
@@ -886,19 +876,6 @@ processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/task
 processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/review/filter/attribute	review_u2_filter_attribute_post	R7
 processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/route/list/mockputtopost	route_u2_list_by_ids	R7
 processplatform_service_processing	POST	/api/processplatform/service/processing/create	create_process	R7
-processplatform_service_processing	POST	/api/processplatform/service/processing/execute/{id}	execute_process	R7
-processplatform_service_processing	POST	/api/processplatform/service/processing/cancel/{executionId}	cancel_process_instance	R7
-processplatform_service_processing	PUT	/api/work/{id}/processing	work_id_processing	R7
-processplatform_service_processing	POST	/api/work/{id}/terminate	work_v2_id_terminate	R7
-processplatform_service_processing	POST	/api/work/{id}/retract	work_v2_id_retract	R7
-processplatform_service_processing	POST	/api/work/{id}/start	work_start	R7
-processplatform_service_processing	POST	/api/work/{id}/complete	work_complete	R7
-processplatform_service_processing	POST	/api/task/{id}/claim	task_claim	R7
-processplatform_service_processing	POST	/api/task/{id}/complete	task_complete	R7
-processplatform_service_processing	POST	/api/task/{id}/reject	task_reject	R7
-processplatform_service_processing	POST	/api/task/{id}/transfer/{person}	task_transfer	R7
-processplatform_service_processing	POST	/api/gateway/{work_id}/{activity_token}/join	gateway_join	R7
-processplatform_service_processing	POST	/api/processplatform/service/processing/gateway/fork/{gateway_instance_id}	gateway_fork	R7
 processplatform_service_processing	POST	/api/processplatform/service/processing/timer/start	start_timer	R7
 processplatform_service_processing	POST	/api/processplatform/service/processing/timer/{job_id}/cancel	cancel_timer	R7
 processplatform_service_processing	POST	/api/processplatform/service/processing/attachment/copy/{work}/{workId}	attachment_copy_work_workId	R7
@@ -973,7 +950,6 @@ processplatform_service_processing	DELETE	/api/processplatform/service/processin
 processplatform_service_processing	PUT	/api/processplatform/service/processing/taskcompleted/next/task/identity	taskcompleted_update_next_identity	R7
 processplatform_service_processing	POST	/api/processplatform/service/processing/work	work_create	R7
 processplatform_service_processing	DELETE	/api/processplatform/service/processing/work/{id}/draft	work_draft_delete	R7
-processplatform_service_processing	PUT	/api/processplatform/service/processing/work/{id}/processing	work_id_processing	R7
 processplatform_service_processing	PUT	/api/processplatform/service/processing/work/{id}/manual/append/identity	work_id_manual_append_identity	R7
 processplatform_service_processing	POST	/api/processplatform/service/processing/work/manual/after/processing	work_manual_after	R7
 processplatform_service_processing	POST	/api/processplatform/service/processing/work/process/{processId}	work_create_for_process	R7
@@ -982,7 +958,6 @@ processplatform_service_processing	PUT	/api/processplatform/service/processing/w
 processplatform_service_processing	PUT	/api/processplatform/service/processing/work/v2/{id}/add/split	work_v2_id_add_split	R7
 processplatform_service_processing	POST	/api/processplatform/service/processing/work/v2/{id}/goback	work_v2_id_goback	R7
 processplatform_service_processing	PUT	/api/processplatform/service/processing/work/v2/{id}/reroute	work_v2_id_reroute	R7
-processplatform_service_processing	PUT	/api/processplatform/service/processing/work/v2/{id}/retract	work_v2_id_retract	R7
 processplatform_service_processing	PUT	/api/processplatform/service/processing/work/v2/{id}/rollback	work_v2_id_rollback	R7
 processplatform_service_processing	POST	/api/processplatform/service/processing/work/v2/{id}/add/manual/task/identity/matrix	work_add_identity_matrix	R7
 processplatform_service_processing	POST	/api/processplatform/service/processing/work/v3/retract	work_v3_retract_body	R7
@@ -1043,8 +1018,6 @@ program_center	DELETE	/api/program_center/mpweixin/menu/delete/{id}	mpweixin_men
 program_center	POST	/api/program_center/qiyeweixin/request/pull/sync	u3_qiyeweixin_request_pull_sync_post	R7
 program_center	POST	/api/program_center/script/list/paging/{page}/size/{size}	script_list_paging_page_size_size	R7
 program_center	POST	/api/program_center/welink/request/pull/sync	u3_welink_request_pull_sync_post	R7
-program_init	POST	/api/externaldatasources/set	external_datasources_set	R7
-program_init	POST	/api/restore/upload	restore_upload	R7
 query_assemble_designer	POST	/api/query/assemble/designer/create	create_designer	R7
 query_assemble_designer	POST	/api/query/assemble/designer/save/{id}	save_designer	R7
 query_assemble_designer	POST	/api/query/assemble/designer/delete/{id}	delete_designer	R7
