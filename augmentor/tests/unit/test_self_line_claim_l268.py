@@ -69,14 +69,15 @@ BLIND = "BLIND"
 MEASURED_SITES = 13
 #: 三档闭合：1 + 5 + 7 = 13。`LIVE` 那一格就是 operative 自指，其余是历史读数与无锚主张。
 MEASURED_TIERS = {LIVE: 1, STALE: 5, BLIND: 7}
-#: 名册：`(卷, 区段, 轮号, 主张的那一行)`。`("OPTIMIZATION_LOOP_2.md", "checklist", 232, 838)` 是
+#: 名册：`(卷, 区段, 轮号, 主张的那一行)`。`("OPTIMIZATION_LOOP_2.md", "checklist", 232, 845)` 是
 #: operative 那一格——L267 复盘现量 832（先钉成 833 的那一格同批改回，见 L267 块 ⑮），L268 的账本批在它之上
-#: 落 3 行 ⇒ 重钉 835，**L269 的账本批又在其上落 3 行（清单行 +1 与 A347 连带分隔空行 +2）⇒ 按 ⑤ 的内容
-#: 定位器重钉为 838**，这一格每次都由 `test_the_roster_is_exact` 的红读数当场逼出
-#: （本轮 `assert ('...', 232, 838) == ('...', 232, 835)`），不是算术推的。
+#: 落 3 行 ⇒ 重钉 835，L269 的账本批又在其上落 3 行（清单行 +1 与 A347 连带分隔空行 +2）⇒ 838，
+#: **L270 的账本批在其上落 7 行（清单行 +1 与新立 A348 / A349 / A350 三笔连带它们的分隔空行 +6）⇒ 按 ⑤ 的内容
+#: 定位器重钉为 845**，这一格每次都由 `test_the_roster_is_exact` 的红读数当场逼出
+#: （本轮 `assert ('...', 232, 845) == ('...', 232, 838)`），不是算术推的。
 ROSTER = frozenset(
     {
-        ("OPTIMIZATION_LOOP_2.md", "checklist", 232, 838),
+        ("OPTIMIZATION_LOOP_2.md", "checklist", 232, 845),
         ("OPTIMIZATION_LOOP_2.md", "checklist", 243, 734),
         ("OPTIMIZATION_LOOP_2.md", "checklist", 252, 795),
         ("OPTIMIZATION_LOOP_2.md", "log", 232, 773),
@@ -251,7 +252,7 @@ class TestTheOperative:
         assert live == {OPERATIVE}, live
 
     def test_the_operative_number_matches_the_independent_locator(self):
-        """散文写的行号 == 按内容独立定位的行号（L269 账本批之后现量 838）"""
+        """散文写的行号 == 按内容独立定位的行号（L270 账本批之后现量 845）"""
         volumes = other.load_volumes()
         site = next(
             s
