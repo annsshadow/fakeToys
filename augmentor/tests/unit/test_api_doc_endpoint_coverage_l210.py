@@ -1,7 +1,7 @@
 # Copyright (C) 2026 annsshadow
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-"""L210：`docs/API.md` 必须覆盖 **每一个** 端点
+"""L210：`docs/augmentor/API.md` 必须覆盖 **每一个** 端点
 
 缺口来源：账本 §3.3 立的「为 `dataset` / `system` 两组补人读字段说明」。实测是
 **27 个端点**（dataset 14 + system 13，比立项时写的 25 多两条——`dataset/impact`

@@ -109,11 +109,11 @@ class TestEndpointTotal:
         assert int(m.group(1)) == endpoint_total()
 
     def test_api_doc_contract_section_states_the_live_total(self):
-        m = _one(r"（共 (\d+) 个）", _text(API_DOC), "docs/API.md")
+        m = _one(r"（共 (\d+) 个）", _text(API_DOC), "docs/augmentor/API.md")
         assert int(m.group(1)) == endpoint_total()
 
     def test_api_doc_overview_states_the_live_total(self):
-        m = _one(r"共 \*\*(\d+)\*\* 个端点", _text(API_DOC), "docs/API.md")
+        m = _one(r"共 \*\*(\d+)\*\* 个端点", _text(API_DOC), "docs/augmentor/API.md")
         assert int(m.group(1)) == endpoint_total()
 
 
@@ -124,10 +124,10 @@ class TestTagCounts:
         text = _text(API_DOC)
         live = tag_counts()
         headings = re.findall(r"^### (\w+)（(\d+)）\s*$", text, re.M)
-        assert headings, "docs/API.md 里一个 `### tag（N）` 标题都没找到"
+        assert headings, "docs/augmentor/API.md 里一个 `### tag（N）` 标题都没找到"
         seen = {}
         for tag, count in headings:
-            assert tag not in seen, f"docs/API.md 里 `### {tag}（N）` 出现了两次"
+            assert tag not in seen, f"docs/augmentor/API.md 里 `### {tag}（N）` 出现了两次"
             seen[tag] = int(count)
         assert seen == dict(live), (
             "文档 tag 计数与实推不一致：\n"
@@ -144,7 +144,7 @@ class TestExportFormats:
 
     def test_doc_example_lists_every_format(self):
         text = _text(API_DOC)
-        m = _one(r'\{"formats": \[([^\]]*)\]\}', text, "docs/API.md")
+        m = _one(r'\{"formats": \[([^\]]*)\]\}', text, "docs/augmentor/API.md")
         listed = re.findall(r'"([^"]+)"', m.group(1))
         live = export_formats()
         assert listed == live, (
@@ -165,7 +165,7 @@ class TestStructureCounts:
     """router 数 / 前端页面数 / 事件循环守门条数"""
 
     def test_router_count(self):
-        m = _one(r"按领域拆分的 (\d+) 个 router", _text(ARCH_DOC), "docs/ARCHITECTURE.md")
+        m = _one(r"按领域拆分的 (\d+) 个 router", _text(ARCH_DOC), "docs/augmentor/ARCHITECTURE.md")
         assert int(m.group(1)) == router_count(), (
             f"文档写 {m.group(1)} 个 router，实推 {router_count()} 个"
         )
@@ -174,7 +174,7 @@ class TestStructureCounts:
         text = _text(ARCH_DOC)
         live = page_count()
         for pattern in (r"路由与菜单（(\d+) 个页面）", r"页面（(\d+) 个）"):
-            m = _one(pattern, text, "docs/ARCHITECTURE.md")
+            m = _one(pattern, text, "docs/augmentor/ARCHITECTURE.md")
             assert int(m.group(1)) == live, (
                 f"ARCHITECTURE.md {pattern!r} 写 {m.group(1)}，实推 {live} 个页面"
             )
@@ -194,7 +194,7 @@ class TestStructureCounts:
         text = _text(ARCH_DOC)
         # 该句跨两行（`+` 收尾换行继续枚举），故显式捕获「本行余下 + 下一行」
         m = _one(r"> (\d+) 条端点（`/api/quality/\*` (\d+) 条 \+ ((?:[^\n]*\n)[^\n]*)",
-                 text, "docs/ARCHITECTURE.md")
+                 text, "docs/augmentor/ARCHITECTURE.md")
         stated_total, stated_quality, rest = (
             int(m.group(1)), int(m.group(2)), m.group(3))
         named = re.findall(r"`(/api/[^`]+)`", rest)

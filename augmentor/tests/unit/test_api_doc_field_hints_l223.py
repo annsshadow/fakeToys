@@ -1,9 +1,9 @@
 # Copyright (C) 2026 annsshadow
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-"""docs/API.md 的逐端点「人读字段提示」必须有**有位置的证据源**（A277）
+"""docs/augmentor/API.md 的逐端点「人读字段提示」必须有**有位置的证据源**（A277）
 
-判据：`docs/API.md` 两张**详细说明表**（四列）里，每格的「说明 + 人读字段提示」中所有
+判据：`docs/augmentor/API.md` 两张**详细说明表**（四列）里，每格的「说明 + 人读字段提示」中所有
 反引号包住的**小写蛇形标识符**，都必须落进下面五种证据之一（外加一份封闭的 JSON 词表）：
 
 1. `face` —— 该端点在 `app.openapi()` 里的契约面：请求体属性（递归过 `$ref` /
@@ -414,7 +414,7 @@ class TestFieldHintsBindToRealEvidence:
         bad = unbound_rows()
         detail = "\n".join(f"  {m} {p}: {toks}" for m, p, toks in bad)
         assert not bad, (
-            "docs/API.md 的逐端点提示里有这些名字在契约面与证据档都找不到"
+            "docs/augmentor/API.md 的逐端点提示里有这些名字在契约面与证据档都找不到"
             f"（字段名拼错/已改名/压根不存在）：\n{detail}"
         )
 

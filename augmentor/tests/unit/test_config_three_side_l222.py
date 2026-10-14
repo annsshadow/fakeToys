@@ -1,7 +1,7 @@
 # Copyright (C) 2026 annsshadow
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-"""L222（A275）：配置面的**三侧同源对账**——`docs/README.md` 表格 / `AppConfig` / `config.yaml`
+"""L222（A275）：配置面的**三侧同源对账**——`docs/augmentor/README.md` 表格 / `AppConfig` / `config.yaml`
 
 **为什么需要这一把**：L220 新增 `evaluation.generated_field` 时，README 的配置表与
 `config.yaml` 两处全靠人肉同步，而 `test_doc_contract_numbers_l200.py` 只核端点数、导出格式数、

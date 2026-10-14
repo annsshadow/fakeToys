@@ -314,7 +314,7 @@ class VersionManager:
         # 身份键只用 instruction（一条 SFT 记录的自然主键）。若把 output 也算进键，
         # 「改了某条的输出」在 diff 里就会拆成「删掉旧 (instr, out1) + 新增 (instr, out2)」
         # 两条，而 modified 永远空——本方法承诺要能报出「修改数」（见 DiffResult 契约、
-        # docs/API.md 的 examples）。同一条 instruction 在单版本里出现多次时保留首条
+        # docs/augmentor/API.md 的 examples）。同一条 instruction 在单版本里出现多次时保留首条
         # （与原有 dict 折叠语义一致，不在本轮扩大范围）。
         def key_of(item):
             return item.get("instruction", "")

@@ -4,7 +4,7 @@
 """账本里「本账第 N 行」那一形自指主张第一次有尺子（A333 的形状 ③ / L268）
 
 **这一轮收的是哪一格**：A333 立账时点名三种 a184 内容维判不到的形状，其中 ③ 是**不带文件名的裸行号**
-——账本散文写「所以本账第 835 行那条 `docs/API.md:1139` 引用仍指得准」，主张的是**本卷自己的行号**。
+——账本散文写「所以本账第 835 行那条 `docs/augmentor/API.md:1139` 引用仍指得准」，主张的是**本卷自己的行号**。
 a184 量的是 `file.py:NNN` / `FILE.md:NNN` 这类**带文件名**的落点，裸行号它结构性看不见，所以历轮每次插行
 把那一格平移一次，全靠人眼重钉；L267 的账本批就当场错过一次（先钉成 833，复盘行号是 832，同句改回），
 而本轮（L268）的账本批落下 3 行 ⇒ 名册里那一格由 832 走到 **835**，这是本守卫第一次咬到自己。
@@ -158,9 +158,9 @@ def tier_counts(sites):
 
 
 #: operative 那一格的**独立定位器**：不读散文里的数字，而是按内容找出那条引用真正住在第几行——
-#: 全卷同时含 `DiffResult` 与 `docs/API.md:1139` 的物理行现量唯一。这样 `test_...` 才是「按内容重算」
+#: 全卷同时含 `DiffResult` 与 `docs/augmentor/API.md:1139` 的物理行现量唯一。这样 `test_...` 才是「按内容重算」
 #: 而不是「把散文写的数抄一遍」。
-OPERATIVE_MARKER = ("DiffResult", "docs/API.md:1139")
+OPERATIVE_MARKER = ("DiffResult", "docs/augmentor/API.md:1139")
 
 
 def locate_operative_target(lines):
@@ -297,7 +297,7 @@ class TestRulerBites:
         idx = locate_operative_target(volumes["OPTIMIZATION_LOOP_2.md"]) - 1
 
         def scrub(lines):
-            lines[idx] = lines[idx].replace("docs/API.md:1139", "另一条引用")
+            lines[idx] = lines[idx].replace("docs/augmentor/API.md:1139", "另一条引用")
             return lines
 
         got = tier_counts(self_claims(patched(volumes, "OPTIMIZATION_LOOP_2.md", scrub)))

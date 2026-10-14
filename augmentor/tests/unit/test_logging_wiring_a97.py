@@ -525,7 +525,7 @@ class TestSectionShapes:
 
         A101 的实测结论是「每一节同形」（Temp `l57/probe1.txt` P4/P5），所以只测
         `logging` 一处就是假结案：下一节新增时会带着同一个崩法活下来。名单口径
-        沿用配置面那条「白名单 = `load_config` 实际读走的键集」（`docs/API.md`），
+        沿用配置面那条「白名单 = `load_config` 实际读走的键集」（`docs/augmentor/API.md`），
         这里等价为「`AppConfig` 里字段类型是 dataclass 的那些节」。
         """
         sections = [(f.name, f.default_factory) for f in dataclasses.fields(AppConfig)
