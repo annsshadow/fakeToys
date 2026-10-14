@@ -248,8 +248,8 @@ func (h *HeatSystem) Update(dtMs float64) {
 // 声明完整类型会强迫调用方与测试方构造十几个无关字段。
 // 依赖面越窄越好改。
 type CooldownTarget struct {
-	CooldownMs        int
-	CooldownRemaining int
+	CooldownMs        int64
+	CooldownRemaining int64
 }
 
 // TickCooldown 推进所有技能的冷却（仅在未过热时）。
@@ -257,7 +257,7 @@ func (h *HeatSystem) TickCooldown(dtMs float64, skills []CooldownTarget) {
 	if h.Overheated {
 		return
 	}
-	d := int(math.Round(dtMs))
+	d := int64(math.Round(dtMs))
 	for i := range skills {
 		if skills[i].CooldownRemaining > 0 {
 			skills[i].CooldownRemaining -= d
