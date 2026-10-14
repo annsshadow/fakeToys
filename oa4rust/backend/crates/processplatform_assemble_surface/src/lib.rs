@@ -89,6 +89,30 @@ async fn u4_require_work_actor(
     u4_require_ppc_actor(pool, session, "PP_C_WORK", id).await
 }
 
+/// R4 第十五批：本 crate 里「一行属于某个人」的条目表（待阅 / 已阅 / 待办 / 已办 /
+/// 草稿 / 流水号 / 签核 / 圈阅）没有 `xcreatorPerson`，行上属主列是 `xperson`——本 crate 的
+/// 待办待阅列表本来就是按 `WHERE xperson = <person_unique>` 过滤的（lib.rs:592 / :631 为证），
+/// 所以归属判据取 xperson，语义与「谁的和谁删」一致。口径与 `u4_require_ppc_actor` 同锁：
+/// 无会话先 401（不触库，离线可证）；归属非空 → 本人或 admin；归属为空或行不存在 → 只允许 admin。
+async fn u4_require_ppc_person(
+    pool: &Pool,
+    session: Option<Extension<shared::session::Session>>,
+    table: &'static str,
+    id: &str,
+) -> Result<(), AppError> {
+    let session = u4_require_session(session)?;
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let owner = client
+        .query_opt(
+            format!("SELECT xperson FROM {table} WHERE xid = $1").as_str(),
+            &[&id.to_string()],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?
+        .map(|r| r.get::<_, Option<String>>("xperson").unwrap_or_default());
+    require_actor_opt(pool, &session, owner.as_deref()).await
+}
+
 #[derive(Debug, Deserialize)]
 pub struct CreateSurfaceRequest {
     pub name: Option<String>,
@@ -7595,7 +7619,9 @@ pub async fn draft_id(
 pub async fn draft_id_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_person(&pool.0, session, "PP_C_DRAFT", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM PP_C_DRAFT WHERE xid = $1", &[&id])
@@ -11123,7 +11149,9 @@ pub async fn read_id_manage(
 pub async fn read_id_manage_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_person(&pool.0, session, "PP_C_READ", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM PP_C_READ WHERE xid = $1", &[&id])
@@ -11183,7 +11211,9 @@ pub async fn read_id_manage_mockdeletetoget(
 pub async fn read_id_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_person(&pool.0, session, "PP_C_READ", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -13075,7 +13105,9 @@ pub async fn readcompleted_id_manage(
 pub async fn readcompleted_id_manage_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_person(&pool.0, session, "PP_C_READCOMPLETED", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM PP_C_READCOMPLETED WHERE xid = $1", &[&id])
@@ -13638,7 +13670,9 @@ pub async fn record_id_manage(
 pub async fn record_id_manage_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool.0, session.as_ref().map(|Extension(s)| s)).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM PP_C_RECORD WHERE xid = $1", &[&id])
@@ -13698,7 +13732,9 @@ pub async fn record_id_manage_mockdeletetoget(
 pub async fn record_id_manage_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool.0, session.as_ref().map(|Extension(s)| s)).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -14663,7 +14699,9 @@ pub async fn review_id_application_applicationFlag_manage(
 pub async fn review_id_application_applicationFlag_manage_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path((id, _applicationFlag)): axum::extract::Path<(String, String)>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_actor(&pool.0, session, "PP_C_REVIEW", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM PP_C_REVIEW WHERE xid = $1", &[&id])
@@ -15191,7 +15229,9 @@ pub async fn serialnumber_id(
 pub async fn serialnumber_id_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_person(&pool.0, session, "PP_C_SERIALNUMBER", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM PP_C_SERIALNUMBER WHERE xid = $1", &[&id])
@@ -15251,7 +15291,9 @@ pub async fn serialnumber_id_mockdeletetoget(
 pub async fn serialnumber_id_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_person(&pool.0, session, "PP_C_SERIALNUMBER", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -15614,7 +15656,9 @@ pub async fn sign_task_taskId(
 pub async fn sign_task_taskId_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_person(&pool.0, session, "PP_C_DOC_SIGN", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM PP_C_DOC_SIGN WHERE xid = $1", &[&id])
@@ -15716,7 +15760,9 @@ pub async fn sign_id(
 pub async fn sign_id_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_person(&pool.0, session, "PP_C_DOC_SIGN", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM PP_C_DOC_SIGN WHERE xid = $1", &[&id])
@@ -17749,7 +17795,9 @@ pub async fn task_id_manage(
 pub async fn task_id_manage_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_person(&pool.0, session, "PP_C_TASK", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM PP_C_TASK WHERE xid = $1", &[&id])
@@ -17809,7 +17857,9 @@ pub async fn task_id_manage_mockdeletetoget(
 pub async fn task_id_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_person(&pool.0, session, "PP_C_TASK", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -19929,7 +19979,9 @@ pub async fn taskcompleted_id_manage(
 pub async fn taskcompleted_id_manage_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_person(&pool.0, session, "PP_C_TASKCOMPLETED", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM PP_C_TASKCOMPLETED WHERE xid = $1", &[&id])
@@ -21994,7 +22046,9 @@ pub async fn work_v2_id_reroute(
 pub async fn work_v2_id_reroute_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_work_actor(&pool.0, session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -22090,7 +22144,9 @@ pub async fn work_v2_id_retract(
 pub async fn work_v2_id_retract_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_work_actor(&pool.0, session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -22186,7 +22242,9 @@ pub async fn work_v2_id_rollback(
 pub async fn work_v2_id_rollback_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_work_actor(&pool.0, session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -22702,7 +22760,9 @@ pub async fn work_id_manage(
 pub async fn work_id_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_work_actor(&pool.0, session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM PP_C_WORK WHERE xid = $1", &[&id])
@@ -22984,7 +23044,9 @@ pub async fn work_id_relative_manage(
 pub async fn work_id_relative_manage_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_work_actor(&pool.0, session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM PP_C_WORK WHERE xid = $1", &[&id])
@@ -23086,7 +23148,9 @@ pub async fn work_id_single_manage(
 pub async fn work_id_single_manage_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_work_actor(&pool.0, session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM PP_C_WORK WHERE xid = $1", &[&id])
@@ -24016,7 +24080,9 @@ pub async fn workcompleted_flag_rollback(
 pub async fn workcompleted_flag_rollback_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_actor(&pool.0, session, "PP_C_WORKCOMPLETED", &flag).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -24196,7 +24262,9 @@ pub async fn workcompleted_id_delete_manage(
 pub async fn workcompleted_id_delete_manage_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_actor(&pool.0, session, "PP_C_WORKCOMPLETED", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM PP_C_WORKCOMPLETED WHERE xid = $1", &[&id])
