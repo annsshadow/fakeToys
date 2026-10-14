@@ -22,7 +22,13 @@ func New(svc *service.Service) *Server { return &Server{Svc: svc} }
 
 // Register 挂载全部路由。
 func (s *Server) Register(app *fiber.App) {
+	// CORS 的宽松程度取决于环境：dev 放行 `*`（前后端不同端口），
+	// prod 默认一条 CORS 头都不发（等价只允许同源）。
+	SetDevMode(s.Svc.Cfg.Env != "prod")
 	app.Use(recoverPanic())
+	// ⚠️ 安全响应头必须在**任何**会写响应体的中间件之前，
+	// 否则拿不到它们的输出（与 compress 同理）。
+	app.Use(securityHeaders())
 	// ⚠️ 压缩必须放在**所有产生响应的中间件之前**，否则拿不到它们的输出。
 	//
 	// 加它的理由是实测数字，不是「JSON 该压缩」这种常识：
@@ -43,7 +49,7 @@ func (s *Server) Register(app *fiber.App) {
 	// 已按实测数字改写。
 	app.Use(compress.New())
 	app.Use(requestLogger())
-	app.Use(cors())
+	app.Use(cors(s.Svc.Cfg.CORSAllowOrigins))
 
 	app.Get("/healthz", s.healthz)
 	app.Get("/readyz", s.readyz)
@@ -57,10 +63,14 @@ func (s *Server) Register(app *fiber.App) {
 	// 曾导致 /admin/login 被误套上 requireUser 而无法登录。
 	// 每个需要认证的路径前缀挂一次 requireUser，一一对应，不做嵌套。
 
+	// ---- 认证入口 ----
+	//
+	// 限流挂在**未认证**这一侧：这三个端点都不需要令牌，
+	// 所以只能按来源 IP 计。理由与额度见 middleware.go 的 perIPLimiter。
 	authAPI := v1.Group("/auth")
-	authAPI.Post("/guest", s.guestLogin)
-	authAPI.Post("/wechat", s.wechatLogin)
-	authAPI.Post("/refresh", s.refresh)
+	authAPI.Post("/guest", perIPLimiter("guest", guestLoginLimit), s.guestLogin)
+	authAPI.Post("/wechat", perIPLimiter("wechat", guestLoginLimit), s.wechatLogin)
+	authAPI.Post("/refresh", perIPLimiter("refresh", refreshLimit), s.refresh)
 
 	v1.Get("/config", s.getConfig)
 	v1.Get("/leaderboard", s.leaderboard)
@@ -94,8 +104,11 @@ func (s *Server) Register(app *fiber.App) {
 
 	battle := v1.Group("/battle", requireUser(s.Svc))
 	battle.Post("/token", s.startBattle)
-	battle.Post("/settle", s.settleBattle)
-	battle.Post("/verify", s.verifyReplay)
+	// 结算与验真是**写放大**路径：每次调用都无条件落库一行，
+	// 且没有幂等键挡住重复（实测同一场战报重复验真 200 次 → 200 行）。
+	// 额度与理由见 middleware.go 的 authRateLimit。
+	battle.Post("/settle", authRateLimit("settle", settleLimit), s.settleBattle)
+	battle.Post("/verify", authRateLimit("verify", verifyLimit), s.verifyReplay)
 	battle.Get("/:id/replay", s.getReplay)
 
 	mastery := v1.Group("/mastery", requireUser(s.Svc))
@@ -120,8 +133,29 @@ func (s *Server) Register(app *fiber.App) {
 	// 第 141 轮：玩家签到状态（已签天数 / 今日可否签）——签到页初始展示。
 	signin.Get("/status", s.signInStatus)
 
+	// 登出：吊销**该用户全部** refresh token。
+	//
+	// ⚠️ 本轮（审计轮）之前**没有登出端点**，后果是具体的：
+	//
+	//   - 玩家手机丢了 / 令牌被 XSS 读走 → **没有任何办法**切断会话。
+	//     唯一能批量吊销 refresh token 的路径是「封禁」（AdminSetUserStatus），
+	//     而那会把正常玩家也一起踢下线。
+	//   - access token（默认 2h）在 TTL 内本来就没法单条吊销，
+	//     但 refresh token 是**长期**的（默认 30 天）—— 那才是真正要切断的。
+	//
+	// 为什么吊销**全部**而不是「只吊销本次这一条」：
+	// 客户端把令牌存在本地，登出的语义是「这个设备/这个人我不信任了」。
+	// 若只吊销一条，被盗的那条依然有效 30 天。
+	// 全部吊销的代价最坏是「重登一次」，而那正是登出的含义。
+	//
+	// 不限流：登出的作用恰恰是「出事时立刻切断」，限流会让受害者
+	// 在最需要它的时候被拒。
+	me.Post("/logout", s.logout)
+
+	// 兑换码既按 IP 也按身份限：IP 额度挡单点爆破，
+	// 身份额度挡「同一个号换 IP 继续试」。
 	redeem := v1.Group("/redeem", requireUser(s.Svc))
-	redeem.Post("/", s.redeem)
+	redeem.Post("/", perIPLimiter("redeem", redeemLimit), authRateLimit("redeem", perUserRedeem), s.redeem)
 
 	diagnose := v1.Group("/diagnose", requireUser(s.Svc))
 	diagnose.Get("/", s.diagnose)
@@ -133,7 +167,11 @@ func (s *Server) Register(app *fiber.App) {
 
 	// ---- 管理端 ----
 	adminLogin := v1.Group("/admin")
-	adminLogin.Post("/login", s.adminLogin) // 公开
+	// ⚠️ 这是全站**最贵的一次未认证请求**：bcrypt cost 10，
+	// 单次比对约 50~100ms 纯 CPU。无限流时，未认证攻击者打满并发
+	// 就能让正常运营完全登不进后台，同时顺便无限次口令喷洒。
+	// 额度 5/分钟对个位数运营者有极大余量，对喷洒器是 7200 次/天的天花板。
+	adminLogin.Post("/login", perIPLimiter("adminlogin", adminLoginLimit), s.adminLogin) // 公开
 
 	adm := v1.Group("/admin", requireAdmin(s.Svc))
 	adm.Get("/me", s.adminMe)
@@ -243,6 +281,18 @@ func (s *Server) me(c *fiber.Ctx) error {
 		"power":        s.Svc.ComputePowerFor(build),
 		"max_stage":    maxStage,
 	})
+}
+
+// logout 吊销该用户的全部 refresh token。
+//
+// 响应恒为 200 且不带任何信息量（`{"ok":true}`）：
+// 「令牌本来就不存在」与「已吊销」没有区别，对调用方也没有意义。
+func (s *Server) logout(c *fiber.Ctx) error {
+	n, err := s.Svc.Logout(c.Context(), userIDFrom(c))
+	if err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(fiber.Map{"ok": true, "revoked": n})
 }
 
 // getLoadout 返回当前出战槽位。

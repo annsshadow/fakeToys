@@ -401,9 +401,26 @@ func (s *Service) AdminSetUserStatus(ctx context.Context, userID int64, banned b
 // 事后翻审计只看到「发放」，分不清哪笔是扣款。
 // 回收是真实需求（老测试写明的「回收场景」），但需求不该靠
 // 「正数事件里混负数」实现 —— 符号本身必须成为审计字段。
+// MaxAdminGrantAmount 是后台单次发放/回收的绝对值上限。
+//
+// ⚠️ 为什么需要它：金额来自 JSON 的 `int64`，没有上界。
+//   - `amount = 2^62` 本身能写进 BIGINT（实测成功），
+//     但**再叠一次**就溢出 → PG `22003 numeric_value_out_of_range`
+//     → 不在 `isSettleRejection` 名单里 → 500「服务内部错误」。
+//   - 也就是说一次手滑（大数粘贴 / 小数点位置搞错）会把整笔发放打成
+//     500，而运营看到的不是「数额不合理」而是「服务端坏了」。
+//
+// 取 1e12：比任何真实的运营发放大 6 个数量级（百万级的活动奖励），
+// 又离 int64 溢出（9.2e18）足够远 —— 连续累加到 9.2e15 次才会碰到边界。
+var MaxAdminGrantAmount = int64(1_000_000_000_000)
+
 func (s *Service) AdminGrantCurrency(ctx context.Context, userID int64, currency string, amount int64) (map[string]int64, error) {
 	if amount == 0 {
 		return nil, fmt.Errorf("%w: 数量为 0 的发放没有意义", ErrBadInput)
+	}
+	if amount > MaxAdminGrantAmount || amount < -MaxAdminGrantAmount {
+		return nil, fmt.Errorf("%w: 数量 %d 超出单次发放上限 %d（多半是手滑）",
+			ErrBadInput, amount, MaxAdminGrantAmount)
 	}
 	reason := "admin_grant"
 	if amount < 0 {

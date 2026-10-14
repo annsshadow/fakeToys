@@ -36,6 +36,20 @@ type Config struct {
 	WechatAppSecret string
 	WechatEndpoint  string
 
+	// CORSAllowOrigins 是允许跨域访问的来源白名单。
+	//
+	// ⚠️ 语义与「空 = 全放行」**相反**：
+	//
+	//   - dev 且未设置   → `*`（前后端不同端口，必须放行）
+	//   - prod 且未设置  → **一条 CORS 头都不发**（等价只允许同源）
+	//
+	// 取反向默认值的理由：本项目不用 cookie 存凭证（纯 Bearer 头），
+	// 所以 `*` 眼下**不构成**带凭证的跨域读 —— 把它报成严重漏洞是错的。
+	// 真正的风险是「将来有人加了 cookie 登录」，那时 `*` 立刻变成全站沦陷，
+	// 且没有任何东西会提醒。所以默认取安全的一侧，
+	// 需要跨域（后台与 H5 不同域名）就显式配置 —— 那是一个需要人做的决定。
+	CORSAllowOrigins []string
+
 	// 战斗结算上限校验
 	BattleTokenTTL    time.Duration
 	MinBattleDuration time.Duration
@@ -73,6 +87,32 @@ func envInt32(key string, def int32) int32 {
 		return def
 	}
 	return int32(n)
+}
+
+// envList 读一个逗号分隔的环境变量列表，逐项去空白、丢空项。
+//
+// # 为什么不能直接 strings.Split 后全塞进去
+//
+// `CORS_ALLOW_ORIGINS="https://a.com, https://b.com"` 是最自然的写法，
+// 第二项会带上前导空格。而 CORS 的 `Origin` 请求头**绝不含空格**，
+// 于是那一项永远匹配不上 —— 表现为「配了白名单但某个域名还是被拒」，
+// 排查时很难想到是空格。
+//
+// 丢空项的另一个理由：`"a,,b"` 与 `"a, ,b"` 不该产生空字符串来源，
+// 否则中间件里 `allowSet[""] = true` 会让「无 Origin 头」的请求
+// 命中白名单分支。
+func envList(key string) []string {
+	raw := strings.TrimSpace(os.Getenv(key))
+	if raw == "" {
+		return nil
+	}
+	var out []string
+	for _, p := range strings.Split(raw, ",") {
+		if p = strings.TrimSpace(p); p != "" {
+			out = append(out, p)
+		}
+	}
+	return out
 }
 
 func envBool(key string, def bool) bool {
@@ -115,6 +155,8 @@ func Load() Config {
 		WechatAppID:     env("WECHAT_APP_ID", ""),
 		WechatAppSecret: env("WECHAT_APP_SECRET", ""),
 		WechatEndpoint:  env("WECHAT_ENDPOINT", "https://api.weixin.qq.com/sns/jscode2session"),
+
+		CORSAllowOrigins: envList("CORS_ALLOW_ORIGINS"),
 
 		BattleTokenTTL:    envDuration("BATTLE_TOKEN_TTL", 30*time.Minute),
 		MinBattleDuration: envDuration("MIN_BATTLE_DURATION", 15*time.Second),
