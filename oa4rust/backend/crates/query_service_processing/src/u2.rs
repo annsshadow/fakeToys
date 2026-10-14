@@ -289,6 +289,26 @@ pub async fn index_update_extra_document(
     Ok(Json(ActionResult::success(json!({ "value": true }))))
 }
 
+// ── 门禁 ────────────────────────────────────────────────────────────────────
+
+/// 运维面 admin 门禁（2026-10 安全审计 四轮 R4-18）：无会话 401、非 admin 403。
+///
+/// 本 crate 此前没有任何会话 / 门禁先例。下面 touch 族与 neural 族的 18 把 GET 面写的是
+/// `x_query_index_state`（索引触达状态）与 `x_query_neural_job`（模型任务），两张表都是
+/// 全局运维状态、行上没有可认的属主列 ⇒ 归属门无从校起，只能收 admin。
+/// 门一律插在 `pool.get()` **之前**：无会话既不触库，也就离线可证。
+async fn require_admin(
+    pool: &Pool,
+    session: Option<&shared::session::Session>,
+) -> Result<(), AppError> {
+    let session = session.ok_or(AppError::Unauthorized)?;
+    if shared::middleware::is_admin(pool, &session.person_unique).await {
+        Ok(())
+    } else {
+        Err(AppError::Forbidden)
+    }
+}
+
 // ── touch ───────────────────────────────────────────────────────────────────
 
 async fn touch_impl(
@@ -361,15 +381,19 @@ macro_rules! touch_endpoints {
         /// 执行高频/低频索引触达
         pub async fn $touch(
             pool: Extension<Pool>,
+            session: Option<Extension<shared::session::Session>>,
             Path(node): Path<String>,
         ) -> Result<Json<ActionResult<Value>>, AppError> {
+            require_admin(&pool, session.as_deref()).await?;
             touch_impl(&pool, $entity, Some($freq), &node, TouchAction::Touch).await
         }
         /// 重置定时任务状态
         pub async fn $reset(
             pool: Extension<Pool>,
+            session: Option<Extension<shared::session::Session>>,
             Path(node): Path<String>,
         ) -> Result<Json<ActionResult<Value>>, AppError> {
+            require_admin(&pool, session.as_deref()).await?;
             touch_impl(&pool, $entity, Some($freq), &node, TouchAction::Reset).await
         }
     };
@@ -406,8 +430,10 @@ touch_endpoints!(
 #[allow(non_snake_case)]
 pub async fn optimize_index_touch(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(node): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, session.as_deref()).await?;
     touch_impl(&pool, "optimize", None, &node, TouchAction::Touch).await
 }
 
@@ -502,7 +528,9 @@ pub async fn table_update_with_bundle(
 #[allow(non_snake_case)]
 pub async fn table_reload_dynamic(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, session.as_deref()).await?;
     touch_impl(&pool, "reload_dynamic", None, "0", TouchAction::Reset).await
 }
 
@@ -587,8 +615,10 @@ async fn neural_stop(
 #[allow(non_snake_case)]
 pub async fn neural_generate(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(model_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, session.as_deref()).await?;
     neural_start(&pool, &model_flag, "generate").await
 }
 
@@ -596,8 +626,10 @@ pub async fn neural_generate(
 #[allow(non_snake_case)]
 pub async fn neural_stop_generating(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(model_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, session.as_deref()).await?;
     neural_stop(&pool, &model_flag, "generate").await
 }
 
@@ -605,8 +637,10 @@ pub async fn neural_stop_generating(
 #[allow(non_snake_case)]
 pub async fn neural_learn(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(model_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, session.as_deref()).await?;
     neural_start(&pool, &model_flag, "learn").await
 }
 
@@ -614,8 +648,10 @@ pub async fn neural_learn(
 #[allow(non_snake_case)]
 pub async fn neural_stop_learning(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(model_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, session.as_deref()).await?;
     neural_stop(&pool, &model_flag, "learn").await
 }
 
