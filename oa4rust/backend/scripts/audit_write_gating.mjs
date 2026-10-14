@@ -204,8 +204,12 @@ const SESSION_RE = /Extension\s*<\s*(?:crate::)?(?:shared::)?session::Session|Ex
 // `require_admin_opt(` —— `require_admin` 后面紧跟 `_`（仍是词字符），尾部 `\b` 落空，
 // 于是加了门的 handler 仍被计成「无门禁」。同时补入手工会话校验那一族
 // （`extract_token_from_headers` + `validate_session`，auth/bind.rs 走的就是这条路）。
+// 尾部**不带** \b：门禁助手的名字会不断长出后缀（require_admin_opt / require_actor_opt /
+// u4_require_actor_of …），写全名单必然慢半拍——本批就出现过「代码已修、读数仍挂 R6」两轮。
+// 改成前缀匹配，凡 `require_admin*` / `require_owner*` / `require_actor*` / `require_session*`
+// / `u4_*` / `u2_require*` / `guard_write*` 等都算体内门禁。
 const GATE_RE =
-  /\b(?:require_admin|require_admin_opt|require_owner|require_owner_opt|require_actor|u4_require_actor|u4_require_actor_of|u4_session|owner_gate|u2_require_admin_opt|u2_check_owner|is_admin|check_permission|assert_admin|require_role|guard_write|require_session|require_session_opt|validate_session|extract_token_from_headers)\b/;
+  /\b(?:require_admin|require_owner|require_actor|require_session|u4_session|u4_require|u2_require|u2_check_owner|owner_gate|is_admin|check_permission|assert_admin|require_role|guard_write|validate_session|extract_token_from_headers)/;
 const fnCache = new Map();
 function fnBody(crate, handler) {
   const key = `${crate}::${handler}`;

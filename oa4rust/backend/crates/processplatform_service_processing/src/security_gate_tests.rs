@@ -1263,4 +1263,107 @@ mod security_gate_tests {
                 .unwrap();
         }
     }
+
+    /// 四轮 R4-2 追加：两把 touch 路由（`PUT …/service/work/{id}/touch`、
+    /// `POST …/service/touch/{work}/{id}`）经薄封装转发到 `service_work_id_touch_core`，
+    /// core 原本既不取会话也不校归属，任一有效会话按 work ID 就能往他人 work 插
+    /// `x_record` 留痕，且 creator 硬写 `"system"`。无会话 → 401（先于任何 SQL）。
+    #[tokio::test]
+    async fn touch_writes_reject_without_session() {
+        let pool = shared::testing::test_pool();
+        let cases: [(&str, Result<(), AppError>); 2] = [
+            (
+                "service_work_id_touch",
+                crate::service_work_id_touch(
+                    Extension(pool.clone()),
+                    axum::extract::Path("w1".into()),
+                    None,
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "service_work_id_touch_p2",
+                crate::service_work_id_touch_p2(
+                    Extension(pool.clone()),
+                    axum::extract::Path(("w1".into(), "w2".into())),
+                    None,
+                )
+                .await
+                .map(|_| ()),
+            ),
+        ];
+        for (name, res) in cases {
+            assert!(
+                matches!(res, Err(AppError::Unauthorized)),
+                "{name} 无会话必须 401"
+            );
+        }
+    }
+
+    /// 实测（需真实 PG）：闯入者 touch 他人 work → 403 **且一条留痕都不落**；
+    /// 发起人本人 touch → 放行，且 `x_record.creator` 是本人而不是 `"system"`。
+    #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
+    async fn touch_requires_work_creator_and_pins_real_actor() {
+        if !shared::testing::is_db_available().await {
+            eprintln!("skip: touch_requires_work_creator_and_pins_real_actor (no DATABASE_URL)");
+            return;
+        }
+        let pool = shared::testing::test_pool();
+        let owner = "r47-touch-owner";
+        let work = "r47-touch-work";
+        seed_work(&pool, work, owner).await;
+
+        let intruder = crate::service_work_id_touch(
+            Extension(pool.clone()),
+            axum::extract::Path(work.to_string()),
+            Some(Extension(sess("r47-touch-intruder"))),
+        )
+        .await
+        .map(|_| ());
+        assert!(
+            matches!(intruder, Err(AppError::Forbidden)),
+            "非发起人 touch 他人 work 必须 403（Ok 或其它 Err 都算门失效）"
+        );
+
+        let c = pool.get().await.unwrap();
+        let n: i64 = c
+            .query_one(
+                "SELECT COUNT(*) AS c FROM x_record WHERE work_id = $1",
+                &[&work.to_string()],
+            )
+            .await
+            .unwrap()
+            .get("c");
+        assert_eq!(n, 0, "拒绝路径不得留下任何 x_record 留痕");
+
+        let ok = crate::service_work_id_touch(
+            Extension(pool.clone()),
+            axum::extract::Path(work.to_string()),
+            Some(Extension(sess(owner))),
+        )
+        .await;
+        assert!(ok.is_ok(), "发起人本人 touch 应放行");
+        let rec_creator: Option<String> = c
+            .query_opt(
+                "SELECT creator FROM x_record WHERE work_id = $1 ORDER BY create_time DESC LIMIT 1",
+                &[&work.to_string()],
+            )
+            .await
+            .unwrap()
+            .map(|r| r.get("creator"));
+        assert_eq!(
+            rec_creator.as_deref(),
+            Some(owner),
+            "留痕 creator 必须是真实操作人，不能硬写 system"
+        );
+
+        c.execute("DELETE FROM x_record WHERE work_id = $1", &[&work.to_string()])
+            .await
+            .unwrap();
+        c.execute("DELETE FROM x_work WHERE id = $1", &[&work.to_string()])
+            .await
+            .unwrap();
+    }
 }

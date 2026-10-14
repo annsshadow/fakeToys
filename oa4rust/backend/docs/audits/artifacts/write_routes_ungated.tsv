@@ -624,8 +624,6 @@ processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/revi
 processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/review/v2/list/create/prev/{id}/{count}	review_v2_list_create_id_prev_count	R7
 processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/review/v2/list/create/paging/{page}/{size}/{size}	review_v2_list_create_paging_page_size_size_p3	R7
 processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/serialnumber/mockdeletetoget/{id}	serialnumber_id_mockdeletetoget	R7
-processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/service/work/touch/{id}	service_work_id_touch	R7
-processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/service/work/touch/mockputtopost/{id}	service_work_id_touch_mockputtopost	R7
 processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/sign/mockdeletetoget/{id}	sign_id_mockdeletetoget	R7
 processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/sign/save/task/{taskId}	sign_save_task_taskId	R7
 processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/sign/task/mockdeletetoget/{taskId}	sign_task_taskId_mockdeletetoget	R7
@@ -811,8 +809,6 @@ processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/seri
 processplatform_assemble_surface	PUT	/api/processplatform/assemble/surface/serialnumber/{id}	serialnumber_id	R7
 processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/serialnumber/{id}/mockputtopost	serialnumber_id_mockputtopost	R7
 processplatform_assemble_surface	DELETE	/api/processplatform/assemble/surface/serialnumber/{id}	serialnumber_id	R7
-processplatform_assemble_surface	PUT	/api/processplatform/assemble/surface/service/work/{id}/touch	service_work_id_touch	R7
-processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/service/work/{id}/touch/mockputtopost	service_work_id_touch_mockputtopost	R7
 processplatform_assemble_surface	DELETE	/api/processplatform/assemble/surface/sign/{id}	sign_id	R7
 processplatform_assemble_surface	DELETE	/api/processplatform/assemble/surface/sign/task/{taskId}	sign_task_taskId	R7
 processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/task/list/{id}/next/{count}/filter	task_list_id_next_count_filter	R7
@@ -959,7 +955,6 @@ processplatform_service_processing	POST	/api/processplatform/service/processing/
 processplatform_service_processing	POST	/api/processplatform/service/processing/data/path/delete/{work}/{id}	data_work_id_path_delete	R7
 processplatform_service_processing	POST	/api/processplatform/service/processing/record/task/processing	record_task_processing	R7
 processplatform_service_processing	POST	/api/processplatform/service/processing/record/processing/{work}	record_work_processing	R7
-processplatform_service_processing	POST	/api/processplatform/service/processing/service/touch/{work}/{id}	service_work_id_touch_p2	R7
 processplatform_service_processing	POST	/api/processplatform/service/processing/task/press/{id}	task_id_press	R7
 processplatform_service_processing	POST	/api/processplatform/service/processing/task/processing/{id}	task_id_processing	R7
 processplatform_service_processing	POST	/api/processplatform/service/processing/task/will/{id}	task_id_will	R7
@@ -1014,7 +1009,6 @@ processplatform_service_processing	POST	/api/processplatform/service/processing/
 processplatform_service_processing	POST	/api/processplatform/service/processing/review/create/work	review_create_work	R7
 processplatform_service_processing	POST	/api/processplatform/service/processing/review/create/workcompleted	review_create_workcompleted	R7
 processplatform_service_processing	POST	/api/processplatform/service/processing/review/init/review	review_init_for_view	R7
-processplatform_service_processing	PUT	/api/processplatform/service/processing/service/work/{id}/touch	service_work_id_touch	R7
 processplatform_service_processing	POST	/api/processplatform/service/processing/snap/upload	snap_upload	R7
 processplatform_service_processing	PUT	/api/processplatform/service/processing/task/{id}/processing	task_id_processing	R7
 processplatform_service_processing	POST	/api/processplatform/service/processing/task/{id}/replace	task_id_replace	R7
