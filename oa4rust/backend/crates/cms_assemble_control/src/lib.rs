@@ -500,6 +500,27 @@ async fn soft_delete_by_id(pool: &Pool, table: &str, id: &str) -> Result<Value, 
     ])))
 }
 
+/// 「已取得归属门 → 软删 → 统一返回体」的单点形状。门判据由调用方给出（与各自正档一致），
+/// 这里只保证 403 / 不存在 / 成功三态不分叉——正档与 GET 动词别名共用一处，别名不再复制逻辑。
+async fn soft_delete_after_gate(
+    pool: &Pool,
+    gate: U2Gate,
+    table: &str,
+    id: &str,
+    not_found: &str,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    match gate {
+        U2Gate::NotFound => Ok(Json(ActionResult::error(not_found))),
+        U2Gate::Forbidden => Err(AppError::Forbidden),
+        U2Gate::Allowed => {
+            soft_delete_by_id(pool, table, id).await?;
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
+            ))))
+        }
+    }
+}
+
 #[allow(dead_code)]
 async fn upsert_by_id(pool: &Pool, table: &str, body: &Value) -> Result<Value, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -711,24 +732,37 @@ pub async fn appinfo_alias_alias(
 #[allow(non_snake_case)]
 pub async fn appinfo_erase_app_id(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    soft_delete_by_id(&pool, "x_cms_appinfo", &id).await?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
-    ))))
+    // 与 appinfo_u2_delete 正档同判据：应用 manager 本人或 admin。
+    let gate = u2_check_owner(
+        &pool,
+        "x_cms_appinfo",
+        "manager",
+        &id,
+        &session.person_unique,
+    )
+    .await?;
+    soft_delete_after_gate(&pool, gate, "x_cms_appinfo", &id, "appinfo not found").await
 }
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn appinfo_erase_app_id_mockdeletetoget(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    soft_delete_by_id(&pool, "x_cms_appinfo", &id).await?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
-    ))))
+    let gate = u2_check_owner(
+        &pool,
+        "x_cms_appinfo",
+        "manager",
+        &id,
+        &session.person_unique,
+    )
+    .await?;
+    soft_delete_after_gate(&pool, gate, "x_cms_appinfo", &id, "appinfo not found").await
 }
 
 #[axum::debug_handler]
@@ -1429,12 +1463,18 @@ pub async fn appinfo_id_control(
 #[allow(non_snake_case)]
 pub async fn appinfo_id_mockdeletetoget(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    soft_delete_by_id(&pool, "x_cms_appinfo", &id).await?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
-    ))))
+    let gate = u2_check_owner(
+        &pool,
+        "x_cms_appinfo",
+        "manager",
+        &id,
+        &session.person_unique,
+    )
+    .await?;
+    soft_delete_after_gate(&pool, gate, "x_cms_appinfo", &id, "appinfo not found").await
 }
 
 #[axum::debug_handler]
@@ -1657,28 +1697,30 @@ pub async fn categoryinfo_bind_categoryId_view_mockputtopost(
     }
 }
 
+/// categoryinfo 是派生资源：属主 = **所属应用的 manager**，与 `categoryinfo_u2_delete` 共用同一条 SQL。
+const U2_CATEGORY_OWNER_SQL: &str = "SELECT (SELECT manager FROM x_cms_appinfo WHERE id = ci.app_id AND manager IS NOT NULL) AS owner \
+                    FROM x_cms_categoryinfo ci WHERE ci.id = $1 AND ci.deleted_at IS NULL";
+
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn categoryinfo_erase_category_id(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    soft_delete_by_id(&pool, "x_cms_categoryinfo", &id).await?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
-    ))))
+    let gate = u2_gate_by_sql(&pool, U2_CATEGORY_OWNER_SQL, &id, &session.person_unique).await?;
+    soft_delete_after_gate(&pool, gate, "x_cms_categoryinfo", &id, "category not found").await
 }
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn categoryinfo_erase_category_id_mockdeletetoget(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    soft_delete_by_id(&pool, "x_cms_categoryinfo", &id).await?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
-    ))))
+    let gate = u2_gate_by_sql(&pool, U2_CATEGORY_OWNER_SQL, &id, &session.person_unique).await?;
+    soft_delete_after_gate(&pool, gate, "x_cms_categoryinfo", &id, "category not found").await
 }
 
 #[axum::debug_handler]
@@ -1967,12 +2009,11 @@ pub async fn categoryinfo_id_execute_projection(
 #[allow(non_snake_case)]
 pub async fn categoryinfo_id_mockdeletetoget(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    soft_delete_by_id(&pool, "x_cms_categoryinfo", &id).await?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
-    ))))
+    let gate = u2_gate_by_sql(&pool, U2_CATEGORY_OWNER_SQL, &id, &session.person_unique).await?;
+    soft_delete_after_gate(&pool, gate, "x_cms_categoryinfo", &id, "category not found").await
 }
 
 #[axum::debug_handler]
@@ -2238,12 +2279,19 @@ pub async fn comment_id_commend(
 #[allow(non_snake_case)]
 pub async fn comment_id_mockdeletetoget(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    soft_delete_by_id(&pool, "x_cms_comment", &id).await?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
-    ))))
+    // 与 comment_u2_delete 正档同判据：评论人本人或 admin。
+    let gate = u2_check_owner(
+        &pool,
+        "x_cms_comment",
+        "person_id",
+        &id,
+        &session.person_unique,
+    )
+    .await?;
+    soft_delete_after_gate(&pool, gate, "x_cms_comment", &id, "comment not found").await
 }
 
 #[axum::debug_handler]
@@ -2735,7 +2783,8 @@ data_path_read_handler!(
 
 /// 路径级 mockdeletetoget / mockputtopost / update / create / delete 的宏生成器。
 ///
-/// - mockdelete（GET 别名删除）与 delete：软删 composed 字段行；
+/// - mockdelete（GET 别名删除）与 delete：软删 composed 字段行，**同一条 `write_doc_field_path`
+///   Remove 路径**（旧别名不取会话、无门，任何已认证用户可删任意文档的任意字段）；
 /// - mockput（POST 别名更新，读 body["fieldValue"]，沿用既有契约）、update（PUT，
 ///   整体 body 为值）：UPSERT（修复旧代码对无唯一约束列使用 ON CONFLICT 的运行期错误）；
 /// - create（POST）：仅在该字段行不存在时插入。
@@ -2744,24 +2793,19 @@ macro_rules! data_path_write_handlers {
         #[axum::debug_handler]
         pub async fn $mockdel(
             pool: Extension<Pool>,
+            session: Extension<shared::session::Session>,
             axum::extract::Path(paths): axum::extract::Path<[String; $arity]>,
         ) -> Result<Json<ActionResult<Value>>, AppError> {
             let (doc_id, rest) = paths.split_first().expect("non-empty path tuple");
-            let field_name = compose_field_path(rest);
-            let client = pool.get().await.map_err(|_| AppError::Internal)?;
-            client
-                .execute(
-                    "UPDATE x_cms_data_document_field SET deleted_at = NOW() \
-                     WHERE doc_id = $1 AND field_name = $2",
-                    &[&doc_id, &field_name],
-                )
-                .await
-                .map_err(|_| AppError::Internal)?;
-            let rows = query_doc_fields_by_name(&pool, doc_id, &field_name).await?;
-            match rows.into_iter().next() {
-                Some(row) => Ok(Json(ActionResult::success(row))),
-                None => Ok(Json(ActionResult::error("field not found"))),
-            }
+            write_doc_field_path(
+                &pool,
+                &session,
+                doc_id,
+                rest.to_vec(),
+                None,
+                PathWriteMode::Remove,
+            )
+            .await
         }
 
         #[axum::debug_handler]
@@ -3193,71 +3237,16 @@ pub async fn design_appdict_id(
 #[allow(non_snake_case)]
 pub async fn design_appdict_id_mockdeletetoget(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    client
-        .execute(
-            "UPDATE x_cms_surface_appdict SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
-    let row = client
-        .query_opt(
-            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time::text FROM x_cms_surface_appdict WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
-    match row {
-        Some(row) => {
-            let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                (
-                    "appInfoFlag".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("app_info_flag")
-                            .unwrap_or_default(),
-                    ),
-                ),
-                (
-                    "appDictFlag".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("app_dict_flag")
-                            .unwrap_or_default(),
-                    ),
-                ),
-                (
-                    "pathLevels".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("path_levels")
-                            .unwrap_or_default(),
-                    ),
-                ),
-                (
-                    "dataValue".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("data_value")
-                            .unwrap_or_default(),
-                    ),
-                ),
-                (
-                    "creator".to_string(),
-                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
-                ),
-                (
-                    "createTime".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("create_time")
-                            .unwrap_or_default(),
-                    ),
-                ),
-            ]));
-            Ok(Json(ActionResult::success(result)))
-        }
-        None => Ok(Json(ActionResult::error("appdict not found"))),
-    }
+    // 与 design_appdict_delete_u3 正档同判据：字典数据是结构面，admin 才能删。
+    // 旧别名体删完再按 `deleted_at IS NULL` 回读，恒返回 "appdict not found"，无可用响应体。
+    u2_require_admin(&pool, &session).await?;
+    soft_delete_by_id(&pool, "x_cms_surface_appdict", &id).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
+    ))))
 }
 
 #[axum::debug_handler]
@@ -3803,71 +3792,14 @@ pub async fn file_flag_appInfo_appInfoFlag_download(
 #[allow(non_snake_case)]
 pub async fn file_flag_mockdeletetoget(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    client
-        .execute(
-            "UPDATE x_cms_file SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
-    let row = client
-        .query_opt(
-            "SELECT id, app_id, name, size, content_type, content_base64, creator, create_time::text FROM x_cms_file WHERE id = $1",
-            &[&id],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
-    match row {
-        Some(row) => {
-            let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                (
-                    "appId".to_string(),
-                    Value::String(row.get::<_, Option<String>>("app_id").unwrap_or_default()),
-                ),
-                (
-                    "name".to_string(),
-                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
-                ),
-                (
-                    "size".to_string(),
-                    Value::Number(serde_json::Number::from(
-                        row.get::<_, Option<i64>>("size").unwrap_or(0),
-                    )),
-                ),
-                (
-                    "contentType".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("content_type")
-                            .unwrap_or_default(),
-                    ),
-                ),
-                (
-                    "contentBase64".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("content_base64")
-                            .unwrap_or_default(),
-                    ),
-                ),
-                (
-                    "creator".to_string(),
-                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
-                ),
-                (
-                    "createTime".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("create_time")
-                            .unwrap_or_default(),
-                    ),
-                ),
-            ]));
-            Ok(Json(ActionResult::success(result)))
-        }
-        None => Ok(Json(ActionResult::error("file not found"))),
-    }
+    // 与 file_delete_u3 正档同判据：文件创建人本人或 admin。
+    // 旧别名体删完还按不带 `deleted_at IS NULL` 的回读把整行（含 contentBase64）吐回去，
+    // 等于「一条无门 GET 同时能删任意文件、又能读任意文件正文」——现在两者一起收掉。
+    let gate = u2_check_owner(&pool, "x_cms_file", "creator", &id, &session.person_unique).await?;
+    soft_delete_after_gate(&pool, gate, "x_cms_file", &id, "file not found").await
 }
 
 #[axum::debug_handler]
@@ -4924,12 +4856,19 @@ pub async fn fileinfo_id_binary_base64_size(
 #[allow(non_snake_case)]
 pub async fn fileinfo_id_doc_docId_change_seqnumber_seqNumber(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path((file_id, doc_id, _seq_number)): axum::extract::Path<(
         String,
         String,
         String,
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 这条 GET 改的是文档附件行的 create_time（排序位置）：按文档写者门（与 data/document 族同判据）。
+    match gate_doc_writer(&pool, &session, &doc_id).await? {
+        U2Gate::NotFound => return Ok(Json(ActionResult::error("document not found"))),
+        U2Gate::Forbidden => return Err(AppError::Forbidden),
+        U2Gate::Allowed => {}
+    }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
@@ -5001,20 +4940,19 @@ pub async fn fileinfo_id_document_documentId(
 #[allow(non_snake_case)]
 pub async fn fileinfo_id_mockdeletetoget(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let row = client
-        .query_opt(
-            "UPDATE x_cms_fileinfo SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING *",
-            &[&id],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
-    match row {
-        Some(row) => Ok(Json(ActionResult::success(row_to_json(&row)))),
-        None => Ok(Json(ActionResult::error("fileinfo not found"))),
-    }
+    // 与 fileinfo_u2_delete 正档同判据：上传者本人或 admin。
+    let gate = u2_check_owner(
+        &pool,
+        "x_cms_fileinfo",
+        "upload_person",
+        &id,
+        &session.person_unique,
+    )
+    .await?;
+    soft_delete_after_gate(&pool, gate, "x_cms_fileinfo", &id, "fileinfo not found").await
 }
 
 #[axum::debug_handler]
@@ -5507,20 +5445,12 @@ pub async fn form_id(
 #[allow(non_snake_case)]
 pub async fn form_id_mockdeletetoget(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let row = client
-        .query_opt(
-            "UPDATE x_cms_form SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING *",
-            &[&id],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
-    match row {
-        Some(row) => Ok(Json(ActionResult::success(row_to_json(&row)))),
-        None => Ok(Json(ActionResult::error("form not found"))),
-    }
+    // 与 form_u2_delete 正档同判据：表单创建人本人或 admin。
+    let gate = u2_check_owner(&pool, "x_cms_form", "creator", &id, &session.person_unique).await?;
+    soft_delete_after_gate(&pool, gate, "x_cms_form", &id, "form not found").await
 }
 
 #[axum::debug_handler]
@@ -5937,8 +5867,12 @@ pub async fn permission_management_refresh_all(
 #[allow(non_snake_case)]
 pub async fn permission_management_refresh_category_categoryId(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(category_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 这条 GET 是把该分类下**全部权限行**软删（重刷），与 permission_management_refresh_all
+    // 同一档：无属主的系统级数据，admin 门。
+    u2_require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let affected = client
         .execute("UPDATE x_cms_permission SET deleted_at = NOW() WHERE category_id = $1 AND deleted_at IS NULL", &[&category_id])
@@ -6188,12 +6122,12 @@ pub async fn script_id(
 #[allow(non_snake_case)]
 pub async fn script_id_mockdeletetoget(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    soft_delete_by_id(&pool, "x_cms_script", &id).await?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
-    ))))
+    // 与 script_u2_delete 正档同判据：脚本创建人本人或 admin。
+    let gate = u2_check_owner(&pool, "x_cms_script", "creator", &id, &session.person_unique).await?;
+    soft_delete_after_gate(&pool, gate, "x_cms_script", &id, "script not found").await
 }
 
 #[axum::debug_handler]
@@ -7047,8 +6981,12 @@ pub async fn templateform_id(
 #[allow(non_snake_case)]
 pub async fn templateform_id_mockdeletetoget(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 这张档删的是 **x_cms_form_v2**（结构定义表，第八批已把 xform 族收进 admin 档），
+    // 与 templateform_u2_delete 的 x_cms_templateform 不是同一张表——按表定级：admin。
+    u2_require_admin(&pool, &session).await?;
     soft_delete_by_id(&pool, "x_cms_form_v2", &id).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
@@ -7117,12 +7055,12 @@ pub async fn view_id(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>,
 #[allow(non_snake_case)]
 pub async fn view_id_mockdeletetoget(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    soft_delete_by_id(&pool, "x_cms_view", &id).await?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
-    ))))
+    // 与 view_u2_delete 正档同判据：视图创建人本人或 admin。
+    let gate = u2_check_owner(&pool, "x_cms_view", "creator", &id, &session.person_unique).await?;
+    soft_delete_after_gate(&pool, gate, "x_cms_view", &id, "view not found").await
 }
 
 #[axum::debug_handler]
@@ -7216,12 +7154,19 @@ pub async fn viewcategory_id(pool: Extension<Pool>) -> Result<Json<ActionResult<
 #[allow(non_snake_case)]
 pub async fn viewcategory_id_mockdeletetoget(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    soft_delete_by_id(&pool, "x_cms_viewcategory", &id).await?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
-    ))))
+    // 与 viewcategory_u2_delete 正档同判据：创建人本人或 admin。
+    let gate = u2_check_owner(
+        &pool,
+        "x_cms_viewcategory",
+        "creator",
+        &id,
+        &session.person_unique,
+    )
+    .await?;
+    soft_delete_after_gate(&pool, gate, "x_cms_viewcategory", &id, "viewcategory not found").await
 }
 
 #[axum::debug_handler]
@@ -7252,12 +7197,13 @@ pub async fn viewfieldconfig_id(
 #[allow(non_snake_case)]
 pub async fn viewfieldconfig_id_mockdeletetoget(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    soft_delete_by_id(&pool, "x_cms_viewfieldconfig", &id).await?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
-    ))))
+    // 与 viewfieldconfig_u2_delete 正档同判据：字段配置经**所属视图的创建人**校验（派生资源）。
+    let gate = u2_gate_by_sql(&pool, U2_VIEW_FIELD_OWNER_SQL, &id, &session.person_unique).await?;
+    soft_delete_after_gate(&pool, gate, "x_cms_viewfieldconfig", &id, "viewfieldconfig not found")
+        .await
 }
 
 #[axum::debug_handler]
@@ -9589,18 +9535,8 @@ pub async fn categoryinfo_u2_delete(
     session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let gate_sql = "SELECT (SELECT manager FROM x_cms_appinfo WHERE id = ci.app_id AND manager IS NOT NULL) AS owner \
-                    FROM x_cms_categoryinfo ci WHERE ci.id = $1 AND ci.deleted_at IS NULL";
-    match u2_gate_by_sql(&pool, gate_sql, &id, &session.person_unique).await? {
-        U2Gate::NotFound => Ok(Json(ActionResult::error("category not found"))),
-        U2Gate::Forbidden => Err(AppError::Forbidden),
-        U2Gate::Allowed => {
-            soft_delete_by_id(&pool, "x_cms_categoryinfo", &id).await?;
-            Ok(Json(ActionResult::success(Value::Object(
-                serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
-            ))))
-        }
-    }
+    let gate = u2_gate_by_sql(&pool, U2_CATEGORY_OWNER_SQL, &id, &session.person_unique).await?;
+    soft_delete_after_gate(&pool, gate, "x_cms_categoryinfo", &id, "category not found").await
 }
 
 async fn u2_write_permissions(
@@ -11107,8 +11043,15 @@ pub async fn file_delete_u3(
 #[allow(non_snake_case)]
 pub async fn file_copy_u3(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path((id, app_flag)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 这条 GET 往任意 app 复制任意文件、连正文一起落库：按源文件创建人门（与 file_delete_u3 同判据）。
+    match u2_check_owner(&pool, "x_cms_file", "creator", &id, &session.person_unique).await? {
+        U2Gate::NotFound => return Ok(Json(ActionResult::error("file not found"))),
+        U2Gate::Forbidden => return Err(AppError::Forbidden),
+        U2Gate::Allowed => {}
+    }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let source = client
         .query_opt(

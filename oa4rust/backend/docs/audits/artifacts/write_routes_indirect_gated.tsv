@@ -61,6 +61,14 @@ cms_assemble_control	DELETE	/api/surface/appdict/{appDictFlag}/appInfo/{appInfoF
 cms_assemble_control	DELETE	/api/surface/appdict/{appDictFlag}/appInfo/{appInfoFlag}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}/data	surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_path3_path4_path5_path6_data_delete	appdict_data_write
 cms_assemble_control	DELETE	/api/surface/appdict/{appDictFlag}/appInfo/{appInfoFlag}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}/{path7}/data	surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_path3_path4_path5_path6_path7_data_delete	appdict_data_write
 cms_assemble_control	GET	/api/data/document/{id}/mockdeletetoget	data_document_id_mockdeletetoget	delete_doc_fields_base
+cms_assemble_control	GET	/api/data/document/{id}/{path0}/mockdeletetoget	data_document_id_path0_mockdeletetoget	write_doc_field_path
+cms_assemble_control	GET	/api/data/document/{id}/{path0}/{path1}/mockdeletetoget	data_document_id_path0_path1_mockdeletetoget	write_doc_field_path
+cms_assemble_control	GET	/api/data/document/{id}/{path0}/{path1}/{path2}/mockdeletetoget	data_document_id_path0_path1_path2_mockdeletetoget	write_doc_field_path
+cms_assemble_control	GET	/api/data/document/{id}/{path0}/{path1}/{path2}/{path3}/mockdeletetoget	data_document_id_path0_path1_path2_path3_mockdeletetoget	write_doc_field_path
+cms_assemble_control	GET	/api/data/document/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/mockdeletetoget	data_document_id_path0_path1_path2_path3_path4_mockdeletetoget	write_doc_field_path
+cms_assemble_control	GET	/api/data/document/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/mockdeletetoget	data_document_id_path0_path1_path2_path3_path4_path5_mockdeletetoget	write_doc_field_path
+cms_assemble_control	GET	/api/data/document/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}/mockdeletetoget	data_document_id_path0_path1_path2_path3_path4_path5_path6_mockdeletetoget	write_doc_field_path
+cms_assemble_control	GET	/api/data/document/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}/{path7}/mockdeletetoget	data_document_id_path0_path1_path2_path3_path4_path5_path6_path7_mockdeletetoget	write_doc_field_path
 cms_assemble_control	GET	/api/document/achive/{id}	document_achive_u3	u3_gate_document
 cms_assemble_control	GET	/api/document/{id}/top	document_u2_top	document_u2_set_top
 cms_assemble_control	GET	/api/document/{id}/unTop	document_u2_un_top	document_u2_set_top
@@ -72,6 +80,7 @@ cms_assemble_control	GET	/api/surface/appdict/{appDictFlag}/appInfo/{appInfoFlag
 cms_assemble_control	GET	/api/surface/appdict/{appDictFlag}/appInfo/{appInfoFlag}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/data/mockdeletetoget	surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_path3_path4_path5_data_delete	appdict_data_write
 cms_assemble_control	GET	/api/surface/appdict/{appDictFlag}/appInfo/{appInfoFlag}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}/data/mockdeletetoget	surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_path3_path4_path5_path6_data_delete	appdict_data_write
 cms_assemble_control	GET	/api/surface/appdict/{appDictFlag}/appInfo/{appInfoFlag}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}/{path7}/data/mockdeletetoget	surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_path3_path4_path5_path6_path7_data_delete	appdict_data_write
+cms_assemble_control	POST	/api/categoryinfo/extContent	categoryinfo_ext_content_save_u3	u3_can_manage_scope
 cms_assemble_control	POST	/api/data/document/{id}	data_document_id_create	write_doc_fields_base
 cms_assemble_control	POST	/api/data/document/{id}/mockputtopost	data_document_id_mockputtopost	write_doc_fields_base
 cms_assemble_control	POST	/api/data/document/{id}/{path0}	data_document_id_path0_create	write_doc_field_path
@@ -86,6 +95,14 @@ cms_assemble_control	POST	/api/document/batch/data/modify/mockputtopost	document
 cms_assemble_control	POST	/api/document/publish/content/mockputtopost	document_publish_content_mock_u3	u3_publish_content_impl
 cms_assemble_control	POST	/api/document/{id}/notify	document_notify_u3	u3_gate_document
 cms_assemble_control	POST	/api/document/{id}/publish/html	document_publish_html_u3	u3_gate_document
+cms_assemble_control	POST	/api/fileinfo/copy/to/doc/{docId}	fileinfo_u2_copy_to_doc	fileinfo_u2_doc_gate
+cms_assemble_control	POST	/api/fileinfo/replace/to/doc/{docId}	fileinfo_u2_replace_to_doc	fileinfo_u2_doc_gate
+cms_assemble_control	POST	/api/permission/manager/appInfo/{id}	permission_save_manager_app_u3	u3_save_scope_permissions
+cms_assemble_control	POST	/api/permission/manager/categoryInfo/{id}	permission_save_manager_category_u3	u3_save_scope_permissions
+cms_assemble_control	POST	/api/permission/publisher/appInfo/{id}	permission_save_publisher_app_u3	u3_save_scope_permissions
+cms_assemble_control	POST	/api/permission/publisher/categoryInfo/{id}	permission_save_publisher_category_u3	u3_save_scope_permissions
+cms_assemble_control	POST	/api/permission/viewer/appInfo/{id}	permission_save_viewer_app_u3	u3_save_scope_permissions
+cms_assemble_control	POST	/api/permission/viewer/categoryInfo/{id}	permission_save_viewer_category_u3	u3_save_scope_permissions
 cms_assemble_control	POST	/api/surface/appdict/{appDictFlag}/appInfo/{appInfoFlag}/mockputtopost	surface_appdict_appDictFlag_appInfo_appInfoFlag_update	appdict_data_write
 cms_assemble_control	POST	/api/surface/appdict/{appDictFlag}/appInfo/{appInfoFlag}/{path0}/data	surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_data_post	appdict_data_write
 cms_assemble_control	POST	/api/surface/appdict/{appDictFlag}/appInfo/{appInfoFlag}/{path0}/{path1}/data	surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_data_post	appdict_data_write

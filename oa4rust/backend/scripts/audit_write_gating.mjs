@@ -342,8 +342,14 @@ const SESSION_RE = /Extension\s*<\s*(?:crate::)?(?:shared::)?session::Session|Ex
 // 缺陷 13 补的词：宏模板里的属主/写者门（gate_doc_writer / gate_topic_owner / …）。
 // 全仓 `gate_` 前缀普查只有 6 个标识符，其中 gate_sql / gate_table 是**变量名不是门**，
 // 所以这里绝不写 `\bgate_` 前缀，只逐个点名（闭集，新增须同步）。
+// 缺陷 23（第十四批补）：cms 的归属判定基座 `u2_gate_by_sql` 不在词表里，于是
+// 「handler 自己调 u2_gate_by_sql 取门、再把 U2Gate 交给形状 helper」这一族**整体看不见门**——
+// 现场是已加门的正档 `categoryinfo_u2_delete` / `viewfieldconfig_u2_delete` 长期挂 R6 无门禁行动面
+// （假阳），第十四批新加的 categoryinfo / viewfieldconfig 三把 GET 别名同样进不了有门名单（假阴）。
+// 它是逐个点名 SQL 的属主判定入口（admin 旁路 + 非属主 Forbidden），按门计；
+// 反向见证钉在「体内确无判定入口」的 document_id_view_count 上，防止词表被扩成恒真。
 const GATE_RE =
-  /\b(?:require_admin|require_owner|require_actor|require_session|u4_session|u4_require|u2_require|u2_check_owner|owner_gate|is_admin|check_permission|assert_admin|require_role|guard_write|validate_session|extract_token_from_headers|resolve_current_person|gate_doc_writer|gate_topic_owner|gate_reply_owner|gate_attachment_owner|gate_appdict_writer)/;
+  /\b(?:require_admin|require_owner|require_actor|require_session|u4_session|u4_require|u2_require|u2_check_owner|u2_gate_by_sql|owner_gate|is_admin|check_permission|assert_admin|require_role|guard_write|validate_session|extract_token_from_headers|resolve_current_person|gate_doc_writer|gate_topic_owner|gate_reply_owner|gate_attachment_owner|gate_appdict_writer)/;
 const fnCache = new Map();
 // 尺子缺陷 11（本批修）：注册点写的是 `post(u2::review_create_work)`，旧实现入表时把 `u2::`
 // 限定符 `.split("::").pop()` 剥掉，`fnBody` 再按「遍历 crates/<crate>/src 命中的**第一个**同名 fn」
@@ -1409,19 +1415,23 @@ for (const key of [
 // 缺陷 22：表名走 `format!` 插值（`UPDATE {} SET deleted_at = NOW()`）的写语句必须判为写面。
 // cms `soft_delete_by_id(pool, table, id)` 一类 helper 全仓被 14 个函数这样落笔，
 // 修前这些 handler 连「含写 SQL」都读不到 ⇒ 既不进 R 行动面，也不进 GET 面（GET 面最危险，
-// csrf / requires_admin 双盲区）。摘掉表名位的 `\{` 分支，下面三条当场从名单里消失。
+// csrf / requires_admin 双盲区）。摘掉表名位的 `\{` 分支，下面的写证据当场消失。
+// 第十四批把这几把 GET 别名加门后，它们**退出 GET 无门禁名单**是预期的，所以正向见证从
+// 「必须挂 K 桶」改成「必须仍带写证据」：判据一旦退化，indirectWrites 里那行就没了，
+// 这条见证照样红——见证钉的是判据，不是某一轮的读数。
 const kRoutes = new Set(getWrites.map(routeKeyOf));
+const iwRoutes = new Set(indirectWrites.map(routeKeyOf));
 for (const key of [
   "cms_assemble_control\tGET\t/api/appinfo/{id}/mockdeletetoget\tappinfo_id_mockdeletetoget",
   "cms_assemble_control\tGET\t/api/comment/{id}/mockdeletetoget\tcomment_id_mockdeletetoget",
   "cms_assemble_control\tGET\t/api/viewfieldconfig/{id}/mockdeletetoget\tviewfieldconfig_id_mockdeletetoget",
 ]) {
-  if (!kRoutes.has(key))
-    witnessGaps.push(`缺陷 22 见证缺失（动态表名的 GET 写档未进 GET 面）：${key.replace(/\t/g, " ")}`);
+  if (!iwRoutes.has(key))
+    witnessGaps.push(`缺陷 22 见证缺失（动态表名的 GET 写档丢了写证据）：${key.replace(/\t/g, " ")}`);
 }
-if (!wHelpers.has("soft_delete_by_id"))
-  witnessGaps.push("缺陷 22 见证缺失（间接写 SQL 名单未见 soft_delete_by_id）");
-// 反向：判据放宽到 `{` 之后，同族里**确实有门**的档不许被拖进 GET 面（防「把有门洗成无门」）。
+if (!wHelpers.has("soft_delete_by_id") && !wHelpers.has("soft_delete_after_gate"))
+  witnessGaps.push("缺陷 22 见证缺失（动态表名落笔的 helper 不在间接写 SQL 名单：soft_delete_by_id / soft_delete_after_gate 都没有）");
+// 反向：判据放宽到 `{` 之后，同族里**有门或只读**的档不许被拖进 GET 无门禁面（防把有门洗成无门）。
 for (const key of [
   "cms_assemble_control\tGET\t/api/data/document/{id}/mockdeletetoget\tdata_document_id_mockdeletetoget",
   "cms_assemble_control\tGET\t/api/appinfo/{id}/control\tappinfo_id_control",
@@ -1429,6 +1439,25 @@ for (const key of [
 ]) {
   if (kRoutes.has(key))
     witnessGaps.push(`缺陷 22 反向见证失效（有门或只读档被误判成 GET 写面）：${key.replace(/\t/g, " ")}`);
+}
+// 缺陷 23：`u2_gate_by_sql` 是 cms 归属判定的入口，必须按门计。
+// 正向：体内只有它、没有别的门名的档——摘掉这个词，这三条当场退回无门禁行动面。
+for (const key of [
+  "cms_assemble_control\tDELETE\t/api/categoryinfo/{id}\tcategoryinfo_u2_delete",
+  "cms_assemble_control\tDELETE\t/api/viewfieldconfig/{id}\tviewfieldconfig_u2_delete",
+  "cms_assemble_control\tGET\t/api/viewfieldconfig/{id}/mockdeletetoget\tviewfieldconfig_id_mockdeletetoget",
+]) {
+  const bucket = bucketByKey.get(key) || "";
+  const inGetUngated = kRoutes.has(key);
+  if (/^R[67]/.test(bucket) || inGetUngated)
+    witnessGaps.push(`缺陷 23 见证缺失（u2_gate_by_sql 定门未被认出，桶 ${bucket || "K"}）：${key.replace(/\t/g, " ")}`);
+}
+// 反向：体内确无判定入口的 GET 写档不许被认成有门（防词表扩成恒真）。
+for (const key of [
+  "cms_assemble_control\tGET\t/api/document/{id}/view/count\tdocument_id_view_count",
+]) {
+  if (!kRoutes.has(key))
+    witnessGaps.push(`缺陷 23 反向见证失效（无门档被误判成已加门）：${key.replace(/\t/g, " ")}`);
 }
 for (const w of WRITE_HELPER_WITNESSES)
   if (!wHelpers.has(w)) witnessGaps.push(`缺陷 16 见证缺失（间接写 SQL 未见 ${w}）`);
@@ -1442,7 +1471,7 @@ console.log(
   `\n判据见证：缺陷 16 ${WRITE_HELPER_WITNESSES.length} 条 / 缺陷 17 ${GATE_HELPER_WITNESSES.length} 条 / ` +
   `缺陷 18 正向 ${DEAD_ALIAS_WITNESSES.length} 条 + 反向 ${LIVE_ALIAS_WITNESSES.length} 条 / ` +
   `缺陷 19 正向 4 条 + 缺陷 20 正向 2 条 + 反向 3 条 / 缺陷 21 反向 2 条 + 正向 1 条 / ` +
-  `缺陷 22 正向 3 条 + helper 1 条 + 反向 3 条，` +
+  `缺陷 22 正向 3 条 + helper 1 条 + 反向 3 条 / 缺陷 23 正向 3 条 + 反向 1 条，` +
   `缺口 ${witnessGaps.length} 处`
 );
 for (const g of witnessGaps) console.error(`  ${g}`);
