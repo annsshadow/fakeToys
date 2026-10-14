@@ -373,6 +373,24 @@ A4 开放问题：① F1 是否 o2server 侧本就以 job/document 创建者为�
 | 一处**被实测否证的类型猜测**（留档） | 同上 §四 第十批 | 我按「迁移 032 把 `pp_e_applicationdict.xupdateTime` 建成 TEXT，`SET … = NOW()` 是 timestamp→text 赋值、必报 42846 ⇒ 这一族即使放行也 500」写进了测试文档注释。DB 臂一跑即**否证**：PostgreSQL 允许经 I/O 转换的赋值转换，落库成 `2026-10-14 16:35:02.054779+00` 这类文本时间戳。注释当场改写，全仓 79 处同型写法由「硬错误」降级为「TEXT 列被写进与会话/其它列不同构的时间文本」的**语义分歧**，进 §五 单独定标 |
 | 新增测试臂 | `processplatform_assemble_surface/src/security_gate_tests.rs`、`processplatform_service_processing/src/security_gate_tests.rs` | surface 4 支：`surface_applicationdict_alias_writes_reject_anonymous`（16 格逐条点名 401）、`…_forbidden_for_non_admin`（16 格 403）、`…_delete_alias_only_admin_lands`（DB：闯入者 403 且行必须还在 / admin 200 且行确实消失）、`…_put_alias_admin_write_lands`（DB：落库才算放行凭据，未命中行也回 200）＋ `surface_data_work_alias_writes_reject_anonymous`（45 格点名）、`surface_data_work_delete_alias_owner_gate_lands`（DB 四格：他人 403 零留痕 / 本人真删 / 空归属只 admin / admin 打满 45 档不出现 401·403）、`surface_data_work_touch_alias_owner_write_lands`（DB：403 不改时间戳、本人 200 且时间戳确实被改写）。ppsvc 2 支：`data_delete_routes_reject_without_session`（离线 401×2）、`data_delete_routes_require_work_creator_and_land`（DB 三格）。路由表由 `routes.rs` 机器枚举生成并 `assert_eq!(len, 16 / 45)`，注册点增减当场红 |
 
+### 三.11 第十一批（`PP_C_JOB` / `PP_C_WORKCOMPLETED` 别名写族 18 把 + 尺子缺陷 16、17、18，代码）
+
+第十批收完 `data/work` 后，`§五` 里同形状的另外两族仍裸奔在 R7 行动面：`data/workcompleted/{id}[/pathN]`
+与 `data/job/{job}[/pathN]` 的 `mockputtopost` 别名。本批把它们一次收完，并顺着「读数为什么和代码不一致」
+把尺子的三处**看不见**补掉——16（写 SQL 在 helper 里）、17（门的传播有两种写法）、18（这条路由根本进不到函数体）。
+
+| 项 | 文件 | 内容 |
+| --- | --- | --- |
+| tranche：18 把 handler / 36 条注册点（27 活 + 9 死档） | `crates/processplatform_assemble_surface/src/lib.rs`、`src/routes.rs` | `data_workcompleted_id{,_path0..path7}_mockputtopost` 9 把 + `data_job_job{,_path0..path7}_mockputtopost` 9 把。handler 原先**不取 Session、不校任何门**，体内第一条 SQL 是 `UPDATE PP_C_WORKCOMPLETED SET "xupdateTime" = NOW() WHERE xid = $1` / 同型 `PP_C_JOB`，随后按同一 xid 回读 `xid/xcreateTime/xupdateTime` 返回 ⇒ **未认证**可按 ID 改写任意流程归档件 / 任务实例的审计时间戳并拿到其存在性与时间信息（可批量枚举）。放行侧实测：摘门后匿名请求直接 200 且 `xupdateTime` 被改写（见 §四 注入臂 G1·G3） |
+| helper 泛化（不是新门，是把上一批的门推广） | 同上 `lib.rs:60` | 第十批的 `u4_require_work_actor` 抽成 `u4_require_ppc_actor(pool, session, table: &'static str, id)`，work 版退化为一行委托 ⇒ 上一批 18 处调用点零改动。表名走 `&'static str` 常量拼进 `format!`，不接用户输入。口径与第十批一致：`u4_require_session`（**401 先于 `pool.get()`**，离线可证）→ 按 xid 读 `"xcreatorPerson"` → `require_actor_opt`（归属非空＝本人或 admin；**空归属／行不存在＝只允许 admin**） |
+| 尺子缺陷 16：写 SQL 在 helper 里，handler 读成「只读挂写方法」 | `scripts/audit_write_gating.mjs` | 旧判据只扫 handler 本体的 `WRITE_SQL_RE`，`..._core`／`appdict_data_write` 一类转调全部看不见 ⇒ **方向是漏量**，且 GET-写探测与三向拆分共用这个判据，一处漏三处错。新增 `writeEvidence(crate, body, depth)`：本体不中则沿「被 await 的转调」递归 ≤3 层；`awaitCall` 与缺陷 15 的 `callPropagates` **有意不同**（写只要跑起来就落笔，`let _ = f().await` 同样拦不住）。现场：`workcompleted_list_count_application_*` 注册在 **GET** 上、本体零 SQL，转调体内就是那条 UPDATE。同批修的调用点正则：`body.matchAll(/([a-z_]\w*)\s*\(/g)` 会把 `row.get(` 当成「调 crate 内名为 `get` 的函数」，首版读数炸到 间接写 1033 / GET 写 711 / A1 27，加负向后视 `(?<![.\w:])` 后落回 319 / 227 / 9 |
+| 尺子缺陷 17：门的拒判会经两种写法传播，且门常在同 crate 的第二层 | 同上 | `callPropagates` 旧写法只认 `)` 之后紧跟 `.await?`；尾位置 `.await`（`)` 后第一个非空字符是 `.`，且 `.await` 之后就是 `}`）同样把拒绝传到调用方，旧判据认不出。`gateEvidence` 旧写法又叠了两个多余前提：要求 helper 自身命中 `GATE_RE`、且只走一层。现改成「helper 会产 `AppError::Forbidden\|Unauthorized` ∧ 调用点传播 ∧ 递归 ≤3」。读数 **indirectGated 12 → 37**（`set_topic_flag` 18、`check_owner` 5、`write_doc_fields_base` 3…），A→B 轴上 4 条 cms `data_document_*` 由 R6 迁 R5 就是这格的功劳 |
+| 尺子缺陷 18：死档注册（Path 段数不足，函数体永不执行） | 同上 + 新产物 `routes_dead_alias.tsv` | 注册路径的 `{}` 段数 **少于** handler 签名 `Path<…>` 需要的段数时，axum 在进入函数体之前就抛 500「Wrong number of path arguments」，SQL 与门都够不着；旧判据只看「方法 + 体内有无写 SQL」，把这类死档算成活写面（**方向是虚报行动面**）。判据 `pathParamCount` vs `pathExtractArity`，两处收窄都是踩过坑加的：① 只看**签名**（第一个 `{` 之前），否则 `Vec<u8>`、`impl Future<Output=…>` 让前扫吞掉十几处逗号，实测把 paging 族读成「需要 16 个参数」；② 抽出泛型实参后**剥掉 `(`/`)` 再按顶层逗号切段并丢掉空段**，否则 rustfmt 换行的 `Path<(\n String,\n String,\n)>` 尾逗号多数一档，实测 24 → 152 条，一半活路由被误杀。全仓现读 24 条死档（写方法 10 条 → 新桶 R9，其余 14 条挂在 GET 上、已从 GET 写面出列） |
+| 死档的处置定拍（**不补段**） | `lib.rs`、`tests_u2.rs`、`security_gate_tests.rs` | 补上参数段等于**把一条今天打不通的路由激活成新攻击面**，本批不做；只逐格点名读数，并在测试注释里写死规则：「一旦有人补段，该格期望码必须跟着改成 401」。测试判据用「模板里有无 `{}` 段」这条可机器复核的规则，而不是硬编码「9 条」——`assert_eq!(dead, 9)` 只钉数量，判据本身仍是段数比对 |
+| 判据见证段（非恒真自证，本批新增） | 同上 | 缺陷 16／17／18 各配正向见证（`appdict_data_write`、`workcompleted_list_count_..._core`、`provider_login`／`set_topic_flag`、`check_owner`、`u2_attachment_guard`／6 条死档行），缺陷 18 另配**反向**见证（4 条必须保持可达的活档，含 `POST /data/job/{job}/mockputtopost` 与 correlation `unlink`），不齐即 `process.exitCode = 1`。这一格是补前十批的方法学缺口：只看一次读数无法证明「修尺子」本身成立，也没有一支尺能量出「尺子退化」 |
+| 旧契约断言返工（改判据不动门槛） | `crates/processplatform_assemble_surface/src/tests_u2.rs` | `u2r_data_job_pathn_extraction_contract` 写档改成逐格点名：`POST /j-1/mockputtopost` 必须 401（活档＋门在 SQL 前），`GET /job/mockputtopost` 必须 500（死档，且在注释里写明它 500 不是门失效而是入口到不了）。`u2r_data_workcompleted_pathn_legacy_shape_extraction_contract` 两格只读 500、三格别名 401。放宽成「500 或 401 都算过」会让「别名漏注册」「门被摘掉」两种红同时读成绿，故拒绝 |
+| 新增测试臂 4 支 | `crates/processplatform_assemble_surface/src/security_gate_tests.rs` | 注册点由 `routes.rs` 机器枚举成 36 行 `ppc_alias_routes()` 并 `assert_eq!(v.len(), 36)`（增减当场红，注释按 handler 分组）。① `surface_ppc_alias_writes_reject_anonymous`：27 活格 401 + 9 死格 500 + `dead == 9`；② `surface_data_workcompleted_touch_alias_owner_gate_lands`、③ `surface_data_job_touch_alias_owner_gate_lands`（DB：他人 403 且 `xupdateTime` 哨兵 `'r50-before'` 不变 / 本人 200 且哨兵确实被改写 / 空归属行普通会话 403、admin 200）；④ `surface_ppc_alias_admin_passes_all_registrations`（admin 打 36 档不得出现 401·403，防门夹死放行侧）。造行按迁移 032 兜底建表（两张表 `"id" TEXT PRIMARY KEY` + `xid/xcreatorPerson/xcreateTime/xupdateTime` 全 TEXT，handler 放行后回读 `xcreateTime`，建表漏它就测不到那条回读） |
+
 ## 四、验证
 
 
@@ -730,6 +748,75 @@ cd oa4rust/backend && cargo test --lib -p <crate>
   本项初稿把 `write_routes_ungated` 记成 1138，与同段自述的 R4 14 + R7 1121 相加不自洽，
   那 2 行差来自 tranche 2/3 尚未全部落盘时的中间态计数；提交前按重跑读数订正。
 
+第十一批（§三.11）读数：
+
+- **三跑对账**（本批同时动了代码和尺子两处，所以基准必须拆成两条轴各跑一次；跑法是
+  `git worktree add --detach` 出一个 HEAD 临时工作树，分别用 HEAD 尺与新版尺各跑一遍，
+  产物按 `(crate, method, path, handler)` 配对，跑完 `git worktree remove` 收掉）：
+
+  | 跑次 | 代码态 | 尺子态 | R5 | R6 | R7 | R9 | GET 写 | 真落笔行动面 | 间接门禁 |
+  | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+  | A | HEAD（第十批收口） | HEAD | 643 | 310 | 1121 | — | 150 | 444 | 12 |
+  | B | HEAD | 本批（16/17/18） | 645 | 301 | 1118 | 10 | 228 | 647 | 37 |
+  | C | 工作树（本批加门） | 本批 | 671 | 301−0=301 | 1092 | 10 | 227 | **621** | 37 |
+
+  **A 复跑与第十批在册读数一字不差**（R5 643 / R6 310 / R7 1121 / GET 150 / 间接门禁 12），
+  说明这把尺在同一份代码上是可复算的，不是每次跑出一个新数。
+  三跑之间矩阵**键数 2233 / 2233 / 2233，两侧 keyDiff=0**（矩阵 2237 行 − 4 组重注关键：
+  `ai_assemble_control` 3 条 + `bbs` `POST /api/bbs/subject/create` 各注册两处，按四元组配对时并成一键，
+  故按键统计比按行统计少 4；这条差异是既有形状，不是本批引入）。
+- **修尺 ≠ 修洞，两轴分开记**：
+  ① **尺子轴 A→B：14 行换桶，零代码改动**。其中 10 行进新桶 R9（缺陷 18 认出死档：
+  `file_assemble_control` 5 条写方法档、`portal_assemble_surface` 3 条、`program_center` 2 条），
+  另 4 行 R6→R5（缺陷 17 认出 cms `data_document_{create,update,delete,mockputtopost}` 的门在
+  helper 的第二层里且拒判经尾位置 `.await` 传播）。
+  ② **代码轴 B→C：26 行 R7→R5**，恰好是本批加门的 27 条活注册点里挂在写方法上的 26 条
+  （9 job POST + 9 workcompleted POST + 8 workcompleted PUT），另 1 条是
+  `GET /data/workcompleted/mockputtopost/{id}`，它落在 GET 段：GET 写 228 → **227**，−1 就是它。
+  GET 段的 A→B 净 +78 由两笔反向的改动合成——缺陷 16／17 让 GET 段第一次看见 helper 内的写（正向），
+  缺陷 18 把 5 条 GET 死档出列（负向，实测：临时把 `isDeadAlias` 恒假，同码同尺读回 232）；
+  正向那一笔的精确值本批没有单独拆量，只保证净差可复算。
+- **行动面分母（选题用）**：三向拆分的闭合断言仍成立（`写 + 只读 + 不可解析 == 桶总数`）。
+  A：**444** = R4 3 + R6 123 + R7 318；B：647 = 5 + 272 + 370；C：**621** = R4 5 + R6 272 + R7 344。
+  也就是**本批把洞修掉 26 条，但尺子新暴露出 203 条此前看不见的落笔面**——这个数字涨不是变坏，
+  是「原来量不到」。只读挂写方法同步从 999 收成 **784**（R7 748 + R6 29 + R4 7）。
+  按 crate 排的真落笔无门禁面（矩阵行计 623，去重后 621，多的 2 行是那 4 组重注关键里的写面）：
+  `cms_assemble_control` 86、`processplatform_assemble_surface` 83、`program_center` 53、
+  `query_assemble_designer` 44、`processplatform_service_processing` 43、`attendance_assemble_control` 39、
+  `query_assemble_surface` 38、`message_assemble_communicate` 37、`meeting_assemble_control` 26、
+  `file_assemble_control` 21（余 12 个 crate 长尾，见 §五）。
+- **匿名写行动面 A1 从 3 条涨到 9 条并已钉成点名名单**（缺陷 16 的副产品）：新增 6 条全部是
+  「写 SQL 在 helper 里、handler 本体只转发」的匿名入口——OAuth 三方登录 4 条经
+  `provider_login` / `oauth_code_store`，密码重置 2 条经 `apply_reset`。**它们是否算洞本批未定拍**
+  （三方登录回写与匿名重置按 o2server 语义本就要求匿名可达），名单里逐条在册，进 §五。
+  尺子的 A1 断言现读「实测 9 条 / 名单 9 条」，多一条少一条都红。
+- **判据见证（本批新增的尺子自证段）**：现读「缺陷 16 3 条 / 缺陷 17 3 条 / 缺陷 18 正向 6 条 +
+  反向 4 条，**缺口 0 处**」；不齐即 `process.exitCode = 1`。
+  字节级注入臂逐臂点名（`/d/tmp/arms_ruler.mjs`，每臂一进程、跑完逐字节复原并断言 sha256 与进入时一致）：
+  E16 摘 `awaitCall` → 缺口 4 处、尺子退 1；E17 把递归压回 0 层 → 缺口 3 处；
+  E18 正向把 `isDeadAlias` 恒假 → 死档 0 条、缺口 6 处；
+  **E18 反向把尾逗号算成一段 → 死档 152 条**、反向见证当场点名 correlation `unlink` 被误判；
+  对照臂（无害注释）仍绿、缺口 0。四臂全部「注入即红」，证明这三处修的是判据而不是读数。
+- **加门臂的注入取证**（`/d/tmp/arms_code.mjs`，同样逐臂复原 + sha256 相等）：
+  G1 摘 job 族 9 把门 → 离线臂点名 9 条 POST 档全部 **200 OK**（本机 PG 在跑，即匿名真落笔）；
+  G2 摘 workcompleted 族 9 把门 → 点名 18 条（9 POST + 8 PUT + 1 GET）全部 200；
+  G3/G4 走 DB 臂 → `assertion left == right failed: 他人会话 touch 他人 job|workcompleted 必须 403，left: 200`，
+  即门一摘，他人归属校验连带失效（时间戳被改写）；对照臂仍绿。
+  复原后整族复跑：注入残迹检查 `grep -c "let _ = session; /* 注入臂"` = **0**，门计数 9 + 9 复原。
+- **测试读数**（一律看 `test result` 行，不信管道退出码；`--ignored` 整族跑）：
+  `processplatform_assemble_surface --lib` **609 passed / 0 failed / 7 ignored**，
+  `-- --ignored` **7 passed / 0 failed / 无 `skip:`**（本批 +2 支离线臂引用、+4 支臂，其中 3 支 DB）；
+  `parity`（过滤本 crate 路由存在性族）**945 passed / 0 failed**——加门未破路由存在性对账；
+  `openapi` 整族**跑不了**：`cargo test -p openapi` 在本机撞 `error calling dlltool 'dlltool.exe': program not found`
+  （`windows-sys` 构建依赖，非本批改动引起），该 crate 的契约面本批**未取得读数**，不记为通过。
+  尺子退出码 0。DB 臂放行侧落库读数：job `xupdateTime` = `2026-10-14 18:16:55.00026+00`、
+  workcompleted = `…55.000202+00`（对照 work 族 `…55.000297+00`），仍是写进 TEXT 列的时间文本（第十批「被否证的类型猜测」同型）。
+- **产物刷新八张**（行数含表头）：`write_routes_matrix` 2238（= 2237 条）/ `write_routes_ungated` 1107
+  （= R4 14 + R7 1092 + 表头，闭合）/ `write_routes_get_writes` 228 / `write_routes_readonly_on_writemethod` 785 /
+  `write_routes_indirect_gated` 38 / `write_routes_indirect_writes` 320 / **新** `routes_dead_alias` 25 /
+  `anonymous_write_routes` 173。
+  落盘顺序按第十批教训排：间接写、间接门禁、死档三段都在所有分桶段之后，GET 段往里追加的条目不会再丢。
+
 ## 五、处置与遗留（下一轮入口）
 
 - 已修并验证：N1、N4-01、N2、preview 加固、F3、F6、F9（离线 403/会话权威断言）、F2（编译与既有测试绿，真门 `#[ignore]` 待 PG）、**A2-F12、A3-N1、A3-N2、A3-N3**（第二批读数见 §四）、**A3-N6（program_init 7 把写收 admin + 匿名 init 判定改 fail-closed）、R4-6、R4-1 全 13 把**（第三批：§三.3 改法、§四 读数，其中 processing/core_express/program_init 的 DB 臂已按 `--ignored --nocapture` 真跑取证）、**R4-2 批 1 + 批 2a 共 29 把**（第四批：§三.4 / §四第四批）、**R4-7**（第五批：§三.5 / §四第五批，含尺子两处计量缺陷 + 门禁词表缺陷的自修）、**R4-2 批 3：processing 两把 touch + surface 四把 touch 路由**（第六批：§三.6 / §四第六批，DB 臂已 `--ignored --nocapture` 真跑取到「闯入者 403 且零留痕、发起人放行且 creator 落本人」的行为差）。
@@ -935,5 +1022,76 @@ cd oa4rust/backend && cargo test --lib -p <crate>
   提交前订正：pssvc 两把 handler 的 `axum::extract::Path` 参数行曾被我的插入脚本写丢 4 空格缩进，
   已复原并重跑 `--lib`（67/0/14）与 `-- --ignored`（14/0、`skip:` 计数 0）与尺子（EXIT=0、
   R1 145 / R4 14 / R5 643 / R6 310 / R7 1121（真落笔 318）/ GET 写 150 全部与加门后读数一致）。
+  共享工作树上并行会话的在制品未被本批收走。本轮未 push。
+
+### 第十一批收口后的刷新（§三.11 / §四 第十一批读数）
+
+- **已修并验证**：**18 把 handler / 36 条注册点加门**——surface `data_workcompleted_id*_mockputtopost` 9 把
+  （1 条 GET `data/workcompleted/mockputtopost/{id}` + 9 条 POST + 8 条 PUT）与
+  `data_job_job*_mockputtopost` 9 把（9 条 POST 活档 + 9 条 GET 字面量死档），
+  门一律 `u4_require_ppc_actor(pool, session, "PP_C_WORKCOMPLETED" | "PP_C_JOB", &id)`——
+  由第十批的 `u4_require_work_actor` 泛化（换表名即可复用，那笔泛化的判断在本批兑现）。
+  代码轴净迁移 **26 行 R7→R5、键集零差**（`keyDiff = 0`）；测试见 §四 第十一批读数
+  （surface `--lib` 609/0/7、`-- --ignored` 7/0 无 `skip:`、parity 过滤 945/0）。
+- **三跑对账的读法（尺子轴与代码轴必须分开，见 §四 那张 A/B/C 表）**：
+  A（HEAD 码 + HEAD 尺）真落笔 444 → B（HEAD 码 + 新尺）647 → C（工作树码 + 新尺）**621**。
+  B→C 的 −26 才是本批代码收掉的门；A→B 的 +203 全部是「尺子多看见了」
+  （缺陷 16 把 helper 转调落笔算进来、缺陷 17 重划 R6/R7、缺陷 18 把 24 条死档出列）。
+  **今后引用「未门禁写面」必须先说明用的是哪把尺**，尺子轴的涨幅不能被读成「漏洞变多了」。
+- **下一轮入口（按 §四 C 跑那张 621 条真落笔的 crate 表排，不再按 crate 名或 handler 名顺序猜）**：
+  `cms_assemble_control` **86** → `processplatform_assemble_surface` **83** → `program_center` **53** →
+  `query_assemble_designer` **44** → `processplatform_service_processing` **43** → `attendance_assemble_control` **39** →
+  `query_assemble_surface` **38** → `message_assemble_communicate` **37** → `meeting_assemble_control` **26** →
+  `file_assemble_control` **21**，其后 `cms_core_entity` 15、`processplatform_assemble_designer` 15，
+  余 27 个 crate 共 121 条（`calendar` / `mind` / `organization` 各 13、`general` 11、`bbs` / `jpush` 各 9 为长尾前列）。
+  - **surface 那 83 条的内部形状已量出**（R6 29 / R7 54）：`attachment_u2b` 族 **24** 是本批之后的最大族，
+    其后 `read_id` 8、`task_id` 8、`work_id` 5、`work_v2` 5、`task_v2` 4、`taskcompleted_id` 3，
+    其余 20 个前缀各 1~2。
+    第十批 §五 预测的「`data_workcompleted` 17 + `data_job` 9 = 26 条首选」**已兑现并归零**：
+    这两族的 `mockputtopost` 写面全部出列，剩下的 `data_job_job*` / `data_workcompleted_id*` PUT 字面档
+    体内是读、挂在写方法上（11 条，落在 `write_routes_readonly_on_writemethod.tsv`），**给它们加门是假修**。
+  - **cms 那 86 条里 `surface_appdict` 一族占 32**，与下格「宏模板作证」是同一块地——**先修尺子再动 cms**。
+- **新开与沿用的待拍格（本批评证出、本批未动）**：
+  1. **A1 真匿名写 9 条到底算不算洞**（逐条在 `anonymous_write_routes.tsv`）：`auth` 的
+     `POST /api/authentication`、`POST /api/authentication/login`，4 条 OAuth（`oauth_login_qywx` /
+     `oauth_login_dingding` / `oauth_login_name` / `oauth_bind_name`），`personal` 的
+     `PUT /api/reset`、`POST /api/reset/password/anonymous`、`POST /api/person/regist`。
+     其中 **6 条是「helper 转调型」**（OAuth 4 条经 `provider_login` / `oauth_code_store`、密码重置 2 条经 `apply_reset`），
+     体内看不见写 SQL 但确实落笔——这是缺陷 16 让它们出列的。
+     **匿名登录 / 注册 / 重置本来就是匿名入口，加门是错的**；真正要拍的是**限流、验证码、一次性凭据与浏览器会话绑定**，
+     属另一族控制，不在本审计的门禁口径内。本批把 A1 从 3 修到 9 是尺子变严，**不是新洞**。
+     另 2 条 `A1-条件匿名`（`program_init` `POST /api/secret/set`、`GET /api/secret/set/cancel`）只在未初始化窗口可达，
+     第七批双锁已盖住「初始化之后」，剩余风险是「窗口内抢注」。
+  2. **宏模板 handler 的门禁作证仍不计分（候选缺陷 19）**：缺陷 13 让「体内写 SQL 信号」能取自 `macro_rules!` 模板（121 条），
+     但缺陷 15/17 的**门禁**判据只在展开后的 fn 体内找，宏模板里的 `require_*` 不作证。
+     若这一格成立，cms `surface_appdict` 32 条里会有相当一部分本就是「有门但尺子不认」的假红；
+     **做 cms 之前先修这一格**，否则会白加 32 道门。
+  3. **24 条死档（缺陷 18）的处置**：逐条在 `routes_dead_alias.tsv`，形状是「签名要 N 个 `Path` 段、注册路径 0 段」。
+     本批定拍**不补段**（补段等于激活一条新攻击面）。
+     风险是日后有人「顺手补齐参数段」把它变成活档——现只有 surface 匿名臂里的 `assert_eq!(dead, 9)` 覆盖本批两族，
+     **全 24 条 needs 一支独立守卫**（可挂在 parity 族或尺子的 `DEAD_ALIAS_WITNESSES` 上）。
+  4. **784 条「只读挂写方法」**：沿用第十批那格。数字从 999 降到 784 是缺陷 16/18 重新划桶的结果，
+     **不代表收了 215 条洞**；修法是把读挂回 GET 或让写方法显式 405，涉及前端调用面，需按 crate 分批。
+  5. **沿用 §五 前批名单、本批未动**：`NOW()` 写进 TEXT 列的语义分歧 79 处；门禁入口两族并存
+     （强制 `Extension<Session>` 裸 router 500 vs `Option<…>` + `require_*_opt` 401——本批 3 处新门一律走后者，
+     理由是 401 那一路离线可证）；`shared/src/crud.rs` 的 CrudSpec 无归属校验；
+     `assert_eq!(status, 500)` 断言族 272 处（把「死档 / 未接线」读成「预期行为」）；correlation 读侧 IDOR；
+     F5 / F7 / F8 / F10；N4-02 / N4-03。
+- **本轮三处自伤与教训（记下防再犯）**：
+  ① **注入臂的产物会污染在册产物**：摘掉缺陷 18 判据那次注入跑把 `routes_dead_alias.tsv` 重写成「只剩表头」。
+  若提交前不复跑，就会把**注入态的尺子输出**当基线产物提交（本批实际差一点发生）。
+  **纪律**：注入跑之后、提交之前，必须用干净工作树重跑尺子，并逐张与 run C 存档比 md5——
+  本批八张产物现已全部逐字节一致。
+  ② **9 条 GET job 档读出 500 时，第一反应是放宽断言**。正解是靠一支打印 body 的临时探针臂定性
+  （`Wrong number of path arguments for \`Path\``），再把它升格成尺子的缺陷 18 判据；
+  探针臂用完即删，不把「打印型测试」留在库里。
+  ③ **本机 `cargo check -p <crate>` 与 `cargo test -p openapi` 撞 `error calling dlltool 'dlltool.exe': program not found`**
+  （`windows-sys` / getrandom 构建脚本），可用验证路径只有 `cargo test --lib -p <crate>`。
+  **`openapi` 契约本批未取得读数**，故只记「未取读数」，不记通过。
+- 提交落点：本批代码（18 把加门 + helper 泛化 + 尺子缺陷 16/17/18 + 判据见证段 + 契约逐格返工 + 4 支新测试臂 + 八张产物）
+  为 `ccf07c5c3`，与本文档（§三.11 / §四 第十一批读数 / 本节）分两笔，本节即第二笔并回填该 hash。
+  第二笔提交前用干净工作树重跑尺子（EXIT=0、R1 145 / R2 3 / R4 14 / R5 671 / R6 301 / R7 1092 / R8 1 / R9 10 = 2237、
+  GET 写 227、真落笔 621、只读挂写 784、A1 实测 9 / 名单 9、见证缺口 0），八张产物与 run C 存档逐字节一致（md5 全等）
+  后才提交——这一步揪出了上格 ①：注入跑曾把 `routes_dead_alias.tsv` 写成只剩表头。
   共享工作树上并行会话的在制品未被本批收走。本轮未 push。
 
