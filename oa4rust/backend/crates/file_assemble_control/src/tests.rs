@@ -541,6 +541,84 @@ mod tests {
         assert!(crate::docx_to_html(&bytes).is_none());
     }
 
+    /// 四轮安全审计 N1 回归：段落数上限必须生效且恰好输出 `DOCX_MAX_PARAGRAPHS` 个，
+    /// 超出的段落不得渲染（无上限时百 MB 级输入会产出行数无界的 HTML）。
+    #[test]
+    fn test_docx_to_html_caps_paragraph_count() {
+        let mut xml = String::from("<w:document><w:body>");
+        for i in 0..(crate::DOCX_MAX_PARAGRAPHS + 50) {
+            xml.push_str(&format!("<w:p><w:r><w:t>P{i}</w:t></w:r></w:p>"));
+        }
+        xml.push_str("</w:body></w:document>");
+        let html = crate::docx_to_html(&build_docx(&xml)).expect("docx should parse");
+        assert_eq!(
+            html.matches("<p>").count(),
+            crate::DOCX_MAX_PARAGRAPHS,
+            "段落数必须恰好截断在上限"
+        );
+        assert!(html.contains("<p>P0</p>"));
+        assert!(
+            !html.contains(&format!("<p>P{}</p>", crate::DOCX_MAX_PARAGRAPHS)),
+            "上限之后的段落不得输出"
+        );
+    }
+
+    /// 四轮安全审计 N1 回归：zip 炸弹（高压缩比 document.xml）不得让解压结果
+    /// 超出 `DOCX_MAX_XML_BYTES`。断言方式是「输出规模有界」——HTML 段落数仍受
+    /// 段落上限约束、体积不随解压字节线性膨胀，且全程不 panic。
+    #[test]
+    fn test_docx_to_html_caps_decompressed_size() {
+        // ~8 MiB 纯 ASCII XML（远超 4 MiB 读取上限），压缩后体量极小
+        let filler = "A".repeat(2000);
+        let mut xml = String::with_capacity(9 * 1024 * 1024);
+        xml.push_str("<w:document><w:body>");
+        for _ in 0..5000 {
+            xml.push_str("<w:p><w:r><w:t>");
+            xml.push_str(&filler);
+            xml.push_str("</w:t></w:r></w:p>");
+        }
+        xml.push_str("</w:body></w:document>");
+        assert!(xml.len() > crate::DOCX_MAX_XML_BYTES as usize * 2);
+        let bytes = build_docx(&xml);
+        let html = crate::docx_to_html(&bytes).expect("bounded read should still parse");
+        assert_eq!(
+            html.matches("<p>").count(),
+            crate::DOCX_MAX_PARAGRAPHS,
+            "zip 炸弹下段落数仍受上限约束"
+        );
+        assert!(
+            html.len() <= (crate::DOCX_MAX_PARAGRAPHS + 1) * (filler.len() + 8),
+            "HTML 输出规模必须有界，got {}",
+            html.len()
+        );
+    }
+
+    /// 四轮安全审计 N4-01 回归：`read_zip_entry`（XLSX sharedStrings / PPTX 每张 slide
+    /// 都经它）必须有解压字节上限。`XLSX_MAX_ROWS` / `PPTX_MAX_SLIDES` 只限制解压后的
+    /// 输出规模，不限制驻留内存，故上限只能落在本函数。
+    #[test]
+    fn test_read_zip_entry_caps_decompressed_size() {
+        use std::io::Write;
+        let payload = "B".repeat(9 * 1024 * 1024);
+        let mut buf = std::io::Cursor::new(Vec::new());
+        {
+            let mut zip = zip::ZipWriter::new(&mut buf);
+            zip.start_file(
+                "xl/sharedStrings.xml",
+                zip::write::SimpleFileOptions::default(),
+            )
+            .unwrap();
+            zip.write_all(payload.as_bytes()).unwrap();
+            zip.finish().unwrap();
+        }
+        let bytes = buf.into_inner();
+        let mut archive = zip::ZipArchive::new(std::io::Cursor::new(bytes.as_slice())).unwrap();
+        let s = crate::read_zip_entry(&mut archive, "xl/sharedStrings.xml")
+            .expect("entry should read");
+        assert_eq!(s.len(), crate::ZIP_ENTRY_MAX_BYTES as usize, "必须截断在上限");
+        assert!(s.len() < payload.len(), "解压结果不得等于源条目大小");
+    }
+
     #[ignore = "requires a running PostgreSQL server"]
     #[tokio::test]
     async fn test_get_anonymous_file_id_download_stream() {
