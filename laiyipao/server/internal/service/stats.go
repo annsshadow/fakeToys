@@ -290,9 +290,28 @@ func (s *Service) AdminListUsers(ctx context.Context, keyword string, limit, off
 	escaped := strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`).Replace(kw)
 	pattern := "%" + escaped + "%"
 
+	// ⚠️ 搜索**只打 nickname，不再打 guest_token**（2026-10-14 安全审计轮）。
+	//
+	// `guest_token` 是与口令同级的凭证 —— 实测：给出同一个 `guest_token`
+	// 调 `POST /auth/guest` 就能拿到该账号的 access + refresh token。
+	// 让它在后台可搜索，意味着：
+	//
+	//  1. **凭证进了运营的检索面。** 后台账号被盗用（令牌被读走，
+	//     或后台被点击劫持诱导操作 —— 见 httpapi.securityHeaders）
+	//     时，攻击者立刻获得「批量列出所有玩家凭证」的能力 ——
+	//     而运营自己根本不需要它。
+	//  2. **凭证进了审计轨迹与截图。** 运营查一个疑似作弊玩家时
+	//     很容易把这一列连同搜索词复制到工单/群里。
+	//
+	// 而它对运营的价值接近于零：真要处理某个玩家，用 nickname 或
+	// user_id 就够了 —— 后台列表两列都有。
+	//
+	// ⚠️ 这**不是**一个「顺便也加上」的改法：它让一条既有功能消失，
+	// 所以必须同时说清楚「谁因此失去了什么」——见下面 `TestAdminSearchNeverMatchesGuestToken`
+	// 的断言，它守的正是「这一列不再可检索」这条新不变式。
 	var total int64
 	if err := s.pool.QueryRow(ctx,
-		`SELECT COUNT(*) FROM users WHERE $1 = '%%' OR nickname LIKE $2 ESCAPE '\'::char OR guest_token LIKE $2 ESCAPE '\'::char`,
+		`SELECT COUNT(*) FROM users WHERE $1 = '%%' OR nickname LIKE $2 ESCAPE '\'::char`,
 		pattern, pattern).Scan(&total); err != nil {
 		return nil, 0, fmt.Errorf("count users: %w", err)
 	}
@@ -325,7 +344,7 @@ func (s *Service) AdminListUsers(ctx context.Context, keyword string, limit, off
 			JOIN battle_records br ON br.id = rv.battle_id
 			GROUP BY br.user_id
 		) v ON v.user_id = u.id
-		WHERE $1 = '%%' OR u.nickname LIKE $1 ESCAPE '\'::char OR u.guest_token LIKE $1 ESCAPE '\'::char
+		WHERE $1 = '%%' OR u.nickname LIKE $1 ESCAPE '\'::char
 		ORDER BY u.id DESC LIMIT $2 OFFSET $3`, pattern, limit, offset)
 	if err != nil {
 		return nil, 0, fmt.Errorf("list users: %w", err)
