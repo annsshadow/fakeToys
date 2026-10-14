@@ -146,7 +146,8 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+        // 路由存在且已先过会话门（四轮 R4-1）：无会话 401，不再直穿到 DB 层报 500。
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
     }
 
     #[tokio::test]
@@ -165,7 +166,8 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+        // 同 execute：取消他人实例是归属写，路由存在且先过会话门 → 无会话 401。
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
     }
 
     #[tokio::test]
@@ -296,26 +298,33 @@ mod tests {
                 .await;
         }
 
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri(format!("/api/work/{}/start", work_id))
-                    .method(Method::POST)
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-
-        assert_eq!(response.status(), StatusCode::OK);
-
-        let bytes = axum::body::to_bytes(response.into_body(), 4096)
-            .await
-            .unwrap();
-        let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        // 四轮 R4-1 之后 work 启动要过「会话 + 发起人」双门：router 只 layer 了 Pool，
+        // 走 HTTP 臂必然 401，故此处按 handler 直调，会话人与 seed 的 creator 同名以取放行分支。
+        let resp = crate::work_start(
+            axum::extract::Extension(pool.clone()),
+            Some(axum::extract::Extension(shared::testing::test_session("system"))),
+            axum::extract::Path(work_id.to_string()),
+        )
+        .await
+        .expect("发起人启动自己的 work 应放行");
+        let json = serde_json::to_value(&resp.0).unwrap();
         assert_eq!(json["type"], "success");
         assert_eq!(json["data"]["status"], "processing");
+
+        let client = client.expect("db client");
+        let status: String = client
+            .query_one("SELECT work_status FROM x_work WHERE id = $1", &[&work_id])
+            .await
+            .unwrap()
+            .get("work_status");
+        assert_eq!(status, "processing", "启动状态必须落库");
+
+        // 启动会建 Start Event 任务，收尾删净避免重复运行时任务无限堆积
+        let removed = client
+            .execute("DELETE FROM x_task WHERE work = $1", &[&work_id])
+            .await
+            .unwrap();
+        assert!(removed >= 1, "启动必须创建 Start Event 任务，实删 {removed} 行");
     }
 }
 
