@@ -78,5 +78,5 @@ related_components:
 
 ## Related
 
-- 计划：`docs/plans/2026-09-21-001-audit-augmentor-fullstack-optimization-plan.md`（F1-F5、F12、F13、Phase 0 执行状态与偏差登记）
+- 计划：`docs/archived-plans/2026-09-21-001-audit-augmentor-fullstack-optimization-plan.md`（F1-F5、F12、F13、Phase 0 执行状态与偏差登记）
 - 测试卫生：`../best-practices/test-hygiene-ast-triage-and-coverage-traps.md`

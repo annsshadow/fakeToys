@@ -149,5 +149,5 @@ Get-ChildItem docs/oa4rust/modules/o2web/*.md | ForEach-Object {
 
 - **Script:** `docs/oa4rust/scripts/generate_cards.py`
 - **Template:** `docs/oa4rust/templates/component-card.md`
-- **Plan:** `docs/plans/2026-08-03-001-feat-oa-project-documentation-plan.md` (U3, U4)
-- **Completion:** `docs/plans/2026-08-10-001-prod-readiness-plan.md` (U4, U5)
+- **Plan:** `docs/archived-plans/2026-08-03-001-feat-oa-project-documentation-plan.md` (U3, U4)
+- **Completion:** `docs/archived-plans/2026-08-10-001-prod-readiness-plan.md` (U4, U5)

@@ -87,6 +87,6 @@ cosmic-ray 默认算子集（尤其 `NumberReplacer`、`ReplaceBinaryOperator_*`
 
 ## Related
 
-- 计划：`docs/plans/2026-09-21-001-audit-augmentor-fullstack-optimization-plan.md`（T1.4 及「工具链上的一个坑」「发现 1/2/3」）
+- 计划：`docs/archived-plans/2026-09-21-001-audit-augmentor-fullstack-optimization-plan.md`（T1.4 及「工具链上的一个坑」「发现 1/2/3」）
 - 测试卫生：`../best-practices/test-hygiene-ast-triage-and-coverage-traps.md`
 - API 契约断言模式：`../security-issues/api-path-whitelist-and-write-authz.md`（api.ts 测试写法）

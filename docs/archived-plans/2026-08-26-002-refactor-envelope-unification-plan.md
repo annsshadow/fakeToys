@@ -3,8 +3,8 @@ title: "refactor: 信封统一——消除 Rust/Java 响应结构差异"
 type: refactor
 status: superseded
 date: 2026-08-26
-origin: docs/plans/2026-08-26-001-feat-parity-convergence-phase2-plan.md
-superseded_by: docs/plans/2026-08-26-002-oa4rust-fail-closure-master-plan.md
+origin: docs/archived-plans/2026-08-26-001-feat-parity-convergence-phase2-plan.md
+superseded_by: docs/archived-plans/2026-08-26-002-oa4rust-fail-closure-master-plan.md
 ---
 
 # 信封统一——消除 Rust/Java 响应结构差异
@@ -283,7 +283,7 @@ ActionResult::java_success(data, count, size)
 
 ## Sources & References
 
-- Phase 2 plan: `docs/plans/2026-08-26-001-feat-parity-convergence-phase2-plan.md`
+- Phase 2 plan: `docs/archived-plans/2026-08-26-001-feat-parity-convergence-phase2-plan.md`
 - 包装模式战役: `docs/solutions/best-practices/oa4rust-o2server-parity-closure-campaign-2026-08-25.md`
 - ActionResult 契约: `docs/solutions/architecture-patterns/actionresult-9-field-contract.md`
 - 信封分析数据: `oa4rust/target/debug/behavior-report.md`（2026-08-26 运行）

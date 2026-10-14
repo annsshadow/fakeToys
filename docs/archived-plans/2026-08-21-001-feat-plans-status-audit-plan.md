@@ -49,7 +49,7 @@ origin: docs/brainstorms/2026-08-21-plans-status-audit-and-consolidation-require
 
 ### Relevant Code and Patterns
 
-- **frontmatter 约定**：字段序 title→type→status→date→origin；`type` 取值 feat/fix/refactor/analysis/plan；2 份无 frontmatter 文档需补建：`docs/plans/2026-08-17-bpmn-gate.md`、`docs/plans/2026-08-19-002-unified-completion-plan.md`
+- **frontmatter 约定**：字段序 title→type→status→date→origin；`type` 取值 feat/fix/refactor/analysis/plan；2 份无 frontmatter 文档需补建：`docs/archived-plans/2026-08-17-bpmn-gate.md`、`docs/archived-plans/2026-08-19-002-unified-completion-plan.md`
 - **当前状态分布**：completed×11、active×4、partially_completed×1（`2026-08-12-002`）、无 frontmatter×2
 - **验证证据面**：
   - 路由挂载：`oa4rust/src/main.rs` 全文件约 88 处 `.merge()`（`create_app()` 为主体；empower 特例为双重模块路径，354 行起）
@@ -110,10 +110,10 @@ origin: docs/brainstorms/2026-08-21-plans-status-audit-and-consolidation-require
 **Dependencies:** None
 
 **Files:**
-- Modify: `docs/plans/2026-08-17-bpmn-gate.md`（补建 frontmatter）
-- Modify: `docs/plans/2026-08-19-001-fix-close-all-blocking-gaps-plan.md`（现 active）
-- Modify: `docs/plans/2026-08-19-002-unified-completion-plan.md`（补建 frontmatter）
-- Modify: `docs/plans/2026-08-20-001-feat-oa4rust-remaining-gap-closure-plan.md`
+- Modify: `docs/archived-plans/2026-08-17-bpmn-gate.md`（补建 frontmatter）
+- Modify: `docs/archived-plans/2026-08-19-001-fix-close-all-blocking-gaps-plan.md`（现 active）
+- Modify: `docs/archived-plans/2026-08-19-002-unified-completion-plan.md`（补建 frontmatter）
+- Modify: `docs/archived-plans/2026-08-20-001-feat-oa4rust-remaining-gap-closure-plan.md`
 
 **Approach:**
 - 逐单元对照代码库：U1 行为对比测试条件执行（查 `tests/behavior_compare.rs` 的环境变量守卫）、U2 crate 挂载（查 `src/main.rs` merge 列表）、U3 handler 测试（查 `tests_generated.rs` 数量）、U4 端点对齐度（git log 显示 08-21 达 36.6%，目标 ≥70% 未达）、U5 文档填充（抽查模块卡片 REST Endpoints 字段）
@@ -140,12 +140,12 @@ origin: docs/brainstorms/2026-08-21-plans-status-audit-and-consolidation-require
 **Dependencies:** None
 
 **Files:**
-- Modify: `docs/plans/2026-08-12-001-fix-oa4rust-final-gap-closure-plan.md`（现 active）
-- Modify: `docs/plans/2026-08-12-002-feat-oa4rust-audit-and-test-coverage-plan.md`（partially_completed → 归一）
-- Modify: `docs/plans/2026-08-13-001-feat-handler-test-coverage-99-plan.md`
-- Modify: `docs/plans/2026-08-13-001-feat-oa4rust-seaorm-entity-parity.md`
-- Modify: `docs/plans/2026-08-13-002-oa4rust-o2server-parity-analysis.md`
-- Modify: `docs/plans/2026-08-13-003-oa4rust-completion-plan.md`（现 active）
+- Modify: `docs/archived-plans/2026-08-12-001-fix-oa4rust-final-gap-closure-plan.md`（现 active）
+- Modify: `docs/archived-plans/2026-08-12-002-feat-oa4rust-audit-and-test-coverage-plan.md`（partially_completed → 归一）
+- Modify: `docs/archived-plans/2026-08-13-001-feat-handler-test-coverage-99-plan.md`
+- Modify: `docs/archived-plans/2026-08-13-001-feat-oa4rust-seaorm-entity-parity.md`
+- Modify: `docs/archived-plans/2026-08-13-002-oa4rust-o2server-parity-analysis.md`
+- Modify: `docs/archived-plans/2026-08-13-003-oa4rust-completion-plan.md`（现 active）
 
 **Approach:**
 - 单元级静态核查 + `docs/solutions/` 的 `Related → Plan:` 反向索引旁证
@@ -172,14 +172,14 @@ origin: docs/brainstorms/2026-08-21-plans-status-audit-and-consolidation-require
 **Dependencies:** None
 
 **Files:**
-- Modify: `docs/plans/2026-08-08-001-feat-multi-axis-quality-plan.md`（现 active）
-- Modify: `docs/plans/2026-08-10-001-feat-oa4rust-gap-audit-plan.md`
-- Modify: `docs/plans/2026-08-10-002-feat-oa4rust-auth-provider-closure-plan.md`
-- Modify: `docs/plans/2026-08-10-002-fix-oa4rust-gap-closure-plan.md`
-- Modify: `docs/plans/2026-08-11-001-feat-oa4rust-full-gap-closure-plan.md`
-- Modify: `docs/plans/2026-08-11-002-feat-oa4rust-core-modules-gap-closure-plan.md`
-- Modify: `docs/plans/2026-08-11-003-feat-oa4rust-api-gap-closure-plan.md`
-- Modify: `docs/plans/2026-08-11-004-feat-oa4rust-remaining-gap-closure-plan.md`
+- Modify: `docs/archived-plans/2026-08-08-001-feat-multi-axis-quality-plan.md`（现 active）
+- Modify: `docs/archived-plans/2026-08-10-001-feat-oa4rust-gap-audit-plan.md`
+- Modify: `docs/archived-plans/2026-08-10-002-feat-oa4rust-auth-provider-closure-plan.md`
+- Modify: `docs/archived-plans/2026-08-10-002-fix-oa4rust-gap-closure-plan.md`
+- Modify: `docs/archived-plans/2026-08-11-001-feat-oa4rust-full-gap-closure-plan.md`
+- Modify: `docs/archived-plans/2026-08-11-002-feat-oa4rust-core-modules-gap-closure-plan.md`
+- Modify: `docs/archived-plans/2026-08-11-003-feat-oa4rust-api-gap-closure-plan.md`
+- Modify: `docs/archived-plans/2026-08-11-004-feat-oa4rust-remaining-gap-closure-plan.md`
 
 **Approach:**
 - 已标 completed 的 7 份：git 历史交叉验证 + 每份抽查 1-2 个代表性交付物（如认证模块文件、MCP 工具桥接产物）；发现不符时升级为代码级核查并记录差异
@@ -206,7 +206,7 @@ origin: docs/brainstorms/2026-08-21-plans-status-audit-and-consolidation-require
 **Dependencies:** U1, U2, U3
 
 **Files:**
-- Create: `docs/plans/2026-08-21-002-feat-remaining-work-consolidation-plan.md`
+- Create: `docs/archived-plans/2026-08-21-002-feat-remaining-work-consolidation-plan.md`
 
 **Approach:**
 - 内容三大来源：① 三批审计发现的未实现功能单元；② 各计划两类 Deferred 小节中未完成项；③ `docs/todo.md` 的 4 个 Linux 文档项（翻译校正、残余复核、链接审计、格式统一）
@@ -215,7 +215,7 @@ origin: docs/brainstorms/2026-08-21-plans-status-audit-and-consolidation-require
 - 新计划遵循标准计划模板（frontmatter、status: active、Summary、Implementation Units 等），使后续可直接进入 ce-work 执行
 
 **Patterns to follow:**
-- `docs/plans/2026-08-20-001-feat-oa4rust-remaining-gap-closure-plan.md` 的模板结构
+- `docs/archived-plans/2026-08-20-001-feat-oa4rust-remaining-gap-closure-plan.md` 的模板结构
 - `docs/solutions/best-practices/single-source-of-truth-migration-status.md` 的表格格式
 
 **Test scenarios:**
@@ -237,7 +237,7 @@ origin: docs/brainstorms/2026-08-21-plans-status-audit-and-consolidation-require
 
 **Files:**
 - Modify: `docs/todo.md`
-- Modify: `docs/plans/2026-08-21-001-feat-plans-status-audit-plan.md`（收尾翻转自身状态）
+- Modify: `docs/archived-plans/2026-08-21-001-feat-plans-status-audit-plan.md`（收尾翻转自身状态）
 
 **Approach:**
 - 内容迁出后将 `todo.md` 置为占位说明（指向新汇总计划），删除原有全部条目

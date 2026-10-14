@@ -224,5 +224,5 @@
 
 - **收官复盘：** `docs/solutions/best-practices/oa4rust-o2server-parity-closure-campaign-2026-08-25.md`
 - **残差需求（仍不能完全替代之处）：** `docs/brainstorms/2026-08-25-oa4rust-o2server-residual-gaps-requirements.md`
-- **执行计划（U2 收官、仍为 active）：** `docs/plans/2026-08-21-002-feat-remaining-work-consolidation-plan.md`
+- **执行计划（U2 收官、仍为 active）：** `docs/archived-plans/2026-08-21-002-feat-remaining-work-consolidation-plan.md`
 - **迁移状态单一真源方法：** `docs/solutions/best-practices/single-source-of-truth-migration-status.md`

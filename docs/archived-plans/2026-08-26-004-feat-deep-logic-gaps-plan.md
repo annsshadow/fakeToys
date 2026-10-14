@@ -3,8 +3,8 @@ title: "feat: 深层逻辑缺口补全（非 Express 模块）"
 type: feat
 status: superseded
 date: 2026-08-26
-origin: docs/plans/2026-08-26-001-feat-parity-convergence-phase2-plan.md
-superseded_by: docs/plans/2026-08-26-002-oa4rust-fail-closure-master-plan.md
+origin: docs/archived-plans/2026-08-26-001-feat-parity-convergence-phase2-plan.md
+superseded_by: docs/archived-plans/2026-08-26-002-oa4rust-fail-closure-master-plan.md
 ---
 
 # 深层逻辑缺口补全（非 Express 模块）

@@ -15,7 +15,7 @@ problem_type: architecture-design
 >
 > **2026-10-14 状态校准**：本架构设计已全部落地并演进——桌面视图 84 个（`oa4rust/frontend/apps/desktop/src/views/`，即本计划所述 oa4rust-web，现并入 `oa4rust/frontend` monorepo）、ProcessDesigner 已增至 11,829 行、移动端 16 页面、后端 96 crates；认证安全与工具链修订按 2026-09-09 注记由 `2026-09-09-001` 计划承接并落地（HttpOnly Cookie + Biome 2.5.11 均已验证在档）。
 >
-> **2026-09-09 安全与工具链修订：** 浏览器认证已由本计划最初的 JavaScript 可读 Bearer/token 设计迁移为服务端 `oa4rust_session` HttpOnly Cookie；刷新、OAuth/SSO 和路由恢复均以 current-user 为权威，不再持久化或从 URL 读取 token。Biome 与前端 QA 的后续规范由 `docs/plans/2026-09-09-001-refactor-httponly-cookie-cargo-audit-rustsec-db-biome-2-5-11-plan.md` 接管；本计划其余前端架构决策仍有效。
+> **2026-09-09 安全与工具链修订：** 浏览器认证已由本计划最初的 JavaScript 可读 Bearer/token 设计迁移为服务端 `oa4rust_session` HttpOnly Cookie；刷新、OAuth/SSO 和路由恢复均以 current-user 为权威，不再持久化或从 URL 读取 token。Biome 与前端 QA 的后续规范由 `docs/archived-plans/2026-09-09-001-refactor-httponly-cookie-cargo-audit-rustsec-db-biome-2-5-11-plan.md` 接管；本计划其余前端架构决策仍有效。
 
 ---
 

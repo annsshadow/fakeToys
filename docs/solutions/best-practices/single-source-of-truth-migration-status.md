@@ -118,6 +118,6 @@ Select-String -Path "crates/*/src/*.rs" -Pattern "assert!\(true\)" | Select-Obje
 - **Current authoritative parity source:** `docs/audits/2026-08-24-002-final-coverage-sweep.md` (99.77% as of 2026-08-23)
 - **Campaign retrospective:** `docs/solutions/best-practices/oa4rust-o2server-parity-closure-campaign-2026-08-25.md`
 - **Residual gaps:** `docs/brainstorms/2026-08-25-oa4rust-o2server-residual-gaps-requirements.md`
-- **Active plan:** `docs/plans/2026-08-21-002-feat-remaining-work-consolidation-plan.md`
+- **Active plan:** `docs/archived-plans/2026-08-21-002-feat-remaining-work-consolidation-plan.md`
 - **Superseded:** `docs/brainstorms/oa4rust-migration-status.md` (2026-08-07)
-- **Plan:** `docs/plans/2026-08-07-001-feat-oa4rust-4wave-realization-plan.md` (R50)
+- **Plan:** `docs/archived-plans/2026-08-07-001-feat-oa4rust-4wave-realization-plan.md` (R50)

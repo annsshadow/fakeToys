@@ -116,7 +116,7 @@ class TestSymbolIntegrity:
     历史上 `QualityReport` 与 `ValidationResult` 各被从两个模块导入到包级别，
     后一次静默覆盖前一次，导致 `augmentor.QualityReport` 指向的类与
     `ReportGenerator.generate()` 实际返回的类不是同一个
-    （见 docs/plans/2026-09-21-001-audit-augmentor-fullstack-optimization-plan.md F2）。
+    （见 docs/archived-plans/2026-09-21-001-audit-augmentor-fullstack-optimization-plan.md F2）。
     """
 
     def test_no_duplicate_names_in_all(self):

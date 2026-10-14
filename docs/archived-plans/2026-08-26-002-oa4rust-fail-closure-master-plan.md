@@ -3,7 +3,7 @@ title: "oa4rust FAIL 闭环总计划"
 type: refactor
 status: completed
 date: 2026-08-26
-origin: docs/plans/2026-08-26-001-feat-parity-convergence-phase2-plan.md
+origin: docs/archived-plans/2026-08-26-001-feat-parity-convergence-phase2-plan.md
 ---
 
 # oa4rust FAIL 闭环总计划
@@ -636,7 +636,7 @@ Track A (信封统一)          Track B (Express POST)      Track C (深层逻�
 
 ## Sources & References
 
-- Phase 2 plan: `docs/plans/2026-08-26-001-feat-parity-convergence-phase2-plan.md`
+- Phase 2 plan: `docs/archived-plans/2026-08-26-001-feat-parity-convergence-phase2-plan.md`
 - 包装模式战役: `docs/solutions/best-practices/oa4rust-o2server-parity-closure-campaign-2026-08-25.md`
 - ActionResult 契约: `docs/solutions/architecture-patterns/actionresult-9-field-contract.md`
 - 深层缺口清单: `docs/audits/2026-08-29-001-behavior-divergence-backlog.md`

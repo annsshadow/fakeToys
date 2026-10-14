@@ -3,7 +3,7 @@ title: refact: SeaORM 迁移后续验收工作
 type: refactor
 status: completed
 date: 2026-08-09
-origin: docs/plans/2026-08-09-001-refact-oa4rust-orm-migration-plan.md
+origin: docs/archived-plans/2026-08-09-001-refact-oa4rust-orm-migration-plan.md
 ---
 
 # SeaORM 迁移后续验收工作
