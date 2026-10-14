@@ -492,6 +492,26 @@ A4 开放问题：① F1 是否 o2server 侧本就以 job/document 创建者为�
 | 第三方回调**零验签**族：本批只关伪造面 | 同上 5 把 `*callback*` handler | 钉钉 / 政务钉钉 / 企微的 sync、regist、callback 一族在整个 crate 里**找不到任何签名校验**，且因 schema drift 今天根本跑不通 ⇒ 收 admin 是在「不打断任何活的集成」的前提下把伪造回调的写面关掉。真验签（timestamp + nonce + 签名比对）是另一件事，本批不冒充做了 |
 | 尺子轴：**本批一字未动** | `scripts/audit_write_gating.mjs` | GET 无门禁 −19、真落笔 −8 全部来自代码。矩阵里另有 **8 条 POST/PUT 行**同键从 R7 搬进 R5（`dingding/request/pull/sync`、`dingding/sync/organization/callback`、`market/flag/install/or/update`、`market/install/offline`、`qiyeweixin/send/getprivateinfo/message`、`zhengwudingding/sync/organization/callback`、`market/{flag}/install/or/update` 等）——同一把 handler 双方法注册同步受益，不是新漏洞消失 |
 
+### 三.18 第十八批（query_service_processing 的 GET 运维面 18 把收 admin 档，纯代码轴）
+
+第十七批 §五 首选那格按实测收掉：`query_service_processing` 在 GET 写档面上挂 **18 条 K3 / 18 把 handler**
+——`touch/{high|low}/freq/{work|workcompleted|document}/node/{node}/{touch|reset}` 12 把、`touch/optimize/index/{node}/touch`、
+`table/reload/dynamic`、`neural/{generate|stop/generating|learn|stop/learning}/model/{modelFlag}` 4 把。
+这批的形状与批 16/17 都不同：**12 把由 `macro_rules! touch_endpoints!` 生成**（正是批 17 提醒要先核的那格宏账），
+且整个 crate 此前**没有任何门禁先例**（`git show HEAD` 的 `src/u2.rs` 与 `src/lib.rs` 里 `session` 出现次数都是 0）。
+
+| 项 | 文件 | 内容 |
+| --- | --- | --- |
+| crate 首个门 helper | `src/u2.rs:300` | 新建 `require_admin(pool, Option<&Session>)`：`session.ok_or(AppError::Unauthorized)?` ⇒ 无会话 401，再 `shared::middleware::is_admin` 校 `auth_role.name='admin'`（fail-closed）⇒ 非 admin 403。名字不带 `u4_` / `require_owner` 前缀，走尺子 `GATE_RE` 认的 `require_admin*` 词形 |
+| 12 把宏生成 handler：**改模板一处** | `src/u2.rs:379`（`macro_rules! touch_endpoints!`）、门在 `:387` / `:396` | 模板的 touch / reset 两个分支各插一句 `require_admin(&pool, session.as_deref()).await?;`，签名同步补 `session: Option<Extension<shared::session::Session>>`（置于 `pool` 之后、`Path` 之前）。宏段旧账已核：这 12 把在尺子上属「按生成函数切段取证」（缺陷 21）那档，不是「整张模板兜底」，所以逐把的门禁作证成立 |
+| 6 把具名 handler | `src/u2.rs:436`（`optimize_index_touch`）、`:533`（`table_reload_dynamic`）、`:621 / :632 / :643 / :654`（4 把 neural） | 同形状：函数体第一句判门，先于 `pool.get()` ⇒ 无会话既不 500 也**不触库、离线可证**（与第十/十一/十五/十六/十七批同法）。`table_reload_dynamic` 只有 `pool` + `session`、无 `Path` |
+| 档位取 **admin** 而非归属，理由写在行上有什么列 | `migrations/077_u2_residual_modules.sql` | 这 18 把落笔的表是 `x_query_index_state` / `x_query_index_extra` / `x_query_neural_job`（节点状态与模型作业状态），**没有可认的属主列**——既不是某人的单据，也不是某人的模型；且语义是「重建索引 / 停学习 / 重载动态实体工厂」这类运维动作。归属门无从校起，只能收 admin。同 crate 的写方法端点（design/search、table insert/update 等 5 条 POST）本批**未动**，仍记在 R 轴旧账里 |
+| 第 19 条 GET 注册**不在本批面**，单列待拍 | `src/u2.rs:663`（`neural_list_calculate_with_work`） | `neural/list/calculate/model/{modelFlag}/work/{workId}` 体内只 `query_opt` 读 `x_query_neural_job` 后算推算，**不含写 SQL** ⇒ 不进 GET 写档面、尺子从来不复述它。但它是「任意 workId 即可取他人单据的推算字段」，属 correlation 读侧 IDOR 同族，本批不加门也不洗白，写进 §五 待拍 |
+| 调用面核过：收 admin **不打断任何活的业务流** | `frontend/apps/desktop/src/views/QueryViewApp.vue:886-906`、`QueryManagerDeep.vue:702-722` | 全前端唯一真打这批路径的是 `QueryViewApp.vue` 那组**契约批量探针**：逐条 GET 用字面量 `0` 占位、结果只汇成 `toast('服务处理读C N 条已提交')`，不消费返回值 ⇒ 探针变 401/403 不伤功能。`QueryManagerDeep.vue` 打的 `neural/generate` 等是 `/api/query/assemble/designer/**`（另一个 crate，下一批入口），`QueryViewApp.vue:644` 的 `tableReload` 走 `/api/queryview/**`（surface 前缀），两处本批都没碰 |
+| 真库契约臂的适配：补会话，不改断言 | `src/tests.rs:188-195`（`ADMIN_PERSON` + `app()` 注 `Extension(test_session(..))`）、`:300-325`（`ensure_schema()` 幂等 seed `auth_role('admin') / auth_person / auth_person_role`） | 加门后 4 支 u2 契约臂先红在 `tests.rs:308`（`assert_eq!(response.status(), OK)` 读到 401）。处置是**给测试客户端注入 admin 会话**而不是把断言降级——契约臂证的是「状态机 / upsert 去重」业务语义，权限层该由下面的点名臂管。seed 形状沿用 `processplatform_service_processing/src/tests.rs:728-752` 的先例（按 `is_admin` 的真实口径造角色链，不造假列） |
+| 新增 2 支离线臂，**逐把点名 18** | `src/tests.rs:788`（`mod security_gate_tests`）、`:799` / `:925`（两支臂）、断言在 `:917-918` 与 `:1044` | `r418_get_writes_reject_without_session`（`mock_pool()` + 无会话 ⇒ 必须全 401）与 `r418_get_writes_forbidden_before_touching_db`（非 admin 会话 ⇒ 必须全 403，且失败消息把「出现 Internal」直接写成「门插在读库之后」）。两支都带 `assert_eq!(cases.len(), 18, "本批 18 把必须逐把点名，少一把即漏门")`；宏那 12 把在臂里**逐个具名调用**（`u2::high_freq_work_touch(..)` 等），不是靠宏展开顺带覆盖 |
+| 尺子轴：**本批一字未动** | `scripts/audit_write_gating.mjs` | GET 无门禁 −18 全部来自代码。**R 轴增量为 0**：这 18 条注册全是 GET，`write_routes_matrix.tsv` 只收写方法 ⇒ 矩阵与 ungated 两张产物 md5 一字不差，只有 `write_routes_get_writes.tsv` 变了。GET 轴与 R 轴是两条账，本批正是「−18 与 0 同时成立」的那格，与批 17 的「−19 与 −8」互为对照 |
+
 ## 四、验证
 
 
@@ -1729,4 +1749,79 @@ cd oa4rust/backend && cargo test --lib -p <crate>
   与本文档（§三.17 / 本节）分两笔，本节即第二笔并回填该 hash。第二笔提交前已在干净树重跑尺子
   （run T / T2 / T3 全等、EXIT=0、真落笔 461、GET 写 110、只读挂写 766、间接写 223 / 间接门禁 234、缺口 0）、
   15 张产物逐张对账、五臂注入逐臂复原并复跑基线复绿。共享工作树上并行会话的在制品未被本批收走。**本轮未 push**。
+
+### 第十八批收口后的刷新（§三.18 / §四 第十八批读数 / §五 名单）
+
+- **尺子读数（代码轴，`scripts/audit_write_gating.mjs` 一字未动）**：
+  | 判据 | 上批收口 | 本批 | 增量 | 归因 |
+  | --- | --- | --- | --- | --- |
+  | GET 体内无门禁 | 110 | **92** | **−18** | `write_routes_get_writes.tsv` 里 `query_service_processing` 由 18 行降到 **0** 行（`git show HEAD` 与工作树两处逐行数过），出列 18 行全是 K3 ⇒ 本批口径是 **18 把 handler / 18 条 GET 注册**，两个数相等（不像批 17 那样 handler 数与注册数要分开） |
+  | K1 / K2 / K3 | 5 / 11 / 94 | 5 / 11 / **76** | K3 −18 | 匿名可达与会读会话两档一支没动；本批只吃 K3 |
+  | 真落笔（R4+R6+R7 含写 SQL） | 461 | **461** | **0** | R4 5 / R6 135 / R7 321 三档一字未动。**R 轴为 0 是本批的取证点**：这 18 条注册全是 GET，`write_routes_matrix.tsv` 只收写方法，GET 面另存 ⇒ 加 18 把门不动 R 桶一根毫毛。与批 17 的「GET −19 / R −8」互为对照，两条判据谁也不许替谁作证 |
+  | ungated 明细总数 / R5 | 1072 / 849 | **1072 / 849** | 0 / 0 | 两格都零增量，与上一格同源：无写方法行改桶 |
+  | 只读挂写 | 766 | 766 | 0 | 本批 18 把都含真写 SQL（经 `touch_impl` / `neural_start` / `neural_stop`），不属这族 |
+  | 间接写 / 间接门禁 | 223 / 234 | 223 / 234 | 0 | helper 名单未新增成员。`touch_impl 14`、`neural_start 2`、`neural_stop 2`、`neural_model_modelFlag_reset_status_core 2` 本来就在间接写名单里——本批加的是**门**（`require_admin` 不带写 SQL），故既不进间接门禁名单（它不是 handler 体内判定，是被 handler 第一句调用的门），也不动间接写数 |
+  | 判据见证（缺陷 16–23） | 缺口 0 | **缺口 0** | — | 尺子 EXIT=0 |
+
+- **产物幂等与逐张对账**：15 张 artifact 中 **14 张 md5 与上批收口态一字不差**，恰 **1 张**变化
+  （`write_routes_get_writes.tsv` 92 行 − 18 行）。同树连跑 run T / T2 两张 md5 清单 `diff` 为空；
+  注入取证（七臂）之后在还原树重跑的 T2 与注入前的 T 也全等——「尺子读数变化」这一路完全由代码解释。
+  与 HEAD 逐张 `md5sum` 对账脚本化跑过一遍（14 same / 1 DIFF），不是靠肉眼挑差异文件。
+- **测试门禁**：`cargo test -p query_service_processing` → **25 passed / 0 failed / 0 ignored / 0 filtered out**
+  （基线 23，+2 臂；`#[test]` / `#[tokio::test]` 属性计数在 `git show HEAD` 与工作树两处逐文件核过：
+  `tests.rs` 19→21，`lib.rs` 0→0，`u2.rs` 0→0）。本 crate 无 `#[ignore]`，真库臂走运行时 `is_db_available()`，本轮 0 skip。
+- **注入取证七臂**（通道 B 的 Node 移植 `/d/tmp/b17arms/inject_arm.mjs`，目标 `crates/query_service_processing/src/u2.rs`；
+  基线绿 → 逐臂点名红 → 复原后复绿三段齐全；每臂 `RESTORE hash_ok=true`）：
+
+  | 臂 | 注入 | 点名读数（实际红在哪一句） | 判定 |
+  | --- | --- | --- | --- |
+  | C0 无害对照 | `async fn touch_impl(` → 多一个空格（行为全同） | 基线 `2 passed` → 注入后仍 `2 passed` | 臂成立：红由注入造成，不是环境本来就不稳 |
+  | C1 摘宏模板 touch 分支 | `:387` 那句门 → `let _ = session;` | `tests.rs:917` 与 `:1044` **各点名 6 把 `*touch`**（`high_freq_work_touch / low_freq_work_touch / high_freq_workcompleted_touch / low_freq_workcompleted_touch / high_freq_document_touch / low_freq_document_touch`，读数一律 `Some(Internal)`），6 把 `*reset` 不在名单里，2 failed | 臂成立：宏那 12 把**按分支可分证**，touch 分支坏了不牵连 reset ⇒ 「改模板一处」不是把 12 把糊成一团 |
+  | C2 摘宏模板 reset 分支 | `:396` 那句门 → `let _ = session;` | 两处断言各点名 6 把 `*reset`，与 C1 名单互斥，2 failed | 臂成立：与 C1 合起来把宏两分支各自钉住，逐把集合等式（不是计数）可证伪 |
+  | C3 摘一把具名门 | `neural_generate`（`:621`）的门 → `let _ = session;` | 两处各**只**点名 `["neural_generate => Some(Internal)"]`，2 failed | 臂成立：具名那 6 把不靠宏覆盖，单把摘除即被单把点名；`assert_eq!(cases.len(), 18)` 与集合断言都不是摆设 |
+  | C4 无会话放行 | `require_admin` 内 `session.ok_or(Unauthorized)?` → `let Some(session) = session else { return Ok(()) };` | **只有 `:917` 红**，点名**全部 18 把**；`:1044` 那支 `1 passed` 仍绿 | 臂成立，且覆盖面正是要的效果：本臂只破坏「无会话即拒」、不破坏 admin 判定，所以 403 臂绿**不是**覆盖缺口，而是两条臂职责分开的证据。读数全为 `Some(Internal)`（不是 `None`）额外证了一件事——门一放行请求就真的走到 `pool.get()` |
+  | C5 admin 判定短路 | `if shared::middleware::is_admin(...)` → `if true \|\| is_admin(...)` | **只有 `:1044` 红**，点名全部 18 把；401 臂 `1 passed` 仍绿 | 臂成立，与 C4 对偶：admin 档由 `is_admin` 独立见证，不是顺带被「无会话即拒」挡住的 |
+  | C6 门插到落笔之后 | `optimize_index_touch` 内两句顺序颠倒并保留 `?` 传播 | `:917`「无会话未回 401：`["optimize_index_touch => Some(Internal)"]`」、`:1044`「非 admin 未回 403…：`["optimize_index_touch => Some(Internal)"]`」，2 failed | 臂成立：**「门必须在读库之前」是被断言消息钉住的可证伪判据**（读数出现 Internal 即门后移），与批 17 的 B4 同法。⚠️ 本臂**第一次跑的是坏形状**：注入体写成 `let _ = touch_impl(..).await?;` 丢了 `Json` 尾表达式 ⇒ `error[E0308]`，被驱动器的 `grep -q 'error\[E' … && exit 9` 判成中止（不算臂成立）。坏形状没被 `finally` 复原干净，**磁盘上留下了注入残留**（`u2.rs:436-437` 两行），是本轮 `git status` + 复跑编译才抓出来的；已按 `git diff` 逐字节手工复原并复跑基线复绿，再以修正形状（`let v = ..?; require_admin(..).await?; Ok(v)`）从**脚本文件**重跑成 C6b。两个教训回写进纪律：① 编译错造成的红不是臂证据，② 多行锚点不许走 Bash 命令行内联转义（第二次尝试即 `[C6b] ABORT anchor hits=0`，虚警一场，好在锚点命中数断言保证文件未动） |
+
+  收尾：`git status --porcelain` 只含本批 3 个在范围内文件（2 源 + 1 产物），复原后基线复绿
+  （`25 passed / 0 failed / 0 ignored / 0 filtered out`），尺子读数与注入前全等（见上格 run T / T2）。
+
+- **下一批（代码轴）入口，按现读 92 条改写**：GET 面无门禁 **92**（K1 5 / K2 11 / K3 76），按 crate 降序：
+  `processplatform_assemble_surface` **16**、`query_assemble_designer` **14**、`attendance_assemble_control` **9**、
+  `auth` **6**、`processplatform_assemble_designer` 5、`message_assemble_communicate` 5、`cms_assemble_control` 5、
+  `meeting_assemble_control` 4、`jpush_assemble_control` 4、`ai_assemble_control` 4、`hotpic` / `file` 各 3，其余 9 个 crate 各 ≤2
+  （`query_service_processing` 本批后归零，`program_center` 只剩 2 条待拍）。
+  1. **优先度最高的一格仍是批 16 立的**：`crates/shared/src/response.rs:17-48` `row_to_json` 对 JSONB / JSON /
+     DATE / TIMESTAMPTZ / NUMERIC 一律 `_ => None` **静默丢列**。本批不新增证据也不动它，但它压着所有响应形状类结论。
+  2. **surface 那 16 把不能整格收 admin**（本批核过名单，逐条点名写在这里以免下批重踩）：**12 条是读形状**
+     ——`{read|readcompleted|task|taskcompleted|work|workcompleted}/list/…/process` 的 count 版 6 条 + `_p2` 计数版 6 条，
+     经 `*_core` helper 落笔（间接写名单里各挂 2 条），收 admin 会直接打断所有人的待办列表；
+     这 12 条要走**归属档**（`x_task.person` / `x_work.creator` 同锁，照批 16 的 task 键口径）或另定「读形状写」的处置。
+     真按动作/删除收的是另 4 把：`handover/{cancel,process}/{id}`、`draft/{id}/start`、`mode/{id}/delete`。
+  3. **auth 那 6 条里有 4 条是 K1 匿名可达**（`oauth/login/{qywx,dingding,name}`、`oauth/bind/name/...`，
+     都在登录/绑定链上）⇒ 与 program_center 的 captcha / code 同一格待拍，收 admin 直接打断认证，
+     只能按「第三方 code 换会话」的语义另定；余 2 条 K3（`oidc/callback`、`qiyeweixin/update/person/detail/{code}`）
+     里 `qiyeweixin_update_person_detail` 与批 17 的组织回调族同性质（零验签 + 改他人档案），可与「路径参数不消费」普查并做。
+  4. `query_assemble_designer` 14 条是下一个整格（`QueryManagerDeep.vue:702-722` 真在打它的 neural / table 面，
+     动档前先核前端消费）；ppsvc **R7 写面仍 49 条** + 「16 把宏未绑段 + 43 条整张模板」旧账；
+     `mockdeletetoget` 14 把；`cms_core_entity` 12 条元数据写。
+- **新增待拍（本批记账，未修）**：
+  1. `neural/list/calculate/model/{modelFlag}/work/{workId}`（`src/u2.rs:663`）体内只读、不进 GET 写档面，
+     但任意 `workId` 即可取他人单据的推算字段、无归属校 ⇒ 与 correlation 读侧 IDOR 同族，属**读侧**那批的入口清单。
+  2. `query_service_processing` 的 **5 条 POST 写面**（`design/search`、`index/directory/document/count`、
+     `index/update/extra/document`、`table/{flag}/insert`、`table/{flag}/update/{bundle}`）本批未动，仍在 R 轴旧账里；
+     其中 `neural_model_modelFlag_reset_status` 一类 GET 已在别的 crate 名下计入 K3。
+  3. **宏生成 handler 的门禁取证口径**：本批证明「改模板一处」与「逐把作证」可以并存，前提是那批宏属
+     尺子缺陷 21 的「按生成函数切段」档；ppsvc 的 `dict_data_fns` 那 16 把属「绑不上段、回落整张模板」档，
+     照那格动刀时不许套用本批的取证结论。
+- **沿用的待拍格**：program_center **2 把**（captcha / code）与其 `creator='system'` 冒名 3 处
+  （`lib.rs:1691 / 1844 / 8722`）、第三方回调**零验签**族、A1 真匿名写 9 条属限流族、24 条死档 needs 独立守卫、
+  只读挂写现读 **766**、`NOW()` 写进 TEXT 列 79 处、门禁入口两族并存、`shared/src/crud.rs` CrudSpec 无归属、
+  correlation 读侧 IDOR、F5 / F7 / F8 / F10、N4-02 / N4-03、`GATE_RE` 里 `require_actor` 无独立见证的冗余词、
+  路径参数不消费族（全仓普查未做）、program_center schema drift 42703 族与 `assert_eq!(status, 500)` 断言族 272 处。
+- **提交落点**：本批代码轴（`crates/query_service_processing/src/u2.rs` 18 把加门 + crate 首个 `require_admin`、
+  `src/tests.rs` 2 支逐把点名臂 + 契约臂的 admin 会话注入与角色 seed、1 张刷新产物）为 `0ae6d8aed`，
+  与本文档（§三.18 / 本节）分两笔，本节即第二笔并回填该 hash。第二笔提交前已在还原树重跑尺子
+  （run T / T2 全等、EXIT=0、真落笔 461、GET 写 92、只读挂写 766、间接写 223 / 间接门禁 234、缺口 0）
+  并复跑门禁 25 / 0 / 0 / 0。共享工作树上并行会话的在制品未被本批收走。**本轮未 push**。
 
