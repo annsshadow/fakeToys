@@ -2083,6 +2083,12 @@ pub async fn attachment2_id_image_width_width_height_height_binary_base64(
 
 /// .docx 本质是 ZIP 包：解压 word/document.xml，将 <w:p> 段落中的
 /// <w:t> 文本提取为简单 HTML（<p> 标签）。表格/图片等复杂内容由调用方降级。
+/// .docx 渲染上限（四轮审计 N1，与 XLSX_MAX_ROWS / PPTX_MAX_SLIDES 惯例对齐）：
+/// 解压 XML 最多读取 4 MiB（2 MiB zip 源经 deflate 可放大数百倍，`read_to_string`
+/// 无上限时单个上传附件即可让一个 worker 常驻百 MB 级字符串），段落最多输出 200 个。
+const DOCX_MAX_XML_BYTES: u64 = 4 * 1024 * 1024;
+const DOCX_MAX_PARAGRAPHS: usize = 200;
+
 fn docx_to_html(bytes: &[u8]) -> Option<String> {
     let reader = std::io::Cursor::new(bytes);
     let mut archive = zip::ZipArchive::new(reader).ok()?;
@@ -2091,7 +2097,10 @@ fn docx_to_html(bytes: &[u8]) -> Option<String> {
         .ok()
         .and_then(|mut f| {
             let mut s = String::new();
-            std::io::Read::read_to_string(&mut f, &mut s).ok()?;
+            // 完全限定 `Read::take`：`Read` 不在作用域时 `f.take(n)` 会被 std prelude
+            // 的 `Iterator::take` 抢走方法解析而编译失败。
+            let mut limited = std::io::Read::take(&mut f, DOCX_MAX_XML_BYTES);
+            std::io::Read::read_to_string(&mut limited, &mut s).ok()?;
             Some(s)
         })?;
 
@@ -2101,7 +2110,12 @@ fn docx_to_html(bytes: &[u8]) -> Option<String> {
 
     let mut html = String::new();
     let mut rest = xml.as_str();
+    let mut paragraphs = 0usize;
     while let Some(start) = rest.find("<w:p") {
+        paragraphs += 1;
+        if paragraphs > DOCX_MAX_PARAGRAPHS {
+            break;
+        }
         let Some(close_rel) = rest[start..].find("</w:p>") else {
             break;
         };
@@ -2311,13 +2325,20 @@ fn pptx_to_html(bytes: &[u8]) -> Option<String> {
     }
 }
 
+/// ZIP 条目解压上限（四轮审计 N4-01，与 `DOCX_MAX_XML_BYTES` 同族同值）：
+/// XLSX 的 `xl/sharedStrings.xml` 与 PPTX 的每张 `slideN.xml` 都经本函数读取；
+/// `XLSX_MAX_ROWS` / `PPTX_MAX_SLIDES` 只在**解压之后**限制输出行数/页数，
+/// 不限制驻留内存，zip 炸弹可让单个附件预览直接把 worker 撑到 OOM。
+const ZIP_ENTRY_MAX_BYTES: u64 = 4 * 1024 * 1024;
+
 fn read_zip_entry(
     archive: &mut zip::ZipArchive<std::io::Cursor<&[u8]>>,
     name: &str,
 ) -> Option<String> {
     let mut f = archive.by_name(name).ok()?;
     let mut s = String::new();
-    std::io::Read::read_to_string(&mut f, &mut s).ok()?;
+    let mut limited = std::io::Read::take(&mut f, ZIP_ENTRY_MAX_BYTES);
+    std::io::Read::read_to_string(&mut limited, &mut s).ok()?;
     Some(s)
 }
 
