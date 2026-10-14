@@ -11,9 +11,9 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 O2SERVER_POM = REPO_ROOT / "oa/o2server/pom.xml"
 O2SERVER_SRC = REPO_ROOT / "oa/o2server"
 O2WEB_SRC = REPO_ROOT / "oa/o2web/source"
-MODULES_OUT = REPO_ROOT / "docs/oa/modules/o2server"
-COMPONENTS_OUT = REPO_ROOT / "docs/oa/modules/o2web"
-TEMPLATES_DIR = REPO_ROOT / "docs/oa/templates"
+MODULES_OUT = REPO_ROOT / "docs/oa4rust/modules/o2server"
+COMPONENTS_OUT = REPO_ROOT / "docs/oa4rust/modules/o2web"
+TEMPLATES_DIR = REPO_ROOT / "docs/oa4rust/templates"
 
 MODULE_CARD_TEMPLATE = (TEMPLATES_DIR / "module-card.md").read_text(encoding="utf-8")
 COMPONENT_CARD_TEMPLATE = (TEMPLATES_DIR / "component-card.md").read_text(encoding="utf-8")
