@@ -45,12 +45,8 @@ FILE_TOKEN = re.compile(r"`([A-Za-z0-9_/\\.\-]*[A-Za-z0-9_]\.py)`")
 LINE_REF = re.compile(r"`([A-Za-z0-9_/\\.\-]*[A-Za-z0-9_]\.py):(\d+)(?:-(\d+))?`")
 BARE_REF = re.compile(r"`:(\d+)(?:-(\d+))?`")
 
-#: 两卷取**绝对路径**：下面大量 `(ROOT / doc)` 的写法在 pathlib 语义下对绝对右操作数
-#: 直接让路，故文档汇总到仓库根 `docs/augmentor/`（2026-10-14）只需改这一处定义，
-#: 不动下面各读取点。账本仍住在 augmentor/ 内。
-REPO = ROOT.parent
-ARCH = REPO / "docs" / "augmentor" / "ARCHITECTURE.md"
-LEDGER = ROOT / "OPTIMIZATION_LOOP.md"
+ARCH = ROOT.parent / "docs" / "augmentor" / "ARCHITECTURE.md"  # 绝对路径 ⇒ 下面 (ROOT / doc) 全部让路（文档 2026-10-14 汇总到仓库根）
+LEDGER = ROOT / "OPTIMIZATION_LOOP.md"  # 账本仍住在 augmentor/ 内
 DOCS = (ARCH, LEDGER)
 
 #: L79 就地清账后的基线。键是 `audit()` 的桶名；**只降不升**，见模块 docstring。
@@ -59,7 +55,7 @@ DOCS = (ARCH, LEDGER)
 #: 架构文档 = 0 / 0 / 0 / 0 / 18 / 29，账本 = 0 / 0 / 69 / 145 / 151 / 111（L83 回填后）。
 #: **L82 回填（两桶同时降，且降下来的原因不是「清了旧账」）**：`bare` 架构文档 20 → **18**
 #: 的净 −2 = **删 3 加 1**（逐条命令现量：删 `` `:33` `` / `` `:34` `` / `` `:308` ``、加
-#: `` `:250` ``），全部发生在同一处 —— L82 复原 A 级位移时重写 `docs/ARCHITECTURE.md` 里
+#: `` `:250` ``），全部发生在同一处 —— L82 复原 A 级位移时重写 `docs/augmentor/ARCHITECTURE.md` 里
 #: 讲 `AugmentationConfig` 那一段，把两处续写行号改成散文（「第 308 行」）、一处换成新行号。
 #: 账本 153 → **152** 同理是「本轮新写的活文本自己达标」：A140 / A123 / A141 三行用
 #: `file.py:82` 起 + 「逐处见 Temp 工件」收尾，不再抄 `:83` / `:86` 那种续写（A141 立项的
@@ -125,7 +121,7 @@ FLOOR = {
     LEDGER: {"line_refs": 263, "file_tokens": 1050},
 }
 
-#: **现量**读数（`Temp/l79q/buckets.py` 的最后一个 run）。凡是在注释、`docs/ARCHITECTURE.md`
+#: **现量**读数（`Temp/l79q/buckets.py` 的最后一个 run）。凡是在注释、`docs/augmentor/ARCHITECTURE.md`
 #: §3.33 或账本里写「实测 N 处」，那个 N 只许从这份常量取 —— A77「一份权威只住一处」用在
 #: **测试自己的注释**上：本轮 §3.33 里「40 处 / 114 处 / 10 例」三个数就是在同一轮内过期的，
 #: 因为文档段落写在了判据改完之前。
@@ -157,7 +153,7 @@ FLOOR = {
 #: **48 / 217 / 38**，账本 285 / 1149 / 165 → **287 / 1196 / 171**。架构文档那格的 `file_tokens`
 #: 在本轮内被**自己**顶高两次（215 → 217 = §3.33 新写的「现量只住常数」那句指针补了 2 个反引号
 #: 文件名），于是这一格第一次撞上一个新形状：**归因句写完之后又改了一次常数** ⇒ 217 的读数不是
-#: 事后补的，是那次改动之后重跑全量时由本守卫报出来的（`('docs/ARCHITECTURE.md', 'file_tokens',
+#: 事后补的，是那次改动之后重跑全量时由本守卫报出来的（`('docs/augmentor/ARCHITECTURE.md', 'file_tokens',
 #: 217, 215)` —— 守卫的失败信息直接给出三元组，这就是它存在的理由）。这里的被减数是**在现树上重跑
 #: `audit()` 得到的 HEAD 文档态**，不是照抄 L81 写下的那三个终态常数 —— 本轮给 `augmentor/config.py`
 #: 等文件插了行，于是同一份文档在同一树上的分桶自己就会位移（实测：账本 `code_but_no_name_match`
@@ -960,13 +956,13 @@ class TestTheAuditIsNotSpinning:
     def test_the_totals_quoted_in_the_prose_are_the_current_measurement(self):
         """`MEASURED` 与真实现量必须相等：**注释与文档里的数不许靠回忆**
 
-        这条是本轮回看段抓到的病：`docs/ARCHITECTURE.md` §3.33 写完后，同一轮内的判据改动
+        这条是本轮回看段抓到的病：`docs/augmentor/ARCHITECTURE.md` §3.33 写完后，同一轮内的判据改动
         让「40 处 / 114 处 / 10 例」三个数当场过期，而**没有任何用例能出声**（散文数字在
         守卫的可见范围之外，即 A129）。修法是把数字搬进常量、让用例去比对现量。
 
         **L216 补上 `require_authoring_tree()`**：常量是在作者树（带 `Temp/` 取证草稿）上量的，
         而本条判据原先没有那道门，于是在干净克隆里**必然**偏一格——L216 现量：干净树上
-        `docs/ARCHITECTURE.md` 的 `code_but_no_name_match` 是 **33**，`MEASURED` 钉的是 **34**，
+        `docs/augmentor/ARCHITECTURE.md` 的 `code_but_no_name_match` 是 **33**，`MEASURED` 钉的是 **34**，
         差的那一格是账本里指向 `Temp/` 快照的行引用（`Temp/` 不在时它落进 `unresolved_source`
         而不是本档）。归因证据：把 HEAD 的文档文本分别放在 HEAD 树与当前树上跑同一把尺子，
         **两边都是 33** ⇒ 与本轮的代码改动无关，是这台工作树缺 `Temp/` 底料。

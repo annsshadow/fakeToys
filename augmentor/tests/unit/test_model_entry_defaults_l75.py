@@ -389,7 +389,7 @@ class TestEnvExpansionSemanticsL185:
 
     权威清单 MODEL_CREDENTIAL_KEYS 只住 config.py 一处；三凭证键之外的值不走 _resolve_env。
     未设置的环境变量静默回落 ''（与 None 等价），**不**在加载面判负（条数随本机 shell 变），
-    出声归 validate-config 的 warning 通道（docs/API.md 3.x「没人读」段）。谁把静默改成加载期
+    出声归 validate-config 的 warning 通道（docs/augmentor/API.md 3.x「没人读」段）。谁把静默改成加载期
     fail-loud（或反过来把 '' 换成报错）都要先翻这一格并重新对账对外契约。
     """
 

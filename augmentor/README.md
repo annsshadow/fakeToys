@@ -79,7 +79,7 @@ FastAPI 提供 **77 个端点**，全部声明 `response_model` —— `/openapi
 uvicorn api.main:app --host 0.0.0.0 --port 8000
 ```
 
-交互式文档见 `/docs`，端点总览与字段说明见 [API 文档](docs/API.md)。
+交互式文档见 `/docs`，端点总览与字段说明见 [API 文档](../docs/augmentor/API.md)。
 
 > **3.0 破坏性变更（API 面）**
 >
@@ -485,7 +485,7 @@ python -m pytest tests/ --cov=augmentor --cov-report=html
 
 ## 文档
 
-详细文档请参阅 `docs/` 目录：
-- [API 文档](docs/API.md)
-- [架构文档](docs/ARCHITECTURE.md)
-- [部署文档](docs/DEPLOYMENT.md)
+详细文档已汇总到仓库根 `docs/augmentor/`（2026-10-14 从本项目的 `docs/` 迁出）：
+- [API 文档](../docs/augmentor/API.md)
+- [架构文档](../docs/augmentor/ARCHITECTURE.md)
+- [部署文档](../docs/augmentor/DEPLOYMENT.md)

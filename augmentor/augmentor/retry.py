@@ -33,7 +33,7 @@ RETRYABLE_STATUS_CODES = frozenset({408, 425, 429, 500, 502, 503, 504})
 # 于对刚说过「别敲门」的服务端提前 3 倍敲门），但被本常数夹住（服务端要 10 天也只
 # 等 300 s）。一次 `generate()` 的最坏总等待因此是
 # `(总尝试次数 - 1) × 300`，而不是 `(总尝试次数 - 1) × max_delay`。
-# 口径的来龙去脉见 docs/ARCHITECTURE.md §3.22。
+# 口径的来龙去脉见 docs/augmentor/ARCHITECTURE.md §3.22。
 #
 # 自 L49 起本常数是 `with_retries(max_retry_wait=…)` 的**默认值**而不是唯一值：
 # 用户可以把它调小（`augmentation.max_retry_wait`），但**不能调大** —— 判据里那道
@@ -171,7 +171,7 @@ def with_retries(func: Callable[..., Any],
             建议等待秒数非 None 时**替换**退避计算结果（如 HTTP ``Retry-After``），
             并且只受 `max_retry_wait` 封顶（默认 `MAX_RETRY_AFTER`）—— 上面那组
             `base_delay/factor/max_delay` 在这一支全部参不到场，两副封顶互不相犯
-            （细节见 `MAX_RETRY_AFTER` 的注释与 docs/ARCHITECTURE.md §3.22）。
+            （细节见 `MAX_RETRY_AFTER` 的注释与 docs/augmentor/ARCHITECTURE.md §3.22）。
         **kwargs: 关键字参数
 
     Returns:

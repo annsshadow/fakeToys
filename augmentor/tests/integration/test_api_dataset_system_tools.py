@@ -1343,7 +1343,7 @@ class TestDatasetSplitContractKnobs:
     `SplitConfig` 的 `stratify` / `stratify_key` / `shuffle` 三个字段自 3.0 就在，分层算法
     L41 才接上，而这个端点以前只发比例与种子 —— 于是 L41 修好的东西对 HTTP 调用方仍然
     不可见（只有 SDK 构造 `SplitConfig` 才走得到）。本轮接旋钮，**响应形态一字不改**：
-    写盘变换类端点只回「写到哪、写了多少」（`docs/API.md` 的 dataset 分组约定），而实测
+    写盘变换类端点只回「写到哪、写了多少」（`docs/augmentor/API.md` 的 dataset 分组约定），而实测
     真实 6,902 条语料按 `instruction` 分层时 `stratify_distribution` 有 6,531 个键、
     紧凑 JSON 404,362 字节，是四计数响应的 5,119 倍。
 
