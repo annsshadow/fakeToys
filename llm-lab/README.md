@@ -61,27 +61,26 @@ llm-lab/
 │   └── main.py          #   CLI：python -m torchgpt.main train|sample
 ├── experiments/
 │   └── scaling_law.py   #   玩具版尺度实验：模型大小 vs loss
-├── docs/                # 中文课程讲义 00~10（见下）
 ├── data/tiny_corpus.txt # 内置小语料
 └── tests/               # 梯度校验 + 单元 + KV cache 等价性 + 端到端冒烟
 ```
 
 ## 课程讲义
 
-从 [`docs/00-学习路线.md`](docs/00-学习路线.md) 开始，按顺序读讲义 + 读对应代码 + 做练习：
+讲义已汇总到仓库根 `docs/llm-lab/`（2026-10-14 从本项目的 `docs/` 迁出）：从 [`docs/llm-lab/00-学习路线.md`](../docs/llm-lab/00-学习路线.md) 开始，按顺序读讲义 + 读对应代码 + 做练习：
 
 | # | 讲义 | 关键词 |
 | --- | --- | --- |
-| 01 | [分词与词表](docs/01-分词与词表.md) | 字符级 / BPE / 中文分词 |
-| 02 | [嵌入与位置编码](docs/02-嵌入与位置编码.md) | token 嵌入 / 位置编码 / RoPE |
-| 03 | [自注意力机制](docs/03-自注意力机制.md) | QKV / 缩放点积 / 因果 mask / 多头 |
-| 04 | [Transformer 结构](docs/04-Transformer结构.md) | 残差 / Pre-LN / MLP / 参数量 |
-| 05 | [预训练与训练循环](docs/05-预训练与训练循环.md) | autograd / 交叉熵 / AdamW / 过拟合 |
-| 06 | [规模化训练](docs/06-规模化训练.md) | 混合精度 / 梯度累积 / DDP / FSDP / ZeRO |
-| 07 | [微调 SFT·LoRA·QLoRA](docs/07-微调-SFT-LoRA-QLoRA.md) | 指令微调 / 低秩适配 / 4bit |
-| 08 | [对齐 RLHF·PPO·DPO](docs/08-对齐-RLHF-PPO-DPO.md) | 偏好对齐 / 奖励模型 / DPO |
-| 09 | [评估](docs/09-评估.md) | 困惑度 / 基准 / 采样策略 |
-| 10 | [推理优化](docs/10-推理优化.md) | KV cache / 量化 / 投机解码 |
+| 01 | [分词与词表](../docs/llm-lab/01-分词与词表.md) | 字符级 / BPE / 中文分词 |
+| 02 | [嵌入与位置编码](../docs/llm-lab/02-嵌入与位置编码.md) | token 嵌入 / 位置编码 / RoPE |
+| 03 | [自注意力机制](../docs/llm-lab/03-自注意力机制.md) | QKV / 缩放点积 / 因果 mask / 多头 |
+| 04 | [Transformer 结构](../docs/llm-lab/04-Transformer结构.md) | 残差 / Pre-LN / MLP / 参数量 |
+| 05 | [预训练与训练循环](../docs/llm-lab/05-预训练与训练循环.md) | autograd / 交叉熵 / AdamW / 过拟合 |
+| 06 | [规模化训练](../docs/llm-lab/06-规模化训练.md) | 混合精度 / 梯度累积 / DDP / FSDP / ZeRO |
+| 07 | [微调 SFT·LoRA·QLoRA](../docs/llm-lab/07-微调-SFT-LoRA-QLoRA.md) | 指令微调 / 低秩适配 / 4bit |
+| 08 | [对齐 RLHF·PPO·DPO](../docs/llm-lab/08-对齐-RLHF-PPO-DPO.md) | 偏好对齐 / 奖励模型 / DPO |
+| 09 | [评估](../docs/llm-lab/09-评估.md) | 困惑度 / 基准 / 采样策略 |
+| 10 | [推理优化](../docs/llm-lab/10-推理优化.md) | KV cache / 量化 / 投机解码 |
 
 ## 设计原则
 

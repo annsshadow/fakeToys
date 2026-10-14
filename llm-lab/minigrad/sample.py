@@ -7,7 +7,7 @@
   logits。简单直观，但同一段前缀被反复计算，总开销 O(T^3)。
 * ``generate_cached``：KV cache 版，prompt 整段算一次并把每层的 K/V 缓存下来，
   之后每步只喂**一个**新 token，开销降到 O(T^2)。这是所有推理引擎的基本功，
-  原理见 docs/10-推理优化.md。
+  原理见 docs/llm-lab/10-推理优化.md。
 
 两种实现产出数学上完全相同的分布——``tests/test_kvcache.py`` 会逐 logit 验证。
 """
