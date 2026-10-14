@@ -1543,11 +1543,15 @@ async fn snap_take_for_wc(pool: &Pool, wc_id: &str, snap_type: &str) -> H {
         return biz_err("workcompleted not found");
     };
     let snap_data = row_to_json(&row);
+    // 第十六批取证顺带修正：x_snap.work_id 原来写的是 workcompleted 的 ID。
+    // 读回侧（`snap_workcompleted/{id}/type/snapworkcompleted`、rollback 取最新快照）
+    // 一律按真实 work_id 查，所以这些完成项快照存进去就再也读不到——键写错，不是权限问题。
+    let work_id: String = opt_str(&row, "work_id");
     let snap_id = Uuid::new_v4().to_string();
     client
         .execute(
             "INSERT INTO x_snap (id, work_id, snap_type, snap_data) VALUES ($1, $2, $3, ($4::text)::jsonb)",
-            &[&snap_id, &wc_id.to_string(), &snap_type.to_string(), &snap_data.to_string()],
+            &[&snap_id, &work_id, &snap_type.to_string(), &snap_data.to_string()],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -1556,31 +1560,58 @@ async fn snap_take_for_wc(pool: &Pool, wc_id: &str, snap_type: &str) -> H {
 
 /// GET snap/work/{workId}/type/abandoned：放弃工作（快照+取消任务+置状态）
 #[allow(non_snake_case)]
-pub async fn snap_type_abandoned(pool: Extension<Pool>, Path(work_id): Path<String>) -> H {
+pub async fn snap_type_abandoned(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Path(work_id): Path<String>,
+) -> H {
+    crate::u4_require_work_owner(&pool.0, session, &work_id).await?;
     snap_take_for_work(&pool, &work_id, "abandoned", true, Some("abandoned")).await
 }
 
 /// GET snap/work/{workId}/type/snap
 #[allow(non_snake_case)]
-pub async fn snap_type_snap(pool: Extension<Pool>, Path(work_id): Path<String>) -> H {
+pub async fn snap_type_snap(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Path(work_id): Path<String>,
+) -> H {
+    crate::u4_require_work_owner(&pool.0, session, &work_id).await?;
     snap_take_for_work(&pool, &work_id, "snap", false, None).await
 }
 
 /// GET snap/work/{workId}/type/suspend：挂起工作
 #[allow(non_snake_case)]
-pub async fn snap_type_suspend(pool: Extension<Pool>, Path(work_id): Path<String>) -> H {
+pub async fn snap_type_suspend(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Path(work_id): Path<String>,
+) -> H {
+    crate::u4_require_work_owner(&pool.0, session, &work_id).await?;
     snap_take_for_work(&pool, &work_id, "suspend", false, Some("suspended")).await
 }
 
 /// GET snap/workcompleted/{workCompletedId}/type/abandonedworkcompleted
 #[allow(non_snake_case)]
-pub async fn snap_wc_type_abandoned(pool: Extension<Pool>, Path(wc_id): Path<String>) -> H {
+pub async fn snap_wc_type_abandoned(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Path(wc_id): Path<String>,
+) -> H {
+    let session = crate::u4_session(session)?;
+    crate::u4_require_actors(&pool.0, &session, crate::U4ActorKey::WorkCompleted, &wc_id).await?;
     snap_take_for_wc(&pool, &wc_id, "abandonedWorkCompleted").await
 }
 
 /// GET snap/workcompleted/{workCompletedId}/type/snapworkcompleted
 #[allow(non_snake_case)]
-pub async fn snap_wc_type_snap(pool: Extension<Pool>, Path(wc_id): Path<String>) -> H {
+pub async fn snap_wc_type_snap(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Path(wc_id): Path<String>,
+) -> H {
+    let session = crate::u4_session(session)?;
+    crate::u4_require_actors(&pool.0, &session, crate::U4ActorKey::WorkCompleted, &wc_id).await?;
     snap_take_for_wc(&pool, &wc_id, "snapWorkCompleted").await
 }
 
@@ -1641,8 +1672,10 @@ pub async fn taskcompleted_delete(
 #[allow(non_snake_case)]
 pub async fn taskcompleted_press(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path((id, work)): Path<(String, String)>,
 ) -> H {
+    crate::u4_require_work_owner(&pool.0, session, &work).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt("SELECT work_id FROM x_readcompleted WHERE id = $1", &[&id])
@@ -2383,7 +2416,13 @@ pub async fn work_add_identity_matrix(
 
 /// GET workcompleted/{flag}/merge：保留 flag 指定项，合并同 work 的其余重复项
 #[allow(non_snake_case)]
-pub async fn wc_merge_flag(pool: Extension<Pool>, Path(flag): Path<String>) -> H {
+pub async fn wc_merge_flag(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Path(flag): Path<String>,
+) -> H {
+    let session = crate::u4_session(session)?;
+    crate::u4_require_actors(&pool.0, &session, crate::U4ActorKey::WorkCompleted, &flag).await?;
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     let row = tx

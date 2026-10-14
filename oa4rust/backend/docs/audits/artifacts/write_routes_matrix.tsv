@@ -1833,14 +1833,14 @@ processplatform_service_processing	POST	/api/processplatform/service/processing/
 processplatform_service_processing	POST	/api/processplatform/service/processing/series/series/activitytoken/processing/signal/{work}/{id}/{activityToken}	work_id_series_series_activitytoken_activityToken_processing_signal	R7-已认证+体内无会话无门禁
 processplatform_service_processing	POST	/api/processplatform/service/processing/service/touch/{work}/{id}	service_work_id_touch_p2	R5-已认证+体内门禁
 processplatform_service_processing	POST	/api/processplatform/service/processing/snap/upload	snap_upload	R7-已认证+体内无会话无门禁
-processplatform_service_processing	POST	/api/processplatform/service/processing/task/press/{id}	task_id_press	R7-已认证+体内无会话无门禁
+processplatform_service_processing	POST	/api/processplatform/service/processing/task/press/{id}	task_id_press	R5-已认证+体内门禁
 processplatform_service_processing	POST	/api/processplatform/service/processing/task/processing/{id}	task_id_processing	R7-已认证+体内无会话无门禁
 processplatform_service_processing	POST	/api/processplatform/service/processing/task/v2/reset/{id}	task_v2_id_reset	R7-已认证+体内无会话无门禁
-processplatform_service_processing	POST	/api/processplatform/service/processing/task/v2/resume/{id}	task_v2_id_resume	R7-已认证+体内无会话无门禁
+processplatform_service_processing	POST	/api/processplatform/service/processing/task/v2/resume/{id}	task_v2_id_resume	R5-已认证+体内门禁
 processplatform_service_processing	POST	/api/processplatform/service/processing/task/v3/add/{id}	task_v3_id_add	R7-已认证+体内无会话无门禁
 processplatform_service_processing	POST	/api/processplatform/service/processing/task/v3/{id}/add	task_v3_id_add	R7-已认证+体内无会话无门禁
 processplatform_service_processing	POST	/api/processplatform/service/processing/task/will/{id}	task_id_will	R7-已认证+体内无会话无门禁
-processplatform_service_processing	POST	/api/processplatform/service/processing/task/{id}/replace	task_id_replace	R7-已认证+体内无会话无门禁
+processplatform_service_processing	POST	/api/processplatform/service/processing/task/{id}/replace	task_id_replace	R5-已认证+体内门禁
 processplatform_service_processing	POST	/api/processplatform/service/processing/taskcompleted/press/{id}/{work}/{work}	taskcompleted_id_press_work_work	R7-已认证+体内无会话无门禁
 processplatform_service_processing	POST	/api/processplatform/service/processing/timer/start	start_timer	R7-已认证+体内无会话无门禁
 processplatform_service_processing	POST	/api/processplatform/service/processing/timer/{job_id}/cancel	cancel_timer	R7-已认证+体内无会话无门禁

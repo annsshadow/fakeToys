@@ -49,6 +49,22 @@
 //! `SELECT … FOR UPDATE` 锁行后校归属；建单三只的 creator 由 body 传入改会话权威
 //! （`work_start_impl` 现收 `person`，冒名建单不再生效）。
 //!
+//! 第十六批追加：本 crate 的 **GET 面**（注册 27 条 / handler 22 把，前缀均为
+//! `/api/processplatform/service/processing`）——`GET snap/work/{workId}/type/*`、
+//! `GET snap/workcompleted/{id}/type/*`、`GET snap/{id}/restore`、
+//! `GET workcompleted/rollback/{id}`、`GET work/v2/{id}/goback|rollback|reroute/{p2}`、
+//! `GET task/{id}/urge|replace|press|expire|pass_expired`、`GET task/v2/{id}/pause|resume`，
+//! 以及 `u2` 面的同名快照 / 催办族——原为 K3 档「已认证、无会话参数、无门禁」：
+//! 任一登录用户按 ID 即可暂停 / 恢复 / 转办 / 催办 / 过期他人待办，给他人单据落
+//! abandoned / suspend 快照，甚至回滚他人的完成记录。GET 之所以是盲区，
+//! `csrf_middleware` 与 `requires_admin` 都只看方法名。
+//! 现在三档归属：work 键沿用 `u4_require_work_owner`（严格校 `x_work.creator`）；
+//! task 键取 `x_task.person` 与 `x_work.creator` **两列 OR**——催办、过期、暂停的合法
+//! 操作人本来就是流程双方（发起人催别人手里的办，负责人转办 / 暂停自己的办）；
+//! workcompleted / snap 两族自身无可用属主（migration 033 给 `x_snap` 加了
+//! creator / person，本 crate 写入路径从不填，全是 NULL），hop 到 `x_work.creator`。
+//! admin 兜底与 `shared::middleware::require_owner` 同口径，空归属行只允许 admin。
+//!
 //! DB 依赖臂需真实 PostgreSQL：
 //! `cargo test --lib -p processplatform_service_processing -- --ignored`
 #[cfg(test)]
@@ -2116,5 +2132,783 @@ mod security_gate_tests {
                 .await
                 .unwrap();
         }
+    }
+
+    // ── 第十六批：GET 面 27 条注册 / 22 把 handler 补归属门 ──────────────────
+    //
+    // 本轮之前这 22 把既不取 Session 也不校归属：任一登录用户（GET 面还落在
+    // csrf / require_admin 两把中间件的方法盲区内）按 ID 就能催办、过期、转办、
+    // 暂停他人的待办，把自己的单据回滚·改道，或物理删除他人的完成记录。
+    // 收紧成三档：work 键走 `u4_require_work_owner`（发起人，空发起人→admin）；
+    // task 键走 `u4_require_actors(Task)`（负责人或发起人，双方都空→admin）；
+    // workcompleted / snap 键按 hop 到 x_work.creator 后同 task 键口径。
+
+    async fn task_status(pool: &Pool, id: &str) -> String {
+        let id = id.to_string();
+        let client = pool.get().await.unwrap();
+        client
+            .query_one("SELECT task_status FROM x_task WHERE id = $1", &[&id])
+            .await
+            .unwrap()
+            .get::<_, Option<String>>("task_status")
+            .unwrap_or_default()
+    }
+
+    async fn work_status(pool: &Pool, id: &str) -> String {
+        let id = id.to_string();
+        let client = pool.get().await.unwrap();
+        client
+            .query_one("SELECT work_status FROM x_work WHERE id = $1", &[&id])
+            .await
+            .unwrap()
+            .get::<_, Option<String>>("work_status")
+            .unwrap_or_default()
+    }
+
+    /// 带一个参数的 COUNT 读数（SQL 只收字面量，id 走绑定）。
+    async fn count_by(pool: &Pool, sql: &'static str, id: &str) -> i64 {
+        let id = id.to_string();
+        let client = pool.get().await.unwrap();
+        client
+            .query_one(sql, &[&id])
+            .await
+            .unwrap()
+            .get::<_, i64>("c")
+    }
+
+    /// 离线臂：22 把 GET 面写逐把点名——无会话一律 401。
+    /// 池在此不可达，所以「回 401」本身就证明门在 `pool.get()` 之前。
+    #[tokio::test]
+    async fn ppsvc_get_writes_reject_without_session() {
+        let pool = shared::testing::test_pool();
+        let p1 = |id: &str| axum::extract::Path(id.to_string());
+        let p2 = |a: &str, b: &str| axum::extract::Path((a.to_string(), b.to_string()));
+        let p3 = |a: &str, b: &str, c: &str| {
+            axum::extract::Path((a.to_string(), b.to_string(), c.to_string()))
+        };
+        let cases: Vec<(&str, Result<(), AppError>)> = vec![
+            (
+                "work_v2_id_goback_p2",
+                crate::work_v2_id_goback_p2(Extension(pool.clone()), None, p2("w", "w"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "work_v2_id_rollback_p2",
+                crate::work_v2_id_rollback_p2(Extension(pool.clone()), None, p2("w", "w"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "work_v2_id_reroute_p2",
+                crate::work_v2_id_reroute_p2(Extension(pool.clone()), None, p2("w", "w"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "task_id_urge",
+                crate::task_id_urge(Extension(pool.clone()), None, p1("t"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "task_id_replace",
+                crate::task_id_replace(Extension(pool.clone()), None, p1("t"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "task_id_press",
+                crate::task_id_press(Extension(pool.clone()), None, p1("t"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "task_id_expire",
+                crate::task_id_expire(Extension(pool.clone()), None, p1("t"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "task_id_pass_expired",
+                crate::task_id_pass_expired(Extension(pool.clone()), None, p1("t"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "task_v2_id_pause",
+                crate::task_v2_id_pause(Extension(pool.clone()), None, p1("t"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "task_v2_id_resume",
+                crate::task_v2_id_resume(Extension(pool.clone()), None, p1("t"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "snap_work_workId_type_abandoned",
+                crate::snap_work_workId_type_abandoned(Extension(pool.clone()), None, p3("a", "w", "b"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "snap_work_workId_type_suspend",
+                crate::snap_work_workId_type_suspend(Extension(pool.clone()), None, p3("a", "w", "b"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "snap_workcompleted_workCompletedId_type_abandonedworkcompleted",
+                crate::snap_workcompleted_workCompletedId_type_abandonedworkcompleted(
+                    Extension(pool.clone()),
+                    None,
+                    p2("wc", "t"),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "snap_id_restore",
+                crate::snap_id_restore(Extension(pool.clone()), None, p1("s"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "workcompleted_flag_rollback",
+                crate::workcompleted_flag_rollback(Extension(pool.clone()), None, p1("wc"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "u2::snap_type_abandoned",
+                crate::u2::snap_type_abandoned(Extension(pool.clone()), None, p1("w"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "u2::snap_type_snap",
+                crate::u2::snap_type_snap(Extension(pool.clone()), None, p1("w"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "u2::snap_type_suspend",
+                crate::u2::snap_type_suspend(Extension(pool.clone()), None, p1("w"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "u2::snap_wc_type_abandoned",
+                crate::u2::snap_wc_type_abandoned(Extension(pool.clone()), None, p1("wc"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "u2::snap_wc_type_snap",
+                crate::u2::snap_wc_type_snap(Extension(pool.clone()), None, p1("wc"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "u2::taskcompleted_press",
+                crate::u2::taskcompleted_press(Extension(pool.clone()), None, p2("rc", "w"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "u2::wc_merge_flag",
+                crate::u2::wc_merge_flag(Extension(pool.clone()), None, p1("wc"))
+                    .await
+                    .map(|_| ()),
+            ),
+        ];
+        let bad: Vec<&str> = cases
+            .iter()
+            .filter(|(_, r)| !matches!(r, Err(AppError::Unauthorized)))
+            .map(|(n, _)| *n)
+            .collect();
+        assert!(bad.is_empty(), "以下 GET 面无会话未回 401：{bad:?}");
+        assert_eq!(cases.len(), 22, "本批 22 把必须逐把点名，少一把即漏门");
+    }
+
+    /// DB 臂（task 键）：陌生会话 403 且状态机一步不动；负责人·发起人各自放行并落笔；
+    /// 双方都空的孤儿任务只对 admin 开放。
+    #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
+    async fn ppsvc_get_task_writes_require_flow_actor_and_land() {
+        if !shared::testing::is_db_available().await {
+            eprintln!("skip: PG unavailable");
+            return;
+        }
+        let pool = shared::testing::test_pool();
+        let salt = uuid::Uuid::new_v4();
+        let work_id = format!("r43-w-{salt}");
+        let task_id = format!("r43-t-{salt}");
+        let orphan = format!("r43-t-{salt}-orphan");
+        let creator = "u-r43-creator";
+        let assignee = "u-r43-assignee";
+        let intruder = "u-r43-intruder";
+        seed_work(&pool, &work_id, creator).await;
+        seed_task(&pool, &task_id, &work_id, assignee, "active").await;
+        let p1 = |id: &str| axum::extract::Path(id.to_string());
+
+        let r = crate::task_id_press(
+            Extension(pool.clone()),
+            Some(Extension(sess(intruder))),
+            p1(&task_id),
+        )
+        .await
+        .map(|_| ());
+        assert!(
+            matches!(r, Err(AppError::Forbidden)),
+            "流程之外的会话按 ID 办他人待办必须 403（实际 {r:?}）"
+        );
+        assert_eq!(
+            task_status(&pool, &task_id).await,
+            "active",
+            "403 之后 x_task.task_status 不得被推动"
+        );
+
+        let r = crate::task_id_press(
+            Extension(pool.clone()),
+            Some(Extension(sess(assignee))),
+            p1(&task_id),
+        )
+        .await
+        .map(|_| ());
+        assert!(r.is_ok(), "负责人处理自己的待办应放行（实际 {r:?}）");
+        assert_eq!(task_status(&pool, &task_id).await, "pressed");
+
+        // 这一格是 task 键取「person + work.creator」两列的理由：催办来自发起人，
+        // 只校 x_task.person 会把正常流程判成越权。
+        let r = crate::task_id_urge(
+            Extension(pool.clone()),
+            Some(Extension(sess(creator))),
+            p1(&task_id),
+        )
+        .await
+        .map(|_| ());
+        assert!(
+            r.is_ok(),
+            "发起人催办自己单据上的待办应放行（实际 {r:?}）"
+        );
+        assert_eq!(task_status(&pool, &task_id).await, "urged");
+        assert_eq!(
+            count_by(
+                &pool,
+                "SELECT COUNT(*) AS c FROM x_record WHERE task_id = $1 AND record_type = 'urge'",
+                &task_id
+            )
+            .await,
+            1,
+            "放行后催办留痕必须落库"
+        );
+
+        seed_task(&pool, &orphan, "r43-no-such-work", "", "active").await;
+        let r = crate::task_id_expire(
+            Extension(pool.clone()),
+            Some(Extension(sess(intruder))),
+            p1(&orphan),
+        )
+        .await
+        .map(|_| ());
+        assert!(
+            matches!(r, Err(AppError::Forbidden)),
+            "负责人与发起人都为空的 task 不得对普通会话开放（实际 {r:?}）"
+        );
+        assert_eq!(task_status(&pool, &orphan).await, "active");
+        let (admin, role_id) = seed_admin(&pool, "r43").await;
+        let r = crate::task_id_expire(
+            Extension(pool.clone()),
+            Some(Extension(sess(&admin))),
+            p1(&orphan),
+        )
+        .await
+        .map(|_| ());
+        assert!(
+            r.is_ok(),
+            "admin 打无主 task 的过期写应放行（实际 {r:?}）"
+        );
+        assert_eq!(
+            task_status(&pool, &orphan).await,
+            "expired",
+            "admin 放行后落笔必须可见"
+        );
+        unseed_admin(&pool, &admin, &role_id).await;
+
+        let client = pool.get().await.unwrap();
+        for t in [task_id.as_str(), orphan.as_str()] {
+            client
+                .execute("DELETE FROM x_record WHERE task_id = $1", &[&t.to_string()])
+                .await
+                .unwrap();
+            client
+                .execute("DELETE FROM x_task WHERE id = $1", &[&t.to_string()])
+                .await
+                .unwrap();
+        }
+        client
+            .execute("DELETE FROM x_work WHERE id = $1", &[&work_id])
+            .await
+            .unwrap();
+    }
+
+    /// DB 臂（work 键）：`u4_require_work_owner` 严格档 + 「归属门先于 IDOR」+
+    /// 空发起人只归 admin。
+    #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
+    async fn ppsvc_get_work_writes_require_creator_and_land() {
+        if !shared::testing::is_db_available().await {
+            eprintln!("skip: PG unavailable");
+            return;
+        }
+        let pool = shared::testing::test_pool();
+        let salt = uuid::Uuid::new_v4();
+        let work_id = format!("r44-w-{salt}");
+        let work2 = format!("r44-w2-{salt}");
+        let orphan = format!("r44-wo-{salt}");
+        let rc = format!("r44-rc-{salt}");
+        let creator = "u-r44-creator";
+        let intruder = "u-r44-intruder";
+        seed_work(&pool, &work_id, creator).await;
+        seed_work(&pool, &work2, creator).await;
+        seed_work(&pool, &orphan, "").await;
+        {
+            let client = pool.get().await.unwrap();
+            client
+                .execute(
+                    "INSERT INTO x_readcompleted (id, work_id, person) VALUES ($1, $2, $3)",
+                    &[&rc, &work2, &"u-r44-reader".to_string()],
+                )
+                .await
+                .unwrap();
+        }
+        let p1 = |id: &str| axum::extract::Path(id.to_string());
+        let p2 = |a: &str, b: &str| axum::extract::Path((a.to_string(), b.to_string()));
+        let p3 = |a: &str, b: &str, c: &str| {
+            axum::extract::Path((a.to_string(), b.to_string(), c.to_string()))
+        };
+
+        let r = crate::u2::snap_type_suspend(
+            Extension(pool.clone()),
+            Some(Extension(sess(intruder))),
+            p1(&work_id),
+        )
+        .await
+        .map(|_| ());
+        assert!(
+            matches!(r, Err(AppError::Forbidden)),
+            "陌生会话挂起他人单据必须 403（实际 {r:?}）"
+        );
+        assert_eq!(
+            count_by(
+                &pool,
+                "SELECT COUNT(*) AS c FROM x_snap WHERE work_id = $1",
+                &work_id
+            )
+            .await,
+            0,
+            "403 之后不得留下任何快照"
+        );
+        assert_eq!(work_status(&pool, &work_id).await, "processing");
+
+        let r = crate::u2::snap_type_suspend(
+            Extension(pool.clone()),
+            Some(Extension(sess(creator))),
+            p1(&work_id),
+        )
+        .await
+        .map(|_| ());
+        assert!(r.is_ok(), "发起人挂起自己的单据应放行（实际 {r:?}）");
+        assert_eq!(work_status(&pool, &work_id).await, "suspended");
+        assert_eq!(
+            count_by(
+                &pool,
+                "SELECT COUNT(*) AS c FROM x_snap WHERE work_id = $1 AND snap_type = 'suspend'",
+                &work_id
+            )
+            .await,
+            1,
+            "放行后挂起快照必须落库"
+        );
+
+        let r = crate::snap_work_workId_type_abandoned(
+            Extension(pool.clone()),
+            Some(Extension(sess(creator))),
+            p3("abandoned", &work_id, "abandoned"),
+        )
+        .await
+        .map(|_| ());
+        assert!(r.is_ok(), "发起人放弃自己的单据应放行（实际 {r:?}）");
+        assert_eq!(
+            count_by(
+                &pool,
+                "SELECT COUNT(*) AS c FROM x_snap WHERE work_id = $1 AND snap_type = 'abandoned'",
+                &work_id
+            )
+            .await,
+            1,
+            "lib 面的 abandoned 快照注册同样要落笔"
+        );
+
+        let r = crate::work_v2_id_reroute_p2(
+            Extension(pool.clone()),
+            Some(Extension(sess(intruder))),
+            p2(&work_id, &work_id),
+        )
+        .await
+        .map(|_| ());
+        assert!(
+            matches!(r, Err(AppError::Forbidden)),
+            "陌生会话改道他人单据必须 403（实际 {r:?}）"
+        );
+        assert_eq!(work_status(&pool, &work_id).await, "suspended");
+        let r = crate::work_v2_id_reroute_p2(
+            Extension(pool.clone()),
+            Some(Extension(sess(creator))),
+            p2(&work_id, &work_id),
+        )
+        .await
+        .map(|_| ());
+        assert!(r.is_ok(), "发起人改道自己的单据应放行（实际 {r:?}）");
+        assert_eq!(work_status(&pool, &work_id).await, "rerouted");
+
+        // 归属门先于 IDOR：发起人打「别人的记录 + 自己的 work」过得了归属门，
+        // 再由 work 等值校验回业务错误——两道门各自可证，不会把 403 当 IDOR 读数。
+        let r = crate::u2::taskcompleted_press(
+            Extension(pool.clone()),
+            Some(Extension(sess(creator))),
+            p2(&rc, &work_id),
+        )
+        .await;
+        assert!(
+            matches!(r, Ok(_)),
+            "发起人过归属门后由 IDOR 返回业务错误信封（HTTP 200）"
+        );
+        assert_eq!(
+            count_by(
+                &pool,
+                "SELECT COUNT(*) AS c FROM x_record WHERE work_id = $1 AND record_type = 'press'",
+                &work_id
+            )
+            .await,
+            0,
+            "IDOR 拒绝后不得留痕"
+        );
+        let r = crate::u2::taskcompleted_press(
+            Extension(pool.clone()),
+            Some(Extension(sess(intruder))),
+            p2(&rc, &work2),
+        )
+        .await
+        .map(|_| ());
+        assert!(
+            matches!(r, Err(AppError::Forbidden)),
+            "陌生会话催办他人已完成项必须 403（实际 {r:?}）"
+        );
+        let r = crate::u2::taskcompleted_press(
+            Extension(pool.clone()),
+            Some(Extension(sess(creator))),
+            p2(&rc, &work2),
+        )
+        .await
+        .map(|_| ());
+        assert!(r.is_ok(), "发起人催办自己单据应放行（实际 {r:?}）");
+        assert_eq!(
+            count_by(
+                &pool,
+                "SELECT COUNT(*) AS c FROM x_record WHERE work_id = $1 AND record_type = 'press'",
+                &work2
+            )
+            .await,
+            1,
+            "放行后催办留痕必须落库"
+        );
+
+        // 空发起人：普通会话 403、admin 放行并落笔。
+        let r = crate::u2::snap_type_abandoned(
+            Extension(pool.clone()),
+            Some(Extension(sess(intruder))),
+            p1(&orphan),
+        )
+        .await
+        .map(|_| ());
+        assert!(
+            matches!(r, Err(AppError::Forbidden)),
+            "空发起人单据不得对普通会话开放（实际 {r:?}）"
+        );
+        let (admin, role_id) = seed_admin(&pool, "r44").await;
+        let r = crate::u2::snap_type_abandoned(
+            Extension(pool.clone()),
+            Some(Extension(sess(&admin))),
+            p1(&orphan),
+        )
+        .await
+        .map(|_| ());
+        assert!(
+            r.is_ok(),
+            "admin 打空发起人单据的快照写应放行（实际 {r:?}）"
+        );
+        assert_eq!(
+            count_by(
+                &pool,
+                "SELECT COUNT(*) AS c FROM x_snap WHERE work_id = $1 AND snap_type = 'abandoned'",
+                &orphan
+            )
+            .await,
+            1,
+            "admin 放行后落笔必须可见"
+        );
+        unseed_admin(&pool, &admin, &role_id).await;
+
+        let client = pool.get().await.unwrap();
+        client
+            .execute("DELETE FROM x_readcompleted WHERE id = $1", &[&rc])
+            .await
+            .unwrap();
+        for w in [work_id.as_str(), work2.as_str(), orphan.as_str()] {
+            client
+                .execute("DELETE FROM x_record WHERE work_id = $1", &[&w.to_string()])
+                .await
+                .unwrap();
+            client
+                .execute("DELETE FROM x_snap WHERE work_id = $1", &[&w.to_string()])
+                .await
+                .unwrap();
+            client
+                .execute("DELETE FROM x_work WHERE id = $1", &[&w.to_string()])
+                .await
+                .unwrap();
+        }
+    }
+
+    /// DB 臂（workcompleted / snap 键）：完成项与快照行自身没有可用属主，
+    /// 必须 hop 到 x_work.creator；放行侧要能看见物理删与状态写真的落库。
+    #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
+    async fn ppsvc_get_completed_snap_writes_hop_to_work_creator() {
+        if !shared::testing::is_db_available().await {
+            eprintln!("skip: PG unavailable");
+            return;
+        }
+        let pool = shared::testing::test_pool();
+        let salt = uuid::Uuid::new_v4();
+        let work_id = format!("r45-w-{salt}");
+        let wc_id = format!("r45-wc-{salt}");
+        let wc_dup = format!("r45-wc2-{salt}");
+        let snap_id = format!("r45-s-{salt}");
+        let creator = "u-r45-creator";
+        let intruder = "u-r45-intruder";
+        seed_work(&pool, &work_id, creator).await;
+        let client = pool.get().await.unwrap();
+        for id in [wc_id.as_str(), wc_dup.as_str()] {
+            client
+                .execute(
+                    "INSERT INTO x_workcompleted (id, work_id) VALUES ($1, $2)",
+                    &[&id.to_string(), &work_id],
+                )
+                .await
+                .unwrap();
+        }
+        client
+            .execute(
+                "INSERT INTO x_snap (id, work_id, snap_type, snap_data) VALUES ($1, $2, 'snap', 'null'::jsonb)",
+                &[&snap_id, &work_id],
+            )
+            .await
+            .unwrap();
+        let p1 = |id: &str| axum::extract::Path(id.to_string());
+        let p2 = |a: &str, b: &str| axum::extract::Path((a.to_string(), b.to_string()));
+
+        // ① snap_wc_type_abandoned：hop 到发起人才能放行；陌生会话零快照。
+        let r = crate::u2::snap_wc_type_abandoned(
+            Extension(pool.clone()),
+            Some(Extension(sess(intruder))),
+            p1(&wc_id),
+        )
+        .await
+        .map(|_| ());
+        assert!(
+            matches!(r, Err(AppError::Forbidden)),
+            "陌生会话给他人完成项打放弃快照必须 403（实际 {r:?}）"
+        );
+        assert_eq!(
+            count_by(
+                &pool,
+                "SELECT COUNT(*) AS c FROM x_snap WHERE work_id = $1 AND snap_type = 'abandonedWorkCompleted'",
+                &work_id
+            )
+            .await,
+            0
+        );
+        let r = crate::u2::snap_wc_type_abandoned(
+            Extension(pool.clone()),
+            Some(Extension(sess(creator))),
+            p1(&wc_id),
+        )
+        .await
+        .map(|_| ());
+        assert!(r.is_ok(), "发起人给完成项打快照应放行（实际 {r:?}）");
+        // 完成项快照按 work_id 落键（读回侧一律按 work_id 查；写成 wc_id 会存进去读不到）。
+        assert_eq!(
+            count_by(
+                &pool,
+                "SELECT COUNT(*) AS c FROM x_snap WHERE work_id = $1 AND snap_type = 'abandonedWorkCompleted'",
+                &work_id
+            )
+            .await,
+            1,
+            "完成项快照必须按真实 work_id 落键"
+        );
+
+        // ② lib 面同一把键（workcompleted 路径注册）：陌生会话 403。
+        let r = crate::snap_workcompleted_workCompletedId_type_abandonedworkcompleted(
+            Extension(pool.clone()),
+            Some(Extension(sess(intruder))),
+            p2(&wc_id, "abandonedworkcompleted"),
+        )
+        .await
+        .map(|_| ());
+        assert!(
+            matches!(r, Err(AppError::Forbidden)),
+            "陌生会话按 workcompleted ID 写放弃快照必须 403（实际 {r:?}）"
+        );
+
+        // ③ snap_id_restore：hop 经 x_snap.work_id。
+        let r = crate::snap_id_restore(
+            Extension(pool.clone()),
+            Some(Extension(sess(intruder))),
+            p1(&snap_id),
+        )
+        .await
+        .map(|_| ());
+        assert!(
+            matches!(r, Err(AppError::Forbidden)),
+            "陌生会话用他人快照回滚单据必须 403（实际 {r:?}）"
+        );
+        assert_eq!(work_status(&pool, &work_id).await, "processing");
+        let r = crate::snap_id_restore(
+            Extension(pool.clone()),
+            Some(Extension(sess(creator))),
+            p1(&snap_id),
+        )
+        .await
+        .map(|_| ());
+        assert!(r.is_ok(), "发起人用自家快照回滚应放行（实际 {r:?}）");
+        assert_eq!(
+            work_status(&pool, &work_id).await,
+            "restored",
+            "放行后 work_status 必须被写"
+        );
+
+        // ④ wc_merge_flag：destroyive 物理删，陌生会话一行都不许掉。
+        let r = crate::u2::wc_merge_flag(
+            Extension(pool.clone()),
+            Some(Extension(sess(intruder))),
+            p1(&wc_id),
+        )
+        .await
+        .map(|_| ());
+        assert!(
+            matches!(r, Err(AppError::Forbidden)),
+            "陌生会话合并他人完成记录必须 403（实际 {r:?}）"
+        );
+        assert_eq!(
+            count_by(
+                &pool,
+                "SELECT COUNT(*) AS c FROM x_workcompleted WHERE work_id = $1",
+                &work_id
+            )
+            .await,
+            2,
+            "403 之后重复项必须原样保留"
+        );
+        let r = crate::u2::wc_merge_flag(
+            Extension(pool.clone()),
+            Some(Extension(sess(creator))),
+            p1(&wc_id),
+        )
+        .await
+        .map(|_| ());
+        assert!(r.is_ok(), "发起人合并自己的重复完成记录应放行（实际 {r:?}）");
+        assert_eq!(
+            count_by(
+                &pool,
+                "SELECT COUNT(*) AS c FROM x_workcompleted WHERE work_id = $1",
+                &work_id
+            )
+            .await,
+            1,
+            "放行后仅保留 flag 指定项"
+        );
+
+        // ⑤ workcompleted_flag_rollback：删完成记录 + work 拉回 pending。
+        let wc3 = format!("r45-wc3-{salt}");
+        client
+            .execute(
+                "INSERT INTO x_workcompleted (id, work_id) VALUES ($1, $2)",
+                &[&wc3, &work_id],
+            )
+            .await
+            .unwrap();
+        let r = crate::workcompleted_flag_rollback(
+            Extension(pool.clone()),
+            Some(Extension(sess(intruder))),
+            p1(&wc3),
+        )
+        .await
+        .map(|_| ());
+        assert!(
+            matches!(r, Err(AppError::Forbidden)),
+            "陌生会话回滚他人完成项必须 403（实际 {r:?}）"
+        );
+        assert_eq!(
+            count_by(
+                &pool,
+                "SELECT COUNT(*) AS c FROM x_workcompleted WHERE id = $1",
+                &wc3
+            )
+            .await,
+            1,
+            "403 之后完成记录不得被物理删"
+        );
+        let r = crate::workcompleted_flag_rollback(
+            Extension(pool.clone()),
+            Some(Extension(sess(creator))),
+            p1(&wc3),
+        )
+        .await
+        .map(|_| ());
+        assert!(r.is_ok(), "发起人回滚自家完成项应放行（实际 {r:?}）");
+        assert_eq!(
+            count_by(
+                &pool,
+                "SELECT COUNT(*) AS c FROM x_workcompleted WHERE id = $1",
+                &wc3
+            )
+            .await,
+            0,
+            "放行后完成记录必须被删"
+        );
+        assert_eq!(work_status(&pool, &work_id).await, "pending");
+
+        client
+            .execute("DELETE FROM x_record WHERE work_id = $1", &[&work_id])
+            .await
+            .unwrap();
+        client
+            .execute("DELETE FROM x_snap WHERE work_id = $1", &[&work_id])
+            .await
+            .unwrap();
+        client
+            .execute("DELETE FROM x_workcompleted WHERE work_id = $1", &[&work_id])
+            .await
+            .unwrap();
+        client
+            .execute("DELETE FROM x_work WHERE id = $1", &[&work_id])
+            .await
+            .unwrap();
     }
 }
