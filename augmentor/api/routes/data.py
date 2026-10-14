@@ -19,7 +19,7 @@ from augmentor.converter import (
 )
 from ..deps import (
     raise_internal_error,
-
+    mutate_json_file,
     allowed_data_roots,
     assert_dataset_shape,
     get_pipeline,
@@ -195,13 +195,13 @@ async def update_data_item(
         raise HTTPException(status_code=404, detail="文件不存在")
 
     try:
-        items = await read_json_file(file_path)
+        def _replace(items: list) -> None:
+            # 越界判决必须读的是**锁内刚拿到的那一份**，不是请求进入时的快照
+            if index < 0 or index >= len(items):
+                raise HTTPException(status_code=400, detail="索引越界")
+            items[index] = item
 
-        if index < 0 or index >= len(items):
-            raise HTTPException(status_code=400, detail="索引越界")
-
-        items[index] = item
-        await write_json_file(file_path, items)
+        await mutate_json_file(file_path, _replace)
 
         return {"success": True}
     except HTTPException:
@@ -224,13 +224,13 @@ async def delete_data_item(
         raise HTTPException(status_code=404, detail="文件不存在")
 
     try:
-        items = await read_json_file(file_path)
+        def _remove(items: list) -> None:
+            # 同 `update_data_item`：判界与弹出都在锁内，对着同一份刚读到的内容做
+            if index < 0 or index >= len(items):
+                raise HTTPException(status_code=400, detail="索引越界")
+            items.pop(index)
 
-        if index < 0 or index >= len(items):
-            raise HTTPException(status_code=400, detail="索引越界")
-
-        items.pop(index)
-        await write_json_file(file_path, items)
+        await mutate_json_file(file_path, _remove)
 
         return {"success": True}
     except HTTPException:

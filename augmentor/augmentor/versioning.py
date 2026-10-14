@@ -16,6 +16,7 @@ from typing import List, Dict, Optional
 from dataclasses import dataclass, asdict
 from pathlib import Path
 from datetime import datetime
+from .atomic_write import path_lock
 from .exceptions import VersionError
 from .validation import require_count, require_within_dir
 
@@ -158,50 +159,57 @@ class VersionManager:
         Returns:
             VersionInfo 实例
         """
-        version_id = self._generate_version_id()
-        version_dir = self._get_version_dir(version_id)
-        version_dir.mkdir(parents=True, exist_ok=True)
+        # L273：版本号申领、快照落盘、current 标记这三步是一体的，必须在一把按存储目录
+        # 的锁里做完。少了它，并发 create_version 撞出两类实测后果：`_generate_version_id`
+        # 的「先看存不存在、再 mkdir」分处两个时刻，两个线程能领到同一个 ID 而后者覆盖前者
+        # 的快照；current 标记那一段更直接 —— 一支线程正写着 current.txt，另一支的
+        # `_clear_current_link` 把它 unlink 掉，Windows 当场拒绝访问（24 支并发实测 1 支
+        # PermissionError 而整支请求变 500，它已建好的版本目录却留在盘上，谁都不认它）。
+        with path_lock(self.storage_dir):
+            version_id = self._generate_version_id()
+            version_dir = self._get_version_dir(version_id)
+            version_dir.mkdir(parents=True, exist_ok=True)
         
-        # 保存数据（紧凑格式）
-        data_path = version_dir / "data.json"
-        with open(data_path, 'w', encoding='utf-8') as f:
-            json.dump(items, f, ensure_ascii=False, separators=(',', ':'))
+            # 保存数据（紧凑格式）
+            data_path = version_dir / "data.json"
+            with open(data_path, 'w', encoding='utf-8') as f:
+                json.dump(items, f, ensure_ascii=False, separators=(',', ':'))
         
-        # 保存元数据
-        version_info = VersionInfo(
-            version_id=version_id,
-            label=label or version_id,
-            description=description,
-            created_at=datetime.now().isoformat(),
-            item_count=len(items),
-            metadata=metadata or {}
-        )
+            # 保存元数据
+            version_info = VersionInfo(
+                version_id=version_id,
+                label=label or version_id,
+                description=description,
+                created_at=datetime.now().isoformat(),
+                item_count=len(items),
+                metadata=metadata or {}
+            )
         
-        info_path = version_dir / "metadata.json"
-        with open(info_path, 'w', encoding='utf-8') as f:
-            json.dump(asdict(version_info), f, ensure_ascii=False, indent=2)
+            info_path = version_dir / "metadata.json"
+            with open(info_path, 'w', encoding='utf-8') as f:
+                json.dump(asdict(version_info), f, ensure_ascii=False, indent=2)
         
-        # 更新 current 符号链接：判存在与清除都住进 _clear_current_link。Windows 上对断链
-        # 调 exists() 会抛 WinError 1920 而不是返回 False —— 本机 data/versions/current 曾是
-        # WSL 在 drvfs 上留下的 LX 链接，is_symlink() 与 os.readlink() 都认不出来，于是
-        # 「那里有没有东西」这个判断自己就能把整个 create_version 炸掉。
-        self._clear_current_link()
+            # 更新 current 符号链接：判存在与清除都住进 _clear_current_link。Windows 上对断链
+            # 调 exists() 会抛 WinError 1920 而不是返回 False —— 本机 data/versions/current 曾是
+            # WSL 在 drvfs 上留下的 LX 链接，is_symlink() 与 os.readlink() 都认不出来，于是
+            # 「那里有没有东西」这个判断自己就能把整个 create_version 炸掉。
+            self._clear_current_link()
         
-        # 创建新的符号链接（Windows 无管理员特权时建不出来，落到下面的 .txt）。目标只写
-        # 版本目录名：链接按自己所在目录解析，写整段相对路径会双重前缀而恒断链。
-        try:
-            self._current_symlink.symlink_to(version_dir.name)
-        except OSError:
-            # Windows 无管理员权限时（本机实测 WinError 1314）建不出符号链接，
-            # 创建 .txt 文件记录当前版本 —— 读侧 get_current_version 两条都认
-            with open(self._current_symlink.with_suffix('.txt'), 'w', encoding='utf-8') as f:
-                f.write(version_id)
+            # 创建新的符号链接（Windows 无管理员特权时建不出来，落到下面的 .txt）。目标只写
+            # 版本目录名：链接按自己所在目录解析，写整段相对路径会双重前缀而恒断链。
+            try:
+                self._current_symlink.symlink_to(version_dir.name)
+            except OSError:
+                # Windows 无管理员权限时（本机实测 WinError 1314）建不出符号链接，
+                # 创建 .txt 文件记录当前版本 —— 读侧 get_current_version 两条都认
+                with open(self._current_symlink.with_suffix('.txt'), 'w', encoding='utf-8') as f:
+                    f.write(version_id)
         
-        logger.info(f"创建版本: {version_id}, 数据条数: {len(items)}")
-        self._log_history("create", version_id, {
-            "label": version_info.label,
-            "item_count": version_info.item_count
-        })
+            logger.info(f"创建版本: {version_id}, 数据条数: {len(items)}")
+            self._log_history("create", version_id, {
+                "label": version_info.label,
+                "item_count": version_info.item_count
+            })
         return version_info
     
     def load_version(self, version_id: str) -> List[Dict]:

@@ -18,7 +18,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 from fastapi import Header, HTTPException
 
 from augmentor import AugmentorPipeline, DataValidationError, load_config
-from augmentor.atomic_write import atomic_write_json
+from augmentor.atomic_write import atomic_write_json, path_lock
 from augmentor.config import WebConfig
 
 logger = logging.getLogger(__name__)
@@ -771,3 +771,35 @@ def raise_boundary_error(exc: Exception) -> None:
     if isinstance(exc, DataValidationError):
         raise HTTPException(status_code=400, detail=str(exc))
     raise_internal_error(exc)
+
+
+async def mutate_json_file(file_path: Path, transform: Callable[[List], None]) -> None:
+    """在同一把按路径的锁里完成 **读 → 改 → 写**（L273 为「丢更新」那一族而立）
+
+    为什么锁必须罩住整段而不只是写那一步：`read_json_file` 与 `write_json_file` 各自都是
+    原子的，但**两次原子不等于一次原子**。两个请求各自读回同一份旧内容、各自只改自己那
+    一格、各自把**整份**写回，后写的那一份带着旧快照 ⇒ 前一次改动凭空消失，而两边都拿到
+    `{"success": true}`。实测（Temp 沙箱、单进程单 worker）：200 条数据集上 20 支并发
+    `PUT /api/data/update` 只有 1 处落盘，`DELETE` 20 支只删掉 1 条。
+
+    锁是 `threading.RLock`（可重入：外层整段与内层自保护的读点用同一个路径键）而不是
+    `asyncio.Lock`，所以整段读-改-写**放进一支工作线程**里跑：
+    一则在 `await` 上持有线程锁是错的，二则这样能和本仓的同步写者（`augmentor/backup.py`
+    的索引、`augmentor/version_control.py` 与 `versioning.py` 的版本账）共用同一把按路径的锁，
+    异步面与同步面之间也互斥。
+
+    只管**同进程**：多 worker（多进程）部署下这把锁跨不出去，那一档记在账本里待拍。
+
+    Args:
+        file_path: 目标数据集路径
+        transform: 就地对读回的记录列表做修改的函数；它抛出的异常（含 `HTTPException`）
+            原样上抛，此时**不写盘**，磁盘保持进入时的内容
+    """
+    def _read_modify_write():
+        with path_lock(file_path):
+            items = read_items(file_path)
+            transform(items)
+            atomic_write_json(file_path, items)
+
+    loop = asyncio.get_event_loop()
+    await loop.run_in_executor(None, _read_modify_write)

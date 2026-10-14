@@ -5,8 +5,8 @@
 
 产品改动住在两处，同一个根因：
 
-- `augmentor/backup.py:55-64`（`DatasetBackup.__init__` 不再 `mkdir`）与
-  `augmentor/backup.py:66-75`（`_load_index` 索引不在场时交回内存空账，不再落默认 `index.json`）
+- `augmentor/backup.py:55-67`（`DatasetBackup.__init__` 不再 `mkdir`）与
+  `augmentor/backup.py:69-78`（`_load_index` 索引不在场时交回内存空账，不再落默认 `index.json`）
 - `augmentor/dependency.py:89-106`（`DependencyManager.__init__` 不再 `mkdir`）
 
 **为什么本轮动的是库而不是路由与 CLI**：改前仓外探针量到 13 只读面里**只有 1 只**不建目录

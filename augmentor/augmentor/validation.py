@@ -1019,9 +1019,36 @@ def require_within_dir(label: str, value: Any, base: Path) -> Path:
 
     root = Path(base).resolve()
     resolved = (root / candidate).resolve()
-    if resolved != root and root not in resolved.parents:
+    if not path_lands_within(root, resolved):
         raise DataValidationError(f"{label} 不能指向 {base.name} 目录之外")
     return resolved
+
+
+def path_lands_within(base: Path, landing: Path) -> bool:
+    r"""`landing` 是否等于 `base` 或落在它之内 —— 判**形状**，且先抹平 `resolve()` 的前缀
+
+    住在 `require_within_dir` 之后而不是之前，是为了不搬动它上面那些被账本与守卫点名的行号；
+    名字是公开的，因为 `augmentor/backup.py` 的落点判据与它是同一件事，不该有两套写法。
+
+    为什么不写成 `base in landing.parents`（L273 现量出来的坑）：`resolve()` 的输出**形状**
+    取决于调用那一刻哪一段存在 —— Windows 上拿到句柄的那一次会多出 `\\?\` 这个扩展长度前缀，
+    没拿到的那一次不带。同一条表达式里两次 `resolve()`，只要目录正好在两次之间被别的线程建
+    出来，两侧就拿到两套形状，于是**一个普通名字被判成目录之外**：并发首用 20 次实测 4—12 次
+    误判，两侧读数由 `probe2_resolve.py` 抓在案（左 `C:\<临时>\c00`、
+    右 `\\?\C:\<临时>\c00\b002.json`）。那不是并发才有的怪事，而是「拿两次读盘的结果比字符串」
+    这件事本身的口径不成立；判形状不比句柄 ⇒ 剥掉扩展长度前缀，再交给 `Path` 自己那一套
+    比较（Windows 折叠大小写、POSIX 不折叠）问「相等，或是它的某一级父目录」。
+
+    Args:
+        base: 已解析的目录
+        landing: 已解析的落点
+
+    Returns:
+        `landing` 是否在 `base` 之内（含两者相等的「就是目录本身」那一档）
+    """
+    left = Path(str(base).removeprefix("\\\\?\\"))
+    right = Path(str(landing).removeprefix("\\\\?\\"))
+    return right == left or left in right.parents
 
 
 def validate_dataset(file_path: str, preset: str = "basic") -> Dict:

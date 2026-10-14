@@ -15,8 +15,8 @@ from pathlib import Path
 from dataclasses import dataclass
 from datetime import datetime
 
-from .atomic_write import atomic_write_json
-from .validation import require_count
+from .atomic_write import atomic_write_json, path_lock
+from .validation import path_lands_within, require_count
 from .exceptions import BackupError, BackupIntegrityError, DataValidationError
 
 logger = logging.getLogger(__name__)
@@ -61,7 +61,10 @@ class DatasetBackup:
         self._backup_dir = Path(backup_dir)
         # 构造不碰磁盘（A332 / L249）：旧写法在这里 mkdir，只读面每探活一次就多一个目录
         self._index_file = self._backup_dir / "index.json"
-        self._index = self._load_index()
+        # L273：读也在这把锁里 —— 别人正把整份索引 `os.replace` 过去时，Windows 会给读者
+        # 一个瞬时拒绝访问（`atomic_write_json` 的临时件命名管不到「目标正被读」这一侧）。
+        with path_lock(self._index_file):
+            self._index = self._load_index()
     
     def _load_index(self) -> Dict:
         """加载索引文件"""
@@ -114,7 +117,7 @@ class DatasetBackup:
         backup_path = self._backup_dir / f"{backup_id}.json"
         # `name` 直接决定落点，而它来自调用方：`../../x` 会写到备份目录之外
         # （HTTP 面实测 200 且真落盘）——白名单只管到 backup_dir 那一格。
-        if self._backup_dir.resolve() not in backup_path.resolve().parents:
+        if not path_lands_within(self._backup_dir.resolve(), backup_path.resolve()):
             raise DataValidationError(f"备份名称不能指向备份目录之外: {name}")
         
         # 读取源数据
@@ -140,10 +143,14 @@ class DatasetBackup:
             checksum=checksum
         )
         
-        # 更新索引（A298 / L250）：同名再备份先摘掉同 backup_id 的旧行 ⇒ 行数与磁盘份数一一对应
-        rows = [b for b in self._index["backups"] if b.get("backup_id") != backup_id]
-        self._index["backups"] = rows + [info.to_dict()]
-        self._save_index()
+        # 更新索引（A298 / L250：同名先摘旧行 ⇒ 行数与磁盘份数一一对应。L273：整段
+        # 读-改-写罩在按路径的锁里，**重读也在锁内** —— 少了它，20 次并发创建实测只剩
+        # 1 行索引，而盘上实实在在 20 份备份，对 list / restore / delete 全部不可见）
+        with path_lock(self._index_file):
+            self._index = self._load_index()
+            rows = [b for b in self._index["backups"] if b.get("backup_id") != backup_id]
+            self._index["backups"] = rows + [info.to_dict()]
+            self._save_index()
         
         logger.info(f"备份创建成功: {backup_id}")
         return info
@@ -210,27 +217,31 @@ class DatasetBackup:
         Returns:
             是否成功删除
         """
-        # 查找备份
-        backup_info = None
-        for i, backup in enumerate(self._index["backups"]):
-            if backup["backup_id"] == backup_id:
-                backup_info = backup
-                break
-        
-        if not backup_info:
-            return False
-        
-        # 删除备份文件
-        backup_path = Path(backup_info["backup_path"])
-        if backup_path.exists():
-            backup_path.unlink()
-        
-        # 更新索引
-        self._index["backups"] = [
-            b for b in self._index["backups"]
-            if b["backup_id"] != backup_id
-        ]
-        self._save_index()
+        # L273：查找 → 删档 → 重排索引 → 落盘整段在锁内，而且查的是**锁内刚读到的那一份**。
+        # 少了它，本方法会拿构造时那份旧账去写索引，把别的线程刚加进去的行原样抹回去。
+        with path_lock(self._index_file):
+            self._index = self._load_index()
+            # 查找备份
+            backup_info = None
+            for backup in self._index["backups"]:
+                if backup["backup_id"] == backup_id:
+                    backup_info = backup
+                    break
+
+            if not backup_info:
+                return False
+
+            # 删除备份文件
+            backup_path = Path(backup_info["backup_path"])
+            if backup_path.exists():
+                backup_path.unlink()
+
+            # 更新索引
+            self._index["backups"] = [
+                b for b in self._index["backups"]
+                if b["backup_id"] != backup_id
+            ]
+            self._save_index()
         
         logger.info(f"备份删除成功: {backup_id}")
         return True
