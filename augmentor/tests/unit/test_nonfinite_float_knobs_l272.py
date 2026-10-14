@@ -17,6 +17,13 @@
    其中 ``raise_internal_error`` 那一族（**A280**，待拍）与 422 渲染崩溃那一族
    （**A311** 的新现量）按**观测行为**钉住，不是假装它们合法——谁改这两族，这张表当场红。
 
+**本轮的边界只写在「有限性」这一维上**：四只咽喉调用权威时把闭区间推到两端
+（`-float("inf")` / `float("inf")`），所以**没有任何一个有限的合法值改了自己的归宿**。
+范围那一维是对外行为变更（200 → 400），账上已有 **A292**（``SampleConfig.ratio`` 越界
+在三种 ``method`` 上给三种结局）在拍，三只阈值与 ``min_scale_gain`` 的同一维本轮立成
+**A354** 待拍 —— 因此下面既有「非有限那一形一律 400」的格子，也有「有限越界仍按改前
+形状」的格子，后者是给下一轮复活的案面，不是笔误。
+
 改前的三格实测（本轮沙箱复现，逐格见循环日志 L272）：``ratio=inf`` 经
 ``int(len * inf)`` 抛 ``OverflowError`` 而它**不是** ``ValueError`` 子类 ⇒ ``to_http_error``
 落到 500 档；``ratio=-0.5`` 在 systematic 支折成 ``items[:-5]``（「丢最后 5 条」）而
@@ -68,9 +75,9 @@ CENSUS = {
     ("/api/dataset/search", "fuzzy_threshold"): ("400", "400", "400", "400"),
     ("/api/dataset/impact", "min_scale_gain"): ("400", "400", "200", "200"),
     ("/api/quality/health-gate", "pass_rate"): ("400", "400", "400", "400"),
-    ("/api/quality/health-gate", "pass_rate_min"): ("400", "400", "400", "400"),
-    ("/api/quality/health-gate", "duplicate_rate_max"): ("400", "400", "400", "400"),
-    ("/api/quality/health-gate", "completeness_min"): ("400", "400", "400", "400"),
+    ("/api/quality/health-gate", "pass_rate_min"): ("400", "400", "200", "200"),
+    ("/api/quality/health-gate", "duplicate_rate_max"): ("400", "400", "200", "200"),
+    ("/api/quality/health-gate", "completeness_min"): ("400", "400", "200", "200"),
     ("/api/quality/outliers", "threshold"): ("400", "200", "200", "400"),
     ("/api/quality/dedup", "threshold"): ("500", "500", "500", "500"),
     ("/api/quality/benchmark", "threshold"): ("500", "500", "500", "500"),
@@ -94,12 +101,10 @@ VERDICT_MARKERS = {
 }
 
 #: 本轮改前是 200 静默错答或 500、改后必须是 400 且判决点名旋钮的那几格。逐格点名，缺一格即红。
+#: **只有非有限那一形在这一列里**——有限越界的格子本轮一格未动（范围那一维是 A292 / A354，待拍），
+#: 它们由下面的 `test_..._range_face_is_untouched` 三支按改前形状钉住。
 SILENT_CELLS_FIXED = (
     ("/api/dataset/sample", "ratio", "inf"),
-    ("/api/dataset/sample", "ratio", "-1.0"),
-    ("/api/quality/health-gate", "pass_rate_min", "5.0"),
-    ("/api/quality/health-gate", "duplicate_rate_max", "5.0"),
-    ("/api/quality/health-gate", "completeness_min", "-1.0"),
     ("/api/dataset/impact", "min_scale_gain", "nan"),
     ("/api/quality/outliers", "threshold", "nan"),
 )
@@ -232,17 +237,32 @@ class TestSampleRatioSink:
     def setup_method(self):
         self.ops = DatasetOperations()
 
-    def test_ratio_above_one_is_rejected(self):
-        for bad in (2.0, 1.5):
-            with pytest.raises(DataValidationError, match="ratio"):
-                self.ops.sample(ITEMS, _ratio_config(ratio=bad))
+    def test_ratio_range_face_is_untouched_at_the_sdk_too(self):
+        """A292 的九格在 SDK 层逐格复现（10 条语料实测）——本轮只接有限性，范围留给拍板
 
-    def test_negative_ratio_is_rejected(self):
-        """改前 systematic 把 -0.5 折成 `items[:-5]`（5 条）、stratified 折成 0 条，两支都 200"""
-        for method in ("random", "systematic", "stratified"):
-            for bad in (-0.5, -2.0):
-                with pytest.raises(DataValidationError, match="ratio"):
-                    self.ops.sample(ITEMS, _ratio_config(method=method, ratio=bad))
+        `2.0` / `1.5` ⇒ random 抛 CPython 的英文 `ValueError`（**不是** `DataValidationError`），
+        systematic 与 stratified 各交整份 10 条；`-0.5` ⇒ systematic 折成前 5 条、
+        stratified 交 0 条；`-1.0` / `-2.0` ⇒ 另两支各交 0 条。
+        """
+        for bad in (2.0, 1.5, -0.5, -1.0, -2.0):
+            with pytest.raises(ValueError) as caught:
+                self.ops.sample(ITEMS, _ratio_config(ratio=bad))
+            assert not isinstance(caught.value, DataValidationError), (bad, caught.value)
+        for method, ratio, want in (("systematic", 2.0, 10), ("stratified", 2.0, 10),
+                                    ("systematic", 1.5, 10), ("stratified", -0.5, 0),
+                                    ("systematic", -1.0, 0), ("stratified", -1.0, 0)):
+            got = self.ops.sample(ITEMS, _ratio_config(method=method, ratio=ratio))
+            assert len(got) == want, (method, ratio, len(got))
+
+    def test_systematic_minus_half_ratio_still_slices_instead_of_refusing(self):
+        """A292 里最贵的一格：`-0.5` 在 systematic 支被折成 `items[:-5]`，交出**前 5 条**而不是报错
+
+        这一格本轮刻意留原样：它一旦改成 400，「同一个越界比例三种结局」就变成一种结局，
+        那是 A292 的修法 ①，得用户拍。
+        """
+        got = self.ops.sample(ITEMS, _ratio_config(method="systematic", ratio=-0.5))
+        assert len(got) == 5
+        assert got == ITEMS[:5]
 
     def test_non_finite_ratio_is_rejected(self):
         for bad in (NAN, INF, MINUS_INF):
@@ -285,11 +305,17 @@ class TestGateThresholdSinks:
                 with pytest.raises(DataValidationError, match=key):
                     self._gate(**{key: bad})
 
-    def test_three_thresholds_reject_out_of_range(self):
-        for key in ("pass_rate_min", "duplicate_rate_max", "completeness_min"):
-            for bad in (5.0, -1.0):
-                with pytest.raises(DataValidationError, match=key):
-                    self._gate(**{key: bad})
+    def test_three_thresholds_range_face_is_untouched(self):
+        """有限越界本轮一格不收紧：`5.0` / `-1.0` / `99.0` 照旧出一份判决（**A354 待拍**）
+
+        L235 那把尺子逐格量过「判决随阈值单调变化」，收紧范围等于凭空造一条后端
+        原本没有的规则并把 200 改成 400 —— 那是对外行为变更，要拍板才动。
+        """
+        for key, legal in (("pass_rate_min", 5.0), ("pass_rate_min", -1.0),
+                           ("duplicate_rate_max", 99.0), ("completeness_min", -3.0),
+                           ("completeness_min", 5.0)):
+            report = self._gate(**{key: legal})
+            assert "gate" in report, (key, legal)
 
     def test_defaults_still_reach_a_verdict(self):
         report = self._gate()
@@ -299,8 +325,8 @@ class TestGateThresholdSinks:
     def test_closed_interval_endpoints_are_legal(self):
         """0.0 与 1.0 是「一条都不许失」与「全部都要过」两档合法口径，且都真的生效
 
-        `pass_rate_min=1.0` 配 `pass_rate=0.9` 必须判 **失败**：这一格证明「写进闭区间
-        上端的 1.0」不是被当成没传而回落默认值——那正是 L149 / B219 那一族的缺陷形状。
+        `pass_rate_min=1.0` 配 `pass_rate=0.9` 必须判 **失败**：这一格证明「送到规则上端的
+        1.0」不是被当成没传而回落默认值——那正是 L149 / B219 那一族的缺陷形状。
         """
         assert self._gate(pass_rate_min=1.0)["gate"]["verdict"] == GateVerdict.FAILED
         assert self._gate(pass_rate_min=0.0)["gate"]["verdict"] == GateVerdict.PASSED
@@ -308,7 +334,7 @@ class TestGateThresholdSinks:
 
 
 class TestImpactSink:
-    """`is_beneficial` 的 min_scale_gain：定义域 [-1, +∞)，下界判死、上界开放"""
+    """`is_beneficial` 的 min_scale_gain：本轮只判有限性，两端都留开（范围那一维属 A354）"""
 
     def setup_method(self):
         self.evaluator = ImpactEvaluator()
@@ -333,10 +359,13 @@ class TestImpactSink:
         assert self._verdict_marker(5.0) is False
         assert self._verdict_marker(0.5) is True
 
-    def test_lower_bound_inclusive_and_below_rejected(self):
+    def test_below_the_semantic_floor_is_still_legal(self):
+        """`-1.0` 是 `scale_gain` 的值域下界，但比它更低的门槛**此前就收**：判死它是对外行为变更
+
+        门槛设在值域之下等于「永远放行」，那是一种用法而不是一个笔误 ⇒ A354 待拍。
+        """
         assert self._verdict_marker(-1.0) is True
-        with pytest.raises(DataValidationError, match="min_scale_gain"):
-            self._verdict_marker(-2.0)
+        assert self._verdict_marker(-2.0) is True
 
     def test_bool_rejected(self):
         """`True` 会被读成 1.0 ⇒ 门槛悄悄抬到「规模必须翻倍」"""
@@ -407,16 +436,41 @@ class TestHttpFace:
             assert code == "400", (path, field, shape, text[:120])
             assert VERDICT_MARKERS[field] in text, (path, field, text[:120])
 
-    def test_ratio_shapes_never_return_200(self, tmp_path):
-        """改前 systematic / stratified 两支对越界 ratio 一律 200 静默错答"""
+    def test_ratio_non_finite_never_returns_200_on_any_method(self, tmp_path):
+        """本轮修掉的那一半：NaN / 无穷在三种 `method` 上一律 400，一支都不再无声交产物"""
         files = self._files(tmp_path)
         for method in ("random", "systematic", "stratified"):
-            for shape in SHAPE_KEYS:
+            for shape in ("nan", "inf"):
                 body = _base_body("/api/dataset/sample", files)
                 body["method"] = method
                 body["ratio"] = SHAPE_VALUES[shape]
                 code, text = _post(self.client, "/api/dataset/sample", body)
                 assert code == "400", (method, shape, text[:120])
+                assert "ratio" in text, (method, shape, text[:120])
+
+    def test_ratio_range_face_is_untouched_on_all_three_methods(self, tmp_path):
+        """A292 没被本轮顺手拍掉：有限越界仍按改前的三种结局逐格复现（10 条语料实测）
+
+        `5.0` ⇒ random 400（CPython 英文原话）、systematic / stratified 各交整份 10 条；
+        `-1.0` ⇒ random 400、另两支各交 0 条。把这一格收紧成统一 400 就是把 200 改成 400
+        的对外行为变更，账上归 **A292**（待拍），所以这张矩阵必须留在守卫里当**反向**证据：
+        哪天有人替用户拍了这一格，这一支当场红。
+        """
+        files = self._files(tmp_path)
+        matrix = {
+            "random": {"5.0": ("400", None), "-1.0": ("400", None)},
+            "systematic": {"5.0": ("200", 10), "-1.0": ("200", 0)},
+            "stratified": {"5.0": ("200", 10), "-1.0": ("200", 0)},
+        }
+        for method, shapes in matrix.items():
+            for shape, (want_code, want_count) in shapes.items():
+                body = _base_body("/api/dataset/sample", files)
+                body["method"] = method
+                body["ratio"] = SHAPE_VALUES[shape]
+                code, text = _post(self.client, "/api/dataset/sample", body)
+                assert code == want_code, (method, shape, text[:120])
+                if want_count is not None:
+                    assert json.loads(text)["output_count"] == want_count, (method, shape)
 
     def test_a280_cells_stay_pinned_as_internal_error(self, tmp_path):
         """`raise_internal_error` 那一族：SDK 有判决但门口把它降成 500（**待拍，本轮不动**）"""

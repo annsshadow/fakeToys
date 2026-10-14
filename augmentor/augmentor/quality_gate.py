@@ -284,9 +284,13 @@ def gate_dataset_health(items: List[Dict[str, Any]],
         raise DataValidationError("数据集为空，门禁无法给出有意义的判定")
 
     require_item_field("text_field", items, text_field)
-    require_ratio("pass_rate_min", pass_rate_min)
-    require_ratio("duplicate_rate_max", duplicate_rate_max)
-    require_ratio("completeness_min", completeness_min)
+    # 本轮只接「有限性」这一维（改前三兄弟无人判，NaN 让比较恒 False ⇒ 无声错判决）。
+    # 范围那一维此前是**实测合法**的（`pass_rate_min=-1.0`、`duplicate_rate_max=5.0`、
+    # `completeness_min=-3.0` 全收且判决随阈值单调变化，L235 逐格量过并写进守卫），收紧它
+    # 等于凭空造一条后端原有的规则、把 200 改成 400 ⇒ 属对外行为变更，立 A354 待拍。
+    require_ratio("pass_rate_min", pass_rate_min, minimum=-float("inf"), maximum=float("inf"))
+    require_ratio("duplicate_rate_max", duplicate_rate_max, minimum=-float("inf"), maximum=float("inf"))
+    require_ratio("completeness_min", completeness_min, minimum=-float("inf"), maximum=float("inf"))
 
     health = DatasetHealthScore(weights=weights).score(items)
 
