@@ -471,6 +471,27 @@ A4 开放问题：① F1 是否 o2server 侧本就以 job/document 创建者为�
 | 新发现（**本批只记账不修**）：`row_to_json` 静默丢列 | `crates/shared/src/response.rs:17-48` | 匹配臂只覆盖 BOOL / INT* / FLOAT* / TEXT / VARCHAR / NAME / BPCHAR，`_ => None` ⇒ JSONB / JSON / DATE / TIMESTAMPTZ / NUMERIC 一律**不进响应**且不报错。上面那条读回缺陷正是靠显式 `::text` 绕开，但根因在跨 crate 的公共序列化口，改它要连所有调用面的响应形状一起核，属另一批 |
 | 尺子轴：**本批一字未动** | `scripts/audit_write_gating.mjs` | GET 面 −27、真落笔 −3 全部来自代码。矩阵里另有 **3 条 POST 行**同键从 R7 搬进 R5——同一把 handler 也挂在 POST 上，加门之后两行注册同步受益，不是新漏洞消失（见 §四 键级 diff 那格） |
 
+### 三.17 第十七批（program_center 的 GET 面 19 条注册 / 17 把 handler 收 admin 档，纯代码轴）
+
+`program_center` 是单文件 441KB 的 `lib.rs`，其 GET 面在尺子上挂 **21 条 K3**（已认证、无会话参数、无门禁），
+是第十五/十六批之后「把物理状态写注册在 GET 上」这一族里剩得最整的一格。逐把读函数体后定性：
+这 21 条里 **19 条**是真要收的写面（同步日志、组织回调、market 装卸、validation 超时、welink 同步），
+其余 **2 条**（`captcha/v2/create/...`、`code/create/mobile/{mobile}`）在登录与验证码下发链路上，
+收 admin 会直接打断认证，本批**不收、只记账**（见下「待拍」）。选批前按批 16 的提醒核过宏段旧账：
+这 17 把全是手写具名 handler，不在 `u2h::` 未解析宏那格上。
+
+| 项 | 文件 | 内容 |
+| --- | --- | --- |
+| 17 把 handler 补会话参数、门插在函数体第一句 | `src/lib.rs`（handler 起始行含 `636 / 4669 / 4760 / 5437 / 5471 / 5700 / 6158 / 6232 / 7726 / 9054 / 9106 / 11851` 等）+ `src/tests_u3.rs` | 形状一律 `session: Option<Extension<shared::session::Session>>` 置于 `pool` 之后、`require_admin_opt(&pool, session.as_deref()).await?` 先于 `pool.get()` ⇒ 无会话 401 且**不触库、离线可证**（与第十/十一/十五/十六批同法）。`Option<Extension<..>>` 必须是第二个 extractor，`Json` 仍留末位 |
+| 档位取 **admin** 而非归属，按「行上到底有没有可认的属主列」定 | `src/lib.rs:9189-9209`（`require_admin` / `require_admin_opt` 复用 crate 既有 helper） | 这 17 把只写**全局 / 系统表**（`x_program_sync_log`、`x_program_message_log`、`x_program_callback_registration`、`x_program_deploy`、`x_program_script`），行上没有可认属主列 ⇒ 归属门无从校起，只能收 admin；与 crate 自身的模板 handler `jest_clear_cache_source`（上一批收的）同锁，`/api/program_center` 前缀在 `ADMIN_WRITE_DEPRECATED_PREFIXES` 里、中间件不背书，门必须在 handler 体内 |
+| 新增 2 支离线臂，**逐把点名 17** | `src/lib.rs:12728 / 12843 / 12977`（内联 `mod security_gate_tests`） | `b17_get_writes_reject_without_session`（`mock_pool()` + 无会话 ⇒ 必须 401）与 `b17_get_writes_forbidden_before_touching_db`（非 admin 会话 ⇒ 必须 403）。两支都带 `assert_eq!(cases.len(), 17, "本批 17 把必须逐把点名，少一把即漏门")`；第二支的失败消息把「出现 Internal」直接写成「门插在读库之后」的判据 ⇒ 门的位置由断言消息钉住，不靠人眼 |
+| `reachable` 族 5 处断言由 500 改 401 | `src/tests_u3.rs:333-341 / 385-388 / 441-445 / 590-598` | 这 5 处原本 `assert_eq!(status, 500)`，加门后无会话变 401。改法沿用上一批 `jest/clear/cache` 的先例（断言跟着真实状态码走 + 注明批次）。**顺带把一条旧怀疑落成事实**：这批 500 断言钉的其实不是错误处理，而是**端点本来就坏**（见下条 schema drift） |
+| 新发现①：**路径参数一律不被消费** | `src/lib.rs` 本批 17 把签名 | `/market/{flag}/uninstall`、`/market/{flag}/install/or/update`、`/invoke/{flag}/execute/get`、`/dingding/sync/organization/register/callback/{enable}`、`/validation/timeout/{timeout}` 这几条注册的路径段，在对应 handler 签名里**一个 `Path` extractor 都没有**（17 把签名逐个查过，全部只有 `pool` + `session`）⇒ `{flag}` 传什么执行的都是同一段代码，路径参数纯属装饰。这是行为缺陷而非权限缺陷，本批加门不掩盖它，单列待拍 |
+| 新发现②：**program_center schema drift 族**（42703，早于本批存在） | 真库 `information_schema` + 逐句 `INSERT` 探针（事务内跑完回滚） | `x_program_sync_log` 实际**没有** `action` / `org_id` / `event_type` 列，`x_program_message_log` 没有 `user_id` / `message_type`，`x_program_callback_registration` 没有 `source` ⇒ 相关 INSERT 一律 42703、**必 500**，连上一批已收 admin 的 `jest_clear_cache` 也一样；而 `x_program_deploy` / `x_program_script` 的 INSERT 真能落笔，说明 `market_install_offline` 与 captcha / code 是**真落笔**写。本批的门插在读库之前，因此加门不改变这些端点的坏状态，也不会把坏状态洗成好状态 |
+| 新发现③：**冒名落笔 `creator='system'` 4 处** | `src/lib.rs:1691 / 1844 / 5709 / 8722` | `x_program_script`（captcha、code 两类）、`x_program_deploy`、`x_program_config` 的 INSERT 把 creator 硬编码成 `'system'` ⇒ 谁落的笔在库里查不出来。`market_install_offline`（5709）本批已收 admin，写者至少限定到管理员；其余 3 处（含 2 把待拍）留作「creator 改会话权威」那一批，与第十六批 `work_start_impl` 同口径 |
+| 第三方回调**零验签**族：本批只关伪造面 | 同上 5 把 `*callback*` handler | 钉钉 / 政务钉钉 / 企微的 sync、regist、callback 一族在整个 crate 里**找不到任何签名校验**，且因 schema drift 今天根本跑不通 ⇒ 收 admin 是在「不打断任何活的集成」的前提下把伪造回调的写面关掉。真验签（timestamp + nonce + 签名比对）是另一件事，本批不冒充做了 |
+| 尺子轴：**本批一字未动** | `scripts/audit_write_gating.mjs` | GET 无门禁 −19、真落笔 −8 全部来自代码。矩阵里另有 **8 条 POST/PUT 行**同键从 R7 搬进 R5（`dingding/request/pull/sync`、`dingding/sync/organization/callback`、`market/flag/install/or/update`、`market/install/offline`、`qiyeweixin/send/getprivateinfo/message`、`zhengwudingding/sync/organization/callback`、`market/{flag}/install/or/update` 等）——同一把 handler 双方法注册同步受益，不是新漏洞消失 |
+
 ## 四、验证
 
 
@@ -1635,4 +1656,77 @@ cd oa4rust/backend && cargo test --lib -p <crate>
   分两笔，本节即第二笔并回填该 hash。第二笔提交前已在干净树重跑尺子（run T / T2 全等、EXIT=0、真落笔 469、
   GET 写 129、只读挂写 766、间接写 223 / 间接门禁 234、缺口 0）、15 张产物逐张对账、五臂注入逐臂复原并复跑双基线复绿。
   共享工作树上并行会话的在制品未被本批收走。**本轮未 push**。
+
+### 第十七批收口后的刷新（§三.17 / §四 第十七批读数 / §五 名单）
+
+- **尺子读数（代码轴，`scripts/audit_write_gating.mjs` 一字未动）**：
+  | 判据 | 上批收口 | 本批 | 增量 | 归因 |
+  | --- | --- | --- | --- | --- |
+  | GET 体内无门禁 | 129 | **110** | **−19** | `write_routes_get_writes.tsv` 里 `program_center` 由 21 行降到 2 行，出列恰好 19 行、全是 K3 ⇒ 本批口径是 **17 把 handler / 19 条 GET 注册**（草稿里写的「21 条」把 handler 数与注册数混了，按产物逐行核过订正为 19；余 2 行是 captcha / code 两把待拍） |
+  | K1 / K2 / K3 | 5 / 11 / 113 | 5 / 11 / **94** | K3 −19 | 本批 19 条全在 K3，匿名可达与会读会话的两档一支没动 |
+  | 真落笔（R4+R6+R7 含写 SQL） | 469 | **461** | **−8** | R7 含写 SQL 329→**321**；R4 5、R6 135 一字未动。−8 对应 ungated 里 8 条 POST/PUT 行（同 handler 双方法注册同步受益），**不等于 −19**：GET 那 19 条挂在 GET 面上、本就不进 R 桶，两条账分开记 |
+  | ungated 明细总数 | 1080 | **1072** | −8 | 与上一格同数，逐行 diff 全为 `program_center` 的 POST/PUT R7 行 |
+  | R5-已认证+体内门禁 | 841 | **849** | +8 | 与 ungated −8 互为镜像，没有第三条来源 |
+  | 只读挂写 | 766 | 766 | 0 | 本批 19 把都含真写 SQL，不属这族 |
+  | 间接写 / 间接门禁 | 223 / 234 | 223 / 234 | 0 | helper 名单未新增成员（`require_admin_opt` 是门，不是写 helper） |
+  | 判据见证（缺陷 16–23） | 缺口 0 | **缺口 0** | — | 尺子 EXIT=0 |
+
+- **产物幂等与逐张对账**：15 张 artifact 中 **12 张 md5 与上批收口态一字不差**，恰 3 张变化
+  （`write_routes_get_writes.tsv` −19 行、`write_routes_ungated.tsv` −8 行、`write_routes_matrix.tsv` 8 行改桶 = 16 行差异）。
+  同一棵树上连跑 run T / T2 / T3 **三次全等**（日志与 15 张 md5 两两 `diff` 空）；注入取证之后在还原树重跑的 T3
+  与注入前的 T 也全等——即「尺子读数变化」这一路完全由代码解释，没有注入残留污染。
+- **矩阵键级 diff 逐条归因**（HEAD vs 本批，key = `crate|method|path`）：**8 条迁移、0 条丢失、0 条新增**，
+  全部是 `program_center` 的 R7→R5：POST `dingding/request/pull/sync`、POST `dingding/sync/organization/callback`、
+  POST `market/flag/install/or/update`、POST `market/install/offline`、POST `qiyeweixin/send/getprivateinfo/message`、
+  POST `zhengwudingding/sync/organization/callback`、PUT `market/flag/install/or/update`、PUT `market/{flag}/install/or/update`。
+  GET 那 19 条不在矩阵里（矩阵只收写方法，GET 面另存 `write_routes_get_writes.tsv`），所以「−19 + −8」是两张产物、
+  两条判据，不是同一个数被拆了两次。
+- **测试门禁**：`cargo test -p program_center` → **262 passed / 0 failed / 0 ignored / 0 filtered out**（基线 260，+2 臂；
+  `#[test]` 属性计数在 `git show HEAD` 与工作树两处逐文件核过：`lib.rs` 4→6、`tests_u3.rs` 19→19）。
+  本 crate 无 `#[ignore]`，真库臂走运行时 `is_db_available()`，本轮 0 skip。
+- **注入取证五臂**（通道 B 的 Node 移植 `/d/tmp/b17arms/inject_arm.mjs`，目标 `crates/program_center/src/lib.rs`，
+  基线绿 → 逐臂点名红 → 复原后复绿三段齐全；每臂 `RESTORE hash_ok=true`）：
+
+  | 臂 | 注入 | 点名读数（实际红在哪一句） | 判定 |
+  | --- | --- | --- | --- |
+  | B0 无害对照 | `fn json_str` → 多一个空格（行为全同） | 基线 `2 passed` → 注入后仍 `2 passed` | 臂成立：红由注入造成，不是环境本来就不稳 |
+  | B1 摘一把门 | `dingding_pull_sync` 的 `require_admin_opt(...).await?;` → `let _ = session;` | `lib.rs:12843`「以下 GET 面无会话未回 401：`["dingding_pull_sync"]`」、`:12977`「非 admin 未回 403…：`["dingding_pull_sync => Err(Internal)"]`」，2 failed | 臂成立：单把摘除即被单把点名，`assert_eq!(cases.len(), 17)` 与集合断言都不是摆设 |
+  | B2 门恒真放行 | `require_admin_opt` 体内 `session.ok_or(Unauthorized)?; require_admin(...)` → `Ok(())` | `:12843` 与 `:12977` **各点名全部 17 把**（401 臂与 403 臂同红），2 failed | 臂成立：无会话即拒这一档由 `session.ok_or` 独立见证，不是顺带被 admin 门挡住的 |
+  | B3 admin 判定短路 | `if is_admin(pool, &session.person_unique).await {` → `if true \|\| is_admin(...)` | **只有 `:12977` 红**，点名全部 17 把；401 臂 `1 passed` 仍绿 | 臂成立，且覆盖面正是要的效果：本臂只破坏 admin 判定、不破坏「无会话即拒」，所以 401 臂绿**不是**覆盖缺口，而是两条臂职责分开的证据 |
+  | B4 门插错位置 | `dingding_pull_sync` 内 `require_admin_opt(...)` 与 `let client = pool.get()...` 两行交换 | `:12843`「无会话未回 401：`["dingding_pull_sync"]`」、`:12977`「…：`["dingding_pull_sync => Err(Internal)"]`」，2 failed | 臂成立：**「门必须在读库之前」不是文档口径，是被断言消息钉住的可证伪判据**（读数出现 Internal 即门后移） |
+
+  收尾：`git status --porcelain` 只含本批 5 个在范围内文件（2 源 + 3 产物），复原后基线复绿
+  （`262 passed / 0 failed / 0 ignored`），尺子读数与注入前全等（见上格 run T3）。
+  锚点纪律照批 16：多行锚点直传 `argv`、`--hits 1` 断言唯一命中，`--cmd` 末位不拿管道退出码当判据，
+  且先 `grep -q 'error\[E' … && exit 9` 把「编译不过而红」排除在臂成立之外。
+- **下一批（代码轴）入口，按实测切片改写**：GET 面无门禁现读 **110** 条（K1 5 / K2 11 / K3 94），
+  按 crate 降序：`query_service_processing` **18**（含 12 条 `u2h::` 宏未绑段旧账，动手前先复核宏段）、
+  `processplatform_assemble_surface` **16**、`query_assemble_designer` **14**、`attendance_assemble_control` **9**、
+  `auth` **6**、`processplatform_assemble_designer` 5、`message_assemble_communicate` 5、`cms_assemble_control` 5、
+  `meeting_assemble_control` 4、`jpush_assemble_control` 4、`ai_assemble_control` 4，其余 11 个 crate 各 ≤3
+  （`program_center` 本批后只剩 2 条待拍）。
+  1. **优先度最高的一格仍是上批新立的**：`crates/shared/src/response.rs:17-48` `row_to_json` 对 JSONB / JSON /
+     DATE / TIMESTAMPTZ / NUMERIC 一律 `_ => None` **静默丢列**。本批给这格补了一条新的紧迫性证据：
+     program_center 的真库探针显示 migration 与在库 schema 已漂移（42703 族），而 `row_to_json` 会把漂移读成
+     「这一列不存在也没关系」——丢列不报错，等于把这类缺陷从可见面上抹掉。改前先核所有调用面的响应形状
+     （与 openapi 契约 + 前端 TS 类型两层对账，可照 `ts-openapi-contract-guard` 的口径）。
+  2. **program_center schema drift（42703）族**：三张表的 INSERT 必 500，属「端点从来没通过」一族；
+     修法要先定「补 migration 还是改 SQL」，两者对 o2server 行为对齐的影响不同，需拍板后才能动。
+     与旧账 `assert_eq!(status, 500)` 断言族 **272 处** 是同一件事的两面：那批断言里有多少钉的是坏端点而非
+     错误处理，本批只坐实了 program_center 的 5 处，剩余要按 crate 逐格查。
+  3. **路径参数不消费族**（本批新发现，尚未做全仓普查）：至少 5 条注册的 `{flag}` / `{enable}` / `{timeout}`
+     在 handler 签名里没有对应 `Path` extractor。先普查（注册路径段 ∩ 签名 extractor 的集合差），
+     再逐条判「参数本该生效」还是「路径纯属别名」。
+  4. ppsvc **R7 写面仍 49 条** + 旧账「16 把宏未绑段 + 43 条整张模板」；`mockdeletetoget` 双 DELETE 恒回
+     not found 的 14 把；`cms_core_entity` 12 条元数据写。
+- **沿用的待拍格**：program_center **2 把**（captcha / code，收 admin 会打断认证链路）与其同源的
+  `creator='system'` 冒名 3 处（`lib.rs:1691 / 1844 / 8722`）、第三方回调**零验签**族（本批只关掉伪造写面，
+  真验签 timestamp + nonce + 签名比对未做）、A1 真匿名写 9 条属限流族、24 条死档 needs 独立守卫、
+  只读挂写现读 **766**、`NOW()` 写进 TEXT 列 79 处、门禁入口两族并存、`shared/src/crud.rs` CrudSpec 无归属、
+  correlation 读侧 IDOR、F5 / F7 / F8 / F10、N4-02 / N4-03、`GATE_RE` 里 `require_actor` 无独立见证的冗余词。
+- **提交落点**：本批代码轴（`crates/program_center/src/lib.rs` 17 把加门 + 2 支逐把点名臂、
+  `src/tests_u3.rs` 5 处 500→401 与 welink 那支拆成 401 / 403 两读、3 张刷新产物）为 `13983b2ca`，
+  与本文档（§三.17 / 本节）分两笔，本节即第二笔并回填该 hash。第二笔提交前已在干净树重跑尺子
+  （run T / T2 / T3 全等、EXIT=0、真落笔 461、GET 写 110、只读挂写 766、间接写 223 / 间接门禁 234、缺口 0）、
+  15 张产物逐张对账、五臂注入逐臂复原并复跑基线复绿。共享工作树上并行会话的在制品未被本批收走。**本轮未 push**。
 
