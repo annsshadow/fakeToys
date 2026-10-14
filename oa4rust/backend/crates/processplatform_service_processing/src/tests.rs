@@ -466,6 +466,38 @@ mod u2_contract {
         (status, v)
     }
 
+    /// 2026-10 R4-2：以指定 person 注入会话后发请求，且**不**预断言 HTTP 200
+    /// ——门禁收紧后要读 401 / 403，业务错误仍是 200 信封。
+    async fn send_raw_as(method: Method, uri: &str, body: Option<Value>, person: &str) -> (StatusCode, Value) {
+        let session = shared::session::Session {
+            token: "test-token".to_string(),
+            person_unique: person.to_string(),
+            created_at: chrono::Utc::now().naive_utc(),
+            expires_at: chrono::Utc::now().naive_utc() + chrono::Duration::hours(1),
+        };
+        let req = match body {
+            Some(v) => Request::builder()
+                .uri(uri)
+                .method(method)
+                .header("content-type", "application/json")
+                .body(Body::from(v.to_string()))
+                .unwrap(),
+            None => Request::builder()
+                .uri(uri)
+                .method(method)
+                .body(Body::empty())
+                .unwrap(),
+        };
+        let resp = app().layer(axum::Extension(session)).oneshot(req).await.unwrap();
+        let status = resp.status();
+        let raw = axum::body::to_bytes(resp.into_body(), usize::MAX)
+            .await
+            .unwrap()
+            .to_vec();
+        let v: Value = serde_json::from_slice(&raw).unwrap_or_else(|_| json!({}));
+        (status, v)
+    }
+
     async fn count(pool: &Pool, sql: &str) -> i64 {
         let c = pool.get().await.unwrap();
         c.query_one(sql, &[]).await.unwrap().get::<_, i64>("c")
@@ -492,13 +524,17 @@ mod u2_contract {
         let (_, v) = send(Method::PUT, &format!("{base}/dic-rt/p0/data"), Some(body)).await;
         assert_eq!(v["type"], "success");
         assert_eq!(v["data"]["value"]["p0"]["k1"]["k2"], "v", "\u{8def}\u{5f84}\u{5bfb}\u{5740}\u{5199}\u{5165}\u{5e94}\u{6302}\u{5728} p0 \u{952e}\u{4e0b}");
-        let (_, v) = send(
+        // R4-2：PUT applicationdict/{id}（写 name / 整只 data）收紧为仅 admin。
+        // 本臂钉住「非 admin 会话 403」；admin 放行侧与真实落库见
+        // security_gate_tests::dict_edit_allowed_for_admin_and_lands。
+        let (status, _) = send_raw_as(
             Method::PUT,
             &format!("{base}/dic-rt"),
             Some(json!({"name": "n"})),
+            "test-person",
         )
         .await;
-        assert_eq!(v["data"]["name"], "n");
+        assert_eq!(status, StatusCode::FORBIDDEN, "非 admin 写字典名必须 403");
         let (_, v) = send(Method::DELETE, &format!("{base}/dic-rt/p0/data"), None).await;
         assert_eq!(v["type"], "success");
         let n = count(&pool, "SELECT COUNT(*) AS c FROM x_application_dict WHERE id='dic-rt' AND data::text LIKE '%p0%' OR data::text LIKE '%k1%'").await;
@@ -1132,7 +1168,7 @@ mod u2_contract {
                 .await
                 .unwrap();
             c.execute(
-                "INSERT INTO x_work (id,title,process,creator) VALUES ('ret-w','t','p','system')",
+                "INSERT INTO x_work (id,title,process,creator) VALUES ('ret-w','t','p','u42-retract-owner')",
                 &[],
             )
             .await
@@ -1140,7 +1176,10 @@ mod u2_contract {
             c.execute("INSERT INTO x_task (id,title,work,person,task_status) VALUES ('ret-t1','t','ret-w','p@P','active')", &[]).await.unwrap();
         }
         let url = "/api/processplatform/service/processing/work/v3/retract";
-        let (_, v) = send(Method::POST, url, Some(json!({"work": "ret-w"}))).await;
+        // R4-2 后该写按 x_work.creator 判归属：以发起人会话发送（拒绝侧见
+        // security_gate_tests 的 work_delete / task_delete 归属臂）
+        let (status, v) = send_raw_as(Method::POST, url, Some(json!({"work": "ret-w"})), "u42-retract-owner").await;
+        assert_eq!(status, StatusCode::OK, "发起人撤回自己的 work 应放行");
         assert_eq!(v["type"], "success");
         let cancelled = count(
             &pool,
@@ -1154,6 +1193,21 @@ mod u2_contract {
         )
         .await;
         assert_eq!(rec, 1, "撤回必须留痕");
+        let record_creator: String = pool
+            .get()
+            .await
+            .unwrap()
+            .query_one(
+                "SELECT creator FROM x_record WHERE work_id='ret-w' AND record_type='retract'",
+                &[],
+            )
+            .await
+            .unwrap()
+            .get("creator");
+        assert_eq!(
+            record_creator, "u42-retract-owner",
+            "R4-2 后留痕 creator 取会话权威，不再硬写 system"
+        );
         let c = pool.get().await.unwrap();
         c.execute("DELETE FROM x_task WHERE work='ret-w'", &[])
             .await
