@@ -18,6 +18,42 @@ pub mod routes;
 
 use entities::{portal, portal_page, script, widget};
 
+/// 门户页面写门禁（安全审计 2026-10 四轮 F2）：本 crate 与 `portal` crate 写**同一张**
+/// `x_portal_page`（列集不同），该表无 creator 列=门户管理台内容；`/api/portal` 不在
+/// `ADMIN_WRITE_PREFIXES`（兜底已废弃），中间件仅 Authenticated → 任一登录用户可
+/// 建/改/软删任意门户页面。两条写路径必须成对收口，否则留旁路。
+/// 本 crate 走 sea-orm `DatabaseConnection`（`shared::middleware::is_admin` 要 deadpool
+/// `Pool`，而 `portal_core_entity_router` 收下 `_pool` 却从未 layer 注入），故按同一条
+/// SQL 就地判 admin；查询失败一律 fail-closed 拒绝。
+#[allow(non_snake_case)]
+async fn require_admin(db: &DatabaseConnection, person_unique: &str) -> Result<(), AppError> {
+    let row = db
+        .query_one(Statement::from_sql_and_values(
+            sea_orm::DbBackend::Postgres,
+            "SELECT EXISTS(SELECT 1 FROM auth_person p \
+               LEFT JOIN auth_person_role pr ON pr.person_id = p.id \
+               LEFT JOIN auth_role r ON r.id = pr.role_id \
+               WHERE (p.unique_id = $1 OR p.id = $1) \
+                 AND r.name = 'admin' AND r.deleted_at IS NULL AND r.disable = \
+               false) AS is_admin",
+            vec![person_unique.into()],
+        ))
+        .await
+        .map_err(|_| AppError::Forbidden)?
+        .ok_or(AppError::Forbidden)?;
+    let granted: bool = row
+        .try_get::<bool>("", "is_admin")
+        .map_err(|_| AppError::Forbidden)?;
+    if granted {
+        Ok(())
+    } else {
+        Err(AppError::Forbidden)
+    }
+}
+
+#[cfg(test)]
+mod security_gate_tests;
+
 #[allow(non_snake_case)]
 pub async fn portal_list(
     db: Extension<DatabaseConnection>,
@@ -169,8 +205,10 @@ pub async fn page_get(
 #[allow(non_snake_case)]
 pub async fn page_create(
     db: Extension<DatabaseConnection>,
+    session: Extension<shared::session::Session>,
     AxumJson(payload): AxumJson<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&db.0, &session.person_unique).await?;
     use portal_page::ActiveModel;
 
     let portal_id = payload
@@ -219,8 +257,10 @@ pub async fn page_create(
 #[allow(non_snake_case)]
 pub async fn page_update(
     db: Extension<DatabaseConnection>,
+    session: Extension<shared::session::Session>,
     AxumJson(payload): AxumJson<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&db.0, &session.person_unique).await?;
     let id = payload
         .get("id")
         .and_then(|v| v.as_str())
@@ -268,8 +308,10 @@ pub async fn page_update(
 #[allow(non_snake_case)]
 pub async fn page_remove(
     db: Extension<DatabaseConnection>,
+    session: Extension<shared::session::Session>,
     AxumJson(payload): AxumJson<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&db.0, &session.person_unique).await?;
     let id = payload
         .get("id")
         .and_then(|v| v.as_str())
