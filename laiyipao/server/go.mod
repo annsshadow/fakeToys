@@ -1,6 +1,6 @@
 module github.com/laiyipao/server
 
-go 1.26.3
+go 1.26.9
 
 require (
 	github.com/gofiber/fiber/v2 v2.52.15
