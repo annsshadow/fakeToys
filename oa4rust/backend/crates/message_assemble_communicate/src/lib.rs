@@ -172,6 +172,9 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
 mod tests;
 #[cfg(test)]
 mod tests_generated;
+#[cfg(test)]
+#[allow(clippy::module_inception)]
+mod security_gate_tests;
 
 #[allow(non_snake_case)]
 pub async fn consume_list_consume_count_count(
@@ -436,9 +439,30 @@ pub async fn consume_type_type_mockputtopost(
 #[allow(non_snake_case)]
 pub async fn consume_id_type_type(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((id, msg_type)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 消费记录是「本人对某条消息的消费形态」，按 id 改他人那行等于伪造他人已读态 ⇒ 归属档。
+    // 归属事实取 sender（本表不写 creator_person）；空 sender 只允许管理员，不把数据缺陷洗成放行。
+    // 说明文刻意不写门名：尺子按体内文本判门禁，注释里的门名会被当成门（审计账本尺子缺陷 26）。
+    let Some(sess) = session.as_deref() else {
+        return Err(AppError::Unauthorized);
+    };
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let owner = client
+        .query_opt(
+            "SELECT coalesce(nullif(trim(sender), ''), '') AS owner \
+             FROM x_message_consume WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let Some(row) = owner else {
+        return Ok(Json(ActionResult::error("consume not found")));
+    };
+    let owner: String = row.get("owner");
+    shared::middleware::require_owner(&pool, sess, &owner).await?;
 
     let result = client
         .execute(
@@ -892,8 +916,17 @@ pub async fn im_conversation_update(
 #[allow(non_snake_case)]
 pub async fn im_conversation_id_group_mockdeletetoget(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 这条 DELETE/GET 别名删的是**整个会话的全部成员行**（不是退自己），属解散级破坏动作；
+    // 而本表族没有「群主」事实可判——x_message_conversation 从不落 creator_person、成员表的
+    // role 也没有任何写路径，收归属档会静默退化成「一律管理员」。与其假装有归属，直接收管理员档。
+    // 前端零调用者（在 frontend/apps/desktop/src 内 grep 该路径无命中），故对活流程零漂移。
+    let Some(sess) = session.as_deref() else {
+        return Err(AppError::Unauthorized);
+    };
+    require_admin(&pool, sess).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -1689,9 +1722,29 @@ pub async fn im_msg_list_page_size_size(
 #[allow(non_snake_case)]
 pub async fn im_msg_revoke_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 撤回是**发送者本人**的动作：按 id 撤他人消息等于抹掉他人的发言（GET/POST 双注册，谁都能刷）。
+    // 归属事实取 sender；空 sender 只允许管理员。注意发消息那族把 sender 取自 body 自称身份，
+    // 那是另一条更靠上游的缺陷（记入账本待修），不在本把的射程内。
+    let Some(sess) = session.as_deref() else {
+        return Err(AppError::Unauthorized);
+    };
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let owner = client
+        .query_opt(
+            "SELECT coalesce(nullif(trim(sender), ''), '') AS owner FROM x_message WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let Some(row) = owner else {
+        return Ok(Json(ActionResult::error("message not found")));
+    };
+    let owner: String = row.get("owner");
+    shared::middleware::require_owner(&pool, sess, &owner).await?;
 
     let result = client
         .execute(
