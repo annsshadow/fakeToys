@@ -1471,13 +1471,18 @@ for (const l of indirectGated) {
   if (!LITERAL_REJECT_RE.test(hb) && !propagatesGate)
     witnessGaps.push(`缺陷 20 独立反证：${p[0]} ${p[1]} ${p[2]} 被 ${p[4]} 作证，但该 helper 无拒绝能力`);
 }
-// 缺陷 19/20 的点名式反向见证：这三条体内确无门禁，读数必须停在 R6/R7，
+// 缺陷 19/20 的点名式反向见证：这三条体内确无门禁，读数必须停在无门档（R6/R7/K1/K2/K3），
 // 也不许出现在间接门禁名单里（防「把真洞洗成已修」）。
-for (const key of [
+// 第二十二批改钉：原第三条 `im_conversation_id_group_mockdeletetoget` 本批真的加上了
+// `require_admin`（不是尺子误判），钉子被合法冲掉；换钉到 `oauth_login_qywx`——它是**设计上匿名**
+// 的登录回调（加会话门等于打断登录，故长期确无门禁），且体内确有 `oauth_code_store` 转调，
+// 「把任何 helper 转调当成门禁作证」这类放宽会被这条当场抓住，比原钉的载荷更强。
+const NEG_WITNESS_1920 = [
   "query_assemble_designer\tDELETE\t/api/query/assemble/designer/delete\tdelete_designer_bare",
   "processplatform_assemble_surface\tPOST\t/api/processplatform/assemble/surface/attachment/doc/to/word/work/{workId}\tattachment_u2b_doc_to_word",
-  "message_assemble_communicate\tDELETE\t/api/message/assemble/communicate/im/conversation/{id}/group/mockdeletetoget\tim_conversation_id_group_mockdeletetoget",
-]) {
+  "auth\tGET\t/api/authentication/oauth/login/qywx/code/{code}\toauth_login_qywx",
+];
+for (const key of NEG_WITNESS_1920) {
   if (gatedByRoute.has(key))
     witnessGaps.push(`缺陷 19/20 反向见证失效（无门路由被误作证 ${gatedByRoute.get(key)}）：${key.replace(/\t/g, " ")}`);
   if (/^R5/.test(bucketByKey.get(key) || ""))
