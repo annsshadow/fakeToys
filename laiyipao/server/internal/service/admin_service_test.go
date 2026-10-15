@@ -453,12 +453,34 @@ func TestAdminListBattles(t *testing.T) {
 }
 
 // loseSettleInput 一份必然通过校验的失败局上报（供多处复用）。
+//
+// ⚠️ `ReplayHash` 是**空串**，这是 2026-10-15 整局重算接线时改的。
+//
+// 改之前这里是占位假值 "0000000000000000"。接线后 `recomputeEngine`
+// 拿存档输入重跑整局，算出真哈希与它一比必然不符，于是在 enforce 档
+// （缺省档位）把**每一次** e2e 结算都拒了。症状是 7 个「中途失败」
+// 用例集体变红，而且红在一个**与它们要测的东西毫无关系**的地方：
+// 它们要测的是 DB 中途失败时整体回滚，却在到达注入点之前就被重算拦下了。
+//
+// 为什么选空串而不是「给它们算一个真哈希」：
+//
+//  1. 空串走的是**既有的兼容路径**——「客户端没上报」，与 S 段那条
+//     「空串放行」同一条规则，不需要为本文件新增任何语义；
+//  2. 这些用例测的是**结算机制**（幂等、回滚、发奖、进度），
+//     不是哈希验真。给它们塞真哈希会把一个纯载荷构造函数变成
+//     「需要先开一局、拿到种子与构筑快照」的服务端方法，
+//     25 个调用点全部要改 —— 而它们并不需要这个；
+//  3. 真哈希路径由 recompute_engine_test.go 专门覆盖，
+//     那里每一局都用**真**种子 + **真**构筑快照算出真哈希。
+//
+// 代价要说清楚：这样一来，这 25 处 e2e 结算**不再经过**重算路径。
+// 如果将来重算本身有 bug，纯靠本文件是发现不了的。
 func loseSettleInput() domain.SettleInput {
 	return domain.SettleInput{
 		// Kills 必须非零：kills 任务的进度推进依赖它
 		Result: "lose", Score: 500, DurationMs: 30_000,
 		Kills: 3, Shots: 200, Hits: 100, Reactions: 2, HeatMax: 30,
-		HPLeft: 500, WaveReached: 1, ReplayHash: "0000000000000000",
+		HPLeft: 500, WaveReached: 1, ReplayHash: "",
 		ElementsUsed: map[string]int{"fire": 1}, ReactionsUsed: map[string]int{},
 		TerrainUsed: []string{}, CardPicks: []int{0, -1},
 	}

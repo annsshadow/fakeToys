@@ -58,6 +58,20 @@ type Service struct {
 	// 由 initRecomputeGate 在 New 里回填，而不是直接内联构造 ——
 	// 因为它的不符率回调要查库，而 s 在构造过程中还不存在。
 	gate *RecomputeGate
+
+	// 整局重算的分支计数（见 recompute_engine.go）。
+	//
+	// ⚠️ 为什么需要它们：台账 settle_recomputes **只记不符**，
+	// 于是「校验正常工作，100% 通过」与「校验根本没跑」在台账上
+	// 都是 0 行，两者无法区分 —— 而后者是灾难性的静默失败。
+	// 这几个计数器提供「跑到了多少局」这个独立读数。
+	//
+	// 用 atomic 而不是普通 int64：SettleBattle 在并发请求里跑，
+	// 读数在管理端接口里，两者并发。
+	recomputeVerified  int64
+	recomputeMismatch  int64
+	recomputeCannotRun int64
+	recomputeSkipped   int64
 }
 
 // New 构造服务。
