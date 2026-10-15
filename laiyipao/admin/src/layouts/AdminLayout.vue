@@ -12,6 +12,7 @@ import {
   MagicStick,
   Reading,
   User,
+  Warning,
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
@@ -64,6 +65,13 @@ const groups: Array<{ title: string; items: NavItem[] }> = [
     items: [
       { path: '/admin/users', title: '用户管理', icon: User },
       { path: '/admin/battles', title: '战斗记录与验真', icon: Aim },
+      // 重算审计紧跟在战报页后面：两者回答的是同一个问题的两层 ——
+      // 战报页看「这一局长什么样」，这一页看「重算认为它对不对、拒没拒」。
+      // 放在 `defenses` 之后会把它们拆开，而值班的人往往是从战报页
+      // 一路点到重算页的。
+      // 用 `Warning` 而不是复用 `Aim`：复用一个图标会让值班的人
+      // 在两个语义完全不同的地方找同一个入口。
+      { path: '/admin/recomputes', title: '结算重算审计', icon: Warning },
       // 原本写的是 `Shield`，而 @element-plus/icons-vue 的 293 个导出里
       // **根本没有 Shield**（最接近的只有 Lock / AlarmClock）。
       // 也就是说这一项即使在修好注册之后仍然是坏的 —— 换成了真实存在的 Lock。

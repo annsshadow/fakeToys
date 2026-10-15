@@ -254,7 +254,7 @@ func TestTxMidwayFailures(t *testing.T) {
 func TestAuditInsertFailure(t *testing.T) {
 	broken := openBrokenService(t)
 	// 不应 panic；返回值为空（审计刻意不阻塞主流程）
-	broken.Audit(context.Background(), 1, "broken_probe", "t", map[string]any{"k": 1})
+	broken.Audit(context.Background(), 1, "broken_probe", "t", "10.0.0.1", map[string]any{"k": 1})
 }
 
 // TestAdminLoginBroken 故障态管理登录：查询失败走非 ErrNoRows 分支。

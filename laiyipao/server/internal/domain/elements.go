@@ -229,8 +229,29 @@ var reactionSpecs = map[ReactionKey]ReactionSpec{
 }
 
 // Spec 返回反应链的数值规格。
+// reactionSpecLookup 是查表函数的**可替换引用**。
+//
+// # 为什么需要它
+//
+// 引擎里 `hitEnemy` 的反应副作用要验一条「有增伤、无状态」的路径，
+// 而当前 7 条反应里**没有任何一条**落在那个组合上：
+//
+//	amplify_pct > 0 的两条 status_duration_ms 都 > 0
+//	status_duration_ms == 0 的五条 amplify_pct 全是 0
+//
+// 那条路径的历史 bug 正是被「有状态」这个条件把门。
+// 不换表就只能等到「产品真的加了那条反应」那天才发现代码是错的。
+//
+// 用**函数变量**而不是直接改 `reactionSpecs`：
+// 后者会让 `/config` 下发一个不存在的反应给所有客户端，
+// 也让 `reaction_specs.json` 的双向契约测试失败 ——
+// ��是把「数据表」与「代码」的责任边界糊掉。
+//
+// ⚠️ 它是包级变量，**只在测试期间替换**，用完必须还原。
+var reactionSpecLookup = LookupReactionSpec
+
 func (k ReactionKey) Spec() ReactionSpec {
-	if s, ok := reactionSpecs[k]; ok {
+	if s, ok := reactionSpecLookup(k); ok {
 		return s
 	}
 	return ReactionSpec{}
@@ -243,6 +264,22 @@ func AllReactionSpecs() []ReactionSpec {
 		out = append(out, reactionSpecs[k])
 	}
 	return out
+}
+
+// LookupReactionSpec 按 key 取反应规格。
+//
+// 第二个返回值为 false 表示 key 不在表里。
+// ⚠️ 存在的理由：`res.Reaction` 是**网络与运行时的联合输入**，
+// 而反应 key 来自 `resolveHit` 的配对表 —— 一张新表项配上新组合
+// 就会让引擎读到零值 ReactionSpec。
+// 用 `ok` 区分「没有这条反应」与「这条反应所有字段都是 0」，
+// 前者要跳过，后者照常走分支。
+func LookupReactionSpec(k ReactionKey) (ReactionSpec, bool) {
+	if k == "" {
+		return ReactionSpec{}, false
+	}
+	spec, ok := reactionSpecs[k]
+	return spec, ok
 }
 
 // LookupReaction 返回"已附着元素 A + 新施加元素 B"触发的反应。
