@@ -106,7 +106,9 @@ mod u2_tests {
                 "/api/attendance/assemble/control/v2/group/some-id/refresh/participate"
             )
             .await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            // 第二十一批：这把是 GET 动词别名上的写操作（刷考勤组参与人），收归属档并挡在
+            // 读库之前，所以 mock_pool（无会话）的读数从 500 前移成 401。
+            StatusCode::UNAUTHORIZED
         );
     }
 
@@ -285,29 +287,35 @@ mod u2_tests {
     #[tokio::test]
     async fn u2_verb_chains_align_with_legacy_methods() {
         // o2server 端 PUT 承载 filter 查询：链式注册后 PUT 可达（不再 405/404）
-        for (method, uri) in [
+        for (method, uri, expect) in [
             (
                 "PUT",
                 "/api/attendance/assemble/control/attendancedetail/filter/list",
+                StatusCode::INTERNAL_SERVER_ERROR,
             ),
             (
                 "PUT",
                 "/api/attendance/assemble/control/statisticshow/filter/unitDay/list/x/next/5",
+                StatusCode::INTERNAL_SERVER_ERROR,
             ),
-            ("GET", "/api/attendance/assemble/control/statistic/do"),
             (
                 "GET",
+                "/api/attendance/assemble/control/statistic/do",
+                StatusCode::INTERNAL_SERVER_ERROR,
+            ),
+            (
+                // 第二十一批：全员生效的开关，GET 档本批收 admin 门 → 无会话先 401
+                "GET",
                 "/api/attendance/assemble/control/attendancesetting/enable/type",
+                StatusCode::UNAUTHORIZED,
             ),
             (
                 "DELETE",
                 "/api/attendance/assemble/control/attendancedetail/mobile/m-1",
+                StatusCode::INTERNAL_SERVER_ERROR,
             ),
         ] {
-            assert_eq!(
-                status_of(method, uri).await,
-                StatusCode::INTERNAL_SERVER_ERROR
-            );
+            assert_eq!(status_of(method, uri).await, expect, "{method} {uri} not routed");
         }
     }
 
