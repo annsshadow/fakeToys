@@ -82,6 +82,17 @@ const SEEDS: Record<number, string> = {
   50: '1234567890123456789',
   75: '999999999999999999',
   100: '-1',
+  // 构筑变体用的种子。写死字面量的理由同上：契约向量必须可复现。
+  // 取值刻意覆盖**边界与陷阱**：0、±1、最大/最小 int64、以及 int64 溢出
+  // 之后 JS number 会失精的那个量级（README 记过种子曾因此变成 "...8032"）。
+  3: '0',
+  7: '1',
+  11: '-1',
+  15: '4611686018427387903', // int64 max
+  19: '-9223372036854775808', // int64 min
+  23: '9007199254740993', // 2^53 + 1 —— 超过 JS 安全整数，验证不丢精度
+  27: '-9007199254740993',
+  31: '2147483647', // int32 max
 }
 
 /**
@@ -107,11 +118,96 @@ function cardPicksFor(levelId: number): number[] {
   return Array.from({ length: waves }, (_, i) => [0, 1, 2, -1, -3, -4][(i * 7 + levelId) % 6])
 }
 
+/**
+ * 构筑变体：同一条 level 线上换一套玩家会真的配出来的构筑。
+ *
+ * ⚠️ 为什么必须加（2026-10-15 依赖审计轮顺带发现的覆盖缺口）：
+ * 原来 5 个用例**共用同一套构筑** —— 技能 id 1/2/3/4、全是 `active`、
+ * 元素只有 fire 与 ice、`active_slots` 恒为 4。于是这几条路径
+ * **从来没有被跨端重放过**：
+ *
+ *   - `kind: "passive"` 的技能（夹具里 id=19 侦察无人机、22 阻击工事）
+ *   - corrosion / lightning 两个元素（reaction 组合完全不同）
+ *   - composite_skills（id 31~48）
+ *   - **`active_slots > 4`** —— 这条最要紧：engine.go 的注释明写
+ *     「只有玩家在专精树点了『额外插槽』时才会 > 4」，也就是说
+ *     5/6 槽是**真实生产场景**，却一次都没被服务端重算过。
+ *     而 `ActiveSlots` **不在哈希锚点里**（A 段只有 7 项攻方系数，
+ *     X 段只有额外血量），它只通过「哪些技能能进牌池」间接影响事件流。
+ *     不测它，就不知道专精玩家会不会被误判成伪造。
+ *
+ * 全部用**互不重复的关卡号**：`replay_contract_test.go` 的子测试名是
+ * `t.Run("lvl"+level_id)`，关卡号撞了名字会变成 `lvl3#01`，review 时
+ * 分不清是哪套构筑。
+ */
+type BuildSpec = {
+  tag: string
+  slots: { id: number; level: number }[]
+  /** 缺省 4。> 4 模拟专精树的「额外插槽」。 */
+  activeSlots?: number
+}
+
+const BUILD_VARIANTS: { levelId: number; spec: BuildSpec }[] = [
+  {
+    // 被动技能（id 19 = 侦察无人机，lightning/passive）
+    levelId: 3,
+    spec: { tag: 'passive', slots: [{ id: 19, level: 7 }, { id: 1, level: 3 }, { id: 7, level: 11 }, { id: 23, level: 2 }] },
+  },
+  {
+    // 腐蚀元素（三个腐蚀主动 + 一个腐蚀复合）
+    levelId: 7,
+    spec: { tag: 'corrosion', slots: [{ id: 16, level: 4 }, { id: 17, level: 9 }, { id: 18, level: 14 }, { id: 43, level: 20 }] },
+  },
+  {
+    // 雷电元素
+    levelId: 11,
+    spec: { tag: 'lightning', slots: [{ id: 7, level: 6 }, { id: 8, level: 13 }, { id: 9, level: 21 }, { id: 24, level: 27 }] },
+  },
+  {
+    // 动能元素
+    levelId: 15,
+    spec: { tag: 'kinetic', slots: [{ id: 10, level: 2 }, { id: 11, level: 8 }, { id: 12, level: 15 }, { id: 13, level: 25 }] },
+  },
+  {
+    // 复合技能（id 31~48 在原 5 个用例里一次都没出现过）
+    levelId: 19,
+    spec: { tag: 'composite', slots: [{ id: 31, level: 5 }, { id: 35, level: 11 }, { id: 39, level: 18 }, { id: 43, level: 29 }] },
+  },
+  {
+    // ⚠️ 专精额外插槽 = 5 槽。真实生产路径，原契约完全没覆盖。
+    levelId: 23,
+    spec: { tag: 'slots5', activeSlots: 5, slots: [{ id: 1, level: 1 }, { id: 2, level: 5 }, { id: 4, level: 12 }, { id: 7, level: 30 }, { id: 19, level: 7 }] },
+  },
+  {
+    // 6 槽 + 被动 + 复合 + 五元素混合
+    levelId: 27,
+    spec: { tag: 'slots6-mixed', activeSlots: 6, slots: [{ id: 16, level: 3 }, { id: 7, level: 9 }, { id: 10, level: 15 }, { id: 19, level: 6 }, { id: 22, level: 12 }, { id: 31, level: 21 }] },
+  },
+  {
+    // 两个被动同槽（id 19 + 22）+ 主动，覆盖「被动也能吃卡牌升格」
+    levelId: 31,
+    spec: { tag: 'passive-heavy', slots: [{ id: 19, level: 9 }, { id: 22, level: 14 }, { id: 23, level: 19 }, { id: 35, level: 24 }] },
+  },
+]
+
+/**
+ * 按 id 查技能定义，**两张表都查**。
+ *
+ * 复合技能（id 31~48）只存在于 `composite_skills`。
+ * 原先 `buildSnapshotFor` 只查 `skills`，一引用复合技能就 `def === undefined`。
+ */
+function skillDef(id: number): any {
+  return (
+    (fixture.skills as any[]).find((k) => k.id === id) ??
+    (fixture.composite_skills as any[]).find((k) => k.id === id)
+  )
+}
+
 /** 造一份确定的构筑快照。 */
-function buildSnapshotFor(levelId: number): BuildSnapshot {
+function buildSnapshotFor(levelId: number, spec?: BuildSpec): BuildSnapshot {
   // 固定 4 槽 + 不同等级：等级必须烘进 baseDamage（replay.ts 的注释），
   // 所以向量要覆盖「不同等级 → 不同哈希」这条。
-  const slots = [
+  const slots = spec?.slots ?? [
     { id: 1, level: 1 },
     { id: 2, level: 5 },
     { id: 3, level: 12 },
@@ -119,7 +215,17 @@ function buildSnapshotFor(levelId: number): BuildSnapshot {
   ]
   const skills: BuildSnapshot['skills'] = {}
   for (const s of slots) {
-    const def: any = fixture.skills.find((k: any) => k.id === s.id)
+    // ⚠️ 必须同时查 skills 与 composite_skills 两张表 ——
+    // 复合技能（id 31~48）只存在于 composite_skills，原先只查 skills
+    // 会让 `def` 变成 undefined，然后在这里抛
+    // "Cannot read properties of undefined (reading 'name')"。
+    const def: any = skillDef(s.id)
+    if (!def) {
+      throw new Error(
+        `夹具里没有 id=${s.id} 的技能（skills 与 composite_skills 都没找到）。` +
+          `构筑变体引用了不存在的技能 id —— 这会让向量文件「生成成功但内容无意义」。`,
+      )
+    }
     skills[String(s.id)] = {
       id: s.id,
       name: def.name,
@@ -135,10 +241,10 @@ function buildSnapshotFor(levelId: number): BuildSnapshot {
   const bump = levelId * 100
   return {
     skills,
-    elements: slots.map((s) => (fixture.skills.find((k: any) => k.id === s.id) as any).element),
+    elements: slots.map((s) => skillDef(s.id)?.element),
     equipment: [],
     mastery_nodes: [],
-    active_slots: 4,
+    active_slots: spec?.activeSlots ?? 4,
     attacker: {
       attack: 100 + bump,
       crit_permille: 1500,
@@ -195,33 +301,63 @@ function scoreRulesFromFixture() {
   return scoreRulesFromServer(raw)
 }
 
-const cases = LEVEL_IDS.map((levelId) => {
+function makeCase(levelId: number, tag: string, spec?: BuildSpec) {
   const level = fixture.levels.find((l: any) => l.id === levelId)
   if (!level) throw new Error(`夹具里没有第 ${levelId} 关`)
+  const seed = SEEDS[levelId]
+  if (seed === undefined) {
+    throw new Error(`第 ${levelId} 关没有种子。新增用例时必须同时在 SEEDS 里补一条写死的字面量。`)
+  }
   const cardPicks = cardPicksFor(levelId)
+  const build = buildSnapshotFor(levelId, spec)
   const out = replay(
     {
       battle_id: 0,
       level_id: levelId,
-      seed: SEEDS[levelId],
+      seed,
       level,
       expected_hash: '',
       created_at: '',
-      build: buildSnapshotFor(levelId),
+      build,
       card_picks: cardPicks,
     },
     { enemies, skills, scoreRules: scoreRulesFromFixture() },
   )
-  if (out.error) throw new Error(`第 ${levelId} 关重放出错：${out.error}`)
+  if (out.error) throw new Error(`第 ${levelId} 关（${tag}）重放出错：${out.error}`)
   return {
     level_id: levelId,
-    seed: SEEDS[levelId],
+    tag,
+    seed,
     card_picks: cardPicks,
-    build: buildSnapshotFor(levelId),
+    build,
     expected_hash: out.computedHash,
     expected_stats: out.stats,
   }
-})
+}
+
+// 原 5 个用例**原样保留** —— 它们是回归基线，改动它们会让
+// 「这次改坏了还是那次改坏了」无法区分。
+// 变体追加在后面，关卡号互不重复（子测试名是 lvl<level_id>）。
+const cases = [
+  ...LEVEL_IDS.map((levelId) => makeCase(levelId, 'base')),
+  ...BUILD_VARIANTS.map((v) => makeCase(v.levelId, v.spec.tag, v.spec)),
+]
+
+// 关卡号唯一性：`t.Run("lvl"+level_id)` 撞号会让子测试变成 `lvl3#01`，
+// review 时分不清是哪套构筑。与其等 Go 侧报怪名字，不如这里当场炸。
+{
+  const seen = new Map<number, string>()
+  for (const c of cases) {
+    const prev = seen.get(c.level_id)
+    if (prev !== undefined) {
+      throw new Error(
+        `关卡 ${c.level_id} 出现了两次（${prev} 与 ${c.tag}）。` +
+          `子测试名会退化成 lvl${c.level_id}#01，必须换关卡号。`,
+      )
+    }
+    seen.set(c.level_id, c.tag)
+  }
+}
 
 const doc = {
   _comment:
@@ -240,7 +376,8 @@ writeFileSync(outPath, JSON.stringify(doc, null, 2) + '\n', 'utf8')
 console.log(`写入 ${outPath}（${cases.length} 个用例）`)
 for (const c of cases) {
   console.log(
-    `  关 ${String(c.level_id).padStart(3)}  hash=${c.expected_hash}  ` +
+    `  关 ${String(c.level_id).padStart(3)}  [${c.tag.padEnd(13)}]  hash=${c.expected_hash}  ` +
+      `slots=${c.build.active_slots}  ` +
       `kills=${c.expected_stats.kills} leaked=${c.expected_stats.leaked} ` +
       `score=${c.expected_stats.score} dur=${c.expected_stats.durationMs}ms ` +
       `picks=${c.card_picks.length}`,
