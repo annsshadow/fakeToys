@@ -179,9 +179,6 @@ func assertCaseStats(t *testing.T, out ReplayOutcome, c replayCase) {
 func TestWholeBattleReplayMatchesCrossEnd(t *testing.T) {
 	doc := loadReplayVectors(t)
 	for _, c := range doc.Cases {
-		if len(c.CardPicks) != 0 {
-			continue // 有选牌脚本的用例在 KnownDivergences 里
-		}
 		c := c
 		t.Run("lvl"+strconv.Itoa(c.LevelID), func(t *testing.T) {
 			out := replayCaseResult(t, c)
@@ -208,15 +205,38 @@ func TestWholeBattleReplayMatchesCrossEnd(t *testing.T) {
 	}
 }
 
-// knownReplayDivergence 是一条**已知未收敛**的分歧的台账条目。
+// knownReplayDivergences 是「已知未收敛的分歧」台账。
 //
-// ⚠️ 为什么写成台账而不是直接断言「哈希不等」：
+// # ⚠️ 当前是**空的**，而这正是它存在的意义
 //
-//	「哈希不等」是**恒真**的断言 —— 它在问题修好的那一刻会**变红**，
-//	而那一刻恰恰是好事。
-//	写成台账则相反：修好之后它会**变红并提醒你删掉这条**，
-//	删掉之后剩余的用例自动升格为「必须匹配」。
-//	两种都红，但只有后者不会在人不想它红的时候红。
+// 它是一张**会被主动清空的**台账：
+//
+//   - 有新分歧 → 往里加一条，`TestNoKnownReplayDivergences` 立刻红
+//   - 修好一条 → 从里删掉，删不掉也红（提醒你它已经不该在里面了）
+//   - 全清空 → 这条测试才绿
+//
+// 为什么不用「直接断言哈希相等」：
+// 那在问题修好的那一刻会**红**，而那一刻恰恰是好事。
+// 台账则相反：修好之后它红并提醒你删掉，删掉之后剩下的用例自动升格。
+// 两种都会红，但只有后者不会在人不想它红的时候红。
+//
+// # 这张台账上真实用过的条目（保留作为「怎么写」的样例）
+//
+//	LevelID 25, Seed "-4611686018427387904", CardPicks 6, FirstDiffTick 444
+//	FirstDiffTS "444|hit|29|7|1"
+//	FirstDiffGo "444|hit|29|6|1"
+//	Why: "同一发弹丸同一目标，直接伤害 TS 754 / Go 698"
+//
+// 它最终指向的不是数值公式，而是
+//
+//	rollSkillCards 忘了置 hasSkillID
+//	  → 技能卡永远落不进 applyCard 的技能分支
+//	  → 技能一次都没升格（skillDamage 100 vs 120、applyStacks 1 vs 2）
+//	  → 伤害低一档 → tick 444 那一发越过评分桶的边界
+//
+// 教训：**「动作发生了」不等于「效果发生了」**。
+// 卡被取走、emit(card_taken)、record(card) 三件事全都照做，
+// replay 事件流看起来完全正常 —— 只有效果那一步是哑的。
 type knownReplayDivergence struct {
 	LevelID int
 	// Seed 原样记下来：换种子就换了另一场战斗，分歧点会变。
@@ -224,115 +244,47 @@ type knownReplayDivergence struct {
 	// CardPicks 数一下：这个数说明「脚本有多长」，是分歧的形状。
 	CardPicks int
 	// FirstDiffTick 是两端 replay 事件流**第一次**不同步的 tick。
-	// 实测值，定位靠它。
 	FirstDiffTick int64
-	// FirstDiffGo / FirstDiffTS 是那两条事件的原文。
-	FirstDiffGo string
-	FirstDiffTS string
+	FirstDiffTS   string
+	FirstDiffGo   string
 	// Why 一句话写清「已排除什么」，省掉下一个人重走一遍。
 	Why string
 }
 
-// knownReplayDivergences 是当前**已知**未收敛的分歧。
-//
-// # 已排除的东西（别重走）
-//
-//   - 构筑还原：`EquippedFromSnapshot` 产出的 S 段与 TS **逐字符相同**
-//     （实测 `0:1:100:1:20,1:2:168:2:30,2:3:261:2:40,3:4:130:1:18`）
-//   - 选牌脚本消费：`cardPicks` 与 TS 相同（`[0,0,-1,-1,-1]`），
-//     波次边界的 **tick 也相同**（233 / 326）
-//   - `ResolveHit` 的公式：Go 的实现与 TS 的 `resolveHit` 逐行等价
-//     （`d` / `direct` / `elementDmg` / 反应两侧 / crit 区间都核对过）
-//   - `currentAttacker()`：两端逐字段一致，**含** critPermille 的 `min(1000)` 夹取
-//   - `mulDiv`：两端都是截断除法 `(a*b)/c`
-//   - tick 序 / 事件流格式：分歧点之前的 replay 事件**逐条相同**
-//
-// # 现象
-//
-// 分歧只在**有选牌脚本**的用例上出现，且都在**第 1 波之后**——
-// 也就是「局内 buff 生效之后」才出现。
-// 第 1 波（buff 尚未生效）两端逐事件相同。
-//
-// 这把范围收得很窄：**嫌疑集中在「卡牌效果如何改变攻方系数」这条链上**，
-// 而不是引擎主干。
-var knownReplayDivergences = []knownReplayDivergence{
-	{
-		LevelID: 25, Seed: "-4611686018427387904", CardPicks: 6, FirstDiffTick: 444,
-		FirstDiffTS: "444|hit|29|7|1",
-		FirstDiffGo: "444|hit|29|6|1",
-		Why: "reaction_mult/element_coef 都是 3500（远高于 B~F 场景的 ≤1100）；" +
-			"同一发弹丸同一目标，直接伤害 TS 754 / Go 698、反应伤害 TS 339 / Go 325",
-	},
-	{
-		LevelID: 50, Seed: "1234567890123456789", CardPicks: 8, FirstDiffTick: -1,
-		Why: "同上，尚未逐条定位到第一处分歧",
-	},
-	{
-		LevelID: 75, Seed: "999999999999999999", CardPicks: 10, FirstDiffTick: -1,
-		Why: "同上；这关 max_reaction_tier=2，tier≠1 的反应路径也可能是嫌疑",
-	},
-	{
-		LevelID: 100, Seed: "-1", CardPicks: 12, FirstDiffTick: -1,
-		Why: "同上；这关 element_cap=8，是五关里层数上限最大的",
-	},
-}
+var knownReplayDivergences = []knownReplayDivergence{}
 
-// TestWholeBattleReplayKnownDivergences 钉住「已知分歧集合」本身。
+// TestNoKnownReplayDivergences 守住「整局重放**没有**已知分歧」。
 //
-// ⚠️ 这条测试的价值在于**集合的形状**，不在于每一条的细节：
+// ⚠️ 这条在有分歧时会红 —— 那是**故意的**：
 //
-//   - 新增分歧 → 这里红（说明还有别的没查清）
-//   - 某条被修好 → 这里红并提示删掉它
-//   - 消失一条却不更新 → 下一条 `MatchesCrossEnd` 会红
-//
-// 也就是说它把「我不知道还有没有别的分歧」这个不确定性，
-// 变成一个每次跑都会回答的问题。
-func TestWholeBattleReplayKnownDivergences(t *testing.T) {
+//	一条绿色的「整局重放已全部收敛」比一条含糊的注释有用得多。
+//	加分歧时它告诉你「现在还不能接线 SettleBattle」。
+func TestNoKnownReplayDivergences(t *testing.T) {
+	if len(knownReplayDivergences) > 0 {
+		lv := make([]string, 0, len(knownReplayDivergences))
+		for _, d := range knownReplayDivergences {
+			lv = append(lv, strconv.Itoa(d.LevelID))
+		}
+		t.Errorf("整局重放有 %d 条已知分歧（第 %s 关）—— "+
+			"**不要接线 SettleBattle**：在它们收敛之前接线等于上线一个"+
+			"「把合法战报判成伪造」的机制。定位手段见 TestProbeReplayDump "+
+			"与 miniapp/scripts/probe-replay-dump.ts。",
+			len(knownReplayDivergences), strings.Join(lv, ", "))
+	}
 	doc := loadReplayVectors(t)
-	got := map[int]replayCase{}
 	for _, c := range doc.Cases {
-		got[c.LevelID] = c
-	}
-	want := map[int]bool{}
-	for _, d := range knownReplayDivergences {
-		want[d.LevelID] = true
-	}
-
-	for _, c := range doc.Cases {
-		c := c
+		if len(c.CardPicks) == 0 {
+			continue // 台账只登记有选牌脚本的用例
+		}
 		out := replayCaseResult(t, c)
 		if out.Err != nil {
 			t.Fatalf("第 %d 关重放没跑起来：%v", c.LevelID, out.Err)
 		}
-		if !want[c.LevelID] {
-			if !out.Matched {
-				t.Errorf("第 %d 关不在已知分歧台账里却哈希不符（Go=%s TS=%s）—— "+
-					"要么把它加进 knownReplayDivergences，要么这是一条新分歧",
-					c.LevelID, out.ComputedHash, c.ExpectedHash)
-			}
-			continue
+		if !out.Matched {
+			t.Errorf("第 %d 关哈希不符（Go=%s TS=%s）且不在台账里 —— "+
+				"这是一条**新**分歧，请定位后登记进 knownReplayDivergences",
+				c.LevelID, out.ComputedHash, c.ExpectedHash)
 		}
-		if out.Matched {
-			t.Errorf("第 %d 关的已知分歧**已收敛**（哈希 %s == TS）—— "+
-				"请把它从 knownReplayDivergences 里删掉，它会自动升格为必须匹配",
-				c.LevelID, out.ComputedHash)
-		}
-		// 台账里记的种子/脚本长度必须与向量文件一致，
-		// 否则「同一条分歧」的描述已经指向另一场战斗了。
-		for _, d := range knownReplayDivergences {
-			if d.LevelID != c.LevelID {
-				continue
-			}
-			if d.Seed != c.Seed {
-				t.Errorf("第 %d 关的台账种子 %s 与向量文件 %s 不一致 —— "+
-					"分歧点会变，台账描述失效", d.LevelID, d.Seed, c.Seed)
-			}
-			if d.CardPicks != len(c.CardPicks) {
-				t.Errorf("第 %d 关的台账记 card_picks %d 项，向量文件是 %d 项",
-					d.LevelID, d.CardPicks, len(c.CardPicks))
-			}
-		}
-		// 结构性统计必须仍然一致 —— 它们是「引擎主干没坏」的证据。
 		assertCaseStats(t, out, c)
 	}
 }
