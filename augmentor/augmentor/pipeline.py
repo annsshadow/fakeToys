@@ -15,7 +15,7 @@ from pathlib import Path
 from .atomic_write import atomic_write_json
 import asyncio
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from queue import Queue
+from queue import Empty, Queue
 
 from .config import (REQUEST_TIMEOUT_RANGE, AppConfig, load_config,
                      get_model_config)
@@ -36,6 +36,11 @@ from .visualizer import DataVisualizer
 from .semantic import persist_index
 
 logger = logging.getLogger(__name__)
+
+# A365：并行增强里「这一笔的结果」的有界等待秒数。消费侧等到这一步时对应的工作
+# 函数已经结束（`as_completed` 只交付完成的 future），所以信箱要么有货要么永远
+# 不会有货——这一格给的是「永远不会有货」那一档的上界，不是单条处理的耗时预算。
+RESULT_WAIT_SECONDS = 60
 
 
 class AugmentorPipeline:
@@ -223,7 +228,8 @@ class AugmentorPipeline:
             idx: 索引
             item: 数据项
             use_quality_check: 是否使用质量检查
-            result_queue: 结果队列
+            result_queue: 本笔结果的信箱（A365 后由 `augment_dataset` 按条目各建一只；
+                直接调用方仍可传任意 `Queue`，本方法只往里 `put` 一次）
             errors: 失败明细的落点。`augment_dataset` 传的是**本批局部清单**（L275）；
                 `None` 留给直接调用本方的旧调用方，那时仍落实例属性
         """
@@ -379,7 +385,15 @@ class AugmentorPipeline:
             )
             logger.info(f"优化线程池: 使用 {num_threads} 个线程 (核心: {available_cores}, 任务: {len(remaining_indices)})")
             
-            result_queue = Queue()
+            # A365 修法①（用户拍板「条目失败继续」）：结果按**这一笔**配对。
+            # 改前一个共享队列配一条不带超时的 `get()`，三格同族缺陷：
+            # ① 任一 worker 少投一次 ⇒ 整批零 CPU 永久挂死（L275 门禁实测停在 62%）；
+            # ② `future` 的返回值一次也不读 ⇒ worker 里逃出 `_process_single_item`
+            #    的异常无声吞掉，日志里连那笔 `TypeError` 都没有；
+            # ③ 配对纯靠顺序（`futures[future] = idx` 建了从不读）⇒ worker 多投一条时
+            #    进度与变体记到别的条目名下。
+            # 每条目一只信箱之后，「这一笔的结果」与「下一条结果」不再可能是两回事。
+            mailboxes = {idx: Queue() for idx in remaining_indices}
             
             with ThreadPoolExecutor(max_workers=num_threads) as executor:
                 # 提交所有任务
@@ -388,14 +402,36 @@ class AugmentorPipeline:
                     item = items[idx]
                     future = executor.submit(
                         self._process_single_item,
-                        idx, item, use_quality_check, result_queue, errors
+                        idx, item, use_quality_check, mailboxes[idx], errors
                     )
                     futures[future] = idx
                 
                 # 收集结果
                 processed = 0
                 for future in as_completed(futures):
-                    idx, success, variants = result_queue.get()
+                    idx = futures[future]
+                    # ②出声：worker 里逃出本方法的异常不再被吞掉（本方法自己 catch
+                    # 不到的那一格，例如 except 支内部再抛），此处读到就记进日志。
+                    escaped = future.exception()
+                    if escaped is not None:
+                        logger.error(f"第 {idx} 条的工作线程逃出异常: {escaped}")
+                    
+                    try:
+                        # 走到这里说明这一笔的工作函数已经返回或抛出 ⇒ 信箱里要么
+                        # 已经有货，要么永远不会有货。有界等待取代无限等待（①）。
+                        _, success, variants = mailboxes[idx].get(
+                            timeout=RESULT_WAIT_SECONDS
+                        )
+                    except Empty:
+                        # ③少投那一笔算**条目失败并继续**，整批不再挂死。
+                        errors.append({
+                            "index": idx,
+                            "error_type": "ResultNotDelivered",
+                            "message": (f"工作线程结束但未投递本笔结果"
+                                        f"（等待超过 {RESULT_WAIT_SECONDS}s）"),
+                            "item_preview": str(items[idx])[:100] if items[idx] else ""
+                        })
+                        success, variants = False, []
                     
                     if success:
                         all_results.extend(variants)
