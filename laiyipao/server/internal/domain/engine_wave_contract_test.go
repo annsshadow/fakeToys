@@ -428,11 +428,14 @@ func checkWaveTick(t *testing.T, e *BattleEngine, want waveTraceStep, step int,
 }
 
 // fmtReplay 把一条重放事件格式化成向量的表示法。
-func fmtReplay(r ReplayEvent) string {
-	return strconv.FormatInt(r.T, 10) + "|" + r.Type + "|" +
-		strconv.FormatInt(r.A, 10) + "|" + strconv.FormatInt(r.B, 10) + "|" +
-		strconv.FormatInt(r.C, 10)
-}
+// fmtReplay 委托给生产代码的 ReplayEvent.String()。
+//
+// ⚠️ 必须委托，不要在这里另写一遍：
+//
+//	哈希按同一个格式逐条拼接，两份写法一旦漂移，
+//	症状是「跨端对齐全绿但整局哈希全错」——
+//	而逐事件比对已经全绿了，看不出这里还有一份。
+func fmtReplay(r ReplayEvent) string { return r.String() }
 
 func resistString(en *Enemy) string {
 	parts := make([]string, 0, 5)

@@ -470,10 +470,24 @@ func (e *BattleEngine) applyReplayDecision() {
 			continue
 		}
 
-		// ⚠️ 范围已在上面那个 case 里判过（want < 0 || want >= len(Hand)），
-		// TakeCard 内部可能已开下一波；也可能没开（剩牌未清），
-		// 那就交给 while 的下一轮 —— 但那时 phase 已不是 card_select，
-		// 循环自然退出。
+		// 按原局同样顺序：先取卡、**再**决定下一波，事件流逐条对齐。
+		//
+		// ⚠️ 范围已在上面那个 case 里判过（`want < 0 || want >= len(Hand)`），
+		// 所以这里不必再判越界 —— 判一次就够，判两次反而让人以为「越界另有兜底」。
+		//
+		// ⚠️ 这里**不能** return：
+		// `TakeCard` 之后手牌未必清空（3 张取 1 张还剩 2 张），
+		// phase 仍是 card_select，于是 while 的下一轮会**继续消费脚本下一项**。
+		//
+		// 这与函数头注释里「每 tick 最多消费一项」看起来矛盾，但 TS 就是这么做的：
+		// 真实的「玩家连点三张」也在同一 tick 内完成，而事件流与 card_picks
+		// 必须与原局**逐条一致**。
+		// 实测（`replay_vectors.json` 第 25 关，脚本 `[0,0,0,0,0,0]`）：
+		// 第 0 波的 card_select 里消费掉 3 项，`cardPicks` 只记成 `[0]`
+		// —— 因为 `recordPick` 的守卫是 `len <= waveIndex`，只在本波第一次生效。
+		// 若这里错改成 return，第 0 波只消费 1 项、后续波次全部错位，
+		// `waves` / `score` / `durationMs` / 哈希会一起变（实测 Go 1718 tick vs TS 1414）。
+		e.TakeCard(e.Deck.Hand[want].ID)
 	}
 }
 
