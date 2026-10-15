@@ -395,6 +395,15 @@ func NewBattleEngine(cfg BattleConfig) *BattleEngine {
 		activeSlots = ActiveSlots
 	}
 
+	// ⚠️ 地形必须在**构造时**建好，不能留到第一次 `updateTerrain`：
+	//   Terrain.Update 是有状态的（油桶的火区计时、蓄能塔的充能、
+	//   旋转风障的角度都跨 tick），而它的第一个 tick 可能被 CheckStalemate
+	//   截断 —— 那会让「第一次 tick 没推进地形」与「地形不存在」变得不可区分。
+	terrains := make([]*Terrain, 0, len(cfg.Level.Terrain))
+	for _, pl := range cfg.Level.Terrain {
+		terrains = append(terrains, NewTerrain(pl))
+	}
+
 	heat := NewHeatSystem()
 	// 热量上限加成（专精 heat_cap + 宝石 gem_heat）。
 	//
@@ -414,6 +423,7 @@ func NewBattleEngine(cfg BattleConfig) *BattleEngine {
 		ElementsUsed:  map[string]int64{},
 		ReactionsUsed: map[string]int64{},
 		Skills:        skills,
+		Terrains:      terrains,
 		BaseHP:        baseHPMax,
 		BaseHPMax:     baseHPMax,
 		// ⚠️ `|| 0` 而不是直接取值：level 是**网络数据**，
@@ -623,9 +633,6 @@ func (e *BattleEngine) nextUID() int64 {
 // B 块（波次与刷怪）已实现在 `engine_wave.go`，故此处不再有空壳。
 // C 块（敌人推进与漏怪）已实现在 `engine_enemy.go`，故此处不再有空壳。
 // D 块（开火与弹道）已实现在 `engine_combat.go`，故此处不再有空壳。
-
-// updateTerrain 推进地形（E 块实现）。
-func (e *BattleEngine) updateTerrain() {}
 
 // updateFloats 推进浮动文字。
 //

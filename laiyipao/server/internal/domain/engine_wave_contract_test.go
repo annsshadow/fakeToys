@@ -23,17 +23,35 @@ import (
 	"testing"
 )
 
-// loadSmokeFixture 读服务端关卡夹具（敌人表与技能表）。
+// smokeLevel 是夹具里一个关卡的形状。
 //
-// ⚠️ 必须用**同一份**夹具：向量里的 level_waves 是从这里取的。
+// ⚠️ 具名类型而不是匿名结构体：
 //
+//	`buildWaveEngine` 与 `buildTerrainEngine` 都要用同一个形状，
+//	匿名写法必须逐字复制 tag —— 复制中改错一个就是「静默得到零值」。
+type smokeLevel struct {
+	ID              int                `json:"id"`
+	BaseHP          int64              `json:"base_hp"`
+	ArmorPermille   int64              `json:"armor_permille"`
+	ElementCap      int64              `json:"element_cap"`
+	MaxReactionTier int64              `json:"max_reaction_tier"`
+	Waves           []waveLevelDef     `json:"waves"`
+	Terrain         []TerrainPlacement `json:"terrain"`
+}
+
+// loadSmokeFixture 读服务端关卡夹具（关卡 + 敌人表 + 技能表）。
+//
+// ⚠️ 必须用**同一份**夹具：向量里的 `level_waves` 是从这里取的，
+//
+//	地形场景的 `terrain_kinds` 也是从这里核对的。
 //	Go 侧若改用 `GenerateLevel` 重新生成，刷怪组可能不同 ——
 //	而 levelgen 是确定性的，两条路本该一致，但那只是「巧合」不是「同一份数据」。
 //	混用两个来源时差异会以「刷怪数量不同」的形式出现，
 //	而排查方向会指向错误的一边。
 func loadSmokeFixture(t *testing.T) struct {
-	Enemies []SeedEnemy `json:"enemies"`
-	Skills  []SeedSkill `json:"skills"`
+	Levels  []smokeLevel `json:"levels"`
+	Enemies []SeedEnemy  `json:"enemies"`
+	Skills  []SeedSkill  `json:"skills"`
 } {
 	t.Helper()
 	raw, err := os.ReadFile(filepath.Join("..", "..", "testdata", "smoke_levels.json"))
@@ -41,8 +59,9 @@ func loadSmokeFixture(t *testing.T) struct {
 		t.Fatalf("读夹具失败：%v", err)
 	}
 	var f struct {
-		Enemies []SeedEnemy `json:"enemies"`
-		Skills  []SeedSkill `json:"skills"`
+		Levels  []smokeLevel `json:"levels"`
+		Enemies []SeedEnemy  `json:"enemies"`
+		Skills  []SeedSkill  `json:"skills"`
 	}
 	if err := json.Unmarshal(raw, &f); err != nil {
 		t.Fatalf("夹具解析失败：%v", err)

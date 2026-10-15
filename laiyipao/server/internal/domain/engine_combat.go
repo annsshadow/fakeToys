@@ -303,16 +303,35 @@ func (e *BattleEngine) updateProjectiles() {
 			// 现在弹丸打在掩体上等同于打在敌人身上（有伤害、有元素），
 			// 于是「用动能砸开掩体、打开弹道」这个设计意图才真正成立。
 			//
-			// ⚠️ 地形块是 E 块的内容；D 块阶段这里**不做**地形判定。
-			//   不做的理由不是「省事」，而是：半接的地形会
-			//   在「有地形的关卡」上把弹丸吃掉，而 Go 侧的地形表
-			//   还没接到 `TerrainUsed` —— 那会引入一批
-			//   「看起来像数值问题、实际是未移植代码」的症状。
-			//   E 块落地时在这里插入同一段逻辑（对齐场景届时带上地形）。
+			// 被崩塌前的掩体阻挡。
 			//
-			//   ⚠️ 但这意味着**跨端对齐的场景必须选无地形关卡**，
-			//   否则 TS 会在这一步做地形判定而 Go 不会。
-
+			// ⚠️ 这里**必须把弹丸的伤害喂给掩体**，否则掩体永远打不破。
+			//
+			//	曾经的写法只是 `p.dead = true; break`，于是：
+			//	  掩体挡住弹丸 -> 弹丸销毁 -> 走不到 checkProjectileHit
+			//	  -> 掩体唯一的充能源（onHit，只在弹丸命中**敌人**时调用）永不触发
+			//	  -> 掩体永不崩塌 -> 弹丸继续被挡     <- 循环依赖
+			//
+			//	实测后果：第 22/33/34 关**永远打不完**。弹丸轨迹实测显示，
+			//	从 (60,880) 射向 (884,638) 的弹丸在 (497,752) 消失，
+			//	而那里距掩体 (514,654) 恰好 99.5 < 100 —— 被挡。
+			//	命中率掉到 1%，12000 tick 只杀 3 只怪，引擎永久停在 wave 阶段。
+			//
+			// 现在弹丸打在掩体上等同于打在敌人身上（有伤害、有元素），
+			// 于是「用动能砸开掩体、打开弹道」这个设计意图才真正成立。
+			for _, t := range e.Terrains {
+				if !t.BlocksProjectile() || !e.withinTerrain(t.X, t.Y, 100, p.X, p.Y) {
+					continue
+				}
+				if t.OnHit(string(p.Element), p.Damage, p.X, p.Y) {
+					e.recordTerrainTrigger(t)
+				}
+				p.Dead = true
+				break
+			}
+			if p.Dead {
+				break
+			}
 			e.checkProjectileHit(p)
 			if p.Dead {
 				break
@@ -536,15 +555,21 @@ func (e *BattleEngine) hitEnemy(p *Projectile, en *Enemy, skipRadius bool) bool 
 		}
 	}
 
-	// 地形联动（E 块）。
+	// 地形联动。地形自身负责判定弹丸是否经过它（updateTerrain 内部已做空间判定），
+	// 因此这里只需传入元素与伤害。
 	//
-	// ⚠️ D 块阶段**刻意不做**：`t.onHit(...)` 会改地形状态并记 terrain 重放事件，
-	//   而地形更新（updateTerrain）属于 E 块。
-	//   半接的后果是「地形记了触发事件却从不结算效果」，
-	//   表现为「玩家看到油桶被点燃但没有任何作用」。
+	// ⚠️ 必须传**命中位置**：地形要判断「这一发是否真的打在地形上」，
+	// 否则站在远处的油桶会被任意位置的火焰点燃（见 Terrain.OnHit 注释）。
+	e.terrainOnHit(p.Element, res.TotalDamage, p.X, p.Y)
 
 	if res.Killed {
 		e.killEnemy(en)
+		// 蓄能塔充能：满则给全场敌人上该敌人身上的主元素。
+		//
+		// ⚠️ 必须**在** killEnemy 之后调：killEnemy 会把 en.Dead 置真，
+		// 而 terrainOnKill 需要用它的元素层数算主导元素。
+		// 顺序反了的话主元素会算成「零层时的默认值」。
+		e.terrainOnKill(en, e.currentAttacker().ElementCap)
 	}
 	return true
 }
