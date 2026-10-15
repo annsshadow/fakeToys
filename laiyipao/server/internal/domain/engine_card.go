@@ -141,7 +141,30 @@ func rollSkillCards(rng *LCG, unlocked []Card, count int) []Card {
 			Descr:   "装备或升格 " + pick.Name,
 			Element: pick.Element,
 			SkillID: pick.SkillID,
-			Tier:    1,
+			// ⚠️⚠️ **必须**在这里置位，否则技能卡永远落不进 `applyCard` 的技能分支。
+			//
+			// `applyCard` 的判据是 `c.Kind == CardKindSkill && c.hasSkillID`
+			// （对应 TS 的 `card.skillId !== undefined`），而 `hasSkillID`
+			// 是**非导出**字段：除了 JSON 反序列化，只有本函数会置它。
+			//
+			// 我第一版忘了置 —— 后果是**每一张技能卡都是哑弹**：
+			// 卡被 `Deck.Take` 取走、`emit(card_taken)`、`record(card)`
+			// 全都照做（所以 replay 事件流看起来完全正常），
+			// 但 `applyCard` 一个分支都没进，技能一次都没升格。
+			//
+			// 症状之所以极难定位，是因为它同时踩中了三个「看起来无关」的巧合：
+			//
+			//  1. `card_picks` 与 `card` 的 replay 记录都正常（取牌动作是真的）
+			//  2. `terrain_used` / `kills` / `waves` 都正常（只是伤害低了一档）
+			//  3. B~F 的 6 个卡牌场景用的全是 **-3** 编码 =「弃一张 + 取一张」，
+			//     取到的是**弃牌之后**的第 0 张（属性卡）——
+			//     **从来没有一个场景取过纯技能卡**
+			//
+			// 而我那批 `TestApplySkillCard*` 单测全都**手工构造**了
+			// `Card{..., hasSkillID: true}`，于是它们验的是
+			// 「`applySkillCard` 对不对」，而不是「deck 里的卡能不能走到那里」。
+			hasSkillID: true,
+			Tier:       1,
 		})
 	}
 	return out

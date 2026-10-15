@@ -119,11 +119,12 @@ F 块里 (1)(2) 的可观测症状是**选牌索引序列错乱**（TS 注释记
 | A 骨架 + tick 序 | ✅ `engine.go` + `engine_block_a_test.go`（13 条守卫） |
 | B 波次与刷怪 | ✅ `engine_wave.go` + `engine_wave_contract_test.go`（**首次跨端逐事件对齐**，5 场景 / 685 轨迹步） |
 | C 敌人推进与漏怪 | OK engine_enemy.go + engine_enemy_test.go（12 条纯逻辑） |
-| D 开火与弹道 | ⬜ 下一步 —— **里程碑：拿到整局 eplay_hash** |
+| D 开火与弹道 | ⬜ 下一步 —— **里程碑：拿到整局 
+eplay_hash** |
 | D 开火与弹道 | ⬜ |
 | E 地形接线 | OK engine_terrain.go + engine_terrain_test.go + engine_terrain_contract_test.go |
 | F 卡牌 | OK engine_card.go + engine_card_test.go + engine_card_contract_test.go |
-| G 结算与哈希 | **部分** —— 第 1 关绿，4 条有选牌脚本的用例已知分歧，**不可接线 SettleBattle** |
+| G 结算与哈希 | OK —— 5 个整局用例 replay_hash **全部逐位相同** |
 
 ### C 块的完成度（诚实口径）
 
@@ -420,75 +421,113 @@ MUT-F7 / F11 的存活是**可证明的等价**，不是漏洞：
 **把一处语义拆成两个各自可观测的断言**。
 场景数量已经足够（B/C/D/E/F 共 25 个），继续加的边际收益在下降。
 
-### G 块的完成度（诚实口径：**未完成**）
+### G 块的完成度：**全绿**
 
 实现 `replay.go`：`BuildSnapshot` / `BuildSnapshotAttacker` / `BuildSnapshotSkill`、
 `EquippedFromSnapshot` / `AttackerFromSnapshot`、`ReplayHash` / `ReplaySkillsSegment`、
 `ReplayEvent.String`、`RunToEnd`、`ReplayOutcome` / `Replay` / `ReplayStats`、
 `MaxTicksPerReplay`；`BattleConfig.ExtraBaseHp`。
-配套 `replay_hash_contract_test.go` + `zz_probe_replay_test.go`（分歧定位探针）。
 
-**当前口径：5 个整局用例里 1 条绿、4 条已知分歧。**
+**5 个整局用例的 `replayHash` 全部与 TS 逐位相同**（第 1/25/50/75/100 关）。
 
-| 关卡 | `card_picks` | 结果 |
-|---|---|---|
-| 1 | `[]`（无脚本） | **绿**，`replayHash` 逐位相同 |
-| 25 / 50 / 75 / 100 | 6 / 8 / 10 / 12 项 | 红，已登记进 `knownReplayDivergences` |
+这一块全绿意味着：**服务端能拿存档里的 `build_snapshot` + `card_picks` + `seed`
+自行重跑整局，并与存档里的 `replay_hash` 逐位比对。**
+README 记的「A 段含局内 buff，服务端算不出」那条限制至此解除 ——
+局内 buff 由 `card_picks` 决定，两者都在 `battle_records` 同一行里。
 
-**绿的那条证明什么**：无选牌脚本时，服务端能拿存档里的
-`build_snapshot` + `seed` 重跑整局并算出**逐位相同**的 `replay_hash`。
-这条足以证明「重放/重算的输入是完备的」——
-README 记的「A 段含局内 buff，服务端算不出」那条限制，
-在**无选牌**时本就不成立；有选牌时才需要 `card_picks`。
+`knownReplayDivergences` 台账**已清空**，并由 `TestNoKnownReplayDivergences`
+守着：它绿 = 「整局重放没有已知分歧」= 可以接线 `SettleBattle`。
 
-**红的 4 条的现象**（第 25 关已精确定位，其余 3 条只定位到「同上」）：
+#### G 块抓到的 bug：技能卡全��是哑弹
 
-- 构筑还原的 S 段两端**逐字符相同**
-  （`0:1:100:1:20,1:2:168:2:30,2:3:261:2:40,3:4:130:1:18`）
-- `card_picks` 两端相同（`[0,0,-1,-1,-1]`），
-  波次边界的 **tick 也相同**（233 / 326）
-- 第一处分歧在 replay 事件流第 71 条、tick 444：
-  TS `444|hit|29|7|1` vs Go `444|hit|29|6|1`
-  —— 同一发弹丸、同一目标，直接伤害 TS 754 / Go 698、反应伤害 TS 339 / Go 325
-- 分歧**只在有选牌脚本时出现**，且都在**第 1 波之后**
-  —— 也就是「局内 buff 生效之后」。第 1 波（buff 未生效）两端逐事件相同。
-
-**已排除的**（写进台账，免得重走一遍）：
-
-- 构筑还原 / 选牌脚本消费 / 波次边界 tick —— 全部逐项相同
-- `ResolveHit` 的公式 —— Go 的实现与 TS 的 `resolveHit` 逐行等价
-  （`d` / `direct` / `elementDmg` / 反应两侧 / crit 区间都核对过）
-- `currentAttacker()` —— 两端逐字段一致，**含** critPermille 的 `min(1000)` 夹取
-- `mulDiv` —— 两端都是截断除法 `(a*b)/c`
-- tick 序 / 事件流格式 —— 分歧点之前的 replay 事件**逐条相同**
-
-**嫌疑范围**：这 4 条的 `reaction_mult_permille` / `element_coef_permille`
-都是 **3500**（B~F 场景全部 ≤ 1100），`element_cap` 最高 8、`reaction_tier` 最高 2。
-所以嫌疑收在**「卡牌效果如何改变攻方系数」这条链**上，而不是引擎主干。
-
-**定位手段（已留在仓库里）**：
+**现象**：第 25 关 tick 444 那发，TS 直接伤害 754 / Go 698、反应伤害 339 / 325。
+中间量探针（两端各落 174/180 条 `resolveHit` 的完整中间量后逐行 diff）
+把范围收到一条：
 
 ```
-cd miniapp && npx tsx scripts/probe-replay-dump.ts 1 $TEMP/ts-replay.txt
-cd server   && PROBE_CASE=1 PROBE_OUT=$TEMP/go-replay.txt \
-  go test ./internal/domain/ -run TestProbeReplayDump -count=1
-# 然后逐行 diff 两个 txt
+hit #13  TS: skillDamage=120  applyStacks=2
+        Go: skillDamage=100  applyStacks=1
 ```
 
-⚠️ **不要接线 `SettleBattle`**。在 4 条分歧收敛之前接线，
-等于上线一个「把合法战报判成伪造」的机制。
+**根因**：`rollSkillCards` 忘了置 `hasSkillID`。
+`applyCard` 的技能分支判据是 `c.Kind == CardKindSkill && c.hasSkillID`
+（对应 TS 的 `card.skillId !== undefined`），而 `hasSkillID` 是**非导出**字段，
+除了 JSON 反序列化只有 `rollSkillCards` 会置它。
+于是**每一张技能卡都是哑弹**：卡被 `Deck.Take` 取走、`emit(card_taken)`、
+`record(card)` 全都照做（所以 replay 事件流看起来完全正常），
+但 `applyCard` 一个分支都没进，技能一次都没升格。
 
-#### 本轮抓到的一个真 bug
+**它为什么能一路绿灯穿过 B~F 的 25 个跨端场景**，靠三个巧合：
 
-`applyReplayDecision` 的**取牌分支**在早一轮的编辑里被连带删掉了。
-后果：`want >= 0` 时循环既不取牌也不退出，
-空转到脚本耗尽 → 走 `SkipCards` → `card_picks` 记成 `[-1,-1,-1,-1,-1]`。
+1. `card` 的 replay 记录正常 → 事件流比对看不出问题
+2. `kills` / `waves` / `terrain_used` 正常 → 只有伤害低一档
+3. **B~F 的 6 个卡牌场景用的全是 `-3` 编码 =「弃一张 + 取一张」**，
+   取到的是**弃牌之后**的第 0 张（属性卡）——
+   **没有任何一个场景取过纯技能卡**
 
-- 症状：整局**每波都跳过**选牌，`waves` 相同但 `score`/`durationMs`/哈希全错
-- 为什么跨端对齐没抓到：B~F 的 6 个卡牌场景里 `card_picks` 全是**负数**编码
-  （-3/-4/-6），**没有一个场景用过 `0/1/2` 这种「取第 N 张」的裸正数**。
-- 补的场景：`replay_vectors.json` 的 5 个整局用例本身就覆盖了裸正数
-  （`[0,0,0,0,0,0]` 等）—— **G 块的价值之一就是补上 F 块缺的那类输入**
+第 3 条是关键：`-3` 不是「取第 0 张」，是「弃一张，然后取第 0 张」。
+我写场景时把它当成前者了，于是整整两个块都没碰到这条路径。
+
+**教训（三条，都可复用）**：
+
+- **「动作发生了」不等于「效果发生了」**。
+  `TakeCard` 无论 `applyCard` 有没有效果都会 emit + record ——
+  所以「replay 事件流正常」这个证据**完全不能**用来推断效果正确。
+  已写成 `TestTakeCardStillRecordsWhenEffectIsSilent`（反向守卫，说明为什么查不出）。
+- **非导出字段 + 布尔标记 = 哑弹温床**。
+  `hasSkillID` 这类「字段是否出现」的标记在 Go 里没有 `undefined` 语义支撑，
+  靠人工置位就一定会漏。要么每次构造都置（并有守卫钉住），要么干脆别用。
+- **测试替身绕过被测代码**（本项目第五次，MUT-E5 / A 段 elementCap / 本次同族）。
+  那批 `TestApplySkillCard*` 全都手工构造了 `Card{..., hasSkillID: true}`，
+  于是验的是「`applySkillCard` 对不对」，而不是「deck 里的卡能不能走到那里」。
+
+**新增守卫** `engine_card_dispatch_test.go` 四条，分别盯三个环节：
+
+| 守卫 | 盯什么 |
+|---|---|
+| `TestRolledSkillCardsCarryTheSkillIDFlag` | 卡牌**产出**端带没带 `skill_id` |
+| `TestApplyCardDispatchesOnRolledCards` | 三类卡都能被 `applyCard` 分发 |
+| `TestTakingSkillCardFromDeckUpgradesSkill` | **玩家动作全路径**（主守卫） |
+| `TestTakeCardStillRecordsWhenEffectIsSilent` | 反向：为什么事件流查不出 |
+
+第三条**全程只用玩家能做的动作**（`TakeCard`），
+不手工构造 `Card`、不直接调 `applyCard`、不设任何字段 ——
+前两条只要有一个跟着实现一起改就会失效，而这条只依赖「发牌 → 取牌 → 效果」这条链本身。
+
+**变异实测 4 处，全部被捕获**：
+
+| 变异 | 结果 |
+|---|---|
+| MUT-G1 `rollSkillCards` 不置 `hasSkillID`（还原本次 bug） | 红 |
+| MUT-G2 `applyCard` 去掉 `hasSkillID` 判据 | **存活 —— 见下** |
+| MUT-G3 `upgradeSkill` 只加层数不加伤害 | 红 |
+| MUT-G4 `applySkillCard` 命中已装备技能时直接 return | 红 |
+
+**MUT-G2 存活是「暂时安全」而不是「正确」**：
+去掉判据后，Go 的行为与 TS 在**当前数据**上完全一致
+（内容表 id 从 1 开始，不存在 `skill_id` 缺失的技能卡）。
+但判据本身对应 TS 的 `card.skillId !== undefined`，
+去掉它等于放弃「畸形输入不许悄悄生效」这条防线。
+所以**保留判据**，并用 MUT-G1 + 那条主守卫钉住「必须置位」。
+
+#### 中间量探针（已留在仓库里）
+
+定位手段：`miniapp/scripts/probe-replay-dump.ts` 导出 TS 侧的 replay 事件流，
+`TestProbeReplayDump` 导出 Go 侧的同一份，逐行 diff 即可定位第一处分歧。
+
+更细的「每发命中的完整中间量」需要临时在 `resolveHit` 里插桩
+（本次用的就是这招）：导出 `d` / `directRaw` / `elementDmg` / `reactionDmg` /
+`reactionElemPortion` / `reactionAttackPortion` / `stacks` / `resist*` /
+`roll` / `skillDamage` / `applyStacks` / 守方 `hp`/`shield`/`armor`/
+`stacks`/`resist` / 攻方 7 项系数，两端键名逐字一致，改完 `git checkout` 还原。
+
+**插桩时的两个坑**：
+
+- TS 侧必须在 `engine.start()` **之前**注册钩子，
+  否则整局跑完钩子还没装上，导出 0 条。
+- TS 的 `Map` 懒建、Go 的 map 预填 0，
+  所以 `stacksDump` / `resistDump` 必须归一化成「5 个元素全列出、缺失记 0」，
+  否则第 0 条就报差异，掩盖真正的分歧点。
 
 #### 一个潜伏的 JSON tag bug
 
@@ -511,7 +550,7 @@ TS 是 `BigInt(a.mechanic_permille ?? 0)`，逐字对应。
 **教训：「为了让某个特性不至于完全失效而填非 0 缺省」是个危险的直觉** ——
 缺省值参与哈希，填错就是全量历史战报失配。
 
-#### 一个测试替身自己制造盲区的实例
+#### 一个测试断言自己踩空
 
 `TestReplayHashAnchorUsesOnlySevenAttackerFields` 第一版写「改
 `Cfg.Attacker.ElementCap` 应当改变哈希」，结果红。
@@ -519,12 +558,8 @@ TS 是 `BigInt(a.mechanic_permille ?? 0)`，逐字对应。
 （`lv.element_cap ? lv.element_cap : base.elementCap`），
 `reactionTier` 更是只读关卡 —— 攻方快照里的同名字段**是死的**。
 
-与 E 块 MUT-E5 同源：**测试绕过被测代码**。
-这里不是替身绕过，而是「改了没人读的字段」——
-断言看起来在验锚点，实际验的是「这个字段有没有接线」。
-
 修正：两种来源都测（关卡给了值时测关卡、没给时测攻方）。
-
+与 E 块 MUT-E5 同源：**断言看起来在验锚点，实际验的是「这个字段有没有接线」**。
 ### 对齐终止条件：为什么停在 `card_select`
 
 第 2 波必须先解掉卡牌选择，那要过 `rollWaveCards`（消耗 RNG，于是后续
