@@ -1470,6 +1470,13 @@ const waveRows = WAVE_SCENARIOS.map((s) => {
     //   「是 won 或 lost」：前者能自动涵盖将来新增的任何终局状态，
     //   后者需要每加一个终局就改一次 —— 而漏改的后果是
     //   「在终局状态下继续 step，跑到一个不存在的状态上去」。
+    // ⚠️ 这里**不能**在 card_select 停下：
+    //   TS 的 pplyReplayDecision 是在 step() 内部被调的
+    //   （phase === 'card_select' && replayScript !== null），
+    //   所以解卡牌**需要一次 step**，而 break 会正好跳过它。
+    //   结果就是 card_picks 永远是空 —— 选牌脚本根本没被执行。
+    //
+    //   B~E 的场景之所以可以「非 wave 即停」，是因为它们没有选牌脚本。
     if (engine.phase !== 'wave' && engine.phase !== 'prepare') break
     const before = (engine as any).replay.length
     engine.step()
@@ -1802,6 +1809,36 @@ function makeTracer(engine: any, sampleEvery: number) {
         triggered: t.triggered,
       })),
       terrain_used: (engine as any).terrainUsed.slice().join(String.fromCharCode(44)),
+terrain_used: (engine as any).terrainUsed.slice().join(String.fromCharCode(44)),
+      // ── F 块：卡牌 ──
+      // ⚠️ 必须逐步记 `cardPicks`：它是「每波选了什么」的**完整序列**，
+      // 而服务端重算需要它来复现局内 buff。
+      // 只记最终值的话，「第 2 波与第 3 波选反了」观察不到。
+      card_picks: (engine as any).cardPicks.join(String.fromCharCode(44)),
+      // 手牌内容：验证 rollWaveCards 的产出（顺序、种类、id）
+      hand: (engine.deck.hand as any[]).map((c: any) => `${c.kind}:${c.id}`),
+      discards_left: (engine.deck as any).discardsLeft,
+      // ⚠️ 技能状态：升格会改 baseDamage / applyStacks / pierce，
+      // 而这些直接进 `currentAttacker` 与弹丸参数。
+      skills: (engine.skills as any[]).map((s: any) =>
+        `${s.skillId}@${s.slot}:${s.baseDamage}:${s.applyStacks}:${s.pierce}:${s.cooldownRemaining}`,
+      ),
+      // 局内加成：applyAttribute / applyMechanic 的直接产物。
+      // ⚠️ `heat.capBonus` 必须单列 —— 它不是 Buffs 的一部分，
+      //   被 `Heat.cap` 单独读走。
+      buffs: JSON.stringify({
+        attack: (engine as any).buffs.attackPermille.toString(),
+        element_coef: (engine as any).buffs.elementCoefPermille.toString(),
+        crit: (engine as any).buffs.critPermille.toString(),
+        element_cap: (engine as any).buffs.elementCapBonus.toString(),
+        armor: (engine as any).buffs.armorPermille.toString(),
+        pierce: (engine as any).buffs.pierceBonus,
+        chain: (engine as any).buffs.chainBonus,
+        aoe: (engine as any).buffs.aoeBonus,
+        free_discard: (engine as any).buffs.freeDiscard,
+        overheat_guard: (engine as any).buffs.overheatGuard,
+        heat_cap_bonus: (engine as any).heat.capBonus.toString(),
+      }),
     })
   }
   return { trace, snap }
@@ -1839,6 +1876,13 @@ const buildRows = BUILD_SCENARIOS.map((s) => {
   const { trace, snap } = makeTracer(engine, s.sampleEvery)
   snap()
   for (let i = 0; i < s.ticks; i++) {
+    // ⚠️ 这里**不能**在 card_select 停下：
+    //   TS 的 pplyReplayDecision 是在 step() 内部被调的
+    //   （phase === 'card_select' && replayScript !== null），
+    //   所以解卡牌**需要一次 step**，而 break 会正好跳过它。
+    //   结果就是 card_picks 永远是空 —— 选牌脚本根本没被执行。
+    //
+    //   B~E 的场景之所以可以「非 wave 即停」，是因为它们没有选牌脚本。
     if (engine.phase !== 'wave' && engine.phase !== 'prepare') break
     const before = (engine as any).replay.length
     engine.step()
@@ -1986,6 +2030,13 @@ const wireTerrainRows = TERRAIN_SCENARIOS.map((s) => {
   const { trace, snap } = makeTracer(engine, s.sampleEvery)
   snap()
   for (let i = 0; i < s.ticks; i++) {
+    // ⚠️ 这里**不能**在 card_select 停下：
+    //   TS 的 pplyReplayDecision 是在 step() 内部被调的
+    //   （phase === 'card_select' && replayScript !== null），
+    //   所以解卡牌**需要一次 step**，而 break 会正好跳过它。
+    //   结果就是 card_picks 永远是空 —— 选牌脚本根本没被执行。
+    //
+    //   B~E 的场景之所以可以「非 wave 即停」，是因为它们没有选牌脚本。
     if (engine.phase !== 'wave' && engine.phase !== 'prepare') break
     const before = (engine as any).replay.length
     engine.step()
@@ -2024,6 +2075,177 @@ const wireTerrainRows = TERRAIN_SCENARIOS.map((s) => {
     trace,
   }
 })
+/**
+ * Block F（卡牌）的场景：**带选牌脚本的多波次战斗**。
+ *
+ * # 这是 R1 第一次能跑过多波次
+ *
+ * B~E 的所有场景都停在第 1 波末尾的 `card_select` ——
+ * 硬跑满 tick 只会得到一片死空间。F 落地后，
+ * 场景能真正走完第 2、3、… 波。
+ *
+ * 而多波次是 `charge_tower`（需要 38+ 次击杀）与
+ * `rotor_vane`（需要更长的弹道里程）这两类地形**唯一的**可达路径 ——
+ * 它们在 E 块里只能靠构造单测覆盖，正是因为第 1 波打不满。
+ *
+ * # 选牌脚本必须**显式**给，不能让引擎自己决定
+ *
+ * `setReplayScript` 注入的序列是重放闭环的最后一环：
+ * 选牌会改变后续战斗（技能升格 / 属性加成 / 机制词条），
+ * 第三方拿不到这个序列就复现不出原局。
+ *
+ * ⚠️ 编码约定（两端必须一致）：
+ *   -1                → 整波跳过
+ *   -(3 + handIdx)    → 取第 handIdx 张
+ *   -(6 + handIdx)    → 弃第 handIdx 张
+ *
+ * `-(3+)` 与 `-(6+)` 的区别见 `PICK_DISCARD_SKIP_BASE` 的说明。
+ *
+ * # 脚本设计：覆盖三类卡 × 两条路径
+ *
+ * | 场景 | 覆盖 |
+ * |---|---|
+ * | `card_skip_all` | 全部 `-1`（整波跳过）：只验 rollWaveCards 消耗 RNG 的效果 |
+ * | `card_take_first` | 全部取第 0 张：技能卡/属性卡/机制卡各波各取一次 |
+ * | `card_take_mixed` | 交替取/弃：覆盖 `discardedThisWave` 与弃牌编码 |
+ * | `card_multiwave`  | 跑到第 3 波以上：解锁多波次路径 |
+ */
+
+interface CardScenario {
+  label: string
+  levelID: number
+  seed: string
+  ticks: number
+  sampleEvery: number
+  skillIDs: number[]
+  /** 选牌脚本（编码见上） */
+  picks: number[]
+  attacker: BuildScenario['attacker']
+}
+
+const CARD_SCENARIOS: CardScenario[] = [
+  { label: 'card_skip_all', levelID: 25, seed: '7046029255919282421', ticks: 30000, sampleEvery: 200, skillIDs: [1, 2, 3, 5], picks: [], attacker: BUILD_ATTACKER },
+  { label: 'card_take_first', levelID: 25, seed: '-1', ticks: 30000, sampleEvery: 200, skillIDs: [1, 2, 3, 5], picks: [], attacker: BUILD_ATTACKER },
+  { label: 'card_take_mixed', levelID: 25, seed: '1234567890123456789', ticks: 30000, sampleEvery: 200, skillIDs: [10, 11, 12, 13], picks: [], attacker: BUILD_ATTACKER },
+  { label: 'card_multiwave', levelID: 25, seed: '42', ticks: 40000, sampleEvery: 300, skillIDs: [1, 4, 7, 16], picks: [], attacker: BUILD_ATTACKER },
+  { label: 'card_charge_tower', levelID: 42, seed: '-1', ticks: 40000, sampleEvery: 300, skillIDs: [1, 2, 3, 5], picks: [], attacker: BUILD_ATTACKER },
+  { label: 'card_rotor_vane', levelID: 82, seed: '1', ticks: 40000, sampleEvery: 300, skillIDs: [1, 2, 3, 5], picks: [], attacker: BUILD_ATTACKER },
+]
+
+const cardRows = CARD_SCENARIOS.map((s) => {
+  const level = fixture.levels.find((l: any) => l.id === s.levelID)
+  if (!level) throw new Error(`夹具里没有第 ${s.levelID} 关`)
+  const enemyDefs = new Map<number, any>((fixture.enemies as any[]).map((e) => [e.id, e]))
+  const skillDefs = new Map<number, any>(
+    [...(fixture.skills as any[]), ...(fixture.composite_skills as any[])].map((x) => [x.id, x]),
+  )
+  const equipped = s.skillIDs.map((id, i) => toEquippedSkill(skillDefs.get(id)!, i))
+
+  const engine = new BattleEngine({
+    level: level as never,
+    enemies: enemyDefs,
+    skills: skillDefs,
+    equipped: equipped as never,
+    attacker: s.attacker as never,
+    seed: BigInt(s.seed),
+    scoreRules: scoreRulesFromFixture(),
+    activeSlots: 4,
+  } as never)
+
+  // ⚠️ 脚本必须在 start() **之前**注入：
+  // `applyReplayDecision` 在 `phase === 'card_select'` 时被 step() 调，
+  // 而第一次进入 card_select 是第 1 波清空时 —— start() 之后注入也来得及，
+  // 但「来得及」不等于「总是」：start() 若将来改成也走一次决策就会漏。
+  const picks = s.picks.length ? s.picks : buildPickScript(s.label)
+  engine.setReplayScript(picks)
+  engine.start()
+
+  const { trace, snap } = makeTracer(engine, s.sampleEvery)
+  snap()
+  for (let i = 0; i < s.ticks; i++) {
+    // ⚠️ 这里**不能**在 card_select 停下：
+    //   TS 的 pplyReplayDecision 是在 step() 内部被调的
+    //   （phase === 'card_select' && replayScript !== null），
+    //   所以解卡牌**需要一次 step**，而 break 会正好跳过它。
+    //   结果就是 card_picks 永远是空 —— 选牌脚本根本没被执行。
+    //
+    //   B~E 的场景之所以可以「非 wave 即停」，是因为它们没有选牌脚本。
+    if (engine.phase !== 'wave' && engine.phase !== 'prepare' && engine.phase !== 'card_select') break
+    const before = (engine as any).replay.length
+    engine.step()
+    if (engine.tick % s.sampleEvery === 0 || (engine as any).replay.length > before) snap()
+  }
+  if (trace[trace.length - 1].tick !== engine.tick) snap()
+
+  return {
+    label: s.label,
+    level_id: s.levelID,
+    seed: s.seed,
+    ticks: s.ticks,
+    sample_every: s.sampleEvery,
+    level_waves: level.waves,
+    level_base_hp: level.base_hp,
+    level_armor_permille: level.armor_permille ?? 0,
+    level_element_cap: level.element_cap ?? 0,
+    level_max_reaction_tier: level.max_reaction_tier ?? 1,
+    terrain_kinds: (level.terrain as any[]).map((t: any) => t.kind),
+    equipped: s.skillIDs,
+    // ⚠️ 脚本**必须**带进文件：它就是这一局的「输入」，
+    //   漏带的话 Go 侧只能猜 —— 而不同脚本给出不同战斗。
+    picks,
+    attacker: {
+      attack: s.attacker.attack.toString(),
+      crit_permille: s.attacker.critPermille.toString(),
+      crit_multiplier_permille: s.attacker.critMultiplierPermille.toString(),
+      reaction_mult_permille: s.attacker.reactionMultPermille.toString(),
+      element_cap: s.attacker.elementCap.toString(),
+      reaction_tier: s.attacker.reactionTier.toString(),
+      element_coef_permille: s.attacker.elementCoefPermille.toString(),
+      heat_cap_permille: s.attacker.heatCapPermille.toString(),
+      armor_permille: s.attacker.armorPermille.toString(),
+      mechanic_permille: s.attacker.mechanicPermille.toString(),
+    },
+    trace,
+  }
+})
+
+/**
+ * 按标签构造一个**确定性**的选牌脚本。
+ *
+ * ⚠️ 为什么用「确定性构造」而不是手写常量列表：
+ *
+ * 关卡的波数随 levelID 变（第 25 关 7 波、第 42 关更多），
+ * 而脚本跑完就停（`replayScriptPos >= script.length` 时走 `skipCards`）——
+ * 所以**长度不重要**，重要的是「前 N 项是什么」。
+ *
+ * 这样脚本长度就不必与波数对齐，少一处需要同步的地方。
+ */
+function buildPickScript(label: string): number[] {
+  // 够长即可：超出后引擎走 skipCards（-1），那也是一条被验的路径。
+  const out: number[] = []
+  for (let i = 0; i < 12; i++) {
+    switch (label) {
+      case 'card_skip_all':
+        out.push(-1)
+        break
+      case 'card_take_first':
+        // 全部取第 0 张：技能卡/属性卡/机制卡按 rollWaveCards 的
+        // 固定顺序排好，所以第 0 张随 RNG 变化而种类不同 ——
+        // 几波下来三类卡都会被取到。
+        out.push(-3)
+        break
+      case 'card_take_mixed':
+        // 偶数波取第 0 张，奇数波弃第 1 张 ——
+        // 弃牌覆盖 discardedThisWave 与 `-(3+handIdx)` 编码。
+        out.push(i % 2 === 0 ? -3 : -(6 + 1))
+        break
+      default:
+        // 多波次场景：取第 i%3 张，覆盖三个不同下标。
+        out.push(-(3 + (i % 3)))
+    }
+  }
+  return out
+}
 const doc = {
   _comment:    '引擎**纯函数**的跨端契约向量。由 miniapp/scripts/gen-engine-pure-vectors.ts 从真实 TS 实现产出。' +
     '期望值不由 Go 侧生成（纯函数没有运行时状态，用实现产出即定义）。' +
@@ -2109,6 +2331,9 @@ const doc = {
   terrain_battle: {
     rows: wireTerrainRows,
   },
+  card_battle: {
+    rows: cardRows,
+  },
 }
 
 const outPath = resolve(serverRoot, 'testdata/engine_pure_vectors.json')
@@ -2121,3 +2346,4 @@ console.log(`  地形脚本 ${terrainRows.length}（轨迹步 ${terrainRows.redu
 console.log(`  波次场景 ${waveRows.length}（轨迹步 ${waveRows.reduce((a, r) => a + r.trace.length, 0)}）`)
 console.log(`  战斗场景 ${buildRows.length}（轨迹步 ${buildRows.reduce((a, r) => a + r.trace.length, 0)}）`)
 console.log(`  地形场景 ${wireTerrainRows.length}（轨迹步 ${wireTerrainRows.reduce((a, r) => a + r.trace.length, 0)}）`)
+console.log(`  卡牌场景 ${cardRows.length}（轨迹步 ${cardRows.reduce((a, r) => a + r.trace.length, 0)}）`)

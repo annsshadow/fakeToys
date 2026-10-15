@@ -49,9 +49,10 @@ type smokeLevel struct {
 //	混用两个来源时差异会以「刷怪数量不同」的形式出现，
 //	而排查方向会指向错误的一边。
 func loadSmokeFixture(t *testing.T) struct {
-	Levels  []smokeLevel `json:"levels"`
-	Enemies []SeedEnemy  `json:"enemies"`
-	Skills  []SeedSkill  `json:"skills"`
+	Levels    []smokeLevel `json:"levels"`
+	Enemies   []SeedEnemy  `json:"enemies"`
+	Skills    []SeedSkill  `json:"skills"`
+	AllSkills []SeedSkill  `json:"composite_skills"`
 } {
 	t.Helper()
 	raw, err := os.ReadFile(filepath.Join("..", "..", "testdata", "smoke_levels.json"))
@@ -59,9 +60,10 @@ func loadSmokeFixture(t *testing.T) struct {
 		t.Fatalf("读夹具失败：%v", err)
 	}
 	var f struct {
-		Levels  []smokeLevel `json:"levels"`
-		Enemies []SeedEnemy  `json:"enemies"`
-		Skills  []SeedSkill  `json:"skills"`
+		Levels    []smokeLevel `json:"levels"`
+		Enemies   []SeedEnemy  `json:"enemies"`
+		Skills    []SeedSkill  `json:"skills"`
+		AllSkills []SeedSkill  `json:"composite_skills"`
 	}
 	if err := json.Unmarshal(raw, &f); err != nil {
 		t.Fatalf("夹具解析失败：%v", err)

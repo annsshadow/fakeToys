@@ -292,8 +292,34 @@ type Card struct {
 	// SkillID 是 skill 卡的技能 id；其它卡为 0。
 	SkillID int `json:"skill_id,omitempty"`
 	// Tier 是 skill 卡的阶数。
+	// Tier 是 skill 卡的星级（升格数）。
 	Tier int `json:"tier,omitempty"`
+	// Element 是卡面元素（skill 卡用；抽牌池按它展示）。
+	Element Element `json:"element,omitempty"`
+	// Effect 是属性卡的数值效果。
+	//
+	// 零值 Kind == "" 表示「这张不是属性卡」——
+	// `applyCard` 的判据依赖这个区分。
+	Effect AttributeEffect `json:"effect,omitempty"`
+	// Mechanic 是机制卡的数值效果（同上）。
+	Mechanic MechanicEffect `json:"mechanic,omitempty"`
+	// hasSkillID 记录「skill_id 字段出现过」。
+	//
+	// 为什么不直接用 `SkillID != 0`：
+	//
+	//	`skillId === 0` 曾落进 `applyCard` 最后的隐式 else ——
+	//	卡被 consume 掉、emit 了 card_taken，但什么也没发生，
+	//	玩家看到「获得技能卡」却没反应。
+	//	内容表当前 id 从 1 开始所以不触发，但 id 空间没有
+	//	「必须非 0」的保证。
+	//
+	// 而 JSON 里 `omitempty` 会让 skill_id = 0 的字段**整个消失**，
+	// 所以「0」与「没给」在反序列化后本来就不可区分。
+	hasSkillID bool
 }
+
+// HasSkillID 报告这张卡是否携带 skill_id。
+func (c Card) HasSkillID() bool { return c.hasSkillID }
 
 // CardDeck 是手牌管理（镜像 `heatmap.ts` 的同名 class）。
 type CardDeck struct {

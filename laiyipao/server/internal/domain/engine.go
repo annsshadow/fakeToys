@@ -218,9 +218,11 @@ type BattleEvent struct {
 
 // 渲染/重放事件类型。
 const (
-	EventStalemate = "stalemate"
-	EventWon       = "won"
-	EventLost      = "lost"
+	EventStalemate     = "stalemate"
+	EventCardTaken     = "card_taken"
+	EventCardDiscarded = "card_discarded"
+	EventWon           = "won"
+	EventLost          = "lost"
 )
 
 // SpawnItem 是刷怪队列的一项。
@@ -654,9 +656,6 @@ func (e *BattleEngine) updateFloats() {
 //
 //	「实现在哪个文件」这件事有两个答案。
 func (e *BattleEngine) checkWaveEndUnused() {}
-
-// applyReplayDecision 按注入的脚本决策取牌（F 块实现）。
-func (e *BattleEngine) applyReplayDecision() {}
 
 // ReplaySegmentA 是 A 段（攻方系数锚点）。
 //

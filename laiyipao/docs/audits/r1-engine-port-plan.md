@@ -122,7 +122,7 @@ F 块里 (1)(2) 的可观测症状是**选牌索引序列错乱**（TS 注释记
 | D 开火与弹道 | ⬜ 下一步 —— **里程碑：拿到整局 eplay_hash** |
 | D 开火与弹道 | ⬜ |
 | E 地形接线 | OK engine_terrain.go + engine_terrain_test.go + engine_terrain_contract_test.go |
-| F 卡牌 | ⬜ 下一步 —— **解锁多波次** |
+| F 卡牌 | OK engine_card.go + engine_card_test.go + engine_card_contract_test.go |
 | G 结算与哈希 | ⬜ |
 
 ### C 块的完成度（诚实口径）
@@ -321,6 +321,105 @@ Go 不允许同名字段与方法共存，只能包一层。
 本轮 E5 与 D5/D7/D8 同类。
 但 E 块多了一条**元教训**：测试替身本身也会制造盲区 ——
 一个绕过被测代码的替身，让被测代码的变异存活。
+### F 块的完成度（诚实口径）
+
+实现 `engine_card.go`：卡池表（6 属性 + 5 机制，顺序进 RNG）、
+`rollWaveCards` / `rollSkillCards` / `rollAttributeCards` / `rollMechanicCards`、
+`beginCardSelect` / `unlockedSkillCards`、`SkipCards` / `TakeCard` / `DiscardCard`、
+`finishCardSelect` / `finishCardSelectNextTick` / `applyReplayDecision`、
+`applyCard` / `applyAttribute` / `applyMechanic` / `applySkillCard` / `upgradeSkill`、
+`cardIndex` / `attributeIndex` / `mechanicIndex`。
+
+**跨端对齐**：6 个真实场景，全绿，且**第一次跑过多波次**
+（实测第 25 关走完 7 波、第 42 关 6 次选牌、第 82 关 8 次选牌 60 杀）。
+`card_charge_tower` 场景跑出 `terrain_used=[charge_tower]` ——
+蓄能塔在 E 块里不可达的那条路径，靠多波次解锁了。
+
+**⚠️ 本轮抓到两个真 bug（都不是「跨端对齐没覆盖到形状」，而是另外两类）**：
+
+1. `triggerSteamBurstAoe` 的溅射击杀**没有**调 `terrainOnKill`。
+   `kills` / `score` / 事件流 / 地形状态 / `terrain_used` **全都对得上**，
+   唯一差异是蓄能塔 `charge` 少 1 —— 而 `charge` 进 `replay_hash`。
+   根因：E 块只在 `hitEnemy` 一条路径接了地形，
+   而 steam_burst 的溅射是**另一条独立击杀路径**。
+   这是「接线点最容易漏」的第二个实例（E 块当时漏了 1/3）。
+
+2. `markTerrainUsed` 的去重守卫**包住了 emit + record**。
+   TS 那边去重守卫只包住 `terrainUsed.push`，
+   `emit` 与 `record` 是**并列的三句**。
+   第 42 关有两座蓄能塔（param 38 / 42），
+   第二座的 `terrain|5|381|607` 事件被静默吃掉。
+   E 块的 `TestTerrainUsedDedupOnKillPath` 只断言了**列表**去重，所以全绿。
+   又一次「守卫只覆盖了一半语义」。
+
+   修法：去重只作用于列表，事件与 replay **每次都发**。
+   已加 `TestMarkTerrainUsedDeduplicatesListButAlwaysEmits`（分三件事断言：
+   列表去重 / 事件发两次 / replay 记两条）。
+
+**⚠️ Go 的 `range` + `splice` 陷阱**：
+`finishCardSelect` 里 `for _, c := range e.Deck.Hand { e.Deck.Drop(c.ID) }`
+在遍历中删除会**跳过元素**，3 张只删 2 张。
+TS 那边写的是 `for (const c of [...this.deck.hand])` —— 那个展开运算符正为此存在。
+抽成 `dropAllHand()` 并在注释里写明原因。
+
+**⚠️ 生成器里的 `.Replace()` 是全局替换**：
+把「card_select 不 break」一次性替换到 4 个循环上，
+wave / battle / terrain 三段的轨迹全变了。
+教训：改生成器循环时按**位置**改，不要按**文本**改。
+
+**⚠️ 测试夹具本身制造过 4 处假失败**（记录在案）：
+
+- `mustEquip` 一律 `kind="active"` → 「只装被动」用例实际发出的是主动卡
+- 只装 3 个技能就断言「槽满」→ `ActiveSlots=4`，槽 3 还空着，走的是另一条分支
+- `MechanicPermille=1000`（100% 放大）→ 面值 1 变 2，断言却写 1
+- `beginCardSelect` **不改 phase**（那是 `checkWaveEnd` 的职责），夹具要自己置
+
+第 2 条尤其值得记：**前置条件不成立时，断言会「意外地通过」并给出错误的安心感**。
+
+**跨端向量必须带 `picks`**：选牌脚本就是这一局的「用户输入」，
+漏带的话 Go 侧只能猜，而不同脚本给出不同战斗。
+
+**变异实测 12 处，10 处被捕获，2 处判定为「结构等价」**：
+
+| 变异 | 结果 |
+|---|---|
+| MUT-F1 手牌顺序改成 技能/机制/属性 | 红 |
+| MUT-F2 `markTerrainUsed` 去重守卫包住 emit | 红 |
+| MUT-F3 `dropAllHand` 去掉「先复制」 | 红 |
+| MUT-F4 弃+取后用 `continue` | 红 |
+| MUT-F5 属性卡编码基数 500→501 | 红 |
+| MUT-F6 `recordPick` 写 `cardIndex` 而非 `handIdx` | 红 |
+| MUT-F8 `free_discard` 不同步加到 `DiscardsLeft` | 红 |
+| MUT-F9 找槽用 `slot < activeSlots`（历史顶槽 bug） | 红 |
+| MUT-F10 `rollSkillCards` 去掉重抽 guard | 红（5s 超时） |
+| MUT-F12 `recordPick` 去掉「每波一次」守卫 | 红 |
+| MUT-F7 抽牌池改用 `e.Skills` 而非 `Cfg.Equipped` | **存活 —— 结构等价** |
+| MUT-F11 池子提前滤掉 passive | **存活 —— 结构等价** |
+
+MUT-F7 / F11 的存活是**可证明的等价**，不是漏洞：
+
+- 池子来源 `Cfg.Equipped` 只可能包含**已装备**的技能，
+  所以技能卡永远命中「已装备 → 升格」，
+  `e.Skills` 不会新增也不会重排 —— 两者在当前设计下永远相同。
+- `rollSkillCards` 内部还会再滤一次 `kind === 'active'`，
+  所以池子是否预先滤掉 passive 都不改变 `actives`。
+
+它们要变得可观测，需要先出现「池子里有未装备技能」的形状，
+而那要求放开「技能卡只能给已装备技能」这条限制 ——
+那是产品决策，不是移植任务。**不在此处补假守卫。**
+
+**教训（第五次出现，但本轮多了一条新形态）**：
+
+跨端对齐证明的是「真实数据上两端一致」，**不覆盖「代码想处理的形状」**。
+本轮两个 bug 都不是「形状到不了」，而是
+
+- **「守卫只覆盖了一半语义」** —— 列表去重 ✓ / 事件必发 ✗
+- **「接线点漏了一条路径」** —— 主命中 ✓ / 溅射 ✗
+
+所以补守卫的方向不是「加更多场景」，而是
+**把一处语义拆成两个各自可观测的断言**。
+场景数量已经足够（B/C/D/E/F 共 25 个），继续加的边际收益在下降。
+
 ### 对齐终止条件：为什么停在 `card_select`
 
 第 2 波必须先解掉卡牌选择，那要过 `rollWaveCards`（消耗 RNG，于是后续
