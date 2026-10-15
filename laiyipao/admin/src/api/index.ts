@@ -325,13 +325,35 @@ export interface RecomputeSummary {
   since: string
   breaker_rate_permille: number
   breaker_min_samples: number
+  /** 台账侧读数：只含不符的局，受 `since` 窗口限制 */
   totals: {
     total: number
     mismatched: number
     rejected: number
     rate_permille: number
   }
+  /** 按关卡分档的台账分布（只含不符） */
   levels: RecomputeLevelStat[]
+  /**
+   * 引擎侧累计读数：进程内计数器，**从进程启动算起**，含**所有**走到重算的局。
+   *
+   * ## 与 totals 的口径不同 —— 别混用
+   *
+   * 单看 totals 会把「校验根本没跑」误判成「没问题」，而那正是最坏的误判。
+   * 这个字段是唯一一个「校验到底有没有在跑」的读数。
+   */
+  engine: {
+    verified: number
+    mismatch: number
+    cannot_run: number
+    skipped: number
+    /** Verified+Mismatch+CannotRun+Skipped —— 作为覆盖率分母 */
+    settled_total: number
+    /** Verified/SettledTotal * 1000；settled_total==0 时为 -1 */
+    verified_permille: number
+    /** 一眼可判的结论字符串，判据在后端 */
+    status: string
+  }
 }
 
 /**
