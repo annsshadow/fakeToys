@@ -141,20 +141,42 @@ func (e *BattleEngine) recordTerrainTrigger(t *Terrain) {
 	e.record(e.Tick, ReplayTerrain, TerrainIndex(t.Kind), int64(t.X), int64(t.Y))
 }
 
-// markTerrainUsed 记一次地形「被用到」（**去重**）。
+// markTerrainUsed 把地形记进「本局用到过哪些地形」的**去重列表**，
+// 并**每次**发事件 + 记 replay。
 //
-// ⚠️ 与 `recordTerrainTrigger` 的区别就是去重。
-// 两条路径的调用点不同：
-//   - trigger 路径（弹丸挡住 / 命中点燃）：每次触发都记重放事件，
-//     `terrainUsed` 也每次追加（与 TS 同）
-//   - used 路径（击杀充能）：只在首次记入
+// ⚠️⚠️ 去重只作用于**列表**，事件与 replay 每次都要发：
+//
+//	TS 那边是
+//	  if (!this.terrainUsed.includes(t.kind)) this.terrainUsed.push(t.kind)
+//	  this.emit({ type: 'terrain', ... })
+//	  this.record(this.tick, 'terrain', terrainIndex(t.kind), t.x, t.y)
+//	三句**并列**，去重守卫**只包住 push 那一句**。
+//
+// 我第一版写成「已记过就 return」，于是第二次触发直接跳过 emit+record。
+// 实测症状：第 42 关有两座蓄能塔（param 38 / 42），
+// 第一座在第 38 杀触发、第二座在第 42 杀触发 ——
+// 两座 `kind` 都是 `charge_tower`，于是 Go 侧第二座的 terrain 事件被吃掉。
+// 而 `kills` / `score` / 地形状态 / `terrain_used` **全都对得上**
+// （因为 `terrain_used` 本来就该去重），
+// 唯一的差异是 replay 流少一条 `terrain|5|381|607` ——
+// 而那一条直接进 `replay_hash`。
+//
+// 这条 bug 与 E 块的教训同源：E 的 `TestTerrainUsedDedupOnKillPath`
+// 只断言了**列表**去重，没断言「第二次触发仍然发事件」。
 func (e *BattleEngine) markTerrainUsed(t *Terrain) {
+	// 去重：只在列表里没有该 kind 时追加。
+	dup := false
 	for _, k := range e.TerrainUsed {
 		if k == t.Kind {
-			return
+			dup = true
+			break
 		}
 	}
-	e.TerrainUsed = append(e.TerrainUsed, t.Kind)
+	if !dup {
+		e.TerrainUsed = append(e.TerrainUsed, t.Kind)
+	}
+	// ⚠️ 事件与 replay **无条件**发：它们描述的是「这一刻地形生效了」，
+	// 不是「本局用过哪些地形」。
 	e.emit(BattleEvent{Type: EventTerrain, X: int64(t.X), Y: int64(t.Y), Text: t.Kind})
 	e.record(e.Tick, ReplayTerrain, TerrainIndex(t.Kind), int64(t.X), int64(t.Y))
 }
