@@ -264,9 +264,3 @@ func (e *BattleEngine) checkWaveEnd() {
 	e.Phase = PhaseCardSelect
 	e.beginCardSelect() // F 块实现：抽牌与 card_offer
 }
-
-// beginCardSelect 抽本波手牌（F 块实现）。
-//
-// B 阶段它刻意是空实现：`checkWaveEnd` 已经把 `Phase` 置为 `card_select`，
-// 而 B 的验收场景是「跑到本波清空」—— 玩家是否真的拿到牌属于 F。
-func (e *BattleEngine) beginCardSelect() {}

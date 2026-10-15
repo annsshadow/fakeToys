@@ -673,6 +673,20 @@ func (e *BattleEngine) triggerSteamBurstAoe(origin *Enemy, reactionDmg int64, at
 		}
 		if res.Killed {
 			e.killEnemy(en)
+			// 蓄能塔充能：满则给全场敌人上该敌人身上的主元素。
+			//
+			// ⚠️ 必须**在** killEnemy 之后调，且用 `att` 而不是
+			//   `currentAttacker()`：killEnemy 会把 en.Dead 置真，
+			//   而 terrainOnKill 需要用它的元素层数算主导元素；
+			//   cap 则沿用触发本次溅射的那次攻击的攻方，
+			//   与 TS `t.onKillCharging(dom, att.elementCap, ...)` 同源。
+			//
+			// ⚠️ 这条是 E 块**漏掉过一次**的接线点：
+			//   最初只在 `hitEnemy` 里加了 terrainOnKill，
+			//   而 steam_burst 的溅射击杀是**另一条**独立的击杀路径。
+			//   症状极隐蔽：`kills` / `score` / 事件流全对，
+			//   只有蓄能塔的 `charge` 少 1 —— 而 `charge` 进 `replay_hash`。
+			e.terrainOnKill(en, att.ElementCap)
 		}
 	}
 }
