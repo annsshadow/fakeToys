@@ -32,11 +32,8 @@ meeting_assemble_control	GET	/api/meeting/assemble/control/meeting/{id}/checkin	
 meeting_assemble_control	GET	/api/meeting/assemble/control/meeting/{id}/manual/completed	meeting_id_manual_completed	K3-已认证无会话无门禁
 meeting_assemble_control	GET	/api/meeting/assemble/control/meeting/{id}/reject	meeting_id_reject	K3-已认证无会话无门禁
 message	GET	/api/message/consume/{id}/type/{type}	update_single	K3-已认证无会话无门禁
-message_assemble_communicate	GET	/api/message/assemble/communicate/consume/{id}/type/{type}	consume_id_type_type	K3-已认证无会话无门禁
-message_assemble_communicate	GET	/api/message/assemble/communicate/im/conversation/{id}/group/mockdeletetoget	im_conversation_id_group_mockdeletetoget	K3-已认证无会话无门禁
 message_assemble_communicate	GET	/api/message/assemble/communicate/im/conversation/{id}/group/quit/self	im_conversation_id_group_quit_self	K2-读会话无门禁
 message_assemble_communicate	GET	/api/message/assemble/communicate/im/conversation/{id}/single/mockdeletetoget	im_conversation_id_single_delete_virtual	K2-读会话无门禁
-message_assemble_communicate	GET	/api/message/assemble/communicate/im/msg/revoke/{id}	im_msg_revoke_id	K3-已认证无会话无门禁
 mind_assemble_control	GET	/api/mind/assemble/control/mind/restore/{id}	mind_restore	K2-读会话无门禁
 organization_assemble_authentication	GET	/api/organization/assemble/authentication/qiyeweixin/bind/{meta}/callback/{code}	qiyeweixin_bind_callback	K3-已认证无会话无门禁
 organization_assemble_authentication	GET	/api/organization/assemble/authentication/oauth/auth	oauth_auth	K3-已认证无会话无门禁

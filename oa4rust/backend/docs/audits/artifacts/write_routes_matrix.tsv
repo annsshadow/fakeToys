@@ -825,7 +825,7 @@ meeting_core_entity	POST	/api/meeting/core/entity/room/save/{id}	update_room	R5-
 message	POST	/api/message/custom/create	custom_create	R5-已认证+体内门禁
 message	POST	/api/message/mark_read/{id}	mark_read	R7-已认证+体内无会话无门禁
 message_assemble_communicate	DELETE	/api/message/assemble/communicate/im/conversation/{id}/group	im_conversation_id_group	R7-已认证+体内无会话无门禁
-message_assemble_communicate	DELETE	/api/message/assemble/communicate/im/conversation/{id}/group/mockdeletetoget	im_conversation_id_group_mockdeletetoget	R7-已认证+体内无会话无门禁
+message_assemble_communicate	DELETE	/api/message/assemble/communicate/im/conversation/{id}/group/mockdeletetoget	im_conversation_id_group_mockdeletetoget	R5-已认证+体内门禁
 message_assemble_communicate	DELETE	/api/message/assemble/communicate/im/conversation/{id}/single	im_conversation_id_single_delete_virtual	R6-已认证+读会话无门禁
 message_assemble_communicate	DELETE	/api/message/assemble/communicate/im/conversation/{id}/single/mockdeletetoget	im_conversation_id_single_delete_virtual	R6-已认证+读会话无门禁
 message_assemble_communicate	DELETE	/api/message/assemble/communicate/im/msg/collection/remove	im_msg_collection_remove	R7-已认证+体内无会话无门禁
@@ -833,7 +833,7 @@ message_assemble_communicate	DELETE	/api/message/assemble/communicate/mass/{id}	
 message_assemble_communicate	DELETE	/api/message/assemble/communicate/mass/{id}/mockdeletetoget	mass_id_mockdeletetoget	R5-已认证+体内门禁
 message_assemble_communicate	POST	/api/message/assemble/communicate/connector	connector_create	R7-已认证+体内无会话无门禁
 message_assemble_communicate	POST	/api/message/assemble/communicate/consume/type/{type}/mockputtopost	consume_type_type_mockputtopost	R7-已认证+体内无会话无门禁
-message_assemble_communicate	POST	/api/message/assemble/communicate/consume/{id}/type/{type}	consume_id_type_type	R7-已认证+体内无会话无门禁
+message_assemble_communicate	POST	/api/message/assemble/communicate/consume/{id}/type/{type}	consume_id_type_type	R5-已认证+体内门禁
 message_assemble_communicate	POST	/api/message/assemble/communicate/im/conversation	im_conversation	R7-已认证+体内无会话无门禁
 message_assemble_communicate	POST	/api/message/assemble/communicate/im/conversation/list/with/person	im_conversation_list_with_person	R7-已认证+体内无会话无门禁
 message_assemble_communicate	POST	/api/message/assemble/communicate/im/conversation/mockputtopost	im_conversation_mockputtopost	R7-已认证+体内无会话无门禁
@@ -852,7 +852,7 @@ message_assemble_communicate	POST	/api/message/assemble/communicate/im/msg/colle
 message_assemble_communicate	POST	/api/message/assemble/communicate/im/msg/collection/remove	im_msg_collection_remove	R7-已认证+体内无会话无门禁
 message_assemble_communicate	POST	/api/message/assemble/communicate/im/msg/list/object	im_msg_list_object	R7-已认证+体内无会话无门禁
 message_assemble_communicate	POST	/api/message/assemble/communicate/im/msg/list/{page}/size/{size}	im_msg_list_page_size_size	R7-已认证+体内无会话无门禁
-message_assemble_communicate	POST	/api/message/assemble/communicate/im/msg/revoke/{id}	im_msg_revoke_id	R7-已认证+体内无会话无门禁
+message_assemble_communicate	POST	/api/message/assemble/communicate/im/msg/revoke/{id}	im_msg_revoke_id	R5-已认证+体内门禁
 message_assemble_communicate	POST	/api/message/assemble/communicate/im/msg/upload/{conversationId}/type/{type}	im_msg_upload_conversationId_type_type	R7-已认证+体内无会话无门禁
 message_assemble_communicate	POST	/api/message/assemble/communicate/instant/currentperson/consumed/mockputtopost	instant_currentperson_consumed_mockputtopost	R7-已认证+体内无会话无门禁
 message_assemble_communicate	POST	/api/message/assemble/communicate/mark_read/{id}	mark_read	R7-已认证+体内无会话无门禁
