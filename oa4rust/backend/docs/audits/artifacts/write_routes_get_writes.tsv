@@ -3,15 +3,6 @@ ai_assemble_control	GET	/api/ai_assemble_control/chat/delete/{clueId}	chat_delet
 ai_assemble_control	GET	/api/ai_assemble_control/file/delete/{flag}	file_delete_flag	K3-已认证无会话无门禁
 ai_assemble_control	GET	/api/ai_assemble_control/index/delete/{flag}	index_delete_flag	K3-已认证无会话无门禁
 ai_assemble_control	GET	/api/ai_assemble_control/index/sync/to/knowledge	index_sync_to_knowledge	K3-已认证无会话无门禁
-attendance_assemble_control	GET	/api/attendance/assemble/control/attendanceappealInfo/archive/{id}	attendanceappealInfo_archive_id	K3-已认证无会话无门禁
-attendance_assemble_control	GET	/api/attendance/assemble/control/attendancedetail/analyse/id/{id}	attendancedetail_analyse_id_id	K3-已认证无会话无门禁
-attendance_assemble_control	GET	/api/attendance/assemble/control/attendancedetail/analyse/{startDate}/{endDate}	attendancedetail_analyse_startDate_endDate	K3-已认证无会话无门禁
-attendance_assemble_control	GET	/api/attendance/assemble/control/attendancedetail/archive/{id}	attendancedetail_archive_id	K3-已认证无会话无门禁
-attendance_assemble_control	GET	/api/attendance/assemble/control/attendancedetail/checkDetailWithPersonByCycle/{cycleYear}/{cycleMonth}	attendancedetail_checkDetailWithPersonByCycle_cycleYear_cycleMonth	K3-已认证无会话无门禁
-attendance_assemble_control	GET	/api/attendance/assemble/control/attendancesetting/enable/type	attendancesetting_enable_type	K3-已认证无会话无门禁
-attendance_assemble_control	GET	/api/attendance/assemble/control/v2/group/{id}/refresh/participate	v2_group_refresh_participate	K3-已认证无会话无门禁
-attendance_assemble_control	GET	/api/attendance/assemble/control/dingding/sync/from/{from}/to/{to}/start	dingding_sync_start	K3-已认证无会话无门禁
-attendance_assemble_control	GET	/api/attendance/assemble/control/qywx/sync/from/{from}/to/{to}/start	qywx_sync_start	K3-已认证无会话无门禁
 auth	GET	/api/authentication/oauth/login/qywx/code/{code}	oauth_login_qywx	K1-匿名可达无门禁
 auth	GET	/api/authentication/oauth/login/dingding/code/{code}	oauth_login_dingding	K1-匿名可达无门禁
 auth	GET	/api/authentication/oauth/login/name/{name}/code/{code}/redirecturi/{redirectUri}	oauth_login_name	K1-匿名可达无门禁
