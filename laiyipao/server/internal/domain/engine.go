@@ -194,6 +194,20 @@ type ReplayEvent struct {
 	C    int64
 }
 
+// String 是事件在哈希里的**唯一**文本形式。
+//
+// ⚠️ 这里是唯一的格式化点，不要在别处再拼一遍：
+//
+//	哈希按 `"{tick}|{类型}|{a}|{b}|{c}"` 逐条拼接，
+//	任何一处「看起来等价」的写法（多一个空格、少一个字段、
+//	用 `fmt.Sprintf` 的 `%v` 印 bool）都会让全量战报哈希失配 ——
+//	而症状是「每一局都不符」，完全看不出是哪一位。
+func (r ReplayEvent) String() string {
+	return strconv.FormatInt(r.T, 10) + "|" + r.Type + "|" +
+		strconv.FormatInt(r.A, 10) + "|" + strconv.FormatInt(r.B, 10) + "|" +
+		strconv.FormatInt(r.C, 10)
+}
+
 // BattleEvent 是给渲染层的事件。
 //
 // 与 ReplayEvent 刻意分开：渲染事件是**全量**的（含纯表现），
@@ -268,6 +282,14 @@ type BattleConfig struct {
 	ScoreRules ScoreRules
 	// ActiveSlots 是主动插槽数。
 	ActiveSlots int
+	// ExtraBaseHp 是玩家自带的额外血量（无上限）。
+	//
+	// ⚠️ **不参与**伤害与波次逻辑，只是把玩家投入的战力**钉在日志里**，
+	// 也**必须**钉在 `level.id` 后面一起进 hash 的前缀 ——
+	// 漏掉它，前缀就与别的关卡重合，同一个 hash 既像这一关又像那一关。
+	//
+	// 未定义时写 `|X0` 而不是省略整段，见 `ReplayHash` 的注释。
+	ExtraBaseHp int64
 }
 
 // BattleEngine 是战斗引擎。
