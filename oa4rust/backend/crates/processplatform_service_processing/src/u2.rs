@@ -2252,11 +2252,12 @@ mod security_gate_tests {
     /// 无会话必须 Unauthorized（不执行删除逻辑），非 admin 会话
     /// （无 DB 时 is_admin 查询失败 fail-closed）必须 Forbidden。
     fn build_session(person_unique: &str) -> shared::session::Session {
+        // 与 shared::testing::test_session 同值的非弃用写法（from_timestamp 已弃用）。
         shared::session::Session {
             token: "t".to_string(),
             person_unique: person_unique.to_string(),
-            created_at: chrono::NaiveDateTime::from_timestamp(0, 0),
-            expires_at: chrono::NaiveDateTime::from_timestamp(3600, 0),
+            created_at: chrono::NaiveDateTime::parse_from_str("1970-01-01 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap(),
+            expires_at: chrono::NaiveDateTime::parse_from_str("1970-01-01 01:00:00", "%Y-%m-%d %H:%M:%S").unwrap(),
         }
     }
 
