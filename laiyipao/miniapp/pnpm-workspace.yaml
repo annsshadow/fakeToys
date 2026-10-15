@@ -13,3 +13,31 @@ onlyBuiltDependencies:
   - vue-demi
   - core-js
   - core-js-pure
+# 依赖审计（2026-10-15）加的补丁级 override。
+#
+# pnpm audit 报 58 条，逐条核过归属后确认**没有一个进小程序产物**——
+# 它们全挂在 @dcloudio 构建链和测试链上（uni-cli-shared / vite-plugin-uni /
+# uni-nvue-styler / jimp / jsdom / vitest）。实测证据：mp-weixin 产物只有
+# 223 KB / 60 文件，里面搜不到 jpeg-js、adm-zip、postcss、source-map-js、
+# @vue/server-renderer、ws 的任何特征串（"postcss": true 是微信开发者工具的
+# 项目设置项，WebSocket 是 Vue 探测浏览器全局，都不是库）。
+#
+# 所以这些是构建期/测试期风险，不是客户端可利用漏洞。仍然 override 掉
+# 能安全升的，剩下的等 @dcloudio 上游发版。
+overrides:
+  # 全部用无条件覆盖。试过收敛覆盖（"pkg@" 形式），对这里**无效**——
+  # @dcloudio/vite-plugin-uni 声明的是 "vite": "5.2.8"，精确 pin 而非范围，
+  # 收敛覆盖只在声明范围容得下目标版本时才生效，精确 pin 直接跳过。
+  # 58 条 -> 39 条（high 18->13、moderate 28->16、low 9->7）。
+  #
+  # postcss 8.5.6 有 4 条（GHSA-6g55/r28c/fxqj/qx2v），修到 8.5.23。
+  # 树里本来就有 8.5.28（另一条路径解析到的），等于已被验证过。
+  "postcss": 8.5.28
+  # 1.2.1 的事件循环 DoS（GHSA-68fv-2mgg-jv7q），补丁级 1.2.2。
+  "source-map-js": 1.2.2
+  # 5.2.8 累计 15 条（GHSA-c27g/fx2h/x574/93m4/v6wh/vg6x/9cwx/64vr/4r4m/
+  # 4w7w/356w/xcj6/859w/jqfw/g4qx 等），同 major 内升到 5.4.21。
+  "vite": 5.4.21
+  # ws 有 8.18.0（2 条）和 7.5.13（jsdom 带的）两条线，都顶到 8.21.0。
+  # 跨大版本，已用 vitest 全量（1045 passed）验过 jsdom 没被打坏。
+  "ws": 8.21.0
