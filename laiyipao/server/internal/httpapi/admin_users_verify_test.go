@@ -61,7 +61,7 @@ func newSettledBattle(t *testing.T, e *e2e, playerTok string) int64 {
 	if status != 200 {
 		t.Fatalf("开 battle token 失败：%d %v", status, body)
 	}
-	status, body = e.post(t, "/api/v1/battle/settle", playerTok, settleBody(num(body, "token_id")))
+	status, body = e.post(t, "/api/v1/battle/settle", playerTok, e.settleBody(t, num(body, "token_id")))
 	if status != 200 {
 		t.Fatalf("结算失败：%d %v", status, body)
 	}
