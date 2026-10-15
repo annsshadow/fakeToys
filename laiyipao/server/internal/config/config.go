@@ -36,6 +36,43 @@ type Config struct {
 	WechatAppSecret string
 	WechatEndpoint  string
 
+	// CORSAllowOrigins 是允许跨域访问的来源白名单。
+	//
+	// ⚠️ 语义与「空 = 全放行」**相反**：
+	//
+	//   - dev 且未设置   → `*`（前后端不同端口，必须放行）
+	//   - prod 且未设置  → **一条 CORS 头都不发**（等价只允许同源）
+	//
+	// 取反向默认值的理由：本项目不用 cookie 存凭证（纯 Bearer 头），
+	// 所以 `*` 眼下**不构成**带凭证的跨域读 —— 把它报成严重漏洞是错的。
+	// 真正的风险是「将来有人加了 cookie 登录」，那时 `*` 立刻变成全站沦陷，
+	// 且没有任何东西会提醒。所以默认取安全的一侧，
+	// 需要跨域（后台与 H5 不同域名）就显式配置 —— 那是一个需要人做的决定。
+	CORSAllowOrigins []string
+
+	// SettleRecomputeMode 是服务端重算的处置档位：off / shadow / enforce。
+	//
+	// ⚠️ 默认 **enforce**，这是刻意的，也是本轮改过一次的地方。
+	//
+	// 第一版默认值定的是 `off`，理由是「引擎会漂移，enforce 会误伤」。
+	// 现有测试立刻把它打红了 —— `replay_skills_e2e_test.go` 断言伪造的
+	// `replay_skills` **必须**被拒。而那条校验早就在生产上跑着。
+	//
+	// 那个理由把两类重算混为一谈了：
+	//
+	//   - 整局引擎（尚未移植）：不符**有歧义**，可能是漂移 → 所以要先 shadow。
+	//   - S 段 replay_skills（已在跑）：不符**无歧义**就是作弊 —— 服务端与
+	//     客户端读同一份 DB 数据，中间没有第二个实现，不存在「算错」这一说。
+	//
+	// 对第二类默认 off 等于**新装部署出厂即关闭反作弊校验**。
+	// 「尚未启用的功能」和「已在运行的防护」不能共用一个默认值。
+	//
+	// 所以：默认 enforce（保持现状），引擎接进来时再**主动**切到 shadow 观察。
+	// 「先观察再收紧」是接入引擎时的动作，不是新装部署的默认状态。
+	//
+	// 切档**不需要发版**：改环境变量重启即可。
+	SettleRecomputeMode string
+
 	// 战斗结算上限校验
 	BattleTokenTTL    time.Duration
 	MinBattleDuration time.Duration
@@ -73,6 +110,32 @@ func envInt32(key string, def int32) int32 {
 		return def
 	}
 	return int32(n)
+}
+
+// envList 读一个逗号分隔的环境变量列表，逐项去空白、丢空项。
+//
+// # 为什么不能直接 strings.Split 后全塞进去
+//
+// `CORS_ALLOW_ORIGINS="https://a.com, https://b.com"` 是最自然的写法，
+// 第二项会带上前导空格。而 CORS 的 `Origin` 请求头**绝不含空格**，
+// 于是那一项永远匹配不上 —— 表现为「配了白名单但某个域名还是被拒」，
+// 排查时很难想到是空格。
+//
+// 丢空项的另一个理由：`"a,,b"` 与 `"a, ,b"` 不该产生空字符串来源，
+// 否则中间件里 `allowSet[""] = true` 会让「无 Origin 头」的请求
+// 命中白名单分支。
+func envList(key string) []string {
+	raw := strings.TrimSpace(os.Getenv(key))
+	if raw == "" {
+		return nil
+	}
+	var out []string
+	for _, p := range strings.Split(raw, ",") {
+		if p = strings.TrimSpace(p); p != "" {
+			out = append(out, p)
+		}
+	}
+	return out
 }
 
 func envBool(key string, def bool) bool {
@@ -116,9 +179,13 @@ func Load() Config {
 		WechatAppSecret: env("WECHAT_APP_SECRET", ""),
 		WechatEndpoint:  env("WECHAT_ENDPOINT", "https://api.weixin.qq.com/sns/jscode2session"),
 
+		CORSAllowOrigins: envList("CORS_ALLOW_ORIGINS"),
+
 		BattleTokenTTL:    envDuration("BATTLE_TOKEN_TTL", 30*time.Minute),
 		MinBattleDuration: envDuration("MIN_BATTLE_DURATION", 15*time.Second),
 		MaxScorePerSecond: int64(envInt("MAX_SCORE_PER_SECOND", 40_000)),
+
+		SettleRecomputeMode: env("SETTLE_RECOMPUTE_MODE", "enforce"),
 
 		OfflineCapHours: envInt("OFFLINE_CAP_HOURS", 12),
 

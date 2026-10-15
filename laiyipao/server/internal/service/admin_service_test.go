@@ -168,7 +168,7 @@ func TestAuditWritesRow(t *testing.T) {
 	ctx := context.Background()
 	adminID, username, _ := ts.newAdminFixture(t, "audit", 1)
 
-	ts.Audit(ctx, adminID, "svc_audit_probe", "target-1", map[string]any{"k": "v"})
+	ts.Audit(ctx, adminID, "svc_audit_probe", "target-1", "10.0.0.1", map[string]any{"k": "v"})
 
 	var n int
 	if err := ts.pool.QueryRow(ctx,
@@ -188,7 +188,7 @@ func TestAuditWritesRow(t *testing.T) {
 	// detail 无法 JSON 化（channel）不得让主流程失败，
 	// 且不得静默降级成 `{}`（第 125 轮：那与「本来无明细」不可区分，
 	// 审计行撒谎）。现在必须落 `{"detail_error": "..."}` 诚实记丢。
-	ts.Audit(ctx, adminID, "svc_audit_badjson", "t", make(chan int))
+	ts.Audit(ctx, adminID, "svc_audit_badjson", "t", "10.0.0.1", make(chan int))
 	var raw []byte
 	var detailType string
 	if err := ts.pool.QueryRow(ctx,
@@ -818,7 +818,7 @@ func TestAdminListAuditLogs(t *testing.T) {
 	ts := openTestService(t)
 	ctx := context.Background()
 	adminID, username, _ := ts.newAdminFixture(t, "logs", 1)
-	ts.Audit(ctx, adminID, "svc_logs_probe", "t", map[string]any{"a": 1})
+	ts.Audit(ctx, adminID, "svc_logs_probe", "t", "10.0.0.1", map[string]any{"a": 1})
 
 	items, err := ts.AdminListAuditLogs(ctx, 100)
 	if err != nil {
