@@ -413,7 +413,7 @@ func TestE2EAdminBattlesAndAudit(t *testing.T) {
 		t.Skipf("开局失败（体力/种子数据异常）：%d %v", status, body)
 	}
 	tokenID := num(body, "token_id")
-	status, body = e.post(t, "/api/v1/battle/settle", playerTok, settleBody(tokenID))
+	status, body = e.post(t, "/api/v1/battle/settle", playerTok, e.settleBody(t, tokenID))
 	if status != 200 {
 		t.Skipf("结算失败：%d %v", status, body)
 	}

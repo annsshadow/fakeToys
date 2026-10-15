@@ -366,6 +366,20 @@ func (s *Service) SettleBattle(ctx context.Context, userID, tokenID int64, in do
 	buildRaw, _ := marshalJSON(buildSnapshot)
 	lootRaw, _ := marshalJSON(res.Loot)
 
+	// ── 整局引擎重算（R1，第 87 轮）──
+	//
+	// 位置在**事务之前**，与上面那段 S 段校验同一个理由：
+	// 拒绝发生时还没有战报 id，台账里记 battle_id = 0。
+	// 放进事务里会让「拒绝」也要开一个事务去写台账，
+	// 而台账写入本来就该独立于被拒的那次结算。
+	//
+	// 传 buildRaw（JSON 原文）而不是 buildSnapshot（map）——
+	// 那条路径保证了两端的字段名/类型/缺省值逐字一致，
+	// 而 map → struct 的手工转换会在每个字段上多一个出错点。
+	if err := s.recomputeEngine(ctx, userID, tok, gl, buildRaw, in); err != nil {
+		return SettleResp{}, err
+	}
+
 	// 第 143 轮：本局通关时的战力，写进 level_stars.min_power_clear（效率榜 L-2）。
 	// 修前 upsert 恒写 0 且 ON CONFLICT 不更新 → 效率榜 `WHERE min_power_clear > 0`
 	// 恒零行，整个榜单自出生起就是死代码。只在胜利时记 —— 失败局保持 0，
