@@ -104,11 +104,17 @@ type replayAttacker struct {
 }
 
 type replayStats struct {
-	Kills      int `json:"kills"`
-	Leaked     int `json:"leaked"`
-	Score      int `json:"score"`
-	Waves      int `json:"waves"`
-	DurationMs int `json:"duration_ms"`
+	Kills  int `json:"kills"`
+	Leaked int `json:"leaked"`
+	Score  int `json:"score"`
+	Waves  int `json:"waves"`
+	// ⚠️ tag 是 `durationMs`（camelCase）而**不是** `duration_ms`。
+	//
+	// 向量文件里就是这个键名，而本文件此前写成 snake_case ——
+	// 解码永远是 0，而**没有任何断言读它**，所以一直没被发现。
+	// 教训：解码失败**静默**（零值），只有断言才会暴露。
+	// 接线 G 块后 `TestWholeBattleReplayHashMatchesCrossEnd` 断言了它，当场变红。
+	DurationMs int `json:"durationMs"`
 }
 
 // loadReplayVectors 读契约向量。缺失即失败 —— 绝不能回落到空集合。
