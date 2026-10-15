@@ -125,7 +125,7 @@ personal	POST	/api/person/regist	register	A1-真匿名+体内写 SQL 且无门�
 personal	GET	/api/person/icon/{person}	get	A3-真匿名+只读
 personal	POST	/api/person/icon/upload	upload	A2-真匿名+体内写 SQL 但读会话或有门禁
 personal	POST	/api/person/icon	set_icon_octet_stream	A2-真匿名+体内写 SQL 但读会话或有门禁
-personal	POST	/api/person/icon/mockputtopost	upload_multipart_alias	A3-真匿名+只读
+personal	POST	/api/person/icon/mockputtopost	upload_multipart_alias	A2-真匿名+体内写 SQL 但读会话或有门禁
 personal	GET	/api/person/custom/{name}	custom_get	A3-真匿名+只读
 personal	PUT	/api/person/custom/{name}	custom_edit	A2-真匿名+体内写 SQL 但读会话或有门禁
 personal	POST	/api/person/custom/{name}	custom_edit	A2-真匿名+体内写 SQL 但读会话或有门禁

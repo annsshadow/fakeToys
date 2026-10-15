@@ -104,7 +104,6 @@ file_assemble_control	POST	/api/file/assemble/control/file/upload/referencetype/
 file_assemble_control	PUT	/api/file/assemble/control/file/upload/referencetype/{referenceType}/reference/{reference}/scale/{scale}	u2_file_upload_multipart	R6	u2_store_new
 meeting_assemble_control	POST	/api/meeting/assemble/control/attachment/meeting/{meetingId}/upload/{summary}	u2_attachment_upload	R6	u2_attachment_store_new
 meeting_assemble_control	POST	/api/meeting/assemble/control/attachment/meeting/{meetingId}/upload/{summary}/callback/{callback}	u2_attachment_upload_callback	R6	u2_attachment_store_new
-meeting_assemble_control	PUT	/api/meeting/assemble/control/attachment/{id}/update	u2_attachment_update	R6	u2_attachment_update_inner
 organization_assemble_authentication	GET	/api/organization/assemble/authentication/oauth/auth	oauth_auth	K	oauth_code_store
 organization_assemble_authentication	POST	/api/organization/assemble/authentication/oauth/generate/code	oauth_generate_code	R7	oauth_code_store
 organization_assemble_control	GET	/api/organization/assemble/control/person/{flag}/mockdeletetoget	person_mock_delete_to_get	K	person_delete
@@ -117,6 +116,8 @@ organization_assemble_express	POST	/api/unitattribute/set/unit/name	unitattr_set
 personal	POST	/api/reset/mockputtopost	reset_password	R7	apply_reset
 personal	POST	/api/reset/password/anonymous	reset_password_anonymous	R4	apply_reset
 personal	PUT	/api/reset	reset_password	R4	apply_reset
+processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/attachment/{id}/preview/image/page/{page}	attachment_u2b_preview_image_page	K	general_file_store
+processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/attachment/{id}/preview/pdf	attachment_u2b_preview_pdf	K	general_file_store
 processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/read/list/application/process/{count}/{applicationFlag}	read_list_count_application_applicationFlag_process_p2	K	read_list_count_application_applicationFlag_process_core
 processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/read/list/count/application/{applicationFlag}/process	read_list_count_application_applicationFlag_process	K	read_list_count_application_applicationFlag_process_core
 processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/readcompleted/list/application/process/{count}/{applicationFlag}	readcompleted_list_count_application_applicationFlag_process_p2	K	readcompleted_list_count_application_applicationFlag_process_core
@@ -131,12 +132,8 @@ processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/workc
 processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/workcompleted/list/count/application/{applicationFlag}/process	workcompleted_list_count_application_applicationFlag_process	K	workcompleted_list_count_application_applicationFlag_process_core
 processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/attachment/doc/to/word/work/{workId}	attachment_u2b_doc_to_word	R6	doc_to_word_for_job
 processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/attachment/doc/to/word/workorworkcompleted/{flag}	attachment_u2b_doc_to_word_wowc	R6	doc_to_word_for_job
-processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/attachment/edit/{id}/work/{workId}/mockputtopost	attachment_u2b_edit_mockputtopost	R6	attachment_u2b_update_by_work
-processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/attachment/edit/{id}/work/{workId}/text/mockputtopost	attachment_u2b_edit_text_mockputtopost	R6	attachment_u2b_update_content
-processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/attachment/update/content/{id}/work/{workId}/mockputtopost	attachment_u2b_update_content_mockputtopost	R6	attachment_u2b_update_content
-processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/attachment/update/{id}/work/{workId}	attachment_u2b_update_post	R6	attachment_u2b_update_by_work
-processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/attachment/update/{id}/work/{workId}/callback/{callbackId}	attachment_u2b_update_callback	R6	u2_att_update_meta
-processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/attachment/update/{id}/work/{workId}/mockputtopost	attachment_u2b_update_mockputtopost	R6	attachment_u2b_update_by_work
+processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/attachment/html/to/image	attachment_u2b_html_to_image	R6	general_file_store
+processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/attachment/html/to/pdf	attachment_u2b_html_to_pdf	R6	general_file_store
 processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/attachment/upload/with/url	attachment_u2b_upload_with_url	R6	u2_att_store_new
 processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/attachment/upload/work/{workId}	attachment_u2b_upload_work	R6	u2_att_store_new
 processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/attachment/upload/work/{workId}/callback/{callbackId}	attachment_u2b_upload_work_callback	R6	u2_att_store_new
@@ -146,10 +143,6 @@ processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/atta
 processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/attachment/v2/upload/workorworkcompleted/{flag}/base64	attachment_u2b_v2_upload_base64	R6	u2_att_store_new
 processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/draft/mockputtopost	draft_u2_save_mockputtopost	R6	u2_draft_save
 processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/keylock/lock/mockputtopost	keylock_u2_lock_mockputtopost	R6	u2_keylock_lock
-processplatform_assemble_surface	PUT	/api/processplatform/assemble/surface/attachment/edit/{id}/work/{workId}	attachment_u2b_edit_by_work	R6	attachment_u2b_update_by_work
-processplatform_assemble_surface	PUT	/api/processplatform/assemble/surface/attachment/edit/{id}/work/{workId}/text	attachment_u2b_edit_text	R6	attachment_u2b_update_content
-processplatform_assemble_surface	PUT	/api/processplatform/assemble/surface/attachment/update/content/{id}/work/{workId}	attachment_u2b_update_content	R6	u2_att_update_text
-processplatform_assemble_surface	PUT	/api/processplatform/assemble/surface/attachment/update/{id}/work/{workId}	attachment_u2b_update_by_work	R6	u2_att_update_meta
 processplatform_assemble_surface	PUT	/api/processplatform/assemble/surface/attachment/upload/work/{workId}/save/as/{saveAs}	attachment_u2b_upload_save_as	R6	u2_att_store_new
 processplatform_assemble_surface	PUT	/api/processplatform/assemble/surface/draft	draft_u2_save	R6	u2_draft_save
 processplatform_assemble_surface	PUT	/api/processplatform/assemble/surface/keylock/lock	keylock_u2_lock	R6	u2_keylock_lock
@@ -203,7 +196,6 @@ query_assemble_designer	GET	/api/query/assemble/designer/table/build/{flag}/{sta
 query_assemble_designer	GET	/api/query/assemble/designer/table/draft/{flag}/{status}	table_flag_status_draft_p2	K	table_flag_status_draft_core
 query_assemble_designer	GET	/api/query/assemble/designer/table/{flag}/status/build	table_flag_status_build	K	table_flag_status_build_core
 query_assemble_designer	GET	/api/query/assemble/designer/table/{flag}/status/draft	table_flag_status_draft	K	table_flag_status_draft_core
-query_assemble_designer	POST	/api/query/assemble/designer/neural/model/reset/{modelFlag}/{status}	neural_model_modelFlag_reset_status_p2	R7	neural_model_modelFlag_reset_status_core
 query_service_processing	GET	/api/query/service/processing/neural/generate/model/{modelFlag}	neural_generate	K	neural_start
 query_service_processing	GET	/api/query/service/processing/neural/learn/model/{modelFlag}	neural_learn	K	neural_start
 query_service_processing	GET	/api/query/service/processing/neural/stop/generating/model/{modelFlag}	neural_stop_generating	K	neural_stop

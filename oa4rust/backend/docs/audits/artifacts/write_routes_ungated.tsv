@@ -931,7 +931,6 @@ query_assemble_designer	POST	/api/query/assemble/designer/delete	delete_designer
 query_assemble_designer	POST	/api/query/assemble/designer/importmodel/{id}	importmodel_id	R7
 query_assemble_designer	POST	/api/query/assemble/designer/importmodel/permission/{id}	importmodel_id_permission	R7
 query_assemble_designer	POST	/api/query/assemble/designer/importmodel/list/{query}/{flag}	importmodel_list_query_flag_p2	R7
-query_assemble_designer	POST	/api/query/assemble/designer/neural/model/reset/{modelFlag}/{status}	neural_model_modelFlag_reset_status_p2	R7
 query_assemble_designer	POST	/api/query/assemble/designer/table/execute/{flag}	table_flag_execute	R7
 query_assemble_designer	POST	/api/query/assemble/designer/table/row/delete/all/{tableFlag}	table_tableFlag_row_delete_all	R7
 query_assemble_designer	POST	/api/query/assemble/designer/table/row/save/{tableFlag}	table_tableFlag_row_save	R7
