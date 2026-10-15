@@ -741,6 +741,21 @@ func (l *LCG) Intn(n int) int {
 	return int(l.Next() % uint64(n))
 }
 
+// Roll 返回一个 0..999 的整数，用于暴击等万分位判定。
+//
+// ⚠️ 范围是 **0..999 而不是 0..9999**。
+//
+//	消费侧的判据是 `roll >= permille - critPermille`，
+//	其中 critPermille 的上界是 1000‰。
+//	若范围是 0..9999 而判据按 1000 算，则 critPermille=1000 时
+//	判据是 `roll >= 0` —— 恒真，每一发都暴击。
+//
+//	这个值参与重放：同一颗种子下 `roll` 的取值序列必须两端一致，
+//	否则暴击分布不同 → 事件流不同 → 哈希不同。
+func (l *LCG) Roll() int64 {
+	return int64(l.Intn(1000))
+}
+
 // GenerateAllLevels 生成全部 100 关。
 func GenerateAllLevels() []GeneratedLevel {
 	out := make([]GeneratedLevel, 0, TotalLevels)

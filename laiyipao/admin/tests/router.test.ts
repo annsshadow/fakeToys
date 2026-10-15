@@ -25,6 +25,7 @@ const ALL_PAGE_NAMES = [
   'equipment',
   'users',
   'battles',
+  'recomputes',
   'defenses',
   'economy',
   'content',

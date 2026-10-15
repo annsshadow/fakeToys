@@ -176,13 +176,33 @@ func (s *Service) EnsureContentSeeded(ctx context.Context) (string, error) {
 
 // Audit 记录后台操作。
 //
+// 参数顺序与 `admin_audit_logs` 的列顺序一致：
+// `(adminID, action, target, ip, detail)`。
+// ⚠️ ip 夹在 target 与 detail 之间是刻意的 —— 它与 action/target 同属
+// 「这一次操作是什么」那一组，而 detail 是自由载荷。
+//
 // ⚠️ 第 125 轮：审计记录不得「以省略撒谎」。
 // detail 序列化失败时，旧代码静默把 detail 换成 `{}` ——
 // 那行审计日志看起来与「这个操作本来就没有明细」**完全相同**，
 // 运营/调查者后读审计轨迹时被误导：字段没了，但没有任何痕迹。
 // 现在失败时 detail 诚实记 `{"detail_error": "..."}`：
 // 行本身即证据——明细丢了、为什么丢，都写在里面。
-func (s *Service) Audit(ctx context.Context, adminID int64, action, target string, detail any) {
+//
+// # ip 必须真的记（本轮审计修复）
+//
+// 原实现写死 `”`。于是**每一行**后台审计的 IP 列都是空的 ——
+// 它看起来像「这一列是可选的」，而它其实是「本项目从来没有过来源信息」。
+//
+// 后果与缺 `detail` 同型且更重：运营账号被盗用（令牌被读走、
+// 或后台被点击劫持诱导操作 —— 见 httpapi.securityHeaders）时，
+// 事后唯一的取证材料就是 IP。它必须记。
+//
+// ⚠️ `c.IP()` 在 Fiber 里取的是 TCP 对端地址。反代之后它是**反代**的 IP，
+//
+//	所以它只在「后端直接暴露」或「反代正确透传 X-Forwarded-For」时可用。
+//	这一点如实标注：生产部署**必须**配好反代的透传头，
+//	否则记下来的是反代地址 —— 那比空串好一点（能看出有集中来源），但不精确。
+func (s *Service) Audit(ctx context.Context, adminID int64, action, target, ip string, detail any) {
 	raw, err := marshalJSON(detail)
 	if err != nil {
 		// 兜底字面量保证 detail 恒为合法 JSONB
@@ -198,10 +218,13 @@ func (s *Service) Audit(ctx context.Context, adminID int64, action, target strin
 	}
 	var username string
 	_ = s.pool.QueryRow(ctx, `SELECT username FROM admin_users WHERE id = $1`, adminID).Scan(&username)
+	if len(ip) > 64 { // ip 列是 VARCHAR(64)，超长会让整行插入失败
+		ip = ip[:64]
+	}
 	// 审计写失败不能影响主流程，但必须留下痕迹到服务端日志
 	if _, err := s.pool.Exec(ctx,
 		`INSERT INTO admin_audit_logs (admin_id, username, action, target, detail, ip)
-		 VALUES ($1,$2,$3,$4,$5,'')`, adminID, username, action, target, raw); err != nil {
+		 VALUES ($1,$2,$3,$4,$5,$6)`, adminID, username, action, target, raw, ip); err != nil {
 		fmt.Printf("[audit-failed] admin=%d action=%s target=%s err=%v\n", adminID, action, target, err)
 	}
 }

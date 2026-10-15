@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -254,6 +255,21 @@ func (s *Service) SettleBattle(ctx context.Context, userID, tokenID int64, in do
 	//
 	// ⚠️ 空串**放行**：老客户端不上报这个字段，直接拒会把它们全部锁死。
 	// 「没上报」与「上报了但不对」要分开 —— 后者才是作弊。
+	//
+	// ── 2026-10-14 轮：这条校验改由 RecomputeGate 统一裁决 ──
+	//
+	// 它是**目前唯一一条已经在跑的「服务端重算」**（整局引擎尚未移植），
+	// 所以把它放到闸门下面有两个作用：
+	//
+	//  1. 闸门从第一天起就有**真实流量**与**真实台账**，
+	//     而不是一段要等引擎上线才第一次被执行的新代码 ——
+	//     「上线才第一次跑」的观测代码几乎必然带着 bug。
+	//  2. 整局引擎接进来时沿用同一条路径、同一个台账、
+	//     同一套熔断，不必再设计一次「怎么灰度」。
+	//
+	// 代价要说清楚：**off 档下这条校验不再拒绝任何人**。
+	// 那是刻意的（关掉即恢复旧行为），但必须可发现 ——
+	// 所以模式会进启动日志。
 	if in.ReplaySkills != "" {
 		expect, err := s.replaySkillsSegment(ctx, userID)
 		if err != nil {
@@ -262,9 +278,40 @@ func (s *Service) SettleBattle(ctx context.Context, userID, tokenID int64, in do
 		if in.ReplaySkills != expect {
 			// ⚠️ 用 %q 而不是 %s：这两个串可能含大量数字，直接打出来会
 			// 让人在日志里一眼扫过去 —— 而这正是排查这类问题最需要看清的东西。
-			return SettleResp{}, fmt.Errorf(
+			mismatch := fmt.Errorf(
 				"%w：replay_skills 与构筑不符\n上报 %q\n重算 %q",
 				ErrReplaySkillsMismatch, in.ReplaySkills, expect)
+			// 台账先行：它是这条路径**唯一**的长期证据。
+			//
+			// ⚠️ battle_id 记 0 —— 这条拒绝发生在写战报**之前**，
+			// 所以还没有战报 id。0 是「无战报」的哨兵，不是某条战报。
+			// 之所以此刻就要记：这是「上报被拒」唯一留痕的地方，
+			// 而此前运营**完全看不到**有谁在被这条校验挡住 ——
+			// 一个被反复误伤的老客户端会表现为「玩家说领不到奖励，
+			// 服务端日志里只有一条 422，没有任何可查的记录」。
+			mode, enforce := s.recomputeVerdict(ctx, ScopeSkills)
+			s.RecordRecompute(ctx, RecomputeRecord{
+				BattleID:           0,
+				UserID:             userID,
+				LevelID:            tok.LevelID,
+				ReportedScore:      in.Score,
+				ReportedKills:      in.Kills,
+				ReportedDurationMs: in.DurationMs,
+				ReportedHash:       in.ReplayHash,
+				MismatchedFields:   []string{"replay_skills"},
+				Mode:               mode,
+				Rejected:           enforce,
+				EngineVersion:      RecomputeEngineVersionSkillsOnly,
+			})
+			if enforce {
+				return SettleResp{}, mismatch
+			}
+			// 非 enforce 档（off / shadow / 熔断后）：只记录，继续正常发奖。
+			// 必须同时留一行服务端日志 —— 否则「台账里有不符但结算成功」
+			// 这件事只有主动查台账的人看得见。
+			fmt.Fprintf(os.Stderr,
+				"[recompute] replay_skills 不符但未拒发（mode=%s, user=%d, level=%d）\n",
+				mode, userID, tok.LevelID)
 		}
 	}
 
