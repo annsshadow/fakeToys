@@ -791,8 +791,14 @@ type RecomputeSummary struct {
 	// BreakerMinSamples 是熔断所需的最小样本量。
 	BreakerMinSamples int `json:"breaker_min_samples"`
 
-	Totals RecomputeTotals      `json:"totals"`
+	Totals RecomputeTotals `json:"totals"`
+	// Levels 是按关卡分档的台账分布（**只含不符**，口径同 Totals）。
 	Levels []RecomputeLevelStat `json:"levels"`
+
+	Engine EngineTotals `json:"engine"`
+	// Engine 是**引擎侧**的累计读数（进程内计数器，从进程启动算起），
+	// 与上面 Totals（台账 SQL，只含不符，受 since 窗口限制）口径不同。
+	// 单看 Totals 会把「校验根本没跑」误判成「没问题」—— 见 EngineTotals 的注释。
 }
 
 // AdminRecomputeSummary 汇总窗口内的总账 + 按关卡分布 + 闸门当前状态。
@@ -804,6 +810,10 @@ func (s *Service) AdminRecomputeSummary(ctx context.Context, since time.Time, le
 		Levels:              []RecomputeLevelStat{},
 		ConfiguredMode:      RecomputeOff,
 		Mode:                RecomputeOff,
+		// 引擎侧累计计数。放在最前面填：它是**唯一一个**
+		// 「校验到底有没有在跑」的读数，其余字段都来自台账，
+		// 而台账在「从不不符」时是空的。
+		Engine: s.engineTotals(),
 	}
 	if s.gate != nil {
 		sum.ConfiguredMode = s.gate.Mode()
