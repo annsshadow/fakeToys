@@ -549,6 +549,22 @@ A4 开放问题：① F1 是否 o2server 侧本就以 job/document 创建者为�
 | 与本 crate 旧注释的**口径冲突**（不平均，直接探针裁决） | `src/tests.rs:879` 附近（优化二轮 49 的断言注释）vs 本轮真库探针 | 该注释声称「`NOW()` 写进 TEXT 列必然 500」，与批 19 的订正（§三.19 那行）正面冲突。本轮在 PG 18.6 的事务内探针（`UPDATE … SET txt = NOW()` → `UPDATE 1`、`INSERT … VALUES ('2', NOW())` → `INSERT 0 1`，随后 `ROLLBACK`）证明**没有 42804**：赋值走 assignment I/O coercion。⇒ 批 19 的订正继续成立，那句注释的历史 500 更可能是同臂自己 `ALTER TABLE … ADD COLUMN IF NOT EXISTS` 之前的**缺列（42703）**族。两条账都记账、不折中 |
 
 
+### 三.21 第二十一批（attendance 的 GET 面 9 把门：8 admin + 1 归属；42883 真缺陷、尺子缺陷 26 取证与一次注入残留）
+
+| 项 | 位置 | 取证与口径 |
+| --- | --- | --- |
+| 覆盖面：9 把门 = 9 条 GET 注册（8 admin + 1 归属） | `crates/attendance_assemble_control/src/lib.rs:542`（`attendanceappealInfo_archive_id`）、`:959`（`attendancedetail_analyse_id_id`）、`:1019`（`attendancedetail_analyse_startDate_endDate`）、`:1046`（`attendancedetail_archive_id`）、`:1080`（`attendancedetail_checkDetailWithPersonByCycle_cycleYear_cycleMonth`）、`:2462`（`attendancesetting_enable_type`）、`:6854`（`dingding_sync_start`）、`:6996`（`qywx_sync_start`）、`:5076`（`v2_group_refresh_participate`，归属档） | 修前这 9 条全落 K3（已认证、handler 不取会话、体内无门禁）⇒ 任何登录用户按 id / `{startDate}/{endDate}` / `{cycleYear}/{cycleMonth}` 就能把**他人**申诉与考勤明细归档、把他人考勤组的 `update_time` 与参与人刷掉、把考勤全局开关置位，还能**拉起钉钉/企微全量同步**（最后这一条不是改一行数据，是驱动一条对外部 SaaS 的批量任务）。GET 名单跨批逐行对账：批 20 的 62 行 → 本批 53 行，diff 恰 9 行删除、**0 行新增**，9 行全属 `attendance_assemble_control`，该 crate 出列后现 **0 行** |
+| 档位：8 把取 admin 的**当场依据** | `x_attendance_sync_record` 列清单（真库 `information_schema` 探针：id/type/status/exception_message/start_date/end_date/create_time/update_time，**无 creator 列**）；`attendancesetting_enable_type` 的行是全局配置不是用户资产 | 同步档那两把**没有"本行归属"可判**——落笔对象是一张无属主列的同步记录表 + 一次第三方调用；开关档那把改的是全企业生效的 `enabled`。归档 / 分析这 4 把收 admin 的口径是「archive / analyse 属管理侧动作，且与 `attendancedetail_delete` 那把既有**归属档**同表不同档」⇒ **一表两档**是本批主动制造的分歧，进「新增待拍」第 1 格，不假装它已由权威定过 |
+| 归属档那把的形态：会话前置 → 读归属 → 缺行回业务错 → 基座判 | `:5076`（`shared::middleware::require_owner`）＋ 其上方 `let Some(sess) = session.as_deref() else { return Err(AppError::Unauthorized); }` 与 `:5063-5075`（`SELECT creator_person FROM x_attendance_v2_group WHERE id = $1` → `Option<String>` → `unwrap_or_default()`） | 顺序钉死：无会话在任何 `pool.get()` **之前**回 401；行不存在回 `ActionResult::error("attendance group not found")`（业务错，不是权限错——不为「探测 id 是否存在」提供 oracle）；归属基座 `require_owner` **内含管理员放行支路**，所以这把同时覆盖 owner 与 admin 两侧，臂里分别量。**口径差异要记明**：本把只读 `creator_person` 单列、**不**做批 20 designer 那样的 `coalesce(creator_person, creator)` ⇒ 空归属行落进「非 admin 一律 403」，效果上等价于 admin-only，但**成因是列口径而非显式收口**，是否统一到 coalesce 进「新增待拍」第 4 格 |
+| 本 crate 第一把门 helper：`require_admin_opt`（Option 版） | `src/lib.rs:4216` | 写成 `Option<&Session>` 而不是裸 `Extension<Session>` 的理由是**取证可行性**：裸 `Extension` 在会话缺失时由 axum 抛 500，「没门」与「门插在读库之后」两种成因读起来一模一样；`Option` 版让无会话请求先 401，于是可以用一张**连不上库的 pool**（`Manager::new(Config::new(), NoTls)`）离线作证 9 把逐把回 401，不需要真库。批内另有既有 `require_admin(pool, &session)`，这把只做「取会话」那一层，admin 判定复用原函数，不复制第二套判定逻辑 |
+| 真缺陷：**`attendancedetail_checkDetailWithPersonByCycle` 必然 500**（42883） | `:1080` 那把的门 + 其体内 SQL；真库列型 `x_attendance_detail.cycle_year / cycle_month` 为 **integer**，handler 绑的是路径 `String` | PostgreSQL 报 `operator does not exist: integer = text`（42883）⇒ 这条端点加门前后的落笔都是 0，纯粹因为先炸在类型上。**这不是可用性缺陷被忽略**：门覆盖它、`untouched()` 哨兵里它永远 `false`，本批用「明列豁免」把它钉住——admin 段允许它 `Internal`，且失败消息把这把点名写死（`security_gate_tests.rs:446-458`），哪天类型口径修好、它开始真落笔，豁免断言会自己喊红，不会静默变成「它一直没风险」 |
+| 尺子缺陷 26（本批抓到，**只记账、尺子未动**）：`gateEvidence` 判门禁时不剥注释 | `scripts/audit_write_gating.mjs:748`（`if (GATE_RE.test(body)) return true;`，`body` 是整段函数体文本，含 `//` 行） | 现场：注入臂 W1 把 `dingding_sync_start` 的门**摘掉**之后，尺子读数里这行**没有回到 GET 名单**——因为本批为这把写的 WHY 注释里出现了 `require_admin` 字面量，`GATE_RE` 把它当成门作证了。反证臂 W1R2 换成「体内摘门 + 注释不含门名」的那把（`attendancesetting_enable_type`），该行立刻回名单（attendance GET 行数 0→1）⇒ **同一形状，两臂读数相反**，缺陷坐实。它属**假阴方向**（把没门的读成有门），比批 20 的缺陷 24/25（假阳）更危险，因为它会让人以为已经修过。本批的**临时**处置是不改尺子、改说明文：lib.rs 里两处 WHY 注释改写掉字面门名（改写后新增注释行含 `GATE_RE` 词元数 **0**，且重跑尺子读数与产物 md5 与改写前**逐字节全等**，T2 = T3 ⇒ 本批读数无一格靠注释撑着）。**修复轴留下一批**，暴露面未普查：全仓约 120 行注释提到门名、其中缩进态约 40 行（多在测试文件），真实射程待尺子补「剥注释」判据后再量 |
+| 注入取证的一次**残留事件**（如实披露，已恢复） | `/d/tmp/b17arms/inject_arm.mjs`（harness）与 `crates/.../src/lib.rs`（当时的磁盘态） | 首轮套件里 W1 被判「恒真」，harness 在 `try` 块内直接 `process.exit(4)` ⇒ **`finally` 的复原没跑**，摘掉的门留在磁盘上；随后 4 臂全部以「baseline not green」中止，中止消息 `dingding_sync_start => Some(Internal)` / `=> None` 正是暴露点——**抓出残留的是下一臂的基线，不是自我报告**。处置：按原行重插该门（8 处 admin 调用点逐点数过，`git diff` 只有插入、0 删除），并把 harness 改成「先记判定码，`finally` 无条件复原」后**整套 8 臂重跑**，本批注入表用的是重跑读数。教训两条：① 判定/中止路径也必须走 `finally`；② 脚本自报「已复原」不可信，磁盘真相由外部复验 |
+| harness 的第二条缺陷（本轮**复验实际未生效**） | `inject_arm.mjs` 的 `restore()` 里 `git status --porcelain -- <target>`；日志每臂 RESTORE 行都是 `git_status=[fatal: not a git repository …]` | 脚本在非仓库 cwd（`/d/tmp/b17arms`）下起子进程，`git status` 当场 fatal、只把那串 fatal 文本打进日志，**没有断言它成功**⇒ 本轮的「外部磁盘复验」这一路是空的，磁盘真相实际只由 `hash_ok=true`（写回后读回比原始字节哈希）撑住。补法两条都已做：收尾在仓库根跑 `git status --porcelain`（结果为**空**，见本节门禁段），并把这条 harness 缺陷记进「新增待修」——下批注入前先把 git 复验的 cwd 固定到仓库根并断言 exit=0 |
+| 契约臂的适配：按**逐条点名 expect**，不放宽判据 | `src/tests_u2_legacy.rs`（`u2l_dingding_core_routes_reachable`、`u2l_qywx_routes_reachable`）、`src/tests_u2.rs`（`u2_v2_group_static_paths_win_over_param_id`、`u2_verb_chains_align_with_legacy_methods`） | 加门后这 4 支既有臂原断言 500（「进到 handler 但 pool 连不上」）会红。改法是每条目带自己的 `expect`：被本批覆盖的 `sync/*/start` 与 `setting/enable/type` 钉 `UNAUTHORIZED`，其余仍钉 `INTERNAL_SERVER_ERROR`。刻意**没有**写成 `is_routed(500|401)` 这种「任一都算命中路由」的 helper——那样门哪天掉下去，路由可达臂照样绿，等于把门禁回归塞进自己的哨兵里（沿用批 15/17/18 先例） |
+| 造数面的既有缺陷：三表**无主键** ⇒ `ON CONFLICT (id)` 撞 42P10 | `migrations/032_create_assemble_control_tables.sql`（`x_attendance_appeal_info` / `x_attendance_detail` / `x_attendance_setting` 均 `"id" TEXT` 且**无 PRIMARY KEY**）；`src/security_gate_tests.rs` 的 `seed()` 注释 | 首轮真库臂红在 42P10 `there is no unique or exclusion constraint matching the ON CONFLICT specification`。测试侧改法是 `unseed()` 再普通 INSERT（幂等仍成立，连跑两遍读数一致）；**产品侧缺陷照记**：这三张表按 id `UPDATE` 无法保证只改一行，重复 id 会让「归档某一条」写成「归档若干条」，与批 19/20 的「缺列 42703」族同属 schema 缺陷，进「新增待修」 |
+| 定性**订正**（批 20 §五 那条「新增待修」读数的两处说过头） | `crates/processplatform_assemble_surface/src/lib.rs:26178`（`attachment_u2b_html_to_pdf`）、`:26147`（`_html_to_image`）；全仓 `crates/` 内 `DefaultBodyLimit` / `RequestBodyLimit` / `LimitLayer` 命中数 **0** | ① 这两把**不是 GET 面**，尺子矩阵里它们是 **POST、R6「已认证 + 读会话无门禁」**，不该占用 GET 的选题口径；② 它们经 `general_file_store(&pool, &session.person_unique, …)` 落的 `x_general_assemble_general_file` 行，`creator` 就是**调用者本人**，属「本人名的存储写」，不是伪造他人归属；③ 渲染 CPU 面受 axum 默认 2 MiB body 上限约束（无任何一处覆写）⇒「无界」这一半不成立。修正后的定性是**限流 / 配额族**（与 A1 真匿名写 9 条同族）：门仍然没收，仍然在 R6 待修名单，只是危害等级要按新口径重记。**批 20 那格的原文不回改**，以本行作订正链 |
+
 ## 四、验证
 
 
@@ -2041,4 +2057,117 @@ cd oa4rust/backend && cargo test --lib -p <crate>
   与本文档（§三.20 / 本节）分两笔，本节即第二笔并回填该 hash。第二笔提交前后各在还原树跑一次尺子
   （T6 / T7 均 EXIT=0，15/15 产物 md5 与提交态全等），门禁 51 / 0 / 0，真库臂连跑两遍读数一致、
   收口后按 `id LIKE 'b20-%'` 逐表数过 0 行残留。共享工作树上并行会话的在制品未被本批收走。**本轮未 push**。
+
+### 第二十一批收口后的刷新（§三.21 / §四 第二十一批读数 / §五 名单）
+
+- **两列读数（批 20 收口 → 本批收口）**。本批**尺子一字未动**，所以没有批 20 那种第三列：
+
+| 尺子格 | 批 20 收口 | 本批收口 | 归因 |
+| --- | ---: | ---: | --- |
+| GET 写面无门禁 | 62 | **53** | 代码轴 −9，全额归本批 9 把门；跨批逐行对账：恰 9 行出列、**0 新增**、9 行全属 attendance |
+| ├ K1 匿名可达无门禁 | 5 | 5 | 本批不动这族（限流族单列待拍） |
+| ├ K2 读会话无门禁 | 11 | 11 | 不动 |
+| └ K3 已认证无会话无门禁 | 46 | **37** | −9 与本批 9 把门逐把对得上（`attendance_assemble_control` 出列后该 crate 现 **0 行**） |
+| R5 已认证 + 体内门禁 | 866 | **872** | +6：**同一批 handler 的 POST 别名**跟着体内门一起进门档 |
+| R6 已认证 + 读会话无门禁 | 146 | 146 | 不动 |
+| R7 已认证 + 无会话无门禁 | 1052 | **1046** | −6 与 R5 那 +6 同源，**改桶不是消失** |
+| R1 / R2 / R4 / R8 / R9 | 145 / 3 / 14 / 1 / 10 | 145 / 3 / 14 / 1 / 10 | 五格全不动 |
+| R4 含写 SQL | 5 | 5 | 不动 |
+| R6 含写 SQL | 125 | 125 | 不动 |
+| R7 含写 SQL | 316 | **310** | −6 全部是上一格改桶的镜像 |
+| **真落笔（R4+R6+R7 含写）** | **446** | **440** | −6 = 6 条 POST 别名同步进门（**同一动作在 GET 表与 R 表上的两次记账，不与 GET −9 相加**） |
+| 只读挂写方法 | 764 | 764 | 不动 |
+| 间接门禁作证 | 263 | **263** | **本批 +0**（与批 20 的 +14 形状相反）：`require_admin_opt` / `require_owner` 命中 `GATE_RE` 的前缀词表，9 把门按**体内直证**进 R5，不经 helper 转调那层，故 `write_routes_indirect_gated.tsv` 一行不加 |
+| 间接写 SQL | 215 | 215 | 不动 |
+| 判据见证缺口 | 0 | 0 | 三次 EXIT=0（T2 注入前基线、T2/T3 改写说明文前后） |
+
+- **两条判据分开记账（本批只有一条轴）**：
+  1. **代码轴**：GET 62→**53** 是本批修的 9 条真漏洞；R 轴 −6 / 真落笔 446→**440** 是同一批 handler
+     双方法注册的**镜像读数**，形状与批 19（GET −16 / R −4）、批 20（GET −14 / R −1）同族，是第四种读法：
+     **GET −9 与 R −6 不可相加**，相加会把 3 把 GET-only 的门（钉钉、企微、考勤组刷新——它们没有 POST 别名）重算一遍。
+  2. **尺子轴：本批零改动**。缺陷 26 只抓到、只取证、只记账，修复留下一批；本批唯一碰尺子侧的动作是
+     改写 lib.rs 里两处说明文（去掉字面门名），**改写前后读数与产物逐字节全等**（T2 = T3，15/15 md5 相同）
+     ⇒ 证明这 53 行的读数里**没有任何一格是靠注释撑住的**。
+- **还原树证明**：注入的三把尺子臂（W1R2 / W1R3 与 D0 之外的所有臂）跑完都会重写产物，故收口前在还原树重跑
+  `scripts/audit_write_gating.mjs`：EXIT=0，`git status --porcelain -- docs/audits/artifacts` 为**空**，
+  15/15 张产物与提交态逐字节全等，GET 名单 53 行、真落笔 440、只读挂写 764、间接门禁 263 / 间接写 215、缺口 0。
+- **门禁**：`cargo test -p attendance_assemble_control` **43 passed / 0 failed / 15 ignored**（基线 41，本批 +2 臂），
+  doc-test 0 条。`--ignored` 族**整族**跑：12 passed / 3 failed，三条失败逐条点名且**全部先于本批存在**
+  （本批未碰这三条代码路径，孤立重跑同样红）：
+  1. `rule/list` 断言 500、现返 200；
+  2. `rule/{id}/toggle` 同上——两格都是既有「契约臂钉 500 而环境已能真跑」漂移，属 §五 沿用名单里 `assert_eq!(status, 500)` 断言族 272 处；
+  3. `import_checkin_rows` 臂红在 `Forbidden`：服务端 `normalize_key` 把 userId `trim().to_lowercase()` 之后，
+     与**原值** `session.person_unique` 直接比 ⇒ 大小写不一致时**本人导入自己被判 403**（真缺陷，见「新增待修」5）。
+  另如实记一条**未成功**的收尾动作：`cargo fmt -p attendance_assemble_control` 跑不了
+  （`error: 'cargo-fmt.exe' is not installed for the toolchain 'stable-x86_64-pc-windows-gnu'`），
+  本批代码是手工按 100 列排版，未经 rustfmt 认证。
+- **真库臂的证伪**：`b21_get_writes_gate_lands` 连跑两遍读数一致、收口后按 `id LIKE 'b21-%'` + 两个 person 造数 +
+  同步记录 `start_date` 逐表数过 **0 行残留**；它「真执行而不是静默 skip」由 W4 / W5 两臂跑红来作证——
+  若它跳过，注入后不可能分别点名出 `Some(Forbidden)` 与 `None` 两格。
+- **八臂注入取证（基线绿 → 逐臂点名红 → 还原复绿；D0–W5 用 cargo 单臂，W1R2 / W1R3 用尺子）**：
+
+| 臂 | 注入 | 读数 | 判定 |
+| --- | --- | --- | --- |
+| D0 | 只改 `security_gate_tests.rs` 注释 | 离线臂 `1 passed / 0 failed` | **成立（无害对照）**：红不是环境本来就不稳 |
+| W1 | 摘 `dingding_sync_start` 的 admin 门（体内摘，注释仍含门名） | 离线臂点名 `["dingding_sync_start => Some(Internal)"]`（exit 101） | **成立**：无会话臂逐把有效 |
+| W1R2 | 摘 `attendancesetting_enable_type` 的门（该把注释**不含**门名）后跑尺子 | attendance GET 行数 0→**1**，该行回到 `write_routes_get_writes.tsv` | **成立**：门是真被作证，不是恒列 |
+| W1R3 | 摘 `dingding_sync_start` 的门后跑尺子（现场：注释含门名） | attendance GET 行数仍 **0**，读数与产物一字不变 | **成立（尺子缺陷 26 取证）**：摘门在尺子侧**完全隐形**——与 W1R2 同形状两臂相反，坐实「`gateEvidence` 不剥注释」 |
+| W2 | 摘归属档的会话前置（无会话不再 401） | 离线臂点名 `["group_refresh_participate => Some(Internal)"]` | **成立** |
+| W3 | 把 `setting_enable_type` 的门挪到 `pool.get()` **之后** | 离线臂点名 `["setting_enable_type => Some(Internal)"]` | **成立**：离线 ordering 哨兵有效（`Internal` 出现 = 门插在读库之后） |
+| W4 | 归属档 helper 收成「一律拒」 | 403 臂点名 `["group_refresh_participate => Some(Forbidden)"]`（本人段被误拒） | **成立**：owner **放行**侧有牙 |
+| W5 | 归属档 helper 收成 `Ok(())`（放行） | 403 臂点名 `["group_refresh_participate => None"]`（他人段放行） | **成立**：**拒**侧有牙，不是恒 403 |
+| — | 臂后磁盘 | 每臂 `hash_ok=true`；仓库根 `git status --porcelain` 收尾**为空**；harness 内那路 `git status` 本轮因 cwd 不在仓库根而打出 fatal、**实际失效**；首轮 W1 判定路径 `exit(4)` 跳过 `finally` 造成一次残留（见 §三.21），已重插门并整套重跑 | 残留：无（复验来源如实降级为「字节哈希 + 仓库级 status」两路） |
+
+- **§五 下一批入口（按现读逐 crate 点名，共 53 条 = K1 5 / K2 11 / K3 37）**：
+  `auth` 6、`cms_assemble_control` 5、`message_assemble_communicate` 5、`processplatform_assemble_designer` 5、
+  `ai_assemble_control` 4、`jpush_assemble_control` 4、`meeting_assemble_control` 4、`file_assemble_control` 3、
+  `hotpic_assemble_control` 3、`calendar_assemble_control` 2、`organization_assemble_authentication` 2、
+  `organization_assemble_control` 2、`program_center` 2、`query_assemble_surface` 2、`general_assemble_control` 1、
+  `message` 1、`mind_assemble_control` 1、`program_init` 1；`attendance_assemble_control` **0**（本批清空，明细同表）。
+  下一格首选仍是 **auth 那 6 条**：OAuth 回调 GET 写，与「第三方回调零验签」族正面重叠——
+  加门只是将写面收口，验签缺失仍在，两件事要分开记。其次是 cms / pp designer 的动词别名 GET 写档
+  （批 14 / 批 20 已各收过一族，余量口径可复用）。
+- **新增待修（本批点名，未修）**：
+  1. **尺子缺陷 26 修复轴**：`gateEvidence` 判 `GATE_RE` 前须剥 `//` 行注释与块注释；修后要重量暴露面
+     （已知约 120 行注释提到门名、缩进态约 40 行，**未普查**），并顺带收批 20 待拍 2 的 `super::` 解析欠账。
+  2. **注入 harness 的 git 复验**：把 `git status --porcelain` 的 cwd 固定到仓库根并断言 exit=0，
+     否则 RESTORE 行只会把 fatal 文本打进日志（`finally` 无条件复原那一半本批已改）。
+  3. **三张考勤表无主键**（`migrations/032_create_assemble_control_tables.sql`：`x_attendance_appeal_info` /
+     `x_attendance_detail` / `x_attendance_setting` 均 `"id" TEXT` 无 PK）⇒ 按 id `UPDATE` 无法保证单行，
+     重复 id 时「归档某一条」写成「归档若干条」；测试侧已绕（42P10），产品侧要补 PK 迁移或改按唯一键写。
+  4. **42883 那把**（`attendancedetail_analyse` 族的 `cycle_year` / `cycle_month` integer ↔ handler 绑 `String` 路径参数）：
+     修它时必须同步撤销测试里对该把的**明列豁免**，否则类型修好、臂照样绿，等于把修复吞进豁免里。
+  5. **`import_checkin_rows` 的归一化 ↔ 权限比较大小写不一致**（`lib.rs:8556-8588` 附近：`normalize_key` =
+     `trim().to_lowercase()`，判权限时与原值 `person_unique` 直接比）⇒ 本人被判 403；属可用性 + 权限口径双缺陷。
+  6. R 侧同族下一格：`attendancedetail_analyse`（POST，body `personId`，仍未收门）与
+     `attendanceappealInfo_appeal_id` / `workflow_appeal_id` 两把申诉写档。
+- **新增待拍（本批记账，未修）**：
+  1. **`x_attendance_detail` 一表两档**：既有 `delete` 走**归属**档，本批 `archive` / `analyse` 4 把走 **admin** 档。
+     同表同族动作两档是真分歧，不是巧合——要么拍成「一张表一把 helper、按动作分档」的显式约定，
+     要么逐把回 o2server 原义对齐（与批 20 待拍 1 同族，合并处理更省）。
+  2. 本批 8 把 admin 档**逐把未与 o2server 权威档位核对**（批 17/18 收 admin 有 java 侧依据，本批只有当场理由）。
+  3. 钉钉 / 企微 `sync/start` 拉起的是**外部副作用**（第三方 API + 批量任务），除档位之外是否要加防抖 / 配额待拍。
+  4. **归属列口径两族并存**：本批 `v2_group_refresh_participate` 只读 `creator_person`，批 20 designer 用
+     `coalesce(nullif(trim(creator_person),''), creator, '')`。两者对「空归属行」的效果都是 admin-only，
+     但一个是列缺失的**副产品**、一个是显式收口。要么全仓定一把 helper（含 trim / 回退 / 空值三档语义），
+     要么逐 crate 记下各自口径——现在的状态是「同一条禁令，两把尺」，与批 20 待拍 3 的合并问题是一对。
+- **沿用的待拍格**（读数按本批终态更新）：`row_to_json` JSONB/时间盲口仍是最高优先；只读挂写现读 **764**；
+  program_center **2 把**（captcha / code）与 `creator='system'` 冒名 3 处（`lib.rs:1691 / 1844 / 8722`）、
+  第三方回调**零验签**族（正压在下一批入口 auth 那 6 条头上）、A1 真匿名写 9 条属限流族
+  （surface 的 `html_to_pdf` / `html_to_image` 两把经本批定性订正后**并入这一族**，不再是「无界 CPU」）、
+  24 条死档 needs 独立守卫、门禁入口两族并存、`shared/src/crud.rs` CrudSpec 无归属、
+  correlation 读侧 IDOR（含 `neural_list_calculate_with_work`）、F5 / F7 / F8 / F10、N4-02 / N4-03、
+  `GATE_RE` 里 `require_actor` 无独立见证的冗余词、路径参数不消费族（全仓普查未做）、
+  program_center schema drift 42703 族与 `assert_eq!(status, 500)` 断言族 272 处（本批 ignored 族那两格红正属此族）、
+  `query_service_processing` 5 条 POST 写面、ppsvc R7 49 + 宏绑不上段 16 把、
+  批 19 三条待拍（list/count 路径段语义、handover cancel/process 全同、`draft/{id}/start` 必然 500）、
+  批 20 三条待拍（designer 归属档权威、`super::` 欠账、空归属放行口径合并）。
+- **提交落点**：本批**只有一条轴**，代码一笔 `49fb86cc3`——`crates/attendance_assemble_control/src/lib.rs`
+  （8 把 admin 门 + 1 把归属门 + `require_admin_opt` helper + 两处说明文改写掉字面门名，共 65 行插入 / 0 删除）
+  + 新增 `src/security_gate_tests.rs`（550 行，`b21_get_writes_reject_without_session` 与 `b21_get_writes_gate_lands`
+  两臂、seed/unseed/untouched/residue）+ `src/tests_u2.rs` / `src/tests_u2_legacy.rs` 四支契约臂改逐条点名 expect
+  + 3 张刷新产物（`write_routes_get_writes.tsv` −9、`write_routes_matrix.tsv` 6 进 6 出、`write_routes_ungated.tsv` −6）。
+  与本文档（§三.21 / 本节）分两笔，本节即第二笔并回填该 hash。第二笔提交前后各在还原树跑一次尺子
+  （均 EXIT=0，15/15 产物 md5 与提交态全等），门禁 43 / 0 / 15，真库臂连跑两遍读数一致、
+  收口后按 `id LIKE 'b21-%'` 逐表数过 0 行残留。共享工作树上并行会话的在制品未被本批收走。**本轮未 push**。
 
