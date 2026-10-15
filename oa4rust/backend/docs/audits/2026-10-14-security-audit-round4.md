@@ -532,6 +532,23 @@ A4 开放问题：① F1 是否 o2server 侧本就以 job/document 创建者为�
 | 旧账口径**订正**：`NOW()` 写进 TEXT 列**不报错**，touch 族真落笔 | 真库探针（`information_schema` 核列 + 事务内 `UPDATE` 后回滚） | §五 里那句「`NOW()` 写进 TEXT 列 79 处」原本按**可用性**缺陷记（预期撞 42804）。本轮探针证明 PostgreSQL 对赋值走 assignment I/O coercion，`NOW()` 写得进 TEXT、语句照落笔 ⇒ 那 79 处是**数据形状**缺陷（时间戳存成文本、精度/时区口径不保），不是「端点跑不通」。**这条订正直接决定本批门禁的定性**：touch 既然真改得动，未认证/他人请求就不是「只探到 500」而是**真的伪造了审计时间戳** |
 | 尺子轴：**本批一字未动** | `scripts/audit_write_gating.mjs` | GET 无门禁 −16 全部来自代码。**R 轴同步受益 4 行**：`draft/start/{id}`、`handover/{id}/cancel`、`handover/{id}/process`、`mode/delete/{id}` 这 4 把的 **POST 别名**从 R7 搬进 R5——`write_routes_matrix.tsv` 恰 4 行改桶、0 行丢失、0 行新增，`write_routes_ungated.tsv` −4，真落笔 461→**457**。两条判据必须分开记账：GET −16 是本批修的漏洞，R −4 是同一把 handler 双方法注册的镜像读数，**不是**又发现了 4 条新漏洞消失（与批 17 的「−19 与 −8 同源」、批 18 的「−18 与 0 并存」构成第三种形状） |
 
+### 三.20 第二十批（designer 的 GET 面 14 把门：13 归属 + 1 admin；尺子缺陷 24 与 25 两处判据修复）
+
+| 项 | 位置 | 取证与口径 |
+| --- | --- | --- |
+| 覆盖面：14 把门 = 13 条 GET 注册 + 1 条 POST 别名 | `crates/query_assemble_designer/src/lib.rs:1403 / 1435 / 1645 / 1655 / 1665 / 1699`（6 把神经模型 generate / learn / stop×2 / reset / reset_p2）、`:3057`（`table/build/query/{query}`）、`:3246 / 3256 / 3293 / 3303`（`{flag}/status/{build,draft}` 与 `build/{flag}/{status}`、`draft/{flag}/{status}` 四把）、`:3348`（`table/query/{query}/build`）、`src/u2_closures.rs:2051`（`table/{flag}/build/dispatch`） | 修前这 13 条 GET 全落 K3（已认证、handler 不取会话、体内无门禁）：任何登录用户按 flag 就能把**他人**查询表 / 神经模型的 `status`（build / draft / generating / learning / idle）与 `reloaded` 位改掉——单据状态伪造，且 flag 可枚举。`neural/model/reset/{modelFlag}/{status}` 这把 POST 别名与 GET 那把共用 `_core`，门一起收，所以**门数 14 而 GET 行 13**，两张账不互抄 |
+| 本 crate 的头两把门 helper | `src/lib.rs:30`（`require_row_owner`）、`:59`（`require_admin_opt`） | `require_row_owner` 按 `(table, key_col, key)` 三参通用化：读本行归属 ⇒ 非空走 `shared::middleware::require_owner`，**空归属与行不存在一律只允许 admin**（不把数据缺陷洗成权限放行）。两把都写成「无会话先 `Err(Unauthorized)`，位置在任何 `pool.get()` **之前**」⇒ 连不上库的 pool 也能证 401。批 17/18 收的是 admin 档，本批收归属档，差别在下面这行 |
+| 档位取**归属**而非 admin 的依据 | `src/lib.rs:42-43`（`coalesce(nullif(trim(creator_person), ''), creator, '')`） | 本 crate 的既有约定就是「`creator_person` 优先、空则回退 `creator`」（`x_query_table` / `x_query_neural_model` 两表都有这两列，且既有写档 handler 按同一口径判归属）。这 14 把是**用户自己的设计器资产**的状态写，不是运维动作，收成 admin 会把正常用户的全族功能打死；批 17/18 那两批收 admin 是因为面本身就是运维/全表级动作 |
+| 唯一的例外档位：`table/reload/dynamic` 收 admin | `src/lib.rs:3084`（门）＋ `:3088`（`UPDATE x_query_table SET reloaded = true … WHERE reloaded = false`） | 这条**无键**、按条件批量改写全表 ⇒ 没有"本行归属"可判，只能收 admin。它是本批唯一一把 admin 门，也是注入臂 E4 单独点名的那把 |
+| 尺子缺陷 24（本批抓到并修）：限定路径调用点整条隐形 | `scripts/audit_write_gating.mjs` 的 `gateEvidence` / `writeEvidence` 调用点正则 + 新增 `callHelperBody` | `src/u2_closures.rs:2051` 那把门写成 `crate::require_row_owner(…)`，而两处 helper 追踪的正向查表正则写成 `(?<![.\w:])([a-z_]\w*)\s*\(`——前视断言把 `:` 也排除掉了，`crate::` / `self::` / `u2_render::` 这类**限定调用点一个都扫不到**。同批 lib.rs 里 13 把裸名调用正常进了间接门禁，这把没有 ⇒ 14 把门只作证 13 把，该行修后仍挂无门禁名单（K3→K2 的那一格，见 §四 本批读数）。**首版修法（取末段查「本 crate 首个同名」索引）被本批自己否掉**：personal crate 里 `icon::upload` 与 `signature::upload` 两把同名，first-wins 命中哪把纯看文件遍历顺序——那等于把缺陷 11 刚堵掉的碰撞面再开一次。终版按模块路径解析（剥 `crate`/`self`、`use x as y` 别名换算、首段是别的 crate 名就换根目录），且**静默**：查不到就不作证，也不写进 `route_handler_unresolved_refs.tsv`（调用点绝大多数属外部 crate/std，落盘会把未解析名单刷成噪音）。已知欠账：`super::f(..)` 需要调用方文件上下文才能定位父模块，这里不猜 |
+| 尺子缺陷 25（本批抓到并修）：门埋在链上第二层时整条链被否 | `scripts/audit_write_gating.mjs:746` `gateEvidence` | 旧写法在递归下一层之前先要求**这一跳自己**「有拒绝能力」。现场是 surface 的 `attachment_u2b_preview_pdf` / `_preview_image_page` 经 `read_attachment_blob(..)` 调 `u2_gate_att_or_business_error(..).await?`（体内 `u2_check_owner` ＋ 拒时 `return Err(Forbidden)`），而那一跳本体只写 `NotFound` / `Internal` ⇒ 前置闸当场否掉。缺陷 24 把它们的写 SQL（`u2_render::general_file_store` 的 INSERT）露出来以后，这 2 行立刻被读成「无门禁行动面」——**尺子假阳**。同族还有 surface 10 条附件 POST/PUT 转发行与 meeting 2 条（门埋在 `u2_attachment_update_inner` → `u2_attachment_guard`）。修法：先递归拿下一层的作证结果，**作证链上有拒绝能力那一层的 helper 名**而不是转发跳的名字；这一跳自己有拒绝能力时仍按旧口径作标本跳名——这样「缺陷 20 的独立反证尺」（逐条要求被作证的 helper 体内确有拒绝能力或传播的门禁调用）继续成立，不会因放宽而失效。`nested === true`（体内只有门名的文本、没有传播的调用点）而本跳无拒绝能力 ⇒ 不作证，正是缺陷 20 注释里「读了标志却照样落笔」那一形 |
+| 缺陷 25 的**反向见证**顺带量出一个真洞（待修，不在本批面） | `src/lib.rs:26178`（`attachment_u2b_html_to_pdf`）、`:26147`（`_html_to_image`）附近；尺子见证段「缺陷 25 反向见证」 | 这两把 POST **确实没有门**：`workHtml` 直接来自 body，本地渲染成 PDF/图片后经 `general_file_store` 往 `x_general_assemble_general_file` INSERT 一条——任意登录用户可批量造文件占库（存储投毒 + 无界 CPU）。它们被钉成「必须继续挂无门禁行动面」的反向见证：哪天链式追踪给它们"作证"出门来，就是恒真化被踩住的信号。定性待拍（admin 档 / 限流 / 只允许本人），已进 §五 名单 |
+| 前端消费面证据 | `frontend/apps/desktop/src/views/QueryManagerDeep.vue:692-711`（`qdReads2`）、`:712` 之后 rev385 同类段；`QueryViewApp.vue:886 / 891` 是 `/0/…` 形状的契约探针 | 本族 14 把在前端**只有这个「深度探针页」**消费：整段 `Promise.all` + 每个请求 `catch(() => null)`，只统计「命中数」弹 toast，不参与任何业务流程；`QueryViewApp.vue` 那两条打的是 query_service_processing 的占位 id。⇒ 加门不会打断活的业务流；非属主用户在该页会看到命中数下降，属预期行为，不是回归 |
+| 契约臂的适配：500→401，不改判据强度 | `src/tests.rs`（`test_v9_neural_model_reset_status_legacy_path_route_exists`） | 该臂原断言 `INTERNAL_SERVER_ERROR`——它钉的是「pool 连不上所以炸」，加了门之后无会话请求先 401、根本走不到读库。按批 17/18 的先例改成 `UNAUTHORIZED` 并在臂上写明理由，**没有**顺手放宽成「任一 4xx 都算过」 |
+| 测试互相踩的修复（不是门禁失效） | `src/tests.rs:1198-1200`（seed 注释）与 `:1221 / :1233`（`reloaded = true`） | 首轮 owner 臂红过一格：`他人 403 侧不得落笔` 读到 `x_query_table/b20-tb-flag-own => Some("2026-10-14 23:06:21")`。成因是同 crate 的既有契约臂并行调**无键全表写** `table_reload_dynamic`（`WHERE reloaded = false`），把本臂哨兵行改掉了——测试互相踩，不是门漏。修法是把本臂 seed 行的 `reloaded` 置 `true`（落在它的射程外）并在 seed 上方把这段因果写在行上 |
+| 与本 crate 旧注释的**口径冲突**（不平均，直接探针裁决） | `src/tests.rs:879` 附近（优化二轮 49 的断言注释）vs 本轮真库探针 | 该注释声称「`NOW()` 写进 TEXT 列必然 500」，与批 19 的订正（§三.19 那行）正面冲突。本轮在 PG 18.6 的事务内探针（`UPDATE … SET txt = NOW()` → `UPDATE 1`、`INSERT … VALUES ('2', NOW())` → `INSERT 0 1`，随后 `ROLLBACK`）证明**没有 42804**：赋值走 assignment I/O coercion。⇒ 批 19 的订正继续成立，那句注释的历史 500 更可能是同臂自己 `ALTER TABLE … ADD COLUMN IF NOT EXISTS` 之前的**缺列（42703）**族。两条账都记账、不折中 |
+
+
 ## 四、验证
 
 
@@ -1930,4 +1947,98 @@ cd oa4rust/backend && cargo test --lib -p <crate>
   与本文档（§三.19 / 本节）分两笔，本节即第二笔并回填该 hash。第二笔提交前已在还原树重跑尺子
   （15/15 张产物 md5 与注入前全等、EXIT=0、真落笔 457、GET 写 76、只读挂写 766、间接写 223 / 间接门禁 234、缺口 0）
   并复跑门禁 612 / 0 / 9 与 `--ignored` 9 / 0。共享工作树上并行会话的在制品未被本批收走。**本轮未 push**。
+
+### 第二十批收口后的刷新（§三.20 / §四 第二十批读数 / §五 名单）
+
+- **三列读数（批 19 收口 → 本批代码后 → 本批收口）**。四列里的第三列是尺子两修都落地后的终态
+  （T5 = T6 = T7 三次独立跑，读数与产物逐字节全等）：
+
+| 尺子格 | 批 19 收口 | 代码后（T，旧尺子） | 收口（T5/T6/T7） | 归因 |
+| --- | ---: | ---: | ---: | --- |
+| GET 写面无门禁 | 76 | 63 | **62** | 跨批逐行对账：恰 14 行出列、0 新增、0 改桶 |
+| ├ K1 匿名可达无门禁 | 5 | 5 | 5 | 本批不动这族（限流族单列待拍） |
+| ├ K2 读会话无门禁 | 11 | 12 | 11 | T 的 +1 就是 `table_build_dispatch_flag`：门在 `u2_closures.rs` 里以**限定路径**调用，旧尺子整条扫不到，把它读成「读了会话但没门」（= 缺陷 24 的现场假阳）；修好后出列 |
+| └ K3 已认证无会话无门禁 | 60 | 46 | **46** | 本批 14 把全在 K3，−14 全额归代码轴 |
+| R5 已认证 + 体内门禁 | 853 | 854 | **866** | 缺陷 25：12 把「handler → 读库 helper → 门 helper」的链上有门的 PUT 从 R6 搬进 R5 |
+| R6 已认证 + 读会话无门禁 | 158 | 158 | **146** | −12 与上一格同源，是改桶不是消失 |
+| R7 已认证 + 无会话无门禁 | 1053 | 1052 | 1052 | −1 代码轴 |
+| R4 含写 SQL | 5 | 5 | 5 | 不动 |
+| R6 含写 SQL | 135 | 135 | **125** | 缺陷 24 先 +2（T3 为 137，把两行「只读」露成「含写」）、缺陷 25 再 −12 |
+| R7 含写 SQL | 317 | 316 | 316 | −1 代码轴 |
+| **真落笔（R4+R6+R7 含写）** | **457** | **456** | **446** | −1 是本批真修掉的一条写面，−10 是尺子假阳修正（那 10 行**一直**有门，只是旧尺子看不见） |
+| 只读挂写方法 | 766 | 766 | **764** | 缺陷 24/25 的重新归类所致，R6 合计不受影响 |
+| 间接门禁作证 | 234 | 247 | **263** | 其中 `query_assemble_designer` 一 crate **4 → 18**（恰本批 14 把）；余量来自两条尺子轴的改桶 |
+| 间接写 SQL | 223 | 222 | **215** | designer **6 → 5**；两条轴方向相反，不许轧差 |
+| 判据见证缺口 | 0 | 0 | 0 | 三次 EXIT=0 |
+
+- **三条判据分开记账（这是本批最容易记错的格）**：
+  1. **代码轴**（批 19 收口 → T）：GET 76→63 里真正属于本批的是 **14 把门**，之所以只 −13，是因为其中一把
+     （`table_build_dispatch_flag`）被旧尺子错误留在名单上当 K2 —— 所以「K2 11→12」不是新漏洞，是尺子的锅。
+     R 轴同时 −1（R7 1053→1052、含写 317→316）⇒ 真落笔 457→**456**。
+  2. **尺子轴 · 缺陷 24**（T → T3）：解析口径改成「限定符 → 模块文件」后，`table_build_dispatch_flag` 出列（−1），
+     另两把经限定调用的写面被露出来（GET 63→64、K2 12→13、只读挂写 766→764、R6 含写 135→137）⇒ **真落笔 456→458**。
+     这一格必须写红：修尺子让读数**变差**了，因为露出来的是本来就存在、以前看不见的写面。
+  3. **尺子轴 · 缺陷 25**（T3 → T5）：链上有门不作证的旧前置闸撤掉后，2 行 preview GET 假阳出列、
+     12 把 PUT 从 R6 搬进 R5 ⇒ GET 64→**62**、R5 854→866、R6 158→146、R6 含写 137→125 ⇒ **真落笔 458→446**。
+     三条轴合起来：**GET −14 全是本批修的漏洞，真落笔 −11 = −1 代码 + −10 假阳**；跨批逐行对账给出同一结论
+     （76 行 vs 62 行，diff 恰 14 行删除、0 行新增、0 行改桶，14 行全是 `query_assemble_designer` 且全是 K3）。
+- **还原树证明**：尺子的注入臂会**顺带重写产物**，R1/R2/R3 跑完磁盘上 4 张产物是脏的
+  （`write_routes_get_writes` / `write_routes_matrix` / `write_routes_indirect_gated` / `write_routes_indirect_writes`）。
+  在还原树重跑尺子（T7，EXIT=0）后 `git diff -- docs/audits/artifacts` 为**空**、15/15 张产物与提交态逐字节全等、
+  GET 名单 62 行、真落笔 446、只读挂写 764、间接门禁 263 / 间接写 215、缺口 0。
+  这条与第十九批的「产物要按**各自桶**比行数」并列：凡跑过尺子（不管注入还是基线），收口前都必须在还原树重跑一次。
+- **门禁**：`cargo test -p query_assemble_designer` **51 passed / 0 failed / 0 ignored**（基线 49，本批 +2 臂）。
+  如实记两条：① 本批两支臂**都不带 `#[ignore]`**，离线臂 `b20_get_writes_reject_without_session` 用死 pool 直接跑；
+  ② 真库臂 `b20_get_writes_owner_gate_lands` 的「真执行、不是 skip 蒙过」由 E2/E3 两臂把它跑红来作证——
+  若它是静默跳过，注入后不可能点名出 13 把与 3 格。
+- **九臂注入取证（基线绿 → 逐臂点名红 → 还原复绿；D0–E6 用 51 臂组，R1–R3 用尺子）**：
+
+| 臂 | 注入 | 读数 | 判定 |
+| --- | --- | --- | --- |
+| D0 | 只改 `tests.rs` 注释 | 51 / 0 两跑皆绿 | **成立（无害对照）**：红不是环境本来就不稳 |
+| E1 | 摘 `u2_closures.rs:2051` 的限定路径门 | 无会话臂点名 `table_build_dispatch_flag`，403 臂同红（exit 101） | **成立** |
+| E2 | 归属 helper 收成 `Ok(())` | 403 臂逐把点名 **13 把全 `=> None`** | **成立** |
+| E3 | 空归属 helper 收成 `Ok(())` | 恰点名 3 格：`neural_empty_owner / table_empty_owner / table_missing_row`（含「他人 / admin」双列读数） | **成立** |
+| E4 | 摘 `table_reload_dynamic` 的 admin 门 | 两臂红，无会话臂点名 `table_reload_dynamic => Some(Internal)` | **成立** |
+| E5 | 摘单把裸名门（`table_flag_status_build`） | 两臂红，无会话臂恰点名该把 | **成立**：证明逐把点名，不是整臂兜底 |
+| E6 | 把门挪到 `pool.get()` 之后 | 无会话臂点名同 handler `=> Some(Internal)`，403 臂绿 | **成立**：离线 ordering 哨兵有效（`Internal` 出现 = 门插在读库之后） |
+| R1 | 摘掉限定调用点门后跑尺子 | 该行回到 `write_routes_get_writes.tsv` | **成立**：门是真被作证，不是恒列 |
+| R2 | 限定调用换成解析不到 / 无拒绝能力的 helper 名 | 尺子不背书该行（回名单），且不作证 | **成立（防恒真）**：作证要求「解析得到 + 链上有拒绝能力」两格都中 |
+| R3 | 把缺陷 25 的修法退回旧前置闸（要求本跳自己有拒绝能力） | 判据见证喊红，尺子 EXIT≠0 | **成立**：新 witness 不是摆设，退步即红 |
+| — | 臂后磁盘 | 每臂 `hash_ok=true`，收尾只剩本批 4 个在 scope 文件；R1–R3 本轮在**已提交树**重跑一次，三臂仍全成立 | 残留：无 |
+
+- **§五 下一批入口（按现读逐 crate 点名，共 62 条 = K1 5 / K2 11 / K3 46）**：
+  `attendance_assemble_control` 9、`auth` 6、`cms_assemble_control` 5、`message_assemble_communicate` 5、
+  `processplatform_assemble_designer` 5、`ai_assemble_control` 4、`jpush_assemble_control` 4、`meeting_assemble_control` 4、
+  `file_assemble_control` 3、`hotpic_assemble_control` 3、`calendar_assemble_control` 2、
+  `organization_assemble_authentication` 2、`organization_assemble_control` 2、`program_center` 2、`query_assemble_surface` 2、
+  `general_assemble_control` 1、`message` 1、`mind_assemble_control` 1、`program_init` 1（明细 `write_routes_get_writes.tsv`）。
+  集中度最高的三族仍是 attendance（签到/请假 touch 族）、auth（OAuth 回调 GET 写，属零验签族）、
+  cms 与 pp designer（动词别名 GET 写档）。
+- **新增待修（本批反向见证量出来的真洞，未修）**：`attachment_u2b_html_to_pdf` / `attachment_u2b_html_to_image`
+  （POST，`surface/src/lib.rs:26178` 起，体内 `workHtml` → 渲染 → `general_file_store`
+  INSERT 进 `x_general_assemble_general_file`，**全程无归属/无 admin 门**）⇒ 任何已认证用户可批量落库任意文件，
+  既是存储面投毒也是无界 CPU（渲染）。与同族的 `attachment_u2b_preview_pdf` / `_preview_image_page` 只差一步：
+  后者经 `read_attachment_blob` → `u2_gate_att_or_business_error` 有门，前者自己不收门。下一批连门带臂一起做。
+- **新增待拍（本批记账，未修）**：
+  1. designer 这 14 把取**归属档**是否与 o2server 权威档位一致，尚未逐把核（批 19 已把 surface 的档位拍成归属，
+     但 designer 侧的 java 原义未查证）；`table_reload_dynamic` 是全批唯一的 admin 例外，理由是**无键全表写**。
+  2. 尺子的 `super::` 限定符仍不解析（`route_handler_unresolved_refs.tsv` 里 process_designer / process_express /
+     process_surface 共 13 行点名）。本批的修法只保证「`crate::` / 模块路径」这一族，`super::` 的**自然样本量未普查**，
+     不知道还有多少行被这一欠账读成无门禁。
+  3. 空归属（`creator` 与 `creator_person` 皆空）行的放行口径按 admin 收，属**数据缺陷不洗成权限放行**的临时口径，
+     与批 17/18 的 admin 档是否合并成一把 helper 待拍。
+- **沿用的待拍格**（读数按本批终态更新）：`row_to_json` JSONB/时间盲口仍是最高优先；program_center **2 把**（captcha / code）
+  与 `creator='system'` 冒名 3 处（`lib.rs:1691 / 1844 / 8722`）、第三方回调**零验签**族、A1 真匿名写 9 条属限流族、
+  24 条死档 needs 独立守卫、只读挂写现读 **764**、门禁入口两族并存、`shared/src/crud.rs` CrudSpec 无归属、
+  correlation 读侧 IDOR（含 `neural_list_calculate_with_work`）、F5 / F7 / F8 / F10、N4-02 / N4-03、
+  `GATE_RE` 里 `require_actor` 无独立见证的冗余词、路径参数不消费族（全仓普查未做）、
+  program_center schema drift 42703 族与 `assert_eq!(status, 500)` 断言族 272 处、`query_service_processing` 5 条 POST 写面、
+  ppsvc R7 49 + 宏绑不上段 16 把、批 19 三条待拍（list/count 路径段语义、handover cancel/process 全同、`draft/{id}/start` 必然 500）。
+- **提交落点**：本批两条轴合成一笔 `29277fe46`——代码轴（`crates/query_assemble_designer/src/lib.rs` 13 把门（12 归属 + 1 admin）
+  + `src/u2_closures.rs` 那把走限定路径的归属门，合计 14 把、`src/tests.rs` `b20_*` 两臂与 seed/unseed）+ 尺子轴
+  （`scripts/audit_write_gating.mjs` 的 `callHelperBody`、缺陷 24/25 两处判据与正反向见证）+ 7 张刷新产物。
+  与本文档（§三.20 / 本节）分两笔，本节即第二笔并回填该 hash。第二笔提交前后各在还原树跑一次尺子
+  （T6 / T7 均 EXIT=0，15/15 产物 md5 与提交态全等），门禁 51 / 0 / 0，真库臂连跑两遍读数一致、
+  收口后按 `id LIKE 'b20-%'` 逐表数过 0 行残留。共享工作树上并行会话的在制品未被本批收走。**本轮未 push**。
 
