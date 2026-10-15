@@ -636,6 +636,52 @@ function indexCrateFns(crate) {
   crateFnIndex.set(crate, idx);
   return idx;
 }
+// 尺子缺陷 24（第二十批抓到并修）：helper 追踪的调用点正则写成
+// `/(?<![.\w:])([a-z_]\w*)\s*\(/g`，前视断言把 `:` 一并排除，于是
+// `crate::f(..)` / `self::f(..)` / `u2_render::f(..)` 这类**限定路径调用点**一个都扫不到，
+// 递归那一臂恒被跳过。现场：query_assemble_designer `table_build_dispatch_flag`
+// （src/u2_closures.rs:2051）体内 `crate::require_row_owner(...).await?` 已加门，修前仍挂
+// GET 无门禁行动面；同批 lib.rs 里 13 把写成裸名调用的同族门正常进了间接门禁（14 把门只作证 13 把）。
+// 首版修法「取末段查同名索引」会把缺陷 11 的同名碰撞再引进来：personal crate 里
+// `icon::upload` 与 `signature::upload` 两把同名，first-wins 命中哪把纯看文件遍历顺序。
+// 终版按模块路径解析（与 fnBody 同口径：crate/self 前缀剥掉、`use x as y` 别名换算、
+// 首段是别的 crate 名就换根目录），但**静默**：查不到就返回 null，既不写
+// route_handler_unresolved_refs.tsv 也不进 noBodyRefs——调用点海量，其中绝大多数属外部
+// crate/std，落盘会把未解析名单刷成噪音。已知欠账：`super::f(..)` 要有调用方文件上下文
+// 才能定位父模块，这里不猜（返回 null），宁少证不假证。
+const qualHelperCache = new Map();
+function callHelperBody(crate, qual, name) {
+  if (!qual) return indexCrateFns(crate).get(name) || null;
+  const key = `${crate}|${qual}|${name}`;
+  if (qualHelperCache.has(key)) return qualHelperCache.get(key);
+  const segs = qual.split("::").filter(Boolean);
+  while (segs.length && (segs[0] === "crate" || segs[0] === "self")) segs.shift();
+  const al = moduleAliases(crate);
+  const candidates = [];
+  if (!segs.length) candidates.push(path.join(CRATES, crate, "src", "lib.rs"));
+  else {
+    for (const v of [...new Set([segs.join("::"), segs.map((p) => al.get(p) || p).join("::")])]) {
+      const parts = v.split("::");
+      let root = path.join(CRATES, crate, "src");
+      if (fs.existsSync(path.join(CRATES, parts[0], "src"))) {
+        root = path.join(CRATES, parts[0], "src");
+        parts.shift();
+      }
+      candidates.push(path.join(root, ...parts) + ".rs", path.join(root, ...parts, "mod.rs"));
+    }
+  }
+  let body = null;
+  for (const f of [...new Set(candidates)]) {
+    if (!fs.existsSync(f)) continue;
+    const b = sliceFn(fs.readFileSync(f, "utf8"), name);
+    if (b) {
+      body = b;
+      break;
+    }
+  }
+  qualHelperCache.set(key, body);
+  return body;
+}
 // 调用点的拒绝是否向上传播。两种形态都算（尺子缺陷 17，第十一批修）：
 //   ① `f(...).await?` —— 旧判据只认这一种；
 //   ② `f(...).await` 且它整个表达式是函数体的**尾表达式**（`.await` 之后到闭括号为空）——
@@ -701,13 +747,31 @@ function gateEvidence(crate, body, depth = 0) {
   if (!body) return false;
   if (GATE_RE.test(body)) return true;
   if (depth >= 3) return false;
-  const idx = indexCrateFns(crate);
-  for (const m of body.matchAll(/(?<![.\w:])([a-z_]\w*)\s*\(/g)) {
-    const n = m[1];
-    const hb = idx.get(n);
-    if (!hb || hb === body || !helperCanReject(hb)) continue;
+  // 尺子缺陷 24（第二十批抓到并修，机理与解析口径见 `callHelperBody` 上方注释）：
+  // 旧正则的前视断言排除 `:`，限定路径调用点整条扫不到，本把门只作证裸名那 13 把。
+  for (const m of body.matchAll(/(?<![.\w])((?:[A-Za-z_]\w*::)*)([a-z_]\w*)\s*\(/g)) {
+    const n = m[2];
+    const hb = callHelperBody(crate, m[1], n);
+    if (!hb || hb === body) continue;
     if (!callPropagates(body, n)) continue;
-    if (gateEvidence(crate, hb, depth + 1) !== false) return n;
+    const nested = gateEvidence(crate, hb, depth + 1);
+    if (nested === false) continue;
+    // 尺子缺陷 25（第二十批抓到并修）：旧写法在进下一层之前先要求**这一跳自己**「有拒绝能力」
+    // （`helperCanReject`：体内含 `AppError::Forbidden|Unauthorized` 字面量，或体内直呼门名）。
+    // 于是「handler → 读库 helper → 门 helper」这条链整条看不见：门不在读 helper 里，
+    // 那一跳本体只写 `AppError::NotFound` / `Internal`，前置闸当场把它否掉。
+    // 现场：surface `attachment_u2b_preview_pdf` / `_preview_image_page` 经 `read_attachment_blob(..)`
+    // 调 `u2_gate_att_or_business_error(..).await?`（体内 `u2_check_owner` + 拒时 `return Err(Forbidden)`），
+    // 缺陷 24 把它们的写 SQL 露出来以后，却被这道前置闸读成「无门禁行动面」——假阳。
+    // 同批新露出的还有 surface 10 条附件 POST/PUT 转发行与 meeting 2 条：门都埋在
+    // `u2_attachment_update_inner` / 被转发 handler 那一层，同样被前置闸否掉。
+    // 修法：先递归拿下一层的作证结果，**作证链条上真正有拒绝能力的那一层 helper 名**，
+    // 而不是这一跳的转发名；这一跳自己也有拒绝能力时仍按旧口径作标本跳名，
+    // 好让「缺陷 20 的独立反证尺」（要求作证的 helper 体内确有拒绝能力或传播的门禁调用）继续成立。
+    if (helperCanReject(hb)) return n;
+    // 只有「下一层给出的是**具名 helper**」才作证；`nested === true` 而这一跳自己无拒绝能力，
+    // 就是缺陷 20 注释里那种「读了标志却照样落笔」的形状，不作证。
+    if (typeof nested === "string") return nested;
   }
   return false;
 }
@@ -777,10 +841,11 @@ function writeEvidence(crate, body, depth = 0) {
   if (!body) return false;
   if (WRITE_SQL_RE.test(body)) return true;
   if (depth >= 3) return false;
-  const idx = indexCrateFns(crate);
-  for (const m of body.matchAll(/(?<![.\w:])([a-z_]\w*)\s*\(/g)) {
-    const n = m[1];
-    const hb = idx.get(n);
+  // 尺子缺陷 24 同族第二处：写 SQL 的转发追踪也不能只看裸名调用点
+  // （现场 `u2_render::general_file_store(..)` INSERT 进 x_general_assemble_general_file，修前隐形）。
+  for (const m of body.matchAll(/(?<![.\w])((?:[A-Za-z_]\w*::)*)([a-z_]\w*)\s*\(/g)) {
+    const n = m[2];
+    const hb = callHelperBody(crate, m[1], n);
     if (!hb || hb === body || !awaitCall(body, n)) continue;
     if (writeEvidence(crate, hb, depth + 1)) return n;
   }
@@ -1362,6 +1427,28 @@ for (const [key, helper] of [
     witnessGaps.push(`缺陷 20 见证缺失（无字面量拒绝分支的 helper 未作证 ${helper}）：${key.replace(/\t/g, " ")}`);
   if (!gHelpers.has(helper))
     witnessGaps.push(`缺陷 20 见证缺失（间接门禁名单未见 helper ${helper}）`);
+}
+// 缺陷 25 正向见证（第二十批）：门埋在**第二层**、第一跳只是转发展读库 helper
+// （`handler → read_attachment_blob → u2_gate_att_or_business_error`）。
+// 把 `gateEvidence` 的前置闸恢复成「这一跳自己必须有拒绝能力」，这两条当场退回无门禁行动面。
+for (const [key, helper] of [
+  ["processplatform_assemble_surface\tGET\t/api/processplatform/assemble/surface/attachment/{id}/preview/pdf\tattachment_u2b_preview_pdf", "u2_gate_att_or_business_error"],
+  ["processplatform_assemble_surface\tGET\t/api/processplatform/assemble/surface/attachment/{id}/preview/image/page/{page}\tattachment_u2b_preview_image_page", "u2_gate_att_or_business_error"],
+]) {
+  if (gatedByRoute.get(key) !== helper)
+    witnessGaps.push(`缺陷 25 见证缺失（门埋在第二层的链未被 ${helper} 作证）：${key.replace(/\t/g, " ")}`);
+}
+// 缺陷 25 反向见证：放宽链条不等于发门。`html/to/pdf` 与 `html/to/image` 两把**确实没有归属门**
+// （它们不读附件，`workHtml` 直接来自 body → 渲染 → `general_file_store` 落一条 GeneralFile），
+// 必须继续挂在无门禁行动面；若哪天它们被链式追踪"作证"出门来，就是恒真化被踩住的信号。
+for (const key of [
+  "processplatform_assemble_surface\tPOST\t/api/processplatform/assemble/surface/attachment/html/to/pdf\tattachment_u2b_html_to_pdf",
+  "processplatform_assemble_surface\tPOST\t/api/processplatform/assemble/surface/attachment/html/to/image\tattachment_u2b_html_to_image",
+]) {
+  if (gatedByRoute.has(key))
+    witnessGaps.push(`缺陷 25 反向见证失效（无门路由被链式追踪误作证 ${gatedByRoute.get(key)}）：${key.replace(/\t/g, " ")}`);
+  if (/^R5/.test(bucketByKey.get(key) || ""))
+    witnessGaps.push(`缺陷 25 反向见证失效（无门路由被误判成 R5）：${key.replace(/\t/g, " ")}`);
 }
 // 缺陷 20 的**独立反证尺**：逐条复核「被拿来作证的 helper 真的有拒绝能力」。
 // 这里的判据是故意**重新写一遍**的字面量 + 传播两条，不调用 `helperCanReject`——
