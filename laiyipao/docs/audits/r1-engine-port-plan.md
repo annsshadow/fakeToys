@@ -121,8 +121,8 @@ F 块里 (1)(2) 的可观测症状是**选牌索引序列错乱**（TS 注释记
 | C 敌人推进与漏怪 | OK engine_enemy.go + engine_enemy_test.go（12 条纯逻辑） |
 | D 开火与弹道 | ⬜ 下一步 —— **里程碑：拿到整局 eplay_hash** |
 | D 开火与弹道 | ⬜ |
-| E 地形接线 | ⬜ |
-| F 卡牌 | ⬜ |
+| E 地形接线 | OK engine_terrain.go + engine_terrain_test.go + engine_terrain_contract_test.go |
+| F 卡牌 | ⬜ 下一步 —— **解锁多波次** |
 | G 结算与哈希 | ⬜ |
 
 ### C 块的完成度（诚实口径）
@@ -259,6 +259,68 @@ TS 会真的对它做 `withinTerrain(t.x, t.y, 100, ...)` 判定。
 数据落不到分界线上时，关于分界线的断言都是空的。
 处理方式有两条：补构造单测（数据可造）或把逻辑抽成可测单元
 （数据造不出来时，如 MUT-D7）。
+### E 块的完成度（诚实口径）
+
+实现 `engine_terrain.go`：`updateTerrain` / `terrainOnHit` / `terrainOnKill` /
+`withinTerrain` / `TerrainIndex` / `terrainCtx` 适配器 / `terrainEnemy` 适配器，
+并把地形接进 D 块刻意留空的三处：弹丸掩体阻挡、`hitEnemy` 的地形联动、
+击杀时的蓄能塔充能。`NewBattleEngine` 现在从 `cfg.Level.Terrain` 构造地形。
+
+**跨端对齐**：5 个真实关卡，全绿。三类地形的状态真的变化了
+（探针实测：`burning` / `collapsed`×3 / `closed`×3）。
+
+**⚠️ 两类地形第 1 波内不可达，用构造单测补上**：
+- `charge_tower`：param=38~42，需要 38+ 次击杀，而第 1 波只有 2~3 杀
+- `rotor_vane`：需要弹丸擦过；探针穷举「含该地形的关卡 × 7 构筑 × 10 种子」
+  共 210 个组合，**无一命中**
+
+**⚠️ 场景组合不是拍脑袋选的**：我第一版按「一类地形配一个看起来合理的构筑」
+写，结果五类里有三类完全不可达（charge_tower / rotor_vane / tidal_gate ——
+闸门的开合周期是 param 毫秒 9276~10855，第一版的种子恰好让它一直开着）。
+改成 `scripts/probe-terrain.ts` **穷举跑出**真实可触发的组合。
+这个脚本保留在仓库里，将来加地形或调数值时可以直接复用。
+
+**⚠️ 两个适配器是 Go 的硬约束**：
+`Enemy` 已有 `HP`/`ArmorPermille`/`Dead` 三个**字段**，
+`BattleEngine` 已有 `Enemies`/`Projectiles` 两个**字段**，
+而 `TerrainEnemy`/`TerrainCtx` 接口要求同名**方法** ——
+Go 不允许同名字段与方法共存，只能包一层。
+包一层而不是改字段名：字段名与 TS 一一对应，
+而跨端对齐逐字段比对依赖这些名字保持可读。
+
+**变异实测 5 处，1 处首轮存活**：
+
+- MUT-E1 地形编号顺序打乱 → 红（编号进 `replay_hash`）
+- MUT-E2 击杀路径不去重 `terrain_used` → 红
+- MUT-E3 闸门也挡钻地敌人 → 红
+- MUT-E4 高度边界 `<= 60` 改成 `< 60` → 红
+- MUT-E5 `ElementCap()` 写死 4 → **首轮存活**。
+  原因是我那条 `TestChargeTowerRespectsElementCap` 用了 `probeTerrainCtx`，
+  而探针的 `ElementCap()` 走 `p.caps`（固定值），
+  **根本没调用生产的 `terrainCtx.ElementCap`**。
+  这是「测试替身绕过被测代码」的典型形态 ——
+  替身越方便，被测代码越容易被绕开。补 `TestTerrainCtxElementCapComesFromAttacker` 后红。
+
+**⚠️ `terrain_used` 的两条路径语义不同，不能互相照抄**：
+- **触发**路径（弹丸挡住 / 命中点燃）：每次都追加，不去重（与 TS 同）
+- **击杀**路径（蓄能塔充能）：只首次记入
+
+去重反了会让服务端 `ValidateSettle` 的 `len(terrain_used) <= len(distinct)`
+判定失败 —— 症状是「玩家打了 100 次油桶，结算直接 422」。
+已写成 `TestTerrainUsedDedupOnKillPath` / `TestTerrainUsedAppendsOnTriggerPath` 两条。
+
+**本轮踩到的工具坑（第四次了）**：
+在共享的 `pureVectors` 大结构体上加字段时，我用字符串拼接做替换，
+连续三次把同文件里**其它块**的守卫连带截断。
+最后的解法是**不碰共享结构体** ——
+`terrain_battle` 段独立解码（`engine_terrain_vectors_test.go`）。
+共享大结构体的代价是：任何一处改动都要重新审视整个文件。
+
+**教训（第四次出现，与 B/C/D 同源）**：
+跨端对齐证明的是「在真实数据上两端一致」，**不覆盖「数据到不了的形状」**。
+本轮 E5 与 D5/D7/D8 同类。
+但 E 块多了一条**元教训**：测试替身本身也会制造盲区 ——
+一个绕过被测代码的替身，让被测代码的变异存活。
 ### 对齐终止条件：为什么停在 `card_select`
 
 第 2 波必须先解掉卡牌选择，那要过 `rollWaveCards`（消耗 RNG，于是后续

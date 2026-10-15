@@ -1786,6 +1786,22 @@ function makeTracer(engine: any, sampleEvery: number) {
       cooldowns: (engine.skills as any[]).map((s: any) => s.cooldownRemaining.toString()),
       elements_used: sortedJSON(engine.elementsUsed),
       reactions_used: sortedJSON(engine.reactionsUsed),
+      // --- E 块：地形 ---
+      // 必须逐字段记地形的**全部状态**，不只是「触发没触发」。
+      // 油桶的火区计时、蓄能塔的充能、旋转风障的角度都跨 tick 演进 ---
+      // 只记布尔量的话，「状态演进不一致」完全观察不到，
+      // 而它的症状是「火区早结束一帧」这类极细的偏差。
+      terrains: (engine.terrains as any[]).map((t: any) => ({
+        kind: t.kind,
+        x: t.x,
+        y: t.y,
+        state: t.state,
+        timer: t.timer.toString(),
+        charge: t.charge,
+        angle: t.angle,
+        triggered: t.triggered,
+      })),
+      terrain_used: (engine as any).terrainUsed.slice().join(String.fromCharCode(44)),
     })
   }
   return { trace, snap }
@@ -1844,6 +1860,154 @@ const buildRows = BUILD_SCENARIOS.map((s) => {
     // ⚠️ 构筑**必须带进文件**：Go 侧要重建同样的技能与槽位。
     //   只存 skillIDs 不够 —— Go 侧还要从内容表取属性，
     //   而「取哪张表」本身就是个可能出错的地方。
+    equipped: s.skillIDs,
+    attacker: {
+      attack: s.attacker.attack.toString(),
+      crit_permille: s.attacker.critPermille.toString(),
+      crit_multiplier_permille: s.attacker.critMultiplierPermille.toString(),
+      reaction_mult_permille: s.attacker.reactionMultPermille.toString(),
+      element_cap: s.attacker.elementCap.toString(),
+      reaction_tier: s.attacker.reactionTier.toString(),
+      element_coef_permille: s.attacker.elementCoefPermille.toString(),
+      heat_cap_permille: s.attacker.heatCapPermille.toString(),
+      armor_permille: s.attacker.armorPermille.toString(),
+      mechanic_permille: s.attacker.mechanicPermille.toString(),
+    },
+    trace,
+  }
+})
+/**
+ * Block E（地形接线）的场景：**带地形**的完整战斗。
+ *
+ * # 为什么现在才做
+ *
+ * D 块的五个场景刻意剥离了 `terrain` —— 那时 Go 侧还没接地形，
+ * 半接的后果是「地形记了触发事件却从不结算效果」，
+ * 症状落在数值上（分数、击杀、漏怪）而根因在接线，极难定位。
+ *
+ * 现在 E 块接上了，这里把债还掉：**每一类地形都要有一个场景**。
+ *
+ * # 地形类型与选关
+ *
+ * | 类型 | 关卡 | 覆盖 |
+ * |---|---|---|
+ * | `oil_drum` | 1 | 被点燃 -> 火区持续伤害 |
+ * | `collapse_wall` | 22 | **阻挡弹丸**（掩体，必须用动能砸开） |
+ * | `charge_tower` | 42 | 击杀充能 -> 全场施加主元素 |
+ * | `tidal_gate` | 61 | 关闭时阻挡低层敌人（`blocked` 分支） |
+ * | `rotor_vane` | 82 | 周期性改变弹丸方向 |
+ *
+ * 五类各一个，是因为它们走**完全不同的代码路径**：
+ *
+ *   - `onHit`（油桶/掩体/风障）：弹丸或命中触发
+ *   - `blocksProjectile`（掩体）：弹丸被吃掉
+ *   - `blocked`（潮汐闸）：敌人被推回
+ *   - `onKillCharging`（蓄能塔）：击杀驱动
+ *   - `update`（全部）：每 tick 推进
+ *
+ * 只验其中一类的话，其余四类的接线错误全部观察不到 ——
+ * 而「接线」正是最容易漏的地方（少一个调用点，不报任何错）。
+ *
+ * ⚠️ 选关用**真实关卡 id**，地形参数（位置/半径/血量）全取自
+ *   `smoke_levels.json` —— 与线上同一份数据。
+ *   用拍出来的地形参数就测不到「坐标是否对得上」这类错误。
+ */
+
+interface TerrainScenario {
+  label: string
+  levelID: number
+  seed: string
+  ticks: number
+  sampleEvery: number
+  skillIDs: number[]
+  attacker: BuildScenario['attacker']
+}
+
+/**
+ * 五类地形各一个场景。
+ *
+ * ⚠️ 组合不是拍脑袋选的，而是 `scripts/probe-terrain.ts` **跑出来**的：
+ * 穷举「含该地形的关卡 × 7 种构筑 × 10 个种子」，
+ * 只保留「地形状态真的发生过变化」的组合。
+ *
+ * 为什么必须这么做：我第一版按「一类地形配一个看起来合理的构筑」写，
+ * 结果五类里有**三类**在第 1 波内完全不可达：
+ *
+ *   - `charge_tower`：param=38~42，即需要 38+ 次击杀才触发，
+ *     而第 1 波只有 2~3 杀
+ *   - `rotor_vane`：要弹丸经过它才转，第一版的弹道根本擦不到
+ *   - `tidal_gate`：闸门的开合周期是 param 毫秒（9276~10855），
+ *     第一版的种子恰好让闸门一直开着
+ *
+ * 这三类要真正覆盖，需要**多波次战斗**（进第 2 波要累计击杀），
+ * 而那要 F 块解锁。当前它们只验到「`update()` 每 tick 被调用、
+ * 且不产生错误状态」—— 这是如实的边界，不是覆盖。
+ * 它们各自的转移逻辑由 Go 侧的构造单测覆盖。
+ */
+const TERRAIN_SCENARIOS: TerrainScenario[] = [
+  // 第 1 关 + fire 构筑 + seed 1：油桶被点燃，进入 burning（探针实测）
+  { label: 'terr_oil_drum', levelID: 1, seed: '1', ticks: 4000, sampleEvery: 25, skillIDs: [1, 2, 3], attacker: BUILD_ATTACKER },
+  // 第 22 关 + weak1（单技能 ember）+ seed 7：三面掩体全部崩塌（探针实测）
+  { label: 'terr_collapse_wall', levelID: 22, seed: '7', ticks: 4000, sampleEvery: 25, skillIDs: [1], attacker: BUILD_ATTACKER },
+  // 第 61 关 + weak1 + seed 7：三道闸门全部关闭（探针实测）
+  { label: 'terr_tidal_gate', levelID: 61, seed: '7', ticks: 4000, sampleEvery: 25, skillIDs: [1], attacker: BUILD_ATTACKER },
+  // 蓄能塔 / 旋转风障：第 1 波内不可达，见上方注释
+  { label: 'terr_charge_tower', levelID: 41, seed: '1', ticks: 4000, sampleEvery: 25, skillIDs: [1], attacker: BUILD_ATTACKER },
+  { label: 'terr_rotor_vane', levelID: 81, seed: '1', ticks: 4000, sampleEvery: 25, skillIDs: [1], attacker: BUILD_ATTACKER },
+]
+
+const wireTerrainRows = TERRAIN_SCENARIOS.map((s) => {
+  const level = fixture.levels.find((l: any) => l.id === s.levelID)
+  if (!level) throw new Error(`夹具里没有第 ${s.levelID} 关`)
+  if (!(level.terrain || []).length) throw new Error(`第 ${s.levelID} 关没有地形 —— 场景选错了关`)
+
+  const enemyDefs = new Map<number, any>((fixture.enemies as any[]).map((e) => [e.id, e]))
+  const skillDefs = new Map<number, any>(
+    [...(fixture.skills as any[]), ...(fixture.composite_skills as any[])].map((x) => [x.id, x]),
+  )
+  const equipped = s.skillIDs.map((id, i) => {
+    const def = skillDefs.get(id)
+    if (!def) throw new Error(`技能 id ${id} 不在夹具里`)
+    return toEquippedSkill(def, i)
+  })
+
+  const engine = new BattleEngine({
+    level: level as never, // ⚠️ **不剥 terrain**
+    enemies: enemyDefs,
+    skills: skillDefs,
+    equipped: equipped as never,
+    attacker: s.attacker as never,
+    seed: BigInt(s.seed),
+    scoreRules: scoreRulesFromFixture(),
+    activeSlots: 4,
+  } as never)
+
+  engine.start()
+  const { trace, snap } = makeTracer(engine, s.sampleEvery)
+  snap()
+  for (let i = 0; i < s.ticks; i++) {
+    if (engine.phase !== 'wave' && engine.phase !== 'prepare') break
+    const before = (engine as any).replay.length
+    engine.step()
+    if (engine.tick % s.sampleEvery === 0 || (engine as any).replay.length > before) snap()
+  }
+  if (trace[trace.length - 1].tick !== engine.tick) snap()
+
+  return {
+    label: s.label,
+    level_id: s.levelID,
+    seed: s.seed,
+    ticks: s.ticks,
+    sample_every: s.sampleEvery,
+    level_waves: level.waves,
+    level_base_hp: level.base_hp,
+    level_armor_permille: level.armor_permille ?? 0,
+    level_element_cap: level.element_cap ?? 0,
+    level_max_reaction_tier: level.max_reaction_tier ?? 1,
+    // ⚠️ 地形**必须**带进文件：Go 侧要重建同样的地形实例。
+    //   只存地形类型就够 —— 位置/参数由关卡数据决定，
+    //   而关卡数据两侧读的是同一份 `smoke_levels.json`。
+    terrain_kinds: (level.terrain as any[]).map((t: any) => t.kind),
     equipped: s.skillIDs,
     attacker: {
       attack: s.attacker.attack.toString(),
@@ -1942,6 +2106,9 @@ const doc = {
   battle: {
     rows: buildRows,
   },
+  terrain_battle: {
+    rows: wireTerrainRows,
+  },
 }
 
 const outPath = resolve(serverRoot, 'testdata/engine_pure_vectors.json')
@@ -1953,3 +2120,4 @@ console.log(`  热量脚本 ${heatRows.length}（轨迹步 ${heatRows.reduce((a,
 console.log(`  地形脚本 ${terrainRows.length}（轨迹步 ${terrainRows.reduce((a, r) => a + r.trace.length, 0)}）`)
 console.log(`  波次场景 ${waveRows.length}（轨迹步 ${waveRows.reduce((a, r) => a + r.trace.length, 0)}）`)
 console.log(`  战斗场景 ${buildRows.length}（轨迹步 ${buildRows.reduce((a, r) => a + r.trace.length, 0)}）`)
+console.log(`  地形场景 ${wireTerrainRows.length}（轨迹步 ${wireTerrainRows.reduce((a, r) => a + r.trace.length, 0)}）`)
