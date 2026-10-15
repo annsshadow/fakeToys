@@ -20,6 +20,54 @@ pub mod u2_closures;
 
 use u2_closures::{ensure_limit, validate_single_select};
 
+/// 第二十批：本 crate 的「物理写注册在 GET 上」一族（13 把）与它的 POST 别名一律走**归属档**。
+/// 表上确实有可认的属主列（`creator_person` 回退 `creator`，与本 crate `u2_closures.rs` 开头
+/// 写明的既有约定同源），所以不套第十七/十八批的 admin 档，也不照那些批把设计器对象收给管理员。
+/// 口径与四轮同锁：无会话先 401（在 `pool.get()` 之前，离线可证）→ 归属非空则本人或 admin
+/// （`require_owner` 无库 fail-closed）→ 归属为空**或行不存在**只允许 admin——
+/// 不用「空归属 = 人人可写」把数据缺陷洗成权限放行。
+/// `table` / `key_col` 取 `&'static str`：SQL 标识符不能参数绑定，只允许内部字面量调用点。
+pub async fn require_row_owner(
+    pool: &Pool,
+    session: Option<Extension<shared::session::Session>>,
+    table: &'static str,
+    key_col: &'static str,
+    key: &str,
+) -> Result<(), AppError> {
+    let session = session.map(|ext| ext.0).ok_or(AppError::Unauthorized)?;
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let owner = client
+        .query_opt(
+            format!(
+                "SELECT coalesce(nullif(trim(creator_person), ''), creator, '') AS owner \
+                 FROM {table} WHERE {key_col} = $1"
+            )
+            .as_str(),
+            &[&key.to_string()],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?
+        .map(|r| r.get::<_, Option<String>>("owner").unwrap_or_default());
+    match owner.as_deref().map(str::trim).filter(|o| !o.is_empty()) {
+        Some(o) => shared::middleware::require_owner(pool, &session, o).await,
+        None => require_admin_opt(pool, Some(Extension(session))).await,
+    }
+}
+
+/// 无会话先 401（在任何 `pool.get()` 之前，离线可证）；非 admin 403（`is_admin` 无库 fail-closed）。
+/// 只给 `table/reload/dynamic` 这种**无键、按条件批量改写全表**的运维动作使用。
+async fn require_admin_opt(
+    pool: &Pool,
+    session: Option<Extension<shared::session::Session>>,
+) -> Result<(), AppError> {
+    let session = session.map(|ext| ext.0).ok_or(AppError::Unauthorized)?;
+    if shared::middleware::is_admin(pool, &session.person_unique).await {
+        Ok(())
+    } else {
+        Err(AppError::Forbidden)
+    }
+}
+
 const DESIGN_TABLE_PREFIX: &str = "x_query_data_";
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
@@ -1349,8 +1397,10 @@ pub async fn input_prepare_create(
 #[allow(non_snake_case)]
 pub async fn neural_generate_model_modelFlag(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(model_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_row_owner(&pool.0, session, "x_query_neural_model", "flag", &model_flag).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -1379,8 +1429,10 @@ pub async fn neural_generate_model_modelFlag(
 #[allow(non_snake_case)]
 pub async fn neural_learn_model_modelFlag(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(model_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_row_owner(&pool.0, session, "x_query_neural_model", "flag", &model_flag).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -1587,24 +1639,30 @@ async fn neural_model_modelFlag_reset_status_core(
 #[allow(non_snake_case)]
 pub async fn neural_model_modelFlag_reset_status(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(model_flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_row_owner(&pool.0, session, "x_query_neural_model", "flag", &model_flag).await?;
     neural_model_modelFlag_reset_status_core(pool, model_flag).await
 }
 
 #[allow(non_snake_case)]
 pub async fn neural_model_modelFlag_reset_status_p2(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((model_flag, _s1)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_row_owner(&pool.0, session, "x_query_neural_model", "flag", &model_flag).await?;
     neural_model_modelFlag_reset_status_core(pool, model_flag).await
 }
 
 #[allow(non_snake_case)]
 pub async fn neural_stop_generating_model_modelFlag(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(model_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_row_owner(&pool.0, session, "x_query_neural_model", "flag", &model_flag).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -1635,8 +1693,10 @@ pub async fn neural_stop_generating_model_modelFlag(
 #[allow(non_snake_case)]
 pub async fn neural_stop_learn_model_modelFlag(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(model_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_row_owner(&pool.0, session, "x_query_neural_model", "flag", &model_flag).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -2991,8 +3051,10 @@ pub async fn table_list_tableFlag_row_id_prev_count(
 #[allow(non_snake_case)]
 pub async fn table_query_query_build(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(query): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_row_owner(&pool.0, session, "x_query_table", "query_flag", &query).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -3017,7 +3079,9 @@ pub async fn table_query_query_build(
 #[allow(non_snake_case)]
 pub async fn table_reload_dynamic(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool.0, session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -3176,16 +3240,20 @@ async fn table_flag_status_build_core(
 #[allow(non_snake_case)]
 pub async fn table_flag_status_build(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_row_owner(&pool.0, session, "x_query_table", "table_flag", &flag).await?;
     table_flag_status_build_core(pool, flag).await
 }
 
 #[allow(non_snake_case)]
 pub async fn table_flag_status_build_p2(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((flag, _s1)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_row_owner(&pool.0, session, "x_query_table", "table_flag", &flag).await?;
     table_flag_status_build_core(pool, flag).await
 }
 
@@ -3219,16 +3287,20 @@ async fn table_flag_status_draft_core(
 #[allow(non_snake_case)]
 pub async fn table_flag_status_draft(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_row_owner(&pool.0, session, "x_query_table", "table_flag", &flag).await?;
     table_flag_status_draft_core(pool, flag).await
 }
 
 #[allow(non_snake_case)]
 pub async fn table_flag_status_draft_p2(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((flag, _s1)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_row_owner(&pool.0, session, "x_query_table", "table_flag", &flag).await?;
     table_flag_status_draft_core(pool, flag).await
 }
 
@@ -3270,8 +3342,10 @@ pub async fn table_id_permission(
 #[allow(non_snake_case)]
 pub async fn table_query_build_dispatch(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(query): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_row_owner(&pool.0, session, "x_query_table", "query_flag", &query).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client

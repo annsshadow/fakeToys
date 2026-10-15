@@ -2045,8 +2045,10 @@ pub async fn view_permission_set(
 #[allow(non_snake_case)]
 pub async fn table_build_dispatch_flag(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    crate::require_row_owner(&pool.0, session, "x_query_table", "table_flag", &flag).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
