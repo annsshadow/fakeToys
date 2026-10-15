@@ -16,7 +16,7 @@
  * 而台账数字看起来可能完全正常。不单独指出来的话，
  * 值班的人会以为防护开着。
  */
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import {
   fetchRecomputes,
@@ -32,6 +32,23 @@ const statsLoading = ref(false)
 const rows = ref<AdminRecompute[]>([])
 const total = ref(0)
 const summary = ref<RecomputeSummary | null>(null)
+
+/**
+ * 引擎侧静默失效告警。
+ *
+ * ⚠️ 这里**不是**再做一次判据：`status` 字段由服务端给出（见 admin
+ * summary 的 EngineTotals）。前端只负责读它、决定要不要弹、以及弹什么颜色。
+ *
+ * 而且只能是**读** —— 判据在后端，不在前端另写一套，
+ * 否则两处各写一遍、必然漂移 —— 这是 §9.2 专门留的钩子。
+ */
+const engineStatus = computed(() => summary.value?.engine?.status ?? '')
+const engineAlertType = computed<'error' | 'warning' | null>(() => {
+  const s = engineStatus.value
+  if (s.startsWith('验真覆盖为 0')) return 'error'
+  if (s.includes('cannot_run 偏高')) return 'warning'
+  return null
+})
 
 const userId = ref<number | undefined>(undefined)
 const levelId = ref<number | undefined>(undefined)
@@ -194,6 +211,22 @@ const asLevel = (r: unknown) => r as RecomputeLevelStat
       :description="`配置档位是 ${summary.configured_mode}，但近 ${hours} 小时不符率超阈值后已自动降级为 ${summary.mode}。本该拒发的上报正在被放行。原因：${summary.demoted_reason}。修复后需人工把 SETTLE_RECOMPUTE_MODE 改回 enforce —— 不会自动升档。`"
     />
 
+    <!--
+      引擎侧「静默失效」告警。
+      这个字段比上面的融断更危险：融断时系统**还在重算、仍在记录，
+      只是不再拒发**，而这里是在说「校验根本没跑过」—— 台账里也是 0 行，
+      但它们的含义完全不同。随时可能就这样静默地开着防护下去。
+    -->
+    <el-alert
+      v-if="engineAlertType"
+      :type="engineAlertType === 'error' ? 'error' : 'warning'"
+      show-icon
+      :closable="false"
+      style="margin-bottom: 12px"
+      :title="engineAlertType === 'error' ? '重算从未成功：防护其实是死的' : '重算长期算不出来：被放行的理由不是没问题'"
+      :description="`${engineStatus}。 verified=${summary?.engine?.verified ?? 0} / mismatch=${summary?.engine?.mismatch ?? 0} / cannot_run=${summary?.engine?.cannot_run ?? 0} / skipped=${summary?.engine?.skipped ?? 0}（从进程启动累计；settled_total=${summary?.engine?.settled_total ?? 0}）`"
+    />
+
     <div class="page-title">结算重算审计</div>
     <p class="page-subtitle">
       服务端重算与上报不符的记录。判读要点：<strong>不符集中在少数关卡</strong>说明引擎某段算错（回滚），
@@ -255,6 +288,24 @@ const asLevel = (r: unknown) => r as RecomputeLevelStat
           <div class="stat-label">已拒发</div>
           <div class="stat-value">{{ summary?.totals.rejected ?? '—' }}</div>
           <div class="stat-note muted">与不符数不等时，先看是不是被熔断了</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">验真覆盖</div>
+          <div class="stat-value">
+            <el-tag
+              v-if="summary?.engine"
+              :type="engineAlertType === 'error' ? 'danger' : engineAlertType === 'warning' ? 'warning' : 'success'"
+              size="small"
+            >
+              {{ summary.engine.settled_total === 0 ? '—' : Math.round(summary.engine.verified_permille / 10) + '%' }}
+            </el-tag>
+            <span v-else class="muted">—</span>
+          </div>
+          <div class="stat-note muted">
+            验真 {{ summary?.engine?.verified ?? 0 }} · 不符 {{ summary?.engine?.mismatch ?? 0 }} ·
+            算不出来 {{ summary?.engine?.cannot_run ?? 0 }} · 老客户端跳过 {{ summary?.engine?.skipped ?? 0 }} ·
+            至今累计 {{ summary?.engine?.settled_total ?? 0 }} 局（进程内，重部署清零）
+          </div>
         </div>
       </div>
 
