@@ -817,7 +817,7 @@ JSONL 进料交给转换器的读边解析成规范记录（`instruction` / `inp
 
 ### `GET /api/augment/progress`
 
-返回当前断点进度。无进行中的任务时返回 `{"status": "no_checkpoint"}`。
+返回当前断点进度——口径是**管理器此刻最后加载的那一份断点**，不是「你这次请求启动的那只任务」：本端点没有任何任务身份可传（响应模型里也没有 `task_id` 以外的选择器），并发跑多只增强时它只能报其中一只；要精确读某只任务，请用 `GET /api/augment/checkpoints` 拿到任务 ID 后按断点文件对账，或把增强串行跑。无进行中的任务时返回 `{"status": "no_checkpoint"}`。
 
 ```json
 {
