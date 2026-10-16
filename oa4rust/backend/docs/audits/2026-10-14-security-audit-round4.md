@@ -771,6 +771,16 @@ GET 写面队列里 `calendar_assemble_control` 与 `jpush_assemble_control` 各
 
 **注**：本批只做「设计对象 + DDL」这一族；同 crate 余下 **R7 含写 29 条**（view/statement/stat/importmodel/neural/input/icon 与 `table/row/*` 数据族）留下一批。`table/row/delete/all/{tableFlag}`（物理清空任意表）在数据族里，与设计对象分档（前者按设计器属主/数据面，后者 admin），届时单批定拍。
 
+### 三.41 第四十一批（query_assemble_designer `u2_closures` 设计对象 7 把收 admin 门）
+
+| 项 | 位置 | 处置与口径 |
+| --- | --- | --- |
+| u2 设计对象写（A2-F1） | `crates/query_assemble_designer/src/u2_closures.rs` `statement_create` / `statement_edit` / `statement_permission` / `stat_create` / `stat_edit` / `view_create` / `view_edit` | 查询语句 / 统计 / 视图定义为设计器元数据 ⇒ 收 admin 门（本模块 `require_admin_gate`：无会话 401 / 非 admin 403）。此前七把无会话无门，任意登录人可建/改任意语句·统计·视图定义，并**改语句权限配置**（可放开他人可见性） |
+| 路由别名辨析（记账） | `lib.rs` router | 这七把挂在 `u2::*` 限定名上（`/designer/statement`、`/designer/statement/{flag}` PUT、`/designer/statement/permission/{id}`、`/designer/stat`、`/designer/stat/{id}` PUT、`/designer/view`、`/designer/view/{id}` PUT），与批 37 收的 `crate::stat_create`（`/designer/stat/create`，crud 版）**同名不同源**——批 37 未覆盖本批七把，故本批单列 |
+| 验证（本批代码变更） | — | query_designer `54 passed / 0 failed`（新臂 `query_designer_u2_design_writes_require_admin`：七把无会话 401 + 非 admin 403）。尺子：**10 条 R7 → R5**，R7 975→**965**、含写 280→270、ungated −10；EXIT 0、判据见证缺口 0 |
+
+**注**：本批后 query_designer 余 **R7 含写 19 条**（`table/row/*` 数据族 9、`importmodel` 2、`neural` 3、`input` 3、`icon` 1 等）留下一批。
+
 ## 四、验证
 
 
