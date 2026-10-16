@@ -80,7 +80,25 @@ async fn test_update_control_config_route() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    // 极光推送广播写收 admin 门：无会话先于读库回 401（而非原先无门的 500）。
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+}
+
+#[tokio::test]
+async fn test_update_control_config_non_admin_forbidden() {
+    use axum::extract::Extension;
+    let pool = build_test_pool();
+    let sess = shared::testing::test_session("jpush-cc-nonadmin");
+    let r = crate::update_control_config(
+        Extension(pool),
+        Some(Extension(sess)),
+        axum::extract::Json(json!({"enabled": true, "maxPushCount": 5000})),
+    )
+    .await;
+    assert!(
+        matches!(r, Err(shared::error::AppError::Forbidden)),
+        "非 admin 写极光推送广播配置必须 403"
+    );
 }
 
 #[tokio::test]

@@ -588,6 +588,17 @@ A4 开放问题：① F1 是否 o2server 侧本就以 job/document 创建者为�
 | 新增待修（本批点名） | `crates/auth/src/oidc.rs::oidc_callback` | **OIDC 回调未校验 `state`**（登录 CSRF / session 固定风险）。`oidc_authorize` 目前透传客户端 state、不落服务端 state，故回调无从校验。修法：比照 oauth 的服务端 `generate_state`/`validate_state`，`oidc_authorize` 生成并存储服务端 state 放入授权 URL，`oidc_callback` 校验。**本批未改**（改 authorize 的 state 语义属登录流行为变更，需端到端联调 IdP，单独一批），先记账 |
 | 验证（本批代码变更） | — | `organization_assemble_control` `151 passed / 0 failed`（含新回归臂；无会话离线臂 401 绿）。真库臂（admin 落笔回读）因本机 Docker 守护进程不可达（`wsl.exe` 被沙箱策略拦截、Docker Desktop 无法在当前会话重启）而**跳过**——`require_admin_opt` 门已在批 21 对真库取证，`is_admin` fail-closed 令非 admin 恒 403（既有 `org_structure_writes_forbidden_for_non_admin` 离线即证），admin 放行落笔路径为确定性的同一 helper，判定风险低；真库臂待 Docker 重启后补跑 |
 
+### 三.24 第二十四批（calendar / jpush 的 update_control_config 收 admin 门）
+
+GET 写面队列里 `calendar_assemble_control` 与 `jpush_assemble_control` 各有一把 `update_control/config`（模块级 update_control_config 家族 A3-N11 的两格）。修前两把均不取会话、无门禁：
+
+| 项 | 位置 | 处置与口径 |
+| --- | --- | --- |
+| calendar 全局配置写 | `crates/calendar_assemble_control/src/lib.rs::update_control_config`（`/api/calendar_assemble_control/update/control/config`，GET） | 往 `cal_control_config` 写全局开关（enabled / 时区 / 共享），任一登录用户可改 ⇒ 收 admin 门：`Option<Extension<Session>>` + `is_admin`（无会话 401 / 非 admin 403）。回归：无会话 HTTP 臂 401、非 admin 直接调用 403（`is_admin` fail-closed） |
+| jpush 推送广播写 | `crates/jpush_assemble_control/src/lib.rs::update_control_config`（GET 与 POST 双注册） | 往 `x_jpush` 建 `target='all'`、`creator` 硬编码 `system` 的广播，任一登录用户可触发全员推送 ⇒ 收 admin 门（同上口径）。回归：无会话 401、非 admin 403 |
+| 契约臂返工 | 两 crate `src/tests.rs::test_update_control_config_route` | 原断言 500（无门 + 无库）。加门后无会话先于读库回 401，断言改为 `UNAUTHORIZED`（属「契约臂钉 500」族 272 处之一，行为真变、逐条钉期望，不放宽判据） |
+| 验证 | — | `calendar_assemble_control` `34 passed / 0 failed`、`jpush_assemble_control` `28 passed / 0 failed`（mock pool，无需真库：无会话 401、非 admin 403 均由门 + `is_admin` fail-closed 离线即证）。admin 放行落笔臂待 Docker 重启补跑 |
+
 ## 四、验证
 
 
