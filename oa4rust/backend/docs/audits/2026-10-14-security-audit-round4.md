@@ -760,6 +760,17 @@ GET 写面队列里 `calendar_assemble_control` 与 `jpush_assemble_control` 各
 | 验证（本批代码变更） | — | personal_extend `19 passed / 0 failed / 1 ignored`（`face_writes_require_owner` 扩臂：`face_create` 离线 401 + 真库自限定「非 admin 携他人 personId，落库归属仍被强制为本人」）。尺子：`face_create` R7→R5（R7 989→**988**）、R6 119（含写 105→**106**、只读挂写 14→**13**）、只读挂写表 −2、ungated −1；EXIT 0、判据见证缺口 0 |
 | 残留（记账，不修） | — | `program_center collect_create` 仍 R6「读会话无门禁」——其 `creator` 取自会话（**自归属**），属已定性假阳（批 31 的 `SELF_SCOPE_SQL_RE` 有意不认 `creator`，避免把「`SET creator=$session`」的按 id 覆写读成有门）；本批只把它从「只读挂写」纠正为「含写 SQL」 |
 
+### 三.40 第四十批（query_assemble_designer 设计对象 + DDL 族 8 把收 admin 门）
+
+| 项 | 位置 | 处置与口径 |
+| --- | --- | --- |
+| 设计对象 CRUD（A2-F1） | `crates/query_assemble_designer/src/lib.rs` `create_designer` / `save_designer` / `delete_designer` + 裸路径别名 `save_designer_bare` / `delete_designer_bare` | `x_query_design` 为设计器元数据 ⇒ 收 admin 门（本 crate `require_admin_opt`：无会话 401 / 非 admin 403）。此前五把无会话无门：任意登录人可建/覆写/软删任意查询设计对象 |
+| 查询表定义 + **DDL 执行**（A2-F2 / A2-F3） | 同上 `create_table_definition` / `update_table_definition` / `execute_table_definition` | 表定义（DDL 蓝图）为设计器元数据、`execute` 按 flag **执行建表/改表语句**（执行权错位，最高危）⇒ 三把收 admin 门 |
+| 验证（本批代码变更） | — | query_designer `53 passed / 0 failed`（3 条钉 500 的契约臂改 401，行为真变；新臂 `query_designer_design_writes_require_admin`：八把无会话 401 + 非 admin 403）。尺子：**13 条 R7 → R5**（create/save/delete designer 各 POST/PUT/DELETE + 裸别名 + table/create/update/execute），R7 988→**975**、含写 293→280、ungated −13；EXIT 0、判据见证缺口 0 |
+| 尺子反向见证改钉（修尺） | `scripts/audit_write_gating.mjs::NEG_WITNESS_1920` | 原钉第一条 `query_assemble_designer DELETE …/designer/delete`（`delete_designer_bare`）本批**真的加上了 `require_admin`**（不是尺子误判），钉子被合法冲掉、尺子退 EXIT 1（「无门路由被误判成 R5」）；按第二十二批先例换钉到 `personal PUT /api/reset`（`reset_password`）——密码重置是**设计上匿名**入口（加会话门等于打断「忘记密码」），体内有 `apply_reset` 转调，同为「把 helper 转调当门禁」的强载荷。复跑 EXIT 0、缺口 0 |
+
+**注**：本批只做「设计对象 + DDL」这一族；同 crate 余下 **R7 含写 29 条**（view/statement/stat/importmodel/neural/input/icon 与 `table/row/*` 数据族）留下一批。`table/row/delete/all/{tableFlag}`（物理清空任意表）在数据族里，与设计对象分档（前者按设计器属主/数据面，后者 admin），届时单批定拍。
+
 ## 四、验证
 
 

@@ -201,8 +201,11 @@ fn table_columns_json(columns: &[TableColumnDefinition]) -> Result<String, AppEr
 #[allow(non_snake_case)]
 pub async fn create_table_definition(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A2-F2：查询表定义（DDL 蓝图）为设计器元数据 ⇒ 收 admin 门（无会话 401 / 非 admin 403）。
+    require_admin_opt(&pool, session).await?;
     let name = body
         .get("name")
         .and_then(Value::as_str)
@@ -250,9 +253,12 @@ pub async fn create_table_definition(
 #[allow(non_snake_case)]
 pub async fn update_table_definition(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(flag): Path<String>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A2-F2：查询表定义改写（DDL 蓝图）为设计器元数据 ⇒ 收 admin 门。
+    require_admin_opt(&pool, session).await?;
     let columns = parse_table_columns(&body)?;
     let columns_json = table_columns_json(&columns)?;
     let name = body.get("name").and_then(Value::as_str).unwrap_or_default();
@@ -278,8 +284,11 @@ pub async fn update_table_definition(
 #[allow(non_snake_case)]
 pub async fn execute_table_definition(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A2-F3：DDL 执行权错位——按 flag 执行建表/改表语句为高危管理动作 ⇒ 收 admin 门。
+    require_admin_opt(&pool, session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
@@ -463,8 +472,11 @@ pub async fn get_designer(
 #[allow(non_snake_case)]
 pub async fn create_designer(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(req): Json<CreateDesignerRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A2-F1：查询设计对象为设计器元数据 ⇒ 收 admin 门（无会话 401 / 非 admin 403）。
+    require_admin_opt(&pool, session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -553,9 +565,12 @@ pub async fn list_designers(
 #[allow(non_snake_case)]
 pub async fn save_designer(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(req): Json<CreateDesignerRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A2-F1：查询设计对象按 id 覆写 ⇒ 收 admin 门。
+    require_admin_opt(&pool, session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let name = req.name.unwrap_or_default();
@@ -591,8 +606,11 @@ pub async fn save_designer(
 #[allow(non_snake_case)]
 pub async fn delete_designer(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A2-F1：查询设计对象按 id 软删 ⇒ 收 admin 门。
+    require_admin_opt(&pool, session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -665,8 +683,11 @@ pub async fn list_designers_all(
 #[allow(non_snake_case)]
 pub async fn save_designer_bare(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Json(req): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A2-F1：查询设计对象（裸路径别名，id 取请求体）覆写 ⇒ 收 admin 门。
+    require_admin_opt(&pool, session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = req
         .get("id")
@@ -732,8 +753,11 @@ pub async fn save_designer_bare(
 #[allow(non_snake_case)]
 pub async fn delete_designer_bare(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Json(req): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A2-F1：查询设计对象（裸路径别名，id 取请求体）软删 ⇒ 收 admin 门。
+    require_admin_opt(&pool, session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = req
         .get("id")

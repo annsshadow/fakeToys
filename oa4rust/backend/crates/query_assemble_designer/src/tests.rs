@@ -117,7 +117,8 @@ async fn test_create_designer_route_exists() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    // 本批给设计对象写收 admin 门：无会话先于读库回 401（而非原先无门的 500）。
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
 }
 
 #[tokio::test]
@@ -181,7 +182,8 @@ async fn test_save_designer_route_exists() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    // 设计对象写收 admin 门：无会话先于读库回 401。
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
 }
 
 #[tokio::test]
@@ -200,7 +202,8 @@ async fn test_delete_designer_route_exists() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    // 设计对象写收 admin 门：无会话先于读库回 401。
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -1403,6 +1406,60 @@ mod security_gate_tests {
             assert!(
                 matches!(r, Err(AppError::Forbidden)),
                 "第 {i} 把（importer/stat 序）非 admin 必须 403"
+            );
+        }
+    }
+
+    /// 第 40 批回归臂：设计对象 + DDL 族（create/save/delete designer 及裸别名、
+    /// create/update/execute table definition）收 admin 门（A2-F1/F2/F3）。
+    /// 离线：无会话 401（先于读库）；非 admin（mock pool fail-closed）403。
+    #[tokio::test]
+    async fn query_designer_design_writes_require_admin() {
+        use shared::error::AppError;
+        let dead = build_test_pool();
+        let jbody = || axum::Json(json!({"name": "x"}));
+        let dbody = || {
+            axum::Json(crate::CreateDesignerRequest {
+                name: Some("x".to_string()),
+                query: None,
+                category: None,
+            })
+        };
+        let path = || axum::extract::Path("f".to_string());
+
+        let unauth = [
+            crate::create_designer(axum::Extension(dead.clone()), None, dbody()).await,
+            crate::save_designer(axum::Extension(dead.clone()), None, path(), dbody()).await,
+            crate::delete_designer(axum::Extension(dead.clone()), None, path()).await,
+            crate::save_designer_bare(axum::Extension(dead.clone()), None, jbody()).await,
+            crate::delete_designer_bare(axum::Extension(dead.clone()), None, jbody()).await,
+            crate::create_table_definition(axum::Extension(dead.clone()), None, jbody()).await,
+            crate::update_table_definition(axum::Extension(dead.clone()), None, path(), jbody())
+                .await,
+            crate::execute_table_definition(axum::Extension(dead.clone()), None, path()).await,
+        ];
+        for (i, r) in unauth.iter().enumerate() {
+            assert!(
+                matches!(r, Err(AppError::Unauthorized)),
+                "第 {i} 把（设计对象/DDL 序）无会话必须 401"
+            );
+        }
+
+        let s = || Some(axum::Extension(shared::testing::test_session("u-qd-design-nobody")));
+        let forbidden = [
+            crate::create_designer(axum::Extension(dead.clone()), s(), dbody()).await,
+            crate::save_designer(axum::Extension(dead.clone()), s(), path(), dbody()).await,
+            crate::delete_designer(axum::Extension(dead.clone()), s(), path()).await,
+            crate::save_designer_bare(axum::Extension(dead.clone()), s(), jbody()).await,
+            crate::delete_designer_bare(axum::Extension(dead.clone()), s(), jbody()).await,
+            crate::create_table_definition(axum::Extension(dead.clone()), s(), jbody()).await,
+            crate::update_table_definition(axum::Extension(dead.clone()), s(), path(), jbody()).await,
+            crate::execute_table_definition(axum::Extension(dead.clone()), s(), path()).await,
+        ];
+        for (i, r) in forbidden.iter().enumerate() {
+            assert!(
+                matches!(r, Err(AppError::Forbidden)),
+                "第 {i} 把（设计对象/DDL 序）非 admin 必须 403"
             );
         }
     }
