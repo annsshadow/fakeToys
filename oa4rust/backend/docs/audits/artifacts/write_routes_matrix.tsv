@@ -757,10 +757,10 @@ jpush	POST	/api/jpush/device/create	device_create	R6-已认证+读会话无门�
 jpush_assemble_control	DELETE	/api/jpush_assemble_control/device/unbind/{deviceName}/{deviceType}	device_unbind_deviceName_deviceType	R7-已认证+体内无会话无门禁
 jpush_assemble_control	POST	/api/jpush/assemble/control/device/bind	device_bind	R7-已认证+体内无会话无门禁
 jpush_assemble_control	POST	/api/jpush/assemble/control/update/control/config	update_control_config	R5-已认证+体内门禁
-jpush_assemble_control	POST	/api/jpush/create	create_jpush	R7-已认证+体内无会话无门禁
+jpush_assemble_control	POST	/api/jpush/create	create_jpush	R5-已认证+体内门禁
 jpush_assemble_control	POST	/api/jpush/delete/{id}	delete_jpush	R7-已认证+体内无会话无门禁
 jpush_assemble_control	POST	/api/jpush/save/{id}	save_jpush	R7-已认证+体内无会话无门禁
-jpush_assemble_control	POST	/api/jpush_assemble_control/device/admin/unbind/all/person	device_admin_unbind_all_person	R7-已认证+体内无会话无门禁
+jpush_assemble_control	POST	/api/jpush_assemble_control/device/admin/unbind/all/person	device_admin_unbind_all_person	R5-已认证+体内门禁
 jpush_assemble_control	POST	/api/jpush_assemble_control/device/bind	device_bind	R7-已认证+体内无会话无门禁
 jpush_assemble_control	POST	/api/jpush_assemble_control/message/send	message_send	R7-已认证+体内无会话无门禁
 jpush_assemble_control	POST	/api/jpush_assemble_control/message/test/send	message_test_send	R7-已认证+体内无会话无门禁
