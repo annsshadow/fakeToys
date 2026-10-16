@@ -17,6 +17,17 @@ export function adminMe() {
   return api.get<{ admin: { id: number; username: string; role: string } }>('/admin/me')
 }
 
+/**
+ * 第 155 轮：后台登出。
+ *
+ * 服务端吊销该管理员的**全部**会话（与玩家侧 /me/logout 同口径），
+ * 不是只清本地 localStorage。响应回带被吊销的会话条数（幂等：
+ * 重复调用 = 0）。
+ */
+export function adminLogout() {
+  return api.post<{ revoked_sessions: number }>('/admin/logout')
+}
+
 // ---------- 看板 ----------
 
 export interface DashboardResp {
