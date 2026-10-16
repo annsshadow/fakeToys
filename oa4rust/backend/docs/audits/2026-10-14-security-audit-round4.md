@@ -655,6 +655,17 @@ GET 写面队列里 `calendar_assemble_control` 与 `jpush_assemble_control` 各
 
 **第三十批收口后 GET 写面队列余 26 条的性质（已逐 crate 核实）**：多为**假阳或非简单 IDOR**，非「写 by id 无会话」型真漏洞——`auth` 6（OAuth 回调，多为已验证匿名流，oidc 缺 state 已记账）、`calendar_assemble_control` 1（follow/cancel，写按 person=session 自限定）、`cms_assemble_control` 5（commend/uncommend，person_id=session 自限定）、`message_assemble_communicate` 2（is_conversation_member + person=session 自限定）、`mind_assemble_control` 1（restore，已有 person_can_manage_mind 门）、`program_center` 2（captcha/code，登录流匿名设计）、`program_init` 1（secret/set/cancel，有意匿名）、`meeting_assemble_control` 4（accept/checkin/manual_completed/reject，属账本「待拍」产品档位）、`organization_assemble_authentication` 2（qiyeweixin bind / oauth auth 回调，需同 auth 族定性）、`message` 1（consume 按 id 标记已消费，低危语义含混）、`general_assemble_control` 1（qrcode 生成，疑只读）。真漏洞型（写 by id、无会话）已在前 30 批收口。
 
+### 三.31 第三十一批（尺子自限定识别：GATE_RE 补门助手 + 自限定判据，尺子缺陷 26 族）
+
+纯尺子轴，零产品码。把「写 SQL 把会话身份绑进 person 列」的自限定形状认成门，出清一批假阳：
+
+| 项 | 位置 | 处置与口径 |
+| --- | --- | --- |
+| GATE_RE 补两个门助手 | `scripts/audit_write_gating.mjs::GATE_RE` | 补 `is_conversation_member`（msg_communicate 的成员门）、`person_can_manage_mind`（mind 的属主/管理门）——两者都是明确的 owner/member 判定入口 |
+| 自限定判据 | 新增 `SELF_SCOPE_RE` + `SELF_SCOPE_SQL_RE`，接入 `gateEvidence` | 命中条件：体内既有 `&session.person_unique`（会话身份被绑定），又有「`person`/`person_id`/`user_id` 列 = 占位符」的写 SQL ⇒ 只改/建自己名下的行，对 IDOR 等价归属门。**只认 person 三列、不认 creator**：`SET creator=$session` 是按 id 更新的归属标注（非自限定），认了会把「按 id 改任意行」的 IDOR 误判成有门（假阴更危险）。反向见证内置：仅当日志、写 SQL 无 person 列不得命中 |
+| 读数 | — | GET 写面 26→**19**（出清 calendar_follow_cancel、cms commend/uncommend×3、msg_communicate quit/self + single_delete_virtual、mind_restore 共 7 条假阳）；R6→R5 自限定重分类 24 条（POST/PUT/DELETE 面，spot-check `file recycle_empty` 确为 `WHERE person=$session` 自限定）；判据见证缺口 0 |
+| 余 19 条性质 | — | auth 6（回调，验签族）、cms 2（view_count 计数器 + comment_commend_u3 自限定 INSERT，均合法已认证写）、general 1（qrcode 疑只读）、meeting 4（待拍产品档位）、message 1（consume 低危）、org_auth 2（回调验签族）、program_center 2（captcha/code 登录流匿名设计）、program_init 1（secret/set/cancel 有意匿名）。真 IDOR 漏洞型已全清 |
+
 ## 四、验证
 
 

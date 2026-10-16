@@ -349,7 +349,16 @@ const SESSION_RE = /Extension\s*<\s*(?:crate::)?(?:shared::)?session::Session|Ex
 // 它是逐个点名 SQL 的属主判定入口（admin 旁路 + 非属主 Forbidden），按门计；
 // 反向见证钉在「体内确无判定入口」的 document_id_view_count 上，防止词表被扩成恒真。
 const GATE_RE =
-  /\b(?:require_admin|require_owner|require_actor|require_session|u4_session|u4_require|u2_require|u2_check_owner|u2_gate_by_sql|owner_gate|is_admin|check_permission|assert_admin|require_role|guard_write|validate_session|extract_token_from_headers|resolve_current_person|gate_doc_writer|gate_topic_owner|gate_reply_owner|gate_attachment_owner|gate_appdict_writer)/;
+  /\b(?:require_admin|require_owner|require_actor|require_session|u4_session|u4_require|u2_require|u2_check_owner|u2_gate_by_sql|owner_gate|is_admin|check_permission|assert_admin|require_role|guard_write|validate_session|extract_token_from_headers|resolve_current_person|gate_doc_writer|gate_topic_owner|gate_reply_owner|gate_attachment_owner|gate_appdict_writer|is_conversation_member|person_can_manage_mind)/;
+// 自限定识别（第三十一批，尺子缺陷 26 族）：写 SQL 把**会话身份**（person_unique）绑进
+// person 列（`person = $N` / `person_id = $N` / `user_id = $N`），即「只改/建自己名下的行」，
+// 对 IDOR 而言等价于归属门。命中条件：体内既有 `&session.person_unique`（会话身份被绑定），
+// 又有「person 列 = 占位符」的写 SQL。**只认 person/person_id/user_id 三列，不认 creator**：
+// `SET creator = $session` 是按 id 更新的归属标注（非自限定），认了会把「按 id 改任意行」的
+// IDOR 误判成有门（假阴方向，比假阳更危险）。反向见证内置：仅把 person_unique 当日志、写 SQL
+// 无 person 列的 handler 不得命中（两个条件同时成立才作证），防止词表被扩成恒真。
+const SELF_SCOPE_RE = /&(?:session|sess|s|cur|current|me)\.person_unique/;
+const SELF_SCOPE_SQL_RE = /\b(?:person|person_id|user_id)\b[^;\n]{0,48}=\s*\$\d/;
 const fnCache = new Map();
 // 尺子缺陷 11（本批修）：注册点写的是 `post(u2::review_create_work)`，旧实现入表时把 `u2::`
 // 限定符 `.split("::").pop()` 剥掉，`fnBody` 再按「遍历 crates/<crate>/src 命中的**第一个**同名 fn」
@@ -746,6 +755,8 @@ function helperCanReject(hb) {
 function gateEvidence(crate, body, depth = 0) {
   if (!body) return false;
   if (GATE_RE.test(body)) return true;
+  // 自限定识别：会话身份绑进 person 列的写 SQL ⇒ 只改/建自己名下的行（等价归属门）。
+  if (SELF_SCOPE_RE.test(body) && SELF_SCOPE_SQL_RE.test(body)) return true;
   if (depth >= 3) return false;
   // 尺子缺陷 24（第二十批抓到并修，机理与解析口径见 `callHelperBody` 上方注释）：
   // 旧正则的前视断言排除 `:`，限定路径调用点整条扫不到，本把门只作证裸名那 13 把。
