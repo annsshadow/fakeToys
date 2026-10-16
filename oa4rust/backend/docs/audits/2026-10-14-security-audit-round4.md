@@ -618,6 +618,14 @@ GET 写面队列里 `calendar_assemble_control` 与 `jpush_assemble_control` 各
 | chat 线索删除 | `::chat_delete_clue_id`（`/api/ai_assemble_control/chat/delete/{clueId}`，GET） | 本有归属门但用**原始串比较** `user_id != session.person_unique`（无 admin 旁路、大小写变体误拒）⇒ 重构为 `require_owner`（归一化 + admin 旁路），并改 `Option<Session>` 令无会话 401（原裸 `Extension<Session>` 无会话 500） |
 | 验证 | — | `ai_assemble_control` `54 passed / 0 failed`（含真库臂 `test_ai_get_writes_owner_admin_gate`：无会话四把全 401；非属主/非 admin 403 且不落笔；属主放行 file/index 真删、chat 软删；admin 旁路放行 + index_sync 跑通；收口零残留）。`test_u2_index_sync_no_json_body_required` 断言 500→401（行为真变）。尺子 GET 写面 44→40 |
 
+### 三.27 第二十七批（file_assemble_control 2 把 GET 写面：1 admin + 1 归属）
+
+| 项 | 位置 | 处置与口径 |
+| --- | --- | --- |
+| 批量清理文件 | `crates/file_assemble_control/src/lib.rs::file_clean_unused_referencetype_cmsdocument_manage`（`/api/file/clean/unused/referencetype/cmsdocument/manage`，GET） | `DELETE FROM file_file WHERE reference_type='cmsdocument_manage'` 批量删属管理维护写面 ⇒ 收 admin 门（无会话 401 / 非 admin 403） |
+| 复制附件 | `::file_copy_attachment_attachmentId_referencetype_referenceType_reference_reference_scale_scale`（GET，两条重复路径映射同一 handler） | 读源 FILE_FILE 行并在 FILE_FILE 新建一行（继承源 `person`）⇒ 收归属门：先取源 `person` 再 `require_owner`（admin 放行 / 本人放行），源不存在回 `attachment not found` |
+| 验证 | — | `file_assemble_control` `92 passed / 0 failed`（含真库臂 `test_file_get_writes_owner_admin_gate`：无会话两把 401；非 admin 403 不删、非属主 403 不建复制行；属主 copy 放行建 1 行；admin clean_unused 删 cmsdocument_manage 行 + admin copy 放行；收口零残留）。尺子 GET 写面 40→37 |
+
 ## 四、验证
 
 
