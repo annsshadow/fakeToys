@@ -1363,4 +1363,47 @@ mod security_gate_tests {
 
         unseed().await;
     }
+
+    /// 第 37 批回归臂：设计器元数据写（importer / stat 各 create/save/delete，共 6 把）
+    /// 收 admin 门（A3-N9）。离线：无会话 401（先于读库）；非 admin（mock pool fail-closed）403。
+    #[tokio::test]
+    async fn query_designer_meta_writes_require_admin() {
+        use shared::error::AppError;
+        let dead = build_test_pool();
+        let body = || axum::Json(json!({}));
+        let path = || axum::extract::Path("x".to_string());
+
+        // 无会话 → 六把全 401
+        let unauth = [
+            crate::importer_create(axum::Extension(dead.clone()), None, body()).await,
+            crate::importer_save(axum::Extension(dead.clone()), None, path(), body()).await,
+            crate::importer_delete(axum::Extension(dead.clone()), None, path()).await,
+            crate::stat_create(axum::Extension(dead.clone()), None, body()).await,
+            crate::stat_save(axum::Extension(dead.clone()), None, path(), body()).await,
+            crate::stat_delete(axum::Extension(dead.clone()), None, path()).await,
+        ];
+        for (i, r) in unauth.iter().enumerate() {
+            assert!(
+                matches!(r, Err(AppError::Unauthorized)),
+                "第 {i} 把（importer/stat 序）无会话必须 401"
+            );
+        }
+
+        // 非 admin → 六把全 403
+        let s = || Some(axum::Extension(shared::testing::test_session("u-qd-nobody")));
+        let forbidden = [
+            crate::importer_create(axum::Extension(dead.clone()), s(), body()).await,
+            crate::importer_save(axum::Extension(dead.clone()), s(), path(), body()).await,
+            crate::importer_delete(axum::Extension(dead.clone()), s(), path()).await,
+            crate::stat_create(axum::Extension(dead.clone()), s(), body()).await,
+            crate::stat_save(axum::Extension(dead.clone()), s(), path(), body()).await,
+            crate::stat_delete(axum::Extension(dead.clone()), s(), path()).await,
+        ];
+        for (i, r) in forbidden.iter().enumerate() {
+            assert!(
+                matches!(r, Err(AppError::Forbidden)),
+                "第 {i} 把（importer/stat 序）非 admin 必须 403"
+            );
+        }
+    }
 }

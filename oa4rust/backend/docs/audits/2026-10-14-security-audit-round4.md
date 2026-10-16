@@ -727,6 +727,18 @@ GET 写面队列里 `calendar_assemble_control` 与 `jpush_assemble_control` 各
 
 **注**：A3-N9 波及约 12 crate，本批收 8 把（search/bbs/org），已核实 ai/console/general/program_center/cms/portal 六 crate 的 crud 面早已有门；**余 pp_designer（dict/form/xform 9 把）与 query_assemble_designer（importer/stat 6 把）** 为下一批（同为无会话无门的设计器元数据写）。
 
+### 三.37 第三十七批（A3-N9 crud 迁移收口批：pp_designer / query_designer 设计器元数据写收 admin 门）
+
+| 项 | 位置 | 处置与口径 |
+| --- | --- | --- |
+| pp_designer 九把 | `crates/processplatform_assemble_designer/src/lib.rs` `dict_create/save/delete`、`form_create/save/delete`、`xform_create/save/delete` | 应用字典（`pp_e_applicationdict`）/流程表单（`pp_e_form`）/扩展表单（`x_pp_xform`）为设计器元数据 ⇒ 收 admin 门：`Option<Extension<Session>>`（无会话 401）+ 本 crate `require_admin_gate`（非 admin 403）。此前九把 `(pool, body/Path)` 无会话无门 |
+| query_designer 六把 | `crates/query_assemble_designer/src/lib.rs` `importer_create/save/delete`、`stat_create/save/delete` | 导入模型（`x_query_import_model`）/统计定义（`x_query_stat`）为设计器元数据 ⇒ 收 admin 门，用本 crate `require_admin_opt`（无会话 401 / 非 admin 403） |
+| 验证（本批代码变更） | — | pp_designer `30 passed / 0 failed / 1 ignored`（新臂 `pp_designer_meta_writes_require_admin`：九把无会话 401 + 非 admin 403）；query_designer `52 passed / 0 failed`（新臂 `query_designer_meta_writes_require_admin`：六把 401/403）。尺子：**24 条 R7 → R5**，R6 119 不动、R7 1018→**994**、ungated −24、只读挂写 −24；EXIT 0、判据见证缺口 0 |
+
+**A3-N9 收口声明**：本批后，全仓 `shared::crud_create/save/delete` 的调用面**已全部有门或已迁移归属版**——ai/console/general/cms/portal/program_center 六 crate 原已有门（`require_admin`/`is_admin`/`u2_require_admin`/属主自限定）；search/bbs/org（批 36）与 pp_designer/query_designer（本批）为新收 admin 门；`personal_extend::face_*` 已于批 34 迁 `crud_save_owned/crud_delete_owned`（`person_id` 归属）。**A3-N9 一格可结**（后续新写的 crud 调用点须自带门或走归属版）。
+
+**一处路由别名（记账非缺陷）**：`DELETE /api/query/assemble/designer/stat/delete/{id}` 由 `u2::stat_delete`（同表软删）占用、早已 R5，本批改的 `crate::stat_delete` 只作用于该路径的 **POST** 别名——故本批净迁 **24** 条而非 25 条（逐条对账 `HEAD`：25 条目标路由中 24 条原 R7、1 条（该 DELETE）原 R5）。
+
 ## 四、验证
 
 
@@ -2317,7 +2329,8 @@ cd oa4rust/backend && cargo test --lib -p <crate>
   program_center **2 把**（captcha / code）与 `creator='system'` 冒名 3 处（`lib.rs:1691 / 1844 / 8722`）、
   第三方回调**零验签**族（正压在下一批入口 auth 那 6 条头上）、A1 真匿名写 9 条属限流族
   （surface 的 `html_to_pdf` / `html_to_image` 两把经本批定性订正后**并入这一族**，不再是「无界 CPU」）、
-  24 条死档 needs 独立守卫、门禁入口两族并存、`shared/src/crud.rs` CrudSpec 无归属、
+  24 条死档 needs 独立守卫、门禁入口两族并存、~~`shared/src/crud.rs` CrudSpec 无归属~~ **已于批 34+36+37 收口**
+  （归属版 `crud_save_owned/crud_delete_owned` + 全仓 crud 调用面逐 crate 加门，A3-N9 结）、
   correlation 读侧 IDOR（含 `neural_list_calculate_with_work`）、F5 / F7 / F8 / F10、N4-02 / N4-03、
   `GATE_RE` 里 `require_actor` 无独立见证的冗余词、路径参数不消费族（全仓普查未做）、
   program_center schema drift 42703 族与 `assert_eq!(status, 500)` 断言族 272 处（本批 ignored 族那两格红正属此族）、

@@ -4893,8 +4893,14 @@ fn dict_spec() -> shared::crud::CrudSpec {
 #[allow(non_snake_case)]
 pub async fn dict_create(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     body: Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A3-N9：应用字典为设计器元数据，写入收 admin 门（无会话 401 / 非 admin 403）。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    require_admin_gate(&pool, &sess).await?;
     let id = shared::crud_create(&pool, &dict_spec(), &body.0).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -4908,9 +4914,15 @@ pub async fn dict_create(
 #[allow(non_snake_case)]
 pub async fn dict_save(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     Path(id): Path<String>,
     body: Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A3-N9：应用字典为设计器元数据，写入收 admin 门。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    require_admin_gate(&pool, &sess).await?;
     let saved = shared::crud_save(&pool, &dict_spec(), &id, &body.0).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -4924,8 +4936,14 @@ pub async fn dict_save(
 #[allow(non_snake_case)]
 pub async fn dict_delete(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A3-N9：应用字典为设计器元数据，写入收 admin 门。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    require_admin_gate(&pool, &sess).await?;
     let deleted = shared::crud_delete(&pool, &dict_spec(), &id).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -5009,8 +5027,14 @@ fn form_spec() -> shared::crud::CrudSpec {
 #[allow(non_snake_case)]
 pub async fn form_create(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     body: Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A3-N9：流程表单为设计器元数据，写入收 admin 门。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    require_admin_gate(&pool, &sess).await?;
     let id = shared::crud_create(&pool, &form_spec(), &body.0).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -5024,9 +5048,15 @@ pub async fn form_create(
 #[allow(non_snake_case)]
 pub async fn form_save(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     Path(id): Path<String>,
     body: Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A3-N9：流程表单为设计器元数据，写入收 admin 门。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    require_admin_gate(&pool, &sess).await?;
     let saved = shared::crud_save(&pool, &form_spec(), &id, &body.0).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -5040,8 +5070,14 @@ pub async fn form_save(
 #[allow(non_snake_case)]
 pub async fn form_delete(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A3-N9：流程表单为设计器元数据，写入收 admin 门。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    require_admin_gate(&pool, &sess).await?;
     let deleted = shared::crud_delete(&pool, &form_spec(), &id).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -5135,8 +5171,14 @@ fn xform_spec() -> shared::crud::CrudSpec {
 #[allow(non_snake_case)]
 pub async fn xform_create(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     body: Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A3-N9：扩展表单为设计器元数据，写入收 admin 门。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    require_admin_gate(&pool, &sess).await?;
     let id = shared::crud_create(&pool, &xform_spec(), &body.0).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -5150,9 +5192,15 @@ pub async fn xform_create(
 #[allow(non_snake_case)]
 pub async fn xform_save(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     Path(id): Path<String>,
     body: Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A3-N9：扩展表单为设计器元数据，写入收 admin 门。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    require_admin_gate(&pool, &sess).await?;
     let saved = shared::crud_save(&pool, &xform_spec(), &id, &body.0).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -5166,8 +5214,14 @@ pub async fn xform_save(
 #[allow(non_snake_case)]
 pub async fn xform_delete(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A3-N9：扩展表单为设计器元数据，写入收 admin 门。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    require_admin_gate(&pool, &sess).await?;
     let deleted = shared::crud_delete(&pool, &xform_spec(), &id).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
