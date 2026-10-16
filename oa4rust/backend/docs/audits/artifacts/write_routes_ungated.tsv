@@ -316,7 +316,6 @@ jpush_assemble_control	POST	/api/jpush_assemble_control/device/bind	device_bind	
 jpush_assemble_control	POST	/api/jpush/create	create_jpush	R7
 jpush_assemble_control	POST	/api/jpush/save/{id}	save_jpush	R7
 jpush_assemble_control	POST	/api/jpush/delete/{id}	delete_jpush	R7
-jpush_assemble_control	POST	/api/jpush/assemble/control/update/control/config	update_control_config	R7
 jpush_assemble_control	POST	/api/jpush/assemble/control/device/bind	device_bind	R7
 jpush_assemble_control	DELETE	/api/jpush_assemble_control/device/unbind/{deviceName}/{deviceType}	device_unbind_deviceName_deviceType	R7
 jpush_assemble_control	POST	/api/jpush_assemble_control/message/send	message_send	R7
