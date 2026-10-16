@@ -594,18 +594,26 @@ mod u2_contract {
             .unwrap();
         }
         let base = "/api/processplatform/service/processing/data/work/dw-1";
-        let (_, v) = send(Method::POST, base, Some(json!({"a":1}))).await;
+        // dw-1 的 creator 种子为 'system'，调用方同样用 'system' 身份即属主，门禁放行。
+        // 第四十三批给 data/work/* 数据面收 `x_work.creator` 归属门后，裸 `send`（无会话）
+        // 会回 401，这里改用注入属主会话的 `send_raw_as`。
+        let (s, v) = send_raw_as(Method::POST, base, Some(json!({"a":1})), "system").await;
+        assert_eq!(s, StatusCode::OK, "属主建数据应放行");
         assert_eq!(v["type"], "success");
-        let (_, v) = send(Method::POST, base, Some(json!({"a":2}))).await;
+        let (s, v) = send_raw_as(Method::POST, base, Some(json!({"a":2})), "system").await;
+        assert_eq!(s, StatusCode::OK);
         assert_eq!(
             v["type"], "error",
             "o2server ExceptionDataAlreadyExist 语义"
         );
-        let (_, v) = send(Method::POST, &format!("{base}/b"), Some(json!(true))).await;
+        let (s, v) = send_raw_as(Method::POST, &format!("{base}/b"), Some(json!(true)), "system").await;
+        assert_eq!(s, StatusCode::OK, "新键创建应放行");
         assert_eq!(v["type"], "success", "新键创建应成功");
-        let (_, v) = send(Method::PUT, &format!("{base}/a"), Some(json!(9))).await;
+        let (s, v) = send_raw_as(Method::PUT, &format!("{base}/a"), Some(json!(9)), "system").await;
+        assert_eq!(s, StatusCode::OK);
         assert_eq!(v["data"]["value"]["a"], 9);
-        let (_, v) = send(Method::POST, &format!("{base}/delete"), None).await;
+        let (s, v) = send_raw_as(Method::POST, &format!("{base}/delete"), None, "system").await;
+        assert_eq!(s, StatusCode::OK, "属主删数据应放行");
         assert_eq!(v["type"], "success");
         let n = count(
             &pool,

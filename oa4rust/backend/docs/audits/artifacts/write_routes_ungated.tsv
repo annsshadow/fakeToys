@@ -793,14 +793,6 @@ processplatform_service_processing	POST	/api/processplatform/service/processing/
 processplatform_service_processing	POST	/api/processplatform/service/processing/manual/after/processing/{work}	work_manual_after_processing	R7
 processplatform_service_processing	POST	/api/processplatform/service/processing/v2/add/split/{work}/{id}	work_v2_id_add_split_p2	R7
 processplatform_service_processing	POST	/api/processplatform/service/processing/workcompleted/merge/{flag}	workcompleted_flag_merge	R7
-processplatform_service_processing	PUT	/api/processplatform/service/processing/data/job/{job}	data_job_put	R7
-processplatform_service_processing	PUT	/api/processplatform/service/processing/data/job/{job}/{path}	data_job_put_path	R7
-processplatform_service_processing	POST	/api/processplatform/service/processing/data/work/{id}	data_work_create	R7
-processplatform_service_processing	PUT	/api/processplatform/service/processing/data/work/{id}	data_work_update	R7
-processplatform_service_processing	POST	/api/processplatform/service/processing/data/work/{id}/{path}	data_work_create_path	R7
-processplatform_service_processing	PUT	/api/processplatform/service/processing/data/work/{id}/{path}	data_work_update_path	R7
-processplatform_service_processing	POST	/api/processplatform/service/processing/data/work/{id}/delete	data_work_delete	R7
-processplatform_service_processing	POST	/api/processplatform/service/processing/data/work/{id}/{path}/delete	data_work_delete_path	R7
 processplatform_service_processing	PUT	/api/processplatform/service/processing/data/workcompleted/{id}	data_wc_update	R7
 processplatform_service_processing	PUT	/api/processplatform/service/processing/data/workcompleted/{id}/{path}	data_wc_update_path	R7
 processplatform_service_processing	POST	/api/processplatform/service/processing/event/add/update/table	event_add_update_table	R7
@@ -817,11 +809,6 @@ processplatform_service_processing	POST	/api/processplatform/service/processing/
 processplatform_service_processing	PUT	/api/processplatform/service/processing/taskcompleted/next/task/identity	taskcompleted_update_next_identity	R7
 processplatform_service_processing	PUT	/api/processplatform/service/processing/work/{id}/manual/append/identity	work_id_manual_append_identity	R7
 processplatform_service_processing	POST	/api/processplatform/service/processing/work/manual/after/processing	work_manual_after	R7
-processplatform_service_processing	PUT	/api/processplatform/service/processing/work/{id}/add/split	work_v2_id_add_split	R7
-processplatform_service_processing	PUT	/api/processplatform/service/processing/work/v2/{id}/add/split	work_v2_id_add_split	R7
-processplatform_service_processing	POST	/api/processplatform/service/processing/work/v2/{id}/goback	work_v2_id_goback	R7
-processplatform_service_processing	PUT	/api/processplatform/service/processing/work/v2/{id}/reroute	work_v2_id_reroute	R7
-processplatform_service_processing	PUT	/api/processplatform/service/processing/work/v2/{id}/rollback	work_v2_id_rollback	R7
 processplatform_service_processing	POST	/api/processplatform/service/processing/workcompleted/process/{processFlag}	wc_process_flag	R7
 processplatform_service_processing	POST	/api/processplatform/service/processing/workcompleted/shift/time	wc_shift_time	R7
 processplatform_service_processing	PUT	/api/processplatform/service/processing/workcompleted/{flag}/rollback	wc_rollback_flag	R7
