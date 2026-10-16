@@ -803,6 +803,19 @@ GET 写面队列里 `calendar_assemble_control` 与 `jpush_assemble_control` 各
 
 | 验证（本批代码变更） | — | ppsvc `69 passed / 0 failed / 18 ignored`：离线臂 `ppsvc_r7_data_and_work_v2_writes_reject_without_session`（12 把逐把点名，无会话全 401）+ 修复的 `u2_data_work_create_then_update_conflict_semantics`（改走属主会话 `send_raw_as(...,"system")`）；新真实库臂 `ppsvc_r7_data_and_work_v2_writes_require_owner_and_admin`（非属主 403 / 属主放行落库 / job 非 admin 403·admin 放行 / 空归属 work 普通会话 403·admin 放行）`--ignored` 显式跑绿。尺子：**13 个写方法 R7 → R5**，R7 946→**933**、含写 251→238、R6 119 不动、ungated −13；EXIT 0、判据见证缺口 0 |
 
+### 三.44 第四十四批（query_assemble_surface 写面 7 把收 admin 门）
+
+| 项 | 位置 | 处置与口径 |
+| --- | --- | --- |
+| surface 数据面（创建/保存/删除） | `lib.rs` `create_surface`（POST `/api/query/assemble/surface/create` 及 queryview 别名）/ `save_surface`（POST `/api/query/assemble/surface/save/{id}`）/ `delete_surface`（POST `/api/query/assemble/surface/delete/{id}`） | 这 3 把是 queryview 的 surface 数据写，属 ownerless 系统数据（surface 无 per-user 归属字段），按批 38/40/42 既定「ownerless 系统数据写 = admin」口径收 `require_admin_opt`（无会话 401 / 非 admin 403）。门插在 `pool.get()` 之前，离线即证 401 |
+| 导入模型执行（整表重算） | `lib.rs` `importmodel_id_execute`（POST `/api/importmodel/id/{id}/execute` 及 `/api/queryview/importmodel/{id}/execute`，两路由别名共用一把 handler） | 按 id 整表重算导入模型属系统级写，收 `require_admin_opt` |
+| 表整表删除 | `lib.rs` `table_tableFlag_row_delete_all`（DELETE `/api/queryview/table/row/delete/all/{tableFlag}` 及 `/api/queryview/table/{flag}/row/delete/all`，两路由别名共用一把） | 整表清空属系统级写，收 `require_admin_opt` |
+| 行级删除（闭包面） | `u2_closures.rs` `table_row_delete`（DELETE `/api/queryview/table/row/delete/{tableFlag}/{id}` 及 `/api/queryview/table/{flag}/row/{rid}`，两路由别名共用一把）/ `importmodel_record_delete`（DELETE `/api/queryview/importmodel/record/delete/{recordId}` 及 `/api/queryview/importmodel/record/{recordId}`，两路由别名共用一把） | 行级删除虽带 tableFlag/recordId，但本 crate 无 per-user 归属判定（谁都能删任意表任意行），按系统级写收 `require_admin_opt`；`u2_closures.rs` 内另立一份同签名 `require_admin_opt` helper |
+
+> 注：本批与「只读挂写方法」族（695 条）边界清晰——R7 里 21 条 POST/DELETE 动词但语法体仅 SELECT 的 handler（`table_row_select_post` / 各 `mockputtopost` / `mockdeletetoget` 别名 / `importmodel_execute_record_recordId` 等）属 false-positive，按既定口径**不动**。另 `importmodel_reexecute_record`（GET）已在更早批次收门，本批不重复。
+
+| 验证（本批代码变更） | — | query_assemble_surface `50 passed / 0 failed / 0 ignored`：离线臂 `test_q44_write_writes_reject_without_session`（7 把逐把点名，无会话全 401）+ `test_q44_write_writes_non_admin_forbidden`（7 把逐把点名，非 admin 会话 `shared::testing::test_session("q44-nonadmin")` 全 403，fail-closed 用空 pool 证门在读库前）；另把 5 支既有路由存在性断言（create/save/delete surface、table_row_delete、importmodel_record_delete）由 `INTERNAL_SERVER_ERROR` 翻为 `UNAUTHORIZED`，并把 2 支 v9 旧路径断言（`importmodel_execute_legacy_path`、`importmodel_record_family_legacy_paths` 的 DEL）同步翻 401，与加门后行为对齐。尺子：**7 把 handler → 11 条 R7 路由出列**（一把 handler 多路由别名，故 7→11），R7 933→**922**、含写 238→227、R6 119 不动、ungated −11；query_assemble_surface 余下 47 条 R7 全部为「只读挂写方法」SELECT 体 false-positive 或 `mockdeletetoget` 动词别名，按口径无需加门；EXIT 0、判据见证缺口 0 |
+
 ## 四、验证
 
 
