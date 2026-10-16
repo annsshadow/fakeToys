@@ -781,6 +781,16 @@ GET 写面队列里 `calendar_assemble_control` 与 `jpush_assemble_control` 各
 
 **注**：本批后 query_designer 余 **R7 含写 19 条**（`table/row/*` 数据族 9、`importmodel` 2、`neural` 3、`input` 3、`icon` 1 等）留下一批。
 
+### 三.42 第四十二批（query_assemble_designer 余下 12 把收 admin 门，**本 crate R7 含写清零**）
+
+| 项 | 位置 | 处置与口径 |
+| --- | --- | --- |
+| 设计表行数据族（A2-F2） | `lib.rs` `table_tableFlag_row_delete_all` / `table_tableFlag_row_save`；`u2_closures.rs` `table_tableFlag_row_insert` / `table_tableFlag_row_update` | 按 `tableFlag` 对设计表落行：`delete_all` 是**无谓词物理清空整张表**（最高危）、save/insert/update 按 flag·id 写行 ⇒ 四把收 admin 门 |
+| 元数据写族（A2-F2） | `lib.rs` `neural_model` / `input_cover` / `input_create` / `input_prepare_create`；`u2_closures.rs` `importmodel_create` / `importmodel_edit` / `neural_update_model_modelFlag` / `query_set_icon` | 神经模型、导入模型、输入项、图标均为设计器元数据 ⇒ 八把收 admin 门 |
+| 验证（本批代码变更） | — | query_designer `55 passed / 0 failed`（2 条钉 500 契约臂改 401；`input_create_writes_text_create_time_ok` 补 admin 造数直调；新臂 `query_designer_data_and_meta_writes_require_admin`：12 把无会话 401 + 非 admin 403）。尺子：**19 条 R7 → R5**，R7 965→**946**、含写 270→251、ungated −19；EXIT 0、判据见证缺口 0 |
+
+**query_designer R7 含写清零声明**：批 40（设计对象 + DDL 8 把）、批 41（u2 设计对象 7 把）、批 42（数据/元数据 12 把）三批合计收 **27 把**，本 crate 的 R7「含写 SQL」名单现为**空**（余 43 条 R7 全为「只读挂写方法」族）。这是 A2-F1/F2/F3 写族的完整收口。
+
 ## 四、验证
 
 

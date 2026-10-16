@@ -1284,8 +1284,11 @@ pub async fn input_compare(
 #[allow(non_snake_case)]
 pub async fn input_cover(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A2-F2：查询输入项设计（覆盖）为设计器元数据 ⇒ 收 admin 门。
+    require_admin_opt(&pool, session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let input_id = body.get("id").and_then(|v| v.as_str()).unwrap_or_default();
@@ -1320,8 +1323,11 @@ pub async fn input_cover(
 #[allow(non_snake_case)]
 pub async fn input_create(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A2-F2：查询输入项设计为设计器元数据 ⇒ 收 admin 门。
+    require_admin_opt(&pool, session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -1388,8 +1394,11 @@ pub async fn input_prepare_cover(
 #[allow(non_snake_case)]
 pub async fn input_prepare_create(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A2-F2：查询输入项预建为设计器元数据 ⇒ 收 admin 门。
+    require_admin_opt(&pool, session).await?;
     let id = uuid::Uuid::new_v4().to_string();
     let content = body
         .get("content")
@@ -1542,8 +1551,11 @@ pub async fn neural_list_model(
 #[allow(non_snake_case)]
 pub async fn neural_model(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A2-F2：神经模型定义为设计器元数据 ⇒ 收 admin 门。
+    require_admin_opt(&pool, session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let name = body
@@ -3468,8 +3480,11 @@ pub async fn table_tableFlag_row_count_where_where(
 #[allow(non_snake_case)]
 pub async fn table_tableFlag_row_delete_all(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(table_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A2-F2：按 tableFlag **物理清空整张设计表**（无谓词 DELETE）⇒ 收 admin 门。
+    require_admin_opt(&pool, session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -3498,9 +3513,12 @@ pub async fn table_tableFlag_row_delete_all(
 #[allow(non_snake_case)]
 pub async fn table_tableFlag_row_save(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(table_flag): Path<String>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A2-F2：向设计表按 flag 落行（upsert）⇒ 收 admin 门。
+    require_admin_opt(&pool, session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
