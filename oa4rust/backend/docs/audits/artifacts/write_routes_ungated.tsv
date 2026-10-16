@@ -277,7 +277,6 @@ file_assemble_control	POST	/api/attachment2/{id}/download	attachment2_id_downloa
 file_assemble_control	POST	/api/attachment2/{id}/download/stream	attachment2_id_download_stream	R7
 file_assemble_control	POST	/api/config	u2_config_save_system_config	R7
 file_assemble_control	POST	/api/file/share/password/verify	u2_share_password_verify	R7
-file_assemble_control	DELETE	/api/file/assemble/control/file/clean/unused/referencetype/cmsdocument/manage	file_clean_unused_referencetype_cmsdocument_manage	R7
 file_assemble_control	POST	/api/file/assemble/control/file/{id}/download	file_id_download	R7
 file_assemble_control	POST	/api/file/assemble/control/file/{id}/download/stream	file_id_download_stream	R7
 file_core_entity	POST	/api/file/core/entity/folder	folder_create	R7

@@ -2658,7 +2658,16 @@ pub async fn editor_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
 #[allow(non_snake_case)]
 pub async fn file_clean_unused_referencetype_cmsdocument_manage(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 批量清理 FILE_FILE（按 reference_type 全删）属管理维护写面：无会话 401、非 admin 403。
+    match session {
+        None => return Err(AppError::Unauthorized),
+        Some(Extension(s)) if !shared::middleware::is_admin(&pool, &s.person_unique).await => {
+            return Err(AppError::Forbidden)
+        }
+        Some(_) => {}
+    }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -2682,6 +2691,7 @@ pub async fn file_clean_unused_referencetype_cmsdocument_manage(
 #[allow(non_snake_case)]
 pub async fn file_copy_attachment_attachmentId_referencetype_referenceType_reference_reference_scale_scale(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((attachment_id, reference_type, reference, _scale)): axum::extract::Path<(
         String,
         String,
@@ -2689,6 +2699,10 @@ pub async fn file_copy_attachment_attachmentId_referencetype_referenceType_refer
         String,
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 复制附件会在 FILE_FILE 新建一行（继承源 person）：无会话 401，仅源附件属主或 admin 可复制。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt("SELECT name, person, extension, length, mime_type, content FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL", &[&attachment_id])
@@ -2699,6 +2713,7 @@ pub async fn file_copy_attachment_attachmentId_referencetype_referenceType_refer
     let new_id = uuid::Uuid::new_v4().to_string();
     let name: String = row.get::<_, Option<String>>("name").unwrap_or_default();
     let person: String = row.get::<_, Option<String>>("person").unwrap_or_default();
+    shared::middleware::require_owner(&pool, &sess, &person).await?;
     let ext: String = row
         .get::<_, Option<String>>("extension")
         .unwrap_or_default();
