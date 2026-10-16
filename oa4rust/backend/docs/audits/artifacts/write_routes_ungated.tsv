@@ -301,12 +301,10 @@ general_core_entity	POST	/api/general/file/delete/{id}	file_delete	R7
 general_core_entity	POST	/api/general/invoice/create	invoice_create	R7
 general_core_entity	POST	/api/general/invoice/update/{id}	invoice_update	R7
 general_core_entity	POST	/api/general/invoice/delete/{id}	invoice_delete	R7
-hotpic_assemble_control	POST	/api/hotpic/assemble/control/user/hotpic/changeTitle	user_hotpic_changeTitle	R7
 hotpic_assemble_control	DELETE	/api/hotpic/assemble/control/cipher/hotpic/bbs/{id}	cipher_hotpic_bbs_id	R7
 hotpic_assemble_control	DELETE	/api/hotpic/assemble/control/cipher/hotpic/cms/{id}	cipher_hotpic_cms_id	R7
 hotpic_assemble_control	PUT	/api/hotpic/assemble/control/cipher/hotpic/filter/list/page/{page}/count/{count}	cipher_hotpic_filter_list_page_page_count_count	R7
 hotpic_assemble_control	PUT	/api/hotpic/assemble/control/user/hotpic/filter/list/page/{page}/count/{count}	user_hotpic_filter_list_page_page_count_count	R7
-hotpic_assemble_control	DELETE	/api/hotpic/assemble/control/user/hotpic/{id}	user_hotpic_id	R7
 hotpic_assemble_control	DELETE	/api/hotpic/assemble/control/user/hotpic/{id}/{id2}	user_hotpic_delete_by_ids	R7
 hotpic_core_entity	POST	/api/hotpic/core/entity/create	create	R7
 hotpic_core_entity	DELETE	/api/hotpic/core/entity/delete/{id}	delete_by_id	R7
