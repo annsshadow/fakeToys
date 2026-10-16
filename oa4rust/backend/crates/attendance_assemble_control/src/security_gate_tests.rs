@@ -20,12 +20,12 @@
 //! `pool.get()` 之后；真库臂跑「他人 403 且不落笔 → 本人只放行归属那把 → admin 全档落笔」，
 //! 落笔与不落笔都逐格回读，免得门被写成「一律拒」还测的是空气。
 //!
-//! 明列豁免 1 处：`checkDetailWithPersonByCycle` 是**早于本批存在**的必然 500——
-//! `cycle_year` / `cycle_month` 在真库是 integer，handler 却把路径字符串直接绑进
-//! `WHERE cycle_year = $1`（42883 operator does not exist: integer = text，已用
-//! `PREPARE tc(text,text)` 探针验真）。UPDATE 那步被 `.unwrap_or(0)` 吞掉，回读 COUNT 那步
-//! `map_err(Internal)?` 当场炸。本批只加门不修语义，所以 admin 格对该把只允许 `Internal`，
-//! 并把它的 checked 落笔状态一并钉住；一旦有人修好类型口径，这条豁免会自己喊红提醒撤掉。
+//! 历史豁免已撤：`checkDetailWithPersonByCycle` 曾因 `cycle_year` / `cycle_month` 在真库是
+//! integer 而 handler 把路径字符串直接绑进 `WHERE cycle_year = $1`（42883 operator does not
+//! exist: integer = text）。本批原先只加门不修语义，故 admin 格一度只允许 `Internal`。现已把
+//! handler 路径改成 `Path<(i32, i32)>`，类型口径修好：admin 放行后 UPDATE 真落笔，
+//! `x_attendance_detail.checked` 由 false 变 true。本文件 admin 段要求它对 9 把全部放行，
+//! 并在落笔回读里钉住 `checked=true`，防止口径回退再次引入 42883。
 
 #[cfg(test)]
 mod security_gate_tests {
@@ -48,8 +48,9 @@ mod security_gate_tests {
     const DATE_TO: &str = "b21-day-9999";
     const DETAIL_DATE: &str = "b21-day-0500";
     /// 同理，周期取真库不可能出现的 9999-99，别把别人的明细圈进这把批量 UPDATE 的射程。
-    const CYCLE_YEAR: &str = "9999";
-    const CYCLE_MONTH: &str = "99";
+    /// handler 路径按真库 integer 口径用 i32 绑定（42883 修复），故常量同步为 i32。
+    const CYCLE_YEAR: i32 = 9999;
+    const CYCLE_MONTH: i32 = 99;
     const SYNC_FROM: &str = "b21-sync-from";
     const SYNC_TO: &str = "b21-sync-to";
     const SENTINEL: &str = "b21-before";
@@ -69,6 +70,10 @@ mod security_gate_tests {
 
     fn p2(a: &str, b: &str) -> Path<(String, String)> {
         Path((a.to_string(), b.to_string()))
+    }
+
+    fn p2i(a: i32, b: i32) -> Path<(i32, i32)> {
+        Path((a, b))
     }
 
     /// 9 把逐个具名调用；表长由 `assert_eq!(cases.len(), 9)` 钉住，少点名一把即红。
@@ -111,7 +116,7 @@ mod security_gate_tests {
                 crate::attendancedetail_checkDetailWithPersonByCycle_cycleYear_cycleMonth(
                     ext(),
                     sess(),
-                    p2(CYCLE_YEAR, CYCLE_MONTH),
+                    p2i(CYCLE_YEAR, CYCLE_MONTH),
                 )
                 .await
                 .map(|_| ()),
@@ -250,10 +255,10 @@ mod security_gate_tests {
         .unwrap();
     }
 
-    /// 造数前先 `unseed()` 按 id 删净，再普通 INSERT——不用 `ON CONFLICT`：
-    /// `x_attendance_appeal_info` / `x_attendance_detail` / `x_attendance_setting` 三张表
-    /// 在 migration 032 里**根本没建主键**（`"id" TEXT` 一列而已），`ON CONFLICT (id)` 当场 42P10。
-    /// 本臂连跑两遍要读数一致，靠的是「先删后插」这条可重复序列，不是上一遍留下的数据。
+    /// 造数前先 `unseed()` 按 id 删净，再普通 INSERT——保持「先删后插」的可重复序列，
+    /// 本臂连跑两遍读数一致靠的是这条序列，而不是上一遍留下的数据。
+    /// （曾因 migration 032 未给这三张表建主键、`ON CONFLICT (id)` 会撞 42P10 而禁用 ON
+    /// CONFLICT；migration 109 已补上主键，此处保留先删后插语义不变。）
     async fn seed() {
         let pool = shared::testing::test_pool();
         let c = pool.get().await.unwrap();
@@ -440,21 +445,15 @@ mod security_gate_tests {
         );
 
         let admin = call_all(&shared::testing::test_pool(), Some(ADMIN_PERSON)).await;
+        // 42883 已修：detail_check_by_cycle 路径绑 i32，admin 放行后同样回 Ok 并真落笔。
         let broke: Vec<String> = admin
             .iter()
-            .filter(|(k, r)| {
-                if *k == "detail_check_by_cycle" {
-                    // 明列豁免：integer 列绑字符串参数必撞 42883，早于本批存在，本批只加门不修
-                    return !matches!(r, Err(AppError::Internal));
-                }
-                r.is_err()
-            })
+            .filter(|(_, r)| r.is_err())
             .map(|(k, r)| format!("{k} => {:?}", r.as_ref().err()))
             .collect();
         assert!(
             broke.is_empty(),
-            "admin 应在 8 把上放行、并在 detail_check_by_cycle 上恰好撞既有 500；\
-             该把一旦变成 Ok 就是类型口径被修好，本豁免要跟着撤：{broke:?}"
+            "admin 段 9 把必须全部放行（含 detail_check_by_cycle，其 42883 已由 i32 路径绑定修复）：{broke:?}"
         );
         assert_eq!(admin.len(), 9, "admin 段同样逐把点名");
 
@@ -466,8 +465,9 @@ mod security_gate_tests {
             ("x_attendance_detail", "archived", DETAIL_ID, "true"),
             // 造数时 enabled=true，admin 那格请求的是关掉它
             ("x_attendance_setting", "enabled", SETTING_CODE, "false"),
-            // 豁免那把不落笔（42883 在 UPDATE 之前就把语句打死）
-            ("x_attendance_detail", "checked", DETAIL_ID, "false"),
+            // detail_check_by_cycle 的 42883 已修：admin 放行后 UPDATE 真把 checked 置真
+            // （造数行 cycle_year=9999, cycle_month=99 恰在射程内）。
+            ("x_attendance_detail", "checked", DETAIL_ID, "true"),
         ] {
             let got = cell(&c, tbl, col, key).await;
             if got != exp {
@@ -546,5 +546,73 @@ mod security_gate_tests {
             .unwrap()
             .get::<_, i64>(0);
         total
+    }
+
+    // 回归（四轮审计 Defect #1）：require_owner 以归一化口径比较本人身份。
+    // 历史缺陷：session.person_unique 与 owner_id 原始字符串比较，当身份标识存在大小写 /
+    // 空白差异时，本人操作会被误判为越权；归一化后同一身份的变体视为本人，且不引入越权
+    // （归一化后确为他者仍一律 Forbidden）。
+    #[tokio::test]
+    async fn r1_require_owner_case_insensitive_self_match() {
+        if !shared::testing::is_db_available().await {
+            eprintln!(
+                "skipping r1_require_owner_case_insensitive_self_match: DATABASE_URL not reachable"
+            );
+            return;
+        }
+        // 用一个明确不在库、非 admin 的身份，隔离 is_admin 支路，单测归一化比较本身。
+        let pool = shared::testing::test_pool();
+        let s = shared::testing::test_session("R1-Case-Owner-9999");
+        // 同一身份的小写变体 -> 视为本人放行
+        assert!(
+            shared::middleware::require_owner(&pool, &s, "r1-case-owner-9999")
+                .await
+                .is_ok(),
+            "同一身份的小写变体应视为本人放行"
+        );
+        // 前后空白 + 大小写 -> trim + lower 后仍视为本人放行
+        assert!(
+            shared::middleware::require_owner(&pool, &s, "  r1-CASE-owner-9999  ")
+                .await
+                .is_ok(),
+            "trim 后的小写变体同样应视为本人放行"
+        );
+        // 归一化后确为他者 -> 一律 Forbidden，不因归一化放松越权判定
+        assert!(
+            matches!(
+                shared::middleware::require_owner(&pool, &s, "r1-case-intruder-0001").await,
+                Err(AppError::Forbidden)
+            ),
+            "他者身份必须 403"
+        );
+    }
+
+    // 回归（四轮审计 Defect #3）：三张考勤表的主键已由 migration 109 补齐。
+    // 早前 migration 032 未建主键，`ON CONFLICT (id)` 会撞 42P10；此处直接在真库校验
+    // 主键约束存在，防止未来迁移回退。
+    #[tokio::test]
+    async fn r3_attendance_tables_have_primary_key() {
+        if !shared::testing::is_db_available().await {
+            eprintln!("skipping r3_attendance_tables_have_primary_key: DATABASE_URL not reachable");
+            return;
+        }
+        let pool = shared::testing::test_pool();
+        let c = pool.get().await.unwrap();
+        for t in [
+            "x_attendance_appeal_info",
+            "x_attendance_detail",
+            "x_attendance_setting",
+        ] {
+            let n: i64 = c
+                .query_one(
+                    "SELECT COUNT(*) FROM pg_constraint \
+                     WHERE conrelid = $1::regclass AND contype = 'p'",
+                    &[&t.to_string()],
+                )
+                .await
+                .unwrap()
+                .get(0);
+            assert_eq!(n, 1, "表 {t} 应恰好有一个主键约束（migration 109 补齐）");
+        }
     }
 }

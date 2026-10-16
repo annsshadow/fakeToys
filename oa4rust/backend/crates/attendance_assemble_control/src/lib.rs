@@ -1070,10 +1070,14 @@ pub async fn attendancedetail_archive_id(
 }
 
 /// POST /api/attendance/assemble/control/attendancedetail/checkDetailWithPersonByCycle/{cycleYear}/{cycleMonth}
+///
+/// `cycle_year` / `cycle_month` 在真库为 INTEGER（迁移 101 加列），早期 handler 把路径字符串
+/// 直接绑进 `WHERE cycle_year = $1` 会触发 42883（integer = text 无隐式转换）。这里按真实类型
+/// 用 `i32` 绑定，消除类型不匹配；非数字路径由 axum 直接 400 拒绝。
 pub async fn attendancedetail_checkDetailWithPersonByCycle_cycleYear_cycleMonth(
     pool: Extension<Pool>,
     session: Option<Extension<shared::session::Session>>,
-    Path((cycle_year, cycle_month)): Path<(String, String)>,
+    Path((cycle_year, cycle_month)): Path<(i32, i32)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 名字里的 WithPerson 在 SQL 里并不存在：整段只按 cycle_year / cycle_month 过滤，
     // 一把覆盖该周期内**所有人**的明细 ⇒ 无归属维度可量，admin 档（语义待拍见账本）。
@@ -8216,7 +8220,10 @@ async fn mobile_check_impl(
     if user_id.is_empty() {
         return Err(AppError::BadRequest("userId is required".to_string()));
     }
-    if user_id != session.person_unique {
+    // 与 require_owner 归一化口径保持一致：会话身份同样归一化后再比较，
+    // 避免本人（大小写/空白变体）被误判为代他人而强制走 require_owner。
+    let session_uid = normalize_key(&session.person_unique);
+    if user_id != session_uid {
         shared::middleware::require_owner(pool, session, &user_id).await?;
     }
 
@@ -8297,8 +8304,9 @@ pub async fn v2_mobile_check_from_out(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     // 外部系统调用（门禁等）：允许代他人打卡，但需 admin
+    let session_uid = normalize_key(&session.person_unique);
     let target = normalize_key(json_str(&payload, "userId").as_str());
-    if !target.is_empty() && target != session.person_unique {
+    if !target.is_empty() && target != session_uid {
         require_admin(&pool, &session).await?;
     }
     let (id, duplicated) =
@@ -8584,7 +8592,10 @@ async fn import_checkin_rows(
         if user_id.is_empty() {
             return Err(AppError::BadRequest("each row requires userId".to_string()));
         }
-        if !admin && user_id != session.person_unique {
+        // 与 import 者会话身份归一化后比较：本人（大小写/空白变体）导入自己的行应放行，
+        // 代他人导入仍须 admin，避免归一化输入与原始会话口径不一致导致的误拒/误判。
+        let session_uid = normalize_key(&session.person_unique);
+        if !admin && user_id != session_uid {
             return Err(AppError::Forbidden);
         }
         let date_str = item

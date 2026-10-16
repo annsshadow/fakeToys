@@ -519,11 +519,17 @@ pub(crate) async fn check_permission(
 /// 所有权检查辅助函数：验证当前会话用户是否拥有指定资源。
 /// 适用于 handler 中需要在执行写操作前校验资源所有权的场景。
 /// 返回 Ok(()) 表示是所有者或 admin，Err(AppError::Forbidden) 表示无权限。
+///
+/// 比较统一做 `trim().to_lowercase()` 归一化（与 attendance 的 `normalize_key` 口径一致）。
+/// 修复历史缺陷：原先 `session.person_unique == owner_id` 是原始字符串比较，当身份标识存在
+/// 大小写/空白差异时，本人操作会被误判为越权而拒绝，且归一化输入与原始会话比较口径不一致
+/// 会在 IDOR 校验中产生歧义。归一化后同一身份的大小写变体视为同一人，既修复本人误拒，
+/// 也不引入越权（不同身份归一化后仍不相等）。
 pub async fn require_owner(pool: &Pool, session: &Session, owner_id: &str) -> Result<(), AppError> {
     if is_admin(pool, &session.person_unique).await {
         return Ok(());
     }
-    if session.person_unique == owner_id {
+    if session.person_unique.trim().to_lowercase() == owner_id.trim().to_lowercase() {
         return Ok(());
     }
     Err(AppError::Forbidden)
