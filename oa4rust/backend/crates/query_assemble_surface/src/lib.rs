@@ -2114,7 +2114,16 @@ pub async fn table_list_tableFlag_row_id_prev_count(
 #[allow(non_snake_case)]
 pub async fn table_reload_dynamic(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 批量重置 x_query_table.reloaded 属维护写面：无会话 401、非 admin 403。
+    match session.as_deref() {
+        None => return Err(AppError::Unauthorized),
+        Some(s) if !shared::middleware::is_admin(&pool, &s.person_unique).await => {
+            return Err(AppError::Forbidden)
+        }
+        Some(_) => {}
+    }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let _ = client
