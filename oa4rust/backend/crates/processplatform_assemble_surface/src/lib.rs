@@ -182,8 +182,15 @@ pub async fn get_surface(
 #[allow(non_snake_case)]
 pub async fn create_surface(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(req): Json<CreateSurfaceRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A2-F11 + A3-N9：流程应用表面为设计元数据（原硬编码 `creator='system'` 冒名）
+    // ⇒ 收 admin 门（无会话 401 / 非 admin 403），creator 改取会话登录人。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    require_admin_opt(&pool.0, Some(&sess)).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let name = req.name.unwrap_or_default();
     if name.trim().is_empty() {
@@ -198,7 +205,7 @@ pub async fn create_surface(
         .content
         .unwrap_or_else(|| Value::Object(serde_json::Map::new()));
     let version = "1.0".to_string();
-    let creator = "system".to_string();
+    let creator = sess.person_unique.clone();
 
     let content_str = serde_json::to_string(&content).map_err(|_| AppError::Internal)?;
 
@@ -396,8 +403,11 @@ pub async fn preview_surface(
 #[allow(non_snake_case)]
 pub async fn publish_surface(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A3-N9：表面发布按 id 改状态，收 admin 门。
+    require_admin_opt(&pool.0, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -467,8 +477,11 @@ pub async fn publish_surface(
 #[allow(non_snake_case)]
 pub async fn delete_surface(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A3-N9：表面物理删按 id，收 admin 门。
+    require_admin_opt(&pool.0, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
@@ -531,9 +544,12 @@ pub async fn delete_surface(
 #[allow(non_snake_case)]
 pub async fn save_surface(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(content): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A3-N9：表面内容按 id 覆写，收 admin 门（无会话 401 / 非 admin 403）。
+    require_admin_opt(&pool.0, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let content_str = serde_json::to_string(&content).map_err(|_| AppError::Internal)?;
 
@@ -8901,14 +8917,18 @@ pub async fn mode_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
 #[allow(non_snake_case)]
 pub async fn mode_save(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(body): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = body
         .get("id")
         .and_then(|v| v.as_str())
         .unwrap_or_default()
         .to_string();
+    // 与同表 `mode_id_delete` 同锁：按 PP_C_TASK_PROCESS_MODE.xperson 归属
+    // （无会话 401 / 非属主且非 admin 403）。
+    u4_require_ppc_person(&pool.0, session, "PP_C_TASK_PROCESS_MODE", &id).await?;
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
             "UPDATE PP_C_TASK_PROCESS_MODE SET \"xupdateTime\" = NOW() WHERE xid = $1",

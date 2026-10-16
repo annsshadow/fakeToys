@@ -739,6 +739,17 @@ GET 写面队列里 `calendar_assemble_control` 与 `jpush_assemble_control` 各
 
 **一处路由别名（记账非缺陷）**：`DELETE /api/query/assemble/designer/stat/delete/{id}` 由 `u2::stat_delete`（同表软删）占用、早已 R5，本批改的 `crate::stat_delete` 只作用于该路径的 **POST** 别名——故本批净迁 **24** 条而非 25 条（逐条对账 `HEAD`：25 条目标路由中 24 条原 R7、1 条（该 DELETE）原 R5）。
 
+### 三.38 第三十八批（ppsurface 表面生命周期 4 把收 admin 门 + `mode_save` 归属门 + 修 creator 冒名）
+
+| 项 | 位置 | 处置与口径 |
+| --- | --- | --- |
+| 表面生命周期四把 | `crates/processplatform_assemble_surface/src/lib.rs` `create_surface` / `save_surface` / `publish_surface` / `delete_surface` | `x_process_surface` 为设计元数据 ⇒ 收 admin 门（本 crate `require_admin_opt`：无会话 401 / 非 admin 403）。此前四把 `(pool, body/Path)` 无会话无门，任意登录人可按 id 覆写内容 / 发布 / 物理删任意表面 |
+| A2-F11 冒名（本 crate 一处） | `create_surface` 的 `let creator = "system"` | 硬编码 `creator='system'` ⇒ 改取会话登录人 `sess.person_unique`（与收门同批；creator 与真实作者不再脱钩） |
+| `mode_save` | 同上 `mode_save` | 写 `PP_C_TASK_PROCESS_MODE` 按 body `id` ⇒ 与**同表** `mode_id_delete` 同锁：`u4_require_ppc_person(&pool.0, session, "PP_C_TASK_PROCESS_MODE", &id)`（无会话 401 / 非属主且非 admin 403；空归属 → 只允许 admin）。id 解析移到门之前，`pool.get()` 移到门之后 |
+| 验证（本批代码变更） | — | ppsurface `612 passed / 0 failed / 9 ignored`（4 条钉 500 的表面契约臂改 401，行为真变）；新臂 `surface_gate_tests::surface_and_mode_writes_require_gate`（五把无会话 401 + 表面四把非 admin 403）与真库臂 `mode_save_owner_gate_lands`（造 `PP_C_TASK_PROCESS_MODE` 一行，非属主 403 不落笔 / 属主放行 / 收口零残留）双绿。尺子：**5 条 R7 → R5**，R7 994→**989**、含写 298→293、ungated −5、只读挂写不变（这些 handler 体内本就有写 SQL，非 crud 转调型）；EXIT 0、判据见证缺口 0 |
+
+**注**：`x_process_surface` 行因 `create_surface` 长期硬编码 `creator='system'`（`creator_person` 为 NULL）**无真实属主**，故按「ownerless 系统数据写 = admin」（F5 / R4-3 / R4-5 族）取 admin 档，与本 crate `require_admin_opt` 的既有两档口径一致。同族读 `list_surfaces` / `mode_list` 属「只读挂写方法」族（754 条），不在本批。
+
 ## 四、验证
 
 
