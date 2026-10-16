@@ -174,6 +174,10 @@ func (s *Server) Register(app *fiber.App) {
 	adminLogin.Post("/login", perIPLimiter("adminlogin", adminLoginLimit), s.adminLogin) // 公开
 
 	adm := v1.Group("/admin", requireAdmin(s.Svc))
+	// 第 155 轮：后台登出（吊销全部会话）。刻意不挂 requireWritable ——
+	// 会话生命周期不是数据写；readonly_guard_test.go 里的 AST 守卫
+	// 有且仅有这一条带注释的豁免。
+	adm.Post("/logout", s.adminLogout)
 	adm.Get("/me", s.adminMe)
 	adm.Get("/dashboard", s.adminDashboard)
 	adm.Get("/levels", s.adminLevels)
