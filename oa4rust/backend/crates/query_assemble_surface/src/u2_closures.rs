@@ -724,8 +724,10 @@ pub async fn morelikethis_post(
 #[allow(non_snake_case)]
 pub async fn table_row_delete(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     Path((table_flag, id)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool.0, session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -811,8 +813,10 @@ pub async fn table_row_insert_one(
 #[allow(non_snake_case)]
 pub async fn importmodel_record_delete(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     Path(record_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool.0, session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -980,6 +984,16 @@ pub async fn view_bundle_v2_post(
 use shared::session::Session;
 
 async fn require_admin_gate(pool: &Pool, session: &Session) -> Result<(), AppError> {
+    if shared::middleware::is_admin(pool, &session.person_unique).await {
+        Ok(())
+    } else {
+        Err(AppError::Forbidden)
+    }
+}
+
+/// `require_admin_gate` 的 `Option<Extension<Session>>` 版：无会话先回 401，非 admin 回 403。
+async fn require_admin_opt(pool: &Pool, session: Option<Extension<Session>>) -> Result<(), AppError> {
+    let session = session.ok_or(AppError::Unauthorized)?;
     if shared::middleware::is_admin(pool, &session.person_unique).await {
         Ok(())
     } else {

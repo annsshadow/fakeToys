@@ -86,7 +86,8 @@ async fn test_create_surface_route_exists() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    // 第四十四批：加 admin 门后，无会话先于读库回 401（原无门时是假 pool 的 500）。
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
 }
 
 #[tokio::test]
@@ -150,7 +151,8 @@ async fn test_save_surface_route_exists() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    // 第四十四批：加 admin 门后无会话先回 401（原无门时是假 pool 的 500）。
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
 }
 
 #[tokio::test]
@@ -169,7 +171,8 @@ async fn test_delete_surface_route_exists() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    // 第四十四批：加 admin 门后无会话先回 401（原无门时是假 pool 的 500）。
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -323,14 +326,15 @@ async fn test_u2_table_row_delete_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/api/queryview/table/row/delete/tbl-1/row-1")
-                .method(Method::DELETE)
-                .body(Body::empty())
-                .unwrap(),
+            .uri("/api/queryview/table/row/delete/tbl-1/row-1")
+            .method(Method::DELETE)
+            .body(Body::empty())
+            .unwrap(),
         )
         .await
         .unwrap();
-    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    // 第四十四批：加 admin 门后无会话先回 401（原无门时是假 pool 的 500）。
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
 }
 
 #[tokio::test]
@@ -403,14 +407,15 @@ async fn test_u2_importmodel_record_delete_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/api/queryview/importmodel/record/delete/record-1")
-                .method(Method::DELETE)
-                .body(Body::empty())
-                .unwrap(),
+            .uri("/api/queryview/importmodel/record/delete/record-1")
+            .method(Method::DELETE)
+            .body(Body::empty())
+            .unwrap(),
         )
         .await
         .unwrap();
-    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    // 第四十四批：加 admin 门后无会话先回 401（原无门时是假 pool 的 500）。
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
 }
 
 #[tokio::test]
@@ -457,6 +462,179 @@ async fn test_query_get_writes_non_admin_forbidden() {
         ),
         "importmodel_reexecute_record 非 admin 必须 403"
     );
+}
+
+// ── 第四十四批：R7 含写收口（query_assemble_surface 真写面 7 把收 admin 门）──
+// 真写面 = create/save/delete_surface（x_query_surface，creator 硬编码 system）、
+// table_row_delete（x_query_table_data 按 id 删）、table_tableFlag_row_delete_all
+// （整表清空）、importmodel_record_delete（x_query_import_model_record 按 id 删）、
+// importmodel_id_execute（INSERT 执行记录）。其余 28 条 R7 多为 SELECT 读
+// （importmodel list/record/status/id、stat/statement/view/table 的 list/paging/execute
+// 等 mockputtopost / mockdeletetoget 形态），属「只读挂写方法」族，不在此批。
+#[tokio::test]
+async fn test_q44_write_writes_reject_without_session() {
+    use axum::extract::{Extension, Json, Path};
+    let pool = build_test_pool();
+    let cases: Vec<(&str, Result<(), shared::error::AppError>)> = vec![
+        (
+            "create_surface",
+            crate::create_surface(
+                Extension(pool.clone()),
+                None,
+                Json(crate::CreateSurfaceRequest { name: None, category: None, query: None, template: None }),
+            )
+            .await
+            .map(|_| ()),
+        ),
+        (
+            "save_surface",
+            crate::save_surface(
+                Extension(pool.clone()),
+                None,
+                Path("s-1".to_string()),
+                Json(crate::CreateSurfaceRequest { name: None, category: None, query: None, template: None }),
+            )
+            .await
+            .map(|_| ()),
+        ),
+        (
+            "delete_surface",
+            crate::delete_surface(Extension(pool.clone()), None, Path("s-1".to_string()))
+                .await
+                .map(|_| ()),
+        ),
+        (
+            "table_tableFlag_row_delete_all",
+            crate::table_tableFlag_row_delete_all(
+                Extension(pool.clone()),
+                None,
+                Path("tf-1".to_string()),
+            )
+            .await
+            .map(|_| ()),
+        ),
+        (
+            "importmodel_id_execute",
+            crate::importmodel_id_execute(
+                Extension(pool.clone()),
+                None,
+                Path("im-1".to_string()),
+            )
+            .await
+            .map(|_| ()),
+        ),
+        (
+            "u2::table_row_delete",
+            crate::u2_closures::table_row_delete(
+                Extension(pool.clone()),
+                None,
+                Path(("tf-1".to_string(), "r-1".to_string())),
+            )
+            .await
+            .map(|_| ()),
+        ),
+        (
+            "u2::importmodel_record_delete",
+            crate::u2_closures::importmodel_record_delete(
+                Extension(pool.clone()),
+                None,
+                Path("rec-1".to_string()),
+            )
+            .await
+            .map(|_| ()),
+        ),
+    ];
+    let bad: Vec<&str> = cases
+        .iter()
+        .filter(|(_, r)| !matches!(r, Err(shared::error::AppError::Unauthorized)))
+        .map(|(n, _)| *n)
+        .collect();
+    assert!(bad.is_empty(), "以下 R7 真写面无会话未回 401：{bad:?}");
+    assert_eq!(cases.len(), 7, "本批 7 把必须逐把点名，少一把即漏门");
+}
+
+#[tokio::test]
+async fn test_q44_write_writes_non_admin_forbidden() {
+    use axum::extract::{Extension, Json, Path};
+    let pool = build_test_pool();
+    // 非 admin 会话：is_admin 对空池 fail-closed → false → 403（与 crate 既有门禁测试同口径）。
+    let sess = shared::testing::test_session("q44-nonadmin");
+    let some = Some(Extension(sess));
+    let cases: Vec<(&str, Result<(), shared::error::AppError>)> = vec![
+        (
+            "create_surface",
+            crate::create_surface(
+                Extension(pool.clone()),
+                some.clone(),
+                Json(crate::CreateSurfaceRequest { name: None, category: None, query: None, template: None }),
+            )
+            .await
+            .map(|_| ()),
+        ),
+        (
+            "save_surface",
+            crate::save_surface(
+                Extension(pool.clone()),
+                some.clone(),
+                Path("s-1".to_string()),
+                Json(crate::CreateSurfaceRequest { name: None, category: None, query: None, template: None }),
+            )
+            .await
+            .map(|_| ()),
+        ),
+        (
+            "delete_surface",
+            crate::delete_surface(Extension(pool.clone()), some.clone(), Path("s-1".to_string()))
+                .await
+                .map(|_| ()),
+        ),
+        (
+            "table_tableFlag_row_delete_all",
+            crate::table_tableFlag_row_delete_all(
+                Extension(pool.clone()),
+                some.clone(),
+                Path("tf-1".to_string()),
+            )
+            .await
+            .map(|_| ()),
+        ),
+        (
+            "importmodel_id_execute",
+            crate::importmodel_id_execute(
+                Extension(pool.clone()),
+                some.clone(),
+                Path("im-1".to_string()),
+            )
+            .await
+            .map(|_| ()),
+        ),
+        (
+            "u2::table_row_delete",
+            crate::u2_closures::table_row_delete(
+                Extension(pool.clone()),
+                some.clone(),
+                Path(("tf-1".to_string(), "r-1".to_string())),
+            )
+            .await
+            .map(|_| ()),
+        ),
+        (
+            "u2::importmodel_record_delete",
+            crate::u2_closures::importmodel_record_delete(
+                Extension(pool.clone()),
+                some,
+                Path("rec-1".to_string()),
+            )
+            .await
+            .map(|_| ()),
+        ),
+    ];
+    let bad: Vec<&str> = cases
+        .iter()
+        .filter(|(_, r)| !matches!(r, Err(shared::error::AppError::Forbidden)))
+        .map(|(n, _)| *n)
+        .collect();
+    assert!(bad.is_empty(), "以下 R7 真写面非 admin 未回 403：{bad:?}");
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -528,8 +706,8 @@ async fn test_v9_importmodel_record_family_legacy_paths_exist() {
         .unwrap();
     assert_eq!(
         del.status(),
-        StatusCode::INTERNAL_SERVER_ERROR,
-        "DELETE /importmodel/record/{{id}} 动词补齐"
+        StatusCode::UNAUTHORIZED,
+        "DELETE /importmodel/record/{{id}} 动词补齐 (已加门, 无会话 401)"
     );
 }
 
@@ -547,7 +725,7 @@ async fn test_v9_importmodel_execute_legacy_path_route_exists() {
         )
         .await
         .unwrap();
-    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
 }
 
 #[tokio::test]

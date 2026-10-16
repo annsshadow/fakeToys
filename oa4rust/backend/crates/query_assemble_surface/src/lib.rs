@@ -13,7 +13,7 @@ use axum::{
 use deadpool_postgres::Pool;
 use serde::Deserialize;
 use serde_json::Value;
-use shared::{error::AppError, response::ActionResult};
+use shared::{error::AppError, response::ActionResult, session::Session};
 
 pub mod routes;
 pub mod u2_closures;
@@ -24,6 +24,18 @@ pub struct CreateSurfaceRequest {
     pub category: Option<String>,
     pub query: Option<String>,
     pub template: Option<String>,
+}
+
+/// admin 门（无会话 401 / 非 admin 403 / admin 放行）。用于本 crate 的 ownerless 系统数据写
+/// （x_query_surface 的 creator 硬编码 system、x_query_table_data / x_query_import_model_record
+/// 无每用户归属）——按「ownerless 系统数据写 = admin」口径，与 ppsurface / query_designer 先例一致。
+async fn require_admin_opt(pool: &Pool, session: Option<Extension<Session>>) -> Result<(), AppError> {
+    let session = session.ok_or(AppError::Unauthorized)?;
+    if shared::middleware::is_admin(pool, &session.person_unique).await {
+        Ok(())
+    } else {
+        Err(AppError::Forbidden)
+    }
 }
 
 #[allow(non_snake_case)]
@@ -86,8 +98,10 @@ pub async fn get_surface(
 #[allow(non_snake_case)]
 pub async fn create_surface(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     axum::extract::Json(req): Json<CreateSurfaceRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool.0, session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -222,9 +236,11 @@ pub async fn explorer_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Va
 #[allow(non_snake_case)]
 pub async fn save_surface(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(req): Json<CreateSurfaceRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool.0, session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let name = req.name.unwrap_or_default();
@@ -261,8 +277,10 @@ pub async fn save_surface(
 #[allow(non_snake_case)]
 pub async fn delete_surface(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool.0, session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -1341,8 +1359,10 @@ pub async fn importmodel_id(
 #[allow(non_snake_case)]
 pub async fn importmodel_id_execute(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool.0, session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
@@ -2269,8 +2289,10 @@ pub async fn table_tableFlag_row_count_where_where(
 #[allow(non_snake_case)]
 pub async fn table_tableFlag_row_delete_all(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     Path(table_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool.0, session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
