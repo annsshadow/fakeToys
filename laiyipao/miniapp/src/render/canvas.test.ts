@@ -70,6 +70,13 @@ class StubContext {
   createLinearGradient(_x0: number, _y0: number, _x1: number, _y1: number) {
     return { addColorStop: () => {} }
   }
+  createRadialGradient(_x0: number, _y0: number, _r0: number, _x1: number, _y1: number, _r1: number) {
+    return { addColorStop: () => {} }
+  }
+  strokeText(t: string, _x: number, _y: number) {
+    this.calls.push(`strokeText:${t}`)
+    this.textStyles.push(this.fillStyle)
+  }
   measureText(t: string) { return { width: t.length * 6 } }
 }
 
