@@ -10,9 +10,7 @@ attendance_assemble_control	POST	/api/attendance/assemble/control/v2/detail/stat
 attendance_assemble_control	POST	/api/attendance/assemble/control/v2/detail/statistic/filter	v2_detail_statistic_filter	R7
 attendance_assemble_control	POST	/api/attendance/assemble/control/v2/group/list/{page}/size/{size}	v2_group_list_page_size	R7
 attendance_assemble_control	POST	/api/attendance/assemble/control/v2/groupschedule/list/filter	v2_groupschedule_list_filter	R7
-attendance_assemble_control	POST	/api/attendance/assemble/control/v2/my/detail/list	v2_my_detail_list	R6
 attendance_assemble_control	POST	/api/attendance/assemble/control/v2/my/rest/date/check	v2_my_rest_date_check	R7
-attendance_assemble_control	POST	/api/attendance/assemble/control/v2/my/statistic	v2_my_statistic	R6
 attendance_assemble_control	POST	/api/attendance/assemble/control/v2/record/list/{page}/size/{size}	v2_record_list_page_size	R7
 attendance_assemble_control	POST	/api/attendance/assemble/control/v2/shift/list/{page}/size/{size}	v2_shift_list_page_size	R7
 attendance_assemble_control	POST	/api/attendance/assemble/control/v2/workplace/list/ids	v2_workplace_list_ids	R7
@@ -147,7 +145,6 @@ cms_assemble_control	POST	/api/script/{uniqueName}/appInfo/{appFlag}	script_load
 cms_assemble_control	POST	/api/templateform/list/category/mockputtopost	templateform_list_category_mockputtopost	R7
 cms_assemble_control	POST	/api/view/viewdata/list/{id}/next/{count}	view_viewdata_list_id_next_count	R7
 cms_assemble_control	POST	/api/viewrecord/list/install/log/paging/{page}/size/{size}	viewrecord_list_install_log_paging_page_size_size	R7
-cms_assemble_control	POST	/api/viewrecord/unread/mockputtopost	viewrecord_unread_u3	R6
 cms_assemble_control	PUT	/api/anonymous/document/filter/list/{id}/next/{count}	anonymous_document_filter_list_id_next_count	R7
 cms_assemble_control	PUT	/api/anonymous/document/filter/list/{page}/size/{size}	anonymous_document_filter_list_page_size_size	R7
 cms_assemble_control	PUT	/api/appinfo/filter/list/{id}/next/{count}	appinfo_filter_list_id_next_count	R7
@@ -172,7 +169,6 @@ cms_assemble_control	PUT	/api/input/prepare/cover	input_prepare_cover	R7
 cms_assemble_control	PUT	/api/input/prepare/create	input_prepare_create	R7
 cms_assemble_control	PUT	/api/output/{appInfoFlag}/select	output_appInfoFlag_select	R7
 cms_assemble_control	PUT	/api/templateform/list/category	templateform_list_category	R7
-cms_assemble_control	PUT	/api/viewrecord/unread	viewrecord_unread_u3	R6
 cms_core_entity	POST	/api/cms/article/create	article_create	R7
 cms_core_entity	POST	/api/cms/category/create	category_create	R7
 correlation_core_entity	DELETE	/api/correlation/core/entity/delete/{id}	delete_by_id	R7
@@ -656,7 +652,6 @@ program_center	POST	/api/program_center/appstyle/current/update	appstyle_current
 program_center	POST	/api/program_center/bar/create/mass/from/count	bar_create_mass_from_count	R7
 program_center	POST	/api/program_center/code/list/paging/{page}/size/{size}	code_list_paging_page_size_size	R7
 program_center	POST	/api/program_center/collect/create	collect_create	R6
-program_center	POST	/api/program_center/collect/save/{id}	collect_save	R6
 program_center	POST	/api/program_center/collect/updateUnit	collect_updateUnit	R7
 program_center	POST	/api/program_center/command/execute	command_execute	R7
 program_center	POST	/api/program_center/deploy/list/paging/{page}/size/{size}	deploy_list_paging_page_size_size	R7
@@ -683,7 +678,6 @@ program_center	POST	/api/program_center/output/list	output_list	R7
 program_center	POST	/api/program_center/schedule/report	schedule_report	R7
 program_center	POST	/api/program_center/script/list/paging/{page}/size/{size}	script_list_paging_page_size_size	R7
 program_center	PUT	/api/program_center/appstyle/current/update	appstyle_current_update	R7
-program_center	PUT	/api/program_center/collect/save/{id}	collect_save	R6
 program_center	PUT	/api/program_center/collect/updateUnit	collect_updateUnit	R7
 program_center	PUT	/api/program_center/collect/validate/codeanswer	collect_validate_codeanswer	R7
 program_center	PUT	/api/program_center/collect/validate/direct	collect_validate_direct	R7
