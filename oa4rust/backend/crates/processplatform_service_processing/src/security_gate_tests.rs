@@ -2684,6 +2684,249 @@ mod security_gate_tests {
         }
     }
 
+    /// 第四十三批（R7 含写收口）：`work/v2/{id}/goback|rollback|reroute|add_split`（POST/PUT，
+    /// 原薄封装别名无门，按 ID 回退/回滚/改派/拆分他人 work）与 `/data/job|work/...` 数据面写
+    /// （PUT/POST，按 job 或 work 改/建/删数据）。前者按 `x_work.creator` 归属，后者 job 收 admin、
+    /// work 收 `x_work.creator` 归属。离线臂：无会话一律 401（门在 `pool.get()` 之前）。
+    #[tokio::test]
+    async fn ppsvc_r7_data_and_work_v2_writes_reject_without_session() {
+        let pool = shared::testing::test_pool();
+        let p1 = |id: &str| axum::extract::Path(id.to_string());
+        let p2 = |a: &str, b: &str| axum::extract::Path((a.to_string(), b.to_string()));
+        let empty = || Json(serde_json::json!({}));
+        let cases: Vec<(&str, Result<(), AppError>)> = vec![
+            (
+                "work_v2_id_goback",
+                crate::work_v2_id_goback(Extension(pool.clone()), None, p1("w"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "work_v2_id_rollback",
+                crate::work_v2_id_rollback(Extension(pool.clone()), None, p1("w"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "work_v2_id_add_split",
+                crate::work_v2_id_add_split(Extension(pool.clone()), None, p1("w"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "work_v2_id_reroute",
+                crate::work_v2_id_reroute(Extension(pool.clone()), None, p1("w"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "data_job_put",
+                crate::u2::data_job_put(Extension(pool.clone()), None, p1("j"), empty())
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "data_job_put_path",
+                crate::u2::data_job_put_path(Extension(pool.clone()), None, p2("j", "p"), empty())
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "data_work_create",
+                crate::u2::data_work_create(Extension(pool.clone()), None, p1("w"), empty())
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "data_work_update",
+                crate::u2::data_work_update(Extension(pool.clone()), None, p1("w"), empty())
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "data_work_create_path",
+                crate::u2::data_work_create_path(Extension(pool.clone()), None, p2("w", "p"), empty())
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "data_work_update_path",
+                crate::u2::data_work_update_path(Extension(pool.clone()), None, p2("w", "p"), empty())
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "data_work_delete",
+                crate::u2::data_work_delete(Extension(pool.clone()), None, p1("w"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "data_work_delete_path",
+                crate::u2::data_work_delete_path(Extension(pool.clone()), None, p2("w", "p"))
+                    .await
+                    .map(|_| ()),
+            ),
+        ];
+        let bad: Vec<&str> = cases
+            .iter()
+            .filter(|(_, r)| !matches!(r, Err(AppError::Unauthorized)))
+            .map(|(n, _)| *n)
+            .collect();
+        assert!(bad.is_empty(), "以下 R7 写面无会话未回 401：{bad:?}");
+        assert_eq!(cases.len(), 12, "本批 12 把必须逐把点名，少一把即漏门");
+    }
+
+    /// DB 臂（第四十三批）：① work 族陌生会话 403 且不留痕、发起人放行且落库；
+    /// ② job 族收 admin 门——非 admin 403、admin 放行；③ work 空发起人普通会话 403、admin 放行。
+    #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
+    async fn ppsvc_r7_data_and_work_v2_writes_require_owner_and_admin() {
+        if !shared::testing::is_db_available().await {
+            eprintln!("skip: PG unavailable");
+            return;
+        }
+        let pool = shared::testing::test_pool();
+        let salt = uuid::Uuid::new_v4();
+        let work_id = format!("r43-w-{salt}");
+        let orphan = format!("r43-wo-{salt}");
+        let creator = "u-r43-creator";
+        let intruder = "u-r43-intruder";
+        seed_work(&pool, &work_id, creator).await;
+        seed_work(&pool, &orphan, "").await;
+        let client = pool.get().await.unwrap();
+        client
+            .execute(
+                "DELETE FROM x_data WHERE scope='work' AND bundle=$1",
+                &[&work_id],
+            )
+            .await
+            .unwrap();
+        let p1 = |id: &str| axum::extract::Path(id.to_string());
+        let body = || Json(serde_json::json!({ "k": "v" }));
+
+        // work_v2_id_goback：陌生会话 403，发起人放行。
+        let r = crate::work_v2_id_goback(
+            Extension(pool.clone()),
+            Some(Extension(sess(intruder))),
+            p1(&work_id),
+        )
+        .await
+        .map(|_| ());
+        assert!(
+            matches!(r, Err(AppError::Forbidden)),
+            "陌生会话回退他人 work 必须 403（实际 {r:?}）"
+        );
+        let r = crate::work_v2_id_goback(
+            Extension(pool.clone()),
+            Some(Extension(sess(creator))),
+            p1(&work_id),
+        )
+        .await
+        .map(|_| ());
+        assert!(r.is_ok(), "发起人回退自己的 work 应放行（实际 {r:?}）");
+
+        // data_work_create：陌生会话 403，发起人放行且落库。
+        let r = crate::u2::data_work_create(
+            Extension(pool.clone()),
+            Some(Extension(sess(intruder))),
+            p1(&work_id),
+            body(),
+        )
+        .await
+        .map(|_| ());
+        assert!(
+            matches!(r, Err(AppError::Forbidden)),
+            "非属主写他人 work 数据必须 403（实际 {r:?}）"
+        );
+        let r = crate::u2::data_work_create(
+            Extension(pool.clone()),
+            Some(Extension(sess(creator))),
+            p1(&work_id),
+            body(),
+        )
+        .await
+        .map(|_| ());
+        assert!(r.is_ok(), "属主写自己 work 数据应放行（实际 {r:?}）");
+        let n: i64 = client
+            .query_one(
+                "SELECT COUNT(*) AS c FROM x_data WHERE scope='work' AND bundle=$1",
+                &[&work_id],
+            )
+            .await
+            .unwrap()
+            .get("c");
+        assert!(n >= 1, "放行后 work 数据必须落库");
+
+        // data_job_put：admin 门——非 admin 403，admin 放行。
+        let r = crate::u2::data_job_put(
+            Extension(pool.clone()),
+            Some(Extension(sess(creator))),
+            p1("r43-job"),
+            body(),
+        )
+        .await
+        .map(|_| ());
+        assert!(
+            matches!(r, Err(AppError::Forbidden)),
+            "非 admin 写 job 数据必须 403（实际 {r:?}）"
+        );
+        let (admin, role_id) = seed_admin(&pool, "r43").await;
+        let r = crate::u2::data_job_put(
+            Extension(pool.clone()),
+            Some(Extension(sess(&admin))),
+            p1("r43-job"),
+            body(),
+        )
+        .await
+        .map(|_| ());
+        assert!(r.is_ok(), "admin 写 job 数据应放行（实际 {r:?}）");
+        unseed_admin(&pool, &admin, &role_id).await;
+
+        // 空发起人 work：普通会话 403，admin 放行。
+        let r = crate::u2::data_work_create(
+            Extension(pool.clone()),
+            Some(Extension(sess(intruder))),
+            p1(&orphan),
+            body(),
+        )
+        .await
+        .map(|_| ());
+        assert!(
+            matches!(r, Err(AppError::Forbidden)),
+            "空发起人 work 不得对普通会话开放（实际 {r:?}）"
+        );
+        let (admin, role_id) = seed_admin(&pool, "r43o").await;
+        let r = crate::u2::data_work_create(
+            Extension(pool.clone()),
+            Some(Extension(sess(&admin))),
+            p1(&orphan),
+            body(),
+        )
+        .await
+        .map(|_| ());
+        assert!(r.is_ok(), "admin 写空发起人 work 应放行（实际 {r:?}）");
+        unseed_admin(&pool, &admin, &role_id).await;
+
+        client
+            .execute(
+                "DELETE FROM x_data WHERE scope='work' AND bundle=$1",
+                &[&work_id],
+            )
+            .await
+            .unwrap();
+        client
+            .execute("DELETE FROM x_data WHERE scope='job'", &[])
+            .await
+            .unwrap();
+        for w in [work_id.clone(), orphan.clone()] {
+            client
+                .execute("DELETE FROM x_work WHERE id=$1", &[&w])
+                .await
+                .unwrap();
+        }
+    }
+
     /// DB 臂（workcompleted / snap 键）：完成项与快照行自身没有可用属主，
     /// 必须 hop 到 x_work.creator；放行侧要能看见物理删与状态写真的落库。
     #[tokio::test]

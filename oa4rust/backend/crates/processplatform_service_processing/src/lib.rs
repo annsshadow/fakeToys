@@ -682,8 +682,12 @@ async fn work_v2_id_goback_core(
 #[allow(non_snake_case)]
 pub async fn work_v2_id_goback(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 与同核 `_p2` 别名同锁：工作流回退按 `x_work.creator` 归属
+    // （无会话 401 / 非属主且非 admin 403）。此前短路径薄封装无门，按 id 可回退他人 work。
+    u4_require_work_owner(&pool.0, session, &id).await?;
     work_v2_id_goback_core(pool, id).await
 }
 
@@ -735,8 +739,11 @@ async fn work_v2_id_rollback_core(
 #[allow(non_snake_case)]
 pub async fn work_v2_id_rollback(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 与同核 `_p2` 别名同锁：工作流回滚按 `x_work.creator` 归属。
+    u4_require_work_owner(&pool.0, session, &id).await?;
     work_v2_id_rollback_core(pool, id).await
 }
 
@@ -789,8 +796,11 @@ async fn work_v2_id_add_split_core(
 #[allow(non_snake_case)]
 pub async fn work_v2_id_add_split(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 与同核 `_p2` 别名同锁：拆分工作按 `x_work.creator` 归属。
+    u4_require_work_owner(&pool.0, session, &id).await?;
     work_v2_id_add_split_core(pool, id).await
 }
 
@@ -834,8 +844,11 @@ async fn work_v2_id_reroute_core(
 #[allow(non_snake_case)]
 pub async fn work_v2_id_reroute(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 与同核 `_p2` 别名同锁：改派工作按 `x_work.creator` 归属。
+    u4_require_work_owner(&pool.0, session, &id).await?;
     work_v2_id_reroute_core(pool, id).await
 }
 
