@@ -1463,4 +1463,61 @@ mod security_gate_tests {
             );
         }
     }
+
+    /// 第 41 批回归臂：u2_closures 设计对象（statement / stat / view 的 create/edit/permission）
+    /// 收 admin 门（A2-F1）。离线：无会话 401（先于读库）；非 admin（mock pool fail-closed）403。
+    #[tokio::test]
+    async fn query_designer_u2_design_writes_require_admin() {
+        use shared::error::AppError;
+        let dead = build_test_pool();
+        let body = || axum::Json(json!({"name": "x"}));
+        let path = || axum::extract::Path("f".to_string());
+
+        let unauth = [
+            crate::u2_closures::statement_create(axum::Extension(dead.clone()), None, body()).await,
+            crate::u2_closures::statement_edit(axum::Extension(dead.clone()), None, path(), body())
+                .await,
+            crate::u2_closures::statement_permission(
+                axum::Extension(dead.clone()),
+                None,
+                path(),
+                body(),
+            )
+            .await,
+            crate::u2_closures::stat_create(axum::Extension(dead.clone()), None, body()).await,
+            crate::u2_closures::stat_edit(axum::Extension(dead.clone()), None, path(), body()).await,
+            crate::u2_closures::view_create(axum::Extension(dead.clone()), None, body()).await,
+            crate::u2_closures::view_edit(axum::Extension(dead.clone()), None, path(), body()).await,
+        ];
+        for (i, r) in unauth.iter().enumerate() {
+            assert!(
+                matches!(r, Err(AppError::Unauthorized)),
+                "第 {i} 把（u2 设计对象序）无会话必须 401"
+            );
+        }
+
+        let s = || Some(axum::Extension(shared::testing::test_session("u-qd-u2-nobody")));
+        let forbidden = [
+            crate::u2_closures::statement_create(axum::Extension(dead.clone()), s(), body()).await,
+            crate::u2_closures::statement_edit(axum::Extension(dead.clone()), s(), path(), body())
+                .await,
+            crate::u2_closures::statement_permission(
+                axum::Extension(dead.clone()),
+                s(),
+                path(),
+                body(),
+            )
+            .await,
+            crate::u2_closures::stat_create(axum::Extension(dead.clone()), s(), body()).await,
+            crate::u2_closures::stat_edit(axum::Extension(dead.clone()), s(), path(), body()).await,
+            crate::u2_closures::view_create(axum::Extension(dead.clone()), s(), body()).await,
+            crate::u2_closures::view_edit(axum::Extension(dead.clone()), s(), path(), body()).await,
+        ];
+        for (i, r) in forbidden.iter().enumerate() {
+            assert!(
+                matches!(r, Err(AppError::Forbidden)),
+                "第 {i} 把（u2 设计对象序）非 admin 必须 403"
+            );
+        }
+    }
 }
