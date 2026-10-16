@@ -565,6 +565,18 @@ A4 开放问题：① F1 是否 o2server 侧本就以 job/document 创建者为�
 | 造数面的既有缺陷：三表**无主键** ⇒ `ON CONFLICT (id)` 撞 42P10 | `migrations/032_create_assemble_control_tables.sql`（`x_attendance_appeal_info` / `x_attendance_detail` / `x_attendance_setting` 均 `"id" TEXT` 且**无 PRIMARY KEY**）；`src/security_gate_tests.rs` 的 `seed()` 注释 | 首轮真库臂红在 42P10 `there is no unique or exclusion constraint matching the ON CONFLICT specification`。测试侧改法是 `unseed()` 再普通 INSERT（幂等仍成立，连跑两遍读数一致）；**产品侧缺陷照记**：这三张表按 id `UPDATE` 无法保证只改一行，重复 id 会让「归档某一条」写成「归档若干条」，与批 19/20 的「缺列 42703」族同属 schema 缺陷，进「新增待修」 |
 | 定性**订正**（批 20 §五 那条「新增待修」读数的两处说过头） | `crates/processplatform_assemble_surface/src/lib.rs:26178`（`attachment_u2b_html_to_pdf`）、`:26147`（`_html_to_image`）；全仓 `crates/` 内 `DefaultBodyLimit` / `RequestBodyLimit` / `LimitLayer` 命中数 **0** | ① 这两把**不是 GET 面**，尺子矩阵里它们是 **POST、R6「已认证 + 读会话无门禁」**，不该占用 GET 的选题口径；② 它们经 `general_file_store(&pool, &session.person_unique, …)` 落的 `x_general_assemble_general_file` 行，`creator` 就是**调用者本人**，属「本人名的存储写」，不是伪造他人归属；③ 渲染 CPU 面受 axum 默认 2 MiB body 上限约束（无任何一处覆写）⇒「无界」这一半不成立。修正后的定性是**限流 / 配额族**（与 A1 真匿名写 9 条同族）：门仍然没收，仍然在 R6 待修名单，只是危害等级要按新口径重记。**批 20 那格的原文不回改**，以本行作订正链 |
 
+### 三.22 修复批 R1（闭合 §三.21「新增待修」3/4/5：require_owner 归一化、42883、考勤三表主键）
+
+本批**不新增任何路由门禁**，GET 写面暴露面不变，未重跑尺子。只把 §三.21「新增待修」里已取证的三个真缺陷连同测试基建一并修掉并验证；明细见独立小结 `docs/audits/2026-10-15-round4-rfixes-report.md`。
+
+| 项 | 位置 | 修法与口径 |
+| --- | --- | --- |
+| 缺陷 1：`require_owner` 归一化不一致 | `crates/shared/src/middleware/rbac.rs::require_owner` | 两侧统一 `trim().to_lowercase()` 后比较（`admin` 放行支路不变）。同一身份的大小写/空白变体视为本人；归一化后确为他者仍 `Forbidden`，不放松越权。attendance 侧 `mobile_check_impl` / `v2_mobile_check_from_out` / `import_checkin_rows` 同步改拿 `normalize_key(&session.person_unique)` 再比，消除「归一化输入 vs 原始会话」的歧义 |
+| 缺陷 2：42883（integer 列绑 text 路径参数） | `crates/attendance_assemble_control/src/lib.rs::attendancedetail_checkDetailWithPersonByCycle_cycleYear_cycleMonth` | 路径绑定 `Path<(String,String)>` → `Path<(i32,i32)>`，按真库 integer 口径绑定；非数字路径由 axum 400 拒（比暗到 500 更正确）。按 §三.21 要求**同步撤销** `security_gate_tests.rs` 里对该把的明列豁免：admin 段要求 9 把全放行，落笔回读 `checked` 由期望 `false` 改 `true`（造数行 9999-99 在射程内，UPDATE 真落笔） |
+| 缺陷 3：三张考勤表无主键 | 新增 `migrations/109_add_attendance_pk.sql`(+ `_rollback.sql`) | 逐表补 `id` 空值→uuid、自连接删重复 id→`SET NOT NULL`→`ADD PRIMARY KEY (id)`。已对测试库应用并验证：三表均 `xxx_pkey`、`id` NOT NULL、`schema_migrations` 命中 109 |
+| 测试基建 | `crates/shared/src/testing.rs` | `test_pool()` / `test_sea_orm_pool()` 支持 `DATABASE_URL` 覆盖（缺省回退默认 5432，CI 不受影响）。背景：Windows 主机 Docker 原生 `5432:5432` 端口代理不通，改用 `15432:5432` 发布 + `DATABASE_URL` 直连，弃用先前不稳的 Node 双栈代理 |
+| 验证 | — | attendance crate `45 passed / 0 failed / 15 ignored`（含新回归 `r1_require_owner_case_insensitive_self_match`、`r3_attendance_tables_have_primary_key` 与更新后的 `b21_*` 两臂）；`require_owner` 全消费方对真实库门禁测试 **325 passed / 0 failed**（calendar / meeting / mind / ai / file / general + attendance）；全 workspace 96 crate 编译通过。整跑 `--lib` 受本机 Windows 构建资源抖动（`os error 5` / `os error 1455`）干扰，已用「全量编译 + 定向门禁测试全绿」作验收证据，环境噪声如实记账 |
+
 ## 四、验证
 
 
