@@ -702,6 +702,17 @@ GET 写面队列里 `calendar_assemble_control` 与 `jpush_assemble_control` 各
 
 **注**：A3-N9 波及约 12 crate，本批先做 shared 归属版能力 + 迁移最敏感的 `x_person_face`（生物特征）；其余 crate（bbs/cms/console/general/org/search/program_center/query/portal/pp_designer/ai）的 crud_save/delete 迁移留下一批（各自判定 owner_column）。
 
+### 三.35 第三十五批（`row_to_json` 类型覆盖补全：JSONB / JSON / 时间 / UUID 静默丢列）
+
+| 项 | 位置 | 处置与口径 |
+| --- | --- | --- |
+| 类型覆盖补全（产品码） | `crates/shared/src/response.rs::row_to_json` | 原匹配臂只覆盖 BOOL / INT2·4·8 / FLOAT4·8 / TEXT / VARCHAR / NAME / BPCHAR，JSONB / JSON / DATE / TIMESTAMPTZ / NUMERIC 一律走 `_ => None` **静默丢列**（连键都不出现，与 NULL 列同形）。本批补三族：JSON·JSONB 原样透传为 `serde_json::Value`；UUID 转规范小写连字符字符串；TIMESTAMP / TIMESTAMPTZ / DATE / TIME 字符串化，口径对齐 `::text`（timestamp 无时区、timestamptz 带 `+00`、date `YYYY-MM-DD`、time `HH:MM:SS[.fff]`，`%.f` 无小数位时连点省略）。NULL 列与仍未知类型保持省略键（o2server/Gson 语义） |
+| 特性开关（构建面） | `Cargo.toml`（`[workspace.dependencies]` 新增 `postgres-types` 条目）+ `crates/shared/Cargo.toml`（`postgres-types.workspace = true`） | 原先 `tokio-postgres` 的 workspace 特性条目**无人引用**（各 crate 经 `deadpool-postgres` 走 tokio-postgres 默认特性），故 `with-chrono-0_4` 一直未真正生效。改为 `shared` 直依 `postgres-types` 并开 `with-chrono-0_4` / `with-serde_json-1` / `with-uuid-1`——`tokio_postgres::types` 即 `postgres_types`，特性合一后 `Row::get` 的 `FromSql` 随即可用（`cargo tree -e features -i postgres-types` 复核三族生效） |
+| NUMERIC 残留（本批不覆盖，记账） | 同上 | `postgres-types` 0.2.14 **已移除 decimal 特性**（`with-bigdecimal-0_4` / `with-rust_decimal-1` 均不在可用列表）⇒ 客户端无 `FromSql` 可读 NUMERIC，`row.get::<_, Option<f64>>` 亦因类型不匹配不可用。要覆盖须在**调用面 SQL 侧**显式 `::float8` / `::text` 转写（或升 `postgres-types` 版本），属另一批；账本 §五 记明此残留 |
+| 验证（本批代码变更） | — | `shared` `152 passed / 0 failed / 11 ignored`（含新真库臂 `row_to_json_covers_jsonb_time_uuid_numeric`：jsonb 透传对象、timestamp/timestamptz/date/time 字符串化、uuid 规范化、NULL 列省略键）。**调用面 8 crate 无回归**：auth 99/0/3、cms_assemble_control 336/0/4、cms_core_entity 17/0/0、file_assemble_control 92/0/27、organization_assemble_control 151/0/0、query_assemble_designer 51/0/0、query_assemble_surface 48/0/0、processplatform_service_processing 68/0/17；`cargo check --workspace` EXIT 0。尺子 EXIT 0、GET 写 11 不变、15 张产物零漂移（本批不触路由） |
+
+**注**：本批只动「序列化口」，不改任何 handler 的门禁，故不改变 `write_routes_*` 读数。响应形状变化是**加列**（此前被丢弃的 jsonb / 时间 / uuid 列现出现在通用 SELECT 响应里），调用面既有断言全绿。A3-N9 其余 crate 的 crud 迁移与 NUMERIC 转写仍是下一批入口。
+
 ## 四、验证
 
 
@@ -2288,7 +2299,7 @@ cd oa4rust/backend && cargo test --lib -p <crate>
      `coalesce(nullif(trim(creator_person),''), creator, '')`。两者对「空归属行」的效果都是 admin-only，
      但一个是列缺失的**副产品**、一个是显式收口。要么全仓定一把 helper（含 trim / 回退 / 空值三档语义），
      要么逐 crate 记下各自口径——现在的状态是「同一条禁令，两把尺」，与批 20 待拍 3 的合并问题是一对。
-- **沿用的待拍格**（读数按本批终态更新）：`row_to_json` JSONB/时间盲口仍是最高优先；只读挂写现读 **764**；
+- **沿用的待拍格**（读数按本批终态更新）：~~`row_to_json` JSONB/时间盲口~~ **已于批 35 收口**（JSONB / JSON / DATE / TIMESTAMPTZ / TIME / UUID 三族补齐，`shared` 152/0 真库臂取证；**NUMERIC 残留**——`postgres-types` 0.2.14 无 decimal 特性，须调用面 `::float8`/`::text` 转写）；只读挂写现读 **764**；
   program_center **2 把**（captcha / code）与 `creator='system'` 冒名 3 处（`lib.rs:1691 / 1844 / 8722`）、
   第三方回调**零验签**族（正压在下一批入口 auth 那 6 条头上）、A1 真匿名写 9 条属限流族
   （surface 的 `html_to_pdf` / `html_to_image` 两把经本批定性订正后**并入这一族**，不再是「无界 CPU」）、

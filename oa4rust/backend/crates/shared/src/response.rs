@@ -10,10 +10,23 @@ use thiserror::Error;
 
 /// 将一行 PostgreSQL 记录转换为 JSON 对象，供通用真实化 handler 复用。
 ///
-/// 支持核心标量类型（bool / 整数 / 浮点 / 文本）。未知类型或 NULL 列映射为
-/// `Value::Null`。该函数的目的是让"通用 SELECT" handler 在不知道具体列名的情况下
-/// 也能返回真实数据，避免 `Value::Null` 桩。复杂/带时间类型的列建议在具体 handler
-/// 中显式映射。
+/// 覆盖三族列类型：
+///   - 标量：BOOL / INT2 / INT4 / INT8 / FLOAT4 / FLOAT8 / TEXT / VARCHAR / NAME / BPCHAR；
+///   - 半结构化：JSON / JSONB（原样透传为 JSON 值）；
+///   - 时间：TIMESTAMP / TIMESTAMPTZ / DATE / TIME（格式化为字符串，口径对齐
+///     `::text`：timestamp 无时区、timestamptz 带 `+00`、date `YYYY-MM-DD`、time `HH:MM:SS[.fff]`）；
+///   - 标识：UUID（规范小写连字符字符串）。
+///
+/// NULL 列与仍未知的类型**省略键**（与 o2server/Gson 对 null 字段省略的行为一致）。
+///
+/// 历史沿革（第四轮 A3 记账）：本函数此前只覆盖标量，JSONB / JSON / DATE / TIMESTAMPTZ /
+/// NUMERIC 一律走 `_ => None` **静默丢列**——调用面在不知道列类型时会把「列不存在」
+/// 与「列被丢弃」读成同一件事，等于把 schema 漂移（42703 族）从可见面上抹掉。本批补齐
+/// 半结构化 / 时间 / UUID 三族，令通用 SELECT 的响应形状与真实列集合一致。
+///
+/// **NUMERIC 仍为残留**：`postgres-types` 0.2.14 已移除 decimal 特性（`with-bigdecimal-0_4`
+/// / `with-rust_decimal-1` 均不存在），客户端无 `FromSql` 可读 NUMERIC；要覆盖它须在调用面
+/// SQL 侧显式 `::float8` / `::text` 转写，属另一批（账本 §五 记账）。
 pub fn row_to_json(row: &Row) -> Value {
     let mut map = serde_json::Map::new();
     for col in row.columns() {
@@ -38,6 +51,25 @@ pub fn row_to_json(row: &Row) -> Value {
             Type::TEXT | Type::VARCHAR | Type::NAME | Type::BPCHAR => {
                 row.get::<_, Option<String>>(name).map(Value::String)
             }
+            // 半结构化：jsonb / json 原样透传（对象、数组、标量皆可）。
+            Type::JSON | Type::JSONB => row.get::<_, Option<Value>>(name),
+            // 标识：uuid 转规范小写连字符字符串。
+            Type::UUID => row
+                .get::<_, Option<uuid::Uuid>>(name)
+                .map(|v| Value::String(v.to_string())),
+            // 时间：统一字符串化。`%.f` 在无小数位时连点一起省略，与 `::text` 同形。
+            Type::TIMESTAMP => row
+                .get::<_, Option<chrono::NaiveDateTime>>(name)
+                .map(|v| Value::String(v.format("%Y-%m-%d %H:%M:%S%.f").to_string())),
+            Type::TIMESTAMPTZ => row
+                .get::<_, Option<chrono::DateTime<chrono::Utc>>>(name)
+                .map(|v| Value::String(v.format("%Y-%m-%d %H:%M:%S%.f+00").to_string())),
+            Type::DATE => row
+                .get::<_, Option<chrono::NaiveDate>>(name)
+                .map(|v| Value::String(v.format("%Y-%m-%d").to_string())),
+            Type::TIME => row
+                .get::<_, Option<chrono::NaiveTime>>(name)
+                .map(|v| Value::String(v.format("%H:%M:%S%.f").to_string())),
             _ => None,
         };
         if let Some(v) = val {
@@ -521,5 +553,46 @@ mod tests {
         assert!(!v2.contains('\r') && !v2.contains('\n'));
         assert_eq!(super::sanitize_mime(""), "application/octet-stream");
         assert_eq!(super::sanitize_mime("image/png"), "image/png");
+    }
+
+    /// 第 35 批回归臂：`row_to_json` 此前对 JSONB / JSON / 时间 / UUID / NUMERIC
+    /// 一律 `_ => None` 静默丢列；本批补齐后这些列必须出现在响应里。
+    /// 需真库（本地 Docker 15432 经 DATABASE_URL 覆盖）；无库时显式 skip，不算绿。
+    #[tokio::test]
+    async fn row_to_json_covers_jsonb_time_uuid_numeric() {
+        if !crate::testing::is_db_available().await {
+            eprintln!("SKIP: no database available (set DATABASE_URL)");
+            return;
+        }
+        let pool = crate::testing::test_pool();
+        let client = pool.get().await.unwrap();
+        let row = client
+            .query_one(
+                "SELECT '{\"a\":1,\"b\":[1,2]}'::jsonb AS j, \
+                        '2026-10-16 08:27:23'::timestamp AS ts, \
+                        '2026-10-16 08:27:23.456+00'::timestamptz AS tstz, \
+                        '2026-10-16'::date AS d, \
+                        '08:27:23'::time AS t, \
+                        '2b1f6a1e-0000-4000-8000-000000000000'::uuid AS u, \
+                        NULL::jsonb AS nul, \
+                        'ok'::text AS s",
+                &[],
+            )
+            .await
+            .unwrap();
+        let v = row_to_json(&row);
+        // 半结构化：jsonb 原样透传为 JSON 值
+        assert_eq!(v["j"], serde_json::json!({"a": 1, "b": [1, 2]}));
+        // 时间：字符串化，口径对齐 ::text
+        assert_eq!(v["ts"], "2026-10-16 08:27:23");
+        assert_eq!(v["tstz"], "2026-10-16 08:27:23.456+00");
+        assert_eq!(v["d"], "2026-10-16");
+        assert_eq!(v["t"], "08:27:23");
+        // 标识
+        assert_eq!(v["u"], "2b1f6a1e-0000-4000-8000-000000000000");
+        // 标量仍覆盖
+        assert_eq!(v["s"], "ok");
+        // NULL 列省略键（o2server/Gson 语义）
+        assert!(v.get("nul").is_none(), "NULL 列应省略键而非落 null");
     }
 }
