@@ -8,14 +8,40 @@
 import { flushPromises } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// 替身化 api 层：路由测试不关心 HTTP，但要保留真实的 getToken/setToken（守卫依赖它们）
+// 替身化 api 层：路由测试不关心 HTTP，但要保留真实的 getToken/setToken/
+// confirmTokenValid（守卫依赖它们，且「验真」这一环必须走真代码）。
 vi.mock('@/api/client', async (importOriginal) => {
   const mod = await importOriginal<typeof import('@/api/client')>()
   return { ...mod, api: { get: vi.fn(), post: vi.fn(), put: vi.fn(), del: vi.fn() } }
 })
 
-import { setToken } from '@/api/client'
+import { invalidateTokenVerification, setToken } from '@/api/client'
 import { router } from '@/router'
+
+const TOKEN_KEY = 'lyp_admin_token'
+
+/**
+ * 让守卫的令牌验真（GET /admin/me）返回指定状态码。
+ *
+ * ⚠️ 为什么路由测试要打桩 fetch：第 154 轮起守卫不再只看
+ * 「localStorage 里有没有字符串」，而是真的问一次 `/admin/me`。
+ * 不桩的话 jsdom 里会去连 http://localhost/api/v1 —— 网络失败
+ * 被 `confirmTokenValid` 判为「令牌不可用」，于是每一个「有令牌应放行」
+ * 的用例都会跳登录页，失败信息还指向路由表而不是网络。
+ */
+function stubMe(status: number) {
+  const body =
+    status >= 200 && status < 300
+      ? JSON.stringify({ admin: { id: 1, username: 'a', role: 'super' } })
+      : JSON.stringify({ error: { code: 'unauthorized', message: 'no' } })
+  const spy = vi.fn().mockResolvedValue({
+    ok: status >= 200 && status < 300,
+    status,
+    text: () => Promise.resolve(body),
+  })
+  vi.stubGlobal('fetch', spy)
+  return spy
+}
 
 const ALL_PAGE_NAMES = [
   'login',
@@ -34,6 +60,10 @@ const ALL_PAGE_NAMES = [
 
 beforeEach(async () => {
   localStorage.clear()
+  // 验真结论缓存在模块内存里，跨用例会残留 —— 每个用例从「没验过」出发。
+  invalidateTokenVerification()
+  // 默认：令牌验得过。需要验真失败的用例自行覆盖。
+  stubMe(200)
   // 回到登录页，保证每个用例从已知状态出发
   await router.push('/admin/login')
   localStorage.clear()
@@ -116,11 +146,63 @@ describe('全局守卫 beforeEach', () => {
     expect(router.currentRoute.value.query.redirect).toBeUndefined()
   })
 
-  it('有令牌时放行所有页面', async () => {
+  it('有令牌且验真通过时放行所有页面', async () => {
     setToken('tok')
     await router.push('/admin/economy')
     await flushPromises()
     expect(router.currentRoute.value.path).toBe('/admin/economy')
+  })
+
+  // ── 第 154 轮：令牌存在 ≠ 令牌有效 ──────────────────────────────
+
+  it('伪造令牌（localStorage 里塞任意字符串）不得进入后台壳', async () => {
+    // 复现路径：浏览器控制台执行
+    //   localStorage.setItem('lyp_admin_token','x')
+    // 原守卫只看真值就放行 —— 组件照样加载、11 个视图全部可达，
+    // 只是每个请求 401。它不是服务端越权（requireAdmin 每次查库），
+    // 但「放行一个已知无效的会话」本身就是守卫的失职。
+    setToken('forged-token')
+    stubMe(401)
+    await router.push('/admin/levels')
+    await flushPromises()
+    expect(router.currentRoute.value.path).toBe('/admin/login')
+    expect(router.currentRoute.value.query.redirect).toBe('/admin/levels')
+  })
+
+  it('验真失败时令牌被清掉（不是只跳页，凭证不留磁盘）', async () => {
+    setToken('expired-token')
+    stubMe(401)
+    await router.push('/admin/users')
+    await flushPromises()
+    expect(localStorage.getItem(TOKEN_KEY)).toBeNull()
+  })
+
+  it('验真结论在同一次会话内缓存：连续导航只问一次 /admin/me', async () => {
+    // 若每次导航都验，11 个视图切换 = 11 次额外请求 ——
+    // 缓存不是优化细节，是让这个守卫本身可用。
+    setToken('tok')
+    const spy = stubMe(200)
+    await router.push('/admin/levels')
+    await flushPromises()
+    await router.push('/admin/skills')
+    await flushPromises()
+    await router.push('/admin/economy')
+    await flushPromises()
+    expect(router.currentRoute.value.path).toBe('/admin/economy')
+    expect(spy).toHaveBeenCalledTimes(1)
+  })
+
+  it('/wiki 不额外验真：它读的是公开 /config，不该因令牌过期闪断', async () => {
+    // ⚠️ 这条钉住一个**刻意的不对称**：/admin/* 验真，/wiki 不验。
+    // wiki 的正文来自公开端点 /api/v1/config；只有右上角的使用统计
+    // 来自 /admin/dashboard（失败时被 catch 成空）。
+    // 让令牌过期的运营看不了公开文档，收益为零而代价是打断阅读。
+    setToken('ancient-token')
+    const spy = stubMe(401)
+    await router.push('/wiki')
+    await flushPromises()
+    expect(router.currentRoute.value.path).toBe('/wiki')
+    expect(spy).not.toHaveBeenCalled()
   })
 })
 

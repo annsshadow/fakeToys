@@ -75,6 +75,24 @@ describe('api client 401 处理', () => {
     expect(window.location.hash).toBe('#/admin/login')
   })
 
+  it('公开请求（auth: false）的 401 不动令牌、不跳转', async () => {
+    // ⚠️ 第 154 轮：判据从「不是登录接口」收紧为「这次请求确实带了令牌」。
+    //
+    // 复现路径：公开端点 /config 若返回 401（网关报错、部署改错鉴权、
+    // 反代把 /api/v1 整段挡在鉴权后），运维**有效**的令牌会被清掉并被
+    // 踢到登录页。运营看到的只有「莫名其妙要重新登录」，而真正的
+    // 故障（公开端点被要求鉴权）被这次误清理掩盖了。
+    localStorage.setItem(TOKEN_KEY, 'valid-token')
+    window.location.hash = '#/wiki'
+    mockFetch(401)
+
+    const { api } = await import('@/api/client')
+    await expect(api.get('/config', { auth: false })).rejects.toBeTruthy()
+
+    expect(localStorage.getItem(TOKEN_KEY)).toBe('valid-token')
+    expect(window.location.hash).toBe('#/wiki')
+  })
+
   it('非 401 的错误不动令牌', async () => {
     localStorage.setItem(TOKEN_KEY, 'good-token')
     window.location.hash = '#/admin/dashboard'
