@@ -643,6 +643,18 @@ GET 写面队列里 `calendar_assemble_control` 与 `jpush_assemble_control` 各
 | 解绑设备 | `::device_unbind_new_deviceName_deviceType_pushType`（`/api/jpush_assemble_control/device/unbind/new/{deviceName}/{deviceType}/{pushType}`，GET） | 按 (deviceName,deviceType,pushType) `UPDATE x_jpush SET deleted_at`，**WHERE 无 creator** ⇒ 任意用户可按设备名解绑他人设备 ⇒ 收归属门：先取设备绑定 `creator` 再 `require_owner` |
 | 验证 | — | `jpush_assemble_control` `29 passed / 0 failed`（含真库臂 `test_jpush_get_writes_owner_admin_gate`：无会话三把 401；非 admin 403 不落笔、非属主 403 不解绑；属主解绑软删放行；admin 建广播 + 批量解绑放行；收口零残留）。`test_jpush_create_legacy_path` 断言 500→401（行为真变）。尺子 GET 写面 34→31 |
 
+### 三.30 第三十批（cms 浏览量自增收会话门 + pp_designer 3 把 process 生命周期收归属门）
+
+| 项 | 位置 | 处置与口径 |
+| --- | --- | --- |
+| cms 浏览量自增 | `crates/cms_assemble_control/src/lib.rs::document_id_view_count`（`/api/document/{id}/view/count`，GET） | `UPDATE x_cms_document SET view_count = view_count + 1 WHERE id=$1` 无会话 ⇒ 收有效会话门（`Option<Session>`，无会话 401），防匿名刷量 |
+| pp process 禁用 | `crates/processplatform_assemble_designer/src/lib.rs::process_id_disable`（GET，两条路径） | `UPDATE PP_E_PROCESS SET xstatus='disabled' WHERE xid=$1` 无归属门 ⇒ 收本 crate `guard_write`（`COALESCE(xcreatorPerson, creator_person)` 属主或 admin） |
+| pp process 启用 | `::process_id_enable`（GET，两条路径） | 同上收 `guard_write` |
+| pp process 升级 | `::process_id_upgrade`（GET） | `UPDATE PP_E_PROCESS SET xversion+1 WHERE xid=$1` 无归属门 ⇒ 同上收 `guard_write` |
+| 验证 | — | `cms_assemble_control` 编译通过（view_count 契约臂 `!= NOT_FOUND`，401≠404 仍绿）；`processplatform_assemble_designer` `29 passed / 0 failed`（含真库臂 `test_pp_process_writes_require_owner`：非属主 403 不 bump、属主 disable+upgrade 放行、admin enable 放行、收口零残留）。尺子 GET 写面 31→26 |
+
+**第三十批收口后 GET 写面队列余 26 条的性质（已逐 crate 核实）**：多为**假阳或非简单 IDOR**，非「写 by id 无会话」型真漏洞——`auth` 6（OAuth 回调，多为已验证匿名流，oidc 缺 state 已记账）、`calendar_assemble_control` 1（follow/cancel，写按 person=session 自限定）、`cms_assemble_control` 5（commend/uncommend，person_id=session 自限定）、`message_assemble_communicate` 2（is_conversation_member + person=session 自限定）、`mind_assemble_control` 1（restore，已有 person_can_manage_mind 门）、`program_center` 2（captcha/code，登录流匿名设计）、`program_init` 1（secret/set/cancel，有意匿名）、`meeting_assemble_control` 4（accept/checkin/manual_completed/reject，属账本「待拍」产品档位）、`organization_assemble_authentication` 2（qiyeweixin bind / oauth auth 回调，需同 auth 族定性）、`message` 1（consume 按 id 标记已消费，低危语义含混）、`general_assemble_control` 1（qrcode 生成，疑只读）。真漏洞型（写 by id、无会话）已在前 30 批收口。
+
 ## 四、验证
 
 

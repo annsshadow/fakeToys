@@ -2482,9 +2482,14 @@ pub async fn process_id(
 #[allow(non_snake_case)]
 pub async fn process_id_disable(
     pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    // 归属门：进程属主或 admin 可禁用（对齐本 crate guard_write 口径）。
+    if !guard_write(&pool, &session, &client, "pp_e_process", &id).await? {
+        return Ok(Json(ActionResult::error("process not found")));
+    }
     let result = client
         .execute(
             "UPDATE PP_E_PROCESS SET xstatus = 'disabled', \"xupdateTime\" = NOW() WHERE xid = $1",
@@ -2507,9 +2512,14 @@ pub async fn process_id_disable(
 #[allow(non_snake_case)]
 pub async fn process_id_enable(
     pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    // 归属门：进程属主或 admin 可启用（对齐本 crate guard_write 口径）。
+    if !guard_write(&pool, &session, &client, "pp_e_process", &id).await? {
+        return Ok(Json(ActionResult::error("process not found")));
+    }
     let result = client
         .execute(
             "UPDATE PP_E_PROCESS SET xstatus = 'enabled', \"xupdateTime\" = NOW() WHERE xid = $1",
@@ -2778,9 +2788,14 @@ pub async fn process_id_process(
 #[allow(non_snake_case)]
 pub async fn process_id_upgrade(
     pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    // 归属门：进程属主或 admin 可升级版本（对齐本 crate guard_write 口径）。
+    if !guard_write(&pool, &session, &client, "pp_e_process", &id).await? {
+        return Ok(Json(ActionResult::error("process not found")));
+    }
     let result = client
         .execute(
             "UPDATE PP_E_PROCESS SET \"xupdateTime\" = NOW(), xversion = COALESCE(xversion, 0) + 1 WHERE xid = $1",
