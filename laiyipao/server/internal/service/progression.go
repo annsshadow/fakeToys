@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/jackc/pgx/v5"
+
 	"github.com/laiyipao/server/internal/domain"
 )
 
@@ -431,6 +433,24 @@ func (s *Service) ListDefenses(ctx context.Context, userID int64) (mine *Defense
 	return mine, candidates, nil
 }
 
+// dailyChallengeCounters 读当日挑战计数。
+//
+// ⚠️ 第 154 轮：**只读**。原实现是一条 `INSERT … ON CONFLICT DO UPDATE`：
+//
+//	INSERT INTO user_daily_challenges (user_id, challenge_date, attempts, stolen_times)
+//	VALUES ($1, $2, 0, 0)
+//	ON CONFLICT (user_id, challenge_date) DO UPDATE SET challenge_date = $2
+//	RETURNING attempts, stolen_times
+//
+// 而它的调用方 `ListDefenses` 对应 **GET /api/v1/defenses** ——
+// 一个纯读端点每次被浏览都在写库。后果有三条，都不需要恶意触发：
+//
+//  1. 每个看过防线列表的玩家每天都落一行，表随 DAU 单调增长；
+//  2. DO UPDATE 会拿**行锁**，与 `ChallengeDefense` 的预锁竞争；
+//  3. 一个 GET 请求放大成写放大路径 —— 客户端刷新一次就是一次写。
+//
+// `ChallengeDefense` 仍走 `dailyChallengeCountersTx` 在建行语义下
+// 确保行存在（那里是 UPSERT，理由见函数头）。读路径改为行不存在即 0。
 func (s *Service) dailyChallengeCounters(ctx context.Context, userID int64) (attempts, stolen int, err error) {
 	// ⚠️ 第 98 轮：`challenge_date` 由 **Go** 决定，与每日任务 / 签到 / 商城同一个口径。
 	//
@@ -445,11 +465,15 @@ func (s *Service) dailyChallengeCounters(ctx context.Context, userID int64) (att
 	//
 	// 传**日期字面量**（与第 89 轮签到、第 97 轮商城同一手法）。
 	today := periodStart(time.Now(), "daily").Format("2006-01-02")
-	err = s.pool.QueryRow(ctx, `
-		INSERT INTO user_daily_challenges (user_id, challenge_date, attempts, stolen_times)
-		VALUES ($1, $2, 0, 0)
-		ON CONFLICT (user_id, challenge_date) DO UPDATE SET challenge_date = $2
-		RETURNING attempts, stolen_times`, userID, today).Scan(&attempts, &stolen)
+	err = s.pool.QueryRow(ctx,
+		`SELECT attempts, stolen_times FROM user_daily_challenges
+		 WHERE user_id = $1 AND challenge_date = $2`, userID, today).
+		Scan(&attempts, &stolen)
+	if errors.Is(err, pgx.ErrNoRows) {
+		// 今天还没挑战过 —— 行不存在等价于两项都是 0。
+		// 不能为了"读起来方便"在这里补一行，见函数头第 154 轮的说明。
+		return 0, 0, nil
+	}
 	return attempts, stolen, err
 }
 
@@ -928,8 +952,16 @@ func (s *Service) ChallengeDefense(ctx context.Context, userID, defenseID int64,
 					}
 				}
 			}
+			// ⚠️ 必须带 `AND owner_id = $2`。
+			// 上面刚用 `SELECT owner_id … WHERE id = $1` 取过归属（紧接着
+			// 做 `ownerID == userID` 与护盾判定），所以当前**不是**可
+			// 利用的越权。但写成只有 `id` 的形式意味着：这条语句自己
+			// 不保证「改的是被挑战者的防线行」—— 一旦有人给它加第二个
+			// 调用点，或上面那段归属判定被挪走/短路，它就变成直接 IDOR。
+			// 归属守卫（ownership_scan_test.go）现在也覆盖 UPDATE，会盯着这里。
 			if _, err := tx.Exec(ctx,
-				`UPDATE defenses SET wins = wins + 1 WHERE id = $1`, defenseID); err != nil {
+				`UPDATE defenses SET wins = wins + 1 WHERE id = $1 AND owner_id = $2`,
+				defenseID, ownerID); err != nil {
 				return err
 			}
 			// 记录被偷
@@ -939,8 +971,10 @@ func (s *Service) ChallengeDefense(ctx context.Context, userID, defenseID int64,
 				return err
 			}
 		} else if !in.Won {
+			// wins / losses 成对出现，两处都带 owner_id（理由见上方 wins 那段注释）。
 			if _, err := tx.Exec(ctx,
-				`UPDATE defenses SET losses = losses + 1 WHERE id = $1`, defenseID); err != nil {
+				`UPDATE defenses SET losses = losses + 1 WHERE id = $1 AND owner_id = $2`,
+				defenseID, ownerID); err != nil {
 				return err
 			}
 		}
