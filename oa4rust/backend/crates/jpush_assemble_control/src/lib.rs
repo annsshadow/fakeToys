@@ -269,8 +269,17 @@ pub async fn get_jpush(
 #[allow(non_snake_case)]
 pub async fn create_jpush(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(req): Json<JpushRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 广播推送创建属管理面：无会话 401、非 admin 403。
+    match session {
+        None => return Err(AppError::Unauthorized),
+        Some(Extension(s)) if !shared::middleware::is_admin(&pool, &s.person_unique).await => {
+            return Err(AppError::Forbidden)
+        }
+        Some(_) => {}
+    }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
     let title = req.title.unwrap_or_default();
@@ -363,8 +372,17 @@ pub async fn delete_jpush(
 #[allow(non_snake_case)]
 pub async fn device_admin_unbind_all_person(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Json(req): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 按 personId 批量解绑属管理面（名字即 admin）：无会话 401、非 admin 403。
+    match session {
+        None => return Err(AppError::Unauthorized),
+        Some(Extension(s)) if !shared::middleware::is_admin(&pool, &s.person_unique).await => {
+            return Err(AppError::Forbidden)
+        }
+        Some(_) => {}
+    }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let person_id = req
         .get("personId")
@@ -544,9 +562,32 @@ pub async fn device_list_pushType(
 #[allow(non_snake_case)]
 pub async fn device_unbind_new_deviceName_deviceType_pushType(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path((device_name, device_type, push_type)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 归属门：解绑前先取该设备绑定的属主（creator），仅属主或 admin 可解绑，
+    // 否则任意登录用户可按设备名解绑他人设备。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let owner: Option<String> = client
+        .query_opt(
+            "SELECT creator FROM x_jpush WHERE title = $1 AND content = $2 AND target = $3 AND deleted_at IS NULL",
+            &[&device_name, &device_type, &push_type],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?
+        .map(|r| r.get::<_, Option<String>>("creator").unwrap_or_default());
+    let owner = match owner {
+        Some(o) if !o.is_empty() => o,
+        _ => {
+            return Ok(Json(ActionResult::error(
+                "device not found or already unbound",
+            )))
+        }
+    };
+    shared::middleware::require_owner(&pool, &sess, &owner).await?;
     let result = client
         .execute(
             "UPDATE x_jpush SET deleted_at = NOW() WHERE title = $1 AND content = $2 AND target = $3 AND deleted_at IS NULL",

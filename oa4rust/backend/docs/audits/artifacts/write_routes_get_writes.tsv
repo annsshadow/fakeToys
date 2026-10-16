@@ -12,9 +12,6 @@ cms_assemble_control	GET	/api/document/{id}/uncommend	document_u2_uncommend	K2-�
 cms_assemble_control	GET	/api/comment/{id}/commend	comment_commend_u3	K2-读会话无门禁
 cms_assemble_control	GET	/api/comment/{id}/uncommend	comment_uncommend_u3	K2-读会话无门禁
 general_assemble_control	GET	/api/general/assemble/control/qrcode/width/{width}/height/{height}/text/{text}	qrcode_width_width_height_height_text_text	K3-已认证无会话无门禁
-jpush_assemble_control	GET	/api/jpush_assemble_control/create/jpush	create_jpush	K3-已认证无会话无门禁
-jpush_assemble_control	GET	/api/jpush/assemble/control/device/admin/unbind/all/person	device_admin_unbind_all_person	K3-已认证无会话无门禁
-jpush_assemble_control	GET	/api/jpush_assemble_control/device/unbind/new/{deviceName}/{deviceType}/{pushType}	device_unbind_new_deviceName_deviceType_pushType	K3-已认证无会话无门禁
 meeting_assemble_control	GET	/api/meeting/assemble/control/meeting/{id}/accept	meeting_id_accept	K2-读会话无门禁
 meeting_assemble_control	GET	/api/meeting/assemble/control/meeting/{id}/checkin	u2_meeting_checkin_get	K2-读会话无门禁
 meeting_assemble_control	GET	/api/meeting/assemble/control/meeting/{id}/manual/completed	meeting_id_manual_completed	K3-已认证无会话无门禁
