@@ -104,8 +104,18 @@ pub async fn list_control_apps(
 #[allow(non_snake_case)]
 pub async fn update_control_config(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 极光推送广播写（往 x_jpush 建 target='all' 的推送，creator 硬编码 system）属管理面：
+    // 无会话 401、非 admin 403。
+    match session.as_deref() {
+        None => return Err(AppError::Unauthorized),
+        Some(s) if !shared::middleware::is_admin(&pool, &s.person_unique).await => {
+            return Err(AppError::Forbidden)
+        }
+        Some(_) => {}
+    }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let config = body.0;
     tracing::info!("Updating jpush assemble control config: {:?}", config);
