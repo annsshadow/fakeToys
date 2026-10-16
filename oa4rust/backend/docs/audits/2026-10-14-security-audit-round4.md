@@ -666,6 +666,16 @@ GET 写面队列里 `calendar_assemble_control` 与 `jpush_assemble_control` 各
 | 读数 | — | GET 写面 26→**19**（出清 calendar_follow_cancel、cms commend/uncommend×3、msg_communicate quit/self + single_delete_virtual、mind_restore 共 7 条假阳）；R6→R5 自限定重分类 24 条（POST/PUT/DELETE 面，spot-check `file recycle_empty` 确为 `WHERE person=$session` 自限定）；判据见证缺口 0 |
 | 余 19 条性质 | — | auth 6（回调，验签族）、cms 2（view_count 计数器 + comment_commend_u3 自限定 INSERT，均合法已认证写）、general 1（qrcode 疑只读）、meeting 4（待拍产品档位）、message 1（consume 低危）、org_auth 2（回调验签族）、program_center 2（captcha/code 登录流匿名设计）、program_init 1（secret/set/cancel 有意匿名）。真 IDOR 漏洞型已全清 |
 
+### 三.32 第三十二批（回调验签族：oidc state 校验 + 尺子认 validate_state）
+
+| 项 | 位置 | 处置与口径 |
+| --- | --- | --- |
+| oidc state 校验（产品码） | `crates/auth/src/oauth.rs`（`generate_state`/`validate_state` 改 `pub(crate)`）、`crates/auth/src/oidc.rs::oidc_authorize` / `oidc_callback` | 修前 `oidc_authorize` 透传客户端 state、服务端不落，`oidc_callback` 不校验 state ⇒ 登录 CSRF / session 固定风险。修法（对齐 oauth 族）：`oidc_authorize` 生成并登记服务端 state 放入授权 URL，`oidc_callback` 先 `validate_state` 再 `exchange_code`，无效/过期 state 回 400 |
+| 尺子认 validate_state | `scripts/audit_write_gating.mjs::GATE_RE` | 补 `validate_state`（OAuth/OIDC 回调的 CSRF 门）——此前 oauth_login_* 四把已用 validate_state 却因词表不认而挂 K1 假阳 |
+| 验证 | — | auth `99 passed / 0 failed`（含新回归 `test_oidc_callback_state_is_validated`：state 一次性、未登记即拒）。尺子 GET 写面 19→**14**（auth 出列 5：oauth_login_qywx/dingding/name/bind + oidc_callback；余 auth 1 = qiyeweixin_update_person_detail，code 服务端交换且只改 unique_id=qywxpos_{userid} 本人，自限定-by-code，非 IDOR） |
+
+**第三十二批收口后 GET 写面队列余 14 条**：auth 1（qiyeweixin_update_person_detail，code 自限定）、cms 2（view_count 计数器 + comment_commend_u3 自限定 INSERT，合法已认证写）、general 1（qrcode 疑只读）、meeting 4（待拍产品档位）、message 1（consume 低危）、org_auth 2（回调，待验签族收口）、program_center 2（captcha/code 登录流匿名设计）、program_init 1（secret/set/cancel 有意匿名）。
+
 ## 四、验证
 
 

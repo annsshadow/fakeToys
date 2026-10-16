@@ -1,9 +1,4 @@
 crate	method	path	handler	bucket
-auth	GET	/api/authentication/oauth/login/qywx/code/{code}	oauth_login_qywx	K1-匿名可达无门禁
-auth	GET	/api/authentication/oauth/login/dingding/code/{code}	oauth_login_dingding	K1-匿名可达无门禁
-auth	GET	/api/authentication/oauth/login/name/{name}/code/{code}/redirecturi/{redirectUri}	oauth_login_name	K1-匿名可达无门禁
-auth	GET	/api/authentication/oauth/bind/name/{name}/code/{code}/redirecturi/{redirectUri}	oauth_bind_name	K1-匿名可达无门禁
-auth	GET	/api/authentication/oidc/callback	oidc_callback	K3-已认证无会话无门禁
 auth	GET	/api/qiyeweixin/update/person/detail/{code}	qiyeweixin_update_person_detail	K3-已认证无会话无门禁
 cms_assemble_control	GET	/api/document/{id}/view/count	document_id_view_count	K2-读会话无门禁
 cms_assemble_control	GET	/api/comment/{id}/commend	comment_commend_u3	K2-读会话无门禁
