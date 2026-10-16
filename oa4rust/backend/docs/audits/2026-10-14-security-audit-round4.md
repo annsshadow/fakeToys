@@ -577,6 +577,17 @@ A4 开放问题：① F1 是否 o2server 侧本就以 job/document 创建者为�
 | 测试基建 | `crates/shared/src/testing.rs` | `test_pool()` / `test_sea_orm_pool()` 支持 `DATABASE_URL` 覆盖（缺省回退默认 5432，CI 不受影响）。背景：Windows 主机 Docker 原生 `5432:5432` 端口代理不通，改用 `15432:5432` 发布 + `DATABASE_URL` 直连，弃用先前不稳的 Node 双栈代理 |
 | 验证 | — | attendance crate `45 passed / 0 failed / 15 ignored`（含新回归 `r1_require_owner_case_insensitive_self_match`、`r3_attendance_tables_have_primary_key` 与更新后的 `b21_*` 两臂）；`require_owner` 全消费方对真实库门禁测试 **325 passed / 0 failed**（calendar / meeting / mind / ai / file / general + attendance）；全 workspace 96 crate 编译通过。整跑 `--lib` 受本机 Windows 构建资源抖动（`os error 5` / `os error 1455`）干扰，已用「全量编译 + 定向门禁测试全绿」作验收证据，环境噪声如实记账 |
 
+### 三.23 第二十三批（org 导出写面收 admin 门 + auth 6 条定性）
+
+本批两件事：①把 GET 写面队列里 `organization_assemble_control` 的两把**导出**写面收 admin 门（真实代码变更）；②对队列里 `auth` 那 6 条做定性（多为已验证的匿名回调流，非简单 IDOR，按账本「加门与验签分开记」的口径处置）。
+
+| 项 | 位置 | 处置与口径 |
+| --- | --- | --- |
+| org 导出两把收 admin 门 | `crates/organization_assemble_control/src/lib.rs` 的 `export_export_all`（`/export/export/all`）、`export_zhengwudingding_person`（`/export/zhengwudingding/person`）；新增 `u2_helpers::require_admin_opt` | 修前两把不取会话、无门禁，任意登录用户可触发全量组织/人员数据导出（往 `x_org_export` 建 `type='all'` / `'zhengwudingding'` 导出任务）⇒ 收 admin 门。用 `Option<Extension<Session>>` + `require_admin_opt`（对齐批 21 先例）：无会话 401、非 admin 403、admin 放行。回归 `org_export_writes_require_admin`：无会话离线臂两把全 401；真库臂非 admin 403 且不落笔、admin 放行且各落 1 行、收口零残留 |
+| auth 6 条定性（多为假阳，非简单 IDOR） | `crates/auth/src/oauth.rs` / `oidc.rs` / `qiyeweixin.rs` | `oauth_login_qywx` / `oauth_login_dingding` / `oauth_login_name` / `oauth_bind_name` 四把：**已有** `validate_state`（CSRF）+ 可选 PKCE，且 code 经服务端与 app_secret 交换 ⇒ 合法匿名登录流，写面（建用户/会话）即登录本身，尺子只因其体含 INSERT 且 `GATE_RE` 不认 `validate_state` 而误计 K1。`oidc_callback`：JWT 经 JWKS RS256 验签 + iss/aud/exp 校验（验签在），但**未校验 `state`**（登录 CSRF 缺口）——此为「验签缺失仍在」一族，**分开记账**（见下）。`qiyeweixin_update_person_detail`：code 服务端交换（app_secret），且只按 `unique_id = qywxpos_{userid}` 更新对应本人，非 IDOR |
+| 新增待修（本批点名） | `crates/auth/src/oidc.rs::oidc_callback` | **OIDC 回调未校验 `state`**（登录 CSRF / session 固定风险）。`oidc_authorize` 目前透传客户端 state、不落服务端 state，故回调无从校验。修法：比照 oauth 的服务端 `generate_state`/`validate_state`，`oidc_authorize` 生成并存储服务端 state 放入授权 URL，`oidc_callback` 校验。**本批未改**（改 authorize 的 state 语义属登录流行为变更，需端到端联调 IdP，单独一批），先记账 |
+| 验证（本批代码变更） | — | `organization_assemble_control` `151 passed / 0 failed`（含新回归臂；无会话离线臂 401 绿）。真库臂（admin 落笔回读）因本机 Docker 守护进程不可达（`wsl.exe` 被沙箱策略拦截、Docker Desktop 无法在当前会话重启）而**跳过**——`require_admin_opt` 门已在批 21 对真库取证，`is_admin` fail-closed 令非 admin 恒 403（既有 `org_structure_writes_forbidden_for_non_admin` 离线即证），admin 放行落笔路径为确定性的同一 helper，判定风险低；真库臂待 Docker 重启后补跑 |
+
 ## 四、验证
 
 
