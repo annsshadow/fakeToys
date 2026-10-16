@@ -286,7 +286,13 @@ func (s *Service) AdminListUsers(ctx context.Context, keyword string, limit, off
 	// 旧实现直接拼 `%<kw>%`，搜 "100%" 会退化成 `%100%%`（% 当通配符），
 	// 结果「输入了东西却匹配到一大片」—— 与第 111 轮关卡搜索同族。
 	// 空 keyword 的 pattern 仍是 `%%`，`$1='%%'` 哨兵语义不变。
-	kw := strings.TrimSpace(keyword)
+	//
+	// 第 154 轮：去空白与长度上限统一走 `trimAdminKeyword`，
+	// 与 `AdminListLevels` 同一个 choke point（理由见那个函数的说明）。
+	kw, err := trimAdminKeyword(keyword)
+	if err != nil {
+		return nil, 0, err
+	}
 	escaped := strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`).Replace(kw)
 	pattern := "%" + escaped + "%"
 

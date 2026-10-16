@@ -110,6 +110,26 @@ type TokenPair struct {
 //
 // 游客凭证是客户端持久化的随机串，服务端不绑定任何个人信息 ——
 // 这样在没有 AppID 的情况下也能完整体验，且天然满足最小化收集原则。
+// MaxNicknameLen 玩家昵称长度上限。
+//
+// # 为什么必须有一条上界
+//
+// `users.nickname` 是 TEXT（见 `00001_core.sql`），而请求体上限是
+// `BodyLimit = 1MB` —— 也就是说**单个注册请求就能写入接近 1MB 的昵称**，
+// 且没有任何东西在看。
+//
+// 它的后果不需要恶意触发：
+//
+//  1. 昵称会进**所有列表响应**：排行榜（`LeaderboardEntry.Nickname`）、
+//     后台用户列表、战报、防线候选。一个 1MB 的昵称会让每一次
+//     这些查询都多传 1MB —— 而坏数据一旦落库就永远在那儿。
+//  2. 它是**玩家可控**字段，客户端改一行 JSON 就能写。
+//
+// 取 64 与 `MaxDefenseNameLen`（32）/ `MaxChallengeReplayHashLen`（64）
+// 同一量级：微信昵称上限是 32 个字符，64 已是两倍余量。
+// 只拒绝「传一段文章」，不拒绝任何真实昵称。
+const MaxNicknameLen = 64
+
 func (s *Service) GuestLogin(ctx context.Context, guestToken, nickname string) (TokenPair, error) {
 	if strings.TrimSpace(guestToken) == "" {
 		var err error
@@ -120,6 +140,17 @@ func (s *Service) GuestLogin(ctx context.Context, guestToken, nickname string) (
 	}
 	if nickname == "" {
 		nickname = "玩家" + fmt.Sprintf("%04d", time.Now().UnixNano()%10000)
+	}
+	// ⚠️ 只在校验通过后写入。此处**不截断** —— 静默截断会让客户端
+	// 以为昵称设成功了（而它显示的是截断后的结果，玩家却不知道自己
+	// 那串被改了）。与防线名（`MaxDefenseNameLen`）同一个口径。
+	//
+	// 注意这条校验只在**首次**创建时生效：`ON CONFLICT DO UPDATE`
+	// 只更新 `last_login_at`，不覆盖昵称 —— 所以它拦的是唯一一条
+	// 能把外部字符串写进 `nickname` 的路径。
+	if n := len([]rune(nickname)); n > MaxNicknameLen {
+		return TokenPair{}, fmt.Errorf("%w: 昵称超过 %d 字（收到 %d 字）",
+			ErrBadInput, MaxNicknameLen, n)
 	}
 
 	var userID int64
@@ -213,7 +244,7 @@ func (s *Service) issueTokens(ctx context.Context, userID int64, u User) (TokenP
 	if u.Status != 1 {
 		return TokenPair{}, fmt.Errorf("%w: 账号已被封禁", ErrForbidden)
 	}
-	access, exp, err := s.JWT.Issue(userID, "user")
+	access, exp, err := s.JWT.Issue(userID, "user", "")
 	if err != nil {
 		return TokenPair{}, err
 	}
