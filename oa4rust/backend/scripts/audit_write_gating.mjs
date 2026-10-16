@@ -349,7 +349,7 @@ const SESSION_RE = /Extension\s*<\s*(?:crate::)?(?:shared::)?session::Session|Ex
 // 它是逐个点名 SQL 的属主判定入口（admin 旁路 + 非属主 Forbidden），按门计；
 // 反向见证钉在「体内确无判定入口」的 document_id_view_count 上，防止词表被扩成恒真。
 const GATE_RE =
-  /\b(?:require_admin|require_owner|require_actor|require_session|u4_session|u4_require|u2_require|u2_check_owner|u2_gate_by_sql|owner_gate|is_admin|check_permission|assert_admin|require_role|guard_write|validate_session|extract_token_from_headers|resolve_current_person|gate_doc_writer|gate_topic_owner|gate_reply_owner|gate_attachment_owner|gate_appdict_writer|is_conversation_member|person_can_manage_mind)/;
+  /\b(?:require_admin|require_owner|require_actor|require_session|u4_session|u4_require|u2_require|u2_check_owner|u2_gate_by_sql|owner_gate|is_admin|check_permission|assert_admin|require_role|guard_write|validate_session|validate_state|extract_token_from_headers|resolve_current_person|gate_doc_writer|gate_topic_owner|gate_reply_owner|gate_attachment_owner|gate_appdict_writer|is_conversation_member|person_can_manage_mind)/;
 // 自限定识别（第三十一批，尺子缺陷 26 族）：写 SQL 把**会话身份**（person_unique）绑进
 // person 列（`person = $N` / `person_id = $N` / `user_id = $N`），即「只改/建自己名下的行」，
 // 对 IDOR 而言等价于归属门。命中条件：体内既有 `&session.person_unique`（会话身份被绑定），
