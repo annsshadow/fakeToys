@@ -29,8 +29,9 @@ var (
 
 // Claims 是 access token 载荷。
 type Claims struct {
-	Sub      int64  `json:"sub"` // user_id 或 admin_id
-	Kind     string `json:"knd"` // "user" / "admin"
+	Sub      int64  `json:"sub"`           // user_id 或 admin_id
+	Kind     string `json:"knd"`           // "user" / "admin"
+	Sid      string `json:"sid,omitempty"` // 仅管理员：admin_tokens 行的会话 id
 	IssuedAt int64  `json:"iat"`
 	Expires  int64  `json:"exp"`
 }
@@ -51,13 +52,19 @@ func (s *Signer) TTL() time.Duration { return s.ttl }
 
 var b64 = base64.RawURLEncoding
 
-// Issue 签发 access token。
-func (s *Signer) Issue(userID int64, kind string) (string, time.Time, error) {
+// Issue 签发 access token。sid 仅管理员用（关联 admin_tokens 会话行）；
+// 玩家传 ""（字段 omitempty，不改变玩家令牌的形状与体积）。
+//
+// ⚠️ 第 155 轮：参数从 2 个变 3 个是**刻意的破坏性变更** ——
+// 不显式写「这个会话没有 sid」，就会让下一个签发点静默拿到
+// 「无会话」令牌，而 admin 侧要求它必须有（见 service.ResolveAdmin）。
+// 调用点没有理由不传 `""`，于是签名自己就把「忘了传」变成了编译错误。
+func (s *Signer) Issue(userID int64, kind, sid string) (string, time.Time, error) {
 	now := time.Now()
 	exp := now.Add(s.ttl)
 	header := b64.EncodeToString([]byte(`{"alg":"HS256","typ":"JWT"}`))
 	payload, err := json.Marshal(Claims{
-		Sub: userID, Kind: kind, IssuedAt: now.Unix(), Expires: exp.Unix(),
+		Sub: userID, Kind: kind, Sid: sid, IssuedAt: now.Unix(), Expires: exp.Unix(),
 	})
 	if err != nil {
 		return "", time.Time{}, fmt.Errorf("marshal claims: %w", err)

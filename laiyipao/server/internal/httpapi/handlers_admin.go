@@ -73,6 +73,22 @@ func (s *Server) adminLogin(c *fiber.Ctx) error {
 	return c.JSON(tp)
 }
 
+// adminLogout 吊销当前管理员的全部后台会话。
+//
+// 刻意**不挂** requireWritable：登出是会话生命周期动作，不是数据写，
+// readonly 账号同样（也许更应该）能立刻切断自己手上的凭证。
+// readonly_guard_test.go 的 AST 守卫把它列为**带注释的豁免**，
+// 豁免理由与这条注释是同一份 —— 两侧任何一方改了，另一方的测试会红。
+func (s *Server) adminLogout(c *fiber.Ctx) error {
+	n, err := s.Svc.AdminLogout(c.Context(), adminIDFrom(c))
+	if err != nil {
+		return failErr(c, err)
+	}
+	s.Svc.Audit(c.Context(), adminIDFrom(c), "logout", "", c.IP(),
+		fiber.Map{"revoked_sessions": n})
+	return c.JSON(fiber.Map{"revoked_sessions": n})
+}
+
 func (s *Server) adminMe(c *fiber.Ctx) error {
 	a, err := s.Svc.AdminMe(c.Context(), adminIDFrom(c))
 	if err != nil {
