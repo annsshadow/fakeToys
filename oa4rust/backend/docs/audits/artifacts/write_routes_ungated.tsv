@@ -535,7 +535,6 @@ processplatform_assemble_designer	POST	/api/processplatform/assemble/designer/pr
 processplatform_assemble_designer	POST	/api/processplatform/assemble/designer/process/application/edition/edition/{applicationId}	process_application_applicationId_edition_edition	R7
 processplatform_assemble_designer	POST	/api/processplatform/assemble/designer/process/{id}/execute/projection	process_id_execute_projection	R7
 processplatform_assemble_designer	POST	/api/processplatform/assemble/designer/process/{id}/list/element	process_id_list_element	R7
-processplatform_assemble_designer	POST	/api/processplatform/assemble/designer/process/{id}/upgrade	process_id_upgrade	R7
 processplatform_assemble_designer	POST	/api/processplatform/assemble/designer/process/{id}/{onlyRemoveNotCompleted}	process_id_onlyRemoveNotCompleted	R7
 processplatform_assemble_designer	POST	/api/processplatform/assemble/designer/process/edition/{id}/{onlyRemoveNotCompleted}	process_id_onlyRemoveNotCompleted_edition	R7
 processplatform_assemble_designer	DELETE	/api/processplatform/assemble/designer/script/{id}	delete	R7
