@@ -236,6 +236,18 @@ async fn face_writes_require_owner() {
         ),
         "face_delete 无会话必须 401"
     );
+    assert!(
+        matches!(
+            personal_mod::face_create(
+                Extension(dead.clone()),
+                None,
+                axum::Json(serde_json::json!({}))
+            )
+            .await,
+            Err(AppError::Unauthorized)
+        ),
+        "face_create 无会话必须 401"
+    );
 
     if !shared::testing::is_db_available().await {
         eprintln!("skipping face_writes_require_owner(real-db arm): DATABASE_URL not reachable");
@@ -376,6 +388,37 @@ async fn face_writes_require_owner() {
         .is_ok(),
         "admin face_delete 应放行（admin 旁路）"
     );
+
+    // face_create 自限定：非 admin 携带他人 personId，落库归属必须被强制为本人。
+    {
+        let created = personal_mod::face_create(
+            Extension(pool.clone()),
+            sess(OTHER),
+            axum::Json(serde_json::json!({"personId": OWNER, "faceName": "self"})),
+        )
+        .await
+        .expect("非 admin face_create 应放行（自限定为本人）");
+        let new_id = created.0.data.as_ref().unwrap()["id"]
+            .as_str()
+            .unwrap()
+            .to_string();
+        let c = pool.get().await.unwrap();
+        let pid: String = c
+            .query_one(
+                "SELECT person_id FROM x_person_face WHERE id=$1",
+                &[&new_id],
+            )
+            .await
+            .unwrap()
+            .get(0);
+        assert_eq!(
+            pid, OTHER,
+            "非 admin 建档归属必须强制为本人，不得冒他人 personId"
+        );
+        c.execute("DELETE FROM x_person_face WHERE id=$1", &[&new_id])
+            .await
+            .unwrap();
+    }
 
     // 收口：清造数，零残留。
     let c = pool.get().await.unwrap();

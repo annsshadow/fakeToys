@@ -327,8 +327,26 @@ fn face_spec() -> shared::crud::CrudSpec {
 #[allow(non_snake_case)]
 pub async fn face_create(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Json(payload): Json<serde_json::Value>,
 ) -> Result<Json<ActionResult<serde_json::Value>>, AppError> {
+    // IDOR 门禁（A3-N9）：人脸特征属生物特征数据，建档只允许为**本人**（`person_id` 强制
+    // 取会话登录人，忽略请求体里的他人 id）；无会话 401。admin 可为任意人建档（保留其 personId）。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    let mut payload = payload;
+    if !shared::middleware::is_admin(&pool, &sess.person_unique).await {
+        match payload.as_object_mut() {
+            Some(obj) => {
+                obj.insert(
+                    "personId".to_string(),
+                    serde_json::Value::String(sess.person_unique.clone()),
+                );
+            }
+            None => return Err(AppError::BadRequest("payload must be an object".to_string())),
+        }
+    }
     let id = shared::crud_create(&pool, &face_spec(), &payload).await?;
     Ok(Json(ActionResult::success(serde_json::Value::Object(
         serde_json::Map::from_iter([
