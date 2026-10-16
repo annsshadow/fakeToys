@@ -32,6 +32,22 @@ func run() error {
 	cfg := config.Load()
 	fmt.Println("[来一炮 server] 启动配置:", cfg.Redacted())
 
+	// 第 154 轮：默认值本身是公开的（写在源码与 README 里），
+	// 而「忘设 APP_ENV=prod」的部署会安静地拿到它们 —— 启动日志里
+	// 与正常启动**一模一样**。所以把「正在用开发默认凭证」显式喊出来。
+	//
+	// ⚠️ 这不是 fail-fast：新克隆的仓库不设任何环境变量也能起来是
+	// 被测试锁住的决定（见 config.DevDefaultWarnings 的注释）。
+	// 这里只负责让那种状态不再隐形。
+	if warns := cfg.DevDefaultWarnings(); len(warns) > 0 {
+		fmt.Println("[来一炮 server] ⚠️⚠️ 正在使用开发默认凭证（APP_ENV=" + cfg.Env + "，不是 prod）：")
+		for _, w := range warns {
+			fmt.Println("[来一炮 server] ⚠️   " + w)
+		}
+		fmt.Println("[来一炮 server] ⚠️ 这只适合本机开发。要部署就设 APP_ENV=prod —— " +
+			"那时缺失的配置会直接 panic，而不是像现在这样静默放行。")
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 

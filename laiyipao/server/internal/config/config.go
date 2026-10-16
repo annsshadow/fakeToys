@@ -227,6 +227,52 @@ func Load() Config {
 	return cfg
 }
 
+// DevDefaultWarnings 返回「正在使用开发默认凭证」的清单（第 154 轮）。
+//
+// # 它解决的问题：默认值本身是**公开的**
+//
+// prod 分支会在缺失配置时 panic（见上面那段），但那要求 `APP_ENV=prod`
+// **被设对了**。`APP_ENV` 的默认值是 `dev` —— 于是「忘设 APP_ENV」的部署
+// 会安静地拿到：
+//
+//	JWT_SECRET = dev-only-insecure-secret-change-me  （写在源码与 README 里）
+//	BOOTSTRAP_ADMIN_PASS = admin12345                  （同上）
+//
+// 后果不是「弱口令」而是**无需爆破**：知道签名的密钥就能直接签一枚
+// `{uid:1, kind:...}` 的访问令牌，而默认管理员口令是公开字面量。
+// 而这一切在启动日志里**没有任何痕迹** —— 它长得和正常启动一模一样。
+//
+// # 为什么是告警而不是禁止
+//
+// 因为「新克隆仓库不设任何环境变量也能起来」是被测试锁住的产品决定
+// （见 `TestNonProdStillGetsDevelopmentDefaults` 与 README 快速开始）。
+// 禁止默认值会让那条路断掉；而静默又让误配置不可见。
+// 告警是两者之间唯一诚实的选项：**默认照常可用，但它不再是隐形的**。
+//
+// # 判据与 prod 守卫**同源**
+//
+// 刻意复用 prod 分支完全相同的两个判断（`HasPrefix(JWTSecret,"dev-only")`
+// 与 `os.Getenv("BOOTSTRAP_ADMIN_PASS") == ""`），而不是另写一套
+// 「值是否等于默认字面量」。两套判据迟早会分叉，而分叉之后一定是
+// 「prod 会 panic，但这里不告警」那种最坏的组合。
+//
+// ⚠️ 不要为了让这条更「精确」而把默认值提成常量的同时改掉
+// `env("BOOTSTRAP_ADMIN_PASS", "admin12345")` 的字面量形态 ——
+// `prod_guard_coverage_test.go` 的 AST 扫描只认 BasicLit，
+// 换成标识符会让那个环境变量**从敏感清单里静默消失**。
+func (c Config) DevDefaultWarnings() []string {
+	var out []string
+	if strings.HasPrefix(c.JWTSecret, "dev-only") {
+		out = append(out, "JWT_SECRET 未显式声明，正在使用本仓库源码里公开的默认密钥 —— "+
+			"任何读到它的人都能伪造任意账号（含管理员）的访问令牌")
+	}
+	if os.Getenv("BOOTSTRAP_ADMIN_PASS") == "" {
+		out = append(out, "BOOTSTRAP_ADMIN_PASS 未显式声明，正在使用公开默认口令 admin12345 —— "+
+			"首次启动会创建 admin/admin12345")
+	}
+	return out
+}
+
 // WechatEnabled 报告微信登录通道是否可用。
 func (c Config) WechatEnabled() bool {
 	return c.WechatAppID != "" && c.WechatAppSecret != ""
