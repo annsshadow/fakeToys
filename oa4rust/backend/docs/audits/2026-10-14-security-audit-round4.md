@@ -750,6 +750,16 @@ GET 写面队列里 `calendar_assemble_control` 与 `jpush_assemble_control` 各
 
 **注**：`x_process_surface` 行因 `create_surface` 长期硬编码 `creator='system'`（`creator_person` 为 NULL）**无真实属主**，故按「ownerless 系统数据写 = admin」（F5 / R4-3 / R4-5 族）取 admin 档，与本 crate `require_admin_opt` 的既有两档口径一致。同族读 `list_surfaces` / `mode_list` 属「只读挂写方法」族（754 条），不在本批。
 
+### 三.39 第三十九批（尺子缺陷 27：跨 crate 通用落笔 `shared::crud_*` 纳入写 SQL 作证 + 顺手修 `face_create` 残留）
+
+| 项 | 位置 | 处置与口径 |
+| --- | --- | --- |
+| 尺子缺陷 27（修尺） | `scripts/audit_write_gating.mjs::writeEvidence` + 新增 `CROSS_CRATE_WRITE_HELPERS` | `shared::crud_create/save/delete(_owned)` 的写 SQL 在 `crates/shared/src/crud.rs` 的**函数体**里；`callHelperBody` 按**模块路径**解析（`crates/shared/src/crud_create.rs` / `crud_create/mod.rs`）必然落空 ⇒ 全部 crud 型 handler 被读成「只读挂写方法」，R6/R7 的「含写 SQL」计数对 crud 型写面**系统性低估**。跨 crate 限定名不在注册表里，故按**具名白名单**作证（与缺陷 11 的限定符路径同族：跨 crate 只能点名，不能靠解析） |
+| 缺陷 27 的即时产出 | `write_routes_readonly_on_writemethod.tsv` −2 | 修后当场把 2 条「只读挂写」纠正为写面：`personal_extend POST /api/personal/face/create`（face_create）、`program_center POST /api/program_center/collect/create`（collect_create） |
+| 顺手修 A3-N9 残留：`face_create` | `crates/personal_extend/src/personal.rs` | 缺陷 27 暴露 `face_create` 仍是「无会话无门 + `crud_create` 直接落 `x_person_face`」——可**为任意 `person_id` 建人脸生物特征行**（批 34 只迁了 `face_save`/`face_delete`，漏了 `create`）。修：`Option<Extension<Session>>`（无会话 401）+ 非 admin **强制 `personId` = 会话登录人**（忽略请求体里的他人 id）；admin 保留其 personId |
+| 验证（本批代码变更） | — | personal_extend `19 passed / 0 failed / 1 ignored`（`face_writes_require_owner` 扩臂：`face_create` 离线 401 + 真库自限定「非 admin 携他人 personId，落库归属仍被强制为本人」）。尺子：`face_create` R7→R5（R7 989→**988**）、R6 119（含写 105→**106**、只读挂写 14→**13**）、只读挂写表 −2、ungated −1；EXIT 0、判据见证缺口 0 |
+| 残留（记账，不修） | — | `program_center collect_create` 仍 R6「读会话无门禁」——其 `creator` 取自会话（**自归属**），属已定性假阳（批 31 的 `SELF_SCOPE_SQL_RE` 有意不认 `creator`，避免把「`SET creator=$session`」的按 id 覆写读成有门）；本批只把它从「只读挂写」纠正为「含写 SQL」 |
+
 ## 四、验证
 
 
