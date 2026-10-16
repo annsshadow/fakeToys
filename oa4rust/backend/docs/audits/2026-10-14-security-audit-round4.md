@@ -791,6 +791,18 @@ GET 写面队列里 `calendar_assemble_control` 与 `jpush_assemble_control` 各
 
 **query_designer R7 含写清零声明**：批 40（设计对象 + DDL 8 把）、批 41（u2 设计对象 7 把）、批 42（数据/元数据 12 把）三批合计收 **27 把**，本 crate 的 R7「含写 SQL」名单现为**空**（余 43 条 R7 全为「只读挂写方法」族）。这是 A2-F1/F2/F3 写族的完整收口。
 
+### 三.43 第四十三批（processplatform_service_processing 薄封装别名 + `/data/*` 数据面 12 把收门）
+
+| 项 | 位置 | 处置与口径 |
+| --- | --- | --- |
+| `work/v2/{id}` 薄封装别名（GET 面已收、POST 形态漏网） | `lib.rs` `work_v2_id_goback` / `work_v2_id_rollback` / `work_v2_id_add_split` / `work_v2_id_reroute` | 这 4 把是 POST/PUT 形态、各自 `route(...)` 直接委托给 `*_core` 的薄封装；此前的归属门只加在 GET 别名 `_p2` 上，POST 形态按 ID 回退/回滚/改派/拆分他人 work 无门 ⇒ 补 `u4_require_work_owner`（按 `x_work.creator` 归属；发起人为空/行不存在 → 仅 admin）。`u4_session` 在 `pool.get()` 之前，离线即证 401 |
+| `/data/job/*` 数据面 | `u2.rs` `data_job_put` / `data_job_put_path` | job 数据属引擎内部系统级数据，按 crate 内 job 族口径收 `require_admin_opt`（无会话 401 / 非 admin 403） |
+| `/data/work/*` 数据面 | `u2.rs` `data_work_create` / `data_work_update` / `data_work_create_path` / `data_work_update_path` / `data_work_delete` / `data_work_delete_path` | work 数据面按 `x_work.creator` 归属收 `u4_require_work_owner`（无会话 401 / 非属主且非 admin 403 / 空发起人仅 admin）。`pool.get()` 移到门之后，避免无会话先炸 Internal |
+
+> 注：本批与更早批次的 `data_work_id_delete` / `data_work_id_path_delete`（`/data/delete|path/delete/...` 形态）互不重叠——后者已在 R4-10 第三批收口，本批收的是 `/data/work/{id}...` 形态，两形态走不同路由、不同 handler。
+
+| 验证（本批代码变更） | — | ppsvc `69 passed / 0 failed / 18 ignored`：离线臂 `ppsvc_r7_data_and_work_v2_writes_reject_without_session`（12 把逐把点名，无会话全 401）+ 修复的 `u2_data_work_create_then_update_conflict_semantics`（改走属主会话 `send_raw_as(...,"system")`）；新真实库臂 `ppsvc_r7_data_and_work_v2_writes_require_owner_and_admin`（非属主 403 / 属主放行落库 / job 非 admin 403·admin 放行 / 空归属 work 普通会话 403·admin 放行）`--ignored` 显式跑绿。尺子：**13 个写方法 R7 → R5**，R7 946→**933**、含写 251→238、R6 119 不动、ungated −13；EXIT 0、判据见证缺口 0 |
+
 ## 四、验证
 
 

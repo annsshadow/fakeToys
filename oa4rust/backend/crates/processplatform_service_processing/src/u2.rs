@@ -545,67 +545,94 @@ async fn data_delete_key(pool: &Pool, scope: &str, bundle: &str, key: &str) -> H
 #[allow(non_snake_case)]
 pub async fn data_job_put(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(job): Path<String>,
     Json(body): Json<Value>,
 ) -> H {
+    // job 数据面按本 crate job 族口径收 admin 门（先例 `job_delete`）。
+    require_admin_opt(&pool.0, session.as_deref()).await?;
     data_put_whole(&pool, DATA_SCOPE_JOB, &job, body).await
 }
 
 #[allow(non_snake_case)]
 pub async fn data_job_put_path(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path((job, path)): Path<(String, String)>,
     Json(body): Json<Value>,
 ) -> H {
+    // job 数据面收 admin 门（先例 `job_delete`）。
+    require_admin_opt(&pool.0, session.as_deref()).await?;
     data_set_key(&pool, DATA_SCOPE_JOB, &job, &path, body, false).await
 }
 
 #[allow(non_snake_case)]
 pub async fn data_work_create(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
     Json(body): Json<Value>,
 ) -> H {
+    // work 数据面按 `x_work.creator` 归属（无会话 401 / 非属主且非 admin 403）。
+    crate::u4_require_work_owner(&pool.0, session, &id).await?;
     data_create_whole(&pool, DATA_SCOPE_WORK, &id, body, Some("x_work")).await
 }
 
 #[allow(non_snake_case)]
 pub async fn data_work_update(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
     Json(body): Json<Value>,
 ) -> H {
+    // work 数据面按 `x_work.creator` 归属。
+    crate::u4_require_work_owner(&pool.0, session, &id).await?;
     data_update_whole(&pool, DATA_SCOPE_WORK, &id, body).await
 }
 
 #[allow(non_snake_case)]
 pub async fn data_work_create_path(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path((id, path)): Path<(String, String)>,
     Json(body): Json<Value>,
 ) -> H {
+    // work 数据面按 `x_work.creator` 归属。
+    crate::u4_require_work_owner(&pool.0, session, &id).await?;
     data_set_key(&pool, DATA_SCOPE_WORK, &id, &path, body, true).await
 }
 
 #[allow(non_snake_case)]
 pub async fn data_work_update_path(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path((id, path)): Path<(String, String)>,
     Json(body): Json<Value>,
 ) -> H {
+    // work 数据面按 `x_work.creator` 归属。
+    crate::u4_require_work_owner(&pool.0, session, &id).await?;
     data_set_key(&pool, DATA_SCOPE_WORK, &id, &path, body, false).await
 }
 
 #[allow(non_snake_case)]
-pub async fn data_work_delete(pool: Extension<Pool>, Path(id): Path<String>) -> H {
+pub async fn data_work_delete(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Path(id): Path<String>,
+) -> H {
+    // work 数据面（整包删）按 `x_work.creator` 归属。
+    crate::u4_require_work_owner(&pool.0, session, &id).await?;
     data_delete_whole(&pool, DATA_SCOPE_WORK, &id).await
 }
 
 #[allow(non_snake_case)]
 pub async fn data_work_delete_path(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path((id, path)): Path<(String, String)>,
 ) -> H {
+    // work 数据面（按键删）按 `x_work.creator` 归属。
+    crate::u4_require_work_owner(&pool.0, session, &id).await?;
     data_delete_key(&pool, DATA_SCOPE_WORK, &id, &path).await
 }
 
