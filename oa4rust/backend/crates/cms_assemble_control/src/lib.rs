@@ -7675,8 +7675,13 @@ pub async fn input_prepare_create_mockputtopost(
 #[allow(non_snake_case)]
 pub async fn document_id_view_count(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 浏览量自增属写面：收有效会话门（无会话 401），防匿名刷量。
+    let Some(Extension(_sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client

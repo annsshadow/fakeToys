@@ -473,3 +473,148 @@ async fn test_designer_script_by_name_and_workcompleted_merge_registered() {
         StatusCode::NOT_FOUND
     );
 }
+
+// 回归（四轮审计 GET 写面队列 · pp_designer 3 把 process 生命周期写）：
+// process_id_disable / process_id_enable / process_id_upgrade 按 id 改 PP_E_PROCESS，
+// 无归属门 ⇒ 收 guard_write（进程属主或 admin，coalesce xcreatorPerson/creator_person）。
+#[tokio::test]
+async fn test_pp_process_writes_require_owner() {
+    use axum::extract::Extension;
+    if !shared::testing::is_db_available().await {
+        eprintln!("skipping test_pp_process_writes_require_owner: DATABASE_URL not reachable");
+        return;
+    }
+    let pool = shared::testing::test_pool();
+    const OWNER: &str = "pp-gate-owner";
+    const OTHER: &str = "pp-gate-other";
+    const ADMIN: &str = "pp-gate-admin";
+    const ROLE: &str = "pp-gate-role-admin";
+    let sess = |p: &str| Extension(shared::testing::test_session(p));
+    let pid = "pp-gate-1".to_string();
+
+    // 造 admin + 归属进程行（xcreatorPerson=OWNER）。
+    {
+        let c = pool.get().await.unwrap();
+        c.execute(
+            "INSERT INTO auth_role (id, name, disable) VALUES ($1,'admin',false) \
+             ON CONFLICT (id) DO UPDATE SET name='admin', disable=false",
+            &[&ROLE.to_string()],
+        )
+        .await
+        .unwrap();
+        c.execute(
+            "INSERT INTO auth_person (id, unique_id, name, password_hash) \
+             VALUES ($1,$1,'pp gate admin','x') ON CONFLICT (id) DO NOTHING",
+            &[&ADMIN.to_string()],
+        )
+        .await
+        .unwrap();
+        c.execute(
+            "INSERT INTO auth_person_role (person_id, role_id, unit_id) \
+             VALUES ($1,$2,'pp-gate-unit') ON CONFLICT DO NOTHING",
+            &[&ADMIN.to_string(), &ROLE.to_string()],
+        )
+        .await
+        .unwrap();
+        c.execute(
+            "INSERT INTO pp_e_process (id, xid, xname, xcreatorPerson, create_time) \
+             VALUES ($1,$1,'p',$2,NOW()) ON CONFLICT (id) DO NOTHING",
+            &[&pid, &OWNER.to_string()],
+        )
+        .await
+        .unwrap();
+    }
+
+    // 非属主/非 admin → 403 且不落笔（xversion 不 bump）。
+    assert!(
+        matches!(
+            crate::process_id_disable(Extension(pool.clone()), sess(OTHER), axum::extract::Path(pid.clone())).await,
+            Err(shared::error::AppError::Forbidden)
+        ),
+        "disable 他人必须 403"
+    );
+    assert!(
+        matches!(
+            crate::process_id_enable(Extension(pool.clone()), sess(OTHER), axum::extract::Path(pid.clone())).await,
+            Err(shared::error::AppError::Forbidden)
+        ),
+        "enable 他人必须 403"
+    );
+    assert!(
+        matches!(
+            crate::process_id_upgrade(Extension(pool.clone()), sess(OTHER), axum::extract::Path(pid.clone())).await,
+            Err(shared::error::AppError::Forbidden)
+        ),
+        "upgrade 他人必须 403"
+    );
+    {
+        let c = pool.get().await.unwrap();
+        let v: i64 = c
+            .query_one("SELECT COALESCE(xversion,0) FROM pp_e_process WHERE xid=$1", &[&pid])
+            .await
+            .unwrap()
+            .get(0);
+        assert_eq!(v, 0, "非属主 403 侧不得 bump xversion");
+    }
+
+    // 属主放行：disable + upgrade。
+    assert!(
+        crate::process_id_disable(Extension(pool.clone()), sess(OWNER), axum::extract::Path(pid.clone()))
+            .await
+            .is_ok(),
+        "属主 disable 应放行"
+    );
+    assert!(
+        crate::process_id_upgrade(Extension(pool.clone()), sess(OWNER), axum::extract::Path(pid.clone()))
+            .await
+            .is_ok(),
+        "属主 upgrade 应放行"
+    );
+    {
+        let c = pool.get().await.unwrap();
+        let v: i64 = c
+            .query_one("SELECT COALESCE(xversion,0) FROM pp_e_process WHERE xid=$1", &[&pid])
+            .await
+            .unwrap()
+            .get(0);
+        assert_eq!(v, 1, "属主 upgrade 应 bump xversion");
+        let s: String = c
+            .query_one("SELECT xstatus::text FROM pp_e_process WHERE xid=$1", &[&pid])
+            .await
+            .unwrap()
+            .get(0);
+        assert_eq!(s, "disabled", "属主 disable 应置 disabled");
+    }
+
+    // admin 放行：enable（admin 旁路）。
+    assert!(
+        crate::process_id_enable(Extension(pool.clone()), sess(ADMIN), axum::extract::Path(pid.clone()))
+            .await
+            .is_ok(),
+        "admin enable 应放行（admin 旁路）"
+    );
+    {
+        let c = pool.get().await.unwrap();
+        let s: String = c
+            .query_one("SELECT xstatus::text FROM pp_e_process WHERE xid=$1", &[&pid])
+            .await
+            .unwrap()
+            .get(0);
+        assert_eq!(s, "enabled", "admin enable 应置 enabled");
+    }
+
+    // 收口：清造数，零残留。
+    let c = pool.get().await.unwrap();
+    c.execute("DELETE FROM pp_e_process WHERE xid=$1", &[&pid])
+        .await
+        .unwrap();
+    c.execute("DELETE FROM auth_person_role WHERE person_id=$1", &[&ADMIN.to_string()])
+        .await
+        .unwrap();
+    c.execute("DELETE FROM auth_person WHERE id=$1", &[&ADMIN.to_string()])
+        .await
+        .unwrap();
+    c.execute("DELETE FROM auth_role WHERE id=$1", &[&ROLE.to_string()])
+        .await
+        .unwrap();
+}

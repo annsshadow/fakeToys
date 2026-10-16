@@ -1344,7 +1344,7 @@ processplatform_assemble_designer	POST	/api/processplatform/assemble/designer/pr
 processplatform_assemble_designer	POST	/api/processplatform/assemble/designer/process/{id}/execute/projection	process_id_execute_projection	R7-已认证+体内无会话无门禁
 processplatform_assemble_designer	POST	/api/processplatform/assemble/designer/process/{id}/list/element	process_id_list_element	R7-已认证+体内无会话无门禁
 processplatform_assemble_designer	POST	/api/processplatform/assemble/designer/process/{id}/permission	process_id_permission_save	R5-已认证+体内门禁
-processplatform_assemble_designer	POST	/api/processplatform/assemble/designer/process/{id}/upgrade	process_id_upgrade	R7-已认证+体内无会话无门禁
+processplatform_assemble_designer	POST	/api/processplatform/assemble/designer/process/{id}/upgrade	process_id_upgrade	R5-已认证+体内门禁
 processplatform_assemble_designer	POST	/api/processplatform/assemble/designer/process/{id}/{onlyRemoveNotCompleted}	process_id_onlyRemoveNotCompleted	R7-已认证+体内无会话无门禁
 processplatform_assemble_designer	POST	/api/processplatform/assemble/designer/save/{id}	save_flow	R7-已认证+体内无会话无门禁
 processplatform_assemble_designer	POST	/api/processplatform/assemble/designer/script	create	R6-已认证+读会话无门禁
