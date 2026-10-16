@@ -608,6 +608,16 @@ GET 写面队列里 `calendar_assemble_control` 与 `jpush_assemble_control` 各
 | 契约臂返工 | `src/tests.rs::test_u2_importmodel_reexecute_record_route_exists` | 原断言 500（无门 + 无库）。加门后无会话先于读库回 401，改 `UNAUTHORIZED`；新增 `test_query_get_writes_non_admin_forbidden`（两把非 admin 403） |
 | 验证 | — | `query_assemble_surface` `48 passed / 0 failed`（mock pool 离线即证 401/403）。admin 放行落笔臂待 Docker 重启补跑 |
 
+### 三.26 第二十六批（ai_assemble_control 4 把 GET 写面：2 归属 + 1 admin + 1 既有门重构）
+
+| 项 | 位置 | 处置与口径 |
+| --- | --- | --- |
+| file 删除 | `crates/ai_assemble_control/src/lib.rs::file_delete_flag`（`/api/ai_assemble_control/file/delete/{flag}`，GET） | `DELETE FROM x_ai_file WHERE id=$1` 无归属门，任意登录用户可删他人文件 ⇒ 收归属门：先 `SELECT creator`，`require_owner`（admin 放行 / 本人放行，归一化），行不存在回 `file not found` |
+| index 删除 | `::index_delete_flag`（`/api/ai_assemble_control/index/delete/{flag}`，GET） | `DELETE FROM x_ai_index WHERE id=$1` 无归属门 ⇒ 同上收归属门（`x_ai_index.creator`） |
+| index 批量同步 | `::index_sync_to_knowledge`（`/api/ai_assemble_control/index/sync/to/knowledge`，GET） | `UPDATE x_ai_index SET synced=TRUE WHERE enabled AND NOT synced` 批量维护写 ⇒ 收 admin 门（`require_admin`） |
+| chat 线索删除 | `::chat_delete_clue_id`（`/api/ai_assemble_control/chat/delete/{clueId}`，GET） | 本有归属门但用**原始串比较** `user_id != session.person_unique`（无 admin 旁路、大小写变体误拒）⇒ 重构为 `require_owner`（归一化 + admin 旁路），并改 `Option<Session>` 令无会话 401（原裸 `Extension<Session>` 无会话 500） |
+| 验证 | — | `ai_assemble_control` `54 passed / 0 failed`（含真库臂 `test_ai_get_writes_owner_admin_gate`：无会话四把全 401；非属主/非 admin 403 且不落笔；属主放行 file/index 真删、chat 软删；admin 旁路放行 + index_sync 跑通；收口零残留）。`test_u2_index_sync_no_json_body_required` 断言 500→401（行为真变）。尺子 GET 写面 44→40 |
+
 ## 四、验证
 
 
