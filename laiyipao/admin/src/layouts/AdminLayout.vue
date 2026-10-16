@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, type Component } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, computed, type Component } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import {
   Aim,
   Bell,
@@ -11,11 +11,17 @@ import {
   Lock,
   MagicStick,
   Reading,
+  SwitchButton,
   User,
   Warning,
 } from '@element-plus/icons-vue'
 
+import { adminLogout } from '@/api'
+import { setToken, invalidateTokenVerification } from '@/api/client'
+
 const route = useRoute()
+const router = useRouter()
+const loggingOut = ref(false)
 
 /**
  * 导航项的图标是**组件引用**，不是字符串名。
@@ -90,6 +96,31 @@ const groups: Array<{ title: string; items: NavItem[] }> = [
 const activePath = computed(() => route.path)
 const currentTitle = computed(() => (route.meta.title as string) || '来一炮')
 const apiLabel = import.meta.env.VITE_API_BASE || '127.0.0.1:8080'
+
+/**
+ * 第 155 轮：后台登出入口。
+ *
+ * 服务端真切断（`POST /admin/logout` 吊销该管理员全部会话），
+ * 不是只清 localStorage —— 后者那枚 2h 有效的签名合法令牌还在
+ * 别人手上 / 别的标签页里继续可用。
+ *
+ * 登出动作本身对 readonly 也放行（会话生命周期不是数据写，
+ * 见 readonly_guard_test.go 的 /logout 豁免理由）；这里不区分角色，
+ * 所有人都能立刻切断自己的凭证。
+ */
+async function logout() {
+  loggingOut.value = true
+  try {
+    await adminLogout()
+  } catch {
+    // 服务端吊销失败（如网络错误）不影响前端清令牌：
+    // 凭证还在就留在，清掉本地的这一份仍是净收益，不阻塞跳转。
+  } finally {
+    setToken('')
+    invalidateTokenVerification()
+    router.replace('/admin/login')
+  }
+}
 </script>
 
 <template>
@@ -132,6 +163,15 @@ const apiLabel = import.meta.env.VITE_API_BASE || '127.0.0.1:8080'
         <div class="topbar-title">{{ currentTitle }}</div>
         <div class="topbar-right">
           <el-tag type="info" size="small" effect="dark">API {{ apiLabel }}</el-tag>
+          <el-button
+            size="small"
+            :loading="loggingOut"
+            class="logout-btn"
+            @click="logout"
+          >
+            <el-icon style="margin-right: 4px"><SwitchButton /></el-icon>
+            登出
+          </el-button>
         </div>
       </el-header>
       <el-main class="content">
@@ -253,6 +293,10 @@ const apiLabel = import.meta.env.VITE_API_BASE || '127.0.0.1:8080'
   background: #10151c;
   border-bottom: 1px solid var(--lyp-border);
   height: 52px;
+}
+
+.logout-btn {
+  margin-left: 10px;
 }
 
 .topbar-title {
