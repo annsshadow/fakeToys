@@ -1506,8 +1506,13 @@ for (const l of indirectGated) {
 // `require_admin`（不是尺子误判），钉子被合法冲掉；换钉到 `oauth_login_qywx`——它是**设计上匿名**
 // 的登录回调（加会话门等于打断登录，故长期确无门禁），且体内确有 `oauth_code_store` 转调，
 // 「把任何 helper 转调当成门禁作证」这类放宽会被这条当场抓住，比原钉的载荷更强。
+// 第四十批再改钉：原第一条 `query_assemble_designer DELETE …/designer/delete`
+// （`delete_designer_bare`）本批真的加上了 `require_admin`（A2-F1，不是尺子误判），钉子被合法
+// 冲掉；换钉到 `personal PUT /api/reset`（`reset_password`）——密码重置是**设计上匿名**的入口
+// （加会话门等于打断「忘记密码」流程，故长期确无门禁），且体内确有 `apply_reset` 转调，
+// 同样是「把 helper 转调当门禁」的强载荷。
 const NEG_WITNESS_1920 = [
-  "query_assemble_designer\tDELETE\t/api/query/assemble/designer/delete\tdelete_designer_bare",
+  "personal\tPUT\t/api/reset\treset_password",
   "processplatform_assemble_surface\tPOST\t/api/processplatform/assemble/surface/attachment/doc/to/word/work/{workId}\tattachment_u2b_doc_to_word",
   "auth\tGET\t/api/authentication/oauth/login/qywx/code/{code}\toauth_login_qywx",
 ];
