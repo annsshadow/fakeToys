@@ -3967,8 +3967,11 @@ fn importer_spec() -> shared::crud::CrudSpec {
 #[allow(non_snake_case)]
 pub async fn importer_create(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     body: Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A3-N9：导入模型为设计器元数据，写入收 admin 门（无会话 401 / 非 admin 403）。
+    require_admin_opt(&pool, session).await?;
     let id = shared::crud_create(&pool, &importer_spec(), &body.0).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -3982,9 +3985,12 @@ pub async fn importer_create(
 #[allow(non_snake_case)]
 pub async fn importer_save(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
     body: Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A3-N9：导入模型为设计器元数据，写入收 admin 门。
+    require_admin_opt(&pool, session).await?;
     let saved = shared::crud_save(&pool, &importer_spec(), &id, &body.0).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -3998,8 +4004,11 @@ pub async fn importer_save(
 #[allow(non_snake_case)]
 pub async fn importer_delete(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A3-N9：导入模型为设计器元数据，写入收 admin 门。
+    require_admin_opt(&pool, session).await?;
     let deleted = shared::crud_delete(&pool, &importer_spec(), &id).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -4090,8 +4099,11 @@ fn stat_spec() -> shared::crud::CrudSpec {
 #[allow(non_snake_case)]
 pub async fn stat_create(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     body: Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A3-N9：统计定义为设计器元数据，写入收 admin 门。
+    require_admin_opt(&pool, session).await?;
     let id = shared::crud_create(&pool, &stat_spec(), &body.0).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -4105,9 +4117,12 @@ pub async fn stat_create(
 #[allow(non_snake_case)]
 pub async fn stat_save(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
     body: Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A3-N9：统计定义为设计器元数据，写入收 admin 门。
+    require_admin_opt(&pool, session).await?;
     let saved = shared::crud_save(&pool, &stat_spec(), &id, &body.0).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -4121,8 +4136,11 @@ pub async fn stat_save(
 #[allow(non_snake_case)]
 pub async fn stat_delete(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A3-N9：统计定义为设计器元数据，写入收 admin 门。
+    require_admin_opt(&pool, session).await?;
     let deleted = shared::crud_delete(&pool, &stat_spec(), &id).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
