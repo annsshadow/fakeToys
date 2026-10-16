@@ -623,7 +623,7 @@ file	POST	/api/file/permission/set	permission_set	R7-已认证+体内无会话�
 file	POST	/api/file/upload	file_upload	R7-已认证+体内无会话无门禁
 file_assemble_control	DELETE	/api/attachment/{id}	u2_attachment_delete	R5-已认证+体内门禁
 file_assemble_control	DELETE	/api/attachment2/{id}	u2_attachment2_delete	R5-已认证+体内门禁
-file_assemble_control	DELETE	/api/file/assemble/control/file/clean/unused/referencetype/cmsdocument/manage	file_clean_unused_referencetype_cmsdocument_manage	R7-已认证+体内无会话无门禁
+file_assemble_control	DELETE	/api/file/assemble/control/file/clean/unused/referencetype/cmsdocument/manage	file_clean_unused_referencetype_cmsdocument_manage	R5-已认证+体内门禁
 file_assemble_control	DELETE	/api/file/assemble/control/file/delete/{id}	delete_file	R7-已认证+体内无会话无门禁
 file_assemble_control	DELETE	/api/file/assemble/control/file/referencetype/{referenceType}/reference/{reference}	u2_file_delete_by_reference	R5-已认证+体内门禁
 file_assemble_control	DELETE	/api/file/assemble/control/file/{id}	u2_file_delete_by_id	R5-已认证+体内门禁
