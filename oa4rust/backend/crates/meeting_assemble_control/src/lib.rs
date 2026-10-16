@@ -2264,9 +2264,9 @@ pub async fn meeting_id_accept(
     session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    // 四轮 A3-N3：被邀请人接受（会议级状态翻转），产品口径待拍见审计文档 §五，
-    // 本批至少要求有效会话；无会话即 401。
-    let _ = &session;
+    // 会议级状态翻转（accept）收会议属主或 admin 门（u2_meeting_owner_gate）——
+    // 拍板「accept/reject/complete 属会议级、归属主/admin」（账本 §三.33 收口待拍）。
+    u2_meeting_owner_gate(&pool.0, &session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -2470,8 +2470,14 @@ pub async fn meeting_id_delete_invite(
 #[allow(non_snake_case)]
 pub async fn meeting_id_manual_completed(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 会议级状态翻转（manual completed）收会议属主或 admin 门；无会话 401。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    u2_meeting_owner_gate(&pool.0, &sess, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -2572,8 +2578,14 @@ pub async fn meeting_id_modify_starttime(
 #[allow(non_snake_case)]
 pub async fn meeting_id_reject(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 会议级状态翻转（reject）收会议属主或 admin 门；无会话 401。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    u2_meeting_owner_gate(&pool.0, &sess, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client

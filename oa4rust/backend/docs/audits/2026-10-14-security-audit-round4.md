@@ -676,6 +676,20 @@ GET 写面队列里 `calendar_assemble_control` 与 `jpush_assemble_control` 各
 
 **第三十二批收口后 GET 写面队列余 14 条**：auth 1（qiyeweixin_update_person_detail，code 自限定）、cms 2（view_count 计数器 + comment_commend_u3 自限定 INSERT，合法已认证写）、general 1（qrcode 疑只读）、meeting 4（待拍产品档位）、message 1（consume 低危）、org_auth 2（回调，待验签族收口）、program_center 2（captcha/code 登录流匿名设计）、program_init 1（secret/set/cancel 有意匿名）。
 
+### 三.33 第三十三批（meeting 会议级状态翻转收归属门：收口 §三.21 待拍）
+
+**产品档位拍板**（账本「meeting_id_accept 谁能做」待拍）：会议级状态翻转（accept/reject/manual completed）统一归属**会议属主或 admin**（`u2_meeting_owner_gate`，读 `x_meeting.creator`）。被邀请人的「接受邀请」语义若需保留，应在 `x_meeting_invite` 层做，不属本批会议级状态翻转。
+
+| 项 | 位置 | 处置与口径 |
+| --- | --- | --- |
+| accept | `crates/meeting_assemble_control/src/lib.rs::meeting_id_accept` | 修前仅要求有效会话、按 id 翻 `x_meeting.status` 无归属判定 ⇒ 加 `u2_meeting_owner_gate`（属主或 admin） |
+| reject | `::meeting_id_reject` | 修前**不取会话**、无门禁 ⇒ 改 `Option<Session>`（无会话 401）+ `u2_meeting_owner_gate` |
+| manual completed | `::meeting_id_manual_completed` | 修前**不取会话**、无门禁 ⇒ 同上 |
+| checkin（假阳） | `::u2_meeting_checkin_get` | 写 `x_meeting_checkin` 时 `person = session.person_unique`（INSERT 自限定）⇒ 安全；尺子不认 INSERT 自限定（`person` 列可能绑请求体，扩词表会引入假阴），留作已定性假阳 |
+| 验证 | — | meeting `security_gate_tests` 的 `meeting_state_writes_forbidden_for_non_owner_non_admin` 扩为 7 例（save/confirm_allow/confirm_deny/add_invite + accept/reject/manual_completed），自包含造数后 `--ignored` 真库跑 **1 passed / 0 failed**（非属主 7 把全 403）。尺子 GET 写面 14→**11**（meeting 出列 3；余 checkin 假阳） |
+
+**注**：meeting 另有两条**先于本批存在**的环境相关失败（已 stash 复验与本次改动无关）：`u2_persist_blob_verified_fails_loud_without_backend`（`STORAGE_BACKEND` 有文件系统回退 + `is_db_available()` 在本沙箱返回 false）、`test_building_list/room_list_returns_internal_error_without_db`（`#[ignore]` 钉 500、DB 可达即漂移）——属账本「`assert_eq!(status,500)` 断言族」环境漂移，非本批引入。
+
 ## 四、验证
 
 

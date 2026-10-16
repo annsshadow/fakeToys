@@ -58,11 +58,22 @@ mod security_gate_tests {
     #[ignore = "requires a running PostgreSQL server"]
     async fn meeting_state_writes_forbidden_for_non_owner_non_admin() {
         let pool = shared::testing::test_pool();
-        // 需真实 PG：x_meeting 里存在一条 creator 非本会话、且本会话非 admin 的行
+        // 自包含造数：一条 creator 非本会话、且本会话非 admin 的会议行。
+        {
+            let c = pool.get().await.unwrap();
+            c.execute(
+                "INSERT INTO x_meeting (id, title, start_time, end_time, applied, invited, creator) \
+                 VALUES ('meeting-owned-by-other','t',NOW(),NOW(),false,false,'meeting-owner-elsewhere') \
+                 ON CONFLICT (id) DO UPDATE SET creator = 'meeting-owner-elsewhere'",
+                &[],
+            )
+            .await
+            .unwrap();
+        }
         let sess = build_session("u-not-the-creator");
         let mid = || axum::extract::Path("meeting-owned-by-other".to_string());
 
-        let cases: [(&str, Result<(), AppError>); 4] = [
+        let cases: [(&str, Result<(), AppError>); 7] = [
             (
                 "save_meeting",
                 crate::save_meeting(
@@ -105,6 +116,32 @@ mod security_gate_tests {
                 .await
                 .map(|_| ()),
             ),
+            (
+                "accept",
+                crate::meeting_id_accept(Extension(pool.clone()), Extension(sess.clone()), mid())
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "reject",
+                crate::meeting_id_reject(
+                    Extension(pool.clone()),
+                    Some(Extension(sess.clone())),
+                    mid(),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "manual_completed",
+                crate::meeting_id_manual_completed(
+                    Extension(pool.clone()),
+                    Some(Extension(sess.clone())),
+                    mid(),
+                )
+                .await
+                .map(|_| ()),
+            ),
         ];
         for (name, res) in cases {
             assert!(
@@ -112,5 +149,12 @@ mod security_gate_tests {
                 "{name} 非属主且非 admin 必须 403，实得 {res:?}"
             );
         }
+        // 收口：清造数。
+        pool.get()
+            .await
+            .unwrap()
+            .execute("DELETE FROM x_meeting WHERE id='meeting-owned-by-other'", &[])
+            .await
+            .unwrap();
     }
 }
