@@ -132,3 +132,71 @@ pub async fn crud_delete(pool: &Pool, spec: &CrudSpec, id: &str) -> Result<bool,
         .map_err(|_| AppError::Internal)?;
     Ok(n > 0)
 }
+
+// ──────────────────────────────────────────────────────────────────────────────
+// 归属版（IDOR 门禁）——A3-N9：通用 crud_save/crud_delete 只按 id 落笔、无 owner 谓词，
+// 任意登录用户可改/删他人行（含 x_person_face 生物特征）。归属版先按 owner_column 取属主、
+// require_owner（admin 放行 / 本人放行，归一化），行不存在回 false（保 not-found 语义）。
+// owner_column 由调用方以静态字面量传入（与 table/columns 同口径，不接受运行时输入）。
+// ──────────────────────────────────────────────────────────────────────────────
+
+/// 归属校验：行不存在回 Ok(false)；命中则 require_owner（非属主且非 admin → Err(Forbidden)）。
+async fn crud_owner_ok(
+    pool: &Pool,
+    spec: &CrudSpec,
+    id: &str,
+    owner_column: &str,
+    session: &crate::session::Session,
+) -> Result<bool, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let deleted = if spec.soft_delete {
+        " AND deleted_at IS NULL"
+    } else {
+        ""
+    };
+    let sql = format!(
+        "SELECT {owner_column} AS owner FROM {} WHERE id = $1{deleted}",
+        spec.table
+    );
+    let owner: Option<String> = client
+        .query_opt(&sql, &[&id])
+        .await
+        .map_err(|_| AppError::Internal)?
+        .map(|r| r.get::<_, Option<String>>("owner").unwrap_or_default());
+    match owner {
+        None => Ok(false),
+        Some(o) => {
+            crate::middleware::require_owner(pool, session, &o).await?;
+            Ok(true)
+        }
+    }
+}
+
+/// 归属版 save：先判归属再 UPDATE（IDOR 门禁）。
+pub async fn crud_save_owned(
+    pool: &Pool,
+    spec: &CrudSpec,
+    id: &str,
+    payload: &Value,
+    owner_column: &str,
+    session: &crate::session::Session,
+) -> Result<bool, AppError> {
+    if !crud_owner_ok(pool, spec, id, owner_column, session).await? {
+        return Ok(false);
+    }
+    crud_save(pool, spec, id, payload).await
+}
+
+/// 归属版 delete：先判归属再软删/硬删（IDOR 门禁）。
+pub async fn crud_delete_owned(
+    pool: &Pool,
+    spec: &CrudSpec,
+    id: &str,
+    owner_column: &str,
+    session: &crate::session::Session,
+) -> Result<bool, AppError> {
+    if !crud_owner_ok(pool, spec, id, owner_column, session).await? {
+        return Ok(false);
+    }
+    crud_delete(pool, spec, id).await
+}

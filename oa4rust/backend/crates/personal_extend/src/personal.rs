@@ -342,10 +342,16 @@ pub async fn face_create(
 #[allow(non_snake_case)]
 pub async fn face_save(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
     Json(payload): Json<serde_json::Value>,
 ) -> Result<Json<ActionResult<serde_json::Value>>, AppError> {
-    let saved = shared::crud_save(&pool, &face_spec(), &id, &payload).await?;
+    // IDOR 门禁（A3-N9）：人脸属 person_id 本人，收归属门（admin 放行 / 本人放行）。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    let saved =
+        shared::crud_save_owned(&pool, &face_spec(), &id, &payload, "person_id", &sess).await?;
     Ok(Json(ActionResult::success(serde_json::Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), serde_json::Value::String(id)),
@@ -358,9 +364,14 @@ pub async fn face_save(
 #[allow(non_snake_case)]
 pub async fn face_delete(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<serde_json::Value>>, AppError> {
-    let deleted = shared::crud_delete(&pool, &face_spec(), &id).await?;
+    // IDOR 门禁（A3-N9）：人脸属 person_id 本人，收归属门。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    let deleted = shared::crud_delete_owned(&pool, &face_spec(), &id, "person_id", &sess).await?;
     Ok(Json(ActionResult::success(serde_json::Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), serde_json::Value::String(id)),

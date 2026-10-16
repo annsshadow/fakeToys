@@ -690,6 +690,18 @@ GET 写面队列里 `calendar_assemble_control` 与 `jpush_assemble_control` 各
 
 **注**：meeting 另有两条**先于本批存在**的环境相关失败（已 stash 复验与本次改动无关）：`u2_persist_blob_verified_fails_loud_without_backend`（`STORAGE_BACKEND` 有文件系统回退 + `is_db_available()` 在本沙箱返回 false）、`test_building_list/room_list_returns_internal_error_without_db`（`#[ignore]` 钉 500、DB 可达即漂移）——属账本「`assert_eq!(status,500)` 断言族」环境漂移，非本批引入。
 
+### 三.34 第三十四批（crud 归属版收口 A3-N9 + 尺子认 crud 归属变体 + 修批 32 遗留的 A1 名单）
+
+| 项 | 位置 | 处置与口径 |
+| --- | --- | --- |
+| crud 归属版（产品码） | `crates/shared/src/crud.rs` 新增 `crud_save_owned` / `crud_delete_owned`（+ 私有 `crud_owner_ok`）；`crates/shared/src/lib.rs` 补 re-export | A3-N9：通用 `crud_save`/`crud_delete` 只按 id 落笔、无 owner 谓词，任意登录用户可改/删他人行。归属版先按 `owner_column` 取属主、`require_owner`（admin 放行 / 本人放行，归一化），行不存在回 false（保 not-found）。`owner_column` 由调用方静态字面量传入（与 table/columns 同口径） |
+| 首批迁移：x_person_face 生物特征 | `crates/personal_extend/src/personal.rs::face_save` / `face_delete` | 改 `Option<Session>`（无会话 401）+ `crud_save_owned`/`crud_delete_owned`（owner_column=`person_id`）——修「他人 x_person_face 行的增改软删」 |
+| 尺子认 crud 归属变体 | `scripts/audit_write_gating.mjs::GATE_RE` | 补 `crud_save_owned`/`crud_delete_owned`（跨 crate helper，`gateEvidence` 不跟进跨 crate，故须点名）——face 4 条路由 R6→R5 |
+| 修批 32 遗留的 A1 名单（尺子自证） | `A1_UNCONDITIONAL_WRITE` 名单 | 批 32 给 GATE_RE 补 `validate_state` 后，OAuth 三方登录 4 条（有 state CSRF 门）离开 A1，硬编码名单未同步 ⇒ 尺子 `A1 名单不一致` 退 exit 1（批 32 提交时该自证被 `| grep` 掩盖未察觉）。本批移除这 4 条（9→5），尺子复归 EXIT 0 |
+| 验证 | — | `personal_extend` `19 passed / 0 failed`（含真库臂 `face_writes_require_owner`：无会话 401、非属主 403 不落笔、属主 save+delete 放行、admin 旁路放行、收口零残留）。尺子 EXIT 0、A1 实测 5=名单 5、判据见证缺口 0；face 4 条 R6→R5 |
+
+**注**：A3-N9 波及约 12 crate，本批先做 shared 归属版能力 + 迁移最敏感的 `x_person_face`（生物特征）；其余 crate（bbs/cms/console/general/org/search/program_center/query/portal/pp_designer/ai）的 crud_save/delete 迁移留下一批（各自判定 owner_column）。
+
 ## 四、验证
 
 
