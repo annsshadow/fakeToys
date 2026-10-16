@@ -492,6 +492,7 @@ onUnload(() => {
   background: rgba(13, 17, 23, 0.96);
   border-top: 1rpx solid var(--border);
   padding: 28rpx 24rpx 40rpx;
+  animation: fade-in-up 0.25s ease-out;
 }
 
 .debug-tag {
@@ -524,19 +525,26 @@ onUnload(() => {
 .hand-card {
   flex: 1;
   background: var(--panel);
-  border: 2rpx solid var(--border);
+  border: 2rpx solid var(--border-soft, var(--border));
   border-radius: 16rpx;
   padding: 20rpx 16rpx;
   display: flex;
   flex-direction: column;
   min-height: 260rpx;
+  transition: transform 0.15s, border-color 0.2s, box-shadow 0.2s;
+}
+
+.hand-card:active {
+  transform: scale(0.97);
 }
 
 .hand-card.rarity-rare {
-  border-color: rgba(88, 166, 255, 0.5);
+  border-color: var(--ice-soft, rgba(88, 166, 255, 0.5));
+  box-shadow: 0 0 0 1rpx rgba(88, 166, 255, 0.25), 0 4rpx 12rpx rgba(88, 166, 255, 0.15);
 }
 .hand-card.rarity-epic {
-  border-color: rgba(201, 167, 255, 0.6);
+  border-color: var(--kinetic-soft, rgba(201, 167, 255, 0.6));
+  box-shadow: 0 0 0 1rpx rgba(201, 167, 255, 0.25), 0 4rpx 12rpx rgba(201, 167, 255, 0.15);
 }
 
 .hand-kind {
