@@ -1,6 +1,6 @@
 crate	method	path	handler	bucket
 ai_assemble_control	DELETE	/api/ai/assemble/control/ann/delete/{id}	ann_delete	R5-已认证+体内门禁
-ai_assemble_control	DELETE	/api/ai_assemble_control/chat/delete/{clueId}	chat_delete_clue_id	R6-已认证+读会话无门禁
+ai_assemble_control	DELETE	/api/ai_assemble_control/chat/delete/{clueId}	chat_delete_clue_id	R5-已认证+体内门禁
 ai_assemble_control	DELETE	/api/ai_assemble_control/config/delete/mcp/{flag}	config_delete_mcp_flag	R5-已认证+体内门禁
 ai_assemble_control	POST	/api/ai/assemble/control/ann/create	ann_create	R5-已认证+体内门禁
 ai_assemble_control	POST	/api/ai/assemble/control/ann/delete/{id}	ann_delete	R5-已认证+体内门禁

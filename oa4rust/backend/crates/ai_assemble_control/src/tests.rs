@@ -426,6 +426,8 @@ mod u2_closure_tests {
         let app = crate::router(build_test_pool());
         // 无 content-type、无 body 的纯 GET。若仍挂着 Json 提取器会得到 415/422，
         // 而非到达 handler 后因占位 pool 失败的 500。
+        // 注：index_sync_to_knowledge 已收 admin 门（无会话先于读库回 401），
+        // 401 同样证明它是无 body 的真实 GET（需 body 会在到达门之前 415/422）。
         let response = app
             .oneshot(
                 Request::builder()
@@ -438,8 +440,8 @@ mod u2_closure_tests {
             .unwrap();
         assert_eq!(
             response.status(),
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "sync 应为无 body 的真实 GET（占位 pool 下 500）"
+            StatusCode::UNAUTHORIZED,
+            "sync 应为无 body 的真实 GET（收 admin 门后无会话回 401）"
         );
     }
 
@@ -527,5 +529,195 @@ mod u2_unit_tests {
         let a = crate::u2_normalize_name("GPT-4  Turbo");
         let b = crate::u2_normalize_name(" gpt-4 turbo ");
         assert_eq!(a, b, "归一化后同名变体必须相等，查重才能拒绝重复创建");
+    }
+
+    // 回归（四轮审计 GET 写面队列 · ai_assemble_control 4 把）：
+    // file_delete_flag / index_delete_flag（按 id 删、无归属门）、index_sync_to_knowledge
+    // （批量维护写）、chat_delete_clue_id（原原始串比较改 require_owner）。
+    #[tokio::test]
+    async fn test_ai_get_writes_owner_admin_gate() {
+        // 无会话离线臂：四把全 401（先于读库；出现 Internal 即门插在读库之后）。
+        let dead = {
+            let mgr = deadpool_postgres::Manager::new(
+                deadpool_postgres::tokio_postgres::Config::new(),
+                deadpool_postgres::tokio_postgres::NoTls,
+            );
+            deadpool_postgres::Pool::builder(mgr)
+                .max_size(1)
+                .build()
+                .unwrap()
+        };
+        let nosess: Vec<(&str, Result<_, shared::error::AppError>)> = vec![
+            (
+                "file_delete_flag",
+                crate::file_delete_flag(
+                    axum::extract::Extension(dead.clone()),
+                    None,
+                    axum::extract::Path("f".to_string()),
+                )
+                .await,
+            ),
+            (
+                "index_delete_flag",
+                crate::index_delete_flag(
+                    axum::extract::Extension(dead.clone()),
+                    None,
+                    axum::extract::Path("i".to_string()),
+                )
+                .await,
+            ),
+            (
+                "index_sync_to_knowledge",
+                crate::index_sync_to_knowledge(axum::extract::Extension(dead.clone()), None).await,
+            ),
+            (
+                "chat_delete_clue_id",
+                crate::chat_delete_clue_id(
+                    axum::extract::Extension(dead.clone()),
+                    None,
+                    axum::extract::Path("c".to_string()),
+                )
+                .await,
+            ),
+        ];
+        for (name, r) in nosess {
+            assert!(
+                matches!(r, Err(shared::error::AppError::Unauthorized)),
+                "{name} 无会话必须 401，实得 {:?}",
+                r.as_ref().err()
+            );
+        }
+
+        if !shared::testing::is_db_available().await {
+            eprintln!(
+                "skipping test_ai_get_writes_owner_admin_gate(real-db arm): DATABASE_URL not reachable"
+            );
+            return;
+        }
+        let pool = shared::testing::test_pool();
+        const OWNER: &str = "ai-gate-owner";
+        const OTHER: &str = "ai-gate-other";
+        const ADMIN: &str = "ai-gate-admin";
+        const ROLE: &str = "ai-gate-role-admin";
+
+        let sess = |p: &str| Some(axum::extract::Extension(shared::testing::test_session(p)));
+        async fn exists(pool: &deadpool_postgres::Pool, sql: &str, key: &str) -> i64 {
+            pool.get()
+                .await
+                .unwrap()
+                .query_one(sql, &[&key.to_string()])
+                .await
+                .unwrap()
+                .get::<_, i64>(0)
+        }
+
+        // 造 admin + 归属行。
+        {
+            let c = pool.get().await.unwrap();
+            c.execute(
+                "INSERT INTO auth_role (id, name, disable) VALUES ($1,'admin',false) \
+                 ON CONFLICT (id) DO UPDATE SET name='admin', disable=false",
+                &[&ROLE.to_string()],
+            )
+            .await
+            .unwrap();
+            c.execute(
+                "INSERT INTO auth_person (id, unique_id, name, password_hash) \
+                 VALUES ($1,$1,'ai gate admin','x') ON CONFLICT (id) DO NOTHING",
+                &[&ADMIN.to_string()],
+            )
+            .await
+            .unwrap();
+            c.execute(
+                "INSERT INTO auth_person_role (person_id, role_id, unit_id) \
+                 VALUES ($1,$2,'ai-gate-unit') ON CONFLICT DO NOTHING",
+                &[&ADMIN.to_string(), &ROLE.to_string()],
+            )
+            .await
+            .unwrap();
+            for (id, suffix) in [("ai-gate-file", "f"), ("ai-gate-file-owner", "f"), ("ai-gate-file-admin", "f")] {
+                let _ = suffix;
+                c.execute(
+                    "INSERT INTO x_ai_file (id, name, file_name, creator, enabled, create_time) \
+                     VALUES ($1,$1,$1,$2,true,NOW()) ON CONFLICT (id) DO NOTHING",
+                    &[&id.to_string(), &OWNER.to_string()],
+                )
+                .await
+                .unwrap();
+            }
+            for id in ["ai-gate-index", "ai-gate-index-owner"] {
+                c.execute(
+                    "INSERT INTO x_ai_index (id, creator, create_time) VALUES ($1,$2,NOW()) \
+                     ON CONFLICT (id) DO NOTHING",
+                    &[&id.to_string(), &OWNER.to_string()],
+                )
+                .await
+                .unwrap();
+            }
+            for id in ["ai-gate-chat", "ai-gate-chat-owner"] {
+                c.execute(
+                    "INSERT INTO x_ai_conversation (id, user_id, create_time) \
+                     VALUES ($1,$2,NOW()) ON CONFLICT (id) DO NOTHING",
+                    &[&id.to_string(), &OWNER.to_string()],
+                )
+                .await
+                .unwrap();
+            }
+        }
+
+        // 非 admin / 非属主 → 403，且不落笔。
+        assert!(
+            matches!(
+                crate::file_delete_flag(axum::extract::Extension(pool.clone()), sess(OTHER), axum::extract::Path("ai-gate-file".to_string())).await,
+                Err(shared::error::AppError::Forbidden)
+            ),
+            "file_delete_flag 他人必须 403"
+        );
+        assert!(
+            matches!(
+                crate::index_delete_flag(axum::extract::Extension(pool.clone()), sess(OTHER), axum::extract::Path("ai-gate-index".to_string())).await,
+                Err(shared::error::AppError::Forbidden)
+            ),
+            "index_delete_flag 他人必须 403"
+        );
+        assert!(
+            matches!(
+                crate::chat_delete_clue_id(axum::extract::Extension(pool.clone()), sess(OTHER), axum::extract::Path("ai-gate-chat".to_string())).await,
+                Err(shared::error::AppError::Forbidden)
+            ),
+            "chat_delete_clue_id 他人必须 403"
+        );
+        assert!(
+            matches!(
+                crate::index_sync_to_knowledge(axum::extract::Extension(pool.clone()), sess(OTHER)).await,
+                Err(shared::error::AppError::Forbidden)
+            ),
+            "index_sync_to_knowledge 非 admin 必须 403"
+        );
+        // 403 侧不落笔。
+        assert_eq!(exists(&pool, "SELECT COUNT(*) FROM x_ai_file WHERE id=$1", "ai-gate-file").await, 1);
+        assert_eq!(exists(&pool, "SELECT COUNT(*) FROM x_ai_index WHERE id=$1", "ai-gate-index").await, 1);
+        assert_eq!(exists(&pool, "SELECT COUNT(*) FROM x_ai_conversation WHERE id=$1 AND deleted_at IS NULL", "ai-gate-chat").await, 1);
+
+        // 属主放行：file / index 真删、chat 软删。
+        assert!(crate::file_delete_flag(axum::extract::Extension(pool.clone()), sess(OWNER), axum::extract::Path("ai-gate-file-owner".to_string())).await.is_ok(), "owner file_delete 应放行");
+        assert!(crate::index_delete_flag(axum::extract::Extension(pool.clone()), sess(OWNER), axum::extract::Path("ai-gate-index-owner".to_string())).await.is_ok(), "owner index_delete 应放行");
+        assert!(crate::chat_delete_clue_id(axum::extract::Extension(pool.clone()), sess(OWNER), axum::extract::Path("ai-gate-chat-owner".to_string())).await.is_ok(), "owner chat_delete 应放行");
+        assert_eq!(exists(&pool, "SELECT COUNT(*) FROM x_ai_file WHERE id=$1", "ai-gate-file-owner").await, 0, "owner 删后文件应消失");
+        assert_eq!(exists(&pool, "SELECT COUNT(*) FROM x_ai_index WHERE id=$1", "ai-gate-index-owner").await, 0, "owner 删后索引应消失");
+        assert_eq!(exists(&pool, "SELECT COUNT(*) FROM x_ai_conversation WHERE id=$1 AND deleted_at IS NULL", "ai-gate-chat-owner").await, 0, "owner 删后会话应软删");
+
+        // admin 放行：owner-gated 那把走 admin 旁路删自己名下的行；admin-gated 那把跑批量。
+        assert!(crate::file_delete_flag(axum::extract::Extension(pool.clone()), sess(ADMIN), axum::extract::Path("ai-gate-file-admin".to_string())).await.is_ok(), "admin file_delete 应放行（admin 旁路）");
+        assert!(crate::index_sync_to_knowledge(axum::extract::Extension(pool.clone()), sess(ADMIN)).await.is_ok(), "admin index_sync 应放行");
+
+        // 收口：清造数，零残留。
+        let c = pool.get().await.unwrap();
+        c.execute("DELETE FROM x_ai_file WHERE id LIKE 'ai-gate-%'", &[]).await.unwrap();
+        c.execute("DELETE FROM x_ai_index WHERE id LIKE 'ai-gate-%'", &[]).await.unwrap();
+        c.execute("DELETE FROM x_ai_conversation WHERE id LIKE 'ai-gate-%'", &[]).await.unwrap();
+        c.execute("DELETE FROM auth_person_role WHERE person_id=$1", &[&ADMIN.to_string()]).await.unwrap();
+        c.execute("DELETE FROM auth_person WHERE id=$1", &[&ADMIN.to_string()]).await.unwrap();
+        c.execute("DELETE FROM auth_role WHERE id=$1", &[&ROLE.to_string()]).await.unwrap();
     }
 }
