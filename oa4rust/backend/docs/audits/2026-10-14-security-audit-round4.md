@@ -626,6 +626,14 @@ GET 写面队列里 `calendar_assemble_control` 与 `jpush_assemble_control` 各
 | 复制附件 | `::file_copy_attachment_attachmentId_referencetype_referenceType_reference_reference_scale_scale`（GET，两条重复路径映射同一 handler） | 读源 FILE_FILE 行并在 FILE_FILE 新建一行（继承源 `person`）⇒ 收归属门：先取源 `person` 再 `require_owner`（admin 放行 / 本人放行），源不存在回 `attachment not found` |
 | 验证 | — | `file_assemble_control` `92 passed / 0 failed`（含真库臂 `test_file_get_writes_owner_admin_gate`：无会话两把 401；非 admin 403 不删、非属主 403 不建复制行；属主 copy 放行建 1 行；admin clean_unused 删 cmsdocument_manage 行 + admin copy 放行；收口零残留）。尺子 GET 写面 40→37 |
 
+### 三.28 第二十八批（hotpic_assemble_control 2 把 GET 写面收归属门）
+
+| 项 | 位置 | 处置与口径 |
+| --- | --- | --- |
+| 改热图标题 | `crates/hotpic_assemble_control/src/lib.rs::user_hotpic_changeTitle`（`/api/hotpic_assemble_control/user/hotpic/changeTitle`，GET） | `UPDATE x_hotpic SET title=$1 WHERE id=$2` 按 id 改、无归属门 ⇒ 收归属门：先 `SELECT creator` 再 `require_owner`（admin 放行 / 本人放行），行不存在回 `hotpic not found` |
+| 删热图 | `::user_hotpic_id`（`/api/hotpic_assemble_control/user/hotpic/{id}` 与 `/api/hotpic/assemble/control/user/hotpic/{id}` 两条重复路径，GET，handler 内含 DELETE 分支） | DELETE 分支 `UPDATE x_hotpic SET deleted_at=NOW() WHERE id=$1` 无归属门 ⇒ 收归属门（同口径）；GET/读分支不设门。**关键顺序**：`pool.get()` 移到会话门**之后**（原先在读库之前，无会话会先炸 Internal 而非 401——「门插在读库之后」） |
+| 验证 | — | `hotpic_assemble_control` `31 passed / 0 failed`（含真库臂 `hotpic_user_writes_require_owner`：无会话两把 401；非属主 403 不改标题不软删；属主改标题 + 软删放行；admin 旁路放行；收口零残留）。尺子 GET 写面 37→34 |
+
 ## 四、验证
 
 
