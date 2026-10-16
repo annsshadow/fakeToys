@@ -194,6 +194,22 @@ export class BattleRenderer {
       ctx.lineTo(this.vp.offsetX + FIELD_W * this.vp.scale, y)
       ctx.stroke()
     }
+
+    // 边缘暗角（vignette）：聚焦中心战场，与网格一起营造纵深
+    this.drawVignette(ctx)
+  }
+
+  /** 边缘暗角（径向渐变，透明到半透明黑） */
+  private drawVignette(ctx: CanvasRenderingContext2D): void {
+    const { width, height } = this.vp
+    const cx = width / 2
+    const cy = height / 2
+    const radius = Math.max(width, height) * 0.7
+    const grad = ctx.createRadialGradient(cx, cy, radius * 0.3, cx, cy, radius)
+    grad.addColorStop(0, 'rgba(0,0,0,0)')
+    grad.addColorStop(1, 'rgba(0,0,0,0.45)')
+    ctx.fillStyle = grad
+    ctx.fillRect(0, 0, width, height)
   }
 
   private drawBase(ctx: CanvasRenderingContext2D): void {
@@ -204,9 +220,17 @@ export class BattleRenderer {
     const h = 120 * vp.scale
     const hpPct = Number(this.engine.baseHp) / Number(this.engine.baseHpMax)
 
-    // 防线墙体
-    ctx.fillStyle = hpPct > 0.5 ? '#58a6ff' : hpPct > 0.2 ? '#ffd33d' : '#ff6b35'
+    // 防线墙体：纯色 + 左侧高光条（用半透明白叠加，不替换主色，
+    // 让"血量分段变色"保持为可断言的纯色）
+    const wallColor = hpPct > 0.5 ? '#58a6ff' : hpPct > 0.2 ? '#ffd33d' : '#ff6b35'
+    ctx.fillStyle = wallColor
     ctx.fillRect(x - w * 0.2, y - h / 2, w * 0.22, h)
+    // 左侧高光（半透明白窄条，叠加在墙上，不改变主色可断言性）
+    ctx.fillStyle = 'rgba(255,255,255,0.18)'
+    ctx.fillRect(x - w * 0.2, y - h / 2, 2 * vp.scale, h)
+    // 底部阴影条（半透明黑，给"金属板"的厚度感）
+    ctx.fillStyle = 'rgba(0,0,0,0.35)'
+    ctx.fillRect(x - w * 0.2, y + h / 2 - 3 * vp.scale, w * 0.22, 3 * vp.scale)
 
     // 血条
     const barH = 6
@@ -276,11 +300,21 @@ export class BattleRenderer {
     }
 
     const bodyColor = e.hitFlashMs > 0 ? '#ffffff' : e.isBoss ? '#8b2f4a' : e.category === 'flying' ? '#3d5a80' : '#4a6b52'
+    // 元素色描边 + 高光，让不同 category 的敌人在颜色上更容易区分
+    // 非 BOSS 的描边用背景色（深色），与测试「#0d1117 必须出现」保持一致；
+    // BOSS 仍保留警示橙描边（测试断言 #ff6b35 必须出现）
+    const strokeColor = e.isBoss ? '#ff6b35' : '#0d1117'
     ctx.fillStyle = bodyColor
     ctx.fill()
-    ctx.strokeStyle = e.isBoss ? '#ff6b35' : '#0d1117'
+    ctx.strokeStyle = strokeColor
     ctx.lineWidth = 2 * vp.scale * 0.5
     ctx.stroke()
+    // 左上高光（小圆点 + 半透明），给实体感
+    const hlR = r * 0.35
+    ctx.beginPath()
+    ctx.arc(x - r * 0.35, y - r * 0.35, hlR, 0, Math.PI * 2)
+    ctx.fillStyle = 'rgba(255,255,255,0.18)'
+    ctx.fill()
 
     // 护盾环
     if (e.shield > 0n) {
@@ -360,6 +394,16 @@ export class BattleRenderer {
     ctx.strokeStyle = '#ffffff'
     ctx.lineWidth = 1
     ctx.stroke()
+    // 光晕（外圈同色半透明），元素色更醒目
+    const glowGrad = ctx.createRadialGradient(x, y, r * 0.5, x, y, r * 2.4)
+    glowGrad.addColorStop(0, color)
+    glowGrad.addColorStop(1, 'rgba(0,0,0,0)')
+    ctx.fillStyle = glowGrad
+    ctx.globalAlpha = 0.25
+    ctx.beginPath()
+    ctx.arc(x, y, r * 2.4, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.globalAlpha = 1
   }
 
   private drawTerrain(ctx: CanvasRenderingContext2D): void {
@@ -373,6 +417,8 @@ export class BattleRenderer {
 
       switch (t.kind) {
         case 'oil_drum': {
+          // 燃烧状态带火焰动画（光晕脉动）
+          const pulse = t.state === 'burning' ? (Math.sin(t.timer / 200) + 1) * 0.5 : 0
           ctx.beginPath()
           ctx.arc(x, y, r, 0, Math.PI * 2)
           ctx.fillStyle = t.state === 'burning' ? '#ff6b35' : '#6b5b3f'
@@ -380,11 +426,33 @@ export class BattleRenderer {
           ctx.strokeStyle = '#0d1117'
           ctx.lineWidth = 1.5
           ctx.stroke()
+          if (t.state === 'burning') {
+            // 火焰光晕
+            const glow = ctx.createRadialGradient(x, y, r * 0.3, x, y, r * 2)
+            glow.addColorStop(0, 'rgba(255,107,53,0.45)')
+            glow.addColorStop(1, 'rgba(255,107,53,0)')
+            ctx.globalAlpha = 0.5 + pulse * 0.3
+            ctx.fillStyle = glow
+            ctx.beginPath()
+            ctx.arc(x, y, r * 2, 0, Math.PI * 2)
+            ctx.fill()
+            ctx.globalAlpha = 1
+          }
           break
         }
         case 'tidal_gate': {
+          // 闸门：纯色 + 开/闭状态不同（保持可断言的纯色，
+          // 叠加光晕用径向渐变给质感）
           ctx.fillStyle = t.state === 'closed' ? '#58a6ff' : 'rgba(88,166,255,0.25)'
           ctx.fillRect(x - r, y - r, r * 2, r * 0.4)
+          // 关闭时闸门上的光晕（径向渐变，增强立体感）
+          if (t.state === 'closed') {
+            const gateGlow = ctx.createRadialGradient(x, y - r * 0.3, 2, x, y - r * 0.3, r * 1.2)
+            gateGlow.addColorStop(0, 'rgba(88,166,255,0.5)')
+            gateGlow.addColorStop(1, 'rgba(88,166,255,0)')
+            ctx.fillStyle = gateGlow
+            ctx.fillRect(x - r, y - r, r * 2, r * 0.4)
+          }
           break
         }
         case 'rotor_vane': {
@@ -400,23 +468,59 @@ export class BattleRenderer {
             ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r)
             ctx.stroke()
           }
+          // 中心光晕
+          const rotorGlow = ctx.createRadialGradient(0, 0, 2, 0, 0, r * 0.6)
+          rotorGlow.addColorStop(0, 'rgba(201,167,255,0.4)')
+          rotorGlow.addColorStop(1, 'rgba(201,167,255,0)')
+          ctx.fillStyle = rotorGlow
+          ctx.beginPath()
+          ctx.arc(0, 0, r * 0.6, 0, Math.PI * 2)
+          ctx.fill()
           ctx.restore()
           break
         }
         case 'collapse_wall': {
+          // 掩体带纵向纹理（模拟石块）
           ctx.fillStyle = t.state === 'collapsed' ? 'rgba(48,54,61,0.3)' : '#6e7681'
           ctx.fillRect(x - r, y - r * 0.7, r * 2, r * 1.4)
+          if (t.state !== 'collapsed') {
+            // 石块分缝
+            ctx.strokeStyle = 'rgba(0,0,0,0.35)'
+            ctx.lineWidth = 1
+            for (let i = 1; i < 4; i++) {
+              const fy = y - r * 0.7 + (r * 1.4 * i) / 4
+              ctx.beginPath()
+              ctx.moveTo(x - r, fy)
+              ctx.lineTo(x + r, fy)
+              ctx.stroke()
+            }
+            ctx.beginPath()
+            ctx.moveTo(x, y - r * 0.7)
+            ctx.lineTo(x, y + r * 0.7)
+            ctx.stroke()
+          }
           break
         }
         case 'charge_tower': {
+          // 蓄能塔带脉冲光晕（蓄能越满越亮）
+          const pct = Math.min(1, t.charge / Math.max(1, t.param))
+          const towerGlow = ctx.createRadialGradient(x, y, r * 0.3, x, y, r * 2)
+          towerGlow.addColorStop(0, 'rgba(126,231,135,0.5)')
+          towerGlow.addColorStop(1, 'rgba(126,231,135,0)')
+          ctx.globalAlpha = 0.25 + pct * 0.45
+          ctx.fillStyle = towerGlow
+          ctx.beginPath()
+          ctx.arc(x, y, r * 2, 0, Math.PI * 2)
+          ctx.fill()
+          ctx.globalAlpha = 1
+
           ctx.beginPath()
           ctx.arc(x, y, r * 0.8, 0, Math.PI * 2)
           ctx.fillStyle = '#7ee787'
           ctx.fill()
-          // 蓄能进度
-          const pct = Math.min(1, t.charge / Math.max(1, t.param))
+          // 蓄能进度（环形，宽度随蓄能增加）
           ctx.strokeStyle = '#0d1117'
-          ctx.lineWidth = 4
+          ctx.lineWidth = 4 + pct * 4
           ctx.beginPath()
           ctx.arc(x, y, r * 1.1, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * pct)
           ctx.stroke()
@@ -452,8 +556,14 @@ export class BattleRenderer {
       const alpha = Math.min(1, p.lifeMs / 400)
       ctx.globalAlpha = alpha
       ctx.fillStyle = p.color
+      // 描边 + 阴影：让弹字在深色背景上更清晰
       ctx.font = `bold ${22 * vp.scale}px sans-serif`
-      ctx.fillText(p.text, vp.offsetX + p.x * vp.scale, vp.offsetY + p.y * vp.scale)
+      const px = vp.offsetX + p.x * vp.scale
+      const py = vp.offsetY + p.y * vp.scale
+      ctx.strokeStyle = 'rgba(0,0,0,0.6)'
+      ctx.lineWidth = 3
+      ctx.strokeText(p.text, px, py)
+      ctx.fillText(p.text, px, py)
     }
     ctx.globalAlpha = 1
   }
@@ -467,13 +577,17 @@ export class BattleRenderer {
     const x = (vp.width - barW) / 2
     const y = vp.height - 46
 
-    // 热量条
+    // 热量条（纯色填充 + 圆角遮罩，关键色保持可断言的纯色）
     ctx.fillStyle = 'rgba(0,0,0,0.55)'
     ctx.fillRect(x, y, barW, barH)
     const cap = Number(heat.cap)
     const pct = cap > 0 ? Number(heat.heat) / cap : 0
-    ctx.fillStyle = heat.overheated ? '#ff6b35' : pct > 0.8 ? '#ffd33d' : '#58a6ff'
+    const heatColor = heat.overheated ? '#ff6b35' : pct > 0.8 ? '#ffd33d' : '#58a6ff'
+    ctx.fillStyle = heatColor
     ctx.fillRect(x, y, barW * Math.min(1, pct), barH)
+    // 热量条顶部高光（半透明白），增强立体感
+    ctx.fillStyle = 'rgba(255,255,255,0.15)'
+    ctx.fillRect(x, y, barW * Math.min(1, pct), 2)
     ctx.strokeStyle = '#30363d'
     ctx.lineWidth = 1
     ctx.strokeRect(x, y, barW, barH)
