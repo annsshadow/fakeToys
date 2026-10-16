@@ -109,7 +109,7 @@ describe('AdminLayout 侧边栏', () => {
     expect(link.text()).toContain('玩家玩法文档站')
   })
 
-  it('11 个图标全部真的画出来了（10 个导航项 + 1 个文档站入口）', async () => {
+  it('12 个图标全部真的画出来了（10 个导航项 + 1 个文档站入口 + 1 个登出按钮）', async () => {
     // 这条守的是「图标解析失败 → 退化成 <data-line>/<reading> 空元素」这个形状。
     //
     // 判据选 **`<svg>` 计数**而不是「有没有警告」：
@@ -124,16 +124,19 @@ describe('AdminLayout 侧边栏', () => {
     // ⚠️ 尤其要看新增的 `Warning`：它是本轮新引入的名字，
     //   而「图标名写错」在这个项目里栽过一次（`Shield` 根本不存在，
     //   而当时的替身列表让它永远绿）。这条是它唯一的防线。
+    //
+    // ⚠️ 第 155 轮起多 1 个图标（登出按钮的 `SwitchButton`），总数 12。
     const { wrapper } = await mountLayout('/admin/dashboard')
 
     expect(wrapper.findAll('.nav-item')).toHaveLength(10)
-    expect(wrapper.findAll('.el-icon')).toHaveLength(11)
-    // 10 个导航项 + 底部文档站链接各一个图标
-    expect(wrapper.findAll('svg')).toHaveLength(11)
+    expect(wrapper.findAll('.el-icon')).toHaveLength(12)
+    // 10 个导航项 + 底部文档站链接 + 顶栏登出按钮 各一个图标
+    expect(wrapper.findAll('svg')).toHaveLength(12)
     // 未解析的组件名会被降级成小写自定义元素，这里必须一个都没有
     expect(wrapper.findAll('reading')).toHaveLength(0)
     expect(wrapper.findAll('data-line')).toHaveLength(0)
     expect(wrapper.findAll('warning')).toHaveLength(0)
+    expect(wrapper.findAll('switch-button')).toHaveLength(0)
   })
 })
 
