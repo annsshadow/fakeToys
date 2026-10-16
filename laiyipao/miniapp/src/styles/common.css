@@ -3,7 +3,9 @@ page {
   --bg: #0d1117;
   --panel: #161b22;
   --panel-2: #1c2430;
+  --panel-3: #242f3d;
   --border: #30363d;
+  --border-soft: rgba(48, 54, 61, 0.5);
   --text: #e6edf3;
   --muted: #8b949e;
   --dim: #6e7681;
@@ -18,9 +20,34 @@ page {
   --warn: #ffd33d;
   --bad: #ff6b35;
 
+  /* 元素色半透明（用于标签背景与 hover 状态） */
+  --fire-soft: rgba(255, 107, 53, 0.18);
+  --ice-soft: rgba(88, 166, 255, 0.18);
+  --lightning-soft: rgba(255, 211, 61, 0.18);
+  --corrosion-soft: rgba(126, 231, 135, 0.18);
+  --kinetic-soft: rgba(201, 167, 255, 0.18);
+  --neutral-soft: rgba(139, 148, 158, 0.16);
+
   background-color: var(--bg);
   color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+
+/* 全局 keyframes：用于星级动画、弹窗出现等动效 */
+@keyframes star-pop {
+  0%   { transform: scale(0.4); opacity: 0; }
+  60%  { transform: scale(1.25); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes fade-in-up {
+  0%   { transform: translateY(12px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 0 rgba(255, 107, 53, 0); }
+  50%      { box-shadow: 0 0 16px rgba(255, 107, 53, 0.35); }
 }
 
 .page-root {
@@ -32,12 +59,14 @@ page {
   padding: 24rpx;
 }
 
+/* 卡片：升级后带更柔和的阴影与微渐变，提升层级感 */
 .card {
-  background: var(--panel);
-  border: 1rpx solid var(--border);
-  border-radius: 16rpx;
-  padding: 24rpx;
+  background: linear-gradient(180deg, var(--panel-2) 0%, var(--panel) 100%);
+  border: 1rpx solid var(--border-soft);
+  border-radius: 18rpx;
+  padding: 28rpx;
   margin-bottom: 20rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.25);
 }
 
 .card-title {
@@ -80,6 +109,7 @@ page {
   flex: 1;
 }
 
+/* 标签：统一用 --*-soft 变量，与元素色一致 */
 .tag {
   display: inline-block;
   padding: 4rpx 14rpx;
@@ -88,35 +118,59 @@ page {
   line-height: 1.6;
 }
 
-.tag-fire { background: rgba(255, 107, 53, 0.18); color: var(--fire); }
-.tag-ice { background: rgba(88, 166, 255, 0.18); color: var(--ice); }
-.tag-lightning { background: rgba(255, 211, 61, 0.18); color: var(--lightning); }
-.tag-corrosion { background: rgba(126, 231, 135, 0.18); color: var(--corrosion); }
-.tag-kinetic { background: rgba(201, 167, 255, 0.18); color: var(--kinetic); }
-.tag-neutral { background: rgba(139, 148, 158, 0.16); color: var(--muted); }
+.tag-fire      { background: var(--fire-soft);      color: var(--fire); }
+.tag-ice       { background: var(--ice-soft);       color: var(--ice); }
+.tag-lightning { background: var(--lightning-soft); color: var(--lightning); }
+.tag-corrosion { background: var(--corrosion-soft);  color: var(--corrosion); }
+.tag-kinetic   { background: var(--kinetic-soft);    color: var(--kinetic); }
+.tag-neutral   { background: var(--neutral-soft);    color: var(--muted); }
 
+/* 按钮：升级后带按压态与焦点环 */
 .btn {
   display: flex;
   align-items: center;
   justify-content: center;
   height: 88rpx;
-  border-radius: 12rpx;
+  border-radius: 14rpx;
   font-size: 30rpx;
   font-weight: 600;
   background: var(--panel-2);
   color: var(--text);
   border: 1rpx solid var(--border);
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+
+.btn:active {
+  transform: scale(0.98);
 }
 
 .btn-primary {
   background: linear-gradient(135deg, #ff6b35, #ff3d71);
   color: #fff;
   border: none;
+  box-shadow: 0 4rpx 12rpx rgba(255, 107, 53, 0.25);
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
 }
 
 .btn-disabled {
   opacity: 0.4;
+  pointer-events: none;
 }
+
+/* 弹窗出现动画：从底部滑入 */
+.card-overlay {
+  animation: fade-in-up 0.25s ease-out;
+}
+
+/* 星级动画：每颗依次放大 */
+.star-big {
+  animation: star-pop 0.5s ease-out backwards;
+}
+.star-big:nth-child(2) { animation-delay: 0.12s; }
+.star-big:nth-child(3) { animation-delay: 0.24s; }
 
 /* 构筑评分雷达图的占位容器 */
 .radar-box {
