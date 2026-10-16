@@ -4725,6 +4725,9 @@ dependencies = [
  "chrono",
  "fallible-iterator",
  "postgres-protocol",
+ "serde_core",
+ "serde_json",
+ "uuid",
 ]
 
 [[package]]
@@ -6148,6 +6151,7 @@ dependencies = [
  "dotenvy",
  "futures-util",
  "hmac 0.12.1",
+ "postgres-types",
  "redis",
  "reqwest",
  "sea-orm",
