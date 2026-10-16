@@ -308,9 +308,7 @@ hotpic_assemble_control	PUT	/api/hotpic/assemble/control/user/hotpic/filter/list
 hotpic_assemble_control	DELETE	/api/hotpic/assemble/control/user/hotpic/{id}/{id2}	user_hotpic_delete_by_ids	R7
 hotpic_core_entity	POST	/api/hotpic/core/entity/create	create	R7
 hotpic_core_entity	DELETE	/api/hotpic/core/entity/delete/{id}	delete_by_id	R7
-jpush_assemble_control	POST	/api/jpush_assemble_control/device/admin/unbind/all/person	device_admin_unbind_all_person	R7
 jpush_assemble_control	POST	/api/jpush_assemble_control/device/bind	device_bind	R7
-jpush_assemble_control	POST	/api/jpush/create	create_jpush	R7
 jpush_assemble_control	POST	/api/jpush/save/{id}	save_jpush	R7
 jpush_assemble_control	POST	/api/jpush/delete/{id}	delete_jpush	R7
 jpush_assemble_control	POST	/api/jpush/assemble/control/device/bind	device_bind	R7

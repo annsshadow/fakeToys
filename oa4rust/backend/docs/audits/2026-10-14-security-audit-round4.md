@@ -634,6 +634,15 @@ GET 写面队列里 `calendar_assemble_control` 与 `jpush_assemble_control` 各
 | 删热图 | `::user_hotpic_id`（`/api/hotpic_assemble_control/user/hotpic/{id}` 与 `/api/hotpic/assemble/control/user/hotpic/{id}` 两条重复路径，GET，handler 内含 DELETE 分支） | DELETE 分支 `UPDATE x_hotpic SET deleted_at=NOW() WHERE id=$1` 无归属门 ⇒ 收归属门（同口径）；GET/读分支不设门。**关键顺序**：`pool.get()` 移到会话门**之后**（原先在读库之前，无会话会先炸 Internal 而非 401——「门插在读库之后」） |
 | 验证 | — | `hotpic_assemble_control` `31 passed / 0 failed`（含真库臂 `hotpic_user_writes_require_owner`：无会话两把 401；非属主 403 不改标题不软删；属主改标题 + 软删放行；admin 旁路放行；收口零残留）。尺子 GET 写面 37→34 |
 
+### 三.29 第二十九批（jpush_assemble_control 3 把 GET 写面：2 admin + 1 归属）
+
+| 项 | 位置 | 处置与口径 |
+| --- | --- | --- |
+| 广播推送创建 | `crates/jpush_assemble_control/src/lib.rs::create_jpush`（`/api/jpush_assemble_control/create/jpush`，GET） | `INSERT INTO x_jpush` 建广播（`creator` 硬编码 `system`），任意登录用户可触发全员推送 ⇒ 收 admin 门 |
+| 批量解绑 | `::device_admin_unbind_all_person`（`/api/jpush/assemble/control/device/admin/unbind/all/person`，GET） | 按 body `personId` `DELETE FROM x_jpush WHERE creator=$1`，任意用户可删他人推送绑定 ⇒ 收 admin 门（名字即 admin） |
+| 解绑设备 | `::device_unbind_new_deviceName_deviceType_pushType`（`/api/jpush_assemble_control/device/unbind/new/{deviceName}/{deviceType}/{pushType}`，GET） | 按 (deviceName,deviceType,pushType) `UPDATE x_jpush SET deleted_at`，**WHERE 无 creator** ⇒ 任意用户可按设备名解绑他人设备 ⇒ 收归属门：先取设备绑定 `creator` 再 `require_owner` |
+| 验证 | — | `jpush_assemble_control` `29 passed / 0 failed`（含真库臂 `test_jpush_get_writes_owner_admin_gate`：无会话三把 401；非 admin 403 不落笔、非属主 403 不解绑；属主解绑软删放行；admin 建广播 + 批量解绑放行；收口零残留）。`test_jpush_create_legacy_path` 断言 500→401（行为真变）。尺子 GET 写面 34→31 |
+
 ## 四、验证
 
 
