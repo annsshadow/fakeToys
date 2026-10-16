@@ -5,12 +5,17 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 
+	"github.com/laiyipao/server/internal/auth"
 	"github.com/laiyipao/server/internal/domain"
 	"github.com/laiyipao/server/internal/seeder"
 )
+
+// HashRefreshToken 重导出：会话行以 SHA-256 摘要落库（与 refresh token 同形态）。
+func HashRefreshToken(plain string) string { return auth.HashRefreshToken(plain) }
 
 // txType 是 pgx.Tx 的最小别名，让 service 各函数能同时接受事务与连接池上下文。
 type txType = pgx.Tx
@@ -25,9 +30,13 @@ type AdminUser struct {
 }
 
 // AdminTokenPair 是后台登录结果。
+//
+// ⚠️ 第 155 轮删掉了曾经的 `Session` 字段：那枚明文会话令牌**没有签发方
+// 消费它**（客户端只用 access_token），留着它等于谎称后台有「另一把
+// 会话钥匙」。会话与令牌的绑定改成 JWT 载荷里的 sid 明文（摘要落库），
+// 见 AdminLogin / ResolveAdmin。
 type AdminTokenPair struct {
 	AccessToken string    `json:"access_token"`
-	Session     string    `json:"session"`
 	ExpiresAt   string    `json:"expires_at"`
 	Admin       AdminUser `json:"admin"`
 }
@@ -54,11 +63,14 @@ func (s *Service) AdminLogin(ctx context.Context, username, password string) (Ad
 		return AdminTokenPair{}, fmt.Errorf("%w: 用户名或密码错误", ErrUnauthorized)
 	}
 
-	access, exp, err := s.JWT.Issue(a.ID, "admin")
+	// 会话与令牌的绑定：明文 sid 进 JWT 载荷，SHA-256 摘要落库（与 refresh
+	// token 同一形态：数据库被拖库也无法直接签出可用的管理员令牌）。
+	// 第 155 轮起 ResolveAdmin 每次都查这一行 —— 登出/过期后立刻失效。
+	sessionPlain, sessionHash, err := NewAdminSession()
 	if err != nil {
 		return AdminTokenPair{}, err
 	}
-	sessionPlain, sessionHash, err := NewAdminSession()
+	access, exp, err := s.JWT.Issue(a.ID, "admin", sessionPlain)
 	if err != nil {
 		return AdminTokenPair{}, err
 	}
@@ -72,12 +84,11 @@ func (s *Service) AdminLogin(ctx context.Context, username, password string) (Ad
 		return AdminTokenPair{}, err
 	}
 	return AdminTokenPair{
-		AccessToken: access, Session: sessionPlain,
-		ExpiresAt: exp.UTC().Format(timeFormat), Admin: a,
+		AccessToken: access,
+		ExpiresAt:   exp.UTC().Format(timeFormat), Admin: a,
 	}, nil
 }
 
-// ResolveAdmin 从 access token 解析管理员 ID。
 // ResolveAdmin 解析管理员 access token。
 //
 // ⚠️ 必须查 admin_users.status。
@@ -85,6 +96,12 @@ func (s *Service) AdminLogin(ctx context.Context, username, password string) (Ad
 // （默认 2h）内仍能发币、封禁玩家、改商城价格 —— 运营的止损手段失效。
 // 全项目只有 AdminMe 带 `AND status = 1`，于是会出现"只有 /admin/me 401，
 // 其余管理端点照常可用"的诡异现象。
+//
+// ⚠️ 第 155 轮起还必须**每次**查 admin_tokens 的会话行（sid 摘要）：
+// 会话被登出吊销（AdminLogout）或落库的 expires_at 过期后，
+// 一枚**签名仍然合法**的 JWT 也必须立刻失效 —— 这是把「登出」
+// 从纯前端清 localStorage 升级成服务端真切断（与玩家侧 refresh
+// token 吊销同形态）。
 func (s *Service) ResolveAdmin(ctx context.Context, token string) (int64, error) {
 	claims, err := s.JWT.Verify(token)
 	if err != nil {
@@ -92,6 +109,28 @@ func (s *Service) ResolveAdmin(ctx context.Context, token string) (int64, error)
 	}
 	if claims.Kind != "admin" {
 		return 0, fmt.Errorf("%w: 令牌类型不匹配", ErrUnauthorized)
+	}
+	if claims.Sid == "" {
+		// 第 155 轮之前签发的存量管理员令牌没有 sid —— 它们随 2h TTL
+		// 自然消亡，不需要数据迁移；新令牌由 AdminLogin 签发、恒带 sid。
+		return 0, fmt.Errorf("%w: 管理员会话不存在", ErrUnauthorized)
+	}
+	var revoked bool
+	var expiresAt time.Time
+	if err := s.pool.QueryRow(ctx,
+		`SELECT revoked_at IS NOT NULL, expires_at
+		 FROM admin_tokens WHERE token_hash = $1`,
+		HashRefreshToken(claims.Sid)).Scan(&revoked, &expiresAt); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return 0, fmt.Errorf("%w: 管理员会话不存在", ErrUnauthorized)
+		}
+		return 0, fmt.Errorf("查管理员会话: %w", err)
+	}
+	if revoked {
+		return 0, fmt.Errorf("%w: 会话已登出吊销", ErrUnauthorized)
+	}
+	if !expiresAt.After(timeNow()) {
+		return 0, fmt.Errorf("%w: 会话已过期", ErrUnauthorized)
 	}
 	var status int
 	if err := s.pool.QueryRow(ctx,
@@ -105,6 +144,22 @@ func (s *Service) ResolveAdmin(ctx context.Context, token string) (int64, error)
 		return 0, fmt.Errorf("%w: 管理员已停用", ErrForbidden)
 	}
 	return claims.Sub, nil
+}
+
+// AdminLogout 吊销该管理员的**全部**后台会话（幂等，返回吊销条数）。
+//
+// 与玩家侧 Logout（吊销全部 refresh token）同口径：登出的语义是
+// 「切断这个人此刻手上的所有凭证」，而不是「只切当前这一个」。
+// 运营在 A 设备登出，B 设备上 2h 内还有效的会话一并失效 ——
+// 重新登录即恢复，代价远低于「忘了那台设备还开着后台」。
+func (s *Service) AdminLogout(ctx context.Context, adminID int64) (int, error) {
+	res, err := s.pool.Exec(ctx,
+		`UPDATE admin_tokens SET revoked_at = now()
+		 WHERE admin_id = $1 AND revoked_at IS NULL`, adminID)
+	if err != nil {
+		return 0, fmt.Errorf("revoke admin sessions: %w", err)
+	}
+	return int(res.RowsAffected()), nil
 }
 
 // AdminMe 返回当前管理员信息。
