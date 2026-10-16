@@ -24,10 +24,10 @@ auth	GET	/api/authentication/oauth/list	oauth_list	A3-真匿名+只读
 auth	GET	/api/authentication/oauth/qywx/config	oauth_qywx_config	A3-真匿名+只读
 auth	GET	/api/authentication/oauth/dingding/config	oauth_dingding_config	A3-真匿名+只读
 auth	GET	/api/authentication/oauth/name/{name}	oauth_name_config	A3-真匿名+只读
-auth	GET	/api/authentication/oauth/login/qywx/code/{code}	oauth_login_qywx	A1-真匿名+体内写 SQL 且无门禁无会话
-auth	GET	/api/authentication/oauth/login/dingding/code/{code}	oauth_login_dingding	A1-真匿名+体内写 SQL 且无门禁无会话
-auth	GET	/api/authentication/oauth/login/name/{name}/code/{code}/redirecturi/{redirectUri}	oauth_login_name	A1-真匿名+体内写 SQL 且无门禁无会话
-auth	GET	/api/authentication/oauth/bind/name/{name}/code/{code}/redirecturi/{redirectUri}	oauth_bind_name	A1-真匿名+体内写 SQL 且无门禁无会话
+auth	GET	/api/authentication/oauth/login/qywx/code/{code}	oauth_login_qywx	A2-真匿名+体内写 SQL 但读会话或有门禁
+auth	GET	/api/authentication/oauth/login/dingding/code/{code}	oauth_login_dingding	A2-真匿名+体内写 SQL 但读会话或有门禁
+auth	GET	/api/authentication/oauth/login/name/{name}/code/{code}/redirecturi/{redirectUri}	oauth_login_name	A2-真匿名+体内写 SQL 但读会话或有门禁
+auth	GET	/api/authentication/oauth/bind/name/{name}/code/{code}/redirecturi/{redirectUri}	oauth_bind_name	A2-真匿名+体内写 SQL 但读会话或有门禁
 meeting_assemble_control	GET	/api/meeting/assemble/control/config/system/config	config_system_config	A3-真匿名+只读
 meeting_assemble_control	POST	/api/meeting/assemble/control/config/system/config/manage	config_system_config_manage	A2-真匿名+体内写 SQL 但读会话或有门禁
 meeting_assemble_control	GET	/api/meeting/assemble/control/config/system/config/manage	u2_config_manage_get	A3-真匿名+只读

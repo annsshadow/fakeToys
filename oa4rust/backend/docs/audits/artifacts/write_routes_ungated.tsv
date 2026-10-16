@@ -322,10 +322,8 @@ meeting	POST	/api/meeting/create	create_meeting	R7
 meeting	POST	/api/meeting/{meetingId}/participant/add	add_participant	R7
 meeting_assemble_control	POST	/api/meeting/assemble/control/create	create_meeting_control	R7
 meeting_assemble_control	POST	/api/meeting/assemble/control/meeting/{id}/delete/invite	meeting_id_delete_invite	R7
-meeting_assemble_control	POST	/api/meeting/assemble/control/meeting/{id}/manual/completed	meeting_id_manual_completed	R7
 meeting_assemble_control	POST	/api/meeting/assemble/control/meeting/{id}/modify/completedtime	meeting_id_modify_completedtime	R7
 meeting_assemble_control	POST	/api/meeting/assemble/control/meeting/{id}/modify/starttime	meeting_id_modify_starttime	R7
-meeting_assemble_control	POST	/api/meeting/assemble/control/meeting/{id}/reject	meeting_id_reject	R7
 meeting_assemble_control	POST	/api/meeting/assemble/control/meeting/checkin/code/{id}	meeting_id_checkin_code	R7
 meeting_assemble_control	POST	/api/meeting/assemble/control/meeting/list/manage/{page}/{size}/{size}	meeting_list_page_size_size_manage_p3	R7
 meeting_assemble_control	DELETE	/api/meeting/assemble/control/meeting/{id}/delete/invite	meeting_id_delete_invite	R7
@@ -494,10 +492,6 @@ organization_core_entity	DELETE	/api/organization/bind/{id}	bind_delete	R7
 personal	POST	/api/reset/check/password	check_password	R7
 personal	POST	/api/reset/mockputtopost	reset_password	R7
 personal_extend	POST	/api/personal/face/create	face_create	R7
-personal_extend	PUT	/api/personal/face/save/{id}	face_save	R7
-personal_extend	POST	/api/personal/face/save/{id}	face_save	R7
-personal_extend	DELETE	/api/personal/face/delete/{id}	face_delete	R7
-personal_extend	POST	/api/personal/face/delete/{id}	face_delete	R7
 portal_assemble_designer	POST	/api/portal/assemble/designer/portal/list/summary/v2	portal_list_summary_v2	R7
 portal_assemble_designer	PUT	/api/portal/assemble/designer/templatepage/list/category	update_templatepage_category	R7
 portal_assemble_designer	POST	/api/portal/assemble/designer/designer/search	designer_search	R7

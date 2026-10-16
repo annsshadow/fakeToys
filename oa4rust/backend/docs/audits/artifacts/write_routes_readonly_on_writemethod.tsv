@@ -348,11 +348,7 @@ organization_core_entity	PUT	/api/organization/custom/{id}	custom_update	R7
 organization_core_entity	PUT	/api/organization/definition/{id}	definition_update	R7
 organization_core_entity	PUT	/api/organization/identity/{id}	identity_update	R7
 personal	POST	/api/reset/check/password	check_password	R7
-personal_extend	DELETE	/api/personal/face/delete/{id}	face_delete	R7
 personal_extend	POST	/api/personal/face/create	face_create	R7
-personal_extend	POST	/api/personal/face/delete/{id}	face_delete	R7
-personal_extend	POST	/api/personal/face/save/{id}	face_save	R7
-personal_extend	PUT	/api/personal/face/save/{id}	face_save	R7
 portal_assemble_designer	POST	/api/portal/assemble/designer/designer/search	designer_search	R7
 portal_assemble_designer	POST	/api/portal/assemble/designer/portal/list/summary/v2	portal_list_summary_v2	R7
 portal_assemble_designer	POST	/api/portal/assemble/designer/script/list/manager	script_list_manager	R7
