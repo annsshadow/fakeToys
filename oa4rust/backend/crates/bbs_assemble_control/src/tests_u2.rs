@@ -945,8 +945,47 @@ async fn test_section_crud_roundtrip() {
         return;
     }
     let pool = test_pool();
-    let session = make_session("w14-section-iter", "section");
+    // 版块写（create/save）自本批起收 admin 门：先造 admin 探针身份（幂等，测后清理）。
+    {
+        let c = pool.get().await.unwrap();
+        c.execute(
+            "INSERT INTO auth_person (id, unique_id, name, password_hash, salt, created_at, updated_at) \
+             VALUES ('u2-admin-section-probe', 'u2-admin-section-probe', 'probe-admin', 'probe-not-a-login', '', NOW(), NOW()) \
+             ON CONFLICT (id) DO NOTHING",
+            &[],
+        )
+        .await
+        .unwrap();
+        c.execute(
+            "INSERT INTO auth_role (id, name, created_at, updated_at) \
+             SELECT 'u2-admin-section-probe-role', 'admin', NOW(), NOW() \
+             WHERE NOT EXISTS (SELECT 1 FROM auth_role WHERE name = 'admin')",
+            &[],
+        )
+        .await
+        .unwrap();
+        c.execute(
+            "INSERT INTO auth_person_role (person_id, role_id, unit_id, created_at) \
+             SELECT 'u2-admin-section-probe', r.id, '', NOW() FROM auth_role r WHERE r.name = 'admin' \
+             ON CONFLICT DO NOTHING",
+            &[],
+        )
+        .await
+        .unwrap();
+    }
+    let session = make_session("u2-admin-section-probe", "section");
     let app = crate::router(pool.clone()).layer(axum::extract::Extension(session));
+
+    // 0) 非 admin 建版块 → 403（本批新增 admin 门的回归臂）
+    let (st_nb, _) = send_with_session(
+        crate::router(pool.clone()),
+        Method::POST,
+        "/api/bbs/assemble/control/section/create",
+        Some(json!({ "name": "w14-nonadmin" })),
+        Some(make_session("w14-section-nonadmin", "nb")),
+    )
+    .await;
+    assert_eq!(st_nb, StatusCode::FORBIDDEN, "非 admin 建版块必须 403");
 
     // 1) 新建版块（creator 缺省取会话登录人）
     let (st, body) = send_with_session(
@@ -970,7 +1009,7 @@ async fn test_section_crud_roundtrip() {
         .await
         .unwrap();
     assert_eq!(row.get::<_, String>("name"), "w14-section-it");
-    assert_eq!(row.get::<_, String>("creator"), "w14-section-iter");
+    assert_eq!(row.get::<_, String>("creator"), "u2-admin-section-probe");
 
     // 2) 重命名（POST 别名；update spec 只写 name 列）
     let (st, body) = send_with_session(

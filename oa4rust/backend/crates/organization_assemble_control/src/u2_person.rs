@@ -796,7 +796,14 @@ fn threemember_spec() -> shared::crud::CrudSpec {
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
-pub async fn threemember_create(pool: Extension<Pool>, body: Json<Value>) -> HandlerResult {
+pub async fn threemember_create(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    body: Json<Value>,
+) -> HandlerResult {
+    // A3-N9：三员（系统管理员/安全保密管理员/安全审计员）为组织安全数据，
+    // 写入收 admin 门（无会话 401 / 非 admin 403）。
+    require_admin_opt(&pool, session.as_deref()).await?;
     let id = shared::crud_create(&pool, &threemember_spec(), &body.0).await?;
     ok(Value::Object(
         vec![
@@ -812,9 +819,12 @@ pub async fn threemember_create(pool: Extension<Pool>, body: Json<Value>) -> Han
 #[allow(non_snake_case)]
 pub async fn threemember_save(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
     body: Json<Value>,
 ) -> HandlerResult {
+    // A3-N9：三员为组织安全数据，写入收 admin 门。
+    require_admin_opt(&pool, session.as_deref()).await?;
     let saved = shared::crud_save(&pool, &threemember_spec(), &id, &body.0).await?;
     ok(Value::Object(
         vec![
@@ -828,7 +838,13 @@ pub async fn threemember_save(
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
-pub async fn threemember_delete(pool: Extension<Pool>, Path(id): Path<String>) -> HandlerResult {
+pub async fn threemember_delete(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Path(id): Path<String>,
+) -> HandlerResult {
+    // A3-N9：三员为组织安全数据，写入收 admin 门。
+    require_admin_opt(&pool, session.as_deref()).await?;
     let deleted = shared::crud_delete(&pool, &threemember_spec(), &id).await?;
     ok(Value::Object(
         vec![

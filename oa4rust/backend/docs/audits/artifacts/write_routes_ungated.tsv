@@ -81,8 +81,6 @@ auth	POST	/api/authentication/sms/send	sms_send_handler	R7
 auth	POST	/api/authentication/sms/verify	sms_verify_handler	R7
 base	POST	/api/base/cache	cache_receive	R7
 base_core_project	POST	/api/cache	cache_post	R7
-bbs_assemble_control	PUT	/api/bbs/assemble/control/section/save/{id}	section_update	R7
-bbs_assemble_control	POST	/api/bbs/assemble/control/section/save/{id}	section_update	R7
 bbs_assemble_control	POST	/api/bbs/assemble/control/update/control/config	update_control_config	R7
 bbs_assemble_control	PUT	/api/bbs/assemble/control/update/control/config	update_control_config	R7
 bbs_assemble_control	POST	/api/bbs/assemble/control/topic/filter/listsubjectinfo	topic_filter_listsubjectinfo	R7
@@ -397,11 +395,6 @@ organization_assemble_authentication	POST	/api/organization/assemble/authenticat
 organization_assemble_control	POST	/api/organization/assemble/control/person/list/like	organization_assemble_control_person_list_like	R7
 organization_assemble_control	PUT	/api/organization/assemble/control/person/list/pinyininitial	person_list_pinyininitial	R7
 organization_assemble_control	POST	/api/organization/assemble/control/person/list/pinyininitial/mockputtopost	person_list_pinyininitial	R7
-organization_assemble_control	POST	/api/organization/assemble/control/threemember/create	threemember_create	R7
-organization_assemble_control	PUT	/api/organization/assemble/control/threemember/save/{id}	threemember_save	R7
-organization_assemble_control	POST	/api/organization/assemble/control/threemember/save/{id}	threemember_save	R7
-organization_assemble_control	DELETE	/api/organization/assemble/control/threemember/delete/{id}	threemember_delete	R7
-organization_assemble_control	POST	/api/organization/assemble/control/threemember/delete/{id}	threemember_delete	R7
 organization_assemble_control	PUT	/api/organization/assemble/control/person/list/like	person_list_like	R7
 organization_assemble_control	POST	/api/organization/assemble/control/person/list/like/mockputtopost	person_list_like	R7
 organization_assemble_control	PUT	/api/organization/assemble/control/person/list/like/pinyin	person_list_like_pinyin	R7
@@ -1035,11 +1028,6 @@ query_service_processing	POST	/api/query/service/processing/index/directory/docu
 query_service_processing	POST	/api/query/service/processing/index/update/extra/document	index_update_extra_document	R7
 query_service_processing	POST	/api/query/service/processing/table/{flag}/insert	table_insert	R7
 query_service_processing	POST	/api/query/service/processing/table/{flag}/update/{bundle}	table_update_with_bundle	R7
-search	POST	/api/ftsearch/create	ftsearch_create	R7
-search	PUT	/api/ftsearch/save/{id}	ftsearch_save	R7
-search	POST	/api/ftsearch/save/{id}	ftsearch_save	R7
-search	DELETE	/api/ftsearch/delete/{id}	ftsearch_delete	R7
-search	POST	/api/ftsearch/delete/{id}	ftsearch_delete	R7
 signature	POST	/signature/pdf/sign	sign_pdf_handler	R7
 signature	POST	/signature/pdf/verify	verify_pdf_handler	R7
 signature	POST	/signature/pdf/status	signature_status_handler	R7
