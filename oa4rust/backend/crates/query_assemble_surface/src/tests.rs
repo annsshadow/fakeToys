@@ -427,7 +427,36 @@ async fn test_u2_importmodel_reexecute_record_route_exists() {
         )
         .await
         .unwrap();
-    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    // 收 admin 门后：无会话先于读库回 401（而非原先无门的 500）。
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+}
+
+#[tokio::test]
+async fn test_query_get_writes_non_admin_forbidden() {
+    use axum::extract::Extension;
+    let pool = build_test_pool();
+    let sess = shared::testing::test_session("query-cc-nonadmin");
+    // 两把 GET 写面（table 批量 reload / importmodel 重执行）非 admin 必须 403
+    //（is_admin 对空池 fail-closed）。
+    assert!(
+        matches!(
+            crate::table_reload_dynamic(Extension(pool.clone()), Some(Extension(sess.clone()))).await,
+            Err(shared::error::AppError::Forbidden)
+        ),
+        "table_reload_dynamic 非 admin 必须 403"
+    );
+    assert!(
+        matches!(
+            crate::u2_closures::importmodel_reexecute_record(
+                Extension(pool.clone()),
+                Some(Extension(sess.clone())),
+                axum::extract::Path("record-1".to_string())
+            )
+            .await,
+            Err(shared::error::AppError::Forbidden)
+        ),
+        "importmodel_reexecute_record 非 admin 必须 403"
+    );
 }
 
 // ──────────────────────────────────────────────────────────────────────────────

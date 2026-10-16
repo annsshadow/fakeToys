@@ -839,8 +839,14 @@ pub async fn importmodel_record_delete(
 #[allow(non_snake_case)]
 pub async fn importmodel_reexecute_record(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     Path(record_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 重新执行导入模型记录属设计/维护写面：无会话 401、非 admin 403。
+    match session.as_deref() {
+        None => return Err(AppError::Unauthorized),
+        Some(s) => require_admin_gate(&pool, s).await?,
+    }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
