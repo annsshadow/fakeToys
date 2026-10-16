@@ -484,7 +484,6 @@ organization_core_entity	PUT	/api/organization/bind/{id}	bind_update	R7
 organization_core_entity	DELETE	/api/organization/bind/{id}	bind_delete	R7
 personal	POST	/api/reset/check/password	check_password	R7
 personal	POST	/api/reset/mockputtopost	reset_password	R7
-personal_extend	POST	/api/personal/face/create	face_create	R7
 portal_assemble_designer	POST	/api/portal/assemble/designer/portal/list/summary/v2	portal_list_summary_v2	R7
 portal_assemble_designer	PUT	/api/portal/assemble/designer/templatepage/list/category	update_templatepage_category	R7
 portal_assemble_designer	POST	/api/portal/assemble/designer/designer/search	designer_search	R7

@@ -340,7 +340,6 @@ organization_core_entity	PUT	/api/organization/custom/{id}	custom_update	R7
 organization_core_entity	PUT	/api/organization/definition/{id}	definition_update	R7
 organization_core_entity	PUT	/api/organization/identity/{id}	identity_update	R7
 personal	POST	/api/reset/check/password	check_password	R7
-personal_extend	POST	/api/personal/face/create	face_create	R7
 portal_assemble_designer	POST	/api/portal/assemble/designer/designer/search	designer_search	R7
 portal_assemble_designer	POST	/api/portal/assemble/designer/portal/list/summary/v2	portal_list_summary_v2	R7
 portal_assemble_designer	POST	/api/portal/assemble/designer/script/list/manager	script_list_manager	R7
@@ -624,7 +623,6 @@ program_center	DELETE	/api/program_center/module/remove/structure/{id}	module_re
 program_center	POST	/api/program_center/appstyle/current/update	appstyle_current_update	R7
 program_center	POST	/api/program_center/bar/create/mass/from/count	bar_create_mass_from_count	R7
 program_center	POST	/api/program_center/code/list/paging/{page}/size/{size}	code_list_paging_page_size_size	R7
-program_center	POST	/api/program_center/collect/create	collect_create	R6
 program_center	POST	/api/program_center/collect/updateUnit	collect_updateUnit	R7
 program_center	POST	/api/program_center/command/execute	command_execute	R7
 program_center	POST	/api/program_center/deploy/list/paging/{page}/size/{size}	deploy_list_paging_page_size_size	R7

@@ -828,6 +828,21 @@ const DYNAMIC_TABLE_RE = /(UPDATE|DELETE\s+FROM|INSERT\s+INTO)\s+\{/i;
 // 判据与缺陷 15 同形，两条件同时成立才算：A. 调用点以 `.await?` 传播（`callPropagates`）；
 // B. 被调 helper 体内判为写。递归至多 3 层（helper 再转调 helper），明细逐条落盘。
 const indirectWrites = [];
+// 尺子缺陷 27（第三十九批抓到并修）：**跨 crate 的通用落笔** `shared::crud_create` /
+// `crud_save` / `crud_delete`（及归属版 `crud_save_owned` / `crud_delete_owned`）把写 SQL
+// 放在 `crates/shared/src/crud.rs` 的函数体里；`callHelperBody` 按**模块路径**解析
+// （`crates/shared/src/crud_create.rs` / `crud_create/mod.rs`）必然落空，于是所有 crud 型
+// handler 被读成「只读挂写方法」——R6/R7 的「含写 SQL」计数对 crud 型写面**系统性低估**。
+// 现场（第三十六/三十七批）：search/bbs/org/pp_designer/query_designer 的 crud 写面在修门
+// 前后都同时出现在 `write_routes_readonly_on_writemethod.tsv` 里。跨 crate 限定名不在注册表里，
+// 故按**具名白名单**作证（与缺陷 11 的限定符路径同族：跨 crate 只能点名，不能靠解析）。
+const CROSS_CRATE_WRITE_HELPERS = [
+  "crud_create",
+  "crud_save",
+  "crud_delete",
+  "crud_save_owned",
+  "crud_delete_owned",
+];
 // 调用点是否真把 helper 跑起来：`)` 之后紧跟 `.await`（带不带 `?` 都算）。
 // 与缺陷 15 的 `callPropagates` 有意不同：门要「拒径向上传播」才算作证，
 // 而写 SQL 只要函数被 await 跑起来就已落笔，`let _ = f().await` 同样拦不住。
@@ -852,6 +867,10 @@ function writeEvidence(crate, body, depth = 0) {
   if (!body) return false;
   if (WRITE_SQL_RE.test(body)) return true;
   if (depth >= 3) return false;
+  // 缺陷 27：跨 crate 通用落笔按具名白名单作证（callHelperBody 解析不到 crud.rs 内的函数）。
+  for (const n of CROSS_CRATE_WRITE_HELPERS) {
+    if (awaitCall(body, n)) return n;
+  }
   // 尺子缺陷 24 同族第二处：写 SQL 的转发追踪也不能只看裸名调用点
   // （现场 `u2_render::general_file_store(..)` INSERT 进 x_general_assemble_general_file，修前隐形）。
   for (const m of body.matchAll(/(?<![.\w])((?:[A-Za-z_]\w*::)*)([a-z_]\w*)\s*\(/g)) {
