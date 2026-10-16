@@ -27,8 +27,11 @@
     <!-- 选牌界面（I-2） -->
     <view v-if="showCards" class="card-overlay">
       <view class="card-header">
-        <text class="card-title">选择一张卡</text>
-        <text class="muted">弃牌 {{ deck.discardsLeft }} 次 · 弃牌返还 1 热量</text>
+        <text class="card-title">这一波给你 3 张卡，点一张就装备上</text>
+        <text class="card-hint">
+          <text>不想？点卡上的「弃」丢掉，还能回 1 点热量（热量攒满就会过热卡 2 秒）。</text>
+          <text> 本波还能弃 {{ deck.discardsLeft }} 张。</text>
+        </text>
       </view>
       <view class="cards">
         <view
@@ -51,7 +54,7 @@
           </view>
         </view>
       </view>
-      <view class="btn" @click="skipCards">跳过（不消耗弃牌次数）</view>
+      <view class="btn" @click="skipCards">一张都不要了，直接下一波</view>
     </view>
 
     <!-- 结算界面 -->
@@ -513,6 +516,14 @@ onUnload(() => {
 .card-header .card-title {
   display: block;
   margin-bottom: 6rpx;
+}
+
+/* 选牌引导（口语化说明，见模板注释） */
+.card-header .card-hint {
+  display: block;
+  font-size: 22rpx;
+  line-height: 1.6;
+  color: var(--dim);
 }
 
 .cards {
