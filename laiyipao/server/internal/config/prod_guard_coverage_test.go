@@ -361,3 +361,71 @@ func TestNonProdStillGetsDevelopmentDefaults(t *testing.T) {
 			"新克隆的仓库应该不设任何环境变量也能起来", cfg.BootstrapAdminPass)
 	}
 }
+
+// TestDevDefaultWarnings —— 启动告警必须**两个方向**都准（第 154 轮）。
+//
+// # 为什么这条测试必须存在
+//
+// `DevDefaultWarnings` 是启动日志里的一行字。没有任何行为依赖它：
+// 它多报一次、少报一次，服务都照常起来、照常工作。
+// 也就是说**这是全仓最容易被静默改坏的东西** ——
+// 删掉它、或让它恒返回 nil，除了人眼没人会发现。
+//
+// 而它防的场景恰好是无声的：默认 JWT 密钥与默认管理员口令是
+// **公开字面量**（写在源码与 README 里），于是「忘设 APP_ENV=prod」
+// 的部署不是「弱口令」，而是无需爆破即可伪造任意账号（含管理员）令牌。
+//
+// # 判据的两个方向
+//
+//  1. 什么都不设（新克隆仓库的形态）→ **必须**告警两条。
+//     漏报等于让误配置继续隐形。
+//  2. 显式声明了两把凭证、但 APP_ENV 仍是 dev → **不得**告警。
+//     误报等于噪声：一条天天出现、永远正确的警告，
+//     很快就会被所有人跳过 —— 那正是本仓库反复记的
+//     「图标全空混在 22 条噪声里没人发现」那种失效。
+func TestDevDefaultWarnings(t *testing.T) {
+	t.Run("新克隆仓库（什么都不设）→ 两把凭证都必须点名", func(t *testing.T) {
+		clearEnv(t)
+		warns := Load().DevDefaultWarnings()
+		joined := strings.Join(warns, "\n")
+		if len(warns) != 2 {
+			t.Fatalf("期望两条告警（JWT 密钥 + 管理员口令），实际 %d 条：\n%s", len(warns), joined)
+		}
+		for _, want := range []string{"JWT_SECRET", "BOOTSTRAP_ADMIN_PASS"} {
+			if !strings.Contains(joined, want) {
+				t.Errorf("告警里没有点名 %s —— 运营看到「正在使用开发默认凭证」"+
+					"却不知道是哪一项，就没法修：\n%s", want, joined)
+			}
+		}
+		// 告警必须说清后果，而不只是「不安全」。
+		// 「不安全」无法据此判断该不该停下手上这件事。
+		if !strings.Contains(joined, "伪造") {
+			t.Errorf("告警必须说明默认 JWT 密钥意味着「能伪造令牌」，而不只是「不安全」：\n%s", joined)
+		}
+	})
+
+	t.Run("显式声明两把凭证后 → 不得再告警（否则是噪声）", func(t *testing.T) {
+		clearEnv(t)
+		t.Setenv("JWT_SECRET", "a-real-secret-from-vault")
+		t.Setenv("BOOTSTRAP_ADMIN_PASS", "a-real-long-production-password")
+		// 刻意仍用 dev：告警的条件是「凭证是默认的」，
+		// 不是「APP_ENV 不是 prod」—— 本机开发也会显式配这两项。
+		if warns := Load().DevDefaultWarnings(); len(warns) != 0 {
+			t.Errorf("凭证都显式声明了，不该告警，实际 %d 条：\n%s",
+				len(warns), strings.Join(warns, "\n"))
+		}
+	})
+
+	t.Run("只显式声明其中一把 → 只告警另一把", func(t *testing.T) {
+		clearEnv(t)
+		t.Setenv("JWT_SECRET", "a-real-secret-from-vault")
+		warns := Load().DevDefaultWarnings()
+		joined := strings.Join(warns, "\n")
+		if len(warns) != 1 || !strings.Contains(joined, "BOOTSTRAP_ADMIN_PASS") {
+			t.Errorf("只剩管理员口令是默认的，应只告警它，实际 %d 条：\n%s", len(warns), joined)
+		}
+		if strings.Contains(joined, "JWT_SECRET") {
+			t.Errorf("JWT_SECRET 已显式声明却仍被告警 —— 判据与赋值脱节了：\n%s", joined)
+		}
+	})
+}
