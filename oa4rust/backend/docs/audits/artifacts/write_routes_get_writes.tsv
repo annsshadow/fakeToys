@@ -1,8 +1,4 @@
 crate	method	path	handler	bucket
-ai_assemble_control	GET	/api/ai_assemble_control/chat/delete/{clueId}	chat_delete_clue_id	K2-读会话无门禁
-ai_assemble_control	GET	/api/ai_assemble_control/file/delete/{flag}	file_delete_flag	K3-已认证无会话无门禁
-ai_assemble_control	GET	/api/ai_assemble_control/index/delete/{flag}	index_delete_flag	K3-已认证无会话无门禁
-ai_assemble_control	GET	/api/ai_assemble_control/index/sync/to/knowledge	index_sync_to_knowledge	K3-已认证无会话无门禁
 auth	GET	/api/authentication/oauth/login/qywx/code/{code}	oauth_login_qywx	K1-匿名可达无门禁
 auth	GET	/api/authentication/oauth/login/dingding/code/{code}	oauth_login_dingding	K1-匿名可达无门禁
 auth	GET	/api/authentication/oauth/login/name/{name}/code/{code}/redirecturi/{redirectUri}	oauth_login_name	K1-匿名可达无门禁
