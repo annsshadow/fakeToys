@@ -599,6 +599,15 @@ GET 写面队列里 `calendar_assemble_control` 与 `jpush_assemble_control` 各
 | 契约臂返工 | 两 crate `src/tests.rs::test_update_control_config_route` | 原断言 500（无门 + 无库）。加门后无会话先于读库回 401，断言改为 `UNAUTHORIZED`（属「契约臂钉 500」族 272 处之一，行为真变、逐条钉期望，不放宽判据） |
 | 验证 | — | `calendar_assemble_control` `34 passed / 0 failed`、`jpush_assemble_control` `28 passed / 0 failed`（mock pool，无需真库：无会话 401、非 admin 403 均由门 + `is_admin` fail-closed 离线即证）。admin 放行落笔臂待 Docker 重启补跑 |
 
+### 三.25 第二十五批（query_assemble_surface 两把 GET 写面收 admin 门）
+
+| 项 | 位置 | 处置与口径 |
+| --- | --- | --- |
+| table 批量 reload | `crates/query_assemble_surface/src/lib.rs::table_reload_dynamic`（`/api/queryview/table/reload/dynamic`，GET） | `UPDATE x_query_table SET reloaded=true WHERE reloaded=false` 批量维护写，任一登录用户可触发 ⇒ 收 admin 门：`Option<Extension<Session>>` + `is_admin`（无会话 401 / 非 admin 403） |
+| importmodel 重执行 | `crates/query_assemble_surface/src/u2_closures.rs::importmodel_reexecute_record`（`/api/queryview/importmodel/execute/record/{recordId}`，GET） | 重置并新建导入模型执行记录（真实写库）属设计/维护写面 ⇒ 收 admin 门（用本 crate 既有 `require_admin_gate`，无会话 401 / 非 admin 403） |
+| 契约臂返工 | `src/tests.rs::test_u2_importmodel_reexecute_record_route_exists` | 原断言 500（无门 + 无库）。加门后无会话先于读库回 401，改 `UNAUTHORIZED`；新增 `test_query_get_writes_non_admin_forbidden`（两把非 admin 403） |
+| 验证 | — | `query_assemble_surface` `48 passed / 0 failed`（mock pool 离线即证 401/403）。admin 放行落笔臂待 Docker 重启补跑 |
+
 ## 四、验证
 
 
