@@ -713,6 +713,20 @@ GET 写面队列里 `calendar_assemble_control` 与 `jpush_assemble_control` 各
 
 **注**：本批只动「序列化口」，不改任何 handler 的门禁，故不改变 `write_routes_*` 读数。响应形状变化是**加列**（此前被丢弃的 jsonb / 时间 / uuid 列现出现在通用 SELECT 响应里），调用面既有断言全绿。A3-N9 其余 crate 的 crud 迁移与 NUMERIC 转写仍是下一批入口。
 
+### 三.36 第三十六批（A3-N9 crud 迁移首批：search / bbs / org 设计元数据写收 admin 门）
+
+| 项 | 位置 | 处置与口径 |
+| --- | --- | --- |
+| search ftsearch 三把 | `crates/search/src/lib.rs` `ftsearch_create` / `ftsearch_save` / `ftsearch_delete` | `x_ftsearch_document` 为搜索索引（系统数据）⇒ 收 admin 门：`Option<Extension<Session>>`（无会话 401）+ `is_admin`（非 admin 403）。此前三把连会话都不取，任意登录人可建/改/删索引 |
+| bbs section 两把 | `crates/bbs_assemble_control/src/lib.rs` `section_create` / `section_update` | 版块为管理元数据（`section_delete` 早已 admin 门）⇒ 收 admin 门。`section_create` 原「有会话无门 + 可冒填 creator」，`section_update` 原「连会话都不取」；均改 `Option<Extension<Session>>` + `is_admin` |
+| org threemember 三把 | `crates/organization_assemble_control/src/u2_person.rs` `threemember_create` / `threemember_save` / `threemember_delete` | 三员（系统管理员 / 安全保密管理员 / 安全审计员）为组织安全数据（`x_org_person`）⇒ 收 admin 门，用本 crate `require_admin_opt`（无会话 401 / 非 admin 403）。此前三把 `(pool, body/Path)` 无会话无门 |
+| 已核实无需动 | ai `ann_*`（require_admin）、console `server_deploy_*`（is_admin）、general `general_control_*`（require_admin）、program_center `collect_*`（属主自限定）/`invoke_*`（require_admin）、cms `dict/form/view/templateform`（u2_require_admin）、portal `dict/widget`（require_admin） | 这些 crud 调用面**已有门**，A3-N9 在此为已收口 |
+| 验证（本批代码变更） | — | search `8 passed / 0 failed`（新臂 `test_ftsearch_writes_require_admin`：无会话三把 401 + 非 admin 三把 403）；bbs `55 passed / 0 failed`（`test_section_crud_roundtrip` 改 admin 探针会话 + 新增非 admin 建版块 403 臂）；org `152 passed / 0 failed`（新臂 `threemember_writes_require_admin`）。尺子：**13 条 R6/R7 → R5**（bbs 3、org 5、search 5），R6 120→119、R7 1030→1018、ungated −12（12 条 R7 + 1 条 R6）、只读挂写 −13；EXIT 0、判据见证缺口 0 |
+
+**新发现（尺子盲点，记账不修）**：本批 13 条路由**原本同时出现在 `write_routes_readonly_on_writemethod.tsv`**——原因是这些 handler 的写 SQL 在**跨 crate 的 `shared::crud_*`** 里，尺子只看 handler 本体的写 SQL 判据，故把它们读成「写方法上的只读 handler」。含义：**R6/R7 的「含写 SQL」计数对 crud 型写面系统性低估**（`shared::crud_create/save/delete` 及 `crud_*_owned` 的落笔不可见）。要么把 `crud_create/save/delete(_owned)` 加进「写 SQL 转调」helper 白名单，要么在 crud 调用点标注；属尺子缺陷族（与缺陷 12/15/16 同轴）。
+
+**注**：A3-N9 波及约 12 crate，本批收 8 把（search/bbs/org），已核实 ai/console/general/program_center/cms/portal 六 crate 的 crud 面早已有门；**余 pp_designer（dict/form/xform 9 把）与 query_assemble_designer（importer/stat 6 把）** 为下一批（同为无会话无门的设计器元数据写）。
+
 ## 四、验证
 
 

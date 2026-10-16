@@ -59,13 +59,10 @@ base_core_project	POST	/api/cache	cache_post	R7
 bbs_assemble_control	POST	/api/bbs/assemble/control/login	login	R7
 bbs_assemble_control	POST	/api/bbs/assemble/control/logout	logout	R7
 bbs_assemble_control	POST	/api/bbs/assemble/control/picture/encode/base64/size/{size}	picture_encode	R7
-bbs_assemble_control	POST	/api/bbs/assemble/control/section/create	section_create	R6
-bbs_assemble_control	POST	/api/bbs/assemble/control/section/save/{id}	section_update	R7
 bbs_assemble_control	POST	/api/bbs/assemble/control/shutup/list/paging/{page}/size/{size}	shutup_list	R7
 bbs_assemble_control	POST	/api/bbs/assemble/control/subject/filter/listsubjectinfo/page/{page}/count/{count}	u2_subject_listsubjectinfo_page	R7
 bbs_assemble_control	POST	/api/bbs/assemble/control/topic/filter/listsubjectinfo	topic_filter_listsubjectinfo	R7
 bbs_assemble_control	PUT	/api/bbs/assemble/control/reply/filter/list/page/{page}/count/{count}	u2_reply_filter_list	R7
-bbs_assemble_control	PUT	/api/bbs/assemble/control/section/save/{id}	section_update	R7
 bbs_assemble_control	PUT	/api/bbs/assemble/control/subject/creamed/list/page/{page}/count/{count}	subject_creamed_list	R7
 bbs_assemble_control	PUT	/api/bbs/assemble/control/subject/filter/list/page/{page}/count/{count}	subject_filter_list	R7
 bbs_assemble_control	PUT	/api/bbs/assemble/control/subject/index/list/page/{page}/count/{count}	subject_index_list	R7
@@ -258,7 +255,6 @@ organization_assemble_authentication	POST	/api/organization/assemble/authenticat
 organization_assemble_authentication	POST	/api/organization/assemble/authentication/sso	sso_post_login	R7
 organization_assemble_authentication	POST	/api/organization/assemble/authentication/sso/encrypt	sso_encrypt	R7
 organization_assemble_authentication	POST	/api/organization/assemble/authentication/zhengwudingding/info	zhengwudingding_info_post	R7
-organization_assemble_control	DELETE	/api/organization/assemble/control/threemember/delete/{id}	threemember_delete	R7
 organization_assemble_control	POST	/api/organization/assemble/control/group/list/like/mockputtopost	group_list_like	R7
 organization_assemble_control	POST	/api/organization/assemble/control/group/list/like/pinyin/mockputtopost	group_list_like_pinyin	R7
 organization_assemble_control	POST	/api/organization/assemble/control/group/list/pinyininitial/mockputtopost	group_list_pinyininitial	R7
@@ -277,9 +273,6 @@ organization_assemble_control	POST	/api/organization/assemble/control/personcard
 organization_assemble_control	POST	/api/organization/assemble/control/role/list/like/mockputtopost	role_list_like	R7
 organization_assemble_control	POST	/api/organization/assemble/control/role/list/like/pinyin/mockputtopost	role_list_like_pinyin	R7
 organization_assemble_control	POST	/api/organization/assemble/control/role/list/pinyininitial/mockputtopost	role_list_pinyininitial	R7
-organization_assemble_control	POST	/api/organization/assemble/control/threemember/create	threemember_create	R7
-organization_assemble_control	POST	/api/organization/assemble/control/threemember/delete/{id}	threemember_delete	R7
-organization_assemble_control	POST	/api/organization/assemble/control/threemember/save/{id}	threemember_save	R7
 organization_assemble_control	POST	/api/organization/assemble/control/unit/list	unit_list_by_body	R7
 organization_assemble_control	POST	/api/organization/assemble/control/unit/list/controller	unit_list_controller	R7
 organization_assemble_control	POST	/api/organization/assemble/control/unit/list/like/mockputtopost	unit_list_like	R7
@@ -300,7 +293,6 @@ organization_assemble_control	PUT	/api/organization/assemble/control/personcard/
 organization_assemble_control	PUT	/api/organization/assemble/control/role/list/like	role_list_like	R7
 organization_assemble_control	PUT	/api/organization/assemble/control/role/list/like/pinyin	role_list_like_pinyin	R7
 organization_assemble_control	PUT	/api/organization/assemble/control/role/list/pinyininitial	role_list_pinyininitial	R7
-organization_assemble_control	PUT	/api/organization/assemble/control/threemember/save/{id}	threemember_save	R7
 organization_assemble_control	PUT	/api/organization/assemble/control/unit/list/like	unit_list_like	R7
 organization_assemble_control	PUT	/api/organization/assemble/control/unit/list/like/pinyin	unit_list_like_pinyin	R7
 organization_assemble_control	PUT	/api/organization/assemble/control/unit/list/pinyininitial	unit_list_pinyininitial	R7
@@ -745,11 +737,6 @@ query_service_processing	POST	/api/query/service/processing/batch	batch_process	
 query_service_processing	POST	/api/query/service/processing/design/search	design_search	R7
 query_service_processing	POST	/api/query/service/processing/index/directory/document/count	index_directory_document_count	R7
 query_service_processing	POST	/api/query/service/processing/process	process_query	R7
-search	DELETE	/api/ftsearch/delete/{id}	ftsearch_delete	R7
-search	POST	/api/ftsearch/create	ftsearch_create	R7
-search	POST	/api/ftsearch/delete/{id}	ftsearch_delete	R7
-search	POST	/api/ftsearch/save/{id}	ftsearch_save	R7
-search	PUT	/api/ftsearch/save/{id}	ftsearch_save	R7
 signature	POST	/signature/pdf/sign	sign_pdf_handler	R7
 signature	POST	/signature/pdf/status	signature_status_handler	R7
 signature	POST	/signature/pdf/verify	verify_pdf_handler	R7

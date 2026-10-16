@@ -252,9 +252,17 @@ fn section_update_spec() -> shared::CrudSpec {
 #[axum::debug_handler]
 pub async fn section_create(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<Session>>,
     body: Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A3-N9：版块为管理元数据（与 section_delete 同口径），写入收 admin 门
+    // （无会话 401 / 非 admin 403）。此前任意登录人可建版块且可冒填 creator。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    if !is_admin(&pool, &sess.person_unique).await {
+        return Err(AppError::Forbidden);
+    }
     let mut obj = match body.0 {
         Value::Object(o) => o,
         _ => serde_json::Map::new(),
@@ -267,7 +275,7 @@ pub async fn section_create(
     {
         obj.insert(
             "creator".to_string(),
-            Value::String(session.person_unique.clone()),
+            Value::String(sess.person_unique.clone()),
         );
     }
     let id = shared::crud_create(&pool, &section_create_spec(), &Value::Object(obj)).await?;
@@ -282,9 +290,18 @@ pub async fn section_create(
 #[axum::debug_handler]
 pub async fn section_update(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     Path(id): Path<String>,
     body: Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A3-N9：版块为管理元数据（与 section_delete 同口径），写入收 admin 门。
+    // 此前本 handler 连会话都不取，任意登录人可改任意版块名。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    if !is_admin(&pool, &sess.person_unique).await {
+        return Err(AppError::Forbidden);
+    }
     let saved = shared::crud_save(&pool, &section_update_spec(), &id, &body.0).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([

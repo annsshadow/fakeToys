@@ -295,4 +295,77 @@ mod security_gate_tests {
             .await
             .unwrap();
     }
+
+    /// 第 36 批回归臂：三员（threemember）写面收 admin 门（A3-N9，x_org_person 为组织安全数据）。
+    /// 离线：无会话 401（先于读库）；非 admin（is_admin fail-closed）403。
+    #[tokio::test]
+    async fn threemember_writes_require_admin() {
+        let pool = shared::testing::test_pool();
+        let sess = build_session("u-threemember-nonadmin");
+        let body = || axum::Json(serde_json::json!({}));
+        let path = || Path("t1".to_string());
+
+        // 无会话 → 401
+        assert!(
+            matches!(
+                crate::u2_person::threemember_create(Extension(pool.clone()), None, body()).await,
+                Err(AppError::Unauthorized)
+            ),
+            "threemember create 无会话必须 401"
+        );
+        assert!(
+            matches!(
+                crate::u2_person::threemember_save(Extension(pool.clone()), None, path(), body())
+                    .await,
+                Err(AppError::Unauthorized)
+            ),
+            "threemember save 无会话必须 401"
+        );
+        assert!(
+            matches!(
+                crate::u2_person::threemember_delete(Extension(pool.clone()), None, path()).await,
+                Err(AppError::Unauthorized)
+            ),
+            "threemember delete 无会话必须 401"
+        );
+
+        // 非 admin → 403
+        assert!(
+            matches!(
+                crate::u2_person::threemember_create(
+                    Extension(pool.clone()),
+                    Some(Extension(sess.clone())),
+                    body()
+                )
+                .await,
+                Err(AppError::Forbidden)
+            ),
+            "threemember create 非 admin 必须 403"
+        );
+        assert!(
+            matches!(
+                crate::u2_person::threemember_save(
+                    Extension(pool.clone()),
+                    Some(Extension(sess.clone())),
+                    path(),
+                    body()
+                )
+                .await,
+                Err(AppError::Forbidden)
+            ),
+            "threemember save 非 admin 必须 403"
+        );
+        assert!(
+            matches!(
+                crate::u2_person::threemember_delete(
+                    Extension(pool.clone()),
+                    Some(Extension(sess.clone())),
+                    path()
+                )
+                .await,
+                Err(AppError::Forbidden)
+            ),
+            "threemember delete 非 admin 必须 403"
+        );
+    }
 }
