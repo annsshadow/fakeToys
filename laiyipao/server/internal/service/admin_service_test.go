@@ -9,6 +9,8 @@ package service
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -17,7 +19,6 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 
-	"github.com/laiyipao/server/internal/auth"
 	"github.com/laiyipao/server/internal/domain"
 )
 
@@ -48,20 +49,33 @@ func TestAdminLogin(t *testing.T) {
 	ctx := context.Background()
 	_, username, password := ts.newAdminFixture(t, "login", 1)
 
-	// 成功：返回 admin 身份与会话令牌
+	// 成功：返回 admin 身份
 	tp, err := ts.AdminLogin(ctx, username, password)
 	if err != nil {
 		t.Fatalf("登录失败：%v", err)
 	}
-	if tp.Admin.Username != username || tp.AccessToken == "" || tp.Session == "" {
+	if tp.Admin.Username != username || tp.AccessToken == "" {
 		t.Fatalf("登录响应不完整：%+v", tp)
 	}
-	// 会话摘要落库，且是对带 a_ 前缀明文的哈希
+	// 第 155 轮：会话与令牌的绑定改为 JWT 载荷里的 sid 明文（摘要落库）。
+	// 这里直接解载荷验证两条：① 登录签发的令牌恒带 sid；② 库里那一行
+	// admin_tokens 就是 sid 的摘要 —— 不满足任一，登出/吊销都无从谈起。
+	payload, err := base64.RawURLEncoding.DecodeString(
+		strings.SplitN(tp.AccessToken, ".", 3)[1])
+	if err != nil {
+		t.Fatalf("解 JWT 载荷失败：%v", err)
+	}
+	var claims struct {
+		Sid string `json:"sid"`
+	}
+	if err := json.Unmarshal(payload, &claims); err != nil || claims.Sid == "" {
+		t.Fatalf("登录令牌必须携带会话 id（sid），实际载荷 %s / %v", payload, err)
+	}
 	var n int
 	if err := ts.pool.QueryRow(ctx,
 		`SELECT COUNT(*) FROM admin_tokens WHERE token_hash = $1`,
-		auth.HashRefreshToken(tp.Session)).Scan(&n); err != nil || n != 1 {
-		t.Errorf("会话摘要未按 a_+明文 落库（count=%d err=%v）", n, err)
+		HashRefreshToken(claims.Sid)).Scan(&n); err != nil || n != 1 {
+		t.Errorf("会话摘要（sid 的 SHA-256）必须落库一行（count=%d err=%v）", n, err)
 	}
 
 	// 未知用户与错误密码必须同一错误（防用户名枚举）
@@ -70,6 +84,69 @@ func TestAdminLogin(t *testing.T) {
 	}
 	if _, err := ts.AdminLogin(ctx, username, "wrong-password"); !errors.Is(err, ErrUnauthorized) {
 		t.Errorf("错误密码应 ErrUnauthorized，实际 %v", err)
+	}
+}
+
+// TestAdminLogoutRevokesAllSessions 登出必须真切断：
+// 该管理员的全部会话被吊销后，**签名仍然合法**的 access token 立刻不可用
+// （「服务端登出」与「只清客户端 localStorage」的区别就在这一条上）。
+func TestAdminLogoutRevokesAllSessions(t *testing.T) {
+	ts := openTestService(t)
+	ctx := context.Background()
+	adminID, username, password := ts.newAdminFixture(t, "logout", 1)
+
+	// 两个设备各登录一次 → 两行会话
+	tp1, err := ts.AdminLogin(ctx, username, password)
+	if err != nil {
+		t.Fatalf("登录 1 失败：%v", err)
+	}
+	tp2, err := ts.AdminLogin(ctx, username, password)
+	if err != nil {
+		t.Fatalf("登录 2 失败：%v", err)
+	}
+	// 登出前两枚都能解析
+	if _, err := ts.ResolveAdmin(ctx, tp1.AccessToken); err != nil {
+		t.Fatalf("登出前 tp1 应可解析：%v", err)
+	}
+	if _, err := ts.ResolveAdmin(ctx, tp2.AccessToken); err != nil {
+		t.Fatalf("登出前 tp2 应可解析：%v", err)
+	}
+
+	n, err := ts.AdminLogout(ctx, adminID)
+	if err != nil {
+		t.Fatalf("登出失败：%v", err)
+	}
+	if n != 2 {
+		t.Errorf("应吊销 2 条会话，实际 %d", n)
+	}
+	// 全部失效（登出是「切断这个人所有凭证」，不是只切当前一个）
+	if _, err := ts.ResolveAdmin(ctx, tp1.AccessToken); !errors.Is(err, ErrUnauthorized) {
+		t.Errorf("登出后 tp1 应 ErrUnauthorized，实际 %v", err)
+	}
+	if _, err := ts.ResolveAdmin(ctx, tp2.AccessToken); !errors.Is(err, ErrUnauthorized) {
+		t.Errorf("登出后 tp2 应 ErrUnauthorized，实际 %v", err)
+	}
+	// 幂等：再登出一次 = 0 条
+	if n2, err := ts.AdminLogout(ctx, adminID); err != nil || n2 != 0 {
+		t.Errorf("重复登出应吊销 0 条，实际 %d / %v", n2, err)
+	}
+	// 重新登录即恢复（新会话是新的一行）
+	tp3, err := ts.AdminLogin(ctx, username, password)
+	if err != nil {
+		t.Fatalf("重新登录失败：%v", err)
+	}
+	if _, err := ts.ResolveAdmin(ctx, tp3.AccessToken); err != nil {
+		t.Errorf("重新登录后的令牌应可解析：%v", err)
+	}
+
+	// 吊销是**按 admin_id** 的：另一个管理员不受影响
+	_, oUser, oPass := ts.newAdminFixture(t, "logout-other", 1)
+	op, err := ts.AdminLogin(ctx, oUser, oPass)
+	if err != nil {
+		t.Fatalf("另一管理员登录失败：%v", err)
+	}
+	if _, err := ts.ResolveAdmin(ctx, op.AccessToken); err != nil {
+		t.Errorf("其他管理员的会话不应被本次登出波及：%v", err)
 	}
 }
 
@@ -113,7 +190,7 @@ func TestResolveAdmin(t *testing.T) {
 	}
 
 	// 不存在的管理员（有效签名但不存在的 id）
-	tok, _, err := ts.JWT.Issue(99999999, "admin")
+	tok, _, err := ts.JWT.Issue(99999999, "admin", "")
 	if err != nil {
 		t.Fatalf("签发失败：%v", err)
 	}
@@ -151,6 +228,51 @@ func TestResolveAdminDeactivated(t *testing.T) {
 	}
 }
 
+// TestResolveAdminSessionRevoked 会话行被吊销后，**签名仍合法**的令牌必须 401。
+// 这是「服务端登出」与「只清客户端 localStorage」的本质区别：
+// 前者让那枚 2h 有效的凭证立刻不可用，后者只是把本地那份藏起来了。
+func TestResolveAdminSessionRevoked(t *testing.T) {
+	ts := openTestService(t)
+	ctx := context.Background()
+	adminID, username, password := ts.newAdminFixture(t, "srevoke", 1)
+	tp, err := ts.AdminLogin(ctx, username, password)
+	if err != nil {
+		t.Fatalf("登录失败：%v", err)
+	}
+	if _, err := ts.ResolveAdmin(ctx, tp.AccessToken); err != nil {
+		t.Fatalf("吊销前令牌应可解析：%v", err)
+	}
+	// 手工吊销这一行（登出的库层动作）
+	if _, err := ts.pool.Exec(ctx,
+		`UPDATE admin_tokens SET revoked_at = now() WHERE admin_id = $1`, adminID); err != nil {
+		t.Fatalf("吊销失败：%v", err)
+	}
+	if _, err := ts.ResolveAdmin(ctx, tp.AccessToken); !errors.Is(err, ErrUnauthorized) {
+		t.Errorf("会话被吊销后旧令牌应 ErrUnauthorized，实际 %v", err)
+	}
+}
+
+// TestResolveAdminSessionExpired 落库 expires_at 早于当前时间 → 令牌不可用。
+// 与 JWT 自带 exp 双保险：即使有人把 JWT 的 exp 手改大，库里的会话行仍会卡住它。
+func TestResolveAdminSessionExpired(t *testing.T) {
+	ts := openTestService(t)
+	ctx := context.Background()
+	adminID, username, password := ts.newAdminFixture(t, "sexp", 1)
+	tp, err := ts.AdminLogin(ctx, username, password)
+	if err != nil {
+		t.Fatalf("登录失败：%v", err)
+	}
+	if _, err := ts.pool.Exec(ctx,
+		`UPDATE admin_tokens SET expires_at = now() - interval '1 hour' WHERE admin_id = $1`, adminID); err != nil {
+		t.Fatalf("回退 expires_at 失败：%v", err)
+	}
+	if _, err := ts.ResolveAdmin(ctx, tp.AccessToken); !errors.Is(err, ErrUnauthorized) {
+		t.Errorf("会话过期后旧令牌应 ErrUnauthorized，实际 %v", err)
+	}
+}
+
+// TestAdminMe 读路径：必须要求 status=1（第 127 轮之前全项目唯一带
+// `AND status = 1` 的 admin 端点，见 ResolveAdmin 注释里的告诫）。
 func TestAdminMe(t *testing.T) {
 	ts := openTestService(t)
 	adminID, username, _ := ts.newAdminFixture(t, "me", 1)
@@ -211,7 +333,7 @@ func TestAdminutil(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewAdminSession：%v", err)
 	}
-	if plain[:2] != "a_" || hash != auth.HashRefreshToken(plain) {
+	if plain[:2] != "a_" || hash != HashRefreshToken(plain) {
 		t.Errorf("会话令牌契约破坏：%q / %q", plain, hash)
 	}
 

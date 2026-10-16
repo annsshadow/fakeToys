@@ -9,7 +9,7 @@ import (
 
 func TestIssueAndVerify(t *testing.T) {
 	s := NewSigner("test-secret", time.Hour)
-	token, exp, err := s.Issue(42, "user")
+	token, exp, err := s.Issue(42, "user", "")
 	if err != nil {
 		t.Fatalf("Issue 失败：%v", err)
 	}
@@ -27,7 +27,7 @@ func TestIssueAndVerify(t *testing.T) {
 
 func TestVerifyRejectsTamperedToken(t *testing.T) {
 	s := NewSigner("test-secret", time.Hour)
-	token, _, _ := s.Issue(1, "user")
+	token, _, _ := s.Issue(1, "user", "")
 
 	t.Run("改载荷", func(t *testing.T) {
 		forged := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9." +
@@ -55,7 +55,7 @@ func TestVerifyRejectsTamperedToken(t *testing.T) {
 
 func TestVerifyRejectsExpired(t *testing.T) {
 	s := NewSigner("test-secret", -time.Minute) // 直接签发已过期的
-	token, _, _ := s.Issue(1, "user")
+	token, _, _ := s.Issue(1, "user", "")
 	if _, err := s.Verify(token); err != ErrExpiredToken {
 		t.Errorf("应返回 ErrExpiredToken，实际 %v", err)
 	}
