@@ -392,8 +392,16 @@ func (s *Service) SettleBattle(ctx context.Context, userID, tokenID int64, in do
 	resp := SettleResp{}
 	err = s.DB.Tx(ctx, func(tx pgx.Tx) error {
 		// 1) 抢占 token：条件更新保证并发下只有一个请求能成功
+		//
+		// ⚠️ 带 `AND user_id = $2` 不改变幂等语义，但把归属钉进语句自己：
+		// 上面 `FROM battle_tokens WHERE id = $1 AND user_id = $2` 已经
+		// 取过归属并校验过 level/过期，所以此处**不是**可利用的越权。
+		// 写成只有 `id` 的形式则是「调用点保证、语句不保证」—— 与本轮
+		// 修的 gems.go / defenses 三处同型。归属守卫（
+		// ownership_scan_test.go）覆盖 UPDATE 之后会盯着这里。
 		tag, err := tx.Exec(ctx,
-			`UPDATE battle_tokens SET used_at = now() WHERE id = $1 AND used_at IS NULL`, tokenID)
+			`UPDATE battle_tokens SET used_at = now() WHERE id = $1 AND user_id = $2 AND used_at IS NULL`,
+			tokenID, userID)
 		if err != nil {
 			return fmt.Errorf("claim token: %w", err)
 		}
