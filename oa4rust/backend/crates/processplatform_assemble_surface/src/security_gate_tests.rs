@@ -1650,3 +1650,163 @@ mod r419_gate_tests {
         unseed().await;
     }
 }
+
+/// 第 38 批回归臂：表面生命周期（create/save/publish/delete，`x_process_surface`）
+/// 与 `mode_save`（`PP_C_TASK_PROCESS_MODE`）写门。
+/// 离线：无会话 401（先于任何 `pool.get()`）；表面四把非 admin（mock pool 下
+/// `is_admin` fail-closed）403。`mode_save` 的非属主 403 需真库（其门先按 `xperson`
+/// 查归属，mock pool 会在 `pool.get` 处落 `Internal`），故此处只断言其 401 档。
+#[cfg(test)]
+mod surface_gate_tests {
+    use axum::extract::{Extension, Path};
+    use shared::error::AppError;
+    use shared::testing::{mock_pool, test_session};
+
+    const OTHER: &str = "u-surface-other";
+    const OWNER: &str = "u-surface-owner";
+
+    /// `mode_save` 的归属档真库臂：`u4_require_ppc_person` 先按 `PP_C_TASK_PROCESS_MODE.xperson`
+    /// 查归属，mock pool 证不到 403 那一档，故这里造一行按真实库跑「非属主 403 不落笔 / 属主放行」。
+    #[tokio::test]
+    async fn mode_save_owner_gate_lands() {
+        use shared::testing::{is_db_available, test_pool};
+        if !is_db_available().await {
+            eprintln!("skipping mode_save_owner_gate_lands: DATABASE_URL not reachable");
+            return;
+        }
+        let pool = test_pool();
+        let c = pool.get().await.unwrap();
+        c.execute(
+            "INSERT INTO PP_C_TASK_PROCESS_MODE (id, xid, xperson) VALUES ('b38-mode','b38-mode',$1) \
+             ON CONFLICT (id) DO UPDATE SET xperson = $1",
+            &[&OWNER.to_string()],
+        )
+        .await
+        .unwrap();
+
+        // 非属主 → 403，不落笔
+        let r = crate::mode_save(
+            Extension(pool.clone()),
+            Some(Extension(test_session(OTHER))),
+            axum::Json(serde_json::json!({ "id": "b38-mode" })),
+        )
+        .await;
+        assert!(
+            matches!(r, Err(AppError::Forbidden)),
+            "mode_save 非属主必须 403，实得 {:?}",
+            r.as_ref().err()
+        );
+
+        // 属主 → 放行
+        let r = crate::mode_save(
+            Extension(pool.clone()),
+            Some(Extension(test_session(OWNER))),
+            axum::Json(serde_json::json!({ "id": "b38-mode" })),
+        )
+        .await;
+        assert!(r.is_ok(), "mode_save 属主应放行：{:?}", r.as_ref().err());
+
+        // 收口零残留
+        c.execute("DELETE FROM PP_C_TASK_PROCESS_MODE WHERE id = 'b38-mode'", &[])
+            .await
+            .unwrap();
+    }
+
+    #[tokio::test]
+    async fn surface_and_mode_writes_require_gate() {
+        let dead = mock_pool();
+        let body = || {
+            axum::Json(crate::CreateSurfaceRequest {
+                name: Some("x".to_string()),
+                template: None,
+                category: None,
+                content: None,
+            })
+        };
+
+        // 无会话：五把全 401
+        assert!(
+            matches!(
+                crate::create_surface(Extension(dead.clone()), None, body()).await,
+                Err(AppError::Unauthorized)
+            ),
+            "create_surface 无会话必须 401"
+        );
+        assert!(
+            matches!(
+                crate::save_surface(
+                    Extension(dead.clone()),
+                    None,
+                    Path("s1".to_string()),
+                    axum::Json(serde_json::json!({}))
+                )
+                .await,
+                Err(AppError::Unauthorized)
+            ),
+            "save_surface 无会话必须 401"
+        );
+        assert!(
+            matches!(
+                crate::publish_surface(Extension(dead.clone()), None, Path("s1".to_string())).await,
+                Err(AppError::Unauthorized)
+            ),
+            "publish_surface 无会话必须 401"
+        );
+        assert!(
+            matches!(
+                crate::delete_surface(Extension(dead.clone()), None, Path("s1".to_string())).await,
+                Err(AppError::Unauthorized)
+            ),
+            "delete_surface 无会话必须 401"
+        );
+        assert!(
+            matches!(
+                crate::mode_save(
+                    Extension(dead.clone()),
+                    None,
+                    axum::Json(serde_json::json!({ "id": "m1" }))
+                )
+                .await,
+                Err(AppError::Unauthorized)
+            ),
+            "mode_save 无会话必须 401"
+        );
+
+        // 非 admin（mock pool 下 is_admin fail-closed）：表面四把全 403
+        let s = || Some(Extension(test_session(OTHER)));
+        assert!(
+            matches!(
+                crate::create_surface(Extension(dead.clone()), s(), body()).await,
+                Err(AppError::Forbidden)
+            ),
+            "create_surface 非 admin 必须 403"
+        );
+        assert!(
+            matches!(
+                crate::save_surface(
+                    Extension(dead.clone()),
+                    s(),
+                    Path("s1".to_string()),
+                    axum::Json(serde_json::json!({}))
+                )
+                .await,
+                Err(AppError::Forbidden)
+            ),
+            "save_surface 非 admin 必须 403"
+        );
+        assert!(
+            matches!(
+                crate::publish_surface(Extension(dead.clone()), s(), Path("s1".to_string())).await,
+                Err(AppError::Forbidden)
+            ),
+            "publish_surface 非 admin 必须 403"
+        );
+        assert!(
+            matches!(
+                crate::delete_surface(Extension(dead.clone()), s(), Path("s1".to_string())).await,
+                Err(AppError::Forbidden)
+            ),
+            "delete_surface 非 admin 必须 403"
+        );
+    }
+}

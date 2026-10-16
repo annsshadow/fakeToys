@@ -527,11 +527,6 @@ processplatform_assemble_designer	POST	/api/processplatform/assemble/designer/pr
 processplatform_assemble_designer	DELETE	/api/processplatform/assemble/designer/script/{id}	delete	R7
 processplatform_assemble_designer	POST	/api/processplatform/assemble/designer/workcompleted/application/merge/data/{applicationFlag}	workcompleted_application_applicationFlag_merge_data	R7
 processplatform_assemble_designer	POST	/api/processplatform/assemble/designer/workcompleted/process/merge/data/{processFlag}	workcompleted_process_processFlag_merge_data	R7
-processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/create	create_surface	R7
-processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/save/{id}	save_surface	R7
-processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/publish/{id}	publish_surface	R7
-processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/delete/{id}	delete_surface	R7
-processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/mode/save	mode_save	R7
 processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/read/opinion/manage/{id}	read_id_opinion_manage	R7
 processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/read/opinion/manage/mockputtopost/{id}	read_id_opinion_manage_mockputtopost	R7
 processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/read/processing/{id}	read_id_processing	R7
