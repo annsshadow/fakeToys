@@ -157,12 +157,20 @@ func requireAdmin(s *service.Service) fiber.Handler {
 // ⚠️ 第 127 轮：admin_users.role 自 00007 迁移就标了 admin/ops/readonly
 // 三个角色，但**没有任何端点消费它** —— readonly 账号可以和 admin 一样
 // 封禁玩家、发币、改关卡/商城。
-// 语义：仅 "readonly" 被拒写；其余角色（admin/ops/未知值）保持可写
-// （该列默认 ops，放行才是「未知角色」的正确方向，不该把写操作打成 500）。
+//
+// ⚠️ 第 155 轮改成 **fail-closed 白名单**：只有 `admin` / `ops` 可写，
+// 其余（含空串、未知值）一律 403。
+// 此前的语义是「只拒 readonly，未知放行」—— 那意味着把 `admin_users.role`
+// 手改成一个拼错的值（如 `readonly ` 尾随空格 / `readonl`）的账号
+// 会变成**可写**的：一个数据录入错误直接升级成越权。
+// 白名单方向上「未知值」只能朝安全的那一侧倒（拒绝），
+// 而列本身 `DEFAULT 'ops'` 覆盖了正常行，误伤的只有**本来就该 403 的行**。
 func requireWritable() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		if role, _ := c.Locals("admin_role").(string); role == "readonly" {
-			return fail(c, fiber.StatusForbidden, "readonly", "readonly 账号不可执行写操作")
+		role, _ := c.Locals("admin_role").(string)
+		if role != "admin" && role != "ops" {
+			return fail(c, fiber.StatusForbidden, "role_not_writable",
+				fmt.Sprintf("当前角色 %q 不可执行写操作（仅 admin/ops）", role))
 		}
 		return c.Next()
 	}
