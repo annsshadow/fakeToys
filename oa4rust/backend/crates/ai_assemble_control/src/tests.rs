@@ -635,29 +635,39 @@ mod u2_unit_tests {
             )
             .await
             .unwrap();
-            for (id, suffix) in [("ai-gate-file", "f"), ("ai-gate-file-owner", "f"), ("ai-gate-file-admin", "f")] {
-                let _ = suffix;
+            for id in ["ai-gate-file", "ai-gate-file-owner", "ai-gate-file-admin"] {
+                // x_ai_file.id 无唯一约束，ON CONFLICT 报 E42P10；改用 DELETE+INSERT 幂等造数。
+                c.execute("DELETE FROM x_ai_file WHERE id = $1", &[&id.to_string()])
+                    .await
+                    .unwrap();
                 c.execute(
                     "INSERT INTO x_ai_file (id, name, file_name, creator, enabled, create_time) \
-                     VALUES ($1,$1,$1,$2,true,NOW()) ON CONFLICT (id) DO NOTHING",
+                     VALUES ($1,$1,$1,$2,true,NOW())",
                     &[&id.to_string(), &OWNER.to_string()],
                 )
                 .await
                 .unwrap();
             }
             for id in ["ai-gate-index", "ai-gate-index-owner"] {
+                // x_ai_index.id 无唯一约束，ON CONFLICT 报 E42P10；改用 DELETE+INSERT 幂等造数。
+                c.execute("DELETE FROM x_ai_index WHERE id = $1", &[&id.to_string()])
+                    .await
+                    .unwrap();
                 c.execute(
-                    "INSERT INTO x_ai_index (id, creator, create_time) VALUES ($1,$2,NOW()) \
-                     ON CONFLICT (id) DO NOTHING",
+                    "INSERT INTO x_ai_index (id, creator, create_time) VALUES ($1,$2,NOW())",
                     &[&id.to_string(), &OWNER.to_string()],
                 )
                 .await
                 .unwrap();
             }
             for id in ["ai-gate-chat", "ai-gate-chat-owner"] {
+                // x_ai_conversation 现需非 null title（schema 漂移）；DELETE+INSERT 幂等造数。
+                c.execute("DELETE FROM x_ai_conversation WHERE id = $1", &[&id.to_string()])
+                    .await
+                    .unwrap();
                 c.execute(
-                    "INSERT INTO x_ai_conversation (id, user_id, create_time) \
-                     VALUES ($1,$2,NOW()) ON CONFLICT (id) DO NOTHING",
+                    "INSERT INTO x_ai_conversation (id, title, user_id, create_time) \
+                     VALUES ($1,$1,$2,NOW())",
                     &[&id.to_string(), &OWNER.to_string()],
                 )
                 .await

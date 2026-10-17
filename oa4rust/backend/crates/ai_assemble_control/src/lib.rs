@@ -23,6 +23,8 @@ pub mod routes;
 mod tests;
 #[cfg(test)]
 mod tests_generated;
+#[cfg(test)]
+mod security_gate_tests;
 
 #[derive(Debug, Deserialize)]
 pub struct ChatCompletionRequest {
@@ -307,6 +309,15 @@ async fn require_admin(pool: &Pool, session: &shared::session::Session) -> Resul
     } else {
         Err(AppError::Forbidden)
     }
+}
+
+#[allow(non_snake_case)]
+fn require_session(
+    session: Option<Extension<shared::session::Session>>,
+) -> Result<shared::session::Session, AppError> {
+    session
+        .map(|Extension(s)| s)
+        .ok_or(AppError::Unauthorized)
 }
 
 #[allow(non_snake_case)]
@@ -1287,8 +1298,10 @@ pub async fn config_update_model_flag(
 #[allow(non_snake_case)]
 pub async fn file_copy_file(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     req: Option<axum::extract::Json<Value>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let req = req.map(|r| r.0).unwrap_or_default();
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let source_id = req
@@ -1525,8 +1538,10 @@ pub async fn file_list_paging_page_size_size(
 #[allow(non_snake_case)]
 pub async fn file_upload(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     req: Option<axum::extract::Json<Value>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let req = req.map(|r| r.0).unwrap_or_default();
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
@@ -2570,6 +2585,7 @@ pub async fn chat_delete_clue_id(
 #[allow(non_snake_case)]
 pub async fn chat_write_completion_extra(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     req: Option<axum::extract::Json<Value>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let req = req.map(|r| r.0).unwrap_or_default();
@@ -2582,6 +2598,7 @@ pub async fn chat_write_completion_extra(
     if id.is_empty() {
         return Err(AppError::BadRequest("id required".to_string()));
     }
+    require_session(session)?;
 
     let extra = req.get("extra").cloned().unwrap_or(Value::Null);
     let extra_text = extra.to_string();
