@@ -786,4 +786,47 @@ mod security_gate_tests {
         let client = pool.get().await.expect("取库失败");
         wipe_alias_rows(&client, &[doc, file]).await;
     }
+
+    // 第四十八批（R7 收口）：input_compare / input_compare_mockputtopost 收会话门，
+    // 无会话必须 401（门在 pool.get() 之前，dead pool 即证）。
+    #[tokio::test]
+    async fn b48_input_compare_reject_without_session() {
+        let mgr = deadpool_postgres::Manager::new(
+            deadpool_postgres::tokio_postgres::Config::new(),
+            deadpool_postgres::tokio_postgres::NoTls,
+        );
+        let pool = deadpool_postgres::Pool::builder(mgr).build().unwrap();
+        let cases: Vec<(&str, Result<(), AppError>)> = vec![
+            (
+                "input_compare",
+                crate::input_compare(
+                    Extension(pool.clone()),
+                    None,
+                    Json(serde_json::json!({})),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "input_compare_mockputtopost",
+                crate::input_compare_mockputtopost(
+                    Extension(pool.clone()),
+                    None,
+                    Json(serde_json::json!({})),
+                )
+                .await
+                .map(|_| ()),
+            ),
+        ];
+        assert_eq!(cases.len(), 2, "本批 2 把必须逐把点名");
+        let leaked: Vec<String> = cases
+            .iter()
+            .filter(|(_, r)| !matches!(r, Err(AppError::Unauthorized)))
+            .map(|(k, r)| format!("{k} => {:?}", r.as_ref().err()))
+            .collect();
+        assert!(
+            leaked.is_empty(),
+            "无会话未回 401（出现 Internal 就是门插在读库之后）：{leaked:?}"
+        );
+    }
 }

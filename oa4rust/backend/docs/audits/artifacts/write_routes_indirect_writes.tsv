@@ -67,12 +67,10 @@ cms_assemble_control	GET	/api/templateform/{id}/mockdeletetoget	templateform_id_
 cms_assemble_control	GET	/api/view/{id}/mockdeletetoget	view_id_mockdeletetoget	K	soft_delete_after_gate
 cms_assemble_control	GET	/api/viewcategory/{id}/mockdeletetoget	viewcategory_id_mockdeletetoget	K	soft_delete_after_gate
 cms_assemble_control	GET	/api/viewfieldconfig/{id}/mockdeletetoget	viewfieldconfig_id_mockdeletetoget	K	soft_delete_after_gate
-cms_assemble_control	POST	/api/document/cipher/publish/content/mockputtopost	document_cipher_publish_workflow_mock_u3	R7	u3_cipher_publish_workflow_impl
-cms_assemble_control	POST	/api/input/cover/mockputtopost	input_cover_mockputtopost	R7	input_cover_impl
-cms_assemble_control	POST	/api/input/create/mockputtopost	input_create_mockputtopost	R7	input_create_impl
-cms_assemble_control	PUT	/api/document/cipher/publish/content	document_cipher_publish_workflow_u3	R7	u3_cipher_publish_workflow_impl
-cms_assemble_control	PUT	/api/input/cover	input_cover	R7	input_cover_impl
-cms_assemble_control	PUT	/api/input/create	input_create	R7	input_create_impl
+cms_assemble_control	POST	/api/input/cover/mockputtopost	input_cover_mockputtopost	R6	input_cover_impl
+cms_assemble_control	POST	/api/input/create/mockputtopost	input_create_mockputtopost	R6	input_create_impl
+cms_assemble_control	PUT	/api/input/cover	input_cover	R6	input_cover_impl
+cms_assemble_control	PUT	/api/input/create	input_create	R6	input_create_impl
 file_assemble_control	POST	/api/attachment/upload/folder/{folderId}/callback/{callback}	attachment_upload_folder_folderId_callback_callback	R6	attachment_upload_folder_folderId
 file_assemble_control	POST	/api/file/assemble/control/file/upload/referencetype/{referenceType}/reference/{reference}/scale/{scale}	u2_file_upload_octet_stream	R6	u2_store_new
 file_assemble_control	POST	/api/file/assemble/control/file/upload/referencetype/{referenceType}/reference/{reference}/scale/{scale}/callback/{callback}	u2_file_upload_callback	R6	u2_file_upload_multipart

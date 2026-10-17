@@ -130,7 +130,7 @@ cms_assemble_control	POST	/api/form/submit	form_submit	R7
 cms_assemble_control	POST	/api/image/encode/base64	image_encode_base64	R7
 cms_assemble_control	POST	/api/image/encode/base64/size/{size}	image_encode_base64_size_size	R7
 cms_assemble_control	POST	/api/image/resize/id/{id}/width/{width}/height/{height}	image_resize_id_id_width_width_height_height	R7
-cms_assemble_control	POST	/api/input/compare/mockputtopost	input_compare_mockputtopost	R7
+cms_assemble_control	POST	/api/input/compare/mockputtopost	input_compare_mockputtopost	R6
 cms_assemble_control	POST	/api/input/prepare/cover/mockputtopost	input_prepare_cover_mockputtopost	R7
 cms_assemble_control	POST	/api/input/prepare/create/mockputtopost	input_prepare_create_mockputtopost	R7
 cms_assemble_control	POST	/api/log/filter/list/{id}/next/{count}	log_filter_list_id_next_count	R7
@@ -161,7 +161,7 @@ cms_assemble_control	PUT	/api/document/filter/list/{id}/prev/{count}	document_fi
 cms_assemble_control	PUT	/api/document/filter/list/{page}/size/{size}	document_filter_paging_u3	R7
 cms_assemble_control	PUT	/api/form/filter/list/{id}/next/{count}/app/{appId}	form_filter_list_id_next_count_app_appId	R7
 cms_assemble_control	PUT	/api/form/filter/list/{id}/prev/{count}/app/{appId}	form_filter_list_id_prev_count_app_appId	R7
-cms_assemble_control	PUT	/api/input/compare	input_compare	R7
+cms_assemble_control	PUT	/api/input/compare	input_compare	R6
 cms_assemble_control	PUT	/api/input/prepare/cover	input_prepare_cover	R7
 cms_assemble_control	PUT	/api/input/prepare/create	input_prepare_create	R7
 cms_assemble_control	PUT	/api/output/{appInfoFlag}/select	output_appInfoFlag_select	R7
