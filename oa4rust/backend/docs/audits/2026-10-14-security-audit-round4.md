@@ -1026,6 +1026,20 @@ GET 写面队列里 `calendar_assemble_control` 与 `jpush_assemble_control` 各
 
 | 验证（本批代码变更） | — | mind_assemble_control 整 lib `32 passed / 0 failed / 3 ignored`（0.16s）：新增离线臂 `b60_writes_reject_without_session`（5 把 dead pool + 无会话逐把点名 401）+ `b60_update_control_config_non_admin_forbidden`（非 admin 403，离线稳健）。`tests_generated` 的 `test_{save,update}_folder`/`test_update_control_config` 走存在性判据照过。尺子：**5 条 R7 路由出列**（全含写），R7 723→**718**、含写 34→**29**、ungated −5；mind R7 5→**0**；EXIT 0、判据见证缺口 0（复跑 3 次稳定） |
 
+### 三.61 第六十一批（file 写面 5 把收门，R7 718→713）
+
+| 项 | 位置 | 处置与口径 |
+| --- | --- | --- |
+| 文件上传（会话档） | `lib.rs` `file_upload`（POST `/upload`，INSERT `FILE_FILE`） | 新增 crate 内 `require_session`：无会话 401。`person` 仍取表单/body（冒名残留记 §五 待修） |
+| 文件夹新增（会话档） | `lib.rs` `folder_create`（POST `/folder/create`，INSERT `FILE_FOLDER`） | `require_session`：无会话 401。`person` 仍取 body（冒名残留记 §五 待修） |
+| 文件夹改（会话档） | `lib.rs` `folder_update`（POST `/folder/update`，UPDATE `FILE_FOLDER`） | `require_session`：无会话 401 |
+| 文件夹软删（会话档） | `lib.rs` `folder_remove`（POST `/folder/remove`，软删 `FILE_FOLDER`） | `require_session`：无会话 401 |
+| 权限配置写（admin 档） | `lib.rs` `permission_set`（POST `/permission/set`，UPSERT `FILE_PERMISSION`） | 新增 crate 内 `require_admin(&pool.0, session)`：无会话 401 / 非 admin 403 |
+
+> 注：file 新鲜 R7 名单 5 条全为真写，本批全收（各单路由，5 条）。文件夹/文件写按会话存在档收；权限配置按 admin 档收。既有 `tests.rs::test_folder_create_empty_name_returns_error`（ignored）补一个有效会话参数以保留空名校验语义；`tests_generated` 走存在性判据照过。
+
+| 验证（本批代码变更） | — | file 整 lib `12 passed / 0 failed / 8 ignored`（0.06s）：新增离线臂 `b61_writes_reject_without_session`（5 把 dead pool + 无会话逐把点名 401）+ `b61_permission_set_non_admin_forbidden`（非 admin 403，离线稳健）。尺子：**5 条 R7 路由出列**（全含写），R7 718→**713**、含写 29→**24**、ungated −5；file R7 5→**0**；EXIT 0、判据见证缺口 0（复跑 3 次稳定） |
+
 ## 四、验证
 
 
