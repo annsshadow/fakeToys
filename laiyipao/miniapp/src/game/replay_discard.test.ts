@@ -1,36 +1,37 @@
 ﻿import { describe, it, expect } from 'vitest'
 import fixture from '@vectors/smoke_levels.json'
-import { BattleEngine, MAX_BATTLE_TICKS, PICK_DISCARD_SKIP_BASE, type BattleConfig } from './engine'
+import {
+  BattleEngine,
+  MAX_BATTLE_TICKS,
+  PICK_CODE_BASE,
+  PICK_MIN,
+  decodeDiscardCode,
+  encodeDiscardCode,
+  type BattleConfig,
+} from './engine'
 import { defaultAttacker } from './damage'
 import { ACTIVE_SLOTS } from './heatmap'
 import type { EnemyDef, GeneratedLevel, SkillDef } from './types'
 import type { Element } from './elements'
 
 /**
- * 「先弃牌再取牌」必须能被重放复现（第 66 轮）。
+ * 「先弃牌再取牌」必须能被重放复现（第 66 轮引入，第 159 轮重写）。
  *
- * # 缺陷：card_picks 只记取牌，弃牌的副作用无人复现
+ * # 第 66 轮版的核心缺陷（第 159 轮修复）
  *
- * `card_picks` 每波只记**一个**整数（`recordPick` 只在
- * `length <= waveIndex` 时 push，即每波第一次有效选择）。
+ * 旧编码 `-(3+handIdx)` / `-(6+handIdx)` 只记「有没有弃过」：
  *
- * 原局里玩家若**先弃牌再取牌**，弃牌会做三件事：
- *   1. `this.deck.discard(id)` —— 扣 `discardsLeft`、把手牌移除
- *   2. `this.heat.refundHeat(r.refund)` —— **回充热量**
- *   3. `this.record(this.tick, 'card', cardIndex(card), 1)` —— **写入回放事件流**
+ *   1. **弃的是哪张表达不了** —— 重放侧固定弃 `hand[0]`。
+ *      线上 UI 允许弃任意一张：弃第 2/3 张的正常玩家，
+ *      重放弃错牌 → 事件流里那张牌不一样 → 哈希失配 → I-6 判伪造。
+ *   2. **弃多于一张表达不了** —— 「快速装填」卡（每波弃牌次数 +1）
+ *      让 discardsLeft > 1 成为正常玩法，旧编码下无法复现。
  *
- * 重放侧 `applyReplayDecision` 只按脚本取牌：
- *   - 不复现那次 `record(..., 1)` → 事件流少一条 → **哈希必然不同**
- *   - 不复现那次 `refundHeat` → 热量差 1 → 后续开火序列整体偏移
- *
- * 后果：该局的 replayHash 与记录不符 → I-6 判**伪造**。
- * 而 `discardCard` 与 `takeCard` 一样只判 `phase === 'card_select'`，
- * 「先弃后取」是 UI 与 API 都允许的合法操作。
- *
- * # 为什么原有测试全绿
- *
- * `replay.test.ts` 与 `i6.e2e.test.ts` 的 card_picks 往返用例都是
- * 「取牌」或「跳过」两种形态 —— **没有一条覆盖「弃牌 + 取牌」**。
+ * 新编码把弃牌集合写成**手牌位掩码**（见 `PICK_CODE_BASE` 的枚举表）：
+ * 一个 code 同时携带「弃了原手牌的哪几张」+「取剩余第几张 / 跳过」。
+ * 弃牌不再写 record 事件 —— 事件流里只留 take/skip 的结果，
+ * 于是**弃牌顺序也不进哈希**（旧实现下点击顺序会改变哈希，
+ * 而点击顺序本来就不是语义）。
  *
  * # 判据
  *
@@ -85,12 +86,12 @@ type Inner = {
   phase: string
   waveIndex: number
   deck: { hand: { id: string; kind: string }[]; discardsLeft: number }
+  buffs: { freeDiscard: number }
   heat: { heat: bigint }
   cardPicks: number[]
   replay: unknown[]
   takeCard(id: string): unknown
   discardCard(id: string): unknown
-  finishCardSelect(): void
   setReplayScript(picks: number[]): void
   hasReplayScript(): boolean
   replayHash(): string
@@ -102,50 +103,33 @@ type Inner = {
 /**
  * 跑完整局，onSelect 决定每波怎么选牌。
  *
- * ⚠️⚠️ `onSelect` 必须**每波只调用一次**，不能每 tick 都调。
- *
- * 我第一版写成「每 tick 检查 phase==='card_select' 就决策一次」，
- * 于是引擎在 takeCard 后手牌未空时不进下一波，下一 tick 又进选牌阶段
- * → 每波取牌 2~3 次。
- *
- * 那个模式**真实玩家做不到**（UI 上「取 1 张」就点下一步），
- * 而且它超出了 `card_picks` 的协议能力：服务端强制
- * `len(card_picks) <= 波数`，即「每波一项」。
- *
- * 实测 symptom：原局 card 事件是
- *   401/30/1  401/506/0  **402/902/0**
- * 而重放只能复现前两条 —— 第 3 条是同波的第 2 次取牌，
- * 协议里没有任何位置能记它。
- *
- * 这个「每波一项」的假设**是既有的、有服务端校验强制的**，
- * 本文件守的就是这个语义下的可复现性。
+ * ⚠️ 第 159 轮起「取牌/跳过」都会**立刻**结束本波，所以 onSelect 每波
+ * 只会被调用一次；保险起见仍保留「同一波不重复决策」的守卫，
+ * 且 onSelect 结束时若还停在 card_select（只弃了牌没取），
+ * 由 harness 补一次 skipCards —— 对应真实玩家点「直接下一波」。
  */
 function play(eng: BattleEngine, onSelect: (e: Inner) => void): { hash: string; picks: number[] } {
   const i = eng as unknown as Inner
   const isReplay = i.hasReplayScript()
   i.start()
-  let decidedThisWave = -1
+  let decidedWave = -1
   for (let t = 0; t < MAX_BATTLE_TICKS; t++) {
     if (i.phase === 'won' || i.phase === 'lost') break
     // ⚠️ 重放时**不能**干预选牌：applyReplayDecision 由 step() 内部驱动，
-    // 这里再调 onSelect / finishCardSelect 就是双重驱动。
-    if (i.phase === 'card_select' && !isReplay) {
-      if (decidedThisWave !== i.waveIndex) {
-        decidedThisWave = i.waveIndex
-        onSelect(i)
-      } else {
-        // 玩家离开选牌界面：丢弃剩余手牌，进入下一波。
-        i.finishCardSelect()
-      }
+    // 这里再调 onSelect / skipCards 就是双重驱动。
+    if (i.phase === 'card_select' && !isReplay && decidedWave !== i.waveIndex) {
+      decidedWave = i.waveIndex
+      onSelect(i)
+      // onSelect 只弃牌不取牌时停在 card_select —— 玩家会点「直接下一波」结束
+      if (i.phase === 'card_select') i.skipCards()
     }
     i.step()
   }
   return { hash: eng.replayHash(), picks: [...i.cardPicks] }
 }
 
-describe('弃牌可被重放复现（第 66 轮）', () => {
-  it('「先弃 1 张再取 1 张」的重放哈希必须与原局一致', () => {
-    // 原局：每波先弃第一张，再取第二张
+describe('弃牌可被重放复现（第 66 轮引入，第 159 轮重写）', () => {
+  it('「先弃第一张再取一张」的重放哈希必须与原局一致', () => {
     const original = play(mkEngine(), (i) => {
       const hand = i.deck.hand
       if (hand.length > 0) i.discardCard(hand[0]!.id)
@@ -156,119 +140,108 @@ describe('弃牌可被重放复现（第 66 轮）', () => {
 
     expect(original.picks.length, '原局应记录了选牌').toBeGreaterThan(0)
 
-    // 重放：只喂 card_picks，不告诉它「原来弃过牌」
-    const replay = mkEngine()
-    ;(replay as unknown as Inner).setReplayScript(original.picks)
-    const replayed = play(replay, () => {
-      /* 重放侧由 applyReplayDecision 驱动，这里不干预 */
-    })
-
-    expect(
-      replayed.hash,
-      '重放哈希与原局不同 —— I-6 会把这局判成伪造。' +
-        '根因：card_picks 每波只记一个整数，弃牌的 record 事件与热量回充都没被复现',
-    ).toBe(original.hash)
-  })
-
-  it('「弃一张后跳过整波」的可复现性（弃牌 + skipCards 组合）', () => {
-    // 弃掉第一张，然后把剩下的整波跳过 —— 这会走 `skipCards` → `recordPick(-1)`。
-    // 弃牌的 record 事件与 refundHeat 仍然要被复现，所以这是最容易失配的组合。
-    const original = play(mkEngine(), (i) => {
-      if (i.deck.hand.length > 0) i.discardCard(i.deck.hand[0]!.id)
-      i.skipCards()
-    })
-
     const replay = mkEngine()
     ;(replay as unknown as Inner).setReplayScript(original.picks)
     const replayed = play(replay, () => {})
 
+    expect(
+      replayed.hash,
+      '重放哈希与原局不同 —— I-6 会把这局判成伪造。' +
+        '根因候选：弃牌掩码没有被重放侧复现（热量回充/手牌变化）',
+    ).toBe(original.hash)
+  })
+
+  it('「弃第 3 张再取第 1 张」可复现（旧编码的盲区：重放固定弃 hand[0]）', () => {
+    // ⚠️ 这是线上真实玩家最常踩的失配之一：
+    // 旧编码只记「有没有弃过」，重放侧永远弃 hand[0]；
+    // 玩家弃了第 3 张时，重放弃错牌 → 哈希失配 → 结算被拒。
+    const original = play(mkEngine(), (i) => {
+      const hand = i.deck.hand
+      if (hand.length > 0) i.discardCard(hand[hand.length - 1]!.id)
+      const after = i.deck.hand
+      if (after.length > 0) i.takeCard(after[0]!.id)
+      else i.skipCards()
+    })
+
+    expect(original.picks.length).toBeGreaterThan(0)
+    // 弃原手牌第 2 张（mask=0b100=4）、取剩余第 0 张 → code = 12 + 0
+    // mask=4 的区间起点 = count(0)+count(1)+count(2)+count(3) = 4+3+3+2 = 12
+    expect(original.picks[0], '编码应携带「弃了哪张」').toBe(-(PICK_CODE_BASE + 12))
+
+    const replay = mkEngine()
+    ;(replay as unknown as Inner).setReplayScript(original.picks)
+    const replayed = play(replay, () => {})
     expect(replayed.hash).toBe(original.hash)
   })
 
-  it('「弃+跳过」的编码会被真实复现（discard 的热量回充必须发生）', () => {
-    // ⚠️ 变异测试的一条**如实记录**：把
-    //   `if (want <= -PICK_DISCARD_SKIP_BASE)` 改成 `if (false)`
-    // 之后，12 条守卫**全部通过**。
-    //
-    // 我追查了原因，结论是**这个变异无害**，不是守卫漏了：
-    //   -6 落入「弃+取」分支，`rest = -(want + 3) = 3`
-    //   而每波只有 3 张牌（索引 0..2），`hand[3]` 不存在
-    //   → 走 `this.skipCards(); continue`
-    //
-    // 两条分支的实际动作都是「discardCard(hand[0]) 然后 skipCards()」，
-    // **完全等价**。所以任何行为断言都抓不到它 ——
-    // 能抓到的只有「源码里有没有这个分支」这种文本扫描，
-    // 而本项目的判据是「改坏会不会红」，文本扫描恰好是那种
-    // 「看起来在守着某样东西、实际什么也没守」的假守卫。
-    //
-    // 这与 README 记的「去掉雪崩只留 levelID × 奇数 → 均匀度测试全绿」
-    // 是同一类：变异确实无害，如实记录，不粉饰。
-    //
-    // 那么这两个分支该不该合并？**不合并** ——
-    // 它们的区别会在 `rollWaveCards` 改成每波 4 张时显现：
-    // 那时 `rest = 3` 落在合法区间内，「弃+跳」的编码就会被
-    // 当成「弃+取第 3 张」。合并等于把这个坑埋到那一天才炸。
-    // `card_picks_contract.test.ts` 的「区间不相交」守卫盯着这件事。
-    //
-    // 这条用例守的是**行为契约本身**（discard 的 refundHeat 真的发生），
-    // 那是无论分支怎么合并都必须成立的东西。
-    const eng = mkEngine()
-    const i = eng as unknown as Inner
-    i.setReplayScript([-PICK_DISCARD_SKIP_BASE])
-    i.start()
-    let guard = 0
-    while (i.phase !== 'card_select' && guard++ < 4000) i.step()
-    expect(i.phase).toBe('card_select')
-
-    // ⚠️ 前提固化（第 158 轮）：这条用例的可观测量是「热量发生了变化」。
-    // 而 `refundHeat` 内部有下限夹取（`heat - n < 0 ? 0 : ...`）——
-    // 若此刻热量恰为 **0**，回充被夹住，热量不变，
-    // 于是断言红，而红的原因与被测行为（discard 有没有执行）**无关**。
-    //
-    // 改前它依赖「跑到第一波 card_select 时热量恰好 > 0」这一偶然状态，
-    // 节奏参数一变就失效。这里显式给一个基准值，
-    // 让「热量有没有被扣」成为本用例的唯一变量。
-    i.heat.heat = 5n
-    const before = i.heat.heat
-    i.step() // applyReplayDecision 在 step 开头跑
-    expect(before).toBeGreaterThan(0n)
-    expect(
-      i.heat.heat,
-      `重放「弃+跳」没有回充热量（before=${before}）—— ` +
-        '说明 discard 没被执行，退化成纯跳过，热量与原局差 1',
-    ).not.toBe(before)
-  })
-
-it('弃过牌再跳过用独立编码（-6..-8），不与「弃+取」（-3..-5）重叠', () => {
-    // 上一条的判据是哈希；这条钉住**编码取值域本身**。
-    //
-    // 我第一版写的是「弃过牌再跳过记 -1」，那是错的：
-    // -1 无法表达「弃过牌」，重放侧不会复现那次 discard 的 record 事件
-    // 与热量变化 → 哈希失配。实测那条用例红，且与「弃+取」的编码域重叠。
+  it('「弃一张后跳过整波」可复现（mask + 不取）', () => {
     const original = play(mkEngine(), (i) => {
       if (i.deck.hand.length > 0) i.discardCard(i.deck.hand[0]!.id)
       i.skipCards()
     })
     expect(original.picks.length).toBeGreaterThan(0)
-    for (const p of original.picks) {
-      expect(
-        p,
-        `picks=${JSON.stringify(original.picks)} —— 「弃+跳」应落在 [-8,-6]，` +
-          '且不得与「弃+取」的 [-5,-3] 重叠（BASE 相差 3 > 每波最大手牌数 2）',
-      ).toBeLessThanOrEqual(-6)
-      expect(p).toBeGreaterThanOrEqual(-8)
-    }
+    // 弃原手牌第 0 张（mask=1）、不取：code = count(0) + (count(1)-1) = 4 + 2 = 6
+    expect(original.picks[0]).toBe(-(PICK_CODE_BASE + 6))
+
+    const replay = mkEngine()
+    ;(replay as unknown as Inner).setReplayScript(original.picks)
+    const replayed = play(replay, () => {})
+    expect(replayed.hash).toBe(original.hash)
   })
 
-  it('弃牌确实改变了热量（否则上面两条守卫可能是空转）', () => {
-    // 守卫的判据是哈希；这条确认「弃牌」不是无副作用的空操作。
-    // 若 discardCard 哪天不再动热量，上面的哈希守卫会失去意义，
-    // 这条会提醒换一种触发机制。
-    //
-    // ⚠️ 断言用「不相等」而不是「变大」：`refundHeat` 的实现是
-    // `heat = heat - n < 0 ? 0 : heat - n` —— 它**降低**热量
-    // （函数名叫 refund 但语义是减），且热量为 0 时减了也不变。
-    // 断言「变大」会把这个语义写反，让守卫变成假绿。
+  it('「一次弃两张（快速装填）后取牌」可复现（旧编码表达不了）', () => {
+    // 真实玩法：先取到「快速装填」（freeDiscard=1），之后每波可弃 2 张。
+    // ⚠️ 弃牌额度来自**战斗状态**（buffs.freeDiscard → beginWave 时进
+    // deck.discardsLeft），不来自 card_picks —— 所以两端必须同源。
+    // 之前在这里给单侧 `deck.discardsLeft = 2`，重放侧没有额度、
+    // 第二次弃牌静默失败 → 哈希失配（这正是本条用例的第一版红因）。
+    const withFreeDiscard = (e: BattleEngine): BattleEngine => {
+      ;(e as unknown as Inner).buffs.freeDiscard = 1
+      return e
+    }
+    const original = play(withFreeDiscard(mkEngine()), (i) => {
+      const hand = i.deck.hand
+      if (hand.length > 0) i.discardCard(hand[0]!.id)
+      const after1 = i.deck.hand
+      if (after1.length > 0) i.discardCard(after1[0]!.id)
+      const after2 = i.deck.hand
+      if (after2.length > 0) i.takeCard(after2[0]!.id)
+      else i.skipCards()
+    })
+    expect(original.picks.length).toBeGreaterThan(0)
+    // 弃原手牌 0、1（mask=0b011=3）、取剩余第 0 张：
+    // mask=3 的区间起点 = count(0)+count(1)+count(2) = 4+3+3 = 10 → code = 10
+    expect(original.picks[0]).toBe(-(PICK_CODE_BASE + 10))
+
+    const replay = withFreeDiscard(mkEngine())
+    ;(replay as unknown as Inner).setReplayScript(original.picks)
+    const replayed = play(replay, () => {})
+    expect(replayed.hash).toBe(original.hash)
+  })
+
+  it('弃牌顺序不进哈希（先弃 A 再弃 B = 先弃 B 再弃 A）', () => {
+    // 第 159 轮起弃牌不写 record 事件，掩码编码存的是**集合**：
+    // 两种点击顺序的最终状态（热量、手牌）相同，哈希必须相同。
+    // 旧实现下点击顺序写进事件流 → 哈希不同 → 换一种点击顺序的玩家
+    // 永远无法被重放。
+    const playTwoDiscards = (first: number, second: number): string => {
+      return play(mkEngine(), (i) => {
+        i.deck.discardsLeft = 2
+        i.discardCard(i.deck.hand[first]!.id)
+        // 第一次移除后下标会移位：按**剩余手牌重新定位**第二张
+        const remaining = i.deck.hand
+        i.discardCard(remaining[second]!.id)
+        const left = i.deck.hand
+        if (left.length > 0) i.takeCard(left[0]!.id)
+        else i.skipCards()
+      }).hash
+    }
+    // 顺序 A：先弃 0 号、再弃（现在的）0 号 → 集合 {0,1}
+    // 顺序 B：先弃 1 号、再弃（现在的）0 号 → 集合 {1,0}
+    expect(playTwoDiscards(0, 0)).toBe(playTwoDiscards(1, 0))
+  })
+
+  it('弃牌确实改变了热量（否则上面几条守卫可能是空转）', () => {
     const eng = mkEngine()
     const i = eng as unknown as Inner
     i.start()
@@ -277,11 +250,8 @@ it('弃过牌再跳过用独立编码（-6..-8），不与「弃+取」（-3..-5
     expect(i.phase, '未能进入选牌阶段').toBe('card_select')
 
     // 弃牌次数必须 > 0，否则 deck.discard 直接失败、什么都不发生。
-    // ⚠️ 先断言这个再断言热量 —— 否则「热量没变」可能只是因为
-    // 弃牌根本没执行，而我把它读成「弃牌不再有副作用」。
     expect(i.deck.discardsLeft, '弃牌次数已耗尽，本用例测不到任何东西').toBeGreaterThan(0)
 
-    // 手动加一点热量，保证「减 1」可观测
     i.heat.heat = 50n
     const before = i.heat.heat
     const discarded = i.discardCard(i.deck.hand[0]!.id)
@@ -292,7 +262,7 @@ it('弃过牌再跳过用独立编码（-6..-8），不与「弃+取」（-3..-5
     ).not.toBe(before)
   })
 
-  it('弃牌会写入回放事件流（这是哈希失配的直接来源）', () => {
+  it('弃牌不再写回放事件流（第 159 轮反转：顺序不进哈希的前提）', () => {
     const eng = mkEngine()
     const i = eng as unknown as Inner
     i.start()
@@ -301,6 +271,42 @@ it('弃过牌再跳过用独立编码（-6..-8），不与「弃+取」（-3..-5
 
     const before = i.replay.length
     i.discardCard(i.deck.hand[0]!.id)
-    expect(i.replay.length, '弃牌没有写回放事件 —— 与上一条互为印证').toBeGreaterThan(before)
+    expect(
+      i.replay.length,
+      '弃牌竟然写了回放事件 —— 「弃哪张/顺序」会重新进哈希，' +
+        '而重放侧只存集合、无法复现点击顺序',
+    ).toBe(before)
+  })
+})
+
+describe('弃牌掩码编码（第 159 轮）', () => {
+  it('encode/decode 往返一致，且覆盖全部 20 个 code', () => {
+    const seen = new Set<number>()
+    for (let mask = 0; mask < 8; mask++) {
+      const remaining = 3 - ((mask & 1) + ((mask >> 1) & 1) + ((mask >> 2) & 1))
+      // 取剩余每一张 + 不取（-1）
+      for (let take = 0; take < remaining; take++) {
+        const code = encodeDiscardCode(mask, take)
+        expect(decodeDiscardCode(code), `mask=${mask} take=${take}`).toEqual({ mask, take })
+        seen.add(code)
+      }
+      const skipCode = encodeDiscardCode(mask, -1)
+      expect(decodeDiscardCode(skipCode), `mask=${mask} take=-1`).toEqual({ mask, take: -1 })
+      seen.add(skipCode)
+    }
+    // 枚举表共 4+3+3+2+3+2+2+1 = 20 个 code
+    expect(seen.size).toBe(20)
+    expect(Math.max(...seen)).toBe(19)
+  })
+
+  it('code 越界返回 null（非法值不产生动作）', () => {
+    expect(decodeDiscardCode(-1)).toBeNull()
+    expect(decodeDiscardCode(20)).toBeNull()
+    expect(decodeDiscardCode(1.5)).toBeNull()
+  })
+
+  it('所有可产出的编码都不低于 PICK_MIN（否则服务端会拒掉客户端自己的产物）', () => {
+    expect(PICK_MIN).toBe(-(PICK_CODE_BASE + 19))
+    expect(-(PICK_CODE_BASE + 19)).toBeGreaterThanOrEqual(PICK_MIN)
   })
 })
