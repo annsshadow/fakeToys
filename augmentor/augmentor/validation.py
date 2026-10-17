@@ -1674,3 +1674,75 @@ def sheet_text_row(row: Dict[str, Any]) -> Dict[str, Any]:
         新字典：键与进入时同序同值，值按 `sheet_text_cell` 过一遍
     """
     return {key: sheet_text_cell(item) for key, item in row.items()}
+
+
+# ---------------------------------------------------------------------------
+# 电子表格容器的解压放大判据（A390 · CWE-409）
+# ---------------------------------------------------------------------------
+
+#: 一个 zip 容器（xlsx 就是一个 zip）解压后允许的最大字节数：512 MiB。
+#: 三条阈值一起定标，读数全部是本轮现量（样本构造与逐格数字见卷二 L288 块）：合法侧
+#: 20000 行 × 50 列同字符填满的工作簿解压后 83.8 MiB，炸弹侧 114.4 MiB 与 1525.9 MiB
+#: ⇒ 上限给「真而大」的档案留 6 倍余地，同时把单次展开量钉在上传上限
+#: （`web.max_upload_bytes` 默认 256 MiB，量的是**压缩后**）的两倍以内。
+MAX_SHEET_EXPANDED_BYTES = 512 * 1024 * 1024
+
+#: 允许的最大解压比率（解压后字节 ÷ 压缩字节）：100。合法侧现量最高 36.9，炸弹侧现量
+#: 最低 1025.4 ⇒ 两侧各留一个数量级的余地。比率只在解压后尺寸超过下面那道地板时才判。
+MAX_SHEET_EXPANSION_RATIO = 100.0
+
+#: 比率判据的地板：解压后不足 32 MiB 的容器**不判比率**。少了这道地板，一个 4 MiB 的
+#: 工作簿（同字符填满那种天然比率就在 1000 以上）会被拒，而它整个展开完也只占 4 MiB
+#: 内存。比率是「放大」的度量，能吃到内存的只有放大之后的绝对量。
+MIN_SHEET_RATIO_JUDGMENT_BYTES = 32 * 1024 * 1024
+
+
+def sheet_expansion_verdict(compressed: int, expanded: int, name: str, face: str) -> None:
+    """按「解压后尺寸 + 解压比率」两条臂判一份容器会不会放大成灾，超阈值就抛
+
+    两条臂一起用是这一格的拍板，各自管一种形状：上限那一臂管「怎么压都会吃光内存」的
+    绝对量（炸弹侧现量 1525.9 MiB），比率那一臂管「压缩体很小但展开很大」的相对量
+    （同族另一格 114.4 MiB 在上限之下，只有比率读得出它）。比率带地板，理由见
+    `MIN_SHEET_RATIO_JUDGMENT_BYTES`。
+
+    `face` 不是装饰：同一对判据要跑两遍，第一遍读**中央目录声明**的尺寸（不碰压缩流，
+    诚实声明的炸弹在这一步就停下），第二遍读**实际解压出来的字节数**（中央目录可以谎报
+    声明尺寸，实测谎报档在只查声明值的那一臂上是能过闸的，见 `safe_sheet_source` 的
+    docstring）。抛出的文案点名是哪一遍读到的，调用方因此分得清「档案自己招了」和
+    「档案撒了谎」。
+
+    抛 `DataValidationError` 而不是新立一档：这条判据的语义正是那句 docstring 里的
+    「取值越界」，而它在门口拿到的归宿（`api/deps.py::to_http_error` 的 `ValueError`
+    支 ⇒ 400 且原文照回）与既有 Excel 读边的拒收同形。新立类型要动 `__all__` 与异常
+    契约那把尺子的面，收益为零。
+
+    Args:
+        compressed: 压缩字节数（本轮量到的是中央目录里各员压缩尺寸之和）
+        expanded: 解压后字节数（声明值或实际读出的字节数，取决于 `face` 那一遍）
+        name: 容器名，只进报错文案
+        face: 这一遍读数的来源，进报错文案（「中央目录声明」/「实际字节流」）
+
+    Raises:
+        DataValidationError: 超过上限，或（解压后大于地板且）比率超过上限
+    """
+    over_ceiling = expanded > MAX_SHEET_EXPANDED_BYTES
+    over_ratio = (
+        expanded > MIN_SHEET_RATIO_JUDGMENT_BYTES
+        and expanded > compressed * MAX_SHEET_EXPANSION_RATIO
+    )
+    if not (over_ceiling or over_ratio):
+        return
+    mib = 1024 * 1024
+    reason = (
+        f"解压后 {expanded / mib:.1f} MiB 超过上限 {MAX_SHEET_EXPANDED_BYTES // mib} MiB"
+        if over_ceiling else
+        f"压缩 {compressed / mib:.1f} MiB 却解压出 {expanded / mib:.1f} MiB，"
+        f"比率 {expanded / max(compressed, 1):.1f} 超过上限 "
+        f"{MAX_SHEET_EXPANSION_RATIO:.0f}（解压后已大于地板 "
+        f"{MIN_SHEET_RATIO_JUDGMENT_BYTES // mib} MiB）"
+    )
+    raise DataValidationError(
+        f"{name} 的{face}读数：{reason}。电子表格容器解压放大超过判据，"
+        f"请拆小工作簿或改交 CSV（三条阈值住 `augmentor/validation.py`，"
+        f"本轮现量定标见循环账本 L288）"
+    )
