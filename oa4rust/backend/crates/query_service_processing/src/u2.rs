@@ -250,8 +250,12 @@ pub struct UpdateExtraDocumentWi {
 #[allow(non_snake_case)]
 pub async fn index_update_extra_document(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Json(wi): Json<UpdateExtraDocumentWi>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // R7 收口（第五十二批）：附加文档 UPSERT 进 x_query_index_extra，收管理员档
+    //（无会话 401 / 非管理员 403，查管理员角色对不可用库 fail-closed）。门在取连接之前。
+    require_admin(&pool, session.as_deref()).await?;
     let doc_type = wi.r#type.clone().unwrap_or_default();
     let key = wi.key.clone().unwrap_or_default();
     let id = wi.id.clone().unwrap_or_default();
@@ -297,7 +301,7 @@ pub async fn index_update_extra_document(
 /// `x_query_index_state`（索引触达状态）与 `x_query_neural_job`（模型任务），两张表都是
 /// 全局运维状态、行上没有可认的属主列 ⇒ 归属门无从校起，只能收 admin。
 /// 门一律插在 `pool.get()` **之前**：无会话既不触库，也就离线可证。
-async fn require_admin(
+pub(crate) async fn require_admin(
     pool: &Pool,
     session: Option<&shared::session::Session>,
 ) -> Result<(), AppError> {
@@ -443,9 +447,11 @@ pub async fn optimize_index_touch(
 #[allow(non_snake_case)]
 pub async fn table_insert(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(flag): Path<String>,
     Json(data): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, session.as_deref()).await?;
     if flag.trim().is_empty() {
         return Ok(Json(ActionResult::error("table flag is required")));
     }
@@ -472,9 +478,11 @@ pub async fn table_insert(
 #[allow(non_snake_case)]
 pub async fn table_update_with_bundle(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path((flag, bundle)): Path<(String, String)>,
     Json(data): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, session.as_deref()).await?;
     if flag.trim().is_empty() || bundle.trim().is_empty() {
         return Ok(Json(ActionResult::error(
             "table flag and bundle are required",
