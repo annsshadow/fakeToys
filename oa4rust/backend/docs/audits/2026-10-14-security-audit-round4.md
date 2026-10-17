@@ -889,6 +889,18 @@ GET 写面队列里 `calendar_assemble_control` 与 `jpush_assemble_control` 各
 
 | 验证（本批代码变更） | — | attendance_assemble_control `46 passed / 0 failed / 15 ignored`（DB 不可达臂 ignored，不影响门证；b50 臂用 dead pool 离线即证）：新增离线臂 `b50_r7_writes_reject_without_session`（7 把逐把点名，dead pool + 无会话全 401；handler 经 crate 根路径调用）。无既有测试直接调用这 7 把，无需翻断言。尺子：**7 把 handler → 7 条 R7 路由出列**（7 把均单路由无别名），R7 831(上次提交值，含尺子读取抖动，复跑稳定值 829)→**822**、含写 140(稳定 138)→131、R6 126→130、ungated −7；3 把控制规则现 R5（admin 门）、4 把申诉/明细现 R6（会话存在门，已出 R7 行动面）；attendance_assemble_control R7 48→**41**（余 41 条全为 false-positive）；EXIT 0、判据见证缺口 0 |
 
+### 三.51 第五十一批（bbs_assemble_control 控制配置写面 1 把收 admin 门，R7 822→820）
+
+| 项 | 位置 | 处置与口径 |
+| --- | --- | --- |
+| BBS 全局控制配置写 | `lib.rs` `update_control_config`（POST+PUT `/api/bbs/assemble/control/update/control/config`，`UPDATE x_bbs_assemble_control_config` 全局开关 enabled / max_forum_count / allow_anonymous） | BBS 控制配置是无归属系统数据（全站开关），按本 crate 既定「无归属系统数据写 = 管理员档」口径收门：加 `session: Option<Extension<Session>>` + `let Some(Extension(sess)) = session else 401` → `is_admin(&pool, &sess.person_unique)` 非管理员 403（`is_admin` 对不可用库 fail-closed）。门插在 `pool.get()` 之前，离线即证 401。沿用本 crate `section_create`(lib.rs:260) 同款门 |
+
+> 注：bbs 新鲜 R7 名单 22 条里，**仅上述 1 把（POST+PUT 双路由别名，故 2 条路由）为真 DB 写**；其余 21 条经体读均非真写——`login`/`logout` 只动内存 `TOKEN_STORE`（鉴权原语，加会话门会破坏登录流程，与批 47 `u3_invoke` 外部调用同族，不收门、另记 §五 待修）；`*_list`/`*_filter`/`*_page`/`subject_creamed_list`/`topic_recommended_list`/`u2_reply_filter_list`/`u2_subject_*`/`u2_role_*`/`u2_setting_get_by_code`/`u2_voterecord_list`/`u2_userinfo_filter` 全为 SELECT 列表体 false-positive；`picture_encode` 为纯内存图片缩放变换（不碰库）。按口径不动。
+>
+> **待修（本批记账，不收门）**：`login`/`logout` 经 `TOKEN_STORE`（thread-local `Mutex<HashMap>`）建/销会话令牌，不落库、不应加用户会话门；但「令牌签发无速率限制 / 无审计落库」属鉴权面独立缺陷，与「第三方回调零验签」族并列，待 §五 单列。
+
+| 验证（本批代码变更） | — | bbs_assemble_control `57 passed / 0 failed / 0 ignored`：新增离线臂 `b51_r7_writes_reject_without_session`（1 把 dead pool + 无会话 401）+ `b51_update_control_config_non_admin_forbidden`（非管理员会话 403，含库不可达 fail-closed 亦 403）。既有 `test_update_control_config`（仅查路由注册 ≠404）仍绿——加门后无会话返 401（≠404）分支照过。尺子：**1 把 handler → 2 条 R7 路由出列**（POST+PUT 别名），R7 822→**820**、含写 131→129、ungated −2；`update_control_config` 现 R5（管理员门）；bbs R7 22→**20**（余 20 条 = login/logout 鉴权原语 2 + 18 条 SELECT 列表 false-positive，均非真写）；EXIT 0、判据见证缺口 0 |
+
 ## 四、验证
 
 

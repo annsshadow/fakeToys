@@ -72,8 +72,6 @@ auth	POST	/api/authentication/sms/send	sms_send_handler	R7
 auth	POST	/api/authentication/sms/verify	sms_verify_handler	R7
 base	POST	/api/base/cache	cache_receive	R7
 base_core_project	POST	/api/cache	cache_post	R7
-bbs_assemble_control	POST	/api/bbs/assemble/control/update/control/config	update_control_config	R7
-bbs_assemble_control	PUT	/api/bbs/assemble/control/update/control/config	update_control_config	R7
 bbs_assemble_control	POST	/api/bbs/assemble/control/topic/filter/listsubjectinfo	topic_filter_listsubjectinfo	R7
 bbs_assemble_control	POST	/api/bbs/assemble/control/login	login	R7
 bbs_assemble_control	POST	/api/bbs/assemble/control/logout	logout	R7
