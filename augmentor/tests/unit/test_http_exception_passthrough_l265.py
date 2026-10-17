@@ -10,7 +10,7 @@
 ``to_http_error`` 的 docstring 把这一格写得清清楚楚 —— ``HTTPException`` **不**在这里处理，
 它应当由调用方原样抛出，否则会被降级成 500。于是「原样抛出」这一支（``except HTTPException:
 raise``，且**必须排在**宽 ``except Exception`` **之前**）是鉴权与白名单判决能否到达客户端的
-唯一通道。全仓今天有 58 只这样的支、52 个「try 体内可达 raiser 且带宽收尾」的配对点，
+唯一通道。全仓今天有 59 只这样的支、53 个「try 体内可达 raiser 且带宽收尾」的配对点，
 **而没有一把尺子量它们**：既有测试是按端点逐个注入的样本（``tests/integration/
 test_api_passthrough_branches.py``，L69），删掉某一路由的那一支、或新写一条漏掉那一支的路由，
 样本一条都不会红 —— 这正是 L242「本账第 NNN 行那一形没有尺子」同款形状的另一个实例。
@@ -20,17 +20,17 @@ test_api_passthrough_branches.py``，L69），删掉某一路由的那一支、�
 更糟的是若收尾写成 ``detail=str(e)``，``HTTPException`` 的 ``str`` 形带 ``detail`` 原文，
 那条 500 就顺带把内部路径说给调用方。判据与 A155①（500 档不回显原文）是同一条口径的两半。
 
-**判据（AST 推导，不抄清单；承 L56「判据型脚本一律走 AST」）**，语料面 = ``api/`` 全部 24 个 ``.py``：
+**判据（AST 推导，不抄清单；承 L56「判据型脚本一律走 AST」）**，语料面 = ``api/`` 全部 25 个 ``.py``：
 
 - ``raisers``：会 ``raise HTTPException``（或 ``raise <收尾函数>`` 的返回值）的函数名，
-  按「体内调用了已知 raiser」迭代到不动点扩张。现量 101 只 = 面内 68 只直接出声 + 33 只间接。
+  按「体内调用了已知 raiser」迭代到不动点扩张。现量 102 只 = 面内 68 只直接出声 + 34 只间接。
 - ``clauses``：所有 ``except HTTPException`` 支，按**体形**分三档 —— ``bare``（整支就一个裸
   ``raise``）、``conditional``（带条件的再抛，全仓唯一一只是 ``api/routes/data.py`` 里
   ``_upload_landing_path`` 的「先解释一次、越界才救」那一支，A160/A163）、``swallow``
   （把异常咽下去）= **缺陷**，现量空集。
 - ``paired``：带宽 ``except Exception`` 的 ``try``，且其体内**装载**（load）过 raiser 名字
   —— 装载而不只是调用，是因为 ``await run_in_thread(load_items, name)`` 把 raiser 当**值**传出去，
-  只看 ``Call`` 的判据会整条漏掉 —— raiser 是**参数**不是被这个 try 调用的函数（实测：52 只配对点
+  只看 ``Call`` 的判据会整条漏掉 —— raiser 是**参数**不是被这个 try 调用的函数（实测：53 只配对点
   里只看调用会少 13 只，且 ``audit.py`` / ``leakage.py`` / ``privacy.py`` 三只文件
   **整块**从配对面消失，见 ``MEASURED_LOAD_ONLY_TRIES`` 与
   ``test_the_load_dimension_is_what_keeps_three_files_in_the_face``）。
@@ -283,36 +283,50 @@ def identity(rows):
     return {(r["file"], r["owner"]) for r in rows}
 
 
-#: ---- 现量（L265 立尺，L273 重钉）----
+#: ---- 现量（L265 立尺，L273、L277 重钉）----
 #: L273 把 update / delete 两只端点的读-改-写折进 `api/deps.py::mutate_json_file`，
 #: 于是这一面同时长了四格：路由里的两个就地闭包 `_replace` / `_remove` 各自
 #: `raise HTTPException(400, "索引越界")` ⇒ 直接出声 +2；`_read_modify_write` 调
 #: `read_items`（体里 `raise to_http_error(e)`，本就在直接出声名册里）⇒ 间接 +1，
 #: `mutate_json_file` 调它 ⇒ 间接再 +1。两只路由的 try 因此从「纯防御」升格为
 #: 「可达 raiser 的配对点」——保码支从「本来用不上」变成「真的在用」，配对面 +2。
-MEASURED_FILES = 24
-MEASURED_RAISERS = 101
+#: L277（API 层缺陷这一批）给这一面带来的是**恰好四格**，逐格可核对：
+#: ① 语料面 +1 —— 新增 `api/middleware/write_auth_gate.py`（未配密钥时把匿名写请求
+#: 收回到回环传输），它自己不出 `HTTPException`（403 由 `JSONResponse` 直接回），
+#: 所以支面与配对面一处未动；② 闭包 +1 —— `api/routes/config.py::_reject_escaping_dir_value`
+#: 把目录值交给 `resolve_within_roots`（本就在直接出声名册里）⇒ 间接 raiser +1，
+#: 直接出声仍是 68 只 ⇒ 它不是新闸而是新「转交者」，故进的是间接档；
+#: ③ 支面 +1、④ 配对面 +1 —— `update_config` 因此成为本仓第 59 支与第 53 个配对点，
+#: 且那一支写在 `except DataValidationError` 与宽 `except Exception` **之前**（顺序承重），
+#: 它把 A341 那道白名单闸的 400/403 原样送出去。两只新格同一处、同一形状，
+#: 且 `_reject_escaping_dir_value` 在 try 体里是**被调用**的，所以调用维也看得见它 ⇒
+#: 装载维独有的名册 `MEASURED_LOAD_ONLY_TRIES` 仍是那 13 只，调用盲文件仍是那 3 只。
+MEASURED_FILES = 25
+MEASURED_RAISERS = 102
 #: 名册里必须出现的锚点：闸与上传面各挑几枚，防止闭包算成一堆同音名字却漏掉正主
 ANCHOR_RAISERS = ("resolve_within_roots", "resolve_data_path", "verify_api_key",
                   "assert_dataset_shape", "_read_upload_body", "_assert_within_roots",
-                  "raise_internal_error", "raise_boundary_error")
-#: 闭包 101 只 = 体里直接 ``raise HTTPException`` 的 68 只 + 由调用关系并进来的 33 只间接
+                  "raise_internal_error", "raise_boundary_error",
+                  #: L277 新增：目录类配置键的白名单转交者，闭包靠调用维把它并进来
+                  "_reject_escaping_dir_value")
+#: 闭包 102 只 = 体里直接 ``raise HTTPException`` 的 68 只 + 由调用关系并进来的 34 只间接
 #: raiser。播种规则是「任何直接出声的函数名都是种子」，所以面内**没有**一只直接出声函数
 #: 落在闭包之外 —— 新增一只闸天然入面，不必等谁把它登记进名册（这一格的尺子见
 #: ``test_the_closure_seeds_every_direct_producer``，注入臂见闭包播种臂）。
 MEASURED_PRODUCERS = 68
-MEASURED_INDIRECT_RAISERS = 33
-MEASURED_CLAUSES = 58
-#: 支数 58 而所在函数 57 —— 唯一一只「同一函数两只支」是 ``upload_data``（读侧与写侧各一支）
-MEASURED_CLAUSE_OWNERS = 57
+MEASURED_INDIRECT_RAISERS = 34
+MEASURED_CLAUSES = 59
+#: 支数 59 而所在函数 58 —— 唯一一只「同一函数两只支」是 ``upload_data``（读侧与写侧各一支）
+MEASURED_CLAUSE_OWNERS = 58
 MEASURED_MULTI_CLAUSE_OWNERS = {("api/routes/data.py", "upload_data"): 2}
-MEASURED_SHAPE_TALLY = {BARE: 57, CONDITIONAL: 1, SWALLOW: 0}
-#: 配对面按 **try** 计数（一只 try 一处），52 处落在 52 个不同函数里
-MEASURED_PAIRED = 52
-MEASURED_PAIRED_OWNERS = 52
+MEASURED_SHAPE_TALLY = {BARE: 58, CONDITIONAL: 1, SWALLOW: 0}
+#: 配对面按 **try** 计数（一只 try 一处），53 处落在 53 个不同函数里
+MEASURED_PAIRED = 53
+MEASURED_PAIRED_OWNERS = 53
 MEASURED_PAIRED_BY_FILE = {
     "api/routes/audit.py": 1,
     "api/routes/augment.py": 1,
+    "api/routes/config.py": 1,
     "api/routes/data.py": 3,
     "api/routes/dataset_tools.py": 14,
     "api/routes/export.py": 3,
@@ -324,13 +338,13 @@ MEASURED_PAIRED_BY_FILE = {
     "api/routes/system_ops.py": 14,
     "api/routes/vector.py": 1,
 }
-#: 只按「raisers 被调用」判的尺子看到 39 只 try，比装载维少 13 只——这 13 只的 raiser
+#: 只按「raisers 被调用」判的尺子看到 40 只 try，比装载维少 13 只——这 13 只的 raiser
 #: 是**当值传出去**的（``await run_in_thread(load_items, name)`` 那一形），不是被直接调用的。
 #: 少掉的那 13 只全部落在 quality/audit/data/export/leakage/privacy 六个文件里，
 #: 若按调用维定配对面，``audit.py`` / ``leakage.py`` / ``privacy.py`` 三只文件的配对面会
 #: 整块消失（L273 之前是四只：``data.py`` 的 update / delete 两只 try 体里只当值传闭包，
 #: 现在它们直接调用 `mutate_json_file` —— 一只间接 raiser —— 于是从调用维也看得见）。
-MEASURED_PAIRED_CALL_ONLY = 39
+MEASURED_PAIRED_CALL_ONLY = 40
 MEASURED_LOAD_ONLY_TRIES = {
     ("api/routes/audit.py", "audit_dataset_endpoint"),
     ("api/routes/data.py", "upload_data"),
@@ -379,7 +393,7 @@ class TestTheRulerSeesSomething:
             assert anchor in known, anchor
 
     def test_the_closure_seeds_every_direct_producer(self):
-        """闭包 = 68 只直接出声 + 33 只间接，且「面内直接出声函数」一只不漏
+        """闭包 = 68 只直接出声 + 34 只间接，且「面内直接出声函数」一只不漏
 
         这条断言是播种规则的可证伪版本：``known`` 里必须**含下**每一只体里直接
         ``raise HTTPException`` 的函数，一只都不许掉在外面 —— 掉了就意味着「新写一只闸、

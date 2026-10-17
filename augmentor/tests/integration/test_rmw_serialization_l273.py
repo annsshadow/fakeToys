@@ -47,6 +47,7 @@ from typing import Dict, List, Optional, Set, Tuple
 import httpx
 import pytest
 
+from api import deps
 from api.main import app
 from augmentor.atomic_write import path_lock
 from augmentor.validation import path_lands_within
@@ -236,16 +237,35 @@ def _seed(tmp_path: Path, name: str = "race.json", items: Optional[List[Dict]] =
     return name
 
 
+#: L277 起 `api/main.py` 上多了 `WriteTransportGate`（未配 `AUGMENTOR_API_KEY` 时，
+#: `/api/` 的写方法只允许从受信传输进来：回环地址、Unix 套接字、或 ASGI 测试夹具给出的
+#: `testserver` 一类固定主机名）。本文件的夹具是 `httpx.ASGITransport(base_url="http://t")`，
+#: 它写进 `scope["server"]` 的是 `("t", None)` —— 既不是回环也不在那份名单里 ⇒ 匿名写请求
+#: 会在**进路由之前**拿 403，RMW 那三格一个字都量不到（实测读数：20 支全 403）。
+#:
+#: 处置刻意不走「把 base_url 换成 testserver」那条捷径：那是靠闸的**测试豁免**档过关，
+#: 而本文件要的是「写请求真的进到路由、真的在锁里做读-改-写」。这里按生产契约把鉴权开起来
+#: （设密钥 + 每支请求带 `X-API-Key`），闸与路由依赖两侧同时成立，判据一档没放松。
+WRITE_KEY = "l273-rmw-gate-key"
+
+
+def _authorize(monkeypatch) -> None:
+    """按 L277 的写鉴权契约把本文件的 HTTP 面变成「已授权客户端」"""
+    monkeypatch.setenv(deps.API_KEY_ENV, WRITE_KEY)
+
+
 def _gather(request):
     async def go():
-        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://t") as c:
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://t",
+                                     headers={"X-API-Key": WRITE_KEY}) as c:
             return await asyncio.gather(*[request(c, i) for i in range(N_CONCURRENT)])
     return asyncio.run(go())
 
 
 def _single(request):
     async def go():
-        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://t") as c:
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://t",
+                                     headers={"X-API-Key": WRITE_KEY}) as c:
             return await request(c)
     return asyncio.run(go())
 
@@ -257,6 +277,7 @@ def test_concurrent_updates_all_land(tmp_path, monkeypatch):
     有多少条真的是本次请求写进去的那一条。
     """
     monkeypatch.setenv("AUGMENTOR_DATA_ROOTS", str(tmp_path))
+    _authorize(monkeypatch)
     name = _seed(tmp_path, items=RACE_ITEMS)
     responses = _gather(lambda c, i: c.put(
         f"/api/data/update/{name}", params={"index": i},
@@ -277,6 +298,7 @@ def test_concurrent_deletes_land_exactly(tmp_path, monkeypatch):
     反而会让高位下标被判越界（那是**正确**的新语义），条数就不再是纯净的判据。
     """
     monkeypatch.setenv("AUGMENTOR_DATA_ROOTS", str(tmp_path))
+    _authorize(monkeypatch)
     name = _seed(tmp_path)
     responses = _gather(lambda c, i: c.delete(f"/api/data/delete/{name}", params={"index": 0}))
     assert [r.status_code for r in responses] == [200] * N_CONCURRENT, [r.text for r in responses]
@@ -379,6 +401,7 @@ def test_out_of_range_index_is_judged_on_the_locked_snapshot(tmp_path, monkeypat
     上一支，本支要的是「越界文案出自锁内读数」这句承诺）。
     """
     monkeypatch.setenv("AUGMENTOR_DATA_ROOTS", str(tmp_path))
+    _authorize(monkeypatch)
     name = _seed(tmp_path)
     resp = _single(lambda c: c.put(f"/api/data/update/{name}", params={"index": 9999},
                                    json={"instruction": "x", "output": "y"}))
@@ -614,6 +637,7 @@ def test_arms_have_teeth_when_the_lock_is_faked_away(tmp_path, monkeypatch):
         monkeypatch.setattr(modules[name], "path_lock", lambda _p: threading.RLock())
 
     monkeypatch.setenv("AUGMENTOR_DATA_ROOTS", str(tmp_path))
+    _authorize(monkeypatch)
     name = _seed(tmp_path, items=RACE_ITEMS)
     responses = _gather(lambda c, i: c.put(
         f"/api/data/update/{name}", params={"index": i},
@@ -623,4 +647,11 @@ def test_arms_have_teeth_when_the_lock_is_faked_away(tmp_path, monkeypatch):
     landed = sum(1 for i in range(N_CONCURRENT) if on_disk[i].get("instruction") == f"改写 {i}")
     lost = N_CONCURRENT - landed
     bad = sum(1 for code in codes if code != 200)
+    # L277 起补的一格：非 200 只许是「读者撞上 `os.replace` 那一瞬」的那档 500。
+    # 403 / 401 / 429 是**闸、鉴权或限流**把请求拦在路由之外，那种形状下 `bad > 0` 会让本支
+    # 靠「压根没量到丢更新」通过 —— 而它声称咬住的是丢更新那一档，不是回执码非 200。
+    # （首跑正是这一形：20 支全 403，`lost` 与 `bad` 一起失真，判据却照样绿。）
+    # 鉴权接线后复量（连跑三次）：`lost` = 14 / 11 / 11、`bad` = 1 / 0 / 1 且非 200 全在 500 档
+    # ⇒ 每一跑 `lost > 0` 都成立，这一支咬的是丢更新本身而不是回执码形状。
+    assert set(codes) <= {200, 500}, codes
     assert lost > 0 or bad > 0, "替身没生效：全落盘且全 200，这一支量不出丢更新"

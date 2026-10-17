@@ -45,6 +45,7 @@ from api.middleware.upload_gate import (
     FRAMING_MARGIN,
     UPLOAD_METHODS,
     UploadBodyGate,
+    _declared_content_length,
     _declared_multipart_bytes,
 )
 
@@ -221,6 +222,53 @@ class TestDeclaredSizeReading:
         assert _declared_multipart_bytes({"type": "http", "headers": []}) is None
 
 
+class TestDeclaredContentLengthReading:
+    """第二把尺 `_declared_content_length`（multipart 之外那一半）：看不见尺寸 ⇒ 放行
+
+    L279 补这一族是全覆盖率读数点名 `api/middleware/upload_gate.py:74-75`——那两行是
+    `int(value)` 抛 `TypeError` / `ValueError` 时「返回 None ⇒ 放行」那一支，此前没有任何测试
+    打进过：`TestDeclaredSizeReading::test_non_numeric_length_is_invisible` 走的是 multipart
+    那把尺里的 `:107-108`（同一个形状、另一个函数、另一个调用点）。两臂由 ASGI 直接驱动——
+    线上会不会出现这种头部由 HTTP 服务器决定，本闸的口径不管那一层，只管「看不见就不拒」。
+    """
+
+    @pytest.mark.parametrize("raw", [b"abc", b"", b"12KiB", b"1.5", b"7,000", None])
+    def test_unparseable_length_is_invisible(self, raw):
+        scope = scope_for([(b"host", b"testserver"),
+                           (b"content-type", b"application/json"),
+                           (b"content-length", raw)])
+        assert _declared_content_length(scope) is None
+
+    def test_negative_length_is_invisible(self):
+        """负数不是「小」而是「不成立」：`>= 0` 那一档必须自己判，不能交给下游算数"""
+        scope = scope_for([(b"content-type", b"application/json"),
+                           (b"content-length", b"-1")])
+        assert _declared_content_length(scope) is None
+
+    @pytest.mark.parametrize("raw", [b"0", b"17", str(BIG).encode()])
+    def test_numeric_length_is_visible(self, raw):
+        scope = scope_for([(b"content-type", b"application/json"),
+                           (b"content-length", raw)])
+        assert _declared_content_length(scope) == int(raw)
+
+    def test_missing_header_is_invisible(self):
+        assert _declared_content_length(scope_for([(b"host", b"testserver")])) is None
+
+    def test_the_gate_passes_a_junk_length_through(self, gate_limit):
+        """放行不等于拒：垃圾尺寸那一只请求必须原样下传，而不是被当成超限"""
+        seen = drive(scope_for([(b"host", b"testserver"),
+                                (b"content-type", b"application/json"),
+                                (b"content-length", b"99999999abc")]), body=payload(1024))
+        assert seen["down"] is True and seen["status"] == 200
+
+    def test_the_gate_still_reads_a_numeric_json_length(self, gate_limit):
+        """反证臂：这一族的牙齿在「JSON 也受上限管」——数字尺寸越界照样 413"""
+        seen = drive(scope_for([(b"host", b"testserver"),
+                                (b"content-type", b"application/json"),
+                                (b"content-length", str(BIG).encode())]), body=payload(1024))
+        assert seen["status"] == 413 and seen["down"] is False
+
+
 class TestGateBehaviour:
     """闸本体的五格：拒收 / 文案 / 边界 / 无体方法 / 不消费请求体"""
 
@@ -328,8 +376,14 @@ class TestRealAppRejectsBeforeParsing:
         assert "不是合法 JSON" in text
 
 
-class TestGateScopeIsMultipartOnly:
-    """闸只管「声明了长度的 multipart」，别的 POST body 一律不归它"""
+class TestGateScopeIsDeclaredBodySize:
+    """闸管「声明了长度的任何写请求体」：multipart 与非 multipart 两侧都判
+
+    从前这一族钉的是「JSON 一律不归它管」，而同一条 `web.max_upload_bytes` 的注释
+    写的设限理由是「不设上限一个客户端就能把服务端内存推到它想给多少」—— 那条理由
+    对 JSON 同样成立（实测 24 MiB JSON 在 `max_upload_bytes=1` 下仍 200），
+    所以那一格钉住的是漏洞本身，本轮按新契约重钉。
+    """
 
     def _app(self):
         sink = FastAPI(middleware=[Middleware(UploadBodyGate)])
@@ -340,14 +394,34 @@ class TestGateScopeIsMultipartOnly:
 
         return sink
 
-    def test_large_json_post_is_left_alone(self, gate_limit):
+    def test_large_json_post_is_refused(self, gate_limit):
         from fastapi.testclient import TestClient
 
         big = json.dumps({"blob": "A" * (BIG * 3)}).encode()
         resp = TestClient(self._app()).post(
             "/echo", content=big, headers={"Content-Type": "application/json"})
+        assert resp.status_code == 413
+        assert GATE_MARK in resp.text
+        # 非 multipart 没有 boundary 开销，文案不许谎报 multipart 余量
+        assert "multipart 余量" not in resp.text
+
+    def test_small_json_post_reaches_the_handler(self, gate_limit):
+        """上限之上拒、之下放：不许把合法 JSON 一起误杀"""
+        from fastapi.testclient import TestClient
+
+        small = json.dumps({"blob": "A" * 1024}).encode()
+        resp = TestClient(self._app()).post(
+            "/echo", content=small, headers={"Content-Type": "application/json"})
         assert resp.status_code == 200
-        assert GATE_MARK not in resp.text
+
+    def test_multipart_still_cites_the_framing_margin(self, gate_limit):
+        from fastapi.testclient import TestClient
+
+        resp = TestClient(self._app()).post(
+            "/echo", files={"file": ("payload.json", payload(BIG),
+                                     "application/json")})
+        assert resp.status_code == 413
+        assert "multipart 余量" in resp.text
 
     def test_small_multipart_reaches_the_handler(self, gate_limit):
         from fastapi.testclient import TestClient
