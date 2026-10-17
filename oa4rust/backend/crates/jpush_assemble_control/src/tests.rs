@@ -181,7 +181,8 @@ async fn test_device_bind_legacy_path() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    // 第五十五批：device_bind 收会话门后无会话返 401（原 500）。
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
 }
 
 #[tokio::test]
@@ -333,10 +334,14 @@ async fn test_jpush_get_writes_owner_admin_gate() {
         )
         .await
         .unwrap();
+        // 幂等造数：x_jpush.id 无唯一约束（schema 缺陷，见账本 §五），不能用 ON CONFLICT (id)；
+        // 先按 id 清后插，保证可重复跑。
+        c.execute("DELETE FROM x_jpush WHERE id = 'jpush-gate-dev'", &[])
+            .await
+            .unwrap();
         c.execute(
             "INSERT INTO x_jpush (id, title, content, target, creator, create_time) \
-             VALUES ('jpush-gate-dev','jpush-gate-dn','jpush-gate-dt','jpush-gate-pt',$1,NOW()) \
-             ON CONFLICT (id) DO NOTHING",
+             VALUES ('jpush-gate-dev','jpush-gate-dn','jpush-gate-dt','jpush-gate-pt',$1,NOW())",
             &[&OWNER.to_string()],
         )
         .await

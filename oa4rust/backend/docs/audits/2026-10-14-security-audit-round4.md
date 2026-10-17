@@ -945,6 +945,22 @@ GET 写面队列里 `calendar_assemble_control` 与 `jpush_assemble_control` 各
 
 | 验证（本批代码变更） | — | meeting_assemble_control 整 lib `62 passed / 0 failed / 26 ignored`（0.53s；注：本机 `localhost` 解析到 IPv6 会拖慢握手致 `is_db_available()` 2s 超时误判，测试改用 `DATABASE_URL=...@127.0.0.1:15432/...` 后稳定）。新增离线臂 `b54_r7_writes_reject_without_session`（4 把 dead pool + 无会话 401）+ `b54_create_control_non_admin_forbidden`（非 admin 403，离线稳健）+ `b54_owner_writes_non_owner_forbidden`（3 把会议属主非本会话 → 403，`#[ignore]` 需真库，实测 0.13s 通过）。`tests_generated` 的 4 个路由注册测试用 `assert_ne!(NOT_FOUND)` 照过（401≠404）。尺子：**8 条 R7 路由出列**（全含写），R7 787→**779**、含写 98→**90**、ungated −8；meeting R7 14→**6**；EXIT 0、判据见证缺口 0（复跑 3 次稳定） |
 
+### 三.55 第五十五批（jpush_assemble_control 剩余写面 5 把收门，R7 779→773）
+
+| 项 | 位置 | 处置与口径 |
+| --- | --- | --- |
+| 改推送配置（归属档） | `lib.rs` `save_jpush`（POST `/api/jpush/save/{id}`，UPDATE `x_jpush.title/content/target`） | 按 `x_jpush.creator` 归属：新增 `jpush_owner_gate(&pool.0, session, &id)`（无会话 401 先于读库；行存在 → `require_owner` 本人或 admin；行不存在 → 返回 false 走原 not-found）。加 `session: Option<Extension<Session>>` |
+| 软删推送配置（归属档） | `lib.rs` `delete_jpush`（POST `/api/jpush/delete/{id}`，软删 `x_jpush.deleted_at`） | 同上 `jpush_owner_gate` |
+| 绑定设备（会话档） | `lib.rs` `device_bind`（POST `/api/jpush_assemble_control/device/bind` 与 `/api/jpush/assemble/control/device/bind`，INSERT `x_jpush`） | 无会话 401（`session.is_none()`）。`creator` 仍取 body.personId——冒名残留记 §五 待修 |
+| 解绑设备（会话档） | `lib.rs` `device_unbind_deviceName_deviceType`（DELETE `/api/jpush_assemble_control/device/unbind/{deviceName}/{deviceType}`，软删 `x_jpush`） | 无会话 401 |
+| 群发推送（admin 档） | `lib.rs` `message_send`（POST `/api/jpush_assemble_control/message/send`，INSERT `x_jpush`） | 与既有 `device_admin_unbind_all_person` 同档：无会话 401 / 非 admin 403 |
+
+> 注：jpush 新鲜 R7 名单 7 条里，**上述 5 把（device_bind 双路由别名 → 共 6 条路由）为真 DB 写**；余 1 条 `message_test_send`（只 SELECT `x_jpush` + 走内存 `MockPushGateway`）为只读 false-positive，按口径不动。
+>
+> **顺带修（本批，预存测试基建/造数缺陷）**：`x_jpush.id` 在测试库**无主键/唯一约束**（`\d x_jpush` 全列 nullable text），既有 `test_jpush_get_writes_owner_admin_gate` 的造数用 `INSERT ... ON CONFLICT (id)` 恒报 `E42P10`（no unique constraint）而假红。改为 DELETE-then-INSERT 幂等造数；`jpush_owner_gate` 的查询加 `LIMIT 1` 以防无约束下重复 id 触发 `query_opt` 多行错误。**schema 缺陷（`x_jpush.id` 无唯一约束）记 §五 待修**。
+
+| 验证（本批代码变更） | — | jpush_assemble_control 整 lib `31 passed / 0 failed / 1 ignored`（0.19s）：新增离线臂 `b55_r7_writes_reject_without_session`（5 把 dead pool + 无会话 401）+ `b55_message_send_non_admin_forbidden`（非 admin 403，离线稳健）+ `b55_owner_writes_non_owner_forbidden`（2 把归属他人 → 403，`#[ignore]` 需真库，实测 0.12s 通过）。既有 `test_device_bind_legacy_path` 由 500 翻 401；`test_u2_post_message_send_route` 等用 `assert_ne!(NOT_FOUND)` 照过。尺子：**6 条 R7 路由出列**（全含写），R7 779→**773**、含写 90→**84**、ungated −6；jpush R7 7→**1**；EXIT 0、判据见证缺口 0（复跑 3 次稳定） |
+
 ## 四、验证
 
 

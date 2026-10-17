@@ -148,6 +148,8 @@ empower	PUT	/api/person/empower/{id}	update	check_owner
 file_assemble_control	POST	/api/attachment/update/callback/callback/{id}	attachment_id_update_callback_callback	attachment_id_update
 file_assemble_control	POST	/api/attachment/{id}/update/callback/{callback}	u2_attachment_update_content_callback	u2_attachment_update_content
 file_assemble_control	PUT	/api/attachment/update/callback/callback/{id}	attachment_id_update_callback_callback	attachment_id_update
+jpush_assemble_control	POST	/api/jpush/delete/{id}	delete_jpush	jpush_owner_gate
+jpush_assemble_control	POST	/api/jpush/save/{id}	save_jpush	jpush_owner_gate
 meeting_assemble_control	DELETE	/api/meeting/assemble/control/attachment/{id}	u2_attachment_delete	u2_attachment_guard
 meeting_assemble_control	DELETE	/api/meeting/assemble/control/meeting/{id}/delete/invite	meeting_id_delete_invite	u2_meeting_owner_gate
 meeting_assemble_control	GET	/api/meeting/assemble/control/meeting/{id}/accept	meeting_id_accept	u2_meeting_owner_gate
