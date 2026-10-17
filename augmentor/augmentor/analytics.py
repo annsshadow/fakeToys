@@ -218,7 +218,7 @@ class DatasetAnalyzer:
         Returns:
             分析报告
         """
-        fields = fields or ["instruction", "output", "input"]
+        fields = fields if fields is not None else ["instruction", "output", "input"]
         
         # 计算每个字段的统计信息
         field_statistics = {}

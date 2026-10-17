@@ -83,7 +83,7 @@ _RENDER_OK = set()
 
 
 def build_formatter(fmt: str) -> logging.Formatter:
-    """造一个「对着真 record 打得开」的 Formatter，打不开就出声
+    """造一个「对着真 record 打得开、且消毒控制字符」的 Formatter，打不开就出声
 
     非空与类型由 `validation.require_string` 判，这里补的是**渲染**这一维：
     `Formatter("%(nope)s")` 构造期不报错，到发第一条日志才抛，而 `Handler.emit`
@@ -95,7 +95,7 @@ def build_formatter(fmt: str) -> logging.Formatter:
         "augmentor.logging_setup", logging.WARNING, __file__, 0, "探针", (), None
     )
     try:
-        formatter = logging.Formatter(fmt)
+        formatter = ControlSafeFormatter(fmt)
         formatter.format(probe)
     except Exception as exc:
         raise DataValidationError(
@@ -153,7 +153,10 @@ def _open_file_handler(path: str) -> logging.handlers.RotatingFileHandler:
             backupCount=_LOG_FILE_BACKUP_COUNT,
             encoding="utf-8",
         )
-    except OSError as exc:
+    except (OSError, ValueError) as exc:
+        # ValueError 也要接住：Windows 上 `"a\x00b.log"` 这类含 NUL 的路径由
+        # `os.path` 抛 `ValueError: embedded null character`，是 `logging.file`
+        # 写错的一种，漏在外面就变成裸异常（API 500 / CLI 一坨栈）。
         raise DataValidationError(
             f"logging.file 打不开 {path!r}：{exc}（相对路径按当前工作目录 "
             f"{os.getcwd()!r} 解释，父目录需要已存在）"
@@ -232,3 +235,51 @@ def apply_logging_config(settings: Any, written: Optional[Iterable[str]] = None)
     # 下一次调用进来时 root.handlers 正是这一份，相同配置即可命中。
     _APPLIED = (signature[:4] + (tuple(root.handlers),), dict(summary))
     return summary
+
+
+# ============ 日志注入消毒（L285，CWE-117）============
+#
+# 新代码一律落在本模块**尾部**，`import re` 也在这一格：文件头的 import 块加一行会把
+# 账本对 `logging_setup.py:95 / 122 / 166 / 206` 的四处活引用整体顶下一行，而本模块
+# 尾部在 206 之下 ⇒ 同行改写 + 文末追加，净零位移。
+import re  # noqa: E402  （刻意不在文件头，理由见上）
+
+#: 会改写「一条记录恒等于一行」这个物理契约、或会驱动终端重绘的字符。
+#: `\x09`（Tab）**不在**这一集里：它既不起新行也不起转义序列，钉掉只会把对齐的表式日志打散。
+_CONTROL_CHARS = re.compile(r"[\x00-\x08\x0a-\x1f\x7f-\x9f]")
+
+
+def escape_control(text: str) -> str:
+    r"""把控制字符写成 `\xNN` 两串字面量，可逆且不吞掉任何一码点
+
+    先 `search` 再 `sub`：绝大多数日志行是干净的，让干净行**逐字节原样**返回（实测
+    `identity_when_clean` 为真），代价只在一次 C 档扫描上。
+    """
+    if not _CONTROL_CHARS.search(text):
+        return text
+    return _CONTROL_CHARS.sub(lambda m: "\\x%02x" % ord(m.group()), text)
+
+
+class ControlSafeFormatter(logging.Formatter):
+    r"""消毒只加在渲染的最后一跳，不改格式串的语义
+
+    为什么落在汇（sink）而不是 170 处调用点：一条 record 要经过 formatter 才变成「一行」，
+    所以 `logging.format` 写成什么串都覆盖得到，而调用点逐个消毒既要改 170 处又必然漏。
+    为什么**只**消毒 `formatMessage`：`Formatter.format()` 在这一步之后才追加 traceback，
+    栈保持原样多行是可观测性的底线 —— 代价是栈里那条 `ValueError: inner\n伪造行` 仍落成
+    两行，这一格留给待拍（A388），不在本轮单方面改掉。
+    """
+
+    def formatMessage(self, record: logging.LogRecord) -> str:
+        return escape_control(super().formatMessage(record))
+
+
+def build_handler(fmt: str) -> logging.StreamHandler:
+    """stderr + 消毒 Formatter 的 handler —— 给 API 入口用
+
+    `logging.basicConfig()` 在 3.12 不收 `formatter=`（实测 `ValueError: Unrecognised
+    argument(s): formatter`），只认 `handlers=`，所以入口侧只能从这里递对象进去。
+    """
+    handler = logging.StreamHandler(sys.stderr)
+    handler.setFormatter(ControlSafeFormatter(fmt))
+    return handler

@@ -246,11 +246,24 @@ class CheckpointManager:
                     delta['failed'].extend(part['failed'])
                     delta['quality_scores'].update(part['quality_scores'])
                 
-                # 合并增量
-                data['completed_indices'].extend(delta['completed'])
-                data['failed_indices'].extend(delta['failed'])
-                data['processed_items'] += len(delta['completed'])
-                data['failed_items'] += len(delta['failed'])
+                # 合并增量按「这一格记过没有」判，两侧都去重。两种重复各有来路：① 崩溃窗
+                # （主文件写成之后、`_remove_delta` 之前被杀）让同一批增量下次再并一次；
+                # ② `_delta_files` 把 legacy 与 JSONL 两份一并读回，同一下标在两份里各
+                # 出现一次时纯 extend 就记两笔。实测①：6 条已完成读成 `processed_items=12`、
+                # `progress_percent=200.0%` 并随合并落盘固化（`test_checkpoint_recovery_l100.py`
+                # 只钉了写**失败**那一支，这两序当时都无守卫）。
+                already_completed = set(data['completed_indices'])
+                fresh_completed = [
+                    idx for idx in dict.fromkeys(delta['completed']) if idx not in already_completed
+                ]
+                already_failed = set(data['failed_indices'])
+                fresh_failed = [idx for idx in dict.fromkeys(delta['failed'])
+                                if idx not in already_failed]
+
+                data['completed_indices'].extend(fresh_completed)
+                data['failed_indices'].extend(fresh_failed)
+                data['processed_items'] += len(fresh_completed)
+                data['failed_items'] += len(fresh_failed)
                 
                 # 合并质量评分
                 data['quality_scores'].update({
@@ -424,8 +437,8 @@ class CheckpointManager:
         """
         for delta_path in (self._get_delta_path(task_id),
                            self._get_legacy_delta_path(task_id)):
-            if delta_path.exists():
-                delta_path.unlink()
+            # 增量已并入主文件，缺档即目标达成：exists 预检挡不住并发删除里裸 unlink 抛的 FileNotFoundError。
+            delta_path.unlink(missing_ok=True)
     
     def update_progress(self,
                        index: int,
@@ -590,8 +603,7 @@ class CheckpointManager:
         """
         checkpoint_path = self._get_checkpoint_path(task_id)
         
-        if checkpoint_path.exists():
-            checkpoint_path.unlink()
+        checkpoint_path.unlink(missing_ok=True)
         self._remove_delta(task_id)
         
         logger.info(f"删除断点: {task_id}")

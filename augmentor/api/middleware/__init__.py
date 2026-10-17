@@ -52,6 +52,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
 from api.middleware.trace import RequestTraceMiddleware
 from api.middleware.rate_limit import RateLimiter, RateLimitMiddleware
 from api.middleware.upload_gate import UploadBodyGate
+from api.middleware.write_auth_gate import WriteTransportGate
 
 __all__ = [
     "RequestLoggingMiddleware",
@@ -59,4 +60,5 @@ __all__ = [
     "RateLimiter",
     "RateLimitMiddleware",
     "UploadBodyGate",
+    "WriteTransportGate",
 ]
