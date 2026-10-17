@@ -36,6 +36,7 @@ import logging
 import logging.handlers
 import os
 import sys
+import threading
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from .exceptions import DataValidationError
@@ -60,6 +61,11 @@ _INSTALLED: List[logging.Handler] = []
 # 且撤与装之间 root 短暂无 handler，并发请求可能正好落在那一瞬丢日志行。
 # 签名带 root.handlers 拓扑元组 ⇒ 任何外部 handler 增减都会打破命中、回到完整装配。
 _APPLIED: Optional[Tuple[Tuple[Any, ...], Dict[str, Any]]] = None
+
+# 装配锁（A393 / L289）：上面那份缓存判的是「配置变没变」，判不了「有没有两支同时在装」。
+# 撤与装这一整段必须一次只让一支进来，否则 handler 按到场人数翻倍、日志跟着翻倍。
+# 只在同进程内有效；跨进程那一档与 A156 / A158 同口径。
+_APPLY_LOCK = threading.Lock()
 
 
 def level_number(value: Any) -> int:
@@ -166,6 +172,14 @@ def _open_file_handler(path: str) -> logging.handlers.RotatingFileHandler:
 def apply_logging_config(settings: Any, written: Optional[Iterable[str]] = None) -> Dict[str, Any]:
     """按 `logging` 节装配 root logger，返回实际生效的摘要
 
+    本函数是**序列化**的（A393 / L289）。A106 那条快路是 check-then-act：签名不命中就
+    「先撤再装」。撤与装之间没有任何互斥 ⇒ 两支并发各装一套，root 上挂着的 handler 按
+    到场人数翻倍，而本模块 docstring 早就把这一族写成了「不撤就是每调一次多一个 handler，
+    日志跟着翻倍」—— 单发不翻了，并发又翻回来。实测（16 支并发 `load_config`，同进程同
+    root）：handler 从 2 涨到 **7 / 14 / 11**（三跑），一条 INFO 在日志文件里变成
+    **6 / 13 / 10** 行；同一份配置单发两次是 2 / 1。快路只挡住了「同配置重复装配」，
+    挡不住「同时装配」，所以这里加一把进程内的装配锁。
+
     Args:
         settings: 带 `level` / `file` / `format` 三属性的对象（`LoggingConfig`；
             刻意不做类型导入 —— 本模块由 `config` 加载，反向 import 会成环）
@@ -178,6 +192,12 @@ def apply_logging_config(settings: Any, written: Optional[Iterable[str]] = None)
         handler 条数, "file": 落盘绝对路径或空串}`` —— 给用例断言用，不参与任何
         对外契约。
     """
+    with _APPLY_LOCK:
+        return _apply_logging_config_locked(settings, written)
+
+
+def _apply_logging_config_locked(settings: Any, written: Optional[Iterable[str]]) -> Dict[str, Any]:
+    """真正的装配体，只在 `_APPLY_LOCK` 之内跑（本函数体与加锁前逐字相同）"""
     keys = set(LOGGING_KEYS) if written is None else set(written)
     root = logging.getLogger()
     global _APPLIED
@@ -240,8 +260,8 @@ def apply_logging_config(settings: Any, written: Optional[Iterable[str]] = None)
 # ============ 日志注入消毒（L285，CWE-117）============
 #
 # 新代码一律落在本模块**尾部**，`import re` 也在这一格：文件头的 import 块加一行会把
-# 账本对 `logging_setup.py:95 / 122 / 166 / 206` 的四处活引用整体顶下一行，而本模块
-# 尾部在 206 之下 ⇒ 同行改写 + 文末追加，净零位移。
+# 账本对本模块的四处活引用整体顶下一行（L285 记账时是 95 / 122 / 166 / 206，L289 把装配
+# 体拆进锁壳后顶成 101 / 128 / 172 / 226，逐格按 a184 与 l79 的红读数重钉）⇒ 尾部只追加。
 import re  # noqa: E402  （刻意不在文件头，理由见上）
 
 #: 会改写「一条记录恒等于一行」这个物理契约、或会驱动终端重绘的字符。
