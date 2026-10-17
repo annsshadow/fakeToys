@@ -100,8 +100,11 @@ pub async fn list_control_rules(
 #[allow(non_snake_case)]
 pub async fn create_control_rule(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 考勤控制规则管理，表无归属列（ownerless）⇒ 管理员档。
+    require_admin_opt(&pool, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
     let rule_name = payload
@@ -196,8 +199,11 @@ pub async fn list_statistics(pool: Extension<Pool>) -> Result<Json<ActionResult<
 #[allow(non_snake_case)]
 pub async fn delete_control_rule(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 考勤控制规则管理，表无归属列（ownerless）⇒ 管理员档。
+    require_admin_opt(&pool, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -215,9 +221,12 @@ pub async fn delete_control_rule(
 
 pub async fn toggle_control_rule(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 考勤控制规则管理，表无归属列（ownerless）⇒ 管理员档。
+    require_admin_opt(&pool, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let enabled: bool = payload
@@ -371,9 +380,14 @@ pub async fn attendanceadmin_id(
 /// POST /api/attendance/assemble/control/attendanceappealInfo/appeal/{id}
 pub async fn attendanceappealInfo_appeal_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 申诉处理，person 从 body 取（冒名族，另记待修）⇒ 会话存在档。
+    let Some(Extension(_session)) = session else {
+        return Err(AppError::Unauthorized);
+    };
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let status = payload
@@ -1680,8 +1694,13 @@ pub async fn attendancedetail_mobile_my(
 /// POST /api/attendance/assemble/control/attendancedetail/mobile/recive
 pub async fn attendancedetail_mobile_recive(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 考勤明细接收，person 从 body 取（冒名族，另记待修）⇒ 会话存在档。
+    let Some(Extension(_session)) = session else {
+        return Err(AppError::Unauthorized);
+    };
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let person_id = payload
@@ -1758,8 +1777,13 @@ pub async fn attendancedetail_mobile_id(
 /// POST /api/attendance/assemble/control/attendancedetail/recive
 pub async fn attendancedetail_recive(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 考勤明细接收，person 从 body 取（冒名族，另记待修）⇒ 会话存在档。
+    let Some(Extension(_session)) = session else {
+        return Err(AppError::Unauthorized);
+    };
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = payload
@@ -1787,8 +1811,13 @@ pub async fn attendancedetail_recive(
 /// POST /api/attendance/assemble/control/attendancedetail/reciveSingle
 pub async fn attendancedetail_reciveSingle(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 考勤明细接收，person 从 body 取（冒名族，另记待修）⇒ 会话存在档。
+    let Some(Extension(_session)) = session else {
+        return Err(AppError::Unauthorized);
+    };
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = payload

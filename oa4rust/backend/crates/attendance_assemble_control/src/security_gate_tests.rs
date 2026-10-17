@@ -615,4 +615,60 @@ mod security_gate_tests {
             assert_eq!(n, 1, "表 {t} 应恰好有一个主键约束（migration 109 补齐）");
         }
     }
+
+    // 第五十批（R7 收口）：考勤控制规则 3 把（admin）+ 申诉/明细接收 4 把（会话存在）
+    // 无会话必须 401（门在 pool.get() 之前，dead pool 即证）。
+    #[tokio::test]
+    async fn b50_r7_writes_reject_without_session() {
+        let pool = dead_pool();
+        let ext = || Extension(pool.clone());
+        let p = || Path("x".to_string());
+        let j = || Json(json!({}));
+        let cases: Vec<(&str, Result<(), AppError>)> = vec![
+            (
+                "create_control_rule",
+                crate::create_control_rule(ext(), None, j()).await.map(|_| ()),
+            ),
+            (
+                "delete_control_rule",
+                crate::delete_control_rule(ext(), None, p()).await.map(|_| ()),
+            ),
+            (
+                "toggle_control_rule",
+                crate::toggle_control_rule(ext(), None, p(), j()).await.map(|_| ()),
+            ),
+            (
+                "attendanceappealInfo_appeal_id",
+                crate::attendanceappealInfo_appeal_id(ext(), None, p(), j())
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "attendancedetail_mobile_recive",
+                crate::attendancedetail_mobile_recive(ext(), None, j())
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "attendancedetail_recive",
+                crate::attendancedetail_recive(ext(), None, j()).await.map(|_| ()),
+            ),
+            (
+                "attendancedetail_reciveSingle",
+                crate::attendancedetail_reciveSingle(ext(), None, j())
+                    .await
+                    .map(|_| ()),
+            ),
+        ];
+        assert_eq!(cases.len(), 7, "本批 7 把必须逐把点名");
+        let leaked: Vec<String> = cases
+            .iter()
+            .filter(|(_, r)| !matches!(r, Err(AppError::Unauthorized)))
+            .map(|(k, r)| format!("{k} => {:?}", r.as_ref().err()))
+            .collect();
+        assert!(
+            leaked.is_empty(),
+            "无会话未回 401（出现 Internal 就是门插在读库之后）：{leaked:?}"
+        );
+    }
 }

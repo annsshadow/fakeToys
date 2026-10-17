@@ -43,12 +43,12 @@ attendance_assemble_control	DELETE	/api/attendance/assemble/control/attendancest
 attendance_assemble_control	DELETE	/api/attendance/assemble/control/attendanceworkdayconfig/{id}	attendanceworkdayconfig_delete	R5-已认证+体内门禁
 attendance_assemble_control	DELETE	/api/attendance/assemble/control/dingding/all	dingding_delete_all	R5-已认证+体内门禁
 attendance_assemble_control	DELETE	/api/attendance/assemble/control/qywx/all	qywx_delete_all	R5-已认证+体内门禁
-attendance_assemble_control	DELETE	/api/attendance/assemble/control/rule/{id}	delete_control_rule	R7-已认证+体内无会话无门禁
+attendance_assemble_control	DELETE	/api/attendance/assemble/control/rule/{id}	delete_control_rule	R5-已认证+体内门禁
 attendance_assemble_control	DELETE	/api/attendance/assemble/control/selfholidaysimple/docId/{docId}	selfholidaysimple_docId_docId_delete	R5-已认证+体内门禁
 attendance_assemble_control	DELETE	/api/attendance/assemble/control/v2/workplace/{id}	v2_workplace_delete	R5-已认证+体内门禁
 attendance_assemble_control	DELETE	/api/attendance/assemble/control/workplace/{id}	workplace_delete	R5-已认证+体内门禁
 attendance_assemble_control	POST	/api/attendance/assemble/control/attendanceadmin	attendanceadmin_create	R5-已认证+体内门禁
-attendance_assemble_control	POST	/api/attendance/assemble/control/attendanceappealInfo/appeal/{id}	attendanceappealInfo_appeal_id	R7-已认证+体内无会话无门禁
+attendance_assemble_control	POST	/api/attendance/assemble/control/attendanceappealInfo/appeal/{id}	attendanceappealInfo_appeal_id	R6-已认证+读会话无门禁
 attendance_assemble_control	POST	/api/attendance/assemble/control/attendanceappealInfo/archive/{id}	attendanceappealInfo_archive_id	R5-已认证+体内门禁
 attendance_assemble_control	POST	/api/attendance/assemble/control/attendanceappealInfo/audit	attendanceappealInfo_audit	R5-已认证+体内门禁
 attendance_assemble_control	POST	/api/attendance/assemble/control/attendanceappealInfo/check	attendanceappealInfo_check	R5-已认证+体内门禁
@@ -63,9 +63,9 @@ attendance_assemble_control	POST	/api/attendance/assemble/control/attendancedeta
 attendance_assemble_control	POST	/api/attendance/assemble/control/attendancedetail/checkDetailWithPersonByCycle/{cycleYear}/{cycleMonth}	attendancedetail_checkDetailWithPersonByCycle_cycleYear_cycleMonth	R5-已认证+体内门禁
 attendance_assemble_control	POST	/api/attendance/assemble/control/attendancedetail/mobile/mobilepreview	attendancedetail_mobile_mobilepreview	R7-已认证+体内无会话无门禁
 attendance_assemble_control	POST	/api/attendance/assemble/control/attendancedetail/mobile/my	attendancedetail_mobile_my	R7-已认证+体内无会话无门禁
-attendance_assemble_control	POST	/api/attendance/assemble/control/attendancedetail/mobile/recive	attendancedetail_mobile_recive	R7-已认证+体内无会话无门禁
-attendance_assemble_control	POST	/api/attendance/assemble/control/attendancedetail/recive	attendancedetail_recive	R7-已认证+体内无会话无门禁
-attendance_assemble_control	POST	/api/attendance/assemble/control/attendancedetail/reciveSingle	attendancedetail_reciveSingle	R7-已认证+体内无会话无门禁
+attendance_assemble_control	POST	/api/attendance/assemble/control/attendancedetail/mobile/recive	attendancedetail_mobile_recive	R6-已认证+读会话无门禁
+attendance_assemble_control	POST	/api/attendance/assemble/control/attendancedetail/recive	attendancedetail_recive	R6-已认证+读会话无门禁
+attendance_assemble_control	POST	/api/attendance/assemble/control/attendancedetail/reciveSingle	attendancedetail_reciveSingle	R6-已认证+读会话无门禁
 attendance_assemble_control	POST	/api/attendance/assemble/control/attendanceemployeeconfig	attendanceemployeeconfig_create	R5-已认证+体内门禁
 attendance_assemble_control	POST	/api/attendance/assemble/control/attendanceschedulesetting	attendanceschedulesetting_create	R5-已认证+体内门禁
 attendance_assemble_control	POST	/api/attendance/assemble/control/attendanceselfholiday	attendanceselfholiday_create	R5-已认证+体内门禁
@@ -75,8 +75,8 @@ attendance_assemble_control	POST	/api/attendance/assemble/control/attendancestat
 attendance_assemble_control	POST	/api/attendance/assemble/control/attendancestatisticrequirelog	attendancestatisticrequirelog_create	R5-已认证+体内门禁
 attendance_assemble_control	POST	/api/attendance/assemble/control/attendanceworkdayconfig	attendanceworkdayconfig_create	R5-已认证+体内门禁
 attendance_assemble_control	POST	/api/attendance/assemble/control/attendanceworkdayconfig/filter	attendanceworkdayconfig_filter	R7-已认证+体内无会话无门禁
-attendance_assemble_control	POST	/api/attendance/assemble/control/rule/create	create_control_rule	R7-已认证+体内无会话无门禁
-attendance_assemble_control	POST	/api/attendance/assemble/control/rule/{id}/toggle	toggle_control_rule	R7-已认证+体内无会话无门禁
+attendance_assemble_control	POST	/api/attendance/assemble/control/rule/create	create_control_rule	R5-已认证+体内门禁
+attendance_assemble_control	POST	/api/attendance/assemble/control/rule/{id}/toggle	toggle_control_rule	R5-已认证+体内门禁
 attendance_assemble_control	POST	/api/attendance/assemble/control/selfholidaysimple	selfholidaysimple_create	R5-已认证+体内门禁
 attendance_assemble_control	POST	/api/attendance/assemble/control/statistic/do	statistic_do	R5-已认证+体内门禁
 attendance_assemble_control	POST	/api/attendance/assemble/control/v2/appeal/list/manager/{page}/size/{size}	v2_appeal_manager_list_page_size	R5-已认证+体内门禁
@@ -110,7 +110,7 @@ attendance_assemble_control	POST	/api/attendance/assemble/control/v2/shift/updat
 attendance_assemble_control	POST	/api/attendance/assemble/control/v2/workplace	v2_workplace_post	R5-已认证+体内门禁
 attendance_assemble_control	POST	/api/attendance/assemble/control/v2/workplace/list/ids	v2_workplace_list_ids	R7-已认证+体内无会话无门禁
 attendance_assemble_control	POST	/api/attendance/assemble/control/workplace	workplace_create	R5-已认证+体内门禁
-attendance_assemble_control	PUT	/api/attendance/assemble/control/attendanceappealInfo/appeal/{id}	attendanceappealInfo_appeal_id	R7-已认证+体内无会话无门禁
+attendance_assemble_control	PUT	/api/attendance/assemble/control/attendanceappealInfo/appeal/{id}	attendanceappealInfo_appeal_id	R6-已认证+读会话无门禁
 attendance_assemble_control	PUT	/api/attendance/assemble/control/attendanceappealInfo/audit	attendanceappealInfo_audit	R5-已认证+体内门禁
 attendance_assemble_control	PUT	/api/attendance/assemble/control/attendanceappealInfo/check	attendanceappealInfo_check	R5-已认证+体内门禁
 attendance_assemble_control	PUT	/api/attendance/assemble/control/attendanceappealInfo/filter/list/{id}/next/{count}	attendanceappealInfo_filter_list_id_next_count	R7-已认证+体内无会话无门禁
@@ -132,7 +132,7 @@ attendance_assemble_control	PUT	/api/attendance/assemble/control/attendanceselfh
 attendance_assemble_control	PUT	/api/attendance/assemble/control/attendanceworkdayconfig/filter	attendanceworkdayconfig_filter	R7-已认证+体内无会话无门禁
 attendance_assemble_control	PUT	/api/attendance/assemble/control/dingding/attendance/list/{id}/next/{count}	dingding_attendance_list_next	R7-已认证+体内无会话无门禁
 attendance_assemble_control	PUT	/api/attendance/assemble/control/qywx/attendance/list/{id}/next/{count}	qywx_attendance_list_next	R7-已认证+体内无会话无门禁
-attendance_assemble_control	PUT	/api/attendance/assemble/control/rule/{id}/toggle	toggle_control_rule	R7-已认证+体内无会话无门禁
+attendance_assemble_control	PUT	/api/attendance/assemble/control/rule/{id}/toggle	toggle_control_rule	R5-已认证+体内门禁
 attendance_assemble_control	PUT	/api/attendance/assemble/control/statisticshow/filter/personMonth/list/{id}/next/{count}	statisticshow_filter_personMonth_list_id_next_count	R7-已认证+体内无会话无门禁
 attendance_assemble_control	PUT	/api/attendance/assemble/control/statisticshow/filter/personMonth/list/{id}/prev/{count}	statisticshow_filter_personMonth_list_id_prev_count	R7-已认证+体内无会话无门禁
 attendance_assemble_control	PUT	/api/attendance/assemble/control/statisticshow/filter/topUnitDay/list/{id}/next/{count}	statisticshow_filter_topUnitDay_list_id_next_count	R7-已认证+体内无会话无门禁
