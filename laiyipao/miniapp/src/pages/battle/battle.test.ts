@@ -403,7 +403,9 @@ describe('battle.vue 战斗页', () => {
     // 不触发响应式，选牌界面永远出不来（triggerRef 修复后本用例才可能通过）
     FakeRenderer.instances[0]!.loop!(TICK)
     await flushPromises()
-    expect(wrapper.text()).toContain('选择一张卡')
+    // 选牌引导（口语化说明）：标题 + 「点卡上的「弃」…还能回 1 点热量」的提示行
+    expect(wrapper.text()).toContain('这一波给你 3 张卡，点一张就装备上')
+    expect(wrapper.text()).toContain('点卡上的「弃」丢掉，还能回 1 点热量')
     // kindLabel 三种分支
     expect(wrapper.text()).toContain('技能')
     expect(wrapper.text()).toContain('属性')
@@ -416,7 +418,7 @@ describe('battle.vue 战斗页', () => {
     await cards[1]!.find('.dim').trigger('click') // 弃
     expect(eng.discarded).toEqual(['c2'])
 
-    await wrapper.findAll('.btn').find((b: any) => b.text().includes('跳过'))!.trigger('click')
+    await wrapper.findAll('.btn').find((b: any) => b.text().includes('直接下一波'))!.trigger('click')
     expect(eng.skipped).toBe(1)
   })
 
@@ -474,7 +476,7 @@ describe('battle.vue 战斗页', () => {
     ;(wrapper.vm as any).skipCards()
     await flushPromises()
     // 没有引擎、没有崩溃、没有选牌界面
-    expect(wrapper.text()).not.toContain('选择一张卡')
+    expect(wrapper.text()).not.toContain('这一波给你 3 张卡')
   })
 
   it('onLoad 无 query → 默认第 1 关；onUnload 时渲染器为 null 也安全', async () => {

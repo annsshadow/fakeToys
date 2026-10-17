@@ -53,10 +53,23 @@ describe('App.vue 根组件', () => {
     const { default: App } = await import('@/App.vue')
     const { router } = await import('@/router')
     const { mount } = await import('@vue/test-utils')
-    const { setToken } = await import('@/api/client')
+    const { setToken, invalidateTokenVerification } = await import('@/api/client')
     const { default: ElementPlus } = await import('element-plus')
 
     localStorage.clear()
+    invalidateTokenVerification()
+    // ⚠️ 第 154 轮：守卫会真的问一次 `/admin/me` 来确认令牌有效。
+    // 不桩 fetch 的话 jsdom 去连 http://localhost/api/v1 —— 网络失败被判成
+    // 「令牌不可用」，于是「有令牌进入后台壳」这一半必然跳回登录页，
+    // 而失败信息指向看板渲染，看不出真正原因。
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        text: () => Promise.resolve(JSON.stringify({ admin: { id: 1, username: 'a', role: 'super' } })),
+      }),
+    )
     // ⚠️ 必须装 Element Plus，与 `main.ts` 的 `app.use(ElementPlus)` 一致。
     //
     // 不装的话这一处会刷出 22 条「Failed to resolve component: el-*」警告。

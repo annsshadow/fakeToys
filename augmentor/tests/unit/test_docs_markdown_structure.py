@@ -18,6 +18,10 @@ from pathlib import Path
 import pytest
 
 AI_DIR = Path(__file__).resolve().parent.parent.parent
+#: 子项目文档已于 2026-10-14 汇总到仓库根 `docs/augmentor/`；本文件自持这一真源
+#: 仓库根。子项目文档已于 2026-10-14 汇总到其下的 `docs/augmentor/`（不再住在 AI_DIR 内）
+REPO = AI_DIR.parent
+DOCS_DIR = REPO / "docs" / "augmentor"
 
 FENCE_RE = re.compile(r"^\s*```", re.M)
 INLINE_CODE_RE = re.compile(r"`[^`]*`")
@@ -25,13 +29,13 @@ SEPARATOR_RE = re.compile(r"^\s*\|[\s:\-|]+\|\s*$")
 
 
 def markdown_docs():
-    """从目录派生待检文档，不抄清单 ⇒ 新增一份顶层或 `docs/` 文档自动进守卫
+    """从目录派生待检文档，不抄清单 ⇒ 新增一份顶层或 `docs/augmentor/` 文档自动进守卫
 
     只扫这两层的平铺 `.md`：递归 `rglob` 实测会把 `web/node_modules`（400+ 份）和
     `Temp/`、`.backups/` 一起拽进来，那是第三方与草稿的领地，不是本仓库的交付面。
     """
-    found = set(AI_DIR.glob("*.md")) | set((AI_DIR / "docs").glob("*.md"))
-    return sorted(found, key=lambda p: str(p.relative_to(AI_DIR)))
+    found = set(AI_DIR.glob("*.md")) | set(DOCS_DIR.glob("*.md"))
+    return sorted(found, key=lambda p: str(p.relative_to(REPO)))
 
 
 DOCS = markdown_docs()
@@ -101,7 +105,7 @@ def tables_without_separator(text):
 
 
 def relative(doc):
-    return doc.relative_to(AI_DIR).as_posix()
+    return doc.relative_to(REPO).as_posix()
 
 
 DOC_IDS = [relative(d) for d in DOCS]

@@ -38,9 +38,11 @@ import re
 import pytest
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
+#: 仓库根；子项目文档已于 2026-10-14 汇总到其下的 `docs/augmentor/`
+REPO = ROOT.parent
 PKG = ROOT / "augmentor"
 TESTS = ROOT / "tests"
-ARCH = (ROOT / "docs" / "ARCHITECTURE.md").relative_to(ROOT).as_posix()
+ARCH = (REPO / "docs" / "augmentor" / "ARCHITECTURE.md").relative_to(REPO).as_posix()
 
 #: 预言机的名字形状：dedup 那支是单数 `_win`，leakage 那支是复数 `_wins`
 NAME_SHAPE = re.compile(r"^_\w*_wins?$")
@@ -185,7 +187,7 @@ def module_trees():
 
 
 def arch_text() -> str:
-    return (ROOT / ARCH).read_text(encoding="utf-8")
+    return (REPO / ARCH).read_text(encoding="utf-8")
 
 
 def section_body(text: str) -> str:

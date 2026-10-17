@@ -27,8 +27,11 @@
     <!-- 选牌界面（I-2） -->
     <view v-if="showCards" class="card-overlay">
       <view class="card-header">
-        <text class="card-title">选择一张卡</text>
-        <text class="muted">弃牌 {{ deck.discardsLeft }} 次 · 弃牌返还 1 热量</text>
+        <text class="card-title">这一波给你 3 张卡，点一张就装备上</text>
+        <text class="card-hint">
+          <text>不想？点卡上的「弃」丢掉，还能回 1 点热量（热量攒满就会过热卡 2 秒）。</text>
+          <text> 本波还能弃 {{ deck.discardsLeft }} 张。</text>
+        </text>
       </view>
       <view class="cards">
         <view
@@ -51,7 +54,7 @@
           </view>
         </view>
       </view>
-      <view class="btn" @click="skipCards">跳过（不消耗弃牌次数）</view>
+      <view class="btn" @click="skipCards">一张都不要了，直接下一波</view>
     </view>
 
     <!-- 结算界面 -->
@@ -492,6 +495,7 @@ onUnload(() => {
   background: rgba(13, 17, 23, 0.96);
   border-top: 1rpx solid var(--border);
   padding: 28rpx 24rpx 40rpx;
+  animation: fade-in-up 0.25s ease-out;
 }
 
 .debug-tag {
@@ -514,6 +518,14 @@ onUnload(() => {
   margin-bottom: 6rpx;
 }
 
+/* 选牌引导（口语化说明，见模板注释） */
+.card-header .card-hint {
+  display: block;
+  font-size: 22rpx;
+  line-height: 1.6;
+  color: var(--dim);
+}
+
 .cards {
   display: flex;
   flex-direction: row;
@@ -524,19 +536,26 @@ onUnload(() => {
 .hand-card {
   flex: 1;
   background: var(--panel);
-  border: 2rpx solid var(--border);
+  border: 2rpx solid var(--border-soft, var(--border));
   border-radius: 16rpx;
   padding: 20rpx 16rpx;
   display: flex;
   flex-direction: column;
   min-height: 260rpx;
+  transition: transform 0.15s, border-color 0.2s, box-shadow 0.2s;
+}
+
+.hand-card:active {
+  transform: scale(0.97);
 }
 
 .hand-card.rarity-rare {
-  border-color: rgba(88, 166, 255, 0.5);
+  border-color: var(--ice-soft, rgba(88, 166, 255, 0.5));
+  box-shadow: 0 0 0 1rpx rgba(88, 166, 255, 0.25), 0 4rpx 12rpx rgba(88, 166, 255, 0.15);
 }
 .hand-card.rarity-epic {
-  border-color: rgba(201, 167, 255, 0.6);
+  border-color: var(--kinetic-soft, rgba(201, 167, 255, 0.6));
+  box-shadow: 0 0 0 1rpx rgba(201, 167, 255, 0.25), 0 4rpx 12rpx rgba(201, 167, 255, 0.15);
 }
 
 .hand-kind {

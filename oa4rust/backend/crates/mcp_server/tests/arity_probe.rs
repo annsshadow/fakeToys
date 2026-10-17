@@ -100,7 +100,7 @@ async fn every_registered_route_has_matching_path_arity() {
     // 棘轮基线：两类「名义已注册、实际不可消费」缺陷各自一份基线，测试仅在出现基线之外的
     // 新回归时失败（防回归），修复推进时同步收缩基线文件。
     let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../../docs/audits/three-ends-2026-09-20");
+        .join("../../../../docs/audits/three-ends-2026-09-20");
     let ratchet = |name: &str, found: &[String], label: &str| -> usize {
         let base_path = dir.join(name);
         let known: std::collections::HashSet<String> = std::fs::read_to_string(&base_path)

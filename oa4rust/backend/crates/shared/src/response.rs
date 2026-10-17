@@ -269,7 +269,7 @@ impl<T> ActionResult<T> {
     }
 
     /// O2OA v9 o2server 兼容成功信封（plan002 U2 行为对齐，基准实测见
-    /// docs/audits/behavior-compare-first-run.md）。
+    /// docs/audits/2026-08-24-001-behavior-compare-first-run.md）。
     ///
     /// o2server 信封所有元数据字段恒存在：message 为空串、date 为服务器时间
     /// （"yyyy-MM-dd HH:mm:ss"）、spent 为耗时毫秒数（此处置 0）、size/count

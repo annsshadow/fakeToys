@@ -8,7 +8,7 @@ from typing import List, Dict, Optional, Tuple
 from dataclasses import dataclass
 import numpy as np
 from .model_manager import model_manager
-from .validation import require_count, require_ratio
+from .validation import require_count, require_item_text, require_ratio
 from .exceptions import DedupError, DataValidationError
 from .config import DEDUP_THRESHOLD_RANGE
 
@@ -794,7 +794,7 @@ class Deduplicator:
             )
         
         # 提取文本
-        texts = [item.get(text_key, "") for item in items]
+        texts = [item.get(text_key, "") for item in require_item_text(items, text_key)]
         
         # 查找重复组：按行分块流式计算，峰值内存与 n 成线性
         duplicate_groups = self._find_duplicate_groups_chunked(texts)

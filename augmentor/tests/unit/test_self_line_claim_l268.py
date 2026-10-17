@@ -4,7 +4,7 @@
 """账本里「本账第 N 行」那一形自指主张第一次有尺子（A333 的形状 ③ / L268）
 
 **这一轮收的是哪一格**：A333 立账时点名三种 a184 内容维判不到的形状，其中 ③ 是**不带文件名的裸行号**
-——账本散文写「所以本账第 835 行那条 `docs/API.md:1139` 引用仍指得准」，主张的是**本卷自己的行号**。
+——账本散文写「所以本账第 835 行那条 `docs/augmentor/API.md:1139` 引用仍指得准」，主张的是**本卷自己的行号**。
 a184 量的是 `file.py:NNN` / `FILE.md:NNN` 这类**带文件名**的落点，裸行号它结构性看不见，所以历轮每次插行
 把那一格平移一次，全靠人眼重钉；L267 的账本批就当场错过一次（先钉成 833，复盘行号是 832，同句改回），
 而本轮（L268）的账本批落下 3 行 ⇒ 名册里那一格由 832 走到 **835**，这是本守卫第一次咬到自己。
@@ -69,14 +69,22 @@ BLIND = "BLIND"
 MEASURED_SITES = 13
 #: 三档闭合：1 + 5 + 7 = 13。`LIVE` 那一格就是 operative 自指，其余是历史读数与无锚主张。
 MEASURED_TIERS = {LIVE: 1, STALE: 5, BLIND: 7}
-#: 名册：`(卷, 区段, 轮号, 主张的那一行)`。`("OPTIMIZATION_LOOP_2.md", "checklist", 232, 838)` 是
+#: 名册：`(卷, 区段, 轮号, 主张的那一行)`。`("OPTIMIZATION_LOOP_2.md", "checklist", 232, 880)` 是
 #: operative 那一格——L267 复盘现量 832（先钉成 833 的那一格同批改回，见 L267 块 ⑮），L268 的账本批在它之上
-#: 落 3 行 ⇒ 重钉 835，**L269 的账本批又在其上落 3 行（清单行 +1 与 A347 连带分隔空行 +2）⇒ 按 ⑤ 的内容
-#: 定位器重钉为 838**，这一格每次都由 `test_the_roster_is_exact` 的红读数当场逼出
-#: （本轮 `assert ('...', 232, 838) == ('...', 232, 835)`），不是算术推的。
+#: 落 3 行 ⇒ 重钉 835，L269 的账本批又在其上落 3 行（清单行 +1 与 A347 连带分隔空行 +2）⇒ 838，
+#: **L270 的账本批在其上落 7 行（清单行 +1 与新立 A348 / A349 / A350 三笔连带它们的分隔空行 +6）⇒ 按 ⑤ 的内容
+#: 定位器重钉为 845**，**L271 的账本批在其上落 21 行（清单行 +1、A351 / A352 连带分隔空行 +5、日志块 +15）
+#: ⇒ 第一次写完落 850、补回表格那一格分隔空行后按定位器重钉为 851**（见 L271 块 ⑨ 的返工记录），
+#: **L272 的账本批在其上落 3 行（清单行 +1 与新立 A353 连带它的分隔空行 +2；本轮日志块那 16 行落在
+#: 被指向的那一行之下 ⇒ 不参与平移）⇒ operative 与链尾同批落到 854**，**L272 修正账本批在其上落 3 行（新立 A354 连带它的分隔空行 +2 与要点 ⑭ +1；清单行与要点 ③④ 都是同行改写 ⇒ 净 0，要点 ⑮ 落在被指向那一行之下 ⇒ 不参与平移）⇒ operative 与链尾同批落到 856**，**L273 的账本批在其上落 6 行（清单行 +1 与新立 A355 / A356 / A357 三笔连带其中两笔的分隔空行 +5；本轮日志块 ⑭⑮ 落在被指向那一行之下 ⇒ 不参与平移）⇒ operative 与链尾同批落到 862**，**L274 的账本批在其上落 9 行（清单行 +1 与新立 A358 / A359 / A360 / A361 四笔连带它们的分隔空行 +8；本轮日志块 19 行与记账批那一行要点都落在被指向那一行之下 ⇒ 不参与平移）⇒ operative 与链尾同批落到 871**，
+#: 这一格每次都由 `test_the_roster_is_exact` 的红读数当场逼出
+#: （L272 那轮是 `assert ('...', 232, 856) == ('...', 232, 854)`；本轮红读数同时点名两格：案面里有 `('...', 232, 871)` 而名册里还是 `('...', 232, 862)`），不是算术推的。
+#: **定位器的唯一性是这一格重钉的前置量**（L274 现场撞到）：`docs/augmentor/API.md:1139` 在卷二有 **47 处**命中，
+#: 按「最后一处」取会指到 4807 那一行、与真落点差出 3936 行 ⇒ 钉进去就是一笔假账。唯一命中的那一串是
+#: `` `modified_count  # 修改数量`）与 docs/augmentor/API.md:1139``（含前导反引号与中文括号，实测 `count == 1`）。
 ROSTER = frozenset(
     {
-        ("OPTIMIZATION_LOOP_2.md", "checklist", 232, 838),
+        ("OPTIMIZATION_LOOP_2.md", "checklist", 232, 880),
         ("OPTIMIZATION_LOOP_2.md", "checklist", 243, 734),
         ("OPTIMIZATION_LOOP_2.md", "checklist", 252, 795),
         ("OPTIMIZATION_LOOP_2.md", "log", 232, 773),
@@ -157,9 +165,9 @@ def tier_counts(sites):
 
 
 #: operative 那一格的**独立定位器**：不读散文里的数字，而是按内容找出那条引用真正住在第几行——
-#: 全卷同时含 `DiffResult` 与 `docs/API.md:1139` 的物理行现量唯一。这样 `test_...` 才是「按内容重算」
+#: 全卷同时含 `DiffResult` 与 `docs/augmentor/API.md:1139` 的物理行现量唯一。这样 `test_...` 才是「按内容重算」
 #: 而不是「把散文写的数抄一遍」。
-OPERATIVE_MARKER = ("DiffResult", "docs/API.md:1139")
+OPERATIVE_MARKER = ("DiffResult", "docs/augmentor/API.md:1139")
 
 
 def locate_operative_target(lines):
@@ -251,7 +259,7 @@ class TestTheOperative:
         assert live == {OPERATIVE}, live
 
     def test_the_operative_number_matches_the_independent_locator(self):
-        """散文写的行号 == 按内容独立定位的行号（L269 账本批之后现量 838）"""
+        """散文写的行号 == 按内容独立定位的行号（L274 账本批之后现量 871）"""
         volumes = other.load_volumes()
         site = next(
             s
@@ -296,7 +304,7 @@ class TestRulerBites:
         idx = locate_operative_target(volumes["OPTIMIZATION_LOOP_2.md"]) - 1
 
         def scrub(lines):
-            lines[idx] = lines[idx].replace("docs/API.md:1139", "另一条引用")
+            lines[idx] = lines[idx].replace("docs/augmentor/API.md:1139", "另一条引用")
             return lines
 
         got = tier_counts(self_claims(patched(volumes, "OPTIMIZATION_LOOP_2.md", scrub)))

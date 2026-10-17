@@ -8,7 +8,7 @@ from typing import List, Dict, Optional
 from dataclasses import dataclass
 from collections import Counter
 import re
-from .validation import require_count
+from .validation import require_count, require_item_text
 
 logger = logging.getLogger(__name__)
 
@@ -170,7 +170,7 @@ class ActiveSampler:
         
         # 问题类型分布
         question_types = Counter()
-        for item in items:
+        for item in require_item_text(items, "instruction"):
             q_type = self._analyze_question_type(item.get("instruction", ""))
             question_types[q_type] += 1
         

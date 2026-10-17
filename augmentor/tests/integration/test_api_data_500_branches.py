@@ -3,8 +3,14 @@
 
 """data 路由剩余 500 异常分支注入测试
 
-向 read_json_file / get_pipeline 注入异常，确定性覆盖 load/update/
+向 read_json_file / read_items / get_pipeline 注入异常，确定性覆盖 load/update/
 delete/upload/analyze/visualize 的通用 500 降级分支。
+
+L273 之后 update / delete 的**读**不再住在路由里：整段读-改-写被收进
+`api.deps.mutate_json_file` 的一支工作线程里（否则 20 支并发只落 1 处），所以
+这两支打的替身是 `api.deps.read_items` 而不是路由模块的 `read_json_file`。
+判据一个字没改——读盘失败仍然必须是 500 且不回显原文；改的只是「从哪一层注入」，
+它必须跟着被代码移动过的那次读取走，否则替身打不到真站点，读数会变成假的「200」。
 """
 
 import json
@@ -59,26 +65,27 @@ class TestLoad500:
 
 class TestUpdateDelete500:
     def test_update_read_failure_500(self, data_env, monkeypatch):
-        import api.routes.data as data_module
+        import api.deps as deps
 
-        async def _boom(path):
+        def _boom(path):
             raise OSError("读失败")
 
-        monkeypatch.setattr(data_module, "read_json_file", _boom)
+        monkeypatch.setattr(deps, "read_items", _boom)
         client, _ = data_env
         response = client.put("/api/data/update/d.json", params={"index": 0}, json={"x": 1})
         assert response.status_code == 500
 
     def test_delete_read_failure_500(self, data_env, monkeypatch):
-        import api.routes.data as data_module
+        import api.deps as deps
 
-        async def _boom(path):
+        def _boom(path):
             raise OSError("读失败")
 
-        monkeypatch.setattr(data_module, "read_json_file", _boom)
+        monkeypatch.setattr(deps, "read_items", _boom)
         client, _ = data_env
         response = client.delete("/api/data/delete/d.json", params={"index": 0})
         assert response.status_code == 500
+        assert response.json()["detail"] == INTERNAL_ERROR_DETAIL
 
 
 class TestUpload500:
