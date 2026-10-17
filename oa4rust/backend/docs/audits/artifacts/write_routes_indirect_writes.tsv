@@ -128,15 +128,6 @@ processplatform_service_processing	GET	/api/processplatform/service/processing/t
 processplatform_service_processing	GET	/api/processplatform/service/processing/v2/goback/{work}/{id}	work_v2_id_goback_p2	K	work_v2_id_goback_core
 processplatform_service_processing	GET	/api/processplatform/service/processing/v2/reroute/{work}/{id}	work_v2_id_reroute_p2	K	work_v2_id_reroute_core
 processplatform_service_processing	GET	/api/processplatform/service/processing/v2/rollback/{work}/{id}	work_v2_id_rollback_p2	K	work_v2_id_rollback_core
-processplatform_service_processing	POST	/api/processplatform/service/processing/read/work/{workId}	read_create_with_work	R7	read_create
-processplatform_service_processing	POST	/api/processplatform/service/processing/read/workcompleted/{workCompletedId}	read_create_with_workcompleted	R7	read_create
-processplatform_service_processing	POST	/api/processplatform/service/processing/record/job/{job}	record_create_with_job	R7	record_create_dedup
-processplatform_service_processing	POST	/api/processplatform/service/processing/record/work/processing	record_work_processing	R7	record_create_dedup
-processplatform_service_processing	POST	/api/processplatform/service/processing/record/work/terminate	record_work_terminate	R7	record_create_dedup
-processplatform_service_processing	POST	/api/processplatform/service/processing/v2/add/split/{work}/{id}	work_v2_id_add_split_p2	R7	work_v2_id_add_split_core
-processplatform_service_processing	POST	/api/processplatform/service/processing/work/manual/after/processing	work_manual_after	R7	record_insert
-processplatform_service_processing	PUT	/api/processplatform/service/processing/data/workcompleted/{id}	data_wc_update	R7	data_put_whole
-processplatform_service_processing	PUT	/api/processplatform/service/processing/data/workcompleted/{id}/{path}	data_wc_update_path	R7	data_set_key
 program_center	GET	/api/program_center/agent/{flag}/disable	u3_agent_flag_disable	K	u3_agent_set_enable
 program_center	GET	/api/program_center/agent/{flag}/enable	u3_agent_flag_enable	K	u3_agent_set_enable
 program_center	GET	/api/program_center/appstyle/image/application/top/erase	u3_appstyle_application_top_erase_get	K	u2_appstyle_erase_current
