@@ -1810,3 +1810,118 @@ mod surface_gate_tests {
         );
     }
 }
+
+// ──────────────────────────────────────────────────────────────────────────────
+// 第五十八批（2026-10 四轮）：processplatform_assemble_surface 的 12 把 mockputtopost 别名写。
+//
+// 这批是「GET 名 + PUT 实」的别名：`*_manage` 是 SELECT，`*_manage_mockputtopost` 才是
+// UPDATE/DELETE 真写（例如 task_id_processing_manage 只读、其 mockputtopost 才 UPDATE
+// PP_C_TASK）。原 12 把均不取会话、无门禁。现按归属列收门：
+// - 待阅/待办/已办：`u4_require_ppc_person`（`xperson`，本人或 admin）；
+// - work：`u4_require_work_actor`（`xcreatorPerson`）；
+// - 引擎 job 物理删：`u4_require_ppc_person(PP_C_JOB)`。
+// 无会话一律 401（先于任何 SQL，离线可证）。
+// ──────────────────────────────────────────────────────────────────────────────
+#[cfg(test)]
+mod b58_gate_tests {
+    use axum::extract::{Extension, Path};
+    use deadpool_postgres::tokio_postgres::{Config, NoTls};
+    use deadpool_postgres::{Manager, Pool};
+    use shared::error::AppError;
+
+    fn dead_pool() -> Pool {
+        let mgr = Manager::new(Config::new(), NoTls);
+        Pool::builder(mgr).max_size(1).build().unwrap()
+    }
+
+    /// 无会话臂：dead pool + None 会话，12 把必须全 401（门在 pool.get() 之前）。
+    #[tokio::test]
+    async fn b58_mockputtopost_writes_reject_without_session() {
+        let pool = dead_pool();
+        let p = || Path("x1".to_string());
+        let cases: Vec<(&str, Result<(), AppError>)> = vec![
+            (
+                "read_id_opinion_manage_mockputtopost",
+                crate::read_id_opinion_manage_mockputtopost(Extension(pool.clone()), None, p())
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "read_id_processing_manage_mockputtopost",
+                crate::read_id_processing_manage_mockputtopost(Extension(pool.clone()), None, p())
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "read_id_reset_manage_mockputtopost",
+                crate::read_id_reset_manage_mockputtopost(Extension(pool.clone()), None, p())
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "task_id_opinion_manage_mockputtopost",
+                crate::task_id_opinion_manage_mockputtopost(Extension(pool.clone()), None, p())
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "task_id_processing_manage_mockputtopost",
+                crate::task_id_processing_manage_mockputtopost(Extension(pool.clone()), None, p())
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "task_id_reset_manage_mockputtopost",
+                crate::task_id_reset_manage_mockputtopost(Extension(pool.clone()), None, p())
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "task_v2_id_reset",
+                crate::task_v2_id_reset(Extension(pool.clone()), None, p())
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "task_v2_id_reset_mockputtopost",
+                crate::task_v2_id_reset_mockputtopost(Extension(pool.clone()), None, p())
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "taskcompleted_id_opinion_manage_mockputtopost",
+                crate::taskcompleted_id_opinion_manage_mockputtopost(Extension(pool.clone()), None, p())
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "work_id_processing_mockputtopost",
+                crate::work_id_processing_mockputtopost(Extension(pool.clone()), None, p())
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "work_v2_id_add_split_mockputtopost",
+                crate::work_v2_id_add_split_mockputtopost(Extension(pool.clone()), None, p())
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "correlation_job_job_delete",
+                crate::correlation_job_job_delete(Extension(pool.clone()), None, p())
+                    .await
+                    .map(|_| ()),
+            ),
+        ];
+        assert_eq!(cases.len(), 12, "本批 12 把必须逐把点名");
+        let leaked: Vec<String> = cases
+            .iter()
+            .filter(|(_, r)| !matches!(r, Err(AppError::Unauthorized)))
+            .map(|(k, r)| format!("{k} => {:?}", r.as_ref().err()))
+            .collect();
+        assert!(
+            leaked.is_empty(),
+            "无会话未回 401（出现 Internal 就是门插在读库之后）：{leaked:?}"
+        );
+    }
+}
