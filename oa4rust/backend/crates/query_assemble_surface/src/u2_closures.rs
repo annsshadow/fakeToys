@@ -753,9 +753,12 @@ pub async fn table_row_delete(
 #[allow(non_snake_case)]
 pub async fn table_row_insert(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     Path(table_flag): Path<String>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十九批：动态表行插入收 admin 档。
+    crate::require_admin_opt(&pool.0, session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -783,9 +786,12 @@ pub async fn table_row_insert(
 #[allow(non_snake_case)]
 pub async fn table_row_insert_one(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     Path(table_flag): Path<String>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十九批：动态表行单条插入收 admin 档。
+    crate::require_admin_opt(&pool.0, session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
