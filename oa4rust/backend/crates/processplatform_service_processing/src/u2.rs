@@ -639,28 +639,36 @@ pub async fn data_work_delete_path(
 #[allow(non_snake_case)]
 pub async fn data_wc_update(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
     Json(body): Json<Value>,
 ) -> H {
+    // 第五十三批：写完成记录的数据 bundle，按完成记录发起人 / work 发起人校归属。
+    let session = crate::u4_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     if !entity_exists(&client, "x_workcompleted", &id).await? {
         return biz_err("workcompleted not found");
     }
     drop(client);
+    crate::u4_require_actors(&pool.0, &session, crate::U4ActorKey::WorkCompleted, &id).await?;
     data_put_whole(&pool, DATA_SCOPE_WC, &id, body).await
 }
 
 #[allow(non_snake_case)]
 pub async fn data_wc_update_path(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path((id, path)): Path<(String, String)>,
     Json(body): Json<Value>,
 ) -> H {
+    // 第五十三批：写完成记录的数据键，按完成记录发起人 / work 发起人校归属。
+    let session = crate::u4_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     if !entity_exists(&client, "x_workcompleted", &id).await? {
         return biz_err("workcompleted not found");
     }
     drop(client);
+    crate::u4_require_actors(&pool.0, &session, crate::U4ActorKey::WorkCompleted, &id).await?;
     data_set_key(&pool, DATA_SCOPE_WC, &id, &path, body, false).await
 }
 
@@ -1019,9 +1027,12 @@ async fn read_create(pool: &Pool, bundle: &str, body: Value, scope: &str, gate_t
 #[allow(non_snake_case)]
 pub async fn read_create_with_work(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(work_id): Path<String>,
     Json(body): Json<Value>,
 ) -> H {
+    // 第五十三批：给 work 造阅读回执，按 work 发起人校归属。
+    crate::u4_require_work_owner(&pool.0, session, &work_id).await?;
     read_create(&pool, &work_id, body, DATA_SCOPE_WORK, "x_work").await
 }
 
@@ -1029,9 +1040,13 @@ pub async fn read_create_with_work(
 #[allow(non_snake_case)]
 pub async fn read_create_with_workcompleted(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(wc_id): Path<String>,
     Json(body): Json<Value>,
 ) -> H {
+    // 第五十三批：给 workcompleted 造阅读回执，按完成记录发起人 / work 发起人校归属。
+    let session = crate::u4_session(session)?;
+    crate::u4_require_actors(&pool.0, &session, crate::U4ActorKey::WorkCompleted, &wc_id).await?;
     read_create(&pool, &wc_id, body, DATA_SCOPE_WC, "x_workcompleted").await
 }
 
@@ -1232,34 +1247,42 @@ async fn record_create_dedup(pool: &Pool, work_id: &str, body: Value) -> H {
 #[allow(non_snake_case)]
 pub async fn record_create_with_job(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(job): Path<String>,
     Json(body): Json<Value>,
 ) -> H {
+    // 第五十三批：按 job 落记录，job 即 work 归属键，按 work 发起人校归属。
+    crate::u4_require_work_owner(&pool.0, session, &job).await?;
     record_create_dedup(&pool, &job, body).await
 }
 
 /// POST record/work/processing
 #[allow(non_snake_case)]
-pub async fn record_work_processing(pool: Extension<Pool>, Json(body): Json<Value>) -> H {
+pub async fn record_work_processing(pool: Extension<Pool>, session: Option<Extension<shared::session::Session>>, Json(body): Json<Value>) -> H {
     let work = body_str(&body, &["work", "workId"]);
     if work.is_empty() {
         return biz_err("work is required");
     }
+    // 第五十三批：按 body.work 落 processing 记录，按 work 发起人校归属。
+    crate::u4_require_work_owner(&pool.0, session, &work).await?;
     record_create_dedup(&pool, &work, body).await
 }
 
 /// POST record/work/terminate
 #[allow(non_snake_case)]
-pub async fn record_work_terminate(pool: Extension<Pool>, Json(body): Json<Value>) -> H {
+pub async fn record_work_terminate(pool: Extension<Pool>, session: Option<Extension<shared::session::Session>>, Json(body): Json<Value>) -> H {
     let work = body_str(&body, &["work", "workId"]);
     if work.is_empty() {
         return biz_err("work is required");
     }
+    // 第五十三批：先无会话即拒（401 先于任何读库），再保留 not-found 语义，最后按 work 发起人校归属。
+    let session = crate::u4_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     if !entity_exists(&client, "x_work", &work).await? {
         return biz_err("work not found");
     }
     drop(client);
+    crate::u4_require_work_owner(&pool.0, Some(Extension(session)), &work).await?;
     record_create_dedup(&pool, &work, body).await
 }
 
@@ -1733,6 +1756,7 @@ pub async fn taskcompleted_press(
 #[allow(non_snake_case)]
 pub async fn taskcompleted_update_next_identity(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Json(body): Json<Value>,
 ) -> H {
     let id = body_str(&body, &["id", "taskId"]);
@@ -1740,6 +1764,9 @@ pub async fn taskcompleted_update_next_identity(
     if id.is_empty() || identity.is_empty() {
         return biz_err("id and nextTaskIdentity are required");
     }
+    // 第五十三批：改任务下一处理身份，按 task 负责人 / work 发起人两列 OR 校归属。
+    let session = crate::u4_session(session)?;
+    crate::u4_require_actors(&pool.0, &session, crate::U4ActorKey::Task, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let n = client
         .execute(
@@ -2252,15 +2279,18 @@ pub async fn work_draft_delete(
 
 /// POST work/manual/after/processing：人工流转后置记录（内容幂等去重）
 #[allow(non_snake_case)]
-pub async fn work_manual_after(pool: Extension<Pool>, Json(body): Json<Value>) -> H {
+pub async fn work_manual_after(pool: Extension<Pool>, session: Option<Extension<shared::session::Session>>, Json(body): Json<Value>) -> H {
     let work = body_str(&body, &["work", "workId"]);
     if work.is_empty() {
         return biz_err("work is required");
     }
+    // 第五十三批：先无会话即拒（401 先于任何读库），再保留 not-found 语义，最后按 work 发起人校归属。
+    let session = crate::u4_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     if !entity_exists(&client, "x_work", &work).await? {
         return biz_err("work not found");
     }
+    crate::u4_require_work_owner(&pool.0, Some(Extension(session)), &work).await?;
     if record_exists(
         &client,
         &work,
@@ -2476,7 +2506,9 @@ pub async fn wc_merge_flag(
 
 /// POST workcompleted/process/{processFlag}：为该流程已结束工作补齐完成记录（幂等）
 #[allow(non_snake_case)]
-pub async fn wc_process_flag(pool: Extension<Pool>, Path(process_flag): Path<String>) -> H {
+pub async fn wc_process_flag(pool: Extension<Pool>, session: Option<Extension<shared::session::Session>>, Path(process_flag): Path<String>) -> H {
+    // 第五十三批：按流程批量补完成记录（跨多 work 的运维作业），收 admin 档。
+    require_admin_opt(&pool.0, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -2506,7 +2538,9 @@ pub async fn wc_process_flag(pool: Extension<Pool>, Path(process_flag): Path<Str
 
 /// POST workcompleted/shift/time：平移完成时间（minutes 可正可负）
 #[allow(non_snake_case)]
-pub async fn wc_shift_time(pool: Extension<Pool>, Json(body): Json<Value>) -> H {
+pub async fn wc_shift_time(pool: Extension<Pool>, session: Option<Extension<shared::session::Session>>, Json(body): Json<Value>) -> H {
+    // 第五十三批：批量平移完成时间（ids 为空时动全表），收 admin 档。
+    require_admin_opt(&pool.0, session.as_deref()).await?;
     let minutes = body.get("minutes").and_then(|v| v.as_i64()).unwrap_or(0);
     if minutes == 0 || minutes.abs() > 5_256_000 {
         return biz_err("minutes must be non-zero within ±10 years");
@@ -2536,7 +2570,10 @@ pub async fn wc_shift_time(pool: Extension<Pool>, Json(body): Json<Value>) -> H 
 
 /// PUT workcompleted/{flag}/rollback：回滚完成态——对应工作恢复运行并补记 rollback
 #[allow(non_snake_case)]
-pub async fn wc_rollback_flag(pool: Extension<Pool>, Path(flag): Path<String>) -> H {
+pub async fn wc_rollback_flag(pool: Extension<Pool>, session: Option<Extension<shared::session::Session>>, Path(flag): Path<String>) -> H {
+    // 第五十三批：回滚完成态（恢复 work + 删完成记录 + 补记 rollback），按完成记录发起人 / work 发起人校归属。
+    let session = crate::u4_session(session)?;
+    crate::u4_require_actors(&pool.0, &session, crate::U4ActorKey::WorkCompleted, &flag).await?;
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     let row = tx

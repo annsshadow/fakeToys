@@ -3155,3 +3155,440 @@ mod security_gate_tests {
             .unwrap();
     }
 }
+
+// ──────────────────────────────────────────────────────────────────────────────
+// 第五十三批（2026-10 四轮）：processplatform_service_processing 剩余写面 26 把的门。
+//
+// 这批是前几批未覆盖的「引擎运行面续集」：建单、推进/重置待办、追加任务、快照上传、
+// 事件留痕、附件复制、完成记录合并/回滚、定时器起停、u2 契约面的完成记录数据写、
+// 阅读回执造数、记录造数、下一身份设置、人工流转后置、按流程批量补完成记录、
+// 批量平移完成时间。全部为真 DB 写（INSERT/UPDATE/DELETE），原不取会话、无门禁。
+//
+// 分档：
+// - work 归属（`u4_require_work_owner` / `u4_require_actor`）：按 `x_work.creator`；
+// - task/workcompleted 归属（`u4_require_actors`）：两列 OR（task.person/work.creator、
+//   wc.creator/work.creator），空归属行只允许 admin；
+// - admin（`require_admin_opt`）：跨多 work 的批量运维作业（按流程补完成记录、批量平移时间）；
+// - 建单（`create_process`）：新资源无既有属主，只要求有效会话。
+// 所有门都插在 `pool.get()` 之前（`u4_session`/`require_admin_opt` 先于任何读库），
+// 故「无会话 401」可离线证；`record_work_terminate`/`work_manual_after` 先 `u4_session`
+// 再保留原 not-found 语义、最后校归属，避免把「库连不上」误报成 401。
+// ──────────────────────────────────────────────────────────────────────────────
+#[cfg(test)]
+mod b53_gate_tests {
+    use axum::extract::{Extension, Path};
+    use axum::Json;
+    use deadpool_postgres::tokio_postgres::{Config, NoTls};
+    use deadpool_postgres::{Manager, Pool};
+    use serde_json::json;
+    use shared::error::AppError;
+
+    fn dead_pool() -> Pool {
+        let mgr = Manager::new(Config::new(), NoTls);
+        Pool::builder(mgr).max_size(1).build().unwrap()
+    }
+
+    fn non_admin() -> shared::session::Session {
+        shared::testing::test_session("b53-nonadmin")
+    }
+
+    fn timer() -> Extension<crate::timer::TimerRegistry> {
+        Extension(crate::timer::TimerRegistry::new())
+    }
+
+    /// 无会话臂：连不上库的 pool + None 会话，26 把必须全 401——
+    /// 出现 Internal 即门插在 pool.get() 之后。
+    #[tokio::test]
+    async fn b53_r7_writes_reject_without_session() {
+        let pool = dead_pool();
+        let cases: Vec<(&str, Result<(), AppError>)> = vec![
+            // ── lib.rs ────────────────────────────────────────────────
+            (
+                "create_process",
+                crate::create_process(
+                    Extension(pool.clone()),
+                    None,
+                    Json(crate::CreateProcessRequest {
+                        name: None,
+                        description: None,
+                        category: None,
+                    }),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "work_v2_id_add_split_p2",
+                crate::work_v2_id_add_split_p2(
+                    Extension(pool.clone()),
+                    None,
+                    Path(("w".to_string(), "w1".to_string())),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "work_manual_after_processing",
+                crate::work_manual_after_processing(
+                    Extension(pool.clone()),
+                    None,
+                    Path("w1".to_string()),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "task_id_processing",
+                crate::task_id_processing(
+                    Extension(pool.clone()),
+                    None,
+                    Path("t1".to_string()),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "task_v2_id_reset",
+                crate::task_v2_id_reset(Extension(pool.clone()), None, Path("t1".to_string()))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "task_v3_id_add",
+                crate::task_v3_id_add(Extension(pool.clone()), None, Path("w1".to_string()))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "taskcompleted_id_press_work_work",
+                crate::taskcompleted_id_press_work_work(
+                    Extension(pool.clone()),
+                    None,
+                    Path((
+                        "wc1".to_string(),
+                        "w1".to_string(),
+                        "x".to_string(),
+                    )),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "snap_upload",
+                crate::snap_upload(Extension(pool.clone()), None, Json(json!({})))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "event_add_update_table",
+                crate::event_add_update_table(Extension(pool.clone()), None, Json(json!({})))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "attachment_copy_work_workId",
+                crate::attachment_copy_work_workId(
+                    Extension(pool.clone()),
+                    None,
+                    Path(("a1".to_string(), "w1".to_string())),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "attachment_copy_workcompleted_workCompletedId",
+                crate::attachment_copy_workcompleted_workCompletedId(
+                    Extension(pool.clone()),
+                    None,
+                    Path("wc1".to_string()),
+                    Json(json!({})),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "workcompleted_flag_merge",
+                crate::workcompleted_flag_merge(
+                    Extension(pool.clone()),
+                    None,
+                    Path("wc1".to_string()),
+                    Json(json!({})),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "start_timer",
+                crate::start_timer(
+                    Extension(pool.clone()),
+                    timer(),
+                    None,
+                    Json(json!({})),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "cancel_timer",
+                crate::cancel_timer(
+                    Extension(pool.clone()),
+                    timer(),
+                    None,
+                    Path("j1".to_string()),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            // ── u2.rs ─────────────────────────────────────────────────
+            (
+                "data_wc_update",
+                crate::u2::data_wc_update(
+                    Extension(pool.clone()),
+                    None,
+                    Path("wc1".to_string()),
+                    Json(json!({})),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "data_wc_update_path",
+                crate::u2::data_wc_update_path(
+                    Extension(pool.clone()),
+                    None,
+                    Path(("wc1".to_string(), "p".to_string())),
+                    Json(json!({})),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "read_create_with_work",
+                crate::u2::read_create_with_work(
+                    Extension(pool.clone()),
+                    None,
+                    Path("w1".to_string()),
+                    Json(json!({})),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "read_create_with_workcompleted",
+                crate::u2::read_create_with_workcompleted(
+                    Extension(pool.clone()),
+                    None,
+                    Path("wc1".to_string()),
+                    Json(json!({})),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "record_create_with_job",
+                crate::u2::record_create_with_job(
+                    Extension(pool.clone()),
+                    None,
+                    Path("j1".to_string()),
+                    Json(json!({})),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "record_work_processing",
+                crate::u2::record_work_processing(
+                    Extension(pool.clone()),
+                    None,
+                    Json(json!({ "work": "w1" })),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "record_work_terminate",
+                crate::u2::record_work_terminate(
+                    Extension(pool.clone()),
+                    None,
+                    Json(json!({ "work": "w1" })),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "taskcompleted_update_next_identity",
+                crate::u2::taskcompleted_update_next_identity(
+                    Extension(pool.clone()),
+                    None,
+                    Json(json!({ "id": "t1", "nextTaskIdentity": "x" })),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "work_manual_after",
+                crate::u2::work_manual_after(
+                    Extension(pool.clone()),
+                    None,
+                    Json(json!({ "work": "w1" })),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "wc_process_flag",
+                crate::u2::wc_process_flag(Extension(pool.clone()), None, Path("p1".to_string()))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "wc_shift_time",
+                crate::u2::wc_shift_time(
+                    Extension(pool.clone()),
+                    None,
+                    Json(json!({ "minutes": 5 })),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "wc_rollback_flag",
+                crate::u2::wc_rollback_flag(Extension(pool.clone()), None, Path("wc1".to_string()))
+                    .await
+                    .map(|_| ()),
+            ),
+        ];
+        assert_eq!(cases.len(), 26, "本批 26 把必须逐把点名");
+        let leaked: Vec<String> = cases
+            .iter()
+            .filter(|(_, r)| !matches!(r, Err(AppError::Unauthorized)))
+            .map(|(k, r)| format!("{k} => {:?}", r.as_ref().err()))
+            .collect();
+        assert!(
+            leaked.is_empty(),
+            "无会话未回 401（出现 Internal 就是门插在读库之后）：{leaked:?}"
+        );
+    }
+
+    /// admin 臂：跨多 work 的批量运维作业，非管理员会话 403
+    /// （`is_admin` 对不可用库 fail-closed，亦 403，故本臂离线稳健）。
+    #[tokio::test]
+    async fn b53_admin_writes_non_admin_forbidden() {
+        let pool = shared::testing::test_pool();
+        let cases: Vec<(&str, Result<(), AppError>)> = vec![
+            (
+                "wc_process_flag",
+                crate::u2::wc_process_flag(
+                    Extension(pool.clone()),
+                    Some(Extension(non_admin())),
+                    Path("p1".to_string()),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "wc_shift_time",
+                crate::u2::wc_shift_time(
+                    Extension(pool.clone()),
+                    Some(Extension(non_admin())),
+                    Json(json!({ "minutes": 5 })),
+                )
+                .await
+                .map(|_| ()),
+            ),
+        ];
+        let leaked: Vec<String> = cases
+            .iter()
+            .filter(|(_, r)| !matches!(r, Err(AppError::Forbidden)))
+            .map(|(k, r)| format!("{k} => {:?}", r.as_ref().err()))
+            .collect();
+        assert!(
+            leaked.is_empty(),
+            "非管理员未回 403（出现 Internal 就是门插在读库之后）：{leaked:?}"
+        );
+    }
+
+    /// 归属臂（需真实 PostgreSQL）：行不存在 → 归属列全空 → 非 admin 一律 403
+    /// （严格口径，不把「缺失行」洗成放行）。`cargo test ... -- --ignored` 触发。
+    #[tokio::test]
+    #[ignore = "需真实 PostgreSQL（DATABASE_URL）"]
+    async fn b53_owner_writes_non_admin_forbidden() {
+        let pool = shared::testing::test_pool();
+        let cases: Vec<(&str, Result<(), AppError>)> = vec![
+            (
+                "task_id_processing",
+                crate::task_id_processing(
+                    Extension(pool.clone()),
+                    Some(Extension(non_admin())),
+                    Path("b53-missing-task".to_string()),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "task_v2_id_reset",
+                crate::task_v2_id_reset(
+                    Extension(pool.clone()),
+                    Some(Extension(non_admin())),
+                    Path("b53-missing-task".to_string()),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "snap_upload",
+                crate::snap_upload(
+                    Extension(pool.clone()),
+                    Some(Extension(non_admin())),
+                    Json(json!({ "workId": "b53-missing-work" })),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "read_create_with_work",
+                crate::u2::read_create_with_work(
+                    Extension(pool.clone()),
+                    Some(Extension(non_admin())),
+                    Path("b53-missing-work".to_string()),
+                    Json(json!({})),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "taskcompleted_id_press_work_work",
+                crate::taskcompleted_id_press_work_work(
+                    Extension(pool.clone()),
+                    Some(Extension(non_admin())),
+                    Path((
+                        "b53-missing-wc".to_string(),
+                        "b53-missing-work".to_string(),
+                        "x".to_string(),
+                    )),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "wc_rollback_flag",
+                crate::u2::wc_rollback_flag(
+                    Extension(pool.clone()),
+                    Some(Extension(non_admin())),
+                    Path("b53-missing-wc".to_string()),
+                )
+                .await
+                .map(|_| ()),
+            ),
+        ];
+        let leaked: Vec<String> = cases
+            .iter()
+            .filter(|(_, r)| !matches!(r, Err(AppError::Forbidden)))
+            .map(|(k, r)| format!("{k} => {:?}", r.as_ref().err()))
+            .collect();
+        assert!(
+            leaked.is_empty(),
+            "非管理员未回 403（出现 Internal 就是门插在读库之后）：{leaked:?}"
+        );
+    }
+}
