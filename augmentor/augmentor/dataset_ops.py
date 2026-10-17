@@ -293,8 +293,11 @@ class DatasetOperations:
             sample_size = min(config.size, len(items))
         # `is not None` 而非 falsy：ratio=0 语义是「采 0 条」，写成 `if config.ratio`
         # 会把 0 读成「未设置」而采全量（L149，B219；下游 0 条由下面的短路守卫接住）
+        # 界取 `require_ratio` 默认的 0-1：`ratio=2.0` 算出 2×全量，random 那支
+        # 当场抛裸 `ValueError: Sample larger than population`（实测 20 条 ⇒ API 500），
+        # 而「采两倍」本来就不是一个比例。
         elif config.ratio is not None:
-            sample_size = int(len(items) * require_ratio("ratio", config.ratio, -float("inf"), float("inf")))
+            sample_size = int(len(items) * require_ratio("ratio", config.ratio))
         else:
             sample_size = len(items)
 

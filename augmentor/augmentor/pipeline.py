@@ -646,7 +646,11 @@ class AugmentorPipeline:
         with open(input_file, 'r', encoding='utf-8') as f:
             items = json.load(f)
         
-        if formats:
+        # 判据是 `is not None` 而不是 truthiness（A343 族）：显式送空清单是
+        # 「这一族一个格式都不导」，交回空映射；只有不表态才走默认全格式。
+        # 从前 `if formats:` 把空清单读成没传，实测落进 `export_all_formats`
+        # 那支、照样按默认格式写出文件。
+        if formats is not None:
             results = {}
             for fmt in formats:
                 # 归一化为字符串：ExportFormat 成员直接进 f-string 会渲染成
@@ -726,7 +730,9 @@ class AugmentorPipeline:
         Args:
             input_file: 输入文件路径
             output_file: 输出文件路径
-            use_checkpoint: 是否使用断点续传
+            use_checkpoint: 是否使用断点续传。与同步入口同式：任务 ID 由
+                `input_file` 派生，命中断点时只跑未完成的条目，并把上一轮已生成的
+                产物载入输出文件（否则整份写回会覆盖掉已完成的成果）
             use_quality_check: 是否使用质量检查。`None`（默认）交给
                 `config.quality.enabled`，与同步入口 `augment_dataset` 同一道判
             use_dedup: 是否使用去重，同上，交给 `config.dedup.enabled`
@@ -748,15 +754,40 @@ class AugmentorPipeline:
         
         logger.info(f"异步增强启动: {len(items)} 条种子数据")
         
+        # 断点续传接线（L277）：`use_checkpoint` 在本入口从前是**死参数** —— 文档承诺
+        # 「跳过已完成条目 + 记进度」，而函数体一个字没读它，实测每次从零重跑、
+        # 进度面恒为空态。用法与同步入口 `augment_dataset` 逐字同式（同一份
+        # `CheckpointManager`、同样显式携带本运行那一份 `ckpt`，不靠管理器上的共享环境态）。
+        task_id = self.build_task_id(input_file)
+        ckpt = None
+        remaining_indices = list(range(len(items)))
+        all_results = []
+        if use_checkpoint:
+            ckpt = self.checkpoint_manager.load_checkpoint(task_id)
+            if ckpt is None:
+                ckpt = self.checkpoint_manager.create_checkpoint(task_id, len(items))
+            remaining_indices = self.checkpoint_manager.get_remaining_indices(ckpt)
+            skipped = len(items) - len(remaining_indices)
+            if skipped > 0:
+                logger.info(f"检测到断点，跳过 {skipped} 条已完成数据")
+                # 续传时必须载入上一轮的产物，否则这一轮的整份写回会把已完成的结果覆盖为空
+                output_path = Path(output_file)
+                if output_path.exists():
+                    with open(output_path, 'r', encoding='utf-8') as f:
+                        all_results = json.load(f)
+                else:
+                    logger.warning(
+                        f"断点显示已处理 {skipped} 条，但输出文件不存在，仅能保留本轮结果")
+        
         # 使用线程池执行同步增强逻辑，避免阻塞事件循环
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             tasks = []
-            for idx, item in enumerate(items):
+            for idx in remaining_indices:
                 # 提交到线程池
                 future = loop.run_in_executor(
                     executor,
                     self.augment_seed,
-                    item,
+                    items[idx],
                     use_quality_check,
                     []
                 )
@@ -764,12 +795,20 @@ class AugmentorPipeline:
             
             results = await asyncio.gather(*tasks, return_exceptions=True)
         
-        all_results = []
-        for result in results:
+        # `gather` 的返回顺序与提交顺序一致 ⇒ 结果与**它自己的**下标配对，
+        # 失败的那一笔记进断点而不是只留一行日志
+        for idx, result in zip(remaining_indices, results):
             if isinstance(result, Exception):
                 logger.error(f"异步处理单条数据失败: {result}")
+                if use_checkpoint:
+                    self.checkpoint_manager.update_progress(idx, False, checkpoint=ckpt)
                 continue
             all_results.extend(result)
+            if use_checkpoint:
+                self.checkpoint_manager.update_progress(idx, True, checkpoint=ckpt)
+        
+        if use_checkpoint:
+            self.checkpoint_manager.save_checkpoint(ckpt)
         
         # 去重
         if use_dedup and all_results:

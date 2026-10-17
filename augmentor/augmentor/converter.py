@@ -987,6 +987,7 @@ class DatasetConverter:
             container = self._infer_format(path)
             format = container if container in CONTAINER_FORMATS else "json"
 
+        from .validation import sheet_text_row  # 公式判据住 validation，见 A389 拍板①
         with open(path, 'w', encoding='utf-8', newline='') as f:
             if format == "jsonl":
                 for item in data:
@@ -995,13 +996,13 @@ class DatasetConverter:
                 if data:
                     writer = csv.DictWriter(f, fieldnames=csv_fieldnames(data))
                     writer.writeheader()
-                    writer.writerows(data)
+                    writer.writerows([sheet_text_row(row) for row in data])
             elif format == "tsv":
                 if data:
                     writer = csv.DictWriter(f, fieldnames=csv_fieldnames(data),
                                             delimiter="\t")
                     writer.writeheader()
-                    writer.writerows(data)
+                    writer.writerows([sheet_text_row(row) for row in data])
             else:
                 json.dump(data, f, ensure_ascii=False, indent=2)
 

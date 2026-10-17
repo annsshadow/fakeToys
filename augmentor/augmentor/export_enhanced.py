@@ -198,27 +198,24 @@ class EnhancedExporter:
     
     def _export_csv(self, items: List[Dict], output: Path, options: ExportOptions):
         """导出CSV格式"""
-        if not items:
-            return
-        
-        fieldnames = csv_fieldnames(items)
-        
+        # 空集不再 `return`：那一句让 `export()` 照样回 `output_path` 与成功，磁盘上却没有文件，
+        # 与 `export.py` 原生 CSV 分支按 A343 立起的「静默零写入 + 成功即缺陷」判据同族。
+        from .validation import sheet_text_row  # 判据住 validation，见 A389 拍板①
         with open(output, 'w', encoding='utf-8', newline='') as f:
-            writer = csv.DictWriter(f, fieldnames=fieldnames)
-            writer.writeheader()
-            writer.writerows(items)
+            if items:
+                writer = csv.DictWriter(f, fieldnames=csv_fieldnames(items))
+                writer.writeheader()
+                writer.writerows([sheet_text_row(row) for row in items])
     
     def _export_tsv(self, items: List[Dict], output: Path, options: ExportOptions):
         """导出TSV格式"""
-        if not items:
-            return
-        
-        fieldnames = csv_fieldnames(items)
-        
+        # 与 CSV 分支同一格：`tsv` 是 `POST /api/data/export` 打得到的格式，静默不写就是假成功。
+        from .validation import sheet_text_row  # 同一条公式判据，见 A389 拍板①
         with open(output, 'w', encoding='utf-8', newline='') as f:
-            writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter='\t')
-            writer.writeheader()
-            writer.writerows(items)
+            if items:
+                writer = csv.DictWriter(f, fieldnames=csv_fieldnames(items), delimiter='\t')
+                writer.writeheader()
+                writer.writerows([sheet_text_row(row) for row in items])
     
     def _export_alpaca(self, items: List[Dict], output: Path, options: ExportOptions):
         """导出Alpaca格式"""

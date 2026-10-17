@@ -627,7 +627,8 @@ async def list_backups_endpoint(
     summary="创建备份",
     dependencies=[Depends(verify_api_key)],
     responses=_error_responses(
-        (400, "`input_file` 为空或含 `..`、`name` 指向备份目录之外，或 " + DIR_EMPTY_DESC),
+        (400, "`input_file` 为空或含 `..`、`name` 不是一个可用路径段（含 `/`、反斜杠、`..`、`#`、`?`、"
+              "控制字符、尾随点或空白、超 255 字符 ⇒ 建得出来却寻不了址），或 " + DIR_EMPTY_DESC),
         (401, NO_KEY_DESC),
         (403, "源文件 `input_file` 或 `backup_dir` 落在数据目录白名单之外"),
         (404, "`input_file` 在白名单内，但那份数据文件不存在"),

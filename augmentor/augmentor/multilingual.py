@@ -49,7 +49,7 @@ class MultilingualSupport:
             max_workers: 批量翻译并发数
         """
         self.model_backend = model_backend
-        self.supported_langs = supported_langs or ["zh", "en"]
+        self.supported_langs = supported_langs if supported_langs is not None else ["zh", "en"]
         self.max_workers = max_workers
 
     def detect_language(self, text: str) -> str:

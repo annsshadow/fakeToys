@@ -57,6 +57,26 @@ _MULTIPART_PREFIX = b"multipart/form-data"
 FRAMING_MARGIN = 1 << 20
 
 
+def _declared_content_length(scope: dict) -> Optional[int]:
+    """任意 `Content-Type` 声明的体长度（JSON / urlencoded 同样要判上限）
+
+    Args:
+        scope: ASGI http scope
+
+    Returns:
+        `Content-Length` 的字节数；没声明、或值不是十进制非负整数时返回 `None`
+        —— 调用方据此放行，绝不因为「看不见」就拒
+    """
+    for name, value in scope.get("headers") or ():
+        if name.lower() == b"content-length":
+            try:
+                declared = int(value)
+            except (TypeError, ValueError):
+                return None
+            return declared if declared >= 0 else None
+    return None
+
+
 def _declared_multipart_bytes(scope: dict) -> Optional[int]:
     """从 ASGI scope 的头部取出「声明了总长度的 multipart 请求」的总字节数
 
@@ -109,16 +129,26 @@ class UploadBodyGate:
         """
         if scope["type"] == "http" and scope["method"] in UPLOAD_METHODS:
             declared = _declared_multipart_bytes(scope)
+            # multipart 之外（JSON / urlencoded）的体同样受 `web.max_upload_bytes` 管：
+            # 那把配置注释给的理由是「不设上限时一个客户端就能把服务端内存推到它想给
+            # 多少」，这条理由对 JSON 一样成立，而 Starlette 在依赖与路由之前就把整个
+            # JSON 体读进内存（实测 `max_upload_bytes=1` 时 24 MiB 的 JSON 打到
+            # `/api/dataset/stats` 仍是 200）。framing 余量只有 multipart 才需要。
+            margin = FRAMING_MARGIN
+            if declared is None:
+                declared = _declared_content_length(scope)
+                margin = 0
             if declared is not None:
                 limit = deps.max_upload_bytes()
-                if declared > limit + FRAMING_MARGIN:
+                if declared > limit + margin:
                     response = JSONResponse(
                         status_code=413,
                         content={
                             "detail": (
                                 f"上传声明 {declared} 字节，超过 "
-                                f"web.max_upload_bytes={limit} 加 multipart 余量 "
-                                f"{FRAMING_MARGIN}（未解析、未落盘）"
+                                f"web.max_upload_bytes={limit}"
+                                + (f" 加 multipart 余量 {FRAMING_MARGIN}" if margin else "")
+                                + "（未解析、未落盘）"
                             )
                         },
                     )

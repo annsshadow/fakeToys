@@ -105,7 +105,7 @@ class ImageProcessor:
         Args:
             supported_extensions: 支持的扩展名列表
         """
-        self.supported_extensions = supported_extensions or SUPPORTED_EXTENSIONS
+        self.supported_extensions = (supported_extensions if supported_extensions is not None else SUPPORTED_EXTENSIONS)
 
     def is_supported(self, path: str) -> bool:
         """判断文件是否为支持的图像格式
@@ -186,16 +186,25 @@ class ImageProcessor:
                 path=str(path), format="", valid=False, error="文件不存在"
             )
 
+        # 「判过存在再 stat」留着一个并发窗口：`POST /api/multimodal/scan` 是 `iterdir()`
+        # 排好队再逐只处理的，队列里任何一张在轮到自己之前被删掉，裸 `stat()` 抛的
+        # FileNotFoundError 就会穿过 try 之外那一段，把上面那条诚实的「文件不存在」读数
+        # 换成整次扫描失败。取尺寸这一步失败就是「文件不存在」，与早退那一格同口径。
+        try:
+            size_bytes = path.stat().st_size
+        except FileNotFoundError:
+            return ImageInfo(
+                path=str(path), format="", valid=False, error="文件不存在"
+            )
+
         if not self.is_supported(str(path)):
             return ImageInfo(
                 path=str(path),
                 format=path.suffix.lstrip('.'),
-                size_bytes=path.stat().st_size,
+                size_bytes=size_bytes,
                 valid=False,
                 error=f"不支持的图像格式: {path.suffix}"
             )
-
-        size_bytes = path.stat().st_size
 
         try:
             try:
