@@ -87,8 +87,8 @@ This pattern was applied atomically across all 17 core_entity crates in a single
 
 ## Related
 
-- [SeaORM Dual-Pool Coexistence](architecture-patterns/seaorm-dual-pool-coexistence.md)
-- [Plan Document Lifecycle Management](development-workflow/plan-status-lifecycle.md)
+- [SeaORM Dual-Pool Coexistence](../architecture-patterns/seaorm-dual-pool-coexistence.md)
+- [Plan Document Lifecycle Management](../development-workflow/plan-status-lifecycle.md)
 - **Fix commit:** `ba8d1368` — fix: catch panic in all core_entity routers with catch_unwind
 - **Prior attempts:** `2c47b3a0` → `a01d9832` → `6fcf5646` → `3cbb5fd1` → `ba8d1368`
-- **Plan:** `docs/plans/2026-08-09-001-refact-oa4rust-orm-migration-plan.md` (U1, Wave 1)
+- **Plan:** `docs/archived-plans/2026-08-09-001-refact-oa4rust-orm-migration-plan.md` (U1, Wave 1)

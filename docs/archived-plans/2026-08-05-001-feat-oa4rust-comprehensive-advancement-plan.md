@@ -3,7 +3,7 @@ title: feat: Comprehensive oa4rust advancement
 type: feat
 status: superseded
 date: 2026-08-05
-<!-- Superseded by: docs/plans/2026-08-07-001-feat-oa4rust-4wave-realization-plan.md -->
+<!-- Superseded by: docs/archived-plans/2026-08-07-001-feat-oa4rust-4wave-realization-plan.md -->
 origin: docs/brainstorms/2026-08-05-oa4rust-comprehensive-advancement-requirements.md
 ---
 
@@ -86,8 +86,8 @@ O2OA 后端当前 100% 基于 Java（Maven 55+ 模块），长期技术栈锁定
 
 ### Institutional Learnings
 
-- 现有计划 `docs/plans/2026-08-03-001-refactor-o2server-rust-rewrite-plan.md` 提供了 auth 模块迁移的详细设计，可作为参考
-- 密钥迁移计划 `docs/plans/2026-07-30-001-refactor-zero-secret-migration-plan.md` 提供了幂等迁移模式参考
+- 现有计划 `docs/archived-plans/2026-08-03-001-refactor-o2server-rust-rewrite-plan.md` 提供了 auth 模块迁移的详细设计，可作为参考
+- 密钥迁移计划 `docs/archived-plans/2026-07-30-001-refactor-zero-secret-migration-plan.md` 提供了幂等迁移模式参考
 - 仓库中无 `docs/solutions/` 目录
 
 ### External References
@@ -548,7 +548,7 @@ O2OA 后端当前 100% 基于 Java（Maven 55+ 模块），长期技术栈锁定
 ## Sources & References
 
 - **Origin document:** [docs/brainstorms/2026-08-05-oa4rust-comprehensive-advancement-requirements.md](../brainstorms/2026-08-05-oa4rust-comprehensive-advancement-requirements.md)
-- Related plan: `docs/plans/2026-08-03-001-refactor-o2server-rust-rewrite-plan.md`
+- Related plan: `docs/archived-plans/2026-08-03-001-refactor-o2server-rust-rewrite-plan.md`
 - Related code: `oa4rust/src/main.rs`, `oa4rust/crates/control/`, `oa4rust/crates/auth/`, `oa4rust/crates/personal/`, `oa4rust/crates/personal_extend/`
 - Related docs: `docs/brainstorms/2026-08-05-oa4rust-comprehensive-advancement-requirements.md`
 - External references: Axum 官方示例, Cargo workspace 文档, SQLx + deadpool-postgres 集成文档

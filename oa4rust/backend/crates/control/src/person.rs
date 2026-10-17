@@ -67,7 +67,7 @@ pub async fn get(
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // xadmin 是 O2OA 内置超级管理员，非数据库 person 记录；o2server 侧返回虚拟详情
-    // （实测基准见 docs/audits/behavior-compare-first-run.md），此处对齐该语义。
+    // （实测基准见 docs/audits/2026-08-24-001-behavior-compare-first-run.md），此处对齐该语义。
     if flag == "xadmin" {
         let data = Value::Object(serde_json::Map::from_iter([
             (

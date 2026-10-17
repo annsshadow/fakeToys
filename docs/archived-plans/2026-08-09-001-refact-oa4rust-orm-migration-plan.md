@@ -587,5 +587,5 @@ auth, GET, /api/authentication/whoami, x_organization_assemble_authentication, j
 - **Endpoint inventory:** [docs/brainstorms/oa4rust-endpoint-inventory.md](../brainstorms/oa4rust-endpoint-inventory.md)
 - **Code review:** [docs/brainstorms/oa4rust-code-review-2026-08-08.md](../brainstorms/oa4rust-code-review-2026-08-08.md)
 - Related code: `oa4rust/crates/shared/src/response.rs`, `oa4rust/crates/shared/src/db.rs`, `oa4rust/crates/control/src/person.rs`, `oa4rust/crates/control/src/pagination.rs`
-- Related plans: [docs/plans/2026-08-07-001-feat-oa4rust-4wave-realization-plan.md](2026-08-07-001-feat-oa4rust-4wave-realization-plan.md)
+- Related plans: [docs/archived-plans/2026-08-07-001-feat-oa4rust-4wave-realization-plan.md](2026-08-07-001-feat-oa4rust-4wave-realization-plan.md)
 - External docs: SeaORM 2.0, SeaQuery, Deadpool-postgres 0.12

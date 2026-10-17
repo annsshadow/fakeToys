@@ -143,7 +143,7 @@ func settle(t *testing.T, e *e2e, tokStr string, skills string) (int, map[string
 		t.Fatalf("购买响应失败 %d %v", status, body)
 	}
 	id := num(body, "token_id")
-	payload := settleBody(id)
+	payload := e.settleBody(t, id)
 	payload["replay_skills"] = skills
 	st, resp := e.post(t, "/api/v1/battle/settle", tokStr, payload)
 	return st, resp, id

@@ -119,12 +119,12 @@ nginx -s reload
 
 ## Related
 
-- [Plan Document Lifecycle Management](development-workflow/plan-status-lifecycle.md)
-- [SeaORM Dual-Pool Coexistence](architecture-patterns/seaorm-dual-pool-coexistence.md)
-- [Single Source of Truth: Migration Status](best-practices/single-source-of-truth-migration-status.md)
+- [Plan Document Lifecycle Management](../development-workflow/plan-status-lifecycle.md)
+- [SeaORM Dual-Pool Coexistence](seaorm-dual-pool-coexistence.md)
+- [Single Source of Truth: Migration Status](../best-practices/single-source-of-truth-migration-status.md)
 - **Origin:** `docs/brainstorms/2026-08-05-oa4rust-comprehensive-advancement-requirements.md`
-- **Plan:** `docs/plans/2026-08-07-001-feat-oa4rust-4wave-realization-plan.md`
-- **Rollback plan:** `docs/plans/2026-08-10-001-prod-readiness-plan.md` (deferred: rollback playbook)
+- **Plan:** `docs/archived-plans/2026-08-07-001-feat-oa4rust-4wave-realization-plan.md`
+- **Rollback plan:** `docs/archived-plans/2026-08-10-001-prod-readiness-plan.md` (deferred: rollback playbook)
 - **Campaign retrospective:** `docs/solutions/best-practices/oa4rust-o2server-parity-closure-campaign-2026-08-25.md`
 - **Residual gaps:** `docs/brainstorms/2026-08-25-oa4rust-o2server-residual-gaps-requirements.md`
-- **Current parity state:** `docs/audits/final-coverage-sweep.md` (99.77% as of 2026-08-23)
+- **Current parity state:** `docs/audits/2026-08-24-002-final-coverage-sweep.md` (99.77% as of 2026-08-23)

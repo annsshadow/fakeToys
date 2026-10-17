@@ -10,7 +10,7 @@
 - ``api/routes/vector.py:150`` —— ``except HTTPException: raise`` 那一支的 ``raise``
 - ``api/routes/multimodal.py:102`` 与 ``:113`` —— 「两级都空 ⇒ 交给处理器内置默认」
 - ``augmentor/semantic.py:94`` —— 空文本清单的早退
-- ``augmentor/versioning.py:275-276`` —— 当前版本指针**是软链接**那一形
+- ``augmentor/versioning.py:283-284`` —— 当前版本指针**是软链接**那一形
 - ``augmentor/data/image.py:135-136`` —— Pillow 在场时的解析路径
 
 **为什么这不是凑覆盖率**：``except HTTPException: raise`` 是本轮守卫
@@ -24,7 +24,7 @@
 - ``semantic.py:93-94`` 不是防崩护栏。实测 ``normalize_vectors(np.zeros((0, d)))``
   不抛、``list(...)`` 也得到 ``[]`` ⇒ 早退与不早退**同值**，它是等价类快路径。
   本文件按快路径接线，并把它唯一有牙齿的那一格（早退不越过维度闸）钉住。
-- ``versioning.py:275-276`` 的真软链接形状本机不可测：无特权创建符号链接会抛
+- ``versioning.py:283-284`` 的真软链接形状本机不可测：无特权创建符号链接会抛
   ``WinError 1314``。这里替的是**指针对象**本身（只替 ``is_symlink()`` 与 ``resolve()``），
   ``with_suffix('.txt')`` 仍走真实路径 ⇒ ``.txt`` 那一档的读法没有被替身掩盖，
   配套的反向臂证明第一臂的返回值确实来自软链接分支。
@@ -175,7 +175,7 @@ class TestEmptyTextInputShortCircuits:
         assert list(normalize_vectors(rows)) == []
 
 
-# ============ 四、versioning.py:275-276 —— 当前版本指针是软链接那一形 ============
+# ============ 四、versioning.py:283-284 —— 当前版本指针是软链接那一形 ============
 
 
 class _PointerLike:

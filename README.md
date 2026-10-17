@@ -28,7 +28,7 @@
 
 | 子项目 | 简介 | 技术栈 |
 | --- | --- | --- |
-| 🦀 **[oa4rust](oa4rust/)** | Rust 重写的企业 OA 系统，97 个 crate workspace；前端桌面/移动双端，bundle 优化至 96KB；跨账号缓存隔离、TypeScript strict | Rust · Axum · Vue3 · uni-app · PostgreSQL |
+| 🦀 **[oa4rust](oa4rust/)** | Rust 重写的企业 OA 系统，96 个 crate workspace；前端桌面/移动双端，bundle 优化至 96KB；跨账号缓存隔离、TypeScript strict | Rust · Axum · Vue3 · uni-app · PostgreSQL |
 | 💥 **[laiyipao](laiyipao/)** | 塔防+元素反应小程序游戏，CI 全面落地（Go/Vue/uni-app 三端自动化测试）；确定性战斗引擎、回放验真机制 | Go · Fiber · uni-app · Vue3 · PostgreSQL |
 | 🧪 **[augmentor](augmentor/)** | AI 训练数据增强工具 v3.0，68 个 REST 端点、7872 单测 97% 覆盖；React 11 页面、配置写入闭环、性能优化 | Python · FastAPI · React · Ant Design |
 | ✅ **[auto-checkin](auto-checkin/)** | 大模型公益站自动签到面板，三站点（vyceai/agentrouter/justwoker）成熟；自动化测试+诊断完整、隐私本地化 | Node · Playwright · Express |
@@ -42,7 +42,7 @@
 用 Rust 重写的企业 OA 系统（源自 O2OA），追求更强的性能、内存安全与更低的资源占用。
 
 **架构特点**
-- 后端：Axum + Tokio 异步栈，PostgreSQL 持久化，**97 个 crate** 的 Cargo workspace
+- 后端：Axum + Tokio 异步栈，PostgreSQL 持久化，**96 个 crate** 的 Cargo workspace
 - 前端：pnpm workspace 统一管理桌面端（Vue3 + Vite）和移动端（uni-app）
 - 类型驱动 SDK：统一 API 客户端服务两端，跨账号缓存隔离保护
 - 质量保障：TypeScript strict 模式、Vitest 单测、Playwright E2E、三端契约守卫
@@ -73,12 +73,12 @@ pnpm install && pnpm dev
 **核心创新**
 - 元素反应矩阵：攻击力权重结构性 ≤30%，堆数值无法绕过搭配收益
 - 确定性战斗：定点整数 + 确定性 PRNG，回放哈希验真
-- 地形机制：5 类可交互地形（油桶/潮汐闸/风障/掩体/蓄能塔），41% 关卡使用
+- 地形机制：5 类可交互地形（油桶/潮汐闸/风障/掩体/蓄能塔），25% 关卡使用
 - 防线值守：构筑快照本地模拟，服务端不跑战斗引擎
 
 **工程完善**
 - CI 全面进仓：Go server / Vue admin / uni-app miniapp 三端自动化测试
-- 48 张业务表 + goose 迁移、端到端验收脚本
+- 49 张业务表 + goose 迁移、端到端验收脚本
 - 双端契约守卫、公式一致性测试、100 关零死锁验证
 
 ```bash
@@ -177,7 +177,7 @@ Cool College OA 免登 Token 生成工具，支持 AES 加密/解密、MD5、Bas
 
 ```
 fakeToys/
-├── oa4rust/          # 🦀 Rust OA 后端 + 前端双端（97 crates + Vue3 + uni-app）
+├── oa4rust/          # 🦀 Rust OA 后端 + 前端双端（96 crates + Vue3 + uni-app）
 ├── laiyipao/         # 💥 塔防元素反应游戏（Go server + uni-app + Vue admin）
 ├── augmentor/        # 🧪 AI 数据增强工具（Python + FastAPI + React）
 ├── auto-checkin/     # ✅ 自动签到面板（Node + Playwright）

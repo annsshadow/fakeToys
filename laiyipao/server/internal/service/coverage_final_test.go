@@ -18,6 +18,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/laiyipao/server/internal/domain"
 )
@@ -30,7 +31,7 @@ import (
 func TestResolveUserDBError(t *testing.T) {
 	broken := openBrokenService(t)
 	// 用故障库自己的签发器造一个结构合法的 user 令牌 —— 签发不碰库。
-	token, _, err := broken.JWT.Issue(1, "user")
+	token, _, err := broken.JWT.Issue(1, "user", "")
 	if err != nil {
 		t.Fatalf("签发失败：%v", err)
 	}
@@ -42,12 +43,16 @@ func TestResolveUserDBError(t *testing.T) {
 // TestResolveAdminDBError 同上，针对管理员令牌。
 func TestResolveAdminDBError(t *testing.T) {
 	broken := openBrokenService(t)
-	token, _, err := broken.JWT.Issue(1, "admin")
+	// 签一个**结构合法但没有会话 id** 的管理员令牌（sid=""）：
+	// 第 155 轮起会话检查在 status 查询之前，所以「会话缺失」先于
+	// 「库故障」被拒 —— 对这条故障分支测试而言两者都非 nil 即可，
+	// 断言的是 ResolveAdmin 不把库故障吞掉。
+	token, _, err := broken.JWT.Issue(1, "admin", "")
 	if err != nil {
 		t.Fatalf("签发失败：%v", err)
 	}
 	if _, err := broken.ResolveAdmin(context.Background(), token); err == nil {
-		t.Error("库故障时 admin status 查询应报错上抛")
+		t.Error("库故障时 ResolveAdmin 应报错上抛（不能静默放行）")
 	}
 }
 
@@ -574,8 +579,82 @@ func TestChallengeDefenseStealSkippedWhenOwnerBroke(t *testing.T) {
 	}
 }
 
+// TestListDefensesDoesNotWriteCounters 锁住「GET 端点不得有写副作用」。
+//
+// # 为什么值得单独一条测试
+//
+// `dailyChallengeCounters` 曾经是一条 `INSERT … ON CONFLICT DO UPDATE`
+// upsert，而它唯一的调用方 `ListDefenses` 对应 **GET /api/v1/defenses**。
+// 于是一个只读端点每次被浏览都写一行：表随 DAU 单调增长、DO UPDATE 拿
+// 行锁与 `ChallengeDefense` 预锁竞争、每次刷新都是一次写放大。
+//
+// 修成只读之后，**没有任何既有测试会红** —— 它们的断言都是
+// 「attempts 读出来对不对」，而那两种实现给出同样的读数。
+// 这正是本项目反复记录的形态：修复的行为本身 invisible 于既有断言。
+//
+// 所以判据必须是形态：读之前数一次行数，读之后行数必须**不变**。
+// 把实现改回 upsert（哪怕 DO UPDATE 的值完全相同），这条会红。
+func TestListDefensesDoesNotWriteCounters(t *testing.T) {
+	ts := openScratchService(t)
+	ctx := context.Background()
+	me := ts.newUser(t, ctx)
+	other := ts.newUser(t, ctx)
+	if _, err := ts.SaveDefense(ctx, other, SaveDefenseInput{Name: "候选线", Skills: []int{1}}); err != nil {
+		t.Fatalf("建候选防线失败：%v", err)
+	}
+
+	countRows := func() int {
+		var n int
+		if err := ts.pool.QueryRow(context.Background(),
+			`SELECT COUNT(*) FROM user_daily_challenges WHERE user_id = $1`, me).Scan(&n); err != nil {
+			t.Fatalf("数计数行失败：%v", err)
+		}
+		return n
+	}
+
+	before := countRows()
+	if before != 0 {
+		t.Fatalf("前置条件：新玩家今天不应有计数行，实际 %d 行", before)
+	}
+
+	// 反复读：只读端点读多少次都不该落行。
+	for i := 0; i < 3; i++ {
+		if _, _, err := ts.ListDefenses(ctx, me); err != nil {
+			t.Fatalf("第 %d 次列表失败：%v", i+1, err)
+		}
+	}
+
+	if after := countRows(); after != before {
+		t.Errorf("GET /defenses 之后计数行从 %d 变成 %d —— "+
+			"读路径不得写 user_daily_challenges", before, after)
+	}
+
+	// 同时确认「读路径不再建行」没有把「读不到既有行」这件事弄坏：
+	// 显式写入一行后，读数必须如实反映出来。
+	ts.exec(t, `INSERT INTO user_daily_challenges (user_id, challenge_date, attempts, stolen_times)
+	            VALUES ($1, $2, $3, $4)`,
+		me, periodStart(time.Now(), "daily").Format("2006-01-02"), 2, 1)
+	_, candidates, err := ts.ListDefenses(ctx, me)
+	if err != nil {
+		t.Fatalf("列表失败：%v", err)
+	}
+	if len(candidates) == 0 {
+		t.Fatal("应有候选防线")
+	}
+	for _, c := range candidates {
+		if !c.CanChallenge {
+			t.Errorf("attempts=2 < 上限 %d 时应仍可挑战：%+v", DefenseAttemptLimit, c)
+		}
+	}
+}
+
 // TestListDefensesAttemptsUsedUp 挑战次数用尽时，候选防线必须标记
 // can_challenge=false 并给出封锁文案（else 分支）。
+//
+// ⚠️ 第 154 轮：前置条件改了。原写法是「先 ListDefenses 一次把计数行
+// 建出来，再 UPDATE 那行」—— 而 `dailyChallengeCounters` 现在**只读**，
+// 行不存在就返回 0（见那个函数的说明：GET 端点不该有写副作用）。
+// 所以现在改成直接插入计数行，语义等价且不再依赖读路径会写库。
 func TestListDefensesAttemptsUsedUp(t *testing.T) {
 	ts := openScratchService(t)
 	ctx := context.Background()
@@ -584,12 +663,10 @@ func TestListDefensesAttemptsUsedUp(t *testing.T) {
 	if _, err := ts.SaveDefense(ctx, owner, SaveDefenseInput{Name: "候选线", Skills: []int{1}}); err != nil {
 		t.Fatalf("建候选防线失败：%v", err)
 	}
-	// 先触发一次计数行创建，再把 attempts 顶到上限
-	if _, _, err := ts.ListDefenses(ctx, me); err != nil {
-		t.Fatalf("首次列表失败：%v", err)
-	}
-	ts.exec(t, `UPDATE user_daily_challenges SET attempts = $2
-	            WHERE user_id = $1 AND challenge_date = CURRENT_DATE`, me, DefenseAttemptLimit)
+	// 直接写入计数行：attempts 顶到上限，日期用 Go 侧的当日口径
+	//（与服务端 periodStart(now,"daily") 一致，不能用 CURRENT_DATE —— 那依赖 PG 会话时区）。
+	ts.exec(t, `INSERT INTO user_daily_challenges (user_id, challenge_date, attempts, stolen_times)
+	            VALUES ($1, $2, $3, 0)`, me, periodStart(time.Now(), "daily").Format("2006-01-02"), DefenseAttemptLimit)
 	_, candidates, err := ts.ListDefenses(ctx, me)
 	if err != nil {
 		t.Fatalf("列表失败：%v", err)

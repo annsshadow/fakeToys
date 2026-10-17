@@ -1,0 +1,21 @@
+[Unit]
+Description=LaiYiPao Game Platform API (isolated, test env)
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/usr/local/laiyipao
+# config.env carries DATABASE_URL (with password) and APP_ENV, kept 600
+EnvironmentFile=/usr/local/laiyipao/etc/config.env
+ExecStart=/usr/local/laiyipao/bin/lyp-server-amd64
+Restart=on-failure
+RestartSec=5
+LimitNOFILE=65535
+
+StandardOutput=append:/usr/local/laiyipao/logs/stdout.log
+StandardError=append:/usr/local/laiyipao/logs/stderr.log
+
+[Install]
+WantedBy=multi-user.target

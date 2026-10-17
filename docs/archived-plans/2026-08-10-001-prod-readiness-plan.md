@@ -22,9 +22,9 @@ oa4rust 已完成 81 个 crate 的真实化和 SeaORM 迁移，但 `docs/plans/`
 
 ## Requirements
 
-- R1. 将 `docs/plans/2026-08-07-001-feat-oa4rust-4wave-realization-plan.md` 和 `docs/plans/2026-08-09-001-refact-oa4rust-orm-migration-plan.md` 的 `status` 更新为 `completed`
-- R2. 将 `docs/plans/2026-08-05-001-feat-oa4rust-comprehensive-advancement-plan.md`、`docs/plans/2026-08-06-001-feat-oa4rust-full-realization-plan.md`、`docs/plans/2026-08-03-001-refactor-o2server-rust-rewrite-plan.md` 的 `status` 更新为 `superseded`，并添加取代说明注释
-- R3. 将 `docs/plans/2026-07-30-001-refactor-zero-secret-migration-plan.md` 的 `status` 更新为 `completed`（该文件无 status 字段，需在 frontmatter 中添加 `status: completed`）
+- R1. 将 `docs/archived-plans/2026-08-07-001-feat-oa4rust-4wave-realization-plan.md` 和 `docs/archived-plans/2026-08-09-001-refact-oa4rust-orm-migration-plan.md` 的 `status` 更新为 `completed`
+- R2. 将 `docs/archived-plans/2026-08-05-001-feat-oa4rust-comprehensive-advancement-plan.md`、`docs/archived-plans/2026-08-06-001-feat-oa4rust-full-realization-plan.md`、`docs/archived-plans/2026-08-03-001-refactor-o2server-rust-rewrite-plan.md` 的 `status` 更新为 `superseded`，并添加取代说明注释
+- R3. 将 `docs/archived-plans/2026-07-30-001-refactor-zero-secret-migration-plan.md` 的 `status` 更新为 `completed`（该文件无 status 字段，需在 frontmatter 中添加 `status: completed`）
 - R4. 为 `program_center_core_entity` 的 5 个实体补全 POST/PUT/DELETE 端点
 - R5. 写操作包含参数验证和软删除过滤
 - R6. 新增集成测试覆盖 happy path 和 error path
@@ -111,16 +111,16 @@ oa4rust 已完成 81 个 crate 的真实化和 SeaORM 迁移，但 `docs/plans/`
 **Dependencies:** None
 
 **Files:**
-- Modify: `docs/plans/2026-08-07-001-feat-oa4rust-4wave-realization-plan.md`（status → completed）
-- Modify: `docs/plans/2026-08-09-001-refact-oa4rust-orm-migration-plan.md`（status → completed）
-- Modify: `docs/plans/2026-07-30-001-refactor-zero-secret-migration-plan.md`（status → completed）
-- Modify: `docs/plans/2026-08-05-001-feat-oa4rust-comprehensive-advancement-plan.md`（status → superseded，添加取代说明）
-- Modify: `docs/plans/2026-08-06-001-feat-oa4rust-full-realization-plan.md`（status → superseded，添加取代说明）
-- Modify: `docs/plans/2026-08-03-001-refactor-o2server-rust-rewrite-plan.md`（status → superseded，添加取代说明）
+- Modify: `docs/archived-plans/2026-08-07-001-feat-oa4rust-4wave-realization-plan.md`（status → completed）
+- Modify: `docs/archived-plans/2026-08-09-001-refact-oa4rust-orm-migration-plan.md`（status → completed）
+- Modify: `docs/archived-plans/2026-07-30-001-refactor-zero-secret-migration-plan.md`（status → completed）
+- Modify: `docs/archived-plans/2026-08-05-001-feat-oa4rust-comprehensive-advancement-plan.md`（status → superseded，添加取代说明）
+- Modify: `docs/archived-plans/2026-08-06-001-feat-oa4rust-full-realization-plan.md`（status → superseded，添加取代说明）
+- Modify: `docs/archived-plans/2026-08-03-001-refactor-o2server-rust-rewrite-plan.md`（status → superseded，添加取代说明）
 
 **Approach:**
 - 已完成计划：将 frontmatter 中 `status: active` 改为 `status: completed`
-- 已取代计划：将 `status` 改为 `superseded`，在 frontmatter 后添加 `<!-- Superseded by: docs/plans/2026-08-07-001-feat-oa4rust-4wave-realization-plan.md -->` 等注释
+- 已取代计划：将 `status` 改为 `superseded`，在 frontmatter 后添加 `<!-- Superseded by: docs/archived-plans/2026-08-07-001-feat-oa4rust-4wave-realization-plan.md -->` 等注释
 - 不删除任何文件，保留历史追溯
 
 **Test scenarios:**

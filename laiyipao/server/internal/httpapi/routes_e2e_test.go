@@ -606,7 +606,53 @@ func num2int(v any) float64 {
 // --- 战斗：开局 → 结算 → 回放 → 验真 ---
 
 // settleBody 构造一份合法的失败局结算上报。
-func settleBody(tokenID int64) map[string]any {
+// settleBody 造一份结算请求体。
+//
+// # ⚠️ `replay_hash` 必须是**真哈希**（2026-10-15 整局重算接线时改的）
+//
+// 改之前这里是占位假值 "abcdef0123456789"。接线后 `recomputeEngine`
+// 拿存档输入重跑整局，真哈希与它必然不符，于是在 enforce 档（缺省）
+// 把每一次 e2e 结算都拒了 —— 连带 8 个 admin 验真用例集体变红，
+// 它们只是需要一个「已结算的战报」，却在结算那一步就被拦下了。
+//
+// # 为什么不能改成空串
+//
+// 空串（「客户端未上报」）确实能过重算，但 `TestAdminVerifyRecordsIntoSameTable`
+// 明确断言「存下来的 replay_hash 非空」——
+// /admin/battles/{id}/verify 这个功能的**被测对象就是那个哈希**。
+// 所以这里必须给真值，不能走兼容路径。
+//
+// 真哈希怎么来：按 (关卡, 种子, 构筑, 选牌) 跑一遍引擎。
+// 这与客户端做的事完全一致 —— 复刻的是 `recomputeEngine` 的输入组装，
+// 不是调用它（要拿的是「玩家本该上报的那个值」，而它的入参里已经含了
+// 玩家上报的哈希）。
+//
+// # ⚠️ 本文件里另有几处 "0000000000000000"
+//
+// 那些是 /admin/battles/{id}/verify 与 /defense/challenge 的入参，
+// **不经过 SettleBattle**，不要跟着改。
+// storedHash 读回某场战报**实际存进去**的 replay_hash。
+//
+// 为什么不能硬编码：整局重算接线后 `settleBody` 填的是按真实输入算出的
+// 哈希，一个固定字面量永远对不上。
+// 而这条断言要测的是「`/battle/verify` 拿**同一个哈希**回来应 matched=true」——
+// 它要的是「与存档里那个一致」，不是「与某个常量一致」。
+func storedHash(t *testing.T, e *e2e, battleID int64) string {
+	t.Helper()
+	var h string
+	if err := e.pool.QueryRow(t.Context(),
+		`SELECT replay_hash FROM battle_records WHERE id = $1`, battleID).Scan(&h); err != nil {
+		t.Fatalf("读战报 %d 的 replay_hash 失败：%v", battleID, err)
+	}
+	if h == "" {
+		t.Fatalf("战报 %d 的 replay_hash 是空的 —— settleBody 没填上", battleID)
+	}
+	return h
+}
+
+func (e *e2e) settleBody(t *testing.T, tokenID int64) map[string]any {
+	t.Helper()
+	picks := []int{0, 1, -1}
 	return map[string]any{
 		"token_id":       tokenID,
 		"result":         "lose",
@@ -618,12 +664,49 @@ func settleBody(tokenID int64) map[string]any {
 		"heat_max":       50,
 		"hp_left":        500,
 		"wave_reached":   1,
-		"replay_hash":    "abcdef0123456789",
+		"replay_hash":    e.realReplayHash(t, tokenID, picks),
 		"elements_used":  map[string]int{"fire": 3},
 		"reactions_used": map[string]int{"overheat": 2},
 		"terrain_used":   []string{},
-		"card_picks":     []int{0, 1, -1},
+		"card_picks":     picks,
 	}
+}
+
+// realReplayHash 按「关卡 + 种子 + 构筑 + 选牌」跑一遍引擎，拿真哈希。
+func (e *e2e) realReplayHash(t *testing.T, tokenID int64, picks []int) string {
+	t.Helper()
+	ctx := t.Context()
+
+	var userID int64
+	var seedText string
+	var levelID int
+	if err := e.pool.QueryRow(ctx,
+		`SELECT user_id, seed, level_id FROM battle_tokens WHERE id = $1`, tokenID).
+		Scan(&userID, &seedText, &levelID); err != nil {
+		t.Fatalf("读 battle_tokens 失败：%v", err)
+	}
+
+	build, err := e.svc.LoadBuildSnapshot(ctx, userID)
+	if err != nil {
+		t.Fatalf("读构筑快照失败：%v", err)
+	}
+	buildRaw, err := json.Marshal(build)
+	if err != nil {
+		t.Fatalf("构筑快照编码失败：%v", err)
+	}
+	var bs domain.BuildSnapshot
+	if err := json.Unmarshal(buildRaw, &bs); err != nil {
+		t.Fatalf("构筑快照解码失败：%v", err)
+	}
+
+	out := domain.Replay(
+		domain.GenerateLevel(levelID), bs, seedText, picks, "",
+		domain.EnemiesByID(), domain.SkillsByID(), domain.DefaultScoreRules(),
+	)
+	if out.Err != nil {
+		t.Fatalf("重算跑不起来：%v", out.Err)
+	}
+	return out.ComputedHash
 }
 
 func TestE2EBattleFullCycle(t *testing.T) {
@@ -682,7 +765,7 @@ func TestE2EBattleFullCycle(t *testing.T) {
 	if status != fiber.StatusNotFound {
 		t.Errorf("未知 token 应 404，实际 %d", status)
 	}
-	bad := settleBody(tokenID)
+	bad := e.settleBody(t, tokenID)
 	bad["kills"] = 100000 // 远超关卡总怪数
 	status, _ = e.post(t, "/api/v1/battle/settle", tok, bad)
 	if status != fiber.StatusUnprocessableEntity {
@@ -690,7 +773,7 @@ func TestE2EBattleFullCycle(t *testing.T) {
 	}
 
 	// 合法结算
-	status, body = e.post(t, "/api/v1/battle/settle", tok, settleBody(tokenID))
+	status, body = e.post(t, "/api/v1/battle/settle", tok, e.settleBody(t, tokenID))
 	if status != 200 {
 		t.Fatalf("合法结算应 200，实际 %d %v", status, body)
 	}
@@ -704,7 +787,7 @@ func TestE2EBattleFullCycle(t *testing.T) {
 	// 同一 token 结算两次 → 422（串行下 ValidateSettle 的 IsUsable 先拦，
 	// ErrTokenUsed 属结算拒绝类；403 的 RowsAffected 分支只在并发竞态下出现，
 	// 由 service 包的 TestConcurrentSettleSameTokenOnlyOnce 覆盖）
-	status, _ = e.post(t, "/api/v1/battle/settle", tok, settleBody(tokenID))
+	status, _ = e.post(t, "/api/v1/battle/settle", tok, e.settleBody(t, tokenID))
 	if status != fiber.StatusUnprocessableEntity {
 		t.Errorf("重复结算应 422，实际 %d", status)
 	}
@@ -736,7 +819,7 @@ func TestE2EBattleFullCycle(t *testing.T) {
 
 	// 验真：匹配 / 不匹配 / 未知战报
 	status, body = e.post(t, "/api/v1/battle/verify", tok, map[string]any{
-		"battle_id": battleID, "replay_hash": "abcdef0123456789",
+		"battle_id": battleID, "replay_hash": storedHash(t, e, battleID),
 	})
 	if status != 200 || body["matched"] != true {
 		t.Errorf("相同哈希应 matched=true：%d %v", status, body)

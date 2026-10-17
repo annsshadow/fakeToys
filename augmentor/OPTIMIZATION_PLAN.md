@@ -38,11 +38,11 @@ augmentor/
 | 维度 | 现状 |
 |------|------|
 | 版本 | **3.0.0**（`augmentor.__version__` 是全仓唯一声明） |
-| 测试 | **3668 个**（3668 passed / 3 skipped），覆盖率 **98.55%**（门槛 80%） |
+| 测试 | **8298+ passed / 覆盖率 99.8%**（OPTIMIZATION_LOOP_2 最新轮门禁读数；静态统计 376 个测试文件 / 6735 个测试函数，门槛 80%） |
 | 版本一致性 | FastAPI 元数据 / `web/package.json` / `docker-compose.yml` 默认 tag 三处均由测试锁定 |
-| HTTP API | **68 个端点 / 13 个 tag**，全部声明 `response_model`，无「无 schema 的 200 响应」；23 条写/删路由挂 `verify_api_key`，由动态发现的路由清单守门 |
+| HTTP API | **77 个端点 / 13 个 tag**（2026-10-14 复核），全部声明 `response_model`，无「无 schema 的 200 响应」；写/删路由挂 `verify_api_key`，由动态发现的路由清单守门 |
 | 路径白名单 | 出厂默认 `web.data_roots` = **`["data"]`**（原 `["."]` 放行整个工作目录）；三处默认值由字面量钉住并交叉比对。`/api/data/list` 扫描范围与白名单同源；相对路径**先在根目录内查已存在的文件**、工作目录兜底，写入需显式 `data/x.json` |
-| 前端 | **11 个功能页**，服务层 43 个函数；契约测试 + 接线守门共 45 个用例 |
+| 前端 | **11 个功能页**，服务层 86 个导出（2026-10-14 复核）；契约测试 + 接线守门常驻 |
 | 模型后端 | ERNIE、OpenAI、Ollama、Claude、Gemini |
 | 导出格式 | 以 `ExportFormat` 枚举为准（13 种，含 `raw`）；CLI `--format` 与转换图的支持面由 `TestExportFormatSurface` / `TestConvertFormatSurface` 双向锁定 |
 
@@ -176,7 +176,7 @@ augmentor/
 | F-03 | CSV/TSV 导出三处产物缺陷 | `convert --format csv` 产物字节实测 `b'instruction,output\r\r\n...'`；异构条目 → `ValueError: dict contains fields not in fieldnames`；空数据集 → 0 字节却报成功 | 写侧补 `newline=''`（POSIX 不显形，只在 Windows 露头）；新增 `csv_fieldnames()` 取**全量键并集**，`converter` / `export_enhanced` 的 CSV+TSV 四条路径共用 |
 | F-04 | 公开「支持格式」清单与实现两处对不上 | `converter.get_supported_formats()` 报 `tsv`，但转换图没有 `json -> tsv` 边 → `UnsupportedFormatError`；CLI `export --format` 少了 SDK/API 都支持的 `raw` | 转换侧清单改为由 `_converters` **反推**（枚举不再是事实来源）；`EXPORT_FORMATS` 补 `raw`；新增三方一致门禁 `TestExportFormatSurface` / `TestConvertFormatSurface` |
 | F-05 | **6 处 SDK 随机操作污染进程级 RNG** | `DataSplitter.split()` 之后调用方的全局随机序列被改写（参照序列对照实测：`0.9097 != 0.2929`） | `dataset_ops`（sample/split/shuffle/merge/模块级 helper）、`data_splitter`、`indexer`、`export_enhanced` 全改局部 `random.Random(seed)`；新增 `tests/unit/test_rng_hygiene.py` 门禁。CLI 侧同一坑 3.0 已修，SDK 侧当时漏了 |
-| F-06 | 文档/注释漂移 4 处 | `docs/README.md` 教用户用已删除的 `--no-url-removal`；`parser.py` 注释写「`history` 取消」而 `choices` 与实现都在；导出格式数写死 12 | 改为真实可执行命令；注释与实现对齐；文档里的**会漂移数字**改成「以枚举/清单为准」的写法 |
+| F-06 | 文档/注释漂移 4 处 | `docs/augmentor/README.md` 教用户用已删除的 `--no-url-removal`；`parser.py` 注释写「`history` 取消」而 `choices` 与实现都在；导出格式数写死 12 | 改为真实可执行命令；注释与实现对齐；文档里的**会漂移数字**改成「以枚举/清单为准」的写法 |
 | F-08 | **收紧默认值会让前端文件选择器集体 403**（收紧动作自己引出的缺陷） | 实测：把 `data_roots` 收紧后按旧解析规则跑闭环 —— 列表给出 `train_data_ui.json`，`GET /api/data/load/train_data_ui.json` 返回 **403**（相对路径只按工作目录解释，而工作目录已不在白名单内）。前端 8 处（`DataList.tsx`/`Analysis.tsx`/`AugmentForm.tsx`/…）都把 `files[].name` 原样拼回 URL，且 `{filename}` 只匹配单个路径段，改传 `data/x.json` 也走不通 | `resolve_within_roots` 对相对路径生成候选：**白名单根目录在前、工作目录兜底**，取第一个存在的解释（`_relative_candidates`）。闭环由 `TestBareNameResolvesInsideRoots::test_listed_name_can_be_loaded_back` 钉住（红→绿已验：403 → 200）。**写**一侧保持显式（`data/out.json`）：目标不存在时不替调用方猜目录，那种猜测会静默改掉产物落点，宁可 403 |
 | F-09 | **依赖端点的缺省注册表目录被自己的白名单闸拦下**，且注册表测试污染版本树 | 收紧后设 `AUGMENTOR_DATA_ROOTS=.../data`：`POST`/`GET /api/system/dependency/datasets` 与 `GET /api/system/dependency/graph` 不传 `registry_path` 时全部 **403**（`detail` 「路径超出允许的数据目录范围」）——三条端点把自己的默认值写死成 `.dependency_registry`（相对工作目录），而工作目录已不在闸内。另一侧，`tests/unit/test_round68.py` 直接 `DependencyManager()` 构造（该类在**构造时** `mkdir`），每轮全量测试都在仓库里留下一处 `.dependency_registry/` | 新增 `deps.default_registry_dir()` ＝ 白名单首个根目录下的 `.dependency_registry`（出厂默认 `data/.dependency_registry`），三条端点的 `registry_path` 改为 `Optional[str] = Query(None)`，显式传参仍走 `resolve_data_dir()` 校验；只有参数**完全缺席**才用缺省，显式空串照旧 400（否则一个可选参数就能把白名单绕成静默兜底）。`test_round68.py` 改为 `monkeypatch.chdir(tmp_path)` + 显式路径。红→绿已验：把默认值退回 `.dependency_registry` → `assert 403 == 200`。全量跑后仓库无 `.dependency_registry/` 残留。SDK/CLI 侧默认参数**不改**（离线工具以工作目录为常识落点，且不经 API 白名单），只让 `--registry-path data/.dependency_registry` 能与 API 共用同一份登记 |
 | F-10 | **备份端点的缺省 `backup_dir` 同样被自家白名单闸拦下**（与 F-09 同构） | 收紧后设 `AUGMENTOR_DATA_ROOTS=.../data`：`GET /api/system/backups` → **403**、`POST /api/system/backups` → 403；四条端点的默认值都是相对工作目录的 `.backups` | 新增 `deps.default_backup_dir()`（白名单首个根目录下的 `.backups`，出厂默认 `data/.backups`），四条端点改 `Optional[str] = Query(None)`，缺省跟白名单、显式空串仍 400。红→绿已验：退回 `backup_dir: str = ".backups"` → 生命周期用例失败。**未迁移历史数据**：仓库里旧的 `augmentor/.backups/`（`.gitignore` 忽略，内含 2026-09-23 之前测试留下的 `index.json`/`snap.json` 与一份旧进度笔记）仍在原处，需要的话自行 `mv .backups data/.backups` |
@@ -212,7 +212,7 @@ augmentor/
   里那句导出传的是相对裸名，每跑一次套件就在 CWD 落一份；那份既存文件会让 A168 的残留守卫
   把 before/after 差集抵冲成空（与 `x` 那一族同形）。现已改为写 `tmp_path`，先前留在
   工作目录根与仓库根的两份产物移进 Temp 下观察一轮，**不删**（可逆）。
-- 文档示例（`docs/README.md`、`enhanceTXT.py` 等）里那些「工作目录根下」的写法指的是**文件名**，
+- 文档示例（`docs/augmentor/README.md`、`enhanceTXT.py` 等）里那些「工作目录根下」的写法指的是**文件名**，
   不是落点断言；真正按路径读它们的只有 `archive/enhanceTXT.py` 那份归档脚本（运行时无人调用）。
 - Docker 部署不受影响：镜像工作目录 `/app`、数据在 `/app/data`，新默认与之一致。
 - 需要旧行为时显式声明 `web.data_roots: ["."]` 或设 `AUGMENTOR_DATA_ROOTS`——

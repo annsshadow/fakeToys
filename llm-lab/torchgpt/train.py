@@ -12,7 +12,7 @@
 * 周期性验证与 checkpoint。
 
 单机多卡请用 ``torchrun --nproc_per_node=N`` 启动并包一层 DDP，详见
-docs/06-规模化训练.md。
+docs/llm-lab/06-规模化训练.md。
 
 注意：本模块使用 torch 2.4+ 的统一 AMP API（``torch.amp.GradScaler`` /
 ``torch.autocast``）；在 torch>=2.14（Python 3.14 可用的首个完整版本）上实测通过。

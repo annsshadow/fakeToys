@@ -46,6 +46,7 @@ import {
   ACTIVE_SLOTS,
 } from './heatmap'
 import { Terrain, BASE_X, BASE_Y, FIELD_W, FIELD_H, toFixed } from './terrain'
+import { DEFAULT_TUNING, type GameTuning } from './tuning'
 import type {
   Enemy,
   EnemyDef,
@@ -261,6 +262,68 @@ export const MAX_BATTLE_TICKS = 30000
 export const TICK_BIG = BigInt(TICK_MS)
 
 /**
+ * 场地/防线边界的**定点形式**（屋顶常量，第 158 轮性能整改）。
+ *
+ * ## 为什么必须预计算
+ *
+ * `toFixed(v)` 的实现是 `BigInt(Math.round(v * 1000))` —— 每次调用都
+ * **新建一个 bigint 对象**。而战场这些边界值在 `updateProjectiles` /
+ * `updateEnemies` 的 innermost loop 里被调用：
+ *
+ *   - `p.x > toFixed(FIELD_W)`：每个弹丸 × 每个子步进
+ *   - `e.x > toFixed(BASE_X)`：每个敌人 × 每 tick
+ *
+ * 20Hz 逻辑下，同屏 16 敌 + 9 弹丸 × 2 子步 = 每 tick 数十次分配、
+ * 每秒上千次 GC 压力 —— **全部算出同一个值**。
+ *
+ * 定点化之后这些位置只剩 bigint 比较，零分配。
+ * 这些常数是 `toFixed(常量)`，语义与原写法**逐位等价**（不改变任何判定）。
+ */
+const FIELD_W_FIXED = toFixed(FIELD_W)
+const FIELD_H_FIXED = toFixed(FIELD_H)
+const BASE_X_FIXED = toFixed(BASE_X)
+const BASE_Y_FIXED = toFixed(BASE_Y)
+/** 掩体类地形挡弹的判定半径（100 逻辑单位）的定点形式，及其平方。
+ *  平方也要预计算：否则 `withinTerrain` 每次调用会重复做一次 bigint 乘法。 */
+const TERRAIN_BLOCK_R_FIXED = toFixed(100)
+const TERRAIN_BLOCK_R2 = TERRAIN_BLOCK_R_FIXED * TERRAIN_BLOCK_R_FIXED
+
+/**
+ * 原地压缩数组：剔除不满足 `keep` 的元素，**保持剩余元素的相对顺序**，
+ * 返回新长度。
+ *
+ * ## 为什么替代 `arr.filter(...)`
+ *
+ * 改前的主循环里每 tick 有 4 处 `this.xxx = this.xxx.filter(...)`：
+ * `enemies`、`projectiles`、`floats`，外加 `pickTarget`/`checkProjectileHit`
+ * 内部的临时 filter。`filter` 每次都**分配一个新数组**，而热循环里
+ * 99% 的元素是保留下来的 —— 等于每 tick 为一个几乎相同的内容付一次
+ * 完整拷贝 + 一次旧数组的 GC。
+ *
+ * 就地写指针只做赋值与一次 `length` 截断，零分配。
+ *
+ * ## ⚠️ 顺序敏感，不能换成 swap-remove
+ *
+ * 敌人的相对顺序会进 `checkProjectileHit` 的遍历顺序，进而决定
+ * 「同一发弹丸同时进入两只敌人的命中圈时谁先被结算」——
+ * 那会改变事件流与 `replayHash()`。
+ *
+ * 所以这里必须是**稳定压缩**（保留相对顺序），
+ * 而不是「把末尾元素搬到空位」那种 O(1) 但不稳定的写法。
+ */
+function compactInPlace<T>(arr: T[], keep: (v: T) => boolean): number {
+  let w = 0
+  for (let r = 0; r < arr.length; r++) {
+    const v = arr[r]
+    if (keep(v)) {
+      arr[w++] = v
+    }
+  }
+  arr.length = w
+  return w
+}
+
+/**
  * 坐标系约定（重要）：
  *  - 逻辑空间 0..FIELD_W（1000），与地形/关卡配置一致，服务端也用它
  *  - 引擎内部所有坐标是**定点整数**（逻辑值 × 1000）
@@ -326,6 +389,17 @@ export interface BattleConfig {
    * 客户端用自己的一份就会与门槛算法漂移（见 score.ts 的注释）。
    */
   scoreRules?: ScoreRules
+
+  /**
+   * 战斗节奏配置（第 158 轮）。
+   *
+   * 所有影响手感的**时间与速度**参数集中在这里。缺省 `DEFAULT_TUNING`。
+   * 详见 tuning.ts —— 那里记录了每一档是怎么定的。
+   *
+   * ⚠️ 缺省必须是 DEFAULT_TUNING：本工程的重放不做跨版本的语义保证，
+   * 但既有测试的地基（100 关平衡扫描、难度曲线）都是按它校准的。
+   */
+  tuning?: GameTuning
 }
 
 /** 引擎向外抛的事件 */
@@ -439,6 +513,15 @@ export class BattleEngine {
   private spawnQueue: Array<{ enemyId: number; atTick: number; uid: number }> = []
 
   /**
+   * 「当前挡弹地形 + 其定点坐标」的**复用容器**（第 158 轮性能整改）。
+   *
+   * 每 tick 由 updateProjectiles 清空后重填，从来不被重建 ——
+   * 连这个数组本身的分配都省了，只剩下每座地形一个小对象
+   * （地形数通常 0~4，而它会被「弹丸 × 子步进」复用上百次）。
+   */
+  private readonly blockersFx: Array<{ terrain: Terrain; cx: bigint; cy: bigint }> = []
+
+  /**
    * 本关总怪数（开波前即可确定，与随机无关）。
    *
    * 存在的原因：胜负判定必须与服务端口径一致。
@@ -456,6 +539,14 @@ export class BattleEngine {
 
   /** 分数规则。缺省 DEFAULT_SCORE_RULES，实际对局应从服务端下发。 */
   readonly scoreRules: ScoreRules
+
+  /**
+   * 本局生效的节奏配置（第 158 轮）。
+   *
+   * ⚠️ 必须在构造早期落地：它是速度与时间的缩放源，下面 `skills` 的换算
+   * 以及后续各处的定量都要读它。缺省 DEFAULT_TUNING。
+   */
+  readonly tuning: GameTuning
 
   /**
    * 无攻击力敌人漏进防线时的推进伤害。
@@ -476,7 +567,19 @@ export class BattleEngine {
   constructor(cfg: BattleConfig) {
     this.cfg = cfg
     this.rng = new BattleRng(cfg.seed)
-    this.skills = cfg.equipped.map((s) => ({ ...s, cooldownRemaining: 0 }))
+    this.tuning = cfg.tuning ?? DEFAULT_TUNING
+    // 技能冷却在这里**一次性**换算（而不是每次重置冷却时再乘）：
+    // 既让每 tick 的冷却扣减保持纯减法，也让 S 段与实际使用的值同源。
+    //
+    // ⚠️ `cooldownMs` 不进 replaySkillsSegmentOf（那里只用
+    // slot/skillId/baseDamage/applyStacks/heatCost），所以这步不影响哈希。
+    this.skills = cfg.equipped.map((s) => ({
+      ...s,
+      cooldownRemaining: 0,
+      cooldownMs: Math.max(1, Math.round((s.cooldownMs * this.tuning.skillCooldownPermille) / 1000)),
+    }))
+    // 过热时长一次性落到 HeatSystem（见 heatmap.ts 的 overheatDurationMs 注释）
+    this.heat.overheatDurationMs = this.tuning.overheatDurationMs
     // 上报用的 S 段在这里冻结 —— 早于任何 applyCard（第 64 轮）。
     this.buildSnapshotSkills = replaySkillsSegmentOf(this.skills)
 
@@ -705,8 +808,14 @@ export class BattleEngine {
       //
       // 这里统一折算成 tick，并向上取整 —— 向上取整保证
       // 「间隔 N 毫秒」不会因为截断变成「间隔 0 毫秒」而让同组怪同时出现。
-      const delayTicks = Math.ceil(group.delay / TICK_MS)
-      const intervalTicks = Math.ceil(group.interval / TICK_MS)
+      // 第 158 轮：两组节奏乘以 tuning 倍率。
+      //
+      // ⚠️ `Math.max(1, ...)` 保住的正是原来的那条不变量：
+      // 「间隔 N 毫秒」不能因为截断变成「间隔 0 毫秒」而让同组怪同时冒出来。
+      // 缩放只会把结果往 0 推得更近，所以这个下限必须跟着缩放一起加。
+      const t = this.tuning
+      const delayTicks = Math.max(1, Math.ceil((group.delay * t.waveDelayPermille) / 1000 / TICK_MS))
+      const intervalTicks = Math.max(1, Math.ceil((group.interval * t.waveIntervalPermille) / 1000 / TICK_MS))
       for (let i = 0; i < group.count; i++) {
         this.spawnQueue.push({
           enemyId: group.enemy_id,
@@ -727,6 +836,17 @@ export class BattleEngine {
     this.record(this.tick, 'wave', index)
   }
 
+  /**
+   * 远程敌人攻击间隔（毫秒）→ 按 tuning 缩放后的整数毫秒。
+   *
+   * 抽成一处是为了让 `attackInterval`（基准，用于重置）与
+   * `attackCooldown`（当前剩余）**必然同源**：
+   * 它们在自适应里被改写是两个不同的量，却必须从同一个换算出。
+   */
+  private scaledAttackInterval(intervalMs: number): number {
+    return Math.max(1, Math.round((intervalMs * this.tuning.enemyAttackIntervalPermille) / 1000))
+  }
+
   private spawnEnemy(enemyId: number, uid: number): void {
     const def = this.cfg.enemies.get(enemyId)
     if (!def) return
@@ -736,6 +856,12 @@ export class BattleEngine {
       const v = def.resist?.[e] ?? 0
       resist.set(e, clampInt64(BigInt(v), -MAX_RESIST, MAX_RESIST))
     }
+    // 两个**出生即恒定**的派生量，在此一次性算好（第 158 轮性能整改）：
+    // 它们在tick 内循环里被调用的次数是全引擎最多的，逐次重算等于把同一个
+    // 值反复转换上千遍，且每次都新建一个 bigint。详见 types.ts 的字段注释。
+    const attackRangeFixed = toFixed(def.attack_range)
+    const hitRadiusFixed = toFixed(28 + def.fly_height * 0.1)
+    const hitRadius2 = hitRadiusFixed * hitRadiusFixed
     const e: Enemy = {
       uid,
       defId: enemyId,
@@ -769,8 +895,16 @@ export class BattleEngine {
       speed: BigInt(def.speed),
       attack: BigInt(def.attack),
       attackRange: BigInt(def.attack_range),
-      attackInterval: def.attack_interval,
-      attackCooldown: def.attack_interval,
+      // ⚠️ 上面那个 `attackRange` 是**逻辑单位**的 bigint（内容就是
+      // `def.attack_range`），而 updateEnemies 的射程比较发生在定点坐标系
+      // （`dist = e.x - BASE_X_FIXED`）。两种量纲并存不是笔误，
+      // 但每次要用就得 `toFixed(Number(attackRange))` 走一趟
+      // bigint → number → bigint 的往返。出生时算一次即可。
+      attackRangeFixed,
+      // 单体命中半径平方（派生缓存，必须与 flyHeight 一致 —— 见 types.ts）
+      hitRadius2,
+      attackInterval: Math.max(1, Math.round((def.attack_interval * this.tuning.enemyAttackIntervalPermille) / 1000)),
+      attackCooldown: this.scaledAttackInterval(def.attack_interval),
       frozenMs: 0,
       stunnedMs: 0,
       slowedMs: 0,
@@ -796,7 +930,7 @@ export class BattleEngine {
     /* v8 ignore next -- 见上：调用点已过滤 dead，此守卫真分支不可达 */
     if (e.dead) return
     if (e.spawnProgress < SPAWN_PROGRESS_FULL) {
-      e.spawnProgress = Math.min(SPAWN_PROGRESS_FULL, e.spawnProgress + SPAWN_PROGRESS_STEP)
+      e.spawnProgress = Math.min(SPAWN_PROGRESS_FULL, e.spawnProgress + this.tuning.spawnProgressStep)
       return
     }
     if (e.hitFlashMs > 0) e.hitFlashMs -= TICK_MS
@@ -813,7 +947,11 @@ export class BattleEngine {
       e.knockback = 0n
     } else {
       const slowFactor = e.slowedMs > 0 ? 500n : 1000n
-      const step = mulDiv(e.speed, slowFactor, 1000n) * TICK_BIG / 1000n
+      // 第 158 轮：整体推进速度倍率（`tuning.enemySpeedPermille`）。
+      // 它只作用于位置推进，不参与任何伤害结算 ——
+      // 倍率是「多快走完这段路」，不是「走多少」。
+      const rate = BigInt(this.tuning.enemySpeedPermille)
+      const step = mulDiv(mulDiv(e.speed, slowFactor, 1000n), rate, 1000n) * TICK_BIG / 1000n
       e.x -= step
     }
   }
@@ -872,12 +1010,24 @@ export class BattleEngine {
   }
 
   private updateSpawns(): void {
-    for (let i = this.spawnQueue.length - 1; i >= 0; i--) {
-      if (this.spawnQueue[i].atTick <= this.tick) {
-        this.spawnEnemy(this.spawnQueue[i].enemyId, this.spawnQueue[i].uid)
-        this.spawnQueue.splice(i, 1)
+    //
+    // ⚠️ 第 158 轮：「倒序出场 + 顺序压缩」两步走。顺序不能改。
+    //
+    // 原实现是 `splice(i, 1)` 逐个剔除 —— 每次 splice 都是 O(n) 的元素搬移。
+    // 改成压缩后仍需保持两个性质：
+    //  1. **spawn 顺序必须是「从尾到头」** —— 原循环是 `i--`，
+    //     所以 spawnEnemy 的出场次序依赖于数组的下标顺序；
+    //     而 spawnEnemy 内部会消耗 `rng.intn` 生成 y 坐标，
+    //     **出场顺序变了 y 坐标分配就变了 → 敌人位置变了 → 命中判定变了
+    //     → replayHash 失配**。所以本步必须继续倒序遍历。
+    //  2. 剩余元素保持相对顺序（等下一 tick 再倒 i--，语义才一致）。
+    const q = this.spawnQueue
+    for (let i = q.length - 1; i >= 0; i--) {
+      if (q[i].atTick <= this.tick) {
+        this.spawnEnemy(q[i].enemyId, q[i].uid)
       }
     }
+    compactInPlace(q, (s) => s.atTick > this.tick)
   }
 
   private updateEnemies(): void {
@@ -896,12 +1046,12 @@ export class BattleEngine {
       // 双倍伤害、leaked 计 2、发出两条 leak 事件。
       // 内容表里远程敌人（attack_range 150~600）大量存在，
       // 每个抵达时都触发一次，防线血量被额外扣掉接近一倍。
-      if (!e.burrow && e.attack > 0n && e.attackRange > 0n && e.x > toFixed(BASE_X)) {
+      if (!e.burrow && e.attack > 0n && e.attackRange > 0n && e.x > BASE_X_FIXED) {
         e.attackCooldown -= TICK_MS
         if (e.attackCooldown <= 0) {
           e.attackCooldown = e.attackInterval
-          const dist = e.x - toFixed(BASE_X)
-          if (dist <= toFixed(Number(e.attackRange))) {
+          const dist = e.x - BASE_X_FIXED
+          if (dist <= e.attackRangeFixed) {
             const dmg = this.leakDamageFor(e)
             this.baseHp -= dmg
             this.leaked++
@@ -939,8 +1089,8 @@ export class BattleEngine {
         }
       }
 
-      // 抵达防线
-      if (e.x <= toFixed(BASE_X)) {
+      // 抵达防线（`BASE_X_FIXED` 取代了原先每敌每 tick 的 `toFixed(BASE_X)`）
+      if (e.x <= BASE_X_FIXED) {
         e.dead = true
         const dmg = this.leakDamage(e)
         this.baseHp -= dmg
@@ -959,7 +1109,11 @@ export class BattleEngine {
         }
       }
     }
-    this.enemies = this.enemies.filter((e) => !e.dead)
+    // 剔除本 tick 标记为 dead 的敌人。
+    //
+    // ⚠️ 保留相对顺序，不能用 swap-remove —— 顺序进 checkProjectileHit 的
+    // 遍历顺序，进而决定同帧多命中时的结算先后，会改变事件流与 replayHash。
+    compactInPlace(this.enemies, (x) => !x.dead)
   }
 
   /**
@@ -1139,22 +1293,41 @@ export class BattleEngine {
 
   /** 索敌优先级：BOSS/精英 > 最近目标；优先能命中的（溅射/穿透/高伤） */
   private pickTarget(s: EquippedSkill): Enemy | null {
-    const live = this.enemies.filter((e) => !e.dead && e.spawnProgress >= SPAWN_PROGRESS_FULL)
-    if (live.length === 0) return null
-    // 飞行/钻地敌人只能被溅射或穿透命中，优先安排给对应技能
-    const evasive = live.filter((e) => e.flyHeight > 0 || e.burrow)
-    if ((s.aoeRadius > 0 || s.pierce > 0) && evasive.length > 0) {
-      return evasive.reduce((a, b) => (a.x <= b.x ? a : b))
+    //
+    // ⚠️ 第 158 轮：改成单趟扫描。
+    //
+    // 改前这里每个技能每 tick 都 `filter` 出两个临时数组（live、evasive）
+    // 再各跑一次 `reduce` —— 4 个技能 × 20Hz = 每秒 160 个临时数组，
+    // 4 个技能 × 20Hz = 每秒 160 个临时数组，而同一个 e 每次都要被
+    // 走两遍（先判是否 live、再看是否 evasive）。
+    //
+    // **必须保持的语义**（否则事件流会变、replayHash 会失配）：
+    //   - `reduce((a, b) => (a.x <= b.x ? a : b))` 取的是**最靠前的、
+    //     并列时第一个** —— <= 让它保留先出现者。下面的两次扫描
+    //     用同样的 `<`（严格小于才替换）来复刻这个 tie-break。
+    //   - evasive 与否的分支条件、优先级不变。
+    const evasiveCapable = s.aoeRadius > 0 || s.pierce > 0
+    let target: Enemy | null = null
+    let evasive: Enemy | null = null
+    for (const e of this.enemies) {
+      if (e.dead || e.spawnProgress < SPAWN_PROGRESS_FULL) continue
+      if (target === null || e.x < target.x) target = e
+      if (evasiveCapable && (e.flyHeight > 0 || e.burrow)) {
+        if (evasive === null || e.x < evasive.x) evasive = e
+      }
     }
-    // 其余取最靠近防线的
-    return live.reduce((a, b) => (a.x <= b.x ? a : b))
+    if (evasive !== null) return evasive
+    return target
   }
 
   private fire(s: EquippedSkill, target: Enemy): void {
     this.shots++
-    const speed = BigInt(s.projectileSpeed || 60000)
+    // 第 158 轮：纯飞行表现倍率 —— 不影响任何伤害结算，只压缩
+    // 「出膛到命中」之间那段玩家无法干预的等待。
+    const base = s.projectileSpeed || 60000
+    const speed = (BigInt(base) * BigInt(this.tuning.projectileSpeedPermille)) / 1000n
     const dx = target.x - toFixed(BASE_X)
-    const dy = target.y - toFixed(BASE_Y)
+    const dy = target.y - BASE_Y_FIXED
     const len = maxBig(1n, sqrtApprox(dx * dx + dy * dy))
     // 归一化方向（定点，保持确定性）
     const nx = (dx * speed) / len
@@ -1165,7 +1338,7 @@ export class BattleEngine {
       skillId: s.skillId,
       element: s.element,
       x: toFixed(BASE_X),
-      y: toFixed(BASE_Y),
+      y: BASE_Y_FIXED,
       vx: nx,
       vy: ny,
       damage: s.baseDamage,
@@ -1185,11 +1358,25 @@ export class BattleEngine {
   private updateProjectiles(): void {
     // 每 tick 分若干等分子步进，降低高速弹丸穿透漏判
     const SUB_STEPS = 2
-    const tickBig = BigInt(TICK_MS)
+    const tickBig = TICK_BIG
+
+    // ⚠️ 第 158 轮：把「哪些地形当前挡弹」与它们的**定点坐标**在 tick 开头
+    // 算好。改前这两件事都在 `弹丸 × 子步进` 的内层循环里做：
+    //   - `t.blocksProjectile()`：状态在 tick 内不变（updateTerrain 在之后才跑），
+    //     却对每个弹丸每个子步重复调用
+    //   - `toFixed(t.x) / toFixed(t.y)`：每次调用新建一个 bigint
+    // 摊到每 tick 一次后，内层循环只剩几何比较。
+    const blockers = this.blockersFx
+    blockers.length = 0
+    for (const t of this.terrains) {
+      if (t.blocksProjectile()) {
+        blockers.push({ terrain: t, cx: toFixed(t.x), cy: toFixed(t.y) })
+      }
+    }
+
     for (const p of this.projectiles) {
-      // `p.dead` 守卫的 true 分支**不可达**：每次 updateProjectiles 末尾都
-      // `this.projectiles = this.projectiles.filter((p) => !p.dead)`（见函数尾），
-      // 故下一 tick 进入本循环时数组里不含 dead 弹丸；本 tick 内每颗只遍历一次。
+      // `p.dead` 守卫的 true 分支**不可达**：每次 updateProjectiles 末尾都剔除
+      // 了 dead 弹丸（见函数尾），故下一 tick 进入本循环时数组里不含 dead。
       /* v8 ignore next -- 见上：末尾已滤除 dead，此守卫真分支不可达 */
       if (p.dead) continue
       for (let s = 0; s < SUB_STEPS; s++) {
@@ -1197,8 +1384,8 @@ export class BattleEngine {
         p.y += p.vy / tickBig
         p.trailLen = p.trailLen + 1
 
-        // 越界（用定点边界）
-        if (p.x < 0n || p.x > toFixed(FIELD_W) || p.y < 0n || p.y > toFixed(FIELD_H)) {
+        // 越界（用预算好的定点边界，取代原先每子步两次的 toFixed）
+        if (p.x < 0n || p.x > FIELD_W_FIXED || p.y < 0n || p.y > FIELD_H_FIXED) {
           p.dead = true
           break
         }
@@ -1222,8 +1409,9 @@ export class BattleEngine {
         //
         // 现在弹丸打在掩体上等同于打在敌人身上（有伤害、有元素），
         // 于是"用动能砸开掩体、打开弹道"这个原本的设计意图才真正成立。
-        for (const t of this.terrains) {
-          if (t.blocksProjectile() && this.withinTerrain(t.x, t.y, 100, p.x, p.y)) {
+        for (const b of blockers) {
+          if (this.withinTerrainFx(b.cx, b.cy, p.x, p.y)) {
+            const t = b.terrain
             if (t.onHit(p.element, p.damage, p.x, p.y)) {
               this.terrainUsed.push(t.kind)
               this.emit({ type: 'terrain', kind: t.kind, x: t.x, y: t.y })
@@ -1239,7 +1427,7 @@ export class BattleEngine {
         if (p.dead) break
       }
     }
-    this.projectiles = this.projectiles.filter((p) => !p.dead)
+    compactInPlace(this.projectiles, (p) => !p.dead)
   }
 
   private checkProjectileHit(p: Projectile): void {
@@ -1265,14 +1453,19 @@ export class BattleEngine {
       }
       // 弹射
       if (p.chainLeft > 0) {
-        const next = this.enemies
-          .filter((x) => !x.dead && !p.hitSet.has(x.uid))
-          .reduce<Enemy | null>((best, x) => {
-            if (!best) return x
-            const d1 = dist2(p.x, p.y, x.x, x.y)
-            const d2 = dist2(p.x, p.y, best.x, best.y)
-            return d1 < d2 ? x : best
-          }, null)
+        // 第 158 轮：同样改成单趟最近邻扫描， replace filter + reduce 的
+        // 两次全量遍历。tie-break 与原写法一致（`d1 < d2 ? x : best` → 严格更小才替换，
+        // 并列时保留先出现者），所以选中的目标与原实现**逐位相同**。
+        let next: Enemy | null = null
+        let bestD = 0n
+        for (const x of this.enemies) {
+          if (x.dead || p.hitSet.has(x.uid)) continue
+          const d = dist2(p.x, p.y, x.x, x.y)
+          if (next === null || d < bestD) {
+            next = x
+            bestD = d
+          }
+        }
         if (next) {
           p.chainLeft--
           p.x = next.x
@@ -1351,7 +1544,7 @@ export class BattleEngine {
     e.hp = def.hp
     e.shield = def.shield
     e.stacks = def.stacks
-    e.hitFlashMs = 140
+    e.hitFlashMs = this.tuning.hitFlashMs
     if (res.dispelShield && e.shield === 0n) {
       this.pushFloat(e.x, e.y, '护盾驱散', '#58a6ff', 14)
     }
@@ -1727,20 +1920,38 @@ export class BattleEngine {
     }
   }
 
-  private withinTerrain(tx: number, ty: number, r: number, x: bigint, y: bigint): boolean {
-    // tx/ty/r 是逻辑单位，x/y 是定点；半径平方需要 ×1000² 才同量纲
-    return dist2(toFixed(tx), toFixed(ty), x, y) <= toFixed(r) * toFixed(r)
+  /**
+   * 定点版的地形命中判定（第 158 轮）。
+   *
+   * ## 为什么改成接收定点参数
+   *
+   * 改前是 `withinTerrain(tx, ty, r, x, y)` 拿**逻辑单位**进来，
+   * 内部做 4 次 `toFixed`（tx、ty、r、r）—— 每次一个 bigint 分配。
+   * 而它全仓**只有一个调用点**（updateProjectiles 的挡弹判定），
+   * 那是一个 `弹丸 × 子步进 × 地形` 的三重内层循环。
+   *
+   * 地形坐标在整场战斗中不变、`r` 恒为 100，所以这些转换的结果
+   * **每次都相同**。现在每 tick 预计算一次（见 `updateProjectiles`），
+   * 这里只剩减法与比较。
+   */
+  private withinTerrainFx(cx: bigint, cy: bigint, x: bigint, y: bigint): boolean {
+    return dist2(cx, cy, x, y) <= TERRAIN_BLOCK_R2
   }
 
   private withinEnemy(e: Enemy, x: bigint, y: bigint): boolean {
-    // 飞行与钻地：只有溅射/穿透能命中
-    const r = 28 + e.flyHeight * 0.1
-    const rr = toFixed(r)
-    return dist2(e.x, e.y, x, y) <= rr * rr
+    // 飞行与钻地：只有溅射/穿透能命中。
+    //
+    // 第 158 轮：`r = 28 + flyHeight * 0.1` 只取决于 `e.flyHeight`，
+    // 而 flyHeight 是**出生即恒定**的内容表字段。
+    // 改前每 tick 里每个弹丸对每个敌人都要重算 `toFixed(r)` 再自乘，
+    // 而命中检测是 O(弹丸 × 敌人) —— 这是整个 tick 里调用次数最多的
+    // bigint 分配。现在用 spawnEnemy 时算好的 `hitRadius2`，此处零分配。
+    return dist2(e.x, e.y, x, y) <= e.hitRadius2
   }
 
   private pushFloat(x: bigint, y: bigint, text: string, color: string, size: number): void {
-    this.floats.push({ x, y, text, color, lifeMs: 900, maxLifeMs: 900, size })
+    const life = this.tuning.floatLifeMs
+    this.floats.push({ x, y, text, color, lifeMs: life, maxLifeMs: life, size })
     if (this.floats.length > 60) this.floats.splice(0, this.floats.length - 60)
   }
 
@@ -1749,7 +1960,7 @@ export class BattleEngine {
       f.lifeMs -= TICK_MS
       f.y -= 30n
     }
-    this.floats = this.floats.filter((f) => f.lifeMs > 0)
+    compactInPlace(this.floats, (f) => f.lifeMs > 0)
   }
 
   // ---------- 波次结束 / 结算 ----------

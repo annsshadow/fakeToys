@@ -40,7 +40,7 @@ RETRY_DELAY_RANGE = (0.0, 60.0)
 # `requests` 对 `timeout=0` 抛 `ValueError: Attempted to set connect timeout to 0,
 # but the timeout cannot be set to a value less than or equal to 0`（L71 实测，
 # py314 + 本机 requests），而它发生在**第一次生成调用**上，症状是「校验绿灯的
-# 配置在几小时后跑炸」。上界 600 与 `docs/DEPLOYMENT.md:226-227` 的 nginx
+# 配置在几小时后跑炸」。上界 600 与 `docs/augmentor/DEPLOYMENT.md:226-227` 的 nginx
 # `proxy_read_timeout 600s` 对齐 —— 客户端等得比网关还久没有意义，只会把
 # 「网关已断」读成「模型很慢」。
 REQUEST_TIMEOUT_RANGE = (1.0, 600.0)
@@ -871,7 +871,7 @@ def _resolve_env(value: Any) -> Any:
     - ``${VAR}`` 且 VAR **未设置** ⇒ 静默回落 ``''``（与 None 等价，都是「这条没配凭据」
       的合法状态，由后端构造入口 ModelNotConfiguredError 在建后端时判）。**这是刻意的**：
       加载期「环境变量未设置」的条数随本机 shell 而变，接进加载声会让同一份配置在不同
-      机器上行数不同（见 docs/API.md）；出声归 validate-config 的 warning 通道（A76/A84），
+      机器上行数不同（见 docs/augmentor/API.md）；出声归 validate-config 的 warning 通道（A76/A84），
       不在加载面判负。
     - 非 ``${...}`` 完整形状（如裸 ``${VAR``、``VAR}``、或根本不是串）⇒ 原样返回，不当占位符。
 

@@ -171,7 +171,16 @@ export interface Enemy {
   speed: bigint
   /** 攻击力（扣防线血量用） */
   attack: bigint
+  /** 射程（**逻辑单位**的 bigint，内容 = def.attack_range） */
   attackRange: bigint
+  /**
+   * 射程的**定点形式**（= `toFixed(attack_range)`），出生即恒定。
+   *
+   * 与上一个是同一件事的两种量纲：定点坐标系里的距离比较需要它，
+   * 而 `updateEnemies` 原本每 tick 都在做一次 `toFixed(Number(attackRange))`
+   * 的往返转换。派生缓存，不参与任何玩法输入。
+   */
+  attackRangeFixed: bigint
   attackInterval: number
   attackCooldown: number
   /** 状态效果剩余毫秒 */
@@ -190,6 +199,20 @@ export interface Enemy {
   /** 出生动画进度 0..1 */
   spawnProgress: number
   hitFlashMs: number
+  /**
+   * 单体命中判定半径的**平方（定点）**，出生即恒定。
+   *
+   * = `toFixed(28 + flyHeight * 0.1)²`
+   *
+   * 为什么字段化（第 158 轮性能整改）：`withinEnemy` 是全引擎调用次数
+   * 最多的判定（每个弹丸 × 每个敌人 × 每 tick），而它依赖的半径只由
+   * 出生时就固定的 `flyHeight` 决定 —— 每 tick 重算等于把同一个值
+   * 计算上千遍，每次还新建一个 bigint。
+   *
+   * ⚠️ 它是**派生缓存**，不是新的玩法输入：
+   * 必须与 `flyHeight` 一致，只能在 `spawnEnemy` 里由 flyHeight 算出。
+   */
+  hitRadius2: bigint
 }
 
 export interface Projectile {

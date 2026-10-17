@@ -7,6 +7,7 @@
 """
 
 import asyncio
+import errno
 import json
 import logging
 import os
@@ -16,8 +17,8 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from fastapi import Header, HTTPException
 
-from augmentor import AugmentorPipeline, DataValidationError, load_config
-from augmentor.atomic_write import atomic_write_json
+from augmentor import AugmentorPipeline, DataValidationError, DatasetTextError, load_config
+from augmentor.atomic_write import atomic_write_json, path_lock
 from augmentor.config import WebConfig
 
 logger = logging.getLogger(__name__)
@@ -462,6 +463,33 @@ def resolve_data_dir(name: str) -> Path:
 #: 原文只落服务端日志（``logger.exception``），客户端拿到的是这一份不含实现细节的固定话术。
 INTERNAL_ERROR_DETAIL = "服务器内部错误，详情见服务端日志"
 
+#: 400 档固定响应文案（L271 / A351）：客户端传入的路径名被操作系统判死时用的话术。
+#: 与 A155① 同一口径——**不转发** ``str(exc)``，因为 ``OSError`` 的原文带着部署根绝对路径
+#: （实测 ``[Errno 22] Invalid argument: 'D:\\deploy\\root\\a\nb.json'``）。
+INVALID_PATH_NAME_DETAIL = "文件路径含当前系统不接受的字符或超出长度上限"
+
+#: 这两个 errno 的含义是「这个名字在任何账户下都不可能成立」，与磁盘满 / 权限缺失一类
+#: 服务端状态不同： EINVAL 是名字里有系统禁止的字符，ENAMETOOLONG 是名字过长。
+#: 实测 Windows 把「名字里有控制符」与「名字 5000 字符」都折成 errno 22，Linux 的
+#: 对应物是 22 与 36，所以两支并收（``errno`` 常量按平台取值，不在本机重钉数字）。
+_OS_REJECTED_NAME_ERRNOS = frozenset({errno.EINVAL, errno.ENAMETOOLONG})
+
+
+def is_rejected_path_name(exc: BaseException) -> bool:
+    """异常是不是「操作系统拒绝这个名字」那一档（400 而不是 500）
+
+    ``FileNotFoundError`` / ``PermissionError`` 等虽然也是 ``OSError`` 子类，但它们的
+    errno 不在这一格里，仍由各分支或 500 兜底处理；errno 为 ``None`` 的注入型
+    ``OSError("磁盘读失败")`` 同样不进这一档——判据只认操作系统自己填的 errno。
+
+    Args:
+        exc: 下游抛出的异常
+
+    Returns:
+        True 表示这是客户端名字形状的错，应当回 400 固定文案
+    """
+    return isinstance(exc, OSError) and exc.errno in _OS_REJECTED_NAME_ERRNOS
+
 
 def to_http_error(
     exc: Exception,
@@ -477,7 +505,11 @@ def to_http_error(
     2. ``JSONDecodeError`` → 400，且**不转发 json 模块的英文原文**；
     3. 其余 ``ValueError`` → 400（参数或数据不合法，原文可行动、照回），其它 → 500
        且**只回固定文案** ``INTERNAL_ERROR_DETAIL``、原文落 ``logger.exception``（不转发
-       部署路径 / 文件系统状态，A155①）。
+       部署路径 / 文件系统状态，A155①）；
+    4. ``is_rejected_path_name``（L271）→ 400 且用固定文案 ``INVALID_PATH_NAME_DETAIL``：
+       errno 22 / 36 是操作系统对**名字形状**的判词（控制符、超长），与 NUL 那一形
+       （操作系统抛 ``ValueError``，走第 3 支拿 400）同属「参数非法」，不收进这一档
+       就会出现「同一类输入两种码」。
 
     顺序有讲究：``JSONDecodeError`` 是 ``ValueError`` 的子类，必须先判。
     ``HTTPException`` **不**在这里处理 —— 它应当由调用方原样抛出，否则会被
@@ -511,6 +543,11 @@ def to_http_error(
         )
     if isinstance(exc, ValueError):
         return HTTPException(status_code=400, detail=str(exc))
+    if is_rejected_path_name(exc):
+        # L271：操作系统对「这个名字不可能成立」的判词（errno 22 / 36）不是服务端故障。
+        # 同族的 NUL 输入在这一档之前已经由 ValueError 支拿到 400，收齐这一形才不再
+        # 「同一类输入两种码」。文案固定：原文带部署根绝对路径（A155①）。
+        return HTTPException(status_code=400, detail=INVALID_PATH_NAME_DETAIL)
     # 500 档（A155①）：原文只落服务端日志、不进响应体，防部署路径与文件系统状态外泄。
     logger.exception("未分类异常收敛为 500，原文仅留服务端日志、不转发客户端")
     return HTTPException(status_code=500, detail=INTERNAL_ERROR_DETAIL)
@@ -523,7 +560,22 @@ def raise_internal_error(exc: Exception) -> None:
     绝对路径与文件系统状态（磁盘满 / 权限缺失等可被利用的探测信号），一律降级为服务端
     日志，客户端只拿 ``INTERNAL_ERROR_DETAIL``。与 to_http_error 的 500 支同一口径
     （A77 一条 500 泄漏判据住一处），区别只是这里直接 raise、供路由 except 分支调用。
+
+    L271 的例外：``is_rejected_path_name`` 为真时 raise 的是 400 而不是 500——
+    操作系统对名字形状的判词（errno 22 / 36）不是服务端故障，与 to_http_error 同一判据、
+    住同一处。
+
+    L274 的第二条例外：``DatasetTextError``（数据集里「被当作文本用的字段」装了非字符串
+    值）也 raise 400，文案取 `str(exc)`——那句判决点名**第几条、哪个字段、实际是什么类型**，
+    是调用方修自己那份文件唯一需要的信息，而 `to_http_error` 的 ``ValueError`` 支本来就
+    原文照回同一句话（A77 一条判据住一处）。放行**按这个具名子类**而不是按父类
+    ``DataValidationError``：后者在 ``raise_internal_error`` 里的归宿由 L272 按 **A280**
+    （待拍，状态码是对外契约）逐格钉死，按父类放行会把那些格子一起改掉。
     """
+    if isinstance(exc, DatasetTextError):
+        raise HTTPException(status_code=400, detail=str(exc))
+    if is_rejected_path_name(exc):
+        raise HTTPException(status_code=400, detail=INVALID_PATH_NAME_DETAIL)
     logger.exception("未分类异常收敛为 500，原文仅留服务端日志、不转发客户端")
     raise HTTPException(status_code=500, detail=INTERNAL_ERROR_DETAIL)
 
@@ -728,3 +780,35 @@ def raise_boundary_error(exc: Exception) -> None:
     if isinstance(exc, DataValidationError):
         raise HTTPException(status_code=400, detail=str(exc))
     raise_internal_error(exc)
+
+
+async def mutate_json_file(file_path: Path, transform: Callable[[List], None]) -> None:
+    """在同一把按路径的锁里完成 **读 → 改 → 写**（L273 为「丢更新」那一族而立）
+
+    为什么锁必须罩住整段而不只是写那一步：`read_json_file` 与 `write_json_file` 各自都是
+    原子的，但**两次原子不等于一次原子**。两个请求各自读回同一份旧内容、各自只改自己那
+    一格、各自把**整份**写回，后写的那一份带着旧快照 ⇒ 前一次改动凭空消失，而两边都拿到
+    `{"success": true}`。实测（Temp 沙箱、单进程单 worker）：200 条数据集上 20 支并发
+    `PUT /api/data/update` 只有 1 处落盘，`DELETE` 20 支只删掉 1 条。
+
+    锁是 `threading.RLock`（可重入：外层整段与内层自保护的读点用同一个路径键）而不是
+    `asyncio.Lock`，所以整段读-改-写**放进一支工作线程**里跑：
+    一则在 `await` 上持有线程锁是错的，二则这样能和本仓的同步写者（`augmentor/backup.py`
+    的索引、`augmentor/version_control.py` 与 `versioning.py` 的版本账）共用同一把按路径的锁，
+    异步面与同步面之间也互斥。
+
+    只管**同进程**：多 worker（多进程）部署下这把锁跨不出去，那一档记在账本里待拍。
+
+    Args:
+        file_path: 目标数据集路径
+        transform: 就地对读回的记录列表做修改的函数；它抛出的异常（含 `HTTPException`）
+            原样上抛，此时**不写盘**，磁盘保持进入时的内容
+    """
+    def _read_modify_write():
+        with path_lock(file_path):
+            items = read_items(file_path)
+            transform(items)
+            atomic_write_json(file_path, items)
+
+    loop = asyncio.get_event_loop()
+    await loop.run_in_executor(None, _read_modify_write)

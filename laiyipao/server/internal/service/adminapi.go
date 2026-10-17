@@ -12,6 +12,43 @@ import (
 	"github.com/laiyipao/server/internal/domain"
 )
 
+// MaxAdminKeywordLen 是后台搜索词（`?keyword=`）的长度上限，**按字符数**。
+//
+// # 为什么需要它
+//
+// keyword 进的是 `%…%` 的 LIKE 模式，此前完全不限长。请求行本身受
+// fasthttp 的 header 上限约束（默认 4KB），所以这不是远程 DoS ——
+// 但实际后果有两条，都不需要恶意：
+//
+//  1. **运营从工单/聊天记录里粘贴一整段话**进来（这是最常见的触发），
+//     服务端老老实实拿整段去全表 LIKE，结果必然是空集。
+//     运营据此得出的结论是「查无此人」，而真正发生的是「整段被当成
+//     一个整体去匹配」。这正是本项目反复修的「静默降级而不是失败」。
+//  2. 4KB 的 LIKE 模式足以让全表扫描慢一个量级，而它耗的是后台自己
+//     的连接池（逐行回退匹配，无法走索引）。
+//
+// 取 64 与 `MaxChallengeReplayHashLen` 同量级：玩家昵称是几个到十几个
+// 字符，64 已经比任何真实昵称/关卡名都长 —— 它拒绝的只是「传一段文章」。
+const MaxAdminKeywordLen = 64
+
+// trimAdminKeyword 归一化后台搜索词：去首尾空白 + 长度上限。
+//
+// ⚠️ 两个调用点（`AdminListLevels` / `AdminListUsers`）必须走同一个函数。
+//
+// LIKE 转义目前就是**两份拷贝**：`adminapi.go` 与 `stats.go` 各写了一遍
+// 同一个 Replacer（见第 118 轮的注释）。同一个语义写两遍就会分叉 ——
+// 上一轮补转义时，两处是靠人记得才一起改的，不是靠结构保证的。
+// 上界比转义更容易漏：漏了转义至少还在功能上看得见，漏了上界
+// 什么都不会发生 —— 直到有人粘贴一整段话进来。
+func trimAdminKeyword(keyword string) (string, error) {
+	kw := strings.TrimSpace(keyword)
+	if n := len([]rune(kw)); n > MaxAdminKeywordLen {
+		return "", fmt.Errorf("%w: 查询参数 keyword 长 %d 字，上限 %d（昵称与关卡名都远短于此）",
+			ErrBadInput, n, MaxAdminKeywordLen)
+	}
+	return kw, nil
+}
+
 // AdminListLevels 返回关卡列表（含真实通关率，供运营判断难度）。
 //
 // chapter > 0 时按章节过滤，keyword 非空时按关卡名模糊过滤。
@@ -35,7 +72,17 @@ func (s *Service) AdminListLevels(ctx context.Context, chapter int, keyword stri
 		args = append(args, chapter)
 		conds = append(conds, fmt.Sprintf("l.chapter = $%d", len(args)))
 	}
-	if kw := strings.TrimSpace(keyword); kw != "" {
+	// keyword 进 LIKE 前必须转义 `%` / `_` / `\`——
+	// 搜索 "100%" 退化成全表匹配是「输入了东西却得到无过滤结果」。
+	//
+	// 第 154 轮补上长度上限：上界与转义是**两件事**，转义保证
+	// 「输入被当成字面量」，上界保证「输入不会长到没有意义」。
+	// 详见 trimAdminKeyword 的说明。
+	kw, err := trimAdminKeyword(keyword)
+	if err != nil {
+		return nil, 0, err
+	}
+	if kw != "" {
 		escaped := strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`).Replace(kw)
 		args = append(args, "%"+escaped+"%")
 		conds = append(conds, fmt.Sprintf("l.name LIKE $%d ESCAPE '\\'::char", len(args)))
