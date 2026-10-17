@@ -101,21 +101,28 @@ const SEEDS: Record<number, string> = {
  * ⚠️ 选牌会改变战斗（技能升格 / 属性加成 / 机制词条），
  *   **缺了它整局就不确定** —— 那是「取牌不改变哈希」这个缺陷的由来。
  *
- * 刻意混合三种形态，让契约覆盖到三条分支：
- *   - `[-1,0,1,...]`  有弃牌、有跳过（覆盖 discardTake / discardSkip / skip）
- *   - `[0,0,0,...]`    连续取牌（覆盖 applyCard 的升格与 buff 叠加）
- *   - `[]`             **空** —— 覆盖「老战报没有该字段」的退化路径
+ * 第 159 轮重写：编码从「弃没弃过」升级成「弃牌掩码 + 取/跳」，
+ * 用例覆盖面改为逐个区间的真实编码（期望值对照 engine.ts 的枚举表）：
+ *
+ *    0   普通取牌（取第 0 张）
+ *   -1   整波跳过
+ *   -7   弃原手牌第 0 张，取剩余第 0 张（mask=1 → code=4）
+ *  -15   弃原手牌第 2 张，取剩余第 0 张（mask=4 → code=12）← 旧编码的盲区
+ *   -9   弃原手牌第 0 张后跳过（mask=1 → code=6）
+ *  -22   弃全部三张后跳过（mask=7 → code=19，下界）
  */
 function cardPicksFor(levelId: number): number[] {
   const waves = fixture.levels.find((l: any) => l.id === levelId)?.waves?.length ?? 0
   if (levelId === 1) return [] // 退化路径：无选牌脚本
-  if (levelId === 25) return Array.from({ length: waves }, () => 0) // 连续取牌
+  if (levelId === 25) {
+    // 连续取牌：下标轮转 0/1/2（覆盖 applyCard 的升格与 buff 叠加）
+    return Array.from({ length: waves }, (_, i) => i % 3)
+  }
   if (levelId === 50) {
-    // 交替「弃一张取第 0 张 / 弃一张整波跳过 / 整波跳过」
-    return Array.from({ length: waves }, (_, i) => (i % 3 === 0 ? 0 : i % 3 === 1 ? -1 : -3))
+    return Array.from({ length: waves }, (_, i) => [0, -1, -7, -15, -9, -22][i % 6])
   }
   // 75 / 100：确定性伪随机但可复现（不用 Math.random）
-  return Array.from({ length: waves }, (_, i) => [0, 1, 2, -1, -3, -4][(i * 7 + levelId) % 6])
+  return Array.from({ length: waves }, (_, i) => [0, 1, 2, -1, -7, -13][(i * 7 + levelId) % 6])
 }
 
 /**
