@@ -201,7 +201,16 @@ func rollMechanicCards(rng *LCG, count int) []Card {
 // ⚠️ 必须**替换** A 块留的空实现 —— 那个空实现让 `checkWaveEnd`
 // 进了 `card_select` 却没有发牌，于是场景永远停在第 1 波。
 func (e *BattleEngine) beginCardSelect() {
+	// ⚠️ 第 159 轮：每次发牌重置本波决策状态。
+	//  - discardedMask：本波已弃牌的位掩码（原手牌下标），进 card_picks 编码
+	//  - handSnapshot：原手牌 id 快照，把「弃了哪张」映射回原下标
+	e.discardedMask = 0
 	cards := rollWaveCards(e.Rng, e.unlockedSkillCards())
+	snapshot := make([]string, len(cards))
+	for i, c := range cards {
+		snapshot[i] = c.ID
+	}
+	e.handSnapshot = snapshot
 	e.Deck.SetHand(cards)
 	e.emit(BattleEvent{Type: EventCardOffer, Score: int64(len(cards))})
 }
@@ -249,46 +258,119 @@ func (e *BattleEngine) recordPick(handIdx int) {
 	}
 }
 
-// 选牌编码基数（第 66 轮引入，进 `replay_hash`）。
+// card_picks 的「弃过牌」负编码基址（第 66 轮引入，第 159 轮重写）。
 //
-// ⚠️ 编码约定两端必须逐字一致：
+// 取值语义（与 TS `PICK_CODE_BASE` 逐位一致）：
 //
-//	handIdx                      → 取第 handIdx 张（未弃过牌）
-//	-1                           → 整波跳过（未弃过牌）
-//	-(PickDiscardBase + handIdx) → 弃一张后取（-3..-5）
-//	-PickDiscardSkipBase         → 弃一张后跳过（-6）
+//	0/1/2        普通取牌（无弃牌），下标是取牌当次的手牌下标
+//	-1           整波跳过（无弃牌）
+//	-(3+code)    本波弃过牌；code ∈ [0, PickCodeMax]，见 decodeDiscardCode
 //
-// 为什么要有「弃牌」这一档：卡牌由玩家在**运行时**选择，
-// 重放方拿不到「玩家当时弃了几张」。
-// 若只固定记 -1，判读侧就「既没看 discard 的 record 事件、
-// 又没看 card_picks」，两种情况完全一样 ——
-// 而 refundHeat(1) 与 record(...,1) 会让事件流不同、replayHash 不同。
+// # 为什么重写（第 159 轮）
+//
+// 旧编码（-3..-5 弃+取、-6..-8 弃+跳）表达不了两件**正常玩法**：
+//
+//  1. **弃的是哪一张** —— 重放侧固定弃 hand[0]，
+//     而线上 UI 允许弃任意一张；弃了非首张的玩家必然失配。
+//  2. **弃多于一张** ——「快速装填」（每波弃牌次数 +1）
+//     让 discardsLeft > 1 成为正常玩法。
+//
+// 新编码把弃牌集合写成**手牌位掩码**：一个 code 同时携带
+// 「弃了原手牌的哪几张」+「（不弃完时）取剩余第几张 / 跳过」。
+//
+// # 枚举（两端必须逐位一致，由 card_picks_contract 测试锁死）
+//
+// 按 mask 升序（bit i = 原手牌第 i 张被弃）：
+//
+//	mask       剩余    选择数     code
+//	0 (不弃)   3 张    4          0..3
+//	1 (弃0)    2 张    3          4..6
+//	2 (弃1)    2 张    3          7..9
+//	3 (弃0,1)  1 张    2          10..11
+//	4 (弃2)    2 张    3          12..14
+//	5 (弃0,2)  1 张    2          15..16
+//	6 (弃1,2)  1 张    2          17..18
+//	7 (弃全)   0 张    1          19
+//
+// 每个 mask 内部按 取剩余第 0 张、第 1 张、…、不取 排列。
+// 下界 `PickMin = -(3+19) = -22`（服务端 `CardPickMin` 同值）。
 const (
-	PickDiscardBase     = 3
-	PickDiscardSkipBase = 6
+	PickCodeBase = 3
+	PickCodeMax  = 19
 )
+
+// PickMin 是 card_picks 条目的合法取值下界（= battle_collections.go 的 CardPickMin）。
+const PickMin = -(PickCodeBase + PickCodeMax) // = -22
+
+// pickPopcount 是 3 位掩码的 popcount。
+func pickPopcount(m int) int { return (m & 1) + ((m >> 1) & 1) + ((m >> 2) & 1) }
+
+// pickChoiceCount 是 mask 下「选择」的个数：取剩余每张各一种 + 不取。
+func pickChoiceCount(mask int) int { return 3 - pickPopcount(mask) + 1 }
+
+// encodeDiscardCode 把（弃牌掩码, 选择）编码成 code。
+//
+// take ∈ [0, 剩余张数-1] 表示「取剩余的第 take 张」（剩余手牌保持原序）；
+// take = -1 表示不取（跳过）。
+func encodeDiscardCode(mask, take int) int {
+	code := 0
+	for m := 0; m < mask; m++ {
+		code += pickChoiceCount(m)
+	}
+	if take < 0 {
+		return code + pickChoiceCount(mask) - 1
+	}
+	return code + take
+}
+
+// decodeDiscardCode 解码 code，返回 (mask, take, ok)；越界返回 ok=false。
+//
+// take = -1 表示不取（跳过）。
+func decodeDiscardCode(code int) (int, int, bool) {
+	if code < 0 || code > PickCodeMax {
+		return 0, 0, false
+	}
+	for mask := 0; mask < 8; mask++ {
+		n := pickChoiceCount(mask)
+		if code < n {
+			take := code
+			if take == n-1 {
+				take = -1
+			}
+			return mask, take, true
+		}
+		code -= n
+	}
+	return 0, 0, false
+}
+
+// indexOfString 是 []string 的 indexOf（找不到返回 -1）。
+//
+// 用于 `handSnapshot` 查「这张牌在本波原手牌里的下标」。
+func indexOfString(xs []string, s string) int {
+	for i := range xs {
+		if xs[i] == s {
+			return i
+		}
+	}
+	return -1
+}
 
 // SkipCards 丢光全部手牌，直接进下一波。
 //
-// ⚠️ 编码只记 `-PICK_DISCARD_SKIP_BASE`（不带 handIdx）：
-//
-//	弃牌的下标信息已经在 `DiscardCard` 的 record 事件里，
-//	再编码一次就成了重复记账。
+// -1 = 整波跳过（无弃牌）；弃过牌时记位掩码编码（第 159 轮）——
+// 重放侧靠它复现那次/那几次 RefundHeat 与手牌变化。
 func (e *BattleEngine) SkipCards() {
 	if e.Phase != PhaseCardSelect {
 		return
 	}
-	encoded := -1
-	if e.discardedThisWave {
-		encoded = -PickDiscardSkipBase
-	}
-	e.recordPick(encoded)
+	e.recordPick(e.encodeCurrentPick(-1))
 	e.finishCardSelect()
 }
 
-// TakeCard 拿一张牌。
+// TakeCard 拿一张牌（取牌即结束本波选牌；第 159 轮）。
 //
-// ⚠️ 三处顺序不可调换（每一条都是第 66 轮踩出来的）：
+// ⚠️ 三处顺序不可调换：
 //
 //  1. `handIdx` 必须在 `take` **之前**取 —— 它是「玩家眼中的第几张」，
 //     而 `card_picks` 记的是这个下标，不是卡种。
@@ -296,13 +378,14 @@ func (e *BattleEngine) SkipCards() {
 //     这样事件驱动的 UI 读到的 `currentAttacker()` 已是加成后的值。
 //  3. `record` 在 `recordPick` **之前**：
 //     `record` 写的是 `cardIndex(card)`（卡种编码），
-//     `recordPick` 写的是 `handIdx`（下标编码）。两者不是一个东西。
+//     `recordPick` 写的是手牌下标编码。两者不是一个东西。
 //
-// ⚠️ `finishCardSelect` 而不是 `BeginWave`：
+// ⚠️ 第 159 轮：取牌**总是**结束本波选牌。
 //
-//	`finishCardSelect` 会先把剩余手牌 `drop` 掉再开波，
-//	而开波时的 `401:wave` 事件必须落在**本 tick**。
-//	直接 `beginWave` 的话，那条事件会晚一 tick（实测 DIFF@61 orig=402 repl=401）。
+//	改前只有取空手牌才结束，于是 UI 允许一波连点多张卡 ——
+//	而 card_picks 每波只记一项，第二张起在重放里必然对不上
+//	（线上 100% 结算被拒的根因之一）。设计本义（I-2）是「三选一」，
+//	剩余手牌静默丢弃（与 `finishCardSelect` 同路径，不写事件）。
 func (e *BattleEngine) TakeCard(id string) (Card, bool) {
 	if e.Phase != PhaseCardSelect {
 		return Card{}, false
@@ -318,24 +401,35 @@ func (e *BattleEngine) TakeCard(id string) (Card, bool) {
 	e.applyCard(c)
 	e.emit(BattleEvent{Type: EventCardTaken, Text: c.Name})
 	e.record(e.Tick, ReplayCard, cardIndex(c), 0, 0)
-	if e.discardedThisWave {
-		e.recordPick(-(PickDiscardBase + handIdx))
-	} else {
-		e.recordPick(handIdx)
-	}
-	if e.Deck.Size() == 0 {
-		e.finishCardSelect()
-	}
+	e.recordPick(e.encodeCurrentPick(handIdx))
+	e.finishCardSelect()
 	return c, true
 }
 
-// DiscardCard 弃一张牌。
+// encodeCurrentPick 把当前决策（discardedMask + 取牌下标/跳过）编码成 card_picks 项。
 //
-// ⚠️ 这里**不**写 card_picks：弃牌的下标由后续的
-// `TakeCard`（`-(3+handIdx)`）或 `SkipCards`（`-6`）一并记。
-// 弃牌自己只写一条 record 事件（flag=1），
-// 那条事件负责「这一 tick 发生了什么」；
-// `card_picks` 负责「这一波玩家做了什么决定」。两者职责不同。
+// `take = -1` 表示跳过。没弃过牌时保持旧值域（0/1/2 与 -1），
+// 保证最常见打法的编码与他端历史行为逐位一致。
+func (e *BattleEngine) encodeCurrentPick(take int) int {
+	if e.discardedMask == 0 {
+		return take
+	}
+	return -(PickCodeBase + encodeDiscardCode(e.discardedMask, take))
+}
+
+// DiscardCard 弃一张牌（第 159 轮重写记录语义）。
+//
+// ⚠️ 弃牌**不再写 record 事件**（旧实现写 flag=1 的 card 事件）。
+//
+//	那条事件的用途是让重放复现这次弃牌 —— 但「弃了哪张、弃了几张」
+//	现在由 card_picks 的位掩码编码携带（见 `PickCodeBase`），
+//	弃牌的全部副作用（RefundHeat / 次数 / 手牌变化）在重放侧由
+//	解码路径复现。事件流里不再出现弃牌，于是**弃牌顺序也不进哈希**
+//	（旧实现下「先弃 A 再弃 B」与「先弃 B 再弃 A」哈希不同，
+//	而玩家点击顺序本来就不是语义）。
+//
+// ⚠️ 这里**不**写 card_picks：掩码与「取/跳」由后续的
+// `TakeCard` / `SkipCards` 一并记（`encodeCurrentPick`）。
 func (e *BattleEngine) DiscardCard(id string) (Card, bool) {
 	if e.Phase != PhaseCardSelect {
 		return Card{}, false
@@ -351,14 +445,12 @@ func (e *BattleEngine) DiscardCard(id string) (Card, bool) {
 	}
 	e.Heat.RefundHeat(r.Refund)
 	e.emit(BattleEvent{Type: EventCardDiscarded, Text: captured.Name})
-	e.record(e.Tick, ReplayCard, cardIndex(captured), 1, 0)
-	e.discardedThisWave = true
-	// ⚠️ 这里必须**直接** `beginWave`，不走 `finishCardSelect`：
-	//   弃牌路径不写 card_picks，而 `finishCardSelect` 的语义是
-	//   「丢弃剩余手牌并进下一波」—— 但弃完最后一张时手牌已经空了，
-	//   两条路径的净效果一样，走 `beginWave` 更贴近 TS 且少一层。
+	// 记录到本波掩码：手牌在本次 offer 里的**原下标**（快照里查 id）
+	if i := indexOfString(e.handSnapshot, captured.ID); i >= 0 {
+		e.discardedMask |= 1 << i
+	}
 	if e.Deck.Size() == 0 {
-		e.BeginWave(e.WaveIndex + 1)
+		e.finishCardSelect()
 	}
 	return captured, true
 }
@@ -389,24 +481,6 @@ func (e *BattleEngine) finishCardSelect() {
 	e.BeginWave(e.WaveIndex + 1)
 }
 
-// finishCardSelectNextTick 静默清空剩余手牌，**不**开下一波。
-//
-// 用于「弃一张 + 取一张 + 剩牌不动」的场景：
-// `takeCard` 里 `deck.size !== 0` 所以不会开波，
-// 剩下的牌要等**下一 tick** `step()` 开头再开波。
-//
-// ⚠️ 走这里而不是 `finishCardSelect`：
-//
-//	`finishCardSelect` 会**立刻** `beginWave`，
-//	于是 `step()` 开头那一段（`if (this.cardSelectDone) {...}`）
-//	还没跑到就被跳过了 ——
-//	波形事件会落在**本 tick**，而原局落在下一 tick。
-//	实测 `DIFF@61 orig=728 repl=727`。
-func (e *BattleEngine) finishCardSelectNextTick() {
-	e.dropAllHand()
-	e.cardSelectDone = true
-}
-
 // dropAllHand 丢掉手牌里全部的牌。
 //
 // ⚠️ 必须**先复制再删**：`Deck.Drop` 走 `take`（= splice），
@@ -422,96 +496,80 @@ func (e *BattleEngine) dropAllHand() {
 	}
 }
 
-// applyReplayDecision 消费选牌脚本。
+// applyReplayDecision 消费选牌脚本（第 159 轮重写）。
 //
-// # ⚠️ 必须**每个 tick 最多消费一项**
+// # 语义：**每个 card_select 恰好消费一项脚本**
 //
-// 原实现把整个脚本在**同一 tick** 内消费完，
-// 于是第 1 波的 picks 被记成 `[-3,-3,-1,-1]` ——
-// 那是**两波**的决策，而事件流多出 `402/902/0`
-// 这条原局没有的记录，`replayHash` 立刻不同。
+// 线上玩家的决策被冻结在同一个 tick 上（见 `Step` 的时钟冻结说明），
+// 重放同样在本 tick 内完成一次完整决策（弃牌掩码 + 取/跳）。
+// 旧实现允许合成脚本在同一 tick 连点消费多项 —— 而线上真实玩家
+// 做不到 50ms 内点三张卡，那个语义从来就不存在。
 //
-// # ⚠️「弃一张 + 取一张」要 `finishCardSelectNextTick` + `return`
-//
-// 玩家「弃 1 张、拿 1 张、剩下 2 张不动」时 `deck.size !== 0`，
-// 于是 `takeCard` 里的 `size == 0` 分支不成立，phase 停在 card_select；
-// 剩下那 2 张要等**下一 tick** 玩家离开界面时才被丢弃。
-//
-// 直接 `continue` 会让 while 循环在同一 tick 内消费脚本下一项，
-// 把**一整波**的决策塞进第二项，于是 picks 又被记成 `[-3,-3,-1,-1]`。
+// 脚本耗尽或编码越界时回退为「跳过整波」，保证重放一定能跑到底
+// （宁可哈希不符，也不要中途卡死让用户看到空白页）。
 func (e *BattleEngine) applyReplayDecision() {
-	// guard 防死循环：万一 `SkipCards` 没能离开 card_select。
-	guard := 0
-	for e.Phase == PhaseCardSelect && guard < 16 {
-		guard++
-		if e.ReplayScript == nil {
-			// `script === null` 是 true 分支：**人工接管**。
-			// `Step` 只在 `ReplayScript != nil` 时调本方法，
-			// 而原局没有脚本时 `setReplayScript(null)` 一直为 null。
-			return
-		}
-		if e.ReplayScriptPos >= len(e.ReplayScript) {
-			e.SkipCards()
-			continue
-		}
-		want := e.ReplayScript[e.ReplayScriptPos]
-		e.ReplayScriptPos++
+	if e.ReplayScript == nil {
+		// 人工接管：`Step` 只在 `ReplayScript != nil` 时调本方法，
+		// 这里保留是类型收窄（nil 排除）用。
+		return
+	}
+	if e.ReplayScriptPos >= len(e.ReplayScript) {
+		e.SkipCards()
+		return
+	}
+	want := e.ReplayScript[e.ReplayScriptPos]
+	e.ReplayScriptPos++
 
-		switch {
-		case want <= -PickDiscardSkipBase:
-			// 「弃一张后跳过」
-			if len(e.Deck.Hand) > 0 {
-				e.DiscardCard(e.Deck.Hand[0].ID)
-			}
-			// recordPick 已在 discard 那一步的分支之外，
-			// skipCards 那一记靠 `len <= WaveIndex` 只生效一次 —— 必须 return。
+	// 负编码（第 159 轮）：-(3+code) = 弃牌掩码 + 取/跳
+	if want <= -PickCodeBase {
+		mask, take, ok := decodeDiscardCode(-(want + PickCodeBase))
+		if !ok {
 			e.SkipCards()
 			return
-
-		case want <= -PickDiscardBase:
-			// 「弃一张 + 取一张」：
-			// 弃牌与取牌**各自发自己的 record 事件**，与原局同源。
-			if len(e.Deck.Hand) > 0 {
-				e.DiscardCard(e.Deck.Hand[0].ID)
-			}
-			rest := -(want + PickDiscardBase)
-			if rest < 0 || rest >= len(e.Deck.Hand) {
-				e.SkipCards()
+		}
+		// 复现弃牌：按**原手牌顺序**（顺序不进哈希 —— 弃牌不写事件，
+		// 热量返还与手牌状态只与「弃哪几张」有关）。
+		//
+		// ⚠️ 与 TS 一致：额度不足时 `DiscardCard` 静默失败
+		//（`Deck.Discard` 判 `DiscardsLeft`），后续取牌照常 ——
+		// 两端必须产生同样的降级结果，否则哈希不同。
+		for i := 0; i < 3; i++ {
+			if mask&(1<<i) == 0 {
 				continue
 			}
-			e.TakeCard(e.Deck.Hand[rest].ID)
-			e.finishCardSelectNextTick()
-			return
-
-		case want < 0 || want >= len(e.Deck.Hand):
-			// -1 或越界 → 整波跳过。
-			//
-			// ⚠️ 越界也走这里（而不是取最后一张）：
-			//   取牌会发 record + refundHeat，
-			//   与脚本的 `replayHash` 立刻不符（I-6 失败过）。
-			e.SkipCards()
-			continue
+			if i >= len(e.handSnapshot) {
+				continue
+			}
+			id := e.handSnapshot[i]
+			if cardIndexInHand(e.Deck.Hand, id) >= 0 {
+				e.DiscardCard(id)
+			}
 		}
-
-		// 按原局同样顺序：先取卡、**再**决定下一波，事件流逐条对齐。
-		//
-		// ⚠️ 范围已在上面那个 case 里判过（`want < 0 || want >= len(Hand)`），
-		// 所以这里不必再判越界 —— 判一次就够，判两次反而让人以为「越界另有兜底」。
-		//
-		// ⚠️ 这里**不能** return：
-		// `TakeCard` 之后手牌未必清空（3 张取 1 张还剩 2 张），
-		// phase 仍是 card_select，于是 while 的下一轮会**继续消费脚本下一项**。
-		//
-		// 这与函数头注释里「每 tick 最多消费一项」看起来矛盾，但 TS 就是这么做的：
-		// 真实的「玩家连点三张」也在同一 tick 内完成，而事件流与 card_picks
-		// 必须与原局**逐条一致**。
-		// 实测（`replay_vectors.json` 第 25 关，脚本 `[0,0,0,0,0,0]`）：
-		// 第 0 波的 card_select 里消费掉 3 项，`cardPicks` 只记成 `[0]`
-		// —— 因为 `recordPick` 的守卫是 `len <= waveIndex`，只在本波第一次生效。
-		// 若这里错改成 return，第 0 波只消费 1 项、后续波次全部错位，
-		// `waves` / `score` / `durationMs` / 哈希会一起变（实测 Go 1718 tick vs TS 1414）。
-		e.TakeCard(e.Deck.Hand[want].ID)
+		if take < 0 {
+			e.SkipCards()
+			return
+		}
+		if take >= len(e.Deck.Hand) {
+			e.SkipCards()
+			return
+		}
+		e.TakeCard(e.Deck.Hand[take].ID)
+		return
 	}
+
+	// 普通取牌：手牌顺序可能与原局不同（不同 seed 的洗牌结果），
+	// 因此按**索引**取，而不是按卡牌 id —— 索引才是脚本记录的语义。
+	if want >= 0 {
+		if want >= len(e.Deck.Hand) {
+			e.SkipCards()
+			return
+		}
+		e.TakeCard(e.Deck.Hand[want].ID)
+		return
+	}
+
+	// -1 与其余非法负值（如 -2）→ 整波跳过
+	e.SkipCards()
 }
 
 // cardIndex 返回卡在 record 事件里的编号。
