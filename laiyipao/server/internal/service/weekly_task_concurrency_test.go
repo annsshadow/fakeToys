@@ -207,40 +207,34 @@ func TestConcurrentClaimOnWeeklyTaskIsAlsoOnce(t *testing.T) {
 		t.Errorf("余额增量 = %d，期望 1000", got)
 	}
 
-	// daily 那一行**必须仍然不存在** —— 若代码某处把 day 写成 daily，
-	// 会凭空多出一行 progress=0 的 daily 记录。
+	// 本周期内，这个 (user, task) 应该**只有一行**进度记录。
 	//
-	// ⚠️ **这条断言在「周一」不可判定**（第 150 轮发现：本包长期红的原因）。
+	// ⚠️ 旧写法按 `task_date = dailyDay` 查「daily 那一行是否存在」，
+	// 但在**周一** daily 与 weekly 的 periodStart 完全相等，
+	// 那条 SQL 会把 weekly 行自己也数进去 → 必然红。
+	// （第 150 轮踩过：README 记的「全绿」那天是周六。）
 	//
-	// `periodStart(now,"weekly")` 是本周一，`periodStart(now,"daily")` 是今天。
-	// 两者在**周一完全相等** —— 于是本用例自己插进去的那一行 weekly 记录，
-	// 也正好是下面这条 SQL 找的那一行 daily 记录。
-	// 结论：`dailyRows != 0` 是**必然成立**的，与代码有没有写死 daily 无关。
+	// 改成「总行数 == 1」后：
+	//   - 周一：weekly 行就是 daily 行，总数 1，断言通过；
+	//   - 其余 6 天：若代码某处把 day 写死成 daily，会多出一行
+	//     → 总数 2 → 断言红。
+	// 周一「多写一行 daily」与 weekly 行撞主键 (user,task,date)，
+	// 无法被行数观测 —— 这条 Monday 盲区由
+	// `TestPeriodStartWeeklyNeverCollapsesToDaily` 单独钉住。
 	//
-	// 这就是「一个测不出区别的断言」：它每天在周一红，其余 6 天绿，
-	// 于是 CI 上看起来像"偶发失败"，被当成 flake 重试掉。
-	// （实测：README 记录的「全绿」那天是 10-10，周六。）
-	//
-	// 修法不是删掉断言，而是**只在两者不等时**判定 ——
-	// 周一那天的"是否写死 daily"确实无法从数据库状态观测出来，
-	// 这条断言本来就观察不到它。
-	dailyDay := periodStart(time.Now(), "daily")
-	weeklyDay := periodStart(time.Now(), "weekly")
-	if dailyDay.Equal(weeklyDay) {
-		t.Logf("今天是周一：daily 与 weekly 的 periodStart 相同（%s），"+
-			"「不存在 daily 行」不可判定 —— 跳过这一条，其余断言仍有效",
-			dailyDay.Format("2006-01-02"))
-	} else {
-		var dailyRows int
-		if err := ts.pool.QueryRow(ctx,
-			`SELECT COUNT(*) FROM user_tasks
-			  WHERE user_id = $1 AND task_id = $2 AND task_date = $3`,
-			uid, taskID, dailyDay).Scan(&dailyRows); err != nil {
-			t.Fatal(err)
-		}
-		if dailyRows != 0 {
-			t.Errorf("daily 那一行被凭空写出来了（%d 行）—— 代码里还有地方把 day 写死成 daily", dailyRows)
-		}
+	// 多一行 daily 的另一种形态（只写 daily、不写 weekly）会被
+	// 上面的 `ok != 1`（领取失败）先抓住，这里不必重复。
+	var totalRows int
+	if err := ts.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM user_tasks
+		  WHERE user_id = $1 AND task_id = $2`,
+		uid, taskID).Scan(&totalRows); err != nil {
+		t.Fatal(err)
+	}
+	if totalRows != 1 {
+		t.Errorf("user_tasks 里出现了 %d 行（期望 1）—— "+
+			"代码某处为 weekly 任务多写了一行（可能把 day 写死成了 daily）",
+			totalRows)
 	}
 }
 
