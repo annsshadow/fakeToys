@@ -233,6 +233,10 @@ CLEANUP_CALLS = frozenset({"unlink", "remove", "rmtree", "close", "rename", "rep
 #: top:PermissionError ctx:None`，真正的写失败没被顶替），重复 close 与 save 成功后的 close 也静默。
 #: 于是按「不为不会发生的情形加兜底」这条原话**不动产品码**，把它钉成下面这份名册里唯一的一格，
 #: 判据逐格写死（文件 + 函数 + 调用文本）：产品码一改，这一格就红；长出第二格，同样红。
+#: **L288 复量：名册仍只有这一格**（A390 那把闸门的初版写的是 `try: … finally: container.close()`
+#: 加一句 `source.seek(0)`，这把尺当场读到第二格，红读数点名 `augmentor/csv_excel_import.py::safe_sheet_source`
+#: ⇒ 产品码改由 `with container:` 关容器。改的理由不是躲尺子：裸清理若抛，会把「解压放大」那句判词顶掉，
+#: 紧跟其后的回卷也跟着被跳过。）
 MEASURED_FINALLY_EXEMPT = (("augmentor/excel_write.py", "export_table_to_excel", "wb.close"),)
 
 

@@ -118,22 +118,25 @@ def test_export_roster_scale():
 
 
 def test_scanned_corpus_scale():
-    """尺子读的语料规模钉住：产品面 133 只 + 测试面 405 只（现量，不含再导出点自身）
+    """尺子读的语料规模钉住：产品面 133 只 + 测试面 406 只（现量，不含再导出点自身）
 
     扫描面缩水（换目录、加过滤）会把「量不到的 0」重新变成假绿，所以这里先量自己。
-    405 = 386 只已跟踪 + 19 只本轮系列新增（尚未跟踪）的测试文件：
+    406 = 405 只已跟踪 + 1 只未跟踪（本轮那支新守卫，`git ls-files tests` 与 `--others` 两侧现量）。
+    改数之前那一份读数是 405 = 386 只已跟踪 + 19 只**当时**尚未跟踪的本轮系列新增测试文件 ⇒
+    下面那串名单逐只点名的十九次计数是历史账，「19 只未跟踪」这一维到本轮已过期（往后的批次把
+    它们逐只提交了，所以分解变了而总数 405 在那一段里没动）：
     `test_vuln_audit_l277.py` / `test_empty_scope_http_l277.py` /
     `test_backup_name_path_segment_l277.py` / `test_config_dir_containment_l277.py` /
     `test_delta_remerge_l277.py`（第二次数 392 → 393 就是它）/
     `test_async_checkpoint_resume_l277.py` / `tests/integration/test_data_page_slice_l277.py`
     / `test_pattern_blowup_l278.py`（第三次数 393 → 394 就是它）/
     `test_shared_cache_lock_l279.py` / `test_memory_cache_lock_l279.py`（L279 两面罩锁守卫，
-    第四次数 394 → 396 就是这两只）/ `test_disk_cache_missing_file_l280.py`（L280 缺文件语义与自逐出守卫，第五次数 396 → 397 就是它）/ `test_missing_file_family_l281.py`（L281 把同一族推到全仓产品语料的常驻守卫，第六次数 397 → 398 就是它；产品面 133 一格未动，本轮只改产品文件内容与新增这一支测试）。/ `test_path_lock_registry_cap_l283.py` + `test_status_degrade_logs_l283.py`（L283 锁表封顶与状态端点出声两支守卫，第七次数 398 → 400 就是这两只；同轮产品面改了 `atomic_write.py` 与 `api/routes/status.py` 的内容，产品文件**只数文件不数行** ⇒ 133 仍不动）。/ `test_validation_finite_echo_l284.py`（L284 错误回执渲染兜底那一族的守卫，第八次数 400 → 401 就是它；本轮产品面只改 `api/main.py` 的内容、没新增文件 ⇒ 133 第四次确认不动）。/ `test_log_forging_l285.py`（L285 日志注入族那一支守卫，第九次数 401 → 402 就是它；同轮产品面改了 `logging_setup.py`（尾部新增消毒三件）与 `api/main.py`（两处同行改写）的内容、没新增产品文件 ⇒ 133 第五次确认不动；该守卫刻意**零 `parametrize`**（`grep -c parametrize` 整文件现量 0），l97 / l98 那两把尺子的量面因此没有新增成员，而不是「跑过了所以没变」。/ `test_dir_self_landing_l286.py` + `test_export_enhanced_empty_set_l286.py`（L286 自指落点与空集静默零写入两支守卫，第十次数 402 → 404 就是这两只；同轮产品面改了 `validation.py`（权威同行改写 + docstring 三处同行改写，净零行）与 `export_enhanced.py`（两个格式分支压成「文件必建、空集 0 字节」，净 -5 行）的内容、没新增产品文件 ⇒ 133 第六次确认不动；这两支守卫**都带 `parametrize`** ⇒ l97 / l98 的量面新增成员，改的是成员数而不是恒真，本轮按各自红读数重钉）。/ `test_sheet_formula_injection_l287.py`（L287 电子表格公式注入那一族的守卫，第十一次数 404 → 405 就是它；同轮产品面改了 `validation.py`（尾部新增判据四件）与 `export.py` / `export_enhanced.py` / `converter.py` / `excel_write.py` 的内容、没新增产品文件 ⇒ 133 第七次确认不动；这支守卫带 3 处 `parametrize`（`grep -c` 整文件现量）⇒ l97 / l98 的量面新增成员，本轮同样按各自红读数重钉）。
+    第四次数 394 → 396 就是这两只）/ `test_disk_cache_missing_file_l280.py`（L280 缺文件语义与自逐出守卫，第五次数 396 → 397 就是它）/ `test_missing_file_family_l281.py`（L281 把同一族推到全仓产品语料的常驻守卫，第六次数 397 → 398 就是它；产品面 133 一格未动，本轮只改产品文件内容与新增这一支测试）。/ `test_path_lock_registry_cap_l283.py` + `test_status_degrade_logs_l283.py`（L283 锁表封顶与状态端点出声两支守卫，第七次数 398 → 400 就是这两只；同轮产品面改了 `atomic_write.py` 与 `api/routes/status.py` 的内容，产品文件**只数文件不数行** ⇒ 133 仍不动）。/ `test_validation_finite_echo_l284.py`（L284 错误回执渲染兜底那一族的守卫，第八次数 400 → 401 就是它；本轮产品面只改 `api/main.py` 的内容、没新增文件 ⇒ 133 第四次确认不动）。/ `test_log_forging_l285.py`（L285 日志注入族那一支守卫，第九次数 401 → 402 就是它；同轮产品面改了 `logging_setup.py`（尾部新增消毒三件）与 `api/main.py`（两处同行改写）的内容、没新增产品文件 ⇒ 133 第五次确认不动；该守卫刻意**零 `parametrize`**（`grep -c parametrize` 整文件现量 0），l97 / l98 那两把尺子的量面因此没有新增成员，而不是「跑过了所以没变」。/ `test_dir_self_landing_l286.py` + `test_export_enhanced_empty_set_l286.py`（L286 自指落点与空集静默零写入两支守卫，第十次数 402 → 404 就是这两只；同轮产品面改了 `validation.py`（权威同行改写 + docstring 三处同行改写，净零行）与 `export_enhanced.py`（两个格式分支压成「文件必建、空集 0 字节」，净 -5 行）的内容、没新增产品文件 ⇒ 133 第六次确认不动；这两支守卫**都带 `parametrize`** ⇒ l97 / l98 的量面新增成员，改的是成员数而不是恒真，本轮按各自红读数重钉）。/ `test_sheet_formula_injection_l287.py`（L287 电子表格公式注入那一族的守卫，第十一次数 404 → 405 就是它；同轮产品面改了 `validation.py`（尾部新增判据四件）与 `export.py` / `export_enhanced.py` / `converter.py` / `excel_write.py` 的内容、没新增产品文件 ⇒ 133 第七次确认不动；这支守卫带 3 处 `parametrize`（`grep -c` 整文件现量）⇒ l97 / l98 的量面新增成员，本轮同样按各自红读数重钉）。/ `test_xlsx_zipbomb_l288.py`（L288 电子表格容器解压放大那一族的守卫，第十二次数 405 → 406 就是它；同轮产品面改了 `validation.py`（尾部新增三条阈值与判决函数，净 +72 行）、`csv_excel_import.py`（第 79 行同行改写 + 尾部新增闸门，净 +61 行）与 `converter.py`（两处同行改写，`git diff --numstat` 复验 5/5 净零行）的内容、没新增产品文件 ⇒ 133 第八次确认不动；插行全部落在三只文件的尾部或既有行之内，`converter.py:999`/`:1005` 与 `csv_excel_import.py:61` 这些活引用逐处复验未平移。这支守卫带 2 处 `parametrize` ⇒ l97 侧 `CALLS 466 → 468`、`READABLE 341 → 343`、`BLIND 125` 未动，l98 侧档位与两张名册未动，逐格读数见 `Temp/l288q/census.py`）。
     """
     n_products = len([p for p in _PRODUCTS if p != _EXPORT_SITE])
     n_tests = len(_TESTS)
-    assert (n_products, n_tests) == (133, 405), \
-        f"语料规模现量 (133, 405)，实得 {(n_products, n_tests)}"
+    assert (n_products, n_tests) == (133, 406), \
+        f"语料规模现量 (133, 406)，实得 {(n_products, n_tests)}"
 
 
 def test_every_all_symbol_has_a_consumer():
