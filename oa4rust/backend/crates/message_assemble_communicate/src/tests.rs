@@ -73,7 +73,7 @@ async fn test_send_message_route_exists() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
 }
 
 #[tokio::test]
@@ -111,7 +111,7 @@ async fn test_mark_read_route_exists() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
 }
 #[cfg(test)]
 mod tests {
