@@ -932,6 +932,19 @@ GET 写面队列里 `calendar_assemble_control` 与 `jpush_assemble_control` 各
 
 | 验证（本批代码变更） | — | processplatform_service_processing 整 lib `71 passed / 0 failed / 19 ignored`：新增离线臂 `b53_r7_writes_reject_without_session`（26 把 dead pool + 无会话逐把点名 401）+ `b53_admin_writes_non_admin_forbidden`（wc_process_flag/wc_shift_time 非管理员 403，离线稳健）+ `b53_owner_writes_non_admin_forbidden`（6 把缺失行 → 非 admin 403，`#[ignore]` 需真库，实测通过 42s）。既有 `test_create_process_route_exists` 由 500 翻 401；`tests_generated` 的 `test_create_process`/`test_start_timer`/`test_cancel_timer` 用 `assert_ne!(NOT_FOUND)` 照过。尺子：**29 条 R7 路由出列**（27 含写 + 2 只读误挂），R7 816→**787**、含写 125→**98**、ungated −29；psp R7 36→**7**；EXIT 0、判据见证缺口 0（复跑 3 次稳定） |
 
+### 三.54 第五十四批（meeting_assemble_control 剩余写面 4 把收门，R7 787→779）
+
+| 项 | 位置 | 处置与口径 |
+| --- | --- | --- |
+| 控制配置新增（admin 档） | `lib.rs` `create_meeting_control`（POST `/meeting/assemble/control/create`，INSERT `x_meeting_assemble_control`） | 与同核 `delete_meeting_control` 同档（管理动作）：加 `session: Option<Extension<Session>>` + `let Some(Extension(sess)) = session else 401` → `is_admin(&pool.0, &sess.person_unique)` 非 admin 403。门在 `pool.get()` 前，离线即证 401 |
+| 删除邀请（会议归属档） | `lib.rs` `meeting_id_delete_invite`（POST/DELETE/PUT `/meeting/{id}/delete/invite`，DELETE `x_meeting_invite`） | 改会议按会议属主或 admin：加 `session` + 401 + `u2_meeting_owner_gate(&pool.0, &sess, &id)`（按 `x_meeting.creator`，行不存在保留 not-found 语义）。沿用 `meeting_id_manual_completed` 同款门 |
+| 改完成时间（会议归属档） | `lib.rs` `meeting_id_modify_completedtime`（POST/PUT `/meeting/{id}/modify/completedtime`，UPDATE `x_meeting.completed_time`） | 同上：`session` + 401 + `u2_meeting_owner_gate` |
+| 改开始/结束时间（会议归属档） | `lib.rs` `meeting_id_modify_starttime`（POST/PUT `/meeting/{id}/modify/starttime`，UPDATE `x_meeting.start_time/end_time`） | 同上：`session` + 401 + `u2_meeting_owner_gate` |
+
+> 注：meeting 新鲜 R7 名单 14 条里，**上述 4 把（delete_invite 三方法别名 3 + modify_completedtime 2 + modify_starttime 2 + create_control 1 = 8 条路由）为真 DB 写**；其余 6 条为只读挂写方法 false-positive——`meeting_id_checkin_code`（SELECT 最近打卡码）与 5 把 `meeting_list_*`（SELECT 分页：list/page/size、list/page/size/manage、list/manage/page/size、list/invite/page/size、list/apply/page/size），按口径不动。
+
+| 验证（本批代码变更） | — | meeting_assemble_control 整 lib `62 passed / 0 failed / 26 ignored`（0.53s；注：本机 `localhost` 解析到 IPv6 会拖慢握手致 `is_db_available()` 2s 超时误判，测试改用 `DATABASE_URL=...@127.0.0.1:15432/...` 后稳定）。新增离线臂 `b54_r7_writes_reject_without_session`（4 把 dead pool + 无会话 401）+ `b54_create_control_non_admin_forbidden`（非 admin 403，离线稳健）+ `b54_owner_writes_non_owner_forbidden`（3 把会议属主非本会话 → 403，`#[ignore]` 需真库，实测 0.13s 通过）。`tests_generated` 的 4 个路由注册测试用 `assert_ne!(NOT_FOUND)` 照过（401≠404）。尺子：**8 条 R7 路由出列**（全含写），R7 787→**779**、含写 98→**90**、ungated −8；meeting R7 14→**6**；EXIT 0、判据见证缺口 0（复跑 3 次稳定） |
+
 ## 四、验证
 
 
