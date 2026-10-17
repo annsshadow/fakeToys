@@ -377,15 +377,10 @@ organization_assemble_express	POST	/api/unitduty/find/by/unit/name	unitduty_find
 organization_assemble_express	POST	/api/personattribute/list/name/person	personattr_list_name_person	R7
 organization_assemble_express	POST	/api/personattribute/list/attribute/person/name	personattr_list_attribute_person_name	R7
 organization_assemble_express	POST	/api/personattribute/list/person/object	personattr_list_person_object	R7
-organization_assemble_express	POST	/api/personattribute/set/person/name	personattr_set_person_name	R7
-organization_assemble_express	POST	/api/personattribute/append/person/name	personattr_append_person_name	R7
 organization_assemble_express	POST	/api/unitattribute/list/name/unit	unitattr_list_name_unit	R7
 organization_assemble_express	POST	/api/unitattribute/list/attribute/unit/name	unitattr_list_attribute_unit_name	R7
 organization_assemble_express	POST	/api/unitattribute/list/unit/object	unitattr_list_unit_object	R7
-organization_assemble_express	POST	/api/unitattribute/set/unit/name	unitattr_set_unit_name	R7
-organization_assemble_express	POST	/api/unitattribute/append/unit/name	unitattr_append_unit_name	R7
 organization_assemble_express	POST	/api/empower/list/identity/object	empower_list_identity_object	R7
-organization_assemble_express	POST	/api/empowerlog	empowerlog_create	R7
 organization_assemble_express	POST	/api/distinguishedname/list	distinguishedname_list	R7
 organization_assemble_personal	POST	/api/organization/assemble/personal/custom/{id}/mockputtopost	custom_mockputtopost	R7
 organization_core_entity	POST	/api/organization/definition	definition_create	R7
