@@ -25,6 +25,8 @@ mod tests_u2;
 #[allow(clippy::module_inception)]
 mod security_gate_tests;
 #[cfg(test)]
+mod security_gate_tests_b63;
+#[cfg(test)]
 mod tests_u2_legacy;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -814,8 +816,12 @@ pub async fn attendanceappealInfo_manager_list_id_next_count(
 /// POST /api/attendance/assemble/control/attendanceappealInfo/workflow/appeal/{id}
 pub async fn attendanceappealInfo_workflow_appeal_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 申述工作流推进：同族 workflow_sync 已是 admin 档；本把整行改 workflow_status，
+    // 属管理动作，admin 档（无会话 401 / 非 admin 403），门插在 pool.get() 前。
+    require_admin_opt(&pool, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -926,8 +932,12 @@ pub async fn attendanceappealInfo_id(
 /// POST /api/attendance/assemble/control/attendancedetail/analyse
 pub async fn attendancedetail_analyse(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 明细核算：同族 analyse/id/{id}（require_admin_opt）、analyse/redo（require_admin）均 admin 档；
+    // 按 person_id 区间批量置 analysed，本人跳过重算属越权，admin 档，门插在 pool.get() 前。
+    require_admin_opt(&pool, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let person_id = payload
