@@ -99,11 +99,15 @@ _MUST_BE_DIRECT = (
 #: `assert 'settings.file' in '    signature = ('` 这一类「引用落在隔壁一行」的形状，
 #: 不是「读者没了」——三行标识符现在依次在 190/191/192，仍是同一个 `signature` 元组里
 #: 对三只键的无条件读取（比 `if "level" in keys` 那几行更硬：那三行是条件消费）。
+#: **L289 再重量（行号 +20，判据仍一字未动）**：A393 把 `apply_logging_config` 拆成「锁壳 +
+#: `_apply_logging_config_locked`」，壳的 docstring 记着改前 16 支并发的实测读数（7/14/11 条
+#: handler、6/13/10 行），把装配体整体顶下二十格。红形与 L277 那一次同一款——
+#: `assert 'settings.level' in ...` 落在别的行上，读者一处未少；三行标识符现量 210/211/212。
 #: 重钉只跟着物理行号走，判据形状与标识符一个字未松；再插行还会再红，这正是本档的用途。
 _LOADER_CONSUMED = (
-    ("logging.level", "augmentor/logging_setup.py", 190, "settings.level"),
-    ("logging.file", "augmentor/logging_setup.py", 191, "settings.file"),
-    ("logging.format", "augmentor/logging_setup.py", 192, "settings.format"),
+    ("logging.level", "augmentor/logging_setup.py", 210, "settings.level"),
+    ("logging.file", "augmentor/logging_setup.py", 211, "settings.file"),
+    ("logging.format", "augmentor/logging_setup.py", 212, "settings.format"),
 )
 
 #: 第 3 档：产品树零读者，逐键签字。

@@ -1,7 +1,7 @@
 # Copyright (C) 2026 annsshadow
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-"""L284：错误回执（422 / 4xx）自己渲染崩掉时的兜底
+r"""L284：错误回执（422 / 4xx）自己渲染崩掉时的兜底
 
 **缺陷形状**（改前实测，本轮仓外探针逐只端点量到）：请求体里写 JSON 的
 `NaN` / `Infinity` / `-Infinity` 字面量（Python 的 JSON 解码默认接受这三个），
@@ -32,6 +32,10 @@ pydantic v2 的每一项都带 `input`，即**回显解析后的请求体**；st
 对 4xx 那支做同一件事（异常身份 `UnicodeEncodeError`，判决整条丢失）；摘掉
 `@app.exception_handler` 那一行则 `test_handler_is_registered_on_the_app` 与
 `test_http_handler_is_registered_on_the_app` 各自红（判据钉在注册本身）。
+
+**本文件 docstring 必须是 raw（A394 / L289 撞出）**：上面第 19 行那句 `"\ud800"` 落在非 raw
+的模块 docstring 里，Python 把它解成真字符后 `compile()` 当场 `UnicodeEncodeError` ⇒ 3.13 上
+整支守卫连收集都过不去（3.12 那条路上侥幸编得过，所以此前那份全量读数里这一格是隐形的）。
 """
 
 import json
