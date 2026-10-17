@@ -385,6 +385,9 @@ function fakeEnemy(over: Partial<Enemy> = {}): Enemy {
     speed: 1n,
     attack: 1n,
     attackRange: 0n,
+    // 派生缓存字段（出生时由内容表算出，见 types.ts）：这里给 0 射程 /
+    // flyHeight=0 对应的那组值，与上面 `attackRange: 0n, flyHeight: 0` 一致。
+    attackRangeFixed: 0n,
     attackInterval: 0,
     attackCooldown: 0,
     frozenMs: 0,
@@ -397,6 +400,8 @@ function fakeEnemy(over: Partial<Enemy> = {}): Enemy {
     dead: false,
     spawnProgress: 1,
     hitFlashMs: 0,
+    // toFixed(28 + flyHeight*0.1)² ，flyHeight=0 → 28000n²
+    hitRadius2: 28000n * 28000n,
     ...over,
   }
 }
