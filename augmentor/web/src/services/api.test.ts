@@ -279,15 +279,29 @@ describe('版本管理', () => {
     expect(instance.get).toHaveBeenCalledWith('/versions')
   })
 
-  it('createVersion 用查询串传 filename、用请求体传 label/description', async () => {
+  it('createVersion 用 params 传 filename、用请求体传 label/description', async () => {
     respondWith({ id: 'v1' })
 
     await api.createVersion('a.json', '标签', '说明')
 
-    expect(instance.post).toHaveBeenCalledWith('/versions/create?filename=a.json', {
-      label: '标签',
-      description: '说明',
-    })
+    // L277：`filename` 不再手拼进路径串。拼串时一个含 `&` / `=` / `#` 或空格的文件名会把
+    // query 拆碎（`a&b.json` 实测变成 `filename=a` 外加一个野键 `b.json`），所以编码交给 axios。
+    expect(instance.post).toHaveBeenCalledWith(
+      '/versions/create',
+      { label: '标签', description: '说明' },
+      { params: { filename: 'a.json' } },
+    )
+  })
+
+  it('createVersion 把带 & 与 # 的文件名原样交给 params，不做任何字符串拼接', async () => {
+    respondWith({ id: 'v1' })
+
+    await api.createVersion('a&b#c.json', '标签', '说明')
+
+    const [url, , config] = instance.post.mock.calls[0]
+    expect(url).toBe('/versions/create')
+    expect(config.params).toEqual({ filename: 'a&b#c.json' })
+    expect(url).not.toContain('filename=')
   })
 
   it('getVersion / getVersionData 命中正确的子路径', async () => {

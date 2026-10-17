@@ -77,6 +77,8 @@ export default function DataManagement() {
   const [files, setFiles] = useState<DataFileInfo[]>([])
   const [selectedFile, setSelectedFile] = useState<string>('')
   const [data, setData] = useState<DataItem[]>([])
+  /** `items` 每一行在盘上文件里的下标，写端点只认这一格（分页/搜索后与行号不等） */
+  const [rowIndices, setRowIndices] = useState<number[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
@@ -105,6 +107,7 @@ export default function DataManagement() {
     try {
       const result = await loadData(selectedFile, page, pageSize, search)
       setData(result.items)
+      setRowIndices(result.indices)
       setTotal(result.total)
     } catch (err) {
       message.error(apiErrorDetail(err, '加载数据失败'))
@@ -189,6 +192,16 @@ export default function DataManagement() {
       setLoading(false)
     }
   }
+
+  /**
+   * 行号 → 盘上下标。
+   *
+   * 后端 `GET /api/data/load` 交回的是**过滤后切片**，而 `PUT /api/data/update`
+   * 与 `DELETE /api/data/delete` 读的是整份文件 ⇒ antd 给的行号从来不是写端点的
+   * 坐标（第 2 页第 1 行 = 行号 0，而盘上是第 21 条；`search` 生效时更是对不上号）。
+   * 坐标由后端在同一把读闸里算好随 `indices` 一起交回，这里只做映射。
+   */
+  const absoluteIndex = (rowIndex: number) => rowIndices[rowIndex] ?? rowIndex
 
   const handleEdit = (item: DataItem, index: number) => {
     setEditingItem({ ...item })
@@ -462,7 +475,7 @@ export default function DataManagement() {
     {
       title: '索引',
       width: 60,
-      render: (_, __, index) => (page - 1) * pageSize + index + 1
+      render: (_, __, index) => absoluteIndex(index) + 1
     },
     {
       title: '问题 (instruction)',
@@ -485,14 +498,14 @@ export default function DataManagement() {
             type="link"
             size="small"
             icon={<EditOutlined />}
-            onClick={() => handleEdit(record, index)}
+            onClick={() => handleEdit(record, absoluteIndex(index))}
           />
           <Button
             type="link"
             size="small"
             danger
             icon={<DeleteOutlined />}
-            onClick={() => handleDelete(index)}
+            onClick={() => handleDelete(absoluteIndex(index))}
           />
         </Space>
       )
@@ -852,8 +865,10 @@ export default function DataManagement() {
           seed 留空则同一份输入两次采样结果不同（实测三次跑出三份）。
         </div>
         <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
-          比例越界**没有判据**，三种方法三种后果：比例 2 与 -0.5 只有 random 支回 400（那句是英文原话，
-          页面照抄不翻译），systematic 支分别交全量与**前 10 条**（负数切片），分层支分别交全量与 0 条（A292）。
+          比例越界**一律 400**，三种方法一种结局：判决是那句「ratio 必须是 0.0 到 1.0 之间的比例」，
+          且 400 之前不落任何产物。改前这里是三种方法三种后果（random 支回 400 且是 CPython 的英文
+          原话、systematic 支用负数切片交**前 10 条**、分层支交 0 条），那一格的账就是 **A292**，
+          范围维在 L277 收口。
           分层那一档：字段名不存在**不报错**（全部塌成一个分组），而分组键只取字段值的**前 10 个字符**——
           前 10 个字相同的两条会被当成同一层，配额因此按折叠后的组数摊（A296）。
         </div>
