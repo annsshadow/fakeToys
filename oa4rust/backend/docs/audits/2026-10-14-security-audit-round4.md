@@ -901,6 +901,21 @@ GET 写面队列里 `calendar_assemble_control` 与 `jpush_assemble_control` 各
 
 | 验证（本批代码变更） | — | bbs_assemble_control `57 passed / 0 failed / 0 ignored`：新增离线臂 `b51_r7_writes_reject_without_session`（1 把 dead pool + 无会话 401）+ `b51_update_control_config_non_admin_forbidden`（非管理员会话 403，含库不可达 fail-closed 亦 403）。既有 `test_update_control_config`（仅查路由注册 ≠404）仍绿——加门后无会话返 401（≠404）分支照过。尺子：**1 把 handler → 2 条 R7 路由出列**（POST+PUT 别名），R7 822→**820**、含写 131→129、ungated −2；`update_control_config` 现 R5（管理员门）；bbs R7 22→**20**（余 20 条 = login/logout 鉴权原语 2 + 18 条 SELECT 列表 false-positive，均非真写）；EXIT 0、判据见证缺口 0 |
 
+### 三.52 第五十二批（query_service_processing 写面 4 把收 admin 门，R7 820→816）
+
+| 项 | 位置 | 处置与口径 |
+| --- | --- | --- |
+| 查询服务重置（运维面，事务二写） | `lib.rs` `reset_service`（POST `/api/query/service/process/reset`，清缓存 + 计数归 1，事务二写） | 无归属全局运维数据，按本 crate「无归属系统数据写 = 管理员档」口径收门。加 `session: Option<Extension<Session>>` + `let Some(Extension(sess)) = session else 401` → `u2::require_admin(&pool, session.as_deref()).await?`（非管理员 403，`is_admin` 对不可用库 fail-closed）。门插在 `pool.get()` 之前，离线即证 401 |
+| 附加文档 UPSERT | `u2.rs` `index_update_extra_document`（UPSERT `x_query_index_extra`） | 同上 admin 门，加 `session` 参数 + `require_admin` 在 `pool.get()` 前 |
+| 动态表行插入 | `u2.rs` `table_insert`（Path 表名；INSERT `x_query_table_data`） | 同上 admin 门 |
+| 动态表行 bundle 更新 | `u2.rs` `table_update_with_bundle`（Path(表名,id)；UPSERT `x_query_table_data`） | 同上 admin 门（`require_admin` 由私有改 `pub(crate)` 以便 `lib.rs` 复用） |
+
+> 注：qsp 新鲜 R7 名单 8 条里，**上述 4 把（均单路由别名，故 4 条路由）为真 DB 写（INSERT/UPDATE/DELETE）**；其余 4 条经体读均非真写——`process_query`/`batch_process`（SELECT 列表体）、`design_search`（SELECT 搜索）、`index_directory_document_count`（SELECT 计数）为只读挂写方法 false-positive，按口径不动。本 crate 另有 touch / neural 两族 GET 运维面 18 把已在第十八批收管理员档（tests.rs 内离线臂证），不重复收。
+>
+> **顺带修（本批，预存测试基建缺陷）**：第十八批共享测试库造数 `seed_qsp_admin` 用 `DELETE BY unique_id` 后 `INSERT`；残留行若 `id = ADMIN_PERSON` 但 `unique_id ≠ ADMIN_PERSON`（旧批 schema 遗留）会令后续 `INSERT` 撞 `auth_person_pkey`，并发测试更会互撞。改为「先 `DELETE WHERE unique_id = $1 AND id <> $1`（清陈旧异 id 残留）」+「`INSERT ... ON CONFLICT (id) DO UPDATE SET unique_id = EXCLUDED.unique_id ...`（以 id 为主键 upsert 自愈合，原子、并发不互撞）」。`auth_person_role` 仍 `ON CONFLICT DO NOTHING`。
+
+| 验证（本批代码变更） | — | query_service_processing 整 lib `27 passed / 0 failed / 0 ignored`：新增离线臂 `b52_r7_writes_reject_without_session`（4 把 dead pool + 无会话 401）+ `b52_r7_writes_non_admin_forbidden`（4 把非管理员会话 403，含库不可达 fail-closed 亦 403）。既有 `test_reset_service_route_exists` 由 `INTERNAL_SERVER_ERROR`(500) 翻 `UNAUTHORIZED`(401)（路由现收门）；其余 3 把 `index_update_extra_document`/`table_insert`/`table_update_with_bundle` 无独立路由存在性测试，由 `b52` 臂直接点名。顺带修的 seed 幂等使 5 把第十八批 `u2_contract` 测试跨运行/并发复绿。尺子：**4 把 handler → 4 条 R7 路由出列**（均单路由），R7 820→**816**、含写 129→**125**、ungated −4；4 把现 R5（管理员门）；qsp R7 8→**4**（余 4 条 = 4 把 SELECT 只读 false-positive）；EXIT 0、判据见证缺口 0 |
+
 ## 四、验证
 
 

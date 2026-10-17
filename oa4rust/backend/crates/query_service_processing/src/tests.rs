@@ -155,15 +155,15 @@ async fn test_reset_service_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/api/query/service/processing/reset")
-                .method(Method::POST)
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
-        .unwrap();
+        .uri("/api/query/service/processing/reset")
+        .method(Method::POST)
+        .body(Body::empty())
+        .unwrap(),
+    )
+    .await
+    .unwrap();
 
-    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -308,9 +308,23 @@ mod u2_contract {
         )
         .await
         .unwrap();
+        // 幂等造数（共享测试库跨运行/并发残留）：
+        // 1) 先清掉「unique_id 相同但 id 不同」的陈旧残留（旧批 schema 可能留下）；
+        // 2) 再以 id 为主键做 upsert，把 unique_id 归一为一致，避免 pkey / unique_id
+        //    双约束在并发插入时冲突。upsert 对自身是原子的，并发测试互不碰撞。
+        c.execute(
+            "DELETE FROM auth_person WHERE unique_id = $1 AND id <> $1",
+            &[&ADMIN_PERSON.to_string()],
+        )
+        .await
+        .unwrap();
         c.execute(
             "INSERT INTO auth_person (id, unique_id, name, password_hash) \
-             VALUES ($1, $1, 'r418 qsp admin', 'x') ON CONFLICT (id) DO NOTHING",
+             VALUES ($1, $1, 'r418 qsp admin', 'x') \
+             ON CONFLICT (id) DO UPDATE \
+             SET unique_id = EXCLUDED.unique_id, \
+                 name = EXCLUDED.name, \
+                 password_hash = EXCLUDED.password_hash",
             &[&ADMIN_PERSON.to_string()],
         )
         .await

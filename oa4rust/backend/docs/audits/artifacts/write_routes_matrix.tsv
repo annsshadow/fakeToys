@@ -2223,11 +2223,11 @@ query_service	POST	/api/query/service/processing/execute	processing_execute	R7-�
 query_service_processing	POST	/api/query/service/processing/batch	batch_process	R7-已认证+体内无会话无门禁
 query_service_processing	POST	/api/query/service/processing/design/search	design_search	R7-已认证+体内无会话无门禁
 query_service_processing	POST	/api/query/service/processing/index/directory/document/count	index_directory_document_count	R7-已认证+体内无会话无门禁
-query_service_processing	POST	/api/query/service/processing/index/update/extra/document	index_update_extra_document	R7-已认证+体内无会话无门禁
+query_service_processing	POST	/api/query/service/processing/index/update/extra/document	index_update_extra_document	R5-已认证+体内门禁
 query_service_processing	POST	/api/query/service/processing/process	process_query	R7-已认证+体内无会话无门禁
-query_service_processing	POST	/api/query/service/processing/reset	reset_service	R7-已认证+体内无会话无门禁
-query_service_processing	POST	/api/query/service/processing/table/{flag}/insert	table_insert	R7-已认证+体内无会话无门禁
-query_service_processing	POST	/api/query/service/processing/table/{flag}/update/{bundle}	table_update_with_bundle	R7-已认证+体内无会话无门禁
+query_service_processing	POST	/api/query/service/processing/reset	reset_service	R5-已认证+体内门禁
+query_service_processing	POST	/api/query/service/processing/table/{flag}/insert	table_insert	R5-已认证+体内门禁
+query_service_processing	POST	/api/query/service/processing/table/{flag}/update/{bundle}	table_update_with_bundle	R5-已认证+体内门禁
 search	DELETE	/api/ftsearch/delete/{id}	ftsearch_delete	R5-已认证+体内门禁
 search	POST	/api/ftsearch/create	ftsearch_create	R5-已认证+体内门禁
 search	POST	/api/ftsearch/delete/{id}	ftsearch_delete	R5-已认证+体内门禁
