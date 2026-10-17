@@ -196,9 +196,6 @@ file	POST	/api/file/folder/create	folder_create	R7
 file	POST	/api/file/folder/update	folder_update	R7
 file	POST	/api/file/folder/remove	folder_remove	R7
 file	POST	/api/file/permission/set	permission_set	R7
-file_assemble_control	POST	/api/file/assemble/control/file/delete/{id}	delete_file	R7
-file_assemble_control	POST	/api/file/core/entity/file/create	create_file_entity	R7
-file_assemble_control	DELETE	/api/file/assemble/control/file/delete/{id}	delete_file	R7
 file_assemble_control	PUT	/api/file/assemble/control/update/control/config	update_control_config	R7
 file_assemble_control	POST	/api/anonymous/file/{id}/download	anonymous_file_id_download	R7
 file_assemble_control	POST	/api/anonymous/file/{id}/download/stream	anonymous_file_id_download_stream	R7
@@ -207,7 +204,6 @@ file_assemble_control	POST	/api/attachment/{id}/download/stream	attachment_id_do
 file_assemble_control	POST	/api/attachment2/list/type/{page}/size/{size}	u2_attachment2_list_type_page_size_size	R7
 file_assemble_control	POST	/api/attachment2/{id}/download	attachment2_id_download	R7
 file_assemble_control	POST	/api/attachment2/{id}/download/stream	attachment2_id_download_stream	R7
-file_assemble_control	POST	/api/config	u2_config_save_system_config	R7
 file_assemble_control	POST	/api/file/share/password/verify	u2_share_password_verify	R7
 file_assemble_control	POST	/api/file/assemble/control/file/{id}/download	file_id_download	R7
 file_assemble_control	POST	/api/file/assemble/control/file/{id}/download/stream	file_id_download_stream	R7

@@ -168,6 +168,53 @@ mod u2_tests {
         }
         let pool = shared::testing::test_pool();
         let client = pool.get().await.unwrap();
+        // 第五十六批：/api/config 收 admin 门后，注入专用 admin 会话（不改共享 test_session，
+        // 避免把 "tester@u2@P" 变成 admin 污染其他用例）。
+        let admin = "b56-cfg-admin@u2@P";
+        client
+            .execute(
+                "INSERT INTO auth_role (id, name, disable) VALUES ('b56-cfg-role','admin',false) \
+                 ON CONFLICT (id) DO NOTHING",
+                &[],
+            )
+            .await
+            .unwrap();
+        client
+            .execute(
+                "DELETE FROM auth_person WHERE id = 'b56-cfg-person' OR unique_id = $1",
+                &[&admin],
+            )
+            .await
+            .unwrap();
+        client
+            .execute(
+                "INSERT INTO auth_person (id, unique_id, name, password_hash) \
+                 VALUES ('b56-cfg-person',$1,'b56 cfg admin','x')",
+                &[&admin],
+            )
+            .await
+            .unwrap();
+        client
+            .execute(
+                "DELETE FROM auth_person_role WHERE person_id = 'b56-cfg-person'",
+                &[],
+            )
+            .await
+            .unwrap();
+        client
+            .execute(
+                "INSERT INTO auth_person_role (person_id, role_id, unit_id) \
+                 VALUES ('b56-cfg-person','b56-cfg-role','b56-unit')",
+                &[],
+            )
+            .await
+            .unwrap();
+        let admin_sess = Session {
+            token: "b56-cfg-token".to_string(),
+            person_unique: admin.to_string(),
+            created_at: chrono::Utc::now().naive_utc(),
+            expires_at: (chrono::Utc::now() + chrono::Duration::hours(1)).naive_utc(),
+        };
         // 空/坏请求 fail-loud：缺 content-type 是客户端错误，绝不静默 success
         let (status, _) = respond("POST", "/api/config", &[], Body::empty()).await;
         assert!(
@@ -180,6 +227,7 @@ mod u2_tests {
                     .uri("/api/config")
                     .method("POST")
                     .header("content-type", "application/json")
+                    .extension(admin_sess.clone())
                     .body(Body::from(
                         r#"{"configs":[{"name":"u2.save.key","value":"a","category":"u2test"},{"name":"u2.save.num","value":8}]}"#,
                     ))
@@ -201,6 +249,7 @@ mod u2_tests {
                     .uri("/api/config")
                     .method("POST")
                     .header("content-type", "application/json")
+                    .extension(admin_sess.clone())
                     .body(Body::from(
                         r#"{"configs":[{"name":"u2.save.key","value":"b","category":"u2test"}]}"#,
                     ))

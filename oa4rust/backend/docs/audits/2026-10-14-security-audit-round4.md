@@ -961,6 +961,20 @@ GET 写面队列里 `calendar_assemble_control` 与 `jpush_assemble_control` 各
 
 | 验证（本批代码变更） | — | jpush_assemble_control 整 lib `31 passed / 0 failed / 1 ignored`（0.19s）：新增离线臂 `b55_r7_writes_reject_without_session`（5 把 dead pool + 无会话 401）+ `b55_message_send_non_admin_forbidden`（非 admin 403，离线稳健）+ `b55_owner_writes_non_owner_forbidden`（2 把归属他人 → 403，`#[ignore]` 需真库，实测 0.12s 通过）。既有 `test_device_bind_legacy_path` 由 500 翻 401；`test_u2_post_message_send_route` 等用 `assert_ne!(NOT_FOUND)` 照过。尺子：**6 条 R7 路由出列**（全含写），R7 779→**773**、含写 90→**84**、ungated −6；jpush R7 7→**1**；EXIT 0、判据见证缺口 0（复跑 3 次稳定） |
 
+### 三.56 第五十六批（file_assemble_control 剩余写面 3 把收门，R7 773→769）
+
+| 项 | 位置 | 处置与口径 |
+| --- | --- | --- |
+| 软删文件（归属档） | `lib.rs` `delete_file`（POST/DELETE `/api/file/assemble/control/file/delete/{id}`，软删 `x_file.deleted_at`） | 按 `x_file.creator` 归属：加 `session: Option<Extension<Session>>` + 401 → 查 creator → `require_owner(&pool, &sess, &creator)`（行不存在保留原 not-found）。沿用同核 `update_file_entity` 同款归属门 |
+| 新建文件实体（会话档） | `lib.rs` `create_file_entity`（POST `/api/file/core/entity/file/create`，INSERT `x_file`） | 无会话 401（`session.is_none()`）。creator 仍硬写 `"system"`（残留记 §五） |
+| 系统参数写（admin 档） | `lib.rs` `u2_config_save_system_config`（POST `/api/config`，按 name UPSERT `x_system_config`） | 无会话 401 + `u2_require_admin(&pool, &sess)` 非 admin 403（复用同核既有 `u2_require_admin`） |
+
+> 注：file_assemble_control 新鲜 R7 名单 15 条里，本批收 **3 把（delete_file 双方法别名 2 + create_file_entity 1 + u2_config 1 = 4 条路由）**。其余 10 条为只读 false-positive（`anonymous_file_id_download(_stream)`、`attachment_id_download(_stream)`、`attachment2_id_download(_stream)`、`file_id_download(_stream)`、`u2_attachment2_list_type_page_size_size`、`u2_share_password_verify`），按口径不动。
+>
+> **§五 待修（本批记账，未加门）**：`update_control_config`（PUT `/api/file/assemble/control/update/control/config`，UPDATE 全局文件配置）虽为真写，但其 `pool: Extension<Arc<dyn ControlPool>>` 扩展**未被 router 提供**（`routes::router` 只 `Extension(pool: deadpool Pool)`；`tests_generated` 对此路由标 "not accessible"）——extraction 先于 handler 失败，加会话门也到不了。属「ControlPool 旧抽象与 Pool 新抽象混用」的接线缺陷，待统一 pool 注入后补 admin 门。
+
+| 验证（本批代码变更） | — | file_assemble_control 整 lib `94 passed / 0 failed / 28 ignored`（0.45s）：新增离线臂 `b56_r7_writes_reject_without_session`（3 把 dead pool + 无会话 401）+ `b56_config_save_non_admin_forbidden`（非 admin 403，离线稳健）+ `b56_delete_file_non_owner_forbidden`（归属他人 → 403，`#[ignore]` 需真库，实测 0.11s 通过）。既有 `u2_system_config_save_upserts_by_name` 因 `/api/config` 收 admin 门，改为注入专用 admin 会话（不改共享 `test_session`，避免污染其他用例）；`test_delete_file_*` 均为 `#[ignore]` 且 `assert_ne!(NOT_FOUND)` 照过。尺子：**4 条 R7 路由出列**（全含写），R7 773→**769**、含写 84→**80**、ungated −4；file_assemble_control R7 15→**11**（余 10 只读 + `update_control_config` 待修）；EXIT 0、判据见证缺口 0（复跑 3 次稳定） |
+
 ## 四、验证
 
 
