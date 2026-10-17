@@ -1917,7 +1917,7 @@ program_center	DELETE	/api/program_center/dict/{id}	dict_delete_id	R5-已认证+
 program_center	DELETE	/api/program_center/invoke/delete/{id}	invoke_delete	R5-已认证+体内门禁
 program_center	DELETE	/api/program_center/invoke/{flag}	u2_invoke_delete	R5-已认证+体内门禁
 program_center	DELETE	/api/program_center/module/remove/structure/{id}	module_remove_structure_id	R7-已认证+体内无会话无门禁
-program_center	DELETE	/api/program_center/mpweixin/menu/delete/{id}	mpweixin_menu_delete_id	R7-已认证+体内无会话无门禁
+program_center	DELETE	/api/program_center/mpweixin/menu/delete/{id}	mpweixin_menu_delete_id	R5-已认证+体内门禁
 program_center	DELETE	/api/program_center/script/{flag}	script_delete_id	R5-已认证+体内门禁
 program_center	POST	/api/program_center/agent	agent_create	R5-已认证+体内门禁
 program_center	POST	/api/program_center/agent/create	agent_create	R5-已认证+体内门禁
@@ -1979,12 +1979,12 @@ program_center	POST	/api/program_center/mpweixin/check	u3_mpweixin_check_post	R7
 program_center	POST	/api/program_center/mpweixin/media/add/forever	mpweixin_media_add_forever	R7-已认证+体内无会话无门禁
 program_center	POST	/api/program_center/mpweixin/menu/add	mpweixin_menu_add	R7-已认证+体内无会话无门禁
 program_center	POST	/api/program_center/mpweixin/menu/create/to/weixin	mpweixin_menu_create_to_weixin	R7-已认证+体内无会话无门禁
-program_center	POST	/api/program_center/mpweixin/menu/update/{id}	mpweixin_menu_update_id	R7-已认证+体内无会话无门禁
+program_center	POST	/api/program_center/mpweixin/menu/update/{id}	mpweixin_menu_update_id	R5-已认证+体内门禁
 program_center	POST	/api/program_center/mpweixin/message/template/send	u3_mpweixin_template_send_post	R6-已认证+读会话无门禁
 program_center	POST	/api/program_center/output/list	output_list	R7-已认证+体内无会话无门禁
 program_center	POST	/api/program_center/prompterrorlog	u3_prompterrorlog_create	R6-已认证+读会话无门禁
 program_center	POST	/api/program_center/qiyeweixin	u3_qiyeweixin_create	R6-已认证+读会话无门禁
-program_center	POST	/api/program_center/qiyeweixin/request/pull/sync	u3_qiyeweixin_request_pull_sync_post	R7-已认证+体内无会话无门禁
+program_center	POST	/api/program_center/qiyeweixin/request/pull/sync	u3_qiyeweixin_request_pull_sync_post	R5-已认证+体内门禁
 program_center	POST	/api/program_center/qiyeweixin/send/getprivateinfo/message	qiyeweixin_send_getprivateinfo_message	R5-已认证+体内门禁
 program_center	POST	/api/program_center/schedule/report	schedule_report	R7-已认证+体内无会话无门禁
 program_center	POST	/api/program_center/schedule/schedule/fire	u3_schedule_fire_post	R5-已认证+体内门禁
@@ -1995,7 +1995,7 @@ program_center	POST	/api/program_center/script/{flag}	script_save_flag	R5-已认
 program_center	POST	/api/program_center/tokenthreshold/update	tokenthreshold_update	R5-已认证+体内门禁
 program_center	POST	/api/program_center/unexpectederrorlog	u3_unexpectederrorlog_create	R6-已认证+读会话无门禁
 program_center	POST	/api/program_center/warnlog	warnlog_create	R6-已认证+读会话无门禁
-program_center	POST	/api/program_center/welink/request/pull/sync	u3_welink_request_pull_sync_post	R7-已认证+体内无会话无门禁
+program_center	POST	/api/program_center/welink/request/pull/sync	u3_welink_request_pull_sync_post	R5-已认证+体内门禁
 program_center	POST	/api/program_center/zhengwudingding/sync/organization/callback	zhengwudingding_sync_organization_callback	R5-已认证+体内门禁
 program_center	PUT	/api/program_center/agent/save/{id}	agent_save	R5-已认证+体内门禁
 program_center	PUT	/api/program_center/agent/{flag}	u3_agent_update_flag	R5-已认证+体内门禁

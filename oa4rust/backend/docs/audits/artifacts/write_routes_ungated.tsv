@@ -799,11 +799,7 @@ program_center	POST	/api/program_center/market/list/install/log/paging/{page}/si
 program_center	POST	/api/program_center/market/list/paging/{page}/size/{size}	u3_market_list_paging_post	R7
 program_center	DELETE	/api/program_center/module/remove/structure/{id}	module_remove_structure_id	R7
 program_center	PUT	/api/program_center/module/write/{id}	module_write_flag	R7
-program_center	POST	/api/program_center/mpweixin/menu/update/{id}	mpweixin_menu_update_id	R7
-program_center	DELETE	/api/program_center/mpweixin/menu/delete/{id}	mpweixin_menu_delete_id	R7
-program_center	POST	/api/program_center/qiyeweixin/request/pull/sync	u3_qiyeweixin_request_pull_sync_post	R7
 program_center	POST	/api/program_center/script/list/paging/{page}/size/{size}	script_list_paging_page_size_size	R7
-program_center	POST	/api/program_center/welink/request/pull/sync	u3_welink_request_pull_sync_post	R7
 query_assemble_designer	POST	/api/query/assemble/designer/importmodel/{id}	importmodel_id	R7
 query_assemble_designer	POST	/api/query/assemble/designer/importmodel/permission/{id}	importmodel_id_permission	R7
 query_assemble_designer	POST	/api/query/assemble/designer/importmodel/list/{query}/{flag}	importmodel_list_query_flag_p2	R7

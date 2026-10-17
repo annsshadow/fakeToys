@@ -6816,8 +6816,10 @@ pub async fn mpweixin_menu_create_to_weixin(
 #[allow(non_snake_case)]
 pub async fn mpweixin_menu_delete_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM x_program_mpweixin_menu WHERE id = $1", &[&id])
@@ -6872,8 +6874,10 @@ pub async fn mpweixin_menu_subscribe(
 #[allow(non_snake_case)]
 pub async fn mpweixin_menu_update_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -11745,7 +11749,9 @@ pub async fn u3_qiyeweixin_create(
 #[allow(non_snake_case)]
 pub async fn u3_qiyeweixin_request_pull_sync_post(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
     client
@@ -11871,7 +11877,9 @@ pub async fn u3_welink_pull_sync(
 #[allow(non_snake_case)]
 pub async fn u3_welink_request_pull_sync_post(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
     client
