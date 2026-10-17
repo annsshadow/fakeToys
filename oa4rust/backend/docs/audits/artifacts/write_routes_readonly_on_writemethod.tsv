@@ -613,8 +613,6 @@ processplatform_service_processing	POST	/api/processplatform/service/processing/
 processplatform_service_processing	POST	/api/processplatform/service/processing/record/task/processing	record_task_processing	R7
 processplatform_service_processing	POST	/api/processplatform/service/processing/series/series/activitytoken/processing/signal/{work}/{id}/{activityToken}	work_id_series_series_activitytoken_activityToken_processing_signal	R7
 processplatform_service_processing	POST	/api/processplatform/service/processing/task/will/{id}	task_id_will	R7
-processplatform_service_processing	POST	/api/processplatform/service/processing/timer/start	start_timer	R7
-processplatform_service_processing	POST	/api/processplatform/service/processing/timer/{job_id}/cancel	cancel_timer	R7
 processplatform_service_processing	PUT	/api/processplatform/service/processing/task/v2/{id}	task_v2_id	R7
 processplatform_service_processing	PUT	/api/processplatform/service/processing/work/{id}/manual/append/identity	work_id_manual_append_identity	R7
 program_center	DELETE	/api/program_center/module/remove/structure/{id}	module_remove_structure_id	R7

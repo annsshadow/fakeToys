@@ -154,8 +154,11 @@ pub async fn get_process(
 #[allow(non_snake_case)]
 pub async fn create_process(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(req): Json<CreateProcessRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十三批：建单要求有效会话（无会话 401，不落库）。
+    u4_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = Uuid::new_v4().to_string();
     let title = req.name.unwrap_or_default();
@@ -807,8 +810,11 @@ pub async fn work_v2_id_add_split(
 #[allow(non_snake_case)]
 pub async fn work_v2_id_add_split_p2(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((_work, id)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十三批：与同核 `_p2` 别名同锁——拆分工作按 `x_work.creator` 归属。
+    u4_require_work_owner(&pool.0, session, &id).await?;
     work_v2_id_add_split_core(pool, id).await
 }
 
@@ -1023,8 +1029,11 @@ pub async fn work_process_processId_name_name_serial(
 #[allow(non_snake_case)]
 pub async fn work_manual_after_processing(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十三批：人工流转后置落 x_record，按 work 发起人校归属。
+    u4_require_work_owner(&pool.0, session, &id).await?;
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     let row = tx
@@ -1113,8 +1122,12 @@ pub async fn task_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
 #[allow(non_snake_case)]
 pub async fn task_id_processing(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十三批：推进待办按 task 负责人 / work 发起人两列 OR 校归属。
+    let session = u4_session(session)?;
+    u4_require_actors(&pool.0, &session, U4ActorKey::Task, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_one(
@@ -1347,8 +1360,12 @@ pub async fn task_v2_id_pause(
 #[allow(non_snake_case)]
 pub async fn task_v2_id_reset(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十三批：重置待办按 task 负责人 / work 发起人两列 OR 校归属。
+    let session = u4_session(session)?;
+    u4_require_actors(&pool.0, &session, U4ActorKey::Task, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     client
         .execute(
@@ -1396,8 +1413,11 @@ pub async fn task_v2_id_resume(
 #[allow(non_snake_case)]
 pub async fn task_v3_id_add(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十三批：给 work 追加任务，按 work 发起人校归属。
+    u4_require_work_owner(&pool.0, session, &id).await?;
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     let row = tx
@@ -1488,12 +1508,16 @@ pub async fn taskcompleted_id(
 #[allow(non_snake_case)]
 pub async fn taskcompleted_id_press_work_work(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((completed_id, work_id, _s2)): axum::extract::Path<(
         String,
         String,
         String,
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十三批：改写完成记录的 work 归属，按 x_workcompleted 发起人 / work 发起人校归属。
+    let session = u4_session(session)?;
+    u4_require_actors(&pool.0, &session, U4ActorKey::WorkCompleted, &completed_id).await?;
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     tx.execute(
@@ -1520,15 +1544,18 @@ pub async fn taskcompleted_id_press_work_work(
 #[allow(non_snake_case)]
 pub async fn snap_upload(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(req): Json<serde_json::Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let id = Uuid::new_v4().to_string();
     let work_id: String = req
         .get("workId")
         .and_then(|v| v.as_str())
         .unwrap_or("")
         .to_string();
+    // 第五十三批：上传快照写 x_snap，按 work 发起人校归属。
+    u4_require_work_owner(&pool.0, session, &work_id).await?;
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let id = Uuid::new_v4().to_string();
     let snap_type: String = req
         .get("snapType")
         .and_then(|v| v.as_str())
@@ -2465,17 +2492,20 @@ pub async fn documentversion_work_work(
 #[allow(non_snake_case)]
 pub async fn event_add_update_table(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(req): Json<serde_json::Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let record_id: String = req
+        .get("recordId")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    // 第五十三批：事件表更新落 x_record（work_id 取 body.recordId），按 work 发起人校归属。
+    u4_require_work_owner(&pool.0, session, &record_id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = Uuid::new_v4().to_string();
     let table: String = req
         .get("table")
-        .and_then(|v| v.as_str())
-        .unwrap_or("")
-        .to_string();
-    let record_id: String = req
-        .get("recordId")
         .and_then(|v| v.as_str())
         .unwrap_or("")
         .to_string();
@@ -2790,8 +2820,11 @@ pub async fn service_work_id_touch_p2(
 #[allow(non_snake_case)]
 pub async fn attachment_copy_work_workId(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((source_id, work_id)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十三批：复制是往目标 work 写，按目标 work 发起人校归属。
+    u4_require_work_owner(&pool.0, session, &work_id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_one(
@@ -2822,9 +2855,13 @@ pub async fn attachment_copy_work_workId(
 #[allow(non_snake_case)]
 pub async fn attachment_copy_workcompleted_workCompletedId(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(work_completed_id): axum::extract::Path<String>,
     axum::extract::Json(body): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十三批：复制是往目标 workcompleted 写，按完成记录发起人 / work 发起人校归属。
+    let session = u4_session(session)?;
+    u4_require_actors(&pool.0, &session, U4ActorKey::WorkCompleted, &work_completed_id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let source_id = body
         .get("id")
@@ -3211,16 +3248,23 @@ pub async fn workcompleted_shift_time(
 #[allow(non_snake_case)]
 pub async fn workcompleted_flag_merge(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id1): axum::extract::Path<String>,
     axum::extract::Json(body): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    // 第五十三批：合并会 UPDATE 源 + DELETE 目标（破坏性），两侧完成记录都要校归属。
+    let session = u4_session(session)?;
     let id2 = body
         .get("targetId")
         .or_else(|| body.get("id"))
         .and_then(|v| v.as_str())
         .unwrap_or_default()
         .to_string();
+    u4_require_actors(&pool.0, &session, U4ActorKey::WorkCompleted, &id1).await?;
+    if !id2.is_empty() {
+        u4_require_actors(&pool.0, &session, U4ActorKey::WorkCompleted, &id2).await?;
+    }
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row1 = match client
         .query_opt(
             "SELECT id, work_id, completed_time, creator FROM x_workcompleted WHERE id = $1",
@@ -4095,7 +4139,9 @@ pub mod timer {
 
 #[allow(non_snake_case)]
 pub async fn start_timer(
+    pool: Extension<Pool>,
     timer: Extension<timer::TimerRegistry>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(req): axum::extract::Json<serde_json::Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let work_id: String = req
@@ -4103,6 +4149,8 @@ pub async fn start_timer(
         .and_then(|v| v.as_str())
         .unwrap_or("")
         .to_string();
+    // 第五十三批：定时任务写 x_timer_job，按 work 发起人校归属。
+    u4_require_work_owner(&pool.0, session, &work_id).await?;
     let task_id: Option<String> = req
         .get("taskId")
         .and_then(|v| v.as_str())
@@ -4137,9 +4185,26 @@ pub async fn start_timer(
 
 #[allow(non_snake_case)]
 pub async fn cancel_timer(
+    pool: Extension<Pool>,
     timer: Extension<timer::TimerRegistry>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(job_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十三批：取消定时任务按该 job 所属 work 的发起人校归属（job 不存在则保留幂等语义）。
+    let session = u4_session(session)?;
+    if let Ok(client) = pool.get().await {
+        if let Ok(Some(row)) = client
+            .query_opt(
+                "SELECT w.creator AS creator FROM x_timer_job j \
+                 LEFT JOIN x_work w ON w.id = j.work_id WHERE j.id = $1",
+                &[&job_id],
+            )
+            .await
+        {
+            let creator: String = row.get::<_, Option<String>>("creator").unwrap_or_default();
+            u4_require_actor(&pool.0, &session, &creator).await?;
+        }
+    }
     timer.cancel(&job_id).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
