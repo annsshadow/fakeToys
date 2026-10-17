@@ -853,6 +853,18 @@ GET 写面队列里 `calendar_assemble_control` 与 `jpush_assemble_control` 各
 
 | 验证（本批代码变更） | — | program_center `263 passed / 0 failed / 0 ignored`：新增离线臂 `b47_r7_writes_reject_without_session`（4 把逐把点名，mock pool + 无会话全 401）；既有路由断言翻 401：`tests_u3.rs` `u3_market_module_family_reachable` 的 `DELETE /mpweixin/menu/delete/{id}`、`u3_logs_misc_reachable` 的 `POST /qiyeweixin/request/pull/sync` 与 `POST /welink/request/pull/sync`（原期望 500，加门后无会话在 DB 前 401）。尺子：**4 把 handler → 4 条 R7 路由出列**（4 把均单路由无别名），R7 868→**864**、含写 175→171、R6 119 不动、ungated −4；program_center 余 42 条 R7 = 40 条「只读挂写方法」false-positive + 2 条外部调用待修（`u3_invoke_execute`/`_with_token`）；EXIT 0、判据见证缺口 0 |
 
+### 三.48 第四十八批（cms_assemble_control input_compare 收会话门，R7 838→836）
+
+> 前置说明：本批接在「基线同步（合并 optimism20261012）」之后。合并后尺子稳定读数 **R7 838 / 含写 145**（合并首次跑读到 864 是工作树写竞态的一次性假象，复跑 3 次均 838）；合并本身带来 optimism 的门禁，R7 864→838（−26）。本批在此基线上推进。
+
+| 项 | 位置 | 处置与口径 |
+| --- | --- | --- |
+| input_compare 应用导入对比 | `lib.rs` `input_compare`（PUT `/api/input/compare`）/ `input_compare_mockputtopost`（POST `/api/input/compare/mockputtopost`，PUT→POST 动词别名） | 两把委托 `input_compare_impl`，体内 `INSERT INTO x_cms_appinfo (id, app_type, alias, enabled, creator) VALUES (..., 'system')`——creator 硬编码 `'system'`，无 per-user 归属列（冒名族），按本 crate `input_create`/`input_cover` 既定**会话存在档**收门：加 `session: Option<Extension<Session>>` + `let Some(Extension(_session)) = session else 401`（无会话 401）。门在 `pool.get()` 之前，离线即证 401 |
+
+> 注：cms_assemble_control 新鲜 R7 名单 68 条里，**仅上述 2 条为真写**；其余 66 条经逐一体读均为「只读挂写方法」false-positive——`*_list_*`/`*_filter_*`/`*_paging_*`/`*_next_*`/`*_prev_*`/`*_search` 族（SELECT）、`data_document_id_array_data`/`form_submit`/`output_appInfoFlag_select`/`script_load_u3`/`categoryinfo_id_execute_projection`/`categoryinfo_bind_categoryId_view`/`appinfo_appId_icon_size_size`（SELECT 体）、`image_encode_base64`/`image_resize_*`（`let _ = pool;` 纯内存变换，不碰库）、`input_prepare_cover`/`input_prepare_create`（无 pool 的桩）。按口径不动。另 `form_u2_update`/`form_u2_delete` 等已带 `u2_check_owner` 门（R5），`input_create`/`input_cover` 已带会话存在门（R6），均不重复。
+
+| 验证（本批代码变更） | — | cms_assemble_control `337 passed / 0 failed / 4 ignored`：新增离线臂 `b48_input_compare_reject_without_session`（2 把逐把点名，dead pool + 无会话全 401）；既有路由存在性探针（`test_input_compare`/`test_input_compare_mockputtopost`）仍绿——探针仅在 404 时断言非空 body，加门后返回 401（≠404）分支跳过，无需改。尺子：**2 把 handler → 2 条 R7 路由出列**（2 把均单路由无别名），R7 838→**836**、含写 145→143、R6 119→121、ungated −2；`input_compare` 现 R6（会话存在门被尺子读作「读会话」，已出 R7 行动面）；cms_assemble_control R7 68→**66**（余 66 条全为 false-positive）；EXIT 0、判据见证缺口 0 |
+
 ## 四、验证
 
 

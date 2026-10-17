@@ -1636,9 +1636,15 @@ pub async fn categoryinfo_bind_categoryId_view(
 #[allow(non_snake_case)]
 pub async fn categoryinfo_bind_categoryId_view_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(category_id): axum::extract::Path<String>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 写面：先取有效会话（无会话 401），再按管理员档判定，均先于任何 SQL。
+    let Some(Extension(session)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    u2_require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let name = body.get("name").and_then(|v| v.as_str()).unwrap_or("");
     let parent_id = body.get("parentId").and_then(|v| v.as_str()).unwrap_or("");
@@ -3253,9 +3259,15 @@ pub async fn design_appdict_id_mockdeletetoget(
 #[allow(non_snake_case)]
 pub async fn design_appdict_id_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 写面：先取有效会话（无会话 401），再按管理员档判定，均先于任何 SQL。
+    let Some(Extension(session)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    u2_require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let data_value = body.get("dataValue").and_then(|v| v.as_str()).unwrap_or("");
     client
@@ -3579,9 +3591,16 @@ pub async fn document_cipher_id_permission_read_person_person(
 #[allow(non_snake_case)]
 pub async fn document_cipher_id_persist_view_record(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 写面：先取有效会话（无会话 401），再按管理员档判定，均先于任何 SQL。
+    // personId 取自请求体（冒名族），仅会话不足以定责，按无属主系统数据收管理员档。
+    let Some(Extension(session)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    u2_require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let person_id = body.get("personId").and_then(|v| v.as_str()).unwrap_or("");
     client
@@ -3979,9 +3998,15 @@ pub async fn file_id_mockputtopost(
 #[allow(non_snake_case)]
 pub async fn file_id_upload(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 写面：收有效会话门（无会话 401）。
+    // x_cms_file 的 creator 列本 upsert 不写，行属主不可判，暂按仅会话存在档收口。
+    let Some(Extension(_session)) = session else {
+        return Err(AppError::Unauthorized);
+    };
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let name = body.get("name").and_then(|v| v.as_str()).unwrap_or("");
     let content_base64 = body
@@ -4424,9 +4449,19 @@ pub async fn fileinfo_download_transfer_flag_flag(
 #[allow(non_snake_case)]
 pub async fn fileinfo_edit_id_doc_docId(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((file_id, doc_id)): axum::extract::Path<(String, String)>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 写面：先取有效会话（无会话 401）；附件归属文档，按文档写者门校验。
+    let Some(Extension(session)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    match gate_doc_writer(&pool, &session, &doc_id).await? {
+        U2Gate::NotFound => return Ok(Json(ActionResult::error("document not found"))),
+        U2Gate::Forbidden => return Err(AppError::Forbidden),
+        U2Gate::Allowed => {}
+    }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let original_name = body
         .get("originalName")
@@ -4454,9 +4489,19 @@ pub async fn fileinfo_edit_id_doc_docId(
 #[allow(non_snake_case)]
 pub async fn fileinfo_edit_id_doc_docId_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((file_id, doc_id)): axum::extract::Path<(String, String)>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 写面：先取有效会话（无会话 401）；附件归属文档，按文档写者门校验。
+    let Some(Extension(session)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    match gate_doc_writer(&pool, &session, &doc_id).await? {
+        U2Gate::NotFound => return Ok(Json(ActionResult::error("document not found"))),
+        U2Gate::Forbidden => return Err(AppError::Forbidden),
+        U2Gate::Allowed => {}
+    }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let original_name = body
         .get("originalName")
@@ -4538,9 +4583,19 @@ pub async fn fileinfo_replace_to_doc_docId(
 #[allow(non_snake_case)]
 pub async fn fileinfo_update_document_docId_attachment_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((doc_id, attachment_id)): axum::extract::Path<(String, String)>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 写面：先取有效会话（无会话 401）；附件归属文档，按文档写者门校验。
+    let Some(Extension(session)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    match gate_doc_writer(&pool, &session, &doc_id).await? {
+        U2Gate::NotFound => return Ok(Json(ActionResult::error("document not found"))),
+        U2Gate::Forbidden => return Err(AppError::Forbidden),
+        U2Gate::Allowed => {}
+    }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let original_name = body
         .get("originalName")
@@ -4568,6 +4623,7 @@ pub async fn fileinfo_update_document_docId_attachment_id(
 #[allow(non_snake_case)]
 pub async fn fileinfo_update_document_docId_attachment_id_callback_callback(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((doc_id, attachment_id, _callback)): axum::extract::Path<(
         String,
         String,
@@ -4575,6 +4631,15 @@ pub async fn fileinfo_update_document_docId_attachment_id_callback_callback(
     )>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 写面：先取有效会话（无会话 401）；附件归属文档，按文档写者门校验。
+    let Some(Extension(session)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    match gate_doc_writer(&pool, &session, &doc_id).await? {
+        U2Gate::NotFound => return Ok(Json(ActionResult::error("document not found"))),
+        U2Gate::Forbidden => return Err(AppError::Forbidden),
+        U2Gate::Allowed => {}
+    }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let original_name = body
         .get("originalName")
@@ -4602,9 +4667,15 @@ pub async fn fileinfo_update_document_docId_attachment_id_callback_callback(
 #[allow(non_snake_case)]
 pub async fn fileinfo_update_id_content(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 写面：收有效会话门（无会话 401）。
+    // x_cms_fileinfo 的 upload_person 列各插入路径均不写，行属主不可判，暂按仅会话存在档收口。
+    let Some(Extension(_session)) = session else {
+        return Err(AppError::Unauthorized);
+    };
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let original_name = body
         .get("originalName")
@@ -4632,9 +4703,19 @@ pub async fn fileinfo_update_id_content(
 #[allow(non_snake_case)]
 pub async fn fileinfo_upload_doc_docId_save_as_flag(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((doc_id, _save_as)): axum::extract::Path<(String, String)>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 写面：先取有效会话（无会话 401）；附件归属文档，按文档写者门校验。
+    let Some(Extension(session)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    match gate_doc_writer(&pool, &session, &doc_id).await? {
+        U2Gate::NotFound => return Ok(Json(ActionResult::error("document not found"))),
+        U2Gate::Forbidden => return Err(AppError::Forbidden),
+        U2Gate::Allowed => {}
+    }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let original_name = body
         .get("originalName")
@@ -4659,9 +4740,19 @@ pub async fn fileinfo_upload_doc_docId_save_as_flag(
 #[allow(non_snake_case)]
 pub async fn fileinfo_upload_document_docId(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(doc_id): axum::extract::Path<String>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 写面：先取有效会话（无会话 401）；附件归属文档，按文档写者门校验。
+    let Some(Extension(session)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    match gate_doc_writer(&pool, &session, &doc_id).await? {
+        U2Gate::NotFound => return Ok(Json(ActionResult::error("document not found"))),
+        U2Gate::Forbidden => return Err(AppError::Forbidden),
+        U2Gate::Allowed => {}
+    }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let original_name = body
         .get("originalName")
@@ -4686,9 +4777,19 @@ pub async fn fileinfo_upload_document_docId(
 #[allow(non_snake_case)]
 pub async fn fileinfo_upload_document_docId_callback_callback(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((doc_id, _callback)): axum::extract::Path<(String, String)>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 写面：先取有效会话（无会话 401）；附件归属文档，按文档写者门校验。
+    let Some(Extension(session)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    match gate_doc_writer(&pool, &session, &doc_id).await? {
+        U2Gate::NotFound => return Ok(Json(ActionResult::error("document not found"))),
+        U2Gate::Forbidden => return Err(AppError::Forbidden),
+        U2Gate::Allowed => {}
+    }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let original_name = body
         .get("originalName")
@@ -5457,9 +5558,16 @@ pub async fn form_id_mockdeletetoget(
 #[allow(non_snake_case)]
 pub async fn form_id_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 写面：先取有效会话（无会话 401），再按管理员档判定，均先于任何 SQL。
+    // 表单定义 upsert 不写 creator 列，行属主不可判，按结构定义族收管理员档。
+    let Some(Extension(session)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    u2_require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let app_id = u2_body_str(&body, "appId")
         .filter(|app_id| !app_id.trim().is_empty())
@@ -5710,9 +5818,15 @@ pub async fn output_appInfoFlag_select(
 #[allow(non_snake_case)]
 pub async fn output_appInfoFlag_select_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(app_info_flag): axum::extract::Path<String>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 写面：先取有效会话（无会话 401），再按管理员档判定，均先于任何 SQL。
+    let Some(Extension(session)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    u2_require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let name = body.get("name").and_then(|v| v.as_str()).unwrap_or("");
     let config = body.get("config").and_then(|v| v.as_str()).unwrap_or("");
@@ -6134,9 +6248,16 @@ pub async fn script_id_mockdeletetoget(
 #[allow(non_snake_case)]
 pub async fn script_id_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 写面：先取有效会话（无会话 401），再按管理员档判定，均先于任何 SQL。
+    // 脚本定义 upsert 不写 creator 列，行属主不可判，按结构定义族收管理员档。
+    let Some(Extension(session)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    u2_require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let name = body.get("name").and_then(|v| v.as_str()).unwrap_or("");
     let script_content = body
@@ -7067,9 +7188,16 @@ pub async fn view_id_mockdeletetoget(
 #[allow(non_snake_case)]
 pub async fn view_id_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 写面：先取有效会话（无会话 401），再按管理员档判定，均先于任何 SQL。
+    // 视图定义 upsert 不写 creator 列，行属主不可判，按结构定义族收管理员档。
+    let Some(Extension(session)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    u2_require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let name = body.get("name").and_then(|v| v.as_str()).unwrap_or("");
     let view_config = body
@@ -7210,9 +7338,16 @@ pub async fn viewfieldconfig_id_mockdeletetoget(
 #[allow(non_snake_case)]
 pub async fn viewfieldconfig_id_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 写面：先取有效会话（无会话 401），再按管理员档判定，均先于任何 SQL。
+    // 字段配置 upsert 不写 creator 列，行属主不可判，按结构定义族收管理员档。
+    let Some(Extension(session)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    u2_require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let field_name = body.get("fieldName").and_then(|v| v.as_str()).unwrap_or("");
     let field_config = body
@@ -7583,8 +7718,13 @@ async fn input_prepare_impl() -> Result<Json<ActionResult<Value>>, AppError> {
 #[allow(non_snake_case)]
 pub async fn input_compare(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 写面：收有效会话门（无会话 401），防匿名应用数据写入。
+    let Some(Extension(_session)) = session else {
+        return Err(AppError::Unauthorized);
+    };
     input_compare_impl(&pool, &body).await
 }
 
@@ -7592,8 +7732,13 @@ pub async fn input_compare(
 #[allow(non_snake_case)]
 pub async fn input_compare_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 写面：收有效会话门（无会话 401），防匿名应用数据写入。
+    let Some(Extension(_session)) = session else {
+        return Err(AppError::Unauthorized);
+    };
     input_compare_impl(&pool, &body).await
 }
 
@@ -7601,8 +7746,13 @@ pub async fn input_compare_mockputtopost(
 #[allow(non_snake_case)]
 pub async fn input_cover(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 写面：收有效会话门（无会话 401），防匿名应用数据写入。
+    let Some(Extension(_session)) = session else {
+        return Err(AppError::Unauthorized);
+    };
     input_cover_impl(&pool, &body).await
 }
 
@@ -7610,8 +7760,13 @@ pub async fn input_cover(
 #[allow(non_snake_case)]
 pub async fn input_cover_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 写面：收有效会话门（无会话 401），防匿名应用数据写入。
+    let Some(Extension(_session)) = session else {
+        return Err(AppError::Unauthorized);
+    };
     input_cover_impl(&pool, &body).await
 }
 
@@ -7619,8 +7774,13 @@ pub async fn input_cover_mockputtopost(
 #[allow(non_snake_case)]
 pub async fn input_create(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 写面：收有效会话门（无会话 401），防匿名应用数据写入。
+    let Some(Extension(_session)) = session else {
+        return Err(AppError::Unauthorized);
+    };
     input_create_impl(&pool, &body).await
 }
 
@@ -7628,8 +7788,13 @@ pub async fn input_create(
 #[allow(non_snake_case)]
 pub async fn input_create_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 写面：收有效会话门（无会话 401），防匿名应用数据写入。
+    let Some(Extension(_session)) = session else {
+        return Err(AppError::Unauthorized);
+    };
     input_create_impl(&pool, &body).await
 }
 
@@ -10089,9 +10254,16 @@ pub async fn comment_uncommend_u3(
 #[allow(non_snake_case)]
 pub async fn correlation_create_u3(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(doc_id): axum::extract::Path<String>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 写面：先取有效会话（无会话 401），再按管理员档判定，均先于任何 SQL。
+    // x_cms_correlation 无归属列，按无属主系统数据收管理员档。
+    let Some(Extension(session)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    u2_require_admin(&pool, &session).await?;
     let mut related = u2_body_strs(&body, "relatedDocIds");
     if related.is_empty() {
         if let Some(one) = u2_body_str(&body, "relatedDocId") {
@@ -10138,9 +10310,16 @@ pub async fn correlation_create_u3(
 #[allow(non_snake_case)]
 pub async fn correlation_update_u3(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(doc_id): axum::extract::Path<String>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 写面：先取有效会话（无会话 401），再按管理员档判定，均先于任何 SQL。
+    // x_cms_correlation 无归属列，按无属主系统数据收管理员档。
+    let Some(Extension(session)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    u2_require_admin(&pool, &session).await?;
     let mut related = u2_body_strs(&body, "relatedDocIds");
     if related.is_empty() {
         if let Some(one) = u2_body_str(&body, "relatedDocId") {
@@ -10603,8 +10782,14 @@ async fn u3_cipher_publish_workflow_impl(
 #[allow(non_snake_case)]
 pub async fn document_cipher_publish_workflow_u3(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 写面：先取有效会话（无会话 401），再按管理员档判定，均先于任何 SQL。
+    let Some(Extension(session)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    u2_require_admin(&pool, &session).await?;
     u3_cipher_publish_workflow_impl(&pool, &body.0).await
 }
 
@@ -10612,8 +10797,14 @@ pub async fn document_cipher_publish_workflow_u3(
 #[allow(non_snake_case)]
 pub async fn document_cipher_publish_workflow_mock_u3(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 写面：先取有效会话（无会话 401），再按管理员档判定，均先于任何 SQL。
+    let Some(Extension(session)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    u2_require_admin(&pool, &session).await?;
     u3_cipher_publish_workflow_impl(&pool, &body.0).await
 }
 
@@ -11163,8 +11354,13 @@ pub async fn fileinfo_binary_base64_u3(
 #[allow(non_snake_case)]
 pub async fn fileinfo_upload_with_url_u3(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 写面：先取有效会话（无会话 401）；附件归属文档，按文档写者门校验。
+    let Some(Extension(session)) = session else {
+        return Err(AppError::Unauthorized);
+    };
     let doc_id = match u2_body_str(&body, "docId") {
         Some(d) if !d.is_empty() => d,
         _ => return Err(AppError::BadRequest("docId required".to_string())),
@@ -11176,6 +11372,11 @@ pub async fn fileinfo_upload_with_url_u3(
     let original_name = u2_body_str(&body, "originalName").unwrap_or_else(|| url.clone());
     let size = u2_body_i64(&body, "size").unwrap_or(0);
     let content_type = u2_body_str(&body, "contentType").unwrap_or_default();
+    match gate_doc_writer(&pool, &session, &doc_id).await? {
+        U2Gate::NotFound => return Ok(Json(ActionResult::error("document not found"))),
+        U2Gate::Forbidden => return Err(AppError::Forbidden),
+        U2Gate::Allowed => {}
+    }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_one(
