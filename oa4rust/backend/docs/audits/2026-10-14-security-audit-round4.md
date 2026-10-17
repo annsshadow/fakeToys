@@ -975,6 +975,21 @@ GET 写面队列里 `calendar_assemble_control` 与 `jpush_assemble_control` 各
 
 | 验证（本批代码变更） | — | file_assemble_control 整 lib `94 passed / 0 failed / 28 ignored`（0.45s）：新增离线臂 `b56_r7_writes_reject_without_session`（3 把 dead pool + 无会话 401）+ `b56_config_save_non_admin_forbidden`（非 admin 403，离线稳健）+ `b56_delete_file_non_owner_forbidden`（归属他人 → 403，`#[ignore]` 需真库，实测 0.11s 通过）。既有 `u2_system_config_save_upserts_by_name` 因 `/api/config` 收 admin 门，改为注入专用 admin 会话（不改共享 `test_session`，避免污染其他用例）；`test_delete_file_*` 均为 `#[ignore]` 且 `assert_ne!(NOT_FOUND)` 照过。尺子：**4 条 R7 路由出列**（全含写），R7 773→**769**、含写 84→**80**、ungated −4；file_assemble_control R7 15→**11**（余 10 只读 + `update_control_config` 待修）；EXIT 0、判据见证缺口 0（复跑 3 次稳定） |
 
+### 三.57 第五十七批（processplatform_assemble_designer 设计面写 6 把收 admin 门，R7 769→763）
+
+| 项 | 位置 | 处置与口径 |
+| --- | --- | --- |
+| 流程定义保存/删除 | `lib.rs` `save_flow`（POST `/save/{id}`，UPDATE `x_process_definition`）、`delete_flow`（POST `/delete/{id}`，DELETE `x_process_definition`） | 设计面管理动作，收 admin 档：`session: Option<Extension<Session>>` + 401 → `require_admin_gate(&pool, &sess)` 非 admin 403 |
+| 设计面文件上传 | `lib.rs` `file_id_upload`（POST `/file/upload/{id}`，UPDATE `PP_E_FILE`） | 同上 admin 档 |
+| 条目权限删除（两形态） | `lib.rs` `item_access_delete_exact`（DELETE `/item-access/delete/process/{processId}/path/{path}`）、`item_access_delete_process_processId_path_path`（POST `/item/access/delete/process/path/path/{processId}`，均 DELETE `pp_e_item_access`） | 同上 admin 档 |
+| 脚本软删 | `u2_script.rs` `delete`（DELETE `/script/{id}`，软删 `PP_E_SCRIPT`） | 同上 admin 档（`crate::require_admin_gate`） |
+
+> 注：designer 新鲜 R7 名单 20 条里，本批收 **6 把（各单路由，6 条路由）为真写**；余 14 条经体读全为 SELECT 只读 false-positive（`application_id_onlyRemoveNotCompleted`、`applicationdict_paging_post`、`mergeitemplan_estimate/_id/_list_*`、`process_application_*_edition*`、`process_id_execute_projection`、`process_id_list_element`、`process_id_onlyRemoveNotCompleted(_edition)`、`workcompleted_*_merge_data`），按口径不动。
+>
+> **顺带修（本批，预存测试造数缺陷）**：`test_pp_process_writes_require_owner` 的造数 `INSERT INTO pp_e_process (… xcreatorPerson …)` 未加双引号，PG 归一成小写 `xcreatorperson` → `E42703` 列不存在假红；改为 `"xcreatorPerson"` 并把 `NOW()` 改 `NOW()::text`（列是 text）。
+
+| 验证（本批代码变更） | — | processplatform_assemble_designer 整 lib `32 passed / 0 failed / 1 ignored`（0.18s）：新增离线臂 `b57_r7_writes_reject_without_session`（6 把 dead pool + 无会话 401）+ `b57_writes_non_admin_forbidden`（6 把非 admin 403，离线稳健）。既有 `test_save_flow_route_exists`/`test_delete_flow_route_exists` 由 500 翻 401；`tests_generated` 用 `assert_ne!(NOT_FOUND)` 照过（file_id_upload / item_access_delete 两族标 "not accessible" 未测）。尺子：**6 条 R7 路由出列**（全含写），R7 769→**763**、含写 80→**74**、ungated −6；designer R7 20→**14**；EXIT 0、判据见证缺口 0（复跑 3 次稳定） |
+
 ## 四、验证
 
 

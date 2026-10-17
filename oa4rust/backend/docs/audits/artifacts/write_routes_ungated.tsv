@@ -390,13 +390,8 @@ processplatform_assemble_bam	POST	/api/processplatform/assemble/bam/period/list/
 processplatform_assemble_bam	POST	/api/processplatform/assemble/bam/period/list/task/{start}/{unit}	period_list_start_task_unit	R7
 processplatform_assemble_bam	POST	/api/processplatform/assemble/bam/period/list/application/{start}/{work}	period_list_start_work_application	R7
 processplatform_assemble_bam	POST	/api/processplatform/assemble/bam/period/list/{start}/{work}/{unit}	period_list_start_work_unit	R7
-processplatform_assemble_designer	POST	/api/processplatform/assemble/designer/save/{id}	save_flow	R7
-processplatform_assemble_designer	POST	/api/processplatform/assemble/designer/delete/{id}	delete_flow	R7
 processplatform_assemble_designer	POST	/api/processplatform/assemble/designer/application/{id}/{onlyRemoveNotCompleted}	application_id_onlyRemoveNotCompleted	R7
 processplatform_assemble_designer	POST	/api/processplatform/assemble/designer/applicationdict/list/paging/{page}/size/{size}	applicationdict_paging_post	R7
-processplatform_assemble_designer	POST	/api/processplatform/assemble/designer/file/upload/{id}	file_id_upload	R7
-processplatform_assemble_designer	DELETE	/api/processplatform/assemble/designer/item-access/delete/process/{processId}/path/{path}	item_access_delete_exact	R7
-processplatform_assemble_designer	POST	/api/processplatform/assemble/designer/item/access/delete/process/path/path/{processId}	item_access_delete_process_processId_path_path	R7
 processplatform_assemble_designer	POST	/api/processplatform/assemble/designer/mergeitemplan/estimate	mergeitemplan_estimate	R7
 processplatform_assemble_designer	POST	/api/processplatform/assemble/designer/mergeitemplan/{id}	mergeitemplan_id	R7
 processplatform_assemble_designer	POST	/api/processplatform/assemble/designer/mergeitemplan/list/application/paging/{applicationId}/{page}/{size}/{size}	mergeitemplan_list_application_applicationId_paging_page_size_size	R7
@@ -407,7 +402,6 @@ processplatform_assemble_designer	POST	/api/processplatform/assemble/designer/pr
 processplatform_assemble_designer	POST	/api/processplatform/assemble/designer/process/{id}/list/element	process_id_list_element	R7
 processplatform_assemble_designer	POST	/api/processplatform/assemble/designer/process/{id}/{onlyRemoveNotCompleted}	process_id_onlyRemoveNotCompleted	R7
 processplatform_assemble_designer	POST	/api/processplatform/assemble/designer/process/edition/{id}/{onlyRemoveNotCompleted}	process_id_onlyRemoveNotCompleted_edition	R7
-processplatform_assemble_designer	DELETE	/api/processplatform/assemble/designer/script/{id}	delete	R7
 processplatform_assemble_designer	POST	/api/processplatform/assemble/designer/workcompleted/application/merge/data/{applicationFlag}	workcompleted_application_applicationFlag_merge_data	R7
 processplatform_assemble_designer	POST	/api/processplatform/assemble/designer/workcompleted/process/merge/data/{processFlag}	workcompleted_process_processFlag_merge_data	R7
 processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/read/opinion/manage/{id}	read_id_opinion_manage	R7

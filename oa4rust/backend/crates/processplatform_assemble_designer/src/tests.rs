@@ -176,7 +176,8 @@ async fn test_save_flow_route_exists() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    // 第五十七批：save_flow 收 admin 门后无会话返 401（原 500）。
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
 }
 
 #[tokio::test]
@@ -195,7 +196,8 @@ async fn test_delete_flow_route_exists() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    // 第五十七批：delete_flow 收 admin 门后无会话返 401（原 500）。
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
 }
 
 #[tokio::test]
@@ -517,8 +519,8 @@ async fn test_pp_process_writes_require_owner() {
         .await
         .unwrap();
         c.execute(
-            "INSERT INTO pp_e_process (id, xid, xname, xcreatorPerson, create_time) \
-             VALUES ($1,$1,'p',$2,NOW()) ON CONFLICT (id) DO NOTHING",
+            "INSERT INTO pp_e_process (id, xid, xname, \"xcreatorPerson\", create_time) \
+             VALUES ($1,$1,'p',$2,NOW()::text) ON CONFLICT (id) DO NOTHING",
             &[&pid, &OWNER.to_string()],
         )
         .await
