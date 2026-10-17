@@ -1038,7 +1038,7 @@ organization_assemble_control	PUT	/api/organization/assemble/control/unitduty/up
 organization_assemble_control	PUT	/api/organization/assemble/control/unitduty/{flag}	duty_edit	R5-已认证+体内门禁
 organization_assemble_express	POST	/api/distinguishedname/list	distinguishedname_list	R7-已认证+体内无会话无门禁
 organization_assemble_express	POST	/api/empower/list/identity/object	empower_list_identity_object	R7-已认证+体内无会话无门禁
-organization_assemble_express	POST	/api/empowerlog	empowerlog_create	R7-已认证+体内无会话无门禁
+organization_assemble_express	POST	/api/empowerlog	empowerlog_create	R6-已认证+读会话无门禁
 organization_assemble_express	POST	/api/group/has/role	group_has_role	R1-中间件 admin
 organization_assemble_express	POST	/api/group/list	group_list	R1-中间件 admin
 organization_assemble_express	POST	/api/group/list/group/sub/direct	group_list_group_sub_direct	R1-中间件 admin
@@ -1103,11 +1103,11 @@ organization_assemble_express	POST	/api/person/list/unit/sub/nested	person_list_
 organization_assemble_express	POST	/api/person/list/unit/sub/nested/like	person_list_unit_sub_nested_like	R1-中间件 admin
 organization_assemble_express	POST	/api/person/list/unit/sub/nested/like/object	person_list_unit_sub_nested_like_object	R1-中间件 admin
 organization_assemble_express	POST	/api/person/list/unit/sub/nested/object	person_list_unit_sub_nested_object	R1-中间件 admin
-organization_assemble_express	POST	/api/personattribute/append/person/name	personattr_append_person_name	R7-已认证+体内无会话无门禁
+organization_assemble_express	POST	/api/personattribute/append/person/name	personattr_append_person_name	R6-已认证+读会话无门禁
 organization_assemble_express	POST	/api/personattribute/list/attribute/person/name	personattr_list_attribute_person_name	R7-已认证+体内无会话无门禁
 organization_assemble_express	POST	/api/personattribute/list/name/person	personattr_list_name_person	R7-已认证+体内无会话无门禁
 organization_assemble_express	POST	/api/personattribute/list/person/object	personattr_list_person_object	R7-已认证+体内无会话无门禁
-organization_assemble_express	POST	/api/personattribute/set/person/name	personattr_set_person_name	R7-已认证+体内无会话无门禁
+organization_assemble_express	POST	/api/personattribute/set/person/name	personattr_set_person_name	R6-已认证+读会话无门禁
 organization_assemble_express	POST	/api/role/list	role_list	R1-中间件 admin
 organization_assemble_express	POST	/api/role/list/object	role_list_object	R1-中间件 admin
 organization_assemble_express	POST	/api/role/list/person	role_list_person	R1-中间件 admin
@@ -1147,11 +1147,11 @@ organization_assemble_express	POST	/api/unit/list/unitattribute	unit_list_unitat
 organization_assemble_express	POST	/api/unit/list/unitattribute/object	unit_list_unitattribute_object	R1-中间件 admin
 organization_assemble_express	POST	/api/unit/list/unitduty	unit_list_unitduty	R1-中间件 admin
 organization_assemble_express	POST	/api/unit/list/unitduty/object	unit_list_unitduty_object	R1-中间件 admin
-organization_assemble_express	POST	/api/unitattribute/append/unit/name	unitattr_append_unit_name	R7-已认证+体内无会话无门禁
+organization_assemble_express	POST	/api/unitattribute/append/unit/name	unitattr_append_unit_name	R6-已认证+读会话无门禁
 organization_assemble_express	POST	/api/unitattribute/list/attribute/unit/name	unitattr_list_attribute_unit_name	R7-已认证+体内无会话无门禁
 organization_assemble_express	POST	/api/unitattribute/list/name/unit	unitattr_list_name_unit	R7-已认证+体内无会话无门禁
 organization_assemble_express	POST	/api/unitattribute/list/unit/object	unitattr_list_unit_object	R7-已认证+体内无会话无门禁
-organization_assemble_express	POST	/api/unitattribute/set/unit/name	unitattr_set_unit_name	R7-已认证+体内无会话无门禁
+organization_assemble_express	POST	/api/unitattribute/set/unit/name	unitattr_set_unit_name	R6-已认证+读会话无门禁
 organization_assemble_express	POST	/api/unitduty/find/by/unit/name	unitduty_find_by_unit_name	R7-已认证+体内无会话无门禁
 organization_assemble_express	POST	/api/unitduty/list/identity/unit/name	unitduty_list_identity_unit_name	R7-已认证+体内无会话无门禁
 organization_assemble_express	POST	/api/unitduty/list/identity/unit/name/object	unitduty_list_identity_unit_name_object	R7-已认证+体内无会话无门禁

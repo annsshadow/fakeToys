@@ -865,6 +865,17 @@ GET 写面队列里 `calendar_assemble_control` 与 `jpush_assemble_control` 各
 
 | 验证（本批代码变更） | — | cms_assemble_control `337 passed / 0 failed / 4 ignored`：新增离线臂 `b48_input_compare_reject_without_session`（2 把逐把点名，dead pool + 无会话全 401）；既有路由存在性探针（`test_input_compare`/`test_input_compare_mockputtopost`）仍绿——探针仅在 404 时断言非空 body，加门后返回 401（≠404）分支跳过，无需改。尺子：**2 把 handler → 2 条 R7 路由出列**（2 把均单路由无别名），R7 838→**836**、含写 145→143、R6 119→121、ungated −2；`input_compare` 现 R6（会话存在门被尺子读作「读会话」，已出 R7 行动面）；cms_assemble_control R7 68→**66**（余 66 条全为 false-positive）；EXIT 0、判据见证缺口 0 |
 
+### 三.49 第四十九批（organization_assemble_express 属性写/授权日志写 5 把收会话门，R7 836→831）
+
+| 项 | 位置 | 处置与口径 |
+| --- | --- | --- |
+| org 人员/单位属性写 | `endpoints_attr.rs` `personattr_set_person_name` / `personattr_append_person_name`（`x_org_person_attribute`，`person_id`）/ `unitattr_set_unit_name` / `unitattr_append_unit_name`（`x_org_unit_attribute`，`unit_id`） | 4 把委托 `attr_write_values`（体内 `INSERT INTO {table} (id, {owner_col}, attribute_key, attribute_value)`）。owner 列（person_id/unit_id）取自请求体 = 冒名族；按批 45/48 既定**会话存在档**收门：加 `session: Option<Extension<Session>>` + `let Some(Extension(_session)) = session else 401`。门在 `pool.get()` 之前，离线即证 401。冒名族（按 id 改他人属性）另记 §五 待修 |
+| 授权日志写 | `endpoints_attr.rs` `empowerlog_create`（`INSERT INTO x_org_empower_log`） | 授权日志写，`from_identity`/`to_identity` 取自请求体 = 冒名族；按会话存在档收门（同上） |
+
+> 注：organization_assemble_express 新鲜 R7 名单 34 条里，**仅上述 5 条为真写**；其余 29 条经体读均为「只读挂写方法」false-positive——`identity_list_*` / `unitduty_list_*` / `unitduty_find_by_*` / `personattr_list_*` / `unitattr_list_*` / `distinguishedname_list` / `empower_list_*` 族（POST 动词挂载但 SELECT 体），按口径不动。另 `organization_assemble_control` 的 43 条 R7 全为 `list/like/pinyininitial/check_password` SELECT 体 false-positive（体读确认），本批不涉。
+
+| 验证（本批代码变更） | — | organization_assemble_express `43 passed / 0 failed / 0 ignored`：新增离线臂 `b49_attr_writes_reject_without_session`（5 把逐把点名，dead pool + 无会话全 401；handler 经 `crate::endpoints_attr::` 路径调用）。无既有测试直接调用这 5 把，无需翻断言。尺子：**5 把 handler → 5 条 R7 路由出列**（5 把均单路由无别名），R7 836→**831**、含写 145→140、R6 121→126、ungated −5；5 把现 R6（会话存在门，已出 R7 行动面）；organization_assemble_express R7 34→**29**（余 29 条全为 false-positive）；EXIT 0、判据见证缺口 0 |
+
 ## 四、验证
 
 
