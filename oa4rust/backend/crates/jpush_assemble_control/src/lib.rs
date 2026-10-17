@@ -25,6 +25,8 @@ pub mod routes;
 mod tests;
 #[cfg(test)]
 mod tests_generated;
+#[cfg(test)]
+mod security_gate_tests;
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
@@ -305,13 +307,50 @@ pub async fn create_jpush(
     Ok(Json(ActionResult::success(result)))
 }
 
+/// 第五十四批：x_jpush 归属门——行存在按 `creator` 本人或 admin；行不存在返回 false
+/// （交由调用方保留原 not-found 语义）。无会话 401 先于任何读库。
+async fn jpush_owner_gate(
+    pool: &Pool,
+    session: Option<Extension<shared::session::Session>>,
+    id: &str,
+) -> Result<bool, AppError> {
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT creator FROM x_jpush WHERE id = $1 AND deleted_at IS NULL LIMIT 1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let Some(row) = row else {
+        return Ok(false);
+    };
+    let creator: String = row.get::<_, Option<String>>("creator").unwrap_or_default();
+    if creator.trim().is_empty() {
+        if shared::middleware::is_admin(pool, &sess.person_unique).await {
+            return Ok(true);
+        }
+        return Err(AppError::Forbidden);
+    }
+    shared::middleware::require_owner(pool, &sess, &creator).await?;
+    Ok(true)
+}
+
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn save_jpush(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(req): Json<JpushRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十四批：改推送配置按 x_jpush.creator 校归属（无会话 401）。
+    if !jpush_owner_gate(&pool.0, session, &id).await? {
+        return Ok(Json(ActionResult::error("jpush not found")));
+    }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let title = req.title.unwrap_or_default();
     let content = req.content.unwrap_or_default();
@@ -344,8 +383,15 @@ pub async fn save_jpush(
 #[allow(non_snake_case)]
 pub async fn delete_jpush(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十四批：软删推送配置按 x_jpush.creator 校归属（无会话 401）。
+    if !jpush_owner_gate(&pool.0, session, &id).await? {
+        return Ok(Json(ActionResult::error(
+            "jpush not found or already deleted",
+        )));
+    }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -417,8 +463,13 @@ pub async fn device_admin_unbind_all_person(
 #[allow(non_snake_case)]
 pub async fn device_bind(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Json(req): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十四批：绑定设备要求有效会话（无会话 401）；creator 仍取 body.personId（冒名残留记 §五）。
+    if session.is_none() {
+        return Err(AppError::Unauthorized);
+    }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let device_name = req
         .get("deviceName")
@@ -615,8 +666,13 @@ pub async fn device_unbind_new_deviceName_deviceType_pushType(
 #[allow(non_snake_case)]
 pub async fn device_unbind_deviceName_deviceType(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path((device_name, device_type)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十四批：解绑设备要求有效会话（无会话 401）。
+    if session.is_none() {
+        return Err(AppError::Unauthorized);
+    }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -909,8 +965,17 @@ impl PushGateway for JPushGateway {
 #[allow(non_snake_case)]
 pub async fn message_send(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(req): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十四批：群发推送=管理面（与 device_admin_unbind_all_person 同档），无会话 401、非 admin 403。
+    match session {
+        None => return Err(AppError::Unauthorized),
+        Some(Extension(s)) if !shared::middleware::is_admin(&pool, &s.person_unique).await => {
+            return Err(AppError::Forbidden)
+        }
+        Some(_) => {}
+    }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
     let title = req
