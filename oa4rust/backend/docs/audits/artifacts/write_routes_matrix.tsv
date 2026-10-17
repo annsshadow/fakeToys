@@ -203,7 +203,7 @@ bbs_assemble_control	POST	/api/bbs/assemble/control/shutup/save	shutup_create	R5
 bbs_assemble_control	POST	/api/bbs/assemble/control/subject/filter/listsubjectinfo/page/{page}/count/{count}	u2_subject_listsubjectinfo_page	R7-已认证+体内无会话无门禁
 bbs_assemble_control	POST	/api/bbs/assemble/control/topic/create	create_topic	R6-已认证+读会话无门禁
 bbs_assemble_control	POST	/api/bbs/assemble/control/topic/filter/listsubjectinfo	topic_filter_listsubjectinfo	R7-已认证+体内无会话无门禁
-bbs_assemble_control	POST	/api/bbs/assemble/control/update/control/config	update_control_config	R7-已认证+体内无会话无门禁
+bbs_assemble_control	POST	/api/bbs/assemble/control/update/control/config	update_control_config	R5-已认证+体内门禁
 bbs_assemble_control	POST	/api/bbs/assemble/control/user/forum	u2_user_forum_save	R5-已认证+体内门禁
 bbs_assemble_control	POST	/api/bbs/assemble/control/user/reply	u2_user_reply_save	R6-已认证+读会话无门禁
 bbs_assemble_control	POST	/api/bbs/assemble/control/user/role	u2_role_save	R5-已认证+体内门禁
@@ -216,7 +216,7 @@ bbs_assemble_control	PUT	/api/bbs/assemble/control/subject/filter/list/page/{pag
 bbs_assemble_control	PUT	/api/bbs/assemble/control/subject/index/list/page/{page}/count/{count}	subject_index_list	R7-已认证+体内无会话无门禁
 bbs_assemble_control	PUT	/api/bbs/assemble/control/subject/recommended/list/page/{page}/count/{count}	topic_recommended_list	R7-已认证+体内无会话无门禁
 bbs_assemble_control	PUT	/api/bbs/assemble/control/subject/search/list/page/{page}/count/{count}	u2_subject_search_page	R7-已认证+体内无会话无门禁
-bbs_assemble_control	PUT	/api/bbs/assemble/control/update/control/config	update_control_config	R7-已认证+体内无会话无门禁
+bbs_assemble_control	PUT	/api/bbs/assemble/control/update/control/config	update_control_config	R5-已认证+体内门禁
 bbs_assemble_control	PUT	/api/bbs/assemble/control/user/reply/accept	u2_user_reply_accept	R5-已认证+体内门禁
 bbs_assemble_control	PUT	/api/bbs/assemble/control/user/reply/my/list/page/{page}/count/{count}	u2_my_reply_list	R6-已认证+读会话无门禁
 bbs_assemble_control	PUT	/api/bbs/assemble/control/user/role/bind/object	u2_role_bind_object	R5-已认证+体内门禁
