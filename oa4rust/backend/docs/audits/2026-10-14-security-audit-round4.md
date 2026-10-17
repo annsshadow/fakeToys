@@ -1004,6 +1004,17 @@ GET 写面队列里 `calendar_assemble_control` 与 `jpush_assemble_control` 各
 
 | 验证（本批代码变更） | — | processplatform_assemble_surface 整 lib `615 passed / 0 failed / 9 ignored`（5.85s）：新增离线臂 `b58_mockputtopost_writes_reject_without_session`（12 把 dead pool + 无会话逐把点名 401）。`tests_generated` 的 12 个路由存在性测试走「空 404 体」判据（401 不触发），照过。尺子：**23 条 R7 路由出列**（全含写），R7 763→**740**、含写 74→**51**、ungated −23；surface R7 250→**227**；EXIT 0、判据见证缺口 0（复跑 3 次稳定） |
 
+### 三.59 第五十九批（query_assemble_surface 动态查询数据写 10 把收 admin 门，R7 740→723）
+
+| 项 | 位置 | 处置与口径 |
+| --- | --- | --- |
+| 动态表行写 | `lib.rs` `table_tableFlag_row_id_mockputtopost`（UPDATE `x_query_table_data`，3 条路由别名）、`table_tableFlag_row_id_part_update`（jsonb_set 局部 UPDATE，2 条）；`u2_closures.rs` `table_row_insert` / `table_row_insert_one`（INSERT `x_query_table_data`，各 2 条） | 查询设计/运行数据写，收 admin 档：加 `session: Option<Extension<Session>>` + `require_admin_opt(&pool.0, session)`（无会话 401 / 非 admin 403），与同 crate `importmodel_record_delete` 同口径 |
+| 视图内容写 | `lib.rs` `view_id_{bundle,excel,execute}_mockputtopost`（UPDATE `x_query_view.content`，execute 2 条、bundle/excel 各 1）、`view_flag_flag_query_queryFlag_{bundle,excel,execute}_mockputtopost`（各 1） | 同上 admin 档 |
+
+> 注：本批 **10 把 handler → 17 条 R7 路由出列**。这批是「execute/bundle/excel」名实不符族——名字像读、体是 `UPDATE x_query_view` / `UPDATE|INSERT x_query_table_data`。此前按「execute 只读」误判为 false-positive，实际是真写；`x_query_table_data` / `x_query_view` 无单一属主列，按本 crate 既定「无归属查询数据写 = admin 档」收门。
+
+| 验证（本批代码变更） | — | query_assemble_surface 整 lib `52 passed / 0 failed / 0 ignored`（0.07s）：新增离线臂 `b59_writes_reject_without_session`（10 把 dead pool + 无会话逐把点名 401）+ `b59_writes_non_admin_forbidden`（10 把非 admin 403，离线稳健）。既有 `test_u2_table_row_insert_route_exists` 由 500 翻 401；其余路由测试用 `assert_ne!`/存在性判据照过。尺子：**17 条 R7 路由出列**（全含写），R7 740→**723**、含写 51→**34**、ungated −17；query_assemble_surface R7 47→**30**；EXIT 0、判据见证缺口 0（复跑 3 次稳定） |
+
 ## 四、验证
 
 
