@@ -16,6 +16,7 @@ from ..deps import (
     config_file_path,
     get_pipeline,
     invalidate_config_caches,
+    resolve_within_roots,
     to_http_error,
     verify_api_key,
 )
@@ -99,6 +100,34 @@ class ConfigUpdateResponse(MessageResponse):
 # 钉住。
 WRITABLE_SECTIONS = ["augmentation", "quality", "dedup", "export",
                      "vector", "rag", "multimodal"]
+
+
+# 写入清单里「值会被当成落点目录直接使用」的键（A341）。
+# 由 `tests/unit/test_config_dir_containment_l277.py` 逐节机器核对：本名单必须
+# 恰好覆盖 7 个可写节里所有「字符串值 + 目录/路径语义」的键，多写或少写都红。
+_DIR_VALUED_KEYS: Dict[str, str] = {"vector": "storage_dir"}
+
+
+def _reject_escaping_dir_value(section: str, key: str, value: Any) -> None:
+    """把目录类配置键交给数据文件那一族的同一把闸（A341 修法 ①）
+
+    为什么判在这里而不是 `VectorConfig.__post_init__`：白名单（`web.data_roots`）
+    是 HTTP 面对「客户端传进来的路径」的授权边界，配置层没有它的概念，把闸装进
+    配置类会让 CLI 与 SDK 的合法绝对路径一起失去落点。而「配置即权限」这条通路
+    与 `resolve_within_roots` 拦的是同一件事——客户端给的路径不能逃出授权目录，
+    两条入口口径不一致时，白名单只是把绕行挪到了更隐蔽的一格。
+
+    判在 `apply_section_update` **之前**：坏值不该先在内存对象上留一秒，
+    也不该被 `save_config` 写进磁盘。空串与非字符串交给配置层自己的
+    `require_string`（那一路已经折成 400），这里只量「落在不在闸内」。
+
+    Raises:
+        HTTPException: 400 空值或含 `..` 组件；403 规范化之后落到白名单之外
+    """
+    if not isinstance(value, str) or not value.strip():
+        return
+    resolve_within_roots(value, f"{section}.{key}")
+
 
 
 @router.get("/api/config", response_model=ConfigResponse, summary="获取配置")
@@ -206,6 +235,11 @@ async def update_config(
             if section in updates:
                 section_config = getattr(p.config, section)
                 known = [f.name for f in dataclasses.fields(section_config)]
+                # A341：目录类键先过数据白名单，判在写内存对象之前 ⇒ 坏值既不进
+                # 内存也不落盘，回执是 400/403 而不是 200 + `ignored_keys: []`。
+                dir_key = _DIR_VALUED_KEYS.get(section)
+                if dir_key and dir_key in updates[section]:
+                    _reject_escaping_dir_value(section, dir_key, updates[section][dir_key])
                 dropped = apply_section_update(section_config, updates[section])
                 for key in dropped:
                     ignored.append(f"{section}.{key}")
@@ -258,6 +292,10 @@ async def update_config(
             # 也可能是**存在但本端点不写**的节（`web`），叫它「未知」是假话。
             message += "（已忽略未写入的配置项：" + "、".join(notes) + "）"
         return {"success": True, "message": message, "ignored_keys": ignored}
+    except HTTPException:
+        # `resolve_within_roots` 的 400/403 已经是对调用方说清楚的话，不能被下面的
+        # 兜底分支折成 500（那会把「你给的落点在闸外」报成「服务端坏了」）。
+        raise
     except DataValidationError as e:
         # 越界的新值要的是 400（「你给的这个值不合法」），不是 500（「服务端坏了」）。
         # `DataValidationError` 是 `ValueError` 子类，`to_http_error` 那一档正好译成

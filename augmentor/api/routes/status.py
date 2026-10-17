@@ -6,6 +6,8 @@
 综合报告健康、版本、模型后端可用性与可选依赖诊断。
 """
 
+import logging
+
 from fastapi import APIRouter
 from pydantic import BaseModel
 from typing import Optional
@@ -14,6 +16,7 @@ from ..deps import get_pipeline
 from augmentor import __version__
 from augmentor.diagnostics import check_dependencies
 
+logger = logging.getLogger(__name__)
 router = APIRouter(tags=["status"])
 
 
@@ -56,7 +59,9 @@ async def get_status():
         if p.model_backend is not None:
             model_retry_count = p.model_backend.retry_count
             model_retry_wait_seconds = p.model_backend.retry_wait_seconds
-    except Exception:
+    except Exception as e:
+        # 原文只落服务端日志、不进响应体，与 `deps` 的 500 支同一口径；从前这一格连日志都不留
+        logger.warning(f"读取管道状态失败，按模型后端不可用回执: {e}")
         default_model = "unknown"
         model_available = False
 

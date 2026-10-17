@@ -22,16 +22,24 @@ class CheckpointListResponse(BaseModel):
 class AugmentProgressResponse(BaseModel):
     """增强进度
 
-    `CheckpointManager.get_progress()` 有**两种形态**：
-    没有进行中的任务时只返回 `{"status": "no_checkpoint"}`，有任务时才补齐
-    其余字段。这里把任务字段全部声明为可选，并在路由上启用
-    `response_model_exclude_none=True`——于是无任务时响应仍是一个键，
-    有任务时字段齐全，两种形态共用同一份 OpenAPI 契约。
+    `CheckpointManager.get_progress()` 有**两种形态**，而且两形的键集不同：
+    没有进行中的任务时只返回 `{"status": "no_checkpoint"}`（**只有这一键**），
+    有任务时返回 11 个任务字段而**不含 `status`**（实测 `checkpoint.py` 的
+    两条 `return`，也实测 HTTP 响应）。路由启用 `response_model_exclude_none=True`
+    ⇒ 两形各自精确：空态回一个键，任务态回 11 个键。
+
+    因此 `status` 只能是**可选**：从前把它声明成必填 `str`，而任务态的字典里
+    压根没有这个键 ⇒ 一旦 `_current_checkpoint` 在场（任务运行中、以及任务结束后
+    ——`get_progress` 读的正是那一份），FastAPI 的响应模型校验当场失败，
+    `GET /api/augment/progress` 回 **500**，前端每 2 秒轮询一次每次吃一次 500，
+    进度卡从此看不见任何真进度（`web/src/pages/Augmentation.tsx` 的 `catch {}`
+    又把这句 500 咽成「暂无进行中的任务」）。前端本来就按「`task_id` 在不在」
+    判别两形，TS 侧 `AugmentProgress` 也是这么建模的，错的只有这份契约。
 
     代价：任务进行中若 `avg_quality_score` 恰为 None，该键会被排除，
     即它不保证「键永远存在」。这是为了让空态契约保持不变而做的取舍。
     """
-    status: str
+    status: Optional[str] = None
     task_id: Optional[str] = None
     total_items: Optional[int] = None
     processed_items: Optional[int] = None

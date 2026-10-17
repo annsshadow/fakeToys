@@ -16,7 +16,7 @@ from dataclasses import dataclass
 from datetime import datetime
 
 from .atomic_write import atomic_write_json, path_lock
-from .validation import path_lands_within, require_count
+from .validation import path_lands_within, require_count, require_path_segment
 from .exceptions import BackupError, BackupIntegrityError, DataValidationError
 
 logger = logging.getLogger(__name__)
@@ -113,7 +113,7 @@ class DatasetBackup:
             raise FileNotFoundError(f"源文件不存在: {source_path}")
         
         now = datetime.now()  # A303 / L250：只读一次钟 ⇒ 秒级 id 与 timestamp 同源
-        backup_id = name or f"backup_{now.strftime('%Y%m%d_%H%M%S')}"
+        backup_id = require_path_segment("备份名称", name or f"backup_{now.strftime('%Y%m%d_%H%M%S')}")
         backup_path = self._backup_dir / f"{backup_id}.json"
         # `name` 直接决定落点，而它来自调用方：`../../x` 会写到备份目录之外
         # （HTTP 面实测 200 且真落盘）——白名单只管到 backup_dir 那一格。
@@ -231,10 +231,13 @@ class DatasetBackup:
             if not backup_info:
                 return False
 
-            # 删除备份文件
+            # 删除备份文件。`missing_ok=True` 而不是「先 exists 再裸 unlink」：判过存在之后
+            # 仍有并发窗口，那一格里抛出的 FileNotFoundError 会跳过下面的索引重排、并把异常
+            # 递给 `DELETE /api/system/backups/{backup_id}`，而该端点的 responses 明文写着
+            # 「索引有条目而备份文件已丢不算 404，仍回 200」——代码与自己写定的契约相反。
+            # 档已不在就是删除成功，索引行照摘。
             backup_path = Path(backup_info["backup_path"])
-            if backup_path.exists():
-                backup_path.unlink()
+            backup_path.unlink(missing_ok=True)
 
             # 更新索引
             self._index["backups"] = [
@@ -373,8 +376,18 @@ def verify_backup_integrity(backup_dir: str = ".backups", backup_id: Optional[st
             continue
         
         backup_path = Path(backup["backup_path"])
-        is_valid = backup_path.exists() and backup_path.stat().st_size > 0
-        current_checksum = manager._calculate_checksum(str(backup_path)) if is_valid else None
+        # 完整性巡检读的是「这份备份还在不在、还对不对」，所以档在窗口里消失要按 `exists:
+        # False` 计（与 `checksum_match: False` 同一诚实口径），而不是让整次巡检因为一份
+        # 被并发删掉的备份而抛 FileNotFoundError。这里覆盖的是两步：stat 与紧随其后的整份
+        # 读（`_calculate_checksum` 直接 open），它们各自都有「判过存在再动手」的窗口。
+        try:
+            is_valid = backup_path.stat().st_size > 0
+            current_checksum = (
+                manager._calculate_checksum(str(backup_path)) if is_valid else None
+            )
+        except FileNotFoundError:
+            is_valid = False
+            current_checksum = None
         checksum_match = current_checksum == backup.get("checksum") if is_valid and current_checksum else False
         
         results[backup["backup_id"]] = {
