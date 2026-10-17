@@ -774,7 +774,7 @@ meeting_assemble_control	DELETE	/api/meeting/assemble/control/building/{id}	u2_b
 meeting_assemble_control	DELETE	/api/meeting/assemble/control/delete/{id}	delete_meeting_control	R5-已认证+体内门禁
 meeting_assemble_control	DELETE	/api/meeting/assemble/control/meeting/delete/{id}	delete_meeting	R5-已认证+体内门禁
 meeting_assemble_control	DELETE	/api/meeting/assemble/control/meeting/{id}	u2_meeting_delete_owned	R5-已认证+体内门禁
-meeting_assemble_control	DELETE	/api/meeting/assemble/control/meeting/{id}/delete/invite	meeting_id_delete_invite	R7-已认证+体内无会话无门禁
+meeting_assemble_control	DELETE	/api/meeting/assemble/control/meeting/{id}/delete/invite	meeting_id_delete_invite	R5-已认证+体内门禁
 meeting_assemble_control	DELETE	/api/meeting/assemble/control/room/{id}	u2_room_delete	R5-已认证+体内门禁
 meeting_assemble_control	POST	/api/meeting/assemble/control/attachment/create/from/processplatform	u2_attachment_create_from_processplatform	R6-已认证+读会话无门禁
 meeting_assemble_control	POST	/api/meeting/assemble/control/attachment/meeting/{meetingId}/upload/{summary}	u2_attachment_upload	R6-已认证+读会话无门禁
@@ -783,7 +783,7 @@ meeting_assemble_control	POST	/api/meeting/assemble/control/attachment/{id}/upda
 meeting_assemble_control	POST	/api/meeting/assemble/control/building	u2_building_create	R5-已认证+体内门禁
 meeting_assemble_control	POST	/api/meeting/assemble/control/config	u2_config_save	R5-已认证+体内门禁
 meeting_assemble_control	POST	/api/meeting/assemble/control/config/system/config/manage	config_system_config_manage	R2-匿名可达+体内门禁
-meeting_assemble_control	POST	/api/meeting/assemble/control/create	create_meeting_control	R7-已认证+体内无会话无门禁
+meeting_assemble_control	POST	/api/meeting/assemble/control/create	create_meeting_control	R5-已认证+体内门禁
 meeting_assemble_control	POST	/api/meeting/assemble/control/meeting	create_meeting	R6-已认证+读会话无门禁
 meeting_assemble_control	POST	/api/meeting/assemble/control/meeting/checkin/code/{id}	meeting_id_checkin_code	R7-已认证+体内无会话无门禁
 meeting_assemble_control	POST	/api/meeting/assemble/control/meeting/create	create_meeting	R6-已认证+读会话无门禁
@@ -800,10 +800,10 @@ meeting_assemble_control	POST	/api/meeting/assemble/control/meeting/{id}/add/inv
 meeting_assemble_control	POST	/api/meeting/assemble/control/meeting/{id}/checkin	meeting_id_checkin	R6-已认证+读会话无门禁
 meeting_assemble_control	POST	/api/meeting/assemble/control/meeting/{id}/confirm/allow	meeting_id_confirm_allow	R5-已认证+体内门禁
 meeting_assemble_control	POST	/api/meeting/assemble/control/meeting/{id}/confirm/deny	meeting_id_confirm_deny	R5-已认证+体内门禁
-meeting_assemble_control	POST	/api/meeting/assemble/control/meeting/{id}/delete/invite	meeting_id_delete_invite	R7-已认证+体内无会话无门禁
+meeting_assemble_control	POST	/api/meeting/assemble/control/meeting/{id}/delete/invite	meeting_id_delete_invite	R5-已认证+体内门禁
 meeting_assemble_control	POST	/api/meeting/assemble/control/meeting/{id}/manual/completed	meeting_id_manual_completed	R5-已认证+体内门禁
-meeting_assemble_control	POST	/api/meeting/assemble/control/meeting/{id}/modify/completedtime	meeting_id_modify_completedtime	R7-已认证+体内无会话无门禁
-meeting_assemble_control	POST	/api/meeting/assemble/control/meeting/{id}/modify/starttime	meeting_id_modify_starttime	R7-已认证+体内无会话无门禁
+meeting_assemble_control	POST	/api/meeting/assemble/control/meeting/{id}/modify/completedtime	meeting_id_modify_completedtime	R5-已认证+体内门禁
+meeting_assemble_control	POST	/api/meeting/assemble/control/meeting/{id}/modify/starttime	meeting_id_modify_starttime	R5-已认证+体内门禁
 meeting_assemble_control	POST	/api/meeting/assemble/control/meeting/{id}/reject	meeting_id_reject	R5-已认证+体内门禁
 meeting_assemble_control	POST	/api/meeting/assemble/control/room	u2_room_create	R5-已认证+体内门禁
 meeting_assemble_control	POST	/api/meeting/assemble/control/room/{id}/photo	u2_room_set_photo	R6-已认证+读会话无门禁
@@ -812,9 +812,9 @@ meeting_assemble_control	PUT	/api/meeting/assemble/control/building/{id}	u2_buil
 meeting_assemble_control	PUT	/api/meeting/assemble/control/meeting/save/{id}	save_meeting	R5-已认证+体内门禁
 meeting_assemble_control	PUT	/api/meeting/assemble/control/meeting/{id}	u2_meeting_put_save	R5-已认证+体内门禁
 meeting_assemble_control	PUT	/api/meeting/assemble/control/meeting/{id}/add/invite	meeting_id_add_invite	R5-已认证+体内门禁
-meeting_assemble_control	PUT	/api/meeting/assemble/control/meeting/{id}/delete/invite	meeting_id_delete_invite	R7-已认证+体内无会话无门禁
-meeting_assemble_control	PUT	/api/meeting/assemble/control/meeting/{id}/modify/completedtime	meeting_id_modify_completedtime	R7-已认证+体内无会话无门禁
-meeting_assemble_control	PUT	/api/meeting/assemble/control/meeting/{id}/modify/starttime	meeting_id_modify_starttime	R7-已认证+体内无会话无门禁
+meeting_assemble_control	PUT	/api/meeting/assemble/control/meeting/{id}/delete/invite	meeting_id_delete_invite	R5-已认证+体内门禁
+meeting_assemble_control	PUT	/api/meeting/assemble/control/meeting/{id}/modify/completedtime	meeting_id_modify_completedtime	R5-已认证+体内门禁
+meeting_assemble_control	PUT	/api/meeting/assemble/control/meeting/{id}/modify/starttime	meeting_id_modify_starttime	R5-已认证+体内门禁
 meeting_assemble_control	PUT	/api/meeting/assemble/control/room/{id}	u2_room_edit	R5-已认证+体内门禁
 meeting_core_entity	POST	/api/meeting/core/entity/meeting/create	create_meeting	R6-已认证+读会话无门禁
 meeting_core_entity	POST	/api/meeting/core/entity/meeting/delete/{id}	delete_meeting	R5-已认证+体内门禁

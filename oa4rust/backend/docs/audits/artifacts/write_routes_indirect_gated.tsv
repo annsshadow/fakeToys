@@ -149,6 +149,7 @@ file_assemble_control	POST	/api/attachment/update/callback/callback/{id}	attachm
 file_assemble_control	POST	/api/attachment/{id}/update/callback/{callback}	u2_attachment_update_content_callback	u2_attachment_update_content
 file_assemble_control	PUT	/api/attachment/update/callback/callback/{id}	attachment_id_update_callback_callback	attachment_id_update
 meeting_assemble_control	DELETE	/api/meeting/assemble/control/attachment/{id}	u2_attachment_delete	u2_attachment_guard
+meeting_assemble_control	DELETE	/api/meeting/assemble/control/meeting/{id}/delete/invite	meeting_id_delete_invite	u2_meeting_owner_gate
 meeting_assemble_control	GET	/api/meeting/assemble/control/meeting/{id}/accept	meeting_id_accept	u2_meeting_owner_gate
 meeting_assemble_control	GET	/api/meeting/assemble/control/meeting/{id}/confirm/allow	meeting_id_confirm_allow	u2_meeting_owner_gate
 meeting_assemble_control	GET	/api/meeting/assemble/control/meeting/{id}/confirm/deny	meeting_id_confirm_deny	u2_meeting_owner_gate
@@ -160,11 +161,17 @@ meeting_assemble_control	POST	/api/meeting/assemble/control/meeting/{id}/accept	
 meeting_assemble_control	POST	/api/meeting/assemble/control/meeting/{id}/add/invite	meeting_id_add_invite	u2_meeting_owner_gate
 meeting_assemble_control	POST	/api/meeting/assemble/control/meeting/{id}/confirm/allow	meeting_id_confirm_allow	u2_meeting_owner_gate
 meeting_assemble_control	POST	/api/meeting/assemble/control/meeting/{id}/confirm/deny	meeting_id_confirm_deny	u2_meeting_owner_gate
+meeting_assemble_control	POST	/api/meeting/assemble/control/meeting/{id}/delete/invite	meeting_id_delete_invite	u2_meeting_owner_gate
 meeting_assemble_control	POST	/api/meeting/assemble/control/meeting/{id}/manual/completed	meeting_id_manual_completed	u2_meeting_owner_gate
+meeting_assemble_control	POST	/api/meeting/assemble/control/meeting/{id}/modify/completedtime	meeting_id_modify_completedtime	u2_meeting_owner_gate
+meeting_assemble_control	POST	/api/meeting/assemble/control/meeting/{id}/modify/starttime	meeting_id_modify_starttime	u2_meeting_owner_gate
 meeting_assemble_control	POST	/api/meeting/assemble/control/meeting/{id}/reject	meeting_id_reject	u2_meeting_owner_gate
 meeting_assemble_control	PUT	/api/meeting/assemble/control/attachment/{id}/update	u2_attachment_update	u2_attachment_guard
 meeting_assemble_control	PUT	/api/meeting/assemble/control/meeting/save/{id}	save_meeting	u2_meeting_owner_gate
 meeting_assemble_control	PUT	/api/meeting/assemble/control/meeting/{id}/add/invite	meeting_id_add_invite	u2_meeting_owner_gate
+meeting_assemble_control	PUT	/api/meeting/assemble/control/meeting/{id}/delete/invite	meeting_id_delete_invite	u2_meeting_owner_gate
+meeting_assemble_control	PUT	/api/meeting/assemble/control/meeting/{id}/modify/completedtime	meeting_id_modify_completedtime	u2_meeting_owner_gate
+meeting_assemble_control	PUT	/api/meeting/assemble/control/meeting/{id}/modify/starttime	meeting_id_modify_starttime	u2_meeting_owner_gate
 meeting_core_entity	POST	/api/meeting/core/entity/meeting/delete/{id}	delete_meeting	meeting_require_owner
 meeting_core_entity	POST	/api/meeting/core/entity/meeting/save/{id}	update_meeting	meeting_require_owner
 mind	DELETE	/api/mind/folder/{id}	delete_folder	mind_owner_gate

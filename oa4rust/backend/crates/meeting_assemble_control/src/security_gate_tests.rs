@@ -158,3 +158,178 @@ mod security_gate_tests {
             .unwrap();
     }
 }
+
+// ──────────────────────────────────────────────────────────────────────────────
+// 第五十四批（2026-10 四轮）：meeting_assemble_control 剩余写面 4 把。
+//
+// - 控制配置新增 `create_meeting_control`（INSERT x_meeting_assemble_control）：
+//   与既有 `delete_meeting_control` 同档，收 admin（无会话 401 / 非 admin 403）；
+// - 会议改单三把 `meeting_id_delete_invite`（DELETE x_meeting_invite）、
+//   `meeting_id_modify_completedtime` / `meeting_id_modify_starttime`（UPDATE x_meeting）：
+//   收会议属主或 admin（`u2_meeting_owner_gate`，按 `x_meeting.creator`；无会话 401）。
+// 余下 `meeting_id_checkin_code`（SELECT）与 5 把 `meeting_list_*`（SELECT 分页）为只读
+// false-positive，按口径不动。
+// ──────────────────────────────────────────────────────────────────────────────
+#[cfg(test)]
+mod b54_gate_tests {
+    use axum::extract::{Extension, Path};
+    use axum::Json;
+    use deadpool_postgres::tokio_postgres::{Config, NoTls};
+    use deadpool_postgres::{Manager, Pool};
+    use serde_json::json;
+    use shared::error::AppError;
+
+    fn dead_pool() -> Pool {
+        let mgr = Manager::new(Config::new(), NoTls);
+        Pool::builder(mgr).max_size(1).build().unwrap()
+    }
+
+    fn non_admin() -> shared::session::Session {
+        shared::testing::test_session("b54-nonadmin")
+    }
+
+    /// 无会话臂：dead pool + None 会话，4 把必须全 401（门在 pool.get() 之前）。
+    #[tokio::test]
+    async fn b54_r7_writes_reject_without_session() {
+        let pool = dead_pool();
+        let cases: Vec<(&str, Result<(), AppError>)> = vec![
+            (
+                "create_meeting_control",
+                crate::create_meeting_control(
+                    Extension(pool.clone()),
+                    None,
+                    Json(json!({ "meetingId": "m1", "controlType": "c" })),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "meeting_id_delete_invite",
+                crate::meeting_id_delete_invite(
+                    Extension(pool.clone()),
+                    None,
+                    Path("m1".to_string()),
+                    Json(json!({ "invitee": "u" })),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "meeting_id_modify_completedtime",
+                crate::meeting_id_modify_completedtime(
+                    Extension(pool.clone()),
+                    None,
+                    Path("m1".to_string()),
+                    Json(json!({ "completedTime": "2026-01-01 00:00:00" })),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "meeting_id_modify_starttime",
+                crate::meeting_id_modify_starttime(
+                    Extension(pool.clone()),
+                    None,
+                    Path("m1".to_string()),
+                    Json(json!({ "startTime": "2026-01-01 00:00:00" })),
+                )
+                .await
+                .map(|_| ()),
+            ),
+        ];
+        assert_eq!(cases.len(), 4, "本批 4 把必须逐把点名");
+        let leaked: Vec<String> = cases
+            .iter()
+            .filter(|(_, r)| !matches!(r, Err(AppError::Unauthorized)))
+            .map(|(k, r)| format!("{k} => {:?}", r.as_ref().err()))
+            .collect();
+        assert!(
+            leaked.is_empty(),
+            "无会话未回 401（出现 Internal 就是门插在读库之后）：{leaked:?}"
+        );
+    }
+
+    /// admin 臂：控制配置新增非管理员 403（is_admin 对不可用库 fail-closed，离线稳健）。
+    #[tokio::test]
+    async fn b54_create_control_non_admin_forbidden() {
+        let pool = shared::testing::test_pool();
+        let res = crate::create_meeting_control(
+            Extension(pool),
+            Some(Extension(non_admin())),
+            Json(json!({ "meetingId": "m1", "controlType": "c" })),
+        )
+        .await
+        .map(|_| ());
+        assert!(
+            matches!(res, Err(AppError::Forbidden)),
+            "非 admin 新增控制配置必须 403，实得 {res:?}"
+        );
+    }
+
+    /// 归属臂（需真实 PostgreSQL）：会议属主非本会话且本会话非 admin → 改单三把 403。
+    #[tokio::test]
+    #[ignore = "需真实 PostgreSQL（DATABASE_URL）"]
+    async fn b54_owner_writes_non_owner_forbidden() {
+        let pool = shared::testing::test_pool();
+        {
+            let c = pool.get().await.unwrap();
+            c.execute(
+                "INSERT INTO x_meeting (id, title, start_time, end_time, applied, invited, creator) \
+                 VALUES ('b54-meeting-owned-by-other','t',NOW(),NOW(),false,false,'b54-owner-elsewhere') \
+                 ON CONFLICT (id) DO UPDATE SET creator = 'b54-owner-elsewhere'",
+                &[],
+            )
+            .await
+            .unwrap();
+        }
+        let sess = non_admin();
+        let mid = || Path("b54-meeting-owned-by-other".to_string());
+        let cases: Vec<(&str, Result<(), AppError>)> = vec![
+            (
+                "meeting_id_delete_invite",
+                crate::meeting_id_delete_invite(
+                    Extension(pool.clone()),
+                    Some(Extension(sess.clone())),
+                    mid(),
+                    Json(json!({ "invitee": "u" })),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "meeting_id_modify_completedtime",
+                crate::meeting_id_modify_completedtime(
+                    Extension(pool.clone()),
+                    Some(Extension(sess.clone())),
+                    mid(),
+                    Json(json!({ "completedTime": "2026-01-01 00:00:00" })),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "meeting_id_modify_starttime",
+                crate::meeting_id_modify_starttime(
+                    Extension(pool.clone()),
+                    Some(Extension(sess.clone())),
+                    mid(),
+                    Json(json!({ "startTime": "2026-01-01 00:00:00" })),
+                )
+                .await
+                .map(|_| ()),
+            ),
+        ];
+        for (name, res) in cases {
+            assert!(
+                matches!(res, Err(AppError::Forbidden)),
+                "{name} 非属主且非 admin 必须 403，实得 {res:?}"
+            );
+        }
+        pool.get()
+            .await
+            .unwrap()
+            .execute("DELETE FROM x_meeting WHERE id='b54-meeting-owned-by-other'", &[])
+            .await
+            .unwrap();
+    }
+}
