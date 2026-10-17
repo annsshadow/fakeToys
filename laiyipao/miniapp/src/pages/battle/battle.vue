@@ -54,7 +54,7 @@
           </view>
         </view>
       </view>
-      <view class="btn" @click="skipCards">一张都不要了，直接下一波</view>
+      <view class="btn" @click="skipCards">全部不要了，直接下一波</view>
     </view>
 
     <!-- 结算界面 -->
@@ -86,11 +86,6 @@
       </view>
       <text class="hash-note">回放哈希 {{ settleResult.replay_hash }}（可验真）</text>
       <view class="btn btn-primary" style="margin-top: 20rpx" @click="backToStage">返回关卡</view>
-    </view>
-
-    <!-- 渲染模式诊断：H5 下 canvas 获取方式与小程序不同，需要能看出走了哪条路径 -->
-    <view class="debug-tag">
-      {{ renderMode === 'raf' ? '渲染: 帧循环' : renderMode === 'fallback' ? '渲染: 降级(无canvas)' : '渲染: 初始化中' }}
     </view>
 
     <!-- 启动失败提示 -->

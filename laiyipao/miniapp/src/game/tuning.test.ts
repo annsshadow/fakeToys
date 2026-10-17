@@ -13,6 +13,7 @@
  */
 import { describe, it, expect } from 'vitest'
 import fixture from '@vectors/smoke_levels.json'
+import vectors from '@vectors/formula_vectors.json'
 import { BattleEngine, MAX_BATTLE_TICKS, type BattleConfig } from './engine'
 import { defaultAttacker } from './damage'
 import { ACTIVE_SLOTS } from './heatmap'
@@ -107,6 +108,41 @@ describe('节奏配置的形状', () => {
       expect(FULL % t.spawnProgressStep, `spawnProgressStep=${t.spawnProgressStep} 会整除 FULL`).not.toBe(0)
     }
     expect(DEFAULT_TUNING.spawnProgressStep).toBe(LEGACY_TUNING.spawnProgressStep)
+  })
+})
+
+describe('节奏配置的跨端钉（第 159 轮）', () => {
+  /**
+   * ⚠️ 第 159 轮事故的直接解药。
+   *
+   * 事故链的另一环是 **Go 侧从未同步 158 轮的 tuning**：
+   * 客户端跑 DEFAULT_TUNING，服务端重放用「整改前」的编译期常量，
+   * 两端时间线整体错位（首个开火差 6 tick、逐波累积 407 tick），
+   * 而存量向量是 158 轮前生成的旧产物 —— Go 与旧向量互相自洽，
+   * 全体测试绿灯，线上 100% 拒发。
+   *
+   * 这里读 `formula_vectors.json` 的 `tuning` 段（Go 侧
+   * `TestConsistencyTuning` 读同一份），断言 DEFAULT_TUNING 逐位一致。
+   * 任一端单方面改数值 → 两端必有一方红。
+   */
+  it('DEFAULT_TUNING 与跨端契约向量逐位一致', () => {
+    const t = (vectors as unknown as { tuning: Record<string, number> }).tuning
+    expect(t, 'formula_vectors.json 缺 tuning 段').toBeDefined()
+    const checks: Array<[string, number]> = [
+      ['spawnProgressStep', t.spawn_progress_step],
+      ['enemySpeedPermille', t.enemy_speed_permille],
+      ['projectileSpeedPermille', t.projectile_speed_permille],
+      ['skillCooldownPermille', t.skill_cooldown_permille],
+      ['waveDelayPermille', t.wave_delay_permille],
+      ['waveIntervalPermille', t.wave_interval_permille],
+      ['enemyAttackIntervalPermille', t.enemy_attack_interval_permille],
+      ['overheatDurationMs', t.overheat_duration_ms],
+      ['hitFlashMs', t.hit_flash_ms],
+      ['floatLifeMs', t.float_life_ms],
+    ]
+    for (const [field, want] of checks) {
+      expect(DEFAULT_TUNING[field as keyof typeof DEFAULT_TUNING], `${field} 与契约向量不一致`).toBe(want)
+    }
   })
 })
 

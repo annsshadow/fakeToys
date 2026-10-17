@@ -2094,12 +2094,15 @@ const wireTerrainRows = TERRAIN_SCENARIOS.map((s) => {
  * 选牌会改变后续战斗（技能升格 / 属性加成 / 机制词条），
  * 第三方拿不到这个序列就复现不出原局。
  *
- * ⚠️ 编码约定（两端必须一致）：
+ * ⚠️ 编码约定（两端必须一致，第 159 轮重写）：
+ *   0/1/2             → 取当次手牌第 idx 张（不弃牌）
  *   -1                → 整波跳过
- *   -(3 + handIdx)    → 取第 handIdx 张
- *   -(6 + handIdx)    → 弃第 handIdx 张
+ *   -(3 + code)       → 本波弃过牌；code ∈ [0,19] 是「弃牌掩码 +
+ *                       取剩余第几张 / 不取」的枚举
  *
- * `-(3+)` 与 `-(6+)` 的区别见 `PICK_DISCARD_SKIP_BASE` 的说明。
+ * 枚举与取值域的完整定义见 engine.ts 的 `PICK_CODE_BASE` 与
+ * server 的 `decodeDiscardCode` / `CardPickMin`；两端由
+ * formula_vectors.json 的 `card_picks` 段锁住。
  *
  * # 脚本设计：覆盖三类卡 × 两条路径
  *
@@ -2235,9 +2238,12 @@ function buildPickScript(label: string): number[] {
         out.push(-3)
         break
       case 'card_take_mixed':
-        // 偶数波取第 0 张，奇数波弃第 1 张 ——
-        // 弃牌覆盖 discardedThisWave 与 `-(3+handIdx)` 编码。
-        out.push(i % 2 === 0 ? -3 : -(6 + 1))
+        // 偶数波取第 0 张；奇数波弃**原手牌第 0 张**并取剩余第 0 张。
+        //
+        // ⚠️ -7 = code 4 = mask 0b001（弃原手牌第 0 张）+ 取剩余第 0 张
+        //（第 159 轮编码）。文案随编码重写时一起更正过 ——
+        // 旧注释写的是「弃第 1 张」，那是旧编码 -(3+handIdx) 的语义。
+        out.push(i % 2 === 0 ? -3 : -7)
         break
       default:
         // 多波次场景：取第 i%3 张，覆盖三个不同下标。
