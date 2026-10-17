@@ -1074,6 +1074,19 @@ GET 写面队列里 `calendar_assemble_control` 与 `jpush_assemble_control` 各
 
 | 验证（本批代码变更） | — | general_assemble_control 整 lib `7 passed / 0 failed / 35 ignored`（0.07s）：新增离线臂 `security_gate_tests_b64::b64_writes_reject_without_session`（2 把 dead pool 401）+ `b64_writes_accept_valid_session_past_gate`（有效会话过门落 Internal 证门在库前）。尺子：**3 条 R7 含写路由出列**，R7 707→**704**、含写 18→**15**、ungated −3；general_assemble_control 真写 R7 净清；EXIT 0、判据见证缺口 0（复跑 3 次稳定） |
 
+### 三.65 第六十五批（general_core_entity 12 把 sea_orm CRUD 真写收会话门，R7 704→692）
+
+| 项 | 位置 | 处置与口径 |
+| --- | --- | --- |
+| dict 三写（会话档） | `lib.rs` `dict_create` / `dict_update` / `dict_delete`（POST `/api/general/dict/*`，sea_orm `ActiveModel` INSERT/UPDATE/DELETE `general_application_dict`） | 新增 crate 内 `require_session`：无会话 401，门置于首行、在 `.insert/.update/.delete(&db.0)` 之前 |
+| dict_item 三写（会话档） | `lib.rs` `dict_item_create` / `dict_item_update` / `dict_item_delete`（POST `/api/general/dict/item/*`，`general_application_dict_item`） | 同上 `require_session` 无会话 401 |
+| file 三写（会话档） | `lib.rs` `file_create` / `file_update` / `file_delete`（POST `/api/general/file/*`，`general_file`） | 同上 |
+| invoice 三写（会话档） | `lib.rs` `invoice_create` / `invoice_update` / `invoice_delete`（POST `/api/general/invoice/*`，`general_invoice`） | 同上 |
+
+> 注：这 12 把是 **sea_orm `ActiveModel` 写**，审计尺子的"含写"指标只扫 deadpool SQL 字面量，**看不见**它们（见 §五 新增 ORM-blindness 条）。它们长期躺在 R7 的"只读挂写方法 677"桶里，但实为无门禁的已认证写。本批按"仅要求有效会话"档收（dict/file/invoice 这类配置/业务 CRUD 是否进一步收 admin 留 §五，需补 sea_orm 版 `is_admin` 助手）。general_core_entity 真写 R7 净清 0。
+
+| 验证（本批代码变更） | — | general_core_entity 整 lib `29 passed / 0 failed / 0 ignored`：新增 `security_gate_tests_b65::b65_writes_reject_without_session`（12 把 `None` 会话 + 占位 `DatabaseConnection` → 全部 `Err(AppError::Unauthorized)`，门在 DB 访问前返回，绝不落查询）+ `b65_require_session_gate_logic`（纯单元校验门逻辑：无会话拒绝、有会话放行）。尺子：**R7 704→692（−12）**、含写 15→**15**（不变，印证 ORM-blindness）；复跑 3 次稳定；EXIT 0 |
+
 ## 四、验证
 
 
@@ -1732,6 +1745,7 @@ cd oa4rust/backend && cargo test --lib -p <crate>
   5. 模块级 `update_control_config` 家族（A3-N11：bbs/calendar/jpush/mind）、`jpush`（A3-N5）、`attendance`（A3-N4）、`mind`（A3-N7）、`ai_assemble_control`（A3-N8）、`file`（A3-N10）。
   6. 归属冒名残留：A2-F11（`creator` 硬编码 "system" 9 处）、A3-N13（invoice 三把）、A2-F13 / F14。
   7. **ai crate 写面收口残留（第六十二批新见）**：①`x_ai_file.id` / `x_ai_index.id` 无唯一/主键约束，`ON CONFLICT (id)` 造数报 E42P10（同格 x_jpush.id）；②`x_ai_conversation` 现已要求非 null `title`（schema 漂移，旧造数 E23502）；两项已在本批 `tests.rs::test_ai_get_writes_owner_admin_gate` 造数改 DELETE+INSERT 幂等并补 `title` 绕过，但属**真实 schema 缺陷**，建议迁移补 `id` 唯一约束 + 明确 `title` 默认值；③`ai_assemble_control` `file_upload`/`file_copy_file` 仍取 body `creator="system"` 而非会话身份，存在冒名写 `x_ai_file` 残留（仅已挡匿名），应按会话 person 落 creator（归 A2-F11）。模块级 `update_control_config`（A3-N8）本批未动，仍待 admin 收口。
+- **尺子缺陷 28（ORM-blindness：sea_orm 写对"含写"指标不可见）**：`scripts/audit_write_gating.mjs` 的写证据只扫 deadpool SQL 字面量（`INSERT/UPDATE/DELETE` 字符串），**不识别 sea_orm `ActiveModel::insert/update/delete`** 这类 ORM 落笔。后果：凡经 sea_orm 的真写（如 `general_core_entity` 的 dict / dict_item / file / invoice 共 12 把 CRUD）长期被读成「只读挂写方法」躺在 R7 桶里，而"含写"计数系统性少算。第六十五批正是此类：R7 704→692（−12）但"含写"纹丝不动 15→15——即该 −12 全是尺子看不见的 ORM 写。**修复轴**：`writeEvidence` 补 sea_orm 写特征（识别 `ActiveModelTrait` 的 `insert/update/delete` 调用、或 `Entity::insert/Update/Delete` builder），把 ORM 型写面从"只读挂写"纠正进"含写"。修复前，R7 的真写面比读数大、含写比读数小；按 crate 下移推进时务必逐批用离线 401 臂交叉验证（不只看"含写"差值），否则会漏掉 ORM 写这类"无门禁但读数不降"的批次。
 - 建议再加三把守卫（本轮取证出的是**机制性缺口**，不是单点漏洞）：
   - **GET 写禁令**：`csrf_middleware` 只覆盖 POST/PUT/PATCH/DELETE（`token.rs:70-74`），`requires_admin` 同样只认这三个方法（`security.rs:129`）；凡 `.route("...", get(handler))` 且 handler 体内含 `INSERT/UPDATE/DELETE` 即应红。已知落点：`hotpic routes.rs:53`、`ai routes.rs:47`、`message routes.rs:19`、meeting accept/confirm/checkin、calendar 与 jpush 的 `update/control/config`、attendance 两处、`processplatform_core_express`。撤 GET 需同批改前端（`MeetingApp.vue` 自检面板仍在用 GET）。
   - **Public 兜底吞掉点名**：`ADMIN_WRITE_PREFIXES` ∩ 注册表 Public 的 15 条交集必须逐条点名，落在此集合内新增的写 handler 必须有体内归属/角色门（§二.7）。

@@ -2,7 +2,6 @@ crate	method	path	handler	bucket
 auth	GET	/api/qiyeweixin/update/person/detail/{code}	qiyeweixin_update_person_detail	K3-已认证无会话无门禁
 cms_assemble_control	GET	/api/document/{id}/view/count	document_id_view_count	K2-读会话无门禁
 cms_assemble_control	GET	/api/comment/{id}/commend	comment_commend_u3	K2-读会话无门禁
-general_assemble_control	GET	/api/general/assemble/control/qrcode/width/{width}/height/{height}/text/{text}	qrcode_width_width_height_height_text_text	K3-已认证无会话无门禁
 meeting_assemble_control	GET	/api/meeting/assemble/control/meeting/{id}/checkin	u2_meeting_checkin_get	K2-读会话无门禁
 message	GET	/api/message/consume/{id}/type/{type}	update_single	K3-已认证无会话无门禁
 organization_assemble_authentication	GET	/api/organization/assemble/authentication/qiyeweixin/bind/{meta}/callback/{code}	qiyeweixin_bind_callback	K3-已认证无会话无门禁
