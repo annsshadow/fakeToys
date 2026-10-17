@@ -1040,6 +1040,18 @@ GET 写面队列里 `calendar_assemble_control` 与 `jpush_assemble_control` 各
 
 | 验证（本批代码变更） | — | file 整 lib `12 passed / 0 failed / 8 ignored`（0.06s）：新增离线臂 `b61_writes_reject_without_session`（5 把 dead pool + 无会话逐把点名 401）+ `b61_permission_set_non_admin_forbidden`（非 admin 403，离线稳健）。尺子：**5 条 R7 路由出列**（全含写），R7 718→**713**、含写 29→**24**、ungated −5；file R7 5→**0**；EXIT 0、判据见证缺口 0（复跑 3 次稳定） |
 
+### 三.62 第六十二批（ai_assemble_control 写面 3 把收会话门，R7 713→710）
+
+| 项 | 位置 | 处置与口径 |
+| --- | --- | --- |
+| AI 文件上传（会话档） | `lib.rs` `file_upload`（POST `/file/upload`，INSERT `x_ai_file`） | 新增 crate 内 `require_session`：无会话 401。`creator` 硬写 `"system"`（冒名残留记 §五 待修） |
+| AI 文件复制（会话档） | `lib.rs` `file_copy_file`（POST `/file/copy/file`，INSERT…SELECT `x_ai_file`） | `require_session`：无会话 401 |
+| 对话扩展写（会话档） | `lib.rs` `chat_write_completion_extra`（POST `/chat/write/completion/extra`，UPDATE `x_ai_chat` by id） | `require_session` 插在空 id 校验之后、`pool.get()` 之前：无会话 401 |
+
+> 注：ai 新鲜 R7 名单含 3 真写 + 3 列表路由（`file_list_*` / `index_list_*`）。3 列表路由体为纯 SELECT（只读），本次未动；新鲜尺子复跑后已将其从 R7 出列（纯读 false-positive），故 ai_assemble_control R7 净清 0。3 真写全按"已认证会话存在"档收（无可用归属列：file 写 `creator="system"`、chat 按 id 整行改），owner/admin 收紧待 §五。
+
+| 验证（本批代码变更） | — | ai_assemble_control 整 lib `56 passed / 0 failed / 0 ignored`（0.22s）：新增离线臂 `b62_writes_reject_without_session`（3 把 dead pool + 无会话逐把点名 401）+ `b62_writes_accept_valid_session_past_gate`（有效会话过门落 Internal，证门在库前）。**顺带修预存红测试** `tests.rs::test_ai_get_writes_owner_admin_gate`：其造数用 `ON CONFLICT (id)` 但 `x_ai_file.id`/`x_ai_index.id` 无唯一约束（E42P10）、且 `x_ai_conversation` 现已要求非 null `title`（E23502）schema 漂移；改为 DELETE+INSERT 幂等造数并补 `title`，测试转绿。尺子：**3 条 R7 含写路由出列**，R7 713→**710**、含写 24→**21**、ungated −3；ai R7 6→**0**（含 3 只读出列）；EXIT 0、判据见证缺口 0（复跑 3 次稳定） |
+
 ## 四、验证
 
 
@@ -1697,6 +1709,7 @@ cd oa4rust/backend && cargo test --lib -p <crate>
   4. `cms_assemble_control` 遗留 CRUD 与 `mock*` 写族 + `update_control_config`（A2-F4/F5/F6，含 GET 注册与 `allow_anonymous` 自翻）。
   5. 模块级 `update_control_config` 家族（A3-N11：bbs/calendar/jpush/mind）、`jpush`（A3-N5）、`attendance`（A3-N4）、`mind`（A3-N7）、`ai_assemble_control`（A3-N8）、`file`（A3-N10）。
   6. 归属冒名残留：A2-F11（`creator` 硬编码 "system" 9 处）、A3-N13（invoice 三把）、A2-F13 / F14。
+  7. **ai crate 写面收口残留（第六十二批新见）**：①`x_ai_file.id` / `x_ai_index.id` 无唯一/主键约束，`ON CONFLICT (id)` 造数报 E42P10（同格 x_jpush.id）；②`x_ai_conversation` 现已要求非 null `title`（schema 漂移，旧造数 E23502）；两项已在本批 `tests.rs::test_ai_get_writes_owner_admin_gate` 造数改 DELETE+INSERT 幂等并补 `title` 绕过，但属**真实 schema 缺陷**，建议迁移补 `id` 唯一约束 + 明确 `title` 默认值；③`ai_assemble_control` `file_upload`/`file_copy_file` 仍取 body `creator="system"` 而非会话身份，存在冒名写 `x_ai_file` 残留（仅已挡匿名），应按会话 person 落 creator（归 A2-F11）。模块级 `update_control_config`（A3-N8）本批未动，仍待 admin 收口。
 - 建议再加三把守卫（本轮取证出的是**机制性缺口**，不是单点漏洞）：
   - **GET 写禁令**：`csrf_middleware` 只覆盖 POST/PUT/PATCH/DELETE（`token.rs:70-74`），`requires_admin` 同样只认这三个方法（`security.rs:129`）；凡 `.route("...", get(handler))` 且 handler 体内含 `INSERT/UPDATE/DELETE` 即应红。已知落点：`hotpic routes.rs:53`、`ai routes.rs:47`、`message routes.rs:19`、meeting accept/confirm/checkin、calendar 与 jpush 的 `update/control/config`、attendance 两处、`processplatform_core_express`。撤 GET 需同批改前端（`MeetingApp.vue` 自检面板仍在用 GET）。
   - **Public 兜底吞掉点名**：`ADMIN_WRITE_PREFIXES` ∩ 注册表 Public 的 15 条交集必须逐条点名，落在此集合内新增的写 handler 必须有体内归属/角色门（§二.7）。
