@@ -1015,6 +1015,17 @@ GET 写面队列里 `calendar_assemble_control` 与 `jpush_assemble_control` 各
 
 | 验证（本批代码变更） | — | query_assemble_surface 整 lib `52 passed / 0 failed / 0 ignored`（0.07s）：新增离线臂 `b59_writes_reject_without_session`（10 把 dead pool + 无会话逐把点名 401）+ `b59_writes_non_admin_forbidden`（10 把非 admin 403，离线稳健）。既有 `test_u2_table_row_insert_route_exists` 由 500 翻 401；其余路由测试用 `assert_ne!`/存在性判据照过。尺子：**17 条 R7 路由出列**（全含写），R7 740→**723**、含写 51→**34**、ungated −17；query_assemble_surface R7 47→**30**；EXIT 0、判据见证缺口 0（复跑 3 次稳定） |
 
+### 三.60 第六十批（mind_assemble_control 写面 5 把收门，R7 723→718）
+
+| 项 | 位置 | 处置与口径 |
+| --- | --- | --- |
+| 全局配置写（admin 档） | `lib.rs` `update_control_config`（POST `/config/update`，UPDATE `x_mind_assemble_control_config`） | 新增 crate 内 `require_admin(pool, session)`：无会话 401 / 非 admin 403 |
+| 文件夹 CRUD（会话档） | `lib.rs` `save_folder`（INSERT `x_mind`）、`update_folder`（UPDATE `x_mind`）、`folder_move_folderId`（UPDATE `x_mind.parent_id`）、`folder_id_force`（软删 `x_mind`） | 新增 crate 内 `require_session`：无会话 401。`x_mind.creator` 硬写 `"system"`，归属门无意义，至少要求有效会话（creator 冒名/空归属记 §五 待修） |
+
+> 注：mind 新鲜 R7 名单 5 条全为真写，本批全收（各单路由，5 条）。无归属列的文件夹写按会话存在档收；全局配置按 admin 档收。
+
+| 验证（本批代码变更） | — | mind_assemble_control 整 lib `32 passed / 0 failed / 3 ignored`（0.16s）：新增离线臂 `b60_writes_reject_without_session`（5 把 dead pool + 无会话逐把点名 401）+ `b60_update_control_config_non_admin_forbidden`（非 admin 403，离线稳健）。`tests_generated` 的 `test_{save,update}_folder`/`test_update_control_config` 走存在性判据照过。尺子：**5 条 R7 路由出列**（全含写），R7 723→**718**、含写 34→**29**、ungated −5；mind R7 5→**0**；EXIT 0、判据见证缺口 0（复跑 3 次稳定） |
+
 ## 四、验证
 
 
