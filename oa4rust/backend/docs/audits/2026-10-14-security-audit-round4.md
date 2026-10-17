@@ -1063,6 +1063,17 @@ GET 写面队列里 `calendar_assemble_control` 与 `jpush_assemble_control` 各
 
 | 验证（本批代码变更） | — | attendance_assemble_control 整 lib `48 passed / 0 failed / 15 ignored`（0.91s）：新增离线臂 `security_gate_tests_b63::b63_writes_reject_without_session`（2 把 dead pool + 无会话逐把点名 401）+ `b63_writes_non_admin_forbidden`（非 admin 403，离线稳健）。**顺带修预存红测试** `security_gate_tests.rs::r3_attendance_tables_have_primary_key`：其用 `$1::regclass` 绑 String 报 `WrongType(Regclass,String)`，改为 JOIN `pg_class` 按 `relname` 查主键，测试转绿。尺子：**3 条 R7 含写路由出列**，R7 710→**707**、含写 21→**18**、ungated −3；attendance 真写 R7 净清；EXIT 0、判据见证缺口 0（复跑 3 次稳定） |
 
+### 三.64 第六十四批（general_assemble_control 写面 2 把工具写收会话门，R7 707→704）
+
+| 项 | 位置 | 处置与口径 |
+| --- | --- | --- |
+| HTML→Word 落库（会话档） | `lib.rs` `office_html_to_word`（POST `/office` 与 `/office/html/to/word`，INSERT `x_general_assemble_office`） | 新增 crate 内 `require_session`：无会话 401。`creator` 取请求体（冒名残留记 §五） |
+| 二维码生成落库（会话档） | `lib.rs` `qrcode_width_width_height_height_text_text`（POST `/qrcode/width/.../text/...`，INSERT `x_general_assemble_qrcode`） | `require_session`：无会话 401（`creator` 硬写 `"system"`） |
+
+> 注：general_assemble_control 新鲜 R7 名单中，本批 2 把（3 路由）为按参数做按需转换并落库的工具写，非配置/系统数据，按"仅要求有效会话"档收（与 file/ai 用户工具写同口径）；`ecnet_check`/`excel_*`/`invoice_list` 等余下 R7 为纯读 false-positive，不属写面。general_assemble_control 真写 R7 净清 0。
+
+| 验证（本批代码变更） | — | general_assemble_control 整 lib `7 passed / 0 failed / 35 ignored`（0.07s）：新增离线臂 `security_gate_tests_b64::b64_writes_reject_without_session`（2 把 dead pool 401）+ `b64_writes_accept_valid_session_past_gate`（有效会话过门落 Internal 证门在库前）。尺子：**3 条 R7 含写路由出列**，R7 707→**704**、含写 18→**15**、ungated −3；general_assemble_control 真写 R7 净清；EXIT 0、判据见证缺口 0（复跑 3 次稳定） |
+
 ## 四、验证
 
 

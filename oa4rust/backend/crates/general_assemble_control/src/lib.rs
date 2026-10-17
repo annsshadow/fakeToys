@@ -21,6 +21,8 @@ mod tests;
 mod tests_generated;
 #[cfg(test)]
 mod security_gate_tests;
+#[cfg(test)]
+mod security_gate_tests_b64;
 
 /// 管理写操作门禁：本 crate 的系统配置/组织架构参考数据（维护模式、注册开关、
 /// 考勤范围、地区、安全等级、全局控制行）为管理台数据，仅 admin 可写。
@@ -33,6 +35,17 @@ async fn require_admin(pool: &Pool, session: &shared::session::Session) -> Resul
     } else {
         Err(AppError::Forbidden)
     }
+}
+
+/// 会话存在档：无会话返回 Unauthorized。用于无需 admin/owner 归属、仅要求有效会话的写面
+/// （如 HTML→Word、二维码生成这类按需转换工具，写库但非配置/系统数据）。门插在 pool.get() 前。
+#[allow(non_snake_case)]
+fn require_session(
+    session: Option<Extension<shared::session::Session>>,
+) -> Result<shared::session::Session, AppError> {
+    session
+        .map(|Extension(s)| s)
+        .ok_or(AppError::Unauthorized)
 }
 
 /// 属主资源门禁：先取记录属主列（creator），命中行时 require_owner；
@@ -1946,8 +1959,10 @@ pub async fn invoice_upload_with_url(
 #[allow(non_snake_case)]
 pub async fn office_html_to_word(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -2024,8 +2039,10 @@ pub async fn office_html_to_word_result_flag(
 #[allow(non_snake_case)]
 pub async fn qrcode_width_width_height_height_text_text(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((width, height, text)): axum::extract::Path<(u32, u32, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
