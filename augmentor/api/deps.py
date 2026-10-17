@@ -12,6 +12,7 @@ import json
 import logging
 import os
 import secrets
+import threading
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
@@ -92,23 +93,39 @@ def config_file_path() -> Path:
     return resolved
 
 
+#: 惰性装配的单例锁（A392 / L289）：改前 `if _pipeline is None: ... = AugmentorPipeline(...)`
+#: 是 check-then-act，两支并发首用各建一只管道、各持一份 `AppConfig` ⇒ 进程里同时站着好几个
+#: 「当前生效配置」。实测（20 支并发 `POST /api/config`，每支一把自己的事件循环）：路由实际
+#: 拿到 **16 只不同的 pipeline 对象**，20 支请求全回 200，而盘上只剩最后一次写入那份快照。
+_PIPELINE_LOCK = threading.Lock()
+
+
 def get_pipeline() -> AugmentorPipeline:
-    """获取管道实例（惰性初始化）
+    """获取管道实例（惰性初始化，双检锁）
+
+    锁只罩「建」那一次而不是每次取：`_pipeline` 的读取本身是一次原子装载，装好之后取用无需
+    互斥；必须只发生一次的是装配（`load_config` + `AugmentorPipeline`）。
 
     Returns:
-        AugmentorPipeline 实例
+        AugmentorPipeline 实例（本进程唯一）
     """
     global _pipeline
     if _pipeline is None:
-        config = load_config(str(config_file_path()))
-        _pipeline = AugmentorPipeline(config)
+        with _PIPELINE_LOCK:
+            if _pipeline is None:
+                _pipeline = AugmentorPipeline(load_config(str(config_file_path())))
     return _pipeline
 
 
 def reset_pipeline():
-    """重置管道实例（主要供测试使用）"""
+    """重置管道实例（主要供测试使用）
+
+    与 `get_pipeline` 共用同一把装配锁：裸写 `_pipeline = None` 会撞上「另一支正持锁装配、
+    出来时把 None 覆盖回一只旧管道」那一格 ⇒ 复位动作凭空丢失。
+    """
     global _pipeline
-    _pipeline = None
+    with _PIPELINE_LOCK:
+        _pipeline = None
 
 
 _config_path_cache: Dict[Tuple[Optional[str], str], Path] = {}
