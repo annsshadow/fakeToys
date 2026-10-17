@@ -12,8 +12,10 @@ package domain
 //  1. **重复触发**同类地形时，事件/replay 仍要发 ——
 //     跨端那 6 个场景里只有第 42 关有两座蓄能塔，
 //     而它们的触发点**恰好被采样到了**。换一个 param 就漏。
-//  2. **「弃一张 + 取一张」**的延后一 tick 收尾 ——
-//     跨端场景覆盖了它，但采样间隔 200/300 tick 会把中间那几 tick 抹平。
+//  2. **「弃一张 + 取一张」的掩码编码** ——
+//     跨端场景覆盖了它，但采样间隔 200/300 tick 会把中间那几 tick 抹平；
+//     且第 159 轮起弃牌掩码（弃的是哪张、弃了几张）取代了旧的
+//     「弃过与否」单 bit，这里逐条盯住编码值与重放复现。
 //  3. `rollSkillCards` 的**重抽 guard** —— actives 只有 1 张而 count > 1 时
 //     无 guard 会**永不退出**（引擎挂死）。跨端场景里池子总是 > 1 张。
 //  4. 脚本**消费完**之后走 `skipCards` 而不是 panic / 空转。
@@ -168,14 +170,14 @@ func TestSkipCardsDropsWholeHand(t *testing.T) {
 	}
 }
 
-// TestSkipCardsAfterDiscardUsesMinusSix 守住「弃过牌后跳过的编码是 -6」。
+// TestSkipCardsAfterDiscardEncodesMask 守住「弃过牌后跳过的编码携带弃牌掩码」。
 //
-// ⚠️ 必须是 `-6` 而不是 `-1`：
+// ⚠️ 第 159 轮重写（旧名 TestSkipCardsAfterDiscardUsesMinusSix）：
 //
-//	重放方拿不到「玩家当时弃了几张」，
-//	若两种情况都记 -1，判读侧就既没看 discard 的 record 事件、
-//	又没看 card_picks —— 两种情况完全一样。
-func TestSkipCardsAfterDiscardUsesMinusSix(t *testing.T) {
+//	旧编码 -6 只说明「弃过一张」，说不出弃的是哪一张 ——
+//	而重放侧固定弃 hand[0]，玩家弃第 2/3 张时必然失配。
+//	新编码 -(3+code)：mask=0b1（弃原手牌第 0 张）+ 不取 → code=6 → -9。
+func TestSkipCardsAfterDiscardEncodesMask(t *testing.T) {
 	e := newCardProbeEngine(t, 1, 2, 3)
 	enterCardSelect(t, e)
 	e.WaveIndex = 0
@@ -190,8 +192,9 @@ func TestSkipCardsAfterDiscardUsesMinusSix(t *testing.T) {
 	if len(e.Deck.Hand) != 0 {
 		t.Errorf("跳过后手牌还剩 %d 张", len(e.Deck.Hand))
 	}
-	if got := e.CardPicks; len(got) != 1 || got[0] != -PickDiscardSkipBase {
-		t.Errorf("card_picks = %v，期望 [%d]", got, -PickDiscardSkipBase)
+	want := -(PickCodeBase + 6) // mask=1 的区间起点 4 + 「不取」= 6
+	if got := e.CardPicks; len(got) != 1 || got[0] != want {
+		t.Errorf("card_picks = %v，期望 [%d]（弃第 0 张后跳过的掩码编码）", got, want)
 	}
 }
 
@@ -523,16 +526,16 @@ func TestApplyMechanicFreeDiscardAlsoTopsUpNow(t *testing.T) {
 	}
 }
 
-// TestApplyReplayDecisionConsumesOnePerTick 守住「每 tick 最多消费一项」。
+// TestApplyReplayDecisionConsumesOnePerCall 守住「每个 card_select 恰好消费一项」。
 //
-// ⚠️ 若在同一 tick 内消费完整个脚本，
-//
-//	第 1 波的 picks 会被记成 `[-3,-3,-1,-1]` —— 那是**两波**的决策，
-//	而事件流多出原局没有的记录，`replayHash` 立刻不同。
-func TestApplyReplayDecisionConsumesOnePerTick(t *testing.T) {
+// ⚠️ 第 159 轮重写：旧实现允许合成脚本在同一 tick 连点消费多项
+//（`[-3,-3,-1,-1]` 这类错位就是这么来的），而线上真实玩家
+// 做不到 50ms 内点三张卡 —— 那个语义从来就不存在。
+func TestApplyReplayDecisionConsumesOnePerCall(t *testing.T) {
 	e := newCardProbeEngine(t, 1, 2, 3)
 	enterCardSelect(t, e)
 	e.WaveIndex = 0
+	// -3 = mask=0（没弃牌）+ 取剩余第 0 张 → 等价普通取牌
 	e.SetReplayScript([]int{-3, -3, -3, -3, -3, -3, -3, -3})
 
 	e.applyReplayDecision()
@@ -541,41 +544,47 @@ func TestApplyReplayDecisionConsumesOnePerTick(t *testing.T) {
 		t.Errorf("一次 applyReplayDecision 消费了 %d 项脚本，期望 1 —— "+
 			"一整波的决策被塞进同一 tick，card_picks 会记成跨波的值", e.ReplayScriptPos)
 	}
-	if len(e.CardPicks) != 1 {
-		t.Errorf("card_picks = %v，期望恰好 1 项", e.CardPicks)
+	if got := e.CardPicks; len(got) != 1 || got[0] != 0 {
+		t.Errorf("card_picks = %v，期望 [0]（mask=0 的取牌回写成普通下标）", got)
+	}
+	if e.Phase != PhaseWave {
+		t.Errorf("取牌后 phase = %q，期望 wave —— 取牌必须立即结束本波", e.Phase)
 	}
 }
 
-// TestApplyReplayDecisionDiscardThenTakeDefersOneTick 守住「延后一 tick 收尾」。
+// TestApplyReplayDecisionDiscardThenTakeFinishesImmediately 守住
+// 「弃牌掩码可被重放复现 + 取牌立即结束本波」。
 //
-// ⚠️ 「弃一张 + 取一张」必须走 `finishCardSelectNextTick` 而**不是**
+// ⚠️ 第 159 轮重写（旧名为 ...DefersOneTick）：
 //
-//	`finishCardSelect`：后者会**立刻** `beginWave`，
-//	于是 `Step` 开头那一段（`if cardSelectDone {...}`）还没跑到就被跳过，
-//	波形事件落在**本 tick** 而原局落在下一 tick（实测 DIFF@61 orig=728 repl=727）。
-func TestApplyReplayDecisionDiscardThenTakeDefersOneTick(t *testing.T) {
+//	选牌时钟冻结之后「取牌」一律立即 finishCardSelect ——
+//	`cardSelectDone` / `finishCardSelectNextTick` 已整体删除，
+//	旧测试钉住的「延后一 tick 收尾」路径不存在了。
+func TestApplyReplayDecisionDiscardThenTakeFinishesImmediately(t *testing.T) {
 	e := newCardProbeEngine(t, 1, 2, 3)
 	enterCardSelect(t, e)
 	e.WaveIndex = 0
-	e.WaveIndex = 0
 	e.Deck.DiscardsLeft = 1
-	// -3 = 弃一张 + 取第 0 张
-	e.SetReplayScript([]int{-3, -3, -3, -3, -3, -3})
+	// -15 = mask=0b100（弃原手牌第 2 张）+ 取剩余第 0 张
+	e.SetReplayScript([]int{-15, -15, -15, -15})
 
 	e.applyReplayDecision()
 
-	if !e.cardSelectDone {
-		t.Error("弃牌+取牌后没有置 cardSelectDone —— 下一 tick 不会开波，会永远卡在 card_select")
+	if e.Phase != PhaseWave {
+		t.Errorf("取牌后 phase = %q，期望 wave —— 取牌必须立即结束本波", e.Phase)
 	}
 	if len(e.Deck.Hand) != 0 {
 		t.Errorf("剩余手牌应被静默丢弃，实际还剩 %d 张", len(e.Deck.Hand))
 	}
-	if e.Phase == PhaseWave {
-		t.Error("本 tick 就进了下一波 —— 波次事件会比原局早一 tick")
+	if got := e.CardPicks; len(got) != 1 || got[0] != -15 {
+		t.Errorf("card_picks = %v，期望 [-15]（掩码编码必须与脚本逐位一致）", got)
+	}
+	if e.ReplayScriptPos != 1 {
+		t.Errorf("ReplayScriptPos = %d，期望 1", e.ReplayScriptPos)
 	}
 }
 
-// TestApplyReplayDecisionExhaustedScriptSkips 守住「脚本消费完走 skipCards」。
+// TestApplyReplayDecisionExhaustedScriptSkips 守住「脚本消费完走 SkipCards」。
 //
 // ⚠️ 走到这里必须是 `SkipCards` 而不是 panic / 空转：
 //
@@ -585,16 +594,18 @@ func TestApplyReplayDecisionExhaustedScriptSkips(t *testing.T) {
 	e := newCardProbeEngine(t, 1, 2, 3)
 	enterCardSelect(t, e)
 	e.WaveIndex = 0
-	e.SetReplayScript([]int{-3})
+	e.SetReplayScript([]int{}) // 空脚本
 
-	e.applyReplayDecision() // 消费掉唯一一项
-	e.applyReplayDecision() // 这次脚本已空
+	e.applyReplayDecision()
 
-	if len(e.CardPicks) == 0 {
-		t.Error("card_picks 为空")
+	if e.Phase != PhaseWave {
+		t.Errorf("脚本耗尽后 phase = %q，期望 wave（回退为整波跳过）", e.Phase)
 	}
-	if e.ReplayScriptPos != 1 {
-		t.Errorf("ReplayScriptPos = %d，期望停在 1（不得越界）", e.ReplayScriptPos)
+	if got := e.CardPicks; len(got) != 1 || got[0] != -1 {
+		t.Errorf("card_picks = %v，期望 [-1]", got)
+	}
+	if e.ReplayScriptPos != 0 {
+		t.Errorf("ReplayScriptPos = %d，期望停在 0（不得越界）", e.ReplayScriptPos)
 	}
 }
 
