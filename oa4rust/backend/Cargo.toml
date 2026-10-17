@@ -297,7 +297,7 @@ urlencoding = "2"
   openapi = { path = "crates/openapi" }
   redis = { version = "0.25", features = ["tokio-comp", "connection-manager"] }
   futures-util = "0.3"
-  lopdf = "0.42.0"
+  lopdf = "0.45.0"
   x509-parser = "0.16"
   p256 = "0.13"
 
