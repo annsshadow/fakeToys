@@ -19,7 +19,7 @@ from augmentor.converter import (
 )
 from ..deps import (
     raise_internal_error,
-
+    mutate_json_file,
     allowed_data_roots,
     assert_dataset_shape,
     get_pipeline,
@@ -157,11 +157,11 @@ async def load_data(filename: str, page: int = 1, page_size: int = 20, search: s
         items = await read_json_file(file_path)
 
         if search:
+            from augmentor.validation import require_item_text
             search_lower = search.lower()
             items = [
-                item for item in items
-                if search_lower in item.get("instruction", "").lower()
-                or search_lower in item.get("output", "").lower()
+                item for item in require_item_text(items, "instruction", "output")
+                if search_lower in item.get("instruction", "").lower() or search_lower in item.get("output", "").lower()
             ]
 
         total = len(items)
@@ -195,13 +195,13 @@ async def update_data_item(
         raise HTTPException(status_code=404, detail="文件不存在")
 
     try:
-        items = await read_json_file(file_path)
+        def _replace(items: list) -> None:
+            # 越界判决必须读的是**锁内刚拿到的那一份**，不是请求进入时的快照
+            if index < 0 or index >= len(items):
+                raise HTTPException(status_code=400, detail="索引越界")
+            items[index] = item
 
-        if index < 0 or index >= len(items):
-            raise HTTPException(status_code=400, detail="索引越界")
-
-        items[index] = item
-        await write_json_file(file_path, items)
+        await mutate_json_file(file_path, _replace)
 
         return {"success": True}
     except HTTPException:
@@ -224,13 +224,13 @@ async def delete_data_item(
         raise HTTPException(status_code=404, detail="文件不存在")
 
     try:
-        items = await read_json_file(file_path)
+        def _remove(items: list) -> None:
+            # 同 `update_data_item`：判界与弹出都在锁内，对着同一份刚读到的内容做
+            if index < 0 or index >= len(items):
+                raise HTTPException(status_code=400, detail="索引越界")
+            items.pop(index)
 
-        if index < 0 or index >= len(items):
-            raise HTTPException(status_code=400, detail="索引越界")
-
-        items.pop(index)
-        await write_json_file(file_path, items)
+        await mutate_json_file(file_path, _remove)
 
         return {"success": True}
     except HTTPException:

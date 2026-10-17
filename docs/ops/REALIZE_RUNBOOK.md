@@ -1,5 +1,11 @@
 # OA4Rust 桩代码真实化执行手册（Runbook）
 
+> **快照注记（2026-10-14）**：本手册写于真实化攻坚早期（当时后端直接位于 `oa4rust/` 根）。
+> 现后端 workspace 已重构至 **`oa4rust/backend/`** 子目录（`backend/Cargo.toml`、`backend/src/main.rs`、
+> `backend/crates/**`），下文路径已按新结构换算。迁移现状：90 个业务 crate 中 88 个已完成
+> （单一信息源 `oa4rust/backend/docs/brainstorms/oa4rust-endpoint-inventory.md`），仅剩
+> `sms` / `captcha_store` 两个基础设施级 crate，本手册保留作方法参考与最后两 crate 的执行指引。
+
 本手册供逐 crate 消除桩代码的执行者（人工或子代理）使用。目标：让每个 crate 的
 `router(pool)` 暴露**真实**的 PostgreSQL 业务逻辑 handler，清除所有 `stub_` / `TODO`
 /`Value::Null` 桩标记，并补至少 1 个可编译通过的测试。
@@ -8,15 +14,16 @@
 
 ## 0. 全局约束（违反会导致全仓编译失败，务必遵守）
 
-- **禁止修改**：`oa4rust/Cargo.toml`、`oa4rust/src/main.rs`、`oa4rust/crates/shared/**`、
-  其他 crate 的代码。只修改你负责的那几个 crate 目录。
+- **禁止修改**：`oa4rust/backend/Cargo.toml`、`oa4rust/backend/src/main.rs`、
+  `oa4rust/backend/crates/shared/**`、其他 crate 的代码。只修改你负责的那几个 crate 目录。
 - **保留签名**：每个 crate 必须导出 `pub fn router(pool: Pool) -> axum::Router`
   （与 `main.rs` 调用 `xxx::router(pool.clone())` 一致）。不要把 `pool` 改名或改类型，
   不要改为 `async fn`。`router` 内部可以 `.layer(Extension(pool))`。
 - **编译门禁**：完成后必须 `cargo build -p <你的crate名>` 通过（warning 可接受，error 必须清零）。
 - **不要引入新依赖**：只用 crate 已有的依赖（`axum` / `deadpool_postgres` / `serde_json` /
   `serde` / `shared`）。
-- **DB 不可用**：本环境无 PostgreSQL，集成测试无法连库。测试必须**无库也能编译并通过**
+- **DB 可用性**：PostgreSQL 可经 `oa4rust/backend/docker-compose.yml` 一键起（推荐，
+  可顺带跑 `--migrate-only` 完成建表）。若执行环境确无库，测试仍必须**无库也能编译并通过**
   （纯单元/结构测试，或对 DB 测试用 `env::var("DATABASE_URL")` 守卫后提前返回）。
 
 ---
@@ -192,12 +199,12 @@ for f in base.rglob("*.rs"):
 `404`=无路由 / `405`=方法不符（路径被宽 `{id}` 影子捕获）/ 非 404·405（=500/415）=已进 handler（
 GET 类命中宽路由即"静默影子误路由"，生产带 DB 会返 200 错体，最高危）。
 
-**命令**（须在装有 Rust 工具链的 Windows/host 侧执行；本沙箱无 cargo 无法跑）：
+**命令**（须在装有 Rust 工具链的 Windows/host 侧执行；测试文件现位于 `oa4rust/backend/tests/designer_route_match.rs`）：
 ```bash
-cd oa4rust && cargo test --test designer_route_match -- --nocapture
+cd oa4rust/backend && cargo test --test designer_route_match -- --nocapture
 ```
 - 修复某条设计器路由后，把该 case 的 `Expect` 由当前档改为目标态（通常 `Matched`）并补真实语义；
-- 详见 `docs/plans/2026-09-11-001-assess-oa4rust-web-full-replacement-gap-plan.md` §9.4 对账表与 W6。
+- 详见 `docs/archived-plans/2026-09-11-001-assess-oa4rust-web-full-replacement-gap-plan.md` §9.4 对账表与 W6。
 - 判据：命令退出 0（全绿）= 当前快照与实测一致；若某 case 失败，说明路由被改动或分类需回写 §9.4。
 
 ---
@@ -224,14 +231,8 @@ cd oa4rust && cargo test --test designer_route_match -- --nocapture
 - `docs/ops/s4-pilot-canary-runbook.md`（S4 金丝雀交接 runbook）——已删除。
 
 `scripts/pilot_gate.py` + `tests/test_pilot_gate.py` + `tests/fixtures/pilot_access.fixture`
-保留为**可选离线观测工具**（上线后可对任意 access log 窗口离线核算 5xx 预算，非门禁），
-本地回归命令不变：
-
-```bash
-cd oa4rust
-python3 tests/test_pilot_gate.py
-python3 -m py_compile scripts/pilot_gate.py tests/test_pilot_gate.py
-```
+**现已不在仓库中**（后续清理时随旧目录结构一并移除；如需离线核算 5xx 预算可从 git 历史找回，
+非门禁，缺失不影响上线判据）。
 
 保留件：`deploy/auth-rollback-drill.sh`（Rust 侧 auth cookie 功能矩阵演练，非旧系统机制）、
 `deploy/nginx-auth-routes-rust-drill.conf`、`deploy/nginx.conf`（服务配置）、`docs/ops/rollback-plan.md`

@@ -34,8 +34,9 @@ SDK 面必须自带，因为 CLI 与直接调 SDK 的调用方**不经过** HTTP
    外泄面）。`task_id=".."` 这一档**按实测是接受**（拼接后是一个文件名字面量，落点仍在
    根内），判据单独钉住，防后来人改成「凡带点就拦」。
 2. 调用点名册按**文件 → 次数**与实测相等（10 处 / 5 个文件）；包含判据的
-   `.parents` 比较在 SDK 包内**恰好两处实现**（本把权威 + L231 给备份名落下的
-   那条手判）——第三份手抄就是 L238 / L256 / L257 收掉的那一族。
+   `.parents` 比较在 SDK 包内**恰好一处实现**（L258 立尺时是两处：本把权威 + L231 给
+   备份名落下的那条手判；L273 把那条手抄折进同一模块的 `path_lands_within`，于是
+   「两处实现」收成一处）——任何第二份手抄就是 L238 / L256 / L257 收掉的那一族。
 3. 版本面：三只入口（`delete_version` / `load_version` / `get_version_info`）对
    `..` 一律出声，且**磁盘上那个目录还在**；合法 id 的落点仍在根内（零行为漂移）。
 4. 断点面：三只拼路径的私有方法一起拦，且拦下之后目录外**零字节**落盘。
@@ -107,8 +108,8 @@ if os.name == "nt":
     ABSOLUTE_REJECTED_SHAPES += [("C:\\abs", "之外"), ("C:/abs", "之外")]
 ACCEPTED_SHAPES = ["v_20261013_120000", "sub/dir_ok", "plain.json"]
 
-#: 现量（L258）：`.parents` 那一档包含比较在 SDK 包内的两处实现。
-MEASURED_CONTAINMENT_IMPLEMENTATIONS = ["augmentor/backup.py", "augmentor/validation.py"]
+#: 现量（L273 重钉；L258 立尺时为两处）：`.parents` 那一档包含比较在 SDK 包内的一处实现。
+MEASURED_CONTAINMENT_IMPLEMENTATIONS = ["augmentor/validation.py"]
 
 
 def _tree(rel: str) -> ast.Module:
@@ -171,7 +172,8 @@ class TestTheAuthorityIsOneFunction:
         assert str(tmp_path.resolve()) not in verdict
         assert re.search(r"[A-Za-z]:[\\/]", verdict) is None, verdict
 
-    def test_the_containment_idiom_is_implemented_twice_not_thrice(self):
+    def test_the_containment_idiom_is_implemented_once_not_twice(self):
+        """`.parents` 那一档比较全 SDK 只许一处实现（L273 把第二处手抄折进权威）"""
         assert _containment_implementations() == MEASURED_CONTAINMENT_IMPLEMENTATIONS
 
 

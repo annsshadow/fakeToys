@@ -73,6 +73,22 @@ func (s *Server) adminLogin(c *fiber.Ctx) error {
 	return c.JSON(tp)
 }
 
+// adminLogout 吊销当前管理员的全部后台会话。
+//
+// 刻意**不挂** requireWritable：登出是会话生命周期动作，不是数据写，
+// readonly 账号同样（也许更应该）能立刻切断自己手上的凭证。
+// readonly_guard_test.go 的 AST 守卫把它列为**带注释的豁免**，
+// 豁免理由与这条注释是同一份 —— 两侧任何一方改了，另一方的测试会红。
+func (s *Server) adminLogout(c *fiber.Ctx) error {
+	n, err := s.Svc.AdminLogout(c.Context(), adminIDFrom(c))
+	if err != nil {
+		return failErr(c, err)
+	}
+	s.Svc.Audit(c.Context(), adminIDFrom(c), "logout", "", c.IP(),
+		fiber.Map{"revoked_sessions": n})
+	return c.JSON(fiber.Map{"revoked_sessions": n})
+}
+
 func (s *Server) adminMe(c *fiber.Ctx) error {
 	a, err := s.Svc.AdminMe(c.Context(), adminIDFrom(c))
 	if err != nil {
@@ -129,7 +145,7 @@ func (s *Server) adminUpdateLevel(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	s.Svc.Audit(c.Context(), adminIDFrom(c), "update_level", strconv.Itoa(id), patch)
+	s.Svc.Audit(c.Context(), adminIDFrom(c), "update_level", strconv.Itoa(id), c.IP(), patch)
 	return c.JSON(fiber.Map{"level": lvl})
 }
 
@@ -138,7 +154,7 @@ func (s *Server) adminRegenerateLevels(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	s.Svc.Audit(c.Context(), adminIDFrom(c), "regenerate_levels", "", fiber.Map{"count": n})
+	s.Svc.Audit(c.Context(), adminIDFrom(c), "regenerate_levels", "", c.IP(), fiber.Map{"count": n})
 	return c.JSON(fiber.Map{"generated": n})
 }
 
@@ -163,7 +179,7 @@ func (s *Server) adminUpdateSkill(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	s.Svc.Audit(c.Context(), adminIDFrom(c), "update_skill", strconv.Itoa(id), patch)
+	s.Svc.Audit(c.Context(), adminIDFrom(c), "update_skill", strconv.Itoa(id), c.IP(), patch)
 	// 第 120 轮：回读行作为响应（后台契约 { skill: AdminSkill }），
 	// 不再整个重列 adminSkills（那样 res.skill 恒 undefined，
 	// 后台改完技能表行停旧值却弹「已保存」）。
@@ -266,7 +282,7 @@ func (s *Server) adminBanUser(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	s.Svc.Audit(c.Context(), adminIDFrom(c), "ban_user", strconv.FormatInt(id, 10), body)
+	s.Svc.Audit(c.Context(), adminIDFrom(c), "ban_user", strconv.FormatInt(id, 10), c.IP(), body)
 	return c.JSON(fiber.Map{"user": u})
 }
 
@@ -279,7 +295,7 @@ func (s *Server) adminUnbanUser(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	s.Svc.Audit(c.Context(), adminIDFrom(c), "unban_user", strconv.FormatInt(id, 10), nil)
+	s.Svc.Audit(c.Context(), adminIDFrom(c), "unban_user", strconv.FormatInt(id, 10), c.IP(), nil)
 	return c.JSON(fiber.Map{"user": u})
 }
 
@@ -306,7 +322,8 @@ func (s *Server) adminGrantUser(c *fiber.Ctx) error {
 		evt = "revoke_currency"
 	}
 	s.Svc.Audit(c.Context(), adminIDFrom(c), evt,
-		strconv.FormatInt(id, 10), fiber.Map{"currency": body.Currency, "amount": body.Amount})
+		strconv.FormatInt(id, 10), c.IP(),
+		fiber.Map{"currency": body.Currency, "amount": body.Amount})
 	return c.JSON(fiber.Map{"wallet": wallet})
 }
 
@@ -342,6 +359,69 @@ func (s *Server) adminBattles(c *fiber.Ctx) error {
 		return failErr(c, err)
 	}
 	return c.JSON(fiber.Map{"items": items, "total": total})
+}
+
+// adminRecomputes 结算重算审计台账（R1）。
+//
+// 运营要在这里回答的是一个二元问题：**这批不符是引擎漂移还是玩家作弊？**
+// 答案不在单行里，在**按关卡聚合**的分布上：
+// 集中在少数关卡 → 引擎某段算错（回滚）；均匀在一个号上 → 作弊（封号）。
+// 所以本端点与下面那个 /stats 必须成对存在 —— 只有列表的话，
+// 运营只能逐行人肉扫，既看不出分布也看不出闸门有没有在拦。
+func (s *Server) adminRecomputes(c *fiber.Ctx) error {
+	limit, err := queryInt(c, "limit", 50)
+	if err != nil {
+		return failErr(c, err)
+	}
+	offset, err := queryInt(c, "offset", 0)
+	if err != nil {
+		return failErr(c, err)
+	}
+	userID, err := queryInt(c, "user_id", 0)
+	if err != nil {
+		return failErr(c, err)
+	}
+	levelID, err := queryInt(c, "level_id", 0)
+	if err != nil {
+		return failErr(c, err)
+	}
+	onlyMismatch := c.Query("only_mismatch") == "1" || c.Query("only_mismatch") == "true"
+	items, total, err := s.Svc.AdminListRecomputes(c.Context(), service.RecomputeFilter{
+		OnlyMismatch: onlyMismatch,
+		LevelID:      levelID,
+		UserID:       int64(userID),
+		Limit:        limit,
+		Offset:       offset,
+	})
+	if err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(fiber.Map{"items": items, "total": total})
+}
+
+// adminRecomputeStats 重算总账 + 按关卡分布 + **闸门当前状态**。
+//
+// ⚠️ `hours` 是**时间窗**而不是固定范围：熔断看的是 10 分钟窗口，
+//
+//	而「最近一天有没有一批新出现的集中不符」要看得更远。
+//	缺省 24 小时，上限 30 天 —— 再远就要落聚合表了，
+//	那不是这张原始台账该承担的事。
+func (s *Server) adminRecomputeStats(c *fiber.Ctx) error {
+	hours, err := queryInt(c, "hours", 24)
+	if err != nil {
+		return failErr(c, err)
+	}
+	if hours <= 0 {
+		hours = 24
+	}
+	if hours > 24*30 {
+		hours = 24 * 30
+	}
+	sum, err := s.Svc.AdminRecomputeSummary(c.Context(), time.Now().Add(-time.Duration(hours)*time.Hour), 20)
+	if err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(sum)
 }
 
 func (s *Server) adminBattleDetail(c *fiber.Ctx) error {
@@ -417,7 +497,7 @@ func (s *Server) adminVerifyBattle(c *fiber.Ctx) error {
 		return failErr(c, err)
 	}
 	// 验真是一次**管理动作**，审计轨迹要独立于统计表存在。
-	s.Svc.Audit(c.Context(), adminID, "battle_verify", strconv.FormatInt(id, 10),
+	s.Svc.Audit(c.Context(), adminID, "battle_verify", strconv.FormatInt(id, 10), c.IP(),
 		service.AuditVerificationDetail(res))
 	return c.JSON(res)
 }
@@ -456,7 +536,7 @@ func (s *Server) adminUpdateShop(c *fiber.Ctx) error {
 		return failErr(c, err)
 	}
 	s.Svc.Audit(c.Context(), adminIDFrom(c), "update_shop_item",
-		strconv.FormatInt(id, 10), patch)
+		strconv.FormatInt(id, 10), c.IP(), patch)
 	return c.JSON(fiber.Map{"item": item})
 }
 
@@ -484,7 +564,7 @@ func (s *Server) adminCreateAnnouncement(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	s.Svc.Audit(c.Context(), adminIDFrom(c), "create_announcement", body.Title, nil)
+	s.Svc.Audit(c.Context(), adminIDFrom(c), "create_announcement", body.Title, c.IP(), nil)
 	return c.JSON(fiber.Map{"item": item})
 }
 
@@ -531,7 +611,7 @@ func (s *Server) adminCreateRedeemCode(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	s.Svc.Audit(c.Context(), adminIDFrom(c), "create_redeem_code", body.Code, body)
+	s.Svc.Audit(c.Context(), adminIDFrom(c), "create_redeem_code", body.Code, c.IP(), body)
 	return c.JSON(fiber.Map{"item": item})
 }
 

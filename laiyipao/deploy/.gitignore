@@ -1,0 +1,12 @@
+# 来一炮 部署相关文件的密钥与本地覆盖
+# 原则：本地密钥信息一律不入库（参考 businessMatchingPlatformSvr TD-40 的 deploy.local.bat 模式）
+
+# 本地密钥文件（含 JWT_SECRET / 测试环境管理员密码等，600 权限）
+.local.keys
+
+# 编译产物（跨平台二进制、前端产物）
+bin/
+build-output/
+
+# 上传到服务器的远端 config.env 副本（含数据库密码，仅在服务器上生效）
+remote-config.env

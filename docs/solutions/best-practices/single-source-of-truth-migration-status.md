@@ -88,7 +88,7 @@ Select-String -Path "crates/*/src/*.rs" -Pattern "assert!\(true\)" | Select-Obje
 
 ## Examples
 
-> **注意（2026-08-25 刷新）：** 下方为 2026-08-10 的**历史快照**，仅用于说明文档格式。当前权威的迁移/端点对齐状态见 `docs/audits/final-coverage-sweep.md`（截至 2026-08-23：唯一端点 3085/3092 = 99.77%，28/30 模块 100%）。本知识条目所述方法本身仍有效。
+> **注意（2026-08-25 刷新）：** 下方为 2026-08-10 的**历史快照**，仅用于说明文档格式。当前权威的迁移/端点对齐状态见 `docs/audits/2026-08-24-002-final-coverage-sweep.md`（截至 2026-08-23：唯一端点 3085/3092 = 99.77%，28/30 模块 100%）。本知识条目所述方法本身仍有效。
 
 **Header:**
 ```markdown
@@ -112,12 +112,12 @@ Select-String -Path "crates/*/src/*.rs" -Pattern "assert!\(true\)" | Select-Obje
 
 ## Related
 
-- [Plan Document Lifecycle Management](development-workflow/plan-status-lifecycle.md)
-- [SeaORM Dual-Pool Coexistence](architecture-patterns/seaorm-dual-pool-coexistence.md)
+- [Plan Document Lifecycle Management](../development-workflow/plan-status-lifecycle.md)
+- [SeaORM Dual-Pool Coexistence](../architecture-patterns/seaorm-dual-pool-coexistence.md)
 - **Historical source (2026-08-08 snapshot):** `docs/brainstorms/oa4rust-migration-status-2026-08-08.md`
-- **Current authoritative parity source:** `docs/audits/final-coverage-sweep.md` (99.77% as of 2026-08-23)
+- **Current authoritative parity source:** `docs/audits/2026-08-24-002-final-coverage-sweep.md` (99.77% as of 2026-08-23)
 - **Campaign retrospective:** `docs/solutions/best-practices/oa4rust-o2server-parity-closure-campaign-2026-08-25.md`
 - **Residual gaps:** `docs/brainstorms/2026-08-25-oa4rust-o2server-residual-gaps-requirements.md`
-- **Active plan:** `docs/plans/2026-08-21-002-feat-remaining-work-consolidation-plan.md`
+- **Active plan:** `docs/archived-plans/2026-08-21-002-feat-remaining-work-consolidation-plan.md`
 - **Superseded:** `docs/brainstorms/oa4rust-migration-status.md` (2026-08-07)
-- **Plan:** `docs/plans/2026-08-07-001-feat-oa4rust-4wave-realization-plan.md` (R50)
+- **Plan:** `docs/archived-plans/2026-08-07-001-feat-oa4rust-4wave-realization-plan.md` (R50)

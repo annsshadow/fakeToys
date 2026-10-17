@@ -1,5 +1,11 @@
 # Database Access Pattern Analysis — OA4Rust Migration
 
+> **快照注记（2026-10-14）**：本分析写于迁移早期，当时仅 6 个 crate 真实化；现状为
+> 90 个业务 crate 中 88 个已完成（见 `oa4rust/backend/docs/brainstorms/oa4rust-endpoint-inventory.md`）。
+> 文中的隔离级别建议与模式结论仍然有效。
+> 另按 2026-10-14 定案：本项目从未上线、无 Java 存量，"Rust/Java 双轨同时访问同一库"
+> 的前提不成立——Rust 独立持有数据库；文中双轨相关表述仅作历史参考。
+
 ## 1. 分析范围
 
 - 当前已真实化 6 个 crate（auth、control、personal、personal_extend、message、program_init）

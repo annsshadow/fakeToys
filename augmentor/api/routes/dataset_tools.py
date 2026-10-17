@@ -800,7 +800,7 @@ async def dataset_sample(request: SampleRequest):
     """按数量或比例采样并落盘
 
     `method="stratified"` 时按 `stratify_key` 分组配额抽样；响应只回「写到哪、写了多少」
-    （写盘变换类端点的成文约定，见 `docs/API.md` 的 dataset 分组说明）。
+    （写盘变换类端点的成文约定，见 `docs/augmentor/API.md` 的 dataset 分组说明）。
     """
     try:
         from augmentor.dataset_ops import DatasetOperations, SampleConfig

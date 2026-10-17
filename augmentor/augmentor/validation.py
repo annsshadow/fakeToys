@@ -20,7 +20,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from enum import Enum
 
-from augmentor.exceptions import DataValidationError
+from augmentor.exceptions import DataValidationError, DatasetTextError
 
 #: L199（B265）：`DataSanitizer.remove_duplicates(keep=)` 的保留策略封闭清单
 #: （A77 单一权威）。改前只跟 `"last"` 比一次，`"Last"` / `"last "` / `"firts"`
@@ -218,7 +218,7 @@ def require_ratio(name: str, value: Any,
         `require_seconds` / `require_positive` 一致，由调用点自己决定回落哪个默认值。
 
     Raises:
-        DataValidationError: 值不是数值（`bool` 也不算）、是 NaN，或不在闭区间内
+        DataValidationError: 值不是数值（`bool` 也不算）、是 NaN 或无穷，或不在闭区间内
     """
     if value is None:
         return None
@@ -226,8 +226,8 @@ def require_ratio(name: str, value: Any,
         raise DataValidationError(
             f"{name} 必须是数值，当前是 {value!r}（{type(value).__name__}）"
         )
-    if math.isnan(value):
-        raise DataValidationError(f"{name} 不能是 NaN")
+    if not math.isfinite(value):
+        raise DataValidationError(f"{name} 必须是有限数值，当前是 {'NaN' if math.isnan(value) else '无穷'}")
     if not minimum <= value <= maximum:
         raise DataValidationError(
             f"{name} 必须是 {minimum} 到 {maximum} 之间的比例，当前是 {value}"
@@ -1019,9 +1019,36 @@ def require_within_dir(label: str, value: Any, base: Path) -> Path:
 
     root = Path(base).resolve()
     resolved = (root / candidate).resolve()
-    if resolved != root and root not in resolved.parents:
+    if not path_lands_within(root, resolved):
         raise DataValidationError(f"{label} 不能指向 {base.name} 目录之外")
     return resolved
+
+
+def path_lands_within(base: Path, landing: Path) -> bool:
+    r"""`landing` 是否等于 `base` 或落在它之内 —— 判**形状**，且先抹平 `resolve()` 的前缀
+
+    住在 `require_within_dir` 之后而不是之前，是为了不搬动它上面那些被账本与守卫点名的行号；
+    名字是公开的，因为 `augmentor/backup.py` 的落点判据与它是同一件事，不该有两套写法。
+
+    为什么不写成 `base in landing.parents`（L273 现量出来的坑）：`resolve()` 的输出**形状**
+    取决于调用那一刻哪一段存在 —— Windows 上拿到句柄的那一次会多出 `\\?\` 这个扩展长度前缀，
+    没拿到的那一次不带。同一条表达式里两次 `resolve()`，只要目录正好在两次之间被别的线程建
+    出来，两侧就拿到两套形状，于是**一个普通名字被判成目录之外**：并发首用 20 次实测 4—12 次
+    误判，两侧读数由 `probe2_resolve.py` 抓在案（左 `C:\<临时>\c00`、
+    右 `\\?\C:\<临时>\c00\b002.json`）。那不是并发才有的怪事，而是「拿两次读盘的结果比字符串」
+    这件事本身的口径不成立；判形状不比句柄 ⇒ 剥掉扩展长度前缀，再交给 `Path` 自己那一套
+    比较（Windows 折叠大小写、POSIX 不折叠）问「相等，或是它的某一级父目录」。
+
+    Args:
+        base: 已解析的目录
+        landing: 已解析的落点
+
+    Returns:
+        `landing` 是否在 `base` 之内（含两者相等的「就是目录本身」那一档）
+    """
+    left = Path(str(base).removeprefix("\\\\?\\"))
+    right = Path(str(landing).removeprefix("\\\\?\\"))
+    return right == left or left in right.parents
 
 
 def validate_dataset(file_path: str, preset: str = "basic") -> Dict:
@@ -1090,3 +1117,67 @@ def generate_validation_report(items: List[Dict], preset: str = "basic") -> Dict
             "建议根据严重程度优先修复错误"
         ]
     }
+
+
+def require_item_text(items: List[Dict], *fields: str,
+                      label: str = "数据集") -> List[Dict]:
+    """校验「数据集条目里被当作文本用的字段，值确实是字符串」，原样返回入参（A358 / L274）。
+
+    `require_item_field` 判的是「这一列存在吗」，本员判的是「这一列里的**值**是不是文本」。
+    缺口是实测出来的：`[{"instruction": 1, "output": 2}]` 在形状门口（`api/deps.py` 的
+    `assert_dataset_shape` 只判「顶层是 list、元素是 dict」）完全合法，于是它一路走进下游
+    那些把 `item.get(key, "")` 直接当字符串用的写法——`"为什么" in 1` 抛 `TypeError`、
+    `1.lower()` 抛 `AttributeError`、`1.encode()` 抛 `AttributeError`，端点把它们一律折成
+    **500**。L274 定向探针（仓外数据根，`Temp/l274/probe3.py`）实测改前 **28 格 500 /
+    6 枚栈帧**：`GET /api/analyze/{filename}`（`sampler.py` 的 `_analyze_question_type`
+    与 `_analyze_topic_distribution`）、`GET /api/data/load/{filename}?search=`
+    （`api/routes/data.py` 的搜索支）、`POST /api/quality/report` 与 `/evaluate` 与
+    `POST /api/dataset/compare`（`quality.py` 的 `_char_ngrams`）、
+    `POST /api/quality/dedup`（`dedup.py` 的 `_ngram_scan`）、`POST /api/dataset/merge`
+    （`dataset_ops.py` 的 `_deduplicate`）。**调用方自己的文件让服务端报内部错误**：
+    客户端只拿到固定文案（A155①），可行动信息全留在服务端日志里，而这一形可以批量制造。
+
+    **为什么不 `str()` 归一**：本仓已有八处手抄的 `str(item[key])`（`statistics.py`、
+    `profiling.py` 五处、`health_score.py` 两处等），归一在**只读测量**一侧顶多是含糊读数；
+    但在**会改写数据**的一侧它是静默删行——`POST /api/dataset/merge` 带 `deduplicate=true`
+    时，`instruction` 为 `1` / `None` / `["a","b"]` 的条目会被折成同一份文本而互为重复，
+    于是只留一条。`str(None)` 还会产出一个名叫 `None` 的四字符假样本。本族「静默降级比报错
+    危险」的判据已由 `require_item_field`（A321 / L238）拍定，本轮沿用而不是另立一套。
+    两侧口径并存（评估一侧 `_as_column` 仍 `str()` 归一）记在 A358 待拍。
+
+    **缺列不判**：`{"output": "b"}` 没有 `instruction` 今天得到 200（下游一律 `.get(key, "")`
+    回落空串），而增强与合并的产物天然多列，异构数据集是合法数据；把「缺列」一并拒掉会把一批
+    **现在就成功**的请求改成 400——那是 A292 / A354 那一维要拍的事，不在本轮。空数据集与
+    在场且为字符串的值一律放行，所以对合法数据**零行为差**（本轮以逐字节响应相同取证）。
+
+    返回入参本身是为了让接线落成**同行包裹**（`items = require_item_text(items, ...)`、
+    `for item in require_item_text(items, ...)`）而不是插行：本仓的历史定位引用钉在
+    `dataset_ops.py` 与 `api/routes/data.py` 的插入点之下，插一行就把它们平移出被点名的构造
+    （纪律第 5 节）。
+
+    Args:
+        items: 数据集条目列表
+        *fields: 要逐个检查的字段名，如 `"instruction", "output"`
+        label: 判决文案里的数据集称呼（两侧对比时写「生成侧」/「参考侧」）
+
+    Returns:
+        进入时的同一个列表对象（不改写、不裁剪、不补空串）
+
+    Raises:
+        DatasetTextError: 某一条里该字段**在场且不是字符串**（`bool` 也不算）。
+            落码走既有契约：`to_http_error` 的 ``ValueError`` 支与 `raise_boundary_error`
+            都回 **400** 并把判决原文照回客户端；`raise_internal_error` 额外认这一个
+            具名窄口（L274），所以六只收尾走它的端点也回 400，而它的父类
+            `DataValidationError` 的其他成员在那六只端点上仍按 **A280** 回 500。
+    """
+    for index, item in enumerate(items):
+        for field_name in fields:
+            if field_name not in item:
+                continue
+            value = item[field_name]
+            if not isinstance(value, str):
+                raise DatasetTextError(
+                    f"{label} 第 {index} 条的字段 '{field_name}' 不是字符串，"
+                    f"当前是 {type(value).__name__}: {repr(value)[:120]}"
+                )
+    return items

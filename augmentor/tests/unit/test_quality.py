@@ -725,7 +725,7 @@ class TestSemanticDimensionOptional:
 
     对已落盘的数据集做质量评估时拿不到原始种子问题。若把 instruction 同时
     当作 original 与 generated，语义相似度会恒为 1.0 并虚增总分（见
-    docs/plans/2026-09-21-001-audit-augmentor-fullstack-optimization-plan.md F1）。
+    docs/archived-plans/2026-09-21-001-audit-augmentor-fullstack-optimization-plan.md F1）。
     因此需要一条「跳过语义维度」的路径，且权重必须重归一化。
     """
 

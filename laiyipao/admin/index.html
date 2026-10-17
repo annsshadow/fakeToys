@@ -4,6 +4,41 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>来一炮 · 运营后台</title>
+    <!--
+      ⚠️ 纵深防御（ CSP ）：本项目**不存在**任何 XSS sink（v-html / innerHTML /
+      eval / new Function 已全量核查 0 命中），CSP 此刻拦不住已知攻击。
+      写上它的理由是：admin 令牌存在 localStorage；将来任何一处 v-html
+      疏漏都会被 CSP 挡在「读不到 token」之前。
+      `frame-ancestors` 不能用 <meta> 下发（CSP3 spec 明确移除）——
+      点击劫持这条唯一「不需要任何服务端漏洞」的路径，必须由**部署侧**
+      的 reverse proxy / 静态托管补 `X-Frame-Options: DENY`（或
+      `Content-Security-Policy: frame-ancestors 'none'`）。
+      缺少那个头时，后台就是 clickjackable 的——这是部署前置条件，
+      不是代码 bug，所以写在这里而不是绑在 Go 入口上。
+      （⚠️ 不要"顺手"把 frame-ancestors 加进下面这条 meta：浏览器会
+      整个丢弃它，只剩控制台一行 warning——那比不写更糟，因为它会让
+      下一个人以为点击劫持已经守住了。`tests/csp_meta.test.ts` 钉着这条。）
+
+      ⚠️ 改这条 CSP 前必须知道的三件事（都是实测，不是推测）：
+
+      1. `connect-src 'self'` **已经覆盖 Vite 开发服务器的 HMR**。
+         HMR 走的是同端口（5175）的 WebSocket，而 CSP3 规定
+         `'self'` 在 http 页面上同时匹配 ws://（https 匹配 wss://）。
+         所以**不要**为了"HMR 连不上"往这里加 `ws:` —— 先去看
+         `vite.config.ts` 的端口是不是被改了。
+      2. `style-src` 的 `'unsafe-inline'` 是**必需的**，不是偷懒：
+         Vite 开发模式用 `document.createElement('style')` 注入样式，
+         去掉它会让 dev server 打开就是裸页面。
+      3. `https:`（connect-src 尾部）是给 `VITE_API_BASE` 指向**跨源**
+         API 时留的余量。默认部署下前端与 API 同源（靠反代），
+         只有 `'self'` 也够。若把 API 换成非同源的 http:// 地址，
+         需要在这里补上那个源——否则表现为"页面能开、请求全被拦"。
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https:"
+    />
+    <meta name="referrer" content="no-referrer" />
   </head>
   <body>
     <div id="app"></div>

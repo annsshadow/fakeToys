@@ -117,9 +117,11 @@ fn row_to_forum(row: &deadpool_postgres::tokio_postgres::Row) -> ForumRow {
 fn row_to_topic(row: &deadpool_postgres::tokio_postgres::Row) -> TopicRow {
     TopicRow {
         id: row.get("id"),
-        forum_id: row.get("forum_id"),
+        // forum_id / content 在 x_bbs_topic 中可空（见 033/067 迁移），非 Option 读取遇
+        // NULL 会 panic——与同函数 creator / create_time 的可空读法对齐。
+        forum_id: row.get::<_, Option<String>>("forum_id").unwrap_or_default(),
         title: row.get("title"),
-        content: row.get("content"),
+        content: row.get::<_, Option<String>>("content").unwrap_or_default(),
         creator: row.get::<_, Option<String>>("creator").unwrap_or_default(),
         create_time: row
             .get::<_, Option<String>>("create_time")
@@ -130,7 +132,8 @@ fn row_to_topic(row: &deadpool_postgres::tokio_postgres::Row) -> TopicRow {
 fn row_to_reply(row: &deadpool_postgres::tokio_postgres::Row) -> ReplyRow {
     ReplyRow {
         id: row.get("id"),
-        topic_id: row.get("topic_id"),
+        // topic_id 在 x_bbs_reply 中可空，非 Option 读取遇 NULL 会 panic（对齐 creator / create_time）
+        topic_id: row.get::<_, Option<String>>("topic_id").unwrap_or_default(),
         content: row.get("content"),
         creator: row.get::<_, Option<String>>("creator").unwrap_or_default(),
         create_time: row

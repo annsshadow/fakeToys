@@ -67,10 +67,40 @@ func ReplaySkillsSegment(items []ReplaySkillSlot) string {
 //	coef(level) = 1000 + (level-1) * CoefPermille
 //	damage     = base * coef / 1000
 //
-// TS 侧对 `coef == 1000`（即 level 1）有快路径直接返回 base，
-// 数值上与通用公式等价，这里不特判。
+// # ⚠️ level 1 的恒等快路径不是优化，是**正确性**要求
+//
+// 原来的 Go 实现直接算 `base * coef / 1000`。数值上与 TS 等价，
+// 所以早期没发现区别 —— 直到我按 TS 的写法逐行对齐。
+//
+// TS 侧是：
+//
+//	const coef = BigInt(coefPermilleAt(rules, level))
+//	if (coef === 1000n) return baseDamage   // 恒等快路径
+//	return (baseDamage * coef) / 1000n
+//
+// 也就是说 **TS 在等级 1 时根本不做那次乘法**。而 Go 的 int64 会：
+//
+//	base = 9_223_372_036_854_775_807  (math.MaxInt64)
+//	coef = 1000
+//	base * 1000                          // ← 溢出
+//
+// 溢出后的结果经 `/1000` 截断，可能得到一个完全不同的数 ——
+// 于是**存量战报在服务端重算时哈希失配**。
+// 症状与「玩家作弊」完全一样，而我方无法自证。
+//
+// 触发条件苛刻（底伤要到 9.2e15 量级才会翻车），
+// 但这条路径的正确性依赖它，所以照抄 TS 的快路径：
+// `coef == 1000` 时直接返回 base，两端逐位一致且无溢出窗口。
+//
+// 满级（10）= 1450‰，乘积在 int64 内仍有约 46 倍余量。
 func SkillBaseDamageAtLevel(rules SkillRules, base int64, level int) int64 {
 	coef := rules.CoefPermilleAt(level)
+	if coef == 1000 {
+		// 恒等：与 TS 的 `if (coef === 1000n) return baseDamage` 同构。
+		// 显式写出而不是让通用式自然得到 base ——
+		// 让它「自然对」就等于把无溢出的正确性寄托在一次乘法上。
+		return base
+	}
 	return base * coef / 1000
 }
 

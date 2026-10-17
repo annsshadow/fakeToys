@@ -8,7 +8,6 @@
 mod security_gate_tests {
     use axum::extract::Extension;
     use serde_json::json;
-    use shared::error::AppError;
 
     use crate::device_create;
 
