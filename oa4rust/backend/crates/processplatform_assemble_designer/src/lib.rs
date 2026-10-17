@@ -288,9 +288,15 @@ pub async fn designer_bare_list(
 #[allow(non_snake_case)]
 pub async fn save_flow(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十七批：保存流程定义=设计面管理动作，收 admin 档（无会话 401 / 非 admin 403）。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    require_admin_gate(&pool, &sess).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let process_definition: Option<Value> = body
         .get("processDefinition")
@@ -331,8 +337,14 @@ pub async fn save_flow(
 #[allow(non_snake_case)]
 pub async fn delete_flow(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十七批：删除流程定义=设计面管理动作，收 admin 档。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    require_admin_gate(&pool, &sess).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM x_process_definition WHERE id = $1", &[&id])
@@ -1183,9 +1195,15 @@ pub async fn file_id_download(
 #[allow(non_snake_case)]
 pub async fn file_id_upload(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十七批：设计面文件上传=管理动作，收 admin 档。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    require_admin_gate(&pool, &sess).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let content = body
         .get("content")
@@ -1564,9 +1582,15 @@ pub async fn input_prepare_create(
 #[allow(non_snake_case)]
 pub async fn item_access_delete_process_processId_path_path(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     axum::extract::Path(processId): axum::extract::Path<String>,
     axum::extract::Path(path): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十七批：删条目权限=设计面管理动作，收 admin 档。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    require_admin_gate(&pool, &sess).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -3582,6 +3606,8 @@ pub async fn workcompleted_process_processFlag_merge_data(
 mod tests;
 #[cfg(test)]
 mod tests_generated;
+#[cfg(test)]
+mod security_gate_tests;
 
 // ──────────────────────────────────────────────────────────────────────────────
 // plan002 U2 · o2server 端点缺口闭合（51 个）
@@ -4107,8 +4133,14 @@ pub async fn item_access_bach_save(
 #[allow(non_snake_case)]
 pub async fn item_access_delete_exact(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     axum::extract::Path((process_id, path)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十七批：精确删条目权限=设计面管理动作，收 admin 档。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    require_admin_gate(&pool, &sess).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
