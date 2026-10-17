@@ -92,8 +92,16 @@ pub async fn list_meeting_controls(
 #[allow(non_snake_case)]
 pub async fn create_meeting_control(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十四批：控制配置新增=管理动作（与 delete_meeting_control 同档），无会话 401、非 admin 403。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    if !shared::middleware::is_admin(&pool.0, &sess.person_unique).await {
+        return Err(AppError::Forbidden);
+    }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let meeting_id = payload
@@ -2440,9 +2448,15 @@ pub async fn meeting_id_confirm_deny(
 #[allow(non_snake_case)]
 pub async fn meeting_id_delete_invite(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十四批：删除邀请=改会议，按会议属主或 admin 门；无会话 401。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    u2_meeting_owner_gate(&pool.0, &sess, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let invitee = payload
@@ -2499,9 +2513,15 @@ pub async fn meeting_id_manual_completed(
 #[allow(non_snake_case)]
 pub async fn meeting_id_modify_completedtime(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十四批：改完成时间=改会议，按会议属主或 admin 门；无会话 401。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    u2_meeting_owner_gate(&pool.0, &sess, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let completed_time = payload
@@ -2534,9 +2554,15 @@ pub async fn meeting_id_modify_completedtime(
 #[allow(non_snake_case)]
 pub async fn meeting_id_modify_starttime(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十四批：改开始/结束时间=改会议，按会议属主或 admin 门；无会话 401。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    u2_meeting_owner_gate(&pool.0, &sess, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let start_time = payload
