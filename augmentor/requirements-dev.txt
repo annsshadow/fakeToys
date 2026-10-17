@@ -5,7 +5,7 @@
 
 -r requirements-core.txt
 
-pytest>=7.4.0
+pytest>=9.1.1
 pytest-cov>=4.1.0
 # FastAPI TestClient 的传输层
 httpx>=0.26.0
