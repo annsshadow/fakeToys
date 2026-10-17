@@ -605,8 +605,9 @@ mod security_gate_tests {
         ] {
             let n: i64 = c
                 .query_one(
-                    "SELECT COUNT(*) FROM pg_constraint \
-                     WHERE conrelid = $1::regclass AND contype = 'p'",
+                    "SELECT COUNT(*) FROM pg_constraint c \
+                     JOIN pg_class t ON t.oid = c.conrelid \
+                     WHERE t.relname = $1 AND c.contype = 'p'",
                     &[&t.to_string()],
                 )
                 .await

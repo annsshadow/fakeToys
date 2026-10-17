@@ -1052,6 +1052,17 @@ GET 写面队列里 `calendar_assemble_control` 与 `jpush_assemble_control` 各
 
 | 验证（本批代码变更） | — | ai_assemble_control 整 lib `56 passed / 0 failed / 0 ignored`（0.22s）：新增离线臂 `b62_writes_reject_without_session`（3 把 dead pool + 无会话逐把点名 401）+ `b62_writes_accept_valid_session_past_gate`（有效会话过门落 Internal，证门在库前）。**顺带修预存红测试** `tests.rs::test_ai_get_writes_owner_admin_gate`：其造数用 `ON CONFLICT (id)` 但 `x_ai_file.id`/`x_ai_index.id` 无唯一约束（E42P10）、且 `x_ai_conversation` 现已要求非 null `title`（E23502）schema 漂移；改为 DELETE+INSERT 幂等造数并补 `title`，测试转绿。尺子：**3 条 R7 含写路由出列**，R7 713→**710**、含写 24→**21**、ungated −3；ai R7 6→**0**（含 3 只读出列）；EXIT 0、判据见证缺口 0（复跑 3 次稳定） |
 
+### 三.63 第六十三批（attendance_assemble_control 写面末 2 把收 admin 门，R7 710→707）
+
+| 项 | 位置 | 处置与口径 |
+| --- | --- | --- |
+| 申述工作流推进（admin 档） | `lib.rs` `attendanceappealInfo_workflow_appeal_id`（POST+PUT `/attendanceappealInfo/workflow/appeal/{id}`，UPDATE `x_attendance_appeal_info` SET `workflow_status='appealed'`） | 同族 `workflow_sync` 已是 admin 档；本把整行改工作流态，属管理动作 → `require_admin_opt(&pool, session.as_deref())`：无会话 401 / 非 admin 403。门插在 `pool.get()` 前 |
+| 明细核算（admin 档） | `lib.rs` `attendancedetail_analyse`（POST `/attendancedetail/analyse`，UPDATE `x_attendance_detail` SET `analysed=true` 按 `person_id` 区间批量） | 同族 `analyse/id/{id}`（`require_admin_opt`）、`analyse/redo`（`require_admin`）均 admin 档；本人跳过重算属越权 → 同款 `require_admin_opt` 门，插在 `pool.get()` 前 |
+
+> 注：attendance 新鲜 R7 名单 41 条，仅 3 路由（2 把 handler）为真写（appeal workflow 的 POST+PUT 同源、analyse 批量置标），本批全收。余 38 条全为 `filter`/`list`/`statistic`/`export`/`preview` 纯读 false-positive，不属写面。attendance 真写 R7 净清 0。
+
+| 验证（本批代码变更） | — | attendance_assemble_control 整 lib `48 passed / 0 failed / 15 ignored`（0.91s）：新增离线臂 `security_gate_tests_b63::b63_writes_reject_without_session`（2 把 dead pool + 无会话逐把点名 401）+ `b63_writes_non_admin_forbidden`（非 admin 403，离线稳健）。**顺带修预存红测试** `security_gate_tests.rs::r3_attendance_tables_have_primary_key`：其用 `$1::regclass` 绑 String 报 `WrongType(Regclass,String)`，改为 JOIN `pg_class` 按 `relname` 查主键，测试转绿。尺子：**3 条 R7 含写路由出列**，R7 710→**707**、含写 21→**18**、ungated −3；attendance 真写 R7 净清；EXIT 0、判据见证缺口 0（复跑 3 次稳定） |
+
 ## 四、验证
 
 

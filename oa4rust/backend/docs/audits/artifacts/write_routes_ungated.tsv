@@ -19,9 +19,6 @@ ai_assemble_control	POST	/api/ai_assemble_control/index/list/paging/{page}/size/
 attendance_assemble_control	PUT	/api/attendance/assemble/control/attendanceappealInfo/filter/list/{id}/next/{count}	attendanceappealInfo_filter_list_id_next_count	R7
 attendance_assemble_control	PUT	/api/attendance/assemble/control/attendanceappealInfo/filter/list/{id}/prev/{count}	attendanceappealInfo_filter_list_id_prev_count	R7
 attendance_assemble_control	PUT	/api/attendance/assemble/control/attendanceappealInfo/manager/list/{id}/next/{count}	attendanceappealInfo_manager_list_id_next_count	R7
-attendance_assemble_control	POST	/api/attendance/assemble/control/attendanceappealInfo/workflow/appeal/{id}	attendanceappealInfo_workflow_appeal_id	R7
-attendance_assemble_control	PUT	/api/attendance/assemble/control/attendanceappealInfo/workflow/appeal/{id}	attendanceappealInfo_workflow_appeal_id	R7
-attendance_assemble_control	POST	/api/attendance/assemble/control/attendancedetail/analyse	attendancedetail_analyse	R7
 attendance_assemble_control	PUT	/api/attendance/assemble/control/attendancedetail/filter/list	attendancedetail_filter_list	R7
 attendance_assemble_control	PUT	/api/attendance/assemble/control/attendancedetail/filter/list/topUnit	attendancedetail_filter_list_topUnit	R7
 attendance_assemble_control	PUT	/api/attendance/assemble/control/attendancedetail/filter/list/unit	attendancedetail_filter_list_unit	R7
