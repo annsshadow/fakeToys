@@ -5,7 +5,7 @@
 
 - visualizer: 话题聚类结果写入 results + output_dir 方法
 - visualize_enhanced: 500+ 长度桶、json 报告落盘
-- export_enhanced: 不支持格式报错、空数据集 csv/tsv 提前返回
+- export_enhanced: 不支持格式报错、空数据集 csv/tsv 落空产物（L286 按 A343② 摘掉提前返回）
 """
 
 from pathlib import Path
@@ -68,16 +68,16 @@ class TestExportEnhancedBranches:
                 [{"a": 1}], str(tmp_path / "o.json"), options
             )
 
-    def test_empty_items_csv_early_return(self, tmp_path):
+    def test_empty_items_csv_writes_an_empty_artifact(self, tmp_path):
         result = EnhancedExporter().export(
             [], str(tmp_path / "a.csv"), ExportOptions(format=ExportFormat.CSV)
         )
         assert result["item_count"] == 0
-        assert not (tmp_path / "a.csv").exists()
+        assert (tmp_path / "a.csv").read_text(encoding="utf-8") == ""
 
-    def test_empty_items_tsv_early_return(self, tmp_path):
+    def test_empty_items_tsv_writes_an_empty_artifact(self, tmp_path):
         result = EnhancedExporter().export(
             [], str(tmp_path / "b.tsv"), ExportOptions(format=ExportFormat.TSV)
         )
         assert result["item_count"] == 0
-        assert not (tmp_path / "b.tsv").exists()
+        assert (tmp_path / "b.tsv").read_text(encoding="utf-8") == ""

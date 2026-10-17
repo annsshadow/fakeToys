@@ -53,7 +53,9 @@ from tests.unit.test_api_doc_endpoint_coverage_l210 import (
     API_DOC,
     DOC_ROW,
     DETAILED_COLUMN_COUNT,
+    column_count,
     operations_of_tag,
+    split_cells,
 )
 from tests.unit.test_config_three_side_l222 import schema_keys
 
@@ -155,16 +157,16 @@ def _build_face(method, path):
 def hint_rows():
     """详细说明表的行 → `[(方法, 路径, 说明+人读字段提示)]`
 
-    列数判据共引 l210（4 列 = 5 个 `|`）；总览表只有 3 列，天然被排除。
+    列数判据共引 l210（4 列 = 5 枚**未转义** `|`，L278 起按 GFM 口径数）；总览表只有 3 列，天然被排除。
     """
     rows = []
     for line in API_DOC.read_text(encoding="utf-8").splitlines():
-        if line.count("|") != DETAILED_COLUMN_COUNT:
+        if column_count(line) != DETAILED_COLUMN_COUNT:
             continue
         match = DOC_ROW.match(line)
         if not match:
             continue
-        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        cells = split_cells(line)
         rows.append((match.group(1), match.group(2), f"{cells[2]} {cells[3]}"))
     return rows
 
