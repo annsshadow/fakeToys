@@ -990,6 +990,20 @@ GET 写面队列里 `calendar_assemble_control` 与 `jpush_assemble_control` 各
 
 | 验证（本批代码变更） | — | processplatform_assemble_designer 整 lib `32 passed / 0 failed / 1 ignored`（0.18s）：新增离线臂 `b57_r7_writes_reject_without_session`（6 把 dead pool + 无会话 401）+ `b57_writes_non_admin_forbidden`（6 把非 admin 403，离线稳健）。既有 `test_save_flow_route_exists`/`test_delete_flow_route_exists` 由 500 翻 401；`tests_generated` 用 `assert_ne!(NOT_FOUND)` 照过（file_id_upload / item_access_delete 两族标 "not accessible" 未测）。尺子：**6 条 R7 路由出列**（全含写），R7 769→**763**、含写 80→**74**、ungated −6；designer R7 20→**14**；EXIT 0、判据见证缺口 0（复跑 3 次稳定） |
 
+### 三.58 第五十八批（processplatform_assemble_surface 12 把 mockputtopost 别名写收归属门，R7 763→740）
+
+| 项 | 位置 | 处置与口径 |
+| --- | --- | --- |
+| 待阅三把（xperson 归属） | `lib.rs` `read_id_opinion_manage_mockputtopost`、`read_id_processing_manage_mockputtopost`、`read_id_reset_manage_mockputtopost`（各双路由别名） | 加 `session: Option<Extension<Session>>` + `u4_require_ppc_person(&pool.0, session, "PP_C_READ", &id)`（`xperson` 本人或 admin；无会话 401 先于 SQL） |
+| 待办三把 + v2 reset（xperson 归属） | `lib.rs` `task_id_opinion_manage_mockputtopost`、`task_id_processing_manage_mockputtopost`、`task_id_reset_manage_mockputtopost`、`task_v2_id_reset`（POST/PUT）、`task_v2_id_reset_mockputtopost`（双路由别名） | 同上，`u4_require_ppc_person(..., "PP_C_TASK", &id)` |
+| 已办意见（xperson 归属） | `lib.rs` `taskcompleted_id_opinion_manage_mockputtopost`（双路由别名） | `u4_require_ppc_person(..., "PP_C_WORKCOMPLETED", &id)` |
+| work 推进/拆分（xcreatorPerson 归属） | `lib.rs` `work_id_processing_mockputtopost`、`work_v2_id_add_split_mockputtopost`（各双路由别名） | `u4_require_work_actor(&pool.0, session, &id)`（`PP_C_WORK.xcreatorPerson`） |
+| 引擎 job 物理删 | `lib.rs` `correlation_job_job_delete`（POST `/correlation/job/{job}/delete`，DELETE `PP_C_JOB`） | `u4_require_ppc_person(..., "PP_C_JOB", &job)` |
+
+> 注：本批是「GET 名 + PUT 实」的别名族——`*_manage` 是 SELECT，`*_manage_mockputtopost` 才是 UPDATE/DELETE 真写。此前 mock* 档按「与正式路由同锁」的 §五 统一修法漏了这 12 把（正式 handler 有门、别名直接 UPDATE），本批补齐。**12 把 handler → 23 条 R7 路由出列**（11 把各双路由别名 + correlation 1 条）。
+
+| 验证（本批代码变更） | — | processplatform_assemble_surface 整 lib `615 passed / 0 failed / 9 ignored`（5.85s）：新增离线臂 `b58_mockputtopost_writes_reject_without_session`（12 把 dead pool + 无会话逐把点名 401）。`tests_generated` 的 12 个路由存在性测试走「空 404 体」判据（401 不触发），照过。尺子：**23 条 R7 路由出列**（全含写），R7 763→**740**、含写 74→**51**、ungated −23；surface R7 250→**227**；EXIT 0、判据见证缺口 0（复跑 3 次稳定） |
+
 ## 四、验证
 
 
