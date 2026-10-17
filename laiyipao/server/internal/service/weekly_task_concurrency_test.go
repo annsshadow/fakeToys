@@ -140,6 +140,12 @@ func TestConcurrentClaimGrantsRewardOnce(t *testing.T) {
 // 若其中一处退回 daily，并发下会「一个请求写到 daily 行、
 // 另一个匹配到 weekly 行」—— 而那在串行测试里完全看不出来。
 func TestConcurrentClaimOnWeeklyTaskIsAlsoOnce(t *testing.T) {
+	// 固定到一个周二，使 weekly 与 daily 的 periodStart 必然不同，
+	// 从而「daily 行必须不存在」这条断言每次都能真正执行（不再 Monday 跳过）。
+	origNow := nowFunc
+	nowFunc = func() time.Time { return time.Date(2026, 10, 13, 12, 0, 0, 0, time.UTC) }
+	defer func() { nowFunc = origNow }()
+
 	ts := openTestService(t)
 	ctx := context.Background()
 	uid := ts.newUser(t, ctx)
@@ -155,7 +161,7 @@ func TestConcurrentClaimOnWeeklyTaskIsAlsoOnce(t *testing.T) {
 	if _, err := ts.pool.Exec(ctx,
 		`INSERT INTO user_tasks (user_id, task_id, task_date, progress)
 		 VALUES ($1,$2,$3,1)`,
-		uid, taskID, periodStart(time.Now(), "weekly")); err != nil {
+		uid, taskID, periodStart(nowFunc(), "weekly")); err != nil {
 		t.Fatal(err)
 	}
 
