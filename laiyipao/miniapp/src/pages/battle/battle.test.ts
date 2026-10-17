@@ -241,7 +241,6 @@ describe('battle.vue 战斗页', () => {
     // canvas 按 dpr 放大（pixelRatio 2 × 375）
     expect(lastNode.width).toBe(750)
     expect(lastNode.height).toBe(1334)
-    expect(wrapper.text()).toContain('渲染: 帧循环')
     expect(wrapper.text()).toContain('波次 1 / 3')
     expect(wrapper.text()).toContain('800 / 1000')
   })
@@ -253,7 +252,6 @@ describe('battle.vue 战斗页', () => {
     const { wrapper } = mountPage(Battle)
     await setupDone(wrapper)
     expect(FakeRenderer.instances.length).toBe(1)
-    expect(wrapper.text()).toContain('渲染: 帧循环')
   })
 
   it('第 137 轮：onUnload 之后 getCanvas 才 resolve，渲染器不在已卸载页面启动（防泄漏）', async () => {
@@ -328,7 +326,8 @@ describe('battle.vue 战斗页', () => {
     const Battle = await loadPage()
     const { wrapper } = mountPage(Battle)
     await setupDone(wrapper)
-    expect(wrapper.text()).toContain('渲染: 降级(无canvas)')
+    // 没有 canvas 时战斗逻辑照跑，只是没有渲染层
+    expect(FakeRenderer.instances.length).toBe(0)
 
     // 定时器推进 → 引擎 won → settle
     await new Promise((r) => setTimeout(r, TICK * 5))
@@ -427,7 +426,7 @@ describe('battle.vue 战斗页', () => {
     const Battle = await loadPage()
     const { wrapper } = mountPage(Battle)
     await setupDone(wrapper)
-    expect(wrapper.text()).toContain('渲染: 降级(无canvas)')
+    expect(FakeRenderer.instances.length).toBe(0)
   })
 
   it('getCanvas 细节：pixelRatio 缺省为 1、fields 未返回尺寸时回退页面尺寸', async () => {
@@ -456,7 +455,6 @@ describe('battle.vue 战斗页', () => {
     expect(node.width).toBe(375) // 375 * dpr 1
     expect(node.height).toBe(667)
     expect(FakeRenderer.instances[0]!.viewport).toEqual([375, 667])
-    expect(wrapper.text()).toContain('渲染: 帧循环')
   })
 
   it('登录失败信息为空 → startError 回退固定文案（|| 右侧分支）', async () => {
