@@ -15,9 +15,10 @@ package domain
 
 // # 排序约束 (1) 与 (2) 为什么**不在本文件**验
 //
-// 它们分别是「`cardSelectDone` 收尾在 `applyReplayDecision` 之前」
-// 与「`applyReplayDecision` 在 `tick++` 之前」，而 `applyReplayDecision`
-// 是 **F 块**（卡牌）的方法，A 阶段是空实现。
+// 它们分别是「选牌决策（含收尾）整体在 `tick++` 之前」
+// 与「选牌期间冻结战斗时钟」（第 159 轮改写后的两条硬约束；
+// 旧的 `cardSelectDone` 延后一 tick 收尾机制已整体删除），
+// 而 `applyReplayDecision` 是 **F 块**（卡牌）的方法，A 阶段是空实现。
 //
 // 空实现下这两种顺序**行为完全相同**，所以此刻没有任何可观测的差异，
 // 写不出能失败的守卫 —— 硬写一条只能靠代码结构断言，那是装饰品。
