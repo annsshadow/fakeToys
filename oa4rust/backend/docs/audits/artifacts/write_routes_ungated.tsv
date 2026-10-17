@@ -255,11 +255,6 @@ message_assemble_communicate	POST	/api/message/assemble/communicate/im/msg/colle
 message_assemble_communicate	POST	/api/message/assemble/communicate/im/msg/list/object	im_msg_list_object	R7
 message_assemble_communicate	POST	/api/message/assemble/communicate/im/msg/list/{page}/size/{size}	im_msg_list_page_size_size	R7
 message_assemble_communicate	POST	/api/message/assemble/communicate/message/list/paging/{page}/size/{size}	message_list_paging_page_size_size	R7
-mind_assemble_control	POST	/api/mind/assemble/control/config/update	update_control_config	R7
-mind_assemble_control	POST	/api/mind/assemble/control/folder/save	save_folder	R7
-mind_assemble_control	POST	/api/mind/assemble/control/folder/{id}/update	update_folder	R7
-mind_assemble_control	PUT	/api/mind/assemble/control/folder/move/{folderId}	folder_move_folderId	R7
-mind_assemble_control	DELETE	/api/mind/assemble/control/folder/{id}/force	folder_id_force	R7
 mind_assemble_control	PUT	/api/mind/assemble/control/mind/filter/list/{id}/next/{page}	mind_filter_list	R7
 mind_core_entity	POST	/api/mind/core/entity/mind	create_mind	R7
 mind_core_entity	POST	/api/mind/core/entity/mind/{id}	update_mind	R7
