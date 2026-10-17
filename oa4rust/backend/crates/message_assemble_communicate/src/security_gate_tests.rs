@@ -25,8 +25,10 @@
 #[cfg(test)]
 mod security_gate_tests {
     use axum::extract::{Extension, Path};
+    use axum::Json;
     use deadpool_postgres::tokio_postgres::{Config, NoTls};
     use deadpool_postgres::{Client, Manager, Pool};
+    use serde_json::json;
     use shared::error::AppError;
 
     const CONSUME_OWN: &str = "b22-consume-own";
@@ -414,5 +416,178 @@ mod security_gate_tests {
                 .get::<_, i64>(0);
         }
         total
+    }
+
+    // 第三十五批（b45）：本 crate 剩余 R7 写面收门后的离线回归。
+    //
+    // 21 把真写 handler（发送/建会话/改会话置顶/已读、收藏增删、富媒体上传、群发开关、
+    // 自定义消息、connector/ws 投递、消费已读等）此前「已认证但体不读会话」——任意登录人可
+    // 对任意资源落笔。本批按既有档位加门：
+    //   - 会话成员判定（改某会话：置顶/已读/清屏/发消息/传富媒体/发自定义）；
+    //   - 归属判定（mark_read 按 x_message_consume.sender，空归属仅管理员）；
+    //   - 管理员判定（im_manager_config_post、mass_enable_type、收藏增删两把——
+    //     本表族无归属事实，不假装有）；
+    //   - 仅会话存在（connector/ws 投递、consume/instant 消费已读——用户侧本人操作，
+    //     主体身份冒名族另记待修，不在本把射程内）。
+    // 离线臂：连不上库的 dead pool + 无会话，21 把必须全 401——出现 Internal 说明门插在读库之后。
+    async fn dummy_multipart() -> axum::extract::Multipart {
+        use axum::extract::FromRequest;
+        use axum::http::header;
+        let req = axum::http::Request::builder()
+            .header(header::CONTENT_TYPE, "multipart/form-data; boundary=x")
+            .body(axum::body::Body::empty())
+            .unwrap();
+        axum::extract::Multipart::from_request(req, &())
+            .await
+            .unwrap()
+    }
+
+    #[tokio::test]
+    async fn b45_r7_writes_reject_without_session() {
+        let pool = dead_pool();
+        let ext = || Extension(pool.clone());
+        let mp = dummy_multipart().await;
+        let cases = vec![
+            (
+                "send_message",
+                crate::send_message(ext(), None, Json(json!({"conversationId": "c1"})))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "mark_read",
+                crate::mark_read(ext(), None, p("m1")).await.map(|_| ()),
+            ),
+            (
+                "consume_type_type_mockputtopost",
+                crate::consume_type_type_mockputtopost(ext(), None, p("t"), Json(json!({"idList": ["a"]})))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "im_conversation",
+                crate::im_conversation(ext(), None, Json(json!({"name": "n"})))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "im_conversation_mockputtopost",
+                crate::im_conversation_mockputtopost(ext(), None, Json(json!({"id": "c1"})))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "im_manager_config_post",
+                crate::im_manager_config_post(ext(), None, Json(json!({"configKey": "k"})))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "im_conversation_id_read_mockputtopost",
+                crate::im_conversation_id_read_mockputtopost(ext(), None, p("c1"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "im_conversation_id_top_cancel",
+                crate::im_conversation_id_top_cancel(ext(), None, p("c1"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "im_conversation_id_top_cancel_mockputtopost",
+                crate::im_conversation_id_top_cancel_mockputtopost(ext(), None, p("c1"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "im_conversation_id_top_set",
+                crate::im_conversation_id_top_set(ext(), None, p("c1")).await.map(|_| ()),
+            ),
+            (
+                "im_conversation_id_top_set_mockputtopost",
+                crate::im_conversation_id_top_set_mockputtopost(ext(), None, p("c1"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "im_msg",
+                crate::im_msg(ext(), None, Json(json!({"conversationId": "c1"})))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "im_msg_clear",
+                crate::im_msg_clear(ext(), None, Json(json!({"conversationId": "c1"})))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "im_msg_collection",
+                crate::im_msg_collection(ext(), None, Json(json!({"messageId": "m1"})))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "im_msg_collection_remove",
+                crate::im_msg_collection_remove(ext(), None, Json(json!({"messageId": "m1"})))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "im_msg_upload_conversationId_type_type",
+                crate::im_msg_upload_conversationId_type_type(ext(), None, p2("c1", "image"), mp)
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "instant_currentperson_consumed_mockputtopost",
+                crate::instant_currentperson_consumed_mockputtopost(
+                    ext(),
+                    None,
+                    Json(json!({"idList": ["a"]})),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "mass_enable_type",
+                crate::mass_enable_type(ext(), None, Json(json!({"type": "t", "enabled": true})))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "message_custom_create",
+                crate::message_custom_create(ext(), None, Json(json!({"conversationId": "c1"})))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "connector_create",
+                crate::connector_create(ext(), None, Json(json!({"type": "t", "person": "p", "title": "tt"})))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "ws_create",
+                crate::ws_create(ext(), None, Json(json!({"person": "p", "body": "hi"})))
+                    .await
+                    .map(|_| ()),
+            ),
+        ];
+        assert_eq!(
+            cases.len(),
+            21,
+            "本批 21 把 R7 写必须逐把点名，少一把即漏门"
+        );
+        let leaked: Vec<String> = cases
+            .iter()
+            .filter(|(_, r)| !matches!(r, Err(AppError::Unauthorized)))
+            .map(|(k, r)| format!("{k} => {:?}", r.as_ref().err()))
+            .collect();
+        assert!(
+            leaked.is_empty(),
+            "以下 R7 写面无会话未回 401（出现 Internal 就是门插在读库之后）：{leaked:?}"
+        );
     }
 }
