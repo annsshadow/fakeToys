@@ -321,9 +321,10 @@ CALLS = {
         request=lambda c: c.get("/api/data/list"),
         keys=_keys("files"),
     ),
+    # L277：`indices` 是写端点的权威坐标（盘上 0 基下标），随分页/搜索切片同序交回。
     ("GET", "/api/data/load/{filename}"): _Case(
         request=lambda c: c.get("/api/data/load/data.json"),
-        keys=_keys("total", "page", "page_size", "items"),
+        keys=_keys("total", "page", "page_size", "items", "indices"),
     ),
     ("PUT", "/api/data/update/{filename}"): _Case(
         request=lambda c: c.put(

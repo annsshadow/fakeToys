@@ -93,10 +93,17 @@ _MUST_BE_DIRECT = (
 )
 
 #: 第 2 档：读者存在但静态绑不到；每条 `(节.键, 文件, 行号, 该行应出现的标识符)`
+#: **L277 重量（行号 +3，判据一字未动）**：本轮在 `_open_file_handler` 的 `except` 之上补了
+#: 三行注释（NUL 路径 ⇒ `ValueError` 也要折成 `DataValidationError`），把 `apply_logging_config`
+#: 整段往下推了三格。原读数 187/188/189 现在落进 A106 那段快路注释里，红的是
+#: `assert 'settings.file' in '    signature = ('` 这一类「引用落在隔壁一行」的形状，
+#: 不是「读者没了」——三行标识符现在依次在 190/191/192，仍是同一个 `signature` 元组里
+#: 对三只键的无条件读取（比 `if "level" in keys` 那几行更硬：那三行是条件消费）。
+#: 重钉只跟着物理行号走，判据形状与标识符一个字未松；再插行还会再红，这正是本档的用途。
 _LOADER_CONSUMED = (
-    ("logging.level", "augmentor/logging_setup.py", 187, "settings.level"),
-    ("logging.file", "augmentor/logging_setup.py", 188, "settings.file"),
-    ("logging.format", "augmentor/logging_setup.py", 189, "settings.format"),
+    ("logging.level", "augmentor/logging_setup.py", 190, "settings.level"),
+    ("logging.file", "augmentor/logging_setup.py", 191, "settings.file"),
+    ("logging.format", "augmentor/logging_setup.py", 192, "settings.format"),
 )
 
 #: 第 3 档：产品树零读者，逐键签字。

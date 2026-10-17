@@ -446,6 +446,28 @@ class TestHistoryLimit:
         with pytest.raises(DataValidationError, match="limit"):
             manager.get_history(limit=-1)
 
+    def test_cli_history_zero_and_negative_are_the_same_two_wrong_answers(self, tmp_path):
+        """L283 补上这一族的漏网孪生：`version_control.DatasetVersionManager.get_history`
+
+        它是 CLI `version history` 的后端，也在 `augmentor.__all__` 的公开导出里。改前那句
+        `entries[:limit] if limit else entries` 给出两处**静默错答**：`0` 被读成「没传参数」而
+        返回全部（要 0 条给 3 条），`-3` 走 `[:-3]` 把**最新的 3 条**丢掉、其余全给（要的正好
+        相反）。`versioning.py` 的同名方法在早轮已按 `require_count` 修好并写下「以前是
+        `if limit else entries`」那句注，这一格是同一族的另一处，此前无人守。
+        """
+        from augmentor.version_control import DatasetVersionManager
+
+        manager = DatasetVersionManager(versions_dir=str(tmp_path))
+        (tmp_path / "history.jsonl").write_text(
+            "".join(json.dumps({"action": "create", "version_id": str(i)}) + "\n" for i in range(3)),
+            encoding="utf-8",
+        )
+        assert len(manager.get_history()) == 3
+        assert manager.get_history(limit=0) == []
+        assert [e["version_id"] for e in manager.get_history(limit=2)] == ["2", "1"]
+        with pytest.raises(DataValidationError, match="limit"):
+            manager.get_history(limit=-1)
+
 
 class TestActiveLearningBatchSize:
     """`min(batch_size or self.batch_size, len(data))` 后的 `[:size]`"""
