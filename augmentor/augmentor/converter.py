@@ -14,7 +14,7 @@ import math
 from typing import List, Dict, Optional, Any, Tuple
 from pathlib import Path
 from enum import Enum
-from .exceptions import DataFormatError, DataLoadError, UnsupportedFormatError
+from .exceptions import DataFormatError, DataLoadError, DataValidationError, UnsupportedFormatError
 
 logger = logging.getLogger(__name__)
 
@@ -867,12 +867,12 @@ class DatasetConverter:
                 f"pip install pandas openpyxl（{name}）"
             )
         try:
-            frame = cei.pd.read_excel(source)
+            frame = cei.pd.read_excel(cei.safe_sheet_source(source, name))
+        except DataValidationError:  # A390（CWE-409）：解压放大的判词不是「文件坏了」，原样放行
+            raise
         except Exception as e:
             raise DataFormatError(
-                f"{name} 读不出 Excel 工作表：文件可能损坏、其实不是 xlsx，"
-                f"或是老 .xls 格式而缺 xlrd（{type(e).__name__}）"
-            ) from e
+                f"{name} 读不出 Excel 工作表：文件可能损坏、其实不是 xlsx，或是老 .xls 格式而缺 xlrd（{type(e).__name__}）") from e
         return [
             {key: excel_cell(value) for key, value in row.items()}
             for row in frame.to_dict(orient="records")
