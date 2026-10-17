@@ -824,12 +824,8 @@ query_service	POST	/api/query/service/neural/generate/{model_flag}	neural_genera
 query_service	POST	/api/query/service/processing/execute	processing_execute	R7
 query_service_processing	POST	/api/query/service/processing/process	process_query	R7
 query_service_processing	POST	/api/query/service/processing/batch	batch_process	R7
-query_service_processing	POST	/api/query/service/processing/reset	reset_service	R7
 query_service_processing	POST	/api/query/service/processing/design/search	design_search	R7
 query_service_processing	POST	/api/query/service/processing/index/directory/document/count	index_directory_document_count	R7
-query_service_processing	POST	/api/query/service/processing/index/update/extra/document	index_update_extra_document	R7
-query_service_processing	POST	/api/query/service/processing/table/{flag}/insert	table_insert	R7
-query_service_processing	POST	/api/query/service/processing/table/{flag}/update/{bundle}	table_update_with_bundle	R7
 signature	POST	/signature/pdf/sign	sign_pdf_handler	R7
 signature	POST	/signature/pdf/verify	verify_pdf_handler	R7
 signature	POST	/signature/pdf/status	signature_status_handler	R7
