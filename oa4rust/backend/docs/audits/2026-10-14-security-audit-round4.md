@@ -829,6 +829,17 @@ GET 写面队列里 `calendar_assemble_control` 与 `jpush_assemble_control` 各
 
 | 验证（本批代码变更） | — | message_assemble_communicate `107 passed / 0 failed / 0 ignored`：新增离线臂 `b45_r7_writes_reject_without_session`（21 把逐把点名，无会话全 401，multipart 把经 `Multipart::from_request` 造空流）；既有 `b22_get_writes_reject_without_session` / `b22_get_writes_gate_lands` 两臂仍绿（加门未动批 22 那 5 把）。既有路由存在性断言翻 401：`tests.rs` 的 `test_send_message_route_exists` / `test_mark_read_route_exists`、`tests_u2.rs` 的 `u2_connector_route_reachable` / `u2_ws_family_reachable`（原期望 500，加门后无会话在 DB 前 401）；`u2_ws_create_reports_false_without_open_session_semantics` 改传会话以保留「无 DB 连接查询失败 → Internal」原意。尺子：**21 把 handler → 27 条 R7 路由出列**（一把 handler 多路由别名，故 21→27），R7 922→**895**、含写 227→200、R6 119 不动、ungated −27；message_assemble_communicate 余 6 条 R7 全为「只读挂写方法」SELECT 体 false-positive；EXIT 0、判据见证缺口 0 |
 
+### 三.46 第四十六批（cms_core_entity 写面 17 把收 admin 门，R7 27→0 含写清零）
+
+| 项 | 位置 | 处置与口径 |
+| --- | --- | --- |
+| cms/core/entity/* 薄 handler（5 家族 × create/save/delete） | `lib.rs` `cms_entity_{column,column_manager,index,module,note}_{create,save,delete}`（15 把，全部委托 `cms_entity_create`/`cms_entity_save`/`cms_entity_soft_delete` 三 helper） | 列/索引/模块/笔记/栏目管理员是 CMS 结构化管理对象，表无可靠归属列（`person_id` 取自请求体 = 冒名族），按批 38/40/42/44 既定「ownerless 系统数据写 = admin」口径收 crate 内 `require_admin_opt`（无会话 401 / 非 admin 403，is_admin 对不可用 DB fail-closed）。门插在 `pool.get()` 之前，离线即证 401 |
+| CMS 内容创建（死档路由，防御性收门） | `lib.rs` `category_create`（POST `/api/cms/category/create`）/ `article_create`（POST `/api/cms/article/create`） | 这两把走 SeaORM `Extension<DatabaseConnection>`，而本 crate router 仅 `.layer(Extension(pool))`（deadpool）、主应用亦未注入 `DatabaseConnection`——与 `file_core_entity` 同源，属「补齐 KNOWN_BACKEND_GAPS」的死档路由（现恒 500）。仍按口径补 `require_admin_opt`（额外加 `Extension<deadpool_postgres::Pool>` 提取器供管理员判定），属防御性收门：即便日后接线，写面也已先收口 |
+
+> 注：本批与「只读挂写方法」族一致——`cms_core_entity` 的 `*_list`（5 把 GET）为只读，不在 R7 写面。`category_*`/`article_*` 的 GET 列表/详情 handler 同样走 SeaORM 死档，但本为只读，不加门。
+
+| 验证（本批代码变更） | — | cms_core_entity `18 passed / 0 failed / 0 ignored`：新增离线臂 `b46_r7_writes_reject_without_session`（15 把薄 handler 逐把点名，dead pool + 无会话全 401）；既有 `test_category_create`/`test_article_create` 仍绿（SeaORM 死档，`Extension<DatabaseConnection>` 未注入 → 提取先 500，handler 体不执行，与加门行为一致）。尺子：**17 把 handler → 27 条 R7 路由出列**（15 把薄 handler 各含 PUT+POST/DELETE+POST 双动词别名，故 17→27），R7 895→**868**、含写 200→175（25 条经 helper 转调的写 SQL 出列；`category_create`/`article_create` 本在「只读挂写方法」误分桶内，收门后一并出列）；cms_core_entity R7 27→**0**（含写清零）；EXIT 0、判据见证缺口 0 |
+
 ## 四、验证
 
 
