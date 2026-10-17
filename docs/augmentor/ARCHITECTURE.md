@@ -2559,6 +2559,47 @@ tests 树里被写进某处 `setattr` / `patch` 的目标位——上一段那�
 现量三条通道给出同一个二元集合；第三条是先量过「会不会误伤」才采用的，全包只命中那两支、零误伤，所以它补得上
 「既改名又换常数」那一类，却不是一把会自己变红的宽尺子。一支**三条通道都不占**的新预言机对守卫仍然失明，只能靠人工回读发现。
 
+### 3.35 L285：日志注入的消毒装在渲染最后一跳 —— 两处装配管住整条产品日志出口（新立 A387 / A388）
+
+**缺陷形状（CWE-117，远程可写）**：`POST /api/system/dependency/datasets` 的 `name` 是任意 JSON 字符串，
+`augmentor/dependency.py` 把它原样拼进 f-string 再交给 `logger.info`。请求体里一枚 `\n` 在 formatter 渲染之后
+落成**第二条物理日志行**：实测 `name = "evil\n[2026-10-17 02:00:00] INFO ROOT admin login success"` 让审计流
+凭空多出一行「管理员登录成功」，而时间戳、级别、logger 名全是攻击者写的。同一条通道上 `\x1b` 序列原样进流，
+够驱动终端重绘与擦行。这一族没有现成的转义可依赖：`%`-style 只认 `%`，`logging` 也从不看消息内容。
+
+**族范围是量出来的，三条负数结果把口子钉准**（Temp `l285_probe*.py` 逐条实测）：① uvicorn access log 打的是
+`get_path_with_query_string(scope)`，源自 raw_path，URL 里的换行到那一跳仍是 `%0A` —— 拆不出行；② 经 TestClient
+的 `request.url.path` 同样未落真换行；③ HTTP 帧禁止头值含 CR/LF，`X-Request-ID` 那类透传不构成拆分。
+**所以这一族的远程可写面只有请求体**，消毒按这个范围收口，不写「全链路都转义」那种证伪不了的主张。
+
+**修法落在汇，不落在调用点**（产品面 `logger.*` / `logging.*` 语句现量 200 条）：只覆写
+`logging.Formatter.formatMessage`（`augmentor/logging_setup.py:ControlSafeFormatter`），因此 `logging.format`
+写成什么串都被覆盖 —— 判据与配置面解耦，换格式串关不掉消毒。装配只有两处：唯一的 Formatter 构造点
+`build_formatter`（`config.yaml` 与 SDK 直构都从这一跳过）与 API 入口的 `build_handler`（3.12 的
+`logging.basicConfig` 实测不收 `formatter=`，报 `ValueError: Unrecognised argument(s): formatter`，只能走
+`handlers=`）。允许集 `[\x00-\x08\x0a-\x1f\x7f-\x9f]`，**Tab `\x09` 刻意排除**（日志里保留对齐是既有可读性口径）；
+命中就写成 `\xNN` 两字符字面量 —— 可逆（`unicode_escape` 反解回原串）、不吞码点、长度不炸；干净行走 `search`
+预检后**原对象返回**，不产生新串。对外语义一字未动：登记接口回来的 `name` 仍是原文，消毒只治日志流。
+
+**代价同口径实测**（都用 `%(message)s`，20000 次 / 轮 × 7 轮取 min，配对 5 轮全同号）：干净载荷
+0.471 → 0.724 µs（**+0.236 µs**），含一枚 `\n` 的载荷 0.483 → 1.704 µs（**+1.202 µs**，只有真载荷才多付这一档）。
+换成生产格式串（含 `%(asctime)s`）时基线本身涨到约 2.4 µs，同一笔固定开销摊薄成 **+0.41 µs / +17 %**。
+`str.translate(dict)` 那版实测 7.627 µs，直接否掉。一条日志几微秒，不进任何端到端预算。
+
+**两格要拍板的残留，本轮不单方面改口径**：A387 —— 纯 CLI 进程在没有 `logging` 节时由 `logging.lastResort`
+落 stderr，那条 handler 是 stdlib 内置、Formatter 不经我们的构造点，所以 CLI 面至今未消毒；补它要么给 CLI 入口
+加一次强制装配（会动「出厂默认档一字未改」那条既有主张），要么接受现状。A388 —— `Formatter.format()` 在
+`formatMessage` **之后**才追加 traceback，栈里的控制字符因此仍是原样多行；把栈也压成一行会破坏 Python 日志的
+标准可读形，属对外可观测口径变更。
+
+**机械守卫**：`tests/unit/test_log_forging_l285.py` 23 例（刻意零 `parametrize`，不动 l97 / l98 的盲区名册）分六类
+—— 单元（允许集 11 个码点逐一体、Tab 不动、可逆、孤立代理位不算控制字符）、渲染形状（伪造载荷只落一行、
+`record` 未被改写、args 插值后消毒、`%(name)s` 字段同样消毒、栈仍多行）、装配（`build_formatter` 返回的类、
+`apply_logging_config` 装的全是消毒器、文件 handler 落盘恰好一行）、族闭包普查（`api/` + `augmentor/` 里裸
+`logging.Formatter(` 构造 == 空集，牙齿走**仓外副本**：往副本注入一处真构造必须量到，同一串写成正注释不算）、
+HTTP 端到端（伪造换行只落一行、ANSI 不再原样进流、响应体仍回显原文）、非恒真（把消毒器换回裸 `Formatter`，
+同一支请求当场回到 2 行）。
+
 ## 4. 核心数据流
 
 ### 4.1 数据增强主流程

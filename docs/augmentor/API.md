@@ -339,11 +339,11 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
 | 状态码 | 含义 | 触发场景 |
 |--------|------|----------|
 | 200 | 成功 | — |
-| 400 | 请求参数错误 | 索引越界、扩展名不支持、`chunk_overlap >= chunk_size`、**路径名被操作系统判死**（`OSError` 的 `errno` 是 `EINVAL` / `ENAMETOOLONG`：名字里有当前系统禁止的字符或名字过长，L271 / A351。`detail` 用固定文案 `文件路径含当前系统不接受的字符或超出长度上限`，**不含**部署根路径；同族的 NUL 那一形由操作系统抛 `ValueError`，走「原文照回」支，所以它的 `detail` 是英文原文——两形文案不同是已登记的余面，不是笔误） |
+| 400 | 请求参数错误 | 索引越界、扩展名不支持、`chunk_overlap >= chunk_size`、**路径名被操作系统判死**（`OSError` 的 `errno` 是 `EINVAL` / `ENAMETOOLONG`：名字里有当前系统禁止的字符或名字过长，L271 / A351。`detail` 用固定文案 `文件路径含当前系统不接受的字符或超出长度上限`，**不含**部署根路径；同族的 NUL 那一形由操作系统抛 `ValueError`，走「原文照回」支，所以它的 `detail` 是英文原文——两形文案不同是已登记的余面，不是笔误）。**判决文案里嵌请求原文**那一格同形会崩（`source_format` 喂一枚孤立代理 ⇒ `detail` 带原文 ⇒ `JSONResponse.render` 抛 `UnicodeEncodeError`）：`api/main.py` 为 `HTTPException` 也兜了一层（L284），默认那支抛了才把编不出的字符换成反斜杠原文重渲染，状态码、响应头与其余字节不动；而成功路径把原文回显进响应体那一格（`POST /api/dataset/search` 的 `query`）**未兜**，实测仍 500，已立 A385 待拍 |
 | 401 | 鉴权失败 | 服务端已设置 `AUGMENTOR_API_KEY`，而写/删请求未携带或携带了错误的 `X-API-Key`（前端那份 key 在「配置管理 → 写操作鉴权」卡上存，由请求拦截器随每个请求送出；401 的 `detail` 会被服务层 `apiErrorDetail` 追加一句指路） |
 | 403 | 路径超出白名单 | 见上「路径白名单」（`detail` 为「路径超出允许的数据目录范围」，与 401 的鉴权失败可区分） |
 | 404 | 资源不存在 | 文件不存在、版本不存在 **409** 不在这张表的行里，它是「备份内容坏了」而不是「资源不在」：备份在、id 也在而校验和对不上，恢复被拒且零写入。备份一族六员的错误档自 **L252** 起逐档声明在 OpenAPI 的 `responses` 里（A330 已收），本表加一整行会平移本文件被账本引用的那一族行号，所以按净 0 同行追加在这里；而「文件不存在」这一档在备份一族里既可能是源数据文件不在场，也可能是 `backup_id` 不在索引里，两种都由 404 出声。 |
-| 422 | 请求体校验失败 | 缺少必填字段、字段类型错误（由 FastAPI 自动返回） |
+| 422 | 请求体校验失败 | 缺少必填字段、字段类型错误（由 FastAPI 自动返回）。载荷里写 JSON 的 `NaN` / `Infinity` / `-Infinity` 字面量时，错误项的 `input` 会回显那个非有限浮点，而 starlette 渲染 JSON 响应钉的是 `allow_nan=False` ⇒ 回执自己渲染不动；本仓在 `api/main.py` 文末兜了一层（L284）：默认处理器抛 `ValueError` 才把非有限浮点换成**同名字符串 token** 重渲染，状态码仍是 422，`type` / `msg` / `ctx` 与其余字节一字未动——**成功路径刻意不脱敏**，否则会掩盖服务端自己算出来的 NaN。同一层还兜 JSON 里解得出来、却编不成 UTF-8 的**孤立代理对**（`"\ud800"`）：渲染抛的是 `UnicodeEncodeError`（它是 `ValueError` 的子类，所以那一支 `except` 天然接得住），编不出的那枚字符换成反斜杠原文（六个可见字符）后重渲染，`query` / `pattern` / `regex_pattern` 三只回显原文的字段实测同形 |
 | 500 | 服务端错误 | 模型调用失败、依赖缺失、磁盘写入失败（指**服务端状态**那一种：磁盘满 / 权限缺失 / 只读卷，`errno` 为 `ENOSPC` / `EACCES` / `EROFS`，或测试注入的无 `errno` `OSError`；「这个名字在任何账户下都不可能成立」那一档在上一行是 400，L271 之前它混在这一格里） |
 | — | **配置越界不走 HTTP** | `web` / `augmentation` 两节的取值越界在 `load_config` 即抛 `DataValidationError`：启动期表现为进程不起，运行期表现为「回退出厂默认 + warning」（见上「路径白名单」）—— 访问控制项宁可退回最小范围也不静默放宽 |
 
@@ -596,7 +596,7 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
 | --- | --- | --- | --- |
 | `POST` | `/api/dataset/stats` | 数据集统计 | 只读分析。`summary` 是**字符串摘要**（不是 dict）；逐字段统计在 `field_statistics`（列表）。 |
 | `POST` | `/api/dataset/validate` | 数据集验证 | 只读。`is_valid` 对**空数据集恒为 true**（一条问题都没有是因为一条都没看，A92）。它的职责是报告坏数据，所以对坏输入回 200 而不是 4xx。 |
-| `POST` | `/api/dataset/search` | 数据集搜索 | 只读。`total_matches` 是**分页前**的全集口径；`fuzzy_threshold` / `ngram_n` / `filters` 三个旋钮的**生效值**在响应里回显（不传时是 `null`，不是默认值）。`method="regex"` 的模式串由调用方给出：编译不过回 **400** 并点名坏模式与位置（`无效的正则表达式 …（位置 N）`），**不是** 200 配 `total_matches: 0`——那是把参数错读成语料里没有（L267）。 |
+| `POST` | `/api/dataset/search` | 数据集搜索 | 只读。`total_matches` 是**分页前**的全集口径；`fuzzy_threshold` / `ngram_n` / `filters` 三个旋钮的**生效值**在响应里回显（不传时是 `null`，不是默认值）。`method="regex"` 的模式串由调用方给出：编译不过回 **400** 并点名坏模式与位置（`无效的正则表达式 …（位置 N）`），**不是** 200 配 `total_matches: 0`——那是把参数错读成语料里没有（L267）。同一支还带两把静态闸（L278 / A345）：模式串长度 > 1024 ⇒ **400** 并点名两侧数字；形状是「可变长的组被重复到 ≥2 次」（`(a+)+b`、`(.*)*`、`(\w+\s?)*`、`((a+))+` 这一族）⇒ **400** 并点名组所在列、组内可变长片段与套在外面的量词，判在读语料**之前**（空数据集也拒）。`contains` / `exact` 那一半不判形状也不判长度——把 `(a+)+b` 当普通字符串搜是合法请求。已知误伤 2 形（`(\[[^\]]*\])+`、`(?:[^,]+,){3}`）与不判的两族（交替分支共享首字符即 `a` 与 `aa` 两支整体被 `+` 重复、可选量词 `(a?)+`）见 `tests/unit/test_pattern_blowup_l278.py`；这是缓解不是根除，请求级超时与线性引擎那一半仍待拍。 |
 | `POST` | `/api/dataset/compare` | 数据集对比 | 只读。返回质量向 A/B 结论 + 重叠度 + 建议，`diff_datasets` 的成员语义见 §11 排查。 |
 | `POST` | `/api/dataset/features` | 字段特征检测 | 只读。`field_features` 是**列表**（不是 dict），每项一个字段的画像。 |
 | `POST` | `/api/dataset/auto-config` | 自动配置推荐 | 只读。返回推荐配置 + 理由；推荐值不落盘，要 `POST /api/config` 才生效。 |
@@ -627,7 +627,7 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
 | `POST` | `/api/system/dependency/datasets` | 登记数据集 | **写**（落 `datasets.json`），改前那行「只读」是错的。挂 `verify_api_key`：服务端设了 `AUGMENTOR_API_KEY` 而无 `X-API-Key` 头就是 401「缺少或无效的 X-API-Key」；前端那份 key 在「配置管理 → 写操作鉴权」卡上存，由请求拦截器随每个请求送出（A312 已收，与备份族缺口 A302 同源）。回执九键（`dataset_id` / `name` / `description` / `path` / `item_count` / `created_at` / `updated_at` / `tags` / `metadata`），`dataset_id = md5(name)[:8]` 只由名字算 ⇒ **同名再登记是覆盖**，无 409 也无任何提示，`created_at` 被刷新，第二次送空 `description`/`tags` 会把旧值**抹成空**（A306；与备份族「覆盖磁盘、索引多一行」的形状不同，这里索引也只留 1 条）。`description`/`tags` 改前**回显即丢**：端点在 `register_dataset()`（内部已落盘）**之后**才改返回对象，改的是内存 —— 响应带着这两格而随后的 GET 与磁盘上都是空；L232 把两格随登记一起传下去，三处一致（A305）。`input_file` 五档：不存在 404「文件不存在」、白名单外 403、带 `..` 400「路径包含非法组件」、空串 400「文件路径 不能为空」、顶层不是 JSON 数组 400「数据文件的顶层必须是 JSON 数组，当前是对象」；缺 `name`/`input_file` 则是 FastAPI 英文 **422** `Field required` ⇒ 两种错误体都要认（A311）。登记过的数据集在产品面上**删不掉**：无 DELETE、无注销，SDK 也没有注销数据集的方法（A309）。`registry_path` 同 GET 那四档。 |
 | `GET` | `/api/system/dependency/graph` | 数据集依赖图与校验问题 | 只读**同样不建注册表目录**（A307 已于 L249 收口，与上面那只 GET 同源）。回 `{nodes: [{id, name, item_count}], edges: [{source, target, type}], issues: […]}`，空注册表 ⇒ **200** 三个空数组。`issues` 只报悬空两端（`missing_source` / `missing_target`，元素 `{type, dependency{五键}, message}`），**不查环**：实测用 SDK 直写 A→B（merged）与 B→A（filtered）成环后读图，`issues` 仍只有悬空那 1 条 ⇒「issues 为空」不能读成「依赖关系没问题」（A310）。边没有 HTTP 也没有 CLI 创建入口（`dependency` 的 4 个 action 里没有建边，`add_dependency`/`remove_dependency`/`get_dependencies`/`validate_dependencies` 四个 SDK 方法一个都没上线），只能由 SDK 的 `add_dependency` 建立 ⇒ 纯前端用户的 `edges` 恒为空（A309）。`registry_path` 同 GET 列表四档。 |
 | `GET` | `/api/system/backups` | 列出备份 | GET 列出 / POST 创建。`backup_dir` 省略时用白名单首个根目录下的 `.backups`（**与 CLI `--backup-dir` 的默认 `.backups`、SDK 形参默认 `.backups` 不是同一个目录**，A301）；四档：空串 400「目录路径 不能为空」、`..` 400「路径包含非法组件」、白名单外绝对路径 403、白名单内绝对路径 200。空目录回 **200** `{"backups": []}`，不是 404 也不是 null；目录**不在场**时同样回空列表而**不把它建出来**（A332 / L249：六只只读面同源，构造零磁盘副作用）。索引里可以躺着**两条同 id** 的记录曾是实测形状（`timestamp` 不同而 `backup_path` 逐字相同）；**A298 已于 L250 收口**——同名再创建时那一行跟着更新，列表条数与磁盘份数一致，而 L250 之前写出的 `index.json` 里的同名多行读边照原样交回，前端行键因此继续拼时间戳。 错误档 **400 / 403** 自 **L252** 起逐档写进 OpenAPI 的 `responses`（A330 已收），本员不挂鉴权所以没有 401。 |
-| `POST` | `/api/system/backups` | 创建备份 | 回执七键（`backup_id` / `timestamp` / `source_path` / `backup_path` / `item_count` / `file_size` / `checksum`），两条路径都是**服务端绝对路径**。`name` 省略**或给空串**都生成 `backup_<YYYYmmdd_HHMMSS>`（秒级；它和回执 `timestamp` 自 **L250** 起来自**同一次** `datetime.now()`，改前是两次调用、跨秒时对不上，A303 已收）。同名再创建**覆盖磁盘那一份**，索引里那一行也跟着更新成新读数 ⇒ 行数与磁盘份数一致（**A298 已于 L250 收成 ①**）；未做的是 ②「让 `backup_id` 真的唯一」，所以同一秒内的两只**匿名**备份仍共享 id、只留一份，那一格由 `tests/unit/test_backup_index_collapse_l250.py` 当场钉住。`name` 带 `/` 放行并在备份目录下建子目录（实测 `sub/deep` ⇒ `.backups/sub/deep.json`），带 `..` 才 400 —— L231 补的那道门：改前 `../../escaped` 实测 **200** 且真写到白名单之外。源文件不存在 404「文件不存在」。本族三只写操作都挂 `verify_api_key`，`web/src` 自 L233 起由请求拦截器送 `X-API-Key`，key 在「配置管理 → 写操作鉴权」卡上存 ⇒ 设了 key 而浏览器里没存（或存的不一致）就一律 401（A302 已收）。SDK 侧的 `clean_old_backups` / `verify_backup_integrity` 自 **L243** 起有 HTTP 入口（A300 已收），见下面 `…/cleanup` 与 `…/verify` 两行。 错误档 **400 / 401 / 403 / 404** 自 **L252** 起写进 `responses`，每一档都由一个真请求实测过。 |
+| `POST` | `/api/system/backups` | 创建备份 | 回执七键（`backup_id` / `timestamp` / `source_path` / `backup_path` / `item_count` / `file_size` / `checksum`），两条路径都是**服务端绝对路径**。`name` 省略**或给空串**都生成 `backup_<YYYYmmdd_HHMMSS>`（秒级；它和回执 `timestamp` 自 **L250** 起来自**同一次** `datetime.now()`，改前是两次调用、跨秒时对不上，A303 已收）。同名再创建**覆盖磁盘那一份**，索引里那一行也跟着更新成新读数 ⇒ 行数与磁盘份数一致（**A298 已于 L250 收成 ①**）；未做的是 ②「让 `backup_id` 真的唯一」，所以同一秒内的两只**匿名**备份仍共享 id、只留一份，那一格由 `tests/unit/test_backup_index_collapse_l250.py` 当场钉住。`name` 必须是**一个可用的 URL 路径段**：带 `/` 或反斜杠、`.`/`..`、`#`/`?`、控制字符、尾随点或空白、超 255 字符一律 **400**（**A366 / L277** 收的那一格：改前 `sub/deep` 实测 **200**，文件落 `.backups/sub/deep.json`、索引与清单里都有这一行，而 `DELETE /api/system/backups/{backup_id}` 与 `…/restore` 的 `{backup_id}` 只匹配 `[^/]+`，percent 编码也救不回来 ⇒ 四档全 **404**，那份备份谁都动不了——建得出来却寻不了址；含 `#` 的名字坏在**另一维**：段形状合法，但裸插值的客户端把 `#` 之后当 fragment 丢掉，实测 restore **405** / delete **404**，只有 `frag%23ment` 寻得着，所以出生时一并拒，前端两只入口自 L277 起改走 `encodeURIComponent` 好让**存量**含 `#` 的备份仍可寻址）。落在根内且形状合法的名字照旧放行，判决只问名字不问落点；`path_lands_within` 那道旧闸保留当第二线，`../../escaped` 现在由新闸先点名（同是 400，文案换成「不能含路径分隔符」）。 —— L231 补的门只判「写出根外」，本轮把它收成「单段可寻址」。源文件不存在 404「文件不存在」。本族三只写操作都挂 `verify_api_key`，`web/src` 自 L233 起由请求拦截器送 `X-API-Key`，key 在「配置管理 → 写操作鉴权」卡上存 ⇒ 设了 key 而浏览器里没存（或存的不一致）就一律 401（A302 已收）。SDK 侧的 `clean_old_backups` / `verify_backup_integrity` 自 **L243** 起有 HTTP 入口（A300 已收），见下面 `…/cleanup` 与 `…/verify` 两行。 错误档 **400 / 401 / 403 / 404** 自 **L252** 起写进 `responses`，每一档都由一个真请求实测过。 |
 | `POST` | `/api/system/backups/{backup_id}/restore` | 恢复备份 | 写。备份不存在回 **404**（与 DELETE 同组同码、同文案「备份不存在」）。回执三键 `{backup_id, output_path, item_count}`，落点键叫 **`output_path`**（本组其余五条写盘端点叫 `output_file`，`split` 叫 `output_dir`）。目标已存在时**整份覆盖，不问**。把备份文件改坏再恢复 ⇒ **409**「备份文件校验和不匹配，文件可能已损坏，未执行恢复: <backup_id>」，且**一个字节都不写**：库里在覆盖输出路径之前抛 `BackupIntegrityError`（**A299 已于 L243 收口**；改前这一档是 200 加一句警告日志，交回来的就是改坏的内容）。想不等恢复就知道哪份坏了，用下面那只只读的 `…/verify`。 错误档 **400 / 401 / 403 / 404 / 409** 自 **L252** 起写进 `responses`，409 那句说明带上「目标文件与索引都未被改写」。 |
 | `DELETE` | `/api/system/backups/{backup_id}` | 删除备份 | 写。同上，404。按 id 过滤索引 ⇒ 同 id 的**全部**行一起消失（L250 起新写出的同名备份只有一行，多行只剩存量索引），磁盘那一份也删掉；此后同 id 再恢复 / 再删都是 404（A298 已收）。 错误档 **400 / 401 / 403 / 404** 自 **L252** 起写进 `responses`，其中 404 的说明点名「索引有条目而备份文件已丢不算这一档，仍回 200」。 |
 | `GET` | `/api/system/backups/verify` | 校验备份完整性 | 只读，**不挂鉴权**（同族另一只 GET 一样不挂）。逐只重读备份文件算 sha256 并与索引登记值比对，回执 `results` 一键，每项五键（`backup_id` / `exists` / `checksum_match` / `item_count` / `timestamp`）。`backup_id` 给一个索引里没有的名字 ⇒ **200 空列表**而不是 404：这只端点报的是「目录里哪些备份是坏的」，不存在的 id 既不坏也好，报不了任何事。目录不存在 ⇒ **200 `{"results": []}` 且不把目录建出来**（改前靠路由那道挡板，L249 起 `DatasetBackup` 的构造本身不再 mkdir 落 index.json，A307 / A332 同源收口）。`exists` 判的是「存在**且非空**」，零字节文件也算丢，此时 `checksum_match` 为 false 且无从比。结果以 `backup_id` 为键 ⇒ 存量索引里的同名多行在这里只出**一行**；自 **L250** 起列表也只剩一行，两面因此对上（A298 的另一面已收）。`backup_dir` 四档与 `GET /api/system/backups` 相同。 错误档 **400 / 403** 自 **L252** 起写进 `responses`；只读面不声明 401，也不给幽灵 id 或坏备份声明 404 / 409。 |
@@ -720,8 +720,8 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
 | 参数 | 位置 | 类型 | 默认 | 说明 |
 |------|------|------|------|------|
 | `filename` | path | string | — | 数据文件路径 |
-| `page` | query | int | `1` | 页码，从 1 开始 |
-| `page_size` | query | int | `20` | 每页条数 |
+| `page` | query | int | `1` | 页码，从 1 开始；`< 1` ⇒ `400` |
+| `page_size` | query | int | `20` | 每页条数；`< 1` ⇒ `400` |
 | `search` | query | string | `""` | 在 `instruction` 与 `output` 中做不区分大小写的子串匹配 |
 
 ```json
@@ -729,11 +729,24 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
   "total": 200,
   "page": 1,
   "page_size": 20,
-  "items": [{"instruction": "如何申请入住？", "input": "", "output": "通过 App 提交申请。"}]
+  "items": [{"instruction": "如何申请入住？", "input": "", "output": "通过 App 提交申请。"}],
+  "indices": [0]
 }
 ```
 
-`404` 文件不存在；`500` 读取或解析失败。
+**`indices` 是写端点唯一的权威坐标**（A365 / L277）：与 `items` 同长同序，逐格是「这一条在
+盘上那份文件里的 0 基下标」。本端点交回的是**过滤后切片**，而 `PUT /api/data/update` 与
+`DELETE /api/data/delete` 读的是整份文件并按 `items[index]` 直接写盘 ⇒ 页内行号从来不是坐标：
+翻到第 2 页时行号 0 指的是第 1 页第 1 条，`search` 生效时更是对不上号（实测 25 条夹具里
+第 2 页第 1 行发 `index=1` 改掉了第 1 页第 2 条，还回 200「保存成功」）。
+
+`page` / `page_size` 的判据在门口（共引 SDK 的 `validation.require_count`）：它们落到
+`items[start:end]` 这把切片，而 Python 切片对越界值不报错、只换语义 —— 改前实测
+`page_size=-10` 回 200 并交出 **15 条**、`page=-1` 回 200 并交出**第 5~14 条**、
+`page=0` / `page_size=0` 回 200 交出空页。四种都是静默错答，故一律 400。页码超过末尾仍是
+`200` + 空页（合法请求，只是没数据）。
+
+`400` 分页参数非法；`404` 文件不存在；`500` 读取或解析失败。
 
 ### `PUT /api/data/update/{filename}`
 
@@ -742,14 +755,14 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
 | 参数 | 位置 | 类型 | 说明 |
 |------|------|------|------|
 | `filename` | path | string | 数据文件路径 |
-| `index` | query | int | 待替换的索引 |
+| `index` | query | int | 待替换的索引——**盘上 0 基下标**，取自 `GET /api/data/load` 的 `indices` |
 | body | body | object | 新的数据条目（任意 JSON 对象） |
 
 ```json
 {"success": true}
 ```
 
-`400` 索引越界。
+`400` 索引越界（含负数：`items[-1]` 会改掉最后一条而不是报错）。
 
 ### `DELETE /api/data/delete/{filename}`
 
