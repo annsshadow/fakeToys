@@ -69,13 +69,13 @@
           "mechanic_permille": 100
         }
       },
-      "expected_hash": "5587405697ca117a",
+      "expected_hash": "96fadb14c686777a",
       "expected_stats": {
         "kills": 39,
         "leaked": 0,
-        "score": 19738,
+        "score": 19679,
         "waves": 5,
-        "durationMs": 77600
+        "durationMs": 64750
       }
     },
     {
@@ -84,11 +84,11 @@
       "seed": "-4611686018427387904",
       "card_picks": [
         0,
+        1,
+        2,
         0,
-        0,
-        0,
-        0,
-        0
+        1,
+        2
       ],
       "build": {
         "skills": {
@@ -151,13 +151,13 @@
           "mechanic_permille": 100
         }
       },
-      "expected_hash": "39c2ebe8bdcb79da",
+      "expected_hash": "5f60b705c154be41",
       "expected_stats": {
         "kills": 40,
         "leaked": 0,
-        "score": 20746,
+        "score": 20781,
         "waves": 6,
-        "durationMs": 70700
+        "durationMs": 58850
       }
     },
     {
@@ -167,10 +167,10 @@
       "card_picks": [
         0,
         -1,
-        -3,
-        0,
-        -1,
-        -3,
+        -7,
+        -15,
+        -9,
+        -22,
         0,
         -1
       ],
@@ -235,13 +235,13 @@
           "mechanic_permille": 200
         }
       },
-      "expected_hash": "db7f17c1744d0965",
+      "expected_hash": "39bd0c5aacc63377",
       "expected_stats": {
         "kills": 49,
         "leaked": 0,
-        "score": 25687,
+        "score": 25615,
         "waves": 8,
-        "durationMs": 96650
+        "durationMs": 75950
       }
     },
     {
@@ -250,14 +250,14 @@
       "seed": "999999999999999999",
       "card_picks": [
         -1,
-        -3,
-        -4,
+        -7,
+        -13,
         0,
         1,
         2,
         -1,
-        -3,
-        -4,
+        -7,
+        -13,
         0
       ],
       "build": {
@@ -321,13 +321,13 @@
           "mechanic_permille": 300
         }
       },
-      "expected_hash": "192cc87a682ccbca",
+      "expected_hash": "a40059bf21f27a97",
       "expected_stats": {
         "kills": 61,
         "leaked": 0,
-        "score": 32635,
+        "score": 32330,
         "waves": 10,
-        "durationMs": 104850
+        "durationMs": 78650
       }
     },
     {
@@ -335,14 +335,14 @@
       "tag": "base",
       "seed": "-1",
       "card_picks": [
-        -3,
-        -4,
+        -7,
+        -13,
         0,
         1,
         2,
         -1,
-        -3,
-        -4,
+        -7,
+        -13,
         0,
         1,
         2,
@@ -409,13 +409,13 @@
           "mechanic_permille": 400
         }
       },
-      "expected_hash": "b3308b7f974a9565",
+      "expected_hash": "d5dfb9fdcb994285",
       "expected_stats": {
         "kills": 84,
         "leaked": 0,
-        "score": 53581,
+        "score": 54160,
         "waves": 12,
-        "durationMs": 141700
+        "durationMs": 124100
       }
     },
     {
@@ -424,8 +424,8 @@
       "seed": "0",
       "card_picks": [
         -1,
-        -3,
-        -4,
+        -7,
+        -13,
         0,
         1
       ],
@@ -490,13 +490,13 @@
           "mechanic_permille": 300
         }
       },
-      "expected_hash": "4d233aab15006376",
+      "expected_hash": "4b16fcf03b7ed9b2",
       "expected_stats": {
-        "kills": 31,
-        "leaked": 1,
-        "score": 15755,
+        "kills": 32,
+        "leaked": 0,
+        "score": 16317,
         "waves": 5,
-        "durationMs": 72400
+        "durationMs": 81850
       }
     },
     {
@@ -507,8 +507,8 @@
         1,
         2,
         -1,
-        -3,
-        -4
+        -7,
+        -13
       ],
       "build": {
         "skills": {
@@ -571,13 +571,13 @@
           "mechanic_permille": 100
         }
       },
-      "expected_hash": "eb5194a866aca808",
+      "expected_hash": "b30effd26f5917ec",
       "expected_stats": {
         "kills": 37,
         "leaked": 0,
-        "score": 18822,
+        "score": 18840,
         "waves": 5,
-        "durationMs": 138250
+        "durationMs": 107900
       }
     },
     {
@@ -585,12 +585,12 @@
       "tag": "lightning",
       "seed": "-1",
       "card_picks": [
-        -4,
+        -13,
         0,
         1,
         2,
         -1,
-        -3
+        -7
       ],
       "build": {
         "skills": {
@@ -653,13 +653,13 @@
           "mechanic_permille": 500
         }
       },
-      "expected_hash": "905221d33f1d413f",
+      "expected_hash": "df0f5e4bc693ca47",
       "expected_stats": {
         "kills": 39,
         "leaked": 0,
-        "score": 19878,
+        "score": 19868,
         "waves": 6,
-        "durationMs": 70250
+        "durationMs": 65400
       }
     },
     {
@@ -668,8 +668,8 @@
       "seed": "4611686018427387903",
       "card_picks": [
         -1,
-        -3,
-        -4,
+        -7,
+        -13,
         0,
         1,
         2,
@@ -736,13 +736,13 @@
           "mechanic_permille": 300
         }
       },
-      "expected_hash": "dc1b6ab2e7dde89c",
+      "expected_hash": "0cb3f87c1afac2a8",
       "expected_stats": {
         "kills": 45,
         "leaked": 0,
-        "score": 23073,
+        "score": 23112,
         "waves": 7,
-        "durationMs": 124150
+        "durationMs": 111550
       }
     },
     {
@@ -753,8 +753,8 @@
         1,
         2,
         -1,
-        -3,
-        -4,
+        -7,
+        -13,
         0,
         1
       ],
@@ -819,13 +819,13 @@
           "mechanic_permille": 100
         }
       },
-      "expected_hash": "6a672677a7a9ead5",
+      "expected_hash": "91b1dbea250bb931",
       "expected_stats": {
         "kills": 49,
         "leaked": 0,
-        "score": 25318,
+        "score": 25313,
         "waves": 7,
-        "durationMs": 55050
+        "durationMs": 37100
       }
     },
     {
@@ -833,12 +833,12 @@
       "tag": "slots5",
       "seed": "9007199254740993",
       "card_picks": [
-        -4,
+        -13,
         0,
         1,
         2,
         -1,
-        -3
+        -7
       ],
       "build": {
         "skills": {
@@ -911,13 +911,13 @@
           "mechanic_permille": 500
         }
       },
-      "expected_hash": "018b2089f43f3d89",
+      "expected_hash": "caa77b166709f9be",
       "expected_stats": {
         "kills": 43,
         "leaked": 0,
-        "score": 22240,
+        "score": 22326,
         "waves": 6,
-        "durationMs": 118100
+        "durationMs": 70150
       }
     },
     {
@@ -926,8 +926,8 @@
       "seed": "-9007199254740993",
       "card_picks": [
         -1,
-        -3,
-        -4,
+        -7,
+        -13,
         0,
         1,
         2
@@ -1013,13 +1013,13 @@
           "mechanic_permille": 300
         }
       },
-      "expected_hash": "ab01774030df0c10",
+      "expected_hash": "51c0226c5bf66915",
       "expected_stats": {
         "kills": 39,
         "leaked": 0,
-        "score": 19998,
+        "score": 20089,
         "waves": 6,
-        "durationMs": 74300
+        "durationMs": 70500
       }
     },
     {
@@ -1030,8 +1030,8 @@
         1,
         2,
         -1,
-        -3,
-        -4,
+        -7,
+        -13,
         0,
         1
       ],
@@ -1096,13 +1096,13 @@
           "mechanic_permille": 100
         }
       },
-      "expected_hash": "fcd8f89629f0b494",
+      "expected_hash": "43669209b72ca328",
       "expected_stats": {
-        "kills": 48,
-        "leaked": 7,
-        "score": 25011,
+        "kills": 47,
+        "leaked": 3,
+        "score": 24442,
         "waves": 7,
-        "durationMs": 147850
+        "durationMs": 115050
       }
     }
   ]

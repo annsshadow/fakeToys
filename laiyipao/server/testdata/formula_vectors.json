@@ -169,6 +169,19 @@
       "max_energy_per_battle": 15
     }
   },
+  "tuning": {
+    "_comment": "战斗节奏配置的跨端钉（第 158 轮 TS 引入，第 159 轮 Go 同步）。TS 是 DEFAULT_TUNING（src/game/tuning.ts），Go 是 DefaultTuning（internal/domain/engine_tuning.go）。它们必须逐位一致：任一端单方面改数值 → 重放时间线与另一端分叉 → 全体结算被拒，且**静默**（存量守卫不跑真实结算）。第 159 轮的线上事故正是这条钉缺失的后果 —— Go 侧从未同步 tuning，而 replay 向量也没随之重生成。",
+    "spawn_progress_step": 80,
+    "enemy_speed_permille": 1000,
+    "projectile_speed_permille": 1200,
+    "skill_cooldown_permille": 1000,
+    "wave_delay_permille": 800,
+    "wave_interval_permille": 850,
+    "enemy_attack_interval_permille": 1000,
+    "overheat_duration_ms": 1600,
+    "hit_flash_ms": 110,
+    "float_life_ms": 700
+  },
   "replay_skills": {
     "_comment": "回放前缀 S 段（技能槽配置）的跨端契约（第 56 轮）。Go 侧 internal/domain/replay_skills_contract_test.go 与 TS 侧 src/game/replay_skills_contract.test.ts 必须同时通过。expected 是字面串 —— 两端各自用**自己的** skillBaseDamageAtLevel / SkillBaseDamageAtLevel 算底伤再拼串，任一端的格式或排序漂移都会在这里露出来。sort 排的是**格式化后的字符串**（TS 的 Array.sort 无参 = UTF-16 码元序，Go 对应 sort.Strings），所以 slot=10 排在 slot=2 前面，这是最容易写错的一处。",
     "cases": [
@@ -287,10 +300,10 @@
     }
   },
   "card_picks": {
-    "_comment": "card_picks 的取值域（第 66 轮）。两端各有一份边界：Go 是 CardPickMin（internal/domain/battle_collections.go），TS 是 PICK_MIN（src/game/engine.ts）。它们必须逐位一致 —— 漂了的后果是静默的：客户端正常对局被服务端 422 拒掉，而客户端测试、Go 测试、e2e 全绿（它们都不跑真实结算）。编码：-1 整波跳过；-(3+handIdx) 弃一张取第 handIdx 张；-(6+handIdx) 弃一张整波跳过。两个负区间不相交，靠 BASE 相差 3（> 每波最大手牌数 2）。",
-    "min": -8,
-    "discard_take_base": 3,
-    "discard_skip_base": 6,
+    "_comment": "card_picks 的取值域（第 66 轮引入，第 159 轮重写）。两端各有一份边界：Go 是 CardPickMin（internal/domain/battle_collections.go），TS 是 PICK_MIN（src/game/engine.ts）。它们必须逐位一致 —— 漂了的后果是静默的：客户端正常对局被服务端 422 拒掉，而客户端测试、Go 测试、e2e 全绿（它们都不跑真实结算）。编码：0/1/2 普通取牌（手牌下标）；-1 整波跳过；-(3+code) 本波弃过牌，code ∈ [0,19] 是「弃牌掩码 + 取剩余的哪张/不取」的枚举（见 engine.ts PICK_CODE_BASE 的枚举表）。负值域 = 连续区间 [-22..-3] + 独立的 -1，-2 是刻意留的空隙。",
+    "min": -22,
+    "code_base": 3,
+    "code_max": 19,
     "skip": -1,
     "hand_slots": 3,
     "cases": [
@@ -299,16 +312,36 @@
         "expected": 0
       },
       {
+        "name": "plain_pick_last",
+        "expected": 2
+      },
+      {
         "name": "plain_skip",
         "expected": -1
       },
       {
-        "name": "discard_then_take_first",
-        "expected": -3
+        "name": "discard_first_take_first",
+        "expected": -7
       },
       {
-        "name": "discard_then_skip",
-        "expected": -6
+        "name": "discard_last_take_first",
+        "expected": -15
+      },
+      {
+        "name": "discard_first_skip",
+        "expected": -9
+      },
+      {
+        "name": "discard_two_take_remaining",
+        "expected": -13
+      },
+      {
+        "name": "discard_two_skip",
+        "expected": -14
+      },
+      {
+        "name": "discard_all_skip",
+        "expected": -22
       }
     ]
   },

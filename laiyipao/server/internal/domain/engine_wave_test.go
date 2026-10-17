@@ -239,26 +239,40 @@ func TestStepEnemyMotionStatusTimersDecay(t *testing.T) {
 	}
 }
 
-// TestCeilDivMsToTicks 守住「毫秒→tick 向上取整」。
+// TestScaledDelayTicks 守住「毫秒→tick 的折算」（第 158/159 轮的 tuning 版）。
 //
-// ⚠️ 向上取整保证「间隔 N 毫秒」不会因为截断变成「间隔 0 毫秒」
+// ⚠️ 两条不变量：
 //
-//	而让同组怪同时出现。反过来（向下取整）会让同组怪**同 tick 全部刷出**，
-//	而那种画面差异极难从数据里看出来。
+//  1. **向上取整**：保证「间隔 N 毫秒」不会因为截断变成「间隔 0 毫秒」
+//     而让同组怪同时出现。反过来（向下取整）会让同组怪**同 tick 全部刷出**，
+//     而那种画面差异极难从数据里看出来。
+//  2. **下限 1 tick**：TS 是 `Math.max(1, Math.ceil(...))` ——
+//     `ms = 0` 或倍率压到 0 tick 时仍然是 1，而不是 0。
+//     旧实现（`ceilDivMsToTicks`）对 0 返回 0，与 TS 不一致。
 //
-// 判据覆盖边界两侧与不能整除的情形。
-func TestCeilDivMsToTicks(t *testing.T) {
+// 判据覆盖边界两侧、不能整除、倍率缩放与下限四种情形。
+func TestScaledDelayTicks(t *testing.T) {
 	cases := []struct {
-		ms   int64
-		want int64
+		name     string
+		ms       int64
+		permille int64
+		want     int64
 	}{
-		{0, 0}, {-1, 0}, {1, 1}, {49, 1}, {50, 1}, {51, 2},
-		{1000, 20}, {1012, 21}, // 第 1 关第一波的真实 delay
-		{99, 2}, {100, 2},
+		{"零毫秒仍占 1 tick（TS 的 max(1,…)）", 0, 1000, 1},
+		{"负毫秒也占 1 tick", -1, 1000, 1},
+		{"1ms 不足一 tick 向上取整", 1, 1000, 1},
+		{"50ms 恰好一 tick", 50, 1000, 1},
+		{"51ms 跨到两 tick", 51, 1000, 2},
+		{"1000ms = 20 tick", 1000, 1000, 20},
+		{"不改倍率时与旧口径一致（1012ms）", 1012, 1000, 21},
+		{"800‰ 缩放第 1 关 delay：1012×0.8=809.6ms → 17", 1012, 800, 17},
+		{"850‰ 缩放 interval：600×0.85=510ms → 11", 600, 850, 11},
+		{"倍率压到极小仍保 1 tick", 10, 1, 1},
 	}
 	for _, c := range cases {
-		if got := ceilDivMsToTicks(c.ms); got != c.want {
-			t.Errorf("ceilDivMsToTicks(%d) = %d，期望 %d", c.ms, got, c.want)
+		if got := scaledDelayTicks(c.ms, c.permille); got != c.want {
+			t.Errorf("scaledDelayTicks(%d, %d) = %d，期望 %d（%s）",
+				c.ms, c.permille, got, c.want, c.name)
 		}
 	}
 }
@@ -270,10 +284,11 @@ func TestCeilDivMsToTicks(t *testing.T) {
 // 实测：把 `updateSpawns` 的倒序改成正序，五个真实场景全部照样绿。
 // 原因是真实关卡的刷怪组把 `atTick` 拉开了，同 tick 到期的通常只有一只。
 //
-// 构造依据合法：`interval = 0` 时 `ceilDivMsToTicks(0) = 0`，
-// 于是同组全部落在同一 tick —— 这正是「同组怪同时出现」的极限形态，
-// 而向上取整的设计意图恰恰是**避免**它。
+// 构造依据合法：这是「同组怪同时出现」的极限形态 ——
+// 而 `scaledDelayTicks` 的下限 1 tick 设计意图恰恰是**避免**它。
 // 所以这是「配置的边界」，不是「配置的正常用法」。
+//（调用方若用 BeginWave 造队列，间隔 0ms 也会被抬到 1 tick；本用例直接
+// 构造 spawnQueue，绕过折算，专测倒序遍历本身的正确性。）
 func TestUpdateSpawnsHandlesMultipleDueInOneTick(t *testing.T) {
 	e := newProbeEngine()
 	e.Cfg.Enemies = map[int]SeedEnemy{
@@ -435,13 +450,15 @@ func TestBeginWaveAtLaterIndex(t *testing.T) {
 	// 这里只关心「atTick 算对了没」——
 	// 把两件事搅在一起断言，失败时说不清是哪一处坏了。
 	//
-	// 期望值：4321 + ceil(1012/50)=21   -> 4342
-	//         4321 + ceil(500/50)=10    -> 4331
-	//         4321 + 10 + ceil(700/50)=14 -> 4345
-	wantTicks := map[int64]bool{4342: true, 4331: true, 4345: true}
+	// 期望值（第 158/159 轮起要过 tuning 倍率，DEFAULT: delay 800‰ / interval 850‰）：
+	//
+	//	1012ms × 800‰ = 809.6ms → ceil(809.6/50) = 17 → 4321+17          = 4338
+	//	 500ms × 800‰ = 400ms   → ceil(400/50)   =  8 → 4321+8           = 4329
+	//	 700ms × 850‰ = 595ms   → ceil(595/50)   = 12 → 4329+12          = 4341
+	wantTicks := map[int64]bool{4338: true, 4329: true, 4341: true}
 	for i, q := range e.spawnQueue {
 		if !wantTicks[q.AtTick] {
-			t.Errorf("刷怪队列[%d].AtTick = %d，不在期望集合 {4331, 4342, 4345} 内 —— "+
+			t.Errorf("刷怪队列[%d].AtTick = %d，不在期望集合 {4329, 4338, 4341} 内 —— "+
 				"它必须含 e.Tick 偏移 = 4321（写死 0 的话第 1 波全绿、第 2 波整波提前刷）",
 				i, q.AtTick)
 		}

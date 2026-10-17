@@ -69,6 +69,27 @@ type ConsistencyVectors struct {
 		MaxResistPermille    int64 `json:"max_resist_permille"`
 		MaxArmorPermille     int64 `json:"max_armor_permille"`
 	} `json:"constants"`
+	// Tuning 是战斗节奏配置的跨端钉（第 158 轮 TS 引入，第 159 轮 Go 同步）。
+	//
+	// 为什么要跨端锁：tuning 只影响**时间线**（刷怪/弹速/冷却/过热），
+	// 而重放哈希的输入是「事件 + tick」。任一端改一个倍率，
+	// 重放时间线就与另一端分叉 —— 症状与 card_picks 漂移完全相同：
+	// 客户端正常对局被服务端判为失配，而单端测试全绿。
+	//
+	// 第 159 轮的线上事故就是这条钉缺失：Go 侧从未同步 tuning.ts，
+	// 而 replay 向量迟迟没有重生成，Go 与旧向量互相自洽。
+	Tuning struct {
+		SpawnProgressStep           int64 `json:"spawn_progress_step"`
+		EnemySpeedPermille          int64 `json:"enemy_speed_permille"`
+		ProjectileSpeedPermille     int64 `json:"projectile_speed_permille"`
+		SkillCooldownPermille       int64 `json:"skill_cooldown_permille"`
+		WaveDelayPermille           int64 `json:"wave_delay_permille"`
+		WaveIntervalPermille        int64 `json:"wave_interval_permille"`
+		EnemyAttackIntervalPermille int64 `json:"enemy_attack_interval_permille"`
+		OverheatDurationMs          int64 `json:"overheat_duration_ms"`
+		HitFlashMs                  int64 `json:"hit_flash_ms"`
+		FloatLifeMs                 int64 `json:"float_life_ms"`
+	} `json:"tuning"`
 	ReplaySkills struct {
 		Cases []struct {
 			Name   string `json:"name"`
@@ -100,7 +121,7 @@ type ConsistencyVectors struct {
 			} `json:"measured"`
 		} `json:"limits"`
 	} `json:"replay_skills"`
-	// CardPicks 是 card_picks 的取值域（第 66 轮）。
+	// CardPicks 是 card_picks 的取值域（第 66 轮引入，第 159 轮重写）。
 	//
 	// 为什么要跨端锁：Go 侧按 CardPickMin 拒，TS 侧按 PICK_MIN 生成。
 	// 两份漂移的后果是**静默**的 —— 客户端正常对局被服务端 422 拒掉，
@@ -109,12 +130,12 @@ type ConsistencyVectors struct {
 	// 这与 replay_skills 同机制：只导数据、不导期望值之外的语义，
 	// 期望值由两侧各自用同一份字面值断言。
 	CardPicks struct {
-		Min             int64 `json:"min"`
-		DiscardTakeBase int64 `json:"discard_take_base"`
-		DiscardSkipBase int64 `json:"discard_skip_base"`
-		Skip            int64 `json:"skip"`
-		HandSlots       int64 `json:"hand_slots"`
-		Cases           []struct {
+		Min      int64 `json:"min"`
+		CodeBase int64 `json:"code_base"`
+		CodeMax  int64 `json:"code_max"`
+		Skip     int64 `json:"skip"`
+		HandSlots int64 `json:"hand_slots"`
+		Cases    []struct {
 			Name     string `json:"name"`
 			Expected int64  `json:"expected"`
 		} `json:"cases"`
@@ -279,6 +300,43 @@ func TestConsistencyBalanceInvariants(t *testing.T) {
 	for _, spec := range AllReactionSpecs() {
 		if int64(spec.AttackWeightPct) > want {
 			t.Errorf("反应 %s 攻击力权重 %d‰ > 契约上限 %d‰", spec.Name, spec.AttackWeightPct, want)
+		}
+	}
+}
+
+// TestConsistencyTuning 守住「战斗节奏参数两端逐位一致」。
+//
+// 这是第 159 轮事故的**直接解药**：
+//
+//	事故链的另一环是 Go 侧从未同步 158 轮的 tuning.ts。
+//	两端各跑 DEFAULT/无 tuning，时间线整体错位（首个开火 6 tick、
+//	逐波累积 407 tick），而存量向量是 158 轮前生成的旧产物 ——
+//	Go 与旧向量互相自洽，全体测试绿灯，线上 100% 拒发。
+//
+// 这条测试锁住 10 个字段的缺省值，任一端单方面改动 → 这里先红。
+// 与 card_picks 段同机制：只导数值，期望值由两侧各自断言。
+func TestConsistencyTuning(t *testing.T) {
+	v := loadVectors(t)
+	c := v.Tuning
+	d := DefaultTuning
+	for _, f := range []struct {
+		name string
+		got, want int64
+	}{
+		{"SpawnProgressStep", d.SpawnProgressStep, c.SpawnProgressStep},
+		{"EnemySpeedPermille", d.EnemySpeedPermille, c.EnemySpeedPermille},
+		{"ProjectileSpeedPermille", d.ProjectileSpeedPermille, c.ProjectileSpeedPermille},
+		{"SkillCooldownPermille", d.SkillCooldownPermille, c.SkillCooldownPermille},
+		{"WaveDelayPermille", d.WaveDelayPermille, c.WaveDelayPermille},
+		{"WaveIntervalPermille", d.WaveIntervalPermille, c.WaveIntervalPermille},
+		{"EnemyAttackIntervalPermille", d.EnemyAttackIntervalPermille, c.EnemyAttackIntervalPermille},
+		{"OverheatDurationMs", d.OverheatDurationMs, c.OverheatDurationMs},
+		{"HitFlashMs", d.HitFlashMs, c.HitFlashMs},
+		{"FloatLifeMs", d.FloatLifeMs, c.FloatLifeMs},
+	} {
+		if f.got != f.want {
+			t.Errorf("DefaultTuning.%s = %d，契约要求 %d（TS 侧 DEFAULT_TUNING 必须同步）",
+				f.name, f.got, f.want)
 		}
 	}
 }
