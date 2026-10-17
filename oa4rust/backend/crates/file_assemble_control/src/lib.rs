@@ -23,6 +23,8 @@ pub mod routes;
 mod tests;
 #[cfg(test)]
 mod tests_generated;
+#[cfg(test)]
+mod security_gate_tests;
 
 pub fn file_assemble_control_router(pool: Pool) -> axum::Router {
     routes::router(pool)
@@ -438,9 +440,26 @@ pub async fn create_file(
 #[allow(non_snake_case)]
 pub async fn delete_file(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十六批：软删文件按 x_file.creator 校归属（无会话 401；行不存在保留 not-found）。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT creator FROM x_file WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let Some(row) = row else {
+        return Ok(Json(ActionResult::error("file not found")));
+    };
+    let creator: String = row.get::<_, Option<String>>("creator").unwrap_or_default();
+    shared::middleware::require_owner(&pool, &sess, &creator).await?;
 
     let result = client
         .execute(
@@ -466,8 +485,13 @@ pub async fn delete_file(
 #[allow(non_snake_case)]
 pub async fn create_file_entity(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(body): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十六批：新建文件实体要求有效会话（无会话 401）；creator 仍硬写 "system"（残留记 §五）。
+    if session.is_none() {
+        return Err(AppError::Unauthorized);
+    }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let name = body
@@ -5346,8 +5370,14 @@ pub async fn u2_attachment2_list_type_page_size_size(
 #[allow(non_snake_case)]
 pub async fn u2_config_save_system_config(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十六批：系统参数写收 admin 档（无会话 401 / 非 admin 403）。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    u2_require_admin(&pool, &sess).await?;
     // 系统参数写：body {"configs":[{name,value,category?}]}，按 name UPSERT（未删行内更新，
     // 否则新插入）；value 接受字符串/数字/布尔，统一落 TEXT。行间独立提交，配置行无事务耦合。
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
