@@ -2980,8 +2980,11 @@ pub async fn correlation_job_job(
 #[allow(non_snake_case)]
 pub async fn correlation_job_job_delete(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(job): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十八批：删除引擎 job（物理删）按 xperson 校归属（无会话 401）。
+    u4_require_ppc_person(&pool.0, session, "PP_C_JOB", &job).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM PP_C_JOB WHERE xid = $1", &[&job])
@@ -11340,8 +11343,11 @@ pub async fn read_id_opinion_manage(
 #[allow(non_snake_case)]
 pub async fn read_id_opinion_manage_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十八批：待阅意见改写按 xperson 校归属（无会话 401）。
+    u4_require_ppc_person(&pool.0, session, "PP_C_READ", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -11478,8 +11484,11 @@ pub async fn read_id_processing_manage(
 #[allow(non_snake_case)]
 pub async fn read_id_processing_manage_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十八批：待阅办理按 xperson 校归属（无会话 401）。
+    u4_require_ppc_person(&pool.0, session, "PP_C_READ", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -11616,8 +11625,11 @@ pub async fn read_id_reset_manage(
 #[allow(non_snake_case)]
 pub async fn read_id_reset_manage_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十八批：待阅重置按 xperson 校归属（无会话 401）。
+    u4_require_ppc_person(&pool.0, session, "PP_C_READ", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -17474,8 +17486,11 @@ pub async fn task_v2_id_pause(
 #[allow(non_snake_case)]
 pub async fn task_v2_id_reset(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十八批：待办重置按 xperson 校归属（无会话 401）。
+    u4_require_ppc_person(&pool.0, session, "PP_C_TASK", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -17528,8 +17543,11 @@ pub async fn task_v2_id_reset(
 #[allow(non_snake_case)]
 pub async fn task_v2_id_reset_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十八批：待办重置按 xperson 校归属（无会话 401）。
+    u4_require_ppc_person(&pool.0, session, "PP_C_TASK", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -17994,8 +18012,11 @@ pub async fn task_id_opinion_manage(
 #[allow(non_snake_case)]
 pub async fn task_id_opinion_manage_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十八批：待办意见改写按 xperson 校归属（无会话 401）。
+    u4_require_ppc_person(&pool.0, session, "PP_C_TASK", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -18174,8 +18195,11 @@ pub async fn task_id_processing_manage(
 #[allow(non_snake_case)]
 pub async fn task_id_processing_manage_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十八批：待办推进按 xperson 校归属（无会话 401）。
+    u4_require_ppc_person(&pool.0, session, "PP_C_TASK", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -18354,8 +18378,11 @@ pub async fn task_id_reset_manage(
 #[allow(non_snake_case)]
 pub async fn task_id_reset_manage_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十八批：待办重置按 xperson 校归属（无会话 401）。
+    u4_require_ppc_person(&pool.0, session, "PP_C_TASK", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -20126,8 +20153,11 @@ pub async fn taskcompleted_id_opinion_manage(
 #[allow(non_snake_case)]
 pub async fn taskcompleted_id_opinion_manage_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十八批：已办意见改写按 xperson 校归属（无会话 401）。
+    u4_require_ppc_person(&pool.0, session, "PP_C_WORKCOMPLETED", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -21997,8 +22027,11 @@ pub async fn work_v2_id_add_split(
 #[allow(non_snake_case)]
 pub async fn work_v2_id_add_split_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十八批：拆分工作按 xcreatorPerson 校归属（无会话 401）。
+    u4_require_work_actor(&pool.0, session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -22911,8 +22944,11 @@ pub async fn work_id_processing(
 #[allow(non_snake_case)]
 pub async fn work_id_processing_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十八批：工作推进按 xcreatorPerson 校归属（无会话 401）。
+    u4_require_work_actor(&pool.0, session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
