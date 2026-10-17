@@ -219,23 +219,19 @@ describe('战斗流程', () => {
     expect(kinds).toEqual(['attribute', 'mechanic', 'skill'])
   })
 
-  it('取完所有手牌后进入下一波（取 1 张仍在选牌阶段）', () => {
+  it('取 1 张就结束本波（剩余手牌被丢弃，第 159 轮）', () => {
     const e = mkEngine(3)
     e.start()
     let guard = 0
     while (e.phase === 'wave' && guard++ < 20000) e.step()
     expect(e.phase).toBe('card_select')
 
-    // 取 1 张后仍有 2 张，必须还停在选牌阶段
+    // ⚠️ 第 159 轮起取牌即结束本波：不再允许连点多张 ——
+    // card_picks 每波只记一项，第二张起在重放里必然对不上
+    //（线上 100% 结算被拒的根因之一）。剩余手牌静默丢弃。
     e.takeCard(e.deck.hand[0].id)
-    expect(e.phase).toBe('card_select')
-    expect(e.deck.size).toBe(2)
-
-    // 取完剩余的才进入下一波
-    e.takeCard(e.deck.hand[0].id)
-    e.takeCard(e.deck.hand[0].id)
-    expect(e.deck.size).toBe(0)
     expect(e.phase).toBe('wave')
+    expect(e.deck.size).toBe(0)
   })
 
   it('跳过手牌也能进入下一波', () => {
