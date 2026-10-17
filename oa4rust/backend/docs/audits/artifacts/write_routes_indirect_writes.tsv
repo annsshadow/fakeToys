@@ -82,10 +82,10 @@ organization_assemble_authentication	POST	/api/organization/assemble/authenticat
 organization_assemble_control	GET	/api/organization/assemble/control/person/{flag}/mockdeletetoget	person_mock_delete_to_get	K	person_delete
 organization_assemble_control	GET	/api/organization/assemble/control/person/{flag}/reserve/mockdeletetoget	person_reserve_mock_delete_to_get	K	person_reserve_delete
 organization_assemble_control	GET	/api/organization/assemble/control/unit/{flag}/mockdeletetoget	unit_mock_delete_to_get	K	unit_delete
-organization_assemble_express	POST	/api/personattribute/append/person/name	personattr_append_person_name	R7	attr_write_values
-organization_assemble_express	POST	/api/personattribute/set/person/name	personattr_set_person_name	R7	attr_write_values
-organization_assemble_express	POST	/api/unitattribute/append/unit/name	unitattr_append_unit_name	R7	attr_write_values
-organization_assemble_express	POST	/api/unitattribute/set/unit/name	unitattr_set_unit_name	R7	attr_write_values
+organization_assemble_express	POST	/api/personattribute/append/person/name	personattr_append_person_name	R6	attr_write_values
+organization_assemble_express	POST	/api/personattribute/set/person/name	personattr_set_person_name	R6	attr_write_values
+organization_assemble_express	POST	/api/unitattribute/append/unit/name	unitattr_append_unit_name	R6	attr_write_values
+organization_assemble_express	POST	/api/unitattribute/set/unit/name	unitattr_set_unit_name	R6	attr_write_values
 personal	POST	/api/reset/mockputtopost	reset_password	R7	apply_reset
 personal	POST	/api/reset/password/anonymous	reset_password_anonymous	R4	apply_reset
 personal	PUT	/api/reset	reset_password	R4	apply_reset

@@ -19,12 +19,6 @@ ai_assemble_control	POST	/api/ai_assemble_control/file/copy/file	file_copy_file	
 ai_assemble_control	POST	/api/ai_assemble_control/file/list/paging/{page}/size/{size}	file_list_paging_page_size_size	R7
 ai_assemble_control	POST	/api/ai_assemble_control/file/list	file_list_with_ids	R7
 ai_assemble_control	POST	/api/ai_assemble_control/index/list/paging/{page}/size/{size}	index_list_paging_page_size_size	R7
-attendance_assemble_control	POST	/api/attendance/assemble/control/rule/{id}/toggle	toggle_control_rule	R7
-attendance_assemble_control	PUT	/api/attendance/assemble/control/rule/{id}/toggle	toggle_control_rule	R7
-attendance_assemble_control	POST	/api/attendance/assemble/control/rule/create	create_control_rule	R7
-attendance_assemble_control	DELETE	/api/attendance/assemble/control/rule/{id}	delete_control_rule	R7
-attendance_assemble_control	POST	/api/attendance/assemble/control/attendanceappealInfo/appeal/{id}	attendanceappealInfo_appeal_id	R7
-attendance_assemble_control	PUT	/api/attendance/assemble/control/attendanceappealInfo/appeal/{id}	attendanceappealInfo_appeal_id	R7
 attendance_assemble_control	PUT	/api/attendance/assemble/control/attendanceappealInfo/filter/list/{id}/next/{count}	attendanceappealInfo_filter_list_id_next_count	R7
 attendance_assemble_control	PUT	/api/attendance/assemble/control/attendanceappealInfo/filter/list/{id}/prev/{count}	attendanceappealInfo_filter_list_id_prev_count	R7
 attendance_assemble_control	PUT	/api/attendance/assemble/control/attendanceappealInfo/manager/list/{id}/next/{count}	attendanceappealInfo_manager_list_id_next_count	R7
@@ -41,9 +35,6 @@ attendance_assemble_control	PUT	/api/attendance/assemble/control/attendancedetai
 attendance_assemble_control	PUT	/api/attendance/assemble/control/attendancedetail/mobile/filter/list/page/{page}/count/{count}	attendancedetail_mobile_filter_list_page_page_count_count	R7
 attendance_assemble_control	POST	/api/attendance/assemble/control/attendancedetail/mobile/mobilepreview	attendancedetail_mobile_mobilepreview	R7
 attendance_assemble_control	POST	/api/attendance/assemble/control/attendancedetail/mobile/my	attendancedetail_mobile_my	R7
-attendance_assemble_control	POST	/api/attendance/assemble/control/attendancedetail/mobile/recive	attendancedetail_mobile_recive	R7
-attendance_assemble_control	POST	/api/attendance/assemble/control/attendancedetail/recive	attendancedetail_recive	R7
-attendance_assemble_control	POST	/api/attendance/assemble/control/attendancedetail/reciveSingle	attendancedetail_reciveSingle	R7
 attendance_assemble_control	PUT	/api/attendance/assemble/control/attendanceselfholiday/filter/list/{id}/next/{count}	attendanceselfholiday_filter_list_id_next_count	R7
 attendance_assemble_control	PUT	/api/attendance/assemble/control/attendanceselfholiday/filter/list/{id}/prev/{count}	attendanceselfholiday_filter_list_id_prev_count	R7
 attendance_assemble_control	POST	/api/attendance/assemble/control/attendanceworkdayconfig/filter	attendanceworkdayconfig_filter	R7

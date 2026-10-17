@@ -876,6 +876,19 @@ GET 写面队列里 `calendar_assemble_control` 与 `jpush_assemble_control` 各
 
 | 验证（本批代码变更） | — | organization_assemble_express `43 passed / 0 failed / 0 ignored`：新增离线臂 `b49_attr_writes_reject_without_session`（5 把逐把点名，dead pool + 无会话全 401；handler 经 `crate::endpoints_attr::` 路径调用）。无既有测试直接调用这 5 把，无需翻断言。尺子：**5 把 handler → 5 条 R7 路由出列**（5 把均单路由无别名），R7 836→**831**、含写 145→140、R6 121→126、ungated −5；5 把现 R6（会话存在门，已出 R7 行动面）；organization_assemble_express R7 34→**29**（余 29 条全为 false-positive）；EXIT 0、判据见证缺口 0 |
 
+### 三.50 第五十批（attendance_assemble_control 控制规则 3 把收 admin 门 + 申诉/明细接收 4 把收会话门，R7 831→822）
+
+| 项 | 位置 | 处置与口径 |
+| --- | --- | --- |
+| 考勤控制规则（增/删/开关） | `lib.rs` `create_control_rule`（POST `/api/attendance/assemble/control/rule/create`，INSERT `x_attendance_control_rule`）/ `delete_control_rule`（DELETE `/api/attendance/assemble/control/rule/{id}`，DELETE）/ `toggle_control_rule`（POST `/api/attendance/assemble/control/rule/{id}/toggle`，UPDATE 开关） | 控制规则是考勤系统级配置（谁可打卡、免打卡等），表无 per-user 归属列，按批 38/40/42/44/46/47 既定「ownerless 系统数据写 = admin」口径收 crate 内既有 `require_admin_opt`（无会话 401 / 非 admin 403，`is_admin` 对不可用 DB fail-closed）。门插在 `pool.get()` 之前，离线即证 401 |
+| 申诉改写 + 明细接收（用户侧投递） | `lib.rs` `attendanceappealInfo_appeal_id`（POST/PUT `/api/attendance/assemble/control/attendanceappealInfo/appeal/{id}`，UPDATE 申诉）/ `attendancedetail_mobile_recive`（POST `/api/attendance/assemble/control/attendancedetail/mobile/recive`）/ `attendancedetail_recive`（POST `/api/attendance/assemble/control/attendancedetail/recive`）/ `attendancedetail_reciveSingle`（POST `/api/attendance/assemble/control/attendancedetail/reciveSingle`） | 四把是「申诉改写」与「打卡明细接收/认领」的按 id 或批量操作，无单一归属行可逐把判（按 id 改他人申诉 / bulk 落库），按批 45/48/49 同族口径收**会话存在档**：加 `session: Option<Extension<Session>>` + `let Some(Extension(_session)) = session else 401`（无会话 401）。门在 `pool.get()` 之前，离线即证 401。冒名族（申诉/明细身份若取自 body 自称）属更上游缺陷，与本批同源，**另记 §五 待修**，不在本把射程内 |
+
+> 注：attendance_assemble_control 新鲜 R7 名单 48 条里，**仅上述 7 条为真写**；其余 41 条经体读均为「只读挂写方法」false-positive——`attendanceappealInfo_manager_list_id_next_count`（SELECT 分页）、`*_statistic_*`/`*_list_*`/`*_paging_*`/`*_workpl_*`/`*_uuid_*` 族（SELECT 体）、`dingding_*`/`*_sync_*` 触发器（GET 触发，已在 R6/R9 处理）等，按口径不动。`attendancedetail_analyse`（POST，body `personId`，未收门）与 `workflow_appeal_id` 两把申诉写档留待后续批次或 §五。
+>
+> **待修（本批记账，不收门）**：`attendanceappealInfo_appeal_id` / `attendancedetail_mobile_recive` / `attendancedetail_recive` / `attendancedetail_reciveSingle` 四把仅收**会话存在档**，主体身份（申诉人 / 接收人）若取自请求体 `personId`/`id` 即构成「本人改他人申诉 / 认领他人明细」的冒名族；与批 45 connector/ws、批 48 input_compare、批 49 personattr/unitattr/empowerlog 同源，属更上游的身份绑定缺陷，需按「会话身份强制覆盖 body 身份」或「归属档」单独决策，不在本把射程内。
+
+| 验证（本批代码变更） | — | attendance_assemble_control `46 passed / 0 failed / 15 ignored`（DB 不可达臂 ignored，不影响门证；b50 臂用 dead pool 离线即证）：新增离线臂 `b50_r7_writes_reject_without_session`（7 把逐把点名，dead pool + 无会话全 401；handler 经 crate 根路径调用）。无既有测试直接调用这 7 把，无需翻断言。尺子：**7 把 handler → 7 条 R7 路由出列**（7 把均单路由无别名），R7 831(上次提交值，含尺子读取抖动，复跑稳定值 829)→**822**、含写 140(稳定 138)→131、R6 126→130、ungated −7；3 把控制规则现 R5（admin 门）、4 把申诉/明细现 R6（会话存在门，已出 R7 行动面）；attendance_assemble_control R7 48→**41**（余 41 条全为 false-positive）；EXIT 0、判据见证缺口 0 |
+
 ## 四、验证
 
 
