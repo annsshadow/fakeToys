@@ -216,8 +216,8 @@ class DatasetOperations:
         # 起的旧行为；产物侧照旧去重（默认 MergeConfig.deduplicate=True）。要不要把
         # 这个「产物去了重、报表说没去」的口径对齐属行为变更轮，本轮不动。
         removed_duplicates = dedup_removed if config is not None else 0
-        # 去重删除与 max_items 截断分开报（旧实现混成一个数，L148，B218）
-        truncated_by_max_items = total_input - removed_duplicates - len(merged)
+        # 去重删除与 max_items 截断分开报（旧实现混成一个数，L148，B218）。截断那一格只报「真截过」的：上面那格在 `config=None` 时刻意记 0，于是残差全是去重的账，而 `MergeConfig()` 的 `max_items` 是 None，截断根本没发生过（L291，A400 ①）。
+        truncated_by_max_items = (0 if (config or MergeConfig()).max_items is None else total_input - removed_duplicates - len(merged))
         
         # 保存结果
         output = Path(output_path)
