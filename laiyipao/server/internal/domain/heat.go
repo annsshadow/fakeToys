@@ -89,6 +89,12 @@ type HeatSystem struct {
 	OverheatRemaining int
 	// CapBonus 是上限加成（**千分比**，见 Cap 的注释）。
 	CapBonus int64
+	// OverheatDurationMs 是过热持续毫秒（实例字段，第 158/159 轮）。
+	//
+	// ⚠️ 第 158 轮 TS 把它从编译期常量改成实例字段并由 tuning 覆盖
+	//（DEFAULT_TUNING = 1600，而升级前的常量是 2000）。
+	// Go 侧若继续用编译期常量，过热时长差 400ms ⇒ 时间线错位 ⇒ 重放失配。
+	OverheatDurationMs int64
 	// MaxHeatThisBattle 是本局热量峰值，进结算上报。
 	MaxHeatThisBattle int64
 
@@ -101,7 +107,11 @@ type HeatSystem struct {
 }
 
 // NewHeatSystem 造一个初始热量系统。
-func NewHeatSystem() HeatSystem { return HeatSystem{} }
+//
+// 缺省过热时长取编译期常量（= 整改前的值）；引擎构造会用 tuning 覆盖它。
+func NewHeatSystem() HeatSystem {
+	return HeatSystem{OverheatDurationMs: OverheatDurationMs}
+}
 
 // TryCast 释放技能，返回是否成功。
 //
@@ -134,7 +144,7 @@ func (h *HeatSystem) RefundHeat(n int64) {
 func (h *HeatSystem) CheckOverheat() bool {
 	if !h.Overheated && h.Heat >= h.Cap() {
 		h.Overheated = true
-		h.OverheatRemaining = OverheatDurationMs
+		h.OverheatRemaining = int(h.OverheatDurationMs)
 		return true
 	}
 	return false
@@ -153,7 +163,7 @@ func (h *HeatSystem) ForceOverheat() bool {
 		return false
 	}
 	h.Overheated = true
-	h.OverheatRemaining = OverheatDurationMs
+	h.OverheatRemaining = int(h.OverheatDurationMs)
 	return true
 }
 

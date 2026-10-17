@@ -46,9 +46,6 @@ func (e *BattleEngine) BeginWave(index int) {
 	e.Phase = PhaseWave
 	e.Deck.NewWave()
 	e.Deck.DiscardsLeft += e.Buffs.FreeDiscard
-	// 每波重置「本波弃过牌」标记 ——
-	// 编码只对**当前波**的 card_picks 项有意义。
-	e.discardedThisWave = false
 
 	var wave Wave
 	found := false
@@ -71,8 +68,14 @@ func (e *BattleEngine) BeginWave(index int) {
 
 	e.spawnQueue = nil
 	for _, group := range wave.Spawns {
-		delayTicks := ceilDivMsToTicks(int64(group.Delay))
-		intervalTicks := ceilDivMsToTicks(int64(group.Interval))
+		// 第 158 轮：两组节奏乘以 tuning 倍率（第 159 轮起 Go 同步）。
+		//
+		// ⚠️ 用 float64 复刻 TS 的 `Math.max(1, Math.ceil((ms * permille) / 1000 / TICK_MS))`：
+		//   - 操作顺序必须一致（先乘 permille、再除 1000、再除 tick）；
+		//   - 下限 1 tick 不能省 —— `interval = 0` 会让同组怪同时冒出来；
+		//     而 TS 的 max(1,…) 保证「间隔 N 毫秒」不会因截断变成 0。
+		delayTicks := scaledDelayTicks(int64(group.Delay), e.Tuning.WaveDelayPermille)
+		intervalTicks := scaledDelayTicks(int64(group.Interval), e.Tuning.WaveIntervalPermille)
 		for i := 0; i < group.Count; i++ {
 			e.spawnQueue = append(e.spawnQueue, SpawnItem{
 				EnemyID: group.EnemyID,
@@ -96,14 +99,6 @@ func (e *BattleEngine) BeginWave(index int) {
 	e.record(e.Tick, ReplayWave, int64(index), 0, 0)
 }
 
-// ceilDivMsToTicks 把毫秒折算成 tick 数，**向上取整**。
-func ceilDivMsToTicks(ms int64) int64 {
-	if ms <= 0 {
-		return 0
-	}
-	return (ms + TickMs - 1) / TickMs
-}
-
 // spawnEnemy 造一个敌人实例。
 //
 // ⚠️ 护甲这里**只能**是敌人自身的，不能加 `Buffs.ArmorPermille`。
@@ -125,6 +120,11 @@ func (e *BattleEngine) spawnEnemy(enemyID int, uid int64) {
 		v := def.Resist[el]
 		resist[el] = clampInt64(v, -MaxResistPermille, MaxResistPermille)
 	}
+	// 远程敌人攻击间隔（毫秒）→ 按 tuning 缩放（第 158/159 轮）。
+	//
+	// ⚠️ TS 是 `Math.max(1, Math.round((attack_interval * permille) / 1000))`，
+	// 且 `attackInterval` 与 `attackCooldown` **同值**（一个是周期，一个是初始计时）。
+	attackInterval := scaledMs(def.AttackEvery, e.Tuning.EnemyAttackIntervalPermille)
 	en := &Enemy{
 		UID:             uid,
 		DefID:           enemyID,
@@ -144,8 +144,8 @@ func (e *BattleEngine) spawnEnemy(enemyID int, uid int64) {
 		Speed:           def.Speed,
 		Attack:          def.Attack,
 		AttackRange:     def.AttackRange,
-		AttackInterval:  def.AttackEvery,
-		AttackCooldown:  def.AttackEvery,
+		AttackInterval:  attackInterval,
+		AttackCooldown:  attackInterval,
 		AmplifyPermille: 0,
 		SpawnProgress:   0,
 	}
@@ -190,8 +190,11 @@ func (e *BattleEngine) StepEnemyMotion(en *Enemy, frozenAll bool) {
 	// ⚠️ 出场动画期间**直接返回**：既不衰减状态也不移动。
 	//   漏掉这条 return 会让「正在出场」的怪也参与冻结判定，
 	//   而出场进度会随 tick 变化 → 每只怪的冻结起始时刻都不同。
+	//
+	// 进度增量来自 tuning（第 158/159 轮）：DEFAULT = 80‰，
+	// 13 个 tick 达成满出场（FULL/STEP = 12.5 不能整除 —— 见 tuning.ts 铁律）。
 	if en.SpawnProgress < SpawnProgressFull {
-		en.SpawnProgress += SpawnProgressStep
+		en.SpawnProgress += e.Tuning.SpawnProgressStep
 		if en.SpawnProgress > SpawnProgressFull {
 			en.SpawnProgress = SpawnProgressFull
 		}
@@ -228,7 +231,11 @@ func (e *BattleEngine) StepEnemyMotion(en *Enemy, frozenAll bool) {
 	}
 	// ⚠️ 先乘后除，与 `mulDiv` 的语义一致。
 	//   交换顺序会在 slowFactor<1000 时向下取整到 0 —— 减速反而让怪不动。
-	step := mulDiv(en.Speed, slowFactor, 1000) * TickBig / 1000
+	//
+	// 第 158/159 轮：整体推进速度倍率（`tuning.enemySpeedPermille`，缺省 1000）。
+	// 它只作用于位置推进，不参与任何伤害结算 ——
+	// 倍率是「多快走完这段路」，不是「走多少」。
+	step := mulDiv(mulDiv(en.Speed, slowFactor, 1000), e.Tuning.EnemySpeedPermille, 1000) * TickBig / 1000
 	en.X -= step
 }
 

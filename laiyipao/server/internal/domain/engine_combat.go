@@ -222,6 +222,11 @@ func (e *BattleEngine) fire(s *EquippedSkill, target *Enemy) {
 	if speed == 0 {
 		speed = 60000
 	}
+	// 第 158/159 轮：纯飞行表现倍率 —— 不影响任何伤害结算，只压缩
+	// 「出膛到命中」之间那段玩家无法干预的等待。
+	//
+	// ⚠️ 与 TS 相同的顺序：先取缺省 60000，再乘倍率（`(base * permille) / 1000n`）。
+	speed = speed * e.Tuning.ProjectileSpeedPermille / 1000
 	dx := target.X - ToFixed(float64(BaseX))
 	dy := target.Y - ToFixed(float64(BaseY))
 	length := sqrtApprox(dx*dx + dy*dy)
@@ -494,7 +499,9 @@ func (e *BattleEngine) hitEnemy(p *Projectile, en *Enemy, skipRadius bool) bool 
 	en.HP = def.HP
 	en.Shield = def.Shield
 	en.Stacks = def.ElementStacks
-	en.HitFlashMs = 140
+	// 受击闪白时长来自 tuning（第 158/159 轮；缺省 110ms，整改前是 140ms）。
+	// 纯表现字段：不进哈希，但两端同源以免将来被当作时间基准使用。
+	en.HitFlashMs = e.Tuning.HitFlashMs
 
 	// ⚠️ `amplifyPct` 与 `statusDurationMs` 是**两件独立的事**，
 	//
