@@ -166,8 +166,6 @@ cms_assemble_control	PUT	/api/input/prepare/cover	input_prepare_cover	R7
 cms_assemble_control	PUT	/api/input/prepare/create	input_prepare_create	R7
 cms_assemble_control	PUT	/api/output/{appInfoFlag}/select	output_appInfoFlag_select	R7
 cms_assemble_control	PUT	/api/templateform/list/category	templateform_list_category	R7
-cms_core_entity	POST	/api/cms/article/create	article_create	R7
-cms_core_entity	POST	/api/cms/category/create	category_create	R7
 correlation_core_entity	DELETE	/api/correlation/core/entity/delete/{id}	delete_by_id	R7
 correlation_core_entity	POST	/api/correlation/core/entity/create	create	R7
 correlation_service_processing	POST	/api/correlation/service/processing/correlation/readable/type/cms	readable_cms	R7
