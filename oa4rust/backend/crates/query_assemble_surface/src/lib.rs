@@ -806,6 +806,8 @@ pub fn query_assemble_surface_router() -> Router {
 mod tests;
 #[cfg(test)]
 mod tests_generated;
+#[cfg(test)]
+mod security_gate_tests;
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     query_assemble_surface_router().layer(axum::extract::Extension(pool))
@@ -2484,9 +2486,12 @@ pub async fn table_tableFlag_row_id_mockdeletetoget(
 #[allow(non_snake_case)]
 pub async fn table_tableFlag_row_id_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     Path((table_flag, id)): Path<(String, String)>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十九批：动态表行写收 admin 档（与 importmodel_record_delete 同口径）。
+    require_admin_opt(&pool.0, session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let data_str = serde_json::to_string(&body).map_err(|_| AppError::Internal)?;
@@ -2518,9 +2523,12 @@ pub async fn table_tableFlag_row_id_mockputtopost(
 #[allow(non_snake_case)]
 pub async fn table_tableFlag_row_id_part_update(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     Path((table_flag, id)): Path<(String, String)>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十九批：动态表行局部写收 admin 档。
+    require_admin_opt(&pool.0, session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let data_str = serde_json::to_string(&body).map_err(|_| AppError::Internal)?;
@@ -2746,9 +2754,12 @@ pub async fn view_flag_flag_query_queryFlag_bundle(
 #[allow(non_snake_case)]
 pub async fn view_flag_flag_query_queryFlag_bundle_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     Path((flag, query_flag)): Path<(String, String)>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十九批：视图 bundle 写收 admin 档。
+    require_admin_opt(&pool.0, session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let bundle_str = serde_json::to_string(&body).map_err(|_| AppError::Internal)?;
@@ -2819,9 +2830,12 @@ pub async fn view_flag_flag_query_queryFlag_excel(
 #[allow(non_snake_case)]
 pub async fn view_flag_flag_query_queryFlag_excel_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     Path((flag, query_flag)): Path<(String, String)>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十九批：视图 excel 写收 admin 档。
+    require_admin_opt(&pool.0, session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let excel_str = body
@@ -2912,9 +2926,12 @@ pub async fn view_flag_flag_query_queryFlag_execute(
 #[allow(non_snake_case)]
 pub async fn view_flag_flag_query_queryFlag_execute_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     Path((flag, query_flag)): Path<(String, String)>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十九批：视图 execute 写收 admin 档。
+    require_admin_opt(&pool.0, session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let data_str = serde_json::to_string(&body).map_err(|_| AppError::Internal)?;
@@ -3151,9 +3168,12 @@ pub async fn view_id_bundle(
 #[allow(non_snake_case)]
 pub async fn view_id_bundle_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     Path(id): Path<String>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十九批：视图 bundle 写收 admin 档。
+    require_admin_opt(&pool.0, session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let bundle_str = serde_json::to_string(&body).map_err(|_| AppError::Internal)?;
@@ -3262,9 +3282,12 @@ pub async fn view_id_excel(
 #[allow(non_snake_case)]
 pub async fn view_id_excel_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     Path(id): Path<String>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十九批：视图 excel 写收 admin 档。
+    require_admin_opt(&pool.0, session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let excel_str = body
@@ -3366,9 +3389,12 @@ pub async fn view_id_execute(
 #[allow(non_snake_case)]
 pub async fn view_id_execute_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     Path(id): Path<String>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十九批：视图 execute 写收 admin 档。
+    require_admin_opt(&pool.0, session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let data_str = serde_json::to_string(&body).map_err(|_| AppError::Internal)?;
