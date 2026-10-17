@@ -840,6 +840,19 @@ GET 写面队列里 `calendar_assemble_control` 与 `jpush_assemble_control` 各
 
 | 验证（本批代码变更） | — | cms_core_entity `18 passed / 0 failed / 0 ignored`：新增离线臂 `b46_r7_writes_reject_without_session`（15 把薄 handler 逐把点名，dead pool + 无会话全 401）；既有 `test_category_create`/`test_article_create` 仍绿（SeaORM 死档，`Extension<DatabaseConnection>` 未注入 → 提取先 500，handler 体不执行，与加门行为一致）。尺子：**17 把 handler → 27 条 R7 路由出列**（15 把薄 handler 各含 PUT+POST/DELETE+POST 双动词别名，故 17→27），R7 895→**868**、含写 200→175（25 条经 helper 转调的写 SQL 出列；`category_create`/`article_create` 本在「只读挂写方法」误分桶内，收门后一并出列）；cms_core_entity R7 27→**0**（含写清零）；EXIT 0、判据见证缺口 0 |
 
+### 三.47 第四十七批（program_center 写面 4 把收 admin 门，R7 46→42）
+
+| 项 | 位置 | 处置与口径 |
+| --- | --- | --- |
+| 公众号菜单增删 | `lib.rs` `mpweixin_menu_delete_id`（DELETE `/mpweixin/menu/delete/{id}`）/ `mpweixin_menu_update_id`（POST `/mpweixin/menu/update/{id}`） | 公众号菜单是平台级管理资源，DELETE/UPDATE 直接落 `x_program_mpweixin_menu`，按 crate 既有 `require_admin_opt` 收管理员档（无会话 401 / 非 admin 403）。门插在 `pool.get()` 之前，离线即证 401 |
+| 企微 / Welink 拉同步 | `lib.rs` `u3_qiyeweixin_request_pull_sync_post`（POST `/qiyeweixin/request/pull/sync`）/ `u3_welink_request_pull_sync_post`（POST `/welink/request/pull/sync`） | 两把 INSERT `x_program_sync_log` 触发拉同步；同族 sibling `u3_schedule_fire_post` 已按 admin 档收门，对齐收 `require_admin_opt` |
+
+> 注：本批 46 条 R7 里 **40 条为「只读挂写方法」SELECT 体 false-positive**（`appstyle_current_update` / `collect_updateUnit` / `collect_validate_*` / `input_*` / `invoke_token` / `deploy_server_o2` / `command_execute` / `mpweixin_media_add_forever` / `mpweixin_menu_add` / `mpweixin_menu_create_to_weixin` / `schedule_report` / `module_*` / 各 `list/paging` / `designer_search` / `output_list` / `module_output*` 等——POST/PUT/DELETE 动词挂载但语法体仅 SELECT），按口径**不动**。仅上述 4 把 + 下述 2 把外部调用为真写。
+>
+> **待修（本批记账，不收门）**：`u3_invoke_execute` / `u3_invoke_execute_with_token`（`/invoke/{flag}/execute` 及带 token 路径变体）是**外部服务调用**端点，自带 `enable_token` / `enable_anonymous` 域内鉴权模型（token 即鉴权凭据，非用户会话）；其「含写」仅是 `UPDATE x_program_invoke SET last_start_time/last_end_time` 的执行时间戳。按用户会话门禁（admin）拦截会破坏外部调用流程，故不作为用户会话门禁目标，改记 §五 待修——与「第三方回调 / 外部调用零验签」族同源，需按调用鉴权模型单独决策。
+
+| 验证（本批代码变更） | — | program_center `263 passed / 0 failed / 0 ignored`：新增离线臂 `b47_r7_writes_reject_without_session`（4 把逐把点名，mock pool + 无会话全 401）；既有路由断言翻 401：`tests_u3.rs` `u3_market_module_family_reachable` 的 `DELETE /mpweixin/menu/delete/{id}`、`u3_logs_misc_reachable` 的 `POST /qiyeweixin/request/pull/sync` 与 `POST /welink/request/pull/sync`（原期望 500，加门后无会话在 DB 前 401）。尺子：**4 把 handler → 4 条 R7 路由出列**（4 把均单路由无别名），R7 868→**864**、含写 175→171、R6 119 不动、ungated −4；program_center 余 42 条 R7 = 40 条「只读挂写方法」false-positive + 2 条外部调用待修（`u3_invoke_execute`/`_with_token`）；EXIT 0、判据见证缺口 0 |
+
 ## 四、验证
 
 
