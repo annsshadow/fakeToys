@@ -290,6 +290,12 @@ type BattleConfig struct {
 	//
 	// 未定义时写 `|X0` 而不是省略整段，见 `ReplayHash` 的注释。
 	ExtraBaseHp int64
+	// Tuning 是战斗节奏参数（第 158 轮 TS 引入，第 159 轮 Go 同步）。
+	//
+	// ⚠️ 缺省（nil）= `DefaultTuning`，与 TS `cfg.tuning ?? DEFAULT_TUNING`
+	// 同义。服务的重算路径**从不显式传值** —— 它必须与客户端同口径。
+	// 显式传值只用于测试（比如复刻「整改前」行为）。
+	Tuning *GameTuning
 }
 
 // BattleEngine 是战斗引擎。
@@ -300,6 +306,11 @@ type BattleConfig struct {
 // 而结构体一改形状，A 阶段验过的排序不变量就要重跑。
 type BattleEngine struct {
 	Cfg BattleConfig
+	// Tuning 是已解析的战斗节奏参数（nil 缺省在上层解析成 DefaultTuning）。
+	//
+	// 放在构造产物上而不是每次读 `Cfg.Tuning`（可能为 nil）：
+	// 读取点散布在波次/移动/开火/受击，每处都判 nil 迟早漏一处。
+	Tuning GameTuning
 	// Rng 是战斗 RNG。⚠️ **必须在构造时由 cfg.Seed 一次性定下** ——
 	//
 	//	它的状态决定刷怪洗牌、敌人 y 坐标、卡牌抽取……
@@ -358,10 +369,13 @@ type BattleEngine struct {
 	// ReplayScript 是外部注入的选牌序列；nil = 交互模式。
 	ReplayScript    []int
 	ReplayScriptPos int
-	cardSelectDone  bool
-	// discardedThisWave 标记「本波弃过牌」——
-	// 编码只对**当前波**的 card_picks 项有意义。
-	discardedThisWave bool
+
+	// discardedMask 是本波弃牌的手牌位掩码
+	// （bit i = 原手牌第 i 张被弃；第 159 轮）。
+	discardedMask int
+	// handSnapshot 是本波发牌时的原手牌 id 快照
+	//（把「弃了哪张」映射回原下标；第 159 轮）。
+	handSnapshot []string
 
 	// TotalEnemies 是本关总怪数（结算上限校验用）。
 	TotalEnemies int
@@ -385,11 +399,18 @@ func NewBattleEngine(cfg BattleConfig) *BattleEngine {
 	//	而「我用的是同一个配置」恰好是所有人都会做的假设。
 	skills := make([]EquippedSkill, len(cfg.Equipped))
 	copy(skills, cfg.Equipped)
+	tuning := resolveTuning(cfg.Tuning)
 	for i := range skills {
 		// 运行时副本的冷却必须归零：
 		// 配置里的 cooldownRemaining 恒为 0，但复制过来后必须显式写 0 ——
 		// 否则将来有人往配置里塞了个值，它就会静默生效。
 		skills[i].CooldownRemaining = 0
+		// 技能冷却在这里**一次性**换算（而不是每次重置冷却时再乘）：
+		// 既让每 tick 的冷却扣减保持纯减法，也让 S 段与实际使用的值同源。
+		//
+		// ⚠️ `CooldownMs` 不进 `ReplaySkillsSegment`（那里只用
+		// slot/skillId/baseDamage/applyStacks/heatCost），这步不影响哈希。
+		skills[i].CooldownMs = scaledMs(skills[i].CooldownMs, tuning.SkillCooldownPermille)
 	}
 	// ⚠️ 复活币加在**当前**血量上，`BaseHPMax` 保持关卡原值。
 	//
@@ -429,6 +450,10 @@ func NewBattleEngine(cfg BattleConfig) *BattleEngine {
 	}
 
 	heat := NewHeatSystem()
+	// 过热时长一次性落到 HeatSystem（与 TS 构造器同语义）。
+	// heat.go 的 `OverheatDurationMs` 常量是「整改前」缺省值 2000，
+	// 而 DEFAULT_TUNING 是 1600 —— 引擎构造必须覆盖它。
+	heat.OverheatDurationMs = tuning.OverheatDurationMs
 	// 热量上限加成（专精 heat_cap + 宝石 gem_heat）。
 	//
 	// ⚠️ 放在构造时注入一次而不是每次读 cap 时加：
@@ -436,12 +461,13 @@ func NewBattleEngine(cfg BattleConfig) *BattleEngine {
 	heat.CapBonus = cfg.Attacker.HeatCapPermille
 
 	return &BattleEngine{
-		Cfg:   cfg,
-		Rng:   newLCG(cfg.Seed),
-		Heat:  heat,
-		Deck:  NewCardDeck(),
-		Buffs: NewBuffs(),
-		Phase: PhasePrepare,
+		Cfg:    cfg,
+		Tuning: tuning,
+		Rng:    newLCG(cfg.Seed),
+		Heat:   heat,
+		Deck:   NewCardDeck(),
+		Buffs:  NewBuffs(),
+		Phase:  PhasePrepare,
 		// ⚠️ `ElementsUsed` / `ReactionsUsed` 必须是**新 map**：
 		// 直接复用 Cfg 里的（若将来加了）会导致两次运行共享统计。
 		ElementsUsed:  map[string]int64{},
@@ -510,14 +536,24 @@ func (e *BattleEngine) record(t int64, typ string, a, b, c int64) {
 //
 // 三条硬约束（TS 注释已点明，此处逐条对齐）：
 //
-//  1. `cardSelectDone` 收尾必须在 `applyReplayDecision` **之前**。
-//     否则同一 tick 内 `applyReplayDecision` 会被再调一次，
-//     消费 script 的下一项，把下一波的决策当成本波的第二张牌
-//     （实测 picks 记成 [-3,-3,-1,-1]，事件流多一条原局没有的记录）。
-//
-//  2. `applyReplayDecision` 必须在 `tick++` **之前**。
+//  1. `applyReplayDecision` 必须在 `tick++` **之前**。
 //     tick 会写进每条 replay 事件，多一格会让后续所有时间戳整体偏移
 //     → 哈希必然不同。原局里玩家点牌同样不推进 tick，两者必须严格一致。
+//
+//  2. **选牌阶段冻结战斗时钟**（第 159 轮）：`Phase == PhaseCardSelect`
+//     时不得 `tick++ / elapsedMs += TickMs`，也不跑任何战斗逻辑。
+//
+//     原实现无条件推进，于是玩家盯着三选一界面思考的每一格都会让
+//     「真人时间线」与「零等待重放的时间线」错开 —— tick 是
+//     replayHash 的输入，线上真实结算因此 100% 被拒
+//     （10-16 enforce 起，台账 mismatched=2/rejected=2，verified=0）。
+//
+//     冻结后决策在战斗时间里**不耗时**：
+//     - 交互模式：玩家点击发生在两次 Step 之间，此时 Tick 恒为 T，
+//     take/skip 立刻完成本波（BeginWave 也落在 T）；
+//     - 重放模式：applyReplayDecision 在本函数内、tick++ 之前执行，
+//     决策事件同样全部落在 T。
+//     两条路径的事件序列与 tick 严格一致，与玩家思考多久无关。
 //
 //  3. `checkStalemate` 必须在 `tick++` **之后**、任何战斗逻辑**之前**。
 //     这样「到上限」这件事本身是这次 tick 的第一个事实。
@@ -526,17 +562,16 @@ func (e *BattleEngine) Step() []BattleEvent {
 		return e.DrainEvents()
 	}
 
-	// (1) 待结束的本波在这里收尾。
-	if e.cardSelectDone {
-		e.cardSelectDone = false
-		e.BeginWave(e.WaveIndex + 1)
-	}
-
-	// (2) 重放决策必须在 tick++ 之前。
-	if e.Phase == PhaseCardSelect && e.ReplayScript != nil {
-		e.applyReplayDecision()
-		// 决策可能已推进到下一波（deck 空时 takeCard 会调 BeginWave），
-		// 也可能仍是 card_select（脚本要求再选一张）。两种情况都继续本 tick。
+	// (1) 选牌阶段：重放决策在 tick++ 之前执行。
+	if e.Phase == PhaseCardSelect {
+		if e.ReplayScript != nil {
+			e.applyReplayDecision()
+			// 决策把本波推进到下一波了则继续（tick++ 后立即开始战斗）；
+			// 仍是 card_select（交互模式等待玩家点击）则本 step 到此为止。
+		}
+		if e.Phase == PhaseCardSelect {
+			return e.DrainEvents()
+		}
 	}
 
 	e.Tick++
