@@ -220,8 +220,18 @@ describe('弃牌可被重放复现（第 66 轮）', () => {
     while (i.phase !== 'card_select' && guard++ < 4000) i.step()
     expect(i.phase).toBe('card_select')
 
+    // ⚠️ 前提固化（第 158 轮）：这条用例的可观测量是「热量发生了变化」。
+    // 而 `refundHeat` 内部有下限夹取（`heat - n < 0 ? 0 : ...`）——
+    // 若此刻热量恰为 **0**，回充被夹住，热量不变，
+    // 于是断言红，而红的原因与被测行为（discard 有没有执行）**无关**。
+    //
+    // 改前它依赖「跑到第一波 card_select 时热量恰好 > 0」这一偶然状态，
+    // 节奏参数一变就失效。这里显式给一个基准值，
+    // 让「热量有没有被扣」成为本用例的唯一变量。
+    i.heat.heat = 5n
     const before = i.heat.heat
     i.step() // applyReplayDecision 在 step 开头跑
+    expect(before).toBeGreaterThan(0n)
     expect(
       i.heat.heat,
       `重放「弃+跳」没有回充热量（before=${before}）—— ` +
