@@ -33,6 +33,8 @@ mod tests;
 mod tests_generated;
 #[cfg(test)]
 mod tests_u2;
+#[cfg(test)]
+mod security_gate_tests;
 
 thread_local! {
     static TOKEN_STORE: Mutex<HashMap<String, String>> = Mutex::new(HashMap::new());
@@ -337,8 +339,17 @@ pub async fn section_delete(
 #[allow(non_snake_case)]
 pub async fn update_control_config(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // R7 收口（第五十一批）：BBS 控制配置为无归属系统数据，写入收管理员档
+    //（无会话 401 / 非管理员 403，查管理员角色对不可用库 fail-closed）。门在取连接之前，离线即证。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    if !is_admin(&pool, &sess.person_unique).await {
+        return Err(AppError::Forbidden);
+    }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let enabled = body
