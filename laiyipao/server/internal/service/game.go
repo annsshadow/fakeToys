@@ -462,7 +462,7 @@ func (s *Service) SettleBattle(ctx context.Context, userID, tokenID int64, in do
 			"clears":    int64(boolToInt(res.Win)),
 			"reactions": int64(in.Reactions),
 			"max_stage": int64(gl.ID),
-		}, time.Now()); err != nil {
+		}, nowFunc()); err != nil {
 			return err
 		}
 
@@ -791,7 +791,7 @@ type TaskView struct {
 
 // LoadTasks 返回指定周期的任务列表。
 func (s *Service) LoadTasks(ctx context.Context, userID int64, scope string) ([]TaskView, error) {
-	day := periodStart(time.Now(), scope)
+	day := periodStart(nowFunc(), scope)
 	rows, err := s.pool.Query(ctx, `
 		SELECT t.id, t.code, t.name, t.scope, t.target, t.metric, t.reward,
 		       COALESCE(ut.progress, 0), ut.claimed_at IS NOT NULL
@@ -951,7 +951,7 @@ func (s *Service) ClaimTask(ctx context.Context, userID int64, taskID int) (map[
 		if err != nil {
 			return err
 		}
-		day := periodStart(time.Now(), scope)
+		day := periodStart(nowFunc(), scope)
 
 		// 第二步：玩家在本周期的进度。
 		// 没有行 = 还没开始做（progress 0，未领取）——
@@ -1069,6 +1069,16 @@ func ValidTaskScope(scope string) bool {
 	}
 	return false
 }
+
+// nowFunc 是服务端「当前时间」的唯一来源。
+//
+// 默认是 time.Now，生产行为与此前完全一致。
+// 测试可以通过覆盖它来固定时钟（例如把周一的边界条件变成可重复的场景），
+// 而不必改任何业务函数的签名 —— 这是「可测性」的最小侵入点。
+//
+// ⚠️ 只有任务周期相关的路径使用它（LoadTasks / ClaimTask / bumpTasks / SettleBattle），
+// 其余路径继续直接 time.Now()，避免把时钟依赖扩散到整个包。
+var nowFunc = time.Now
 
 func periodStart(t time.Time, scope string) time.Time {
 	// ⚠️ 这里的 case 必须覆盖 `TaskScopes` 的每一项。
