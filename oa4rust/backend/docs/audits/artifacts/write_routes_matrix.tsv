@@ -616,11 +616,11 @@ express	POST	/api/express/person/with/unit	express_person_with_unit	R7-已认证
 express	POST	/api/express/role/list	express_role_list	R7-已认证+体内无会话无门禁
 express	POST	/api/express/subscribe	subscribe_express	R7-已认证+体内无会话无门禁
 express	POST	/api/express/unit/list	express_unit_list	R7-已认证+体内无会话无门禁
-file	POST	/api/file/folder/create	folder_create	R7-已认证+体内无会话无门禁
-file	POST	/api/file/folder/remove	folder_remove	R7-已认证+体内无会话无门禁
-file	POST	/api/file/folder/update	folder_update	R7-已认证+体内无会话无门禁
-file	POST	/api/file/permission/set	permission_set	R7-已认证+体内无会话无门禁
-file	POST	/api/file/upload	file_upload	R7-已认证+体内无会话无门禁
+file	POST	/api/file/folder/create	folder_create	R5-已认证+体内门禁
+file	POST	/api/file/folder/remove	folder_remove	R5-已认证+体内门禁
+file	POST	/api/file/folder/update	folder_update	R5-已认证+体内门禁
+file	POST	/api/file/permission/set	permission_set	R5-已认证+体内门禁
+file	POST	/api/file/upload	file_upload	R5-已认证+体内门禁
 file_assemble_control	DELETE	/api/attachment/{id}	u2_attachment_delete	R5-已认证+体内门禁
 file_assemble_control	DELETE	/api/attachment2/{id}	u2_attachment2_delete	R5-已认证+体内门禁
 file_assemble_control	DELETE	/api/file/assemble/control/file/clean/unused/referencetype/cmsdocument/manage	file_clean_unused_referencetype_cmsdocument_manage	R5-已认证+体内门禁
