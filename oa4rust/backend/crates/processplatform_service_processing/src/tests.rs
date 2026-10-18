@@ -949,6 +949,9 @@ mod u2_contract {
         }
         let pool = test_pool();
         ensure_schema(&pool).await;
+        // 第十二批起 record create 收「会话 + work 发起人」双门（`u4_require_work_owner`）：
+        // 必须先有这份 work 与它的发起人，再以发起人身份发请求（原用例裸调 send，收 401）。
+        const REC_OWNER: &str = "u2-rec-job-owner";
         {
             let c = pool.get().await.unwrap();
             c.execute(
@@ -957,12 +960,23 @@ mod u2_contract {
             )
             .await
             .unwrap();
+            c.execute("DELETE FROM x_work WHERE id='rec-job'", &[])
+                .await
+                .unwrap();
+            c.execute(
+                "INSERT INTO x_work (id, title, process, creator) VALUES ('rec-job', 't', 'p', $1)",
+                &[&REC_OWNER.to_string()],
+            )
+            .await
+            .unwrap();
         }
         let url = "/api/processplatform/service/processing/record/job/rec-job";
         let body = json!({"recordType": "Info", "content": 424242});
-        let (_, v1) = send(Method::POST, url, Some(body.clone())).await;
+        let (st1, v1) = send_raw_as(Method::POST, url, Some(body.clone()), REC_OWNER).await;
+        assert_eq!(st1, StatusCode::OK, "发起人提交记录必须 200: {v1}");
         assert_ne!(v1["data"]["duplicated"], true);
-        let (_, v2) = send(Method::POST, url, Some(body)).await;
+        let (st2, v2) = send_raw_as(Method::POST, url, Some(body), REC_OWNER).await;
+        assert_eq!(st2, StatusCode::OK, "发起人重复提交仍是 200 信封: {v2}");
         assert_eq!(v2["data"]["duplicated"], true, "同内容重复提交必须去重");
         let n = count(&pool, "SELECT COUNT(*) AS c FROM x_record WHERE work_id='rec-job' AND record_type='info' AND content = '424242'").await;
         assert_eq!(n, 1);
@@ -973,6 +987,9 @@ mod u2_contract {
         )
         .await
         .unwrap();
+        c.execute("DELETE FROM x_work WHERE id='rec-job'", &[])
+            .await
+            .unwrap();
     }
 
     #[tokio::test]
@@ -1534,12 +1551,16 @@ mod u2_contract {
             c.execute("INSERT INTO x_task (id,title,work,person,task_status) VALUES ('nti-t','t','nti-w','p@P','active')", &[]).await.unwrap();
         }
         let url = "/api/processplatform/service/processing/taskcompleted/next/task/identity";
-        let (_, v) = send(
+        // 第十二批起该面收「会话 + task 参与者（task.person / work.creator）」双门：
+        // 上面 seed 的任务 person 是 `p@P`，故以 `p@P` 注入会话（原用例裸调 send，收 401）。
+        let (st, v) = send_raw_as(
             Method::PUT,
             url,
             Some(json!({"id": "nti-t", "nextTaskIdentity": "manager@I"})),
+            "p@P",
         )
         .await;
+        assert_eq!(st, StatusCode::OK, "任务参与者改 next 身份必须 200: {v}");
         assert_eq!(v["type"], "success");
         let ident: Option<String> = {
             let c = pool.get().await.unwrap();

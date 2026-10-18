@@ -712,6 +712,14 @@ mod u3_tests {
             return;
         }
         let pool = test_pool();
+        // correlation upsert 自 2026-10 安全审计起收「会话 + admin」双门（`u2_require_admin`）。
+        // 测试库的初始化管理员来自迁移种子（002/007：person-admin / role-admin），doc 的
+        // `u3_batch_delete_requires_admin` 那两支是「无管理员就跳过」，这里同一口径：
+        // 没有种子就跑不到门后的真库往返，报明原因后跳过（不是把判据放松）。
+        if !shared::middleware::is_admin(&pool, "person-admin").await {
+            eprintln!("skipping u3_correlation_update_upsert_real_db: 测试库无 admin 种子");
+            return;
+        }
         let client = pool.get().await.unwrap();
         let _ = client
             .execute(
@@ -719,12 +727,17 @@ mod u3_tests {
                 &[],
             )
             .await;
+        let admin = Session {
+            token: "u3-correlation-admin".to_string(),
+            person_unique: "person-admin".to_string(),
+            ..session(STRANGER)
+        };
 
         let (status, body) = call(
             "POST",
             "/api/correlation/update/doc/u3-cor-doc",
             Some(json!({"relatedDocId": "u3-cor-target", "correlationType": "reference"})),
-            None,
+            Some(admin),
         )
         .await;
         assert_eq!(status, StatusCode::OK, "{body}");
