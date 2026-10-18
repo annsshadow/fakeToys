@@ -143,10 +143,10 @@ attendance_assemble_control	PUT	/api/attendance/assemble/control/statisticshow/f
 attendance_assemble_control	PUT	/api/attendance/assemble/control/statisticshow/filter/unitDay/list/{id}/prev/{count}	statisticshow_filter_unitDay_list_id_prev_count	R7-已认证+体内无会话无门禁
 attendance_assemble_control	PUT	/api/attendance/assemble/control/statisticshow/filter/unitMonth/list/{id}/next/{count}	statisticshow_filter_unitMonth_list_id_next_count	R7-已认证+体内无会话无门禁
 attendance_assemble_control	PUT	/api/attendance/assemble/control/statisticshow/filter/unitMonth/list/{id}/prev/{count}	statisticshow_filter_unitMonth_list_id_prev_count	R7-已认证+体内无会话无门禁
-attendance_core_entity	POST	/api/attendance/core/entity/record/create	record_create	R7-已认证+体内无会话无门禁
-attendance_core_entity	POST	/api/attendance/core/entity/record/{id}/update	record_update	R7-已认证+体内无会话无门禁
-attendance_core_entity	POST	/api/attendance/core/entity/rule/create	rule_create	R7-已认证+体内无会话无门禁
-attendance_core_entity	POST	/api/attendance/core/entity/rule/{id}/update	rule_update	R7-已认证+体内无会话无门禁
+attendance_core_entity	POST	/api/attendance/core/entity/record/create	record_create	R5-已认证+体内门禁
+attendance_core_entity	POST	/api/attendance/core/entity/record/{id}/update	record_update	R5-已认证+体内门禁
+attendance_core_entity	POST	/api/attendance/core/entity/rule/create	rule_create	R5-已认证+体内门禁
+attendance_core_entity	POST	/api/attendance/core/entity/rule/{id}/update	rule_update	R5-已认证+体内门禁
 auth	DELETE	/api/authentication	logout	R4-匿名可达+体内无门禁
 auth	POST	/api/authentication	login	R4-匿名可达+体内无门禁
 auth	POST	/api/authentication/bind/meta/{meta}	bind_confirm	R2-匿名可达+体内门禁
