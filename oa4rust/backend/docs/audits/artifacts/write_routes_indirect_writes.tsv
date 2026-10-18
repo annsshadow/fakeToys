@@ -78,7 +78,6 @@ file_assemble_control	PUT	/api/file/assemble/control/file/upload/referencetype/{
 meeting_assemble_control	POST	/api/meeting/assemble/control/attachment/meeting/{meetingId}/upload/{summary}	u2_attachment_upload	R6	u2_attachment_store_new
 meeting_assemble_control	POST	/api/meeting/assemble/control/attachment/meeting/{meetingId}/upload/{summary}/callback/{callback}	u2_attachment_upload_callback	R6	u2_attachment_store_new
 organization_assemble_authentication	GET	/api/organization/assemble/authentication/oauth/auth	oauth_auth	K	oauth_code_store
-organization_assemble_authentication	POST	/api/organization/assemble/authentication/oauth/generate/code	oauth_generate_code	R7	oauth_code_store
 organization_assemble_control	GET	/api/organization/assemble/control/person/{flag}/mockdeletetoget	person_mock_delete_to_get	K	person_delete
 organization_assemble_control	GET	/api/organization/assemble/control/person/{flag}/reserve/mockdeletetoget	person_reserve_mock_delete_to_get	K	person_reserve_delete
 organization_assemble_control	GET	/api/organization/assemble/control/unit/{flag}/mockdeletetoget	unit_mock_delete_to_get	K	unit_delete
@@ -86,7 +85,6 @@ organization_assemble_express	POST	/api/personattribute/append/person/name	perso
 organization_assemble_express	POST	/api/personattribute/set/person/name	personattr_set_person_name	R6	attr_write_values
 organization_assemble_express	POST	/api/unitattribute/append/unit/name	unitattr_append_unit_name	R6	attr_write_values
 organization_assemble_express	POST	/api/unitattribute/set/unit/name	unitattr_set_unit_name	R6	attr_write_values
-personal	POST	/api/reset/mockputtopost	reset_password	R7	apply_reset
 personal	POST	/api/reset/password/anonymous	reset_password_anonymous	R4	apply_reset
 personal	PUT	/api/reset	reset_password	R4	apply_reset
 processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/attachment/{id}/preview/image/page/{page}	attachment_u2b_preview_image_page	K	general_file_store
@@ -138,8 +136,6 @@ program_center	GET	/api/program_center/appstyle/image/menu/logo/focus/erase	u3_a
 program_center	GET	/api/program_center/appstyle/image/process/default/erase	u3_appstyle_process_default_erase_get	K	u2_appstyle_erase_current
 program_center	GET	/api/program_center/appstyle/image/setup/about/logo/erase	u3_appstyle_setup_about_logo_erase_get	K	u2_appstyle_erase_current
 program_center	POST	/api/program_center/collect/create	collect_create	R6	crud_create
-program_center	POST	/api/program_center/invoke/{flag}/client/{client}/token/{token}/execute	u3_invoke_execute_with_token	R7	u3_invoke_execute_inner
-program_center	POST	/api/program_center/invoke/{flag}/execute	u3_invoke_execute	R7	u3_invoke_execute_inner
 program_center	PUT	/api/program_center/module/compare/upload	u3_module_compare_upload_put	R6	u3_module_sync_action
 program_center	PUT	/api/program_center/module/list	u3_module_list_put	R6	u3_module_sync_action
 program_center	PUT	/api/program_center/module/output	u3_module_output_put	R6	u3_module_sync_action

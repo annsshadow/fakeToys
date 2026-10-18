@@ -584,8 +584,8 @@ control	PUT	/api/group/{flag}	update	R1-中间件 admin
 control	PUT	/api/person/{flag}	update	R1-中间件 admin
 control	PUT	/api/role/{flag}	update	R1-中间件 admin
 control	PUT	/api/unit/{flag}	update	R1-中间件 admin
-correlation_core_entity	DELETE	/api/correlation/core/entity/delete/{id}	delete_by_id	R7-已认证+体内无会话无门禁
-correlation_core_entity	POST	/api/correlation/core/entity/create	create	R7-已认证+体内无会话无门禁
+correlation_core_entity	DELETE	/api/correlation/core/entity/delete/{id}	delete_by_id	R5-已认证+体内门禁
+correlation_core_entity	POST	/api/correlation/core/entity/create	create	R5-已认证+体内门禁
 correlation_service_processing	POST	/api/correlation/service/processing/correlation/delete/type/cms/document/{document}	delete_cms	R5-已认证+体内门禁
 correlation_service_processing	POST	/api/correlation/service/processing/correlation/delete/type/processplatform/job/{job}	delete_pp	R5-已认证+体内门禁
 correlation_service_processing	POST	/api/correlation/service/processing/correlation/readable/type/cms	readable_cms	R7-已认证+体内无会话无门禁
@@ -764,8 +764,8 @@ jpush_assemble_control	POST	/api/jpush_assemble_control/device/admin/unbind/all/
 jpush_assemble_control	POST	/api/jpush_assemble_control/device/bind	device_bind	R6-已认证+读会话无门禁
 jpush_assemble_control	POST	/api/jpush_assemble_control/message/send	message_send	R5-已认证+体内门禁
 jpush_assemble_control	POST	/api/jpush_assemble_control/message/test/send	message_test_send	R7-已认证+体内无会话无门禁
-jpush_core_entity	DELETE	/api/jpush/core/entity/device/{id}	device_delete	R7-已认证+体内无会话无门禁
-jpush_core_entity	POST	/api/jpush/core/entity/device/create	device_create	R7-已认证+体内无会话无门禁
+jpush_core_entity	DELETE	/api/jpush/core/entity/device/{id}	device_delete	R5-已认证+体内门禁
+jpush_core_entity	POST	/api/jpush/core/entity/device/create	device_create	R5-已认证+体内门禁
 mcp_server	POST	/mcp	mcp_http_handler	R7-已认证+体内无会话无门禁
 meeting	POST	/api/meeting/create	create_meeting	R5-已认证+体内门禁
 meeting	POST	/api/meeting/{meetingId}/participant/add	add_participant	R5-已认证+体内门禁
