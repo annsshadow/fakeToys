@@ -1155,6 +1155,18 @@ GET 写面队列里 `calendar_assemble_control` 与 `jpush_assemble_control` 各
 
 | 验证（本批代码变更） | — | 两 crate 整 lib 全绿：calendar_assemble_control `37 passed / 0 failed / 0 ignored`（新 `security_gate_tests_b70` 三臂：`b70_writes_reject_without_session` 死池+None→401、`b70_writes_accept_valid_session_past_gate` 有效会话+死池→Internal、`b70_require_session_gate_logic` 纯单元）；calendar_core_entity `8 passed / 0 failed / 0 ignored`（新 `security_gate_tests_b70` 三臂：`b70_writes_reject_without_session` 6 把真库连接+None→全 `Err(AppError::Unauthorized)`、`b70_update_remove_pass_gate_reach_db_without_write` 有效会话+不存在 id→`Err(AppError::NotFound)` 证过门触库且不落写、`b70_require_session_gate_logic` 纯单元）。尺子：**R7 685→678（−7）**、含写 8→**7**（−1，ORM-blindness 第二例证）、只读挂写桶 677→671（−6）；复跑 3 次稳定；EXIT 0 |
 
+### 三.71 — express 1 把订阅真写收会话门（R7 678→677，含写 7→6）
+- **批次目标**：收 express 唯一真写 R7：`subscribe_express`（POST `/api/express/subscribe`，`INSERT INTO x_express_subscribe (xid, "xtrackingNumber", xcompany, xcallback)`）。
+- **收口档**：session 档（新增 crate 内 `require_session`，无会话 401，门置于 `pool.get()` 之前）。
+- **§五 关联（非新增，重申）**：`x_express_subscribe` 无属主列，订阅记录不带身份（`xid` 为随机 uuid）——本批只抹匿名写面；订阅归属（按会话 person 落列或加 person 列）属归属族遗留，与 file/ai/calendar 同族合并处理。
+- **顺带净化（测试侧）**：加门后 `tests_generated::test_subscribe_express`（原用真池 POST 空体）由"真库 INSERT 一条空串脏行"变为 401 不到库——该预存测试对开发库的写污染被门禁顺带消除。
+
+| 门档 | 处理函数 | 路由 / 真写动作 | 加门说明 |
+| --- | --- | --- | --- |
+| 会话档（新增 require_session） | `subscribe_express` | POST `/api/express/subscribe`，INSERT x_express_subscribe | crate 内新增 `require_session`：无会话 401，门置于 `pool.get()` 之前 |
+
+| 验证（本批代码变更） | — | express 整 lib `24 passed / 0 failed / 0 ignored`：新增 `security_gate_tests_b71` 三臂——`b71_writes_reject_without_session`（dead pool + `None` 会话 → `Err(AppError::Unauthorized)`，门在 DB 访问前）+ `b71_writes_accept_valid_session_past_gate`（有效会话 + dead pool → `Err(AppError::Internal)`，证门在库前）+ `b71_require_session_gate_logic`（纯单元）。顺带修预存 `tests::test_subscribe_express`（原断言语落死池 → 500）：给其 router 注一层 `Extension(test_session)` 保留语义。尺子：**R7 678→677（−1）**、含写 7→**6**（−1，印证死池字面量写）；复跑 3 次稳定；EXIT 0 |
+
 ## 四、验证
 
 
