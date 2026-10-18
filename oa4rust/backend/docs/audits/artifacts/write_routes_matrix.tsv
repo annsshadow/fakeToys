@@ -2214,7 +2214,7 @@ query_assemble_surface	PUT	/api/queryview/view/flag/{flag}/query/{queryFlag}/exe
 query_assemble_surface	PUT	/api/queryview/view/{id}/bundle	view_id_bundle_put	R5-已认证+体内门禁
 query_assemble_surface	PUT	/api/queryview/view/{id}/excel	view_id_excel_put	R5-已认证+体内门禁
 query_assemble_surface	PUT	/api/queryview/view/{id}/execute	view_id_execute_put	R5-已认证+体内门禁
-query_core_entity	POST	/api/query/view/create	view_create	R7-已认证+体内无会话无门禁
+query_core_entity	POST	/api/query/view/create	view_create	R5-已认证+体内门禁
 query_core_express	POST	/api/query/core/express/cache/{queryId}	cache_query_result	R5-已认证+体内门禁
 query_core_express	POST	/api/query/core/express/execute	execute_query	R5-已认证+体内门禁
 query_express	POST	/api/query/create	create_query	R7-已认证+体内无会话无门禁
