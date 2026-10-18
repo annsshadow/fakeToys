@@ -411,7 +411,7 @@ func isWordByte(b byte) bool {
 // classifySQL 回答两个问题：
 //
 //	这是不是一张「按用户分区」的表？
-//	如果���，它有没有带归属过滤？
+//	如果是，它有没有带归属过滤？
 //
 // 拆出来是为了能**直接单测它** —— 见
 // `TestOwnershipClassifierRejectsKnownShapes`。扫描器整体是非盲的，

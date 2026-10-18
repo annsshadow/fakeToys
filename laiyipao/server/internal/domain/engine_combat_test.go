@@ -122,7 +122,7 @@ func TestCurrentAttackerPassesThroughNonDamageFields(t *testing.T) {
 // ⚠️ `element_cap` 的取值口径是 `lv.element_cap ? lv : base`，
 //
 //	而 0 在这里表示「关卡没给」而不是「上限为 0」。
-//	写�� `lv.element_cap || base.elementCap` 在 JS 里等价，
+//	写成 `lv.element_cap || base.elementCap` 在 JS 里等价，
 //	但在 Go 里 `||` 不是运算符 —— 移植时最容易写成
 //	「无条件用 lv.ElementCap」，那样关卡缺这个字段时上限变成 0，
 //	于是**任何元素都叠不上层**，反应层整体静默失效。

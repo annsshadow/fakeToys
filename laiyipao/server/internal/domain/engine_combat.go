@@ -552,7 +552,7 @@ func (e *BattleEngine) hitEnemy(p *Projectile, en *Enemy, skipRadius bool) bool 
 	//
 	// 口径（与 `reaction_specs.json` 服务端 canonical 逐行一致）：
 	//   - 伤害 = reactionDamage >> 2（定点，25%）
-	//   - 源体不���（自身已结算）
+	//   - 源体不计（自身已结算）
 	//   - 半径 = 反应表 AoeRadius（像素，×1000 转定点）
 	//   - 邻居伤害走 resolveHit 复用护甲/护盾/抗性，但**不再触发反应**
 	//     —— 否则 steam_burst 会在溅射目标上**再次**爆开，形成指数级连锁。

@@ -245,7 +245,7 @@ var reactionSpecs = map[ReactionKey]ReactionSpec{
 // 用**函数变量**而不是直接改 `reactionSpecs`：
 // 后者会让 `/config` 下发一个不存在的反应给所有客户端，
 // 也让 `reaction_specs.json` 的双向契约测试失败 ——
-// ��是把「数据表」与「代码」的责任边界糊掉。
+// 那是把「数据表」与「代码」的责任边界糊掉。
 //
 // ⚠️ 它是包级变量，**只在测试期间替换**，用完必须还原。
 var reactionSpecLookup = LookupReactionSpec

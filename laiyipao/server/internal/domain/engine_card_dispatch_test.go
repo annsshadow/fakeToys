@@ -74,7 +74,7 @@ func TestRolledSkillCardsCarryTheSkillIDFlag(t *testing.T) {
 //	只用「效果变了」当判据，是因为那才是玩家能观察到的东西。
 func TestApplyCardDispatchesOnRolledCards(t *testing.T) {
 	// 属性卡：抽到哪一张不确定（池子 6 张），所以断言「**任一**属性加成被加上」
-	// 而���是「attack 一定被加」—— 写死具体那张卡等于把守卫绑在一次抽牌结果上
+	// 而不是「attack 一定被加」—— 写死具体那张卡等于把守卫绑在一次抽牌结果上
 	e := newCardProbeEngine(t, 1, 2, 3)
 	enterCardSelect(t, e)
 	for _, c := range e.Deck.Hand {

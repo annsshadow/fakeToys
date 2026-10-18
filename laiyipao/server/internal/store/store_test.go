@@ -55,7 +55,7 @@ const scratchPrefix = "laiyipao_store_test_"
 // TestMain 跑测试前清掉本包前缀下的残留库。
 //
 // 没有它，孤儿库会**累积**：单次跑测留下的孤儿让下一次跑测开始失败，
-// 于是「跑得越多越红」。docs/audits/coverage-2026-09-28.md §6 记过这件事
+// 于是「跑得越多越红」。docs/laiyipao/audits/coverage-2026-09-28.md §6 记过这件事
 // （曾残留 1049 个），但当时只做了一次性清理，没留下机制，必然复发。
 func TestMain(m *testing.M) {
 	if n, err := scratchdb.SweepPrefix(scratchPrefix); err != nil {

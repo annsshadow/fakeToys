@@ -97,7 +97,7 @@ type BuildSnapshotAttacker struct {
 //	而存档里记的是 `0:1:100:1:20` ——
 //	症状是**所有老战报都无法重放**，报错却是 `ErrReplaySkillsMismatch`（422）。
 type BuildSnapshot struct {
-	// Skills 是**按 id 字符串**索引的 map，序���不定。
+	// Skills 是**按 id 字符串**索引的 map，顺序不定。
 	//
 	// ⚠️ 所以 `EquippedFromSnapshot` 必须显式排序 ——
 	// `sort.Strings` 对数字字符串会给出字典序（"10" < "2"），

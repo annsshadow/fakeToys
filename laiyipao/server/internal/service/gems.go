@@ -31,7 +31,7 @@ import (
 //
 // 写成常量而不是裸字符串：它是**跨表契约**（seeder 写、Buy 读），
 // 一旦两边拼错，表现是「买了什么都没发生」——
-// 而那正是最难排查的一类症状，所以给��个名字并在两边都引用它。
+// 而那正是最难排查的一类症状，所以给它个名字并在两边都引用它。
 const gemInstanceKey = "gem_instance"
 
 // gemAffixRow 是 `user_gems.affixes` JSONB 里的一项。

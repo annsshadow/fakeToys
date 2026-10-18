@@ -335,7 +335,7 @@ func TestAchievementEpochIsNotARealDay(t *testing.T) {
 }
 
 /**
- * 守��本身**不许退化成空洞通过**（第 93 轮）。
+ * 守卫本身**不许退化成空洞通过**（第 93 轮）。
  *
  * # 实际发生过
  *
