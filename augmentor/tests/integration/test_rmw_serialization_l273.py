@@ -638,11 +638,18 @@ def test_arms_have_teeth_when_the_lock_is_faked_away(tmp_path, monkeypatch):
     """注入臂 R1：`path_lock` 退化成「每次新建一把」⇒ 20 支并发改写必然至少丢一次
 
     判据是「丢更新与瞬时 500 至少中一个」，两边都不许为零：去掉锁之后丢多少取决于线程
-    交错（实测 1—19 浮动，改前那 1 处落盘是最坏档），而读者撞上 `os.replace` 那一瞬给的
-    `PermissionError` 也同时回来了（50 支实测 3 支 500）。能稳定复现的是**会不会坏**，
-    不是坏几次。没有这一支，`test_concurrent_updates_all_land` 有可能只是恰好绿。
+    交错（实测 1—19 浮动），而读者撞上 `os.replace` 那一瞬给的 `PermissionError`
+    也会回来（50 支实测 3 支 500）。没有这一支，`test_concurrent_updates_all_land`
+    有可能只是恰好绿。
+
+    **既有红 2026-10-19（判据靠调度，快机上恒绿）**：只摘锁这一格不稳——读-改-写三段全在
+    工作线程里跑，快机上 20 支常被调度成近乎串行，实测 5 跑 3 红 2 绿、`lost` 在 0—19 浮动，
+    全量跑正好撞上恒绿那几跑（main 上这条红就是这个形状）。所以本支除了摘锁，还给**读边**
+    加一格窗：读回真内容后停 50 ms 再返回，快照与「写回整份」之间的窗口撑到毫秒级，
+    20 支快照必然互相重叠（丢更新的充分条件）——判据从「会不会坏」改成「必然坏」。
     """
     import threading
+    import time
 
     import api.deps as deps_mod
     import augmentor.backup as backup_mod
@@ -653,6 +660,18 @@ def test_arms_have_teeth_when_the_lock_is_faked_away(tmp_path, monkeypatch):
                "augmentor.version_control": vc_mod, "augmentor.versioning": vm_mod}
     for name in PATH_LOCK_CONSUMERS:
         monkeypatch.setattr(modules[name], "path_lock", lambda _p: threading.RLock())
+
+    # 读边窗（见 docstring「既有红 2026-10-19」）：`mutate_json_file` 内部按模块全局取
+    # `read_items`，这里读回**真内容**后再停 50 ms —— 快照与写回整份的窗口被撑开，
+    # 20 支快照必然重叠，丢更新不再靠调度运气。
+    _real_read_items = deps_mod.read_items
+
+    def _read_then_window(path):
+        snapshot = _real_read_items(path)
+        time.sleep(0.05)
+        return snapshot
+
+    monkeypatch.setattr(deps_mod, "read_items", _read_then_window)
 
     monkeypatch.setenv("AUGMENTOR_DATA_ROOTS", str(tmp_path))
     _authorize(monkeypatch)

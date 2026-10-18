@@ -318,7 +318,13 @@ class TestRulerIsProven:
         # 于是「git 侧活着」被当成「最近一枚提交属于本仓」，并行会话一动就凭空红（L265 实测两次）。
         # 改按本守卫自己声明的意图取数：HEAD 要解析得到主题（上一行），且近 40 枚主题里读得到本账的轮号。
         # git 坏掉时两格同时空 ⇒ 牙齿一格未削，只是不再把「谁最后提交」当成判据。
-        back = subprocess.run(["git", "-C", str(ROOT), "log", "-n", "40", "--format=%s"],
+        #
+        # **既有红 2026-10-19（窗口取全谱被机器人提交灌满）**：`log -n 40` 不带 `--first-parent` 时，
+        # 40 枚窗口里读到的全是 dependabot 的 `Merge remote-tracking branch ...` 与配套 chore ——
+        # 实测该窗口 ≥200 轮号 **0 枚**（`--first-parent` 同一时刻是 L232…L260），判据因此常红。
+        # 本仓对「主线历史」的既有口径就是 `--first-parent`（同 l98 账本哈希槽守卫，见 ai-platform-ci.yml
+        # 里 checkout 那段的注释），这里改用同一口径：窗口仍是 40，量的是主线自己走过多少轮。
+        back = subprocess.run(["git", "-C", str(ROOT), "log", "--first-parent", "-n", "40", "--format=%s"],
                               capture_output=True, text=True,
                               encoding="utf-8", errors="replace").stdout
         assert [int(m) for m in ROUNDS.findall(back) if int(m) >= 200], \
