@@ -1325,6 +1325,19 @@ GET 写面队列里 `calendar_assemble_control` 与 `jpush_assemble_control` 各
 
 | 验证（本批代码变更） | — | 两 crate 整 lib 全绿：correlation_core_entity `12 passed / 0 failed / 0 ignored`、jpush_core_entity `12 passed / 0 failed / 0 ignored`；各新增 `security_gate_tests_b83`（2 把真库 sea_orm 连接 + `None` 会话 → 全部 `Err(AppError::Unauthorized)`，门在 DB 访问前 + 纯单元门逻辑）。尺子：**R7 634→630（−4）**、含写 0→**0**（ORM-blindness 第九例证）、只读挂写桶 634→630（−4）；复跑 3 次稳定；EXIT 0 |
 
+### 三.84 — ORM 盲区复查：query_express 1 把收会话门（R7 630→629，含写 0→0）
+
+- **批次目标**：收 `query_express` 1 把 sea_orm 真写：
+  - `create_query`（POST `/api/query/create`，`query_view::ActiveModel::insert` INSERT query_view）。
+- **收口档**：会话存在档（crate 内新增 `require_session`，无会话 401，门在 `insert` 前）。查询收藏创建为普通用户域写，收会话档。
+- **接线缺陷口径同第七十八批**：`query_express_router` 不提供 `Extension<DatabaseConnection>`（§五 遗留 30）⇒ HTTP 面 extraction 先失败（500），本批静态收门 + 直调臂验证。
+
+| 门档 | 处理函数 | 路由 / 真写动作 | 加门说明 |
+| --- | --- | --- | --- |
+| 会话档（新增 require_session） | `create_query`（query_express） | POST `/api/query/create`，query_view | crate 内新增 `require_session`：无会话 401，门在 `ActiveModel::insert` 前 |
+
+| 验证（本批代码变更） | — | `cargo test --lib -p query_express` **EXIT=0**，`11 passed / 0 failed / 0 ignored`（含新增 `security_gate_tests_b84`：真库 sea_orm 连接 + `None` 会话 → `Err(AppError::Unauthorized)`，门在 DB 访问前 + 纯单元门逻辑）。尺子：**R7 630→629（−1）**、含写 0→**0**（ORM-blindness 第十例证）、只读挂写桶 630→629（−1）；复跑 3 次稳定；EXIT 0 |
+
 ## 四、验证
 
 
