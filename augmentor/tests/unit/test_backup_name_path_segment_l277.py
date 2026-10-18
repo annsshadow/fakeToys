@@ -9,7 +9,8 @@ r"""A366 / L277 守卫：备份名**只能占一个路径段**——「建得出
 
 - `POST /api/system/backups` (`name=sub/deep`) ⇒ **200**，回执 `backup_id="sub/deep"`；
 - `GET /api/system/backups` ⇒ 清单里**有这一行**，磁盘上 `sub\deep.json` 也在；
-- `DELETE /api/system/backups/sub/deep` ⇒ **404**，`POST …/sub/deep/restore` ⇒ **404**；
+- `DELETE /api/system/backups/sub/deep` ⇒ **404**，`POST …/sub/deep/restore` ⇒ **404**（这一档
+  回执码随部署形状分叉：`/` 上挂着静态兜底时两形都是 **405**，判据按 `app.routes` 现算，见 A361 与 `_phantom_code`）；
 - 换成 percent 编码 `sub%2Fdeep` 两只入口**照样 404**（路由按原始路径切段，`{backup_id}` 只吃
   `[^/]+`，编码救不回来）。
 
@@ -87,6 +88,19 @@ def http(tmp_path, monkeypatch):
     return TestClient(app), root
 
 
+def _phantom_code(client) -> int:
+    """「按回执名寻不到址」那一档的回执码随部署形状分叉 ⇒ 按 `app.routes` 现算（A361 口径）
+
+    `/` 上挂着静态兜底（这一树构建过前端、`web/dist` 在场）时，未匹配的 API 路径会被那只
+    Mount 吃掉、非 GET 给出 **405**；没挂时才是路由表自己的 **404**。把任何一侧抄成常数，
+    等于把「作者机构建过 UI」写进判据——干净克隆与构建过的机器各红一边（L293 撞到的就是
+    这一形：合并进主工作树后同一份代码、同一个用例，只因那边有 `web/dist` 就从 404 变 405）。
+    现算不等于放宽：两档都只认一个码，判决由装配事实决定。
+    """
+    mounted = any(type(route).__name__ == "Mount" for route in client.app.routes)
+    return 405 if mounted else 404
+
+
 class TestThePhantomState:
     """缺陷本体钉在这里：把新闸在**内存里**摘成恒等 ⇒ 失踪态当场重现，装回去 ⇒ 消失"""
 
@@ -104,13 +118,16 @@ class TestThePhantomState:
         assert (bdir / "sub" / "deep.json").is_file(), "摘了闸还不落盘 ⇒ 这一臂没在测落点"
         listed = client.get(CREATED, params={"backup_dir": str(bdir)})
         assert [b["backup_id"] for b in listed.json()["backups"]] == ["sub/deep"]
+        expected = _phantom_code(client)
         for wire in ("sub/deep", urllib.parse.quote("sub/deep", safe="")):
             assert client.delete(f"{CREATED}/{wire}",
-                                 params={"backup_dir": str(bdir)}).status_code == 404
+                                 params={"backup_dir": str(bdir)}).status_code == expected
             assert client.post(f"{CREATED}/{wire}/restore",
                                json={"output_file": "out.json"},
-                               params={"backup_dir": str(bdir)}).status_code == 404
-        assert not (root / "out.json").exists(), "404 却把内容恢复了 ⇒ 上面那两读数不可信"
+                               params={"backup_dir": str(bdir)}).status_code == expected
+        assert (bdir / "sub" / "deep.json").is_file(), \
+            f"回执 {expected} 说寻不到址，那一份就必须还在盘上 ⇒ 少了这条，「码对而数据已毁」也会放行"
+        assert not (root / "out.json").exists(), "寻不到址却把内容恢复了 ⇒ 上面那几读数不可信"
 
     def test_with_the_gate_the_same_name_is_400_and_writes_nothing(self, http, tmp_path):
         client, root = http
