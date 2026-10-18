@@ -27,9 +27,7 @@ use entities::{
 fn require_session(
     session: Option<Extension<shared::session::Session>>,
 ) -> Result<shared::session::Session, AppError> {
-    session
-        .map(|Extension(s)| s)
-        .ok_or(AppError::Unauthorized)
+    session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
@@ -963,12 +961,12 @@ pub fn general_core_entity_router(_pool: Pool) -> Router {
 }
 
 #[cfg(test)]
+mod security_gate_tests_b65;
+#[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-#[cfg(test)]
-mod security_gate_tests_b65;
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::general_core_entity_router(pool)

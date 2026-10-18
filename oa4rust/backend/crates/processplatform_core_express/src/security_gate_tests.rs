@@ -97,10 +97,7 @@ mod security_gate_tests {
         .await;
         assert!(res.is_ok(), "属主终止自己的 work 应放行");
         let status: Option<String> = client
-            .query_opt(
-                "SELECT work_status FROM x_work WHERE id = $1",
-                &[&work_id],
-            )
+            .query_opt("SELECT work_status FROM x_work WHERE id = $1", &[&work_id])
             .await
             .unwrap()
             .map(|row| row.get("work_status"));

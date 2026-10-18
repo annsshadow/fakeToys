@@ -99,9 +99,12 @@ mod security_gate_tests {
         let pool = shared::testing::test_pool();
         {
             let c = pool.get().await.unwrap();
-            c.execute("DELETE FROM x_file WHERE id = 'b56-file-owned-by-other'", &[])
-                .await
-                .unwrap();
+            c.execute(
+                "DELETE FROM x_file WHERE id = 'b56-file-owned-by-other'",
+                &[],
+            )
+            .await
+            .unwrap();
             c.execute(
                 "INSERT INTO x_file (id, name, path, size, creator, create_time, folder_id) \
                  VALUES ('b56-file-owned-by-other','n','p',1,'b56-owner-elsewhere',NOW()::text,'f')",

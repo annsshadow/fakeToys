@@ -1115,7 +1115,10 @@ mod security_gate_tests {
 
     /// 14 把逐个具名调用。`person = None` 即「无会话」；表长本身就是本批覆盖面，
     /// 由 `assert_eq!(cases.len(), 14)` 钉住——少一把（或门漏一把）都会红。
-    async fn call_all(pool: &Pool, person: Option<&str>) -> Vec<(&'static str, Result<(), AppError>)> {
+    async fn call_all(
+        pool: &Pool,
+        person: Option<&str>,
+    ) -> Vec<(&'static str, Result<(), AppError>)> {
         let sess = || person.map(|w| Extension(shared::testing::test_session(w)));
         let ext = || Extension(pool.clone());
         vec![
@@ -1287,9 +1290,12 @@ mod security_gate_tests {
     async fn unseed() {
         let pool = shared::testing::test_pool();
         let c = pool.get().await.unwrap();
-        c.execute("DELETE FROM x_query_neural_model WHERE id LIKE 'b20-%'", &[])
-            .await
-            .unwrap();
+        c.execute(
+            "DELETE FROM x_query_neural_model WHERE id LIKE 'b20-%'",
+            &[],
+        )
+        .await
+        .unwrap();
         c.execute("DELETE FROM x_query_table WHERE id LIKE 'b20-%'", &[])
             .await
             .unwrap();
@@ -1308,7 +1314,10 @@ mod security_gate_tests {
                 .query_opt(sql.as_str(), &[&key.to_string()])
                 .await
                 .unwrap()
-                .map(|r| r.get::<_, Option<String>>("update_time").unwrap_or_default());
+                .map(|r| {
+                    r.get::<_, Option<String>>("update_time")
+                        .unwrap_or_default()
+                });
             if v.as_deref() != Some(SENTINEL) {
                 out.push(format!("{tbl}/{key} => {v:?}"));
             }
@@ -1395,7 +1404,13 @@ mod security_gate_tests {
             .iter()
             .zip(edge_admin.iter())
             .filter(|((_, a), (_, b))| !matches!(a, Err(AppError::Forbidden)) || b.is_err())
-            .map(|((k, a), (_, b))| format!("{k} => 他人 {:?} / admin {:?}", a.as_ref().err(), b.as_ref().err()))
+            .map(|((k, a), (_, b))| {
+                format!(
+                    "{k} => 他人 {:?} / admin {:?}",
+                    a.as_ref().err(),
+                    b.as_ref().err()
+                )
+            })
             .collect();
         assert!(
             wrong.is_empty(),
@@ -1432,7 +1447,11 @@ mod security_gate_tests {
         }
 
         // 非 admin → 六把全 403
-        let s = || Some(axum::Extension(shared::testing::test_session("u-qd-nobody")));
+        let s = || {
+            Some(axum::Extension(shared::testing::test_session(
+                "u-qd-nobody",
+            )))
+        };
         let forbidden = [
             crate::importer_create(axum::Extension(dead.clone()), s(), body()).await,
             crate::importer_save(axum::Extension(dead.clone()), s(), path(), body()).await,
@@ -1484,7 +1503,11 @@ mod security_gate_tests {
             );
         }
 
-        let s = || Some(axum::Extension(shared::testing::test_session("u-qd-design-nobody")));
+        let s = || {
+            Some(axum::Extension(shared::testing::test_session(
+                "u-qd-design-nobody",
+            )))
+        };
         let forbidden = [
             crate::create_designer(axum::Extension(dead.clone()), s(), dbody()).await,
             crate::save_designer(axum::Extension(dead.clone()), s(), path(), dbody()).await,
@@ -1492,7 +1515,8 @@ mod security_gate_tests {
             crate::save_designer_bare(axum::Extension(dead.clone()), s(), jbody()).await,
             crate::delete_designer_bare(axum::Extension(dead.clone()), s(), jbody()).await,
             crate::create_table_definition(axum::Extension(dead.clone()), s(), jbody()).await,
-            crate::update_table_definition(axum::Extension(dead.clone()), s(), path(), jbody()).await,
+            crate::update_table_definition(axum::Extension(dead.clone()), s(), path(), jbody())
+                .await,
             crate::execute_table_definition(axum::Extension(dead.clone()), s(), path()).await,
         ];
         for (i, r) in forbidden.iter().enumerate() {
@@ -1524,9 +1548,11 @@ mod security_gate_tests {
             )
             .await,
             crate::u2_closures::stat_create(axum::Extension(dead.clone()), None, body()).await,
-            crate::u2_closures::stat_edit(axum::Extension(dead.clone()), None, path(), body()).await,
+            crate::u2_closures::stat_edit(axum::Extension(dead.clone()), None, path(), body())
+                .await,
             crate::u2_closures::view_create(axum::Extension(dead.clone()), None, body()).await,
-            crate::u2_closures::view_edit(axum::Extension(dead.clone()), None, path(), body()).await,
+            crate::u2_closures::view_edit(axum::Extension(dead.clone()), None, path(), body())
+                .await,
         ];
         for (i, r) in unauth.iter().enumerate() {
             assert!(
@@ -1535,7 +1561,11 @@ mod security_gate_tests {
             );
         }
 
-        let s = || Some(axum::Extension(shared::testing::test_session("u-qd-u2-nobody")));
+        let s = || {
+            Some(axum::Extension(shared::testing::test_session(
+                "u-qd-u2-nobody",
+            )))
+        };
         let forbidden = [
             crate::u2_closures::statement_create(axum::Extension(dead.clone()), s(), body()).await,
             crate::u2_closures::statement_edit(axum::Extension(dead.clone()), s(), path(), body())
@@ -1572,7 +1602,8 @@ mod security_gate_tests {
 
         let unauth = [
             crate::table_tableFlag_row_delete_all(axum::Extension(dead.clone()), None, p1()).await,
-            crate::table_tableFlag_row_save(axum::Extension(dead.clone()), None, p1(), jbody()).await,
+            crate::table_tableFlag_row_save(axum::Extension(dead.clone()), None, p1(), jbody())
+                .await,
             crate::neural_model(axum::Extension(dead.clone()), None, jbody()).await,
             crate::input_cover(axum::Extension(dead.clone()), None, jbody()).await,
             crate::input_create(axum::Extension(dead.clone()), None, jbody()).await,
@@ -1607,13 +1638,8 @@ mod security_gate_tests {
                 jbody(),
             )
             .await,
-            crate::u2_closures::query_set_icon(
-                axum::Extension(dead.clone()),
-                None,
-                p1(),
-                jbody(),
-            )
-            .await,
+            crate::u2_closures::query_set_icon(axum::Extension(dead.clone()), None, p1(), jbody())
+                .await,
         ];
         for (i, r) in unauth.iter().enumerate() {
             assert!(
@@ -1622,10 +1648,15 @@ mod security_gate_tests {
             );
         }
 
-        let s = || Some(axum::Extension(shared::testing::test_session("u-qd-data-nobody")));
+        let s = || {
+            Some(axum::Extension(shared::testing::test_session(
+                "u-qd-data-nobody",
+            )))
+        };
         let forbidden = [
             crate::table_tableFlag_row_delete_all(axum::Extension(dead.clone()), s(), p1()).await,
-            crate::table_tableFlag_row_save(axum::Extension(dead.clone()), s(), p1(), jbody()).await,
+            crate::table_tableFlag_row_save(axum::Extension(dead.clone()), s(), p1(), jbody())
+                .await,
             crate::neural_model(axum::Extension(dead.clone()), s(), jbody()).await,
             crate::input_cover(axum::Extension(dead.clone()), s(), jbody()).await,
             crate::input_create(axum::Extension(dead.clone()), s(), jbody()).await,

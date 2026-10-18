@@ -530,21 +530,36 @@ async fn test_pp_process_writes_require_owner() {
     // 非属主/非 admin → 403 且不落笔（xversion 不 bump）。
     assert!(
         matches!(
-            crate::process_id_disable(Extension(pool.clone()), sess(OTHER), axum::extract::Path(pid.clone())).await,
+            crate::process_id_disable(
+                Extension(pool.clone()),
+                sess(OTHER),
+                axum::extract::Path(pid.clone())
+            )
+            .await,
             Err(shared::error::AppError::Forbidden)
         ),
         "disable 他人必须 403"
     );
     assert!(
         matches!(
-            crate::process_id_enable(Extension(pool.clone()), sess(OTHER), axum::extract::Path(pid.clone())).await,
+            crate::process_id_enable(
+                Extension(pool.clone()),
+                sess(OTHER),
+                axum::extract::Path(pid.clone())
+            )
+            .await,
             Err(shared::error::AppError::Forbidden)
         ),
         "enable 他人必须 403"
     );
     assert!(
         matches!(
-            crate::process_id_upgrade(Extension(pool.clone()), sess(OTHER), axum::extract::Path(pid.clone())).await,
+            crate::process_id_upgrade(
+                Extension(pool.clone()),
+                sess(OTHER),
+                axum::extract::Path(pid.clone())
+            )
+            .await,
             Err(shared::error::AppError::Forbidden)
         ),
         "upgrade 他人必须 403"
@@ -552,7 +567,10 @@ async fn test_pp_process_writes_require_owner() {
     {
         let c = pool.get().await.unwrap();
         let v: i64 = c
-            .query_one("SELECT COALESCE(xversion,0) FROM pp_e_process WHERE xid=$1", &[&pid])
+            .query_one(
+                "SELECT COALESCE(xversion,0) FROM pp_e_process WHERE xid=$1",
+                &[&pid],
+            )
             .await
             .unwrap()
             .get(0);
@@ -561,27 +579,41 @@ async fn test_pp_process_writes_require_owner() {
 
     // 属主放行：disable + upgrade。
     assert!(
-        crate::process_id_disable(Extension(pool.clone()), sess(OWNER), axum::extract::Path(pid.clone()))
-            .await
-            .is_ok(),
+        crate::process_id_disable(
+            Extension(pool.clone()),
+            sess(OWNER),
+            axum::extract::Path(pid.clone())
+        )
+        .await
+        .is_ok(),
         "属主 disable 应放行"
     );
     assert!(
-        crate::process_id_upgrade(Extension(pool.clone()), sess(OWNER), axum::extract::Path(pid.clone()))
-            .await
-            .is_ok(),
+        crate::process_id_upgrade(
+            Extension(pool.clone()),
+            sess(OWNER),
+            axum::extract::Path(pid.clone())
+        )
+        .await
+        .is_ok(),
         "属主 upgrade 应放行"
     );
     {
         let c = pool.get().await.unwrap();
         let v: i64 = c
-            .query_one("SELECT COALESCE(xversion,0) FROM pp_e_process WHERE xid=$1", &[&pid])
+            .query_one(
+                "SELECT COALESCE(xversion,0) FROM pp_e_process WHERE xid=$1",
+                &[&pid],
+            )
             .await
             .unwrap()
             .get(0);
         assert_eq!(v, 1, "属主 upgrade 应 bump xversion");
         let s: String = c
-            .query_one("SELECT xstatus::text FROM pp_e_process WHERE xid=$1", &[&pid])
+            .query_one(
+                "SELECT xstatus::text FROM pp_e_process WHERE xid=$1",
+                &[&pid],
+            )
             .await
             .unwrap()
             .get(0);
@@ -590,15 +622,22 @@ async fn test_pp_process_writes_require_owner() {
 
     // admin 放行：enable（admin 旁路）。
     assert!(
-        crate::process_id_enable(Extension(pool.clone()), sess(ADMIN), axum::extract::Path(pid.clone()))
-            .await
-            .is_ok(),
+        crate::process_id_enable(
+            Extension(pool.clone()),
+            sess(ADMIN),
+            axum::extract::Path(pid.clone())
+        )
+        .await
+        .is_ok(),
         "admin enable 应放行（admin 旁路）"
     );
     {
         let c = pool.get().await.unwrap();
         let s: String = c
-            .query_one("SELECT xstatus::text FROM pp_e_process WHERE xid=$1", &[&pid])
+            .query_one(
+                "SELECT xstatus::text FROM pp_e_process WHERE xid=$1",
+                &[&pid],
+            )
             .await
             .unwrap()
             .get(0);
@@ -610,9 +649,12 @@ async fn test_pp_process_writes_require_owner() {
     c.execute("DELETE FROM pp_e_process WHERE xid=$1", &[&pid])
         .await
         .unwrap();
-    c.execute("DELETE FROM auth_person_role WHERE person_id=$1", &[&ADMIN.to_string()])
-        .await
-        .unwrap();
+    c.execute(
+        "DELETE FROM auth_person_role WHERE person_id=$1",
+        &[&ADMIN.to_string()],
+    )
+    .await
+    .unwrap();
     c.execute("DELETE FROM auth_person WHERE id=$1", &[&ADMIN.to_string()])
         .await
         .unwrap();

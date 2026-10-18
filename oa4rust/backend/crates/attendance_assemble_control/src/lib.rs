@@ -16,16 +16,16 @@ pub mod routes;
 
 #[cfg(test)]
 #[allow(clippy::module_inception)]
+mod security_gate_tests;
+#[cfg(test)]
+mod security_gate_tests_b63;
+#[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;
 #[cfg(test)]
 mod tests_u2;
-#[cfg(test)]
-#[allow(clippy::module_inception)]
-mod security_gate_tests;
-#[cfg(test)]
-mod security_gate_tests_b63;
 #[cfg(test)]
 mod tests_u2_legacy;
 

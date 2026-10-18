@@ -12,12 +12,12 @@ use shared::{error::AppError, response::ActionResult};
 pub mod routes;
 
 #[cfg(test)]
+mod security_gate_tests;
+#[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-#[cfg(test)]
-mod security_gate_tests;
 
 /// 属主资源门禁（安全审计 2026-10 二轮）：思维导图/文件夹写操作仅属主/admin。
 /// 命中行时按 creator 列校验；行不存在则放行（后续 UPDATE/DELETE 命中 0 行，
@@ -31,7 +31,10 @@ async fn mind_owner_gate(
     id: &str,
 ) -> Result<(), AppError> {
     let row = client
-        .query_opt(&format!("SELECT creator FROM {table} WHERE id = $1"), &[&id])
+        .query_opt(
+            &format!("SELECT creator FROM {table} WHERE id = $1"),
+            &[&id],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
     if let Some(row) = row {

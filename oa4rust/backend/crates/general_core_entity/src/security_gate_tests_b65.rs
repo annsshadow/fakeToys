@@ -23,7 +23,11 @@ mod tests {
         testing::{test_sea_orm_pool, test_session},
     };
 
-    use crate::{dict_create, dict_delete, dict_item_create, dict_item_delete, dict_item_update, dict_update, file_create, file_delete, file_update, invoice_create, invoice_delete, invoice_update};
+    use crate::{
+        dict_create, dict_delete, dict_item_create, dict_item_delete, dict_item_update,
+        dict_update, file_create, file_delete, file_update, invoice_create, invoice_delete,
+        invoice_update,
+    };
 
     fn make_db(db: &DatabaseConnection) -> Extension<DatabaseConnection> {
         Extension(db.clone())
@@ -47,40 +51,76 @@ mod tests {
 
         // dict_create
         let r = dict_create(db_ext.clone(), none.clone(), empty_json()).await;
-        assert!(matches!(r, Err(AppError::Unauthorized)), "dict_create 无会话应 401: r");
+        assert!(
+            matches!(r, Err(AppError::Unauthorized)),
+            "dict_create 无会话应 401: r"
+        );
         // dict_update
         let r = dict_update(db_ext.clone(), none.clone(), fake_path(), empty_json()).await;
-        assert!(matches!(r, Err(AppError::Unauthorized)), "dict_update 无会话应 401: r");
+        assert!(
+            matches!(r, Err(AppError::Unauthorized)),
+            "dict_update 无会话应 401: r"
+        );
         // dict_delete
         let r = dict_delete(db_ext.clone(), none.clone(), fake_path()).await;
-        assert!(matches!(r, Err(AppError::Unauthorized)), "dict_delete 无会话应 401: r");
+        assert!(
+            matches!(r, Err(AppError::Unauthorized)),
+            "dict_delete 无会话应 401: r"
+        );
         // dict_item_create
         let r = dict_item_create(db_ext.clone(), none.clone(), empty_json()).await;
-        assert!(matches!(r, Err(AppError::Unauthorized)), "dict_item_create 无会话应 401: r");
+        assert!(
+            matches!(r, Err(AppError::Unauthorized)),
+            "dict_item_create 无会话应 401: r"
+        );
         // dict_item_update
         let r = dict_item_update(db_ext.clone(), none.clone(), fake_path(), empty_json()).await;
-        assert!(matches!(r, Err(AppError::Unauthorized)), "dict_item_update 无会话应 401: r");
+        assert!(
+            matches!(r, Err(AppError::Unauthorized)),
+            "dict_item_update 无会话应 401: r"
+        );
         // dict_item_delete
         let r = dict_item_delete(db_ext.clone(), none.clone(), fake_path()).await;
-        assert!(matches!(r, Err(AppError::Unauthorized)), "dict_item_delete 无会话应 401: r");
+        assert!(
+            matches!(r, Err(AppError::Unauthorized)),
+            "dict_item_delete 无会话应 401: r"
+        );
         // file_create
         let r = file_create(db_ext.clone(), none.clone(), empty_json()).await;
-        assert!(matches!(r, Err(AppError::Unauthorized)), "file_create 无会话应 401: r");
+        assert!(
+            matches!(r, Err(AppError::Unauthorized)),
+            "file_create 无会话应 401: r"
+        );
         // file_update
         let r = file_update(db_ext.clone(), none.clone(), fake_path(), empty_json()).await;
-        assert!(matches!(r, Err(AppError::Unauthorized)), "file_update 无会话应 401: r");
+        assert!(
+            matches!(r, Err(AppError::Unauthorized)),
+            "file_update 无会话应 401: r"
+        );
         // file_delete
         let r = file_delete(db_ext.clone(), none.clone(), fake_path()).await;
-        assert!(matches!(r, Err(AppError::Unauthorized)), "file_delete 无会话应 401: r");
+        assert!(
+            matches!(r, Err(AppError::Unauthorized)),
+            "file_delete 无会话应 401: r"
+        );
         // invoice_create
         let r = invoice_create(db_ext.clone(), none.clone(), empty_json()).await;
-        assert!(matches!(r, Err(AppError::Unauthorized)), "invoice_create 无会话应 401: r");
+        assert!(
+            matches!(r, Err(AppError::Unauthorized)),
+            "invoice_create 无会话应 401: r"
+        );
         // invoice_update
         let r = invoice_update(db_ext.clone(), none.clone(), fake_path(), empty_json()).await;
-        assert!(matches!(r, Err(AppError::Unauthorized)), "invoice_update 无会话应 401: r");
+        assert!(
+            matches!(r, Err(AppError::Unauthorized)),
+            "invoice_update 无会话应 401: r"
+        );
         // invoice_delete
         let r = invoice_delete(db_ext.clone(), none.clone(), fake_path()).await;
-        assert!(matches!(r, Err(AppError::Unauthorized)), "invoice_delete 无会话应 401: r");
+        assert!(
+            matches!(r, Err(AppError::Unauthorized)),
+            "invoice_delete 无会话应 401: r"
+        );
     }
 
     #[test]

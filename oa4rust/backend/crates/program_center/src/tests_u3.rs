@@ -778,7 +778,9 @@ mod u3_tests {
             ),
             (
                 "u3_welink_request_pull_sync_post",
-                u3_welink_request_pull_sync_post(ext, None).await.map(|_| ()),
+                u3_welink_request_pull_sync_post(ext, None)
+                    .await
+                    .map(|_| ()),
             ),
         ];
         assert_eq!(cases.len(), 4, "本批 4 把含写必须逐把点名，少一把即漏门");

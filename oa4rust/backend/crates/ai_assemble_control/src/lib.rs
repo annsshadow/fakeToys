@@ -19,12 +19,12 @@ pub const API_BASE: &str = "/api/ai_assemble_control";
 pub mod routes;
 
 #[cfg(test)]
+mod security_gate_tests;
+#[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-#[cfg(test)]
-mod security_gate_tests;
 
 #[derive(Debug, Deserialize)]
 pub struct ChatCompletionRequest {
@@ -315,9 +315,7 @@ async fn require_admin(pool: &Pool, session: &shared::session::Session) -> Resul
 fn require_session(
     session: Option<Extension<shared::session::Session>>,
 ) -> Result<shared::session::Session, AppError> {
-    session
-        .map(|Extension(s)| s)
-        .ok_or(AppError::Unauthorized)
+    session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
 }
 
 #[allow(non_snake_case)]

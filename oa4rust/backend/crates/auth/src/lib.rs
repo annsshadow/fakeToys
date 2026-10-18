@@ -278,7 +278,9 @@ pub async fn login(
             password::verify_password(&req.password, &password_hash, "", legacy_compat, None)
         }
         // Error 和 Disabled 已通过 Err/None 路径处理，此处为防御性分支
-        Some(_) => password::verify_password(&req.password, &password_hash, "", legacy_compat, None),
+        Some(_) => {
+            password::verify_password(&req.password, &password_hash, "", legacy_compat, None)
+        }
     };
     if !valid {
         return Ok(

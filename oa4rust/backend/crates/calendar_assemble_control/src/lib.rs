@@ -11,12 +11,12 @@ pub mod routes;
 pub mod u2;
 
 #[cfg(test)]
+mod security_gate_tests_b70;
+#[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-#[cfg(test)]
-mod security_gate_tests_b70;
 
 #[axum::debug_handler]
 pub async fn get_control_config(

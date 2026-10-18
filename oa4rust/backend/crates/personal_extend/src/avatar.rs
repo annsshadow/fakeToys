@@ -232,9 +232,7 @@ fn is_safe_avatar_rel(rel: &str) -> bool {
         return false;
     }
     let rest = rel.strip_prefix(AVATAR_DIR).unwrap_or("");
-    !rest.is_empty()
-        && rest.starts_with('/')
-        && !rest[1..].contains('/')
+    !rest.is_empty() && rest.starts_with('/') && !rest[1..].contains('/')
 }
 
 /// 读取存储文件并以 base64 返回；无头像或文件缺失时返回 exists=false

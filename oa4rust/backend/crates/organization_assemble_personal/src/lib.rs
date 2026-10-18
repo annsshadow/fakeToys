@@ -24,12 +24,12 @@ fn require_session(
 }
 
 #[cfg(test)]
+mod security_gate_tests_b75;
+#[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-#[cfg(test)]
-mod security_gate_tests_b75;
 
 #[axum::debug_handler]
 pub async fn user_setting(

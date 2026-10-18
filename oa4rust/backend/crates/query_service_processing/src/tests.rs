@@ -155,13 +155,13 @@ async fn test_reset_service_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-        .uri("/api/query/service/processing/reset")
-        .method(Method::POST)
-        .body(Body::empty())
-        .unwrap(),
-    )
-    .await
-    .unwrap();
+                .uri("/api/query/service/processing/reset")
+                .method(Method::POST)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
 
     assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
 }

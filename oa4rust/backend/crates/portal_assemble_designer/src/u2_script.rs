@@ -23,10 +23,7 @@ fn body_str<'a>(body: &'a Value, key: &str) -> Option<&'a str> {
 /// 脚本正文会被 portal surface 读回渲染，而 CSP 允许 `script-src 'self' 'unsafe-eval'`，
 /// 所以任意登录用户按 IDOR 覆写他人脚本等于在受害者门户里落地执行存储型 JS。
 /// 无 DB 时 `is_admin` fail-closed 拒绝。
-async fn require_admin(
-    pool: &Pool,
-    session: &shared::session::Session,
-) -> Result<(), AppError> {
+async fn require_admin(pool: &Pool, session: &shared::session::Session) -> Result<(), AppError> {
     if shared::middleware::is_admin(pool, &session.person_unique).await {
         Ok(())
     } else {

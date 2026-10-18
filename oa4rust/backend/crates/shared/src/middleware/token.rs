@@ -148,7 +148,8 @@ pub async fn auth_middleware(
     // （即使注册表把 `/api/secret/*` 记为 Public），已初始化后仍要求会话。
     let secret_hit = SECRET_INIT_PATHS.iter().any(|p| path_matches(&path, p));
     let init_window = secret_hit && system_uninitialized(&state.pool).await;
-    if is_auth_exempt(&path) && (init_window || (!secret_hit && super::rbac::is_registry_public(&path)))
+    if is_auth_exempt(&path)
+        && (init_window || (!secret_hit && super::rbac::is_registry_public(&path)))
     {
         return next.run(request).await;
     }

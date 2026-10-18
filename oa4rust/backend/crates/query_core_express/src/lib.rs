@@ -363,10 +363,10 @@ pub fn query_core_express_router(pool: Pool) -> Router {
 }
 
 #[cfg(test)]
+mod security_gate_tests;
+#[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;
-#[cfg(test)]
-mod security_gate_tests;
 #[cfg(test)]
 mod tests_generated;
 

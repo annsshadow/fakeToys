@@ -11,12 +11,12 @@ pub const API_BASE: &str = "/api/component_assemble_control";
 pub mod routes;
 
 #[cfg(test)]
+mod security_gate_tests;
+#[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-#[cfg(test)]
-mod security_gate_tests;
 
 /// 组件管理写门禁（安全审计 2026-10 二轮）：x_component 内容与系统配置此前
 /// 无角色校验，任一登录用户可增删改或全表软删组件、改组件控制配置。

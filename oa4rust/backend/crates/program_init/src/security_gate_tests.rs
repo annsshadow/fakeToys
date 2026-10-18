@@ -26,12 +26,9 @@ mod security_gate_tests {
         let cases: [(&str, Result<(), AppError>); 5] = [
             (
                 "external_datasources_set_cancel",
-                external_datasources_set_cancel(
-                    Extension(pool.clone()),
-                    Extension(sess.clone()),
-                )
-                .await
-                .map(|_| ()),
+                external_datasources_set_cancel(Extension(pool.clone()), Extension(sess.clone()))
+                    .await
+                    .map(|_| ()),
             ),
             (
                 "restore_upload",

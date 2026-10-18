@@ -20,15 +20,18 @@ async fn b84_writes_reject_without_session() {
     let db = Extension(db);
     let none: Option<Extension<shared::session::Session>> = None;
 
-    assert!(matches!(
-        create_query(
-            Extension(db.0),
-            none,
-            Json(serde_json::json!({"name": "b84", "queryType": "x"}))
-        )
-        .await,
-        Err(AppError::Unauthorized)
-    ), "create_query 无会话必须 401");
+    assert!(
+        matches!(
+            create_query(
+                Extension(db.0),
+                none,
+                Json(serde_json::json!({"name": "b84", "queryType": "x"}))
+            )
+            .await,
+            Err(AppError::Unauthorized)
+        ),
+        "create_query 无会话必须 401"
+    );
 }
 
 /// 纯单元：`require_session` 门逻辑本身（无 DB 副作用）——无会话拒绝、有会话放行。

@@ -84,10 +84,9 @@ mod tests {
         let pool = build_test_pool();
         // round4-b69：view_create 已收会话门——注入有效会话 Extension，
         // 保留原断言语义（路由可达 + handler 体直落死池 → 500）。
-        let app = crate::query_core_entity_router(pool)
-            .layer(axum::Extension(shared::testing::test_session(
-                "query-view-create-test",
-            )));
+        let app = crate::query_core_entity_router(pool).layer(axum::Extension(
+            shared::testing::test_session("query-view-create-test"),
+        ));
 
         let response = app
             .clone()

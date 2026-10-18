@@ -16,9 +16,7 @@ mod security_gate_tests {
     use serde_json::json;
     use shared::error::AppError;
 
-    use crate::{
-        create_room, delete_meeting, delete_room, update_meeting, update_room,
-    };
+    use crate::{create_room, delete_meeting, delete_room, update_meeting, update_room};
 
     fn build_session(person_unique: &str) -> shared::session::Session {
         shared::testing::test_session(person_unique)

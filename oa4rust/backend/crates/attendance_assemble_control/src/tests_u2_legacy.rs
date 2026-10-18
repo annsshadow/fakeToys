@@ -47,7 +47,11 @@ mod u2_legacy_tests {
                 "/dingding/sync/from/2026-08-01/to/2026-08-07/start",
                 StatusCode::UNAUTHORIZED,
             ),
-            ("GET", "/dingding/sync/list", StatusCode::INTERNAL_SERVER_ERROR),
+            (
+                "GET",
+                "/dingding/sync/list",
+                StatusCode::INTERNAL_SERVER_ERROR,
+            ),
             (
                 "PUT",
                 "/dingding/attendance/list/x/next/20",

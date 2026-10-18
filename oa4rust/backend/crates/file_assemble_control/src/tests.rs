@@ -199,10 +199,7 @@ mod tests {
             // round4-b77：enabled/max_upload_size 实为 TEXT 列，handler 按字符串解析，mock 同步。
             ("enabled", Value::String("true".to_string())),
             ("default_storage", Value::String("local".to_string())),
-            (
-                "max_upload_size",
-                Value::String("104857600".to_string()),
-            ),
+            ("max_upload_size", Value::String("104857600".to_string())),
         ]);
         let pool = mock_control_pool(results);
 
@@ -255,7 +252,10 @@ mod tests {
                 deadpool_postgres::tokio_postgres::Config::new(),
                 deadpool_postgres::tokio_postgres::NoTls,
             );
-            deadpool_postgres::Pool::builder(mgr).max_size(1).build().unwrap()
+            deadpool_postgres::Pool::builder(mgr)
+                .max_size(1)
+                .build()
+                .unwrap()
         };
 
         let body = axum::extract::Json(serde_json::json!({"enabled": false}));
@@ -632,9 +632,13 @@ mod tests {
         }
         let bytes = buf.into_inner();
         let mut archive = zip::ZipArchive::new(std::io::Cursor::new(bytes.as_slice())).unwrap();
-        let s = crate::read_zip_entry(&mut archive, "xl/sharedStrings.xml")
-            .expect("entry should read");
-        assert_eq!(s.len(), crate::ZIP_ENTRY_MAX_BYTES as usize, "必须截断在上限");
+        let s =
+            crate::read_zip_entry(&mut archive, "xl/sharedStrings.xml").expect("entry should read");
+        assert_eq!(
+            s.len(),
+            crate::ZIP_ENTRY_MAX_BYTES as usize,
+            "必须截断在上限"
+        );
         assert!(s.len() < payload.len(), "解压结果不得等于源条目大小");
     }
 
@@ -1050,7 +1054,10 @@ mod office_preview_tests {
                 deadpool_postgres::tokio_postgres::Config::new(),
                 deadpool_postgres::tokio_postgres::NoTls,
             );
-            deadpool_postgres::Pool::builder(mgr).max_size(1).build().unwrap()
+            deadpool_postgres::Pool::builder(mgr)
+                .max_size(1)
+                .build()
+                .unwrap()
         };
         assert!(
             matches!(
@@ -1166,13 +1173,19 @@ mod office_preview_tests {
         {
             let c = pool.get().await.unwrap();
             let n: i64 = c
-                .query_one("SELECT COUNT(*) FROM file_file WHERE id='file-gate-clean'", &[])
+                .query_one(
+                    "SELECT COUNT(*) FROM file_file WHERE id='file-gate-clean'",
+                    &[],
+                )
                 .await
                 .unwrap()
                 .get(0);
             assert_eq!(n, 1, "非 admin 403 侧不得删 clean 行");
             let m: i64 = c
-                .query_one("SELECT COUNT(*) FROM file_file WHERE reference_id='ref-other'", &[])
+                .query_one(
+                    "SELECT COUNT(*) FROM file_file WHERE reference_id='ref-other'",
+                    &[],
+                )
                 .await
                 .unwrap()
                 .get(0);
@@ -1214,18 +1227,27 @@ mod office_preview_tests {
         {
             let c = pool.get().await.unwrap();
             let n: i64 = c
-                .query_one("SELECT COUNT(*) FROM file_file WHERE id='file-gate-clean'", &[])
+                .query_one(
+                    "SELECT COUNT(*) FROM file_file WHERE id='file-gate-clean'",
+                    &[],
+                )
                 .await
                 .unwrap()
                 .get(0);
             assert_eq!(n, 0, "admin clean_unused 应删掉 cmsdocument_manage 行");
             let o: i64 = c
-                .query_one("SELECT COUNT(*) FROM file_file WHERE reference_id='ref-owner'", &[])
+                .query_one(
+                    "SELECT COUNT(*) FROM file_file WHERE reference_id='ref-owner'",
+                    &[],
+                )
                 .await
                 .unwrap()
                 .get(0);
             let a: i64 = c
-                .query_one("SELECT COUNT(*) FROM file_file WHERE reference_id='ref-admin'", &[])
+                .query_one(
+                    "SELECT COUNT(*) FROM file_file WHERE reference_id='ref-admin'",
+                    &[],
+                )
                 .await
                 .unwrap()
                 .get(0);
@@ -1241,9 +1263,12 @@ mod office_preview_tests {
         )
         .await
         .unwrap();
-        c.execute("DELETE FROM auth_person_role WHERE person_id=$1", &[&ADMIN.to_string()])
-            .await
-            .unwrap();
+        c.execute(
+            "DELETE FROM auth_person_role WHERE person_id=$1",
+            &[&ADMIN.to_string()],
+        )
+        .await
+        .unwrap();
         c.execute("DELETE FROM auth_person WHERE id=$1", &[&ADMIN.to_string()])
             .await
             .unwrap();

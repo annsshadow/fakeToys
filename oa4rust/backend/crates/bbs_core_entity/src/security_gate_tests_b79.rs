@@ -29,46 +29,73 @@ async fn b79_writes_reject_without_session() {
     let body = || Json(serde_json::json!({}));
 
     // forum
-    assert!(matches!(
-        create_forum(Extension(db.0.clone()), none.clone(), body()).await,
-        Err(AppError::Unauthorized)
-    ), "create_forum 无会话必须 401");
-    assert!(matches!(
-        update_forum(Extension(db.0.clone()), none.clone(), path(), body()).await,
-        Err(AppError::Unauthorized)
-    ), "update_forum 无会话必须 401");
-    assert!(matches!(
-        delete_forum(Extension(db.0.clone()), none.clone(), path()).await,
-        Err(AppError::Unauthorized)
-    ), "delete_forum 无会话必须 401");
+    assert!(
+        matches!(
+            create_forum(Extension(db.0.clone()), none.clone(), body()).await,
+            Err(AppError::Unauthorized)
+        ),
+        "create_forum 无会话必须 401"
+    );
+    assert!(
+        matches!(
+            update_forum(Extension(db.0.clone()), none.clone(), path(), body()).await,
+            Err(AppError::Unauthorized)
+        ),
+        "update_forum 无会话必须 401"
+    );
+    assert!(
+        matches!(
+            delete_forum(Extension(db.0.clone()), none.clone(), path()).await,
+            Err(AppError::Unauthorized)
+        ),
+        "delete_forum 无会话必须 401"
+    );
 
     // section
-    assert!(matches!(
-        create_section(Extension(db.0.clone()), none.clone(), body()).await,
-        Err(AppError::Unauthorized)
-    ), "create_section 无会话必须 401");
-    assert!(matches!(
-        update_section(Extension(db.0.clone()), none.clone(), path(), body()).await,
-        Err(AppError::Unauthorized)
-    ), "update_section 无会话必须 401");
-    assert!(matches!(
-        delete_section(Extension(db.0.clone()), none.clone(), path()).await,
-        Err(AppError::Unauthorized)
-    ), "delete_section 无会话必须 401");
+    assert!(
+        matches!(
+            create_section(Extension(db.0.clone()), none.clone(), body()).await,
+            Err(AppError::Unauthorized)
+        ),
+        "create_section 无会话必须 401"
+    );
+    assert!(
+        matches!(
+            update_section(Extension(db.0.clone()), none.clone(), path(), body()).await,
+            Err(AppError::Unauthorized)
+        ),
+        "update_section 无会话必须 401"
+    );
+    assert!(
+        matches!(
+            delete_section(Extension(db.0.clone()), none.clone(), path()).await,
+            Err(AppError::Unauthorized)
+        ),
+        "delete_section 无会话必须 401"
+    );
 
     // subject
-    assert!(matches!(
-        create_subject(Extension(db.0.clone()), none.clone(), body()).await,
-        Err(AppError::Unauthorized)
-    ), "create_subject 无会话必须 401");
-    assert!(matches!(
-        update_subject(Extension(db.0.clone()), none.clone(), path(), body()).await,
-        Err(AppError::Unauthorized)
-    ), "update_subject 无会话必须 401");
-    assert!(matches!(
-        delete_subject(Extension(db.0), none, path()).await,
-        Err(AppError::Unauthorized)
-    ), "delete_subject 无会话必须 401");
+    assert!(
+        matches!(
+            create_subject(Extension(db.0.clone()), none.clone(), body()).await,
+            Err(AppError::Unauthorized)
+        ),
+        "create_subject 无会话必须 401"
+    );
+    assert!(
+        matches!(
+            update_subject(Extension(db.0.clone()), none.clone(), path(), body()).await,
+            Err(AppError::Unauthorized)
+        ),
+        "update_subject 无会话必须 401"
+    );
+    assert!(
+        matches!(
+            delete_subject(Extension(db.0), none, path()).await,
+            Err(AppError::Unauthorized)
+        ),
+        "delete_subject 无会话必须 401"
+    );
 }
 
 /// 纯单元：`require_session` 门逻辑本身（无 DB 副作用）——无会话拒绝、有会话放行。

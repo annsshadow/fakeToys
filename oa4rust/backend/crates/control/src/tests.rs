@@ -337,7 +337,9 @@ mod tests {
             false,
             None
         ));
-        assert!(!auth::password::verify_password("wrong", &hash, "", false, None));
+        assert!(!auth::password::verify_password(
+            "wrong", &hash, "", false, None
+        ));
 
         let md5_hash = format!("{:x}", md5::compute("legacy".as_bytes()));
         // 遗留 MD5 仅显式开启兼容开关时接受（fail-closed 设计）。

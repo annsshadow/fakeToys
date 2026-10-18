@@ -363,23 +363,33 @@ mod u2_tests {
         let cases: Vec<(&str, Result<(), AppError>)> = vec![
             (
                 "personattr_set_person_name",
-                crate::endpoints_attr::personattr_set_person_name(ext(), None, j()).await.map(|_| ()),
+                crate::endpoints_attr::personattr_set_person_name(ext(), None, j())
+                    .await
+                    .map(|_| ()),
             ),
             (
                 "personattr_append_person_name",
-                crate::endpoints_attr::personattr_append_person_name(ext(), None, j()).await.map(|_| ()),
+                crate::endpoints_attr::personattr_append_person_name(ext(), None, j())
+                    .await
+                    .map(|_| ()),
             ),
             (
                 "unitattr_set_unit_name",
-                crate::endpoints_attr::unitattr_set_unit_name(ext(), None, j()).await.map(|_| ()),
+                crate::endpoints_attr::unitattr_set_unit_name(ext(), None, j())
+                    .await
+                    .map(|_| ()),
             ),
             (
                 "unitattr_append_unit_name",
-                crate::endpoints_attr::unitattr_append_unit_name(ext(), None, j()).await.map(|_| ()),
+                crate::endpoints_attr::unitattr_append_unit_name(ext(), None, j())
+                    .await
+                    .map(|_| ()),
             ),
             (
                 "empowerlog_create",
-                crate::endpoints_attr::empowerlog_create(ext(), None, je()).await.map(|_| ()),
+                crate::endpoints_attr::empowerlog_create(ext(), None, je())
+                    .await
+                    .map(|_| ()),
             ),
         ];
         assert_eq!(cases.len(), 5, "本批 5 把必须逐把点名");

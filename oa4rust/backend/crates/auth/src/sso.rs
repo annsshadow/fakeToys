@@ -14,7 +14,7 @@ use shared::error::AppError;
 use shared::response::ActionResult;
 use shared::session::SessionManager;
 
-use crate::password::{sso_decrypt_payload, sso_encrypt_payload, legacy_compat_from_env};
+use crate::password::{legacy_compat_from_env, sso_decrypt_payload, sso_encrypt_payload};
 
 // ──────────────────────────────────────────────────────────────────────────────
 // sso — 单点登录（3DES EDE2 加密 token）

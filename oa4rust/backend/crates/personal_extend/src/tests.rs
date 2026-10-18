@@ -209,7 +209,10 @@ async fn face_writes_require_owner() {
             deadpool_postgres::tokio_postgres::Config::new(),
             deadpool_postgres::tokio_postgres::NoTls,
         );
-        deadpool_postgres::Pool::builder(mgr).max_size(1).build().unwrap()
+        deadpool_postgres::Pool::builder(mgr)
+            .max_size(1)
+            .build()
+            .unwrap()
     };
     assert!(
         matches!(
@@ -425,9 +428,12 @@ async fn face_writes_require_owner() {
     c.execute("DELETE FROM x_person_face WHERE id LIKE 'face-gate-%'", &[])
         .await
         .unwrap();
-    c.execute("DELETE FROM auth_person_role WHERE person_id=$1", &[&ADMIN.to_string()])
-        .await
-        .unwrap();
+    c.execute(
+        "DELETE FROM auth_person_role WHERE person_id=$1",
+        &[&ADMIN.to_string()],
+    )
+    .await
+    .unwrap();
     c.execute("DELETE FROM auth_person WHERE id=$1", &[&ADMIN.to_string()])
         .await
         .unwrap();

@@ -1433,7 +1433,14 @@ pub async fn neural_generate_model_modelFlag(
     session: Option<Extension<shared::session::Session>>,
     Path(model_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_row_owner(&pool.0, session, "x_query_neural_model", "flag", &model_flag).await?;
+    require_row_owner(
+        &pool.0,
+        session,
+        "x_query_neural_model",
+        "flag",
+        &model_flag,
+    )
+    .await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -1465,7 +1472,14 @@ pub async fn neural_learn_model_modelFlag(
     session: Option<Extension<shared::session::Session>>,
     Path(model_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_row_owner(&pool.0, session, "x_query_neural_model", "flag", &model_flag).await?;
+    require_row_owner(
+        &pool.0,
+        session,
+        "x_query_neural_model",
+        "flag",
+        &model_flag,
+    )
+    .await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -1678,7 +1692,14 @@ pub async fn neural_model_modelFlag_reset_status(
     session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(model_flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_row_owner(&pool.0, session, "x_query_neural_model", "flag", &model_flag).await?;
+    require_row_owner(
+        &pool.0,
+        session,
+        "x_query_neural_model",
+        "flag",
+        &model_flag,
+    )
+    .await?;
     neural_model_modelFlag_reset_status_core(pool, model_flag).await
 }
 
@@ -1688,7 +1709,14 @@ pub async fn neural_model_modelFlag_reset_status_p2(
     session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((model_flag, _s1)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_row_owner(&pool.0, session, "x_query_neural_model", "flag", &model_flag).await?;
+    require_row_owner(
+        &pool.0,
+        session,
+        "x_query_neural_model",
+        "flag",
+        &model_flag,
+    )
+    .await?;
     neural_model_modelFlag_reset_status_core(pool, model_flag).await
 }
 
@@ -1698,7 +1726,14 @@ pub async fn neural_stop_generating_model_modelFlag(
     session: Option<Extension<shared::session::Session>>,
     Path(model_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_row_owner(&pool.0, session, "x_query_neural_model", "flag", &model_flag).await?;
+    require_row_owner(
+        &pool.0,
+        session,
+        "x_query_neural_model",
+        "flag",
+        &model_flag,
+    )
+    .await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -1732,7 +1767,14 @@ pub async fn neural_stop_learn_model_modelFlag(
     session: Option<Extension<shared::session::Session>>,
     Path(model_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_row_owner(&pool.0, session, "x_query_neural_model", "flag", &model_flag).await?;
+    require_row_owner(
+        &pool.0,
+        session,
+        "x_query_neural_model",
+        "flag",
+        &model_flag,
+    )
+    .await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client

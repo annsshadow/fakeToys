@@ -27,14 +27,14 @@ pub mod routes;
 pub mod u2;
 
 #[cfg(test)]
+mod security_gate_tests;
+#[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;
 #[cfg(test)]
 mod tests_u2;
-#[cfg(test)]
-mod security_gate_tests;
 
 thread_local! {
     static TOKEN_STORE: Mutex<HashMap<String, String>> = Mutex::new(HashMap::new());

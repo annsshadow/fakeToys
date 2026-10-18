@@ -87,7 +87,10 @@ mod security_gate_tests {
                 deadpool_postgres::tokio_postgres::Config::new(),
                 deadpool_postgres::tokio_postgres::NoTls,
             );
-            deadpool_postgres::Pool::builder(mgr).max_size(1).build().unwrap()
+            deadpool_postgres::Pool::builder(mgr)
+                .max_size(1)
+                .build()
+                .unwrap()
         };
         assert!(
             matches!(
@@ -168,7 +171,9 @@ mod security_gate_tests {
                 crate::user_hotpic_changeTitle(
                     Extension(pool.clone()),
                     sess(OTHER),
-                    axum::extract::Json(serde_json::json!({"id": "hotpic-gate-1", "title": "hacked"}))
+                    axum::extract::Json(
+                        serde_json::json!({"id": "hotpic-gate-1", "title": "hacked"})
+                    )
                 )
                 .await,
                 Err(AppError::Forbidden)
@@ -281,9 +286,12 @@ mod security_gate_tests {
         c.execute("DELETE FROM x_hotpic WHERE id LIKE 'hotpic-gate-%'", &[])
             .await
             .unwrap();
-        c.execute("DELETE FROM auth_person_role WHERE person_id=$1", &[&ADMIN.to_string()])
-            .await
-            .unwrap();
+        c.execute(
+            "DELETE FROM auth_person_role WHERE person_id=$1",
+            &[&ADMIN.to_string()],
+        )
+        .await
+        .unwrap();
         c.execute("DELETE FROM auth_person WHERE id=$1", &[&ADMIN.to_string()])
             .await
             .unwrap();

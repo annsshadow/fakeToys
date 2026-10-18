@@ -15,12 +15,12 @@ pub mod routes;
 pub mod u2;
 
 #[cfg(test)]
+mod security_gate_tests;
+#[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-#[cfg(test)]
-mod security_gate_tests;
 
 /// 第五十九批：mind 写面门禁——会话存在档（无会话 401，先于任何 SQL）。
 fn require_session(

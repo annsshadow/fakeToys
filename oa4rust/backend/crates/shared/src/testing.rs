@@ -28,9 +28,8 @@ pub fn mock_pool() -> Pool {
 /// 设 `DATABASE_URL=postgres://o2server:password@localhost:15432/oa4rust` 即可，
 /// 不影响 CI（CI 不设该变量，回退 5432）。
 pub fn test_pool() -> Pool {
-    let database_url = std::env::var("DATABASE_URL").unwrap_or_else(|_| {
-        "postgres://o2server:password@localhost:5432/oa4rust".to_string()
-    });
+    let database_url = std::env::var("DATABASE_URL")
+        .unwrap_or_else(|_| "postgres://o2server:password@localhost:5432/oa4rust".to_string());
     let url = url::Url::parse(&database_url).expect("invalid DATABASE_URL");
     let host = url.host_str().unwrap_or("localhost");
     let port = url.port().unwrap_or(5432);
@@ -96,9 +95,8 @@ pub async fn is_redis_available() -> bool {
 ///
 /// 与 [`test_pool`] 一致，支持 `DATABASE_URL` 覆盖连接目标（缺省回退默认 5432 库）。
 pub async fn test_sea_orm_pool() -> Result<DatabaseConnection, String> {
-    let database_url = std::env::var("DATABASE_URL").unwrap_or_else(|_| {
-        "postgres://o2server:password@localhost:5432/oa4rust".to_string()
-    });
+    let database_url = std::env::var("DATABASE_URL")
+        .unwrap_or_else(|_| "postgres://o2server:password@localhost:5432/oa4rust".to_string());
     let mut options = ConnectOptions::new(database_url);
     options.max_connections(5).sqlx_logging(false);
     Database::connect(options).await.map_err(|e| e.to_string())

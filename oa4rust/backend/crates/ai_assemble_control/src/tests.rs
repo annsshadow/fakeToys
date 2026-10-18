@@ -662,9 +662,12 @@ mod u2_unit_tests {
             }
             for id in ["ai-gate-chat", "ai-gate-chat-owner"] {
                 // x_ai_conversation 现需非 null title（schema 漂移）；DELETE+INSERT 幂等造数。
-                c.execute("DELETE FROM x_ai_conversation WHERE id = $1", &[&id.to_string()])
-                    .await
-                    .unwrap();
+                c.execute(
+                    "DELETE FROM x_ai_conversation WHERE id = $1",
+                    &[&id.to_string()],
+                )
+                .await
+                .unwrap();
                 c.execute(
                     "INSERT INTO x_ai_conversation (id, title, user_id, create_time) \
                      VALUES ($1,$1,$2,NOW())",
@@ -678,56 +681,182 @@ mod u2_unit_tests {
         // 非 admin / 非属主 → 403，且不落笔。
         assert!(
             matches!(
-                crate::file_delete_flag(axum::extract::Extension(pool.clone()), sess(OTHER), axum::extract::Path("ai-gate-file".to_string())).await,
+                crate::file_delete_flag(
+                    axum::extract::Extension(pool.clone()),
+                    sess(OTHER),
+                    axum::extract::Path("ai-gate-file".to_string())
+                )
+                .await,
                 Err(shared::error::AppError::Forbidden)
             ),
             "file_delete_flag 他人必须 403"
         );
         assert!(
             matches!(
-                crate::index_delete_flag(axum::extract::Extension(pool.clone()), sess(OTHER), axum::extract::Path("ai-gate-index".to_string())).await,
+                crate::index_delete_flag(
+                    axum::extract::Extension(pool.clone()),
+                    sess(OTHER),
+                    axum::extract::Path("ai-gate-index".to_string())
+                )
+                .await,
                 Err(shared::error::AppError::Forbidden)
             ),
             "index_delete_flag 他人必须 403"
         );
         assert!(
             matches!(
-                crate::chat_delete_clue_id(axum::extract::Extension(pool.clone()), sess(OTHER), axum::extract::Path("ai-gate-chat".to_string())).await,
+                crate::chat_delete_clue_id(
+                    axum::extract::Extension(pool.clone()),
+                    sess(OTHER),
+                    axum::extract::Path("ai-gate-chat".to_string())
+                )
+                .await,
                 Err(shared::error::AppError::Forbidden)
             ),
             "chat_delete_clue_id 他人必须 403"
         );
         assert!(
             matches!(
-                crate::index_sync_to_knowledge(axum::extract::Extension(pool.clone()), sess(OTHER)).await,
+                crate::index_sync_to_knowledge(axum::extract::Extension(pool.clone()), sess(OTHER))
+                    .await,
                 Err(shared::error::AppError::Forbidden)
             ),
             "index_sync_to_knowledge 非 admin 必须 403"
         );
         // 403 侧不落笔。
-        assert_eq!(exists(&pool, "SELECT COUNT(*) FROM x_ai_file WHERE id=$1", "ai-gate-file").await, 1);
-        assert_eq!(exists(&pool, "SELECT COUNT(*) FROM x_ai_index WHERE id=$1", "ai-gate-index").await, 1);
-        assert_eq!(exists(&pool, "SELECT COUNT(*) FROM x_ai_conversation WHERE id=$1 AND deleted_at IS NULL", "ai-gate-chat").await, 1);
+        assert_eq!(
+            exists(
+                &pool,
+                "SELECT COUNT(*) FROM x_ai_file WHERE id=$1",
+                "ai-gate-file"
+            )
+            .await,
+            1
+        );
+        assert_eq!(
+            exists(
+                &pool,
+                "SELECT COUNT(*) FROM x_ai_index WHERE id=$1",
+                "ai-gate-index"
+            )
+            .await,
+            1
+        );
+        assert_eq!(
+            exists(
+                &pool,
+                "SELECT COUNT(*) FROM x_ai_conversation WHERE id=$1 AND deleted_at IS NULL",
+                "ai-gate-chat"
+            )
+            .await,
+            1
+        );
 
         // 属主放行：file / index 真删、chat 软删。
-        assert!(crate::file_delete_flag(axum::extract::Extension(pool.clone()), sess(OWNER), axum::extract::Path("ai-gate-file-owner".to_string())).await.is_ok(), "owner file_delete 应放行");
-        assert!(crate::index_delete_flag(axum::extract::Extension(pool.clone()), sess(OWNER), axum::extract::Path("ai-gate-index-owner".to_string())).await.is_ok(), "owner index_delete 应放行");
-        assert!(crate::chat_delete_clue_id(axum::extract::Extension(pool.clone()), sess(OWNER), axum::extract::Path("ai-gate-chat-owner".to_string())).await.is_ok(), "owner chat_delete 应放行");
-        assert_eq!(exists(&pool, "SELECT COUNT(*) FROM x_ai_file WHERE id=$1", "ai-gate-file-owner").await, 0, "owner 删后文件应消失");
-        assert_eq!(exists(&pool, "SELECT COUNT(*) FROM x_ai_index WHERE id=$1", "ai-gate-index-owner").await, 0, "owner 删后索引应消失");
-        assert_eq!(exists(&pool, "SELECT COUNT(*) FROM x_ai_conversation WHERE id=$1 AND deleted_at IS NULL", "ai-gate-chat-owner").await, 0, "owner 删后会话应软删");
+        assert!(
+            crate::file_delete_flag(
+                axum::extract::Extension(pool.clone()),
+                sess(OWNER),
+                axum::extract::Path("ai-gate-file-owner".to_string())
+            )
+            .await
+            .is_ok(),
+            "owner file_delete 应放行"
+        );
+        assert!(
+            crate::index_delete_flag(
+                axum::extract::Extension(pool.clone()),
+                sess(OWNER),
+                axum::extract::Path("ai-gate-index-owner".to_string())
+            )
+            .await
+            .is_ok(),
+            "owner index_delete 应放行"
+        );
+        assert!(
+            crate::chat_delete_clue_id(
+                axum::extract::Extension(pool.clone()),
+                sess(OWNER),
+                axum::extract::Path("ai-gate-chat-owner".to_string())
+            )
+            .await
+            .is_ok(),
+            "owner chat_delete 应放行"
+        );
+        assert_eq!(
+            exists(
+                &pool,
+                "SELECT COUNT(*) FROM x_ai_file WHERE id=$1",
+                "ai-gate-file-owner"
+            )
+            .await,
+            0,
+            "owner 删后文件应消失"
+        );
+        assert_eq!(
+            exists(
+                &pool,
+                "SELECT COUNT(*) FROM x_ai_index WHERE id=$1",
+                "ai-gate-index-owner"
+            )
+            .await,
+            0,
+            "owner 删后索引应消失"
+        );
+        assert_eq!(
+            exists(
+                &pool,
+                "SELECT COUNT(*) FROM x_ai_conversation WHERE id=$1 AND deleted_at IS NULL",
+                "ai-gate-chat-owner"
+            )
+            .await,
+            0,
+            "owner 删后会话应软删"
+        );
 
         // admin 放行：owner-gated 那把走 admin 旁路删自己名下的行；admin-gated 那把跑批量。
-        assert!(crate::file_delete_flag(axum::extract::Extension(pool.clone()), sess(ADMIN), axum::extract::Path("ai-gate-file-admin".to_string())).await.is_ok(), "admin file_delete 应放行（admin 旁路）");
-        assert!(crate::index_sync_to_knowledge(axum::extract::Extension(pool.clone()), sess(ADMIN)).await.is_ok(), "admin index_sync 应放行");
+        assert!(
+            crate::file_delete_flag(
+                axum::extract::Extension(pool.clone()),
+                sess(ADMIN),
+                axum::extract::Path("ai-gate-file-admin".to_string())
+            )
+            .await
+            .is_ok(),
+            "admin file_delete 应放行（admin 旁路）"
+        );
+        assert!(
+            crate::index_sync_to_knowledge(axum::extract::Extension(pool.clone()), sess(ADMIN))
+                .await
+                .is_ok(),
+            "admin index_sync 应放行"
+        );
 
         // 收口：清造数，零残留。
         let c = pool.get().await.unwrap();
-        c.execute("DELETE FROM x_ai_file WHERE id LIKE 'ai-gate-%'", &[]).await.unwrap();
-        c.execute("DELETE FROM x_ai_index WHERE id LIKE 'ai-gate-%'", &[]).await.unwrap();
-        c.execute("DELETE FROM x_ai_conversation WHERE id LIKE 'ai-gate-%'", &[]).await.unwrap();
-        c.execute("DELETE FROM auth_person_role WHERE person_id=$1", &[&ADMIN.to_string()]).await.unwrap();
-        c.execute("DELETE FROM auth_person WHERE id=$1", &[&ADMIN.to_string()]).await.unwrap();
-        c.execute("DELETE FROM auth_role WHERE id=$1", &[&ROLE.to_string()]).await.unwrap();
+        c.execute("DELETE FROM x_ai_file WHERE id LIKE 'ai-gate-%'", &[])
+            .await
+            .unwrap();
+        c.execute("DELETE FROM x_ai_index WHERE id LIKE 'ai-gate-%'", &[])
+            .await
+            .unwrap();
+        c.execute(
+            "DELETE FROM x_ai_conversation WHERE id LIKE 'ai-gate-%'",
+            &[],
+        )
+        .await
+        .unwrap();
+        c.execute(
+            "DELETE FROM auth_person_role WHERE person_id=$1",
+            &[&ADMIN.to_string()],
+        )
+        .await
+        .unwrap();
+        c.execute("DELETE FROM auth_person WHERE id=$1", &[&ADMIN.to_string()])
+            .await
+            .unwrap();
+        c.execute("DELETE FROM auth_role WHERE id=$1", &[&ROLE.to_string()])
+            .await
+            .unwrap();
     }
 }

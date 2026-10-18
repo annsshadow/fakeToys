@@ -36,86 +36,86 @@ mod exempt_authorize_parity {
     /// 用函数而非 `const`：`json!` 不是 const 函数，探针体需要真实对象。
     fn must_reach_with_session() -> Vec<(&'static str, Method, &'static str, Value)> {
         vec![
-        // 6c D1：被同层 `{id}` 通配豁免吞掉的写路由
-        (
-            "invoice_create",
-            Method::POST,
-            "/api/general/assemble/control/invoice/create",
-            json!({ "name": "r48-parity-invoice-create" }),
-        ),
-        (
-            "invoice_upload",
-            Method::POST,
-            "/api/general/assemble/control/invoice/upload",
-            json!({ "name": "r48-parity-invoice-upload", "creator": "r48-spoofed-actor" }),
-        ),
-        (
-            "meeting_create_alias",
-            Method::POST,
-            "/api/meeting/assemble/control/meeting/create",
-            Value::Null,
-        ),
-        (
-            "meeting_create_root",
-            Method::POST,
-            "/api/meeting/assemble/control/meeting",
-            Value::Null,
-        ),
-        // 6c D2：豁免表里的字面量只读路由，注册表没有 Public，`/api`→Authenticated 兜死
-        (
-            "meeting_get_by_id",
-            Method::GET,
-            "/api/meeting/assemble/control/meeting/r48-parity-nonexistent",
-            Value::Null,
-        ),
-        (
-            "queryview_list",
-            Method::GET,
-            "/api/queryview/list",
-            Value::Null,
-        ),
-        (
-            "queryview_view_by_id",
-            Method::GET,
-            "/api/queryview/view/r48-parity-nonexistent",
-            Value::Null,
-        ),
-        (
-            "surface_task_list_work",
-            Method::GET,
-            "/api/processplatform/assemble/surface/task/list/work/r48-parity-nonexistent",
-            Value::Null,
-        ),
-        (
-            "surface_attachment_list_work",
-            Method::GET,
-            "/api/processplatform/assemble/surface/attachment/list/work/r48-parity-nonexistent",
-            Value::Null,
-        ),
-        (
-            "captcha_verify",
-            Method::POST,
-            "/api/secret/captcha/verify",
-            Value::Null,
-        ),
+            // 6c D1：被同层 `{id}` 通配豁免吞掉的写路由
+            (
+                "invoice_create",
+                Method::POST,
+                "/api/general/assemble/control/invoice/create",
+                json!({ "name": "r48-parity-invoice-create" }),
+            ),
+            (
+                "invoice_upload",
+                Method::POST,
+                "/api/general/assemble/control/invoice/upload",
+                json!({ "name": "r48-parity-invoice-upload", "creator": "r48-spoofed-actor" }),
+            ),
+            (
+                "meeting_create_alias",
+                Method::POST,
+                "/api/meeting/assemble/control/meeting/create",
+                Value::Null,
+            ),
+            (
+                "meeting_create_root",
+                Method::POST,
+                "/api/meeting/assemble/control/meeting",
+                Value::Null,
+            ),
+            // 6c D2：豁免表里的字面量只读路由，注册表没有 Public，`/api`→Authenticated 兜死
+            (
+                "meeting_get_by_id",
+                Method::GET,
+                "/api/meeting/assemble/control/meeting/r48-parity-nonexistent",
+                Value::Null,
+            ),
+            (
+                "queryview_list",
+                Method::GET,
+                "/api/queryview/list",
+                Value::Null,
+            ),
+            (
+                "queryview_view_by_id",
+                Method::GET,
+                "/api/queryview/view/r48-parity-nonexistent",
+                Value::Null,
+            ),
+            (
+                "surface_task_list_work",
+                Method::GET,
+                "/api/processplatform/assemble/surface/task/list/work/r48-parity-nonexistent",
+                Value::Null,
+            ),
+            (
+                "surface_attachment_list_work",
+                Method::GET,
+                "/api/processplatform/assemble/surface/attachment/list/work/r48-parity-nonexistent",
+                Value::Null,
+            ),
+            (
+                "captcha_verify",
+                Method::POST,
+                "/api/secret/captcha/verify",
+                Value::Null,
+            ),
         ]
     }
 
     /// 设计上必须匿名可达（登录/注册前置流程）
     fn must_reach_anonymous() -> Vec<(&'static str, Method, &'static str, Value)> {
         vec![
-        (
-            "person_regist",
-            Method::POST,
-            "/api/person/regist",
-            json!({}),
-        ),
-        (
-            "captcha_verify",
-            Method::POST,
-            "/api/secret/captcha/verify",
-            json!({}),
-        ),
+            (
+                "person_regist",
+                Method::POST,
+                "/api/person/regist",
+                json!({}),
+            ),
+            (
+                "captcha_verify",
+                Method::POST,
+                "/api/secret/captcha/verify",
+                json!({}),
+            ),
         ]
     }
 
@@ -173,7 +173,9 @@ mod exempt_authorize_parity {
                 resp
             );
             if status == axum::http::StatusCode::UNAUTHORIZED {
-                red.push(format!("{name} {method} {uri} 带合法会话仍 401（半开双锁）"));
+                red.push(format!(
+                    "{name} {method} {uri} 带合法会话仍 401（半开双锁）"
+                ));
             }
         }
         for (name, method, uri, body) in must_reach_anonymous() {

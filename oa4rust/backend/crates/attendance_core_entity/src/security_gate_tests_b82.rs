@@ -27,22 +27,34 @@ async fn b82_writes_reject_without_session() {
     let path = || axum::extract::Path("b82-absent".to_string());
     let body = || axum::extract::Json(serde_json::json!({}));
 
-    assert!(matches!(
-        record_create(Extension(db.0.clone()), none.clone(), body()).await,
-        Err(AppError::Unauthorized)
-    ), "record_create 无会话必须 401");
-    assert!(matches!(
-        record_update(Extension(db.0.clone()), none.clone(), path(), body()).await,
-        Err(AppError::Unauthorized)
-    ), "record_update 无会话必须 401");
-    assert!(matches!(
-        rule_create(Extension(db.0.clone()), none.clone(), body()).await,
-        Err(AppError::Unauthorized)
-    ), "rule_create 无会话必须 401");
-    assert!(matches!(
-        rule_update(Extension(db.0), none, path(), body()).await,
-        Err(AppError::Unauthorized)
-    ), "rule_update 无会话必须 401");
+    assert!(
+        matches!(
+            record_create(Extension(db.0.clone()), none.clone(), body()).await,
+            Err(AppError::Unauthorized)
+        ),
+        "record_create 无会话必须 401"
+    );
+    assert!(
+        matches!(
+            record_update(Extension(db.0.clone()), none.clone(), path(), body()).await,
+            Err(AppError::Unauthorized)
+        ),
+        "record_update 无会话必须 401"
+    );
+    assert!(
+        matches!(
+            rule_create(Extension(db.0.clone()), none.clone(), body()).await,
+            Err(AppError::Unauthorized)
+        ),
+        "rule_create 无会话必须 401"
+    );
+    assert!(
+        matches!(
+            rule_update(Extension(db.0), none, path(), body()).await,
+            Err(AppError::Unauthorized)
+        ),
+        "rule_update 无会话必须 401"
+    );
 }
 
 /// 纯单元：`require_session` 门逻辑本身（无 DB 副作用）——无会话拒绝、有会话放行。

@@ -273,7 +273,13 @@ mod tests {
         let encrypted = des_encrypt_for_test(password, key);
         let base64 = base64::engine::general_purpose::URL_SAFE.encode(encrypted);
         let url_encoded = urlencoding::encode(&base64);
-        assert!(!verify_password(password, &url_encoded, "wrongkey", true, None));
+        assert!(!verify_password(
+            password,
+            &url_encoded,
+            "wrongkey",
+            true,
+            None
+        ));
     }
 
     #[test]

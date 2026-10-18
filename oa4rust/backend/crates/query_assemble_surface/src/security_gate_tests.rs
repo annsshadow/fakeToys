@@ -42,15 +42,25 @@ mod security_gate_tests {
         let cases: Vec<(&str, Result<(), AppError>)> = vec![
             (
                 "table_tableFlag_row_id_mockputtopost",
-                crate::table_tableFlag_row_id_mockputtopost(Extension(pool.clone()), None, two(), body())
-                    .await
-                    .map(|_| ()),
+                crate::table_tableFlag_row_id_mockputtopost(
+                    Extension(pool.clone()),
+                    None,
+                    two(),
+                    body(),
+                )
+                .await
+                .map(|_| ()),
             ),
             (
                 "table_tableFlag_row_id_part_update",
-                crate::table_tableFlag_row_id_part_update(Extension(pool.clone()), None, two(), body())
-                    .await
-                    .map(|_| ()),
+                crate::table_tableFlag_row_id_part_update(
+                    Extension(pool.clone()),
+                    None,
+                    two(),
+                    body(),
+                )
+                .await
+                .map(|_| ()),
             ),
             (
                 "table_row_insert",
@@ -60,9 +70,14 @@ mod security_gate_tests {
             ),
             (
                 "table_row_insert_one",
-                crate::u2_closures::table_row_insert_one(Extension(pool.clone()), None, one(), body())
-                    .await
-                    .map(|_| ()),
+                crate::u2_closures::table_row_insert_one(
+                    Extension(pool.clone()),
+                    None,
+                    one(),
+                    body(),
+                )
+                .await
+                .map(|_| ()),
             ),
             (
                 "view_id_bundle_mockputtopost",
@@ -139,15 +154,25 @@ mod security_gate_tests {
         let cases: Vec<(&str, Result<(), AppError>)> = vec![
             (
                 "table_tableFlag_row_id_mockputtopost",
-                crate::table_tableFlag_row_id_mockputtopost(Extension(pool.clone()), s(), two(), body())
-                    .await
-                    .map(|_| ()),
+                crate::table_tableFlag_row_id_mockputtopost(
+                    Extension(pool.clone()),
+                    s(),
+                    two(),
+                    body(),
+                )
+                .await
+                .map(|_| ()),
             ),
             (
                 "table_tableFlag_row_id_part_update",
-                crate::table_tableFlag_row_id_part_update(Extension(pool.clone()), s(), two(), body())
-                    .await
-                    .map(|_| ()),
+                crate::table_tableFlag_row_id_part_update(
+                    Extension(pool.clone()),
+                    s(),
+                    two(),
+                    body(),
+                )
+                .await
+                .map(|_| ()),
             ),
             (
                 "table_row_insert",
@@ -157,9 +182,14 @@ mod security_gate_tests {
             ),
             (
                 "table_row_insert_one",
-                crate::u2_closures::table_row_insert_one(Extension(pool.clone()), s(), one(), body())
-                    .await
-                    .map(|_| ()),
+                crate::u2_closures::table_row_insert_one(
+                    Extension(pool.clone()),
+                    s(),
+                    one(),
+                    body(),
+                )
+                .await
+                .map(|_| ()),
             ),
             (
                 "view_id_bundle_mockputtopost",

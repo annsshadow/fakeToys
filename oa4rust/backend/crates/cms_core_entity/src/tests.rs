@@ -377,7 +377,11 @@ mod tests {
                     .map(|_| ()),
             ),
         ];
-        assert_eq!(cases.len(), 15, "本批 15 把薄 handler 必须逐把点名，少一把即漏门");
+        assert_eq!(
+            cases.len(),
+            15,
+            "本批 15 把薄 handler 必须逐把点名，少一把即漏门"
+        );
         let leaked: Vec<String> = cases
             .iter()
             .filter(|(_, r)| !matches!(r, Err(shared::error::AppError::Unauthorized)))

@@ -259,7 +259,12 @@ fn https_redirect(request: &Request<Body>) -> Option<Response> {
 
     let host = match force_https_host() {
         Some(h) => h,
-        None => request.headers().get(header::HOST)?.to_str().ok()?.to_string(),
+        None => request
+            .headers()
+            .get(header::HOST)?
+            .to_str()
+            .ok()?
+            .to_string(),
     };
     let path = request
         .uri()

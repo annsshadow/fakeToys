@@ -61,7 +61,6 @@ async fn require_admin_opt(
     }
 }
 
-
 // ── 第四轮 R4-2：工作流实体写的归属门 ───────────────────────────────────────
 //
 // 本模块的 work / task / record / review / attachment / draft 写原本「登录即可」：
@@ -97,11 +96,7 @@ fn u4_actor_sql(res: U4Res) -> &'static str {
 }
 
 /// 取该资源行的归属人；行不存在返回 None（由调用方保住原有 not-found 语义）。
-async fn u4_actor_of(
-    client: &Client,
-    res: U4Res,
-    id: &str,
-) -> Result<Option<String>, AppError> {
+async fn u4_actor_of(client: &Client, res: U4Res, id: &str) -> Result<Option<String>, AppError> {
     let row = client
         .query_opt(u4_actor_sql(res), &[&id])
         .await
@@ -1258,7 +1253,11 @@ pub async fn record_create_with_job(
 
 /// POST record/work/processing
 #[allow(non_snake_case)]
-pub async fn record_work_processing(pool: Extension<Pool>, session: Option<Extension<shared::session::Session>>, Json(body): Json<Value>) -> H {
+pub async fn record_work_processing(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Json(body): Json<Value>,
+) -> H {
     let work = body_str(&body, &["work", "workId"]);
     if work.is_empty() {
         return biz_err("work is required");
@@ -1270,7 +1269,11 @@ pub async fn record_work_processing(pool: Extension<Pool>, session: Option<Exten
 
 /// POST record/work/terminate
 #[allow(non_snake_case)]
-pub async fn record_work_terminate(pool: Extension<Pool>, session: Option<Extension<shared::session::Session>>, Json(body): Json<Value>) -> H {
+pub async fn record_work_terminate(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Json(body): Json<Value>,
+) -> H {
     let work = body_str(&body, &["work", "workId"]);
     if work.is_empty() {
         return biz_err("work is required");
@@ -2011,7 +2014,10 @@ pub async fn documentversion_create(
     // 相同 MAX 而插入重复版本号；锁父行串行化后后者的 MAX 读到前者已提交的行。
     // 锁同时兼作存在性检查（不存在则无行可锁）。
     let locked = tx
-        .query_opt("SELECT creator FROM x_work WHERE id = $1 FOR UPDATE", &[&work])
+        .query_opt(
+            "SELECT creator FROM x_work WHERE id = $1 FOR UPDATE",
+            &[&work],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
     let Some(locked_row) = locked else {
@@ -2232,7 +2238,10 @@ pub async fn work_delete(
     // 级联物理删 x_work / x_task / x_draft 之前先锁行取发起人，
     // 非发起人 / 非 admin 退回时事务不进入任何 DELETE
     let row = tx
-        .query_opt("SELECT creator FROM x_work WHERE id = $1 FOR UPDATE", &[&id])
+        .query_opt(
+            "SELECT creator FROM x_work WHERE id = $1 FOR UPDATE",
+            &[&id],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
     let Some(creator) = row.map(|r| opt_str(&r, "creator")) else {
@@ -2279,7 +2288,11 @@ pub async fn work_draft_delete(
 
 /// POST work/manual/after/processing：人工流转后置记录（内容幂等去重）
 #[allow(non_snake_case)]
-pub async fn work_manual_after(pool: Extension<Pool>, session: Option<Extension<shared::session::Session>>, Json(body): Json<Value>) -> H {
+pub async fn work_manual_after(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Json(body): Json<Value>,
+) -> H {
     let work = body_str(&body, &["work", "workId"]);
     if work.is_empty() {
         return biz_err("work is required");
@@ -2327,7 +2340,10 @@ pub async fn work_v3_retract_body(
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     let row = tx
-        .query_opt("SELECT creator FROM x_work WHERE id = $1 FOR UPDATE", &[&work])
+        .query_opt(
+            "SELECT creator FROM x_work WHERE id = $1 FOR UPDATE",
+            &[&work],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
     let Some(creator) = row.map(|r| opt_str(&r, "creator")) else {
@@ -2506,7 +2522,11 @@ pub async fn wc_merge_flag(
 
 /// POST workcompleted/process/{processFlag}：为该流程已结束工作补齐完成记录（幂等）
 #[allow(non_snake_case)]
-pub async fn wc_process_flag(pool: Extension<Pool>, session: Option<Extension<shared::session::Session>>, Path(process_flag): Path<String>) -> H {
+pub async fn wc_process_flag(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Path(process_flag): Path<String>,
+) -> H {
     // 第五十三批：按流程批量补完成记录（跨多 work 的运维作业），收 admin 档。
     require_admin_opt(&pool.0, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -2538,7 +2558,11 @@ pub async fn wc_process_flag(pool: Extension<Pool>, session: Option<Extension<sh
 
 /// POST workcompleted/shift/time：平移完成时间（minutes 可正可负）
 #[allow(non_snake_case)]
-pub async fn wc_shift_time(pool: Extension<Pool>, session: Option<Extension<shared::session::Session>>, Json(body): Json<Value>) -> H {
+pub async fn wc_shift_time(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Json(body): Json<Value>,
+) -> H {
     // 第五十三批：批量平移完成时间（ids 为空时动全表），收 admin 档。
     require_admin_opt(&pool.0, session.as_deref()).await?;
     let minutes = body.get("minutes").and_then(|v| v.as_i64()).unwrap_or(0);
@@ -2570,7 +2594,11 @@ pub async fn wc_shift_time(pool: Extension<Pool>, session: Option<Extension<shar
 
 /// PUT workcompleted/{flag}/rollback：回滚完成态——对应工作恢复运行并补记 rollback
 #[allow(non_snake_case)]
-pub async fn wc_rollback_flag(pool: Extension<Pool>, session: Option<Extension<shared::session::Session>>, Path(flag): Path<String>) -> H {
+pub async fn wc_rollback_flag(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Path(flag): Path<String>,
+) -> H {
     // 第五十三批：回滚完成态（恢复 work + 删完成记录 + 补记 rollback），按完成记录发起人 / work 发起人校归属。
     let session = crate::u4_session(session)?;
     crate::u4_require_actors(&pool.0, &session, crate::U4ActorKey::WorkCompleted, &flag).await?;
@@ -2623,8 +2651,16 @@ mod security_gate_tests {
         shared::session::Session {
             token: "t".to_string(),
             person_unique: person_unique.to_string(),
-            created_at: chrono::NaiveDateTime::parse_from_str("1970-01-01 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap(),
-            expires_at: chrono::NaiveDateTime::parse_from_str("1970-01-01 01:00:00", "%Y-%m-%d %H:%M:%S").unwrap(),
+            created_at: chrono::NaiveDateTime::parse_from_str(
+                "1970-01-01 00:00:00",
+                "%Y-%m-%d %H:%M:%S",
+            )
+            .unwrap(),
+            expires_at: chrono::NaiveDateTime::parse_from_str(
+                "1970-01-01 01:00:00",
+                "%Y-%m-%d %H:%M:%S",
+            )
+            .unwrap(),
         }
     }
 
@@ -2641,8 +2677,11 @@ mod security_gate_tests {
     #[tokio::test]
     async fn touch_merge_item_forbidden_for_non_admin() {
         let pool = shared::testing::test_pool();
-        let res = touch_merge_item(Extension(pool), Some(Extension(build_session("u-nonadmin"))))
-            .await;
+        let res = touch_merge_item(
+            Extension(pool),
+            Some(Extension(build_session("u-nonadmin"))),
+        )
+        .await;
         assert!(
             matches!(res, Err(AppError::Forbidden)),
             "非 admin 会话调用 touch/mergeitem 必须 403"

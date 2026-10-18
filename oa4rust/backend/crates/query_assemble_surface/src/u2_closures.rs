@@ -998,7 +998,10 @@ async fn require_admin_gate(pool: &Pool, session: &Session) -> Result<(), AppErr
 }
 
 /// `require_admin_gate` 的 `Option<Extension<Session>>` 版：无会话先回 401，非 admin 回 403。
-async fn require_admin_opt(pool: &Pool, session: Option<Extension<Session>>) -> Result<(), AppError> {
+async fn require_admin_opt(
+    pool: &Pool,
+    session: Option<Extension<Session>>,
+) -> Result<(), AppError> {
     let session = session.ok_or(AppError::Unauthorized)?;
     if shared::middleware::is_admin(pool, &session.person_unique).await {
         Ok(())

@@ -4525,8 +4525,13 @@ pub async fn dict_dictFlag_data_post(
     Path(dict_flag): Path<String>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    dict_dictFlag_path_data_mockputtopost(pool, session, Path((dict_flag, String::new())), Json(body))
-        .await
+    dict_dictFlag_path_data_mockputtopost(
+        pool,
+        session,
+        Path((dict_flag, String::new())),
+        Json(body),
+    )
+    .await
 }
 
 #[allow(non_snake_case)]
@@ -12526,9 +12531,11 @@ mod security_gate_tests {
     #[tokio::test]
     async fn appstyle_erase_forbidden_for_non_admin() {
         let pool = shared::testing::test_pool();
-        let res =
-            appstyle_image_application_top_erase(Extension(pool), Some(Extension(build_session("u-nonadmin"))))
-                .await;
+        let res = appstyle_image_application_top_erase(
+            Extension(pool),
+            Some(Extension(build_session("u-nonadmin"))),
+        )
+        .await;
         assert!(
             matches!(res, Err(AppError::Forbidden)),
             "非 admin 会话调用 appstyle erase 必须 403",
@@ -12664,8 +12671,12 @@ mod security_gate_tests {
 
         assert!(
             matches!(
-                invoke_create(Extension(pool.clone()), sess(), axum::Json(serde_json::json!({})))
-                    .await,
+                invoke_create(
+                    Extension(pool.clone()),
+                    sess(),
+                    axum::Json(serde_json::json!({}))
+                )
+                .await,
                 Err(AppError::Forbidden)
             ),
             "invoke_create 非 admin 必须 403"
@@ -12758,7 +12769,9 @@ mod security_gate_tests {
         let cases: Vec<(&str, Result<(), AppError>)> = vec![
             (
                 "andfx_pull_sync",
-                andfx_pull_sync(Extension(pool.clone()), None).await.map(|_| ()),
+                andfx_pull_sync(Extension(pool.clone()), None)
+                    .await
+                    .map(|_| ()),
             ),
             (
                 "dingding_pull_sync",
@@ -12850,9 +12863,13 @@ mod security_gate_tests {
             ),
             (
                 "validation_timeout_timeout",
-                validation_timeout_timeout(Extension(pool.clone()), None, axum::extract::Path(60i64))
-                    .await
-                    .map(|_| ()),
+                validation_timeout_timeout(
+                    Extension(pool.clone()),
+                    None,
+                    axum::extract::Path(60i64),
+                )
+                .await
+                .map(|_| ()),
             ),
             (
                 "u3_welink_pull_sync",
@@ -12954,13 +12971,9 @@ mod security_gate_tests {
             ),
             (
                 "zhengwudingding_sync_organization_callback",
-                zhengwudingding_sync_organization_callback(
-                    Extension(pool.clone()),
-                    sess(),
-                    body(),
-                )
-                .await
-                .map(|_| ()),
+                zhengwudingding_sync_organization_callback(Extension(pool.clone()), sess(), body())
+                    .await
+                    .map(|_| ()),
             ),
             (
                 "dingding_sync_organization_register_callback_enable",

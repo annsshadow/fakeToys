@@ -171,7 +171,11 @@ mod security_gate_tests {
             let m = if k == 4 { Method::DELETE } else { Method::GET };
             v.push((m, dict_uri(k, "mockdeletetoget")));
         }
-        assert_eq!(v.len(), 16, "本族注册点恰好 16 条，多一条/少一条都要先红在这里");
+        assert_eq!(
+            v.len(),
+            16,
+            "本族注册点恰好 16 条，多一条/少一条都要先红在这里"
+        );
         v
     }
 
@@ -300,7 +304,9 @@ mod security_gate_tests {
     #[ignore = "requires a running PostgreSQL server"]
     async fn surface_applicationdict_delete_alias_only_admin_lands() {
         if !shared::testing::is_db_available().await {
-            eprintln!("skip: surface_applicationdict_delete_alias_only_admin_lands (no DATABASE_URL)");
+            eprintln!(
+                "skip: surface_applicationdict_delete_alias_only_admin_lands (no DATABASE_URL)"
+            );
             return;
         }
         let pool = shared::testing::test_pool();
@@ -495,7 +501,12 @@ mod security_gate_tests {
         v
     }
 
-    async fn call_work_as(xid: &str, method: Method, tpl: &str, person: Option<&str>) -> StatusCode {
+    async fn call_work_as(
+        xid: &str,
+        method: Method,
+        tpl: &str,
+        person: Option<&str>,
+    ) -> StatusCode {
         let uri = work_uri_at(xid, tpl);
         let mut app = app();
         if let Some(p) = person {
@@ -653,7 +664,11 @@ mod security_gate_tests {
         seed_work_row(&pool, &xid, &creator).await;
 
         let s = call_work_as(&xid, Method::GET, TOUCH_GET_TPL, Some(&intruder)).await;
-        assert_eq!(s, StatusCode::FORBIDDEN, "他人会话 touch 他人 work 必须 403");
+        assert_eq!(
+            s,
+            StatusCode::FORBIDDEN,
+            "他人会话 touch 他人 work 必须 403"
+        );
         assert_eq!(
             work_update_time(&pool, &xid).await.as_deref(),
             Some("r49-before"),
@@ -777,12 +792,7 @@ mod security_gate_tests {
         v
     }
 
-    async fn call_ppc_as(
-        xid: &str,
-        method: Method,
-        tpl: &str,
-        person: Option<&str>,
-    ) -> StatusCode {
+    async fn call_ppc_as(xid: &str, method: Method, tpl: &str, person: Option<&str>) -> StatusCode {
         let uri = ppc_uri_at(xid, tpl);
         let mut app = app();
         if let Some(p) = person {
@@ -954,9 +964,7 @@ mod security_gate_tests {
     #[ignore = "requires a running PostgreSQL server"]
     async fn surface_data_job_touch_alias_owner_gate_lands() {
         if !shared::testing::is_db_available().await {
-            eprintln!(
-                "skip: surface_data_job_touch_alias_owner_gate_lands (no DATABASE_URL)"
-            );
+            eprintln!("skip: surface_data_job_touch_alias_owner_gate_lands (no DATABASE_URL)");
             return;
         }
         let pool = shared::testing::test_pool();
@@ -1113,7 +1121,13 @@ mod security_gate_tests {
     /// 臂②里「被 seed 的那个人也 403」证的正是「把 record 改成归属档」不可行——
     /// 改回去要么全拒（假收口），要么 42703 变 500，两种都会在臂②当场红。
     /// 兜底建表只在裸库生效（真库里这些 o2server 表已存在，CREATE IF NOT EXISTS 是无操作）。
-    async fn seed_mock_row(pool: &deadpool_postgres::Pool, table: &str, xid: &str, owner_col: &str, owner: &str) {
+    async fn seed_mock_row(
+        pool: &deadpool_postgres::Pool,
+        table: &str,
+        xid: &str,
+        owner_col: &str,
+        owner: &str,
+    ) {
         let c = pool.get().await.unwrap();
         c.execute(
             format!(
@@ -1176,7 +1190,11 @@ mod security_gate_tests {
     /// 少一格（有人删了别名注册）或多一格（又长出一把别名）都会先红在计数上。
     #[tokio::test]
     async fn surface_mock_alias_writes_reject_anonymous() {
-        assert_eq!(MOCK_ALIAS_ARMS.len(), 22, "本批 22 把别名 handler 必须逐条点名");
+        assert_eq!(
+            MOCK_ALIAS_ARMS.len(),
+            22,
+            "本批 22 把别名 handler 必须逐条点名"
+        );
         let mut bad: Vec<String> = Vec::new();
         let mut regs = 0usize;
         for a in MOCK_ALIAS_ARMS {
@@ -1189,7 +1207,10 @@ mod security_gate_tests {
             }
         }
         assert_eq!(regs, 44, "22 把 × 2 条注册点 = 44 格，一格不许少");
-        assert!(bad.is_empty(), "mock 动词别名写缺 401（门缺失或门晚于取会话）：{bad:?}");
+        assert!(
+            bad.is_empty(),
+            "mock 动词别名写缺 401（门缺失或门晚于取会话）：{bad:?}"
+        );
     }
 
     /// 臂②（真库）：逐把打「拒绝侧 + 放行侧」两半，落笔形状分别用**行是否还在**（del 族）
@@ -1214,7 +1235,12 @@ mod security_gate_tests {
         let mut bad: Vec<String> = Vec::new();
 
         /// 放行侧凭据：del 族要求行已消失，touch 族要求时间戳脱离哨兵。
-        async fn landed(pool: &deadpool_postgres::Pool, table: &str, xid: &str, shape: &str) -> bool {
+        async fn landed(
+            pool: &deadpool_postgres::Pool,
+            table: &str,
+            xid: &str,
+            shape: &str,
+        ) -> bool {
             match shape {
                 "del" => !mock_row_exists(pool, table, xid).await,
                 _ => ppc_update_time(pool, table, xid)
@@ -1237,10 +1263,7 @@ mod security_gate_tests {
             } else if !mock_row_exists(&pool, table, &xid).await {
                 bad.push(format!("{name}: 403 之后行已消失，门晚于 SQL"));
             } else if shape == "touch"
-                && ppc_update_time(&pool, table, &xid)
-                    .await
-                    .as_deref()
-                    != Some("r51-before")
+                && ppc_update_time(&pool, table, &xid).await.as_deref() != Some("r51-before")
             {
                 bad.push(format!("{name}: 403 之后 xupdateTime 被改写，门晚于 SQL"));
             }
@@ -1253,14 +1276,15 @@ mod security_gate_tests {
                         "{name}: record 行上没有属主列，非 admin 会话期望 403，实际 {s}"
                     ));
                 } else if shape == "touch"
-                    && ppc_update_time(&pool, table, &xid)
-                        .await
-                        .as_deref()
-                        != Some("r51-before")
+                    && ppc_update_time(&pool, table, &xid).await.as_deref() != Some("r51-before")
                 {
-                    bad.push(format!("{name}: 非 admin 走了 touch 落笔，admin 档被写成归属档"));
+                    bad.push(format!(
+                        "{name}: 非 admin 走了 touch 落笔，admin 档被写成归属档"
+                    ));
                 } else if shape == "del" && !mock_row_exists(&pool, table, &xid).await {
-                    bad.push(format!("{name}: 非 admin 真删了 record 行，admin 档被写成归属档"));
+                    bad.push(format!(
+                        "{name}: 非 admin 真删了 record 行，admin 档被写成归属档"
+                    ));
                 }
             } else {
                 // ② 归属档：本人放行且真落笔
@@ -1317,7 +1341,10 @@ mod security_gate_tests {
             delete_mock_row(&pool, a.1, &xid).await;
         }
         assert_eq!(regs, 44, "两动词同门必须打满 44 条注册点");
-        assert!(bad.is_empty(), "mock 别名门漏了 POST 侧（或反过来）：{bad:?}");
+        assert!(
+            bad.is_empty(),
+            "mock 别名门漏了 POST 侧（或反过来）：{bad:?}"
+        );
     }
 }
 
@@ -1353,7 +1380,11 @@ mod r419_gate_tests {
         ("PP_C_TASK", "xperson", "r419-task"),
         ("PP_C_TASKCOMPLETED", "xperson", "r419-taskcompleted"),
         ("PP_C_WORK", "\"xcreatorPerson\"", "r419-work"),
-        ("PP_C_WORKCOMPLETED", "\"xcreatorPerson\"", "r419-workcompleted"),
+        (
+            "PP_C_WORKCOMPLETED",
+            "\"xcreatorPerson\"",
+            "r419-workcompleted",
+        ),
         ("PP_C_DRAFT", "xperson", "r419-draft"),
         ("PP_C_HANDOVER", "xperson", "r419-handover"),
         ("PP_C_TASK_PROCESS_MODE", "xperson", "r419-mode"),
@@ -1436,9 +1467,13 @@ mod r419_gate_tests {
             ),
             (
                 "task_list_count_application_applicationFlag_process",
-                crate::task_list_count_application_applicationFlag_process(p(), s(), one("r419-task"))
-                    .await
-                    .map(|_| ()),
+                crate::task_list_count_application_applicationFlag_process(
+                    p(),
+                    s(),
+                    one("r419-task"),
+                )
+                .await
+                .map(|_| ()),
             ),
             (
                 "task_list_count_application_applicationFlag_process_p2",
@@ -1472,9 +1507,13 @@ mod r419_gate_tests {
             ),
             (
                 "work_list_count_application_applicationFlag_process",
-                crate::work_list_count_application_applicationFlag_process(p(), s(), one("r419-work"))
-                    .await
-                    .map(|_| ()),
+                crate::work_list_count_application_applicationFlag_process(
+                    p(),
+                    s(),
+                    one("r419-work"),
+                )
+                .await
+                .map(|_| ()),
             ),
             (
                 "work_list_count_application_applicationFlag_process_p2",
@@ -1614,7 +1653,11 @@ mod r419_gate_tests {
         );
 
         let owner = call_all(&pool, Some(OWNER)).await;
-        let ok: Vec<&str> = owner.iter().filter(|(_, r)| r.is_ok()).map(|(k, _)| *k).collect();
+        let ok: Vec<&str> = owner
+            .iter()
+            .filter(|(_, r)| r.is_ok())
+            .map(|(k, _)| *k)
+            .collect();
         let broke: Vec<&str> = owner
             .iter()
             .filter(|(_, r)| matches!(r, Err(AppError::Internal)))
@@ -1707,9 +1750,12 @@ mod surface_gate_tests {
         assert!(r.is_ok(), "mode_save 属主应放行：{:?}", r.as_ref().err());
 
         // 收口零残留
-        c.execute("DELETE FROM PP_C_TASK_PROCESS_MODE WHERE id = 'b38-mode'", &[])
-            .await
-            .unwrap();
+        c.execute(
+            "DELETE FROM PP_C_TASK_PROCESS_MODE WHERE id = 'b38-mode'",
+            &[],
+        )
+        .await
+        .unwrap();
     }
 
     #[tokio::test]
@@ -1890,9 +1936,13 @@ mod b58_gate_tests {
             ),
             (
                 "taskcompleted_id_opinion_manage_mockputtopost",
-                crate::taskcompleted_id_opinion_manage_mockputtopost(Extension(pool.clone()), None, p())
-                    .await
-                    .map(|_| ()),
+                crate::taskcompleted_id_opinion_manage_mockputtopost(
+                    Extension(pool.clone()),
+                    None,
+                    p(),
+                )
+                .await
+                .map(|_| ()),
             ),
             (
                 "work_id_processing_mockputtopost",

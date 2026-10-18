@@ -360,9 +360,9 @@ pub fn router(pool: Pool, session_manager: SessionManager) -> Router {
 }
 
 #[cfg(test)]
+mod security_gate_tests_b76;
+#[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-#[cfg(test)]
-mod security_gate_tests_b76;

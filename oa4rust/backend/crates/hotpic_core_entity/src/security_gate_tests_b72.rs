@@ -31,7 +31,12 @@ async fn b72_writes_reject_without_session() {
         .expect("test sea_orm db");
     let none: Option<Extension<shared::session::Session>> = None;
 
-    let res = create(Extension(db.clone()), none.clone(), Json(serde_json::json!({}))).await;
+    let res = create(
+        Extension(db.clone()),
+        none.clone(),
+        Json(serde_json::json!({})),
+    )
+    .await;
     assert!(
         matches!(res, Err(AppError::Unauthorized)),
         "无会话调用 create 必须 401（门在 DB 访问前）"

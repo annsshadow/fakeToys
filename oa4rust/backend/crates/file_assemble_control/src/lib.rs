@@ -19,14 +19,14 @@ pub const API_BASE: &str = "/api/file_assemble_control";
 pub mod routes;
 
 #[cfg(test)]
+mod security_gate_tests;
+#[cfg(test)]
+mod security_gate_tests_b77;
+#[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-#[cfg(test)]
-mod security_gate_tests;
-#[cfg(test)]
-mod security_gate_tests_b77;
 
 pub fn file_assemble_control_router(pool: Pool) -> axum::Router {
     routes::router(pool)
@@ -64,7 +64,10 @@ pub async fn get_control_config(
 
     let data = match row {
         Ok(r) => serde_json::Map::from_iter([
-            ("enabled".to_string(), Value::Bool(text_truthy(&*r, "enabled"))),
+            (
+                "enabled".to_string(),
+                Value::Bool(text_truthy(&*r, "enabled")),
+            ),
             (
                 "defaultStorage".to_string(),
                 Value::String(r.get_str("default_storage").to_string()),
@@ -5325,8 +5328,16 @@ pub async fn u2_share_password_verify(
     pool: Extension<Pool>,
     axum::Json(body): axum::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let id = body.get("id").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let password = body.get("password").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let id = body
+        .get("id")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let password = body
+        .get("password")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
     if id.is_empty() {
         return Ok(Json(ActionResult::error("id is required")));
     }
