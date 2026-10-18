@@ -152,8 +152,9 @@ applies_when:
 7. **`crud_save` 全列写入是系统性陷阱**：spec 含归属列就会在局部保存时抹归属（本轮 personal_extend 实测）。
    新增 `*_save` 时用窄白名单（只列业务列），归属只由 create 定。
 8. **容器构建产物的磁盘账要记**：本轮 Rust target 缓存卷涨到 85.7 GB、把宿主 C: 顶满，连累 Docker 引擎
-   （vhdx 无法扩容 ⇒ guest I/O error ⇒ dockerd SIGBUS）。清理后 guest 从 ~129 GB 回落到 ~10 GB；
-   大构建建议放独立磁盘或跑完即 `docker volume rm`。
+   （vhdx 无法扩容 ⇒ guest I/O error ⇒ dockerd SIGBUS）。删掉这些卷后 guest 的数据盘用量从 ~107 GB 回落到 ~8.5 GB，
+   但**宿主上的 vhdx 文件仍是 129 GB**——要压缩（`Optimize-VHD -Mode Full` 或 diskpart `compact vdisk`，需管理员）
+   才会把空间真正还给 C:。大构建建议放独立磁盘或跑完即 `docker volume rm`。
 9. **pytest 的等价口径包含 working-directory**：CI 在 `augmentor/` 下跑 `pytest`（`testpaths=tests`）。
    若从仓库根跑，会多收 `llm-lab/` 等目录的用例（本轮多收 130 支），并让"以 `tests/` 为基准算相对键"
    的元测试（l98 盲面守卫）在越界项上假红——复刻 CI 时要把工作目录一起复刻。
