@@ -610,6 +610,10 @@ class TestTheRulerHasTeeth:
             json.dumps({"ids": ["secret-id"], "metadata": [], "dimension": 4}), encoding="utf-8"
         )
         db = faiss_mod.FAISSDB(dimension=4, collection="../secrets/v", storage_dir=str(tmp_path / "db"))
+        # 早先这支漏了建 `storage_dir`：`db/../secrets/v_vectors.npy` 在 `db` 不存在时
+        # `stat` 直接 ENOENT（内核要先解析到 `db` 那一层），`load()` 于是走「文件不在」那条
+        # `return False`，与闸门是否被摘掉无关 —— 这一支量的是注入后的读边，不是目录存在性。
+        (tmp_path / "db").mkdir()
         monkeypatch.setattr(faiss_mod, "require_within_dir", self._raw)
         assert db.load() is True
         assert db._ids == ["secret-id"], "注入后仍读不到目录外 ⇒ 第 2 组那一支是恒真的"
