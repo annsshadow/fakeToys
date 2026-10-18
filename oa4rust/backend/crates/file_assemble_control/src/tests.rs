@@ -196,11 +196,12 @@ mod tests {
     #[tokio::test]
     async fn test_get_control_config_returns_success() {
         let results = MockControlClient::single_row(vec![
-            ("enabled", Value::Bool(true)),
+            // round4-b77：enabled/max_upload_size 实为 TEXT 列，handler 按字符串解析，mock 同步。
+            ("enabled", Value::String("true".to_string())),
             ("default_storage", Value::String("local".to_string())),
             (
                 "max_upload_size",
-                Value::Number(serde_json::Number::from(104857600_i64)),
+                Value::String("104857600".to_string()),
             ),
         ]);
         let pool = mock_control_pool(results);
@@ -241,16 +242,34 @@ mod tests {
 
     #[tokio::test]
     async fn test_update_control_config_returns_success() {
+        // round4-b77：update_control_config 已收 admin 门（全局配置写属管理面）。
+        // 离线环境下无法产出 admin（is_admin 需真库），原"mock 写通道成功"臂
+        // 迁移至 security_gate_tests_b77 的真库 #[ignore] 臂；
+        // 本臂改验门禁契约：mock 写通道 + 死池（is_admin fail-closed）+ 非 admin → 403。
         let results = MockControlClient::count(1);
         let pool = mock_control_pool(results);
 
+        // 死池：is_admin 查不到即 fail-closed → 非 admin 会话必须 403（离线可证）。
+        let dead = {
+            let mgr = deadpool_postgres::Manager::new(
+                deadpool_postgres::tokio_postgres::Config::new(),
+                deadpool_postgres::tokio_postgres::NoTls,
+            );
+            deadpool_postgres::Pool::builder(mgr).max_size(1).build().unwrap()
+        };
+
         let body = axum::extract::Json(serde_json::json!({"enabled": false}));
-        let result = update_control_config(Extension(pool), body).await.unwrap();
-        let action: ActionResult<serde_json::Value> = result.0;
-        assert_eq!(action.r#type, Some("success".to_string()));
-        assert!(action.data.is_some());
-        let data = action.data.unwrap();
-        assert_eq!(data.get("updated"), Some(&Value::Bool(true)));
+        let result = update_control_config(
+            Extension(pool),
+            Extension(dead),
+            Some(Extension(shared::testing::test_session("b77-nonadmin"))),
+            body,
+        )
+        .await;
+        assert!(
+            matches!(result, Err(shared::error::AppError::Forbidden)),
+            "非 admin 会话调用 update_control_config 必须 403（is_admin fail-closed）"
+        );
     }
 
     #[ignore = "requires a running PostgreSQL server"]
