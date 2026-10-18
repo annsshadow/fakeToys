@@ -21,6 +21,15 @@ use shared::{error::AppError, response::ActionResult};
 
 type ApiResult = Result<Json<ActionResult<Value>>, AppError>;
 
+/// 安全审计（round4-b70）：setting_create 真写收"会话存在档"门禁。
+/// 无会话（Option<Extension<Session>> = None）→ 401，门置于首个 DB 访问
+/// （`pool.get()`）之前，杜绝匿名写 `cal_setting`。
+pub(crate) fn require_session(
+    session: Option<Extension<shared::session::Session>>,
+) -> Result<shared::session::Session, AppError> {
+    session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
+}
+
 fn calendar_row_to_value(row: &deadpool_postgres::tokio_postgres::Row) -> Value {
     let mut map = serde_json::Map::new();
     map.insert("id".into(), Value::String(row.get("id")));
@@ -1019,7 +1028,12 @@ pub async fn message_create(
 
 /// POST /api/calendar_assemble_control/setting —— 创建设置
 #[allow(non_snake_case)]
-pub async fn setting_create(pool: Extension<Pool>, Json(body): Json<Value>) -> ApiResult {
+pub async fn setting_create(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Json(body): Json<Value>,
+) -> ApiResult {
+    require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
     let code = body
