@@ -26,7 +26,7 @@ applies_when:
 
 - 合并方式：本地 `git merge` 依赖分支 → 分支 `chore/dependabot-triage-20261018` → 快进推送 `main`（未走 PR 页面，因为 gh 未登录）。
 - 判定口径：**每个子项目用与 CI 等价的本地命令复跑**；红必须回答"是 main 既有红还是本次引入"，办法是把同一门禁在 main 基线（`git worktree` 一份全新检出）上再跑一遍，比较失败集合是否逐字相同。
-- 结果：**19 条合入（含 1 条改造后合入）、1 条关闭（#72）**；引入的业务代码改动只有 2 处（见 §3）。
+- 结果：**20 条全部处置完毕**——18 条直接合并关闭；#49 以成套改造取代后关闭（PR 本体只改两个包、不自洽）；#72 关闭（拒绝与 dcloudio 锁步冲突的单升）。引入的业务代码改动只有 2 处（见 §3）。
 
 | PR | 依赖/变更 | 判定 | 关键证据 |
 |----|-----------|------|----------|
@@ -36,7 +36,7 @@ applies_when:
 | #46 | 根 `@playwright/test` 1.64.0 | 合入 | 与 #64 同一依赖的两处配置；见 #64 |
 | #47 | augmentor(dev) `pytest>=9.1.1` | 合入 | 合并后树 `pip install --dry-run -r requirements-dev.txt` 解析到 pytest 9.1.1 |
 | #48 | augmentor `pyyaml>=6.0.3,<7.0.0` | 合入 | 同上解析到 PyYAML 6.0.3 |
-| #49 | augmentor/web `react-dom` → 19.3 | **改造后合入** | 拆成套 React 19（`react`/`react-dom` `^19.3.1` + `@types/react(-dom)` `^19.3.0`），见 §3 |
+| #49 | augmentor/web `react-dom` → 19.3 | **改造后合入** | PR 本体只改 react-dom/@types/react-dom，与 peer 要求不自洽，未直接合；改拆成套 React 19（`react`/`react-dom` `^19.3.1` + `@types/react(-dom)` `^19.3.0`）随分诊分支落 main，PR 以 `Closes #49` 关闭，见 §3 |
 | #50 | augmentor `sentence-transformers>=6.1.0,<7.0.0` | 合入 | 下限收紧（原 `>=6.0.0`）；轮子可取 |
 | #52 | augmentor/web `@ant-design/icons` 6.3.4 | 合入 | 与 #54 必须配套（antd 6 自带 `@ant-design/icons ^6.3.4` 且 peer react>=18） |
 | #53 | oa4rust `uuid` 1.28.0 | 合入 | Rust 门禁失败集合与 main 逐字相同 |
@@ -105,7 +105,7 @@ applies_when:
 
 ## 6. 遗留与后续
 
-1. **#72 需人工确认已关闭**（`Closes #72` 只对落到默认分支的提交生效；gh 未登录看不到结果）。
-2. 其余 19 条 PR 由 push 进来的同名提交"间接合并"，GitHub 可能不会自动把 PR 标为 merged——若仍 open，需人工关闭或走一次页面合并。
-3. **oa4rust-web 两处既有红建议单独立项修**：`pnpm exec biome check --write .` 可机械修掉 formatter/organizeImports（`noControlCharactersInRegex` 需人工取舍）；mp-weixin 的 rolldown 崩溃需要排查 @dcloudio 与 vite 8 的兼容（改 pin 或等上游）。
-4. **供应链例外到期**：`lopdf` 的 `RUSTSEC-2026-0187` 例外 2026-10-28 到期（见 `docs/solutions/security-issues/rustsec-pinned-audit-double-track-gate.md`），本次 #59 升级到 0.45.0 后需复扫。
+1. **PR 收尾实况（API 复核）**：18 条在 push 后由 GitHub 判定为 merged（含 #42/#44/#45/#46/#47/#48/#50/#52/#53/#54/#56/#57/#59/#61/#62/#63/#64/#73）；#72 与 #49 以 `Closes #N` 关闭（均为 closed-未合并，符合"不接受该 PR 的改动/被等价改造取代"的意图）。
+2. **oa4rust-web 两处既有红建议单独立项修**：`pnpm exec biome check --write .` 可机械修掉 formatter/organizeImports（`noControlCharactersInRegex` 需人工取舍）；mp-weixin 的 rolldown 崩溃需要排查 @dcloudio 与 vite 8 的兼容（改 pin 或等上游）。
+3. **供应链例外到期**：`lopdf` 的 `RUSTSEC-2026-0187` 例外 2026-10-28 到期（见 `docs/solutions/security-issues/rustsec-pinned-audit-double-track-gate.md`），本次 #59 升级到 0.45.0 后需复扫。
+4. **push 后 CI 归因**：main 上 `CI`/`AI platform CI`/`OA4Rust web quality` 仍会红，对应 §4 清单，属既有红。
