@@ -8,7 +8,7 @@ import { stripTsComments } from '../testkit/stripComments'
 /**
  * `ReactionSpec.descr` **只允许承诺已实现的效果**（第 83 轮）。
  *
- * # 缺陷：7 条反应里有 3 条对外文案承诺了不存在的机制
+ * # 现状：未实现项只剩 2 条（burn_cloud / corrosion_spread）
  *
  * 逐字段核对消费面（`resolveHit` + `BattleEngine.hitEnemy`）：
  *
@@ -19,23 +19,24 @@ import { stripTsComments } from '../testkit/stripComments'
  * | statusDurationMs| `damage.ts` → 引擎写 `frozenMs`/`stunnedMs` | ✓ |
  * | dispelShield    | `damage.ts`                             | ✓    |
  * | amplifyPct      | `engine.ts`                              | ✓    |
- * | aoeRadius       | `engine.ts triggerSteamBurstAoe`（steam_burst）| ✓（2026-10-10）|
+ * | aoeRadius       | `engine.ts triggerReactionAoe`（steam_burst / overheat）| ✓（2026-10-10 / 2026-10-18）|
  * | armorShredPermille | `engine.ts` hitEnemy                 | ✓（armor_break）|
  * | knockback       | `engine.ts` hitEnemy                     | ✓（armor_break）|
  *
  * | 反应            | 文案承诺的效果            | 实际 |
  * |-----------------|-----------------------------|------|
  * | `steam_burst`   | 范围伤害 + 驱散护盾            | **已实现全部**（2026-10-10） |
- * | `overheat`      | 爆炸 + 眩晕                  | 只有眩晕 |
+ * | `overheat`      | 爆炸 + 眩晕                  | **已实现全部**（2026-10-18） |
  * | `burn_cloud`    | 生成持续火区                 | **什么都没有** |
  * | `corrosion_spread` | 把元素层数传播给周围敌人     | **什么都没有** |
  * | `armor_break`   | 击退 + 削减护甲              | **已实现全部** |
  *
  * # 为什么改文案而不是「补实现」
  *
- * 「要不要给它们实现溅射/火区/传播」是**产品决策**：
- * 伤害量？是否计分？溅射到的目标要不要再触发反应？
- * 是否需要服务端一并重算以免 I-6 失配？—— 这些猜不得。
+ * 「要不要给它们实现火区/传播」是**产品决策**：
+ * 伤害量？是否计分？是否需要服务端一并重算以免 I-6 失配？—— 这些猜不得。
+ * （清单上原有的「溅射/爆炸」两项：steam_burst 于 2026-10-10、overheat 于
+ * 第 160 轮分别按当时的参数草案落地。）
  *
  * 但**文案承诺一个不存在的机制**是确定的缺陷，无论将来是否实现。
  * 所以这轮把文案改成只描述已实现的效果，
@@ -63,9 +64,10 @@ const KEYS = Object.keys(REACTIONS) as ReactionKey[]
  * `armor_break_effect.test.ts` 行为断言「施加后状态确实变了」。
  *
  * ⚠️「范围」「溅射」「爆炸」「火区」「传播」亦已移出：
- * steam_burst 的范围伤害已实现（`triggerSteamBurstAoe`，aoeRadius=120），
- * 文案现在真实承诺了一个真实效果。overheat/burn_cloud/corrosion_spread
- * 的「爆炸/火区/传播」仍没实现 —— 它们的 descr 里**已经不包含**这些词
+ * steam_burst（aoeRadius=120，2026-10-10）与 overheat（aoeRadius=90，
+ * 第 160 轮）的范围伤害已实现（`engine.ts triggerReactionAoe`），
+ * 文案现在真实承诺了真实效果。burn_cloud/corrosion_spread 的
+ * 「火区/传播」仍没实现 —— 它们的 descr 里**已经不包含**这些词
  * （见第 83 轮的诚实修订），所以词表里不需要它们做守卫。
  */
 const PROMISE_WORDS: Array<{ word: string; unbackedBy: string }> = [
@@ -101,12 +103,14 @@ describe('反应文案与实现的一致性（第 83 轮）', () => {
   })
 
   it('aoeRadius 非零的反应，必须有一个真实的伤害消费者', () => {
-    // 2026-10-10：steam_burst 把 aoeRadius 120 接上了范围伤害
-    // （engine.ts triggerSteamBurstAoe），所以「aoeRadius=0」不再是
-    // 全体反应的必要条件。但凡非零，都必须被**伤害/状态逻辑**而非
-    // 仅屏幕震动所消费 —— 否则文案就在承诺一个看不见摸不着的爆炸。
-    const AOE_CONSUMER: Partial<Record<ReactionKey, 'engine.ts triggerSteamBurstAoe'>> = {
-      steam_burst: 'engine.ts triggerSteamBurstAoe',
+    // 2026-10-10：steam_burst 把 aoeRadius 120 接上了范围伤害；
+    // 第 160 轮 overheat 以同一管线接上 90（engine.ts triggerReactionAoe）。
+    // 所以「aoeRadius=0」不再是全体反应的必要条件。但凡非零，都必须被
+    // **伤害/状态逻辑**而非仅屏幕震动所消费 —— 否则文案就在承诺一个
+    // 看不见摸不着的爆炸。
+    const AOE_CONSUMER: Partial<Record<ReactionKey, 'engine.ts triggerReactionAoe'>> = {
+      steam_burst: 'engine.ts triggerReactionAoe',
+      overheat: 'engine.ts triggerReactionAoe',
     }
     const unbacked = KEYS.filter((k) => {
       const r = REACTIONS[k]
@@ -116,7 +120,7 @@ describe('反应文案与实现的一致性（第 83 轮）', () => {
     expect(
       unbacked,
       `这些反应的 aoeRadius 非 0 但没有伤害消费者：${unbacked.join(', ')}\n` +
-        '非零 aoeRadius 必被 triggerSteamBurstAoe（或今后新增的消费者）接线。',
+        '非零 aoeRadius 必被 triggerReactionAoe（或今后新增的消费者）接线。',
     ).toEqual([])
   })
 
@@ -194,14 +198,15 @@ describe('ReactionSpec 没有「只有表现层消费者」的字段', () => {
     // render/canvas.ts 的屏幕震动（第 83 轮删掉）。「加个假读者」变异
     // 观察不到差异 —— 于是旧断语钉住「aoeRadius=0 → 不准有消费者」。
     //
-    // 2026-10-10 steam_burst 把 aoeRadius 接到**真实伤害逻辑**上
-    // (`engine.ts triggerSteamBurstAoe`)，判据升级为两个：
+    // 2026-10-10 steam_burst、第 160 轮 overheat 把 aoeRadius 接到
+    // **真实伤害逻辑**上 (`engine.ts triggerReactionAoe`)，判据升级为两个：
     //   1. 值非零的反应，必须在 AOE_CONSUMERS 显式名单里  （防承诺没实现）
     //   2. render/canvas.ts **不准**读反应规格的 aoeRadius  （防假信号）
     // 名单是显式的，不是「扫出引用就放行」 —— 后者会把
     // `if (spec.aoeRadius > 0) shake` 这种渲染消费当成消费者。
     const AOE_CONSUMERS: Partial<Record<ReactionKey, string>> = {
-      steam_burst: 'engine.ts triggerSteamBurstAoe',
+      steam_burst: 'engine.ts triggerReactionAoe',
+      overheat: 'engine.ts triggerReactionAoe',
     }
     const nonzero = KEYS.filter((k) => REACTIONS[k].aoeRadius !== 0)
     const backed = nonzero.filter((k) => AOE_CONSUMERS[k] !== undefined)

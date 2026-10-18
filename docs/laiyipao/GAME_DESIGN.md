@@ -105,12 +105,17 @@
 > 没有 DoT 的 tick 定义。燃烧云的火区是地形机制（见 I-4），不是反应自带的 DoT。
 > 见 §11 边界 4。
 >
-> ✅ **`破甲击退` 已实现**（区别于上面 4 条未实现项）：触发后 4000ms 内目标
-> 有效护甲被削 150‰，并一次性击退 4px（定点 4000）。削甲/击退量与时长都落在
-> 反应表的 `armor_shred_permille` / `knockback` / `status_duration_ms` 三字段，
-> 客户端引擎（`engine.ts` hitEnemy）消费，跨端由 `reaction_specs.json` 与
-> `reaction_contract.test.ts` 双向锁定，行为由 `armor_break.test.ts` 钉住。
-> 其余 3 条（overheat 爆炸 / burn_cloud 火区 /
+> ✅ **范围伤害与破甲击退已实现**（区别于下面 2 条未实现项）：
+> `steam_burst`（2026-10-10，半径 120）与 `overheat`（第 160 轮，半径 90）
+> 的爆炸/溅射走同一条管线（`engine.ts triggerReactionAoe`，Go 侧镜像）——
+> 命中敌人为圆心、半径内邻居受 25% 反应伤害；眩晕 / 驱散护盾等状态
+> **只作用主目标，不随溅射扩散**。`破甲击退`触发后 4000ms 内目标
+> 有效护甲被削 150‰，并一次性击退 4px（定点 4000）。两类数值都落在
+> 反应表的 `aoe_radius` / `armor_shred_permille` / `knockback` /
+> `status_duration_ms` 字段，跨端由 `reaction_specs.json` 与
+> `reaction_contract.test.ts` 双向锁定，行为由 `armor_break.test.ts` /
+> `overheat_aoe.test.ts`（TS）与 Go 侧对应行为测试钉住。
+> 其余 2 条（burn_cloud 火区 /
 > corrosion_spread 层数传播）仍是**纯反应伤害**，未实现，见 §11 边界 4。
 
 **敌人 5 维抗性**：每种敌人有 `fire/ice/lightning/corrosion/kinetic` 五个抗性值，

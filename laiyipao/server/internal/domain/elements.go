@@ -155,16 +155,19 @@ type ReactionSpec struct {
 // 两份副本由 testdata/reaction_specs.json 双向锁住，
 // 改动任何一侧都必须同步另一侧并重新生成契约文件。
 //
-// ⚠️ 本轮接通 `steam_burst` 的范围伤害（aoeRadius 120，客户端引擎以命中
-// 敌人为圆心、半径内邻居受 25% 反应伤害）。余下 **3 条反应仍無特殊效果**：
-// overheat 的爆炸、burn_cloud 的持续火区、corrosion_spread 的层数传播。
+// ⚠️ 范围伤害已接通两条：`steam_burst`（aoeRadius 120，2026-10-10）与
+// `overheat`（aoeRadius 90，第 160 轮）——客户端引擎以命中敌人为圆心、
+// 半径内邻居受 25% 反应伤害（`engine.ts triggerReactionAoe`，
+// Go 侧镜像 `engine_combat.go triggerReactionAoe`）。
+// 余下 **2 条反应仍无特殊效果**：burn_cloud 的持续火区、
+// corrosion_spread 的层数传播。
 //
-// # I-6 安全性（为什么「仅实现 steam_burst AoE 就不摇旗»
+// # I-6 安全性（为什么「实现反应 AoE 不影响 I-6」）
 //
 // 服务端 replay_hash 仅封 S 段（构筑快照），**不重算事件流**
 // （battle_collections.go: replay_hash 只封长 ≤ 64，store as-opaque）；
 // I-6 的 server-side 校验是 `replay_skills` 段的相等。
-// 因此 steam_burst 的溅射事件只需「客户端局内哈希稳定」，
+// 因此反应的溅射事件只需「客户端局内哈希稳定」，
 // 不需要服务端独立验证 —— 它不进入 replay_skills，因而不影响 I-6。
 //
 // # 口采一致性
@@ -180,22 +183,25 @@ type ReactionSpec struct {
 //
 //	baseCoef / attackWeightPct / statusDurationMs / dispelShield /
 //	amplifyPct / armorShredPermille / knockback               ✓
-//	aoeRadius                                                      ✓（steam_burst：客户端溅射）
+//	aoeRadius                                                      ✓（steam_burst / overheat：客户端溅射）
 //
 
 var reactionSpecs = map[ReactionKey]ReactionSpec{
 	ReactionSteamBurst: {
 		Key: ReactionSteamBurst, Name: "蒸汽爆发", BaseCoef: 60, AttackWeightPct: 300,
 		// ⚠️ 2026-10-10：0 -> 120，实现范围伤害。
-		// 客户端 `engine.ts triggerSteamBurstAoe` 以命中敌人为圆心、半径
+		// 客户端 `engine.ts triggerReactionAoe` 以命中敌人为圆心、半径
 		// aoeRadius 内的邻居造成 reactionDmg >> 2（25%）二次伤害，
 		// 不再是「屏幕震动谎称爆炸」。I-6 安全：溅射伤害来自
 		// resolveHit（formula_vectors.json 锁定），不进入 replay_skills 段。
 		AoeRadius: 120, DispelShield: true, Descr: "驱散护盾并造成反应伤害（触发时以自身为圆心，半径 120 像素内的敌人受到 25% 范围伤害）",
 	},
 	ReactionOverheat: {
+		// 第 160 轮：0 -> 90（恢复第 83 轮前的历史值），实现「爆炸」。
+		// 与 steam_burst 共用同一条溅射管线；眩晕（StatusDurationMs）
+		// 仍只作用主目标，不随溅射扩散。
 		Key: ReactionOverheat, Name: "过热", BaseCoef: 55, AttackWeightPct: 300,
-		AoeRadius: 0, StatusDurationMs: 1500, Descr: "眩晕 1.5 秒并造成反应伤害",
+		AoeRadius: 90, StatusDurationMs: 1500, Descr: "眩晕 1.5 秒并造成反应伤害（触发时以自身为圆心，半径 90 像素内的敌人受到 25% 范围伤害）",
 	},
 	ReactionBurnCloud: {
 		// ⚠️ 第 83 轮：这条反应的**整条文案都是未实现的**。

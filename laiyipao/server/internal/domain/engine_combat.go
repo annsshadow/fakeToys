@@ -4,7 +4,7 @@ package domain
 //
 // 本块把 `updateAutoFire` / `fire` / `updateProjectiles` /
 // `checkProjectileHit` / `hitEnemy` / `currentAttacker` /
-// `triggerSteamBurstAoe` / `applyAoe` 从空实现换成真实实现。
+// `triggerReactionAoe` / `applyAoe` 从空实现换成真实实现。
 //
 // # 为什么 D 是里程碑
 //
@@ -548,17 +548,23 @@ func (e *BattleEngine) hitEnemy(p *Projectile, en *Enemy, skipRadius bool) bool 
 		_ = spec
 	}
 
-	// ⚠️ steam_burst 的溅射范围伤害。
+	// ⚠️ steam_burst / overheat 的溅射范围伤害。
 	//
 	// 口径（与 `reaction_specs.json` 服务端 canonical 逐行一致）：
 	//   - 伤害 = reactionDamage >> 2（定点，25%）
 	//   - 源体不计（自身已结算）
+	//   - 溅射只造成伤害：不施元素层数、不写状态（overheat 的眩晕只作用
+	//     主目标，与 steam_burst 的驱散护盾同口径）
 	//   - 半径 = 反应表 AoeRadius（像素，×1000 转定点）
 	//   - 邻居伤害走 resolveHit 复用护甲/护盾/抗性，但**不再触发反应**
-	//     —— 否则 steam_burst 会在溅射目标上**再次**爆开，形成指数级连锁。
-	if res.Reaction == "steam_burst" && res.ReactionDamage > 0 {
+	//     —— 否则反应会在溅射目标上**再次**爆开，形成指数级连锁。
+	//
+	// ⚠️ 触发条件**显式列出两条反应**，不泛化成「任何 AoeRadius > 0」——
+	// burn_cloud / corrosion_spread 将来接上的非零半径语义是火区 / 层数传播，
+	// 不是伤害溅射。
+	if (res.Reaction == ReactionSteamBurst || res.Reaction == ReactionOverheat) && res.ReactionDamage > 0 {
 		if spec, ok := LookupReactionSpec(res.Reaction); ok && spec.AoeRadius > 0 {
-			e.triggerSteamBurstAoe(en, res.ReactionDamage, att)
+			e.triggerReactionAoe(en, res.Reaction, res.ReactionDamage, att)
 		}
 	}
 
@@ -617,10 +623,11 @@ func (e *BattleEngine) applyAoe(p *Projectile, origin *Enemy, radius int64) {
 	}
 }
 
-// triggerSteamBurstAoe steam_burst 的溅射范围伤害。
+// triggerReactionAoe steam_burst / overheat 的溅射范围伤害（第 160 轮起共用）。
 //
-// 对「已命中触发 steam_burst 的敌人」周围 AoeRadius 内、存活的其他敌人，
-// 造成 reactionDamage >> 2（25%）的二次伤害。
+// 对「已命中触发该反应的敌人」周围 AoeRadius 内、存活的其他敌人，
+// 造成 reactionDamage >> 2（25%）的二次伤害。半径取自触发反应自己的
+// 表项（`reactionAoeRadius(key)`），两条反应各自保留区分度（120 / 90）。
 //
 // # ⚠️ 二次伤害为何不用 `hitEnemy`
 //
@@ -632,8 +639,8 @@ func (e *BattleEngine) applyAoe(p *Projectile, origin *Enemy, radius int64) {
 // 所以这里只复用 `resolveHit` 的**装配 + 结算**部分（护甲/护盾/抗性），
 // 不施加元素、不掷骰、不触发反应 ——
 // 二次伤害纯粹是「命中减去护甲/护盾」。
-func (e *BattleEngine) triggerSteamBurstAoe(origin *Enemy, reactionDmg int64, att Attacker) {
-	rr := ToFixed(float64(steamBurstAoeRadius()))
+func (e *BattleEngine) triggerReactionAoe(origin *Enemy, key ReactionKey, reactionDmg int64, att Attacker) {
+	rr := ToFixed(float64(reactionAoeRadius(key)))
 	splash := reactionDmg >> 2
 	if splash <= 0 {
 		return
@@ -690,7 +697,7 @@ func (e *BattleEngine) triggerSteamBurstAoe(origin *Enemy, reactionDmg int64, at
 			//
 			// ⚠️ 这条是 E 块**漏掉过一次**的接线点：
 			//   最初只在 `hitEnemy` 里加了 terrainOnKill，
-			//   而 steam_burst 的溅射击杀是**另一条**独立的击杀路径。
+			//   而溅射击杀是**另一条**独立的击杀路径。
 			//   症状极隐蔽：`kills` / `score` / 事件流全对，
 			//   只有蓄能塔的 `charge` 少 1 —— 而 `charge` 进 `replay_hash`。
 			e.terrainOnKill(en, att.ElementCap)
@@ -698,13 +705,13 @@ func (e *BattleEngine) triggerSteamBurstAoe(origin *Enemy, reactionDmg int64, at
 	}
 }
 
-// steamBurstAoeRadius 读 steam_burst 的溅射半径。
+// reactionAoeRadius 读某条反应的溅射半径。
 //
 // ⚠️ 单独抽出来是为了让「半径来自反应表」这件事在一处可见：
 //
 //	将来若改成按等级缩放，改这里就行。
-func steamBurstAoeRadius() int64 {
-	spec, ok := LookupReactionSpec("steam_burst")
+func reactionAoeRadius(key ReactionKey) int64 {
+	spec, ok := LookupReactionSpec(key)
 	if !ok {
 		return 0
 	}

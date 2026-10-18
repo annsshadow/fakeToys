@@ -1686,7 +1686,7 @@ export class BattleEngine {
       this.record(this.tick, 'reaction', e.uid, reactionIndex(res.reaction))
     }
 
-    // ⚠️ steam_burst 的溅射范围伤害。
+    // ⚠️ steam_burst / overheat 的溅射范围伤害。
     //
     // # 设计与 I-6
     //
@@ -1701,16 +1701,21 @@ export class BattleEngine {
     //   `res.reactionDamage`**——双端已通过 `resolveHit` 逐位一致
     //   （formula_vectors.json 锁定），所以溅射伤害也一致。
     // - 源体 e 不计（自身已结算）。
+    // - 溅射只造成伤害：不施元素层数、不写状态（overheat 的眩晕只作用
+    //   主目标，与 steam_burst 的驱散护盾同口径）。
     // - 半径 = 反应表 `aoeRadius`（像素，×1000 转定点）。
     // - 邻居伤害走 `resolveHit` 复用护甲/护盾/抗性，但**不再触发反应**
     //   （forceReaction 为空且邻居身上挂的已有元素 + 技能元素不再配对生成
-    //   新反应 —— 否则 steam_burst 就会在溅射目标上**再次**爆开，
+    //   新反应 —— 否则反应就会在溅射目标上**再次**爆开，
     //   形成指数级连锁。`res.reaction == ''` 守住这一点）。
     // - 目标集合确定：`this.enemies` 数组顺序 + 距离 ≤ 半径 + 存活。
     //   两者皆由种子决定（刷怪洗牌 / 坐标由 levelgen 产出），故同种子
     //   同行。`dist2` 用 bigint 避免浮点，不存在跨端漂移。
-    if (res.reaction === 'steam_burst' && res.reactionDamage > 0n && reactSpec !== undefined && reactSpec.aoeRadius > 0) {
-      this.triggerSteamBurstAoe(e, res.reactionDamage, att)
+    // ⚠️ 触发条件**显式列出两条反应**，不泛化成「任何 aoeRadius > 0」——
+    // burn_cloud / corrosion_spread 将来接上的非零半径语义是火区 / 层数传播，
+    // 不是伤害溅射。
+    if ((res.reaction === 'steam_burst' || res.reaction === 'overheat') && res.reactionDamage > 0n && reactSpec !== undefined && reactSpec.aoeRadius > 0) {
+      this.triggerReactionAoe(e, reactKey, res.reactionDamage, att)
     }
     // 地形联动。地形自身负责判定弹丸是否经过它（updateXxx 内部已做空间判定），
     // 因此这里只需传入元素与伤害，不需要坐标。
@@ -1744,9 +1749,9 @@ export class BattleEngine {
   }
 
   /**
-   * steam_burst 的溅射范围伤害。
+   * steam_burst / overheat 的溅射范围伤害（第 160 轮起两条反应共用）。
    *
-   * 对「已命中触发 steam_burst 的敌人」周围 `aoeRadius` 内、存活的其他敌人，
+   * 对「已命中触发该反应的敌人」周围 `aoeRadius` 内、存活的其他敌人，
    * 造成 `reactionDmg >> 2`（25%）的二次伤害。
    *
    * # 二次伤害为何不用 `hitEnemy`
@@ -1767,13 +1772,15 @@ export class BattleEngine {
    *   刷怪洗牌与坐标均由 levelgen 的 LCG 产出，所以同种子同行；
    *   `dist2`/`toFixed` 全定点，无浮点。
    */
-  private triggerSteamBurstAoe(origin: Enemy, reactionDmg: bigint, att: Attacker): void {
-    const spec = REACTIONS['steam_burst']
+  private triggerReactionAoe(origin: Enemy, key: ReactionKey, reactionDmg: bigint, att: Attacker): void {
+    const spec = REACTIONS[key]
     const rr = toFixed(spec.aoeRadius)
-    
+
     //
-    // 2026-10-10 实现 steam_burst 范围伤害：aoeRadius 恢复为 120（像素）。
-    // 引擎 `hitEnemy` 在 steam_burst 反应触发后、以命中敌人为圆心、半径
+    // 2026-10-10 实现 steam_burst 范围伤害（aoeRadius 恢复 120）；
+    // 第 160 轮 overheat 爆炸（aoeRadius 恢复 90）复用同一条管线，
+    // 半径各自取自触发反应自己的表项（`REACTIONS[key]`）。
+    // 引擎 `hitEnemy` 在反应触发后、以命中敌人为圆心、半径
     // aoeRadius 搜索邻居，造成 reactionDmg >> 2（25%）的二次伤害。
     // I-6 安全：溅射伤害来自 resolveHit（formula_vectors.json 锁定），
     // 不进入 replay_skills 段，因而不影响 I-6 的 S-段校验。
