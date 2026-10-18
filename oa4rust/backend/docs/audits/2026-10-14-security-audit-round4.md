@@ -1087,6 +1087,18 @@ GET 写面队列里 `calendar_assemble_control` 与 `jpush_assemble_control` 各
 
 | 验证（本批代码变更） | — | general_core_entity 整 lib `29 passed / 0 failed / 0 ignored`：新增 `security_gate_tests_b65::b65_writes_reject_without_session`（12 把 `None` 会话 + 占位 `DatabaseConnection` → 全部 `Err(AppError::Unauthorized)`，门在 DB 访问前返回，绝不落查询）+ `b65_require_session_gate_logic`（纯单元校验门逻辑：无会话拒绝、有会话放行）。尺子：**R7 704→692（−12）**、含写 15→**15**（不变，印证 ORM-blindness）；复跑 3 次稳定；EXIT 0 |
 
+### 三.66 — meeting 2 把真写收会话门（R7 692→690，含写 15→13）
+- **批次目标**：收 meeting crate 两把真写 R7（已是 deadpool SQL 字面量，可被"含写"捕获）：`create_meeting`（POST `/api/meeting/create`，INSERT `meeting_info`）、`add_participant`（POST `/api/meeting/participant/add`，INSERT `meeting_participant`）。
+- **收口档**：session 档（`require_session` 无会话 401）。这两把是"会议室/参会人"业务写，保持仅要求有效会话（不收 admin，留 §五 判定）。
+- **加门落点**：`create_meeting` / `add_participant` 均在 `pool.get()` 之前插入 `require_session(session)?;`，无会话即 401，门在 DB 访问前返回。
+
+| 门档 | 处理函数 | 路由 / 真写动作 | 加门说明 |
+| --- | --- | --- | --- |
+| 会话档（新增 require_session） | `create_meeting` | POST `/api/meeting/create`，INSERT `meeting_info` | crate 内新增 `require_session`：无会话 401，门置于 `pool.get()` 之前 |
+| 会话档（新增 require_session） | `add_participant` | POST `/api/meeting/participant/add`，INSERT `meeting_participant` | 同上 `require_session` 无会话 401，门在 `pool.get()` 之前 |
+
+| 验证（本批代码变更） | — | meeting 整 lib `17 passed / 0 failed / 0 ignored`：新增 `security_gate_tests_b66::b66_writes_reject_without_session`（2 把 dead pool + `None` 会话 → 全部 `Err(AppError::Unauthorized)`，门在 DB 访问前）+ `b66_writes_accept_valid_session_past_gate`（有效会话 + dead pool → `Err(AppError::Internal)`，证门在库前、之后才落库）。尺子：**R7 692→690（−2）**、含写 15→**13**（−2，印证两把均为 deadpool 字面量写）；复跑 3 次稳定；EXIT 0 |
+
 ## 四、验证
 
 
