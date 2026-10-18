@@ -1160,23 +1160,23 @@ organization_assemble_express	POST	/api/unitduty/list/name/identity	unitduty_lis
 organization_assemble_express	POST	/api/unitduty/list/name/unit	unitduty_list_name_unit	R7-已认证+体内无会话无门禁
 organization_assemble_express	POST	/api/unitduty/list/unit/object	unitduty_list_unit_object	R7-已认证+体内无会话无门禁
 organization_assemble_personal	POST	/api/organization/assemble/personal/custom/{id}/mockputtopost	custom_mockputtopost	R5-已认证+体内门禁
-organization_core_entity	DELETE	/api/organization/bind/{id}	bind_delete	R7-已认证+体内无会话无门禁
-organization_core_entity	DELETE	/api/organization/custom/{id}	custom_delete	R7-已认证+体内无会话无门禁
-organization_core_entity	DELETE	/api/organization/definition/{id}	definition_delete	R7-已认证+体内无会话无门禁
+organization_core_entity	DELETE	/api/organization/bind/{id}	bind_delete	R5-已认证+体内门禁
+organization_core_entity	DELETE	/api/organization/custom/{id}	custom_delete	R5-已认证+体内门禁
+organization_core_entity	DELETE	/api/organization/definition/{id}	definition_delete	R5-已认证+体内门禁
 organization_core_entity	DELETE	/api/organization/group/{id}	group_delete	R1-中间件 admin
-organization_core_entity	DELETE	/api/organization/identity/{id}	identity_delete	R7-已认证+体内无会话无门禁
+organization_core_entity	DELETE	/api/organization/identity/{id}	identity_delete	R5-已认证+体内门禁
 organization_core_entity	DELETE	/api/organization/person/{id}	person_delete	R1-中间件 admin
-organization_core_entity	POST	/api/organization/bind	bind_create	R7-已认证+体内无会话无门禁
-organization_core_entity	POST	/api/organization/custom	custom_create	R7-已认证+体内无会话无门禁
-organization_core_entity	POST	/api/organization/definition	definition_create	R7-已认证+体内无会话无门禁
+organization_core_entity	POST	/api/organization/bind	bind_create	R5-已认证+体内门禁
+organization_core_entity	POST	/api/organization/custom	custom_create	R5-已认证+体内门禁
+organization_core_entity	POST	/api/organization/definition	definition_create	R5-已认证+体内门禁
 organization_core_entity	POST	/api/organization/group	group_create	R1-中间件 admin
-organization_core_entity	POST	/api/organization/identity	identity_create	R7-已认证+体内无会话无门禁
+organization_core_entity	POST	/api/organization/identity	identity_create	R5-已认证+体内门禁
 organization_core_entity	POST	/api/organization/person	person_create	R1-中间件 admin
-organization_core_entity	PUT	/api/organization/bind/{id}	bind_update	R7-已认证+体内无会话无门禁
-organization_core_entity	PUT	/api/organization/custom/{id}	custom_update	R7-已认证+体内无会话无门禁
-organization_core_entity	PUT	/api/organization/definition/{id}	definition_update	R7-已认证+体内无会话无门禁
+organization_core_entity	PUT	/api/organization/bind/{id}	bind_update	R5-已认证+体内门禁
+organization_core_entity	PUT	/api/organization/custom/{id}	custom_update	R5-已认证+体内门禁
+organization_core_entity	PUT	/api/organization/definition/{id}	definition_update	R5-已认证+体内门禁
 organization_core_entity	PUT	/api/organization/group/{id}	group_update	R1-中间件 admin
-organization_core_entity	PUT	/api/organization/identity/{id}	identity_update	R7-已认证+体内无会话无门禁
+organization_core_entity	PUT	/api/organization/identity/{id}	identity_update	R5-已认证+体内门禁
 organization_core_entity	PUT	/api/organization/person/{id}	person_update	R1-中间件 admin
 personal	DELETE	/api/person/custom/{name}	custom_delete	R1-中间件 admin
 personal	DELETE	/api/person/definition/{name}	definition_delete	R1-中间件 admin
