@@ -1966,8 +1966,8 @@ program_center	POST	/api/program_center/invoke/create	invoke_create	R5-已认证
 program_center	POST	/api/program_center/invoke/delete/{id}	invoke_delete	R5-已认证+体内门禁
 program_center	POST	/api/program_center/invoke/save/{id}	invoke_save	R5-已认证+体内门禁
 program_center	POST	/api/program_center/invoke/token	invoke_token	R7-已认证+体内无会话无门禁
-program_center	POST	/api/program_center/invoke/{flag}/client/{client}/token/{token}/execute	u3_invoke_execute_with_token	R7-已认证+体内无会话无门禁
-program_center	POST	/api/program_center/invoke/{flag}/execute	u3_invoke_execute	R7-已认证+体内无会话无门禁
+program_center	POST	/api/program_center/invoke/{flag}/client/{client}/token/{token}/execute	u3_invoke_execute_with_token	R5-已认证+体内门禁
+program_center	POST	/api/program_center/invoke/{flag}/execute	u3_invoke_execute	R5-已认证+体内门禁
 program_center	POST	/api/program_center/market/flag/install/or/update	market_flag_install_or_update	R5-已认证+体内门禁
 program_center	POST	/api/program_center/market/install/offline	market_install_offline	R5-已认证+体内门禁
 program_center	POST	/api/program_center/market/list/install/log/paging/{page}/size/{size}	u3_market_install_log_paging_post	R7-已认证+体内无会话无门禁
