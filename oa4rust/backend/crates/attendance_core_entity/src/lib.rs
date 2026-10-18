@@ -15,6 +15,17 @@ pub mod routes;
 
 use entities::{attendance_record, attendance_rule};
 
+/// 安全审计（round4-b82）：attendance 实体 4 把 sea_orm CRUD 真写收"会话存在档"门禁。
+/// 无会话（Option<Extension<Session>> = None）→ 401，门置于首个 DB 访问
+/// （`ActiveModel::insert/update` / `Entity::find_by_id().one()`）之前，杜绝匿名写
+/// attendance_record / attendance_rule。这些是 sea_orm ORM 写，审计尺子"含写"
+/// 指标不可见（ORM-blindness，§五 尺子缺陷 28），R7 降但含写不变属预期。
+fn require_session(
+    session: Option<Extension<shared::session::Session>>,
+) -> Result<shared::session::Session, AppError> {
+    session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
+}
+
 /// 获取考勤记录列表
 #[allow(non_snake_case)]
 pub async fn record_list(
@@ -100,8 +111,10 @@ pub async fn rule_list(
 #[allow(non_snake_case)]
 pub async fn record_create(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     AxumJson(payload): AxumJson<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     use attendance_record::ActiveModel;
 
     let user_id = payload
@@ -147,9 +160,11 @@ pub async fn record_create(
 #[allow(non_snake_case)]
 pub async fn record_update(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
     AxumJson(payload): AxumJson<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     use attendance_record::ActiveModel;
 
     let check_out_time = payload
@@ -215,8 +230,10 @@ pub async fn record_delete(
 #[allow(non_snake_case)]
 pub async fn rule_create(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     AxumJson(payload): AxumJson<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     use attendance_rule::ActiveModel;
 
     let name = payload
@@ -263,9 +280,11 @@ pub async fn rule_create(
 #[allow(non_snake_case)]
 pub async fn rule_update(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
     AxumJson(payload): AxumJson<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     use attendance_rule::ActiveModel;
 
     let name = payload
@@ -377,6 +396,8 @@ pub fn attendance_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
 mod tests;
 #[cfg(test)]
 mod tests_generated;
+#[cfg(test)]
+mod security_gate_tests_b82;
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::attendance_core_entity_router(pool)
