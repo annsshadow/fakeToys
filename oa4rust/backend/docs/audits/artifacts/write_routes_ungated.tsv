@@ -99,13 +99,6 @@ bbs_core_entity	POST	/api/bbs/core/entity/reply	create_reply	R7
 calendar_assemble_control	PUT	/api/calendar_assemble_control/calendar/list/filter	calendar_list_filter	R7
 calendar_assemble_control	PUT	/api/calendar_assemble_control/event/list/filter	event_list_filter	R7
 calendar_assemble_control	PUT	/api/calendar_assemble_control/event/list/filter/sample	event_list_filter_sample	R7
-calendar_assemble_control	POST	/api/calendar_assemble_control/setting	setting_create	R7
-calendar_core_entity	POST	/api/calendar/core/entity/calendar/create	calendar_create	R7
-calendar_core_entity	POST	/api/calendar/core/entity/calendar/update	calendar_update	R7
-calendar_core_entity	POST	/api/calendar/core/entity/calendar/remove	calendar_remove	R7
-calendar_core_entity	POST	/api/calendar/core/entity/event/create	event_create	R7
-calendar_core_entity	POST	/api/calendar/core/entity/event/update	event_update	R7
-calendar_core_entity	POST	/api/calendar/core/entity/event/remove	event_remove	R7
 cms_assemble_control	POST	/api/data/document/{id}/array/data	data_document_id_array_data	R7
 cms_assemble_control	PUT	/api/categoryinfo/filter/list/{id}/next/{count}/app/{appId}	categoryinfo_filter_list_id_next_count_app_appId	R7
 cms_assemble_control	POST	/api/categoryinfo/filter/list/{id}/next/{count}/app/{appId}/mockputtopost	categoryinfo_filter_list_id_next_count_app_appId_mockputtopost	R7

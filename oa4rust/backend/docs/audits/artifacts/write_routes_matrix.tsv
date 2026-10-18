@@ -258,7 +258,7 @@ calendar_assemble_control	POST	/api/calendar_assemble_control/event	event_create
 calendar_assemble_control	POST	/api/calendar_assemble_control/event/list/filter/sample/manager	event_list_filter_sample_manager	R6-已认证+读会话无门禁
 calendar_assemble_control	POST	/api/calendar_assemble_control/event/manage	event_manage	R6-已认证+读会话无门禁
 calendar_assemble_control	POST	/api/calendar_assemble_control/message	message_create	R6-已认证+读会话无门禁
-calendar_assemble_control	POST	/api/calendar_assemble_control/setting	setting_create	R7-已认证+体内无会话无门禁
+calendar_assemble_control	POST	/api/calendar_assemble_control/setting	setting_create	R5-已认证+体内门禁
 calendar_assemble_control	PUT	/api/calendar_assemble_control/calendar/list/filter	calendar_list_filter	R7-已认证+体内无会话无门禁
 calendar_assemble_control	PUT	/api/calendar_assemble_control/event	event_update_all	R6-已认证+读会话无门禁
 calendar_assemble_control	PUT	/api/calendar_assemble_control/event/list/filter	event_list_filter	R7-已认证+体内无会话无门禁
@@ -266,12 +266,12 @@ calendar_assemble_control	PUT	/api/calendar_assemble_control/event/list/filter/s
 calendar_assemble_control	PUT	/api/calendar_assemble_control/event/update/after/{id}	event_update_after	R6-已认证+读会话无门禁
 calendar_assemble_control	PUT	/api/calendar_assemble_control/event/update/all/{id}	event_update_all	R6-已认证+读会话无门禁
 calendar_assemble_control	PUT	/api/calendar_assemble_control/event/update/single/{id}	event_update_single	R6-已认证+读会话无门禁
-calendar_core_entity	POST	/api/calendar/core/entity/calendar/create	calendar_create	R7-已认证+体内无会话无门禁
-calendar_core_entity	POST	/api/calendar/core/entity/calendar/remove	calendar_remove	R7-已认证+体内无会话无门禁
-calendar_core_entity	POST	/api/calendar/core/entity/calendar/update	calendar_update	R7-已认证+体内无会话无门禁
-calendar_core_entity	POST	/api/calendar/core/entity/event/create	event_create	R7-已认证+体内无会话无门禁
-calendar_core_entity	POST	/api/calendar/core/entity/event/remove	event_remove	R7-已认证+体内无会话无门禁
-calendar_core_entity	POST	/api/calendar/core/entity/event/update	event_update	R7-已认证+体内无会话无门禁
+calendar_core_entity	POST	/api/calendar/core/entity/calendar/create	calendar_create	R5-已认证+体内门禁
+calendar_core_entity	POST	/api/calendar/core/entity/calendar/remove	calendar_remove	R5-已认证+体内门禁
+calendar_core_entity	POST	/api/calendar/core/entity/calendar/update	calendar_update	R5-已认证+体内门禁
+calendar_core_entity	POST	/api/calendar/core/entity/event/create	event_create	R5-已认证+体内门禁
+calendar_core_entity	POST	/api/calendar/core/entity/event/remove	event_remove	R5-已认证+体内门禁
+calendar_core_entity	POST	/api/calendar/core/entity/event/update	event_update	R5-已认证+体内门禁
 cms_assemble_control	DELETE	/api/appinfo/erase/app/{id}	appinfo_erase_app_id	R5-已认证+体内门禁
 cms_assemble_control	DELETE	/api/appinfo/{id}	appinfo_u2_delete	R5-已认证+体内门禁
 cms_assemble_control	DELETE	/api/categoryinfo/erase/category/{id}	categoryinfo_erase_category_id	R5-已认证+体内门禁

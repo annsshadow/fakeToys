@@ -1135,6 +1135,26 @@ GET 写面队列里 `calendar_assemble_control` 与 `jpush_assemble_control` 各
 
 | 验证（本批代码变更） | — | query_core_entity 整 lib `17 passed / 0 failed / 0 ignored`：新增 `security_gate_tests_b69` 三臂——`b69_writes_reject_without_session`（dead pool + `None` 会话 → `Err(AppError::Unauthorized)`，门在 DB 访问前）+ `b69_writes_accept_valid_session_past_gate`（有效会话 + dead pool → `Err(AppError::Internal)`，证门在库前）+ `b69_require_session_gate_logic`（纯单元）。顺带修预存 `tests::test_view_create_returns_success`（路由可达臂）：加门后匿名 HTTP 请求由 500 变 401，给其 router 注一层 `Extension(test_session)` 保留原"路由可达 + 落死池 → 500"断言语义。尺子：**R7 686→685（−1）**、含写 9→**8**（−1，印证死池字面量写）；复跑 3 次稳定；EXIT 0 |
 
+### 三.70 — calendar 域 7 把真写收会话门（R7 685→678，含写 8→7）
+- **批次目标**：收 calendar 域全部 R7 真写 7 把（跨两 crate）：
+  - `calendar_assemble_control::setting_create`（POST `/api/calendar_assemble_control/setting`，`INSERT INTO cal_setting`，deadpool 字面量写，尺子可见）；
+  - `calendar_core_entity` 6 把 sea_orm CRUD（`calendar_create` / `calendar_update` / `calendar_remove` / `event_create` / `event_update` / `event_remove`，POST `/api/calendar/core/entity/*`，经 `ActiveModel::insert/update` 或 `Entity::find_by_id().one()` 后 update 写 `cal_calendar` / `cal_event`）。
+- **收口档**：均 session 存在档（两 crate 各新增 crate 内 `require_session`，无会话 401，门置于首个 DB 访问之前）。日历/事件与设置为用户域资源，任何已认证用户可写（不收 admin）。
+- **ORM-blindness 再次坐实（第六十五批结论的第二例证）**：本批 R7 −7，但"含写"仅 −1（setting_create）——6 把 sea_orm 写尺子不可见，同时"只读挂写方法"桶 677→671 同步 −6，与第六十五批（general_core_entity −12 / 只读桶 −12 / 含写 0）完全同型。**按 crate 下移时，凡 R7 降幅 > 含写降幅的批次，其差即 ORM 写**，须以离线 401 臂交叉验证（本批 b70 臂即证）。
+- **§五 关联（非新增，重申）**：`setting_create` 与 `calendar_create`/`event_create` 的归属列（person / createor）均取自 body（默认 "anonymous"），属冒名残留 A2-F11 族——本批只抹匿名写面，按会话 person 落归属列 §五 遗留。
+
+| 门档 | 处理函数 | 路由 / 真写动作 | 加门说明 |
+| --- | --- | --- | --- |
+| 会话档（新增 require_session） | `setting_create`（calendar_assemble_control/u2.rs） | POST `/api/calendar_assemble_control/setting`，INSERT cal_setting | crate 内新增 `require_session`：无会话 401，门置于 `pool.get()` 之前 |
+| 会话档（新增 require_session） | `calendar_create`（calendar_core_entity） | POST `/api/calendar/core/entity/calendar/create`，sea_orm insert cal_calendar | crate 内新增 `require_session`：无会话 401，门置于 `ActiveModel::insert` 之前 |
+| 会话档（新增 require_session） | `calendar_update` | POST `/api/calendar/core/entity/calendar/update`，find+update cal_calendar | 同上 |
+| 会话档（新增 require_session） | `calendar_remove` | POST `/api/calendar/core/entity/calendar/remove`，软关闭 update cal_calendar | 同上 |
+| 会话档（新增 require_session） | `event_create` | POST `/api/calendar/core/entity/event/create`，sea_orm insert cal_event | 同上 |
+| 会话档（新增 require_session） | `event_update` | POST `/api/calendar/core/entity/event/update`，find+update cal_event | 同上 |
+| 会话档（新增 require_session） | `event_remove` | POST `/api/calendar/core/entity/event/remove`，软关闭 update cal_event | 同上 |
+
+| 验证（本批代码变更） | — | 两 crate 整 lib 全绿：calendar_assemble_control `37 passed / 0 failed / 0 ignored`（新 `security_gate_tests_b70` 三臂：`b70_writes_reject_without_session` 死池+None→401、`b70_writes_accept_valid_session_past_gate` 有效会话+死池→Internal、`b70_require_session_gate_logic` 纯单元）；calendar_core_entity `8 passed / 0 failed / 0 ignored`（新 `security_gate_tests_b70` 三臂：`b70_writes_reject_without_session` 6 把真库连接+None→全 `Err(AppError::Unauthorized)`、`b70_update_remove_pass_gate_reach_db_without_write` 有效会话+不存在 id→`Err(AppError::NotFound)` 证过门触库且不落写、`b70_require_session_gate_logic` 纯单元）。尺子：**R7 685→678（−7）**、含写 8→**7**（−1，ORM-blindness 第二例证）、只读挂写桶 677→671（−6）；复跑 3 次稳定；EXIT 0 |
+
 ## 四、验证
 
 
