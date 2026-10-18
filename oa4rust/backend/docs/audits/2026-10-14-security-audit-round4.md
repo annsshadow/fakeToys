@@ -1286,6 +1286,19 @@ GET 写面队列里 `calendar_assemble_control` 与 `jpush_assemble_control` 各
 
 | 验证（本批代码变更） | — | organization_core_entity 整 lib `35 passed / 0 failed / 0 ignored`：新增 `security_gate_tests_b80`——`b80_writes_reject_without_session`（12 把真库 sea_orm 连接 + `None` 会话 → 全部 `Err(AppError::Unauthorized)`，门在 DB 访问前）+ `b80_require_session_gate_logic`（纯单元）。尺子：**R7 657→645（−12）**、含写 0→**0**（ORM-blindness 第六例证）、只读挂写桶 657→645（−12）；复跑 3 次稳定；EXIT 0 |
 
+### 三.81 — ORM 盲区复查：mind_core_entity 7 把收会话门（R7 645→638，含写 0→0）
+- **批次目标**：mind_core_entity 的 R7 7 条全为真写（sea_orm CRUD）：mind 族 × create/update/delete + folder 族 × create/update/delete + `create_version`（version 快照创建）。
+- **收口档**：均 session 存在档（新增 crate 内 `require_session`，无会话 401，门在 `ActiveModel::insert/update/delete` 前）。思维图/文件夹/版本为用户个人域内容，任意已认证用户可写；creator/归属冒名残留按 A2-F11 族记 §五。
+- **接线缺陷口径同第七十八批**：router 不提供 `Extension<DatabaseConnection>`（§五 遗留 30）⇒ HTTP 面 500 死路，本批静态收门 + 直调臂验证。
+
+| 门档 | 处理函数 | 路由 / 真写动作 | 加门说明 |
+| --- | --- | --- | --- |
+| 会话档（新增 require_session） | `create_mind`/`update_mind`/`delete_mind` | POST `/api/mind/core/entity/mind`、POST/DELETE `/api/mind/core/entity/mind/{id}`，mind_mind | crate 内新增 `require_session`：无会话 401，门在 DB 访问前 |
+| 会话档（新增 require_session） | `create_folder`/`update_folder`/`delete_folder` | `/api/mind/core/entity/folder`（+`/{id}`），mind_folder | 同上 |
+| 会话档（新增 require_session） | `create_version` | POST `/api/mind/core/entity/version`，mind_version | 同上 |
+
+| 验证（本批代码变更） | — | mind_core_entity 整 lib `24 passed / 0 failed / 0 ignored`：新增 `security_gate_tests_b81`——`b81_writes_reject_without_session`（7 把真库 sea_orm 连接 + `None` 会话 → 全部 `Err(AppError::Unauthorized)`，门在 DB 访问前）+ `b81_require_session_gate_logic`（纯单元）。尺子：**R7 645→638（−7）**、含写 0→**0**（ORM-blindness 第七例证）、只读挂写桶 645→638（−7）；复跑 3 次稳定；EXIT 0 |
+
 ## 四、验证
 
 
