@@ -680,9 +680,9 @@ file_assemble_control	PUT	/api/file/assemble/control/update/control/config	updat
 file_assemble_control	PUT	/api/file/core/entity/file/update/{id}	update_file_entity	R5-已认证+体内门禁
 file_assemble_control	PUT	/api/folder/{id}	u2_folder_rename	R5-已认证+体内门禁
 file_assemble_control	PUT	/api/folder2/{id}	u2_folder_rename	R5-已认证+体内门禁
-file_core_entity	DELETE	/api/file/core/entity/folder/{id}	folder_delete	R7-已认证+体内无会话无门禁
-file_core_entity	POST	/api/file/core/entity/file	file_create	R7-已认证+体内无会话无门禁
-file_core_entity	POST	/api/file/core/entity/folder	folder_create	R7-已认证+体内无会话无门禁
+file_core_entity	DELETE	/api/file/core/entity/folder/{id}	folder_delete	R5-已认证+体内门禁
+file_core_entity	POST	/api/file/core/entity/file	file_create	R5-已认证+体内门禁
+file_core_entity	POST	/api/file/core/entity/folder	folder_create	R5-已认证+体内门禁
 general_assemble_control	DELETE	/api/general/assemble/control/area/delete/{id}	area_delete	R5-已认证+体内门禁
 general_assemble_control	DELETE	/api/general/assemble/control/attendscope/delete/{id}	attendscope_delete	R5-已认证+体内门禁
 general_assemble_control	DELETE	/api/general/assemble/control/delete/{id}	general_control_delete	R5-已认证+体内门禁

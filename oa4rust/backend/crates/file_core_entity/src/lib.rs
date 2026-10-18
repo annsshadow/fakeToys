@@ -17,6 +17,17 @@ use shared::{error::AppError, response::ActionResult};
 
 use crate::entities::{file_file, file_folder};
 
+/// 安全审计（round4-b78）：file entity 3 把 sea_orm CRUD 真写收"会话存在档"门禁。
+/// 无会话（Option<Extension<Session>> = None）→ 401，门置于首个 DB 访问
+/// （`ActiveModel::insert` / `Entity::find_by_id().one()`）之前，杜绝匿名写
+/// `file_folder` / `file_file`。这些是 sea_orm ORM 写，审计尺子"含写"指标
+/// 不可见（ORM-blindness，§五 尺子缺陷 28），R7 降但含写不变属预期。
+fn require_session(
+    session: Option<Extension<shared::session::Session>>,
+) -> Result<shared::session::Session, AppError> {
+    session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
+}
+
 pub mod entities;
 pub mod routes;
 
@@ -304,8 +315,10 @@ pub async fn complex_top(
 #[allow(non_snake_case)]
 pub async fn folder_create(
     Extension(db): Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     Json(req): Json<FolderCreateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     if req.name.trim().is_empty() || req.person.trim().is_empty() {
         return Ok(Json(ActionResult::error("name and person are required")));
     }
@@ -339,8 +352,10 @@ pub async fn folder_create(
 #[allow(non_snake_case)]
 pub async fn folder_delete(
     Extension(db): Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let model = file_folder::Entity::find_by_id(&id)
         .one(&db)
         .await
@@ -361,8 +376,10 @@ pub async fn folder_delete(
 #[allow(non_snake_case)]
 pub async fn file_create(
     Extension(db): Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     Json(req): Json<FileCreateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     if req.name.trim().is_empty()
         || req.person.trim().is_empty()
         || req.reference_type.trim().is_empty()
@@ -435,6 +452,8 @@ pub fn file_core_entity_router(_pool: Pool) -> Router {
 mod tests;
 #[cfg(test)]
 mod tests_generated;
+#[cfg(test)]
+mod security_gate_tests_b78;
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::file_core_entity_router(pool)
