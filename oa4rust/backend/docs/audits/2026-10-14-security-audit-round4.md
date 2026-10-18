@@ -1299,6 +1299,18 @@ GET 写面队列里 `calendar_assemble_control` 与 `jpush_assemble_control` 各
 
 | 验证（本批代码变更） | — | mind_core_entity 整 lib `24 passed / 0 failed / 0 ignored`：新增 `security_gate_tests_b81`——`b81_writes_reject_without_session`（7 把真库 sea_orm 连接 + `None` 会话 → 全部 `Err(AppError::Unauthorized)`，门在 DB 访问前）+ `b81_require_session_gate_logic`（纯单元）。尺子：**R7 645→638（−7）**、含写 0→**0**（ORM-blindness 第七例证）、只读挂写桶 645→638（−7）；复跑 3 次稳定；EXIT 0 |
 
+### 三.82 — ORM 盲区复查：attendance_core_entity 4 把收会话门（R7 638→634，含写 0→0）
+- **批次目标**：attendance_core_entity 的 R7 4 条全为真写（sea_orm CRUD）：`record_create`（POST `/api/attendance/core/entity/record/create`）、`record_update`（POST `/api/attendance/core/entity/record/{id}/update`）、`rule_create`（POST `/api/attendance/core/entity/rule/create`）、`rule_update`（POST `/api/attendance/core/entity/rule/{id}/update`）。同 crate 的 record_delete / rule_delete handler 存在但**未注册路由**（矩阵无行），不在范围。
+- **收口档**：均 session 存在档（新增 crate 内 `require_session`，无会话 401，门在 `ActiveModel::insert/update` 前）。签到记录/考勤规则的创建与修改收会话档；注意与 `attendance_assemble_control` 的 admin 档（b63：workflow/analyse）是**同域两档**——实体 CRUD 会话档 vs 装配面运维 admin 档，口径差留 §五 与 o2server 权威对齐。
+- **接线缺陷口径同第七十八批**：router 不提供 `Extension<DatabaseConnection>`（§五 遗留 30）⇒ HTTP 面 extraction 先失败（500），本批静态收门 + 直调臂验证；预存路由臂（500）行为不变。
+
+| 门档 | 处理函数 | 路由 / 真写动作 | 加门说明 |
+| --- | --- | --- | --- |
+| 会话档（新增 require_session） | `record_create` / `record_update` | POST `/api/attendance/core/entity/record/create`、`/record/{id}/update`，attendance_record | crate 内新增 `require_session`：无会话 401，门在 DB 访问前 |
+| 会话档（新增 require_session） | `rule_create` / `rule_update` | POST `/api/attendance/core/entity/rule/create`、`/rule/{id}/update`，attendance_rule | 同上 |
+
+| 验证（本批代码变更） | — | attendance_core_entity 整 lib `11 passed / 0 failed / 0 ignored`：新增 `security_gate_tests_b82`——`b82_writes_reject_without_session`（4 把真库 sea_orm 连接 + `None` 会话 → 全部 `Err(AppError::Unauthorized)`，门在 DB 访问前）+ `b82_require_session_gate_logic`（纯单元）。预存路由臂（经 router 匿名 → extraction 先失败 500）行为不变。尺子：**R7 638→634（−4）**、含写 0→**0**（ORM-blindness 第八例证）、只读挂写桶 638→634（−4）；复跑 3 次稳定；EXIT 0 |
+
 ## 四、验证
 
 

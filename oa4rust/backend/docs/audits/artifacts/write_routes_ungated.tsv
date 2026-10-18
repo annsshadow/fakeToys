@@ -54,10 +54,6 @@ attendance_assemble_control	POST	/api/attendance/assemble/control/v2/detail/stat
 attendance_assemble_control	POST	/api/attendance/assemble/control/v2/groupschedule/list/filter	v2_groupschedule_list_filter	R7
 attendance_assemble_control	POST	/api/attendance/assemble/control/v2/my/rest/date/check	v2_my_rest_date_check	R7
 attendance_assemble_control	POST	/api/attendance/assemble/control/v2/workplace/list/ids	v2_workplace_list_ids	R7
-attendance_core_entity	POST	/api/attendance/core/entity/record/create	record_create	R7
-attendance_core_entity	POST	/api/attendance/core/entity/record/{id}/update	record_update	R7
-attendance_core_entity	POST	/api/attendance/core/entity/rule/create	rule_create	R7
-attendance_core_entity	POST	/api/attendance/core/entity/rule/{id}/update	rule_update	R7
 auth	POST	/api/authentication/two_factor	two_factor_login	R7
 auth	POST	/api/authentication/sso	sso_post_login	R7
 auth	POST	/api/authentication/sso/encrypt	sso_encrypt	R7
