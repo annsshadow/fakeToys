@@ -690,7 +690,6 @@ query_assemble_surface	POST	/api/queryview/table/list/{id}/row/select	table_row_
 query_assemble_surface	POST	/api/queryview/view/flag/{flag}/query/{queryFlag}/execute/v2/page/{page}/size/{size}	view_execute_v2_flag_query	R7
 query_assemble_surface	POST	/api/queryview/view/{id}/bundle/v2	view_bundle_v2_post	R7
 query_assemble_surface	POST	/api/queryview/view/{id}/execute/v2/page/{page}/size/{size}	view_execute_v2_id	R7
-query_core_entity	POST	/api/query/view/create	view_create	R7
 query_express	POST	/api/query/create	create_query	R7
 query_service_processing	POST	/api/query/service/processing/process	process_query	R7
 query_service_processing	POST	/api/query/service/processing/batch	batch_process	R7
