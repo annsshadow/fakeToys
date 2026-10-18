@@ -27,7 +27,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 
 from .atomic_write import atomic_write_json, path_lock
-from .validation import require_within_dir
+from .validation import require_count, require_within_dir
 
 logger = logging.getLogger(__name__)
 
@@ -101,11 +101,12 @@ class DatasetVersionManager:
         """获取版本操作历史（按时间倒序）
 
         Args:
-            limit: 最多返回的条数（从最新开始）
+            limit: 最多返回的条数（从最新开始）。`None` 是「全部」、`0` 是「一条都不要」，负数与非整数由 `require_count` 判掉（L283：与孪生方法 `versioning.DatasetVersionManager.get_history` 同口径，改前这一格走 `if limit else` 把两者都读反）
 
         Returns:
             历史记录列表
         """
+        require_count("limit", limit)
         if not self._history_file.exists():
             return []
 
@@ -121,7 +122,7 @@ class DatasetVersionManager:
                     logger.warning("跳过无法解析的历史记录行")
 
         entries.reverse()
-        return entries[:limit] if limit else entries
+        return entries[:limit] if limit is not None else entries
     
     def _load_index(self) -> Dict:
         """加载索引文件

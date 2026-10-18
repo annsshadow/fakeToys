@@ -287,7 +287,7 @@ class DatasetIndexer:
         import time
         start_time = time.time()
         
-        fields = fields or ["instruction", "output"]
+        fields = fields if fields is not None else ["instruction", "output"]
         all_matches: Dict[int, float] = defaultdict(float)
         executed = method
         

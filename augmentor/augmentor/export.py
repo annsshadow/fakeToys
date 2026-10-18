@@ -14,7 +14,7 @@ import json
 import csv
 
 from .atomic_write import atomic_write_json, atomic_write_text
-from .validation import require_within_dir
+from .validation import require_within_dir, sheet_text_row
 import logging
 from typing import List, Dict, Optional
 from pathlib import Path
@@ -269,11 +269,15 @@ class Exporter:
             atomic_write_json(output_path, data)
         elif export_format == ExportFormat.CSV:
             data = self._convert_to_csv(items)
-            if data:
-                with open(output_path, 'w', encoding='utf-8', newline='') as f:
+            # 空数据集从前被 `if data:` 整段跳过 ⇒ 返回 "csv"、日志说「导出成功」、
+            # 文件却根本不存在（实测 `export([], out.csv, "csv")`），与本函数上方刚为
+            # A343 立起的那道「静默零写入 + 成功即缺陷」的判据自相矛盾。现在与 jsonl
+            # 档同形：产物存在、读回 0 条；没有表头可抄是空集的既有事实，不谎造表头。
+            with open(output_path, 'w', encoding='utf-8', newline='') as f:
+                if data:
                     writer = csv.DictWriter(f, fieldnames=data[0].keys())
                     writer.writeheader()
-                    writer.writerows(data)
+                    writer.writerows([sheet_text_row(row) for row in data])
         else:
             # 上面那道闸门只放过 NATIVE_FORMATS 的成员，走到这里说明有人给那个元组
             # 加了员却没接分支。改前这一档静默不写任何文件、照样返回成功（A343 族），
@@ -355,7 +359,9 @@ class Exporter:
         output_dir_path = Path(output_dir)
         output_dir_path.mkdir(parents=True, exist_ok=True)
 
-        format_names = formats or [self.default_format.value]
+        # `formats=[]` 是「这几种格式一种都不导」，不是「没表态」（A343 族）：
+        # 从前 `or` 把空清单套上默认格式，调用方清空勾选却仍拿到一份 jsonl。
+        format_names = formats if formats is not None else [self.default_format.value]
         # 校验格式合法性，避免部分任务失败后才发现
         for fmt in format_names:
             ExportFormat(fmt)

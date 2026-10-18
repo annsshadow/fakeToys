@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, Button, Space, Select, Switch, message, Progress, Tag } from 'antd'
 import { RocketOutlined, ReloadOutlined } from '@ant-design/icons'
 import { apiErrorDetail, startAugmentation, getProgress, getCheckpoints, getDataFiles } from '../services/api'
@@ -14,13 +14,12 @@ export default function Augmentation() {
   const [running, setRunning] = useState(false)
   const [progress, setProgress] = useState<AugmentProgressDetail | null>(null)
   const [checkpoints, setCheckpoints] = useState<string[]>([])
-
-  useEffect(() => {
-    loadFiles()
-    loadCheckpoints()
-    const interval = setInterval(checkProgress, 2000)
-    return () => clearInterval(interval)
-  }, [])
+  // L277：轮询开关是一个**状态**，定时器由 effect 拥有——终态（`progress >= 1`）把开关关掉，
+  // 表随之被 cleanup 清掉；再点一次「开始增强」把开关打开，表重新起。
+  // 改前这里没有开关：`setInterval` 住在挂载 effect 的局部变量里，`checkProgress` 够不着它，
+  // 于是任务完成后定时器照跑——「增强任务完成！」每 2 秒重发一次，页面永远在打
+  // `GET /api/augment/progress`。
+  const [polling, setPolling] = useState(false)
 
   const loadFiles = async () => {
     try {
@@ -40,7 +39,10 @@ export default function Augmentation() {
     }
   }
 
-  const checkProgress = async () => {
+  // `useCallback` 的依赖是空集：函数体只碰 setter（React 保证身份稳定）与模块级服务函数。
+  // 这不是「为了过 lint 而包一层」——它进下面那只 effect 的依赖数组，身份不稳定就会每次渲染
+  // 清表再起表，轮询节奏变成随渲染抖动。
+  const checkProgress = useCallback(async () => {
     try {
       const result = await getProgress()
       // 后端有两种响应：`{ status: 'no_checkpoint' }`，或完整进度（**不带** `status`）。
@@ -51,12 +53,29 @@ export default function Augmentation() {
         if (result.progress >= 1) {
           setRunning(false)
           message.success('增强任务完成！')
+          // L277：到终态就收表。改前这一句之后定时器照跑，于是「增强任务完成！」
+          // 每 2 秒重发一次、并且永远在打 `GET /api/augment/progress`。
+          setPolling(false)
         }
       }
     } catch {
       // 忽略错误
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    loadFiles()
+    loadCheckpoints()
+    setPolling(true)
+  }, [])
+
+  // 开关开 ⇒ 起表；开关关或组件卸载 ⇒ cleanup 清表。定时器只住在这里，
+  // 页面上任何一处（`checkProgress`、`handleStart`）都只翻转开关，不碰句柄。
+  useEffect(() => {
+    if (!polling) return
+    const timer = setInterval(checkProgress, 2000)
+    return () => clearInterval(timer)
+  }, [polling, checkProgress])
 
   const handleStart = async () => {
     if (!inputFile) {
@@ -68,6 +87,8 @@ export default function Augmentation() {
     try {
       await startAugmentation(inputFile, outputFile, useQuality, useDedup, useCheckpoint)
       message.success('增强任务已启动')
+      // 上一轮到终态时把表关了；这里重新打开，否则第二次点「开始增强」页面不会再刷进度。
+      setPolling(true)
     } catch (err) {
       message.error(apiErrorDetail(err, '启动失败'))
       setRunning(false)

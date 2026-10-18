@@ -296,15 +296,15 @@ class VersionManager:
         Args:
             version_id: 版本 ID
         """
-        current = self.get_current_version()
-        if current == version_id:
-            raise VersionError("不能删除当前版本")
-        
-        version_dir = self._get_version_dir(version_id)
-        if version_dir.exists():
-            shutil.rmtree(version_dir)
-            logger.info(f"删除版本: {version_id}")
-            self._log_history("delete", version_id)
+        with path_lock(self.storage_dir):  # L290 / A397：判 current 与动手必须同趟
+            current = self.get_current_version()
+            if current == version_id:
+                raise VersionError("不能删除当前版本")
+            version_dir = self._get_version_dir(version_id)
+            if version_dir.exists():
+                shutil.rmtree(version_dir)
+                logger.info(f"删除版本: {version_id}")
+                self._log_history("delete", version_id)
     
     def diff(self, version1_id: str, version2_id: str) -> DiffResult:
         """对比两个版本的差异
@@ -371,28 +371,27 @@ class VersionManager:
         Returns:
             是否成功
         """
-        version_dir = self._get_version_dir(version_id)
-        
-        if not version_dir.exists():
-            logger.error(f"版本不存在: {version_id}")
-            return False
-        
-        # 更新 current 符号链接：同 create_version。判存在与清除都住进 _clear_current_link，
-        # 因为断链上 exists() 会抛 WinError 1920；目标同样只写版本目录名，写整段相对路径
-        # 会得到 data/versions/data/versions/… 这种双重前缀的恒断链。
-        self._clear_current_link()
-        
-        try:
-            self._current_symlink.symlink_to(version_dir.name)
-        except OSError:
-            # 建不出链接（Windows 无管理员特权）时退回 .txt；_clear_current_link 已经把
-            # 上一次那份 .txt 一起清掉了，所以读侧不会停在一个更早的版本上
-            with open(self._current_symlink.with_suffix('.txt'), 'w', encoding='utf-8') as f:
-                f.write(version_id)
-        
-        logger.info(f"回滚到版本: {version_id}")
-        self._log_history("rollback", version_id)
-        return True
+        with path_lock(self.storage_dir):  # L290 / A397：与 create_version 同抢一把
+            version_dir = self._get_version_dir(version_id)
+            if not version_dir.exists():
+                logger.error(f"版本不存在: {version_id}")
+                return False
+            # 更新 current 符号链接：同 create_version。判存在与清除都住进 _clear_current_link，
+            # 因为断链上 exists() 会抛 WinError 1920；目标同样只写版本目录名，写整段相对路径
+            # 会得到 data/versions/data/versions/… 这种双重前缀的恒断链。
+            self._clear_current_link()
+            
+            try:
+                self._current_symlink.symlink_to(version_dir.name)
+            except OSError:
+                # 建不出链接（Windows 无管理员特权）时退回 .txt；_clear_current_link 已经把
+                # 上一次那份 .txt 一起清掉了，所以读侧不会停在一个更早的版本上
+                with open(self._current_symlink.with_suffix('.txt'), 'w', encoding='utf-8') as f:
+                    f.write(version_id)
+            
+            logger.info(f"回滚到版本: {version_id}")
+            self._log_history("rollback", version_id)
+            return True
     
     def generate_report(self) -> Dict:
         """生成版本管理报告

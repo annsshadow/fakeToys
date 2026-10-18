@@ -66,6 +66,8 @@ export interface DataPageResponse {
   page: number
   page_size: number
   items: DataItem[]
+  /** 与 `items` 同长同序：每条在**盘上文件**里的 0 基下标，写端点的权威坐标 */
+  indices: number[]
 }
 
 /** `POST /api/data/upload` */

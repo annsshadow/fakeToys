@@ -216,8 +216,8 @@ class DatasetOperations:
         # 起的旧行为；产物侧照旧去重（默认 MergeConfig.deduplicate=True）。要不要把
         # 这个「产物去了重、报表说没去」的口径对齐属行为变更轮，本轮不动。
         removed_duplicates = dedup_removed if config is not None else 0
-        # 去重删除与 max_items 截断分开报（旧实现混成一个数，L148，B218）
-        truncated_by_max_items = total_input - removed_duplicates - len(merged)
+        # 去重删除与 max_items 截断分开报（旧实现混成一个数，L148，B218）。截断那一格只报「真截过」的：上面那格在 `config=None` 时刻意记 0，于是残差全是去重的账，而 `MergeConfig()` 的 `max_items` 是 None，截断根本没发生过（L291，A400 ①）。
+        truncated_by_max_items = (0 if (config or MergeConfig()).max_items is None else total_input - removed_duplicates - len(merged))
         
         # 保存结果
         output = Path(output_path)
@@ -293,8 +293,11 @@ class DatasetOperations:
             sample_size = min(config.size, len(items))
         # `is not None` 而非 falsy：ratio=0 语义是「采 0 条」，写成 `if config.ratio`
         # 会把 0 读成「未设置」而采全量（L149，B219；下游 0 条由下面的短路守卫接住）
+        # 界取 `require_ratio` 默认的 0-1：`ratio=2.0` 算出 2×全量，random 那支
+        # 当场抛裸 `ValueError: Sample larger than population`（实测 20 条 ⇒ API 500），
+        # 而「采两倍」本来就不是一个比例。
         elif config.ratio is not None:
-            sample_size = int(len(items) * require_ratio("ratio", config.ratio, -float("inf"), float("inf")))
+            sample_size = int(len(items) * require_ratio("ratio", config.ratio))
         else:
             sample_size = len(items)
 

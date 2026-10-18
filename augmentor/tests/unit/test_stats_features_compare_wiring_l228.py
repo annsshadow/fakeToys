@@ -13,7 +13,7 @@
 | 页面上有没有手写字段名清单 | 有（impact / semantic 两张卡各写 `instruction`、`output` 两档） | 新增两张卡的候选**只能来自回执**，本文件钉住「无字面量 option」 |
 
 **为什么这一批要换一条判据**：l226 那把尺子量的是「封闭清单 vs 可 import 的 Python 常数」，
-l227 因为**没有**这种常数（`["instruction", "input", "output"]` 只是 `audit.py:68` 等处的
+l227 因为**没有**这种常数（`["instruction", "input", "output"]` 只是 `audit.py:69` 等处的
 手写字面量，见 **A285**）退到「页面发得出每一档都被端点接受」。这一批连那条都不够用——
 实测这两档旋钮给错值时后端**不出声**：
 
@@ -204,14 +204,16 @@ class TestWiredDefaults:
     def test_empty_opts_really_omit_the_key_on_the_wire(self, http_with_datasets):
         """`fields: undefined` 序列化后这个键不出现 ⇒ 走的是模型的 `None`，不是空列表
 
-        实测 `fields: []` 与缺省等价（都给全字段），但等价是**巧合**还是设计得看模型：
-        这里钉的是「页面留空时线上没有 fields 这一档」。
+        L277（修法①）之后 `fields: []` 与「不发这一键」**不再等价**：留空 ⇒ 全字段（模型的
+        `None` 档），显式空清单 ⇒ 零字段作用域（`field_statistics` 是空字典）。两档可区分正是
+        这一族要的结果，所以这里钉两件事：① 空清单不再被吞成全量；② 页面留空时线上没有
+        `fields` 这一档（拿的还是全量）。
         """
         http, _ = http_with_datasets
         with_list = http.post("/api/dataset/stats",
                               json={"input_file": "p.json", "fields": []}).json()
         omitted = http.post("/api/dataset/stats", json={"input_file": "p.json"}).json()
-        assert list(with_list["field_statistics"]) == list(omitted["field_statistics"])
+        assert with_list["field_statistics"] == {}, "空清单又被吞成全字段 ⇒ 修法① 被回退"
         assert set(omitted["field_statistics"]) == {"instruction", "input", "output"}
 
 

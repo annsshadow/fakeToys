@@ -1093,6 +1093,11 @@ def load_config(config_path: Optional[str] = None) -> AppConfig:
             # 配置语义上就是全默认，和本函数不传路径同解；`or {}` 的先例在本模块
             # `save_config` 里已经有了。
             raw_config = yaml.safe_load(f) or {}
+            # 顶层写成列表/标量/字符串时，下面第一句 `'models' in raw_config`（对
+            # int 抛 TypeError）或 `raw_config.get`（对 list/str 抛 AttributeError）
+            # 裸崩 —— 同一形状在节内早由 `_require_mapping` 判成可行动的
+            # ConfigError（A77），顶层那份是这族守卫漏下的一格。
+            _require_mapping(raw_config, "配置")
         
         # 加载模型配置
         # `models` 走这条特判路径、绕开了 `_load_section` 的形状守卫（A101 当年只
@@ -1250,16 +1255,20 @@ def save_config(config: AppConfig, config_path: str = "config.yaml") -> None:
     # 早前直接 pop 掉整个键，等于把 `api_key: ${BAIDU_API_KEY}` 这行删了——
     # 重新加载时该模型拿不到密钥，增强能力静默失效。而如果文件里写的是明文
     # 密钥，则一律丢弃（只保留环境变量引用，避免把明文写回磁盘）。
+    # 键名单取 `MODEL_CREDENTIAL_KEYS`（加载侧解析占位符的就是那三条）：改前
+    # `base_url: ${X}` 不在回写名单里，于是占位符被解析后的**真实值**顶替落盘
+    # （实测 `base_url: ${FAKE_BASE_URL}` 存盘变成 `base_url: https://internal.example/v1`）。
+    # `base_url` 不参与「明文即丢」：它不是凭证，pop 掉只会把一个可用 URL 变成 None。
     existing_models = existing.get("models") if isinstance(existing.get("models"), dict) else {}
     for name, model_conf in data.get("models", {}).items():
         if name == "default" or not isinstance(model_conf, dict):
             continue
         previous = existing_models.get(name) if isinstance(existing_models.get(name), dict) else {}
-        for secret in ("api_key", "secret_key"):
+        for secret in MODEL_CREDENTIAL_KEYS:
             placeholder = previous.get(secret, "")
             if isinstance(placeholder, str) and placeholder.startswith("${") and placeholder.endswith("}"):
                 model_conf[secret] = placeholder
-            else:
+            elif secret != "base_url":
                 model_conf.pop(secret, None)
 
     # 原子替换（L269）：旧写法是 `open(path, 'w')` 整份截断直写，写窗口里盘上那份

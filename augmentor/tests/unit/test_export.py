@@ -290,12 +290,20 @@ class TestExportFileFormats:
             data = json.load(f)
         assert data[0]["instruction"] == "问题"
 
-    def test_export_csv_empty_dataset_no_file(self, tmp_path):
-        """空数据集 CSV 导出不创建文件（无数据可写）"""
+    def test_export_csv_empty_dataset_writes_an_empty_file(self, tmp_path):
+        """空数据集 CSV 导出：产物存在、零字节（L277 起与 jsonl 档同形）
+
+        改前 `export([], out, "csv")` 返回 `"csv"`、日志说「导出成功」却不建文件，
+        下游按回执去读就拿到 `FileNotFoundError`——那正是 A343 立起来的
+        「静默零写入 + 成功即缺陷」判据要禁的形状。没有表头可抄是空集的既有事实，
+        所以文件本体是零字节，不谎造表头。
+        """
         exporter = Exporter()
         output = tmp_path / "empty.csv"
-        exporter.export([], str(output), "csv")
-        assert not output.exists()
+        used = exporter.export([], str(output), "csv")
+        assert used == "csv"
+        assert output.exists()
+        assert output.read_text(encoding="utf-8") == ""
 
 
 class TestExportAllFormatsExtended:

@@ -349,7 +349,12 @@ class LeakageDetector:
             raise DataValidationError(
                 "fuzzy_threshold 必须大于 0（0 档会把干净数据全判为泄漏，假零家族 L144 同式）"
             )
-        self.fields = fields or ["instruction"]
+        self.fields = fields if fields is not None else ["instruction"]
+        if not self.fields:
+            raise DataValidationError(
+                "fields 不能是空清单：零字段作用域下所有样本的签名同为分隔符，"
+                "会把「无从比对」报成「无泄漏」（假干净档）"
+            )
         self.fuzzy_threshold = fuzzy_threshold
         # min_examples 是计数旋钮（require_count 口径）：0 = 「报告不带示例」的合法意图，
         # 负数档让 `[:n]` 切片换语义（`[:-2]` = 丢掉最后 2 条，要得越多剩得越多）⇒ 拒；
