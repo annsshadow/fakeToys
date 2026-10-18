@@ -229,7 +229,6 @@ organization_assemble_authentication	POST	/api/organization/assemble/authenticat
 organization_assemble_authentication	POST	/api/organization/assemble/authentication/sso/encrypt	sso_encrypt	R7
 organization_assemble_authentication	POST	/api/organization/assemble/authentication/dingding/info	dingding_info	R7
 organization_assemble_authentication	POST	/api/organization/assemble/authentication/zhengwudingding/info	zhengwudingding_info_post	R7
-organization_assemble_authentication	POST	/api/organization/assemble/authentication/oauth/generate/code	oauth_generate_code	R7
 organization_assemble_authentication	POST	/api/organization/assemble/authentication/oauth/info	oauth_info_post	R7
 organization_assemble_authentication	POST	/api/organization/assemble/authentication/oauth/info/jira	oauth_info_jira_post	R7
 organization_assemble_authentication	POST	/api/organization/assemble/authentication/oauth/token	oauth_token_post	R7
