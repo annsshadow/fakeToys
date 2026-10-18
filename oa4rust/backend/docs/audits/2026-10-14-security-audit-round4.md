@@ -1207,6 +1207,18 @@ GET 写面队列里 `calendar_assemble_control` 与 `jpush_assemble_control` 各
 
 | 验证（本批代码变更） | — | organization_assemble_authentication 整 lib `19 passed / 0 failed / 2 ignored`：新增 `security_gate_tests_b74` 三臂——`b74_writes_reject_without_session`（dead pool + `None` 会话 → `Err(AppError::Unauthorized)`，门在 DB 访问前）+ `b74_writes_accept_valid_session_past_gate`（有效会话 + dead pool → `Err(AppError::Internal)`，证门在库前）+ `b74_require_session_gate_logic`（纯单元）。尺子：**R7 673→672（−1）**、含写 4→**3**（−1，印证 deadpool 字面量写）；复跑 3 次稳定；EXIT 0 |
 
+### 三.75 — org_personal 1 把自定义字段更新收会话门（R7 672→671，含写 3→2）
+- **批次目标**：收 organization_assemble_personal 唯一 R7（亦为唯一真写）：`custom_mockputtopost`（POST `/api/organization/assemble/personal/custom/{id}/mockputtopost`，`UPDATE x_org_custom SET field_value = $2 WHERE id = $1 AND deleted_at IS NULL`）。
+- **收口档**：session 档（新增 crate 内 `require_session`，无会话 401，门置于 `pool.get()` 之前）。
+- **§五 关联（IDOR 收紧残留）**：UPDATE 仅按 id 过滤、无属主/归属条件——任意已认证用户可改任意 `x_org_custom` 行。本批先抹匿名写面；属主条件（custom 行归属 person）收紧列 §五（与 hotpic delete_by_ids 同族合并处理）。
+- 全 crate R7 仅此 1 条，收后 org_personal 真写 R7 净清 0。
+
+| 门档 | 处理函数 | 路由 / 真写动作 | 加门说明 |
+| --- | --- | --- | --- |
+| 会话档（新增 require_session） | `custom_mockputtopost` | POST `/api/organization/assemble/personal/custom/{id}/mockputtopost`，UPDATE x_org_custom field_value | crate 内新增 `require_session`：无会话 401，门置于 `pool.get()` 之前 |
+
+| 验证（本批代码变更） | — | organization_assemble_personal 整 lib `11 passed / 0 failed / 0 ignored`：新增 `security_gate_tests_b75` 三臂——`b75_writes_reject_without_session`（dead pool + `None` 会话 → `Err(AppError::Unauthorized)`，门在 DB 访问前）+ `b75_writes_accept_valid_session_past_gate`（有效会话 + dead pool → `Err(AppError::Internal)`，证门在库前）+ `b75_require_session_gate_logic`（纯单元）。预存两个路由可达臂（`!= 404` 判据）不受影响（401 ≠ 404）。尺子：**R7 672→671（−1）**、含写 3→**2**（−1，印证 deadpool 字面量写）；复跑 3 次稳定；EXIT 0 |
+
 ## 四、验证
 
 
