@@ -1053,13 +1053,15 @@ async fn test_section_crud_roundtrip() {
     );
 
     // 4) 硬删（无 deleted_at 列 → DELETE）：轮6 起 section delete=管理动作，
-    //    非 admin 必 403，admin 成功（守卫双断言）
+    //    非 admin 必 403，admin 成功（守卫双断言）。
+    //    非 admin 这一臂必须走**不带会话层**的 router + 显式非 admin 会话：上面那支 `app` 在
+    //    路由上挂的是 admin 探针会话，拿它发 `None` 请求挡的是 admin 门（200），量不到 403。
     let (st, _) = send_with_session(
-        app.clone(),
+        crate::router(pool.clone()),
         Method::POST,
         &format!("/api/bbs/assemble/control/section/delete/{}", id),
         None,
-        None,
+        Some(make_session("w14-section-nonadmin", "nb")),
     )
     .await;
     assert_eq!(st, StatusCode::FORBIDDEN, "非 admin 删除版块必须 403");

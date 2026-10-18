@@ -18,6 +18,7 @@
 //! 无会话 401（先于任何 SQL，可离线证），非 admin 403（`shared::middleware::is_admin`
 //! 无库 fail-closed）。
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod security_gate_tests {
     use axum::body::Body;
     use axum::http::{Method, Request, StatusCode};
@@ -1166,14 +1167,14 @@ mod security_gate_tests {
 
     async fn mock_row_exists(pool: &deadpool_postgres::Pool, table: &str, xid: &str) -> bool {
         let c = pool.get().await.unwrap();
-        c.query(
+        // `!…is_empty()` 而不是 `…len() > 0`（clippy::len_zero，main 上的既有红）。
+        !c.query(
             format!("SELECT 1 FROM \"{table}\" WHERE xid = $1").as_str(),
             &[&xid.to_string()],
         )
         .await
         .unwrap()
-        .len()
-            > 0
+        .is_empty()
     }
 
     async fn delete_mock_row(pool: &deadpool_postgres::Pool, table: &str, xid: &str) {
@@ -1366,6 +1367,7 @@ mod security_gate_tests {
 #[cfg(test)]
 mod r419_gate_tests {
     use axum::extract::{Extension, Path};
+    use shared::db::dialect::dialect;
     use shared::error::AppError;
     use shared::testing::{is_db_available, mock_pool, test_pool, test_session};
 
@@ -1379,12 +1381,8 @@ mod r419_gate_tests {
         ("PP_C_READCOMPLETED", "xperson", "r419-readcompleted"),
         ("PP_C_TASK", "xperson", "r419-task"),
         ("PP_C_TASKCOMPLETED", "xperson", "r419-taskcompleted"),
-        ("PP_C_WORK", "\"xcreatorPerson\"", "r419-work"),
-        (
-            "PP_C_WORKCOMPLETED",
-            "\"xcreatorPerson\"",
-            "r419-workcompleted",
-        ),
+        ("PP_C_WORK", "xcreatorPerson", "r419-work"),
+        ("PP_C_WORKCOMPLETED", "xcreatorPerson", "r419-workcompleted"),
         ("PP_C_DRAFT", "xperson", "r419-draft"),
         ("PP_C_HANDOVER", "xperson", "r419-handover"),
         ("PP_C_TASK_PROCESS_MODE", "xperson", "r419-mode"),
@@ -1548,10 +1546,13 @@ mod r419_gate_tests {
         ]
     }
 
-    /// 表名 / 列名只取本文件 `ROWS` 里的字面量，ID 与人员走参数绑定。
+    /// 表名 / 列名只取本文件 `ROWS` 里的字面量（列名经方言权威 `quote_ident` 引用，
+    /// `xcreatorPerson` 这类 camelCase 列在 PG 下大小写敏感，不带引号会折成小写找不到列）；
+    /// ID 与人员走参数绑定。
     async fn seed_rows(person: &str) {
         let c = test_pool().get().await.unwrap();
         for (t, col, id) in ROWS {
+            let col = dialect().quote_ident(col);
             c.execute(
                 format!(
                     "INSERT INTO {t} (id, xid, {col}) VALUES ($1, $1, $2) \

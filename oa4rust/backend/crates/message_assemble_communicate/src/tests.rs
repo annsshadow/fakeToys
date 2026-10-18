@@ -531,8 +531,29 @@ async fn test_send_message_row_and_conversation_touch_are_atomic() {
     )
     .await
     .unwrap();
+    // 2026-10 安全审计后 send 面收两道门：无会话 401 + 发送人必须是会话成员
+    // （`send_message` 先 `is_conversation_member`）。成员表与上面两张同口径自建，
+    // 并给本用例的会话成员补一行；会话注入走 test_session。
+    c.execute(
+        "CREATE TABLE IF NOT EXISTS x_message_conversation_member (id TEXT, conversation_id TEXT, person_id TEXT, join_time TEXT, create_time TEXT)",
+        &[],
+    )
+    .await
+    .unwrap();
+    c.execute(
+        "DELETE FROM x_message_conversation_member WHERE conversation_id = $1",
+        &[&conv_id],
+    )
+    .await
+    .unwrap();
+    c.execute(
+        "INSERT INTO x_message_conversation_member (id, conversation_id, person_id) VALUES ($1, $2, $3)",
+        &[&"u2-mem-send-atom-001".to_string(), &conv_id.to_string(), &"u2-sender-dave".to_string()],
+    )
+    .await
+    .unwrap();
 
-    let app = crate::router(pool);
+    let app = crate::router(pool).layer(Extension(shared::testing::test_session("u2-sender-dave")));
     let response = app
         .oneshot(
             Request::builder()
@@ -587,6 +608,12 @@ async fn test_send_message_row_and_conversation_touch_are_atomic() {
     .unwrap();
     c.execute(
         "DELETE FROM x_message_conversation WHERE id = $1",
+        &[&conv_id],
+    )
+    .await
+    .unwrap();
+    c.execute(
+        "DELETE FROM x_message_conversation_member WHERE conversation_id = $1",
         &[&conv_id],
     )
     .await
