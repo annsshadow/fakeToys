@@ -52,13 +52,16 @@ pub fn oidc_router() -> Router {
 
 pub async fn oidc_authorize(Query(req): Query<OidcAuthorizeRequest>) -> Result<Redirect, AppError> {
     let issuer = std::env::var("OIDC_ISSUER").unwrap_or_default();
+    // 服务端生成并登记 state（登录 CSRF 防护），回调时校验——对齐 oauth 族口径。
+    // 原先透传客户端 state、服务端不落，回调无从校验（session 固定风险）。
+    let state = crate::oauth::generate_state();
     let auth_url = format!(
         "https://{}/authorize?client_id={}&redirect_uri={}&response_type=code&scope={}&state={}",
         issuer,
         req.client_id,
         urlencoding::encode(&req.redirect_uri),
         urlencoding::encode(&req.scope),
-        req.state,
+        urlencoding::encode(&state),
     );
     Ok(Redirect::to(&auth_url))
 }
@@ -68,6 +71,11 @@ pub async fn oidc_callback(
     session_manager: Extension<SessionManager>,
     Query(req): Query<OidcCallbackRequest>,
 ) -> Result<Response, AppError> {
+    // 登录 CSRF 防护：校验并消费服务端 state（对齐 oauth 族）。无效/过期 state 拒绝，
+    // 防止攻击者用自己 IdP 账号的回调把受害者登录成攻击者（session 固定）。
+    if !crate::oauth::validate_state(&req.state) {
+        return Err(AppError::BadRequest("invalid or expired state".to_string()));
+    }
     let token = exchange_code(req.code).await?;
     let claims = verify_id_token(&token.id_token).await?;
     let person = get_or_create_person(&pool, &claims.sub).await?;
@@ -445,6 +453,26 @@ mod tests {
         assert_eq!(
             result.get("name").and_then(|v| v.as_str()),
             Some("Pre-existing OIDC User")
+        );
+    }
+
+    // 回归（四轮审计回调验签族 · oidc state）：oidc_callback 必须校验并消费服务端 state，
+    // 防登录 CSRF / session 固定。state 一次性、未登记即拒。
+    #[test]
+    fn test_oidc_callback_state_is_validated() {
+        // generate_state / validate_state 由 oauth 模块暴露（pub(crate)），oidc 复用同一状态库。
+        let s = crate::oauth::generate_state();
+        assert!(
+            crate::oauth::validate_state(&s),
+            "oidc_authorize 登记的服务端 state 必须可通过校验"
+        );
+        assert!(
+            !crate::oauth::validate_state(&s),
+            "state 一次性：二次校验（重放）必须失败"
+        );
+        assert!(
+            !crate::oauth::validate_state("attacker-forged-state"),
+            "未登记的 state 必须拒绝（登录 CSRF 防护）"
         );
     }
 }

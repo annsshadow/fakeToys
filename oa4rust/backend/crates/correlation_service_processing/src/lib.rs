@@ -227,8 +227,10 @@ pub async fn get_correlation(
 #[allow(non_snake_case)]
 pub async fn create_correlation(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Json(req): Json<CorrelationRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    crate::require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
     let person_id = req.person_id.unwrap_or_default();
@@ -238,7 +240,7 @@ pub async fn create_correlation(
 
     client
         .execute(
-            r#"INSERT INTO x_correlation (id, person_id, target_id, "type", creator, create_time) \
+            r#"INSERT INTO x_correlation (id, person_id, target_id, "type", creator, create_time)
              VALUES ($1, $2, $3, $4, $5, NOW())"#,
             &[&id, &person_id, &target_id, &r#type, &creator],
         )
@@ -258,9 +260,11 @@ pub async fn create_correlation(
 #[allow(non_snake_case)]
 pub async fn save_correlation(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(req): Json<CorrelationUpdateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    crate::require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let target_id = req.target_id.unwrap_or_default();
     let r#type = req.r#type.unwrap_or_default();
@@ -290,8 +294,10 @@ pub async fn save_correlation(
 #[allow(non_snake_case)]
 pub async fn delete_correlation(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    crate::require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM x_correlation WHERE id = $1", &[&id])
@@ -315,6 +321,7 @@ pub async fn delete_correlation(
 #[allow(non_snake_case)]
 pub async fn unlink_service(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path((source_type, source_id, target_type, target_id)): axum::extract::Path<(
         String,
         String,
@@ -322,6 +329,7 @@ pub async fn unlink_service(
         String,
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    crate::require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -346,6 +354,20 @@ pub async fn unlink_service(
             ("targetId".to_string(), Value::String(target_id)),
         ]),
     ))))
+}
+
+/// 四轮审计 N-06：身份关联写（create/save/delete/unlink + u2 pp/cms 族）无属主
+/// （creator 恒 system），任一登录用户可关联/解除任意 person 的外部身份（SSO/账号
+/// 体系身份劫持面）。系统级数据统一 admin 门（无会话 401 由中间件兜底，非 admin 403）。
+pub(crate) async fn require_admin(
+    pool: &deadpool_postgres::Pool,
+    session: &shared::session::Session,
+) -> Result<(), shared::error::AppError> {
+    if shared::middleware::is_admin(pool, &session.person_unique).await {
+        Ok(())
+    } else {
+        Err(shared::error::AppError::Forbidden)
+    }
 }
 
 pub fn correlation_service_processing_router() -> Router {
@@ -415,6 +437,8 @@ pub fn correlation_service_processing_router() -> Router {
 mod tests;
 #[cfg(test)]
 mod tests_generated;
+#[cfg(test)]
+mod security_gate_tests;
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     correlation_service_processing_router().layer(axum::extract::Extension(pool))

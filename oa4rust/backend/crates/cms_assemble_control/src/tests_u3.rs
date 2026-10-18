@@ -372,13 +372,15 @@ mod u3_tests {
         // 参数校验先于 DB 访问：空 payload → BadRequest 而非 Internal
         let r = correlation_create_u3(
             Extension(mock_pool()),
+            Some(Extension(session(OWNER))),
             axum::extract::Path("d-1".to_string()),
             axum::extract::Json(json!({})),
         )
         .await;
+        // 收门后先判会话与管理员档：mock pool 不可用 → is_admin fail-closed → Forbidden
         match r {
-            Err(AppError::BadRequest(_)) => {}
-            other => panic!("expected BadRequest, got {:?}", other.map(|_| "ok")),
+            Err(AppError::Forbidden) => {}
+            other => panic!("expected Forbidden, got {:?}", other.map(|_| "ok")),
         }
         let r = review_v2_search_u3(
             Extension(mock_pool()),

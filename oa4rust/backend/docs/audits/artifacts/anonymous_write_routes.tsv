@@ -1,0 +1,173 @@
+crate	method	path	handler	bucket
+attendance_assemble_control	GET	/api/attendance/assemble/control/dingdingstatistic/person/{person}/{year}/{month}	dingdingstatistic_person	A3-真匿名+只读
+attendance_assemble_control	GET	/api/attendance/assemble/control/dingdingstatistic/person/unit/{unit}/{year}/{month}	dingdingstatistic_person_unit	A3-真匿名+只读
+attendance_assemble_control	GET	/api/attendance/assemble/control/dingdingstatistic/unit/{unit}/{year}/{month}	dingdingstatistic_unit	A3-真匿名+只读
+attendance_assemble_control	GET	/api/attendance/assemble/control/qywxstatistic/person/{person}/{year}/{month}	qywxstatistic_person	A3-真匿名+只读
+attendance_assemble_control	GET	/api/attendance/assemble/control/qywxstatistic/person/unit/{unit}/{year}/{month}	qywxstatistic_person_unit	A3-真匿名+只读
+attendance_assemble_control	GET	/api/attendance/assemble/control/qywxstatistic/unit/{unit}/{year}/{month}	qywxstatistic_unit	A3-真匿名+只读
+auth	GET	/api/authentication/bind	bind	A3-真匿名+只读
+auth	GET	/api/authentication/bind/meta/{meta}	bind_poll	A3-真匿名+只读
+auth	POST	/api/authentication/bind/meta/{meta}	bind_confirm	A3-真匿名+只读
+auth	GET	/api/authentication/captcha	captcha_default	A3-真匿名+只读
+auth	GET	/api/authentication/captcha/width/{width}/height/{height}	captcha_with_size	A3-真匿名+只读
+auth	POST	/api/secret/captcha/verify	verify	A3-真匿名+只读
+auth	POST	/api/authentication	login	A1-真匿名+体内写 SQL 且无门禁无会话
+auth	DELETE	/api/authentication	logout	A3-真匿名+只读
+auth	GET	/api/authentication	whoami	A3-真匿名+只读
+auth	POST	/api/authentication/login	login	A1-真匿名+体内写 SQL 且无门禁无会话
+auth	POST	/api/authentication/logout	logout	A3-真匿名+只读
+auth	GET	/api/authentication/who	whoami	A3-真匿名+只读
+auth	POST	/api/authentication/refresh	refresh	A3-真匿名+只读
+auth	POST	/api/authentication/code	code	A3-真匿名+只读
+auth	GET	/api/authentication/code/credential/{credential}	code_send	A3-真匿名+只读
+auth	GET	/api/authentication/oauth/list	oauth_list	A3-真匿名+只读
+auth	GET	/api/authentication/oauth/qywx/config	oauth_qywx_config	A3-真匿名+只读
+auth	GET	/api/authentication/oauth/dingding/config	oauth_dingding_config	A3-真匿名+只读
+auth	GET	/api/authentication/oauth/name/{name}	oauth_name_config	A3-真匿名+只读
+auth	GET	/api/authentication/oauth/login/qywx/code/{code}	oauth_login_qywx	A2-真匿名+体内写 SQL 但读会话或有门禁
+auth	GET	/api/authentication/oauth/login/dingding/code/{code}	oauth_login_dingding	A2-真匿名+体内写 SQL 但读会话或有门禁
+auth	GET	/api/authentication/oauth/login/name/{name}/code/{code}/redirecturi/{redirectUri}	oauth_login_name	A2-真匿名+体内写 SQL 但读会话或有门禁
+auth	GET	/api/authentication/oauth/bind/name/{name}/code/{code}/redirecturi/{redirectUri}	oauth_bind_name	A2-真匿名+体内写 SQL 但读会话或有门禁
+meeting_assemble_control	GET	/api/meeting/assemble/control/config/system/config	config_system_config	A3-真匿名+只读
+meeting_assemble_control	POST	/api/meeting/assemble/control/config/system/config/manage	config_system_config_manage	A2-真匿名+体内写 SQL 但读会话或有门禁
+meeting_assemble_control	GET	/api/meeting/assemble/control/config/system/config/manage	u2_config_manage_get	A3-真匿名+只读
+organization_assemble_authentication	GET	/api/organization/assemble/authentication/authentication/mode	mode	A3-真匿名+只读
+organization_assemble_authentication	GET	/api/organization/assemble/authentication/authentication/mockdeletetoget	logout_get	A3-真匿名+只读
+organization_assemble_authentication	POST	/api/organization/assemble/authentication/authentication	login	A3-真匿名+只读
+organization_assemble_authentication	DELETE	/api/organization/assemble/authentication/authentication	logout	A3-真匿名+只读
+organization_assemble_authentication	GET	/api/organization/assemble/authentication/authentication	whoami	A3-真匿名+只读
+organization_assemble_authentication	GET	/api/organization/assemble/authentication/authentication/captchaRSAPublicKey	captcha_rsa_public_key	A3-真匿名+只读
+organization_assemble_authentication	GET	/api/organization/assemble/authentication/authentication/safe/logout	safe_logout_get	A3-真匿名+只读
+organization_assemble_express	GET	/api/person/nick/name/{flag}	person_nick_name_flag	A3-真匿名+只读
+organization_assemble_express	POST	/api/person/list	person_list	A3-真匿名+只读
+organization_assemble_express	POST	/api/person/list/object	person_list_object	A3-真匿名+只读
+organization_assemble_express	GET	/api/person/list/all	person_list_all	A3-真匿名+只读
+organization_assemble_express	GET	/api/person/list/all/object	person_list_all_object	A3-真匿名+只读
+organization_assemble_express	POST	/api/person/has/role	person_has_role	A3-真匿名+只读
+organization_assemble_express	POST	/api/person/list/identity	person_list_identity	A3-真匿名+只读
+organization_assemble_express	POST	/api/person/list/group	person_list_group	A3-真匿名+只读
+organization_assemble_express	POST	/api/person/list/role	person_list_role	A3-真匿名+只读
+organization_assemble_express	POST	/api/unit/list/object	unit_list_object	A3-真匿名+只读
+organization_assemble_express	GET	/api/unit/list/all	unit_list_all	A3-真匿名+只读
+organization_assemble_express	GET	/api/unit/list/all/object	unit_list_all_object	A3-真匿名+只读
+organization_assemble_express	POST	/api/unit/check/unit/has/person	unit_check_unit_has_person	A3-真匿名+只读
+organization_assemble_express	POST	/api/group/list	group_list	A3-真匿名+只读
+organization_assemble_express	POST	/api/group/list/object	group_list_object	A3-真匿名+只读
+organization_assemble_express	POST	/api/group/list/person	group_list_person	A3-真匿名+只读
+organization_assemble_express	POST	/api/role/list	role_list	A3-真匿名+只读
+organization_assemble_express	POST	/api/role/list/person	role_list_person	A3-真匿名+只读
+organization_assemble_express	POST	/api/person/list/login/after	person_list_login_after	A3-真匿名+只读
+organization_assemble_express	POST	/api/person/list/login/after/object	person_list_login_after_object	A3-真匿名+只读
+organization_assemble_express	POST	/api/person/list/login/recent	person_list_login_recent	A3-真匿名+只读
+organization_assemble_express	POST	/api/person/list/login/recent/object	person_list_login_recent_object	A3-真匿名+只读
+organization_assemble_express	POST	/api/person/list/pair/identity	person_list_pair_identity	A3-真匿名+只读
+organization_assemble_express	POST	/api/person/detail/{flag}	person_detail_flag	A3-真匿名+只读
+organization_assemble_express	POST	/api/person/list/group/object	person_list_group_object	A3-真匿名+只读
+organization_assemble_express	POST	/api/person/list/identity/object	person_list_identity_object	A3-真匿名+只读
+organization_assemble_express	POST	/api/person/list/person/sub/direct	person_list_person_sub_direct	A3-真匿名+只读
+organization_assemble_express	POST	/api/person/list/person/sub/direct/object	person_list_person_sub_direct_object	A3-真匿名+只读
+organization_assemble_express	POST	/api/person/list/person/sub/nested	person_list_person_sub_nested	A3-真匿名+只读
+organization_assemble_express	POST	/api/person/list/person/sub/nested/object	person_list_person_sub_nested_object	A3-真匿名+只读
+organization_assemble_express	POST	/api/person/list/person/sup/direct	person_list_person_sup_direct	A3-真匿名+只读
+organization_assemble_express	POST	/api/person/list/person/sup/direct/object	person_list_person_sup_direct_object	A3-真匿名+只读
+organization_assemble_express	POST	/api/person/list/person/sup/nested	person_list_person_sup_nested	A3-真匿名+只读
+organization_assemble_express	POST	/api/person/list/person/sup/nested/object	person_list_person_sup_nested_object	A3-真匿名+只读
+organization_assemble_express	POST	/api/person/list/role/object	person_list_role_object	A3-真匿名+只读
+organization_assemble_express	POST	/api/person/list/unit/sub/direct	person_list_unit_sub_direct	A3-真匿名+只读
+organization_assemble_express	POST	/api/person/list/unit/sub/direct/object	person_list_unit_sub_direct_object	A3-真匿名+只读
+organization_assemble_express	POST	/api/person/list/unit/sub/nested	person_list_unit_sub_nested	A3-真匿名+只读
+organization_assemble_express	POST	/api/person/list/unit/sub/nested/object	person_list_unit_sub_nested_object	A3-真匿名+只读
+organization_assemble_express	POST	/api/person/list/unit/sub/direct/like	person_list_unit_sub_direct_like	A3-真匿名+只读
+organization_assemble_express	POST	/api/person/list/unit/sub/direct/like/object	person_list_unit_sub_direct_like_object	A3-真匿名+只读
+organization_assemble_express	POST	/api/person/list/unit/sub/nested/like	person_list_unit_sub_nested_like	A3-真匿名+只读
+organization_assemble_express	POST	/api/person/list/unit/sub/nested/like/object	person_list_unit_sub_nested_like_object	A3-真匿名+只读
+organization_assemble_express	POST	/api/unit/identity/level	unit_get_with_identity_with_level	A3-真匿名+只读
+organization_assemble_express	POST	/api/unit/identity/level/object	unit_get_with_identity_with_level_object	A3-真匿名+只读
+organization_assemble_express	POST	/api/unit/identity/type	unit_get_with_identity_with_type	A3-真匿名+只读
+organization_assemble_express	POST	/api/unit/identity/type/object	unit_get_with_identity_with_type_object	A3-真匿名+只读
+organization_assemble_express	POST	/api/unit/list/identity	unit_list_identity	A3-真匿名+只读
+organization_assemble_express	POST	/api/unit/list/identity/object	unit_list_identity_object	A3-真匿名+只读
+organization_assemble_express	POST	/api/unit/list/identity/sup/nested	unit_list_identity_sup_nested	A3-真匿名+只读
+organization_assemble_express	POST	/api/unit/list/identity/sup/nested/object	unit_list_identity_sup_nested_object	A3-真匿名+只读
+organization_assemble_express	POST	/api/unit/list/level	unit_list_level	A3-真匿名+只读
+organization_assemble_express	POST	/api/unit/list/level/object	unit_list_level_object	A3-真匿名+只读
+organization_assemble_express	POST	/api/unit/list/level/name/object	unit_list_level_name_object	A3-真匿名+只读
+organization_assemble_express	POST	/api/unit/list/person	unit_list_person	A3-真匿名+只读
+organization_assemble_express	POST	/api/unit/list/person/object	unit_list_person_object	A3-真匿名+只读
+organization_assemble_express	POST	/api/unit/list/person/sup/nested	unit_list_person_sup_nested	A3-真匿名+只读
+organization_assemble_express	POST	/api/unit/list/person/sup/nested/object	unit_list_person_sup_nested_object	A3-真匿名+只读
+organization_assemble_express	POST	/api/unit/list/unitduty	unit_list_unitduty	A3-真匿名+只读
+organization_assemble_express	POST	/api/unit/list/unitduty/object	unit_list_unitduty_object	A3-真匿名+只读
+organization_assemble_express	POST	/api/unit/check/unit/has/identity	unit_check_unit_has_identity	A3-真匿名+只读
+organization_assemble_express	POST	/api/unit/check/unit/has/unit	unit_check_unit_has_unit	A3-真匿名+只读
+organization_assemble_express	POST	/api/unit/list/types	unit_list_types	A3-真匿名+只读
+organization_assemble_express	POST	/api/unit/list/types/object	unit_list_types_object	A3-真匿名+只读
+organization_assemble_express	POST	/api/group/has/role	group_has_role	A3-真匿名+只读
+organization_assemble_express	POST	/api/group/list/group/sub/direct	group_list_group_sub_direct	A3-真匿名+只读
+organization_assemble_express	POST	/api/group/list/group/sub/direct/object	group_list_group_sub_direct_object	A3-真匿名+只读
+organization_assemble_express	POST	/api/group/list/group/sub/nested	group_list_group_sub_nested	A3-真匿名+只读
+organization_assemble_express	POST	/api/group/list/group/sub/nested/object	group_list_group_sub_nested_object	A3-真匿名+只读
+organization_assemble_express	POST	/api/group/list/group/sup/direct	group_list_group_sup_direct	A3-真匿名+只读
+organization_assemble_express	POST	/api/group/list/group/sup/direct/object	group_list_group_sup_direct_object	A3-真匿名+只读
+organization_assemble_express	POST	/api/group/list/group/sup/nested	group_list_group_sup_nested	A3-真匿名+只读
+organization_assemble_express	POST	/api/group/list/group/sup/nested/object	group_list_group_sup_nested_object	A3-真匿名+只读
+organization_assemble_express	POST	/api/group/list/person/object	group_list_person_object	A3-真匿名+只读
+organization_assemble_express	POST	/api/group/list/identity	group_list_identity	A3-真匿名+只读
+organization_assemble_express	POST	/api/group/list/identity/object	group_list_identity_object	A3-真匿名+只读
+organization_assemble_express	POST	/api/group/list/group/tree	group_list_group_tree	A3-真匿名+只读
+organization_assemble_express	POST	/api/role/list/object	role_list_object	A3-真匿名+只读
+organization_assemble_express	POST	/api/role/list/person/object	role_list_person_object	A3-真匿名+只读
+personal	GET	/api/reset/check/credential/{credential}	check_credential	A3-真匿名+只读
+personal	GET	/api/reset/code/credential/{credential}	send_code	A3-真匿名+只读
+personal	PUT	/api/reset	reset_password	A1-真匿名+体内写 SQL 且无门禁无会话
+personal	POST	/api/reset/password/anonymous	reset_password_anonymous	A1-真匿名+体内写 SQL 且无门禁无会话
+personal	POST	/api/person/regist	register	A1-真匿名+体内写 SQL 且无门禁无会话
+personal	GET	/api/person/icon/{person}	get	A3-真匿名+只读
+personal	POST	/api/person/icon/upload	upload	A2-真匿名+体内写 SQL 但读会话或有门禁
+personal	POST	/api/person/icon	set_icon_octet_stream	A2-真匿名+体内写 SQL 但读会话或有门禁
+personal	POST	/api/person/icon/mockputtopost	upload_multipart_alias	A2-真匿名+体内写 SQL 但读会话或有门禁
+personal	GET	/api/person/custom/{name}	custom_get	A3-真匿名+只读
+personal	PUT	/api/person/custom/{name}	custom_edit	A2-真匿名+体内写 SQL 但读会话或有门禁
+personal	POST	/api/person/custom/{name}	custom_edit	A2-真匿名+体内写 SQL 但读会话或有门禁
+personal	DELETE	/api/person/custom/{name}	custom_delete	A2-真匿名+体内写 SQL 但读会话或有门禁
+personal	GET	/api/person/custom/manager/person/{person}/name/{name}	custom_manager_get	A3-真匿名+只读
+personal	PUT	/api/person/custom/manager/person/{person}/name/{name}	custom_manager_edit	A2-真匿名+体内写 SQL 但读会话或有门禁
+personal	POST	/api/person/custom/manager/person/{person}/name/{name}/mockputtopost	custom_manager_edit	A2-真匿名+体内写 SQL 但读会话或有门禁
+personal	GET	/api/person/definition/{name}	definition_get	A3-真匿名+只读
+personal	PUT	/api/person/definition/{name}	definition_edit	A2-真匿名+体内写 SQL 但读会话或有门禁
+personal	POST	/api/person/definition/{name}	definition_edit	A2-真匿名+体内写 SQL 但读会话或有门禁
+personal	DELETE	/api/person/definition/{name}	definition_delete	A2-真匿名+体内写 SQL 但读会话或有门禁
+personal	POST	/api/person/definition/{name}/mockputtopost	definition_edit	A2-真匿名+体内写 SQL 但读会话或有门禁
+personal_extend	PUT	/api/person/icon	upload	A2-真匿名+体内写 SQL 但读会话或有门禁
+personal_extend	GET	/api/person/icon	get_current_icon	A3-真匿名+只读
+processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/control/workorworkcompleted/{workOrWorkCompleted}	control_workorworkcompleted_workOrWorkCompleted	A3-真匿名+只读
+processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/readrecord/list/workorworkcompleted/{workOrWorkCompleted}	readrecord_list_workorworkcompleted_workOrWorkCompleted	A3-真匿名+只读
+processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/record/list/job/job/paging/{page}/{size}/{size}	record_list_job_job_paging_page_size_size	A3-真匿名+只读
+processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/record/list/workorworkcompleted/{workOrWorkCompleted}	record_list_workorworkcompleted_workOrWorkCompleted	A3-真匿名+只读
+processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/record/list/workorworkcompleted/paging/{workOrWorkCompleted}/{page}/{size}/{size}	record_list_workorworkcompleted_workOrWorkCompleted_paging_page_size_size_p4	A3-真匿名+只读
+processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/application/list	application_list	A3-真匿名+只读
+processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/application/list/complex	application_list_complex	A3-真匿名+只读
+processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/application/list/range	application_list_range	A3-真匿名+只读
+processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/application/list/key/{key}	application_list_key_key	A3-真匿名+只读
+processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/application/list/terminal/{terminal}	application_list_terminal_terminal	A3-真匿名+只读
+processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/application/list/complex/manage/{person}	application_list_complex_manage_person	A2-真匿名+体内写 SQL 但读会话或有门禁
+processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/work/count/{credential}/application/{appId}	work_count_credential_application_appId_u2	A3-真匿名+只读
+processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/readrecord/list/job/{job}	readrecord_list_job_job	A3-真匿名+只读
+processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/record/list/workorworkcompleted/{workOrWorkCompleted}/paging/{page}/size/{size}	record_list_workorworkcompleted_workOrWorkCompleted_paging_page_size_size	A3-真匿名+只读
+processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/record/list/job/{job}	record_list_job_job	A3-真匿名+只读
+processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/record/list/job/{job}/paging/{page}/size/{size}	record_list_job_job_paging_page_size_size	A3-真匿名+只读
+processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/sign/list/job/{job}	sign_list_job_job	A3-真匿名+只读
+processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/work/count/{credential}	work_count_credential	A3-真匿名+只读
+program_center	GET	/api/program_center/center/applications	center_applications	A3-真匿名+只读
+program_center	GET	/api/program_center/datastructure/fileds/all	datastructure_fileds_all	A3-真匿名+只读
+program_center	GET	/api/program_center/datastructure/modules/all	datastructure_modules_all	A3-真匿名+只读
+program_center	GET	/api/program_center/datastructure/tables/all	datastructure_tables_all	A3-真匿名+只读
+program_center	GET	/api/program_center/dingding/get/callback/aes	dingding_get_callback_aes	A3-真匿名+只读
+program_center	GET	/api/program_center/market/cloud/unit/is/vip	market_cloud_unit_is_vip	A3-真匿名+只读
+program_center	GET	/api/program_center/applications	applications	A3-真匿名+只读
+program_center	GET	/api/program_center/authentication	authentication_who	A3-真匿名+只读
+program_init	GET	/api/secret/check	check	A3-条件匿名（仅未初始化窗口）+只读
+program_init	POST	/api/secret/set	set	A1-条件匿名（仅未初始化窗口）+体内写 SQL 且无门禁无会话
+program_init	GET	/api/secret/set/cancel	set_cancel	A1-条件匿名（仅未初始化窗口）+体内写 SQL 且无门禁无会话
+query_assemble_surface	POST	/api/queryview/search	search_post	A3-真匿名+只读
+query_assemble_surface	POST	/api/queryview/morelikethis	morelikethis_post	A3-真匿名+只读

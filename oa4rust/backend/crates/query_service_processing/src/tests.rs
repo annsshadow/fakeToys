@@ -155,15 +155,15 @@ async fn test_reset_service_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/api/query/service/processing/reset")
-                .method(Method::POST)
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
-        .unwrap();
+        .uri("/api/query/service/processing/reset")
+        .method(Method::POST)
+        .body(Body::empty())
+        .unwrap(),
+    )
+    .await
+    .unwrap();
 
-    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -179,12 +179,20 @@ async fn test_reset_service_route_exists() {
 #[cfg(test)]
 mod u2_contract {
 
-    use shared::testing::test_pool;
+    use axum::extract::Extension;
+    use shared::testing::{test_pool, test_session};
     use tower::util::ServiceExt;
 
+    /// `is_admin` 判定的口径是 `auth_role.name='admin'`（未删未禁，经 `auth_person_role`
+    /// 关联），所以这个人的角色行由 `ensure_schema()` 里的 seed 幂等造出。
+    const ADMIN_PERSON: &str = "u-r418-qsp-admin";
+
+    /// 第十八批：touch / neural / reload 这 18 把 GET 运维面收了 admin 档，契约测试必须以
+    /// admin 身份走 HTTP 路径。其余无门 handler 不读会话，注入 Extension 对它们无影响。
+    /// 无会话 401 / 非 admin 403 由 `security_gate_tests` 的离线臂单独证，不在这里。
     fn app() -> axum::Router {
         let pool = test_pool();
-        crate::router(pool)
+        crate::router(pool).layer(Extension(test_session(ADMIN_PERSON)))
     }
 
     async fn client() -> deadpool_postgres::Client {
@@ -289,6 +297,42 @@ mod u2_contract {
                 creator_person VARCHAR
              )",
             &[],
+        )
+        .await
+        .unwrap();
+        // 第十八批：运维面 admin 档所需的角色链，按 is_admin 的真实口径幂等造出。
+        c.execute(
+            "INSERT INTO auth_role (id, name, disable) VALUES ('r418-role-admin', 'admin', false) \
+             ON CONFLICT (id) DO NOTHING",
+            &[],
+        )
+        .await
+        .unwrap();
+        // 幂等造数（共享测试库跨运行/并发残留）：
+        // 1) 先清掉「unique_id 相同但 id 不同」的陈旧残留（旧批 schema 可能留下）；
+        // 2) 再以 id 为主键做 upsert，把 unique_id 归一为一致，避免 pkey / unique_id
+        //    双约束在并发插入时冲突。upsert 对自身是原子的，并发测试互不碰撞。
+        c.execute(
+            "DELETE FROM auth_person WHERE unique_id = $1 AND id <> $1",
+            &[&ADMIN_PERSON.to_string()],
+        )
+        .await
+        .unwrap();
+        c.execute(
+            "INSERT INTO auth_person (id, unique_id, name, password_hash) \
+             VALUES ($1, $1, 'r418 qsp admin', 'x') \
+             ON CONFLICT (id) DO UPDATE \
+             SET unique_id = EXCLUDED.unique_id, \
+                 name = EXCLUDED.name, \
+                 password_hash = EXCLUDED.password_hash",
+            &[&ADMIN_PERSON.to_string()],
+        )
+        .await
+        .unwrap();
+        c.execute(
+            "INSERT INTO auth_person_role (person_id, role_id, unit_id) \
+             VALUES ($1, 'r418-role-admin', 'r418-unit') ON CONFLICT DO NOTHING",
+            &[&ADMIN_PERSON.to_string()],
         )
         .await
         .unwrap();
@@ -733,5 +777,288 @@ mod u2_contract {
         )
         .await
         .unwrap();
+    }
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// 安全审计回归（2026-10 四轮 R4-18）：query_service_processing 的 GET 运维面 18 把
+//
+// `GET touch/{high|low}/freq/{work|workcompleted|document}/node/{node}/{touch|reset}`
+// 12 把（由 `touch_endpoints!` 宏生成）、`GET touch/optimize/index/{node}/touch`、
+// `GET table/reload/dynamic`、`GET neural/{generate,learn,stop/generating,stop/learning}/model/{modelFlag}`
+// 4 把——此前全部只取 `pool` + `Path`，整个 crate 没有任何会话 / 门禁先例。
+// 任一登录用户按 ID 即可把索引状态机置成 touched / idle、清错误位，或启动 / 停掉
+// 他人的模型生成与学习任务。
+//
+// 现在一律收 **admin**：这些写落在 `x_query_index_state`（索引触达状态）与
+// `x_query_neural_job`（模型任务）两张全局运维表上，行上没有可认的属主列，
+// 归属门无从校起。门插在 `pool.get()` **之前** ⇒ 无会话 401 且不触库，离线可证；
+// 非 admin 403 由 `shared::middleware::is_admin` 的 fail-closed 保证（查不到就是 false）。
+// 本 crate 的调用面只有前端 `QueryViewApp.vue` 的 rev485 占位探测（路径槽填 0 且逐条 catch），
+// 不是业务链路，所以收 admin 不打断任何真实功能。
+// ═════════════════════════════════════════════════════════════════════════════
+
+#[cfg(test)]
+mod security_gate_tests {
+    use axum::extract::{Extension, Path};
+    use shared::error::AppError;
+    use shared::testing::{mock_pool, test_session};
+
+    use crate::u2;
+
+    /// 18 把逐把点名：少一把即漏门（`assert_eq!(cases.len(), 18)` 把「加了几把」本身
+    /// 也变成可证伪断言，不靠人眼数）。用 `mock_pool()`（连不上库的池）跑——
+    /// 门若插在 `pool.get()` 之后，读数会是 `Internal` 而不是 `Unauthorized`，当场红。
+    #[tokio::test]
+    async fn r418_get_writes_reject_without_session() {
+        let pool = mock_pool();
+        let node = |v: &str| Path(v.to_string());
+        let cases: Vec<(&str, Result<(), AppError>)> = vec![
+            (
+                "high_freq_work_touch",
+                u2::high_freq_work_touch(Extension(pool.clone()), None, node("n"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "high_freq_work_reset",
+                u2::high_freq_work_reset(Extension(pool.clone()), None, node("n"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "low_freq_work_touch",
+                u2::low_freq_work_touch(Extension(pool.clone()), None, node("n"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "low_freq_work_reset",
+                u2::low_freq_work_reset(Extension(pool.clone()), None, node("n"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "high_freq_workcompleted_touch",
+                u2::high_freq_workcompleted_touch(Extension(pool.clone()), None, node("n"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "high_freq_workcompleted_reset",
+                u2::high_freq_workcompleted_reset(Extension(pool.clone()), None, node("n"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "low_freq_workcompleted_touch",
+                u2::low_freq_workcompleted_touch(Extension(pool.clone()), None, node("n"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "low_freq_workcompleted_reset",
+                u2::low_freq_workcompleted_reset(Extension(pool.clone()), None, node("n"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "high_freq_document_touch",
+                u2::high_freq_document_touch(Extension(pool.clone()), None, node("n"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "high_freq_document_reset",
+                u2::high_freq_document_reset(Extension(pool.clone()), None, node("n"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "low_freq_document_touch",
+                u2::low_freq_document_touch(Extension(pool.clone()), None, node("n"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "low_freq_document_reset",
+                u2::low_freq_document_reset(Extension(pool.clone()), None, node("n"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "optimize_index_touch",
+                u2::optimize_index_touch(Extension(pool.clone()), None, node("n"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "table_reload_dynamic",
+                u2::table_reload_dynamic(Extension(pool.clone()), None)
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "neural_generate",
+                u2::neural_generate(Extension(pool.clone()), None, node("m"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "neural_stop_generating",
+                u2::neural_stop_generating(Extension(pool.clone()), None, node("m"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "neural_learn",
+                u2::neural_learn(Extension(pool.clone()), None, node("m"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "neural_stop_learning",
+                u2::neural_stop_learning(Extension(pool.clone()), None, node("m"))
+                    .await
+                    .map(|_| ()),
+            ),
+        ];
+        let bad: Vec<String> = cases
+            .iter()
+            .filter(|(_, r)| !matches!(r, Err(AppError::Unauthorized)))
+            .map(|(k, r)| format!("{k} => {:?}", r.as_ref().err()))
+            .collect();
+        assert!(bad.is_empty(), "以下 GET 运维面无会话未回 401：{bad:?}");
+        assert_eq!(cases.len(), 18, "本批 18 把必须逐把点名，少一把即漏门");
+    }
+
+    /// 有会话但非 admin → 必须 403，且**先于任何读库**：这个人的角色行不在库里，
+    /// `is_admin` fail-closed 返回 false。读数里出现 `Internal` 就说明门插在了
+    /// `pool.get()` 之后。
+    #[tokio::test]
+    async fn r418_get_writes_forbidden_before_touching_db() {
+        let pool = mock_pool();
+        let s = || Some(Extension(test_session("u-r418-not-a-real-admin")));
+        let node = |v: &str| Path(v.to_string());
+        let cases: Vec<(&str, Result<(), AppError>)> = vec![
+            (
+                "high_freq_work_touch",
+                u2::high_freq_work_touch(Extension(pool.clone()), s(), node("n"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "high_freq_work_reset",
+                u2::high_freq_work_reset(Extension(pool.clone()), s(), node("n"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "low_freq_work_touch",
+                u2::low_freq_work_touch(Extension(pool.clone()), s(), node("n"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "low_freq_work_reset",
+                u2::low_freq_work_reset(Extension(pool.clone()), s(), node("n"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "high_freq_workcompleted_touch",
+                u2::high_freq_workcompleted_touch(Extension(pool.clone()), s(), node("n"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "high_freq_workcompleted_reset",
+                u2::high_freq_workcompleted_reset(Extension(pool.clone()), s(), node("n"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "low_freq_workcompleted_touch",
+                u2::low_freq_workcompleted_touch(Extension(pool.clone()), s(), node("n"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "low_freq_workcompleted_reset",
+                u2::low_freq_workcompleted_reset(Extension(pool.clone()), s(), node("n"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "high_freq_document_touch",
+                u2::high_freq_document_touch(Extension(pool.clone()), s(), node("n"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "high_freq_document_reset",
+                u2::high_freq_document_reset(Extension(pool.clone()), s(), node("n"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "low_freq_document_touch",
+                u2::low_freq_document_touch(Extension(pool.clone()), s(), node("n"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "low_freq_document_reset",
+                u2::low_freq_document_reset(Extension(pool.clone()), s(), node("n"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "optimize_index_touch",
+                u2::optimize_index_touch(Extension(pool.clone()), s(), node("n"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "table_reload_dynamic",
+                u2::table_reload_dynamic(Extension(pool.clone()), s())
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "neural_generate",
+                u2::neural_generate(Extension(pool.clone()), s(), node("m"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "neural_stop_generating",
+                u2::neural_stop_generating(Extension(pool.clone()), s(), node("m"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "neural_learn",
+                u2::neural_learn(Extension(pool.clone()), s(), node("m"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "neural_stop_learning",
+                u2::neural_stop_learning(Extension(pool.clone()), s(), node("m"))
+                    .await
+                    .map(|_| ()),
+            ),
+        ];
+        let bad: Vec<String> = cases
+            .iter()
+            .filter(|(_, r)| !matches!(r, Err(AppError::Forbidden)))
+            .map(|(k, r)| format!("{k} => {:?}", r.as_ref().err()))
+            .collect();
+        assert!(
+            bad.is_empty(),
+            "以下 GET 运维面非 admin 未回 403（401 之外还出现 Internal 就是门插在读库之后）：{bad:?}"
+        );
+        assert_eq!(cases.len(), 18, "本批 18 把必须逐把点名，少一把即漏门");
     }
 }

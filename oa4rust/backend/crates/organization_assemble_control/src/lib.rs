@@ -450,7 +450,10 @@ pub async fn organization_assemble_control_person_list_like(
 #[allow(non_snake_case)]
 pub async fn export_export_all(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 全量组织数据导出属高危写面：任意登录用户可触发整库导出 ⇒ 收 admin 门。
+    crate::u2_helpers::require_admin_opt(&pool, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let export_id = uuid::Uuid::new_v4().to_string();
@@ -537,7 +540,10 @@ pub async fn export_result_flag_flag(
 #[allow(non_snake_case)]
 pub async fn export_zhengwudingding_person(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 政务钉钉人员导出属高危写面：任意登录用户可触发人员数据导出 ⇒ 收 admin 门。
+    crate::u2_helpers::require_admin_opt(&pool, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let export_id = uuid::Uuid::new_v4().to_string();
