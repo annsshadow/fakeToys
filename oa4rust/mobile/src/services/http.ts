@@ -55,10 +55,7 @@ export function setApiBase(base: string): void {
   apiBase = base.replace(/\/+$/, '')
   // 安全审计（2026-10）：明文 http:// 绝对地址会在生产环境传输登录凭据/会话 cookie。
   // 仅允许 localhost/127.0.0.1 形式的 dev 地址走 http；其余一律告警提示改用 https。
-  if (
-    apiBase.startsWith('http://') &&
-    !/^http:\/\/(localhost|127\.0\.0\.1)(:|$)/.test(apiBase)
-  ) {
+  if (apiBase.startsWith('http://') && !/^http:\/\/(localhost|127\.0\.0\.1)(:|$)/.test(apiBase)) {
     console.warn(
       '[oa4rust-mobile] insecure http:// API base detected:',
       apiBase,

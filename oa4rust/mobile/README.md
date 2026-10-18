@@ -48,6 +48,13 @@ pnpm --filter @oa4rust/mobile typecheck             # tsc 检查（SDK 经 tscon
 pnpm --filter @oa4rust/mobile dev:h5                # 启动 H5（默认 :5174）
 ```
 
+> ⚠️ **`vite` 是精确 pin（当前 `6.4.3`），不要升到 8.x**：`@dcloudio/vite-plugin-uni` 的 peer
+> 是精确 pin `vite: "5.2.8"`，而工作区安全 override（`vite@<=6.4.2` → `6.4.3`）把 ≤6.4.2 顶到
+> 6.4.3，6.4.3 正是「uni 工具链可用」与「过安全线」的交点。升到 vite 8 会换成 Rolldown，
+> `@dcloudio/uni-cli-shared` 的 `parseVueComponentImports` 在 `build:mp-weixin` 时抛
+> `TypeError: Cannot read properties of undefined (reading 'context')`（2026-10-10 dependabot
+> 升到 8.3.4 造成；回钉 6.4.3 后 H5 与 mp-weixin 双构建复绿）。桌面端不受此 pin 约束。
+
 页面：`login`（登录）、`index`（工作台，待办计数 + 宫格入口）、`message`（会话列表）、
 `chat`（会话详情：历史 + 发消息 + 标记已读）、`process`（审批：待办/已办/我发起 +
 通过/驳回）、`doc`（我的文件：列表 + 下载预览）、`contacts`（通讯录搜索）、

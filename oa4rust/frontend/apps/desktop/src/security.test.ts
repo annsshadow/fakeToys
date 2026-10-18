@@ -61,17 +61,13 @@ describe('desktop security regressions', () => {
     // widget.ts 清空容器走 textContent（不解析/注入 HTML）；源码层禁止
     // innerHTML= 任意非空字符串赋值。
     const source = readSource('../../../packages/sdk/src/widget.ts')
-    expect(source).toContain('container.textContent = \'\'')
+    expect(source).toContain("container.textContent = ''")
     expect(source).not.toMatch(/container\.innerHTML\s*=\s*['"`][^'"`]+['"`]/)
   })
 
   it('opens new browser windows with noopener/noreferrer (no window.opener leak)', () => {
     // tab-nabbing 防护：window.open(url,'_blank') 必须带 'noopener,noreferrer'。
-    for (const file of [
-      '../../../packages/sdk/src/router.ts',
-      'views/FileInfoApp.vue',
-      'views/FileManager.vue',
-    ]) {
+    for (const file of ['../../../packages/sdk/src/router.ts', 'views/FileInfoApp.vue', 'views/FileManager.vue']) {
       const source = readSource(file)
       // 任何含 '_blank' 的 window.open 调用都必须带 noopener,noreferrer。
       const openCalls = source.match(/window\.open\(([^)]*)\)/g) ?? []
