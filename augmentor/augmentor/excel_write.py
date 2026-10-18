@@ -29,11 +29,13 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 from .exceptions import DataValidationError
+from .validation import is_sheet_formula_text
 
 logger = logging.getLogger(__name__)
 
 try:
     from openpyxl import Workbook
+    from openpyxl.cell import WriteOnlyCell
     HAS_OPENPYXL = True
 except ImportError:
     HAS_OPENPYXL = False
@@ -81,8 +83,8 @@ def excel_cell(value: Any) -> Any:
     - 列表 / 字典 / 元组 / 集合 / bytes → `str()` 化（`"['a', 'b']"`、`"{1, 2}"`、
       `"b'xy'"`）—— 与 csv 写边对同样输入给的字面量一致，这条是 L84 定下的契约；
     - 空串**不**特殊处理：pandas 路里它是 openpyxl 写的空单元格，读回来同样是 `None`；
-    - 前导 `=` 的字符串两条路都被 openpyxl 当公式存（golden `c07`：读回 `None`），
-      本函数**不**悄悄改写它 —— 那是另一个契约，L85 只在账上记它没变。
+    - 前导 `=` 的字符串**值面一字不改**，但类型位由 `text_only_cell` 钉成文本（L287 按
+      A389 拍板① 改掉「两条路都被 openpyxl 当公式存、golden `c07` 读回 `None`」那一档）；
     - 超过 32767 字符的串也不在这里截：截是 openpyxl 干的（两条路读回都是 32767，
       L85 现量），本函数只负责不撒谎。报警在 `export_table_to_excel` 那一头。
     """
@@ -99,6 +101,30 @@ def excel_cell(value: Any) -> Any:
     if isinstance(value, (list, dict, tuple, set, frozenset, bytes, bytearray)):
         return str(value)
     return value
+
+
+def text_only_cell(ws: Any, value: Any) -> Any:
+    """会被读回当公式执行的字符串 ⇒ 交出一个类型钉成文本的格子，值面一字不改
+
+    为什么 xlsx 这一侧不必像 CSV 那样加前导单引号：容器里有真正的类型位。默认写法是让
+    openpyxl 按值自己定类型，而它把前导 `=` 的字符串判成公式（`data_type == "f"`），落进
+    sheet XML 就是 `<f>1+1</f>` —— 接收方一打开就执行，读回来则是空（`c07` 那一档实测
+    读回 `None`、pandas 读回 `NaN`）。这里显式把类型位设成 `s`，写边出的是
+    `t="inlineStr"`，字面串与进入时逐字相同；判据（哪些前导会被执行）住在
+    `validation.is_sheet_formula_text`，与三条 CSV/TSV 写边同一个产地，不在此手抄。
+
+    Args:
+        ws: 目标工作表（`WriteOnlyCell` 要挂它才能带样式）
+        value: 已经过 `excel_cell` 的值
+
+    Returns:
+        需要转义时是 `WriteOnlyCell`，其余是进入时的同一个对象
+    """
+    if not is_sheet_formula_text(value):
+        return value
+    cell = WriteOnlyCell(ws, value=value)
+    cell.data_type = "s"
+    return cell
 
 
 def export_table_to_excel(items: List[Dict],
@@ -137,11 +163,11 @@ def export_table_to_excel(items: List[Dict],
         # 1/2 而读回是空表）。这里必须一样：没有列就没有行。
         truncated = 0
         if cols:
-            ws.append(cols)
+            ws.append([text_only_cell(ws, c) for c in cols])
             for rec in items:
                 row = [excel_cell(rec.get(c)) for c in cols]
                 truncated += sum(1 for v in row if isinstance(v, str) and len(v) > 32767)
-                ws.append(row)
+                ws.append([text_only_cell(ws, v) for v in row])
         wb.save(out)
     finally:
         wb.close()

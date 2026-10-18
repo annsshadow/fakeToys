@@ -203,7 +203,7 @@ class TestWhatTheListHandsBackIsReachable:
 
     这一句是 `test_api_security.py::TestDataListScansWhitelist` 立的那条承诺在宽档下的续量。
     内容形态那一格**按现量钉**而不是按应有的形状钉：非数组那份拿到的是 500 + 固定文案，而不是
-    `assert_dataset_shape` 里那句 400 原话——`load_data` 的收尾分支（`api/routes/data.py:177`）
+    `assert_dataset_shape` 里那句 400 原话——`load_data` 的收尾分支（`api/routes/data.py:211`）
     用 `except Exception` 兜住了 `raise_internal_error`，而 `HTTPException` 也在它的吞掉范围内。
     那一格属于 **A280** 那一族（一刀切收敛），A280 待拍（状态码是对外契约），所以本轮只把它的
     现量钉下来；谁去收 A280，这一支要同批改。

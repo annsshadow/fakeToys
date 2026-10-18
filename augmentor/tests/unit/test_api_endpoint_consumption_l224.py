@@ -118,9 +118,16 @@ params 那一维**动了**：11 → **13** 条绑定、去重键名 8 → **9**�
 那句「params 一个数没动」是两轮各自的现量，不是同一格的两种说法。
 
 **名单空了不等于尺子钝了**：`UNCONSUMED` 收到 ∅ 之后，判据 3 那两条验真（子命令名存在、
-末段确实不是子命令）的循环体不再执行 ⇒ 单看它们恒真。所以 `TestRulerIsNotBlind` 补了一支
-反证：把服务层的调用形状摘掉一条，实测缺口立刻非空、相等判据当场红——今天这个 0 是
-**量出来的 0**，不是「什么都没扫到」的 0。
+末段确实不是子命令）的循环体不再执行 ⇒ 单看它们恒真。guard-integrity 自查正是点名这一族
+（外加 `test_frontend_face_scale` 与 `test_corpus_excludes_test_files` 两处**构造式恒真**，
+以及 `test_roster_entries_are_real_operations` 那处「空集减任何集合都是空集」）。修法不是
+再添一支反证就完事，而是把判据搬成四只**收名单为参数**的纯函数
+（`unverified_cli_claims` / `false_no_entry_claims` / `roster_phantoms` /
+`roster_partition_problems`）：主判据读现量名单，`TestRulerIsNotBlind` 的五支注入臂读
+**会撒谎的名单**（假子命令、把真子命令说成无入口、契约面上不存在的操作、划分三病、
+`.test.` 排除档），函数不为空就点名 ⇒ 今天这些 0 是量出来的 0，不是「什么都没扫到」的 0。
+`test_unwiring_one_operation_turns_the_empty_roster_red`（摘掉一条服务层调用形状的
+monkeypatch 臂）继续钉主判据那一向。
 
 **两侧权威各只有一份**：
 * 后端面 = `app.openapi()` 里 `(方法, 路径模板)` 的集合（77 条操作 / 73 条路径，
@@ -136,7 +143,8 @@ params 那一维**动了**：11 → **13** 条绑定、去重键名 8 → **9**�
 3. `UNCONSUMED` 每一员要么指到一个**真实存在**的 CLI 子命令（`cli_entry` 的每个名字由
    parser 的 `add_parser` 名单验真），要么落进 `NO_ENTRY`（L226 时 3 条，L227 接走其中
    2 条后剩 **1** 条，L236 收口后 **∅**）：判据是「路径末段确实不在 CLI 子命令清单里」。
-   两张名单都空之后这一向的循环体不再执行，牙齿改由 `TestRulerIsNotBlind` 那支反证提供；
+   两张名单都空之后这一向的循环体不再执行 ⇒ 判据搬进纯函数，牙齿由 `TestRulerIsNotBlind`
+   的注入臂①②④（假子命令 / 把真子命令说成无入口 / 划分三病）在名单非空时逐格点名；
 4. query 参数逐键对到该操作的 `in=query` 声明。两处来源都算：写在路径串里的
    `` `/versions/create?filename=${filename}` ``（1 条）与 axios 的 `params: {…}` 对象
    （L232 之后 11 条 / 去重后 8 个键名）。后者是量出来才补进去的一维 —— `data/load` 的分页三键与
@@ -175,10 +183,10 @@ PARAMS_BLOCK = re.compile(r"params:\s*\{([^{}]*)\}")
 
 #: params 块到所属调用的字符间隔上限。现量 4~41（L231 之前是 4~14；`restoreBackup` 那条
 #: 把请求体写在调用里，间隔 41）。这一维今天不咬人：把上限放到无穷，
-#: 归属仍是 8 条 —— 语料里每个 `params:` 块之前都站着另一条调用，「最近前一员」自己就
+#: 归属仍是 14 条 —— 语料里每个 `params:` 块之前都站着另一条调用，「最近前一员」自己就
 #: 收对了。上限守的是另一种还没出现的形状：一个不属于任何调用的 `params:` 块（比如最后
 #: 一条调用之后的配置对象）没有上限就会被记到最后一员头上。下界有牙齿：收到 3 就把
-#: 8 条真归属全判没（见 `TestTheParamsWindowIsScoped`）。
+#: 14 条真归属全判没（见 `TestTheParamsWindowIsScoped`）。
 #: 60 这个数也**真的会咬人**：L231 的 `createBackup` 原本间隔超限 ⇒ `backup_dir`
 #: 绑不上，处置是改源码把请求体提上去，不是放宽这里。
 PARAMS_MAX_GAP = 60
@@ -290,10 +298,15 @@ def params_bindings():
     ]
 
 
-def front_source_files():
-    """前端源码语料（不含 `*.test.*`）——接线判据不吃测试替身，L211 的教训"""
+def front_source_files(root=None):
+    """前端源码语料（不含 `*.test.*`）——接线判据不吃测试替身，L211 的教训
+
+    `root` 这一格是自查之后添的：排除档若只能读 `web/src`，「测试替身被排掉了」这件事就
+    永远只有空读数。注入臂⑤拿它读一份临时目录（`Panel.tsx` 收、`Panel.test.tsx` 排），
+    当场证明这道过滤真的在排东西。
+    """
     out = []
-    for path in sorted(FRONT_SRC.rglob("*")):
+    for path in sorted((root or FRONT_SRC).rglob("*")):
         if not path.is_file() or path.suffix not in {".ts", ".tsx", ".vue", ".js"}:
             continue
         if "__pycache__" in path.parts or ".test." in path.name:
@@ -386,6 +399,51 @@ def undeclared_queries():
     return out
 
 
+#: ---------------------------------------------------------------------------
+#: 名单判据（guard-integrity 自查之后重写的这一族）
+#: 三张名单在 L236 之后同时为空集，于是「遍历名单逐项验真」那几支的循环体一次都不执行，
+#: `assert not <空集>` 从此恒真。判据搬进下面的纯函数，函数**收到什么名单就验什么名单**，
+#: 于是同一只函数既能读现量（空 ⇒ 空问题清单）也能读注入（非空 ⇒ 逐格点名喊红）。
+#: ---------------------------------------------------------------------------
+
+def unverified_cli_claims(cli_entry, names=None):
+    """`CLI_ENTRY` 那句「CLI 那条路有入口」的验真：回点名清单（子命令名并不存在的那些）"""
+    names = cli_subcommands() if names is None else set(names)
+    return sorted({cmd for cmd in cli_entry.values()} - names)
+
+
+def false_no_entry_claims(no_entry, names=None):
+    """`NO_ENTRY` 那句「两边都没入口」的验真：路径末段其实是真子命令的成员"""
+    names = cli_subcommands() if names is None else set(names)
+    return sorted(entry for entry in no_entry
+                  if entry.split("/")[-1].split("{")[0].rstrip("-") in names)
+
+
+def roster_phantoms(roster, ops=None):
+    """名单里躺着契约面上并不存在的操作（端点改名或删除而名单没同步）"""
+    ops = {f"{m} {p}" for m, p in operations()} if ops is None else set(ops)
+    return sorted(set(roster) - set(ops))
+
+
+def roster_partition_problems(measured, cli_entry, no_entry):
+    """三张名单与**实测缺口**的对账：漏分类、双分类、名单过期，三类问题逐个点名
+
+    读的是 `unconsumed_operations()`（实测）而不是 `UNCONSUMED` 常量本身 ⇒ 契约面新增
+    一条没接的端点时，这一支会立刻报「既不在 CLI_ENTRY 也不在 NO_ENTRY」，而不是继续
+    对三个空集做集合运算。
+    """
+    measured, claimed_cli, claimed_no = set(measured), set(cli_entry), set(no_entry)
+    problems = []
+    for label, group in (
+            ("漏分类（缺口没落进任何一档）", measured - claimed_cli - claimed_no),
+            ("双分类（同一员既算有入口又算无入口）", claimed_cli & claimed_no),
+            ("名单过期（名单里但实测缺口没有：已接好或已消失）",
+             (claimed_cli | claimed_no) - measured)):
+        if group:
+            problems.append(f"{label}: {sorted(group)}")
+    return problems
+
+
 class TestRulerSeesTheRealSurface:
     """先确认尺子读到了两侧的真实现场"""
 
@@ -405,7 +463,10 @@ class TestRulerSeesTheRealSurface:
         """
         shapes = call_shapes()
         assert len(shapes) == 78, f"服务层调用形状现量 78，实得 {len(shapes)}"
-        assert {m for m, _, _ in shapes} <= {"GET", "POST", "PUT", "DELETE", "PATCH"}
+        # 旧写法是 `<= {"GET","POST","PUT","DELETE","PATCH"}`，而 CALL 那条正则本身只可能
+        # 匹到这五个动词 ⇒ 构造式恒真。换成与契约面（另一侧权威）对账，才有牙齿。
+        assert {m for m, _, _ in shapes} <= {m for m, _ in operations()}, \
+            "前端发了契约面上没有的方法"
 
     def test_http_paths_live_only_in_the_service_layer(self):
         """页面与组件里不许再出现第二处 `api.<verb>('/...')` 形状
@@ -423,9 +484,19 @@ class TestRulerSeesTheRealSurface:
         assert not outside, f"这些文件绕过服务层直接拼路径：{outside}"
 
     def test_corpus_excludes_test_files(self):
-        tests = [p for p in FRONT_SRC.rglob("*") if ".test." in p.name]
-        assert len(tests) >= 10, f"只找到 {len(tests)} 个前端测试文件，语料口径变了"
-        assert not any(p == API_TS for p in tests)
+        """语料口径本身：22 只产品文件在场（含 `api.ts`），22 只测试替身被排除在外
+
+        旧写法里的第二支 `assert not any(p == API_TS for p in tests)` 是构造式恒真 ——
+        `tests` 是按 `.test.` 筛出来的，而 `API_TS` 叫 `api.ts`，两条名单永不相交。
+        改成读**排除是否真的排掉了东西**：两侧规模各自钉住，且在场判据直接点名服务层。
+        """
+        assert len(front_source_files()) == 22, \
+            f"前端产品语料现量 22 只，实得 {len(front_source_files())} 只 ⇒ 口径变了"
+        assert API_TS in front_source_files(), "服务层那一份必须在这把尺子的语料里"
+        excluded = [p for p in FRONT_SRC.rglob("*")
+                    if p.is_file() and p.suffix in {".ts", ".tsx", ".vue", ".js"}
+                    and ".test." in p.name]
+        assert len(excluded) == 22, f"被排除的测试替身现量 22 只，实得 {len(excluded)} 只"
 
 
 class TestNoGhostCalls:
@@ -442,8 +513,10 @@ class TestNoGhostCalls:
     def test_at_least_one_call_carries_a_query_key(self):
         """query 那一支判据不能空转：两处来源合起来现量 **15** 条
 
-        **2 条写在路径串里**（`/versions/create?filename=…`，L251 又添 `/data/list?all_files=true`），
-        13 条走 `params: {…}` 对象（`data/load` 3 键、`data/update` 与 `data/delete` 各 `index`、
+        **1 条写在路径串里**（L251 的 `/data/list?all_files=true`；L277 把原先另一条
+        `/versions/create?filename=…` 改走了 `params`，含 `&` / `=` / `#` 的文件名拼串会拆坏
+        query），14 条走 `params: {…}` 对象（`data/load` 3 键、`data/update` 与 `data/delete`
+        各 `index`、
         `versions/history` 各 `limit`，L231 添备份那一族四条各 `backup_dir`，L232 再添数据集血缘
         那一族三条各 `registry_path`，**L243 添备份完整性的两员**：`cleanup` 一只 `backup_dir`、
         `verify` 一只 `{backup_id, backup_dir}`）；去重后 **10** 个键名（L251 添 `all_files`）。
@@ -451,7 +524,7 @@ class TestNoGhostCalls:
         with_query = [s for s in call_shapes() if s[2]]
         assert len(with_query) == 15, f"带 query 的调用现量 15 条，实得 {len(with_query)} 条"
         assert len({k for _, _, keys in with_query for k in keys}) == 10
-        assert len(params_bindings()) == 13, "params 对象那一支现量 13 条"
+        assert len(params_bindings()) == 14, "params 对象那一支现量 14 条"
         assert sum(1 for _, _, keys, _ in params_bindings() if keys == {"backup_dir"}) == 5
         # L232 那三条：两条 GET 的间隔是 8，POST 那条因为请求体先提成 `const body` 是 14
         assert sum(1 for _, _, keys, _ in params_bindings() if keys == {"registry_path"}) == 3
@@ -482,7 +555,7 @@ class TestTheParamsWindowIsScoped:
         assert listed == {(), ("all_files",)}, listed
 
     def test_the_gap_budget_is_load_bearing(self):
-        """上限的两端都量过：收到 3 判没 13 条，放到无穷今天不多收一条
+        """上限的两端都量过：收到 3 判没 14 条，放到无穷今天不多收一条
 
         现量最大间隔 41 字符（`restoreBackup`：请求体写在调用里，把 `params` 块推远了），
         所以 60 这个数留的是余量而不是判据。真正在收归属的是
@@ -494,15 +567,18 @@ class TestTheParamsWindowIsScoped:
         先把 body 提成 `const body`，实测间隔 14 —— 这次是**先躲开**而不是先踩再修。
         **L243 的 `cleanupBackups` 走同一条处方**（请求体先提成 `const body`，间隔 14），
         没有重踩一遍 `createBackup` 那只坑。
+        **归属那一维现量 13 → 14**：L277 把 `createVersion` 的 `filename` 从路径串改走
+        `params`（含 `&` / `=` / `#` 的文件名会把 query 拆开），于是 params 对象多收一条、
+        写在路径串里的那一档从 2 条收到 1 条。本轮只按实测回填数字，判据一格没松。
         """
         gaps = [gap for _, _, _, gap in params_bindings()]
-        assert len(gaps) == 13 and max(gaps) <= 41, f"归属间隔现量 ≤41，实得 {gaps}"
+        assert len(gaps) == 14 and max(gaps) <= 41, f"归属间隔现量 ≤41，实得 {gaps}"
         original = PARAMS_MAX_GAP
         try:
             globals()["PARAMS_MAX_GAP"] = 3
-            assert params_bindings() == [], "收到 3 应把 13 条真归属全判没"
+            assert params_bindings() == [], "收到 3 应把 14 条真归属全判没"
             globals()["PARAMS_MAX_GAP"] = 10 ** 6
-            assert len(params_bindings()) == 13, "放宽上限今天不多收：语料里每块前面都有调用"
+            assert len(params_bindings()) == 14, "放宽上限今天不多收：语料里每块前面都有调用"
         finally:
             globals()["PARAMS_MAX_GAP"] = original
 
@@ -581,30 +657,43 @@ class TestConsumptionRoster:
         assert len(consumed_operations()) == len(operations()), "契约面全数被消费才算收口"
 
     def test_roster_entries_are_real_operations(self):
-        ops = {f"{m} {p}" for m, p in operations()}
-        ghost = set(UNCONSUMED) - ops
-        assert not ghost, f"名单里有契约中不存在的操作（改名或删端点要同步这里）：{sorted(ghost)}"
+        """名单与实测缺口都不许躺着契约面上不存在的操作
+
+        旧写法 `ghost = set(UNCONSUMED) - ops` 在名单为空时是恒真的（空集减任何集合都还是
+        空集）。现在把**实测缺口**也喂进同一只判据：契约面新增一条没接的操作，它先进
+        `unconsumed_operations()`，这一格与名单相等那一格一起红。
+        """
+        assert roster_phantoms(UNCONSUMED) == [], roster_phantoms(UNCONSUMED)
+        assert roster_phantoms(unconsumed_operations()) == [], \
+            "实测缺口里出现了契约面上不存在的操作（绑定或归一化口径变了）"
 
 
 class TestCliEntryClaimsAreReal:
-    """缺口名单每一员的「CLI 那条路有入口」这句话都得验真"""
+    """缺口名单每一员的「CLI 那条路有入口」这句话都得验真
+
+    **guard-integrity 自查点名了这一族的三处恒真**：L236 之后 `CLI_ENTRY` 与 `NO_ENTRY`
+    同时为空集，于是「遍历名单逐名验真」的循环体一次都不执行，`assert not <空集>` 与
+    `空集 | 空集 == 空集` 从此永远绿。判据搬进三只纯函数（`unverified_cli_claims` /
+    `false_no_entry_claims` / `roster_partition_problems`），主判据继续读现量名单，
+    `TestRulerIsNotBlind` 里那几支注入臂把**会撒谎的名单**喂进同一只函数——函数不为空
+    就说谎，这一族的牙齿不再依赖名单恰好是空的。
+    """
 
     def test_every_mapped_subcommand_exists(self):
         names = cli_subcommands()
-        assert names, "parser 里一个 add_parser 都没解析到 ⇒ 判据坏了"
-        missing = sorted({cmd for cmd in CLI_ENTRY.values()} - names)
-        assert not missing, f"这些 CLI 子命令名并不存在：{missing}"
+        assert len(names) == 37, f"parser 的 add_parser 名单现量 37，实得 {len(names)} ⇒ 判据坏了"
+        bad = unverified_cli_claims(CLI_ENTRY)
+        assert not bad, f"这些 CLI 子命令名并不存在：{bad}"
 
     def test_no_entry_members_really_have_no_subcommand(self):
         """`NO_ENTRY` 的牙齿：路径末段确实不在子命令清单里"""
-        names = cli_subcommands()
-        for entry in sorted(NO_ENTRY):
-            tail = entry.split("/")[-1].split("{")[0].rstrip("-")
-            assert tail not in names, f"{entry} 声称无 CLI 入口，但末段 {tail!r} 是个子命令"
+        bad = false_no_entry_claims(NO_ENTRY)
+        assert not bad, f"这些成员声称无 CLI 入口，但末段是个真子命令：{bad}"
 
     def test_roster_partitions_into_two_claims(self):
-        assert set(CLI_ENTRY) | set(NO_ENTRY) == set(UNCONSUMED)
-        assert not (set(CLI_ENTRY) & set(NO_ENTRY)), "同一员不能既算有入口又算无入口"
+        """两档划分读的是**实测缺口**，不是三张空名单互相对账"""
+        problems = roster_partition_problems(unconsumed_operations(), CLI_ENTRY, NO_ENTRY)
+        assert problems == [], problems
 
     def test_cli_roster_scale(self):
         """37 个子命令是 L204 钉过的现量；名单 7 条指向其中 7 个不同子命令
@@ -644,11 +733,18 @@ class TestCliEntryClaimsAreReal:
         的最后一名（先做 A283 ① 的契约再接线 ⇒ 1 收到 **0**）。两张名单同时空掉，
         而子命令现量（37）一个没动——本轮没给 CLI 加子命令，`translate` 在 CLI 侧仍然
         没有入口，它出名单是因为**前端接上了**，不是因为多了一条 CLI 路。
+
+        **guard-integrity 自查之后这一格换了形状**：两张名单同时空掉之后，
+        `len(CLI_ENTRY) == 0` 这种常数钉子只钉得住「不许退回」，量不到现场。现在这一格
+        读的是**实测缺口规模**——名单规模必须等于缺口规模：契约面新增一条没接的操作而
+        名单没跟上，当场红；名单自己长回去（把已接好的操作留在册上）同样红。上面那段
+        历史保留不动，是因为回填这三个数的人需要知道每一批为什么动 `CLI_ENTRY` 或
+        `NO_ENTRY`。
         """
         assert len(cli_subcommands()) == 37
-        assert len(CLI_ENTRY) == 0
-        assert len(set(CLI_ENTRY.values())) == 0
-        assert len(NO_ENTRY) == 0
+        assert (len(CLI_ENTRY), len(NO_ENTRY)) == (0, 0), "名单回填只降不升"
+        assert len(CLI_ENTRY) + len(NO_ENTRY) == len(unconsumed_operations()), \
+            "名单规模与实测缺口脱钩了（接线一轮就同步回填这三个数）"
 
     def test_the_empty_claims_are_not_a_blind_ruler(self):
         """两张名单空了之后，上面两条验真的循环体不再执行 ⇒ 这一支替它们保留牙齿
@@ -709,3 +805,48 @@ class TestRulerIsNotBlind:
     def test_base_prefix_is_read_not_hardcoded(self):
         assert base_prefix() == "/api"
         assert API_TS.read_text(encoding="utf-8").count("baseURL") == 1
+
+    def test_a_lying_cli_entry_roster_is_named(self):
+        """注入臂①：`CLI_ENTRY` 现为空集，主判据那一格读不到东西 ⇒ 喂一份撒谎的名单
+
+        同一只函数必须做到「真名放行、假名点名」，否则 `assert not unverified_cli_claims(
+        CLI_ENTRY)` 就还是对空集求像的恒真判据。
+        """
+        names = cli_subcommands()
+        assert "monitor" in names and "translate" not in names, "尺子的子命令读数面变了"
+        assert unverified_cli_claims({"GET /api/system/monitor": "monitor"}, names) == []
+        assert unverified_cli_claims({"GET /api/system/monitor": "monitors"}, names) == \
+            ["monitors"]
+
+    def test_a_lying_no_entry_roster_is_named(self):
+        """注入臂②：把「两边都没入口」说给一个**真有**子命令的操作 ⇒ 必须反驳"""
+        names = cli_subcommands()
+        assert false_no_entry_claims({"POST /api/dataset/translate"}, names) == []
+        assert false_no_entry_claims({"POST /api/dataset/convert"}, names) == \
+            ["POST /api/dataset/convert"]
+
+    def test_a_phantom_roster_entry_is_named(self):
+        """注入臂③：名单里塞一条契约面上不存在的操作 ⇒ 必须点名"""
+        assert roster_phantoms({"POST /api/dataset/translate"}) == []
+        assert roster_phantoms({"GET /api/no/such/operation"}) == ["GET /api/no/such/operation"]
+
+    def test_the_three_partition_faults_are_each_named(self):
+        """注入臂④：划分的三种病各喂一次 —— 漏分类、双分类、名单过期"""
+        gap = {"POST /api/system/monitor"}
+        assert roster_partition_problems(gap, {"POST /api/system/monitor": "monitor"}, set()) == []
+        missing = roster_partition_problems(gap, {}, set())
+        assert len(missing) == 1 and "漏分类" in missing[0], missing
+        stale = roster_partition_problems(set(), gap, gap)
+        assert any("双分类" in p for p in stale), stale
+        assert any("名单过期" in p for p in stale), stale
+
+    def test_the_test_file_filter_actually_excludes_something(self, tmp_path):
+        """注入臂⑤：临时目录里造两只同形文件，产品面读得到、测试替身必须读不到"""
+        ghost = "api.get('/api/nonsense/only-in-injection')"
+        (tmp_path / "Panel.test.tsx").write_text(ghost, encoding="utf-8")
+        (tmp_path / "Panel.tsx").write_text(ghost, encoding="utf-8")
+        corpus = front_source_files(tmp_path)
+        assert [p.name for p in corpus] == ["Panel.tsx"], \
+            "`.test.` 那一档没被排除 ⇒ 语料口径退化，接线判据会吃到测试替身（L211 的教训）"
+        # 另一半牙齿：没被排除的那只文件确实会被读出来（不是靠「什么都读不到」绿的）
+        assert CALL.findall((tmp_path / "Panel.tsx").read_text(encoding="utf-8"))

@@ -239,7 +239,7 @@ class ModelEvaluator:
             metrics: 评估指标列表
             model_factory: 模型名到后端实例的工厂函数，用于模型对比
         """
-        self.metrics = metrics or ["bleu", "rouge_l", "similarity"]
+        self.metrics = metrics if metrics is not None else ["bleu", "rouge_l", "similarity"]
 
         unsupported = [m for m in self.metrics if m not in METRIC_FUNCTIONS]
         if unsupported:

@@ -16,6 +16,7 @@ from ..deps import (
     config_file_path,
     get_pipeline,
     invalidate_config_caches,
+    resolve_within_roots,
     to_http_error,
     verify_api_key,
 )
@@ -101,6 +102,34 @@ WRITABLE_SECTIONS = ["augmentation", "quality", "dedup", "export",
                      "vector", "rag", "multimodal"]
 
 
+# 写入清单里「值会被当成落点目录直接使用」的键（A341）。
+# 由 `tests/unit/test_config_dir_containment_l277.py` 逐节机器核对：本名单必须
+# 恰好覆盖 7 个可写节里所有「字符串值 + 目录/路径语义」的键，多写或少写都红。
+_DIR_VALUED_KEYS: Dict[str, str] = {"vector": "storage_dir"}
+
+
+def _reject_escaping_dir_value(section: str, key: str, value: Any) -> None:
+    """把目录类配置键交给数据文件那一族的同一把闸（A341 修法 ①）
+
+    为什么判在这里而不是 `VectorConfig.__post_init__`：白名单（`web.data_roots`）
+    是 HTTP 面对「客户端传进来的路径」的授权边界，配置层没有它的概念，把闸装进
+    配置类会让 CLI 与 SDK 的合法绝对路径一起失去落点。而「配置即权限」这条通路
+    与 `resolve_within_roots` 拦的是同一件事——客户端给的路径不能逃出授权目录，
+    两条入口口径不一致时，白名单只是把绕行挪到了更隐蔽的一格。
+
+    判在 `apply_section_update` **之前**：坏值不该先在内存对象上留一秒，
+    也不该被 `save_config` 写进磁盘。空串与非字符串交给配置层自己的
+    `require_string`（那一路已经折成 400），这里只量「落在不在闸内」。
+
+    Raises:
+        HTTPException: 400 空值或含 `..` 组件；403 规范化之后落到白名单之外
+    """
+    if not isinstance(value, str) or not value.strip():
+        return
+    resolve_within_roots(value, f"{section}.{key}")
+
+
+
 @router.get("/api/config", response_model=ConfigResponse, summary="获取配置")
 async def get_config():
     """获取配置"""
@@ -175,89 +204,106 @@ async def update_config(
     try:
         import dataclasses
 
+        from augmentor.atomic_write import path_lock
         from augmentor.config import apply_section_update, save_config
         from augmentor.config_validator import ConfigValidator
 
         p = get_pipeline()
         updates = request.model_dump(exclude_none=True)
 
-        # `applied` = 这一次请求是否真的往配置对象里写了东西（A152①）。它决定
-        # 要不要落盘，所以口径必须是「写没写」而不是「有没有报错」：`default_model`
-        # 是直接赋值（`apply_section_update` 管不到它），节内键则要扣掉被 `hasattr`
-        # 丢回去的那些 —— 只提交未知键的请求（`{"augmentation": {"variants_per_item":
-        # 3}}`，L88 自己的写面用例就是这个形状）算「没写」。
-        applied = False
-        if "default_model" in updates:
-            p.config.default_model = updates["default_model"]
-            applied = True
+        # A384（L289）：「改内存 -> 整份落盘」必须在同一把按路径的锁里做完（L273 同族）。
+        # 只罩 `save_config` 治不到这一形：A 先快照（还没带上 B 的改动）-> B 改完并写盘 ->
+        # A 用旧快照后写 => 盘上整批丢而两边都回 200。罩住「判决 + 改 + 写」整段之后，
+        # 最后落盘那一份必然带得上此前所有已提交的改动。
+        # 这一把锁只出得了本进程：多 worker 那一档与 A156 / A158 同口径，仍记在账上。
+        # 段内没有 `await`（整支端点是同步体），所以线程锁不会跨 `await` 持有。
+        with path_lock(config_file_path()):
+            # `applied` = 这一次请求是否真的往配置对象里写了东西（A152①）。它决定
+            # 要不要落盘，所以口径必须是「写没写」而不是「有没有报错」：`default_model`
+            # 是直接赋值（`apply_section_update` 管不到它），节内键则要扣掉被 `hasattr`
+            # 丢回去的那些 —— 只提交未知键的请求（`{"augmentation": {"variants_per_item":
+            # 3}}`，L88 自己的写面用例就是这个形状）算「没写」。
+            applied = False
+            if "default_model" in updates:
+                p.config.default_model = updates["default_model"]
+                applied = True
 
-        # `hasattr` 丢弃未知子键（不崩溃）是既有契约；本轮补的是「丢弃要出声」：
-        # 拼错/多余的键被静默跳过却仍回 success，用户看不出「写了没生效」，与读路径
-        # 的 A76 同族。`ignored_keys` 是给程序消费的干净清单，`message` 附「是否想写
-        # X」给人看；判定、状态码与既有 `success`/`message` 的语义都不变，只加一键。
-        #
-        # 写入一律经 `apply_section_update`（L73 / A117）而不是裸 `setattr`：判据住在
-        # 各节的 `__post_init__` 里，裸 `setattr` 不触发它 ⇒ 坏值能挂到运行中的对象上、
-        # 还能被下面的 `save_config` 落盘（当次 200、重启即抛）。该函数要么全落、
-        # 要么整批回滚，所以本端点不再存在「内存已改、文件未写」的中间态。
-        ignored: List[str] = []
-        notes: List[str] = []
-        for section in WRITABLE_SECTIONS:
-            if section in updates:
-                section_config = getattr(p.config, section)
-                known = [f.name for f in dataclasses.fields(section_config)]
-                dropped = apply_section_update(section_config, updates[section])
-                for key in dropped:
-                    ignored.append(f"{section}.{key}")
+            # `hasattr` 丢弃未知子键（不崩溃）是既有契约；本轮补的是「丢弃要出声」：
+            # 拼错/多余的键被静默跳过却仍回 success，用户看不出「写了没生效」，与读路径
+            # 的 A76 同族。`ignored_keys` 是给程序消费的干净清单，`message` 附「是否想写
+            # X」给人看；判定、状态码与既有 `success`/`message` 的语义都不变，只加一键。
+            #
+            # 写入一律经 `apply_section_update`（L73 / A117）而不是裸 `setattr`：判据住在
+            # 各节的 `__post_init__` 里，裸 `setattr` 不触发它 ⇒ 坏值能挂到运行中的对象上、
+            # 还能被下面的 `save_config` 落盘（当次 200、重启即抛）。该函数要么全落、
+            # 要么整批回滚，所以本端点不再存在「内存已改、文件未写」的中间态。
+            ignored: List[str] = []
+            notes: List[str] = []
+            for section in WRITABLE_SECTIONS:
+                if section in updates:
+                    section_config = getattr(p.config, section)
+                    known = [f.name for f in dataclasses.fields(section_config)]
+                    # A341：目录类键先过数据白名单，判在写内存对象之前 ⇒ 坏值既不进
+                    # 内存也不落盘，回执是 400/403 而不是 200 + `ignored_keys: []`。
+                    dir_key = _DIR_VALUED_KEYS.get(section)
+                    if dir_key and dir_key in updates[section]:
+                        _reject_escaping_dir_value(section, dir_key, updates[section][dir_key])
+                    dropped = apply_section_update(section_config, updates[section])
+                    for key in dropped:
+                        ignored.append(f"{section}.{key}")
+                        notes.append(
+                            f"{section}.{key}"
+                            + ConfigValidator._suggest(key, sorted(known))
+                        )
+                    # 「一个键都没落」的节不算写入：`apply_section_update` 只把 `hasattr`
+                    # 判败的键退回来，所以「提交数 > 退回数」就是「至少 setattr 过一次」。
+                    if len(updates[section]) > len(dropped):
+                        applied = True
+
+            # A151：节级漏网。`extra="allow"` 把不认识的顶层节留在 `model_extra` 里，
+            # 于是这里能分清两种「没写进去」：配置里**有**这一节但本端点不写（`web` /
+            # `logging` 那 15 节，改了要重启或牵动生效时机），以及节名压根拼错。
+            # 从前前者被 pydantic 直接吃掉、连 `ignored_keys` 都是空的，实测
+            # `{"web": {"max_upload_bytes": 0}}` 回 200「配置已保存」而 live 与磁盘未动。
+            known_sections = (set(ConfigValidator.consumed_section_keys())
+                              | ConfigValidator.META_TOP_SECTIONS)
+            for key in sorted(request.model_extra or {}):
+                ignored.append(key)
+                if key in known_sections:
+                    notes.append(f"{key}（本端点不修改该节，请编辑 config.yaml 后重启服务）")
+                else:
                     notes.append(
-                        f"{section}.{key}"
-                        + ConfigValidator._suggest(key, sorted(known))
+                        key + ConfigValidator._suggest(
+                            key, sorted(known_sections | set(ConfigUpdateRequest.model_fields)))
                     )
-                # 「一个键都没落」的节不算写入：`apply_section_update` 只把 `hasattr`
-                # 判败的键退回来，所以「提交数 > 退回数」就是「至少 setattr 过一次」。
-                if len(updates[section]) > len(dropped):
-                    applied = True
 
-        # A151：节级漏网。`extra="allow"` 把不认识的顶层节留在 `model_extra` 里，
-        # 于是这里能分清两种「没写进去」：配置里**有**这一节但本端点不写（`web` /
-        # `logging` 那 15 节，改了要重启或牵动生效时机），以及节名压根拼错。
-        # 从前前者被 pydantic 直接吃掉、连 `ignored_keys` 都是空的，实测
-        # `{"web": {"max_upload_bytes": 0}}` 回 200「配置已保存」而 live 与磁盘未动。
-        known_sections = (set(ConfigValidator.consumed_section_keys())
-                          | ConfigValidator.META_TOP_SECTIONS)
-        for key in sorted(request.model_extra or {}):
-            ignored.append(key)
-            if key in known_sections:
-                notes.append(f"{key}（本端点不修改该节，请编辑 config.yaml 后重启服务）")
+            # A152①：只有「真的写了东西」才落盘。`save_config` 是「读现有文件 → 合并 →
+            # 整份重写」，而 `yaml.safe_dump` 不回写注释 ⇒ 一次什么都没写成的请求从前也会
+            # 把磁盘上那份 `config.yaml` 的注释与排版一起抹掉。那 202 行注释里住的不是文档，
+            # 是判据本身：自动保存档「10 倍静默写放大」的实测、`request_timeout` 取 120 而
+            # 不是 60 的两侧代价、`max_upload_bytes` 默认 256 MiB 的定标依据。⇒ 空写入连
+            # 文件都不碰：字节、mtime、内容缓存三者一律不动，`message` 也不再谎称已保存。
+            if applied:
+                save_config(p.config, str(config_file_path()))
+                # 写盘成功即作废内容类缓存：`save_config` 是整份重序列化，`web` 那两键
+                # （数据白名单、上传上限）也一起被重写了一遍，而读它们的缓存按
+                # `(路径, mtime_ns)` 建键 ⇒ 「改过配置文件，下一次读必然看见新值」这句话
+                # 本来是由操作系统时钟是否跨过一格决定的（本机 tick 实测 0.5 ms）。缓存的
+                # 写入方就在本进程，所以这一格只有显式失效能封死；跨进程与「保住 mtime」
+                # 的写方管不到，那两格记在 A156 / A158。
+                invalidate_config_caches()
+                message = "配置已保存，部分配置需要重启服务生效"
             else:
-                notes.append(
-                    key + ConfigValidator._suggest(
-                        key, sorted(known_sections | set(ConfigUpdateRequest.model_fields)))
-                )
-
-        # A152①：只有「真的写了东西」才落盘。`save_config` 是「读现有文件 → 合并 →
-        # 整份重写」，而 `yaml.safe_dump` 不回写注释 ⇒ 一次什么都没写成的请求从前也会
-        # 把磁盘上那份 `config.yaml` 的注释与排版一起抹掉。那 202 行注释里住的不是文档，
-        # 是判据本身：自动保存档「10 倍静默写放大」的实测、`request_timeout` 取 120 而
-        # 不是 60 的两侧代价、`max_upload_bytes` 默认 256 MiB 的定标依据。⇒ 空写入连
-        # 文件都不碰：字节、mtime、内容缓存三者一律不动，`message` 也不再谎称已保存。
-        if applied:
-            save_config(p.config, str(config_file_path()))
-            # 写盘成功即作废内容类缓存：`save_config` 是整份重序列化，`web` 那两键
-            # （数据白名单、上传上限）也一起被重写了一遍，而读它们的缓存按
-            # `(路径, mtime_ns)` 建键 ⇒ 「改过配置文件，下一次读必然看见新值」这句话
-            # 本来是由操作系统时钟是否跨过一格决定的（本机 tick 实测 0.5 ms）。缓存的
-            # 写入方就在本进程，所以这一格只有显式失效能封死；跨进程与「保住 mtime」
-            # 的写方管不到，那两格记在 A156 / A158。
-            invalidate_config_caches()
-            message = "配置已保存，部分配置需要重启服务生效"
-        else:
-            message = "本次请求未写入任何配置项，config.yaml 保持不变"
+                message = "本次请求未写入任何配置项，config.yaml 保持不变"
         if ignored:
             # 措辞从「未知配置项」改成「未写入的配置项」：A151 之后这份清单里
             # 也可能是**存在但本端点不写**的节（`web`），叫它「未知」是假话。
             message += "（已忽略未写入的配置项：" + "、".join(notes) + "）"
         return {"success": True, "message": message, "ignored_keys": ignored}
+    except HTTPException:
+        # `resolve_within_roots` 的 400/403 已经是对调用方说清楚的话，不能被下面的
+        # 兜底分支折成 500（那会把「你给的落点在闸外」报成「服务端坏了」）。
+        raise
     except DataValidationError as e:
         # 越界的新值要的是 400（「你给的这个值不合法」），不是 500（「服务端坏了」）。
         # `DataValidationError` 是 `ValueError` 子类，`to_http_error` 那一档正好译成

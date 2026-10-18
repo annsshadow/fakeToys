@@ -62,7 +62,7 @@ NON_LITERAL_PATTERNS = (
 #: 免得名册绿而那一格已被搬走或改写。
 ROSTER_ANCHORS = {
     "augmentor/search_enhanced.py":
-        "pattern = re.compile(query, re.IGNORECASE)",
+        "pattern = re.compile(require_search_pattern(\"query\", query), re.IGNORECASE)",
     "augmentor/validation.py":
         "re.compile(p, re.IGNORECASE) for p in patterns",
 }

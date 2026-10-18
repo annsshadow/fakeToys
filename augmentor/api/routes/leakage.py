@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from ..deps import raise_internal_error, load_items, run_in_thread
+from ..deps import raise_boundary_error, load_items, run_in_thread
 from augmentor.leakage import LeakageReport, detect_leakage
 
 router = APIRouter(tags=["leakage"])
@@ -63,4 +63,8 @@ async def check_leakage(request: LeakageRequest):
     except HTTPException:
         raise
     except Exception as e:
-        raise_internal_error(e)
+        # L277：`LeakageDetector` 构造期的门口判据（含「fields 不能是空清单」⇒ 否则零作用域
+        # 会报成 `is_clean: true` 的假干净）抛 `DataValidationError`，旧归宿把它压成 500 是把
+        # 请求方的错伪装成服务器故障。改走 `raise_boundary_error`，与 `api/routes/version.py`
+        # 同口径；其余未分类异常仍收敛 500。
+        raise_boundary_error(e)

@@ -7,7 +7,7 @@
 
 **可达、补测（本文件）**
 - export.py 173->180        chatml 里 `system` 显式为空串 ⇒ 系统消息被跳过
-- export.py 277->286        CSV 且 items 为空 ⇒ `if data:` 假支，不落文件
+- export.py 277->286        CSV 且 items 为空 ⇒ `if data:` 假支，不写表头（L277 起文件本体照落，零字节）
 - pipeline.py 369->352      并行 + 用断点 + 某条处理失败 ⇒ `if use_checkpoint` 假支（update_progress(idx, False)）
 - version_control.py 321->326  删的是「当前版本」且还有别的版本 ⇒ 回退到列表尾
 - version_control.py 329->335  删的是「当前版本」且它是最后一条 ⇒ 当前版本置 None
@@ -59,14 +59,17 @@ class TestExportChatmlEmptySystem:
 
 
 class TestExportCsvEmptyItems:
-    def test_csv_export_of_empty_items_writes_no_file(self, tmp_path):
+    def test_csv_export_of_empty_items_writes_a_zero_byte_file(self, tmp_path):
         from augmentor.export import Exporter
 
         output = tmp_path / "empty.csv"
         used = Exporter().export([], str(output), "csv")
-        # `if data:` 假支：没有数据就不建 CSV 文件（表头都写不出）
+        # `if data:` 假支仍在（空集不建 DictWriter、不写表头），但 L277 之后文件本体照建：
+        # 「返回成功却根本没有产物」那一档已由 A343 的「静默零写入 + 成功即缺陷」判据禁掉，
+        # 假支现在只覆盖「表头不写」，落不落文件的旧读法已作废。
         assert used == "csv"
-        assert not output.exists()
+        assert output.exists()
+        assert output.stat().st_size == 0
 
 
 class TestPipelineVariantFiltering:

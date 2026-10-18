@@ -61,7 +61,7 @@ class QualityReport:
 
 class ReportGenerator:
     def __init__(self, buckets: Optional[List[float]] = None, threshold: float = 0.6):
-        self.buckets = buckets or DEFAULT_BUCKETS
+        self.buckets = buckets if buckets is not None else DEFAULT_BUCKETS
         self.threshold = threshold
 
     def generate(self, items: List[Dict], scores: List[Any],

@@ -8,7 +8,7 @@
 `require_positive` 无量纲倍率旋钮 / `require_ratio` 0-1 比例旋钮 /
 `require_bool` 开关旋钮 / `require_string` 非空字符串旋钮 /
 `require_string_list` 字符串列表旋钮 / `require_choice` 封闭清单旋钮）。字符串
-那一族的「整串是空白」这一刀只有一个产地 `is_blank_string`，静态校验器共引它。
+那一族的「整串是空白」只有一个产地 `is_blank_string`，跨解释器边界的判据也住这里：电子表格「这一格会不会被当公式执行」只有一个产地 `SHEET_FORMULA_LEADERS`。
 """
 
 import json
@@ -129,7 +129,9 @@ def require_seconds(name: str, value: Any, minimum: float = 0.0,
         raise DataValidationError(
             f"{name} 必须是数值秒数，当前是 {value!r}（{type(value).__name__}）"
         )
-    if math.isnan(value):
+    # 整数按定义不是 NaN：`math.isnan(10**400)` 抛的是 OverflowError（裸异常 ⇒ 500），
+    # 而区间比较对 int 是精确的，所以 NaN 判据只在 float 档跑。
+    if isinstance(value, float) and math.isnan(value):
         raise DataValidationError(f"{name} 不能是 NaN")
     if value < minimum:
         raise DataValidationError(f"{name} 必须是不小于 {minimum} 的秒数，当前是 {value}")
@@ -176,7 +178,9 @@ def require_positive(name: str, value: Any) -> Optional[float]:
         raise DataValidationError(
             f"{name} 必须是数值，当前是 {value!r}（{type(value).__name__}）"
         )
-    if math.isnan(value):
+    # 整数按定义不是 NaN：`math.isnan(10**400)` 抛的是 OverflowError（裸异常 ⇒ 500），
+    # 而区间比较对 int 是精确的，所以 NaN 判据只在 float 档跑。
+    if isinstance(value, float) and math.isnan(value):
         raise DataValidationError(f"{name} 不能是 NaN")
     if value <= 0:
         raise DataValidationError(f"{name} 必须是大于 0 的数值，当前是 {value}")
@@ -226,7 +230,8 @@ def require_ratio(name: str, value: Any,
         raise DataValidationError(
             f"{name} 必须是数值，当前是 {value!r}（{type(value).__name__}）"
         )
-    if not math.isfinite(value):
+    # 同上：整数不可能是 NaN/无穷，裸 `math.isfinite` 对超大 int 抛 OverflowError
+    if isinstance(value, float) and not math.isfinite(value):
         raise DataValidationError(f"{name} 必须是有限数值，当前是 {'NaN' if math.isnan(value) else '无穷'}")
     if not minimum <= value <= maximum:
         raise DataValidationError(
@@ -993,7 +998,7 @@ def require_within_dir(label: str, value: Any, base: Path) -> Path:
     那个整目录 `shutil.rmtree` 掉，`load_version("../secrets")` 交出目录外的
     `data.json`，`CheckpointManager.create_checkpoint("../../escape", 3)` 把断点
     文件写到 `checkpoint_dir` 之外，`DiskCache(cache_dir=<数据目录>).clear()`
-    连目录里别人的 `*.json` 一起 unlink。
+    连目录里别人的 `*.json` 一起 unlink。L286 补最后一档：名字是 `.` 时落点**就是基座目录本身**（`path_lands_within` 判形状，「相等」也算落在之内），于是 `delete_version(".")` 一次 `rmtree` 掉整个版本根（全部版本 + `history.jsonl` + `current.txt`），而 HTTP 面 `DELETE /api/versions/%2E` 实测能把 `'.'` 原样送进路径参数。
 
     与 `api/deps.py` 的 `resolve_within_roots` 是同一条口径的两个尺度：那一把
     管「HTTP 传入的路径只能落在数据白名单之内」，这一把管「一个**名字**不许
@@ -1001,11 +1006,11 @@ def require_within_dir(label: str, value: Any, base: Path) -> Path:
     调用方**不经过** HTTP 那道闸。
 
     Returns:
-        `base / value` 规范化之后的绝对路径（恒在 `base` 之内）
+        `base / value` 规范化之后的绝对路径（严格落在 `base` 之内，不含 `base` 本身）
 
     Raises:
-        DataValidationError: 名字为空、是绝对路径、含 `..` 组件，或规范化之后
-            落到 `base` 之外（符号链接逃逸）。错误文案**只含名字与目录标签，
+        DataValidationError: 名字为空、是绝对路径、含 `..` 组件，或规范化之后落到
+            `base` 之外（符号链接逃逸）或**就是 `base` 本身**。判据写成两次 `path_lands_within` 而不是 `resolved == root`，是因为 `resolve()` 的扩展长度前缀形状在两次调用之间可以不一致（L273 现量那一格），归一交给权威自己做。错误文案**只含名字与目录标签，
             不含解析后的绝对落点** —— 那是 `INTERNAL_ERROR_DETAIL` 那一族要防的
             部署路径外泄面。
     """
@@ -1019,8 +1024,8 @@ def require_within_dir(label: str, value: Any, base: Path) -> Path:
 
     root = Path(base).resolve()
     resolved = (root / candidate).resolve()
-    if not path_lands_within(root, resolved):
-        raise DataValidationError(f"{label} 不能指向 {base.name} 目录之外")
+    if not path_lands_within(root, resolved) or path_lands_within(resolved, root):
+        raise DataValidationError(f"{label} 不能指向 {base.name} 目录之外或它本身")
     return resolved
 
 
@@ -1181,3 +1186,563 @@ def require_item_text(items: List[Dict], *fields: str,
                     f"当前是 {type(value).__name__}: {repr(value)[:120]}"
                 )
     return items
+
+
+def require_path_segment(label: str, value: Any) -> str:
+    r"""校验「一个可被 URL 寻址的 id 只占一个路径段」，返回原值（A366 / L277）。
+
+    **为什么立这一条**：`augmentor/backup.py` 的备份名由请求方给，它同时是**落盘文件名**
+    和 HTTP 路径段（`DELETE /api/system/backups/{backup_id}`、
+    `POST /api/system/backups/{backup_id}/restore`）。原有的落点判据 `path_lands_within`
+    只管「别写出备份目录之外」，于是 `sub/bak` 这种**落在根内、却含分隔符**的名字完全放行：
+    文件照样建、索引照样登记、`GET /api/system/backups` 照样列得出来，但 Starlette 的
+    `{backup_id}` 只匹配 `[^/]+` ⇒ restore / delete 恒 404（percent 编码成 `sub%2Fdeep` 也一样 404，
+    路由按原始路径切段）。实测形状是「创建回 200、清单里有这一行、这两个入口用尽办法也够不着」——
+    数据不是被拒，是**失踪**。同一格在 Windows 上还多一挡：尾随的点与空白会被文件系统
+    抹掉，落点名 ≠ 回执 id，按回执 id 去寻址同样 404。
+
+    「建得出来却寻不了址」比直接报错危险，因为它把一份看起来成功的持久状态留在了系统里，
+    而所有能操作它的入口都到不了。判据设在**创建那一刻**（名字唯一的出生点），
+    不在路由里补——路由只认 HTTP 面，SDK 与 CLI 用户代码传的同一个名字会走同一条落盘路径。
+
+    拒绝的八档（每档都对应一个「回执与可寻址名不成立」的具体形状）：
+
+    1. 非字符串、空串、纯空白：空名落盘成 `.json`，与目录里其它文件无从区分。
+    2. 含 `/` 或 `\`（**两种都拒，不分平台**）：`/` 在 URL 段里是分隔符，`\` 在 Windows 上
+       是 `os.sep`；POSIX 下它虽然只是普通文件名字符，但一份用 Windows 客户端建的索引
+       拿到 POSIX 上读就是两套读法，跨平台的 id 面按更严的一边收。
+    3. `.` 与 `..`：单点/双点各自都是「相对父目录」的写法，`..` 会走出备份目录。
+    4. `#` 与 `?`：URL 的片段与查询分隔符。实测名字含 `#` 的备份创建 **200**、清单里躺着它，
+       而照回执原样拼 URL 的客户端拿到 restore **405** / delete **404**（`#` 之后整段被客户端
+       当片段丢掉），只有编码成 `frag%23ment` 才寻得着；`?` 在 Windows 上已被文件系统判死
+       （`errno 22` ⇒ 400），在 POSIX 上却是合法文件名 ⇒ 两个平台一套口径，出生时就拒。
+    5. 控制字符（`\x00`—`\x1f`、`\x7f`）：NUL 让 `open()` 直接 `ValueError`，旧归宿是 500。
+    6. 尾随的点或空白：Windows 静默裁剪 ⇒ 落点名与回执 id 不同形。
+    7. 超过 255 字符：单个路径段的长度上限，越界时 `open()` 报 `ENAMETOOLONG`。这一档只是
+       **必要**条件——总长还叠加备份目录那一段，Windows 上更早的一刀由操作系统落下
+       （实测 200 字符可成、240 字符 `errno 22` ⇒ 400，且**不留残骸**），由 L271 的
+       `is_rejected_path_name` 接住，不在这里冒充本闸判的。
+    8. 含 `:`（**同样不分平台**）：Windows 上它不是合法文件名字符，而 `pathlib` 会把名字开头
+       那一段当**盘符前缀**吞掉——实测 `<备份目录> / "C:foo.json"` 的落点是 `foo.json`：
+       回执 id 是 `C:foo`，盘上那份叫 `foo`。同目录里再创建一个 `foo`，两份名字落到同一只
+       文件上，清单里**两行并存**、各自自称一条备份；按 `C:foo` 删除（**200**）会把那只共用文件
+       unlink，剩下的 `foo` 那一行指向已经不存在的文件，恢复它回 **404**——一次跨 id 的数据损毁
+       （与档 2/4 同一族「回执说它在、入口找不到它」，只是坏在盘名而不是 URL）。换别的盘符
+       （`D:evil`）则整个走出备份目录，靠 `path_lands_within` 那道第二线接住（400）；`"C:"`
+       更落到 `.json`，正是档 1 要避免的那个形状。POSIX 上 `C:foo.json` 是合法文件名 ⇒
+       同一个 id 在两个平台上是两个落点，按更严的一边收。
+
+    Args:
+        label: 判决文案里的名称称呼（如「备份名称」），调用方看到的仍是自己写的那一格
+        value: 传入的名字
+
+    Returns:
+        进入时的同一个字符串（不改写、不裁剪、不剥空白——裁剪会造出第二个 id 面）
+
+    Raises:
+        DataValidationError: 八档任一命中。落码沿用既有契约：HTTP 面由 `to_http_error` /
+            `raise_boundary_error` 回 **400** 并把判决原文照回客户端。
+    """
+    if not isinstance(value, str) or is_blank_string(value):
+        raise DataValidationError(f"{label}必须是非空字符串，当前是 {repr(value)[:120]}")
+    if "/" in value or chr(92) in value:
+        raise DataValidationError(f"{label}不能含路径分隔符，否则寻不了址: {value[:120]}")
+    # 冒号档（L279 / A366 的续格）：`pathlib` 把 `C:foo` 当盘符前缀吞掉 ⇒ 落点名 ≠ 回执 id，
+    # 同目录里 `C:foo` 与 `foo` 两份名字落到同一只文件，索引里两行并存，按其中一个 id 删除就毁掉另一条的载荷。
+    if ":" in value:
+        raise DataValidationError(
+            f"{label}不能含冒号：pathlib 会把开头的盘符前缀吞掉，落点名与回执 id 不同: {value[:120]}"
+        )
+    if value in (".", ".."):
+        raise DataValidationError(f"{label}不能是相对父目录的写法: {value}")
+    if "#" in value or "?" in value:
+        raise DataValidationError(
+            f"{label}不能含 URL 结构字符 # 与 ?，它们会把 id 截成前半段: {value[:120]}"
+        )
+    if any(ord(ch) < 32 or ord(ch) == 127 for ch in value):
+        raise DataValidationError(f"{label}不能含控制字符: {repr(value)[:120]}")
+    if value != value.rstrip(" ."):
+        raise DataValidationError(
+            f"{label}不能以点或空白结尾，文件系统会静默裁剪它: {repr(value)[:120]}"
+        )
+    if len(value) > 255:
+        raise DataValidationError(f"{label}超过单个路径段上限 255 字符: {len(value)}")
+    return value
+
+
+# ---------- 模式串（A345 / L278）----------
+
+#: 模式串长度上限。`method="regex"` 的 `query` 是「编译一次、对每条候选字段的值各跑
+#: 一遍 `pattern.search`」的输入，长度直接乘进回溯状态数；改前 `SearchRequest.query`
+#: 是无约束 `str`，实测 200,000 字照收、模型层不拦（A345 由 L267 立项）。
+#: 取 1024 的理由：数据集检索里真正在用的模式（关键词、`.*` 分隔的短语、字段名）在
+#: 几十到几百字符量级，1024 已经容得下把整份小词表写进一个 `(a|b|c|…)` 里；超过它的
+#: 模式串更可能是构造品而不是请求。这一刀只治「长度乘进状态数」那一维，
+#: **不治**形状——`(a+)+b` 只有 7 个字符，所以还需要下面那把静态闸。
+MAX_PATTERN_LENGTH = 1024
+
+#: 组扩展记号里合法的 inline flag 集（`(?aiLmsux-imsx:…)`）。
+_GROUP_FLAGS = "aiLmsux-"
+
+#: 重复计数里合法的数字：`re` 只吃 ASCII 0-9，`str.isdigit()` 会把 `²` 也算数字，
+#: 而 `int("²")` 当场炸 `ValueError`。
+_REPEAT_DIGITS = "0123456789"
+
+
+def _skip_char_class(source: str, start: int) -> Optional[int]:
+    """跳过 `[...]` 字符类，返回 `]` 之后的下标。
+
+    Args:
+        source: 模式串
+        start: `[` 的下标
+
+    Returns:
+        类结束后的下标；**类未闭合**时返回 `None`（语法错交给 `re.compile` 报，
+        本静态闸不下判断）。首位置的 `]` 与 `[^]` 里的 `]` 按 `re` 的口径算字面量。
+
+    类里再出现 `[` 时**不**当成嵌套类：`re` 没有 POSIX 类，`[[:alpha:]]` 在它眼里是
+    字符类 `[:alpha:]` 加一枚字面 `]`（实测 `findall` 在 `"a]:b[c"` 上返回 `['a]']`）。
+    改前这里去找 `]]`，于是把整条模式扫到结尾并回 `None` ⇒ 「类里含 `[`」的指数形
+    （实测 `([ab[]+)+b` 与基准 `(a+)+b` 同曲线）整族漏判。
+    """
+    i = start + 1
+    if source[i:i + 1] == "^":
+        i += 1
+    if source[i:i + 1] == "]":
+        i += 1
+    while i < len(source):
+        ch = source[i]
+        if ch == "\\":
+            i += 2
+            continue
+        if ch == "]":
+            return i + 1
+        i += 1
+    return None
+
+
+def _read_repeat_bound(source: str, start: int) -> Optional[tuple]:
+    """从 `{` 处读一个**重复计数**量词。
+
+    只认 `re` 真正当量词的四种写法：`{n}` / `{n,}` / `{n,m}` / `{,m}`（`{,}` 实测等价
+    `{0,}`）。改前这里用 `int(body)` 收尾，而 `body` 只验过「字符是数字或 `, `」⇒
+    `{1,2,3}` 把 `int("2,3")`、`{ }` 把 `int(" ")` 炸成 `ValueError`：它既不是
+    `DataValidationError` 也不是 `re.error`，`_search_regex` 的 `except re.error`
+    接不住 ⇒ 域外异常逃出产品入口（HTTP 面 500）。
+
+    Args:
+        source: 模式串
+        start: `{` 的下标
+
+    Returns:
+        `(结束下标, 下界, 上界)`，上界 `None` 表示开区间 `{n,}`；**不是合法重复计数**
+        时返回 `None`（`re` 会把 `{` 当字面量：`{}` / `{a}` / `{1, 2}` 这类含空格 /
+        两个逗号 / 非 ASCII 数字）。`{3,2}` 那一形 `re` 直接报错，这里也回 `None`，
+        报错由编译那把闸出声。
+    """
+    end = source.find("}", start + 1)
+    if end < 0 or end - start > 21:
+        return None
+    body = source[start + 1:end]
+    if not body or body.count(",") > 1:
+        return None
+    if any(ch not in _REPEAT_DIGITS and ch != "," for ch in body):
+        return None
+    low, comma, high = body.partition(",")
+    lo = int(low) if low else 0
+    hi = int(high) if high else (None if comma else lo)
+    if hi is not None and hi < lo:
+        return None
+    return end + 1, lo, hi
+
+
+def _read_quantifier(source: str, start: int) -> Optional[tuple]:
+    """读 `start` 处的一个量词，判它的两维。
+
+    两维是本静态闸唯一用到的：
+    - **能重复到 ≥2 次**（`+` / `*` / `{n,}` 含 `{0,}` 与 `{,}` / `{n,m}`(m≥2) / `{k}`(k≥2)）：
+      只有重复到两次以上，组内的可变长才会变成「同一串换一种切法」的组合爆炸。
+      改前开区间还额外要求 `n != 0`，于是把等价于 `*` 的 `{0,}` 打成了不可重复 ⇒
+      `((a+)){0,}b`、`(a+){0,}b` 实测与基准 `(a+)+b` 同曲线（n=14/16/18/20/22 为
+      0.00074/0.00242/0.00864/0.03659/0.14244 秒，每 +2 字 ×4）却整族漏判。
+    - **可变长**（`+` / `*` / `{n,}` / `{n,m}`(m>n)）：切点不唯一才叫可变长。
+      **`?` 与 `{0,1}` / `{,1}` 不算**：`{0,1}` 就是 `?` 的另一写法，它在 CPython 的
+      空匹配推进护栏下实测线性（`(a?)+b` 与 `(a{0,1})+b` 在 22 字上都是 0.00000 秒），
+      把它算进来只会把「本闸明知线性且刻意放行」的那一族变成误伤；`{k}` 是定长，
+      它不产生切点歧义。
+
+    Args:
+        source: 模式串
+        start: 量词起始下标
+
+    Returns:
+        `(结束下标, 能重复到≥2次, 可变长, 量词文本)`；`{` 读不出重复计数时返回 `None`
+        （由调用方按字面量处理）。
+    """
+    ch = source[start]
+    if ch in "+*":
+        return start + 1, True, True, ch
+    if ch == "?":
+        return start + 1, False, False, ch
+    bound = _read_repeat_bound(source, start)
+    if bound is None:
+        return None
+    end, lo, hi = bound
+    text = source[start:end]
+    can_repeat = hi is None or hi >= 2
+    variable = (hi is None or hi > lo) and (lo, hi) != (0, 1)
+    return end, can_repeat, variable, text
+
+
+def _flag_directive_end(source: str, start: int) -> Optional[int]:
+    """`(?aiLmsux)` 这一形（**纯开关指令**，不是包住内容的组）的结束下标。
+
+    `(?i)` 后面没有 `:` 也没有内容，所以它不该推一个组帧进去。改前它落到
+    `_group_extension_end` 的「认不出」支路并回 `None` ⇒ **整条模式放弃判断**，
+    于是一个 5 字符的前缀就绕过了整把静态闸：实测 `(?i)(a+)+b` 与 `(?s)(a*)*c`
+    都是合法正则、读数为 `None`。
+
+    Args:
+        source: 模式串
+        start: `(` 的下标
+
+    Returns:
+        指令之后的下标（`)` 之后）；不是这一形时返回 `None`。
+    """
+    if not source.startswith("(?", start):
+        return None
+    i = start + 2
+    while i < len(source) and source[i] in _GROUP_FLAGS:
+        i += 1
+    if i == start + 2 or source[i:i + 1] != ")":
+        return None
+    return i + 1
+
+
+def _group_extension_end(source: str, start: int) -> Optional[int]:
+    """跳过 `(?` 之后的组扩展记号，返回记号结束后的下标。
+
+    认得的形状：`(?:` / `(?=` / `(?!` / `(?<=` / `(?<!` / `(?P<name>` / `(?P=name)` /
+    `(?<name>` / `(?flags:`。纯开关指令 `(?flags)` 由 `_flag_directive_end` 先行认走。
+
+    Args:
+        source: 模式串
+        start: `(` 的下标
+
+    Returns:
+        记号之后的下标；普通捕获组直接返回 `(` 之后。**认不出来**时返回 `start + 2`，
+        即把 `(?` 当成一个普通组的开头**继续扫**；只有「名字没写完就到底」
+        （`(?P<` / `(?<x` 缺 `>`）才返回 `None` 让调用方不下判断。
+
+        改前认不出就回 `None`，而调用方据此**放弃整条模式** ⇒ 攻击者在危险形状前面
+        挂一枚合法但不认识的扩展记号就能废掉整把闸：实测 `()(?(1)a)(a+)+b` 与
+        `(?i)(a+)+b` 都是合法正则、改前读数都是 `None`。按组开头继续扫不会让栈失衡
+        （吃掉的 `(` 总有一个 `)` 来配），所以「认不出」只可能变成「这一形判得不准」，
+        不可能再变成「整条不判」。
+    """
+    if not source.startswith("(?", start):
+        return start + 1
+    i = start + 2
+    head = source[i:i + 1]
+    if head == "P":
+        i += 1
+        marker = source[i:i + 1]
+        if marker == "<":
+            end = source.find(">", i)
+            return None if end < 0 else end + 1
+        if marker == "=":
+            return i + 1
+        return start + 2
+    if head in ("=", "!"):
+        return i + 1
+    if head == "<":
+        nxt = source[i + 1:i + 2]
+        if nxt in ("=", "!"):
+            return i + 2
+        end = source.find(">", i)
+        return None if end < 0 else end + 1
+    while i < len(source) and source[i] in _GROUP_FLAGS:
+        i += 1
+    if source[i:i + 1] == ":":
+        return i + 1
+    return start + 2
+
+
+def find_repeated_ambiguous_group(source: str) -> Optional[tuple]:
+    r"""静态找出「**可变长的组被重复到 ≥2 次**」这一族形状（栈式单遍扫描）。
+
+    判据：一个括号组在它的某条路径上含可变长片段（`x+` / `x*` / `x{n,}` / `x{n,m}`(m>n)，
+    或一个本身可变长的子组），而它自己又被能重复到 ≥2 次的量词套住 ⇒ 判危险。
+    `(a+)+b`、`(.*)*c`、`(a*){2,}`、`((a+))+`、`(a|a+)+b`、`(\w+\s?)*`、`([0-9]+)+x`
+    都在这一族里；`(foo|bar)+`、`(abc){3}`、`(?:\d{2}){4}`、`colou?r` 不在。
+
+    复杂度对**模式串本身**线性（每个字符至多看两次），不看语料、不跑 `re` 引擎，
+    所以它自己不可能成为新的 DoS 面。
+
+    Args:
+        source: 模式串（调用方给的字面量，未经编译）
+
+    Returns:
+        命中标记形状时返回 `(组的起始列, 组内可变长片段, 被重复的那个片段, 量词文本)`；
+        无命中返回 `None`。`None` 里还混着**极少数**「扫不下去就不下判断」的形状：
+        括号不配对、字符类未闭合、组名没写完就到底、结尾裸反斜杠——它们全都同时是
+        `re.compile` 的语法错，所以到不了匹配那一步。认不出的 `(?` 扩展**不在**这一列
+        （改前在，于是一枚扩展记号就能废掉整把闸，见 `_group_extension_end`）。
+    """
+    root = {"col": -1, "ambiguous": None, "unit": None}
+    stack = [root]
+    i = 0
+    n = len(source)
+    while i < n:
+        ch = source[i]
+        frame = stack[-1]
+        if ch == "\\":
+            if i + 1 >= n:
+                return None
+            frame["unit"] = (False, False, source[i:i + 2], i, None)
+            i += 2
+            continue
+        if ch == "[":
+            end = _skip_char_class(source, i)
+            if end is None:
+                return None
+            frame["unit"] = (False, False, source[i:end], i, None)
+            i = end
+            continue
+        if ch == "(":
+            if source.startswith("(?#", i):
+                end = source.find(")", i + 4)
+                if end < 0:
+                    return None
+                frame["unit"] = (False, False, source[i:end], i, None)
+                i = end + 1
+                continue
+            directive = _flag_directive_end(source, i)
+            if directive is not None:
+                frame["unit"] = (False, False, source[i:directive], i, None)
+                i = directive
+                continue
+            end = _group_extension_end(source, i)
+            if end is None:
+                return None
+            stack.append({"col": i, "ambiguous": None, "unit": None})
+            i = end
+            continue
+        if ch == ")":
+            if len(stack) == 1:
+                return None
+            closed = stack.pop()
+            group_src = source[closed["col"]:i + 1]
+            variable = closed["ambiguous"] is not None
+            parent = stack[-1]
+            if variable and parent["ambiguous"] is None:
+                # 可变长的子组本身就是「父组里那个可变长片段」：`((a+))+` 要在最外层
+                # 那把 `+` 上红，所以父帧的歧义源得从子组继承，不能只认直接写出的量词。
+                parent["ambiguous"] = group_src
+            parent["unit"] = (variable, True, group_src, closed["col"],
+                              closed["ambiguous"])
+            i += 1
+            continue
+        if ch == "|":
+            frame["unit"] = None
+            i += 1
+            continue
+        if ch in "+*?{":
+            quant = _read_quantifier(source, i)
+            if quant is None:
+                frame["unit"] = (False, False, ch, i, None)
+                i += 1
+                continue
+            end, can_repeat, variable, text = quant
+            if frame["unit"] is None:
+                # 前面没有可重复的单元（`^+` 这类）⇒ 语法错，交给 re.compile 报
+                i = end
+                continue
+            was_variable, is_group, unit_src, unit_col, inner_src = frame["unit"]
+            if can_repeat and is_group and was_variable:
+                return (unit_col, inner_src, unit_src, text)
+            if variable:
+                if frame["ambiguous"] is None:
+                    frame["ambiguous"] = inner_src or source[unit_col:end]
+                frame["unit"] = (True, is_group, source[unit_col:end], unit_col,
+                                 inner_src or source[unit_col:end])
+            else:
+                frame["unit"] = (was_variable, is_group, unit_src, unit_col, inner_src)
+            i = end
+            continue
+        frame["unit"] = (False, False, ch, i, None)
+        i += 1
+    if len(stack) != 1:
+        return None
+    return None
+
+
+def require_search_pattern(name: str, value: Any) -> str:
+    """校验「被当成正则模式来用」的入参，返回原串。
+
+    两把静态闸，都在**编译之前**、都不看语料：
+
+    1. 非空字符串：走 `require_string`（`None` / 非串 / 空串 / 纯空白一律拒）。
+       改前 `query=None` 会让 `re.compile` 抛 `TypeError` —— 那是 `except re.error`
+       接不住的域外异常，HTTP 面降成 500 固定文案；空串则是「匹配一切」的隐式全量请求。
+    2. 长度上限 `MAX_PATTERN_LENGTH`，再排掉 `find_repeated_ambiguous_group`
+       认出的「可变长的组被重复」形状。
+
+    这是**缓解不是根除**：它不看语料，所以判的是模式串的形状；换引擎（`re2`）与
+    请求级超时那一半仍待拍（见账本 A345 的判决）。
+
+    Args:
+        name: 参数名，直接出现在报错里
+        value: 传入的值
+
+    Returns:
+        校验通过后的原模式串
+
+    Raises:
+        DataValidationError: 不是非空字符串、超过长度上限，或含被重复的可变长组
+    """
+    text = require_string(name, value)
+    if len(text) > MAX_PATTERN_LENGTH:
+        raise DataValidationError(
+            f"{name} 作为正则模式的长度 {len(text)} 超过上限 {MAX_PATTERN_LENGTH}；"
+            f"模式串长度会乘进每条候选的回溯状态数"
+        )
+    hit = find_repeated_ambiguous_group(text)
+    if hit is not None:
+        col, inner, repeated, quant = hit
+        raise DataValidationError(
+            f"{name} 作为正则模式有指数级回溯风险：第 {col + 1} 列的 {repeated!r} "
+            f"被量词 {quant!r} 重复，而它内部已含可变长片段 {inner!r}；"
+            f"请把内层改成确切计数（`{{k}}`）或把重复挪到组外"
+        )
+    return text
+
+
+#: 电子表格读回时会被当**公式**解释的前导字符（CWE-1236 触发面，A389 于 L287 按拍板① 立案）：
+#: `=` 是公式出生符；`+` / `-` / `@` 在 Excel 与 LibreOffice 里同样把一串字面量当公式或函数调用
+#: 执行（`-2+3` 打开即算、`@SUM(1)` 在 Apple Numbers 与旧版 Excel 里就是函数）；制表与回车前导
+#: 先躲过「以数字或文本开头」的肉眼判断，再被解析器剥掉空白后长成正好那一族形状。
+#: 本常数只有这一处产地，三条 CSV/TSV 写边与 xlsx 写边共引它，谁都不许手抄字符集。
+SHEET_FORMULA_LEADERS = ("=", "+", "-", "@", "\t", "\r")
+
+
+def is_sheet_formula_text(value: Any) -> bool:
+    """这一格会不会被电子表格当成公式执行（判据只此一处，写边不许各自实现）
+
+    只判**字符串**：数字、布尔、`None` 这些原生类型到了表格里就是原生类型，不会长成公式；
+    列表与字典在 xlsx 写边已由 `excel_write.excel_cell` 先 `str()` 化，`"['a']"` 这类字面量
+    不以判据里的任何字符开头，因此不需要在这一层重复处理。
+
+    Args:
+        value: 待写入单元格的值
+
+    Returns:
+        该值是否需要转义
+    """
+    return isinstance(value, str) and value[:1] in SHEET_FORMULA_LEADERS
+
+
+def sheet_text_cell(value: Any) -> Any:
+    """CSV / TSV 写边的转义：会被执行的字面串前面加一个单引号，其余原样返回
+
+    为什么 CSV 只能加前缀：纯文本容器里没有「类型」这一维，`"=1+1"` 加引号也一样是公式，
+    客户端唯一认的既有约定就是前导单引号（Excel / LibreOffice / Numbers 都把它当「这是文本」
+    的标记而不显示出来）。**这一改写会进交付字节**：读回那份 CSV 拿到的是 `'=1+1`，
+    这是 A389 拍板① 明确接受的面，不是疏漏。xlsx 那侧相反，见 `is_sheet_formula_text`
+    在 `excel_write` 里的用法——它有真正的类型位可改，因此一个字都不必加。
+
+    Args:
+        value: 待写入 CSV / TSV 某一格的值
+
+    Returns:
+        转义后的值（需要转义时为带前导单引号的新字符串，否则是进入时的同一个对象）
+    """
+    return "'" + value if is_sheet_formula_text(value) else value
+
+
+def sheet_text_row(row: Dict[str, Any]) -> Dict[str, Any]:
+    """整行的**值**过 `sheet_text_cell`，键一字不动，返回新字典（不改调用方的记录）
+
+    键不在本轮的判据面里：给表头加前导单引号会改变列名，而列名是读回侧用来配行的键——
+    一处转义就得两处同步，否则 `csv.DictWriter` 报 extraneous keys。那一面量到之后另立
+    待拍格处置（卷二 A391），这里刻意不顺手。
+
+    Args:
+        row: 一条对象记录
+
+    Returns:
+        新字典：键与进入时同序同值，值按 `sheet_text_cell` 过一遍
+    """
+    return {key: sheet_text_cell(item) for key, item in row.items()}
+
+
+# ---------------------------------------------------------------------------
+# 电子表格容器的解压放大判据（A390 · CWE-409）
+# ---------------------------------------------------------------------------
+
+#: 一个 zip 容器（xlsx 就是一个 zip）解压后允许的最大字节数：512 MiB。
+#: 三条阈值一起定标，读数全部是本轮现量（样本构造与逐格数字见卷二 L288 块）：合法侧
+#: 20000 行 × 50 列同字符填满的工作簿解压后 83.8 MiB，炸弹侧 114.4 MiB 与 1525.9 MiB
+#: ⇒ 上限给「真而大」的档案留 6 倍余地，同时把单次展开量钉在上传上限
+#: （`web.max_upload_bytes` 默认 256 MiB，量的是**压缩后**）的两倍以内。
+MAX_SHEET_EXPANDED_BYTES = 512 * 1024 * 1024
+
+#: 允许的最大解压比率（解压后字节 ÷ 压缩字节）：100。合法侧现量最高 36.9，炸弹侧现量
+#: 最低 1025.4 ⇒ 两侧各留一个数量级的余地。比率只在解压后尺寸超过下面那道地板时才判。
+MAX_SHEET_EXPANSION_RATIO = 100.0
+
+#: 比率判据的地板：解压后不足 32 MiB 的容器**不判比率**。少了这道地板，一个 4 MiB 的
+#: 工作簿（同字符填满那种天然比率就在 1000 以上）会被拒，而它整个展开完也只占 4 MiB
+#: 内存。比率是「放大」的度量，能吃到内存的只有放大之后的绝对量。
+MIN_SHEET_RATIO_JUDGMENT_BYTES = 32 * 1024 * 1024
+
+
+def sheet_expansion_verdict(compressed: int, expanded: int, name: str, face: str) -> None:
+    """按「解压后尺寸 + 解压比率」两条臂判一份容器会不会放大成灾，超阈值就抛
+
+    两条臂一起用是这一格的拍板，各自管一种形状：上限那一臂管「怎么压都会吃光内存」的
+    绝对量（炸弹侧现量 1525.9 MiB），比率那一臂管「压缩体很小但展开很大」的相对量
+    （同族另一格 114.4 MiB 在上限之下，只有比率读得出它）。比率带地板，理由见
+    `MIN_SHEET_RATIO_JUDGMENT_BYTES`。
+
+    `face` 不是装饰：同一对判据要跑两遍，第一遍读**中央目录声明**的尺寸（不碰压缩流，
+    诚实声明的炸弹在这一步就停下），第二遍读**实际解压出来的字节数**（中央目录可以谎报
+    声明尺寸，实测谎报档在只查声明值的那一臂上是能过闸的，见 `safe_sheet_source` 的
+    docstring）。抛出的文案点名是哪一遍读到的，调用方因此分得清「档案自己招了」和
+    「档案撒了谎」。
+
+    抛 `DataValidationError` 而不是新立一档：这条判据的语义正是那句 docstring 里的
+    「取值越界」，而它在门口拿到的归宿（`api/deps.py::to_http_error` 的 `ValueError`
+    支 ⇒ 400 且原文照回）与既有 Excel 读边的拒收同形。新立类型要动 `__all__` 与异常
+    契约那把尺子的面，收益为零。
+
+    Args:
+        compressed: 压缩字节数（本轮量到的是中央目录里各员压缩尺寸之和）
+        expanded: 解压后字节数（声明值或实际读出的字节数，取决于 `face` 那一遍）
+        name: 容器名，只进报错文案
+        face: 这一遍读数的来源，进报错文案（「中央目录声明」/「实际字节流」）
+
+    Raises:
+        DataValidationError: 超过上限，或（解压后大于地板且）比率超过上限
+    """
+    over_ceiling = expanded > MAX_SHEET_EXPANDED_BYTES
+    over_ratio = (
+        expanded > MIN_SHEET_RATIO_JUDGMENT_BYTES
+        and expanded > compressed * MAX_SHEET_EXPANSION_RATIO
+    )
+    if not (over_ceiling or over_ratio):
+        return
+    mib = 1024 * 1024
+    reason = (
+        f"解压后 {expanded / mib:.1f} MiB 超过上限 {MAX_SHEET_EXPANDED_BYTES // mib} MiB"
+        if over_ceiling else
+        f"压缩 {compressed / mib:.1f} MiB 却解压出 {expanded / mib:.1f} MiB，"
+        f"比率 {expanded / max(compressed, 1):.1f} 超过上限 "
+        f"{MAX_SHEET_EXPANSION_RATIO:.0f}（解压后已大于地板 "
+        f"{MIN_SHEET_RATIO_JUDGMENT_BYTES // mib} MiB）"
+    )
+    raise DataValidationError(
+        f"{name} 的{face}读数：{reason}。电子表格容器解压放大超过判据，"
+        f"请拆小工作簿或改交 CSV（三条阈值住 `augmentor/validation.py`，"
+        f"本轮现量定标见循环账本 L288）"
+    )
