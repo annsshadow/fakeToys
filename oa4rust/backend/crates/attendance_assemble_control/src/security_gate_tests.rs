@@ -28,6 +28,7 @@
 //! 并在落笔回读里钉住 `checked=true`，防止口径回退再次引入 42883。
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod security_gate_tests {
     use axum::extract::{Extension, Json, Path};
     use deadpool_postgres::tokio_postgres::{Config, NoTls};

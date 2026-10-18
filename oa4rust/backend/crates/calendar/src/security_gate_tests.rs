@@ -9,6 +9,7 @@
 //! 属主门禁需先查库取 createor，故 DB 门控：有库时种真实行断言非属主 403、
 //! 属主放行、create 属主取会话；无库时跳过（与 meeting_assemble_control u2 先例一致）。
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod security_gate_tests {
     use axum::extract::Extension;
     use shared::error::AppError;

@@ -12,6 +12,7 @@
 //! （login/logout 只动内存 TOKEN_STORE，不应加会话门），按口径不动。
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod security_gate_tests {
     use axum::extract::{Extension, Json};
     use deadpool_postgres::tokio_postgres::{Config, NoTls};

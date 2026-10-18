@@ -13,6 +13,7 @@
 //!
 //! 归属臂需真实 PostgreSQL：`cargo test --lib -p jpush_assemble_control -- --ignored`
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod security_gate_tests {
     use axum::extract::{Extension, Path};
     use axum::Json;

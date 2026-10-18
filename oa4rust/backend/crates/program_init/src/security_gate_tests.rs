@@ -9,6 +9,7 @@
 //! 原本在查询出错时 `.unwrap_or(false)` fail-open，即 DB 抖动时匿名可重写密钥——已改 fail-closed。
 //! 修复后写族仅 admin（无 DB 时 `is_admin` fail-closed → 403）。
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod security_gate_tests {
     use axum::extract::Extension;
     use shared::error::AppError;

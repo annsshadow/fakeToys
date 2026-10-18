@@ -14,6 +14,7 @@
 //! （gauge R7 未见），本批不动；若将来挂路由须同档收门。
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod security_gate_tests_b73 {
     use crate::mark_read;
     use axum::extract::Extension;

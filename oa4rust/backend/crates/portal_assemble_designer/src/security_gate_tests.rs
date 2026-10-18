@@ -6,6 +6,7 @@
 //! CSP 允许 `script-src 'self' 'unsafe-eval'`，等价于在受害者门户里执行存储型 JS。
 //! 修复后 create/update/delete 三把写收 admin（无 DB 时 `is_admin` fail-closed → 403）。
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod security_gate_tests {
     use axum::extract::Extension;
     use shared::error::AppError;

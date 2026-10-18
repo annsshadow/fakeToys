@@ -13,6 +13,7 @@
 //!
 //! DB 依赖臂：`cargo test --lib -p attendance_assemble_control -- --ignored`
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod security_gate_tests_b63 {
     use axum::extract::{Extension, Json, Path};
     use deadpool_postgres::tokio_postgres::{Config, NoTls};

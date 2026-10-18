@@ -1,6 +1,12 @@
 // Copyright (C) 2026 annsshadow
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+// SSO token 的加/解密与解码一律只回「成不成」：失败细分原因对调用方无用
+// （一律判无效 token），而把它外泄会成为攻击者试格式的 oracle（见下文 v2/3DES
+// 前缀判别那几段），故 `Result<_, ()>` 是本文件的刻意口径。clippy 的
+// `result_unit_err` 在这里按仓库既有 allow 惯例收口，不改成具体错误类型。
+#![allow(clippy::result_unit_err)]
+
 use aes_gcm::aead::{rand_core::RngCore, Aead, OsRng};
 use aes_gcm::{Aes256Gcm, Key, Nonce};
 use base64::{engine::general_purpose::URL_SAFE, Engine as _};

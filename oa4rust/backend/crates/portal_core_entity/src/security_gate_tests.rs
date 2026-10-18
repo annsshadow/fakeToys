@@ -12,6 +12,7 @@
 //! 请求不得进入 SQL 分支）与代码审查；接 DB 后用下面这条命令跑真门：
 //! `cargo test --lib -p portal_core_entity -- --ignored`
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod security_gate_tests {
     use axum::extract::Extension;
     use shared::error::AppError;

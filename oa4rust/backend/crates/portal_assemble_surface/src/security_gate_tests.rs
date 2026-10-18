@@ -6,6 +6,7 @@
 //! 任一登录用户可增删改门户内容或翻转发布开关。修复后仅 admin；无 DB 时
 //! is_admin fail-closed → 非 admin 403。
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod security_gate_tests {
     use axum::extract::Extension;
     use shared::error::AppError;

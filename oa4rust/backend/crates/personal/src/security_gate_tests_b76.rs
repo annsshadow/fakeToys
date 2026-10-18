@@ -16,6 +16,7 @@
 //! 要么补豁免让别名可用（加宽前置面）、要么保持现状，应显式决策。
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod security_gate_tests_b76 {
     use crate::reset::{self, ResetCodeStore};
     use axum::extract::Extension;

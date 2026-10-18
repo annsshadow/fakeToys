@@ -14,6 +14,7 @@
 //!
 //! DB 依赖臂：`cargo test --lib -p processplatform_assemble_designer -- --ignored`
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod security_gate_tests {
     use axum::extract::{Extension, Path};
     use axum::Json;

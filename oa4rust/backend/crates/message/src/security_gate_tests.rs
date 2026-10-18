@@ -5,6 +5,7 @@
 //! 系统消息发布（x_msg_message INSERT）此前任一登录用户可伪造全员可见的系统
 //! 通知。修复后仅 admin 可发布；无 DB 时 is_admin fail-closed → 非 admin 403。
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod security_gate_tests {
     use axum::extract::Extension;
     use shared::error::AppError;

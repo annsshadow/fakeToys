@@ -13,6 +13,7 @@
 //!    证明门确实在库前、且只挡匿名不挡已认证。
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod security_gate_tests_b72 {
     use crate::user_hotpic_delete_by_ids;
     use axum::extract::Extension;

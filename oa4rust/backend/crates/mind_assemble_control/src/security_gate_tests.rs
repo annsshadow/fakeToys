@@ -7,10 +7,12 @@
 //! - `save_folder` / `update_folder` / `folder_move_folderId` / `folder_id_force`
 //!   （INSERT/UPDATE/软删 `x_mind`）→ 会话存在档（`x_mind.creator` 硬写 "system"，
 //!   归属门无意义，至少要求有效会话）。
+//!
 //! 无会话一律 401（先于任何 SQL，离线可证）。
 //!
 //! DB 依赖臂：`cargo test --lib -p mind_assemble_control -- --ignored`
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod security_gate_tests {
     use axum::extract::{Extension, Path};
     use axum::Json;

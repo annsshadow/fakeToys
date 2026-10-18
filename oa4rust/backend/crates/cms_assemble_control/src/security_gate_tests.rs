@@ -9,6 +9,7 @@
 //! 是一条无门的全表权限缓存重刷。按「无属主的系统级数据 = admin」档收口，与 §三.4 的
 //! `dict_edit` / `job_delete` 同族。`is_admin` 无库时 fail-closed，故拒绝侧离线即可证。
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod security_gate_tests {
     use axum::extract::{Extension, Path};
     use axum::Json;
@@ -222,10 +223,10 @@ mod security_gate_tests {
         let ext = || Extension(shared::testing::test_session("u-nonadmin-alias"));
         let p = || Path("x1".to_string());
 
-        let cases: Vec<(
-            &str,
-            Result<Json<shared::response::ActionResult<Value>>, AppError>,
-        )> = vec![
+        /// 这三把 admin 面的统一返回形状：`clippy::type_complexity` 只认别名（对齐 `u2.rs`
+        /// 里 `type ApiResult = Result<Json<ActionResult<Value>>, AppError>;` 的既有先例）。
+        type ApiResult = Result<Json<shared::response::ActionResult<Value>>, AppError>;
+        let cases: Vec<(&str, ApiResult)> = vec![
             (
                 "design_appdict_id_mockdeletetoget",
                 crate::design_appdict_id_mockdeletetoget(Extension(pool.clone()), ext(), p()).await,

@@ -54,7 +54,7 @@ pub async fn send_message(
         .get("conversationId")
         .and_then(|v| v.as_str())
         .unwrap_or_default();
-    if !is_conversation_member(&client, &conversation_id, &sess.person_unique).await? {
+    if !is_conversation_member(&client, conversation_id, &sess.person_unique).await? {
         return Ok(Json(ActionResult::error("not a conversation member")));
     }
     let content = req
@@ -698,7 +698,7 @@ pub async fn im_conversation_mockputtopost(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = req.get("id").and_then(|v| v.as_str()).unwrap_or_default();
-    if !is_conversation_member(&client, &id, &sess.person_unique).await? {
+    if !is_conversation_member(&client, id, &sess.person_unique).await? {
         return Ok(Json(ActionResult::error("not a conversation member")));
     }
     let title = req
@@ -1336,7 +1336,7 @@ pub async fn im_msg(
         .get("conversationId")
         .and_then(|v| v.as_str())
         .unwrap_or_default();
-    if !is_conversation_member(&client, &conversation_id, &sess.person_unique).await? {
+    if !is_conversation_member(&client, conversation_id, &sess.person_unique).await? {
         return Ok(Json(ActionResult::error("not a conversation member")));
     }
     let content = req
@@ -2734,7 +2734,7 @@ pub async fn message_custom_create(
         .get("conversationId")
         .and_then(|v| v.as_str())
         .unwrap_or_default();
-    if !is_conversation_member(&client, &conversation_id, &sess.person_unique).await? {
+    if !is_conversation_member(&client, conversation_id, &sess.person_unique).await? {
         return Ok(Json(ActionResult::error("not a conversation member")));
     }
     let content = req

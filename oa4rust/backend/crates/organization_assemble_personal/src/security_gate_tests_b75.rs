@@ -14,6 +14,7 @@
 //! 用户可改任意 custom 行；本批先抹匿名写面。
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod security_gate_tests_b75 {
     use crate::custom_mockputtopost;
     use axum::extract::Extension;
