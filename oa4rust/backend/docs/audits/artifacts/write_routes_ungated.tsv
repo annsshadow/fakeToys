@@ -203,13 +203,6 @@ message_assemble_communicate	POST	/api/message/assemble/communicate/im/msg/list/
 message_assemble_communicate	POST	/api/message/assemble/communicate/im/msg/list/{page}/size/{size}	im_msg_list_page_size_size	R7
 message_assemble_communicate	POST	/api/message/assemble/communicate/message/list/paging/{page}/size/{size}	message_list_paging_page_size_size	R7
 mind_assemble_control	PUT	/api/mind/assemble/control/mind/filter/list/{id}/next/{page}	mind_filter_list	R7
-mind_core_entity	POST	/api/mind/core/entity/mind	create_mind	R7
-mind_core_entity	POST	/api/mind/core/entity/mind/{id}	update_mind	R7
-mind_core_entity	DELETE	/api/mind/core/entity/mind/{id}	delete_mind	R7
-mind_core_entity	POST	/api/mind/core/entity/folder	create_folder	R7
-mind_core_entity	POST	/api/mind/core/entity/folder/{id}	update_folder	R7
-mind_core_entity	DELETE	/api/mind/core/entity/folder/{id}	delete_folder	R7
-mind_core_entity	POST	/api/mind/core/entity/version	create_version	R7
 organization_assemble_authentication	POST	/api/organization/assemble/authentication/authentication/captcha	captcha_login	R7
 organization_assemble_authentication	POST	/api/organization/assemble/authentication/authentication/two/factory/login	two_factor_login	R7
 organization_assemble_authentication	POST	/api/organization/assemble/authentication/sso	sso_post_login	R7
