@@ -912,7 +912,7 @@ organization_assemble_authentication	POST	/api/organization/assemble/authenticat
 organization_assemble_authentication	POST	/api/organization/assemble/authentication/bind/meta/{meta}	bind_confirm	R5-已认证+体内门禁
 organization_assemble_authentication	POST	/api/organization/assemble/authentication/dingding/bind/{meta}/confirm	dingding_bind_confirm	R5-已认证+体内门禁
 organization_assemble_authentication	POST	/api/organization/assemble/authentication/dingding/info	dingding_info	R7-已认证+体内无会话无门禁
-organization_assemble_authentication	POST	/api/organization/assemble/authentication/oauth/generate/code	oauth_generate_code	R7-已认证+体内无会话无门禁
+organization_assemble_authentication	POST	/api/organization/assemble/authentication/oauth/generate/code	oauth_generate_code	R5-已认证+体内门禁
 organization_assemble_authentication	POST	/api/organization/assemble/authentication/oauth/info	oauth_info_post	R7-已认证+体内无会话无门禁
 organization_assemble_authentication	POST	/api/organization/assemble/authentication/oauth/info/jira	oauth_info_jira_post	R7-已认证+体内无会话无门禁
 organization_assemble_authentication	POST	/api/organization/assemble/authentication/oauth/token	oauth_token_post	R7-已认证+体内无会话无门禁
