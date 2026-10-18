@@ -1219,6 +1219,18 @@ GET 写面队列里 `calendar_assemble_control` 与 `jpush_assemble_control` 各
 
 | 验证（本批代码变更） | — | organization_assemble_personal 整 lib `11 passed / 0 failed / 0 ignored`：新增 `security_gate_tests_b75` 三臂——`b75_writes_reject_without_session`（dead pool + `None` 会话 → `Err(AppError::Unauthorized)`，门在 DB 访问前）+ `b75_writes_accept_valid_session_past_gate`（有效会话 + dead pool → `Err(AppError::Internal)`，证门在库前）+ `b75_require_session_gate_logic`（纯单元）。预存两个路由可达臂（`!= 404` 判据）不受影响（401 ≠ 404）。尺子：**R7 672→671（−1）**、含写 3→**2**（−1，印证 deadpool 字面量写）；复跑 3 次稳定；EXIT 0 |
 
+### 三.76 — personal 密码重置 mock 别名 1 把收会话门（R7 671→670，含写 2→1）
+- **批次目标**：收 personal crate 唯一真写 R7：`POST /api/reset/mockputtopost`（o2server mock-PUT-to-POST 别名，handler `reset::reset_password` → `apply_reset` → `UPDATE auth_person SET password_hash = $1, updated_at = NOW() WHERE id = $2`）。
+- **关键约束与拆法（共享 handler 不能直接动）**：`reset_password` handler 被两条路由共用——PUT `/api/reset`（`AUTH_EXEMPT_PATHS` 在册，自服务重置流程须认证前置可用，匿名流走这条）与 POST 别名（豁免表只列规范路径，别名不在册 ⇒ 中间件要求会话可达）。**若在共享 handler 内加门会打断可用的匿名重置流**，故采用路由级 wrapper：新增 `reset_password_mockputtopost`（会话存在档 + 转调原 handler），注册点由 `post(reset::reset_password)` 换为 wrapper；PUT 规范路径一行未动。
+- **§五 新增决策项（豁免表不对齐）**：mock 别名与规范路径的豁免状态不一致——别名认证-only，对"不能发 PUT 的客户端"形同死路（中间件先 401）。要么给豁免表补 `/api/reset/mockputtopost`（加宽前置面、与 PUT 对齐），要么保持认证-only，应显式决策；本批取"保持认证-only + handler 门"的最保守解。
+- **假阳性判定**：`check_password`（POST /api/reset/check/password，R7）为纯内存密码规则校验，无 DB 访问、无写——false-positive，不收门。
+
+| 门档 | 处理函数 | 路由 / 真写动作 | 加门说明 |
+| --- | --- | --- | --- |
+| 会话档（路由级 wrapper，共享 handler 不动） | `reset_password_mockputtopost`（新）→ `reset_password`/`apply_reset` | POST `/api/reset/mockputtopost`，UPDATE auth_person password_hash | 新增 `reset::require_session`：无会话 401，门置于验证码校验与 DB 访问之前；PUT `/api/reset` 匿名流不受影响 |
+
+| 验证（本批代码变更） | — | personal crate 整 lib `37 passed / 0 failed / 0 ignored`：新增 `security_gate_tests_b76` 四臂——`b76_writes_reject_without_session`（死池+无会话+None → `Err(AppError::Unauthorized)`）+ `b76_writes_accept_valid_session_past_gate`（有效会话+已签发验证码 → 过门后密码/验证码过、落死池 → `Err(AppError::Internal)`，证门在库前）+ `b76_require_session_gate_logic`（纯单元）+ `b76_put_canonical_route_stays_anonymous_capable`（**回归护栏**：PUT `/api/reset` 规范路径经原 handler、无会话仍可达死池 → Internal 而非 401，证明匿名重置流未被打断）。尺子：**R7 671→670（−1）**、含写 2→**1**（−1，印证 deadpool 字面量写）；复跑 3 次稳定；EXIT 0 |
+
 ## 四、验证
 
 
