@@ -22,6 +22,19 @@ pub mod routes;
 
 use entities::{org_bind, org_custom, org_definition, org_group, org_identity, org_person};
 
+/// 安全审计（round4-b80）：org 实体 12 把 sea_orm CRUD 真写收"会话存在档"门禁。
+/// 无会话（Option<Extension<Session>> = None）→ 401，门置于首个 DB 访问
+/// （`ActiveModel::insert/update/delete` / `Entity::find_by_id().one()`）之前，
+/// 杜绝匿名写 org_definition / org_identity / org_custom / org_bind。这些是
+/// sea_orm ORM 写，审计尺子"含写"指标不可见（ORM-blindness，§五 尺子缺陷 28），
+/// R7 降但含写不变属预期。同 crate 的 group/person 6 写路由挂中间件
+/// ADMIN_WRITE_PREFIXES（R1-中间件 admin），不在本批范围。
+fn require_session(
+    session: Option<Extension<shared::session::Session>>,
+) -> Result<shared::session::Session, AppError> {
+    session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
+}
+
 // ── Request structs ──────────────────────────────────────────────────────────
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -348,8 +361,10 @@ pub async fn bind_list(
 #[allow(non_snake_case)]
 pub async fn definition_create(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     Json(req): Json<DefinitionCreateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     if req.name.trim().is_empty() || req.category.trim().is_empty() || req.type_.trim().is_empty() {
         return Ok(Json(ActionResult::error(
             "name, category and type are required",
@@ -381,9 +396,11 @@ pub async fn definition_create(
 #[allow(non_snake_case)]
 pub async fn definition_update(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
     Json(req): Json<DefinitionUpdateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let model = org_definition::Entity::find_by_id(&id)
         .one(&db.0)
         .await
@@ -419,8 +436,10 @@ pub async fn definition_update(
 #[allow(non_snake_case)]
 pub async fn definition_delete(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let model = org_definition::Entity::find_by_id(&id)
         .one(&db.0)
         .await
@@ -538,8 +557,10 @@ pub async fn group_delete(
 #[allow(non_snake_case)]
 pub async fn identity_create(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     Json(req): Json<IdentityCreateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     if req.person_id.trim().is_empty() || req.name.trim().is_empty() || req.type_.trim().is_empty()
     {
         return Ok(Json(ActionResult::error(
@@ -572,9 +593,11 @@ pub async fn identity_create(
 #[allow(non_snake_case)]
 pub async fn identity_update(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
     Json(req): Json<IdentityUpdateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let model = org_identity::Entity::find_by_id(&id)
         .one(&db.0)
         .await
@@ -610,8 +633,10 @@ pub async fn identity_update(
 #[allow(non_snake_case)]
 pub async fn identity_delete(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let model = org_identity::Entity::find_by_id(&id)
         .one(&db.0)
         .await
@@ -727,8 +752,10 @@ pub async fn person_delete(
 #[allow(non_snake_case)]
 pub async fn custom_create(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     Json(req): Json<CustomCreateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     if req.identity_id.trim().is_empty()
         || req.field_name.trim().is_empty()
         || req.field_value.trim().is_empty()
@@ -769,9 +796,11 @@ pub async fn custom_create(
 #[allow(non_snake_case)]
 pub async fn custom_update(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
     Json(req): Json<CustomUpdateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let model = org_custom::Entity::find_by_id(&id)
         .one(&db.0)
         .await
@@ -810,8 +839,10 @@ pub async fn custom_update(
 #[allow(non_snake_case)]
 pub async fn custom_delete(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let model = org_custom::Entity::find_by_id(&id)
         .one(&db.0)
         .await
@@ -833,8 +864,10 @@ pub async fn custom_delete(
 #[allow(non_snake_case)]
 pub async fn bind_create(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     Json(req): Json<BindCreateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     if req.identity_id.trim().is_empty() || req.group_id.trim().is_empty() {
         return Ok(Json(ActionResult::error(
             "identity_id and group_id are required",
@@ -869,9 +902,11 @@ pub async fn bind_create(
 #[allow(non_snake_case)]
 pub async fn bind_update(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
     Json(req): Json<BindUpdateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let model = org_bind::Entity::find_by_id(&id)
         .one(&db.0)
         .await
@@ -912,8 +947,10 @@ pub async fn bind_update(
 #[allow(non_snake_case)]
 pub async fn bind_delete(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let model = org_bind::Entity::find_by_id(&id)
         .one(&db.0)
         .await
@@ -988,6 +1025,8 @@ pub fn organization_core_entity_router(_pool: deadpool_postgres::Pool) -> Router
 mod tests;
 #[cfg(test)]
 mod tests_generated;
+#[cfg(test)]
+mod security_gate_tests_b80;
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::organization_core_entity_router(pool)

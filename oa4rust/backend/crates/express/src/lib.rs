@@ -11,6 +11,16 @@ use shared::{error::AppError, response::ActionResult};
 pub mod batch_query;
 pub mod routes;
 
+/// 安全审计（round4-b71）：快递订阅真写收"会话存在档"门禁。
+/// 无会话（Option<Extension<Session>> = None）→ 401，门置于首个 DB 访问
+/// （`pool.get()`）之前，杜绝匿名写 `x_express_subscribe`（含 body 带入的
+/// 任意 callback 地址）。
+fn require_session(
+    session: Option<Extension<shared::session::Session>>,
+) -> Result<shared::session::Session, AppError> {
+    session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
+}
+
 pub use batch_query::{
     express_group_list, express_identity_list, express_person_list, express_person_with_identity,
     express_person_with_unit, express_role_list, express_unit_list,
@@ -109,8 +119,10 @@ pub async fn list_express_companies(
 
 pub async fn subscribe_express(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Json(payload): Json<ExpressSubscribeRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let code = payload.code.unwrap_or_default();
     let company = payload.company.unwrap_or_default();
     let callback = payload.callback.unwrap_or_default();
@@ -145,3 +157,5 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
 mod tests;
 #[cfg(test)]
 mod tests_generated;
+#[cfg(test)]
+mod security_gate_tests_b71;

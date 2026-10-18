@@ -14,10 +14,21 @@ use shared::response::ActionResult;
 
 pub mod routes;
 
+/// 安全审计（round4-b68）：query_service 两把真写收"会话存在档"门禁。
+/// 无会话（Option<Extension<Session>> = None）→ 401，门置于首个 DB 访问
+/// （`pool.get()`）之前，杜绝匿名写 `x_query_neural_model` / `x_query_processing`。
+fn require_session(
+    session: Option<Extension<shared::session::Session>>,
+) -> Result<shared::session::Session, AppError> {
+    session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
+}
+
 pub async fn neural_generate_model(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(model_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -123,8 +134,10 @@ fn validate_query(query: &str) -> bool {
 #[axum::debug_handler]
 pub async fn processing_execute(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Json(req): Json<ProcessingExecuteRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let query = req.query.unwrap_or_default();
@@ -206,3 +219,5 @@ pub async fn processing_execute(
 mod tests;
 #[cfg(test)]
 mod tests_generated;
+#[cfg(test)]
+mod security_gate_tests_b68;

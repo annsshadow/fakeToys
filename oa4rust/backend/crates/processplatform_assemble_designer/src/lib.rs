@@ -288,9 +288,15 @@ pub async fn designer_bare_list(
 #[allow(non_snake_case)]
 pub async fn save_flow(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十七批：保存流程定义=设计面管理动作，收 admin 档（无会话 401 / 非 admin 403）。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    require_admin_gate(&pool, &sess).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let process_definition: Option<Value> = body
         .get("processDefinition")
@@ -331,8 +337,14 @@ pub async fn save_flow(
 #[allow(non_snake_case)]
 pub async fn delete_flow(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十七批：删除流程定义=设计面管理动作，收 admin 档。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    require_admin_gate(&pool, &sess).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM x_process_definition WHERE id = $1", &[&id])
@@ -1183,9 +1195,15 @@ pub async fn file_id_download(
 #[allow(non_snake_case)]
 pub async fn file_id_upload(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十七批：设计面文件上传=管理动作，收 admin 档。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    require_admin_gate(&pool, &sess).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let content = body
         .get("content")
@@ -1564,9 +1582,15 @@ pub async fn input_prepare_create(
 #[allow(non_snake_case)]
 pub async fn item_access_delete_process_processId_path_path(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     axum::extract::Path(processId): axum::extract::Path<String>,
     axum::extract::Path(path): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十七批：删条目权限=设计面管理动作，收 admin 档。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    require_admin_gate(&pool, &sess).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -2482,9 +2506,14 @@ pub async fn process_id(
 #[allow(non_snake_case)]
 pub async fn process_id_disable(
     pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    // 归属门：进程属主或 admin 可禁用（对齐本 crate guard_write 口径）。
+    if !guard_write(&pool, &session, &client, "pp_e_process", &id).await? {
+        return Ok(Json(ActionResult::error("process not found")));
+    }
     let result = client
         .execute(
             "UPDATE PP_E_PROCESS SET xstatus = 'disabled', \"xupdateTime\" = NOW() WHERE xid = $1",
@@ -2507,9 +2536,14 @@ pub async fn process_id_disable(
 #[allow(non_snake_case)]
 pub async fn process_id_enable(
     pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    // 归属门：进程属主或 admin 可启用（对齐本 crate guard_write 口径）。
+    if !guard_write(&pool, &session, &client, "pp_e_process", &id).await? {
+        return Ok(Json(ActionResult::error("process not found")));
+    }
     let result = client
         .execute(
             "UPDATE PP_E_PROCESS SET xstatus = 'enabled', \"xupdateTime\" = NOW() WHERE xid = $1",
@@ -2778,9 +2812,14 @@ pub async fn process_id_process(
 #[allow(non_snake_case)]
 pub async fn process_id_upgrade(
     pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    // 归属门：进程属主或 admin 可升级版本（对齐本 crate guard_write 口径）。
+    if !guard_write(&pool, &session, &client, "pp_e_process", &id).await? {
+        return Ok(Json(ActionResult::error("process not found")));
+    }
     let result = client
         .execute(
             "UPDATE PP_E_PROCESS SET \"xupdateTime\" = NOW(), xversion = COALESCE(xversion, 0) + 1 WHERE xid = $1",
@@ -3567,6 +3606,8 @@ pub async fn workcompleted_process_processFlag_merge_data(
 mod tests;
 #[cfg(test)]
 mod tests_generated;
+#[cfg(test)]
+mod security_gate_tests;
 
 // ──────────────────────────────────────────────────────────────────────────────
 // plan002 U2 · o2server 端点缺口闭合（51 个）
@@ -4092,8 +4133,14 @@ pub async fn item_access_bach_save(
 #[allow(non_snake_case)]
 pub async fn item_access_delete_exact(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     axum::extract::Path((process_id, path)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十七批：精确删条目权限=设计面管理动作，收 admin 档。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    require_admin_gate(&pool, &sess).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -4878,8 +4925,14 @@ fn dict_spec() -> shared::crud::CrudSpec {
 #[allow(non_snake_case)]
 pub async fn dict_create(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     body: Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A3-N9：应用字典为设计器元数据，写入收 admin 门（无会话 401 / 非 admin 403）。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    require_admin_gate(&pool, &sess).await?;
     let id = shared::crud_create(&pool, &dict_spec(), &body.0).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -4893,9 +4946,15 @@ pub async fn dict_create(
 #[allow(non_snake_case)]
 pub async fn dict_save(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     Path(id): Path<String>,
     body: Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A3-N9：应用字典为设计器元数据，写入收 admin 门。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    require_admin_gate(&pool, &sess).await?;
     let saved = shared::crud_save(&pool, &dict_spec(), &id, &body.0).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -4909,8 +4968,14 @@ pub async fn dict_save(
 #[allow(non_snake_case)]
 pub async fn dict_delete(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A3-N9：应用字典为设计器元数据，写入收 admin 门。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    require_admin_gate(&pool, &sess).await?;
     let deleted = shared::crud_delete(&pool, &dict_spec(), &id).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -4994,8 +5059,14 @@ fn form_spec() -> shared::crud::CrudSpec {
 #[allow(non_snake_case)]
 pub async fn form_create(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     body: Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A3-N9：流程表单为设计器元数据，写入收 admin 门。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    require_admin_gate(&pool, &sess).await?;
     let id = shared::crud_create(&pool, &form_spec(), &body.0).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -5009,9 +5080,15 @@ pub async fn form_create(
 #[allow(non_snake_case)]
 pub async fn form_save(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     Path(id): Path<String>,
     body: Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A3-N9：流程表单为设计器元数据，写入收 admin 门。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    require_admin_gate(&pool, &sess).await?;
     let saved = shared::crud_save(&pool, &form_spec(), &id, &body.0).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -5025,8 +5102,14 @@ pub async fn form_save(
 #[allow(non_snake_case)]
 pub async fn form_delete(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A3-N9：流程表单为设计器元数据，写入收 admin 门。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    require_admin_gate(&pool, &sess).await?;
     let deleted = shared::crud_delete(&pool, &form_spec(), &id).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -5120,8 +5203,14 @@ fn xform_spec() -> shared::crud::CrudSpec {
 #[allow(non_snake_case)]
 pub async fn xform_create(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     body: Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A3-N9：扩展表单为设计器元数据，写入收 admin 门。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    require_admin_gate(&pool, &sess).await?;
     let id = shared::crud_create(&pool, &xform_spec(), &body.0).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -5135,9 +5224,15 @@ pub async fn xform_create(
 #[allow(non_snake_case)]
 pub async fn xform_save(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     Path(id): Path<String>,
     body: Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A3-N9：扩展表单为设计器元数据，写入收 admin 门。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    require_admin_gate(&pool, &sess).await?;
     let saved = shared::crud_save(&pool, &xform_spec(), &id, &body.0).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -5151,8 +5246,14 @@ pub async fn xform_save(
 #[allow(non_snake_case)]
 pub async fn xform_delete(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A3-N9：扩展表单为设计器元数据，写入收 admin 门。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    require_admin_gate(&pool, &sess).await?;
     let deleted = shared::crud_delete(&pool, &xform_spec(), &id).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([

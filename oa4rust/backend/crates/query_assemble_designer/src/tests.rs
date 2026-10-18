@@ -14,6 +14,38 @@ fn build_test_pool() -> Pool {
     Pool::builder(mgr).max_size(1).build().unwrap()
 }
 
+/// 第二十批：admin 档臂与契约臂共用的管理员身份。
+const ADMIN_PERSON: &str = "b20-admin-person";
+/// 归属档臂的两个当事人：属主与旁人。
+const OWNER_PERSON: &str = "b20-owner-person";
+const OTHER_PERSON: &str = "b20-other-person";
+
+/// 按 `shared::middleware::is_admin` 的真实口径幂等造角色链（auth_role.name='admin'），
+/// 不造假列、不绕判定。形如第十八批 `query_service_processing/src/tests.rs` 的同名 seed。
+async fn seed_admin_role(c: &deadpool_postgres::Client) {
+    c.execute(
+        "INSERT INTO auth_role (id, name, disable) VALUES ('b20-role-admin', 'admin', false) \
+         ON CONFLICT (id) DO UPDATE SET name = 'admin', disable = false",
+        &[],
+    )
+    .await
+    .unwrap();
+    c.execute(
+        "INSERT INTO auth_person (id, unique_id, name, password_hash) \
+         VALUES ($1, $1, 'b20 designer admin', 'x') ON CONFLICT (id) DO NOTHING",
+        &[&ADMIN_PERSON.to_string()],
+    )
+    .await
+    .unwrap();
+    c.execute(
+        "INSERT INTO auth_person_role (person_id, role_id, unit_id) \
+         VALUES ($1, 'b20-role-admin', 'b20-unit') ON CONFLICT DO NOTHING",
+        &[&ADMIN_PERSON.to_string()],
+    )
+    .await
+    .unwrap();
+}
+
 #[test]
 fn test_create_designer_action_result_format() {
     let result: ActionResult<serde_json::Value> = ActionResult::success(json!({
@@ -85,7 +117,8 @@ async fn test_create_designer_route_exists() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    // 本批给设计对象写收 admin 门：无会话先于读库回 401（而非原先无门的 500）。
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
 }
 
 #[tokio::test]
@@ -149,7 +182,8 @@ async fn test_save_designer_route_exists() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    // 设计对象写收 admin 门：无会话先于读库回 401。
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
 }
 
 #[tokio::test]
@@ -168,7 +202,8 @@ async fn test_delete_designer_route_exists() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    // 设计对象写收 admin 门：无会话先于读库回 401。
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -226,7 +261,8 @@ async fn test_u2_neural_model_create_route_exists() {
         )
         .await
         .unwrap();
-    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    // 本批给神经模型写收 admin 门：无会话先于读库回 401。
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
 }
 
 #[tokio::test]
@@ -567,7 +603,10 @@ async fn test_v9_neural_model_reset_status_legacy_path_route_exists() {
         )
         .await
         .unwrap();
-    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    // 第二十批加门后本路的无会话读数由 500 变 401。原断言钉的其实不是错误处理，而是
+    // 「这库里连不上 ⇒ handler 必炸」这条既有状态；门插在 `pool.get()` 之前，所以route exists
+    // 现在由 401 作证（与第十七/十八批同类改法一致：断言跟着真实状态码走，注明批次）。
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
 }
 
 #[tokio::test]
@@ -702,7 +741,8 @@ async fn test_v9_table_row_legacy_paths_route_exists() {
         )
         .await
         .unwrap();
-    assert_eq!(insert.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    // 本批给设计表行写收 admin 门：无会话先于读库回 401。
+    assert_eq!(insert.status(), StatusCode::UNAUTHORIZED);
 
     let count_where = crate::router(pool)
         .oneshot(
@@ -912,9 +952,18 @@ async fn table_reload_dynamic_writes_text_update_time_ok() {
     .unwrap();
 
     // 修复前：NOW() 赋给 TEXT 列 → PG 报错 → handler 返回 500；修复后成功
-    let resp = crate::table_reload_dynamic(axum::Extension(pool.clone()))
-        .await
-        .expect("reload handler 不应因 NOW()→TEXT 类型错配而 500");
+    //
+    // 第二十批：`table_reload_dynamic` 现在收 **admin 档**（它无键、按 `WHERE reloaded = false`
+    // 批量改写全表，行上没有可认的单一属主）。本臂证的是「to_char 之后不再类型错配」这条业务语义，
+    // 权限层归下面的 `security_gate_tests` 点名臂管 ⇒ 处置是给测试客户端注入 admin 会话并幂等造
+    // 角色链，**不是**把断言降级（沿用第十八批同族的口径）。
+    seed_admin_role(&c).await;
+    let resp = crate::table_reload_dynamic(
+        axum::Extension(pool.clone()),
+        Some(axum::Extension(shared::testing::test_session(ADMIN_PERSON))),
+    )
+    .await
+    .expect("reload handler 不应因 NOW()→TEXT 类型错配而 500");
     let j = serde_json::to_value(&resp.0).unwrap();
     assert_eq!(j["type"], "success");
 
@@ -949,6 +998,29 @@ async fn input_create_writes_text_create_time_ok() {
     }
     let pool = shared::testing::test_pool();
     let c = pool.get().await.unwrap();
+    // 本批 input_create 收 admin 门（A2-F2）：造 admin 身份供直调。
+    const ADMIN: &str = "u-qd-input-admin";
+    c.execute(
+        "INSERT INTO auth_role (id, name, disable) VALUES ('u-qd-input-role','admin',false) \
+         ON CONFLICT (id) DO UPDATE SET name='admin', disable=false",
+        &[],
+    )
+    .await
+    .unwrap();
+    c.execute(
+        "INSERT INTO auth_person (id, unique_id, name, password_hash) VALUES ($1,$1,'input admin','x') \
+         ON CONFLICT (id) DO NOTHING",
+        &[&ADMIN.to_string()],
+    )
+    .await
+    .unwrap();
+    c.execute(
+        "INSERT INTO auth_person_role (person_id, role_id, unit_id) VALUES ($1,'u-qd-input-role','u') \
+         ON CONFLICT DO NOTHING",
+        &[&ADMIN.to_string()],
+    )
+    .await
+    .unwrap();
     c.execute(
         "CREATE TABLE IF NOT EXISTS x_query_input (id TEXT PRIMARY KEY, content TEXT, creator TEXT, create_time TEXT, update_time TEXT)",
         &[],
@@ -965,6 +1037,7 @@ async fn input_create_writes_text_create_time_ok() {
     // 修复前：NOW() 赋 TEXT 列 → 报错 500；修复后 to_char 字面量成功
     let resp = crate::input_create(
         axum::Extension(pool.clone()),
+        Some(axum::Extension(shared::testing::test_session(ADMIN))),
         axum::Json(serde_json::json!({"content": "u2-input-body"})),
     )
     .await
@@ -991,4 +1064,605 @@ async fn input_create_writes_text_create_time_ok() {
     )
     .await
     .unwrap();
+    // 收口：清本测试造的 admin 身份。
+    c.execute(
+        "DELETE FROM auth_person_role WHERE person_id = $1",
+        &[&ADMIN.to_string()],
+    )
+    .await
+    .unwrap();
+    c.execute(
+        "DELETE FROM auth_person WHERE id = $1",
+        &[&ADMIN.to_string()],
+    )
+    .await
+    .unwrap();
+}
+
+/// 安全审计回归（2026-10 四轮 R4·第二十批）：本 crate 把**物理状态写注册在 GET 上**的一族 14 把
+/// handler（13 条 GET 注册 + 1 条 POST 别名 `neural/model/reset/{modelFlag}/{status}`，后者与 GET
+/// 那把共用 `_core`）。修好写门禁尺子才露出来：它们落在 K3（已认证、handler 不取会话、体内无门禁），
+/// 于是任何登录用户都能按 flag 改他人查询表 / 神经模型的 `status`（build / draft / generating /
+/// learning / idle）与 `reloaded` 位——单据状态伪造，且可批量枚举他人 flag。
+///
+/// 三条取证意图：
+/// ① 无会话 401 必须在 `pool.get()` **之前** ⇒ 用连不上库的 pool 也能证（`b20_get_writes_reject_without_session`）；
+/// ② 归属档由「他人 403 **且不落笔**」与「本人放行」两半共同钉住（`b20_get_writes_owner_gate_lands`）：
+///    只看 403 会漏掉「恒 403 的摆设门」，只看放行会漏掉「谁都能写」，两半缺一不算证；
+///    拒绝侧的落笔凭据是 `update_time` 哨兵串未变，**不看状态码**（handler 未命中行也回 success 壳）。
+/// ③ 空归属与**行不存在**一律只允许 admin——不把数据缺陷洗成权限放行。
+#[cfg(test)]
+mod security_gate_tests {
+    use super::*;
+    use axum::extract::Path;
+
+    const NM_FLAG: &str = "b20-nm-flag-own";
+    const NM_EMPTY_FLAG: &str = "b20-nm-flag-empty";
+    const TB_FLAG: &str = "b20-tb-flag-own";
+    const TB_EMPTY_FLAG: &str = "b20-tb-flag-empty";
+    const TB_QUERY_FLAG: &str = "b20-tb-query-own";
+    const TB_EMPTY_QUERY_FLAG: &str = "b20-tb-empty-query-own";
+    const MISSING_FLAG: &str = "b20-flag-does-not-exist";
+    const SENTINEL: &str = "b20-before";
+
+    fn p(v: &str) -> Path<String> {
+        Path(v.to_string())
+    }
+
+    fn p2(v: &str) -> Path<(String, String)> {
+        Path((v.to_string(), "x".to_string()))
+    }
+
+    /// 14 把逐个具名调用。`person = None` 即「无会话」；表长本身就是本批覆盖面，
+    /// 由 `assert_eq!(cases.len(), 14)` 钉住——少一把（或门漏一把）都会红。
+    async fn call_all(pool: &Pool, person: Option<&str>) -> Vec<(&'static str, Result<(), AppError>)> {
+        let sess = || person.map(|w| Extension(shared::testing::test_session(w)));
+        let ext = || Extension(pool.clone());
+        vec![
+            (
+                "neural_generate_model_modelFlag",
+                crate::neural_generate_model_modelFlag(ext(), sess(), p(NM_FLAG))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "neural_learn_model_modelFlag",
+                crate::neural_learn_model_modelFlag(ext(), sess(), p(NM_FLAG))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "neural_stop_generating_model_modelFlag",
+                crate::neural_stop_generating_model_modelFlag(ext(), sess(), p(NM_FLAG))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "neural_stop_learn_model_modelFlag",
+                crate::neural_stop_learn_model_modelFlag(ext(), sess(), p(NM_FLAG))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "neural_model_modelFlag_reset_status",
+                crate::neural_model_modelFlag_reset_status(ext(), sess(), p(NM_FLAG))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "neural_model_modelFlag_reset_status_p2",
+                crate::neural_model_modelFlag_reset_status_p2(ext(), sess(), p2(NM_FLAG))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "table_query_query_build",
+                crate::table_query_query_build(ext(), sess(), p(TB_QUERY_FLAG))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "table_query_build_dispatch",
+                crate::table_query_build_dispatch(ext(), sess(), p(TB_QUERY_FLAG))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "table_flag_status_build",
+                crate::table_flag_status_build(ext(), sess(), p(TB_FLAG))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "table_flag_status_build_p2",
+                crate::table_flag_status_build_p2(ext(), sess(), p2(TB_FLAG))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "table_flag_status_draft",
+                crate::table_flag_status_draft(ext(), sess(), p(TB_FLAG))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "table_flag_status_draft_p2",
+                crate::table_flag_status_draft_p2(ext(), sess(), p2(TB_FLAG))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "table_build_dispatch_flag",
+                crate::u2_closures::table_build_dispatch_flag(ext(), sess(), p(TB_FLAG))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "table_reload_dynamic",
+                crate::table_reload_dynamic(ext(), sess()).await.map(|_| ()),
+            ),
+        ]
+    }
+
+    /// 只在 `call_all` 之外单列的三格：空归属 ×2 + 行不存在 ×1。
+    async fn call_edge(
+        pool: &Pool,
+        person: Option<&str>,
+    ) -> Vec<(&'static str, Result<(), AppError>)> {
+        let sess = || person.map(|w| Extension(shared::testing::test_session(w)));
+        let ext = || Extension(pool.clone());
+        vec![
+            (
+                "neural_empty_owner",
+                crate::neural_generate_model_modelFlag(ext(), sess(), p(NM_EMPTY_FLAG))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "table_empty_owner",
+                crate::table_flag_status_build(ext(), sess(), p(TB_EMPTY_FLAG))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "table_missing_row",
+                crate::table_flag_status_build(ext(), sess(), p(MISSING_FLAG))
+                    .await
+                    .map(|_| ()),
+            ),
+        ]
+    }
+
+    async fn seed() {
+        let pool = shared::testing::test_pool();
+        let c = pool.get().await.unwrap();
+        unseed().await;
+        // 本臂的 seed 行一律置 `reloaded = true`：`table/reload/dynamic` 是**无键全表写**
+        // （`WHERE reloaded = false`），同 crate 的既有契约臂会跑到它，若本臂的行落在它的射程内，
+        // 「他人 403 且不落笔」那条哨兵会被别的线程改掉——那是测试互相踩，不是门禁失效。
+        c.execute(
+            "INSERT INTO x_query_neural_model (id, name, flag, status, creator, update_time) \
+             VALUES ('b20-nm-own', 'b20 nm', $1, 'generating', $2, $3)",
+            &[
+                &NM_FLAG.to_string(),
+                &OWNER_PERSON.to_string(),
+                &SENTINEL.to_string(),
+            ],
+        )
+        .await
+        .unwrap();
+        c.execute(
+            "INSERT INTO x_query_neural_model (id, name, flag, status, creator, update_time) \
+             VALUES ('b20-nm-empty', 'b20 nm empty', $1, 'generating', '', $2)",
+            &[&NM_EMPTY_FLAG.to_string(), &SENTINEL.to_string()],
+        )
+        .await
+        .unwrap();
+        c.execute(
+            "INSERT INTO x_query_table (id, name, table_flag, query_flag, creator, update_time, status, reloaded) \
+             VALUES ('b20-tb-own', 'b20 tb', $1, $2, $3, $4, 'draft', true)",
+            &[
+                &TB_FLAG.to_string(),
+                &TB_QUERY_FLAG.to_string(),
+                &OWNER_PERSON.to_string(),
+                &SENTINEL.to_string(),
+            ],
+        )
+        .await
+        .unwrap();
+        c.execute(
+            "INSERT INTO x_query_table (id, name, table_flag, query_flag, creator, update_time, status, reloaded) \
+             VALUES ('b20-tb-empty', 'b20 tb empty', $1, $2, '', $3, 'draft', true)",
+            &[
+                &TB_EMPTY_FLAG.to_string(),
+                &TB_EMPTY_QUERY_FLAG.to_string(),
+                &SENTINEL.to_string(),
+            ],
+        )
+        .await
+        .unwrap();
+        seed_admin_role(&c).await;
+    }
+
+    async fn unseed() {
+        let pool = shared::testing::test_pool();
+        let c = pool.get().await.unwrap();
+        c.execute("DELETE FROM x_query_neural_model WHERE id LIKE 'b20-%'", &[])
+            .await
+            .unwrap();
+        c.execute("DELETE FROM x_query_table WHERE id LIKE 'b20-%'", &[])
+            .await
+            .unwrap();
+    }
+
+    async fn sentinel_left() -> Vec<String> {
+        let pool = shared::testing::test_pool();
+        let c = pool.get().await.unwrap();
+        let mut out = Vec::new();
+        for (tbl, col, key) in [
+            ("x_query_neural_model", "flag", NM_FLAG),
+            ("x_query_table", "table_flag", TB_FLAG),
+        ] {
+            let sql = format!("SELECT update_time FROM {tbl} WHERE {col} = $1");
+            let v: Option<String> = c
+                .query_opt(sql.as_str(), &[&key.to_string()])
+                .await
+                .unwrap()
+                .map(|r| r.get::<_, Option<String>>("update_time").unwrap_or_default());
+            if v.as_deref() != Some(SENTINEL) {
+                out.push(format!("{tbl}/{key} => {v:?}"));
+            }
+        }
+        out
+    }
+
+    /// 无会话 → 14 把全 401，且**先于任何读库**：这个 pool 连不上库，读数里出现
+    /// `Internal` 就说明门插在了 `pool.get()` 之后。
+    #[tokio::test]
+    async fn b20_get_writes_reject_without_session() {
+        let pool = build_test_pool();
+        let cases = call_all(&pool, None).await;
+        let bad: Vec<String> = cases
+            .iter()
+            .filter(|(_, r)| !matches!(r, Err(AppError::Unauthorized)))
+            .map(|(k, r)| format!("{k} => {:?}", r.as_ref().err()))
+            .collect();
+        assert!(
+            bad.is_empty(),
+            "以下 GET 写面无会话未回 401（出现 Internal 就是门插在读库之后）：{bad:?}"
+        );
+        assert_eq!(cases.len(), 14, "本批 14 把必须逐把点名，少一把即漏门");
+    }
+
+    /// 真库三段：他人 403 且不落笔 → 本人放行（reload 按设计仍 403）→ admin 全放行；
+    /// 外加空归属与行不存在两格只允许 admin。
+    #[tokio::test]
+    async fn b20_get_writes_owner_gate_lands() {
+        if !shared::testing::is_db_available().await {
+            eprintln!("skipping b20_get_writes_owner_gate_lands: DATABASE_URL not reachable");
+            return;
+        }
+        seed().await;
+
+        let other = call_all(&shared::testing::test_pool(), Some(OTHER_PERSON)).await;
+        let leaked: Vec<String> = other
+            .iter()
+            .filter(|(_, r)| !matches!(r, Err(AppError::Forbidden)))
+            .map(|(k, r)| format!("{k} => {:?}", r.as_ref().err()))
+            .collect();
+        assert!(
+            leaked.is_empty(),
+            "他人会话按 flag 改他人查询表 / 神经模型状态必须 403：{leaked:?}"
+        );
+        assert_eq!(other.len(), 14, "本批 14 把必须逐把点名，少一把即漏门");
+        let written = sentinel_left().await;
+        assert!(
+            written.is_empty(),
+            "他人 403 侧不得落笔（update_time 哨兵应仍为 {SENTINEL}）：{written:?}"
+        );
+
+        let owner = call_all(&shared::testing::test_pool(), Some(OWNER_PERSON)).await;
+        let blocked: Vec<String> = owner
+            .iter()
+            .filter(|(k, r)| {
+                if *k == "table_reload_dynamic" {
+                    // 无键、按条件批量改写全表 ⇒ 按设计收 admin，本人也 403
+                    return !matches!(r, Err(AppError::Forbidden));
+                }
+                r.is_err()
+            })
+            .map(|(k, r)| format!("{k} => {:?}", r.as_ref().err()))
+            .collect();
+        assert!(
+            blocked.is_empty(),
+            "本人 13 把必须放行、reload 必须仍 403（admin 档）：{blocked:?}"
+        );
+
+        let admin = call_all(&shared::testing::test_pool(), Some(ADMIN_PERSON)).await;
+        let denied: Vec<String> = admin
+            .iter()
+            .filter(|(_, r)| r.is_err())
+            .map(|(k, r)| format!("{k} => {:?}", r.as_ref().err()))
+            .collect();
+        assert!(
+            denied.is_empty(),
+            "admin 应能在全部 14 把上放行：{denied:?}"
+        );
+
+        let edge_other = call_edge(&shared::testing::test_pool(), Some(OTHER_PERSON)).await;
+        let edge_admin = call_edge(&shared::testing::test_pool(), Some(ADMIN_PERSON)).await;
+        let wrong: Vec<String> = edge_other
+            .iter()
+            .zip(edge_admin.iter())
+            .filter(|((_, a), (_, b))| !matches!(a, Err(AppError::Forbidden)) || b.is_err())
+            .map(|((k, a), (_, b))| format!("{k} => 他人 {:?} / admin {:?}", a.as_ref().err(), b.as_ref().err()))
+            .collect();
+        assert!(
+            wrong.is_empty(),
+            "空归属与行不存在两格只允许 admin，不得把数据缺陷洗成权限放行：{wrong:?}"
+        );
+        assert_eq!(edge_other.len(), 3, "空归属 ×2 + 行不存在 ×1 必须逐格点名");
+
+        unseed().await;
+    }
+
+    /// 第 37 批回归臂：设计器元数据写（importer / stat 各 create/save/delete，共 6 把）
+    /// 收 admin 门（A3-N9）。离线：无会话 401（先于读库）；非 admin（mock pool fail-closed）403。
+    #[tokio::test]
+    async fn query_designer_meta_writes_require_admin() {
+        use shared::error::AppError;
+        let dead = build_test_pool();
+        let body = || axum::Json(json!({}));
+        let path = || axum::extract::Path("x".to_string());
+
+        // 无会话 → 六把全 401
+        let unauth = [
+            crate::importer_create(axum::Extension(dead.clone()), None, body()).await,
+            crate::importer_save(axum::Extension(dead.clone()), None, path(), body()).await,
+            crate::importer_delete(axum::Extension(dead.clone()), None, path()).await,
+            crate::stat_create(axum::Extension(dead.clone()), None, body()).await,
+            crate::stat_save(axum::Extension(dead.clone()), None, path(), body()).await,
+            crate::stat_delete(axum::Extension(dead.clone()), None, path()).await,
+        ];
+        for (i, r) in unauth.iter().enumerate() {
+            assert!(
+                matches!(r, Err(AppError::Unauthorized)),
+                "第 {i} 把（importer/stat 序）无会话必须 401"
+            );
+        }
+
+        // 非 admin → 六把全 403
+        let s = || Some(axum::Extension(shared::testing::test_session("u-qd-nobody")));
+        let forbidden = [
+            crate::importer_create(axum::Extension(dead.clone()), s(), body()).await,
+            crate::importer_save(axum::Extension(dead.clone()), s(), path(), body()).await,
+            crate::importer_delete(axum::Extension(dead.clone()), s(), path()).await,
+            crate::stat_create(axum::Extension(dead.clone()), s(), body()).await,
+            crate::stat_save(axum::Extension(dead.clone()), s(), path(), body()).await,
+            crate::stat_delete(axum::Extension(dead.clone()), s(), path()).await,
+        ];
+        for (i, r) in forbidden.iter().enumerate() {
+            assert!(
+                matches!(r, Err(AppError::Forbidden)),
+                "第 {i} 把（importer/stat 序）非 admin 必须 403"
+            );
+        }
+    }
+
+    /// 第 40 批回归臂：设计对象 + DDL 族（create/save/delete designer 及裸别名、
+    /// create/update/execute table definition）收 admin 门（A2-F1/F2/F3）。
+    /// 离线：无会话 401（先于读库）；非 admin（mock pool fail-closed）403。
+    #[tokio::test]
+    async fn query_designer_design_writes_require_admin() {
+        use shared::error::AppError;
+        let dead = build_test_pool();
+        let jbody = || axum::Json(json!({"name": "x"}));
+        let dbody = || {
+            axum::Json(crate::CreateDesignerRequest {
+                name: Some("x".to_string()),
+                query: None,
+                category: None,
+            })
+        };
+        let path = || axum::extract::Path("f".to_string());
+
+        let unauth = [
+            crate::create_designer(axum::Extension(dead.clone()), None, dbody()).await,
+            crate::save_designer(axum::Extension(dead.clone()), None, path(), dbody()).await,
+            crate::delete_designer(axum::Extension(dead.clone()), None, path()).await,
+            crate::save_designer_bare(axum::Extension(dead.clone()), None, jbody()).await,
+            crate::delete_designer_bare(axum::Extension(dead.clone()), None, jbody()).await,
+            crate::create_table_definition(axum::Extension(dead.clone()), None, jbody()).await,
+            crate::update_table_definition(axum::Extension(dead.clone()), None, path(), jbody())
+                .await,
+            crate::execute_table_definition(axum::Extension(dead.clone()), None, path()).await,
+        ];
+        for (i, r) in unauth.iter().enumerate() {
+            assert!(
+                matches!(r, Err(AppError::Unauthorized)),
+                "第 {i} 把（设计对象/DDL 序）无会话必须 401"
+            );
+        }
+
+        let s = || Some(axum::Extension(shared::testing::test_session("u-qd-design-nobody")));
+        let forbidden = [
+            crate::create_designer(axum::Extension(dead.clone()), s(), dbody()).await,
+            crate::save_designer(axum::Extension(dead.clone()), s(), path(), dbody()).await,
+            crate::delete_designer(axum::Extension(dead.clone()), s(), path()).await,
+            crate::save_designer_bare(axum::Extension(dead.clone()), s(), jbody()).await,
+            crate::delete_designer_bare(axum::Extension(dead.clone()), s(), jbody()).await,
+            crate::create_table_definition(axum::Extension(dead.clone()), s(), jbody()).await,
+            crate::update_table_definition(axum::Extension(dead.clone()), s(), path(), jbody()).await,
+            crate::execute_table_definition(axum::Extension(dead.clone()), s(), path()).await,
+        ];
+        for (i, r) in forbidden.iter().enumerate() {
+            assert!(
+                matches!(r, Err(AppError::Forbidden)),
+                "第 {i} 把（设计对象/DDL 序）非 admin 必须 403"
+            );
+        }
+    }
+
+    /// 第 41 批回归臂：u2_closures 设计对象（statement / stat / view 的 create/edit/permission）
+    /// 收 admin 门（A2-F1）。离线：无会话 401（先于读库）；非 admin（mock pool fail-closed）403。
+    #[tokio::test]
+    async fn query_designer_u2_design_writes_require_admin() {
+        use shared::error::AppError;
+        let dead = build_test_pool();
+        let body = || axum::Json(json!({"name": "x"}));
+        let path = || axum::extract::Path("f".to_string());
+
+        let unauth = [
+            crate::u2_closures::statement_create(axum::Extension(dead.clone()), None, body()).await,
+            crate::u2_closures::statement_edit(axum::Extension(dead.clone()), None, path(), body())
+                .await,
+            crate::u2_closures::statement_permission(
+                axum::Extension(dead.clone()),
+                None,
+                path(),
+                body(),
+            )
+            .await,
+            crate::u2_closures::stat_create(axum::Extension(dead.clone()), None, body()).await,
+            crate::u2_closures::stat_edit(axum::Extension(dead.clone()), None, path(), body()).await,
+            crate::u2_closures::view_create(axum::Extension(dead.clone()), None, body()).await,
+            crate::u2_closures::view_edit(axum::Extension(dead.clone()), None, path(), body()).await,
+        ];
+        for (i, r) in unauth.iter().enumerate() {
+            assert!(
+                matches!(r, Err(AppError::Unauthorized)),
+                "第 {i} 把（u2 设计对象序）无会话必须 401"
+            );
+        }
+
+        let s = || Some(axum::Extension(shared::testing::test_session("u-qd-u2-nobody")));
+        let forbidden = [
+            crate::u2_closures::statement_create(axum::Extension(dead.clone()), s(), body()).await,
+            crate::u2_closures::statement_edit(axum::Extension(dead.clone()), s(), path(), body())
+                .await,
+            crate::u2_closures::statement_permission(
+                axum::Extension(dead.clone()),
+                s(),
+                path(),
+                body(),
+            )
+            .await,
+            crate::u2_closures::stat_create(axum::Extension(dead.clone()), s(), body()).await,
+            crate::u2_closures::stat_edit(axum::Extension(dead.clone()), s(), path(), body()).await,
+            crate::u2_closures::view_create(axum::Extension(dead.clone()), s(), body()).await,
+            crate::u2_closures::view_edit(axum::Extension(dead.clone()), s(), path(), body()).await,
+        ];
+        for (i, r) in forbidden.iter().enumerate() {
+            assert!(
+                matches!(r, Err(AppError::Forbidden)),
+                "第 {i} 把（u2 设计对象序）非 admin 必须 403"
+            );
+        }
+    }
+
+    /// 第 42 批回归臂：设计表行数据族（table/row/*）、importmodel、neural、input、icon
+    /// 共 12 把收 admin 门（A2-F2）。离线：无会话 401；非 admin（mock pool）403。
+    #[tokio::test]
+    async fn query_designer_data_and_meta_writes_require_admin() {
+        use shared::error::AppError;
+        let dead = build_test_pool();
+        let jbody = || axum::Json(json!({"name": "x"}));
+        let p1 = || axum::extract::Path("f".to_string());
+        let p2 = || axum::extract::Path(("f".to_string(), "r".to_string()));
+
+        let unauth = [
+            crate::table_tableFlag_row_delete_all(axum::Extension(dead.clone()), None, p1()).await,
+            crate::table_tableFlag_row_save(axum::Extension(dead.clone()), None, p1(), jbody()).await,
+            crate::neural_model(axum::Extension(dead.clone()), None, jbody()).await,
+            crate::input_cover(axum::Extension(dead.clone()), None, jbody()).await,
+            crate::input_create(axum::Extension(dead.clone()), None, jbody()).await,
+            crate::input_prepare_create(axum::Extension(dead.clone()), None, jbody()).await,
+            crate::u2_closures::table_tableFlag_row_insert(
+                axum::Extension(dead.clone()),
+                None,
+                p1(),
+                jbody(),
+            )
+            .await,
+            crate::u2_closures::table_tableFlag_row_update(
+                axum::Extension(dead.clone()),
+                None,
+                p2(),
+                jbody(),
+            )
+            .await,
+            crate::u2_closures::importmodel_create(axum::Extension(dead.clone()), None, jbody())
+                .await,
+            crate::u2_closures::importmodel_edit(
+                axum::Extension(dead.clone()),
+                None,
+                p1(),
+                jbody(),
+            )
+            .await,
+            crate::u2_closures::neural_update_model_modelFlag(
+                axum::Extension(dead.clone()),
+                None,
+                p1(),
+                jbody(),
+            )
+            .await,
+            crate::u2_closures::query_set_icon(
+                axum::Extension(dead.clone()),
+                None,
+                p1(),
+                jbody(),
+            )
+            .await,
+        ];
+        for (i, r) in unauth.iter().enumerate() {
+            assert!(
+                matches!(r, Err(AppError::Unauthorized)),
+                "第 {i} 把（数据/元数据序）无会话必须 401"
+            );
+        }
+
+        let s = || Some(axum::Extension(shared::testing::test_session("u-qd-data-nobody")));
+        let forbidden = [
+            crate::table_tableFlag_row_delete_all(axum::Extension(dead.clone()), s(), p1()).await,
+            crate::table_tableFlag_row_save(axum::Extension(dead.clone()), s(), p1(), jbody()).await,
+            crate::neural_model(axum::Extension(dead.clone()), s(), jbody()).await,
+            crate::input_cover(axum::Extension(dead.clone()), s(), jbody()).await,
+            crate::input_create(axum::Extension(dead.clone()), s(), jbody()).await,
+            crate::input_prepare_create(axum::Extension(dead.clone()), s(), jbody()).await,
+            crate::u2_closures::table_tableFlag_row_insert(
+                axum::Extension(dead.clone()),
+                s(),
+                p1(),
+                jbody(),
+            )
+            .await,
+            crate::u2_closures::table_tableFlag_row_update(
+                axum::Extension(dead.clone()),
+                s(),
+                p2(),
+                jbody(),
+            )
+            .await,
+            crate::u2_closures::importmodel_create(axum::Extension(dead.clone()), s(), jbody())
+                .await,
+            crate::u2_closures::importmodel_edit(axum::Extension(dead.clone()), s(), p1(), jbody())
+                .await,
+            crate::u2_closures::neural_update_model_modelFlag(
+                axum::Extension(dead.clone()),
+                s(),
+                p1(),
+                jbody(),
+            )
+            .await,
+            crate::u2_closures::query_set_icon(axum::Extension(dead.clone()), s(), p1(), jbody())
+                .await,
+        ];
+        for (i, r) in forbidden.iter().enumerate() {
+            assert!(
+                matches!(r, Err(AppError::Forbidden)),
+                "第 {i} 把（数据/元数据序）非 admin 必须 403"
+            );
+        }
+    }
 }

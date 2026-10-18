@@ -34,7 +34,7 @@ pub mod storage;
 pub mod testing;
 
 pub use crate::error::AppError;
-pub use crud::{crud_create, crud_delete, crud_save, CrudSpec};
+pub use crud::{crud_create, crud_delete, crud_delete_owned, crud_save, crud_save_owned, CrudSpec};
 pub use deadpool_postgres::Pool;
 pub use rate_limit::RateLimiter;
 pub use session::SessionManager;

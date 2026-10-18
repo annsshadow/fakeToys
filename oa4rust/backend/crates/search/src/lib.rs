@@ -230,6 +230,46 @@ mod tests {
         assert_eq!(json["id"], "msg-1");
         assert_eq!(json["content"], "消息内容");
     }
+
+    /// 第 36 批回归臂：ftsearch 写面（create/save/delete）收 admin 门（A3-N9）。
+    /// 离线：无会话 → 401（先于读库）；非 admin（mock pool fail-closed）→ 403。
+    #[tokio::test]
+    async fn test_ftsearch_writes_require_admin() {
+        use axum::extract::Extension;
+        use shared::error::AppError;
+        let dead = build_test_pool();
+        let path = || axum::extract::Path("x".to_string());
+        let body = || axum::Json(serde_json::json!({}));
+
+        // 无会话：三把全 401（门先于 crud 的 pool.get()）
+        assert!(matches!(
+            crate::ftsearch_create(Extension(dead.clone()), None, body()).await,
+            Err(AppError::Unauthorized)
+        ));
+        assert!(matches!(
+            crate::ftsearch_save(Extension(dead.clone()), None, path(), body()).await,
+            Err(AppError::Unauthorized)
+        ));
+        assert!(matches!(
+            crate::ftsearch_delete(Extension(dead.clone()), None, path()).await,
+            Err(AppError::Unauthorized)
+        ));
+
+        // 非 admin（mock pool 下 is_admin fail-closed）：三把全 403
+        let s = || Some(Extension(shared::testing::test_session("u-ftsearch-nobody")));
+        assert!(matches!(
+            crate::ftsearch_create(Extension(dead.clone()), s(), body()).await,
+            Err(AppError::Forbidden)
+        ));
+        assert!(matches!(
+            crate::ftsearch_save(Extension(dead.clone()), s(), path(), body()).await,
+            Err(AppError::Forbidden)
+        ));
+        assert!(matches!(
+            crate::ftsearch_delete(Extension(dead.clone()), s(), path()).await,
+            Err(AppError::Forbidden)
+        ));
+    }
 }
 
 /// PostgreSQL full-text document search that preserves the endpoint's
@@ -307,8 +347,16 @@ fn ftsearch_spec() -> shared::crud::CrudSpec {
 #[allow(non_snake_case)]
 pub async fn ftsearch_create(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     body: Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A3-N9：搜索文档索引为系统数据，写入收 admin 门（无会话 401 / 非 admin 403）。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    if !shared::middleware::is_admin(&pool, &sess.person_unique).await {
+        return Err(AppError::Forbidden);
+    }
     let id = shared::crud_create(&pool, &ftsearch_spec(), &body.0).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -322,9 +370,17 @@ pub async fn ftsearch_create(
 #[allow(non_snake_case)]
 pub async fn ftsearch_save(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
     body: Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A3-N9：搜索文档索引为系统数据，写入收 admin 门。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    if !shared::middleware::is_admin(&pool, &sess.person_unique).await {
+        return Err(AppError::Forbidden);
+    }
     let saved = shared::crud_save(&pool, &ftsearch_spec(), &id, &body.0).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -338,8 +394,16 @@ pub async fn ftsearch_save(
 #[allow(non_snake_case)]
 pub async fn ftsearch_delete(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A3-N9：搜索文档索引为系统数据，写入收 admin 门。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    if !shared::middleware::is_admin(&pool, &sess.person_unique).await {
+        return Err(AppError::Forbidden);
+    }
     let deleted = shared::crud_delete(&pool, &ftsearch_spec(), &id).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([

@@ -11,6 +11,108 @@ use shared::{error::AppError, response::ActionResult};
 pub mod routes;
 pub mod u2_render;
 
+// ── 第四轮 R4-7：匿名可达的 GET 写 ──────────────────────────────────────────
+//
+// 本 crate 的一批状态写注册在 GET 上（A3-N12 / mockdeletetoget 族）。GET 既不过
+// csrf_middleware 也不过 requires_admin，路径又落在 AUTH_EXEMPT_PREFIXES 里，
+// 于是「中间件层完全没有门禁」：handler 自己是唯一一道门。
+// 门按两档取：无会话 401（不触库，可离线证），非 admin 403（is_admin 无库 fail-closed）。
+async fn require_admin_opt(
+    pool: &Pool,
+    session: Option<&shared::session::Session>,
+) -> Result<(), AppError> {
+    let session = session.ok_or(AppError::Unauthorized)?;
+    if shared::middleware::is_admin(pool, &session.person_unique).await {
+        Ok(())
+    } else {
+        Err(AppError::Forbidden)
+    }
+}
+
+/// 无会话先 401（在任何 `pool.get()` 之前，离线可证）。
+fn u4_require_session(
+    session: Option<Extension<shared::session::Session>>,
+) -> Result<shared::session::Session, AppError> {
+    session.map(|ext| ext.0).ok_or(AppError::Unauthorized)
+}
+
+/// 归属档：行上归属非空 → 本人或 admin（`require_owner`，无库 fail-closed）；
+/// 归属为空或行不存在 → **只允许 admin**。后者是四轮定下的严格口径：
+/// 不用「空归属 = 人人可写」把数据缺陷洗成权限放行。
+async fn require_actor_opt(
+    pool: &Pool,
+    session: &shared::session::Session,
+    actor: Option<&str>,
+) -> Result<(), AppError> {
+    match actor.map(str::trim).filter(|a| !a.is_empty()) {
+        Some(a) => shared::middleware::require_owner(pool, session, a).await,
+        None => {
+            if shared::middleware::is_admin(pool, &session.person_unique).await {
+                Ok(())
+            } else {
+                Err(AppError::Forbidden)
+            }
+        }
+    }
+}
+
+/// 第四轮 R4-10/R4-11：o2server 形状别名写族（`data/work`、`data/workcompleted`、
+/// `data/job` 的 mock* 档）在**无会话**条件下 touch / 物理删除流程实例行。
+/// 口径与正式路由同锁（§五 统一修法）：
+/// 无会话在任何 SQL 之前 401（离线可证）；有会话先按 xid 读发起人再校归属——
+/// 归属非空 → 本人或 admin，归属为空或行不存在 → 只允许 admin。
+/// `table` 取 `&'static str`：SQL 表名不能参数绑定，只允许内部字面量调用点。
+async fn u4_require_ppc_actor(
+    pool: &Pool,
+    session: Option<Extension<shared::session::Session>>,
+    table: &'static str,
+    id: &str,
+) -> Result<(), AppError> {
+    let session = u4_require_session(session)?;
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let owner = client
+        .query_opt(
+            format!("SELECT \"xcreatorPerson\" FROM {table} WHERE xid = $1").as_str(),
+            &[&id.to_string()],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?
+        .map(|r| r.get::<_, Option<String>>("xcreatorPerson").unwrap_or_default());
+    require_actor_opt(pool, &session, owner.as_deref()).await
+}
+
+async fn u4_require_work_actor(
+    pool: &Pool,
+    session: Option<Extension<shared::session::Session>>,
+    id: &str,
+) -> Result<(), AppError> {
+    u4_require_ppc_actor(pool, session, "PP_C_WORK", id).await
+}
+
+/// R4 第十五批：本 crate 里「一行属于某个人」的条目表（待阅 / 已阅 / 待办 / 已办 /
+/// 草稿 / 流水号 / 签核 / 圈阅）没有 `xcreatorPerson`，行上属主列是 `xperson`——本 crate 的
+/// 待办待阅列表本来就是按 `WHERE xperson = <person_unique>` 过滤的（lib.rs:592 / :631 为证），
+/// 所以归属判据取 xperson，语义与「谁的和谁删」一致。口径与 `u4_require_ppc_actor` 同锁：
+/// 无会话先 401（不触库，离线可证）；归属非空 → 本人或 admin；归属为空或行不存在 → 只允许 admin。
+async fn u4_require_ppc_person(
+    pool: &Pool,
+    session: Option<Extension<shared::session::Session>>,
+    table: &'static str,
+    id: &str,
+) -> Result<(), AppError> {
+    let session = u4_require_session(session)?;
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let owner = client
+        .query_opt(
+            format!("SELECT xperson FROM {table} WHERE xid = $1").as_str(),
+            &[&id.to_string()],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?
+        .map(|r| r.get::<_, Option<String>>("xperson").unwrap_or_default());
+    require_actor_opt(pool, &session, owner.as_deref()).await
+}
+
 #[derive(Debug, Deserialize)]
 pub struct CreateSurfaceRequest {
     pub name: Option<String>,
@@ -80,8 +182,15 @@ pub async fn get_surface(
 #[allow(non_snake_case)]
 pub async fn create_surface(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(req): Json<CreateSurfaceRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A2-F11 + A3-N9：流程应用表面为设计元数据（原硬编码 `creator='system'` 冒名）
+    // ⇒ 收 admin 门（无会话 401 / 非 admin 403），creator 改取会话登录人。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    require_admin_opt(&pool.0, Some(&sess)).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let name = req.name.unwrap_or_default();
     if name.trim().is_empty() {
@@ -96,7 +205,7 @@ pub async fn create_surface(
         .content
         .unwrap_or_else(|| Value::Object(serde_json::Map::new()));
     let version = "1.0".to_string();
-    let creator = "system".to_string();
+    let creator = sess.person_unique.clone();
 
     let content_str = serde_json::to_string(&content).map_err(|_| AppError::Internal)?;
 
@@ -294,8 +403,11 @@ pub async fn preview_surface(
 #[allow(non_snake_case)]
 pub async fn publish_surface(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A3-N9：表面发布按 id 改状态，收 admin 门。
+    require_admin_opt(&pool.0, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -365,8 +477,11 @@ pub async fn publish_surface(
 #[allow(non_snake_case)]
 pub async fn delete_surface(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A3-N9：表面物理删按 id，收 admin 门。
+    require_admin_opt(&pool.0, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
@@ -429,9 +544,12 @@ pub async fn delete_surface(
 #[allow(non_snake_case)]
 pub async fn save_surface(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(content): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A3-N9：表面内容按 id 覆写，收 admin 门（无会话 401 / 非 admin 403）。
+    require_admin_opt(&pool.0, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let content_str = serde_json::to_string(&content).map_err(|_| AppError::Internal)?;
 
@@ -697,7 +815,12 @@ pub async fn application_list_complex(
 pub async fn application_list_complex_manage_person(
     pool: Extension<Pool>,
     axum::extract::Path(person): axum::extract::Path<String>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // R4-7：路径在 AUTH_EXEMPT_PREFIXES 内、注册在 GET 上，中间件层两道门都够不着，
+    // 而函数体首条 SQL 就是按 ID 的 UPDATE——匿名可按 ID 改任意应用的时间戳并回读其
+    // create/updateTime。这是应用管理面（桌面侧仅运维控制台调用），收 admin。
+    require_admin_opt(&pool.0, session.as_ref().map(|Extension(s)| s)).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -1236,12 +1359,17 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
 #[allow(non_snake_case)]
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_data_mockdeletetoget(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((applicationDictFlag, _applicationFlag, _path0)): axum::extract::Path<(
         String,
         String,
         String,
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 四轮第十批：系统级元数据 PP_E_APPLICATIONDICT 的别名写族。mockdeletetoget 有 7 档注册在
+    // GET 上，csrf_middleware 与 requires_admin 两道中间件都只认写方法，够不着这条路；
+    // handler 自己是唯一一道门，故与本 crate R4-7（lib.rs:750）同口径收 admin。
+    require_admin_opt(&pool.0, session.as_ref().map(|Extension(s)| s)).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -1306,12 +1434,17 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
 #[allow(non_snake_case)]
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_data_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((applicationDictFlag, _applicationFlag, _path0)): axum::extract::Path<(
         String,
         String,
         String,
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 四轮第十批：系统级元数据 PP_E_APPLICATIONDICT 的别名写族。mockdeletetoget 有 7 档注册在
+    // GET 上，csrf_middleware 与 requires_admin 两道中间件都只认写方法，够不着这条路；
+    // handler 自己是唯一一道门，故与本 crate R4-7（lib.rs:750）同口径收 admin。
+    require_admin_opt(&pool.0, session.as_ref().map(|Extension(s)| s)).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -1406,8 +1539,13 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
 #[allow(non_snake_case)]
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_data_mockdeletetoget(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((applicationDictFlag, _applicationFlag, _path0, _path1)): axum::extract::Path<(String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 四轮第十批：系统级元数据 PP_E_APPLICATIONDICT 的别名写族。mockdeletetoget 有 7 档注册在
+    // GET 上，csrf_middleware 与 requires_admin 两道中间件都只认写方法，够不着这条路；
+    // handler 自己是唯一一道门，故与本 crate R4-7（lib.rs:750）同口径收 admin。
+    require_admin_opt(&pool.0, session.as_ref().map(|Extension(s)| s)).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -1472,8 +1610,13 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
 #[allow(non_snake_case)]
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_data_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((applicationDictFlag, _applicationFlag, _path0, _path1)): axum::extract::Path<(String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 四轮第十批：系统级元数据 PP_E_APPLICATIONDICT 的别名写族。mockdeletetoget 有 7 档注册在
+    // GET 上，csrf_middleware 与 requires_admin 两道中间件都只认写方法，够不着这条路；
+    // handler 自己是唯一一道门，故与本 crate R4-7（lib.rs:750）同口径收 admin。
+    require_admin_opt(&pool.0, session.as_ref().map(|Extension(s)| s)).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -1568,8 +1711,13 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
 #[allow(non_snake_case)]
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_data_mockdeletetoget(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((applicationDictFlag, _applicationFlag, _path0, _path1, _path2)): axum::extract::Path<(String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 四轮第十批：系统级元数据 PP_E_APPLICATIONDICT 的别名写族。mockdeletetoget 有 7 档注册在
+    // GET 上，csrf_middleware 与 requires_admin 两道中间件都只认写方法，够不着这条路；
+    // handler 自己是唯一一道门，故与本 crate R4-7（lib.rs:750）同口径收 admin。
+    require_admin_opt(&pool.0, session.as_ref().map(|Extension(s)| s)).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -1634,8 +1782,13 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
 #[allow(non_snake_case)]
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_data_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((applicationDictFlag, _applicationFlag, _path0, _path1, _path2)): axum::extract::Path<(String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 四轮第十批：系统级元数据 PP_E_APPLICATIONDICT 的别名写族。mockdeletetoget 有 7 档注册在
+    // GET 上，csrf_middleware 与 requires_admin 两道中间件都只认写方法，够不着这条路；
+    // handler 自己是唯一一道门，故与本 crate R4-7（lib.rs:750）同口径收 admin。
+    require_admin_opt(&pool.0, session.as_ref().map(|Extension(s)| s)).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -1730,8 +1883,13 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
 #[allow(non_snake_case)]
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_data_mockdeletetoget(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((applicationDictFlag, _applicationFlag, _path0, _path1, _path2, _path3)): axum::extract::Path<(String, String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 四轮第十批：系统级元数据 PP_E_APPLICATIONDICT 的别名写族。mockdeletetoget 有 7 档注册在
+    // GET 上，csrf_middleware 与 requires_admin 两道中间件都只认写方法，够不着这条路；
+    // handler 自己是唯一一道门，故与本 crate R4-7（lib.rs:750）同口径收 admin。
+    require_admin_opt(&pool.0, session.as_ref().map(|Extension(s)| s)).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -1796,8 +1954,13 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
 #[allow(non_snake_case)]
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_data_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((applicationDictFlag, _applicationFlag, _path0, _path1, _path2, _path3)): axum::extract::Path<(String, String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 四轮第十批：系统级元数据 PP_E_APPLICATIONDICT 的别名写族。mockdeletetoget 有 7 档注册在
+    // GET 上，csrf_middleware 与 requires_admin 两道中间件都只认写方法，够不着这条路；
+    // handler 自己是唯一一道门，故与本 crate R4-7（lib.rs:750）同口径收 admin。
+    require_admin_opt(&pool.0, session.as_ref().map(|Extension(s)| s)).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -1900,6 +2063,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
 #[allow(non_snake_case)]
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_data_mockdeletetoget(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((
         applicationDictFlag,
         _applicationFlag,
@@ -1910,6 +2074,10 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
         _path4,
     )): axum::extract::Path<(String, String, String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 四轮第十批：系统级元数据 PP_E_APPLICATIONDICT 的别名写族。mockdeletetoget 有 7 档注册在
+    // GET 上，csrf_middleware 与 requires_admin 两道中间件都只认写方法，够不着这条路；
+    // handler 自己是唯一一道门，故与本 crate R4-7（lib.rs:750）同口径收 admin。
+    require_admin_opt(&pool.0, session.as_ref().map(|Extension(s)| s)).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -1974,6 +2142,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
 #[allow(non_snake_case)]
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_data_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((
         applicationDictFlag,
         _applicationFlag,
@@ -1984,6 +2153,10 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
         _path4,
     )): axum::extract::Path<(String, String, String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 四轮第十批：系统级元数据 PP_E_APPLICATIONDICT 的别名写族。mockdeletetoget 有 7 档注册在
+    // GET 上，csrf_middleware 与 requires_admin 两道中间件都只认写方法，够不着这条路；
+    // handler 自己是唯一一道门，故与本 crate R4-7（lib.rs:750）同口径收 admin。
+    require_admin_opt(&pool.0, session.as_ref().map(|Extension(s)| s)).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -2096,6 +2269,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
 #[allow(non_snake_case)]
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_path5_data_mockdeletetoget(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((
         applicationDictFlag,
         _applicationFlag,
@@ -2116,6 +2290,10 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
         String,
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 四轮第十批：系统级元数据 PP_E_APPLICATIONDICT 的别名写族。mockdeletetoget 有 7 档注册在
+    // GET 上，csrf_middleware 与 requires_admin 两道中间件都只认写方法，够不着这条路；
+    // handler 自己是唯一一道门，故与本 crate R4-7（lib.rs:750）同口径收 admin。
+    require_admin_opt(&pool.0, session.as_ref().map(|Extension(s)| s)).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -2180,6 +2358,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
 #[allow(non_snake_case)]
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_path5_data_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((
         applicationDictFlag,
         _applicationFlag,
@@ -2200,6 +2379,10 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
         String,
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 四轮第十批：系统级元数据 PP_E_APPLICATIONDICT 的别名写族。mockdeletetoget 有 7 档注册在
+    // GET 上，csrf_middleware 与 requires_admin 两道中间件都只认写方法，够不着这条路；
+    // handler 自己是唯一一道门，故与本 crate R4-7（lib.rs:750）同口径收 admin。
+    require_admin_opt(&pool.0, session.as_ref().map(|Extension(s)| s)).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -2314,6 +2497,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
 #[allow(non_snake_case)]
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_path5_path6_data_mockdeletetoget(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((
         applicationDictFlag,
         _applicationFlag,
@@ -2336,6 +2520,10 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
         String,
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 四轮第十批：系统级元数据 PP_E_APPLICATIONDICT 的别名写族。mockdeletetoget 有 7 档注册在
+    // GET 上，csrf_middleware 与 requires_admin 两道中间件都只认写方法，够不着这条路；
+    // handler 自己是唯一一道门，故与本 crate R4-7（lib.rs:750）同口径收 admin。
+    require_admin_opt(&pool.0, session.as_ref().map(|Extension(s)| s)).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -2400,6 +2588,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
 #[allow(non_snake_case)]
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_path5_path6_data_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((
         applicationDictFlag,
         _applicationFlag,
@@ -2422,6 +2611,10 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
         String,
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 四轮第十批：系统级元数据 PP_E_APPLICATIONDICT 的别名写族。mockdeletetoget 有 7 档注册在
+    // GET 上，csrf_middleware 与 requires_admin 两道中间件都只认写方法，够不着这条路；
+    // handler 自己是唯一一道门，故与本 crate R4-7（lib.rs:750）同口径收 admin。
+    require_admin_opt(&pool.0, session.as_ref().map(|Extension(s)| s)).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -2538,6 +2731,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
 #[allow(non_snake_case)]
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_path5_path6_path7_data_mockdeletetoget(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((
         applicationDictFlag,
         _applicationFlag,
@@ -2562,6 +2756,10 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
         String,
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 四轮第十批：系统级元数据 PP_E_APPLICATIONDICT 的别名写族。mockdeletetoget 有 7 档注册在
+    // GET 上，csrf_middleware 与 requires_admin 两道中间件都只认写方法，够不着这条路；
+    // handler 自己是唯一一道门，故与本 crate R4-7（lib.rs:750）同口径收 admin。
+    require_admin_opt(&pool.0, session.as_ref().map(|Extension(s)| s)).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -2626,6 +2824,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
 #[allow(non_snake_case)]
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_path5_path6_path7_data_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((
         applicationDictFlag,
         _applicationFlag,
@@ -2650,6 +2849,10 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
         String,
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 四轮第十批：系统级元数据 PP_E_APPLICATIONDICT 的别名写族。mockdeletetoget 有 7 档注册在
+    // GET 上，csrf_middleware 与 requires_admin 两道中间件都只认写方法，够不着这条路；
+    // handler 自己是唯一一道门，故与本 crate R4-7（lib.rs:750）同口径收 admin。
+    require_admin_opt(&pool.0, session.as_ref().map(|Extension(s)| s)).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -2777,8 +2980,11 @@ pub async fn correlation_job_job(
 #[allow(non_snake_case)]
 pub async fn correlation_job_job_delete(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(job): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十八批：删除引擎 job（物理删）按 xperson 校归属（无会话 401）。
+    u4_require_ppc_person(&pool.0, session, "PP_C_JOB", &job).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM PP_C_JOB WHERE xid = $1", &[&job])
@@ -3129,8 +3335,10 @@ pub async fn data_job_job_array_data(
 #[allow(non_snake_case)]
 pub async fn data_job_job_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_actor(&pool.0, session, "PP_C_JOB", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -3233,8 +3441,10 @@ pub async fn data_job_job_path0(
 #[allow(non_snake_case)]
 pub async fn data_job_job_path0_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((id, _path0)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_actor(&pool.0, session, "PP_C_JOB", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -3337,8 +3547,10 @@ pub async fn data_job_job_path0_path1(
 #[allow(non_snake_case)]
 pub async fn data_job_job_path0_path1_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((id, _path0, _path1)): axum::extract::Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_actor(&pool.0, session, "PP_C_JOB", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -3446,6 +3658,7 @@ pub async fn data_job_job_path0_path1_path2(
 #[allow(non_snake_case)]
 pub async fn data_job_job_path0_path1_path2_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((id, _path0, _path1, _path2)): axum::extract::Path<(
         String,
         String,
@@ -3453,6 +3666,7 @@ pub async fn data_job_job_path0_path1_path2_mockputtopost(
         String,
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_actor(&pool.0, session, "PP_C_JOB", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -3561,6 +3775,7 @@ pub async fn data_job_job_path0_path1_path2_path3(
 #[allow(non_snake_case)]
 pub async fn data_job_job_path0_path1_path2_path3_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((id, _path0, _path1, _path2, _path3)): axum::extract::Path<(
         String,
         String,
@@ -3569,6 +3784,7 @@ pub async fn data_job_job_path0_path1_path2_path3_mockputtopost(
         String,
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_actor(&pool.0, session, "PP_C_JOB", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -3678,6 +3894,7 @@ pub async fn data_job_job_path0_path1_path2_path3_path4(
 #[allow(non_snake_case)]
 pub async fn data_job_job_path0_path1_path2_path3_path4_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4)): axum::extract::Path<(
         String,
         String,
@@ -3687,6 +3904,7 @@ pub async fn data_job_job_path0_path1_path2_path3_path4_mockputtopost(
         String,
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_actor(&pool.0, session, "PP_C_JOB", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -3791,10 +4009,12 @@ pub async fn data_job_job_path0_path1_path2_path3_path4_path5(
 #[allow(non_snake_case)]
 pub async fn data_job_job_path0_path1_path2_path3_path4_path5_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4, _path5)): axum::extract::Path<
         (String, String, String, String, String, String, String),
     >,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_actor(&pool.0, session, "PP_C_JOB", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -3897,8 +4117,10 @@ pub async fn data_job_job_path0_path1_path2_path3_path4_path5_path6(
 #[allow(non_snake_case)]
 pub async fn data_job_job_path0_path1_path2_path3_path4_path5_path6_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4, _path5, _path6)): axum::extract::Path<(String, String, String, String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_actor(&pool.0, session, "PP_C_JOB", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -4001,8 +4223,10 @@ pub async fn data_job_job_path0_path1_path2_path3_path4_path5_path6_path7(
 #[allow(non_snake_case)]
 pub async fn data_job_job_path0_path1_path2_path3_path4_path5_path6_path7_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4, _path5, _path6, _path7)): axum::extract::Path<(String, String, String, String, String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_actor(&pool.0, session, "PP_C_JOB", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -4088,7 +4312,9 @@ pub async fn data_work_id(
 pub async fn data_work_id_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_work_actor(&pool.0, session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM PP_C_WORK WHERE xid = $1", &[&id])
@@ -4148,7 +4374,9 @@ pub async fn data_work_id_mockdeletetoget(
 pub async fn data_work_id_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_work_actor(&pool.0, session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -4252,7 +4480,9 @@ pub async fn data_work_id_path0(
 pub async fn data_work_id_path0_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path((id, _path0)): axum::extract::Path<(String, String)>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_work_actor(&pool.0, session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM PP_C_WORK WHERE xid = $1", &[&id])
@@ -4312,7 +4542,9 @@ pub async fn data_work_id_path0_mockdeletetoget(
 pub async fn data_work_id_path0_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path((id, _path0)): axum::extract::Path<(String, String)>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_work_actor(&pool.0, session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -4416,7 +4648,9 @@ pub async fn data_work_id_path0_path1(
 pub async fn data_work_id_path0_path1_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path((id, _path0, _path1)): axum::extract::Path<(String, String, String)>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_work_actor(&pool.0, session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM PP_C_WORK WHERE xid = $1", &[&id])
@@ -4476,7 +4710,9 @@ pub async fn data_work_id_path0_path1_mockdeletetoget(
 pub async fn data_work_id_path0_path1_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path((id, _path0, _path1)): axum::extract::Path<(String, String, String)>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_work_actor(&pool.0, session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -4590,7 +4826,9 @@ pub async fn data_work_id_path0_path1_path2_mockdeletetoget(
         String,
         String,
     )>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_work_actor(&pool.0, session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM PP_C_WORK WHERE xid = $1", &[&id])
@@ -4655,7 +4893,9 @@ pub async fn data_work_id_path0_path1_path2_mockputtopost(
         String,
         String,
     )>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_work_actor(&pool.0, session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -4771,7 +5011,9 @@ pub async fn data_work_id_path0_path1_path2_path3_mockdeletetoget(
         String,
         String,
     )>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_work_actor(&pool.0, session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM PP_C_WORK WHERE xid = $1", &[&id])
@@ -4837,7 +5079,9 @@ pub async fn data_work_id_path0_path1_path2_path3_mockputtopost(
         String,
         String,
     )>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_work_actor(&pool.0, session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -4955,7 +5199,9 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_mockdeletetoget(
         String,
         String,
     )>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_work_actor(&pool.0, session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM PP_C_WORK WHERE xid = $1", &[&id])
@@ -5022,7 +5268,9 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_mockputtopost(
         String,
         String,
     )>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_work_actor(&pool.0, session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -5130,7 +5378,9 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_mockdeletetoget(
     axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4, _path5)): axum::extract::Path<
         (String, String, String, String, String, String, String),
     >,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_work_actor(&pool.0, session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM PP_C_WORK WHERE xid = $1", &[&id])
@@ -5192,7 +5442,9 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_mockputtopost(
     axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4, _path5)): axum::extract::Path<
         (String, String, String, String, String, String, String),
     >,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_work_actor(&pool.0, session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -5296,7 +5548,9 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6(
 pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4, _path5, _path6)): axum::extract::Path<(String, String, String, String, String, String, String, String)>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_work_actor(&pool.0, session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM PP_C_WORK WHERE xid = $1", &[&id])
@@ -5356,7 +5610,9 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_mockdeleteto
 pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4, _path5, _path6)): axum::extract::Path<(String, String, String, String, String, String, String, String)>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_work_actor(&pool.0, session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -5460,7 +5716,9 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_path7(
 pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_path7_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4, _path5, _path6, _path7)): axum::extract::Path<(String, String, String, String, String, String, String, String, String)>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_work_actor(&pool.0, session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM PP_C_WORK WHERE xid = $1", &[&id])
@@ -5520,7 +5778,9 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_path7_mockde
 pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_path7_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4, _path5, _path6, _path7)): axum::extract::Path<(String, String, String, String, String, String, String, String, String)>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_work_actor(&pool.0, session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -5723,8 +5983,10 @@ pub async fn data_workcompleted_id_from_item(
 #[allow(non_snake_case)]
 pub async fn data_workcompleted_id_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_actor(&pool.0, session, "PP_C_WORKCOMPLETED", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -5827,8 +6089,10 @@ pub async fn data_workcompleted_id_path0(
 #[allow(non_snake_case)]
 pub async fn data_workcompleted_id_path0_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((id, _path0)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_actor(&pool.0, session, "PP_C_WORKCOMPLETED", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -5931,8 +6195,10 @@ pub async fn data_workcompleted_id_path0_path1(
 #[allow(non_snake_case)]
 pub async fn data_workcompleted_id_path0_path1_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((id, _path0, _path1)): axum::extract::Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_actor(&pool.0, session, "PP_C_WORKCOMPLETED", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -6040,6 +6306,7 @@ pub async fn data_workcompleted_id_path0_path1_path2(
 #[allow(non_snake_case)]
 pub async fn data_workcompleted_id_path0_path1_path2_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((id, _path0, _path1, _path2)): axum::extract::Path<(
         String,
         String,
@@ -6047,6 +6314,7 @@ pub async fn data_workcompleted_id_path0_path1_path2_mockputtopost(
         String,
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_actor(&pool.0, session, "PP_C_WORKCOMPLETED", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -6155,6 +6423,7 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3(
 #[allow(non_snake_case)]
 pub async fn data_workcompleted_id_path0_path1_path2_path3_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((id, _path0, _path1, _path2, _path3)): axum::extract::Path<(
         String,
         String,
@@ -6163,6 +6432,7 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_mockputtopost(
         String,
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_actor(&pool.0, session, "PP_C_WORKCOMPLETED", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -6272,6 +6542,7 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4(
 #[allow(non_snake_case)]
 pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4)): axum::extract::Path<(
         String,
         String,
@@ -6281,6 +6552,7 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_mockputtopost(
         String,
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_actor(&pool.0, session, "PP_C_WORKCOMPLETED", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -6385,10 +6657,12 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5(
 #[allow(non_snake_case)]
 pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4, _path5)): axum::extract::Path<
         (String, String, String, String, String, String, String),
     >,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_actor(&pool.0, session, "PP_C_WORKCOMPLETED", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -6491,8 +6765,10 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6(
 #[allow(non_snake_case)]
 pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4, _path5, _path6)): axum::extract::Path<(String, String, String, String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_actor(&pool.0, session, "PP_C_WORKCOMPLETED", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -6595,8 +6871,10 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_pat
 #[allow(non_snake_case)]
 pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_path7_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4, _path5, _path6, _path7)): axum::extract::Path<(String, String, String, String, String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_actor(&pool.0, session, "PP_C_WORKCOMPLETED", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -7360,7 +7638,9 @@ pub async fn draft_id(
 pub async fn draft_id_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_person(&pool.0, session, "PP_C_DRAFT", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM PP_C_DRAFT WHERE xid = $1", &[&id])
@@ -7419,8 +7699,10 @@ pub async fn draft_id_mockdeletetoget(
 #[allow(non_snake_case)]
 pub async fn draft_id_start(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_person(&pool.0, session, "PP_C_DRAFT", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -8191,8 +8473,10 @@ pub async fn handover_id(
 #[allow(non_snake_case)]
 pub async fn handover_id_cancel(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_person(&pool.0, session, "PP_C_HANDOVER", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -8245,8 +8529,10 @@ pub async fn handover_id_cancel(
 #[allow(non_snake_case)]
 pub async fn handover_id_process(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_person(&pool.0, session, "PP_C_HANDOVER", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -8634,14 +8920,18 @@ pub async fn mode_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
 #[allow(non_snake_case)]
 pub async fn mode_save(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(body): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = body
         .get("id")
         .and_then(|v| v.as_str())
         .unwrap_or_default()
         .to_string();
+    // 与同表 `mode_id_delete` 同锁：按 PP_C_TASK_PROCESS_MODE.xperson 归属
+    // （无会话 401 / 非属主且非 admin 403）。
+    u4_require_ppc_person(&pool.0, session, "PP_C_TASK_PROCESS_MODE", &id).await?;
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
             "UPDATE PP_C_TASK_PROCESS_MODE SET \"xupdateTime\" = NOW() WHERE xid = $1",
@@ -8693,8 +8983,10 @@ pub async fn mode_save(
 #[allow(non_snake_case)]
 pub async fn mode_id_delete(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_person(&pool.0, session, "PP_C_TASK_PROCESS_MODE", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
@@ -9480,16 +9772,20 @@ async fn read_list_count_application_applicationFlag_process_core(
 #[allow(non_snake_case)]
 pub async fn read_list_count_application_applicationFlag_process(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(applicationFlag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_person(&pool.0, session, "PP_C_READ", &applicationFlag).await?;
     read_list_count_application_applicationFlag_process_core(pool, applicationFlag).await
 }
 
 #[allow(non_snake_case)]
 pub async fn read_list_count_application_applicationFlag_process_p2(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((_s0, applicationFlag)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_person(&pool.0, session, "PP_C_READ", &applicationFlag).await?;
     read_list_count_application_applicationFlag_process_core(pool, applicationFlag).await
 }
 
@@ -10888,7 +11184,9 @@ pub async fn read_id_manage(
 pub async fn read_id_manage_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_person(&pool.0, session, "PP_C_READ", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM PP_C_READ WHERE xid = $1", &[&id])
@@ -10948,7 +11246,9 @@ pub async fn read_id_manage_mockdeletetoget(
 pub async fn read_id_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_person(&pool.0, session, "PP_C_READ", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -11043,8 +11343,11 @@ pub async fn read_id_opinion_manage(
 #[allow(non_snake_case)]
 pub async fn read_id_opinion_manage_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十八批：待阅意见改写按 xperson 校归属（无会话 401）。
+    u4_require_ppc_person(&pool.0, session, "PP_C_READ", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -11181,8 +11484,11 @@ pub async fn read_id_processing_manage(
 #[allow(non_snake_case)]
 pub async fn read_id_processing_manage_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十八批：待阅办理按 xperson 校归属（无会话 401）。
+    u4_require_ppc_person(&pool.0, session, "PP_C_READ", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -11319,8 +11625,11 @@ pub async fn read_id_reset_manage(
 #[allow(non_snake_case)]
 pub async fn read_id_reset_manage_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十八批：待阅重置按 xperson 校归属（无会话 401）。
+    u4_require_ppc_person(&pool.0, session, "PP_C_READ", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -11554,16 +11863,20 @@ async fn readcompleted_list_count_application_applicationFlag_process_core(
 #[allow(non_snake_case)]
 pub async fn readcompleted_list_count_application_applicationFlag_process(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(applicationFlag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_person(&pool.0, session, "PP_C_READCOMPLETED", &applicationFlag).await?;
     readcompleted_list_count_application_applicationFlag_process_core(pool, applicationFlag).await
 }
 
 #[allow(non_snake_case)]
 pub async fn readcompleted_list_count_application_applicationFlag_process_p2(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((_s0, applicationFlag)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_person(&pool.0, session, "PP_C_READCOMPLETED", &applicationFlag).await?;
     readcompleted_list_count_application_applicationFlag_process_core(pool, applicationFlag).await
 }
 
@@ -12840,7 +13153,9 @@ pub async fn readcompleted_id_manage(
 pub async fn readcompleted_id_manage_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_person(&pool.0, session, "PP_C_READCOMPLETED", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM PP_C_READCOMPLETED WHERE xid = $1", &[&id])
@@ -13403,7 +13718,9 @@ pub async fn record_id_manage(
 pub async fn record_id_manage_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool.0, session.as_ref().map(|Extension(s)| s)).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM PP_C_RECORD WHERE xid = $1", &[&id])
@@ -13463,7 +13780,9 @@ pub async fn record_id_manage_mockdeletetoget(
 pub async fn record_id_manage_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool.0, session.as_ref().map(|Extension(s)| s)).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -14428,7 +14747,9 @@ pub async fn review_id_application_applicationFlag_manage(
 pub async fn review_id_application_applicationFlag_manage_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path((id, _applicationFlag)): axum::extract::Path<(String, String)>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_actor(&pool.0, session, "PP_C_REVIEW", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM PP_C_REVIEW WHERE xid = $1", &[&id])
@@ -14956,7 +15277,9 @@ pub async fn serialnumber_id(
 pub async fn serialnumber_id_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_person(&pool.0, session, "PP_C_SERIALNUMBER", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM PP_C_SERIALNUMBER WHERE xid = $1", &[&id])
@@ -15016,7 +15339,9 @@ pub async fn serialnumber_id_mockdeletetoget(
 pub async fn serialnumber_id_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_person(&pool.0, session, "PP_C_SERIALNUMBER", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -15070,8 +15395,21 @@ pub async fn serialnumber_id_mockputtopost(
 pub async fn service_work_id_touch(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = u4_require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    // 四轮 R4-2：按 ID 直接 UPDATE PP_C_WORK."xupdateTime" 的 touch，原先不取会话也不校归属，
+    // 任一有效会话可 touch 他人 work 并回读其 create/updateTime。先读发起人再校归属。
+    let owner = client
+        .query_opt(
+            "SELECT \"xcreatorPerson\" FROM PP_C_WORK WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?
+        .map(|r| r.get::<_, Option<String>>("xcreatorPerson").unwrap_or_default());
+    require_actor_opt(&pool.0, &session, owner.as_deref()).await?;
     let result = client
         .execute(
             "UPDATE PP_C_WORK SET \"xupdateTime\" = NOW() WHERE xid = $1",
@@ -15124,8 +15462,20 @@ pub async fn service_work_id_touch(
 pub async fn service_work_id_touch_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = u4_require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    // 与 service_work_id_touch 同一 handler 的 mockputtopost 别名，同批同口径收归属门。
+    let owner = client
+        .query_opt(
+            "SELECT \"xcreatorPerson\" FROM PP_C_WORK WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?
+        .map(|r| r.get::<_, Option<String>>("xcreatorPerson").unwrap_or_default());
+    require_actor_opt(&pool.0, &session, owner.as_deref()).await?;
     let result = client
         .execute(
             "UPDATE PP_C_WORK SET \"xupdateTime\" = NOW() WHERE xid = $1",
@@ -15354,7 +15704,9 @@ pub async fn sign_task_taskId(
 pub async fn sign_task_taskId_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_person(&pool.0, session, "PP_C_DOC_SIGN", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM PP_C_DOC_SIGN WHERE xid = $1", &[&id])
@@ -15456,7 +15808,9 @@ pub async fn sign_id(
 pub async fn sign_id_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_person(&pool.0, session, "PP_C_DOC_SIGN", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM PP_C_DOC_SIGN WHERE xid = $1", &[&id])
@@ -15713,16 +16067,20 @@ async fn task_list_count_application_applicationFlag_process_core(
 #[allow(non_snake_case)]
 pub async fn task_list_count_application_applicationFlag_process(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(applicationFlag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_person(&pool.0, session, "PP_C_TASK", &applicationFlag).await?;
     task_list_count_application_applicationFlag_process_core(pool, applicationFlag).await
 }
 
 #[allow(non_snake_case)]
 pub async fn task_list_count_application_applicationFlag_process_p2(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((_s0, applicationFlag)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_person(&pool.0, session, "PP_C_TASK", &applicationFlag).await?;
     task_list_count_application_applicationFlag_process_core(pool, applicationFlag).await
 }
 
@@ -17128,8 +17486,11 @@ pub async fn task_v2_id_pause(
 #[allow(non_snake_case)]
 pub async fn task_v2_id_reset(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十八批：待办重置按 xperson 校归属（无会话 401）。
+    u4_require_ppc_person(&pool.0, session, "PP_C_TASK", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -17182,8 +17543,11 @@ pub async fn task_v2_id_reset(
 #[allow(non_snake_case)]
 pub async fn task_v2_id_reset_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十八批：待办重置按 xperson 校归属（无会话 401）。
+    u4_require_ppc_person(&pool.0, session, "PP_C_TASK", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -17489,7 +17853,9 @@ pub async fn task_id_manage(
 pub async fn task_id_manage_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_person(&pool.0, session, "PP_C_TASK", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM PP_C_TASK WHERE xid = $1", &[&id])
@@ -17549,7 +17915,9 @@ pub async fn task_id_manage_mockdeletetoget(
 pub async fn task_id_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_person(&pool.0, session, "PP_C_TASK", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -17644,8 +18012,11 @@ pub async fn task_id_opinion_manage(
 #[allow(non_snake_case)]
 pub async fn task_id_opinion_manage_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十八批：待办意见改写按 xperson 校归属（无会话 401）。
+    u4_require_ppc_person(&pool.0, session, "PP_C_TASK", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -17824,8 +18195,11 @@ pub async fn task_id_processing_manage(
 #[allow(non_snake_case)]
 pub async fn task_id_processing_manage_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十八批：待办推进按 xperson 校归属（无会话 401）。
+    u4_require_ppc_person(&pool.0, session, "PP_C_TASK", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -18004,8 +18378,11 @@ pub async fn task_id_reset_manage(
 #[allow(non_snake_case)]
 pub async fn task_id_reset_manage_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十八批：待办重置按 xperson 校归属（无会话 401）。
+    u4_require_ppc_person(&pool.0, session, "PP_C_TASK", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -18291,16 +18668,20 @@ async fn taskcompleted_list_count_application_applicationFlag_process_core(
 #[allow(non_snake_case)]
 pub async fn taskcompleted_list_count_application_applicationFlag_process(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(applicationFlag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_person(&pool.0, session, "PP_C_TASKCOMPLETED", &applicationFlag).await?;
     taskcompleted_list_count_application_applicationFlag_process_core(pool, applicationFlag).await
 }
 
 #[allow(non_snake_case)]
 pub async fn taskcompleted_list_count_application_applicationFlag_process_p2(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((_s0, applicationFlag)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_person(&pool.0, session, "PP_C_TASKCOMPLETED", &applicationFlag).await?;
     taskcompleted_list_count_application_applicationFlag_process_core(pool, applicationFlag).await
 }
 
@@ -19669,7 +20050,9 @@ pub async fn taskcompleted_id_manage(
 pub async fn taskcompleted_id_manage_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_person(&pool.0, session, "PP_C_TASKCOMPLETED", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM PP_C_TASKCOMPLETED WHERE xid = $1", &[&id])
@@ -19770,8 +20153,11 @@ pub async fn taskcompleted_id_opinion_manage(
 #[allow(non_snake_case)]
 pub async fn taskcompleted_id_opinion_manage_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十八批：已办意见改写按 xperson 校归属（无会话 401）。
+    u4_require_ppc_person(&pool.0, session, "PP_C_WORKCOMPLETED", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -20251,16 +20637,20 @@ async fn work_list_count_application_applicationFlag_process_core(
 #[allow(non_snake_case)]
 pub async fn work_list_count_application_applicationFlag_process(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(applicationFlag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_actor(&pool.0, session, "PP_C_WORK", &applicationFlag).await?;
     work_list_count_application_applicationFlag_process_core(pool, applicationFlag).await
 }
 
 #[allow(non_snake_case)]
 pub async fn work_list_count_application_applicationFlag_process_p2(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((_s0, applicationFlag)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_actor(&pool.0, session, "PP_C_WORK", &applicationFlag).await?;
     work_list_count_application_applicationFlag_process_core(pool, applicationFlag).await
 }
 
@@ -21637,8 +22027,11 @@ pub async fn work_v2_id_add_split(
 #[allow(non_snake_case)]
 pub async fn work_v2_id_add_split_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十八批：拆分工作按 xcreatorPerson 校归属（无会话 401）。
+    u4_require_work_actor(&pool.0, session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -21734,7 +22127,9 @@ pub async fn work_v2_id_reroute(
 pub async fn work_v2_id_reroute_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_work_actor(&pool.0, session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -21830,7 +22225,9 @@ pub async fn work_v2_id_retract(
 pub async fn work_v2_id_retract_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_work_actor(&pool.0, session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -21926,7 +22323,9 @@ pub async fn work_v2_id_rollback(
 pub async fn work_v2_id_rollback_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_work_actor(&pool.0, session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -22442,7 +22841,9 @@ pub async fn work_id_manage(
 pub async fn work_id_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_work_actor(&pool.0, session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM PP_C_WORK WHERE xid = $1", &[&id])
@@ -22543,8 +22944,11 @@ pub async fn work_id_processing(
 #[allow(non_snake_case)]
 pub async fn work_id_processing_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十八批：工作推进按 xcreatorPerson 校归属（无会话 401）。
+    u4_require_work_actor(&pool.0, session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -22724,7 +23128,9 @@ pub async fn work_id_relative_manage(
 pub async fn work_id_relative_manage_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_work_actor(&pool.0, session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM PP_C_WORK WHERE xid = $1", &[&id])
@@ -22826,7 +23232,9 @@ pub async fn work_id_single_manage(
 pub async fn work_id_single_manage_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_work_actor(&pool.0, session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM PP_C_WORK WHERE xid = $1", &[&id])
@@ -23091,16 +23499,20 @@ async fn workcompleted_list_count_application_applicationFlag_process_core(
 #[allow(non_snake_case)]
 pub async fn workcompleted_list_count_application_applicationFlag_process(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(applicationFlag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_actor(&pool.0, session, "PP_C_WORKCOMPLETED", &applicationFlag).await?;
     workcompleted_list_count_application_applicationFlag_process_core(pool, applicationFlag).await
 }
 
 #[allow(non_snake_case)]
 pub async fn workcompleted_list_count_application_applicationFlag_process_p2(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((_s0, applicationFlag)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_actor(&pool.0, session, "PP_C_WORKCOMPLETED", &applicationFlag).await?;
     workcompleted_list_count_application_applicationFlag_process_core(pool, applicationFlag).await
 }
 
@@ -23756,7 +24168,9 @@ pub async fn workcompleted_flag_rollback(
 pub async fn workcompleted_flag_rollback_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_actor(&pool.0, session, "PP_C_WORKCOMPLETED", &flag).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -23936,7 +24350,9 @@ pub async fn workcompleted_id_delete_manage(
 pub async fn workcompleted_id_delete_manage_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_ppc_actor(&pool.0, session, "PP_C_WORKCOMPLETED", &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM PP_C_WORKCOMPLETED WHERE xid = $1", &[&id])
@@ -28297,6 +28713,9 @@ mod tests_generated;
 
 #[cfg(test)]
 mod tests_u2;
+
+#[cfg(test)]
+mod security_gate_tests;
 
 #[allow(non_snake_case)]
 pub async fn task_list_date_hour_exclude_draft_manage(

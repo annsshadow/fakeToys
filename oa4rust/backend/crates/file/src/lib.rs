@@ -17,6 +17,26 @@ use shared::{
     response::ActionResult,
 };
 
+/// 第六十一批：file 写面门禁——会话存在档（无会话 401，先于任何 SQL）。
+fn require_session(
+    session: Option<Extension<shared::session::Session>>,
+) -> Result<shared::session::Session, AppError> {
+    session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
+}
+
+/// 第六十一批：权限配置写门禁——admin 档（无会话 401 / 非 admin 403）。
+async fn require_admin(
+    pool: &Pool,
+    session: Option<Extension<shared::session::Session>>,
+) -> Result<(), AppError> {
+    let s = require_session(session)?;
+    if shared::middleware::is_admin(pool, &s.person_unique).await {
+        Ok(())
+    } else {
+        Err(AppError::Forbidden)
+    }
+}
+
 const ALLOWED_MIME_TYPES: &[&str] = &[
     "image/jpeg",
     "image/png",
@@ -281,8 +301,11 @@ pub async fn complex_top(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
 #[allow(non_snake_case)]
 pub async fn file_upload(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     mut form: Multipart,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第六十一批：文件上传收会话存在档（无会话 401）；person 仍取表单（冒名残留记 §五）。
+    require_session(session)?;
     let mut file_data: Option<Vec<u8>> = None;
     let mut mime_type: Option<String> = None;
     let mut filename: Option<String> = None;
@@ -556,8 +579,11 @@ pub async fn file_download(
 #[allow(non_snake_case)]
 pub async fn folder_create(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(body): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第六十一批：新建文件夹收会话存在档（无会话 401）；person 仍取 body（冒名残留记 §五）。
+    require_session(session)?;
     let name = body
         .get("name")
         .and_then(|v| v.as_str())
@@ -615,8 +641,11 @@ pub async fn folder_create(
 #[allow(non_snake_case)]
 pub async fn folder_update(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(body): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第六十一批：改文件夹收会话存在档（无会话 401）。
+    require_session(session)?;
     let id = body
         .get("id")
         .and_then(|v| v.as_str())
@@ -673,8 +702,11 @@ pub async fn folder_update(
 #[allow(non_snake_case)]
 pub async fn folder_remove(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(body): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第六十一批：软删文件夹收会话存在档（无会话 401）。
+    require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = body
@@ -722,8 +754,11 @@ pub async fn folder_remove(
 #[allow(non_snake_case)]
 pub async fn permission_set(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(body): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第六十一批：权限配置写收 admin 档（无会话 401 / 非 admin 403）。
+    require_admin(&pool.0, session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let target_type = body
@@ -779,3 +814,5 @@ pub async fn permission_set(
 mod tests;
 #[cfg(test)]
 mod tests_generated;
+#[cfg(test)]
+mod security_gate_tests;

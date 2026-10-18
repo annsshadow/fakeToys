@@ -58,6 +58,20 @@ pub async fn require_admin(
     }
 }
 
+/// admin 门的 Option 版：无会话回 401（而非 axum 裸 `Extension<Session>` 在缺失时抛的
+/// 500），非 admin 回 403。用于 GET 写面门禁——无会话臂可离线断言 401，且「没门」与
+/// 「门插在读库之后」不会都读成 500（对齐 attendance 批 21 的 `require_admin_opt` 先例）。
+#[allow(non_snake_case)]
+pub async fn require_admin_opt(
+    pool: &Pool,
+    session: Option<&shared::session::Session>,
+) -> Result<(), AppError> {
+    match session {
+        None => Err(AppError::Unauthorized),
+        Some(s) => require_admin(pool, s).await,
+    }
+}
+
 #[allow(non_snake_case)]
 pub async fn client_of(pool: &Pool) -> Result<Client, AppError> {
     pool.get().await.map_err(|_| AppError::Internal)

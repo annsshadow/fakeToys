@@ -358,7 +358,14 @@ pub const AUTH_EXEMPT_PATHS: &[&str] = &[
 // 认证类端点（计入 10 次/分钟/IP 的认证限流）。
 // 精确限流仅限"明文凭证尝试"：登录契约路径（POST /api/authentication）
 // 与其自造别名（/api/authentication/login）；以及密码重置与初始化端点（前缀）。
-pub const AUTH_RATE_LIMIT_EXACT: &[&str] = &["/api/authentication", "/api/authentication/login"];
+pub const AUTH_RATE_LIMIT_EXACT: &[&str] = &[
+    "/api/authentication",
+    "/api/authentication/login",
+    // 四轮 §三.7：注册与验证码校验显式公开后必须限流，否则匿名侧变成
+    // 无上限批量建号 / 验证码暴力枚举（rate_limit_middleware 对「豁免且未列限流」直接跳过）。
+    "/api/person/regist",
+    "/api/secret/captcha/verify",
+];
 pub const AUTH_RATE_LIMIT_PREFIXES: &[&str] = &[
     "/api/authentication/code",
     "/api/authentication/two",        // 双因素登录
@@ -378,7 +385,14 @@ pub const AUTH_RATE_LIMIT_PREFIXES: &[&str] = &[
 ];
 
 // 系统初始化端点：仅当系统未初始化（auth_person 无任何未删除的未锁定用户）时豁免认证
-pub const SECRET_INIT_PATHS: &[&str] = &["/api/secret/check", "/api/secret/set"];
+// 四轮 §三.7 补齐销毁侧：`path_matches` 按段数相等匹配，`/api/secret/set` 不吞
+// `/api/secret/set/cancel`，所以少列一条就等于让「删掉初始化密钥」这一 GET 永久匿名可达，
+// 只剩 handler 体内 `has_person` 一道锁（全库用户锁定/软删的维护态下那道锁也会失效）。
+pub const SECRET_INIT_PATHS: &[&str] = &[
+    "/api/secret/check",
+    "/api/secret/set",
+    "/api/secret/set/cancel",
+];
 
 // ── 速率限制（轮72）────────────────────────────────────────────────────
 // 历史上 AUTH/GENERAL 均为 10000/分钟（等于不设防），与注释「10 次/分钟」不符，

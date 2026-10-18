@@ -77,7 +77,7 @@ mod u2_tests {
                 .to_string(),
         )
         .await;
-        assert_eq!(status, StatusCode::INTERNAL_SERVER_ERROR);
+        assert_eq!(status, StatusCode::UNAUTHORIZED);
     }
 
     #[tokio::test]
@@ -89,7 +89,7 @@ mod u2_tests {
                 r#"{"person":"u1"}"#.to_string()
             )
             .await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::UNAUTHORIZED
         );
         assert_eq!(
             status_of("GET", "/api/message/assemble/communicate/ws/count/person").await,
@@ -417,6 +417,7 @@ mod u2_tests {
         let pool = mock_pool();
         let client_err = crate::ws_create(
             axum::extract::Extension(pool),
+            Some(axum::extract::Extension(shared::testing::test_session("u1"))),
             Json(json!({"person": "u1", "body": "hi"})),
         )
         .await;

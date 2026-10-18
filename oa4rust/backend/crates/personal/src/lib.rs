@@ -236,7 +236,11 @@ pub fn router(pool: Pool, session_manager: SessionManager) -> Router {
             post(u2::regist_check_password),
         )
         // ResetAction
-        .route("/api/reset/mockputtopost", post(reset::reset_password))
+        // round4-b76：mock 别名收会话门（wrapper），PUT /api/reset 匿名流不受影响
+        .route(
+            "/api/reset/mockputtopost",
+            post(reset::reset_password_mockputtopost),
+        )
         // SignatureAction
         .route(
             "/api/person/signature/list/person/{flag}",
@@ -360,3 +364,5 @@ pub fn router(pool: Pool, session_manager: SessionManager) -> Router {
 mod tests;
 #[cfg(test)]
 mod tests_generated;
+#[cfg(test)]
+mod security_gate_tests_b76;
