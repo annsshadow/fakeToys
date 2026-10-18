@@ -323,6 +323,22 @@ fn face_spec() -> shared::crud::CrudSpec {
     }
 }
 
+/// save 用**窄**白名单（同 bbs 的 `section_update_spec` 惯例）：只列可写列，**不含 `person_id`**。
+/// `crud_save` 会把 spec 里每一列都按 payload 取值写回（缺键取 `""`），全列 spec 下
+/// 「属主改个 faceName」这一步就会把归属列抹成空串——之后本人再 delete/save 全部 403（实测复现）。
+fn face_update_spec() -> shared::crud::CrudSpec {
+    shared::crud::CrudSpec {
+        table: "x_person_face",
+        columns: &[
+            ("faceName", "face_name"),
+            ("faceType", "face_type"),
+            ("feature", "feature"),
+            ("status", "status"),
+        ],
+        soft_delete: true,
+    }
+}
+
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn face_create(
@@ -369,11 +385,19 @@ pub async fn face_save(
     Json(payload): Json<serde_json::Value>,
 ) -> Result<Json<ActionResult<serde_json::Value>>, AppError> {
     // IDOR 门禁（A3-N9）：人脸属 person_id 本人，收归属门（admin 放行 / 本人放行）。
+    // save 走窄白名单（不含 person_id）：归属列只由 face_create 定，save 不改写它。
     let Some(Extension(sess)) = session else {
         return Err(AppError::Unauthorized);
     };
-    let saved =
-        shared::crud_save_owned(&pool, &face_spec(), &id, &payload, "person_id", &sess).await?;
+    let saved = shared::crud_save_owned(
+        &pool,
+        &face_update_spec(),
+        &id,
+        &payload,
+        "person_id",
+        &sess,
+    )
+    .await?;
     Ok(Json(ActionResult::success(serde_json::Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), serde_json::Value::String(id)),

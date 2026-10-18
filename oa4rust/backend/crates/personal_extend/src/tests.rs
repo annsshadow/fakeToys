@@ -288,8 +288,10 @@ async fn face_writes_require_owner() {
         .await
         .unwrap();
         c.execute(
+            // 种子行必须**权威**：`DO NOTHING` 时上一次跑崩（没走到收尾的 LIKE 清理）留下的
+            // 残留行会把 person_id 钉在旧值/空串上，本支随后以属主身份写就被判 403（假红）。
             "INSERT INTO x_person_face (id, person_id) VALUES ('face-gate-1',$1) \
-             ON CONFLICT (id) DO NOTHING",
+             ON CONFLICT (id) DO UPDATE SET person_id = EXCLUDED.person_id, deleted_at = NULL",
             &[&OWNER.to_string()],
         )
         .await
@@ -347,6 +349,21 @@ async fn face_writes_require_owner() {
         .is_ok(),
         "属主 face_save 应放行"
     );
+    // save 只带 faceName：归属列必须原样留在 OWNER 上（save 白名单不含 person_id）。
+    // 判据取的是这一格，因为「save 把归属抹成空串」正是下面那条 delete 403 的成因：
+    // 只断言 delete 是 is_ok 的话，把归属抹空与 append 归属检查两处缺陷会互相掩盖。
+    {
+        let c = pool.get().await.unwrap();
+        let pid: String = c
+            .query_one(
+                "SELECT person_id FROM x_person_face WHERE id='face-gate-1'",
+                &[],
+            )
+            .await
+            .unwrap()
+            .get(0);
+        assert_eq!(pid, OWNER, "属主 save 不得改写归属列");
+    }
     assert!(
         personal_mod::face_delete(
             Extension(pool.clone()),
@@ -374,8 +391,10 @@ async fn face_writes_require_owner() {
     {
         let c = pool.get().await.unwrap();
         c.execute(
+            // 同 face-gate-1：种子权威化，避免上一次跑崩留下的残留行（可能已软删）把这条臂
+            // 变成「`crud_owner_ok` 直接 Ok(false)、一条 SQL 都没走到」的空转。
             "INSERT INTO x_person_face (id, person_id) VALUES ('face-gate-2',$1) \
-             ON CONFLICT (id) DO NOTHING",
+             ON CONFLICT (id) DO UPDATE SET person_id = EXCLUDED.person_id, deleted_at = NULL",
             &[&OWNER.to_string()],
         )
         .await
