@@ -19,6 +19,9 @@ mod tests_u2;
 #[cfg(test)]
 mod tests_u3;
 
+#[cfg(test)]
+mod security_gate_tests_b67;
+
 #[derive(Debug, Deserialize)]
 pub struct CollectAddRequest {
     pub title: Option<String>,
@@ -9212,6 +9215,17 @@ async fn require_admin_opt(
     require_admin(pool, session).await
 }
 
+/// 安全审计（round4-b67）：invoke 执行真写收"会话存在档"门禁。
+/// 无会话（Option<Extension<Session>> = None）→ 401，门置于首个 DB 访问
+/// （pool.get() / POST 体校验之后）之前，杜绝匿名触发 `x_program_invoke`
+/// last_start_time/last_end_time 写入。已验证的 token/回调验签属 §五
+/// "第三方回调零验签族"遗留项，与本次加门分开记。
+fn require_session(
+    session: Option<Extension<shared::session::Session>>,
+) -> Result<shared::session::Session, AppError> {
+    session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
+}
+
 fn json_str(payload: &Value, key: &str) -> String {
     payload
         .get(key)
@@ -11204,9 +11218,11 @@ async fn u3_invoke_execute_inner(
 #[allow(non_snake_case)]
 pub async fn u3_invoke_execute(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(flag): Path<String>,
     Json(_body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     u3_invoke_execute_inner(&pool, &flag, None).await
 }
 
@@ -11214,9 +11230,11 @@ pub async fn u3_invoke_execute(
 #[allow(non_snake_case)]
 pub async fn u3_invoke_execute_with_token(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path((flag, _client, token)): Path<(String, String, String)>,
     Json(_body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     u3_invoke_execute_inner(&pool, &flag, Some(&token)).await
 }
 
