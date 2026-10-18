@@ -170,7 +170,6 @@ correlation_core_entity	DELETE	/api/correlation/core/entity/delete/{id}	delete_b
 correlation_service_processing	POST	/api/correlation/service/processing/link	link_service	R7
 correlation_service_processing	POST	/api/correlation/service/processing/correlation/readable/type/processplatform	readable_pp	R7
 correlation_service_processing	POST	/api/correlation/service/processing/correlation/readable/type/cms	readable_cms	R7
-express	POST	/api/express/subscribe	subscribe_express	R7
 express	POST	/api/express/person/list	express_person_list	R7
 express	POST	/api/express/unit/list	express_unit_list	R7
 express	POST	/api/express/identity/list	express_identity_list	R7

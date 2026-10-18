@@ -614,7 +614,7 @@ express	POST	/api/express/person/list	express_person_list	R7-已认证+体内无
 express	POST	/api/express/person/with/identity	express_person_with_identity	R7-已认证+体内无会话无门禁
 express	POST	/api/express/person/with/unit	express_person_with_unit	R7-已认证+体内无会话无门禁
 express	POST	/api/express/role/list	express_role_list	R7-已认证+体内无会话无门禁
-express	POST	/api/express/subscribe	subscribe_express	R7-已认证+体内无会话无门禁
+express	POST	/api/express/subscribe	subscribe_express	R5-已认证+体内门禁
 express	POST	/api/express/unit/list	express_unit_list	R7-已认证+体内无会话无门禁
 file	POST	/api/file/folder/create	folder_create	R5-已认证+体内门禁
 file	POST	/api/file/folder/remove	folder_remove	R5-已认证+体内门禁
