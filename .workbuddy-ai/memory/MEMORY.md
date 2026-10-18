@@ -1,7 +1,8 @@
 # oa4rust 项目长期备忘
 
-## 审计 campaign（分支 oa4rust-vuln-audit-r4）
+## 审计 campaign（分支 oa4rust-vuln-audit-r4 → 已合入 optimism20261012）
 - 四轮安全审计主账本：`oa4rust/backend/docs/audits/2026-10-14-security-audit-round4.md`（§三 逐批记账，§五 处置与遗留）。
+- **R7 战役已收尾**：基线 820 → 629（−191，第 65–84 批）；ORM 盲区复查队列（b65→b84）已清空。各批 commit 在 `oa4rust-vuln-audit-r4`，**已于 2026-10-18 合并进 `optimism20261012`**（合并提交 `e65238424` 并 push；合并后尺子复读 R7=629，与 r4 分支一致）。
 - 进行中主题：GET 写面逐 crate 加门（尺子 `scripts/audit_write_gating.mjs` 产 `docs/audits/artifacts/*.tsv`）。**下一批入口 = auth 6 条**（OAuth 回调 GET 写，与「第三方回调零验签」族重叠，加门与验签分开记）。
 - 遗留待修大项：第三方回调零验签族、`shared/src/crud.rs` CrudSpec 无归属、`GATE_RE` 里 `require_actor` 冗余词、尺子 `gateEvidence` 不剥注释（尺子缺陷 26）、`row_to_json` JSONB/时间盲口、只读挂写 764 等（详见账本 §五）。
 
