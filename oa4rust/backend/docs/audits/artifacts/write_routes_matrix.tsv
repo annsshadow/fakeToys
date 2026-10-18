@@ -2217,7 +2217,7 @@ query_assemble_surface	PUT	/api/queryview/view/{id}/execute	view_id_execute_put	
 query_core_entity	POST	/api/query/view/create	view_create	R5-已认证+体内门禁
 query_core_express	POST	/api/query/core/express/cache/{queryId}	cache_query_result	R5-已认证+体内门禁
 query_core_express	POST	/api/query/core/express/execute	execute_query	R5-已认证+体内门禁
-query_express	POST	/api/query/create	create_query	R7-已认证+体内无会话无门禁
+query_express	POST	/api/query/create	create_query	R5-已认证+体内门禁
 query_service	POST	/api/query/service/neural/generate/{model_flag}	neural_generate_model	R5-已认证+体内门禁
 query_service	POST	/api/query/service/processing/execute	processing_execute	R5-已认证+体内门禁
 query_service_processing	POST	/api/query/service/processing/batch	batch_process	R7-已认证+体内无会话无门禁
