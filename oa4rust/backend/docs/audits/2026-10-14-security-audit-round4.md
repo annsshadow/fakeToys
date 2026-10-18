@@ -1099,6 +1099,19 @@ GET 写面队列里 `calendar_assemble_control` 与 `jpush_assemble_control` 各
 
 | 验证（本批代码变更） | — | meeting 整 lib `17 passed / 0 failed / 0 ignored`：新增 `security_gate_tests_b66::b66_writes_reject_without_session`（2 把 dead pool + `None` 会话 → 全部 `Err(AppError::Unauthorized)`，门在 DB 访问前）+ `b66_writes_accept_valid_session_past_gate`（有效会话 + dead pool → `Err(AppError::Internal)`，证门在库前、之后才落库）。尺子：**R7 692→690（−2）**、含写 15→**13**（−2，印证两把均为 deadpool 字面量写）；复跑 3 次稳定；EXIT 0 |
 
+### 三.67 — program_center 2 把 invoke 执行真写收会话门（R7 690→688，含写 13→11）
+- **批次目标**：收 program_center 两把 invoke 执行真写 R7：`u3_invoke_execute`（POST `/api/program_center/invoke/{flag}/execute`，"执行服务调用"）、`u3_invoke_execute_with_token`（POST `/api/program_center/invoke/{flag}/client/{client}/token/{token}/execute`，外部带 token 调用）。二者共用 `u3_invoke_execute_inner`：查 `x_program_invoke` by flag → 校验 `enable_token`/`enable_anonymous` → `UPDATE x_program_invoke SET last_start_time = NOW(), last_end_time = NOW() WHERE id = $1`（本批目标写）。
+- **收口档**：session 档（新增 crate 内 `require_session`，无会话 401，门置于 `u3_invoke_execute_inner` 调用之前、即 `pool.get()` 之前）。crate 内已有 88 处 `Extension<Session>` 会话门与 `require_admin`/`require_admin_opt`（admin 档，覆盖 config_save/appstyle_erase/jest 等运维写），本轮补上 invoke 执行族的会话档。
+- **§五 新增遗留（token 零验签族坐实）**：`x_program_invoke` 表**无任何 token 存储列**（DDL 见 `migrations/074_u2_small_modules.sql`，仅 `enable_token`/`enable_anonymous` 两个布尔），`u3_invoke_execute_inner` 对 `with_token` 变体只做"token 非空"检查（`token.map(str::trim).unwrap_or_default().is_empty()`），**从不与任何存储值比对**——路径上的 token 是纯占位。属"第三方回调零验签族"（见 §五）。本批按既定约定"加门与验签分开记"：先收会话门抹掉匿名写面；真验签需 schema 增加 token 哈希列 + 常量时间比对，列 §五 遗留。
+- **与前批"待修不收门"判定的关系（重要澄清）**：前批账本曾判定这两把"不作为用户会话门禁目标"，理由是**按 admin 档**拦截会破坏外部调用流程——该判定仅对 admin 档成立（外部服务多以普通登录用户身份调用，admin 门会误伤）。本批收的是**会话存在档**（无会话 401、任何已认证用户放行），与外部调用鉴权模型兼容：经核查 `AUTH_EXEMPT_PATHS` 与 rbac 注册表**均不含** `/api/program_center/invoke/*`，即这两条路本就要过 `auth_middleware` 持会话可达，handler 内 `require_session` 是纵深防御（万一豁免表/注册表漂移，handler 仍挡匿名），**不破坏任何活的集成**。
+
+| 门档 | 处理函数 | 路由 / 真写动作 | 加门说明 |
+| --- | --- | --- | --- |
+| 会话档（新增 require_session） | `u3_invoke_execute` | POST `/api/program_center/invoke/{flag}/execute`，走 `u3_invoke_execute_inner`（UPDATE x_program_invoke last_start_time/last_end_time） | crate 内新增 `require_session`：无会话 401，门置于 inner 调用（即 `pool.get()`）之前 |
+| 会话档（新增 require_session） | `u3_invoke_execute_with_token` | POST `/api/program_center/invoke/{flag}/client/{client}/token/{token}/execute`，同 inner | 同上 `require_session` 无会话 401；token 零验签遗留见 §五 |
+
+| 验证（本批代码变更） | — | program_center 整 lib `266 passed / 0 failed / 0 ignored`（0.84s）：新增 `security_gate_tests_b67` 三臂——`b67_writes_reject_without_session`（2 把 dead pool + `None` 会话 → 全部 `Err(AppError::Unauthorized)`，门在 DB 访问前）+ `b67_writes_accept_valid_session_past_gate`（有效会话 + dead pool → `Err(AppError::Internal)`，证门在库前、只挡匿名）+ `b67_require_session_gate_logic`（纯单元：无会话拒绝、有会话放行）。尺子：**R7 690→688（−2）**、含写 13→**11**（−2，印证两把均为 deadpool 字面量写）；复跑 3 次稳定；EXIT 0 |
+
 ## 四、验证
 
 
@@ -1758,6 +1771,7 @@ cd oa4rust/backend && cargo test --lib -p <crate>
   6. 归属冒名残留：A2-F11（`creator` 硬编码 "system" 9 处）、A3-N13（invoice 三把）、A2-F13 / F14。
   7. **ai crate 写面收口残留（第六十二批新见）**：①`x_ai_file.id` / `x_ai_index.id` 无唯一/主键约束，`ON CONFLICT (id)` 造数报 E42P10（同格 x_jpush.id）；②`x_ai_conversation` 现已要求非 null `title`（schema 漂移，旧造数 E23502）；两项已在本批 `tests.rs::test_ai_get_writes_owner_admin_gate` 造数改 DELETE+INSERT 幂等并补 `title` 绕过，但属**真实 schema 缺陷**，建议迁移补 `id` 唯一约束 + 明确 `title` 默认值；③`ai_assemble_control` `file_upload`/`file_copy_file` 仍取 body `creator="system"` 而非会话身份，存在冒名写 `x_ai_file` 残留（仅已挡匿名），应按会话 person 落 creator（归 A2-F11）。模块级 `update_control_config`（A3-N8）本批未动，仍待 admin 收口。
 - **尺子缺陷 28（ORM-blindness：sea_orm 写对"含写"指标不可见）**：`scripts/audit_write_gating.mjs` 的写证据只扫 deadpool SQL 字面量（`INSERT/UPDATE/DELETE` 字符串），**不识别 sea_orm `ActiveModel::insert/update/delete`** 这类 ORM 落笔。后果：凡经 sea_orm 的真写（如 `general_core_entity` 的 dict / dict_item / file / invoice 共 12 把 CRUD）长期被读成「只读挂写方法」躺在 R7 桶里，而"含写"计数系统性少算。第六十五批正是此类：R7 704→692（−12）但"含写"纹丝不动 15→15——即该 −12 全是尺子看不见的 ORM 写。**修复轴**：`writeEvidence` 补 sea_orm 写特征（识别 `ActiveModelTrait` 的 `insert/update/delete` 调用、或 `Entity::insert/Update/Delete` builder），把 ORM 型写面从"只读挂写"纠正进"含写"。修复前，R7 的真写面比读数大、含写比读数小；按 crate 下移推进时务必逐批用离线 401 臂交叉验证（不只看"含写"差值），否则会漏掉 ORM 写这类"无门禁但读数不降"的批次。
+- **遗留 29（program_center invoke token 零验签，第六十七批新见）**：`u3_invoke_execute_with_token`（`/invoke/{flag}/client/{client}/token/{token}/execute`）路径上的 token 是**纯占位**——`u3_invoke_execute_inner` 仅做"非空"检查（`token.map(str::trim).unwrap_or_default().is_empty()`），`x_program_invoke` 表 DDL（`migrations/074_u2_small_modules.sql`）**无任何 token 存储列**，从不与存储值比对。属"第三方回调零验签族"在 invoke 域的延伸。**修复轴**：schema 增 token 哈希列（如 `token_hash TEXT` + `token_updated_at`）+ handler 常量时间比对（`subtle`/手写常量时间比较），鉴权模型从"域内布尔开关"升级为"真凭据"；本批已按"加门与验签分开记"先收会话门（`require_session`）抹掉匿名写面，验签本身列此遗留。附带影响面评估：两条 invoke 路均不在 `AUTH_EXEMPT_PATHS` / rbac Public 注册表内，`auth_middleware` 本就要求会话，故收会话门不破坏活的集成（与前批"admin 档会破坏外部调用"的判定不矛盾——那是 admin 档的结论）。
 - 建议再加三把守卫（本轮取证出的是**机制性缺口**，不是单点漏洞）：
   - **GET 写禁令**：`csrf_middleware` 只覆盖 POST/PUT/PATCH/DELETE（`token.rs:70-74`），`requires_admin` 同样只认这三个方法（`security.rs:129`）；凡 `.route("...", get(handler))` 且 handler 体内含 `INSERT/UPDATE/DELETE` 即应红。已知落点：`hotpic routes.rs:53`、`ai routes.rs:47`、`message routes.rs:19`、meeting accept/confirm/checkin、calendar 与 jpush 的 `update/control/config`、attendance 两处、`processplatform_core_express`。撤 GET 需同批改前端（`MeetingApp.vue` 自检面板仍在用 GET）。
   - **Public 兜底吞掉点名**：`ADMIN_WRITE_PREFIXES` ∩ 注册表 Public 的 15 条交集必须逐条点名，落在此集合内新增的写 handler 必须有体内归属/角色门（§二.7）。

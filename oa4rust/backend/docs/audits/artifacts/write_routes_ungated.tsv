@@ -640,8 +640,6 @@ program_center	PUT	/api/program_center/collect/updateUnit	collect_updateUnit	R7
 program_center	POST	/api/program_center/code/list/paging/{page}/size/{size}	code_list_paging_page_size_size	R7
 program_center	POST	/api/program_center/deploy/list/paging/{page}/size/{size}	deploy_list_paging_page_size_size	R7
 program_center	POST	/api/program_center/dict/list/paging/{page}/size/{size}	dict_list_paging_page_size_size	R7
-program_center	POST	/api/program_center/invoke/{flag}/execute	u3_invoke_execute	R7
-program_center	POST	/api/program_center/invoke/{flag}/client/{client}/token/{token}/execute	u3_invoke_execute_with_token	R7
 program_center	POST	/api/program_center/market/list/install/log/paging/{page}/size/{size}	u3_market_install_log_paging_post	R7
 program_center	POST	/api/program_center/market/list/paging/{page}/size/{size}	u3_market_list_paging_post	R7
 program_center	DELETE	/api/program_center/module/remove/structure/{id}	module_remove_structure_id	R7
