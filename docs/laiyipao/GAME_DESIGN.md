@@ -4,16 +4,18 @@
 >
 > ⚠️ **本文档的地位**：玩法**设计意图** + 与实现的**差异清单**。
 > 它**不是**实现的单一事实源 —— 实现的单一事实源是代码与
-> [`server/testdata/`](../server/testdata/) 里的契约夹具。
+> [`server/testdata/`](../../laiyipao/server/testdata/) 里的契约夹具。
 >
 > 本文档与代码不一致的地方，本文档**已经标注**（每处注明实测值与核实方式）。
-> 数字改动后请跑 `go -C server test ./internal/domain -run DocDrift` ——
+> 数字改动后请跑 `go -C server test ./internal/domain -run "GameDesign|OpsDoc|DesignDoc" -v` ——
 > `docs_drift_test.go` 会把本文档里的关键数字与代码逐项比对，漂了就红。
+> ⚠️ 跑这条命令时应看到**恰好 7 条** `--- PASS`（GameDesign×2 / OpsDoc×3 / DesignDoc×2）；
+> 一条都没有 = 模式没命中任何测试（本守卫家族 2026-10-14 文档迁移后曾因此静默空转过）。
 >
 > 定位：玩法机制与《向僵尸开炮》同构（关卡闯关 / 守防线 / 局内选卡 / 场外养成），
 > **表达与系统全原创**，并在其之上做 **7 项**机制级创新以形成自有辨识度。
 >
-> 逐关数值平衡、实测数据与已知边界见 [`../README.md`](../README.md)。
+> 逐关数值平衡、实测数据与已知边界见 [`../../laiyipao/README.md`](../../laiyipao/README.md)。
 
 ---
 
@@ -492,7 +494,7 @@
 
 ## 11. 已知边界（设计意图 vs 实现现状）
 
-> 完整的已知边界与实测数据见 [`../README.md`](../README.md) 的「已知边界」章。
+> 完整的已知边界与实测数据见 [`../../laiyipao/README.md`](../../laiyipao/README.md) 的「已知边界」章。
 > 这里只列**与本文档设计意图直接冲突**的项。
 
 | # | 设计意图 | 实现现状 | 原因 |
