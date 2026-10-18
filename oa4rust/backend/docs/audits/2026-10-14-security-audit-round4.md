@@ -1271,6 +1271,21 @@ GET 写面队列里 `calendar_assemble_control` 与 `jpush_assemble_control` 各
 
 | 验证（本批代码变更） | — | bbs_core_entity 整 lib `28 passed / 0 failed / 0 ignored`：新增 `security_gate_tests_b79`——`b79_writes_reject_without_session`（9 把真库 sea_orm 连接 + `None` 会话 → 全部 `Err(AppError::Unauthorized)`，门在 DB 访问前）+ `b79_require_session_gate_logic`（纯单元）。尺子：**R7 666→657（−9）**、含写 0→**0**（ORM-blindness 第五例证）、只读挂写桶 666→657（−9）；复跑 3 次稳定；EXIT 0 |
 
+### 三.80 — ORM 盲区复查：organization_core_entity 12 把收会话门（R7 657→645，含写 0→0）
+- **批次目标**：organization_core_entity 的 R7 12 条全为真写（sea_orm CRUD）：definition/identity/custom/bind 四族 × create/update/delete。
+- **矩阵对照（分组收口）**：同 crate 的 group/person 6 写路由（POST/PUT/DELETE `/api/organization/group`、`/person`）分类为 **R1-中间件 admin**（挂 ADMIN_WRITE_PREFIXES，中间件层已拦 admin）——不在 R7、不在本批范围；本批只收 handler 无门的 12 把。
+- **收口档**：均 session 存在档（新增 crate 内 `require_session`，无会话 401，门在 `ActiveModel::insert/update/delete` 前）。组织定义/身份/自定义字段/绑定为组织管理面数据，任意已认证用户可写（是否进一步收 admin 留 §五——与 group/person 的中间件 admin 档存在档位差，需与 o2server 权威对齐）。
+- **接线缺陷口径同第七十八批**：router 不提供 `Extension<DatabaseConnection>`（§五 遗留 30）⇒ HTTP 面 500 死路，本批静态收门 + 直调臂验证。
+
+| 门档 | 处理函数 | 路由 / 真写动作 | 加门说明 |
+| --- | --- | --- | --- |
+| 会话档（新增 require_session） | `definition_create`/`update`/`delete` | POST `/api/organization/definition`、PUT/DELETE `/api/organization/definition/{id}`，org_definition | crate 内新增 `require_session`：无会话 401，门在 DB 访问前 |
+| 会话档（新增 require_session） | `identity_create`/`update`/`delete` | `/api/organization/identity`（+`/{id}`），org_identity | 同上 |
+| 会话档（新增 require_session） | `custom_create`/`update`/`delete` | `/api/organization/custom`（+`/{id}`），org_custom | 同上 |
+| 会话档（新增 require_session） | `bind_create`/`update`/`delete` | `/api/organization/bind`（+`/{id}`），org_bind | 同上 |
+
+| 验证（本批代码变更） | — | organization_core_entity 整 lib `35 passed / 0 failed / 0 ignored`：新增 `security_gate_tests_b80`——`b80_writes_reject_without_session`（12 把真库 sea_orm 连接 + `None` 会话 → 全部 `Err(AppError::Unauthorized)`，门在 DB 访问前）+ `b80_require_session_gate_logic`（纯单元）。尺子：**R7 657→645（−12）**、含写 0→**0**（ORM-blindness 第六例证）、只读挂写桶 657→645（−12）；复跑 3 次稳定；EXIT 0 |
+
 ## 四、验证
 
 
