@@ -1195,6 +1195,18 @@ GET 写面队列里 `calendar_assemble_control` 与 `jpush_assemble_control` 各
 
 | 验证（本批代码变更） | — | message 整 lib `15 passed / 0 failed / 0 ignored`：新增 `security_gate_tests_b73` 三臂——`b73_writes_reject_without_session`（dead pool + `None` 会话 → `Err(AppError::Unauthorized)`，门在 DB 访问前）+ `b73_writes_accept_valid_session_past_gate`（有效会话 + dead pool → `Err(AppError::Internal)`，证门在库前）+ `b73_require_session_gate_logic`（纯单元）。顺带修预存 `tests::test_mark_read`（原断言语落死池 → 500）：给其 router 注一层 `Extension(test_session)` 保留语义。尺子：**R7 674→673（−1）**、含写 5→**4**（−1，印证死池字面量写）；复跑 3 次稳定；EXIT 0 |
 
+### 三.74 — org_auth OAuth 授权码签发 1 把收会话门（R7 673→672，含写 4→3）
+- **批次目标**：收 organization_assemble_authentication 唯一真写 R7：`oauth_generate_code`（POST `/api/organization/assemble/authentication/oauth/generate/code`，经 `oauth_code_store` 助手 `INSERT INTO x_org_oauth_code (id, code, client, person_id, scope, expire_time, created_at)`）。
+- **收口档**：session 档（新增 crate 内 `require_session`，无会话 401，门置于 `pool.get()` 之前）。OAuth 授权码签发须由已登录用户发起（授权步语义）。
+- **§五 关联（"第三方回调零验签族"延伸，零验签分开记）**：`oauth_generate_code` 的 `clientId` 未与已注册应用比对、`personId` 取自 body（可伪造签发他人身份 code）；真验签需 registered-clients 表 + client 凭证校验 + personId 改会话身份。本批按既定约定"加门与验签分开记"：先收会话门抹掉匿名签发面。
+- **全 crate R7 分类（13 条 R7 路由逐条过）**：①真写 1 把即 `oauth_generate_code`（本批收）；②假阳性 12 条——`captcha_login` / `two_factor_login` / `sso_post_login` / `sso_encrypt` / `dingding_info` / `zhengwudingding_info_post` / `oauth_info_post` / `oauth_info_jira_post` / `oauth_token_post` / `oauth_token_jira_post`（后两者转调 `oauth_token_get` 纯 SELECT）/ `qiyeweixin_info_sign` / `authentication_bind_meta_post` 均无写；`login`/`logout` 在 R4（令牌签发/注销，按前批既定不挂会话门）。③另发现 **GET 写族新落点**：`oauth_auth`（routes.rs:1111，`get(oauth_auth)`）经同助手 INSERT `x_org_oauth_code` scope="auth" ——GET 路由挂写，不进 R7，补入 §五"GET 写禁令"族清单。④`dingding/qiyeweixin/zhengwudingding bind_confirm` 三把 `UPDATE auth_person` 写已在 R5（有门禁），不动。
+
+| 门档 | 处理函数 | 路由 / 真写动作 | 加门说明 |
+| --- | --- | --- | --- |
+| 会话档（新增 require_session） | `oauth_generate_code` | POST `/api/organization/assemble/authentication/oauth/generate/code`，INSERT x_org_oauth_code（经 oauth_code_store） | crate 内新增 `require_session`：无会话 401，门置于 `pool.get()` 之前 |
+
+| 验证（本批代码变更） | — | organization_assemble_authentication 整 lib `19 passed / 0 failed / 2 ignored`：新增 `security_gate_tests_b74` 三臂——`b74_writes_reject_without_session`（dead pool + `None` 会话 → `Err(AppError::Unauthorized)`，门在 DB 访问前）+ `b74_writes_accept_valid_session_past_gate`（有效会话 + dead pool → `Err(AppError::Internal)`，证门在库前）+ `b74_require_session_gate_logic`（纯单元）。尺子：**R7 673→672（−1）**、含写 4→**3**（−1，印证 deadpool 字面量写）；复跑 3 次稳定；EXIT 0 |
+
 ## 四、验证
 
 
@@ -1856,7 +1868,7 @@ cd oa4rust/backend && cargo test --lib -p <crate>
 - **尺子缺陷 28（ORM-blindness：sea_orm 写对"含写"指标不可见）**：`scripts/audit_write_gating.mjs` 的写证据只扫 deadpool SQL 字面量（`INSERT/UPDATE/DELETE` 字符串），**不识别 sea_orm `ActiveModel::insert/update/delete`** 这类 ORM 落笔。后果：凡经 sea_orm 的真写（如 `general_core_entity` 的 dict / dict_item / file / invoice 共 12 把 CRUD）长期被读成「只读挂写方法」躺在 R7 桶里，而"含写"计数系统性少算。第六十五批正是此类：R7 704→692（−12）但"含写"纹丝不动 15→15——即该 −12 全是尺子看不见的 ORM 写。**修复轴**：`writeEvidence` 补 sea_orm 写特征（识别 `ActiveModelTrait` 的 `insert/update/delete` 调用、或 `Entity::insert/Update/Delete` builder），把 ORM 型写面从"只读挂写"纠正进"含写"。修复前，R7 的真写面比读数大、含写比读数小；按 crate 下移推进时务必逐批用离线 401 臂交叉验证（不只看"含写"差值），否则会漏掉 ORM 写这类"无门禁但读数不降"的批次。
 - **遗留 29（program_center invoke token 零验签，第六十七批新见）**：`u3_invoke_execute_with_token`（`/invoke/{flag}/client/{client}/token/{token}/execute`）路径上的 token 是**纯占位**——`u3_invoke_execute_inner` 仅做"非空"检查（`token.map(str::trim).unwrap_or_default().is_empty()`），`x_program_invoke` 表 DDL（`migrations/074_u2_small_modules.sql`）**无任何 token 存储列**，从不与存储值比对。属"第三方回调零验签族"在 invoke 域的延伸。**修复轴**：schema 增 token 哈希列（如 `token_hash TEXT` + `token_updated_at`）+ handler 常量时间比对（`subtle`/手写常量时间比较），鉴权模型从"域内布尔开关"升级为"真凭据"；本批已按"加门与验签分开记"先收会话门（`require_session`）抹掉匿名写面，验签本身列此遗留。附带影响面评估：两条 invoke 路均不在 `AUTH_EXEMPT_PATHS` / rbac Public 注册表内，`auth_middleware` 本就要求会话，故收会话门不破坏活的集成（与前批"admin 档会破坏外部调用"的判定不矛盾——那是 admin 档的结论）。
 - 建议再加三把守卫（本轮取证出的是**机制性缺口**，不是单点漏洞）：
-  - **GET 写禁令**：`csrf_middleware` 只覆盖 POST/PUT/PATCH/DELETE（`token.rs:70-74`），`requires_admin` 同样只认这三个方法（`security.rs:129`）；凡 `.route("...", get(handler))` 且 handler 体内含 `INSERT/UPDATE/DELETE` 即应红。已知落点：`hotpic routes.rs:53`、`ai routes.rs:47`、`message routes.rs:19`、meeting accept/confirm/checkin、calendar 与 jpush 的 `update/control/config`、attendance 两处、`processplatform_core_express`。撤 GET 需同批改前端（`MeetingApp.vue` 自检面板仍在用 GET）。
+  - **GET 写禁令**：`csrf_middleware` 只覆盖 POST/PUT/PATCH/DELETE（`token.rs:70-74`），`requires_admin` 同样只认这三个方法（`security.rs:129`）；凡 `.route("...", get(handler))` 且 handler 体内含 `INSERT/UPDATE/DELETE` 即应红。已知落点：`hotpic routes.rs:53`、`ai routes.rs:47`、`message routes.rs:19`、meeting accept/confirm/checkin、calendar 与 jpush 的 `update/control/config`、attendance 两处、`processplatform_core_express`、**`organization_assemble_authentication routes.rs:1111`（第七十四批新见：`oauth_auth` GET 经 `oauth_code_store` INSERT `x_org_oauth_code` scope="auth"）**。撤 GET 需同批改前端（`MeetingApp.vue` 自检面板仍在用 GET）。
   - **Public 兜底吞掉点名**：`ADMIN_WRITE_PREFIXES` ∩ 注册表 Public 的 15 条交集必须逐条点名，落在此集合内新增的写 handler 必须有体内归属/角色门（§二.7）。
   - **测试在册 ≠ 测试在跑**：6 个 crate 的 `src/tests.rs` 是游离文件——文件在，`lib.rs` 没有
     `mod tests;`，里面的断言一条都不参与编译（`console` / `ldap` / `openapi` / `orm` /
