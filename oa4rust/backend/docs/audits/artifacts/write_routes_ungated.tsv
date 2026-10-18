@@ -199,9 +199,6 @@ hotpic_assemble_control	DELETE	/api/hotpic/assemble/control/cipher/hotpic/bbs/{i
 hotpic_assemble_control	DELETE	/api/hotpic/assemble/control/cipher/hotpic/cms/{id}	cipher_hotpic_cms_id	R7
 hotpic_assemble_control	PUT	/api/hotpic/assemble/control/cipher/hotpic/filter/list/page/{page}/count/{count}	cipher_hotpic_filter_list_page_page_count_count	R7
 hotpic_assemble_control	PUT	/api/hotpic/assemble/control/user/hotpic/filter/list/page/{page}/count/{count}	user_hotpic_filter_list_page_page_count_count	R7
-hotpic_assemble_control	DELETE	/api/hotpic/assemble/control/user/hotpic/{id}/{id2}	user_hotpic_delete_by_ids	R7
-hotpic_core_entity	POST	/api/hotpic/core/entity/create	create	R7
-hotpic_core_entity	DELETE	/api/hotpic/core/entity/delete/{id}	delete_by_id	R7
 jpush_assemble_control	POST	/api/jpush_assemble_control/message/test/send	message_test_send	R7
 jpush_core_entity	DELETE	/api/jpush/core/entity/device/{id}	device_delete	R7
 jpush_core_entity	POST	/api/jpush/core/entity/device/create	device_create	R7

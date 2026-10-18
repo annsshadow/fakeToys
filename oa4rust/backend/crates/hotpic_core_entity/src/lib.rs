@@ -19,6 +19,17 @@ pub mod routes;
 
 use entities::hotpic;
 
+/// 安全审计（round4-b72）：hotpic 2 把 sea_orm CRUD 真写收"会话存在档"门禁。
+/// 无会话（Option<Extension<Session>> = None）→ 401，门置于首个 DB 访问
+/// （`ActiveModel::insert` / `Entity::find_by_id().one()`）之前，杜绝匿名写
+/// `hotpic` 表。这些是 sea_orm ORM 写，审计尺子"含写"指标不可见
+/// （ORM-blindness，§五 尺子缺陷 28），R7 降但含写不变属预期。
+fn require_session(
+    session: Option<Extension<shared::session::Session>>,
+) -> Result<shared::session::Session, AppError> {
+    session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
+}
+
 // 热图实体
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct HotPic {
@@ -149,8 +160,10 @@ pub async fn exists_check(
 #[axum::debug_handler]
 pub async fn create(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let id = uuid::Uuid::new_v4().to_string();
     let application = payload
         .get("application")
@@ -199,8 +212,10 @@ pub async fn create(
 
 pub async fn delete_by_id(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let model = hotpic::Entity::find_by_id(&id)
         .one(&db.0)
         .await
@@ -253,6 +268,8 @@ pub fn hotpic_core_entity_router(_pool: Pool) -> Router {
 mod tests;
 #[cfg(test)]
 mod tests_generated;
+#[cfg(test)]
+mod security_gate_tests_b72;
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::hotpic_core_entity_router(pool)
