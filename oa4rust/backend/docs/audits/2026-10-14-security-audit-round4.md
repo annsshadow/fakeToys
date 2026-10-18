@@ -1124,6 +1124,17 @@ GET 写面队列里 `calendar_assemble_control` 与 `jpush_assemble_control` 各
 
 | 验证（本批代码变更） | — | query_service 整 lib `9 passed / 0 failed / 0 ignored`：新增 `security_gate_tests_b68` 三臂——`b68_writes_reject_without_session`（2 把 dead pool + `None` 会话 → 全部 `Err(AppError::Unauthorized)`，门在 DB 访问前）+ `b68_writes_accept_valid_session_past_gate`（有效会话 + dead pool → `Err(AppError::Internal)`，证门在库前、只挡匿名）+ `b68_require_session_gate_logic`（纯单元）。尺子：**R7 688→686（−2）**、含写 11→**9**（−2，印证两把均为 deadpool 字面量写）；复跑 3 次稳定；EXIT 0 |
 
+### 三.69 — query_core_entity 1 把视图创建真写收会话门（R7 686→685，含写 9→8）
+- **批次目标**：收 query_core_entity 唯一真写 R7：`view_create`（POST `/api/query/view/create`，`INSERT INTO QUERY_VIEW (id, name, description, query_sql, creator_id, status, create_time)`）。
+- **收口档**：session 档（新增 crate 内 `require_session`，无会话 401，门置于 `pool.get()` 之前）。查询视图创建是普通用户动作，收会话存在档。
+- **§五 关联（非新增，重申）**：`view_create` 的 `creator_id` 取自 body（`payload["creatorId"]`）而非会话身份——冒名写入残留（A2-F11 族）。本批只抹匿名写面；按会话 person 落 `creator_id` 列 §五 遗留。
+
+| 门档 | 处理函数 | 路由 / 真写动作 | 加门说明 |
+| --- | --- | --- | --- |
+| 会话档（新增 require_session） | `view_create` | POST `/api/query/view/create`，INSERT QUERY_VIEW | crate 内新增 `require_session`：无会话 401，门置于 `pool.get()` 之前 |
+
+| 验证（本批代码变更） | — | query_core_entity 整 lib `17 passed / 0 failed / 0 ignored`：新增 `security_gate_tests_b69` 三臂——`b69_writes_reject_without_session`（dead pool + `None` 会话 → `Err(AppError::Unauthorized)`，门在 DB 访问前）+ `b69_writes_accept_valid_session_past_gate`（有效会话 + dead pool → `Err(AppError::Internal)`，证门在库前）+ `b69_require_session_gate_logic`（纯单元）。顺带修预存 `tests::test_view_create_returns_success`（路由可达臂）：加门后匿名 HTTP 请求由 500 变 401，给其 router 注一层 `Extension(test_session)` 保留原"路由可达 + 落死池 → 500"断言语义。尺子：**R7 686→685（−1）**、含写 9→**8**（−1，印证死池字面量写）；复跑 3 次稳定；EXIT 0 |
+
 ## 四、验证
 
 

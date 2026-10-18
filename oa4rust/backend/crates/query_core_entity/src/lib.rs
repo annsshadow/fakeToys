@@ -173,11 +173,22 @@ pub async fn view_get(
     }
 }
 
+/// 安全审计（round4-b69）：query 视图创建真写收"会话存在档"门禁。
+/// 无会话（Option<Extension<Session>> = None）→ 401，门置于首个 DB 访问
+/// （`pool.get()`）之前，杜绝匿名写 `QUERY_VIEW`。
+fn require_session(
+    session: Option<Extension<shared::session::Session>>,
+) -> Result<shared::session::Session, AppError> {
+    session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
+}
+
 #[axum::debug_handler]
 pub async fn view_create(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
     let name = payload
@@ -353,6 +364,8 @@ pub fn query_core_entity_router(pool: Pool) -> Router {
 mod tests;
 #[cfg(test)]
 mod tests_generated;
+#[cfg(test)]
+mod security_gate_tests_b69;
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::query_core_entity_router(pool)
