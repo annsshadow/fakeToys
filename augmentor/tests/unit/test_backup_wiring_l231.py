@@ -36,8 +36,8 @@
 * 源与恢复目标同受白名单管：源给白名单外绝对路径 ⇒ **403**，给 `../outside/secret.json` ⇒
   **400**；恢复目标给白名单外绝对路径 ⇒ **403**，给 `..` ⇒ **400**，给空串 ⇒ **400**「文件路径
   不能为空」。三档都**没有**任何文件落到白名单之外（探针跑完逐目录点过）。
-* `name="sub/deep"` ⇒ **200**，在备份目录下建 `sub/` 再落 `deep.json`；带 `/` 的名字放行，
-  带 `..` 的名字被本轮那道闸拦下（闸**不是一刀切禁分隔符**，见 `TestTheTraversalGateDiscriminates`）。
+* **L231 当时**`name="sub/deep"` ⇒ **200** 并建 `sub/`；**L277 收 A366 之后这一档改判 400**：
+  含分隔符的名字建得出来却寻不了址（`{backup_id}` 只匹配一段），见 `TestTheTraversalGateDiscriminates`。
 * `clean_old_backups` 与 `verify_backup_integrity` 在 SDK 里都存在且可调用，而
   `GET /api/system/backups/ck/verify` ⇒ **404**（没有这只端点）⇒ 页面上做不到「清理旧备份」与
   「单独校验一份备份」（**A300**）。**L243 已收**：契约面这两族从 4 只变 **6** 只，下面
@@ -139,7 +139,9 @@ class TestTheFourFetchersMatchTheContract:
         for (verb, path), name in FETCHERS.items():
             body = fetcher_body(name)
             # 服务层的路径不带 `/api` 前缀（那一份住在 `baseURL` 里，l224 从源码读它）
-            literal = path.replace("{}", "${backupId}").removeprefix("/api")
+            # L277（A366）：路径段改走 `encodeURIComponent`（存量名字里可能有 `#`，裸插值会被当
+            # fragment 丢掉 ⇒ restore 405 / delete 404），所以这里找的是编码后的那一种插值
+            literal = path.replace("{}", "${encodeURIComponent(backupId)}").removeprefix("/api")
             assert f"api.{verb.lower()}(" in body, f"{name} 不是 {verb} 调用"
             assert literal in body, f"{name} 里没有 {path}（找的是 {literal}）"
 
@@ -382,7 +384,7 @@ class TestMeasuredEndpointBehavior:
 
 
 class TestTheTraversalGateDiscriminates:
-    """本轮收掉的那一格：`name` 里的 `..` 被拒，而 `/` 仍然放行（不是一刀切禁分隔符）"""
+    """`name` 越出备份目录被拒（L231 那一格）；**L277 起分隔符整族被拒**（A366，理由见下）"""
 
     def test_traversal_name_is_400_and_writes_nothing_outside(self, http_with_backups):
         http, root, _, tmp_path = http_with_backups
@@ -390,15 +392,26 @@ class TestTheTraversalGateDiscriminates:
                       json={"input_file": "p.json", "name": "../../escaped"},
                       params={"backup_dir": str(root / ".backups")})
         assert r.status_code == 400, r.text
-        assert r.json()["detail"] == "备份名称不能指向备份目录之外: ../../escaped"
+        # L277（A366）：`..` 里必然含 `/`，先被「单一路径段」那道门点名；判决档位与落盘副作用
+        # 与 L231 完全一致（400、目录外零文件），换的只是文案指出的是更靠前的那一格闸。
+        assert r.json()["detail"] == "备份名称不能含路径分隔符，否则寻不了址: ../../escaped"
         assert sorted(p.name for p in tmp_path.glob("*.json")) == []
         assert not list(tmp_path.rglob("escaped.json")), "越界文件还是落盘了"
 
-    def test_a_name_with_a_separator_is_still_allowed_inside(self, http_with_backups):
-        http, root, *_ = http_with_backups
+    def test_a_name_with_a_separator_is_now_400(self, http_with_backups):
+        """L231 曾放行 `sub/deep`（落在根内就不算越界）；**L277 反过来了**
+
+        翻的理由不是「更安全」这种口号，而是一条实测形状：`.backups/sub/deep.json` 建得出来、
+        索引登记得上、`GET /api/system/backups` 列得出它，可 HTTP 面把 id 放在**一个路径段**里
+        （`/api/system/backups/{backup_id}` 的 `backup_id` 只匹配 `[^/]+`），于是 restore / delete
+        恒 404 —— 数据不是被拒，是失踪。宁可创建时 400。
+        """
+        http, root, _, tmp_path = http_with_backups
         r = http.post("/api/system/backups", json={"input_file": "p.json", "name": "sub/deep"})
-        assert r.status_code == 200, r.text
-        assert (root / ".backups" / "sub" / "deep.json").is_file()
+        assert r.status_code == 400, r.text
+        assert "路径分隔符" in r.json()["detail"]
+        assert not (root / ".backups" / "sub").exists(), "400 却不落文件是判据，落了就是假判决"
+        assert sorted(p.name for p in tmp_path.glob("*.json")) == []
 
     def test_the_gate_raises_the_type_that_maps_to_400(self):
         """闸抛的是 `DataValidationError`（`ValueError` 子类）⇒ `to_http_error` 读成 400 而不是 500"""

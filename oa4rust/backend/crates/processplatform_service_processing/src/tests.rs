@@ -89,7 +89,8 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+        // 第五十三批：create_process 收会话门后无会话返 401（原 500）。
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
     }
 
     #[tokio::test]
@@ -146,7 +147,8 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+        // 路由存在且已先过会话门（四轮 R4-1）：无会话 401，不再直穿到 DB 层报 500。
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
     }
 
     #[tokio::test]
@@ -165,7 +167,8 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+        // 同 execute：取消他人实例是归属写，路由存在且先过会话门 → 无会话 401。
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
     }
 
     #[tokio::test]
@@ -296,26 +299,33 @@ mod tests {
                 .await;
         }
 
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri(format!("/api/work/{}/start", work_id))
-                    .method(Method::POST)
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-
-        assert_eq!(response.status(), StatusCode::OK);
-
-        let bytes = axum::body::to_bytes(response.into_body(), 4096)
-            .await
-            .unwrap();
-        let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        // 四轮 R4-1 之后 work 启动要过「会话 + 发起人」双门：router 只 layer 了 Pool，
+        // 走 HTTP 臂必然 401，故此处按 handler 直调，会话人与 seed 的 creator 同名以取放行分支。
+        let resp = crate::work_start(
+            axum::extract::Extension(pool.clone()),
+            Some(axum::extract::Extension(shared::testing::test_session("system"))),
+            axum::extract::Path(work_id.to_string()),
+        )
+        .await
+        .expect("发起人启动自己的 work 应放行");
+        let json = serde_json::to_value(&resp.0).unwrap();
         assert_eq!(json["type"], "success");
         assert_eq!(json["data"]["status"], "processing");
+
+        let client = client.expect("db client");
+        let status: String = client
+            .query_one("SELECT work_status FROM x_work WHERE id = $1", &[&work_id])
+            .await
+            .unwrap()
+            .get("work_status");
+        assert_eq!(status, "processing", "启动状态必须落库");
+
+        // 启动会建 Start Event 任务，收尾删净避免重复运行时任务无限堆积
+        let removed = client
+            .execute("DELETE FROM x_task WHERE work = $1", &[&work_id])
+            .await
+            .unwrap();
+        assert!(removed >= 1, "启动必须创建 Start Event 任务，实删 {removed} 行");
     }
 }
 
@@ -457,6 +467,38 @@ mod u2_contract {
         (status, v)
     }
 
+    /// 2026-10 R4-2：以指定 person 注入会话后发请求，且**不**预断言 HTTP 200
+    /// ——门禁收紧后要读 401 / 403，业务错误仍是 200 信封。
+    async fn send_raw_as(method: Method, uri: &str, body: Option<Value>, person: &str) -> (StatusCode, Value) {
+        let session = shared::session::Session {
+            token: "test-token".to_string(),
+            person_unique: person.to_string(),
+            created_at: chrono::Utc::now().naive_utc(),
+            expires_at: chrono::Utc::now().naive_utc() + chrono::Duration::hours(1),
+        };
+        let req = match body {
+            Some(v) => Request::builder()
+                .uri(uri)
+                .method(method)
+                .header("content-type", "application/json")
+                .body(Body::from(v.to_string()))
+                .unwrap(),
+            None => Request::builder()
+                .uri(uri)
+                .method(method)
+                .body(Body::empty())
+                .unwrap(),
+        };
+        let resp = app().layer(axum::Extension(session)).oneshot(req).await.unwrap();
+        let status = resp.status();
+        let raw = axum::body::to_bytes(resp.into_body(), usize::MAX)
+            .await
+            .unwrap()
+            .to_vec();
+        let v: Value = serde_json::from_slice(&raw).unwrap_or_else(|_| json!({}));
+        (status, v)
+    }
+
     async fn count(pool: &Pool, sql: &str) -> i64 {
         let c = pool.get().await.unwrap();
         c.query_one(sql, &[]).await.unwrap().get::<_, i64>("c")
@@ -480,17 +522,39 @@ mod u2_contract {
         ensure_schema(&pool).await;
         let base = "/api/processplatform/service/processing/applicationdict";
         let body = json!({"k1": {"k2": "v"}});
-        let (_, v) = send(Method::PUT, &format!("{base}/dic-rt/p0/data"), Some(body)).await;
+        // 四轮 §三.9：dict_set_N / dict_del_N 宏生成体收 admin（x_application_dict 属系统级数据）。
+        // 本臂改用真实 admin 会话，钉「admin 放行 + 路径寻址写入」；
+        // 无会话 401 / 非 admin 403 由 security_gate_tests::dict_depth_writes_reject_without_admin 钉。
+        let admin = seed_u2_admin().await;
+        let (status, v) = send_raw_as(
+            Method::PUT,
+            &format!("{base}/dic-rt/p0/data"),
+            Some(body),
+            &admin,
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "admin 写深度路径字典应放行，实际 {status}");
         assert_eq!(v["type"], "success");
         assert_eq!(v["data"]["value"]["p0"]["k1"]["k2"], "v", "\u{8def}\u{5f84}\u{5bfb}\u{5740}\u{5199}\u{5165}\u{5e94}\u{6302}\u{5728} p0 \u{952e}\u{4e0b}");
-        let (_, v) = send(
+        // R4-2：PUT applicationdict/{id}（写 name / 整只 data）收紧为仅 admin。
+        // 本臂钉住「非 admin 会话 403」；admin 放行侧与真实落库见
+        // security_gate_tests::dict_edit_allowed_for_admin_and_lands。
+        let (status, _) = send_raw_as(
             Method::PUT,
             &format!("{base}/dic-rt"),
             Some(json!({"name": "n"})),
+            "test-person",
         )
         .await;
-        assert_eq!(v["data"]["name"], "n");
-        let (_, v) = send(Method::DELETE, &format!("{base}/dic-rt/p0/data"), None).await;
+        assert_eq!(status, StatusCode::FORBIDDEN, "非 admin 写字典名必须 403");
+        let (status, v) = send_raw_as(
+            Method::DELETE,
+            &format!("{base}/dic-rt/p0/data"),
+            None,
+            &admin,
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "admin 删深度路径字典段应放行，实际 {status}");
         assert_eq!(v["type"], "success");
         let n = count(&pool, "SELECT COUNT(*) AS c FROM x_application_dict WHERE id='dic-rt' AND data::text LIKE '%p0%' OR data::text LIKE '%k1%'").await;
         assert_eq!(n, 0, "删除后键 k1 不得残留");
@@ -531,18 +595,26 @@ mod u2_contract {
             .unwrap();
         }
         let base = "/api/processplatform/service/processing/data/work/dw-1";
-        let (_, v) = send(Method::POST, base, Some(json!({"a":1}))).await;
+        // dw-1 的 creator 种子为 'system'，调用方同样用 'system' 身份即属主，门禁放行。
+        // 第四十三批给 data/work/* 数据面收 `x_work.creator` 归属门后，裸 `send`（无会话）
+        // 会回 401，这里改用注入属主会话的 `send_raw_as`。
+        let (s, v) = send_raw_as(Method::POST, base, Some(json!({"a":1})), "system").await;
+        assert_eq!(s, StatusCode::OK, "属主建数据应放行");
         assert_eq!(v["type"], "success");
-        let (_, v) = send(Method::POST, base, Some(json!({"a":2}))).await;
+        let (s, v) = send_raw_as(Method::POST, base, Some(json!({"a":2})), "system").await;
+        assert_eq!(s, StatusCode::OK);
         assert_eq!(
             v["type"], "error",
             "o2server ExceptionDataAlreadyExist 语义"
         );
-        let (_, v) = send(Method::POST, &format!("{base}/b"), Some(json!(true))).await;
+        let (s, v) = send_raw_as(Method::POST, &format!("{base}/b"), Some(json!(true)), "system").await;
+        assert_eq!(s, StatusCode::OK, "新键创建应放行");
         assert_eq!(v["type"], "success", "新键创建应成功");
-        let (_, v) = send(Method::PUT, &format!("{base}/a"), Some(json!(9))).await;
+        let (s, v) = send_raw_as(Method::PUT, &format!("{base}/a"), Some(json!(9)), "system").await;
+        assert_eq!(s, StatusCode::OK);
         assert_eq!(v["data"]["value"]["a"], 9);
-        let (_, v) = send(Method::POST, &format!("{base}/delete"), None).await;
+        let (s, v) = send_raw_as(Method::POST, &format!("{base}/delete"), None, "system").await;
+        assert_eq!(s, StatusCode::OK, "属主删数据应放行");
         assert_eq!(v["type"], "success");
         let n = count(
             &pool,
@@ -586,9 +658,18 @@ mod u2_contract {
         }
         let url = "/api/processplatform/service/processing/attachment/copy/work/att-dst-w";
         let body = json!({"attachmentList": ["att-src-a"]});
-        let (_, v1) = send(Method::POST, url, Some(body.clone())).await;
+        // R4-2：往他人工作复制附件按目标 work 的发起人判定（本臂 seed 为 system）
+        let (status, v1) = send_raw_as(Method::POST, url, Some(body.clone()), "system").await;
+        assert_eq!(status, StatusCode::OK, "发起人向自己的 work 复制附件应放行");
         assert_eq!(v1["data"]["successList"][0]["copied"], true);
-        let (_, v2) = send(Method::POST, url, Some(body)).await;
+        let (s_stranger, _) =
+            send_raw_as(Method::POST, url, Some(body.clone()), "att-stranger").await;
+        assert_eq!(
+            s_stranger,
+            StatusCode::FORBIDDEN,
+            "非目标 work 发起人不得往里复制附件"
+        );
+        let (_, v2) = send_raw_as(Method::POST, url, Some(body), "system").await;
         assert_eq!(v2["data"]["successList"][0]["copied"], false);
         assert_eq!(v2["data"]["successList"][0]["reason"], "already exist");
         let n = count(
@@ -637,7 +718,9 @@ mod u2_contract {
             .unwrap();
         }
         let url = "/api/processplatform/service/processing/attachment/att-x/work/w-other";
-        let (_, v) = send(Method::DELETE, url, None).await;
+        // 附件×work 的 IDOR 门排在上传者门之前：跨 work 引用仍以业务错误拒绝（200 信封）
+        let (status, v) = send_raw_as(Method::DELETE, url, None, "att-other-person").await;
+        assert_eq!(status, StatusCode::OK, "业务错误按 ActionResult 契约仍走 200");
         assert_eq!(v["type"], "error", "附件不属于该 work 时必须拒绝");
         let n = count(
             &pool,
@@ -651,6 +734,34 @@ mod u2_contract {
             .unwrap();
     }
 
+    /// 按 `is_admin` 的真实口径（auth_role.name='admin' ∧ 未删未禁，经 auth_person_role
+    /// 关联）幂等造一个 admin，返回其 unique_id 供 `send_raw_as` 注入会话。
+    async fn seed_u2_admin() -> String {
+        let person = "u-r48-review-admin";
+        let c = test_pool().get().await.unwrap();
+        c.execute(
+            "INSERT INTO auth_role (id, name, disable) VALUES ('r48-role-admin', 'admin', false) ON CONFLICT (id) DO NOTHING",
+            &[],
+        )
+        .await
+        .unwrap();
+        c.execute(
+            "INSERT INTO auth_person (id, unique_id, name, password_hash) VALUES ($1, $1, 'r48 admin', 'x') ON CONFLICT (id) DO NOTHING",
+            &[&person.to_string()],
+        )
+        .await
+        .unwrap();
+        c.execute(
+            "INSERT INTO auth_person_role (person_id, role_id, unit_id) VALUES ($1, 'r48-role-admin', 'r48-unit') ON CONFLICT DO NOTHING",
+            &[&person.to_string()],
+        )
+        .await
+        .unwrap();
+        person.to_string()
+    }
+
+    /// review/create/work 的 upsert 去重语义：同 (work, reviewer) 第二次调用必须进
+    /// failureList 而不是重复建行。四轮 N-01 收 admin 后本用例先钉授权口径。
     #[tokio::test]
     async fn u2_review_create_dedups_same_reviewer_per_work() {
         if !is_db_available().await {
@@ -680,9 +791,31 @@ mod u2_contract {
         }
         let url = "/api/processplatform/service/processing/review/create/work";
         let body = json!({"work": "rev-w", "personList": ["alice@P"]});
-        let (_, v1) = send(Method::POST, url, Some(body.clone())).await;
+
+        // 四轮 N-01 活口：`x_review` 审批链写收 admin（reviewer 由请求体任意指定，
+        // 且同 (work,person) 一旦写入便永久去重）。先钉住授权口径，再谈 upsert 语义。
+        let (forbidden, _) =
+            send_raw_as(Method::POST, url, Some(body.clone()), "u-r48-review-nonadmin").await;
+        assert_eq!(
+            forbidden,
+            StatusCode::FORBIDDEN,
+            "非 admin 给他人 work 挂评审人必须 403"
+        );
+        assert_eq!(
+            count(
+                &pool,
+                "SELECT COUNT(*) AS c FROM x_review WHERE work_id='rev-w' AND reviewer='alice@P'",
+            )
+            .await,
+            0,
+            "拒绝路径不得建出评审行"
+        );
+
+        let admin = seed_u2_admin().await;
+        let (status, v1) = send_raw_as(Method::POST, url, Some(body.clone()), &admin).await;
+        assert_eq!(status, StatusCode::OK, "admin 放行后才是业务 200 信封");
         assert_eq!(v1["data"]["successList"].as_array().unwrap().len(), 1);
-        let (_, v2) = send(Method::POST, url, Some(body)).await;
+        let (_, v2) = send_raw_as(Method::POST, url, Some(body), &admin).await;
         assert_eq!(v2["data"]["failureList"][0]["reason"], "already exist");
         let n = count(
             &pool,
@@ -730,7 +863,9 @@ mod u2_contract {
             .unwrap();
         }
         let url = "/api/processplatform/service/processing/read/read-mv/processing";
-        let (_, v) = send(Method::PUT, url, None).await;
+        // R4-2：标记已读按该待阅记录的阅读人判定，需本人会话（bob@P）
+        let (status, v) = send_raw_as(Method::PUT, url, None, "bob@P").await;
+        assert_eq!(status, StatusCode::OK, "阅读人标记自己的待阅应放行");
         assert_eq!(v["type"], "success");
         assert!(v["data"]["readCompletedId"].as_str().is_some());
         let active = count(
@@ -823,11 +958,27 @@ mod u2_contract {
             .unwrap();
         }
         let url = "/api/processplatform/service/processing/documentversion/work/dv-w";
-        let (_, v1) = send(Method::POST, url, Some(json!({}))).await;
-        let (_, v2) = send(Method::POST, url, Some(json!({}))).await;
+        // R4-2：文档版本写按父 work 发起人判定，且版本作者取会话权威（不再取请求体 / system）
+        let (status, v1) = send_raw_as(Method::POST, url, Some(json!({ "creator": "u42-spoof" })), "system").await;
+        assert_eq!(status, StatusCode::OK, "发起人给自己的 work 建文档版本应放行");
+        let (s_stranger, _) = send_raw_as(Method::POST, url, Some(json!({})), "dv-stranger").await;
+        assert_eq!(s_stranger, StatusCode::FORBIDDEN, "非发起人不得为他人 work 建版本");
+        let (_, v2) = send_raw_as(Method::POST, url, Some(json!({})), "system").await;
         let s1 = v1["data"]["version"].as_i64().unwrap();
         let s2 = v2["data"]["version"].as_i64().unwrap();
         assert_eq!(s2, s1 + 1, "版本号必须严格递增");
+        let creator: String = pool
+            .get()
+            .await
+            .unwrap()
+            .query_one(
+                "SELECT creator FROM x_document_version WHERE work_id='dv-w' ORDER BY version LIMIT 1",
+                &[],
+            )
+            .await
+            .unwrap()
+            .get("creator");
+        assert_eq!(creator, "system", "版本作者必须是会话身份，不能是请求体传值");
         let c = pool.get().await.unwrap();
         c.execute("DELETE FROM x_document_version WHERE work_id='dv-w'", &[])
             .await
@@ -868,7 +1019,14 @@ mod u2_contract {
             .unwrap();
         }
         // 共享同一 pool（max_size=5）使两请求真正并发执行
-        let app = crate::router(pool.clone());
+        // R4-2：该写现按父 work 发起人（seed 为 system）判定，两并发请求带同一会话
+        let session = shared::session::Session {
+            token: "test-token".to_string(),
+            person_unique: "system".to_string(),
+            created_at: chrono::Utc::now().naive_utc(),
+            expires_at: chrono::Utc::now().naive_utc() + chrono::Duration::hours(1),
+        };
+        let app = crate::router(pool.clone()).layer(axum::Extension(session));
         let make_req = || {
             Request::builder()
                 .uri("/api/processplatform/service/processing/documentversion/work/dv-race")
@@ -937,7 +1095,10 @@ mod u2_contract {
             c.execute("INSERT INTO x_work (id,title,process,work_status,creator) VALUES ('sus-w','t','p','processing','system')", &[]).await.unwrap();
         }
         let url = "/api/processplatform/service/processing/snap/work/sus-w/type/suspend";
-        let (_, v) = send(Method::GET, url, None).await;
+        // 第十六批：本把 GET 上挂快照写，收紧为「发起人或 admin」；种子行 creator='system'，
+        // 故以 system 会话调用。无会话 401 / 陌生会话 403 由 security_gate_tests 取证。
+        let (status, v) = send_raw_as(Method::GET, url, None, "system").await;
+        assert_eq!(status, StatusCode::OK);
         assert_eq!(v["type"], "success");
         let n = count(
             &pool,
@@ -986,7 +1147,9 @@ mod u2_contract {
             c.execute("INSERT INTO x_task (id,title,work,person,task_status) VALUES ('tk-exp','t','tk-work','p@P','active')", &[]).await.unwrap();
         }
         let url = "/api/processplatform/service/processing/task/tk-exp/expire";
-        let (_, v) = send(Method::GET, url, None).await;
+        // 第十六批：task 族状态写按「负责人 / 发起人 / admin」放行，此处取负责人 p@P。
+        let (status, v) = send_raw_as(Method::GET, url, None, "p@P").await;
+        assert_eq!(status, StatusCode::OK);
         assert_eq!(v["type"], "success");
         let st: String = {
             let c = pool.get().await.unwrap();
@@ -1023,22 +1186,48 @@ mod u2_contract {
                 .await
                 .unwrap();
             c.execute(
-                "DELETE FROM x_record WHERE work_id='tc-w' AND record_type='press'",
+                "DELETE FROM x_record WHERE work_id IN ('tc-w','tc-other') AND record_type='press'",
                 &[],
             )
             .await
             .unwrap();
+            for w in ["tc-w", "tc-other"] {
+                c.execute("DELETE FROM x_work WHERE id = $1", &[&w.to_string()])
+                    .await
+                    .unwrap();
+            }
+            // 两把 work 同属 p@P：让「跨 work 催办」这一支先过归属门、再由 IDOR 等值校验拒绝。
+            // 若 tc-other 不存在或属他人，读到的 403 会被误当成 IDOR 的读数——两道门各自可证。
+            for w in ["tc-w", "tc-other"] {
+                c.execute(
+                    "INSERT INTO x_work (id,title,process,work_status,creator) VALUES ($1,'t','p','completed','p@P')",
+                    &[&w.to_string()],
+                )
+                .await
+                .unwrap();
+            }
             c.execute("INSERT INTO x_readcompleted (id, work_id, person) VALUES ('tc-press','tc-w','p@P')", &[]).await.unwrap();
         }
         let wrong =
             "/api/processplatform/service/processing/taskcompleted/tc-press/press/work/tc-other";
-        let (_, v) = send(Method::GET, wrong, None).await;
+        let (status, v) = send_raw_as(Method::GET, wrong, None, "p@P").await;
+        assert_eq!(status, StatusCode::OK, "归属门放行后，跨 work 由业务错误信封返回");
         assert_eq!(v["type"], "error", "IDOR：记录不属于该 work 时必须拒绝催办");
         let right =
             "/api/processplatform/service/processing/taskcompleted/tc-press/press/work/tc-w";
-        let (_, v1) = send(Method::GET, right, None).await;
+        // 第十六批：流程之外的会话按 ID 催办他人已完成项，归属门 403 且零留痕。
+        let (s403, _) = send_raw_as(Method::GET, right, None, "x@X").await;
+        assert_eq!(s403, StatusCode::FORBIDDEN, "非发起人催办必须 403");
+        let after_intruder = count(
+            &pool,
+            "SELECT COUNT(*) AS c FROM x_record WHERE work_id='tc-w' AND record_type='press'",
+        )
+        .await;
+        assert_eq!(after_intruder, 0, "403 之后不得留下任何催办记录");
+        let (status1, v1) = send_raw_as(Method::GET, right, None, "p@P").await;
+        assert_eq!(status1, StatusCode::OK);
         assert_ne!(v1["data"]["duplicated"], true);
-        let (_, v2) = send(Method::GET, right, None).await;
+        let (_, v2) = send_raw_as(Method::GET, right, None, "p@P").await;
         assert_eq!(v2["data"]["duplicated"], true);
         let n = count(
             &pool,
@@ -1051,11 +1240,16 @@ mod u2_contract {
             .await
             .unwrap();
         c.execute(
-            "DELETE FROM x_record WHERE work_id='tc-w' AND record_type='press'",
+            "DELETE FROM x_record WHERE work_id IN ('tc-w','tc-other') AND record_type='press'",
             &[],
         )
         .await
         .unwrap();
+        for w in ["tc-w", "tc-other"] {
+            c.execute("DELETE FROM x_work WHERE id = $1", &[&w.to_string()])
+                .await
+                .unwrap();
+        }
     }
 
     #[tokio::test]
@@ -1123,7 +1317,7 @@ mod u2_contract {
                 .await
                 .unwrap();
             c.execute(
-                "INSERT INTO x_work (id,title,process,creator) VALUES ('ret-w','t','p','system')",
+                "INSERT INTO x_work (id,title,process,creator) VALUES ('ret-w','t','p','u42-retract-owner')",
                 &[],
             )
             .await
@@ -1131,7 +1325,10 @@ mod u2_contract {
             c.execute("INSERT INTO x_task (id,title,work,person,task_status) VALUES ('ret-t1','t','ret-w','p@P','active')", &[]).await.unwrap();
         }
         let url = "/api/processplatform/service/processing/work/v3/retract";
-        let (_, v) = send(Method::POST, url, Some(json!({"work": "ret-w"}))).await;
+        // R4-2 后该写按 x_work.creator 判归属：以发起人会话发送（拒绝侧见
+        // security_gate_tests 的 work_delete / task_delete 归属臂）
+        let (status, v) = send_raw_as(Method::POST, url, Some(json!({"work": "ret-w"})), "u42-retract-owner").await;
+        assert_eq!(status, StatusCode::OK, "发起人撤回自己的 work 应放行");
         assert_eq!(v["type"], "success");
         let cancelled = count(
             &pool,
@@ -1145,6 +1342,21 @@ mod u2_contract {
         )
         .await;
         assert_eq!(rec, 1, "撤回必须留痕");
+        let record_creator: String = pool
+            .get()
+            .await
+            .unwrap()
+            .query_one(
+                "SELECT creator FROM x_record WHERE work_id='ret-w' AND record_type='retract'",
+                &[],
+            )
+            .await
+            .unwrap()
+            .get("creator");
+        assert_eq!(
+            record_creator, "u42-retract-owner",
+            "R4-2 后留痕 creator 取会话权威，不再硬写 system"
+        );
         let c = pool.get().await.unwrap();
         c.execute("DELETE FROM x_task WHERE work='ret-w'", &[])
             .await
@@ -1181,6 +1393,17 @@ mod u2_contract {
             c.execute("DELETE FROM x_workcompleted WHERE work_id='mrg-w'", &[])
                 .await
                 .unwrap();
+            c.execute("DELETE FROM x_work WHERE id='mrg-w'", &[])
+                .await
+                .unwrap();
+            // 第十六批：合并是「按 work 物理删 x_workcompleted 其余重复项」的 destructive 写。
+            // 完成记录行本身 creator 为空，归属从 x_work.creator hop 取得，故必须建出该 work。
+            c.execute(
+                "INSERT INTO x_work (id,title,process,work_status,creator) VALUES ('mrg-w','t','p','completed','p@P')",
+                &[],
+            )
+            .await
+            .unwrap();
             for id in ["mrg-keep", "mrg-drop"] {
                 c.execute(
                     "INSERT INTO x_workcompleted (id, work_id) VALUES ($1,'mrg-w')",
@@ -1191,7 +1414,8 @@ mod u2_contract {
             }
         }
         let url = "/api/processplatform/service/processing/workcompleted/mrg-keep/merge";
-        let (_, v) = send(Method::GET, url, None).await;
+        let (status, v) = send_raw_as(Method::GET, url, None, "p@P").await;
+        assert_eq!(status, StatusCode::OK);
         assert_eq!(v["type"], "success");
         assert_eq!(v["data"]["merged"], 1);
         let kept = count(
@@ -1207,6 +1431,9 @@ mod u2_contract {
         assert_eq!((kept, dropped), (1, 0), "合并后仅保留 flag 指定项");
         let c = pool.get().await.unwrap();
         c.execute("DELETE FROM x_workcompleted WHERE work_id='mrg-w'", &[])
+            .await
+            .unwrap();
+        c.execute("DELETE FROM x_work WHERE id='mrg-w'", &[])
             .await
             .unwrap();
     }
@@ -1288,8 +1515,22 @@ mod u2_contract {
             c.execute("INSERT INTO x_process_definition (id,name) VALUES ('pd-boot','pd-boot-name') ON CONFLICT (id) DO NOTHING", &[]).await.unwrap();
         }
         let url = "/api/processplatform/service/processing/work/process/pd-boot/name/boot/serial";
-        let (_, v) = send(Method::POST, url, Some(json!({}))).await;
+        // R4-2：发起人以会话为权威——请求体里的 creator / person 不再能决定 x_work.creator
+        let (status, v) = send_raw_as(
+            Method::POST,
+            url,
+            Some(json!({ "creator": "u42-victim" })),
+            "u42-booter",
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "有效会话创建工作应放行");
         assert_eq!(v["type"], "success");
+        let as_own = count(
+            &pool,
+            "SELECT COUNT(*) AS c FROM x_work WHERE process='pd-boot' AND creator='u42-booter'",
+        )
+        .await;
+        assert_eq!(as_own, 1, "新建 work 的 creator 必须是会话本人，不得替他人建单");
         assert!(
             v["data"]["taskId"].as_str().is_some(),
             "创建工作必须同步产生首个任务"
@@ -1333,7 +1574,7 @@ mod u2_contract {
                 .await
                 .unwrap();
             c.execute(
-                "INSERT INTO x_work (id, title, process, work_status) VALUES ('r32-work','t','p','completed')",
+                "INSERT INTO x_work (id, title, process, work_status, creator) VALUES ('r32-work','t','p','completed','p@P')",
                 &[],
             )
             .await
@@ -1346,7 +1587,9 @@ mod u2_contract {
             .unwrap();
         }
         let url = "/api/processplatform/service/processing/workcompleted/rollback/r32-wc";
-        let (_, v) = send(Method::GET, url, None).await;
+        // 第十六批：回滚会删完成记录并把 work 拉回 pending，按发起人放行。
+        let (status, v) = send_raw_as(Method::GET, url, None, "p@P").await;
+        assert_eq!(status, StatusCode::OK);
         assert_eq!(v["type"], "success");
         // 终态：work 已恢复 pending
         let pending = count(

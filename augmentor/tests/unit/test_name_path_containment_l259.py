@@ -12,12 +12,17 @@ L258 装上了权威（`augmentor/validation.require_within_dir`）并接了十�
 - `FAISSDB(collection="../escaped", storage_dir=<tmp>/db).persist()` 把 `escaped_vectors.npy`
   与 `escaped_meta.json` 写到 **`storage_dir` 之外**（实测目录内 `[]`、目录外那两份文件），
   `load()` 从目录外读回内容（实测 `faiss_load_outside_ids == ["x"]`）。
-  这一处 HTTP **两步可达**：`vector` 在 `WRITABLE_SECTIONS` 里（`api/routes/config.py:100`），
+  这一处 HTTP **两步可达**：`vector` 在 `WRITABLE_SECTIONS` 里（`api/routes/config.py:101`，
+  L277 给该节新添的目录值白名单闸排在它下面两行，所以行号由 100 重钉为 101），
   而 `VectorConfig` 对 `vector.collection` **只过 `require_string`**（`augmentor/config.py`
   那一节：判非空、不判包含）⇒ `POST /api/config` 写 `collection: ../escaped` 拿 200，
   之后 `POST /api/augment` 在 `vector.enabled` 为真时走
   `augment_dataset` → `build_vector_index` → `semantic.persist_index` → `FAISSDB.persist`。
   读侧同一条名字走 `GET /api/dataset/vector-status` → `index_status` → `load()`。
+  **L277 起这一条只剩半截**：同一节里「目录语义」的键 `storage_dir` 已经被 A341 接进
+  数据根白名单（越界回 400/403，见 `tests/unit/test_config_dir_containment_l277.py`），
+  本守卫的可达性主张因此**只坐在 `collection` 这只名字键上** —— 那正是 SDK 侧这四道权威
+  仍然承重、不许被摘掉的原因。
   改后：`persist` 的判决排在 `mkdir` **之前**（实测坏集合名之后目录根本没被创建），
   `load` 与 `index_status` 一并出声，磁盘上零字节越界。
 - `ExperimentTracker(storage_dir=<tmp>/exp).start_experiment("../trapped", ...)` 把
@@ -63,6 +68,9 @@ L258 装上了权威（`augmentor/validation.require_within_dir`）并接了十�
 6. 配置面（可达性，结构判据）：`vector` 确在可写节名册里；沙箱 YAML 的 `collection: ../escaped`
    经 `load_config` **原样存活**（那道门只判非空）；`augment_dataset` 里 `build_vector_index`
    确实坐在 `if self.config.vector.enabled` 那一档之内（AST 判，不是读到就信）。
+   **L277 起再加一格**：`vector` 节里被接进数据根白名单的键**恰好只有** `storage_dir`
+   （`collection` 不在其中）——这一格钉的是「配置侧关上的是目录那扇门，名字那扇门仍然开着」，
+   所以 SDK 侧那四道权威不许跟着被摘。
 7. HTTP 边界：`GET /api/dataset/vector-status` 在越界集合名下拿 **400**（既有 `to_http_error`
    的 `ValueError→400` 映射，本轮没有新造状态码），正文是 SDK 那句判决且**不含部署路径**；
    合法档位仍 200 且键集不变；`POST /api/data/export` 的 `formats` 越界按实测仍 **500**
@@ -106,10 +114,25 @@ MEASURED_CALL_SITES = {
 }
 
 #: 现量（L259）：SDK 包内**没有**走权威的「目录 / 名字」拼接，逐处点名与其处置理由。
+#: **L277 重量（键里的行号跟着产品码走）**：四处拼接**还是那四处**（文件、形状、处置一字未动），
+#: 只是两处的**行号**被本轮的产品改动顶上去了 —— `cache.py:219 → 245`（DiskCache 的重入锁 +5 行、
+#: MemoryCache 淘汰旧键的 `KeyError` 修复 +19 行、模块头 +2 行，合计 +26 行），
+#: `validation.py:1021 → 1026`（`require_seconds` +2 / `require_positive` +2 / `require_ratio` +1，
+#: 全是 L277 给超大整数补的 `OverflowError` 兜底，合计 +5 行）。两侧行号都用
+#: `git show HEAD:…` 与 `ast` 现量对过，不是按「应该移了几行」推的。
+#: **L279 重量**：`cache.py:245 → 262`（净 +17 行，全部落在 `_get_cache_path` **之前**：
+#: `_synchronized` 整块从 176 行搬到 `class MemoryCache` 之前并重写 docstring、`MemoryCache`
+#: 建实例锁、七个公开入口各加一枚装饰器；`_evict` 的口径改写走同行净零）。拼接本身一格未动，
+#: 处置理由一字未改 —— 这一档红的归因只有「行号漂了」，没有「多了/少了拼接」。
+#: 这一格记的是** census 的位置**而不是判据的松紧：名册仍按集合相等判，多出第六处拼接、
+#: 或少一处、或行号漂了都红。**L280 重量**：`cache.py:262 → 268`（净 +6 行，同样全部落在
+#: `_get_cache_path` **之前**：`_load_metadata` 把 `exists()` 后 `open()` 换成直接开文件 +
+#: `except FileNotFoundError`，docstring 两行；拼接与处置理由一格未动，本行读数由守卫自己
+#: 现量得到（红读数逐字是 `At index 1 diff: 'augmentor/cache.py:268' != 'augmentor/cache.py:262'`）。
 MEASURED_RESIDUAL_JOINS = {
-    "augmentor/backup.py:114": "L231 给备份名落下的手判（`.parents` 那一档），与权威同口径",
-    "augmentor/cache.py:219": "键是 md5 十六进制摘要，形状上不含分隔符与 `..` ⇒ 惰性",
-    "augmentor/validation.py:1021": "权威自己那一行 `root / candidate`（判完才拼）",
+    "augmentor/backup.py:117": "L231 给备份名落下的手判（`.parents` 那一档），与权威同口径",
+    "augmentor/cache.py:268": "键是 md5 十六进制摘要，形状上不含分隔符与 `..` ⇒ 惰性",
+    "augmentor/validation.py:1026": "权威自己那一行 `root / candidate`（判完才拼）",
     "augmentor/visualizer.py:83": "返回的那句拼接：上一行刚刚用权威判过同一个 `output_file`",
 }
 
@@ -408,12 +431,26 @@ class TestThePipelineExportFace:
 
 
 class TestTheConfigSurfaceStaysOpen:
-    """可达性的三块结构证据：配置能写进这个键、加载不判它、增强链真会读它"""
+    """可达性的四块结构证据：配置能写进这个键、加载不判它、增强链真会读它、配置侧只关目录那扇门"""
 
     def test_vector_is_a_writable_section(self):
         from api.routes.config import WRITABLE_SECTIONS
 
         assert "vector" in WRITABLE_SECTIONS, WRITABLE_SECTIONS
+
+    def test_the_directory_key_is_gated_while_the_name_key_is_not(self):
+        """L277 起：可写节里被接进数据根白名单的键**恰好只有** vector 的 storage_dir
+
+        为什么这一格住在本守卫里而不是只交给新守卫：L259 这一族的立论是「名字拼进路径之后由
+        SDK 那四道权威收口」，而 A341 关的是**目录**那扇门。哪天有人把 `collection` 也当成
+        「配置侧已经管住了」顺手摘掉 SDK 的闸，这一格会先红，逼改的人回来看第 2 组。
+        """
+        from api.routes import config as config_routes
+
+        gated = dict(config_routes._DIR_VALUED_KEYS)
+        assert gated == {"vector": "storage_dir"}, gated
+        assert "collection" not in set(gated.values())
+        assert set(gated) <= set(config_routes.WRITABLE_SECTIONS)
 
     def test_the_loader_keeps_an_escaping_collection_as_is(self, tmp_path):
         """`VectorConfig` 对 `vector.collection` 只过 `require_string` ⇒ 门在 SDK 侧，不在配置侧"""

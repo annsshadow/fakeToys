@@ -171,6 +171,28 @@
         </text>
       </view>
     </view>
+
+    <!--
+      账号区。
+
+      ⚠️ 「退出登录」放在这里不是为了功能完整，而是因为
+      **服务端此前没有任何切断会话的端点** ——
+      手机丢了 / 令牌被读走之后，玩家唯一能做的「登出」只是清本地，
+      而 refresh token 仍有 30 天有效期。
+      服务端 `POST /me/logout` 补上的是「吊销全部」，
+      这个按钮是它唯一的客户端入口（`TestEveryRouteHasClientCaller` 守这条）。
+
+      ⚠️ 必须二次确认：它会**吊销该账号的全部会话**（不只是这台设备），
+      在别的设备上登录的玩家会一起掉线。这是刻意的（登出的语义是
+      「这个人不信任了」），但也必须让用户知道。
+    -->
+    <view class="card">
+      <text class="card-title">账号</text>
+      <text class="muted" style="display: block; margin-bottom: 16rpx">
+        退出后本机的令牌立即失效，并会通知服务端吊销该账号的全部登录会话（其他设备也会被登出）。
+      </text>
+      <button class="btn" @click="confirmLogout">退出登录</button>
+    </view>
   </view>
 </template>
 
@@ -201,6 +223,46 @@ const simulating = ref(0)
 const lastChallenge = ref<(ChallengeOutcome & { stolen?: Record<string, number> }) | null>(null)
 
 const DEFENSE_WORK_CODES = ['slow_belt', 'block_wall', 'tesla_grid']
+
+/**
+ * 退出登录。
+ *
+ * ⚠️ 为什么**必须二次确认**：服务端吊销的是「该账号的全部会话」，
+ * 不只是这台设备。所以「我在手机上退出」会把平板上的玩家一起踢下线。
+ * 这是登出的正确语义（一个不信任了就是全都不信任），
+ * 但用户必须**事先知道**，否则会被当成 bug。
+ *
+ * ⚠️ 为什么「服务端没通知成功」也要如实说出来：
+ * 网络不通时本地令牌已清、服务端那份还活着。
+ * 谎称「已完全登出」会让用户以为风险已消除 ——
+ * 而安全相关的提示一旦撒谎就再也不会被相信。
+ */
+async function confirmLogout() {
+  const confirmed = await new Promise<boolean>((resolve) => {
+    uni.showModal({
+      title: '退出登录',
+      content: '将吊销本账号的全部登录会话（其他设备也会被登出）。确定继续？',
+      confirmText: '退出',
+      cancelText: '取消',
+      success: (r) => resolve(!!r.confirm),
+      fail: () => resolve(false),
+    })
+  })
+  if (!confirmed) return
+
+  const { serverNotified } = await api.logout()
+  if (serverNotified) {
+    uni.showToast({ title: '已退出登录', icon: 'success' })
+  } else {
+    uni.showModal({
+      title: '已在本机退出',
+      content: '未能通知服务端，网络恢复后建议重新登录一次以确保旧会话失效。',
+      showCancel: false,
+    })
+  }
+  // 回到首页，让所有页面重新走一次游客登录与配置加载。
+  uni.reLaunch({ url: '/pages/index/index' })
+}
 
 function currencyName(k: string): string {
   return k === 'coin' ? '金币' : k === 'gem' ? '钻石' : k === 'keys' ? '钥匙' : k === 'energy' ? '体力' : k

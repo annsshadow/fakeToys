@@ -34,6 +34,17 @@ _WS = " \t\r\n"
 _DEFAULT_READ_SIZE = 65536
 
 
+def _next_retry_gap(gap: int) -> int:
+    """重试解码之前要求缓冲至少新增的字符数：逐次翻倍
+
+    一次失败的 `raw_decode` 会把整段缓冲从头扫到尾（C 扫描器不能续扫），按固定
+    `read_size` 重试 ⇒ 单个跨块元素 O(n²)；让增量本身几何增长 ⇒ 重扫总量回到线性，
+    峰值内存不变（一只元素本来就要整只待在缓冲里）。本函数也是测试缝：换成恒等
+    即退回旧节奏，`tests/unit/test_stream_retry_backoff_l294.py` 用它做牙齿臂。
+    """
+    return gap * 2
+
+
 def _peek_first_non_space(stream, read_size: int = 4096) -> Optional[str]:
     """返回流中第一个非空白字符
 
@@ -130,6 +141,7 @@ def _iter_json_array_items(stream, read_size: int = _DEFAULT_READ_SIZE) -> Itera
             if buf[pos] == "]":
                 return  # 容忍尾随逗号
 
+        gap = read_size
         while True:
             try:
                 value, end = decoder.raw_decode(buf, pos)
@@ -137,7 +149,12 @@ def _iter_json_array_items(stream, read_size: int = _DEFAULT_READ_SIZE) -> Itera
             except json.JSONDecodeError:
                 if eof:
                     raise
-                fill()
+                # 攒够「上次失败点之后再新增 gap 个字符」才重试：失败一次就是整段缓冲被从头
+                # 重扫一遍，增量逐次翻倍 ⇒ 重扫总量从 O(n²) 回到 O(n)
+                target = len(buf) + gap
+                while not eof and len(buf) < target:
+                    fill()
+                gap = _next_retry_gap(gap)
 
         yield value
         pos = end
@@ -191,6 +208,7 @@ def _is_single_json_value(stream, read_size: int = _DEFAULT_READ_SIZE) -> bool:
         else:
             buf += more
 
+    gap = read_size
     while True:
         try:
             _, end = decoder.raw_decode(buf, pos)
@@ -198,11 +216,15 @@ def _is_single_json_value(stream, read_size: int = _DEFAULT_READ_SIZE) -> bool:
         except json.JSONDecodeError:
             if eof:
                 return False
-            more = stream.read(read_size)
-            if not more:
-                eof = True
-            else:
-                buf += more
+            # 与 `_iter_json_array_items` 同一族：攒够一块几何增量再重试，避免整段缓冲反复重扫
+            target = len(buf) + gap
+            while not eof and len(buf) < target:
+                more = stream.read(read_size)
+                if not more:
+                    eof = True
+                else:
+                    buf += more
+            gap = _next_retry_gap(gap)
 
     pos = end
     while True:

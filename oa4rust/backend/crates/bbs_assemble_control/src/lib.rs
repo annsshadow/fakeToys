@@ -33,6 +33,8 @@ mod tests;
 mod tests_generated;
 #[cfg(test)]
 mod tests_u2;
+#[cfg(test)]
+mod security_gate_tests;
 
 thread_local! {
     static TOKEN_STORE: Mutex<HashMap<String, String>> = Mutex::new(HashMap::new());
@@ -117,9 +119,11 @@ fn row_to_forum(row: &deadpool_postgres::tokio_postgres::Row) -> ForumRow {
 fn row_to_topic(row: &deadpool_postgres::tokio_postgres::Row) -> TopicRow {
     TopicRow {
         id: row.get("id"),
-        forum_id: row.get("forum_id"),
+        // forum_id / content 在 x_bbs_topic 中可空（见 033/067 迁移），非 Option 读取遇
+        // NULL 会 panic——与同函数 creator / create_time 的可空读法对齐。
+        forum_id: row.get::<_, Option<String>>("forum_id").unwrap_or_default(),
         title: row.get("title"),
-        content: row.get("content"),
+        content: row.get::<_, Option<String>>("content").unwrap_or_default(),
         creator: row.get::<_, Option<String>>("creator").unwrap_or_default(),
         create_time: row
             .get::<_, Option<String>>("create_time")
@@ -130,7 +134,8 @@ fn row_to_topic(row: &deadpool_postgres::tokio_postgres::Row) -> TopicRow {
 fn row_to_reply(row: &deadpool_postgres::tokio_postgres::Row) -> ReplyRow {
     ReplyRow {
         id: row.get("id"),
-        topic_id: row.get("topic_id"),
+        // topic_id 在 x_bbs_reply 中可空，非 Option 读取遇 NULL 会 panic（对齐 creator / create_time）
+        topic_id: row.get::<_, Option<String>>("topic_id").unwrap_or_default(),
         content: row.get("content"),
         creator: row.get::<_, Option<String>>("creator").unwrap_or_default(),
         create_time: row
@@ -252,9 +257,17 @@ fn section_update_spec() -> shared::CrudSpec {
 #[axum::debug_handler]
 pub async fn section_create(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<Session>>,
     body: Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A3-N9：版块为管理元数据（与 section_delete 同口径），写入收 admin 门
+    // （无会话 401 / 非 admin 403）。此前任意登录人可建版块且可冒填 creator。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    if !is_admin(&pool, &sess.person_unique).await {
+        return Err(AppError::Forbidden);
+    }
     let mut obj = match body.0 {
         Value::Object(o) => o,
         _ => serde_json::Map::new(),
@@ -267,7 +280,7 @@ pub async fn section_create(
     {
         obj.insert(
             "creator".to_string(),
-            Value::String(session.person_unique.clone()),
+            Value::String(sess.person_unique.clone()),
         );
     }
     let id = shared::crud_create(&pool, &section_create_spec(), &Value::Object(obj)).await?;
@@ -282,9 +295,18 @@ pub async fn section_create(
 #[axum::debug_handler]
 pub async fn section_update(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     Path(id): Path<String>,
     body: Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A3-N9：版块为管理元数据（与 section_delete 同口径），写入收 admin 门。
+    // 此前本 handler 连会话都不取，任意登录人可改任意版块名。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    if !is_admin(&pool, &sess.person_unique).await {
+        return Err(AppError::Forbidden);
+    }
     let saved = shared::crud_save(&pool, &section_update_spec(), &id, &body.0).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -317,8 +339,17 @@ pub async fn section_delete(
 #[allow(non_snake_case)]
 pub async fn update_control_config(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // R7 收口（第五十一批）：BBS 控制配置为无归属系统数据，写入收管理员档
+    //（无会话 401 / 非管理员 403，查管理员角色对不可用库 fail-closed）。门在取连接之前，离线即证。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    if !is_admin(&pool, &sess.person_unique).await {
+        return Err(AppError::Forbidden);
+    }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let enabled = body

@@ -28,6 +28,8 @@ pub mod u2;
 mod tests;
 #[cfg(test)]
 mod tests_generated;
+#[cfg(test)]
+mod security_gate_tests_b74;
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Bind store — 扫码绑定状态管理（复用 bind.rs 模式）
@@ -1214,11 +1216,24 @@ pub async fn oauth_auth(
     }))))
 }
 
+/// 安全审计（round4-b74）：OAuth 授权码签发真写收"会话存在档"门禁。
+/// 无会话（Option<Extension<Session>> = None）→ 401，门置于首个 DB 访问
+/// （`pool.get()`）之前，杜绝匿名签发 `x_org_oauth_code` 授权码。
+/// 注意：clientId 未与已注册应用比对、personId 取自 body（可伪造）——
+/// 属 §五"第三方回调零验签族"，本批按"加门与验签分开记"只收会话档。
+fn require_session(
+    session: Option<Extension<shared::session::Session>>,
+) -> Result<shared::session::Session, AppError> {
+    session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
+}
+
 #[allow(non_snake_case)]
 pub async fn oauth_generate_code(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let client = req.get("clientId").and_then(|v| v.as_str()).unwrap_or("");
     let person_id = req.get("personId").and_then(|v| v.as_str());
     let code = uuid::Uuid::new_v4().to_string();

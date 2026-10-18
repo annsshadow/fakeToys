@@ -6,7 +6,7 @@
 LoRA（Low-Rank Adaptation）冻结原始权重 W，只训练两个小矩阵 A(r×in)、B(out×r)，
 用 ``W x + (BA) x * (alpha/r)`` 近似权重更新。可训练参数通常只有全参微调的
 0.1%~1%，是单卡微调大模型的主流做法。QLoRA 则在此基础上把 base 权重量化到 4bit，
-进一步省显存（见 docs/07-微调-SFT-LoRA-QLoRA.md）。
+进一步省显存（见 docs/llm-lab/07-微调-SFT-LoRA-QLoRA.md）。
 """
 
 from __future__ import annotations

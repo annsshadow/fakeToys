@@ -9,7 +9,7 @@ RLHF 的轻量替代：不训练奖励模型、不跑 PPO，直接用成对的�
     loss = -log σ( β · [ (logπ(y_w|x) - logπ(y_l|x)) - (logπ_ref(y_w|x) - logπ_ref(y_l|x)) ] )
 
 其中 π 是待训练策略，π_ref 是冻结的参考模型（通常是 SFT 后的模型）。
-详见 docs/08-对齐-RLHF-PPO-DPO.md。
+详见 docs/llm-lab/08-对齐-RLHF-PPO-DPO.md。
 """
 
 from __future__ import annotations

@@ -14,7 +14,7 @@ import math
 from typing import List, Dict, Optional, Any, Tuple
 from pathlib import Path
 from enum import Enum
-from .exceptions import DataFormatError, DataLoadError, UnsupportedFormatError
+from .exceptions import DataFormatError, DataLoadError, DataValidationError, UnsupportedFormatError
 
 logger = logging.getLogger(__name__)
 
@@ -867,12 +867,12 @@ class DatasetConverter:
                 f"pip install pandas openpyxl（{name}）"
             )
         try:
-            frame = cei.pd.read_excel(source)
+            frame = cei.pd.read_excel(cei.safe_sheet_source(source, name))
+        except DataValidationError:  # A390（CWE-409）：解压放大的判词不是「文件坏了」，原样放行
+            raise
         except Exception as e:
             raise DataFormatError(
-                f"{name} 读不出 Excel 工作表：文件可能损坏、其实不是 xlsx，"
-                f"或是老 .xls 格式而缺 xlrd（{type(e).__name__}）"
-            ) from e
+                f"{name} 读不出 Excel 工作表：文件可能损坏、其实不是 xlsx，或是老 .xls 格式而缺 xlrd（{type(e).__name__}）") from e
         return [
             {key: excel_cell(value) for key, value in row.items()}
             for row in frame.to_dict(orient="records")
@@ -987,6 +987,7 @@ class DatasetConverter:
             container = self._infer_format(path)
             format = container if container in CONTAINER_FORMATS else "json"
 
+        from .validation import sheet_text_row  # 公式判据住 validation，见 A389 拍板①
         with open(path, 'w', encoding='utf-8', newline='') as f:
             if format == "jsonl":
                 for item in data:
@@ -995,13 +996,13 @@ class DatasetConverter:
                 if data:
                     writer = csv.DictWriter(f, fieldnames=csv_fieldnames(data))
                     writer.writeheader()
-                    writer.writerows(data)
+                    writer.writerows([sheet_text_row(row) for row in data])
             elif format == "tsv":
                 if data:
                     writer = csv.DictWriter(f, fieldnames=csv_fieldnames(data),
                                             delimiter="\t")
                     writer.writeheader()
-                    writer.writerows(data)
+                    writer.writerows([sheet_text_row(row) for row in data])
             else:
                 json.dump(data, f, ensure_ascii=False, indent=2)
 

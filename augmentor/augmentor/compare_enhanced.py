@@ -20,6 +20,8 @@ import logging
 from typing import List, Dict, Optional, Any, Set, Tuple
 from dataclasses import dataclass, field
 
+from .validation import DataValidationError
+
 logger = logging.getLogger(__name__)
 
 
@@ -123,7 +125,12 @@ class EnhancedComparator:
         Returns:
             比较结果
         """
-        key_fields = key_fields or ["instruction"]
+        key_fields = key_fields if key_fields is not None else ["instruction"]
+        if not key_fields:
+            raise DataValidationError(
+                "key_fields 不能是空清单：零键作用域下所有条目的键同为空元组，"
+                "两份无关数据集会被报成「完全一致」"
+            )
         
         # 计算指标
         metrics = self._calculate_metrics(items_a, items_b, key_fields)
@@ -391,7 +398,12 @@ def diff_datasets(items_a: List[Dict], items_b: List[Dict],
     Returns:
         差异信息
     """
-    key_fields = key_fields or ["instruction"]
+    key_fields = key_fields if key_fields is not None else ["instruction"]
+    if not key_fields:
+        raise DataValidationError(
+            "key_fields 不能是空清单：零键作用域下所有条目的键同为空元组，"
+            "差异会被静默抹平"
+        )
     
     # 获取唯一标识
     keys_a = set()

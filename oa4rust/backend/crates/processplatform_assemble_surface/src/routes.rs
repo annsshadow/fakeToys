@@ -391,8 +391,8 @@ pub fn router(pool: Pool) -> Router {
         .route("/api/processplatform/assemble/surface/application/icon/{flag}", get(application_flag_icon))
         .route("/api/processplatform/assemble/surface/application/is/manager/{flag}", get(application_flag_is_manager))
         .route("/api/processplatform/assemble/surface/application/{flag}/{onlyRemoveNotCompleted}", get(application_flag_onlyRemoveNotCompleted))
-        .route("/api/processplatform/assemble/surface/application/list/complex/manage/person", get(|pool: Extension<Pool>| async move {
-            application_list_complex_manage_person(pool, axum::extract::Path("person".to_string())).await
+        .route("/api/processplatform/assemble/surface/application/list/complex/manage/person", get(|pool: Extension<Pool>, session: Option<Extension<shared::session::Session>>| async move {
+            application_list_complex_manage_person(pool, axum::extract::Path("person".to_string()), session).await
         }))
         .route("/api/processplatform/assemble/surface/application/list/key/key", get(|pool: Extension<Pool>| async move {
             application_list_key_key(pool, axum::extract::Path("key".to_string())).await

@@ -213,8 +213,14 @@ async fn statement_duplicate_exists(
 #[allow(non_snake_case)]
 pub async fn statement_create(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A2-F1：查询语句定义为设计器元数据 ⇒ 收 admin 门（无会话 401 / 非 admin 403）。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    require_admin_gate(&pool, &sess).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let name = body
@@ -279,9 +285,15 @@ pub async fn statement_create(
 #[allow(non_snake_case)]
 pub async fn statement_edit(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(flag): Path<String>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A2-F1：查询语句定义改写 ⇒ 收 admin 门。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    require_admin_gate(&pool, &sess).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let alias = body.get("alias").and_then(|v| v.as_str()).unwrap_or("");
@@ -436,9 +448,15 @@ pub async fn statement_list_with_query(
 #[allow(non_snake_case)]
 pub async fn statement_permission(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A2-F1：语句权限配置为设计器元数据（可放开他人可见性）⇒ 收 admin 门。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    require_admin_gate(&pool, &sess).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let permission = serde_json::to_string(
@@ -586,8 +604,14 @@ pub async fn statement_execute_mode_v2(
 #[allow(non_snake_case)]
 pub async fn importmodel_create(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A2-F2：导入模型为设计器元数据 ⇒ 收 admin 门。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    require_admin_gate(&pool, &sess).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let name = body
@@ -639,9 +663,15 @@ pub async fn importmodel_create(
 #[allow(non_snake_case)]
 pub async fn importmodel_edit(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A2-F2：导入模型改写为设计器元数据 ⇒ 收 admin 门。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    require_admin_gate(&pool, &sess).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let name = body.get("name").and_then(|v| v.as_str()).unwrap_or("");
@@ -754,9 +784,15 @@ pub async fn neural_delete_model_modelFlag(
 #[allow(non_snake_case)]
 pub async fn neural_update_model_modelFlag(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(model_flag): Path<String>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A2-F2：神经模型配置改写为设计器元数据 ⇒ 收 admin 门。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    require_admin_gate(&pool, &sess).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let name = body.get("name").and_then(|v| v.as_str()).unwrap_or("");
@@ -786,8 +822,14 @@ pub async fn neural_update_model_modelFlag(
 #[allow(non_snake_case)]
 pub async fn stat_create(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A2-F1：统计定义为设计器元数据 ⇒ 收 admin 门。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    require_admin_gate(&pool, &sess).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let name = body
@@ -840,9 +882,15 @@ pub async fn stat_create(
 #[allow(non_snake_case)]
 pub async fn stat_edit(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A2-F1：统计定义改写 ⇒ 收 admin 门。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    require_admin_gate(&pool, &sess).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let name = body.get("name").and_then(|v| v.as_str()).unwrap_or("");
@@ -1043,9 +1091,15 @@ pub async fn table_delete(
 #[allow(non_snake_case)]
 pub async fn table_tableFlag_row_insert(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(table_flag): Path<String>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A2-F2：向设计表按 flag 插入行 ⇒ 收 admin 门。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    require_admin_gate(&pool, &sess).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -1073,9 +1127,15 @@ pub async fn table_tableFlag_row_insert(
 #[allow(non_snake_case)]
 pub async fn table_tableFlag_row_update(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path((table_flag, id)): Path<(String, String)>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A2-F2：按 id 改写设计表行 ⇒ 收 admin 门。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    require_admin_gate(&pool, &sess).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let data_str = serde_json::to_string(&body).map_err(|_| AppError::Internal)?;
@@ -1150,8 +1210,14 @@ pub async fn table_tableFlag_row_delete(
 #[allow(non_snake_case)]
 pub async fn view_create(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A2-F1：查询视图定义为设计器元数据 ⇒ 收 admin 门。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    require_admin_gate(&pool, &sess).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let name = body
@@ -1204,9 +1270,15 @@ pub async fn view_create(
 #[allow(non_snake_case)]
 pub async fn view_edit(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A2-F1：查询视图定义改写 ⇒ 收 admin 门。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    require_admin_gate(&pool, &sess).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let name = body.get("name").and_then(|v| v.as_str()).unwrap_or("");
@@ -1280,9 +1352,15 @@ pub async fn view_delete(
 #[allow(non_snake_case)]
 pub async fn query_set_icon(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(flag): Path<String>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // A2-F2：设计对象图标写入为设计器元数据 ⇒ 收 admin 门。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    require_admin_gate(&pool, &sess).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let icon = body.get("icon").and_then(|v| v.as_str()).unwrap_or("");
@@ -2045,8 +2123,10 @@ pub async fn view_permission_set(
 #[allow(non_snake_case)]
 pub async fn table_build_dispatch_flag(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    crate::require_row_owner(&pool.0, session, "x_query_table", "table_flag", &flag).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client

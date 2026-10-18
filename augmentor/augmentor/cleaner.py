@@ -31,6 +31,10 @@ from .validation import require_count
 
 logger = logging.getLogger(__name__)
 
+# `clean(fields=None)` 的默认清洗字段；唯一读者就是下面那一行判据，
+# 提成常量是为了让批处理驱动与单趟清洗共用同一份「没表态时洗哪三格」。
+DEFAULT_CLEAN_FIELDS = ["instruction", "output", "input"]
+
 # 噪声清除用的模式。与 `augmentor.data.cleaner` 保持一致，避免同一份数据
 # 在 CLI 与 REST API 两条路径上被清成不同结果。
 URL_PATTERN = re.compile(r"https?://\S+|www\.\S+")
@@ -90,6 +94,9 @@ class DatasetCleaner:
         """初始化清洗器"""
         self._rules: List[CleaningRule] = []
         self._custom_rules: List[Callable] = []
+        # 跨批的去重账：默认 None（单趟 `clean` 从空集开始，产物与改动前逐字相同）；
+        # `clean_batch_optimized` 把它换成一份活集合，让第 2 批看得见第 1 批收过的条目。
+        self._dedup_seen: Optional[set] = None
         
         # 默认规则。字典顺序即 `clean(rules=None)` 的执行顺序，因此噪声清除
         # （URL / HTML 标签 / 控制字符）必须排在 `normalize_whitespace` 之前：
@@ -108,6 +115,11 @@ class DatasetCleaner:
             "normalize_punctuation": self._normalize_punctuation,
         }
     
+    @property
+    def rule_names(self) -> List[str]:
+        """内置规则名的封闭清单（权威是 `_default_rules` 这张表本身，字典顺序即执行顺序）"""
+        return list(self._default_rules)
+
     def add_rule(self, rule: CleaningRule):
         """添加清洗规则
         
@@ -138,8 +150,11 @@ class DatasetCleaner:
         Returns:
             (清洗后的数据, 清洗结果)
         """
-        fields = fields or ["instruction", "output", "input"]
-        rules = rules or list(self._default_rules.keys())
+        # A343 那一族在本文件里的两处：`or` 把调用方**显式传入的空清单**读成「没传」，
+        # 于是 `clean(dirty, rules=[])` 照跑全部内置规则。空清单的合法读法是「一条都不 apply」，
+        # 与「调用方没表态」是两件事，故判据换成 `is not None`。
+        fields = DEFAULT_CLEAN_FIELDS if fields is None else fields
+        rules = self.rule_names if rules is None else list(rules)
 
         # L192：规则名走封闭清单——权威是本实例 `_default_rules` 的键（A77）。
         # 改前 `for rule_name in rules: if rule_name in ...` 对未知名静默跳过：
@@ -162,12 +177,12 @@ class DatasetCleaner:
         
         # 应用规则
         for rule_name in rules:
-            if rule_name in self._default_rules:
-                rule_func = self._default_rules[rule_name]
-                cleaned_items, was_modified = rule_func(cleaned_items, fields)
-                if was_modified:
-                    applied_rules.append(rule_name)
-                    modified_count += 1
+            # 闸在上面：rules 已被封闭清单校验成 _default_rules 的键，再判一次存在性等于把静默跳过藏回闸后
+            rule_func = self._default_rules[rule_name]
+            cleaned_items, was_modified = rule_func(cleaned_items, fields)
+            if was_modified:
+                applied_rules.append(rule_name)
+                modified_count += 1
         
         # 应用自定义规则
         for rule_func in self._custom_rules:
@@ -194,6 +209,12 @@ class DatasetCleaner:
         Returns:
             (清洗后的数据, 是否修改)
         """
+        # L277：零字段作用域在 `any(...)` 上是真空假值——空 `fields` 时恒 False，
+        # 于是每一条都被判「空」而删光。空清单的合法读法是「没有可检查的字段」，
+        # 不是「每条都没有非空字段」⇒ 原样返回、不记修改。
+        if not fields:
+            return items, False
+
         original_count = len(items)
         cleaned = [item for item in items if any(item.get(field) for field in fields)]
         return cleaned, len(cleaned) != original_count
@@ -208,8 +229,16 @@ class DatasetCleaner:
         Returns:
             (清洗后的数据, 是否修改)
         """
+        # L277：`fields` 为空时每条的键都是 `()` ⇒ 整个数据集会被压成 1 条。
+        # 与 `_remove_empty` 同档：零作用域 = 无从判定，不是「全都重复」。
+        if not fields:
+            return items, False
+
         original_count = len(items)
-        seen = set()
+        # `_dedup_seen` 由批处理驱动留在实例上：每批新建 `seen` 会让同一份输入换个
+        # `batch_size` 交出不同产物（实测 5 条含 2 条重复：batch 1/2 ⇒ 留 5 条，
+        # batch 5/100 ⇒ 留 3 条，单趟 `clean_dataset` 是 3 条）。
+        seen = self._dedup_seen if self._dedup_seen is not None else set()
         cleaned = []
         
         for item in items:
@@ -579,7 +608,10 @@ def clean_batch_optimized(items: List[Dict],
     require_count("batch_size", batch_size, minimum=1)
 
     cleaner = DatasetCleaner()
+    # 去重账跨批共用（见 `_remove_duplicates`），批与批之间不再各自清零
+    cleaner._dedup_seen = set()
     cleaned_items = []
+    applied_rules: List[str] = []
     total_modified = 0
     total_removed = 0
     
@@ -590,12 +622,18 @@ def clean_batch_optimized(items: List[Dict],
         cleaned_items.extend(cleaned_batch)
         total_modified += result.modified_count
         total_removed += result.removed_count
+        for rule_name in result.rules_applied:
+            if rule_name not in applied_rules:
+                applied_rules.append(rule_name)
     
     final_result = CleaningResult(
         original_count=len(items),
         cleaned_count=len(cleaned_items),
         removed_count=total_removed,
         modified_count=total_modified,
-        rules_applied=rules or []
+        # 从前写 `rules or []`：调用方不表态（`rules=None`）时汇总报告恒为空，
+        # 而批内实际跑的是全套默认规则（实测 removed=2 仍报 `rules_applied=[]`）。
+        # 现在与单趟 `clean()` 同口径：报的是**真的改动过产物**的规则名。
+        rules_applied=applied_rules
     )
     return cleaned_items, final_result

@@ -366,9 +366,22 @@ func TestRecoverPanicDoesNotKillProcess(t *testing.T) {
 
 // --- CORS ---
 
+// withDevMode 临时切换包级 devMode，并在测试结束后还原。
+//
+// ⚠️ 为什么需要这个辅助：`devMode` 是包级变量（见 SetDevMode），
+// 所以切换它会**影响同包其它测试**。因此每个改它的用例都必须还原，
+// 否则会出现「单跑绿、全跑红」这类与本改动无关的偶发失败。
+func withDevMode(t *testing.T, dev bool) {
+	t.Helper()
+	old := devMode
+	SetDevMode(dev)
+	t.Cleanup(func() { SetDevMode(old) })
+}
+
 func TestCORSHeadersAndPreflight(t *testing.T) {
+	withDevMode(t, true) // dev：前后端不同端口，必须放行
 	app := fiber.New()
-	app.Use(cors())
+	app.Use(cors(nil))
 	app.Get("/x", func(c *fiber.Ctx) error { return c.SendString("ok") })
 
 	resp, err := app.Test(get("/x"), 5000)
@@ -386,6 +399,72 @@ func TestCORSHeadersAndPreflight(t *testing.T) {
 	}
 	if resp2.StatusCode != fiber.StatusNoContent {
 		t.Errorf("预检应 204，实际 %d", resp2.StatusCode)
+	}
+}
+
+// TestCORSProdDoesNotDefaultToWildcard 是本轮（审计轮）新增的关键守卫。
+//
+// 修前 cors() **无条件**发 `Access-Control-Allow-Origin: *`，
+// 而那句「生产应收紧」只存在于注释里 —— 注释是最容易让所有人
+// 以为已经做了的形态。
+//
+// 判据是**反向默认**：prod 未配置白名单时**一条 CORS 头都不发**，
+// 而不是继续发 `*`。
+//
+// 为什么这条必须存在：项目现在不用 cookie 存凭证，所以 `*` 本身
+// **不构成**带凭证的跨域读（浏览器在 `*` 下不发 cookie，
+// 攻击站点也读不到别 origin 的 localStorage）。
+// 真正的风险是「将来有人加了 cookie 登录」——那时 `*` 立刻变成全站沦陷，
+// 而没有任何东西会提醒。所以默认必须取安全的一侧。
+func TestCORSProdDoesNotDefaultToWildcard(t *testing.T) {
+	withDevMode(t, false) // prod
+	app := fiber.New()
+	app.Use(cors(nil))
+	app.Get("/x", func(c *fiber.Ctx) error { return c.SendString("ok") })
+
+	req := httptest.NewRequest(http.MethodGet, "/x", nil)
+	req.Header.Set("Origin", "https://evil.example")
+	resp, err := app.Test(req, 5000)
+	if err != nil {
+		t.Fatalf("请求失败：%v", err)
+	}
+	if got := resp.Header.Get("Access-Control-Allow-Origin"); got != "" {
+		t.Errorf("prod 未配白名单时不应发任何 Allow-Origin，实际 = %q", got)
+	}
+}
+
+// TestCORSAllowListEchoesOnlyListedOrigin 断言白名单**双向**生效：
+// 列内的回显具体来源，列外的一条头都不发。
+//
+// ⚠️ 双向都必须测：只测「列内能用」的话，一个恒返回 `*` 的实现
+// 也会让它变绿 —— 而那正是本条要防的回归形态。
+func TestCORSAllowListEchoesOnlyListedOrigin(t *testing.T) {
+	withDevMode(t, false)
+	app := fiber.New()
+	app.Use(cors([]string{"https://admin.example.com"}))
+	app.Get("/x", func(c *fiber.Ctx) error { return c.SendString("ok") })
+
+	in := httptest.NewRequest(http.MethodGet, "/x", nil)
+	in.Header.Set("Origin", "https://admin.example.com")
+	respIn, err := app.Test(in, 5000)
+	if err != nil {
+		t.Fatalf("白名单内请求失败：%v", err)
+	}
+	if got := respIn.Header.Get("Access-Control-Allow-Origin"); got != "https://admin.example.com" {
+		t.Errorf("白名单内应回显具体来源，实际 = %q", got)
+	}
+	if got := respIn.Header.Get("Vary"); got != "Origin" {
+		t.Errorf("回显具体来源时必须带 Vary: Origin（否则 CDN 会串味），实际 = %q", got)
+	}
+
+	out := httptest.NewRequest(http.MethodGet, "/x", nil)
+	out.Header.Set("Origin", "https://evil.example")
+	respOut, err := app.Test(out, 5000)
+	if err != nil {
+		t.Fatalf("白名单外请求失败：%v", err)
+	}
+	if got := respOut.Header.Get("Access-Control-Allow-Origin"); got != "" {
+		t.Errorf("白名单外不应发 Allow-Origin，实际 = %q", got)
 	}
 }
 

@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -64,6 +65,58 @@ func TestGuestLoginLifecycle(t *testing.T) {
 	}
 	if tp3.User.Nickname == "" {
 		t.Error("空昵称应自动生成")
+	}
+}
+
+// TestGuestLoginNicknameIsBounded 昵称上界（第 154 轮）。
+//
+// # 缺陷
+//
+// `users.nickname` 是 TEXT，请求体上限是 BodyLimit = 1MB ——
+// 也就是说**单个注册请求就能写入接近 1MB 的昵称，且没有任何东西在看**。
+// 它不是"只是大了点"：昵称会进**所有列表响应**（排行榜、后台用户列表、
+// 战报、防线候选），而坏数据一旦落库就永远在那儿 ——
+// 清掉它需要手工 SQL，且没人会知道要先去做这件事。
+//
+// # 判据是「能写进去多少」，不是「有没有校验」
+//
+//   - 上限 + 1 → ErrBadInput，**且没有落库**（拒绝必须发生在写之前；
+//     先写后删的实现会让这条路留下一行脏数据）
+//   - 恰好上限 → 成功，且**库里读回来的就是那个昵称**
+//
+// 后一条不是多余的：一个 `return ErrBadInput` 的无条件实现也能让
+// 前一条绿，而它会让所有玩家都注册不了。
+func TestGuestLoginNicknameIsBounded(t *testing.T) {
+	ts := openTestService(t)
+	ctx := context.Background()
+
+	atLimit := strings.Repeat("昵", MaxNicknameLen)
+	atToken := fmt.Sprintf("svc_nick_at_%d", time.Now().UnixNano())
+	tp, err := ts.GuestLogin(ctx, atToken, atLimit)
+	if err != nil {
+		t.Fatalf("恰好 %d 字应放行：%v", MaxNicknameLen, err)
+	}
+	var stored string
+	if err := ts.pool.QueryRow(ctx,
+		`SELECT nickname FROM users WHERE id = $1`, tp.User.ID).Scan(&stored); err != nil {
+		t.Fatalf("读回昵称失败：%v", err)
+	}
+	if stored != atLimit {
+		t.Errorf("恰好在边界上的昵称必须原样落库（不能被截断）：库里 %d 字，期望 %d 字",
+			len([]rune(stored)), len([]rune(atLimit)))
+	}
+
+	overToken := atToken + "_over"
+	if _, err := ts.GuestLogin(ctx, overToken, atLimit+"昵"); !errors.Is(err, ErrBadInput) {
+		t.Errorf("%d 字昵称应被 ErrBadInput 拒绝，实际 %v", MaxNicknameLen+1, err)
+	}
+	var rows int
+	if err := ts.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM users WHERE guest_token = $1`, overToken).Scan(&rows); err != nil {
+		t.Fatalf("查被拒用户失败：%v", err)
+	}
+	if rows != 0 {
+		t.Errorf("被拒的注册不得留下任何行，实际插入 %d 行 —— 校验发生在写入之后", rows)
 	}
 }
 
@@ -118,7 +171,7 @@ func TestResolveUserTokenKinds(t *testing.T) {
 	}
 
 	// 有效签名但不存在的用户（id 99999999）
-	tok, _, _ := ts.JWT.Issue(99999999, "user")
+	tok, _, _ := ts.JWT.Issue(99999999, "user", "")
 	if _, err := ts.ResolveUser(ctx, tok); !errors.Is(err, ErrUnauthorized) {
 		t.Errorf("不存在用户应 ErrUnauthorized，实际 %v", err)
 	}

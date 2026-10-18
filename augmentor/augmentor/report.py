@@ -61,7 +61,7 @@ class QualityReport:
 
 class ReportGenerator:
     def __init__(self, buckets: Optional[List[float]] = None, threshold: float = 0.6):
-        self.buckets = buckets or DEFAULT_BUCKETS
+        self.buckets = buckets if buckets is not None else DEFAULT_BUCKETS
         self.threshold = threshold
 
     def generate(self, items: List[Dict], scores: List[Any],
@@ -133,17 +133,16 @@ class ReportGenerator:
         if dedup_summary.get("removal_rate", 0) > 0.5:
             suggestions.append("去重移除比例较高，种子数据同质化严重，建议增加多样性")
 
-        metrics = ["semantic_similarity", "relevance", "diversity"]
-        labels = ["语义相似度", "回答相关性", "多样性"]
-        for metric, label in zip(metrics, labels):
+        # 三项指标各配一条建议：文案是数据不是控制流。旧的 if/elif 链逐个点名指标名，
+        # 链尾那一支「三项都不是」在封闭名单下永远走不到（覆盖率里的偏支），并成三元组
+        # 之后链消失，加第四项只需多一行数据。
+        metrics = [("semantic_similarity", "语义相似度", "收敛生成约束或优化prompt"),
+                   ("relevance", "回答相关性", "检查问答匹配质量"),
+                   ("diversity", "多样性", "提高temperature或增加采样多样性")]
+        for metric, label, advice in metrics:
             values = [getattr(s, metric, 0.0) for s in scores]
             if values and sum(values) / len(values) < 0.5:
-                if metric == "semantic_similarity":
-                    suggestions.append(f"{label}偏低，建议收敛生成约束或优化prompt")
-                elif metric == "relevance":
-                    suggestions.append(f"{label}偏低，建议检查问答匹配质量")
-                elif metric == "diversity":
-                    suggestions.append(f"{label}偏低，建议提高temperature或增加采样多样性")
+                suggestions.append(f"{label}偏低，建议{advice}")
 
         if not suggestions:
             suggestions.append("各项指标均在合理区间，数据质量良好")

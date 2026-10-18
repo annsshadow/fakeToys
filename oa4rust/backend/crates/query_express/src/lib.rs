@@ -16,6 +16,17 @@ pub mod routes;
 
 use entities::query_view;
 
+/// 安全审计（round4-b84）：query_express 1 把 sea_orm 真写收"会话存在档"门禁。
+/// 无会话（Option<Extension<Session>> = None）→ 401，门置于首个 DB 访问
+/// （`ActiveModel::insert`）之前，杜绝匿名写 `query_view` 表。这是 sea_orm ORM 写，
+/// 审计尺子"含写"指标不可见（ORM-blindness，§五 尺子缺陷 28），R7 降但含写
+/// 不变属预期。
+fn require_session(
+    session: Option<Extension<shared::session::Session>>,
+) -> Result<shared::session::Session, AppError> {
+    session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
+}
+
 pub async fn query_list(
     db: Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -55,8 +66,10 @@ pub async fn query_list(
 #[axum::debug_handler]
 pub async fn create_query(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let id = uuid::Uuid::new_v4().to_string();
     let name = payload
         .get("name")
@@ -105,3 +118,5 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
 mod tests;
 #[cfg(test)]
 mod tests_generated;
+#[cfg(test)]
+mod security_gate_tests_b84;

@@ -5,7 +5,61 @@
  * uni.request 在两端 API 同构，因此直接用它，不引入额外 HTTP 库。
  */
 
-const BASE_URL = 'http://127.0.0.1:8080/api/v1'
+/**
+ * 解析后端地址。
+ *
+ * ⚠️ 它曾经是**写死的字面量** `'http://127.0.0.1:8080/api/v1'` ——
+ * 也就是说打出来的包只能连用户自己设备的回环地址，生产环境根本不可用，
+ * 而「唯一的修法」是回去改这个源码常量。
+ *
+ * 那条修改路径上没有任何东西阻止人把 `http://` 换成真实域名保留下来，
+ * 于是最自然的修补就是「照抄，只把地址换掉」——
+ * 而那会让 `access_token` / `refresh_token`（有效期默认 30 天）
+ * **以明文过网**。微信小程序对非 HTTPS 域名有白名单限制，
+ * 但 H5 端没有任何东西挡着。
+ *
+ * 所以这里做两件事，缺一不可：
+ *  1. 从环境变量取地址（与 admin 的 `VITE_API_BASE` 同一套机制）；
+ *  2. **非回环主机必须以 https:// 开头，否则启动即抛**。
+ *
+ * 判据为什么是「回环」而不是「localhost」字面量：
+ * 回环地址（127.0.0.1 / localhost / ::1）在真机上指向手机自己，
+ * 抓包也只能看到本机流量，明文无所谓。
+ * 而**局域网 IP**（192.168.x.x / 10.x.x.x）虽然用于真机调试，
+ * 它同样是明文 —— 但它是开发场景，且微信开发者工具本身就在
+ * 「不校验合法域名」模式下运行，硬拦会挡住正常开发。
+ * 因此对局域网 IP 只警告不抛，对**公网域名**才硬拦。
+ */
+function resolveBaseURL(): string {
+  const configured =
+    (typeof import.meta !== 'undefined' &&
+      (import.meta as { env?: Record<string, string | undefined> }).env?.VITE_API_BASE) ||
+    ''
+  const raw = (configured || 'http://127.0.0.1:8080/api/v1').trim()
+
+  const isLoopback = /^http:\/\/(127\.0\.0\.1|localhost|\[::1\])(:|\/|$)/i.test(raw)
+  const isPrivateLAN = /^http:\/\/(192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\.)/i.test(raw)
+  const isPlainHTTP = /^http:\/\//i.test(raw)
+
+  if (isPlainHTTP && !isLoopback) {
+    if (isPrivateLAN) {
+      // 开发场景：真机连本机局域网。只警告。
+      console.warn(
+        '[api] 后端地址走明文 HTTP 的局域网地址：' +
+          '真机调试可用，但令牌会明文过网，仅限开发环境。',
+      )
+    } else {
+      // 公网域名 + 明文 = 长期有效的令牌裸奔。硬拦。
+      throw new Error(
+        `api: 生产后端地址必须是 HTTPS（当前 ${raw}）。` +
+          '请设置 VITE_API_BASE=https://your.domain/api/v1。',
+      )
+    }
+  }
+  return raw.replace(/\/+$/, '')
+}
+
+const BASE_URL = resolveBaseURL()
 
 /** GameConfig 与服务端 /api/v1/config 的响应结构对应。 */
 export interface GameConfig {
@@ -167,6 +221,58 @@ export function clearTokens(): void {
   del(TOKEN_KEY)
   del(REFRESH_KEY)
   del(TOKEN_EXP_KEY)
+}
+
+/**
+ * 登出：吊销服务端该账号的全部 refresh token、轮换游客凭证，再清本地令牌。
+ *
+ * # 为什么「登出」必须调服务端，不能只清本地
+ *
+ * 本地 `clearTokens()` 只是让**这台设备**不再用它。
+ * 而 refresh token 的有效期是 30 天（服务端 `REFRESH_TTL`）、
+ * `guest_token` 更是**永久有效** —— 在这期间它们**仍然是有效凭证**。
+ * 手机丢了 / 令牌被读走之后，玩家在设置里点「退出登录」，
+ * 攻击者手里的那份照样能换出新会话。
+ *
+ * # ⚠️ `guest_token` 的顺序是本函数里最容易写错的一处
+ *
+ * 服务端登出会**轮换** `guest_token`（旧的那枚立即作废）。
+ * 所以必须把响应里的新 token **存下来** ——
+ *
+ * 不存 → 下一次冷启动带着已作废的旧 token 调 GuestLogin
+ *      → 匹配不到任何账号 → 服务端建出一个**新号**
+ *      → 玩家的金币、关卡进度、专精全部「凭空消失」
+ *
+ * 那比「凭证没轮换」更糟：凭证问题静默，丢进度会被立刻发现并当成
+ * 一个无法解释的 bug。所以这里 `setGuestToken` 在 `clearTokens` **之前**，
+ * 且失败路径（网络不通）也要处理 —— 见下面那条注释。
+ */
+export async function logout(): Promise<{ serverNotified: boolean }> {
+  try {
+    const res = await request<{ revoked: number; guest_token: string }>('/me/logout', {
+      method: 'POST',
+    })
+    // ⚠️ 先存新凭证再清令牌：clearTokens 只删 access/refresh 两枚，
+    //   顺序理论上无关，但写成「先写后清」让「凭证一定被更新过」
+    //   成为一个可以从代码上直接看出的性质，而不是依赖两条语句互不干扰。
+    //
+    //   ⚠️ 为什么必须判空：服务端若在轮换前就返回（不该发生，但空串兜底），
+    //   setGuestToken('') 会**清掉**本地凭证 → 下次冷启动变成新号。
+    //   「什么都不存」是安全的一侧：它退回到「这次登出没生效」，
+    //   而不是「进度丢了」。
+    if (res?.guest_token) setGuestToken(res.guest_token)
+    clearTokens()
+    return { serverNotified: true }
+  } catch {
+    // 网络不通：服务端那两份没吊销。
+    // 但用户的意图是「我现在不信任这台设备」，此时把有效 access token
+    // 留在 localStorage 是违背意图的 —— 所以本地照清。
+    //
+    // ⚠️ 这里**不**动 guest_token：服务端没轮换它，本地那份仍然有效，
+    //   清掉反而会让玩家丢进度（见上面的顺序注释）。
+    clearTokens()
+    return { serverNotified: false }
+  }
 }
 
 interface RequestOptions {

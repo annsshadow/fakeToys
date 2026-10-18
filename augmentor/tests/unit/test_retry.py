@@ -452,7 +452,7 @@ class TestTwoDelayCeilings:
     一支是退避计算（归调用方传的 `max_delay`），另一支是服务端 `Retry-After`
     （归 `MAX_RETRY_AFTER`）。`models/base.py` 的 `_MAX_RETRY_DELAY` 曾被注释成
     「单次重试等待上限」，而实测 429 + `Retry-After: 45` 时 sleeper 收到 45.0 ——
-    那句话说的是这一支管不到的事。口径见 docs/ARCHITECTURE.md §3.22。
+    那句话说的是这一支管不到的事。口径见 docs/augmentor/ARCHITECTURE.md §3.22。
     """
 
     @staticmethod

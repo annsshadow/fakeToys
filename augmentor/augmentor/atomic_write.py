@@ -28,11 +28,15 @@
 """
 
 import json
+import logging
 import os
 import secrets
+import threading
 import time
 from pathlib import Path
-from typing import Any, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
+
+logger = logging.getLogger(__name__)
 
 # 同名并发替换在 Windows 上会撞到瞬时的 `ERROR_ACCESS_DENIED`：两支线程同时把各自的临时件
 # 换到同一个目标时，后到的那支会被拒绝（L99 的并发守卫实测：8 支线程同一时刻写同一文件，
@@ -57,6 +61,22 @@ def _replace_with_retry(src: Path, dst: Path):
         except PermissionError:
             time.sleep(_SWAP_BACKOFF_S)
     os.replace(src, dst)
+
+
+def _discard_tmp(tmp: Path) -> None:
+    """尽力清掉临时件，任何清理失败都不许顶替调用方正在抛的那个异常
+
+    两格各管一件事。`missing_ok=True` 管「临时件已经不在」：`os.replace` 成功之后它本该
+    消失，判过存在再删仍然留着一个并发窗口。外层 `except OSError` 管「删它这件事失败」：
+    Windows 上杀软或索引器暂占句柄时 `unlink` 抛 `PermissionError`，而 `finally` 里抛出的
+    异常会**顶替**上面那次真正的写失败，把本模块 docstring 承诺的「异常原样上抛」变成一句
+    不相干的清理报错。留在盘上的临时件不匹配任何目录扫描（前导点 + `.tmp-` 中段），代价是
+    垃圾而不是坏答案，所以这里出声即可、不升级成失败。
+    """
+    try:
+        tmp.unlink(missing_ok=True)
+    except OSError as cleanup_error:
+        logger.warning("清理临时件失败 %s: %s", tmp, cleanup_error)
 
 
 def atomic_write_json(file_path: Path, data: Union[List, Any],
@@ -88,8 +108,7 @@ def atomic_write_json(file_path: Path, data: Union[List, Any],
                 json.dump(data, f, ensure_ascii=ensure_ascii, indent=indent)
         _replace_with_retry(tmp, file_path)
     finally:
-        if tmp.exists():
-            tmp.unlink()
+        _discard_tmp(tmp)
 
 
 def atomic_write_text(file_path: Path, text: str):
@@ -107,5 +126,69 @@ def atomic_write_text(file_path: Path, text: str):
             f.write(text)
         _replace_with_retry(tmp, file_path)
     finally:
-        if tmp.exists():
-            tmp.unlink()
+        _discard_tmp(tmp)
+
+
+# ============ 读-改-写的互斥（L273） ============
+
+#: 按「规范化后的绝对路径」登记的进程内互斥锁。第二把尺子管的是本模块 docstring
+#: 没覆盖的那一半承诺：`os.replace` 保证**读者**看不见半份，它保证不了**写者**不互相
+#: 覆盖 —— 两个写者各自先读整份、各自改自己那一格、各自整份写回，后写的那一份带着
+#: 旧快照，把前一次改动凭空抹掉，而两边都回了 `success: true`。
+#: 实测（Temp 沙箱，`probe_race.py` / `probe1_guard.py` / `probe3_versions.py`）：
+#: 同一份 200 条数据集上 20 支并发 `PUT /api/data/update` ⇒ 落盘 1 处、丢 19 处，
+#: 全部 200；50 支时另有 3 支 500（读侧撞 Windows 的瞬时拒绝访问）；并发 `DELETE` 20 支
+#: ⇒ 只删掉 1 条，丢 19 次删除；备份索引 20 次创建 ⇒ 索引 1 行、盘上 20 份文件，
+#: 那 19 份对 `list` / `restore` / `delete` / `clean_old_backups` 全部不可见。
+_PATH_LOCKS: Dict[str, threading.RLock] = {}
+_PATH_LOCKS_REGISTRY = threading.Lock()
+
+#: 锁表键数上限。表本身按路径**单调增长**、没有任何东西会把它缩小，而它的键来自
+#: 请求方能点名的数据集文件名 ⇒ 「碰过的文件数量是有界的」这句话在这仓里没有 enforce
+#: 它的那段代码（实测 `Temp/probe_l283_locks.py`：20 000 个不同路径登记 **6.25 MB**、
+#: 每格约 312 B，且把路径对象全部丢弃、文件也不存在之后，一格都不退）。
+#: 与 `api/middleware/rate_limit.py` 的 `DEFAULT_MAX_KEYS` 同一取向：封顶而不是回收。
+#: 为什么不回收： eviction 必须在「取出锁」与「拿到锁」之间开窗，那正是丢更新那一族的
+#: 形状 —— A 线程刚取到锁对象还没进 `with`，B 线程把这一格删掉，C 线程给同一路径建出
+#: 第二把锁，两边并发写同一份文件而两边都回 `success: true`。宁可超限之后所有路径共用
+#: 一把锁（只会多串行化，永远不会少），也不留这种窗。
+MAX_PATH_LOCKS = 10000
+
+#: 超限之后的共用锁。它是**更严格**而不是更宽松：拿到它的两个不同文件会被串行化，
+#: 而串行化永远不会造成丢更新。
+_SPILL_LOCK = threading.RLock()
+
+
+def path_lock(file_path: Any) -> threading.RLock:
+    r"""取（并记住）`file_path` 这一把锁 —— 同一个文件路径的读-改-写共用一把
+
+    为什么是 `RLock` 不是 `Lock`：锁按路径建键之后，「外层罩住整段读-改-写」与「内层
+    那个读写同一份文件的辅助方法自保」会**套在同一把锁上**（`version_control._load_index`
+    被 `create_version` 在锁内调用就是这一形）。普通锁同线程重入会当场自锁死，可重入锁
+    让两处各自成立、合起来仍然是一趟。
+
+    键取 `normcase(abspath(...))`：同一份文件被写成相对与绝对两种形状时必须是同一把锁，
+    否则锁就只是装饰。Windows 上 `normcase` 顺带折叠大小写（盘符路径本就不区分大小写）。
+
+    锁表按路径单调增长、**不回收**，因此有一条硬上限 `MAX_PATH_LOCKS`（理由与实测见
+    那一格的注释）：一个进程碰过的文件数量在正常使用里是有界的（数据集名、备份索引、
+    版本目录），但键来自请求方能点名的文件名，所以「有界」必须由代码 enforce 而不是
+    靠假设。上限之内同一个路径永远是同一把锁（`is` 相同），超限之后新路径共用一把
+    spill 锁 —— 那只会多串行化，永远不会放宽。
+
+    Args:
+        file_path: 目标文件路径（`str` 或 `Path`）
+
+    Returns:
+        该路径专属的 `threading.RLock`
+    """
+    key = os.path.normcase(os.path.abspath(str(file_path)))
+    with _PATH_LOCKS_REGISTRY:
+        lock = _PATH_LOCKS.get(key)
+        if lock is None:
+            if len(_PATH_LOCKS) >= MAX_PATH_LOCKS:
+                return _SPILL_LOCK
+            lock = threading.RLock()
+            _PATH_LOCKS[key] = lock
+        return lock
+

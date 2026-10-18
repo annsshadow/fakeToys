@@ -8,7 +8,7 @@ from typing import List, Dict, Optional
 from dataclasses import dataclass
 from collections import Counter
 import re
-from .validation import require_count
+from .validation import require_count, require_item_text
 
 logger = logging.getLogger(__name__)
 
@@ -170,7 +170,7 @@ class ActiveSampler:
         
         # 问题类型分布
         question_types = Counter()
-        for item in items:
+        for item in require_item_text(items, "instruction"):
             q_type = self._analyze_question_type(item.get("instruction", ""))
             question_types[q_type] += 1
         
@@ -289,6 +289,12 @@ class ActiveSampler:
                     elif value == "long" and len(text) >= 30:
                         recommended_seeds.append(item)
                         break
+                else:
+                    # 类别名单由 identify_underrepresented 封闭成两类，落到这里说明有人
+                    # 加了第三类却没接分支：静默少推一颗种子，覆盖率报告照常出。
+                    from .exceptions import DataValidationError
+                    raise DataValidationError(
+                        f"{ur_type} 的类别 {category} 没有对应的种子分支")
         
         # 生成建议
         recommendations = []

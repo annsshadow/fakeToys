@@ -176,7 +176,8 @@ async fn test_save_flow_route_exists() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    // 第五十七批：save_flow 收 admin 门后无会话返 401（原 500）。
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
 }
 
 #[tokio::test]
@@ -195,7 +196,8 @@ async fn test_delete_flow_route_exists() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    // 第五十七批：delete_flow 收 admin 门后无会话返 401（原 500）。
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
 }
 
 #[tokio::test]
@@ -472,4 +474,198 @@ async fn test_designer_script_by_name_and_workcompleted_merge_registered() {
         .await,
         StatusCode::NOT_FOUND
     );
+}
+
+// 回归（四轮审计 GET 写面队列 · pp_designer 3 把 process 生命周期写）：
+// process_id_disable / process_id_enable / process_id_upgrade 按 id 改 PP_E_PROCESS，
+// 无归属门 ⇒ 收 guard_write（进程属主或 admin，coalesce xcreatorPerson/creator_person）。
+#[tokio::test]
+async fn test_pp_process_writes_require_owner() {
+    use axum::extract::Extension;
+    if !shared::testing::is_db_available().await {
+        eprintln!("skipping test_pp_process_writes_require_owner: DATABASE_URL not reachable");
+        return;
+    }
+    let pool = shared::testing::test_pool();
+    const OWNER: &str = "pp-gate-owner";
+    const OTHER: &str = "pp-gate-other";
+    const ADMIN: &str = "pp-gate-admin";
+    const ROLE: &str = "pp-gate-role-admin";
+    let sess = |p: &str| Extension(shared::testing::test_session(p));
+    let pid = "pp-gate-1".to_string();
+
+    // 造 admin + 归属进程行（xcreatorPerson=OWNER）。
+    {
+        let c = pool.get().await.unwrap();
+        c.execute(
+            "INSERT INTO auth_role (id, name, disable) VALUES ($1,'admin',false) \
+             ON CONFLICT (id) DO UPDATE SET name='admin', disable=false",
+            &[&ROLE.to_string()],
+        )
+        .await
+        .unwrap();
+        c.execute(
+            "INSERT INTO auth_person (id, unique_id, name, password_hash) \
+             VALUES ($1,$1,'pp gate admin','x') ON CONFLICT (id) DO NOTHING",
+            &[&ADMIN.to_string()],
+        )
+        .await
+        .unwrap();
+        c.execute(
+            "INSERT INTO auth_person_role (person_id, role_id, unit_id) \
+             VALUES ($1,$2,'pp-gate-unit') ON CONFLICT DO NOTHING",
+            &[&ADMIN.to_string(), &ROLE.to_string()],
+        )
+        .await
+        .unwrap();
+        c.execute(
+            "INSERT INTO pp_e_process (id, xid, xname, \"xcreatorPerson\", create_time) \
+             VALUES ($1,$1,'p',$2,NOW()::text) ON CONFLICT (id) DO NOTHING",
+            &[&pid, &OWNER.to_string()],
+        )
+        .await
+        .unwrap();
+    }
+
+    // 非属主/非 admin → 403 且不落笔（xversion 不 bump）。
+    assert!(
+        matches!(
+            crate::process_id_disable(Extension(pool.clone()), sess(OTHER), axum::extract::Path(pid.clone())).await,
+            Err(shared::error::AppError::Forbidden)
+        ),
+        "disable 他人必须 403"
+    );
+    assert!(
+        matches!(
+            crate::process_id_enable(Extension(pool.clone()), sess(OTHER), axum::extract::Path(pid.clone())).await,
+            Err(shared::error::AppError::Forbidden)
+        ),
+        "enable 他人必须 403"
+    );
+    assert!(
+        matches!(
+            crate::process_id_upgrade(Extension(pool.clone()), sess(OTHER), axum::extract::Path(pid.clone())).await,
+            Err(shared::error::AppError::Forbidden)
+        ),
+        "upgrade 他人必须 403"
+    );
+    {
+        let c = pool.get().await.unwrap();
+        let v: i64 = c
+            .query_one("SELECT COALESCE(xversion,0) FROM pp_e_process WHERE xid=$1", &[&pid])
+            .await
+            .unwrap()
+            .get(0);
+        assert_eq!(v, 0, "非属主 403 侧不得 bump xversion");
+    }
+
+    // 属主放行：disable + upgrade。
+    assert!(
+        crate::process_id_disable(Extension(pool.clone()), sess(OWNER), axum::extract::Path(pid.clone()))
+            .await
+            .is_ok(),
+        "属主 disable 应放行"
+    );
+    assert!(
+        crate::process_id_upgrade(Extension(pool.clone()), sess(OWNER), axum::extract::Path(pid.clone()))
+            .await
+            .is_ok(),
+        "属主 upgrade 应放行"
+    );
+    {
+        let c = pool.get().await.unwrap();
+        let v: i64 = c
+            .query_one("SELECT COALESCE(xversion,0) FROM pp_e_process WHERE xid=$1", &[&pid])
+            .await
+            .unwrap()
+            .get(0);
+        assert_eq!(v, 1, "属主 upgrade 应 bump xversion");
+        let s: String = c
+            .query_one("SELECT xstatus::text FROM pp_e_process WHERE xid=$1", &[&pid])
+            .await
+            .unwrap()
+            .get(0);
+        assert_eq!(s, "disabled", "属主 disable 应置 disabled");
+    }
+
+    // admin 放行：enable（admin 旁路）。
+    assert!(
+        crate::process_id_enable(Extension(pool.clone()), sess(ADMIN), axum::extract::Path(pid.clone()))
+            .await
+            .is_ok(),
+        "admin enable 应放行（admin 旁路）"
+    );
+    {
+        let c = pool.get().await.unwrap();
+        let s: String = c
+            .query_one("SELECT xstatus::text FROM pp_e_process WHERE xid=$1", &[&pid])
+            .await
+            .unwrap()
+            .get(0);
+        assert_eq!(s, "enabled", "admin enable 应置 enabled");
+    }
+
+    // 收口：清造数，零残留。
+    let c = pool.get().await.unwrap();
+    c.execute("DELETE FROM pp_e_process WHERE xid=$1", &[&pid])
+        .await
+        .unwrap();
+    c.execute("DELETE FROM auth_person_role WHERE person_id=$1", &[&ADMIN.to_string()])
+        .await
+        .unwrap();
+    c.execute("DELETE FROM auth_person WHERE id=$1", &[&ADMIN.to_string()])
+        .await
+        .unwrap();
+    c.execute("DELETE FROM auth_role WHERE id=$1", &[&ROLE.to_string()])
+        .await
+        .unwrap();
+}
+
+/// 第 37 批回归臂：设计器元数据写（dict / form / xform 各 create/save/delete，共 9 把）
+/// 收 admin 门（A3-N9）。离线：无会话 401（先于读库）；非 admin（mock pool fail-closed）403。
+#[tokio::test]
+async fn pp_designer_meta_writes_require_admin() {
+    use shared::error::AppError;
+    let dead = build_test_pool();
+    let body = || axum::Json(json!({}));
+    let path = || axum::extract::Path("x".to_string());
+
+    // 无会话 → 九把全 401（门先于 crud 的 pool.get()）
+    let unauth = [
+        crate::dict_create(Extension(dead.clone()), None, body()).await,
+        crate::dict_save(Extension(dead.clone()), None, path(), body()).await,
+        crate::dict_delete(Extension(dead.clone()), None, path()).await,
+        crate::form_create(Extension(dead.clone()), None, body()).await,
+        crate::form_save(Extension(dead.clone()), None, path(), body()).await,
+        crate::form_delete(Extension(dead.clone()), None, path()).await,
+        crate::xform_create(Extension(dead.clone()), None, body()).await,
+        crate::xform_save(Extension(dead.clone()), None, path(), body()).await,
+        crate::xform_delete(Extension(dead.clone()), None, path()).await,
+    ];
+    for (i, r) in unauth.iter().enumerate() {
+        assert!(
+            matches!(r, Err(AppError::Unauthorized)),
+            "第 {i} 把（dict/form/xform 序）无会话必须 401"
+        );
+    }
+
+    // 非 admin（mock pool 下 is_admin fail-closed）→ 九把全 403
+    let s = || Some(Extension(shared::testing::test_session("u-ppd-nobody")));
+    let forbidden = [
+        crate::dict_create(Extension(dead.clone()), s(), body()).await,
+        crate::dict_save(Extension(dead.clone()), s(), path(), body()).await,
+        crate::dict_delete(Extension(dead.clone()), s(), path()).await,
+        crate::form_create(Extension(dead.clone()), s(), body()).await,
+        crate::form_save(Extension(dead.clone()), s(), path(), body()).await,
+        crate::form_delete(Extension(dead.clone()), s(), path()).await,
+        crate::xform_create(Extension(dead.clone()), s(), body()).await,
+        crate::xform_save(Extension(dead.clone()), s(), path(), body()).await,
+        crate::xform_delete(Extension(dead.clone()), s(), path()).await,
+    ];
+    for (i, r) in forbidden.iter().enumerate() {
+        assert!(
+            matches!(r, Err(AppError::Forbidden)),
+            "第 {i} 把（dict/form/xform 序）非 admin 必须 403"
+        );
+    }
 }

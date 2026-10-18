@@ -10,10 +10,12 @@
 #[cfg(test)]
 mod u3_tests {
     use crate::{
-        router as program_center_router, u3_agent_flag_disable, u3_collect_resetpassword_put,
-        u3_config_change_password_post, u3_invoke_file_put, u3_jest_clear_cache_source,
-        u3_market_list_paging_category, u3_prompterrorlog_create, u3_qiyeweixin_create,
+        mpweixin_menu_delete_id, mpweixin_menu_update_id, router as program_center_router,
+        u3_agent_flag_disable, u3_collect_resetpassword_put, u3_config_change_password_post,
+        u3_invoke_file_put, u3_jest_clear_cache_source, u3_market_list_paging_category,
+        u3_prompterrorlog_create, u3_qiyeweixin_create, u3_qiyeweixin_request_pull_sync_post,
         u3_schedule_fire_post, u3_script_save_name, u3_welink_pull_sync,
+        u3_welink_request_pull_sync_post,
     };
     use axum::body::Body;
     use axum::extract::Extension;
@@ -330,13 +332,15 @@ mod u3_tests {
             StatusCode::NOT_FOUND
         );
 
+        // 第十七批安全审计：钉钉组织注册回调开关（GET 上挂状态写）收 admin 档，
+        // 门在读库之前 → 无会话 401，不再直通 DB 层 500。
         assert_eq!(
             status_of(
                 "GET",
                 "/api/program_center/dingding/sync/organization/register/callback/true"
             )
             .await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::UNAUTHORIZED
         );
         assert_eq!(
             status_of("GET", "/api/program_center/deploy/d-1").await,
@@ -380,9 +384,10 @@ mod u3_tests {
             status_of("GET", "/api/program_center/invoke/list/with/category/cms").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
+        // 第十七批安全审计：invoke 执行（GET 面）收 admin 档，无会话先 401。
         assert_eq!(
             status_of("GET", "/api/program_center/invoke/i-1/execute/get").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::UNAUTHORIZED
         );
         for uri in [
             "/api/program_center/invoke/i-1/execute",
@@ -435,9 +440,11 @@ mod u3_tests {
             status_of("GET", "/api/program_center/market/m-1/installed/version").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
+        // 第十七批安全审计：market 卸载（GET /market/{flag}/uninstall）收 admin 档，
+        // 无会话先 401。同一 handler 的 install/or/update（上方两条 assert_ne）同样被门拦住。
         assert_eq!(
             status_of("GET", "/api/program_center/market/m-1/uninstall").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::UNAUTHORIZED
         );
         assert_ne!(
             status_of("POST", "/api/program_center/market/list/paging/1/size/20").await,
@@ -482,7 +489,7 @@ mod u3_tests {
         );
         assert_eq!(
             status_of("DELETE", "/api/program_center/mpweixin/menu/delete/wm-1").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::UNAUTHORIZED
         );
         assert_eq!(
             status_of("GET", "/api/program_center/mpweixin/menu/create/to/weixin").await,
@@ -550,7 +557,7 @@ mod u3_tests {
         );
         assert_eq!(
             status_of("POST", "/api/program_center/qiyeweixin/request/pull/sync").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::UNAUTHORIZED
         );
 
         assert_ne!(
@@ -582,17 +589,19 @@ mod u3_tests {
             StatusCode::NOT_FOUND
         );
 
+        // 第十七批安全审计：validation/timeout 与 welink 同步（均 GET 上挂写）收 admin 档，
+        // 无会话先 401；POST /welink/request/pull/sync（第六轮 R7 收口）同收 admin 档，无会话 401。
         assert_eq!(
             status_of("GET", "/api/program_center/validation/timeout/30000").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::UNAUTHORIZED
         );
         assert_eq!(
             status_of("GET", "/api/program_center/welink/pull/sync").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::UNAUTHORIZED
         );
         assert_eq!(
             status_of("POST", "/api/program_center/welink/request/pull/sync").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::UNAUTHORIZED
         );
     }
 
@@ -662,9 +671,13 @@ mod u3_tests {
     #[tokio::test]
     async fn u3_db_backed_reads_fail_internal_without_db() {
         let pool = mock_pool();
-        // 同步日志型端点：无 DB 连接 → Internal
-        let r = u3_welink_pull_sync(Extension(pool.clone())).await;
-        assert!(matches!(r, Err(shared::error::AppError::Internal)));
+        // 同步日志型端点：第十七批收 admin 档后，门插在 pool.get() **之前**，
+        // 因此这一族不再能走到「连不上库 → Internal」——无会话 401、非 admin 403。
+        // 这条断言由 Internal 改成两格门禁读数，改动本身就是门生效的证据。
+        let r = u3_welink_pull_sync(Extension(pool.clone()), None).await;
+        assert!(matches!(r, Err(shared::error::AppError::Unauthorized)));
+        let r = u3_welink_pull_sync(Extension(pool.clone()), Some(Extension(test_session()))).await;
+        assert!(matches!(r, Err(shared::error::AppError::Forbidden)));
         let r = u3_jest_clear_cache_source(
             Extension(pool.clone()),
             Some(Extension(test_session())),
@@ -736,5 +749,47 @@ mod u3_tests {
         .await;
         // 无 DB 时查询脚本所有者失败 → Internal（require_owner 前置查询）
         assert!(matches!(r, Err(shared::error::AppError::Internal)));
+    }
+
+    // 第六轮 R7 写面收口离线臂：4 把含写 handler 无会话全 401（门在 pool.get() 之前）。
+    // mpweixin menu 增删、企微/ Welink 拉同步日志——均为管理员管理资源， sibling u3_schedule_fire_post 同档。
+    #[tokio::test]
+    async fn b47_r7_writes_reject_without_session() {
+        let pool = mock_pool();
+        let ext = Extension(pool.clone());
+        let cases = vec![
+            (
+                "mpweixin_menu_delete_id",
+                mpweixin_menu_delete_id(ext.clone(), None, axum::extract::Path("wm-1".to_string()))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "mpweixin_menu_update_id",
+                mpweixin_menu_update_id(ext.clone(), None, axum::extract::Path("wm-1".to_string()))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "u3_qiyeweixin_request_pull_sync_post",
+                u3_qiyeweixin_request_pull_sync_post(ext.clone(), None)
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "u3_welink_request_pull_sync_post",
+                u3_welink_request_pull_sync_post(ext, None).await.map(|_| ()),
+            ),
+        ];
+        assert_eq!(cases.len(), 4, "本批 4 把含写必须逐把点名，少一把即漏门");
+        let leaked: Vec<String> = cases
+            .iter()
+            .filter(|(_, r)| !matches!(r, Err(shared::error::AppError::Unauthorized)))
+            .map(|(k, r)| format!("{k} => {:?}", r.as_ref().err()))
+            .collect();
+        assert!(
+            leaked.is_empty(),
+            "以下含写 handler 无会话未回 401（出现 Internal 就是门插在读库之后）：{leaked:?}"
+        );
     }
 }

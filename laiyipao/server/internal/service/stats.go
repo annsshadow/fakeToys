@@ -286,13 +286,38 @@ func (s *Service) AdminListUsers(ctx context.Context, keyword string, limit, off
 	// 旧实现直接拼 `%<kw>%`，搜 "100%" 会退化成 `%100%%`（% 当通配符），
 	// 结果「输入了东西却匹配到一大片」—— 与第 111 轮关卡搜索同族。
 	// 空 keyword 的 pattern 仍是 `%%`，`$1='%%'` 哨兵语义不变。
-	kw := strings.TrimSpace(keyword)
+	//
+	// 第 154 轮：去空白与长度上限统一走 `trimAdminKeyword`，
+	// 与 `AdminListLevels` 同一个 choke point（理由见那个函数的说明）。
+	kw, err := trimAdminKeyword(keyword)
+	if err != nil {
+		return nil, 0, err
+	}
 	escaped := strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`).Replace(kw)
 	pattern := "%" + escaped + "%"
 
+	// ⚠️ 搜索**只打 nickname，不再打 guest_token**（2026-10-14 安全审计轮）。
+	//
+	// `guest_token` 是与口令同级的凭证 —— 实测：给出同一个 `guest_token`
+	// 调 `POST /auth/guest` 就能拿到该账号的 access + refresh token。
+	// 让它在后台可搜索，意味着：
+	//
+	//  1. **凭证进了运营的检索面。** 后台账号被盗用（令牌被读走，
+	//     或后台被点击劫持诱导操作 —— 见 httpapi.securityHeaders）
+	//     时，攻击者立刻获得「批量列出所有玩家凭证」的能力 ——
+	//     而运营自己根本不需要它。
+	//  2. **凭证进了审计轨迹与截图。** 运营查一个疑似作弊玩家时
+	//     很容易把这一列连同搜索词复制到工单/群里。
+	//
+	// 而它对运营的价值接近于零：真要处理某个玩家，用 nickname 或
+	// user_id 就够了 —— 后台列表两列都有。
+	//
+	// ⚠️ 这**不是**一个「顺便也加上」的改法：它让一条既有功能消失，
+	// 所以必须同时说清楚「谁因此失去了什么」——见下面 `TestAdminSearchNeverMatchesGuestToken`
+	// 的断言，它守的正是「这一列不再可检索」这条新不变式。
 	var total int64
 	if err := s.pool.QueryRow(ctx,
-		`SELECT COUNT(*) FROM users WHERE $1 = '%%' OR nickname LIKE $2 ESCAPE '\'::char OR guest_token LIKE $2 ESCAPE '\'::char`,
+		`SELECT COUNT(*) FROM users WHERE $1 = '%%' OR nickname LIKE $2 ESCAPE '\'::char`,
 		pattern, pattern).Scan(&total); err != nil {
 		return nil, 0, fmt.Errorf("count users: %w", err)
 	}
@@ -325,7 +350,7 @@ func (s *Service) AdminListUsers(ctx context.Context, keyword string, limit, off
 			JOIN battle_records br ON br.id = rv.battle_id
 			GROUP BY br.user_id
 		) v ON v.user_id = u.id
-		WHERE $1 = '%%' OR u.nickname LIKE $1 ESCAPE '\'::char OR u.guest_token LIKE $1 ESCAPE '\'::char
+		WHERE $1 = '%%' OR u.nickname LIKE $1 ESCAPE '\'::char
 		ORDER BY u.id DESC LIMIT $2 OFFSET $3`, pattern, limit, offset)
 	if err != nil {
 		return nil, 0, fmt.Errorf("list users: %w", err)
@@ -401,9 +426,26 @@ func (s *Service) AdminSetUserStatus(ctx context.Context, userID int64, banned b
 // 事后翻审计只看到「发放」，分不清哪笔是扣款。
 // 回收是真实需求（老测试写明的「回收场景」），但需求不该靠
 // 「正数事件里混负数」实现 —— 符号本身必须成为审计字段。
+// MaxAdminGrantAmount 是后台单次发放/回收的绝对值上限。
+//
+// ⚠️ 为什么需要它：金额来自 JSON 的 `int64`，没有上界。
+//   - `amount = 2^62` 本身能写进 BIGINT（实测成功），
+//     但**再叠一次**就溢出 → PG `22003 numeric_value_out_of_range`
+//     → 不在 `isSettleRejection` 名单里 → 500「服务内部错误」。
+//   - 也就是说一次手滑（大数粘贴 / 小数点位置搞错）会把整笔发放打成
+//     500，而运营看到的不是「数额不合理」而是「服务端坏了」。
+//
+// 取 1e12：比任何真实的运营发放大 6 个数量级（百万级的活动奖励），
+// 又离 int64 溢出（9.2e18）足够远 —— 连续累加到 9.2e15 次才会碰到边界。
+var MaxAdminGrantAmount = int64(1_000_000_000_000)
+
 func (s *Service) AdminGrantCurrency(ctx context.Context, userID int64, currency string, amount int64) (map[string]int64, error) {
 	if amount == 0 {
 		return nil, fmt.Errorf("%w: 数量为 0 的发放没有意义", ErrBadInput)
+	}
+	if amount > MaxAdminGrantAmount || amount < -MaxAdminGrantAmount {
+		return nil, fmt.Errorf("%w: 数量 %d 超出单次发放上限 %d（多半是手滑）",
+			ErrBadInput, amount, MaxAdminGrantAmount)
 	}
 	reason := "admin_grant"
 	if amount < 0 {

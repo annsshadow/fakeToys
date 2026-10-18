@@ -65,8 +65,10 @@ class DataAggregator:
             value_fields: 用于一致性判断的字段列表（如 output）
             random_state: 随机种子
         """
-        self.key_fields = key_fields or ["instruction"]
-        self.value_fields = value_fields or ["output"]
+        # A343 族：显式送空清单（`key_fields=[]`）从前被 `or` 读成没传而套上
+        # `["instruction"]`，调用方「不按任何字段对齐」的表态无声变成按 instruction 对齐。
+        self.key_fields = list(key_fields) if key_fields is not None else ["instruction"]
+        self.value_fields = list(value_fields) if value_fields is not None else ["output"]
         self._random = random.Random(random_state)
 
     def _key_of(self, item: Dict) -> str:

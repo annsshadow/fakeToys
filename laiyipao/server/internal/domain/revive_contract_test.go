@@ -95,7 +95,7 @@ func TestReviveExtraBaseHPMatchesLeakCount(t *testing.T) {
 //
 // 这是第 148–152 轮那个无效实现的根因：抬高 `BaseHP` 会同步抬高
 // `baseHpMax`，而漏怪伤害以它为分母，于是加成被整个抵掉
-// （实测 100 关 0 关翻盘，见 miniapp/src/game/revive_bonus_is_inert.test.ts）。
+// （实测 100 关 0 关翻盘，见 README 已知边界第 16 条）。
 //
 // 现在 `ReviveExtraBaseHP` 只返回数字、不返回改过的关卡，
 // 这条守卫确保它以后也不会被改回「返回一个 BaseHP 被抬高的关卡」。

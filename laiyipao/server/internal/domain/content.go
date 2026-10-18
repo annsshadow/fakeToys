@@ -1,5 +1,7 @@
 package domain
 
+import "sync"
+
 // 游戏内容定义（全部原创命名，未参考或复制任何既有作品）。
 //
 // 这些表是服务端与客户端的共同数据源：服务端落库后经 /api/v1/config 下发，
@@ -201,6 +203,53 @@ func ScaleAllCompositeSkills() []SeedSkill {
 	}
 	return out
 }
+
+// ── 重放用的 map 形式（2026-10-15 接 SettleBattle 时加）─────────────────
+//
+// `Replay` 要的是 `map[int]SeedEnemy` / `map[int]SeedSkill`，而上面三个
+// `ScaleAll*` 返回的是 slice —— 契约测试每次都自己建 map，接进
+// `SettleBattle` 时若照抄那段，会在**每一次结算**上重建 70 个元素的 map。
+//
+// 所以这里用 `sync.OnceValue` 缓存成 map：
+//
+//   - `/config` 端点已经在 `staticConfig` 里用 `sync.OnceValue` 缓存了
+//     同样的静态表，两处保持一致，改一处不会只改一半；
+//   - 这三张表是 `var` 里的字面量，进程生命周期内**只读**，
+//     缓存不会引入陈旧数据的风险（admin 改的是 DB 副本，不是它们 ——
+//     `TestLevelTableIsCurrentlyNotThePlayerSource` 记的就是这件事）。
+//
+// ⚠️ 返回的 map **不要修改**。它是共享的；调用方要改就自己复制一份。
+var (
+	enemyByID = sync.OnceValue(func() map[int]SeedEnemy {
+		m := make(map[int]SeedEnemy, len(SeedEnemies))
+		for _, e := range ScaleAllEnemies() {
+			m[e.ID] = e
+		}
+		return m
+	})
+	skillByID = sync.OnceValue(func() map[int]SeedSkill {
+		// 基础技能与合成技能合并到**同一张表**——与 `Replay` 的用法一致：
+		// 构筑快照里的 skill id 不区分来源，id 31~48 只在 composite 里。
+		m := make(map[int]SeedSkill, len(SeedSkills)+len(SeedCompositeSkills))
+		for _, s := range ScaleAllSkills() {
+			m[s.ID] = s
+		}
+		for _, s := range ScaleAllCompositeSkills() {
+			m[s.ID] = s
+		}
+		return m
+	})
+)
+
+// EnemiesByID 返回按 id 索引的敌人表（重放用）。
+//
+// ⚠️ 返回的是**共享 map**，调用方只读。要改先 `maps.Clone`。
+func EnemiesByID() map[int]SeedEnemy { return enemyByID() }
+
+// SkillsByID 返回按 id 索引的技能表（基础 + 合成合并，重放用）。
+//
+// ⚠️ 返回的是**共享 map**，调用方只读。要改先 `maps.Clone`。
+func SkillsByID() map[int]SeedSkill { return skillByID() }
 
 var SeedEnemies = []SeedEnemy{
 	// 普通 8

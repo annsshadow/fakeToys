@@ -79,7 +79,7 @@ func TestApplyArmorVectorsCoverNegativeDamage(t *testing.T) {
 	}
 	if len(negatives) == 0 {
 		t.Fatal("apply_armor 向量里没有任何负伤害用例 —— " +
-			"负伤���的跨端语义就此失去守卫，而 Go 侧注释说它表示「反伤/异常」")
+			"负伤害的跨端语义就此失去守卫，而 Go 侧注释说它表示「反伤/异常」")
 	}
 
 	// 至少要覆盖「负伤害 + 有护甲」这一对 —— 那正是两端曾经分歧的组合。

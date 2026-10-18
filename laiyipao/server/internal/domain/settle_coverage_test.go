@@ -395,7 +395,7 @@ func TestTerrainUsedRejectsDuplicates(t *testing.T) {
 	// 而 vitest/go test 把 SKIP 计入 PASS ⇒ 「全绿」里藏着一个没测的东西。
 	// 这正是「Tests pass is wrong if any were skipped」那条。
 	//
-	// 合成两���地形的关卡后：`[A, A]` 长度 2 ≤ distinct 2，
+	// 合成两种地形的关卡后：`[A, A]` 长度 2 ≤ distinct 2，
 	// 长度检查放行，**只有重复检查**能拦 —— 守卫这才真的被测到。
 	gl := GenerateLevel(1)
 	kinds := terrainKindsOn(gl)
@@ -421,7 +421,7 @@ func TestTerrainUsedRejectsDuplicates(t *testing.T) {
 	in.TerrainUsed = []string{kinds[0], kinds[0]}
 
 	// 前提：长度必须**不超**上界，否则会被长度检查顺带拦下，
-	// 这条测试就退化��在测长度检查。
+	// 这条测试就退化成在测长度检查。
 	distinct := len(terrainKindsOn(gl))
 	if len(in.TerrainUsed) > distinct {
 		t.Fatalf("构造有误：长度 %d 超过 distinct %d", len(in.TerrainUsed), distinct)

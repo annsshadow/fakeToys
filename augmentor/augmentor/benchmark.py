@@ -45,7 +45,7 @@ class QualityBenchmark:
             scorer: 质量评分器，为 None 时惰性创建
             deduplicator: 去重器，为 None 时惰性创建
         """
-        self.metrics = metrics or list(SUPPORTED_METRICS)
+        self.metrics = metrics if metrics is not None else list(SUPPORTED_METRICS)
 
         unsupported = [m for m in self.metrics if m not in SUPPORTED_METRICS]
         if unsupported:

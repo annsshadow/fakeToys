@@ -114,10 +114,10 @@ class TestEnhancedSearcher:
         assert result.total_matches == 0
 
     def test_search_invalid_regex(self, sample_dataset):
-        """无效正则表达式 - 返回空结果"""
+        """L267：坏模式是参数错，抛 DataValidationError，不再读成「零命中」"""
         searcher = EnhancedSearcher(sample_dataset)
-        result = searcher.search("[invalid", method="regex")
-        assert result.total_matches == 0
+        with pytest.raises(DataValidationError, match="无效的正则表达式"):
+            searcher.search("[invalid", method="regex")
 
     def test_search_with_empty_data(self):
         """空数据集搜索"""
@@ -298,10 +298,10 @@ class TestSearchMethodsExtended:
         assert result.total_matches == 0
 
     def test_search_regex_invalid_pattern(self):
-        """无效正则应返回空结果"""
+        """L267 行为差：改前 0 条匹配，改后点名坏模式与位置"""
         searcher = EnhancedSearcher([{"instruction": "hello"}])
-        result = searcher.search("[invalid", method="regex")
-        assert result.total_matches == 0
+        with pytest.raises(DataValidationError, match=r"位置 0"):
+            searcher.search("[invalid", method="regex")
 
     def test_search_no_items(self):
         """空数据集搜索"""

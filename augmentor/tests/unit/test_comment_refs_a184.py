@@ -82,6 +82,11 @@ import pytest
 from tests.unit.test_doc_line_refs_l79 import LINE_REF, name_bucket, require_authoring_tree
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
+#: 仓库根与「汇总到仓库根的子项目文档」目录（2026-10-14 从 `augmentor/docs/` 迁出）。
+#: 索引要伸到这一层，否则产品码与账本里的 docs/augmentor/<DOC>.md 会集体翻档。
+#: （本行不写反引号：本文件属于扫描面，成形的引用一律走 `tick()`，见其 docstring）
+REPO = ROOT.parent
+DOCS_DIR = REPO / "docs" / "augmentor"
 
 IDX_SKIP = frozenset({".git", "__pycache__", ".pytest_cache", "node_modules",
                         ".backups"})
@@ -104,7 +109,7 @@ ALL_EXT = SRC_EXT | DOC_EXT
 SCAN_EXT = SRC_EXT | {".md"}
 #: 账本与架构文档的散文里全是「当年那条 API 主张后来作废」这类句子，符号档只在产品注释与
 #: README 上用（案面与判面分开量，承 A183 那条读法）
-NO_SYM_SCAN = frozenset({"OPTIMIZATION_LOOP.md", "docs/ARCHITECTURE.md",
+NO_SYM_SCAN = frozenset({"OPTIMIZATION_LOOP.md", "docs/augmentor/ARCHITECTURE.md",
                          "OPTIMIZATION_PLAN.md"})
 
 _EXT_ALT = "|".join(sorted(e[1:] for e in ALL_EXT))
@@ -216,6 +221,20 @@ def _walks(include_temp, skip, top_skip=frozenset()):
             yield path.relative_to(ROOT).as_posix(), path
 
 
+def _repo_docs_walks():
+    """汇出到仓库根的子项目文档（2026-10-14 从 `augmentor/docs/` 迁到 `docs/augmentor/`）
+
+    产出与 `_walks` 同形，但相对坐标取**仓库根** ⇒ 首段是 `docs`，与产品码和账本里的
+    引用写法（docs/augmentor/ 加文件名）对齐。不收它，那些引用会集体从 `live` 翻成
+    `scratch_missing`（实测见本账 L14 文档汇总那一轮）。
+    """
+    if not DOCS_DIR.is_dir():
+        return
+    for path in sorted(DOCS_DIR.rglob("*")):
+        if path.is_file() and path.suffix in ALL_EXT:
+            yield path.name, ("docs", "augmentor", *path.relative_to(DOCS_DIR).parts)
+
+
 @functools.lru_cache(maxsize=1)
 def full_index():
     """`{文件名: (仓内路径的段元组, ...)}` —— 与 L79 的 `build_index` 同式，但**收全部扩展名**
@@ -226,6 +245,8 @@ def full_index():
     for rel, _ in _walks(include_temp=True, skip=IDX_SKIP, top_skip=TOPLEVEL_SKIP):
         parts = pathlib.PurePath(rel).parts
         index[parts[-1]].append(parts)
+    for name, parts in _repo_docs_walks():
+        index[name].append(parts)
     return {k: tuple(sorted(v)) for k, v in index.items()}
 
 
@@ -387,15 +408,24 @@ def tracked_dirs():
     只要父目录，因为判据问的是「这个目录里本来有没有东西」；被跟踪文件本身由索引答。
     用 git 的跟踪集合而不是磁盘，因为磁盘上还站着不入仓的用户数据 —— 按「目录里有文件」判，
     本轮第一版实测把 414 条示例路径全判成了死链。
+
+    2026-10-14 文档汇总：`docs/` 不再是 augmentor 内的命名空间，改由仓库根
+    `docs/augmentor/` 承接 ⇒ 跟踪集合要把 `docs/augmentor` 一并取回，并保留
+    `docs` 与 `docs/augmentor` 两级父目录。不取的话 docs/CONFIG.md 这类
+    已知坏链接会从 `dead_path` 滑进 `runtime_ns`，`TestRulerProvesItself`
+    两格当场红（判据自己不再认得已知答案）。
     """
-    out = subprocess.run(["git", "ls-files", "--", "augmentor"], cwd=ROOT.parent,
-                         capture_output=True, text=True,
+    out = subprocess.run(["git", "ls-files", "--", "augmentor", "docs/augmentor"],
+                         cwd=ROOT.parent, capture_output=True, text=True,
                          encoding="utf-8", errors="replace")
     dirs = set()
     for line in out.stdout.splitlines():
-        if not line.startswith("augmentor/"):
+        parts = pathlib.PurePath(line).parts
+        if parts[:1] == ("augmentor",):
+            #: 原有坐标：augmentor 相对（augmentor/api/routes/x.py → api、api/routes）
+            parts = parts[1:]
+        elif parts[:2] != ("docs", "augmentor"):
             continue
-        parts = pathlib.PurePath(line).parts[1:]
         dirs.update("/".join(parts[:i]) for i in range(1, len(parts)))
     return frozenset(dirs)
 
@@ -635,7 +665,7 @@ class TestCensusIsProven:
         「我以为它唯一」上。
         """
         index, src = full_index(), source_dirs()
-        for rel in ("config.yaml", "web/src/services/api.ts", "docs/ARCHITECTURE.md"):
+        for rel in ("config.yaml", "web/src/services/api.ts", "docs/augmentor/ARCHITECTURE.md"):
             bucket, live = name_bucket(rel, index, src)
             assert bucket is None and live == rel, (rel, bucket, live)
 

@@ -318,7 +318,7 @@ func TestConcurrentSettleSameTokenOnlyOnce(t *testing.T) {
 	in := domain.SettleInput{
 		Result: "lose", Score: 100, DurationMs: 30_000,
 		Shots: 100, Hits: 50, Reactions: 5, HeatMax: 50,
-		HPLeft: 900, WaveReached: 1, ReplayHash: "0000000000000000",
+		HPLeft: 900, WaveReached: 1, ReplayHash: "",
 	}
 
 	const workers = 10

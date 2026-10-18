@@ -59,7 +59,7 @@ class AudioProcessor:
         Args:
             supported_extensions: 支持的扩展名列表
         """
-        self.supported_extensions = supported_extensions or SUPPORTED_EXTENSIONS
+        self.supported_extensions = (supported_extensions if supported_extensions is not None else SUPPORTED_EXTENSIONS)
 
     def is_supported(self, path: str) -> bool:
         """判断文件是否为支持的音频格式
@@ -138,16 +138,25 @@ class AudioProcessor:
                 path=str(path), format="", valid=False, error="文件不存在"
             )
 
+        # 与 `data/image.py` 同一格缺陷：`POST /api/multimodal/scan` 的队列来自 `iterdir()`，
+        # 排好队之后、轮到这只之前文件被删，裸 `stat()` 抛的 FileNotFoundError 落在 try
+        # 之外，会把上面那条诚实的「文件不存在」换成整次扫描失败。取尺寸失败即档不在。
+        try:
+            size_bytes = path.stat().st_size
+        except FileNotFoundError:
+            return AudioInfo(
+                path=str(path), format="", valid=False, error="文件不存在"
+            )
+
         if not self.is_supported(str(path)):
             return AudioInfo(
                 path=str(path),
                 format=path.suffix.lstrip('.'),
-                size_bytes=path.stat().st_size,
+                size_bytes=size_bytes,
                 valid=False,
                 error=f"不支持的音频格式: {path.suffix}"
             )
 
-        size_bytes = path.stat().st_size
         suffix = path.suffix.lower()
 
         try:

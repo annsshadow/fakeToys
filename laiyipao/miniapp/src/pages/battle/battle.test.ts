@@ -241,7 +241,6 @@ describe('battle.vue 战斗页', () => {
     // canvas 按 dpr 放大（pixelRatio 2 × 375）
     expect(lastNode.width).toBe(750)
     expect(lastNode.height).toBe(1334)
-    expect(wrapper.text()).toContain('渲染: 帧循环')
     expect(wrapper.text()).toContain('波次 1 / 3')
     expect(wrapper.text()).toContain('800 / 1000')
   })
@@ -253,7 +252,6 @@ describe('battle.vue 战斗页', () => {
     const { wrapper } = mountPage(Battle)
     await setupDone(wrapper)
     expect(FakeRenderer.instances.length).toBe(1)
-    expect(wrapper.text()).toContain('渲染: 帧循环')
   })
 
   it('第 137 轮：onUnload 之后 getCanvas 才 resolve，渲染器不在已卸载页面启动（防泄漏）', async () => {
@@ -328,7 +326,8 @@ describe('battle.vue 战斗页', () => {
     const Battle = await loadPage()
     const { wrapper } = mountPage(Battle)
     await setupDone(wrapper)
-    expect(wrapper.text()).toContain('渲染: 降级(无canvas)')
+    // 没有 canvas 时战斗逻辑照跑，只是没有渲染层
+    expect(FakeRenderer.instances.length).toBe(0)
 
     // 定时器推进 → 引擎 won → settle
     await new Promise((r) => setTimeout(r, TICK * 5))
@@ -403,7 +402,9 @@ describe('battle.vue 战斗页', () => {
     // 不触发响应式，选牌界面永远出不来（triggerRef 修复后本用例才可能通过）
     FakeRenderer.instances[0]!.loop!(TICK)
     await flushPromises()
-    expect(wrapper.text()).toContain('选择一张卡')
+    // 选牌引导（口语化说明）：标题 + 「点卡上的「弃」…还能回 1 点热量」的提示行
+    expect(wrapper.text()).toContain('这一波给你 3 张卡，点一张就装备上')
+    expect(wrapper.text()).toContain('点卡上的「弃」丢掉，还能回 1 点热量')
     // kindLabel 三种分支
     expect(wrapper.text()).toContain('技能')
     expect(wrapper.text()).toContain('属性')
@@ -416,7 +417,7 @@ describe('battle.vue 战斗页', () => {
     await cards[1]!.find('.dim').trigger('click') // 弃
     expect(eng.discarded).toEqual(['c2'])
 
-    await wrapper.findAll('.btn').find((b: any) => b.text().includes('跳过'))!.trigger('click')
+    await wrapper.findAll('.btn').find((b: any) => b.text().includes('直接下一波'))!.trigger('click')
     expect(eng.skipped).toBe(1)
   })
 
@@ -425,7 +426,7 @@ describe('battle.vue 战斗页', () => {
     const Battle = await loadPage()
     const { wrapper } = mountPage(Battle)
     await setupDone(wrapper)
-    expect(wrapper.text()).toContain('渲染: 降级(无canvas)')
+    expect(FakeRenderer.instances.length).toBe(0)
   })
 
   it('getCanvas 细节：pixelRatio 缺省为 1、fields 未返回尺寸时回退页面尺寸', async () => {
@@ -454,7 +455,6 @@ describe('battle.vue 战斗页', () => {
     expect(node.width).toBe(375) // 375 * dpr 1
     expect(node.height).toBe(667)
     expect(FakeRenderer.instances[0]!.viewport).toEqual([375, 667])
-    expect(wrapper.text()).toContain('渲染: 帧循环')
   })
 
   it('登录失败信息为空 → startError 回退固定文案（|| 右侧分支）', async () => {
@@ -474,7 +474,7 @@ describe('battle.vue 战斗页', () => {
     ;(wrapper.vm as any).skipCards()
     await flushPromises()
     // 没有引擎、没有崩溃、没有选牌界面
-    expect(wrapper.text()).not.toContain('选择一张卡')
+    expect(wrapper.text()).not.toContain('这一波给你 3 张卡')
   })
 
   it('onLoad 无 query → 默认第 1 关；onUnload 时渲染器为 null 也安全', async () => {

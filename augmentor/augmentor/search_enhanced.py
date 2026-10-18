@@ -16,7 +16,7 @@ from collections.abc import Mapping
 import time
 
 from augmentor.exceptions import DataValidationError
-from augmentor.validation import require_count, require_choice
+from augmentor.validation import require_count, require_choice, require_search_pattern
 
 logger = logging.getLogger(__name__)
 
@@ -387,7 +387,7 @@ class EnhancedSearcher:
 
         start_time = time.time()
         
-        fields = fields or ["instruction", "output", "input"]
+        fields = fields if fields is not None else ["instruction", "output", "input"]
         all_matches: Dict[int, float] = defaultdict(float)
         
         # 执行搜索
@@ -557,23 +557,23 @@ class EnhancedSearcher:
         
         Args:
             field: 字段名
-            query: 正则表达式
+            query: 正则表达式（语法非法/空串/超长/可变长组被重复 ⇒ DataValidationError，不是空结果）
         
         Returns:
             匹配结果 {索引: 分数}
         """
         matches = {}
-        
         try:
-            pattern = re.compile(query, re.IGNORECASE)
-            
-            for idx, item in enumerate(self._items):
-                value = item.get(field, "")
-                if isinstance(value, str) and pattern.search(value):
-                    matches[idx] = 1.0
-        except re.error as e:
-            logger.warning(f"正则表达式错误: {e}")
-        
+            pattern = re.compile(require_search_pattern("query", query), re.IGNORECASE)
+        except re.error as exc:
+            # 模式串是调用方给的数据，坏模式是参数错，不是「语料里没有」⇒ 必须出声
+            raise DataValidationError(
+                f"无效的正则表达式 {query!r}：{exc.msg}（位置 {exc.pos}）"
+            ) from exc
+        for idx, item in enumerate(self._items):
+            value = item.get(field, "")
+            if isinstance(value, str) and pattern.search(value):
+                matches[idx] = 1.0
         return matches
     
     def _apply_filter(self, indices: Set[int], filter_item: SearchFilter) -> Set[int]:

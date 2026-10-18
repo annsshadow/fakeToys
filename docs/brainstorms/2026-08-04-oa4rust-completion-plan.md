@@ -1,9 +1,9 @@
 # OA4Rust 后端迁移实施方案
 
 > **⚠️ 已取代** — 此方案（2026-08-04）已被以下计划取代：
-> - `docs/plans/2026-08-07-001-feat-oa4rust-4wave-realization-plan.md`（4 波次实现）
-> - `docs/plans/2026-08-09-001-refact-oa4rust-orm-migration-plan.md`（SeaORM 迁移）
-> - `docs/plans/2026-08-10-001-prod-readiness-plan.md`（生产就绪）
+> - `docs/archived-plans/2026-08-07-001-feat-oa4rust-4wave-realization-plan.md`（4 波次实现）
+> - `docs/archived-plans/2026-08-09-001-refact-oa4rust-orm-migration-plan.md`（SeaORM 迁移）
+> - `docs/archived-plans/2026-08-10-001-prod-readiness-plan.md`（生产就绪）
 >
 > 所有工作已完成。81 个 crate 全部真实化，SeaORM 迁移完成，写操作补齐。
 

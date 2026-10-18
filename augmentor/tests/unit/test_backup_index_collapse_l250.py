@@ -116,18 +116,28 @@ class TestTheWriteEdgeCollapses:
         assert _files_on_disk(target) == ["a.json", "b.json", "c.json"]
 
     def test_the_row_count_tracks_the_disk_across_create_and_delete(self, tmp_path):
-        """不变量：索引行数 == 磁盘份数，覆盖写、子目录名、删除之后都成立"""
+        """不变量：索引行数 == 磁盘份数，覆盖写与删除之后都成立
+
+        **L277（A366）改了一格语料**：原来这里用 `sub/deep` 测「子目录名也守得住不变量」，而
+        含分隔符的名字现在于出生处就被拒（那种名字建行却不落盘、或落盘却寻不了址，都是谎报）。
+        所以臂改成「嵌套名被拒 ⇒ 行数与磁盘**都不动**」，比原来多证一档：不变量不会被一个
+        建到一半的名字撑破。
+        """
+        from augmentor.exceptions import DataValidationError
+
         src = _write_source(tmp_path / "s.json", ITEMS)
         target = tmp_path / "bk"
         manager = DatasetBackup(str(target))
         manager.backup(str(src), name="a")
         manager.backup(str(src), name="a")
-        manager.backup(str(src), name="sub/deep")
+        manager.backup(str(src), name="deep")
+        with pytest.raises(DataValidationError):
+            manager.backup(str(src), name="sub/deep")
 
         assert len(manager.list_backups()) == len(_files_on_disk(target)) == 2
         assert manager.delete_backup("a") is True
         assert len(manager.list_backups()) == len(_files_on_disk(target)) == 1
-        assert _files_on_disk(target) == ["sub/deep.json"]
+        assert _files_on_disk(target) == ["deep.json"]
 
     def test_a_fresh_instance_sees_the_collapsed_row(self, tmp_path):
         """收敛落在磁盘上，不是只在同一实例的内存里——换新实例读得回那一行"""
@@ -296,7 +306,10 @@ class TestTheWriteEdgeIsAFilterNotAnAppend:
         guarded = [cond for cond in conditions if any(
             isinstance(n, ast.Name) and n.id == "backup_id" for n in ast.walk(cond))]
         assert guarded, "backup() 里没有「以 backup_id 为条件」的过滤 ⇒ 收敛不在写边上"
-        assigns = [n for n in body.body if isinstance(n, (ast.Assign, ast.AugAssign))]
+        # L273 之后写点不再躺在函数体顶层：整段读-改-写罩在 `with path_lock(...)` 里，
+        # 所以按 `body.body` 只取顶层语句会数到 0。判据本身一字未动——**恰好一处**对
+        # `self._index[...]` 的赋值，多一处（例如又按次追加）照样红。
+        assigns = [n for n in ast.walk(body) if isinstance(n, (ast.Assign, ast.AugAssign))]
         written = [n for n in assigns if any(
             isinstance(t, ast.Subscript) and isinstance(t.value, ast.Attribute)
             and t.value.attr == "_index" for t in getattr(n, "targets", []))]

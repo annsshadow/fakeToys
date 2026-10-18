@@ -1,9 +1,9 @@
 # Copyright (C) 2026 annsshadow
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-"""docs/API.md 的逐端点「人读字段提示」必须有**有位置的证据源**（A277）
+"""docs/augmentor/API.md 的逐端点「人读字段提示」必须有**有位置的证据源**（A277）
 
-判据：`docs/API.md` 两张**详细说明表**（四列）里，每格的「说明 + 人读字段提示」中所有
+判据：`docs/augmentor/API.md` 两张**详细说明表**（四列）里，每格的「说明 + 人读字段提示」中所有
 反引号包住的**小写蛇形标识符**，都必须落进下面五种证据之一（外加一份封闭的 JSON 词表）：
 
 1. `face` —— 该端点在 `app.openapi()` 里的契约面：请求体属性（递归过 `$ref` /
@@ -17,7 +17,7 @@
 
 ## 为什么第 2 档必须限作用域
 
-`output_path` 在 `augmentor/backup.py:192` 和 `augmentor/export_enhanced.py:143` **确实是
+`output_path` 在 `augmentor/backup.py:199` 和 `augmentor/export_enhanced.py:143` **确实是
 字面量**。如果按「全仓字面量」判据，它就成了「有据可查」，而 `/api/dataset/convert` 的
 请求字段实为 `output_file`（`api/routes/dataset_tools.py:90`）—— 全局字面量会把一个真
 用户可见的文档缺陷洗白。作用域取「路由文件 + 两跳 import 闭包」，两跳这个数字是量的：
@@ -53,7 +53,9 @@ from tests.unit.test_api_doc_endpoint_coverage_l210 import (
     API_DOC,
     DOC_ROW,
     DETAILED_COLUMN_COUNT,
+    column_count,
     operations_of_tag,
+    split_cells,
 )
 from tests.unit.test_config_three_side_l222 import schema_keys
 
@@ -155,16 +157,16 @@ def _build_face(method, path):
 def hint_rows():
     """详细说明表的行 → `[(方法, 路径, 说明+人读字段提示)]`
 
-    列数判据共引 l210（4 列 = 5 个 `|`）；总览表只有 3 列，天然被排除。
+    列数判据共引 l210（4 列 = 5 枚**未转义** `|`，L278 起按 GFM 口径数）；总览表只有 3 列，天然被排除。
     """
     rows = []
     for line in API_DOC.read_text(encoding="utf-8").splitlines():
-        if line.count("|") != DETAILED_COLUMN_COUNT:
+        if column_count(line) != DETAILED_COLUMN_COUNT:
             continue
         match = DOC_ROW.match(line)
         if not match:
             continue
-        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        cells = split_cells(line)
         rows.append((match.group(1), match.group(2), f"{cells[2]} {cells[3]}"))
     return rows
 
@@ -414,7 +416,7 @@ class TestFieldHintsBindToRealEvidence:
         bad = unbound_rows()
         detail = "\n".join(f"  {m} {p}: {toks}" for m, p, toks in bad)
         assert not bad, (
-            "docs/API.md 的逐端点提示里有这些名字在契约面与证据档都找不到"
+            "docs/augmentor/API.md 的逐端点提示里有这些名字在契约面与证据档都找不到"
             f"（字段名拼错/已改名/压根不存在）：\n{detail}"
         )
 

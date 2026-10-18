@@ -26,8 +26,8 @@ from pathlib import Path
 from dataclasses import dataclass, field
 from datetime import datetime
 
-from .atomic_write import atomic_write_json
-from .validation import require_within_dir
+from .atomic_write import atomic_write_json, path_lock
+from .validation import require_count, require_within_dir
 
 logger = logging.getLogger(__name__)
 
@@ -74,7 +74,10 @@ class DatasetVersionManager:
         self._versions_dir.mkdir(parents=True, exist_ok=True)
         self._index_file = self._versions_dir / "index.json"
         self._history_file = self._versions_dir / "history.jsonl"
-        self._index = self._load_index()
+        # L273：读索引进锁（与 `create_version` 同一把）—— 别的线程正在整份替换它时，
+        # Windows 会给读者一个瞬时拒绝访问；`_load_index` 无 except，那一撞就是一次 500。
+        with path_lock(self._index_file):
+            self._index = self._load_index()
     
     def _record(self, action: str, **details):
         """追加一条操作日志
@@ -98,11 +101,12 @@ class DatasetVersionManager:
         """获取版本操作历史（按时间倒序）
 
         Args:
-            limit: 最多返回的条数（从最新开始）
+            limit: 最多返回的条数（从最新开始）。`None` 是「全部」、`0` 是「一条都不要」，负数与非整数由 `require_count` 判掉（L283：与孪生方法 `versioning.DatasetVersionManager.get_history` 同口径，改前这一格走 `if limit else` 把两者都读反）
 
         Returns:
             历史记录列表
         """
+        require_count("limit", limit)
         if not self._history_file.exists():
             return []
 
@@ -118,18 +122,24 @@ class DatasetVersionManager:
                     logger.warning("跳过无法解析的历史记录行")
 
         entries.reverse()
-        return entries[:limit] if limit else entries
+        return entries[:limit] if limit is not None else entries
     
     def _load_index(self) -> Dict:
-        """加载索引文件"""
-        if self._index_file.exists():
-            with open(self._index_file, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        # 创建默认索引（L161 收原子写：本方法无 except 且在 __init__ 必调，
-        # 旧写法的半份索引窗口会让第二个实例构造当场崩）
-        default_index = {"versions": [], "current_version": None}
-        atomic_write_json(self._index_file, default_index)
-        return default_index
+        """加载索引文件
+
+        读与「索引不在场时补一份默认账」都罩在同一把按路径的锁里（L273）：本方法被
+        `__init__` 与三处写点调用，其中两处已经在锁内——`path_lock` 因此必须是可重入锁，
+        否则这里会当场自锁死。补默认账那一步是写，写在读之外就等于丢更新的另一形。
+        """
+        with path_lock(self._index_file):
+            if self._index_file.exists():
+                with open(self._index_file, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+            # 创建默认索引（L161 收原子写：本方法无 except 且在 __init__ 必调，
+            # 旧写法的半份索引窗口会让第二个实例构造当场崩）
+            default_index = {"versions": [], "current_version": None}
+            atomic_write_json(self._index_file, default_index)
+            return default_index
     
     def _save_index(self):
         """保存索引文件（L161 收原子写——读侧 _load_index 无 except，
@@ -165,43 +175,49 @@ class DatasetVersionManager:
         Returns:
             版本信息
         """
-        # 生成版本号
-        version_number = self._generate_version_number()
-        version_id = f"v{version_number}"
+        # L273：版本号按「索引里已有几版」算出来，而每次调用都新建一个 manager ⇒ 并发的
+        # 20 次创建各自读到同一份旧索引、各自算出同一个 `v1`、各自往同一个目录里写快照
+        # （实测 20 次创建只剩 1 个版本目录与 1 行索引，19 次凭空消失）。申领 + 落盘 + 记账
+        # 必须在同一把锁内，且锁内要**重读**索引，不能拿着构造时那份旧账往外写。
+        with path_lock(self._index_file):
+            self._index = self._load_index()
+            # 生成版本号
+            version_number = self._generate_version_number()
+            version_id = f"v{version_number}"
         
-        # 创建版本目录
-        version_dir = require_within_dir("版本 ID", version_id, self._versions_dir)
-        version_dir.mkdir(exist_ok=True)
+            # 创建版本目录
+            version_dir = require_within_dir("版本 ID", version_id, self._versions_dir)
+            version_dir.mkdir(exist_ok=True)
         
-        # 保存数据
-        data_file = version_dir / "data.json"
-        with open(data_file, 'w', encoding='utf-8') as f:
-            json.dump(items, f, ensure_ascii=False, indent=2)
+            # 保存数据
+            data_file = version_dir / "data.json"
+            with open(data_file, 'w', encoding='utf-8') as f:
+                json.dump(items, f, ensure_ascii=False, indent=2)
         
-        # 计算校验和
-        checksum = self._calculate_checksum(str(data_file))
+            # 计算校验和
+            checksum = self._calculate_checksum(str(data_file))
         
-        # 创建版本信息
-        version = DatasetVersion(
-            version_id=version_id,
-            version_number=version_number,
-            timestamp=datetime.now().isoformat(),
-            description=description,
-            item_count=len(items),
-            checksum=checksum,
-            tags=tags or [],
-            metadata=metadata or {}
-        )
+            # 创建版本信息
+            version = DatasetVersion(
+                version_id=version_id,
+                version_number=version_number,
+                timestamp=datetime.now().isoformat(),
+                description=description,
+                item_count=len(items),
+                checksum=checksum,
+                tags=tags or [],
+                metadata=metadata or {}
+            )
         
-        # 保存版本信息
-        version_file = version_dir / "version.json"
-        with open(version_file, 'w', encoding='utf-8') as f:
-            json.dump(version.to_dict(), f, ensure_ascii=False, indent=2)
+            # 保存版本信息
+            version_file = version_dir / "version.json"
+            with open(version_file, 'w', encoding='utf-8') as f:
+                json.dump(version.to_dict(), f, ensure_ascii=False, indent=2)
         
-        # 更新索引
-        self._index["versions"].append(version.to_dict())
-        self._index["current_version"] = version_id
-        self._save_index()
+            # 更新索引
+            self._index["versions"].append(version.to_dict())
+            self._index["current_version"] = version_id
+            self._save_index()
 
         self._record("create", version_id=version_id,
                      version_number=version_number, item_count=len(items))
@@ -293,13 +309,17 @@ class DatasetVersionManager:
         Returns:
             是否成功
         """
-        for version_data in self._index["versions"]:
-            if version_data["version_id"] == version_id:
-                self._index["current_version"] = version_id
-                self._save_index()
-                self._record("set_current", version_id=version_id)
-                return True
-        return False
+        # L273：与 `create_version` 同一把锁 —— 「读到那一版」与「把它写成当前版」之间不许
+        # 被别的写者插进来，否则会把别人刚建的版本设为当前，而自己在盘上看不见它。
+        with path_lock(self._index_file):
+            self._index = self._load_index()
+            for version_data in self._index["versions"]:
+                if version_data["version_id"] == version_id:
+                    self._index["current_version"] = version_id
+                    self._save_index()
+                    self._record("set_current", version_id=version_id)
+                    return True
+            return False
     
     def delete_version(self, version_id: str) -> bool:
         """删除版本
@@ -310,38 +330,42 @@ class DatasetVersionManager:
         Returns:
             是否成功删除
         """
-        # 查找版本
-        version_index = None
-        for i, version_data in enumerate(self._index["versions"]):
-            if version_data["version_id"] == version_id:
-                version_index = i
-                break
+        # L273：删档与重排索引也在这把锁里，而且对着**锁内重读**的那份账找版本 —— 否则会拿
+        # 构造时那份旧账整份写回，把并发创建好的版本行凭空复活成一个没有条目的目录。
+        with path_lock(self._index_file):
+            self._index = self._load_index()
+            # 查找版本
+            version_index = None
+            for i, version_data in enumerate(self._index["versions"]):
+                if version_data["version_id"] == version_id:
+                    version_index = i
+                    break
         
-        if version_index is None:
-            return False
+            if version_index is None:
+                return False
         
-        # 删除版本目录
-        version_dir = require_within_dir("版本 ID", version_id, self._versions_dir)
-        if version_dir.exists():
-            import shutil
-            shutil.rmtree(version_dir)
+            # 删除版本目录
+            version_dir = require_within_dir("版本 ID", version_id, self._versions_dir)
+            if version_dir.exists():
+                import shutil
+                shutil.rmtree(version_dir)
         
-        # 更新索引
-        self._index["versions"].pop(version_index)
+            # 更新索引
+            self._index["versions"].pop(version_index)
         
-        # 更新当前版本
-        if self._index["current_version"] == version_id:
-            if self._index["versions"]:
-                self._index["current_version"] = self._index["versions"][-1]["version_id"]
-            else:
-                self._index["current_version"] = None
+            # 更新当前版本
+            if self._index["current_version"] == version_id:
+                if self._index["versions"]:
+                    self._index["current_version"] = self._index["versions"][-1]["version_id"]
+                else:
+                    self._index["current_version"] = None
         
-        self._save_index()
+            self._save_index()
 
-        self._record("delete", version_id=version_id)
+            self._record("delete", version_id=version_id)
 
-        logger.info(f"版本删除成功: {version_id}")
-        return True
+            logger.info(f"版本删除成功: {version_id}")
+            return True
     
     def compare_versions(self, version_id_a: str, version_id_b: str) -> Dict:
         """比较两个版本

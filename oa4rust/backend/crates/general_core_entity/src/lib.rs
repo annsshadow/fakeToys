@@ -21,6 +21,17 @@ use entities::{
     general_application_dict, general_application_dict_item, general_file, general_invoice,
 };
 
+/// 会话存在档：无会话返回 401。本 crate 全 sea_orm，不依赖 deadpool，门在 DB 写之前，
+/// 用于关闭 R7（已认证路由但体内无会话无门禁）。dict/file/invoice 这类配置/业务 CRUD 收紧到
+/// admin 待 §五（需补 sea_orm 版 is_admin 助手）。
+fn require_session(
+    session: Option<Extension<shared::session::Session>>,
+) -> Result<shared::session::Session, AppError> {
+    session
+        .map(|Extension(s)| s)
+        .ok_or(AppError::Unauthorized)
+}
+
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct ApplicationDict {
     pub id: String,
@@ -126,8 +137,10 @@ pub async fn dict_item_list(
 #[allow(non_snake_case)]
 pub async fn dict_create(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let id = uuid::Uuid::new_v4().to_string();
     let name = payload
         .get("name")
@@ -189,9 +202,11 @@ pub async fn dict_get(
 #[allow(non_snake_case)]
 pub async fn dict_update(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let name = payload
         .get("name")
         .and_then(|v| v.as_str())
@@ -230,8 +245,10 @@ pub async fn dict_update(
 #[allow(non_snake_case)]
 pub async fn dict_delete(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let model = general_application_dict::Entity::find_by_id(&id)
         .one(&db.0)
         .await
@@ -260,8 +277,10 @@ pub async fn dict_delete(
 #[allow(non_snake_case)]
 pub async fn dict_item_create(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let id = uuid::Uuid::new_v4().to_string();
     let dict_id = payload
         .get("dictId")
@@ -328,9 +347,11 @@ pub async fn dict_item_get(
 #[allow(non_snake_case)]
 pub async fn dict_item_update(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let dict_id = payload
         .get("dictId")
         .and_then(|v| v.as_str())
@@ -376,8 +397,10 @@ pub async fn dict_item_update(
 #[allow(non_snake_case)]
 pub async fn dict_item_delete(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let model = general_application_dict_item::Entity::find_by_id(&id)
         .one(&db.0)
         .await
@@ -482,8 +505,10 @@ pub async fn invoice_list(
 #[allow(non_snake_case)]
 pub async fn file_create(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let id = uuid::Uuid::new_v4().to_string();
     let name = payload
         .get("name")
@@ -566,9 +591,11 @@ pub async fn file_get(
 #[allow(non_snake_case)]
 pub async fn file_update(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let name = payload
         .get("name")
         .and_then(|v| v.as_str())
@@ -619,8 +646,10 @@ pub async fn file_update(
 #[allow(non_snake_case)]
 pub async fn file_delete(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let model = general_file::Entity::find_by_id(&id)
         .one(&db.0)
         .await
@@ -693,8 +722,10 @@ pub async fn file_download(
 #[allow(non_snake_case)]
 pub async fn invoice_create(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let id = uuid::Uuid::new_v4().to_string();
     let number = payload
         .get("number")
@@ -794,9 +825,11 @@ pub async fn invoice_get(
 #[allow(non_snake_case)]
 pub async fn invoice_update(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let number = payload
         .get("number")
         .and_then(|v| v.as_str())
@@ -862,8 +895,10 @@ pub async fn invoice_update(
 #[allow(non_snake_case)]
 pub async fn invoice_delete(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let model = general_invoice::Entity::find_by_id(&id)
         .one(&db.0)
         .await
@@ -932,6 +967,8 @@ pub fn general_core_entity_router(_pool: Pool) -> Router {
 mod tests;
 #[cfg(test)]
 mod tests_generated;
+#[cfg(test)]
+mod security_gate_tests_b65;
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::general_core_entity_router(pool)

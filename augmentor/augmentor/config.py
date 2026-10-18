@@ -40,7 +40,7 @@ RETRY_DELAY_RANGE = (0.0, 60.0)
 # `requests` 对 `timeout=0` 抛 `ValueError: Attempted to set connect timeout to 0,
 # but the timeout cannot be set to a value less than or equal to 0`（L71 实测，
 # py314 + 本机 requests），而它发生在**第一次生成调用**上，症状是「校验绿灯的
-# 配置在几小时后跑炸」。上界 600 与 `docs/DEPLOYMENT.md:226-227` 的 nginx
+# 配置在几小时后跑炸」。上界 600 与 `docs/augmentor/DEPLOYMENT.md:226-227` 的 nginx
 # `proxy_read_timeout 600s` 对齐 —— 客户端等得比网关还久没有意义，只会把
 # 「网关已断」读成「模型很慢」。
 REQUEST_TIMEOUT_RANGE = (1.0, 600.0)
@@ -871,7 +871,7 @@ def _resolve_env(value: Any) -> Any:
     - ``${VAR}`` 且 VAR **未设置** ⇒ 静默回落 ``''``（与 None 等价，都是「这条没配凭据」
       的合法状态，由后端构造入口 ModelNotConfiguredError 在建后端时判）。**这是刻意的**：
       加载期「环境变量未设置」的条数随本机 shell 而变，接进加载声会让同一份配置在不同
-      机器上行数不同（见 docs/API.md）；出声归 validate-config 的 warning 通道（A76/A84），
+      机器上行数不同（见 docs/augmentor/API.md）；出声归 validate-config 的 warning 通道（A76/A84），
       不在加载面判负。
     - 非 ``${...}`` 完整形状（如裸 ``${VAR``、``VAR}``、或根本不是串）⇒ 原样返回，不当占位符。
 
@@ -1093,6 +1093,11 @@ def load_config(config_path: Optional[str] = None) -> AppConfig:
             # 配置语义上就是全默认，和本函数不传路径同解；`or {}` 的先例在本模块
             # `save_config` 里已经有了。
             raw_config = yaml.safe_load(f) or {}
+            # 顶层写成列表/标量/字符串时，下面第一句 `'models' in raw_config`（对
+            # int 抛 TypeError）或 `raw_config.get`（对 list/str 抛 AttributeError）
+            # 裸崩 —— 同一形状在节内早由 `_require_mapping` 判成可行动的
+            # ConfigError（A77），顶层那份是这族守卫漏下的一格。
+            _require_mapping(raw_config, "配置")
         
         # 加载模型配置
         # `models` 走这条特判路径、绕开了 `_load_section` 的形状守卫（A101 当年只
@@ -1209,6 +1214,7 @@ def save_config(config: AppConfig, config_path: str = "config.yaml") -> None:
         config_path: 配置文件路径
     """
     import dataclasses
+    from .atomic_write import atomic_write_text
 
     def _to_dict(obj):
         if dataclasses.is_dataclass(obj):
@@ -1249,20 +1255,33 @@ def save_config(config: AppConfig, config_path: str = "config.yaml") -> None:
     # 早前直接 pop 掉整个键，等于把 `api_key: ${BAIDU_API_KEY}` 这行删了——
     # 重新加载时该模型拿不到密钥，增强能力静默失效。而如果文件里写的是明文
     # 密钥，则一律丢弃（只保留环境变量引用，避免把明文写回磁盘）。
+    # 键名单取 `MODEL_CREDENTIAL_KEYS`（加载侧解析占位符的就是那三条）：改前
+    # `base_url: ${X}` 不在回写名单里，于是占位符被解析后的**真实值**顶替落盘
+    # （实测 `base_url: ${FAKE_BASE_URL}` 存盘变成 `base_url: https://internal.example/v1`）。
+    # `base_url` 不参与「明文即丢」：它不是凭证，pop 掉只会把一个可用 URL 变成 None。
     existing_models = existing.get("models") if isinstance(existing.get("models"), dict) else {}
     for name, model_conf in data.get("models", {}).items():
         if name == "default" or not isinstance(model_conf, dict):
             continue
         previous = existing_models.get(name) if isinstance(existing_models.get(name), dict) else {}
-        for secret in ("api_key", "secret_key"):
+        for secret in MODEL_CREDENTIAL_KEYS:
             placeholder = previous.get(secret, "")
             if isinstance(placeholder, str) and placeholder.startswith("${") and placeholder.endswith("}"):
                 model_conf[secret] = placeholder
-            else:
+            elif secret != "base_url":
                 model_conf.pop(secret, None)
 
-    with open(config_path, "w", encoding="utf-8") as f:
-        yaml.safe_dump(data, f, allow_unicode=True, sort_keys=False)
+    # 原子替换（L269）：旧写法是 `open(path, 'w')` 整份截断直写，写窗口里盘上那份
+    # `config.yaml` 是半份，而读侧把坏内容读成**一个错误答案** —— `api/deps.py` 加载时对
+    # `OSError / YAMLError` 的那一档直接回落成「文件里什么都没有」，于是下次装配拿到的是
+    # 出厂默认而不是用户配置。按 `atomic_write` 的判据口径（只看读侧拿到截断内容时的行为，
+    # 「变成错误答案」那档必收，见该模块 docstring 与账本 A182），这一边必收。
+    # A182 的逐面收之所以漏掉它，是因为那把普查尺数的是「`open(...,'w')` 紧跟 `json.dump`」，
+    # 而配置写的是 YAML —— 同一条边在 `json` 面之外，本轮把它接进同一把工具。
+    # 行尾形状逐字节照旧：旧写法走 text 模式，每个 `\n` 由平台翻成行尾（Windows 是 `\r\n`），
+    # 而 `atomic_write_text` 用 `newline=""` 不翻译，所以这里显式按 `os.linesep` 展开。
+    text = yaml.safe_dump(data, allow_unicode=True, sort_keys=False)
+    atomic_write_text(Path(config_path), text.replace("\n", os.linesep))
 
 
 def apply_section_update(section: Any, updates: Dict[str, Any]) -> list:

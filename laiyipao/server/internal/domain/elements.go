@@ -155,16 +155,19 @@ type ReactionSpec struct {
 // 两份副本由 testdata/reaction_specs.json 双向锁住，
 // 改动任何一侧都必须同步另一侧并重新生成契约文件。
 //
-// ⚠️ 本轮接通 `steam_burst` 的范围伤害（aoeRadius 120，客户端引擎以命中
-// 敌人为圆心、半径内邻居受 25% 反应伤害）。余下 **3 条反应仍無特殊效果**：
-// overheat 的爆炸、burn_cloud 的持续火区、corrosion_spread 的层数传播。
+// ⚠️ 范围伤害已接通两条：`steam_burst`（aoeRadius 120，2026-10-10）与
+// `overheat`（aoeRadius 90，第 160 轮）——客户端引擎以命中敌人为圆心、
+// 半径内邻居受 25% 反应伤害（`engine.ts triggerReactionAoe`，
+// Go 侧镜像 `engine_combat.go triggerReactionAoe`）。
+// 余下 **2 条反应仍无特殊效果**：burn_cloud 的持续火区、
+// corrosion_spread 的层数传播。
 //
-// # I-6 安全性（为什么「仅实现 steam_burst AoE 就不摇旗»
+// # I-6 安全性（为什么「实现反应 AoE 不影响 I-6」）
 //
 // 服务端 replay_hash 仅封 S 段（构筑快照），**不重算事件流**
 // （battle_collections.go: replay_hash 只封长 ≤ 64，store as-opaque）；
 // I-6 的 server-side 校验是 `replay_skills` 段的相等。
-// 因此 steam_burst 的溅射事件只需「客户端局内哈希稳定」，
+// 因此反应的溅射事件只需「客户端局内哈希稳定」，
 // 不需要服务端独立验证 —— 它不进入 replay_skills，因而不影响 I-6。
 //
 // # 口采一致性
@@ -180,22 +183,25 @@ type ReactionSpec struct {
 //
 //	baseCoef / attackWeightPct / statusDurationMs / dispelShield /
 //	amplifyPct / armorShredPermille / knockback               ✓
-//	aoeRadius                                                      ✓（steam_burst：客户端溅射）
+//	aoeRadius                                                      ✓（steam_burst / overheat：客户端溅射）
 //
 
 var reactionSpecs = map[ReactionKey]ReactionSpec{
 	ReactionSteamBurst: {
 		Key: ReactionSteamBurst, Name: "蒸汽爆发", BaseCoef: 60, AttackWeightPct: 300,
 		// ⚠️ 2026-10-10：0 -> 120，实现范围伤害。
-		// 客户端 `engine.ts triggerSteamBurstAoe` 以命中敌人为圆心、半径
+		// 客户端 `engine.ts triggerReactionAoe` 以命中敌人为圆心、半径
 		// aoeRadius 内的邻居造成 reactionDmg >> 2（25%）二次伤害，
 		// 不再是「屏幕震动谎称爆炸」。I-6 安全：溅射伤害来自
 		// resolveHit（formula_vectors.json 锁定），不进入 replay_skills 段。
 		AoeRadius: 120, DispelShield: true, Descr: "驱散护盾并造成反应伤害（触发时以自身为圆心，半径 120 像素内的敌人受到 25% 范围伤害）",
 	},
 	ReactionOverheat: {
+		// 第 160 轮：0 -> 90（恢复第 83 轮前的历史值），实现「爆炸」。
+		// 与 steam_burst 共用同一条溅射管线；眩晕（StatusDurationMs）
+		// 仍只作用主目标，不随溅射扩散。
 		Key: ReactionOverheat, Name: "过热", BaseCoef: 55, AttackWeightPct: 300,
-		AoeRadius: 0, StatusDurationMs: 1500, Descr: "眩晕 1.5 秒并造成反应伤害",
+		AoeRadius: 90, StatusDurationMs: 1500, Descr: "眩晕 1.5 秒并造成反应伤害（触发时以自身为圆心，半径 90 像素内的敌人受到 25% 范围伤害）",
 	},
 	ReactionBurnCloud: {
 		// ⚠️ 第 83 轮：这条反应的**整条文案都是未实现的**。
@@ -229,8 +235,29 @@ var reactionSpecs = map[ReactionKey]ReactionSpec{
 }
 
 // Spec 返回反应链的数值规格。
+// reactionSpecLookup 是查表函数的**可替换引用**。
+//
+// # 为什么需要它
+//
+// 引擎里 `hitEnemy` 的反应副作用要验一条「有增伤、无状态」的路径，
+// 而当前 7 条反应里**没有任何一条**落在那个组合上：
+//
+//	amplify_pct > 0 的两条 status_duration_ms 都 > 0
+//	status_duration_ms == 0 的五条 amplify_pct 全是 0
+//
+// 那条路径的历史 bug 正是被「有状态」这个条件把门。
+// 不换表就只能等到「产品真的加了那条反应」那天才发现代码是错的。
+//
+// 用**函数变量**而不是直接改 `reactionSpecs`：
+// 后者会让 `/config` 下发一个不存在的反应给所有客户端，
+// 也让 `reaction_specs.json` 的双向契约测试失败 ——
+// 那是把「数据表」与「代码」的责任边界糊掉。
+//
+// ⚠️ 它是包级变量，**只在测试期间替换**，用完必须还原。
+var reactionSpecLookup = LookupReactionSpec
+
 func (k ReactionKey) Spec() ReactionSpec {
-	if s, ok := reactionSpecs[k]; ok {
+	if s, ok := reactionSpecLookup(k); ok {
 		return s
 	}
 	return ReactionSpec{}
@@ -243,6 +270,22 @@ func AllReactionSpecs() []ReactionSpec {
 		out = append(out, reactionSpecs[k])
 	}
 	return out
+}
+
+// LookupReactionSpec 按 key 取反应规格。
+//
+// 第二个返回值为 false 表示 key 不在表里。
+// ⚠️ 存在的理由：`res.Reaction` 是**网络与运行时的联合输入**，
+// 而反应 key 来自 `resolveHit` 的配对表 —— 一张新表项配上新组合
+// 就会让引擎读到零值 ReactionSpec。
+// 用 `ok` 区分「没有这条反应」与「这条反应所有字段都是 0」，
+// 前者要跳过，后者照常走分支。
+func LookupReactionSpec(k ReactionKey) (ReactionSpec, bool) {
+	if k == "" {
+		return ReactionSpec{}, false
+	}
+	spec, ok := reactionSpecs[k]
+	return spec, ok
 }
 
 // LookupReaction 返回"已附着元素 A + 新施加元素 B"触发的反应。

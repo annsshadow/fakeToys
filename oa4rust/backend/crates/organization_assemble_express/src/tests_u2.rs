@@ -338,4 +338,59 @@ mod u2_tests {
     }
 
     use serde_json::Value;
+
+    // 第四十九批（R7 收口）：org 属性写 / 授权日志写 5 把收会话门，
+    // 无会话必须 401（门在 pool.get() 之前，dead pool 即证）。
+    #[tokio::test]
+    async fn b49_attr_writes_reject_without_session() {
+        use axum::extract::Extension;
+        use axum::Json;
+        use deadpool_postgres::tokio_postgres::{Config, NoTls};
+        use deadpool_postgres::{Manager, Pool};
+        use serde_json::json;
+        use shared::error::AppError;
+
+        let mgr = Manager::new(Config::new(), NoTls);
+        let pool = Pool::builder(mgr).build().unwrap();
+        let ext = || Extension(pool.clone());
+        let j = || Json(json!({ "personId": "p1", "attributeKey": "k", "attributeValue": "v" }));
+        let je = || {
+            Json(json!({
+                "application": "a", "process": "p",
+                "fromIdentity": "f", "toIdentity": "t"
+            }))
+        };
+        let cases: Vec<(&str, Result<(), AppError>)> = vec![
+            (
+                "personattr_set_person_name",
+                crate::endpoints_attr::personattr_set_person_name(ext(), None, j()).await.map(|_| ()),
+            ),
+            (
+                "personattr_append_person_name",
+                crate::endpoints_attr::personattr_append_person_name(ext(), None, j()).await.map(|_| ()),
+            ),
+            (
+                "unitattr_set_unit_name",
+                crate::endpoints_attr::unitattr_set_unit_name(ext(), None, j()).await.map(|_| ()),
+            ),
+            (
+                "unitattr_append_unit_name",
+                crate::endpoints_attr::unitattr_append_unit_name(ext(), None, j()).await.map(|_| ()),
+            ),
+            (
+                "empowerlog_create",
+                crate::endpoints_attr::empowerlog_create(ext(), None, je()).await.map(|_| ()),
+            ),
+        ];
+        assert_eq!(cases.len(), 5, "本批 5 把必须逐把点名");
+        let leaked: Vec<String> = cases
+            .iter()
+            .filter(|(_, r)| !matches!(r, Err(AppError::Unauthorized)))
+            .map(|(k, r)| format!("{k} => {:?}", r.as_ref().err()))
+            .collect();
+        assert!(
+            leaked.is_empty(),
+            "无会话未回 401（出现 Internal 就是门插在读库之后）：{leaked:?}"
+        );
+    }
 }

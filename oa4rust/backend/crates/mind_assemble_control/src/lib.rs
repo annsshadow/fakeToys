@@ -19,6 +19,28 @@ pub mod u2;
 mod tests;
 #[cfg(test)]
 mod tests_generated;
+#[cfg(test)]
+mod security_gate_tests;
+
+/// 第五十九批：mind 写面门禁——会话存在档（无会话 401，先于任何 SQL）。
+fn require_session(
+    session: Option<Extension<shared::session::Session>>,
+) -> Result<shared::session::Session, AppError> {
+    session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
+}
+
+/// 第五十九批：mind 全局配置写门禁——admin 档（无会话 401 / 非 admin 403）。
+async fn require_admin(
+    pool: &Pool,
+    session: Option<Extension<shared::session::Session>>,
+) -> Result<(), AppError> {
+    let s = require_session(session)?;
+    if shared::middleware::is_admin(pool, &s.person_unique).await {
+        Ok(())
+    } else {
+        Err(AppError::Forbidden)
+    }
+}
 
 #[allow(non_snake_case)]
 pub async fn get_control_config(
@@ -72,8 +94,11 @@ pub async fn get_control_config(
 #[allow(non_snake_case)]
 pub async fn update_control_config(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十九批：全局思维导图配置写收 admin 档。
+    require_admin(&pool.0, session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let config_id = payload.get("id").and_then(|v| v.as_str()).unwrap_or("");
@@ -226,8 +251,11 @@ pub async fn get_folder(
 #[allow(non_snake_case)]
 pub async fn save_folder(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(req): Json<MindFolderRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十九批：新建思维导图文件夹收会话存在档（无会话 401）。
+    require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -256,9 +284,12 @@ pub async fn save_folder(
 #[allow(non_snake_case)]
 pub async fn update_folder(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十九批：改思维导图文件夹收会话存在档（无会话 401）。
+    require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
@@ -308,9 +339,12 @@ pub async fn update_folder(
 #[allow(non_snake_case)]
 pub async fn folder_move_folderId(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(folder_id): Path<String>,
     Json(req): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十九批：移动思维导图文件夹收会话存在档（无会话 401）。
+    require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let parent_id = req
@@ -412,8 +446,11 @@ pub async fn folder_id(
 #[allow(non_snake_case)]
 pub async fn folder_id_force(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十九批：强制删除思维导图文件夹收会话存在档（无会话 401）。
+    require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
