@@ -307,7 +307,6 @@ organization_assemble_express	POST	/api/unitattribute/list/attribute/unit/name	u
 organization_assemble_express	POST	/api/unitattribute/list/unit/object	unitattr_list_unit_object	R7
 organization_assemble_express	POST	/api/empower/list/identity/object	empower_list_identity_object	R7
 organization_assemble_express	POST	/api/distinguishedname/list	distinguishedname_list	R7
-organization_assemble_personal	POST	/api/organization/assemble/personal/custom/{id}/mockputtopost	custom_mockputtopost	R7
 organization_core_entity	POST	/api/organization/definition	definition_create	R7
 organization_core_entity	PUT	/api/organization/definition/{id}	definition_update	R7
 organization_core_entity	DELETE	/api/organization/definition/{id}	definition_delete	R7

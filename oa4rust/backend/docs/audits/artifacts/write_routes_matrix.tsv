@@ -1159,7 +1159,7 @@ organization_assemble_express	POST	/api/unitduty/list/name	unitduty_list_name	R7
 organization_assemble_express	POST	/api/unitduty/list/name/identity	unitduty_list_name_identity	R7-已认证+体内无会话无门禁
 organization_assemble_express	POST	/api/unitduty/list/name/unit	unitduty_list_name_unit	R7-已认证+体内无会话无门禁
 organization_assemble_express	POST	/api/unitduty/list/unit/object	unitduty_list_unit_object	R7-已认证+体内无会话无门禁
-organization_assemble_personal	POST	/api/organization/assemble/personal/custom/{id}/mockputtopost	custom_mockputtopost	R7-已认证+体内无会话无门禁
+organization_assemble_personal	POST	/api/organization/assemble/personal/custom/{id}/mockputtopost	custom_mockputtopost	R5-已认证+体内门禁
 organization_core_entity	DELETE	/api/organization/bind/{id}	bind_delete	R7-已认证+体内无会话无门禁
 organization_core_entity	DELETE	/api/organization/custom/{id}	custom_delete	R7-已认证+体内无会话无门禁
 organization_core_entity	DELETE	/api/organization/definition/{id}	definition_delete	R7-已认证+体内无会话无门禁
