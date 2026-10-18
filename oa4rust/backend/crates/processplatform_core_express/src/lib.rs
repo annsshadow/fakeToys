@@ -15,9 +15,25 @@ pub mod routes;
 #[allow(non_snake_case)]
 pub async fn work_terminate(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(work_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 四轮 R4-6：此前该写既不取会话也不校归属，任一登录用户（甚至中间件缺位时）
+    // 按 ID 即可终止任意 work。终止他人 work 与 meeting/work 其余状态写同族，走属主门。
+    let Some(Extension(session)) = session else {
+        return Err(AppError::Unauthorized);
+    };
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let creator: Option<String> = client
+        .query_opt("SELECT creator FROM x_work WHERE id = $1", &[&work_id])
+        .await
+        .map_err(|_| AppError::Internal)?
+        .and_then(|row| row.get::<_, Option<String>>("creator"));
+    // 行不存在时放行到下面的 UPDATE（0 行结果，保持既有 not-found 语义）；
+    // creator 为空的历史行同样放行，避免把数据修复问题伪装成权限问题。
+    if let Some(creator) = creator.filter(|c| !c.is_empty()) {
+        shared::middleware::require_owner(&pool.0, &session, &creator).await?;
+    }
     client
         .execute(
             "UPDATE x_work SET work_status = $1 WHERE id = $2",
@@ -221,5 +237,7 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::processplatform_core_express_router(pool)
 }
 
+#[cfg(test)]
+mod security_gate_tests;
 #[cfg(test)]
 mod tests_generated;

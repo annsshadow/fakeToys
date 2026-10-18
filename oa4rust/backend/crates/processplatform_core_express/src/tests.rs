@@ -19,7 +19,9 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_work_terminate_returns_success() {
+    async fn test_work_terminate_requires_session() {
+        // 四轮 R4-6 前这条用例叫 returns_success，断言「无会话 GET 也返回 200」，
+        // 钉住的正是漏洞本身：任何请求都能终止任意 work。现按修复后的口径断言 401。
         let pool = build_test_pool();
         let app = processplatform_core_express_router(pool);
 
@@ -35,7 +37,7 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
     }
 
     #[tokio::test]

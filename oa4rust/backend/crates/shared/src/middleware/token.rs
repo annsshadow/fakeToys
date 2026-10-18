@@ -139,9 +139,16 @@ pub async fn auth_middleware(
 ) -> Response {
     let path = request.uri().path().to_string();
 
-    if is_auth_exempt(&path)
-        && (!SECRET_INIT_PATHS.iter().any(|p| path_matches(&path, p))
-            || system_uninitialized(&state.pool).await)
+    // 双锁一致性（四轮 §三.7）：豁免表与权限注册表是两份独立权威。本函数早退时
+    // **不插 Session**，而 `authorize_middleware` 只在注册表判定 Public 时放行，
+    // 取不到 Session 就 401 —— 所以「豁免 ∧ ¬Public」的路对**任何人**（实测含带合法
+    // 会话的 admin）都是 401 死态，尺子第 6c 段量出 19 条、`tests/exempt_authorize_parity.rs`
+    // 逐臂实测 12 条红。现在豁免必须有注册表 Public 佐证，半开的锁不再可能出现。
+    // `SECRET_INIT_PATHS` 的严格性保持不变：命中它就只允许未初始化窗口匿名通过
+    // （即使注册表把 `/api/secret/*` 记为 Public），已初始化后仍要求会话。
+    let secret_hit = SECRET_INIT_PATHS.iter().any(|p| path_matches(&path, p));
+    let init_window = secret_hit && system_uninitialized(&state.pool).await;
+    if is_auth_exempt(&path) && (init_window || (!secret_hit && super::rbac::is_registry_public(&path)))
     {
         return next.run(request).await;
     }

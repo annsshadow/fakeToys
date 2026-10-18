@@ -19,6 +19,21 @@ fn body_str<'a>(body: &'a Value, key: &str) -> Option<&'a str> {
     body.get(key).and_then(Value::as_str)
 }
 
+/// 设计态脚本写 = admin（四轮 A3-N1，比照二轮 S5 的 portal 写收口）。
+/// 脚本正文会被 portal surface 读回渲染，而 CSP 允许 `script-src 'self' 'unsafe-eval'`，
+/// 所以任意登录用户按 IDOR 覆写他人脚本等于在受害者门户里落地执行存储型 JS。
+/// 无 DB 时 `is_admin` fail-closed 拒绝。
+async fn require_admin(
+    pool: &Pool,
+    session: &shared::session::Session,
+) -> Result<(), AppError> {
+    if shared::middleware::is_admin(pool, &session.person_unique).await {
+        Ok(())
+    } else {
+        Err(AppError::Forbidden)
+    }
+}
+
 async fn next_version(
     tx: &deadpool_postgres::tokio_postgres::Transaction<'_>,
     script_id: &str,
@@ -40,6 +55,7 @@ pub async fn create(
     session: Extension<shared::session::Session>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
     let name = body_str(&body, "name")
         .unwrap_or_default()
         .trim()
@@ -88,6 +104,7 @@ pub async fn update(
     axum::extract::Path(id): axum::extract::Path<String>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
     let name = body_str(&body, "name").map(str::to_string);
     let content = body_str(&body, "content").map(str::to_string);
     let category = body_str(&body, "category").map(str::to_string);
@@ -133,8 +150,10 @@ pub async fn update(
 /// DELETE /api/portal/assemble/designer/script/{id} —— 软删除
 pub async fn delete(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let n = client
         .execute(

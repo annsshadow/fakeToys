@@ -42,14 +42,21 @@ pub async fn unread_count(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
 #[allow(non_snake_case)]
 pub async fn send_message(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let Some(sess) = session.as_deref() else {
+        return Err(AppError::Unauthorized);
+    };
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let conversation_id = req
         .get("conversationId")
         .and_then(|v| v.as_str())
         .unwrap_or_default();
+    if !is_conversation_member(&client, &conversation_id, &sess.person_unique).await? {
+        return Ok(Json(ActionResult::error("not a conversation member")));
+    }
     let content = req
         .get("content")
         .and_then(|v| v.as_str())
@@ -146,9 +153,26 @@ pub async fn receive_list(
 #[allow(non_snake_case)]
 pub async fn mark_read(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let Some(sess) = session.as_deref() else {
+        return Err(AppError::Unauthorized);
+    };
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let owner = client
+        .query_opt(
+            "SELECT coalesce(nullif(trim(sender), ''), '') AS owner FROM x_message_consume WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let Some(row) = owner else {
+        return Ok(Json(ActionResult::error("consume not found")));
+    };
+    let owner: String = row.get("owner");
+    shared::middleware::require_owner(&pool, sess, &owner).await?;
 
     let result = client
         .execute(
@@ -172,6 +196,9 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
 mod tests;
 #[cfg(test)]
 mod tests_generated;
+#[cfg(test)]
+#[allow(clippy::module_inception)]
+mod security_gate_tests;
 
 #[allow(non_snake_case)]
 pub async fn consume_list_consume_count_count(
@@ -394,9 +421,13 @@ pub async fn consume_type_type(
 #[allow(non_snake_case)]
 pub async fn consume_type_type_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(msg_type): axum::extract::Path<String>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    if session.is_none() {
+        return Err(AppError::Unauthorized);
+    }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     // W12 收敛：对齐 o2server ActionUpdate（consume/type/{type}）——按 Wi.idList 定位
     // x_message、标记 consumed=true，WrapNumber 返回命中条数；空 body → 0。
@@ -436,9 +467,30 @@ pub async fn consume_type_type_mockputtopost(
 #[allow(non_snake_case)]
 pub async fn consume_id_type_type(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((id, msg_type)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 消费记录是「本人对某条消息的消费形态」，按 id 改他人那行等于伪造他人已读态 ⇒ 归属档。
+    // 归属事实取 sender（本表不写 creator_person）；空 sender 只允许管理员，不把数据缺陷洗成放行。
+    // 说明文刻意不写门名：尺子按体内文本判门禁，注释里的门名会被当成门（审计账本尺子缺陷 26）。
+    let Some(sess) = session.as_deref() else {
+        return Err(AppError::Unauthorized);
+    };
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let owner = client
+        .query_opt(
+            "SELECT coalesce(nullif(trim(sender), ''), '') AS owner \
+             FROM x_message_consume WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let Some(row) = owner else {
+        return Ok(Json(ActionResult::error("consume not found")));
+    };
+    let owner: String = row.get("owner");
+    shared::middleware::require_owner(&pool, sess, &owner).await?;
 
     let result = client
         .execute(
@@ -460,8 +512,12 @@ pub async fn consume_id_type_type(
 #[allow(non_snake_case)]
 pub async fn im_conversation(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    if session.is_none() {
+        return Err(AppError::Unauthorized);
+    }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let name = req.get("name").and_then(|v| v.as_str()).unwrap_or_default();
@@ -633,11 +689,18 @@ pub async fn im_conversation_list_with_person(
 #[allow(non_snake_case)]
 pub async fn im_conversation_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let Some(sess) = session.as_deref() else {
+        return Err(AppError::Unauthorized);
+    };
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = req.get("id").and_then(|v| v.as_str()).unwrap_or_default();
+    if !is_conversation_member(&client, &id, &sess.person_unique).await? {
+        return Ok(Json(ActionResult::error("not a conversation member")));
+    }
     let title = req
         .get("title")
         .and_then(|v| v.as_str())
@@ -762,8 +825,13 @@ pub async fn im_conversation_id_group(
 #[allow(non_snake_case)]
 pub async fn im_manager_config_post(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let Some(sess) = session.as_deref() else {
+        return Err(AppError::Unauthorized);
+    };
+    require_admin(&pool, sess).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let config_key = req
@@ -892,8 +960,17 @@ pub async fn im_conversation_update(
 #[allow(non_snake_case)]
 pub async fn im_conversation_id_group_mockdeletetoget(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 这条 DELETE/GET 别名删的是**整个会话的全部成员行**（不是退自己），属解散级破坏动作；
+    // 而本表族没有「群主」事实可判——x_message_conversation 从不落 creator_person、成员表的
+    // role 也没有任何写路径，收归属档会静默退化成「一律管理员」。与其假装有归属，直接收管理员档。
+    // 前端零调用者（在 frontend/apps/desktop/src 内 grep 该路径无命中），故对活流程零漂移。
+    let Some(sess) = session.as_deref() else {
+        return Err(AppError::Unauthorized);
+    };
+    require_admin(&pool, sess).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -1005,9 +1082,16 @@ pub async fn im_conversation_id_read(
 #[allow(non_snake_case)]
 pub async fn im_conversation_id_read_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let Some(sess) = session.as_deref() else {
+        return Err(AppError::Unauthorized);
+    };
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    if !is_conversation_member(&client, &id, &sess.person_unique).await? {
+        return Ok(Json(ActionResult::error("not a conversation member")));
+    }
 
     let result = client
         .execute("UPDATE x_message_conversation SET read_status = 'read', read_time = NOW() WHERE id = $1", &[&id])
@@ -1089,9 +1173,16 @@ pub async fn im_conversation_id_single_mockdeletetoget(
 #[allow(non_snake_case)]
 pub async fn im_conversation_id_top_cancel(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let Some(sess) = session.as_deref() else {
+        return Err(AppError::Unauthorized);
+    };
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    if !is_conversation_member(&client, &id, &sess.person_unique).await? {
+        return Ok(Json(ActionResult::error("not a conversation member")));
+    }
 
     let result = client
         .execute(
@@ -1109,9 +1200,16 @@ pub async fn im_conversation_id_top_cancel(
 #[allow(non_snake_case)]
 pub async fn im_conversation_id_top_cancel_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let Some(sess) = session.as_deref() else {
+        return Err(AppError::Unauthorized);
+    };
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    if !is_conversation_member(&client, &id, &sess.person_unique).await? {
+        return Ok(Json(ActionResult::error("not a conversation member")));
+    }
 
     let result = client
         .execute(
@@ -1129,9 +1227,16 @@ pub async fn im_conversation_id_top_cancel_mockputtopost(
 #[allow(non_snake_case)]
 pub async fn im_conversation_id_top_set(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let Some(sess) = session.as_deref() else {
+        return Err(AppError::Unauthorized);
+    };
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    if !is_conversation_member(&client, &id, &sess.person_unique).await? {
+        return Ok(Json(ActionResult::error("not a conversation member")));
+    }
 
     let result = client
         .execute(
@@ -1149,9 +1254,16 @@ pub async fn im_conversation_id_top_set(
 #[allow(non_snake_case)]
 pub async fn im_conversation_id_top_set_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let Some(sess) = session.as_deref() else {
+        return Err(AppError::Unauthorized);
+    };
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    if !is_conversation_member(&client, &id, &sess.person_unique).await? {
+        return Ok(Json(ActionResult::error("not a conversation member")));
+    }
 
     let result = client
         .execute(
@@ -1212,14 +1324,21 @@ pub async fn im_manager_config(
 #[allow(non_snake_case)]
 pub async fn im_msg(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let Some(sess) = session.as_deref() else {
+        return Err(AppError::Unauthorized);
+    };
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let conversation_id = req
         .get("conversationId")
         .and_then(|v| v.as_str())
         .unwrap_or_default();
+    if !is_conversation_member(&client, &conversation_id, &sess.person_unique).await? {
+        return Ok(Json(ActionResult::error("not a conversation member")));
+    }
     let content = req
         .get("content")
         .and_then(|v| v.as_str())
@@ -1254,8 +1373,12 @@ pub async fn im_msg(
 #[allow(non_snake_case)]
 pub async fn im_msg_clear(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let Some(sess) = session.as_deref() else {
+        return Err(AppError::Unauthorized);
+    };
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let conversation_id = req
@@ -1264,6 +1387,9 @@ pub async fn im_msg_clear(
         .and_then(|v| v.as_str())
         .unwrap_or_default()
         .to_string();
+    if !is_conversation_member(&client, &conversation_id, &sess.person_unique).await? {
+        return Ok(Json(ActionResult::error("not a conversation member")));
+    }
 
     let result = client
         .execute(
@@ -1281,8 +1407,13 @@ pub async fn im_msg_clear(
 #[allow(non_snake_case)]
 pub async fn im_msg_collection(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let Some(sess) = session.as_deref() else {
+        return Err(AppError::Unauthorized);
+    };
+    require_admin(&pool, sess).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let message_id = req
@@ -1353,8 +1484,13 @@ pub async fn im_msg_collection_list_page_size_size(
 #[allow(non_snake_case)]
 pub async fn im_msg_collection_remove(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let Some(sess) = session.as_deref() else {
+        return Err(AppError::Unauthorized);
+    };
+    require_admin(&pool, sess).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let message_id = req
@@ -1689,9 +1825,29 @@ pub async fn im_msg_list_page_size_size(
 #[allow(non_snake_case)]
 pub async fn im_msg_revoke_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 撤回是**发送者本人**的动作：按 id 撤他人消息等于抹掉他人的发言（GET/POST 双注册，谁都能刷）。
+    // 归属事实取 sender；空 sender 只允许管理员。注意发消息那族把 sender 取自 body 自称身份，
+    // 那是另一条更靠上游的缺陷（记入账本待修），不在本把的射程内。
+    let Some(sess) = session.as_deref() else {
+        return Err(AppError::Unauthorized);
+    };
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let owner = client
+        .query_opt(
+            "SELECT coalesce(nullif(trim(sender), ''), '') AS owner FROM x_message WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let Some(row) = owner else {
+        return Ok(Json(ActionResult::error("message not found")));
+    };
+    let owner: String = row.get("owner");
+    shared::middleware::require_owner(&pool, sess, &owner).await?;
 
     let result = client
         .execute(
@@ -1709,9 +1865,13 @@ pub async fn im_msg_revoke_id(
 #[allow(non_snake_case)]
 pub async fn im_msg_upload_conversationId_type_type(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((conversation_id, msg_type)): axum::extract::Path<(String, String)>,
     mut form: axum::extract::Multipart,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let Some(sess) = session.as_deref() else {
+        return Err(AppError::Unauthorized);
+    };
     // W10：IM 富媒体必须走真实 multipart——`fileName` 文本字段 + `file` 二进制字段
     let mut file_name: Option<String> = None;
     let mut file_mime: Option<String> = None;
@@ -1753,6 +1913,9 @@ pub async fn im_msg_upload_conversationId_type_type(
     );
 
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    if !is_conversation_member(&client, &conversation_id, &sess.person_unique).await? {
+        return Ok(Json(ActionResult::error("not a conversation member")));
+    }
     let id = Uuid::new_v4().to_string();
     let content_b64 = base64::engine::general_purpose::STANDARD.encode(&data);
     let file_size = data.len().to_string();
@@ -1879,8 +2042,12 @@ pub async fn instant_currentperson_consumed_all(
 #[allow(non_snake_case)]
 pub async fn instant_currentperson_consumed_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    if session.is_none() {
+        return Err(AppError::Unauthorized);
+    }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id_list = req
@@ -2377,8 +2544,13 @@ pub async fn instant_list_id_prev_count(
 #[allow(non_snake_case)]
 pub async fn mass_enable_type(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let Some(sess) = session.as_deref() else {
+        return Err(AppError::Unauthorized);
+    };
+    require_admin(&pool, sess).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let msg_type = req.get("type").and_then(|v| v.as_str()).unwrap_or_default();
@@ -2550,14 +2722,21 @@ pub async fn mass_id(
 #[allow(non_snake_case)]
 pub async fn message_custom_create(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let Some(sess) = session.as_deref() else {
+        return Err(AppError::Unauthorized);
+    };
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let conversation_id = req
         .get("conversationId")
         .and_then(|v| v.as_str())
         .unwrap_or_default();
+    if !is_conversation_member(&client, &conversation_id, &sess.person_unique).await? {
+        return Ok(Json(ActionResult::error("not a conversation member")));
+    }
     let content = req
         .get("content")
         .and_then(|v| v.as_str())
@@ -2700,8 +2879,12 @@ async fn conversation_type(
 #[allow(non_snake_case)]
 pub async fn connector_create(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    if session.is_none() {
+        return Err(AppError::Unauthorized);
+    }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let msg_type = req
@@ -2775,8 +2958,12 @@ pub async fn connector_create(
 #[allow(non_snake_case)]
 pub async fn ws_create(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    if session.is_none() {
+        return Err(AppError::Unauthorized);
+    }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let person = req

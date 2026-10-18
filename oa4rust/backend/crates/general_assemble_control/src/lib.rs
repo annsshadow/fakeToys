@@ -21,6 +21,8 @@ mod tests;
 mod tests_generated;
 #[cfg(test)]
 mod security_gate_tests;
+#[cfg(test)]
+mod security_gate_tests_b64;
 
 /// 管理写操作门禁：本 crate 的系统配置/组织架构参考数据（维护模式、注册开关、
 /// 考勤范围、地区、安全等级、全局控制行）为管理台数据，仅 admin 可写。
@@ -33,6 +35,17 @@ async fn require_admin(pool: &Pool, session: &shared::session::Session) -> Resul
     } else {
         Err(AppError::Forbidden)
     }
+}
+
+/// 会话存在档：无会话返回 Unauthorized。用于无需 admin/owner 归属、仅要求有效会话的写面
+/// （如 HTML→Word、二维码生成这类按需转换工具，写库但非配置/系统数据）。门插在 pool.get() 前。
+#[allow(non_snake_case)]
+fn require_session(
+    session: Option<Extension<shared::session::Session>>,
+) -> Result<shared::session::Session, AppError> {
+    session
+        .map(|Extension(s)| s)
+        .ok_or(AppError::Unauthorized)
 }
 
 /// 属主资源门禁：先取记录属主列（creator），命中行时 require_owner；
@@ -1836,6 +1849,7 @@ pub async fn invoice_update_id(
 #[allow(non_snake_case)]
 pub async fn invoice_upload(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -1847,11 +1861,10 @@ pub async fn invoice_upload(
         .unwrap_or("")
         .to_string();
     let flag = uuid::Uuid::new_v4().to_string();
-    let creator = payload
-        .get("creator")
-        .and_then(|v| v.as_str())
-        .unwrap_or("system")
-        .to_string();
+    // 四轮 §三.7：这三把 upload 家族在 R4-2 批里补过尺子门禁但 creator 仍取请求体，
+    // 而双锁修复让它们从「对所有人 401 死态」变成登录可达——冒名归属面随之打开，
+    // 故与 `invoice_create` 同口径：归属以会话登录人为事实源。
+    let creator = session.person_unique.clone();
 
     client
         .execute(
@@ -1874,6 +1887,7 @@ pub async fn invoice_upload(
 #[allow(non_snake_case)]
 pub async fn invoice_upload_for_create(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -1885,11 +1899,8 @@ pub async fn invoice_upload_for_create(
         .unwrap_or("")
         .to_string();
     let flag = uuid::Uuid::new_v4().to_string();
-    let creator = payload
-        .get("creator")
-        .and_then(|v| v.as_str())
-        .unwrap_or("system")
-        .to_string();
+    // 同 `invoice_upload`：归属以会话登录人为事实源，客户端 creator 可伪造。
+    let creator = session.person_unique.clone();
 
     client
         .execute(
@@ -1912,6 +1923,7 @@ pub async fn invoice_upload_for_create(
 #[allow(non_snake_case)]
 pub async fn invoice_upload_with_url(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -1923,11 +1935,8 @@ pub async fn invoice_upload_with_url(
         .unwrap_or("")
         .to_string();
     let flag = uuid::Uuid::new_v4().to_string();
-    let creator = payload
-        .get("creator")
-        .and_then(|v| v.as_str())
-        .unwrap_or("system")
-        .to_string();
+    // 同 `invoice_upload`：归属以会话登录人为事实源，客户端 creator 可伪造。
+    let creator = session.person_unique.clone();
 
     client
         .execute(
@@ -1950,8 +1959,10 @@ pub async fn invoice_upload_with_url(
 #[allow(non_snake_case)]
 pub async fn office_html_to_word(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -2028,8 +2039,10 @@ pub async fn office_html_to_word_result_flag(
 #[allow(non_snake_case)]
 pub async fn qrcode_width_width_height_height_text_text(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((width, height, text)): axum::extract::Path<(u32, u32, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();

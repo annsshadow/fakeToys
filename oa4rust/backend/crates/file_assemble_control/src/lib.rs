@@ -23,9 +23,27 @@ pub mod routes;
 mod tests;
 #[cfg(test)]
 mod tests_generated;
+#[cfg(test)]
+mod security_gate_tests;
+#[cfg(test)]
+mod security_gate_tests_b77;
 
 pub fn file_assemble_control_router(pool: Pool) -> axum::Router {
     routes::router(pool)
+}
+
+/// round4-b77：TEXT 列宽容读取。`x_file_assemble_control_config` /
+/// `x_file_assemble_control_storage_pool` 的 `enabled` 实为 TEXT 列
+/// （migrations/032 DDL 起即全 TEXT 列），`RowGet::get_bool` 在真库上会因类型
+/// 不符 panic；统一按字符串解析（"true"/"1"/"TRUE"/"True" 为真），mock 侧相应
+/// 返回字符串值。schema 漂移本体记 §五（修 bind 或迁列型后此助手可退场）。
+fn text_truthy(row: &dyn crate::RowGet, col: &str) -> bool {
+    matches!(row.get_str(col), "true" | "1" | "TRUE" | "True")
+}
+
+/// TEXT 列宽容读 i64（parse 失败回落默认值）。
+fn text_i64(row: &dyn crate::RowGet, col: &str, default: i64) -> i64 {
+    row.get_str(col).parse::<i64>().unwrap_or(default)
 }
 
 #[axum::debug_handler]
@@ -46,14 +64,18 @@ pub async fn get_control_config(
 
     let data = match row {
         Ok(r) => serde_json::Map::from_iter([
-            ("enabled".to_string(), Value::Bool(r.get_bool("enabled"))),
+            ("enabled".to_string(), Value::Bool(text_truthy(&*r, "enabled"))),
             (
                 "defaultStorage".to_string(),
                 Value::String(r.get_str("default_storage").to_string()),
             ),
             (
                 "maxUploadSize".to_string(),
-                Value::Number(serde_json::Number::from(r.get_i64("max_upload_size"))),
+                Value::Number(serde_json::Number::from(text_i64(
+                    &*r,
+                    "max_upload_size",
+                    104857600,
+                ))),
             ),
         ]),
         Err(_) => serde_json::Map::from_iter([
@@ -101,7 +123,10 @@ pub async fn list_storage_pools(
                         "name".to_string(),
                         Value::String(row.get_str("name").to_string()),
                     ),
-                    ("enabled".to_string(), Value::Bool(row.get_bool("enabled"))),
+                    (
+                        "enabled".to_string(),
+                        Value::Bool(text_truthy(&**row, "enabled")),
+                    ),
                 ]))
             })
             .collect(),
@@ -120,8 +145,24 @@ pub async fn list_storage_pools(
 #[allow(non_snake_case)]
 pub async fn update_control_config(
     pool: Extension<Arc<dyn ControlPool>>,
+    admin_pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 安全审计 round4-b77：全局文件控制配置写（enabled / default_storage / max_upload_size）
+    // 属管理面（与 calendar_assemble_control::update_control_config 同族口径）：
+    // 无会话 401、非 admin 403（is_admin 查不到即 fail-closed）。门置于首个 DB
+    // 访问（pool.acquire()）之前。
+    //
+    // 注：本 handler 取 ControlPool 扩展（写通道）；admin 判定复用
+    // shared::middleware::is_admin 需裸 deadpool Pool，由并列的 Extension<Pool>
+    // 提供（router 原有 layer；round4-b77 一并补齐 ControlPool 扩展接线）。
+    let Some(Extension(session)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    if !shared::middleware::is_admin(&admin_pool, &session.person_unique).await {
+        return Err(AppError::Forbidden);
+    }
     let client = pool.acquire().await?;
 
     let enabled = body
@@ -143,7 +184,14 @@ pub async fn update_control_config(
             &dialect().format_sql(
                 "UPDATE x_file_assemble_control_config SET enabled = $1, default_storage = $2, max_upload_size = $3 WHERE id = 'global'",
             ),
-            &[&enabled, &default_storage, &max_upload_size],
+            // round4-b77：目标列实为 TEXT（schema 漂移，见 §五）——按字符串绑定。
+            // 文本参数对 TEXT 列直写；若将来迁回 BOOLEAN/BIGINT 列，PG 的 assignment
+            // cast（text→bool / text→bigint）同样接受，故文本绑定对两种 schema 都成立。
+            &[
+                &enabled.to_string(),
+                &default_storage,
+                &max_upload_size.to_string(),
+            ],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -438,9 +486,26 @@ pub async fn create_file(
 #[allow(non_snake_case)]
 pub async fn delete_file(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十六批：软删文件按 x_file.creator 校归属（无会话 401；行不存在保留 not-found）。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT creator FROM x_file WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let Some(row) = row else {
+        return Ok(Json(ActionResult::error("file not found")));
+    };
+    let creator: String = row.get::<_, Option<String>>("creator").unwrap_or_default();
+    shared::middleware::require_owner(&pool, &sess, &creator).await?;
 
     let result = client
         .execute(
@@ -466,8 +531,13 @@ pub async fn delete_file(
 #[allow(non_snake_case)]
 pub async fn create_file_entity(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(body): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十六批：新建文件实体要求有效会话（无会话 401）；creator 仍硬写 "system"（残留记 §五）。
+    if session.is_none() {
+        return Err(AppError::Unauthorized);
+    }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let name = body
@@ -2083,6 +2153,12 @@ pub async fn attachment2_id_image_width_width_height_height_binary_base64(
 
 /// .docx 本质是 ZIP 包：解压 word/document.xml，将 <w:p> 段落中的
 /// <w:t> 文本提取为简单 HTML（<p> 标签）。表格/图片等复杂内容由调用方降级。
+/// .docx 渲染上限（四轮审计 N1，与 XLSX_MAX_ROWS / PPTX_MAX_SLIDES 惯例对齐）：
+/// 解压 XML 最多读取 4 MiB（2 MiB zip 源经 deflate 可放大数百倍，`read_to_string`
+/// 无上限时单个上传附件即可让一个 worker 常驻百 MB 级字符串），段落最多输出 200 个。
+const DOCX_MAX_XML_BYTES: u64 = 4 * 1024 * 1024;
+const DOCX_MAX_PARAGRAPHS: usize = 200;
+
 fn docx_to_html(bytes: &[u8]) -> Option<String> {
     let reader = std::io::Cursor::new(bytes);
     let mut archive = zip::ZipArchive::new(reader).ok()?;
@@ -2091,7 +2167,10 @@ fn docx_to_html(bytes: &[u8]) -> Option<String> {
         .ok()
         .and_then(|mut f| {
             let mut s = String::new();
-            std::io::Read::read_to_string(&mut f, &mut s).ok()?;
+            // 完全限定 `Read::take`：`Read` 不在作用域时 `f.take(n)` 会被 std prelude
+            // 的 `Iterator::take` 抢走方法解析而编译失败。
+            let mut limited = std::io::Read::take(&mut f, DOCX_MAX_XML_BYTES);
+            std::io::Read::read_to_string(&mut limited, &mut s).ok()?;
             Some(s)
         })?;
 
@@ -2101,7 +2180,12 @@ fn docx_to_html(bytes: &[u8]) -> Option<String> {
 
     let mut html = String::new();
     let mut rest = xml.as_str();
+    let mut paragraphs = 0usize;
     while let Some(start) = rest.find("<w:p") {
+        paragraphs += 1;
+        if paragraphs > DOCX_MAX_PARAGRAPHS {
+            break;
+        }
         let Some(close_rel) = rest[start..].find("</w:p>") else {
             break;
         };
@@ -2311,13 +2395,20 @@ fn pptx_to_html(bytes: &[u8]) -> Option<String> {
     }
 }
 
+/// ZIP 条目解压上限（四轮审计 N4-01，与 `DOCX_MAX_XML_BYTES` 同族同值）：
+/// XLSX 的 `xl/sharedStrings.xml` 与 PPTX 的每张 `slideN.xml` 都经本函数读取；
+/// `XLSX_MAX_ROWS` / `PPTX_MAX_SLIDES` 只在**解压之后**限制输出行数/页数，
+/// 不限制驻留内存，zip 炸弹可让单个附件预览直接把 worker 撑到 OOM。
+const ZIP_ENTRY_MAX_BYTES: u64 = 4 * 1024 * 1024;
+
 fn read_zip_entry(
     archive: &mut zip::ZipArchive<std::io::Cursor<&[u8]>>,
     name: &str,
 ) -> Option<String> {
     let mut f = archive.by_name(name).ok()?;
     let mut s = String::new();
-    std::io::Read::read_to_string(&mut f, &mut s).ok()?;
+    let mut limited = std::io::Read::take(&mut f, ZIP_ENTRY_MAX_BYTES);
+    std::io::Read::read_to_string(&mut limited, &mut s).ok()?;
     Some(s)
 }
 
@@ -2637,7 +2728,16 @@ pub async fn editor_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
 #[allow(non_snake_case)]
 pub async fn file_clean_unused_referencetype_cmsdocument_manage(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 批量清理 FILE_FILE（按 reference_type 全删）属管理维护写面：无会话 401、非 admin 403。
+    match session {
+        None => return Err(AppError::Unauthorized),
+        Some(Extension(s)) if !shared::middleware::is_admin(&pool, &s.person_unique).await => {
+            return Err(AppError::Forbidden)
+        }
+        Some(_) => {}
+    }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -2661,6 +2761,7 @@ pub async fn file_clean_unused_referencetype_cmsdocument_manage(
 #[allow(non_snake_case)]
 pub async fn file_copy_attachment_attachmentId_referencetype_referenceType_reference_reference_scale_scale(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((attachment_id, reference_type, reference, _scale)): axum::extract::Path<(
         String,
         String,
@@ -2668,6 +2769,10 @@ pub async fn file_copy_attachment_attachmentId_referencetype_referenceType_refer
         String,
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 复制附件会在 FILE_FILE 新建一行（继承源 person）：无会话 401，仅源附件属主或 admin 可复制。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt("SELECT name, person, extension, length, mime_type, content FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL", &[&attachment_id])
@@ -2678,6 +2783,7 @@ pub async fn file_copy_attachment_attachmentId_referencetype_referenceType_refer
     let new_id = uuid::Uuid::new_v4().to_string();
     let name: String = row.get::<_, Option<String>>("name").unwrap_or_default();
     let person: String = row.get::<_, Option<String>>("person").unwrap_or_default();
+    shared::middleware::require_owner(&pool, &sess, &person).await?;
     let ext: String = row
         .get::<_, Option<String>>("extension")
         .unwrap_or_default();
@@ -5310,8 +5416,14 @@ pub async fn u2_attachment2_list_type_page_size_size(
 #[allow(non_snake_case)]
 pub async fn u2_config_save_system_config(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十六批：系统参数写收 admin 档（无会话 401 / 非 admin 403）。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    u2_require_admin(&pool, &sess).await?;
     // 系统参数写：body {"configs":[{name,value,category?}]}，按 name UPSERT（未删行内更新，
     // 否则新插入）；value 接受字符串/数字/布尔，统一落 TEXT。行间独立提交，配置行无事务耦合。
     let client = pool.get().await.map_err(|_| AppError::Internal)?;

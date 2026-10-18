@@ -224,8 +224,13 @@ fn wrap_true() -> Value {
 /// Wi{person, name, attributeList})：全量替换属性值。
 pub async fn personattr_set_person_name(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Json(body): Json<Value>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
+    // 写面：收有效会话门（无会话 401），防匿名属性写入；owner 从 body 取（冒名族，另记待修）。
+    let Some(Extension(_session)) = session else {
+        return Err(AppError::Unauthorized);
+    };
     attr_write_values(&pool, &body, "x_org_person_attribute", "person_id", false).await?;
     Ok(AxumJson(ActionResult::success(wrap_true())))
 }
@@ -234,8 +239,13 @@ pub async fn personattr_set_person_name(
 /// 追加缺失值（归一化查重后）。
 pub async fn personattr_append_person_name(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Json(body): Json<Value>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
+    // 写面：收有效会话门（无会话 401），防匿名属性写入；owner 从 body 取（冒名族，另记待修）。
+    let Some(Extension(_session)) = session else {
+        return Err(AppError::Unauthorized);
+    };
     attr_write_values(&pool, &body, "x_org_person_attribute", "person_id", true).await?;
     Ok(AxumJson(ActionResult::success(wrap_true())))
 }
@@ -376,8 +386,13 @@ pub async fn unitattr_list_unit_object(
 /// POST /api/unitattribute/set/unit/name：全量替换组织属性值。
 pub async fn unitattr_set_unit_name(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Json(body): Json<Value>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
+    // 写面：收有效会话门（无会话 401），防匿名属性写入；owner 从 body 取（冒名族，另记待修）。
+    let Some(Extension(_session)) = session else {
+        return Err(AppError::Unauthorized);
+    };
     attr_write_values(&pool, &body, "x_org_unit_attribute", "unit_id", false).await?;
     Ok(AxumJson(ActionResult::success(wrap_true())))
 }
@@ -385,8 +400,13 @@ pub async fn unitattr_set_unit_name(
 /// POST /api/unitattribute/append/unit/name：追加缺失的组织属性值。
 pub async fn unitattr_append_unit_name(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Json(body): Json<Value>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
+    // 写面：收有效会话门（无会话 401），防匿名属性写入；owner 从 body 取（冒名族，另记待修）。
+    let Some(Extension(_session)) = session else {
+        return Err(AppError::Unauthorized);
+    };
     attr_write_values(&pool, &body, "x_org_unit_attribute", "unit_id", true).await?;
     Ok(AxumJson(ActionResult::success(wrap_true())))
 }
@@ -442,8 +462,13 @@ pub async fn empower_list_identity_object(
 /// 校验必填字段后落库 x_org_empower_log。
 pub async fn empowerlog_create(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Json(body): Json<Value>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
+    // 写面：收有效会话门（无会话 401），防匿名授权日志写入；from/to identity 从 body 取（冒名族，另记待修）。
+    let Some(Extension(_session)) = session else {
+        return Err(AppError::Unauthorized);
+    };
     let required = [
         ("application", string_field(&body, "application")),
         ("process", string_field(&body, "process")),

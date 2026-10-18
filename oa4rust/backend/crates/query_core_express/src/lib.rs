@@ -23,12 +23,19 @@ pub struct QueryRequest {
 
 /// 执行查询
 /// 根据查询语句执行数据库查询并返回结果
-/// 安全限制：仅允许 SELECT，最大 500 行，自动注入权限 WHERE 条件
+/// 安全限制：仅管理员、仅 SELECT、最大 500 行、权限 WHERE 条件缺失时拒绝执行
 pub async fn execute_query(
     pool: Extension<Pool>,
     session: Extension<Session>,
     axum::extract::Json(req): Json<QueryRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 原写法「任意认证用户可读全库任意表」：`Statement::Query` 只挡住写/DDL，
+    // 行级过滤靠列名匹配，攻击者自带 `x_identity`/`x_unit_id` 别名即可贯穿，
+    // 且过滤器取不到身份/单位时 where_clause 为空——直接原样执行未过滤 SQL。
+    // 裸 SQL 执行面按 S5 口径收 admin；权限谓词为空改 fail-closed。
+    if !shared::middleware::is_admin(&pool.0, &session.person_unique).await {
+        return Err(AppError::Forbidden);
+    }
     let raw_sql = req
         .query
         .as_deref()
@@ -74,13 +81,12 @@ pub async fn execute_query(
         format!("{} LIMIT 500", raw_sql)
     };
 
-    // 如有权限过滤条件，注入到 WHERE
+    // 如有权限过滤条件，注入到 WHERE；一条都拼不出来时不得放行未过滤 SQL
     let where_clause = build_where_clause(&identity_filter, &unit_filter);
-    let final_sql = if !where_clause.is_empty() {
-        inject_where(&limited_sql, &where_clause)
-    } else {
-        limited_sql
-    };
+    if where_clause.is_empty() {
+        return Err(AppError::Forbidden);
+    }
+    let final_sql = inject_where(&limited_sql, &where_clause);
 
     let rows = client
         .query(&final_sql, &[])
@@ -246,11 +252,16 @@ pub async fn get_query_history(
 /// 将查询结果缓存以提高后续查询性能
 pub async fn cache_query_result(
     pool: Extension<Pool>,
+    session: Extension<Session>,
     axum::extract::Path(query_id): axum::extract::Path<String>,
     axum::extract::Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
+    // 与 execute_query 同一张写面：往查询记录表插行原本无 session、creator 硬写 "system"
+    if !shared::middleware::is_admin(&pool.0, &session.person_unique).await {
+        return Err(AppError::Forbidden);
+    }
     let query_row = client
         .query_opt("SELECT id, name FROM x_query WHERE id = $1", &[&query_id])
         .await
@@ -263,7 +274,7 @@ pub async fn cache_query_result(
             client
                 .execute(
                     "INSERT INTO x_query_import_record (id, name, creator, create_time) VALUES ($1, $2, $3, NOW())",
-                    &[&cache_id, &query_name, &"system"],
+                    &[&cache_id, &query_name, &session.person_unique],
                 )
                 .await
                 .map_err(|_| AppError::Internal)?;
@@ -354,6 +365,8 @@ pub fn query_core_express_router(pool: Pool) -> Router {
 #[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;
+#[cfg(test)]
+mod security_gate_tests;
 #[cfg(test)]
 mod tests_generated;
 

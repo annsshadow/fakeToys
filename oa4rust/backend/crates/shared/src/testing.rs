@@ -22,13 +22,38 @@ pub fn mock_pool() -> Pool {
 /// 默认使用 oa4rust 测试库（postgres://o2server:password@localhost:5432/oa4rust）。
 /// 连接是延迟建立的——pool.get().await 时才实际建连。
 /// 若 PG 不可达，pool 仍可构建，首次 get() 返回错误。
+///
+/// 支持通过 `DATABASE_URL` 环境变量覆盖连接目标（解析 host/port/user/password/dbname，
+/// 任一缺失则回退到上面的默认值）。本地用非标准端口（如 Docker 15432）跑测试时，
+/// 设 `DATABASE_URL=postgres://o2server:password@localhost:15432/oa4rust` 即可，
+/// 不影响 CI（CI 不设该变量，回退 5432）。
 pub fn test_pool() -> Pool {
+    let database_url = std::env::var("DATABASE_URL").unwrap_or_else(|_| {
+        "postgres://o2server:password@localhost:5432/oa4rust".to_string()
+    });
+    let url = url::Url::parse(&database_url).expect("invalid DATABASE_URL");
+    let host = url.host_str().unwrap_or("localhost");
+    let port = url.port().unwrap_or(5432);
+    let user = if url.username().is_empty() {
+        "o2server"
+    } else {
+        url.username()
+    };
+    let password = url.password().unwrap_or("password");
+    let dbname = {
+        let p = url.path().trim_start_matches('/');
+        if p.is_empty() {
+            "oa4rust"
+        } else {
+            p
+        }
+    };
     let mut cfg = deadpool_postgres::tokio_postgres::Config::new();
-    cfg.host("localhost")
-        .port(5432)
-        .user("o2server")
-        .password("password")
-        .dbname("oa4rust");
+    cfg.host(host)
+        .port(port)
+        .user(user)
+        .password(password)
+        .dbname(dbname);
     let mgr = deadpool_postgres::Manager::new(cfg, deadpool_postgres::tokio_postgres::NoTls);
     Pool::builder(mgr).max_size(5).build().unwrap()
 }
@@ -68,8 +93,13 @@ pub async fn is_redis_available() -> bool {
 /// 连接到 PostgreSQL 的 sea_orm::DatabaseConnection，
 /// 用于 Extension<DatabaseConnection> 类型的 handler 测试。
 /// 若 PG 不可达，返回 Err。
+///
+/// 与 [`test_pool`] 一致，支持 `DATABASE_URL` 覆盖连接目标（缺省回退默认 5432 库）。
 pub async fn test_sea_orm_pool() -> Result<DatabaseConnection, String> {
-    let mut options = ConnectOptions::new("postgres://o2server:password@localhost:5432/oa4rust");
+    let database_url = std::env::var("DATABASE_URL").unwrap_or_else(|_| {
+        "postgres://o2server:password@localhost:5432/oa4rust".to_string()
+    });
+    let mut options = ConnectOptions::new(database_url);
     options.max_connections(5).sqlx_logging(false);
     Database::connect(options).await.map_err(|e| e.to_string())
 }

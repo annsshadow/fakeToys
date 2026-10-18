@@ -21,6 +21,21 @@ pub mod routes;
 
 use entities::{cms_article, cms_category};
 
+// 第六轮 R7 写面收口：ownerless 管理资源一律管理员档（无会话 401 / 非管理员 403；
+// 管理员判定对不可用 DB fail-closed）。表结构无可靠归属列（person_id 取自请求体，
+// 属冒名族，另记待修），故按系统级管理资源收管理员档。
+async fn require_admin_opt(
+    pool: &deadpool_postgres::Pool,
+    session: Option<Extension<shared::session::Session>>,
+) -> Result<(), AppError> {
+    let session = session.ok_or(AppError::Unauthorized)?;
+    if shared::middleware::is_admin(pool, &session.person_unique).await {
+        Ok(())
+    } else {
+        Err(AppError::Forbidden)
+    }
+}
+
 #[allow(non_snake_case)]
 pub async fn category_list(
     db: Extension<DatabaseConnection>,
@@ -102,8 +117,11 @@ pub async fn category_get(
 #[allow(non_snake_case)]
 pub async fn category_create(
     db: Extension<DatabaseConnection>,
+    pool: Extension<deadpool_postgres::Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool.0, session).await?;
     let id = uuid::Uuid::new_v4().to_string();
     let name = payload
         .get("name")
@@ -245,8 +263,11 @@ pub async fn article_get(
 #[allow(non_snake_case)]
 pub async fn article_create(
     db: Extension<DatabaseConnection>,
+    pool: Extension<deadpool_postgres::Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool.0, session).await?;
     let id = uuid::Uuid::new_v4().to_string();
     let category_id = payload
         .get("categoryId")
@@ -511,8 +532,10 @@ async fn cms_entity_save(
 #[allow(non_snake_case)]
 pub async fn cms_entity_column_create(
     pool: Extension<deadpool_postgres::Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool.0, session).await?;
     let id = cms_entity_create(&pool, "x_cms_column", &payload).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -526,9 +549,11 @@ pub async fn cms_entity_column_create(
 #[allow(non_snake_case)]
 pub async fn cms_entity_column_save(
     pool: Extension<deadpool_postgres::Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool.0, session).await?;
     let ok = cms_entity_save(&pool, "x_cms_column", &id, &payload).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -542,8 +567,10 @@ pub async fn cms_entity_column_save(
 #[allow(non_snake_case)]
 pub async fn cms_entity_column_delete(
     pool: Extension<deadpool_postgres::Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool.0, session).await?;
     let ok = cms_entity_soft_delete(&pool, "x_cms_column", &id).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -557,8 +584,10 @@ pub async fn cms_entity_column_delete(
 #[allow(non_snake_case)]
 pub async fn cms_entity_column_manager_create(
     pool: Extension<deadpool_postgres::Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool.0, session).await?;
     let id = cms_entity_create(&pool, "x_cms_column_manager", &payload).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -572,9 +601,11 @@ pub async fn cms_entity_column_manager_create(
 #[allow(non_snake_case)]
 pub async fn cms_entity_column_manager_save(
     pool: Extension<deadpool_postgres::Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool.0, session).await?;
     let ok = cms_entity_save(&pool, "x_cms_column_manager", &id, &payload).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -588,8 +619,10 @@ pub async fn cms_entity_column_manager_save(
 #[allow(non_snake_case)]
 pub async fn cms_entity_column_manager_delete(
     pool: Extension<deadpool_postgres::Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool.0, session).await?;
     let ok = cms_entity_soft_delete(&pool, "x_cms_column_manager", &id).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -603,8 +636,10 @@ pub async fn cms_entity_column_manager_delete(
 #[allow(non_snake_case)]
 pub async fn cms_entity_index_create(
     pool: Extension<deadpool_postgres::Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool.0, session).await?;
     let id = cms_entity_create(&pool, "x_cms_index", &payload).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -618,9 +653,11 @@ pub async fn cms_entity_index_create(
 #[allow(non_snake_case)]
 pub async fn cms_entity_index_save(
     pool: Extension<deadpool_postgres::Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool.0, session).await?;
     let ok = cms_entity_save(&pool, "x_cms_index", &id, &payload).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -634,8 +671,10 @@ pub async fn cms_entity_index_save(
 #[allow(non_snake_case)]
 pub async fn cms_entity_index_delete(
     pool: Extension<deadpool_postgres::Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool.0, session).await?;
     let ok = cms_entity_soft_delete(&pool, "x_cms_index", &id).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -649,8 +688,10 @@ pub async fn cms_entity_index_delete(
 #[allow(non_snake_case)]
 pub async fn cms_entity_module_create(
     pool: Extension<deadpool_postgres::Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool.0, session).await?;
     let id = cms_entity_create(&pool, "x_cms_module", &payload).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -664,9 +705,11 @@ pub async fn cms_entity_module_create(
 #[allow(non_snake_case)]
 pub async fn cms_entity_module_save(
     pool: Extension<deadpool_postgres::Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool.0, session).await?;
     let ok = cms_entity_save(&pool, "x_cms_module", &id, &payload).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -680,8 +723,10 @@ pub async fn cms_entity_module_save(
 #[allow(non_snake_case)]
 pub async fn cms_entity_module_delete(
     pool: Extension<deadpool_postgres::Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool.0, session).await?;
     let ok = cms_entity_soft_delete(&pool, "x_cms_module", &id).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -695,8 +740,10 @@ pub async fn cms_entity_module_delete(
 #[allow(non_snake_case)]
 pub async fn cms_entity_note_create(
     pool: Extension<deadpool_postgres::Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool.0, session).await?;
     let id = cms_entity_create(&pool, "x_cms_note", &payload).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -710,9 +757,11 @@ pub async fn cms_entity_note_create(
 #[allow(non_snake_case)]
 pub async fn cms_entity_note_save(
     pool: Extension<deadpool_postgres::Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool.0, session).await?;
     let ok = cms_entity_save(&pool, "x_cms_note", &id, &payload).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -726,8 +775,10 @@ pub async fn cms_entity_note_save(
 #[allow(non_snake_case)]
 pub async fn cms_entity_note_delete(
     pool: Extension<deadpool_postgres::Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool.0, session).await?;
     let ok = cms_entity_soft_delete(&pool, "x_cms_note", &id).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([

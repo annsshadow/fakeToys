@@ -1,0 +1,25 @@
+crate	method	path	handler	arity
+file_assemble_control	GET	/api/file/share/share/shareId/file/fileId/folder/folderId	share_share_shareId_file_fileId_folder_folderId	path参数段 0 < 签名需要 3
+file_assemble_control	GET	/api/file/share/shield/id	share_shield_id	path参数段 0 < 签名需要 1
+file_assemble_control	POST	/api/attachment/update/callback/callback/{id}	attachment_id_update_callback_callback	path参数段 1 < 签名需要 2
+file_assemble_control	POST	/api/attachment/upload/folder/callback/callback/{folderId}	attachment_upload_folder_folderId_callback_callback	path参数段 1 < 签名需要 2
+file_assemble_control	POST	/api/file/upload/referencetype/reference/reference/scale/scale/callback/callback/{referenceType}	file_upload_referencetype_referenceType_reference_reference_scale_scale_callback_callback	path参数段 1 < 签名需要 4
+file_assemble_control	POST	/api/file/upload/referencetype/reference/reference/scale/scale/{referenceType}	file_upload_referencetype_referenceType_reference_reference_scale_scale	path参数段 1 < 签名需要 3
+file_assemble_control	PUT	/api/attachment/update/callback/callback/{id}	attachment_id_update_callback_callback	path参数段 1 < 签名需要 2
+portal_assemble_surface	DELETE	/api/portal/assemble/surface/dict/portal/path/data/mockdeletetoget/{dictFlag}/{portalFlag}	dict_dictFlag_portal_portalFlag_path_data_mockdeletetoget	path参数段 2 < 签名需要 3
+portal_assemble_surface	POST	/api/portal/assemble/surface/dict/portal/path/data/mockdeletetoget/{dictFlag}/{portalFlag}	dict_dictFlag_portal_portalFlag_path_data_mockdeletetoget	path参数段 2 < 签名需要 3
+portal_assemble_surface	POST	/api/portal/assemble/surface/dict/portal/path/data/mockputtopost/{dictFlag}/{portalFlag}	dict_dictFlag_portal_portalFlag_path_data_mockputtopost	path参数段 2 < 签名需要 3
+processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/data/job/job/mockputtopost	data_job_job_mockputtopost	path参数段 0 < 签名需要 1
+processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/data/job/job/path0/mockputtopost	data_job_job_path0_mockputtopost	path参数段 0 < 签名需要 2
+processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/data/job/job/path0/path1/mockputtopost	data_job_job_path0_path1_mockputtopost	path参数段 0 < 签名需要 3
+processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/data/job/job/path0/path1/path2/mockputtopost	data_job_job_path0_path1_path2_mockputtopost	path参数段 0 < 签名需要 4
+processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/mockputtopost	data_job_job_path0_path1_path2_path3_mockputtopost	path参数段 0 < 签名需要 5
+processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4/mockputtopost	data_job_job_path0_path1_path2_path3_path4_mockputtopost	path参数段 0 < 签名需要 6
+processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4/path5/mockputtopost	data_job_job_path0_path1_path2_path3_path4_path5_mockputtopost	path参数段 0 < 签名需要 7
+processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4/path5/path6/mockputtopost	data_job_job_path0_path1_path2_path3_path4_path5_path6_mockputtopost	path参数段 0 < 签名需要 8
+processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4/path5/path6/path7/mockputtopost	data_job_job_path0_path1_path2_path3_path4_path5_path6_path7_mockputtopost	path参数段 0 < 签名需要 9
+processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/draft/mockputtopost	draft_mockputtopost	path参数段 0 < 签名需要 1
+processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/keylock/lock/mockputtopost	keylock_lock_mockputtopost	path参数段 0 < 签名需要 1
+processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/route/list/mockputtopost	route_list_mockputtopost	path参数段 0 < 签名需要 1
+program_center	DELETE	/api/program_center/dict/dictFlag/path/data/mockdeletetoget	dict_dictFlag_path_data_mockdeletetoget	path参数段 0 < 签名需要 2
+program_center	POST	/api/program_center/dict/dictFlag/path/data/mockputtopost	dict_dictFlag_path_data_mockputtopost	path参数段 0 < 签名需要 2

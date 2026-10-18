@@ -1,0 +1,7 @@
+crate	method	path	handler	bucket	eaten_by
+general_assemble_control	POST	/api/general/assemble/control/invoice/create	invoice_create	W2-碰撞豁免+含写 SQL 但体内读会话或有门禁	/api/general/assemble/control/invoice/{id} [{id}→create]
+general_assemble_control	POST	/api/general/assemble/control/invoice/upload	invoice_upload	W2-碰撞豁免+含写 SQL 但体内读会话或有门禁	/api/general/assemble/control/invoice/{id} [{id}→upload]
+meeting_assemble_control	POST	/api/meeting/assemble/control/meeting/create	create_meeting	W2-碰撞豁免+含写 SQL 但体内读会话或有门禁	/api/meeting/assemble/control/meeting/{id} [{id}→create]
+query_assemble_surface	GET	/api/queryview/list	query_list	W3-碰撞豁免+只读	/api/queryview/{id} [{id}→list]
+query_assemble_surface	POST	/api/queryview/search	search_post	W3-碰撞豁免+只读	/api/queryview/{id} [{id}→search]
+query_assemble_surface	POST	/api/queryview/morelikethis	morelikethis_post	W3-碰撞豁免+只读	/api/queryview/{id} [{id}→morelikethis]

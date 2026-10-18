@@ -4,7 +4,7 @@
 //! plan002 U2 legacy 族闭合端点的路由可达测试与单元测试。
 //!
 //! 路由测试使用 mock_pool（无法建连）：请求命中路由后 handler 返回 500，
-//! 断言 500（而非 404）即可证明路由已注册且可达。
+//! 断言「进到 handler」（500 或门禁挡下的 401，而非 404/405）即可证明路由已注册且可达。
 //! Router 构建本身会校验路径唯一性——若存在重复注册将直接 panic。
 
 #[cfg(test)]
@@ -37,15 +37,26 @@ mod u2_legacy_tests {
 
     #[tokio::test]
     async fn u2l_dingding_core_routes_reachable() {
-        for (method, uri) in [
-            ("DELETE", "/dingding/all"),
-            ("GET", "/dingding/sync/from/2026-08-01/to/2026-08-07/start"),
-            ("GET", "/dingding/sync/list"),
-            ("PUT", "/dingding/attendance/list/x/next/20"),
+        // 第二十一批：`/dingding/sync/*/start` 是 GET 面写操作（往 `x_attendance_sync_record`
+        // 插同步记录），已收 admin 档并挡在读库之前，所以 mock_pool 下读数从 500 变成 401；
+        // 逐格钉死两种读数，免得「路由丢失」与「门被摘掉」都读成绿。
+        for (method, uri, expect) in [
+            ("DELETE", "/dingding/all", StatusCode::INTERNAL_SERVER_ERROR),
+            (
+                "GET",
+                "/dingding/sync/from/2026-08-01/to/2026-08-07/start",
+                StatusCode::UNAUTHORIZED,
+            ),
+            ("GET", "/dingding/sync/list", StatusCode::INTERNAL_SERVER_ERROR),
+            (
+                "PUT",
+                "/dingding/attendance/list/x/next/20",
+                StatusCode::INTERNAL_SERVER_ERROR,
+            ),
         ] {
             assert_eq!(
                 status_of(method, &format!("{}{}", BASE, uri)).await,
-                StatusCode::INTERNAL_SERVER_ERROR,
+                expect,
                 "{} {} not routed",
                 method,
                 uri
@@ -91,20 +102,49 @@ mod u2_legacy_tests {
 
     #[tokio::test]
     async fn u2l_qywx_routes_reachable() {
-        for (method, uri) in [
-            ("DELETE", "/qywx/all"),
-            ("GET", "/qywx/sync/from/2026-08-01/to/2026-08-07/start"),
-            ("GET", "/qywx/sync/list"),
-            ("PUT", "/qywx/attendance/list/x/next/20"),
-            ("GET", "/qywx/statistic/person/year/2026/month/08"),
-            ("GET", "/qywx/statistic/unit/year/2026/month/08/day/22"),
-            ("GET", "/qywxstatistic/person/p1/2026/08"),
-            ("GET", "/qywxstatistic/person/unit/u1/2026/08"),
-            ("GET", "/qywxstatistic/unit/u1/2026/08"),
+        // 同上：`/qywx/sync/*/start` 本批收 admin 档，无会话时门先于读库落下 → 401。
+        for (method, uri, expect) in [
+            ("DELETE", "/qywx/all", StatusCode::INTERNAL_SERVER_ERROR),
+            (
+                "GET",
+                "/qywx/sync/from/2026-08-01/to/2026-08-07/start",
+                StatusCode::UNAUTHORIZED,
+            ),
+            ("GET", "/qywx/sync/list", StatusCode::INTERNAL_SERVER_ERROR),
+            (
+                "PUT",
+                "/qywx/attendance/list/x/next/20",
+                StatusCode::INTERNAL_SERVER_ERROR,
+            ),
+            (
+                "GET",
+                "/qywx/statistic/person/year/2026/month/08",
+                StatusCode::INTERNAL_SERVER_ERROR,
+            ),
+            (
+                "GET",
+                "/qywx/statistic/unit/year/2026/month/08/day/22",
+                StatusCode::INTERNAL_SERVER_ERROR,
+            ),
+            (
+                "GET",
+                "/qywxstatistic/person/p1/2026/08",
+                StatusCode::INTERNAL_SERVER_ERROR,
+            ),
+            (
+                "GET",
+                "/qywxstatistic/person/unit/u1/2026/08",
+                StatusCode::INTERNAL_SERVER_ERROR,
+            ),
+            (
+                "GET",
+                "/qywxstatistic/unit/u1/2026/08",
+                StatusCode::INTERNAL_SERVER_ERROR,
+            ),
         ] {
             assert_eq!(
                 status_of(method, &format!("{}{}", BASE, uri)).await,
-                StatusCode::INTERNAL_SERVER_ERROR,
+                expect,
                 "{} {} not routed",
                 method,
                 uri

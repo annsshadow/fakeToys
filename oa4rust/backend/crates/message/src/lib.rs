@@ -11,6 +11,8 @@ use shared::{error::AppError, response::ActionResult};
 
 #[cfg(test)]
 mod security_gate_tests;
+#[cfg(test)]
+mod security_gate_tests_b73;
 
 /// 系统消息发布门禁（安全审计 2026-10 二轮）：x_msg_message 为全员可见的系统
 /// 通知，任意登录用户可 INSERT 伪造系统消息 → 仅 admin 可发布。
@@ -20,6 +22,15 @@ async fn require_admin(pool: &Pool, session: &shared::session::Session) -> Resul
     } else {
         Err(AppError::Forbidden)
     }
+}
+
+/// 安全审计（round4-b73）：mark_read 真写收"会话存在档"门禁。
+/// 无会话（Option<Extension<Session>> = None）→ 401，门置于首个 DB 访问
+/// （`pool.get()`）之前，杜绝匿名把任意消息标为已读。
+fn require_session(
+    session: Option<Extension<shared::session::Session>>,
+) -> Result<shared::session::Session, AppError> {
+    session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
 }
 
 #[derive(Debug, Deserialize)]
@@ -166,8 +177,10 @@ pub async fn custom_create(
 
 pub async fn mark_read(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query("SELECT xid FROM x_msg_message WHERE xid = $1", &[&id])

@@ -20,6 +20,8 @@ mod tests;
 mod tests_generated;
 #[cfg(test)]
 mod security_gate_tests;
+#[cfg(test)]
+mod security_gate_tests_b72;
 
 /// 内容管理写门禁（安全审计 2026-10 二轮）：轮播图（x_hotpic）与控制配置为
 /// 管理台内容，此前 creator 恒写 "system" 且无角色校验，任一登录用户可增删改。
@@ -550,8 +552,12 @@ pub async fn cipher_hotpic_id(
 #[allow(non_snake_case)]
 pub async fn user_hotpic_changeTitle(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Json(req): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = req
         .get("id")
@@ -567,6 +573,21 @@ pub async fn user_hotpic_changeTitle(
     if id.is_empty() {
         return Ok(Json(ActionResult::error("id is required")));
     }
+
+    // 归属门：先取热图属主再判（admin 放行 / 本人放行，归一化比较）。
+    let owner: Option<String> = client
+        .query_opt(
+            "SELECT creator FROM x_hotpic WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?
+        .map(|r| r.get::<_, Option<String>>("creator").unwrap_or_default());
+    let owner = match owner {
+        Some(o) if !o.is_empty() => o,
+        _ => return Ok(Json(ActionResult::error("hotpic not found"))),
+    };
+    shared::middleware::require_owner(&pool, &sess, &owner).await?;
 
     let result = client
         .execute(
@@ -710,12 +731,36 @@ pub async fn user_hotpic_application_infoId(
 #[allow(non_snake_case)]
 pub async fn user_hotpic_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
     method: axum::http::Method,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-
     if method == axum::http::Method::DELETE {
+        // 归属门：无会话 401（先于读库）；仅热图属主或 admin 可软删（归一化比较）。
+        let Some(Extension(sess)) = session else {
+            return Err(AppError::Unauthorized);
+        };
+        let client = pool.get().await.map_err(|_| AppError::Internal)?;
+        let owner: Option<String> = client
+            .query_opt(
+                "SELECT creator FROM x_hotpic WHERE id = $1 AND deleted_at IS NULL",
+                &[&id],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?
+            .map(|r| r.get::<_, Option<String>>("creator").unwrap_or_default());
+        let owner = match owner {
+            Some(o) if !o.is_empty() => o,
+            _ => {
+                return Ok(Json(ActionResult::success(Value::Object(
+                    serde_json::Map::from_iter([
+                        ("id".to_string(), Value::String(id)),
+                        ("deleted".to_string(), Value::Bool(false)),
+                    ]),
+                ))))
+            }
+        };
+        shared::middleware::require_owner(&pool, &sess, &owner).await?;
         let result = client
             .execute(
                 "UPDATE x_hotpic SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
@@ -731,6 +776,7 @@ pub async fn user_hotpic_id(
         ))));
     }
 
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
             "SELECT id, title, image_url, creator, create_time::text AS create_time FROM x_hotpic WHERE id = $1 AND deleted_at IS NULL",
@@ -769,8 +815,14 @@ pub async fn user_hotpic_id(
 #[allow(non_snake_case)]
 pub async fn user_hotpic_delete_by_ids(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path((id, id2)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 安全审计 round4-b72：会话存在档（沿用本 crate user_hotpic_changeTitle 惯例），
+    // 门置于 pool.get() 之前，杜绝匿名软删 x_hotpic。
+    let Some(Extension(_sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let ids = vec![id.clone(), id2.clone()];
     let n = client
