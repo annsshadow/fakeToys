@@ -1,7 +1,7 @@
 # 运维手册
 
 > 面向**部署与值班**。玩法设计见 [`GAME_DESIGN.md`](./GAME_DESIGN.md)，
-> 工程约束与已知边界见 [`../README.md`](../README.md)。
+> 工程约束与已知边界见 [`../../laiyipao/README.md`](../../laiyipao/README.md)。
 >
 > 本手册里的每条命令都实际执行过；未验证的操作不写进来。
 
