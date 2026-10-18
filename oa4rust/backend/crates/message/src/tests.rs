@@ -77,7 +77,11 @@ mod tests {
     #[tokio::test]
     async fn test_mark_read() {
         let pool = build_test_pool();
-        let app = crate::router(pool);
+        // round4-b73：mark_read 已收会话门——注入有效会话 Extension，
+        // 保留原断言语义（路由可达 + handler 体直落死池 → 500）。
+        let app = crate::router(pool).layer(axum::Extension(shared::testing::test_session(
+            "message-mark-read-test",
+        )));
 
         let response = app
             .oneshot(

@@ -265,7 +265,7 @@ def gate_dataset_health(items: List[Dict[str, Any]],
     Raises:
         DataValidationError: 数据集为空；`text_field` 不是非空字符串或整个数据集没有
             一条含该字段（A321，L238）；`weights` 形状不对（转自
-            `DatasetHealthScore`，A319 / A320）
+            `DatasetHealthScore`，A319 / A320）；三只阈值不是 [0, 1] 内的有限比例（L272）
 
     **字段名的判决住在本层，不住在端点**（A321 的修法）：`ImpactEvaluator.measure()` 用
     `item.get(text_field, "")` 取文本，字段名拼错时每条都取到空串 ⇒ `duplicate_rate`
@@ -276,7 +276,7 @@ def gate_dataset_health(items: List[Dict[str, Any]],
     """
     from .health_score import DatasetHealthScore
     from .impact import ImpactEvaluator
-    from .validation import require_item_field
+    from .validation import require_item_field, require_ratio
 
     if not items:
         # 空数据集上每项指标都是 0.0：duplicate_rate 规则会以「0 ≤ 上限」通过，
@@ -284,6 +284,13 @@ def gate_dataset_health(items: List[Dict[str, Any]],
         raise DataValidationError("数据集为空，门禁无法给出有意义的判定")
 
     require_item_field("text_field", items, text_field)
+    # 本轮只接「有限性」这一维（改前三兄弟无人判，NaN 让比较恒 False ⇒ 无声错判决）。
+    # 范围那一维此前是**实测合法**的（`pass_rate_min=-1.0`、`duplicate_rate_max=5.0`、
+    # `completeness_min=-3.0` 全收且判决随阈值单调变化，L235 逐格量过并写进守卫），收紧它
+    # 等于凭空造一条后端原有的规则、把 200 改成 400 ⇒ 属对外行为变更，立 A354 待拍。
+    require_ratio("pass_rate_min", pass_rate_min, minimum=-float("inf"), maximum=float("inf"))
+    require_ratio("duplicate_rate_max", duplicate_rate_max, minimum=-float("inf"), maximum=float("inf"))
+    require_ratio("completeness_min", completeness_min, minimum=-float("inf"), maximum=float("inf"))
 
     health = DatasetHealthScore(weights=weights).score(items)
 

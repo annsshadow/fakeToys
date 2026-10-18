@@ -11,7 +11,7 @@
  *   - 「attack 边际收益低」→ 部分成立（敌人血量太低），但没量化过
  *
  * 用法：npx vitest run --config vitest.config.ts src/game/balance.probe.test.ts
- * 输出会以 [bal] 开头打印到控制��。
+ * 输出会以 [bal] 开头打印到控制台。
  */
 import { describe, it } from 'vitest'
 import fixture from '@vectors/smoke_levels.json'
@@ -660,13 +660,20 @@ describe('平衡基准', () => {
           // 真实取牌：走 takeCard（含 applyCard → applyAttribute/applyMechanic）
           const hand = eng.deck.hand
           if (hand.length > 0) {
-            const c = hand[Math.floor((t % 7) / 3) % hand.length]
-            const k = c.mechanic?.kind
-              ? `mechanic:${c.mechanic.kind}`
-              : c.effect
-                ? `attr:${c.effect.kind}`
-                : `${c.kind}:none`
-            cardKinds.set(k, (cardKinds.get(k) || 0) + 1)
+            const kindOf = (c: (typeof hand)[number]) =>
+              c.mechanic?.kind
+                ? `mechanic:${c.mechanic.kind}`
+                : c.effect
+                  ? `attr:${c.effect.kind}`
+                  : `${c.kind}:none`
+            // ⚠️ 覆盖优先（第 159 轮）：本用例的断言是「每种 buff 都能被
+            // 真实触发」（liveness），不是抽样分布。而每波现在只取 1 张
+            //（改前同一波会连点 3 张），纯随机抽样在 5 个种子上会漏掉
+            // 个别卡面（实测 aoeBonus），那是样本量问题，不是死代码。
+            // 优先取「还没统计到过的卡面」，抽不到才回退随机。
+            const preferred = hand.find((c) => !cardKinds.has(kindOf(c)))
+            const c = preferred ?? hand[Math.floor((t % 7) / 3) % hand.length]
+            cardKinds.set(kindOf(c), (cardKinds.get(kindOf(c)) || 0) + 1)
             eng.takeCard(c.id)
             cardsTaken++
           } else {

@@ -23,6 +23,17 @@ pub mod routes;
 
 use entities::{cal_calendar, cal_event};
 
+/// 安全审计（round4-b70）：calendar/event 6 把 sea_orm CRUD 真写收"会话存在档"门禁。
+/// 无会话（Option<Extension<Session>> = None）→ 401，门置于首个 DB 访问
+/// （`Entity::find_by_id` / `ActiveModel::insert/update`）之前，杜绝匿名写
+/// `cal_calendar` / `cal_event`。这些是 sea_orm ORM 写，审计尺子"含写"指标
+/// 不可见（ORM-blindness，见 §五 尺子缺陷 28），R7 降但含写不变属预期。
+fn require_session(
+    session: Option<Extension<shared::session::Session>>,
+) -> Result<shared::session::Session, AppError> {
+    session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
+}
+
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct CalendarItem {
     pub id: String,
@@ -242,8 +253,10 @@ pub async fn calendar_get(
 #[allow(non_snake_case)]
 pub async fn calendar_create(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     AxumJson(req): AxumJson<CreateCalendarRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let name = req
         .name
         .ok_or_else(|| AppError::BadRequest("name is required".to_string()))?;
@@ -302,8 +315,10 @@ pub async fn calendar_create(
 #[allow(non_snake_case)]
 pub async fn calendar_update(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     AxumJson(req): AxumJson<UpdateCalendarRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let id = req
         .id
         .ok_or_else(|| AppError::BadRequest("id is required".to_string()))?;
@@ -368,8 +383,10 @@ pub async fn calendar_update(
 #[allow(non_snake_case)]
 pub async fn calendar_remove(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     AxumJson(req): AxumJson<DeleteCalendarRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let id = req
         .id
         .ok_or_else(|| AppError::BadRequest("id is required".to_string()))?;
@@ -416,8 +433,10 @@ pub async fn calendar_remove(
 #[allow(non_snake_case)]
 pub async fn event_create(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     AxumJson(req): AxumJson<CreateEventRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let calendar_id = req
         .calendar_id
         .ok_or_else(|| AppError::BadRequest("calendarId is required".to_string()))?;
@@ -498,8 +517,10 @@ pub async fn event_create(
 #[allow(non_snake_case)]
 pub async fn event_update(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     AxumJson(req): AxumJson<UpdateEventRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let id = req
         .id
         .ok_or_else(|| AppError::BadRequest("id is required".to_string()))?;
@@ -587,8 +608,10 @@ pub async fn event_update(
 #[allow(non_snake_case)]
 pub async fn event_remove(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     AxumJson(req): AxumJson<DeleteEventRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let id = req
         .id
         .ok_or_else(|| AppError::BadRequest("id is required".to_string()))?;
@@ -728,6 +751,8 @@ pub fn calendar_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
 mod tests;
 #[cfg(test)]
 mod tests_generated;
+#[cfg(test)]
+mod security_gate_tests_b70;
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::calendar_core_entity_router(pool)

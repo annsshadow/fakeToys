@@ -262,13 +262,14 @@ onMounted(async () => {
 .day {
   width: calc(25% - 9rpx);
   background: var(--panel-2);
-  border: 1rpx solid var(--border);
-  border-radius: 10rpx;
+  border: 1rpx solid var(--border-soft, var(--border));
+  border-radius: 14rpx;
   padding: 14rpx 8rpx;
   display: flex;
   flex-direction: column;
   align-items: center;
   opacity: 0.55;
+  transition: opacity 0.2s, border-color 0.2s, background 0.2s;
 }
 
 .day.claimed {
@@ -279,7 +280,8 @@ onMounted(async () => {
 .day.today {
   opacity: 1;
   border-color: var(--fire);
-  background: rgba(255, 107, 53, 0.1);
+  background: var(--fire-soft, rgba(255, 107, 53, 0.18));
+  animation: glow-pulse 2s ease-in-out infinite;
 }
 
 .day-no {
@@ -304,7 +306,7 @@ onMounted(async () => {
   flex-direction: row;
   align-items: center;
   padding: 18rpx 0;
-  border-bottom: 1rpx solid var(--border);
+  border-bottom: 1rpx solid var(--border-soft, var(--border));
 }
 
 .task:last-child {
@@ -319,8 +321,8 @@ onMounted(async () => {
   flex: 1;
   height: 72rpx;
   background: var(--panel-2);
-  border: 1rpx solid var(--border);
-  border-radius: 10rpx;
+  border: 1rpx solid var(--border-soft, var(--border));
+  border-radius: 12rpx;
   padding: 0 20rpx;
   font-size: 26rpx;
   color: var(--text);

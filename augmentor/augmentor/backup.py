@@ -15,8 +15,8 @@ from pathlib import Path
 from dataclasses import dataclass
 from datetime import datetime
 
-from .atomic_write import atomic_write_json
-from .validation import require_count
+from .atomic_write import atomic_write_json, path_lock
+from .validation import path_lands_within, require_count, require_path_segment
 from .exceptions import BackupError, BackupIntegrityError, DataValidationError
 
 logger = logging.getLogger(__name__)
@@ -61,7 +61,10 @@ class DatasetBackup:
         self._backup_dir = Path(backup_dir)
         # 构造不碰磁盘（A332 / L249）：旧写法在这里 mkdir，只读面每探活一次就多一个目录
         self._index_file = self._backup_dir / "index.json"
-        self._index = self._load_index()
+        # L273：读也在这把锁里 —— 别人正把整份索引 `os.replace` 过去时，Windows 会给读者
+        # 一个瞬时拒绝访问（`atomic_write_json` 的临时件命名管不到「目标正被读」这一侧）。
+        with path_lock(self._index_file):
+            self._index = self._load_index()
     
     def _load_index(self) -> Dict:
         """加载索引文件"""
@@ -110,11 +113,11 @@ class DatasetBackup:
             raise FileNotFoundError(f"源文件不存在: {source_path}")
         
         now = datetime.now()  # A303 / L250：只读一次钟 ⇒ 秒级 id 与 timestamp 同源
-        backup_id = name or f"backup_{now.strftime('%Y%m%d_%H%M%S')}"
+        backup_id = require_path_segment("备份名称", name or f"backup_{now.strftime('%Y%m%d_%H%M%S')}")
         backup_path = self._backup_dir / f"{backup_id}.json"
         # `name` 直接决定落点，而它来自调用方：`../../x` 会写到备份目录之外
         # （HTTP 面实测 200 且真落盘）——白名单只管到 backup_dir 那一格。
-        if self._backup_dir.resolve() not in backup_path.resolve().parents:
+        if not path_lands_within(self._backup_dir.resolve(), backup_path.resolve()):
             raise DataValidationError(f"备份名称不能指向备份目录之外: {name}")
         
         # 读取源数据
@@ -140,10 +143,14 @@ class DatasetBackup:
             checksum=checksum
         )
         
-        # 更新索引（A298 / L250）：同名再备份先摘掉同 backup_id 的旧行 ⇒ 行数与磁盘份数一一对应
-        rows = [b for b in self._index["backups"] if b.get("backup_id") != backup_id]
-        self._index["backups"] = rows + [info.to_dict()]
-        self._save_index()
+        # 更新索引（A298 / L250：同名先摘旧行 ⇒ 行数与磁盘份数一一对应。L273：整段
+        # 读-改-写罩在按路径的锁里，**重读也在锁内** —— 少了它，20 次并发创建实测只剩
+        # 1 行索引，而盘上实实在在 20 份备份，对 list / restore / delete 全部不可见）
+        with path_lock(self._index_file):
+            self._index = self._load_index()
+            rows = [b for b in self._index["backups"] if b.get("backup_id") != backup_id]
+            self._index["backups"] = rows + [info.to_dict()]
+            self._save_index()
         
         logger.info(f"备份创建成功: {backup_id}")
         return info
@@ -210,27 +217,34 @@ class DatasetBackup:
         Returns:
             是否成功删除
         """
-        # 查找备份
-        backup_info = None
-        for i, backup in enumerate(self._index["backups"]):
-            if backup["backup_id"] == backup_id:
-                backup_info = backup
-                break
-        
-        if not backup_info:
-            return False
-        
-        # 删除备份文件
-        backup_path = Path(backup_info["backup_path"])
-        if backup_path.exists():
-            backup_path.unlink()
-        
-        # 更新索引
-        self._index["backups"] = [
-            b for b in self._index["backups"]
-            if b["backup_id"] != backup_id
-        ]
-        self._save_index()
+        # L273：查找 → 删档 → 重排索引 → 落盘整段在锁内，而且查的是**锁内刚读到的那一份**。
+        # 少了它，本方法会拿构造时那份旧账去写索引，把别的线程刚加进去的行原样抹回去。
+        with path_lock(self._index_file):
+            self._index = self._load_index()
+            # 查找备份
+            backup_info = None
+            for backup in self._index["backups"]:
+                if backup["backup_id"] == backup_id:
+                    backup_info = backup
+                    break
+
+            if not backup_info:
+                return False
+
+            # 删除备份文件。`missing_ok=True` 而不是「先 exists 再裸 unlink」：判过存在之后
+            # 仍有并发窗口，那一格里抛出的 FileNotFoundError 会跳过下面的索引重排、并把异常
+            # 递给 `DELETE /api/system/backups/{backup_id}`，而该端点的 responses 明文写着
+            # 「索引有条目而备份文件已丢不算 404，仍回 200」——代码与自己写定的契约相反。
+            # 档已不在就是删除成功，索引行照摘。
+            backup_path = Path(backup_info["backup_path"])
+            backup_path.unlink(missing_ok=True)
+
+            # 更新索引
+            self._index["backups"] = [
+                b for b in self._index["backups"]
+                if b["backup_id"] != backup_id
+            ]
+            self._save_index()
         
         logger.info(f"备份删除成功: {backup_id}")
         return True
@@ -362,8 +376,18 @@ def verify_backup_integrity(backup_dir: str = ".backups", backup_id: Optional[st
             continue
         
         backup_path = Path(backup["backup_path"])
-        is_valid = backup_path.exists() and backup_path.stat().st_size > 0
-        current_checksum = manager._calculate_checksum(str(backup_path)) if is_valid else None
+        # 完整性巡检读的是「这份备份还在不在、还对不对」，所以档在窗口里消失要按 `exists:
+        # False` 计（与 `checksum_match: False` 同一诚实口径），而不是让整次巡检因为一份
+        # 被并发删掉的备份而抛 FileNotFoundError。这里覆盖的是两步：stat 与紧随其后的整份
+        # 读（`_calculate_checksum` 直接 open），它们各自都有「判过存在再动手」的窗口。
+        try:
+            is_valid = backup_path.stat().st_size > 0
+            current_checksum = (
+                manager._calculate_checksum(str(backup_path)) if is_valid else None
+            )
+        except FileNotFoundError:
+            is_valid = False
+            current_checksum = None
         checksum_match = current_checksum == backup.get("checksum") if is_valid and current_checksum else False
         
         results[backup["backup_id"]] = {

@@ -3,14 +3,14 @@ title: fix: close all blocking gaps to production parity with o2server
 type: fix
 status: completed
 date: 2026-08-19
-origin: docs/plans/2026-08-13-003-oa4rust-completion-plan.md
+origin: docs/archived-plans/2026-08-13-003-oa4rust-completion-plan.md
 ---
 
 # Fix: Close All Blocking Gaps to Production Parity with o2server
 
 ## Summary
 
-基于对 `docs/plans/2026-08-13-003-oa4rust-completion-plan.md` 的逐单元审计，Phase 2–4 存在 10 项阻塞项未关闭，涵盖静默空数据、认证生态缺口、BPMN 执行语义不完整、测试基础设施虚设、parity 套件深度不足、性能基线缺失。本计划以最小可行闭环为目标，按依赖顺序组织 10 个实现单元，在现有 crate 和脚本边界内补齐缺口，最终使 oa4rust 满足 DoD #1–#5 的出关条件。
+基于对 `docs/archived-plans/2026-08-13-003-oa4rust-completion-plan.md` 的逐单元审计，Phase 2–4 存在 10 项阻塞项未关闭，涵盖静默空数据、认证生态缺口、BPMN 执行语义不完整、测试基础设施虚设、parity 套件深度不足、性能基线缺失。本计划以最小可行闭环为目标，按依赖顺序组织 10 个实现单元，在现有 crate 和脚本边界内补齐缺口，最终使 oa4rust 满足 DoD #1–#5 的出关条件。
 
 ---
 
@@ -84,7 +84,7 @@ origin: docs/plans/2026-08-13-003-oa4rust-completion-plan.md
 ### Institutional Learnings
 
 - `docs/solutions/2026-08-18-sql-dialect-abstraction.md`：SQL 方言抽象的最小 trait 设计（8 方法 + 2 默认），format_sql() 仅做 $N→? 替换，casts 用显式方法。CI matrix 已有 dialect: [postgres, mysql]。
-- `docs/plans/2026-08-13-003-oa4rust-completion-plan.md`：原计划 Phase 0–4 的 DoD 定义仍是当前项目的验收基准。
+- `docs/archived-plans/2026-08-13-003-oa4rust-completion-plan.md`：原计划 Phase 0–4 的 DoD 定义仍是当前项目的验收基准。
 
 ### External References
 
@@ -621,7 +621,7 @@ flowchart TD
 
 - 更新 `docs/brainstorms/oa4rust-migration-status.md`：db_touch_rate 列对齐 gen_inventory.py 输出
 - 更新 `docs/performance-baseline.md`：填充实际压测数据，移除 TBD 占位
-- 更新 `docs/plans/2026-08-13-003-oa4rust-completion-plan.md`：标记 Phase 2–4 各单元为已完成/部分完成
+- 更新 `docs/archived-plans/2026-08-13-003-oa4rust-completion-plan.md`：标记 Phase 2–4 各单元为已完成/部分完成
 
 ---
 
@@ -636,7 +636,7 @@ flowchart TD
 
 ## Sources & References
 
-- **Origin document:** `docs/plans/2026-08-13-003-oa4rust-completion-plan.md`
+- **Origin document:** `docs/archived-plans/2026-08-13-003-oa4rust-completion-plan.md`
 - Related code: `crates/shared/src/session.rs`, `crates/auth/src/lib.rs`, `crates/processplatform_service_processing/src/lib.rs`
 - Related audits: `docs/audits/o2server-parity-report.json`
 - Institutional learning: `docs/solutions/2026-08-18-sql-dialect-abstraction.md`

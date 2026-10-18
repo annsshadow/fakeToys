@@ -5,7 +5,7 @@
 
 困惑度 = exp(平均交叉熵)，是语言模型最常用的内在指标：数值越低，模型对真实
 文本"越不意外"。它只衡量预测分布的质量，不等于下游任务好坏——下游还需 MMLU、
-GSM8K 等基准（见 docs/09-评估.md）。
+GSM8K 等基准（见 docs/llm-lab/09-评估.md）。
 """
 
 from __future__ import annotations

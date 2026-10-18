@@ -324,6 +324,8 @@ mod tests {
     }
 
     /// 测试 auth::password 双算法哈希：bcrypt 前缀 + 兼容校验 + MD5 兼容校验
+    /// （2026-10 安全审计：verify_password 增加 legacy_compat 参数，非 bcrypt 旧
+    /// 格式仅在显式开启时接受。bcrypt 路径不受该开关影响；MD5 兼容须传 true。）
     #[test]
     fn test_password_hash_and_verify() {
         let hash = auth::password::hash_password("secret123");
@@ -332,13 +334,19 @@ mod tests {
             "secret123",
             &hash,
             "",
+            false,
             None
         ));
-        assert!(!auth::password::verify_password("wrong", &hash, "", None));
+        assert!(!auth::password::verify_password("wrong", &hash, "", false, None));
 
         let md5_hash = format!("{:x}", md5::compute("legacy".as_bytes()));
+        // 遗留 MD5 仅显式开启兼容开关时接受（fail-closed 设计）。
         assert!(auth::password::verify_password(
-            "legacy", &md5_hash, "", None
+            "legacy", &md5_hash, "", true, None
+        ));
+        // 关闭开关时同一 MD5 哈希必须拒绝。
+        assert!(!auth::password::verify_password(
+            "legacy", &md5_hash, "", false, None
         ));
     }
 

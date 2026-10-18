@@ -8,7 +8,7 @@ escape-aware ({\"param\"} no longer truncates the match) and raw strings
 r#"..."# are supported. Method detection accepts fully-qualified
 `axum::routing::get(...)` forms as well as plain/chained get(a).put(b).
 
-Exclusions (triaged in docs/audits/final-coverage-sweep.md §六):
+Exclusions (triaged in docs/audits/2026-08-24-002-final-coverage-sweep.md §六):
 - parity crate: test harness; its `.route(` occurrences are doc-comment examples
 - mcp_server crate: standalone binary (/mcp has no Java counterpart)
 - files named tests*/testing*: #[cfg(test)] modules and test helpers

@@ -13,6 +13,8 @@ pub mod routes;
 mod tests;
 #[cfg(test)]
 mod tests_generated;
+#[cfg(test)]
+mod security_gate_tests;
 
 #[derive(Debug, Serialize)]
 pub struct CalendarItem {
@@ -247,6 +249,7 @@ pub async fn calendar_get(
 #[allow(non_snake_case)]
 pub async fn calendar_create(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Json(req): axum::extract::Json<CreateCalendarRequest>,
 ) -> Result<Json<ActionResult<CalendarItem>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -261,7 +264,8 @@ pub async fn calendar_create(
     let color = req.color.unwrap_or_else(|| "#1462be".to_string());
     let description = req.description;
     let source = req.source;
-    let createor = req.createor.unwrap_or_else(|| "anonymous".to_string());
+    // 属主以会话登录人为事实源（客户端 createor 可伪造，安全审计 2026-10 二轮）。
+    let createor = session.person_unique.clone();
     let is_public = req.is_public.unwrap_or(false);
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -294,6 +298,7 @@ pub async fn calendar_create(
 #[allow(non_snake_case)]
 pub async fn calendar_update(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Json(req): axum::extract::Json<UpdateCalendarRequest>,
 ) -> Result<Json<ActionResult<CalendarItem>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -311,6 +316,14 @@ pub async fn calendar_update(
         .await
         .map_err(|_| AppError::NotFound)?;
 
+    let createor: String = existing
+        .get::<_, Option<String>>("createor")
+        .unwrap_or_default();
+    // 属主门禁：仅属主/admin 可改他人日历（安全审计 2026-10 二轮）。
+    if !createor.is_empty() {
+        shared::middleware::require_owner(&pool, &session, &createor).await?;
+    }
+
     let name = req.name.unwrap_or_else(|| existing.get("name"));
     let calendar_type = req.calendar_type.unwrap_or_else(|| existing.get("type"));
     let target = req.target.unwrap_or_else(|| existing.get("target"));
@@ -321,9 +334,6 @@ pub async fn calendar_update(
         .get::<_, Option<String>>("status")
         .unwrap_or_default();
     let source: Option<String> = existing.get("source");
-    let createor: String = existing
-        .get::<_, Option<String>>("createor")
-        .unwrap_or_default();
 
     client
         .execute(
@@ -353,6 +363,7 @@ pub async fn calendar_update(
 #[allow(non_snake_case)]
 pub async fn calendar_remove(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Json(req): axum::extract::Json<DeleteCalendarRequest>,
 ) -> Result<Json<ActionResult<CalendarItem>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -369,6 +380,14 @@ pub async fn calendar_remove(
         )
         .await
         .map_err(|_| AppError::NotFound)?;
+
+    // 属主门禁：仅属主/admin 可关他人日历（安全审计 2026-10 二轮）。
+    let createor: String = existing
+        .get::<_, Option<String>>("createor")
+        .unwrap_or_default();
+    if !createor.is_empty() {
+        shared::middleware::require_owner(&pool, &session, &createor).await?;
+    }
 
     client
         .execute(
@@ -397,6 +416,7 @@ pub async fn calendar_remove(
 #[allow(non_snake_case)]
 pub async fn event_create(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Json(req): axum::extract::Json<CreateEventRequest>,
 ) -> Result<Json<ActionResult<CalendarEvent>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -417,7 +437,8 @@ pub async fn event_create(
         .ok_or_else(|| AppError::BadRequest("endTime is required".to_string()))?;
     let all_day = req.all_day.unwrap_or(false);
     let visibility = req.visibility.unwrap_or_else(|| "PUBLIC".to_string());
-    let createor = req.createor.unwrap_or_else(|| "anonymous".to_string());
+    // 属主以会话登录人为事实源（客户端 createor 可伪造，安全审计 2026-10 二轮）。
+    let createor = session.person_unique.clone();
 
     let id = uuid::Uuid::new_v4().to_string();
 
@@ -450,6 +471,7 @@ pub async fn event_create(
 #[allow(non_snake_case)]
 pub async fn event_update(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Json(req): axum::extract::Json<UpdateEventRequest>,
 ) -> Result<Json<ActionResult<CalendarEvent>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -467,6 +489,14 @@ pub async fn event_update(
         .await
         .map_err(|_| AppError::NotFound)?;
 
+    let createor: String = existing
+        .get::<_, Option<String>>("createor")
+        .unwrap_or_default();
+    // 属主门禁：仅属主/admin 可改他人日程（安全审计 2026-10 二轮）。
+    if !createor.is_empty() {
+        shared::middleware::require_owner(&pool, &session, &createor).await?;
+    }
+
     let title = req.title.unwrap_or_else(|| existing.get("title"));
     let content = req.content.or_else(|| existing.get("content"));
     let location = req.location.or_else(|| existing.get("location"));
@@ -481,9 +511,6 @@ pub async fn event_update(
     let status = req.status.unwrap_or_else(|| existing.get("status"));
     let calendar_id: String = existing
         .get::<_, Option<String>>("calendar_id")
-        .unwrap_or_default();
-    let createor: String = existing
-        .get::<_, Option<String>>("createor")
         .unwrap_or_default();
 
     client
@@ -515,6 +542,7 @@ pub async fn event_update(
 #[allow(non_snake_case)]
 pub async fn event_remove(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Json(req): axum::extract::Json<DeleteEventRequest>,
 ) -> Result<Json<ActionResult<CalendarEvent>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -531,6 +559,14 @@ pub async fn event_remove(
         )
         .await
         .map_err(|_| AppError::NotFound)?;
+
+    // 属主门禁：仅属主/admin 可关他人日程（安全审计 2026-10 二轮）。
+    let createor: String = existing
+        .get::<_, Option<String>>("createor")
+        .unwrap_or_default();
+    if !createor.is_empty() {
+        shared::middleware::require_owner(&pool, &session, &createor).await?;
+    }
 
     client
         .execute(

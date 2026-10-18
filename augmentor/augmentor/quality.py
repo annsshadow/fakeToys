@@ -4,12 +4,13 @@
 """数据质量评分模块 - 优化版"""
 
 import logging
+import threading
 from typing import List, Dict, Optional
 from dataclasses import dataclass
 import numpy as np
 from .model_manager import model_manager
 from .exceptions import QualityError, DataValidationError
-from .validation import require_count, require_ratio, require_ratio_list
+from .validation import require_count, require_item_text, require_ratio, require_ratio_list
 from .config import QUALITY_THRESHOLD_RANGE
 
 logger = logging.getLogger(__name__)
@@ -94,8 +95,8 @@ class QualityScorer:
         self._model = None
         self._cross_encoder = None
         # 两份参照集缓存都用「上一轮真正缓存的那一段列表」本身作失效判据，
-        # 不做内容指纹——理由见 :meth:`_calculate_diversity`；行范数是 embeddings 的纯函数，不另设判据，只随那一次编码同处刷新（A327 / L246）。
-        self._existing_embeddings, self._existing_norms = [], []  # 已有文本的 embeddings 与其行范数
+        # 不做内容指纹——理由见 :meth:`_calculate_diversity`；行范数是 embeddings 的纯函数，不另设判据，只随那一次编码同处刷新（A327 / L246）。三份参照属性与批量编码缓存的「判据 → 刷新 → 读取」由 `self._cache_lock` 罩在同一临界区里，理由与实测读数见 A364 / L279。
+        self._existing_embeddings, self._existing_norms, self._embedding_cache, self._cache_lock = [], [], {}, threading.Lock()  # 参照缓存 + 批量编码 FIFO；`_cache_lock` 罩住它们全部的「判据 → 刷新 → 读取」（A364 / L279）
         self._existing_texts: List[str] = []  # 向量侧缓存对应的参照切片
         # n-gram 侧的参照集缓存**独立于向量侧**：两份缓存装的是同一段文本的不同
         # 表示，共用一份判据的话，`_model` 一旦变化（测试与降级路径都会）就会让
@@ -200,16 +201,17 @@ class QualityScorer:
             # 顺带还便宜：真实语料 30 条参照切片，md5 那套 32.7 µs/次（每条候选
             # 付一次），列表相等 0.042 µs/次。
             # 两份缓存**用独立的属性**，理由见 `__init__`。
-            sample_texts = existing_texts[:self.diversity_sample_size]
-            if sample_texts != self._existing_ngram_texts:
-                self._existing_ngrams = [_char_ngrams(text) for text in sample_texts]
-                self._existing_ngram_texts = sample_texts
-            candidate = _char_ngrams(text)
-            max_sim = 0.0
-            for ref_ngrams in self._existing_ngrams:
-                sim = _jaccard(candidate, ref_ngrams)
-                max_sim = max(max_sim, sim)
-            return float(max(0.0, 1.0 - max_sim))
+            with self._cache_lock:
+                sample_texts = existing_texts[:self.diversity_sample_size]
+                if sample_texts != self._existing_ngram_texts:
+                    self._existing_ngrams = [_char_ngrams(text) for text in sample_texts]
+                    self._existing_ngram_texts = sample_texts
+                candidate = _char_ngrams(text)
+                max_sim = 0.0
+                for ref_ngrams in self._existing_ngrams:
+                    sim = _jaccard(candidate, ref_ngrams)
+                    max_sim = max(max_sim, sim)
+                return float(max(0.0, 1.0 - max_sim))
 
         # 编码当前文本（调用方已编码时直接复用）
         if text_embedding is None:
@@ -219,36 +221,38 @@ class QualityScorer:
         # 失效判据必须精确等于「被缓存的东西」：这里缓存的是
         # `existing_texts[:diversity_sample_size]` 那一段的向量，所以就直接拿
         # 那一段列表本身作判据（同一口径的来龙去脉见上面的 fallback 分支）。
-        sample_texts = existing_texts[:self.diversity_sample_size]
-        if sample_texts != self._existing_texts:
-            # 需要重新计算
-            # 入口 :181 已保证 existing_texts 非空、diversity_sample_size 判据最低 1，
-            # sample_texts 恒非空，原恒真守卫已在 L126 删除（偏支 222->230 随之消失）
-            self._existing_embeddings = self._model.encode(
-                sample_texts, show_progress_bar=False, batch_size=32
+        with self._cache_lock:
+            sample_texts = existing_texts[:self.diversity_sample_size]
+            if sample_texts != self._existing_texts:
+                # 需要重新计算
+                # 入口 :181 已保证 existing_texts 非空、diversity_sample_size 判据最低 1，
+                # sample_texts 恒非空，原恒真守卫已在 L126 删除（偏支 222->230 随之消失）
+                self._existing_embeddings = self._model.encode(
+                    sample_texts, show_progress_bar=False, batch_size=32
+                )
+                # 行范数与向量同批刷新：逐条候选重算这份 sample_size×dim 的平方和，n=4000 实测占全程 5.1%~13.5%（A327 / L246，现量见账）
+                self._existing_norms = np.linalg.norm(self._existing_embeddings, axis=1)
+                self._existing_texts = sample_texts
+            
+            if len(self._existing_embeddings) == 0:
+                return 1.0
+            
+            # 计算与所有已有文本的最大相似度
+            similarities = np.dot(self._existing_embeddings, text_embedding) / (
+                self._existing_norms * np.linalg.norm(text_embedding)
             )
-            # 行范数与向量同批刷新：逐条候选重算这份 sample_size×dim 的平方和，n=4000 实测占全程 5.1%~13.5%（A327 / L246，现量见账）
-            self._existing_norms = np.linalg.norm(self._existing_embeddings, axis=1)
-            self._existing_texts = sample_texts
-        
-        if len(self._existing_embeddings) == 0:
-            return 1.0
-        
-        # 计算与所有已有文本的最大相似度
-        similarities = np.dot(self._existing_embeddings, text_embedding) / (
-            self._existing_norms * np.linalg.norm(text_embedding)
-        )
-        max_similarity = float(np.max(similarities))
+            max_similarity = float(np.max(similarities))
         
         # 多样性 = 1 - 最大相似度
         return float(max(0.0, 1.0 - max_similarity))
     
     def reset_cache(self):
         """重置缓存"""
-        self._existing_embeddings, self._existing_norms = [], []
-        self._existing_texts = []
-        self._existing_ngrams = []
-        self._existing_ngram_texts = []
+        with self._cache_lock:
+            self._existing_embeddings, self._existing_norms = [], []
+            self._existing_texts = []
+            self._existing_ngrams = []
+            self._existing_ngram_texts = []
     
     def effective_weights(self, include_semantic: bool) -> List[float]:
         """计算实际生效的权重
@@ -343,12 +347,12 @@ class QualityScorer:
         weights = self.effective_weights(include_semantic)
         
         # 提取文本
-        originals = [item.get("original", "") for item in items]
+        originals = [item.get("original", "") for item in require_item_text(items, "original", "generated", "output")]
         generateds = [item.get("generated", "") for item in items]
         outputs = [item.get("output", "") for item in items]
         
         # 批量编码优化：缓存已编码文本（避免重复计算相同文本嵌入），驻留上限见下面的有界 FIFO
-        self._embedding_cache = getattr(self, '_embedding_cache', {})
+        # `_embedding_cache` 改由 `__init__` 建好：改前这里是 `self._embedding_cache = getattr(self, "_embedding_cache", {})`，并发首调时两只线程各造一枚空字典再赋回，后赋那一只把前一只已插入的批次整份顶掉（A364 / L279 附带的一格）
         
         def cached_encode(texts, batch_key):
             # 缓存键就是「被缓存的那份输入」本身（batch_key + 元组化的文本列表），不做内容指纹：
@@ -360,12 +364,15 @@ class QualityScorer:
             cache_key = (batch_key, tuple(texts))
             if cache_key in self._embedding_cache:
                 return self._embedding_cache[cache_key]
+            embeddings = self._model.encode(texts, show_progress_bar=False, batch_size=32)
             # 有界 FIFO（A334 / L247）：一次 batch_score 最多插 orig/gen 两个键，上限 2 就等于
             # 「只留最近一批」；不设界则逐 chunk 的流式调用会把历史批次向量一直挂在实例上。
-            while len(self._embedding_cache) >= 2:
-                self._embedding_cache.pop(next(iter(self._embedding_cache)))
-            embeddings = self._model.encode(texts, show_progress_bar=False, batch_size=32)
-            self._embedding_cache[cache_key] = embeddings
+            # 淘汰与插入罩进同一临界区（A364 / L279）：改前两处写分居 `self._cache_lock` 之外，
+            # 两只线程各自看过 `len()>=2` 再取同一枚最老键时，后落盘那一只 `pop` 当场 KeyError。
+            with self._cache_lock:
+                while len(self._embedding_cache) >= 2:
+                    self._embedding_cache.pop(next(iter(self._embedding_cache)))
+                self._embedding_cache[cache_key] = embeddings
             return embeddings
 
         # 生成文本的批量编码是「语义相似度」与「多样性」共用的输入。

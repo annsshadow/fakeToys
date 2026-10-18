@@ -268,4 +268,124 @@ mod tests {
             }
         });
     }
+
+    // 第六轮 R7 写面收口离线臂：15 把 cms/core/entity/* 薄 handler 无会话全 401。
+    // dead pool + 无会话，require_admin_opt 在 pool.get() 之前先 401（出现 Internal 说明门插在读库之后）。
+    #[tokio::test]
+    async fn b46_r7_writes_reject_without_session() {
+        use axum::extract::{Extension, Path};
+        use axum::Json;
+        use serde_json::json;
+
+        let mgr = Manager::new(
+            deadpool_postgres::tokio_postgres::Config::new(),
+            deadpool_postgres::tokio_postgres::NoTls,
+        );
+        let pool = Pool::builder(mgr).build().unwrap();
+        let ext = Extension(pool);
+        let j = || Json(json!({"name": "x", "description": "d", "personId": "p"}));
+        let p = || Path("b46-c1".to_string());
+        let cases = vec![
+            (
+                "column_create",
+                crate::cms_entity_column_create(ext.clone(), None, j())
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "column_save",
+                crate::cms_entity_column_save(ext.clone(), None, p(), j())
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "column_delete",
+                crate::cms_entity_column_delete(ext.clone(), None, p())
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "column_manager_create",
+                crate::cms_entity_column_manager_create(ext.clone(), None, j())
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "column_manager_save",
+                crate::cms_entity_column_manager_save(ext.clone(), None, p(), j())
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "column_manager_delete",
+                crate::cms_entity_column_manager_delete(ext.clone(), None, p())
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "index_create",
+                crate::cms_entity_index_create(ext.clone(), None, j())
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "index_save",
+                crate::cms_entity_index_save(ext.clone(), None, p(), j())
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "index_delete",
+                crate::cms_entity_index_delete(ext.clone(), None, p())
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "module_create",
+                crate::cms_entity_module_create(ext.clone(), None, j())
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "module_save",
+                crate::cms_entity_module_save(ext.clone(), None, p(), j())
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "module_delete",
+                crate::cms_entity_module_delete(ext.clone(), None, p())
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "note_create",
+                crate::cms_entity_note_create(ext.clone(), None, j())
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "note_save",
+                crate::cms_entity_note_save(ext.clone(), None, p(), j())
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "note_delete",
+                crate::cms_entity_note_delete(ext.clone(), None, p())
+                    .await
+                    .map(|_| ()),
+            ),
+        ];
+        assert_eq!(cases.len(), 15, "本批 15 把薄 handler 必须逐把点名，少一把即漏门");
+        let leaked: Vec<String> = cases
+            .iter()
+            .filter(|(_, r)| !matches!(r, Err(shared::error::AppError::Unauthorized)))
+            .map(|(k, r)| format!("{k} => {:?}", r.as_ref().err()))
+            .collect();
+        assert!(
+            leaked.is_empty(),
+            "以下 cms/core/entity 写面无会话未回 401（出现 Internal 就是门插在读库之后）：{leaked:?}"
+        );
+    }
 }

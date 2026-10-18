@@ -8,6 +8,22 @@ use shared::{error::AppError, response::ActionResult};
 
 pub mod routes;
 
+/// 门户页面写门禁（安全审计 2026-10 四轮 F3）：`x_portal_page` 是门户管理台内容、
+/// 无 creator 列（migrations/029），此前 `/api/portal` 不在 `ADMIN_WRITE_PREFIXES`
+/// （已废弃兜底），中间件仅 Authenticated → 任一登录用户可改任意页面正文、
+/// **物理 DELETE** 任意页面（不可恢复）。同表另一条写路径见 portal_core_entity F2。
+#[allow(non_snake_case)]
+async fn require_admin(pool: &Pool, session: &shared::session::Session) -> Result<(), AppError> {
+    if shared::middleware::is_admin(pool, &session.person_unique).await {
+        Ok(())
+    } else {
+        Err(AppError::Forbidden)
+    }
+}
+
+#[cfg(test)]
+mod security_gate_tests;
+
 #[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;
@@ -378,9 +394,11 @@ pub async fn create_page(
 #[allow(non_snake_case)]
 pub async fn save_page(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let content = payload
         .get("content")
@@ -424,8 +442,10 @@ pub async fn save_page(
 #[allow(non_snake_case)]
 pub async fn delete_page(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM x_portal_page WHERE id = $1", &[&id])

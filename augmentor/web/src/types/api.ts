@@ -66,6 +66,8 @@ export interface DataPageResponse {
   page: number
   page_size: number
   items: DataItem[]
+  /** 与 `items` 同长同序：每条在**盘上文件**里的 0 基下标，写端点的权威坐标 */
+  indices: number[]
 }
 
 /** `POST /api/data/upload` */
@@ -1067,7 +1069,7 @@ export interface CompareResponse {
  * 两个「名字」键回的都是**实际生效值**：请求省略 `source_format` 时这里给的是推断结果
  * （实测 `a.json` 回 `json`），不是空串——所以页面显示回执这两格，而不是回显用户的选择。
  * `input_file` / `output_file` 回的是解析后的**绝对路径**（与导出类端点同一口径，
- * `docs/API.md` 的 dataset 分组说明里已把「落盘后的绝对路径」当成对外形状写明）。
+ * `docs/augmentor/API.md` 的 dataset 分组说明里已把「落盘后的绝对路径」当成对外形状写明）。
  * 读写两侧的合法拼法**不是同一份清单**：读边十三项含 `xls`，写边十二项不含
  * （`augmentor/converter.py:56` 明确拒写老 BIFF 容器），所以两个下拉各用各的清单。
  */

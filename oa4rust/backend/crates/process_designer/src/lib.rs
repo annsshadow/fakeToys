@@ -15,6 +15,21 @@ pub mod routes;
 
 pub use routes::process_designer_router;
 
+#[cfg(test)]
+mod security_gate_tests;
+
+/// 流程设计器管理写门禁（安全审计 2026-10 二轮）：PROCESS_APPLICATION 无属主
+/// 列（系统级流程定义），任一登录用户可建改删任意流程应用 → 按 ownerless
+/// 系统数据裁决（见 idor 档案）仅 admin 可写。
+#[allow(non_snake_case)]
+async fn require_admin(pool: &Pool, session: &shared::session::Session) -> Result<(), AppError> {
+    if shared::middleware::is_admin(pool, &session.person_unique).await {
+        Ok(())
+    } else {
+        Err(AppError::Forbidden)
+    }
+}
+
 #[derive(Debug, Deserialize)]
 pub struct ApplicationCreateRequest {
     pub name: String,
@@ -194,8 +209,11 @@ pub async fn application_get(
 #[allow(non_snake_case)]
 pub async fn application_create(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Json(req): Json<ApplicationCreateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 流程应用创建仅 admin（无属主列系统数据，安全审计 2026-10 二轮）。
+    require_admin(&pool, &session).await?;
     if req.name.trim().is_empty() {
         return Ok(Json(ActionResult::error("name is required")));
     }
@@ -228,8 +246,11 @@ pub async fn application_create(
 #[allow(non_snake_case)]
 pub async fn application_update(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Json(req): Json<ApplicationUpdateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 流程应用更新仅 admin（无属主列系统数据，安全审计 2026-10 二轮）。
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -289,8 +310,11 @@ pub async fn application_update(
 #[allow(non_snake_case)]
 pub async fn application_remove(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Json(req): Json<ApplicationRemoveRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 流程应用软删仅 admin（无属主列系统数据，安全审计 2026-10 二轮）。
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(

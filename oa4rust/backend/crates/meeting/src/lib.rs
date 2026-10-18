@@ -8,15 +8,29 @@ use serde_json::Value;
 use shared::{
     error::AppError,
     response::{option_to_json, row_opt_json, ActionResult},
+    session::Session,
 };
 
 pub mod routes;
+
+/// 会话存在档：无会话返回 401。本 crate 两把真写（create_meeting / add_participant）收会话门，
+/// 门置于 `pool.get()` 之前，用于关闭 R7（已认证路由但体内无会话无门禁）。creator 冒名残留
+/// （create_meeting 仍取 body `creator`，默认 "system"）记 §五 待修。
+fn require_session(
+    session: Option<Extension<Session>>,
+) -> Result<Session, AppError> {
+    session
+        .map(|Extension(s)| s)
+        .ok_or(AppError::Unauthorized)
+}
 
 #[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;
+#[cfg(test)]
+mod security_gate_tests_b66;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Room {
@@ -243,8 +257,10 @@ pub async fn openmeeting_list_room(
 #[allow(non_snake_case)]
 pub async fn create_meeting(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let title = payload
         .get("title")
@@ -441,9 +457,11 @@ pub async fn list_meetings(pool: Extension<Pool>) -> Result<Json<ActionResult<Va
 #[allow(non_snake_case)]
 pub async fn add_participant(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     axum::extract::Path(meeting_id): axum::extract::Path<String>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let invitee = payload
         .get("invitee")

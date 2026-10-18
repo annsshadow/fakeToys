@@ -82,17 +82,21 @@ func TestValidateReportCollectionsRejectsOversizedElementsUsed(t *testing.T) {
 }
 
 // TestValidateReportCollectionsRejectsNegativeCardPick
-// card_picks 的取值下界（第 66 轮从 -1 放宽到 CardPickMin = -8）。
+// card_picks 的取值下界（第 66 轮从 -1 放宽到 -8，第 159 轮重写到 -22）。
 //
-// ⚠️ 这条断言的下界在第 66 轮**变过**，所以「哪些负值合法」必须重述：
+// ⚠️ 下界在历史上变过两次，所以「哪些负值合法」必须重述：
 //
 //	-1              整波跳过
-//	-3..-5          弃一张，取第 handIdx 张
-//	-6..-8          弃一张，整波跳过
-//	< -8            拒绝
+//	-3..-22         本波弃过牌：-(3+code)，code ∈ [0,19] 是
+//	                「弃牌掩码 + 取剩余第几张/不取」的枚举
+//	                （见 engine_card.go 的编码块）
+//	-2              刻意留的空隙，**非法**
+//	< -22           拒绝
 //
 // 放宽的原因：弃牌要做三件不可复现的事（扣次数、动热量、写 record 事件），
 // 而 -1 无法表达「弃过牌」→ 重放失配 → I-6 把正常对局判成伪造。
+// 第 159 轮再放宽是因为旧编码表达不了「弃哪张」与「弃多张」——
+// 线上 UI 两者都允许，每局必失配。
 //
 // `-2` 恰好落在两个编码之间，**保持非法** —— 这是 BASE 相差 3 的效果。
 func TestValidateReportCollectionsRejectsNegativeCardPick(t *testing.T) {
@@ -107,11 +111,12 @@ func TestValidateReportCollectionsRejectsNegativeCardPick(t *testing.T) {
 	})
 
 	t.Run("弃牌编码全部合法", func(t *testing.T) {
-		for _, pick := range []int{-3, -4, -5, -6, -7, -8} {
+		// 覆盖新区间的两端与若干中点（含下界 -22 = 弃全部手牌）。
+		for _, pick := range []int{-3, -5, -8, -15, -22} {
 			in := baseInput(gl)
 			in.CardPicks = []int{pick}
 			if err := validateReportCollections(gl, in); err != nil {
-				t.Errorf("card_picks[%d] 是第 66 轮新增的合法编码，却被拒：%v", pick, err)
+				t.Errorf("card_picks[%d] 是第 159 轮的合法编码，却被拒：%v", pick, err)
 			}
 		}
 	})
@@ -128,7 +133,10 @@ func TestValidateReportCollectionsRejectsNegativeCardPick(t *testing.T) {
 	})
 
 	t.Run("低于下界", func(t *testing.T) {
-		for _, pick := range []int{-9, -100} {
+		// ⚠️ 第 159 轮：下界从 -8 扩到 -22（弃牌掩码编码），
+		// 于是旧的「-9 越界」样本变成了**合法值** —— 不能再拿来测下界。
+		// 现在用 -23（下界 -22 正好越一位）与 -100。
+		for _, pick := range []int{-23, -100} {
 			in := baseInput(gl)
 			in.CardPicks = []int{pick}
 			if err := validateReportCollections(gl, in); err == nil {

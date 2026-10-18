@@ -75,7 +75,11 @@ mod tests {
     #[tokio::test]
     async fn test_subscribe_express() {
         let pool = build_test_pool();
-        let app = crate::router(pool);
+        // round4-b71：subscribe_express 已收会话门——注入有效会话 Extension，
+        // 保留原断言语义（路由可达 + handler 体直落死池 → 500）。
+        let app = crate::router(pool).layer(axum::Extension(shared::testing::test_session(
+            "express-subscribe-test",
+        )));
 
         let body = serde_json::json!({"code": "TEST123", "company": "SF", "callback": "http://example.com"}).to_string();
         let response = app

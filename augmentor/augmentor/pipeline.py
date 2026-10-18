@@ -15,7 +15,7 @@ from pathlib import Path
 from .atomic_write import atomic_write_json
 import asyncio
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from queue import Queue
+from queue import Empty, Queue
 
 from .config import (REQUEST_TIMEOUT_RANGE, AppConfig, load_config,
                      get_model_config)
@@ -36,6 +36,11 @@ from .visualizer import DataVisualizer
 from .semantic import persist_index
 
 logger = logging.getLogger(__name__)
+
+# A365：并行增强里「这一笔的结果」的有界等待秒数。消费侧等到这一步时对应的工作
+# 函数已经结束（`as_completed` 只交付完成的 future），所以信箱要么有货要么永远
+# 不会有货——这一格给的是「永远不会有货」那一档的上界，不是单条处理的耗时预算。
+RESULT_WAIT_SECONDS = 60
 
 
 class AugmentorPipeline:
@@ -215,14 +220,18 @@ class AugmentorPipeline:
                             idx: int, 
                             item: Dict, 
                             use_quality_check: bool,
-                            result_queue: Queue):
+                            result_queue: Queue,
+                            errors: Optional[List[Dict]] = None):
         """处理单条数据（线程安全）
         
         Args:
             idx: 索引
             item: 数据项
             use_quality_check: 是否使用质量检查
-            result_queue: 结果队列
+            result_queue: 本笔结果的信箱（A365 后由 `augment_dataset` 按条目各建一只；
+                直接调用方仍可传任意 `Queue`，本方法只往里 `put` 一次）
+            errors: 失败明细的落点。`augment_dataset` 传的是**本批局部清单**（L275）；
+                `None` 留给直接调用本方的旧调用方，那时仍落实例属性
         """
         try:
             variants = self._generate_variants(item)
@@ -271,7 +280,10 @@ class AugmentorPipeline:
             with self._lock:
                 # L206：列表在 __init__ 就建好，这里只 append（仍持锁：
                 # 多工作线程并发 append 到同一个 list）。
-                self._process_errors.append(error_info)
+                # L275：落点优先是 `augment_dataset` 传下来的本批清单。改前两个任务
+                # 共用这一个 pipeline 实例时都往 `self._process_errors` 写，实测 A 的
+                # 报告里 139 笔明细**全部**来自对方。不传才落实例属性。
+                (errors if errors is not None else self._process_errors).append(error_info)
             result_queue.put((idx, False, []))
     
     def augment_dataset(self,
@@ -311,6 +323,11 @@ class AugmentorPipeline:
 
         # L206：每次运行前清空。改前不清 ⇒ 同一个实例跑第二批时，第一批的
         # 错误记录还留在里面，报告于是混进与本次无关的错。
+        # L275：本批明细住在局部清单里，`self._process_errors` 只留作直接调用方
+        # （不传 `errors=` 的旧写法）的默认出口。改前「同时跑两批」时这一格是共享的：
+        # B 的 start 会把 A 已记录的错抹掉，A 的报告反过来全是 B 的错。
+        errors: List[Dict] = []
+        ckpt = None
         with self._lock:
             self._process_errors = []
 
@@ -324,11 +341,15 @@ class AugmentorPipeline:
         task_id = self.build_task_id(input_file)
         
         # 创建或恢复断点
+        # L275：把**本运行自己那一份**断点对象握在手里，之后每一笔进度与收尾都显式
+        # 交给它。改前这些调用不带断点，落到 `CheckpointManager._current_checkpoint`
+        # 这一格共享环境态上 ⇒ 两个任务同时在跑时，后加载的一方决定所有进度写进谁的
+        # 文件（实测 230 笔里 170 笔写错对象）。
         if use_checkpoint:
-            resumed = self.checkpoint_manager.load_checkpoint(task_id)
-            if resumed is None:
-                self.checkpoint_manager.create_checkpoint(task_id, len(items))
-            remaining_indices = self.checkpoint_manager.get_remaining_indices()
+            ckpt = self.checkpoint_manager.load_checkpoint(task_id)
+            if ckpt is None:
+                ckpt = self.checkpoint_manager.create_checkpoint(task_id, len(items))
+            remaining_indices = self.checkpoint_manager.get_remaining_indices(ckpt)
             skipped = len(items) - len(remaining_indices)
             if skipped > 0:
                 logger.info(f"检测到断点，跳过 {skipped} 条已完成数据")
@@ -364,7 +385,15 @@ class AugmentorPipeline:
             )
             logger.info(f"优化线程池: 使用 {num_threads} 个线程 (核心: {available_cores}, 任务: {len(remaining_indices)})")
             
-            result_queue = Queue()
+            # A365 修法①（用户拍板「条目失败继续」）：结果按**这一笔**配对。
+            # 改前一个共享队列配一条不带超时的 `get()`，三格同族缺陷：
+            # ① 任一 worker 少投一次 ⇒ 整批零 CPU 永久挂死（L275 门禁实测停在 62%）；
+            # ② `future` 的返回值一次也不读 ⇒ worker 里逃出 `_process_single_item`
+            #    的异常无声吞掉，日志里连那笔 `TypeError` 都没有；
+            # ③ 配对纯靠顺序（`futures[future] = idx` 建了从不读）⇒ worker 多投一条时
+            #    进度与变体记到别的条目名下。
+            # 每条目一只信箱之后，「这一笔的结果」与「下一条结果」不再可能是两回事。
+            mailboxes = {idx: Queue() for idx in remaining_indices}
             
             with ThreadPoolExecutor(max_workers=num_threads) as executor:
                 # 提交所有任务
@@ -373,14 +402,36 @@ class AugmentorPipeline:
                     item = items[idx]
                     future = executor.submit(
                         self._process_single_item,
-                        idx, item, use_quality_check, result_queue
+                        idx, item, use_quality_check, mailboxes[idx], errors
                     )
                     futures[future] = idx
                 
                 # 收集结果
                 processed = 0
                 for future in as_completed(futures):
-                    idx, success, variants = result_queue.get()
+                    idx = futures[future]
+                    # ②出声：worker 里逃出本方法的异常不再被吞掉（本方法自己 catch
+                    # 不到的那一格，例如 except 支内部再抛），此处读到就记进日志。
+                    escaped = future.exception()
+                    if escaped is not None:
+                        logger.error(f"第 {idx} 条的工作线程逃出异常: {escaped}")
+                    
+                    try:
+                        # 走到这里说明这一笔的工作函数已经返回或抛出 ⇒ 信箱里要么
+                        # 已经有货，要么永远不会有货。有界等待取代无限等待（①）。
+                        _, success, variants = mailboxes[idx].get(
+                            timeout=RESULT_WAIT_SECONDS
+                        )
+                    except Empty:
+                        # ③少投那一笔算**条目失败并继续**，整批不再挂死。
+                        errors.append({
+                            "index": idx,
+                            "error_type": "ResultNotDelivered",
+                            "message": (f"工作线程结束但未投递本笔结果"
+                                        f"（等待超过 {RESULT_WAIT_SECONDS}s）"),
+                            "item_preview": str(items[idx])[:100] if items[idx] else ""
+                        })
+                        success, variants = False, []
                     
                     if success:
                         all_results.extend(variants)
@@ -390,14 +441,16 @@ class AugmentorPipeline:
                             existing_generated = existing_generated[-max_existing_window:]
                         
                         if use_checkpoint:
-                            self.checkpoint_manager.update_progress(idx, True)
+                            self.checkpoint_manager.update_progress(idx, True,
+                                                                    checkpoint=ckpt)
                         
                         processed += 1
                         if processed % 10 == 0:
                             logger.info(f"已处理 {processed}/{len(remaining_indices)}")
                     else:
                         if use_checkpoint:
-                            self.checkpoint_manager.update_progress(idx, False)
+                            self.checkpoint_manager.update_progress(idx, False,
+                                                                    checkpoint=ckpt)
         else:
             # 串行处理
             for idx in remaining_indices:
@@ -419,7 +472,8 @@ class AugmentorPipeline:
                     
                     # 更新断点
                     if use_checkpoint:
-                        self.checkpoint_manager.update_progress(idx, True)
+                        self.checkpoint_manager.update_progress(idx, True,
+                                                                checkpoint=ckpt)
                     
                     logger.info(f"生成 {len(variants)} 个变体")
                     
@@ -428,19 +482,21 @@ class AugmentorPipeline:
                     # L206：串行支路此前只打日志、**不记 `_process_errors`** ⇒
                     # `use_parallel=False`（或只剩一条数据）时 `errors` 恒为空，
                     # 「失败明细有出口」这件事只在并行档成立。两支出同一份明细。
-                    with self._lock:
-                        self._process_errors.append({
-                            "index": idx,
-                            "error_type": type(e).__name__,
-                            "message": str(e),
-                            "item_preview": str(item)[:100] if item else "",
-                        })
+                    # L275 之后这一支不持锁：写的是本运行自己的 `errors`，而一次运行
+                    # 只走串行或并行其中一支，串行这一支只有调用方那一个线程在 append。
+                    errors.append({
+                        "index": idx,
+                        "error_type": type(e).__name__,
+                        "message": str(e),
+                        "item_preview": str(item)[:100] if item else "",
+                    })
                     if use_checkpoint:
-                        self.checkpoint_manager.update_progress(idx, False)
+                        self.checkpoint_manager.update_progress(idx, False,
+                                                                checkpoint=ckpt)
         
         # 合并增量并落盘，确保中断后可恢复
         if use_checkpoint:
-            self.checkpoint_manager.save_checkpoint()
+            self.checkpoint_manager.save_checkpoint(ckpt)
         
         # 去重
         if use_dedup and all_results:
@@ -492,8 +548,9 @@ class AugmentorPipeline:
             "vector_index": vector_index,
             # L206：失败明细出得来了。放在 progress 之前——报告形键集中在
             # 一起，`progress` / `memory_monitor` 是运行期诊断，错误是结果。
-            "errors": list(self._process_errors),
-            "progress": self.checkpoint_manager.get_progress() if use_checkpoint else None,
+            # L275：取本批局部清单，不再取共享的实例属性。
+            "errors": list(errors),
+            "progress": self.checkpoint_manager.get_progress(ckpt) if use_checkpoint else None,
             "memory_monitor": {
                 "peak_usage_mb": memory_monitor.get_peak_usage_mb(),
                 "trend": memory_monitor.get_trend(),
@@ -589,7 +646,11 @@ class AugmentorPipeline:
         with open(input_file, 'r', encoding='utf-8') as f:
             items = json.load(f)
         
-        if formats:
+        # 判据是 `is not None` 而不是 truthiness（A343 族）：显式送空清单是
+        # 「这一族一个格式都不导」，交回空映射；只有不表态才走默认全格式。
+        # 从前 `if formats:` 把空清单读成没传，实测落进 `export_all_formats`
+        # 那支、照样按默认格式写出文件。
+        if formats is not None:
             results = {}
             for fmt in formats:
                 # 归一化为字符串：ExportFormat 成员直接进 f-string 会渲染成
@@ -669,7 +730,9 @@ class AugmentorPipeline:
         Args:
             input_file: 输入文件路径
             output_file: 输出文件路径
-            use_checkpoint: 是否使用断点续传
+            use_checkpoint: 是否使用断点续传。与同步入口同式：任务 ID 由
+                `input_file` 派生，命中断点时只跑未完成的条目，并把上一轮已生成的
+                产物载入输出文件（否则整份写回会覆盖掉已完成的成果）
             use_quality_check: 是否使用质量检查。`None`（默认）交给
                 `config.quality.enabled`，与同步入口 `augment_dataset` 同一道判
             use_dedup: 是否使用去重，同上，交给 `config.dedup.enabled`
@@ -691,15 +754,40 @@ class AugmentorPipeline:
         
         logger.info(f"异步增强启动: {len(items)} 条种子数据")
         
+        # 断点续传接线（L277）：`use_checkpoint` 在本入口从前是**死参数** —— 文档承诺
+        # 「跳过已完成条目 + 记进度」，而函数体一个字没读它，实测每次从零重跑、
+        # 进度面恒为空态。用法与同步入口 `augment_dataset` 逐字同式（同一份
+        # `CheckpointManager`、同样显式携带本运行那一份 `ckpt`，不靠管理器上的共享环境态）。
+        task_id = self.build_task_id(input_file)
+        ckpt = None
+        remaining_indices = list(range(len(items)))
+        all_results = []
+        if use_checkpoint:
+            ckpt = self.checkpoint_manager.load_checkpoint(task_id)
+            if ckpt is None:
+                ckpt = self.checkpoint_manager.create_checkpoint(task_id, len(items))
+            remaining_indices = self.checkpoint_manager.get_remaining_indices(ckpt)
+            skipped = len(items) - len(remaining_indices)
+            if skipped > 0:
+                logger.info(f"检测到断点，跳过 {skipped} 条已完成数据")
+                # 续传时必须载入上一轮的产物，否则这一轮的整份写回会把已完成的结果覆盖为空
+                output_path = Path(output_file)
+                if output_path.exists():
+                    with open(output_path, 'r', encoding='utf-8') as f:
+                        all_results = json.load(f)
+                else:
+                    logger.warning(
+                        f"断点显示已处理 {skipped} 条，但输出文件不存在，仅能保留本轮结果")
+        
         # 使用线程池执行同步增强逻辑，避免阻塞事件循环
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             tasks = []
-            for idx, item in enumerate(items):
+            for idx in remaining_indices:
                 # 提交到线程池
                 future = loop.run_in_executor(
                     executor,
                     self.augment_seed,
-                    item,
+                    items[idx],
                     use_quality_check,
                     []
                 )
@@ -707,12 +795,20 @@ class AugmentorPipeline:
             
             results = await asyncio.gather(*tasks, return_exceptions=True)
         
-        all_results = []
-        for result in results:
+        # `gather` 的返回顺序与提交顺序一致 ⇒ 结果与**它自己的**下标配对，
+        # 失败的那一笔记进断点而不是只留一行日志
+        for idx, result in zip(remaining_indices, results):
             if isinstance(result, Exception):
                 logger.error(f"异步处理单条数据失败: {result}")
+                if use_checkpoint:
+                    self.checkpoint_manager.update_progress(idx, False, checkpoint=ckpt)
                 continue
             all_results.extend(result)
+            if use_checkpoint:
+                self.checkpoint_manager.update_progress(idx, True, checkpoint=ckpt)
+        
+        if use_checkpoint:
+            self.checkpoint_manager.save_checkpoint(ckpt)
         
         # 去重
         if use_dedup and all_results:

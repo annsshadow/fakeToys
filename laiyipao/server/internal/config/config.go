@@ -36,6 +36,43 @@ type Config struct {
 	WechatAppSecret string
 	WechatEndpoint  string
 
+	// CORSAllowOrigins 是允许跨域访问的来源白名单。
+	//
+	// ⚠️ 语义与「空 = 全放行」**相反**：
+	//
+	//   - dev 且未设置   → `*`（前后端不同端口，必须放行）
+	//   - prod 且未设置  → **一条 CORS 头都不发**（等价只允许同源）
+	//
+	// 取反向默认值的理由：本项目不用 cookie 存凭证（纯 Bearer 头），
+	// 所以 `*` 眼下**不构成**带凭证的跨域读 —— 把它报成严重漏洞是错的。
+	// 真正的风险是「将来有人加了 cookie 登录」，那时 `*` 立刻变成全站沦陷，
+	// 且没有任何东西会提醒。所以默认取安全的一侧，
+	// 需要跨域（后台与 H5 不同域名）就显式配置 —— 那是一个需要人做的决定。
+	CORSAllowOrigins []string
+
+	// SettleRecomputeMode 是服务端重算的处置档位：off / shadow / enforce。
+	//
+	// ⚠️ 默认 **enforce**，这是刻意的，也是本轮改过一次的地方。
+	//
+	// 第一版默认值定的是 `off`，理由是「引擎会漂移，enforce 会误伤」。
+	// 现有测试立刻把它打红了 —— `replay_skills_e2e_test.go` 断言伪造的
+	// `replay_skills` **必须**被拒。而那条校验早就在生产上跑着。
+	//
+	// 那个理由把两类重算混为一谈了：
+	//
+	//   - 整局引擎（尚未移植）：不符**有歧义**，可能是漂移 → 所以要先 shadow。
+	//   - S 段 replay_skills（已在跑）：不符**无歧义**就是作弊 —— 服务端与
+	//     客户端读同一份 DB 数据，中间没有第二个实现，不存在「算错」这一说。
+	//
+	// 对第二类默认 off 等于**新装部署出厂即关闭反作弊校验**。
+	// 「尚未启用的功能」和「已在运行的防护」不能共用一个默认值。
+	//
+	// 所以：默认 enforce（保持现状），引擎接进来时再**主动**切到 shadow 观察。
+	// 「先观察再收紧」是接入引擎时的动作，不是新装部署的默认状态。
+	//
+	// 切档**不需要发版**：改环境变量重启即可。
+	SettleRecomputeMode string
+
 	// 战斗结算上限校验
 	BattleTokenTTL    time.Duration
 	MinBattleDuration time.Duration
@@ -73,6 +110,32 @@ func envInt32(key string, def int32) int32 {
 		return def
 	}
 	return int32(n)
+}
+
+// envList 读一个逗号分隔的环境变量列表，逐项去空白、丢空项。
+//
+// # 为什么不能直接 strings.Split 后全塞进去
+//
+// `CORS_ALLOW_ORIGINS="https://a.com, https://b.com"` 是最自然的写法，
+// 第二项会带上前导空格。而 CORS 的 `Origin` 请求头**绝不含空格**，
+// 于是那一项永远匹配不上 —— 表现为「配了白名单但某个域名还是被拒」，
+// 排查时很难想到是空格。
+//
+// 丢空项的另一个理由：`"a,,b"` 与 `"a, ,b"` 不该产生空字符串来源，
+// 否则中间件里 `allowSet[""] = true` 会让「无 Origin 头」的请求
+// 命中白名单分支。
+func envList(key string) []string {
+	raw := strings.TrimSpace(os.Getenv(key))
+	if raw == "" {
+		return nil
+	}
+	var out []string
+	for _, p := range strings.Split(raw, ",") {
+		if p = strings.TrimSpace(p); p != "" {
+			out = append(out, p)
+		}
+	}
+	return out
 }
 
 func envBool(key string, def bool) bool {
@@ -116,9 +179,13 @@ func Load() Config {
 		WechatAppSecret: env("WECHAT_APP_SECRET", ""),
 		WechatEndpoint:  env("WECHAT_ENDPOINT", "https://api.weixin.qq.com/sns/jscode2session"),
 
+		CORSAllowOrigins: envList("CORS_ALLOW_ORIGINS"),
+
 		BattleTokenTTL:    envDuration("BATTLE_TOKEN_TTL", 30*time.Minute),
 		MinBattleDuration: envDuration("MIN_BATTLE_DURATION", 15*time.Second),
 		MaxScorePerSecond: int64(envInt("MAX_SCORE_PER_SECOND", 40_000)),
+
+		SettleRecomputeMode: env("SETTLE_RECOMPUTE_MODE", "enforce"),
 
 		OfflineCapHours: envInt("OFFLINE_CAP_HOURS", 12),
 
@@ -158,6 +225,52 @@ func Load() Config {
 		}
 	}
 	return cfg
+}
+
+// DevDefaultWarnings 返回「正在使用开发默认凭证」的清单（第 154 轮）。
+//
+// # 它解决的问题：默认值本身是**公开的**
+//
+// prod 分支会在缺失配置时 panic（见上面那段），但那要求 `APP_ENV=prod`
+// **被设对了**。`APP_ENV` 的默认值是 `dev` —— 于是「忘设 APP_ENV」的部署
+// 会安静地拿到：
+//
+//	JWT_SECRET = dev-only-insecure-secret-change-me  （写在源码与 README 里）
+//	BOOTSTRAP_ADMIN_PASS = admin12345                  （同上）
+//
+// 后果不是「弱口令」而是**无需爆破**：知道签名的密钥就能直接签一枚
+// `{uid:1, kind:...}` 的访问令牌，而默认管理员口令是公开字面量。
+// 而这一切在启动日志里**没有任何痕迹** —— 它长得和正常启动一模一样。
+//
+// # 为什么是告警而不是禁止
+//
+// 因为「新克隆仓库不设任何环境变量也能起来」是被测试锁住的产品决定
+// （见 `TestNonProdStillGetsDevelopmentDefaults` 与 README 快速开始）。
+// 禁止默认值会让那条路断掉；而静默又让误配置不可见。
+// 告警是两者之间唯一诚实的选项：**默认照常可用，但它不再是隐形的**。
+//
+// # 判据与 prod 守卫**同源**
+//
+// 刻意复用 prod 分支完全相同的两个判断（`HasPrefix(JWTSecret,"dev-only")`
+// 与 `os.Getenv("BOOTSTRAP_ADMIN_PASS") == ""`），而不是另写一套
+// 「值是否等于默认字面量」。两套判据迟早会分叉，而分叉之后一定是
+// 「prod 会 panic，但这里不告警」那种最坏的组合。
+//
+// ⚠️ 不要为了让这条更「精确」而把默认值提成常量的同时改掉
+// `env("BOOTSTRAP_ADMIN_PASS", "admin12345")` 的字面量形态 ——
+// `prod_guard_coverage_test.go` 的 AST 扫描只认 BasicLit，
+// 换成标识符会让那个环境变量**从敏感清单里静默消失**。
+func (c Config) DevDefaultWarnings() []string {
+	var out []string
+	if strings.HasPrefix(c.JWTSecret, "dev-only") {
+		out = append(out, "JWT_SECRET 未显式声明，正在使用本仓库源码里公开的默认密钥 —— "+
+			"任何读到它的人都能伪造任意账号（含管理员）的访问令牌")
+	}
+	if os.Getenv("BOOTSTRAP_ADMIN_PASS") == "" {
+		out = append(out, "BOOTSTRAP_ADMIN_PASS 未显式声明，正在使用公开默认口令 admin12345 —— "+
+			"首次启动会创建 admin/admin12345")
+	}
+	return out
 }
 
 // WechatEnabled 报告微信登录通道是否可用。

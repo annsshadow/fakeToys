@@ -19,6 +19,9 @@ mod tests_u2;
 #[cfg(test)]
 mod tests_u3;
 
+#[cfg(test)]
+mod security_gate_tests_b67;
+
 #[derive(Debug, Deserialize)]
 pub struct CollectAddRequest {
     pub title: Option<String>,
@@ -633,7 +636,11 @@ pub async fn agent_flag_file(pool: Extension<Pool>) -> Result<Json<ActionResult<
 }
 
 #[allow(non_snake_case)]
-pub async fn andfx_pull_sync(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn andfx_pull_sync(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -4664,7 +4671,9 @@ pub async fn dingding_get_callback_aes(
 #[allow(non_snake_case)]
 pub async fn dingding_pull_sync(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -4686,7 +4695,9 @@ pub async fn dingding_pull_sync(
 #[allow(non_snake_case)]
 pub async fn dingding_request_pull_sync(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -4710,8 +4721,10 @@ pub async fn dingding_request_pull_sync(
 #[allow(non_snake_case)]
 pub async fn dingding_sync_organization_callback(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let event_type = body
@@ -4749,8 +4762,10 @@ pub async fn dingding_sync_organization_callback(
 #[allow(non_snake_case)]
 pub async fn dingding_sync_organization_register_callback_enable(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(enable): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
     client
@@ -5424,7 +5439,9 @@ pub async fn invoke_flag_client_client_token_token_execute(
 #[allow(non_snake_case)]
 pub async fn invoke_flag_execute(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
@@ -5456,8 +5473,10 @@ pub async fn invoke_flag_execute(
 #[allow(non_snake_case)]
 pub async fn invoke_flag_execute_get(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
@@ -5683,7 +5702,9 @@ pub async fn market_cloud_unit_is_vip(
 #[allow(non_snake_case)]
 pub async fn market_install_offline(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
     client
@@ -6139,7 +6160,9 @@ pub async fn market_flag_install_log(
 #[allow(non_snake_case)]
 pub async fn market_flag_install_or_update(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
     client
@@ -6211,7 +6234,9 @@ pub async fn market_flag_installed_version(
 #[allow(non_snake_case)]
 pub async fn market_flag_uninstall(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
     client
@@ -6794,8 +6819,10 @@ pub async fn mpweixin_menu_create_to_weixin(
 #[allow(non_snake_case)]
 pub async fn mpweixin_menu_delete_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM x_program_mpweixin_menu WHERE id = $1", &[&id])
@@ -6850,8 +6877,10 @@ pub async fn mpweixin_menu_subscribe(
 #[allow(non_snake_case)]
 pub async fn mpweixin_menu_update_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -7703,7 +7732,9 @@ pub async fn qiyeweixin_get_callback_aes(
 #[allow(non_snake_case)]
 pub async fn qiyeweixin_pull_sync(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -7762,8 +7793,10 @@ pub async fn qiyeweixin_request_pull_sync(
 #[allow(non_snake_case)]
 pub async fn qiyeweixin_send_getprivateinfo_message(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let user_id = body
@@ -9027,8 +9060,10 @@ pub async fn validation_scripting_benchmark(
 #[allow(non_snake_case)]
 pub async fn validation_timeout_timeout(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(timeout): Path<i64>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     client
         .execute(
@@ -9048,7 +9083,9 @@ pub async fn validation_timeout_timeout(
 #[allow(non_snake_case)]
 pub async fn zhengwudingding_pull_sync(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -9075,7 +9112,9 @@ pub async fn zhengwudingding_pull_sync(
 #[allow(non_snake_case)]
 pub async fn zhengwudingding_regist_callback(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -9101,8 +9140,10 @@ pub async fn zhengwudingding_regist_callback(
 #[allow(non_snake_case)]
 pub async fn zhengwudingding_sync_organization_callback(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let event_type = body
@@ -9172,6 +9213,17 @@ async fn require_admin_opt(
 ) -> Result<(), AppError> {
     let session = session.ok_or(AppError::Unauthorized)?;
     require_admin(pool, session).await
+}
+
+/// 安全审计（round4-b67）：invoke 执行真写收"会话存在档"门禁。
+/// 无会话（Option<Extension<Session>> = None）→ 401，门置于首个 DB 访问
+/// （pool.get() / POST 体校验之后）之前，杜绝匿名触发 `x_program_invoke`
+/// last_start_time/last_end_time 写入。已验证的 token/回调验签属 §五
+/// "第三方回调零验签族"遗留项，与本次加门分开记。
+fn require_session(
+    session: Option<Extension<shared::session::Session>>,
+) -> Result<shared::session::Session, AppError> {
+    session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
 }
 
 fn json_str(payload: &Value, key: &str) -> String {
@@ -11166,9 +11218,11 @@ async fn u3_invoke_execute_inner(
 #[allow(non_snake_case)]
 pub async fn u3_invoke_execute(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(flag): Path<String>,
     Json(_body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     u3_invoke_execute_inner(&pool, &flag, None).await
 }
 
@@ -11176,9 +11230,11 @@ pub async fn u3_invoke_execute(
 #[allow(non_snake_case)]
 pub async fn u3_invoke_execute_with_token(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path((flag, _client, token)): Path<(String, String, String)>,
     Json(_body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     u3_invoke_execute_inner(&pool, &flag, Some(&token)).await
 }
 
@@ -11711,7 +11767,9 @@ pub async fn u3_qiyeweixin_create(
 #[allow(non_snake_case)]
 pub async fn u3_qiyeweixin_request_pull_sync_post(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
     client
@@ -11816,7 +11874,9 @@ pub async fn u3_script_name_imported(
 #[allow(non_snake_case)]
 pub async fn u3_welink_pull_sync(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
     client
@@ -11835,7 +11895,9 @@ pub async fn u3_welink_pull_sync(
 #[allow(non_snake_case)]
 pub async fn u3_welink_request_pull_sync_post(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
     client
@@ -12448,12 +12510,7 @@ mod security_gate_tests {
     /// 均为 admin 运维操作。无会话必须 Unauthorized；非 admin 会话
     /// （无 DB 时 is_admin fail-closed 返回 false）必须 Forbidden。
     fn build_session(person_unique: &str) -> shared::session::Session {
-        shared::session::Session {
-            token: "t".to_string(),
-            person_unique: person_unique.to_string(),
-            created_at: chrono::NaiveDateTime::from_timestamp(0, 0),
-            expires_at: chrono::NaiveDateTime::from_timestamp(3600, 0),
-        }
+        shared::testing::test_session(person_unique)
     }
 
     #[tokio::test]
@@ -12679,5 +12736,274 @@ mod security_gate_tests {
             ),
             "deploy_web_resource_as_new_asNew 非 admin 必须 403"
         );
+    }
+
+    /// 第十七批：本 crate GET 面（注册 19 条 / handler 17 把）的会话档逐把点名。
+    /// 这一族全部落在 csrf / requires_admin 的双盲区（中间件只看方法名），且
+    /// `/api/program_center` 已被挪出 `ADMIN_WRITE_PREFIXES` ⇒ 门禁只能落在 handler 体内。
+    /// 定档依据是 information_schema 实弹探针：这 17 把写的都是**全局/系统表**
+    /// （x_program_sync_log / x_program_deploy / x_program_callback_registration /
+    /// x_program_agent），行上没有可认的属主列（creator / creator_person 写死 'system'
+    /// 或根本不填）⇒「按行上属主放行」这一档不可表达，收 admin。
+    /// `captcha_v2_create_*` 与 `code_create_mobile_*` 两把**本批故意不收 admin**：
+    /// 它们在登录/验证码下发链路上，收 admin 会直接打断认证，属限流族待拍。
+    ///
+    /// 用 `mock_pool()`（连不上库的池）跑：门必须**先于** `pool.get()`，
+    /// 否则读数会是 `Internal` 而不是 `Unauthorized` / `Forbidden`，两臂当场红。
+    #[tokio::test]
+    async fn b17_get_writes_reject_without_session() {
+        let pool = shared::testing::mock_pool();
+        let body = || axum::Json(serde_json::json!({ "eventType": "org", "userId": "u1" }));
+        let s = |v: &str| axum::extract::Path(v.to_string());
+        let cases: Vec<(&str, Result<(), AppError>)> = vec![
+            (
+                "andfx_pull_sync",
+                andfx_pull_sync(Extension(pool.clone()), None).await.map(|_| ()),
+            ),
+            (
+                "dingding_pull_sync",
+                dingding_pull_sync(Extension(pool.clone()), None)
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "dingding_request_pull_sync",
+                dingding_request_pull_sync(Extension(pool.clone()), None)
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "dingding_sync_organization_callback",
+                dingding_sync_organization_callback(Extension(pool.clone()), None, body())
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "invoke_flag_execute",
+                invoke_flag_execute(Extension(pool.clone()), None)
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "market_install_offline",
+                market_install_offline(Extension(pool.clone()), None)
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "market_flag_install_or_update",
+                market_flag_install_or_update(Extension(pool.clone()), None)
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "market_flag_uninstall",
+                market_flag_uninstall(Extension(pool.clone()), None)
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "qiyeweixin_pull_sync",
+                qiyeweixin_pull_sync(Extension(pool.clone()), None)
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "qiyeweixin_send_getprivateinfo_message",
+                qiyeweixin_send_getprivateinfo_message(Extension(pool.clone()), None, body())
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "zhengwudingding_pull_sync",
+                zhengwudingding_pull_sync(Extension(pool.clone()), None)
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "zhengwudingding_regist_callback",
+                zhengwudingding_regist_callback(Extension(pool.clone()), None)
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "zhengwudingding_sync_organization_callback",
+                zhengwudingding_sync_organization_callback(Extension(pool.clone()), None, body())
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "dingding_sync_organization_register_callback_enable",
+                dingding_sync_organization_register_callback_enable(
+                    Extension(pool.clone()),
+                    None,
+                    s("true"),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "invoke_flag_execute_get",
+                invoke_flag_execute_get(Extension(pool.clone()), None, s("ag-1"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "validation_timeout_timeout",
+                validation_timeout_timeout(Extension(pool.clone()), None, axum::extract::Path(60i64))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "u3_welink_pull_sync",
+                u3_welink_pull_sync(Extension(pool.clone()), None)
+                    .await
+                    .map(|_| ()),
+            ),
+        ];
+        let bad: Vec<&str> = cases
+            .iter()
+            .filter(|(_, r)| !matches!(r, Err(AppError::Unauthorized)))
+            .map(|(n, _)| *n)
+            .collect();
+        assert!(bad.is_empty(), "以下 GET 面无会话未回 401：{bad:?}");
+        assert_eq!(cases.len(), 17, "本批 17 把必须逐把点名，少一把即漏门");
+    }
+
+    /// 第十七批第二臂：非 admin 会话一律 403，且 403 发生在**触库之前**
+    /// （`mock_pool()` 连不上库，若门插在读库之后就只会看到 `Internal`）。
+    /// `is_admin` 在查不到库时 fail-closed 返回 false，所以这臂不需要真实 PG 也成立。
+    #[tokio::test]
+    async fn b17_get_writes_forbidden_before_touching_db() {
+        let pool = shared::testing::mock_pool();
+        let sess = || Some(Extension(build_session("u-nonadmin-b17")));
+        let body = || axum::Json(serde_json::json!({ "eventType": "org", "userId": "u1" }));
+        let s = |v: &str| axum::extract::Path(v.to_string());
+        let cases: Vec<(&str, Result<(), AppError>)> = vec![
+            (
+                "andfx_pull_sync",
+                andfx_pull_sync(Extension(pool.clone()), sess())
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "dingding_pull_sync",
+                dingding_pull_sync(Extension(pool.clone()), sess())
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "dingding_request_pull_sync",
+                dingding_request_pull_sync(Extension(pool.clone()), sess())
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "dingding_sync_organization_callback",
+                dingding_sync_organization_callback(Extension(pool.clone()), sess(), body())
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "invoke_flag_execute",
+                invoke_flag_execute(Extension(pool.clone()), sess())
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "market_install_offline",
+                market_install_offline(Extension(pool.clone()), sess())
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "market_flag_install_or_update",
+                market_flag_install_or_update(Extension(pool.clone()), sess())
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "market_flag_uninstall",
+                market_flag_uninstall(Extension(pool.clone()), sess())
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "qiyeweixin_pull_sync",
+                qiyeweixin_pull_sync(Extension(pool.clone()), sess())
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "qiyeweixin_send_getprivateinfo_message",
+                qiyeweixin_send_getprivateinfo_message(Extension(pool.clone()), sess(), body())
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "zhengwudingding_pull_sync",
+                zhengwudingding_pull_sync(Extension(pool.clone()), sess())
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "zhengwudingding_regist_callback",
+                zhengwudingding_regist_callback(Extension(pool.clone()), sess())
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "zhengwudingding_sync_organization_callback",
+                zhengwudingding_sync_organization_callback(
+                    Extension(pool.clone()),
+                    sess(),
+                    body(),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "dingding_sync_organization_register_callback_enable",
+                dingding_sync_organization_register_callback_enable(
+                    Extension(pool.clone()),
+                    sess(),
+                    s("true"),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "invoke_flag_execute_get",
+                invoke_flag_execute_get(Extension(pool.clone()), sess(), s("ag-1"))
+                    .await
+                    .map(|_| ()),
+            ),
+            (
+                "validation_timeout_timeout",
+                validation_timeout_timeout(
+                    Extension(pool.clone()),
+                    sess(),
+                    axum::extract::Path(60i64),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "u3_welink_pull_sync",
+                u3_welink_pull_sync(Extension(pool.clone()), sess())
+                    .await
+                    .map(|_| ()),
+            ),
+        ];
+        let bad: Vec<String> = cases
+            .iter()
+            .filter(|(_, r)| !matches!(r, Err(AppError::Forbidden)))
+            .map(|(n, r)| format!("{n} => {r:?}"))
+            .collect();
+        assert!(
+            bad.is_empty(),
+            "以下 GET 面非 admin 未回 403（401 之外还出现 Internal 就是门插在读库之后）：{bad:?}"
+        );
+        assert_eq!(cases.len(), 17, "本批 17 把必须逐把点名，少一把即漏门");
     }
 }

@@ -4,7 +4,7 @@
 """CLI stdio 编码兜底守卫（L56，把 A98 的根因按住）
 
 L55 换掉了两个会崩的装饰符，但根因一字未动：stdout 仍按 locale 编码，zh-CN Windows 的
-管道就是 GBK ⇒ 用户数据里一个 emoji 能让整条命令崩成 rc=1，而 1 在 `docs/ARCHITECTURE.md`
+管道就是 GBK ⇒ 用户数据里一个 emoji 能让整条命令崩成 rc=1，而 1 在 `docs/augmentor/ARCHITECTURE.md`
 §6 的口径里正是「判决未通过」那一档 —— **崩溃与判负同号，脚本读不出区别**。
 L56 实测破坏面（Temp `l56/gbkblast_pre.txt`，GBK 管道 + 含 emoji 语料，16 条命令各跑一次）：
 `check-leakage` / `stats` / `preview` / `search` 四条崩成 rc=1，前三条 stdout 0 字节。

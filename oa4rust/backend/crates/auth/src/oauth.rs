@@ -44,13 +44,15 @@ fn oauth_states() -> &'static Mutex<HashMap<String, ()>> {
     OAUTH_STATES.get_or_init(|| Mutex::new(HashMap::new()))
 }
 
-fn generate_state() -> String {
+/// 生成并登记服务端 state（OAuth/OIDC 回调 CSRF 防护）。pub(crate) 供 oidc 复用同一状态库。
+pub(crate) fn generate_state() -> String {
     let s = uuid::Uuid::new_v4().to_string();
     oauth_states().lock().unwrap().insert(s.clone(), ());
     s
 }
 
-fn validate_state(s: &str) -> bool {
+/// 校验并消费 state（一次性）。pub(crate) 供 oidc 复用。
+pub(crate) fn validate_state(s: &str) -> bool {
     oauth_states().lock().unwrap().remove(s).is_some()
 }
 

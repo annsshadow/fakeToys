@@ -61,6 +61,73 @@ async fn require_admin_opt(
     }
 }
 
+
+// ── 第四轮 R4-2：工作流实体写的归属门 ───────────────────────────────────────
+//
+// 本模块的 work / task / record / review / attachment / draft 写原本「登录即可」：
+// 任何有效会话都能改或删别人的工作流数据（水平越权，含 work_delete 的级联物理删库），
+// 既不取会话也不校归属。本轮按两档收紧：
+// - admin 档（dict_edit / job_delete / snap_delete）：字典表与引擎内部 job / snap 属
+//   系统级数据，复用既有 require_admin_opt（无会话 401，非 admin 403）；
+// - 归属档：按资源行的发起人 / 负责人 / 作者列走 require_owner（本人或 admin）。
+// 归属档取「严格」口径：归属列为空的历史脏行、孤儿草稿只允许 admin 动，不用
+// 「空归属 = 人人可写」把数据缺陷洗成权限放行。
+
+/// 归属列取法（每个资源各写一条 SQL 字面量，不做字符串拼接）。
+enum U4Res {
+    Work,
+    Task,
+    Record,
+    Review,
+    Read,
+    Attachment,
+    ReadCompleted,
+}
+
+fn u4_actor_sql(res: U4Res) -> &'static str {
+    match res {
+        U4Res::Work => "SELECT creator AS actor FROM x_work WHERE id = $1",
+        U4Res::Task => "SELECT person AS actor FROM x_task WHERE id = $1",
+        U4Res::Record => "SELECT creator AS actor FROM x_record WHERE id = $1",
+        U4Res::Review => "SELECT reviewer AS actor FROM x_review WHERE id = $1",
+        U4Res::Read => "SELECT person AS actor FROM x_read WHERE id = $1",
+        U4Res::Attachment => "SELECT creator AS actor FROM x_attachment WHERE id = $1",
+        U4Res::ReadCompleted => "SELECT person AS actor FROM x_readcompleted WHERE id = $1",
+    }
+}
+
+/// 取该资源行的归属人；行不存在返回 None（由调用方保住原有 not-found 语义）。
+async fn u4_actor_of(
+    client: &Client,
+    res: U4Res,
+    id: &str,
+) -> Result<Option<String>, AppError> {
+    let row = client
+        .query_opt(u4_actor_sql(res), &[&id])
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(row.map(|r| opt_str(&r, "actor")))
+}
+
+/// 严格归属门：非空 → 本人或 admin（require_owner，无 DB 时 fail-closed）；
+/// 空或 None（脏行 / 孤儿行）→ 仅 admin。
+async fn u4_require_actor_of(
+    pool: &Pool,
+    session: &shared::session::Session,
+    actor: Option<&str>,
+) -> Result<(), AppError> {
+    match actor.map(str::trim).filter(|a| !a.is_empty()) {
+        Some(a) => shared::middleware::require_owner(pool, session, a).await,
+        None => {
+            if shared::middleware::is_admin(pool, &session.person_unique).await {
+                Ok(())
+            } else {
+                Err(AppError::Forbidden)
+            }
+        }
+    }
+}
+
 fn opt_str(row: &Row, col: &str) -> String {
     row.get::<_, Option<String>>(col).unwrap_or_default()
 }
@@ -144,9 +211,11 @@ async fn record_exists(
 #[allow(non_snake_case)]
 pub async fn dict_edit(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
     Json(body): Json<Value>,
 ) -> H {
+    require_admin_opt(&pool.0, session.as_deref()).await?;
     let id = id.trim().to_string();
     if id.is_empty() {
         return biz_err("id is required");
@@ -261,16 +330,22 @@ macro_rules! dict_data_fns {
     ($set:ident, $del:ident ($($p:ident : $t:ty),+)) => {
         pub async fn $set(
             pool: Extension<Pool>,
+            session: Option<Extension<shared::session::Session>>,
             Path(($($p),+)): Path<($($t),+)>,
             Json(body): Json<Value>,
         ) -> H {
+            // x_application_dict 是系统级数据（本文件 §applicationdict 口径：dict 表 = admin 档），
+            // 深度路径写与 dict_edit 同一把门。
+            require_admin_opt(&pool.0, session.as_deref()).await?;
             dict_set(&pool, &[$($p.to_string()),+], body).await
         }
 
         pub async fn $del(
             pool: Extension<Pool>,
+            session: Option<Extension<shared::session::Session>>,
             Path(($($p),+)): Path<($($t),+)>,
         ) -> H {
+            require_admin_opt(&pool.0, session.as_deref()).await?;
             dict_del(&pool, &[$($p.to_string()),+]).await
         }
     };
@@ -470,95 +545,130 @@ async fn data_delete_key(pool: &Pool, scope: &str, bundle: &str, key: &str) -> H
 #[allow(non_snake_case)]
 pub async fn data_job_put(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(job): Path<String>,
     Json(body): Json<Value>,
 ) -> H {
+    // job 数据面按本 crate job 族口径收 admin 门（先例 `job_delete`）。
+    require_admin_opt(&pool.0, session.as_deref()).await?;
     data_put_whole(&pool, DATA_SCOPE_JOB, &job, body).await
 }
 
 #[allow(non_snake_case)]
 pub async fn data_job_put_path(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path((job, path)): Path<(String, String)>,
     Json(body): Json<Value>,
 ) -> H {
+    // job 数据面收 admin 门（先例 `job_delete`）。
+    require_admin_opt(&pool.0, session.as_deref()).await?;
     data_set_key(&pool, DATA_SCOPE_JOB, &job, &path, body, false).await
 }
 
 #[allow(non_snake_case)]
 pub async fn data_work_create(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
     Json(body): Json<Value>,
 ) -> H {
+    // work 数据面按 `x_work.creator` 归属（无会话 401 / 非属主且非 admin 403）。
+    crate::u4_require_work_owner(&pool.0, session, &id).await?;
     data_create_whole(&pool, DATA_SCOPE_WORK, &id, body, Some("x_work")).await
 }
 
 #[allow(non_snake_case)]
 pub async fn data_work_update(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
     Json(body): Json<Value>,
 ) -> H {
+    // work 数据面按 `x_work.creator` 归属。
+    crate::u4_require_work_owner(&pool.0, session, &id).await?;
     data_update_whole(&pool, DATA_SCOPE_WORK, &id, body).await
 }
 
 #[allow(non_snake_case)]
 pub async fn data_work_create_path(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path((id, path)): Path<(String, String)>,
     Json(body): Json<Value>,
 ) -> H {
+    // work 数据面按 `x_work.creator` 归属。
+    crate::u4_require_work_owner(&pool.0, session, &id).await?;
     data_set_key(&pool, DATA_SCOPE_WORK, &id, &path, body, true).await
 }
 
 #[allow(non_snake_case)]
 pub async fn data_work_update_path(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path((id, path)): Path<(String, String)>,
     Json(body): Json<Value>,
 ) -> H {
+    // work 数据面按 `x_work.creator` 归属。
+    crate::u4_require_work_owner(&pool.0, session, &id).await?;
     data_set_key(&pool, DATA_SCOPE_WORK, &id, &path, body, false).await
 }
 
 #[allow(non_snake_case)]
-pub async fn data_work_delete(pool: Extension<Pool>, Path(id): Path<String>) -> H {
+pub async fn data_work_delete(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Path(id): Path<String>,
+) -> H {
+    // work 数据面（整包删）按 `x_work.creator` 归属。
+    crate::u4_require_work_owner(&pool.0, session, &id).await?;
     data_delete_whole(&pool, DATA_SCOPE_WORK, &id).await
 }
 
 #[allow(non_snake_case)]
 pub async fn data_work_delete_path(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path((id, path)): Path<(String, String)>,
 ) -> H {
+    // work 数据面（按键删）按 `x_work.creator` 归属。
+    crate::u4_require_work_owner(&pool.0, session, &id).await?;
     data_delete_key(&pool, DATA_SCOPE_WORK, &id, &path).await
 }
 
 #[allow(non_snake_case)]
 pub async fn data_wc_update(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
     Json(body): Json<Value>,
 ) -> H {
+    // 第五十三批：写完成记录的数据 bundle，按完成记录发起人 / work 发起人校归属。
+    let session = crate::u4_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     if !entity_exists(&client, "x_workcompleted", &id).await? {
         return biz_err("workcompleted not found");
     }
     drop(client);
+    crate::u4_require_actors(&pool.0, &session, crate::U4ActorKey::WorkCompleted, &id).await?;
     data_put_whole(&pool, DATA_SCOPE_WC, &id, body).await
 }
 
 #[allow(non_snake_case)]
 pub async fn data_wc_update_path(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path((id, path)): Path<(String, String)>,
     Json(body): Json<Value>,
 ) -> H {
+    // 第五十三批：写完成记录的数据键，按完成记录发起人 / work 发起人校归属。
+    let session = crate::u4_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     if !entity_exists(&client, "x_workcompleted", &id).await? {
         return biz_err("workcompleted not found");
     }
     drop(client);
+    crate::u4_require_actors(&pool.0, &session, crate::U4ActorKey::WorkCompleted, &id).await?;
     data_set_key(&pool, DATA_SCOPE_WC, &id, &path, body, false).await
 }
 
@@ -566,8 +676,17 @@ pub async fn data_wc_update_path(
 
 /// DELETE attachment/{id}：软删除
 #[allow(non_snake_case)]
-pub async fn att_delete_id(pool: Extension<Pool>, Path(id): Path<String>) -> H {
+pub async fn att_delete_id(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Path(id): Path<String>,
+) -> H {
+    let session = crate::u4_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let Some(actor) = u4_actor_of(&client, U4Res::Attachment, &id).await? else {
+        return biz_err("attachment not found");
+    };
+    u4_require_actor_of(&pool.0, &session, Some(&actor)).await?;
     let n = client
         .execute(
             "UPDATE x_attachment SET deleted_at = NOW() \
@@ -586,12 +705,14 @@ pub async fn att_delete_id(pool: Extension<Pool>, Path(id): Path<String>) -> H {
 #[allow(non_snake_case)]
 pub async fn att_delete_with_work(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path((id, work_id)): Path<(String, String)>,
 ) -> H {
+    let session = crate::u4_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT work_id FROM x_attachment WHERE id = $1 AND deleted_at IS NULL",
+            "SELECT work_id, creator FROM x_attachment WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
         )
         .await
@@ -603,6 +724,9 @@ pub async fn att_delete_with_work(
     if owner != work_id {
         return biz_err("attachment does not belong to work");
     }
+    // 既有 IDOR 门只保证「附件属于该 work」，任一登录用户仍能删他人附件；补上传者归属门
+    let actor = opt_str(&row, "creator");
+    u4_require_actor_of(&pool.0, &session, Some(&actor)).await?;
     let n = client
         .execute(
             "UPDATE x_attachment SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
@@ -617,12 +741,14 @@ pub async fn att_delete_with_work(
 #[allow(non_snake_case)]
 pub async fn att_delete_with_workcompleted(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path((id, wc_id)): Path<(String, String)>,
 ) -> H {
+    let session = crate::u4_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT workcompleted_id FROM x_attachment WHERE id = $1 AND deleted_at IS NULL",
+            "SELECT workcompleted_id, creator FROM x_attachment WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
         )
         .await
@@ -634,6 +760,8 @@ pub async fn att_delete_with_workcompleted(
     if owner.is_empty() || owner != wc_id {
         return biz_err("attachment does not belong to workcompleted");
     }
+    let actor = opt_str(&row, "creator");
+    u4_require_actor_of(&pool.0, &session, Some(&actor)).await?;
     let n = client
         .execute(
             "UPDATE x_attachment SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
@@ -648,14 +776,20 @@ pub async fn att_delete_with_workcompleted(
 #[allow(non_snake_case)]
 pub async fn att_edit_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
     Json(body): Json<Value>,
 ) -> H {
+    let session = crate::u4_session(session)?;
     let name = body_str(&body, &["name", "fileName"]);
     if name.is_empty() {
         return biz_err("name is required");
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let Some(actor) = u4_actor_of(&client, U4Res::Attachment, &id).await? else {
+        return biz_err("attachment not found");
+    };
+    u4_require_actor_of(&pool.0, &session, Some(&actor)).await?;
     let n = client
         .execute(
             "UPDATE x_attachment SET name = $2 WHERE id = $1 AND deleted_at IS NULL",
@@ -680,14 +814,20 @@ pub async fn att_edit_id(
 #[allow(non_snake_case)]
 pub async fn att_edit_text(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
     Json(body): Json<Value>,
 ) -> H {
+    let session = crate::u4_session(session)?;
     let text = body_str(&body, &["text", "content"]);
     if text.is_empty() {
         return biz_err("text is required");
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let Some(actor) = u4_actor_of(&client, U4Res::Attachment, &id).await? else {
+        return biz_err("attachment not found");
+    };
+    u4_require_actor_of(&pool.0, &session, Some(&actor)).await?;
     let n = client
         .execute(
             "UPDATE x_attachment SET content = $2 WHERE id = $1 AND deleted_at IS NULL",
@@ -706,9 +846,11 @@ pub async fn att_edit_text(
 #[allow(non_snake_case)]
 pub async fn att_copy_to_work(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(work_id): Path<String>,
     Json(body): Json<Value>,
 ) -> H {
+    let session = crate::u4_session(session)?;
     let list = body_str_list(&body, &["attachmentList"]);
     if work_id.trim().is_empty() {
         return biz_err("workId is required");
@@ -717,9 +859,11 @@ pub async fn att_copy_to_work(
         return biz_err("attachmentList is required");
     }
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
-    if !entity_exists(&client, "x_work", &work_id).await? {
+    let creator = u4_actor_of(&client, U4Res::Work, &work_id).await?;
+    if creator.is_none() {
         return biz_err("work not found");
     }
+    u4_require_actor_of(&pool.0, &session, creator.as_deref()).await?;
     // 批量化：源件一次 ANY 查回、目标已有重名一次查回（原逐条 SELECT+COUNT 为 3N+1）；
     // 写入包同一事务。同请求内重复 id/同名经 map/set 回填保持原逐条判重语义。
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
@@ -779,7 +923,12 @@ pub async fn att_copy_to_work(
 
 /// DELETE job/{job}：结束 job 及其运行任务
 #[allow(non_snake_case)]
-pub async fn job_delete(pool: Extension<Pool>, Path(job): Path<String>) -> H {
+pub async fn job_delete(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Path(job): Path<String>,
+) -> H {
+    require_admin_opt(&pool.0, session.as_deref()).await?;
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     let n = tx
@@ -878,9 +1027,12 @@ async fn read_create(pool: &Pool, bundle: &str, body: Value, scope: &str, gate_t
 #[allow(non_snake_case)]
 pub async fn read_create_with_work(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(work_id): Path<String>,
     Json(body): Json<Value>,
 ) -> H {
+    // 第五十三批：给 work 造阅读回执，按 work 发起人校归属。
+    crate::u4_require_work_owner(&pool.0, session, &work_id).await?;
     read_create(&pool, &work_id, body, DATA_SCOPE_WORK, "x_work").await
 }
 
@@ -888,16 +1040,29 @@ pub async fn read_create_with_work(
 #[allow(non_snake_case)]
 pub async fn read_create_with_workcompleted(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(wc_id): Path<String>,
     Json(body): Json<Value>,
 ) -> H {
+    // 第五十三批：给 workcompleted 造阅读回执，按完成记录发起人 / work 发起人校归属。
+    let session = crate::u4_session(session)?;
+    crate::u4_require_actors(&pool.0, &session, crate::U4ActorKey::WorkCompleted, &wc_id).await?;
     read_create(&pool, &wc_id, body, DATA_SCOPE_WC, "x_workcompleted").await
 }
 
 /// DELETE read/{id}：软删除
 #[allow(non_snake_case)]
-pub async fn read_delete(pool: Extension<Pool>, Path(id): Path<String>) -> H {
+pub async fn read_delete(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Path(id): Path<String>,
+) -> H {
+    let session = crate::u4_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let Some(actor) = u4_actor_of(&client, U4Res::Read, &id).await? else {
+        return biz_err("read not found");
+    };
+    u4_require_actor_of(&pool.0, &session, Some(&actor)).await?;
     let n = client
         .execute(
             "UPDATE x_read SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
@@ -913,7 +1078,12 @@ pub async fn read_delete(pool: Extension<Pool>, Path(id): Path<String>) -> H {
 
 /// PUT read/{id}/processing：标记已读——事务内迁移至 x_readcompleted 并软删源记录
 #[allow(non_snake_case)]
-pub async fn read_processing(pool: Extension<Pool>, Path(id): Path<String>) -> H {
+pub async fn read_processing(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Path(id): Path<String>,
+) -> H {
+    let session = crate::u4_session(session)?;
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     let row = tx
@@ -927,6 +1097,8 @@ pub async fn read_processing(pool: Extension<Pool>, Path(id): Path<String>) -> H
     let Some(row) = row else {
         return biz_err("read not found");
     };
+    let actor = opt_str(&row, "person");
+    u4_require_actor_of(&pool.0, &session, Some(&actor)).await?;
     let rc_id = Uuid::new_v4().to_string();
     tx.execute(
         "INSERT INTO x_readcompleted (id, work_id, person) VALUES ($1, $2, $3)",
@@ -952,14 +1124,20 @@ pub async fn read_processing(pool: Extension<Pool>, Path(id): Path<String>) -> H
 #[allow(non_snake_case)]
 pub async fn read_replace(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
     Json(body): Json<Value>,
 ) -> H {
+    let session = crate::u4_session(session)?;
     let person = body_str(&body, &["person"]);
     if person.is_empty() {
         return biz_err("person is required");
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let Some(actor) = u4_actor_of(&client, U4Res::Read, &id).await? else {
+        return biz_err("read not found");
+    };
+    u4_require_actor_of(&pool.0, &session, Some(&actor)).await?;
     let n = client
         .execute(
             "UPDATE x_read SET person = $2 WHERE id = $1 AND deleted_at IS NULL",
@@ -977,11 +1155,17 @@ pub async fn read_replace(
 #[allow(non_snake_case)]
 pub async fn read_reset(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
     Json(body): Json<Value>,
 ) -> H {
+    let session = crate::u4_session(session)?;
     let person = body_str(&body, &["person"]);
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let Some(actor) = u4_actor_of(&client, U4Res::Read, &id).await? else {
+        return biz_err("read not found");
+    };
+    u4_require_actor_of(&pool.0, &session, Some(&actor)).await?;
     let n = if person.is_empty() {
         client
             .execute("UPDATE x_read SET deleted_at = NULL WHERE id = $1", &[&id])
@@ -1006,8 +1190,17 @@ pub async fn read_reset(
 
 /// DELETE readcompleted/{id}
 #[allow(non_snake_case)]
-pub async fn readcompleted_delete(pool: Extension<Pool>, Path(id): Path<String>) -> H {
+pub async fn readcompleted_delete(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Path(id): Path<String>,
+) -> H {
+    let session = crate::u4_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let Some(actor) = u4_actor_of(&client, U4Res::ReadCompleted, &id).await? else {
+        return biz_err("readcompleted not found");
+    };
+    u4_require_actor_of(&pool.0, &session, Some(&actor)).await?;
     let n = client
         .execute("DELETE FROM x_readcompleted WHERE id = $1", &[&id])
         .await
@@ -1054,34 +1247,42 @@ async fn record_create_dedup(pool: &Pool, work_id: &str, body: Value) -> H {
 #[allow(non_snake_case)]
 pub async fn record_create_with_job(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(job): Path<String>,
     Json(body): Json<Value>,
 ) -> H {
+    // 第五十三批：按 job 落记录，job 即 work 归属键，按 work 发起人校归属。
+    crate::u4_require_work_owner(&pool.0, session, &job).await?;
     record_create_dedup(&pool, &job, body).await
 }
 
 /// POST record/work/processing
 #[allow(non_snake_case)]
-pub async fn record_work_processing(pool: Extension<Pool>, Json(body): Json<Value>) -> H {
+pub async fn record_work_processing(pool: Extension<Pool>, session: Option<Extension<shared::session::Session>>, Json(body): Json<Value>) -> H {
     let work = body_str(&body, &["work", "workId"]);
     if work.is_empty() {
         return biz_err("work is required");
     }
+    // 第五十三批：按 body.work 落 processing 记录，按 work 发起人校归属。
+    crate::u4_require_work_owner(&pool.0, session, &work).await?;
     record_create_dedup(&pool, &work, body).await
 }
 
 /// POST record/work/terminate
 #[allow(non_snake_case)]
-pub async fn record_work_terminate(pool: Extension<Pool>, Json(body): Json<Value>) -> H {
+pub async fn record_work_terminate(pool: Extension<Pool>, session: Option<Extension<shared::session::Session>>, Json(body): Json<Value>) -> H {
     let work = body_str(&body, &["work", "workId"]);
     if work.is_empty() {
         return biz_err("work is required");
     }
+    // 第五十三批：先无会话即拒（401 先于任何读库），再保留 not-found 语义，最后按 work 发起人校归属。
+    let session = crate::u4_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     if !entity_exists(&client, "x_work", &work).await? {
         return biz_err("work not found");
     }
     drop(client);
+    crate::u4_require_work_owner(&pool.0, Some(Extension(session)), &work).await?;
     record_create_dedup(&pool, &work, body).await
 }
 
@@ -1089,17 +1290,16 @@ pub async fn record_work_terminate(pool: Extension<Pool>, Json(body): Json<Value
 #[allow(non_snake_case)]
 pub async fn record_edit(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
     Json(body): Json<Value>,
 ) -> H {
+    let session = crate::u4_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let row = client
-        .query_opt("SELECT id FROM x_record WHERE id = $1", &[&id])
-        .await
-        .map_err(|_| AppError::Internal)?;
-    if row.is_none() {
+    let Some(actor) = u4_actor_of(&client, U4Res::Record, &id).await? else {
         return biz_err("record not found");
-    }
+    };
+    u4_require_actor_of(&pool.0, &session, Some(&actor)).await?;
     if let Some(t) = body.get("recordType").or_else(|| body.get("type")) {
         if let Some(t) = t.as_str() {
             client
@@ -1134,8 +1334,17 @@ pub async fn record_edit(
 
 /// DELETE record/{id}：物理删除（o2server Record delete 语义）
 #[allow(non_snake_case)]
-pub async fn record_delete(pool: Extension<Pool>, Path(id): Path<String>) -> H {
+pub async fn record_delete(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Path(id): Path<String>,
+) -> H {
+    let session = crate::u4_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let Some(actor) = u4_actor_of(&client, U4Res::Record, &id).await? else {
+        return biz_err("record not found");
+    };
+    u4_require_actor_of(&pool.0, &session, Some(&actor)).await?;
     let n = client
         .execute("DELETE FROM x_record WHERE id = $1", &[&id])
         .await
@@ -1206,22 +1415,43 @@ async fn review_create_batch(pool: &Pool, work_id: &str, body: Value, gate_table
 }
 
 /// POST review/create/work
+///
+/// 四轮审计 N-01 活口：`x_review` 是审批链行，reviewer 由请求体任意指定且 creator 不落真人，
+/// 此前整族不取会话——任一匿名/登录用户都能给任意 work 挂评审人（伪造审批人、抢先占位后
+/// 该 (work,person) 永久去重拒绝真人入列）。按「审批链 = 系统级数据」档收 admin。
 #[allow(non_snake_case)]
-pub async fn review_create_work(pool: Extension<Pool>, Json(body): Json<Value>) -> H {
+pub async fn review_create_work(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Json(body): Json<Value>,
+) -> H {
+    require_admin_opt(&pool.0, session.as_ref().map(|e| &e.0)).await?;
     let work = body_str(&body, &["work", "workId"]);
     review_create_batch(&pool, &work, body, "x_work").await
 }
 
 /// POST review/create/workcompleted
 #[allow(non_snake_case)]
-pub async fn review_create_workcompleted(pool: Extension<Pool>, Json(body): Json<Value>) -> H {
+pub async fn review_create_workcompleted(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Json(body): Json<Value>,
+) -> H {
+    require_admin_opt(&pool.0, session.as_ref().map(|e| &e.0)).await?;
     let work = body_str(&body, &["workCompleted", "workCompletedId", "work"]);
     review_create_batch(&pool, &work, body, "x_workcompleted").await
 }
 
 /// POST review/init/review：为所有有任务的工作补齐缺失评审（幂等批量）
+///
+/// 全表扫描 + 批量 INSERT，一次调用能给库内所有 work 造评审行，属运维维护作业，
+/// 与 touch/mergeitem 同档收 admin。
 #[allow(non_snake_case)]
-pub async fn review_init_for_view(pool: Extension<Pool>) -> H {
+pub async fn review_init_for_view(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+) -> H {
+    require_admin_opt(&pool.0, session.as_ref().map(|e| &e.0)).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -1255,8 +1485,17 @@ pub async fn review_init_for_view(pool: Extension<Pool>) -> H {
 
 /// DELETE review/{id}：软删除
 #[allow(non_snake_case)]
-pub async fn review_delete(pool: Extension<Pool>, Path(id): Path<String>) -> H {
+pub async fn review_delete(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Path(id): Path<String>,
+) -> H {
+    let session = crate::u4_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let Some(actor) = u4_actor_of(&client, U4Res::Review, &id).await? else {
+        return biz_err("review not found");
+    };
+    u4_require_actor_of(&pool.0, &session, Some(&actor)).await?;
     let n = client
         .execute(
             "UPDATE x_review SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
@@ -1274,7 +1513,12 @@ pub async fn review_delete(pool: Extension<Pool>, Path(id): Path<String>) -> H {
 
 /// DELETE snap/{id}
 #[allow(non_snake_case)]
-pub async fn snap_delete(pool: Extension<Pool>, Path(id): Path<String>) -> H {
+pub async fn snap_delete(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Path(id): Path<String>,
+) -> H {
+    require_admin_opt(&pool.0, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let n = client
         .execute("DELETE FROM x_snap WHERE id = $1", &[&id])
@@ -1349,11 +1593,15 @@ async fn snap_take_for_wc(pool: &Pool, wc_id: &str, snap_type: &str) -> H {
         return biz_err("workcompleted not found");
     };
     let snap_data = row_to_json(&row);
+    // 第十六批取证顺带修正：x_snap.work_id 原来写的是 workcompleted 的 ID。
+    // 读回侧（`snap_workcompleted/{id}/type/snapworkcompleted`、rollback 取最新快照）
+    // 一律按真实 work_id 查，所以这些完成项快照存进去就再也读不到——键写错，不是权限问题。
+    let work_id: String = opt_str(&row, "work_id");
     let snap_id = Uuid::new_v4().to_string();
     client
         .execute(
             "INSERT INTO x_snap (id, work_id, snap_type, snap_data) VALUES ($1, $2, $3, ($4::text)::jsonb)",
-            &[&snap_id, &wc_id.to_string(), &snap_type.to_string(), &snap_data.to_string()],
+            &[&snap_id, &work_id, &snap_type.to_string(), &snap_data.to_string()],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -1362,31 +1610,58 @@ async fn snap_take_for_wc(pool: &Pool, wc_id: &str, snap_type: &str) -> H {
 
 /// GET snap/work/{workId}/type/abandoned：放弃工作（快照+取消任务+置状态）
 #[allow(non_snake_case)]
-pub async fn snap_type_abandoned(pool: Extension<Pool>, Path(work_id): Path<String>) -> H {
+pub async fn snap_type_abandoned(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Path(work_id): Path<String>,
+) -> H {
+    crate::u4_require_work_owner(&pool.0, session, &work_id).await?;
     snap_take_for_work(&pool, &work_id, "abandoned", true, Some("abandoned")).await
 }
 
 /// GET snap/work/{workId}/type/snap
 #[allow(non_snake_case)]
-pub async fn snap_type_snap(pool: Extension<Pool>, Path(work_id): Path<String>) -> H {
+pub async fn snap_type_snap(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Path(work_id): Path<String>,
+) -> H {
+    crate::u4_require_work_owner(&pool.0, session, &work_id).await?;
     snap_take_for_work(&pool, &work_id, "snap", false, None).await
 }
 
 /// GET snap/work/{workId}/type/suspend：挂起工作
 #[allow(non_snake_case)]
-pub async fn snap_type_suspend(pool: Extension<Pool>, Path(work_id): Path<String>) -> H {
+pub async fn snap_type_suspend(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Path(work_id): Path<String>,
+) -> H {
+    crate::u4_require_work_owner(&pool.0, session, &work_id).await?;
     snap_take_for_work(&pool, &work_id, "suspend", false, Some("suspended")).await
 }
 
 /// GET snap/workcompleted/{workCompletedId}/type/abandonedworkcompleted
 #[allow(non_snake_case)]
-pub async fn snap_wc_type_abandoned(pool: Extension<Pool>, Path(wc_id): Path<String>) -> H {
+pub async fn snap_wc_type_abandoned(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Path(wc_id): Path<String>,
+) -> H {
+    let session = crate::u4_session(session)?;
+    crate::u4_require_actors(&pool.0, &session, crate::U4ActorKey::WorkCompleted, &wc_id).await?;
     snap_take_for_wc(&pool, &wc_id, "abandonedWorkCompleted").await
 }
 
 /// GET snap/workcompleted/{workCompletedId}/type/snapworkcompleted
 #[allow(non_snake_case)]
-pub async fn snap_wc_type_snap(pool: Extension<Pool>, Path(wc_id): Path<String>) -> H {
+pub async fn snap_wc_type_snap(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Path(wc_id): Path<String>,
+) -> H {
+    let session = crate::u4_session(session)?;
+    crate::u4_require_actors(&pool.0, &session, crate::U4ActorKey::WorkCompleted, &wc_id).await?;
     snap_take_for_wc(&pool, &wc_id, "snapWorkCompleted").await
 }
 
@@ -1394,8 +1669,17 @@ pub async fn snap_wc_type_snap(pool: Extension<Pool>, Path(wc_id): Path<String>)
 
 /// DELETE task/{id}：软删除待办
 #[allow(non_snake_case)]
-pub async fn task_delete(pool: Extension<Pool>, Path(id): Path<String>) -> H {
+pub async fn task_delete(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Path(id): Path<String>,
+) -> H {
+    let session = crate::u4_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let Some(actor) = u4_actor_of(&client, U4Res::Task, &id).await? else {
+        return biz_err("task not found");
+    };
+    u4_require_actor_of(&pool.0, &session, Some(&actor)).await?;
     let n = client
         .execute(
             "UPDATE x_task SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
@@ -1413,8 +1697,17 @@ pub async fn task_delete(pool: Extension<Pool>, Path(id): Path<String>) -> H {
 
 /// DELETE taskcompleted/{id}：物理删除已完成任务
 #[allow(non_snake_case)]
-pub async fn taskcompleted_delete(pool: Extension<Pool>, Path(id): Path<String>) -> H {
+pub async fn taskcompleted_delete(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Path(id): Path<String>,
+) -> H {
+    let session = crate::u4_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let Some(actor) = u4_actor_of(&client, U4Res::ReadCompleted, &id).await? else {
+        return biz_err("taskcompleted not found");
+    };
+    u4_require_actor_of(&pool.0, &session, Some(&actor)).await?;
     let n = client
         .execute("DELETE FROM x_readcompleted WHERE id = $1", &[&id])
         .await
@@ -1429,8 +1722,10 @@ pub async fn taskcompleted_delete(pool: Extension<Pool>, Path(id): Path<String>)
 #[allow(non_snake_case)]
 pub async fn taskcompleted_press(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path((id, work)): Path<(String, String)>,
 ) -> H {
+    crate::u4_require_work_owner(&pool.0, session, &work).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt("SELECT work_id FROM x_readcompleted WHERE id = $1", &[&id])
@@ -1461,6 +1756,7 @@ pub async fn taskcompleted_press(
 #[allow(non_snake_case)]
 pub async fn taskcompleted_update_next_identity(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Json(body): Json<Value>,
 ) -> H {
     let id = body_str(&body, &["id", "taskId"]);
@@ -1468,6 +1764,9 @@ pub async fn taskcompleted_update_next_identity(
     if id.is_empty() || identity.is_empty() {
         return biz_err("id and nextTaskIdentity are required");
     }
+    // 第五十三批：改任务下一处理身份，按 task 负责人 / work 发起人两列 OR 校归属。
+    let session = crate::u4_session(session)?;
+    crate::u4_require_actors(&pool.0, &session, crate::U4ActorKey::Task, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let n = client
         .execute(
@@ -1701,21 +2000,25 @@ pub async fn touch_merge_item(
 #[allow(non_snake_case)]
 pub async fn documentversion_create(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(work): Path<String>,
     Json(body): Json<Value>,
 ) -> H {
+    let session = crate::u4_session(session)?;
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     // 行锁父 work：MAX+1 是读-改-写序号分配，无锁时两并发创建对同一 work 读到
     // 相同 MAX 而插入重复版本号；锁父行串行化后后者的 MAX 读到前者已提交的行。
     // 锁同时兼作存在性检查（不存在则无行可锁）。
     let locked = tx
-        .query_opt("SELECT id FROM x_work WHERE id = $1 FOR UPDATE", &[&work])
+        .query_opt("SELECT creator FROM x_work WHERE id = $1 FOR UPDATE", &[&work])
         .await
         .map_err(|_| AppError::Internal)?;
-    if locked.is_none() {
+    let Some(locked_row) = locked else {
         return biz_err("work not found");
-    }
+    };
+    let work_creator = opt_str(&locked_row, "creator");
+    u4_require_actor_of(&pool.0, &session, Some(&work_creator)).await?;
     let next: i32 = tx
         .query_one(
             "SELECT COALESCE(MAX(version), 0) + 1 AS v FROM x_document_version WHERE work_id = $1",
@@ -1726,14 +2029,7 @@ pub async fn documentversion_create(
         .get("v");
     let id = Uuid::new_v4().to_string();
     let content_val = body.get("content").cloned().unwrap_or(json!({}));
-    let creator = {
-        let c = body_str(&body, &["creator", "person"]);
-        if c.is_empty() {
-            "system".to_string()
-        } else {
-            c
-        }
-    };
+    let creator = session.person_unique.clone();
     tx.execute(
         "INSERT INTO x_document_version (id, work_id, version, content, creator) \
          VALUES ($1, $2, $3, ($4::text)::jsonb, $5)",
@@ -1749,28 +2045,37 @@ pub async fn documentversion_create(
 
 /// POST work：按流程标识创建工作实例（事务内建 work + 首个任务）
 #[allow(non_snake_case)]
-pub async fn work_create(pool: Extension<Pool>, Json(body): Json<Value>) -> H {
+pub async fn work_create(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Json(body): Json<Value>,
+) -> H {
+    let session = crate::u4_session(session)?;
     let process_id = body_str(&body, &["process", "processId"]);
-    work_start_impl(pool, process_id, None, body).await
+    work_start_impl(pool, process_id, None, body, &session.person_unique).await
 }
 
 /// POST work/process/{processId}：流程标识取自路径
 #[allow(non_snake_case)]
 pub async fn work_create_for_process(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(process_id): Path<String>,
     Json(body): Json<Value>,
 ) -> H {
-    work_start_impl(pool, process_id, None, body).await
+    let session = crate::u4_session(session)?;
+    work_start_impl(pool, process_id, None, body, &session.person_unique).await
 }
 
 /// POST work/process/{processId}/name/{name}/serial：按名称创建，流水号服务端生成（同流程现有工作数+1）
 #[allow(non_snake_case)]
 pub async fn work_create_with_serial(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path((process_id, name)): Path<(String, String)>,
     Json(body): Json<Value>,
 ) -> H {
+    let session = crate::u4_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let n: i64 = client
         .query_one(
@@ -1782,7 +2087,7 @@ pub async fn work_create_with_serial(
         .get("c");
     drop(client);
     let title = format!("{name}-{next}", next = n + 1);
-    work_start_impl(pool, process_id, Some(title), body).await
+    work_start_impl(pool, process_id, Some(title), body, &session.person_unique).await
 }
 
 async fn work_start_impl(
@@ -1790,6 +2095,7 @@ async fn work_start_impl(
     process_id: String,
     title_override: Option<String>,
     body: Value,
+    person: &str,
 ) -> H {
     let process_id = process_id.trim().to_string();
     let title = title_override.unwrap_or_else(|| {
@@ -1817,14 +2123,9 @@ async fn work_start_impl(
         return biz_err("process not found");
     }
     let id = Uuid::new_v4().to_string();
-    let creator = {
-        let c = body_str(&body, &["creator", "person"]);
-        if c.is_empty() {
-            "system".to_string()
-        } else {
-            c
-        }
-    };
+    // 发起人以会话为权威：原取请求体 creator / person，任一登录用户可替他人建 work 并
+    // 把首个待办塞给对方
+    let creator = person.to_string();
     tx.execute(
         "INSERT INTO x_work (id, title, process, application, work_status, creator, create_time, start_time) \
          VALUES ($1, $2, $3, '', 'pending', $4, NOW(), NOW())",
@@ -1887,14 +2188,20 @@ pub async fn work_get(pool: Extension<Pool>, Path(id): Path<String>) -> H {
 #[allow(non_snake_case)]
 pub async fn work_edit(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
     Json(body): Json<Value>,
 ) -> H {
+    let session = crate::u4_session(session)?;
     let title = body_str(&body, &["title"]);
     if title.is_empty() {
         return biz_err("title is required");
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let Some(actor) = u4_actor_of(&client, U4Res::Work, &id).await? else {
+        return biz_err("work not found");
+    };
+    u4_require_actor_of(&pool.0, &session, Some(&actor)).await?;
     let n = client
         .execute("UPDATE x_work SET title = $2 WHERE id = $1", &[&id, &title])
         .await
@@ -1914,9 +2221,24 @@ pub async fn work_edit(
 
 /// DELETE work/{id}：物理删除工作及其任务（o2server delete 级联语义，事务内执行）
 #[allow(non_snake_case)]
-pub async fn work_delete(pool: Extension<Pool>, Path(id): Path<String>) -> H {
+pub async fn work_delete(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Path(id): Path<String>,
+) -> H {
+    let session = crate::u4_session(session)?;
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    // 级联物理删 x_work / x_task / x_draft 之前先锁行取发起人，
+    // 非发起人 / 非 admin 退回时事务不进入任何 DELETE
+    let row = tx
+        .query_opt("SELECT creator FROM x_work WHERE id = $1 FOR UPDATE", &[&id])
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let Some(creator) = row.map(|r| opt_str(&r, "creator")) else {
+        return biz_err("work not found");
+    };
+    u4_require_actor_of(&pool.0, &session, Some(&creator)).await?;
     let n = tx
         .execute("DELETE FROM x_work WHERE id = $1", &[&id])
         .await
@@ -1936,8 +2258,15 @@ pub async fn work_delete(pool: Extension<Pool>, Path(id): Path<String>) -> H {
 
 /// DELETE work/{id}/draft：删除该工作的全部草稿；无草稿报错（o2server ExceptionDeleteDraft）
 #[allow(non_snake_case)]
-pub async fn work_draft_delete(pool: Extension<Pool>, Path(work): Path<String>) -> H {
+pub async fn work_draft_delete(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Path(work): Path<String>,
+) -> H {
+    let session = crate::u4_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let creator = u4_actor_of(&client, U4Res::Work, &work).await?;
+    u4_require_actor_of(&pool.0, &session, creator.as_deref()).await?;
     let n = client
         .execute("DELETE FROM x_draft WHERE work_id = $1", &[&work])
         .await
@@ -1950,15 +2279,18 @@ pub async fn work_draft_delete(pool: Extension<Pool>, Path(work): Path<String>) 
 
 /// POST work/manual/after/processing：人工流转后置记录（内容幂等去重）
 #[allow(non_snake_case)]
-pub async fn work_manual_after(pool: Extension<Pool>, Json(body): Json<Value>) -> H {
+pub async fn work_manual_after(pool: Extension<Pool>, session: Option<Extension<shared::session::Session>>, Json(body): Json<Value>) -> H {
     let work = body_str(&body, &["work", "workId"]);
     if work.is_empty() {
         return biz_err("work is required");
     }
+    // 第五十三批：先无会话即拒（401 先于任何读库），再保留 not-found 语义，最后按 work 发起人校归属。
+    let session = crate::u4_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     if !entity_exists(&client, "x_work", &work).await? {
         return biz_err("work not found");
     }
+    crate::u4_require_work_owner(&pool.0, Some(Extension(session)), &work).await?;
     if record_exists(
         &client,
         &work,
@@ -1982,13 +2314,26 @@ pub async fn work_manual_after(pool: Extension<Pool>, Json(body): Json<Value>) -
 
 /// POST work/v3/retract：按 body.work 撤回（状态机迁移 + 任务取消，事务内）
 #[allow(non_snake_case)]
-pub async fn work_v3_retract_body(pool: Extension<Pool>, Json(body): Json<Value>) -> H {
+pub async fn work_v3_retract_body(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Json(body): Json<Value>,
+) -> H {
+    let session = crate::u4_session(session)?;
     let work = body_str(&body, &["work", "workId"]);
     if work.is_empty() {
         return biz_err("work is required");
     }
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let row = tx
+        .query_opt("SELECT creator FROM x_work WHERE id = $1 FOR UPDATE", &[&work])
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let Some(creator) = row.map(|r| opt_str(&r, "creator")) else {
+        return biz_err("work not found");
+    };
+    u4_require_actor_of(&pool.0, &session, Some(&creator)).await?;
     let n = tx
         .execute(
             "UPDATE x_work SET work_status = 'retracted' WHERE id = $1",
@@ -2006,7 +2351,7 @@ pub async fn work_v3_retract_body(pool: Extension<Pool>, Json(body): Json<Value>
     )
     .await
     .map_err(|_| AppError::Internal)?;
-    record_insert_tx(&tx, &work, "retract", "v3 retract", "system").await?;
+    record_insert_tx(&tx, &work, "retract", "v3 retract", &session.person_unique).await?;
     tx.commit().await.map_err(|_| AppError::Internal)?;
     ok(json!({ "id": work, "value": true }))
 }
@@ -2040,14 +2385,16 @@ async fn record_insert_tx(
 #[allow(non_snake_case)]
 pub async fn work_processing_signal(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path((id, series, activity_token)): Path<(String, String, String)>,
 ) -> H {
     let _ = series;
+    let session = crate::u4_session(session)?;
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     let row = tx
         .query_opt(
-            "SELECT id FROM x_task \
+            "SELECT id, person FROM x_task \
              WHERE work = $1 AND activity_token = $2 AND deleted_at IS NULL FOR UPDATE",
             &[&id, &activity_token],
         )
@@ -2057,6 +2404,8 @@ pub async fn work_processing_signal(
         return biz_err("task not found by activityToken");
     };
     let task_id: String = row.get("id");
+    let assignee = opt_str(&row, "person");
+    u4_require_actor_of(&pool.0, &session, Some(&assignee)).await?;
     tx.execute(
         "UPDATE x_task SET task_status = 'completed', end_time = NOW() WHERE id = $1",
         &[&task_id],
@@ -2068,7 +2417,7 @@ pub async fn work_processing_signal(
         &id,
         "signal",
         &format!("activityToken:{activity_token}"),
-        "system",
+        &session.person_unique,
     )
     .await?;
     tx.commit().await.map_err(|_| AppError::Internal)?;
@@ -2079,9 +2428,11 @@ pub async fn work_processing_signal(
 #[allow(non_snake_case)]
 pub async fn work_add_identity_matrix(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
     Json(body): Json<Value>,
 ) -> H {
+    let session = crate::u4_session(session)?;
     let identities = body_str_list(&body, &["identityList", "identityMatrix", "identities"]);
     if identities.is_empty() {
         return biz_err("identityList is required");
@@ -2090,7 +2441,7 @@ pub async fn work_add_identity_matrix(
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     let row = tx
         .query_opt(
-            "SELECT id, title FROM x_work WHERE id = $1 FOR UPDATE",
+            "SELECT id, title, creator FROM x_work WHERE id = $1 FOR UPDATE",
             &[&id],
         )
         .await
@@ -2099,6 +2450,9 @@ pub async fn work_add_identity_matrix(
         return biz_err("work not found");
     };
     let title: String = row.get("title");
+    // 往他人工作里批量插待办属改写流程，按发起人判定
+    let work_creator = opt_str(&row, "creator");
+    u4_require_actor_of(&pool.0, &session, Some(&work_creator)).await?;
     let mut created = Vec::new();
     for identity in identities {
         let task_id = Uuid::new_v4().to_string();
@@ -2119,7 +2473,13 @@ pub async fn work_add_identity_matrix(
 
 /// GET workcompleted/{flag}/merge：保留 flag 指定项，合并同 work 的其余重复项
 #[allow(non_snake_case)]
-pub async fn wc_merge_flag(pool: Extension<Pool>, Path(flag): Path<String>) -> H {
+pub async fn wc_merge_flag(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Path(flag): Path<String>,
+) -> H {
+    let session = crate::u4_session(session)?;
+    crate::u4_require_actors(&pool.0, &session, crate::U4ActorKey::WorkCompleted, &flag).await?;
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     let row = tx
@@ -2146,7 +2506,9 @@ pub async fn wc_merge_flag(pool: Extension<Pool>, Path(flag): Path<String>) -> H
 
 /// POST workcompleted/process/{processFlag}：为该流程已结束工作补齐完成记录（幂等）
 #[allow(non_snake_case)]
-pub async fn wc_process_flag(pool: Extension<Pool>, Path(process_flag): Path<String>) -> H {
+pub async fn wc_process_flag(pool: Extension<Pool>, session: Option<Extension<shared::session::Session>>, Path(process_flag): Path<String>) -> H {
+    // 第五十三批：按流程批量补完成记录（跨多 work 的运维作业），收 admin 档。
+    require_admin_opt(&pool.0, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -2176,7 +2538,9 @@ pub async fn wc_process_flag(pool: Extension<Pool>, Path(process_flag): Path<Str
 
 /// POST workcompleted/shift/time：平移完成时间（minutes 可正可负）
 #[allow(non_snake_case)]
-pub async fn wc_shift_time(pool: Extension<Pool>, Json(body): Json<Value>) -> H {
+pub async fn wc_shift_time(pool: Extension<Pool>, session: Option<Extension<shared::session::Session>>, Json(body): Json<Value>) -> H {
+    // 第五十三批：批量平移完成时间（ids 为空时动全表），收 admin 档。
+    require_admin_opt(&pool.0, session.as_deref()).await?;
     let minutes = body.get("minutes").and_then(|v| v.as_i64()).unwrap_or(0);
     if minutes == 0 || minutes.abs() > 5_256_000 {
         return biz_err("minutes must be non-zero within ±10 years");
@@ -2206,7 +2570,10 @@ pub async fn wc_shift_time(pool: Extension<Pool>, Json(body): Json<Value>) -> H 
 
 /// PUT workcompleted/{flag}/rollback：回滚完成态——对应工作恢复运行并补记 rollback
 #[allow(non_snake_case)]
-pub async fn wc_rollback_flag(pool: Extension<Pool>, Path(flag): Path<String>) -> H {
+pub async fn wc_rollback_flag(pool: Extension<Pool>, session: Option<Extension<shared::session::Session>>, Path(flag): Path<String>) -> H {
+    // 第五十三批：回滚完成态（恢复 work + 删完成记录 + 补记 rollback），按完成记录发起人 / work 发起人校归属。
+    let session = crate::u4_session(session)?;
+    crate::u4_require_actors(&pool.0, &session, crate::U4ActorKey::WorkCompleted, &flag).await?;
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     let row = tx
@@ -2252,11 +2619,12 @@ mod security_gate_tests {
     /// 无会话必须 Unauthorized（不执行删除逻辑），非 admin 会话
     /// （无 DB 时 is_admin 查询失败 fail-closed）必须 Forbidden。
     fn build_session(person_unique: &str) -> shared::session::Session {
+        // 与 shared::testing::test_session 同值的非弃用写法（from_timestamp 已弃用）。
         shared::session::Session {
             token: "t".to_string(),
             person_unique: person_unique.to_string(),
-            created_at: chrono::NaiveDateTime::from_timestamp(0, 0),
-            expires_at: chrono::NaiveDateTime::from_timestamp(3600, 0),
+            created_at: chrono::NaiveDateTime::parse_from_str("1970-01-01 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap(),
+            expires_at: chrono::NaiveDateTime::parse_from_str("1970-01-01 01:00:00", "%Y-%m-%d %H:%M:%S").unwrap(),
         }
     }
 

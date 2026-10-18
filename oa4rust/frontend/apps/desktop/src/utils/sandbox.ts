@@ -104,7 +104,13 @@ export function runInSandbox(code: string, timeoutMs = 5000): Promise<SandboxRes
 }
 
 /**
- * Bootstrap the sandbox iframe content once (called internally via srcdoc).
+ * 测试辅助：将内容写入已创建的沙箱 iframe 的 `srcdoc`。
+ *
+ * 说明（安全审计 2026-10 二轮）：生产路径不经由 srcdoc 引导——`getOrCreateFrame`
+ * 走 `iframe.src = ${BASE_URL}sandbox.html`（opaque-origin 沙箱页）。本函数仅被
+ * `sandbox.test.ts` 用于注入测试内容；iframe 的 `sandbox="allow-scripts"` 属性在
+ * srcdoc 场景下依然生效，故无额外风险面。保留导出仅为测试，勿在生产逻辑中改用
+ * srcdoc 引导（会绕过 sandbox.html 的 source 守卫）。
  */
 export function bootstrapSandboxFrame(srcdoc: string): void {
   if (iframe) {

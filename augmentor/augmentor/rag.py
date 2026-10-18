@@ -58,13 +58,13 @@ class RAGFormatter:
 
         chunks = []
         step = self.chunk_size - self.chunk_overlap
-        for start in range(0, len(text), step):
-            chunk = text[start:start + self.chunk_size]
-            if chunk:
-                chunks.append(chunk)
-            if start + self.chunk_size >= len(text):
-                break
-
+        # 起点严格小于 tail 者各出一块，再补一块盖住结尾：旧写法用 break 收尾，「循环耗尽」与「空块」两支不可达
+        tail = len(text) - self.chunk_size
+        start = 0
+        while start < tail:
+            chunks.append(text[start:start + self.chunk_size])
+            start += step
+        chunks.append(text[start:start + self.chunk_size])
         return chunks
 
     def _build_metadata(self, item: Dict, index: int, extra: Optional[Dict] = None) -> Dict:

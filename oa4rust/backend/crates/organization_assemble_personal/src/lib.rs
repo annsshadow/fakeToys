@@ -13,11 +13,23 @@ use shared::{error::AppError, response::ActionResult};
 pub const API_BASE: &str = "/api/organization_assemble_personal";
 pub mod routes;
 
+/// 安全审计（round4-b75）：个人自定义字段更新真写收"会话存在档"门禁。
+/// 无会话（Option<Extension<Session>> = None）→ 401，门置于首个 DB 访问
+/// （`pool.get()`）之前，杜绝匿名改写 `x_org_custom.field_value`。
+/// 注：UPDATE 仅按 id 过滤、无属主/归属条件（IDOR 收紧残留，列 §五）。
+fn require_session(
+    session: Option<Extension<shared::session::Session>>,
+) -> Result<shared::session::Session, AppError> {
+    session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
+}
+
 #[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;
+#[cfg(test)]
+mod security_gate_tests_b75;
 
 #[axum::debug_handler]
 pub async fn user_setting(
@@ -109,9 +121,11 @@ pub fn organization_assemble_personal_router() -> Router {
 
 pub async fn custom_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
     Json(req): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let value = req.get("fieldValue").and_then(|v| v.as_str()).unwrap_or("");
     let n = client

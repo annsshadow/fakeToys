@@ -493,13 +493,37 @@ mod u2_tests {
             ("GET", "/j-1/p0"),
             ("GET", "/j-1/p0/p1/p2"),
             ("GET", "/j-1/p0/p1/p2/p3/p4/p5"),
-            ("POST", "/j-1/mockputtopost"),
             ("GET", "/j-1/p0/mockdeletetoget"),
         ] {
             assert_eq!(
                 status_of(method, &format!("{}{}", base, path)).await,
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "data job pathN route failed: {} {}",
+                method,
+                path
+            );
+        }
+        // 第十一批口径：写档逐格点名期望码，不写「500 或 401 都算过」——那种放宽会让
+        // 「别名档被漏注册」与「门被摘掉」两种红都读成绿。
+        // POST 档路径带 `{job}` 段，是活的：加门后 401，且门在 `pool.get()` 之前，
+        // 比 500 更强的「路由存在且可达」凭据。
+        // GET `/job/mockputtopost` 档是死档：注册时把 `{job}` 写成字面量 `job`、又缺 `{id}` 段，
+        // 路径零参数而 handler 取 `Path<String>`，axum 在进函数体前就抛
+        // 「Wrong number of path arguments」（本批实测 500），SQL 永不执行。
+        // 它落进 500 而非 401 不是「门失效」，而是「入口本就到不了」；一旦有人补上参数段，
+        // 本格的期望就得跟着改成 401。
+        for (method, path, want) in [
+            ("POST", "/j-1/mockputtopost", StatusCode::UNAUTHORIZED),
+            (
+                "GET",
+                "/job/mockputtopost",
+                StatusCode::INTERNAL_SERVER_ERROR,
+            ),
+        ] {
+            assert_eq!(
+                status_of(method, &format!("{}{}", base, path)).await,
+                want,
+                "data job mockputtopost 写档读数不符: {} {}",
                 method,
                 path
             );
@@ -901,20 +925,40 @@ mod u2b_tests {
     #[tokio::test]
     async fn u2r_data_work_pathn_legacy_shape_extraction_contract() {
         // 鏂█ 500锛堣€岄潪 400/404锛夎瘉鏄庯細o2server 褰㈢姸璺敱瀛樺湪涓?N 鍏冪粍 Path 鎻愬彇鍣ㄥ尮閰嶃€?
+        // 四轮 R4-10：本族 8 格里 5 格是 mock* 别名写，现已加归属门。
+        // 门在 Path 提取之后、`pool.get()` 之前，所以「形状契约」仍成立，只是读数
+        // 从 500（无库时触库失败）换成 401（无会话被门拦）——两者都排除 400/404。
+        // 逐格点名期望码：别名格必须 401，只读格必须仍是 500。
         let base = "/api/processplatform/assemble/surface/data/work";
-        for (method, path) in [
-            ("GET", &format!("{base}/w-1/p0")),
-            ("GET", &format!("{base}/w-1/p0/p1/p2/p3")),
-            ("GET", &format!("{base}/w-1/p0/p1/p2/p3/p4/p5/p6/p7")),
-            ("GET", &format!("{base}/w-1/p0/mockdeletetoget")),
-            ("PUT", &format!("{base}/w-1/p0")),
-            ("PUT", &format!("{base}/w-1/p0/p1/p2")),
-            ("POST", &format!("{base}/w-1/p0/p1/mockputtopost")),
-            ("DELETE", &format!("{base}/w-1/p0/p1/p2")),
+        for (method, path, expect) in [
+            ("GET", &format!("{base}/w-1/p0"), StatusCode::INTERNAL_SERVER_ERROR),
+            (
+                "GET",
+                &format!("{base}/w-1/p0/p1/p2/p3"),
+                StatusCode::INTERNAL_SERVER_ERROR,
+            ),
+            (
+                "GET",
+                &format!("{base}/w-1/p0/p1/p2/p3/p4/p5/p6/p7"),
+                StatusCode::INTERNAL_SERVER_ERROR,
+            ),
+            ("GET", &format!("{base}/w-1/p0/mockdeletetoget"), StatusCode::UNAUTHORIZED),
+            ("PUT", &format!("{base}/w-1/p0"), StatusCode::UNAUTHORIZED),
+            ("PUT", &format!("{base}/w-1/p0/p1/p2"), StatusCode::UNAUTHORIZED),
+            (
+                "POST",
+                &format!("{base}/w-1/p0/p1/mockputtopost"),
+                StatusCode::UNAUTHORIZED,
+            ),
+            (
+                "DELETE",
+                &format!("{base}/w-1/p0/p1/p2"),
+                StatusCode::UNAUTHORIZED,
+            ),
         ] {
             assert_eq!(
                 status_of(method, path).await,
-                StatusCode::INTERNAL_SERVER_ERROR,
+                expect,
                 "work pathN tuple extraction failed: {path}"
             );
         }
@@ -926,13 +970,26 @@ mod u2b_tests {
         for (method, path) in [
             ("GET", &format!("{base}/wc-1/p0")),
             ("GET", &format!("{base}/wc-1/p0/p1/p2/p3/p4/p5/p6/p7")),
-            ("PUT", &format!("{base}/wc-1/p0/p1")),
-            ("POST", &format!("{base}/wc-1/p0/mockputtopost")),
         ] {
             assert_eq!(
                 status_of(method, path).await,
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "workcompleted pathN tuple extraction failed: {path}"
+            );
+        }
+        // 第十一批：PUT 档与 POST 档都由同一把 `*_mockputtopost` handler 承担（routes.rs 把
+        // `put(...)` 与 `post(...)` 双双注册到它），加门后这两档在读 SQL 之前就 401；
+        // GET 形状别名 `/workcompleted/mockputtopost/{id}` 同属 csrf/`requires_admin` 双盲区，
+        // 一并逐格点名，避免「路由丢失」与「门被摘掉」都读成绿。
+        for (method, path) in [
+            ("PUT", &format!("{base}/wc-1/p0/p1")),
+            ("POST", &format!("{base}/wc-1/p0/mockputtopost")),
+            ("GET", &format!("{base}/mockputtopost/wc-1")),
+        ] {
+            assert_eq!(
+                status_of(method, path).await,
+                StatusCode::UNAUTHORIZED,
+                "workcompleted 写别名档应被会话门挡在 SQL 之前: {method} {path}"
             );
         }
     }

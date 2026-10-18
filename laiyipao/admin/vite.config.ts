@@ -8,6 +8,10 @@ import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 const API_TARGET = process.env.VITE_API_TARGET || 'http://127.0.0.1:8080'
 
 export default defineConfig({
+  // ⚠️ 第 159 轮：部署在 https://<YOUR_TEST_DOMAIN>/laiyipao-admin/，
+  // 缺 base 时 vite 默认 '/'，资源全打到 <host>/assets/… 404 → 白屏。
+  // 与 H5 的 base='/laiyipao-h5/' 对齐。
+  base: '/laiyipao-admin/',
   // ⚠️ 顺序有讲究：Components 必须排在 vue() **之后** ——
   // 它靠分析编译后的 render 函数来收集模板里用到的组件，
   // 排在前面就什么也收集不到（表现为「构建成功但组件全丢」）。

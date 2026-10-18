@@ -22,6 +22,11 @@ mod tests_generated;
 #[cfg(test)]
 mod tests_u2;
 #[cfg(test)]
+#[allow(clippy::module_inception)]
+mod security_gate_tests;
+#[cfg(test)]
+mod security_gate_tests_b63;
+#[cfg(test)]
 mod tests_u2_legacy;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -97,8 +102,11 @@ pub async fn list_control_rules(
 #[allow(non_snake_case)]
 pub async fn create_control_rule(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 考勤控制规则管理，表无归属列（ownerless）⇒ 管理员档。
+    require_admin_opt(&pool, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
     let rule_name = payload
@@ -193,8 +201,11 @@ pub async fn list_statistics(pool: Extension<Pool>) -> Result<Json<ActionResult<
 #[allow(non_snake_case)]
 pub async fn delete_control_rule(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 考勤控制规则管理，表无归属列（ownerless）⇒ 管理员档。
+    require_admin_opt(&pool, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -212,9 +223,12 @@ pub async fn delete_control_rule(
 
 pub async fn toggle_control_rule(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 考勤控制规则管理，表无归属列（ownerless）⇒ 管理员档。
+    require_admin_opt(&pool, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let enabled: bool = payload
@@ -368,9 +382,14 @@ pub async fn attendanceadmin_id(
 /// POST /api/attendance/assemble/control/attendanceappealInfo/appeal/{id}
 pub async fn attendanceappealInfo_appeal_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 申诉处理，person 从 body 取（冒名族，另记待修）⇒ 会话存在档。
+    let Some(Extension(_session)) = session else {
+        return Err(AppError::Unauthorized);
+    };
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let status = payload
@@ -532,8 +551,11 @@ pub async fn attendanceconfig_save(
 /// POST /api/attendance/assemble/control/attendanceappealInfo/archive/{id}
 pub async fn attendanceappealInfo_archive_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 归档会把申诉移出待审批队列，与同表 audit / check / workflow_sync 同属管理员动作 ⇒ admin 档。
+    require_admin_opt(&pool, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -794,8 +816,12 @@ pub async fn attendanceappealInfo_manager_list_id_next_count(
 /// POST /api/attendance/assemble/control/attendanceappealInfo/workflow/appeal/{id}
 pub async fn attendanceappealInfo_workflow_appeal_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 申述工作流推进：同族 workflow_sync 已是 admin 档；本把整行改 workflow_status，
+    // 属管理动作，admin 档（无会话 401 / 非 admin 403），门插在 pool.get() 前。
+    require_admin_opt(&pool, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -906,8 +932,12 @@ pub async fn attendanceappealInfo_id(
 /// POST /api/attendance/assemble/control/attendancedetail/analyse
 pub async fn attendancedetail_analyse(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 明细核算：同族 analyse/id/{id}（require_admin_opt）、analyse/redo（require_admin）均 admin 档；
+    // 按 person_id 区间批量置 analysed，本人跳过重算属越权，admin 档，门插在 pool.get() 前。
+    require_admin_opt(&pool, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let person_id = payload
@@ -945,8 +975,12 @@ pub async fn attendancedetail_analyse(
 /// POST /api/attendance/assemble/control/attendancedetail/analyse/id/{id}
 pub async fn attendancedetail_analyse_id_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // analyse 族是核算动作：同族 analyse/redo（按 person_id 批量置回）与 analyse/{start}/{end}
+    // 都按管理员口径出，本人把自己的明细标成「已核算」等于跳过重算 ⇒ admin 档。
+    require_admin_opt(&pool, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -1002,8 +1036,11 @@ pub async fn attendancedetail_analyse_redo(
 /// POST /api/attendance/assemble/control/attendancedetail/analyse/{startDate}/{endDate}
 pub async fn attendancedetail_analyse_startDate_endDate(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path((start_date, end_date)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 无归属维度的批量核算：一条 SQL 覆盖日期区间内**所有人**的明细，归属档量不出来 ⇒ admin 档。
+    require_admin_opt(&pool, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -1025,8 +1062,12 @@ pub async fn attendancedetail_analyse_startDate_endDate(
 /// POST /api/attendance/assemble/control/attendancedetail/archive/{id}
 pub async fn attendancedetail_archive_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 明细是同步/核算生成的行，封存属核算管线的管理动作 ⇒ admin 档。
+    // 注意同张表的 `attendancedetail_delete` 走归属档（creator_person），一表两档并存待 o2 权威核。
+    require_admin_opt(&pool, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -1053,10 +1094,18 @@ pub async fn attendancedetail_archive_id(
 }
 
 /// POST /api/attendance/assemble/control/attendancedetail/checkDetailWithPersonByCycle/{cycleYear}/{cycleMonth}
+///
+/// `cycle_year` / `cycle_month` 在真库为 INTEGER（迁移 101 加列），早期 handler 把路径字符串
+/// 直接绑进 `WHERE cycle_year = $1` 会触发 42883（integer = text 无隐式转换）。这里按真实类型
+/// 用 `i32` 绑定，消除类型不匹配；非数字路径由 axum 直接 400 拒绝。
 pub async fn attendancedetail_checkDetailWithPersonByCycle_cycleYear_cycleMonth(
     pool: Extension<Pool>,
-    Path((cycle_year, cycle_month)): Path<(String, String)>,
+    session: Option<Extension<shared::session::Session>>,
+    Path((cycle_year, cycle_month)): Path<(i32, i32)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 名字里的 WithPerson 在 SQL 里并不存在：整段只按 cycle_year / cycle_month 过滤，
+    // 一把覆盖该周期内**所有人**的明细 ⇒ 无归属维度可量，admin 档（语义待拍见账本）。
+    require_admin_opt(&pool, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     // 兼容旧 schema：若 checked/update_time 列不存在则跳过 UPDATE
@@ -1655,8 +1704,13 @@ pub async fn attendancedetail_mobile_my(
 /// POST /api/attendance/assemble/control/attendancedetail/mobile/recive
 pub async fn attendancedetail_mobile_recive(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 考勤明细接收，person 从 body 取（冒名族，另记待修）⇒ 会话存在档。
+    let Some(Extension(_session)) = session else {
+        return Err(AppError::Unauthorized);
+    };
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let person_id = payload
@@ -1733,8 +1787,13 @@ pub async fn attendancedetail_mobile_id(
 /// POST /api/attendance/assemble/control/attendancedetail/recive
 pub async fn attendancedetail_recive(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 考勤明细接收，person 从 body 取（冒名族，另记待修）⇒ 会话存在档。
+    let Some(Extension(_session)) = session else {
+        return Err(AppError::Unauthorized);
+    };
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = payload
@@ -1762,8 +1821,13 @@ pub async fn attendancedetail_recive(
 /// POST /api/attendance/assemble/control/attendancedetail/reciveSingle
 pub async fn attendancedetail_reciveSingle(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 考勤明细接收，person 从 body 取（冒名族，另记待修）⇒ 会话存在档。
+    let Some(Extension(_session)) = session else {
+        return Err(AppError::Unauthorized);
+    };
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = payload
@@ -2434,8 +2498,11 @@ pub async fn attendancesetting_code_code(
 /// POST /api/attendance/assemble/control/attendancesetting/enable/type
 pub async fn attendancesetting_enable_type(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     body: Option<Json<Value>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 开关的是**全局考勤类型**（x_attendance_setting.enabled），一人一改就影响全员 ⇒ admin 档。
+    require_admin_opt(&pool, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     // o2server 端该端点为 GET 无 body；字段均可选
     let payload = body.map(|Json(v)| v).unwrap_or(Value::Null);
@@ -4184,6 +4251,19 @@ async fn require_admin(pool: &Pool, session: &shared::session::Session) -> Resul
     }
 }
 
+/// 管理写操作门禁（可选会话版）：无会话返回 Unauthorized，非 admin 返回 Forbidden。
+///
+/// 用 Option 而不是裸 `Extension<Session>`，是为了让「门插在读库之前」这件事能离线作证：
+/// 这些 GET 写面由路由层要求已认证，生产中会话不会缺；裸扩展缺失时 axum 回 500，
+/// 既分不清「没门」和「门插错位置」，也没法用连不上库的 pool 跑哨兵臂。
+async fn require_admin_opt(
+    pool: &Pool,
+    session: Option<&shared::session::Session>,
+) -> Result<(), AppError> {
+    let session = session.ok_or(AppError::Unauthorized)?;
+    require_admin(pool, session).await
+}
+
 fn json_str(payload: &Value, key: &str) -> String {
     payload
         .get(key)
@@ -5014,9 +5094,29 @@ pub async fn v2_group_delete(
 /// GET /api/attendance/assemble/control/v2/group/{id}/refresh/participate
 pub async fn v2_group_refresh_participate(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let Some(sess) = session.as_deref() else {
+        return Err(AppError::Unauthorized);
+    };
+    // 考勤组是配置人自己的行（同组 delete 走 creator_person 归属档），刷新成员名单按归属收；
+    // 下面调的归属基座内含管理员放行支路，所以管理员仍能刷他人的组。
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT creator_person FROM x_attendance_v2_group WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let Some(row) = row else {
+        return Ok(Json(ActionResult::error("attendance group not found")));
+    };
+    let owner: String = row
+        .get::<_, Option<String>>("creator_person")
+        .unwrap_or_default();
+    shared::middleware::require_owner(&pool, sess, &owner).await?;
 
     let n = client
         .execute(
@@ -6788,8 +6888,13 @@ pub async fn dingding_delete_all(
 /// GET /api/attendance/assemble/control/dingding/sync/from/{from}/to/{to}/start
 pub async fn dingding_sync_start(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path((from, to)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // ddqy_sync_start 往 x_attendance_sync_record 插一条 status='成功' 的同步记录，
+    // 而该表连 creator 列都没有（无法按归属量），且同族 delete_all / statistic_* 全部走管理员档 ⇒ admin 档。
+    // （说明文刻意不写门名：尺子按体内文本判门禁，注释里的门名会被当成门，见审计账本尺子缺陷 26。）
+    require_admin_opt(&pool, session.as_deref()).await?;
     ddqy_sync_start(&pool, "dingding", &from, &to).await
 }
 
@@ -6927,8 +7032,11 @@ pub async fn qywx_delete_all(
 /// GET /api/attendance/assemble/control/qywx/sync/from/{from}/to/{to}/start
 pub async fn qywx_sync_start(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path((from, to)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 与 dingding_sync_start 同一把 helper、同一档：见那里的 admin 档理由（sync_record 无归属列）。
+    require_admin_opt(&pool, session.as_deref()).await?;
     ddqy_sync_start(&pool, "qywx", &from, &to).await
 }
 
@@ -8151,7 +8259,10 @@ async fn mobile_check_impl(
     if user_id.is_empty() {
         return Err(AppError::BadRequest("userId is required".to_string()));
     }
-    if user_id != session.person_unique {
+    // 与 require_owner 归一化口径保持一致：会话身份同样归一化后再比较，
+    // 避免本人（大小写/空白变体）被误判为代他人而强制走 require_owner。
+    let session_uid = normalize_key(&session.person_unique);
+    if user_id != session_uid {
         shared::middleware::require_owner(pool, session, &user_id).await?;
     }
 
@@ -8232,8 +8343,9 @@ pub async fn v2_mobile_check_from_out(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     // 外部系统调用（门禁等）：允许代他人打卡，但需 admin
+    let session_uid = normalize_key(&session.person_unique);
     let target = normalize_key(json_str(&payload, "userId").as_str());
-    if !target.is_empty() && target != session.person_unique {
+    if !target.is_empty() && target != session_uid {
         require_admin(&pool, &session).await?;
     }
     let (id, duplicated) =
@@ -8519,7 +8631,10 @@ async fn import_checkin_rows(
         if user_id.is_empty() {
             return Err(AppError::BadRequest("each row requires userId".to_string()));
         }
-        if !admin && user_id != session.person_unique {
+        // 与 import 者会话身份归一化后比较：本人（大小写/空白变体）导入自己的行应放行，
+        // 代他人导入仍须 admin，避免归一化输入与原始会话口径不一致导致的误拒/误判。
+        let session_uid = normalize_key(&session.person_unique);
+        if !admin && user_id != session_uid {
             return Err(AppError::Forbidden);
         }
         let date_str = item

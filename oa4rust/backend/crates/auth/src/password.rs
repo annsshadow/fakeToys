@@ -18,8 +18,15 @@ pub const BCRYPT_COST: u32 = 10;
 /// o2server 3DES-ECB 仅作历史解密兼容，新加密一律走 AES-GCM。
 pub const AES_GCM_PREFIX: &str = "{aesgcm256}";
 
-/// 密码验证结果短期缓存（避免对同一 (hash, plain) 重复做 bcrypt）
+/// 密码验证结果短期缓存（避免对同一 (hash, plain) 重复做 bcrypt）。
+///
+/// 安全审计（2026-10 二轮）：原实现无容量上限且缓存失败结果——匿名登录端点
+/// 可用唯一明文洪泛撑爆进程内存（慢速 OOM DoS），且缓存失败会让重复错误密码
+/// 跳过 bcrypt 慢哈希、放大暴力破解吞吐。现改为：仅缓存成功结果 + 容量上限
+/// （满则整体清空重建，条目数恒有界）。
 type VerifyCache = std::collections::HashMap<String, bool>;
+/// 缓存容量上限：登录成功 (hash, plain) 对的最多保留条数。
+const VERIFY_CACHE_CAP: usize = 4096;
 static VERIFY_CACHE: std::sync::OnceLock<std::sync::Mutex<VerifyCache>> =
     std::sync::OnceLock::new();
 
@@ -36,9 +43,18 @@ fn get_cached(bcrypt_hash: &str, plain: &str) -> Option<bool> {
 }
 
 fn set_cached(bcrypt_hash: &str, plain: &str, result: bool) {
+    // 仅缓存成功：失败必须每次过 bcrypt（保持暴力破解的每尝试成本）。
+    if !result {
+        return;
+    }
     if let Some(cache) = VERIFY_CACHE.get() {
         if let Ok(mut c) = cache.lock() {
-            c.insert(cache_key(bcrypt_hash, plain), result);
+            // 容量有界：满则整体清空（成功缓存为便利加速，清空仅使后续命中重算
+            // bcrypt，不影响正确性；杜绝无上限内存增长）。
+            if c.len() >= VERIFY_CACHE_CAP {
+                c.clear();
+            }
+            c.insert(cache_key(bcrypt_hash, plain), true);
         }
     }
 }
@@ -407,5 +423,43 @@ mod tests {
 
         let pt = sso_decrypt_payload(&legacy_token, key, true).unwrap();
         assert_eq!(pt, b"u123#1700000000");
+    }
+
+    #[test]
+    fn verify_cache_bounded_and_success_only() {
+        // 安全审计（2026-10 二轮）：VERIFY_CACHE 容量有界 + 仅缓存成功结果。
+        // 1) 失败结果不入缓存（重复错误密码仍须每次过 bcrypt，防暴力加速）。
+        set_cached("hash-fail", "wrong", false);
+        assert!(
+            get_cached("hash-fail", "wrong").is_none(),
+            "失败结果不得入缓存（保持暴力破解每尝试的 bcrypt 成本）"
+        );
+
+        // 2) 成功结果入缓存且可命中。
+        set_cached("hash-ok", "right", true);
+        assert!(
+            get_cached("hash-ok", "right").is_some(),
+            "成功结果应缓存命中"
+        );
+
+        // 3) 容量上限：灌满后经 set_cached 触发溢出路径（整体清空重建），
+        //    长度恒有界（杜绝匿名登录洪泛 OOM）。
+        let cache = VERIFY_CACHE.get_or_init(|| std::sync::Mutex::new(VerifyCache::new()));
+        {
+            let mut c = cache.lock().unwrap();
+            c.clear();
+            for i in 0..VERIFY_CACHE_CAP {
+                c.insert(format!("flood-{i}"), true);
+            }
+            assert_eq!(c.len(), VERIFY_CACHE_CAP);
+        }
+        set_cached("flood-new", "x", true); // 满 → 清空 + 插入，长度回落
+        let mut c = cache.lock().unwrap();
+        assert!(
+            c.len() <= VERIFY_CACHE_CAP && c.contains_key("flood-new:x"),
+            "缓存满后写入必须整体清空重建（长度恒有界）"
+        );
+        c.clear(); // 清理，避免污染同模块其它用例
+        drop(c);
     }
 }

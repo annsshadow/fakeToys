@@ -5,7 +5,7 @@
  * **源码写了**那份清单与那几句口径，证不出渲染面上真的看得见。这一份钉四件事：
  * ① 三张下拉渲染的项数与初值（方法三项、策略四项、格式「服务端默认」+ 三项）；
  * ② 每个按钮的必填闸、成功回执与失败判决三路各有可见读数——失败时用户看见的是服务端那句
- *    判决（含 `ratio` 越界那句**英文**原话），不是页面自己编的「失败了」；
+ *    判决原话（L277 起 `ratio` 越界是那句中文区间判决），不是页面自己编的「失败了」；
  * ③ 聚合卡的来源名是页面起的：勾上就出现一个初值等于 stem 的输入框，重名在**发之前**被拦下
  *    （重名会让映射互相覆盖、回执的 `source_counts` 少一格，那是静默丢源）；
  * ④ 五条实测过的**诚实口径**留在卡上（A292 / A293 / A294 / A295 / A296 / A297）。
@@ -201,10 +201,12 @@ describe('采样卡的渲染面', () => {
     await waitFor(() => expect(labeled('采样回执')?.textContent).toContain('0 条出'))
   })
 
-  it('采样失败显示服务端那句**英文**判决（ratio 越界只有 random 支会拦，A292）', async () => {
-    // 这句照抄探针在真实端点上量到的回执：页面不翻译、不改写，用户看到的就是服务端那串字。
+  it('采样失败显示服务端那句判决原文（页面不翻译、不改写，也不自己编一句）', async () => {
+    // 这句照抄 L277 探针在真实端点上量到的回执：三种 method 同一句中文区间判决。
+    // 改前这里 mock 的是 CPython 的英文原话「Sample larger than population or is negative」，
+    // 那一格随 A292 的范围维一起收掉了——页面仍然只转述服务端的话，只是话换了。
     spies.sampleDataset.mockRejectedValue({
-      response: { data: { detail: 'Sample larger than population or is negative' } },
+      response: { data: { detail: 'ratio 必须是 0.0 到 1.0 之间的比例，当前是 2.0' } },
     })
     const { container } = render(<DataManagement />)
     await waitFiles(container)
@@ -215,7 +217,7 @@ describe('采样卡的渲染面', () => {
 
     await waitFor(
       () => expect(document.body.textContent)
-        .toContain('Sample larger than population or is negative'),
+        .toContain('ratio 必须是 0.0 到 1.0 之间的比例，当前是 2.0'),
       { timeout: 4000 },
     )
     expect(labeled('采样回执')).toBeNull()
@@ -410,13 +412,14 @@ describe('三张卡上的诚实口径', () => {
    * 每一句都是探针在真实端点上量到的静默形状：少了它们，用户会把「塌成一个分组」读成
    * 「分层生效了」、把「填了目标条数」读成「任何策略都会截断」。
    */
-  it('采样的越界分岔、分层折叠与 seed 语义都写在卡上', () => {
+  it('采样的越界判决、分层折叠与 seed 语义都写在卡上', () => {
     render(<DataManagement />)
 
     const page = document.body.textContent || ''
     expect(page).toContain('条数赢')
-    expect(page).toContain('没有判据')
-    expect(page).toContain('负数切片')
+    expect(page).toContain('一律 400')
+    expect(page).toContain('一种结局')
+    expect(page).not.toContain('没有判据')
     expect(page).toContain('塌成一个分组')
     expect(page).toContain('前 10 个字符')
     expect(page).toContain('A292')

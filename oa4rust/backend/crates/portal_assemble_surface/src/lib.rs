@@ -17,6 +17,21 @@ use shared::{error::AppError, response::ActionResult};
 
 pub mod routes;
 
+/// 门户内容管理写门禁（安全审计 2026-10 二轮）：surface/layout/dict 为门户
+/// 管理台内容，此前 /api/portal 不在 ADMIN_WRITE_PREFIXES（已废弃列表），中间件
+/// 兜底仅 Authenticated，任一登录用户可增删改门户内容与发布开关。
+#[allow(non_snake_case)]
+async fn require_admin(pool: &Pool, session: &shared::session::Session) -> Result<(), AppError> {
+    if shared::middleware::is_admin(pool, &session.person_unique).await {
+        Ok(())
+    } else {
+        Err(AppError::Forbidden)
+    }
+}
+
+#[cfg(test)]
+mod security_gate_tests;
+
 #[derive(Debug, Deserialize)]
 pub struct CreateSurfaceRequest {
     pub name: Option<String>,
@@ -98,8 +113,11 @@ pub async fn get_surface(
 #[allow(non_snake_case)]
 pub async fn create_surface(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Json(req): Json<CreateSurfaceRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 门户内容创建仅 admin（安全审计 2026-10 二轮）。
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -107,7 +125,8 @@ pub async fn create_surface(
     let template = req.template.unwrap_or_default();
     let category = "default".to_string();
     let html = "<div></div>".to_string();
-    let creator = "system";
+    // 属主以会话登录人为事实源（原恒写 "system"，安全审计 2026-10 二轮）。
+    let creator = session.person_unique.clone();
 
     client
         .execute(
@@ -237,8 +256,11 @@ pub async fn preview_surface(
 #[allow(non_snake_case)]
 pub async fn publish_surface(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 门户发布开关仅 admin（安全审计 2026-10 二轮）。
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -383,8 +405,11 @@ pub async fn surface_preview(
 #[allow(non_snake_case)]
 pub async fn surface_publish(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 门户发布开关仅 admin（安全审计 2026-10 二轮）。
+    require_admin(&pool, &session).await?;
     let id = body
         .get("id")
         .and_then(|v| v.as_str())
@@ -435,8 +460,11 @@ pub async fn surface_publish(
 #[allow(non_snake_case)]
 pub async fn page_id_delete(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 门户页面物理删除仅 admin（安全审计 2026-10 二轮）。
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute("DELETE FROM x_portal_page WHERE id = $1", &[&id])
@@ -637,15 +665,19 @@ pub async fn list_layouts(
 #[allow(non_snake_case)]
 pub async fn create_layout(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Json(req): Json<CreateLayoutRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 门户布局创建仅 admin（安全审计 2026-10 二轮）。
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let name = req.name.unwrap_or_default();
     let category = req.category.unwrap_or_default();
     let content = req.content.unwrap_or_default();
-    let creator = "system";
+    // 属主以会话登录人为事实源（原恒写 "system"，安全审计 2026-10 二轮）。
+    let creator = session.person_unique.clone();
 
     client
         .execute(
@@ -669,8 +701,11 @@ pub async fn create_layout(
 #[allow(non_snake_case)]
 pub async fn save_layout(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Json(req): Json<CreateLayoutRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 门户布局写仅 admin（安全审计 2026-10 二轮）。
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let name = req.name.unwrap_or_default();
@@ -729,8 +764,11 @@ pub async fn save_layout(
 #[allow(non_snake_case)]
 pub async fn delete_layout(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 门户布局物理删除仅 admin（安全审计 2026-10 二轮）。
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = req
@@ -1002,9 +1040,12 @@ pub async fn dict_dictFlag_portal_portalFlag_path_data_mockdeletetoget(
 #[allow(non_snake_case)]
 pub async fn dict_dictFlag_portal_portalFlag_path_data_mockputtopost(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Path((dict_flag, portal_flag, _path)): Path<(String, String, String)>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 门户字典写仅 admin（安全审计 2026-10 二轮）。
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let data_str = match body {
@@ -2583,8 +2624,10 @@ pub async fn widget_id_mobile(
 #[allow(non_snake_case)]
 pub async fn dict_dictFlag_portal_portalFlag_path_data_delete(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Path((dict_flag, portal_flag, _path)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -2606,9 +2649,11 @@ pub async fn dict_dictFlag_portal_portalFlag_path_data_delete(
 #[allow(non_snake_case)]
 pub async fn dict_dictFlag_portal_portalFlag_path_data_post(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Path((dict_flag, portal_flag, _path)): Path<(String, String, String)>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let data_str = match body {
@@ -2676,9 +2721,11 @@ pub async fn dict_dictFlag_portal_portalFlag_path_data_post(
 #[allow(non_snake_case)]
 pub async fn dict_dictFlag_portal_portalFlag_path_data_put(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Path((dict_flag, portal_flag, _path)): Path<(String, String, String)>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let data_str = match body {
@@ -2766,9 +2813,11 @@ pub async fn dict_dictFlag_portal_portalFlag_path_data_put(
 #[allow(non_snake_case)]
 pub async fn script_portal_portal_name_post(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Path((portal, name)): Path<(String, String)>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     // 归一化查重：同 portal 下同名 script 视为重复
@@ -2830,6 +2879,14 @@ mod soft_delete_lifecycle_tests {
 
     const PORTAL_FLAG: &str = "u2test-dict-portal";
 
+    /// 四轮 A3-N2 起这 4 把 dict/script 写收 admin 门，生命周期测试必须有真 admin 行，
+    /// 故由外部注入人选；未配置即显式 skip（不伪装成绿）。
+    fn admin_session() -> Option<shared::session::Session> {
+        std::env::var("OA4RUST_TEST_ADMIN_PERSON")
+            .ok()
+            .map(|person| shared::testing::test_session(&person))
+    }
+
     fn test_path(flag: &str) -> Path<(String, String, String)> {
         Path((flag.to_string(), PORTAL_FLAG.to_string(), "p".to_string()))
     }
@@ -2884,12 +2941,17 @@ mod soft_delete_lifecycle_tests {
             eprintln!("skip: PG unavailable");
             return;
         }
+        let Some(sess) = admin_session() else {
+            eprintln!("skip: 需 OA4RUST_TEST_ADMIN_PERSON（A3-N2 后该写端点仅 admin）");
+            return;
+        };
         let pool = test_pool();
         let flag = format!("u2test-dict-del-{}", uuid::Uuid::new_v4());
         seed_row(&pool, &flag, "v1").await;
 
         let resp = dict_dictFlag_portal_portalFlag_path_data_delete(
             Extension(pool.clone()),
+            Extension(sess.clone()),
             test_path(&flag),
         )
         .await
@@ -2905,6 +2967,7 @@ mod soft_delete_lifecycle_tests {
         // 幂等：二次 delete 不再命中（deleted 计数 0），行仍是唯一一条
         let resp = dict_dictFlag_portal_portalFlag_path_data_delete(
             Extension(pool.clone()),
+            Extension(sess.clone()),
             test_path(&flag),
         )
         .await
@@ -2920,11 +2983,16 @@ mod soft_delete_lifecycle_tests {
             eprintln!("skip: PG unavailable");
             return;
         }
+        let Some(sess) = admin_session() else {
+            eprintln!("skip: 需 OA4RUST_TEST_ADMIN_PERSON（A3-N2 后该写端点仅 admin）");
+            return;
+        };
         let pool = test_pool();
         let flag = format!("u2test-dict-put-{}", uuid::Uuid::new_v4());
         seed_row(&pool, &flag, "old").await;
         let _ = dict_dictFlag_portal_portalFlag_path_data_delete(
             Extension(pool.clone()),
+            Extension(sess.clone()),
             test_path(&flag),
         )
         .await
@@ -2933,6 +3001,7 @@ mod soft_delete_lifecycle_tests {
         // 重新保存必须复活已删行：新数据可读、deleted_at 归空
         let resp = dict_dictFlag_portal_portalFlag_path_data_put(
             Extension(pool.clone()),
+            Extension(sess.clone()),
             test_path(&flag),
             Json(Value::String("revived".to_string())),
         )

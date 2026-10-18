@@ -124,7 +124,7 @@ export class HeatSystem {
    *   capBonus=1000‰ → cap=1100   过热 1174 次  漏 1168
    *   capBonus=2000‰ → cap=2100   过热  638 次  漏 1484
    *
-   * 上限涨到 11 倍时，过热几乎不再发生（冻结全��敌人的时间大幅减少），
+   * 上限涨到 11 倍时，过热几乎不再发生（冻结全场敌人的时间大幅减少），
    * 而**热量衰减率是固定的** —— 于是玩家长期停在"热量很高但放不出技能"的
    * 死区里，漏怪翻 2~3 倍、分数掉 13.8%。
    *
@@ -155,11 +155,20 @@ export class HeatSystem {
     this.heat = this.heat - n < 0n ? 0n : this.heat - n
   }
 
+  /**
+   * 单次过热的持续时长（毫秒）。
+   *
+   * 第 158 轮：从编译期常量 OVERHEAT_DURATION_MS 改成**实例字段**。
+   * 缺省仍然是 OVERHEAT_DURATION_MS —— 也就是本轮不改任何既有期望值，
+   * 只是把「这段惩罚性等待有多长」变成可由  调整的量。
+   */
+  overheatDurationMs: number = OVERHEAT_DURATION_MS
+
   /** 超过上限则进入过热 */
   checkOverheat(): boolean {
     if (!this.overheated && this.heat >= this.cap) {
       this.overheated = true
-      this.overheatRemaining = OVERHEAT_DURATION_MS
+      this.overheatRemaining = this.overheatDurationMs
       return true
     }
     return false
@@ -181,7 +190,7 @@ export class HeatSystem {
   forceOverheat(): boolean {
     if (this.overheated) return false
     this.overheated = true
-    this.overheatRemaining = OVERHEAT_DURATION_MS
+    this.overheatRemaining = this.overheatDurationMs
     return true
   }
 

@@ -28,6 +28,42 @@ use entities::{meeting, meeting_room};
 mod tests;
 #[cfg(test)]
 mod tests_generated;
+#[cfg(test)]
+mod security_gate_tests;
+
+/// 会议室 / 会议管理写操作门禁（安全审计 2026-10 二轮）。
+///
+/// 先例：program_center（5fe82f1e7）、meeting assemble U2。本 crate 的 room/meeting
+/// 写端点此前无会话、无 admin/属主门禁——任一登录用户可物理删除或篡改任意会议与
+/// 会议室（x_meeting_room 无属主列 → admin；x_meeting 有 creator 列 → 属主）。
+#[allow(non_snake_case)]
+async fn require_admin(pool: &Pool, session: &shared::session::Session) -> Result<(), AppError> {
+    if shared::middleware::is_admin(pool, &session.person_unique).await {
+        Ok(())
+    } else {
+        Err(AppError::Forbidden)
+    }
+}
+
+/// 属主资源门禁：取会议 creator 列，命中行时 require_owner（admin 旁路）；
+/// 行不存在则放行，后续 UPDATE/DELETE 命中 0 行统一回 "meeting not found"，语义不变。
+#[allow(non_snake_case)]
+async fn meeting_require_owner(
+    pool: &Pool,
+    session: &shared::session::Session,
+    id: &str,
+) -> Result<(), AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt("SELECT creator FROM x_meeting WHERE id = $1", &[&id])
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if let Some(row) = row {
+        let creator: String = row.get::<_, Option<String>>("creator").unwrap_or_default();
+        shared::middleware::require_owner(pool, session, &creator).await?;
+    }
+    Ok(())
+}
 
 /// 获取会议室列表
 /// 从数据库查询 x_meeting_room 表
@@ -78,8 +114,12 @@ pub async fn room_list(
 #[allow(non_snake_case)]
 pub async fn create_room(
     db: Extension<DatabaseConnection>,
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     AxumJson(payload): AxumJson<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 会议室无属主列，为系统资源：仅 admin 可建（安全审计 2026-10 二轮）。
+    require_admin(&pool, &session).await?;
     let name = payload
         .get("name")
         .and_then(|v| v.as_str())
@@ -222,9 +262,12 @@ pub async fn get_room(
 pub async fn update_room(
     _db: Extension<DatabaseConnection>,
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Path(id): Path<String>,
     AxumJson(payload): AxumJson<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 会议室改名为系统资源写：仅 admin（安全审计 2026-10 二轮）。
+    require_admin(&pool, &session).await?;
     let name = payload
         .get("name")
         .and_then(|v| v.as_str())
@@ -286,8 +329,11 @@ pub async fn update_room(
 pub async fn delete_room(
     _db: Extension<DatabaseConnection>,
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 会议室删除 = 系统资源写：仅 admin（安全审计 2026-10 二轮）。
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows_affected = client
         .execute("DELETE FROM x_meeting_room WHERE id = $1", &[&id])
@@ -406,6 +452,7 @@ pub async fn meeting_list_by_room(
 #[allow(non_snake_case)]
 pub async fn create_meeting(
     db: Extension<DatabaseConnection>,
+    session: Extension<shared::session::Session>,
     AxumJson(payload): AxumJson<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let title = payload
@@ -439,11 +486,8 @@ pub async fn create_meeting(
     let end_time: chrono::NaiveDateTime = end_time_str
         .parse()
         .map_err(|_| AppError::BadRequest("invalid \"endTime\"".to_string()))?;
-    let organizer_id = payload
-        .get("organizerId")
-        .and_then(|v| v.as_str())
-        .unwrap_or("system");
-    let organizer_id = organizer_id.to_string();
+    // 组织者以会话登录人为事实源：客户端 organizerId 可伪造（冒名归属，IDOR 面）。
+    let organizer_id = session.person_unique.clone();
 
     let id = uuid::Uuid::new_v4().to_string();
 
@@ -529,9 +573,12 @@ pub async fn get_meeting(
 pub async fn update_meeting(
     _db: Extension<DatabaseConnection>,
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Path(id): Path<String>,
     AxumJson(payload): AxumJson<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 会议更新 = 属主资源写：仅属主/admin（安全审计 2026-10 二轮）。
+    meeting_require_owner(&pool, &session, &id).await?;
     let title = payload
         .get("title")
         .and_then(|v| v.as_str())
@@ -583,8 +630,11 @@ pub async fn update_meeting(
 pub async fn delete_meeting(
     _db: Extension<DatabaseConnection>,
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 会议删除 = 属主资源写：仅属主/admin（安全审计 2026-10 二轮）。
+    meeting_require_owner(&pool, &session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows_affected = client
         .execute("DELETE FROM x_meeting WHERE id = $1", &[&id])

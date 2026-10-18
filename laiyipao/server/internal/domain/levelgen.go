@@ -209,7 +209,7 @@ func SummarizeAll(levels []GeneratedLevel) []LevelSummary {
 //
 // ⚠️ 这些常量曾经只有 Go 这一份定义，而客户端引擎把同样的数字
 // **硬编码了 5 处**（engine.ts 的加分、记事件、地形充能），
-// 测试里还��� 2 处。漂移的后果很隐蔽：
+// 测试里还有 2 处。漂移的后果很隐蔽：
 //
 //	Go 侧用 scorePerDamageUnit 算 star_targets
 //	TS 侧用自己那份 /100 累加实际得分
@@ -637,7 +637,7 @@ func generateTerrain(rng *LCG, kind string, levelID int) []TerrainPlacement {
 			// 两个区间只在 [600, 660] 重叠 —— 约 16%。
 			//
 			// 后果实测：6 个油桶**一个都没被点燃过**（0%）。
-			// 因为火焰弹丸是瞄着**敌人**飞的，敌人�� y≈800 时弹道在 y 800~880，
+			// 因为火焰弹丸是瞄着**敌人**飞的，敌人在 y≈800 时弹道在 y 800~880，
 			// 而油桶在 y≈500，距离 300+ 远超 120 的充能半径。
 			// 掩体也受影响（放置 9 个只生效 5 个）——
 			// 弹道不经过掩体，自然既不会被挡也不会被打。
@@ -739,6 +739,21 @@ func (l *LCG) Intn(n int) int {
 		return 0
 	}
 	return int(l.Next() % uint64(n))
+}
+
+// Roll 返回一个 0..999 的整数，用于暴击等万分位判定。
+//
+// ⚠️ 范围是 **0..999 而不是 0..9999**。
+//
+//	消费侧的判据是 `roll >= permille - critPermille`，
+//	其中 critPermille 的上界是 1000‰。
+//	若范围是 0..9999 而判据按 1000 算，则 critPermille=1000 时
+//	判据是 `roll >= 0` —— 恒真，每一发都暴击。
+//
+//	这个值参与重放：同一颗种子下 `roll` 的取值序列必须两端一致，
+//	否则暴击分布不同 → 事件流不同 → 哈希不同。
+func (l *LCG) Roll() int64 {
+	return int64(l.Intn(1000))
 }
 
 // GenerateAllLevels 生成全部 100 关。

@@ -125,7 +125,12 @@ mod tests {
     async fn test_folder_create_empty_name_returns_error() {
         let pool = Extension(test_pool());
         let body = serde_json::json!({"name": "", "superior": null});
-        let result = folder_create(pool, axum::extract::Json(body)).await;
+        let result = folder_create(
+            pool,
+            Some(axum::extract::Extension(shared::testing::test_session("folder-create-empty"))),
+            axum::extract::Json(body),
+        )
+        .await;
 
         assert!(result.is_err());
         match result {

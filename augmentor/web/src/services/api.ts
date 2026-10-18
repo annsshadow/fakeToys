@@ -240,6 +240,14 @@ export const getBackupSourceCandidates = async (): Promise<DataFileListResponse>
   return response.data
 }
 
+/**
+ * `GET /api/data/load/{filename}`
+ *
+ * 交回的是**过滤后切片**，所以 `items` 的行号从来不是写端点的坐标；要改或删页里某一行，
+ * 用同序返回的 `indices`（盘上 0 基下标）发给 `PUT /api/data/update` 与 `DELETE`（A367 / L277）。
+ * `page` 与 `page_size` 在门口判掉：小于 1 一律 **400**（改前 `page_size=-10` 回 200 交出
+ * 「除了最后 10 条」的 15 条、`page=-1` 交出中间一段，都是静默错答）；页码超过末尾仍是 200 + 空页。
+ */
 export const loadData = async (
   filename: string,
   page: number,
@@ -370,10 +378,12 @@ export const createVersion = async (
   label: string,
   description: string
 ): Promise<CreateVersionResponse> => {
-  const response = await api.post(`/versions/create?filename=${filename}`, {
-    label,
-    description,
-  })
+  // L277：`filename` 改走 axios 的 `params`，不再拼进路径串。拼串时一个含 `&` / `=` / `#`
+  // 或空格的文件名会把 query 拆开、截断甚至整个丢掉 `#` 之后的部分（`a&b.json` 实测变成
+  // `filename=a` 外加一个野键 `b.json`），编码交给 axios，键名仍是契约里的 `filename`。
+  // `params` 块紧贴调用（同 L231 为 `createBackup` 定下的口径），别让绑定窗口去够它。
+  const body = { label, description }
+  const response = await api.post('/versions/create', body, { params: { filename } })
   return response.data
 }
 
@@ -970,11 +980,11 @@ export const splitDataset = async (
  * `ratio None`、`seed None`、`stratify_key "instruction"`）。`size` 与 `ratio` 同给时
  * **size 赢**（实测 `3` 与 `0.9` 同给 ⇒ 出 3 条），所以本层不做二选一，两格都照发。
  *
- * 越界的归宿**按 method 分岔**（实测，20 条语料）：`size=-1` 三支一致 400「size 必须是不小于 0
- * 的整数，当前是 -1」；`ratio=2` 与 `ratio=-0.5` 只有 `random` 支 400，且那句是 CPython 的英文
- * 原话「Sample larger than population or is negative」，`systematic` / `stratified` 两支照收 ——
- * `ratio=2` 交全量 20 条，`ratio=-0.5` 走负数切片交出**前 10 条**（分层支交 0 条）。这一档没有
- * 判据，页面上写明了（**A292**）。
+ * 越界的归宿**三种 method 一种结局**（实测，20 条语料）：`size=-1` 三支一致 400「size 必须是不小于 0
+ * 的整数，当前是 -1」；`ratio=2` 与 `ratio=-0.5` 也一致 400「ratio 必须是 0.0 到 1.0 之间的比例，
+ * 当前是 …」，且 400 之前不落任何产物。**A292 的范围维在 L277 收口**——改前只有 `random` 支回 400，
+ * 且那句是 CPython 的英文原话「Sample larger than population or is negative」，`systematic` /
+ * `stratified` 两支照收：`ratio=2` 交全量 20 条，`ratio=-0.5` 走负数切片交出**前 10 条**（分层支交 0 条）。
  */
 export const sampleDataset = async (
   inputFile: string,
@@ -1068,9 +1078,9 @@ export const listBackups = async (backupDir?: string): Promise<BackupListRespons
  *
  * `name` 就是回执里的 `backup_id`，省略时服务端按秒级时间戳取 `backup_<YYYYmmdd_HHMMSS>`；
  * 送空串与省略**等价**（`name or …` 那一步把空串读成没给，实测 200 且回时间戳 id）。
- * 名字里带 `..` 会被拒（**400**「备份名称不能指向备份目录之外」，L231 收的那一格：此前
- * `name="../../x"` 是 200 且真写到备份目录之外）；带 `/` 的名字仍然放行，它会在备份目录下
- * 建子目录。源文件不存在是 **404**「文件不存在」。
+ * 名字必须是**一个 URL 路径段**：`..`、`/`、反斜杠、`#`、`?`、控制字符、尾随点或空白、超 255 字符一律
+ * **400**「备份名称不能含路径分隔符，否则寻不了址…」。**A366 / L277** 起的口径——改前带 `/` 的名字
+ * 放行（`.backups/sub/deep.json` 建得出、清单也列得出），但 `{backup_id}` 只吃一段 ⇒ 恢复/删除恒 404。
  */
 export const createBackup = async (
   inputFile: string,
@@ -1091,6 +1101,8 @@ export const createBackup = async (
  *
  * 目标文件已存在时**整份覆盖**（实测），备份 id 不存在是 **404**「备份不存在」。
  * 回执的落点键叫 `output_path` 而不是同族其余五只的 `output_file`。
+ * id 走 `encodeURIComponent`：**存量**名字里可能有 `#`（A366 之前建得出来），裸插值会被浏览器
+ * 当 fragment 丢掉 ⇒ 服务端只收到前半截，restore 拿 405、delete 拿 404。
  */
 export const restoreBackup = async (
   backupId: string,
@@ -1098,7 +1110,7 @@ export const restoreBackup = async (
   backupDir?: string
 ): Promise<RestoreBackupResponse> => {
   const response = await api.post(
-    `/system/backups/${backupId}/restore`,
+    `/system/backups/${encodeURIComponent(backupId)}/restore`,
     { output_file: outputFile },
     { params: { backup_dir: backupDir || undefined } }
   )
@@ -1115,7 +1127,7 @@ export const deleteBackup = async (
   backupId: string,
   backupDir?: string
 ): Promise<MutationResponse> => {
-  const response = await api.delete(`/system/backups/${backupId}`, {
+  const response = await api.delete(`/system/backups/${encodeURIComponent(backupId)}`, {
     params: { backup_dir: backupDir || undefined },
   })
   return response.data

@@ -1,9 +1,12 @@
 # o2server 容器化运行指南（plan002 U9a）
 
+> **注记（2026-10-14）**：o2server 容器仅作**开发期 parity 行为对齐基准**（4143 用例比对），
+> 不参与部署、不存在迁移切换——oa4rust 从未上线、无 Java 存量。本文保留作基准容器操作参考。
+
 ## 镜像与服务
 
 - 镜像：`o2oa/o2server:latest`（O2OA v9.5.2，OpenJDK 11.0.23，~2.6GB）
-- compose 服务名 `o2server`（见 `oa4rust/docker-compose.yml`），端口 **18080→80**
+- compose 服务名 `o2server`（见 `oa4rust/backend/docker-compose.yml`），端口 **18080→80**
 - 数据卷：config / custom / dynamic / local / logs / webroot / 内置 MySQL 全部持久化
 
 ## 无头初始化（已验证）

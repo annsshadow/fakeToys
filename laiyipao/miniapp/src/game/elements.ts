@@ -85,7 +85,7 @@ export interface ReactionSpec {
 }
 
 /**
- * # ⚠️ 这张表里有 **3 条反应只有反应伤害**，没有特殊效果
+ * # ⚠️ 反应表「特殊效果」的实现现状（未实现项只剩 2 条）
  *
  * 逐字段核过消费面（`resolveHit` + `BattleEngine.hitEnemy`）：
  *
@@ -98,22 +98,22 @@ export interface ReactionSpec {
  * | amplifyPct        | `engine.ts`（**且以 `statusDurationMs > 0` 为前提**） | ✓ |
  * | armorShredPermille| `engine.ts`（削甲，armor_break）      | ✓    |
  * | knockback         | `engine.ts`（击退位移，armor_break）  | ✓    |
- * | aoeRadius         | **只有 `render/canvas.ts` 的屏幕震动** | ✗ **从未影响任何伤害** |
+ * | aoeRadius         | `engine.ts triggerReactionAoe`（steam_burst / overheat 的范围溅射） | ✓ |
  *
  * 所以：
  *
- * - `steam_burst` 的「范围伤害」不存在（驱散护盾是真的）
- * - `overheat` 的「爆炸」不存在（眩晕是真的）
- * - `burn_cloud` 的「持续火区」不存在 —— 它整条都是空的
- * - `corrosion_spread` 的「层数传播」不存在
+ * - `steam_burst` 的「范围伤害」**已实现**（2026-10-10，aoeRadius 120）
+ * - `overheat` 的「爆炸」**已实现**（第 160 轮，aoeRadius 90；眩晕只作用主目标）
+ * - `burn_cloud` 的「持续火区」仍不存在 —— 它整条都是空的
+ * - `corrosion_spread` 的「层数传播」仍不存在
  * - `armor_break` 的「击退」与「削甲」**已实现**（armorShredPermille / knockback，
- *   见下方该条注释），不再是空壳
+ *   见下方该条注释）
  *
  * 第 83 轮把未实现项的文案改成只描述**已实现**的效果，并把 `aoeRadius` 全部置 0
  * （字段保留：它已经在 `/config` 的公开 JSON 契约里，删字段是破坏性变更）。
+ * 此后 steam_burst（120）与 overheat（90）相继恢复历史值并接上真实溅射伤害。
  *
- * 「要不要给 steam_burst / overheat / burn_cloud / corrosion_spread 实现
- * 溅射 / 爆炸 / 火区 / 传播」仍是**产品决策**，已记入 README 已知边界第 19 条。
+ * 「火区 / 传播要不要实现」仍是**产品决策**，已记入 README 已知边界第 19 条。
  */
 
 export const REACTIONS: Record<ReactionKey, ReactionSpec> = {
@@ -153,12 +153,18 @@ export const REACTIONS: Record<ReactionKey, ReactionSpec> = {
     baseCoef: 55,
     attackWeightPct: 300,
     statusDurationMs: 1500,
-    aoeRadius: 0, // ⚠️ 第 83 轮：90 → 0，「爆炸」从未被实现（理由同 steam_burst）
+    // 第 83 轮：90 → 0（「爆炸」当时未实现，理由同 steam_burst）。
+    // 第 160 轮（产品决策落地）：恢复 90 并接上范围溅射 —— 命中敌人为
+    // 圆心、半径 90 像素内的邻居受 reactionDmg >> 2（25%），与 steam_burst
+    // 共用同一条管线（`engine.ts triggerReactionAoe`）。
+    // 眩晕（statusDurationMs）仍只作用主目标，不随溅射扩散 —— 与
+    // steam_burst 的驱散护盾同口径，双端由 reaction_specs.json 锁定。
+    aoeRadius: 90,
     dispelShield: false,
     amplifyPct: 0,
     armorShredPermille: 0,
     knockback: 0,
-    descr: '眩晕 1.5 秒并造成反应伤害',
+    descr: '眩晕 1.5 秒并造成反应伤害（触发时以自身为圆心，半径 90 像素内的敌人受到 25% 范围伤害）',
   },
   burn_cloud: {
     key: 'burn_cloud',

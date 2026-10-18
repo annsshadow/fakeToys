@@ -19,6 +19,8 @@ mod tests;
 mod tests_generated;
 #[cfg(test)]
 mod tests_u2;
+#[cfg(test)]
+mod security_gate_tests;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -90,8 +92,16 @@ pub async fn list_meeting_controls(
 #[allow(non_snake_case)]
 pub async fn create_meeting_control(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十四批：控制配置新增=管理动作（与 delete_meeting_control 同档），无会话 401、非 admin 403。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    if !shared::middleware::is_admin(&pool.0, &sess.person_unique).await {
+        return Err(AppError::Forbidden);
+    }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let meeting_id = payload
@@ -655,8 +665,13 @@ pub async fn config_system_config(
 #[allow(non_snake_case)]
 pub async fn config_system_config_manage(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 安全审计（2026-10 二轮）：系统会议配置写（UPDATE x_meeting_config）为管理操作。
+    // 路由前缀 /config/system 须保持匿名可达（o2server 对齐的未登录读），故在
+    // handler 内拦截：未认证 401、非 admin 403，杜绝匿名篡改会议模块全局配置。
+    u2_require_admin_opt(&pool, session.as_deref()).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let config_key = payload
@@ -2083,12 +2098,37 @@ pub async fn meeting_id(
     }
 }
 
+/// 四轮 A3-N3 归属门：会议审批 / 邀请 / 改单写此前连 session 都不取（GET 注册还同时绕开
+/// csrf 与 requires_admin 兜底）。此处先读 x_meeting.creator 再走 require_owner
+/// （admin 旁路；行不存在放行以保既有 not-found 语义）。
+async fn u2_meeting_owner_gate(
+    pool: &Pool,
+    session: &shared::session::Session,
+    meeting_id: &str,
+) -> Result<(), AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt("SELECT creator FROM x_meeting WHERE id = $1", &[&meeting_id])
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(r) => {
+            let creator: String = r.get::<_, Option<String>>("creator").unwrap_or_default();
+            shared::middleware::require_owner(pool, session, &creator).await
+        }
+        // 行不存在：交由后续 SQL 的 0 行结果走既有 not-found 分支
+        None => Ok(()),
+    }
+}
+
 #[allow(non_snake_case)]
 pub async fn create_meeting(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
 
     let title = payload
         .get("title")
@@ -2106,10 +2146,8 @@ pub async fn create_meeting(
         .get("endTime")
         .and_then(|v| v.as_str())
         .ok_or(AppError::BadRequest("endTime is required".to_string()))?;
-    let creator = payload
-        .get("creator")
-        .and_then(|v| v.as_str())
-        .unwrap_or("system");
+    // 四轮 A3-N3：creator 不再取请求体（原可任意冒名 / 落 "system"），改以会话身份为权威
+    let creator = session.person_unique.as_str();
     // roomId 落 x_meeting.room_id（前端选择会议室；buildingId 仅用于筛选会议室，可由 room 反查，不单独落库）
     let room_id = payload
         .get("roomId")
@@ -2143,9 +2181,11 @@ pub async fn create_meeting(
 #[allow(non_snake_case)]
 pub async fn save_meeting(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_meeting_owner_gate(&pool.0, &session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let title = payload
@@ -2229,8 +2269,12 @@ pub async fn delete_meeting(
 #[allow(non_snake_case)]
 pub async fn meeting_id_accept(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 会议级状态翻转（accept）收会议属主或 admin 门（u2_meeting_owner_gate）——
+    // 拍板「accept/reject/complete 属会议级、归属主/admin」（账本 §三.33 收口待拍）。
+    u2_meeting_owner_gate(&pool.0, &session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -2252,9 +2296,11 @@ pub async fn meeting_id_accept(
 #[allow(non_snake_case)]
 pub async fn meeting_id_add_invite(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_meeting_owner_gate(&pool.0, &session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let invitee = payload
@@ -2284,15 +2330,14 @@ pub async fn meeting_id_add_invite(
 #[allow(non_snake_case)]
 pub async fn meeting_id_checkin(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
-    axum::extract::Json(payload): axum::extract::Json<Value>,
+    axum::extract::Json(_payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let person = payload
-        .get("person")
-        .and_then(|v| v.as_str())
-        .ok_or(AppError::BadRequest("person is required".to_string()))?;
+    // 四轮 A3-N3：签到人不再取请求体（原可以他人身份打卡），改以会话身份为权威
+    let person = session.person_unique.as_str();
     let checkin_id = uuid::Uuid::new_v4().to_string();
 
     let result = client
@@ -2353,8 +2398,10 @@ pub async fn meeting_id_checkin_code(
 #[allow(non_snake_case)]
 pub async fn meeting_id_confirm_allow(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_meeting_owner_gate(&pool.0, &session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -2376,8 +2423,10 @@ pub async fn meeting_id_confirm_allow(
 #[allow(non_snake_case)]
 pub async fn meeting_id_confirm_deny(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_meeting_owner_gate(&pool.0, &session, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -2399,9 +2448,15 @@ pub async fn meeting_id_confirm_deny(
 #[allow(non_snake_case)]
 pub async fn meeting_id_delete_invite(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十四批：删除邀请=改会议，按会议属主或 admin 门；无会话 401。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    u2_meeting_owner_gate(&pool.0, &sess, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let invitee = payload
@@ -2429,8 +2484,14 @@ pub async fn meeting_id_delete_invite(
 #[allow(non_snake_case)]
 pub async fn meeting_id_manual_completed(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 会议级状态翻转（manual completed）收会议属主或 admin 门；无会话 401。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    u2_meeting_owner_gate(&pool.0, &sess, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -2452,9 +2513,15 @@ pub async fn meeting_id_manual_completed(
 #[allow(non_snake_case)]
 pub async fn meeting_id_modify_completedtime(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十四批：改完成时间=改会议，按会议属主或 admin 门；无会话 401。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    u2_meeting_owner_gate(&pool.0, &sess, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let completed_time = payload
@@ -2487,9 +2554,15 @@ pub async fn meeting_id_modify_completedtime(
 #[allow(non_snake_case)]
 pub async fn meeting_id_modify_starttime(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十四批：改开始/结束时间=改会议，按会议属主或 admin 门；无会话 401。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    u2_meeting_owner_gate(&pool.0, &sess, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let start_time = payload
@@ -2531,8 +2604,14 @@ pub async fn meeting_id_modify_starttime(
 #[allow(non_snake_case)]
 pub async fn meeting_id_reject(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 会议级状态翻转（reject）收会议属主或 admin 门；无会话 401。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    u2_meeting_owner_gate(&pool.0, &sess, &id).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -2960,6 +3039,17 @@ async fn u2_require_admin(pool: &Pool, session: &shared::session::Session) -> Re
     } else {
         Err(AppError::Forbidden)
     }
+}
+
+/// 可选会话版 admin 门禁：无会话 401、非 admin 403。
+/// 用于挂在 o2server 对齐豁免前缀下的破坏性写 handler（前缀须保持匿名可达供
+/// 只读端点使用，写操作只能在 handler 内拦截，未认证请求拿不到会话即 401）。
+async fn u2_require_admin_opt(
+    pool: &Pool,
+    session: Option<&shared::session::Session>,
+) -> Result<(), AppError> {
+    let session = session.ok_or(AppError::Unauthorized)?;
+    u2_require_admin(pool, session).await
 }
 
 /// 归一化查重键：trim + 小写 + 折叠内部空白。同名不同形视为冲突。

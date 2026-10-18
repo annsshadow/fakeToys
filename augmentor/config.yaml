@@ -3,7 +3,7 @@
 # 写了没人读的键会被 `python cli.py validate-config` 报成**警告**（不改「通过/失败」
 # 判决）：节名拼错、节内键名拼错、`models.<名字>` 的子键拼错都会出声，能确定相近项时
 # 还会附上「是否想写 X？」。判据的键集从 `AppConfig` 的字段类型推导，与 `load_config`
-# 实际读走的键集同一份来源，所以这里不需要维护清单。详见 docs/API.md「配置的「写了
+# 实际读走的键集同一份来源，所以这里不需要维护清单。详见 docs/augmentor/API.md「配置的「写了
 # 没人读」反馈」。
 
 # 应用配置
@@ -119,7 +119,7 @@ augmentation:
   # 调小会让本来跑得完的长回答被中途掐断（新失败），调大只让「后端已经不响应」那条
   # 路多等 60 s 才出声（旧失败晚一点）。⇒ 对 ollama 行为一字不变，其余四支只是失败
   # 路径变慢，没有任何一支会被新掐断。
-  # 上界 600 与 docs/DEPLOYMENT.md 的 nginx `proxy_read_timeout 600s` 对齐 —— 再大就是
+  # 上界 600 与 docs/augmentor/DEPLOYMENT.md 的 nginx `proxy_read_timeout 600s` 对齐 —— 再大就是
   # 配了也不生效的假旋钮；下界 1 不是防手滑而是实测硬界：`requests` 对 `timeout=0` 抛
   # `ValueError: ... the timeout cannot be set to a value less than or equal to 0`，
   # 且崩在**第一次生成调用**上而不是加载时，不判掉就是「validate-config 绿灯、一跑就炸」。

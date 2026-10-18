@@ -413,7 +413,7 @@ func TestE2EAdminBattlesAndAudit(t *testing.T) {
 		t.Skipf("开局失败（体力/种子数据异常）：%d %v", status, body)
 	}
 	tokenID := num(body, "token_id")
-	status, body = e.post(t, "/api/v1/battle/settle", playerTok, settleBody(tokenID))
+	status, body = e.post(t, "/api/v1/battle/settle", playerTok, e.settleBody(t, tokenID))
 	if status != 200 {
 		t.Skipf("结算失败：%d %v", status, body)
 	}
@@ -435,7 +435,7 @@ func TestE2EAdminBattlesAndAudit(t *testing.T) {
 
 	// 审计：管理操作必须留痕。用真实 adminID —— admin_id=0 会撞外键
 	// 且 Audit 刻意吞掉写失败（不影响主流程），探针就无声消失了。
-	e.svc.Audit(context.Background(), adminID, "e2e_audit_probe", fmt.Sprintf("user#%d", uid), map[string]any{"k": "v"})
+	e.svc.Audit(context.Background(), adminID, "e2e_audit_probe", fmt.Sprintf("user#%d", uid), "10.0.0.1", map[string]any{"k": "v"})
 	status, body = e.get(t, "/api/v1/admin/audit-logs?limit=200", tok)
 	if status != 200 {
 		t.Fatalf("审计列表应 200，实际 %d", status)

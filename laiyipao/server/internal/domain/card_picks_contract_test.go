@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-// card_picks 取值域的**跨端契约**（第 66 轮）。
+// card_picks 取值域的**跨端契约**（第 66 轮引入，第 159 轮重写）。
 //
 // # 为什么必须锁
 //
@@ -37,56 +37,58 @@ func TestCardPickMinMatchesCrossEndVectors(t *testing.T) {
 	}
 }
 
-// TestCardPickEncodingsAreDisjoint 钉住「两个负区间不重叠」。
+// TestCardPickNegativeRangeIsContiguous 钉住新的负值域形状。
 //
-// 这是本轮最容易出事的性质：一旦 `rollWaveCards` 改成每波 4 张，
-// `-(3+handIdx)` 与 `-(6+handIdx)` 的取值域就会开始重叠，
-// 于是「弃+取第 2 张」与「弃+跳第 1 张」编码成同一个值 ——
-// 重放会选错路径，而**没有任何测试会红**（每侧单独看都合法）。
-//
-// 判据用**结构**而不是魔数：BASE 之差必须大于每波最大手牌数。
-func TestCardPickEncodingsAreDisjoint(t *testing.T) {
+// 第 159 轮起：负值域 = 连续区间 [min..-code_base] + 独立值 skip(-1)，
+// -2 是刻意留的空隙。`validCardPick` 的判据就建立在这个形状上 ——
+// 形状漂了（比如 code_max 改了但 validCardPick 没跟着改）
+// 会让「客户端产物」与「服务端校验」错位。
+func TestCardPickNegativeRangeIsContiguous(t *testing.T) {
 	v := loadVectors(t)
 	cp := v.CardPicks
 
-	if cp.HandSlots <= 0 {
-		t.Fatalf("契约向量里的 hand_slots = %d，必须为正", cp.HandSlots)
+	if cp.CodeBase != CardPickCodeBase || cp.CodeMax != CardPickCodeMax {
+		t.Fatalf("契约向量 code_base/code_max = %d/%d，Go 侧 = %d/%d —— "+
+			"「弃牌掩码 + 取/跳」的枚举区间两端漂了",
+			cp.CodeBase, cp.CodeMax, CardPickCodeBase, CardPickCodeMax)
 	}
-	gap := cp.DiscardSkipBase - cp.DiscardTakeBase
-	// ⚠️ 判据是 `gap >= hand_slots`，不是 `>`。
-	//
-	// 两个区间分别是 [-(base+h-1), -base]，长度都是 h。
-	// 不相交要求 -(skipBase) < -(takeBase) - (h-1)
-	//   ⟺ skipBase > takeBase + h - 1
-	//   ⟺ gap >= h        ← 等号成立时恰好相邻，仍然不相交
-	//
-	// 我第一版写成 `gap <= h` 就红，把「恰好相邻」误判成「重叠」。
-	// 这类「差一」的错误与 README 记的「gofmt -C 那次」同形：
-	// 判据里的边界算错了一个数，于是结论整个反过来。
-	if gap < cp.HandSlots {
-		t.Fatalf("两个 BASE 之差 %d < 每波最大手牌数 %d —— "+
-			"「弃+取」与「弃+跳」的编码区间会重叠，同一个值被解释成两种操作。\n"+
-			"修法是拉开 BASE（DiscardSkipBase），不是改这个断言。",
-			gap, cp.HandSlots)
+	if cp.HandSlots != CardPickHandSlots {
+		t.Fatalf("契约向量 hand_slots = %d，Go 侧 = %d", cp.HandSlots, CardPickHandSlots)
+	}
+	if cp.Min != -(cp.CodeBase + cp.CodeMax) {
+		t.Fatalf("契约 min=%d 与 code 区间 [0..%d] 不自洽（应为 -(base+max) = %d）",
+			cp.Min, cp.CodeMax, -(cp.CodeBase + cp.CodeMax))
 	}
 
-	// 两个区间各自都必须在 [min, ...] 内
-	takeLo := -(cp.DiscardTakeBase + cp.HandSlots - 1)
-	skipLo := -(cp.DiscardSkipBase + cp.HandSlots - 1)
-	if takeLo < cp.Min {
-		t.Errorf("弃+取区间下界 %d < 契约 min %d —— 服务端会拒掉客户端自己产生的编码", takeLo, cp.Min)
+	// 每一个枚举 code 都必须被 validCardPick 放行 ——
+	// 否则「客户端按枚举表产出」会被服务端自己人拒掉。
+	for code := int64(0); code <= cp.CodeMax; code++ {
+		pick := -(cp.CodeBase + code)
+		if !validCardPick(int(pick)) {
+			t.Errorf("枚举 code=%d（pick=%d）被 validCardPick 拒绝 —— "+
+				"服务端会拒掉客户端自己产生的编码", code, pick)
+		}
 	}
-	if skipLo < cp.Min {
-		t.Errorf("弃+跳区间下界 %d < 契约 min %d —— 服务端会拒掉客户端自己产生的编码", skipLo, cp.Min)
+	if !validCardPick(int(cp.Skip)) {
+		t.Errorf("skip=%d 被 validCardPick 拒绝", cp.Skip)
 	}
-	// 区间不相交
-	if skipLo >= takeLo {
-		t.Errorf("弃+跳下界 %d 与弃+取下界 %d 相交（应满足 skipLo < takeLo）", skipLo, takeLo)
+	if validCardPick(-2) {
+		t.Error("-2 应落在空隙里（协议刻意留的，不是笔误）")
+	}
+	if validCardPick(int(cp.Min) - 1) {
+		t.Errorf("pick=%d 低于下界却被放行", cp.Min-1)
 	}
 }
 
+// pickWithMask 按服务端编码约定重算「弃 mask 位手牌 + 取/跳」的 card_picks 值。
+//
+// take = -1 表示不取（跳过）。
+func pickWithMask(mask, take int) int {
+	return -(PickCodeBase + encodeDiscardCode(mask, take))
+}
+
 // TestCardPickVectorCasesMatchGoBoundaries 让向量里的每条字面期望值
-// 都被 Go 侧边界逻辑实际验证一遍。
+// 都被 Go 侧编码逻辑实际验证一遍。
 //
 // 只比对 CardPickMin 与 min 是不够的 —— 编码的**语义**（哪个值代表哪种操作）
 // 也要有守卫，否则「两端同时改成另一个含义」不会被发现。
@@ -94,17 +96,48 @@ func TestCardPickVectorCasesMatchGoBoundaries(t *testing.T) {
 	v := loadVectors(t)
 	cp := v.CardPicks
 
+	// name → 本地重算值。判据不是「常量相等」而是「算出来的值等于向量」——
+	// 后者能抓住「改了枚举但忘了同步向量」这种半途而废。
+	byName := map[string]int64{
+		"plain_pick_first":           0,
+		"plain_pick_last":            cp.HandSlots - 1,
+		"plain_skip":                 cp.Skip,
+		"discard_first_take_first":   int64(pickWithMask(0b001, 0)),
+		"discard_last_take_first":    int64(pickWithMask(0b100, 0)),
+		"discard_first_skip":         int64(pickWithMask(0b001, -1)),
+		"discard_two_take_remaining": int64(pickWithMask(0b011, 0)),
+		"discard_two_skip":           int64(pickWithMask(0b011, -1)),
+		"discard_all_skip":           int64(pickWithMask(0b111, -1)),
+	}
 	for _, c := range cp.Cases {
 		t.Run(c.Name, func(t *testing.T) {
-			if c.Expected < cp.Min {
-				t.Fatalf("向量值 %d < 契约下界 %d —— 这条用例本身非法", c.Expected, cp.Min)
+			want, ok := byName[c.Name]
+			if !ok {
+				t.Fatalf("向量里出现未知用例 %s —— Go 侧还没有对应编码", c.Name)
 			}
-			if c.Expected > cp.HandSlots-1 && c.Expected != cp.Skip &&
-				c.Expected > -(cp.DiscardTakeBase) {
-				t.Fatalf("向量值 %d 不属于任何已知编码区间（普通下标 %v / 跳过 %d / 弃+取 / 弃+跳）",
-					c.Expected, cp.HandSlots, cp.Skip)
+			if !validCardPick(int(c.Expected)) {
+				t.Fatalf("向量值 %d 不是合法编码（validCardPick 拒绝）—— 这条用例本身非法", c.Expected)
+			}
+			if want != c.Expected {
+				t.Errorf("用例 %s：本地重算 %d ≠ 向量 %d", c.Name, want, c.Expected)
 			}
 		})
+	}
+
+	// 字面值人工推导核对：枚举表里 mask=1/4/3/7 的区间起点是 4/12/10/19。
+	// 这条把「枚举表」与「向量字面值」绑在一起，两边不一致时必红。
+	literal := map[string]int{
+		"discard_first_take_first":   -7,
+		"discard_last_take_first":    -15,
+		"discard_first_skip":         -9,
+		"discard_two_take_remaining": -13,
+		"discard_two_skip":           -14,
+		"discard_all_skip":           -22,
+	}
+	for name, want := range literal {
+		if got := int(byName[name]); got != want {
+			t.Errorf("%s 本地重算 = %d，人工推导 = %d（枚举表与实现漂了）", name, got, want)
+		}
 	}
 }
 
@@ -137,11 +170,13 @@ func TestValidateSettleAcceptsNewCardPickRange(t *testing.T) {
 		pick int
 	}{
 		{"plain_pick_first", 0},
-		{"plain_skip", -1},
-		{"discard_then_take_first", -3},
-		{"discard_then_take_last", -5},
-		{"discard_then_skip", -6},
-		{"discard_then_skip_last", -8},
+		{"plain_pick_last", int(CardPickHandSlots) - 1},
+		{"plain_skip", CardPickSkip},
+		{"discard_first_take_first", pickWithMask(0b001, 0)}, // -7
+		{"discard_last_take_first", pickWithMask(0b100, 0)},  // -15
+		{"discard_first_skip", pickWithMask(0b001, -1)},      // -9
+		{"discard_two_skip", pickWithMask(0b011, -1)},        // -14
+		{"discard_all_skip", pickWithMask(0b111, -1)},        // -22（下界）
 	}
 	for _, c := range accepted {
 		t.Run(c.name, func(t *testing.T) {
@@ -151,8 +186,8 @@ func TestValidateSettleAcceptsNewCardPickRange(t *testing.T) {
 		})
 	}
 
-	// 下界之外必须拒 —— 否则下界就是装饰品
-	for _, bad := range []int{-9, -100, -1 << 30} {
+	// 空隙与下界之外必须拒 —— 否则下界就是装饰品
+	for _, bad := range []int{-2, CardPickMin - 1, -100, -1 << 30} {
 		if _, err := ValidateSettle(usableToken(gl.ID, now), gl, mk(bad), limits, now); err == nil {
 			t.Errorf("card_picks[%d] 越界却被放行 —— 下界 CardPickMin=%d 没有被真正执行", bad, CardPickMin)
 		}

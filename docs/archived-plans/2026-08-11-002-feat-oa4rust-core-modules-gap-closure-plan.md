@@ -60,7 +60,7 @@ oa4rust 已完成 86 个 crate 的路由挂载，但核心业务模块存在大�
 
 ### 已有完成计划（不重复实现）
 
-- `docs/plans/2026-08-11-001-feat-oa4rust-full-gap-closure-plan.md`（status: completed）
+- `docs/archived-plans/2026-08-11-001-feat-oa4rust-full-gap-closure-plan.md`（status: completed）
 - 覆盖：认证安全检查、双因素登录、安全注销、Token 校验、switch_user、电子签名、头像、用户注册、LDAP 集成、批量查询、授权管理 CRUD、null 桩修复
 - **本计划不覆盖上述模块**
 
@@ -486,7 +486,7 @@ oa4rust 已完成 86 个 crate 的路由挂载，但核心业务模块存在大�
 ## Sources & References
 
 - **Origin document:** [docs/brainstorms/2026-08-11-oa4rust-full-gap-closure-comprehensive-requirements.md](docs/brainstorms/2026-08-11-oa4rust-full-gap-closure-comprehensive-requirements.md)
-- **Related completed plan:** [docs/plans/2026-08-11-001-feat-oa4rust-full-gap-closure-plan.md](docs/plans/2026-08-11-001-feat-oa4rust-full-gap-closure-plan.md)（status: completed）
+- **Related completed plan:** [docs/archived-plans/2026-08-11-001-feat-oa4rust-full-gap-closure-plan.md](docs/archived-plans/2026-08-11-001-feat-oa4rust-full-gap-closure-plan.md)（status: completed）
 - **Related code:** `crates/processplatform_service_processing/`, `crates/processplatform_assemble_designer/`, `crates/file_assemble_control/`, `crates/bbs_assemble_control/`, `crates/organization_assemble_control/`, `crates/query_core_express/`, `crates/console/`, `crates/cms_express/`
 - **Java reference:** `oa/o2server/x_processplatform_service_processing/`, `oa/o2server/x_file_assemble_control/`, `oa/o2server/x_bbs_assemble_control/`, `oa/o2server/x_organization_assemble_control/`
 

@@ -23,6 +23,8 @@ pub mod routes;
 mod tests;
 #[cfg(test)]
 mod tests_generated;
+#[cfg(test)]
+mod security_gate_tests;
 
 #[derive(Debug, Deserialize)]
 pub struct ChatCompletionRequest {
@@ -307,6 +309,15 @@ async fn require_admin(pool: &Pool, session: &shared::session::Session) -> Resul
     } else {
         Err(AppError::Forbidden)
     }
+}
+
+#[allow(non_snake_case)]
+fn require_session(
+    session: Option<Extension<shared::session::Session>>,
+) -> Result<shared::session::Session, AppError> {
+    session
+        .map(|Extension(s)| s)
+        .ok_or(AppError::Unauthorized)
 }
 
 #[allow(non_snake_case)]
@@ -1287,8 +1298,10 @@ pub async fn config_update_model_flag(
 #[allow(non_snake_case)]
 pub async fn file_copy_file(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     req: Option<axum::extract::Json<Value>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let req = req.map(|r| r.0).unwrap_or_default();
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let source_id = req
@@ -1325,9 +1338,24 @@ pub async fn file_copy_file(
 #[allow(non_snake_case)]
 pub async fn file_delete_flag(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    // 归属门：先取文件属主再判（admin 放行 / 本人放行，归一化比较），否则任意登录用户可删他人文件。
+    let owner: Option<String> = client
+        .query_opt("SELECT creator FROM x_ai_file WHERE id = $1", &[&id])
+        .await
+        .map_err(|_| AppError::Internal)?
+        .map(|r| r.get::<_, Option<String>>("creator").unwrap_or_default());
+    let owner = match owner {
+        Some(o) if !o.is_empty() => o,
+        _ => return Ok(Json(ActionResult::error("file not found"))),
+    };
+    shared::middleware::require_owner(&pool, &sess, &owner).await?;
     let result = client
         .execute("DELETE FROM x_ai_file WHERE id = $1", &[&id])
         .await
@@ -1510,8 +1538,10 @@ pub async fn file_list_paging_page_size_size(
 #[allow(non_snake_case)]
 pub async fn file_upload(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     req: Option<axum::extract::Json<Value>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let req = req.map(|r| r.0).unwrap_or_default();
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
@@ -1807,9 +1837,24 @@ pub async fn index_cms_doc_docId(
 #[allow(non_snake_case)]
 pub async fn index_delete_flag(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    // 归属门：先取索引属主再判（admin 放行 / 本人放行，归一化比较），否则任意登录用户可删他人索引。
+    let owner: Option<String> = client
+        .query_opt("SELECT creator FROM x_ai_index WHERE id = $1", &[&id])
+        .await
+        .map_err(|_| AppError::Internal)?
+        .map(|r| r.get::<_, Option<String>>("creator").unwrap_or_default());
+    let owner = match owner {
+        Some(o) if !o.is_empty() => o,
+        _ => return Ok(Json(ActionResult::error("index not found"))),
+    };
+    shared::middleware::require_owner(&pool, &sess, &owner).await?;
     let result = client
         .execute("DELETE FROM x_ai_index WHERE id = $1", &[&id])
         .await
@@ -1885,7 +1930,13 @@ pub async fn index_list_paging_page_size_size(
 #[allow(non_snake_case)]
 pub async fn index_sync_to_knowledge(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 批量把全部启用文档标记已同步属维护写面：无会话 401、非 admin 403。
+    match session {
+        None => return Err(AppError::Unauthorized),
+        Some(Extension(s)) => require_admin(&pool, &s).await?,
+    }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let synced_count = client
@@ -2463,9 +2514,12 @@ pub async fn chat_list_completion_clue_id_paging_page_size_size(
 #[allow(non_snake_case)]
 pub async fn chat_delete_clue_id(
     pool: Extension<Pool>,
-    Extension(session): Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     Path(clue_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let Some(Extension(session)) = session else {
+        return Err(AppError::Unauthorized);
+    };
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let owner: Option<String> = client
@@ -2486,8 +2540,10 @@ pub async fn chat_delete_clue_id(
                 ]),
             ))))
         }
-        Some(user_id) if user_id != session.person_unique => return Err(AppError::Forbidden),
-        _ => {}
+        // 归属门：admin 放行 / 本人放行（require_owner 归一化比较），替代原原始串比较。
+        Some(user_id) => {
+            shared::middleware::require_owner(&pool, &session, &user_id).await?;
+        }
     }
 
     // 级联软删：会话与其全部对话记录必须原子，中途失败留「会话在而记录已删」。
@@ -2529,6 +2585,7 @@ pub async fn chat_delete_clue_id(
 #[allow(non_snake_case)]
 pub async fn chat_write_completion_extra(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     req: Option<axum::extract::Json<Value>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let req = req.map(|r| r.0).unwrap_or_default();
@@ -2541,6 +2598,7 @@ pub async fn chat_write_completion_extra(
     if id.is_empty() {
         return Err(AppError::BadRequest("id required".to_string()));
     }
+    require_session(session)?;
 
     let extra = req.get("extra").cloned().unwrap_or(Value::Null);
     let extra_text = extra.to_string();

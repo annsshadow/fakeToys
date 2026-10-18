@@ -174,7 +174,7 @@ func TestWashGemSpendsTokenAndKeepsQuality(t *testing.T) {
 // TestWashGemRejectsForeignGem 别人的宝石洗不了。
 //
 // 归属校验必须在**扣券之前** —— 否则「拿别人的宝石 id 反复请求」虽然会失败，
-// 但每一���失败请求都可能已经扣掉了券。
+// 但每一次失败请求都可能已经扣掉了券。
 func TestWashGemRejectsForeignGem(t *testing.T) {
 	ts := openTestService(t)
 	ctx := context.Background()

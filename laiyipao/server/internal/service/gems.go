@@ -31,7 +31,7 @@ import (
 //
 // 写成常量而不是裸字符串：它是**跨表契约**（seeder 写、Buy 读），
 // 一旦两边拼错，表现是「买了什么都没发生」——
-// 而那正是最难排查的一类症状，所以给��个名字并在两边都引用它。
+// 而那正是最难排查的一类症状，所以给它个名字并在两边都引用它。
 const gemInstanceKey = "gem_instance"
 
 // gemAffixRow 是 `user_gems.affixes` JSONB 里的一项。
@@ -292,8 +292,24 @@ func (s *Service) WashGem(ctx context.Context, userID, gemID int64) (*GemView, e
 		if err != nil {
 			return err
 		}
+		// ⚠️ 必须带 `AND user_id = $3`，不能只写 `WHERE id = $2`。
+		//
+		// 当前这条语句看起来是安全的 —— 同一个事务上方刚用
+		// `SELECT ... WHERE id = $1 AND user_id = $2 FOR UPDATE` 锁过行，
+		// 行锁保证这颗宝石确实属于该玩家。
+		//
+		// 但那是**调用点**保证的，不是这条语句自己保证的。守卫
+		// （ownership_scan_test.go）历史上只扫 SELECT，于是这种
+		// 「UPDATE 里没有 user_id」的写法**没有任何东西在看**。
+		// 一旦有人给 UPDATE 路径加第二个调用点、或把上面的 FOR UPDATE
+		// 挪走，这里就变成一条直接的 IDOR：传别人的 gemID 即可改写
+		// 别人的词条，而且返回的是自己视角的宝石列表，看不出异常。
+		//
+		// 多带一个条件不花任何代价（主键定位已经选中这一行），
+		// 却把「不会越权」从调用点的偶然变成语句自己的不变量。
 		if _, err := tx.Exec(ctx,
-			`UPDATE user_gems SET affixes = $1::jsonb WHERE id = $2`, raw, gemID); err != nil {
+			`UPDATE user_gems SET affixes = $1::jsonb WHERE id = $2 AND user_id = $3`,
+			raw, gemID, userID); err != nil {
 			return fmt.Errorf("update user_gem: %w", err)
 		}
 

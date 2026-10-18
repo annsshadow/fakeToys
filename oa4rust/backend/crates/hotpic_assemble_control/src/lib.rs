@@ -18,6 +18,20 @@ pub mod routes;
 mod tests;
 #[cfg(test)]
 mod tests_generated;
+#[cfg(test)]
+mod security_gate_tests;
+#[cfg(test)]
+mod security_gate_tests_b72;
+
+/// 内容管理写门禁（安全审计 2026-10 二轮）：轮播图（x_hotpic）与控制配置为
+/// 管理台内容，此前 creator 恒写 "system" 且无角色校验，任一登录用户可增删改。
+async fn require_admin(pool: &Pool, session: &shared::session::Session) -> Result<(), AppError> {
+    if shared::middleware::is_admin(pool, &session.person_unique).await {
+        Ok(())
+    } else {
+        Err(AppError::Forbidden)
+    }
+}
 
 pub fn hotpic_assemble_control_router(pool: Pool) -> axum::Router {
     routes::router(pool)
@@ -92,8 +106,11 @@ pub async fn list_control_panels(
 #[allow(non_snake_case)]
 pub async fn update_control_config(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 轮播控制配置写：仅 admin（安全审计 2026-10 二轮）。
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let config = body.0;
     tracing::info!("Updating hotpic assemble control config: {:?}", config);
@@ -264,13 +281,17 @@ pub async fn get_hotpic(
 #[allow(non_snake_case)]
 pub async fn create_hotpic(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Json(req): Json<HotpicRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 轮播图 = 管理台内容，仅 admin 可建（安全审计 2026-10 二轮）。
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
     let title = req.title.unwrap_or_default();
     let image_url = req.imageUrl.unwrap_or_default();
-    let creator = "system";
+    // 属主以会话登录人为事实源（原恒写 "system"，属主列形同虚设）。
+    let creator = session.person_unique.clone();
 
     client
         .execute(
@@ -293,9 +314,12 @@ pub async fn create_hotpic(
 #[allow(non_snake_case)]
 pub async fn save_hotpic(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(req): Json<HotpicRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 轮播图改 = 管理台内容写：仅 admin（安全审计 2026-10 二轮）。
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let title = req.title.unwrap_or_default();
     let image_url = req.imageUrl.unwrap_or_default();
@@ -326,8 +350,11 @@ pub async fn save_hotpic(
 #[allow(non_snake_case)]
 pub async fn delete_hotpic(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 轮播图删 = 管理台内容写：仅 admin（安全审计 2026-10 二轮）。
+    require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -525,8 +552,12 @@ pub async fn cipher_hotpic_id(
 #[allow(non_snake_case)]
 pub async fn user_hotpic_changeTitle(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Json(req): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = req
         .get("id")
@@ -542,6 +573,21 @@ pub async fn user_hotpic_changeTitle(
     if id.is_empty() {
         return Ok(Json(ActionResult::error("id is required")));
     }
+
+    // 归属门：先取热图属主再判（admin 放行 / 本人放行，归一化比较）。
+    let owner: Option<String> = client
+        .query_opt(
+            "SELECT creator FROM x_hotpic WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?
+        .map(|r| r.get::<_, Option<String>>("creator").unwrap_or_default());
+    let owner = match owner {
+        Some(o) if !o.is_empty() => o,
+        _ => return Ok(Json(ActionResult::error("hotpic not found"))),
+    };
+    shared::middleware::require_owner(&pool, &sess, &owner).await?;
 
     let result = client
         .execute(
@@ -685,12 +731,36 @@ pub async fn user_hotpic_application_infoId(
 #[allow(non_snake_case)]
 pub async fn user_hotpic_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
     method: axum::http::Method,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-
     if method == axum::http::Method::DELETE {
+        // 归属门：无会话 401（先于读库）；仅热图属主或 admin 可软删（归一化比较）。
+        let Some(Extension(sess)) = session else {
+            return Err(AppError::Unauthorized);
+        };
+        let client = pool.get().await.map_err(|_| AppError::Internal)?;
+        let owner: Option<String> = client
+            .query_opt(
+                "SELECT creator FROM x_hotpic WHERE id = $1 AND deleted_at IS NULL",
+                &[&id],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?
+            .map(|r| r.get::<_, Option<String>>("creator").unwrap_or_default());
+        let owner = match owner {
+            Some(o) if !o.is_empty() => o,
+            _ => {
+                return Ok(Json(ActionResult::success(Value::Object(
+                    serde_json::Map::from_iter([
+                        ("id".to_string(), Value::String(id)),
+                        ("deleted".to_string(), Value::Bool(false)),
+                    ]),
+                ))))
+            }
+        };
+        shared::middleware::require_owner(&pool, &sess, &owner).await?;
         let result = client
             .execute(
                 "UPDATE x_hotpic SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
@@ -706,6 +776,7 @@ pub async fn user_hotpic_id(
         ))));
     }
 
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
             "SELECT id, title, image_url, creator, create_time::text AS create_time FROM x_hotpic WHERE id = $1 AND deleted_at IS NULL",
@@ -744,8 +815,14 @@ pub async fn user_hotpic_id(
 #[allow(non_snake_case)]
 pub async fn user_hotpic_delete_by_ids(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path((id, id2)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 安全审计 round4-b72：会话存在档（沿用本 crate user_hotpic_changeTitle 惯例），
+    // 门置于 pool.get() 之前，杜绝匿名软删 x_hotpic。
+    let Some(Extension(_sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let ids = vec![id.clone(), id2.clone()];
     let n = client

@@ -10,7 +10,7 @@
 use axum::{extract::Extension, Json};
 use deadpool_postgres::Pool;
 use serde_json::Value;
-use shared::{error::AppError, response::ActionResult};
+use shared::{error::AppError, response::ActionResult, session::Session};
 use uuid::Uuid;
 
 fn body_str<'a>(body: &'a Value, key: &str) -> Option<&'a str> {
@@ -118,8 +118,14 @@ pub async fn update(
 /// DELETE /api/processplatform/assemble/designer/script/{id} —— 软删除
 pub async fn delete(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十七批：删脚本=设计面管理动作，收 admin 档（无会话 401 / 非 admin 403）。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    crate::require_admin_gate(&pool, &sess).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let n = client
         .execute(
