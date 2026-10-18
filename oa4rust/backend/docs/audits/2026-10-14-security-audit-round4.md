@@ -1231,6 +1231,19 @@ GET 写面队列里 `calendar_assemble_control` 与 `jpush_assemble_control` 各
 
 | 验证（本批代码变更） | — | personal crate 整 lib `37 passed / 0 failed / 0 ignored`：新增 `security_gate_tests_b76` 四臂——`b76_writes_reject_without_session`（死池+无会话+None → `Err(AppError::Unauthorized)`）+ `b76_writes_accept_valid_session_past_gate`（有效会话+已签发验证码 → 过门后密码/验证码过、落死池 → `Err(AppError::Internal)`，证门在库前）+ `b76_require_session_gate_logic`（纯单元）+ `b76_put_canonical_route_stays_anonymous_capable`（**回归护栏**：PUT `/api/reset` 规范路径经原 handler、无会话仍可达死池 → Internal 而非 401，证明匿名重置流未被打断）。尺子：**R7 671→670（−1）**、含写 2→**1**（−1，印证 deadpool 字面量写）；复跑 3 次稳定；EXIT 0 |
 
+### 三.77 — file_assemble_control 控制配置写收 admin 门 + ControlPool 接线修复（R7 670→669，含写 1→0 清零）
+- **批次目标**：收 file_assemble_control 最后一把真写 R7：`update_control_config`（PUT `/api/file/assemble/control/update/control/config`，`UPDATE x_file_assemble_control_config SET enabled/default_storage/max_upload_size WHERE id='global'`）。**本批同时兑现第六十二批记账的"接线缺陷待修"**。
+- **收口档**：admin 档（全局配置写属管理面，与 `calendar_assemble_control::update_control_config`、cms 同族口径一致）：无会话 401、非 admin 403（`is_admin` 查不到即 fail-closed），门置于 `pool.acquire()` 之前。
+- **接线修复（本批核心）**：4 把 control-config handler 取 `Extension<Arc<dyn ControlPool>>`，但 router 从未提供该扩展 ⇒ extraction 先于 handler 失败，四条路全 500 死态（静态分析仍读出无门写面 ⇒ 长挂 R7）。本批 router 补 `.layer(Extension(Arc::new(pool.clone()) as Arc<dyn ControlPool>))`（`Pool` 本身 `impl ControlPool`）；写面同批收 admin 门，读面三把（get_control_config / list_storage_pools / list_control_categories）随之复活。
+- **§五 新增 schema 漂移项（复活读面时发现，与 x_ai_file 族同型）**：`x_file_assemble_control_config` / `x_file_assemble_control_storage_pool` 的 `enabled` / `max_upload_size` 实为 **TEXT 列**（migrations/032 DDL 起即全 TEXT 列），而 handler 原按 `get_bool` / `get_i64` / bool·i64 绑定读写——复活后读会 panic、写会 42804。**本批修复**：读侧新增 `text_truthy` / `text_i64` 宽容解析助手；写侧按字符串绑定（"true"/"104857600"——对 TEXT 列直写，对将来迁回的 BOOLEAN/BIGINT 列亦有 PG assignment cast 兜底，两种 schema 都成立）。mock 单测同步改字符串值。**建议**：后续迁移把这些列归一为 BOOLEAN/BIGINT，或与 o2server 侧确认全 TEXT 列口径后让助手常驻。
+- **🎉 里程碑：尺子"含写 SQL"桶清零（0 条）**——全部 deadpool 字面量写路由收门完毕；R7 余 669 条全部落在"只读挂写方法"桶（真读假阳性 + ORM 盲区残查 + GET 写族另账）。
+
+| 门档 | 处理函数 | 路由 / 真写动作 | 加门说明 |
+| --- | --- | --- | --- |
+| admin 档（inline is_admin，crate 惯例） | `update_control_config` | PUT `/api/file/assemble/control/update/control/config`，UPDATE x_file_assemble_control_config（全局配置） | 无会话 401、非 admin 403（fail-closed），门置于 `pool.acquire()` 之前；admin 判定经并列 `Extension<Pool>` 复用 `shared::middleware::is_admin` |
+
+| 验证（本批代码变更） | — | file_assemble_control 整 lib `97 passed / 0 failed / 29 ignored`：新增 `security_gate_tests_b77` 三臂——`b77_writes_reject_without_session`（mock 控制池+死池+None → `Err(AppError::Unauthorized)`）+ `b77_writes_forbidden_for_non_admin`（非 admin + 死池 → `Err(AppError::Forbidden)`，fail-closed 离线可证）+ `b77_route_alive_and_gated_after_wiring_fix`（**接线修复路由活性回归**：整 router 匿名 PUT 该路 → 401，而非缺陷期 500/404）；另 `--ignored` 真库臂 `b77_admin_write_succeeds_on_real_db`（b56 种子 admin + 真 ControlPool → 文本绑定写在真库成功）。预存 `tests::test_update_control_config_returns_success` 改写禁契约（403）+ 漂移修复的 mock 串值化。尺子：**R7 670→669（−1）**、含写 1→**0**（**清零**）；复跑 3 次稳定；EXIT 0 |
+
 ## 四、验证
 
 

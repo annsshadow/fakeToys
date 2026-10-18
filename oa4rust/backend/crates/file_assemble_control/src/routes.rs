@@ -284,5 +284,13 @@ pub fn router(pool: Pool) -> Router {
         .route("/api/file/assemble/control/file/{id}/download", get(file_id_download).post(file_id_download))
         .route("/api/file/assemble/control/file/{id}/download/stream", post(file_id_download_stream))
         .route("/api/file/assemble/control/file/{id}", delete(u2_file_delete_by_id))
-.layer(Extension(pool))
+        // round4-b77 接线修复：4 把 control-config handler（get/list_storage_pools/
+        // update_control_config/list_control_categories）取 Extension<Arc<dyn ControlPool>>，
+        // 但 router 从未提供该扩展 ⇒ extraction 先于 handler 失败（四条路全 500 死态）。
+        // 现随 router 补齐 ControlPool 扩展（Pool 本身 impl ControlPool）；写面
+        // update_control_config 同批收 admin 门（lib.rs），读面三把随之复活。
+        .layer(Extension(
+            std::sync::Arc::new(pool.clone()) as std::sync::Arc<dyn crate::ControlPool>,
+        ))
+        .layer(Extension(pool))
 }
