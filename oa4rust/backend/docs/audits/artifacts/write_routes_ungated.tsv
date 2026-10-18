@@ -177,7 +177,6 @@ express	POST	/api/express/group/list	express_group_list	R7
 express	POST	/api/express/role/list	express_role_list	R7
 express	POST	/api/express/person/with/unit	express_person_with_unit	R7
 express	POST	/api/express/person/with/identity	express_person_with_identity	R7
-file_assemble_control	PUT	/api/file/assemble/control/update/control/config	update_control_config	R7
 file_assemble_control	POST	/api/anonymous/file/{id}/download	anonymous_file_id_download	R7
 file_assemble_control	POST	/api/anonymous/file/{id}/download/stream	anonymous_file_id_download_stream	R7
 file_assemble_control	POST	/api/attachment/{id}/download	attachment_id_download	R7

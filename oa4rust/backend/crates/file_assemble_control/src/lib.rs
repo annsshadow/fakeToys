@@ -25,9 +25,25 @@ mod tests;
 mod tests_generated;
 #[cfg(test)]
 mod security_gate_tests;
+#[cfg(test)]
+mod security_gate_tests_b77;
 
 pub fn file_assemble_control_router(pool: Pool) -> axum::Router {
     routes::router(pool)
+}
+
+/// round4-b77：TEXT 列宽容读取。`x_file_assemble_control_config` /
+/// `x_file_assemble_control_storage_pool` 的 `enabled` 实为 TEXT 列
+/// （migrations/032 DDL 起即全 TEXT 列），`RowGet::get_bool` 在真库上会因类型
+/// 不符 panic；统一按字符串解析（"true"/"1"/"TRUE"/"True" 为真），mock 侧相应
+/// 返回字符串值。schema 漂移本体记 §五（修 bind 或迁列型后此助手可退场）。
+fn text_truthy(row: &dyn crate::RowGet, col: &str) -> bool {
+    matches!(row.get_str(col), "true" | "1" | "TRUE" | "True")
+}
+
+/// TEXT 列宽容读 i64（parse 失败回落默认值）。
+fn text_i64(row: &dyn crate::RowGet, col: &str, default: i64) -> i64 {
+    row.get_str(col).parse::<i64>().unwrap_or(default)
 }
 
 #[axum::debug_handler]
@@ -48,14 +64,18 @@ pub async fn get_control_config(
 
     let data = match row {
         Ok(r) => serde_json::Map::from_iter([
-            ("enabled".to_string(), Value::Bool(r.get_bool("enabled"))),
+            ("enabled".to_string(), Value::Bool(text_truthy(&*r, "enabled"))),
             (
                 "defaultStorage".to_string(),
                 Value::String(r.get_str("default_storage").to_string()),
             ),
             (
                 "maxUploadSize".to_string(),
-                Value::Number(serde_json::Number::from(r.get_i64("max_upload_size"))),
+                Value::Number(serde_json::Number::from(text_i64(
+                    &*r,
+                    "max_upload_size",
+                    104857600,
+                ))),
             ),
         ]),
         Err(_) => serde_json::Map::from_iter([
@@ -103,7 +123,10 @@ pub async fn list_storage_pools(
                         "name".to_string(),
                         Value::String(row.get_str("name").to_string()),
                     ),
-                    ("enabled".to_string(), Value::Bool(row.get_bool("enabled"))),
+                    (
+                        "enabled".to_string(),
+                        Value::Bool(text_truthy(&**row, "enabled")),
+                    ),
                 ]))
             })
             .collect(),
@@ -122,8 +145,24 @@ pub async fn list_storage_pools(
 #[allow(non_snake_case)]
 pub async fn update_control_config(
     pool: Extension<Arc<dyn ControlPool>>,
+    admin_pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 安全审计 round4-b77：全局文件控制配置写（enabled / default_storage / max_upload_size）
+    // 属管理面（与 calendar_assemble_control::update_control_config 同族口径）：
+    // 无会话 401、非 admin 403（is_admin 查不到即 fail-closed）。门置于首个 DB
+    // 访问（pool.acquire()）之前。
+    //
+    // 注：本 handler 取 ControlPool 扩展（写通道）；admin 判定复用
+    // shared::middleware::is_admin 需裸 deadpool Pool，由并列的 Extension<Pool>
+    // 提供（router 原有 layer；round4-b77 一并补齐 ControlPool 扩展接线）。
+    let Some(Extension(session)) = session else {
+        return Err(AppError::Unauthorized);
+    };
+    if !shared::middleware::is_admin(&admin_pool, &session.person_unique).await {
+        return Err(AppError::Forbidden);
+    }
     let client = pool.acquire().await?;
 
     let enabled = body
@@ -145,7 +184,14 @@ pub async fn update_control_config(
             &dialect().format_sql(
                 "UPDATE x_file_assemble_control_config SET enabled = $1, default_storage = $2, max_upload_size = $3 WHERE id = 'global'",
             ),
-            &[&enabled, &default_storage, &max_upload_size],
+            // round4-b77：目标列实为 TEXT（schema 漂移，见 §五）——按字符串绑定。
+            // 文本参数对 TEXT 列直写；若将来迁回 BOOLEAN/BIGINT 列，PG 的 assignment
+            // cast（text→bool / text→bigint）同样接受，故文本绑定对两种 schema 都成立。
+            &[
+                &enabled.to_string(),
+                &default_storage,
+                &max_upload_size.to_string(),
+            ],
         )
         .await
         .map_err(|_| AppError::Internal)?;

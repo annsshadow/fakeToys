@@ -676,7 +676,7 @@ file_assemble_control	PUT	/api/attachment/{id}	attachment_id_update	R5-已认证
 file_assemble_control	PUT	/api/attachment/{id}/update	u2_attachment_update_content	R5-已认证+体内门禁
 file_assemble_control	PUT	/api/attachment2/{id}	u2_attachment2_update	R5-已认证+体内门禁
 file_assemble_control	PUT	/api/file/assemble/control/file/upload/referencetype/{referenceType}/reference/{reference}/scale/{scale}	u2_file_upload_multipart	R6-已认证+读会话无门禁
-file_assemble_control	PUT	/api/file/assemble/control/update/control/config	update_control_config	R7-已认证+体内无会话无门禁
+file_assemble_control	PUT	/api/file/assemble/control/update/control/config	update_control_config	R5-已认证+体内门禁
 file_assemble_control	PUT	/api/file/core/entity/file/update/{id}	update_file_entity	R5-已认证+体内门禁
 file_assemble_control	PUT	/api/folder/{id}	u2_folder_rename	R5-已认证+体内门禁
 file_assemble_control	PUT	/api/folder2/{id}	u2_folder_rename	R5-已认证+体内门禁
