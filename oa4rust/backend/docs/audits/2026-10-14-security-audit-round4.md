@@ -1167,6 +1167,23 @@ GET 写面队列里 `calendar_assemble_control` 与 `jpush_assemble_control` 各
 
 | 验证（本批代码变更） | — | express 整 lib `24 passed / 0 failed / 0 ignored`：新增 `security_gate_tests_b71` 三臂——`b71_writes_reject_without_session`（dead pool + `None` 会话 → `Err(AppError::Unauthorized)`，门在 DB 访问前）+ `b71_writes_accept_valid_session_past_gate`（有效会话 + dead pool → `Err(AppError::Internal)`，证门在库前）+ `b71_require_session_gate_logic`（纯单元）。顺带修预存 `tests::test_subscribe_express`（原断言语落死池 → 500）：给其 router 注一层 `Extension(test_session)` 保留语义。尺子：**R7 678→677（−1）**、含写 7→**6**（−1，印证死池字面量写）；复跑 3 次稳定；EXIT 0 |
 
+### 三.72 — hotpic 域 3 把真写收会话门（R7 677→674，含写 6→5）
+- **批次目标**：收 hotpic 域全部 R7 真写 3 把（跨两 crate；预计算清单只列 1 把，fresh gauge 实测 3 把——余 2 把为 sea_orm ORM 盲区写）：
+  - `hotpic_assemble_control::user_hotpic_delete_by_ids`（DELETE `/api/hotpic/assemble/control/user/hotpic/{id}/{id2}`，`UPDATE x_hotpic SET deleted_at = NOW() WHERE id = ANY($1)`，deadpool 字面量写，尺子可见）；
+  - `hotpic_core_entity::create`（POST `/api/hotpic/core/entity/create`，sea_orm insert `hotpic`）；
+  - `hotpic_core_entity::delete_by_id`（DELETE `/api/hotpic/core/entity/delete/{id}`，find 后 update `deleted_at` 软删）。
+- **假阳性判定（4 条出列）**：hotpic_assemble_control 余下 R7 4 条（`cipher_hotpic_bbs_id` / `cipher_hotpic_cms_id` DELETE、`cipher_hotpic_filter_list` / `user_hotpic_filter_list` PUT 分页）handler 体均为纯 SELECT（`SELECT … FROM x_hotpic … LIMIT/OFFSET`），属读操作挂 DELETE/PUT 方法族 false-positive（方法面与体不一致，另属"方法-体不一致"普查项）。
+- **收口档**：均 session 存在档。assemble 侧沿用本 crate `user_hotpic_changeTitle` 的 inline let-else 惯例（无会话 401，门在 `pool.get()` 之前）；core_entity 侧新增 crate 内 `require_session`（门在 `ActiveModel::insert` / `Entity::find_by_id().one()` 之前）。
+- **§五 关联（非新增，重申两族）**：①`hotpic_assemble_control::user_hotpic_delete_by_ids` 未做归属校验（同族 `user_hotpic_changeTitle` 已有 owner 门、`security_gate_tests::hotpic_user_writes_require_owner` 在册）——任意已认证用户可软删他人热图，属 IDOR 收紧残留；②`hotpic` 实体表无 creator 列（core_entity 的 create 不带归属），session 档已是最严可行档。
+
+| 门档 | 处理函数 | 路由 / 真写动作 | 加门说明 |
+| --- | --- | --- | --- |
+| 会话档（inline let-else，crate 惯例） | `user_hotpic_delete_by_ids`（hotpic_assemble_control） | DELETE `/api/hotpic/assemble/control/user/hotpic/{id}/{id2}`，UPDATE x_hotpic 软删 | 沿用 `user_hotpic_changeTitle` 惯例：无会话 401，门置于 `pool.get()` 之前 |
+| 会话档（新增 require_session） | `create`（hotpic_core_entity） | POST `/api/hotpic/core/entity/create`，sea_orm insert hotpic | crate 内新增 `require_session`：无会话 401，门置于 `ActiveModel::insert` 之前 |
+| 会话档（新增 require_session） | `delete_by_id`（hotpic_core_entity） | DELETE `/api/hotpic/core/entity/delete/{id}`，find 后 update 软删 | 同上 |
+
+| 验证（本批代码变更） | — | 两 crate 整 lib 全绿：hotpic_assemble_control `33 passed / 0 failed / 0 ignored`（新 `security_gate_tests_b72` 两臂：`b72_writes_reject_without_session` 死池+None→401、`b72_writes_accept_valid_session_past_gate` 有效会话+死池→Internal）；hotpic_core_entity `16 passed / 0 failed / 0 ignored`（新 `security_gate_tests_b72` 三臂：`b72_writes_reject_without_session` 2 把真库连接+None→全 `Err(AppError::Unauthorized)`、`b72_delete_passes_gate_reaches_db_without_write` 有效会话+不存在 id→error 信封证过门触库不落写、`b72_require_session_gate_logic` 纯单元）。尺子：**R7 677→674（−3）**、含写 6→**5**（−1，ORM-blindness 第三例证）、只读挂写桶 671→669（−2）；复跑 3 次稳定；EXIT 0 |
+
 ## 四、验证
 
 

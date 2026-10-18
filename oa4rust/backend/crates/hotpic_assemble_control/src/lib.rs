@@ -20,6 +20,8 @@ mod tests;
 mod tests_generated;
 #[cfg(test)]
 mod security_gate_tests;
+#[cfg(test)]
+mod security_gate_tests_b72;
 
 /// 内容管理写门禁（安全审计 2026-10 二轮）：轮播图（x_hotpic）与控制配置为
 /// 管理台内容，此前 creator 恒写 "system" 且无角色校验，任一登录用户可增删改。
@@ -813,8 +815,14 @@ pub async fn user_hotpic_id(
 #[allow(non_snake_case)]
 pub async fn user_hotpic_delete_by_ids(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path((id, id2)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 安全审计 round4-b72：会话存在档（沿用本 crate user_hotpic_changeTitle 惯例），
+    // 门置于 pool.get() 之前，杜绝匿名软删 x_hotpic。
+    let Some(Extension(_sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let ids = vec![id.clone(), id2.clone()];
     let n = client
