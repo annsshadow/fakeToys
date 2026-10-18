@@ -209,7 +209,6 @@ meeting_assemble_control	POST	/api/meeting/assemble/control/meeting/list/{page}/
 meeting_assemble_control	POST	/api/meeting/assemble/control/meeting/list/{page}/size/{size}/manage	meeting_list_page_size_size_manage	R7
 meeting_assemble_control	POST	/api/meeting/assemble/control/meeting/list/invite/{page}/size/{size}	meeting_list_invite_page_size_size	R7
 meeting_assemble_control	POST	/api/meeting/assemble/control/meeting/list/apply/{page}/size/{size}	meeting_list_apply_page_size_size	R7
-message	POST	/api/message/mark_read/{id}	mark_read	R7
 message_assemble_communicate	POST	/api/message/assemble/communicate/im/conversation/list/with/person	im_conversation_list_with_person	R7
 message_assemble_communicate	DELETE	/api/message/assemble/communicate/im/conversation/{id}/group	im_conversation_id_group	R7
 message_assemble_communicate	POST	/api/message/assemble/communicate/im/msg/collection/list/{page}/size/{size}	im_msg_collection_list_page_size_size	R7

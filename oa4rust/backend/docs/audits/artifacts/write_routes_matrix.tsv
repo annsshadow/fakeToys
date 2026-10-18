@@ -823,7 +823,7 @@ meeting_core_entity	POST	/api/meeting/core/entity/room/create	create_room	R5-已
 meeting_core_entity	POST	/api/meeting/core/entity/room/delete/{id}	delete_room	R5-已认证+体内门禁
 meeting_core_entity	POST	/api/meeting/core/entity/room/save/{id}	update_room	R5-已认证+体内门禁
 message	POST	/api/message/custom/create	custom_create	R5-已认证+体内门禁
-message	POST	/api/message/mark_read/{id}	mark_read	R7-已认证+体内无会话无门禁
+message	POST	/api/message/mark_read/{id}	mark_read	R5-已认证+体内门禁
 message_assemble_communicate	DELETE	/api/message/assemble/communicate/im/conversation/{id}/group	im_conversation_id_group	R7-已认证+体内无会话无门禁
 message_assemble_communicate	DELETE	/api/message/assemble/communicate/im/conversation/{id}/group/mockdeletetoget	im_conversation_id_group_mockdeletetoget	R5-已认证+体内门禁
 message_assemble_communicate	DELETE	/api/message/assemble/communicate/im/conversation/{id}/single	im_conversation_id_single_delete_virtual	R5-已认证+体内门禁

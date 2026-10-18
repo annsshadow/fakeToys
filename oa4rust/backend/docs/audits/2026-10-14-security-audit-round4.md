@@ -1184,6 +1184,17 @@ GET 写面队列里 `calendar_assemble_control` 与 `jpush_assemble_control` 各
 
 | 验证（本批代码变更） | — | 两 crate 整 lib 全绿：hotpic_assemble_control `33 passed / 0 failed / 0 ignored`（新 `security_gate_tests_b72` 两臂：`b72_writes_reject_without_session` 死池+None→401、`b72_writes_accept_valid_session_past_gate` 有效会话+死池→Internal）；hotpic_core_entity `16 passed / 0 failed / 0 ignored`（新 `security_gate_tests_b72` 三臂：`b72_writes_reject_without_session` 2 把真库连接+None→全 `Err(AppError::Unauthorized)`、`b72_delete_passes_gate_reaches_db_without_write` 有效会话+不存在 id→error 信封证过门触库不落写、`b72_require_session_gate_logic` 纯单元）。尺子：**R7 677→674（−3）**、含写 6→**5**（−1，ORM-blindness 第三例证）、只读挂写桶 671→669（−2）；复跑 3 次稳定；EXIT 0 |
 
+### 三.73 — message 1 把已读标记真写收会话门（R7 674→673，含写 5→4）
+- **批次目标**：收 message crate 唯一真写 R7：`mark_read`（POST `/api/message/mark_read/{id}`，`UPDATE x_msg_message SET xconsumed = true WHERE xid = $1`）。
+- **收口档**：session 档（新增 crate 内 `require_session`，无会话 401，门置于 `pool.get()` 之前）。"把消息标为已读"是用户对自有收件的状态操作，收会话存在档；收件归属校验（xconsumer/xperson 与会话 person 对齐）属 IDOR 收紧残留，列 §五（本批先抹匿名写面）。
+- **交叉核查（非本批范围，记账备查）**：①同 crate `update_single`（routes.rs:19）做**同一个 UPDATE**（xconsumed=true），但注册在 **GET** `/api/message/consume/{id}/type/{type}` 上——属 §五"GET 写禁令"族已列明的落点（message routes.rs:19 原文在册），故不出现在 R7；撤 GET 需同批改前端，留 §五。②`message_assemble_communicate` 的 7 条 R7 全部假阳性：6 条 list/paging 纯 SELECT + `im_conversation_id_group`（DELETE 方法但体为 SELECT 成员列表）；该 crate 无 sea_orm（0 处），无隐藏 ORM 写。
+
+| 门档 | 处理函数 | 路由 / 真写动作 | 加门说明 |
+| --- | --- | --- | --- |
+| 会话档（新增 require_session） | `mark_read` | POST `/api/message/mark_read/{id}`，UPDATE x_msg_message xconsumed=true | crate 内新增 `require_session`：无会话 401，门置于 `pool.get()` 之前 |
+
+| 验证（本批代码变更） | — | message 整 lib `15 passed / 0 failed / 0 ignored`：新增 `security_gate_tests_b73` 三臂——`b73_writes_reject_without_session`（dead pool + `None` 会话 → `Err(AppError::Unauthorized)`，门在 DB 访问前）+ `b73_writes_accept_valid_session_past_gate`（有效会话 + dead pool → `Err(AppError::Internal)`，证门在库前）+ `b73_require_session_gate_logic`（纯单元）。顺带修预存 `tests::test_mark_read`（原断言语落死池 → 500）：给其 router 注一层 `Extension(test_session)` 保留语义。尺子：**R7 674→673（−1）**、含写 5→**4**（−1，印证死池字面量写）；复跑 3 次稳定；EXIT 0 |
+
 ## 四、验证
 
 
