@@ -250,7 +250,7 @@ function fieldOf(container: HTMLElement, label: string): HTMLInputElement {
  * 在第 `label` 那一只 Select 里挑一项
  *
  * 不按「本页第几只 Select」数：antd 的 AutoComplete 也建在 Select 上，同样带
- * `.ant-select-selector`，首跑就是那么红的（按序号点开的是文件下拉，里面当然没有
+ * `.ant-select`（v5 时代这个类叫 `.ant-select-selector`，antd 6 已移除），首跑就是那么红的（按序号点开的是文件下拉，里面当然没有
  * 「quality · 按质量分过滤」这一项）。按 aria-label 落到那一格自己才是这里要钉的接线。
  * 下拉也只认**没被收起**的那一只：点过一次的 dropdown 会留在 body 上。
  */
@@ -259,7 +259,7 @@ function pickOption(container: HTMLElement, label: string, optionLabel: string) 
   expect(holder, `页面上没有「${label}」这一格`).toBeTruthy()
   const select = holder!.closest('.ant-select')
   expect(select, `「${label}」不是一只 Select`).toBeTruthy()
-  fireEvent.mouseDown(select!.querySelector('.ant-select-selector')!)
+  fireEvent.mouseDown(select!)
   const dropdowns = document.querySelectorAll(
     '.ant-select-dropdown:not(.ant-select-dropdown-hidden)'
   )

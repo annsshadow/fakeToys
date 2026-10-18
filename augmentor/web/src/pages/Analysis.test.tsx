@@ -129,7 +129,7 @@ const ANALYSIS = {
 async function selectFileAndWait() {
   const { container } = render(<Analysis />)
   await waitFor(() => expect(spies.getDataFiles).toHaveBeenCalled())
-  fireEvent.mouseDown(container.querySelector('.ant-select-selector')!)
+  fireEvent.mouseDown(container.querySelector('.ant-select')!)
   await waitFor(() =>
     expect(document.querySelector('.ant-select-item-option')).toBeInTheDocument()
   )
@@ -149,7 +149,7 @@ async function selectFileAndWait() {
  * 再取 DOM 里最后创建的那份下拉（第二次打开的一定排在后面）。
  */
 async function pickInNthSelect(container: HTMLElement, index: number, label: string) {
-  fireEvent.mouseDown(container.querySelectorAll('.ant-select-selector')[index])
+  fireEvent.mouseDown(container.querySelectorAll('.ant-select')[index])
   await waitFor(() =>
     expect(container.querySelectorAll('[role=combobox]')[index]).toHaveAttribute(
       'aria-expanded',

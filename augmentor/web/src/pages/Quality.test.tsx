@@ -240,7 +240,7 @@ describe('Quality 结构校验', () => {
     const { container } = render(<Quality />)
     fireEvent.click(screen.getByTestId('pick-file'))
     // 本页两个下拉：0=离群点方法，1=验证预设
-    fireEvent.mouseDown(container.querySelectorAll('.ant-select-selector')[1])
+    fireEvent.mouseDown(container.querySelectorAll('.ant-select')[1])
     await waitFor(() =>
       expect(container.querySelectorAll('[role=combobox]')[1]).toHaveAttribute(
         'aria-expanded',

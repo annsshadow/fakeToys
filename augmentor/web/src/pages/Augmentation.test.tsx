@@ -86,7 +86,7 @@ describe('Augmentation 启动校验与负载', () => {
     await waitFor(() => expect(spies.getDataFiles).toHaveBeenCalled())
     // 直接驱动受控 Select：mousedown 打开后点选项（用 option 类精确定位，避免与
     // 选中态回显的同名节点冲突）
-    fireEvent.mouseDown(container.querySelector('.ant-select-selector')!)
+    fireEvent.mouseDown(container.querySelector('.ant-select')!)
     await waitFor(() =>
       expect(document.querySelector('.ant-select-item-option')).toBeInTheDocument()
     )
@@ -191,7 +191,7 @@ describe('Augmentation 轮询的停表与重启（L277）', () => {
 
     const { container } = render(<Augmentation />)
 
-    fireEvent.mouseDown(container.querySelector('.ant-select-selector')!)
+    fireEvent.mouseDown(container.querySelector('.ant-select')!)
     await waitFor(() =>
       expect(document.querySelector('.ant-select-item-option')).toBeInTheDocument()
     )

@@ -133,8 +133,9 @@ describe('Settings 保存时递给服务层的负载', () => {
     const { container } = render(<Settings />)
 
     // 等下拉真的把 default 显示出来，才证明 defaultModel 状态已就绪（否则保存拿到空串）
+    // antd 6 起单选的选中值就渲染在 `.ant-select-content` 里（v5 的 `.ant-select-selection-item` 已移除）
     await waitFor(() =>
-      expect(container.querySelector('.ant-select-selection-item')?.textContent).toBe('ernie')
+      expect(container.querySelector('.ant-select-content')?.textContent).toBe('ernie')
     )
     fireEvent.click(screen.getByRole('button', { name: /保存配置/ }))
     const payload = spies.updateConfig.mock.calls[0][0]
@@ -213,7 +214,7 @@ describe('Settings 按数据推荐配置', () => {
 
   /** 选中数据集下拉（本页第二个 Select：0=默认模型，1=数据集） */
   async function pickRecommendFile(container: HTMLElement) {
-    fireEvent.mouseDown(container.querySelectorAll('.ant-select-selector')[1])
+    fireEvent.mouseDown(container.querySelectorAll('.ant-select')[1])
     await waitFor(() =>
       expect(container.querySelectorAll('[role=combobox]')[1]).toHaveAttribute(
         'aria-expanded',

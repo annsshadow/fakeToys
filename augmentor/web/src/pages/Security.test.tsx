@@ -156,14 +156,14 @@ describe('Security 泄漏检测', () => {
     fireEvent.click(screen.getByRole('tab', { name: /泄漏检测/ }))
 
     // 两个 antd Select（训练集/测试集）
-    const selectors = document.querySelectorAll('.ant-select-selector')
+    const selectors = document.querySelectorAll('.ant-select')
     fireEvent.mouseDown(selectors[0])
     await waitFor(() =>
       expect(document.querySelector('.ant-select-item-option')).toBeInTheDocument()
     )
     fireEvent.click(document.querySelectorAll('.ant-select-item-option')[0]) // train.json
 
-    fireEvent.mouseDown(document.querySelectorAll('.ant-select-selector')[1])
+    fireEvent.mouseDown(document.querySelectorAll('.ant-select')[1])
     await waitFor(() =>
       expect(document.querySelectorAll('.ant-select-item-option').length).toBeGreaterThan(1)
     )

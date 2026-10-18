@@ -1,7 +1,7 @@
 /**
  * 测试全局准备
  *
- * 三件事，全是**跨文件踩过的坑**，收在这里一处守护：
+ * 四件事，全是**跨文件踩过的坑**，收在这里一处守护：
  *
  * 1. jest-dom 匹配器（`toBeInTheDocument` 等）。`api.ts` 的测试用不到它，
  *    但 React 组件测试的标准底座（规划 T1.9 要求引入 RTL），先就位。
@@ -21,6 +21,16 @@
  *
  * 3. antd 的 `message.destroy()` 在测试环境里要能反复调用（无害）——
  *    这里包 try 是防极个别文件根本没有挂载过 antd 时的边缘情况。
+ *
+ * 4. antd 6 的两个坑（2026-10-18 升级 antd 5→6 时踩到，写在这里免得下次重踩）：
+ *    - Trigger（Select / Dropdown / DatePicker…）依赖 `ResizeObserver`，jsdom 没有 →
+ *      各页面测试在挂载前自行补桩（`window.ResizeObserver = window.ResizeObserver || ...`），
+ *      `window.matchMedia` 同理。
+ *    - Select 的 DOM 变了：v5 的 `.ant-select-selector` **已移除**，打开下拉的 `mouseDown`
+ *      要打在根节点 `.ant-select` 上（探针实测：`.ant-select` / `.ant-select-content` /
+ *      `[role=combobox]` 都能开，只有根节点不会随下拉内容变化，且下拉内部不含 `.ant-select`）。
+ *      单选的选中值渲染在 `.ant-select-content`（v5 的 `.ant-select-selection-item` 同样已移除）。
+ *      未变：选项类名 `.ant-select-item-option`、`[role=combobox]` 的 `aria-expanded`。
  */
 import '@testing-library/jest-dom/vitest'
 import { cleanup } from '@testing-library/react'
