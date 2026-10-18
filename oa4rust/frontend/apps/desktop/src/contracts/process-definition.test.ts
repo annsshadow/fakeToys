@@ -3,12 +3,12 @@
 
 import { describe, expect, it } from 'vitest'
 import {
-  O2_ACTIVITY_TYPES,
   activityName,
+  O2_ACTIVITY_TYPES,
+  type ProcessCanvasNode,
   parseProcessDefinition,
   processCreatePayload,
   serializeProcessDefinition,
-  type ProcessCanvasNode,
 } from './process-definition'
 
 describe('O2OA process definition adapter', () => {

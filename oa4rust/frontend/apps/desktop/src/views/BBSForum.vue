@@ -744,7 +744,11 @@ function formatContent(content?: string): string {
 // javascript:/data:/vbscript:/file:/blob: 与异源 http(s)。
 function isSafePicUrl(u: string): boolean {
   if (!u) return false
-  const s = u.replace(/[\u0000-\u0020]/g, '').toLowerCase()
+  // 控制字符 + 空格先归一（`java\tscript:`、`java script:` 这类混淆都栽在这一步）。
+  // 写成 `\p{Cc}` 而不写字面量区间：biome 的 noControlCharactersInRegex 禁字面控制字符，
+  // 原写法 `[\u0000-\u0020]` 正落在它的打击面里；`\p{Cc}` 覆盖同一批不可见控制码点
+  // （U+0000–U+001F、U+007F–U+009F），另补 U+0020 这个空格。
+  const s = u.replace(/[\p{Cc}\u0020]/gu, '').toLowerCase()
   if (/^(javascript|vbscript|file|data|blob):/.test(s)) return false
   // 相对路径（/… ./…）= 同源
   if (/^\/|^\.\//.test(s)) return true
@@ -798,7 +802,9 @@ async function loadTopicExtras(subjectId: string): Promise<void> {
   const pd = (pics as { data?: unknown } | null)?.data
   topicPics.value = (
     Array.isArray(pd) ? pd : Array.isArray((pd as { data?: unknown })?.data) ? (pd as { data: unknown[] }).data : []
-  ).map(String).filter(isSafePicUrl)
+  )
+    .map(String)
+    .filter(isSafePicUrl)
   const gd = (gate as { data?: unknown } | null)?.data
   replyGate.value = gate
     ? gd === true || (gd as { replyPublishable?: boolean })?.replyPublishable

@@ -42,9 +42,13 @@ describe('mobile form parser (parseMobileForm)', () => {
         m5: { id: 'm5', type: 'signature', name: 'sig', label: '签字' },
       }),
     )
-    expect(form.fields.map((f) => f.type)).toEqual(
-      ['attachment', 'attachment', 'attachment', 'attachment', 'attachment'],
-    )
+    expect(form.fields.map((f) => f.type)).toEqual([
+      'attachment',
+      'attachment',
+      'attachment',
+      'attachment',
+      'attachment',
+    ])
   })
 
   it('flat form (no layout container) yields a single default group', () => {
