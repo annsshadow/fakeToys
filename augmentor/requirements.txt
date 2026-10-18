@@ -26,7 +26,7 @@ python-multipart>=0.0.6
 
 # ============ 旧版脚本 enhanceTXT.py 专用 ============
 nlpaug>=1.1.0
-nlpcda>=2.1.0
+nlpcda>=2.5.8
 
 # ============ 多模型后端 (可选) ============
 anthropic>=0.25.0
