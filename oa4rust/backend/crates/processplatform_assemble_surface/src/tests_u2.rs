@@ -931,7 +931,11 @@ mod u2b_tests {
         // 逐格点名期望码：别名格必须 401，只读格必须仍是 500。
         let base = "/api/processplatform/assemble/surface/data/work";
         for (method, path, expect) in [
-            ("GET", &format!("{base}/w-1/p0"), StatusCode::INTERNAL_SERVER_ERROR),
+            (
+                "GET",
+                &format!("{base}/w-1/p0"),
+                StatusCode::INTERNAL_SERVER_ERROR,
+            ),
             (
                 "GET",
                 &format!("{base}/w-1/p0/p1/p2/p3"),
@@ -942,9 +946,17 @@ mod u2b_tests {
                 &format!("{base}/w-1/p0/p1/p2/p3/p4/p5/p6/p7"),
                 StatusCode::INTERNAL_SERVER_ERROR,
             ),
-            ("GET", &format!("{base}/w-1/p0/mockdeletetoget"), StatusCode::UNAUTHORIZED),
+            (
+                "GET",
+                &format!("{base}/w-1/p0/mockdeletetoget"),
+                StatusCode::UNAUTHORIZED,
+            ),
             ("PUT", &format!("{base}/w-1/p0"), StatusCode::UNAUTHORIZED),
-            ("PUT", &format!("{base}/w-1/p0/p1/p2"), StatusCode::UNAUTHORIZED),
+            (
+                "PUT",
+                &format!("{base}/w-1/p0/p1/p2"),
+                StatusCode::UNAUTHORIZED,
+            ),
             (
                 "POST",
                 &format!("{base}/w-1/p0/p1/mockputtopost"),

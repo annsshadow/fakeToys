@@ -13,14 +13,14 @@ pub const API_BASE: &str = "/api/meeting_assemble_control";
 pub mod routes;
 
 #[cfg(test)]
+mod security_gate_tests;
+#[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;
 #[cfg(test)]
 mod tests_u2;
-#[cfg(test)]
-mod security_gate_tests;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -2108,7 +2108,10 @@ async fn u2_meeting_owner_gate(
 ) -> Result<(), AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
-        .query_opt("SELECT creator FROM x_meeting WHERE id = $1", &[&meeting_id])
+        .query_opt(
+            "SELECT creator FROM x_meeting WHERE id = $1",
+            &[&meeting_id],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
     match row {
@@ -2128,7 +2131,6 @@ pub async fn create_meeting(
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-
 
     let title = payload
         .get("title")

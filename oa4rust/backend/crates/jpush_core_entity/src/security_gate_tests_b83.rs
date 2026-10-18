@@ -26,14 +26,30 @@ async fn b83_writes_reject_without_session() {
     let db = Extension(db);
     let none: Option<Extension<shared::session::Session>> = None;
 
-    assert!(matches!(
-        device_create(Extension(db.0.clone()), none.clone(), Json(serde_json::json!({}))).await,
-        Err(AppError::Unauthorized)
-    ), "device_create 无会话必须 401");
-    assert!(matches!(
-        device_delete(Extension(db.0), none, axum::extract::Path("b83-absent".to_string())).await,
-        Err(AppError::Unauthorized)
-    ), "device_delete 无会话必须 401");
+    assert!(
+        matches!(
+            device_create(
+                Extension(db.0.clone()),
+                none.clone(),
+                Json(serde_json::json!({}))
+            )
+            .await,
+            Err(AppError::Unauthorized)
+        ),
+        "device_create 无会话必须 401"
+    );
+    assert!(
+        matches!(
+            device_delete(
+                Extension(db.0),
+                none,
+                axum::extract::Path("b83-absent".to_string())
+            )
+            .await,
+            Err(AppError::Unauthorized)
+        ),
+        "device_delete 无会话必须 401"
+    );
 }
 
 /// 纯单元：`require_session` 门逻辑本身（无 DB 副作用）——无会话拒绝、有会话放行。

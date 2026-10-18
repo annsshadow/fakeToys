@@ -120,8 +120,11 @@ mod anonymous_write_guard {
         let mut buf = Vec::new();
         buf.extend_from_slice(format!("--{B}\r\n").as_bytes());
         buf.extend_from_slice(
-            format!(r#"Content-Disposition: form-data; name="{}"; filename="{}""#, f.field, f.filename)
-                .as_bytes(),
+            format!(
+                r#"Content-Disposition: form-data; name="{}"; filename="{}""#,
+                f.field, f.filename
+            )
+            .as_bytes(),
         );
         buf.extend_from_slice(b"\r\n");
         buf.extend_from_slice(format!("Content-Type: {}\r\n\r\n", f.content_type).as_bytes());
@@ -290,7 +293,10 @@ mod anonymous_write_guard {
             .unwrap()
             .map(|r| r.get("secret_encrypted"));
         let has_person: i64 = client
-            .query_one("SELECT COUNT(*) FROM auth_person WHERE locked = false AND deleted_at IS NULL", &[])
+            .query_one(
+                "SELECT COUNT(*) FROM auth_person WHERE locked = false AND deleted_at IS NULL",
+                &[],
+            )
             .await
             .unwrap()
             .get(0);
@@ -310,7 +316,11 @@ mod anonymous_write_guard {
                 "{} 的探针行 {}={} 在本轮请求之前已存在（历史匿名写入残留）",
                 p.uri, p.table, p.filter_val
             );
-            let dir_before = if p.avatar_dir { avatar_entries().await } else { 0 };
+            let dir_before = if p.avatar_dir {
+                avatar_entries().await
+            } else {
+                0
+            };
 
             let (status, desc) = if let Some(f) = &p.file {
                 let (s, text) = send_anon_multipart(&app, p.method.clone(), p.uri, f).await;
@@ -322,7 +332,11 @@ mod anonymous_write_guard {
             };
 
             let after = count(&pool, p.table, p.filter_col, p.filter_val).await;
-            let dir_after = if p.avatar_dir { avatar_entries().await } else { 0 };
+            let dir_after = if p.avatar_dir {
+                avatar_entries().await
+            } else {
+                0
+            };
             println!(
                 "匿名实测 {:>6} {:<52} → HTTP {} 行数 {}→{} 头像目录 {}{}  {}",
                 p.method.as_str(),
@@ -426,7 +440,10 @@ mod anonymous_write_guard {
             println!("注意：清掉上一轮匿名销毁臂的哨兵残留 {stale} 行");
         }
         let existed_before: bool = client2
-            .query_opt("SELECT 1 FROM secret_config WHERE id = $1", &[&SECRET_ROW.to_string()])
+            .query_opt(
+                "SELECT 1 FROM secret_config WHERE id = $1",
+                &[&SECRET_ROW.to_string()],
+            )
             .await
             .unwrap()
             .is_some();
@@ -443,7 +460,10 @@ mod anonymous_write_guard {
         let (cancel_status, cancel_body) =
             send_anon_json(&app, Method::GET, "/api/secret/set/cancel", &json!({})).await;
         let row_after_cancel: bool = client2
-            .query_opt("SELECT 1 FROM secret_config WHERE id = $1", &[&SECRET_ROW.to_string()])
+            .query_opt(
+                "SELECT 1 FROM secret_config WHERE id = $1",
+                &[&SECRET_ROW.to_string()],
+            )
             .await
             .unwrap()
             .is_some();
@@ -454,7 +474,11 @@ mod anonymous_write_guard {
             cancel_status,
             existed_before,
             row_after_cancel,
-            if existed_before { "为既有现场" } else { "由本测试插入" },
+            if existed_before {
+                "为既有现场"
+            } else {
+                "由本测试插入"
+            },
             cancel_body
         );
         if has_person > 0 {
@@ -495,14 +519,26 @@ mod anonymous_write_guard {
             )
             .await
             .unwrap();
-        let hit = count(&pool, "x_general_assemble_invoice", "name", "r48-instrument").await;
+        let hit = count(
+            &pool,
+            "x_general_assemble_invoice",
+            "name",
+            "r48-instrument",
+        )
+        .await;
         let _ = client
             .execute(
                 "DELETE FROM x_general_assemble_invoice WHERE id = $1",
                 &[&"r48-instrument-control".to_string()],
             )
             .await;
-        let miss = count(&pool, "x_general_assemble_invoice", "name", "r48-instrument").await;
+        let miss = count(
+            &pool,
+            "x_general_assemble_invoice",
+            "name",
+            "r48-instrument",
+        )
+        .await;
         println!("行数尺自证：真插一行后 count {hit}→{miss}");
         assert_eq!(hit, 1, "计数尺读不到真实写入，说明本文件所有断言恒真");
         assert_eq!(miss, 0, "清场失败，残留会污染下一轮");
@@ -516,7 +552,11 @@ mod anonymous_write_guard {
         let _ = tokio::fs::remove_file(&ctl).await;
         let back = avatar_entries().await;
         println!("头像目录尺自证：{base} → {up} → {back}");
-        assert_eq!(up, base + 1, "头像目录尺读不到真实落盘文件，匿名文件写探针恒真");
+        assert_eq!(
+            up,
+            base + 1,
+            "头像目录尺读不到真实落盘文件，匿名文件写探针恒真"
+        );
         assert_eq!(back, base, "头像目录尺清场失败，残留会污染下一轮");
 
         // 3) 放行正控：同一条路由带**真会话**必须插得进去，且 creator 必须取会话权威而不是请求体。

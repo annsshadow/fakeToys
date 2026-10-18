@@ -15,14 +15,14 @@ pub const API_BASE: &str = "/api/general_assemble_control";
 pub mod routes;
 
 #[cfg(test)]
+mod security_gate_tests;
+#[cfg(test)]
+mod security_gate_tests_b64;
+#[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-#[cfg(test)]
-mod security_gate_tests;
-#[cfg(test)]
-mod security_gate_tests_b64;
 
 /// 管理写操作门禁：本 crate 的系统配置/组织架构参考数据（维护模式、注册开关、
 /// 考勤范围、地区、安全等级、全局控制行）为管理台数据，仅 admin 可写。
@@ -43,9 +43,7 @@ async fn require_admin(pool: &Pool, session: &shared::session::Session) -> Resul
 fn require_session(
     session: Option<Extension<shared::session::Session>>,
 ) -> Result<shared::session::Session, AppError> {
-    session
-        .map(|Extension(s)| s)
-        .ok_or(AppError::Unauthorized)
+    session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
 }
 
 /// 属主资源门禁：先取记录属主列（creator），命中行时 require_owner；
@@ -68,7 +66,9 @@ async fn owner_gate(
         .await
         .map_err(|_| AppError::Internal)?;
     if let Some(row) = row {
-        let owner: String = row.get::<_, Option<String>>(owner_column).unwrap_or_default();
+        let owner: String = row
+            .get::<_, Option<String>>(owner_column)
+            .unwrap_or_default();
         shared::middleware::require_owner(pool, session, &owner).await?;
     }
     Ok(())
@@ -1568,7 +1568,15 @@ pub async fn invoice_delete_id(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     // IDOR 门禁：属主列 creator（admin 旁路）；行不存在则后续 DELETE 命中 0 行。
-    owner_gate(&pool, &client, &session, "x_general_assemble_invoice", "creator", &id).await?;
+    owner_gate(
+        &pool,
+        &client,
+        &session,
+        "x_general_assemble_invoice",
+        "creator",
+        &id,
+    )
+    .await?;
 
     let result = client
         .execute(
@@ -1772,7 +1780,15 @@ pub async fn invoice_update_apply_status_id(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     // IDOR 门禁：审批状态变更仅限属主/admin（安全审计 2026-10 二轮）。
-    owner_gate(&pool, &client, &session, "x_general_assemble_invoice", "creator", &id).await?;
+    owner_gate(
+        &pool,
+        &client,
+        &session,
+        "x_general_assemble_invoice",
+        "creator",
+        &id,
+    )
+    .await?;
 
     let status = payload
         .get("status")
@@ -1811,7 +1827,15 @@ pub async fn invoice_update_id(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     // IDOR 门禁：属主列 creator（admin 旁路）；行不存在则后续 UPDATE 命中 0 行。
-    owner_gate(&pool, &client, &session, "x_general_assemble_invoice", "creator", &id).await?;
+    owner_gate(
+        &pool,
+        &client,
+        &session,
+        "x_general_assemble_invoice",
+        "creator",
+        &id,
+    )
+    .await?;
 
     let name = payload
         .get("name")
@@ -2203,7 +2227,15 @@ pub async fn qrcode_delete(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     // IDOR 门禁：属主列 creator（admin 旁路）。
-    owner_gate(&pool, &client, &session, "x_general_assemble_qrcode", "creator", &id).await?;
+    owner_gate(
+        &pool,
+        &client,
+        &session,
+        "x_general_assemble_qrcode",
+        "creator",
+        &id,
+    )
+    .await?;
 
     let result = client
         .execute(

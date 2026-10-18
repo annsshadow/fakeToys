@@ -48,13 +48,9 @@ mod security_gate_tests {
             ),
             (
                 "folder_create",
-                crate::folder_create(
-                    Extension(pool.clone()),
-                    None,
-                    Json(json!({ "name": "n" })),
-                )
-                .await
-                .map(|_| ()),
+                crate::folder_create(Extension(pool.clone()), None, Json(json!({ "name": "n" })))
+                    .await
+                    .map(|_| ()),
             ),
             (
                 "folder_update",
@@ -68,13 +64,9 @@ mod security_gate_tests {
             ),
             (
                 "folder_remove",
-                crate::folder_remove(
-                    Extension(pool.clone()),
-                    None,
-                    Json(json!({ "id": "f1" })),
-                )
-                .await
-                .map(|_| ()),
+                crate::folder_remove(Extension(pool.clone()), None, Json(json!({ "id": "f1" })))
+                    .await
+                    .map(|_| ()),
             ),
             (
                 "permission_set",

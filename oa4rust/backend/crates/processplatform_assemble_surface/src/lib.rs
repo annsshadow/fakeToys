@@ -77,7 +77,10 @@ async fn u4_require_ppc_actor(
         )
         .await
         .map_err(|_| AppError::Internal)?
-        .map(|r| r.get::<_, Option<String>>("xcreatorPerson").unwrap_or_default());
+        .map(|r| {
+            r.get::<_, Option<String>>("xcreatorPerson")
+                .unwrap_or_default()
+        });
     require_actor_opt(pool, &session, owner.as_deref()).await
 }
 
@@ -15408,7 +15411,10 @@ pub async fn service_work_id_touch(
         )
         .await
         .map_err(|_| AppError::Internal)?
-        .map(|r| r.get::<_, Option<String>>("xcreatorPerson").unwrap_or_default());
+        .map(|r| {
+            r.get::<_, Option<String>>("xcreatorPerson")
+                .unwrap_or_default()
+        });
     require_actor_opt(&pool.0, &session, owner.as_deref()).await?;
     let result = client
         .execute(
@@ -15474,7 +15480,10 @@ pub async fn service_work_id_touch_mockputtopost(
         )
         .await
         .map_err(|_| AppError::Internal)?
-        .map(|r| r.get::<_, Option<String>>("xcreatorPerson").unwrap_or_default());
+        .map(|r| {
+            r.get::<_, Option<String>>("xcreatorPerson")
+                .unwrap_or_default()
+        });
     require_actor_opt(&pool.0, &session, owner.as_deref()).await?;
     let result = client
         .execute(

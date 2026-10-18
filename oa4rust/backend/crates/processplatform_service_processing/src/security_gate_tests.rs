@@ -124,7 +124,11 @@ mod security_gate_tests {
             "DELETE FROM x_task WHERE id = $1",
             "DELETE FROM x_work WHERE id = $1",
         ] {
-            let arg = if sql.contains("x_task WHERE id") { task_id } else { work_id };
+            let arg = if sql.contains("x_task WHERE id") {
+                task_id
+            } else {
+                work_id
+            };
             client.execute(sql, &[&arg.to_string()]).await.unwrap();
         }
     }
@@ -136,9 +140,13 @@ mod security_gate_tests {
         let cases: [(&str, Result<(), AppError>); 7] = [
             (
                 "task_claim",
-                crate::task_claim(Extension(pool.clone()), None, axum::extract::Path("t1".into()))
-                    .await
-                    .map(|_| ()),
+                crate::task_claim(
+                    Extension(pool.clone()),
+                    None,
+                    axum::extract::Path("t1".into()),
+                )
+                .await
+                .map(|_| ()),
             ),
             (
                 "task_complete",
@@ -667,9 +675,18 @@ mod security_gate_tests {
             axum::extract::Path("s1".to_string()),
         )
         .await;
-        assert!(matches!(dict, Err(AppError::Forbidden)), "非 admin 改字典必须 403");
-        assert!(matches!(job, Err(AppError::Forbidden)), "非 admin 结束他人 job 必须 403");
-        assert!(matches!(snap, Err(AppError::Forbidden)), "非 admin 删快照必须 403");
+        assert!(
+            matches!(dict, Err(AppError::Forbidden)),
+            "非 admin 改字典必须 403"
+        );
+        assert!(
+            matches!(job, Err(AppError::Forbidden)),
+            "非 admin 结束他人 job 必须 403"
+        );
+        assert!(
+            matches!(snap, Err(AppError::Forbidden)),
+            "非 admin 删快照必须 403"
+        );
     }
 
     /// 造一个真正带 admin 角色的人（`is_admin` 按 auth_role.name='admin' 判定），
@@ -707,11 +724,17 @@ mod security_gate_tests {
     async fn unseed_admin(pool: &Pool, person: &str, role_id: &str) {
         let client = pool.get().await.unwrap();
         client
-            .execute("DELETE FROM auth_person_role WHERE person_id = $1", &[&person.to_string()])
+            .execute(
+                "DELETE FROM auth_person_role WHERE person_id = $1",
+                &[&person.to_string()],
+            )
             .await
             .unwrap();
         client
-            .execute("DELETE FROM auth_person WHERE id = $1", &[&person.to_string()])
+            .execute(
+                "DELETE FROM auth_person WHERE id = $1",
+                &[&person.to_string()],
+            )
             .await
             .unwrap();
         client
@@ -758,11 +781,17 @@ mod security_gate_tests {
         );
         let client = pool.get().await.unwrap();
         let alive: i64 = client
-            .query_one("SELECT COUNT(*) AS c FROM x_work WHERE id = $1", &[&work_id])
+            .query_one(
+                "SELECT COUNT(*) AS c FROM x_work WHERE id = $1",
+                &[&work_id],
+            )
             .await
             .unwrap()
             .get("c");
-        assert_eq!(alive, 1, "403 之后 work 行必须还在（级联物理删一行都不能动）");
+        assert_eq!(
+            alive, 1,
+            "403 之后 work 行必须还在（级联物理删一行都不能动）"
+        );
         let drafts: i64 = client
             .query_one(
                 "SELECT COUNT(*) AS c FROM x_draft WHERE work_id = $1",
@@ -790,7 +819,10 @@ mod security_gate_tests {
             .get("c");
         assert_eq!(gone, 0, "删除须落地");
         let tasks_left: i64 = client
-            .query_one("SELECT COUNT(*) AS c FROM x_task WHERE work = $1", &[&work_id])
+            .query_one(
+                "SELECT COUNT(*) AS c FROM x_task WHERE work = $1",
+                &[&work_id],
+            )
             .await
             .unwrap()
             .get("c");
@@ -1088,15 +1120,23 @@ mod security_gate_tests {
             ),
             (
                 "read_delete",
-                crate::u2::read_delete(Extension(pool.clone()), None, axum::extract::Path("r1".to_string()))
-                    .await
-                    .map(|_| ()),
+                crate::u2::read_delete(
+                    Extension(pool.clone()),
+                    None,
+                    axum::extract::Path("r1".to_string()),
+                )
+                .await
+                .map(|_| ()),
             ),
             (
                 "read_processing",
-                crate::u2::read_processing(Extension(pool.clone()), None, axum::extract::Path("r1".to_string()))
-                    .await
-                    .map(|_| ()),
+                crate::u2::read_processing(
+                    Extension(pool.clone()),
+                    None,
+                    axum::extract::Path("r1".to_string()),
+                )
+                .await
+                .map(|_| ()),
             ),
             (
                 "read_replace",
@@ -1136,11 +1176,7 @@ mod security_gate_tests {
                 crate::u2::work_processing_signal(
                     Extension(pool.clone()),
                     None,
-                    axum::extract::Path((
-                        "w1".to_string(),
-                        "s1".to_string(),
-                        "t1".to_string(),
-                    )),
+                    axum::extract::Path(("w1".to_string(), "s1".to_string(), "t1".to_string())),
                 )
                 .await
                 .map(|_| ()),
@@ -1375,9 +1411,12 @@ mod security_gate_tests {
             "留痕 creator 必须是真实操作人，不能硬写 system"
         );
 
-        c.execute("DELETE FROM x_record WHERE work_id = $1", &[&work.to_string()])
-            .await
-            .unwrap();
+        c.execute(
+            "DELETE FROM x_record WHERE work_id = $1",
+            &[&work.to_string()],
+        )
+        .await
+        .unwrap();
         c.execute("DELETE FROM x_work WHERE id = $1", &[&work.to_string()])
             .await
             .unwrap();
@@ -1486,7 +1525,14 @@ mod security_gate_tests {
         let work = format!("r48-{tag}-work");
         let assignee = format!("u-r48-{tag}-assignee");
         seed_work(&pool, &work, "u-r48-creator").await;
-        seed_task(&pool, &format!("r48-{tag}-task"), &work, &assignee, "active").await;
+        seed_task(
+            &pool,
+            &format!("r48-{tag}-task"),
+            &work,
+            &assignee,
+            "active",
+        )
+        .await;
 
         let before: i64 = pool
             .get()
@@ -1517,12 +1563,10 @@ mod security_gate_tests {
         assert_eq!(before, after, "拒绝路径不得新建任何 x_review 行");
 
         let (admin, role_id) = seed_admin(&pool, &tag).await;
-        let okres = crate::u2::review_init_for_view(
-            Extension(pool.clone()),
-            Some(Extension(sess(&admin))),
-        )
-        .await
-        .map(|_| ());
+        let okres =
+            crate::u2::review_init_for_view(Extension(pool.clone()), Some(Extension(sess(&admin))))
+                .await
+                .map(|_| ());
         assert!(okres.is_ok(), "admin 触发应放行，实际 {okres:?}");
         let landed: i64 = pool
             .get()
@@ -1538,13 +1582,19 @@ mod security_gate_tests {
         assert_eq!(landed, 1, "admin 臂应确实为 (work, assignee) 建出评审行");
 
         let c = pool.get().await.unwrap();
-        c.execute("DELETE FROM x_review WHERE work_id = $1", &[&work.to_string()])
-            .await
-            .unwrap();
+        c.execute(
+            "DELETE FROM x_review WHERE work_id = $1",
+            &[&work.to_string()],
+        )
+        .await
+        .unwrap();
         unseed_admin(&pool, &admin, &role_id).await;
-        c.execute("DELETE FROM x_task WHERE work_id = $1", &[&work.to_string()])
-            .await
-            .unwrap();
+        c.execute(
+            "DELETE FROM x_task WHERE work_id = $1",
+            &[&work.to_string()],
+        )
+        .await
+        .unwrap();
         c.execute("DELETE FROM x_work WHERE id = $1", &[&work.to_string()])
             .await
             .unwrap();
@@ -1896,7 +1946,11 @@ mod security_gate_tests {
                 .map(|_| ()),
             ),
         ];
-        assert_eq!(nonadmin.len(), 4, "深度首末两档（1 段 / 8 段）各证一把写与删");
+        assert_eq!(
+            nonadmin.len(),
+            4,
+            "深度首末两档（1 段 / 8 段）各证一把写与删"
+        );
         let bad2: Vec<&str> = nonadmin
             .iter()
             .filter(|(_, r)| !matches!(r, Err(AppError::Forbidden)))
@@ -1942,7 +1996,11 @@ mod security_gate_tests {
             matches!(intruder, Err(AppError::Forbidden)),
             "非 admin 写字典必须 403，实际 {intruder:?}"
         );
-        assert_eq!(dict_row_count(&pool, &id).await, 0, "拒绝路径不得新建 x_application_dict 行");
+        assert_eq!(
+            dict_row_count(&pool, &id).await,
+            0,
+            "拒绝路径不得新建 x_application_dict 行"
+        );
 
         let (admin, role_id) = seed_admin(&pool, &tag).await;
         let okres = crate::u2::dict_set_1(
@@ -1954,7 +2012,11 @@ mod security_gate_tests {
         .await
         .map(|_| ());
         assert!(okres.is_ok(), "admin 写字典应放行，实际 {okres:?}");
-        assert_eq!(dict_row_count(&pool, &id).await, 1, "admin 臂应确实落出字典行");
+        assert_eq!(
+            dict_row_count(&pool, &id).await,
+            1,
+            "admin 臂应确实落出字典行"
+        );
 
         let delres = crate::u2::dict_del_1(
             Extension(pool.clone()),
@@ -2081,10 +2143,7 @@ mod security_gate_tests {
         )
         .await
         .map(|_| ());
-        assert!(
-            ok.is_ok(),
-            "发起人软删自己的 work 应放行（实际 {ok:?}）"
-        );
+        assert!(ok.is_ok(), "发起人软删自己的 work 应放行（实际 {ok:?}）");
         let deleted: bool = client
             .query_one(
                 "SELECT (deleted_at IS NOT NULL) AS d FROM x_work WHERE id = $1",
@@ -2093,7 +2152,10 @@ mod security_gate_tests {
             .await
             .unwrap()
             .get("d");
-        assert!(deleted, "放行臂必须真的把 deleted_at 写进去（未命中行也会回 ok，落库才是凭据）");
+        assert!(
+            deleted,
+            "放行臂必须真的把 deleted_at 写进去（未命中行也会回 ok，落库才是凭据）"
+        );
 
         // ③ 空发起人：普通会话 403、admin 200
         let orphan = format!("r410-w-{tag}-orphan");
@@ -2249,15 +2311,23 @@ mod security_gate_tests {
             ),
             (
                 "snap_work_workId_type_abandoned",
-                crate::snap_work_workId_type_abandoned(Extension(pool.clone()), None, p3("a", "w", "b"))
-                    .await
-                    .map(|_| ()),
+                crate::snap_work_workId_type_abandoned(
+                    Extension(pool.clone()),
+                    None,
+                    p3("a", "w", "b"),
+                )
+                .await
+                .map(|_| ()),
             ),
             (
                 "snap_work_workId_type_suspend",
-                crate::snap_work_workId_type_suspend(Extension(pool.clone()), None, p3("a", "w", "b"))
-                    .await
-                    .map(|_| ()),
+                crate::snap_work_workId_type_suspend(
+                    Extension(pool.clone()),
+                    None,
+                    p3("a", "w", "b"),
+                )
+                .await
+                .map(|_| ()),
             ),
             (
                 "snap_workcompleted_workCompletedId_type_abandonedworkcompleted",
@@ -2390,10 +2460,7 @@ mod security_gate_tests {
         )
         .await
         .map(|_| ());
-        assert!(
-            r.is_ok(),
-            "发起人催办自己单据上的待办应放行（实际 {r:?}）"
-        );
+        assert!(r.is_ok(), "发起人催办自己单据上的待办应放行（实际 {r:?}）");
         assert_eq!(task_status(&pool, &task_id).await, "urged");
         assert_eq!(
             count_by(
@@ -2427,10 +2494,7 @@ mod security_gate_tests {
         )
         .await
         .map(|_| ());
-        assert!(
-            r.is_ok(),
-            "admin 打无主 task 的过期写应放行（实际 {r:?}）"
-        );
+        assert!(r.is_ok(), "admin 打无主 task 的过期写应放行（实际 {r:?}）");
         assert_eq!(
             task_status(&pool, &orphan).await,
             "expired",
@@ -2745,15 +2809,25 @@ mod security_gate_tests {
             ),
             (
                 "data_work_create_path",
-                crate::u2::data_work_create_path(Extension(pool.clone()), None, p2("w", "p"), empty())
-                    .await
-                    .map(|_| ()),
+                crate::u2::data_work_create_path(
+                    Extension(pool.clone()),
+                    None,
+                    p2("w", "p"),
+                    empty(),
+                )
+                .await
+                .map(|_| ()),
             ),
             (
                 "data_work_update_path",
-                crate::u2::data_work_update_path(Extension(pool.clone()), None, p2("w", "p"), empty())
-                    .await
-                    .map(|_| ()),
+                crate::u2::data_work_update_path(
+                    Extension(pool.clone()),
+                    None,
+                    p2("w", "p"),
+                    empty(),
+                )
+                .await
+                .map(|_| ()),
             ),
             (
                 "data_work_delete",
@@ -3075,7 +3149,10 @@ mod security_gate_tests {
         )
         .await
         .map(|_| ());
-        assert!(r.is_ok(), "发起人合并自己的重复完成记录应放行（实际 {r:?}）");
+        assert!(
+            r.is_ok(),
+            "发起人合并自己的重复完成记录应放行（实际 {r:?}）"
+        );
         assert_eq!(
             count_by(
                 &pool,
@@ -3146,7 +3223,10 @@ mod security_gate_tests {
             .await
             .unwrap();
         client
-            .execute("DELETE FROM x_workcompleted WHERE work_id = $1", &[&work_id])
+            .execute(
+                "DELETE FROM x_workcompleted WHERE work_id = $1",
+                &[&work_id],
+            )
             .await
             .unwrap();
         client
@@ -3239,13 +3319,9 @@ mod b53_gate_tests {
             ),
             (
                 "task_id_processing",
-                crate::task_id_processing(
-                    Extension(pool.clone()),
-                    None,
-                    Path("t1".to_string()),
-                )
-                .await
-                .map(|_| ()),
+                crate::task_id_processing(Extension(pool.clone()), None, Path("t1".to_string()))
+                    .await
+                    .map(|_| ()),
             ),
             (
                 "task_v2_id_reset",
@@ -3264,11 +3340,7 @@ mod b53_gate_tests {
                 crate::taskcompleted_id_press_work_work(
                     Extension(pool.clone()),
                     None,
-                    Path((
-                        "wc1".to_string(),
-                        "w1".to_string(),
-                        "x".to_string(),
-                    )),
+                    Path(("wc1".to_string(), "w1".to_string(), "x".to_string())),
                 )
                 .await
                 .map(|_| ()),
@@ -3319,14 +3391,9 @@ mod b53_gate_tests {
             ),
             (
                 "start_timer",
-                crate::start_timer(
-                    Extension(pool.clone()),
-                    timer(),
-                    None,
-                    Json(json!({})),
-                )
-                .await
-                .map(|_| ()),
+                crate::start_timer(Extension(pool.clone()), timer(), None, Json(json!({})))
+                    .await
+                    .map(|_| ()),
             ),
             (
                 "cancel_timer",

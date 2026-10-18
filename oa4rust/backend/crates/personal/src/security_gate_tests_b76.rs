@@ -35,7 +35,10 @@ mod security_gate_tests_b76 {
         Pool::builder(mgr).build().unwrap()
     }
 
-    fn reset_req(credential: &str, code: &str) -> axum::extract::Json<crate::reset::ResetPasswordRequest> {
+    fn reset_req(
+        credential: &str,
+        code: &str,
+    ) -> axum::extract::Json<crate::reset::ResetPasswordRequest> {
         axum::extract::Json(crate::reset::ResetPasswordRequest {
             credential: credential.to_string(),
             code: code.to_string(),
@@ -70,9 +73,13 @@ mod security_gate_tests_b76 {
         let session = Some(Extension(build_session("b76-valid")));
 
         // 过门 → 密码规则过 → 验证码校验并消费 → 死池 pool.get() 必败 → Internal。
-        let res =
-            reset::reset_password_mockputtopost(Extension(pool), store, session, reset_req("b76-cred", &code))
-                .await;
+        let res = reset::reset_password_mockputtopost(
+            Extension(pool),
+            store,
+            session,
+            reset_req("b76-cred", &code),
+        )
+        .await;
         assert!(
             matches!(res, Err(AppError::Internal)),
             "有效会话应过门、之后才落库（死池 → Internal），证门在库前"
@@ -101,12 +108,7 @@ mod security_gate_tests_b76 {
         let store = Extension(ResetCodeStore::default());
         let code = store.0.issue("b76-put").await;
 
-        let res = reset::reset_password(
-            Extension(pool),
-            store,
-            reset_req("b76-put", &code),
-        )
-        .await;
+        let res = reset::reset_password(Extension(pool), store, reset_req("b76-put", &code)).await;
         assert!(
             matches!(res, Err(AppError::Internal)),
             "PUT /api/reset 规范路径必须保持匿名可用（死池 → Internal，而非 401）"

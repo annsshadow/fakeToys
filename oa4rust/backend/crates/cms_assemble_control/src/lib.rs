@@ -14,6 +14,8 @@ use std::collections::HashMap;
 pub mod routes;
 
 #[cfg(test)]
+mod security_gate_tests;
+#[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
@@ -24,8 +26,6 @@ mod tests_generated;
 mod tests_u2;
 #[cfg(test)]
 mod tests_u3;
-#[cfg(test)]
-mod security_gate_tests;
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
@@ -6240,7 +6240,14 @@ pub async fn script_id_mockdeletetoget(
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 与 script_u2_delete 正档同判据：脚本创建人本人或 admin。
-    let gate = u2_check_owner(&pool, "x_cms_script", "creator", &id, &session.person_unique).await?;
+    let gate = u2_check_owner(
+        &pool,
+        "x_cms_script",
+        "creator",
+        &id,
+        &session.person_unique,
+    )
+    .await?;
     soft_delete_after_gate(&pool, gate, "x_cms_script", &id, "script not found").await
 }
 
@@ -7294,7 +7301,14 @@ pub async fn viewcategory_id_mockdeletetoget(
         &session.person_unique,
     )
     .await?;
-    soft_delete_after_gate(&pool, gate, "x_cms_viewcategory", &id, "viewcategory not found").await
+    soft_delete_after_gate(
+        &pool,
+        gate,
+        "x_cms_viewcategory",
+        &id,
+        "viewcategory not found",
+    )
+    .await
 }
 
 #[axum::debug_handler]
@@ -7330,8 +7344,14 @@ pub async fn viewfieldconfig_id_mockdeletetoget(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 与 viewfieldconfig_u2_delete 正档同判据：字段配置经**所属视图的创建人**校验（派生资源）。
     let gate = u2_gate_by_sql(&pool, U2_VIEW_FIELD_OWNER_SQL, &id, &session.person_unique).await?;
-    soft_delete_after_gate(&pool, gate, "x_cms_viewfieldconfig", &id, "viewfieldconfig not found")
-        .await
+    soft_delete_after_gate(
+        &pool,
+        gate,
+        "x_cms_viewfieldconfig",
+        &id,
+        "viewfieldconfig not found",
+    )
+    .await
 }
 
 #[axum::debug_handler]

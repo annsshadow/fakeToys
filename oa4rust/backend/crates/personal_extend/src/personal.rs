@@ -344,7 +344,11 @@ pub async fn face_create(
                     serde_json::Value::String(sess.person_unique.clone()),
                 );
             }
-            None => return Err(AppError::BadRequest("payload must be an object".to_string())),
+            None => {
+                return Err(AppError::BadRequest(
+                    "payload must be an object".to_string(),
+                ))
+            }
         }
     }
     let id = shared::crud_create(&pool, &face_spec(), &payload).await?;

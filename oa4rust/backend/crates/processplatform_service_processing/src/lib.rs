@@ -373,10 +373,7 @@ pub async fn cancel_process_instance(
     let session = u4_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let creator: Option<String> = client
-        .query_opt(
-            "SELECT creator FROM x_work WHERE id = $1",
-            &[&execution_id],
-        )
+        .query_opt("SELECT creator FROM x_work WHERE id = $1", &[&execution_id])
         .await
         .map_err(|_| AppError::Internal)?
         .and_then(|row| row.get::<_, Option<String>>("creator"));
@@ -2861,7 +2858,13 @@ pub async fn attachment_copy_workcompleted_workCompletedId(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 第五十三批：复制是往目标 workcompleted 写，按完成记录发起人 / work 发起人校归属。
     let session = u4_session(session)?;
-    u4_require_actors(&pool.0, &session, U4ActorKey::WorkCompleted, &work_completed_id).await?;
+    u4_require_actors(
+        &pool.0,
+        &session,
+        U4ActorKey::WorkCompleted,
+        &work_completed_id,
+    )
+    .await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let source_id = body
         .get("id")

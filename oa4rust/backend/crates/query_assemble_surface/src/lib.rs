@@ -29,7 +29,10 @@ pub struct CreateSurfaceRequest {
 /// admin 门（无会话 401 / 非 admin 403 / admin 放行）。用于本 crate 的 ownerless 系统数据写
 /// （x_query_surface 的 creator 硬编码 system、x_query_table_data / x_query_import_model_record
 /// 无每用户归属）——按「ownerless 系统数据写 = admin」口径，与 ppsurface / query_designer 先例一致。
-async fn require_admin_opt(pool: &Pool, session: Option<Extension<Session>>) -> Result<(), AppError> {
+async fn require_admin_opt(
+    pool: &Pool,
+    session: Option<Extension<Session>>,
+) -> Result<(), AppError> {
     let session = session.ok_or(AppError::Unauthorized)?;
     if shared::middleware::is_admin(pool, &session.person_unique).await {
         Ok(())
@@ -802,12 +805,12 @@ pub fn query_assemble_surface_router() -> Router {
 }
 
 #[cfg(test)]
+mod security_gate_tests;
+#[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-#[cfg(test)]
-mod security_gate_tests;
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     query_assemble_surface_router().layer(axum::extract::Extension(pool))

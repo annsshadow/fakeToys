@@ -53,7 +53,10 @@ async fn b70_writes_accept_valid_session_past_gate() {
 fn b70_require_session_gate_logic() {
     let none: Option<Extension<shared::session::Session>> = None;
     assert!(
-        matches!(super::u2::require_session(none), Err(AppError::Unauthorized)),
+        matches!(
+            super::u2::require_session(none),
+            Err(AppError::Unauthorized)
+        ),
         "require_session：无会话必须 Unauthorized"
     );
 

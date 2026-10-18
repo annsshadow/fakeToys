@@ -244,12 +244,12 @@ pub async fn device_delete(
 }
 
 #[cfg(test)]
+mod security_gate_tests_b83;
+#[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-#[cfg(test)]
-mod security_gate_tests_b83;
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::jpush_core_entity_router(pool)

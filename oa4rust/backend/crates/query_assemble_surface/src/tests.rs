@@ -326,10 +326,10 @@ async fn test_u2_table_row_delete_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-            .uri("/api/queryview/table/row/delete/tbl-1/row-1")
-            .method(Method::DELETE)
-            .body(Body::empty())
-            .unwrap(),
+                .uri("/api/queryview/table/row/delete/tbl-1/row-1")
+                .method(Method::DELETE)
+                .body(Body::empty())
+                .unwrap(),
         )
         .await
         .unwrap();
@@ -408,10 +408,10 @@ async fn test_u2_importmodel_record_delete_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-            .uri("/api/queryview/importmodel/record/delete/record-1")
-            .method(Method::DELETE)
-            .body(Body::empty())
-            .unwrap(),
+                .uri("/api/queryview/importmodel/record/delete/record-1")
+                .method(Method::DELETE)
+                .body(Body::empty())
+                .unwrap(),
         )
         .await
         .unwrap();
@@ -446,7 +446,8 @@ async fn test_query_get_writes_non_admin_forbidden() {
     //（is_admin 对空池 fail-closed）。
     assert!(
         matches!(
-            crate::table_reload_dynamic(Extension(pool.clone()), Some(Extension(sess.clone()))).await,
+            crate::table_reload_dynamic(Extension(pool.clone()), Some(Extension(sess.clone())))
+                .await,
             Err(shared::error::AppError::Forbidden)
         ),
         "table_reload_dynamic 非 admin 必须 403"
@@ -482,7 +483,12 @@ async fn test_q44_write_writes_reject_without_session() {
             crate::create_surface(
                 Extension(pool.clone()),
                 None,
-                Json(crate::CreateSurfaceRequest { name: None, category: None, query: None, template: None }),
+                Json(crate::CreateSurfaceRequest {
+                    name: None,
+                    category: None,
+                    query: None,
+                    template: None,
+                }),
             )
             .await
             .map(|_| ()),
@@ -493,7 +499,12 @@ async fn test_q44_write_writes_reject_without_session() {
                 Extension(pool.clone()),
                 None,
                 Path("s-1".to_string()),
-                Json(crate::CreateSurfaceRequest { name: None, category: None, query: None, template: None }),
+                Json(crate::CreateSurfaceRequest {
+                    name: None,
+                    category: None,
+                    query: None,
+                    template: None,
+                }),
             )
             .await
             .map(|_| ()),
@@ -516,13 +527,9 @@ async fn test_q44_write_writes_reject_without_session() {
         ),
         (
             "importmodel_id_execute",
-            crate::importmodel_id_execute(
-                Extension(pool.clone()),
-                None,
-                Path("im-1".to_string()),
-            )
-            .await
-            .map(|_| ()),
+            crate::importmodel_id_execute(Extension(pool.clone()), None, Path("im-1".to_string()))
+                .await
+                .map(|_| ()),
         ),
         (
             "u2::table_row_delete",
@@ -567,7 +574,12 @@ async fn test_q44_write_writes_non_admin_forbidden() {
             crate::create_surface(
                 Extension(pool.clone()),
                 some.clone(),
-                Json(crate::CreateSurfaceRequest { name: None, category: None, query: None, template: None }),
+                Json(crate::CreateSurfaceRequest {
+                    name: None,
+                    category: None,
+                    query: None,
+                    template: None,
+                }),
             )
             .await
             .map(|_| ()),
@@ -578,16 +590,25 @@ async fn test_q44_write_writes_non_admin_forbidden() {
                 Extension(pool.clone()),
                 some.clone(),
                 Path("s-1".to_string()),
-                Json(crate::CreateSurfaceRequest { name: None, category: None, query: None, template: None }),
+                Json(crate::CreateSurfaceRequest {
+                    name: None,
+                    category: None,
+                    query: None,
+                    template: None,
+                }),
             )
             .await
             .map(|_| ()),
         ),
         (
             "delete_surface",
-            crate::delete_surface(Extension(pool.clone()), some.clone(), Path("s-1".to_string()))
-                .await
-                .map(|_| ()),
+            crate::delete_surface(
+                Extension(pool.clone()),
+                some.clone(),
+                Path("s-1".to_string()),
+            )
+            .await
+            .map(|_| ()),
         ),
         (
             "table_tableFlag_row_delete_all",

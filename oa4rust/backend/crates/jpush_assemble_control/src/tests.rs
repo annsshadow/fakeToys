@@ -460,9 +460,12 @@ async fn test_jpush_get_writes_owner_admin_gate() {
     )
     .await
     .unwrap();
-    c.execute("DELETE FROM auth_person_role WHERE person_id=$1", &[&ADMIN.to_string()])
-        .await
-        .unwrap();
+    c.execute(
+        "DELETE FROM auth_person_role WHERE person_id=$1",
+        &[&ADMIN.to_string()],
+    )
+    .await
+    .unwrap();
     c.execute("DELETE FROM auth_person WHERE id=$1", &[&ADMIN.to_string()])
         .await
         .unwrap();

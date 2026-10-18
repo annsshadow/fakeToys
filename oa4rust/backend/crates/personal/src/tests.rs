@@ -121,7 +121,9 @@ mod tests {
             false,
             None
         ));
-        assert!(!auth::password::verify_password("wrong", &hash, "", false, None));
+        assert!(!auth::password::verify_password(
+            "wrong", &hash, "", false, None
+        ));
     }
 
     #[test]

@@ -1,12 +1,12 @@
 // Copyright (C) 2026 annsshadow
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+use aes_gcm::aead::{rand_core::RngCore, Aead, OsRng};
+use aes_gcm::{Aes256Gcm, Key, Nonce};
 use base64::{engine::general_purpose::URL_SAFE, Engine as _};
 use cipher::{Block, BlockDecryptMut, BlockEncrypt, KeyInit};
 use des::{Des, TdesEde2};
 use sha2::Digest;
-use aes_gcm::aead::{Aead, OsRng, rand_core::RngCore};
-use aes_gcm::{Aes256Gcm, Key, Nonce};
 
 /// bcrypt 哈希存储前缀，用于区分 MD5/DES 旧格式
 pub const BCRYPT_PREFIX: &str = "{bcrypt}";
@@ -81,7 +81,13 @@ pub fn legacy_compat_from_env() -> bool {
     std::env::var("AUTH_LEGACY_COMPAT").as_deref().unwrap_or("") == "true"
 }
 
-pub fn verify_password(plain: &str, stored: &str, key: &str, legacy_compat: bool, _encrypt_type: Option<&str>) -> bool {
+pub fn verify_password(
+    plain: &str,
+    stored: &str,
+    key: &str,
+    legacy_compat: bool,
+    _encrypt_type: Option<&str>,
+) -> bool {
     if let Some(bcrypt_hash) = stored.strip_prefix(BCRYPT_PREFIX) {
         if let Some(cached) = get_cached(bcrypt_hash, plain) {
             return cached;
@@ -336,7 +342,13 @@ mod tests {
         let binding = URL_SAFE.encode(des_encrypt("despass", key).unwrap());
         let stored = urlencoding::encode(&binding);
         assert!(verify_password("despass", &stored, key, true, None));
-        assert!(!verify_password("despass", &stored, "anotherkey8", true, None));
+        assert!(!verify_password(
+            "despass",
+            &stored,
+            "anotherkey8",
+            true,
+            None
+        ));
         // 空 key 走不到 DES 分支；关闭兼容开关时旧格式一律拒绝。
         assert!(!verify_password("despass", &stored, "", true, None));
         assert!(!verify_password("despass", &stored, key, false, None));
@@ -415,11 +427,16 @@ mod tests {
         let legacy_token = URL_SAFE.encode(&legacy_ct);
 
         assert!(
-            !URL_SAFE.decode(&legacy_token).unwrap().starts_with(SSO_TOKEN_V2_PREFIX),
+            !URL_SAFE
+                .decode(&legacy_token)
+                .unwrap()
+                .starts_with(SSO_TOKEN_V2_PREFIX),
             "回归前提：旧 3DES token 必不带 v2. 前缀"
         );
-        assert!(sso_decrypt_payload(&legacy_token, key, false).is_err(),
-            "未开启兼容开关时旧 3DES token 必须拒绝");
+        assert!(
+            sso_decrypt_payload(&legacy_token, key, false).is_err(),
+            "未开启兼容开关时旧 3DES token 必须拒绝"
+        );
 
         let pt = sso_decrypt_payload(&legacy_token, key, true).unwrap();
         assert_eq!(pt, b"u123#1700000000");

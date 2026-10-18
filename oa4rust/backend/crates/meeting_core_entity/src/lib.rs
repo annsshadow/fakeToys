@@ -24,12 +24,12 @@ pub mod routes;
 use entities::{meeting, meeting_room};
 
 #[cfg(test)]
+mod security_gate_tests;
+#[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-#[cfg(test)]
-mod security_gate_tests;
 
 /// 会议室 / 会议管理写操作门禁（安全审计 2026-10 二轮）。
 ///

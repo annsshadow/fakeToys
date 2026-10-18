@@ -37,7 +37,12 @@ mod security_gate_tests_b73 {
     async fn b73_writes_reject_without_session() {
         let pool = dead_pool();
 
-        let res = mark_read(Extension(pool), None, axum::extract::Path("b73-id".to_string())).await;
+        let res = mark_read(
+            Extension(pool),
+            None,
+            axum::extract::Path("b73-id".to_string()),
+        )
+        .await;
         assert!(
             matches!(res, Err(AppError::Unauthorized)),
             "无会话调用 mark_read 必须 401（门在 pool.get() 之前）"
@@ -50,8 +55,12 @@ mod security_gate_tests_b73 {
         let session = Some(Extension(build_session("b73-valid")));
 
         // 有效会话过门后直落死池 pool.get() 必败 → Internal（证明门在库前、只挡匿名）。
-        let res = mark_read(Extension(pool), session, axum::extract::Path("b73-id".to_string()))
-            .await;
+        let res = mark_read(
+            Extension(pool),
+            session,
+            axum::extract::Path("b73-id".to_string()),
+        )
+        .await;
         assert!(
             matches!(res, Err(AppError::Internal)),
             "有效会话应过门、之后才落库（死池 → Internal），证门在库前"
@@ -63,10 +72,7 @@ mod security_gate_tests_b73 {
     fn b73_require_session_gate_logic() {
         let none: Option<Extension<shared::session::Session>> = None;
         assert!(
-            matches!(
-                crate::require_session(none),
-                Err(AppError::Unauthorized)
-            ),
+            matches!(crate::require_session(none), Err(AppError::Unauthorized)),
             "require_session：无会话必须 Unauthorized"
         );
 

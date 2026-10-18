@@ -784,12 +784,12 @@ pub fn bbs_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
 }
 
 #[cfg(test)]
+mod security_gate_tests_b79;
+#[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-#[cfg(test)]
-mod security_gate_tests_b79;
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::bbs_core_entity_router(pool)

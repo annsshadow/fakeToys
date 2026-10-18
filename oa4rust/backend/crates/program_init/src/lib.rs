@@ -32,10 +32,7 @@ const SECRET_ROW_ID: &str = "init-secret";
 /// 四轮 A3-N6：外部数据源 / 恢复 / 进程控制写族此前只要求「有会话」，任一登录用户即可
 /// 把外部数据库 host/port/账密写进 init_external_datasource、触发 restore 落盘或直接停服。
 /// 按二轮 S5 口径收 admin（无 DB 时 is_admin fail-closed）。
-async fn require_admin(
-    pool: &Pool,
-    session: &shared::session::Session,
-) -> Result<(), AppError> {
+async fn require_admin(pool: &Pool, session: &shared::session::Session) -> Result<(), AppError> {
     if shared::middleware::is_admin(pool, &session.person_unique).await {
         Ok(())
     } else {
@@ -747,9 +744,9 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
 }
 
 #[cfg(test)]
+mod security_gate_tests;
+#[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;
-#[cfg(test)]
-mod security_gate_tests;
 #[cfg(test)]
 mod tests_generated;

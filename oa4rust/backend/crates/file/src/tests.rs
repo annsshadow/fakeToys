@@ -127,7 +127,9 @@ mod tests {
         let body = serde_json::json!({"name": "", "superior": null});
         let result = folder_create(
             pool,
-            Some(axum::extract::Extension(shared::testing::test_session("folder-create-empty"))),
+            Some(axum::extract::Extension(shared::testing::test_session(
+                "folder-create-empty",
+            ))),
             axum::extract::Json(body),
         )
         .await;

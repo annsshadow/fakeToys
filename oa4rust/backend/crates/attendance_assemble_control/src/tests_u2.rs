@@ -315,7 +315,11 @@ mod u2_tests {
                 StatusCode::INTERNAL_SERVER_ERROR,
             ),
         ] {
-            assert_eq!(status_of(method, uri).await, expect, "{method} {uri} not routed");
+            assert_eq!(
+                status_of(method, uri).await,
+                expect,
+                "{method} {uri} not routed"
+            );
         }
     }
 

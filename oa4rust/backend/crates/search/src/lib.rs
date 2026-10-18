@@ -256,7 +256,11 @@ mod tests {
         ));
 
         // 非 admin（mock pool 下 is_admin fail-closed）：三把全 403
-        let s = || Some(Extension(shared::testing::test_session("u-ftsearch-nobody")));
+        let s = || {
+            Some(Extension(shared::testing::test_session(
+                "u-ftsearch-nobody",
+            )))
+        };
         assert!(matches!(
             crate::ftsearch_create(Extension(dead.clone()), s(), body()).await,
             Err(AppError::Forbidden)

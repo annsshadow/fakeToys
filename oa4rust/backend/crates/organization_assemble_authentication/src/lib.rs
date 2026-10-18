@@ -24,12 +24,12 @@ pub mod routes;
 pub mod u2;
 
 #[cfg(test)]
+mod security_gate_tests_b74;
+#[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-#[cfg(test)]
-mod security_gate_tests_b74;
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Bind store — 扫码绑定状态管理（复用 bind.rs 模式）

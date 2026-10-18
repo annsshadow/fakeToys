@@ -97,21 +97,36 @@ mod security_gate_tests {
             ),
             (
                 "update_portal",
-                crate::update_portal(Extension(pool.clone()), Extension(sess.clone()), p(), axum::Json(body.clone()))
-                    .await
-                    .map(|_| ()),
+                crate::update_portal(
+                    Extension(pool.clone()),
+                    Extension(sess.clone()),
+                    p(),
+                    axum::Json(body.clone()),
+                )
+                .await
+                .map(|_| ()),
             ),
             (
                 "update_portal_icon",
-                crate::update_portal_icon(Extension(pool.clone()), Extension(sess.clone()), p(), axum::Json(body.clone()))
-                    .await
-                    .map(|_| ()),
+                crate::update_portal_icon(
+                    Extension(pool.clone()),
+                    Extension(sess.clone()),
+                    p(),
+                    axum::Json(body.clone()),
+                )
+                .await
+                .map(|_| ()),
             ),
             (
                 "portal_id_permission_post",
-                crate::portal_id_permission_post(Extension(pool.clone()), Extension(sess.clone()), p(), axum::Json(body.clone()))
-                    .await
-                    .map(|_| ()),
+                crate::portal_id_permission_post(
+                    Extension(pool.clone()),
+                    Extension(sess.clone()),
+                    p(),
+                    axum::Json(body.clone()),
+                )
+                .await
+                .map(|_| ()),
             ),
             (
                 "create_page",
@@ -121,9 +136,14 @@ mod security_gate_tests {
             ),
             (
                 "save_page",
-                crate::save_page(Extension(pool.clone()), Extension(sess.clone()), p(), savepage())
-                    .await
-                    .map(|_| ()),
+                crate::save_page(
+                    Extension(pool.clone()),
+                    Extension(sess.clone()),
+                    p(),
+                    savepage(),
+                )
+                .await
+                .map(|_| ()),
             ),
             (
                 "delete_page",
@@ -133,9 +153,13 @@ mod security_gate_tests {
             ),
             (
                 "create_templatepage",
-                crate::create_templatepage(Extension(pool.clone()), Extension(sess.clone()), axum::Json(body.clone()))
-                    .await
-                    .map(|_| ()),
+                crate::create_templatepage(
+                    Extension(pool.clone()),
+                    Extension(sess.clone()),
+                    axum::Json(body.clone()),
+                )
+                .await
+                .map(|_| ()),
             ),
             (
                 "delete_templatepage",
@@ -145,9 +169,13 @@ mod security_gate_tests {
             ),
             (
                 "create_widget",
-                crate::create_widget(Extension(pool.clone()), Extension(sess.clone()), axum::Json(body.clone()))
-                    .await
-                    .map(|_| ()),
+                crate::create_widget(
+                    Extension(pool.clone()),
+                    Extension(sess.clone()),
+                    axum::Json(body.clone()),
+                )
+                .await
+                .map(|_| ()),
             ),
             (
                 "delete_widget",
@@ -157,21 +185,35 @@ mod security_gate_tests {
             ),
             (
                 "update_widget",
-                crate::update_widget(Extension(pool.clone()), Extension(sess.clone()), p(), axum::Json(body.clone()))
-                    .await
-                    .map(|_| ()),
+                crate::update_widget(
+                    Extension(pool.clone()),
+                    Extension(sess.clone()),
+                    p(),
+                    axum::Json(body.clone()),
+                )
+                .await
+                .map(|_| ()),
             ),
             (
                 "widget_create",
-                crate::widget_create(Extension(pool.clone()), Extension(sess.clone()), axum::Json(body.clone()))
-                    .await
-                    .map(|_| ()),
+                crate::widget_create(
+                    Extension(pool.clone()),
+                    Extension(sess.clone()),
+                    axum::Json(body.clone()),
+                )
+                .await
+                .map(|_| ()),
             ),
             (
                 "widget_save",
-                crate::widget_save(Extension(pool.clone()), Extension(sess.clone()), p(), axum::Json(body.clone()))
-                    .await
-                    .map(|_| ()),
+                crate::widget_save(
+                    Extension(pool.clone()),
+                    Extension(sess.clone()),
+                    p(),
+                    axum::Json(body.clone()),
+                )
+                .await
+                .map(|_| ()),
             ),
             (
                 "widget_delete",
@@ -181,39 +223,65 @@ mod security_gate_tests {
             ),
             (
                 "input_create",
-                crate::input_create(Extension(pool.clone()), Extension(sess.clone()), axum::Json(body.clone()))
-                    .await
-                    .map(|_| ()),
+                crate::input_create(
+                    Extension(pool.clone()),
+                    Extension(sess.clone()),
+                    axum::Json(body.clone()),
+                )
+                .await
+                .map(|_| ()),
             ),
             (
                 "input_cover",
-                crate::input_cover(Extension(pool.clone()), Extension(sess.clone()), axum::Json(body.clone()))
-                    .await
-                    .map(|_| ()),
+                crate::input_cover(
+                    Extension(pool.clone()),
+                    Extension(sess.clone()),
+                    axum::Json(body.clone()),
+                )
+                .await
+                .map(|_| ()),
             ),
             (
                 "input_prepare_create",
-                crate::input_prepare_create(Extension(pool.clone()), Extension(sess.clone()), axum::Json(body.clone()))
-                    .await
-                    .map(|_| ()),
+                crate::input_prepare_create(
+                    Extension(pool.clone()),
+                    Extension(sess.clone()),
+                    axum::Json(body.clone()),
+                )
+                .await
+                .map(|_| ()),
             ),
             (
                 "file_id_upload",
-                crate::file_id_upload(Extension(pool.clone()), Extension(sess.clone()), p(), axum::Json(body.clone()))
-                    .await
-                    .map(|_| ()),
+                crate::file_id_upload(
+                    Extension(pool.clone()),
+                    Extension(sess.clone()),
+                    p(),
+                    axum::Json(body.clone()),
+                )
+                .await
+                .map(|_| ()),
             ),
             (
                 "dict_create",
-                crate::dict_create(Extension(pool.clone()), Extension(sess.clone()), axum::Json(body.clone()))
-                    .await
-                    .map(|_| ()),
+                crate::dict_create(
+                    Extension(pool.clone()),
+                    Extension(sess.clone()),
+                    axum::Json(body.clone()),
+                )
+                .await
+                .map(|_| ()),
             ),
             (
                 "dict_save",
-                crate::dict_save(Extension(pool.clone()), Extension(sess.clone()), p(), axum::Json(body.clone()))
-                    .await
-                    .map(|_| ()),
+                crate::dict_save(
+                    Extension(pool.clone()),
+                    Extension(sess.clone()),
+                    p(),
+                    axum::Json(body.clone()),
+                )
+                .await
+                .map(|_| ()),
             ),
             (
                 "dict_delete",
@@ -229,15 +297,24 @@ mod security_gate_tests {
             ),
             (
                 "save_design",
-                crate::save_design(Extension(pool.clone()), Extension(sess.clone()), p(), axum::Json(body.clone()))
-                    .await
-                    .map(|_| ()),
+                crate::save_design(
+                    Extension(pool.clone()),
+                    Extension(sess.clone()),
+                    p(),
+                    axum::Json(body.clone()),
+                )
+                .await
+                .map(|_| ()),
             ),
             (
                 "design_save",
-                crate::design_save(Extension(pool.clone()), Extension(sess.clone()), axum::Json(body))
-                    .await
-                    .map(|_| ()),
+                crate::design_save(
+                    Extension(pool.clone()),
+                    Extension(sess.clone()),
+                    axum::Json(body),
+                )
+                .await
+                .map(|_| ()),
             ),
         ];
 

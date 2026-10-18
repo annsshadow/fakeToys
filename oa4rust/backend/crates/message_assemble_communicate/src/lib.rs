@@ -193,12 +193,12 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
 
 #[cfg(test)]
 #[allow(clippy::module_inception)]
+mod security_gate_tests;
+#[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-#[cfg(test)]
-#[allow(clippy::module_inception)]
-mod security_gate_tests;
 
 #[allow(non_snake_case)]
 pub async fn consume_list_consume_count_count(

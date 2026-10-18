@@ -10,7 +10,7 @@ use shared::error::AppError;
 use shared::response::ActionResult;
 use shared::session::SessionManager;
 
-use crate::password::{sso_decrypt_payload, legacy_compat_from_env};
+use crate::password::{legacy_compat_from_env, sso_decrypt_payload};
 
 // ──────────────────────────────────────────────────────────────────────────────
 // andfx — 移动办公 MOA SSO（Android/iOS）

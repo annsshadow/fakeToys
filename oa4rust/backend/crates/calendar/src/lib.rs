@@ -9,12 +9,12 @@ use shared::{error::AppError, response::ActionResult};
 pub mod routes;
 
 #[cfg(test)]
+mod security_gate_tests;
+#[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-#[cfg(test)]
-mod security_gate_tests;
 
 #[derive(Debug, Serialize)]
 pub struct CalendarItem {

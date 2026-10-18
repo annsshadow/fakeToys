@@ -14,8 +14,8 @@
 
 #[cfg(test)]
 mod security_gate_tests {
-    use axum::extract::{Extension, Json, Path};
     use crate::u2::UpdateExtraDocumentWi;
+    use axum::extract::{Extension, Json, Path};
     use deadpool_postgres::tokio_postgres::{Config, NoTls};
     use deadpool_postgres::{Manager, Pool};
     use serde_json::json;
@@ -50,13 +50,19 @@ mod security_gate_tests {
         let cases: Vec<(&str, Result<(), AppError>)> = vec![
             (
                 "reset_service",
-                crate::reset_service(Extension(pool.clone()), None).await.map(|_| ()),
+                crate::reset_service(Extension(pool.clone()), None)
+                    .await
+                    .map(|_| ()),
             ),
             (
                 "index_update_extra_document",
-                crate::u2::index_update_extra_document(Extension(pool.clone()), None, Json(empty_extra_doc()))
-                    .await
-                    .map(|_| ()),
+                crate::u2::index_update_extra_document(
+                    Extension(pool.clone()),
+                    None,
+                    Json(empty_extra_doc()),
+                )
+                .await
+                .map(|_| ()),
             ),
             (
                 "table_insert",

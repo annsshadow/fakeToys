@@ -433,12 +433,12 @@ pub fn correlation_service_processing_router() -> Router {
 }
 
 #[cfg(test)]
+mod security_gate_tests;
+#[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-#[cfg(test)]
-mod security_gate_tests;
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     correlation_service_processing_router().layer(axum::extract::Extension(pool))

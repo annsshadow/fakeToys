@@ -14,14 +14,14 @@ pub const API_BASE: &str = "/api/hotpic_assemble_control";
 pub mod routes;
 
 #[cfg(test)]
+mod security_gate_tests;
+#[cfg(test)]
+mod security_gate_tests_b72;
+#[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-#[cfg(test)]
-mod security_gate_tests;
-#[cfg(test)]
-mod security_gate_tests_b72;
 
 /// 内容管理写门禁（安全审计 2026-10 二轮）：轮播图（x_hotpic）与控制配置为
 /// 管理台内容，此前 creator 恒写 "system" 且无角色校验，任一登录用户可增删改。

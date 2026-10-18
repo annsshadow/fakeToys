@@ -215,9 +215,9 @@ pub async fn processing_execute(
 }
 
 #[cfg(test)]
+mod security_gate_tests_b68;
+#[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-#[cfg(test)]
-mod security_gate_tests_b68;

@@ -16,8 +16,8 @@ mod security_gate_tests {
     use crate::{
         export_export_all, export_zhengwudingding_person, group_flag_add_member,
         group_flag_delete_member, group_flag_mockdeletetoget, identity_flag_mockdeletetoget,
-        personcard_createCode_cardId, personcard_createQR_cardId, personcard_flag_mockdeletetoget,
-        permissionsetting_flag_mockdeletetoget, role_flag_mockdeletetoget,
+        permissionsetting_flag_mockdeletetoget, personcard_createCode_cardId,
+        personcard_createQR_cardId, personcard_flag_mockdeletetoget, role_flag_mockdeletetoget,
         unitduty_flag_mockdeletetoget,
     };
 
@@ -165,10 +165,16 @@ mod security_gate_tests {
                 deadpool_postgres::tokio_postgres::Config::new(),
                 deadpool_postgres::tokio_postgres::NoTls,
             );
-            deadpool_postgres::Pool::builder(mgr).max_size(1).build().unwrap()
+            deadpool_postgres::Pool::builder(mgr)
+                .max_size(1)
+                .build()
+                .unwrap()
         };
         let nosess: Vec<(&str, Result<_, AppError>)> = vec![
-            ("export_export_all", export_export_all(Extension(dead.clone()), None).await),
+            (
+                "export_export_all",
+                export_export_all(Extension(dead.clone()), None).await,
+            ),
             (
                 "export_zhengwudingding_person",
                 export_zhengwudingding_person(Extension(dead.clone()), None).await,
@@ -252,7 +258,11 @@ mod security_gate_tests {
             ),
             "export_zhengwudingding_person 非 admin 必须 403"
         );
-        assert_eq!(cnt(&pool, "all").await, before_all, "非 admin 403 侧不得落笔(all)");
+        assert_eq!(
+            cnt(&pool, "all").await,
+            before_all,
+            "非 admin 403 侧不得落笔(all)"
+        );
         assert_eq!(
             cnt(&pool, "zhengwudingding").await,
             before_zw,
@@ -273,7 +283,11 @@ mod security_gate_tests {
                 .is_ok(),
             "admin export_zhengwudingding_person 应放行"
         );
-        assert_eq!(cnt(&pool, "all").await, before_all + 1, "admin 应落 1 行(all)");
+        assert_eq!(
+            cnt(&pool, "all").await,
+            before_all + 1,
+            "admin 应落 1 行(all)"
+        );
         assert_eq!(
             cnt(&pool, "zhengwudingding").await,
             before_zw + 1,
@@ -282,15 +296,24 @@ mod security_gate_tests {
 
         // 收口：清掉本臂落笔与造数，零残留。
         let c = pool.get().await.unwrap();
-        c.execute("DELETE FROM x_org_export WHERE type IN ('all','zhengwudingding')", &[])
-            .await
-            .unwrap();
-        c.execute("DELETE FROM auth_person_role WHERE person_id = $1", &[&ADMIN.to_string()])
-            .await
-            .unwrap();
-        c.execute("DELETE FROM auth_person WHERE id = $1", &[&ADMIN.to_string()])
-            .await
-            .unwrap();
+        c.execute(
+            "DELETE FROM x_org_export WHERE type IN ('all','zhengwudingding')",
+            &[],
+        )
+        .await
+        .unwrap();
+        c.execute(
+            "DELETE FROM auth_person_role WHERE person_id = $1",
+            &[&ADMIN.to_string()],
+        )
+        .await
+        .unwrap();
+        c.execute(
+            "DELETE FROM auth_person WHERE id = $1",
+            &[&ADMIN.to_string()],
+        )
+        .await
+        .unwrap();
         c.execute("DELETE FROM auth_role WHERE id = $1", &[&ROLE.to_string()])
             .await
             .unwrap();

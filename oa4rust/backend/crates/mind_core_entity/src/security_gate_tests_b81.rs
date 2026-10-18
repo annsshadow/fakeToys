@@ -27,36 +27,57 @@ async fn b81_writes_reject_without_session() {
     let path = || axum::extract::Path("b81-absent".to_string());
     let body = || Json(serde_json::json!({}));
 
-    assert!(matches!(
-        create_mind(Extension(db.0.clone()), none.clone(), body()).await,
-        Err(AppError::Unauthorized)
-    ), "create_mind 无会话必须 401");
-    assert!(matches!(
-        update_mind(Extension(db.0.clone()), none.clone(), path(), body()).await,
-        Err(AppError::Unauthorized)
-    ), "update_mind 无会话必须 401");
-    assert!(matches!(
-        delete_mind(Extension(db.0.clone()), none.clone(), path()).await,
-        Err(AppError::Unauthorized)
-    ), "delete_mind 无会话必须 401");
+    assert!(
+        matches!(
+            create_mind(Extension(db.0.clone()), none.clone(), body()).await,
+            Err(AppError::Unauthorized)
+        ),
+        "create_mind 无会话必须 401"
+    );
+    assert!(
+        matches!(
+            update_mind(Extension(db.0.clone()), none.clone(), path(), body()).await,
+            Err(AppError::Unauthorized)
+        ),
+        "update_mind 无会话必须 401"
+    );
+    assert!(
+        matches!(
+            delete_mind(Extension(db.0.clone()), none.clone(), path()).await,
+            Err(AppError::Unauthorized)
+        ),
+        "delete_mind 无会话必须 401"
+    );
 
-    assert!(matches!(
-        create_folder(Extension(db.0.clone()), none.clone(), body()).await,
-        Err(AppError::Unauthorized)
-    ), "create_folder 无会话必须 401");
-    assert!(matches!(
-        update_folder(Extension(db.0.clone()), none.clone(), path(), body()).await,
-        Err(AppError::Unauthorized)
-    ), "update_folder 无会话必须 401");
-    assert!(matches!(
-        delete_folder(Extension(db.0.clone()), none.clone(), path()).await,
-        Err(AppError::Unauthorized)
-    ), "delete_folder 无会话必须 401");
+    assert!(
+        matches!(
+            create_folder(Extension(db.0.clone()), none.clone(), body()).await,
+            Err(AppError::Unauthorized)
+        ),
+        "create_folder 无会话必须 401"
+    );
+    assert!(
+        matches!(
+            update_folder(Extension(db.0.clone()), none.clone(), path(), body()).await,
+            Err(AppError::Unauthorized)
+        ),
+        "update_folder 无会话必须 401"
+    );
+    assert!(
+        matches!(
+            delete_folder(Extension(db.0.clone()), none.clone(), path()).await,
+            Err(AppError::Unauthorized)
+        ),
+        "delete_folder 无会话必须 401"
+    );
 
-    assert!(matches!(
-        create_version(Extension(db.0), none, body()).await,
-        Err(AppError::Unauthorized)
-    ), "create_version 无会话必须 401");
+    assert!(
+        matches!(
+            create_version(Extension(db.0), none, body()).await,
+            Err(AppError::Unauthorized)
+        ),
+        "create_version 无会话必须 401"
+    );
 }
 
 /// 纯单元：`require_session` 门逻辑本身（无 DB 副作用）——无会话拒绝、有会话放行。

@@ -83,11 +83,15 @@ mod security_gate_tests {
             ),
             (
                 "msg_revoke_own",
-                crate::im_msg_revoke_id(ext(), sess(), p(MSG_OWN)).await.map(|_| ()),
+                crate::im_msg_revoke_id(ext(), sess(), p(MSG_OWN))
+                    .await
+                    .map(|_| ()),
             ),
             (
                 "msg_revoke_empty_owner",
-                crate::im_msg_revoke_id(ext(), sess(), p(MSG_EMPTY)).await.map(|_| ()),
+                crate::im_msg_revoke_id(ext(), sess(), p(MSG_EMPTY))
+                    .await
+                    .map(|_| ()),
             ),
             (
                 "group_members_delete",
@@ -111,7 +115,9 @@ mod security_gate_tests {
             ),
             (
                 "msg_missing",
-                crate::im_msg_revoke_id(ext(), sess(), p(MISSING)).await.map(|_| ()),
+                crate::im_msg_revoke_id(ext(), sess(), p(MISSING))
+                    .await
+                    .map(|_| ()),
             ),
         ]
     }
@@ -148,7 +154,9 @@ mod security_gate_tests {
         ] {
             let got = cell(&c, tbl, col, key).await;
             if got != SENTINEL {
-                broke.push(format!("{tbl}/{key}/{col} => {got:?} 期望仍是哨兵 {SENTINEL:?}"));
+                broke.push(format!(
+                    "{tbl}/{key}/{col} => {got:?} 期望仍是哨兵 {SENTINEL:?}"
+                ));
             }
         }
         let n = member_count(&c).await;
@@ -174,7 +182,9 @@ mod security_gate_tests {
         ] {
             let got = cell(&c, tbl, col, key).await;
             if got == SENTINEL {
-                broke.push(format!("{tbl}/{key}/{col} 仍是哨兵 {SENTINEL:?}，管理员那步没落笔"));
+                broke.push(format!(
+                    "{tbl}/{key}/{col} 仍是哨兵 {SENTINEL:?}，管理员那步没落笔"
+                ));
             }
         }
         let n = member_count(&c).await;
@@ -409,11 +419,7 @@ mod security_gate_tests {
             "SELECT COUNT(*) FROM auth_person WHERE id LIKE 'b22-%'",
             "SELECT COUNT(*) FROM auth_person_role WHERE role_id = 'b22-role-admin'",
         ] {
-            total += c
-                .query_one(sql, &[])
-                .await
-                .unwrap()
-                .get::<_, i64>(0);
+            total += c.query_one(sql, &[]).await.unwrap().get::<_, i64>(0);
         }
         total
     }
@@ -460,9 +466,14 @@ mod security_gate_tests {
             ),
             (
                 "consume_type_type_mockputtopost",
-                crate::consume_type_type_mockputtopost(ext(), None, p("t"), Json(json!({"idList": ["a"]})))
-                    .await
-                    .map(|_| ()),
+                crate::consume_type_type_mockputtopost(
+                    ext(),
+                    None,
+                    p("t"),
+                    Json(json!({"idList": ["a"]})),
+                )
+                .await
+                .map(|_| ()),
             ),
             (
                 "im_conversation",
@@ -502,7 +513,9 @@ mod security_gate_tests {
             ),
             (
                 "im_conversation_id_top_set",
-                crate::im_conversation_id_top_set(ext(), None, p("c1")).await.map(|_| ()),
+                crate::im_conversation_id_top_set(ext(), None, p("c1"))
+                    .await
+                    .map(|_| ()),
             ),
             (
                 "im_conversation_id_top_set_mockputtopost",
@@ -564,9 +577,13 @@ mod security_gate_tests {
             ),
             (
                 "connector_create",
-                crate::connector_create(ext(), None, Json(json!({"type": "t", "person": "p", "title": "tt"})))
-                    .await
-                    .map(|_| ()),
+                crate::connector_create(
+                    ext(),
+                    None,
+                    Json(json!({"type": "t", "person": "p", "title": "tt"})),
+                )
+                .await
+                .map(|_| ()),
             ),
             (
                 "ws_create",

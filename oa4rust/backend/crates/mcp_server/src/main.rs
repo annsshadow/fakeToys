@@ -38,13 +38,10 @@ async fn main() -> anyhow::Result<()> {
             // 2026-10 安全审计：默认只绑定回环，避免 0.0.0.0 无认证暴露
             // ToolBridge（直通 DB 的后端工具调用）；确需远端访问时通过
             // MCP_BIND_ADDR 显式配置，并务必同时设置 MCP_API_KEY 门禁。
-            let bind_addr = std::env::var("MCP_BIND_ADDR").unwrap_or_else(|_| "127.0.0.1".to_string());
+            let bind_addr =
+                std::env::var("MCP_BIND_ADDR").unwrap_or_else(|_| "127.0.0.1".to_string());
             let api_key = std::env::var("MCP_API_KEY").ok();
-            if api_key.is_none()
-                && !matches!(
-                    bind_addr.as_str(),
-                    "127.0.0.1" | "localhost" | "::1"
-                )
+            if api_key.is_none() && !matches!(bind_addr.as_str(), "127.0.0.1" | "localhost" | "::1")
             {
                 tracing::warn!(
                     "MCP server binds to non-loopback address {bind_addr} without MCP_API_KEY: \
@@ -55,13 +52,15 @@ async fn main() -> anyhow::Result<()> {
             let listener = TcpListener::bind(format!("{bind_addr}:{listen_port}"))
                 .await
                 .with_context(|| {
-                    format!(
-                        "failed to bind MCP HTTP listener on {bind_addr}:{listen_port}"
-                    )
+                    format!("failed to bind MCP HTTP listener on {bind_addr}:{listen_port}")
                 })?;
             tracing::info!(
                 "MCP server listening on http://{bind_addr}:{listen_port} (api_key={})",
-                if api_key.is_some() { "required" } else { "open" }
+                if api_key.is_some() {
+                    "required"
+                } else {
+                    "open"
+                }
             );
 
             let mcp_router = axum::Router::new()
@@ -173,37 +172,33 @@ async fn mcp_http_handler(
                 match serde_json::from_value(params) {
                     Ok(p) => p,
                     Err(e) => {
-                        return Ok(
-                            axum::Json(
-                                JsonRpcResponse::err(id, -32600, format!("invalid params: {}", e))
-                                    .into_json_value(),
-                            ),
-                        );
+                        return Ok(axum::Json(
+                            JsonRpcResponse::err(id, -32600, format!("invalid params: {}", e))
+                                .into_json_value(),
+                        ));
                     }
                 };
             match bridge.call_tool(tool_call).await {
                 Ok(resp) => Ok(serde_json::to_value(resp).unwrap_or(serde_json::json!({}))),
                 Err(e) => {
-                    return Ok(
-                        axum::Json(
-                            JsonRpcResponse::err(id, e.code, e.message).into_json_value(),
-                        ),
-                    );
+                    return Ok(axum::Json(
+                        JsonRpcResponse::err(id, e.code, e.message).into_json_value(),
+                    ));
                 }
             }
         }
         _ => {
-            return Ok(
-                axum::Json(
-                    JsonRpcResponse::err(id, -32601, format!("method not found: {}", method))
-                        .into_json_value(),
-                ),
-            );
+            return Ok(axum::Json(
+                JsonRpcResponse::err(id, -32601, format!("method not found: {}", method))
+                    .into_json_value(),
+            ));
         }
     };
 
     match result {
         Ok(r) => Ok(axum::Json(JsonRpcResponse::ok(id, r).into_json_value())),
-        Err(e) => Ok(axum::Json(JsonRpcResponse::err(id, e.code, e.message).into_json_value())),
+        Err(e) => Ok(axum::Json(
+            JsonRpcResponse::err(id, e.code, e.message).into_json_value(),
+        )),
     }
 }

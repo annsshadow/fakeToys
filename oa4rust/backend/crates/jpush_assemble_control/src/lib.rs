@@ -21,12 +21,12 @@ pub const API_BASE: &str = "/api/jpush_assemble_control";
 pub mod routes;
 
 #[cfg(test)]
+mod security_gate_tests;
+#[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-#[cfg(test)]
-mod security_gate_tests;
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]

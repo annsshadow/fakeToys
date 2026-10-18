@@ -280,7 +280,10 @@ impl PermissionRegistry {
         );
         // 破坏性写（batch delete attachments）：o2server 对齐虽列 Public，但 Rust 侧
         // handler 以 require_admin 门禁，故降为 Authenticated（登录用户 + admin 校验）。
-        registry.register_prefix("/api/program_center/adminlogin", PermissionLevel::Authenticated);
+        registry.register_prefix(
+            "/api/program_center/adminlogin",
+            PermissionLevel::Authenticated,
+        );
         registry.register_prefix("/api/program_center/applications", PermissionLevel::Public);
         registry.register_prefix(
             "/api/program_center/center/applications",
@@ -356,10 +359,16 @@ impl PermissionRegistry {
         // 剩余 program_center 查询/管理端点
         // appstyle：图片读/擦除/上传全部仅管理控制台消费（无未认证读），
         // 移出豁免后由 auth 层要求会话，写操作在 handler 内 require_admin。
-        registry.register_prefix("/api/program_center/appstyle", PermissionLevel::Authenticated);
+        registry.register_prefix(
+            "/api/program_center/appstyle",
+            PermissionLevel::Authenticated,
+        );
         // cachedispatch / ai chat delete：破坏性写，handler 已 require_admin / require_owner，
         // 降为 Authenticated（需登录会话）。
-        registry.register_prefix("/api/program_center/cachedispatch", PermissionLevel::Authenticated);
+        registry.register_prefix(
+            "/api/program_center/cachedispatch",
+            PermissionLevel::Authenticated,
+        );
         registry.register_prefix("/api/ai/chat/delete", PermissionLevel::Authenticated);
         registry.register_prefix(
             "/api/calendar/assemble/control/calendar/follow",

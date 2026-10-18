@@ -3602,12 +3602,12 @@ pub async fn workcompleted_process_processFlag_merge_data(
 }
 
 #[cfg(test)]
+mod security_gate_tests;
+#[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-#[cfg(test)]
-mod security_gate_tests;
 
 // ──────────────────────────────────────────────────────────────────────────────
 // plan002 U2 · o2server 端点缺口闭合（51 个）

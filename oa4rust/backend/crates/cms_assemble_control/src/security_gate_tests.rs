@@ -222,28 +222,28 @@ mod security_gate_tests {
         let ext = || Extension(shared::testing::test_session("u-nonadmin-alias"));
         let p = || Path("x1".to_string());
 
-        let cases: Vec<(&str, Result<Json<shared::response::ActionResult<Value>>, AppError>)> =
-            vec![
-                (
-                    "design_appdict_id_mockdeletetoget",
-                    crate::design_appdict_id_mockdeletetoget(Extension(pool.clone()), ext(), p())
-                        .await,
-                ),
-                (
-                    "templateform_id_mockdeletetoget",
-                    crate::templateform_id_mockdeletetoget(Extension(pool.clone()), ext(), p())
-                        .await,
-                ),
-                (
-                    "permission_management_refresh_category_categoryId",
-                    crate::permission_management_refresh_category_categoryId(
-                        Extension(pool.clone()),
-                        ext(),
-                        p(),
-                    )
-                    .await,
-                ),
-            ];
+        let cases: Vec<(
+            &str,
+            Result<Json<shared::response::ActionResult<Value>>, AppError>,
+        )> = vec![
+            (
+                "design_appdict_id_mockdeletetoget",
+                crate::design_appdict_id_mockdeletetoget(Extension(pool.clone()), ext(), p()).await,
+            ),
+            (
+                "templateform_id_mockdeletetoget",
+                crate::templateform_id_mockdeletetoget(Extension(pool.clone()), ext(), p()).await,
+            ),
+            (
+                "permission_management_refresh_category_categoryId",
+                crate::permission_management_refresh_category_categoryId(
+                    Extension(pool.clone()),
+                    ext(),
+                    p(),
+                )
+                .await,
+            ),
+        ];
 
         assert_eq!(cases.len(), 3, "admin 档 3 把必须逐条点名，少一把即漏格");
         let bad: Vec<&str> = cases
@@ -374,7 +374,10 @@ mod security_gate_tests {
         ] {
             for id in ids {
                 let _ = client
-                    .execute(&format!("DELETE FROM {t} WHERE id = $1"), &[&id.to_string()])
+                    .execute(
+                        &format!("DELETE FROM {t} WHERE id = $1"),
+                        &[&id.to_string()],
+                    )
                     .await;
             }
         }
@@ -672,7 +675,11 @@ mod security_gate_tests {
                 .unwrap()
                 .get::<_, i64>("n")
         };
-        assert_eq!(copies().await, 0, "副本槽位本该为空，否则下面的增量断言恒真");
+        assert_eq!(
+            copies().await,
+            0,
+            "副本槽位本该为空，否则下面的增量断言恒真"
+        );
 
         let call = |person: &str| {
             crate::file_copy_u3(
@@ -681,20 +688,27 @@ mod security_gate_tests {
                 Path((src.to_string(), app.to_string())),
             )
         };
-        let r = call(STRANGER).await.map(|Json(v)| serde_json::to_value(v).unwrap());
+        let r = call(STRANGER)
+            .await
+            .map(|Json(v)| serde_json::to_value(v).unwrap());
         assert!(
             matches!(r, Err(AppError::Forbidden)),
             "file_copy_u3：他人会话未被 403，实际 {r:?}"
         );
         assert_eq!(copies().await, 0, "file_copy_u3：403 之后仍复制出了行");
 
-        let r = call(OWNER).await.map(|Json(v)| serde_json::to_value(v).unwrap());
+        let r = call(OWNER)
+            .await
+            .map(|Json(v)| serde_json::to_value(v).unwrap());
         assert!(r.is_ok(), "file_copy_u3：属主会话未放行，实际 {r:?}");
         assert_eq!(copies().await, 1, "file_copy_u3：属主放行后副本未落库");
 
         let client = pool.get().await.expect("取库失败");
         let _ = client
-            .execute(&format!("DELETE FROM x_cms_file WHERE app_id = '{app}'"), &[])
+            .execute(
+                &format!("DELETE FROM x_cms_file WHERE app_id = '{app}'"),
+                &[],
+            )
             .await;
         wipe_alias_rows(&client, &[src]).await;
     }
@@ -728,7 +742,9 @@ mod security_gate_tests {
             let client = pool.get().await.expect("取库失败");
             client
                 .query_one(
-                    &format!("SELECT create_time::text AS t FROM x_cms_fileinfo WHERE id = '{file}'"),
+                    &format!(
+                        "SELECT create_time::text AS t FROM x_cms_fileinfo WHERE id = '{file}'"
+                    ),
                     &[],
                 )
                 .await
@@ -764,7 +780,9 @@ mod security_gate_tests {
             let client = pool.get().await.expect("取库失败");
             client
                 .query_one(
-                    &format!("SELECT create_time::text AS t FROM x_cms_fileinfo WHERE id = '{file}'"),
+                    &format!(
+                        "SELECT create_time::text AS t FROM x_cms_fileinfo WHERE id = '{file}'"
+                    ),
                     &[],
                 )
                 .await
@@ -799,13 +817,9 @@ mod security_gate_tests {
         let cases: Vec<(&str, Result<(), AppError>)> = vec![
             (
                 "input_compare",
-                crate::input_compare(
-                    Extension(pool.clone()),
-                    None,
-                    Json(serde_json::json!({})),
-                )
-                .await
-                .map(|_| ()),
+                crate::input_compare(Extension(pool.clone()), None, Json(serde_json::json!({})))
+                    .await
+                    .map(|_| ()),
             ),
             (
                 "input_compare_mockputtopost",

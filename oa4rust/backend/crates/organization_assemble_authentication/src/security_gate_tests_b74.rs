@@ -51,7 +51,8 @@ mod security_gate_tests_b74 {
         let session = Some(Extension(build_session("b74-valid")));
 
         // 有效会话过门后直落死池 pool.get() 必败 → Internal（证明门在库前、只挡匿名）。
-        let res = oauth_generate_code(Extension(pool), session, axum::extract::Json(json!({}))).await;
+        let res =
+            oauth_generate_code(Extension(pool), session, axum::extract::Json(json!({}))).await;
         assert!(
             matches!(res, Err(AppError::Internal)),
             "有效会话应过门、之后才落库（死池 → Internal），证门在库前"

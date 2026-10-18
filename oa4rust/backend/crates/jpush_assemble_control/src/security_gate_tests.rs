@@ -112,9 +112,12 @@ mod security_gate_tests {
         {
             let c = pool.get().await.unwrap();
             // x_jpush.id 无唯一约束（schema 缺陷，见账本 §五），不能用 ON CONFLICT；先清后插。
-            c.execute("DELETE FROM x_jpush WHERE id = 'b55-jpush-owned-by-other'", &[])
-                .await
-                .unwrap();
+            c.execute(
+                "DELETE FROM x_jpush WHERE id = 'b55-jpush-owned-by-other'",
+                &[],
+            )
+            .await
+            .unwrap();
             c.execute(
                 "INSERT INTO x_jpush (id, title, content, target, creator, create_time) \
                  VALUES ('b55-jpush-owned-by-other','t','c','all','b55-owner-elsewhere',NOW())",
@@ -157,7 +160,10 @@ mod security_gate_tests {
         pool.get()
             .await
             .unwrap()
-            .execute("DELETE FROM x_jpush WHERE id='b55-jpush-owned-by-other'", &[])
+            .execute(
+                "DELETE FROM x_jpush WHERE id='b55-jpush-owned-by-other'",
+                &[],
+            )
             .await
             .unwrap();
     }

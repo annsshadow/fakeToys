@@ -808,12 +808,12 @@ pub fn portal_assemble_designer_router() -> Router {
 }
 
 #[cfg(test)]
+mod security_gate_tests;
+#[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-#[cfg(test)]
-mod security_gate_tests;
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     portal_assemble_designer_router().layer(axum::extract::Extension(pool))

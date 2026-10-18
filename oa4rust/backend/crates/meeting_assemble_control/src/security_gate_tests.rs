@@ -22,8 +22,12 @@ mod security_gate_tests {
     #[tokio::test]
     async fn config_manage_requires_session() {
         let pool = shared::testing::test_pool();
-        let res =
-            config_system_config_manage(Extension(pool), None, Json(json!({"configKey": "k", "configValue": "v"}))).await;
+        let res = config_system_config_manage(
+            Extension(pool),
+            None,
+            Json(json!({"configKey": "k", "configValue": "v"})),
+        )
+        .await;
         assert!(
             matches!(res, Err(AppError::Unauthorized)),
             "无会话调用会议配置写必须 401"
@@ -153,7 +157,10 @@ mod security_gate_tests {
         pool.get()
             .await
             .unwrap()
-            .execute("DELETE FROM x_meeting WHERE id='meeting-owned-by-other'", &[])
+            .execute(
+                "DELETE FROM x_meeting WHERE id='meeting-owned-by-other'",
+                &[],
+            )
             .await
             .unwrap();
     }
@@ -328,7 +335,10 @@ mod b54_gate_tests {
         pool.get()
             .await
             .unwrap()
-            .execute("DELETE FROM x_meeting WHERE id='b54-meeting-owned-by-other'", &[])
+            .execute(
+                "DELETE FROM x_meeting WHERE id='b54-meeting-owned-by-other'",
+                &[],
+            )
             .await
             .unwrap();
     }

@@ -15,8 +15,8 @@ mod security_gate_tests {
 
     use crate::{
         area_create, area_delete, area_update, attendscope_create, general_control_create,
-        general_control_save, general_control_delete, securityclearance_create,
-        securityclearance_delete, securityclearance_update, securityclearance_enable,
+        general_control_delete, general_control_save, securityclearance_create,
+        securityclearance_delete, securityclearance_enable, securityclearance_update,
         update_general_control_status,
     };
 
@@ -43,8 +43,12 @@ mod security_gate_tests {
         );
         assert!(
             matches!(
-                general_control_create(Extension(pool.clone()), Extension(sess.clone()), Json(json!({})))
-                    .await,
+                general_control_create(
+                    Extension(pool.clone()),
+                    Extension(sess.clone()),
+                    Json(json!({}))
+                )
+                .await,
                 Err(AppError::Forbidden)
             ),
             "general_control_create 非 admin 必须 403"
@@ -76,8 +80,12 @@ mod security_gate_tests {
         );
         assert!(
             matches!(
-                area_create(Extension(pool.clone()), Extension(sess.clone()), Json(json!({})))
-                    .await,
+                area_create(
+                    Extension(pool.clone()),
+                    Extension(sess.clone()),
+                    Json(json!({}))
+                )
+                .await,
                 Err(AppError::Forbidden)
             ),
             "area_create 非 admin 必须 403"

@@ -124,7 +124,6 @@ async fn seed_admin_session() -> shared::session::Session {
     shared::testing::test_session("u-u2c-admin")
 }
 
-
 // ── ActionResult format tests ──────────────────────────────────────────────
 
 #[test]
@@ -246,10 +245,9 @@ async fn test_list_links_route_exists() {
 /// 一律 fail-closed，若门后于 SQL 就会变成 500）。因此本臂不需要真库。
 #[tokio::test]
 async fn test_unlink_service_route_exists() {
-    let app = crate::router(build_test_pool())
-        .layer(axum::extract::Extension(shared::testing::test_session(
-            "u-r48-nonadmin-unlink-route",
-        )));
+    let app = crate::router(build_test_pool()).layer(axum::extract::Extension(
+        shared::testing::test_session("u-r48-nonadmin-unlink-route"),
+    ));
     let response = app
         .oneshot(
             Request::builder()

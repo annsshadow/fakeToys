@@ -417,7 +417,9 @@ mod u2_tests {
         let pool = mock_pool();
         let client_err = crate::ws_create(
             axum::extract::Extension(pool),
-            Some(axum::extract::Extension(shared::testing::test_session("u1"))),
+            Some(axum::extract::Extension(shared::testing::test_session(
+                "u1",
+            ))),
             Json(json!({"person": "u1", "body": "hi"})),
         )
         .await;

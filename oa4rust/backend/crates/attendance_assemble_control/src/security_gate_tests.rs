@@ -79,7 +79,10 @@ mod security_gate_tests {
     /// 9 把逐个具名调用；表长由 `assert_eq!(cases.len(), 9)` 钉住，少点名一把即红。
     /// 除 `setting/enable/type`（要把 code 关成 false，好让 admin 格有可观测的落笔）外一律不带体：
     /// 门在读体之前，体的内容不影响门禁读数。
-    async fn call_all(pool: &Pool, person: Option<&str>) -> Vec<(&'static str, Result<(), AppError>)> {
+    async fn call_all(
+        pool: &Pool,
+        person: Option<&str>,
+    ) -> Vec<(&'static str, Result<(), AppError>)> {
         let sess = || person.map(|w| Extension(shared::testing::test_session(w)));
         let ext = || Extension(pool.clone());
         vec![
@@ -197,7 +200,12 @@ mod security_gate_tests {
             ("x_attendance_detail", "checked", DETAIL_ID, "false"),
             ("x_attendance_detail", "archived", DETAIL_ID, "false"),
             ("x_attendance_setting", "enabled", SETTING_CODE, "true"),
-            ("x_attendance_v2_group", "update_time", GROUP_EMPTY_ID, SENTINEL),
+            (
+                "x_attendance_v2_group",
+                "update_time",
+                GROUP_EMPTY_ID,
+                SENTINEL,
+            ),
         ];
         let mut out = Vec::new();
         for (tbl, col, key, exp) in want {
@@ -328,9 +336,12 @@ mod security_gate_tests {
             let sql = format!("DELETE FROM {tbl} WHERE id = $1");
             c.execute(sql.as_str(), &[&key.to_string()]).await.unwrap();
         }
-        c.execute("DELETE FROM x_attendance_v2_group WHERE id LIKE 'b21-%'", &[])
-            .await
-            .unwrap();
+        c.execute(
+            "DELETE FROM x_attendance_v2_group WHERE id LIKE 'b21-%'",
+            &[],
+        )
+        .await
+        .unwrap();
         c.execute(
             "DELETE FROM x_attendance_sync_record WHERE start_date = $1",
             &[&SYNC_FROM.to_string()],
@@ -497,7 +508,10 @@ mod security_gate_tests {
             .filter(|(_, r)| r.is_err())
             .map(|(k, r)| format!("{k} => {:?}", r.as_ref().err()))
             .collect();
-        assert!(bad.is_empty(), "admin 对归属为空与行不存在两格都应放行：{bad:?}");
+        assert!(
+            bad.is_empty(),
+            "admin 对归属为空与行不存在两格都应放行：{bad:?}"
+        );
         let empty_touch = cell(&c, "x_attendance_v2_group", "update_time", GROUP_EMPTY_ID).await;
         assert_ne!(
             empty_touch, SENTINEL,
@@ -531,11 +545,7 @@ mod security_gate_tests {
             "SELECT COUNT(*) FROM auth_person WHERE id = 'b21-admin-person'",
             "SELECT COUNT(*) FROM auth_person_role WHERE person_id = 'b21-admin-person'",
         ] {
-            total += c
-                .query_one(sql, &[])
-                .await
-                .unwrap()
-                .get::<_, i64>(0);
+            total += c.query_one(sql, &[]).await.unwrap().get::<_, i64>(0);
         }
         total += c
             .query_one(
@@ -628,15 +638,21 @@ mod security_gate_tests {
         let cases: Vec<(&str, Result<(), AppError>)> = vec![
             (
                 "create_control_rule",
-                crate::create_control_rule(ext(), None, j()).await.map(|_| ()),
+                crate::create_control_rule(ext(), None, j())
+                    .await
+                    .map(|_| ()),
             ),
             (
                 "delete_control_rule",
-                crate::delete_control_rule(ext(), None, p()).await.map(|_| ()),
+                crate::delete_control_rule(ext(), None, p())
+                    .await
+                    .map(|_| ()),
             ),
             (
                 "toggle_control_rule",
-                crate::toggle_control_rule(ext(), None, p(), j()).await.map(|_| ()),
+                crate::toggle_control_rule(ext(), None, p(), j())
+                    .await
+                    .map(|_| ()),
             ),
             (
                 "attendanceappealInfo_appeal_id",
@@ -652,7 +668,9 @@ mod security_gate_tests {
             ),
             (
                 "attendancedetail_recive",
-                crate::attendancedetail_recive(ext(), None, j()).await.map(|_| ()),
+                crate::attendancedetail_recive(ext(), None, j())
+                    .await
+                    .map(|_| ()),
             ),
             (
                 "attendancedetail_reciveSingle",

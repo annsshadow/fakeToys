@@ -28,135 +28,171 @@ async fn b80_writes_reject_without_session() {
     let path = || axum::extract::Path("b80-absent".to_string());
 
     // definition
-    assert!(matches!(
-        definition_create(
-            Extension(db.0.clone()),
-            none.clone(),
-            Json(DefinitionCreateRequest {
-                name: "b80".to_string(),
-                category: "b80".to_string(),
-                type_: "b80".to_string(),
-            }),
-        )
-        .await,
-        Err(AppError::Unauthorized)
-    ), "definition_create 无会话必须 401");
-    assert!(matches!(
-        definition_update(
-            Extension(db.0.clone()),
-            none.clone(),
-            path(),
-            Json(DefinitionUpdateRequest {
-                name: None,
-                category: None,
-                type_: None,
-            }),
-        )
-        .await,
-        Err(AppError::Unauthorized)
-    ), "definition_update 无会话必须 401");
-    assert!(matches!(
-        definition_delete(Extension(db.0.clone()), none.clone(), path()).await,
-        Err(AppError::Unauthorized)
-    ), "definition_delete 无会话必须 401");
+    assert!(
+        matches!(
+            definition_create(
+                Extension(db.0.clone()),
+                none.clone(),
+                Json(DefinitionCreateRequest {
+                    name: "b80".to_string(),
+                    category: "b80".to_string(),
+                    type_: "b80".to_string(),
+                }),
+            )
+            .await,
+            Err(AppError::Unauthorized)
+        ),
+        "definition_create 无会话必须 401"
+    );
+    assert!(
+        matches!(
+            definition_update(
+                Extension(db.0.clone()),
+                none.clone(),
+                path(),
+                Json(DefinitionUpdateRequest {
+                    name: None,
+                    category: None,
+                    type_: None,
+                }),
+            )
+            .await,
+            Err(AppError::Unauthorized)
+        ),
+        "definition_update 无会话必须 401"
+    );
+    assert!(
+        matches!(
+            definition_delete(Extension(db.0.clone()), none.clone(), path()).await,
+            Err(AppError::Unauthorized)
+        ),
+        "definition_delete 无会话必须 401"
+    );
 
     // identity
-    assert!(matches!(
-        identity_create(
-            Extension(db.0.clone()),
-            none.clone(),
-            Json(IdentityCreateRequest {
-                person_id: "b80".to_string(),
-                name: "b80".to_string(),
-                type_: "b80".to_string(),
-            }),
-        )
-        .await,
-        Err(AppError::Unauthorized)
-    ), "identity_create 无会话必须 401");
-    assert!(matches!(
-        identity_update(
-            Extension(db.0.clone()),
-            none.clone(),
-            path(),
-            Json(IdentityUpdateRequest {
-                person_id: None,
-                name: None,
-                type_: None,
-            }),
-        )
-        .await,
-        Err(AppError::Unauthorized)
-    ), "identity_update 无会话必须 401");
-    assert!(matches!(
-        identity_delete(Extension(db.0.clone()), none.clone(), path()).await,
-        Err(AppError::Unauthorized)
-    ), "identity_delete 无会话必须 401");
+    assert!(
+        matches!(
+            identity_create(
+                Extension(db.0.clone()),
+                none.clone(),
+                Json(IdentityCreateRequest {
+                    person_id: "b80".to_string(),
+                    name: "b80".to_string(),
+                    type_: "b80".to_string(),
+                }),
+            )
+            .await,
+            Err(AppError::Unauthorized)
+        ),
+        "identity_create 无会话必须 401"
+    );
+    assert!(
+        matches!(
+            identity_update(
+                Extension(db.0.clone()),
+                none.clone(),
+                path(),
+                Json(IdentityUpdateRequest {
+                    person_id: None,
+                    name: None,
+                    type_: None,
+                }),
+            )
+            .await,
+            Err(AppError::Unauthorized)
+        ),
+        "identity_update 无会话必须 401"
+    );
+    assert!(
+        matches!(
+            identity_delete(Extension(db.0.clone()), none.clone(), path()).await,
+            Err(AppError::Unauthorized)
+        ),
+        "identity_delete 无会话必须 401"
+    );
 
     // custom
-    assert!(matches!(
-        custom_create(
-            Extension(db.0.clone()),
-            none.clone(),
-            Json(CustomCreateRequest {
-                identity_id: "b80".to_string(),
-                field_name: "b80".to_string(),
-                field_value: "b80".to_string(),
-            }),
-        )
-        .await,
-        Err(AppError::Unauthorized)
-    ), "custom_create 无会话必须 401");
-    assert!(matches!(
-        custom_update(
-            Extension(db.0.clone()),
-            none.clone(),
-            path(),
-            Json(CustomUpdateRequest {
-                field_name: None,
-                field_value: None,
-            }),
-        )
-        .await,
-        Err(AppError::Unauthorized)
-    ), "custom_update 无会话必须 401");
-    assert!(matches!(
-        custom_delete(Extension(db.0.clone()), none.clone(), path()).await,
-        Err(AppError::Unauthorized)
-    ), "custom_delete 无会话必须 401");
+    assert!(
+        matches!(
+            custom_create(
+                Extension(db.0.clone()),
+                none.clone(),
+                Json(CustomCreateRequest {
+                    identity_id: "b80".to_string(),
+                    field_name: "b80".to_string(),
+                    field_value: "b80".to_string(),
+                }),
+            )
+            .await,
+            Err(AppError::Unauthorized)
+        ),
+        "custom_create 无会话必须 401"
+    );
+    assert!(
+        matches!(
+            custom_update(
+                Extension(db.0.clone()),
+                none.clone(),
+                path(),
+                Json(CustomUpdateRequest {
+                    field_name: None,
+                    field_value: None,
+                }),
+            )
+            .await,
+            Err(AppError::Unauthorized)
+        ),
+        "custom_update 无会话必须 401"
+    );
+    assert!(
+        matches!(
+            custom_delete(Extension(db.0.clone()), none.clone(), path()).await,
+            Err(AppError::Unauthorized)
+        ),
+        "custom_delete 无会话必须 401"
+    );
 
     // bind
-    assert!(matches!(
-        bind_create(
-            Extension(db.0.clone()),
-            none.clone(),
-            Json(BindCreateRequest {
-                identity_id: "b80".to_string(),
-                group_id: "b80".to_string(),
-                role: None,
-            }),
-        )
-        .await,
-        Err(AppError::Unauthorized)
-    ), "bind_create 无会话必须 401");
-    assert!(matches!(
-        bind_update(
-            Extension(db.0.clone()),
-            none.clone(),
-            path(),
-            Json(BindUpdateRequest {
-                identity_id: None,
-                group_id: None,
-                role: None,
-            }),
-        )
-        .await,
-        Err(AppError::Unauthorized)
-    ), "bind_update 无会话必须 401");
-    assert!(matches!(
-        bind_delete(Extension(db.0), none, path()).await,
-        Err(AppError::Unauthorized)
-    ), "bind_delete 无会话必须 401");
+    assert!(
+        matches!(
+            bind_create(
+                Extension(db.0.clone()),
+                none.clone(),
+                Json(BindCreateRequest {
+                    identity_id: "b80".to_string(),
+                    group_id: "b80".to_string(),
+                    role: None,
+                }),
+            )
+            .await,
+            Err(AppError::Unauthorized)
+        ),
+        "bind_create 无会话必须 401"
+    );
+    assert!(
+        matches!(
+            bind_update(
+                Extension(db.0.clone()),
+                none.clone(),
+                path(),
+                Json(BindUpdateRequest {
+                    identity_id: None,
+                    group_id: None,
+                    role: None,
+                }),
+            )
+            .await,
+            Err(AppError::Unauthorized)
+        ),
+        "bind_update 无会话必须 401"
+    );
+    assert!(
+        matches!(
+            bind_delete(Extension(db.0), none, path()).await,
+            Err(AppError::Unauthorized)
+        ),
+        "bind_delete 无会话必须 401"
+    );
 }
 
 /// 纯单元：`require_session` 门逻辑本身（无 DB 副作用）——无会话拒绝、有会话放行。

@@ -253,7 +253,11 @@ mod security_gate_tests {
         client
             .execute(
                 "INSERT INTO auth_person_role (person_id, role_id, unit_id) VALUES ($1, $2, $3)",
-                &[&admin, &format!("r48-role-{tag}"), &format!("r48-unit-{tag}")],
+                &[
+                    &admin,
+                    &format!("r48-role-{tag}"),
+                    &format!("r48-unit-{tag}"),
+                ],
             )
             .await
             .unwrap();
@@ -281,10 +285,7 @@ mod security_gate_tests {
         assert_eq!(landed, 1, "admin 臂应确实建出关联行");
 
         client
-            .execute(
-                "DELETE FROM x_correlation WHERE person_id = $1",
-                &[&victim],
-            )
+            .execute("DELETE FROM x_correlation WHERE person_id = $1", &[&victim])
             .await
             .unwrap();
         client

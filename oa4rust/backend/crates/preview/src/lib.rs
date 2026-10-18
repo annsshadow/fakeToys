@@ -296,11 +296,7 @@ impl LibreOfficePreview {
 
         // 2026-10 安全审计：target_format 会被拼进输出文件名与 libreoffice
         // --convert-to 参数，限定纯字母数字，杜绝 ../ 穿越与畸形过滤器名。
-        if !target_format
-            .chars()
-            .all(|c| c.is_ascii_alphanumeric())
-            || target_format.is_empty()
-        {
+        if !target_format.chars().all(|c| c.is_ascii_alphanumeric()) || target_format.is_empty() {
             return Err(PreviewError::ConversionFailed(
                 "invalid target format".to_string(),
             ));
@@ -346,7 +342,9 @@ impl PreviewService for LibreOfficePreview {
         let output_path = self.temp_dir.join("output").join(format!(
             "{}.{}",
             Self::safe_base_name(file_name)
-                .and_then(|b| std::path::Path::new(&b).file_stem().map(|s| s.to_string_lossy().into_owned()))
+                .and_then(|b| std::path::Path::new(&b)
+                    .file_stem()
+                    .map(|s| s.to_string_lossy().into_owned()))
                 .unwrap_or_else(|| "output".to_string()),
             target
         ));
@@ -589,7 +587,10 @@ mod security_preview_tests {
     /// 2026-10 安全审计：路径穿越必须被 safe_base_name 拦截。
     #[test]
     fn safe_base_name_blocks_traversal() {
-        assert_eq!(LibreOfficePreview::safe_base_name("a.docx").as_deref(), Some("a.docx"));
+        assert_eq!(
+            LibreOfficePreview::safe_base_name("a.docx").as_deref(),
+            Some("a.docx")
+        );
         assert_eq!(
             LibreOfficePreview::safe_base_name("../../etc/cron.d/x").as_deref(),
             Some("x"),
