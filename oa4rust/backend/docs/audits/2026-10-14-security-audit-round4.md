@@ -1112,6 +1112,18 @@ GET 写面队列里 `calendar_assemble_control` 与 `jpush_assemble_control` 各
 
 | 验证（本批代码变更） | — | program_center 整 lib `266 passed / 0 failed / 0 ignored`（0.84s）：新增 `security_gate_tests_b67` 三臂——`b67_writes_reject_without_session`（2 把 dead pool + `None` 会话 → 全部 `Err(AppError::Unauthorized)`，门在 DB 访问前）+ `b67_writes_accept_valid_session_past_gate`（有效会话 + dead pool → `Err(AppError::Internal)`，证门在库前、只挡匿名）+ `b67_require_session_gate_logic`（纯单元：无会话拒绝、有会话放行）。尺子：**R7 690→688（−2）**、含写 13→**11**（−2，印证两把均为 deadpool 字面量写）；复跑 3 次稳定；EXIT 0 |
 
+### 三.68 — query_service 2 把真写收会话门（R7 688→686，含写 11→9）
+- **批次目标**：收 query_service 两把真写 R7：`neural_generate_model`（POST `/api/query/service/neural/generate/{model_flag}`，`UPDATE x_query_neural_model SET status='generating', update_time=NOW() WHERE flag=$1`）、`processing_execute`（POST `/api/query/service/processing/execute`，按 `model_flag` 空否分支：INSERT `x_query_processing` 或 `INSERT … ON CONFLICT (model_flag) DO UPDATE`，并可能跟一个 `UPDATE x_query_neural_model SET status='processing'`）。
+- **收口档**：session 档（新增 crate 内 `require_session`，无会话 401，门置于 `pool.get()` 之前）。两把都是"模型生成/执行"用户动作，任何已认证用户可触发（不收 admin）。
+- **§五 关联（非新增，重申）**：`processing_execute` 的 `creator` 仍硬编码 `"system"`（`lib.rs:145`，冒名残留 A2-F11 族）——本批只抹匿名写面，冒名列应按会话 person 落（遗留）；其 `validate_query` 黑名单（大小写 contains）对 SQL 注入只是浅防，且 body `query` 并不直接执行（落库待处理），另属 query 域安全设计题，留 §五。
+
+| 门档 | 处理函数 | 路由 / 真写动作 | 加门说明 |
+| --- | --- | --- | --- |
+| 会话档（新增 require_session） | `neural_generate_model` | POST `/api/query/service/neural/generate/{model_flag}`，UPDATE x_query_neural_model | crate 内新增 `require_session`：无会话 401，门置于 `pool.get()` 之前 |
+| 会话档（新增 require_session） | `processing_execute` | POST `/api/query/service/processing/execute`，INSERT/UPDATE x_query_processing（+ 可能 UPDATE x_query_neural_model） | 同上 `require_session` 无会话 401，门在 `pool.get()` 之前 |
+
+| 验证（本批代码变更） | — | query_service 整 lib `9 passed / 0 failed / 0 ignored`：新增 `security_gate_tests_b68` 三臂——`b68_writes_reject_without_session`（2 把 dead pool + `None` 会话 → 全部 `Err(AppError::Unauthorized)`，门在 DB 访问前）+ `b68_writes_accept_valid_session_past_gate`（有效会话 + dead pool → `Err(AppError::Internal)`，证门在库前、只挡匿名）+ `b68_require_session_gate_logic`（纯单元）。尺子：**R7 688→686（−2）**、含写 11→**9**（−2，印证两把均为 deadpool 字面量写）；复跑 3 次稳定；EXIT 0 |
+
 ## 四、验证
 
 
