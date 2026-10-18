@@ -1201,7 +1201,7 @@ personal	POST	/api/person/regist/check/password	regist_check_password	R1-中间�
 personal	POST	/api/person/regist/code	send_regist_code	R1-中间件 admin
 personal	POST	/api/person/signature/upload	upload	R1-中间件 admin
 personal	POST	/api/reset/check/password	check_password	R7-已认证+体内无会话无门禁
-personal	POST	/api/reset/mockputtopost	reset_password	R7-已认证+体内无会话无门禁
+personal	POST	/api/reset/mockputtopost	reset_password_mockputtopost	R5-已认证+体内门禁
 personal	POST	/api/reset/password/anonymous	reset_password_anonymous	R4-匿名可达+体内无门禁
 personal	PUT	/api/person	edit_person	R1-中间件 admin
 personal	PUT	/api/person/custom/manager/person/{person}/name/{name}	custom_manager_edit	R1-中间件 admin

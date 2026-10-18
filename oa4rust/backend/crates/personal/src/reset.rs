@@ -18,6 +18,20 @@ use uuid::Uuid;
 
 use auth::password::hash_password;
 
+/// 安全审计（round4-b76）：`/api/reset/mockputtopost` 别名路由收"会话存在档"门禁。
+/// 无会话（Option<Extension<Session>> = None）→ 401。
+///
+/// 背景：`reset_password` handler 被两条路由共用——PUT `/api/reset`（在
+/// `AUTH_EXEMPT_PATHS`，自服务重置流程须认证前置可用，匿名流走这条，**不能动**）
+/// 与 POST `/api/reset/mockputtopost`（o2server mock-PUT-to-POST 别名，不在豁免
+/// 表内 ⇒ 中间件本就要求会话可达）。若在共享 handler 内加门会打断可用的匿名
+/// 重置流，故仅在别名路由上加 wrapper 收门（纵深防御），PUT 规范路径不受影响。
+pub(crate) fn require_session(
+    session: Option<Extension<shared::session::Session>>,
+) -> Result<shared::session::Session, AppError> {
+    session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
+}
+
 // --- 重置验证码存储 ---
 
 /// 验证码有效期（5 分钟）
@@ -243,6 +257,23 @@ pub async fn reset_password_anonymous(
     axum::extract::Json(req): axum::extract::Json<ResetPasswordRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     apply_reset(pool, store, &req.credential, &req.code, &req.password).await
+}
+
+/// POST /api/reset/mockputtopost —— PUT `/api/reset` 的 mock 别名（安全审计 round4-b76）
+///
+/// 该别名不在 `AUTH_EXEMPT_PATHS`（豁免表只列规范路径 `/api/reset`），中间件要求
+/// 会话可达；本 wrapper 在 handler 体内补会话存在档（无会话 401），门置于真实
+/// 处理 `reset_password`（→ `apply_reset` → UPDATE auth_person password_hash）
+/// 之前。PUT `/api/reset` 匿名流不受影响（不经过本 wrapper）。
+#[allow(non_snake_case)]
+pub async fn reset_password_mockputtopost(
+    pool: Extension<Pool>,
+    store: Extension<ResetCodeStore>,
+    session: Option<Extension<shared::session::Session>>,
+    axum::extract::Json(req): axum::extract::Json<ResetPasswordRequest>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
+    reset_password(pool, store, axum::extract::Json(req)).await
 }
 
 async fn apply_reset(
