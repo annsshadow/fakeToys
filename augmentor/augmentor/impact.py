@@ -98,6 +98,12 @@ class ImpactEvaluator:
         )
 
     def is_beneficial(self, impact: AugmentationImpact, min_scale_gain: float = 0.0) -> bool:
+        # scale_gain 定义在 (after-before)/before 上 ⇒ 值域 [-1, +∞)，但**本轮只判有限性**：
+        # 改前 NaN 让下面那句 `<` 恒 False，无声判成 beneficial=true（实测 200）。
+        # 范围那一维此前无人判（`-1.5` / `5.0` 都收），收紧它是 200→400 的对外行为变更 ⇒ A354 待拍。
+        from .validation import require_ratio
+
+        require_ratio("min_scale_gain", min_scale_gain, minimum=-float("inf"), maximum=float("inf"))
         if impact.gains.get("scale_gain", 0.0) < min_scale_gain:
             return False
         if impact.gains.get("dedup_gain", 0.0) < -0.05:

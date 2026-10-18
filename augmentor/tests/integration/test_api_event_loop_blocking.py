@@ -314,7 +314,11 @@ def _hit_off_loop_thread(
     async def go():
         loop_thread = threading.current_thread().ident
         transport = httpx.ASGITransport(app=app)
-        async with httpx.AsyncClient(transport=transport, base_url="http://svc") as client:
+        # base_url 的 host 会被 `ASGITransport` 写进 `scope["server"]`（这条连接**本地侧**的地址）。
+        # L277 起的 `WriteTransportGate` 只放行回环与 ASGI 测试夹具上的匿名写，所以这里必须是
+        # `testserver` 而不是随手起的名——本文件测的是「读盘有没有挪出事件循环」，不是传输信任；
+        # 用一个认不出的主机名会先被闸拒成 403，那 48 支断言就全在测 403 了。
+        async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
             response = await client.post(path, json=body, params=query)
         return loop_thread, response
 

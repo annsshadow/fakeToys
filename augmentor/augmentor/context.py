@@ -83,12 +83,16 @@ class ContextAugmentor:
     
     def generate_multi_turn(self, 
                            seed_qa: Dict,
-                           existing_histories: Optional[List[List[Dict]]] = None) -> Dict:
+                           existing_histories: Optional[List[List[Dict]]] = None,
+                           num_turns: Optional[int] = None) -> Dict:
         """生成多轮对话数据
         
         Args:
             seed_qa: 种子问答对 {"instruction": "...", "output": "..."}
             existing_histories: 已有的历史对话（用于去重）
+            num_turns: 本次生成的对话轮数。为 None 时读实例默认值；带值时它只影响
+                这一次调用，不改写 `self.num_turns`——存-改-复原那一族在并发下会把
+                别人的轮数当自己的，交错两轮还会把实例默认值永久留在最后一次复原值上
         
         Returns:
             多轮对话数据
@@ -107,7 +111,7 @@ class ContextAugmentor:
                 )
 
         # 生成后续对话
-        for i in range(self.num_turns - 1):
+        for i in range((self.num_turns if num_turns is None else num_turns) - 1):
             follow_up = self._generate_follow_up_question(
                 history, current_q, current_a
             )
@@ -139,13 +143,15 @@ class ContextAugmentor:
     def batch_generate(self,
                       items: List[Dict],
                       existing_histories: Optional[List[List[Dict]]] = None,
-                      use_parallel: bool = True) -> List[Dict]:
+                      use_parallel: bool = True,
+                      num_turns: Optional[int] = None) -> List[Dict]:
         """批量生成多轮对话数据（优化版）
         
         Args:
             items: 种子问答对列表
             existing_histories: 已有的历史对话
             use_parallel: 是否使用并行处理
+            num_turns: 逐层带下去的对话轮数，为 None 时由 `generate_multi_turn` 读实例默认值
         
         Returns:
             多轮对话数据列表
@@ -155,7 +161,7 @@ class ContextAugmentor:
             results = []
             for i, item in enumerate(items):
                 logger.info(f"生成多轮对话 {i + 1}/{len(items)}")
-                multi_turn = self.generate_multi_turn(item, existing_histories)
+                multi_turn = self.generate_multi_turn(item, existing_histories, num_turns)
                 results.append(multi_turn)
             return results
         
@@ -164,7 +170,7 @@ class ContextAugmentor:
         
         def process_item(idx_item):
             idx, item = idx_item
-            return idx, self.generate_multi_turn(item, existing_histories)
+            return idx, self.generate_multi_turn(item, existing_histories, num_turns)
         
         with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
             futures = [executor.submit(process_item, (i, item)) for i, item in enumerate(items)]
@@ -191,16 +197,10 @@ class ContextAugmentor:
         Returns:
             多轮对话数据列表
         """
-        if num_turns is not None:
-            original_num_turns = self.num_turns
-            self.num_turns = num_turns
-        
-        try:
-            results = self.batch_generate(items)
-            return results
-        finally:
-            if num_turns is not None:
-                self.num_turns = original_num_turns
+        # 轮数只沿调用链带下去，不写实例属性：存-改-复原这一族在并发下会把别人的轮数
+        # 当自己的，交错两轮还会把 `self.num_turns` 永久留在最后一次复原的那一格上
+        # （A364 第二格 / L279，改前后读数见 `tests/unit/test_shared_cache_lock_l279.py`）。
+        return self.batch_generate(items, num_turns=num_turns)
     
     def add_history_to_single_turn(self,
                                   items: List[Dict],

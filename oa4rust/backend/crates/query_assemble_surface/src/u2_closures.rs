@@ -724,8 +724,10 @@ pub async fn morelikethis_post(
 #[allow(non_snake_case)]
 pub async fn table_row_delete(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     Path((table_flag, id)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool.0, session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -751,9 +753,12 @@ pub async fn table_row_delete(
 #[allow(non_snake_case)]
 pub async fn table_row_insert(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     Path(table_flag): Path<String>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十九批：动态表行插入收 admin 档。
+    crate::require_admin_opt(&pool.0, session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -781,9 +786,12 @@ pub async fn table_row_insert(
 #[allow(non_snake_case)]
 pub async fn table_row_insert_one(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     Path(table_flag): Path<String>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 第五十九批：动态表行单条插入收 admin 档。
+    crate::require_admin_opt(&pool.0, session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -811,8 +819,10 @@ pub async fn table_row_insert_one(
 #[allow(non_snake_case)]
 pub async fn importmodel_record_delete(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     Path(record_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin_opt(&pool.0, session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
@@ -839,8 +849,14 @@ pub async fn importmodel_record_delete(
 #[allow(non_snake_case)]
 pub async fn importmodel_reexecute_record(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     Path(record_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 重新执行导入模型记录属设计/维护写面：无会话 401、非 admin 403。
+    match session.as_deref() {
+        None => return Err(AppError::Unauthorized),
+        Some(s) => require_admin_gate(&pool, s).await?,
+    }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
@@ -974,6 +990,16 @@ pub async fn view_bundle_v2_post(
 use shared::session::Session;
 
 async fn require_admin_gate(pool: &Pool, session: &Session) -> Result<(), AppError> {
+    if shared::middleware::is_admin(pool, &session.person_unique).await {
+        Ok(())
+    } else {
+        Err(AppError::Forbidden)
+    }
+}
+
+/// `require_admin_gate` 的 `Option<Extension<Session>>` 版：无会话先回 401，非 admin 回 403。
+async fn require_admin_opt(pool: &Pool, session: Option<Extension<Session>>) -> Result<(), AppError> {
+    let session = session.ok_or(AppError::Unauthorized)?;
     if shared::middleware::is_admin(pool, &session.person_unique).await {
         Ok(())
     } else {

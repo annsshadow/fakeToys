@@ -161,7 +161,7 @@ func ctxBG() context.Context { return context.Background() }
 // tokenFor 为用户签一个 access token。
 func (ts *testService) tokenFor(t *testing.T, uid int64) string {
 	t.Helper()
-	tok, _, err := ts.JWT.Issue(uid, "user")
+	tok, _, err := ts.JWT.Issue(uid, "user", "")
 	if err != nil {
 		t.Fatalf("签发令牌失败：%v", err)
 	}

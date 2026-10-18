@@ -15,6 +15,8 @@ pub mod u2;
 mod tests;
 #[cfg(test)]
 mod tests_generated;
+#[cfg(test)]
+mod security_gate_tests_b70;
 
 #[axum::debug_handler]
 pub async fn get_control_config(
@@ -99,8 +101,17 @@ pub async fn list_control_calendars(
 #[axum::debug_handler]
 pub async fn update_control_config(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 全局日历配置写（enabled / 时区 / 共享开关）属管理面：无会话 401、非 admin 403。
+    match session.as_deref() {
+        None => return Err(AppError::Unauthorized),
+        Some(s) if !shared::middleware::is_admin(&pool, &s.person_unique).await => {
+            return Err(AppError::Forbidden)
+        }
+        Some(_) => {}
+    }
     let config = body.0;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 

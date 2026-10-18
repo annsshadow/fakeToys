@@ -32,6 +32,52 @@ class CheckpointData:
     quality_scores: Dict[int, float]  # 质量评分
 
 
+
+class _RunState:
+    """一份断点**自己**的运行态：待落盘的增量与上一次自动保存时的已处理数。
+
+    L275 之前这几格可变量住在 `CheckpointManager` 实例上，而
+    `update_progress(index, success)` 不带任务身份 ⇒ 一次运行的每一笔进度写的都是
+    「此刻 `_current_checkpoint` 指向的那一份」。改前实测（同一进程、同一个 manager，
+    A=200 条与 B=50 条两次 `augment_dataset` 并发）：230 笔进度里 **170 笔落在对方的断点上**，
+    于是 B 的 `completed_indices` 拿到 150 个越界下标（值域 0..199 而 `total_items=50`），
+    A 自己那份在盘上停在 `processed_items=0`，另留一枚没人认领的增量文件。
+    L273 的 `path_lock` 治的是「同一份文件别写坏」，治不到「这次更新属于哪个任务」。
+
+    状态跟着断点对象走之后，归属由调用方手里的那份对象决定，与「谁最后加载」无关。
+    它不是 dataclass 字段，所以 `asdict()` 的序列化面一字不变——盘上格式与既有断点文件
+    全兼容（把它写成字段等于改盘上格式，旧文件立刻读不回来）。
+    """
+
+    __slots__ = ("pending_completed", "pending_failed", "last_save_count")
+
+    def __init__(self):
+        self.pending_completed = set()
+        self.pending_failed = set()
+        self.last_save_count = 0
+
+
+# 挂在 CheckpointData 实例上的私有属性名
+_RUN_STATE_ATTR = "_run_state"
+
+
+def _state_of(checkpoint: "CheckpointData") -> _RunState:
+    """取这份断点自己的运行态，第一次用时建一个挂在对象上
+
+    Args:
+        checkpoint: 断点数据对象
+
+    Returns:
+        该对象专属的 `_RunState`
+    """
+    state = getattr(checkpoint, _RUN_STATE_ATTR, None)
+    if state is None:
+        state = _RunState()
+        setattr(checkpoint, _RUN_STATE_ATTR, state)
+    return state
+
+
+
 class CheckpointManager:
     """断点管理器 - 优化版"""
     
@@ -54,11 +100,53 @@ class CheckpointManager:
         self.auto_save_interval = auto_save_interval
         
         self._current_checkpoint: Optional[CheckpointData] = None
-        self._last_save_count = 0
+        # 「还没有当前断点」时环境态的读写落点。产品路径拿不到它（`update_progress`
+        # 在此之前就 return 了），它存在是为了让环境态任一刻都有对象可用，
+        # 也让既有测试里 `manager._pending_completed` 这类直读直写继续成立。
+        self._orphan_state = _RunState()
         self._lock = threading.Lock()
-        self._pending_completed: Set[int] = set()  # 待保存的完成索引
-        self._pending_failed: Set[int] = set()  # 待保存的失败索引
     
+    @property
+    def _active_state(self) -> _RunState:
+        """环境态读法的落点：当前断点自己的那一份，没有当前断点时用孤儿态
+
+        `_pending_completed` / `_pending_failed` / `_last_save_count` 三格的名字与写法
+        一律保留，为的是**不改动任何既有读者**：`create_checkpoint` 与 `load_checkpoint`
+        里那三行「换当前断点时把待保存集合清零」照原样成立，而它们清的是新那份对象
+        自己的状态。带 `checkpoint` 参的路径不走这里，直接 `_state_of(ck)`。
+        """
+        if self._current_checkpoint is None:
+            return self._orphan_state
+        return _state_of(self._current_checkpoint)
+
+    @property
+    def _pending_completed(self) -> Set[int]:
+        """当前断点的待保存完成索引（环境态代理，落点见 `_active_state`）"""
+        return self._active_state.pending_completed
+
+    @_pending_completed.setter
+    def _pending_completed(self, value: Set[int]) -> None:
+        self._active_state.pending_completed = set(value)
+
+    @property
+    def _pending_failed(self) -> Set[int]:
+        """当前断点的待保存失败索引（环境态代理，落点见 `_active_state`）"""
+        return self._active_state.pending_failed
+
+    @_pending_failed.setter
+    def _pending_failed(self, value: Set[int]) -> None:
+        self._active_state.pending_failed = set(value)
+
+    @property
+    def _last_save_count(self) -> int:
+        """当前断点上一次自动保存时的已处理数（环境态代理）"""
+        return self._active_state.last_save_count
+
+    @_last_save_count.setter
+    def _last_save_count(self, value: int) -> None:
+        self._active_state.last_save_count = value
+
+
     def _get_checkpoint_path(self, task_id: str) -> Path:
         """获取断点文件路径
         
@@ -158,11 +246,24 @@ class CheckpointManager:
                     delta['failed'].extend(part['failed'])
                     delta['quality_scores'].update(part['quality_scores'])
                 
-                # 合并增量
-                data['completed_indices'].extend(delta['completed'])
-                data['failed_indices'].extend(delta['failed'])
-                data['processed_items'] += len(delta['completed'])
-                data['failed_items'] += len(delta['failed'])
+                # 合并增量按「这一格记过没有」判，两侧都去重。两种重复各有来路：① 崩溃窗
+                # （主文件写成之后、`_remove_delta` 之前被杀）让同一批增量下次再并一次；
+                # ② `_delta_files` 把 legacy 与 JSONL 两份一并读回，同一下标在两份里各
+                # 出现一次时纯 extend 就记两笔。实测①：6 条已完成读成 `processed_items=12`、
+                # `progress_percent=200.0%` 并随合并落盘固化（`test_checkpoint_recovery_l100.py`
+                # 只钉了写**失败**那一支，这两序当时都无守卫）。
+                already_completed = set(data['completed_indices'])
+                fresh_completed = [
+                    idx for idx in dict.fromkeys(delta['completed']) if idx not in already_completed
+                ]
+                already_failed = set(data['failed_indices'])
+                fresh_failed = [idx for idx in dict.fromkeys(delta['failed'])
+                                if idx not in already_failed]
+
+                data['completed_indices'].extend(fresh_completed)
+                data['failed_indices'].extend(fresh_failed)
+                data['processed_items'] += len(fresh_completed)
+                data['failed_items'] += len(fresh_failed)
                 
                 # 合并质量评分
                 data['quality_scores'].update({
@@ -217,7 +318,7 @@ class CheckpointManager:
             logger.error(f"保存断点失败: {e}")
             return False
     
-    def _save_delta(self):
+    def _save_delta(self, checkpoint: Optional[CheckpointData] = None):
         """追加一批增量（A144：写侧 O(1)，不再整读整写）
 
         每次自动保存只把**新完成的那一批**写成一行，因此第 k 次保存的代价与已保存
@@ -230,37 +331,44 @@ class CheckpointManager:
         追加失败（目录不在、盘满、路径被占）时的口径是**不清空待保存集合**：那一批留在内存里，
         下一次保存连同新批次一起补写，代价是延迟落盘而不是丢失。因此调用方不必看返回值，但也
         不能把「本函数返回」读成「这一批已经在盘上」。
+
+        Args:
+            checkpoint: 这一批增量属于哪一份断点（决定落哪个 delta 文件、读哪份评分表）。
+                `None` 沿用当前断点；并发运行的调用方要传自己那一份，见 `_RunState`。
         """
-        if self._current_checkpoint is None:
+        ck = checkpoint if checkpoint is not None else self._current_checkpoint
+        if ck is None:
             return
-        
-        if not self._pending_completed and not self._pending_failed:
+
+        state = _state_of(ck)
+        if not state.pending_completed and not state.pending_failed:
             return
-        
-        delta_path = self._get_delta_path(self._current_checkpoint.task_id)
-        
+
+        delta_path = self._get_delta_path(ck.task_id)
+
         record = {
-            'completed': sorted(self._pending_completed),
-            'failed': sorted(self._pending_failed),
+            'completed': sorted(state.pending_completed),
+            'failed': sorted(state.pending_failed),
             'quality_scores': {
-                str(k): self._current_checkpoint.quality_scores[k]
-                for k in self._pending_completed
-                if k in self._current_checkpoint.quality_scores
+                str(k): ck.quality_scores[k]
+                for k in state.pending_completed
+                if k in ck.quality_scores
             },
         }
-        
+
         try:
             delta_path.parent.mkdir(parents=True, exist_ok=True)
             with open(delta_path, 'a', encoding='utf-8') as f:
                 f.write(json.dumps(record, ensure_ascii=False, separators=(',', ':')) + "\n")
-            
+
             # 清空待保存集合
-            self._pending_completed.clear()
-            self._pending_failed.clear()
-            
+            state.pending_completed.clear()
+            state.pending_failed.clear()
+
         except Exception as e:
             logger.error(f"保存增量失败: {e}")
-    
+
+
     def _read_delta(self, delta_path: Path) -> Dict:
         """读取增量文件（JSONL 逐行合并；旧格式的单个 JSON 文档同样认）
 
@@ -329,66 +437,85 @@ class CheckpointManager:
         """
         for delta_path in (self._get_delta_path(task_id),
                            self._get_legacy_delta_path(task_id)):
-            if delta_path.exists():
-                delta_path.unlink()
+            # 增量已并入主文件，缺档即目标达成：exists 预检挡不住并发删除里裸 unlink 抛的 FileNotFoundError。
+            delta_path.unlink(missing_ok=True)
     
     def update_progress(self,
                        index: int,
                        success: bool,
-                       quality_score: Optional[float] = None):
+                       quality_score: Optional[float] = None,
+                       checkpoint: Optional[CheckpointData] = None):
         """更新进度
-        
+
         Args:
             index: 当前处理的索引
             success: 是否成功
             quality_score: 质量评分
+            checkpoint: 这一笔进度属于哪一份断点。默认 `None` 是环境态读法（写进
+                `_current_checkpoint` 当下指的那一份）；并发运行的调用方**必须**传自己
+                手里那份，否则就是 L275 量到的那一形——A 的 200 笔进度落进 B 的断点文件，
+                B 的续传集合从此多出 150 个越界下标，而 A 在盘上一条都没做过。
         """
-        if self._current_checkpoint is None:
+        ck = checkpoint if checkpoint is not None else self._current_checkpoint
+        if ck is None:
             return
-        
+
         with self._lock:
-            checkpoint = self._current_checkpoint
-            
+            checkpoint = ck
+            state = _state_of(checkpoint)
+
             if success:
                 checkpoint.processed_items += 1
                 checkpoint.completed_indices.append(index)
-                self._pending_completed.add(index)
+                state.pending_completed.add(index)
                 if quality_score is not None:
                     checkpoint.quality_scores[index] = quality_score
             else:
                 checkpoint.failed_items += 1
                 checkpoint.failed_indices.append(index)
-                self._pending_failed.add(index)
-            
+                state.pending_failed.add(index)
+
             # 定期保存增量
-            if checkpoint.processed_items - self._last_save_count >= self.auto_save_interval:
-                self._save_delta()
-                self._last_save_count = checkpoint.processed_items
+            if checkpoint.processed_items - state.last_save_count >= self.auto_save_interval:
+                self._save_delta(checkpoint)
+                state.last_save_count = checkpoint.processed_items
                 logger.debug(f"保存增量: {checkpoint.processed_items}/{checkpoint.total_items}")
-    
-    def save_checkpoint(self):
-        """手动保存断点（合并增量）"""
+
+
+    def save_checkpoint(self, checkpoint: Optional[CheckpointData] = None):
+        """手动保存断点（合并增量）
+
+        Args:
+            checkpoint: 要收尾的那一份断点；`None` 沿用当前断点
+        """
         with self._lock:
-            if self._current_checkpoint:
-                self._save_delta()
-                if self._save_checkpoint(self._current_checkpoint):
+            ck = checkpoint if checkpoint is not None else self._current_checkpoint
+            if ck:
+                self._save_delta(ck)
+                if self._save_checkpoint(ck):
                     # 增量已并入主文件，删除以免下次恢复时重复累加；主文件没写成就不删
-                    self._remove_delta(self._current_checkpoint.task_id)
-                    logger.info(f"手动保存断点: {self._current_checkpoint.task_id}")
-    
-    def get_progress(self) -> Dict:
+                    self._remove_delta(ck.task_id)
+                    logger.info(f"手动保存断点: {ck.task_id}")
+
+
+    def get_progress(self, checkpoint: Optional[CheckpointData] = None) -> Dict:
         """获取进度信息
-        
+
+        Args:
+            checkpoint: 读哪一份断点。`None` 是环境态读法（当下 `_current_checkpoint`
+                指谁就读谁）——`GET /api/augment/progress` 走的正是这一支。
+                一次运行自己要进度应传手里那份，否则并发下读到的是别人的数（L275）。
+
         Returns:
             进度信息字典
         """
-        if self._current_checkpoint is None:
+        ck = checkpoint if checkpoint is not None else self._current_checkpoint
+        if ck is None:
             return {"status": "no_checkpoint"}
         
-        checkpoint = self._current_checkpoint
-        elapsed_time = time.time() - checkpoint.start_time
+        elapsed_time = time.time() - ck.start_time
         
-        progress = checkpoint.processed_items / checkpoint.total_items if checkpoint.total_items > 0 else 0
+        progress = ck.processed_items / ck.total_items if ck.total_items > 0 else 0
         
         # 预计剩余时间
         if progress > 0:
@@ -398,17 +525,17 @@ class CheckpointManager:
             remaining_time = 0
         
         return {
-            "task_id": checkpoint.task_id,
-            "total_items": checkpoint.total_items,
-            "processed_items": checkpoint.processed_items,
-            "failed_items": checkpoint.failed_items,
+            "task_id": ck.task_id,
+            "total_items": ck.total_items,
+            "processed_items": ck.processed_items,
+            "failed_items": ck.failed_items,
             "progress": progress,
             "progress_percent": f"{progress * 100:.1f}%",
             "elapsed_time": self._format_time(elapsed_time),
             "remaining_time": self._format_time(remaining_time),
-            "start_time": datetime.fromtimestamp(checkpoint.start_time).isoformat(),
-            "last_update": datetime.fromtimestamp(checkpoint.last_update_time).isoformat(),
-            "avg_quality_score": self._calculate_avg_quality_score()
+            "start_time": datetime.fromtimestamp(ck.start_time).isoformat(),
+            "last_update": datetime.fromtimestamp(ck.last_update_time).isoformat(),
+            "avg_quality_score": self._calculate_avg_quality_score(ck)
         }
     
     def _format_time(self, seconds: float) -> str:
@@ -429,33 +556,45 @@ class CheckpointManager:
             hours = seconds / 3600
             return f"{hours:.1f}小时"
     
-    def _calculate_avg_quality_score(self) -> float:
+    def _calculate_avg_quality_score(self,
+                                    checkpoint: Optional[CheckpointData] = None) -> float:
         """计算平均质量评分
-        
+
+        Args:
+            checkpoint: 算哪一份断点的评分表；`None` 沿用当前断点
+
         Returns:
             平均质量评分
         """
-        if self._current_checkpoint is None:
+        ck = checkpoint if checkpoint is not None else self._current_checkpoint
+        if ck is None:
             return 0.0
         
-        scores = list(self._current_checkpoint.quality_scores.values())
+        scores = list(ck.quality_scores.values())
         return sum(scores) / len(scores) if scores else 0.0
     
-    def get_remaining_indices(self) -> List[int]:
+    def get_remaining_indices(self,
+                             checkpoint: Optional[CheckpointData] = None) -> List[int]:
         """获取未处理的索引
-        
+
+        Args:
+            checkpoint: 要问的那一份断点；`None` 沿用当前断点（并发运行里传自己那份，
+                否则问到的可能是别人的总条目数）
+
         Returns:
             未处理的索引列表
         """
-        if self._current_checkpoint is None:
+        ck = checkpoint if checkpoint is not None else self._current_checkpoint
+        if ck is None:
             return []
-        
-        checkpoint = self._current_checkpoint
+
+        checkpoint = ck
         all_indices = set(range(checkpoint.total_items))
         processed = set(checkpoint.completed_indices + checkpoint.failed_indices)
-        
+
         return sorted(list(all_indices - processed))
-    
+
+
     def delete_checkpoint(self, task_id: str):
         """删除断点
         
@@ -464,8 +603,7 @@ class CheckpointManager:
         """
         checkpoint_path = self._get_checkpoint_path(task_id)
         
-        if checkpoint_path.exists():
-            checkpoint_path.unlink()
+        checkpoint_path.unlink(missing_ok=True)
         self._remove_delta(task_id)
         
         logger.info(f"删除断点: {task_id}")

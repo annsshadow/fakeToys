@@ -1,0 +1,18 @@
+crate	method	path	handler	bucket	eaten_by	registry_level
+general_assemble_control	POST	/api/general/assemble/control/invoice/create	invoice_create	D1-惰性豁免条目（需登录，豁免本身失效）+体内写 SQL	/api/general/assemble/control/invoice/{id}	prefix:/api→Authenticated
+general_assemble_control	POST	/api/general/assemble/control/invoice/upload	invoice_upload	D1-惰性豁免条目（需登录，豁免本身失效）+体内写 SQL	/api/general/assemble/control/invoice/{id}	prefix:/api→Authenticated
+meeting_assemble_control	POST	/api/meeting/assemble/control/meeting/create	create_meeting	D1-惰性豁免条目（需登录，豁免本身失效）+体内写 SQL	/api/meeting/assemble/control/meeting/{id}	prefix:/api/meeting→Authenticated
+meeting_assemble_control	GET	/api/meeting/assemble/control/meeting/{id}	meeting_id	D2-惰性豁免条目（需登录，豁免本身失效）+只读	/api/meeting/assemble/control/meeting/{id}	prefix:/api/meeting→Authenticated
+meeting_assemble_control	POST	/api/meeting/assemble/control/meeting	create_meeting	D1-惰性豁免条目（需登录，豁免本身失效）+体内写 SQL	/api/meeting/assemble/control/meeting	prefix:/api/meeting→Authenticated
+meeting_assemble_control	DELETE	/api/meeting/assemble/control/meeting/{id}	u2_meeting_delete_owned	D1-惰性豁免条目（需登录，豁免本身失效）+体内写 SQL	/api/meeting/assemble/control/meeting/{id}	prefix:/api/meeting→Authenticated
+meeting_assemble_control	POST	/api/meeting/assemble/control/meeting/{id}	u2_meeting_modify	D1-惰性豁免条目（需登录，豁免本身失效）+体内写 SQL	/api/meeting/assemble/control/meeting/{id}	prefix:/api/meeting→Authenticated
+meeting_assemble_control	PUT	/api/meeting/assemble/control/meeting/{id}	u2_meeting_put_save	D1-惰性豁免条目（需登录，豁免本身失效）+体内写 SQL	/api/meeting/assemble/control/meeting/{id}	prefix:/api/meeting→Authenticated
+processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/process/list/application/{applicationFlag}	process_list_application_applicationFlag	D2-惰性豁免条目（需登录，豁免本身失效）+只读	/api/processplatform/assemble/surface/process/list/application/{applicationFlag}	prefix:/api/processplatform→Authenticated
+processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/attachment/list/work/{workId}	attachment_u2_list_work_work_id	D2-惰性豁免条目（需登录，豁免本身失效）+只读	/api/processplatform/assemble/surface/attachment/list/work/{workId}	prefix:/api/processplatform→Authenticated
+processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/task/list/work/{work}	task_list_work_work	D2-惰性豁免条目（需登录，豁免本身失效）+只读	/api/processplatform/assemble/surface/task/list/work/{workId}	prefix:/api/processplatform→Authenticated
+query_assemble_surface	GET	/api/queryview/table/{flag}	table_flag	D2-惰性豁免条目（需登录，豁免本身失效）+只读	/api/queryview/table/{flag}	prefix:/api/query→Authenticated
+query_assemble_surface	GET	/api/queryview/list	query_list	D2-惰性豁免条目（需登录，豁免本身失效）+只读	/api/queryview/list	prefix:/api/query→Authenticated
+query_assemble_surface	GET	/api/queryview/view/{id}	view_id	D2-惰性豁免条目（需登录，豁免本身失效）+只读	/api/queryview/view/{id}	prefix:/api/query→Authenticated
+query_assemble_surface	GET	/api/queryview/statement/{id}	statement_get_id	D2-惰性豁免条目（需登录，豁免本身失效）+只读	/api/queryview/statement/{id}	prefix:/api/query→Authenticated
+query_assemble_surface	GET	/api/queryview/stat/{id}	stat_get_id	D2-惰性豁免条目（需登录，豁免本身失效）+只读	/api/queryview/stat/{id}	prefix:/api/query→Authenticated
+query_assemble_surface	GET	/api/queryview/table/list/{id}/next/{count}	table_list_id_next_count	D2-惰性豁免条目（需登录，豁免本身失效）+只读	/api/queryview/table/list/{id}/next/{count}	prefix:/api/query→Authenticated

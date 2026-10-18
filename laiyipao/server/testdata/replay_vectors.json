@@ -1,0 +1,1109 @@
+{
+  "_comment": "跨端「整局重放」契约向量。由 miniapp/scripts/gen-replay-vectors.ts 从**真实 TS 引擎**产出；期望值不由 Go 侧生成（那是自证）。TS 引擎即玩家设备上运行的那份代码，所以它的输出就是「合法的一局」的定义。Go 侧 domain/replay_contract_test.go 只断言与本文件一致。",
+  "version": 1,
+  "hash_note": "replayHash = hex16(fnv1a64(\"L{id}|A{7 项攻方系数}|S{槽位技能段}|X{额外血量};事件流\"))。事件逐条为 \"{tick}|{类型}|{a}|{b}|{c}\"，以 \";\" 连接。",
+  "cases": [
+    {
+      "level_id": 1,
+      "tag": "base",
+      "seed": "7046029255919282421",
+      "card_picks": [],
+      "build": {
+        "skills": {
+          "1": {
+            "id": 1,
+            "name": "燃烧弹",
+            "family": "flame",
+            "element": "fire",
+            "kind": "active",
+            "level": 1,
+            "slot": 0
+          },
+          "2": {
+            "id": 2,
+            "name": "燃油弹",
+            "family": "flame",
+            "element": "fire",
+            "kind": "active",
+            "level": 5,
+            "slot": 1
+          },
+          "3": {
+            "id": 3,
+            "name": "温压弹",
+            "family": "flame",
+            "element": "fire",
+            "kind": "active",
+            "level": 12,
+            "slot": 2
+          },
+          "4": {
+            "id": 4,
+            "name": "干冰弹",
+            "family": "frost",
+            "element": "ice",
+            "kind": "active",
+            "level": 30,
+            "slot": 3
+          }
+        },
+        "elements": [
+          "fire",
+          "fire",
+          "fire",
+          "ice"
+        ],
+        "equipment": [],
+        "mastery_nodes": [],
+        "active_slots": 4,
+        "attacker": {
+          "attack": 200,
+          "crit_permille": 1500,
+          "crit_multiplier_permille": 1500,
+          "reaction_mult_permille": 1100,
+          "element_cap": 8,
+          "reaction_tier": 2,
+          "element_coef_permille": 1100,
+          "heat_cap_permille": 100,
+          "armor_permille": 100,
+          "mechanic_permille": 100
+        }
+      },
+      "expected_hash": "96fadb14c686777a",
+      "expected_stats": {
+        "kills": 39,
+        "leaked": 0,
+        "score": 19679,
+        "waves": 5,
+        "durationMs": 64750
+      }
+    },
+    {
+      "level_id": 25,
+      "tag": "base",
+      "seed": "-4611686018427387904",
+      "card_picks": [
+        0,
+        1,
+        2,
+        0,
+        1,
+        2
+      ],
+      "build": {
+        "skills": {
+          "1": {
+            "id": 1,
+            "name": "燃烧弹",
+            "family": "flame",
+            "element": "fire",
+            "kind": "active",
+            "level": 1,
+            "slot": 0
+          },
+          "2": {
+            "id": 2,
+            "name": "燃油弹",
+            "family": "flame",
+            "element": "fire",
+            "kind": "active",
+            "level": 5,
+            "slot": 1
+          },
+          "3": {
+            "id": 3,
+            "name": "温压弹",
+            "family": "flame",
+            "element": "fire",
+            "kind": "active",
+            "level": 12,
+            "slot": 2
+          },
+          "4": {
+            "id": 4,
+            "name": "干冰弹",
+            "family": "frost",
+            "element": "ice",
+            "kind": "active",
+            "level": 30,
+            "slot": 3
+          }
+        },
+        "elements": [
+          "fire",
+          "fire",
+          "fire",
+          "ice"
+        ],
+        "equipment": [],
+        "mastery_nodes": [],
+        "active_slots": 4,
+        "attacker": {
+          "attack": 2600,
+          "crit_permille": 1500,
+          "crit_multiplier_permille": 1500,
+          "reaction_mult_permille": 3500,
+          "element_cap": 8,
+          "reaction_tier": 2,
+          "element_coef_permille": 3500,
+          "heat_cap_permille": 100,
+          "armor_permille": 250,
+          "mechanic_permille": 100
+        }
+      },
+      "expected_hash": "5f60b705c154be41",
+      "expected_stats": {
+        "kills": 40,
+        "leaked": 0,
+        "score": 20781,
+        "waves": 6,
+        "durationMs": 58850
+      }
+    },
+    {
+      "level_id": 50,
+      "tag": "base",
+      "seed": "1234567890123456789",
+      "card_picks": [
+        0,
+        -1,
+        -7,
+        -15,
+        -9,
+        -22,
+        0,
+        -1
+      ],
+      "build": {
+        "skills": {
+          "1": {
+            "id": 1,
+            "name": "燃烧弹",
+            "family": "flame",
+            "element": "fire",
+            "kind": "active",
+            "level": 1,
+            "slot": 0
+          },
+          "2": {
+            "id": 2,
+            "name": "燃油弹",
+            "family": "flame",
+            "element": "fire",
+            "kind": "active",
+            "level": 5,
+            "slot": 1
+          },
+          "3": {
+            "id": 3,
+            "name": "温压弹",
+            "family": "flame",
+            "element": "fire",
+            "kind": "active",
+            "level": 12,
+            "slot": 2
+          },
+          "4": {
+            "id": 4,
+            "name": "干冰弹",
+            "family": "frost",
+            "element": "ice",
+            "kind": "active",
+            "level": 30,
+            "slot": 3
+          }
+        },
+        "elements": [
+          "fire",
+          "fire",
+          "fire",
+          "ice"
+        ],
+        "equipment": [],
+        "mastery_nodes": [],
+        "active_slots": 4,
+        "attacker": {
+          "attack": 5100,
+          "crit_permille": 1500,
+          "crit_multiplier_permille": 1500,
+          "reaction_mult_permille": 6000,
+          "element_cap": 8,
+          "reaction_tier": 3,
+          "element_coef_permille": 6000,
+          "heat_cap_permille": 200,
+          "armor_permille": 500,
+          "mechanic_permille": 200
+        }
+      },
+      "expected_hash": "39bd0c5aacc63377",
+      "expected_stats": {
+        "kills": 49,
+        "leaked": 0,
+        "score": 25615,
+        "waves": 8,
+        "durationMs": 75950
+      }
+    },
+    {
+      "level_id": 75,
+      "tag": "base",
+      "seed": "999999999999999999",
+      "card_picks": [
+        -1,
+        -7,
+        -13,
+        0,
+        1,
+        2,
+        -1,
+        -7,
+        -13,
+        0
+      ],
+      "build": {
+        "skills": {
+          "1": {
+            "id": 1,
+            "name": "燃烧弹",
+            "family": "flame",
+            "element": "fire",
+            "kind": "active",
+            "level": 1,
+            "slot": 0
+          },
+          "2": {
+            "id": 2,
+            "name": "燃油弹",
+            "family": "flame",
+            "element": "fire",
+            "kind": "active",
+            "level": 5,
+            "slot": 1
+          },
+          "3": {
+            "id": 3,
+            "name": "温压弹",
+            "family": "flame",
+            "element": "fire",
+            "kind": "active",
+            "level": 12,
+            "slot": 2
+          },
+          "4": {
+            "id": 4,
+            "name": "干冰弹",
+            "family": "frost",
+            "element": "ice",
+            "kind": "active",
+            "level": 30,
+            "slot": 3
+          }
+        },
+        "elements": [
+          "fire",
+          "fire",
+          "fire",
+          "ice"
+        ],
+        "equipment": [],
+        "mastery_nodes": [],
+        "active_slots": 4,
+        "attacker": {
+          "attack": 7600,
+          "crit_permille": 1500,
+          "crit_multiplier_permille": 1500,
+          "reaction_mult_permille": 8500,
+          "element_cap": 8,
+          "reaction_tier": 1,
+          "element_coef_permille": 8500,
+          "heat_cap_permille": 300,
+          "armor_permille": 0,
+          "mechanic_permille": 300
+        }
+      },
+      "expected_hash": "a40059bf21f27a97",
+      "expected_stats": {
+        "kills": 61,
+        "leaked": 0,
+        "score": 32330,
+        "waves": 10,
+        "durationMs": 78650
+      }
+    },
+    {
+      "level_id": 100,
+      "tag": "base",
+      "seed": "-1",
+      "card_picks": [
+        -7,
+        -13,
+        0,
+        1,
+        2,
+        -1,
+        -7,
+        -13,
+        0,
+        1,
+        2,
+        -1
+      ],
+      "build": {
+        "skills": {
+          "1": {
+            "id": 1,
+            "name": "燃烧弹",
+            "family": "flame",
+            "element": "fire",
+            "kind": "active",
+            "level": 1,
+            "slot": 0
+          },
+          "2": {
+            "id": 2,
+            "name": "燃油弹",
+            "family": "flame",
+            "element": "fire",
+            "kind": "active",
+            "level": 5,
+            "slot": 1
+          },
+          "3": {
+            "id": 3,
+            "name": "温压弹",
+            "family": "flame",
+            "element": "fire",
+            "kind": "active",
+            "level": 12,
+            "slot": 2
+          },
+          "4": {
+            "id": 4,
+            "name": "干冰弹",
+            "family": "frost",
+            "element": "ice",
+            "kind": "active",
+            "level": 30,
+            "slot": 3
+          }
+        },
+        "elements": [
+          "fire",
+          "fire",
+          "fire",
+          "ice"
+        ],
+        "equipment": [],
+        "mastery_nodes": [],
+        "active_slots": 4,
+        "attacker": {
+          "attack": 10100,
+          "crit_permille": 1500,
+          "crit_multiplier_permille": 1500,
+          "reaction_mult_permille": 11000,
+          "element_cap": 8,
+          "reaction_tier": 2,
+          "element_coef_permille": 11000,
+          "heat_cap_permille": 0,
+          "armor_permille": 250,
+          "mechanic_permille": 400
+        }
+      },
+      "expected_hash": "d5dfb9fdcb994285",
+      "expected_stats": {
+        "kills": 84,
+        "leaked": 0,
+        "score": 54160,
+        "waves": 12,
+        "durationMs": 124100
+      }
+    },
+    {
+      "level_id": 3,
+      "tag": "passive",
+      "seed": "0",
+      "card_picks": [
+        -1,
+        -7,
+        -13,
+        0,
+        1
+      ],
+      "build": {
+        "skills": {
+          "1": {
+            "id": 1,
+            "name": "燃烧弹",
+            "family": "flame",
+            "element": "fire",
+            "kind": "active",
+            "level": 3,
+            "slot": 1
+          },
+          "7": {
+            "id": 7,
+            "name": "电弧弹",
+            "family": "volt",
+            "element": "lightning",
+            "kind": "active",
+            "level": 11,
+            "slot": 2
+          },
+          "19": {
+            "id": 19,
+            "name": "侦察无人机",
+            "family": "drone",
+            "element": "lightning",
+            "kind": "passive",
+            "level": 7,
+            "slot": 0
+          },
+          "23": {
+            "id": 23,
+            "name": "工程修复",
+            "family": "engineering",
+            "element": "ice",
+            "kind": "active",
+            "level": 2,
+            "slot": 3
+          }
+        },
+        "elements": [
+          "lightning",
+          "fire",
+          "lightning",
+          "ice"
+        ],
+        "equipment": [],
+        "mastery_nodes": [],
+        "active_slots": 4,
+        "attacker": {
+          "attack": 400,
+          "crit_permille": 1500,
+          "crit_multiplier_permille": 1500,
+          "reaction_mult_permille": 1300,
+          "element_cap": 8,
+          "reaction_tier": 1,
+          "element_coef_permille": 1300,
+          "heat_cap_permille": 300,
+          "armor_permille": 300,
+          "mechanic_permille": 300
+        }
+      },
+      "expected_hash": "f939171c04328707",
+      "expected_stats": {
+        "kills": 32,
+        "leaked": 0,
+        "score": 16292,
+        "waves": 5,
+        "durationMs": 84350
+      }
+    },
+    {
+      "level_id": 7,
+      "tag": "corrosion",
+      "seed": "1",
+      "card_picks": [
+        1,
+        2,
+        -1,
+        -7,
+        -13
+      ],
+      "build": {
+        "skills": {
+          "16": {
+            "id": 16,
+            "name": "腐蚀弹",
+            "family": "blight",
+            "element": "corrosion",
+            "kind": "active",
+            "level": 4,
+            "slot": 0
+          },
+          "17": {
+            "id": 17,
+            "name": "喷射毒雾",
+            "family": "blight",
+            "element": "corrosion",
+            "kind": "active",
+            "level": 9,
+            "slot": 1
+          },
+          "18": {
+            "id": 18,
+            "name": "液化毒雾",
+            "family": "blight",
+            "element": "corrosion",
+            "kind": "active",
+            "level": 14,
+            "slot": 2
+          },
+          "43": {
+            "id": 43,
+            "name": "毒雾弥漫",
+            "family": "blight",
+            "element": "corrosion",
+            "kind": "active",
+            "level": 20,
+            "slot": 3
+          }
+        },
+        "elements": [
+          "corrosion",
+          "corrosion",
+          "corrosion",
+          "corrosion"
+        ],
+        "equipment": [],
+        "mastery_nodes": [],
+        "active_slots": 4,
+        "attacker": {
+          "attack": 800,
+          "crit_permille": 1500,
+          "crit_multiplier_permille": 1500,
+          "reaction_mult_permille": 1700,
+          "element_cap": 8,
+          "reaction_tier": 2,
+          "element_coef_permille": 1700,
+          "heat_cap_permille": 300,
+          "armor_permille": 700,
+          "mechanic_permille": 100
+        }
+      },
+      "expected_hash": "b30effd26f5917ec",
+      "expected_stats": {
+        "kills": 37,
+        "leaked": 0,
+        "score": 18840,
+        "waves": 5,
+        "durationMs": 107900
+      }
+    },
+    {
+      "level_id": 11,
+      "tag": "lightning",
+      "seed": "-1",
+      "card_picks": [
+        -13,
+        0,
+        1,
+        2,
+        -1,
+        -7
+      ],
+      "build": {
+        "skills": {
+          "7": {
+            "id": 7,
+            "name": "电弧弹",
+            "family": "volt",
+            "element": "lightning",
+            "kind": "active",
+            "level": 6,
+            "slot": 0
+          },
+          "8": {
+            "id": 8,
+            "name": "电磁穿刺",
+            "family": "volt",
+            "element": "lightning",
+            "kind": "active",
+            "level": 13,
+            "slot": 1
+          },
+          "9": {
+            "id": 9,
+            "name": "雷暴链",
+            "family": "volt",
+            "element": "lightning",
+            "kind": "active",
+            "level": 21,
+            "slot": 2
+          },
+          "24": {
+            "id": 24,
+            "name": "电磁栅栏",
+            "family": "engineering",
+            "element": "lightning",
+            "kind": "active",
+            "level": 27,
+            "slot": 3
+          }
+        },
+        "elements": [
+          "lightning",
+          "lightning",
+          "lightning",
+          "lightning"
+        ],
+        "equipment": [],
+        "mastery_nodes": [],
+        "active_slots": 4,
+        "attacker": {
+          "attack": 1200,
+          "crit_permille": 1500,
+          "crit_multiplier_permille": 1500,
+          "reaction_mult_permille": 2100,
+          "element_cap": 8,
+          "reaction_tier": 3,
+          "element_coef_permille": 2100,
+          "heat_cap_permille": 300,
+          "armor_permille": 350,
+          "mechanic_permille": 500
+        }
+      },
+      "expected_hash": "df0f5e4bc693ca47",
+      "expected_stats": {
+        "kills": 39,
+        "leaked": 0,
+        "score": 19868,
+        "waves": 6,
+        "durationMs": 65400
+      }
+    },
+    {
+      "level_id": 15,
+      "tag": "kinetic",
+      "seed": "4611686018427387903",
+      "card_picks": [
+        -1,
+        -7,
+        -13,
+        0,
+        1,
+        2,
+        -1
+      ],
+      "build": {
+        "skills": {
+          "10": {
+            "id": 10,
+            "name": "重炮弹",
+            "family": "kinetic",
+            "element": "kinetic",
+            "kind": "active",
+            "level": 2,
+            "slot": 0
+          },
+          "11": {
+            "id": 11,
+            "name": "破片弹",
+            "family": "kinetic",
+            "element": "kinetic",
+            "kind": "active",
+            "level": 8,
+            "slot": 1
+          },
+          "12": {
+            "id": 12,
+            "name": "攻城锤",
+            "family": "kinetic",
+            "element": "kinetic",
+            "kind": "active",
+            "level": 15,
+            "slot": 2
+          },
+          "13": {
+            "id": 13,
+            "name": "聚焦激光",
+            "family": "light",
+            "element": "kinetic",
+            "kind": "active",
+            "level": 25,
+            "slot": 3
+          }
+        },
+        "elements": [
+          "kinetic",
+          "kinetic",
+          "kinetic",
+          "kinetic"
+        ],
+        "equipment": [],
+        "mastery_nodes": [],
+        "active_slots": 4,
+        "attacker": {
+          "attack": 1600,
+          "crit_permille": 1500,
+          "crit_multiplier_permille": 1500,
+          "reaction_mult_permille": 2500,
+          "element_cap": 8,
+          "reaction_tier": 1,
+          "element_coef_permille": 2500,
+          "heat_cap_permille": 300,
+          "armor_permille": 0,
+          "mechanic_permille": 300
+        }
+      },
+      "expected_hash": "0cb3f87c1afac2a8",
+      "expected_stats": {
+        "kills": 45,
+        "leaked": 0,
+        "score": 23112,
+        "waves": 7,
+        "durationMs": 111550
+      }
+    },
+    {
+      "level_id": 19,
+      "tag": "composite",
+      "seed": "-9223372036854775808",
+      "card_picks": [
+        1,
+        2,
+        -1,
+        -7,
+        -13,
+        0,
+        1
+      ],
+      "build": {
+        "skills": {
+          "31": {
+            "id": 31,
+            "name": "灼热弹幕",
+            "family": "flame",
+            "element": "fire",
+            "kind": "active",
+            "level": 5,
+            "slot": 0
+          },
+          "35": {
+            "id": 35,
+            "name": "绝对零度",
+            "family": "frost",
+            "element": "ice",
+            "kind": "active",
+            "level": 11,
+            "slot": 1
+          },
+          "39": {
+            "id": 39,
+            "name": "破片重弹",
+            "family": "kinetic",
+            "element": "kinetic",
+            "kind": "active",
+            "level": 18,
+            "slot": 2
+          },
+          "43": {
+            "id": 43,
+            "name": "毒雾弥漫",
+            "family": "blight",
+            "element": "corrosion",
+            "kind": "active",
+            "level": 29,
+            "slot": 3
+          }
+        },
+        "elements": [
+          "fire",
+          "ice",
+          "kinetic",
+          "corrosion"
+        ],
+        "equipment": [],
+        "mastery_nodes": [],
+        "active_slots": 4,
+        "attacker": {
+          "attack": 2000,
+          "crit_permille": 1500,
+          "crit_multiplier_permille": 1500,
+          "reaction_mult_permille": 2900,
+          "element_cap": 8,
+          "reaction_tier": 2,
+          "element_coef_permille": 2900,
+          "heat_cap_permille": 300,
+          "armor_permille": 400,
+          "mechanic_permille": 100
+        }
+      },
+      "expected_hash": "91b1dbea250bb931",
+      "expected_stats": {
+        "kills": 49,
+        "leaked": 0,
+        "score": 25313,
+        "waves": 7,
+        "durationMs": 37100
+      }
+    },
+    {
+      "level_id": 23,
+      "tag": "slots5",
+      "seed": "9007199254740993",
+      "card_picks": [
+        -13,
+        0,
+        1,
+        2,
+        -1,
+        -7
+      ],
+      "build": {
+        "skills": {
+          "1": {
+            "id": 1,
+            "name": "燃烧弹",
+            "family": "flame",
+            "element": "fire",
+            "kind": "active",
+            "level": 1,
+            "slot": 0
+          },
+          "2": {
+            "id": 2,
+            "name": "燃油弹",
+            "family": "flame",
+            "element": "fire",
+            "kind": "active",
+            "level": 5,
+            "slot": 1
+          },
+          "4": {
+            "id": 4,
+            "name": "干冰弹",
+            "family": "frost",
+            "element": "ice",
+            "kind": "active",
+            "level": 12,
+            "slot": 2
+          },
+          "7": {
+            "id": 7,
+            "name": "电弧弹",
+            "family": "volt",
+            "element": "lightning",
+            "kind": "active",
+            "level": 30,
+            "slot": 3
+          },
+          "19": {
+            "id": 19,
+            "name": "侦察无人机",
+            "family": "drone",
+            "element": "lightning",
+            "kind": "passive",
+            "level": 7,
+            "slot": 4
+          }
+        },
+        "elements": [
+          "fire",
+          "fire",
+          "ice",
+          "lightning",
+          "lightning"
+        ],
+        "equipment": [],
+        "mastery_nodes": [],
+        "active_slots": 5,
+        "attacker": {
+          "attack": 2400,
+          "crit_permille": 1500,
+          "crit_multiplier_permille": 1500,
+          "reaction_mult_permille": 3300,
+          "element_cap": 8,
+          "reaction_tier": 3,
+          "element_coef_permille": 3300,
+          "heat_cap_permille": 300,
+          "armor_permille": 50,
+          "mechanic_permille": 500
+        }
+      },
+      "expected_hash": "5c4abeb43522184b",
+      "expected_stats": {
+        "kills": 43,
+        "leaked": 0,
+        "score": 22257,
+        "waves": 6,
+        "durationMs": 73950
+      }
+    },
+    {
+      "level_id": 27,
+      "tag": "slots6-mixed",
+      "seed": "-9007199254740993",
+      "card_picks": [
+        -1,
+        -7,
+        -13,
+        0,
+        1,
+        2
+      ],
+      "build": {
+        "skills": {
+          "7": {
+            "id": 7,
+            "name": "电弧弹",
+            "family": "volt",
+            "element": "lightning",
+            "kind": "active",
+            "level": 9,
+            "slot": 1
+          },
+          "10": {
+            "id": 10,
+            "name": "重炮弹",
+            "family": "kinetic",
+            "element": "kinetic",
+            "kind": "active",
+            "level": 15,
+            "slot": 2
+          },
+          "16": {
+            "id": 16,
+            "name": "腐蚀弹",
+            "family": "blight",
+            "element": "corrosion",
+            "kind": "active",
+            "level": 3,
+            "slot": 0
+          },
+          "19": {
+            "id": 19,
+            "name": "侦察无人机",
+            "family": "drone",
+            "element": "lightning",
+            "kind": "passive",
+            "level": 6,
+            "slot": 3
+          },
+          "22": {
+            "id": 22,
+            "name": "阻击工事",
+            "family": "engineering",
+            "element": "kinetic",
+            "kind": "passive",
+            "level": 12,
+            "slot": 4
+          },
+          "31": {
+            "id": 31,
+            "name": "灼热弹幕",
+            "family": "flame",
+            "element": "fire",
+            "kind": "active",
+            "level": 21,
+            "slot": 5
+          }
+        },
+        "elements": [
+          "corrosion",
+          "lightning",
+          "kinetic",
+          "lightning",
+          "kinetic",
+          "fire"
+        ],
+        "equipment": [],
+        "mastery_nodes": [],
+        "active_slots": 6,
+        "attacker": {
+          "attack": 2800,
+          "crit_permille": 1500,
+          "crit_multiplier_permille": 1500,
+          "reaction_mult_permille": 3700,
+          "element_cap": 8,
+          "reaction_tier": 1,
+          "element_coef_permille": 3700,
+          "heat_cap_permille": 300,
+          "armor_permille": 450,
+          "mechanic_permille": 300
+        }
+      },
+      "expected_hash": "b1e13c2e1ba0237a",
+      "expected_stats": {
+        "kills": 39,
+        "leaked": 0,
+        "score": 20076,
+        "waves": 6,
+        "durationMs": 70500
+      }
+    },
+    {
+      "level_id": 31,
+      "tag": "passive-heavy",
+      "seed": "2147483647",
+      "card_picks": [
+        1,
+        2,
+        -1,
+        -7,
+        -13,
+        0,
+        1
+      ],
+      "build": {
+        "skills": {
+          "19": {
+            "id": 19,
+            "name": "侦察无人机",
+            "family": "drone",
+            "element": "lightning",
+            "kind": "passive",
+            "level": 9,
+            "slot": 0
+          },
+          "22": {
+            "id": 22,
+            "name": "阻击工事",
+            "family": "engineering",
+            "element": "kinetic",
+            "kind": "passive",
+            "level": 14,
+            "slot": 1
+          },
+          "23": {
+            "id": 23,
+            "name": "工程修复",
+            "family": "engineering",
+            "element": "ice",
+            "kind": "active",
+            "level": 19,
+            "slot": 2
+          },
+          "35": {
+            "id": 35,
+            "name": "绝对零度",
+            "family": "frost",
+            "element": "ice",
+            "kind": "active",
+            "level": 24,
+            "slot": 3
+          }
+        },
+        "elements": [
+          "lightning",
+          "kinetic",
+          "ice",
+          "ice"
+        ],
+        "equipment": [],
+        "mastery_nodes": [],
+        "active_slots": 4,
+        "attacker": {
+          "attack": 3200,
+          "crit_permille": 1500,
+          "crit_multiplier_permille": 1500,
+          "reaction_mult_permille": 4100,
+          "element_cap": 8,
+          "reaction_tier": 2,
+          "element_coef_permille": 4100,
+          "heat_cap_permille": 300,
+          "armor_permille": 100,
+          "mechanic_permille": 100
+        }
+      },
+      "expected_hash": "43669209b72ca328",
+      "expected_stats": {
+        "kills": 47,
+        "leaked": 3,
+        "score": 24442,
+        "waves": 7,
+        "durationMs": 115050
+      }
+    }
+  ]
+}

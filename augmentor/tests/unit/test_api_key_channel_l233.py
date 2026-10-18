@@ -52,6 +52,8 @@ from tests.unit.test_wired_dropdown_choices_l226 import needs_web_src, strip_com
 from api.deps import API_KEY_ENV, verify_api_key
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
+#: 子项目文档已于 2026-10-14 汇总到仓库根 `docs/augmentor/`；本文件自持这一真源
+DOCS_DIR = ROOT.parent / "docs" / "augmentor"
 SRC = ROOT / "web" / "src"
 API_TS = SRC / "services" / "api.ts"
 SETTINGS_TSX = SRC / "pages" / "Settings.tsx"
@@ -318,7 +320,7 @@ class TestTheHonestProse:
 
     def test_the_docs_no_longer_say_the_frontend_has_no_channel(self):
         stale = []
-        for doc in (ROOT / "docs" / "API.md", ROOT / "README.md"):
+        for doc in (DOCS_DIR / "API.md", ROOT / "README.md"):
             text = doc.read_text(encoding="utf-8")
             stale += [f"{doc.name}:{line.strip()[:60]}" for line in text.splitlines()
                       if "没有送这个头的通道" in line or "前端没有送" in line]

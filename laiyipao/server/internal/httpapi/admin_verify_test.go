@@ -22,6 +22,7 @@ package httpapi
 // 没有 Postgres 时 `newE2E` 会 Skip —— 那一刻断言**未执行**，不是「通过」。
 
 import (
+	"github.com/laiyipao/server/internal/service"
 	"testing"
 )
 
@@ -156,6 +157,20 @@ func TestAdminVerifyDoesNotRecompute(t *testing.T) {
 	e := newE2E(t)
 	_, adminTok := e.newAdmin(t, "admnorecompute")
 	_, tok := e.newPlayer(t, "verfake")
+	// ⚠️ 切到 shadow 档（2026-10-15 整局重算接线后加的）。
+	//
+	// 本用例要造的是「一场 replay_hash 是编造出来的战报」—— 因为它测的是
+	// `/admin/battles/{id}/verify` **不重算、只比对存档里那个哈希**这条局限。
+	// 而整局重算接线后，enforce 档（缺省）会在**结算那一步**就拒掉这个
+	// 编造哈希，用例根本走不到它要验的那段。
+	//
+	// 切 shadow 而不是改断言：那条局限本身仍然成立（那个端点确实不重算），
+	// 我们要保住的是「用一条独立于新链路的证据把它记下来」。
+	// 整局重算恰恰是补上这条局限的新防线，由 service 包的
+	// recompute_engine_test.go 覆盖。
+	if err := e.svc.SetRecomputeMode(service.RecomputeShadow); err != nil {
+		t.Fatalf("切到 shadow 档失败：%v", err)
+	}
 
 	// 造一场 replay_hash 是编造出来的战报（根本没跑过引擎）
 	status, body := e.post(t, "/api/v1/battle/token", tok, map[string]any{"level_id": 1})

@@ -4,7 +4,7 @@ O2OA 后端的 Rust 实现，以认证模块为第一个迁移试点。
 
 ## 开发环境
 
-- Rust 1.75+
+- Rust 1.85+（`Cargo.toml` `[workspace.package] rust-version`）
 - PostgreSQL 14+
 - 推荐使用 `rust-analyzer` 插件
 

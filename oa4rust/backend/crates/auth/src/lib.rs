@@ -472,7 +472,7 @@ pub async fn whoami(
     match row {
         Some(row) => {
             // 字段集对齐 O2OA v9 o2server GET /api/authentication（whoami）实测响应
-            // （plan002 U2 行为对齐，基准见 docs/audits/behavior-compare-first-run.md）。
+            // （plan002 U2 行为对齐，基准见 docs/audits/2026-08-24-001-behavior-compare-first-run.md）。
             let id: String = row.get("id");
             let unique_id: String = row.get("unique_id");
             let name: String = row.get("name");

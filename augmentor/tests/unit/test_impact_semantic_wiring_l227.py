@@ -15,7 +15,7 @@
 **为什么要另建一把尺子而不是扩 l226**：l226 管的是「封闭清单」——`SEARCH_METHODS`、
 `VALIDATION_PRESETS` 在 Python 侧有可 import 的常数，TSX 那份字面量能逐项比。这两条操作
 **没有**这种清单：`text_field` / `text_key` 的合法取值来自数据集本身，SDK 里
-`["instruction", "input", "output"]` 只是 `audit.py:68` 与 `privacy.py:76` 的两处手写字面量
+`["instruction", "input", "output"]` 只是 `audit.py:69` 与 `privacy.py:76` 的两处手写字面量
 （不是常数，引它等于自造一套权威）。所以本文件的权威换了三处来源：
 ① 默认值 → **请求模型的 `model_fields[...].default`**（页面把默认抄进 `useState`，抄的东西会漂）；
 ② 增益键集 → **真实回执里的 `gains` 键**（SDK 产出什么，页面就得说明什么，反向也不许留空话）；

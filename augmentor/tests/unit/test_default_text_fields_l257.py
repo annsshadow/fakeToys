@@ -19,10 +19,12 @@
   `check-leakage` 只比 `instruction` 一格。第 3 面把它们逐一点名，防止「把一切叫 fields
   的东西都并进来」这种假收口。
 
-口径 5 之外还钉了一格**现量不对称**（本轮只核对未修，已立 **A339**）：显式空列表在
-`PiiSanitizer` 那侧是「零字段」的合法意图（L188 改的正是这一刀），在 `DatasetAuditor`
-那侧仍被 `fields or 默认` 读成「没传」而套上三格。本文件把它钉成现量而不是顺手改掉——
-改掉要让空值统计面变窄，属行为变更，待拍。
+口径 5 之外还钉了一格**曾经过不对称**（当时只核对未修，立为 **A339**，修法① 于 L277 收口）：
+显式空列表在 `PiiSanitizer` 那侧是「零字段」的合法意图（L188 改的正是这一刀），在
+`DatasetAuditor` 那侧被 `fields or 默认` 读成「没传」而套上三格。收口后两边共引同一句
+`fields is not None`，两档归宿**仍然**不同——脱敏器交回计数（`touched_items: 0` 在零作用域下
+依然为真），审计器交回判决（零作用域会把「无从检查」报成「就绪」），所以后者当场拒。
+本文件第 3 面把这条分界线钉成断言。
 """
 
 import ast
@@ -33,6 +35,7 @@ import pytest
 
 from augmentor.audit import DatasetAuditor
 from augmentor.cli.parser import build_parser
+from augmentor.exceptions import DataValidationError
 from augmentor.privacy import DEFAULT_TEXT_FIELDS, PiiSanitizer
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
@@ -67,16 +70,17 @@ class TestTheAuthorityIsOneObject:
         assert audit_module.DEFAULT_TEXT_FIELDS is DEFAULT_TEXT_FIELDS
 
     def test_the_two_sdk_sites_read_the_authority_instead_of_a_literal(self):
-        """两处各自的那一句：`audit` 用 `or`、`privacy` 用 `is not None`（这一格不对称是
-        A339 的内容，本面只验「两边都从权威取值」）"""
-        for rel, sentence in (
-            ("augmentor/audit.py", "fields or list(DEFAULT_TEXT_FIELDS)"),
-            ("augmentor/privacy.py",
-             "fields if fields is not None else list(DEFAULT_TEXT_FIELDS)"),
-        ):
+        """两处用的是**同一句**写法：`fields is not None` 才回落默认（A339 修法① 于 L277 收口）
+
+        改前这里是两句不同的话（`audit` 用 `or`、`privacy` 用 `is not None`），那一格不对称
+        就是 A339 立账的内容。现在两边逐字相同，本面因此验「同句」而不是验「各自的形状」。
+        """
+        sentence = "fields if fields is not None else list(DEFAULT_TEXT_FIELDS)"
+        for rel in ("augmentor/audit.py", "augmentor/privacy.py"):
             src = _src(rel)
             assert SDK_USE.search(src), rel
-            assert sentence in src, (rel, sentence)
+            assert src.count(sentence) == 1, rel
+            assert "fields or list(DEFAULT_TEXT_FIELDS)" not in src, rel
 
     def test_privacy_holds_exactly_one_trio_and_it_is_the_definition(self):
         """权威文件里那一遍必须是定义本身，逐行点名落点"""
@@ -119,14 +123,22 @@ class TestRuntimeDefaultsFollowTheAuthority:
         assert PiiSanitizer(fields=["output"]).fields == ["output"]
         assert DatasetAuditor(fields=["output"]).fields == ["output"]
 
-    def test_the_empty_list_is_honest_on_one_face_and_swallowed_on_the_other(self):
-        """A339 的现量：显式空列表在 privacy 侧是合法意图，在 audit 侧仍被 `or` 读成没传
+    def test_the_empty_list_means_no_work_on_the_sanitizer_and_is_refused_by_the_auditor(self):
+        """A339 收口后的两档，分界线是「交回的是判决还是计数」
 
-        本轮**只核对未修**。把这一格钉成断言而不是注释，是为了让「顺手改掉」或「悄悄修好」
-        都必须在 A339 那一行留下账——它现在红着的是行为，不是尺子。
+        - `PiiSanitizer(fields=[])` 仍是零字段（L188 那一刀改的正是这一格）：它交回的是
+          **数据本身与「改了几处」的计数**，`touched_items: 0` 说的是「我什么都没动」，
+          这句话在零作用域下依然为真，不冒充任何结论。
+        - `DatasetAuditor(fields=[])` 当场拒（L277 收的 A339 修法①）：它交回的是
+          **「就绪 / 未就绪」这个判决**，零字段让 PII 与空值两档恒为 0，于是把
+          「无从检查」报成「就绪」——假干净。同一句话在两个面上的代价不同，所以口径也不同。
+
+        把这一格钉成断言而不是注释，是为了让「顺手统一成一边」必须在账上留下理由。
         """
         assert PiiSanitizer(fields=[]).fields == []
-        assert DatasetAuditor(fields=[]).fields == list(DEFAULT_TEXT_FIELDS)
+        with pytest.raises(DataValidationError) as got:
+            DatasetAuditor(fields=[])
+        assert "不能是空清单" in str(got.value)
 
 
 class TestTheCliFaceIsPinnedNotImported:

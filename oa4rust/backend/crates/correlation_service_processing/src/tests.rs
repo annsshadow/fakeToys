@@ -14,6 +14,117 @@ fn build_test_pool() -> Pool {
     Pool::builder(mgr).max_size(1).build().unwrap()
 }
 
+// 以下三把 helper 从 `mod u2_contract` 上提到本模块：
+// 第四轮加门后，legacy 写路由的契约臂（admin 端到端放行 / 非 admin 403）与 u2 契约臂
+// 需要同一套「最小 DDL + 按 is_admin 真实口径造 admin + 带会话层的 Router」，
+// 复制到两处会漂移，故上提；`u2_contract` 通过 `use super::*` 继续引用。
+/// 与 migration 077 等价的幂等 DDL 子集（测试自举，不污染其他用例）
+async fn ensure_schema(pool: &Pool) {
+    let client = pool.get().await.unwrap();
+    client
+        .execute(
+            "CREATE TABLE IF NOT EXISTS x_correlation (
+            id TEXT PRIMARY KEY,
+            create_time TIMESTAMP DEFAULT NOW(),
+            update_time TIMESTAMP DEFAULT NOW(),
+            type TEXT,
+            target_id TEXT,
+            person_id TEXT,
+            from_type TEXT,
+            from_bundle TEXT,
+            target_type TEXT,
+            target_bundle TEXT,
+            person TEXT,
+            site TEXT,
+            view TEXT,
+            target_title TEXT,
+            target_category TEXT,
+            target_start_time TEXT,
+            target_creator_person TEXT
+         )",
+            &[],
+        )
+        .await
+        .unwrap();
+    client
+        .execute(
+            "CREATE TABLE IF NOT EXISTS x_work (
+            id VARCHAR(255) PRIMARY KEY,
+            title VARCHAR(500),
+            creator VARCHAR(255)
+         )",
+            &[],
+        )
+        .await
+        .unwrap();
+    client
+        .execute(
+            "CREATE TABLE IF NOT EXISTS x_review (
+            id VARCHAR(255) PRIMARY KEY,
+            work_id VARCHAR(255),
+            reviewer VARCHAR(255)
+         )",
+            &[],
+        )
+        .await
+        .unwrap();
+    for col in [
+        "from_type TEXT",
+        "from_bundle TEXT",
+        "target_type TEXT",
+        "target_bundle TEXT",
+        "person TEXT",
+        "site TEXT",
+        "view TEXT",
+        "target_title TEXT",
+        "target_category TEXT",
+        "target_start_time TEXT",
+        "target_creator_person TEXT",
+    ] {
+        client
+            .execute(
+                &format!("ALTER TABLE x_correlation ADD COLUMN IF NOT EXISTS {col}"),
+                &[],
+            )
+            .await
+            .unwrap();
+    }
+}
+
+/// 四轮 N-06 后身份关联写族收 admin，契约用例必须以 admin 身份发起（真实路由 + 真实门禁）。
+fn app_with(session: shared::session::Session) -> axum::Router {
+    crate::router(shared::testing::test_pool()).layer(axum::extract::Extension(session))
+}
+
+/// 按 `is_admin` 的真实判定口径幂等造一个 admin（auth_role.name=admin ∧ 未删未禁，
+/// 并经 auth_person_role 关联到该人），返回其会话。
+async fn seed_admin_session() -> shared::session::Session {
+    let client = shared::testing::test_pool().get().await.unwrap();
+    client
+        .execute(
+            "INSERT INTO auth_role (id, name, disable) VALUES ('u2c-role-admin', 'admin', false) ON CONFLICT (id) DO NOTHING",
+            &[],
+        )
+        .await
+        .unwrap();
+    client
+        .execute(
+            "INSERT INTO auth_person (id, unique_id, name, password_hash) VALUES ('u-u2c-admin', 'u-u2c-admin', 'u2c admin', 'x') ON CONFLICT (id) DO NOTHING",
+            &[],
+        )
+        .await
+        .unwrap();
+    client
+        .execute(
+            "INSERT INTO auth_person_role (person_id, role_id, unit_id) VALUES ('u-u2c-admin', 'u2c-role-admin', 'u2c-unit') ON CONFLICT DO NOTHING",
+            &[],
+        )
+        .await
+        .unwrap();
+    shared::testing::test_session("u-u2c-admin")
+}
+
+
 // ── ActionResult format tests ──────────────────────────────────────────────
 
 #[test]
@@ -129,11 +240,16 @@ async fn test_list_links_route_exists() {
     assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
 }
 
+/// 四轮 N-06：`unlink_service` 收 admin 之后，本臂不再断言「匿名打通 = 200」，
+/// 而是注入一个非 admin 会话断言 403——403（而非 404）同时证明两件事：
+/// 路由仍在注册表里可匹配，且门禁排在任何 SQL 之前（池连不上时 `is_admin`
+/// 一律 fail-closed，若门后于 SQL 就会变成 500）。因此本臂不需要真库。
 #[tokio::test]
-#[ignore = "handler requires DB, returns 500 with mock pool"]
 async fn test_unlink_service_route_exists() {
-    let pool = build_test_pool();
-    let app = crate::router(pool);
+    let app = crate::router(build_test_pool())
+        .layer(axum::extract::Extension(shared::testing::test_session(
+            "u-r48-nonadmin-unlink-route",
+        )));
     let response = app
         .oneshot(
             Request::builder()
@@ -144,7 +260,7 @@ async fn test_unlink_service_route_exists() {
         )
         .await
         .unwrap();
-    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(response.status(), StatusCode::FORBIDDEN);
 }
 
 // ── Route existence: all registered routes ─────────────────────────────────
@@ -549,22 +665,57 @@ async fn test_link_service_empty_body() {
     assert_eq!(response.status(), StatusCode::BAD_REQUEST);
 }
 
+/// DB 臂：加门之后 admin 侧仍必须走得通。判据不看状态码——`unlink_service`
+/// 未命中行时也返回 200（`ActionResult::error`），所以先经 SQL 建一行、
+/// 再用 admin 会话打真路由，最后数行：只有行数从 1 变 0 才证明放行侧没被门夹死。
 #[tokio::test]
-#[ignore = "handler requires DB, returns 500 with mock pool"]
+#[ignore = "requires a running PostgreSQL server"]
 async fn test_unlink_service_route_ok() {
-    let pool = build_test_pool();
-    let app = crate::router(pool);
-    let response = app
+    if !shared::testing::is_db_available().await {
+        eprintln!("skip: test_unlink_service_route_ok (no DATABASE_URL)");
+        return;
+    }
+    let pool = shared::testing::test_pool();
+    ensure_schema(&pool).await;
+    let admin = seed_admin_session().await;
+    let tag = uuid::Uuid::new_v4().simple().to_string();
+    let person = format!("r48-unlink-{tag}");
+    let target = format!("r48-out-{tag}");
+    {
+        let c = pool.get().await.unwrap();
+        c.execute(
+            "INSERT INTO x_correlation (id, type, person_id, target_id) \
+             VALUES ($1, 'type1', $2, $3)",
+            &[&tag, &person, &target],
+        )
+        .await
+        .unwrap();
+    }
+    let uri = format!(
+        "/api/correlation/service/processing/unlink/type1/{}/type2/{}",
+        person, target
+    );
+    let response = app_with(admin)
         .oneshot(
             Request::builder()
-                .uri("/api/correlation/service/processing/unlink/type1/id1/type2/id2")
+                .uri(&uri)
                 .method(Method::POST)
                 .body(Body::empty())
                 .unwrap(),
         )
         .await
         .unwrap();
-    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(response.status(), StatusCode::OK, "admin 解除关联应放行");
+    let c = pool.get().await.unwrap();
+    let n: i64 = c
+        .query_one(
+            "SELECT COUNT(*) AS c FROM x_correlation WHERE id = $1",
+            &[&tag],
+        )
+        .await
+        .unwrap()
+        .get("c");
+    assert_eq!(n, 0, "放行臂必须真的删掉那一行，否则 200 只是空转");
 }
 
 // ── Router build test ───────────────────────────────────────────────────────
@@ -589,79 +740,6 @@ mod u2_contract {
     use super::*;
     use crate::u2;
     use shared::testing::test_pool;
-
-    /// 与 migration 077 等价的幂等 DDL 子集（测试自举，不污染其他用例）
-    async fn ensure_schema(pool: &Pool) {
-        let client = pool.get().await.unwrap();
-        client
-            .execute(
-                "CREATE TABLE IF NOT EXISTS x_correlation (
-                id TEXT PRIMARY KEY,
-                create_time TIMESTAMP DEFAULT NOW(),
-                update_time TIMESTAMP DEFAULT NOW(),
-                type TEXT,
-                target_id TEXT,
-                person_id TEXT,
-                from_type TEXT,
-                from_bundle TEXT,
-                target_type TEXT,
-                target_bundle TEXT,
-                person TEXT,
-                site TEXT,
-                view TEXT,
-                target_title TEXT,
-                target_category TEXT,
-                target_start_time TEXT,
-                target_creator_person TEXT
-             )",
-                &[],
-            )
-            .await
-            .unwrap();
-        client
-            .execute(
-                "CREATE TABLE IF NOT EXISTS x_work (
-                id VARCHAR(255) PRIMARY KEY,
-                title VARCHAR(500),
-                creator VARCHAR(255)
-             )",
-                &[],
-            )
-            .await
-            .unwrap();
-        client
-            .execute(
-                "CREATE TABLE IF NOT EXISTS x_review (
-                id VARCHAR(255) PRIMARY KEY,
-                work_id VARCHAR(255),
-                reviewer VARCHAR(255)
-             )",
-                &[],
-            )
-            .await
-            .unwrap();
-        for col in [
-            "from_type TEXT",
-            "from_bundle TEXT",
-            "target_type TEXT",
-            "target_bundle TEXT",
-            "person TEXT",
-            "site TEXT",
-            "view TEXT",
-            "target_title TEXT",
-            "target_category TEXT",
-            "target_start_time TEXT",
-            "target_creator_person TEXT",
-        ] {
-            client
-                .execute(
-                    &format!("ALTER TABLE x_correlation ADD COLUMN IF NOT EXISTS {col}"),
-                    &[],
-                )
-                .await
-                .unwrap();
-        }
-    }
 
     fn app() -> axum::Router {
         crate::router(test_pool())
@@ -695,6 +773,7 @@ mod u2_contract {
             .await
             .unwrap();
         }
+        let admin = seed_admin_session().await;
         let body = serde_json::json!({
             "person": "person-a@P",
             "targetList": [
@@ -703,7 +782,7 @@ mod u2_contract {
             ]
         });
         for _ in 0..2 {
-            let response = app()
+            let response = app_with(admin.clone())
                 .oneshot(
                     Request::builder()
                         .uri("/api/correlation/service/processing/correlation/type/processplatform/job/job-1")
@@ -755,7 +834,7 @@ mod u2_contract {
                 {"type": "unknown-type", "bundle": "x"}
             ]
         });
-        let response = app()
+        let response = app_with(seed_admin_session().await)
             .oneshot(
                 Request::builder()
                     .uri("/api/correlation/service/processing/correlation/type/processplatform/job/job-2")
@@ -793,7 +872,7 @@ mod u2_contract {
         }
         let body = serde_json::json!({"idList": ["row-x"]});
         // job-1 与 row-x 的 from_bundle=job-other 不匹配 → 必须拒绝而非静默删除
-        let response = app()
+        let response = app_with(seed_admin_session().await)
             .oneshot(
                 Request::builder()
                     .uri("/api/correlation/service/processing/correlation/delete/type/processplatform/job/job-1")
@@ -942,7 +1021,7 @@ mod u2_contract {
                 {"site": "sx", "targetList": [{"type": "cms", "bundle": "t-new"}]}
             ]
         });
-        let response = app()
+        let response = app_with(seed_admin_session().await)
             .oneshot(
                 Request::builder()
                     .uri("/api/correlation/service/processing/correlation/update/type/cms/document/doc-u")

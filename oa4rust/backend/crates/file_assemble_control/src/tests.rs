@@ -196,11 +196,12 @@ mod tests {
     #[tokio::test]
     async fn test_get_control_config_returns_success() {
         let results = MockControlClient::single_row(vec![
-            ("enabled", Value::Bool(true)),
+            // round4-b77：enabled/max_upload_size 实为 TEXT 列，handler 按字符串解析，mock 同步。
+            ("enabled", Value::String("true".to_string())),
             ("default_storage", Value::String("local".to_string())),
             (
                 "max_upload_size",
-                Value::Number(serde_json::Number::from(104857600_i64)),
+                Value::String("104857600".to_string()),
             ),
         ]);
         let pool = mock_control_pool(results);
@@ -241,16 +242,34 @@ mod tests {
 
     #[tokio::test]
     async fn test_update_control_config_returns_success() {
+        // round4-b77：update_control_config 已收 admin 门（全局配置写属管理面）。
+        // 离线环境下无法产出 admin（is_admin 需真库），原"mock 写通道成功"臂
+        // 迁移至 security_gate_tests_b77 的真库 #[ignore] 臂；
+        // 本臂改验门禁契约：mock 写通道 + 死池（is_admin fail-closed）+ 非 admin → 403。
         let results = MockControlClient::count(1);
         let pool = mock_control_pool(results);
 
+        // 死池：is_admin 查不到即 fail-closed → 非 admin 会话必须 403（离线可证）。
+        let dead = {
+            let mgr = deadpool_postgres::Manager::new(
+                deadpool_postgres::tokio_postgres::Config::new(),
+                deadpool_postgres::tokio_postgres::NoTls,
+            );
+            deadpool_postgres::Pool::builder(mgr).max_size(1).build().unwrap()
+        };
+
         let body = axum::extract::Json(serde_json::json!({"enabled": false}));
-        let result = update_control_config(Extension(pool), body).await.unwrap();
-        let action: ActionResult<serde_json::Value> = result.0;
-        assert_eq!(action.r#type, Some("success".to_string()));
-        assert!(action.data.is_some());
-        let data = action.data.unwrap();
-        assert_eq!(data.get("updated"), Some(&Value::Bool(true)));
+        let result = update_control_config(
+            Extension(pool),
+            Extension(dead),
+            Some(Extension(shared::testing::test_session("b77-nonadmin"))),
+            body,
+        )
+        .await;
+        assert!(
+            matches!(result, Err(shared::error::AppError::Forbidden)),
+            "非 admin 会话调用 update_control_config 必须 403（is_admin fail-closed）"
+        );
     }
 
     #[ignore = "requires a running PostgreSQL server"]
@@ -539,6 +558,84 @@ mod tests {
         let xml = r#"<w:document><w:body><w:tbl><w:tr><w:tc><w:p><w:r><w:t>x</w:t></w:r></w:p></w:tc></w:tr></w:tbl></w:body></w:document>"#;
         let bytes = build_docx(xml);
         assert!(crate::docx_to_html(&bytes).is_none());
+    }
+
+    /// 四轮安全审计 N1 回归：段落数上限必须生效且恰好输出 `DOCX_MAX_PARAGRAPHS` 个，
+    /// 超出的段落不得渲染（无上限时百 MB 级输入会产出行数无界的 HTML）。
+    #[test]
+    fn test_docx_to_html_caps_paragraph_count() {
+        let mut xml = String::from("<w:document><w:body>");
+        for i in 0..(crate::DOCX_MAX_PARAGRAPHS + 50) {
+            xml.push_str(&format!("<w:p><w:r><w:t>P{i}</w:t></w:r></w:p>"));
+        }
+        xml.push_str("</w:body></w:document>");
+        let html = crate::docx_to_html(&build_docx(&xml)).expect("docx should parse");
+        assert_eq!(
+            html.matches("<p>").count(),
+            crate::DOCX_MAX_PARAGRAPHS,
+            "段落数必须恰好截断在上限"
+        );
+        assert!(html.contains("<p>P0</p>"));
+        assert!(
+            !html.contains(&format!("<p>P{}</p>", crate::DOCX_MAX_PARAGRAPHS)),
+            "上限之后的段落不得输出"
+        );
+    }
+
+    /// 四轮安全审计 N1 回归：zip 炸弹（高压缩比 document.xml）不得让解压结果
+    /// 超出 `DOCX_MAX_XML_BYTES`。断言方式是「输出规模有界」——HTML 段落数仍受
+    /// 段落上限约束、体积不随解压字节线性膨胀，且全程不 panic。
+    #[test]
+    fn test_docx_to_html_caps_decompressed_size() {
+        // ~8 MiB 纯 ASCII XML（远超 4 MiB 读取上限），压缩后体量极小
+        let filler = "A".repeat(2000);
+        let mut xml = String::with_capacity(9 * 1024 * 1024);
+        xml.push_str("<w:document><w:body>");
+        for _ in 0..5000 {
+            xml.push_str("<w:p><w:r><w:t>");
+            xml.push_str(&filler);
+            xml.push_str("</w:t></w:r></w:p>");
+        }
+        xml.push_str("</w:body></w:document>");
+        assert!(xml.len() > crate::DOCX_MAX_XML_BYTES as usize * 2);
+        let bytes = build_docx(&xml);
+        let html = crate::docx_to_html(&bytes).expect("bounded read should still parse");
+        assert_eq!(
+            html.matches("<p>").count(),
+            crate::DOCX_MAX_PARAGRAPHS,
+            "zip 炸弹下段落数仍受上限约束"
+        );
+        assert!(
+            html.len() <= (crate::DOCX_MAX_PARAGRAPHS + 1) * (filler.len() + 8),
+            "HTML 输出规模必须有界，got {}",
+            html.len()
+        );
+    }
+
+    /// 四轮安全审计 N4-01 回归：`read_zip_entry`（XLSX sharedStrings / PPTX 每张 slide
+    /// 都经它）必须有解压字节上限。`XLSX_MAX_ROWS` / `PPTX_MAX_SLIDES` 只限制解压后的
+    /// 输出规模，不限制驻留内存，故上限只能落在本函数。
+    #[test]
+    fn test_read_zip_entry_caps_decompressed_size() {
+        use std::io::Write;
+        let payload = "B".repeat(9 * 1024 * 1024);
+        let mut buf = std::io::Cursor::new(Vec::new());
+        {
+            let mut zip = zip::ZipWriter::new(&mut buf);
+            zip.start_file(
+                "xl/sharedStrings.xml",
+                zip::write::SimpleFileOptions::default(),
+            )
+            .unwrap();
+            zip.write_all(payload.as_bytes()).unwrap();
+            zip.finish().unwrap();
+        }
+        let bytes = buf.into_inner();
+        let mut archive = zip::ZipArchive::new(std::io::Cursor::new(bytes.as_slice())).unwrap();
+        let s = crate::read_zip_entry(&mut archive, "xl/sharedStrings.xml")
+            .expect("entry should read");
+        assert_eq!(s.len(), crate::ZIP_ENTRY_MAX_BYTES as usize, "必须截断在上限");
+        assert!(s.len() < payload.len(), "解压结果不得等于源条目大小");
     }
 
     #[ignore = "requires a running PostgreSQL server"]
@@ -939,5 +1036,219 @@ mod office_preview_tests {
         )
         .await
         .unwrap();
+    }
+
+    // 回归（四轮审计 GET 写面队列 · file_assemble_control 2 把）：
+    // file_clean_unused_.../manage（批量删 FILE_FILE，收 admin 门）与
+    // file_copy_attachment_...（复制附件新建行，收归属门）。
+    #[tokio::test]
+    async fn test_file_get_writes_owner_admin_gate() {
+        use axum::extract::Extension;
+        // 无会话离线臂：两把全 401（先于读库）。
+        let dead = {
+            let mgr = deadpool_postgres::Manager::new(
+                deadpool_postgres::tokio_postgres::Config::new(),
+                deadpool_postgres::tokio_postgres::NoTls,
+            );
+            deadpool_postgres::Pool::builder(mgr).max_size(1).build().unwrap()
+        };
+        assert!(
+            matches!(
+                crate::file_clean_unused_referencetype_cmsdocument_manage(
+                    Extension(dead.clone()),
+                    None
+                )
+                .await,
+                Err(shared::error::AppError::Unauthorized)
+            ),
+            "clean_unused 无会话必须 401"
+        );
+        assert!(
+            matches!(
+                crate::file_copy_attachment_attachmentId_referencetype_referenceType_reference_reference_scale_scale(
+                    Extension(dead.clone()),
+                    None,
+                    axum::extract::Path(("f".to_string(), "doc".to_string(), "r".to_string(), "1".to_string()))
+                )
+                .await,
+                Err(shared::error::AppError::Unauthorized)
+            ),
+            "copy_attachment 无会话必须 401"
+        );
+
+        if !shared::testing::is_db_available().await {
+            eprintln!(
+                "skipping test_file_get_writes_owner_admin_gate(real-db arm): DATABASE_URL not reachable"
+            );
+            return;
+        }
+        let pool = shared::testing::test_pool();
+        const OWNER: &str = "file-gate-owner";
+        const OTHER: &str = "file-gate-other";
+        const ADMIN: &str = "file-gate-admin";
+        const ROLE: &str = "file-gate-role-admin";
+        let sess = |p: &str| Some(Extension(shared::testing::test_session(p)));
+        let copy_path = |refid: &str| {
+            axum::extract::Path((
+                "file-gate-src".to_string(),
+                "doc".to_string(),
+                refid.to_string(),
+                "1".to_string(),
+            ))
+        };
+
+        // 造 admin + 归属文件行（clean 行 reference_type=cmsdocument_manage，src 行 doc）。
+        {
+            let c = pool.get().await.unwrap();
+            c.execute(
+                "INSERT INTO auth_role (id, name, disable) VALUES ($1,'admin',false) \
+                 ON CONFLICT (id) DO UPDATE SET name='admin', disable=false",
+                &[&ROLE.to_string()],
+            )
+            .await
+            .unwrap();
+            c.execute(
+                "INSERT INTO auth_person (id, unique_id, name, password_hash) \
+                 VALUES ($1,$1,'file gate admin','x') ON CONFLICT (id) DO NOTHING",
+                &[&ADMIN.to_string()],
+            )
+            .await
+            .unwrap();
+            c.execute(
+                "INSERT INTO auth_person_role (person_id, role_id, unit_id) \
+                 VALUES ($1,$2,'file-gate-unit') ON CONFLICT DO NOTHING",
+                &[&ADMIN.to_string(), &ROLE.to_string()],
+            )
+            .await
+            .unwrap();
+            c.execute(
+                "INSERT INTO file_file (id, name, person, reference_id, reference_type, create_time) \
+                 VALUES ('file-gate-clean','f',$1,'ref-clean','cmsdocument_manage',NOW()) \
+                 ON CONFLICT (id) DO NOTHING",
+                &[&OWNER.to_string()],
+            )
+            .await
+            .unwrap();
+            c.execute(
+                "INSERT INTO file_file (id, name, person, reference_id, reference_type, create_time) \
+                 VALUES ('file-gate-src','f',$1,'ref-src','doc',NOW()) \
+                 ON CONFLICT (id) DO NOTHING",
+                &[&OWNER.to_string()],
+            )
+            .await
+            .unwrap();
+        }
+
+        // 非 admin → clean_unused 403 且不落笔；非属主 → copy 403 且不建行。
+        assert!(
+            matches!(
+                crate::file_clean_unused_referencetype_cmsdocument_manage(
+                    Extension(pool.clone()),
+                    sess(OTHER)
+                )
+                .await,
+                Err(shared::error::AppError::Forbidden)
+            ),
+            "clean_unused 非 admin 必须 403"
+        );
+        assert!(
+            matches!(
+                crate::file_copy_attachment_attachmentId_referencetype_referenceType_reference_reference_scale_scale(
+                    Extension(pool.clone()),
+                    sess(OTHER),
+                    copy_path("ref-other")
+                )
+                .await,
+                Err(shared::error::AppError::Forbidden)
+            ),
+            "copy 他人附件必须 403"
+        );
+        {
+            let c = pool.get().await.unwrap();
+            let n: i64 = c
+                .query_one("SELECT COUNT(*) FROM file_file WHERE id='file-gate-clean'", &[])
+                .await
+                .unwrap()
+                .get(0);
+            assert_eq!(n, 1, "非 admin 403 侧不得删 clean 行");
+            let m: i64 = c
+                .query_one("SELECT COUNT(*) FROM file_file WHERE reference_id='ref-other'", &[])
+                .await
+                .unwrap()
+                .get(0);
+            assert_eq!(m, 0, "非属主 403 侧不得建复制行");
+        }
+
+        // 属主放行：copy 附件成功，新建一行（reference_id=ref-owner）。
+        assert!(
+            crate::file_copy_attachment_attachmentId_referencetype_referenceType_reference_reference_scale_scale(
+                Extension(pool.clone()),
+                sess(OWNER),
+                copy_path("ref-owner")
+            )
+            .await
+            .is_ok(),
+            "属主 copy 应放行"
+        );
+
+        // admin 放行：clean_unused 删掉 cmsdocument_manage 行；admin 也能 copy（admin 旁路）。
+        assert!(
+            crate::file_clean_unused_referencetype_cmsdocument_manage(
+                Extension(pool.clone()),
+                sess(ADMIN)
+            )
+            .await
+            .is_ok(),
+            "admin clean_unused 应放行"
+        );
+        assert!(
+            crate::file_copy_attachment_attachmentId_referencetype_referenceType_reference_reference_scale_scale(
+                Extension(pool.clone()),
+                sess(ADMIN),
+                copy_path("ref-admin")
+            )
+            .await
+            .is_ok(),
+            "admin copy 应放行（admin 旁路）"
+        );
+        {
+            let c = pool.get().await.unwrap();
+            let n: i64 = c
+                .query_one("SELECT COUNT(*) FROM file_file WHERE id='file-gate-clean'", &[])
+                .await
+                .unwrap()
+                .get(0);
+            assert_eq!(n, 0, "admin clean_unused 应删掉 cmsdocument_manage 行");
+            let o: i64 = c
+                .query_one("SELECT COUNT(*) FROM file_file WHERE reference_id='ref-owner'", &[])
+                .await
+                .unwrap()
+                .get(0);
+            let a: i64 = c
+                .query_one("SELECT COUNT(*) FROM file_file WHERE reference_id='ref-admin'", &[])
+                .await
+                .unwrap()
+                .get(0);
+            assert_eq!(o, 1, "属主 copy 应新建 1 行");
+            assert_eq!(a, 1, "admin copy 应新建 1 行");
+        }
+
+        // 收口：清造数与复制行，零残留。
+        let c = pool.get().await.unwrap();
+        c.execute(
+            "DELETE FROM file_file WHERE id LIKE 'file-gate-%' OR reference_id IN ('ref-owner','ref-admin')",
+            &[],
+        )
+        .await
+        .unwrap();
+        c.execute("DELETE FROM auth_person_role WHERE person_id=$1", &[&ADMIN.to_string()])
+            .await
+            .unwrap();
+        c.execute("DELETE FROM auth_person WHERE id=$1", &[&ADMIN.to_string()])
+            .await
+            .unwrap();
+        c.execute("DELETE FROM auth_role WHERE id=$1", &[&ROLE.to_string()])
+            .await
+            .unwrap();
     }
 }

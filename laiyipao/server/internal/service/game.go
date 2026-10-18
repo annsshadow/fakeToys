@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -141,7 +142,7 @@ func (s *Service) StartBattle(ctx context.Context, userID int64, levelID int) (B
 	// 实测证明**任何倍率都不生效**：漏怪伤害以 `baseHpMax` 为分母
 	// （`engine.ts` 的 `baseHpMax / LeakDamageDivisor`），血量与漏怪伤害
 	// 同步放大，比值不变，见 domain/revive.go 文件头与
-	// `miniapp/src/game/revive_bonus_is_inert.test.ts`。
+	// README 已知边界第 16 条（实测 100 关 0 关翻盘）。
 	//
 	// 现在改为下发**额外当前血量**：它加在 `baseHp` 上而**不动 `baseHpMax`**，
 	// 这才是「多扛 N 次漏怪」。
@@ -254,6 +255,21 @@ func (s *Service) SettleBattle(ctx context.Context, userID, tokenID int64, in do
 	//
 	// ⚠️ 空串**放行**：老客户端不上报这个字段，直接拒会把它们全部锁死。
 	// 「没上报」与「上报了但不对」要分开 —— 后者才是作弊。
+	//
+	// ── 2026-10-14 轮：这条校验改由 RecomputeGate 统一裁决 ──
+	//
+	// 它是**目前唯一一条已经在跑的「服务端重算」**（整局引擎尚未移植），
+	// 所以把它放到闸门下面有两个作用：
+	//
+	//  1. 闸门从第一天起就有**真实流量**与**真实台账**，
+	//     而不是一段要等引擎上线才第一次被执行的新代码 ——
+	//     「上线才第一次跑」的观测代码几乎必然带着 bug。
+	//  2. 整局引擎接进来时沿用同一条路径、同一个台账、
+	//     同一套熔断，不必再设计一次「怎么灰度」。
+	//
+	// 代价要说清楚：**off 档下这条校验不再拒绝任何人**。
+	// 那是刻意的（关掉即恢复旧行为），但必须可发现 ——
+	// 所以模式会进启动日志。
 	if in.ReplaySkills != "" {
 		expect, err := s.replaySkillsSegment(ctx, userID)
 		if err != nil {
@@ -262,9 +278,40 @@ func (s *Service) SettleBattle(ctx context.Context, userID, tokenID int64, in do
 		if in.ReplaySkills != expect {
 			// ⚠️ 用 %q 而不是 %s：这两个串可能含大量数字，直接打出来会
 			// 让人在日志里一眼扫过去 —— 而这正是排查这类问题最需要看清的东西。
-			return SettleResp{}, fmt.Errorf(
+			mismatch := fmt.Errorf(
 				"%w：replay_skills 与构筑不符\n上报 %q\n重算 %q",
 				ErrReplaySkillsMismatch, in.ReplaySkills, expect)
+			// 台账先行：它是这条路径**唯一**的长期证据。
+			//
+			// ⚠️ battle_id 记 0 —— 这条拒绝发生在写战报**之前**，
+			// 所以还没有战报 id。0 是「无战报」的哨兵，不是某条战报。
+			// 之所以此刻就要记：这是「上报被拒」唯一留痕的地方，
+			// 而此前运营**完全看不到**有谁在被这条校验挡住 ——
+			// 一个被反复误伤的老客户端会表现为「玩家说领不到奖励，
+			// 服务端日志里只有一条 422，没有任何可查的记录」。
+			mode, enforce := s.recomputeVerdict(ctx, ScopeSkills)
+			s.RecordRecompute(ctx, RecomputeRecord{
+				BattleID:           0,
+				UserID:             userID,
+				LevelID:            tok.LevelID,
+				ReportedScore:      in.Score,
+				ReportedKills:      in.Kills,
+				ReportedDurationMs: in.DurationMs,
+				ReportedHash:       in.ReplayHash,
+				MismatchedFields:   []string{"replay_skills"},
+				Mode:               mode,
+				Rejected:           enforce,
+				EngineVersion:      RecomputeEngineVersionSkillsOnly,
+			})
+			if enforce {
+				return SettleResp{}, mismatch
+			}
+			// 非 enforce 档（off / shadow / 熔断后）：只记录，继续正常发奖。
+			// 必须同时留一行服务端日志 —— 否则「台账里有不符但结算成功」
+			// 这件事只有主动查台账的人看得见。
+			fmt.Fprintf(os.Stderr,
+				"[recompute] replay_skills 不符但未拒发（mode=%s, user=%d, level=%d）\n",
+				mode, userID, tok.LevelID)
 		}
 	}
 
@@ -319,6 +366,20 @@ func (s *Service) SettleBattle(ctx context.Context, userID, tokenID int64, in do
 	buildRaw, _ := marshalJSON(buildSnapshot)
 	lootRaw, _ := marshalJSON(res.Loot)
 
+	// ── 整局引擎重算（R1，第 87 轮）──
+	//
+	// 位置在**事务之前**，与上面那段 S 段校验同一个理由：
+	// 拒绝发生时还没有战报 id，台账里记 battle_id = 0。
+	// 放进事务里会让「拒绝」也要开一个事务去写台账，
+	// 而台账写入本来就该独立于被拒的那次结算。
+	//
+	// 传 buildRaw（JSON 原文）而不是 buildSnapshot（map）——
+	// 那条路径保证了两端的字段名/类型/缺省值逐字一致，
+	// 而 map → struct 的手工转换会在每个字段上多一个出错点。
+	if err := s.recomputeEngine(ctx, userID, tok, gl, buildRaw, in); err != nil {
+		return SettleResp{}, err
+	}
+
 	// 第 143 轮：本局通关时的战力，写进 level_stars.min_power_clear（效率榜 L-2）。
 	// 修前 upsert 恒写 0 且 ON CONFLICT 不更新 → 效率榜 `WHERE min_power_clear > 0`
 	// 恒零行，整个榜单自出生起就是死代码。只在胜利时记 —— 失败局保持 0，
@@ -331,8 +392,16 @@ func (s *Service) SettleBattle(ctx context.Context, userID, tokenID int64, in do
 	resp := SettleResp{}
 	err = s.DB.Tx(ctx, func(tx pgx.Tx) error {
 		// 1) 抢占 token：条件更新保证并发下只有一个请求能成功
+		//
+		// ⚠️ 带 `AND user_id = $2` 不改变幂等语义，但把归属钉进语句自己：
+		// 上面 `FROM battle_tokens WHERE id = $1 AND user_id = $2` 已经
+		// 取过归属并校验过 level/过期，所以此处**不是**可利用的越权。
+		// 写成只有 `id` 的形式则是「调用点保证、语句不保证」—— 与本轮
+		// 修的 gems.go / defenses 三处同型。归属守卫（
+		// ownership_scan_test.go）覆盖 UPDATE 之后会盯着这里。
 		tag, err := tx.Exec(ctx,
-			`UPDATE battle_tokens SET used_at = now() WHERE id = $1 AND used_at IS NULL`, tokenID)
+			`UPDATE battle_tokens SET used_at = now() WHERE id = $1 AND user_id = $2 AND used_at IS NULL`,
+			tokenID, userID)
 		if err != nil {
 			return fmt.Errorf("claim token: %w", err)
 		}
@@ -393,7 +462,7 @@ func (s *Service) SettleBattle(ctx context.Context, userID, tokenID int64, in do
 			"clears":    int64(boolToInt(res.Win)),
 			"reactions": int64(in.Reactions),
 			"max_stage": int64(gl.ID),
-		}, time.Now()); err != nil {
+		}, nowFunc()); err != nil {
 			return err
 		}
 
@@ -722,7 +791,7 @@ type TaskView struct {
 
 // LoadTasks 返回指定周期的任务列表。
 func (s *Service) LoadTasks(ctx context.Context, userID int64, scope string) ([]TaskView, error) {
-	day := periodStart(time.Now(), scope)
+	day := periodStart(nowFunc(), scope)
 	rows, err := s.pool.Query(ctx, `
 		SELECT t.id, t.code, t.name, t.scope, t.target, t.metric, t.reward,
 		       COALESCE(ut.progress, 0), ut.claimed_at IS NOT NULL
@@ -882,7 +951,7 @@ func (s *Service) ClaimTask(ctx context.Context, userID int64, taskID int) (map[
 		if err != nil {
 			return err
 		}
-		day := periodStart(time.Now(), scope)
+		day := periodStart(nowFunc(), scope)
 
 		// 第二步：玩家在本周期的进度。
 		// 没有行 = 还没开始做（progress 0，未领取）——
@@ -1000,6 +1069,16 @@ func ValidTaskScope(scope string) bool {
 	}
 	return false
 }
+
+// nowFunc 是服务端「当前时间」的唯一来源。
+//
+// 默认是 time.Now，生产行为与此前完全一致。
+// 测试可以通过覆盖它来固定时钟（例如把周一的边界条件变成可重复的场景），
+// 而不必改任何业务函数的签名 —— 这是「可测性」的最小侵入点。
+//
+// ⚠️ 只有任务周期相关的路径使用它（LoadTasks / ClaimTask / bumpTasks / SettleBattle），
+// 其余路径继续直接 time.Now()，避免把时钟依赖扩散到整个包。
+var nowFunc = time.Now
 
 func periodStart(t time.Time, scope string) time.Time {
 	// ⚠️ 这里的 case 必须覆盖 `TaskScopes` 的每一项。

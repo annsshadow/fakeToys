@@ -62,7 +62,7 @@ class ModelBackend(ABC):
     # 退避计算的等待上限（秒），防止指数退避无界增长。**只管退避计算那一支**：
     # 服务端给出 `Retry-After` 时改由 `with_retries` 的 `max_retry_wait` 封顶（默认
     # `retry.MAX_RETRY_AFTER` = 300 s），本常数参不到场（两副封顶为何故意不相犯，
-    # 见 docs/ARCHITECTURE.md §3.22）。
+    # 见 docs/augmentor/ARCHITECTURE.md §3.22）。
     # 抖动默认 0 ⇒ 30 s 在本层是硬上限；`compute_delay` 的抖动加在夹逼**之后**，
     # 所以 `augmentation.retry_jitter` 一旦配了非 0 值，这一支的最坏等待就变成
     # `本常数 × (1 + jitter)`（默认档 0.5 即 45 s）。
@@ -244,7 +244,7 @@ class ModelBackend(ABC):
                         # POST，而本仓库 5 个后端一律用 POST，所以原先挂上去的那副
                         # 从未生效过一次，只会让人误以为存在第二层重试；实测数字、
                         # 以及 10/20 这两个数与 requests 默认值的关系，见
-                        # docs/ARCHITECTURE.md §3.21。
+                        # docs/augmentor/ARCHITECTURE.md §3.21。
                         adapter = HTTPAdapter(
                             pool_connections=10,
                             pool_maxsize=20

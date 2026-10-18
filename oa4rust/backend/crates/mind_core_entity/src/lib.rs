@@ -18,6 +18,18 @@ pub mod routes;
 
 use entities::{mind_folder, mind_mind, mind_version};
 
+/// 安全审计（round4-b81）：mind 实体 7 把 sea_orm CRUD 真写收"会话存在档"门禁。
+/// 无会话（Option<Extension<Session>> = None）→ 401，门置于首个 DB 访问
+/// （`ActiveModel::insert/update/delete` / `Entity::find_by_id().one()`）之前，
+/// 杜绝匿名写 mind_mind / mind_folder / mind_version。这些是 sea_orm ORM 写，
+/// 审计尺子"含写"指标不可见（ORM-blindness，§五 尺子缺陷 28），R7 降但含写
+/// 不变属预期。
+fn require_session(
+    session: Option<Extension<shared::session::Session>>,
+) -> Result<shared::session::Session, AppError> {
+    session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
+}
+
 fn build_json_object(pairs: &[(&str, Option<Value>)]) -> Value {
     let mut map = Map::new();
     for (key, value) in pairs {
@@ -169,8 +181,10 @@ pub async fn version_list(
 #[allow(non_snake_case)]
 pub async fn create_mind(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     use mind_mind::ActiveModel;
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -218,9 +232,11 @@ pub async fn create_mind(
 #[allow(non_snake_case)]
 pub async fn update_mind(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     use mind_mind::ActiveModel;
 
     let model = mind_mind::Entity::find_by_id(id.clone())
@@ -267,8 +283,10 @@ pub async fn update_mind(
 #[allow(non_snake_case)]
 pub async fn delete_mind(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let deleted = mind_mind::Entity::delete_by_id(id.clone())
         .exec(&db.0)
         .await
@@ -293,8 +311,10 @@ pub async fn delete_mind(
 #[allow(non_snake_case)]
 pub async fn create_folder(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     use mind_folder::ActiveModel;
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -348,9 +368,11 @@ pub async fn create_folder(
 #[allow(non_snake_case)]
 pub async fn update_folder(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     use mind_folder::ActiveModel;
 
     let model = mind_folder::Entity::find_by_id(id.clone())
@@ -408,8 +430,10 @@ pub async fn update_folder(
 #[allow(non_snake_case)]
 pub async fn delete_folder(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let deleted = mind_folder::Entity::delete_by_id(id.clone())
         .exec(&db.0)
         .await
@@ -434,8 +458,10 @@ pub async fn delete_folder(
 #[allow(non_snake_case)]
 pub async fn create_version(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     use mind_version::ActiveModel;
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -529,6 +555,8 @@ pub fn mind_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
 mod tests;
 #[cfg(test)]
 mod tests_generated;
+#[cfg(test)]
+mod security_gate_tests_b81;
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::mind_core_entity_router(pool)

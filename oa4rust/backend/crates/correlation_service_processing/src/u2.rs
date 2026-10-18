@@ -235,9 +235,11 @@ async fn create_impl(
 #[allow(non_snake_case)]
 pub async fn create_pp(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Path(job): Path<String>,
     Json(wi): Json<CreateWi>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    crate::require_admin(&pool, &session).await?;
     create_impl(&pool, TYPE_PROCESSPLATFORM, &job, wi).await
 }
 
@@ -245,9 +247,11 @@ pub async fn create_pp(
 #[allow(non_snake_case)]
 pub async fn create_cms(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Path(document): Path<String>,
     Json(wi): Json<CreateWi>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    crate::require_admin(&pool, &session).await?;
     create_impl(&pool, TYPE_CMS, &document, wi).await
 }
 
@@ -316,9 +320,11 @@ async fn update_impl(
 #[allow(non_snake_case)]
 pub async fn update_pp(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Path(job): Path<String>,
     Json(wi): Json<UpdateWi>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    crate::require_admin(&pool, &session).await?;
     update_impl(&pool, TYPE_PROCESSPLATFORM, &job, wi).await
 }
 
@@ -326,9 +332,11 @@ pub async fn update_pp(
 #[allow(non_snake_case)]
 pub async fn update_cms(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Path(document): Path<String>,
     Json(wi): Json<UpdateWi>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    crate::require_admin(&pool, &session).await?;
     update_impl(&pool, TYPE_CMS, &document, wi).await
 }
 
@@ -392,9 +400,11 @@ async fn delete_impl(
 #[allow(non_snake_case)]
 pub async fn delete_pp(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Path(job): Path<String>,
     Json(wi): Json<DeleteWi>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    crate::require_admin(&pool, &session).await?;
     delete_impl(&pool, TYPE_PROCESSPLATFORM, &job, wi).await
 }
 
@@ -402,9 +412,11 @@ pub async fn delete_pp(
 #[allow(non_snake_case)]
 pub async fn delete_cms(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Path(document): Path<String>,
     Json(wi): Json<DeleteWi>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    crate::require_admin(&pool, &session).await?;
     delete_impl(&pool, TYPE_CMS, &document, wi).await
 }
 

@@ -16,27 +16,38 @@
 「写到哪、写了多少」。仓外探针（三支，跑完即删）在真实中间件链上量到的形状，逐条是下面这些判据的依据：
 
 * **三份清单各有各的权威，且都不是「后端有一份常量」那种好办形状**：采样方法三项住在
-  `DatasetOperations.sample()` 的 if/elif 分发里（`augmentor/dataset_ops.py:313`、`:315`、`:318`），
-  聚合策略四项住在 `DataAggregator.aggregate()` 的同形分发里（`augmentor/aggregator.py:260` 起），
+  `DatasetOperations.sample()` 的 if/elif 分发里（`augmentor/dataset_ops.py:316`、`:318`、`:321`），
+  聚合策略四项住在 `DataAggregator.aggregate()` 的同形分发里（`augmentor/aggregator.py:262` 起），
   RAG 格式三项才是真常量（`augmentor/rag.py:17`，并被 `augmentor/config.py:120` 的 `RAG_FORMATS`
   引走）。前两处没有常量可引 ⇒ 本文件用 AST 把分发里逐个 `== "字面量"` 抓回来与页面逐项相等，
   而不是在测试里再抄一份名单（抄一份就等于把「加一支方法要动两处」这件事藏起来）。
-* **`ratio` 越界没有判据，三种方法三种后果（A292）**：`size` 那一格有 `require_count`
-  （`augmentor/dataset_ops.py:291`），三支一致 400「size 必须是不小于 0 的整数，当前是 -1」；
-  `ratio` 那一格（`:296`）只算 `int(len(items) * ratio)`，没有任何判据。实测 20 条语料：
-  `ratio=2` ⇒ random **400**（那句是 CPython 的英文原话「Sample larger than population or is
-  negative」）、systematic **200 交全量 20 条**、stratified **200 交全量 20 条**；`ratio=-0.5` ⇒
-  random **400**、systematic **200 交前 10 条**（`items[::1][:-10]` 的负数切片）、stratified
-  **200 交 0 条**。`ratio=0.0001` 三支一致交 0 条（`int()` 归零，被 `:305` 的短路接住）。
-* **分层键取字段值的前 10 个字符（A296）**：`augmentor/dataset_ops.py:354` 是 `value[:10]`。
+  **L277 起上面这几个行号整体平移**（`sample()` 里为 `require_ratio` 与 `is not None` 各插了注释行）：
+  本文件对这些引用只作散文说明，判据一律走 AST / 字符串，不数行号（l217 那把尺子把同一缺陷类
+  量过三次），所以订正到当前读数而不是删掉。
+* **`ratio` 的两维现在都判死，三种 method 一种结局（A292 的这一半在 L277 收口）**：
+  `size` 那一格一直有 `require_count`（`augmentor/dataset_ops.py:291`），三支一致 400
+  「size 必须是不小于 0 的整数，当前是 -1」；`ratio` 那一格（`:300`）此前只算
+  `int(len(items) * ratio)`，**非有限那一维**由 L272 补上、**范围那一维**由 L277 补上
+  （改用 `require_ratio("ratio", config.ratio)` 的默认 0-1 界）。
+  L277 的改前实测（20 条语料）：`ratio=2` ⇒ random **400**（那句是 CPython 的英文原话
+  「Sample larger than population or is negative」）、systematic **200 交全量 20 条**、
+  stratified **200 交全量 20 条**；`ratio=-0.5` ⇒ random **400**、systematic **200 交前 10 条**
+  （`items[::1][:-10]` 的负数切片）、stratified **200 交 0 条**。
+  **改后逐格复量**：`2` / `2.0` / `1.5` / `-0.5` / `-1.0` 在五档 × 三种 `method` 上一律 **400**，
+  detail 整句等于「`ratio 必须是 0.0 到 1.0 之间的比例，当前是 <值>`」（pydantic 把 `2` 收进
+  `Optional[float]` ⇒ 读数写作 `2.0`），且**盘上不留任何产物**。判据由「反向证据」翻成正向判决，
+  是因为「同一越界比例三种结局」这个洞的形状从来不是契约。
+  `ratio=0.0001` 仍是合法档：三支一致 200 交 0 条（`int()` 归零，被 `:308` 的短路接住，
+  不是三种异常）。
+* **分层键取字段值的前 10 个字符（A296）**：`augmentor/dataset_ops.py:357` 是 `value[:10]`。
   决定性的一格（探针第一版**量歪过**，见下面「被推翻的想象」）：三条 `AAAAAAAAAA甲` /
   `AAAAAAAAAA乙` / `BBBBBBBBBB丙` 取 2 条、`seed=7` ⇒ 落盘 `['AAAAAAAAAA乙', 'BBBBBBBBBB丙']`。
   若不折叠，三组各一条、配额该是 `[1,1,0]` ⇒ 落盘甲乙、**丙不在内**。幽灵分层键（字段名不存在）
   实测 **200**，全部塌成一个 `"empty"` 组，取 8 条照给 8 条；空字符串键才是 400
-  「分层采样需要非空的 stratify_key」（`augmentor/dataset_ops.py:347`）。
+  「分层采样需要非空的 stratify_key」（`augmentor/dataset_ops.py:350`）。
 * **聚合端点比 SDK 面窄三个旋钮，且不可复现（A293）**：路由是 `DataAggregator()` 无参构造
   （`api/routes/dataset_tools.py:887`），SDK 的 `key_fields` / `value_fields` / `random_state`
-  三个都不可设（`augmentor/aggregator.py:57`）。实测后果：同问不同答的两条 union ⇒ 并成 1 条、
+  三个都不可设（`augmentor/aggregator.py:58`）。实测后果：同问不同答的两条 union ⇒ 并成 1 条、
   `removed_duplicates 1`、活下来的是**第一条**（「答案甲」）；weighted 同参两次 ⇒ 落盘内容
   **不相等**。回执那一半是**两份各自手写的键集**：`to_dict()`（`augmentor/aggregator.py:37`）交回
   `total_count / source_counts / removed_duplicates / conflict_count / conflicts` 五键，端点在
@@ -44,7 +55,7 @@
   `conflict_count`、多出 `output_file`），conflicts 明细两侧都整份上线——与本组「写盘变换类只回
   写到哪、写了多少」的成文约定相反（实测那份 conflicts 明细 133 字节，四计数响应的十几倍）。
 * **`target_size` 只对 weighted 生效（A294）**：实测 `target_size=1` 配 union ⇒ **20 条**、
-  配 consistent ⇒ **20 条**、配 weighted ⇒ **1 条**。请求模型与 `docs/API.md` 都没写这件事，
+  配 consistent ⇒ **20 条**、配 weighted ⇒ **1 条**。请求模型与 `docs/augmentor/API.md` 都没写这件事，
   所以页面把那一格标成「只 weighted 吃这一格」。`target_size=0` 是合法档（200 交空产物），
   `-1` 才是 400「target_size 必须是不小于 0 的整数，当前是 -1」；不给时走 SDK 的
   `DEFAULT_TARGET_SIZE = 100`（`augmentor/aggregator.py:22`），够不着就交全量。
@@ -404,45 +415,52 @@ class TestEveryArmTheUiCanSendForSample:
 
     def test_negative_size_is_the_same_verdict_on_all_three_methods(
             self, http_with_dataset_tools):
-        """`size` 那一格有判据（`require_count`），三支一致 —— 与 `ratio` 那一格正好相反"""
+        """`size` 那一格有判据（`require_count`），三支一致 —— **L277 起 `ratio` 那一格与它同等待遇**
+        （见 `test_out_of_range_ratio_is_one_verdict_on_all_three_methods`；旧形状是「三支三结局」）。
+
+        这一支保留独立判据而不是并入 ratio 那一支：`size` 走 `require_count`、`ratio` 走
+        `require_ratio`，是两处判据、两句文案，任何一处回退都该单独喊红。
+        """
         http, _root, _outside, _disk = http_with_dataset_tools
         for method in ("random", "systematic", "stratified"):
             resp = sample(http, method=method, size=-1, output_file=f"neg_{method}.json")
             assert resp.status_code == 400, (method, resp.json())
             assert resp.json()["detail"] == "size 必须是不小于 0 的整数，当前是 -1"
 
-    @pytest.mark.parametrize("ratio,expected", [(2, {"random": 400, "systematic": 200,
-                                                      "stratified": 200}),
-                                                (-0.5, {"random": 400, "systematic": 200,
-                                                        "stratified": 200})],
-                             ids=["ratio=2", "ratio=-0.5"])
-    def test_out_of_range_ratio_has_no_verdict_and_splits_three_ways(
-            self, http_with_dataset_tools, ratio, expected):
-        """A292 的本体：同一个越界比例，random 支 400，另两支 200 且产物**各不相同**
+    @pytest.mark.parametrize("ratio", [2, 2.0, 1.5, -0.5, -1.0],
+                             ids=["ratio=2", "ratio=2.0", "ratio=1.5",
+                                  "ratio=-0.5", "ratio=-1.0"])
+    def test_out_of_range_ratio_is_one_verdict_on_all_three_methods(
+            self, http_with_dataset_tools, ratio):
+        """A292 的这一半 L277 已收口：同一个越界比例，三种 method 一种结局（400 + 零产物）
 
-        `ratio=2` ⇒ 后两支都交全量 20 条；`ratio=-0.5` ⇒ systematic 走负数切片交出**前 10 条**、
-        stratified 交 0 条。random 那句拒绝还是 CPython 的英文原话，页面照抄不翻译。
+        **这是契约翻面后的重写，不是把断言删松**。旧判据（L230 写下、L272 沿用的**反向**证据）
+        钉的是「洞的形状」：`ratio=2` ⇒ random 400 且 detail 是 CPython 的英文原话
+        「Sample larger than population or is negative」、systematic 与 stratified 各 200 交全量
+        20 条；`ratio=-0.5` ⇒ random 400、systematic 200 交**前 10 条**（负数切片）、
+        stratified 200 交 0 条。那句洞从来不是契约，所以新判据比旧的更强，四条都要成立：
+
+        ① 状态码恰好 400（回退成 200 静默产物 ⇒ 红；被裸异常折成 500 ⇒ 也红）；
+        ② detail **整句**等于那句中文区间判决 —— 回退成 CPython 英文原话虽然也是 400，
+           但对客户端不可行动，那一格就是 A292 立账时点名的原话，所以整句相等而不是包含；
+        ③ 三种 method 的归宿**逐字相同**（旧形状最贵的那一格正是「同值三结局」）；
+        ④ 400 之前一格产物都没写：`output_file` 指向的文件在盘上不存在。
+
+        `ratio=2`（整数）与 `ratio=2.0` 分列两档：请求模型是 `Optional[float]`，
+        pydantic 会把 `2` 收进浮点 ⇒ 读数写作「当前是 2.0」，这一格钉住的是那条 coercion 不漂。
         """
-        http, _root, _outside, _disk = http_with_dataset_tools
-        counts = {}
+        http, root, _outside, _disk = http_with_dataset_tools
+        detail = f"ratio 必须是 0.0 到 1.0 之间的比例，当前是 {float(ratio)}"
         for method in ("random", "systematic", "stratified"):
-            resp = sample(http, method=method, ratio=ratio, seed=7,
-                          output_file=f"r_{ratio}_{method}.json")
-            assert resp.status_code == expected[method], (method, resp.json())
-            if resp.status_code == 200:
-                counts[method] = resp.json()["output_count"]
-                if ratio == 2:
-                    assert counts[method] == 20, method
-        if ratio == -0.5:
-            assert counts == {"systematic": 10, "stratified": 0}, counts
-        else:
-            assert http.post("/api/dataset/sample", json={
-                "input_file": "p.json", "output_file": "r_msg.json",
-                "ratio": ratio}).json()["detail"] == \
-                "Sample larger than population or is negative"
+            name = f"r_{ratio}_{method}.json"
+            resp = sample(http, method=method, ratio=ratio, seed=7, output_file=name)
+            assert resp.status_code == 400, (method, ratio, resp.json())
+            assert resp.json()["detail"] == detail, (method, ratio, resp.json())
+            assert "Sample larger than population" not in resp.text, (method, ratio)
+            assert not (root / name).exists(), (method, ratio, "400 之前写了盘")
 
     def test_a_tiny_ratio_rounds_to_zero_on_all_three_methods(self, http_with_dataset_tools):
-        """`int()` 归零那一档三支一致交 0 条（被 `dataset_ops.py:305` 的短路接住，不是三种异常）"""
+        """`int()` 归零那一档三支一致交 0 条（被 `dataset_ops.py:308` 的短路接住，不是三种异常）"""
         http, _root, _outside, _disk = http_with_dataset_tools
         for method in ("random", "systematic", "stratified"):
             resp = sample(http, method=method, ratio=0.0001, output_file=f"t_{method}.json")
@@ -607,7 +625,7 @@ class TestEveryArmTheUiCanSendForAggregate:
         `aggregated_count`、`conflict_count` 在线上被丢掉、`output_file` 只在线上有）。
         判据因此写成「逐键列出两份、点名差在哪」，而不是「一边有明细一边没有」。
 
-        明细整份上线这一格与 `docs/API.md` 给 dataset 那组定的「写盘变换类只回写到哪、
+        明细整份上线这一格与 `docs/augmentor/API.md` 给 dataset 那组定的「写盘变换类只回写到哪、
         写了多少」相反，所以页面把每条冲突逐字渲出来（不藏），同时在卡上写明它偏了约定。
         """
         sdk_keys = set(AggregationResult(aggregated=[], source_counts={}).to_dict())
@@ -801,7 +819,9 @@ class TestHonestyCopyOnTheThreeCards:
     def test_the_sample_card_says_the_ratio_split_and_the_ten_char_collapse(self):
         page = _page()
         assert "条数赢" in page
-        assert "没有判据" in page and "负数切片" in page
+        assert "一律 400" in page and "一种结局" in page
+        assert "负数切片" in page  # 只作为**改前**的取证留在卡上
+        assert "没有判据" not in page  # L277 收了 A292 的范围维，这句成了假话
         assert "前 10 个字符" in page
         assert "塌成一个分组" in page
         assert "A292" in page and "A296" in page
@@ -834,7 +854,10 @@ class TestHonestyCopyOnTheThreeCards:
 # ------------------------------------------------------------------ 文档那一侧
 # 这两条路径常量放在使用点旁边：本文件其余常量都在头部，但这一段是 L230 收口时
 # 追加的「文档与实测对账」，与前面的接线判据是两回事。
-API_MD = ROOT / "docs" / "API.md"
+#: 子项目文档已于 2026-10-14 汇总到仓库根 `docs/augmentor/`；本文件自持这一真源
+DOCS_DIR = ROOT.parent / "docs" / "augmentor"
+
+API_MD = DOCS_DIR / "API.md"
 README_MD = ROOT / "README.md"
 
 
@@ -847,7 +870,7 @@ def doc_row(path: pathlib.Path, needle: str) -> str:
 
 
 class TestTheDocRowsSayWhatTheEndpointDoes:
-    """`docs/API.md` 那两行散文注必须与实测同口径——本轮订正过两处，判据住在这里防回潮
+    """`docs/augmentor/API.md` 那两行散文注必须与实测同口径——本轮订正过两处，判据住在这里防回潮
 
     **改前实测**（L230 收口时逐条量，两句话都与端点行为不符）：
 
@@ -855,7 +878,7 @@ class TestTheDocRowsSayWhatTheEndpointDoes:
       —— 实测 **200**，`aggregated_count` 20（语料只有 20 条，`DEFAULT_TARGET_SIZE = 100`
       够不着就交全量）。那句「不让 None 溜进算术」描述的是**已被兜住**的那条路径：
       `aggregate()` 透传 `kwargs.get("target_size")`，由 `aggregate_weighted` 统一接住
-      `None` 并换成 `DEFAULT_TARGET_SIZE`（`augmentor/aggregator.py:159`）。
+      `None` 并换成 `DEFAULT_TARGET_SIZE`（`augmentor/aggregator.py:161`）。
     * rag 那行写「`config.rag.default_format`（出厂默认 `langchain`）」—— 实测出厂值是
       **`llamaindex`**（`AppConfig().rag.default_format`），`langchain` 是路由那第三个兜底
       字面量（A295），只在配置被设成空串时才轮得到。省略 `format` 的实测回执也是 `llamaindex`。

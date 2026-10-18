@@ -12,6 +12,7 @@ import math
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Tuple
 from .exceptions import DataValidationError
+from .validation import require_positive
 
 logger = logging.getLogger(__name__)
 
@@ -69,8 +70,8 @@ class OutlierDetector:
         """
         if method not in ("zscore", "iqr", "zscore_one_sided"):
             raise DataValidationError(f"不支持的异常检测方法: {method}")
-        if threshold <= 0:
-            raise DataValidationError("threshold 必须为正数")
+        # 倍率旋钮：0 与负数不报错而是换形状，NaN 连 `<= 0` 都判不住 ⇒ 交回同族唯一权威
+        require_positive("threshold", threshold)
 
         self.method = method
         self.threshold = threshold

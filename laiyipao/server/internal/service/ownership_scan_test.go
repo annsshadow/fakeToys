@@ -63,6 +63,28 @@ var battleScopedTables = map[string]string{
 	"defense_challenges": "user_id",
 }
 
+// ownerScopedVerbs 是本守卫管辖的语句类型。
+//
+// ⚠️ **刻意不含 INSERT** —— 这是本轮（2026-10-15）扩范围时踩到的第一个坑。
+//
+// 原来只扫 `SELECT`，于是 `WashGem` 里那条
+//
+//	UPDATE user_gems SET affixes = $1::jsonb WHERE id = $2
+//
+// 从来不在管辖范围内（它缺 `AND user_id = $3`）。它当时**不是**可
+// 利用的漏洞 —— 同一事务上方有 `SELECT ... FOR UPDATE` 锁过行 ——
+// 但这种「调用点保证，语句自己不保证」的写法，只要有人给 UPDATE
+// 路径加第二个调用点、或把 FOR UPDATE 挪走，就立刻变成直接 IDOR。
+//
+// 扩到 UPDATE/DELETE 之后又差点误报：所有 `INSERT INTO user_*`
+// （upsert）都「没有归属过滤」。但 INSERT **不存在定位别人行的
+// 问题** —— 归属由 VALUES 里的使用者 id 决定，而它总是来自已认证
+// 的 userID。把 INSERT 纳管会让每一处 upsert 都变红，那就是守卫误报。
+//
+// 所以边界是语义的：**按已有行定位**（SELECT/UPDATE/DELETE）要管，
+// **创建新行**（INSERT）不管。
+var ownerScopedVerbs = []string{"SELECT", "UPDATE", "DELETE"}
+
 // adminSurfacePrefix 是管理面函数的命名前缀（第 78 轮）。
 //
 // ⚠️ 这是**按名字**判定的，不是按调用图 ——
@@ -117,10 +139,13 @@ var ownershipExemptions = map[string]string{
 		"这不是「第 75 轮那个洞」的同类：那里泄露的是 build_snapshot + seed。\n" +
 		"⚠️ 键是 SQL **字面量的起始行**（115），不是 FROM 所在行（117）—— " +
 		"多行 raw string 里两者差 2 行。",
-	"progression.go:800": "「挑战别人的防线」本身就是玩法：读 `defenses WHERE id = $1` " +
+	"progression.go:824": "「挑战别人的防线」本身就是玩法：读 `defenses WHERE id = $1` " +
 		"是为了拿到 owner_id 做后续判定。归属检查在**同一事务内**紧接着做：" +
 		"`if ownerID == userID { return ErrForbidden }`。" +
-		"所以这里不按 owner_id 过滤是正确的 —— 过滤了反而挑战不了任何人。",
+		"所以这里不按 owner_id 过滤是正确的 —— 过滤了反而挑战不了任何人。" +
+		"\n⚠️ 键是 SQL **字面量的起始行**（824）。第 154 轮给 `SaveDefense` 的" +
+		" UPDATE 补 `AND user_id = $3` 注释后，它从 800 漂到 824 —— " +
+		"`TestOwnershipExemptionKeysAreStillPresent` 立刻报了出来，这正是那条守卫存在的理由。",
 }
 
 // scanUnscopedQueries 扫出「按用户分区但没有 user_id 过滤」的查询。
@@ -179,7 +204,7 @@ func scanUnscopedQueries(t *testing.T) []unscopedQuery {
 						continue
 					}
 					upper := strings.ToUpper(sql)
-					if !strings.Contains(upper, "SELECT") {
+					if !isOwnerScopedStatement(upper) {
 						continue
 					}
 					tbl, filtered := classifySQL(sql)
@@ -283,10 +308,110 @@ func joinOnClauses(flat string) string {
 	return b.String()
 }
 
+// isOwnerScopedStatement 判断一条字符串字面量是否属于本守卫管辖的语句类型。
+// 判据是**词边界**上的动词出现，而不是整条以它开头：
+// `WITH k AS (SELECT …) UPDATE user_wallets …`（能量回补那条）
+// 整条以 WITH 开头，但它本质上是一次 UPDATE，同样要管。
+//
+// ⚠️ 两处必须挡在外面，否则扫出来的全是**误报**：
+//
+//  1. 普通错误文案。`fmt.Errorf("update user_gem: %w", err)` 里就有
+//     `update` 这个词。所以额外要求出现 SQL 专有的结构记号
+//     （`$N` / FROM / INTO / SET …），错误文案不会拼出这种形状。
+//  2. UPSERT。`INSERT … ON CONFLICT … DO UPDATE SET …` 里的 UPDATE 是
+//     **建行语义**（值来自调用方显式传的 user_id，不存在"按 id 定位
+//     别人的行"这一说）。全文匹配动词会把它当成 UPDATE 语句扫，
+//     于是每一处 upsert 都变红。第一版就是这么误报出 9 处的。
+//
+// 误报比漏报更危险：它会让人以为守卫在喊狼来了，然后把它关掉。
+func isOwnerScopedStatement(upper string) bool {
+	if !hasSQLShape(upper) {
+		return false
+	}
+	// 语句的**第一个**动词才是它的类型；`ON CONFLICT DO UPDATE` 不是。
+	lead := leadingVerb(upper)
+	if lead == "INSERT" {
+		return false
+	}
+	for _, verb := range ownerScopedVerbs {
+		if containsWord(upper, verb) {
+			return true
+		}
+	}
+	return false
+}
+
+// leadingVerb 取一条 SQL 语句的**首个**动词（跳过 WITH 子句）。
+//
+// ⚠️ 必须先剥掉**字面量引号**：`ast.BasicLit.Value` 带原始引号
+// （raw string 是反引号、普通 string 是双引号），所以 `flat` 第一个
+// 字符是 “ ` “ 而不是 `I`。第一版忘了剥，于是每一处 `INSERT … ON
+// CONFLICT DO UPDATE` 都没被认出来 —— 9 处 upsert 全被当成 UPDATE 扫。
+func leadingVerb(upper string) string {
+	flat := strings.TrimSpace(upper)
+	if len(flat) > 0 && (flat[0] == '`' || flat[0] == '"') {
+		flat = strings.TrimSpace(flat[1:])
+	}
+	// WITH 开头（CTE）：主语句动词在 CTE 的右括号之后。
+	if strings.HasPrefix(flat, "WITH ") {
+		if i := strings.Index(flat, ")"); i >= 0 {
+			flat = strings.TrimSpace(flat[i+1:])
+		}
+	}
+	for _, v := range []string{"SELECT", "INSERT", "UPDATE", "DELETE"} {
+		if strings.HasPrefix(flat, v+" ") || strings.HasPrefix(flat, v+"\t") {
+			return v
+		}
+	}
+	return ""
+}
+
+// sqlShapeMarkers 是「这确实是一条 SQL 语句」的结构性证据。
+//
+// 选 `$N` 是因为本项目的每一条真实 SQL 都带绑定参数（store 层
+// 一律参数化，见 SQL 注入审计结论）；选 `FROM x` / `INTO x` /
+// `SET x` 是因为错误文案不会拼出这种形状。
+var sqlShapeMarkers = []string{"$", "FROM ", "INTO ", "SET ", "VALUES ", "WHERE "}
+
+func hasSQLShape(upper string) bool {
+	for _, m := range sqlShapeMarkers {
+		if strings.Contains(upper, m) {
+			return true
+		}
+	}
+	return false
+}
+
+// containsWord 判断 word 是否以**词边界**形式出现在 s 中。
+func containsWord(s, word string) bool {
+	from := 0
+	for {
+		i := strings.Index(s[from:], word)
+		if i < 0 {
+			return false
+		}
+		start, end := from+i, from+i+len(word)
+		beforeOK := start == 0 || !isWordByte(s[start-1])
+		afterOK := end == len(s) || !isWordByte(s[end])
+		if beforeOK && afterOK {
+			return true
+		}
+		from = end
+	}
+}
+
+// isWordByte 判断是否构成标识符的字节（下划线、字母、数字）。
+func isWordByte(b byte) bool {
+	return b == '_' ||
+		(b >= 'a' && b <= 'z') ||
+		(b >= 'A' && b <= 'Z') ||
+		(b >= '0' && b <= '9')
+}
+
 // classifySQL 回答两个问题：
 //
 //	这是不是一张「按用户分区」的表？
-//	如果���，它有没有带归属过滤？
+//	如果是，它有没有带归属过滤？
 //
 // 拆出来是为了能**直接单测它** —— 见
 // `TestOwnershipClassifierRejectsKnownShapes`。扫描器整体是非盲的，
@@ -390,6 +515,60 @@ func TestUserScopedQueriesMustFilterByOwner(t *testing.T) {
 		"修法：SQL 的 WHERE 里加 `AND <别名>.user_id = $n`；\n"+
 		"若确实是管理面（跨用户查询），挪到 adminapi.go 或写进豁免表并说明理由。",
 		len(violations), strings.Join(violations, "\n  "))
+}
+
+// TestStatementVerbGateRejectsFalsePositives 守卫动词判据本身。
+//
+// # 为什么必须单独测它，而不是只靠分类器用例
+//
+// 本轮（2026-10-15）把扫描范围从 SELECT 扩到 UPDATE/DELETE 之后，
+// 第一版判据是「字符串里出现动词就算」。实测扫出 12~13 处，
+// 其中:
+//
+//	9 处  `INSERT … ON CONFLICT … DO UPDATE SET` — 建行语义，不是 UPDATE 语句
+//	5 处  fmt.Errorf("update user_gem: %w")    — 普通错误文案，不是 SQL
+//
+// 也就是说**判据本身错了两类**，而它们的方向相反：前者把合法的 upsert
+// 判成违规（误报），后者把无关字符串拉进扫描范围（噪音）。
+//
+// # 为什么不能只靠分类器用例兜住
+//
+// `TestOwnershipClassifierRejectsKnownShapes` 调用的是 `classifySQL`，
+// 而这两类过滤发生在它**上游**的 `isOwnerScopedStatement` 里 ——
+// 分类器对 `ON CONFLICT DO UPDATE` 照样会回答「没归属过滤」。
+// 所以判据错了，分类器用例一条都不会红。
+//
+// # 判据的第三个性质：CTE 主句不能漏
+//
+// 能量回补那条以 `WITH k AS (SELECT …) UPDATE …` 开头。若只用
+// 「整条以动词开头」来判，它会因为第一个词是 WITH 而脱管 ——
+// 那正是一次 UPDATE，漏掉它是**漏报**，与上面两类误报同样致命。
+func TestStatementVerbGateRejectsFalsePositives(t *testing.T) {
+	cases := []struct {
+		name string
+		sql  string
+		want bool
+	}{
+		// ── 必须放行（真语句）──
+		{"UPDATE 语句本身", `UPDATE user_gems SET affixes = $1::jsonb WHERE id = $2 AND user_id = $3`, true},
+		{"多行 raw string 的 UPDATE（含前导反引号）", "`\n\t\t\tUPDATE user_wallets SET x = $2 WHERE id = $1 AND user_id = $3`", true},
+		{"CTE 主句是 UPDATE（能量回补的形状）", "`\nWITH k AS ( SELECT n FROM user_wallets WHERE user_id = $1 )\nUPDATE user_wallets w SET energy = k.n FROM k WHERE w.user_id = $1`", true},
+		{"DELETE 语句本身", `DELETE FROM user_skill_slots WHERE user_id = $1`, true},
+		{"SELECT 语句本身", `SELECT id FROM user_gems WHERE user_id = $1`, true},
+
+		// ── 必须挡住（不是该管的语句）──
+		{"UPSERT：ON CONFLICT DO UPDATE 里的 UPDATE 不是语句动词", "`\n\t\t\t\t\tINSERT INTO user_tasks (user_id, task_id, task_date, progress)\n\t\t\t\t\tVALUES ($1,$2,$3,$4)\n\t\t\t\t\tON CONFLICT (user_id, task_id, task_date) DO UPDATE SET\n\t\t\t\t\t  progress = GREATEST(user_tasks.progress, EXCLUDED.progress)`", false},
+		{"普通错误文案里有 update 这个词", "update user_gem: %w", false},
+		{"普通错误文案里有 select 这个词", "select slot: %w", false},
+		{"没有任何 SQL 结构记号的短文案", "update done", false},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			if got := isOwnerScopedStatement(strings.ToUpper(c.sql)); got != c.want {
+				t.Errorf("isOwnerScopedStatement = %v，期望 %v\nSQL: %s", got, c.want, c.sql)
+			}
+		})
+	}
 }
 
 // TestOwnershipClassifierRejectsKnownShapes 是扫描器**自己的**守卫。
@@ -554,6 +733,75 @@ func TestOwnershipClassifierRejectsKnownShapes(t *testing.T) {
 			name:       "内容表也不该被管",
 			sql:        `SELECT id, hp, attack FROM enemies WHERE chapter_id = $1 ORDER BY id`,
 			wantTable:  "",
+			wantFilter: true,
+		},
+		// ── 2026-10-15 新增：UPDATE / DELETE 形状 ──
+		//
+		// 这一组的出现是因为 `WashGem` 里那条
+		// `UPDATE user_gems SET affixes = $1::jsonb WHERE id = $2`
+		// （修复前的原文）在 SELECT-only 的扫描器下**完全不可见**。
+		{
+			// 修复前的 `WashGem`：形似归属过滤（有 WHERE），实则按 id 定位。
+			// 与上面那条 `SELECT owner_id, ... WHERE id = $1` 是同一个形状，
+			// 只是动词换成了 UPDATE —— 而动词恰是旧扫描器的盲区。
+			name:       "UPDATE 只按 id 定位、没有 user_id → 未过滤（WashGem 修复前的形状）",
+			sql:        `UPDATE user_gems SET affixes = $1::jsonb WHERE id = $2`,
+			wantTable:  "user_gems",
+			wantFilter: false,
+		},
+		{
+			name:       "UPDATE 带 user_id → 已过滤（WashGem 修复后）",
+			sql:        `UPDATE user_gems SET affixes = $1::jsonb WHERE id = $2 AND user_id = $3`,
+			wantTable:  "user_gems",
+			wantFilter: true,
+		},
+		{
+			name:       "DELETE 只按 id 定位 → 未过滤",
+			sql:        `DELETE FROM user_skill_slots WHERE id = $1`,
+			wantTable:  "user_skill_slots",
+			wantFilter: false,
+		},
+		{
+			name:       "DELETE 带 user_id → 已过滤",
+			sql:        `DELETE FROM user_mastery_nodes WHERE user_id = $1`,
+			wantTable:  "user_mastery_nodes",
+			wantFilter: true,
+		},
+		{
+			// INSERT 刻意**不管**：见 ownerScopedVerbs 的注释。
+			// 这条用例钉住那个决定 —— 否则将来有人把 INSERT 也加进
+			// 管辖范围时，会误以为「本来就是这样」。
+			//
+			// ⚠️ `filtered=false` 是**分类器**的答案，不是扫描器的：
+			// `ON CONFLICT DO UPDATE` 里确实没有归属过滤子句，
+			// 但它在 isOwnerScopedStatement 那关就被放过了（建行语义）。
+			name:       "INSERT INTO user_* 不受管（创建新行，不存在定位别人行的问题）",
+			sql:        `INSERT INTO user_tasks (user_id, task_id, task_date, progress) VALUES ($1,$2,$3,$4)`,
+			wantTable:  "user_tasks",
+			wantFilter: false,
+		},
+		{
+			name: "UPSERT：`ON CONFLICT DO UPDATE` 里的 UPDATE 不是语句动词",
+			sql: `INSERT INTO user_tasks (user_id, task_id, task_date, progress)
+				VALUES ($1,$2,$3,$4)
+				ON CONFLICT (user_id, task_id, task_date) DO UPDATE SET
+				  progress = GREATEST(user_tasks.progress, EXCLUDED.progress)`,
+			wantTable:  "user_tasks",
+			wantFilter: false,
+		},
+		{
+			// 能量回补那条 UPDATE 整条以 `WITH` 开头，而旧实现用
+			// `strings.Contains(upper, "SELECT")` 恰好能命中 CTE 里的 SELECT；
+			// 换成词边界判据后必须仍然命中，否则这条语句会悄悄脱管。
+			name: "CTE 开头的 UPDATE 仍然受管（能量回补那条的形状）",
+			sql: `WITH k AS (
+			  SELECT GREATEST(0, FLOOR(EXTRACT(EPOCH FROM (now() - energy_updated_at)) / $3))::int AS n
+			    FROM user_wallets WHERE user_id = $1
+			)
+			UPDATE user_wallets w SET energy = LEAST($2::int, w.energy + k.n), updated_at = now()
+			  FROM k
+			 WHERE w.user_id = $1`,
+			wantTable:  "user_wallets",
 			wantFilter: true,
 		},
 	}

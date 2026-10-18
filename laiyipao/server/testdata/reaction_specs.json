@@ -18,12 +18,12 @@
     "base_coef": 55,
     "attack_weight_pct": 300,
     "status_duration_ms": 1500,
-    "aoe_radius": 0,
+    "aoe_radius": 90,
     "dispel_shield": false,
     "amplify_pct": 0,
     "armor_shred_permille": 0,
     "knockback": 0,
-    "descr": "眩晕 1.5 秒并造成反应伤害"
+    "descr": "眩晕 1.5 秒并造成反应伤害（触发时以自身为圆心，半径 90 像素内的敌人受到 25% 范围伤害）"
   },
   {
     "key": "burn_cloud",

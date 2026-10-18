@@ -46,6 +46,7 @@ import {
   ACTIVE_SLOTS,
 } from './heatmap'
 import { Terrain, BASE_X, BASE_Y, FIELD_W, FIELD_H, toFixed } from './terrain'
+import { DEFAULT_TUNING, type GameTuning } from './tuning'
 import type {
   Enemy,
   EnemyDef,
@@ -86,59 +87,98 @@ export function replaySkillsSegmentOf(
 export const TICK_HZ = 20
 
 /**
- * `card_picks` 里「本波弃过一张」的编码（第 66 轮）。
+ * `card_picks` 的「弃过牌」负编码基址（第 66 轮引入，第 159 轮重写）。
  *
- * 一波内的记录值形如 `-(PICK_DISCARD_BASE + handIdx)`：
- * 弃过牌并取第 0 张 → -3，第 1 张 → -4，第 2 张 → -5。
+ * 取值语义：
+ *   0/1/2        普通取牌（无弃牌），下标是取牌当次的手牌下标
+ *   -1           整波跳过（无弃牌）
+ *   -(3+code)    本波弃过牌；code ∈ [0, PICK_CODE_MAX]，见下方枚举
  *
- * -1 保留给「整波跳过」（既有语义，不改）。
+ * # 为什么重写（第 159 轮）
  *
- * ⚠️⚠️ 编码**必须恒为负**，否则与普通手牌下标撞车。
+ * 旧编码（-3..-5 弃+取、-6..-8 弃+跳）有两个致命缺陷：
  *
- * 第一版写成 `PICK_DISCARD_BASE - handIdx`（base=2），于是
- * 「弃过牌并取第 0 张」= 2 —— 而 2 也是合法的普通下标（取第 2 张）。
- * 两者的 record / 事件流完全不同，却编码成同一个值。
+ *  1. 表达不了「弃的是哪一张」—— 重放侧固定弃 hand[0]，
+ *     而线上 UI 允许弃任意一张；弃了非首张的正常玩家必然失配。
+ *  2. 表达不了「弃多于一张」——「快速装填」卡（每波弃牌次数 +1）
+ *     让 discardsLeft > 1 成为正常玩法。
  *
- * 实测症状很隐蔽：`cardPicks` 记成 `[2,2,2,2]`，看起来完全正常
- * （全是合法下标），但重放按「取第 2 张」解释，于是每波少一次弃牌
- * → 事件流少 4 条 → 哈希失配。
+ * 新编码把弃牌集合写成**手牌位掩码**：一个 code 同时携带
+ * 「弃了原手牌的哪几张」+「（不弃完时）取剩余第几张 / 跳过」。
  *
- * **教训**：编码负数下标时，「编码值」与「合法取值域」必须**互不相交**。
- * 这个 bug 与 README 记的「第 57 轮 slot=10 排在 slot=2 前面」同源：
- * 都是编码与取值域撞车，而单测（全绿）看不出来，因为撞车只在**跨侧**发生。
+ * # 枚举（两端必须逐位一致，由 card_picks_contract 测试锁死）
  *
- * 下界：handIdx ∈ [0, 2]（每波固定 3 张牌）→ 最负 -5。
- * **服务端 `card_picks` 的下界校验必须同步放宽到 -5。**
+ * 按 mask 升序（bit i = 原手牌第 i 张被弃），每个 mask 的 code 区间
+ * 依次排列：
+ *
+ *   mask       剩余    选择数     code
+ *   0 (不弃)   3 张    4          0..3
+ *   1 (弃0)    2 张    3          4..6
+ *   2 (弃1)    2 张    3          7..9
+ *   3 (弃0,1)  1 张    2          10..11
+ *   4 (弃2)    2 张    3          12..14
+ *   5 (弃0,2)  1 张    2          15..16
+ *   6 (弃1,2)  1 张    2          17..18
+ *   7 (弃全)   0 张    1          19
+ *
+ * 每个 mask 内部的「选择」按 取剩余第 0 张、第 1 张、…、不取 排列。
+ * `PICK_CODE_MAX = 19`；`PICK_MIN = -(3+19) = -22` 即服务端 CardPickMin。
+ *
+ * ⚠️ mask=0 的 code（-3..-6）是**冗余编码**（与 0/1/2/-1 语义重合）：
+ * 引擎不会产出它，但解码端必须接受 —— 于是负值域连成一段
+ * [-22..-3]，两端校验可以写成区间判据（-1 单独一个值）。
+ *
+ * ⚠️ 编码**必须恒为负**，否则与普通手牌下标撞车（第 66 轮踩过：
+ * 第一版 `base - handIdx`（base=2）把「弃+取0」编码成 2，与合法下标撞车，
+ * 单测全绿而跨侧失配）。
  */
-export const PICK_DISCARD_BASE = 3
+export const PICK_CODE_BASE = 3
 
-/**
- * `card_picks` 里「本波弃过牌但整波跳过」的编码（第 66 轮）。
- *
- * 形如 `-(PICK_DISCARD_SKIP_BASE + handIdx)`：
- * 弃一张后跳过第 0 张 → -4，第 1 张 → -5，第 2 张 → -6。
- *
- * 为什么需要它：`-1`（整波跳过）无法表达「弃过牌再跳过」。
- * 实测那种打法下原局与重放的事件流差一条 `record(..., 1)`，
- * 热量也差 1 → replayHash 不同 → I-6 判伪造。
- * 而「弃一张后跳过」是完全合法的操作（discardCard 与 skipCards 都只判
- * `phase === 'card_select'`）。
- *
- * ⚠️ 它必须与 `-(PICK_DISCARD_BASE + handIdx)` 取值域**不相交**：
- *   弃+取：-(3+0..2) = -3..-5
- *   弃+跳：-(6+0..2) = -6..-8
- * 不相交，靠的是两个 BASE 相差 3（大于单波最大手牌数 2）。
- * 若哪天 `rollWaveCards` 改成每波 4 张，这两个区间就会开始重叠 ——
- * 那时必须把 BASE 拉开，而不是改 `handIdx` 的上限。
- */
-export const PICK_DISCARD_SKIP_BASE = 6
+/** code 的合法上界（第 159 轮枚举表的最后一项）。 */
+export const PICK_CODE_MAX = 19
 
 /**
  * `card_picks` 条目的合法取值下界（第 66 轮）。
  *
  * 导出给边界与契约测试共用，避免三处各写一份魔数。
  */
-export const PICK_MIN = -(PICK_DISCARD_SKIP_BASE + 2) // = -8
+export const PICK_MIN = -(PICK_CODE_BASE + PICK_CODE_MAX) // = -22
+
+/** 3 位掩码的 popcount。 */
+function pickPopcount(m: number): number {
+  return (m & 1) + ((m >> 1) & 1) + ((m >> 2) & 1)
+}
+
+/** mask 下「选择」的个数：取剩余每张各一种 + 不取（跳过）。 */
+function pickChoiceCount(mask: number): number {
+  return 3 - pickPopcount(mask) + 1
+}
+
+/**
+ * 把（弃牌掩码, 选择）编码成 code（两端一致，见 PICK_CODE_BASE 枚举表）。
+ *
+ * `take ∈ [0, 剩余张数-1]` 表示「取剩余的第 take 张」（剩余手牌保持原序）；
+ * `take = -1` 表示不取（跳过）。
+ */
+export function encodeDiscardCode(mask: number, take: number): number {
+  let code = 0
+  for (let m = 0; m < mask; m++) code += pickChoiceCount(m)
+  return code + (take < 0 ? pickChoiceCount(mask) - 1 : take)
+}
+
+/**
+ * 解码 code。返回 `{ mask, take }`（take = -1 表示不取）；越界返回 null。
+ */
+export function decodeDiscardCode(code: number): { mask: number; take: number } | null {
+  if (!Number.isInteger(code) || code < 0 || code > PICK_CODE_MAX) return null
+  for (let mask = 0; mask < 8; mask++) {
+    const n = pickChoiceCount(mask)
+    if (code < n) return { mask, take: code === n - 1 ? -1 : code }
+    code -= n
+  }
+  /* v8 ignore next -- code ≤ PICK_CODE_MAX 时循环必然已返回 */
+  return null
+}
 /**
  * 每 tick 的毫秒数。
  *
@@ -261,6 +301,68 @@ export const MAX_BATTLE_TICKS = 30000
 export const TICK_BIG = BigInt(TICK_MS)
 
 /**
+ * 场地/防线边界的**定点形式**（屋顶常量，第 158 轮性能整改）。
+ *
+ * ## 为什么必须预计算
+ *
+ * `toFixed(v)` 的实现是 `BigInt(Math.round(v * 1000))` —— 每次调用都
+ * **新建一个 bigint 对象**。而战场这些边界值在 `updateProjectiles` /
+ * `updateEnemies` 的 innermost loop 里被调用：
+ *
+ *   - `p.x > toFixed(FIELD_W)`：每个弹丸 × 每个子步进
+ *   - `e.x > toFixed(BASE_X)`：每个敌人 × 每 tick
+ *
+ * 20Hz 逻辑下，同屏 16 敌 + 9 弹丸 × 2 子步 = 每 tick 数十次分配、
+ * 每秒上千次 GC 压力 —— **全部算出同一个值**。
+ *
+ * 定点化之后这些位置只剩 bigint 比较，零分配。
+ * 这些常数是 `toFixed(常量)`，语义与原写法**逐位等价**（不改变任何判定）。
+ */
+const FIELD_W_FIXED = toFixed(FIELD_W)
+const FIELD_H_FIXED = toFixed(FIELD_H)
+const BASE_X_FIXED = toFixed(BASE_X)
+const BASE_Y_FIXED = toFixed(BASE_Y)
+/** 掩体类地形挡弹的判定半径（100 逻辑单位）的定点形式，及其平方。
+ *  平方也要预计算：否则 `withinTerrain` 每次调用会重复做一次 bigint 乘法。 */
+const TERRAIN_BLOCK_R_FIXED = toFixed(100)
+const TERRAIN_BLOCK_R2 = TERRAIN_BLOCK_R_FIXED * TERRAIN_BLOCK_R_FIXED
+
+/**
+ * 原地压缩数组：剔除不满足 `keep` 的元素，**保持剩余元素的相对顺序**，
+ * 返回新长度。
+ *
+ * ## 为什么替代 `arr.filter(...)`
+ *
+ * 改前的主循环里每 tick 有 4 处 `this.xxx = this.xxx.filter(...)`：
+ * `enemies`、`projectiles`、`floats`，外加 `pickTarget`/`checkProjectileHit`
+ * 内部的临时 filter。`filter` 每次都**分配一个新数组**，而热循环里
+ * 99% 的元素是保留下来的 —— 等于每 tick 为一个几乎相同的内容付一次
+ * 完整拷贝 + 一次旧数组的 GC。
+ *
+ * 就地写指针只做赋值与一次 `length` 截断，零分配。
+ *
+ * ## ⚠️ 顺序敏感，不能换成 swap-remove
+ *
+ * 敌人的相对顺序会进 `checkProjectileHit` 的遍历顺序，进而决定
+ * 「同一发弹丸同时进入两只敌人的命中圈时谁先被结算」——
+ * 那会改变事件流与 `replayHash()`。
+ *
+ * 所以这里必须是**稳定压缩**（保留相对顺序），
+ * 而不是「把末尾元素搬到空位」那种 O(1) 但不稳定的写法。
+ */
+function compactInPlace<T>(arr: T[], keep: (v: T) => boolean): number {
+  let w = 0
+  for (let r = 0; r < arr.length; r++) {
+    const v = arr[r]
+    if (keep(v)) {
+      arr[w++] = v
+    }
+  }
+  arr.length = w
+  return w
+}
+
+/**
  * 坐标系约定（重要）：
  *  - 逻辑空间 0..FIELD_W（1000），与地形/关卡配置一致，服务端也用它
  *  - 引擎内部所有坐标是**定点整数**（逻辑值 × 1000）
@@ -294,8 +396,8 @@ export interface BattleConfig {
    *
    * 所以把 `base_hp` 抬到 1.5 倍时，血量 1.5B、每次漏怪扣 1.5B/10，
    * **可承受漏怪数恒为 LeakDamageDivisor**，加成被整个抵掉。
-   * ��� 148–152 轮复活币一直是这么做的，实测 100 关里 0 关翻盘
-   * （`revive_bonus_is_inert.test.ts`）。
+   * 第 148–152 轮复活币一直是这么做的，实测 100 关里 0 关翻盘
+   * （见 README 已知边界第 16 条）。
    *
    * `baseHp`（当前）与 `baseHpMax`（上限）本来就是两个字段，
    * 加在 `baseHp` 上而**不动 `baseHpMax`**，才是真的「多扛 N 次漏怪」。
@@ -326,6 +428,17 @@ export interface BattleConfig {
    * 客户端用自己的一份就会与门槛算法漂移（见 score.ts 的注释）。
    */
   scoreRules?: ScoreRules
+
+  /**
+   * 战斗节奏配置（第 158 轮）。
+   *
+   * 所有影响手感的**时间与速度**参数集中在这里。缺省 `DEFAULT_TUNING`。
+   * 详见 tuning.ts —— 那里记录了每一档是怎么定的。
+   *
+   * ⚠️ 缺省必须是 DEFAULT_TUNING：本工程的重放不做跨版本的语义保证，
+   * 但既有测试的地基（100 关平衡扫描、难度曲线）都是按它校准的。
+   */
+  tuning?: GameTuning
 }
 
 /** 引擎向外抛的事件 */
@@ -439,6 +552,15 @@ export class BattleEngine {
   private spawnQueue: Array<{ enemyId: number; atTick: number; uid: number }> = []
 
   /**
+   * 「当前挡弹地形 + 其定点坐标」的**复用容器**（第 158 轮性能整改）。
+   *
+   * 每 tick 由 updateProjectiles 清空后重填，从来不被重建 ——
+   * 连这个数组本身的分配都省了，只剩下每座地形一个小对象
+   * （地形数通常 0~4，而它会被「弹丸 × 子步进」复用上百次）。
+   */
+  private readonly blockersFx: Array<{ terrain: Terrain; cx: bigint; cy: bigint }> = []
+
+  /**
    * 本关总怪数（开波前即可确定，与随机无关）。
    *
    * 存在的原因：胜负判定必须与服务端口径一致。
@@ -458,13 +580,21 @@ export class BattleEngine {
   readonly scoreRules: ScoreRules
 
   /**
+   * 本局生效的节奏配置（第 158 轮）。
+   *
+   * ⚠️ 必须在构造早期落地：它是速度与时间的缩放源，下面 `skills` 的换算
+   * 以及后续各处的定量都要读它。缺省 DEFAULT_TUNING。
+   */
+  readonly tuning: GameTuning
+
+  /**
    * 无攻击力敌人漏进防线时的推进伤害。
    *
    * 取 base_hp 的 1/LeakDamageDivisor。Divisor 越大越宽容 ——
    * base_hp=1000、Divisor=10 时漏 10 只才归零，
    * 给玩家「失误几次还能救」的空间，而不是「漏一只就结束」。
    *
-   * ⚠️ 它必须**只与关卡血量挂钩、��敌人血量无关**，
+   * ⚠️ 它必须**只与关卡血量挂钩、与敌人血量无关**，
    * 否则调敌人血量会连带把生存难度也改了，
    * 两个变量纠缠在一起就没法单独调平衡。
    */
@@ -476,7 +606,19 @@ export class BattleEngine {
   constructor(cfg: BattleConfig) {
     this.cfg = cfg
     this.rng = new BattleRng(cfg.seed)
-    this.skills = cfg.equipped.map((s) => ({ ...s, cooldownRemaining: 0 }))
+    this.tuning = cfg.tuning ?? DEFAULT_TUNING
+    // 技能冷却在这里**一次性**换算（而不是每次重置冷却时再乘）：
+    // 既让每 tick 的冷却扣减保持纯减法，也让 S 段与实际使用的值同源。
+    //
+    // ⚠️ `cooldownMs` 不进 replaySkillsSegmentOf（那里只用
+    // slot/skillId/baseDamage/applyStacks/heatCost），所以这步不影响哈希。
+    this.skills = cfg.equipped.map((s) => ({
+      ...s,
+      cooldownRemaining: 0,
+      cooldownMs: Math.max(1, Math.round((s.cooldownMs * this.tuning.skillCooldownPermille) / 1000)),
+    }))
+    // 过热时长一次性落到 HeatSystem（见 heatmap.ts 的 overheatDurationMs 注释）
+    this.heat.overheatDurationMs = this.tuning.overheatDurationMs
     // 上报用的 S 段在这里冻结 —— 早于任何 applyCard（第 64 轮）。
     this.buildSnapshotSkills = replaySkillsSegmentOf(this.skills)
 
@@ -680,9 +822,6 @@ export class BattleEngine {
     this.phase = 'wave'
     this.deck.newWave()
     this.deck.discardsLeft += this.buffs.freeDiscard
-    // ⚠️ 第 66 轮：每波重置「本波弃过牌」标记 ——
-    // 编码只对**当前波**的 card_picks 项有意义。
-    this.discardedThisWave = false
 
     const wave = this.cfg.level.waves[index]
     if (!wave) {
@@ -705,8 +844,14 @@ export class BattleEngine {
       //
       // 这里统一折算成 tick，并向上取整 —— 向上取整保证
       // 「间隔 N 毫秒」不会因为截断变成「间隔 0 毫秒」而让同组怪同时出现。
-      const delayTicks = Math.ceil(group.delay / TICK_MS)
-      const intervalTicks = Math.ceil(group.interval / TICK_MS)
+      // 第 158 轮：两组节奏乘以 tuning 倍率。
+      //
+      // ⚠️ `Math.max(1, ...)` 保住的正是原来的那条不变量：
+      // 「间隔 N 毫秒」不能因为截断变成「间隔 0 毫秒」而让同组怪同时冒出来。
+      // 缩放只会把结果往 0 推得更近，所以这个下限必须跟着缩放一起加。
+      const t = this.tuning
+      const delayTicks = Math.max(1, Math.ceil((group.delay * t.waveDelayPermille) / 1000 / TICK_MS))
+      const intervalTicks = Math.max(1, Math.ceil((group.interval * t.waveIntervalPermille) / 1000 / TICK_MS))
       for (let i = 0; i < group.count; i++) {
         this.spawnQueue.push({
           enemyId: group.enemy_id,
@@ -727,6 +872,17 @@ export class BattleEngine {
     this.record(this.tick, 'wave', index)
   }
 
+  /**
+   * 远程敌人攻击间隔（毫秒）→ 按 tuning 缩放后的整数毫秒。
+   *
+   * 抽成一处是为了让 `attackInterval`（基准，用于重置）与
+   * `attackCooldown`（当前剩余）**必然同源**：
+   * 它们在自适应里被改写是两个不同的量，却必须从同一个换算出。
+   */
+  private scaledAttackInterval(intervalMs: number): number {
+    return Math.max(1, Math.round((intervalMs * this.tuning.enemyAttackIntervalPermille) / 1000))
+  }
+
   private spawnEnemy(enemyId: number, uid: number): void {
     const def = this.cfg.enemies.get(enemyId)
     if (!def) return
@@ -736,6 +892,12 @@ export class BattleEngine {
       const v = def.resist?.[e] ?? 0
       resist.set(e, clampInt64(BigInt(v), -MAX_RESIST, MAX_RESIST))
     }
+    // 两个**出生即恒定**的派生量，在此一次性算好（第 158 轮性能整改）：
+    // 它们在tick 内循环里被调用的次数是全引擎最多的，逐次重算等于把同一个
+    // 值反复转换上千遍，且每次都新建一个 bigint。详见 types.ts 的字段注释。
+    const attackRangeFixed = toFixed(def.attack_range)
+    const hitRadiusFixed = toFixed(28 + def.fly_height * 0.1)
+    const hitRadius2 = hitRadiusFixed * hitRadiusFixed
     const e: Enemy = {
       uid,
       defId: enemyId,
@@ -769,8 +931,16 @@ export class BattleEngine {
       speed: BigInt(def.speed),
       attack: BigInt(def.attack),
       attackRange: BigInt(def.attack_range),
-      attackInterval: def.attack_interval,
-      attackCooldown: def.attack_interval,
+      // ⚠️ 上面那个 `attackRange` 是**逻辑单位**的 bigint（内容就是
+      // `def.attack_range`），而 updateEnemies 的射程比较发生在定点坐标系
+      // （`dist = e.x - BASE_X_FIXED`）。两种量纲并存不是笔误，
+      // 但每次要用就得 `toFixed(Number(attackRange))` 走一趟
+      // bigint → number → bigint 的往返。出生时算一次即可。
+      attackRangeFixed,
+      // 单体命中半径平方（派生缓存，必须与 flyHeight 一致 —— 见 types.ts）
+      hitRadius2,
+      attackInterval: Math.max(1, Math.round((def.attack_interval * this.tuning.enemyAttackIntervalPermille) / 1000)),
+      attackCooldown: this.scaledAttackInterval(def.attack_interval),
       frozenMs: 0,
       stunnedMs: 0,
       slowedMs: 0,
@@ -796,7 +966,7 @@ export class BattleEngine {
     /* v8 ignore next -- 见上：调用点已过滤 dead，此守卫真分支不可达 */
     if (e.dead) return
     if (e.spawnProgress < SPAWN_PROGRESS_FULL) {
-      e.spawnProgress = Math.min(SPAWN_PROGRESS_FULL, e.spawnProgress + SPAWN_PROGRESS_STEP)
+      e.spawnProgress = Math.min(SPAWN_PROGRESS_FULL, e.spawnProgress + this.tuning.spawnProgressStep)
       return
     }
     if (e.hitFlashMs > 0) e.hitFlashMs -= TICK_MS
@@ -813,7 +983,11 @@ export class BattleEngine {
       e.knockback = 0n
     } else {
       const slowFactor = e.slowedMs > 0 ? 500n : 1000n
-      const step = mulDiv(e.speed, slowFactor, 1000n) * TICK_BIG / 1000n
+      // 第 158 轮：整体推进速度倍率（`tuning.enemySpeedPermille`）。
+      // 它只作用于位置推进，不参与任何伤害结算 ——
+      // 倍率是「多快走完这段路」，不是「走多少」。
+      const rate = BigInt(this.tuning.enemySpeedPermille)
+      const step = mulDiv(mulDiv(e.speed, slowFactor, 1000n), rate, 1000n) * TICK_BIG / 1000n
       e.x -= step
     }
   }
@@ -824,25 +998,24 @@ export class BattleEngine {
   step(): BattleEvent[] {
     if (this.phase === 'won' || this.phase === 'lost') return this.drainEvents()
 
-    // ⚠️ 待结束的本波在这里收尾（第 66 轮）。
+    // ⚠️ 第 159 轮：选牌阶段**冻结战斗时钟**（I-6 根修）。
     //
-    // 位置关键：必须在 `applyReplayDecision` **之前**。
-    // 否则同一 tick 内 `applyReplayDecision` 会被再调一次，
-    // 消费 script 的下一项，把下一波的决策当成本波的第二张牌
-    // （实测 picks 记成 [-3,-3,-1,-1]，事件流多一条原局没有的 402/902/0）。
-    if (this.cardSelectDone) {
-      this.cardSelectDone = false
-      this.beginWave(this.waveIndex + 1)
-    }
-
-    // ⚠️ 重放决策必须在 tick++ **之前**执行，否则会多消耗一个 tick。
-    // tick 会写进每条 replay 事件（record(tick, ...)），
-    // 多一格会让后续所有事件时间戳整体偏移 → 哈希必然不同。
-    // 原局里玩家点牌同样不推进 tick，两者必须严格一致。
-    if (this.phase === 'card_select' && this.replayScript !== null) {
-      this.applyReplayDecision()
-      // 决策可能已推进到下一波（deck 空时 takeCard 会调 beginWave），
-      // 也可能仍是 card_select（脚本要求再选一张）。两种情况都继续本 tick。
+    // 原实现里 tick / elapsedMs 每次 step 无条件自增，包括玩家在
+    // 选牌界面思考的每一格。而事件 tick 是 replayHash 的输入 ——
+    // 于是「真实玩家的时间线」与「零等待重放的时间线」必然错开，
+    // 哪怕只犹豫 50ms。线上两笔真实结算 100% 被拒（10-16 起）即源于此。
+    //
+    // 冻结后决策在战斗时间里**不耗时**：
+    //   - 交互模式：点击发生在两次 step 之间，此时 tick 恒为 T；
+    //     take/skip 立刻完成本波（beginWave 也落在 T）。
+    //   - 重放模式：applyReplayDecision 在本函数内、tick++ 之前执行，
+    //     决策事件同样全部落在 T。
+    // 两条路径的事件序列与 tick 严格一致，与玩家思考多久无关。
+    if (this.phase === 'card_select') {
+      if (this.replayScript !== null) this.applyReplayDecision()
+      // 决策把本波推进到下一波了则继续（tick++ 后立即开始战斗）；
+      // 仍是 card_select（交互模式等待玩家点击）则本 step 到此为止。
+      if (this.phase === 'card_select') return this.drainEvents()
     }
 
     this.tick++
@@ -872,12 +1045,24 @@ export class BattleEngine {
   }
 
   private updateSpawns(): void {
-    for (let i = this.spawnQueue.length - 1; i >= 0; i--) {
-      if (this.spawnQueue[i].atTick <= this.tick) {
-        this.spawnEnemy(this.spawnQueue[i].enemyId, this.spawnQueue[i].uid)
-        this.spawnQueue.splice(i, 1)
+    //
+    // ⚠️ 第 158 轮：「倒序出场 + 顺序压缩」两步走。顺序不能改。
+    //
+    // 原实现是 `splice(i, 1)` 逐个剔除 —— 每次 splice 都是 O(n) 的元素搬移。
+    // 改成压缩后仍需保持两个性质：
+    //  1. **spawn 顺序必须是「从尾到头」** —— 原循环是 `i--`，
+    //     所以 spawnEnemy 的出场次序依赖于数组的下标顺序；
+    //     而 spawnEnemy 内部会消耗 `rng.intn` 生成 y 坐标，
+    //     **出场顺序变了 y 坐标分配就变了 → 敌人位置变了 → 命中判定变了
+    //     → replayHash 失配**。所以本步必须继续倒序遍历。
+    //  2. 剩余元素保持相对顺序（等下一 tick 再倒 i--，语义才一致）。
+    const q = this.spawnQueue
+    for (let i = q.length - 1; i >= 0; i--) {
+      if (q[i].atTick <= this.tick) {
+        this.spawnEnemy(q[i].enemyId, q[i].uid)
       }
     }
+    compactInPlace(q, (s) => s.atTick > this.tick)
   }
 
   private updateEnemies(): void {
@@ -896,12 +1081,12 @@ export class BattleEngine {
       // 双倍伤害、leaked 计 2、发出两条 leak 事件。
       // 内容表里远程敌人（attack_range 150~600）大量存在，
       // 每个抵达时都触发一次，防线血量被额外扣掉接近一倍。
-      if (!e.burrow && e.attack > 0n && e.attackRange > 0n && e.x > toFixed(BASE_X)) {
+      if (!e.burrow && e.attack > 0n && e.attackRange > 0n && e.x > BASE_X_FIXED) {
         e.attackCooldown -= TICK_MS
         if (e.attackCooldown <= 0) {
           e.attackCooldown = e.attackInterval
-          const dist = e.x - toFixed(BASE_X)
-          if (dist <= toFixed(Number(e.attackRange))) {
+          const dist = e.x - BASE_X_FIXED
+          if (dist <= e.attackRangeFixed) {
             const dmg = this.leakDamageFor(e)
             this.baseHp -= dmg
             this.leaked++
@@ -939,8 +1124,8 @@ export class BattleEngine {
         }
       }
 
-      // 抵达防线
-      if (e.x <= toFixed(BASE_X)) {
+      // 抵达防线（`BASE_X_FIXED` 取代了原先每敌每 tick 的 `toFixed(BASE_X)`）
+      if (e.x <= BASE_X_FIXED) {
         e.dead = true
         const dmg = this.leakDamage(e)
         this.baseHp -= dmg
@@ -959,7 +1144,11 @@ export class BattleEngine {
         }
       }
     }
-    this.enemies = this.enemies.filter((e) => !e.dead)
+    // 剔除本 tick 标记为 dead 的敌人。
+    //
+    // ⚠️ 保留相对顺序，不能用 swap-remove —— 顺序进 checkProjectileHit 的
+    // 遍历顺序，进而决定同帧多命中时的结算先后，会改变事件流与 replayHash。
+    compactInPlace(this.enemies, (x) => !x.dead)
   }
 
   /**
@@ -1139,22 +1328,41 @@ export class BattleEngine {
 
   /** 索敌优先级：BOSS/精英 > 最近目标；优先能命中的（溅射/穿透/高伤） */
   private pickTarget(s: EquippedSkill): Enemy | null {
-    const live = this.enemies.filter((e) => !e.dead && e.spawnProgress >= SPAWN_PROGRESS_FULL)
-    if (live.length === 0) return null
-    // 飞行/钻地敌人只能被溅射或穿透命中，优先安排给对应技能
-    const evasive = live.filter((e) => e.flyHeight > 0 || e.burrow)
-    if ((s.aoeRadius > 0 || s.pierce > 0) && evasive.length > 0) {
-      return evasive.reduce((a, b) => (a.x <= b.x ? a : b))
+    //
+    // ⚠️ 第 158 轮：改成单趟扫描。
+    //
+    // 改前这里每个技能每 tick 都 `filter` 出两个临时数组（live、evasive）
+    // 再各跑一次 `reduce` —— 4 个技能 × 20Hz = 每秒 160 个临时数组，
+    // 4 个技能 × 20Hz = 每秒 160 个临时数组，而同一个 e 每次都要被
+    // 走两遍（先判是否 live、再看是否 evasive）。
+    //
+    // **必须保持的语义**（否则事件流会变、replayHash 会失配）：
+    //   - `reduce((a, b) => (a.x <= b.x ? a : b))` 取的是**最靠前的、
+    //     并列时第一个** —— <= 让它保留先出现者。下面的两次扫描
+    //     用同样的 `<`（严格小于才替换）来复刻这个 tie-break。
+    //   - evasive 与否的分支条件、优先级不变。
+    const evasiveCapable = s.aoeRadius > 0 || s.pierce > 0
+    let target: Enemy | null = null
+    let evasive: Enemy | null = null
+    for (const e of this.enemies) {
+      if (e.dead || e.spawnProgress < SPAWN_PROGRESS_FULL) continue
+      if (target === null || e.x < target.x) target = e
+      if (evasiveCapable && (e.flyHeight > 0 || e.burrow)) {
+        if (evasive === null || e.x < evasive.x) evasive = e
+      }
     }
-    // 其余取最靠近防线的
-    return live.reduce((a, b) => (a.x <= b.x ? a : b))
+    if (evasive !== null) return evasive
+    return target
   }
 
   private fire(s: EquippedSkill, target: Enemy): void {
     this.shots++
-    const speed = BigInt(s.projectileSpeed || 60000)
+    // 第 158 轮：纯飞行表现倍率 —— 不影响任何伤害结算，只压缩
+    // 「出膛到命中」之间那段玩家无法干预的等待。
+    const base = s.projectileSpeed || 60000
+    const speed = (BigInt(base) * BigInt(this.tuning.projectileSpeedPermille)) / 1000n
     const dx = target.x - toFixed(BASE_X)
-    const dy = target.y - toFixed(BASE_Y)
+    const dy = target.y - BASE_Y_FIXED
     const len = maxBig(1n, sqrtApprox(dx * dx + dy * dy))
     // 归一化方向（定点，保持确定性）
     const nx = (dx * speed) / len
@@ -1165,7 +1373,7 @@ export class BattleEngine {
       skillId: s.skillId,
       element: s.element,
       x: toFixed(BASE_X),
-      y: toFixed(BASE_Y),
+      y: BASE_Y_FIXED,
       vx: nx,
       vy: ny,
       damage: s.baseDamage,
@@ -1185,11 +1393,25 @@ export class BattleEngine {
   private updateProjectiles(): void {
     // 每 tick 分若干等分子步进，降低高速弹丸穿透漏判
     const SUB_STEPS = 2
-    const tickBig = BigInt(TICK_MS)
+    const tickBig = TICK_BIG
+
+    // ⚠️ 第 158 轮：把「哪些地形当前挡弹」与它们的**定点坐标**在 tick 开头
+    // 算好。改前这两件事都在 `弹丸 × 子步进` 的内层循环里做：
+    //   - `t.blocksProjectile()`：状态在 tick 内不变（updateTerrain 在之后才跑），
+    //     却对每个弹丸每个子步重复调用
+    //   - `toFixed(t.x) / toFixed(t.y)`：每次调用新建一个 bigint
+    // 摊到每 tick 一次后，内层循环只剩几何比较。
+    const blockers = this.blockersFx
+    blockers.length = 0
+    for (const t of this.terrains) {
+      if (t.blocksProjectile()) {
+        blockers.push({ terrain: t, cx: toFixed(t.x), cy: toFixed(t.y) })
+      }
+    }
+
     for (const p of this.projectiles) {
-      // `p.dead` 守卫的 true 分支**不可达**：每次 updateProjectiles 末尾都
-      // `this.projectiles = this.projectiles.filter((p) => !p.dead)`（见函数尾），
-      // 故下一 tick 进入本循环时数组里不含 dead 弹丸；本 tick 内每颗只遍历一次。
+      // `p.dead` 守卫的 true 分支**不可达**：每次 updateProjectiles 末尾都剔除
+      // 了 dead 弹丸（见函数尾），故下一 tick 进入本循环时数组里不含 dead。
       /* v8 ignore next -- 见上：末尾已滤除 dead，此守卫真分支不可达 */
       if (p.dead) continue
       for (let s = 0; s < SUB_STEPS; s++) {
@@ -1197,8 +1419,8 @@ export class BattleEngine {
         p.y += p.vy / tickBig
         p.trailLen = p.trailLen + 1
 
-        // 越界（用定点边界）
-        if (p.x < 0n || p.x > toFixed(FIELD_W) || p.y < 0n || p.y > toFixed(FIELD_H)) {
+        // 越界（用预算好的定点边界，取代原先每子步两次的 toFixed）
+        if (p.x < 0n || p.x > FIELD_W_FIXED || p.y < 0n || p.y > FIELD_H_FIXED) {
           p.dead = true
           break
         }
@@ -1222,8 +1444,9 @@ export class BattleEngine {
         //
         // 现在弹丸打在掩体上等同于打在敌人身上（有伤害、有元素），
         // 于是"用动能砸开掩体、打开弹道"这个原本的设计意图才真正成立。
-        for (const t of this.terrains) {
-          if (t.blocksProjectile() && this.withinTerrain(t.x, t.y, 100, p.x, p.y)) {
+        for (const b of blockers) {
+          if (this.withinTerrainFx(b.cx, b.cy, p.x, p.y)) {
+            const t = b.terrain
             if (t.onHit(p.element, p.damage, p.x, p.y)) {
               this.terrainUsed.push(t.kind)
               this.emit({ type: 'terrain', kind: t.kind, x: t.x, y: t.y })
@@ -1239,7 +1462,7 @@ export class BattleEngine {
         if (p.dead) break
       }
     }
-    this.projectiles = this.projectiles.filter((p) => !p.dead)
+    compactInPlace(this.projectiles, (p) => !p.dead)
   }
 
   private checkProjectileHit(p: Projectile): void {
@@ -1265,14 +1488,19 @@ export class BattleEngine {
       }
       // 弹射
       if (p.chainLeft > 0) {
-        const next = this.enemies
-          .filter((x) => !x.dead && !p.hitSet.has(x.uid))
-          .reduce<Enemy | null>((best, x) => {
-            if (!best) return x
-            const d1 = dist2(p.x, p.y, x.x, x.y)
-            const d2 = dist2(p.x, p.y, best.x, best.y)
-            return d1 < d2 ? x : best
-          }, null)
+        // 第 158 轮：同样改成单趟最近邻扫描， replace filter + reduce 的
+        // 两次全量遍历。tie-break 与原写法一致（`d1 < d2 ? x : best` → 严格更小才替换，
+        // 并列时保留先出现者），所以选中的目标与原实现**逐位相同**。
+        let next: Enemy | null = null
+        let bestD = 0n
+        for (const x of this.enemies) {
+          if (x.dead || p.hitSet.has(x.uid)) continue
+          const d = dist2(p.x, p.y, x.x, x.y)
+          if (next === null || d < bestD) {
+            next = x
+            bestD = d
+          }
+        }
         if (next) {
           p.chainLeft--
           p.x = next.x
@@ -1351,7 +1579,7 @@ export class BattleEngine {
     e.hp = def.hp
     e.shield = def.shield
     e.stacks = def.stacks
-    e.hitFlashMs = 140
+    e.hitFlashMs = this.tuning.hitFlashMs
     if (res.dispelShield && e.shield === 0n) {
       this.pushFloat(e.x, e.y, '护盾驱散', '#58a6ff', 14)
     }
@@ -1458,7 +1686,7 @@ export class BattleEngine {
       this.record(this.tick, 'reaction', e.uid, reactionIndex(res.reaction))
     }
 
-    // ⚠️ steam_burst 的溅射范围伤害。
+    // ⚠️ steam_burst / overheat 的溅射范围伤害。
     //
     // # 设计与 I-6
     //
@@ -1473,16 +1701,21 @@ export class BattleEngine {
     //   `res.reactionDamage`**——双端已通过 `resolveHit` 逐位一致
     //   （formula_vectors.json 锁定），所以溅射伤害也一致。
     // - 源体 e 不计（自身已结算）。
+    // - 溅射只造成伤害：不施元素层数、不写状态（overheat 的眩晕只作用
+    //   主目标，与 steam_burst 的驱散护盾同口径）。
     // - 半径 = 反应表 `aoeRadius`（像素，×1000 转定点）。
     // - 邻居伤害走 `resolveHit` 复用护甲/护盾/抗性，但**不再触发反应**
     //   （forceReaction 为空且邻居身上挂的已有元素 + 技能元素不再配对生成
-    //   新反应 —— 否则 steam_burst 就会在溅射目标上**再次**爆开，
+    //   新反应 —— 否则反应就会在溅射目标上**再次**爆开，
     //   形成指数级连锁。`res.reaction == ''` 守住这一点）。
     // - 目标集合确定：`this.enemies` 数组顺序 + 距离 ≤ 半径 + 存活。
     //   两者皆由种子决定（刷怪洗牌 / 坐标由 levelgen 产出），故同种子
     //   同行。`dist2` 用 bigint 避免浮点，不存在跨端漂移。
-    if (res.reaction === 'steam_burst' && res.reactionDamage > 0n && reactSpec !== undefined && reactSpec.aoeRadius > 0) {
-      this.triggerSteamBurstAoe(e, res.reactionDamage, att)
+    // ⚠️ 触发条件**显式列出两条反应**，不泛化成「任何 aoeRadius > 0」——
+    // burn_cloud / corrosion_spread 将来接上的非零半径语义是火区 / 层数传播，
+    // 不是伤害溅射。
+    if ((res.reaction === 'steam_burst' || res.reaction === 'overheat') && res.reactionDamage > 0n && reactSpec !== undefined && reactSpec.aoeRadius > 0) {
+      this.triggerReactionAoe(e, reactKey, res.reactionDamage, att)
     }
     // 地形联动。地形自身负责判定弹丸是否经过它（updateXxx 内部已做空间判定），
     // 因此这里只需传入元素与伤害，不需要坐标。
@@ -1516,9 +1749,9 @@ export class BattleEngine {
   }
 
   /**
-   * steam_burst 的溅射范围伤害。
+   * steam_burst / overheat 的溅射范围伤害（第 160 轮起两条反应共用）。
    *
-   * 对「已命中触发 steam_burst 的敌人」周围 `aoeRadius` 内、存活的其他敌人，
+   * 对「已命中触发该反应的敌人」周围 `aoeRadius` 内、存活的其他敌人，
    * 造成 `reactionDmg >> 2`（25%）的二次伤害。
    *
    * # 二次伤害为何不用 `hitEnemy`
@@ -1539,13 +1772,15 @@ export class BattleEngine {
    *   刷怪洗牌与坐标均由 levelgen 的 LCG 产出，所以同种子同行；
    *   `dist2`/`toFixed` 全定点，无浮点。
    */
-  private triggerSteamBurstAoe(origin: Enemy, reactionDmg: bigint, att: Attacker): void {
-    const spec = REACTIONS['steam_burst']
+  private triggerReactionAoe(origin: Enemy, key: ReactionKey, reactionDmg: bigint, att: Attacker): void {
+    const spec = REACTIONS[key]
     const rr = toFixed(spec.aoeRadius)
-    
+
     //
-    // 2026-10-10 实现 steam_burst 范围伤害：aoeRadius 恢复为 120（像素）。
-    // 引擎 `hitEnemy` 在 steam_burst 反应触发后、以命中敌人为圆心、半径
+    // 2026-10-10 实现 steam_burst 范围伤害（aoeRadius 恢复 120）；
+    // 第 160 轮 overheat 爆炸（aoeRadius 恢复 90）复用同一条管线，
+    // 半径各自取自触发反应自己的表项（`REACTIONS[key]`）。
+    // 引擎 `hitEnemy` 在反应触发后、以命中敌人为圆心、半径
     // aoeRadius 搜索邻居，造成 reactionDmg >> 2（25%）的二次伤害。
     // I-6 安全：溅射伤害来自 resolveHit（formula_vectors.json 锁定），
     // 不进入 replay_skills 段，因而不影响 I-6 的 S-段校验。
@@ -1727,20 +1962,38 @@ export class BattleEngine {
     }
   }
 
-  private withinTerrain(tx: number, ty: number, r: number, x: bigint, y: bigint): boolean {
-    // tx/ty/r 是逻辑单位，x/y 是定点；半径平方需要 ×1000² 才同量纲
-    return dist2(toFixed(tx), toFixed(ty), x, y) <= toFixed(r) * toFixed(r)
+  /**
+   * 定点版的地形命中判定（第 158 轮）。
+   *
+   * ## 为什么改成接收定点参数
+   *
+   * 改前是 `withinTerrain(tx, ty, r, x, y)` 拿**逻辑单位**进来，
+   * 内部做 4 次 `toFixed`（tx、ty、r、r）—— 每次一个 bigint 分配。
+   * 而它全仓**只有一个调用点**（updateProjectiles 的挡弹判定），
+   * 那是一个 `弹丸 × 子步进 × 地形` 的三重内层循环。
+   *
+   * 地形坐标在整场战斗中不变、`r` 恒为 100，所以这些转换的结果
+   * **每次都相同**。现在每 tick 预计算一次（见 `updateProjectiles`），
+   * 这里只剩减法与比较。
+   */
+  private withinTerrainFx(cx: bigint, cy: bigint, x: bigint, y: bigint): boolean {
+    return dist2(cx, cy, x, y) <= TERRAIN_BLOCK_R2
   }
 
   private withinEnemy(e: Enemy, x: bigint, y: bigint): boolean {
-    // 飞行与钻地：只有溅射/穿透能命中
-    const r = 28 + e.flyHeight * 0.1
-    const rr = toFixed(r)
-    return dist2(e.x, e.y, x, y) <= rr * rr
+    // 飞行与钻地：只有溅射/穿透能命中。
+    //
+    // 第 158 轮：`r = 28 + flyHeight * 0.1` 只取决于 `e.flyHeight`，
+    // 而 flyHeight 是**出生即恒定**的内容表字段。
+    // 改前每 tick 里每个弹丸对每个敌人都要重算 `toFixed(r)` 再自乘，
+    // 而命中检测是 O(弹丸 × 敌人) —— 这是整个 tick 里调用次数最多的
+    // bigint 分配。现在用 spawnEnemy 时算好的 `hitRadius2`，此处零分配。
+    return dist2(e.x, e.y, x, y) <= e.hitRadius2
   }
 
   private pushFloat(x: bigint, y: bigint, text: string, color: string, size: number): void {
-    this.floats.push({ x, y, text, color, lifeMs: 900, maxLifeMs: 900, size })
+    const life = this.tuning.floatLifeMs
+    this.floats.push({ x, y, text, color, lifeMs: life, maxLifeMs: life, size })
     if (this.floats.length > 60) this.floats.splice(0, this.floats.length - 60)
   }
 
@@ -1749,7 +2002,7 @@ export class BattleEngine {
       f.lifeMs -= TICK_MS
       f.y -= 30n
     }
-    this.floats = this.floats.filter((f) => f.lifeMs > 0)
+    compactInPlace(this.floats, (f) => f.lifeMs > 0)
   }
 
   // ---------- 波次结束 / 结算 ----------
@@ -1780,6 +2033,10 @@ export class BattleEngine {
       return
     }
     this.phase = 'card_select'
+    // ⚠️ 第 159 轮：每次发牌重置本波决策状态。
+    //  - discardedMask：本波已弃牌的位掩码（原手牌下标），进 card_picks 编码
+    //  - handSnapshot：原手牌 id 快照，把「弃了哪张」映射回原下标
+    this.discardedMask = 0
     const cards = rollWaveCards(
       this.rng,
       this.cfg.equipped.map((s) => ({
@@ -1789,17 +2046,18 @@ export class BattleEngine {
         kind: s.kind,
       })),
     )
+    this.handSnapshot = cards.map((c) => c.id)
     this.deck.setHand(cards)
     this.emit({ type: 'card_offer', cards })
   }
 
-  /** 取牌（玩家选择） */
+  /** 取牌（玩家选择）。取牌即结束本波选牌（第 159 轮）。 */
   takeCard(id: string): Card | null {
     if (this.phase !== 'card_select') return null
     // 索引必须在 take 之前取：take 后该卡已不在 hand 里。
     //
-    // ⚠️ 记录的是**手牌下标**（0/1/2），不是 cardIndex()。
-    // 重放脚本按手牌下标解释，两者语义必须一致 ——
+    // ⚠️ 记录的是**手牌下标**（0/1/2，弃牌之后的当次手牌），
+    // 不是 cardIndex()。重放脚本按手牌下标解释，两者语义必须一致 ——
     // 混用会让重放选中完全不同的牌，且不会有任何报错。
     const handIdx = this.deck.hand.findIndex((c) => c.id === id)
     const card = this.deck.take(id)
@@ -1807,57 +2065,45 @@ export class BattleEngine {
     this.applyCard(card)
     this.emit({ type: 'card_taken', card })
     this.record(this.tick, 'card', cardIndex(card))
-    // ⚠️ 第 66 轮：本波弃过牌时，把「弃过」编码进记录，
-    // 否则重放不会复现那次 refundHeat 与 record 事件（哈希必然失配）。
-    this.recordPick(this.discardedThisWave ? -(PICK_DISCARD_BASE + handIdx) : handIdx)
-    // ⚠️ 第 66 轮：走 finishCardSelect 而不是直接 beginWave ——
-    // 直接 beginWave 会让 `wave` 事件落在取牌那一 tick，而原局的
-    // wave 事件在下一 tick（实测 DIFF@61 orig=402 repl=401）。
-    if (this.deck.size === 0) this.finishCardSelect()
+    this.recordPick(this.encodeCurrentPick(handIdx))
+    // ⚠️ 第 159 轮：取牌**总是**结束本波选牌。
+    //
+    // 改前只有取空手牌才结束，于是 UI 允许一波连点多张卡 ——
+    // 而 card_picks 每波只记一项，第二张起在重放里必然对不上
+    // （线上 100% 结算被拒的根因之一）。设计本义（I-2）是「三选一」，
+    // UI 文案也写「点一张就装备上」；剩余手牌静默丢弃
+    // （与 skipCards 同路径，不写事件 —— 原局玩家离开界面时也没有这个动作）。
+    this.finishCardSelect()
     return card
   }
 
   /**
-   * 记录本波选中的手牌下标（-1 = 整波跳过）。
+   * 把当前决策（discardedMask + 取牌下标/跳过）编码成 card_picks 项（第 159 轮）。
    *
-   * 语义：手牌在本次 offer 中的下标（0/1/2），对应 applyReplayDecision 的解释。
+   * `take = -1` 表示跳过。没弃过牌时保持旧值域（0/1/2 与 -1），
+   * 保证最常见打法的编码与他端历史行为逐位一致。
+   */
+  private encodeCurrentPick(take: number): number {
+    if (this.discardedMask === 0) return take
+    return -(PICK_CODE_BASE + encodeDiscardCode(this.discardedMask, take))
+  }
+
+  /**
+   * 记录本波决策到 card_picks（每波恰好一项；I-6 重放闭环的最后一环）。
    *
-   * ⚠️ 第 66 轮：新增「本波弃过一张」的标记。
+   * 取值语义（第 159 轮定稿，枚举表见文件头 `PICK_CODE_BASE`）：
+   *   0/1/2        普通取牌（无弃牌），取牌当次的手牌下标
+   *   -1           整波跳过（无弃牌）
+   *   -(3+code)    本波弃过牌：code 同时编码「弃牌集合」与「取/跳」
    *
-   * 原来每波只记第一次选择，注释写「玩家若先弃牌后取牌，记的是取的那次」。
-   * **索引语义确实是对的**（弃一张后取到的下标仍指向同一张卡），
-   * 但**弃牌的副作用无人复现**：
-   *   - `discardCard` 会 `refundHeat(1)`（降低热量、延后过热）
-   *   - 以及 `record(..., 'card', ..., 1)` 写进回放事件流
+   * 守卫 `length <= waveIndex`：本波的第一项（也是唯一一项）。
+   * 第 159 轮起每次 card_select 恰好消费一项（取牌即结束本波），
+   * 「同一波第二次选择」这种状态已不存在；守卫保留为防御。
    *
-   * 而重放侧 `applyReplayDecision` 只按脚本取牌，既不回充热量也不写那条事件
-   * → 事件流少一条 → **replayHash 必然不同** → I-6 把这局判成伪造。
-   *
-   * 「先弃后取」是 `discardCard` 与 `takeCard` 都允许的合法操作
-   * （两者只判 `phase === 'card_select'`），所以这不是理论漏洞。
-   *
-   * # 为什么不改协议去表达「弃牌张数」
-   *
-   * `card_picks` 是 `number[]`，服务端校验 `len <= WaveCount` 且每值落在
-   * `validCardPick` 接受的区间里（`internal/domain/battle_collections.go`，
-   * 与本文的 PICK_* 由 formula_vectors.json 双向锁住）。
-   * 改成变长序列要动跨端契约与历史战报兼容性；而弃牌每波**最多 1 次**
-   * （`DISCARD_PER_WAVE = 1`），所以「有没有弃过」这一个 bit 就够。
-   *
-   * # 编码（第 66 轮定稿，与文件头 PICK_* 常量一一对应）
-   *
-   * - 普通取牌：`handIdx`（0/1/2）
-   * - 整波跳过：`-1`
-   * - 弃一张后取牌：`-(PICK_DISCARD_BASE + handIdx)` = -3..-5
-   * - 弃一张后跳过整波：`-(PICK_DISCARD_SKIP_BASE + handIdx)` = -6..-8
-   *
-   * handIdx 是**弃牌之后**的手牌下标（弃牌移除的是更靠前的一张），
-   * 与 `takeCard` 内部取下标的时机一致。两个 BASE 相差 3（= 手牌上限），
-   * 保证两个负区间相邻而不重叠；`PICK_MIN = -8` 即服务端 CardPickMin。
-   *
-   * ⚠️ **第一版编码是 `-2 - handIdx`（下界 -4）**，后因要表达「弃牌后
-   * 跳过整波」改为两个 BASE。这段历史留给下一个读代码的人：**不要再把
-   * 编码改回单基址** —— 那是为了让「有没有弃过」这一个 bit 够用而付的账。
+   * ⚠️ 弃牌的副作用（refundHeat / 次数 / 手牌变化）由 code 在重放侧复现，
+   * 但弃牌**不再写 record 事件** —— 那是第 66 轮的权宜（旧编码表达不了
+   * 「弃的是哪张」），代价是「先弃 A 再弃 B」与「先弃 B 再弃 A」哈希不同。
+   * 第 159 轮起事件流里只留 take/skip 的结果，弃牌顺序不再进哈希。
    */
   private recordPick(handIdx: number): void {
     if (this.cardPicks.length <= this.waveIndex) {
@@ -1891,8 +2137,9 @@ export class BattleEngine {
  * 重放侧下一 tick 又进 `applyReplayDecision` 消费脚本下一项 → 波次错位
  * （实测 `discardsLeft` 显示 wave 2 被进入两次）。
  *
- * 这里把「取完就结束本波」显式化，用 `deck.drop` 静默清空
- * （不消耗弃牌次数、不写事件），`skipCards` 与弃牌路径共用。
+ * 第 159 轮起：**取牌总是**走这里结束本波（改前只覆盖「取空手牌」的
+ * 情形），take / skip / 弃空三条路径统一到本函数。用 `deck.drop` 静默
+ * 清空剩余手牌（不消耗弃牌次数、不写事件）。
  */
 private finishCardSelect(): void {
     for (const c of [...this.deck.hand]) {
@@ -1901,63 +2148,23 @@ private finishCardSelect(): void {
     this.beginWave(this.waveIndex + 1)
   }
 
-  /**
-   * 结束本波选牌，但**下一 tick** 才推进到下一波（第 66 轮）。
-   *
-   * # 为什么需要这个「延后一 tick」的变体
-   *
-   * 原局里玩家「弃 1 张、拿 1 张、剩下 2 张不动」，此时 `deck.size !== 0`，
-   * `takeCard` 里的 `if (this.deck.size === 0) beginWave(...)` 不成立 ——
-   * 于是 phase 停在 `card_select`，**下一 tick** 玩家离开界面时才推进。
-   *
-   * 实测证据（弃+取，每波一张）：
-   *
-   *   CARD_O: 401/30/1 401/506/0  [tick 728] 40/1 ...
-   *   CARD_R: 401/30/1 401/506/0  [tick 727] 40/1 ...
-   *                                          ^ wave 事件早了一格
-   *
-   *  ⚠️ 写这段注释时踩过一个坑：`... 506/0 **728**-/40/1 ...` 里的
-   * `**` 与紧随的 `/` 组成了注释闭合序列，把块注释提前结束 ——
-   * 表现是 esbuild 报 `Expected ";" but found "/"`，
-   * 而报错行号落在**注释内部**，看起来完全无辜。
-   // 在注释里写事件流样例时，避免让 `**` 紧跟 `/`。
-   *
-   * 而「弃牌后跳过整波」那条路径不同 —— `skipCards` 是**同 tick** 推进的
-   * （原局 `401:wave` 连着出现两次）。
-   *
-   * 两条路径的 tick 语义本来就不同，必须分别表达；
-   * 把它们统一成一种只会让其中一条失配。
-   *
-   * # 为什么重放侧必须走这条延后路径
-   *
-   * `applyReplayDecision` 在 `return` 之后，phase 仍是 `card_select`。
-   * 若不在下一 tick 立刻收尾，`applyReplayDecision` 会在**同一 tick**
-   * 再被调用一次（`step()` 开头无条件检查），消费 script 的下一项 ——
-   * 把下一波的决策当成本波的第二张牌。实测 picks 记成 `[-3,-3,-1,-1]`，
-   * 事件流多出 `402/902/0` 这条原局没有的记录。
-   *
-   * 所以：重放侧必须在**返回后**由 `step()` 在下一 tick 开头收尾，
-   * 且收尾时机要与原局「玩家离开界面」那一步对齐。
-   */
-private finishCardSelectNextTick(): void {
-    for (const c of [...this.deck.hand]) {
-      this.deck.drop(c.id)
-    }
-    this.cardSelectDone = true
-  }
+  /** 本波弃牌的手牌位掩码（bit i = 原手牌第 i 张被弃；第 159 轮）。 */
+  private discardedMask = 0
 
-  /** 本波选牌已结束，等待下一 tick 推进到下一波（第 66 轮）。 */
-  private cardSelectDone = false
-
-  /** 本波是否已经弃过牌（第 66 轮新增）。 */
-  private discardedThisWave = false
+  /** 本波发牌时的原手牌 id 快照（在 checkWaveEnd 发牌后写，第 159 轮）。 */
+  private handSnapshot: string[] = []
 
   /**
-   * 弃牌。
+   * 弃牌（第 159 轮重写记录语义）。
    *
-   * ⚠️ 第 66 轮：弃牌会**改写本波的 card_picks 记录**，
-   * 让重放能复现这次弃牌（回充热量 + 那条 record 事件）。
-   * 见 `recordPick` 的注释。
+   * ⚠️ 弃牌**不再写 record 事件**（旧实现写 `cardIndex(card), 1`）。
+   *
+   * 那条事件的用途是让重放复现这次弃牌 —— 但「弃了哪张、弃了几张」
+   * 现在由 card_picks 的位掩码编码携带（见 `PICK_CODE_BASE`），
+   * 弃牌的全部副作用（refundHeat / 次数 / 手牌变化）在重放侧由
+   * 解码路径复现。事件流里不再出现弃牌，于是**弃牌顺序也不进哈希**
+   * （旧实现下「先弃 A 再弃 B」与「先弃 B 再弃 A」哈希不同，
+   * 而玩家点击顺序本来就不是语义）。
    */
   discardCard(id: string): Card | null {
     if (this.phase !== 'card_select') return null
@@ -1967,121 +2174,91 @@ private finishCardSelectNextTick(): void {
     if (!r.ok) return null
     this.heat.refundHeat(r.refund)
     this.emit({ type: 'card_discarded', card })
-    this.record(this.tick, 'card', cardIndex(card), 1)
-    this.discardedThisWave = true
-    if (this.deck.size === 0) this.beginWave(this.waveIndex + 1)
+    // 记录到本波掩码：手牌在本次 offer 里的**原下标**（快照里查 id）
+    const origIdx = this.handSnapshot.indexOf(card.id)
+    /* v8 ignore next -- handSnapshot 恒含当前手牌（发牌时快照），不可达 */
+    if (origIdx >= 0) this.discardedMask |= 1 << origIdx
+    if (this.deck.size === 0) this.finishCardSelect()
     return card
   }
 
   /** 放弃全部手牌，直接进入下一波。不消耗弃牌次数，也不返还热量 */
   skipCards(): void {
     if (this.phase !== 'card_select') return
-    // -1 表示整波跳过（重放时按此原样复现）
-    //
-    // ⚠️ 第 66 轮：弃过牌再跳过时不能记 -1 ——
-    // 那样重放侧不知道要复现那次 discard 的 record 事件与热量变化。
-    // 记 `-(PICK_DISCARD_SKIP_BASE + handIdx)`，handIdx 取弃牌后的第一张
-    // （那正是「跳过时手牌里还剩什么」的信息，重放侧只需丢掉它）。
-    const encoded = this.discardedThisWave ? -PICK_DISCARD_SKIP_BASE : -1
-    this.recordPick(encoded)
+    // -1 = 整波跳过（无弃牌）；弃过牌时记位掩码编码（第 159 轮）——
+    // 重放侧靠它复现那次/那几次 refundHeat 与手牌变化。
+    this.recordPick(this.encodeCurrentPick(-1))
     this.finishCardSelect()
   }
 
   /**
-   * 按重放脚本执行选牌决策。
+   * 按重放脚本执行选牌决策（第 159 轮重写）。
    *
-   * ⚠️ 必须在**单个 tick 内把本波所有决策做完**，而不是每个 tick 做一个。
+   * 语义：**每个 card_select 恰好消费一项脚本**，且与线上玩家的
+   * 决策流逐事件对齐 —— 线上决策被冻结在同一个 tick 上
+   * （见 `step()` 的时钟冻结说明），重放同样在本 tick 内完成决策。
    *
-   * 原因：原局里玩家的操作是离散的、不占 tick 的 ——
-   * 「取 1 张，再跳过剩下 2 张」发生在同一个 tick 间隔内。
-   * 若重放把每次决策摊到不同 tick，后续所有事件的 tick 都会偏移，
-   * 哈希必然不同（record 里的 tick 是哈希输入）。
-   *
-   * 脚本耗尽或越界时回退为"跳过整波"，保证重放一定能跑到底
+   * 脚本耗尽或编码越界时回退为「跳过整波」，保证重放一定能跑到底
    * （宁可哈希不符，也不要中途卡死让用户看到空白页）。
+   *
+   * ⚠️ 为什么不再有 while 循环 /「延后一 tick 收尾」：旧实现允许
+   * 合成脚本在同一 tick 连点消费多项，导致两波决策挤进一项、波次错位。
+   * 线上真实玩家做不到 50ms 内点三张卡，那个语义从来就不存在。
    */
   private applyReplayDecision(): void {
-    // guard 兜底：正常一轮 while 就会离开 card_select（skipCards → beginWave），
-    // 但若 beginWave 因波次耗尽直接 finish，仍需确保不无限循环。
-    let guard = 0
-    while (this.phase === 'card_select' && guard++ < 16) {
-      const script = this.replayScript
-      // `script === null` 的 true 分支**不可达**：applyReplayDecision 仅在
-      // step() 里 `phase==='card_select' && this.replayScript !== null` 时被调用，
-      // 且循环内无处把 replayScript 置空。保留是类型收窄（null 排除）用。
-      /* v8 ignore next -- 见上：调用点已保证 replayScript!==null，此真分支不可达 */
-      if (script === null) return
+    const script = this.replayScript
+    /* v8 ignore next -- 调用点已保证 replayScript !== null，此分支不可达 */
+    if (script === null) return
 
-      if (this.replayScriptPos >= script.length) {
-        this.skipCards()
-        continue
-      }
-      const want = script[this.replayScriptPos++]
-      // ⚠️ 第 66 轮：负值编码表示「本波弃过牌」。
-      //   -1                  整波跳过（未弃牌）
-      //   -(3+handIdx)        弃一张，取第 handIdx 张   [-3..-5]
-      //   -(6+handIdx)        弃一张，整波跳过           [-6..-8]
-      //
-      // 原实现把任何 `want < 0` 都当「整波跳过」，于是「先弃后取」
-      // 与「弃后跳过」两种正常打法都被重放成「整波跳过」——
-      // 少了那次 refundHeat 与那条 record 事件，replayHash 必然不同，
-      // I-6 把这局判成伪造。
-      if (want <= -PICK_DISCARD_SKIP_BASE) {
-        // 弃一张后跳过：先复现 discard 的三件事，再走 skipCards。
-        const toDrop = this.deck.hand[0]
-        if (toDrop) this.discardCard(toDrop.id)
-        // recordPick 已被 discard 路径影响，这里显式写 -1 之外的语义：
-        // skipCards 会再 recordPick 一次，但 `length <= waveIndex` 保证只写一项。
+    if (this.replayScriptPos >= script.length) {
+      this.skipCards()
+      return
+    }
+    const want = script[this.replayScriptPos++]
+
+    // 负编码（第 159 轮）：-(3+code) = 弃牌掩码 + 取/跳
+    if (want <= -PICK_CODE_BASE) {
+      const decoded = decodeDiscardCode(-(want + PICK_CODE_BASE))
+      if (!decoded) {
         this.skipCards()
         return
       }
-      if (want <= -PICK_DISCARD_BASE) {
-        // 弃掉第一张手牌。discardCard 会做原局同样的三件事：
-        // 扣次数 + refundHeat + record(..., 1)。
-        const toDrop = this.deck.hand[0]
-        if (toDrop) this.discardCard(toDrop.id)
-        // 编码是 -(PICK_DISCARD_BASE + handIdx)，所以 handIdx = -(want + PICK_DISCARD_BASE)
-        const rest = -(want + PICK_DISCARD_BASE)
-        const target = this.deck.hand[rest]
-        if (!target) {
-          this.skipCards()
-          continue
+      // 复现弃牌：按**原手牌顺序**（顺序不进哈希 —— 弃牌不写事件，
+      // 热量返还与手牌状态只与「弃哪几张」有关）。
+      for (let i = 0; i < 3; i++) {
+        if (!(decoded.mask & (1 << i))) continue
+        const id = this.handSnapshot[i]
+        if (id !== undefined && this.deck.hand.some((c) => c.id === id)) {
+          this.discardCard(id)
         }
-        this.takeCard(target.id)
-        // ⚠️⚠️ 这里必须 `return`，**不能** `continue`（第 66 轮）。
-        //
-        // 一个 card_picks 项就是**一整波**的决策，原局里玩家
-        // 「弃 1 张、拿 1 张、剩下 2 张不动」就结束了 ——
-        // 剩下那 2 张在**下一 tick** 玩家离开界面时才被丢掉。
-        //
-        // 若写成 continue，while 会在同一 tick 里消费 script 的下一项，
-        // 把**下一波**的决策当成本波的第二张牌。实测 trace：
-        //   want=-3 pos=1 wave=0 hand=3
-        //   want=-3 pos=2 wave=0 hand=1   ← 本波只剩 1 张牌，本该结束
-        // 结果第 3、4 波错位，cardPicks 记成 [-3,-3,-1,-1]，事件流少 7 条。
-        //
-        // 用 `finishCardSelectNextTick` 而不是 `finishCardSelect`：
-        // 原局这条路径不立即进下一波（`deck.size` 非 0），
-        // 立即推进会让 `wave` 事件早一格（实测 orig=728 repl=727）。
-        this.finishCardSelectNextTick()
+      }
+      if (decoded.take < 0) {
+        this.skipCards()
         return
       }
-      // -1 或越界 → 整波跳过
-      if (want < 0 || want >= this.deck.hand.length) {
+      const rest = this.deck.hand[decoded.take]
+      if (!rest) {
         this.skipCards()
-        continue
+        return
       }
-      // 手牌顺序可能与原局不同（不同 seed 的洗牌结果），
-      // 因此按**索引**取，而不是按卡牌 id —— 索引才是脚本记录的语义。
+      this.takeCard(rest.id)
+      return
+    }
+
+    // 普通取牌：手牌顺序可能与原局不同（不同 seed 的洗牌结果），
+    // 因此按**索引**取，而不是按卡牌 id —— 索引才是脚本记录的语义。
+    if (want >= 0) {
       const target = this.deck.hand[want]
       if (!target) {
         this.skipCards()
-        continue
+        return
       }
       this.takeCard(target.id)
-      // takeCard 后手牌可能已空（已进下一波），也可能还有剩余
-      // （玩家在原局取了 1 张又跳过其余）—— 两种都由 while 继续处理。
+      return
     }
+
+    // -1 与其余非法负值（如 -2）→ 整波跳过
+    this.skipCards()
   }
 
   private applyCard(card: Card): void {
@@ -2289,7 +2466,7 @@ private finishCardSelectNextTick(): void {
    * 在真机上那意味着玩家盯着一个永远不结算的画面。
    *
    * 那个具体缺陷已修（见 updateProjectiles 里的注释），但：
-   *   - 循环依赖/互斥这类缺陷很难靠"读代码看出��"杜绝
+   *   - 循环依赖/互斥这类缺陷很难靠"读代码看出来"杜绝
    *   - 任何未来的内容改动都可能再造一个
    *   - 挂死的代价（玩家永久卡在一局、无法退出、体力不返还）远高于误判
    *

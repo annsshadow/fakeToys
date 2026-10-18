@@ -12,7 +12,7 @@ from typing import List, Dict, Optional, Any, Set
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from .atomic_write import atomic_write_json
+from .atomic_write import atomic_write_json, path_lock
 from .exceptions import DataValidationError
 from .validation import require_choice
 from datetime import datetime
@@ -98,12 +98,12 @@ class DependencyManager:
         self._datasets_file = self._registry_path / "datasets.json"
         self._dependencies_file = self._registry_path / "dependencies.json"
         
-        loaded_datasets = self._load_file(self._datasets_file, {})
-        self._datasets: Dict[str, DatasetInfo] = {
-            k: DatasetInfo(**v) if isinstance(v, dict) else v
-            for k, v in loaded_datasets.items()
-        }
-        self._dependencies: List[Dependency] = self._load_dependencies()
+        # L290（A396）：这份快照只供**读面**用，写面从不在它上面改完整份写回（理由与实测
+        # 读数见 `_load_datasets`）。构造这一格也住进同一把目录锁：Windows 上一个正被
+        # `os.replace` 的目标文件会让裸 `open(..., 'r')` 抛 EACCES，锁外读实测能撞上。
+        with path_lock(self._registry_path):
+            self._datasets: Dict[str, DatasetInfo] = self._load_datasets()
+            self._dependencies: List[Dependency] = self._load_dependencies()
     
     def _load_file(self, path: Path, default: Any) -> Any:
         """加载文件
@@ -172,11 +172,36 @@ class DependencyManager:
             metadata=metadata or {}
         )
         
-        self._datasets[dataset_id] = info
-        self._save_datasets()
+        # L290（A396）：「锁内重读 → 改 → 整份写回」三步合成一趟。`atomic_write_json`
+        # 只保证读者看不见半份，保证不了写者不互相覆盖（`atomic_write.py` 的 L273 段
+        # 同一条口径）；锁按注册表目录取，与 `versioning.py` 用目录做键同一形状。
+        with path_lock(self._registry_path):
+            self._datasets = self._load_datasets()
+            self._datasets[dataset_id] = info
+            self._save_datasets()
         
         logger.info(f"数据集注册成功: {name} ({dataset_id})")
         return info
+    
+    def _load_datasets(self) -> Dict[str, DatasetInfo]:
+        """整份读登记账（L290 / A396：构造与写面共用这一只）
+
+        存在理由是一次实测，不是一种洁癖。改前任一只管理器把「构造时读到的整份
+        快照」改完就整份写回，而路由面每支请求新建一只（`system_ops._dependency_manager`）
+        ⇒ 两支线程的读都发生在对方的写之前。仓外探针（20 支线程同一时刻各登记一条，
+        逐支一个新实例）读数：**盘上 1 条、丢 19 条**，另有 1 支 `PermissionError`
+        （两支同时把各自的临时件换到同一个 `datasets.json`，Windows 瞬时拒绝访问，
+        `atomic_write.py` 的 5 次退避上限内没换上）⇒ 20 支全回 200 而 19 条登记凭空消失。
+        同一形状在 `add_dependency` / `remove_dependency` 各一份，所以三处一起收。
+
+        Returns:
+            `dataset_id -> DatasetInfo`；注册表还不存在时为空账
+        """
+        data = self._load_file(self._datasets_file, {})
+        return {
+            k: DatasetInfo(**v) if isinstance(v, dict) else v
+            for k, v in data.items()
+        }
     
     def get_dataset(self, dataset_id: str) -> Optional[DatasetInfo]:
         """获取数据集信息
@@ -232,8 +257,11 @@ class DependencyManager:
             created_at=datetime.now().isoformat()
         )
         
-        self._dependencies.append(dep)
-        self._save_dependencies()
+        # L290（A396）：同一把目录锁里的「重读→追加→写回」，理由见 `register_dataset`。
+        with path_lock(self._registry_path):
+            self._dependencies = self._load_dependencies()
+            self._dependencies.append(dep)
+            self._save_dependencies()
         
         logger.info(f"依赖关系添加成功: {source_dataset} -> {target_dataset}")
         return dep
@@ -280,18 +308,22 @@ class DependencyManager:
         Returns:
             是否成功移除
         """
-        original_count = len(self._dependencies)
-        self._dependencies = [
-            dep for dep in self._dependencies
-            if not (dep.source_dataset == source_dataset and dep.target_dataset == target_dataset)
-        ]
-        
-        if len(self._dependencies) < original_count:
-            self._save_dependencies()
-            logger.info(f"依赖关系移除成功: {source_dataset} -> {target_dataset}")
-            return True
-        
-        return False
+        # L290（A396）：删除同样是「整份读→整份写回」，不收进锁就会把别人新增的
+        # 依赖连同自己的删除一起写回旧快照。
+        with path_lock(self._registry_path):
+            self._dependencies = self._load_dependencies()
+            original_count = len(self._dependencies)
+            self._dependencies = [
+                dep for dep in self._dependencies
+                if not (dep.source_dataset == source_dataset and dep.target_dataset == target_dataset)
+            ]
+            
+            if len(self._dependencies) < original_count:
+                self._save_dependencies()
+                logger.info(f"依赖关系移除成功: {source_dataset} -> {target_dataset}")
+                return True
+            
+            return False
     
     def get_dependency_graph(self) -> Dict:
         """获取依赖图

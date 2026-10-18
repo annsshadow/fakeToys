@@ -29,6 +29,7 @@ from augmentor.exceptions import (
     DataFormatError,
     DataLoadError,
     DataValidationError,
+    DatasetTextError,
     DedupError,
     ExportError,
     ModelError,
@@ -54,6 +55,11 @@ BUILTIN_COMPAT = {
     DataLoadError: ValueError,
     DataFormatError: ValueError,
     DataValidationError: ValueError,
+    # L274（A358）新立：数据集里的「文本字段」装了非字符串值。它是 `DataValidationError`
+    # 的子类而不是平级成员，所以 `except ValueError` / `except DataValidationError` 两面
+    # 都不会漏接；单独立类型是为了让 `api/deps.py::raise_internal_error` 按**具名窄口**
+    # 放行它，而不把父类其余成员（A280 那一族，待拍）一起改成 400。
+    DatasetTextError: ValueError,
     QualityError: ValueError,
     DedupError: ValueError,
     ExportError: ValueError,

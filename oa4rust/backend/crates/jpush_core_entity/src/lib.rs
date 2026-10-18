@@ -14,6 +14,17 @@ pub mod routes;
 
 use entities::{jpush_device, jpush_template};
 
+/// 安全审计（round4-b83）：jpush 实体 2 把 sea_orm CRUD 真写收"会话存在档"门禁。
+/// 无会话（Option<Extension<Session>> = None）→ 401，门置于首个 DB 访问
+/// （`ActiveModel::insert` / `Entity::find_by_id().one()`）之前，杜绝匿名写
+/// `jpush_device` 表。这些是 sea_orm ORM 写，审计尺子"含写"指标不可见
+/// （ORM-blindness，§五 尺子缺陷 28），R7 降但含写不变属预期。
+fn require_session(
+    session: Option<Extension<shared::session::Session>>,
+) -> Result<shared::session::Session, AppError> {
+    session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
+}
+
 // 推送设备实体
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct PushDevice {
@@ -93,8 +104,10 @@ pub async fn device_get(
 /// 创建推送设备
 pub async fn device_create(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     Json(req): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let id = uuid::Uuid::new_v4().to_string();
     let user_id = req
         .get("userId")
@@ -214,8 +227,10 @@ pub fn jpush_core_entity_router(_pool: Pool) -> Router {
 #[allow(non_snake_case)]
 pub async fn device_delete(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let result = jpush_device::Entity::delete_by_id(&id)
         .exec(&db.0)
         .await
@@ -233,6 +248,8 @@ pub async fn device_delete(
 mod tests;
 #[cfg(test)]
 mod tests_generated;
+#[cfg(test)]
+mod security_gate_tests_b83;
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::jpush_core_entity_router(pool)

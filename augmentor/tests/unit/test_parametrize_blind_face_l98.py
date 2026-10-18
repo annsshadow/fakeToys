@@ -94,9 +94,11 @@ TIER_OPAQUE = "opaque"              # 压根解析不到
 #: 与 l97 的盲面 +4 独立闭合；那支自带字面 ids 清单的第五格不进盲面，只进豁免名册
 #: （豁免 17 → **18**）。
 MEASURED_TIERS: Dict[str, int] = {
-    TIER_PLAIN: 61,  # **L259 重量**：60 → **61**（`test_name_path_containment_l259.py` 那支值位引用 `sorted(MEASURED_CALL_SITES)` 的 parametrize，无 ids ⇒ plain）。L258 那一步：59 → **60**（`test_name_path_containment_l258.py` 那支值位引用 `sorted(MEASURED_CALL_SITES)` 的 parametrize，无 ids ⇒ plain）。L257 那一步：58 → **59**（新守卫那支值位引用 `CLI_TRIO_SUBCOMMANDS` 的 parametrize，无 ids ⇒ plain）
-    TIER_DERIVED: 38,
-    TIER_IDS_DERIVED: 11,
+    TIER_PLAIN: 67,  # **L290 重量**：63 → **67**（本轮两支新守卫各 2 处 parametrize，值位全是 `sorted(<模块级常数>)`、无 `ids=` ⇒ 四格同落 plain：`test_dependency_registry_lock_l290.py` 的 `test_each_write_site_enters_the_registry_lock_exactly_once` / `test_read_precedes_write_and_both_sit_inside_the_lock`（值位 `sorted(WRITE_METHODS)`）+ `test_versioning_current_lock_l290.py` 的 `test_write_site_enters_the_storage_dir_lock_exactly_once` / `test_the_check_and_the_act_are_in_the_same_span`（值位 `sorted(PROTECTED_ACTIONS)`）。档位和 125 → **129**（`67 + 39 + 12 + 11`），与 l97 侧 `MEASURED_BLIND` 125 → **129** 独立咬合；另三档 39/12/11 一格未动，两张逐格名册与 `MEASURED_EXEMPT_SITES` 34 未动。红读数 `{'plain': 67, ...} != {'plain': 63, ...}`，读数出自仓外探针 `Temp/l290q/l98census.py` 的同一次现量（`static_rows` + `tier_counts`），非推断。）**L286 重量**：62 → **63**（`test_dir_self_landing_l286.py::test_ordinary_names_still_land_strictly_inside` 那支值位引用模块级常数清单 `STILL_ACCEPTED`、无 ids ⇒ plain；同批另一格落 derived，见下一行；同批其余三格内联字面清单 ⇒ 不进盲面。档位和 122 → **124**，与 l97 侧 `MEASURED_BLIND` 同涨那两格独立咬合。红读数 `{'plain': 63, ...} != {'plain': 62, ...}`。）**L284 重量**：61 → **62**（`test_validation_finite_echo_l284.py::test_nan_echo_returns_422_not_500` 那支值位引用模块级常数元组 `ENDPOINTS`、无 ids ⇒ plain；本文件其余四格值位全是内联字面清单 ⇒ 不进盲面。档位和 121 → **122**，与 l97 侧 `MEASURED_BLIND` 同涨那一格独立咬合。红读数 `{'plain': 62, ...} != {'plain': 61, ...}`。**L259 重量**：60 → **61**（`test_name_path_containment_l259.py` 那支值位引用 `sorted(MEASURED_CALL_SITES)` 的 parametrize，无 ids ⇒ plain）。L258 那一步：59 → **60**（`test_name_path_containment_l258.py` 那支值位引用 `sorted(MEASURED_CALL_SITES)` 的 parametrize，无 ids ⇒ plain）。L257 那一步：58 → **59**（新守卫那支值位引用 `CLI_TRIO_SUBCOMMANDS` 的 parametrize，无 ids ⇒ plain）
+    TIER_DERIVED: 39,  # **L286 重量**：38 → **39**（`test_export_enhanced_empty_set_l286.py::test_the_delegated_exporter_writes_a_file_for_an_empty_dataset` 那支值位引用模块级常数清单 `DELEGATED_FORMATS`、其元素写成 `ExportFormat.CSV` 这一族属性取值 ⇒ derived，无 ids ⇒ 进盲面。档位和与 plain 那格同批走到 124，红读数 `{'derived': 39, ...} != {'derived': 38, ...}`。）
+    TIER_IDS_DERIVED: 12,  # **L287 重量**：11 → **12**（新守卫那一支 `sorted(WRITERS)` + `ids=str`，
+                           # 逐格点名见上面 `MEASURED_IDS_DERIVED_SITES` 的注释；四档之和 125 与 l97
+                           # 的 `MEASURED_BLIND` 同数，其余三档 63/39/11 一格未动）
     TIER_OPAQUE: 11,
 }
 #: 盲面里静态读到类型形状的格（无字面 ids 即违规）：**0 格** —— 这就是 L97 残项的答案
@@ -115,7 +117,7 @@ MEASURED_OPAQUE_SITES: frozenset = frozenset({
     "unit/test_python_version_floor_l198.py::test_documented_claim_is_present#0",
     "unit/test_transform_wiring_l229.py::test_every_target_the_page_offers_is_accepted_by_the_endpoint#0",
 })
-#: `ids=` 写成非字面量的 11 格（同上键形）—— L97 只记「有没有 ids」，这一档是它看不见的
+#: `ids=` 写成非字面量的 12 格（同上键形）—— L97 只记「有没有 ids」，这一档是它看不见的
 MEASURED_IDS_DERIVED_SITES: frozenset = frozenset({
     "integration/test_api_dataset_system_tools.py::test_rejected_with_400#1",
     "unit/test_exceptions.py::test_builtin_compat_contract#0",
@@ -128,6 +130,10 @@ MEASURED_IDS_DERIVED_SITES: frozenset = frozenset({
     "unit/test_transform_wiring_l229.py::test_every_key_is_read_in_the_page_receipt#0",
     "unit/test_transform_wiring_l229.py::test_the_initial_value_is_the_contract_default#0",
     "unit/test_transform_wiring_l229.py::test_ts_face_matches_the_response_model#0",
+    # **L287 重量**：11 → **12**（新守卫 `test_sheet_formula_injection_l287.py::test_every_leader_gets_
+    # the_apostrophe_on_every_edge` 值位写成 `sorted(WRITERS)` 且 `ids=str` ⇒ 落在这一档；同文件另两支
+    # parametrize 的值位是内联字面清单 ⇒ 走可读面，所以 l97 的 CALLS +3 而盲面只 +1，两面各自闭合）
+    "unit/test_sheet_formula_injection_l287.py::test_every_leader_gets_the_apostrophe_on_every_edge#0",
 })
 #: 动态面**不做豁免**时读到的风险名册，按解释器分档钉住（同一份源码在两版上是两种对象，
 #: 把两版读数写进同一张表才是这条判据的全部信息量；未知解释器直接抛，不给读数）
@@ -180,14 +186,14 @@ MEASURED_HAZARD_ROSTER: Dict[Tuple[int, int], frozenset] = {
 #: **L230 回填（豁免 18 → 23，+5）**：同文件五支用例的每一支 parametrize 都自带字面 ids
 #: 清单（回执键名册、路径判决、越界 ratio 三臂、`target_size` 四策略、TS 面三张回执），
 #: 整支进豁免名册。豁免是「动态面放过」的名单，涨它不等于放松：值位那一维仍逐格判。
-MEASURED_BLIND_TESTS = 116  # **L259 重量**：115 → **116**（`test_each_guarded_module_imports_the_authority_not_a_local_copy` 按名进盲面名册，本轮那支的九档逐档真跑）。L258 那一步：114 → **115**（`test_each_guarded_module_imports_the_authority_not_a_local_copy` 按名进盲面名册）
-MEASURED_BLIND_SEEN = 116  # **L259 重量**：115 → **116**（新那支盲面站点被动态面真采到，与盲面用例名册同数 ⇒ 覆盖面没有掉队）。L258 那一步：114 → **115**（新那支盲面站点被动态面真采到，与盲面用例名册同数 ⇒ 覆盖面没有掉队）
+MEASURED_BLIND_TESTS = 124  # **L290 重量**：120 → **124**（本轮两支新守卫各按名进盲面用例名册两支（每文件那两支用例名互不相同 ⇒ 名册 +4 而不是 +2）：`test_dependency_registry_lock_l290.py` 的 `test_each_write_site_enters_the_registry_lock_exactly_once` / `test_read_precedes_write_and_both_sit_inside_the_lock`、`test_versioning_current_lock_l290.py` 的 `test_write_site_enters_the_storage_dir_lock_exactly_once` / `test_the_check_and_the_act_are_in_the_same_span`；四格值位都是 `sorted(<模块级常数>)`、无 `ids=` ⇒ 用例名看得见、格子值看不见。**这两格按循环纪律只有全量能看见**（本文件自带「本次采集不得低于 3000 条」的尺子自证闸门，定向跑必出 `RulerNotProven`），所以名册这一格的最终复验在全量那一次；静态侧 `Temp/l290q/l98blindtests.py` 已现量 `blind_sites 129 / blind_tests 124`（同名多格那 5 支与改前同一批 ⇒ 120 + 4 = 124 是量出来的，不是推的）；`MEASURED_EXEMPT_SITES` 34 一格未动（四格都不写字面 `ids=`）。）**L287 重量**：119 → **120**（新守卫 `test_sheet_formula_injection_l287.py` 里 `test_every_leader_gets_the_apostrophe_on_every_edge` 一支按名进盲面：值位 `sorted(WRITERS)`、`ids=str` ⇒ 用例名看得见、格子值看不见；同文件另两支 parametrize 走可读面 ⇒ 只 +1。）  # **L286 重量**：117 → **119**（本轮两支新守卫各一支按名进盲面用例名册：`test_dir_self_landing_l286.py::test_ordinary_names_still_land_strictly_inside` 值位引用模块级常数清单 `STILL_ACCEPTED`、无 ids ⇒ plain；`test_export_enhanced_empty_set_l286.py::test_the_delegated_exporter_writes_a_file_for_an_empty_dataset` 值位引用 `DELEGATED_FORMATS` 且元素写成 `ExportFormat.CSV` 那一族属性取值 ⇒ derived。两格与同批档位和 122 → **124** 叠在同一批上，独立咬合 l97 侧 `MEASURED_BLIND` 同涨那两格。红读数 `assert 119 == 117`。**这一格为什么漏到全量才红**：L286 的定向门禁跑了十四只文件，l98 不在其中——它自带「本次采集不得低于 3000 条」的尺子自证闸门，局部跑必出 `RulerNotProven`，所以名册这一格只有全量能看见；同批 `MEASURED_TIERS` 的 plain/derived 两格在定向之前就已按现量钉过，红的只是漏钉的那格，尺子一格未松。**L284 重量**：116 → **117**（`test_validation_finite_echo_l284.py::test_nan_echo_returns_422_not_500` 按名进盲面用例名册）。红读数 `assert 117 == 116`。**L259 重量**：115 → **116**（`test_each_guarded_module_imports_the_authority_not_a_local_copy` 按名进盲面名册，本轮那支的九档逐档真跑）。L258 那一步：114 → **115**（`test_each_guarded_module_imports_the_authority_not_a_local_copy` 按名进盲面名册）
+MEASURED_BLIND_SEEN = 124  # **L290 重量**：120 → **124**（与名册那格同批：本轮四格盲面站点被动态面真采到，`blind_tests - seen` 差集为空 ⇒ 进的是「被看到」那一维，不是「被放过」那一维；同批 `MEASURED_EXEMPT_SITES` 34 一格未动。这一格只能由全量那一次现量取证（定向跑必出 `RulerNotProven`），落钉之后待全量复验，本轮不写成已观测。）**L287 重量**：119 → **120**（新守卫 `test_sheet_formula_injection_l287.py` 里 `test_every_leader_gets_the_apostrophe_on_every_edge` 一支按名进盲面：值位 `sorted(WRITERS)`、`ids=str` ⇒ 用例名看得见、格子值看不见；同文件另两支 parametrize 走可读面 ⇒ 只 +1。）  # **L286 重量**：117 → **119**（与名册同批，且仓外现量证动态面**真采到**那两支：整树 `--collect-only` 一次采集 10022 条，`blind_tests - seen` 差集为空 ⇒ 覆盖面没有掉队；豁免名册 `MEASURED_EXEMPT_SITES` 同一次现量仍是 34、一格未动 ⇒ 这两格进的是「被看到」那一维，不是「被放过」那一维）。红读数与名册那格同源（`assert 117 == 116` 那一族的下一格）。**L284 重量**：116 → **117**（新那支盲面站点被动态面真采到，与盲面用例名册同数 ⇒ 覆盖面没有掉队；豁免名册同批 33 → **34**，见 `MEASURED_EXEMPT_SITES`）。红读数 `assert 117 == 116`。**L259 重量**：115 → **116**（新那支盲面站点被动态面真采到，与盲面用例名册同数 ⇒ 覆盖面没有掉队）。L258 那一步：114 → **115**（新那支盲面站点被动态面真采到，与盲面用例名册同数 ⇒ 覆盖面没有掉队）
 #: 现量：整支豁免（该用例的每一支 parametrize 都写了字面 ids）的用数
 #: **L241 回填（23 → 24）**：`test_cost_oracle_routing_l241.py` 的
 #: `test_no_float_no_call_no_attribute` 那一支 parametrize 自带字面 ids 清单（`dedup` / `leakage`）
 #: ⇒ 整支进豁免名册。豁免是「动态面放过」的名单，涨它不等于放松：值位那一维仍逐格判，
 #: 且本轮档位四档（58/38/11/11）与盲面 118 一格未动，两边独立闭合。
-MEASURED_EXEMPT_SITES = 24
+MEASURED_EXEMPT_SITES = 34  # **L284 重量**：33 → **34**（新守卫 `test_validation_finite_echo_l284.py` 里 `test_default_handler_called_once` 一支——它**唯一**的 parametrize 把值位与 `ids=` 两串都写成内联字面量 ⇒ 整支进豁免名册；本文件另四支不整支豁免，`test_nan_echo_returns_422_not_500` 那一支还进了盲面）。红读数 `assert 34 == 33`，同一次现量里档位和 122、`MEASURED_BLIND_TESTS` 与 `MEASURED_BLIND_SEEN` 各 117、三张逐格名册（typed 空集 / opaque 11 / ids-derived 11）一字未动 ⇒ 豁免名单变长只是「动态面放过」那一格多了新成员，值位那一维仍逐格判，尺子没有放松。**L281 重量**：27 → **33**（新守卫 `test_missing_file_family_l281.py` 的六支用例，每一支**唯一**的 parametrize 都把值位与 `ids=` 两串写成内联字面量 ⇒ 整支进豁免名册，逐格点名：`test_checkpoint_unlink_sites_declare_missing_ok` / `test_processors_stat_the_size_under_file_not_found` / `test_processors_report_the_honest_missing_reading` / `test_the_corpus_ruler_names_the_pre_fix_shape` / `test_the_roster_names_a_flipped_missing_ok` / `test_the_roster_names_a_widened_except_face`）。红读数 `assert 453 == 447`（l97 那侧），同一次仓外现量里盲面四档（plain 61 / derived 38 / ids-derived 11 / opaque 11 = 121）、`MEASURED_BLIND_TESTS` 116、`MEASURED_BLIND_SEEN` 116、`MEASURED_TIERS` 与两张盲面名册各自一字未动，六格全落 `ids-literal` 档 ⇒ 豁免名单变长只是「动态面放过」的那一格多了新成员，值位那一维仍逐格判，尺子没有放松。**L277 重量**：25 → **27**（新增两支整支豁免的用例，逐格点名：`test_backup_name_path_segment_l277.py::test_http_create_refuses_it_with_its_own_verdict`（10 档坏名，值位与 `ids=` 两串都是内联字面量）与 `::test_create_restore_delete_all_reach_it`（6 档合法名，同形）⇒ 两支的**每一支** parametrize 都写字面 ids，整支进豁免名册）。红读数 `assert 27 == 25`，同一次全量（9717 条采集）里盲面用例 116、BLIND_SEEN 116、四档（plain 61 / derived 38 / ids-derived 11 / opaque 11 = 121）与 l97 那三格（445/324/121）各自未动 ⇒ 豁免名单变长只是「动态面放过」的那一格多了新成员，值位那一维仍逐格判，尺子没有放松。本轮另五处新 parametrize（`test_config_dir_containment_l277.py` 两支、`test_vuln_audit_l277.py` 三支）**不带** ids ⇒ 一支都不进豁免，与 l97 侧「七格全落可读档」的读数互不矛盾。**L262 重量**：24 → **25**（`test_empty_container_defaults_l262.py::test_empty_list_is_swallowed_into_the_default` 那一支把 parametrize 的值位与 `ids=` 两串都写成内联字面量 ⇒ 整支进豁免名册）。红读数 `assert 25 == 24`，同一次全量里盲面用例 116、BLIND_SEEN 116、四档（61/38/11/11）与 l97 那三格（438/317/121）各自未动 ⇒ 豁免名单变长只是「动态面放过」的那一格多了新成员，值位那一维仍逐格判，尺子没有放松。
 #: 动态面至少要采到这么多条，否则「没有风险对象」只是没采到（A171 口径：数不到不判干净）
 MIN_COLLECTED_ITEMS = 3000
 

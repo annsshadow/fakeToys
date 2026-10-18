@@ -394,7 +394,7 @@ func seedShop(ctx context.Context, tx pgx.Tx, res *SeedResult) error {
 		{3, "shop_energy", "体力补给", "currency", map[string]int{"gem": 20}, map[string]int{"energy": 30}, 2, false},
 		{4, "shop_keys", "钥匙串", "currency", map[string]int{"gem": 30}, map[string]int{"keys": 3}, 1, false},
 		// 复活币：第 153 轮**第二次恢复上架** —— 这次是真的有效。
-		// 第 152 轮实测（`miniapp/src/game/revive_bonus_is_inert.test.ts`，100 关全跑）证明
+		// 第 152 轮实测（100 关全跑，记录见 README 已知边界第 16 条）证明
 		// 「+X% 基础血量」**几乎不产生任何效果**：
 		//
 		//	普通怪漏怪伤害 = baseHpMax / LeakDamageDivisor，与血量同步缩放

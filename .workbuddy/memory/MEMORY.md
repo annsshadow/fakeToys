@@ -11,7 +11,8 @@
 - **配置建议（已实装）**：`pull.ff` 于 2026-08-17 由 `only` 改为 `false`（分叉时走 merge，根治 pull 直接 abort）；`pull.rebase=true` 为备选（线性历史但需干净工作树）。`core.autocrlf` 保持 false。**agent 遗留未提交改动 + 本地提交未推送 + 远端有新提交 = 分叉 → pull/push 同时失败**，标准解法：`stash` 脏树 → `rebase origin/<branch>` → `push`（fast-forward）→ `stash pop`。
 - **危险假象**：损坏 refs 下 `git status` 会显示整个工作树 staged-A（branch has no commits yet）。**切勿 `git commit`**，那会造出游离根提交。
 
-## 环境约束（沙箱）
-- 沙箱抑制 `.git` 写入（loose ref / reset 跨命令不持久），但**工作树文件写入持久**。故涉及 `.git` 结构的修复必须在用户真机终端执行。
-- **勿武断归因**：本 agent 沙箱 `.git` 虽是 overlay stub，但"HEAD 不可解析 + 整树 staged-A 假象"在用户**真机**也会出现（真机 refs 损坏/混乱时）。2026-08-17 曾连续误判用户真机 PowerShell 运行为沙箱，须**先向用户确认运行环境**再下结论，而非仅凭症状猜测。
+## 环境约束（写入持久性随环境而定，动 .git 前先探针实测）
+- **⚠️ 已更新（2026-10-14 实测）**：当前环境 `.git` **完全可写且跨命令持久**——探针 blob（`echo x | git hash-object -w --stdin`）落盘 `.git/objects/` 且新命令 `cat-file -t` 可读；探针 ref `refs/wb-probe/check` 写入→跨命令可见→`update-ref -d` 删除均成功；`git commit` 正常且 `git log`/`git show --stat` 跨命令复核通过（提交 `5ba7c0731`）。⇒ **可直接在会话内提交**，勿再照搬"必须由用户真机执行"的旧结论。
+- 历史（2026-08 沙箱会话）：曾出现 `.git` 写入不持久（loose ref / reset 跨命令失效；工作树文件写入持久）。**不变的原则**：涉及 .git 结构修复前先用无害探针（写入 blob + 临时 ref，验证后即删）实测持久性，再决定是自己动手还是交用户真机。
+- **勿武断归因**：本 agent 沙箱 `.git` 曾是 overlay stub，但"HEAD 不可解析 + 整树 staged-A 假象"在用户**真机**也会出现（真机 refs 损坏/混乱时）。2026-08-17 曾连续误判用户真机 PowerShell 运行为沙箱，须**先向用户确认运行环境**再下结论，而非仅凭症状猜测。
 - 跨空间上下文：用户 annsshadow 关注"AI 是否看得到其他空间上下文"（见 2026-08-13.md）；用 WorkBuddy 时各 workspace 记忆隔离，需主动说明。

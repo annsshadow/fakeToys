@@ -368,6 +368,16 @@ mod security_audit_tests {
             "/api/processplatform/assemble/surface/attachment/batch/delete/manage",
             // AI 线索删除（owner 门禁）
             "/api/ai/chat/delete/some-clue",
+            // 破坏性维护作业/写端点（2026-10-13 二轮复核：原 o2server 对齐豁免误放，
+            // handler 均为 admin 门禁，移出豁免后未认证 401 而非 500）
+            "/api/attendance/assemble/control/dingding/all",
+            "/api/attendance/assemble/control/qywx/all",
+            "/api/attendance/assemble/control/statistic/do",
+            "/api/attendance/assemble/control/attendancestatisticalcycle",
+            "/api/document/batch/d-1",
+            "/api/file/assemble/control/file/referencetype/t1/reference/r1",
+            "/api/meeting/assemble/control/config",
+            "/api/script/list/manager",
         ];
         for path in destructive {
             assert!(

@@ -34,9 +34,9 @@ oa4rust 项目在 2026-08-09 已完成全部 81 个 crate 的真实化和 SeaORM
 ## Requirements
 
 **计划清理**
-- R1. 将 `docs/plans/2026-08-07-001-feat-oa4rust-4wave-realization-plan.md` 和 `docs/plans/2026-08-09-001-refact-oa4rust-orm-migration-plan.md` 的 `status` 从 `active` 更新为 `completed`
-- R2. 将 `docs/plans/2026-08-05-001-feat-oa4rust-comprehensive-advancement-plan.md`、`docs/plans/2026-08-06-001-feat-oa4rust-full-realization-plan.md`、`docs/plans/2026-08-03-001-refactor-o2server-rust-rewrite-plan.md` 的 `status` 更新为 `superseded`，并在文件头部添加注释说明被哪个计划取代
-- R3. 将 `docs/plans/2026-07-30-001-refactor-zero-secret-migration-plan.md` 的 `status` 更新为 `completed`（delivery.md 已确认所有单元完成）
+- R1. 将 `docs/archived-plans/2026-08-07-001-feat-oa4rust-4wave-realization-plan.md` 和 `docs/archived-plans/2026-08-09-001-refact-oa4rust-orm-migration-plan.md` 的 `status` 从 `active` 更新为 `completed`
+- R2. 将 `docs/archived-plans/2026-08-05-001-feat-oa4rust-comprehensive-advancement-plan.md`、`docs/archived-plans/2026-08-06-001-feat-oa4rust-full-realization-plan.md`、`docs/archived-plans/2026-08-03-001-refactor-o2server-rust-rewrite-plan.md` 的 `status` 更新为 `superseded`，并在文件头部添加注释说明被哪个计划取代
+- R3. 将 `docs/archived-plans/2026-07-30-001-refactor-zero-secret-migration-plan.md` 的 `status` 更新为 `completed`（delivery.md 已确认所有单元完成）
 
 **program_center_core_entity 写操作补全**
 - R4. 为 `program_center_core_entity` crate 的 5 个实体（application、script、invoke、agent、structure）补全 POST/PUT/DELETE 写操作端点

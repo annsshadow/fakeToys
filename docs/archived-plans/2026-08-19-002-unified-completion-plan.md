@@ -3,12 +3,12 @@ title: OA4Rust 全面收尾与生产就绪计划
 type: plan
 status: completed
 date: 2026-08-19
-origin: docs/plans/2026-08-13-003-oa4rust-completion-plan.md
+origin: docs/archived-plans/2026-08-13-003-oa4rust-completion-plan.md
 ---
 
 # OA4Rust 全面收尾与生产就绪计划
 
-> 统一承接 `docs/plans/2026-08-13-003-oa4rust-completion-plan.md` 与 `docs/plans/2026-08-19-001-fix-close-all-blocking-gaps-plan.md`，将两份计划中未完成项、测试缺口、生产就绪项、o2server 缺失功能整合为可执行的新计划。
+> 统一承接 `docs/archived-plans/2026-08-13-003-oa4rust-completion-plan.md` 与 `docs/archived-plans/2026-08-19-001-fix-close-all-blocking-gaps-plan.md`，将两份计划中未完成项、测试缺口、生产就绪项、o2server 缺失功能整合为可执行的新计划。
 
 ---
 
@@ -261,7 +261,7 @@ origin: docs/plans/2026-08-13-003-oa4rust-completion-plan.md
 
 ## 6. 下一步动作
 
-1. **立即**：创建 `docs/plans/2026-08-19-002-unified-completion-plan.md`（本计划）
+1. **立即**：创建 `docs/archived-plans/2026-08-19-002-unified-completion-plan.md`（本计划）
 2. **按优先级**：从 Phase A 开始执行，先修复测试基线
 3. **每完成一个 Phase**：更新本计划的状态标记，记录实际耗时与偏差
 

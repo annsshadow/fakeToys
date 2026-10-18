@@ -49,7 +49,7 @@ const configFixture = () => ({
   ],
   composite_skills: [{ id: 9, name: '超导融合', element: 'lightning', descr: '冰+电' }],
   reactions: [
-    { key: 'steam_burst', name: '蒸汽爆发', base_coef: 1500, attack_weight_pct: 300, status_duration_ms: 5000, aoe_radius: 0, dispel_shield: false, amplify_pct: 0 },
+    { key: 'steam_burst', name: '蒸汽爆发', base_coef: 1500, attack_weight_pct: 300, status_duration_ms: 5000, aoe_radius: 120, dispel_shield: false, amplify_pct: 0 },
     { key: 'superconduct', name: '超导', base_coef: 2000, attack_weight_pct: 200, status_duration_ms: 8000, aoe_radius: 2, dispel_shield: true, amplify_pct: 20 },
   ],
   chapters: [
@@ -109,7 +109,7 @@ describe('WikiView 配置加载', () => {
 })
 
 describe('WikiView 核心规则页签', () => {
-  it('反应表：攻击力权重 ≥300 预警为 warning 色阶，溅射 0 显示「单体」', async () => {
+  it('反应表：攻击力权重 ≥300 预警为 warning 色阶，溅射半径按值渲染', async () => {
     const wrapper = await mountWiki()
     const rows = wrapper.findAll('.el-table__row')
     const steamRow = rows.find((r) => r.text().includes('蒸汽爆发'))!
@@ -120,7 +120,7 @@ describe('WikiView 核心规则页签', () => {
     const weightTag = (r: (typeof rows)[number]) =>
       r.findAll('.el-tag').find((t) => t.text().includes('‰'))!
     expect(weightTag(steamRow).classes()).toContain('el-tag--warning') // 300 → 预警
-    expect(steamRow.text()).toContain('单体') // aoe_radius 0
+    expect(steamRow.text()).toContain('120') // aoe_radius 120（真实值）
     expect(weightTag(scRow).classes()).toContain('el-tag--info') // 200 → info
     expect(scRow.text()).toContain('2') // aoe_radius 2
     wrapper.unmount()
@@ -152,6 +152,7 @@ describe('WikiView 核心规则页签', () => {
     const rows = wrapper.findAll('.el-table__row')
     const row = (n: string) => rows.find((r) => r.text().includes(n))!
     expect(row('闪冻').text()).toContain('冻结 3.0s') // flash_freeze 分支
+    expect(row('闪冻').text()).toContain('单体') // aoe_radius 0 → 回退文案
     expect(row('超导').text()).toContain('减速 8.0s') // superconduct 分支
     expect(row('过热').text()).toContain('眩晕 2.0s') // overheat 分支
     expect(row('燃云').text()).not.toContain('s') // status 0 → muted「—」，无秒数

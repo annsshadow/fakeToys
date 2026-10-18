@@ -54,5 +54,5 @@
 ## 参考
 
 - **迁移状态：** `docs/brainstorms/oa4rust-migration-status-2026-08-08.md`
-- **计划文档：** `docs/plans/2026-08-09-001-refact-oa4rust-orm-migration-plan.md`
-- **生产就绪：** `docs/plans/2026-08-10-001-prod-readiness-plan.md`
+- **计划文档：** `docs/archived-plans/2026-08-09-001-refact-oa4rust-orm-migration-plan.md`
+- **生产就绪：** `docs/archived-plans/2026-08-10-001-prod-readiness-plan.md`

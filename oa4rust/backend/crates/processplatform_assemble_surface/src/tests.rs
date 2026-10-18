@@ -110,7 +110,8 @@ async fn test_create_surface_route_exists() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    // 本批给表面写收 admin 门：无会话先于读库回 401（而非原先无门的 500）。
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
 }
 
 #[tokio::test]
@@ -172,7 +173,8 @@ async fn test_save_surface_route_exists() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    // 表面写收 admin 门：无会话先于读库回 401。
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
 }
 
 #[tokio::test]
@@ -191,7 +193,8 @@ async fn test_delete_surface_route_exists() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    // 表面写收 admin 门：无会话先于读库回 401。
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
 }
 
 #[tokio::test]
@@ -229,7 +232,8 @@ async fn test_publish_surface_route_exists() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    // 表面写收 admin 门：无会话先于读库回 401。
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
 }
 #[cfg(test)]
 mod tests {
