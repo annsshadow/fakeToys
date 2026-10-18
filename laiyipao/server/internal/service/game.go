@@ -142,7 +142,7 @@ func (s *Service) StartBattle(ctx context.Context, userID int64, levelID int) (B
 	// 实测证明**任何倍率都不生效**：漏怪伤害以 `baseHpMax` 为分母
 	// （`engine.ts` 的 `baseHpMax / LeakDamageDivisor`），血量与漏怪伤害
 	// 同步放大，比值不变，见 domain/revive.go 文件头与
-	// `miniapp/src/game/revive_bonus_is_inert.test.ts`。
+	// README 已知边界第 16 条（实测 100 关 0 关翻盘）。
 	//
 	// 现在改为下发**额外当前血量**：它加在 `baseHp` 上而**不动 `baseHpMax`**，
 	// 这才是「多扛 N 次漏怪」。

@@ -358,7 +358,7 @@ func (g *RecomputeGate) Decide(ctx context.Context, now time.Time, scope Recompu
 	}
 }
 
-// checkBreaker 判��是否该熔断。
+// checkBreaker 判断是否该熔断。
 //
 // # 阈值为什么是「样本量 + 不符率」两条，而不是只看不符率
 //
@@ -396,10 +396,10 @@ const MinBreakerSamples = 200
 // 20‰ = 2%。定这个数的理由：
 //
 //   - 诚实玩家的不符率**理论上是 0** —— 重算与真实上报逐位相同才不叫不符。
-//     所以任何非零值都值得看，而 2% 足以把「一次系统��漂移」
+//     所以任何非零值都值得看，而 2% 足以把「一次系统性漂移」
 //     与「零星作弊」分开（作弊通常是某个号的 100%，不是全服的 2%）。
 //   - 不能定 0：样本里总会混进网络重试、客户端时钟漂移这类边缘情况。
-//   - 不能定 5%：5% 意味着 20 分之一的真实玩家被拒发，那已经���事故了。
+//   - 不能定 5%：5% 意味着 20 分之一的真实玩家被拒发，那已经是事故了。
 const MaxBreakerRate = 20
 
 // evaluateBreaker 是熔断判定的**纯函数**部分（便于单测）。
@@ -457,7 +457,7 @@ type RecomputeRecord struct {
 	EngineVersion string
 }
 
-// MismatchFields 返回不��字段列表（never nil，调用方可直接写库）。
+// MismatchFields 返回不符字段列表（never nil，调用方可直接写库）。
 func (r *RecomputeRecord) MismatchFields() []string {
 	if r.MismatchedFields == nil {
 		return []string{}

@@ -71,7 +71,7 @@ func TestGrantTokenNegativeDeltaNeverAbortsTransaction(t *testing.T) {
 	// ⚠️ 必须把原价存下来并在结束时还原。
 	//
 	// 本包**所有**用例共享一个一次性库（第 150 轮的 `packageDSN`），
-	// 所以任何「改共享行却��还原」的用例都在给后面的用例埋雷。
+	// 所以任何「改共享行却不还原」的用例都在给后面的用例埋雷。
 	// 实测过一次：本用例把 price 改成 {"mastery_reset":5} 后没还原，
 	// 于是后面的 `TestShopDayBoundaryMatchesTaskDayBoundary`
 	// （它取 `ORDER BY id LIMIT 1` 的第一个在售商品）挑中了这一件，

@@ -216,7 +216,7 @@ func (c terrainCtx) TerrainTickDamage() int64 { return ElementPerStackBase / 8 }
 //	它是关卡 `element_cap` + 局内 `elementCapBonus` 的合成值，
 //	玩家还能靠「元素容器」卡抬高。
 //	用 `currentAttacker()` 而不是各处重算：那是唯一一处已经把这个
-//	合成值算对的地方，重���就是**第二份实现**。
+//	合成值算对的地方，重算就是**第二份实现**。
 func (c terrainCtx) ElementCap() int64 { return c.e.currentAttacker().ElementCap }
 
 // Enemies 返回全部敌人（给全场元素用）。

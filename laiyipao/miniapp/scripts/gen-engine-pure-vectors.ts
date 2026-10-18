@@ -104,7 +104,7 @@ const skills = new Map<number, SkillDef>(
  * 而且**只在跑到第一次伤害时才炸**（`damageScore` 里除法那行），
  * 前面几十行配置全部正常通过。
  *
- * 那是��很坏的报错位置：如果向量里选的关卡一波都没开火，
+ * 那是个很坏的报错位置：如果向量里选的关卡一波都没开火，
  * 这个类型错误会**完全不出现**，生成器照常产出「合法」的向量文件，
  * 而文件里的分数规则是错的。
  *
@@ -235,7 +235,7 @@ const workRows = WORKS_CASES.map(({ works, label }) => {
   // 不是「TS 的 applyWorks 是这样」。
   //
   // 缓解：Go 侧的守卫另外断言了逐条映射关系（见 engine_pure_contract_test.go
-  // 的 TestApplyWorksMatchesDocumentedMapping），把「三���装置各加多少」
+  // 的 TestApplyWorksMatchesDocumentedMapping），把「三种装置各加多少」
   // 钉成**独立于本文件**的断言。若两端映射表真的不一致，
   // 至少有一处会红。
   const a: Attacker = { ...COMBAT_ATTACKER }

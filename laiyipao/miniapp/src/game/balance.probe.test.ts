@@ -11,7 +11,7 @@
  *   - 「attack 边际收益低」→ 部分成立（敌人血量太低），但没量化过
  *
  * 用法：npx vitest run --config vitest.config.ts src/game/balance.probe.test.ts
- * 输出会以 [bal] 开头打印到控制��。
+ * 输出会以 [bal] 开头打印到控制台。
  */
 import { describe, it } from 'vitest'
 import fixture from '@vectors/smoke_levels.json'
