@@ -46,7 +46,7 @@ import (
 func readFileFrom(t *testing.T, what string, rels ...string) string {
 	t.Helper()
 	for _, rel := range rels {
-		for _, base := range []string{"", "..", filepath.Join("..", ".."), filepath.Join("..", "..", "..")} {
+		for _, base := range []string{"", "..", filepath.Join("..", ".."), filepath.Join("..", "..", ".."), filepath.Join("..", "..", "..", "..")} {
 			p := filepath.Join(base, rel)
 			if b, err := os.ReadFile(p); err == nil {
 				return string(b)
@@ -58,7 +58,9 @@ func readFileFrom(t *testing.T, what string, rels ...string) string {
 	return ""
 }
 
-const designDocPath = "docs/GAME_DESIGN.md"
+// designDocPath 等文档路径：2026-10-14 起子项目文档迁到仓库根 docs/laiyipao/，
+// 所以要在 readFileFrom 的候选基址（含向上一级到仓库根）下按新路径解析。
+const designDocPath = "docs/laiyipao/GAME_DESIGN.md"
 
 // tsConst 从 TS 源码抽 `export const NAME = <number>`。
 //
@@ -230,8 +232,8 @@ func TestGameDesignDeclaresKnownGaps(t *testing.T) {
 //  3. 两个探针端点确实注册
 //  4. 文档覆盖了全部环境变量（漏一个，运维就少配一个）
 func TestOpsDocMatchesReality(t *testing.T) {
-	ops := readFileFrom(t, "运维手册 docs/OPERATIONS.md",
-		filepath.Join("docs", "OPERATIONS.md"))
+	ops := readFileFrom(t, "运维手册 docs/laiyipao/OPERATIONS.md",
+		filepath.Join("docs", "laiyipao", "OPERATIONS.md"))
 	cfgSrc := readFileFrom(t, "配置源码 miniapp/server 内",
 		filepath.Join("..", "internal", "config", "config.go"))
 
@@ -282,8 +284,8 @@ func TestOpsDocMatchesReality(t *testing.T) {
 // 一份把这些删掉的运维手册，比没有手册更危险 ——
 // 因为它读起来仍然完整。
 func TestOpsDocHasCriticalWarnings(t *testing.T) {
-	ops := readFileFrom(t, "运维手册 docs/OPERATIONS.md",
-		filepath.Join("docs", "OPERATIONS.md"))
+	ops := readFileFrom(t, "运维手册 docs/laiyipao/OPERATIONS.md",
+		filepath.Join("docs", "laiyipao", "OPERATIONS.md"))
 
 	// ⚠️ 判据必须是**警告的实质内容**，不能是「某个词出现过」。
 	//
@@ -387,8 +389,8 @@ func TestDesignDocHasNoFalseImplementationClaims(t *testing.T) {
 // 要求每个 URL 要么命中根挂载（`/healthz`、`/readyz`），
 // 要么以某个 Group 前缀开头，且剩余部分能对上某个注册路径。
 func TestOpsDocURLsAreReal(t *testing.T) {
-	ops := readFileFrom(t, "运维手册 docs/OPERATIONS.md",
-		filepath.Join("docs", "OPERATIONS.md"))
+	ops := readFileFrom(t, "运维手册 docs/laiyipao/OPERATIONS.md",
+		filepath.Join("docs", "laiyipao", "OPERATIONS.md"))
 	routes := readFileFrom(t, "路由表 server/internal/httpapi/routes.go",
 		filepath.Join("..", "httpapi", "routes.go"))
 
