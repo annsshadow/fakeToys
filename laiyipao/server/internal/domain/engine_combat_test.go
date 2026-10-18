@@ -473,11 +473,11 @@ func TestSteamBurstSplashIsQuarter(t *testing.T) {
 	// ⚠️ 溅射半径必须来自反应表，不是硬编码。
 	// 写成常量 120 的话，改反应表时不会红 ——
 	// 而 `reaction_specs.json` 是服务端 canonical，与 TS 表由契约测试锁定。
-	if steamBurstAoeRadius() <= 0 {
+	if reactionAoeRadius(ReactionSteamBurst) <= 0 {
 		t.Errorf("steam_burst 的 aoe_radius = %d，必须为正 —— "+
-			"半径为 0 时 `triggerSteamBurstAoe` 什么都不做，"+
+			"半径为 0 时 `triggerReactionAoe` 什么都不做，"+
 			"而卡面文案仍写着「半径 120 像素内的敌人受到 25%% 范围伤害」",
-			steamBurstAoeRadius())
+			reactionAoeRadius(ReactionSteamBurst))
 	}
 }
 
@@ -509,7 +509,7 @@ func TestSteamBurstSplashDoesNotConsumeRng(t *testing.T) {
 
 	att := Attacker{Attack: 100, ReactionMultPermille: 1000, ElementCap: 3,
 		ReactionTier: 1, ElementCoefPermille: 1000}
-	e.triggerSteamBurstAoe(origin, 400, att)
+	e.triggerReactionAoe(origin, ReactionSteamBurst, 400, att)
 
 	// 触发溅射之后再取三次：若溅射内部掷过骰子，
 	// 这三次会与「同种子下不掷骰」的序列错开。
@@ -524,6 +524,74 @@ func TestSteamBurstSplashDoesNotConsumeRng(t *testing.T) {
 		t.Errorf("溅射后 RNG 序列 = [%d,%d]，不掷骰时应为 [%d,%d] —— "+
 			"溅射消耗了 RNG，后续每次暴击判定的取值都会偏移",
 			r1, r2, want1, want2)
+	}
+}
+
+// TestOverheatSplashUsesOwnRadius 守住 overheat 爆炸的三个口径（第 160 轮）。
+//
+// # 为什么这条必须存在
+//
+// `triggerReactionAoe` 的半径读自**触发反应自己的表项**。若实现里写死
+// steam_burst 的半径（或共用一个常量），overheat 就会按 120 结算 ——
+// 而文案写的是 90。夹具把邻居摆在**两条半径之间**（100px）：
+// 120 打到、90 打不到，于是「半径读的是哪条反应」在观测上可分辨。
+//
+// 另外两个口径一并钉住：
+//   - 眩晕（StatusDurationMs）只作用主目标：溅射不写 StunnedMs；
+//   - 源体不计：origin 自己不再吃一次伤害。
+//
+// ⚠️ 对照组（同场景换 steam_burst，100px 邻居**应当**被打到）不可省：
+// 没有它，「far 没掉血」可能只是溅射整体坏了 —— 那是另一种红。
+func TestOverheatSplashUsesOwnRadius(t *testing.T) {
+	att := Attacker{Attack: 100, ReactionMultPermille: 1000, ElementCap: 3,
+		ReactionTier: 1, ElementCoefPermille: 1000}
+
+	// 圆心 + 两邻居：5px（两条半径都覆盖）与 100px（steam 120 覆盖、
+	// overheat 90 不覆盖）。坐标是定点 ×1000。
+	mk := func() (origin, near, far *Enemy) {
+		origin = &Enemy{UID: 1, X: 500000, Y: 500000, HP: 10000, MaxHP: 10000,
+			SpawnProgress: SpawnProgressFull}
+		near = &Enemy{UID: 2, X: 505000, Y: 500000, HP: 10000, MaxHP: 10000,
+			SpawnProgress: SpawnProgressFull}
+		far = &Enemy{UID: 3, X: 600000, Y: 500000, HP: 10000, MaxHP: 10000,
+			SpawnProgress: SpawnProgressFull}
+		return
+	}
+
+	e := newProbeEngine()
+	origin, near, far := mk()
+	e.Enemies = []*Enemy{origin, near, far}
+	e.triggerReactionAoe(origin, ReactionOverheat, 400, att)
+
+	if origin.HP != 10000 {
+		t.Errorf("溅射不得伤到源体：origin.HP = %d", origin.HP)
+	}
+	if near.HP >= 10000 {
+		t.Errorf("5px 邻居应被 overheat 溅射命中（半径 90）：HP = %d", near.HP)
+	}
+	if far.HP != 10000 {
+		t.Errorf("100px 邻居在 overheat 半径（90）之外却吃到了伤害（HP = %d）—— "+
+			"半径很可能读成了 steam_burst 的 120", far.HP)
+	}
+	if near.StunnedMs != 0 {
+		t.Errorf("溅射不得扩散眩晕：near.StunnedMs = %d", near.StunnedMs)
+	}
+	for _, el := range AllElements() {
+		if near.Stacks[el] != 0 {
+			t.Errorf("溅射不得施加元素层数：near.Stacks[%s] = %d", el, near.Stacks[el])
+		}
+	}
+
+	// 对照组：同一几何、换成 steam_burst（半径 120），100px 邻居应被打到。
+	e2 := newProbeEngine()
+	o2, n2, f2 := mk()
+	e2.Enemies = []*Enemy{o2, n2, f2}
+	e2.triggerReactionAoe(o2, ReactionSteamBurst, 400, att)
+	if n2.HP >= 10000 {
+		t.Errorf("对照组：5px 邻居应被 steam_burst 溅射命中：HP = %d", n2.HP)
+	}
+	if f2.HP >= 10000 {
+		t.Errorf("对照组：100px 邻居应被 steam_burst（半径 120）命中：HP = %d", f2.HP)
 	}
 }
 

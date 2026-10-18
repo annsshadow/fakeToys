@@ -1724,7 +1724,7 @@ const BUILD_SCENARIOS: BuildScenario[] = [
     seed: '0',
     ticks: 4000,
     sampleEvery: 25,
-    // 腐蚀 + 冰 = steam_burst（唯一有 aoeRadius 的反应）
+    // 腐蚀 + 冰 = flash_freeze（急速冻结；2026-10-18 修正此前「= steam_burst」的误注）
     skillIDs: [16, 17, 4, 18],
     attacker: BUILD_ATTACKER,
   },
