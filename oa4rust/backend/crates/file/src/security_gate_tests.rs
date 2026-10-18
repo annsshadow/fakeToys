@@ -6,10 +6,12 @@
 //! - `file_upload`（INSERT `FILE_FILE`）、`folder_create`（INSERT `FILE_FOLDER`）、
 //!   `folder_update`（UPDATE）、`folder_remove`（软删）→ 会话存在档（无会话 401）；
 //! - `permission_set`（UPSERT `FILE_PERMISSION`）→ admin 档（无会话 401 / 非 admin 403）。
+//!
 //! `file_upload`/`folder_create` 的 person 仍取表单/body（冒名残留记 §五）。
 //!
 //! DB 依赖臂：`cargo test --lib -p file -- --ignored`
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod security_gate_tests {
     use axum::extract::{Extension, FromRequest, Multipart};
     use axum::Json;

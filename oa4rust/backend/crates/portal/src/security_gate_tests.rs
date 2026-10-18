@@ -5,6 +5,7 @@
 //! Authenticated，任一登录用户可改任意页面正文或**物理删**任意页面。修复后仅 admin；
 //! 无 DB 时 `is_admin` fail-closed → 非 admin 403。
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod security_gate_tests {
     use shared::error::AppError;
 

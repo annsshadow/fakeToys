@@ -23,6 +23,7 @@
 //! 管理员全档落笔」，落笔与不落笔都逐格回读。
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod security_gate_tests {
     use axum::extract::{Extension, Path};
     use axum::Json;

@@ -11,6 +11,7 @@
 //!
 //! DB 依赖臂：`cargo test --lib -p general_assemble_control -- --ignored`
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod security_gate_tests_b64 {
     use axum::extract::{Extension, Json, Path};
     use deadpool_postgres::tokio_postgres::{Config, NoTls};

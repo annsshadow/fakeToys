@@ -5,10 +5,12 @@
 //!
 //! - `file_upload`（INSERT `x_ai_file`）、`file_copy_file`（INSERT … SELECT … `x_ai_file`）、
 //!   `chat_write_completion_extra`（UPDATE `x_ai_chat`）→ 会话存在档（无会话 401）。
+//!
 //! `creator` 硬写 `"system"`/按 id 更新，无可用归属列，仅收"必须有效会话"档（admin/owner 收紧记 §五）。
 //!
 //! DB 依赖臂：`cargo test --lib -p ai_assemble_control -- --ignored`
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod security_gate_tests {
     use axum::extract::Extension;
     use axum::Json;

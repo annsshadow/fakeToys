@@ -10,6 +10,7 @@
 //! 覆盖格：`create/save/delete_correlation` + `unlink_service`（lib.rs 4 把）
 //! 与 `create/update/delete_{pp,cms}`（u2.rs 6 把，共享同一个 `require_admin`）。
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod security_gate_tests {
     use axum::extract::{Extension, Path};
     use shared::error::AppError;

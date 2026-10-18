@@ -68,6 +68,7 @@
 //! DB 依赖臂需真实 PostgreSQL：
 //! `cargo test --lib -p processplatform_service_processing -- --ignored`
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod security_gate_tests {
     use axum::extract::Extension;
     use axum::Json;
@@ -2648,7 +2649,7 @@ mod security_gate_tests {
         )
         .await;
         assert!(
-            matches!(r, Ok(_)),
+            r.is_ok(),
             "发起人过归属门后由 IDOR 返回业务错误信封（HTTP 200）"
         );
         assert_eq!(

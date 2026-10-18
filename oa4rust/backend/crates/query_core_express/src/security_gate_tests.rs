@@ -10,6 +10,7 @@
 //! fail-closed 那一支（admin 但无身份/单位行）需要真实 PostgreSQL 才能走到，
 //! 本机离线只能证到 admin 门；跑真门的命令见 §四。
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod security_gate_tests {
     use shared::error::AppError;
 

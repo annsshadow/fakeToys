@@ -258,9 +258,7 @@ impl LibreOfficePreview {
         // 构建平台的 Path::file_name() 语义——Linux 下反斜杠是普通文件名字符，
         // 若按平台 Path 解析则 `..\..\evil` 会被整体当作末段原样保留，削弱契约。
         // 跨平台统一剥离后，该串在 Windows 与 Linux 上都无法穿越出沙箱。
-        let base = file_name
-            .rsplit(|c: char| c == '/' || c == '\\')
-            .find(|seg| !seg.is_empty())?;
+        let base = file_name.rsplit(['/', '\\']).find(|seg| !seg.is_empty())?;
         if base == "." || base == ".." {
             return None;
         }

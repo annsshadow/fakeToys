@@ -15,6 +15,7 @@
 //! 共 10 把 handler → 17 条 R7 路由。
 //! DB 依赖臂：`cargo test --lib -p query_assemble_surface -- --ignored`
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod security_gate_tests {
     use axum::extract::{Extension, Path};
     use axum::Json;

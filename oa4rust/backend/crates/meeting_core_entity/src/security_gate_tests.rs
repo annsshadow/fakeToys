@@ -5,12 +5,14 @@
 //! meeting_core_entity 会议/会议室写端点越权修复——
 //! - 会议室（x_meeting_room 无属主列）create/update/delete 仅 admin；
 //! - 会议（x_meeting 有 creator 列）update/delete 仅属主/admin。
+//!
 //! 此前中间件兜底 Authenticated，任一登录用户可物理删除/篡改任意会议与会议室。
 //!
 //! 无 DB 时 is_admin fail-closed 返回 false → 会议室写 403（不依赖数据库即可断言）。
 //! 会议属主门禁需先查库取 creator，故用 DB 门控：有库时种真实会议行断言
 //! 非属主 403、属主放行；无库时跳过（与 meeting_assemble_control u2 先例一致）。
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod security_gate_tests {
     use axum::extract::{Extension, Path};
     use serde_json::json;

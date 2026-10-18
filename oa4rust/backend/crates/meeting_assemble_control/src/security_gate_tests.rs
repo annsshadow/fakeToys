@@ -7,6 +7,7 @@
 //! 无会话/无 admin 门禁，匿名网络调用即可 UPDATE x_meeting_config（会议模块全局
 //! 配置：enableOnline / meetingViewer / 视图名等）。修复后：未认证 401、非 admin 403。
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod security_gate_tests {
     use axum::extract::Extension;
     use axum::Json;

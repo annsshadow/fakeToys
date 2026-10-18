@@ -16,6 +16,7 @@
 //!    → **401**（既不是 404 也不是 500）——证明接线修复后路由复活且带门。
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod security_gate_tests_b77 {
     use crate::update_control_config;
     use axum::body::Body;

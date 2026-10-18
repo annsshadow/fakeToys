@@ -5,6 +5,7 @@
 //! jpush 设备注册越权修复——`device_create` 的 userId 原取请求体，任一登录用户
 //! 可替他人注册推送设备（推送劫持面）。修复后 user_id 恒取会话登录人。
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod security_gate_tests {
     use axum::extract::Extension;
     use serde_json::json;
@@ -32,7 +33,7 @@ mod security_gate_tests {
             axum::Json(json!({ "userId": "u-impersonate", "platform": "android", "token": "t" })),
         )
         .await;
-        assert!(matches!(res, Ok(_)), "device_create 属主注册应成功");
+        assert!(res.is_ok(), "device_create 属主注册应成功");
 
         let row = client
             .query_opt(

@@ -474,14 +474,18 @@ async fn route_path_arity_matches_handlers() {
 // （前序失败运行还会因固定种子 id 无前置清理而残留，INSERT 撞唯一键）。故：
 //   1) 用进程内互斥锁把两个 delta 测试串行化（互斥仅约束本 crate 内并发）；
 //   2) 每次开跑前置 DELETE 本测试固定种子行（幂等，失败运行不留残留）。
-static STATE_DELTA_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+//
+// 锁用 `tokio::sync::Mutex` 而不是 `std::sync::Mutex`：互斥要**罩住整段带 await 的测试体**
+// （种子清理、断言都得串行），而把 std 锁的 guard 跨 await 持着正是 `clippy::await_holding_lock`
+// 的打击面（CI 跑 `-D warnings`，main 上这条就红在这里）。异步锁语义相同，还免了 poisoned guard。
+static STATE_DELTA_LOCK: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
 
 #[tokio::test]
 async fn state_summary_filter_buckets_match_seeded_deltas() {
     if !shared::testing::is_db_available().await {
         return;
     }
-    let _delta_guard = STATE_DELTA_LOCK.lock().unwrap_or_else(|p| p.into_inner());
+    let _delta_guard = STATE_DELTA_LOCK.lock().await;
     let pool = shared::testing::test_pool();
     let client = pool.get().await.unwrap();
 
@@ -585,7 +589,7 @@ async fn state_running_filter_buckets_match_seeded_deltas() {
         return;
     }
     // 与 state_summary delta 测试串行化 + 前置清理（测试卫生，见 STATE_DELTA_LOCK）。
-    let _delta_guard = STATE_DELTA_LOCK.lock().unwrap_or_else(|p| p.into_inner());
+    let _delta_guard = STATE_DELTA_LOCK.lock().await;
     let pool = shared::testing::test_pool();
     let client = pool.get().await.unwrap();
 

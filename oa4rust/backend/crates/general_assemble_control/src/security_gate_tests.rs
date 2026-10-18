@@ -7,6 +7,7 @@
 //! 即可全局启停维护模式或改安全等级。无 DB 时 is_admin fail-closed 返回 false，
 //! 非 admin 会话一律 403，故本组断言不依赖数据库。
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod security_gate_tests {
     use axum::extract::Extension;
     use axum::Json;

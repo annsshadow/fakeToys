@@ -8,6 +8,7 @@
 //! 高权群组 / 删权限配置）或破坏结构数据。修复后非 admin 会话一律 403
 //! （无 DB 时 is_admin fail-closed 返回 false，断言不依赖数据库）。
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod security_gate_tests {
     use axum::extract::Extension;
     use axum::extract::Path;

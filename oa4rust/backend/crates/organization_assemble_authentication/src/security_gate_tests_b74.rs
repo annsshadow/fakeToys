@@ -14,6 +14,7 @@
 //! "第三方回调零验签族"，本批按"加门与验签分开记"只收会话档，验签列遗留。
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod security_gate_tests_b74 {
     use crate::oauth_generate_code;
     use axum::extract::Extension;

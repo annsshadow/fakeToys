@@ -13,6 +13,7 @@
 //! 为 SELECT 只读体 false-positive，按口径不动。
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod security_gate_tests {
     use crate::u2::UpdateExtraDocumentWi;
     use axum::extract::{Extension, Json, Path};

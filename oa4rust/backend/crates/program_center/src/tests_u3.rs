@@ -757,7 +757,7 @@ mod u3_tests {
     async fn b47_r7_writes_reject_without_session() {
         let pool = mock_pool();
         let ext = Extension(pool.clone());
-        let cases = vec![
+        let cases = [
             (
                 "mpweixin_menu_delete_id",
                 mpweixin_menu_delete_id(ext.clone(), None, axum::extract::Path("wm-1".to_string()))

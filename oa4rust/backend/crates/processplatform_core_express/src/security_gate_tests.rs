@@ -10,6 +10,7 @@
 //! DB 依赖的属主臂需真实 PostgreSQL：
 //! `cargo test --lib -p processplatform_core_express -- --ignored`
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod security_gate_tests {
     use axum::body::Body;
     use axum::extract::Extension;
