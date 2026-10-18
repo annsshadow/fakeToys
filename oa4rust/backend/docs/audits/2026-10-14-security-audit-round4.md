@@ -1311,6 +1311,20 @@ GET 写面队列里 `calendar_assemble_control` 与 `jpush_assemble_control` 各
 
 | 验证（本批代码变更） | — | attendance_core_entity 整 lib `11 passed / 0 failed / 0 ignored`：新增 `security_gate_tests_b82`——`b82_writes_reject_without_session`（4 把真库 sea_orm 连接 + `None` 会话 → 全部 `Err(AppError::Unauthorized)`，门在 DB 访问前）+ `b82_require_session_gate_logic`（纯单元）。预存路由臂（经 router 匿名 → extraction 先失败 500）行为不变。尺子：**R7 638→634（−4）**、含写 0→**0**（ORM-blindness 第八例证）、只读挂写桶 638→634（−4）；复跑 3 次稳定；EXIT 0 |
 
+### 三.83 — ORM 盲区复查：correlation + jpush core_entity 4 把收会话门（R7 634→630，含写 0→0）
+- **批次目标**：收 correlation_core_entity 2 把 + jpush_core_entity 2 把（均 sea_orm CRUD 真写）：
+  - `create`（POST `/api/correlation/core/entity/create`，INSERT correlation）/ `delete_by_id`（DELETE `/api/correlation/core/entity/delete/{id}`，DELETE correlation）；
+  - `device_create`（POST `/api/jpush/core/entity/device/create`，INSERT jpush_device）/ `device_delete`（DELETE `/api/jpush/core/entity/device/{id}`，find + delete）。
+- **收口档**：均 session 存在档（两 crate 各新增 crate 内 `require_session`，无会话 401，门在 `ActiveModel::insert/delete` 前）。关联关系/推送设备注册为普通用户域写，收会话档。
+- **接线缺陷口径同第七十八批**：两 crate router 均不提供 `Extension<DatabaseConnection>`（§五 遗留 30）⇒ HTTP 面 500 死路，本批静态收门 + 直调臂验证。
+
+| 门档 | 处理函数 | 路由 / 真写动作 | 加门说明 |
+| --- | --- | --- | --- |
+| 会话档（新增 require_session） | `create` / `delete_by_id`（correlation_core_entity） | POST `/api/correlation/core/entity/create`、DELETE `/api/correlation/core/entity/delete/{id}`，correlation | crate 内新增 `require_session`：无会话 401，门在 DB 访问前 |
+| 会话档（新增 require_session） | `device_create` / `device_delete`（jpush_core_entity） | POST `/api/jpush/core/entity/device/create`、DELETE `/api/jpush/core/entity/device/{id}`，jpush_device | 同上 |
+
+| 验证（本批代码变更） | — | 两 crate 整 lib 全绿：correlation_core_entity `12 passed / 0 failed / 0 ignored`、jpush_core_entity `12 passed / 0 failed / 0 ignored`；各新增 `security_gate_tests_b83`（2 把真库 sea_orm 连接 + `None` 会话 → 全部 `Err(AppError::Unauthorized)`，门在 DB 访问前 + 纯单元门逻辑）。尺子：**R7 634→630（−4）**、含写 0→**0**（ORM-blindness 第九例证）、只读挂写桶 634→630（−4）；复跑 3 次稳定；EXIT 0 |
+
 ## 四、验证
 
 

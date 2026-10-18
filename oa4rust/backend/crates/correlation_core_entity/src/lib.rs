@@ -19,6 +19,17 @@ pub mod routes;
 
 use entities::correlation;
 
+/// 安全审计（round4-b83）：correlation 实体 2 把 sea_orm CRUD 真写收"会话存在档"门禁。
+/// 无会话（Option<Extension<Session>> = None）→ 401，门置于首个 DB 访问
+/// （`ActiveModel::insert/delete` / `Entity::find_by_id().one()`）之前，杜绝匿名写
+/// `correlation` 表。这些是 sea_orm ORM 写，审计尺子"含写"指标不可见
+/// （ORM-blindness，§五 尺子缺陷 28），R7 降但含写不变属预期。
+fn require_session(
+    session: Option<Extension<shared::session::Session>>,
+) -> Result<shared::session::Session, AppError> {
+    session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
+}
+
 // 关联实体 - 表示两个对象之间的关系
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct Correlation {
@@ -128,8 +139,10 @@ pub async fn list_by_source(
 #[axum::debug_handler]
 pub async fn create(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let id = uuid::Uuid::new_v4().to_string();
     let source_type = payload
         .get("sourceType")
@@ -186,8 +199,10 @@ pub async fn create(
 
 pub async fn delete_by_id(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let model = correlation::Entity::find_by_id(&id)
         .one(&db.0)
         .await
@@ -239,6 +254,8 @@ pub fn correlation_core_entity_router(_pool: Pool) -> Router {
 mod tests;
 #[cfg(test)]
 mod tests_generated;
+#[cfg(test)]
+mod security_gate_tests_b83;
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::correlation_core_entity_router(pool)
