@@ -18,6 +18,18 @@ pub mod routes;
 
 use entities::{bbs_forum_info, bbs_section_info, bbs_subject_info};
 
+/// 安全审计（round4-b79）：bbs 实体 9 把 sea_orm CRUD 真写收"会话存在档"门禁。
+/// 无会话（Option<Extension<Session>> = None）→ 401，门置于首个 DB 访问
+/// （`ActiveModel::insert/update/delete` / `Entity::find_by_id().one()`）之前，
+/// 杜绝匿名写 bbs_forum_info / bbs_section_info / bbs_subject_info。这些是
+/// sea_orm ORM 写，审计尺子"含写"指标不可见（ORM-blindness，§五 尺子缺陷 28），
+/// R7 降但含写不变属预期。
+fn require_session(
+    session: Option<Extension<shared::session::Session>>,
+) -> Result<shared::session::Session, AppError> {
+    session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
+}
+
 #[allow(non_snake_case)]
 pub async fn forum_list(
     db: Extension<DatabaseConnection>,
@@ -204,8 +216,10 @@ pub async fn subject_list(
 #[allow(non_snake_case)]
 pub async fn create_forum(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let id = uuid::Uuid::new_v4().to_string();
     let name = payload
         .get("name")
@@ -243,9 +257,11 @@ pub async fn create_forum(
 #[allow(non_snake_case)]
 pub async fn update_forum(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let existing = bbs_forum_info::Entity::find_by_id(&id)
         .one(&db.0)
         .await
@@ -300,8 +316,10 @@ pub async fn update_forum(
 #[allow(non_snake_case)]
 pub async fn delete_forum(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let existing = bbs_forum_info::Entity::find_by_id(&id)
         .one(&db.0)
         .await
@@ -328,8 +346,10 @@ pub async fn delete_forum(
 #[allow(non_snake_case)]
 pub async fn create_section(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let id = uuid::Uuid::new_v4().to_string();
     let name = payload
         .get("name")
@@ -375,9 +395,11 @@ pub async fn create_section(
 #[allow(non_snake_case)]
 pub async fn update_section(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let existing = bbs_section_info::Entity::find_by_id(&id)
         .one(&db.0)
         .await
@@ -450,8 +472,10 @@ pub async fn update_section(
 #[allow(non_snake_case)]
 pub async fn delete_section(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let existing = bbs_section_info::Entity::find_by_id(&id)
         .one(&db.0)
         .await
@@ -478,8 +502,10 @@ pub async fn delete_section(
 #[allow(non_snake_case)]
 pub async fn create_subject(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let id = uuid::Uuid::new_v4().to_string();
     let title = payload
         .get("title")
@@ -528,9 +554,11 @@ pub async fn create_subject(
 #[allow(non_snake_case)]
 pub async fn update_subject(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let existing = bbs_subject_info::Entity::find_by_id(&id)
         .one(&db.0)
         .await
@@ -609,8 +637,10 @@ pub async fn update_subject(
 #[allow(non_snake_case)]
 pub async fn delete_subject(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let existing = bbs_subject_info::Entity::find_by_id(&id)
         .one(&db.0)
         .await
@@ -758,6 +788,8 @@ pub fn bbs_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
 mod tests;
 #[cfg(test)]
 mod tests_generated;
+#[cfg(test)]
+mod security_gate_tests_b79;
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::bbs_core_entity_router(pool)
