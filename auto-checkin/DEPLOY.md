@@ -146,7 +146,7 @@ Register-ScheduledTask -TaskName AutoCheckin -Xml (Get-Content .\AutoCheckin.xml
 
 ---
 
-## 3. 逐项说明这些设置为什��这么设
+## 3. 逐项说明这些设置为什么这么设
 
 | 设置 | 值 | 原因 |
 | --- | --- | --- |

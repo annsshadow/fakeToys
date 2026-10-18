@@ -215,7 +215,7 @@ func ScaleAllCompositeSkills() []SeedSkill {
 //   - `/config` 端点已经在 `staticConfig` 里用 `sync.OnceValue` 缓存了
 //     同样的静态表，两处保持一致，改一处不会只改一半；
 //   - 这三张表是 `var` 里的字面量，进程生命周期内**只读**，
-//     缓存不���引入陈旧数据的风险（admin 改的是 DB 副本，不是它们 ——
+//     缓存不会引入陈旧数据的风险（admin 改的是 DB 副本，不是它们 ——
 //     `TestLevelTableIsCurrentlyNotThePlayerSource` 记的就是这件事）。
 //
 // ⚠️ 返回的 map **不要修改**。它是共享的；调用方要改就自己复制一份。

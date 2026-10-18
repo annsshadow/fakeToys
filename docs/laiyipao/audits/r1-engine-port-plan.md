@@ -438,7 +438,7 @@ README 记的「A 段含局内 buff，服务端算不出」那条限制至此解
 `knownReplayDivergences` 台账**已清空**，并由 `TestNoKnownReplayDivergences`
 守着：它绿 = 「整局重放没有已知分歧」= 可以接线 `SettleBattle`。
 
-#### G 块抓到的 bug：技能卡全��是哑弹
+#### G 块抓到的 bug：技能卡全都是哑弹
 
 **现象**：第 25 关 tick 444 那发，TS 直接伤害 754 / Go 698、反应伤害 339 / 325。
 中间量探针（两端各落 174/180 条 `resolveHit` 的完整中间量后逐行 diff）

@@ -152,7 +152,7 @@ func (s *Service) ResetMastery(ctx context.Context, userID int64) (int, error) {
 
 // lockChallengeStateOrdered 按**固定顺序**锁住一次挑战会触碰的全部跨用户行（第 79 轮）。
 //
-// # 缺陷：两个对向挑战必然死锁（有两处，不是��处）
+// # 缺陷：两个对向挑战必然死锁（有两处，不是一处）
 //
 // `ChallengeDefense` 会碰到**两个人的**三类行：
 //

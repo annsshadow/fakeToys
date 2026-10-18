@@ -11,7 +11,7 @@ package domain
 // A 阶段能验的是**排序不变量**：它们不依赖 B~F，且错了会立刻出事。
 // 第一次真正的跨端逐事件对齐在 B。
 //
-// 详见 `docs/audits/r1-engine-port-plan.md`。
+// 详见 `docs/laiyipao/audits/r1-engine-port-plan.md`。
 
 // # 排序约束 (1) 与 (2) 为什么**不在本文件**验
 //
@@ -29,7 +29,7 @@ package domain
 //
 // 本文件只验约束 (3)（停滞位置），因为它现在就有行为。
 //
-// 详见 `docs/audits/r1-engine-port-plan.md`。
+// 详见 `docs/laiyipao/audits/r1-engine-port-plan.md`。
 
 import (
 	"path/filepath"
@@ -206,7 +206,7 @@ func TestStalemateRunsBeforeCombatLogic(t *testing.T) {
 //
 // ⚠️ 判据包含 `Tick` 不变，不只是「不再有新事件」。
 //
-//	只查事件的话，一个「把后续 tick 全跑完但不记录」的实��也能通过 ——
+//	只查事件的话，一个「把后续 tick 全跑完但不记录」的实现也能通过 ——
 //	而它会让 elapsedMs 多涨 50ms，进而让 duration_ms 偏大，
 //	症状是「偶尔有战斗的时长比记录多一点点」，极难查。
 func TestStepAfterTerminalDoesNotAdvance(t *testing.T) {

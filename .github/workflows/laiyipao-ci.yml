@@ -12,7 +12,7 @@
 #   不会触发它 —— GitHub 看到的不是「通过」也不是「失败」，而是
 #   **「Expected — waiting for status」**，PR 永远无法合并。
 #
-#   也就是��：`paths` 过滤与 required check 互斥。
+#   也就是说：`paths` 过滤与 required check 互斥。
 #
 #   代价是每个 PR 都会跑一遍 laiyipao 的三端（约 6~8 分钟，含双构建）。
 #   oa4rust 那边没有改 —— 97 个 crate 全量跑太贵，先只用 laiyipao 做闸门。

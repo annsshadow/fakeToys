@@ -6,7 +6,7 @@ package domain
 //
 // 第 148 轮把它做成 `base_hp × 1500‰`，看起来是战前加成的自然选择。
 // 第 152 轮用引擎实跑 100 关证明**任何倍率都不生效**
-// （见 `miniapp/src/game/revive_bonus_is_inert.test.ts`）：
+// （见 README 已知边界第 16 条）：
 //
 //	普通怪漏怪伤害 = baseHpMax / LeakDamageDivisor   ← 与血量同步缩放
 //	可承受漏怪数   = baseHpMax / (baseHpMax/10) = 10 ← 与倍率无关

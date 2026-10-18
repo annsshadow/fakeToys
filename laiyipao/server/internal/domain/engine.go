@@ -14,11 +14,11 @@ package domain
 // # 为什么可以这样做
 //
 // 因为 A 阶段的验收**不是**「事件流与 TS 一致」（那时必然不一致，
-// 因为 `start()` 要调的 `beginWave` 还��空实现）。
+// 因为 `start()` 要调的 `beginWave` 还是空实现）。
 // A 阶段验的是**排序不变量**：tick 怎么长、停滞在哪一刻触发、
 // 终局后还推不推进 tick。这些不依赖 B~F，且错了会立刻出事。
 //
-// 第一次真正的跨端逐事件对齐在 B。详见 `docs/audits/r1-engine-port-plan.md`。
+// 第一次真正的跨端逐事件对齐在 B。详见 `docs/laiyipao/audits/r1-engine-port-plan.md`。
 
 import "strconv"
 
