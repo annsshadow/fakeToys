@@ -2950,3 +2950,17 @@ cd oa4rust/backend && cargo test --lib -p <crate>
   （均 EXIT=0，15/15 产物 md5 与提交态全等），门禁 43 / 0 / 15，真库臂连跑两遍读数一致、
   收口后按 `id LIKE 'b21-%'` 逐表数过 0 行残留。共享工作树上并行会话的在制品未被本批收走。**本轮未 push**。
 
+---
+
+### 五·附 — 第四轮 R7 收口战役收尾（截至第八十四批）
+
+- **总览**：第四轮以 R7（已认证路由、handler 体内无会话无门禁）为唯一驱动指标，按"批次"推进，基线 **820 → 629（−191）**；含写指标在 ORM 盲区复查段（b65→b84）因尺子 ORM-blindness（§五 尺子缺陷 28）恒为 0，属预期不降。
+- **收口手法**：逐 crate 定位真写 R7 路由 → 真写 handler 加门禁（会话档：`require_session` 无会话 401；admin 档：`require_admin`/`require_admin_opt` 非 admin 403）→ 跑测试套件（全绿）+ 离线尺子 3 次确认 R7 精确下降 → 更新账本 §三.X + memory + commit/push 到 `oa4rust-vuln-audit-r4`。
+- **关键发现**：
+  - 尺子 ORM-blindness（缺陷 28）：尺子只扫 deadpool SQL 字面量，看不见 sea_orm `ActiveModel::insert/update/delete` 写 ⇒ 含写桶不降、只读挂写桶降。用 b65/b70/b72/b78–b84 共 9+ 例证坐实。
+  - 全仓 16 个 `*_core_entity` router 不提供 `Extension<DatabaseConnection>`（遗留 30）：HTTP 面 500 死路，属接线缺陷，不计入 R7 下降。本战役对这部分做**静态收门 + handler 直调臂验证**，复活留作后续单 crate campaign。
+- **收尾状态（截至 b84）**：
+  - ORM 盲区复查队列（b65→b84）**已清空**。
+  - 余下仅为 §五 遗留项，每个可单开 campaign：①遗留 30 接线修复（复活 16 个 `*_core_entity` HTTP 面）；②GET 写禁令族（§二/§五 GET 写活读数）；③第三方回调零验签族（含遗留 29 invoke token）；④归属收紧族（CrudSpec 已 b34+36+37 收口，余 attendance 同表两档等沿用例）；⑤尺子缺陷 28（让尺子识别 ORM 写，使含写指标真实反映）。
+- **最后提交**：b84 `5971d330d`（query_express 1 把，R7 630→629）。
+
