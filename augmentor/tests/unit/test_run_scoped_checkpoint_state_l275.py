@@ -45,10 +45,15 @@ IDENTITY_ARITY = {
 # 多一格、少一格、或把带身份的写成不带身份的，当场红。
 # `api/routes/augment.py` 那一格是**已立账的待拍面**（进度端点读「最后加载的那份」），
 # 它钉在这里而不是被顺手修掉，是因为改它等于改响应面。
+# L277 收了 A368 的异步入口（`augment_async` 从前根本不读 `use_checkpoint`）：
+# pipeline 那三行的总数因此从 4/1/1 涨到 6/2/2——`update_progress` 四笔在同步入口、
+# 两笔在异步入口（成功/失败各一），`save_checkpoint` 与 `get_remaining_indices` 各入口一笔。
+# 涨的每一格都当场核过身份参（异步那四处是 `checkpoint=ckpt` / `save_checkpoint(ckpt)` /
+# `get_remaining_indices(ckpt)`），行为面另有 `tests/unit/test_async_checkpoint_resume_l277.py`。
 EXPECTED_PRODUCT_CALLS = {
-    ("augmentor/pipeline.py", "update_progress"): (4, 4),
-    ("augmentor/pipeline.py", "save_checkpoint"): (1, 1),
-    ("augmentor/pipeline.py", "get_remaining_indices"): (1, 1),
+    ("augmentor/pipeline.py", "update_progress"): (6, 6),
+    ("augmentor/pipeline.py", "save_checkpoint"): (2, 2),
+    ("augmentor/pipeline.py", "get_remaining_indices"): (2, 2),
     ("augmentor/pipeline.py", "get_progress"): (1, 1),
     ("augmentor/checkpoint.py", "_save_delta"): (2, 2),
     ("api/routes/augment.py", "get_progress"): (1, 0),

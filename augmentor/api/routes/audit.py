@@ -8,7 +8,7 @@ from typing import List, Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from ..deps import raise_internal_error, load_items, run_in_thread
+from ..deps import raise_boundary_error, load_items, run_in_thread
 from augmentor.audit import AuditReport, DatasetAuditor
 
 router = APIRouter(tags=["audit"])
@@ -44,4 +44,8 @@ async def audit_dataset_endpoint(request: AuditRequest):
     except HTTPException:
         raise
     except Exception as e:
-        raise_internal_error(e)
+        # L277：本端点的 SDK 判据（`DatasetAuditor` 构造期，含「fields 不能是空清单」那一格）
+        # 抛的是 `DataValidationError`＝请求方的错，旧归宿 `raise_internal_error` 把它压成 500，
+        # 等于把参数缺陷伪装成服务器故障。改走 `raise_boundary_error`（同 `api/routes/version.py`
+        # 那八只端点的既有口径），判决原文回 400；其余未分类异常仍按同一函数的 500 支收敛。
+        raise_boundary_error(e)

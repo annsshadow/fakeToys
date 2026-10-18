@@ -19,6 +19,7 @@ from typing import Any, Dict, List, Optional
 from .dedup import Deduplicator
 from .leakage import detect_leakage
 from .privacy import DEFAULT_TEXT_FIELDS, PiiSanitizer
+from .validation import DataValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +66,12 @@ class DatasetAuditor:
             duplicate_threshold: 去重相似度阈值
             pii_free_required: 是否要求零 PII 才判定就绪
         """
-        self.fields = fields or list(DEFAULT_TEXT_FIELDS)
+        self.fields = fields if fields is not None else list(DEFAULT_TEXT_FIELDS)
+        if not self.fields:
+            raise DataValidationError(
+                "fields 不能是空清单：零字段作用域下 PII 与空值两档恒为 0，"
+                "会把「无从检查」报成「就绪」（假干净档）"
+            )
         self.duplicate_threshold = duplicate_threshold
         self.pii_free_required = pii_free_required
 

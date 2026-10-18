@@ -17,6 +17,8 @@ from augmentor.converter import (
     INPUT_FORMAT_CHOICES,
     read_records,
 )
+from augmentor.exceptions import DataValidationError
+from augmentor.validation import require_count
 from ..deps import (
     raise_internal_error,
     mutate_json_file,
@@ -53,11 +55,20 @@ class DataLoadResponse(BaseModel):
 
     `total` 是**过滤后**的总条数（`search` 生效时小于文件总条数），
     客户端据此翻页。
+
+    `indices` 与 `items` **同长同序**，逐格是「这一条在盘上那份文件里的 0 基下标」。
+    它是 `PUT /api/data/update` 与 `DELETE /api/data/delete` 唯一的权威坐标：那两端点
+    读的是整份文件并按 `items[index]` 直接写盘，而本端点交回的却是**过滤后切片**的
+    页内下标 ⇒ 从前调用方把手里这一格的行号发过去，`search` 生效时指的是另一条，
+    翻到第 2 页指的是第 1 页的第 N 条（实测：25 条夹具里第 2 页第 1 行发 `index=1`
+    ⇒ 改掉了第 1 页第 2 条，还回 200「保存成功」）。键集因此多一格是加法，
+    既有消费方不受影响。
     """
     total: int
     page: int
     page_size: int
     items: List[Dict[str, Any]]
+    indices: List[int]
 
 
 class DataUploadResponse(BaseModel):
@@ -148,7 +159,21 @@ async def list_data_files(all_files: bool = False):
     summary="分页加载数据",
 )
 async def load_data(filename: str, page: int = 1, page_size: int = 20, search: str = ""):
-    """加载数据（分页）"""
+    """加载数据（分页）
+
+    `page` / `page_size` 在门口判掉（L277 / A367）：它们落到 `items[start:end]` 这把切片，
+    而 Python 的切片对越界值不报错、只换语义。实测改前 25 条夹具：
+    `page_size=-10` 回 200 并交出 **15 条**（「每页 -10 条」变成「除了最后 10 条全要」）、
+    `page=-1` 回 200 并交出 **第 5~14 条**（一个不存在的页码给出真实数据）、
+    `page=0` / `page_size=0` 回 200 交出空页——四种都是形状合法、内容错误的静默答案，
+    客户端无从分辨。判据共引 SDK 的 `require_count`（A77），不在这里另立一套。
+    """
+    try:
+        page = require_count("page", page, minimum=1)
+        page_size = require_count("page_size", page_size, minimum=1)
+    except DataValidationError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
     file_path = _safe_data_path(filename)
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="文件不存在")
@@ -159,10 +184,18 @@ async def load_data(filename: str, page: int = 1, page_size: int = 20, search: s
         if search:
             from augmentor.validation import require_item_text
             search_lower = search.lower()
-            items = [
-                item for item in require_item_text(items, "instruction", "output")
-                if search_lower in item.get("instruction", "").lower() or search_lower in item.get("output", "").lower()
+            matched = [
+                (index, item)
+                for index, item in enumerate(
+                    require_item_text(items, "instruction", "output")
+                )
+                if search_lower in item.get("instruction", "").lower()
+                or search_lower in item.get("output", "").lower()
             ]
+            indices = [index for index, _ in matched]
+            items = [item for _, item in matched]
+        else:
+            indices = list(range(len(items)))
 
         total = len(items)
         start = (page - 1) * page_size
@@ -172,7 +205,8 @@ async def load_data(filename: str, page: int = 1, page_size: int = 20, search: s
             "total": total,
             "page": page,
             "page_size": page_size,
-            "items": items[start:end]
+            "items": items[start:end],
+            "indices": indices[start:end],
         }
     except Exception as e:
         raise_internal_error(e)

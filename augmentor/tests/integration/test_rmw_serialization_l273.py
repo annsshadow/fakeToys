@@ -30,6 +30,13 @@
 本文件三面：一、锁的身份；二、改后的并发读数（全部落在 `tmp_path`）；三、结构普查尺子
 （新写的 RMW 点没进锁就红）加它的四支注入臂；四、落点判据没被写松（安全面）。
 
+L290 给这把尺子补了一格它原本**结构性看不见**的形状：`augmentor/dependency.py` 的登记账
+把整份读住在构造里、整份写回住在别的方法里，「同函数体内读写同目标」这一判据配不上对。
+那一轮把读面收进 `_load_datasets` / `_load_dependencies` 之后，形状变成同函数体内的先读
+后写，尺子第一次能点名这一族 ⇒ 名单从七格长成十格（`WRITE_CALLS` / `READ_CALLS` 各加两只
+名字，判据一字未松）。新格的注入臂在 `test_dependency_registry_lock_l290.py`：把
+`register_dataset` 的锁摘掉，本文件的 `census_tree` 必须点名它。
+
 另两格不在本轮自决的面，已记进账本待拍：HTTP **读**侧撞 `os.replace` 那一瞬的
 `PermissionError`/500（要不要给读也上锁是吞吐与响应面的取舍）、以及这把锁只保**同进程**
 （多 worker 部署跨不出去）。
@@ -47,6 +54,7 @@ from typing import Dict, List, Optional, Set, Tuple
 import httpx
 import pytest
 
+from api import deps
 from api.main import app
 from augmentor.atomic_write import path_lock
 from augmentor.validation import path_lands_within
@@ -70,23 +78,34 @@ N_CONCURRENT = 20
 
 # ============ 三、结构普查尺子：判据与现量名单 ============
 
-#: 「整份写回」的四种写法。只认这几类，是因为丢更新的**代价**来自整份覆盖：
+#: 「整份写回」的六种写法。只认这几类，是因为丢更新的**代价**来自整份覆盖：
 #: 追加式写（`open(..., "a")`、`history.jsonl`）不在这一族。
-WRITE_CALLS = {"atomic_write_json", "atomic_write_text", "_save_index", "write_json_file"}
+#: 后两格（`_save_datasets` / `_save_dependencies`）由 L290 接进来，理由见下面名单的归因段。
+WRITE_CALLS = {"atomic_write_json", "atomic_write_text", "_save_index", "write_json_file",
+               "_save_datasets", "_save_dependencies"}
 #: 「读回整份」的写法，与上面**同一目标**成对出现才叫读-改-写
-READ_CALLS = {"read_items", "read_json_file", "_load_index", "load_version", "load_config"}
+READ_CALLS = {"read_items", "read_json_file", "_load_index", "load_version", "load_config",
+              "_load_datasets", "_load_dependencies"}
 
 SCAN_DIRS = ("augmentor", "api", "cli")
 
-#: 现量（L273）：全仓「同一目标先读回整份、再整份写回」的函数名单，逐处点名其写点数。
-#: 这张名单是**普查的输出**而不是手抄的期望 —— `test_rmw_roster_is_exactly_the_census`
-#: 拿它和真扫一遍做集合相等：多一处（新写的 RMW）或少一处（形状被改造）都红。
-#: 计数都是 1，因为每处只有那一次整份写回；`api/deps.py` 的一格是 `_read_modify_write`
-#: （路由面 RMW 的唯一落点），其余六格是 SDK 的索引与版本账。
+#: 现量（L273 建尺，L290 重钉）：全仓「同一目标先读回整份、再整份写回」的函数名单，
+#: 逐处点名其写点数。这张名单是**普查的输出**而不是手抄的期望 ——
+#: `test_rmw_roster_is_exactly_the_census` 拿它和真扫一遍做集合相等：多一处（新写的 RMW）
+#: 或少一处（形状被改造）都红。计数都是 1，因为每处只有那一次整份写回。
+#:
+#: **L290 的三格（A396）归因**：`augmentor/dependency.py` 的三处写点改前**看不见**，不是
+#: 因为漏扫，而是因为它的读住在 `__init__`、写住在别的方法里 —— 判据按「同一函数体内
+#: 读写打到同一目标」配对，跨函数的那一形结构性地落在尺子之外。L290 把整份读收进
+#: `_load_datasets` / `_load_dependencies` 并让写面在锁内调用它们，形状变成同函数体内
+#: 的先读后写，于是这三格第一次进名单。名单从七格长成十格是**覆盖面扩大**，不是判据放宽。
 MEASURED_RMW_SITES: Dict[str, int] = {
     "api/deps.py::_read_modify_write": 1,
     "augmentor/backup.py::DatasetBackup.backup": 1,
     "augmentor/backup.py::DatasetBackup.delete_backup": 1,
+    "augmentor/dependency.py::DependencyManager.add_dependency": 1,
+    "augmentor/dependency.py::DependencyManager.register_dataset": 1,
+    "augmentor/dependency.py::DependencyManager.remove_dependency": 1,
     "augmentor/version_control.py::DatasetVersionManager._load_index": 1,
     "augmentor/version_control.py::DatasetVersionManager.create_version": 1,
     "augmentor/version_control.py::DatasetVersionManager.delete_version": 1,
@@ -236,16 +255,35 @@ def _seed(tmp_path: Path, name: str = "race.json", items: Optional[List[Dict]] =
     return name
 
 
+#: L277 起 `api/main.py` 上多了 `WriteTransportGate`（未配 `AUGMENTOR_API_KEY` 时，
+#: `/api/` 的写方法只允许从受信传输进来：回环地址、Unix 套接字、或 ASGI 测试夹具给出的
+#: `testserver` 一类固定主机名）。本文件的夹具是 `httpx.ASGITransport(base_url="http://t")`，
+#: 它写进 `scope["server"]` 的是 `("t", None)` —— 既不是回环也不在那份名单里 ⇒ 匿名写请求
+#: 会在**进路由之前**拿 403，RMW 那三格一个字都量不到（实测读数：20 支全 403）。
+#:
+#: 处置刻意不走「把 base_url 换成 testserver」那条捷径：那是靠闸的**测试豁免**档过关，
+#: 而本文件要的是「写请求真的进到路由、真的在锁里做读-改-写」。这里按生产契约把鉴权开起来
+#: （设密钥 + 每支请求带 `X-API-Key`），闸与路由依赖两侧同时成立，判据一档没放松。
+WRITE_KEY = "l273-rmw-gate-key"
+
+
+def _authorize(monkeypatch) -> None:
+    """按 L277 的写鉴权契约把本文件的 HTTP 面变成「已授权客户端」"""
+    monkeypatch.setenv(deps.API_KEY_ENV, WRITE_KEY)
+
+
 def _gather(request):
     async def go():
-        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://t") as c:
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://t",
+                                     headers={"X-API-Key": WRITE_KEY}) as c:
             return await asyncio.gather(*[request(c, i) for i in range(N_CONCURRENT)])
     return asyncio.run(go())
 
 
 def _single(request):
     async def go():
-        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://t") as c:
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://t",
+                                     headers={"X-API-Key": WRITE_KEY}) as c:
             return await request(c)
     return asyncio.run(go())
 
@@ -257,6 +295,7 @@ def test_concurrent_updates_all_land(tmp_path, monkeypatch):
     有多少条真的是本次请求写进去的那一条。
     """
     monkeypatch.setenv("AUGMENTOR_DATA_ROOTS", str(tmp_path))
+    _authorize(monkeypatch)
     name = _seed(tmp_path, items=RACE_ITEMS)
     responses = _gather(lambda c, i: c.put(
         f"/api/data/update/{name}", params={"index": i},
@@ -277,6 +316,7 @@ def test_concurrent_deletes_land_exactly(tmp_path, monkeypatch):
     反而会让高位下标被判越界（那是**正确**的新语义），条数就不再是纯净的判据。
     """
     monkeypatch.setenv("AUGMENTOR_DATA_ROOTS", str(tmp_path))
+    _authorize(monkeypatch)
     name = _seed(tmp_path)
     responses = _gather(lambda c, i: c.delete(f"/api/data/delete/{name}", params={"index": 0}))
     assert [r.status_code for r in responses] == [200] * N_CONCURRENT, [r.text for r in responses]
@@ -379,6 +419,7 @@ def test_out_of_range_index_is_judged_on_the_locked_snapshot(tmp_path, monkeypat
     上一支，本支要的是「越界文案出自锁内读数」这句承诺）。
     """
     monkeypatch.setenv("AUGMENTOR_DATA_ROOTS", str(tmp_path))
+    _authorize(monkeypatch)
     name = _seed(tmp_path)
     resp = _single(lambda c: c.put(f"/api/data/update/{name}", params={"index": 9999},
                                    json={"instruction": "x", "output": "y"}))
@@ -489,9 +530,9 @@ def test_rmw_roster_is_exactly_the_census():
 
 
 def test_no_rmw_write_lands_outside_a_path_lock():
-    """判据正面：七格读-改-写的写点全部在锁里"""
+    """判据正面：十格读-改-写的写点全部在锁里（L290 起含 `dependency.py` 的三格）"""
     sites, bad = census_repo()
-    assert len(sites) == 7, sites
+    assert len(sites) == 10, sites
     assert bad == [], bad
 
 
@@ -614,6 +655,7 @@ def test_arms_have_teeth_when_the_lock_is_faked_away(tmp_path, monkeypatch):
         monkeypatch.setattr(modules[name], "path_lock", lambda _p: threading.RLock())
 
     monkeypatch.setenv("AUGMENTOR_DATA_ROOTS", str(tmp_path))
+    _authorize(monkeypatch)
     name = _seed(tmp_path, items=RACE_ITEMS)
     responses = _gather(lambda c, i: c.put(
         f"/api/data/update/{name}", params={"index": i},
@@ -623,4 +665,11 @@ def test_arms_have_teeth_when_the_lock_is_faked_away(tmp_path, monkeypatch):
     landed = sum(1 for i in range(N_CONCURRENT) if on_disk[i].get("instruction") == f"改写 {i}")
     lost = N_CONCURRENT - landed
     bad = sum(1 for code in codes if code != 200)
+    # L277 起补的一格：非 200 只许是「读者撞上 `os.replace` 那一瞬」的那档 500。
+    # 403 / 401 / 429 是**闸、鉴权或限流**把请求拦在路由之外，那种形状下 `bad > 0` 会让本支
+    # 靠「压根没量到丢更新」通过 —— 而它声称咬住的是丢更新那一档，不是回执码非 200。
+    # （首跑正是这一形：20 支全 403，`lost` 与 `bad` 一起失真，判据却照样绿。）
+    # 鉴权接线后复量（连跑三次）：`lost` = 14 / 11 / 11、`bad` = 1 / 0 / 1 且非 200 全在 500 档
+    # ⇒ 每一跑 `lost > 0` 都成立，这一支咬的是丢更新本身而不是回执码形状。
+    assert set(codes) <= {200, 500}, codes
     assert lost > 0 or bad > 0, "替身没生效：全落盘且全 200，这一支量不出丢更新"

@@ -41,7 +41,26 @@ DOC_ROW_DETAILED = re.compile(
 
 #: 详细说明表的行有 **5 个 `|`**（四列）；总览表只有 4 个（三列）。用列数区分，
 #: 比在正则里数后续列更稳（CRLF + 中文会让 `[^|]*` 的行为变得难猜）。
+#:
+#: **L278 起这里数的是「未转义」竖线**：GFM 规范写明单元格内容里的竖线必须转义，
+#: 「包括在其他内联标记内部」⇒ 行内码 `` `a|b` `` 里的裸竖线照样把那一行切成第 5 列，
+#: 而 `` `a\|b` `` 不会。本轮就栽在裸竖线上：`docs/augmentor/API.md` 的搜索行正文里写了
+#: `(a|aa)+b`，这一格数出 6 枚 ⇒ 整行被下面的列数过滤**静默丢掉**，`/api/dataset/search`
+#: 从详细层消失（l210 与 l223 同时红，结构守卫那一维却全绿 ⇒ 已把它的口径一并改成 GFM）。
+#: 两把尺子共引本文件这一对助手，不许各写一份。
 DETAILED_COLUMN_COUNT = 5
+UNESCAPED_PIPE = re.compile(r"(?<!\\)\|")
+
+
+def column_count(line):
+    """一行里有几枚**未转义**竖线（= GFM 会切出的分隔符数）"""
+    return len(UNESCAPED_PIPE.findall(line))
+
+
+def split_cells(line):
+    """按未转义竖线切单元格：先把反斜杠竖线换成占位符再切，切完还原"""
+    guarded = line.strip().strip("|").replace("\\|", "\x00")
+    return [cell.replace("\x00", "|").strip() for cell in guarded.split("|")]
 
 
 def live_paths():
@@ -70,11 +89,12 @@ def detailed_path_set():
 
     总览表只有三列（4 个 `|`），详细表有四列（5 个 `|`）。用列数区分比在正则里
     数后续列稳（CRLF + 中文会让 `[^|]*` 的行为难猜，实测栽过一次）。
+    数的口径是**未转义**竖线，见上面 `DETAILED_COLUMN_COUNT` 那一段。
     """
     text = API_DOC.read_text(encoding="utf-8")
     found = set()
     for line in text.splitlines():
-        if line.count("|") != DETAILED_COLUMN_COUNT:
+        if column_count(line) != DETAILED_COLUMN_COUNT:
             continue
         m = DOC_ROW.match(line)
         if m:
@@ -196,3 +216,19 @@ class TestTheRulerSeesSomething:
         live = live_paths()
         assert len(live) >= 60, f"只解析到 {len(live)} 个路径"
         assert len(documented_path_set()) >= 60
+
+    def test_the_column_split_follows_gfm_escaping(self):
+        """L278 的牙齿，双向：同一格写裸竖线就算多出第 5 列，写成转义形就还是四列
+
+        前一半不是洁癖而是本轮真实发生过的形状：`docs/augmentor/API.md` 的搜索行正文里
+        写了一枚交替组的裸竖线 ⇒ 列数读成 6 ⇒ 下面那两个按列数过滤的解析器把**整行**丢掉，
+        `/api/dataset/search` 从详细层消失（当场红的是本文件与 l223 的集合对账维）。
+        """
+        bare = "| `POST` | `/api/x` | 说明 | 交替 `(a|aa)+b` 这一族 |"
+        escaped = "| `POST` | `/api/x` | 说明 | 交替 `(a\\|aa)+b` 这一族 |"
+        assert column_count(bare) == 6, "行内码里的裸竖线没算进列数 ⇒ 仍是旧的裸切口径"
+        assert column_count(escaped) == 5, "转义竖线被算成列分隔符 ⇒ 合法的转义写法被误伤"
+        assert len(split_cells(bare)) == 5
+        assert split_cells(escaped) == [
+            "`POST`", "`/api/x`", "说明", "交替 `(a|aa)+b` 这一族"], (
+            "切列结果应当是四格，且还原出裸竖线")

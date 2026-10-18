@@ -183,7 +183,7 @@ def sanitize_pii(items: List[Dict[str, Any]],
 # check-leakage 只比 instruction 一格——它们各有权威，不由这一格收编。
 #
 # 为什么定义在文件末尾而不是紧挨 DEFAULT_PATTERNS：账本与 l227 / l228 两把守卫的模块
-# docstring 把本模块第 76 行和 audit.py 第 68 行钉成活引用，在它们之上插任何一行都会
+# docstring 把本模块第 76 行和 audit.py 第 69 行钉成活引用，在它们之上插任何一行都会
 # 把落点平移成上一行——那正是 A337 / A338 那一族「行号还在、指的已不是那句」的形状。
 # 取用点在第 76 行（`__init__` 运行时才查这个名字），所以定义住在尾部既能保持五格引用
 # 逐字不漂，又仍然只有一份字面量。

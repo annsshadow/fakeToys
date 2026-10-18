@@ -124,7 +124,7 @@ class DatasetStatisticsCalculator:
         Returns:
             数据集统计信息
         """
-        fields = fields or self._get_all_fields()
+        fields = fields if fields is not None else self._get_all_fields()
         
         stats = DatasetStatistics(
             dataset_name=self._dataset_name,
