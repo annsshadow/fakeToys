@@ -93,7 +93,8 @@ applies_when:
 在 **main 基线 worktree（6bacf19ed）** 上逐字复现：
 
 - `pnpm lint`（`biome check --error-on-warnings .`，267 文件）→ `Found 15 errors`：3 条具名规则（`frontend/apps/desktop/src/contracts/process-definition.test.ts:5:1` 与 `frontend/apps/desktop/src/views/AttendanceApp.vue:232:1` 的 assist/source/organizeImports、`frontend/apps/desktop/src/views/BBSForum.vue:747:25` lint/suspicious/noControlCharactersInRegex）+ 12 处 formatter 漂移。
-- `pnpm --filter @oa4rust/mobile build:mp-weixin` → `TypeError: Cannot read properties of undefined (reading 'context')`，栈：rolldown@1.2.13 resolve ← `@dcloudio/uni-cli-shared` `mp/usingComponents.js:412` parseVueComponentImports ← `@dcloudio/uni-mp-vite` `plugins/mainJs.js:36`（vite 8.3.4 工具链组合问题）。
+- `pnpm --filter @oa4rust/mobile build:mp-weixin` → `TypeError: Cannot read properties of undefined (reading 'context')`，栈：rolldown@1.2.13 resolve ← `@dcloudio/uni-cli-shared` `mp/usingComponents.js:412` parseVueComponentImports ← `@dcloudio/uni-mp-vite` `plugins/mainJs.js:36`。
+  **根因（2026-10-19 定案）**：`@dcloudio/vite-plugin-uni` 的 peer 是精确 pin `vite: "5.2.8"`，工作区安全 override 把 `vite@<=6.4.2` 顶到 `6.4.3` ⇒ 真实可用版是 6.4.3；dependabot 把 mobile 的 vite 抬到 8.3.4（vite 8 = Rolldown）后与 dcloudio 插件不兼容，插件上下文里取不到 `context`。修法：`"vite": "6.4.3"` 回钉 + 同步 lock，见 §7。
 - 本次两个 playwright bump 只改 `oa4rust/package.json` 一行 + lockfile 里 playwright/playwright-core/fsevents 三组条目，biome 与 vite/@dcloudio 解析不变 ⇒ 上面两处红与本次无关（main 上逐字复现）。
 
 ## 5. 环境与命令口径（无 Python/gcc 的 Windows 机器）
@@ -106,6 +107,21 @@ applies_when:
 ## 6. 遗留与后续
 
 1. **PR 收尾实况（API 复核）**：18 条在 push 后由 GitHub 判定为 merged（含 #42/#44/#45/#46/#47/#48/#50/#52/#53/#54/#56/#57/#59/#61/#62/#63/#64/#73）；#72 与 #49 以 `Closes #N` 关闭（均为 closed-未合并，符合"不接受该 PR 的改动/被等价改造取代"的意图）。
-2. **oa4rust-web 两处既有红建议单独立项修**：`pnpm exec biome check --write .` 可机械修掉 formatter/organizeImports（`noControlCharactersInRegex` 需人工取舍）；mp-weixin 的 rolldown 崩溃需要排查 @dcloudio 与 vite 8 的兼容（改 pin 或等上游）。
+2. **oa4rust-web 两处既有红（已修，2026-10-19）**：biome 的 15 条里 6 条真红（自动修 + `BBSForum.vue` 手修为 `/[\p{Cc}\u0020]/gu`），另 8 条是**本机 CRLF 造成的假红**（`git ls-files --eol` 证 index=lf）；mp-weixin 按 §4.3 根因把 mobile 的 vite 回钉 6.4.3。全过程见 `main-existing-reds-fix-2026-10-19.md`。
 3. **供应链例外到期**：`lopdf` 的 `RUSTSEC-2026-0187` 例外 2026-10-28 到期（见 `docs/solutions/security-issues/rustsec-pinned-audit-double-track-gate.md`），本次 #59 升级到 0.45.0 后需复扫。
-4. **push 后 CI 归因**：main 上 `CI`/`AI platform CI`/`OA4Rust web quality` 仍会红，对应 §4 清单，属既有红。
+4. **push 后 CI 归因**：main 上 `CI`/`AI platform CI`/`OA4Rust web quality` 的既有红已全部修掉（见 §7），
+   此后新一轮 CI 若仍红，可直接用"与 main 基线逐字比对"的口径判"本次引入"。
+
+## 7. 跟进：main 既有红全量清零（2026-10-19）
+
+§4 的三份既有红已在分支 `fix/main-existing-reds-20261018` 上逐条修掉（本地 CI 等价验证后进 main）；
+完整方法、教训与遗留见 [main-existing-reds-fix-2026-10-19.md](main-existing-reds-fix-2026-10-19.md)。
+
+| 门禁 | 修复要点 | 提交 |
+|------|----------|------|
+| `cargo fmt --all -- --check` | rustc/rustfmt 1.98.1 全量重排 120 文件（纯机械，单独一笔；用"快照法"从逻辑改动里分离） | `129ddf3e9` |
+| `cargo clippy … -D warnings` | 60 余条按仓库先例收口（`module_inception` 41 处 allow、bam 异步锁、auth 文件级 allow 等）。**加 `--keep-going` 才能拿全清单** | `f4a46e360` |
+| `cargo test --workspace --lib` | §4.1 的 6 个 target 全部转绿：5 个是夹具/断言失配；`personal_extend` 那条是**产品缺陷**（`face_save` 全列 spec 把 `person_id` 抹成空串） | `87b176706`、`fd089b4e0` |
+| `quoted_key_guard` | `ROWS` 夹具改裸列名 + `dialect().quote_ident(col)` 引用（PG 下 camelCase 不带引号会被折成小写） | `87b176706` |
+| `pytest`（AI platform CI） | 8 条红清零：l273 注入臂加"读边 50 ms 窗"（flaky → 必现）、l264 改 `--first-parent`、l259 faiss 臂补建目录、xlsx 5 条补 pandas/openpyxl 依赖 | 见新文档 §2.5 |
+| `biome` + `build:mp-weixin` | biome 6 条真红 + 8 条 CRLF 假红；mp-weixin 按 §4.3 回钉 vite 6.4.3 | `b73185a78` |
