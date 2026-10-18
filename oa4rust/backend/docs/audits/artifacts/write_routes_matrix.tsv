@@ -767,8 +767,8 @@ jpush_assemble_control	POST	/api/jpush_assemble_control/message/test/send	messag
 jpush_core_entity	DELETE	/api/jpush/core/entity/device/{id}	device_delete	R7-已认证+体内无会话无门禁
 jpush_core_entity	POST	/api/jpush/core/entity/device/create	device_create	R7-已认证+体内无会话无门禁
 mcp_server	POST	/mcp	mcp_http_handler	R7-已认证+体内无会话无门禁
-meeting	POST	/api/meeting/create	create_meeting	R7-已认证+体内无会话无门禁
-meeting	POST	/api/meeting/{meetingId}/participant/add	add_participant	R7-已认证+体内无会话无门禁
+meeting	POST	/api/meeting/create	create_meeting	R5-已认证+体内门禁
+meeting	POST	/api/meeting/{meetingId}/participant/add	add_participant	R5-已认证+体内门禁
 meeting_assemble_control	DELETE	/api/meeting/assemble/control/attachment/{id}	u2_attachment_delete	R5-已认证+体内门禁
 meeting_assemble_control	DELETE	/api/meeting/assemble/control/building/{id}	u2_building_delete	R5-已认证+体内门禁
 meeting_assemble_control	DELETE	/api/meeting/assemble/control/delete/{id}	delete_meeting_control	R5-已认证+体内门禁
