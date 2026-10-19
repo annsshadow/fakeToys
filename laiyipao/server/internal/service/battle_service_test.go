@@ -327,12 +327,14 @@ func TestSlotBudgetEnforcedInBuildSnapshot(t *testing.T) {
 	uid := ts.newUser(t, ctx)
 
 	// loadSkillsAndSlots 的槽位统计走 user_skills ⋈ user_skill_slots：
-	// 未拥有的技能不进快照也不占预算。所以要造"6 个**已拥有**技能各占一槽"。
+	// 未拥有的技能不进快照也不占预算。所以要造"6 个**已拥有**技能各占一槽"
+	// （1/4/7 是新号礼包自带的，5/6/8 这里补授 —— 不能再用 2/3，
+	// 入门包重排为三元素后新号不再拥有它们）。
 	ts.exec(t, `INSERT INTO user_skills (user_id, skill_id)
 	            SELECT $1, s.id FROM skills s WHERE s.id BETWEEN 5 AND 9
 	            ON CONFLICT DO NOTHING`, uid)
 	ts.exec(t, `INSERT INTO user_skill_slots (user_id, slot, skill_id)
-	            VALUES ($1,0,1),($1,1,2),($1,2,3),($1,3,4),($1,4,5),($1,5,6)
+	            VALUES ($1,0,1),($1,1,4),($1,2,5),($1,3,6),($1,4,7),($1,5,8)
 	            ON CONFLICT (user_id, slot) DO UPDATE SET skill_id = EXCLUDED.skill_id`, uid)
 	if _, err := ts.LoadBuildSnapshot(ctx, uid); err != nil {
 		// 预期：读路径必须报 ErrSlotBudgetExceeded
@@ -349,8 +351,8 @@ func TestLoadoutService(t *testing.T) {
 	ctx := context.Background()
 	uid := ts.newUser(t, ctx)
 
-	// 合法保存
-	got, err := ts.SaveLoadout(ctx, uid, SaveLoadoutInput{SkillIDs: []int{2, 0, 4, 1}})
+	// 合法保存（1 焰 / 4 冰 / 7 电是新号礼包拥有的三元素技能）
+	got, err := ts.SaveLoadout(ctx, uid, SaveLoadoutInput{SkillIDs: []int{4, 0, 7, 1}})
 	if err != nil {
 		t.Fatalf("保存失败：%v", err)
 	}
@@ -358,7 +360,7 @@ func TestLoadoutService(t *testing.T) {
 		t.Errorf("应原样返回槽位数组：%v", got)
 	}
 	slots, err := ts.Loadout(ctx, uid)
-	if err != nil || slots[0] != 2 || slots[1] != 0 || slots[2] != 4 || slots[3] != 1 {
+	if err != nil || slots[0] != 4 || slots[1] != 0 || slots[2] != 7 || slots[3] != 1 {
 		t.Errorf("读回槽位不符：%v, %v", slots, err)
 	}
 
@@ -370,8 +372,11 @@ func TestLoadoutService(t *testing.T) {
 		t.Errorf("槽位变更必须写审计（%d, %v）", n, err)
 	}
 
-	// 拒绝分支
-	if _, err := ts.SaveLoadout(ctx, uid, SaveLoadoutInput{SkillIDs: []int{1, 2, 3, 4, 5}}); !errors.Is(err, ErrBadInput) {
+	// 拒绝分支（超槽需要 5 个**已拥有**技能 —— 补授 5/6 后凑满）
+	ts.exec(t, `INSERT INTO user_skills (user_id, skill_id)
+	            SELECT $1, s.id FROM skills s WHERE s.id IN (5, 6)
+	            ON CONFLICT DO NOTHING`, uid)
+	if _, err := ts.SaveLoadout(ctx, uid, SaveLoadoutInput{SkillIDs: []int{1, 4, 7, 5, 6}}); !errors.Is(err, ErrBadInput) {
 		t.Errorf("超槽应拒绝，实际 %v", err)
 	}
 	if _, err := ts.SaveLoadout(ctx, uid, SaveLoadoutInput{SkillIDs: []int{1, 1}}); !errors.Is(err, ErrBadInput) {
@@ -416,10 +421,10 @@ func TestUpgradeSkillService(t *testing.T) {
 	if _, err := ts.UpgradeSkill(ctx, uid, 1); !errors.Is(err, ErrBadInput) {
 		t.Errorf("余额不足应 ErrBadInput，实际 %v", err)
 	}
-	// 满级
+	// 满级（技能 4 在新号礼包里；旧写法用 2，入门包重排后不再拥有）
 	ts.exec(t, `UPDATE user_wallets SET coin = 999999999 WHERE user_id = $1`, uid)
-	ts.exec(t, `UPDATE user_skills SET level = $2 WHERE user_id = $1 AND skill_id = 2`, uid, skillRules.MaxLevel)
-	if _, err := ts.UpgradeSkill(ctx, uid, 2); !errors.Is(err, ErrBadInput) {
+	ts.exec(t, `UPDATE user_skills SET level = $2 WHERE user_id = $1 AND skill_id = 4`, uid, skillRules.MaxLevel)
+	if _, err := ts.UpgradeSkill(ctx, uid, 4); !errors.Is(err, ErrBadInput) {
 		t.Errorf("满级应 ErrBadInput，实际 %v", err)
 	}
 	// 成功：等级 +1、扣费、返回新等级

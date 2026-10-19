@@ -412,7 +412,7 @@ func TestConcurrentChallengeRespectsDailyLimit(t *testing.T) {
 	owner := ts.newUser(t, ctx)
 	victim := ts.newUser(t, ctx)
 	dv, err := ts.SaveDefense(ctx, victim, SaveDefenseInput{
-		Name: "目标", Works: []string{"slow_belt"}, Skills: []int{1, 2, 3},
+		Name: "目标", Works: []string{"slow_belt"}, Skills: []int{1, 4, 7},
 	})
 	if err != nil {
 		t.Fatalf("建防线失败：%v", err)
@@ -458,7 +458,7 @@ func TestConcurrentSaveDefenseNoPartialWrite(t *testing.T) {
 		_, err := ts.SaveDefense(ctx, userID, SaveDefenseInput{
 			Name:   "并发",
 			Works:  []string{"slow_belt", "block_wall", "tesla_grid"},
-			Skills: []int{1, 2, 3},
+			Skills: []int{1, 4, 7},
 		})
 		return err
 	})
@@ -498,7 +498,7 @@ func TestSaveDefenseRejectsForgedOwnership(t *testing.T) {
 	}
 	// 合法输入必须仍然通过
 	if _, err := ts.SaveDefense(ctx, userID, SaveDefenseInput{
-		Name: "合法防线", Works: []string{"slow_belt", "block_wall"}, Skills: []int{1, 2, 3},
+		Name: "合法防线", Works: []string{"slow_belt", "block_wall"}, Skills: []int{1, 4, 7},
 		ShieldHours: 24,
 	}); err != nil {
 		t.Fatalf("合法输入被误拒：%v", err)

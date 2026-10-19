@@ -109,7 +109,7 @@ func TestListDefensesViews(t *testing.T) {
 	foe := ts.newUser(t, ctx)
 
 	if _, err := ts.SaveDefense(ctx, owner, SaveDefenseInput{
-		Name: "svc防线", Skills: []int{1, 2, 3},
+		Name: "svc防线", Skills: []int{1, 4, 7},
 	}); err != nil {
 		t.Fatalf("建防线失败：%v", err)
 	}
@@ -202,7 +202,7 @@ func TestChallengeDefensePaths(t *testing.T) {
 	owner := ts.newUser(t, ctx)
 	foe := ts.newUser(t, ctx)
 
-	dv, err := ts.SaveDefense(ctx, owner, SaveDefenseInput{Name: "被挑战", Skills: []int{1, 2, 3}})
+	dv, err := ts.SaveDefense(ctx, owner, SaveDefenseInput{Name: "被挑战", Skills: []int{1, 4, 7}})
 	if err != nil {
 		t.Fatalf("建防线失败：%v", err)
 	}

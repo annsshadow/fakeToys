@@ -540,6 +540,29 @@ func (s *Service) applyProgress(ctx context.Context, tx pgx.Tx, userID int64, le
 	if err != nil {
 		return 0, fmt.Errorf("update progress: %w", err)
 	}
+
+	// 等级解锁（README 已知边界第 29 条的发放侧）：结算事务内按**更新后的**
+	// level_exp 补发基础技能。上面 UPDATE 完成后子查询读到的是新值。
+	//
+	// 等级口径与 mastery_points 派生式同源：level = floor(level_exp / 100)
+	// （mastery 的 /1000 = "每 10 级 +1" 反推）。三段论：
+	//   1. 只解锁**基础技能** —— `id NOT IN (SELECT output_skill_id FROM skill_recipes)`
+	//      把 18 个合成技能排除在外，它们留给二期合成系统（配方表已就位），
+	//      其 unlock_level 30..62 届时作为合成门槛复用；
+	//   2. `ON CONFLICT DO NOTHING` 幂等 —— 重复结算/重复跨级不会重复发放；
+	//   3. 老玩家无需回填脚本：任意一场结算即按当前等级补齐。
+	//
+	// 消费侧契约不动：未解锁技能装备/升级仍一律 400（routes_e2e_test.go 既有断言）。
+	if _, err := tx.Exec(ctx, `
+		INSERT INTO user_skills (user_id, skill_id)
+		SELECT $1, s.id
+		  FROM skills s
+		 WHERE s.unlock_level <= (SELECT FLOOR(p.level_exp / 100) FROM user_progress p WHERE p.user_id = $1)
+		   AND s.id NOT IN (SELECT output_skill_id FROM skill_recipes)
+		ON CONFLICT (user_id, skill_id) DO NOTHING`,
+		userID); err != nil {
+		return 0, fmt.Errorf("unlock skills by level: %w", err)
+	}
 	return newMax, nil
 }
 

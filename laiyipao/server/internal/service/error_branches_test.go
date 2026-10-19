@@ -205,7 +205,7 @@ func TestTxMidwayFailures(t *testing.T) {
 		ts := openScratchService(t)
 		uid := ts.newUser(t, ctx)
 		ts.renameTable(t, "user_skill_slots", "user_skill_slots_bak")
-		_, err := ts.SaveLoadout(ctx, uid, SaveLoadoutInput{SkillIDs: []int{1, 2}})
+		_, err := ts.SaveLoadout(ctx, uid, SaveLoadoutInput{SkillIDs: []int{1, 4}})
 		ts.renameTable(t, "user_skill_slots_bak", "user_skill_slots")
 		// 技能归属查询成功、DELETE 槽位失败
 		mustErr(t, err, "clear slots")

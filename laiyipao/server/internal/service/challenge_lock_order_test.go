@@ -346,7 +346,7 @@ func TestSelfChallengeStillRejected(t *testing.T) {
 	ctx := context.Background()
 	uid := ts.newUser(t, ctx)
 	dv, err := ts.SaveDefense(ctx, uid, SaveDefenseInput{
-		Name: "自挑战探针", Works: []string{"slow_belt"}, Skills: []int{1, 2, 3},
+		Name: "自挑战探针", Works: []string{"slow_belt"}, Skills: []int{1, 4, 7},
 	})
 	if err != nil {
 		t.Fatalf("造防线失败：%v", err)
@@ -398,7 +398,7 @@ func TestChallengeDefensePreLocksBeforeStealing(t *testing.T) {
 	lo, hi := attacker, owner
 
 	dv, err := ts.SaveDefense(ctx, owner, SaveDefenseInput{
-		Name: "预锁探针", Works: []string{"slow_belt"}, Skills: []int{1, 2, 3},
+		Name: "预锁探针", Works: []string{"slow_belt"}, Skills: []int{1, 4, 7},
 	})
 	if err != nil {
 		t.Fatalf("造防线失败：%v", err)
