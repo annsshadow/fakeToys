@@ -178,6 +178,12 @@ class FAISSDB(VectorDB):
         normalized_query = normalize_vectors(query_array)
         k = min(top_k, len(self._ids))
 
+        if k <= 0:
+            # top_k=0 是 UI 允许的输入（echo-only 模式）：faiss 的 search 对 k<=0
+            # 直接 assert，numpy 分支则天然返回空。统一在这里短路，别把这条语义
+            # 交给底层库——两种后端行为必须一致（判据见 test_zero_top_k_returns_no_rows）。
+            return []
+
         # 查询缓存：键必须覆盖所有影响结果的输入。
         # 原实现只用查询向量做键，于是 search(q, top_k=5) 之后
         # search(q, top_k=10) 会命中那条已经被截断成 5 条的缓存。
@@ -265,7 +271,9 @@ class FAISSDB(VectorDB):
 
         if self._faiss is not None:
             self._index = self._faiss.IndexFlatIP(self.dimension)
-            if len(self._vectors):
+            if len(self._vectors) and self._vectors.shape[1] == self.dimension:
+                # 维度不匹配的向量（load 允许加载，见 test_load_with_wrong_dimension）
+                # 不入索引：faiss 的 add 对不匹配维度直接 assert。
                 self._index.add(self._vectors)
 
         self._invalidate_query_cache()
@@ -343,8 +351,17 @@ class FAISSDB(VectorDB):
 
         if self._faiss is not None:
             self._index = self._faiss.IndexFlatIP(self.dimension)
-            if len(vectors):
+            if len(vectors) and vectors.shape[1] == self.dimension:
                 self._index.add(vectors)
+            elif len(vectors):
+                # load 的判据是「维度不匹配的数据也要能加载」（见
+                # test_load_with_wrong_dimension），但不该拿它去喂 faiss：
+                # 低维数据入不了 d 维索引，faiss 的 add 会直接 assert。
+                # 跳过入索引，数据仍留在 `_vectors` 里。
+                logger.warning(
+                    f"加载的向量维度 {vectors.shape[1]} 与索引维度 {self.dimension} "
+                    f"不匹配，跳过 faiss 索引重建（本次仅 numpy 检索可用）"
+                )
 
         self._invalidate_query_cache()
 
