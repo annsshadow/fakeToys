@@ -161,9 +161,80 @@ applies_when:
 
 ## 5. 遗留
 
-1. **faiss 存在时的 4 条 latent 红**（CI 不装 faiss，故不是 CI 红）：`test_faiss_not_installed_raises`（断言 faiss 缺席）、
-   `test_zero_top_k_returns_no_rows` / `test_top_k_zero_is_the_echo_only_mode_the_ui_allows`（新 faiss 内部 `assert k > 0`）、
-   `test_load_with_wrong_dimension`（新 faiss 维度断言）。装了 faiss 的环境会看到这 4 条——建议产品侧在 `top_k<=0`
-   与维度不匹配处显式早返回，别把语义交给 faiss 的 assert。
-2. `shared::crud_save` 的同类审计：其余 `*_save` 若 spec 含归属列，同样会在局部保存时抹归属。
+1. ~~**faiss 存在时的 4 条 latent 红**（CI 不装 faiss，故不是 CI 红）~~ **已修（追加轮 §6.1）**：
+   产品侧在 `top_k<=0` 早返回、`load`/`delete` 重建索引前判维度；测试侧用 `sys.modules["faiss"]=None`
+   哨兵把"没装"变成可控输入。原判据（"别把语义交给 faiss 的 assert"）成立。
+2. ~~`shared::crud_save` 的同类审计~~ **已修（追加轮 §6.2）**：助手层改"只写载荷里出现的列"，
+   5 处含归属列的 save 补窄 `*_update_spec()`；21 个调用点的逐点判定见
+   [crud_save PATCH 语义](../best-practices/crud-save-patch-semantics.md)。
 3. `main` 的 CI 归因文档（分诊文档 §4）已随之更新为"已修"状态。
+
+## 6. 追加轮（同日）：faiss latent 红与 crud_save 系统性收口
+
+§5 的两条遗留当日收口。口径不变：判据只用本地 CI 等价命令；能改产品代码就改（本轮两处都定性为**产品缺陷**）。
+
+### 6.1 faiss 的 4 条 latent 红（`python:3.11` 容器 + `faiss-cpu`）
+
+| 用例 | 定性 | 修法 |
+|---|---|---|
+| `test_zero_top_k_returns_no_rows`、`test_top_k_zero_is_the_echo_only_mode_the_ui_allows` | 产品缺陷（两条后端行为不一致） | `FAISSDB.search`：`k <= 0` 早返回 `[]`，不再把语义交给 faiss 的 `assert k > 0` |
+| `test_load_with_wrong_dimension` | 产品缺陷 | `load`/`delete` 重建索引前判 `vectors.shape[1] == dimension`；不匹配则跳过入索引 + 告警（`load()` 仍返回 True，数据留在 `_vectors`） |
+| `test_faiss_not_installed_raises` | 测试口径（隐含"环境没装 faiss"） | `monkeypatch.setitem(sys.modules, "faiss", None)` 把"缺失"变成可控输入，两种环境跑同一条分支 |
+
+口径与可复用教训见 [可选依赖导致的 latent 红](../testing/optional-dependency-latent-reds.md)。
+
+### 6.2 crud_save 系统性收口
+
+- **助手层（根因）**：`shared::crud::crud_save` 改为**只写载荷里出现的列**——缺键保持原值、显式 `""`/null 才清空、
+  一个可写列都没有时不发空 `SET`（改查 `SELECT 1 … WHERE id=$1`，保 not-found 语义与 `*_owned` 门禁链）。
+  一处改动覆盖全部 21 个 `crud_save` 调用点。
+- **归属层（防显式改写）**：5 处 spec 含归属列者新增 `*_update_spec()` 并让 save 改走它——
+  `program_center::collect_save`（`person_id`）、`portal::dict_save`/`widget_save` 与
+  `query::importer_save`/`stat_save`（`creator`）；`collect_save` 原"剥离 personId"的补丁随之删除。
+- **测试**：shared 三条实库用例（部分载荷保留未提交列 / 空载荷只答存在性 / 显式空值清空）+
+  program_center 的 collect save 往返（部分保存后归属仍在、客户端硬塞 `personId` 被忽略、非属主 `saved=false`）+
+  portal/query 的窄 spec 形状测试（钉住"save spec 不含 creator"）。
+- 逐点审计表、判定标准（归属列 vs 关联列）与遗留见
+  [crud_save PATCH 语义](../best-practices/crud-save-patch-semantics.md)。
+
+### 6.3 本轮验证
+
+判据同 §3：本地 CI 等价命令，逐条给退出码/计数。
+
+**Rust**（`rust:1.98.1-bookworm` 容器 + PostgreSQL 容器，`_verify.sh` 九步）
+
+| 步骤 | 命令 | 结果 |
+|---|---|---|
+| 1 fmt | `cargo fmt --all -- --check` | ✅ 0（首跑报 5 处差异，**全在本轮新加的测试代码里**，已格式化后复查 0） |
+| 2 clippy | `cargo clippy --workspace --all-targets --keep-going -- -D warnings` | ✅ 0 error / 0 warning |
+| 3 迁移 | `cargo run --bin oa4rust -- --migrate-only` | ✅ 0 |
+| 4 单测 | `cargo test --workspace --lib --no-fail-fast` | ✅ 全绿（含 shared 3 条新实库用例） |
+| 5 契约 | `cargo test -p parity --lib` | ✅ 4143 passed / 0 failed |
+| 6 探针 | `cargo test --test u2_probe` | ✅ 2 passed |
+| 7 集成 | `cargo test --test integration_runner` | ✅ 1 passed / 6 ignored（需真库，既有口径） |
+| 8 路由对账 | `cargo test --test designer_route_match` | ✅ 1 passed |
+| 9 引号键守卫 | `cargo test --test quoted_key_guard` | ✅ 1 passed |
+
+- **两条环境坑（不是代码问题，但会让人误判"全绿"，如实记录）**：
+  1. 容器里的 rustup 工具链**没装 rustfmt/clippy**：首跑 `FMT_EXIT=1`/`CLIPPY_EXIT=1` 的真身是
+     `error: 'cargo-fmt' is not installed for the toolchain` ——**不是"检查通过"**。
+     装上组件后这两步才真正执行，并立刻抓到上面那 5 处格式差异。
+  2. `utoipa-swagger-ui v7.1.0` 的构建脚本要从 `github.com` 下载 swagger-ui（本网络
+     `curl: (35) SSL_ERROR_SYSCALL in connection to github.com:443`）。构建脚本自带
+     `SWAGGER_UI_DOWNLOAD_URL` 口子：指向 `target/` 里先前成功下载过的同一枚
+     `v5.17.12.zip`（`file://` 协议）即可 —— **只影响资源获取，不影响编译与检查结果**。
+- 顺手收口一条**既有 flake**：`query_service_processing::tests::u2_contract::u2_reset_clears_recent_processing_in_one_txn`
+  走 HTTP 且 reset 是 admin 档，但它自己不调 `ensure_schema()`，只靠"同包别的用例先跑过"播种角色链。
+  实测：删掉 `auth_role`/`auth_person`/`auth_person_role` 后**单跑必 403**（`ExceptionAccessDenied`），
+  全量跑则靠线程调度侥幸通过。按同文件 9 个兄弟用例的写法补 `ensure_schema().await`；
+  补后同样的删除条件下单跑通过。
+
+**Python**（`python:3.11` + `requirements-dev.txt`，`augmentor/` 工作目录 = AI platform CI 的 backend-test job）
+
+| 口径 | 命令 | 结果 |
+|---|---|---|
+| 装了 `faiss-cpu 1.15.1` | `python -m compileall -q augmentor api cli.py` + `pytest -q` | ✅ **10124 passed / 14 skipped**，覆盖 99.96%（4 条 latent 红归零） |
+| 卸掉 faiss（CI 口径） | 同上 | ✅ **10124 passed / 14 skipped**，覆盖 99.99%（与装 faiss 同数、同跳过集） |
+
+两轮都在**干净克隆**上跑（不是作者工作树），跳过的 14 条全是既有的"需要作者工作树/数据集/前端产物"档，
+与本次改动无关。
