@@ -17,7 +17,8 @@ use crate::error::AppError;
 pub struct CrudSpec {
     /// 目标表名（静态常量）。
     pub table: &'static str,
-    /// 允许读写的 (json_key, db_column) 映射；create 按 json_key 取 payload，写按 db_column。
+    /// 允许读写的 (json_key, db_column) 映射；create 按 json_key 取 payload 补齐缺键，
+    /// save 只写在 payload 里**出现**的键（缺键保持原值，见 `crud_save`）。
     pub columns: &'static [(&'static str, &'static str)],
     /// 是否有软删列 deleted_at（save/delete 追加 AND deleted_at IS NULL / 软删 UPDATE）。
     pub soft_delete: bool,
@@ -72,7 +73,13 @@ pub async fn crud_create(
     Ok(id)
 }
 
-/// 参数化 save：UPDATE 指定列 WHERE id = $N（软删表追加 deleted_at IS NULL）。返回是否命中。
+/// 参数化 save：只 UPDATE 载荷里**出现**的列（缺键的列保持原值），WHERE id = $N
+/// （软删表追加 deleted_at IS NULL）。返回是否命中。
+///
+/// 缺键不写是判据不是巧合：原实现按 spec 全列写、缺键取 `""`，于是「局部保存」
+/// 会把未提交的列（归属 person_id/creator、关联 app_id/portal_id…）抹成空串——
+/// x_person_face 实测过归属被抹（face_save / collect_save）。要清空某列就显式给
+/// `""`/null；要改归属只能走 create。
 pub async fn crud_save(
     pool: &Pool,
     spec: &CrudSpec,
@@ -85,16 +92,35 @@ pub async fn crud_save(
     let mut set_parts: Vec<String> = Vec::new();
     let mut params: Vec<String> = Vec::new();
     for (json, db) in spec.columns {
-        set_parts.push(format!("{db}=${}", params.len() + 1));
-        params.push(str_of(payload, json));
+        // 只认载荷里出现的键：`get` 对缺键与载荷不是对象都回 None，两者都不落笔。
+        if let Some(value) = payload.get(*json) {
+            set_parts.push(format!("{db}=${}", params.len() + 1));
+            params.push(value.as_str().unwrap_or("").to_string());
+        }
     }
-    params.push(id.to_string());
-    let id_ph = format!("${}", params.len());
+
     let deleted = if spec.soft_delete {
         " AND deleted_at IS NULL"
     } else {
         ""
     };
+
+    if set_parts.is_empty() {
+        // 载荷里没有可写列：不落笔，只回答「行是否存在」，保住 not-found 语义
+        // （UPDATE 空 SET 是语法错，不能拿它当 no-op）。
+        let sql = format!("SELECT 1 FROM {} WHERE id = $1{}", spec.table, deleted);
+        let owned = id.to_string();
+        let refs: Vec<&(dyn ToSql + Sync)> = vec![&owned as &(dyn ToSql + Sync)];
+        let hit = client
+            .query_opt(&sql, &refs)
+            .await
+            .map_err(|_| AppError::Internal)?
+            .is_some();
+        return Ok(hit);
+    }
+
+    params.push(id.to_string());
+    let id_ph = format!("${}", params.len());
     let sql = format!(
         "UPDATE {} SET {} WHERE id = {}{}",
         spec.table,

@@ -4047,6 +4047,21 @@ fn importer_spec() -> shared::crud::CrudSpec {
     }
 }
 
+/// save 的**窄**白名单：不含 `creator`——审计/归属列只由 create 落笔，
+/// save 里传 creator 会被忽略（同 bbs `section_update_spec`）。
+fn importer_update_spec() -> shared::crud::CrudSpec {
+    shared::crud::CrudSpec {
+        table: "x_query_import_model",
+        columns: &[
+            ("name", "name"),
+            ("modelFlag", "model_flag"),
+            ("queryFlag", "query_flag"),
+            ("content", "content"),
+        ],
+        soft_delete: true,
+    }
+}
+
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn importer_create(
@@ -4075,7 +4090,7 @@ pub async fn importer_save(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // A3-N9：导入模型为设计器元数据，写入收 admin 门。
     require_admin_opt(&pool, session).await?;
-    let saved = shared::crud_save(&pool, &importer_spec(), &id, &body.0).await?;
+    let saved = shared::crud_save(&pool, &importer_update_spec(), &id, &body.0).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
@@ -4179,6 +4194,20 @@ fn stat_spec() -> shared::crud::CrudSpec {
     }
 }
 
+/// save 的**窄**白名单：不含 `creator`——审计/归属列只由 create 落笔，
+/// save 里传 creator 会被忽略（同 bbs `section_update_spec`）。
+fn stat_update_spec() -> shared::crud::CrudSpec {
+    shared::crud::CrudSpec {
+        table: "x_query_stat",
+        columns: &[
+            ("name", "name"),
+            ("queryFlag", "query_flag"),
+            ("statType", "stat_type"),
+        ],
+        soft_delete: true,
+    }
+}
+
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn stat_create(
@@ -4207,7 +4236,7 @@ pub async fn stat_save(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // A3-N9：统计定义为设计器元数据，写入收 admin 门。
     require_admin_opt(&pool, session).await?;
-    let saved = shared::crud_save(&pool, &stat_spec(), &id, &body.0).await?;
+    let saved = shared::crud_save(&pool, &stat_update_spec(), &id, &body.0).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),

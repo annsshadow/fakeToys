@@ -869,4 +869,188 @@ mod tests {
             .await
             .unwrap();
     }
+
+    #[tokio::test]
+    async fn test_crud_save_partial_payload_preserves_unlisted_columns_live() {
+        // 判据钉：save 只写载荷里**出现**的列。原实现按 spec 全列写、缺键取 `""`，
+        // 于是「局部保存」会把未提交的列（归属 person_id/creator、关联 app_id…）
+        // 抹成空串——x_person_face / x_program_collect 实测过归属被抹。
+        use crate::testing::{is_db_available, test_pool};
+        if !is_db_available().await {
+            eprintln!(
+                "skipping test_crud_save_partial_payload_preserves_unlisted_columns_live: DB not reachable"
+            );
+            return;
+        }
+        let pool = test_pool();
+        let client = pool.get().await.unwrap();
+        client
+            .execute("DROP TABLE IF EXISTS x_crud_probe_save_partial", &[])
+            .await
+            .unwrap();
+        client
+            .execute(
+                "CREATE TABLE x_crud_probe_save_partial (id TEXT PRIMARY KEY, a TEXT, b TEXT, c TEXT)",
+                &[],
+            )
+            .await
+            .unwrap();
+        let spec = crate::CrudSpec {
+            table: "x_crud_probe_save_partial",
+            columns: &[("a", "a"), ("b", "b"), ("c", "c")],
+            soft_delete: false,
+        };
+        let id = crate::crud_create(
+            &pool,
+            &spec,
+            &serde_json::json!({ "a": "A", "b": "B", "c": "C" }),
+        )
+        .await
+        .unwrap();
+
+        // 只提交 b：a/c 必须保持原值
+        let hit = crate::crud_save(&pool, &spec, &id, &serde_json::json!({ "b": "B2" }))
+            .await
+            .unwrap();
+        assert!(hit, "部分载荷保存应命中");
+        let row = client
+            .query_one(
+                "SELECT a, b, c FROM x_crud_probe_save_partial WHERE id = $1",
+                &[&id],
+            )
+            .await
+            .unwrap();
+        assert_eq!(row.get::<_, String>("a"), "A", "缺键列不该被清空");
+        assert_eq!(row.get::<_, String>("b"), "B2", "提交的列应落笔");
+        assert_eq!(row.get::<_, String>("c"), "C", "缺键列不该被清空");
+
+        client
+            .execute("DROP TABLE x_crud_probe_save_partial", &[])
+            .await
+            .unwrap();
+    }
+
+    #[tokio::test]
+    async fn test_crud_save_empty_payload_is_noop_but_reports_existence_live() {
+        // 空载荷（一个可写列都没有）不是语法错：不落笔，只回答「行是否存在」，
+        // 且软删表的 deleted_at IS NULL 过滤照旧生效（保住 not-found 语义）。
+        use crate::testing::{is_db_available, test_pool};
+        if !is_db_available().await {
+            eprintln!(
+                "skipping test_crud_save_empty_payload_is_noop_but_reports_existence_live: DB not reachable"
+            );
+            return;
+        }
+        let pool = test_pool();
+        let client = pool.get().await.unwrap();
+        client
+            .execute("DROP TABLE IF EXISTS x_crud_probe_save_noop", &[])
+            .await
+            .unwrap();
+        client
+            .execute(
+                "CREATE TABLE x_crud_probe_save_noop (id TEXT PRIMARY KEY, a TEXT, deleted_at TIMESTAMPTZ)",
+                &[],
+            )
+            .await
+            .unwrap();
+        let spec = crate::CrudSpec {
+            table: "x_crud_probe_save_noop",
+            columns: &[("a", "a")],
+            soft_delete: true,
+        };
+        let id = crate::crud_create(&pool, &spec, &serde_json::json!({ "a": "A" }))
+            .await
+            .unwrap();
+
+        assert!(
+            crate::crud_save(&pool, &spec, &id, &serde_json::json!({}))
+                .await
+                .unwrap(),
+            "空载荷保存应命中（行存在），但不落笔"
+        );
+        let kept: String = client
+            .query_one("SELECT a FROM x_crud_probe_save_noop WHERE id = $1", &[&id])
+            .await
+            .unwrap()
+            .get("a");
+        assert_eq!(kept, "A", "空载荷不该改动任何列");
+
+        // 软删后：空载荷保存回 false（not-found 语义）；不存在 id 同样回 false
+        client
+            .execute(
+                "UPDATE x_crud_probe_save_noop SET deleted_at = NOW() WHERE id = $1",
+                &[&id],
+            )
+            .await
+            .unwrap();
+        assert!(!crate::crud_save(&pool, &spec, &id, &serde_json::json!({}))
+            .await
+            .unwrap());
+        assert!(
+            !crate::crud_save(&pool, &spec, "no-such-id", &serde_json::json!({}))
+                .await
+                .unwrap()
+        );
+
+        client
+            .execute("DROP TABLE x_crud_probe_save_noop", &[])
+            .await
+            .unwrap();
+    }
+
+    #[tokio::test]
+    async fn test_crud_save_explicit_empty_string_clears_live() {
+        // 「缺键不写」的另一半：清空某列要走显式 `""`/null，而不是不提交。
+        // 显式空串 / JSON null 都写 `""`（与 create 的取值口径一致）。
+        use crate::testing::{is_db_available, test_pool};
+        if !is_db_available().await {
+            eprintln!(
+                "skipping test_crud_save_explicit_empty_string_clears_live: DB not reachable"
+            );
+            return;
+        }
+        let pool = test_pool();
+        let client = pool.get().await.unwrap();
+        client
+            .execute("DROP TABLE IF EXISTS x_crud_probe_save_clear", &[])
+            .await
+            .unwrap();
+        client
+            .execute(
+                "CREATE TABLE x_crud_probe_save_clear (id TEXT PRIMARY KEY, a TEXT, b TEXT)",
+                &[],
+            )
+            .await
+            .unwrap();
+        let spec = crate::CrudSpec {
+            table: "x_crud_probe_save_clear",
+            columns: &[("a", "a"), ("b", "b")],
+            soft_delete: false,
+        };
+        let id = crate::crud_create(&pool, &spec, &serde_json::json!({ "a": "A", "b": "B" }))
+            .await
+            .unwrap();
+
+        crate::crud_save(&pool, &spec, &id, &serde_json::json!({ "b": "" }))
+            .await
+            .unwrap();
+        crate::crud_save(&pool, &spec, &id, &serde_json::json!({ "a": null }))
+            .await
+            .unwrap();
+        let row = client
+            .query_one(
+                "SELECT a, b FROM x_crud_probe_save_clear WHERE id = $1",
+                &[&id],
+            )
+            .await
+            .unwrap();
+        assert_eq!(row.get::<_, String>("a"), "", "显式 null 应清空该列");
+        assert_eq!(row.get::<_, String>("b"), "", "显式空串应清空该列");
+
+        client
+            .execute("DROP TABLE x_crud_probe_save_clear", &[])
+            .await
+            .unwrap();
+    }
 }
