@@ -3,7 +3,7 @@ title: "assess: 远端分支相对 main 的未落地功能盘点（26 条分支 
 type: assess
 status: completed
 date: 2026-10-19
-scope: origin 全部业务分支（分析时点现存 18 条 ＋ 已归档 8 条；后续 10 条零独有 `feat/*` 亦已归档删除）vs main@931af210e；路径级 ∪ 抽样复核
+scope: origin 全部业务分支（分析时点现存 18 条 ＋ 已归档 8 条；后续 10 条零独有 `feat/*` 与 3 条冷线非 `feat/*` 亦已归档删除）vs main@931af210e；路径级 ∪ 抽样复核
 origin: 用户要求「既然有 18 条分支，重新看一下有哪些功能没落地到 main，落文档到 docs/plans 供后续实施」；承接 2026-10-19-001 的 8 条老分支删除决议
 ---
 
@@ -19,7 +19,8 @@ origin: 用户要求「既然有 18 条分支，重新看一下有哪些功能�
 >    可映射 1,544（`oa4rust` 946 / `oa4rust-web` 234 / `ai` 364）＋ 真残留 453（§三）。
 > 3. 本盘点为**路径级 + 抽样**；`2026-10-19-001` 的 M（同名不同内容）清单为内容级差异，维持「低优先、需人读」原判。
 > 4. **清理已执行**：10 条零独有 `feat/*`（含 3 条指向 main 根提交的空壳）已于同日续程按 §五 流程
->    「先 tag 后删」，远端 `feat/*` 清零（§四 C3、附录 A）；8 条非 `feat/*` 多为他方审计线，仅记录（§四 C5）。
+>    「先 tag 后删」，远端 `feat/*` 清零（§四 C3、附录 A）；8 条非 `feat/*` 中冷线 3 条亦同批归档删除、
+>    其余 5 条（含 4 条在动的审计线）保留待静置（§四 C5、附录 A 第三批）。
 > 5. 本计划据此收口：`status: active → completed`，按 `plan-status-lifecycle` 惯例归档 `docs/archived-plans/`。
 
 ## 一、范围与基线
@@ -82,9 +83,9 @@ origin: 用户要求「既然有 18 条分支，重新看一下有哪些功能�
 | `watering-poc` | `4f0cf03d1` | 2026-08-18 | **= main 根提交（空壳）** |
 
 > 上表 10 条已于 2026-10-19 续程按 §五 流程「先 tag（`archive/feat-<短名>-20261019`，×10、已推送）后删」
-> 归档删除，远端 `feat/*` 清零；下表 8 条非 `feat/*` 仅记录（C5）。
+> 归档删除，远端 `feat/*` 清零；下表 8 条非 `feat/*`：冷线 3 条已归档删除，其余 5 条保留待静置（§四 C5）。
 
-**8 条现存非 `feat/*`**（全部 `rev-list --count --not main` = 0）：`augmentor-opt100`（`f5a3efb86`）、
+**8 条当时现存非 `feat/*`**（全部 `rev-list --count --not main` = 0）：`augmentor-opt100`（`f5a3efb86`）、
 `augmentor-vuln-audit-20261016`（`5920baab6`）、`docs/plans-status-audit`（`7f041f249`）、
 `laiyipao-r1-engine-port`（`d79e17e4e`）、`oa4rust-vuln-audit-r4`（`b77873564`）、`optimism20261012`（`f45b31930`）、
 `optimize/oa4rust-hardening`（`fad49cd9f`）、`restore-main`（`4f0cf03d1`，= main 根提交的空壳）。
@@ -171,29 +172,30 @@ origin: 用户要求「既然有 18 条分支，重新看一下有哪些功能�
 | **C1a** | `tests/behavior_comparison` 行为对比自检 | 7 文件 | ✅ **已复核关闭**（2026-10-19） | main 侧已演进为 `crates/parity`（`parity_test!`/`behavior_tests`）＋ `tests/parity/*`（语料＋runner）＋ `scripts/cluster_behavior_diffs.py` ＋ `tests/behavior_comparison/seeds/*`；旧 `comparator/reporter/allowlist` 为运行时对比原型，功能位被取代 |
 | **C1b** | `008_cleanup_duplicates.sql`、`009_correlation_tables.sql` | 2 文件 | ✅ **已复核关闭**（2026-10-19） | `008` 自述「no-op for database schema」，仅文档化归档重复的 003/004；`009` 的 correlation 表族已被 main 迁移链 011/023/029/032/037/038/040/041/077/103 覆盖 |
 | **C1c** | `AIAssistant.vue` 桌面视图 | 1 文件 | ✅ **已复核关闭**（2026-10-19） | main `AIChatApp.vue` 注释明写「MCP 配置面板（合并自 AIAssistant.vue，并补上入口按钮）」，并已调 `/api/ai/chat\|config\|core/entity/*` |
-| **C2** | 历史资料归档（linux-gcov-coverage 15 ＋ docs 312） | 327 | 未执行（用户裁定本轮不做；保留可选） | 命令见 §五；不做也不影响 main |
+| **C2** | 历史资料归档（linux-gcov-coverage 15 ＋ docs 312） | 327 | 未执行（用户 2026-10-19 复核确认：维持不做） | tag 即归档；恢复命令见 §五；不做也不影响 main |
 | **C3** | 删除 10 条零独有 `feat/*` | 10 条 | ✅ **已执行**（2026-10-19 续程）：先 tag 后删，远端 `feat/*` 清零 | 事前核查：`refs/pull/*` 74 条全为历史 PR（编号 1..74 连续，含已删批次）；公开 API `pulls?state=open` = `[]` → 无开放 PR 受影响 |
 | **C4** | `oa/` 27,761 ＋ 旧世代 M 清单 | — | **不实施**（维持 001 判读） | — |
-| **C5** | 8 条非 `feat/*` 分支 | 8 条 | 仅记录；清理需各方确认 | 多为审计线，内容已全部在 main |
+| **C5** | 8 条非 `feat/*` 分支 | 8 条 | ✅ **部分清理**（2026-10-19）：冷线 3 条先 tag 后删；4 条热线＋`augmentor-opt100` 保留待静置 | 多为审计线，内容已全部在 main；冷线 = `restore-main`、`docs/plans-status-audit`、`optimize/oa4rust-hardening`（08~09 月、无本地占用） |
 
-**执行结果**：C1a/C1b/C1c 人读后全部关闭（无搬运项）；C3 已执行；C2 用户裁定不做（保留可选）；
-C4 不实施；C5 仅记录。本计划据此收口（`status: active → completed`）并按 `plan-status-lifecycle` 惯例归档。
+**执行结果**：C1a/C1b/C1c 人读后全部关闭（无搬运项）；C3 已执行；C4 不实施；C2 用户核定维持不做；
+C5 部分清理（冷线 3 条，2026-10-19 续程；热线保留待静置）。本计划据此收口
+（`status: active → completed`）并按 `plan-status-lifecycle` 惯例归档。
 
 ## 五、行动边界与删除流程
 
 - **不 merge / 不 rebase / 不用 `--allow-unrelated-histories`**（8 条旧线与 main 无共同祖先，合并语义不成立）。
 - **搬运一律单向**：`git show <tag>:<路径> > <目的路径>` 或 `git restore --source=<tag> -- <路径>`，经评审后入 main。
-- **删除远端分支流程**（8 条旧线 ＋ 10 条零独有 `feat/*` 两批先例，均已完整走完）：
+- **删除远端分支流程**（8 条旧线 ＋ 10 条零独有 `feat/*` ＋ 3 条冷线三批先例，均已完整走完）：
   ① 打 annotated tag：`git tag -a archive/<分支短名>-<日期> <tip-sha> -m "<说明>"` 并 `git push origin`；
   ② 知会相关方；③ `git push origin --delete <refs>`；④ 本地 `git fetch --prune`。
-  恢复方法：`git branch <名> archive/<分支短名>-<日期>`。
-- 本盘点期间共执行两批远端删除（均为先 tag 后删、经拍板）：① 8 条旧线（前一轮决议）；
-  ② 10 条零独有 `feat/*`（本轮续程，用户拍板）。除此之外未改动任何远端状态。
+  恢复方法：`git branch <名> archive/…-<日期>`。
+- 本盘点期间共执行三批远端删除（均为先 tag 后删、经拍板）：① 8 条旧线（前一轮决议）；
+  ② 10 条零独有 `feat/*`（本轮续程）；③ 3 条非 `feat/*` 冷线（本轮续程）。除此之外未改动任何远端状态。
 
 ## 六、复核脚本（只读，可复跑）
 
 ```powershell
-# 前提：归档 tag 在本仓库（git tag -l 'archive/*' 应输出 18 条；10 条零独有分支 tag 不引入 D，不影响期望值）
+# 前提：归档 tag 在本仓库（git tag -l 'archive/*' 应输出 21 条；零独有分支 tag 不引入 D，不影响期望值）
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $tags   = @(git tag -l 'archive/*')
 $mainB  = @{}; @(git ls-tree -r --name-only main:oa4rust/backend) | ForEach-Object { $mainB[$_]  = $true }
@@ -220,10 +222,11 @@ $r1 | Sort-Object; $r2 | Sort-Object; $r3 | Sort-Object
 @($U.Keys).Count                                                      # 29758
 ```
 
-## 附录 A：两批删除执行记录（001 决议 ＋ 002 续程）
+## 附录 A：三批删除执行记录（001 决议 ＋ 002 续程）
 
 - 依据：`docs/archived-plans/2026-10-19-001-assess-stale-remote-branches-vs-main-plan.md` §五 / §六。
-  建档提交 `dfebf697b`（002 建档＋001 补记）；本收口提交含 C1 结论与 C3 执行记录。
+  建档提交 `dfebf697b`（002 建档＋001 补记）；本收口提交含 C1 结论与 C3 执行记录；
+  第三批记录见下（2026-10-19 同日续程）。
 - **第一批（8 条旧线，2026-10-19）**：
   1. `git tag -a archive/feat-<名>-20261019 <tip>` ×8（annotated，含 tip sha 与 001 文档引用）；
   2. `git push origin`（8 个 tag 已在远端）；
@@ -238,7 +241,17 @@ $r1 | Sort-Object; $r2 | Sort-Object; $r3 | Sort-Object
      `…oa4rust-residual-gaps-closure…`、`…remaining-work-consolidation…`、`…systems-documentation…`、
      `…three-ends-f-contract-zero…`、`…watering-poc…`；tip sha 见 §三 3.1）→ `git push origin` → `--delete` ×10；
   3. 核对：远端 heads = **9**（`feat/*` = **0**）、`archive/*` tag = **18**（8＋10，本地/远端一致）。
-- 恢复：`git branch <名> archive/feat-<名>-20261019`，或 `git restore --source=archive/… -- <路径>`。
+- **第三批（C5 冷线 3 条，同日续程，用户拍板）**：
+  1. 对象与判定：`restore-main`（08-18 快照空壳）、`docs/plans-status-audit`（08-21，审计已完成归档）、
+     `optimize/oa4rust-hardening`（09-14）——均独有=0、无本地分支/worktree 占用、仓库开放 PR=0
+     （当日 API 已复核；本条删除前复核遇匿名限流，沿用当日结果）；
+     tag ×3（`archive/restore-main-20261019`、`archive/docs-plans-status-audit-20261019`、
+     `archive/optimize-oa4rust-hardening-20261019`）→ 推送 → `--delete` ×3；
+  2. 保留：4 条热线（`augmentor-vuln-audit-20261016`、`oa4rust-vuln-audit-r4`、`optimism20261012`、
+     `laiyipao-r1-engine-port`，10-15~18 仍在动）＋ `augmentor-opt100`（10-10 边界线）——待静置后再议；
+  3. 核对：远端 heads = **6**（main ＋ 5 条保留线）、`archive/*` tag = **21**（8＋10＋3）。
+     另：本地遗留分支 `chore/dependabot-triage-20261018`（仅本地、独有=0）已删除，无远端影响。
+- 恢复：`git branch <名> archive/…-20261019`，或 `git restore --source=archive/… -- <路径>`。
 
 ## 附录 B：判定要点速查
 
