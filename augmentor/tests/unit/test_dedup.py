@@ -368,8 +368,16 @@ class TestComputeSimilarityMatrixChunked:
 class TestFindDuplicatesFaiss:
     """FAISS 去重测试（ImportError 分支）"""
 
-    def test_faiss_not_installed_raises(self):
-        """未安装 faiss 时应抛出 ImportError"""
+    def test_faiss_not_installed_raises(self, monkeypatch):
+        """未安装 faiss 时应抛出 ImportError
+
+        判据是「import faiss 失败」这条分支，与开发机是否恰好装了 faiss 无关：
+        用 `sys.modules["faiss"] = None` 哨兵让 import 机制必然抛 ImportError
+        （装了 faiss 的环境也能跑，未装的环境语义不变）。
+        """
+        import sys
+
+        monkeypatch.setitem(sys.modules, "faiss", None)
         dedup = Deduplicator()
         embeddings = np.random.rand(3, 10)
         with pytest.raises(ImportError, match="FAISS"):
