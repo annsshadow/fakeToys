@@ -281,6 +281,17 @@ fn collect_spec() -> shared::crud::CrudSpec {
     }
 }
 
+/// save 的**窄**白名单：只列业务列，**不含 `person_id`**——归属只由 create 从会话落笔
+/// （客户端在 save 里传 personId 会被忽略），同 bbs `section_update_spec` /
+/// personal_extend `face_update_spec`。
+fn collect_update_spec() -> shared::crud::CrudSpec {
+    shared::crud::CrudSpec {
+        table: "x_program_collect",
+        columns: &[("title", "title"), ("url", "url")],
+        soft_delete: true,
+    }
+}
+
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn collect_create(
@@ -313,7 +324,8 @@ pub async fn collect_save(
     Path(id): Path<String>,
     body: Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    // 属主门禁（此前任何登录人可改任意收藏）+ personId 剥离（归属不可经 save 改写）
+    // 属主门禁（此前任何登录人可改任意收藏）；归属不可经 save 改写：
+    // save 走不含 person_id 的窄 spec（客户端传 personId 会被忽略，见 collect_update_spec）
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let owned = client
         .query_opt(
@@ -330,11 +342,7 @@ pub async fn collect_save(
             ]),
         ))));
     }
-    let mut payload = body.0;
-    if let Some(obj) = payload.as_object_mut() {
-        obj.remove("personId");
-    }
-    let saved = shared::crud_save(&pool, &collect_spec(), &id, &payload).await?;
+    let saved = shared::crud_save(&pool, &collect_update_spec(), &id, &body.0).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),

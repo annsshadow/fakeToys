@@ -324,7 +324,8 @@ fn face_spec() -> shared::crud::CrudSpec {
 }
 
 /// save 用**窄**白名单（同 bbs 的 `section_update_spec` 惯例）：只列可写列，**不含 `person_id`**。
-/// `crud_save` 会把 spec 里每一列都按 payload 取值写回（缺键取 `""`），全列 spec 下
+/// 归属只由 create 从会话落笔；save 里传 personId 会被忽略（`crud_save` 只写 spec 里列出的列）。
+/// 历史教训：窄化前这里是全列 spec，碰上当时「缺键取 `""`」的写法，
 /// 「属主改个 faceName」这一步就会把归属列抹成空串——之后本人再 delete/save 全部 403（实测复现）。
 fn face_update_spec() -> shared::crud::CrudSpec {
     shared::crud::CrudSpec {

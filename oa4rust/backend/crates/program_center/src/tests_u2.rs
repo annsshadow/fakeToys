@@ -566,4 +566,161 @@ mod u2_tests {
                 .unwrap();
         }
     }
+
+    // ── 归属抹除回归钉（crud_save 全列写 → save 窄 update spec）──
+    // 修复前 collect_save 走含 person_id 的全列 spec：局部保存（不带 personId）
+    // 会把 person_id 写成空串，这条收藏就从此人列表里消失（归属被抹）。
+    #[tokio::test]
+    async fn collect_save_keeps_person_id_and_ignores_client_person_id() {
+        use shared::testing::{is_db_available, test_pool};
+        if !is_db_available().await {
+            eprintln!("skipping collect save ownership: DB not reachable");
+            return;
+        }
+        let pool = test_pool();
+        fn session_for(person: &str) -> shared::session::Session {
+            let now = chrono::Utc::now().naive_utc();
+            shared::session::Session {
+                token: format!("u2-collect-save-{}", person),
+                person_unique: person.to_string(),
+                created_at: now,
+                expires_at: now + chrono::Duration::hours(2),
+            }
+        }
+
+        let alice_app = program_center_router(pool.clone())
+            .layer(Extension(session_for("u-collect-save-alice")));
+        let create = alice_app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/api/program_center/collect/create")
+                    .header("content-type", "application/json")
+                    .body(Body::from(
+                        r#"{"personId":"u-collect-save-alice","title":"save 前标题","url":"https://internal.example/z"}"#,
+                    ))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(create.status(), StatusCode::OK);
+        let bytes = axum::body::to_bytes(create.into_body(), 65536)
+            .await
+            .unwrap();
+        let created: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        let id = created["data"]["id"]
+            .as_str()
+            .expect("create 应返回 id")
+            .to_string();
+
+        // 局部保存（只带 title）：person_id 必须原样保留
+        let save = alice_app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method("PUT")
+                    .uri(format!("/api/program_center/collect/save/{}", id))
+                    .header("content-type", "application/json")
+                    .body(Body::from(r#"{"title":"save 后标题"}"#))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(save.status(), StatusCode::OK);
+        let bytes = axum::body::to_bytes(save.into_body(), 65536).await.unwrap();
+        let saved: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(saved["data"]["saved"].as_bool(), Some(true));
+        {
+            let client = pool.get().await.unwrap();
+            let row = client
+                .query_one(
+                    "SELECT title, person_id FROM x_program_collect WHERE id = $1",
+                    &[&id],
+                )
+                .await
+                .unwrap();
+            assert_eq!(
+                row.get::<_, String>("title"),
+                "save 后标题",
+                "提交的列应落笔"
+            );
+            assert_eq!(
+                row.get::<_, String>("person_id"),
+                "u-collect-save-alice",
+                "局部保存不得抹掉归属"
+            );
+        }
+
+        // 客户端硬塞 personId：save 的窄 spec 不含 person_id，必须被忽略
+        let forge = alice_app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method("PUT")
+                    .uri(format!("/api/program_center/collect/save/{}", id))
+                    .header("content-type", "application/json")
+                    .body(Body::from(
+                        r#"{"personId":"u-collect-save-mallory","url":"https://internal.example/z2"}"#,
+                    ))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(forge.status(), StatusCode::OK);
+        {
+            let client = pool.get().await.unwrap();
+            let row = client
+                .query_one(
+                    "SELECT person_id, url FROM x_program_collect WHERE id = $1",
+                    &[&id],
+                )
+                .await
+                .unwrap();
+            assert_eq!(
+                row.get::<_, String>("person_id"),
+                "u-collect-save-alice",
+                "save 改不动归属（客户端 personId 被忽略）"
+            );
+            assert_eq!(
+                row.get::<_, String>("url"),
+                "https://internal.example/z2",
+                "同一载荷里的业务列照常落笔"
+            );
+        }
+
+        // 非属主保存：仍被属主门禁拦下（saved=false）
+        let bob_app =
+            program_center_router(pool.clone()).layer(Extension(session_for("u-collect-save-bob")));
+        let steal = bob_app
+            .oneshot(
+                Request::builder()
+                    .method("PUT")
+                    .uri(format!("/api/program_center/collect/save/{}", id))
+                    .header("content-type", "application/json")
+                    .body(Body::from(r#"{"title":"bob 改的"}"#))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(steal.status(), StatusCode::OK);
+        let bytes = axum::body::to_bytes(steal.into_body(), 65536)
+            .await
+            .unwrap();
+        let stolen: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(
+            stolen["data"]["saved"].as_bool(),
+            Some(false),
+            "非属主保存必须落空"
+        );
+
+        // 清理：物理删测试数据
+        {
+            let client = pool.get().await.unwrap();
+            client
+                .execute("DELETE FROM x_program_collect WHERE id = $1", &[&id])
+                .await
+                .unwrap();
+        }
+    }
 }

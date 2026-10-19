@@ -307,3 +307,20 @@ async fn test_u2_designer_gap_routes_exist() {
         );
     }
 }
+
+// ── 归属抹除回归钉（crud_save 全列写 → save 窄 update spec）──
+// dict/widget 的 save 走窄 spec：`creator` 是审计/归属列，save 里传了也不落笔
+// （crud_save 只写 spec 里列出的列，见 shared::crud::crud_save 与
+// shared 的 test_crud_save_partial_payload_preserves_unlisted_columns_live）。
+#[test]
+fn test_dict_and_widget_save_specs_exclude_creator() {
+    for (name, spec) in [
+        ("dict", dict_update_spec()),
+        ("widget", widget_update_spec()),
+    ] {
+        assert!(
+            !spec.columns.iter().any(|(_, db)| *db == "creator"),
+            "{name} 的 save spec 不得含 creator（归属只由 create 落笔）"
+        );
+    }
+}
