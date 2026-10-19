@@ -35,6 +35,8 @@
           等级只提升**伤害**，不影响热量与冷却。
           每级 +<text v-if="skillRules">{{ skillRules.coef_permille }}‰</text>伤害，满级
           <text v-if="skillRules">{{ skillRules.max_level }}</text> 级。
+          技能库列出全部技能；标「未解锁」的不能装备或升级 ——
+          当前版本还没有获取途径。
         </text>
         <view v-for="s in allSkills" :key="s.id" class="skill-row">
           <view class="flex-1">
@@ -53,18 +55,26 @@
           </view>
           <view class="skill-act">
             <view style="display: flex; flex-direction: column; align-items: flex-end; gap: 8rpx">
-              <text v-if="isMaxLevel(s.id)" class="dim">已满级</text>
-              <text
-                v-else-if="!canAfford(s.id)"
-                class="dim"
-              >金币不足（{{ upgradeCost(s.id) }}）</text>
-              <text
-                v-else
-                class="link"
-                @click="doUpgrade(s.id)"
-              >升级 {{ upgradeCost(s.id) }} 金币</text>
-              <text v-if="isEquipped(s.id)" class="dim">已装备</text>
-              <text v-else class="link" @click="toggleEquip(s.id)">装备</text>
+              <!-- 未解锁：不给升级/装备入口。
+                   服务端对未解锁技能一律拒（SaveLoadout → 400「技能 N 未解锁」，
+                   routes_e2e_test 有断言；UpgradeSkill 同理回「未拥有」）。
+                   此前这里对全表技能一律渲染「装备」，玩家点未解锁的那些
+                   只会看到一句「保存失败，出战配置未变更」—— 看起来像故障。 -->
+              <text v-if="!isOwned(s.id)" class="dim">未解锁</text>
+              <template v-else>
+                <text v-if="isMaxLevel(s.id)" class="dim">已满级</text>
+                <text
+                  v-else-if="!canAfford(s.id)"
+                  class="dim"
+                >金币不足（{{ upgradeCost(s.id) }}）</text>
+                <text
+                  v-else
+                  class="link"
+                  @click="doUpgrade(s.id)"
+                >升级 {{ upgradeCost(s.id) }} 金币</text>
+                <text v-if="isEquipped(s.id)" class="dim">已装备</text>
+                <text v-else class="link" @click="toggleEquip(s.id)">装备</text>
+              </template>
             </view>
           </view>
         </view>
@@ -365,6 +375,20 @@ function levelOf(skillId: number): number {
   return typeof row?.level === 'number' ? row.level : 0
 }
 
+/**
+ * 玩家是否已解锁该技能 —— 判据是服务端 `build.skills` 里有没有这一行。
+ *
+ * 为什么不写成 `levelOf() > 0`：那是同一个事实的另一种说法，而这里要表达的是
+ * **能不能操作**（装备与升级都要过服务端的解锁校验），读键存在性更贴题意。
+ *
+ * build 未就绪（/me 还没回来，或拉取失败）时**不假装拥有**：
+ * 那种状态下点任何按钮都只会被服务端拒（400），先按未解锁渲染更诚实。
+ */
+function isOwned(skillId: number): boolean {
+  const bag = store.build?.skills
+  return !!bag && Object.prototype.hasOwnProperty.call(bag, String(skillId))
+}
+
 /** 升到下一级的金币花费（线性：基数 × 当前等级）。 */
 function upgradeCost(skillId: number): number {
   const r = skillRules.value
@@ -415,6 +439,12 @@ function damageAt(s: SkillDef): number {
 
 async function doUpgrade(skillId: number): Promise<void> {
   if (upgrading.value !== null) return // 防连点
+  if (!isOwned(skillId)) {
+    // 未解锁的技能服务端必拒（UpgradeSkill → 「技能 N 未拥有」），
+    // 本地先拦下：白跑一趟网络还只换来一句「升级失败」。
+    uni.showToast({ title: '技能未解锁', icon: 'none' })
+    return
+  }
   upgrading.value = skillId
   try {
     const r = await api.upgradeSkill(skillId)
@@ -480,6 +510,13 @@ function isEquipped(id: number): boolean {
 async function toggleEquip(id: number) {
   const s = allSkills.value.find((x) => x.id === id)
   if (!s) return
+  if (!isOwned(id)) {
+    // 服务端对未解锁技能回 400「技能 N 未解锁」。这里先拦：
+    // 否则 UI 提示的是「保存失败，出战配置未变更」—— 玩家会当成故障，
+    // 而真实原因是他本来就没资格装备它（routes_e2e_test 有 400 断言）。
+    uni.showToast({ title: '技能未解锁', icon: 'none' })
+    return
+  }
   if (s.kind !== 'active') {
     uni.showToast({ title: '被动技能不占主动槽', icon: 'none' })
     return
