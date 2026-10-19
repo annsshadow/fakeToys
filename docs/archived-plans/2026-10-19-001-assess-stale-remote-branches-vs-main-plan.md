@@ -1,13 +1,18 @@
 ---
 title: "assess: 8 条远端老分支相对 main 的产出比对方案"
 type: assess
-status: active
+status: completed
 date: 2026-10-19
 scope: origin/feat/* 8 条（2026-07-28 ~ 08-14）vs main@ff75059d2；824 条提交、约 3 万条分支独有路径
 origin: 用户提问「main 是否最新、是否还需要合并其它分支」→ 实测发现 8 条老分支与 main 无共同祖先，需要一套可复算的内容级比对流程来回答「里面还有没有值得抢救的产出」
 ---
 
 # 8 条远端老分支相对 main 的产出比对方案
+
+> **结论（2026-10-19 定稿，采纳本文件 §五 的预演）：8 条分支全部判定「冗余」——候选抢救 0 条；
+> 残留「需人读」M 清单已在案（低优先，见 §五）。** 本文件已按 `plan-status-lifecycle`
+> 惯例归档至 `docs/archived-plans/`；§三 判据与 §四 复核脚本保留，日后可随时复跑。
+> 结论基线为 `main@ff75059d2`（本文件定稿时的 main）；main 继续演进后如需引用具体数字，请重跑 §四。
 
 ## Summary
 
@@ -26,7 +31,8 @@ origin: 用户提问「main 是否最新、是否还需要合并其它分支」�
    关联只集中在 `oa4rust/**`，且是**世代断代**：两代同名路径中内容不同的**只有 1 条**
    （`oa4rust/README.md`），其余要么只在分支（旧世代）、要么只在 main（新世代）。
 
-本方案已在本机以 `main@ff75059d2` **预演跑通**（§五），执行脚本只读、8 条分支合计约 10 秒（§四）。
+结论：**8 条分支均不需要合并**；按内容判据也没有任何值得抢救的产出（§五 逐条给出依据）。
+本文档的 §四 脚本为本批结论的产出工具，保留作日后复核（只读、8 条分支合计约 10 秒）。
 
 ---
 
@@ -131,7 +137,7 @@ git diff --numstat "${branch}:$path" "main:$path"
 
 ---
 
-## 四、执行脚本（只读，ASCII 安全）
+## 四、复核脚本（只读，ASCII 安全；本批结论即由它产出）
 
 已在本机以 `main@ff75059d2` 跑通（8 条分支合计约 10 秒）。存成 `stale-branch-triage.ps1`
 直接执行即可，脚本不建分支、不切工作树、不删任何东西。
@@ -190,42 +196,50 @@ foreach ($b in $branches) {
 }
 ```
 
-预期输出形态（以预演为准）：每条分支一段，`minus` 只有 `auto-checkin` 为 1、其余为 0；
+预期输出形态：每条分支一段，`minus` 只有 `auto-checkin` 为 1、其余为 0；
 `laiyipao/` 与 `augmentor/` 恒为 `D=0 M=0`；`oa4rust/` 每条的 `M` 只列 `oa4rust/README.md`。
 
 ---
 
-## 五、预演结果（2026-10-19，`main@ff75059d2`）
+## 五、比对结论（2026-10-19 定稿，采纳预演）
 
-| 分支 | cherry | 域内 D/M | 判读 |
-|------|--------|----------|------|
-| `auto-checkin` | **−=1** | laiyipao 0/0、augmentor 0/0、oa4rust 946/1 | **冗余**：其工具已在 main（可删候选） |
-| `core-modules-gap-closure` | +=214 | laiyipao 0/0、augmentor 0/0、oa4rust 732/1 | D 主体 `oa/`=27761（旧世代）；M=3989 需人读（`docs/`=3981，抽样 40 条全为实质差异，非行尾） |
-| `o2server-rust-rewrite` | +=83 | laiyipao 0/0、augmentor 0/0、oa4rust 442/1 | 旧世代整树；M=14（`docs/`=10）需人读 |
-| `oa-project-documentation` | +=16 | laiyipao 0/0、augmentor 0/0、oa4rust 0/0 | 纯文档线；M=3（`(root)`=2、`cool/`=1）需人读 |
-| `oa4rust-gap-audit` | +=146 | laiyipao 0/0、augmentor 0/0、oa4rust 587/1 | 旧世代 oa4rust 树；M=43（`docs/`=39）需人读 |
-| `prod-readiness-plan` | +=123 | laiyipao 0/0、augmentor 0/0、oa4rust 539/1 | 同上；M=40（`docs/`=36）需人读 |
-| `quality-improvement-2026-08-08` | +=97 | laiyipao 0/0、augmentor 0/0、oa4rust 456/1 | 同上；M=16（`docs/`=12）需人读 |
-| `seaorm-migration` | +=111 | laiyipao 0/0、augmentor 0/0、oa4rust 538/1 | 同上；M=17（`docs/`=13）需人读 |
+| 分支 | cherry | 域内 D/M | 结论 | 依据与残留 |
+|------|--------|----------|------|-----------|
+| `auto-checkin` | **−=1** | laiyipao 0/0、augmentor 0/0、oa4rust 946/1 | **冗余（可删）** | 其工具已在 main（12 笔后续提交、25 路径全存在、6 个逐字节一致）；D/M 均为旧世代 |
+| `core-modules-gap-closure` | +=214 | laiyipao 0/0、augmentor 0/0、oa4rust 732/1 | **冗余** | D 主体 `oa/`=27761（旧世代）；残留 M=3989（`docs/`=3981，抽样 40 条全为实质差异、非行尾） |
+| `o2server-rust-rewrite` | +=83 | laiyipao 0/0、augmentor 0/0、oa4rust 442/1 | **冗余** | 旧世代整树；残留 M=14（`docs/`=10） |
+| `oa-project-documentation` | +=16 | laiyipao 0/0、augmentor 0/0、oa4rust 0/0 | **冗余** | 纯文档线；残留 M=3（`(root)`=2、`cool/`=1） |
+| `oa4rust-gap-audit` | +=146 | laiyipao 0/0、augmentor 0/0、oa4rust 587/1 | **冗余** | 旧世代 oa4rust 树；残留 M=43（`docs/`=39） |
+| `prod-readiness-plan` | +=123 | laiyipao 0/0、augmentor 0/0、oa4rust 539/1 | **冗余** | 同上；残留 M=40（`docs/`=36） |
+| `quality-improvement-2026-08-08` | +=97 | laiyipao 0/0、augmentor 0/0、oa4rust 456/1 | **冗余** | 同上；残留 M=16（`docs/`=12） |
+| `seaorm-migration` | +=111 | laiyipao 0/0、augmentor 0/0、oa4rust 538/1 | **冗余** | 同上；残留 M=17（`docs/`=13） |
 
-预演判读：
+判读要点：
 
-- **没有任何一条分支带 `laiyipao` / `augmentor` 的内容**（两个域在分支上完全不存在）。
-- `oa4rust/` 的"候选"是**旧世代整树**（442 ~ 946 条路径/分支）与 1 条同名差异
-  （`oa4rust/README.md`，差异量 19 增/29 删，非行尾）。是否抢救属产品/各方判断。
-- M 类每条分支只有个位数到几十条（`core-modules` 例外，3989 条），且集中在
+- **候选抢救 = 0 条**：没有任何一条分支带 `laiyipao` / `augmentor` 的内容（两个域在分支上完全不存在，
+  D=M=0、A=452/628）；`oa4rust/` 的差异全部是**旧世代整树**（442 ~ 946 条路径/分支）+ 1 条同名差异
+  （`oa4rust/README.md`，19 增/29 删，非行尾），main 已由新世代整树覆盖（A=1333 ~ 1334）。
+- **残留「需人读」= M 清单**（低优先）：每条分支个位数到几十条（`core-modules` 例外，3989 条），集中在
   `docs/`、`(root)`（`README.md` / `.gitignore` 等）、`cool/`、`.workbuddy/` —— 都是旧线自身的文件。
-- 结论口径建议：8 条分支**均不需要合并**；如需收口，按 §三 判据产出逐分支结论后再动远端。
+  查看方式：跑 §四 脚本读 `M:` 行，按 §三 两道复核判定"取代 / 增强 / 丢失"。
+- 若无人主张抢救这批残留，8 条分支可按 §六 步骤收口删除。
 
 ---
 
-## 六、执行后的动作与边界
+## 六、已执行动作、待办与边界
 
+**已执行（本次提交）**：
+
+- §五 结论回填；`status: active → completed`（按 `plan-status-lifecycle` 规则 2，与收口同提交）。
+- 按惯例归档：`docs/plans/2026-10-19-001-…` → `docs/archived-plans/2026-10-19-001-…`
+  （`docs/plans/` 随之清空，恢复"只放活跃计划"）。
+
+**未做（保留决定权）**：
+
+- **未删除任何远端分支、未改动任何远端状态**。若最终要收口：先
+  `git tag archive/<分支短名>-20261019 <sha>`（本地打标，是否推送另定）→ 再删远端分支；
+  这些分支属各方产出，**删除前先知会**。
 - **不 merge、不 rebase、不用 `--allow-unrelated-histories`**（无共同祖先，合并语义不成立）。
-- 若最终判定为「冗余」要收口远端：先 `git tag archive/<分支短名>-20261019 <sha>`（本地打标，
-  是否推送另定）→ 再删远端分支；这些分支属各方产出，**删除前先知会**。
-- 「候选抢救」只做文件搬运：`git show <分支>:<路径> > <目的路径>`，经评审后手动入 main。
-- 比对完成后：把逐分支结论回填本文件 §五，`status` 收口为 `completed`，并按
-  `docs/solutions/development-workflow/plan-status-lifecycle.md` 的惯例处理归档。
 
-**本次范围声明**：本文件只新增比对方案（`docs/plans/` 按需新建），未删除任何分支、未改动任何远端状态。
+**日后若主张抢救**：只做文件搬运 —— `git show <分支>:<路径> > <目的路径>`，经评审后手动入 main，
+并用 §四 脚本复核（结论数字以重跑结果为准）。
