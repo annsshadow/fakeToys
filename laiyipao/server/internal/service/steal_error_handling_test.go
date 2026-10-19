@@ -59,7 +59,7 @@ func TestStealMustNotMaskInfrastructureErrors(t *testing.T) {
 	owner := ts.newUser(t, ctx)
 
 	dv, err := ts.SaveDefense(ctx, owner, SaveDefenseInput{
-		Name: "窃取探针", Works: []string{"slow_belt"}, Skills: []int{1, 2, 3},
+		Name: "窃取探针", Works: []string{"slow_belt"}, Skills: []int{1, 4, 7},
 	})
 	if err != nil {
 		t.Fatalf("造防线失败：%v", err)
@@ -100,7 +100,7 @@ func TestStealSurfacesRealCauseInsteadOfAbortedTx(t *testing.T) {
 	o := scratch.newUser(t, ctx)
 
 	dv, err := scratch.SaveDefense(ctx, o, SaveDefenseInput{
-		Name: "流水故障探针", Works: []string{"slow_belt"}, Skills: []int{1, 2, 3},
+		Name: "流水故障探针", Works: []string{"slow_belt"}, Skills: []int{1, 4, 7},
 	})
 	if err != nil {
 		t.Fatalf("造防线失败：%v", err)
@@ -163,7 +163,7 @@ func TestStealCreditsAttackerOnlyWhenOwnerWasDebited(t *testing.T) {
 	owner := scratch.newUser(t, ctx)
 
 	dv, err := scratch.SaveDefense(ctx, owner, SaveDefenseInput{
-		Name: "恒等式探针", Works: []string{"slow_belt"}, Skills: []int{1, 2, 3},
+		Name: "恒等式探针", Works: []string{"slow_belt"}, Skills: []int{1, 4, 7},
 	})
 	if err != nil {
 		t.Fatalf("造防线失败：%v", err)

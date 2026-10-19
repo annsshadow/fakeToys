@@ -397,9 +397,16 @@ func (s *Service) initNewUser(ctx context.Context, userID int64) error {
 		 ON CONFLICT (user_id, equipment_id) DO NOTHING`, userID); err != nil {
 		return fmt.Errorf("init equipment: %w", err)
 	}
-	// 新号解锁前 4 个技能
+	// 新号赠送三元素入门包：1 焰 ember（Lv1）/ 4 冰 dryice（Lv3）/ 7 电 arc（Lv6）。
+	//
+	// ⚠️ 此前这里发的是技能 1–4，而 2/3 按种子数据是燃油弹/温压弹 —— 全是焰系，
+	// 与下面槽位注释宣称的"三元素保反应链"矛盾（ID 重排后没同步），新手实际
+	// 三焰开局，I-1 的跨元素反应链根本触发不了。第 29 条做发放侧时一并纠正。
+	//
+	// 赠送超出新号等级（0 级）是礼包语义；第 4 个技能不再白送 ——
+	// Lv2 解锁 slug（重炮弹，物理系）成为玩家第一次"升级解锁新技能"的体验。
 	if _, err := s.pool.Exec(ctx,
-		`INSERT INTO user_skills (user_id, skill_id) VALUES ($1,1),($1,2),($1,3),($1,4)
+		`INSERT INTO user_skills (user_id, skill_id) VALUES ($1,1),($1,4),($1,7)
 		 ON CONFLICT (user_id, skill_id) DO NOTHING`, userID); err != nil {
 		return fmt.Errorf("init skills: %w", err)
 	}
@@ -408,10 +415,12 @@ func (s *Service) initNewUser(ctx context.Context, userID int64) error {
 	// 开局拿到的 build.skills 全部 slot=-1，引擎没有任何技能可用，
 	// 而唯一的配置入口（/me/loadout）在界面上又被"先打完一场"的引导挡在后面。
 	//
-	// 默认装 3 个：1 焰 / 2 冰 / 3 电 —— 三种不同元素，
+	// 默认装 3 个：1 焰 / 4 冰 / 7 电 —— 三种不同元素，
 	// 保证新号一进关就能触发反应链（I-1 的核心体验不能被"新号不会玩"埋掉）。
+	// 装备校验（loadout.go「技能未拥有」）与 build 组装都以 user_skills 为准，
+	// 所以槽位上的三个技能必须都在上面的赠送列表里 —— 缺一个就是幽灵槽位。
 	if _, err := s.pool.Exec(ctx,
-		`INSERT INTO user_skill_slots (user_id, slot, skill_id) VALUES ($1,0,1),($1,1,2),($1,2,3)
+		`INSERT INTO user_skill_slots (user_id, slot, skill_id) VALUES ($1,0,1),($1,1,4),($1,2,7)
 		 ON CONFLICT (user_id, slot) DO NOTHING`, userID); err != nil {
 		return fmt.Errorf("init skill slots: %w", err)
 	}

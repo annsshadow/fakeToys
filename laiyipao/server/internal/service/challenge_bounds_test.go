@@ -175,7 +175,7 @@ func TestChallengeEntryPointActuallyValidates(t *testing.T) {
 	foe := ts.newUser(t, ctx)
 
 	dv, err := ts.SaveDefense(ctx, owner, SaveDefenseInput{
-		Name: "边界探针", Works: []string{"slow_belt"}, Skills: []int{1, 2, 3},
+		Name: "边界探针", Works: []string{"slow_belt"}, Skills: []int{1, 4, 7},
 	})
 	if err != nil {
 		t.Fatalf("造防线失败：%v", err)

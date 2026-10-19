@@ -772,7 +772,7 @@ func TestSaveLoadoutAuditError(t *testing.T) {
 	// user_skills / user_skill_slots 完好 → 归属校验、清槽、插槽都成功；
 	// admin_audit_logs 改名 → 审计写入失败。
 	ts.renameTable(t, "admin_audit_logs", "admin_audit_logs_bak")
-	_, err := ts.SaveLoadout(ctx, uid, SaveLoadoutInput{SkillIDs: []int{1, 2}})
+	_, err := ts.SaveLoadout(ctx, uid, SaveLoadoutInput{SkillIDs: []int{1, 4}})
 	ts.renameTable(t, "admin_audit_logs_bak", "admin_audit_logs")
 	mustErr(t, err, "audit log")
 }

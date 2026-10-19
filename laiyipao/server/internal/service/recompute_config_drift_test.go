@@ -51,6 +51,34 @@ func TestAdminSkillEditDoesNotAffectRecompute(t *testing.T) {
 	uid := ts.newUser(t, ctx)
 	ts.grant(t, ctx, uid, map[string]int64{"energy": 200})
 
+	// ⚠️ 本用例在**共用库**上改种子技能（1..4 的 name/element/base_damage/heat_cost），
+	// 改完必须恢复 —— 否则后续任何依赖技能装饰字段的测试（比如入门包三元素守卫）
+	// 会被这里的 corrosion 污染。既有测试曾长期不恢复而无人踩坑，
+	// 是因为此前没有测试盯着这些字段；守卫上线后这里就是污染源。
+	type skillRow struct {
+		name       string
+		element    string
+		baseDamage int
+		heatCost   int
+	}
+	orig := map[int]skillRow{}
+	for id := 1; id <= 4; id++ {
+		var r skillRow
+		if err := ts.pool.QueryRow(ctx,
+			`SELECT name, element, base_damage, heat_cost FROM skills WHERE id = $1`, id).
+			Scan(&r.name, &r.element, &r.baseDamage, &r.heatCost); err != nil {
+			t.Fatalf("备份技能 %d 失败：%v", id, err)
+		}
+		orig[id] = r
+	}
+	t.Cleanup(func() {
+		for id, r := range orig {
+			_, _ = ts.pool.Exec(ctx,
+				`UPDATE skills SET name = $2, element = $3, base_damage = $4, heat_cost = $5 WHERE id = $1`,
+				id, r.name, r.element, r.baseDamage, r.heatCost)
+		}
+	})
+
 	// ⚠️ 必须用**同一个 token** 算两次哈希。
 	//
 	// `StartBattle` 每局生成一个**新的随机种子**（newBattleSeed 走
@@ -113,6 +141,29 @@ func TestAdminSkillEditDoesNotLeakIntoConfig(t *testing.T) {
 	if skillBefore.ID == 0 {
 		t.Skip("config 里没有技能，取不到基线")
 	}
+
+	// 同样要恢复（与上一条同理：共用库上改种子必须收拾干净）
+	type leakRow struct {
+		name       string
+		baseDamage int
+	}
+	orig := map[int]leakRow{}
+	for id := 1; id <= 4; id++ {
+		var r leakRow
+		if err := ts.pool.QueryRow(ctx,
+			`SELECT name, base_damage FROM skills WHERE id = $1`, id).
+			Scan(&r.name, &r.baseDamage); err != nil {
+			t.Fatalf("备份技能 %d 失败：%v", id, err)
+		}
+		orig[id] = r
+	}
+	t.Cleanup(func() {
+		for id, r := range orig {
+			_, _ = ts.pool.Exec(ctx,
+				`UPDATE skills SET name = $2, base_damage = $3 WHERE id = $1`,
+				id, r.name, r.baseDamage)
+		}
+	})
 
 	for id := 1; id <= 4; id++ {
 		if _, err := ts.AdminUpdateSkill(ctx, id, map[string]any{

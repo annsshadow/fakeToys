@@ -537,14 +537,14 @@ func TestE2ELoadoutAndUpgradeSkill(t *testing.T) {
 		}
 	}
 
-	// 合法保存后必须可读回
-	status, body = e.put(t, "/api/v1/me/loadout", tok, map[string]any{"skill_ids": []int{2, 0, 3}})
+	// 合法保存后必须可读回（1 焰 / 4 冰 / 7 电是新号礼包拥有的三元素技能）
+	status, body = e.put(t, "/api/v1/me/loadout", tok, map[string]any{"skill_ids": []int{4, 0, 7}})
 	if status != 200 {
 		t.Fatalf("合法保存应 200，实际 %d %v", status, body)
 	}
 	status, body = e.get(t, "/api/v1/me/loadout", tok)
 	ids, _ = body["skill_ids"].([]any)
-	if len(ids) != 4 || int(num2int(ids[0])) != 2 || int(num2int(ids[2])) != 3 {
+	if len(ids) != 4 || int(num2int(ids[0])) != 4 || int(num2int(ids[2])) != 7 {
 		t.Errorf("读回槽位与保存不符：%v", ids)
 	}
 
@@ -563,16 +563,16 @@ func TestE2ELoadoutAndUpgradeSkill(t *testing.T) {
 	if status != fiber.StatusBadRequest {
 		t.Errorf("未拥有技能应 400，实际 %d", status)
 	}
-	// 余额不足
+	// 余额不足（技能 1 在新号礼包里；旧写法用 2，入门包重排后不再拥有）
 	e.exec(t, `UPDATE user_wallets SET coin = 0 WHERE user_id = $1`, uid)
-	status, _ = e.post(t, "/api/v1/me/skills/2/upgrade", tok, nil)
+	status, _ = e.post(t, "/api/v1/me/skills/1/upgrade", tok, nil)
 	if status != fiber.StatusBadRequest {
 		t.Errorf("余额不足应 400，实际 %d", status)
 	}
 	// 成功：给足金币，升 1 级并回传钱包
 	cost := domain.DefaultSkillRules().CostFrom(1)
 	e.exec(t, `UPDATE user_wallets SET coin = $2 WHERE user_id = $1`, uid, cost+500)
-	status, body = e.post(t, "/api/v1/me/skills/2/upgrade", tok, nil)
+	status, body = e.post(t, "/api/v1/me/skills/1/upgrade", tok, nil)
 	if status != 200 {
 		t.Fatalf("升级应成功，实际 %d %v", status, body)
 	}
@@ -582,10 +582,10 @@ func TestE2ELoadoutAndUpgradeSkill(t *testing.T) {
 	if body["wallet"] == nil {
 		t.Error("升级响应必须带钱包（避免前端再查一次的竞态）")
 	}
-	// 满级拒绝
+	// 满级拒绝（技能 4 在新号礼包里；旧写法用 3，同上）
 	maxLv := domain.DefaultSkillRules().MaxLevel
-	e.exec(t, `UPDATE user_skills SET level = $2 WHERE user_id = $1 AND skill_id = 3`, uid, maxLv)
-	status, _ = e.post(t, "/api/v1/me/skills/3/upgrade", tok, nil)
+	e.exec(t, `UPDATE user_skills SET level = $2 WHERE user_id = $1 AND skill_id = 4`, uid, maxLv)
+	status, _ = e.post(t, "/api/v1/me/skills/4/upgrade", tok, nil)
 	if status != fiber.StatusBadRequest {
 		t.Errorf("满级技能应 400，实际 %d", status)
 	}
@@ -1182,7 +1182,7 @@ func TestE2EDefenses(t *testing.T) {
 	// 合法保存 → 200，返回 defense 视图
 	status, body = e.post(t, "/api/v1/defenses/save", ownerTok, map[string]any{
 		"name": "E2E防线", "works": []string{"slow_belt", "block_wall"},
-		"skills": []int{1, 2, 3},
+		"skills": []int{1, 4, 7},
 	})
 	if status != 200 {
 		t.Fatalf("保存防线应 200，实际 %d %v", status, body)
