@@ -238,8 +238,9 @@ foreach ($b in $branches) {
 
 - ~~**未删除任何远端分支、未改动任何远端状态**~~ → **已作废（2026-10-19 第二轮已执行）**：8 条分支先按
   原流程打 `archive/feat-<分支短名>-20261019`（annotated、含 tip sha 与本文档引用）并推送 origin → 知会 →
-  删除（`git push origin --delete`）→ `git fetch --prune`。远端 `feat/*` 现余 10 条，全部「独有提交=0」；
-  盘点与后续候选见 `docs/plans/2026-10-19-002-assess-unlanded-features-vs-main-plan.md`。
+  删除（`git push origin --delete`）→ `git fetch --prune`。远端 `feat/*` 当时余 10 条，全部「独有提交=0」——
+  同日续程中这 10 条零独有分支亦按同流程归档删除（远端 `feat/*` 清零）；盘点、后续候选与两批删除记录见
+  `docs/archived-plans/2026-10-19-002-assess-unlanded-features-vs-main-plan.md`。
 - **不 merge、不 rebase、不用 `--allow-unrelated-histories`**（无共同祖先，合并语义不成立）。
 
 **日后若主张抢救**：只做文件搬运 —— `git show <分支>:<路径> > <目的路径>`，经评审后手动入 main，
