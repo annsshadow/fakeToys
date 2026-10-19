@@ -722,6 +722,11 @@ mod u2_contract {
         if !shared::testing::is_db_available().await {
             return;
         }
+        // 本用例走 HTTP 且 reset 是 admin 档：角色链必须自己造（见 ensure_schema 注释）。
+        // 此前它不调 ensure_schema()，只靠**同包别的用例**先跑过来播种 ——
+        // 于是「单独跑」必 403，全量跑靠调度侥幸通过。
+        // 2026-10-19 实测：删掉 auth 链后单跑必红（403 forbidden），即此顺序依赖。
+        ensure_schema().await;
         let c = client().await;
         c.execute(
             "CREATE TABLE IF NOT EXISTS x_query_processing (id VARCHAR(255) PRIMARY KEY, query TEXT NOT NULL, model_flag VARCHAR(255), params JSONB DEFAULT '{}', creator VARCHAR(255), create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP, update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP)",
