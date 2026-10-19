@@ -1,7 +1,7 @@
 ﻿// @vitest-environment jsdom
 /**
  * 背包页（bag.vue）组件测试。
- * 覆盖：出战槽同步（服务端权威）、装备/移除/槽位满/被动技能/保存失败全分支、
+ * 覆盖：出战槽同步（服务端权威）、装备/移除/槽位满/未解锁/被动技能/保存失败全分支、
  * clearSlot 的空槽早退与成功流、名称映射的回退分支（未知元素/家族/槽位）。
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
@@ -20,6 +20,7 @@ vi.mock('@/api/client', () => ({
   fetchMe: vi.fn(),
   fetchLoadout: vi.fn(),
   saveLoadout: vi.fn(),
+  upgradeSkill: vi.fn(),
   fetchGems: vi.fn(),
   washGem: vi.fn(),
   setTokenInternal: vi.fn(),
@@ -28,6 +29,17 @@ vi.mock('@/api/client', () => ({
 const mockApi = vi.mocked(api, true)
 
 let um: ReturnType<typeof installUniMock>
+
+/**
+ * 服务端 `build.skills` 的已解锁技能行（键 = 技能 id 字符串）。
+ *
+ * 判「能不能装备/升级」的唯一依据就是这张表：服务端对不在其中的技能
+ * 一律拒（SaveLoadout 400「技能 N 未解锁」/ UpgradeSkill「未拥有」）。
+ */
+function owned(...ids: number[]): Record<string, { id: number; level: number; slot: number }> {
+  return Object.fromEntries(ids.map((id) => [String(id), { id, level: 1, slot: -1 }]))
+}
+
 
 /** 技能库：普通 + 带穿透/溅射 + 被动 + 未知元素/家族（驱动名称映射回退分支） */
 function bagConfig(): GameConfig {
@@ -58,7 +70,14 @@ beforeEach(() => {
   })
   mockApi.fetchConfigIfVersion.mockResolvedValue({ status: 'modified', config: bagConfig(), serverTimeMs: 0 })
   mockApi.fetchWallet.mockResolvedValue({ coin: 1, gem: 2, energy: 3, keys: 4, tokens: {} })
-  mockApi.fetchMe.mockResolvedValue({ user_id: 7, build: null, build_rating: null, power: 9 } as any)
+  mockApi.fetchMe.mockResolvedValue({
+    user_id: 7,
+    // 缺省把测试用到的技能都设为已解锁；「未解锁」形态由用例各自覆盖
+    // （服务端只给新号基础 4 个技能，合成技能没有获取途径 —— 见未解锁用例）。
+    build: { skills: owned(1, 2, 3, 4, 5, 101) },
+    build_rating: null,
+    power: 9,
+  } as any)
   mockApi.fetchLoadout.mockResolvedValue({ skill_ids: [1, 2] })
   // 宝石默认空：用例需要时各自覆盖。不设默认的话 loadGems 会靠 catch 兜住
   // undefined，那条路径能跑但是在测「拉到 undefined」，不是测「拉到空列表」。
@@ -308,6 +327,49 @@ describe('bag.vue 背包页', () => {
     await flushPromises()
     expect(um.mock.showToast).toHaveBeenCalledWith({ title: '被动技能不占主动槽', icon: 'none' })
     expect(mockApi.saveLoadout).not.toHaveBeenCalled()
+  })
+
+  it('未解锁的技能：行内标「未解锁」，不给装备/升级入口', async () => {
+    // 服务端只解锁了基础技能（新号 = 1..4）；合成技能 101 当前没有获取途径。
+    // 修前：技能库对全表一律渲染「装备」，点未解锁的那些只会拿到
+    // 400「技能 5 未解锁」，界面弹的却是「保存失败，出战配置未变更」。
+    mockApi.fetchMe.mockResolvedValue({
+      user_id: 7,
+      build: { skills: owned(1, 2, 3, 4) },
+      build_rating: null,
+      power: 9,
+    } as any)
+    const { wrapper } = mountPage(Bag)
+    await flushPromises()
+
+    const steamRow = wrapper.findAll('.skill-row').find((r) => r.text().includes('蒸汽弹'))!
+    expect(steamRow.text()).toContain('未解锁')
+    expect(steamRow.find('.link').exists()).toBe(false) // 没有任何可点的操作
+    // 已解锁的技能照旧给入口：穿甲弹未装备（槽位 [1,2]），
+    // 升级因 coin=1 显示「金币不足」（非链接），链接是「装备」那个。
+    const apRow = wrapper.findAll('.skill-row').find((r) => r.text().includes('穿甲弹'))!
+    expect(apRow.find('.link').exists()).toBe(true)
+  })
+
+  it('未解锁的技能：直呼 toggleEquip / doUpgrade 也被本地拦下（不发请求）', async () => {
+    // 模板已经不给入口了，这里守的是「入口被别的路径调到」：
+    // 放行的话服务端必回 400 /「未拥有」，玩家看到的是「保存失败」「升级失败」——
+    // 一个本地就该拦下的操作被报成了系统故障。
+    mockApi.fetchMe.mockResolvedValue({
+      user_id: 7,
+      build: { skills: owned(1) },
+      build_rating: null,
+      power: 9,
+    } as any)
+    const { wrapper } = mountPage(Bag)
+    await flushPromises()
+
+    await (wrapper.vm as any).toggleEquip(101)
+    await (wrapper.vm as any).doUpgrade(101)
+
+    expect(um.mock.showToast).toHaveBeenCalledWith({ title: '技能未解锁', icon: 'none' })
+    expect(mockApi.saveLoadout).not.toHaveBeenCalled()
+    expect(mockApi.upgradeSkill).not.toHaveBeenCalled()
   })
 
   it('回归：仅第 1 槽装备（[1,0,0,0]）时槽位正确渲染且无渲染错误', async () => {
