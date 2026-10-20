@@ -243,7 +243,8 @@ const ScoreFullAtSec = 60
 //
 // # ⚠️ 这个机制是「防速通闸」，不是「速度激励」
 //
-//  的语义是「通关时长 < 锚点 → 线性裁剪」：
+//	的语义是「通关时长 < 锚点 → 线性裁剪」：
+//
 // 快于锚点被裁、慢于锚点满分。所以锚点必须 **≤ 真实通关时长**，
 // 否则正常玩家会被误伤（把 K 取大 = 裁掉正常对局）。
 //
@@ -854,12 +855,25 @@ type DiagnoseInput struct {
 }
 
 // Diagnose 是失败诊断结论。
+//
+// ⚠️ 这个 struct **直接进 HTTP 响应**（`GET /api/v1/diagnose` 由
+// handler `c.JSON(res)` 原样返回），所以字段必须有 snake_case json tag。
+//
+// 曾经五个字段全都没 tag，于是 Go 按字段名原文序列化成 PascalCase，
+// 而客户端 `stage.vue` 读的是小写 —— 症状是诊断卡整张空白
+// （置信度%、标题、详情、建议全是 undefined）。这个是漏 tag，
+// 不是设计：同文件其他下发 struct（`GeneratedLevel` / `SettleInput` /
+// `SeedEnemy`…）一律带 tag。
+//
+// 不能靠「改客户端去读 PascalCase」来修：C1 契约要求跨端一律
+// snake_case，其他 65 个端点全都合规，把唯一合规的读取点改成不合规
+// 会让下一次对拍更难看。`TestDiagnoseJSONShapeIsSnakeCase` 钉住形状。
 type Diagnose struct {
-	Stage       string   // 诊断分类
-	Title       string   // 一句话结论
-	Detail      string   // 详细数据
-	Suggestions []string // 可执行建议
-	Confidence  int      // 置信度 0..100
+	Stage       string   `json:"stage"`       // 诊断分类
+	Title       string   `json:"title"`       // 一句话结论
+	Detail      string   `json:"detail"`      // 详细数据
+	Suggestions []string `json:"suggestions"` // 可执行建议
+	Confidence  int      `json:"confidence"`  // 置信度 0..100
 }
 
 // DiagnoseFailure 分析玩家为何卡关，给出针对性建议。
