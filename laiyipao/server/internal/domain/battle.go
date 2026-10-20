@@ -218,16 +218,75 @@ type SettleLimits struct {
 	MaxScorePerSec int64
 }
 
-// ScoreFullAtSec 是「理论上最快多少秒能拿到满分」。
+// ScoreFullAtSec 是「无关卡信息时的兜底满分时长」。
 //
-// 取 60 秒的依据：第 1 关实测 6806 tick（340 秒）拿 16048 分，
-// 速率约 47 分/秒、满分需约 415 秒。60 秒作为「绝对最快」下界，
-// 既拦住「1 秒速通拿满分」，又不会误伤正常对局 ——
-// 玩家再怎么快，实测也是 5~6 分钟。
-//
-// ⚠️ 若将来把关卡调到 60 秒以内可通关，这个值要跟着调；
-// TestScoreCapNeverAllowsInstantFull 会在调整前提醒。
+// ⚠️ 2026-10-20（DECISIONS D3）：速率锚点已改为**按关卡推导**
+// （`speedAnchorSec` = 理论最短通关时长 × SpeedAnchorPermille）。
+// 这个常量只在关卡没有波次数据（老数据 / 空波次）时兜底，
+// 不再参与正常关卡的裁剪 —— 它当年取 60 秒就是为了「不误伤正常对局」，
+// 代价是速率裁剪**从不生效**（已知边界第 5 条）。
 const ScoreFullAtSec = 60
+
+// SpeedAnchorPermille 是速率锚点相对「理论最短通关时长」的倍率（千分比）。
+//
+// # 标定依据（2026-10-20 实测）
+//
+//   - 理论最短时长 = Σ(每波刷怪时长)：波次是「场上清空才进下一波」
+//     （engine 的 checkWaveEnd），所以即使 DPS 无限、敌人一出现就死，
+//     也要等刷怪排布走完 —— 这是**严格下界**
+//   - 第 1 关：下界 15.2s / 实测 194s（ratio 12.8）
+//   - 第 100 关：下界 39.4s / 实测 594s（ratio 15.1）
+//
+// # ⚠️ 这个机制是「防速通闸」，不是「速度激励」
+//
+//  的语义是「通关时长 < 锚点 → 线性裁剪」：
+// 快于锚点被裁、慢于锚点满分。所以锚点必须 **≤ 真实通关时长**，
+// 否则正常玩家会被误伤（把 K 取大 = 裁掉正常对局）。
+//
+// 取 **9 倍** = 实测最小 ratio（第 10 关 10.1）的 0.89 倍：
+// 六关实测样本（194/181/228/285/318/594s）全部在锚点之上，**零误伤**；
+// 而速通（远快于理论下界的 9 倍）会被裁 —— 高关卡的闸真正接通了
+// （第 100 关锚点 ≈ 351s，速通 200s 只拿 57%）。
+//
+// # 它不做什么（诚实标注）
+//
+// **不会奖励「打得快」**：快于锚点的分数被裁，慢于锚点拿满分 ——
+// 这是负向闸而不是正向激励。要真正让「速度进分数」需要改星级或
+// 加分机制（见 KNOWN_LIMITS 第 5 条），那是产品设计，不在本实现范围。
+const SpeedAnchorPermille = 9000
+
+// theoreticalClearSec 是关卡的理论最短通关时长（秒）。
+//
+// 波次推进是「场上敌人清空才进下一波」（engine 的 checkWaveEnd），
+// 所以最短时长 = Σ(每波刷怪时长)；每波时长 = max(组内 Delay+(Count-1)*Interval)。
+// 这是**严格下界**：即使敌人一出现就被秒，也要等刷怪排布走完。
+func theoreticalClearSec(gl GeneratedLevel) int64 {
+	var totalMs int64
+	for _, w := range gl.Waves {
+		var waveMs int64
+		for _, s := range w.Spawns {
+			end := int64(s.Delay) + int64(s.Count-1)*int64(s.Interval)
+			if end > waveMs {
+				waveMs = end
+			}
+		}
+		totalMs += waveMs
+	}
+	if totalMs <= 0 {
+		return 0
+	}
+	return totalMs / 1000
+}
+
+// speedAnchorSec 是速率裁剪的满分锚点（秒）。
+//
+// 关卡没有波次数据时回落到 ScoreFullAtSec（老数据兜底）。
+func speedAnchorSec(gl GeneratedLevel) int64 {
+	if lower := theoreticalClearSec(gl); lower > 0 {
+		return lower * SpeedAnchorPermille / 1000
+	}
+	return ScoreFullAtSec
+}
 
 // validateHPLeft 校验上报的剩余血量：0 ≤ hp_left ≤ 该关初始血量。
 //
@@ -262,7 +321,12 @@ func validateHPLeft(gl GeneratedLevel, hpLeft int) error {
 
 // scoreCapFor 返回给定秒数下的得分上界。
 //
-// 规则：线性插值到**理论满分**，满分需 ScoreFullAtSec 秒。
+// 规则：线性插值到**理论满分**，满分需 `speedAnchorSec(gl)` 秒。
+//
+// 锚点按关卡推导（2026-10-20，DECISIONS D3）：
+// 理论最短通关时长 × SpeedAnchorPermille。此前的固定 60 秒
+// 远小于任何真实通关时长（实测 146~594s），于是速率裁剪**从不生效** ——
+// 那是已知边界第 5 条；现在锚点落在实测区间的上沿，机制才真的接通。
 //
 // ⚠️ 锚点必须是 MaxScore（理论满分，1000‰），不是 3 星门槛。
 //
@@ -304,12 +368,17 @@ func scoreCapFor(gl GeneratedLevel, sec int64) int64 {
 		// 两个来源都缺 = 完全没有依据，fail closed。
 		return 0
 	}
-	if sec >= ScoreFullAtSec {
+	anchor := speedAnchorSec(gl)
+	if anchor <= 0 {
+		// 关卡连锚点都推不出来（空波次且无兜底）—— 同样 fail closed。
+		return 0
+	}
+	if sec >= anchor {
 		return full
 	}
 	// 先乘后除不会溢出（full 与 sec 都是小整数），
-	// 且 sec < ScoreFullAtSec 保证结果 < full。
-	return full * sec / ScoreFullAtSec
+	// 且 sec < anchor 保证结果 < full。
+	return full * sec / anchor
 }
 
 // SettleResult 是服务端裁剪后的最终结果。

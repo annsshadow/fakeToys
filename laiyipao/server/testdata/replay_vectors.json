@@ -490,13 +490,13 @@
           "mechanic_permille": 300
         }
       },
-      "expected_hash": "f939171c04328707",
+      "expected_hash": "0b67a540249ee460",
       "expected_stats": {
-        "kills": 32,
-        "leaked": 0,
-        "score": 16292,
+        "kills": 30,
+        "leaked": 2,
+        "score": 15327,
         "waves": 5,
-        "durationMs": 84350
+        "durationMs": 119500
       }
     },
     {
@@ -736,13 +736,13 @@
           "mechanic_permille": 300
         }
       },
-      "expected_hash": "0cb3f87c1afac2a8",
+      "expected_hash": "21c7f204837252ae",
       "expected_stats": {
-        "kills": 45,
-        "leaked": 0,
-        "score": 23112,
+        "kills": 44,
+        "leaked": 1,
+        "score": 22598,
         "waves": 7,
-        "durationMs": 111550
+        "durationMs": 126750
       }
     },
     {

@@ -81,10 +81,12 @@ func TestThreeStarIsReachableOnRealLevels(t *testing.T) {
 			t.Errorf("关卡 %d 的 3 星门槛 %d 超过理论满分 %d —— 该星不可达",
 				id, gl.StarTargets[2], gl.MaxScore)
 		}
-		// 满分只在 ScoreFullAtSec 秒可得：验证裁剪锚与满分的对应关系
-		if cap := scoreCapFor(gl, ScoreFullAtSec); cap != gl.MaxScore {
+		// 满分只在锚点秒数可得：验证裁剪锚与满分的对应关系
+		// （D3：锚点按关卡推导，不再是固定 ScoreFullAtSec）
+		anchor := speedAnchorSec(gl)
+		if cap := scoreCapFor(gl, anchor); cap != gl.MaxScore {
 			t.Errorf("关卡 %d：满 %d 秒应放行理论满分 %d，实际裁剪为 %d",
-				id, ScoreFullAtSec, gl.MaxScore, cap)
+				id, anchor, gl.MaxScore, cap)
 		}
 	}
 }

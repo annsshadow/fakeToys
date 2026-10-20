@@ -47,7 +47,8 @@ func TestMaximalLegalSettlementIsAccepted(t *testing.T) {
 		// 因为「我自己算错了上界」而红 —— 那是假绿的反面（假红），
 		// 同样有害。这里刻意直接调用 maxShotsFor / MaxReactionsPerEnemy /
 		// scoreCapFor，与 ValidateSettle 内部用的是同一批常量。
-		durMs := ScoreFullAtSec * 1000 // 恰好够到满分额度的时长
+		// D3（2026-10-20）：满分锚点按关卡推导，不再是固定 60s。
+		durMs := int(speedAnchorSec(gl) * 1000) // 恰好够到满分额度的时长
 		maxShots := maxShotsFor(durMs)
 		maxReactions := int64(maxShots) * MaxReactionsPerHit
 		if absMax := int64(maxKills) * MaxReactionsPerEnemy; absMax < maxReactions {

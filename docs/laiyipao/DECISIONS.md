@@ -132,6 +132,6 @@
 |---|---|---|
 | D1 | **已实施（b）** 2026-10-20 | 回执加 `applied_to_players: false` / `player_authority: "generator"`；后台提示与保存文案改写；守卫 `TestAdminUpdateLevelDeclaresNotAppliedToPlayers` |
 | D2 | **已实施（先做 corrosion_spread）** 2026-10-20 | 传播 1 层 / 120px；不造成伤害、不触发新反应、clamp `elementCap`；契约加 `spread_stacks`；守卫 `corrosion_spread.test.ts` 4 例；`burn_cloud` 火区仍待拍板 |
-| D3 | | |
+| D3 | **已实施（防速通闸）** 2026-10-20 | 锚点按关卡推导：`speedAnchorSec` = 理论最短通关时长 × 9 倍（标定依据见 `battle.go`）；六关实测零误伤；守卫 `speed_anchor_test.go` 4 条。**未奖励「打得快」** —— 那是正向激励，需改星级/加分机制（与 MaxScore 冲突），仍待产品设计 |
 | D4 | **已实施（中间档）** 2026-10-20 | 挑战上报带 `replay_skills`，服务端按 `user_skill_slots` 重算比对；空串放行；长度复用 `domain.ReplaySkillsMaxLen`；守卫 `challenge_replay_skills_test.go` 4 条。**胜负本身仍客户端裁决** |
-| D5 | | |
+| D5 | **已实施（小步版）** 2026-10-20 | 每关最多 **2 种**地形（主种类 + 按种子选的第二种类，同屏共存）；`terrain_used` 上限随之变为 2；守卫 `terrain_multi_test.go` 3 条。**按波次轮换未做**（需引擎感知波次，TS+Go 双端） |

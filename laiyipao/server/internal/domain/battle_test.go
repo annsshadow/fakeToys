@@ -15,9 +15,11 @@ func newTestToken(levelID int) BattleToken {
 }
 
 func winInput(gl GeneratedLevel) SettleInput {
+	// 时长必须达到该关的速率锚点（D3 起锚点按关卡推导，不再是固定 60s）——
+	// 写死 120s 会让高关卡的分数被裁，星级断言随之失效。
 	return SettleInput{
 		Result: "win", Score: gl.StarTargets[0], Kills: gl.TotalEnemies(),
-		WaveReached: gl.WaveCount, DurationMs: 120000, Shots: 400, Hits: 300,
+		WaveReached: gl.WaveCount, DurationMs: int(speedAnchorSec(gl) * 1000), Shots: 400, Hits: 300,
 		Reactions: 80, HPLeft: 400,
 	}
 }
