@@ -1,6 +1,35 @@
 ﻿# 端到端验收脚本：启动真实服务端 + 真实 PostgreSQL，跑通完整玩家链路。
-# 前置：本地 PostgreSQL 15 在 127.0.0.1:5432 可连（trust 认证），用户 postgres。
+# 前置：本地 PostgreSQL 15 可连，用户 postgres。
 # 用法：pwsh -File scripts/e2e.ps1
+#
+# 端口与口令用环境变量覆盖，缺省与本仓开发约定一致：
+#   PGPORT       5432   —— 本机原生 PG；Docker 发布到别的端口时设它
+#                            （本机实测：容器 5432 映射到 15432）
+#   PGUSER       postgres
+#   PGPASSWORD   空（trust 认证）；有口令的库在这里覆盖
+#
+# ⚠️ DATABASE_URL 必须显式传给服务端：不设的话它吃 config.go 的默认值
+#    （127.0.0.1:5432），而那个端口在本机 Docker 场景下不存在 ——
+#    症状是服务端起不来，而脚本报的是「服务端未启动」，排查会跑偏。
+#
+# ⚠️ 本脚本跑在 SETTLE_RECOMPUTE_MODE=shadow 下，这是**分工**不是放水：
+#
+#   本脚本的 replay_hash 是 PowerShell 手搓的（见下方 Fnv1a64Hex）——
+#   它不可能等于 TS 引擎的真实输出，而那是校验引擎一致性的唯一判据。
+#   enforce 档下首次结算就会被判不符 → 422 → 后续步骤全部连锁失败。
+#
+#   两条验证职责不同，不能互相替代：
+#     · 引擎一致性（Go 与 TS 逐位相同）
+#         → service.TestRecomputeAcceptsClientSideHash
+#           用 testdata/replay_vectors.json 里 **TS 引擎产出**的 expected_hash
+#           驱动真实 recomputeEngine；那条才是「合法的一局」的定义。
+#     · 服务端接口与流程（幂等 / 门禁 / 经济 / 后台 / 重放拒绝语义）
+#         → 本脚本。它验的是「服务端行为符合契约」，
+#           因此必须让结算那条路能走通，否则验的全是 422。
+#
+#   config.go 的接入纪律写着「引擎接进来时先主动切 shadow 观察」，
+#   本脚本 shadow 正是那个观察档的一环；线上仍按 SETTLE_RECOMPUTE_MODE
+#   独立配置（默认 enforce，因 S 段反作弊早就在生产跑着）。
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 $serverDir = Join-Path $root 'server'
@@ -12,11 +41,24 @@ function Bad($msg)  { Write-Host "  !!  $msg" -ForegroundColor Red; $script:fail
 $script:failed = 0
 $env:GOFLAGS = '-mod=mod'
 
+# 数据库连接参数（可用环境变量覆盖，见文件头）
+$pgPort = if ($env:PGPORT) { $env:PGPORT } else { '5432' }
+$pgUser = if ($env:PGUSER) { $env:PGUSER } else { 'postgres' }
+if (-not $env:PGPASSWORD) { $env:PGPASSWORD = '' }
+
 Step "0. 重建数据库（保证从干净状态验收）"
-& psql -h 127.0.0.1 -p 5432 -U postgres -c "DROP DATABASE IF EXISTS laiyipao;" 2>&1 | Out-Null
-& psql -h 127.0.0.1 -p 5432 -U postgres -c "CREATE DATABASE laiyipao ENCODING 'UTF8';" 2>&1 | Out-Null
-if ($LASTEXITCODE -ne 0) { Bad "无法创建数据库"; exit 1 }
-Ok "数据库 laiyipao 已重建"
+# ⚠️ -d postgres 是必需的：psql 不指定库时默认连「与用户名同名」的库，
+# 而多数部署里那个库不存在（本机 o2server 用户就没有 o2server 库）。
+# 症状是「无法创建数据库」，而真实原因是连接本身就没建立 ——
+# 与「端口不对」看起来一模一样，排查会跑偏。
+& psql -h 127.0.0.1 -p $pgPort -U $pgUser -d postgres -c "DROP DATABASE IF EXISTS laiyipao;" 2>&1 | Out-Null
+& psql -h 127.0.0.1 -p $pgPort -U $pgUser -d postgres -c "CREATE DATABASE laiyipao ENCODING 'UTF8';" 2>&1 | Out-Null
+if ($LASTEXITCODE -ne 0) {
+  Bad "无法创建数据库。逐项排查：端口 $pgPort 可达？用户 $pgUser 有建库权限？PGPASSWORD 对吗？"
+  & psql -h 127.0.0.1 -p $pgPort -U $pgUser -d postgres -c "SELECT current_user;" 2>&1 | Out-Null
+  exit 1
+}
+Ok "数据库 laiyipao 已重建（127.0.0.1:$pgPort）"
 
 Step "1. 迁移 + 种子数据"
 Push-Location $serverDir
@@ -32,6 +74,12 @@ if ($LASTEXITCODE -ne 0) { Bad "编译失败"; Pop-Location; exit 1 }
 Pop-Location
 
 $env:ADDR = ':8080'
+# shadow：让结算链路能走通（理由见文件头）。不设的话服务端吃默认值 enforce，
+# 手搓 replay_hash 首次结算即被判不符 → 422 → 本脚本从第 8 步起连锁失败。
+$env:SETTLE_RECOMPUTE_MODE = 'shadow'
+# 显式给服务端连接串（含端口）。口令非空时才拼 user:pass@，避免留下 "@" 让 PG 解析错。
+$pgAuth = if ($env:PGPASSWORD) { "${pgUser}:$($env:PGPASSWORD)" } else { $pgUser }
+$env:DATABASE_URL = "postgres://$pgAuth@127.0.0.1:$pgPort/laiyipao?sslmode=disable"
 $proc = Start-Process -FilePath "$env:TEMP\lyp-server.exe" -PassThru `
   -RedirectStandardOutput "$env:TEMP\lyp-api.out" -RedirectStandardError "$env:TEMP\lyp-api.err"
 Start-Sleep -Seconds 4
@@ -109,7 +157,14 @@ try {
   Bad "重放同一 token 竟然成功了 —— 防重放失效"
 } catch {
   $code = $_.Exception.Response.StatusCode.value__
-  Ok "重放被拒 HTTP $code （防重放生效）"
+  # ⚠️ 必须是 422（结算拒绝族），不能「任何错误码都算过」：
+  # 500 是服务端坏了，与 422 是「上报不可信」完全相反，
+  # 而两种情况下这个 catch 都会进来 —— 不判 code 就等于没验。
+  if ($code -eq 422) {
+    Ok "重放被拒 HTTP 422 settle_rejected（防重放生效）"
+  } else {
+    Bad "重放被拒但 HTTP $code 不是 422 —— 期望 422 settle_rejected，别把 500 当成通过"
+  }
 }
 
 Step "9. 超量击杀必须被拒"
