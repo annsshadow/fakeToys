@@ -1,7 +1,9 @@
 package domain
 
 import (
+	"encoding/json"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 )
@@ -282,3 +284,42 @@ func TestDiagnoseDistinguishesBuildVsPower(t *testing.T) {
 }
 
 func now0() time.Time { return time.Now() }
+
+// TestDiagnoseJSONShapeIsSnakeCase 钉住 Diagnose 的**序列化形状**。
+//
+// 这条测试不是冗余的：字段曾经全是无 tag，Go 按字段名原文序列化成
+// PascalCase，而客户端读小写 —— 诊断卡整张空白（置信度%、标题、
+// 详情、建议全是 undefined）。而三处测试当时全绿：
+//   - `stage.test.ts` 的 mock 是**从客户端代码抄的**小写；
+//   - `routes_e2e_test.go` 只测状态码；
+//   - `e2e.ps1` 取了 `$diag` 但没断言行内字段。
+//
+// 于是「服务端发 PascalCase / 客户端读小写 / mock 也是小写」三方自洽。
+//
+// 这正是 ENGINEERING 第 4 条（跨端字段名双向核对）要防而没防住的形态：
+// 单端测试的自洽数据证明不了契约。判据必须落在**序列化输出**上。
+func TestDiagnoseJSONShapeIsSnakeCase(t *testing.T) {
+	// 取一个真实会走到的分支，保证字段有值（空串会让 contains 判定失真）
+	d := DiagnoseFailure(DiagnoseInput{
+		LevelID: 30, FailedTimes: 3, Kills: 50, TotalEnemies: 100,
+		ElementsUsed: map[string]int{}, Loadout: []Element{ElementFire},
+	}, GenerateLevel(30))
+
+	raw, err := json.Marshal(d)
+	if err != nil {
+		t.Fatalf("序列化失败：%v", err)
+	}
+	got := string(raw)
+
+	for _, want := range []string{`"stage"`, `"title"`, `"detail"`, `"suggestions"`, `"confidence"`} {
+		if !strings.Contains(got, want) {
+			t.Errorf("Diagnose 序列化输出缺少 %s 键（跨端契约 C1 要求 snake_case）：\n%s\n"+
+				"漏 json tag 时 Go 会按字段名原文输出 PascalCase，客户端读到 undefined", want, got)
+		}
+	}
+	for _, bad := range []string{`"Stage"`, `"Title"`, `"Detail"`, `"Suggestions"`, `"Confidence"`} {
+		if strings.Contains(got, bad) {
+			t.Errorf("Diagnose 序列化输出出现了 %s —— 字段漏了 json tag", bad)
+		}
+	}
+}
