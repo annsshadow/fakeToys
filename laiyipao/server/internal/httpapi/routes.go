@@ -90,6 +90,13 @@ func (s *Server) Register(app *fiber.App) {
 	// 若挂在 v1 根下，任何人都能替别人花钱/给别人升级 ——
 	// 鉴权不是这个端点的细节，是它的全部意义。
 	me.Post("/skills/:id/upgrade", s.upgradeSkill)
+	// 技能熔炼：把两个已拥有的材料技能熔炼成高阶技能（发放 18 个合成技能）。
+	//
+	// ⚠️ 与上面的 `/skills/:id/upgrade` 不冲突：那段是 3 段路径且固定带
+	// `/upgrade` 后缀，这段是 2 段 —— 纤维按段数匹配，不会被 `:id` 吃掉。
+	//
+	// 挂在 /me 组下（带 requireUser）：熔炼消耗的是**玩家自己的**材料。
+	me.Post("/skills/synthesize", s.synthesizeSkill)
 
 	// 第 150 轮：宝石。第 133 轮的权益扫描要求「宝石要有装备/卸下入口」，
 	// 那条只覆盖了 equipped_slot；这里补的是**看得见**与**洗得动**。
@@ -355,6 +362,32 @@ func (s *Server) upgradeSkill(c *fiber.Ctx) error {
 		return failErr(c, err)
 	}
 	return c.JSON(fiber.Map{"skill_id": id, "level": level, "wallet": w})
+}
+
+// synthesizeSkill 把两个已拥有的材料技能熔炼成高阶技能（发放 18 个合成技能）。
+//
+// 请求体：{"a": <技能id>, "b": <技能id>}。顺序无所谓（service 用 LEAST/GREATEST
+// 抹平，(a,b) 与 (b,a) 命中同一配方）。
+// 失败一律走 `failErr`（未配方/未达等级/材料不全/已拥有产物 → 400，不泄漏配方细节）。
+func (s *Server) synthesizeSkill(c *fiber.Ctx) error {
+	var in struct {
+		A int64 `json:"a"`
+		B int64 `json:"b"`
+	}
+	if err := c.BodyParser(&in); err != nil {
+		return fail(c, fiber.StatusBadRequest, "bad_body", "熔炼请求体需为 {\"a\":int,\"b\":int}")
+	}
+	output, err := s.Svc.SynthesizeSkills(c.Context(), userIDFrom(c), in.A, in.B)
+	if err != nil {
+		return failErr(c, err)
+	}
+	// 熔炼会删材料并改槽位，build 快照立即失效 —— 一并回给前端，
+	// 避免它拿着旧 build 又发一次 /me 看到中间态。
+	build, err := s.Svc.LoadBuildSnapshot(c.Context(), userIDFrom(c))
+	if err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(fiber.Map{"output": output, "build": build})
 }
 
 func (s *Server) wallet(c *fiber.Ctx) error {

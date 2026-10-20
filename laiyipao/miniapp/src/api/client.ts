@@ -678,6 +678,22 @@ export function upgradeSkill(skillId: number) {
   }>(`/me/skills/${skillId}/upgrade`, { method: 'POST' })
 }
 
+/**
+ * 技能熔炼：把两个已拥有的材料技能熔炼成高阶技能（发放 18 个合成技能）。
+ *
+ * 材料会被**消耗掉**（服务端 `SynthesizeSkills`），产物立即进背包。
+ * 顺序无所谓：服务端用 LEAST/GREATEST 抹平，(a,b) 与 (b,a) 命中同一配方。
+ *
+ * 判定全在服务端：配方存在 / 材料拥有 / 等级达标（产物 `unlock_level`）/
+ * 产物未拥有 —— 客户端只负责「材料不齐就不给入口」这一层（约束 19）。
+ */
+export function synthesizeSkills(a: number, b: number) {
+  return request<{ output: number; build: unknown }>('/me/skills/synthesize', {
+    method: 'POST',
+    body: { a, b },
+  })
+}
+
 /** 开局凭证。seed 是字符串 —— 服务端刻意不用 number，避免 JS 精度损失。 */
 export interface BattleTokenResp {
   token_id: number
