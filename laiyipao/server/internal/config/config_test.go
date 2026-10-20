@@ -11,6 +11,7 @@ package config
 // 全部用例零依赖：env 解析是纯函数，panic 分支用 recover 断言。
 
 import (
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -30,7 +31,7 @@ func clearEnv(t *testing.T) {
 		"MIGRATIONS_ON_BOOT",
 		"JWT_SECRET", "ACCESS_TTL", "REFRESH_TTL",
 		"WECHAT_APP_ID", "WECHAT_APP_SECRET", "WECHAT_ENDPOINT",
-		"BATTLE_TOKEN_TTL", "MIN_BATTLE_DURATION", "MAX_SCORE_PER_SECOND",
+		"BATTLE_TOKEN_TTL", "MIN_BATTLE_DURATION",
 		"SETTLE_RECOMPUTE_MODE",
 		"OFFLINE_CAP_HOURS",
 		"BOOTSTRAP_ADMIN_USER", "BOOTSTRAP_ADMIN_PASS",
@@ -73,9 +74,6 @@ func TestLoadDefaults(t *testing.T) {
 	if cfg.MinBattleDuration != 15*time.Second {
 		t.Errorf("MinBattleDuration 默认值 = %s", cfg.MinBattleDuration)
 	}
-	if cfg.MaxScorePerSecond != 40_000 {
-		t.Errorf("MaxScorePerSecond 默认值 = %d", cfg.MaxScorePerSecond)
-	}
 	if cfg.OfflineCapHours != 12 {
 		t.Errorf("OfflineCapHours 默认值 = %d", cfg.OfflineCapHours)
 	}
@@ -105,7 +103,6 @@ func TestLoadParsesEnvOverrides(t *testing.T) {
 	t.Setenv("WECHAT_ENDPOINT", "https://example.com/wx")
 	t.Setenv("BATTLE_TOKEN_TTL", "10m")
 	t.Setenv("MIN_BATTLE_DURATION", "1s")
-	t.Setenv("MAX_SCORE_PER_SECOND", "123")
 	t.Setenv("OFFLINE_CAP_HOURS", "6")
 	t.Setenv("BOOTSTRAP_ADMIN_USER", "boss")
 	t.Setenv("BOOTSTRAP_ADMIN_PASS", "longpassword")
@@ -139,8 +136,8 @@ func TestLoadParsesEnvOverrides(t *testing.T) {
 	if cfg.BattleTokenTTL != 10*time.Minute || cfg.MinBattleDuration != time.Second {
 		t.Errorf("战斗配置覆盖未生效：%s/%s", cfg.BattleTokenTTL, cfg.MinBattleDuration)
 	}
-	if cfg.MaxScorePerSecond != 123 || cfg.OfflineCapHours != 6 {
-		t.Errorf("数值覆盖未生效：%d/%d", cfg.MaxScorePerSecond, cfg.OfflineCapHours)
+	if cfg.OfflineCapHours != 6 {
+		t.Errorf("数值覆盖未生效：%d", cfg.OfflineCapHours)
 	}
 	if cfg.BootstrapAdminUser != "boss" || cfg.BootstrapAdminPass != "longpassword" {
 		t.Errorf("bootstrap 管理员覆盖未生效：%q/%q", cfg.BootstrapAdminUser, cfg.BootstrapAdminPass)
@@ -154,7 +151,6 @@ func TestLoadFallsBackOnInvalidValues(t *testing.T) {
 	t.Setenv("DB_MAX_CONNS", "not-a-number")
 	t.Setenv("MIGRATIONS_ON_BOOT", "yes-please")
 	t.Setenv("ACCESS_TTL", "5 minutes")
-	t.Setenv("MAX_SCORE_PER_SECOND", "")
 
 	cfg := Load()
 	if cfg.DBMaxConns != 10 {
@@ -165,9 +161,6 @@ func TestLoadFallsBackOnInvalidValues(t *testing.T) {
 	}
 	if cfg.AccessTTL != 2*time.Hour {
 		t.Errorf("非法 duration 应回落默认 2h，实际 %s", cfg.AccessTTL)
-	}
-	if cfg.MaxScorePerSecond != 40_000 {
-		t.Errorf("空值应回落默认 40000，实际 %d", cfg.MaxScorePerSecond)
 	}
 }
 
@@ -384,4 +377,88 @@ func TestEnvInt32ClampDoesNotSwallowDefaults(t *testing.T) {
 	if got := envInt32("CFG_TEST_INT32", 42); got != 42 {
 		t.Errorf("越界应回退 def=42，实际 %d", got)
 	}
+}
+
+// TestNoScoreRateConfig 防止「速率上限」以新配置项的形式回来。
+//
+// 2026-10-20 删掉的 `MAX_SCORE_PER_SECOND` 是一个**误导性配置面**：
+// 运维手册里写着它，运营会以为把它调小能收紧反作弊；而它的值
+// 从来不影响任何判定（min(sec*50000, full) 永远取满分那侧）。
+// 一个「看起来能配、配了不生效」的旋钮，比没有这个旋钮更糟。
+//
+// 现在速率上限由 domain 的 `scoreCapFor` 按关卡推导，锚点与
+// `ScoreFullAtSec` 共用同一份常量。做成可配置项就等于制造
+// 「配置里一个值、公式里另一个值」的两处可能不同步的面。
+//
+// 判据必须是「配置源码里不出现这个名字」—— 只断言字段不存在的话，
+// 下一个人加个 `MaxRate int` 也能通过。
+//
+// ⚠️ 必须先剥注释再看：这个文件（以及 domain/battle.go 的 SettleLimits
+// 注释）里**刻意**写着 `MAX_SCORE_PER_SECOND` 作为历史说明。
+// 不剥注释的话，「写注释解释为什么删」这件事本身就会让守卫红 ——
+// 那会激励下一个人把说明删掉，比留下死字段更糟。
+// 同理 bundle_size.test.ts 的 stripComments 是同类坑。
+func TestNoScoreRateConfig(t *testing.T) {
+	src := stripComments(readSelf(t))
+	for _, needle := range []string{"MAX_SCORE_PER_SECOND", "MaxScorePerSec"} {
+		if strings.Contains(src, needle) {
+			t.Errorf("config 里又出现了 %q —— 速率上限不该是可配置项，"+
+				"应由 domain.scoreCapFor 按关卡推导（见该测试上方的说明）", needle)
+		}
+	}
+}
+
+// readSelf 读本包的配置源码（供源码级守卫使用）。
+func readSelf(t *testing.T) string {
+	t.Helper()
+	b, err := os.ReadFile("config.go")
+	if err != nil {
+		t.Fatalf("读 config.go 失败：%v", err)
+	}
+	return string(b)
+}
+
+// stripComments 剥掉 Go 源码里的行注释与块注释，保留字符串字面量。
+//
+// 与 admin/tests/bundle_size.test.ts 的同名函数同一个理由：
+// 源码级守卫匹配到**自己写的解释性注释**时，「把代码改对」反而会红，
+// 那会激励下一个人删掉说明而不是修代码。
+func stripComments(src string) string {
+	var out strings.Builder
+	for i := 0; i < len(src); i++ {
+		c := src[i]
+		if c == '/' && i+1 < len(src) {
+			if src[i+1] == '/' {
+				for i < len(src) && src[i] != '\n' {
+					i++
+				}
+				continue
+			}
+			if src[i+1] == '*' {
+				i += 2
+				for i+1 < len(src) && !(src[i] == '*' && src[i+1] == '/') {
+					i++
+				}
+				i++ // 跳过 '*'，循环的 i++ 再跳过 '/'
+				continue
+			}
+		}
+		if c == '"' || c == '`' || c == '\'' {
+			quote := c
+			out.WriteByte(c)
+			for i++; i < len(src) && src[i] != quote; i++ {
+				if quote == '"' && src[i] == '\\' && i+1 < len(src) {
+					out.WriteByte(src[i])
+					i++
+				}
+				out.WriteByte(src[i])
+			}
+			if i < len(src) {
+				out.WriteByte(src[i])
+			}
+			continue
+		}
+		out.WriteByte(c)
+	}
+	return out.String()
 }

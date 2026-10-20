@@ -238,8 +238,7 @@ func (s *Service) SettleBattle(ctx context.Context, userID, tokenID int64, in do
 
 	gl := domain.GenerateLevel(tok.LevelID)
 	limits := domain.SettleLimits{
-		MinDurationMs:  int64(s.Cfg.MinBattleDuration / time.Millisecond),
-		MaxScorePerSec: s.Cfg.MaxScorePerSecond,
+		MinDurationMs: int64(s.Cfg.MinBattleDuration / time.Millisecond),
 	}
 	res, err := domain.ValidateSettle(tok, gl, in, limits, time.Now())
 	if err != nil {

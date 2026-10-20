@@ -32,7 +32,7 @@ func usableToken(levelID int, now time.Time) BattleToken {
 }
 
 func antiCheatLimits() SettleLimits {
-	return SettleLimits{MinDurationMs: 5000, MaxScorePerSec: 50_000}
+	return SettleLimits{MinDurationMs: 5000}
 }
 
 // legalShots 返回给定时长下的合法发射数（贴着上界）。

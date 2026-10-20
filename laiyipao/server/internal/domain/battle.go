@@ -201,21 +201,25 @@ type SettleInput struct {
 }
 
 // SettleLimits 是校验阈值。
+//
+// ⚠️ 这里**只有时长一项**，分数速率上限刻意不进来。
+//
+// 曾经的 `MaxScorePerSec`（硬编码 50000）就在这个结构体里，
+// 而第 1 关满分只有 19539 —— `min(sec*50000, full)` 永远取满分那一侧，
+// 速率限制实际失效：上报 duration_ms=1000 就能合法拿满分、3 星。
+// 那是星级门槛修复的连带回归（门槛从 78000 降到 14656 之后，
+// 50000/秒 再也碰不到了）。
+//
+// 已改为由 `scoreCapFor` 按关卡动态推导（满分需多少秒），
+// 与 100 关自动匹配，不需要逐个标定。之所以**不**把速率上限做成
+// 可配置项：它必须与 `scoreCapFor` 用同一个锚点，
+// 放进可配置结构体就多了一个「两处可能不同步」的面。
+//
+// 回归守卫：`battle_validate_test.go` 的 TestScoreCapNeverAllowsInstantFull
+// （直接断言「短时长拿不到满分」，100 关全扫）。
 type SettleLimits struct {
 	// MinDurationMs 是「清完全部敌人」的最短合理时长。
 	MinDurationMs int64
-	// MaxScorePerSec 已废弃，不参与判定。
-	//
-	// 它曾直接计算时长额度（sec * MaxScorePerSec），但值是硬编码的 50000，
-	// 而第 1 关满分只有 19539 —— min() 永远取满分那一侧，
-	// 速率限制实际失效：上报 duration_ms=1000 就能合法拿满分、3 星。
-	// 这是星级门槛修复的连带回归（门槛从 78000 降到 14656 之后，
-	// 50000/秒 再也碰不到了）。
-	//
-	// 现在额度由 scoreCapFor 按「满分需 ScoreFullAtSec 秒」动态计算，
-	// 与关卡自动匹配，不需要为 100 关逐个标定速率。
-	// 字段保留只为不破坏 service 层的构造调用点。
-	MaxScorePerSec int64
 }
 
 // ScoreFullAtSec 是「无关卡信息时的兜底满分时长」。

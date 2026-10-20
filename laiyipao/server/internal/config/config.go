@@ -76,7 +76,6 @@ type Config struct {
 	// 战斗结算上限校验
 	BattleTokenTTL    time.Duration
 	MinBattleDuration time.Duration
-	MaxScorePerSecond int64
 
 	// 离线收益
 	OfflineCapHours int
@@ -183,7 +182,6 @@ func Load() Config {
 
 		BattleTokenTTL:    envDuration("BATTLE_TOKEN_TTL", 30*time.Minute),
 		MinBattleDuration: envDuration("MIN_BATTLE_DURATION", 15*time.Second),
-		MaxScorePerSecond: int64(envInt("MAX_SCORE_PER_SECOND", 40_000)),
 
 		SettleRecomputeMode: env("SETTLE_RECOMPUTE_MODE", "enforce"),
 
