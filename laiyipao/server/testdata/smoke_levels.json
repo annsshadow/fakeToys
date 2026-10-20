@@ -241,10 +241,10 @@
           "param": 7
         },
         {
-          "kind": "oil_drum",
+          "kind": "collapse_wall",
           "x": 443,
           "y": 617,
-          "param": 4
+          "param": 32
         }
       ],
       "is_boss": false,
@@ -1555,10 +1555,10 @@
           "param": 4
         },
         {
-          "kind": "oil_drum",
+          "kind": "collapse_wall",
           "x": 425,
           "y": 754,
-          "param": 4
+          "param": 32
         }
       ],
       "is_boss": false,
@@ -2468,10 +2468,10 @@
           "param": 62
         },
         {
-          "kind": "collapse_wall",
+          "kind": "charge_tower",
           "x": 514,
           "y": 674,
-          "param": 50
+          "param": 30
         },
         {
           "kind": "collapse_wall",
@@ -3959,7 +3959,7 @@
           "param": 44
         },
         {
-          "kind": "collapse_wall",
+          "kind": "charge_tower",
           "x": 654,
           "y": 684,
           "param": 30
@@ -5091,10 +5091,10 @@
           "param": 38
         },
         {
-          "kind": "charge_tower",
+          "kind": "collapse_wall",
           "x": 381,
           "y": 607,
-          "param": 42
+          "param": 62
         }
       ],
       "is_boss": false,
@@ -6596,10 +6596,10 @@
           "param": 42
         },
         {
-          "kind": "charge_tower",
+          "kind": "tidal_gate",
           "x": 469,
           "y": 899,
-          "param": 39
+          "param": 10149
         }
       ],
       "is_boss": false,
@@ -7536,10 +7536,10 @@
           "param": 34
         },
         {
-          "kind": "charge_tower",
+          "kind": "oil_drum",
           "x": 528,
           "y": 894,
-          "param": 46
+          "param": 6
         },
         {
           "kind": "charge_tower",
@@ -7877,10 +7877,10 @@
           "param": 9276
         },
         {
-          "kind": "tidal_gate",
+          "kind": "rotor_vane",
           "x": 549,
           "y": 674,
-          "param": 9403
+          "param": 53
         },
         {
           "kind": "tidal_gate",
@@ -8037,10 +8037,10 @@
           "param": 9444
         },
         {
-          "kind": "tidal_gate",
+          "kind": "charge_tower",
           "x": 883,
           "y": 791,
-          "param": 9588
+          "param": 38
         }
       ],
       "is_boss": false,
@@ -8191,10 +8191,10 @@
           "param": 8871
         },
         {
-          "kind": "tidal_gate",
+          "kind": "collapse_wall",
           "x": 628,
           "y": 830,
-          "param": 8428
+          "param": 58
         },
         {
           "kind": "tidal_gate",
@@ -8915,10 +8915,10 @@
           "param": 10213
         },
         {
-          "kind": "tidal_gate",
+          "kind": "oil_drum",
           "x": 893,
           "y": 861,
-          "param": 9225
+          "param": 5
         }
       ],
       "is_boss": false,
@@ -11213,7 +11213,7 @@
           "param": 71
         },
         {
-          "kind": "rotor_vane",
+          "kind": "charge_tower",
           "x": 835,
           "y": 813,
           "param": 34
@@ -11390,10 +11390,10 @@
           "param": 52
         },
         {
-          "kind": "rotor_vane",
+          "kind": "collapse_wall",
           "x": 438,
           "y": 665,
-          "param": 49
+          "param": 69
         }
       ],
       "is_boss": false,
@@ -13664,10 +13664,10 @@
           "param": 34
         },
         {
-          "kind": "charge_tower",
+          "kind": "rotor_vane",
           "x": 269,
           "y": 846,
-          "param": 37
+          "param": 57
         }
       ],
       "is_boss": true,
@@ -13852,10 +13852,10 @@
           "param": 32
         },
         {
-          "kind": "charge_tower",
+          "kind": "tidal_gate",
           "x": 716,
           "y": 826,
-          "param": 41
+          "param": 11991
         }
       ],
       "is_boss": false,

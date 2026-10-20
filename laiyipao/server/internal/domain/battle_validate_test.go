@@ -207,18 +207,23 @@ func TestScoreCapNeverAllowsInstantFull(t *testing.T) {
 		if star3 := fullStarTarget(gl); star3 > full {
 			t.Errorf("第 %d 关 3 星门槛 %d 高于理论满分 %d —— 3 星不可达", id, star3, full)
 		}
-		// 任何短于满分所需时间的时长，都拿不到满分
-		for _, sec := range []int64{1, 5, 10, 30, ScoreFullAtSec - 1} {
+		// 锚点按关卡推导（D3，2026-10-20）：理论最短时长 × SpeedAnchorPermille。
+		anchor := speedAnchorSec(gl)
+		if anchor <= 0 {
+			t.Fatalf("第 %d 关推不出速率锚点", id)
+		}
+		// 任何短于锚点的时长，都拿不到满分
+		for _, sec := range []int64{1, 5, 10, 30, anchor - 1} {
 			cap := scoreCapFor(gl, sec)
 			if cap >= full {
 				t.Errorf("第 %d 关 %ds 的额度 %d 已达满分 %d —— 可秒通拿满分",
 					id, sec, cap, full)
 			}
 		}
-		// 达到 ScoreFullAtSec 秒才允许满分
-		if cap := scoreCapFor(gl, ScoreFullAtSec); cap != full {
-			t.Errorf("第 %d 关 %ds 的额度应为满分 %d，实际 %d",
-				id, ScoreFullAtSec, full, cap)
+		// 达到锚点秒数才允许满分
+		if cap := scoreCapFor(gl, anchor); cap != full {
+			t.Errorf("第 %d 关锚点 %ds 的额度应为满分 %d，实际 %d",
+				id, anchor, full, cap)
 		}
 		// 额度必须单调不减（时长越久额度越大）
 		prev := int64(0)

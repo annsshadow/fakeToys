@@ -11,6 +11,8 @@ package domain
 // ⚠️ 生成必须确定性：同样的章节参数 + seed 必须产出完全相同的结果，
 // 否则关卡数据无法在客户端/服务端/后台之间保持一致。
 
+import "sort"
+
 // Chapter 章节定义。
 type Chapter struct {
 	ID            int
@@ -503,7 +505,12 @@ func GenerateLevel(levelID int) GeneratedLevel {
 	// json.Marshal(nil slice) 会产出 JSON null，客户端遍历时会炸。
 	gl.Terrain = []TerrainPlacement{}
 	if kind, ok := chapterTerrainFor(ch, levelID, levelSeed); ok {
-		gl.Terrain = generateTerrain(rng, kind, levelID)
+		// D5（2026-10-20）：多地形关 —— 主种类 + 按种子稳定选的第二种类。
+		kinds := []string{kind}
+		if second := secondTerrainKind(kind, levelSeed); second != "" {
+			kinds = append(kinds, second)
+		}
+		gl.Terrain = generateTerrain(rng, kinds, levelID)
 	}
 
 	return gl
@@ -561,11 +568,16 @@ func generateWave(rng *LCG, ch Chapter, index, total int, levelID int, isBoss bo
 
 // generateTerrain 生成 1~3 件地形。坐标用 0..1000 逻辑空间，
 // 客户端按实际画布尺寸线性映射，避免服务端依赖具体分辨率。
-func generateTerrain(rng *LCG, kind string, levelID int) []TerrainPlacement {
+func generateTerrain(rng *LCG, kinds []string, levelID int) []TerrainPlacement {
 	count := 1 + rng.Intn(3)
 	out := make([]TerrainPlacement, 0, count)
 	usedX := map[int]bool{}
 	for i := 0; i < count; i++ {
+		// 多地形关（D5，2026-10-20）：每关最多 2 种地形，按件数轮换。
+		// **同屏共存**而不是按波次分段 —— 每种地形的判定互相独立
+		// （油桶充能 / 闸门挡路 / 风障偏转），不存在叠加语义；
+		// 波次轮换需要引擎感知当前波次，属引擎级改动，留待后续。
+		kind := kinds[i%len(kinds)]
 		x := 250 + rng.Intn(650)
 		for usedX[x] { // 简单去重，避免地形叠在一起
 			x = 250 + rng.Intn(650)
@@ -650,6 +662,27 @@ func generateTerrain(rng *LCG, kind string, levelID int) []TerrainPlacement {
 		})
 	}
 	return out
+}
+
+// secondTerrainKind 为「多地形关」选第二种地形（D5，2026-10-20）。
+//
+// 从**章节声明过的全部种类**里按种子稳定选一个与主种类不同的 ——
+// 用 allTerrainKinds（内容数据）而不是硬编码列表：
+// 加一章就多一种地形，这里与 battle_collections.go 的校验同源、
+// 两边自动跟上（硬编码会让「新增地形」与「校验通过」脱钩）。
+func secondTerrainKind(primary string, levelSeed int64) string {
+	all := allTerrainKinds()
+	cands := make([]string, 0, len(all))
+	for k := range all {
+		if k != primary {
+			cands = append(cands, k)
+		}
+	}
+	if len(cands) == 0 {
+		return ""
+	}
+	sort.Strings(cands)
+	return cands[int(uint64(levelSeed)%uint64(len(cands)))]
 }
 
 func levelName(ch Chapter, levelID int) string {

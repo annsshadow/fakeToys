@@ -82,8 +82,8 @@ func TestScoreIsCappedAtMaxScore(t *testing.T) {
 					id, sec, cap, gl.MaxScore)
 			}
 		}
-		// 时长足够长时额度应当就是满额（否则裁剪器会误伤干净通关）
-		if cap := scoreCapFor(gl, ScoreFullAtSec+1); cap != gl.MaxScore {
+		// 时长达到锚点（D3：按关卡推导）时额度应当就是满额（否则裁剪器会误伤干净通关）
+		if cap := scoreCapFor(gl, speedAnchorSec(gl)); cap != gl.MaxScore {
 			t.Errorf("第 %d 关时长充足时上限 = %d，应为 MaxScore %d（裁剪器会误伤干净通关）",
 				id, cap, gl.MaxScore)
 		}

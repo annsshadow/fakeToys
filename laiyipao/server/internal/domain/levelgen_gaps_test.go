@@ -120,7 +120,7 @@ func TestGenerateTerrainDedupCoordinates(t *testing.T) {
 	rng.Next() // 模拟真实调用链：地形生成前 rng 已被波次生成消费
 
 	before := rng.state
-	terrain := generateTerrain(rng, "oil_drum", 1)
+	terrain := generateTerrain(rng, []string{"oil_drum"}, 1)
 	steps := lcgStepsTo(before, rng.state)
 
 	count := len(terrain)
