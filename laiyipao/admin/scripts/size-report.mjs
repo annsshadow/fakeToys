@@ -131,7 +131,16 @@ function closure(entry) {
 }
 
 const html = readFileSync(join(dist, 'index.html'), 'utf8')
-const entry = html.match(/src="\/assets\/(index-[^"]+\.js)"/)
+// ⚠️ base 前缀不能写死：admin 的 vite base 是 `/laiyipao-admin/`，
+// 所以 index.html 里是 `src="/laiyipao-admin/assets/index-*.js"`。
+//
+// 写死 `/assets/` 的后果不是「报错」而是「永远量不出来」：
+// 脚本会以「找不到 entry 脚本」退出 2，看起来像构建坏了，
+// 其实是**脚本**坏了 —— 于是「首屏体积」这个闸门长期处于
+// 「没人跑、也跑不出来」的状态，而没人发现。
+//
+// 所以这里匹配「任意前缀 + /assets/ + 文件名」，把 base 留给 vite。
+const entry = html.match(/src="[^"]*\/assets\/(index-[^"]+\.js)"/)
 if (!entry) {
   console.error('index.html 里找不到 entry 脚本 —— 构建配置可能变了，请更新本脚本。')
   process.exit(2)
@@ -156,7 +165,7 @@ const first = closure(entry[1])
  * （vite 通常会合并进 entry CSS，但显式检查比假设它会合并可靠）。
  */
 const linkedCss = [
-  ...html.matchAll(/<link[^>]+rel="stylesheet"[^>]+href="\/assets\/([^"]+\.css)"/g),
+  ...html.matchAll(/<link[^>]+rel="stylesheet"[^>]+href="[^"]*\/assets\/([^"]+\.css)"/g),
 ].map((m) => m[1])
 for (const f of first) {
   const src = readFileSync(join(assets, f), 'utf8')
