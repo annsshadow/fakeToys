@@ -384,12 +384,27 @@ func TestEnsureBootstrapAdmin(t *testing.T) {
 
 func TestAdminDashboard(t *testing.T) {
 	ts := openTestService(t)
-	d, err := ts.AdminDashboard(context.Background())
+	ctx := context.Background()
+	// ⚠️ 自己造一个用户，**不依赖同包其他用例先跑**。
+	//
+	// 整包共用 `TestMain` 建的一次性库，用例之间本来就共享状态
+	// （见 openTestService 的注释）。此前这里没造用户却断言
+	// `Total >= 1`，实际靠的是源码顺序排在前面的 Cases
+	// （TestAdminListUsers 等）先写进去的数据 —— 于是：
+	//   - `go test ./...` 全量跑：绿；
+	//   - `-run TestAdminDashboard$` 单独跑：库是干净的，Total=0 → 红。
+	//
+	// 这是测试隔离缺陷，不是产品缺陷。一个用例的正确性不能建立在
+	// 「别的用例恰好先跑过」上：单独复现问题是排障的基本动作，
+	// 而复现不了的问题会被当成"偶发"或"环境问题"。
+	ts.newUser(t, ctx)
+
+	d, err := ts.AdminDashboard(ctx)
 	if err != nil {
 		t.Fatalf("看板失败：%v", err)
 	}
 	if d.Users.Total < 1 {
-		t.Error("库中有测试用户，total 不应为 0")
+		t.Error("本用例已建号，total 不应为 0")
 	}
 	// 反应分布必须覆盖全部反应定义（客户端渲染依赖完整清单）
 	if len(d.ReactionUsage) != len(domain.AllReactionSpecs()) {
