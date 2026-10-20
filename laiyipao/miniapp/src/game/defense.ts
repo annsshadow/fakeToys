@@ -98,6 +98,12 @@ export interface ChallengeOutcome {
     duration_ms: number
     hp_left_pct: number
     replay_hash: string
+    /**
+     * 挑战者的构筑 S 段（2026-10-20，DECISIONS D4）。
+     * 服务端按挑战者的 user_skill_slots 重算并比对 —— 抓「构筑造假」；
+     * 空串放行（老客户端兼容），与结算面的 replay_skills 同口径。
+     */
+    replay_skills: string
   }
   /** 本地统计（用于展示） */
   stats: {
@@ -212,7 +218,7 @@ export function runChallenge(
 ): ChallengeOutcome {
   const fail = (reason: string): ChallengeOutcome => ({
     won: false,
-    report: { seed: '0', won: false, duration_ms: 0, hp_left_pct: 100, replay_hash: '0000000000000000' },
+    report: { seed: '0', won: false, duration_ms: 0, hp_left_pct: 100, replay_hash: '0000000000000000', replay_skills: '' },
     stats: { kills: 0, leaked: 0, waves: 0, score: 0, durationMs: 0, hpLeftPct: 100 },
     error: reason,
   })
@@ -264,6 +270,8 @@ export function runChallenge(
       duration_ms: Math.round(engine.elapsedMs),
       hp_left_pct: hpLeftPct,
       replay_hash: hash,
+      // D4：构筑 S 段随上报一起提交，服务端可独立重算比对。
+      replay_skills: engine.replaySkillsSegment(),
     },
     stats: {
       kills: engine.kills,
