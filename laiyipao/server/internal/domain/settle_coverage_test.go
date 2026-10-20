@@ -106,14 +106,18 @@ func settleBase(t *testing.T, gl GeneratedLevel) SettleInput {
 }
 
 func limitsFor(gl GeneratedLevel) SettleLimits {
-	// ⚠️ `ScoreFullAtSec` 是**包级常量**、不是 `SettleLimits` 的字段 ——
+	// ⚠️ 速率上限**不在**这个结构体里，`SettleLimits` 只有时长一项。
+	//
+	// 曾经的 `MaxScorePerSec` 在这里，值硬编码 50000，而第 1 关满分
+	// 只有 19539 —— `min(sec*50000, full)` 永远取满分那一侧，
+	// 裁剪分支从未走到。已改为由 `scoreCapFor` 按关卡推导。
+	//
+	// 同理 `ScoreFullAtSec` 也是**包级常量**、不是 `SettleLimits` 的字段 ——
 	// 第一版把它写进结构体字面量，编译不过。
-	// 顺带说明它为什么在包里而不是配置里：它是分数裁剪速率的锚点，
-	// 必须与 `scoreCapFor` 用同一个值；放进可配置结构体
-	// 就多了一个「两处可能不同步」的面。
+	// 两者共同的理由：分数裁剪的锚点必须与 `scoreCapFor` 用同一个值，
+	// 放进可配置结构体就多了一个「两处可能不同步」的面。
 	return SettleLimits{
-		MinDurationMs:  minDurationMsFor(gl),
-		MaxScorePerSec: 0, // 已废弃，不参与判定
+		MinDurationMs: minDurationMsFor(gl),
 	}
 }
 

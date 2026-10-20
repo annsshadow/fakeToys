@@ -131,7 +131,6 @@ cd laiyipao/admin   && pnpm install && pnpm dev          # :5175
 |---|---|---|
 | `BATTLE_TOKEN_TTL` | `30m` | 战斗凭证有效期 |
 | `MIN_BATTLE_DURATION` | `15s` | 「清完全场」的最短合理时长，短于此的**胜利**上报会被拒 |
-| `MAX_SCORE_PER_SECOND` | `40000` | ⚠️ **已废弃，不参与判定**。历史上它被当速率上限，但值远高于第 1 关满分，`min()` 永远取满分那侧，限制实际失效。现由 `scoreCapFor` 按关卡动态计算 |
 | `SETTLE_RECOMPUTE_MODE` | `enforce` | 服务端重算的处置档位，`off` / `shadow` / `enforce`。**不发版即可切换**，改环境变量重启生效 |
 | `OFFLINE_CAP_HOURS` | `12` | 离线收益累计上限 |
 

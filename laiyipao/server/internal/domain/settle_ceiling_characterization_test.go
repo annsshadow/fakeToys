@@ -73,7 +73,7 @@ func TestMaximalLegalSettlementIsAccepted(t *testing.T) {
 
 		tok := BattleToken{ID: 1, UserID: 1, LevelID: id, Seed: 42,
 			IssuedAt: now, ExpiresAt: now.Add(time.Hour)}
-		limits := SettleLimits{MinDurationMs: 15_000, MaxScorePerSec: 40_000}
+		limits := SettleLimits{MinDurationMs: 15_000}
 
 		res, err := ValidateSettle(tok, gl, in, limits, now)
 		if err != nil {
@@ -155,7 +155,7 @@ func TestSettleRejectsOvershootBeyondEveryCap(t *testing.T) {
 	maxKills := MaxKillsFor(gl)
 	tok := BattleToken{ID: 1, UserID: 1, LevelID: 1, Seed: 42,
 		IssuedAt: now, ExpiresAt: now.Add(time.Hour)}
-	limits := SettleLimits{MinDurationMs: 15_000, MaxScorePerSec: 40_000}
+	limits := SettleLimits{MinDurationMs: 15_000}
 
 	base := func() SettleInput {
 		durMs := ScoreFullAtSec * 1000

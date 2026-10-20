@@ -54,11 +54,16 @@
 | `CORS_ALLOW_ORIGINS` | 空 | 否 | 逗号分隔白名单；**prod 为空 = 不发任何 CORS 头** |
 | `BATTLE_TOKEN_TTL` | `30m` | 否 | 开局凭证有效期 |
 | `MIN_BATTLE_DURATION` | `15s` | 否 | 最短可信战斗时长 |
-| `MAX_SCORE_PER_SECOND` | `40000` | 否 | ⚠️ **已废弃**，不参与判定（速率上限改为按关卡推导） |
 | `SETTLE_RECOMPUTE_MODE` | `enforce` | 否 | `off` / `shadow` / `enforce` |
 | `OFFLINE_CAP_HOURS` | `12` | 否 | ⚠️ 已解析但当前无离线收益端点消费 |
 | `BOOTSTRAP_ADMIN_USER` | `admin` | 否 | 首次引导管理员用户名 |
 | `BOOTSTRAP_ADMIN_PASS` | `admin12345` | **是** | prod 下未显式设置会 panic；长度 < 10 时拒绝创建 |
+
+> **没有速率上限配置项，这是刻意的。** 曾经的 `MAX_SCORE_PER_SECOND`
+> （硬编码 50000）已在 2026-10-20 删除：它远高于第 1 关满分（19539），
+> `min()` 永远取满分那侧，限制从未真正生效。现在由 `domain.scoreCapFor`
+> 按关卡推导。**不要再把它加回来** —— 锚点必须与 `scoreCapFor`
+> 用同一个值，做成可配置项就多了一个「两处可能不同步」的面。
 
 三条 prod 守卫（`config.Load`）：
 

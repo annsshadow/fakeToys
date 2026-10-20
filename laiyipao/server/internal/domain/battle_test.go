@@ -25,7 +25,7 @@ func winInput(gl GeneratedLevel) SettleInput {
 }
 
 func testLimits() SettleLimits {
-	return SettleLimits{MinDurationMs: 15000, MaxScorePerSec: 40000}
+	return SettleLimits{MinDurationMs: 15000}
 }
 
 // 防作弊：重放同一份战报必须被拒（token 已使用）。
