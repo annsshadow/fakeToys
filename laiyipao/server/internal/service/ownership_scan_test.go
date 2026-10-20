@@ -100,52 +100,69 @@ var ownerScopedVerbs = []string{"SELECT", "UPDATE", "DELETE"}
 // `TestOwnershipExemptionsAreReachableOnlyFromAdminRoutes` 交叉核对。
 const adminSurfacePrefix = "Admin"
 
-// posKey 把 token.Position 压成 `basename.go:行号`。
+// posKey 把 token.Position 压成 `basename.go:行号`，**仅供报错定位**。
 //
-// ⚠️ 豁免表必须用**这个格式**，不能用 `token.Position.String()`
-// （那是完整绝对路径，换台机器就全失效）。
+// ⚠️ 它**不做豁免表的键**（曾经做过，漂移过四次，见 exemptionKey 的注释）。
+// 保留它是因为 `tx_error_branch_test.go` 的错误吞噬守卫要用它生成
+// 人类可读的 `文件:行`。
+//
+// ⚠️ 不能用 `token.Position.String()` 的原文（那是完整绝对路径，
+// 换台机器就全失效）。这里去掉路径前缀与 **col** 那一段。
+//
+// ⚠️ 我第一版写成「找第二个冒号再截断」，结果把**行号**也截掉了
+// （progression.go:572:4 → progression.go），于是每条豁免都失效。
 func posKey(pos string) string {
 	base := pos
 	if i := strings.LastIndexAny(base, `\/`); i >= 0 {
 		base = base[i+1:]
 	}
-	// `token.Position.String()` 是 "file.go:line:col" —— 去掉 **col** 那一段，
-	// 保留 "file.go:line"。
-	//
-	// ⚠️ 我第一版写成「找第二个冒号再截断」，结果把**行号**也截掉了
-	// （progression.go:572:4 → progression.go），于是每条豁免都失效。
 	if i := strings.LastIndex(base, ":"); i >= 0 {
 		base = base[:i]
 	}
 	return base
 }
 
-// ownershipExemptions 是具名豁免表：`文件:行` → 理由。
+// exemptionKey 是豁免表的键：`文件名.函数名:表名`，例如
+// `progression.go.ChallengeDefense:defenses`。
+//
+// ⚠️ 为什么**不是** `文件:行号`（曾经的形态）：那个键漂移过四次。
+//
+//	第  79 轮  给 ChallengeDefense 加预锁注释        572 → 673
+//	第 132 轮  给 ChallengeInput 加 seed 校验         721 → 751
+//	第 154 轮  给 SaveDefense 补 AND user_id 注释     800 → 824
+//	D4  轮      再补一段 S 段说明                      824 → 857
+//
+// 四次全部与「归属」无关 —— 都是给函数加注释。而
+// `TestOwnershipExemptionKeysAreStillPresent` 每次都准时报了出来，
+// 于是这件事的实际形态是「守卫很灵敏」+「每次都要改一行」，
+// 而不是「问题被解决了」。灵敏的守卫报出的若是**同一类噪声**，
+// 它的净效果是训练人忽略它。
+//
+// 函数名与表名属于**语义**：加注释不改它们，而函数被删/改名、
+// SQL 被挪走、查询被补上归属过滤时键会变 —— 那三种情况
+// 正是不该再豁免的场景，报失效是对的。
+//
+// ⚠️ 这里刻意不用 `token.Position`（含列号与绝对路径）：换台机器
+// 或改一下缩进，绝对路径那半就全失效了。
+func exemptionKey(q unscopedQuery) string {
+	return q.Fn + ":" + q.Table
+}
+
+// ownershipExemptions 是具名豁免表：`文件名.函数名:表名` → 理由。
 //
 // ⚠️ 每条都必须写清理由 ——「这里没问题」这种判断留给写豁免的人，
 // 不留给沉默。理由为空时本测试会红。
 //
-// ⚠️ 键是 SQL **字面量的起始行**，而多行 raw string 加上注释会把它推着走：
-// 第 79 轮给 `ChallengeDefense` 加了预锁注释，`progression.go` 的豁免键
-// 从 572 漂到 673；第 132 轮在 `ChallengeInput`/`ValidateChallengeInput`
-// 加了 seed 字符串校验，又把它从 721 漂到 751 ——
-// `TestOwnershipExemptionKeysAreStillPresent` 每次都立刻报了出来。
-//
-// **这正是那条守卫存在的理由。** 若没有它，失效的豁免会静默躺着，
-// 而「守卫从未报过」会被误读成「那里一直有约束」。
+// ⚠️ 键的构造见 `exemptionKey`：它曾经是 `文件:行号`，漂移过四次，
+// 现在是语义键（函数名 + 表名），加注释不会再让它失效。
 var ownershipExemptions = map[string]string{
-	"economy.go:115": "排行榜本就跨用户 —— 它返回全服前 N 名，" +
+	"economy.go.Leaderboard:user_progress": "排行榜本就跨用户 —— 它返回全服前 N 名，" +
 		"而返回列里没有别人的任何私有数据（只有 nickname / avatar / level_exp）。" +
-		"这不是「第 75 轮那个洞」的同类：那里泄露的是 build_snapshot + seed。\n" +
-		"⚠️ 键是 SQL **字面量的起始行**（115），不是 FROM 所在行（117）—— " +
-		"多行 raw string 里两者差 2 行。",
-	"progression.go:824": "「挑战别人的防线」本身就是玩法：读 `defenses WHERE id = $1` " +
+		"这不是「第 75 轮那个洞」的同类：那里泄露的是 build_snapshot + seed。",
+	"progression.go.ChallengeDefense:defenses": "「挑战别人的防线」本身就是玩法：读 `defenses WHERE id = $1` " +
 		"是为了拿到 owner_id 做后续判定。归属检查在**同一事务内**紧接着做：" +
 		"`if ownerID == userID { return ErrForbidden }`。" +
-		"所以这里不按 owner_id 过滤是正确的 —— 过滤了反而挑战不了任何人。" +
-		"\n⚠️ 键是 SQL **字面量的起始行**（824）。第 154 轮给 `SaveDefense` 的" +
-		" UPDATE 补 `AND user_id = $3` 注释后，它从 800 漂到 824 —— " +
-		"`TestOwnershipExemptionKeysAreStillPresent` 立刻报了出来，这正是那条守卫存在的理由。",
+		"所以这里不按 owner_id 过滤是正确的 —— 过滤了反而挑战不了任何人。",
 }
 
 // scanUnscopedQueries 扫出「按用户分区但没有 user_id 过滤」的查询。
@@ -492,10 +509,10 @@ func TestUserScopedQueriesMustFilterByOwner(t *testing.T) {
 
 	var violations []string
 	for _, q := range found {
-		if why, ok := ownershipExemptions[posKey(q.Pos)]; ok {
+		if why, ok := ownershipExemptions[exemptionKey(q)]; ok {
 			if strings.TrimSpace(why) == "" {
 				violations = append(violations,
-					q.Pos+" 有豁免但理由为空 —— 「这里没问题」这种判断不留给沉默")
+					exemptionKey(q)+" 有豁免但理由为空 —— 「这里没问题」这种判断不留给沉默")
 			}
 			continue
 		}
@@ -837,7 +854,9 @@ func TestOwnershipScannerSeesTheRealPackage(t *testing.T) {
 	sort.Slice(found, func(i, j int) bool { return found[i].Pos < found[j].Pos })
 	seen := map[string]int{}
 	for _, q := range found {
-		t.Logf("KEY %s", posKey(q.Pos))
+		// 打**豁免键**而不是行号：排查「这条为什么没被豁免」时，
+		// 真正要对照的是 ownershipExemptions 的键。
+		t.Logf("KEY %s（%s）", exemptionKey(q), q.Pos)
 	}
 	for _, q := range found {
 		seen[q.Table]++
@@ -860,18 +879,18 @@ func TestOwnershipExemptionKeysAreStillPresent(t *testing.T) {
 	found := scanUnscopedQueries(t)
 	present := map[string]bool{}
 	for _, q := range found {
-		present[posKey(q.Pos)] = true
+		present[exemptionKey(q)] = true
 	}
 	var stale []string
-	for pos := range ownershipExemptions {
-		if !present[pos] {
-			stale = append(stale, pos)
+	for key := range ownershipExemptions {
+		if !present[key] {
+			stale = append(stale, key)
 		}
 	}
 	if len(stale) > 0 {
 		sort.Strings(stale)
-		t.Errorf("豁免表里有 %d 条已失效（对应代码已改或已删）：\n  %s\n\n"+
-			"请删掉它们，或更新到新的位置。失效的豁免比没有豁免更糟 —— "+
+		t.Errorf("豁免表里有 %d 条已失效（对应函数已改/已删，或查询已补上归属过滤）：\n  %s\n\n"+
+			"请删掉它们，或更新到新的键。失效的豁免比没有豁免更糟 —— "+
 			"它让人以为那里仍然有约束。",
 			len(stale), strings.Join(stale, "\n  "))
 	}
