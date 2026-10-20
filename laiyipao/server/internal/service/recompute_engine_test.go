@@ -24,6 +24,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"strconv"
 	"testing"
 
@@ -456,5 +457,107 @@ func TestSettleRecomputeCountersDistinguishAllBranches(t *testing.T) {
 	}
 	if c := ts.EngineCounters(); c.Mismatch != 1 || c.Verified != 1 || c.Skipped != 1 {
 		t.Errorf("篡改哈希应只增 mismatch，实际 %+v", c)
+	}
+}
+
+// TestRecomputeAcceptsClientSideHash 用 **TS 引擎产出**的哈希驱动真实重算链路。
+//
+// 这条测试与 `realHashSettle` 的区别是**期望值的来源**，而那正是关键：
+//
+//	realHashSettle  → 用 `domain.Replay`（被测代码本身）算哈希
+//	                 → 断言 verified 是恒等的：Replay(x) == Replay(x) 永远成立
+//	本测试          → 用 testdata/replay_vectors.json 里的 expected_hash，
+//	                   由 miniapp/scripts/gen-replay-vectors.ts 从**真实 TS 引擎**产出
+//	                 → Go 用自己的实现算，两边必须相等才绿灯
+//
+// 夹具的 _comment 已经把这件事说清楚了：「期望值不由 Go 侧生成
+// （那是自证）。TS 引擎即玩家设备上运行的那份代码，所以它的输出就是
+// 『合法的一局』的定义。」
+//
+// 所以在 `realHashSettle` 全绿之外，仍然需要这一条：它证明的是
+// 「玩家设备上真算出来的那个哈希，服务端会接受」。Go 引擎一旦与 TS
+// 漂移，`domain/replay_contract_test.go` 与本条会同时红 —— 前者指出
+// 漂在哪个中间量，后者指出「线上正在拒发诚实玩家」。
+func TestRecomputeAcceptsClientSideHash(t *testing.T) {
+	ts := openTestService(t)
+	ctx := context.Background()
+	ts.Service.Cfg.SettleRecomputeMode = RecomputeEnforce
+	ts.resetEngineCounters()
+
+	const fixture = "../../testdata/replay_vectors.json"
+	raw, err := os.ReadFile(fixture)
+	if err != nil {
+		t.Fatalf("读 %s 失败：%v", fixture, err)
+	}
+	var doc struct {
+		Cases []struct {
+			Tag           string                     `json:"tag"`
+			LevelID       int                        `json:"level_id"`
+			Seed          string                     `json:"seed"`
+			Build         json.RawMessage            `json:"build"`
+			CardPicks     []int                      `json:"card_picks"`
+			ExpectedHash  string                     `json:"expected_hash"`
+			ExpectedStats map[string]json.RawMessage `json:"expected_stats"`
+		} `json:"cases"`
+	}
+	if err := json.Unmarshal(raw, &doc); err != nil {
+		t.Fatalf("解析 %s 失败：%v", fixture, err)
+	}
+	if len(doc.Cases) == 0 {
+		t.Fatal("夹具里没有 case —— 守卫的锚点失效了")
+	}
+
+	// 覆盖不同形态：覆盖 5 个元素系的代表关 + 多槽位 + 负/极端种子。
+	want := map[string]bool{
+		"base:1": true, "base:25": true, "base:50": true,
+		"passive:3": true, "corrosion:7": true, "lightning:11": true,
+		"kinetic:15": true, "composite:19": true, "slots5:23": true,
+	}
+	seen := map[string]bool{}
+
+	for _, c := range doc.Cases {
+		key := c.Tag + ":" + strconv.Itoa(c.LevelID)
+		if !want[key] {
+			continue
+		}
+		seen[key] = true
+
+		t.Run(key, func(t *testing.T) {
+			buildRaw, err := json.Marshal(json.RawMessage(c.Build))
+			if err != nil {
+				t.Fatalf("build 重新编码失败：%v", err)
+			}
+			tok := domain.BattleToken{
+				ID: int64(len(seen)), UserID: 1, LevelID: c.LevelID,
+				Seed: mustSeed(t, c.Seed),
+			}
+			in := domain.SettleInput{ReplayHash: c.ExpectedHash, CardPicks: c.CardPicks}
+
+			// recomputeEngine 返回 nil == 放行（matched / cannotRun 都放行），
+			// 所以必须同时看计数器才能区分「验过了」与「没跑起来」。
+			before := ts.EngineCounters()
+			if err := ts.recomputeEngine(ctx, 1, tok,
+				domain.GenerateLevel(c.LevelID), buildRaw, in); err != nil {
+				t.Fatalf("TS 引擎产出的合法哈希被拒：%v", err)
+			}
+			after := ts.EngineCounters()
+			if after.Verified != before.Verified+1 {
+				t.Errorf("该局应计 verified，实际 %d → %d（cannot_run %d → %d）。\n"+
+					"若 cannot_run 增长了，说明 Go 引擎跑不起这条输入，那是不可接受的静默放行",
+					before.Verified, after.Verified, before.CannotRun, after.CannotRun)
+			}
+			if after.Mismatch != before.Mismatch {
+				t.Errorf("该局被判不符：Go 引擎与 TS 引擎漂移了")
+			}
+		})
+	}
+	if len(seen) != len(want) {
+		var missing []string
+		for k := range want {
+			if !seen[k] {
+				missing = append(missing, k)
+			}
+		}
+		t.Fatalf("夹具缺少预期 case：%v —— 夹具可能被改过，请同步本测试的 want 表", missing)
 	}
 }
