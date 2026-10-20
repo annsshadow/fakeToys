@@ -22,7 +22,7 @@ fastapi>=0.78.0,<1.0.0
 uvicorn>=0.18.0,<1.0.0
 # 平台代码使用 pydantic v2 的 model_dump()，必须锁 v2
 pydantic>=2.0.0,<3.0.0
-python-multipart>=0.0.6
+python-multipart>=0.0.32
 
 # ============ 旧版脚本 enhanceTXT.py 专用 ============
 nlpaug>=1.1.0
