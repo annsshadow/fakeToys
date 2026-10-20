@@ -6,7 +6,7 @@
 -r requirements-core.txt
 
 pytest>=9.1.1
-pytest-cov>=4.1.0
+pytest-cov>=7.1.0
 # FastAPI TestClient 的传输层
 httpx>=0.26.0
 # L288 xlsx 容器守卫（tests/unit/test_xlsx_zipbomb_l288.py，5 支）量的是**真实**读边：
