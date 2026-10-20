@@ -53,6 +53,16 @@ beforeEach(() => {
   })
   mockApi.fetchWallet.mockResolvedValue({ coin: 1, gem: 2, energy: 30, keys: 4, tokens: {} })
   mockApi.fetchMe.mockResolvedValue({ user_id: 7, build: null, build_rating: null, power: 9 } as any)
+  // ⚠️ 这里的字段名必须与**服务端真实响应**一致（snake_case），
+  // 而不是与 stage.vue 的读取代码「互相迁就」。
+  //
+  // 2026-10-20 之前，服务端 `domain.Diagnose` 漏了 json tag、实际下发
+  // PascalCase，而客户端读小写 —— 诊断卡整张空白。当时这条 mock 用的
+  // 是小写（与客户端代码自洽），于是测试全绿，缺陷一路活到文档阶段。
+  //
+  // 判据：mock 数据的形状是**契约**，不是测试的自便。
+  // 服务端有 TestDiagnoseJSONShapeIsSnakeCase 钉住它的序列化输出，
+  // 两件事必须同时成立，单端自洽证明不了任何事。
   mockApi.diagnose.mockResolvedValue({
     stage: 'mid_game',
     confidence: 80,
