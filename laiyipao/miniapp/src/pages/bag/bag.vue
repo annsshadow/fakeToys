@@ -28,6 +28,36 @@
         </view>
       </view>
 
+      <!-- 熔炼：两个已拥有的材料技能 → 高阶技能。
+           材料会被消耗；等级门槛由服务端判定（产物 unlock_level 30..62）。
+           未集齐材料的配方**不给按钮**（约束 19：不给假按钮）。 -->
+      <view v-if="recipes.length" class="card">
+        <text class="card-title">熔炼</text>
+        <text class="muted" style="display: block; margin-bottom: 16rpx">
+          两个材料技能熔炼成高阶技能，材料会被消耗。
+          产物需要等级达标（由服务端判定，不足时会提示所需等级）。
+        </text>
+        <view v-for="r in recipes" :key="r.output" class="skill-row">
+          <view class="flex-1">
+            <view class="row" style="gap: 8rpx">
+              <text class="skill-name">{{ skillNameOf(r.a) }}</text>
+              <text class="dim">+</text>
+              <text class="skill-name">{{ skillNameOf(r.b) }}</text>
+              <text class="dim">→</text>
+              <text class="skill-name">{{ skillNameOf(r.output) }}</text>
+              <text class="dim">{{ r.out_tier }} 阶</text>
+            </view>
+          </view>
+          <view class="skill-act">
+            <text v-if="missingFor(r).length" class="dim">
+              缺 {{ missingFor(r).map(skillNameOf).join('、') }}
+            </text>
+            <text v-else-if="synthesizing === r.output" class="dim">熔炼中…</text>
+            <text v-else class="link" @click="doSynthesize(r)">熔炼</text>
+          </view>
+        </view>
+      </view>
+
       <!-- 技能列表 -->
       <view class="card">
         <text class="card-title">技能库</text>
@@ -35,8 +65,8 @@
           等级只提升**伤害**，不影响热量与冷却。
           每级 +<text v-if="skillRules">{{ skillRules.coef_permille }}‰</text>伤害，满级
           <text v-if="skillRules">{{ skillRules.max_level }}</text> 级。
-          技能库列出全部技能；标「未解锁」的不能装备或升级 ——
-          当前版本还没有获取途径。
+          基础技能按等级自动解锁；高阶技能靠熔炼（见上）。
+          标「未解锁」的不能装备或升级。
         </text>
         <view v-for="s in allSkills" :key="s.id" class="skill-row">
           <view class="flex-1">
@@ -457,6 +487,43 @@ async function doUpgrade(skillId: number): Promise<void> {
     uni.showToast({ title: e?.message ?? '升级失败', icon: 'none' })
   } finally {
     upgrading.value = null
+  }
+}
+
+/** 熔炼中的产物 id（防连点；null = 空闲）。 */
+const synthesizing = ref<number | null>(null)
+
+/** 配方缺哪些材料（空数组 = 两个材料都拥有，可以熔炼）。 */
+function missingFor(r: { a: number; b: number }): number[] {
+  const out: number[] = []
+  if (!isOwned(r.a)) out.push(r.a)
+  if (!isOwned(r.b)) out.push(r.b)
+  return out
+}
+
+/**
+ * 熔炼两个材料技能。
+ *
+ * 本地只拦「材料不齐」这一层（约束 19：不给假按钮）——
+ * 配方存在性、等级门槛、产物是否已拥有，全部由服务端判定
+ * （`SynthesizeSkills`，材料会被消耗）。
+ */
+async function doSynthesize(r: { a: number; b: number; output: number }): Promise<void> {
+  if (synthesizing.value !== null) return // 防连点
+  if (missingFor(r).length) {
+    uni.showToast({ title: '材料未集齐', icon: 'none' })
+    return
+  }
+  synthesizing.value = r.output
+  try {
+    const res = await api.synthesizeSkills(r.a, r.b)
+    // 材料已删、产物已发放、槽位可能被清空 —— build 快照必须重拉
+    await store.refreshProfile()
+    uni.showToast({ title: `熔炼成功：${skillNameOf(res.output)}`, icon: 'none' })
+  } catch (e: any) {
+    uni.showToast({ title: e?.message ?? '熔炼失败', icon: 'none' })
+  } finally {
+    synthesizing.value = null
   }
 }
 
