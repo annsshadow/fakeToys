@@ -1712,10 +1712,16 @@ export class BattleEngine {
     //   两者皆由种子决定（刷怪洗牌 / 坐标由 levelgen 产出），故同种子
     //   同行。`dist2` 用 bigint 避免浮点，不存在跨端漂移。
     // ⚠️ 触发条件**显式列出两条反应**，不泛化成「任何 aoeRadius > 0」——
-    // burn_cloud / corrosion_spread 将来接上的非零半径语义是火区 / 层数传播，
-    // 不是伤害溅射。
+    // burn_cloud 将来接上的非零半径语义是火区（持续伤害），
+    // 而 corrosion_spread 的 aoeRadius 是**层数传播半径**（2026-10-20 起非零），
+    // 两者都不是伤害溅射。泛化会让层数传播凭空多出伤害事件。
     if ((res.reaction === 'steam_burst' || res.reaction === 'overheat') && res.reactionDamage > 0n && reactSpec !== undefined && reactSpec.aoeRadius > 0) {
       this.triggerReactionAoe(e, reactKey, res.reactionDamage, att)
+    }
+    // corrosion_spread 的层数传播（2026-10-20，DECISIONS D2）。
+    // 只写层数、不造成伤害、不再触发反应 —— 见 triggerCorrosionSpread 的说明。
+    if (res.reaction === 'corrosion_spread' && reactSpec !== undefined && reactSpec.spreadStacks > 0) {
+      this.triggerCorrosionSpread(e, reactSpec.aoeRadius, reactSpec.spreadStacks, att)
     }
     // 地形联动。地形自身负责判定弹丸是否经过它（updateXxx 内部已做空间判定），
     // 因此这里只需传入元素与伤害，不需要坐标。
@@ -1826,6 +1832,35 @@ export class BattleEngine {
           }
         }
       }
+    }
+  }
+
+  /**
+   * corrosion_spread 的层数传播（2026-10-20，DECISIONS D2）。
+   *
+   * # 与 triggerReactionAoe 的三处语义差别（也是它单独成方法的原因）
+   *
+   * 1. **不造成伤害** —— 只写元素层数，不消耗 RNG、不产生 hit/kill 事件；
+   * 2. **不触发新反应** —— 直接写 `stacks`，不走 `applyElement` 的反应判定。
+   *    若走它，每个被传播的敌人都可能**立即**触发新反应，传播链指数级扩散
+   *    —— 这正是 D2 拍板时列为必答问题的风险；
+   * 3. **clamp 到 elementCap** —— 与 `applyElement` 同一上限，否则层数会越过
+   *    反应伤害公式的输入上界。
+   *
+   * 层数本身不计分（无伤害）；被传播的敌人后续命中时产生的反应伤害
+   * 走常规计分路径。I-6：事件流不进 replay_skills 段，与溅射同口径。
+   */
+  private triggerCorrosionSpread(origin: Enemy, radius: number, stacks: number, att: Attacker): void {
+    if (stacks <= 0 || radius <= 0) return
+    const rr = toFixed(radius)
+    const cap = att.elementCap
+    const add = BigInt(stacks)
+    for (const e of this.enemies) {
+      if (e.dead || e.uid === origin.uid) continue
+      if (dist2(origin.x, origin.y, e.x, e.y) > rr * rr) continue
+      let next = (e.stacks.get('corrosion') ?? 0n) + add
+      if (next > cap) next = cap
+      e.stacks.set('corrosion', next)
     }
   }
 

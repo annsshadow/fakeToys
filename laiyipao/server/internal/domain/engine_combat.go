@@ -560,11 +560,20 @@ func (e *BattleEngine) hitEnemy(p *Projectile, en *Enemy, skipRadius bool) bool 
 	//     —— 否则反应会在溅射目标上**再次**爆开，形成指数级连锁。
 	//
 	// ⚠️ 触发条件**显式列出两条反应**，不泛化成「任何 AoeRadius > 0」——
-	// burn_cloud / corrosion_spread 将来接上的非零半径语义是火区 / 层数传播，
-	// 不是伤害溅射。
+	// burn_cloud 将来接上的非零半径语义是火区（持续伤害），
+	// 而 corrosion_spread 的 AoeRadius 是**层数传播半径**（2026-10-20 起非零），
+	// 两者都不是伤害溅射。泛化会让层数传播去走伤害管线（凭空多出伤害事件）。
 	if (res.Reaction == ReactionSteamBurst || res.Reaction == ReactionOverheat) && res.ReactionDamage > 0 {
 		if spec, ok := LookupReactionSpec(res.Reaction); ok && spec.AoeRadius > 0 {
 			e.triggerReactionAoe(en, res.Reaction, res.ReactionDamage, att)
+		}
+	}
+
+	// corrosion_spread 的层数传播（2026-10-20，DECISIONS D2）。
+	// 只写层数、不造成伤害、不再触发反应 —— 见 triggerCorrosionSpread 的说明。
+	if res.Reaction == ReactionCorrosionSpray {
+		if spec, ok := LookupReactionSpec(res.Reaction); ok && spec.SpreadStacks > 0 {
+			e.triggerCorrosionSpread(en, int64(spec.AoeRadius), int64(spec.SpreadStacks))
 		}
 	}
 
@@ -716,6 +725,43 @@ func reactionAoeRadius(key ReactionKey) int64 {
 		return 0
 	}
 	return int64(spec.AoeRadius)
+}
+
+// triggerCorrosionSpread 把腐蚀层数传播给半径内的其他敌人（corrosion_spread，2026-10-20）。
+//
+// # 为什么它单独成函数，不复用 triggerReactionAoe
+//
+// 两者看着都是「以命中敌人为圆心扫邻居」，但语义有三处不同：
+//
+//  1. **不造成伤害** —— 只写元素层数，因此不消耗 RNG、不产生 hit 事件、
+//     不触发击杀路径（`triggerReactionAoe` 那套计分/击杀/蓄能塔逻辑一条都不走）；
+//  2. **不触发新反应** —— 直接写 `Stacks`，不走 `applyElement` 的反应判定。
+//     若走 applyElement，每个被传播的敌人都可能**立即**触发新的反应，
+//     传播链会指数级扩散 —— 这正是 DECISIONS D2 拍板时列为必答问题的风险；
+//  3. **clamp 到 elementCap** —— 与 `applyElement` 同一上限，否则层数会越过
+//     反应伤害公式的输入上界。
+//
+// 层数本身不计分（无伤害）；被传播的敌人后续命中时产生的反应伤害
+// 走常规路径自然计分。
+func (e *BattleEngine) triggerCorrosionSpread(origin *Enemy, radius int64, stacks int64) {
+	if stacks <= 0 || radius <= 0 {
+		return
+	}
+	rr := ToFixed(float64(radius))
+	cap := e.currentAttacker().ElementCap
+	for _, en := range e.Enemies {
+		if en.Dead || en.UID == origin.UID {
+			continue
+		}
+		if dist2(origin.X, origin.Y, en.X, en.Y) > rr*rr {
+			continue
+		}
+		next := en.Stacks[ElementCorrosion] + stacks
+		if next > cap {
+			next = cap
+		}
+		en.Stacks[ElementCorrosion] = next
+	}
 }
 
 // currentAttacker 算本 tick 的攻方。

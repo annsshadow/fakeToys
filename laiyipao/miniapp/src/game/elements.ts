@@ -64,6 +64,13 @@ export interface ReactionSpec {
   statusDurationMs: number
   /** 溅射半径（像素），0 表示单体 */
   aoeRadius: number
+  /**
+   * 层数传播量（0 表示无）。corrosion_spread 专用（2026-10-20）：
+   * 触发时把该层数**直接写入**半径 aoeRadius 内其他敌人的腐蚀层数
+   * （clamp 到 elementCap），**不触发新的反应**（避免指数级连锁）。
+   * 消费者：`engine.ts` 的 `hitEnemy` → `triggerCorrosionSpread`。
+   */
+  spreadStacks: number
   /** 是否驱散护盾 */
   dispelShield: boolean
   /** 对目标的受击伤害放大（千分比），0 表示无 */
@@ -139,6 +146,7 @@ export const REACTIONS: Record<ReactionKey, ReactionSpec> = {
     // `aoeRadius` 此前唯一的消费者是 `render/canvas.ts` 屏幕震动，
     // 它原本谎称「120 像素范围爆炸」却不造成任何伤害。
     aoeRadius: 120,
+    spreadStacks: 0,
     dispelShield: true,
     amplifyPct: 0,
     armorShredPermille: 0,
@@ -160,6 +168,7 @@ export const REACTIONS: Record<ReactionKey, ReactionSpec> = {
     // 眩晕（statusDurationMs）仍只作用主目标，不随溅射扩散 —— 与
     // steam_burst 的驱散护盾同口径，双端由 reaction_specs.json 锁定。
     aoeRadius: 90,
+    spreadStacks: 0,
     dispelShield: false,
     amplifyPct: 0,
     armorShredPermille: 0,
@@ -188,6 +197,7 @@ export const REACTIONS: Record<ReactionKey, ReactionSpec> = {
     attackWeightPct: 250,
     statusDurationMs: 0,
     aoeRadius: 0, // [mutation] 100
+    spreadStacks: 0,
     dispelShield: false,
     amplifyPct: 0,
     armorShredPermille: 0,
@@ -201,6 +211,7 @@ export const REACTIONS: Record<ReactionKey, ReactionSpec> = {
     attackWeightPct: 250,
     statusDurationMs: 4000,
     aoeRadius: 0,
+    spreadStacks: 0,
     dispelShield: false,
     amplifyPct: 600,
     armorShredPermille: 0,
@@ -214,6 +225,7 @@ export const REACTIONS: Record<ReactionKey, ReactionSpec> = {
     attackWeightPct: 250,
     statusDurationMs: 2000,
     aoeRadius: 0,
+    spreadStacks: 0,
     dispelShield: false,
     amplifyPct: 300,
     armorShredPermille: 0,
@@ -226,12 +238,15 @@ export const REACTIONS: Record<ReactionKey, ReactionSpec> = {
     baseCoef: 35,
     attackWeightPct: 200,
     statusDurationMs: 0,
-    aoeRadius: 0, // ⚠️ 第 83 轮：150 → 0，「传播」从未被实现
+    // 2026-10-20：层数传播落地（aoe_radius 0 -> 120，spread_stacks 0 -> 1）。
+    // DECISIONS D2：传播**不再触发反应**、计入后续常规计分、服务端镜像同逻辑。
+    aoeRadius: 120,
+    spreadStacks: 1,
     dispelShield: false,
     amplifyPct: 0,
     armorShredPermille: 0,
     knockback: 0,
-    descr: '造成反应伤害',
+    descr: '造成反应伤害，并把 1 层腐蚀传播给半径 120 像素内的其他敌人（传播本身不触发新反应）',
   },
   armor_break: {
     key: 'armor_break',
@@ -255,6 +270,7 @@ export const REACTIONS: Record<ReactionKey, ReactionSpec> = {
     attackWeightPct: 300,
     statusDurationMs: 4000,
     aoeRadius: 0,
+    spreadStacks: 0,
     dispelShield: false,
     amplifyPct: 0,
     armorShredPermille: 150,

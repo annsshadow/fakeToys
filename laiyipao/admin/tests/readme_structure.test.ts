@@ -31,7 +31,20 @@ import { fileURLToPath } from 'node:url'
 import { describe, it, expect } from 'vitest'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..')
-const lines = readFileSync(join(root, 'README.md'), 'utf8').split(/\r?\n/)
+
+/**
+ * 2026-10-20 文档拆分：README 的「工程约束 / 已实现内容 / 已知边界」
+ * 三章迁到了 `docs/laiyipao/`。本守卫跟着文档走 ——
+ * 只盯 README 会让「约束编号连续」在拆分后变成**永远绿的空转**
+ * （README 里已经没有编号条目了），那正是本文件开头说的「文档腐烂」。
+ */
+const DOCS = [
+  { name: 'README.md', path: join(root, 'README.md'), ordered: true },
+  { name: 'ENGINEERING.md', path: join(root, '..', 'docs', 'laiyipao', 'ENGINEERING.md'), ordered: true },
+  // 已知边界的编号是**历史沉积的锚**（有意乱序、含重复编号），不查连续性
+  { name: 'KNOWN_LIMITS.md', path: join(root, '..', 'docs', 'laiyipao', 'KNOWN_LIMITS.md'), ordered: false },
+  { name: 'IMPLEMENTATION.md', path: join(root, '..', 'docs', 'laiyipao', 'IMPLEMENTATION.md'), ordered: false },
+].map((d) => ({ ...d, lines: readFileSync(d.path, 'utf8').split(/\r?\n/) }))
 
 /** `### 12. xxx` → "12"；`### 9.1 xxx` → "9.1"；其余 → null */
 function itemNumber(line: string): string | null {
@@ -41,59 +54,69 @@ function itemNumber(line: string): string | null {
 
 const isHeading = (line: string) => /^#{1,6}\s+\S/.test(line)
 
-describe('README 结构', () => {
+describe('文档结构（README + docs/laiyipao 拆分后的四份）', () => {
   it('约束条目编号在同一段里连续递增', () => {
     // ⚠️ 必须**分段**检查。
     //
     // README 里有两个各自从 1 开始的编号序列：
     //   「快速开始」的 1~4（起后端/起小程序/起后台/端到端验收）
-    //   「关键工程约束」的 1~17
+    //   「关键工程约束」的 1~19（拆分后已迁到 ENGINEERING.md）
     //
     // 第一版当成一条序列，于是报 `4 -> 1` —— 那是**误报**，
     // 而误报的守卫会被当成噪声忽略，之后真乱序也就不再有人看。
     //
     // 遇到 `##` 二级标题就开新段：段内必须严格 +1，段与段之间不比较。
-    const runs: Array<{ start: number; nums: number[] }> = []
-    let cur: { start: number; nums: number[] } | null = null
-
-    lines.forEach((line, i) => {
-      if (/^##\s+\S/.test(line)) {
-        cur = { start: i + 1, nums: [] }
-        runs.push(cur)
-        return
-      }
-      const n = itemNumber(line)
-      if (n === null) return
-      if (!cur) {
-        cur = { start: i + 1, nums: [] }
-        runs.push(cur)
-      }
-      // 子条目（9.1）不参与顶层序列
-      if (Number.isInteger(Number(n))) cur.nums.push(Number(n))
-    })
-
     const bad: string[] = []
-    for (const run of runs) {
-      for (let i = 1; i < run.nums.length; i++) {
-        if (run.nums[i] !== run.nums[i - 1] + 1) {
-          bad.push(`L${run.start} 起的一段：${run.nums[i - 1]} -> ${run.nums[i]}`)
+    let longest = 0
+    let runCount = 0
+
+    for (const doc of DOCS) {
+      if (!doc.ordered) continue
+      const runs: Array<{ start: number; nums: number[] }> = []
+      let cur: { start: number; nums: number[] } | null = null
+
+      doc.lines.forEach((line, i) => {
+        if (/^##\s+\S/.test(line)) {
+          cur = { start: i + 1, nums: [] }
+          runs.push(cur)
+          return
+        }
+        const n = itemNumber(line)
+        if (n === null) return
+        if (!cur) {
+          cur = { start: i + 1, nums: [] }
+          runs.push(cur)
+        }
+        // 子条目（9.1）不参与顶层序列
+        if (Number.isInteger(Number(n))) cur.nums.push(Number(n))
+      })
+
+      for (const run of runs) {
+        for (let i = 1; i < run.nums.length; i++) {
+          if (run.nums[i] !== run.nums[i - 1] + 1) {
+            bad.push(`${doc.name} L${run.start} 起的一段：${run.nums[i - 1]} -> ${run.nums[i]}`)
+          }
         }
       }
+      runCount += runs.length
+      longest = Math.max(longest, ...runs.map((r) => r.nums.length))
     }
     expect(bad).toEqual([])
     // 至少要有两段、且最长那段超过 10 条 —— 否则守卫自己没生效
-    expect(runs.length).toBeGreaterThanOrEqual(2)
-    expect(Math.max(...runs.map((r) => r.nums.length))).toBeGreaterThan(10)
+    expect(runCount).toBeGreaterThanOrEqual(2)
+    expect(longest).toBeGreaterThan(10)
   })
 
   it('每个标题前面都有空行（否则渲染会与上一段粘连）', () => {
     const bad: string[] = []
-    lines.forEach((line, i) => {
-      if (i === 0) return
-      if (isHeading(line) && lines[i - 1].trim() !== '') {
-        bad.push(`L${i + 1}: ${line.slice(0, 48)}`)
-      }
-    })
+    for (const doc of DOCS) {
+      doc.lines.forEach((line, i) => {
+        if (i === 0) return
+        if (isHeading(line) && doc.lines[i - 1].trim() !== '') {
+          bad.push(`${doc.name} L${i + 1}: ${line.slice(0, 48)}`)
+        }
+      })
+    }
     expect(bad).toEqual([])
   })
 
@@ -102,11 +125,13 @@ describe('README 结构', () => {
     // 「三条被撤回的误判」这种数字是内容，不在管辖范围内 —— 见文件头说明。
     const rot = /^#{2,3}\s+\S*[一二三四五六七八九十百]+\s*(?:个|条)?\s*(?:关键)?(?:工程)?(?:约束|条目)/
     const bad: string[] = []
-    lines.forEach((line, i) => {
-      if (/^#{2,3}\s/.test(line) && rot.test(line)) {
-        bad.push(`L${i + 1}: ${line.slice(0, 48)}（条目一加就不对，去掉计数）`)
-      }
-    })
+    for (const doc of DOCS) {
+      doc.lines.forEach((line, i) => {
+        if (/^#{2,3}\s/.test(line) && rot.test(line)) {
+          bad.push(`${doc.name} L${i + 1}: ${line.slice(0, 48)}（条目一加就不对，去掉计数）`)
+        }
+      })
+    }
     expect(bad).toEqual([])
   })
 
@@ -119,8 +144,9 @@ describe('README 结构', () => {
     // 变异验证时它**没抓住**复现出来的同一处断裂 —— 那是装饰品，已删。
     // 换成实测可靠的信号：重复的长正文行。
     //
-    // 阈值 16 字是量出来的：当前 README 里 >=12 字有 1 处重复
+    // 阈值 16 字是量出来的：当前文档集里 >=12 字有 1 处重复
     //（`pnpm install`，代码块里的命令），>=16 字 **0 处**。
+    // 按文件分别扫：跨文件重复（如两份文档引用同一句契约说明）是**正常的**。
     const MIN = 16
     const isStructural = (l: string) =>
       l === undefined ||
@@ -132,20 +158,24 @@ describe('README 结构', () => {
       /^\s*>/.test(l) ||
       l.trim() === '---'
 
-    const seen = new Map<string, number>()
     const dups: string[] = []
-    lines.forEach((l, i) => {
-      const t2 = l.trim()
-      if (isStructural(l) || t2.length < MIN) return
-      const prev = seen.get(t2)
-      if (prev !== undefined) {
-        dups.push(`L${prev} 与 L${i + 1} 重复：${t2.slice(0, 48)}`)
-      } else {
-        seen.set(t2, i + 1)
-      }
-    })
+    let scanned = 0
+    for (const doc of DOCS) {
+      const seen = new Map<string, number>()
+      doc.lines.forEach((l, i) => {
+        const t2 = l.trim()
+        if (isStructural(l) || t2.length < MIN) return
+        scanned++
+        const prev = seen.get(t2)
+        if (prev !== undefined) {
+          dups.push(`${doc.name} L${prev} 与 L${i + 1} 重复：${t2.slice(0, 48)}`)
+        } else {
+          seen.set(t2, i + 1)
+        }
+      })
+    }
     expect(dups).toEqual([])
     // 守卫本身要生效：至少扫到足够多的行，否则「0 重复」是因为什么都没扫到
-    expect(seen.size).toBeGreaterThan(100)
+    expect(scanned).toBeGreaterThan(100)
   })
 })

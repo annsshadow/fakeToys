@@ -38,6 +38,10 @@ type reactionRow struct {
 	AttackWeightPct    int    `json:"attack_weight_pct"`
 	StatusDurationMs   int    `json:"status_duration_ms"`
 	AoeRadius          int    `json:"aoe_radius"`
+	// SpreadStacks：corrosion_spread 的层数传播量（2026-10-20）。
+	// 进契约是为了让客户端引擎与服务端镜像读同一份参数 ——
+	// 写死两份就会漂，漂了之后的症状是「客户端层数比服务端多」。
+	SpreadStacks       int    `json:"spread_stacks"`
 	DispelShield       bool   `json:"dispel_shield"`
 	AmplifyPct         int    `json:"amplify_pct"`
 	ArmorShredPermille int    `json:"armor_shred_permille"`
@@ -56,6 +60,7 @@ func buildReactions() ([]byte, error) {
 			AttackWeightPct:    s.AttackWeightPct,
 			StatusDurationMs:   s.StatusDurationMs,
 			AoeRadius:          s.AoeRadius,
+			SpreadStacks:       s.SpreadStacks,
 			DispelShield:       s.DispelShield,
 			AmplifyPct:         s.AmplifyPct,
 			ArmorShredPermille: s.ArmorShredPermille,

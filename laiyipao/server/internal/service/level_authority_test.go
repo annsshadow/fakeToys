@@ -122,3 +122,29 @@ func TestLevelTableIsCurrentlyNotThePlayerSource(t *testing.T) {
 			a.BaseHP, b.BaseHP, a.Name, b.Name, a.Seed, b.Seed)
 	}
 }
+
+// TestAdminUpdateLevelDeclaresNotAppliedToPlayers 第 23 条产品决策（2026-10-20）的守卫。
+//
+// 决策走**路线 (b)：生成器继续权威**，后台改的只是 `levels` 表这张规划记录。
+// 这条测试钉住「后台不再假装生效」——
+// 写入回执里必须**机器可读地**声明 `applied_to_players: false`，
+// 后台界面据此提示「记录在案，不影响线上」。
+//
+// 若将来产品改主意走路线 (a)（表成为权威），这条会红 —— 那是正确的：
+// 届时 `player_authority` 必须改成 "table"，并且玩家侧读取路径要同步改
+// （`TestLevelTableIsCurrentlyNotThePlayerSource` 会先红）。
+func TestAdminUpdateLevelDeclaresNotAppliedToPlayers(t *testing.T) {
+	ts := openScratchService(t)
+	ctx := context.Background()
+
+	row, err := ts.AdminUpdateLevel(ctx, 1, map[string]any{"name": "P23回执声明"})
+	if err != nil {
+		t.Fatalf("AdminUpdateLevel 失败：%v", err)
+	}
+	if got := row["applied_to_players"]; got != false {
+		t.Errorf("回执必须声明 applied_to_players=false（路线 b：生成器权威），实际 %v", got)
+	}
+	if got := row["player_authority"]; got != "generator" {
+		t.Errorf("回执必须声明 player_authority=\"generator\"，实际 %v", got)
+	}
+}

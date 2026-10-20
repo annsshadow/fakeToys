@@ -218,6 +218,14 @@ func (s *Service) AdminLevelRow(ctx context.Context, levelID int) (map[string]an
 		"is_boss": isBoss, "enabled": enabled,
 		"attempts": attempts, "clears": clears,
 		"clear_rate": clearRate, "avg_wave": avgWave,
+		// 第 23 条产品决策（2026-10-20，路线 b：生成器继续权威）：
+		// 后台改的只是 `levels` 表这张**规划记录**，玩家侧关卡由纯函数
+		// `domain.GenerateLevel` 产出 —— 两个字段让这件事**机器可读**，
+		// 后台界面据此提示「记录在案，不影响线上」，
+		// 而不是把写入回执显示成「已生效」。
+		// 守卫：level_authority_test.go 的 TestAdminUpdateLevelDeclaresNotAppliedToPlayers。
+		"player_authority": "generator",
+		"applied_to_players": false,
 	}, nil
 }
 

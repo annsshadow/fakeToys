@@ -130,8 +130,8 @@
 
 | 决策 | 结论 | 备注 |
 |---|---|---|
-| D1 | | |
-| D2 | | |
+| D1 | **已实施（b）** 2026-10-20 | 回执加 `applied_to_players: false` / `player_authority: "generator"`；后台提示与保存文案改写；守卫 `TestAdminUpdateLevelDeclaresNotAppliedToPlayers` |
+| D2 | **已实施（先做 corrosion_spread）** 2026-10-20 | 传播 1 层 / 120px；不造成伤害、不触发新反应、clamp `elementCap`；契约加 `spread_stacks`；守卫 `corrosion_spread.test.ts` 4 例；`burn_cloud` 火区仍待拍板 |
 | D3 | | |
 | D4 | | |
 | D5 | | |
