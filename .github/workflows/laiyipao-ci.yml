@@ -129,6 +129,16 @@ jobs:
         run: pnpm test
       - name: Build (vue-tsc + vite)
         run: pnpm build
+      - name: Size budget (first-load) must stay within budget
+        # `pnpm size:check` 量的是**首屏**体积（index.html 入口的静态 import 闭包），
+        # 不是 dist 总量 —— 路由是代码分割的，dist 总量会把懒加载页也算进来。
+        #
+        # ⚠️ 这一步以前不在 CI 里，于是「脚本烂掉」没人知道：
+        # 2026-10-21 实测它的 entry 正则写死 `/assets/`，
+        # 而 admin 的 vite base 是 `/laiyipao-admin/` → 永远匹配不到，
+        # 脚本以退出码 2 结束（「找不到 entry 脚本」）。
+        # 一个「量不出来」的闸门等于没有闸门 —— 放进 CI 才能让它坏掉时立刻红。
+        run: pnpm size:check
 
   # ── miniapp 小程序端（uni-app）：类型检查 + 单测 + H5/微信双构建 ─────────
   # mp-weixin 构建对 vite 5.2.8 pin 敏感（依赖升级曾假红），进 CI 后回归可见。
