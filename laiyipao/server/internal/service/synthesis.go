@@ -37,8 +37,11 @@ import (
 //     `/config` 的 `recipes` 下发的是 `domain.SeedRecipes`（进程内静态表），
 //     而后台 `PUT /admin/skills/:id` 会改库 —— 两者会漂（历史上漂过）。
 //     判定必须查 `skill_recipes` 表；客户端拿 `/config` 只为**展示**。
-//  2. **配方按 (a,b) 有序唯一**，而玩家可能反着选 —— 查表用
-//     LEAST/GREATEST 规范化（否则 (2,1) 查不到配方，症状是「明明有配方却说没有」）。
+//  2. **配方按 (a,b) 有序唯一**，而玩家可能反着选 —— 两处都做了抹平：
+//     Go 侧先交换成 `(lo,hi)`，SQL 再套一层 LEAST/GREATEST。**这是双保险**：
+//     变异实测表明删掉任一处单独都不会让 `TestSynthesizeIsOrderInsensitive` 变红
+//     （另一处还在兜底），真正的单点判据是 Go 侧的 `lo, hi = hi, lo` ——
+//     删它才会红（「技能 2 + 1 没有配方」）。将来"简化"其中一处前请先看这条。
 //  3. **熔炼后必须清槽位**。`user_skill_slots.skill_id` 有 FK 且 NOT NULL，
 //     不能置 0；材料行删掉后槽位若还指着它，就是**幽灵槽位** ——
 //     引擎按 `user_skills ⋈ user_skill_slots` 统计，会静默少一个可用技能
