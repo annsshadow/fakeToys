@@ -15,7 +15,7 @@
 > 定位：玩法机制与《向僵尸开炮》同构（关卡闯关 / 守防线 / 局内选卡 / 场外养成），
 > **表达与系统全原创**，并在其之上做 **7 项**机制级创新以形成自有辨识度。
 >
-> 逐关数值平衡、实测数据与已知边界见 [`../../laiyipao/README.md`](../../laiyipao/README.md)。
+> 逐关数值平衡与实测数据见 [`IMPLEMENTATION.md`](./IMPLEMENTATION.md)，已知边界见 [`KNOWN_LIMITS.md`](./KNOWN_LIMITS.md)。
 
 ---
 
@@ -499,7 +499,7 @@
 
 ## 11. 已知边界（设计意图 vs 实现现状）
 
-> 完整的已知边界与实测数据见 [`../../laiyipao/README.md`](../../laiyipao/README.md) 的「已知边界」章。
+> 完整的已知边界见 [`KNOWN_LIMITS.md`](./KNOWN_LIMITS.md)，实测数据见 [`IMPLEMENTATION.md`](./IMPLEMENTATION.md)。
 > 这里只列**与本文档设计意图直接冲突**的项。
 
 | # | 设计意图 | 实现现状 | 原因 |
