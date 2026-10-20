@@ -680,6 +680,15 @@ type ChallengeInput struct {
 	DurationMs int    `json:"duration_ms"`
 	HPLeftPct  int    `json:"hp_left_pct"`
 	ReplayHash string `json:"replay_hash"`
+	// ReplaySkills 是挑战者构筑的 S 段（2026-10-20，DECISIONS D4）。
+	//
+	// 与结算面的 `SettleInput.ReplaySkills` 同格式、同口径：
+	// `slot:skillId:baseDamage:applyStacks:heatCost` 按字符串升序逗号连接。
+	// 服务端按挑战者的 `user_skill_slots` 重算并**逐字比对** ——
+	// 它抓得住「谎报一套不同的构筑」（最常见的作弊面），
+	// 仍抓不到「胜负本身」（服务端不跑引擎，I-5 取舍不变）。
+	// 空串放行：老客户端不上报这个字段，直接拒会把它们全部锁死。
+	ReplaySkills string `json:"replay_skills"`
 }
 
 // challengeSeedValue 解析并校验挑战 seed（字符串形态）。
@@ -767,6 +776,12 @@ func ValidateChallengeInput(in ChallengeInput) error {
 		return fmt.Errorf("%w：replay_hash 长 %d 字符，上限 %d",
 			domain.ErrInvalidField, len(in.ReplayHash), MaxChallengeReplayHashLen)
 	}
+	// 构筑 S 段（D4，2026-10-20）：长度上限与结算面**同一个常量**，
+	// 不在这里再写一个 1024 —— 同一个量两份常量，漂了不报错（约束 4）。
+	if len(in.ReplaySkills) > domain.ReplaySkillsMaxLen {
+		return fmt.Errorf("%w：replay_skills 长 %d 字符，上限 %d",
+			domain.ErrInvalidField, len(in.ReplaySkills), domain.ReplaySkillsMaxLen)
+	}
 	return nil
 }
 
@@ -812,6 +827,24 @@ func (s *Service) ChallengeDefense(ctx context.Context, userID, defenseID int64,
 	// 客户端能看到「上报不可信」而不是「服务内部错误」。
 	if err := ValidateChallengeInput(in); err != nil {
 		return ChallengeResult{}, err
+	}
+
+	// 构筑 S 段校验（D4，2026-10-20）：抓「谎报构筑」。
+	//
+	// 与结算面同一套判据：空串放行（老客户端兼容），非空必须与服务端
+	// 按 `user_skill_slots` 重算的 S 段**逐字相等**。
+	// 它抓不住「胜负本身」—— 服务端仍不跑引擎（I-5 取舍不变），
+	// 但把最常见的作弊面（谎报一套更强的构筑去挑战）堵上。
+	// 台账/熔断不在这里做：挑战面不重算引擎，没有「不符率」可熔断。
+	if in.ReplaySkills != "" {
+		expect, err := s.replaySkillsSegment(ctx, userID)
+		if err != nil {
+			return ChallengeResult{}, fmt.Errorf("recompute replay skills: %w", err)
+		}
+		if in.ReplaySkills != expect {
+			return ChallengeResult{}, fmt.Errorf(
+				"%w：挑战上报的构筑与当前出战配置不符", ErrReplaySkillsMismatch)
+		}
 	}
 
 	var res ChallengeResult

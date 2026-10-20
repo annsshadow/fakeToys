@@ -448,6 +448,9 @@ async function challenge(target: DefenseView) {
         duration_ms: outcome.report.duration_ms,
         hp_left_pct: outcome.report.hp_left_pct,
         replay_hash: outcome.report.replay_hash,
+        // D4（2026-10-20）：构筑 S 段随上报提交，服务端按挑战者的
+        // user_skill_slots 重算比对 —— 抓「构筑造假」。空串放行（老客户端）。
+        replay_skills: outcome.report.replay_skills,
       })
       lastChallenge.value = { ...outcome, stolen: res.stolen ?? {} }
       await store.refreshWallet()
@@ -461,6 +464,7 @@ async function challenge(target: DefenseView) {
           duration_ms: 0,
           hp_left_pct: 100,
           replay_hash: '0000000000000000',
+          replay_skills: '',
         },
         stats: { kills: 0, leaked: 0, waves: 0, score: 0, durationMs: 0, hpLeftPct: 100 },
         error: (e as Error).message,
