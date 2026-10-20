@@ -8,7 +8,7 @@
 pytest>=9.1.1
 pytest-cov>=4.1.0
 # FastAPI TestClient 的传输层
-httpx>=0.26.0
+httpx>=0.28.1
 # L288 xlsx 容器守卫（tests/unit/test_xlsx_zipbomb_l288.py，5 支）量的是**真实**读边：
 # 产品侧缺这两件时降级成 `DataLoadError`（「需要安装 pandas 与 openpyxl」），
 # 放大判据 / 判词不被翻译吞掉 / 接线普查三组都到不了 ⇒ 不列进来这 5 支在 CI 恒红。
