@@ -70,6 +70,14 @@ export interface AdminLevel {
   terrain_config: unknown
   star_targets: number[]
   /**
+   * 关卡配置的权威侧（第 23 条产品决策，2026-10-20）。
+   * `generator` = 玩家侧由生成器产出，本页编辑只是规划记录（不影响线上）；
+   * 若将来改走「表权威」路线，这里会变成 `table`。
+   */
+  player_authority?: 'generator' | 'table'
+  /** 本次写入是否对玩家生效。`generator` 路线下恒为 false。 */
+  applied_to_players?: boolean
+  /**
    * 通关率，**已是百分数**（服务端算的是 clears*100/attempts）。
    * 视图层直接展示，不要再乘 100 —— 否则 100% 会被显示成 10000%。
    */

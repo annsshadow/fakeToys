@@ -108,9 +108,14 @@ describe('反应文案与实现的一致性（第 83 轮）', () => {
     // 所以「aoeRadius=0」不再是全体反应的必要条件。但凡非零，都必须被
     // **伤害/状态逻辑**而非仅屏幕震动所消费 —— 否则文案就在承诺一个
     // 看不见摸不着的爆炸。
-    const AOE_CONSUMER: Partial<Record<ReactionKey, 'engine.ts triggerReactionAoe'>> = {
+    const AOE_CONSUMER: Partial<Record<ReactionKey, 'engine.ts triggerReactionAoe' | 'engine.ts triggerCorrosionSpread'>> = {
       steam_burst: 'engine.ts triggerReactionAoe',
       overheat: 'engine.ts triggerReactionAoe',
+      // 2026-10-20（DECISIONS D2）：corrosion_spread 的 aoeRadius 是
+      // **层数传播半径**，消费者是 triggerCorrosionSpread
+      // （只写层数、不造成伤害、不触发新反应）。
+      // 它是第二类合法消费者 —— 非零半径不再只意味着「伤害溅射」。
+      corrosion_spread: 'engine.ts triggerCorrosionSpread',
     }
     const unbacked = KEYS.filter((k) => {
       const r = REACTIONS[k]
@@ -207,6 +212,8 @@ describe('ReactionSpec 没有「只有表现层消费者」的字段', () => {
     const AOE_CONSUMERS: Partial<Record<ReactionKey, string>> = {
       steam_burst: 'engine.ts triggerReactionAoe',
       overheat: 'engine.ts triggerReactionAoe',
+      // 第二类消费者：层数传播（2026-10-20，DECISIONS D2）
+      corrosion_spread: 'engine.ts triggerCorrosionSpread',
     }
     const nonzero = KEYS.filter((k) => REACTIONS[k].aoeRadius !== 0)
     const backed = nonzero.filter((k) => AOE_CONSUMERS[k] !== undefined)

@@ -114,6 +114,13 @@ type ReactionSpec struct {
 	StatusDurationMs int `json:"status_duration_ms"`
 	// AoeRadius 溅射半径（像素，0 表示单体）
 	AoeRadius int `json:"aoe_radius"`
+	// SpreadStacks 层数传播量（0 表示无）。corrosion_spread 专用（2026-10-20）：
+	// 触发时把该层数**直接写入**半径 AoeRadius 内其他敌人的腐蚀层数
+	// （clamp 到 elementCap），**不触发新的反应**（避免指数级连锁）。
+	// 消费者：客户端引擎 `engine.ts` 的 `hitEnemy`（`triggerCorrosionSpread`），
+	// 服务端镜像在 `engine_combat.go`。层数本身不计分（无伤害），
+	// 后续命中产生的反应伤害走常规计分路径。
+	SpreadStacks int `json:"spread_stacks"`
 	// DispelShield 是否驱散护盾
 	DispelShield bool `json:"dispel_shield"`
 	// AmplifyPct 对目标造成的"受击伤害放大"比例（千分比，0 表示无）
@@ -219,8 +226,12 @@ var reactionSpecs = map[ReactionKey]ReactionSpec{
 		StatusDurationMs: 2000, AmplifyPct: 300, Descr: "冻结并提高受击伤害",
 	},
 	ReactionCorrosionSpray: {
+		// 2026-10-20：层数传播落地（aoe_radius 0 -> 120，spread_stacks 0 -> 1）。
+		// 产品决策（DECISIONS D2）：传播**不再触发反应**、计入后续常规计分、
+		// 服务端镜像同一逻辑（见 engine_combat.go triggerCorrosionSpread）。
 		Key: ReactionCorrosionSpray, Name: "腐蚀扩散", BaseCoef: 35, AttackWeightPct: 200,
-		AoeRadius: 0, Descr: "造成反应伤害",
+		AoeRadius: 120, SpreadStacks: 1,
+		Descr: "造成反应伤害，并把 1 层腐蚀传播给半径 120 像素内的其他敌人（传播本身不触发新反应）",
 	},
 	ReactionArmorBreak: {
 		// 第 83 轮时「击退」与「削减护甲」都未实现，该条只有反应伤害，

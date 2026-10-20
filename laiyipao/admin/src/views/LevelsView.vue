@@ -95,7 +95,8 @@ async function onEdit(row: AdminLevel) {
     )
     const res = await updateLevel(row.id, { base_hp: Number(value) })
     Object.assign(row, res.level)
-    ElMessage.success('已保存')
+    // 不显示「已保存」——那会让运营以为玩家侧也变了（第 23 条：生成器权威）
+    ElMessage.success('已保存到规划表（不影响线上玩家）')
   } catch {
     /* 取消 */
   }
@@ -163,6 +164,12 @@ const asRow = (r: unknown) => r as AdminLevel
     <p class="page-subtitle">
       100 关由种子化生成器产出，<strong>难度必须全局单调</strong>（1000‰ → 4200‰）。
       若出现断崖，说明生成器的章节边界算错了 —— 这会让玩家在某一关突然卡死。
+    </p>
+    <p class="page-subtitle">
+      <strong>注意：本页的编辑只写 `levels` 表（规划记录），不影响线上玩家。</strong>
+      玩家侧关卡由生成器按种子产出（`domain.GenerateLevel`），从不查库 ——
+      回执里 `applied_to_players` 恒为 false 就是这个意思。
+      要让改动真正生效，需要产品决策改走「表权威」路线（已知边界第 23 条）。
     </p>
 
     <el-card shadow="never">

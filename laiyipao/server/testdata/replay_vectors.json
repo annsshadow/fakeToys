@@ -1013,13 +1013,13 @@
           "mechanic_permille": 300
         }
       },
-      "expected_hash": "b1e13c2e1ba0237a",
+      "expected_hash": "78ddea01fce71f23",
       "expected_stats": {
         "kills": 39,
         "leaked": 0,
-        "score": 20076,
+        "score": 20138,
         "waves": 6,
-        "durationMs": 70500
+        "durationMs": 59500
       }
     },
     {
