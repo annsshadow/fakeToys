@@ -281,7 +281,7 @@ cbc = { version = "0.1", features = ["alloc"] }
 uuid = { version = "1", features = ["v4"] }
 hmac = "0.12"
   sha2 = { version = "0.10", features = ["oid"] }
-  sha1 = "0.10"
+  sha1 = "0.11"
   hex = "0.4"
   digest = { version = "0.10", features = ["oid"] }
 anyhow = "1"
