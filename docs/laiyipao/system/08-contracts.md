@@ -17,7 +17,7 @@
 | C2 | 超过 2^53 的整数一律**字符串**下发 | `BattleTokenResp.Seed` ↔ `bt.seed` | 类型定义 |
 | C3 | 确定性 PRNG（PCG-XSH-RR） | `domain.LCG` ↔ `game/lcg.ts` | 已知向量对拍 + `LCG_KNOWN_VECTORS` |
 | C4 | 定点整数 `bigint` 存千分比 | `domain/*` ↔ `game/fixed.ts` | 一致性测试 |
-| C5 | 攻方属性字段集（12 个） | `domain.Attacker` ↔ `damage.ts` | `attacker_fields_test.go` |
+| C5 | 攻方属性字段集（10 个） | `domain.Attacker` ↔ `damage.ts` | `attacker_fields_test.go` |
 | C6 | 回放哈希前缀三段 | `battle.go` / Go 镜像 ↔ `engine.ts` | `replay_hash_contract_test.go` |
 | C7 | S 段格式与**两个口径** | `domain/replayskills.go` ↔ `engine.ts` | `replay_skills_contract` + `formula_vectors.json` |
 | C8 | `card_picks` 整数编码 | `battle.go` ↔ `engine.ts` | `card_picks_contract` |
@@ -373,9 +373,9 @@ go run ./cmd/vectors -check   # 只校验是否为最新，不写盘（CI 用）
 | `formula_vectors.json` | 跨端公式的**字面期望值**（人工推导） | 15 KB | Go + TS 对拍 |
 | `reaction_specs.json` | 7 条反应链数值 | 2.6 KB | Go + TS |
 | `level_seeds.json` | 100 关种子 | 2.5 KB | TS |
-| `replay_vectors.json` | 回放向量 | 26 KB | Go + TS |
-| `smoke_levels.json` | 真实关卡（暴露引擎停摆的关键夹具） | 344 KB | TS 引擎冒烟 |
-| `engine_pure_vectors.json` | Go 引擎镜像的纯输出向量 | 19.6 MB | Go |
+| `replay_vectors.json` | 回放向量 | 26 KB（25.7） | Go + TS |
+| `smoke_levels.json` | 真实关卡（暴露引擎停摆的关键夹具） | 337 KB | TS 引擎冒烟 |
+| `engine_pure_vectors.json` | Go 引擎镜像的纯输出向量 | 19.2 MB | Go |
 
 两条铁律：
 
@@ -405,8 +405,8 @@ go run ./cmd/vectors -check   # 只校验是否为最新，不写盘（CI 用）
 | C9 规则 | `config_verify_test.go` | `skill.test.ts`、`score.test.ts` |
 | C11 反应表 | `reaction_contract_test.go` | `reaction_contract.test.ts`、`reaction_descr.test.ts` |
 | C12 榜单 | `TestLeaderboardKindIsValidated` | `rank.test.ts` |
-| C13 常量 | `TestTickMsMatchesClient` | `settle_bounds_parity.test.ts` |
-| 引擎镜像 | `engine_divergence_test.go`、`engine_pure_vectors_test.go` | `engine.test.ts` |
+| C13 常量 | `TestTickMsMatchesClient`（`engine_block_a_test.go`） | `settle_bounds_parity.test.ts` |
+| 引擎镜像 | `engine_divergence_test.go`、`engine_pure_contract_test.go` | `engine.test.ts` |
 
 四条结构性守卫（AST / 扫描类，不依赖具体行为）：
 
