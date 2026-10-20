@@ -32,12 +32,12 @@ import (
 )
 
 type reactionRow struct {
-	Key                string `json:"key"`
-	Name               string `json:"name"`
-	BaseCoef           int    `json:"base_coef"`
-	AttackWeightPct    int    `json:"attack_weight_pct"`
-	StatusDurationMs   int    `json:"status_duration_ms"`
-	AoeRadius          int    `json:"aoe_radius"`
+	Key              string `json:"key"`
+	Name             string `json:"name"`
+	BaseCoef         int    `json:"base_coef"`
+	AttackWeightPct  int    `json:"attack_weight_pct"`
+	StatusDurationMs int    `json:"status_duration_ms"`
+	AoeRadius        int    `json:"aoe_radius"`
 	// SpreadStacks：corrosion_spread 的层数传播量（2026-10-20）。
 	// 进契约是为了让客户端引擎与服务端镜像读同一份参数 ——
 	// 写死两份就会漂，漂了之后的症状是「客户端层数比服务端多」。

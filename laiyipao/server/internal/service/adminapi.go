@@ -224,7 +224,7 @@ func (s *Service) AdminLevelRow(ctx context.Context, levelID int) (map[string]an
 		// 后台界面据此提示「记录在案，不影响线上」，
 		// 而不是把写入回执显示成「已生效」。
 		// 守卫：level_authority_test.go 的 TestAdminUpdateLevelDeclaresNotAppliedToPlayers。
-		"player_authority": "generator",
+		"player_authority":   "generator",
 		"applied_to_players": false,
 	}, nil
 }

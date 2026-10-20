@@ -529,7 +529,7 @@ func TestApplyMechanicFreeDiscardAlsoTopsUpNow(t *testing.T) {
 // TestApplyReplayDecisionConsumesOnePerCall 守住「每个 card_select 恰好消费一项」。
 //
 // ⚠️ 第 159 轮重写：旧实现允许合成脚本在同一 tick 连点消费多项
-//（`[-3,-3,-1,-1]` 这类错位就是这么来的），而线上真实玩家
+// （`[-3,-3,-1,-1]` 这类错位就是这么来的），而线上真实玩家
 // 做不到 50ms 内点三张卡 —— 那个语义从来就不存在。
 func TestApplyReplayDecisionConsumesOnePerCall(t *testing.T) {
 	e := newCardProbeEngine(t, 1, 2, 3)

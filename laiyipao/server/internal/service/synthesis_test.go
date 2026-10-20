@@ -161,9 +161,9 @@ func TestSynthesizeRejectsInvalidInputs(t *testing.T) {
 	r := loadSynthRecipe(t, ts, ctx, 31)
 
 	cases := []struct {
-		name     string
-		prepare  func(t *testing.T, uid int64)
-		a, b     int64
+		name    string
+		prepare func(t *testing.T, uid int64)
+		a, b    int64
 	}{
 		{
 			name:    "同 id",

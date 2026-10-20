@@ -130,12 +130,12 @@ type ConsistencyVectors struct {
 	// 这与 replay_skills 同机制：只导数据、不导期望值之外的语义，
 	// 期望值由两侧各自用同一份字面值断言。
 	CardPicks struct {
-		Min      int64 `json:"min"`
-		CodeBase int64 `json:"code_base"`
-		CodeMax  int64 `json:"code_max"`
-		Skip     int64 `json:"skip"`
+		Min       int64 `json:"min"`
+		CodeBase  int64 `json:"code_base"`
+		CodeMax   int64 `json:"code_max"`
+		Skip      int64 `json:"skip"`
 		HandSlots int64 `json:"hand_slots"`
-		Cases    []struct {
+		Cases     []struct {
 			Name     string `json:"name"`
 			Expected int64  `json:"expected"`
 		} `json:"cases"`
@@ -320,7 +320,7 @@ func TestConsistencyTuning(t *testing.T) {
 	c := v.Tuning
 	d := DefaultTuning
 	for _, f := range []struct {
-		name string
+		name      string
 		got, want int64
 	}{
 		{"SpawnProgressStep", d.SpawnProgressStep, c.SpawnProgressStep},

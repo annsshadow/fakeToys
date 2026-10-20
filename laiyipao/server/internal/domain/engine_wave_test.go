@@ -287,7 +287,7 @@ func TestScaledDelayTicks(t *testing.T) {
 // 构造依据合法：这是「同组怪同时出现」的极限形态 ——
 // 而 `scaledDelayTicks` 的下限 1 tick 设计意图恰恰是**避免**它。
 // 所以这是「配置的边界」，不是「配置的正常用法」。
-//（调用方若用 BeginWave 造队列，间隔 0ms 也会被抬到 1 tick；本用例直接
+// （调用方若用 BeginWave 造队列，间隔 0ms 也会被抬到 1 tick；本用例直接
 // 构造 spawnQueue，绕过折算，专测倒序遍历本身的正确性。）
 func TestUpdateSpawnsHandlesMultipleDueInOneTick(t *testing.T) {
 	e := newProbeEngine()
