@@ -109,10 +109,21 @@ func TestAdminReactionsIsNotTheHeavyConfig(t *testing.T) {
 	if len(got) == 0 {
 		t.Fatal("返回空数组")
 	}
+	// ⚠️ 这份白名单是**手工维护**的：给 ReactionSpec 加字段必须在这里显式登记。
+	//
+	// `spread_stacks`（D2，2026-10-20）：corrosion_spread 的层数传播量，
+	// 一个 int，与 aoe_radius 同量级 —— 不违反「轻量端点」的初衷。
+	//
+	// 为什么不从 `domain.ReactionSpec` 反射生成白名单：
+	// 反射生成会让「给 ReactionSpec 塞一个大字段」也自动放行，
+	// 而本测试要守的恰恰是「别把重字段塞进这个端点」。
+	// 手工登记的代价是「加了字段忘了登记 → 这里红」，
+	// 那是**提醒**（这次就是 D2 落地时漏登记），不是故障。
 	allowed := map[string]bool{
 		"key": true, "name": true, "base_coef": true, "attack_weight_pct": true,
 		"status_duration_ms": true, "aoe_radius": true, "dispel_shield": true,
 		"amplify_pct": true, "armor_shred_permille": true, "knockback": true, "descr": true,
+		"spread_stacks": true,
 	}
 	for _, item := range got {
 		m, ok := item.(map[string]any)
