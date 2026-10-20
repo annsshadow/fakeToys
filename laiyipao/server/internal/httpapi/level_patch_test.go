@@ -235,6 +235,10 @@ func toF(v any) float64 {
 // # 判据
 //
 // 键集**相等**（不是子集）：多一个键（响应夹带数据）与少一个键都是形状漂移。
+//
+// ⚠️ 唯一的例外是 D1 引入的两个**写入回执键**（`player_authority` /
+// `applied_to_players`）—— 它们是「这一次写入的声明」，不是关卡行的属性，
+// 详见下面 `receiptOnly` 处的说明。
 func TestLevelUpdateResponseMatchesListRowShape(t *testing.T) {
 	e := newE2E(t)
 	_, tok := e.newAdmin(t, "shape108")
@@ -274,8 +278,22 @@ func TestLevelUpdateResponseMatchesListRowShape(t *testing.T) {
 			t.Errorf("更新响应缺键 %q —— 与列表行不一致（后台 Object.assign 后该列会停在旧值）", k)
 		}
 	}
+
+	// ⚠️ D1（第 23 条产品决策，2026-10-20）之后，更新回执比列表行**多两个键**：
+	//
+	//	`player_authority`     —— 关卡表的权威侧声明（generator = 玩家侧由生成器产出）
+	//	`applied_to_players`  —— 本次写入是否对玩家生效（generator 路线下恒为 false）
+	//
+	// 它们是**这一次写入的声明**，不是关卡行本身的属性 —— 列表行里没有它们，
+	// 后台 TS 契约 `AdminLevel` 也把这两个字段标成可选（`player_authority?`）。
+	// 所以判据不能是「键集完全相等」，而是「= 列表行 + 这两个回执键」：
+	// 少键仍然红（会漏字段），多出**别的**键也仍然红（形状漂移）。
+	receiptOnly := map[string]bool{
+		"player_authority":   true,
+		"applied_to_players": true,
+	}
 	for k := range updKeys {
-		if !base[k] {
+		if !base[k] && !receiptOnly[k] {
 			t.Errorf("更新响应多出键 %q —— 形状漂移（列表行没有它）", k)
 		}
 	}
