@@ -135,7 +135,7 @@ describe('index.vue 首页', () => {
     expect(wrapper.text()).toContain('正在加载游戏配置…')
   })
 
-  it('微信账号（isGuest=false）→ 顶栏显示微信账号（isGuest 三元分支）', async () => {
+  it('账号登录（isGuest=false）→ 顶栏显示「账号登录」（isGuest 三元分支）', async () => {
     pinia = createPinia()
     setActivePinia(pinia)
     const store = useGameStore()
@@ -144,7 +144,10 @@ describe('index.vue 首页', () => {
     store.nickname = '微信玩家'
     wrapper = mount(Index, { global: { plugins: [pinia] } })
     await flushPromises()
-    expect(wrapper.text()).toContain('微信账号')
+    // ⚠️ 原文案是「微信账号」，但微信通道未接通，而 isGuest=false 现在还
+    // 多了一种来源：**账号口令登录**。继续写「微信账号」等于把口令账号
+    // 说成微信账号 —— 事实不对，且「我明明用密码登的」这种困惑极难自查。
+    expect(wrapper.text()).toContain('账号登录')
     expect(wrapper.text()).toContain('微信玩家')
   })
 

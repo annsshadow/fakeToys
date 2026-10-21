@@ -428,7 +428,7 @@ describe('me.vue 我的页', () => {
     expect(um.mock.showToast).toHaveBeenCalledWith({ title: '暂时无法挑战', icon: 'none' })
   })
 
-  it('展示回退分支：快照缺失 / 哈希缺失 / 微信账号 / 非零 maxStage', async () => {
+  it('展示回退分支：快照缺失 / 哈希缺失 / 账号登录 / 非零 maxStage', async () => {
     mockApi.fetchDefenses.mockResolvedValue({
       mine: null,
       candidates: [defenseView({ owner_name: '', snapshot: undefined, snapshot_hash: '' })],
@@ -442,7 +442,9 @@ describe('me.vue 我的页', () => {
       st.buildRating = { total: 88 }
     })
     await flushPromises()
-    expect(wrapper.text()).toContain('微信账号')
+    // ⚠️ 原文案是「微信账号」：微信通道未接通，且 isGuest=false 现在还
+    // 多了一种来源（账号口令登录）—— 说成「微信账号」是事实不对。
+    expect(wrapper.text()).toContain('账号登录')
     expect(wrapper.text()).toContain('第 7 关')
     expect(wrapper.text()).toContain('88') // buildRating?.total 有值 → 走 ?? 左侧
     expect(wrapper.text()).toContain('0 技能') // snapshot?.skills?.length ?? 0

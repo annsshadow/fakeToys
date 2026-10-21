@@ -7,7 +7,12 @@
           <view class="flex-1">
             <text class="nick">{{ store.nickname || '玩家' }}</text>
             <text class="dim" style="display: block">ID {{ store.userId }}</text>
-            <text class="dim">{{ store.isGuest ? '游客账号（未绑定微信）' : '微信账号' }}</text>
+            <!-- ⚠️ 这里原本写「微信账号」，但微信通道在本项目**未接通**
+                 （WECHAT_APP_ID 未配置 → /auth/wechat 返回 501），
+                 而 `is_guest=false` 现在还多了一种来源：**账号口令登录**。
+                 继续写「微信账号」会把口令账号说成微信账号 —— 事实不对，
+                 而「我明明是用账号密码登的」这种困惑很难自查。 -->
+            <text class="dim">{{ store.isGuest ? '游客账号（未绑定微信）' : '账号登录' }}</text>
           </view>
         </view>
       </view>

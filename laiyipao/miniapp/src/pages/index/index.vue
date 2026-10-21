@@ -6,7 +6,7 @@
         <view class="avatar">炮</view>
         <view class="player-info">
           <text class="nick">{{ store.nickname || '玩家' }}</text>
-          <text class="muted">{{ store.isGuest ? '游客账号' : '微信账号' }}</text>
+          <text class="muted">{{ store.isGuest ? '游客账号' : '账号登录' }}</text>
         </view>
       </view>
       <view class="res-row">
