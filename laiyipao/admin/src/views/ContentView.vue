@@ -7,15 +7,18 @@ import {
   fetchRedeemCodes,
   createRedeemCode,
   fetchAuditLogs,
+  type AdminAnnouncementView,
+  type AdminAuditLogView,
+  type AdminRedeemCodeView,
 } from '@/api'
 import { fmtTime } from '@/utils/format'
 
 const activeTab = ref('announcements')
 const loading = ref(false)
 
-const announcements = ref<Array<Record<string, unknown>>>([])
-const codes = ref<Array<Record<string, unknown>>>([])
-const logs = ref<Array<Record<string, unknown>>>([])
+const announcements = ref<AdminAnnouncementView[]>([])
+const codes = ref<AdminRedeemCodeView[]>([])
+const logs = ref<AdminAuditLogView[]>([])
 
 // 公告表单
 const annForm = ref({ title: '', body: '', published: false })
@@ -27,16 +30,6 @@ const codeForm = ref({
   max_uses: 100,
   expires_at: '',
 })
-
-function str(o: Record<string, unknown>, k: string): string {
-  const v = o[k]
-  return v === undefined || v === null ? '' : String(v)
-}
-
-function num(o: Record<string, unknown>, k: string): number {
-  const v = Number(o[k] ?? 0)
-  return Number.isFinite(v) ? v : 0
-}
 
 async function loadAll() {
   loading.value = true
@@ -103,9 +96,14 @@ async function submitCode() {
   }
 }
 
-function rewardText(v: unknown): string {
-  const o = typeof v === 'string' ? (JSON.parse(v || '{}') as Record<string, number>) : (v as Record<string, number>)
-  return Object.entries(o ?? {})
+/**
+ * 兑换码奖励展示。
+ *
+ * 2026-10-21：服务端现在直接下发**对象**（`map[string]int`），
+ * 不再是 JSON 字符串 —— 旧的 parse 兜底会把「字段名不对」显示成「无奖励」。
+ */
+function rewardText(v: Record<string, number> | undefined): string {
+  return Object.entries(v ?? {})
     .map(([k, n]) => `${k}×${n}`)
     .join(' · ')
 }
@@ -159,15 +157,28 @@ onMounted(loadAll)
               <el-table :data="announcements" size="small" stripe>
                 <el-table-column prop="id" label="ID" width="55" />
                 <el-table-column prop="title" label="标题" min-width="140" />
+                <!--
+                  2026-10-21（P5-10）：此前只有标题，正文（`body`）与
+                  发布时间（`published_at`）服务端**都返回了**但界面不显示 ——
+                  运营无法确认「我发的公告到底写了什么」。
+                -->
+                <el-table-column label="正文" min-width="220">
+                  <template #default="{ row }">
+                    <span class="clamp-2">{{ row.body || '—' }}</span>
+                  </template>
+                </el-table-column>
                 <el-table-column label="状态" width="76">
                   <template #default="{ row }">
-                    <el-tag :type="num(row, 'published') === 1 ? 'success' : 'info'" size="small">
-                      {{ num(row, 'published') === 1 ? '已发布' : '草稿' }}
+                    <el-tag :type="row.published ? 'success' : 'info'" size="small">
+                      {{ row.published ? '已发布' : '草稿' }}
                     </el-tag>
                   </template>
                 </el-table-column>
+                <el-table-column label="发布时间" width="155">
+                  <template #default="{ row }">{{ fmtTime(row.published_at) }}</template>
+                </el-table-column>
                 <el-table-column label="创建时间" width="155">
-                  <template #default="{ row }">{{ fmtTime(str(row, 'created_at')) }}</template>
+                  <template #default="{ row }">{{ fmtTime(row.created_at) }}</template>
                 </el-table-column>
               </el-table>
             </el-card>
@@ -206,11 +217,19 @@ onMounted(loadAll)
             </el-table-column>
             <el-table-column label="已用 / 上限" width="110">
               <template #default="{ row }">
-                {{ num(row, 'used_count') }} / {{ num(row, 'max_uses') }}
+                {{ row.used_count }} / {{ row.max_uses }}
               </template>
             </el-table-column>
             <el-table-column label="过期" width="155">
-              <template #default="{ row }">{{ fmtTime(str(row, 'expires_at')) }}</template>
+              <template #default="{ row }">{{ fmtTime(row.expires_at) }}</template>
+            </el-table-column>
+            <!-- 2026-10-21（P5-10）：`enabled` 服务端一直返回，界面不显示。 -->
+            <el-table-column label="状态" width="80">
+              <template #default="{ row }">
+                <el-tag :type="row.enabled ? 'success' : 'info'" size="small">
+                  {{ row.enabled ? '可用' : '停用' }}
+                </el-tag>
+              </template>
             </el-table-column>
           </el-table>
         </el-card>
@@ -234,7 +253,7 @@ onMounted(loadAll)
               <template #default="{ row }">{{ detailText(row.detail) }}</template>
             </el-table-column>
             <el-table-column label="时间" width="155">
-              <template #default="{ row }">{{ fmtTime(str(row, 'created_at')) }}</template>
+              <template #default="{ row }">{{ fmtTime(row.created_at) }}</template>
             </el-table-column>
           </el-table>
         </el-card>

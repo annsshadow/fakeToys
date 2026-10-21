@@ -1,12 +1,19 @@
 <script setup lang="ts">
 import { onMounted, ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
-import { fetchBattles, fetchBattleDetail, verifyBattle, type AdminBattle, type VerifyResult } from '@/api'
+import {
+  fetchBattles,
+  fetchBattleDetail,
+  verifyBattle,
+  type AdminBattleDetailView,
+  type AdminBattleView,
+  type VerifyResult,
+} from '@/api'
 import { fetchReactionLabels, labelOfReaction, type ReactionLabels } from '@/reactions'
 import { fmtTime } from '@/utils/format'
 
 const loading = ref(false)
-const battles = ref<AdminBattle[]>([])
+const battles = ref<AdminBattleView[]>([])
 const total = ref(0)
 const userId = ref<number | undefined>(undefined)
 const levelId = ref<number | undefined>(undefined)
@@ -15,7 +22,10 @@ const levelId = ref<number | undefined>(undefined)
 const reactionLabel = ref<ReactionLabels>({})
 
 const detailDrawer = ref(false)
-const detail = ref<(AdminBattle & Record<string, unknown>) | null>(null)
+// 2026-10-21（P2-1）：详情现在有**自己的类型**（服务端返回战报详情本身），
+// 不再是「列表行 + Record<string, unknown>」——
+// 后者让抽屉里 14/16 个字段恒空，而没有任何一个地方会报错。
+const detail = ref<AdminBattleDetailView | null>(null)
 
 /**
 /**
@@ -24,7 +34,7 @@ const detail = ref<(AdminBattle & Record<string, unknown>) | null>(null)
  * 要拦的情况。修前这里只判 `=== 0`（无接触），其余一律「守恒」，
  * 没有任何总怪数来源，伪造战报的「一致性」列永远绿。
  */
-function consistencyTag(b: AdminBattle): { text: string; type: 'success' | 'warning' | 'danger' } {
+function consistencyTag(b: AdminBattleView): { text: string; type: 'success' | 'warning' | 'danger' } {
   if (b.kills + b.leaked === 0) return { text: '无接触', type: 'warning' }
   const total = Number(b.total_enemies ?? 0)
   if (total > 0 && b.kills + b.leaked > total) {
@@ -34,7 +44,7 @@ function consistencyTag(b: AdminBattle): { text: string; type: 'success' | 'warn
 }
 
 /** 暴走的对局：反应数远高于击杀数 → 极可能在刷反应计数 */
-function reactionAbuse(b: AdminBattle): boolean {
+function reactionAbuse(b: AdminBattleView): boolean {
   return b.reactions > 0 && b.kills > 0 && b.reactions / b.kills > 30
 }
 
@@ -45,7 +55,7 @@ function reactionAbuse(b: AdminBattle): boolean {
  * 与 `UsersView.verifyTag` 语义完全一致 —— 同一个概念在两个页面
  * 必须说同一套话，否则运营会以为「用户页说一致、战报页说未验真」是矛盾。
  */
-function verifyTag(b: AdminBattle): { text: string; type: 'info' | 'success' | 'danger' } {
+function verifyTag(b: AdminBattleView): { text: string; type: 'info' | 'success' | 'danger' } {
   const checked = b.verify_checked ?? 0
   const mismatched = b.verify_mismatched ?? 0
   if (mismatched > 0) return { text: `不匹配 ${mismatched}/${checked}`, type: 'danger' }
@@ -82,7 +92,7 @@ async function load() {
   }
 }
 
-async function openDetail(row: AdminBattle) {
+async function openDetail(row: AdminBattleView) {
   // 换一条战报就把上一次的输入与结果清掉 —— 否则会把 A 的比对结果
   // 看成 B 的结论，而两个都是合法的界面状态。
   verifyHashInput.value = ''
@@ -120,14 +130,18 @@ function fmtDur(ms: number): string {
   return `${(ms / 1000).toFixed(1)}s`
 }
 
-/** 元素使用 / 反应使用在 detail 里是 JSON 字符串，需要解析 */
-function parseObj(v: unknown): Record<string, number> {
-  if (typeof v !== 'string') return (v as Record<string, number>) ?? {}
-  try {
-    return JSON.parse(v)
-  } catch {
-    return {}
-  }
+/**
+ * 元素 / 反应使用分布。
+ *
+ * 2026-10-21（P2-1）：服务端现在直接下发**对象**（`map[string]int64`），
+ * 不再是 JSON 字符串 —— 所以这里不需要 parse 了。
+ * 旧的 parseObj 是「形状不确定就什么都往里塞」的兜底，
+ * 它恰好是「字段名拼错不报错」的帮凶之一：解析失败返回 {}，
+ * 页面就显示「无记录」，而真相是「字段名不对」。
+ */
+function usageEntries(v: Record<string, number> | undefined): Array<[string, number]> {
+  if (!v) return []
+  return Object.entries(v)
 }
 
 const ELEMENT_LABEL: Record<string, string> = {
@@ -153,7 +167,7 @@ onMounted(load)
  * 断言让它们重新受检；但它断言的是**形状**，
  * 字段名本身拼错仍要靠运行时的 `undefined` 暴露。
  */
-const asRow = (r: unknown) => r as AdminBattle
+const asRow = (r: unknown) => r as AdminBattleView
 </script>
 
 <template>
@@ -252,14 +266,17 @@ const asRow = (r: unknown) => r as AdminBattle
           <el-descriptions-item label="发射 / 命中">
             {{ detail.shots }} / {{ detail.hits }}
           </el-descriptions-item>
+          <el-descriptions-item label="剩余防线血量">{{ detail.hp_left }}</el-descriptions-item>
+          <el-descriptions-item label="结算后战力">{{ detail.power_after }}</el-descriptions-item>
+          <el-descriptions-item label="玩家">{{ detail.nickname }}（#{{ detail.user_id }}）</el-descriptions-item>
+          <el-descriptions-item label="结果">
+            <el-tag :type="detail.result === 'win' ? 'success' : 'danger'" size="small">
+              {{ detail.result === 'win' ? '通关' : '失败' }} · {{ detail.stars }} 星
+            </el-tag>
+          </el-descriptions-item>
           <el-descriptions-item label="峰值热量">{{ detail.heat_max }}</el-descriptions-item>
           <el-descriptions-item label="回放哈希" :span="2">
             <code class="hash">{{ detail.replay_hash }}</code>
-          </el-descriptions-item>
-          <el-descriptions-item v-if="detail.clamped" label="服务端修正" :span="2">
-            <el-tag type="warning" size="small">
-              {{ detail.clamp_note || '上报数据越界，已按上限截断' }}
-            </el-tag>
           </el-descriptions-item>
         </el-descriptions>
 
@@ -307,29 +324,28 @@ const asRow = (r: unknown) => r as AdminBattle
 
         <div class="section-title">元素使用分布</div>
         <div class="chip-row">
-          <template v-for="(v, k) in parseObj(detail.elements_used)" :key="k">
+          <template v-for="[k, v] in usageEntries(detail.elements_used)" :key="k">
             <span class="chip">{{ ELEMENT_LABEL[k] ?? k }} × {{ v }}</span>
           </template>
-          <span v-if="Object.keys(parseObj(detail.elements_used)).length === 0" class="muted">
+          <span v-if="usageEntries(detail.elements_used).length === 0" class="muted">
             无记录
           </span>
         </div>
 
         <div class="section-title">反应使用分布</div>
         <div class="chip-row">
-          <template v-for="(v, k) in parseObj(detail.reactions_used)" :key="k">
+          <template v-for="[k, v] in usageEntries(detail.reactions_used)" :key="k">
             <span class="chip reaction">{{ labelOfReaction(reactionLabel, k) }} × {{ v }}</span>
           </template>
-          <span v-if="Object.keys(parseObj(detail.reactions_used)).length === 0" class="muted">
+          <span v-if="usageEntries(detail.reactions_used).length === 0" class="muted">
             无记录 —— 这一局完全没触发反应，说明玩家在无脑堆面板
           </span>
         </div>
 
         <div class="section-title">触发地形</div>
         <div class="chip-row">
-          <span v-if="!parseObj(detail.terrain_used) && typeof detail.terrain_used !== 'string'" class="muted">
-            —</span>
-          <span class="chip">{{ detail.terrain_used }}</span>
+          <span v-if="detail.terrain_used.length === 0" class="muted">—</span>
+          <span v-for="t in detail.terrain_used" :key="t" class="chip">{{ t }}</span>
         </div>
       </template>
     </el-drawer>

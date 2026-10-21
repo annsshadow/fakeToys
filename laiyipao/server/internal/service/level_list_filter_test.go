@@ -42,7 +42,7 @@ func TestAdminListLevelsFiltersActuallyFilter(t *testing.T) {
 			t.Errorf("第 %d 章应回 %d 行，实际 %d", ch, want, len(got))
 		}
 		for _, m := range got {
-			if c, _ := m["chapter"].(int); c != ch {
+			if c := m.Chapter; c != ch {
 				t.Errorf("第 %d 章过滤混进了第 %d 章的行", ch, c)
 			}
 		}

@@ -11,7 +11,7 @@ import {
 } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
 
-import { fetchDashboard, type DashboardResp } from '@/api'
+import { fetchDashboard, type Dashboard } from '@/api'
 import { fetchReactionLabels, labelOfReaction, type ReactionLabels } from '@/reactions'
 
 echarts.use([
@@ -26,7 +26,7 @@ echarts.use([
 ])
 
 const loading = ref(true)
-const data = ref<DashboardResp | null>(null)
+const data = ref<Dashboard | null>(null)
 const loadError = ref('')
 
 const dauRef = ref<HTMLElement | null>(null)

@@ -698,15 +698,15 @@ func TestAdminUpdateSkill(t *testing.T) {
 	if err != nil {
 		t.Fatalf("更新失败：%v", err)
 	}
-	if row["name"] != "svc技能" {
-		t.Errorf("回读行 name 应为 svc技能，实际 %v", row["name"])
+	if row.Name != "svc技能" {
+		t.Errorf("回读行 name 应为 svc技能，实际 %v", row.Name)
 	}
 	var dmg int64
 	if err := ts.pool.QueryRow(ctx, `SELECT base_damage FROM skills WHERE id = 1`).Scan(&dmg); err != nil || dmg != 33 {
 		t.Fatalf("base_damage 应写库 33，实际 %d（err=%v）", dmg, err)
 	}
-	if row["base_damage"] != int64(33) {
-		t.Errorf("回读行 base_damage 应为 33，实际 %v（写后读必须与落库一致）", row["base_damage"])
+	if row.BaseDamage != int64(33) {
+		t.Errorf("回读行 base_damage 应为 33，实际 %v（写后读必须与落库一致）", row.BaseDamage)
 	}
 
 	if _, err := ts.AdminUpdateSkill(ctx, 1, map[string]any{"name": 42, "base_damage": -1}); !errors.Is(err, ErrBadInput) {
@@ -728,11 +728,18 @@ func TestAdminListLevelsAndWaves(t *testing.T) {
 		t.Fatalf("关卡列表应 %d 关：%d, %v", domain.TotalLevels, total, err)
 	}
 	// 每行必须带运营要看的通关率字段
+	// 2026-10-21: the row is a typed view now, so "the field exists" is a
+	// compile-time fact. What still deserves an assertion is that the
+	// aggregation columns carry real numbers (not zero-valued placeholders).
 	first := items[0]
-	for _, key := range []string{"attempts", "clears", "clear_rate", "avg_wave"} {
-		if _, ok := first[key]; !ok {
-			t.Errorf("关卡列表缺字段 %q", key)
-		}
+	if first.Attempts < 0 || first.Clears < 0 {
+		t.Errorf("通关率聚合不应为负：attempts=%d clears=%d", first.Attempts, first.Clears)
+	}
+	if first.ClearRate < 0 || first.ClearRate > 100 {
+		t.Errorf("clear_rate 应是百分数（0..100），实际 %v", first.ClearRate)
+	}
+	if first.AvgWave < 0 {
+		t.Errorf("avg_wave 不应为负，实际 %v", first.AvgWave)
 	}
 
 	waves, err := ts.AdminLevelWaves(ctx, 1)
@@ -757,12 +764,11 @@ func TestAdminSkillsAndEquipment(t *testing.T) {
 	if err != nil {
 		t.Fatalf("AdminSkills：%v", err)
 	}
-	items, _ := data["items"].([]map[string]any)
-	if len(items) == 0 {
+	if len(data.Items) == 0 {
 		t.Fatal("技能列表不应为空")
 	}
 	// base / composite 拆分边界：id<=24 是基础技能
-	if len(data["recipes"].([]domain.SeedRecipe)) == 0 {
+	if len(data.Recipes) == 0 {
 		t.Error("配方清单不应为空")
 	}
 
@@ -770,10 +776,34 @@ func TestAdminSkillsAndEquipment(t *testing.T) {
 	if err != nil {
 		t.Fatalf("AdminEquipment：%v", err)
 	}
-	for _, key := range []string{"equipment", "gems", "qualities", "skins", "enemies", "reactions", "mastery"} {
-		if _, ok := eq[key]; !ok {
-			t.Errorf("AdminEquipment 缺 %q", key)
-		}
+	// 2026-10-21: the admin frontend used to declare only 3 of the 8 keys
+	// this endpoint returns, so enemies / reactions / mastery / rating
+	// weights were silently dropped on the way to the UI. The keys are
+	// compile-time facts now; what still needs an assertion is that they
+	// are actually populated.
+	if len(eq.Equipment) == 0 {
+		t.Error("装备清单不应为空")
+	}
+	if len(eq.Gems) == 0 {
+		t.Error("宝石清单不应为空")
+	}
+	if len(eq.Qualifications) == 0 {
+		t.Error("宝石品质清单不应为空")
+	}
+	if len(eq.Skins) == 0 {
+		t.Error("皮肤清单不应为空")
+	}
+	if len(eq.Enemies) == 0 {
+		t.Error("敌人清单不应为空")
+	}
+	if len(eq.Reactions) == 0 {
+		t.Error("反应表不应为空")
+	}
+	if len(eq.Mastery) == 0 {
+		t.Error("专精树清单不应为空")
+	}
+	if eq.RatingWeights.ElementCoverage <= 0 || eq.RatingWeights.ReactionCoverage <= 0 {
+		t.Errorf("构筑权重不应全零，实际 %+v", eq.RatingWeights)
 	}
 
 	broken := openBrokenService(t)
@@ -815,9 +845,11 @@ func TestAdminEconomy(t *testing.T) {
 	if err != nil {
 		t.Fatalf("AdminEconomy：%v", err)
 	}
-	shop, ok := data["shop"].([]map[string]any)
-	if !ok || len(shop) == 0 {
+	if len(data.Shop) == 0 {
 		t.Fatal("商城配置不应为空")
+	}
+	if len(data.Flows) == 0 {
+		t.Fatal("钱包流水不应为空")
 	}
 
 	broken := openBrokenService(t)
@@ -848,8 +880,8 @@ func TestAdminUpdateShopItem(t *testing.T) {
 	if err != nil {
 		t.Fatalf("更新失败：%v", err)
 	}
-	if out["id"].(int64) != 1 {
-		t.Errorf("返回 id = %v", out["id"])
+	if out.ID != 1 {
+		t.Errorf("返回 id = %v", out.ID)
 	}
 	var limit int
 	if err := ts.pool.QueryRow(ctx, `SELECT limit_per_day FROM shop_items WHERE id = 1`).Scan(&limit); err != nil || limit != 9 {
@@ -873,9 +905,9 @@ func TestAdminAnnouncements(t *testing.T) {
 		t.Fatalf("创建公告失败：%v", err)
 	}
 	t.Cleanup(func() {
-		_, _ = ts.pool.Exec(ctx, `DELETE FROM announcements WHERE id = $1`, item["id"])
+		_, _ = ts.pool.Exec(ctx, `DELETE FROM announcements WHERE id = $1`, item.ID)
 	})
-	if item["published"] != true {
+	if !item.Published {
 		t.Error("published 应原样返回")
 	}
 	items, err := ts.AdminListAnnouncements(ctx)
@@ -915,8 +947,8 @@ func TestAdminRedeemCodes(t *testing.T) {
 	t.Cleanup(func() {
 		_, _ = ts.pool.Exec(ctx, `DELETE FROM redeem_codes WHERE code = $1`, code)
 	})
-	if id, _ := created["id"].(int); id <= 0 {
-		t.Errorf("自动分配的 id 应为正，得 %v", created["id"])
+	if created.ID <= 0 {
+		t.Errorf("自动分配的 id 应为正，得 %v", created.ID)
 	}
 
 	after, err := ts.AdminListRedeemCodes(ctx)
@@ -928,10 +960,10 @@ func TestAdminRedeemCodes(t *testing.T) {
 	}
 	found := false
 	for _, it := range after {
-		if it["code"] == code {
+		if it.Code == code {
 			found = true
-			if mu, _ := it["max_uses"].(int); mu != 3 {
-				t.Errorf("max_uses 应为 3，得 %v", it["max_uses"])
+			if it.MaxUses != 3 {
+				t.Errorf("max_uses 应为 3，得 %v", it.MaxUses)
 			}
 		}
 	}
@@ -985,7 +1017,7 @@ func TestAdminListAuditLogs(t *testing.T) {
 	}
 	found := false
 	for _, it := range items {
-		if it["username"] == username {
+		if it.Username == username {
 			found = true
 		}
 	}

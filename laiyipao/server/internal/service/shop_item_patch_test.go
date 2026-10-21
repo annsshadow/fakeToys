@@ -70,7 +70,7 @@ func TestAdminShopItemPatchIsAllOrNothing(t *testing.T) {
 		if !errors.Is(err, ErrBadInput) {
 			t.Errorf("%s：应 ErrBadInput，实际 %v", c.name, err)
 		}
-		if out != nil {
+		if out.ID != 0 || out.Updated != nil {
 			t.Errorf("%s：整单拒绝时不应有返回值，实际 %v", c.name, out)
 		}
 		// 关键：零副作用 —— 任何一个字段都不能被写进去
@@ -87,8 +87,8 @@ func TestAdminShopItemPatchIsAllOrNothing(t *testing.T) {
 	if err != nil {
 		t.Fatalf("全部合法应成功，实际 %v", err)
 	}
-	if out == nil {
-		t.Fatal("成功时应有返回")
+	if out.ID != 1 || len(out.Updated) == 0 {
+		t.Fatalf("成功时应有回执（id + 实际写入的列），实际 %+v", out)
 	}
 	// （整行恢复由测试顶部的 t.Cleanup 统一负责，这里不再单独清 name）
 	var priceJSON, payloadJSON []byte

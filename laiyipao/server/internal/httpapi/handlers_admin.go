@@ -70,7 +70,11 @@ func (s *Server) adminLogin(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	return c.JSON(tp)
+	return c.JSON(service.AdminLoginResp{
+		AccessToken: tp.AccessToken,
+		ExpiresAt:   tp.ExpiresAt,
+		Admin:       tp.Admin,
+	})
 }
 
 // adminLogout 吊销当前管理员的全部后台会话。
@@ -94,7 +98,7 @@ func (s *Server) adminMe(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	return c.JSON(fiber.Map{"admin": a})
+	return c.JSON(service.AdminMeResp{Admin: a})
 }
 
 func (s *Server) adminDashboard(c *fiber.Ctx) error {
@@ -117,7 +121,7 @@ func (s *Server) adminLevels(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	return c.JSON(fiber.Map{"items": items, "total": total})
+	return c.JSON(service.AdminLevelsResp{Items: items, Total: total})
 }
 
 func (s *Server) adminLevelWaves(c *fiber.Ctx) error {
@@ -129,7 +133,7 @@ func (s *Server) adminLevelWaves(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	return c.JSON(fiber.Map{"waves": waves})
+	return c.JSON(service.AdminWavesResp{Waves: waves})
 }
 
 func (s *Server) adminUpdateLevel(c *fiber.Ctx) error {
@@ -146,7 +150,7 @@ func (s *Server) adminUpdateLevel(c *fiber.Ctx) error {
 		return failErr(c, err)
 	}
 	s.Svc.Audit(c.Context(), adminIDFrom(c), "update_level", strconv.Itoa(id), c.IP(), patch)
-	return c.JSON(fiber.Map{"level": lvl})
+	return c.JSON(service.AdminLevelResp{Level: lvl})
 }
 
 func (s *Server) adminRegenerateLevels(c *fiber.Ctx) error {
@@ -155,7 +159,7 @@ func (s *Server) adminRegenerateLevels(c *fiber.Ctx) error {
 		return failErr(c, err)
 	}
 	s.Svc.Audit(c.Context(), adminIDFrom(c), "regenerate_levels", "", c.IP(), fiber.Map{"count": n})
-	return c.JSON(fiber.Map{"generated": n})
+	return c.JSON(service.AdminRegenerateResp{Generated: n})
 }
 
 func (s *Server) adminSkills(c *fiber.Ctx) error {
@@ -183,7 +187,7 @@ func (s *Server) adminUpdateSkill(c *fiber.Ctx) error {
 	// 第 120 轮：回读行作为响应（后台契约 { skill: AdminSkill }），
 	// 不再整个重列 adminSkills（那样 res.skill 恒 undefined，
 	// 后台改完技能表行停旧值却弹「已保存」）。
-	return c.JSON(fiber.Map{"skill": skill})
+	return c.JSON(service.AdminSkillResp{Skill: skill})
 }
 
 func (s *Server) adminEquipment(c *fiber.Ctx) error {
@@ -220,7 +224,7 @@ func (s *Server) adminEquipment(c *fiber.Ctx) error {
 //  2. 裸数组在多数 HTTP 客户端的解码助手（`map[string]any`）里会直接失败 ——
 //     这是实测踩到的，不是理论顾虑。
 func (s *Server) adminReactions(c *fiber.Ctx) error {
-	return c.JSON(fiber.Map{"reactions": domain.AllReactionSpecs()})
+	return c.JSON(service.AdminReactionsResp{Reactions: domain.AllReactionSpecs()})
 }
 
 func (s *Server) adminUsers(c *fiber.Ctx) error {
@@ -236,7 +240,7 @@ func (s *Server) adminUsers(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	return c.JSON(fiber.Map{"items": items, "total": total})
+	return c.JSON(service.AdminUsersResp{Items: items, Total: total})
 }
 
 func (s *Server) adminBanUser(c *fiber.Ctx) error {
@@ -283,7 +287,7 @@ func (s *Server) adminBanUser(c *fiber.Ctx) error {
 		return failErr(c, err)
 	}
 	s.Svc.Audit(c.Context(), adminIDFrom(c), "ban_user", strconv.FormatInt(id, 10), c.IP(), body)
-	return c.JSON(fiber.Map{"user": u})
+	return c.JSON(service.AdminUserResp{User: u})
 }
 
 func (s *Server) adminUnbanUser(c *fiber.Ctx) error {
@@ -296,7 +300,7 @@ func (s *Server) adminUnbanUser(c *fiber.Ctx) error {
 		return failErr(c, err)
 	}
 	s.Svc.Audit(c.Context(), adminIDFrom(c), "unban_user", strconv.FormatInt(id, 10), c.IP(), nil)
-	return c.JSON(fiber.Map{"user": u})
+	return c.JSON(service.AdminUserResp{User: u})
 }
 
 func (s *Server) adminGrantUser(c *fiber.Ctx) error {
@@ -324,7 +328,7 @@ func (s *Server) adminGrantUser(c *fiber.Ctx) error {
 	s.Svc.Audit(c.Context(), adminIDFrom(c), evt,
 		strconv.FormatInt(id, 10), c.IP(),
 		fiber.Map{"currency": body.Currency, "amount": body.Amount})
-	return c.JSON(fiber.Map{"wallet": wallet})
+	return c.JSON(service.AdminGrantResp{Wallet: wallet})
 }
 
 func (s *Server) adminBattles(c *fiber.Ctx) error {
@@ -358,7 +362,7 @@ func (s *Server) adminBattles(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	return c.JSON(fiber.Map{"items": items, "total": total})
+	return c.JSON(service.AdminBattlesResp{Items: items, Total: total})
 }
 
 // adminRecomputes 结算重算审计台账（R1）。
@@ -396,7 +400,7 @@ func (s *Server) adminRecomputes(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	return c.JSON(fiber.Map{"items": items, "total": total})
+	return c.JSON(service.AdminRecomputesResp{Items: items, Total: total})
 }
 
 // adminRecomputeStats 重算总账 + 按关卡分布 + **闸门当前状态**。
@@ -424,6 +428,21 @@ func (s *Server) adminRecomputeStats(c *fiber.Ctx) error {
 	return c.JSON(sum)
 }
 
+// adminBattleDetail 返回单场战报的**详情**。
+//
+// # 2026-10-21（P2-1）：此前这里返回的是 `ReplayInfo`（复现信息）
+//
+// `ReplayInfo` 的形状是 `{battle_id, level_id, seed, level, expected_hash,
+// created_at, build, card_picks}` —— 它是给「**重放**」用的，
+// 而后台抽屉要展示的是「这一局**发生了什么**」（发射/命中、元素分布、
+// 反应分布、地形、种子）。
+//
+// 两者都没有错，但**用错了地方**：抽屉按 `AdminBattle` 的字段读一份
+// `ReplayInfo`，于是 **14/16 个字段恒空** —— 运营点开战报看到一片空白，
+// 而列表里的那一行是好的（所以「列表有数据、点开是空的」）。
+//
+// 现在这个端点返回战报详情本身；重放信息仍由玩家侧
+// `GET /api/v1/battle/:id/replay` 与运营的验真流程提供。
 func (s *Server) adminBattleDetail(c *fiber.Ctx) error {
 	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
 	if err != nil {
@@ -431,11 +450,11 @@ func (s *Server) adminBattleDetail(c *fiber.Ctx) error {
 	}
 	// 运营侧**不加**归属过滤 —— 查任意玩家的战报本来就是它的职责
 	// （见 service.AdminGetReplay 的注释）。
-	info, err := s.Svc.AdminGetReplay(c.Context(), id)
+	detail, err := s.Svc.AdminBattleDetail(c.Context(), id)
 	if err != nil {
 		return failErr(c, err)
 	}
-	return c.JSON(fiber.Map{"battle": info})
+	return c.JSON(service.AdminBattleDetailResp{Battle: detail})
 }
 
 // adminVerifyBattle 运营侧发起验真。
@@ -511,7 +530,7 @@ func (s *Server) adminDefenses(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	return c.JSON(fiber.Map{"items": items, "total": total})
+	return c.JSON(service.AdminDefensesResp{Items: items, Total: total})
 }
 
 func (s *Server) adminEconomy(c *fiber.Ctx) error {
@@ -537,7 +556,7 @@ func (s *Server) adminUpdateShop(c *fiber.Ctx) error {
 	}
 	s.Svc.Audit(c.Context(), adminIDFrom(c), "update_shop_item",
 		strconv.FormatInt(id, 10), c.IP(), patch)
-	return c.JSON(fiber.Map{"item": item})
+	return c.JSON(service.AdminShopItemResp{Item: item})
 }
 
 func (s *Server) adminAnnouncements(c *fiber.Ctx) error {
@@ -545,7 +564,7 @@ func (s *Server) adminAnnouncements(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	return c.JSON(fiber.Map{"items": items})
+	return c.JSON(service.AdminAnnouncementsResp{Items: items})
 }
 
 func (s *Server) adminCreateAnnouncement(c *fiber.Ctx) error {
@@ -565,7 +584,7 @@ func (s *Server) adminCreateAnnouncement(c *fiber.Ctx) error {
 		return failErr(c, err)
 	}
 	s.Svc.Audit(c.Context(), adminIDFrom(c), "create_announcement", body.Title, c.IP(), nil)
-	return c.JSON(fiber.Map{"item": item})
+	return c.JSON(service.AdminAnnouncementResp{Item: item})
 }
 
 func (s *Server) adminRedeemCodes(c *fiber.Ctx) error {
@@ -573,7 +592,7 @@ func (s *Server) adminRedeemCodes(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	return c.JSON(fiber.Map{"items": items})
+	return c.JSON(service.AdminRedeemCodesResp{Items: items})
 }
 
 func (s *Server) adminCreateRedeemCode(c *fiber.Ctx) error {
@@ -612,7 +631,7 @@ func (s *Server) adminCreateRedeemCode(c *fiber.Ctx) error {
 		return failErr(c, err)
 	}
 	s.Svc.Audit(c.Context(), adminIDFrom(c), "create_redeem_code", body.Code, c.IP(), body)
-	return c.JSON(fiber.Map{"item": item})
+	return c.JSON(service.AdminRedeemCodeResp{Item: item})
 }
 
 func (s *Server) adminAuditLogs(c *fiber.Ctx) error {
@@ -624,7 +643,7 @@ func (s *Server) adminAuditLogs(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	return c.JSON(fiber.Map{"items": items})
+	return c.JSON(service.AdminAuditLogsResp{Items: items})
 }
 
 // ctxUnused 保留下划线避免未使用告警（中间件已封装 Context 传递）。

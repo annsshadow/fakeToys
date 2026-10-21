@@ -41,12 +41,10 @@ type Vm = {
   annForm: { title: string; body: string; published: boolean }
   codeForm: { code: string; reward: string; max_uses: number; expires_at: string }
   parseReward: (s: string) => Record<string, number> | null
-  rewardText: (v: unknown) => string
+  rewardText: (v: Record<string, number> | undefined) => string
   submitAnnouncement: () => Promise<void>
   submitCode: () => Promise<void>
   fmtTime: (s: string) => string
-  num: (o: Row, k: string) => number
-  str: (o: Row, k: string) => string
 }
 
 beforeEach(() => {
@@ -101,29 +99,76 @@ describe('ContentView 列表渲染', () => {
 
   it('公告状态（已发布/草稿）、兑换码奖励（字符串 JSON/对象/null）、审计日志字段如实渲染', async () => {
     const wrapper = await mountContent({
+      // 2026-10-21：与 service.AdminAnnouncementView 一致 ——
+      // `published` 是**布尔**（此前 fixture 写的是 1/0，界面靠 num() 兜底，
+      // 于是「已发布/草稿」其实是在比数字，不是比布尔）。
       announcements: [
-        { id: 1, title: '维护公告', published: 1, created_at: '2026-01-02T03:04:05Z' },
-        { id: 2, title: '草稿公告', published: 0, created_at: '' },
+        {
+          id: 1,
+          title: '维护公告',
+          body: '今晚 02:00 维护',
+          published: true,
+          published_at: '2026-01-02T03:04:05Z',
+          created_at: '2026-01-02T03:04:05Z',
+        },
+        {
+          id: 2,
+          title: '草稿公告',
+          body: '还没发',
+          published: false,
+          published_at: null,
+          created_at: '2026-01-02T03:04:05Z',
+        },
       ],
+      // 2026-10-21：reward 现在是**对象**（服务端 jsonb map），
+      // 不再是 JSON 字符串。
       codes: [
-        { id: 1, code: 'LYP-A', reward: '{"coin":1000}', used_count: 3, max_uses: 100, expires_at: '' },
-        { id: 2, code: 'LYP-B', reward: { gem: 50 }, used_count: 0, max_uses: 5 },
-        { id: 3, code: 'LYP-C', reward: null },
-        { id: 4, code: 'LYP-D', reward: '' }, // 空串 → JSON.parse(v || '{}') 的兜底分支
+        {
+          id: 1,
+          code: 'LYP-A',
+          reward: { coin: 1000 },
+          max_uses: 100,
+          used_count: 3,
+          expires_at: null,
+          enabled: true,
+        },
+        {
+          id: 2,
+          code: 'LYP-B',
+          reward: { gem: 50 },
+          max_uses: 5,
+          used_count: 0,
+          expires_at: '2026-06-01T00:00:00Z',
+          enabled: false,
+        },
       ],
       // 第 121 轮：审计日志字段按**服务端真实形状**（AdminListAuditLogs：
       // username / action / target / detail），修前 UI 读的 admin_username /
       // target_type / target_id / reason 全都不存在，四列恒空白。
       logs: [
-        { id: 1, username: 'admin', action: 'grant_currency', target: '9', detail: { currency: 'coin', amount: -300 }, created_at: '2026-01-02T03:04:05Z' },
+        {
+          id: 1,
+          admin_id: 1,
+          username: 'admin',
+          action: 'grant_currency',
+          target: '9',
+          detail: { currency: 'coin', amount: -300 },
+          created_at: '2026-01-02T03:04:05Z',
+        },
       ],
     })
     const text = wrapper.text()
     expect(text).toContain('已发布')
     expect(text).toContain('草稿')
+    // 2026-10-21（P5-10）：公告正文与发布时间此前**不显示** ——
+    // 服务端一直返回 `body` / `published_at`，运营却看不到自己发了什么。
+    expect(text).toContain('今晚 02:00 维护')
+    expect(text).toContain('还没发')
     expect(text).toContain('coin×1000')
     expect(text).toContain('gem×50')
     expect(text).toContain('3 / 100')
+    expect(text).toContain('可用') // enabled=true
+    expect(text).toContain('停用') // enabled=false
     expect(text).toContain('—') // 空时间
     // 审计日志：管理员 / 操作 / 对象 三列按服务端字段渲染
     expect(text).toContain('admin')
@@ -134,15 +179,17 @@ describe('ContentView 列表渲染', () => {
     wrapper.unmount()
   })
 
-  it('str / num / fmtTime 的容错分支直测', async () => {
+  /**
+   * 2026-10-21：原先这里还直测了 `str` / `num` 两个「什么都往里塞」的兜底。
+   * 它们服务的其实是**服务端根本不会发的形状**（`published: 1`、
+   * `reward: '{"coin":1000}'` 这种字符串化 jsonb）——
+   * 兜底让界面「看起来有数据」，也让 fixture 与线上错开。
+   *
+   * 现在数据有类型，兜底删了，判据换成「真实字段算对了没有」。
+   */
+  it('fmtTime 的容错分支直测', async () => {
     const wrapper = await mountContent()
     const vm = wrapper.vm as unknown as Vm
-    expect(vm.str({ a: null }, 'a')).toBe('')
-    expect(vm.str({}, 'a')).toBe('')
-    expect(vm.str({ a: 5 }, 'a')).toBe('5')
-    expect(vm.num({ a: 'abc' }, 'a')).toBe(0) // NaN 回退 0
-    expect(vm.num({ a: null }, 'a')).toBe(0)
-    expect(vm.num({ a: '7' }, 'a')).toBe(7) // 数字字符串被解析
     expect(vm.fmtTime('')).toBe('—')
     // 第 124 轮：fmtTime 渲染成**查看者本地时区**（服务端下发 UTC）。
     // 判据与生产同一算法（Date + 本地分量），与机器时区无关。
@@ -169,12 +216,12 @@ describe('ContentView 列表渲染', () => {
     wrapper.unmount()
   })
 
-  it('rewardText 直接验证：字符串/对象/null 三态', async () => {
+  it('rewardText 直接验证：对象与空值两态（服务端现在下发对象）', async () => {
     const wrapper = await mountContent()
     const vm = wrapper.vm as unknown as Vm
-    expect(vm.rewardText('{"coin":5}')).toBe('coin×5')
+    expect(vm.rewardText({ coin: 5 })).toBe('coin×5')
     expect(vm.rewardText({ gem: 2 })).toBe('gem×2')
-    expect(vm.rewardText(null)).toBe('')
+    expect(vm.rewardText(undefined)).toBe('')
     wrapper.unmount()
   })
 

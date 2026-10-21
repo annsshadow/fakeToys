@@ -67,11 +67,11 @@ func TestLevelTableIsCurrentlyNotThePlayerSource(t *testing.T) {
 	if err != nil {
 		t.Fatalf("读回行失败：%v", err)
 	}
-	if row["base_hp"] != int64(wantHP) {
-		t.Fatalf("库里 base_hp=%v，我们写的是 %d", row["base_hp"], wantHP)
+	if row.BaseHP != int64(wantHP) {
+		t.Fatalf("库里 base_hp=%v，我们写的是 %d", row.BaseHP, wantHP)
 	}
-	if row["name"] != wantName {
-		t.Fatalf("库里 name=%v，我们写的是 %q", row["name"], wantName)
+	if row.Name != wantName {
+		t.Fatalf("库里 name=%v，我们写的是 %q", row.Name, wantName)
 	}
 
 	// 2) 运营列表读到的是**同一个**表 → 运营看得到改动
@@ -81,7 +81,7 @@ func TestLevelTableIsCurrentlyNotThePlayerSource(t *testing.T) {
 	}
 	adminSees := false
 	for _, m := range list {
-		if m["id"] == 1 && m["base_hp"] == int64(wantHP) {
+		if m.ID == 1 && m.BaseHP == int64(wantHP) {
 			adminSees = true
 		}
 	}
@@ -141,10 +141,10 @@ func TestAdminUpdateLevelDeclaresNotAppliedToPlayers(t *testing.T) {
 	if err != nil {
 		t.Fatalf("AdminUpdateLevel 失败：%v", err)
 	}
-	if got := row["applied_to_players"]; got != false {
+	if got := row.AppliedToPlayers; got != false {
 		t.Errorf("回执必须声明 applied_to_players=false（路线 b：生成器权威），实际 %v", got)
 	}
-	if got := row["player_authority"]; got != "generator" {
+	if got := row.PlayerAuthority; got != "generator" {
 		t.Errorf("回执必须声明 player_authority=\"generator\"，实际 %v", got)
 	}
 }

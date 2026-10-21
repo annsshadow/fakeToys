@@ -6,11 +6,11 @@ import {
   updateLevel,
   regenerateLevels,
   fetchLevelWaves,
-  type AdminLevel,
+  type AdminLevelView,
 } from '@/api'
 
 const loading = ref(false)
-const levels = ref<AdminLevel[]>([])
+const levels = ref<AdminLevelView[]>([])
 const total = ref(0)
 const chapter = ref<number | undefined>(undefined)
 /**
@@ -24,7 +24,7 @@ const keyword = ref('')
 
 // 波次抽屉
 const waveDrawer = ref(false)
-const waveTarget = ref<AdminLevel | null>(null)
+const waveTarget = ref<AdminLevelView | null>(null)
 const waveRows = ref<Array<{ wave_index: number; spawns: unknown }>>([])
 
 /** 关卡难度是否在合理区间。低于 1000‰ 表示比基准还简单，高于 4200‰ 已超设计上限。 */
@@ -76,7 +76,7 @@ async function load() {
   }
 }
 
-async function toggleEnabled(row: AdminLevel) {
+async function toggleEnabled(row: AdminLevelView) {
   try {
     const res = await updateLevel(row.id, { enabled: !row.enabled })
     Object.assign(row, res.level)
@@ -86,7 +86,7 @@ async function toggleEnabled(row: AdminLevel) {
   }
 }
 
-async function onEdit(row: AdminLevel) {
+async function onEdit(row: AdminLevelView) {
   try {
     const { value } = await ElMessageBox.prompt(
       `修改「${row.name}」的防线血量（当前 ${row.base_hp}）`,
@@ -121,7 +121,7 @@ async function onRegen() {
   }
 }
 
-async function openWaves(row: AdminLevel) {
+async function openWaves(row: AdminLevelView) {
   waveTarget.value = row
   waveDrawer.value = true
   try {
@@ -155,7 +155,7 @@ onMounted(load)
  * 断言让它们重新受检；但它断言的是**形状**，
  * 字段名本身拼错仍要靠运行时的 `undefined` 暴露。
  */
-const asRow = (r: unknown) => r as AdminLevel
+const asRow = (r: unknown) => r as AdminLevelView
 </script>
 
 <template>

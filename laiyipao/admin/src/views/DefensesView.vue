@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { onMounted, ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
-import { fetchDefenses } from '@/api'
+import { fetchDefenses, type AdminDefenseView } from '@/api'
 import { fmtTime } from '@/utils/format'
 
 const loading = ref(false)
-const rows = ref<Array<Record<string, unknown>>>([])
+const rows = ref<AdminDefenseView[]>([])
 const total = ref(0)
 
 /**
@@ -19,34 +19,22 @@ const total = ref(0)
  */
 const suspiciousRows = computed(() =>
   rows.value.filter((r) => {
-    const w = Number(r.wins ?? 0)
-    const l = Number(r.losses ?? 0)
+    const w = r.wins
+    const l = r.losses
     if (w + l < 3) return false
     return w / (w + l) > 0.98 || w / (w + l) < 0.02
   }),
 )
 
-function str(r: Record<string, unknown>, k: string): string {
-  const v = r[k]
-  return v === undefined || v === null ? '' : String(v)
-}
-
-function num(r: Record<string, unknown>, k: string): number {
-  const v = Number(r[k] ?? 0)
-  return Number.isFinite(v) ? v : 0
-}
-
-function winRate(r: Record<string, unknown>): string {
-  const w = num(r, 'wins')
-  const l = num(r, 'losses')
-  const total2 = w + l
+function winRate(r: AdminDefenseView): string {
+  const total2 = r.wins + r.losses
   if (total2 === 0) return '—'
-  return `${((w / total2) * 100).toFixed(1)}%`
+  return `${((r.wins / total2) * 100).toFixed(1)}%`
 }
 
-function rateTone(r: Record<string, unknown>): 'success' | 'info' | 'warning' | 'danger' {
-  const w = num(r, 'wins')
-  const l = num(r, 'losses')
+function rateTone(r: AdminDefenseView): 'success' | 'info' | 'warning' | 'danger' {
+  const w = r.wins
+  const l = r.losses
   const t = w + l
   if (t === 0) return 'info'
   const rate = w / t
@@ -67,6 +55,17 @@ async function load() {
     loading.value = false
   }
 }
+
+/**
+ * `el-table` 插槽给出的行类型是 element-plus 内部的 `DefaultRow`，
+ * 它不能直接传给形参是 `AdminDefenseView` 的函数（TS2345），
+ * 所以在调用点集中断言一次（编译后被擦除，运行时行为不变）。
+ *
+ * ⚠️ 值得记一笔：这些调用此前**根本没有被类型检查**——
+ * `components.d.ts` 不存在时 `el-table` 是未知组件、插槽行是 `any`，
+ * 于是 22 处调用全部静默通过。也就是说「参数名拼错」这类错误在过去查不出来。
+ */
+const asRow = (r: unknown) => r as AdminDefenseView
 
 onMounted(load)
 </script>
@@ -98,36 +97,40 @@ onMounted(load)
 
       <el-table :data="rows" size="small" stripe>
         <el-table-column prop="id" label="ID" width="60" />
-        <el-table-column prop="user_id" label="属主" width="70" />
+        <el-table-column prop="owner_id" label="属主 ID" width="80" />
+        <el-table-column prop="owner_name" label="属主" min-width="120" />
         <el-table-column label="防线名" min-width="120">
-          <template #default="{ row }">{{ str(row, 'name') || '（未命名）' }}</template>
+          <template #default="{ row }">{{ row.name || '（未命名）' }}</template>
         </el-table-column>
         <el-table-column label="战力" width="90">
-          <template #default="{ row }">{{ num(row, 'power') }}</template>
+          <template #default="{ row }">{{ row.power }}</template>
         </el-table-column>
         <el-table-column label="元素覆盖" width="94">
-          <template #default="{ row }">{{ num(row, 'element_coverage') }}/5</template>
+          <template #default="{ row }">{{ row.element_coverage }}/5</template>
+        </el-table-column>
+        <el-table-column label="专精已点" width="94">
+          <template #default="{ row }">{{ row.mastery_done }}</template>
         </el-table-column>
         <el-table-column label="战绩" width="110">
           <template #default="{ row }">
-            {{ num(row, 'wins') }} 胜 / {{ num(row, 'losses') }} 负
+            {{ row.wins }} 胜 / {{ row.losses }} 负
           </template>
         </el-table-column>
         <el-table-column label="胜率" width="90">
           <template #default="{ row }">
-            <el-tag :type="rateTone(row)" size="small">{{ winRate(row) }}</el-tag>
+            <el-tag :type="rateTone(asRow(row))" size="small">{{ winRate(asRow(row)) }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column label="护盾至" width="155">
-          <template #default="{ row }">{{ fmtTime(str(row, 'shielded_until')) }}</template>
+          <template #default="{ row }">{{ fmtTime(row.shielded_until) }}</template>
         </el-table-column>
         <el-table-column label="快照哈希" min-width="150">
           <template #default="{ row }">
-            <code class="hash">{{ str(row, 'snapshot_hash').slice(0, 16) }}…</code>
+            <code class="hash">{{ row.snapshot_hash ? row.snapshot_hash.slice(0, 16) + '…' : '—' }}</code>
           </template>
         </el-table-column>
         <el-table-column label="更新时间" width="155">
-          <template #default="{ row }">{{ fmtTime(str(row, 'updated_at')) }}</template>
+          <template #default="{ row }">{{ fmtTime(row.updated_at) }}</template>
         </el-table-column>
       </el-table>
     </el-card>

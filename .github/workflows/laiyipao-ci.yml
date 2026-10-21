@@ -87,6 +87,24 @@ jobs:
         run: go build ./...
       - name: Vet
         run: go vet ./...
+      # 契约守卫（2026-10-21）：后台的 TS 类型是**从 Go 响应类型生成**的。
+      # 改了 Go 侧而不重新生成 → 前端拿着旧类型继续编译 → 契约漂移静默回来。
+      # 所以这一步是 required：它把「忘了重新生成」变成一次红构建。
+      #
+      # 判据是 `go run ./cmd/tygen -check`（非零退出 = 生成物过期）。
+      - name: Generated TS types must be up to date
+        run: go run ./cmd/tygen -check
+      - name: Gofmt must report no diff
+        # 判据是 **`gofmt -l` 无输出**，不是「跑过 gofmt -w」。
+        # （KNOWN_LIMITS 记了「gofmt -C 是无效 flag + `| Out-Null` 吞掉 stderr」
+        #  的误判：命令没报错 ≠ 命令生效了。这里直接用 -l 当闸门。）
+        run: |
+          out=$(gofmt -l .)
+          if [ -n "$out" ]; then
+            echo "::error::gofmt reports unformatted files:"
+            echo "$out"
+            exit 1
+          fi
       - name: Test
         run: go test ./... -count=1 -timeout 1200s
 

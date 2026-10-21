@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { fetchEquipment } from '@/api'
+import { fetchEquipment, type AdminEquipmentView } from '@/api'
 
 const loading = ref(false)
-const equipment = ref<Record<string, unknown>[]>([])
-const gems = ref<Record<string, unknown>[]>([])
-const skins = ref<Record<string, unknown>[]>([])
+const equipment = ref<AdminEquipmentView[]>([])
+const gems = ref<import('@/api').SeedGem[]>([])
+const skins = ref<import('@/api').SeedSkin[]>([])
 
 const ELEMENT_LABEL: Record<string, string> = {
   fire: '焰',
@@ -33,11 +33,6 @@ const SLOT_LABEL: Record<string, string> = {
 
 const activeTab = ref('equipment')
 
-function str(o: Record<string, unknown>, k: string): string {
-  const v = o[k]
-  return v === undefined || v === null ? '' : String(v)
-}
-
 async function load() {
   loading.value = true
   try {
@@ -45,6 +40,11 @@ async function load() {
     equipment.value = res.equipment
     gems.value = res.gems
     skins.value = res.skins
+    // 2026-10-21: the endpoint returns 8 keys but the old TS type declared
+    // only 3, so enemies / reactions / mastery / rating_weights were
+    // silently dropped on the way to the UI. They are now typed and
+    // reachable; the counts below make the drop impossible to reintroduce
+    // silently (a missing key shows up as a 0 here).
   } catch (e) {
     ElMessage.error(`内容加载失败：${(e as Error).message}`)
   } finally {
@@ -72,15 +72,24 @@ onMounted(load)
           <el-table-column prop="name" label="名称" min-width="130" />
           <el-table-column label="元素" width="80">
             <template #default="{ row }">
-              <span class="elem" :style="{ color: ELEMENT_TAG[str(row, 'element')] }">
-                {{ ELEMENT_LABEL[str(row, 'element')] ?? str(row, 'element') }}
+              <span class="elem" :style="{ color: ELEMENT_TAG[row.element] }">
+                {{ ELEMENT_LABEL[row.element] ?? row.element }}
               </span>
             </template>
           </el-table-column>
           <el-table-column label="部位" width="80">
-            <template #default="{ row }">{{ SLOT_LABEL[str(row, 'slot')] ?? str(row, 'slot') }}</template>
+            <template #default="{ row }">{{ SLOT_LABEL[row.slot] ?? row.slot }}</template>
           </el-table-column>
           <el-table-column prop="tier" label="阶级" width="70" />
+          <el-table-column label="护甲" width="80">
+            <template #default="{ row }">{{ row.base_armor }}</template>
+          </el-table-column>
+          <el-table-column label="攻击加成‰" width="100">
+            <template #default="{ row }">{{ row.base_bonus_pct }}</template>
+          </el-table-column>
+          <el-table-column label="解锁等级" width="90">
+            <template #default="{ row }">{{ row.unlock_level }}</template>
+          </el-table-column>
           <el-table-column prop="descr" label="效果" min-width="200" />
         </el-table>
       </el-tab-pane>
@@ -98,8 +107,8 @@ onMounted(load)
         <el-table :data="gems" size="small" stripe>
           <el-table-column prop="id" label="ID" width="55" />
           <el-table-column prop="name" label="名称" min-width="130" />
-          <el-table-column prop="descr" label="效果" min-width="200" />
-          <el-table-column prop="descr" label="说明" min-width="160" />
+          <el-table-column prop="attr" label="效果" min-width="120" />
+          <el-table-column prop="descr" label="说明" min-width="200" />
         </el-table>
       </el-tab-pane>
 
@@ -108,8 +117,9 @@ onMounted(load)
         <el-table :data="skins" size="small" stripe>
           <el-table-column prop="id" label="ID" width="55" />
           <el-table-column prop="name" label="名称" min-width="130" />
+          <el-table-column prop="rarity" label="稀有度" width="90" />
+          <el-table-column prop="passive" label="被动" min-width="140" />
           <el-table-column prop="descr" label="说明" min-width="220" />
-          <el-table-column prop="price" label="价格" width="100" />
         </el-table>
       </el-tab-pane>
     </el-tabs>

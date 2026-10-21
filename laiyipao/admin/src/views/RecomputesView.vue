@@ -21,7 +21,7 @@ import { ElMessage } from 'element-plus'
 import {
   fetchRecomputes,
   fetchRecomputeStats,
-  type AdminRecompute,
+  type RecomputeView,
   type RecomputeLevelStat,
   type RecomputeSummary,
 } from '@/api'
@@ -29,7 +29,7 @@ import { fmtTime } from '@/utils/format'
 
 const loading = ref(false)
 const statsLoading = ref(false)
-const rows = ref<AdminRecompute[]>([])
+const rows = ref<RecomputeView[]>([])
 const total = ref(0)
 const summary = ref<RecomputeSummary | null>(null)
 
@@ -76,7 +76,7 @@ function fieldLabel(f: string): string {
  * 「mode=enforce 但 rejected=false」。合成一列就看不出这个差异，
  * 而「为什么这批没被拒」正是运营的第一个问题。
  */
-function modeTag(row: AdminRecompute): { text: string; type: 'info' | 'warning' | 'danger' } {
+function modeTag(row: RecomputeView): { text: string; type: 'info' | 'warning' | 'danger' } {
   if (row.rejected) return { text: '已拒发', type: 'danger' }
   if (row.mode === 'enforce') {
     // enforce 档却没拒 —— 只可能因为熔断把这次降级了
@@ -86,13 +86,13 @@ function modeTag(row: AdminRecompute): { text: string; type: 'info' | 'warning' 
 }
 
 /** 重算值缺席时显示「—」而不是 0。见 `RecomputeSide` 的注释。 */
-function recomputedText(row: AdminRecompute): string {
+function recomputedText(row: RecomputeView): string {
   if (!row.recomputed) return '—'
   const r = row.recomputed
   return `${r.score} / ${r.kills} / ${r.duration_ms}ms`
 }
 
-function reportedText(row: AdminRecompute): string {
+function reportedText(row: RecomputeView): string {
   const r = row.reported
   return `${r.score} / ${r.kills} / ${r.duration_ms}ms`
 }
@@ -190,7 +190,7 @@ onMounted(reloadAll)
  *   断言让它们重新受检；但它只断言**形状**，
  *   字段名本身拼错仍要靠运行时的 `undefined` 暴露。
  */
-const asRow = (r: unknown) => r as AdminRecompute
+const asRow = (r: unknown) => r as RecomputeView
 const asLevel = (r: unknown) => r as RecomputeLevelStat
 </script>
 

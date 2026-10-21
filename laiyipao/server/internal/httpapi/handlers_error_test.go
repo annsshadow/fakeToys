@@ -136,7 +136,12 @@ func TestHandlerErrorBranchesOnBrokenPool(t *testing.T) {
 		{"adminUnbanUser", "POST", "/x/1", "", true, 0, s.adminUnbanUser},
 		{"adminGrantUser", "POST", "/x/1", `{"currency":"coin","amount":1}`, true, 0, s.adminGrantUser},
 		{"adminBattles", "GET", "/x", "", false, 0, s.adminBattles},
-		{"adminBattleDetail", "GET", "/x/1", "", true, fiber.StatusNotFound, s.adminBattleDetail},
+		// 2026-10-21：adminBattleDetail 不再把「查不了」说成「不存在」。
+		// 玩家侧的 getReplay 仍把任何错误报成 ErrNotFound（防预言机），
+		// 但运营端本来就能看全部战报列表，没有预言机要防 ——
+		// 库一挂就说「战报不存在」是个**假的**答案。
+		// 现在只有「真的没有这一行」才 404，其余一律 500。
+		{"adminBattleDetail", "GET", "/x/1", "", true, 0, s.adminBattleDetail},
 		{"adminDefenses", "GET", "/x", "", false, 0, s.adminDefenses},
 		{"adminEconomy", "GET", "/x", "", false, 0, s.adminEconomy},
 		{"adminUpdateShop", "PUT", "/x/1", `{"limit_per_day":1}`, true, 0, s.adminUpdateShop},

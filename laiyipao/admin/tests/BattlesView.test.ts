@@ -8,7 +8,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { ElDrawer, ElInputNumber } from 'element-plus'
 import ElementPlus from 'element-plus'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { AdminBattle } from '@/api'
+import type { AdminBattleView } from '@/api'
 import { __resetReactionLabelCache } from '@/reactions'
 
 const fetchBattles = vi.hoisted(() => vi.fn())
@@ -20,7 +20,7 @@ vi.mock('@/api', () => ({ fetchBattles, fetchBattleDetail, fetchReactions, verif
 
 import BattlesView from '@/views/BattlesView.vue'
 
-function battleFixture(overrides: Partial<AdminBattle> = {}): AdminBattle {
+function battleFixture(overrides: Partial<AdminBattleView> = {}): AdminBattleView {
   return {
     id: 1,
     user_id: 9,
@@ -43,7 +43,41 @@ function battleFixture(overrides: Partial<AdminBattle> = {}): AdminBattle {
   }
 }
 
-async function mountBattles(items: AdminBattle[] = [], total = items.length) {
+/**
+ * 2026-10-21（P2-1）：详情端点现在返回**战报详情本身**
+ * （`service.AdminBattleDetailView`），不再是复现信息。
+ *
+ * 此前 fixture 直接复用了列表行的形状 —— 于是「发射/命中」等字段
+ * 在测试里是 undefined，而线上那 14 个字段也全是空的：
+ * 测试和线上错得一模一样，所以都绿。
+ */
+const detailBase = {
+  id: 88,
+  user_id: 9,
+  nickname: '铁壁玩家',
+  level_id: 3,
+  result: 'win',
+  stars: 3,
+  score: 88000,
+  kills: 10,
+  leaked: 2,
+  hp_left: 420,
+  wave_reached: 5,
+  duration_ms: 12345,
+  shots: 10,
+  hits: 8,
+  reactions: 5,
+  heat_max: 90,
+  elements_used: {} as Record<string, number>,
+  reactions_used: {} as Record<string, number>,
+  terrain_used: [] as string[],
+  replay_hash: 'abcd1234abcd1234abcd1234abcd1234',
+  seed: '424242',
+  power_after: 91000,
+  created_at: '2026-01-02T03:04:05Z',
+}
+
+async function mountBattles(items: AdminBattleView[] = [], total = items.length) {
   fetchBattles.mockResolvedValue({ items, total })
   const wrapper = mount(BattlesView, { global: { plugins: [ElementPlus] } })
   await flushPromises()
@@ -169,15 +203,14 @@ describe('BattlesView 列表渲染', () => {
 })
 
 describe('BattlesView 详情抽屉', () => {
-  const detailBase = { ...battleFixture({ id: 88 }), shots: 10, hits: 8 } as AdminBattle & Record<string, unknown>
 
   it('详情正常打开：回放哈希、发射/命中、元素与反应分布中文标签渲染；关闭抽屉走 v-model', async () => {
     fetchBattleDetail.mockResolvedValueOnce({
       battle: {
         ...detailBase,
-        elements_used: '{"fire":3,"kinetic":1,"void":4}', // void 不在映射表 → 回退原始 key
-        reactions_used: '{"steam_burst":2,"mega_boom":1}', // mega_boom 同上
-        terrain_used: 'oil_drum',
+        elements_used: { fire: 3, kinetic: 1, void: 4 }, // void 不在映射表 → 回退原始 key
+        reactions_used: { steam_burst: 2, mega_boom: 1 }, // mega_boom 同上
+        terrain_used: ['oil_drum'],
       },
     })
     const wrapper = await mountBattles([battleFixture()])
@@ -189,6 +222,11 @@ describe('BattlesView 详情抽屉', () => {
     expect(text).toContain('战报详情')
     expect(text).toContain('battle_id')
     expect(text).toContain('10 / 8')
+    // 2026-10-21（P2-1）：这些字段此前**恒空**（服务端给的是复现信息）。
+    // 现在断言它们真的显示出来。
+    expect(text).toContain('420') // hp_left
+    expect(text).toContain('铁壁玩家') // nickname
+    expect(text).toContain('91000') // power_after
     expect(text).toContain('abcd1234abcd1234abcd1234abcd1234')
     expect(text).toContain('焰 × 3')
     expect(text).toContain('动能 × 1')
@@ -205,33 +243,29 @@ describe('BattlesView 详情抽屉', () => {
     wrapper.unmount()
   })
 
-  it('服务端修正过的战报：clamped 标记展示，clamp_note 缺省时显示默认文案', async () => {
-    fetchBattleDetail.mockResolvedValueOnce({
-      battle: { ...detailBase, clamped: true, clamp_note: '' },
-    })
-    const wrapper = await mountBattles([battleFixture()])
-    await wrapper.findAll('button').find((b) => b.text() === '详情')!.trigger('click')
-    await flushPromises()
-    expect(wrapper.text()).toContain('上报数据越界，已按上限截断')
-    wrapper.unmount()
-  })
-
-  it('未修正的战报不显示修正标签（v-if 假分支）', async () => {
+  /**
+   * 2026-10-21（P2-1）：`clamped` / `clamp_note` 这两列**在库里根本不存在**
+   * （battle_records 没有这两列）。此前界面按它们渲染了一个
+   * 「服务端修正」标签 —— 一个**永远不可能出现**的标签。
+   * 现在这个标签被删掉了：展示一个永远不出现的分支 = 谎称有这条能力。
+   */
+  it('不再渲染「服务端修正」标签（那两列在库里不存在）', async () => {
     fetchBattleDetail.mockResolvedValueOnce({ battle: { ...detailBase } })
     const wrapper = await mountBattles([battleFixture()])
     await wrapper.findAll('button').find((b) => b.text() === '详情')!.trigger('click')
     await flushPromises()
     expect(wrapper.text()).not.toContain('服务端修正')
+    expect(wrapper.text()).not.toContain('上报数据越界')
     wrapper.unmount()
   })
 
-  it('元素/反应 JSON 的容错：非法 JSON 与空值都回退为空分布提示', async () => {
+  it('空分布回退成引导文案；空地形显示占位', async () => {
     fetchBattleDetail.mockResolvedValueOnce({
       battle: {
         ...detailBase,
-        elements_used: 'not-json{',
-        reactions_used: 'also-bad{',
-        terrain_used: 0,
+        elements_used: {},
+        reactions_used: {},
+        terrain_used: [],
       },
     })
     const wrapper = await mountBattles([battleFixture()])
@@ -239,9 +273,7 @@ describe('BattlesView 详情抽屉', () => {
     await flushPromises()
 
     const text = wrapper.text()
-    // 解析失败 → 空分布 → 引导文案
     expect(text).toContain('无记录 —— 这一局完全没触发反应')
-    // terrain_used=0：数值走 !parseObj 的真分支，显示占位
     expect(text).toContain('—')
     wrapper.unmount()
   })
@@ -258,13 +290,21 @@ describe('BattlesView 详情抽屉', () => {
     wrapper.unmount()
   })
 
-  it('parseObj 直接验证四个分支：对象透传 / null 回退 / 合法 JSON / 非法 JSON', async () => {
-    const wrapper = await mountBattles()
-    const vm = wrapper.vm as unknown as { parseObj: (v: unknown) => Record<string, number> }
-    expect(vm.parseObj({ fire: 2 })).toEqual({ fire: 2 })
-    expect(vm.parseObj(null)).toEqual({})
-    expect(vm.parseObj('{"a":1}')).toEqual({ a: 1 })
-    expect(vm.parseObj('bad{')).toEqual({})
+  /**
+   * 2026-10-21（P2-1）：`parseObj` 这个「形状不确定就什么都往里塞」的兜底
+   * 已经删掉了。服务端现在直接下发**对象**，前端不需要解析；
+   * 而旧兜底恰好是「字段名拼错不报错」的帮凶 ——
+   * 解析失败返回 `{}`，页面就显示「无记录」，而真相是「字段名不对」。
+   */
+  it('分布数据是对象而不是 JSON 字符串（不再需要 parseObj）', async () => {
+    fetchBattleDetail.mockResolvedValueOnce({
+      battle: { ...detailBase, elements_used: { fire: 7 }, reactions_used: {} },
+    })
+    const wrapper = await mountBattles([battleFixture()])
+    await wrapper.findAll('button').find((b) => b.text() === '详情')!.trigger('click')
+    await flushPromises()
+    expect(wrapper.text()).toContain('焰 × 7')
+    expect((wrapper.vm as unknown as { parseObj?: unknown }).parseObj).toBeUndefined()
     wrapper.unmount()
   })
 })
@@ -329,10 +369,14 @@ describe('BattlesView 运营侧验真入口', () => {
    * 早先一版三条都踩了，症状是 6 条用例全红而功能其实写好了 ——
    * 「测试全红」和「功能坏了」看起来一模一样，必须逐条核对前提。
    */
-  async function openDetailOf(row: AdminBattle) {
+  async function openDetailOf(row: AdminBattleView) {
     fetchBattleDetail.mockResolvedValueOnce({
-      battle: { ...row, shots: 10, hits: 8, seed: '424242' } as AdminBattle &
-        Record<string, unknown>,
+      battle: {
+        ...detailBase,
+        id: row.id,
+        level_id: row.level_id,
+        seed: '424242',
+      },
     })
     const wrapper = await mountBattles([row])
     const btn = wrapper.findAll('button').find((b) => b.text() === '详情')
@@ -434,8 +478,8 @@ describe('BattlesView 运营侧验真入口', () => {
       recorded_at: '2026-01-02T03:04:05Z',
     })
     fetchBattleDetail
-      .mockResolvedValueOnce({ battle: { ...battleFixture({ id: 1 }) } as never })
-      .mockResolvedValueOnce({ battle: { ...battleFixture({ id: 2 }) } as never })
+      .mockResolvedValueOnce({ battle: { ...detailBase, id: 1 } })
+      .mockResolvedValueOnce({ battle: { ...detailBase, id: 2 } })
 
     const wrapper = await mountBattles([battleFixture({ id: 1 }), battleFixture({ id: 2 })])
     const detailBtns = () => wrapper.findAll('button').filter((b) => b.text() === '详情')

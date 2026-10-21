@@ -1,11 +1,16 @@
 <script setup lang="ts">
 import { onMounted, ref, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { fetchEconomy, updateShopItem } from '@/api'
+import {
+  fetchEconomy,
+  updateShopItem,
+  type AdminEconomyFlowView,
+  type AdminShopItemView,
+} from '@/api'
 
 const loading = ref(false)
-const flows = ref<Array<Record<string, unknown>>>([])
-const shop = ref<Array<Record<string, unknown>>>([])
+const flows = ref<AdminEconomyFlowView[]>([])
+const shop = ref<AdminShopItemView[]>([])
 
 const CURRENCY_LABEL: Record<string, string> = {
   coin: '金币',
@@ -36,22 +41,10 @@ const REASON_LABEL: Record<string, string> = {
 const netFlow = computed(() => {
   const out: Record<string, number> = {}
   for (const f of flows.value) {
-    const cur = String(f.currency ?? '')
-    const amt = Number(f.delta ?? 0)
-    out[cur] = (out[cur] ?? 0) + amt
+    out[f.currency] = (out[f.currency] ?? 0) + f.delta
   }
   return out
 })
-
-function str(o: Record<string, unknown>, k: string): string {
-  const v = o[k]
-  return v === undefined || v === null ? '' : String(v)
-}
-
-function num(o: Record<string, unknown>, k: string): number {
-  const v = Number(o[k] ?? 0)
-  return Number.isFinite(v) ? v : 0
-}
 
 function flowTone(net: number): 'success' | 'info' | 'warning' {
   if (net > 0) return 'warning'
@@ -63,27 +56,25 @@ function flowTone(net: number): 'success' | 'info' | 'warning' {
 // 服务端没有 currency 列，币种就在 price 的 key 上。
 // 修前 `num(row, 'price')` 对一个 object 取 Number → NaN → 恒 0，
 // `str(row, 'currency')` 恒空 —— 价格列全 0、货币列全空。
-function priceMap(o: Record<string, unknown>): Record<string, number> {
-  const p = o.price
-  if (typeof p !== 'object' || p === null || Array.isArray(p)) return {}
-  return p as Record<string, number>
+function priceMap(o: AdminShopItemView): Record<string, number> {
+  return o.price ?? {}
 }
 
-function priceText(o: Record<string, unknown>): string {
+function priceText(o: AdminShopItemView): string {
   const m = priceMap(o)
   const ks = Object.keys(m)
   if (ks.length === 0) return '—'
   return ks.map((k) => `${CURRENCY_LABEL[k] ?? k}:${m[k]}`).join('、')
 }
 
-function priceCurrencies(o: Record<string, unknown>): string {
+function priceCurrencies(o: AdminShopItemView): string {
   const ks = Object.keys(priceMap(o))
   if (ks.length === 0) return '—'
   return ks.map((k) => CURRENCY_LABEL[k] ?? k).join('、')
 }
 
-/** enabled 是服务端布尔值（JSON true/false），显式 === true 兜住一切脏形状 */
-function isOnSale(o: Record<string, unknown>): boolean {
+/** enabled 是服务端布尔值（JSON true/false）。 */
+function isOnSale(o: AdminShopItemView): boolean {
   return o.enabled === true
 }
 
@@ -123,13 +114,13 @@ function parsePriceMap(s: string): Record<string, number> | null {
   return Object.keys(out).length === 0 ? null : out
 }
 
-async function patchShop(row: Record<string, unknown>, field: string, label: string) {
+async function patchShop(row: AdminShopItemView, field: string, label: string) {
   try {
     // price 当前值显示成「金币:100、钻石:5」而不是 raw JSON；
     // 限购读的是 limit_per_day（服务端字段名，修前读 limit 恒空）
-    const current = field === 'price' ? priceText(row) : String(num(row, field))
+    const current = field === 'price' ? priceText(row) : String(row[field as keyof AdminShopItemView] ?? '')
     const { value } = await ElMessageBox.prompt(
-      `修改「${str(row, 'name')}」的${label}（当前 ${current}${field === 'price' ? '，格式 货币:数量, 货币:数量' : ''}）`,
+      `修改「${row.name}」的${label}（当前 ${current}${field === 'price' ? '，格式 货币:数量, 货币:数量' : ''}）`,
       '编辑商城项',
       { inputValue: current },
     )
@@ -150,7 +141,7 @@ async function patchShop(row: Record<string, unknown>, field: string, label: str
     } else {
       parsed = value
     }
-    await updateShopItem(num(row, 'id'), { [field]: parsed })
+    await updateShopItem(row.id, { [field]: parsed })
     // 第 113 轮（A-7 同族）：写后读回不再 Object.assign 响应——
     // 服务端响应只有 {id, updated}，assign 完表格还是旧值却弹「已保存」。
     // 直接整页重拉：表格与 KPI 一起对齐真库。
@@ -160,6 +151,43 @@ async function patchShop(row: Record<string, unknown>, field: string, label: str
     /* 取消 */
   }
 }
+
+/**
+ * P5-5：上架 / 下架。
+ *
+ * 服务端 `PUT /admin/shop/:id` 早就支持 `enabled`，但后台**没有入口** ——
+ * 于是「临时下架一个出问题的商品」这件事运营根本做不到。
+ *
+ * 下架是破坏性动作（玩家会立刻买不到），所以要二次确认。
+ */
+async function toggleOnSale(row: AdminShopItemView) {
+  const next = !row.enabled
+  try {
+    await ElMessageBox.confirm(
+      next
+        ? `上架「${row.name}」？玩家将能立即购买。`
+        : `下架「${row.name}」？玩家将立刻买不到它。`,
+      next ? '上架商品' : '下架商品',
+      { type: next ? 'info' : 'warning', confirmButtonText: next ? '上架' : '下架' },
+    )
+  } catch {
+    return // 取消
+  }
+  try {
+    await updateShopItem(row.id, { enabled: next })
+    ElMessage.success(next ? '已上架' : '已下架')
+    await load()
+  } catch (e) {
+    ElMessage.error(`操作失败：${(e as Error).message}`)
+  }
+}
+
+/**
+ * `el-table` 插槽给出的行类型是 element-plus 内部的 `DefaultRow`，
+ * 它不能直接传给形参是 `AdminShopItemView` 的函数（TS2345），
+ * 所以在调用点集中断言一次（编译后被擦除，运行时行为不变）。
+ */
+const asRow = (r: unknown) => r as AdminShopItemView
 
 onMounted(load)
 </script>
@@ -192,23 +220,23 @@ onMounted(load)
       <el-table :data="flows" size="small" stripe>
         <el-table-column label="货币" width="90">
           <template #default="{ row }">
-            {{ CURRENCY_LABEL[str(row, 'currency')] ?? str(row, 'currency') }}
+            {{ CURRENCY_LABEL[row.currency] ?? row.currency }}
           </template>
         </el-table-column>
         <el-table-column label="来源" width="130">
           <template #default="{ row }">
-            {{ REASON_LABEL[str(row, 'reason')] ?? str(row, 'reason') }}
+            {{ REASON_LABEL[row.reason] ?? row.reason }}
           </template>
         </el-table-column>
         <el-table-column label="总量" width="120">
-          <template #default="{ row }">{{ num(row, 'delta').toLocaleString() }}</template>
+          <template #default="{ row }">{{ row.delta.toLocaleString() }}</template>
         </el-table-column>
         <el-table-column label="笔数" width="90">
-          <template #default="{ row }">{{ num(row, 'count') }}</template>
+          <template #default="{ row }">{{ row.count }}</template>
         </el-table-column>
-        <el-table-column label="人均" width="110">
+        <el-table-column label="人均单笔" width="110">
           <template #default="{ row }">
-            {{ num(row, 'count') ? (num(row, 'delta') / num(row, 'count')).toFixed(1) : '—' }}
+            {{ row.count ? (row.delta / row.count).toFixed(1) : '—' }}
           </template>
         </el-table-column>
       </el-table>
@@ -218,31 +246,42 @@ onMounted(load)
       <el-table :data="shop" size="small" stripe>
         <el-table-column prop="id" label="ID" width="55" />
         <el-table-column label="名称" min-width="140">
-          <template #default="{ row }">{{ str(row, 'name') }}</template>
+          <template #default="{ row }">{{ row.name }}</template>
         </el-table-column>
+        <el-table-column prop="category" label="类目" width="90" />
         <el-table-column label="货币" width="80">
-          <template #default="{ row }">{{ priceCurrencies(row) }}</template>
+          <template #default="{ row }">{{ priceCurrencies(asRow(row)) }}</template>
         </el-table-column>
         <el-table-column label="价格" width="100">
-          <template #default="{ row }">{{ priceText(row) }}</template>
+          <template #default="{ row }">{{ priceText(asRow(row)) }}</template>
         </el-table-column>
         <el-table-column label="限购" width="90">
           <template #default="{ row }">
-            {{ num(row, 'limit_per_day') === 0 ? '不限' : num(row, 'limit_per_day') }}
+            {{ row.limit_per_day === 0 ? '不限' : row.limit_per_day }}
           </template>
         </el-table-column>
         <el-table-column label="上架" width="80">
           <template #default="{ row }">
-            <el-tag :type="isOnSale(row) ? 'success' : 'info'" size="small">
-              {{ isOnSale(row) ? '是' : '否' }}
+            <el-tag :type="isOnSale(asRow(row)) ? 'success' : 'info'" size="small">
+              {{ isOnSale(asRow(row)) ? '是' : '否' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="150" fixed="right">
+        <el-table-column label="操作" width="230" fixed="right">
           <template #default="{ row }">
-            <el-button size="small" text @click="patchShop(row, 'price', '价格')">改价</el-button>
-            <el-button size="small" text @click="patchShop(row, 'limit_per_day', '限购次数')">限购</el-button>
-            <el-button size="small" text @click="patchShop(row, 'name', '名称')">改名</el-button>
+            <el-button size="small" text @click="patchShop(asRow(row), 'price', '价格')">改价</el-button>
+            <el-button size="small" text @click="patchShop(asRow(row), 'limit_per_day', '限购次数')">
+              限购
+            </el-button>
+            <el-button size="small" text @click="patchShop(asRow(row), 'name', '名称')">改名</el-button>
+            <el-button
+              size="small"
+              text
+              :type="isOnSale(asRow(row)) ? 'warning' : 'success'"
+              @click="toggleOnSale(asRow(row))"
+            >
+              {{ isOnSale(asRow(row)) ? '下架' : '上架' }}
+            </el-button>
           </template>
         </el-table-column>
       </el-table>

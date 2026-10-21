@@ -57,7 +57,7 @@ func trimAdminKeyword(keyword string) (string, error) {
 // 运营选「第 3 章」看到 100 关，会以为「该章无数据」或干脆不看。
 // keyword 进 LIKE 前必须转义 `%` / `_` / `\`——
 // 搜索 "100%" 退化成全表匹配是「输入了东西却得到无过滤结果」。
-func (s *Service) AdminListLevels(ctx context.Context, chapter int, keyword string) ([]map[string]any, int64, error) {
+func (s *Service) AdminListLevels(ctx context.Context, chapter int, keyword string) ([]AdminLevelView, int64, error) {
 	query := `
 		SELECT l.id, l.chapter, l.name, l.seed, l.base_hp, l.wave_count, l.difficulty,
 		       l.energy_cost, l.star_targets, l.terrain_config, l.is_boss, l.enabled,
@@ -99,7 +99,7 @@ func (s *Service) AdminListLevels(ctx context.Context, chapter int, keyword stri
 	}
 	defer rows.Close()
 
-	var out []map[string]any
+	var out []AdminLevelView
 	for rows.Next() {
 		var (
 			id, chapter, waveCount, difficulty, energyCost int
@@ -132,19 +132,31 @@ func (s *Service) AdminListLevels(ctx context.Context, chapter int, keyword stri
 		if attempts > 0 {
 			clearRate = float64(clears) * 100 / float64(attempts)
 		}
-		out = append(out, map[string]any{
-			"id": id, "chapter": chapter, "name": name,
-			// 第 108 轮：seed 以**字符串**下发。
-			// seed 是 64 位 LCG 值（如 -7046029255919282421），
-			// 超过 2^53 后 JS Number 直接失精，
-			// 且后台 TS 契约（AdminLevel.seed）本来就是 string。
-			// 玩家侧的同族约定见 routes_e2e_test.go 的 seed_str。
-			"seed":    strconv.FormatInt(seed, 10),
-			"base_hp": baseHP, "wave_count": waveCount, "difficulty": difficulty,
-			"energy_cost": energyCost, "star_targets": stars, "terrain_config": terrain,
-			"is_boss": isBoss, "enabled": enabled,
-			"attempts": attempts, "clears": clears,
-			"clear_rate": clearRate, "avg_wave": avgWave,
+		out = append(out, AdminLevelView{
+			ID: id, Chapter: chapter, Name: name,
+			// seed is a STRING on purpose: it is a 64-bit LCG value
+			// (e.g. -7046029255919282421) and past 2^53 a JS Number loses
+			// precision. The admin TS contract has always typed it string.
+			// See routes_e2e_test.go seed_str for the player-side twin.
+			Seed:          strconv.FormatInt(seed, 10),
+			BaseHP:        baseHP,
+			WaveCount:     waveCount,
+			Difficulty:    difficulty,
+			EnergyCost:    energyCost,
+			StarTargets:   stars,
+			TerrainConfig: terrain,
+			IsBoss:        isBoss,
+			Enabled:       enabled,
+			Attempts:      attempts,
+			Clears:        clears,
+			ClearRate:     clearRate,
+			AvgWave:       avgWave,
+			// 23rd product decision (route b: the generator stays
+			// authoritative). List rows carry these too, otherwise ops sees
+			// the edited HP in the table with no way to know it does not
+			// reach players.
+			PlayerAuthority:  playerAuthorityGenerator,
+			AppliedToPlayers: false,
 		})
 	}
 	return out, int64(len(out)), rows.Err()
@@ -170,7 +182,7 @@ func (s *Service) AdminListLevels(ctx context.Context, chapter int, keyword stri
 // 「改完刷新前后不一致」又回到第 107 轮修掉的同一种缺陷。
 // 所以这里直接复用列表的 JOIN 查询（按 id 过滤），
 // 保证「回读响应 = 刷新列表会看到的行」。
-func (s *Service) AdminLevelRow(ctx context.Context, levelID int) (map[string]any, error) {
+func (s *Service) AdminLevelRow(ctx context.Context, levelID int) (AdminLevelView, error) {
 	var (
 		id, chapter, waveCount, difficulty, energyCost int
 		name                                           string
@@ -194,50 +206,55 @@ func (s *Service) AdminLevelRow(ctx context.Context, levelID int) (map[string]an
 			&energyCost, &starRaw, &terrainRaw, &isBoss, &enabled,
 			&attempts, &clears, &avgWave)
 	if err != nil {
-		return nil, fmt.Errorf("level row %d: %w", levelID, err)
+		return AdminLevelView{}, fmt.Errorf("level row %d: %w", levelID, err)
 	}
 	var stars []int64
 	var terrain []domain.TerrainPlacement
 	// 第 146 轮：fail-loud，见 AdminListLevels 同族说明。单关详情更不该静默吞坏数据。
 	if err := json.Unmarshal(starRaw, &stars); err != nil {
-		return nil, fmt.Errorf("level row %d: star_targets 非法 jsonb: %w", levelID, err)
+		return AdminLevelView{}, fmt.Errorf("level row %d: star_targets 非法 jsonb: %w", levelID, err)
 	}
 	if err := json.Unmarshal(terrainRaw, &terrain); err != nil {
-		return nil, fmt.Errorf("level row %d: terrain_config 非法 jsonb: %w", levelID, err)
+		return AdminLevelView{}, fmt.Errorf("level row %d: terrain_config 非法 jsonb: %w", levelID, err)
 	}
 
 	clearRate := 0.0
 	if attempts > 0 {
 		clearRate = float64(clears) * 100 / float64(attempts)
 	}
-	return map[string]any{
-		"id": id, "chapter": chapter, "name": name,
-		"seed":    strconv.FormatInt(seed, 10),
-		"base_hp": baseHP, "wave_count": waveCount, "difficulty": difficulty,
-		"energy_cost": energyCost, "star_targets": stars, "terrain_config": terrain,
-		"is_boss": isBoss, "enabled": enabled,
-		"attempts": attempts, "clears": clears,
-		"clear_rate": clearRate, "avg_wave": avgWave,
-		// 第 23 条产品决策（2026-10-20，路线 b：生成器继续权威）：
-		// 后台改的只是 `levels` 表这张**规划记录**，玩家侧关卡由纯函数
-		// `domain.GenerateLevel` 产出 —— 两个字段让这件事**机器可读**，
-		// 后台界面据此提示「记录在案，不影响线上」，
-		// 而不是把写入回执显示成「已生效」。
-		// 守卫：level_authority_test.go 的 TestAdminUpdateLevelDeclaresNotAppliedToPlayers。
-		"player_authority":   "generator",
-		"applied_to_players": false,
+	return AdminLevelView{
+		ID: id, Chapter: chapter, Name: name,
+		Seed:          strconv.FormatInt(seed, 10),
+		BaseHP:        baseHP,
+		WaveCount:     waveCount,
+		Difficulty:    difficulty,
+		EnergyCost:    energyCost,
+		StarTargets:   stars,
+		TerrainConfig: terrain,
+		IsBoss:        isBoss,
+		Enabled:       enabled,
+		Attempts:      attempts,
+		Clears:        clears,
+		ClearRate:     clearRate,
+		AvgWave:       avgWave,
+		// 23rd product decision (route b: the generator stays authoritative).
+		// These two fields make that machine-readable so the admin UI can say
+		// "recorded, does not affect live players" instead of rendering the
+		// write receipt as if it had taken effect.
+		PlayerAuthority:  playerAuthorityGenerator,
+		AppliedToPlayers: false,
 	}, nil
 }
 
 // AdminLevelWaves 返回某关的波次配置。
-func (s *Service) AdminLevelWaves(ctx context.Context, levelID int) ([]map[string]any, error) {
+func (s *Service) AdminLevelWaves(ctx context.Context, levelID int) ([]AdminLevelWaveView, error) {
 	rows, err := s.pool.Query(ctx,
 		`SELECT wave_index, spawns FROM level_waves WHERE level_id = $1 ORDER BY wave_index`, levelID)
 	if err != nil {
 		return nil, fmt.Errorf("admin waves: %w", err)
 	}
 	defer rows.Close()
-	var out []map[string]any
+	var out []AdminLevelWaveView
 	for rows.Next() {
 		var idx int
 		var raw []byte
@@ -250,24 +267,24 @@ func (s *Service) AdminLevelWaves(ctx context.Context, levelID int) ([]map[strin
 		if err := json.Unmarshal(raw, &spawns); err != nil {
 			return nil, fmt.Errorf("admin level waves: 第 %d 波 spawns 非法 jsonb: %w", idx, err)
 		}
-		out = append(out, map[string]any{"wave_index": idx, "spawns": spawns})
+		out = append(out, AdminLevelWaveView{WaveIndex: idx, Spawns: spawns})
 	}
 	return out, rows.Err()
 }
 
 // AdminSkills 返回技能与配方。
-func (s *Service) AdminSkills(ctx context.Context) (map[string]any, error) {
+func (s *Service) AdminSkills(ctx context.Context) (AdminSkillsResp, error) {
 	base, composite, err := s.fetchSkills(ctx)
 	if err != nil {
-		return nil, err
+		return AdminSkillsResp{}, err
 	}
-	return map[string]any{
-		"items":   append(base, composite...),
-		"recipes": domain.SeedRecipes,
+	return AdminSkillsResp{
+		Items:   append(base, composite...),
+		Recipes: domain.SeedRecipes,
 	}, nil
 }
 
-func (s *Service) fetchSkills(ctx context.Context) (base, composite []map[string]any, err error) {
+func (s *Service) fetchSkills(ctx context.Context) (base, composite []AdminSkillView, err error) {
 	//
 	// ⚠️ 第 119 轮：基础/复合用**生成器种子成员**判定，不再用写死的 `id <= 24`。
 	// 24 是魔法数字——当前 SeedSkills 恰好 1..24、SeedCompositeSkills 从 31 起，
@@ -301,12 +318,12 @@ func (s *Service) fetchSkills(ctx context.Context) (base, composite []map[string
 			&speed, &chain, &unlock); err != nil {
 			return nil, nil, err
 		}
-		item := map[string]any{
-			"id": id, "code": code, "name": name, "family": family, "element": element,
-			"kind": kind, "descr": descr, "base_damage": baseDamage,
-			"heat_cost": heatCost, "cooldown_ms": cooldown, "pierce": pierce,
-			"aoe_radius": aoe, "apply_element": applyElement, "apply_stacks": stacks,
-			"projectile_speed": speed, "chain": chain, "unlock_level": unlock,
+		item := AdminSkillView{
+			ID: id, Code: code, Name: name, Family: family, Element: element,
+			Kind: kind, Descr: descr, BaseDamage: baseDamage,
+			HeatCost: heatCost, CooldownMs: cooldown, Pierce: pierce,
+			AoeRadius: aoe, ApplyElement: applyElement, ApplyStacks: stacks,
+			ProjectileSpeed: speed, Chain: chain, UnlockLevel: unlock,
 		}
 		if baseIDs[id] {
 			base = append(base, item)
@@ -318,15 +335,15 @@ func (s *Service) fetchSkills(ctx context.Context) (base, composite []map[string
 }
 
 // AdminEquipment 返回装备 / 宝石 / 皮肤 / 敌人抗性。
-func (s *Service) AdminEquipment(ctx context.Context) (map[string]any, error) {
+func (s *Service) AdminEquipment(ctx context.Context) (AdminEquipmentResp, error) {
 	rows, err := s.pool.Query(ctx, `
 		SELECT id, code, name, slot, tier, element, descr, base_armor, base_bonus_pct, unlock_level
 		FROM equipment ORDER BY id`)
 	if err != nil {
-		return nil, fmt.Errorf("admin equipment: %w", err)
+		return AdminEquipmentResp{}, fmt.Errorf("admin equipment: %w", err)
 	}
 	defer rows.Close()
-	var equipment []map[string]any
+	var equipment []AdminEquipmentView
 	for rows.Next() {
 		var (
 			id, tier, armor, bonus, unlock   int
@@ -334,32 +351,32 @@ func (s *Service) AdminEquipment(ctx context.Context) (map[string]any, error) {
 		)
 		if err := rows.Scan(&id, &code, &name, &slot, &tier, &element, &descr,
 			&armor, &bonus, &unlock); err != nil {
-			return nil, err
+			return AdminEquipmentResp{}, err
 		}
-		equipment = append(equipment, map[string]any{
-			"id": id, "code": code, "name": name, "slot": slot, "tier": tier,
-			"element": element, "descr": descr, "base_armor": armor,
-			"base_bonus_pct": bonus, "unlock_level": unlock,
+		equipment = append(equipment, AdminEquipmentView{
+			ID: id, Code: code, Name: name, Slot: slot, Tier: tier,
+			Element: element, Descr: descr, BaseArmor: armor,
+			BaseBonusPct: bonus, UnlockLevel: unlock,
 		})
 	}
 	if err := rows.Err(); err != nil {
-		return nil, err
+		return AdminEquipmentResp{}, err
 	}
 
-	return map[string]any{
-		"equipment":      equipment,
-		"gems":           domain.SeedGems,
-		"qualities":      domain.GemQualities,
-		"skins":          domain.SeedSkins,
-		"enemies":        domain.ScaleAllEnemies(),
-		"reactions":      domain.AllReactionSpecs(),
-		"mastery":        domain.AllMasteryFamilies(),
-		"rating_weights": domain.DefaultRatingWeights(),
+	return AdminEquipmentResp{
+		Equipment:      equipment,
+		Gems:           domain.SeedGems,
+		Qualifications: qualitiesFromDomain(),
+		Skins:          domain.SeedSkins,
+		Enemies:        domain.ScaleAllEnemies(),
+		Reactions:      domain.AllReactionSpecs(),
+		Mastery:        domain.AllMasteryFamilies(),
+		RatingWeights:  domain.DefaultRatingWeights(),
 	}, nil
 }
 
 // AdminListDefenses 返回全部防线。
-func (s *Service) AdminListDefenses(ctx context.Context, limit int) ([]map[string]any, int64, error) {
+func (s *Service) AdminListDefenses(ctx context.Context, limit int) ([]AdminDefenseView, int64, error) {
 	if limit <= 0 || limit > 200 {
 		limit = 50
 	}
@@ -369,67 +386,74 @@ func (s *Service) AdminListDefenses(ctx context.Context, limit int) ([]map[strin
 	}
 	rows, err := s.pool.Query(ctx, `
 		SELECT d.id, d.owner_id, u.nickname, d.name, d.power, d.element_coverage,
-		       d.mastery_done, d.wins, d.losses, d.shielded_until, d.updated_at
+		       d.mastery_done, d.wins, d.losses, d.shielded_until, d.updated_at,
+		       d.snapshot_hash
 		FROM defenses d JOIN users u ON u.id = d.owner_id
 		ORDER BY d.power DESC LIMIT $1`, limit)
 	if err != nil {
 		return nil, 0, fmt.Errorf("admin defenses: %w", err)
 	}
 	defer rows.Close()
-	var out []map[string]any
+	var out []AdminDefenseView
 	for rows.Next() {
 		var (
 			id, ownerID, power, coverage, masteryDone, wins, losses int64
 			ownerName, name                                         string
+			snapshotHash                                            string
 			shielded                                                *time.Time
 			updated                                                 time.Time
 		)
 		if err := rows.Scan(&id, &ownerID, &ownerName, &name, &power, &coverage,
-			&masteryDone, &wins, &losses, &shielded, &updated); err != nil {
+			&masteryDone, &wins, &losses, &shielded, &updated, &snapshotHash); err != nil {
 			return nil, 0, err
 		}
-		out = append(out, map[string]any{
-			"id": id, "owner_id": ownerID, "owner_name": ownerName, "name": name,
-			"power": power, "element_coverage": coverage, "mastery_done": masteryDone,
-			"wins": wins, "losses": losses, "shielded_until": shielded,
-			"updated_at": updated,
+		out = append(out, AdminDefenseView{
+			ID: id, OwnerID: ownerID, OwnerName: ownerName, Name: name,
+			Power: power, ElementCoverage: int(coverage), MasteryDone: int(masteryDone),
+			Wins: int(wins), Losses: int(losses), ShieldedUntil: shielded,
+			UpdatedAt: updated,
+			// 2026-10-21: the admin "defense watch" page ranks snapshot-hash
+			// stability as its TOP concern, but the server never returned this
+			// column -> the column was permanently blank and the concern was
+			// invisible to the very page built to surface it.
+			SnapshotHash: snapshotHash,
 		})
 	}
 	return out, total, rows.Err()
 }
 
 // AdminEconomy 返回经济流水与商城配置。
-func (s *Service) AdminEconomy(ctx context.Context) (map[string]any, error) {
+func (s *Service) AdminEconomy(ctx context.Context) (AdminEconomyResp, error) {
 	rows, err := s.pool.Query(ctx, `
 		SELECT reason, currency, COUNT(*), COALESCE(SUM(delta), 0)
 		FROM wallet_flows GROUP BY reason, currency ORDER BY COUNT(*) DESC LIMIT 50`)
 	if err != nil {
-		return nil, fmt.Errorf("admin economy flows: %w", err)
+		return AdminEconomyResp{}, fmt.Errorf("admin economy flows: %w", err)
 	}
 	defer rows.Close()
-	flows := []map[string]any{}
+	flows := []AdminEconomyFlowView{}
 	for rows.Next() {
 		var reason, currency string
 		var count, delta int64
 		if err := rows.Scan(&reason, &currency, &count, &delta); err != nil {
-			return nil, err
+			return AdminEconomyResp{}, err
 		}
-		flows = append(flows, map[string]any{
-			"reason": reason, "currency": currency, "count": count, "delta": delta,
+		flows = append(flows, AdminEconomyFlowView{
+			Reason: reason, Currency: currency, Count: count, Delta: delta,
 		})
 	}
 	if err := rows.Err(); err != nil {
-		return nil, err
+		return AdminEconomyResp{}, err
 	}
 
 	srows, err := s.pool.Query(ctx,
 		`SELECT id, code, name, category, price, payload, limit_per_day, sort_order, enabled
 		 FROM shop_items ORDER BY sort_order`)
 	if err != nil {
-		return nil, fmt.Errorf("admin shop: %w", err)
+		return AdminEconomyResp{}, fmt.Errorf("admin shop: %w", err)
 	}
 	defer srows.Close()
-	shop := []map[string]any{}
+	shop := []AdminShopItemView{}
 	for srows.Next() {
 		var id, limit, sort int
 		var code, name, category string
@@ -437,23 +461,23 @@ func (s *Service) AdminEconomy(ctx context.Context) (map[string]any, error) {
 		var enabled bool
 		if err := srows.Scan(&id, &code, &name, &category, &priceRaw, &payloadRaw,
 			&limit, &sort, &enabled); err != nil {
-			return nil, err
+			return AdminEconomyResp{}, err
 		}
 		var price, payload map[string]int
-		// 第 149 轮：fail-loud，与 LoadShop 同口径。
+		// fail-loud, same rule as LoadShop.
 		if err := json.Unmarshal(priceRaw, &price); err != nil {
-			return nil, fmt.Errorf("admin economy: 商品 price 非法 jsonb: %w", err)
+			return AdminEconomyResp{}, fmt.Errorf("admin economy: shop price is invalid jsonb: %w", err)
 		}
 		if err := json.Unmarshal(payloadRaw, &payload); err != nil {
-			return nil, fmt.Errorf("admin economy: 商品 payload 非法 jsonb: %w", err)
+			return AdminEconomyResp{}, fmt.Errorf("admin economy: shop payload is invalid jsonb: %w", err)
 		}
-		shop = append(shop, map[string]any{
-			"id": id, "code": code, "name": name, "category": category,
-			"price": price, "payload": payload, "limit_per_day": limit,
-			"sort_order": sort, "enabled": enabled,
+		shop = append(shop, AdminShopItemView{
+			ID: id, Code: code, Name: name, Category: category,
+			Price: price, Payload: payload, LimitPerDay: limit,
+			SortOrder: sort, Enabled: enabled,
 		})
 	}
-	return map[string]any{"flows": flows, "shop": shop}, srows.Err()
+	return AdminEconomyResp{Flows: flows, Shop: shop}, srows.Err()
 }
 
 // AdminUpdateShopItem 更新商城配置。
@@ -473,7 +497,7 @@ func (s *Service) AdminEconomy(ctx context.Context) (map[string]any, error) {
 //
 // 所以判据必须落在**形状**上（和「能不能序列化」无关）：
 // price/payload 必须是「已知货币 → 非负整数」的对象。
-func (s *Service) AdminUpdateShopItem(ctx context.Context, id int64, patch map[string]any) (map[string]any, error) {
+func (s *Service) AdminUpdateShopItem(ctx context.Context, id int64, patch map[string]any) (AdminShopUpdateResp, error) {
 	fields := []string{}
 	args := []any{id}
 	set := func(col string, v any) {
@@ -544,17 +568,17 @@ func (s *Service) AdminUpdateShopItem(ctx context.Context, id int64, patch map[s
 	}
 	if len(rejected) > 0 {
 		sort.Strings(rejected)
-		return nil, fmt.Errorf("%w: 这些字段没被接受，整单未执行：%s",
-			ErrBadInput, strings.Join(rejected, "、"))
+		return AdminShopUpdateResp{}, fmt.Errorf("%w: these fields were rejected, nothing was written: %s",
+			ErrBadInput, strings.Join(rejected, ", "))
 	}
 	if len(fields) == 0 {
-		return nil, fmt.Errorf("%w: 没有可更新的字段", ErrBadInput)
+		return AdminShopUpdateResp{}, fmt.Errorf("%w: no updatable fields", ErrBadInput)
 	}
 	sql := fmt.Sprintf(`UPDATE shop_items SET %s, updated_at = now() WHERE id = $1`, joinComma(fields))
 	if _, err := s.pool.Exec(ctx, sql, args...); err != nil {
-		return nil, fmt.Errorf("update shop item: %w", err)
+		return AdminShopUpdateResp{}, fmt.Errorf("update shop item: %w", err)
 	}
-	return map[string]any{"id": id, "updated": fields}, nil
+	return AdminShopUpdateResp{ID: id, Updated: fields}, nil
 }
 
 // toIntMap 把 JSON 值转成 map[string]int。
@@ -593,14 +617,14 @@ func validWalletCurrency(k string) bool {
 }
 
 // AdminListAnnouncements 返回公告。
-func (s *Service) AdminListAnnouncements(ctx context.Context) ([]map[string]any, error) {
+func (s *Service) AdminListAnnouncements(ctx context.Context) ([]AdminAnnouncementView, error) {
 	rows, err := s.pool.Query(ctx,
 		`SELECT id, title, body, published, published_at, created_at FROM announcements ORDER BY id DESC`)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var out []map[string]any
+	var out []AdminAnnouncementView
 	for rows.Next() {
 		var id int
 		var title, body string
@@ -609,16 +633,16 @@ func (s *Service) AdminListAnnouncements(ctx context.Context) ([]map[string]any,
 		if err := rows.Scan(&id, &title, &body, &published, &publishedAt, &createdAt); err != nil {
 			return nil, err
 		}
-		out = append(out, map[string]any{
-			"id": id, "title": title, "body": body, "published": published,
-			"published_at": publishedAt, "created_at": createdAt,
+		out = append(out, AdminAnnouncementView{
+			ID: id, Title: title, Body: body, Published: published,
+			PublishedAt: publishedAt, CreatedAt: createdAt,
 		})
 	}
 	return out, rows.Err()
 }
 
 // AdminCreateAnnouncement 创建公告。
-func (s *Service) AdminCreateAnnouncement(ctx context.Context, title, body string, published bool) (map[string]any, error) {
+func (s *Service) AdminCreateAnnouncement(ctx context.Context, title, body string, published bool) (AdminAnnouncementView, error) {
 	var id int
 	var at *time.Time
 	if published {
@@ -628,20 +652,22 @@ func (s *Service) AdminCreateAnnouncement(ctx context.Context, title, body strin
 	if err := s.pool.QueryRow(ctx,
 		`INSERT INTO announcements (title, body, published, published_at) VALUES ($1,$2,$3,$4) RETURNING id`,
 		title, body, published, at).Scan(&id); err != nil {
-		return nil, fmt.Errorf("create announcement: %w", err)
+		return AdminAnnouncementView{}, fmt.Errorf("create announcement: %w", err)
 	}
-	return map[string]any{"id": id, "title": title, "body": body, "published": published}, nil
+	return AdminAnnouncementView{
+		ID: id, Title: title, Body: body, Published: published, PublishedAt: at,
+	}, nil
 }
 
 // AdminListRedeemCodes 返回兑换码。
-func (s *Service) AdminListRedeemCodes(ctx context.Context) ([]map[string]any, error) {
+func (s *Service) AdminListRedeemCodes(ctx context.Context) ([]AdminRedeemCodeView, error) {
 	rows, err := s.pool.Query(ctx,
 		`SELECT id, code, reward, max_uses, used_count, expires_at, enabled FROM redeem_codes ORDER BY id`)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var out []map[string]any
+	var out []AdminRedeemCodeView
 	for rows.Next() {
 		var id, maxUses, used int
 		var code string
@@ -652,13 +678,14 @@ func (s *Service) AdminListRedeemCodes(ctx context.Context) ([]map[string]any, e
 			return nil, err
 		}
 		var reward map[string]int
-		// 第 149 轮：fail-loud。兑换码奖励坏掉时静默给空，运营会以为「码没奖」。
+		// fail-loud: a broken reward map would otherwise read as "this code
+		// grants nothing".
 		if err := json.Unmarshal(rewardRaw, &reward); err != nil {
-			return nil, fmt.Errorf("admin redeem codes: 码 %s 的 reward 非法 jsonb: %w", code, err)
+			return nil, fmt.Errorf("admin redeem codes: code %s has invalid reward jsonb: %w", code, err)
 		}
-		out = append(out, map[string]any{
-			"id": id, "code": code, "reward": reward, "max_uses": maxUses,
-			"used_count": used, "expires_at": expires, "enabled": enabled,
+		out = append(out, AdminRedeemCodeView{
+			ID: id, Code: code, Reward: reward, MaxUses: maxUses,
+			UsedCount: used, ExpiresAt: expires, Enabled: enabled,
 		})
 	}
 	return out, rows.Err()
@@ -673,27 +700,25 @@ func (s *Service) AdminListRedeemCodes(ctx context.Context) ([]map[string]any, e
 // 运营设的过期时间静默丢失，兑换码永久有效（可被无限期转卖滥用）。
 // 兑换路径本就认 `expires_at`（economy.go 的 Redeem SQL：
 // `expires_at IS NULL OR expires_at > now()`），只差创建端不写库。
-func (s *Service) AdminCreateRedeemCode(ctx context.Context, code string, reward map[string]int, maxUses int, expiresAt *time.Time) (map[string]any, error) {
+func (s *Service) AdminCreateRedeemCode(ctx context.Context, code string, reward map[string]int, maxUses int, expiresAt *time.Time) (AdminRedeemCodeView, error) {
 	raw, err := json.Marshal(reward)
 	if err != nil {
-		return nil, err
+		return AdminRedeemCodeView{}, err
 	}
 	var id int
 	if err := s.pool.QueryRow(ctx,
 		`INSERT INTO redeem_codes (code, reward, max_uses, expires_at)
 		 VALUES ($1,$2,$3,$4) RETURNING id`,
 		code, raw, maxUses, expiresAt).Scan(&id); err != nil {
-		return nil, fmt.Errorf("create redeem code: %w", err)
+		return AdminRedeemCodeView{}, fmt.Errorf("create redeem code: %w", err)
 	}
-	out := map[string]any{"id": id, "code": code, "reward": reward, "max_uses": maxUses}
-	if expiresAt != nil {
-		out["expires_at"] = *expiresAt
-	}
-	return out, nil
+	return AdminRedeemCodeView{
+		ID: id, Code: code, Reward: reward, MaxUses: maxUses, ExpiresAt: expiresAt,
+	}, nil
 }
 
 // AdminListAuditLogs 返回操作审计。
-func (s *Service) AdminListAuditLogs(ctx context.Context, limit int) ([]map[string]any, error) {
+func (s *Service) AdminListAuditLogs(ctx context.Context, limit int) ([]AdminAuditLogView, error) {
 	if limit <= 0 || limit > 500 {
 		limit = 100
 	}
@@ -704,7 +729,7 @@ func (s *Service) AdminListAuditLogs(ctx context.Context, limit int) ([]map[stri
 		return nil, err
 	}
 	defer rows.Close()
-	var out []map[string]any
+	var out []AdminAuditLogView
 	for rows.Next() {
 		var id, adminID *int64
 		var username, action, target string
@@ -714,10 +739,16 @@ func (s *Service) AdminListAuditLogs(ctx context.Context, limit int) ([]map[stri
 			return nil, err
 		}
 		var d any
-		_ = json.Unmarshal(detail, &d)
-		out = append(out, map[string]any{
-			"id": id, "admin_id": adminID, "username": username, "action": action,
-			"target": target, "detail": d, "created_at": createdAt,
+		// 2026-10-21: this used to be `_ = json.Unmarshal(detail, &d)`, so a
+		// broken payload became null -- indistinguishable from "no detail at
+		// all". The write side already writes {"detail_error": ...}; the read
+		// side must not pretend a broken payload is an empty one.
+		if err := json.Unmarshal(detail, &d); err != nil {
+			return nil, fmt.Errorf("admin audit logs: entry %v has invalid detail jsonb: %w", id, err)
+		}
+		out = append(out, AdminAuditLogView{
+			ID: id, AdminID: adminID, Username: username, Action: action,
+			Target: target, Detail: d, CreatedAt: createdAt,
 		})
 	}
 	return out, rows.Err()

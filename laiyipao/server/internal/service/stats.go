@@ -609,7 +609,7 @@ func (s *Service) AdminListBattles(ctx context.Context, userID int64, levelID in
 // AdminUpdateLevel 更新关卡配置。
 //
 // 只有白名单字段可写 —— 客户端上报的任意字段绝不能直接进库。
-func (s *Service) AdminUpdateLevel(ctx context.Context, levelID int, patch map[string]any) (map[string]any, error) {
+func (s *Service) AdminUpdateLevel(ctx context.Context, levelID int, patch map[string]any) (AdminLevelView, error) {
 	fields := []string{}
 	args := []any{levelID}
 	set := func(col string, v any) {
@@ -780,16 +780,16 @@ func (s *Service) AdminUpdateLevel(ctx context.Context, levelID int, patch map[s
 
 	if len(rejected) > 0 {
 		sort.Strings(rejected)
-		return nil, fmt.Errorf("%w: 这些字段没被接受，整单未执行：%s",
+		return AdminLevelView{}, fmt.Errorf("%w: 这些字段没被接受，整单未执行：%s",
 			ErrBadInput, strings.Join(rejected, "、"))
 	}
 	if len(fields) == 0 {
-		return nil, fmt.Errorf("%w: 没有可更新的字段", ErrBadInput)
+		return AdminLevelView{}, fmt.Errorf("%w: 没有可更新的字段", ErrBadInput)
 	}
 	sql := fmt.Sprintf(`UPDATE levels SET %s, updated_at = now() WHERE id = $1`,
 		joinComma(fields))
 	if _, err := s.pool.Exec(ctx, sql, args...); err != nil {
-		return nil, fmt.Errorf("update level: %w", err)
+		return AdminLevelView{}, fmt.Errorf("update level: %w", err)
 	}
 	//
 	// ⚠️ 第 107 轮：这里原来返回 `domain.GenerateLevel(levelID)`。
@@ -805,7 +805,7 @@ func (s *Service) AdminUpdateLevel(ctx context.Context, levelID int, patch map[s
 	// 以及 README 已知边界第 23 条（需要产品决策）。
 	row, err := s.AdminLevelRow(ctx, levelID)
 	if err != nil {
-		return nil, fmt.Errorf("read back level: %w", err)
+		return AdminLevelView{}, fmt.Errorf("read back level: %w", err)
 	}
 	return row, nil
 }
@@ -818,47 +818,83 @@ func (s *Service) AdminUpdateLevel(ctx context.Context, levelID int, patch map[s
 // `res.skill` 恒为 undefined —— 改完技能表行**停在上次刷新的旧值**
 // 却弹「已保存」（写后读与写入矛盾，第 107/108 轮同族）。
 // 现在返回读回的行，响应即「后台刷新列表会看到的那一行」。
-func (s *Service) AdminUpdateSkill(ctx context.Context, skillID int, patch map[string]any) (map[string]any, error) {
+func (s *Service) AdminUpdateSkill(ctx context.Context, skillID int, patch map[string]any) (AdminSkillView, error) {
 	fields := []string{}
 	args := []any{skillID}
 	set := func(col string, v any) {
 		args = append(args, v)
 		fields = append(fields, fmt.Sprintf("%s = $%d", col, len(args)))
 	}
+	//
+	// 2026-10-21 (P2-10): unknown/invalid keys are now rejected as a whole
+	// request, exactly like AdminUpdateLevel and AdminUpdateShopItem.
+	//
+	// Before, every case was `if ok { set(...) }` and the loop continued, so
+	//
+	//	PUT {"name":"X", "base_damage":-5}  ->  200
+	//	  the name was written, base_damage was silently dropped
+	//
+	// Ops saw 200 and believed both fields had been tuned. "Partially applied
+	// with a success receipt" is worse than an outright error, because an error
+	// at least says "your request was wrong".
+	var rejected []string
+	reject := func(key, why string) {
+		rejected = append(rejected, fmt.Sprintf("%s (%s)", key, why))
+	}
+
 	for key, val := range patch {
 		switch key {
 		case "name", "descr":
-			if v, ok := val.(string); ok {
-				set(key, v)
+			v, ok := val.(string)
+			if !ok || v == "" {
+				reject(key, "must be a non-empty string")
+				continue
 			}
+			set(key, v)
 		case "base_damage", "heat_cost", "cooldown_ms", "pierce", "aoe_radius",
 			"apply_stacks", "projectile_speed", "chain":
-			if v, ok := toInt64(val); ok && v >= 0 {
-				set(key, v)
+			v, ok := toInt64(val)
+			if !ok || v < 0 {
+				reject(key, "must be a non-negative integer")
+				continue
 			}
+			set(key, v)
 		case "element", "family", "kind":
-			if v, ok := val.(string); ok && v != "" {
-				set(key, v)
+			v, ok := val.(string)
+			if !ok || v == "" {
+				reject(key, "must be a non-empty string")
+				continue
 			}
+			set(key, v)
+		default:
+			// An unknown key must be reported: silently ignoring it is a trap,
+			// because the caller gets 200 and believes the field was tuned.
+			reject(key, "not in the updatable-field whitelist")
 		}
 	}
+	if len(rejected) > 0 {
+		sort.Strings(rejected)
+		return AdminSkillView{}, fmt.Errorf("%w: these fields were rejected, nothing was written: %s",
+			ErrBadInput, strings.Join(rejected, ", "))
+	}
 	if len(fields) == 0 {
-		return nil, fmt.Errorf("%w: 没有可更新的字段", ErrBadInput)
+		return AdminSkillView{}, fmt.Errorf("%w: no updatable fields", ErrBadInput)
 	}
 	sql := fmt.Sprintf(`UPDATE skills SET %s WHERE id = $1`, joinComma(fields))
 	if _, err := s.pool.Exec(ctx, sql, args...); err != nil {
-		return nil, fmt.Errorf("update skill: %w", err)
+		return AdminSkillView{}, fmt.Errorf("update skill: %w", err)
 	}
-	// 回读落库后的那一行（第 120 轮：响应 = 后台刷新列表会看到的那一行）
+	// Read the row back (round 120: the response IS the row the admin table
+	// would show after a refresh).
 	row, err := s.skillRow(ctx, skillID)
 	if err != nil {
-		return nil, fmt.Errorf("read back skill: %w", err)
+		return AdminSkillView{}, fmt.Errorf("read back skill: %w", err)
 	}
 	return row, nil
 }
 
 // skillRow 读回单行技能配置（与 fetchSkills 的列一致，供写后读与后台契约对齐）。
-func (s *Service) skillRow(ctx context.Context, skillID int) (map[string]any, error) {
+func (s *Service) skillRow(ctx context.Context, skillID int) (AdminSkillView, error) {
 	var (
 		id, heatCost, cooldown, pierce, aoe, stacks, speed, chain, unlock int
 		code, name, family, element, kind, descr, applyElement            string
@@ -873,14 +909,14 @@ func (s *Service) skillRow(ctx context.Context, skillID int) (map[string]any, er
 			&baseDamage, &heatCost, &cooldown, &pierce, &aoe, &applyElement, &stacks,
 			&speed, &chain, &unlock)
 	if err != nil {
-		return nil, err
+		return AdminSkillView{}, err
 	}
-	return map[string]any{
-		"id": id, "code": code, "name": name, "family": family, "element": element,
-		"kind": kind, "descr": descr, "base_damage": baseDamage,
-		"heat_cost": heatCost, "cooldown_ms": cooldown, "pierce": pierce,
-		"aoe_radius": aoe, "apply_element": applyElement, "apply_stacks": stacks,
-		"projectile_speed": speed, "chain": chain, "unlock_level": unlock,
+	return AdminSkillView{
+		ID: id, Code: code, Name: name, Family: family, Element: element,
+		Kind: kind, Descr: descr, BaseDamage: baseDamage,
+		HeatCost: heatCost, CooldownMs: cooldown, Pierce: pierce,
+		AoeRadius: aoe, ApplyElement: applyElement, ApplyStacks: stacks,
+		ProjectileSpeed: speed, Chain: chain, UnlockLevel: unlock,
 	}, nil
 }
 

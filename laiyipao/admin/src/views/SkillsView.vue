@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { fetchSkills, updateSkill, type AdminSkill } from '@/api'
+import { fetchSkills, updateSkill, type AdminSkillView, type SeedRecipe } from '@/api'
 
 const loading = ref(false)
-const skills = ref<AdminSkill[]>([])
-const recipes = ref<Array<Record<string, number>>>([])
+const skills = ref<AdminSkillView[]>([])
+const recipes = ref<SeedRecipe[]>([])
 const activeElement = ref<string>('')
 const activeKind = ref<string>('')
 
@@ -41,13 +41,13 @@ const FAMILY_LABEL: Record<string, string> = {
  * 但热量是 I-2 的核心约束 —— 玩家只有 100 点热量预算。
  * 比值低的技能意味着「同样的热量预算换不到伤害」，是数值失衡的早期信号。
  */
-function dpsPerHeat(s: AdminSkill): number {
+function dpsPerHeat(s: AdminSkillView): number {
   if (s.heat_cost <= 0) return s.base_damage
   const shotsPerSec = 1000 / Math.max(1, s.cooldown_ms)
   return (s.base_damage * shotsPerSec) / s.heat_cost
 }
 
-function heatTone(s: AdminSkill): 'success' | 'info' | 'warning' | 'danger' {
+function heatTone(s: AdminSkillView): 'success' | 'info' | 'warning' | 'danger' {
   const r = dpsPerHeat(s)
   if (r >= 8) return 'success'
   if (r >= 4) return 'info'
@@ -69,14 +69,14 @@ async function load() {
 }
 
 /** 关键：改任何一项都必须知道整体影响，因此逐字段确认而不是整行提交 */
-async function patch(row: AdminSkill, field: keyof AdminSkill, label: string) {
+async function patch(row: AdminSkillView, field: keyof AdminSkillView, label: string) {
   try {
     const { value } = await ElMessageBox.prompt(
       `修改「${row.name}」的${label}（当前 ${row[field]}）`,
       '编辑技能',
       { inputValue: String(row[field]), inputPattern: /^-?\d+$/, inputErrorMessage: '必须是整数' },
     )
-    const res = await updateSkill(row.id, { [field]: Number(value) } as Partial<AdminSkill>)
+    const res = await updateSkill(row.id, { [field]: Number(value) } as Partial<AdminSkillView>)
     Object.assign(row, res.skill)
     ElMessage.success('已保存')
   } catch {
@@ -84,7 +84,7 @@ async function patch(row: AdminSkill, field: keyof AdminSkill, label: string) {
   }
 }
 
-async function onEditDescr(row: AdminSkill) {
+async function onEditDescr(row: AdminSkillView) {
   try {
     const { value } = await ElMessageBox.prompt('修改技能描述', '编辑技能', {
       inputValue: row.descr,
@@ -120,7 +120,7 @@ onMounted(load)
  * 断言让它们重新受检；但它断言的是**形状**，
  * 字段名本身拼错仍要靠运行时的 `undefined` 暴露。
  */
-const asRow = (r: unknown) => r as AdminSkill
+const asRow = (r: unknown) => r as AdminSkillView
 </script>
 
 <template>

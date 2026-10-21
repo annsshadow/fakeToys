@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { onMounted, ref, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { fetchUsers, banUser, unbanUser, grantUser, type AdminUser } from '@/api'
+import { fetchUsers, banUser, unbanUser, grantUser, type AdminUserView } from '@/api'
 import { fmtTime } from '@/utils/format'
 
 const loading = ref(false)
-const users = ref<AdminUser[]>([])
+const users = ref<AdminUserView[]>([])
 const total = ref(0)
 const keyword = ref('')
 const limit = ref(50)
@@ -22,12 +22,12 @@ const page = computed(() => Math.floor(offset.value / limit.value) + 1)
 const pageCount = computed(() => Math.max(1, Math.ceil(total.value / limit.value)))
 
 /** status: 1=正常 2=封禁（与迁移中的 CHECK 约束一致） */
-function statusOf(u: AdminUser): { text: string; type: 'success' | 'danger' } {
+function statusOf(u: AdminUserView): { text: string; type: 'success' | 'danger' } {
   return u.status === 1 ? { text: '正常', type: 'success' } : { text: '封禁', type: 'danger' }
 }
 
 /** 高战力但零战斗记录的用户是刷分嫌疑，列表里直接标出来。 */
-function suspicious(u: AdminUser): boolean {
+function suspicious(u: AdminUserView): boolean {
   return u.power > 5000 && u.max_stage <= 1
 }
 
@@ -52,13 +52,13 @@ function suspicious(u: AdminUser): boolean {
  */
 type VerifyState = 'unknown' | 'clean' | 'suspect'
 
-function verifyState(u: AdminUser): VerifyState {
+function verifyState(u: AdminUserView): VerifyState {
   if ((u.verify_mismatched ?? 0) > 0) return 'suspect'
   if ((u.verify_checked ?? 0) === 0) return 'unknown'
   return 'clean'
 }
 
-function verifyTag(u: AdminUser): { text: string; type: 'info' | 'success' | 'danger' } {
+function verifyTag(u: AdminUserView): { text: string; type: 'info' | 'success' | 'danger' } {
   const s = verifyState(u)
   if (s === 'suspect') return { text: `不匹配 ${u.verify_mismatched}/${u.verify_checked}`, type: 'danger' }
   if (s === 'clean') return { text: `一致 ${u.verify_checked}`, type: 'success' }
@@ -90,7 +90,7 @@ function nextPage() {
   load()
 }
 
-async function onBan(u: AdminUser) {
+async function onBan(u: AdminUserView) {
   try {
     const { value } = await ElMessageBox.prompt(`封禁「${u.nickname}」的原因`, '封禁用户', {
       inputType: 'textarea',
@@ -105,13 +105,13 @@ async function onBan(u: AdminUser) {
   }
 }
 
-async function onUnban(u: AdminUser) {
+async function onUnban(u: AdminUserView) {
   const res = await unbanUser(u.id)
   Object.assign(u, res.user)
   ElMessage.success('已解封')
 }
 
-async function onGrant(u: AdminUser) {
+async function onGrant(u: AdminUserView) {
   try {
     const { value } = await ElMessageBox.prompt(
       `给「${u.nickname}」发放资源。格式：coin 10000 / gem 500 / energy 200 / keys 5（货币名为 coin/gem/energy/keys；数量为负 = 回收）`,
@@ -162,7 +162,7 @@ onMounted(load)
  * 断言让它们重新受检；但它断言的是**形状**，
  * 字段名本身拼错仍要靠运行时的 `undefined` 暴露。
  */
-const asRow = (r: unknown) => r as AdminUser
+const asRow = (r: unknown) => r as AdminUserView
 </script>
 
 <template>

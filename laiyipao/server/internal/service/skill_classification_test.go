@@ -37,16 +37,11 @@ func TestSkillClassificationFollowsSeed(t *testing.T) {
 
 	gotBase := map[int]bool{}
 	for _, m := range base {
-		if id, ok := m["id"].(int); ok {
-			gotBase[id] = true
-		}
+		gotBase[m.ID] = true
 	}
 	gotComposite := map[int]bool{}
 	for _, m := range composite {
-		if id, ok := m["id"].(int); ok {
-			gotComposite[id] = true
-		}
-
+		gotComposite[m.ID] = true
 	}
 
 	for id := range wantBase {
