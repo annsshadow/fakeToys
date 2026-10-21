@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import {onMounted, ref, computed, onActivated} from 'vue'
+import { useAdminRole } from '@/utils/adminRole'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { isCancel } from '@/utils/format'
 import {
   fetchEconomy,
   updateShopItem,
@@ -11,6 +13,8 @@ import {
 /** 空态文案（2026-10-21 P5-8）：空表要说清「为什么空」。 */
 const emptyText = '暂无流水记录'
 const loading = ref(false)
+// 2026-10-21（P5-6 / 二轮审计 P2-3）：readonly 账号看不到写入口。
+const { isReadonly } = useAdminRole()
 const flows = ref<AdminEconomyFlowView[]>([])
 const shop = ref<AdminShopItemView[]>([])
 
@@ -149,8 +153,10 @@ async function patchShop(row: AdminShopItemView, field: string, label: string) {
     // 直接整页重拉：表格与 KPI 一起对齐真库。
     ElMessage.success('已保存')
     await load()
-  } catch {
-    /* 取消 */
+  } catch (e) {
+    // 「取消」与「失败」分开（2026-10-21 二轮审计 P2-2）。
+    if (isCancel(e)) return
+    ElMessage.error(`保存失败：${(e as Error).message}`)
   }
 }
 
@@ -202,8 +208,21 @@ onMounted(load)
  *
  * `onActivated` 是 keep-alive 视图重新可见时的钩子。
  */
+/**
+   * `onActivated` 在**首次挂载**时也会触发（vue 给 keep-alive 的子组件
+   * 打标记并把钩子排进 post-render 队列），而 `onMounted` 已经加载过一次 ——
+   * 两者都留着 = 每进一次页面发**两份**请求，还留下一个
+   * 「后到的先渲染」的乱序窗口。
+   *
+   * 所以：首次的 `onActivated` 跳过，之后的才刷新。
+   */
+  let activatedOnce = false
 onActivated(() => {
-  load()
+    if (!activatedOnce) {
+    activatedOnce = true
+    return
+  }
+load()
 })
 </script>
 
@@ -287,12 +306,13 @@ onActivated(() => {
         </el-table-column>
         <el-table-column label="操作" width="230" fixed="right">
           <template #default="{ row }">
-            <el-button size="small" text @click="patchShop(asRow(row), 'price', '价格')">改价</el-button>
-            <el-button size="small" text @click="patchShop(asRow(row), 'limit_per_day', '限购次数')">
+            <el-button v-if="!isReadonly" size="small" text @click="patchShop(asRow(row), 'price', '价格')">改价</el-button>
+            <el-button v-if="!isReadonly" size="small" text @click="patchShop(asRow(row), 'limit_per_day', '限购次数')">
               限购
             </el-button>
-            <el-button size="small" text @click="patchShop(asRow(row), 'name', '名称')">改名</el-button>
+            <el-button v-if="!isReadonly" size="small" text @click="patchShop(asRow(row), 'name', '名称')">改名</el-button>
             <el-button
+              v-if="!isReadonly"
               size="small"
               text
               :type="isOnSale(asRow(row)) ? 'warning' : 'success'"

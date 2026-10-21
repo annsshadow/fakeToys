@@ -29,6 +29,7 @@ export interface AdminAnnouncementView {
 
 export interface AdminAnnouncementsResp {
   items: AdminAnnouncementView[]
+  total: number
 }
 
 export interface AdminAuditLogView {
@@ -43,6 +44,7 @@ export interface AdminAuditLogView {
 
 export interface AdminAuditLogsResp {
   items: AdminAuditLogView[]
+  total: number
 }
 
 export interface AdminBattleDetailResp {
@@ -235,6 +237,7 @@ export interface AdminRedeemCodeView {
 
 export interface AdminRedeemCodesResp {
   items: AdminRedeemCodeView[]
+  total: number
 }
 
 export interface AdminRegenerateResp {
@@ -407,9 +410,21 @@ export interface LevelSummary {
 }
 
 export interface MasteryFamily {
-  Family: string
-  Name: string
-  Nodes: []
+  family: string
+  name: string
+  nodes: MasteryNode[]
+}
+
+export interface MasteryNode {
+  id: number
+  family: string
+  layer: number
+  slot: number
+  name: string
+  kind: string
+  value: number
+  prereq_family: string
+  prereq_layer: number
 }
 
 export interface QualityInfo {
@@ -461,6 +476,18 @@ export interface RecomputeLevelStat {
   max_user_mismatches: number
 }
 
+export interface RecomputeModeState {
+  mode: string
+  configured_mode: string
+  engine_mode: string
+  skills_mode: string
+  enforcing: boolean
+  demoted: boolean
+  demoted_reason: string
+  breaker_rate_permille: number
+  breaker_min_samples: number
+}
+
 export interface RecomputeSide {
   score: number
   kills: number
@@ -470,6 +497,9 @@ export interface RecomputeSide {
 
 export interface RecomputeSummary {
   mode: string
+  engine_mode: string
+  skills_mode: string
+  enforcing: boolean
   configured_mode: string
   demoted: boolean
   demoted_reason: string

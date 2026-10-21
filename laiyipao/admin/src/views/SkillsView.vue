@@ -1,11 +1,15 @@
 <script setup lang="ts">
 import {onMounted, ref, onActivated} from 'vue'
+import { useAdminRole } from '@/utils/adminRole'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { isCancel } from '@/utils/format'
 import { fetchSkills, updateSkill, type AdminSkillView, type SeedRecipe } from '@/api'
 
 /** 空态文案（2026-10-21 P5-8）：空表要说清「为什么空」。 */
 const emptyText = '技能表为空'
 const loading = ref(false)
+// 2026-10-21（P5-6 / 二轮审计 P2-3）：readonly 账号看不到写入口。
+const { isReadonly } = useAdminRole()
 const skills = ref<AdminSkillView[]>([])
 const recipes = ref<SeedRecipe[]>([])
 const activeElement = ref<string>('')
@@ -174,8 +178,11 @@ async function patch(row: AdminSkillView, field: keyof AdminSkillView, label: st
     const res = await updateSkill(row.id, { [field]: Number(value) } as Partial<AdminSkillView>)
     Object.assign(row, res.skill)
     ElMessage.success('已保存')
-  } catch {
-    /* 取消 */
+  } catch (e) {
+    // 「取消」与「失败」分开（2026-10-21 二轮审计 P2-2）：
+    // 否则 readonly 账号点改数值得到 403，**屏幕上什么都不显示**。
+    if (isCancel(e)) return
+    ElMessage.error(`保存失败：${(e as Error).message}`)
   }
 }
 
@@ -188,8 +195,9 @@ async function onEditDescr(row: AdminSkillView) {
     const res = await updateSkill(row.id, { descr: value })
     Object.assign(row, res.skill)
     ElMessage.success('已保存')
-  } catch {
-    /* 取消 */
+  } catch (e) {
+    if (isCancel(e)) return
+    ElMessage.error(`保存失败：${(e as Error).message}`)
   }
 }
 
@@ -211,8 +219,21 @@ onMounted(load)
  *
  * `onActivated` 是 keep-alive 视图重新可见时的钩子。
  */
+/**
+   * `onActivated` 在**首次挂载**时也会触发（vue 给 keep-alive 的子组件
+   * 打标记并把钩子排进 post-render 队列），而 `onMounted` 已经加载过一次 ——
+   * 两者都留着 = 每进一次页面发**两份**请求，还留下一个
+   * 「后到的先渲染」的乱序窗口。
+   *
+   * 所以：首次的 `onActivated` 跳过，之后的才刷新。
+   */
+  let activatedOnce = false
 onActivated(() => {
-  load()
+    if (!activatedOnce) {
+    activatedOnce = true
+    return
+  }
+load()
 })
 
 /**
@@ -294,8 +315,8 @@ const asRow = (r: unknown) => r as AdminSkillView
           <template #default="{ row }">
             <el-button size="small" text @click="patch(asRow(row), 'base_damage', '基础伤害')">伤害</el-button>
             <el-button size="small" text @click="patch(asRow(row), 'heat_cost', '热量消耗')">热量</el-button>
-            <el-button size="small" text @click="openEdit(asRow(row))">编辑</el-button>
-            <el-button size="small" text @click="onEditDescr(asRow(row))">描述</el-button>
+            <el-button v-if="!isReadonly" size="small" text @click="openEdit(asRow(row))">编辑</el-button>
+            <el-button v-if="!isReadonly" size="small" text @click="onEditDescr(asRow(row))">描述</el-button>
           </template>
         </el-table-column>
         <template #empty>

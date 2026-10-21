@@ -25,6 +25,8 @@ const chapter = ref<number | undefined>(undefined)
  * 其实是那个章根本不存在。内容加章后这里自动跟上，不用再改 UI。
  */
 const chapterOptions = ref<number[]>([])
+/** 全量章节（只有无筛选的拉取才更新它 —— 见 load 里的注释）。 */
+const allChapters = ref<number[]>([])
 const keyword = ref('')
 
 // 波次抽屉
@@ -67,11 +69,26 @@ async function load() {
     const res = await fetchLevels({ chapter: chapter.value, keyword: keyword.value || undefined })
     // 只在**无章节筛选**时从全量推导下拉选项：筛选后 items 只剩该章，
     // 拿它推导会把其它章从下拉里删掉，选项本身就漏了。
-    if (chapter.value === undefined) {
+    // ⚠️ 2026-10-21（二轮审计 P2-5）：关键词搜索**也会**把下拉选项挤掉 ——
+    // 搜索命中的一关可能只在第 1 章，于是 `chapterOptions` 塌成 [1]，
+    // 运营再也选不到第 3 章（清空搜索才恢复）。
+    //
+    // 所以：只要**没有**章节筛选，就从**全量**关卡推导选项，
+    // 而不是从（可能已被过滤的）items 推导。
+    //
+    // ⚠️ 2026-10-21（二轮审计 P2-5）：章节下拉选项**不能**从被过滤过的
+    // `res.items` 推导。
+    //
+    // 搜索「龙」→ 只有关键词命中的关卡（可能都在第 1 章）→
+    // 选项塌成 [1] → 运营**再也选不到第 3 章**（清空搜索才恢复）。
+    //
+    // 修法：只在**无筛选**的那次拉取里更新「全量章节」，之后一直用它。
+    if (chapter.value === undefined && !keyword.value) {
       const seen = new Set<number>()
       for (const l of res.items) seen.add(l.chapter)
-      chapterOptions.value = [...seen].sort((a, b) => a - b)
+      allChapters.value = [...seen].sort((a, b) => a - b)
     }
+    chapterOptions.value = allChapters.value
     levels.value = res.items
     total.value = res.total
   } catch (e) {
@@ -266,8 +283,21 @@ onMounted(load)
  *
  * `onActivated` 是 keep-alive 视图重新可见时的钩子。
  */
+/**
+   * `onActivated` 在**首次挂载**时也会触发（vue 给 keep-alive 的子组件
+   * 打标记并把钩子排进 post-render 队列），而 `onMounted` 已经加载过一次 ——
+   * 两者都留着 = 每进一次页面发**两份**请求，还留下一个
+   * 「后到的先渲染」的乱序窗口。
+   *
+   * 所以：首次的 `onActivated` 跳过，之后的才刷新。
+   */
+  let activatedOnce = false
 onActivated(() => {
-  load()
+    if (!activatedOnce) {
+    activatedOnce = true
+    return
+  }
+load()
 })
 
 /**

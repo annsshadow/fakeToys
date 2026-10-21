@@ -128,13 +128,15 @@ describe('DefensesView 渲染细节', () => {
     wrapper.unmount()
   })
 
-  it('刷新按钮重新拉取（固定 limit=100）', async () => {
+  it('刷新按钮重新拉取（带 limit/offset）', async () => {
     const wrapper = await mountDefenses()
     expect(fetchDefenses).toHaveBeenCalledTimes(1)
     await wrapper.findAll('button').find((b) => b.text() === '刷新')!.trigger('click')
     await flushPromises()
     expect(fetchDefenses).toHaveBeenCalledTimes(2)
-    expect(fetchDefenses).toHaveBeenLastCalledWith(100)
+    // 2026-10-21（P2-6）：防线列表分页了 —— limit/offset 一起发。
+    // 此前固定 limit=100 且**没有** offset，于是第 101 条起不可达。
+    expect(fetchDefenses).toHaveBeenLastCalledWith(50, 0)
     wrapper.unmount()
   })
 

@@ -18,3 +18,21 @@ export function fmtTime(s: string): string {
     `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`
   )
 }
+
+/**
+ * 判断一个异常是不是「用户取消了弹窗」。
+ *
+ * 2026-10-21（二轮审计 P2-2）：Element Plus 的 `ElMessageBox` 在取消时
+ * 抛一个字符串（`'cancel'`），而不是 Error。
+ *
+ * 有了它，「取消」与「请求失败」就能分开处理 ——
+ * 此前一个空 catch（注释里写着「取消」）把两者一起吞掉，
+ * readonly 账号点写按钮得到 403 时**屏幕上什么都没有发生**。
+ */
+export function isCancel(e: unknown): boolean {
+  if (e === 'cancel' || e === 'close') return true
+  if (e instanceof Error) {
+    return e.message === 'cancel' || e.message === 'close'
+  }
+  return false
+}

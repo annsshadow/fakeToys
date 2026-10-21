@@ -45,10 +45,13 @@ function rateTone(r: AdminDefenseView): 'success' | 'info' | 'warning' | 'danger
   return 'success'
 }
 
+const PAGE_SIZE = 50
+const page = ref(1)
+
 async function load() {
   loading.value = true
   try {
-    const res = await fetchDefenses(100)
+    const res = await fetchDefenses(PAGE_SIZE, (page.value - 1) * PAGE_SIZE)
     rows.value = res.items
     total.value = res.total
   } catch (e) {
@@ -80,8 +83,21 @@ onMounted(load)
  *
  * `onActivated` 是 keep-alive 视图重新可见时的钩子。
  */
+/**
+   * `onActivated` 在**首次挂载**时也会触发（vue 给 keep-alive 的子组件
+   * 打标记并把钩子排进 post-render 队列），而 `onMounted` 已经加载过一次 ——
+   * 两者都留着 = 每进一次页面发**两份**请求，还留下一个
+   * 「后到的先渲染」的乱序窗口。
+   *
+   * 所以：首次的 `onActivated` 跳过，之后的才刷新。
+   */
+  let activatedOnce = false
 onActivated(() => {
-  load()
+    if (!activatedOnce) {
+    activatedOnce = true
+    return
+  }
+load()
 })
 </script>
 
@@ -105,6 +121,16 @@ onActivated(() => {
 
     <el-card shadow="never">
       <div class="toolbar">
+        <el-pagination
+          v-if="total > PAGE_SIZE"
+          v-model:current-page="page"
+          :page-size="PAGE_SIZE"
+          :total="total"
+          layout="prev, pager, next, total"
+          size="small"
+          background
+          @current-change="load"
+        />
         <el-button @click="load">刷新</el-button>
         <span class="toolbar-spacer" />
         <span class="muted">共 {{ total }} 条防线</span>

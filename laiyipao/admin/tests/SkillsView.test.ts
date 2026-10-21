@@ -9,7 +9,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { ElSelect } from 'element-plus'
 import ElementPlus from 'element-plus'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { AdminSkill } from '@/api'
+import type { AdminSkillView } from '@/api'
 
 const fetchSkills = vi.hoisted(() => vi.fn())
 const updateSkill = vi.hoisted(() => vi.fn())
@@ -23,7 +23,7 @@ vi.mock('element-plus', async (importOriginal) => {
 
 import SkillsView from '@/views/SkillsView.vue'
 
-function skillFixture(overrides: Partial<AdminSkill> = {}): AdminSkill {
+function skillFixture(overrides: Partial<AdminSkillView> = {}): AdminSkillView {
   return {
     id: 1,
     code: 'fire_bolt',
@@ -38,13 +38,16 @@ function skillFixture(overrides: Partial<AdminSkill> = {}): AdminSkill {
     aoe_radius: 0,
     apply_element: 'fire',
     apply_stacks: 2,
+    // projectile_speed / chain 都是**必填**（服务端一直返回）
+    projectile_speed: 1000,
+    chain: 0,
     unlock_level: 1,
     descr: '发射火弹',
     ...overrides,
   }
 }
 
-async function mountSkills(items: AdminSkill[] = [], recipes: Array<Record<string, number>> = []) {
+async function mountSkills(items: AdminSkillView[] = [], recipes: Array<Record<string, number>> = []) {
   fetchSkills.mockResolvedValue({ items, recipes })
   const wrapper = mount(SkillsView, { global: { plugins: [ElementPlus] } })
   await flushPromises()
@@ -52,14 +55,14 @@ async function mountSkills(items: AdminSkill[] = [], recipes: Array<Record<strin
 }
 
 type Vm = {
-  dpsPerHeat: (s: AdminSkill) => number
-  heatTone: (s: AdminSkill) => string
+  dpsPerHeat: (s: AdminSkillView) => number
+  heatTone: (s: AdminSkillView) => string
   recipeText: (r: Record<string, number>) => string
   activeElement: string
   activeKind: string
-  skills: AdminSkill[]
-  patch: (row: AdminSkill, field: keyof AdminSkill, label: string) => Promise<void>
-  onEditDescr: (row: AdminSkill) => Promise<void>
+  skills: AdminSkillView[]
+  patch: (row: AdminSkillView, field: keyof AdminSkillView, label: string) => Promise<void>
+  onEditDescr: (row: AdminSkillView) => Promise<void>
 }
 
 beforeEach(() => {

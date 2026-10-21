@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, onActivated, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { fetchEquipment, type AdminEquipmentView } from '@/api'
 
@@ -55,6 +55,17 @@ async function load() {
 }
 
 onMounted(load)
+
+// 2026-10-21（P5-9）：装备页此前是**唯一**没有 onActivated 刷新的视图 ——
+// 「改完装备配置 → 切走 → 切回来」看到的是旧数据。
+let activatedOnce = false
+onActivated(() => {
+  if (!activatedOnce) {
+    activatedOnce = true
+    return
+  }
+  void load()
+})
 </script>
 
 <template>

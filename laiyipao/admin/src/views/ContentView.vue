@@ -19,8 +19,11 @@ const emptyText = '暂无记录'
 const loading = ref(false)
 
 const announcements = ref<AdminAnnouncementView[]>([])
+const annTotal = ref(0)
 const codes = ref<AdminRedeemCodeView[]>([])
+const codeTotal = ref(0)
 const logs = ref<AdminAuditLogView[]>([])
+const logTotal = ref(0)
 
 // 公告表单
 const annForm = ref({ title: '', body: '', published: false })
@@ -33,13 +36,27 @@ const codeForm = ref({
   expires_at: '',
 })
 
+/** 三张表的分页（2026-10-21 P2-6）：此前固定 50/50/100 条且**没有分页器**，
+ *  而接口返回的 `total` 是全量 —— 更早的公告 / 兑换码 / 审计记录**根本看不到**。 */
+const PAGE_SIZE = 50
+const annPage = ref(1)
+const codePage = ref(1)
+const logPage = ref(1)
+
 async function loadAll() {
   loading.value = true
   try {
-    const [a, c, l] = await Promise.all([fetchAnnouncements(), fetchRedeemCodes(), fetchAuditLogs(100)])
+    const [a, c, l] = await Promise.all([
+      fetchAnnouncements(PAGE_SIZE, (annPage.value - 1) * PAGE_SIZE),
+      fetchRedeemCodes(PAGE_SIZE, (codePage.value - 1) * PAGE_SIZE),
+      fetchAuditLogs(PAGE_SIZE, (logPage.value - 1) * PAGE_SIZE),
+    ])
     announcements.value = a.items
+    annTotal.value = a.total ?? a.items.length
     codes.value = c.items
+    codeTotal.value = c.total ?? c.items.length
     logs.value = l.items
+    logTotal.value = l.total ?? l.items.length
   } catch (e) {
     ElMessage.error(`运营数据加载失败：${(e as Error).message}`)
   } finally {
@@ -135,8 +152,21 @@ onMounted(loadAll)
  *
  * `onActivated` 是 keep-alive 视图重新可见时的钩子。
  */
+/**
+   * `onActivated` 在**首次挂载**时也会触发（vue 给 keep-alive 的子组件
+   * 打标记并把钩子排进 post-render 队列），而 `onMounted` 已经加载过一次 ——
+   * 两者都留着 = 每进一次页面发**两份**请求，还留下一个
+   * 「后到的先渲染」的乱序窗口。
+   *
+   * 所以：首次的 `onActivated` 跳过，之后的才刷新。
+   */
+  let activatedOnce = false
 onActivated(() => {
-  loadAll()
+    if (!activatedOnce) {
+    activatedOnce = true
+    return
+  }
+loadAll()
 })
 </script>
 
@@ -199,6 +229,22 @@ onActivated(() => {
           <el-empty :description="emptyText" :image-size="60" />
         </template>
 </el-table>
+              <!--
+                2026-10-21（二轮审计 P2-6）：分页器。
+                此前这里只有前 50 条 —— 接口早就支持 offset，
+                但页面既没有分页器，也没有「共 N 条」，
+                于是**更早的公告 / 兑换码 / 审计记录根本看不到**。
+              -->
+              <el-pagination
+                v-if="annTotal > PAGE_SIZE"
+                v-model:current-page="annPage"
+                :page-size="PAGE_SIZE"
+                :total="annTotal"
+                layout="prev, pager, next, total"
+                size="small"
+                background
+                @current-change="loadAll"
+              />
             </el-card>
           </el-col>
         </el-row>
@@ -253,6 +299,22 @@ onActivated(() => {
           <el-empty :description="emptyText" :image-size="60" />
         </template>
 </el-table>
+          <!--
+            2026-10-21（二轮审计 P2-6）：分页器。
+            此前这里只有前 50 条 —— 接口早就支持 offset，
+            但页面既没有分页器，也没有「共 N 条」，
+            于是**更早的公告 / 兑换码 / 审计记录根本看不到**。
+          -->
+          <el-pagination
+            v-if="codeTotal > PAGE_SIZE"
+            v-model:current-page="codePage"
+            :page-size="PAGE_SIZE"
+            :total="codeTotal"
+            layout="prev, pager, next, total"
+            size="small"
+            background
+            @current-change="loadAll"
+          />
         </el-card>
       </el-tab-pane>
 
@@ -280,6 +342,22 @@ onActivated(() => {
           <el-empty :description="emptyText" :image-size="60" />
         </template>
 </el-table>
+          <!--
+            2026-10-21（二轮审计 P2-6）：分页器。
+            此前这里只有前 50 条 —— 接口早就支持 offset，
+            但页面既没有分页器，也没有「共 N 条」，
+            于是**更早的公告 / 兑换码 / 审计记录根本看不到**。
+          -->
+          <el-pagination
+            v-if="logTotal > PAGE_SIZE"
+            v-model:current-page="logPage"
+            :page-size="PAGE_SIZE"
+            :total="logTotal"
+            layout="prev, pager, next, total"
+            size="small"
+            background
+            @current-change="loadAll"
+          />
         </el-card>
       </el-tab-pane>
     </el-tabs>
