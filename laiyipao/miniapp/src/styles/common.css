@@ -3,7 +3,6 @@ page {
   --bg: #0d1117;
   --panel: #161b22;
   --panel-2: #1c2430;
-  --panel-3: #242f3d;
   --border: #30363d;
   --border-soft: rgba(48, 54, 61, 0.5);
   --text: #e6edf3;
@@ -55,6 +54,26 @@ page {
   box-sizing: border-box;
 }
 
+/*
+ * 安全区（2026-10-21 P6-2）。
+ *
+ * iPhone 的底部横条、刘海屏的顶部区域都会被内容盖住，
+ * 而 `padding-bottom: env(safe-area-inset-bottom)` 是唯一的通用解法
+ * （小程序与 H5 都支持这个 CSS 变量）。
+ *
+ * ⚠️ 此前全项目 **0 处** safe-area，而 `App.vue` 的注释写着
+ * 「小程序胶囊按钮避让在这里统一处理」—— 那条注释描述的是一个
+ * **不存在**的行为（注释是最容易让所有人以为已经做了的形态）。
+ */
+.safe-bottom {
+  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
+}
+
+/* 有自定义导航栏的页面：顶部要让开状态栏。 */
+.safe-top {
+  padding-top: calc(var(--status-bar-h, 20rpx) + 12rpx);
+}
+
 .pad {
   padding: 24rpx;
 }
@@ -98,12 +117,6 @@ page {
   align-items: center;
 }
 
-.row-between {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-}
 
 .flex-1 {
   flex: 1;
@@ -172,9 +185,3 @@ page {
 .star-big:nth-child(2) { animation-delay: 0.12s; }
 .star-big:nth-child(3) { animation-delay: 0.24s; }
 
-/* 构筑评分雷达图的占位容器 */
-.radar-box {
-  width: 320rpx;
-  height: 320rpx;
-  position: relative;
-}

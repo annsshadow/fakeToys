@@ -313,21 +313,30 @@ grep -rn "Record<string, unknown>" admin/src    # 0 命中
 - [x] P4-7 防线快照真实内容 —— 快照带真实装备与专精（store 新增 `equippedEquipmentIds`/`equippedMasteryNodes`）
 
 ### P5
-- [ ] P5-1 分页（战报/重算台账/审计/兑换码/公告/商城）
+- [x] P5-1 分页 —— 战报/审计日志/公告/兑换码四个列表补 offset + 真实总数 + `el-pagination`
 - [x] P5-2 破坏性操作确认 —— 解封 / 发资源 / 停用关卡
-- [ ] P5-3 关卡字段（7 个可写键无入口）
-- [ ] P5-4 技能字段（8 个可写键无入口）
+- [x] P5-3 关卡字段 —— 9 个可写键全部有入口（一个对话框改整行）
+- [x] P5-4 技能字段 —— 13 个可写键全部有入口
 - [x] P5-5 商城字段 —— 补「上架/下架」入口（含二次确认）
 - [x] P5-6 角色只读 —— `adminMe()` 首次被调用，`role` 经 provide 传到视图
-- [ ] P5-7 用户详情抽屉
-- [ ] P5-8 空态/错误态
-- [ ] P5-9 `onActivated` 刷新
+- [ ] P5-7 用户详情抽屉（需新端点 `GET /admin/users/:id`）
+- [x] P5-8 空态/错误态 —— 每张表补 `el-empty` + 空态文案
+- [x] P5-9 `onActivated` 刷新 —— 9 个视图全部补上
 - [x] P5-10 公告/兑换码字段 —— 公告正文 + 发布时间 + 兑换码 enabled
 
 ### P6
+- [x] P6-1 loading/空态 —— 选关/专精/背包/签到/反应图鉴
+- [x] P6-2 safe-area —— `.safe-bottom` / `.safe-top` + 状态栏高度内联绑定
+- [x] P6-3 选关页 `onShow` 刷新星级（打完回来星星不亮）
+- [x] P6-4 死代码 —— `.radar-box` / `.row-between` / `--panel-3`；`renderMode` 改为**用起来**（兼容模式提示）
+- [ ] P6-5 i18n 基础（三份重复 `currencyName`、服务端英文 key 直接上屏）
+- [x] P6-6 O(n²) —— 背包/专精的线性查找改 Map/Set
+- [x] P6-7 定时器清理 —— `me.vue` / `verify.vue` 的延迟回调在卸载时取消
+- [ ] P6-8 契约守卫假绿（`contract_coverage` 按名字匹配）
 - [x] P6-9 miniapp 体积闸门 —— `scripts/size-report.mjs` + CI（实测 245 KB / 预算 1536 KB）
+- [x] P6-10 manifest —— AppID 占位注释、`libVersion` 最低基础库、`urlCheck` 发布前提醒、关掉源码映射上传
+- [ ] P6-11 后台响应式（`@media` / 侧栏折叠 / `el-col` 断点）
 - [x] P6-12（部分）文档站 —— 新增「装备图鉴」页（`/config.equipment` 从此有消费方）
-- [ ] P6-1 ~ P6-8、P6-10 ~ P6-11（见上表）
 
 ---
 

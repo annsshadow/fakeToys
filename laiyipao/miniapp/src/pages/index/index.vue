@@ -1,7 +1,7 @@
 <template>
   <view class="page-root home">
     <!-- 顶部资源栏 -->
-    <view class="topbar">
+    <view class="topbar safe-top" :style="{ paddingTop: statusBarPad }">
       <view class="player">
         <view class="avatar">炮</view>
         <view class="player-info">
@@ -16,7 +16,7 @@
       </view>
     </view>
 
-    <view v-if="store.loginError" class="pad">
+    <view v-if="store.loginError" class="pad safe-bottom">
       <view class="card" style="border-color: var(--bad)">
         <text class="card-title">无法连接服务器</text>
         <text class="muted">{{ store.loginError }}</text>
@@ -94,12 +94,16 @@
 </template>
 
 <script setup lang="ts">
+import { useStatusBarPad } from '@/utils/statusBar'
 import { computed, onMounted } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { useGameStore } from '@/store/game'
 import { ELEMENT_ORDER, ELEMENT_NAME, ELEMENT_COLOR } from '@/game/elements'
 
 const store = useGameStore()
+
+/** 顶部让开状态栏（2026-10-21 P6-2）。 */
+const { statusBarPad } = useStatusBarPad()
 
 const elements = ELEMENT_ORDER.map((k) => ({
   key: k,

@@ -10,7 +10,7 @@
     />
 
     <!-- 顶部信息层 -->
-    <view class="overlay-top">
+    <view class="overlay-top safe-top" :style="{ paddingTop: statusBarPad }">
       <view class="hp-box">
         <text class="hp-label">防线</text>
         <text class="hp-value mono">{{ hpText }}</text>
@@ -19,6 +19,11 @@
         </view>
       </view>
       <view class="top-right">
+        <!--
+          2026-10-21（P6-4）：拿不到 canvas 时明确告诉玩家。
+          此前是**静默**降级 —— 玩家只看到黑屏，以为游戏卡了。
+        -->
+        <view v-if="renderMode === 'fallback'" class="mode-note">兼容模式</view>
         <text class="wave-text">波次 {{ waveText }}</text>
         <text class="kill-text">击杀 {{ engine?.kills ?? 0 }}</text>
         <!--
@@ -106,6 +111,7 @@
 </template>
 
 <script setup lang="ts">
+import { useStatusBarPad } from '@/utils/statusBar'
 import { ref, computed, getCurrentInstance, triggerRef } from 'vue'
 import { onLoad, onUnload } from '@dcloudio/uni-app'
 import { useGameStore } from '@/store/game'
@@ -119,18 +125,32 @@ import type { Card, EquippedSkill } from '@/game/heatmap'
 import type { GeneratedLevel } from '@/game/types'
 
 const store = useGameStore()
+
+/** 顶部让开状态栏（2026-10-21 P6-2）。 */
+const { statusBarPad } = useStatusBarPad()
 const inst = getCurrentInstance()
 
 const canvasW = ref(375)
 const canvasH = ref(667)
 const engine = ref<BattleEngine | null>(null)
 const renderer = ref<BattleRenderer | null>(null)
-/** 渲染模式：raf=帧循环已启动，fallback=无 canvas 降级，pending=尚未决定 */
-const renderMode = ref<'pending' | 'raf' | 'fallback'>('pending')
 const startError = ref('')
 const settleResult = ref<any>(null)
 const hand = ref<Card[]>([])
 const tokenId = ref(0)
+
+/**
+ * 渲染模式（2026-10-21 P6-4）。
+ *
+ * 'pending'  —— 还没起
+ * 'raf'     —— 正常，用 requestAnimationFrame 驱动
+ * 'fallback'—— **拿不到 canvas**，改用定时器推进
+ *
+ * ⚠️ 此前这个 ref 只写不读：拿不到 canvas 时页面**静默**降级，
+ * 玩家只看到一片黑屏，还以为是游戏卡了。
+ * 现在 fallback 会明确提示（「兼容模式」）。
+ */
+const renderMode = ref<'pending' | 'raf' | 'fallback'>('pending')
 const levelId = ref(1)
 
 let loopStarted = false
@@ -487,6 +507,16 @@ onUnload(() => {
   background: rgba(255, 123, 114, 0.22);
   color: #ff7b72;
   font-size: 22rpx;
+  text-align: center;
+}
+
+.mode-note {
+  margin-bottom: 8rpx;
+  padding: 4rpx 12rpx;
+  border-radius: 8rpx;
+  background: rgba(255, 209, 61, 0.2);
+  color: #ffd33d;
+  font-size: 20rpx;
   text-align: center;
 }
 

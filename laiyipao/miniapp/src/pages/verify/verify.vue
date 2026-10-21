@@ -1,6 +1,6 @@
 <template>
   <view class="page-root">
-    <view class="pad">
+    <view class="pad safe-bottom">
       <view class="card">
         <text class="card-title">战绩验真</text>
         <text class="muted" style="display: block">
@@ -118,6 +118,7 @@
 </template>
 
 <script setup lang="ts">
+import { onUnload } from '@dcloudio/uni-app'
 import { ref, computed, onMounted } from 'vue'
 import { useGameStore } from '@/store/game'
 import * as api from '@/api/client'
@@ -132,6 +133,28 @@ import {
 import { scoreRulesFromServer } from '@/game/score'
 
 const store = useGameStore()
+/**
+ * 延迟回调的句柄（2026-10-21 P6-7）。
+ *
+ * 此前那个 `setTimeout(async () => { ...写请求... })` **从不清除**：
+ * 页面已经卸载了，回调照样跑、照样发 POST ——
+ * 症状是「离开了这个页面，它还在提交」，
+ * 而验真是一个**会改数据**的端点。
+ */
+let pendingTimer: ReturnType<typeof setTimeout> | null = null
+/** 页面是否已卸载。卸载后不再执行任何延迟回调。 */
+let pageUnloaded = false
+
+/** 延迟执行；若页面已卸载则**不执行**（P6-7）。 */
+function schedulePending(fn: () => void, ms: number): void {
+  if (pendingTimer) clearTimeout(pendingTimer)
+  pendingTimer = setTimeout(() => {
+    pendingTimer = null
+    if (pageUnloaded) return
+    fn()
+  }, ms)
+}
+
 const battleId = ref('')
 const replayInfo = ref<ReplayInfo | null>(null)
 const outcome = ref<ReplayOutcome | null>(null)
@@ -199,7 +222,7 @@ function doReplay() {
   replaying.value = true
   errMsg.value = ''
   // 先让 loading 态渲染出来，再做同步重放（约 1 万 tick，毫秒级）
-  setTimeout(async () => {
+  schedulePending(async () => {
     try {
       const r = runReplay(ri, {
         level: ri.level,
@@ -232,6 +255,20 @@ function doFalsify() {
 
 onMounted(async () => {
   if (!store.loggedIn) await store.login()
+})
+
+/**
+ * 页面卸载时取消待执行的延迟回调（P6-7）。
+ *
+ * 否则「离开这个页面之后它还在提交」——
+ * 对验真这种**会改数据**的端点，那是实打实的副作用。
+ */
+onUnload(() => {
+  pageUnloaded = true
+  if (pendingTimer) {
+    clearTimeout(pendingTimer)
+    pendingTimer = null
+  }
 })
 </script>
 

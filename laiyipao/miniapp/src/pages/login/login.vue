@@ -1,6 +1,6 @@
 <template>
   <view class="page-root">
-    <view class="pad" style="padding-top: 120rpx">
+    <view class="pad safe-bottom" style="padding-top: 120rpx">
       <view class="card">
         <view class="row" style="gap: 20rpx">
           <view class="avatar">炮</view>

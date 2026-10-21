@@ -1,5 +1,6 @@
 {
   "name": "来一炮",
+  "//appid": "占位符 —— 真实 AppID 由部署方填入（不入库）。空值时微信开发者工具无法预览/上传。",
   "appid": "",
   "description": "元素反应驱动的塔防射击 —— 用搭配而非堆数值取胜",
   "versionName": "0.1.0",
@@ -19,8 +20,12 @@
   },
   "quickapp": {},
   "mp-weixin": {
+    "//appid": "占位符 —— 真实 AppID 由部署方填入（不入库）。空值时微信开发者工具无法预览/上传。",
     "appid": "",
+    "//最低基础库": "canvas type=2d 需要 2.9.0+；离屏画布（render/canvas.ts 的 offscreen 分支）需要 2.16.1+。低于此版本会退到兜底渲染路径（画面表现不同但不崩）。",
+    "libVersion": "2.16.1",
     "setting": {
+      "//urlCheck": "开发期为 false（不校验合法域名）；**发布前必须改成 true** 并把后端域名加入小程序后台的「服务器域名」白名单，否则线上请求会被微信拦掉（表现为所有接口 401/不响应）。",
       "urlCheck": false,
       "es6": true,
       "enhance": true,
@@ -36,7 +41,8 @@
       "uglifyFileName": false,
       "checkInvalidKey": true,
       "checkSiteMap": true,
-      "uploadWithSourceMap": true,
+      "//uploadWithSourceMap": "上传源码映射到微信后台便于看堆栈，但源码映射里含**未压缩的源码** —— 生产环境建议关闭。",
+      "uploadWithSourceMap": false,
       "compileHotReLoad": false,
       "useMultiFrameRuntime": true,
       "useApiHook": true,

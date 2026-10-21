@@ -1,6 +1,13 @@
 ﻿<template>
   <view class="page-root">
-    <view class="pad">
+    <view class="pad safe-bottom">
+      <!-- 加载中 / 空态（2026-10-21 P6-1）-->
+      <view v-if="loading" class="card">
+        <text class="muted">加载中…</text>
+      </view>
+      <view v-else-if="allSkills.length === 0" class="card">
+        <text class="muted">还没有可用技能</text>
+      </view>
       <!-- 技能槽配置 -->
       <view class="card">
         <text class="card-title">出战技能（最多 4 个主动槽）</text>
@@ -280,6 +287,8 @@ import { skillBaseDamageAtLevel } from '@/game/skill'
 import type { OwnedGem } from '@/api/client'
 import type { SkillDef } from '@/game/types'
 
+/** 加载中（2026-10-21 P6-1）。 */
+const loading = ref(false)
 const store = useGameStore()
 const selected = ref<number[]>([0, 0, 0, 0])
 /** 保存中：保存期间禁用操作，避免连点产生竞态 */
@@ -289,6 +298,21 @@ const allSkills = computed<SkillDef[]>(() => {
   const base = store.config?.skills ?? []
   const composite = store.config?.composite_skills ?? []
   return [...base, ...composite]
+})
+
+/**
+ * id → 技能 的索引（2026-10-21 P6-6）。
+ *
+ * 此前 `skillOf` / `skillNameOf` 都是**线性扫描** `allSkills`，
+ * 而它们在 `v-for` 里被逐行调用 —— 60 个技能 × 每次扫描 60 项
+ * = 每帧 3600 次比较。
+ *
+ * 改成 Map 之后是 O(1)。
+ */
+const skillById = computed(() => {
+  const m = new Map<number, SkillDef>()
+  for (const s of allSkills.value) m.set(s.id, s)
+  return m
 })
 
 /**
@@ -374,7 +398,7 @@ const recipes = computed<{ output: number; a: number; b: number; out_tier: numbe
 
 /** 技能名查表：配方两端都是技能 id，界面要显示名字。 */
 function skillNameOf(id: number): string {
-  return allSkills.value.find((s) => s.id === id)?.name ?? `#${id}`
+  return skillById.value.get(id)?.name ?? `#${id}`
 }
 
 const skins = computed<any[]>(() => store.config?.skins ?? [])
@@ -666,7 +690,7 @@ function slotName(s: string): string {
 function skillOf(slotIdx: number): SkillDef | undefined {
   const id = selected.value[slotIdx]
   if (!id) return undefined
-  return allSkills.value.find((s) => s.id === id)
+  return skillById.value.get(id)
 }
 
 function isEquipped(id: number): boolean {
@@ -738,7 +762,9 @@ onMounted(async () => {
   // 宝石（第 150 轮）与它们并发：它只影响下面那块「我的宝石」，不参与槽位逻辑。
   // 2026-10-21（P4-1）：装备也要一起拉 ——
   // 此前背包页的装备区是纯目录，玩家看不到自己有哪些、也装不了。
+  loading.value = true
   await Promise.all([store.loadLoadout(), store.refreshProfile(), loadGems(), loadEquipment()])
+  loading.value = false
   selected.value = [...store.loadout]
   while (selected.value.length < 4) selected.value.push(0)
 })

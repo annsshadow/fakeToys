@@ -1,6 +1,13 @@
 <template>
   <view class="page-root">
-    <view class="pad">
+    <view class="pad safe-bottom">
+      <!-- 加载中 / 空态（2026-10-21 P6-1）-->
+      <view v-if="store.configLoading" class="card">
+        <text class="muted">加载中…</text>
+      </view>
+      <view v-else-if="allReactions.length === 0" class="card">
+        <text class="muted">反应表还没加载出来</text>
+      </view>
       <!-- 我的构筑能打出哪些反应 -->
       <view class="card">
         <text class="card-title">我的构筑能触发的反应</text>

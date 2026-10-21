@@ -1,6 +1,6 @@
 <template>
-  <view class="page-root">
-    <view class="pad" style="padding-top: 100rpx">
+  <view class="page-root safe-top" :style="{ paddingTop: statusBarPad }">
+    <view class="pad safe-bottom" style="padding-top: 100rpx">
       <view class="card">
         <view class="row" style="gap: 20rpx">
           <view class="avatar">炮</view>
@@ -202,8 +202,9 @@
 </template>
 
 <script setup lang="ts">
+import { useStatusBarPad } from '@/utils/statusBar'
 import { ref, computed, onMounted } from 'vue'
-import { onShow } from '@dcloudio/uni-app'
+import {onShow, onUnload} from '@dcloudio/uni-app'
 import { useGameStore } from '@/store/game'
 import * as api from '@/api/client'
 import {
@@ -220,6 +221,31 @@ import type { Element } from '@/game/elements'
 import type { GeneratedLevel } from '@/game/types'
 
 const store = useGameStore()
+/**
+ * 延迟回调的句柄（2026-10-21 P6-7）。
+ *
+ * 此前那个 `setTimeout(async () => { ...写请求... })` **从不清除**：
+ * 页面已经卸载了，回调照样跑、照样发 POST。
+ * 症状是「离开了这个页面，它还在提交」——
+ * 对一个会**改数据**的端点（验真、挑战防线）来说这是实打实的副作用。
+ */
+let pendingTimer: ReturnType<typeof setTimeout> | null = null
+/** 页面是否已卸载。卸载后不再执行任何延迟回调。 */
+let pageUnloaded = false
+
+/** 延迟执行；若页面已卸载则**不执行**（P6-7）。 */
+function schedulePending(fn: () => void, ms: number): void {
+  if (pendingTimer) clearTimeout(pendingTimer)
+  pendingTimer = setTimeout(() => {
+    pendingTimer = null
+    if (pageUnloaded) return
+    fn()
+  }, ms)
+}
+
+
+/** 顶部让开状态栏（2026-10-21 P6-2）。 */
+const { statusBarPad } = useStatusBarPad()
 const myDefense = ref<DefenseView | null>(null)
 const candidates = ref<DefenseView[]>([])
 const attackLeft = ref(3)
@@ -453,7 +479,7 @@ async function challenge(target: DefenseView) {
 
   simulating.value = target.id
   // 让按钮先进入「模拟中」状态再跑同步模拟
-  setTimeout(async () => {
+  schedulePending(async () => {
     try {
       const deps = {
         myEquipped: equipped,
@@ -527,6 +553,20 @@ onShow(async () => {
     // 从「背包」页改过槽位再回来时，这里重新拉一次权威槽位。
     await store.loadLoadout()
     await loadDefenses()
+  }
+})
+
+/**
+ * 页面卸载时取消待执行的延迟回调（P6-7）。
+ *
+ * 否则「离开这个页面之后它还在提交」——
+ * 对验真 / 挑战防线这种**会改数据**的端点，那是实打实的副作用。
+ */
+onUnload(() => {
+  pageUnloaded = true
+  if (pendingTimer) {
+    clearTimeout(pendingTimer)
+    pendingTimer = null
   }
 })
 </script>

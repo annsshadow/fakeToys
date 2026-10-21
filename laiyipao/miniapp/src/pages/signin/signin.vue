@@ -1,6 +1,13 @@
 <template>
   <view class="page-root">
-    <view class="pad">
+    <view class="pad safe-bottom">
+      <!-- 加载中 / 空态（2026-10-21 P6-1）-->
+      <view v-if="loading" class="card">
+        <text class="muted">加载中…</text>
+      </view>
+      <view v-else-if="tasks.length === 0" class="card">
+        <text class="muted">暂无任务</text>
+      </view>
       <view class="card">
         <text class="card-title">每日签到</text>
         <text class="muted">连续 7 天，第 7 天额外获得体力。</text>
@@ -106,6 +113,9 @@ import { ref, onMounted } from 'vue'
 import { useGameStore } from '@/store/game'
 import * as api from '@/api/client'
 
+/** 加载中（2026-10-21 P6-1）：数据没到之前页面不能是空白 ——
+ * 空白与「你什么都没有」长得一模一样，玩家不知道该等还是该重试。 */
+const loading = ref(false)
 const store = useGameStore()
 const tasks = ref<any[]>([])
 const claimedCount = ref(0)
@@ -182,12 +192,15 @@ type ScopeKey = (typeof SCOPES)[number]['key']
 const scope = ref<ScopeKey>('daily')
 
 async function load() {
+  loading.value = true
   try {
     // ⚠️ 传当前 scope，而不是写死 'daily'。
     const res = await api.fetchTasks(scope.value)
     tasks.value = res.items ?? []
   } catch (e) {
     uni.showToast({ title: (e as Error).message, icon: 'none' })
+  } finally {
+    loading.value = false
   }
 }
 

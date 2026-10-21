@@ -1,6 +1,13 @@
 <template>
   <view class="page-root">
-    <view class="pad">
+    <view class="pad safe-bottom">
+      <!-- 加载中 / 空态（2026-10-21 P6-1）-->
+      <view v-if="store.configLoading" class="card">
+        <text class="muted">加载中…</text>
+      </view>
+      <view v-else-if="chapterLevels.length === 0" class="card">
+        <text class="muted">本章节还没有关卡</text>
+      </view>
       <!-- 章节选择 -->
       <scroll-view scroll-x class="chapter-scroll" :show-scrollbar="false">
         <view class="chapter-row">
@@ -98,7 +105,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
+import {onLoad, onShow} from '@dcloudio/uni-app'
 import { useGameStore } from '@/store/game'
 import * as api from '@/api/client'
 import { TERRAIN_NAME, TERRAIN_DESCR } from '@/game/terrain'
@@ -191,6 +198,27 @@ function startBattle() {
   uni.navigateTo({ url: `/pages/battle/battle?level=${selected.value.id}` })
 }
 
+/**
+ * 刷新星级（2026-10-21 P6-3）。
+ *
+ * 此前星级**只在 onLoad 拉一次** —— 于是打完一局返回选关页，
+ * 刚拿到的星星**不亮**（要退出重进才更新）。
+ * 玩家看到的是「我明明通关了，但没给星」。
+ */
+async function refreshStars(): Promise<void> {
+  try {
+    const r = await api.fetchMyStars()
+    stars.value = r.stars
+  } catch {
+    /* 星级拉取失败不阻塞选关 */
+  }
+}
+
+/** 从战斗页返回时刷新星级。 */
+onShow(() => {
+  void refreshStars()
+})
+
 onLoad(async (query) => {
   if (!store.loggedIn) await store.login()
   const lv = Number(query?.level ?? 0)
@@ -202,12 +230,7 @@ onLoad(async (query) => {
   // 星级以服务端的 level_stars（历史 GREATEST）为准：
   // 不拉这份数据，stars.value 永远空，starOf() 恒为 0，
   // 「已通关」与星级行在选关页永远不亮。
-  try {
-    const r = await api.fetchMyStars()
-    stars.value = r.stars
-  } catch {
-    /* 星级拉取失败不阻塞选关 */
-  }
+  await refreshStars()
   // 卡关诊断：失败次数由**服务端**算（2026-10-21 P2-7）。
   //
   // 此前这里传的是硬编码的 2，于是**每个人**第一次进关都能看到

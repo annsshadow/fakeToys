@@ -1,6 +1,10 @@
 <template>
   <view class="page-root">
-    <view class="pad">
+    <view class="pad safe-bottom">
+      <!-- 加载中 / 空态（2026-10-21 P6-1）-->
+      <view v-if="loading" class="card">
+        <text class="muted">加载中…</text>
+      </view>
       <view class="card">
         <view class="card-title">
           <text>专精点</text>
@@ -77,6 +81,9 @@ import { useGameStore } from '@/store/game'
 import * as api from '@/api/client'
 import type { MasteryNode } from '@/game/types'
 
+/** 加载中（2026-10-21 P6-1）：数据没到之前页面不能是空白 ——
+ * 空白与「你什么都没有」长得一模一样，玩家不知道该等还是该重试。 */
+const loading = ref(false)
 const store = useGameStore()
 const points = ref(0)
 const selected = ref<number[]>([])
@@ -96,12 +103,39 @@ const curName = computed(
   () => families.value.find((x) => x.family === curFamily.value)?.name ?? curFamily.value,
 )
 
+/**
+ * 按层分组的节点（2026-10-21 P6-6）。
+ *
+ * 此前 `nodesInLayer` 每次调用都**重新 filter 一遍** `curNodes`，
+ * 而它在模板的 `v-for` 里被逐节点调用（每层 4 个节点 × 3 层），
+ * `pickedInLayer` 又在里面再 filter 一次 + 对 `selected` 做 `includes`
+ * —— 每帧 O(n²)。
+ *
+ * 改成 computed 之后只算一次。
+ */
+const nodesByLayer = computed(() => {
+  const m = new Map<number, MasteryNode[]>()
+  for (const n of curNodes.value) {
+    const list = m.get(n.layer)
+    if (list) list.push(n)
+    else m.set(n.layer, [n])
+  }
+  return m
+})
+
+/** 已点亮的节点 id 集合（`includes` 在一个 Set 上是 O(1)）。 */
+const selectedSet = computed(() => new Set(selected.value))
+
 function nodesInLayer(layer: number): MasteryNode[] {
-  return curNodes.value.filter((n) => n.layer === layer)
+  return nodesByLayer.value.get(layer) ?? []
 }
 
 function pickedInLayer(layer: number): number {
-  return nodesInLayer(layer).filter((n) => selected.value.includes(n.id)).length
+  let n = 0
+  for (const node of nodesInLayer(layer)) {
+    if (selectedSet.value.has(node.id)) n++
+  }
+  return n
 }
 
 function isLocked(n: MasteryNode): boolean {
@@ -113,7 +147,11 @@ function isLocked(n: MasteryNode): boolean {
 function invested(family: string): number {
   const f = families.value.find((x) => x.family === family)
   if (!f) return 0
-  return f.nodes.filter((n) => selected.value.includes(n.id)).length
+  let n = 0
+  for (const node of f.nodes) {
+    if (selectedSet.value.has(node.id)) n++
+  }
+  return n
 }
 
 async function toggle(n: MasteryNode) {
@@ -141,12 +179,15 @@ async function toggle(n: MasteryNode) {
 }
 
 async function load() {
+  loading.value = true
   try {
     const res = await api.fetchMastery()
     points.value = res.points
     selected.value = res.nodes ?? []
   } catch (e) {
     uni.showToast({ title: (e as Error).message, icon: 'none' })
+  } finally {
+    loading.value = false
   }
 }
 

@@ -210,6 +210,25 @@ export const useGameStore = defineStore('game', () => {
     }
   }
 
+  /**
+   * 状态栏高度（2026-10-21 P6-2）。
+   *
+   * 自定义导航栏的页面（首页/我的/战斗）要自己让开状态栏，
+   * 而状态栏高度**因设备而异** —— 写死一个值就是「在部分机型上被盖住」。
+   *
+   * 取不到时给 20rpx（≈10px，接近常见状态栏高度）而不是 0：
+   * 猜错的后果是「顶栏低了一点点」，而给 0 的后果是「被状态栏盖住」。
+   */
+  const statusBarHeight = ref(0)
+  function readStatusBarHeight(): void {
+    try {
+      const info = uni.getSystemInfoSync()
+      statusBarHeight.value = Number(info.statusBarHeight ?? 0) || 0
+    } catch {
+      statusBarHeight.value = 0
+    }
+  }
+
   const equippedElements = computed<Element[]>(() => {
     const out: Element[] = []
     for (const id of loadout.value) {
@@ -430,6 +449,7 @@ export const useGameStore = defineStore('game', () => {
   }
 
   async function refreshProfile(): Promise<void> {
+    readStatusBarHeight()
     try {
       const [w, me] = await Promise.all([api.fetchWallet(), api.fetchMe()])
       wallet.value = { ...w, tokens: w.tokens ?? {} }
@@ -532,6 +552,8 @@ export const useGameStore = defineStore('game', () => {
     masteryNodes,
     equippedEquipmentIds,
     equippedMasteryNodes,
+    statusBarHeight,
+    readStatusBarHeight,
     loadEquipment,
     loadMasteryNodes,
     enemyMap,

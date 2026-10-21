@@ -1,6 +1,6 @@
 <template>
   <view class="page-root">
-    <view class="pad">
+    <view class="pad safe-bottom">
       <view class="tabs">
         <view
           v-for="t in tabs"
