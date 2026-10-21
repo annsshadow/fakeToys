@@ -176,3 +176,7 @@ fn test_fixture_key_pair_is_self_signed_and_marked_as_test() { /* … */ }
 - 守卫形态（新增子项目照抄）：`laiyipao/server/internal/domain/secrets_leak_test.go`
 - 测试夹具守卫：`oa4rust/backend/crates/signature/src/lib.rs`
 - 既有路径越界治理：`../security-issues/api-path-whitelist-and-write-authz.md`
+- **改历史的机制与坑**：`../development-workflow/git-history-scrub-mechanics-and-pitfalls.md`
+  （本篇讲「什么算真值、怎么写」，那篇讲「已经进了历史怎么清」：
+  filter-repo 在 Windows 上会把 blob 写成 CRLF、其清理会删掉被 ignore 的本地目录、
+  `--refs` 不重写 `refs/remotes/*`，以及 rebase 范围容易数错一位等六个坑）
