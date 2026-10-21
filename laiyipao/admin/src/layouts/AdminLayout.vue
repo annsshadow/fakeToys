@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, type Component } from 'vue'
+import { ref, computed, provide, readonly, onMounted, type Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   Aim,
@@ -16,8 +16,9 @@ import {
   Warning,
 } from '@element-plus/icons-vue'
 
-import { adminLogout } from '@/api'
+import { adminLogout, adminMe } from '@/api'
 import { setToken, invalidateTokenVerification } from '@/api/client'
+import { ADMIN_ROLE_KEY } from '@/utils/adminRole'
 
 const route = useRoute()
 const router = useRouter()
@@ -94,6 +95,33 @@ const groups: Array<{ title: string; items: NavItem[] }> = [
 ]
 
 const activePath = computed(() => route.path)
+
+/**
+ * 当前管理员身份（2026-10-21 P5-6）。
+ *
+ * 此前 `adminMe()` **从未被调用** —— 于是 `role` 从未被读取，
+ * readonly 账号看得见全部写按钮，只有点下去吃一个 403 才知道自己不能写。
+ * 那个 403 出现在**动作已经发生之后**（比如「已封禁」之后才发现没权限）。
+ *
+ * 现在布局在挂载时取一次身份，并把它挂到 `provide` 上，
+ * 视图用 `useAdminRole()` 读。
+ */
+const adminRole = ref<string>('')
+const adminName = ref<string>('')
+
+/** 是不是只读账号。未知时按「可写」处理（宁可多显示，也不要误伤）。 */
+const isReadonly = computed(() => adminRole.value === 'readonly')
+
+async function loadIdentity() {
+  try {
+    const res = await adminMe()
+    adminRole.value = res.admin?.role ?? ''
+    adminName.value = res.admin?.username ?? ''
+  } catch {
+    // 取不到身份**不阻断**后台使用：服务端仍会对写操作做鉴权，
+    // 这里只是让界面少显示几个按钮而已。
+  }
+}
 const currentTitle = computed(() => (route.meta.title as string) || '来一炮')
 const apiLabel = import.meta.env.VITE_API_BASE || '127.0.0.1:8080'
 
@@ -121,6 +149,11 @@ async function logout() {
     router.replace('/admin/login')
   }
 }
+
+// 把身份 provide 给子视图：它们用 `useAdminRole()` 读。
+provide(ADMIN_ROLE_KEY, { role: readonly(adminRole), name: readonly(adminName), isReadonly })
+
+onMounted(loadIdentity)
 </script>
 
 <template>

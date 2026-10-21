@@ -2,9 +2,12 @@
 import { onMounted, ref, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { fetchUsers, banUser, unbanUser, grantUser, type AdminUserView } from '@/api'
+import { useAdminRole } from '@/utils/adminRole'
 import { fmtTime } from '@/utils/format'
 
 const loading = ref(false)
+// 2026-10-21（P5-6）：readonly 账号看不到写按钮。
+const { isReadonly } = useAdminRole()
 const users = ref<AdminUserView[]>([])
 const total = ref(0)
 const keyword = ref('')
@@ -105,10 +108,30 @@ async function onBan(u: AdminUserView) {
   }
 }
 
+/**
+ * 解封。
+ *
+ * 2026-10-21（P5-2）：此前**一次点击直接生效**、无任何确认 ——
+ * 而封禁是有确认的（要填理由）。这个不对称让「手滑」的成本完全不对称：
+ * 封禁了要再走一次流程才能解开，解封了却只需要点错一下。
+ */
 async function onUnban(u: AdminUserView) {
-  const res = await unbanUser(u.id)
-  Object.assign(u, res.user)
-  ElMessage.success('已解封')
+  try {
+    await ElMessageBox.confirm(
+      `解封「${u.nickname}」？该玩家将立即恢复登录与游戏权限。`,
+      '解封用户',
+      { type: 'warning', confirmButtonText: '解封' },
+    )
+  } catch {
+    return // 取消
+  }
+  try {
+    const res = await unbanUser(u.id)
+    Object.assign(u, res.user)
+    ElMessage.success('已解封')
+  } catch (e) {
+    ElMessage.error(`解封失败：${(e as Error).message}`)
+  }
 }
 
 async function onGrant(u: AdminUserView) {
@@ -134,6 +157,29 @@ async function onGrant(u: AdminUserView) {
       return
     }
     const amount = Number(m[2])
+
+    // 2026-10-21（P5-2）：**二次确认**。
+    //
+    // 此前发/回收资源只有一次输入弹窗，输入完直接提交 ——
+    // 一次手滑（`coin -1000000`）会直接回收玩家 100 万金币，
+    // 而唯一的反馈是一条几秒后就消失的 toast。
+    //
+    // 确认框里必须写清**净变化**（回收多少 / 发放多少），
+    // 让运营在点确认之前再看一眼那个负号。
+    const isRevoke = amount < 0
+    try {
+      await ElMessageBox.confirm(
+        isRevoke
+          ? `回收「${u.nickname}」的 ${CURRENCY_LABEL[currency]} ${-amount}？` +
+              `该玩家的${CURRENCY_LABEL[currency]}余额会被扣掉这么多，且不可撤销。`
+          : `给「${u.nickname}」发放 ${CURRENCY_LABEL[currency]} ${amount}？`,
+        isRevoke ? '确认回收资源' : '确认发放资源',
+        { type: isRevoke ? 'warning' : 'info' },
+      )
+    } catch {
+      return // 取消
+    }
+
     const res = await grantUser(u.id, currency, amount)
     u.coin = res.wallet.coin
     u.gem = res.wallet.gem
@@ -224,8 +270,11 @@ const asRow = (r: unknown) => r as AdminUserView
         </el-table-column>
         <el-table-column label="操作" width="150" fixed="right">
           <template #default="{ row }">
-            <el-button size="small" text @click="onGrant(asRow(row))">发资源</el-button>
+            <el-button v-if="!isReadonly" size="small" text @click="onGrant(asRow(row))">
+              发资源
+            </el-button>
             <el-button
+              v-if="!isReadonly"
               size="small"
               text
               :type="row.status === 1 ? 'danger' : 'success'"

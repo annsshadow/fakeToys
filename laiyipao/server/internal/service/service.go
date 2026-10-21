@@ -916,6 +916,12 @@ type GameConfig struct {
 	// 不能自己硬编码 500/5000/100 —— 漂移了星级就会与实际表现不符，
 	// 而两端各自都「自洽」，没有任何测试会发现。
 	ScoreRules domain.ScoreRules `json:"score_rules"`
+	// DropRates 是掉落表（2026-10-21 P4-6）。
+	//
+	// 此前它只在服务端，客户端**不知道通关会返还 5 点体力** ——
+	// 于是选关页显示「体力消耗 6」，实际净消耗是 1。
+	// 玩家看到的数与实际付出的数不是一回事。
+	DropRates domain.DropRates `json:"drop_rates"`
 	// SkillRules 是技能升级规则（等级上限 / 每级伤害系数 / 费用基数）。
 	//
 	// 客户端的升级按钮要显示费用与「已满级」，战斗要按等级缩放伤害，
@@ -1020,6 +1026,9 @@ var staticConfig = sync.OnceValue(func() GameConfig {
 		Reactions:  domain.AllReactionSpecs(),
 		RatingW:    domain.DefaultRatingWeights(),
 		SkillRules: domain.DefaultSkillRules(),
+		// 2026-10-21（P4-6）：掉落表随 config 下发，
+		// 客户端才能算出「通关净消耗多少体力」（成本 - 通关返还）。
+		DropRates: domain.DefaultDropRates(),
 	}
 	for _, q := range domain.GemQualities {
 		cfg.Qualities = append(cfg.Qualities, QualityInfo{q.Name, q.Count, q.Mult})

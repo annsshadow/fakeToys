@@ -47,7 +47,10 @@
         <view class="info-row"><text class="muted">防线血量</text><text class="mono">{{ selected.base_hp }}</text></view>
         <view class="info-row"><text class="muted">波次</text><text class="mono">{{ selected.wave_count }}</text></view>
         <view class="info-row"><text class="muted">难度系数</text><text class="mono">{{ selected.difficulty }}‰</text></view>
-        <view class="info-row"><text class="muted">体力消耗</text><text class="mono">{{ selected.energy_cost }}</text></view>
+        <view class="info-row">
+          <text class="muted">体力消耗</text>
+          <text class="mono">{{ energyCostText }}</text>
+        </view>
         <view class="info-row"><text class="muted">元素层数上限</text><text class="mono">{{ selected.element_cap }}</text></view>
         <view v-if="selected.terrain && selected.terrain.length" class="info-row">
           <text class="muted">地形</text>
@@ -134,6 +137,23 @@ const selected = computed<LevelSummary | null>(() => {
 })
 
 const canEnter = computed(() => !!selected.value && selected.value.id <= store.unlockedLevel)
+
+/**
+ * 体力消耗文案（2026-10-21 P4-6）。
+ *
+ * 此前只显示 `energy_cost`（如 6），而**通关会返还 5 点** ——
+ * 于是玩家看到「消耗 6」，实际净消耗是 1。
+ * 「看到的数」与「实际付出的数」不是一回事，这正是本项目反复修的那类缺陷。
+ *
+ * 现在两个数都给：失败全损、通关返还。
+ */
+const energyCostText = computed(() => {
+  const cost = selected.value?.energy_cost ?? 0
+  const back = store.config?.drop_rates?.energy_on_win ?? 0
+  if (back <= 0) return String(cost)
+  const net = cost - back
+  return net > 0 ? `${cost}（通关净消耗 ${net}）` : `${cost}（通关不扣体力）`
+})
 
 const startLabel = computed(() => {
   if (!selected.value) return '未选择关卡'

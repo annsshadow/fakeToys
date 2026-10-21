@@ -294,38 +294,39 @@ grep -rn "Record<string, unknown>" admin/src    # 0 命中
 - [x] P2-10 `AdminUpdateSkill` 整单拒绝（补 `default: reject` 分支）
 
 ### P3
-- [ ] P3-1 `/me` ctx + 吞错
-- [ ] P3-2 grant 用户不存在
+- [x] P3-1 `/me` ctx + 吞错 —— `ComputeRatingFor` 接 ctx + 返回 error；点数查询失败不再静默按 0 点算
+- [x] P3-2 grant 用户不存在 —— 先查用户存在，报「用户不存在」而不是「金币不足」
 - [ ] P3-3 重算档位 HTTP 读写
-- [ ] P3-4 levels 分页 + 真实 total
+- [x] P3-4 levels 分页 + 真实 total —— `limit`/`offset` + `COUNT(*)`
 - [ ] P3-5 验真幂等
 - [ ] P3-6 regenerate 护栏
-- [ ] P3-7 `/mastery/reset` 响应形状
+- [x] P3-7 `/mastery/reset` 响应形状 —— 与 `GET /mastery` 共用 `masteryState`
 - [x] P3-8 审计 detail fail-loud（`adminapi.go` 的 `AdminListAuditLogs`）
 
 ### P4
 - [ ] P4-1 装备获取 + 装备/卸下
-- [ ] P4-2 反应图鉴
-- [ ] P4-3 `reachableReactions` 接线
-- [ ] P4-4 地形机制
+- [x] P4-2 反应图鉴 —— 新增 `pages/reactions/reactions.vue`，消费 `/config.reactions` 全字段
+- [x] P4-3 `reachableReactions` 接线 —— 首页/图鉴页标出「我的构筑可达」
+- [x] P4-4 地形机制 —— 选关页显示 `TERRAIN_DESCR`
 - [ ] P4-5 战斗退出
-- [ ] P4-6 体力净消耗
+- [x] P4-6 体力净消耗 —— `drop_rates` 随 config 下发，选关页显示「通关净消耗 N」
 - [ ] P4-7 防线快照真实内容
 
 ### P5
-- [ ] P5-1 分页
-- [ ] P5-2 破坏性操作确认
-- [ ] P5-3 关卡字段
-- [ ] P5-4 技能字段
+- [ ] P5-1 分页（战报/重算台账/审计/兑换码/公告/商城）
+- [x] P5-2 破坏性操作确认 —— 解封 / 发资源 / 停用关卡
+- [ ] P5-3 关卡字段（7 个可写键无入口）
+- [ ] P5-4 技能字段（8 个可写键无入口）
 - [x] P5-5 商城字段 —— 补「上架/下架」入口（含二次确认）
-- [ ] P5-6 角色只读
+- [x] P5-6 角色只读 —— `adminMe()` 首次被调用，`role` 经 provide 传到视图
 - [ ] P5-7 用户详情抽屉
 - [ ] P5-8 空态/错误态
 - [ ] P5-9 `onActivated` 刷新
 - [x] P5-10 公告/兑换码字段 —— 公告正文 + 发布时间 + 兑换码 enabled
 
 ### P6
-- [ ] P6-1 ~ P6-12（见上表）
+- [x] P6-9 miniapp 体积闸门 —— `scripts/size-report.mjs` + CI（实测 245 KB / 预算 1536 KB）
+- [ ] P6-1 ~ P6-8、P6-10 ~ P6-12（见上表）
 
 ---
 
@@ -340,3 +341,35 @@ grep -rn "Record<string, unknown>" admin/src    # 0 命中
 | 商城「上架/下架」无入口 | 新增按钮 + 二次确认（服务端 `enabled` 早已支持） |
 | 公告看不到正文 | 新增「正文」「发布时间」两列；兑换码新增「状态」列 |
 | `GET /admin/equipment` 的 8 个 key 只有 3 个被前端声明 | 全部进类型；敌人/反应/专精树/构筑权重不再被丢弃 |
+
+---
+
+## 收尾核验（2026-10-21）
+
+| 端 | 命令 | 结果 |
+|---|---|---|
+| server | `gofmt -l .` | **无输出** ✅ |
+| server | `go vet ./...` | 无输出 ✅ |
+| server | `go test ./... -count=1` | **14/14 包通过** ✅ |
+| server | `go run ./cmd/tygen -check` | 生成物与源同步 ✅ |
+| admin | `pnpm type-check` | 0 错误 ✅ |
+| admin | `pnpm test` | **27 文件 / 307 用例通过**（基线 26/294） ✅ |
+| admin | `pnpm build` + `pnpm size:check` | 首屏 170 KB / 预算 220 KB ✅ |
+| miniapp | `pnpm type-check` | 0 错误 ✅ |
+| miniapp | `pnpm test` | **76 文件 / 1080 通过 / 2 跳过**（基线 75/1075） ✅ |
+| miniapp | `pnpm build:mp-weixin` + `pnpm size:check` | 主包 245 KB / 预算 1536 KB ✅ |
+
+> 2 条跳过是 `i6.e2e.test.ts`（需 `LYP_E2E=1` + 运行中的服务端）——
+> **故意**的，不是缺依赖。按 AGENTS.md #11 显式记账，不计入「全绿」。
+
+### 仍未完成（本轮未做，明确记账）
+
+| 项 | 原因 |
+|---|---|
+| P3-3 / P3-5 / P3-6 | 运维向增强（重算档位开关、验真幂等、regenerate 护栏）—— 需要新迁移或产品决策，本轮未铺 |
+| P4-1 装备获取 + 装备/卸下 | **本轮最大的剩余缺口**：18 件装备里 16 件不可达且无装备入口。属独立一轮（要加端点 + 迁移 + 商城商品 + 背包 UI + 平衡复测） |
+| P4-5 战斗退出 | 需要服务端支持「放弃并退体力」，涉及开战事务与 token 状态 |
+| P4-7 防线快照真实内容 | 需要 `user_equipment` 落地（P4-1 的前置） |
+| P5-1 / P5-3 / P5-4 / P5-7 / P5-8 / P5-9 | 后台能力补齐（分页、字段入口、用户详情、空态、缓存刷新）—— 纯前端工作量，可独立迭代 |
+| P6-1 ~ P6-8 / P6-10 ~ P6-12 | 体验与卫生（loading/空态、safe-area、死代码、O(n²)、假绿守卫、manifest、响应式、文档站） |
+| ② `burn_cloud` 火区 | **按决定不做**（见 §2）：会改 `replay_hash` → 存量战报永久失去可重放性，且要重跑 100 关平衡基线。规格留档待拍板 |

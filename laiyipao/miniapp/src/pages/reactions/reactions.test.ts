@@ -35,7 +35,8 @@ vi.mock('@/api/client', () => ({
 
 const mockApi = vi.mocked(api, true)
 
-let um: ReturnType<typeof installUniMock>
+// uni mock 的句柄：本页不导航，用不到它的 API。
+// （保留 installUniMock 调用即可 —— 它装的是全局 uni 替身。）
 
 /** 反应表：与服务端 `domain.ReactionSpec` 同形状（少一个字段就会红）。 */
 function reactionFixtures() {
@@ -83,7 +84,13 @@ async function mountReactions(elements: 'fire_ice' | 'fire_only' = 'fire_ice') {
     serverTimeMs: 0,
   })
   mockApi.fetchWallet.mockResolvedValue({ coin: 1, gem: 1, energy: 1, keys: 1, tokens: {} })
-  mockApi.fetchMe.mockResolvedValue({ user_id: 7, build: {}, build_rating: {}, power: 0, max_stage: 1 })
+  mockApi.fetchMe.mockResolvedValue({
+    user_id: 7,
+    build: { skills: {}, equipment: [], mastery_nodes: [] },
+    build_rating: {},
+    power: 0,
+    max_stage: 1,
+  })
   // 出战槽位：技能 1 = fire，技能 2 = ice（见 fixtures.makeSkill）
   // ⚠️ 字段名是 `skill_ids`（服务端 /me/loadout 的契约），不是 `loadout`。
   mockApi.fetchLoadout.mockResolvedValue({
@@ -104,7 +111,7 @@ async function mountReactions(elements: 'fire_ice' | 'fire_only' = 'fire_ice') {
 }
 
 beforeEach(() => {
-  um = installUniMock()
+  installUniMock()
   vi.clearAllMocks()
   mockApi.hasUsableToken.mockReturnValue(false)
   mockApi.loadProfile.mockReturnValue(null)

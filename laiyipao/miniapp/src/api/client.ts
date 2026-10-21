@@ -125,6 +125,21 @@ export interface GameConfig {
     terrain_kind: string
     boss_enemy_id: number
   }>
+  /**
+   * 掉落表（2026-10-21 P4-6）。
+   *
+   * 此前只在服务端，客户端不知道「通关返还 5 点体力」——
+   * 于是选关页显示「体力消耗 6」，而实际净消耗是 1。
+   * 玩家看到的数与实际付出的数不是一回事。
+   */
+  drop_rates: {
+    coin_base: number
+    coin_per_star: number
+    coin_per_kill: number
+    reaction_bonus: number
+    keys_on_three_star: number
+    energy_on_win: number
+  }
   rating_weights: {
     element_coverage: number
     reaction_coverage: number

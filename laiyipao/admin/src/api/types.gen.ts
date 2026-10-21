@@ -361,6 +361,7 @@ export interface GameConfig {
   chapters: ChapterInfo[]
   rating_weights: RatingWeights
   score_rules: ScoreRules
+  drop_rates: { coin_base: number; coin_per_star: number; coin_per_kill: number; reaction_bonus: number; keys_on_three_star: number; energy_on_win: number }
   skill_rules: SkillRules
   server_time: string
 }

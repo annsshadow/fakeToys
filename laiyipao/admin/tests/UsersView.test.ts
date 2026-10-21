@@ -410,3 +410,89 @@ describe('UsersView 验真信号三态', () => {
   })
 })
 
+/**
+ * 2026-10-21（P5-2）：破坏性操作的**二次确认**。
+ *
+ * 此前：
+ *   - 解封：一次点击直接生效（而封禁是要填理由的 —— 不对称）
+ *   - 发/回收资源：输入完直接提交，一次手滑 `coin -1000000`
+ *     会直接回收玩家 100 万金币，而反馈只是一条几秒后消失的 toast
+ *
+ * 判据是**可观测后果**：确认框被调用；取消则**不发请求**。
+ */
+describe('UsersView 破坏性操作需要二次确认（P5-2）', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    fetchUsers.mockResolvedValue({ items: [userFixture({ id: 1, status: 2 })], total: 1 })
+  })
+
+  it('解封：先弹确认框；取消则不调用 unbanUser', async () => {
+    unbanUser.mockResolvedValueOnce({ user: userFixture({ id: 1, status: 1 }) })
+    box.confirm.mockRejectedValueOnce('cancel')
+
+    const wrapper = mount(UsersView, { global: { plugins: [ElementPlus] } })
+    await flushPromises()
+    const rows = wrapper.findAll('.el-table__row')
+    const btn = rows[0].findAll('button').find((b) => b.text() === '解封')
+    expect(btn, '找不到「解封」按钮').toBeTruthy()
+    await btn!.trigger('click')
+    await flushPromises()
+
+    expect(box.confirm).toHaveBeenCalled()
+    expect(unbanUser).not.toHaveBeenCalled()
+    wrapper.unmount()
+  })
+
+  it('解封：确认后才调用 unbanUser', async () => {
+    unbanUser.mockResolvedValueOnce({ user: userFixture({ id: 1, status: 1 }) })
+    box.confirm.mockResolvedValueOnce('ok')
+
+    const wrapper = mount(UsersView, { global: { plugins: [ElementPlus] } })
+    await flushPromises()
+    const rows = wrapper.findAll('.el-table__row')
+    const btn = rows[0].findAll('button').find((b) => b.text() === '解封')
+    await btn!.trigger('click')
+    await flushPromises()
+
+    expect(box.confirm).toHaveBeenCalled()
+    expect(unbanUser).toHaveBeenCalledWith(1)
+    wrapper.unmount()
+  })
+
+  it('回收资源：确认框里写清回收数量；取消则不调用 grantUser', async () => {
+    box.prompt.mockResolvedValueOnce({ value: 'coin -1000000' })
+    box.confirm.mockRejectedValueOnce('cancel')
+
+    const wrapper = mount(UsersView, { global: { plugins: [ElementPlus] } })
+    await flushPromises()
+    const rows = wrapper.findAll('.el-table__row')
+    const btn = rows[0].findAll('button').find((b) => b.text() === '发资源')
+    expect(btn, '找不到「发资源」按钮').toBeTruthy()
+    await btn!.trigger('click')
+    await flushPromises()
+
+    expect(box.confirm).toHaveBeenCalled()
+    // 确认框的文案必须说清**回收多少**（含数字），否则运营看不到那个负号
+    const msg = String(box.confirm.mock.calls[0]?.[0] ?? '')
+    expect(msg).toContain('1000000')
+    expect(grantUser).not.toHaveBeenCalled()
+    wrapper.unmount()
+  })
+
+  it('发放资源：确认后才调用 grantUser', async () => {
+    grantUser.mockResolvedValueOnce({ wallet: { coin: 11000, gem: 50 } })
+    box.prompt.mockResolvedValueOnce({ value: 'coin 10000' })
+    box.confirm.mockResolvedValueOnce('ok')
+
+    const wrapper = mount(UsersView, { global: { plugins: [ElementPlus] } })
+    await flushPromises()
+    const rows = wrapper.findAll('.el-table__row')
+    const btn = rows[0].findAll('button').find((b) => b.text() === '发资源')
+    await btn!.trigger('click')
+    await flushPromises()
+
+    expect(box.confirm).toHaveBeenCalled()
+    expect(grantUser).toHaveBeenCalledWith(1, 'coin', 10000)
+    wrapper.unmount()
+  })
+})

@@ -685,12 +685,22 @@ func computeStars(score int64, targets []int64) int {
 // DropRates 是掉落表（千分比，作用于满额掉落基数）。
 // 刻意让"反应次数"影响掉落：鼓励玩家用搭配而非只堆伤害。
 type DropRates struct {
-	CoinBase        int64
-	CoinPerStar     int64
-	CoinPerKill     int64
-	ReactionBonus   int64 // 每 10 次反应额外金币
-	KeysOnThreeStar int64
-	EnergyOnWin     int64
+	// CoinBase 是满额掉落基数（千分比口径下的基础值）。
+	CoinBase int64 `json:"coin_base"`
+	// CoinPerStar 是每颗星的额外金币。
+	CoinPerStar int64 `json:"coin_per_star"`
+	// CoinPerKill 是每次击杀的额外金币。
+	CoinPerKill int64 `json:"coin_per_kill"`
+	// ReactionBonus 是每 10 次反应额外金币（鼓励搭配而非只堆伤害）。
+	ReactionBonus int64 `json:"reaction_bonus"`
+	// KeysOnThreeStar 是三星通关的钥匙奖励。
+	KeysOnThreeStar int64 `json:"keys_on_three_star"`
+	// EnergyOnWin 是**通关返还**的体力。
+	//
+	// ⚠️ 2026-10-21（P4-6）：这个字段此前只在服务端，客户端不知道 ——
+	// 于是选关页显示「体力消耗 6」，而实际净消耗是 1（6 - 5）。
+	// 玩家看到的数与实际付出的数不是一回事。
+	EnergyOnWin int64 `json:"energy_on_win"`
 }
 
 // DefaultDropRates 返回首版掉落表。

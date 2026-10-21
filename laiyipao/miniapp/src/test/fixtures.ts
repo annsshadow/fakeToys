@@ -132,6 +132,16 @@ export function makeConfig(over: Partial<GameConfig> = {}): GameConfig {
       { id: 1, name: '第一章', start_level: 1, end_level: 2, terrain_kind: 'none', boss_enemy_id: 0 },
       { id: 2, name: '第二章', start_level: 3, end_level: 3, terrain_kind: 'none', boss_enemy_id: 0 },
     ],
+    // 2026-10-21（P4-6）：掉落表随 config 下发。
+    // energy_on_win = 5 → 第 1 关（cost 6）通关净消耗 1。
+    drop_rates: {
+      coin_base: 200,
+      coin_per_star: 150,
+      coin_per_kill: 20,
+      reaction_bonus: 30,
+      keys_on_three_star: 1,
+      energy_on_win: 5,
+    },
     rating_weights: {
       element_coverage: 1,
       reaction_coverage: 1,

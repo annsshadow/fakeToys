@@ -192,6 +192,10 @@ func TestConfigVersionIsStableAndContentDerived(t *testing.T) {
 		{"rating_weights", func(g *GameConfig) { g.RatingW.ElementCoverage += 1 }},
 		{"score_rules", func(g *GameConfig) { g.ScoreRules.OnKillNormal += 1 }},
 		{"skill_rules", func(g *GameConfig) { g.SkillRules.MaxLevel += 1 }},
+		// 2026-10-21（P4-6）：掉落表也进了 config，
+		// 所以它必须被版本哈希覆盖 ——
+		// 否则改了「通关返还多少体力」，客户端会把旧配置当成没变。
+		{"drop_rates", func(g *GameConfig) { g.DropRates.EnergyOnWin += 1 }},
 	}
 	for _, m := range mutations {
 		g := base()

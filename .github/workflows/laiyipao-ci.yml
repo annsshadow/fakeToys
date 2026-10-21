@@ -219,6 +219,15 @@ jobs:
         run: pnpm build:h5
       - name: Build WeChat mini program
         run: pnpm build:mp-weixin
+      # 小程序主包体积闸门（2026-10-21 P6-9）。
+      #
+      # 此前 admin 有 `size:check`，miniapp **没有** —— 而微信主包上限是
+      # 2 MB，且本项目未分包（全部文件进主包）。
+      # 没有闸门 = 某天加个依赖就把包撑爆，**直到上传失败才发现**。
+      #
+      # 判据：主包总大小 ≤ 1536 KB（微信硬上限 2048 KB，留 25% 余量）。
+      - name: Mini program main-package size must stay within budget
+        run: pnpm size:check
 
   # ── 依赖漏洞闸门（2026-10-15 安全审计轮新增）────────────────────────────
   #

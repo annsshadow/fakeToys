@@ -8,9 +8,12 @@ import {
   fetchLevelWaves,
   type AdminLevelView,
 } from '@/api'
+import { useAdminRole } from '@/utils/adminRole'
 
 const loading = ref(false)
 const levels = ref<AdminLevelView[]>([])
+// 2026-10-21（P5-6）：readonly 账号看不到写入口。
+const { isReadonly } = useAdminRole()
 const total = ref(0)
 const chapter = ref<number | undefined>(undefined)
 /**
@@ -77,8 +80,22 @@ async function load() {
 }
 
 async function toggleEnabled(row: AdminLevelView) {
+  const next = !row.enabled
+  // 2026-10-21（P5-2）：停用一关会影响**所有玩家**（他们点进去拿不到关卡数据），
+  // 此前一次点击直接生效，唯一的反馈是「已停用」三个字。
   try {
-    const res = await updateLevel(row.id, { enabled: !row.enabled })
+    await ElMessageBox.confirm(
+      next
+        ? `启用「${row.name}」？该关将重新出现在玩家的选关列表里。`
+        : `停用「${row.name}」？所有玩家都将无法进入这一关。`,
+      next ? '启用关卡' : '停用关卡',
+      { type: next ? 'info' : 'warning', confirmButtonText: next ? '启用' : '停用' },
+    )
+  } catch {
+    return // 取消
+  }
+  try {
+    const res = await updateLevel(row.id, { enabled: next })
     Object.assign(row, res.level)
     ElMessage.success(`${row.name} 已${row.enabled ? '启用' : '停用'}`)
   } catch (e) {
@@ -229,8 +246,8 @@ const asRow = (r: unknown) => r as AdminLevelView
         <el-table-column label="操作" width="150" fixed="right">
           <template #default="{ row }">
             <el-button size="small" text @click="openWaves(asRow(row))">波次</el-button>
-            <el-button size="small" text @click="onEdit(asRow(row))">改血量</el-button>
-            <el-button size="small" text @click="toggleEnabled(asRow(row))">
+            <el-button v-if="!isReadonly" size="small" text @click="onEdit(asRow(row))">改血量</el-button>
+            <el-button v-if="!isReadonly" size="small" text @click="toggleEnabled(asRow(row))">
               {{ row.enabled ? '停用' : '启用' }}
             </el-button>
           </template>
