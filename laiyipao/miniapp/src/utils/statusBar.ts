@@ -49,6 +49,13 @@ export function useStatusBarPad(): { statusBarPad: ComputedRef<string> } {
     return statusBarHeight.value
   })
   const statusBarPad = computed(() => {
+    // ⚠️ 2026-10-21（P2-7）：安卓/桌面 H5 上 `statusBarHeight` 常态是 **0**
+    // （只有 iOS 才有状态栏）。所以「0 就当没有状态栏」是错的 ——
+    // 那等于在安卓上**完全不让开顶部**。
+    //
+    // 正确做法：0 时给一个**保守的兜底**（20rpx ≈ 10px），
+    // 与 store 里那句注释（「取不到时给 20rpx 而不是 0」）一致。
+    if (px.value <= 0) return '20rpx'
     try {
       const info = uni.getSystemInfoSync() as unknown as { windowWidth?: number }
       const w = Number(info?.windowWidth ?? 375) || 375

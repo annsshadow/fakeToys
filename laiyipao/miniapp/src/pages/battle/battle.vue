@@ -440,8 +440,15 @@ function backToStage() {
  */
 const abandoning = ref(false)
 
+/** 放弃成功后的跳转定时器（页面卸载时必须清掉 —— 否则会弹掉上一页）。 */
+let abandonNavTimer: ReturnType<typeof setTimeout> | null = null
+
 async function abandon() {
+  // ⚠️ 守卫必须在 showModal **之前**：
+  // 放在之后的话，双击会弹出两个确认框，两个都 resolve → 发两次请求，
+  // 第二次必然被服务端拒（这局已经结束了）→ 弹一个莫名其妙的错误。
   if (abandoning.value || !tokenId.value) return
+  abandoning.value = true
   const ok = await new Promise<boolean>((resolve) => {
     uni.showModal({
       title: '放弃这一局？',
@@ -452,8 +459,10 @@ async function abandon() {
       fail: () => resolve(false),
     })
   })
-  if (!ok) return
-  abandoning.value = true
+  if (!ok) {
+    abandoning.value = false
+    return
+  }
   try {
     const res = await api.abandonBattle(tokenId.value)
     await store.refreshWallet()
@@ -462,12 +471,29 @@ async function abandon() {
       icon: 'none',
     })
     settled.value = true
-    setTimeout(() => uni.navigateBack(), 800)
+    // 停掉引擎：画面继续跑 800ms 与「已放弃」矛盾，
+    // 而且引擎终局会触发 settle() —— 与 abandon() 并发。
+    stopLoop()
+    abandonNavTimer = setTimeout(() => {
+      abandonNavTimer = null
+      uni.navigateBack()
+    }, 800)
   } catch (e) {
     uni.showToast({ title: (e as Error).message, icon: 'none' })
   } finally {
     abandoning.value = false
   }
+}
+
+/** 停掉渲染器与逻辑定时器（结算与放弃都要用）。 */
+function stopLoop(): void {
+  if (renderer.value) renderer.value.stop()
+  renderer.value = null
+  if (timerId) {
+    clearInterval(timerId)
+    timerId = null
+  }
+  loopStarted = false
 }
 
 onLoad(async (query) => {
@@ -476,6 +502,13 @@ onLoad(async (query) => {
 })
 
 onUnload(() => {
+  // 放弃后的跳转定时器必须清掉：
+  // 玩家在这 800ms 内按系统返回键离开 → 定时器在已卸载页面上触发
+  // `uni.navigateBack()` → 把**上一页**（选关页）一起弹掉。
+  if (abandonNavTimer) {
+    clearTimeout(abandonNavTimer)
+    abandonNavTimer = null
+  }
   // 第 137 轮：先置标志，让仍在飞行中的 setup()（各 await 之后）能感知到
   // 「页面已卸载」并停止创建渲染器/定时器。
   pageUnloaded = true
@@ -499,6 +532,17 @@ onUnload(() => {
 }
 
 .abandon-btn {
+  /*!
+   * ⚠️ 必须显式写 `pointer-events: auto`。
+   *
+   * `.overlay-top` 有 `pointer-events: none`（为了让顶栏不挡住画布点击），
+   * 而 `pointer-events` 是**可继承**属性 —— 不写这一行，
+   * 按钮就继承到 `none`，**永远点不动**（而且画面上看起来完全正常）。
+   *
+   * 这条是 P4-5「放弃战斗」的整个功能：按钮可见、点不动，
+   * 玩家只会以为游戏卡了。
+   */
+  pointer-events: auto;
   margin-top: 10rpx;
   padding: 6rpx 18rpx;
   border-radius: 10rpx;
@@ -509,6 +553,7 @@ onUnload(() => {
 }
 
 .mode-note {
+  pointer-events: auto;
   margin-bottom: 8rpx;
   padding: 4rpx 12rpx;
   border-radius: 8rpx;

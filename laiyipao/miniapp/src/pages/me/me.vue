@@ -355,13 +355,30 @@ const defenseBuild = computed(() => ({
  *
  * 否则快照里的 `equipment` / `mastery_nodes` 是**空数组** ——
  * 别人挑战时模拟的不是你的构筑。
+ *
+ * ⚠️ 2026-10-21（二轮审计 P2-9）：加载失败**必须中止保存**。
+ * 此前 `loadEquipment` / `loadMasteryNodes` 内部只 `console.warn`，
+ * 于是一次网络抖动 → 构筑为空 → **原样提交一份空快照**，
+ * 正是 P4-7 要消灭的那个缺陷又回来了。
  */
-async function ensureBuildLoaded() {
-  await Promise.all([store.loadEquipment(), store.loadMasteryNodes()])
+async function ensureBuildLoaded(): Promise<boolean> {
+  try {
+    await Promise.all([store.loadEquipment(), store.loadMasteryNodes()])
+  } catch (e) {
+    uni.showToast({ title: `构筑加载失败，未保存防线：${(e as Error).message}`, icon: 'none' })
+    return false
+  }
+  // 兜底：两处都空（既没数据也没报错）也算加载不到 ——
+  // 存一份空快照比不存更糟。
+  if (store.equipment.length === 0 && store.masteryNodes.length === 0) {
+    uni.showToast({ title: '构筑数据未加载，未保存防线', icon: 'none' })
+    return false
+  }
+  return true
 }
 
 async function saveDefense() {
-  await ensureBuildLoaded()
+  if (!(await ensureBuildLoaded())) return
   try {
     const res = await api.saveDefense({
       name: '我的防线',
@@ -381,7 +398,7 @@ async function saveDefense() {
 }
 
 async function toggleShield() {
-  await ensureBuildLoaded()
+  if (!(await ensureBuildLoaded())) return
   try {
     const res = await api.saveDefense({
       name: myDefense.value?.name ?? '我的防线',

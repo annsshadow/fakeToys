@@ -127,6 +127,8 @@ function terrainDescr(kind: TerrainKind): string {
 const curChapter = ref(1)
 const selectedId = ref(0)
 const stars = ref<Record<number, number>>({})
+/** 星级是否已经拉过一次（避免 onLoad + onShow 各拉一次）。 */
+const starsLoaded = ref(false)
 const diagnoseInfo = ref<any>(null)
 
 const chapters = computed(() => store.config?.chapters ?? [])
@@ -206,6 +208,7 @@ function startBattle() {
  * 玩家看到的是「我明明通关了，但没给星」。
  */
 async function refreshStars(): Promise<void> {
+  starsLoaded.value = true
   try {
     const r = await api.fetchMyStars()
     stars.value = r.stars
@@ -216,7 +219,10 @@ async function refreshStars(): Promise<void> {
 
 /** 从战斗页返回时刷新星级。 */
 onShow(() => {
-  void refreshStars()
+  // ⚠️ onLoad 也会拉一次 —— 两者都跑就是**两次请求**，
+  // 而且 onShow 那次不 await，可能在令牌就绪前发出 → 401 被静默吞掉。
+  // 这里用 `starsLoaded` 挡住重复拉取。
+  if (starsLoaded.value) void refreshStars()
 })
 
 onLoad(async (query) => {
