@@ -56,6 +56,7 @@
 | `MIN_BATTLE_DURATION` | `15s` | 否 | 最短可信战斗时长 |
 | `SETTLE_RECOMPUTE_MODE` | `enforce` | 否 | `off` / `shadow` / `enforce` |
 | `OFFLINE_CAP_HOURS` | `12` | 否 | ⚠️ 已解析但当前无离线收益端点消费 |
+| `PLAYER_LOGIN_REQUIRED` | `false` | 否 | 开启后玩家必须用账号口令登录，`/auth/guest` 一律 403；启动时引导一个**与超管同名同口令**的共享测试账号 |
 | `BOOTSTRAP_ADMIN_USER` | `admin` | 否 | 首次引导管理员用户名 |
 | `BOOTSTRAP_ADMIN_PASS` | `admin12345` | **是** | prod 下未显式设置会 panic；长度 < 10 时拒绝创建 |
 
@@ -101,6 +102,34 @@ BOOTSTRAP_ADMIN_PASS 环境变量为空      → panic
 
 仓库里**不含**任何真实域名 / IP / 口令。`deploy/README.md` 里的
 `<YOUR_TEST_DOMAIN>` 是占位符。
+
+### 2.4 玩家登录模式（游客 vs 账号）
+
+| 模式 | 开关 | 行为 |
+|---|---|---|
+| 游客（缺省） | `PLAYER_LOGIN_REQUIRED` 未设 / `false` | 每个浏览器/设备一个游客号，凭证在 localStorage 的 `lyp_guest` |
+| 账号 | `PLAYER_LOGIN_REQUIRED=true` | 只能用 `POST /auth/login`（用户名 + 口令）；`/auth/guest` 一律 403 `login_required` |
+
+**为什么测试环境要开账号模式**：游客通道给每个设备一个独立账号，于是
+
+- 测试数据（金币、关卡进度、专精、战报）散落在无数个 `users` 行里；
+- 换一个浏览器（或者清一次缓存）就是一个新号 ——「我刚打的关卡呢」；
+- 多人同时测时互相看不见对方的进度，运营无法复现「玩家卡在第 27 关」。
+
+**共享账号的口令与运营超管相同**（复用 `BOOTSTRAP_ADMIN_USER` /
+`BOOTSTRAP_ADMIN_PASS`），于是测试环境只需记一套凭据。
+代价是这个登录端点同时是**超管口令的爆破面** —— 所以它的限流是
+10/min/IP（不是游客建号的 60/min），而口令**绝不写进前端产物**
+（H5 登录页只回填用户名）。
+
+**开关是服务端权威**：客户端也拿得到 `/config` 的 `require_login`，
+但那个字段不在内容哈希里、缓存副本可能过期 —— 真正的判据是
+服务端对 `/auth/guest` 的那道 403。改了开关**立即生效**，不必等
+客户端重新拉包。
+
+**数据不会被重建**：共享账号已存在时，启动只**同步口令**，
+不碰钱包/进度/专精/战报 —— 「重建账号」等于把测试数据清空，
+那正是这个功能要解决的事。
 
 ---
 
@@ -316,6 +345,8 @@ JWT_SECRET=<64 字节随机>
 BOOTSTRAP_ADMIN_PASS=<强口令>
 SETTLE_RECOMPUTE_MODE=enforce
 MIGRATIONS_ON_BOOT=false
+# 测试环境专用：玩家必须用账号登录（详见 §2.4）
+PLAYER_LOGIN_REQUIRED=true
 ```
 
 目录布局：

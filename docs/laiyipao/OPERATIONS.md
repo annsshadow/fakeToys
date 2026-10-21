@@ -44,7 +44,7 @@
 # 1) 建库
 createdb laiyipao
 
-# 2) 迁移（14 个 goose 迁移，49 张业务表）
+# 2) 迁移（16 个 goose 迁移，50 张业务表）
 cd laiyipao/server
 export DATABASE_URL="postgres://postgres@127.0.0.1:5432/laiyipao?sslmode=disable"
 export BOOTSTRAP_ADMIN_PASS="<至少 10 位，缺省会拒绝启动>"
@@ -133,6 +133,28 @@ cd laiyipao/admin   && pnpm install && pnpm dev          # :5175
 | `MIN_BATTLE_DURATION` | `15s` | 「清完全场」的最短合理时长，短于此的**胜利**上报会被拒 |
 | `SETTLE_RECOMPUTE_MODE` | `enforce` | 服务端重算的处置档位，`off` / `shadow` / `enforce`。**不发版即可切换**，改环境变量重启生效 |
 | `OFFLINE_CAP_HOURS` | `12` | 离线收益累计上限 |
+| `PLAYER_LOGIN_REQUIRED` | `false` | 玩家是否必须用账号口令登录。开启后 `/auth/guest` 一律 403，并引导一个**与超管同名同口令**的共享测试账号（测试环境用，详见 §2.4） |
+
+#### `PLAYER_LOGIN_REQUIRED` 怎么用（测试环境）
+
+**背景**：游客通道给**每个浏览器/设备**一个独立账号。测试环境里这意味着
+测试数据散落在无数个游客号里、换浏览器就丢进度、多人测时互相看不见。
+
+**开启**：在 `config.env` 里加 `PLAYER_LOGIN_REQUIRED=true`，重启服务。
+
+| 项 | 行为 |
+|---|---|
+| 账号 | 启动时引导创建，用户名与口令**与运营超管相同**（复用 `BOOTSTRAP_ADMIN_USER` / `BOOTSTRAP_ADMIN_PASS`） |
+| H5 | 出登录页（只回填用户名，**口令不预填** —— 前端产物是公开的） |
+| `/auth/guest` | 一律 **403 `login_required`**（且**不建号**）—— 服务端这一道才是权威判据，缓存的旧客户端也一样被挡住 |
+| 限流 | `POST /auth/login` **10/min/IP**（bcrypt cost 10，且这个口令同时是超管口令的爆破面） |
+| 已存在的账号 | 启动只**同步口令**，**不碰**钱包/进度/专精/战报 |
+
+**关掉**：把 `PLAYER_LOGIN_REQUIRED` 去掉或设为 `false` 重启 —— 游客通道恢复，
+**已有的账号行不受影响**（账号只是多了一行玩家数据）。
+
+**改口令**：改 `BOOTSTRAP_ADMIN_PASS` 后重启，共享测试账号的口令会跟着变
+（两侧刻意保持一致，否则会出现「后台能登、H5 登不进」）。
 
 #### `SETTLE_RECOMPUTE_MODE` 怎么用
 

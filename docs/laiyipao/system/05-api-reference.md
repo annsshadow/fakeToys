@@ -48,9 +48,10 @@
 | 3 | POST | `/api/v1/auth/guest` | 60/min IP | 游客登录/恢复 |
 | 4 | POST | `/api/v1/auth/wechat` | 60/min IP | 微信 code 登录（未配置时 403） |
 | 5 | POST | `/api/v1/auth/refresh` | 60/min IP | 刷新令牌（轮换） |
-| 6 | GET | `/api/v1/config` | — | 全量配置（支持 `?if_version=` → 304） |
-| 7 | GET | `/api/v1/leaderboard` | — | 排行榜（`?type=power\|stage\|efficiency`） |
-| 8 | POST | `/api/v1/admin/login` | 5/min IP | 管理员登录 |
+| 6 | POST | `/api/v1/auth/login` | 10/min IP | 玩家账号登录（用户名 + 口令） |
+| 7 | GET | `/api/v1/config` | — | 全量配置（支持 `?if_version=` → 304） |
+| 8 | GET | `/api/v1/leaderboard` | — | 排行榜（`?type=power\|stage\|efficiency`） |
+| 9 | POST | `/api/v1/admin/login` | 5/min IP | 管理员登录 |
 
 ### 2.2 玩家（`requireUser`）
 
@@ -146,6 +147,34 @@
 - `guest_token` 为空 → 服务端生成新的（新号）；非空且存在 → 恢复该账号并只更新 `last_login_at`。
 - `nickname` 为空 → 生成「玩家 + 4 位数字」；长度 > 64 → 400（不静默截断）。
 - 新号初始化：coin 2000 / gem 50 / energy 30 / keys 1，2 件装备，3 个技能（1/4/7），3 个出战槽位。
+- ⚠️ `PLAYER_LOGIN_REQUIRED=true` 时本端点 **403 `login_required`**（且**不建号**）。
+  服务端这一道是权威判据 —— 只在客户端挡的话，浏览器里缓存着旧 bundle 的
+  测试者仍会调它，于是「每个浏览器一个号、测试数据散在各处」的老问题
+  会在**看起来已经修好**之后继续存在。
+
+#### `POST /api/v1/auth/login`
+
+```json
+// 请求
+{ "username": "admin", "password": "…" }
+// 响应 200 —— 与 /auth/guest 完全同构
+{
+  "access_token": "eyJ…",
+  "refresh_token": "…",
+  "expires_at": "2026-10-21T14:00:00Z",
+  "user": { "id": 15, "nickname": "admin", "avatar_url": "", "is_guest": false, "status": 1 }
+}
+```
+
+- 账号登录与游客登录拿到的是**同一种令牌**（`kind=user`），权限面完全一样；
+  差别只在「用哪把钥匙进门」。
+- **用户不存在与口令错误返回同一条错误**（401 `用户名或密码错误`）——
+  分开报等于白送一个用户名枚举器。
+- 账号被封禁（`status=2`）→ 403 `forbidden`；但**口令错**时仍返回
+  「用户名或密码错误」，不泄露封禁状态（先验口令再查状态）。
+- 限流 **10/min/IP**（比游客建号严）：它做 bcrypt（cost 10），
+  且测试环境下这个口令与运营超管相同 —— 它同时是超管口令的爆破面。
+- 用途：测试环境要求全体测试者共用一个账号，否则数据散在无数个游客号里。
 
 #### `POST /api/v1/auth/wechat`
 
@@ -965,6 +994,7 @@
 | `POST /auth/guest` | IP | 60/min | 冷启动集中；NAT 后可能很多玩家 |
 | `POST /auth/wechat` | IP | 60/min | 同上 |
 | `POST /auth/refresh` | IP | 60/min | 一次冷启动 1 次 |
+| `POST /auth/login` | IP | 10/min | bcrypt 最贵；**且测试环境口令与超管相同**（爆破面），但共享账号要照顾整个测试组 |
 | `POST /admin/login` | IP | 5/min | bcrypt 最贵；运营人数个位数 |
 | `POST /redeem` | IP | 5/min | 挡兑换码爆破 |
 | `POST /redeem` | 用户 | 20/min | 挡「换 IP 继续试」 |
