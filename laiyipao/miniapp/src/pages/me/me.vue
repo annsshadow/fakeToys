@@ -202,6 +202,7 @@
 </template>
 
 <script setup lang="ts">
+import { currencyName } from '@/utils/labels'
 import { useStatusBarPad } from '@/utils/statusBar'
 import { ref, computed, onMounted } from 'vue'
 import {onShow, onUnload} from '@dcloudio/uni-app'
@@ -303,9 +304,6 @@ async function confirmLogout() {
   }
 }
 
-function currencyName(k: string): string {
-  return k === 'coin' ? '金币' : k === 'gem' ? '钻石' : k === 'keys' ? '钥匙' : k === 'energy' ? '体力' : k
-}
 
 const stolenText = computed(() => {
   const s = lastChallenge.value?.stolen

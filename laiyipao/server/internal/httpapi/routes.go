@@ -218,6 +218,8 @@ func (s *Server) Register(app *fiber.App) {
 	adm.Get("/reactions", s.adminReactions)
 	adm.Get("/users", s.adminUsers)
 	adm.Post("/users/:id/ban", requireWritable(), s.adminBanUser)
+	// 2026-10-21（P5-7）：玩家详情（只读）。
+	adm.Get("/users/:id", s.adminUserDetail)
 	adm.Post("/users/:id/unban", requireWritable(), s.adminUnbanUser)
 	adm.Post("/users/:id/grant", requireWritable(), s.adminGrantUser)
 	adm.Get("/battles", s.adminBattles)

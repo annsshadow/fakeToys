@@ -243,18 +243,18 @@ describe('UsersView 封禁 / 解封', () => {
 
     // 第 1 行（正常用户）：发资源 → 封禁
     const normalBtns = rows[0].findAll('button')
-    expect(normalBtns.map((b) => b.text())).toEqual(['发资源', '封禁'])
-    await normalBtns[0].trigger('click')
+    expect(normalBtns.map((b) => b.text())).toEqual(['详情', '发资源', '封禁'])
+    await normalBtns.find((b) => b.text() === '发资源')!.trigger('click')
     await flushPromises()
     expect(grantUser).toHaveBeenCalledWith(1, 'coin', 10000)
-    await rows[0].findAll('button')[1].trigger('click')
+    await rows[0].findAll('button').find((b) => b.text() === '封禁')!.trigger('click')
     await flushPromises()
     expect(banUser).toHaveBeenCalledWith(1, '恶意刷分')
 
     // 第 2 行（封禁用户）：解封
     const bannedBtns = rows[1].findAll('button')
-    expect(bannedBtns.map((b) => b.text())).toEqual(['发资源', '解封'])
-    await bannedBtns[1].trigger('click')
+    expect(bannedBtns.map((b) => b.text())).toEqual(['详情', '发资源', '解封'])
+    await bannedBtns.find((b) => b.text() === '解封')!.trigger('click')
     await flushPromises()
     expect(unbanUser).toHaveBeenCalledWith(2)
     wrapper.unmount()

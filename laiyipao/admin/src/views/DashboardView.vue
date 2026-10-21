@@ -194,7 +194,7 @@ onActivated(() => {
 
     <template v-if="data">
       <el-row :gutter="12" style="margin-bottom: 12px">
-        <el-col :span="6">
+        <el-col :span="6" :xs="24" :sm="12" :md="6">
           <el-card shadow="never">
             <div class="kpi-label">注册用户</div>
             <div class="kpi-value">{{ data.users.total.toLocaleString() }}</div>
@@ -204,7 +204,7 @@ onActivated(() => {
             </div>
           </el-card>
         </el-col>
-        <el-col :span="6">
+        <el-col :span="6" :xs="24" :sm="12" :md="6">
           <el-card shadow="never">
             <div class="kpi-label">战斗总数</div>
             <div class="kpi-value">{{ data.battles.total.toLocaleString() }}</div>
@@ -214,14 +214,14 @@ onActivated(() => {
             </div>
           </el-card>
         </el-col>
-        <el-col :span="6">
+        <el-col :span="6" :xs="24" :sm="12" :md="6">
           <el-card shadow="never">
             <div class="kpi-label">平均战力 / 关卡</div>
             <div class="kpi-value">{{ data.progression.avg_power.toLocaleString() }}</div>
             <div class="kpi-sub">平均最高关 {{ data.progression.avg_max_stage.toFixed(1) }}</div>
           </el-card>
         </el-col>
-        <el-col :span="6">
+        <el-col :span="6" :xs="24" :sm="12" :md="6">
           <el-card shadow="never">
             <div class="kpi-label">验真一致率</div>
             <div class="kpi-value">
@@ -235,28 +235,28 @@ onActivated(() => {
       </el-row>
 
       <el-row :gutter="12" style="margin-bottom: 12px">
-        <el-col :span="6">
+        <el-col :span="6" :xs="24" :sm="12" :md="6">
           <el-card shadow="never">
             <div class="kpi-label">金币流入 / 流出</div>
             <div class="kpi-value">{{ data.economy.coin_in.toLocaleString() }}</div>
             <div class="kpi-sub">流出 {{ data.economy.coin_out.toLocaleString() }}</div>
           </el-card>
         </el-col>
-        <el-col :span="6">
+        <el-col :span="6" :xs="24" :sm="12" :md="6">
           <el-card shadow="never">
             <div class="kpi-label">钻石流入 / 流出</div>
             <div class="kpi-value">{{ data.economy.gem_in.toLocaleString() }}</div>
             <div class="kpi-sub">流出 {{ data.economy.gem_out.toLocaleString() }}</div>
           </el-card>
         </el-col>
-        <el-col :span="6">
+        <el-col :span="6" :xs="24" :sm="12" :md="6">
           <el-card shadow="never">
             <div class="kpi-label">订单</div>
             <div class="kpi-value">{{ data.economy.orders_paid }}</div>
             <div class="kpi-sub">待支付 {{ data.economy.orders_pending }}</div>
           </el-card>
         </el-col>
-        <el-col :span="6">
+        <el-col :span="6" :xs="24" :sm="12" :md="6">
           <el-card shadow="never">
             <div class="kpi-label">封禁用户</div>
             <div class="kpi-value">{{ data.users.banned }}</div>
@@ -266,12 +266,12 @@ onActivated(() => {
       </el-row>
 
       <el-row :gutter="12">
-        <el-col :span="12">
+        <el-col :span="12" :xs="24" :sm="12">
           <el-card shadow="never" header="近 14 日活跃">
             <div ref="dauRef" style="height: 240px" />
           </el-card>
         </el-col>
-        <el-col :span="12">
+        <el-col :span="12" :xs="24" :sm="12">
           <el-card shadow="never" header="元素反应使用分布（I-1 健康度）">
             <div ref="reactionRef" style="height: 240px" />
             <el-alert

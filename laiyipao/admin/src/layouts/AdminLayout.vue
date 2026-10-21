@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, provide, readonly, onMounted, type Component } from 'vue'
+import { ref, computed, provide, readonly, onMounted, onUnmounted, type Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   Aim,
@@ -19,6 +19,31 @@ import {
 import { adminLogout, adminMe } from '@/api'
 import { setToken, invalidateTokenVerification } from '@/api/client'
 import { ADMIN_ROLE_KEY } from '@/utils/adminRole'
+
+/**
+ * 窄屏标记（2026-10-21 P6-11）。
+ *
+ * 此前侧边栏是**固定 216px**，而项目里 0 个 `@media` ——
+ * 于是在 375px 的手机上，侧栏本身就占了 57% 的宽度。
+ *
+ * 用 `window.matchMedia` 而不是监听 resize：后者每次缩放都触发一次重排。
+ */
+const NARROW_QUERY = '(max-width: 900px)'
+const narrow = ref(false)
+let narrowMedia: MediaQueryList | null = null
+function onNarrowChange(e: { matches: boolean }): void {
+  narrow.value = e.matches
+}
+onMounted(() => {
+  if (typeof window === 'undefined' || !window.matchMedia) return
+  narrowMedia = window.matchMedia(NARROW_QUERY)
+  narrow.value = narrowMedia.matches
+  narrowMedia.addEventListener('change', onNarrowChange)
+})
+onUnmounted(() => {
+  narrowMedia?.removeEventListener('change', onNarrowChange)
+  narrowMedia = null
+})
 
 const route = useRoute()
 const router = useRouter()
@@ -158,7 +183,7 @@ onMounted(loadIdentity)
 
 <template>
   <el-container class="admin-shell">
-    <el-aside width="216px" class="sidebar">
+    <el-aside width="216px" class="sidebar" :class="{ 'aside-narrow': narrow }">
       <div class="brand">
         <div class="brand-mark">炮</div>
         <div>
@@ -219,6 +244,21 @@ onMounted(loadIdentity)
 </template>
 
 <style scoped>
+/*
+ * 窄屏（2026-10-21 P6-11）。
+ *
+ * 之前侧栏是固定 216px，而项目里 0 个 `@media` ——
+ * 375px 的手机上侧栏本身占 57% 宽度。
+ */
+@media (max-width: 900px) {
+  .aside-narrow {
+    width: 64px !important;
+  }
+  .aside-narrow :deep(.el-menu) {
+    --el-menu-item-height: 48px;
+  }
+}
+
 .admin-shell {
   height: 100vh;
 }

@@ -83,7 +83,7 @@ describe('signin.vue 签到页', () => {
     expect(wrapper.text()).toContain('未完成')
     expect(wrapper.text()).toContain('已领')
     // 奖励文案（currencyName 的金/钻/钥匙分支）
-    expect(wrapper.text()).toContain('金 500 · 钻 10')
+    expect(wrapper.text()).toContain('金币 500 · 钻石 10')
     expect(wrapper.text()).toContain('钥匙 1')
   })
 
@@ -174,7 +174,7 @@ describe('signin.vue 签到页', () => {
     await wrapper.find('.btn-primary').trigger('click')
     await flushPromises()
     expect(mockApi.signIn).toHaveBeenCalledTimes(1)
-    expect(wrapper.text()).toContain('签到成功，获得 金 4000')
+    expect(wrapper.text()).toContain('签到成功，获得 金币 4000')
     // refreshWallet 被签到流程调用（coin 变为 1）
     expect(store.wallet.coin).toBe(1)
     expect(um.mock.showToast).not.toHaveBeenCalled()
@@ -212,7 +212,7 @@ describe('signin.vue 签到页', () => {
     await wrapper.findAll('.task .btn')[0]!.trigger('click')
     await flushPromises()
     expect(mockApi.claimTask).toHaveBeenCalledWith(1)
-    expect(um.mock.showToast).toHaveBeenCalledWith({ title: '已领取 金 500', icon: 'none' })
+    expect(um.mock.showToast).toHaveBeenCalledWith({ title: '已领取 金币 500', icon: 'none' })
     expect(mockApi.fetchTasks).toHaveBeenCalledTimes(fetchCalls + 1)
     expect(store.wallet.coin).toBe(1)
   })
@@ -237,7 +237,7 @@ describe('signin.vue 签到页', () => {
     const { wrapper } = mountPage(Signin)
     await flushPromises()
     expect(wrapper.text()).toContain('vip_point 3') // currencyName 未知键 → 原文
-    expect(wrapper.text()).toContain('体 5') // energy 键
+    expect(wrapper.text()).toContain('体力 5') // energy 键（统一后的长名）
     // reward ?? {} 分支：null 奖励渲染为空串而不是崩溃
     expect(wrapper.text()).not.toContain('undefined')
   })
@@ -257,7 +257,7 @@ describe('signin.vue 签到页', () => {
     await flushPromises()
     // 输入被 trim 后提交
     expect(mockApi.redeem).toHaveBeenCalledWith('LYP2026')
-    expect(wrapper.text()).toContain('兑换成功：钻 100')
+    expect(wrapper.text()).toContain('兑换成功：钻石 100')
     expect((wrapper.find('input').element as HTMLInputElement).value).toBe('')
     expect(store.wallet.coin).toBe(1) // refreshWallet 生效
   })

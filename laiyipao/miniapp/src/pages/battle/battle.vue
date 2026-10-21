@@ -111,6 +111,7 @@
 </template>
 
 <script setup lang="ts">
+import { currencyName } from '@/utils/labels'
 import { useStatusBarPad } from '@/utils/statusBar'
 import { ref, computed, getCurrentInstance, triggerRef } from 'vue'
 import { onLoad, onUnload } from '@dcloudio/uni-app'
@@ -185,9 +186,6 @@ function kindLabel(k: string): string {
   return k === 'skill' ? '技能' : k === 'attribute' ? '属性' : '机制'
 }
 
-function currencyName(k: string): string {
-  return k === 'coin' ? '金币' : k === 'gem' ? '钻石' : k === 'keys' ? '钥匙' : k === 'energy' ? '体力' : k
-}
 
 /**
  * 取可用于绘制的 canvas 节点。

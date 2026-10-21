@@ -1,7 +1,15 @@
 <script setup lang="ts">
 import {onMounted, ref, computed, onActivated} from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { fetchUsers, banUser, unbanUser, grantUser, type AdminUserView } from '@/api'
+import {
+  fetchUsers,
+  fetchUserDetail,
+  banUser,
+  unbanUser,
+  grantUser,
+  type AdminUserDetailResp,
+  type AdminUserView,
+} from '@/api'
 import { useAdminRole } from '@/utils/adminRole'
 import { fmtTime } from '@/utils/format'
 
@@ -11,6 +19,32 @@ const loading = ref(false)
 // 2026-10-21（P5-6）：readonly 账号看不到写按钮。
 const { isReadonly } = useAdminRole()
 const users = ref<AdminUserView[]>([])
+
+/**
+ * 玩家详情抽屉（2026-10-21 P5-7）。
+ *
+ * 此前后台**只能看到用户列表的一行**。运营要回答的四个问题 ——
+ * 「他最近打了什么 / 钱去哪了 / 构筑是什么 / 被验真验出不匹配了吗」——
+ * 全都要去别处拼 URL。
+ *
+ * 一个**不能看的详情**比没有更糟：它让运营以为「没有信息」= 「没有问题」。
+ */
+const detailDrawer = ref(false)
+const detailLoading = ref(false)
+const detail = ref<AdminUserDetailResp | null>(null)
+
+async function openDetail(u: AdminUserView) {
+  detailDrawer.value = true
+  detailLoading.value = true
+  detail.value = null
+  try {
+    detail.value = await fetchUserDetail(u.id)
+  } catch (e) {
+    ElMessage.error(`玩家详情加载失败：${(e as Error).message}`)
+  } finally {
+    detailLoading.value = false
+  }
+}
 const total = ref(0)
 const keyword = ref('')
 const limit = ref(50)
@@ -285,6 +319,7 @@ const asRow = (r: unknown) => r as AdminUserView
         </el-table-column>
         <el-table-column label="操作" width="150" fixed="right">
           <template #default="{ row }">
+            <el-button size="small" text @click="openDetail(asRow(row))">详情</el-button>
             <el-button v-if="!isReadonly" size="small" text @click="onGrant(asRow(row))">
               发资源
             </el-button>
@@ -305,6 +340,78 @@ const asRow = (r: unknown) => r as AdminUserView
 </el-table>
     </el-card>
   </div>
+
+    <!--
+      玩家详情抽屉（2026-10-21 P5-7）。
+      此前后台只能看到用户列表的一行 —— 运营要回答的四个问题
+      （最近打了什么 / 钱去哪了 / 构筑是什么 / 验真结论）全都得去别处拼 URL。
+    -->
+    <el-drawer v-model="detailDrawer" title="玩家详情" size="48%">
+      <div v-loading="detailLoading">
+        <template v-if="detail">
+          <el-descriptions :column="2" border size="small">
+            <el-descriptions-item label="ID">{{ detail.user.id }}</el-descriptions-item>
+            <el-descriptions-item label="昵称">{{ detail.user.nickname || '（未命名）' }}</el-descriptions-item>
+            <el-descriptions-item label="最高关卡">{{ detail.user.max_stage }}</el-descriptions-item>
+            <el-descriptions-item label="战力">{{ detail.user.power }}</el-descriptions-item>
+            <el-descriptions-item label="金币">{{ detail.wallet.coin ?? 0 }}</el-descriptions-item>
+            <el-descriptions-item label="钻石">{{ detail.wallet.gem ?? 0 }}</el-descriptions-item>
+            <el-descriptions-item label="体力">{{ detail.wallet.energy ?? 0 }}</el-descriptions-item>
+            <el-descriptions-item label="钥匙">{{ detail.wallet.keys ?? 0 }}</el-descriptions-item>
+            <el-descriptions-item label="验真">{{ detail.user.verify_checked }} / 不匹配 {{ detail.user.verify_mismatched }}</el-descriptions-item>
+            <el-descriptions-item label="流水条数">{{ detail.flow_count }}</el-descriptions-item>
+          </el-descriptions>
+
+          <div class="section-title">构筑</div>
+          <el-descriptions :column="1" border size="small">
+            <el-descriptions-item label="出战技能">
+              {{ detail.equipped_skills.map((id) => (id > 0 ? '#' + id : '空')).join(' / ') }}
+            </el-descriptions-item>
+            <el-descriptions-item label="已装配装备">
+              {{ detail.equipped_equipment.length ? detail.equipped_equipment.map((id) => '#' + id).join('、') : '（无）' }}
+            </el-descriptions-item>
+            <el-descriptions-item label="专精节点">
+              {{ detail.mastery_nodes.length ? detail.mastery_nodes.join('、') : '（未点亮）' }}
+            </el-descriptions-item>
+          </el-descriptions>
+
+          <div class="section-title">最近战报</div>
+          <el-table :data="detail.recent_battles" size="small" border>
+            <el-table-column prop="id" label="ID" width="60" />
+            <el-table-column prop="level_id" label="关卡" width="70" />
+            <el-table-column prop="result" label="结果" width="70" />
+            <el-table-column prop="score" label="分数" width="100" />
+            <el-table-column prop="kills" label="击杀" width="70" />
+            <el-table-column prop="leaked" label="漏怪" width="70" />
+            <el-table-column prop="created_at" label="时间" min-width="160">
+              <template #default="{ row }">{{ fmtTime(row.created_at) }}</template>
+            </el-table-column>
+            <template #empty>
+              <el-empty description="还没有战报" :image-size="60" />
+            </template>
+          </el-table>
+
+          <div class="section-title">验真记录</div>
+          <el-table :data="detail.verifications" size="small" border>
+            <el-table-column prop="battle_id" label="战报" width="80" />
+            <el-table-column label="结论" width="90">
+              <template #default="{ row }">
+                <el-tag :type="row.matched ? 'success' : 'danger'" size="small">
+                  {{ row.matched ? '一致' : '不匹配' }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="actual_hash" label="上报哈希" min-width="180" />
+            <el-table-column prop="created_at" label="时间" min-width="160">
+              <template #default="{ row }">{{ fmtTime(row.created_at) }}</template>
+            </el-table-column>
+            <template #empty>
+              <el-empty description="没有验真记录" :image-size="60" />
+            </template>
+          </el-table>
+        </template>
+      </div>
+    </el-drawer>
 </template>
 
 <style scoped>

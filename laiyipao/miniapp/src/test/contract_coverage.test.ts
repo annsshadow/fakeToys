@@ -92,6 +92,13 @@ const AUTH_FIELDS = [
  * 一个说不出具体理由的条目等于把缺口永久合法化。
  */
 const KNOWN_UNCONSUMED: Record<string, string> = {
+  equipment:
+    '装备目录：2026-10-21（P4-1）起，小程序端从 `/me/equipment` 读装备 —— ' +
+    '那个端点一次返回「目录 + 拥有状态 + 装配状态」，而 /config.equipment ' +
+    '只有目录。从 /config 再读一遍同一份目录是重复传输。' +
+    '该字段的真实消费方是**后台的玩家文档站**（admin 的 WikiView「装备图鉴」页），' +
+    '它在另一个包里 —— 本守卫的扫描范围只覆盖 miniapp/src，' +
+    '所以这里是「有消费方、但不在本扫描范围内」，不是「没人要」。',
   avatar_url:
     '头像字段：users.avatar_url 只有 DEFAULT（空串，migrations/00001_core.sql:12），' +
     '全仓库没有 UPDATE、没有 INSERT，也没有默认值覆盖 —— 所以它永远是空串。' +
@@ -127,8 +134,17 @@ describe('跨端消费面（第 150 轮）', () => {
     const orphans: string[] = []
     for (const f of CONFIG_FIELDS) {
       if (KNOWN_UNCONSUMED[f]) continue
-      // 字段以对象属性形式被读：`cfg.<field>` / `config?.<field>` / `config.<field>`
-      const re = new RegExp(`\\.${f}\\b|['"\`]${f}['"\`]`)
+      //
+      // ⚠️ 2026-10-21（P6-8）：判据收紧为「**从 config 对象上读**」。
+      //
+      // 此前是「源码里出现过这个名字就算」——
+      // 于是 `reactions` 匹配到了 `settleResult.reactions`（战报结果里的字段），
+      // `/config.reactions` 于是**看起来**有人读，而实际上零消费。
+      // 这条守卫自己就写下了这个失效形态（见文件头注释），
+      // 这次把它修掉。
+      //
+      // 现在要求：字段是挂在 `config`（或 `cfg`）上的属性。
+      const re = new RegExp(`\\b(?:config|cfg)[^\n]{0,60}?\\.${f}\\b`)
       if (!re.test(text)) orphans.push(f)
     }
     expect(
@@ -144,7 +160,12 @@ describe('跨端消费面（第 150 轮）', () => {
     const orphans: string[] = []
     for (const f of AUTH_FIELDS) {
       if (KNOWN_UNCONSUMED[f]) continue
-      const re = new RegExp(`\\.${f}\\b|['"\`]${f}['"\`]`)
+      //
+      // ⚠️ 2026-10-21（P6-8）：裸字符串匹配去掉。
+      //
+      // `'user_id'` 出现在任何地方（哪怕是日志文案）都算「有人读」，
+      // 而「有人**读这个字段的值**」才是判据。保留「属性访问」这一种。
+      const re = new RegExp(`\\.${f}\\b`)
       if (!re.test(text)) orphans.push(f)
     }
     expect(
@@ -157,9 +178,18 @@ describe('跨端消费面（第 150 轮）', () => {
 
   it('KNOWN_UNCONSUMED 里没有已经有人消费的字段（豁免会过期）', () => {
     const { text } = productSource()
-    const stale = Object.keys(KNOWN_UNCONSUMED).filter((f) =>
-      new RegExp(`\\.${f}\\b|['"\`]${f}['"\`]`).test(text),
-    )
+    // ⚠️ 2026-10-21（P6-8）：必须与上面那条**用同一条判据**。
+    //
+    // 否则两条检查会互相打架：一条按「宽松的名字匹配」说有消费方，
+    // 另一条按「结构化匹配」说没有 —— 于是豁免既被要求存在、
+    // 又被判为过期，守卫自己卡死。
+    const stale = Object.keys(KNOWN_UNCONSUMED).filter((f) => {
+      const isConfig = (CONFIG_FIELDS as readonly string[]).includes(f)
+      const re = isConfig
+        ? new RegExp(`\\b(?:config|cfg)[^\n]{0,60}?\\.${f}\\b`)
+        : new RegExp(`\\.${f}\\b`)
+      return re.test(text)
+    })
     expect(
       stale,
       `这些字段已登记豁免，但代码里已经有人消费它们了：${stale.join(', ')}\n` +

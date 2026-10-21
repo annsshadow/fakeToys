@@ -281,6 +281,25 @@ func (s *Server) adminUsers(c *fiber.Ctx) error {
 	return c.JSON(service.AdminUsersResp{Items: items, Total: total})
 }
 
+// adminUserDetail 返回一个玩家的详情（构筑、钱包、最近战报、验真明细）。
+//
+// ⚠️ 2026-10-21（P5-7）：此前后台**只能看到用户列表的一行**，
+// 运营要回答「他最近打了什么 / 钱去哪了 / 构筑是什么」只能去别处拼 URL。
+//
+// 一个**不能看的玩家详情**比没有这个功能更糟：它让运营以为「没有信息」
+// 意味着「没有问题」。
+func (s *Server) adminUserDetail(c *fiber.Ctx) error {
+	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
+	if err != nil || id < 1 {
+		return fail(c, fiber.StatusBadRequest, "bad_input", "user id 非法")
+	}
+	detail, err := s.Svc.AdminUserDetail(c.Context(), id)
+	if err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(detail)
+}
+
 func (s *Server) adminBanUser(c *fiber.Ctx) error {
 	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
 	if err != nil {

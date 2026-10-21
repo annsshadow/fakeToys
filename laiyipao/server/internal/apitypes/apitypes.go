@@ -57,6 +57,8 @@ var AdminRegistry = tygen.Registry{
 	{Name: "AdminSkillResp", Go: service.AdminSkillResp{}},
 	{Name: "AdminUsersResp", Go: service.AdminUsersResp{}},
 	{Name: "AdminUserResp", Go: service.AdminUserResp{}},
+	{Name: "AdminUserDetailResp", Go: service.AdminUserDetailResp{}},
+	{Name: "AdminVerificationView", Go: service.AdminVerificationView{}},
 	{Name: "AdminGrantResp", Go: service.AdminGrantResp{}},
 	{Name: "AdminBattlesResp", Go: service.AdminBattlesResp{}},
 	{Name: "AdminRecomputesResp", Go: service.AdminRecomputesResp{}},

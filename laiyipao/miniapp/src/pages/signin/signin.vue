@@ -109,6 +109,7 @@
 </template>
 
 <script setup lang="ts">
+import { currencyName } from '@/utils/labels'
 import { ref, onMounted } from 'vue'
 import { useGameStore } from '@/store/game'
 import * as api from '@/api/client'
@@ -170,9 +171,6 @@ function rewardText(reward: Record<string, number>): string {
     .join(' · ')
 }
 
-function currencyName(k: string): string {
-  return k === 'coin' ? '金' : k === 'gem' ? '钻' : k === 'energy' ? '体' : k === 'keys' ? '钥匙' : k
-}
 
 /**
  * SCOPES 是任务面板可切换的三种周期。

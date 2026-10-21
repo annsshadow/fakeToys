@@ -291,6 +291,17 @@ export interface AdminSkillsResp {
   recipes: SeedRecipe[]
 }
 
+export interface AdminUserDetailResp {
+  user: AdminUserView
+  wallet: { [key: string]: number }
+  mastery_nodes: number[]
+  equipped_skills: number[]
+  equipped_equipment: number[]
+  recent_battles: AdminBattleView[]
+  verifications: AdminVerificationView[]
+  flow_count: number
+}
+
 export interface AdminUserResp {
   user: AdminUserView
 }
@@ -313,6 +324,17 @@ export interface AdminUserView {
 export interface AdminUsersResp {
   items: AdminUserView[]
   total: number
+}
+
+export interface AdminVerificationView {
+  id: number
+  battle_id: number
+  verifier_id: number | null
+  admin_verifier_id: number | null
+  expected_hash: string
+  actual_hash: string
+  matched: boolean
+  created_at: string
 }
 
 export interface AdminWavesResp {

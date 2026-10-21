@@ -279,6 +279,7 @@
 </template>
 
 <script setup lang="ts">
+import { qualityName, affixName } from '@/utils/labels'
 import { ref, computed, onMounted } from 'vue'
 import { useGameStore } from '@/store/game'
 import * as api from '@/api/client'
@@ -404,33 +405,12 @@ function skillNameOf(id: number): string {
 const skins = computed<any[]>(() => store.config?.skins ?? [])
 
 /** 品质中文名；未知品质原样返回（不要吞掉后端新增的档位）。 */
-const QUALITY_CN: Record<string, string> = {
-  gray: '灰',
-  blue: '蓝',
-  purple: '紫',
-  red: '红',
-  gold: '金',
-}
 
-const QUALITY_AFFIX_CN: Record<string, string> = {
-  attack: '攻击',
-  skill_damage: '技能伤害',
-  armor: '护甲',
-  crit: '暴击',
-  element_coef: '元素系数',
-  element_cap: '元素上限',
-  reaction_mult: '反应倍率',
-  heat_cap: '热量上限',
-}
-
-function qualityName(q: string): string {
-  return QUALITY_CN[q] ?? q
-}
 
 /** 词条渲染成「暴击 +42 · 护甲 +18」。未知词条名原样显示。 */
 function affixText(affixes: { affix: string; value: number }[]): string {
   if (!affixes || affixes.length === 0) return '（无词条）'
-  return affixes.map((a) => `${QUALITY_AFFIX_CN[a.affix] ?? a.affix} +${a.value}`).join(' · ')
+  return affixes.map((a) => `${affixName(a.affix)} +${a.value}`).join(' · ')
 }
 
 /** 我持有的宝石实例（第 150 轮新增读取面）。 */

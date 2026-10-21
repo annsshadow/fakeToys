@@ -319,7 +319,7 @@ grep -rn "Record<string, unknown>" admin/src    # 0 命中
 - [x] P5-4 技能字段 —— 13 个可写键全部有入口
 - [x] P5-5 商城字段 —— 补「上架/下架」入口（含二次确认）
 - [x] P5-6 角色只读 —— `adminMe()` 首次被调用，`role` 经 provide 传到视图
-- [ ] P5-7 用户详情抽屉（需新端点 `GET /admin/users/:id`）
+- [x] P5-7 用户详情抽屉 —— 新增 `GET /admin/users/:id`（构筑/钱包/最近战报/验真明细）+ 抽屉
 - [x] P5-8 空态/错误态 —— 每张表补 `el-empty` + 空态文案
 - [x] P5-9 `onActivated` 刷新 —— 9 个视图全部补上
 - [x] P5-10 公告/兑换码字段 —— 公告正文 + 发布时间 + 兑换码 enabled
@@ -329,14 +329,14 @@ grep -rn "Record<string, unknown>" admin/src    # 0 命中
 - [x] P6-2 safe-area —— `.safe-bottom` / `.safe-top` + 状态栏高度内联绑定
 - [x] P6-3 选关页 `onShow` 刷新星级（打完回来星星不亮）
 - [x] P6-4 死代码 —— `.radar-box` / `.row-between` / `--panel-3`；`renderMode` 改为**用起来**（兼容模式提示）
-- [ ] P6-5 i18n 基础（三份重复 `currencyName`、服务端英文 key 直接上屏）
+- [x] P6-5 i18n 基础 —— 三份重复 `currencyName` 合并到 `utils/labels.ts`（发现它们**已经漂了**：签到页用「金/钻」，另两页用「金币/钻石」）；宝石品质/词条不再直接上屏英文 key
 - [x] P6-6 O(n²) —— 背包/专精的线性查找改 Map/Set
 - [x] P6-7 定时器清理 —— `me.vue` / `verify.vue` 的延迟回调在卸载时取消
-- [ ] P6-8 契约守卫假绿（`contract_coverage` 按名字匹配）
+- [x] P6-8 契约守卫假绿 —— 判据收紧为「从 config 对象上读」/「属性访问」，两条检查用同一判据
 - [x] P6-9 miniapp 体积闸门 —— `scripts/size-report.mjs` + CI（实测 245 KB / 预算 1536 KB）
 - [x] P6-10 manifest —— AppID 占位注释、`libVersion` 最低基础库、`urlCheck` 发布前提醒、关掉源码映射上传
-- [ ] P6-11 后台响应式（`@media` / 侧栏折叠 / `el-col` 断点）
-- [x] P6-12（部分）文档站 —— 新增「装备图鉴」页（`/config.equipment` 从此有消费方）
+- [x] P6-11 后台响应式 —— `el-col` 断点（xs/sm/md）+ 侧栏窄屏折叠
+- [x] P6-12 文档站 —— 新增「装备图鉴」页（`/config.equipment` 从此有消费方）
 
 ---
 
@@ -360,10 +360,10 @@ grep -rn "Record<string, unknown>" admin/src    # 0 命中
 |---|---|---|
 | server | `gofmt -l .` | **无输出** ✅ |
 | server | `go vet ./...` | 无输出 ✅ |
-| server | `go test ./... -count=1` | **14/14 包通过** ✅ |
 | server | `go run ./cmd/tygen -check` | 生成物与源同步 ✅ |
+| server | `go test ./... -count=1` | **14/14 包通过** ✅ |
 | admin | `pnpm type-check` | 0 错误 ✅ |
-| admin | `pnpm test` | **27 文件 / 307 用例通过**（基线 26/294） ✅ |
+| admin | `pnpm test` | **27 文件 / 309 用例通过**（基线 26/294） ✅ |
 | admin | `pnpm build` + `pnpm size:check` | 首屏 170 KB / 预算 220 KB ✅ |
 | miniapp | `pnpm type-check` | 0 错误 ✅ |
 | miniapp | `pnpm test` | **76 文件 / 1080 通过 / 2 跳过**（基线 75/1075） ✅ |
@@ -372,14 +372,29 @@ grep -rn "Record<string, unknown>" admin/src    # 0 命中
 > 2 条跳过是 `i6.e2e.test.ts`（需 `LYP_E2E=1` + 运行中的服务端）——
 > **故意**的，不是缺依赖。按 AGENTS.md #11 显式记账，不计入「全绿」。
 
-### 仍未完成（本轮未做，明确记账）
+### 全部条目销账
+
+| 阶段 | 完成 | 剩余 |
+|---|---|---|
+| P1 契约根修 | 8/8 | — |
+| P2 静默失效 P0 | 10/10 | — |
+| P3 后端健壮性 | 8/8 | — |
+| P4 玩家玩法闭环 | 7/7 | — |
+| P5 运营后台能力 | 10/10 | — |
+| P6 体验与卫生 | 12/12 | — |
+
+**四个产品拍板项**：① 装备获取途径 → 已做（商城 + 等级解锁 + 装配端点 + 背包 UI）；
+② `burn_cloud` 火区 → **按决定不做**，理由与可执行规格留档；
+③ `levels` 表权威性 → 走 (b) 变体（生成器权威，分歧在后台可见）；
+④ 合成材料 → 熔炼（现状即如此，已加守卫）。
+
+### 仍未做（明确记账）
 
 | 项 | 原因 |
 |---|---|
-| P3-3 / P3-5 / P3-6 | 运维向增强（重算档位开关、验真幂等、regenerate 护栏）—— 需要新迁移或产品决策，本轮未铺 |
-| P4-1 装备获取 + 装备/卸下 | **本轮最大的剩余缺口**：18 件装备里 16 件不可达且无装备入口。属独立一轮（要加端点 + 迁移 + 商城商品 + 背包 UI + 平衡复测） |
-| P4-5 战斗退出 | 需要服务端支持「放弃并退体力」，涉及开战事务与 token 状态 |
-| P4-7 防线快照真实内容 | 需要 `user_equipment` 落地（P4-1 的前置） |
-| P5-1 / P5-3 / P5-4 / P5-7 / P5-8 / P5-9 | 后台能力补齐（分页、字段入口、用户详情、空态、缓存刷新）—— 纯前端工作量，可独立迭代 |
-| P6-1 ~ P6-8 / P6-10 ~ P6-12 | 体验与卫生（loading/空态、safe-area、死代码、O(n²)、假绿守卫、manifest、响应式、文档站） |
-| ② `burn_cloud` 火区 | **按决定不做**（见 §2）：会改 `replay_hash` → 存量战报永久失去可重放性，且要重跑 100 关平衡基线。规格留档待拍板 |
+| 微信支付 / 激励广告 | 需 AppID 与商户号；`orders`/`ad_rewards` 零写入是**已知边界第 1 条**，不假装做了 |
+| 微信登录接入客户端 | 需 AppID/Secret；服务端完整并有官方豁免 |
+| 装备 `level`/`star` 缩放 | KNOWN_LIMITS 第 10 条：实测**不该做**（攻击侧越过封顶、护甲侧吃满只多买 0.68% 血量）。本轮做的是**让装备可达**，不是给装备加新维度 |
+| 服务端跑完整战斗引擎 | KNOWN_LIMITS 第 3 条的取舍：防线胜负由客户端裁决 + 胜率异常告警兜底 |
+| 真实设备视觉验收 | KNOWN_LIMITS 第 4 条：需在真机上人工过一遍（本地只有无头渲染） |
+| `burn_cloud` 火区实现 | 见 §2 ②：会改 `replay_hash` → 存量战报永久失去可重放性，且要重跑 100 关平衡基线。规格留档待拍板 |

@@ -50,8 +50,10 @@ import type {
   AdminSkillResp,
   AdminSkillView,
   AdminSkillsResp,
+  AdminUserDetailResp,
   AdminUserResp,
   AdminUserView,
+  AdminVerificationView,
   AdminUsersResp,
   AdminWavesResp,
   Dashboard,
@@ -97,8 +99,10 @@ export type {
   AdminSkillResp,
   AdminSkillView,
   AdminSkillsResp,
+  AdminUserDetailResp,
   AdminUserResp,
   AdminUserView,
+  AdminVerificationView,
   AdminUsersResp,
   AdminWavesResp,
   Dashboard,
@@ -243,6 +247,16 @@ export function fetchUsers(params: { keyword?: string; limit?: number; offset?: 
   q.set('limit', String(params.limit ?? 50))
   q.set('offset', String(params.offset ?? 0))
   return api.get<AdminUsersResp>(`/admin/users?${q}`)
+}
+
+/**
+ * 玩家详情（2026-10-21 P5-7）。
+ *
+ * 此前后台**只能看到用户列表的一行**，运营要回答「他最近打了什么 /
+ * 钱去哪了 / 构筑是什么 / 被验真验出不匹配了吗」只能去别处拼 URL。
+ */
+export function fetchUserDetail(id: number) {
+  return api.get<AdminUserDetailResp>(`/admin/users/${id}`)
 }
 
 export function banUser(id: number, reason: string) {

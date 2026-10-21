@@ -151,7 +151,7 @@ onActivated(() => {
       <!-- 公告 -->
       <el-tab-pane label="公告" name="announcements">
         <el-row :gutter="12">
-          <el-col :span="10">
+          <el-col :span="10" :xs="24" :sm="24" :md="10">
             <el-card shadow="never" header="发布公告">
               <el-form label-position="top">
                 <el-form-item label="标题">
@@ -167,7 +167,7 @@ onActivated(() => {
               </el-form>
             </el-card>
           </el-col>
-          <el-col :span="14">
+          <el-col :span="14" :xs="24" :sm="24" :md="14">
             <el-card shadow="never" header="已有公告">
               <el-table :data="announcements" size="small" stripe>
                 <el-table-column prop="id" label="ID" width="55" />
