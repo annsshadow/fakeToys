@@ -477,6 +477,20 @@ grep -rn "Record<string, unknown>" admin/src    # 0 处**业务使用**
 | D-3 | 存档失败时**静默存了一份空构筑快照** | `loadEquipment` / `loadMasteryNodes` 内部只 `console.warn` → 加载失败**必须中止保存** |
 | D-4 | 安卓上顶栏**完全不让开状态栏** | `statusBarHeight` 常态是 0（只有 iOS 有状态栏），而「0 就当没有状态栏」是错的 |
 
+### E · 「注释/契约与事实不符」类
+
+| 条目 | 现象 | 根因 |
+|---|---|---|
+| E-1 | 00017 的注释说「唯一索引是**部分索引**」（它没有 WHERE 子句）、「NULL 参与唯一索引比较时都算相等」（**假的** —— PostgreSQL 默认 NULLS DISTINCT） | 写注释时把**猜测**当成了事实，而其中一条恰好是那个 P1 缺陷的根源。订正注释，并说明真正的病根是 `COALESCE` 折叠了两个 ID 空间 |
+| E-2 | 00017 的去重也按 `COALESCE` 分区 → 玩家 id=1 与运营 id=1 的两行会被当成**重复**删掉一条 | 同上。订正后的去重放进 00018（对已上线的库是**补救**，对全新库是空操作） |
+| E-3 | 诊断接口允许客户端把 `failed_times` 抬到**任意大** → 服务端的权威连续失败数被客户端的**猜测**推翻，第一次挑战就能拿到「卡关诊断」卡 | 当时的实现是「客户端报得大就认它的」。现在只允许**比我们多 1**（在途的那一局还没写进 `battle_records`）—— 而「卡住」的阈值是 2，所以客户端**跨不过**它 |
+
+> E-3 的安全性判据不是「客户端不能影响结果」，而是
+> **「客户端最多只能把计数抬到 real+1，而阈值是 2」** ——
+> 于是「从没输过」的玩家无论报多大都跨不过阈值。
+> 这条已由 `TestDiagnoseIgnoresInflatedClientFailedTimes` 钉住，
+> 并做过变异验证（去掉夹紧即红）。
+
 ### 变异验证（证明测试真的能红）
 
 | 测试 | 变异 | 结果 |
@@ -484,6 +498,7 @@ grep -rn "Record<string, unknown>" admin/src    # 0 处**业务使用**
 | `TestVerificationDoesNotMixUserAndAdminIDSpaces` | 迁移文件改回 COALESCE 索引 **且** 代码改回 COALESCE 的 `ON CONFLICT` | 红：「应留下 2 行，实际 1 行 —— 唯一索引把两个 ID 空间合并了，运营那一行被静默丢弃」 |
 | `TestModeStateSeparatesEngineAndSkillsScopes` | `out.Mode = out.SkillsMode` 改回 `out.Mode = g.EffectiveMode(ScopeEngine)` | 红：「权威档位应是 S 段的 enforce，实际 "shadow" —— 报成引擎侧会让运营以为整个防护都关了」 |
 | `TestMasteryTreeJSONShapeIsLowercase` | 去掉 `MasteryFamily` / `MasteryNode` 的 json tag | 红（键名大小写断言） |
+| `TestDiagnoseIgnoresInflatedClientFailedTimes` | 去掉 `failedTimes > realFailed+1` 的夹紧 | 红：「客户端把 failed_times 抬到 999999，服务端的权威计数被推翻了」 |
 
 > 变异必须改**迁移文件本身** —— scratch 库是按迁移文件重建的，
 > 只改开发库不会影响测试结果（第一次就踩了这个坑，测试照样绿）。
@@ -496,6 +511,7 @@ grep -rn "Record<string, unknown>" admin/src    # 0 处**业务使用**
 | B 契约不一致 | 6 | 6/6 |
 | C 静默吞错 / 不可达 | 8 | 8/8 |
 | D 竞态与结构 | 4 | 4/4 |
+| E 注释/契约与事实不符 | 3 | 3/3 |
 | 连带（测试夹具漂移、CI 缺步骤、README 漂移、类型名漂移等） | 12 | 12/12 |
 
 **三端门禁（第二轮收尾）**：
