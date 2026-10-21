@@ -191,6 +191,42 @@ export const useGameStore = defineStore('game', () => {
    */
   let loginInflight: Promise<boolean> | null = null
 
+  /**
+   * 本环境是否要求账号登录。
+   *
+   * 来自服务端 `/config` 的 `require_login`（`PLAYER_LOGIN_REQUIRED`）。
+   * 开启后：不再自动游客建号，未登录时跳登录页。
+   *
+   * ⚠️ 配置副本可能过期（这个字段不在内容哈希里），
+   * 所以它只是「提前知道」，权威判据是服务端对 `/auth/guest` 的
+   * 403（code=login_required）—— 见 doLogin 的 catch 分支。
+   */
+  const loginRequired = computed(() => config.value?.require_login === true)
+
+  /** 需要跳登录页（页面据此渲染「请先登录」而不是空白/报错）。 */
+  const needLogin = ref(false)
+
+  /**
+   * 跳登录页。
+   *
+   * 用 `reLaunch` 而不是 `navigateTo`：登录页是**闸门** ——
+   * 栈里若留着需要鉴权的页面，返回键会把用户带回一个
+   * 「没有数据 / 401」的页面，而那正是最让人困惑的形态。
+   *
+   * 已经站在登录页上就不再跳（否则 12 个调用点会互相踩）。
+   */
+  function gotoLoginPage(): void {
+    // ⚠️ `getCurrentPages` 在真机上是全局函数，但测试环境里可能不存在
+    // （jsdom 里没有 uni 运行时）—— 用 typeof 守卫，
+    // 缺失时**跳过**「已经在登录页」的判据，而不是崩掉。
+    if (typeof getCurrentPages === 'function') {
+      const pages = getCurrentPages()
+      const cur = pages[pages.length - 1]
+      if (cur && cur.route === 'pages/login/login') return
+    }
+    uni.reLaunch({ url: '/pages/login/login' })
+  }
+
   async function login(): Promise<boolean> {
     if (loginInflight) return loginInflight
     loginInflight = doLogin()
@@ -204,12 +240,67 @@ export const useGameStore = defineStore('game', () => {
   async function doLogin(): Promise<boolean> {
     loginError.value = ''
     try {
+      // ① 已有可用令牌（口令登录后的冷启动）→ 直接用，**别再打 /auth/guest**。
+      //    这一步是「有账号」与「每设备一个游客号」的分水岭：
+      //    调 /auth/guest 会建出一个**新的游客号**，
+      //    于是「我刚打的关卡呢」又回来了。
+      //
+      //    ⚠️ 昵称取自上次登录时存下的身份摘要（api.loadProfile）——
+      //    口令登录不会像游客登录那样每次回一个 user 对象。
+      if (api.hasUsableToken()) {
+        const prof = api.loadProfile()
+        nickname.value = prof?.nickname ?? ''
+        isGuest.value = prof?.isGuest === true
+        loggedIn.value = true
+        await Promise.all([loadConfig(), refreshProfile()])
+        return true
+      }
+      // ② 游客通道。
       const tp = await api.guestLogin()
       setTokenInternal(tp.access_token, tp.refresh_token, tp.expires_at)
+      api.saveProfile({ nickname: tp.user.nickname, isGuest: tp.user.is_guest })
       userId.value = tp.user.id
       nickname.value = tp.user.nickname
       isGuest.value = tp.user.is_guest
       loggedIn.value = true
+      await Promise.all([loadConfig(), refreshProfile()])
+      return true
+    } catch (e) {
+      // 服务端拒绝游客建号（开关打开）→ 去登录页，而不是显示一句
+      // 「游客登录失败」让人以为是网络问题。
+      //
+      // ⚠️ 这是**权威**判据：`/config` 的 require_login 不在内容哈希里，
+      // 客户端本地缓存的配置副本可能带着旧值；
+      // 服务端这道 403 则一定是当下的真实状态。
+      if ((e as { code?: string })?.code === 'login_required') {
+        needLogin.value = true
+        gotoLoginPage()
+        return false
+      }
+      loginError.value = (e as Error).message
+      loggedIn.value = false
+      return false
+    }
+  }
+
+  /**
+   * 账号口令登录。
+   *
+   * 成功后**不**再调 /auth/guest：账号登录拿到的是同一个账号，
+   * 再打一次游客建号只会多造一个游客号。
+   */
+  async function loginWithPassword(username: string, password: string): Promise<boolean> {
+    loginError.value = ''
+    try {
+      const tp = await api.login(username, password)
+      setTokenInternal(tp.access_token, tp.refresh_token, tp.expires_at)
+      api.saveProfile({ nickname: tp.user.nickname, isGuest: tp.user.is_guest })
+      api.saveLastUsername(username)
+      userId.value = tp.user.id
+      nickname.value = tp.user.nickname
+      isGuest.value = tp.user.is_guest
+      loggedIn.value = true
+      needLogin.value = false
       await Promise.all([loadConfig(), refreshProfile()])
       return true
     } catch (e) {
@@ -388,6 +479,8 @@ export const useGameStore = defineStore('game', () => {
     isGuest,
     loggedIn,
     loginError,
+    loginRequired,
+    needLogin,
     config,
     configLoading,
     wallet,
@@ -404,6 +497,7 @@ export const useGameStore = defineStore('game', () => {
     attacker,
     equippedElements,
     login,
+    loginWithPassword,
     loadConfig,
     estimateServerNowMs,
     refreshProfile,

@@ -73,6 +73,14 @@ export interface GameConfig {
    * 这个判断从来没被实现过。现在两端都按它做真判断。
    */
   version: string
+  /**
+   * 本环境是否要求账号登录（服务端 `PLAYER_LOGIN_REQUIRED`）。
+   *
+   * ⚠️ 它**不在**内容哈希里，所以本地缓存的配置副本可能带着旧值。
+   * 因此它只用来「提前显示登录页」，权威判据是服务端对
+   * `/auth/guest` 的 403（code=login_required）—— 那条永远是对的。
+   */
+  require_login?: boolean
   levels: import('@/game/types').LevelSummary[]
   enemies: import('@/game/types').EnemyDef[]
   skills: import('@/game/types').SkillDef[]
@@ -152,6 +160,20 @@ const REFRESH_KEY = 'lyp_refresh'
 /** access token 的过期时刻（RFC3339 原文）。第 150 轮新增。 */
 const TOKEN_EXP_KEY = 'lyp_token_exp'
 const GUEST_KEY = 'lyp_guest'
+/**
+ * 账号口令登录后缓存的「身份摘要」。
+ *
+ * # 为什么需要它
+ *
+ * 游客通道每次冷启动都能重新问服务端要昵称（`/auth/guest` 会回 user 对象），
+ * 而口令登录**不会**再调 `/auth/guest` —— 冷启动走的是「拿本地令牌直接用」。
+ * 于是昵称只能从上次登录时存下来的这份摘要里取。
+ *
+ * 只存昵称与游客标记，**不存口令**。
+ */
+const PROFILE_KEY = 'lyp_profile'
+/** 上次登录用的用户名（只为了下次少打一遍，不是凭证）。 */
+const LAST_USER_KEY = 'lyp_last_user'
 
 export class ApiError extends Error {
   constructor(
@@ -472,6 +494,68 @@ export function guestLogin(nickname = ''): Promise<TokenPair> {
     auth: false,
     body: { guest_token: getGuestToken(), nickname },
   })
+}
+
+/**
+ * 账号口令登录（`POST /auth/login`）。
+ *
+ * 与游客登录拿到的是**同一种令牌**（kind=user），权限面完全一样 ——
+ * 差别只在「用哪一把钥匙进门」：游客用设备凭证，账号用用户名口令。
+ *
+ * 用途：测试环境要求全体测试者用**同一个账号** ——
+ * 否则每个浏览器/设备一个游客号，测试数据（金币、关卡进度、专精）
+ * 就散在无数个 `users` 行里，互不相通。
+ */
+export function login(username: string, password: string): Promise<TokenPair> {
+  return request<TokenPair>('/auth/login', {
+    method: 'POST',
+    auth: false,
+    body: { username, password },
+  })
+}
+
+/** 本地是否有一枚「看起来还能用」的 access token。 */
+export function hasUsableToken(): boolean {
+  const t = get(TOKEN_KEY)
+  if (!t) return false
+  // 已知过期时刻且已经过了 → 不可用。
+  // 不知道过期时刻（旧版本登录）→ 照旧当成可用，由 401 兜底路径处理。
+  const raw = get(TOKEN_EXP_KEY)
+  if (!raw) return true
+  const at = Date.parse(raw)
+  if (Number.isNaN(at)) return true
+  return at > Date.now()
+}
+
+/** 账号身份摘要（昵称 + 是否游客）。 */
+export interface StoredProfile {
+  nickname: string
+  isGuest: boolean
+}
+
+export function saveProfile(p: StoredProfile): void {
+  set(PROFILE_KEY, JSON.stringify(p))
+}
+
+export function loadProfile(): StoredProfile | null {
+  const raw = get(PROFILE_KEY)
+  if (!raw) return null
+  try {
+    const parsed = JSON.parse(raw) as Partial<StoredProfile> | null
+    if (!parsed || typeof parsed.nickname !== 'string') return null
+    return { nickname: parsed.nickname, isGuest: parsed.isGuest === true }
+  } catch {
+    return null
+  }
+}
+
+/** 记下上次用的用户名（只是省一次输入，不构成凭证）。 */
+export function saveLastUsername(u: string): void {
+  set(LAST_USER_KEY, u)
+}
+
+export function loadLastUsername(): string {
+  return get(LAST_USER_KEY)
 }
 
 export function fetchWallet() {

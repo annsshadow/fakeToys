@@ -30,6 +30,15 @@ vi.mock('@/api/client', () => ({
   fetchLoadout: vi.fn(),
   saveLoadout: vi.fn(),
   setTokenInternal: vi.fn(),
+  // 账号登录（测试环境共用一个账号）新增的 API 面：
+  //   hasUsableToken —— 本地是否已有可用令牌（有就别再建游客号）
+  //   loadProfile / saveProfile —— 身份摘要（昵称 + 是否游客）
+  //   login / saveLastUsername —— 口令登录与用户名回填
+  hasUsableToken: vi.fn(() => false),
+  loadProfile: vi.fn(() => null),
+  saveProfile: vi.fn(),
+  login: vi.fn(),
+  saveLastUsername: vi.fn(),
   startBattle: vi.fn(),
   settleBattle: vi.fn(),
 }))

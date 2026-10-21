@@ -260,8 +260,16 @@ async function confirmLogout() {
       showCancel: false,
     })
   }
-  // 回到首页，让所有页面重新走一次游客登录与配置加载。
-  uni.reLaunch({ url: '/pages/index/index' })
+  // 回到首页，让所有页面重新走一次登录与配置加载。
+  //
+  // ⚠️ 要求账号登录的环境里，回首页没有意义 ——
+  // 首页会立刻发现「没有登录态」再把用户弹回登录页，绕一圈。
+  // 直接落到登录页，少一次无意义的跳转。
+  if (store.loginRequired) {
+    uni.reLaunch({ url: '/pages/login/login' })
+  } else {
+    uni.reLaunch({ url: '/pages/index/index' })
+  }
 }
 
 function currencyName(k: string): string {

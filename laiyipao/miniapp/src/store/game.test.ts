@@ -18,12 +18,17 @@ import { installUniMock } from '../test/uni-mock'
 
 vi.mock('@/api/client', () => ({
   guestLogin: vi.fn(),
+  login: vi.fn(),
   fetchConfigIfVersion: vi.fn(),
   fetchWallet: vi.fn(),
   fetchMe: vi.fn(),
   fetchLoadout: vi.fn(),
   saveLoadout: vi.fn(),
   setTokenInternal: vi.fn(),
+  hasUsableToken: vi.fn(() => false),
+  loadProfile: vi.fn(() => null),
+  saveProfile: vi.fn(),
+  saveLastUsername: vi.fn(),
 }))
 
 const mockApi = vi.mocked(api, true)
@@ -114,6 +119,76 @@ describe('login（单飞 + 全流程）', () => {
     expect(await store.login()).toBe(true)
     expect(store.loginError).toBe('')
     expect(mockApi.guestLogin).toHaveBeenCalledTimes(2)
+  })
+})
+
+// 账号登录（测试环境「全体共用一个账号」）相关的分支。
+//
+// # 为什么这些用例重要
+//
+// 游客通道给**每个浏览器/设备**一个独立账号，测试数据因此散在各处。
+// 开了账号登录之后，冷启动**绝不能**再去打 /auth/guest ——
+// 那会建出一个新的游客号，「我刚打的关卡呢」就回来了。
+describe('账号登录闸门', () => {
+  it('本地有可用令牌 → 直接用，不建游客号', async () => {
+    mockApi.hasUsableToken.mockReturnValue(true)
+    mockApi.loadProfile.mockReturnValue({ nickname: '测试账号', isGuest: false })
+
+    const ok = await store.login()
+    expect(ok).toBe(true)
+    // ⚠️ 核心断言：**没有**建游客号。
+    expect(mockApi.guestLogin).not.toHaveBeenCalled()
+    expect(store.nickname).toBe('测试账号')
+    expect(store.isGuest).toBe(false)
+    expect(store.loggedIn).toBe(true)
+  })
+
+  it('服务端拒绝游客建号（login_required）→ 跳登录页，不显示错误文案', async () => {
+    mockApi.hasUsableToken.mockReturnValue(false)
+    mockApi.guestLogin.mockRejectedValue(
+      Object.assign(new Error('本环境要求账号登录，请使用账号密码登录'), {
+        code: 'login_required',
+      }),
+    )
+
+    const ok = await store.login()
+    expect(ok).toBe(false)
+    expect(store.needLogin).toBe(true)
+    // 登录失败不该显示成「游客登录失败」——那会把人引向网络问题的错误方向。
+    expect(store.loginError).toBe('')
+    expect(uni.reLaunch).toHaveBeenCalledWith({ url: '/pages/login/login' })
+  })
+
+  it('loginWithPassword：成功 → 写令牌、置账号态、不建游客号', async () => {
+    mockApi.login.mockResolvedValue({
+      access_token: 'acc-pw',
+      refresh_token: 'ref-pw',
+      expires_at: '2099-01-01T00:00:00Z',
+      user: { id: 42, nickname: 'admin', avatar_url: '', is_guest: false, status: 1 },
+    })
+    // /me 是 user_id 的权威（见 refreshProfile 的注释），所以这里也要给 42，
+    // 否则断言到的是旧 mock 的 7 —— 那测的是另一个东西。
+    mockApi.fetchMe.mockResolvedValue({ user_id: 42, build: null, build_rating: null, power: 5 } as any)
+
+    const ok = await store.loginWithPassword('admin', 'whatever-password')
+    expect(ok).toBe(true)
+    expect(mockApi.setTokenInternal).toHaveBeenCalledWith('acc-pw', 'ref-pw', '2099-01-01T00:00:00Z')
+    expect(mockApi.saveProfile).toHaveBeenCalledWith({ nickname: 'admin', isGuest: false })
+    expect(store.userId).toBe(42)
+    expect(store.nickname).toBe('admin')
+    expect(store.isGuest).toBe(false)
+    expect(store.needLogin).toBe(false)
+    // 账号登录之后**绝不能**再建一个游客号。
+    expect(mockApi.guestLogin).not.toHaveBeenCalled()
+  })
+
+  it('loginWithPassword：口令错 → 记错误、登录态为 false', async () => {
+    mockApi.login.mockRejectedValue(new Error('用户名或密码错误'))
+
+    const ok = await store.loginWithPassword('admin', 'wrong')
+    expect(ok).toBe(false)
+    expect(store.loggedIn).toBe(false)
+    expect(store.loginError).toBe('用户名或密码错误')
   })
 })
 

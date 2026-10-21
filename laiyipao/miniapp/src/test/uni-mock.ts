@@ -28,6 +28,11 @@ export function createUniMock() {
     navigateTo: vi.fn(),
     navigateBack: vi.fn(),
     switchTab: vi.fn(),
+    // ⚠️ reLaunch 与 navigateTo 是**两件事**：
+    // reLaunch 会清掉页面栈（登录页是闸门，必须用它）。
+    // 此前 mock 里没有它，于是 me.vue 的「退出登录」路径在测试里
+    // 调的是 undefined —— 缺的桩会让「登出后去哪」这条分支形同虚测。
+    reLaunch: vi.fn(),
     getSystemInfoSync: vi.fn(() => ({
       platform: 'devtools',
       SDKVersion: 'test',
@@ -44,5 +49,9 @@ export function createUniMock() {
 export function installUniMock() {
   const { mock, storage } = createUniMock()
   vi.stubGlobal('uni', mock)
+  // `getCurrentPages` 是 uni-app 的**全局函数**（不是 uni.xxx 成员），
+  // 真机上恒存在。测试里补一个默认「空栈」的桩：
+  // store 的登录闸门用它判断「是不是已经在登录页上」。
+  vi.stubGlobal('getCurrentPages', vi.fn(() => [] as Array<{ route?: string }>))
   return { mock, storage }
 }
