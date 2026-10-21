@@ -94,7 +94,21 @@ oa4rust/backend/deploy/.backups/
 scripts/cleanup_*.js
 
 # Environment secrets
-oa4rust/backend/.env
+# 通用规则：任何子项目的 .env / 密钥文件都不入库，模板 (.env.example) 才入库。
+# 理由与判据见 AGENTS.md「Secrets & Environment Data」。
+.env
+.env.*
+*.env
+!.env.example
+!.env.*.example
+!*.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.keystore
+*.local.keys
+remote-config.env
 oa4rust/backend/scripts/.token
 scripts/.java-seed-ids.json
 
