@@ -886,6 +886,14 @@ var WalletTokenKinds = func() []string {
 // 「版本没变就不用刷新」这个判断从来没被实现过。现在是 SHA-256 前 16 位十六进制。
 type GameConfig struct {
 	Version string `json:"version"`
+	// RequireLogin 告诉客户端「本环境要求账号登录」。
+	//
+	// ⚠️ 它**不在**内容哈希里（version 只覆盖游戏内容），
+	// 所以客户端持久化的旧配置副本里这个值可能是过期的。
+	// 因此客户端不能只靠它做判断 —— 服务端在 /auth/guest 上还会
+	// 硬拦一道（403 login_required），那条才是权威判据。
+	// 这个字段只是让客户端**少走一次冤枉路**。
+	RequireLogin bool `json:"require_login"`
 	// Levels 是**列表摘要**（不含 waves）。
 	//
 	// 为什么不是 GeneratedLevel：`waves` 占这个字段的 75%（实测 93,338 字节），
@@ -976,6 +984,9 @@ func (s *Service) LoadGameConfig() GameConfig {
 	cfg := staticConfig()
 	// 唯一每请求不同的字段：服务端当时挂钟，客户端拿它校准本地时钟偏移。
 	cfg.ServerTime = time.Now()
+	// ⚠️ 这一条**依赖实例**（config 里来的开关），所以不能放进 staticConfig
+	// —— 那个 OnceValue 是全局静态的，与 Service 实例无关。
+	cfg.RequireLogin = s.Cfg.PlayerLoginRequired
 	return cfg
 }
 

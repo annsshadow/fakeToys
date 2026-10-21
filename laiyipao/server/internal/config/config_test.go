@@ -83,6 +83,11 @@ func TestLoadDefaults(t *testing.T) {
 	if cfg.WechatEnabled() {
 		t.Error("未配置 AppID/Secret 时微信通道不应可用")
 	}
+	// 缺省必须是**关闭**：游客通道是现有部署的默认行为，
+	// 新开关不能顺手把默认改了。
+	if cfg.PlayerLoginRequired {
+		t.Error("PLAYER_LOGIN_REQUIRED 缺省应为 false（游客通道保持默认）")
+	}
 }
 
 func TestLoadParsesEnvOverrides(t *testing.T) {
@@ -106,6 +111,7 @@ func TestLoadParsesEnvOverrides(t *testing.T) {
 	t.Setenv("OFFLINE_CAP_HOURS", "6")
 	t.Setenv("BOOTSTRAP_ADMIN_USER", "boss")
 	t.Setenv("BOOTSTRAP_ADMIN_PASS", "longpassword")
+	t.Setenv("PLAYER_LOGIN_REQUIRED", "true")
 
 	cfg := Load()
 
@@ -141,6 +147,9 @@ func TestLoadParsesEnvOverrides(t *testing.T) {
 	}
 	if cfg.BootstrapAdminUser != "boss" || cfg.BootstrapAdminPass != "longpassword" {
 		t.Errorf("bootstrap 管理员覆盖未生效：%q/%q", cfg.BootstrapAdminUser, cfg.BootstrapAdminPass)
+	}
+	if !cfg.PlayerLoginRequired {
+		t.Error("PLAYER_LOGIN_REQUIRED=true 未生效")
 	}
 }
 

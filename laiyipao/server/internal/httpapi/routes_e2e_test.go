@@ -45,6 +45,18 @@ type e2e struct {
 
 // newE2E 起一个完整 app（真中间件 + 真路由 + 真 Service）。
 func newE2E(t *testing.T) *e2e {
+	return newE2EWith(t, nil)
+}
+
+// newE2EWith 与 newE2E 相同，但允许在装配前改配置。
+//
+// # 为什么要这个口子
+//
+// 有些行为**只在某个开关打开时**才存在（例如「要求账号登录」时
+// /auth/guest 必须 403）。不改造夹具就只能靠改环境变量来测 ——
+// 而环境变量是**进程级**的，同包其它用例会被一起影响，
+// 于是测试之间开始互相依赖（这正是本仓反复吃过亏的地方）。
+func newE2EWith(t *testing.T, mutate func(*config.Config)) *e2e {
 	t.Helper()
 	dsn := os.Getenv("TEST_DATABASE_URL")
 	if dsn == "" {
@@ -54,6 +66,9 @@ func newE2E(t *testing.T) *e2e {
 	cfg.DatabaseURL = dsn
 	// 短 TTL，测试签发的令牌在库里留不久
 	cfg.AccessTTL = 5 * time.Minute
+	if mutate != nil {
+		mutate(&cfg)
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()

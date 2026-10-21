@@ -83,6 +83,30 @@ type Config struct {
 	// 默认管理员（仅在 admin_users 为空时引导创建）
 	BootstrapAdminUser string
 	BootstrapAdminPass string
+
+	// PlayerLoginRequired 开启「玩家必须用账号密码登录」。
+	//
+	// 缺省关闭：H5/小程序走游客通道（每设备一个游客号，凭证在 localStorage）。
+	// 打开后：
+	//
+	//   - `POST /api/v1/auth/guest` 直接 403（code=login_required）——
+	//     连**浏览器里缓存的旧客户端**也建不出新的游客号；
+	//   - 启动时引导创建一个共享测试账号（用户名/口令与运营超管一致）。
+	//
+	// # 为什么服务端也要拦，而不是只改客户端
+	//
+	// 只改客户端的话，「每个浏览器一个号、测试数据散在各处」这个老问题
+	// 会在**看起来已经修好**之后继续存在 ——
+	// 因为浏览器里还缓存着旧 bundle，它照样调 /auth/guest 建新号。
+	// 服务端开关是唯一能让「开关一拧，所有客户端立刻一致」的地方。
+	//
+	// # 为什么共享账号的口令与超管一致是**运维选择**而不是模型要求
+	//
+	// 数据模型上两者完全独立（`users` vs `admin_users`，令牌 kind 不同）。
+	// 让它们共用一套口令只是省掉「再记一套测试凭据」，
+	// 代价是这个登录端点同时成为**超管口令的爆破面** ——
+	// 所以它的限流比游客建号严得多（见 middleware.go 的 playerLoginLimit）。
+	PlayerLoginRequired bool
 }
 
 func env(key, def string) string {
@@ -189,6 +213,8 @@ func Load() Config {
 
 		BootstrapAdminUser: env("BOOTSTRAP_ADMIN_USER", "admin"),
 		BootstrapAdminPass: env("BOOTSTRAP_ADMIN_PASS", "admin12345"),
+
+		PlayerLoginRequired: envBool("PLAYER_LOGIN_REQUIRED", false),
 	}
 
 	if cfg.Env == "prod" {

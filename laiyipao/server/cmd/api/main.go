@@ -75,6 +75,27 @@ func run() error {
 			cfg.BootstrapAdminUser)
 	}
 
+	// 玩家账号登录（PLAYER_LOGIN_REQUIRED=true 时）。
+	//
+	// 引导一个共享测试账号：用户名与口令**与运营超管一致**，
+	// 于是测试环境只需要记一套凭据，全体测试者的进度/金币聚在同一个号上。
+	//
+	// ⚠️ 账号已存在时只同步口令、**不碰任何玩家数据** ——
+	// 钱包与进度是这个功能要保住的东西，重建账号等于把它清空。
+	if cfg.PlayerLoginRequired {
+		created, err := svc.EnsureBootstrapPlayer(bootCtx, cfg.BootstrapAdminUser, cfg.BootstrapAdminPass)
+		if err != nil {
+			return fmt.Errorf("引导玩家测试账号: %w", err)
+		}
+		if created {
+			fmt.Printf("[来一炮 server] 已创建玩家测试账号：%s（口令与运营超管一致）\n",
+				cfg.BootstrapAdminUser)
+		} else {
+			fmt.Printf("[来一炮 server] 玩家测试账号已存在：%s（口令已同步为 BOOTSTRAP_ADMIN_PASS）\n",
+				cfg.BootstrapAdminUser)
+		}
+	}
+
 	// 第 129 轮：内容表体检。全新库自动补种子；库比当前版本「少内容」
 	// 时打警示（不自动覆盖，避免冲掉运营自定义行）。
 	if msg, err := svc.EnsureContentSeeded(bootCtx); err != nil {
@@ -98,6 +119,9 @@ func run() error {
 
 	fmt.Printf("[来一炮 server] 监听 %s（微信登录通道：%s）\n",
 		cfg.Addr, map[bool]string{true: "已启用", false: "未启用（游客登录）"}[cfg.WechatEnabled()])
+	if cfg.PlayerLoginRequired {
+		fmt.Printf("[来一炮 server] 玩家登录：已开启账号登录（/auth/guest 已关闭）\n")
+	}
 
 	if err := app.Listen(cfg.Addr); err != nil {
 		return fmt.Errorf("监听 %s: %w", cfg.Addr, err)

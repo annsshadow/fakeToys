@@ -71,6 +71,12 @@ func (s *Server) Register(app *fiber.App) {
 	authAPI.Post("/guest", perIPLimiter("guest", guestLoginLimit), s.guestLogin)
 	authAPI.Post("/wechat", perIPLimiter("wechat", guestLoginLimit), s.wechatLogin)
 	authAPI.Post("/refresh", perIPLimiter("refresh", refreshLimit), s.refresh)
+	// 玩家账号登录（用户名 + 密码）。
+	//
+	// ⚠️ 限流比游客建号严得多：这个端点做 bcrypt（cost 10，单次 50~100ms
+	// 纯 CPU），而且**测试环境的共享账号口令与运营超管相同** ——
+	// 它同时是超管口令的爆破面。理由与额度见 middleware.go 的 playerLoginLimit。
+	authAPI.Post("/login", perIPLimiter("playerlogin", playerLoginLimit), s.playerLogin)
 
 	v1.Get("/config", s.getConfig)
 	v1.Get("/leaderboard", s.leaderboard)
@@ -235,6 +241,18 @@ func (s *Server) readyz(c *fiber.Ctx) error {
 // --- 玩家端处理器 ---
 
 func (s *Server) guestLogin(c *fiber.Ctx) error {
+	// ⚠️ 开关打开时**连游客建号都不许**。
+	//
+	// 只在客户端挡（弹登录页）是不够的：浏览器里缓存着旧 bundle 的
+	// 测试者仍会调到这个端点，于是「每个浏览器一个号、测试数据散在各处」
+	// 这个老问题会在**看起来已经修好**之后继续存在。
+	//
+	// 403 + 明确的 code=login_required：客户端据此跳登录页，
+	// 而不是把「登录失败」显示成一句看不懂的报错。
+	if s.Svc.Cfg.PlayerLoginRequired {
+		return fail(c, fiber.StatusForbidden, "login_required",
+			"本环境要求账号登录，请使用账号密码登录")
+	}
 	var body struct {
 		GuestToken string `json:"guest_token"`
 		Nickname   string `json:"nickname"`
@@ -243,6 +261,26 @@ func (s *Server) guestLogin(c *fiber.Ctx) error {
 		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
 	}
 	tp, err := s.Svc.GuestLogin(c.Context(), body.GuestToken, body.Nickname)
+	if err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(tp)
+}
+
+// playerLogin 玩家账号登录（用户名 + 密码）。
+//
+// 与游客登录的差别只在凭据：这里走 `users.username` + `users.password_hash`，
+// 而游客登录走 `users.guest_token`（一枚客户端持有的随机串）。
+// 两者拿到的是同一种令牌（kind=user），权限面完全一样。
+func (s *Server) playerLogin(c *fiber.Ctx) error {
+	var body struct {
+		Username string `json:"username"`
+		Password string `json:"password"`
+	}
+	if err := c.BodyParser(&body); err != nil {
+		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+	}
+	tp, err := s.Svc.Login(c.Context(), body.Username, body.Password)
 	if err != nil {
 		return failErr(c, err)
 	}
