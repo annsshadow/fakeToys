@@ -125,8 +125,14 @@ describe('bag.vue 背包页', () => {
     expect(text).toContain('清空全部已点亮的专精节点')
 
     // 下架的那件：必须写「已下架」，并说明已购余额怎么办
-    expect(text).toContain('已从商城下架')
-    expect(text).toContain('已购余额暂时无法使用')
+    // 2026-10-21（P2-6）：洗练券**是可用的** ——
+    //   - `POST /me/gems/:id/wash` 已接通；
+    //   - 商城商品 `shop_gem_wash` 在售（seed.go 的 delisted=false）。
+    // 此前界面写「已从商城下架 / 已购余额暂时无法使用」，与事实相反，
+    // 而**这句话还被写成了断言** —— 错的文案因此被锁住。
+    expect(text).toContain('洗练')
+    expect(text).not.toContain('已从商城下架')
+    expect(text).not.toContain('尚未接入')
   })
 
   it('复活币接通消费端点后必须写成「可用」，不能还留着「已下架」', async () => {

@@ -11,10 +11,12 @@ import ElementPlus from 'element-plus'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const apiGet = vi.hoisted(() => vi.fn())
-const fetchDashboard = vi.hoisted(() => vi.fn())
+// 2026-10-21（P2-5）：文档站现在用 **soft** 版看板请求
+// （401 是预期答案，不该把访客踢去运营后台登录页）。
+const fetchDashboardSoft = vi.hoisted(() => vi.fn())
 
 vi.mock('@/api/client', () => ({ api: { get: apiGet } }))
-vi.mock('@/api', () => ({ fetchDashboard }))
+vi.mock('@/api', () => ({ fetchDashboardSoft }))
 
 import WikiView from '@/views/WikiView.vue'
 
@@ -79,7 +81,7 @@ async function mountWiki() {
 beforeEach(() => {
   vi.clearAllMocks()
   apiGet.mockResolvedValue(configFixture())
-  fetchDashboard.mockResolvedValue({
+  fetchDashboardSoft.mockResolvedValue({
     reaction_usage: [
       { reaction: 'overheat', count: 50 },
       { reaction: 'steam_burst', count: 10 },
@@ -89,7 +91,7 @@ beforeEach(() => {
 
 describe('WikiView 配置加载', () => {
   it('以免鉴权方式请求 /config，且 dashboard 失败不影响文档渲染', async () => {
-    fetchDashboard.mockRejectedValueOnce(new Error('dashboard 401'))
+    fetchDashboardSoft.mockRejectedValueOnce(new Error('dashboard 401'))
     const wrapper = await mountWiki()
 
     expect(apiGet).toHaveBeenCalledWith('/config', { auth: false })
@@ -297,7 +299,7 @@ describe('WikiView 实战分布', () => {
   })
 
   it('无实战数据时 reactUsage 为空、topReaction 为 undefined（不渲染提示）', async () => {
-    fetchDashboard.mockResolvedValueOnce({ reaction_usage: [] })
+    fetchDashboardSoft.mockResolvedValueOnce({ reaction_usage: [] })
     const wrapper = await mountWiki()
     expect(wrapper.text()).not.toContain('当前主流打法是')
     const vm = wrapper.vm as unknown as { topReaction: { reaction: string } | undefined }

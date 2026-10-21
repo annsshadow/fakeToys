@@ -289,6 +289,25 @@ func (s *Service) Diagnose(ctx context.Context, userID int64, levelID, failedTim
 	if levelID < 1 || levelID > domain.TotalLevels {
 		return domain.Diagnose{}, fmt.Errorf("%w: 关卡 %d 不存在", ErrBadInput, levelID)
 	}
+	// 2026-10-21 (P2-7): the consecutive-failure count is computed **here**.
+	//
+	// It used to come from the client (`?failed_times=`), and the client
+	// hardcoded it to 2 -- so every player saw the "stuck" diagnosis card on
+	// their first attempt. The server already knows the real count
+	// (battle_records records every result); letting the client guess is
+	// letting it make things up.
+	realFailed, err := s.countConsecutiveLosses(ctx, userID, levelID)
+	if err != nil {
+		return domain.Diagnose{}, err
+	}
+	// The client-provided value is only honoured when it is LARGER than what
+	// we computed -- that is "the player says they have failed more often",
+	// which is closer to the moment than our record is.
+	if failedTimes > realFailed {
+		realFailed = failedTimes
+	}
+	failedTimes = realFailed
+
 	gl := domain.GenerateLevel(levelID)
 
 	// 取最近若干局该关的战报做样本
@@ -342,7 +361,45 @@ func (s *Service) Diagnose(ctx context.Context, userID int64, levelID, failedTim
 	}
 	sort.Slice(in.Loadout, func(i, j int) bool { return in.Loadout[i] < in.Loadout[j] })
 
-	return domain.DiagnoseFailure(in, gl), nil
+	d := domain.DiagnoseFailure(in, gl)
+	d.FailedTimes = failedTimes
+	d.Stuck = failedTimes >= domain.StuckThreshold
+	return d, nil
+}
+
+// countConsecutiveLosses counts how many losses in a row, starting from the
+// most recent battle on that level.
+//
+// Semantics: walk back from the newest record on that level and count
+// consecutive `result='lose'` rows. A `win` stops the walk -- winning means
+// the level is beatable, so the failures before it were trial and error, not
+// being stuck.
+//
+// Never played the level -> 0 (never failed).
+func (s *Service) countConsecutiveLosses(ctx context.Context, userID int64, levelID int) (int, error) {
+	rows, err := s.pool.Query(ctx,
+		`SELECT result FROM battle_records
+		 WHERE user_id = $1 AND level_id = $2
+		 ORDER BY created_at DESC, id DESC LIMIT 20`, userID, levelID)
+	if err != nil {
+		return 0, fmt.Errorf("count consecutive losses: %w", err)
+	}
+	defer rows.Close()
+	n := 0
+	for rows.Next() {
+		var result string
+		if err := rows.Scan(&result); err != nil {
+			return 0, err
+		}
+		if result != "lose" {
+			break
+		}
+		n++
+	}
+	if err := rows.Err(); err != nil {
+		return 0, err
+	}
+	return n, nil
 }
 
 // --- 防线（I-5） ---

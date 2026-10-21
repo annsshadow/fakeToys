@@ -181,6 +181,17 @@ export function fetchDashboard() {
   return api.get<Dashboard>('/admin/dashboard')
 }
 
+/**
+ * 「尽力而为」版看板：401 **不**触发跳转登录。
+ *
+ * 2026-10-21（P2-5）：玩家向的文档站用这个版本。
+ * 匿名访客拿到 401 时，页面照常显示 —— 之前那次 401 会把
+ * `location.hash` 改成 `#/admin/login`，把访客踢去了运营后台。
+ */
+export function fetchDashboardSoft() {
+  return api.get<Dashboard>('/admin/dashboard', { soft: true })
+}
+
 // ---------- 关卡 ----------
 
 export function fetchLevels(params: { chapter?: number; keyword?: string } = {}) {

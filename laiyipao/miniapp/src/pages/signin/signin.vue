@@ -214,8 +214,15 @@ async function doSignIn() {
       await store.refreshWallet()
     }
   } catch (e) {
-    canSign.value = false
-    lastResult.value = (e as Error).message
+    // 2026-10-21（P2-8）：失败时**不能**把按钮禁掉。
+    //
+    // 此前 catch 里 `canSign.value = false`，而按钮文案是
+    // `canSign ? '领取今日奖励' : signedToday ? '今日已签到' : '七日签到已完成'`
+    // —— 于是失败后按钮变成「**七日签到已完成**」：
+    // 一句**假话**（今天既没签到、周期也没完成），而且本会话内再也点不了。
+    //
+    // 正确做法：保持可点（网络抖一下重试就好），把错误如实显示出来。
+    lastResult.value = `签到失败：${(e as Error).message}`
   }
 }
 

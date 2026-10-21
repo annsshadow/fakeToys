@@ -8,7 +8,7 @@
  */
 import { onMounted, ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
-import { fetchDashboard } from '@/api'
+import { fetchDashboardSoft } from '@/api'
 
 interface ConfigResp {
   levels: Array<{ id: number; chapter: number; name: string; is_boss: boolean; terrain: unknown[]; difficulty: number; base_hp: number; wave_count: number; energy_cost: number; element_cap: number; max_reaction_tier: number; star_targets: number[] }>
@@ -127,12 +127,24 @@ async function load() {
   try {
     // config 端点无需管理员令牌，因此直接走底层 api 客户端而不经 admin 封装
     const { api } = await import('@/api/client')
-    const [data, dash] = await Promise.all([
-      api.get<ConfigResp>('/config', { auth: false }),
-      fetchDashboard().catch(() => null),
-    ])
+    const data = await api.get<ConfigResp>('/config', { auth: false })
     cfg.value = data
-    reactUsage.value = dash?.reaction_usage ?? []
+
+    // 2026-10-21（P2-5）：「实战分布」用的是**管理员**数据
+    // （GET /admin/dashboard），所以它用 **soft** 版本调用：
+    // 401 是**预期答案**（匿名访客本来就没这个权限），不该触发
+    // `handleUnauthorized()` 把 location.hash 改成 '#/admin/login'
+    // —— 一个**玩家向的文档站**把访客踢去了运营后台登录页。
+    //
+    // 此前那个 `.catch(() => null)` 只吞掉了**异常**，
+    // 拦不住**已经发生的跳转** —— 症状是「打开文档站 → 被弹去登录页」。
+    try {
+      const dash = await fetchDashboardSoft()
+      reactUsage.value = dash?.reaction_usage ?? []
+    } catch {
+      // 锦上添花的东西拿不到，不该影响文档站本身
+      reactUsage.value = []
+    }
   } catch (e) {
     ElMessage.error(`配置加载失败：${(e as Error).message}`)
   } finally {

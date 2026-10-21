@@ -78,6 +78,11 @@ beforeEach(() => {
     title: '反应链不足',
     detail: '技能元素单一',
     suggestions: ['补一种元素'],
+    // 2026-10-21（P2-7）：连续失败次数由**服务端**算，客户端不再编。
+    // `stuck` 才是「要不要显示这张卡」的判据 ——
+    // 此前客户端无条件显示，于是每个玩家第一次进关都看到「卡关诊断」。
+    failed_times: 3,
+    stuck: true,
   })
 })
 
@@ -92,7 +97,10 @@ describe('stage.vue 选关页', () => {
     await flushPromises()
     triggerUniHook(wrapper.vm, 'onLoad', {})
     await flushPromises()
-    expect(mockApi.diagnose).toHaveBeenCalledWith(1, 2)
+    // 2026-10-21（P2-7）：失败次数不再由客户端**硬编码成 2** ——
+    // 那让每个玩家第一次进关都看到「卡关诊断」卡片。
+    // 现在服务端算这个数，客户端不再编。
+    expect(mockApi.diagnose).toHaveBeenCalledWith(1)
     expect(wrapper.text()).toContain('第 1 关 · 测试关')
     expect(wrapper.text()).toContain('防线血量')
     expect(wrapper.text()).toContain('1000‰') // difficulty
@@ -150,6 +158,31 @@ describe('stage.vue 选关页', () => {
     expect(wrapper.text()).toContain('alien_kind') // TERRAIN_NAME 未命中 → 原文
   })
 
+  /**
+   * 2026-10-21（P2-7）：服务端说「没卡住」时，诊断卡**不显示**。
+   *
+   * 这是本次修复的核心判据：此前客户端无条件显示这张卡，
+   * 于是每个玩家第一次进关都看到「卡关诊断」——
+   * 一张对所有人说同一句话的卡片。
+   */
+  it('服务端说没卡住时不显示诊断卡', async () => {
+    mockApi.diagnose.mockResolvedValue({
+      stage: 'no_element',
+      confidence: 60,
+      title: '这一局没打出任何元素',
+      detail: '元素伤害占比 0%',
+      suggestions: ['带上元素技能'],
+      failed_times: 0,
+      stuck: false,
+    })
+    const { wrapper } = mountPage(Stage)
+    await flushPromises()
+    triggerUniHook(wrapper.vm, 'onLoad', {})
+    await flushPromises()
+    expect(wrapper.text()).not.toContain('卡关诊断')
+    wrapper.unmount()
+  })
+
   it('startLabel：未选关 / 未解锁 / 体力不足 三种文案', async () => {
     const { wrapper, store } = mountPage(Stage)
     await flushPromises()
@@ -158,7 +191,10 @@ describe('stage.vue 选关页', () => {
     await flushPromises()
     expect(wrapper.find('.btn-primary').text()).toBe('未选择关卡')
     // 诊断此时回退用 unlockedLevel
-    expect(mockApi.diagnose).toHaveBeenCalledWith(1, 2)
+    // 2026-10-21（P2-7）：失败次数不再由客户端**硬编码成 2** ——
+    // 那让每个玩家第一次进关都看到「卡关诊断」卡片。
+    // 现在服务端算这个数，客户端不再编。
+    expect(mockApi.diagnose).toHaveBeenCalledWith(1)
 
     // selected 为 null 时点击开始：守卫直接返回，不 toast 不导航
     await wrapper.find('.btn-primary').trigger('click')

@@ -286,11 +286,11 @@ grep -rn "Record<string, unknown>" admin/src    # 0 命中
 - [x] P2-2 防线属主 + 快照哈希 —— 服务端补 `snapshot_hash`，前端改绑 `owner_id`/`owner_name`
 - [x] P2-3 宝石效果列 —— 改绑 `attr`
 - [x] P2-4 皮肤列 —— `price`（不存在）换成 `rarity`/`passive`
-- [ ] P2-5 wiki 匿名 401
-- [ ] P2-6 洗练券文案
-- [ ] P2-7 卡关诊断真实失败次数
-- [ ] P2-8 签到失败不永久禁用
-- [ ] P2-9 结算 marshalJSON fail-loud
+- [x] P2-5 wiki 匿名 401 —— 新增 `soft` 请求选项（401 是预期答案，不跳转不清令牌）
+- [x] P2-6 洗练券文案 —— 改为与 seed 一致（可洗练、在售）
+- [x] P2-7 卡关诊断真实失败次数 —— 服务端算连续失败 + `stuck` 字段，客户端不再硬编码 2
+- [x] P2-8 签到失败不永久禁用 —— 不再谎称「七日签到已完成」
+- [x] P2-9 结算 marshalJSON fail-loud —— 5 处 `_ =` 改报错返回
 - [x] P2-10 `AdminUpdateSkill` 整单拒绝（补 `default: reject` 分支）
 
 ### P3

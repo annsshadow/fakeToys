@@ -123,11 +123,22 @@ function handleUnauthorized(): void {
   }
 }
 
+/**
+ * `soft` 的语义：这次请求的 401 是**预期答案**，不是「会话过期」。
+ *
+ * 2026-10-21（P2-5）：玩家向的文档站（`/wiki`）会拉一个**管理员**端点
+ * （`/admin/dashboard`）来做「实战分布」。匿名访客拿到 401 →
+ * `handleUnauthorized()` 把 `location.hash` 改成 `#/admin/login`
+ * —— 一个公开页面把访客踢去了运营后台。
+ *
+ * `soft: true` 时：401 **不**跳转、**不**清令牌（那是「有效登录被误清」，
+ * 比不跳转更糟），但仍然抛错，让调用方自己决定怎么显示。
+ */
 async function request<T>(
   method: string,
   path: string,
   body?: unknown,
-  opts: { auth?: boolean } = {},
+  opts: { auth?: boolean; soft?: boolean } = {},
 ): Promise<T> {
   const headers: Record<string, string> = { Accept: 'application/json' }
   if (body !== undefined) headers['Content-Type'] = 'application/json'
@@ -158,7 +169,12 @@ async function request<T>(
   // 却会把运营**有效**的令牌清掉并踢去登录页 —— 一个不该登出的地方
   // 被登出了，而运营只会看到「莫名其妙要重新登录」。
   // 判据收紧为「这次请求确实带了令牌 + 不是登录接口本身」。
-  if (resp.status === 401 && opts.auth !== false && !path.endsWith('/admin/login')) {
+  if (
+    resp.status === 401 &&
+    opts.auth !== false &&
+    !opts.soft &&
+    !path.endsWith('/admin/login')
+  ) {
     handleUnauthorized()
   }
 
@@ -184,10 +200,12 @@ async function request<T>(
 }
 
 export const api = {
-  get: <T>(path: string, opts?: { auth?: boolean }) => request<T>('GET', path, undefined, opts),
-  post: <T>(path: string, body?: unknown, opts?: { auth?: boolean }) =>
+  get: <T>(path: string, opts?: { auth?: boolean; soft?: boolean }) =>
+    request<T>('GET', path, undefined, opts),
+  post: <T>(path: string, body?: unknown, opts?: { auth?: boolean; soft?: boolean }) =>
     request<T>('POST', path, body, opts),
-  put: <T>(path: string, body?: unknown, opts?: { auth?: boolean }) =>
+  put: <T>(path: string, body?: unknown, opts?: { auth?: boolean; soft?: boolean }) =>
     request<T>('PUT', path, body, opts),
-  del: <T>(path: string, opts?: { auth?: boolean }) => request<T>('DELETE', path, undefined, opts),
+  del: <T>(path: string, opts?: { auth?: boolean; soft?: boolean }) =>
+    request<T>('DELETE', path, undefined, opts),
 }

@@ -167,10 +167,14 @@ onLoad(async (query) => {
   } catch {
     /* 星级拉取失败不阻塞选关 */
   }
-  // 连续失败 >= 2 次时预取诊断
+  // 卡关诊断：失败次数由**服务端**算（2026-10-21 P2-7）。
+  //
+  // 此前这里传的是硬编码的 2，于是**每个人**第一次进关都能看到
+  // 「卡关诊断」卡片 —— 一张对所有人说同一句话的卡片。
+  // 现在只认服务端给的 `stuck`（连续失败 >= 2）。
   try {
-    const d = await api.diagnose(selected.value?.id ?? store.unlockedLevel, 2)
-    if (d && d.stage !== 'unclear') diagnoseInfo.value = d
+    const d = await api.diagnose(selected.value?.id ?? store.unlockedLevel)
+    if (d && d.stuck && d.stage !== 'unclear') diagnoseInfo.value = d
   } catch {
     /* 诊断不可用不阻塞选关 */
   }

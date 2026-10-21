@@ -869,12 +869,33 @@ type DiagnoseInput struct {
 // snake_case，其他 65 个端点全都合规，把唯一合规的读取点改成不合规
 // 会让下一次对拍更难看。`TestDiagnoseJSONShapeIsSnakeCase` 钉住形状。
 type Diagnose struct {
-	Stage       string   `json:"stage"`       // 诊断分类
-	Title       string   `json:"title"`       // 一句话结论
-	Detail      string   `json:"detail"`      // 详细数据
-	Suggestions []string `json:"suggestions"` // 可执行建议
-	Confidence  int      `json:"confidence"`  // 置信度 0..100
+	Stage       string   `json:"stage"`       // stage
+	Title       string   `json:"title"`       // one-line advice
+	Detail      string   `json:"detail"`      // details
+	Suggestions []string `json:"suggestions"` // actionable suggestions
+	Confidence  int      `json:"confidence"`  // confidence 0..100
+
+	// FailedTimes is the consecutive-loss count **computed by the server**.
+	//
+	// 2026-10-21 (P2-7): this number used to come from the client
+	// (`?failed_times=`), and the client hardcoded it to 2 -- so EVERY
+	// player saw the "stuck" diagnosis card on their first attempt.
+	// The server already knows the real count (battle_records records
+	// every result); letting the client guess is letting it make things up.
+	FailedTimes int `json:"failed_times"`
+	// Stuck means "actually stuck" = consecutive failures >= StuckThreshold.
+	//
+	// The client uses this to decide **whether to show the card at all**.
+	// Without it the client showed it unconditionally, which turned the
+	// diagnosis into a sentence that says the same thing to everybody.
+	Stuck bool `json:"stuck"`
 }
+
+// StuckThreshold is how many consecutive losses count as "stuck".
+//
+// 2, not 1: losing once is normal (trying things out is part of the game);
+// losing twice in a row is what says "the build might be the problem".
+const StuckThreshold = 2
 
 // DiagnoseFailure 分析玩家为何卡关，给出针对性建议。
 //

@@ -908,8 +908,33 @@ export function challengeDefense(id: number, payload: any) {
   return request<any>(`/defenses/${id}/challenge`, { method: 'POST', body: payload })
 }
 
-export function diagnose(levelId: number, failedTimes: number) {
-  return request<any>(`/diagnose?level_id=${levelId}&failed_times=${failedTimes}`)
+/**
+ * 卡关诊断（L-1）。
+ *
+ * 2026-10-21（P2-7）：`failed_times` 此前由客户端**硬编码成 2**，
+ * 于是每个玩家第一次进关都能看到「卡关诊断」卡片 ——
+ * 一张对所有人说同一句话的卡片。
+ *
+ * 现在这个数由**服务端算**（battle_records 记着每一局的结果），
+ * 客户端不再编。`failedTimes` 仍然可以传，但只作为「玩家自己说已经
+ * 失败更多次」的上限提示用（服务端取两者较大值）。
+ *
+ * `stuck` 才是「要不要显示这张卡」的判据。
+ */
+export interface DiagnoseResp {
+  stage: string
+  title: string
+  detail: string
+  suggestions: string[]
+  confidence: number
+  /** 连续失败次数（服务端算） */
+  failed_times: number
+  /** 真的卡住了（连续失败 >= 2） */
+  stuck: boolean
+}
+
+export function diagnose(levelId: number, failedTimes = 0) {
+  return request<DiagnoseResp>(`/diagnose?level_id=${levelId}&failed_times=${failedTimes}`)
 }
 
 export { BASE_URL }

@@ -137,6 +137,27 @@ describe('api client 401 处理', () => {
     expect(window.location.hash).toBe('#/admin/dashboard')
   })
 
+  it('soft 请求的 401 不跳转、不清令牌（2026-10-21 P2-5）', async () => {
+    // 玩家向的文档站（/wiki）会拉一个**管理员**端点做「实战分布」。
+    // 匿名访客拿到 401 是**预期答案**，不该被踢去运营后台登录页 ——
+    // 那个跳转由 `handleUnauthorized()` 触发，`.catch()` 拦不住
+    // （它只吞异常，拦不住已经发生的导航）。
+    //
+    // `soft: true` 的语义：这次的 401 是预期答案，不是「会话过期」。
+    localStorage.setItem(TOKEN_KEY, 'valid-token')
+    window.location.hash = '#/wiki'
+    mockFetch(401)
+
+    const { api } = await import('@/api/client')
+    await expect(api.get('/admin/dashboard', { soft: true })).rejects.toBeTruthy()
+
+    // 判据是**可观测后果**：没跳转、令牌还在。
+    // 仍要抛错 —— 调用方要自己决定怎么显示（静默吞掉会让
+    // 「拿不到数据」和「拿到了空数据」长得一样）。
+    expect(localStorage.getItem(TOKEN_KEY)).toBe('valid-token')
+    expect(window.location.hash).toBe('#/wiki')
+  })
+
   it('已在登录页时令牌照样清空', async () => {
     localStorage.setItem(TOKEN_KEY, 'expired-token')
     window.location.hash = '#/admin/login'

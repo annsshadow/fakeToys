@@ -340,9 +340,27 @@ func (s *Service) SettleBattle(ctx context.Context, userID, tokenID int64, in do
 	//
 	// 触发条件不需要恶意：客户端省字段、第三方工具、老版本客户端
 	// 都会走到这里。e2e 的「谎报星级」用例就是故意省掉这三个字段的。
-	elementsRaw, _ := marshalJSON(orEmptyMap(in.ElementsUsed))
-	reactionsRaw, _ := marshalJSON(orEmptyMap(in.ReactionsUsed))
-	terrainRaw, _ := marshalJSON(orEmptySlice(in.TerrainUsed))
+	//
+	// 2026-10-21（P2-9）：这四处曾经是 `_ =`（忽略错误）。
+	//
+	// `_ =` 在这里的后果不是「少一个字段」，而是**写进库里的是空值**：
+	// 序列化失败 → raw 为 nil → jsonb 列写成 null/空。
+	// 运营看到的是「这一局没用任何元素 / 没触发任何反应 / 没有地形」，
+	// 而真相是「数据坏了」。
+	//
+	// 与第 149 轮（admin 侧的 fail-loud）同口径：**出错必须响**。
+	elementsRaw, err := marshalJSON(orEmptyMap(in.ElementsUsed))
+	if err != nil {
+		return SettleResp{}, fmt.Errorf("settle: elements_used 序列化失败: %w", err)
+	}
+	reactionsRaw, err := marshalJSON(orEmptyMap(in.ReactionsUsed))
+	if err != nil {
+		return SettleResp{}, fmt.Errorf("settle: reactions_used 序列化失败: %w", err)
+	}
+	terrainRaw, err := marshalJSON(orEmptySlice(in.TerrainUsed))
+	if err != nil {
+		return SettleResp{}, fmt.Errorf("settle: terrain_used 序列化失败: %w", err)
+	}
 
 	// 选牌决策序列：I-6 重放闭环的最后一环。
 	// 逗号分隔的紧凑文本，-1 表示该波跳过。
@@ -362,8 +380,20 @@ func (s *Service) SettleBattle(ctx context.Context, userID, tokenID int64, in do
 	}
 	// 上报原文另存一档，供审计与纠纷追溯
 	buildSnapshot["settle_input"] = in
-	buildRaw, _ := marshalJSON(buildSnapshot)
-	lootRaw, _ := marshalJSON(res.Loot)
+	//
+	// ⚠️ build_snapshot 是**回放哈希与验真的锚点**（I-6）。
+	// 序列化失败时若继续，库里会存下一份**空的**构筑快照 ——
+	// 之后每一次重放都拿不到技能与养成属性，算出的哈希必然对不上，
+	// 于是**所有正常对局都被判成伪造**。
+	// 所以这里必须让结算失败（fail-loud），而不是写个空壳进去。
+	buildRaw, err := marshalJSON(buildSnapshot)
+	if err != nil {
+		return SettleResp{}, fmt.Errorf("settle: build_snapshot 序列化失败（回放哈希的锚点，不能写空）: %w", err)
+	}
+	lootRaw, err := marshalJSON(res.Loot)
+	if err != nil {
+		return SettleResp{}, fmt.Errorf("settle: loot 序列化失败: %w", err)
+	}
 
 	// ── 整局引擎重算（R1，第 87 轮）──
 	//

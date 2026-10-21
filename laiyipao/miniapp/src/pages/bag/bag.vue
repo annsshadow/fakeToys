@@ -380,7 +380,14 @@ const tokenRows = computed(() => {
     {
       kind: 'gem_wash_token',
       label: '宝石洗练券',
-      status: '⚠️ 洗练尚未接入（且玩家暂无宝石实例可洗），已从商城下架。已购余额暂时无法使用。',
+      // 2026-10-21（P2-6）：这段文案此前说「尚未接入、已从商城下架」，
+      // 而服务端的事实**正好相反** ——
+      //   - `POST /me/gems/:id/wash` 已接通（server/internal/service/gems.go）
+      //   - 商城商品 `shop_gem_wash` 是**在售**的（seed.go 的 delisted=false
+      //     → enabled=true）
+      //   - 宝石本体 `shop_gem` 也在售
+      // 一句与事实相反的文案比没有文案更糟：玩家看着「用不了」就不买了。
+      status: '在「我的宝石」里选中一颗宝石，点「洗练」消耗 1 枚，重掷词条（品质不变）。',
     },
   ]
   return catalog.map((c) => ({ ...c, count: tokens[c.kind] ?? 0 }))
