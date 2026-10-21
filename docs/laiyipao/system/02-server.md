@@ -1,6 +1,6 @@
 # 02 · 服务端（server）
 
-> Go 1.26.3 + Fiber v2 + pgx v5 + PostgreSQL 15+。
+> Go 1.26.9 + Fiber v2 + pgx v5 + PostgreSQL 15+。
 > 本文按「目录 → 分层规则 → 各包职责 → 核心流程 → 事务约定 → 测试体系」展开。
 > 接口形状见 [05](./05-api-reference.md)，表结构见 [06](./06-data-model.md)。
 
@@ -8,7 +8,7 @@
 
 ## 1. 运行入口与启动序列
 
-四个可执行入口，都在 `server/cmd/` 下：
+五个可执行入口，都在 `server/cmd/` 下：
 
 | 命令 | 作用 | 典型用法 |
 |---|---|---|
@@ -16,6 +16,7 @@
 | `cmd/migrate` | 独立迁移，支持 `-down` | `go run ./cmd/migrate` / `-down` |
 | `cmd/seed` | 写入游戏内容（幂等 upsert） | 首次部署必须执行 |
 | `cmd/vectors` | 从 Go 真相源导出跨端契约夹具 | `-check` 供 CI 校验 |
+| `cmd/tygen` | 从 Go 响应结构生成后台 TS 类型（`admin/src/api/types.gen.ts`） | `-check` 供 CI 校验漂移 |
 
 `cmd/api` 的启动顺序是**硬性**的，任一步失败直接退出并打印原因：
 
@@ -55,8 +56,10 @@ server/
 │  ├─ api/          HTTP 服务入口
 │  ├─ migrate/      迁移命令
 │  ├─ seed/         内容灌入
+│  ├─ tygen/        后台 TS 类型生成器
 │  └─ vectors/      契约夹具生成器
 ├─ internal/
+│  ├─ apitypes/     后台响应结构注册表（tygen 的输入）
 │  ├─ auth/         JWT 签发校验、refresh/guest token 生成与摘要
 │  ├─ config/       环境变量 → Config，prod 守卫，开发默认告警
 │  ├─ domain/       纯逻辑：数值、元素、关卡生成、结算校验、引擎镜像
@@ -64,13 +67,14 @@ server/
 │  ├─ seeder/       内容表写入（敌人/技能/装备/宝石/皮肤/专精/关卡/签到/任务/商城/兑换码）
 │  ├─ service/      业务编排：事务边界、跨表一致性、权限
 │  ├─ store/        pgx 连接池、goose 迁移、时区钉死
+│  ├─ tygen/        TS 类型生成器实现（读 apitypes 注册表）
 │  └─ testutil/     测试辅助（scratchdb：真实 PG 临时库）
-├─ migrations/      15 个 goose 迁移（00001…00015）+ embed.go
+├─ migrations/      18 个 goose 迁移（00001…00018）+ embed.go
 ├─ testdata/        跨端契约夹具（由 cmd/vectors 生成）
 └─ test/            端到端辅助
 ```
 
-非测试代码约 22.6k 行；`domain` 与 `service` 占其中约 2/3。
+非测试代码约 25.3k 行；`domain` 与 `service` 占其中约 2/3。
 
 ---
 
@@ -197,7 +201,11 @@ cmd/*  ──▶  httpapi  ──▶  service  ──▶  domain
 | `loadout_attacker.go` / `attacker.go` / `build_parts.go` | 攻方属性推导（装备/宝石/专精/皮肤） | 与 TS `damage.ts` 对齐 |
 | `synthesis.go` | 技能熔炼 | 材料消耗 + 配方匹配 |
 | `gems.go` | 宝石铸造、列出、洗练 | 词条 roll 与品质缩放 |
-| `verification.go` | 玩家/运营验真 | 两条路径共用 `compareAndRecord` |
+| `equipment.go` | 装备目录 + 拥有/装配状态、整组替换装配 | P4-1：装备从「只有数值」变成可获取可换 |
+| `battleabandon.go` | 放弃战斗并退回体力（复活币） | P4-5：中途退出不再白扣体力 |
+| `player_account.go` | 玩家账号登录（用户名 + 口令） | 与游客登录共用 `issueTokens` |
+| `adminuserdetail.go` / `adminbattledetail.go` | 后台玩家详情 / 战报详情 | P5-7 / P2-1 |
+| `verification.go` | 玩家/运营验真 | 两条路径共用 `compareAndRecord`；00017 起同人同哈希幂等 |
 | `admin.go` / `adminutil.go` | 管理员登录、会话、审计、引导 | bcrypt + sid 会话 |
 | `adminapi.go` | 后台内容管理（关卡/技能/装备/经济/公告/兑换码） | 白名单字段更新 |
 | `stats.go` | 看板、用户列表、封禁、发币、战报列表 | 聚合 SQL |
@@ -361,6 +369,9 @@ VerifyReplay / AdminVerifyReplay
 
 **它不重算哈希**。服务端没有引擎参与这条路径（R1 的重算走另一条）。
 它防的是「改了数据却没改凭证」，不防「从一开始就伪造」。
+迁移 00017 给 `replay_verifications` 加了唯一索引
+`(battle_id, COALESCE(verifier_id, admin_verifier_id), actual_hash)`：
+同一场战报 + 同一个验真者 + 同一个哈希只留一条（建索引前先删重复行，保留最早）。
 运营侧验真额外写 `admin_audit_logs`（管理动作的审计轨迹独立于统计表）。
 
 ### 5.6 经济
@@ -503,7 +514,7 @@ LoadGameConfig() = staticConfig() + ServerTime=now()
 | **抢占用条件 UPDATE + RowsAffected** | 「先查后写」在并发下必然重复 | `battle_tokens.used_at`、兑换码名额 |
 | **扣减用 `WHERE balance >= need`** | 靠 CHECK 兜底会整批失败且无法给可读错误 | `grantWallet`、`grantToken`、`spendToken` |
 | **锁顺序固定** | 双人互打防线会 ABBA 死锁 | `lockChallengeStateOrdered` |
-| **幂等键优先于去重查询** | 主键/唯一索引是数据库层的原子保证 | `user_sign_ins`、`redeem_usages`、`defense_challenges` |
+| **幂等键优先于去重查询** | 主键/唯一索引是数据库层的原子保证 | `user_sign_ins`、`redeem_usages`、`defense_challenges`、`replay_verifications` |
 | **同一语义只写一份实现** | 两份实现必然漂移，且症状指向错误方向 | 玩家/运营验真共用 `compareAndRecord` |
 | **归属写进语句本身** | 「调用点保证」在新增调用点时会静默失效 | `UPDATE … WHERE id=$1 AND user_id=$2` |
 

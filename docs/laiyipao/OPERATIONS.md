@@ -30,7 +30,7 @@
 
 | 依赖 | 版本 | 检查 |
 |---|---|---|
-| Go | 1.26.3 | `go version` |
+| Go | 1.26.9 | `go version` |
 | PostgreSQL | 15+ | `psql --version` |
 | Node | 20+ | `node -v` |
 | pnpm | 11 | `pnpm -v` |
@@ -44,7 +44,7 @@
 # 1) 建库
 createdb laiyipao
 
-# 2) 迁移（16 个 goose 迁移，50 张业务表）
+# 2) 迁移（18 个 goose 迁移，50 张业务表）
 cd laiyipao/server
 export DATABASE_URL="postgres://postgres@127.0.0.1:5432/laiyipao?sslmode=disable"
 export BOOTSTRAP_ADMIN_PASS="<至少 10 位，缺省会拒绝启动>"
@@ -100,6 +100,7 @@ cd laiyipao/admin   && pnpm install && pnpm dev          # :5175
 | `MIGRATIONS_ON_BOOT` | `true` | 见 §3.2 的取舍 |
 | `ACCESS_TTL` | `2h` | 访问令牌有效期 |
 | `REFRESH_TTL` | `720h` | 刷新令牌有效期 |
+| `CORS_ALLOW_ORIGINS` | 空 | 跨域来源白名单（逗号分隔，逐项去空白）；dev 默认放行 `*`、prod 默认不发送任何 CORS 头（语义见 §2 末尾注释） |
 
 ### 数据库连接池
 
@@ -300,8 +301,8 @@ cd .. && pwsh -NoProfile -File scripts/e2e.ps1
       259 个 DB 测试自然跳过，这属于已知行为，不是回归。
       本地需 `go test ./... -count=1 -timeout 1200s` 在**有 PG** 的前提下跑，
       方能进入「零 SKIP」的真门槛。）
-- [ ] `npx vitest run --config vitest.config.ts` 通过
-      （miniapp）；`cd ../admin && npx vitest run` 亦需全绿
+- [ ] `pnpm vitest run --config vitest.config.ts` 通过
+      （miniapp）；`cd ../admin && pnpm vitest run` 亦需全绿
 - [ ] 双端 `npx tsc --noEmit` 无错误
 - [ ] `gofmt -l server` 输出为空、`go vet ./...` 无输出
 - [ ] `go run ./cmd/vectors -check` 全 OK

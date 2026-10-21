@@ -1,6 +1,6 @@
 # 06 · 数据模型
 
-> PostgreSQL 15+，**50 张表**，15 个 goose 迁移（`server/migrations/00001…00015`）。
+> PostgreSQL 15+，**50 张表**，18 个 goose 迁移（`server/migrations/00001…00018`）。
 > 迁移通过 `embed.go` 嵌入二进制，运行时从内存读，不依赖部署目录里的 `.sql` 文件。
 
 ---
@@ -32,6 +32,7 @@
 | `id` | BIGSERIAL PK | |
 | `guest_token` | TEXT NOT NULL **UNIQUE** | 游客设备凭证；微信登录后保留（用于数据合并） |
 | `openid` / `unionid` | TEXT UNIQUE / TEXT | 微信登录回填 |
+| `username` / `password_hash` | TEXT / TEXT | 玩家账号登录（迁移 00016，均可空；NULL = 不能用口令登录） |
 | `nickname` | TEXT NOT NULL DEFAULT '' | 上限 64 **字**（服务层校验，不静默截断） |
 | `avatar_url` | TEXT | |
 | `is_guest` | BOOLEAN | 微信登录后置 false |
@@ -39,11 +40,13 @@
 | `ban_reason` | TEXT | |
 | `created_at` / `last_login_at` | TIMESTAMPTZ | |
 
-索引：`idx_users_openid (openid) WHERE openid IS NOT NULL`。
+索引：`idx_users_openid (openid) WHERE openid IS NOT NULL`、
+`idx_users_username (username) WHERE username IS NOT NULL`（00016，部分唯一索引）。
 
 不变量：
 
 - `guest_token` 唯一且**登出时轮换**。它是凭证，等价于口令。
+- `username` 非空则唯一（部分索引）—— 游客号没有用户名，多个 NULL 不冲突。
 - 封禁即时生效：`ResolveUser` 每次请求都查 `status`，不依赖 JWT 过期。
 
 ### 2.2 `refresh_tokens`
@@ -275,6 +278,11 @@ PK `(user_id, level_id)`；`stars` / `best_score` / `clears` / `min_power_clear`
 | `expected_hash` / `actual_hash` / `matched` | |
 
 约束 `replay_verifications_one_verifier CHECK (num_nonnulls(verifier_id, admin_verifier_id) = 1)`。
+唯一索引 `idx_replay_verifications_unique
+(battle_id, COALESCE(verifier_id, admin_verifier_id), actual_hash)`（迁移 00017）——
+同一场战报 + 同一个验真者 + 同一个哈希只留一条；建索引前先删重复行（保留最早）。
+建在 `COALESCE(...)` 上是为了让玩家侧与运营侧的验真落在同一个口径里
+（理由见迁移 00017 文件头注释）。
 
 > 两个都允许为空会产生「这条验真没有验真人」的行，而这一列的全部价值
 > 就是回答「谁验的」。
@@ -532,6 +540,8 @@ PK `(user_id, token)`；索引 `(token)`。
 | `00013_achievement_epoch.sql` | 成就合并到哨兵日期 | **是**（历史周期不可还原） |
 | `00014_gem_affix_pool.sql` | `gem_affixes` 唯一约束 + `gems.descr` | **是**（丢已洗练词条） |
 | `00015_settle_recompute_audit.sql` | `settle_recomputes` | 是（丢历史证据） |
+| `00016_player_account.sql` | `users.username` / `password_hash` + 部分唯一索引 | **是**（共享账号退回登不上的游客号） |
+| `00017_verification_idempotency.sql` | `replay_verifications` 幂等唯一索引（先删重复行） | 否（Up 删的是重复行，Down 只删索引） |
 
 有损回滚必须在迁移文件里写明「为什么不对称」—— 否则半年后
 下一个人会以为只是漏写了 Down。
@@ -557,7 +567,7 @@ go run ./cmd/migrate -down
 | 表 | 增长来源 | 建议 |
 |---|---|---|
 | `battle_records` | 每局一行 | 按 `created_at` 归档；注意 `settle_recomputes` 不建外键，归档不会连带删证据 |
-| `replay_verifications` | 每次验真一行（无幂等键） | 已有按身份限流；长期可按 `created_at` 归档 |
+| `replay_verifications` | 每次验真一行（00017 起同人同哈希幂等，重复行已在迁移中清理） | 长期可按 `created_at` 归档 |
 | `wallet_flows` | 每笔货币变动 | 运营分析需要，建议保留 |
 | `admin_audit_logs` | 每次后台写 | **不建议删**（审计） |
 | `user_daily_challenges` | 每人每天一行 | 可归档 90 天前 |

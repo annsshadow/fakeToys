@@ -213,6 +213,18 @@ jobs:
             echo "自查：npx vue-tsc --noEmit 2>&1 | grep -i 'search string not found'"
             exit 1
           fi
+      # 测试面类型门禁（2026-10-21 补上）。
+      #
+      # ⚠️ 这一步此前**根本跑不起来**：`tsconfig.vitest.json` 的 include 只有
+      # `tests/**/*.ts`，`src/**` 不在编译范围内 → `src/env.d.ts` 里的
+      # `declare module '*.vue'` 不在作用域 → 测试里的 `import X from '*.vue'`
+      # 全部报 TS2307 → 门禁在检查任何东西之前就死了。
+      #
+      # 而且 CI 从来没跑过它 —— 于是「测试面类型门禁」守的东西等于没守：
+      # 4 个测试文件引用着已改名的类型（AdminUser → AdminUserView 等），
+      # 一直没人发现。
+      - name: Type-check the test sources too
+        run: pnpm type-check:test
       - name: Run Vitest tests
         run: pnpm test
       - name: Build H5

@@ -107,9 +107,9 @@
 
 ### 端
 
-- **server**：config / domain / battle / power / seeder / httpapi / service 全部实现，`gofmt` 无差异，`go vet` 干净
-- **miniapp**：9 页面（首页/关卡/战斗/背包/专精/签到/排行/验真/我的）+ TS 战斗内核 + Canvas 渲染层
-- **admin**：11 视图 + 玩法文档站；登录守卫、审计日志、货币净流入监控、胜率异常告警
+- **server**：config / domain / battle / power / seeder / httpapi / service / apitypes / tygen / store 全部实现，`gofmt` 无差异，`go vet` 干净
+- **miniapp**：12 页面（首页/关卡/战斗/背包/专精/签到/排行/验真/我的/商城/shop/反应图鉴/reactions/装备相关）+ TS 战斗内核 + Canvas 渲染层
+- **admin**：12 视图（Dashboard / Levels / Skills / Equipment / Defenses / Economy / Battles / Users / Wiki / Recomputes / Content / Login）+ 玩法文档站；登录守卫、审计日志、货币净流入监控、胜率异常告警
 
 ### 这一轮的复盘：「存在」不等于「有意义」，而「有意义」必须能被机器查出来（第 150 轮）
 
@@ -242,8 +242,8 @@ pnpm vitest run src/test/contract_coverage.test.ts
 
 | 项 | 状态 |
 |---|---|
-| Go 测试 | **12 个包全绿**（2026-10-13 实测：Go 1.26.3 + PostgreSQL 18.6）。`internal/service` 全套约 163s；孤儿库残留 **0 个**；开发库测试不再写入 |
-| TS 测试 | miniapp **1035**（+2 端到端需起服务）· admin **250** 全绿 |
+| Go 测试 | **13 个含测试包全绿**（2026-10-21 三端优化收尾复测：Go 1.26.9 + PostgreSQL 17；此前 2026-10-13 实测为 12 包 / Go 1.26.3 / PostgreSQL 18.6，当时快照保留）。`internal/service` 全套约 163s；孤儿库残留 **0 个**；开发库测试不再写入 |
+| TS 测试 | miniapp **1083** 通过 + 2 跳过（`i6.e2e.test.ts` 需 `LYP_E2E=1` + 运行中的服务端）· admin **309** 全绿（详见 `docs/plans/2026-10-21-laiyipao-three-end-optimization.md` 收尾核验） |
 | `go vet` / `gofmt -l` | 干净 |
 | `vue-tsc`（admin + miniapp） | 0 error |
 | `e2e.ps1` 19 步 | 全通过 |
@@ -262,7 +262,7 @@ pnpm vitest run src/test/contract_coverage.test.ts
 
 ```bash
 cd server && go run ./cmd/api
-cd miniapp && LYP_E2E=1 npx vitest run --config vitest.config.ts src/game/i6.e2e.test.ts
+cd miniapp && LYP_E2E=1 pnpm vitest run --config vitest.config.ts src/game/i6.e2e.test.ts
 ```
 
 ### 跨端契约文件由生成器产出，不要手工编辑

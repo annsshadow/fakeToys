@@ -11,7 +11,7 @@
 
 | 组件 | 版本 | 用途 |
 |---|---|---|
-| Go | **1.26.3** | 后端编译 |
+| Go | **1.26.9** | 后端编译 |
 | PostgreSQL | **15+** | 数据库（需要 `num_nonnulls`、`GENERATED … AS IDENTITY`） |
 | Node | **20+** | 前端构建 |
 | pnpm | 11 | 依赖管理 |
@@ -151,7 +151,7 @@ sudo -u postgres psql -c "CREATE DATABASE laiyipao OWNER laiyipao_app;"
 cd laiyipao/server
 export DATABASE_URL="postgres://laiyipao_app:<PASSWORD>@127.0.0.1:5432/laiyipao?sslmode=disable"
 
-go run ./cmd/migrate      # 15 个迁移，50 张表
+go run ./cmd/migrate      # 18 个迁移，50 张表
 go run ./cmd/seed         # 首次必须执行：敌人/技能/装备/关卡/签到/任务/商城/兑换码
 ```
 
@@ -386,8 +386,8 @@ DATABASE_URL=… ./bin/lyp-migrate
 
 ### 7.3 不要盲目 `-down`
 
-`00011` / `00013` / `00014` / `00015` 的 Down 都是**有损**的
-（删运营验真记录 / 丢历史周期 / 丢已洗练词条 / 丢重算证据）。
+`00011` / `00013` / `00014` / `00015` / `00016` 的 Down 都是**有损**的
+（删运营验真记录 / 丢历史周期 / 丢已洗练词条 / 丢重算证据 / 共享账号失去口令登录能力）。
 回滚前先看迁移文件头部的说明，并做备份。
 
 ---
