@@ -196,7 +196,7 @@ describe('SkillsView 列表与过滤', () => {
     const wrapper = mount(SkillsView, { global: { plugins: [ElementPlus] } })
     await flushPromises()
     const buttons = wrapper.findAll('.el-table__row')[0].findAll('button')
-    expect(buttons.map((b) => b.text())).toEqual(['伤害', '热量', '描述'])
+    expect(buttons.map((b) => b.text())).toEqual(['伤害', '热量', '编辑', '描述'])
 
     await buttons[0].trigger('click')
     await flushPromises()
@@ -207,6 +207,9 @@ describe('SkillsView 列表与过滤', () => {
     expect(updateSkill).toHaveBeenLastCalledWith(7, { heat_cost: 20 })
 
     await buttons[2].trigger('click')
+    await flushPromises()
+
+    await buttons[3].trigger('click')
     await flushPromises()
     expect(updateSkill).toHaveBeenLastCalledWith(7, { descr: '重塑后的描述' })
     wrapper.unmount()

@@ -16,7 +16,7 @@
  * 而台账数字看起来可能完全正常。不单独指出来的话，
  * 值班的人会以为防护开着。
  */
-import { computed, onMounted, ref } from 'vue'
+import {computed, onMounted, ref, onActivated} from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   fetchRecomputes,
@@ -30,6 +30,8 @@ import {
 } from '@/api'
 import { fmtTime } from '@/utils/format'
 
+/** 空态文案（2026-10-21 P5-8）：空表要说清「为什么空」。 */
+const emptyText = '没有匹配的重算记录'
 const loading = ref(false)
 const statsLoading = ref(false)
 const rows = ref<RecomputeView[]>([])
@@ -233,6 +235,19 @@ function reloadAll() {
 onMounted(reloadAll)
 
 /**
+ * 2026-10-21（P5-9）：缓存视图重新可见时刷新数据。
+ *
+ * 布局用 `keep-alive`（max=4）缓存视图，而每个视图此前**只在
+ * `onMounted` 加载一次** —— 于是「封禁一个用户 → 切到别的页 →
+ * 切回来」看到的还是**旧数据**，运营会以为操作没生效。
+ *
+ * `onActivated` 是 keep-alive 视图重新可见时的钩子。
+ */
+onActivated(() => {
+  reloadAll()
+})
+
+/**
  * `el-table` 插槽给出的行类型是 element-plus 内部的 `DefaultRow`，
  * 不能直接传给形参是具体类型的函数（TS2345），所以在调用点集中断言一次。
  *
@@ -425,7 +440,10 @@ const asLevel = (r: unknown) => r as RecomputeLevelStat
             <span :class="{ danger: shapeHint(asLevel(row)) }">{{ shapeHint(asLevel(row)) || '—' }}</span>
           </template>
         </el-table-column>
-      </el-table>
+        <template #empty>
+          <el-empty :description="emptyText" :image-size="60" />
+        </template>
+</el-table>
       <div v-else class="muted" style="padding: 12px 0">窗口内没有重算记录。</div>
     </el-card>
 
@@ -496,7 +514,10 @@ const asLevel = (r: unknown) => r as RecomputeLevelStat
         <el-table-column label="时间" width="155">
           <template #default="{ row }">{{ fmtTime(row.created_at) }}</template>
         </el-table-column>
-      </el-table>
+        <template #empty>
+          <el-empty :description="emptyText" :image-size="60" />
+        </template>
+</el-table>
     </el-card>
   </div>
 </template>

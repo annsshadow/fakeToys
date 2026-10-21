@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, computed } from 'vue'
+import {onMounted, ref, computed, onActivated} from 'vue'
 import { ElMessage } from 'element-plus'
 import * as echarts from 'echarts/core'
 import { BarChart, LineChart, RadarChart } from 'echarts/charts'
@@ -159,6 +159,19 @@ async function load() {
 }
 
 onMounted(load)
+
+/**
+ * 2026-10-21（P5-9）：缓存视图重新可见时刷新数据。
+ *
+ * 布局用 `keep-alive`（max=4）缓存视图，而每个视图此前**只在
+ * `onMounted` 加载一次** —— 于是「封禁一个用户 → 切到别的页 →
+ * 切回来」看到的还是**旧数据**，运营会以为操作没生效。
+ *
+ * `onActivated` 是 keep-alive 视图重新可见时的钩子。
+ */
+onActivated(() => {
+  load()
+})
 </script>
 
 <template>

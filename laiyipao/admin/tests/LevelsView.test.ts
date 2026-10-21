@@ -144,30 +144,85 @@ describe('LevelsView 启停开关', () => {
   })
 })
 
-describe('LevelsView 改血量', () => {
-  it('确认输入：updateLevel 携带 Number 化的新血量，行数据合并', async () => {
-    box.prompt.mockResolvedValueOnce({ value: '500' })
+describe('LevelsView 完整编辑（P5-3）', () => {
+  it('提交**整行**字段（服务端白名单有 9 个键，此前界面只有 2 个入口）', async () => {
     const row = levelFixture({ base_hp: 1000 })
-    updateLevel.mockResolvedValueOnce({ level: { ...row, base_hp: 500 } })
+    updateLevel.mockResolvedValueOnce({ level: { ...row, base_hp: 500, wave_count: 7 } })
     const wrapper = await mountLevels([row])
-    const vm = wrapper.vm as unknown as { onEdit: (r: AdminLevel) => Promise<void> }
-    await vm.onEdit(row)
+    const vm = wrapper.vm as unknown as {
+      openEdit: (r: AdminLevel) => void
+      submitEdit: () => Promise<void>
+      editForm: { base_hp: number; wave_count: number; star_targets: number[] }
+      starTargetsText: string
+    }
+    vm.openEdit(row)
+    vm.editForm.base_hp = 500
+    vm.editForm.wave_count = 7
+    vm.starTargetsText = '1000, 5000, 12000'
+    await vm.submitEdit()
     await flushPromises()
 
-    expect(box.prompt).toHaveBeenCalledWith(expect.stringContaining('第1关'), '编辑关卡', expect.anything())
-    expect(updateLevel).toHaveBeenCalledWith(1, { base_hp: 500 })
+    // 判据：提交的是**整行**，不是单个字段
+    expect(updateLevel).toHaveBeenCalledWith(1, {
+      name: row.name,
+      base_hp: 500,
+      wave_count: 7,
+      difficulty: row.difficulty,
+      energy_cost: row.energy_cost,
+      star_targets: [1000, 5000, 12000],
+      is_boss: row.is_boss,
+    })
     expect(row.base_hp).toBe(500)
     expect(document.body.textContent).toContain('已保存')
     wrapper.unmount()
   })
 
-  it('弹窗取消：不调用更新接口，也不报错', async () => {
-    box.prompt.mockRejectedValueOnce('cancel')
+  it('星级门槛格式非法：不提交，并说清原因', async () => {
     const wrapper = await mountLevels([levelFixture()])
-    const vm = wrapper.vm as unknown as { onEdit: (r: AdminLevel) => Promise<void> }
-    await vm.onEdit(levelFixture())
+    const vm = wrapper.vm as unknown as {
+      openEdit: (r: AdminLevel) => void
+      submitEdit: () => Promise<void>
+      starTargetsText: string
+    }
+    vm.openEdit(levelFixture())
+    vm.starTargetsText = '1000, abc'
+    await vm.submitEdit()
+    await flushPromises()
+
+    // 静默提交空数组 → 服务端整单拒绝 → 运营看到一句与输入无关的 400。
+    // 所以这里必须**本地**拦下并说清。
+    expect(updateLevel).not.toHaveBeenCalled()
+    expect(document.body.textContent).toContain('星级门槛')
+    wrapper.unmount()
+  })
+
+  it('防线血量非正：不提交', async () => {
+    const wrapper = await mountLevels([levelFixture()])
+    const vm = wrapper.vm as unknown as {
+      openEdit: (r: AdminLevel) => void
+      submitEdit: () => Promise<void>
+      editForm: { base_hp: number }
+      starTargetsText: string
+    }
+    vm.openEdit(levelFixture())
+    vm.editForm.base_hp = 0
+    await vm.submitEdit()
     await flushPromises()
     expect(updateLevel).not.toHaveBeenCalled()
+    wrapper.unmount()
+  })
+
+  it('保存失败：弹出错误消息', async () => {
+    updateLevel.mockRejectedValueOnce(new Error('并发冲突'))
+    const wrapper = await mountLevels([levelFixture()])
+    const vm = wrapper.vm as unknown as {
+      openEdit: (r: AdminLevel) => void
+      submitEdit: () => Promise<void>
+    }
+    vm.openEdit(levelFixture())
+    await vm.submitEdit()
+    await flushPromises()
+    expect(document.body.textContent).toContain('并发冲突')
     wrapper.unmount()
   })
 })
@@ -231,25 +286,35 @@ describe('LevelsView 工具栏与操作列交互', () => {
   it('操作列三个按钮（波次/改血量/启停）逐个点击走真实流程', async () => {
     const row = levelFixture({ id: 2, name: '交互关', enabled: false })
     fetchLevels.mockResolvedValue({ items: [row], total: 1 })
-    // 改血量的返回值不带 enabled，避免合并后按钮状态提前翻转
+    // 编辑的返回值不带 enabled，避免合并后按钮状态提前翻转
     updateLevel
       .mockResolvedValueOnce({ level: { ...row, base_hp: 500 } })
       .mockResolvedValueOnce({ level: { ...row, enabled: true } })
     fetchLevelWaves.mockResolvedValue({ waves: [] })
-    box.prompt.mockResolvedValueOnce({ value: '500' })
 
     const wrapper = mount(LevelsView, { global: { plugins: [ElementPlus] } })
     await flushPromises()
     const buttons = wrapper.findAll('.el-table__row')[0].findAll('button')
-    expect(buttons.map((b) => b.text())).toEqual(['波次', '改血量', '启用'])
+    expect(buttons.map((b) => b.text())).toEqual(['波次', '编辑', '启用'])
 
     await buttons[0].trigger('click') // 波次
     await flushPromises()
     expect(fetchLevelWaves).toHaveBeenCalledWith(2)
 
-    await buttons[1].trigger('click') // 改血量
+    // 「编辑」现在开的是**整行编辑对话框**（P5-3），
+    // 所以流程是：开对话框 → 改字段 → 提交。
+    await buttons[1].trigger('click') // 编辑
     await flushPromises()
-    expect(updateLevel).toHaveBeenCalledWith(2, { base_hp: 500 })
+    const vm = wrapper.vm as unknown as {
+      editForm: { base_hp: number }
+      starTargetsText: string
+      submitEdit: () => Promise<void>
+    }
+    vm.editForm.base_hp = 500
+    vm.starTargetsText = '1000, 5000, 12000'
+    await vm.submitEdit()
+    await flushPromises()
+    expect(updateLevel).toHaveBeenCalledWith(2, expect.objectContaining({ base_hp: 500 }))
 
     await buttons[2].trigger('click') // 启用
     await flushPromises()

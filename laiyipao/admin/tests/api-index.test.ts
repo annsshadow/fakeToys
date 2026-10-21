@@ -227,7 +227,16 @@ describe('api/index 经济与运营内容', () => {
 
   it('fetchAuditLogs：默认 limit=100，可覆盖', async () => {
     echoArgs()
-    await expect(fetchAuditLogs()).resolves.toEqual({ __args: ['/admin/audit-logs?limit=100'] })
-    await expect(fetchAuditLogs(7)).resolves.toEqual({ __args: ['/admin/audit-logs?limit=7'] })
+    // 2026-10-21（P5-1）：审计日志带 offset（此前只能看最新 100 条）。
+  await expect(fetchAuditLogs()).resolves.toEqual({
+    __args: ['/admin/audit-logs?limit=100&offset=0'],
+  })
+    await expect(fetchAuditLogs(7)).resolves.toEqual({
+      __args: ['/admin/audit-logs?limit=7&offset=0'],
+    })
+    // 翻页
+    await expect(fetchAuditLogs(7, 14)).resolves.toEqual({
+      __args: ['/admin/audit-logs?limit=7&offset=14'],
+    })
   })
 })

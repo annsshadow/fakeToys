@@ -546,7 +546,7 @@ type AdminBattleView struct {
 //
 // onlyMismatched 为真时**只**返回「被验真过且有不匹配记录」的战报，
 // 用来从「这个用户有 3 次不匹配」直接跳到「是哪 3 场」。
-func (s *Service) AdminListBattles(ctx context.Context, userID int64, levelID int, limit int, onlyMismatched bool) ([]AdminBattleView, int64, error) {
+func (s *Service) AdminListBattles(ctx context.Context, userID int64, levelID int, limit int, onlyMismatched bool, offset int) ([]AdminBattleView, int64, error) {
 	if limit <= 0 || limit > 200 {
 		limit = 50
 	}
@@ -598,7 +598,7 @@ func (s *Service) AdminListBattles(ctx context.Context, userID int64, levelID in
 		LEFT JOIN users u ON u.id = br.user_id
 		`+vsub+`
 		WHERE `+where+`
-		ORDER BY br.id DESC LIMIT $3`, userID, levelID, limit)
+		ORDER BY br.id DESC LIMIT $3 OFFSET $4`, userID, levelID, limit, offset)
 	if err != nil {
 		return nil, 0, fmt.Errorf("list battles: %w", err)
 	}

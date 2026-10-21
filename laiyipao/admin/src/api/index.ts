@@ -260,7 +260,13 @@ export function grantUser(id: number, currency: string, amount: number) {
 // ---------- 战斗记录与验真 ----------
 
 export function fetchBattles(
-  params: { user_id?: number; level_id?: number; limit?: number; only_mismatched?: boolean } = {},
+  params: {
+    user_id?: number
+    level_id?: number
+    limit?: number
+    offset?: number
+    only_mismatched?: boolean
+  } = {},
 ) {
   const q = new URLSearchParams()
   if (params.user_id) q.set('user_id', String(params.user_id))
@@ -268,6 +274,9 @@ export function fetchBattles(
   // 只看验真不匹配的战报：从「这个用户有 3 次不匹配」直接跳到「是哪 3 场」
   if (params.only_mismatched) q.set('only_mismatched', '1')
   q.set('limit', String(params.limit ?? 50))
+  // 2026-10-21（P5-1）：分页。此前只能看前 50 条 ——
+  // 战报表可能有上万行，而「共 N 条」显示的其实是**这次返回了几条**。
+  if (params.offset) q.set('offset', String(params.offset))
   return api.get<AdminBattlesResp>(`/admin/battles?${q}`)
 }
 
@@ -416,6 +425,8 @@ export function createRedeemCode(payload: {
   return api.post<AdminRedeemCodeResp>('/admin/redeem-codes', payload)
 }
 
-export function fetchAuditLogs(limit = 100) {
-  return api.get<AdminAuditLogsResp>(`/admin/audit-logs?limit=${limit}`)
+export function fetchAuditLogs(limit = 100, offset = 0) {
+  // 2026-10-21（P5-1）：审计日志也要能翻页 —— 固定 100 条时，
+  // 更早的操作**根本看不到**。
+  return api.get<AdminAuditLogsResp>(`/admin/audit-logs?limit=${limit}&offset=${offset}`)
 }

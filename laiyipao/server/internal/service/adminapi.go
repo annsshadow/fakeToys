@@ -642,9 +642,9 @@ func validWalletCurrency(k string) bool {
 }
 
 // AdminListAnnouncements 返回公告。
-func (s *Service) AdminListAnnouncements(ctx context.Context) ([]AdminAnnouncementView, error) {
+func (s *Service) AdminListAnnouncements(ctx context.Context, limit, offset int) ([]AdminAnnouncementView, error) {
 	rows, err := s.pool.Query(ctx,
-		`SELECT id, title, body, published, published_at, created_at FROM announcements ORDER BY id DESC`)
+		`SELECT id, title, body, published, published_at, created_at FROM announcements ORDER BY id DESC LIMIT $1 OFFSET $2`, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -685,9 +685,9 @@ func (s *Service) AdminCreateAnnouncement(ctx context.Context, title, body strin
 }
 
 // AdminListRedeemCodes 返回兑换码。
-func (s *Service) AdminListRedeemCodes(ctx context.Context) ([]AdminRedeemCodeView, error) {
+func (s *Service) AdminListRedeemCodes(ctx context.Context, limit, offset int) ([]AdminRedeemCodeView, error) {
 	rows, err := s.pool.Query(ctx,
-		`SELECT id, code, reward, max_uses, used_count, expires_at, enabled FROM redeem_codes ORDER BY id`)
+		`SELECT id, code, reward, max_uses, used_count, expires_at, enabled FROM redeem_codes ORDER BY id LIMIT $1 OFFSET $2`, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -743,13 +743,13 @@ func (s *Service) AdminCreateRedeemCode(ctx context.Context, code string, reward
 }
 
 // AdminListAuditLogs 返回操作审计。
-func (s *Service) AdminListAuditLogs(ctx context.Context, limit int) ([]AdminAuditLogView, error) {
+func (s *Service) AdminListAuditLogs(ctx context.Context, limit int, offset int) ([]AdminAuditLogView, error) {
 	if limit <= 0 || limit > 500 {
 		limit = 100
 	}
 	rows, err := s.pool.Query(ctx,
 		`SELECT id, admin_id, username, action, target, detail, created_at
-		 FROM admin_audit_logs ORDER BY id DESC LIMIT $1`, limit)
+		 FROM admin_audit_logs ORDER BY id DESC LIMIT $1 OFFSET $2`, limit, offset)
 	if err != nil {
 		return nil, err
 	}

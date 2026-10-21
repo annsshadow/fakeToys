@@ -45,7 +45,7 @@ func TestFailLoudSweep(t *testing.T) {
 
 	// 4) AdminListRedeemCodes：坏 reward → 报错
 	ts.exec(t, `UPDATE redeem_codes SET reward = $1::jsonb WHERE id = (SELECT MIN(id) FROM redeem_codes)`, `[1]`)
-	if _, err := ts.AdminListRedeemCodes(ctx); err == nil {
+	if _, err := ts.AdminListRedeemCodes(ctx, 50, 0); err == nil {
 		t.Errorf("AdminListRedeemCodes 应对坏 reward 报错（fail-loud），却静默成功了")
 	}
 }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, computed } from 'vue'
+import {onMounted, ref, computed, onActivated} from 'vue'
 import { ElMessage } from 'element-plus'
 import {
   fetchBattles,
@@ -12,6 +12,8 @@ import {
 import { fetchReactionLabels, labelOfReaction, type ReactionLabels } from '@/reactions'
 import { fmtTime } from '@/utils/format'
 
+/** 空态文案（2026-10-21 P5-8）：空表要说清「为什么空」。 */
+const emptyText = '没有匹配的战报'
 const loading = ref(false)
 const battles = ref<AdminBattleView[]>([])
 const total = ref(0)
@@ -65,10 +67,21 @@ function verifyTag(b: AdminBattleView): { text: string; type: 'info' | 'success'
 
 const onlyMismatched = ref(false)
 
+/**
+ * 2026-10-21（P5-1）：分页。
+ *
+ * 此前战报列表**只能看前 50 条** —— 而「共 N 条」显示的其实是
+ * **这次返回了几条**，不是真实总数。战报表可以上万行，
+ * 于是「第 51 条之后的战报根本看不到」。
+ */
+const PAGE_SIZE = 50
+const page = ref(1)
+
 const filterParams = computed(() => ({
   user_id: userId.value,
   level_id: levelId.value,
-  limit: 50,
+  limit: PAGE_SIZE,
+  offset: (page.value - 1) * PAGE_SIZE,
   only_mismatched: onlyMismatched.value || undefined,
 }))
 
@@ -155,6 +168,19 @@ const ELEMENT_LABEL: Record<string, string> = {
 onMounted(load)
 
 /**
+ * 2026-10-21（P5-9）：缓存视图重新可见时刷新数据。
+ *
+ * 布局用 `keep-alive`（max=4）缓存视图，而每个视图此前**只在
+ * `onMounted` 加载一次** —— 于是「封禁一个用户 → 切到别的页 →
+ * 切回来」看到的还是**旧数据**，运营会以为操作没生效。
+ *
+ * `onActivated` 是 keep-alive 视图重新可见时的钩子。
+ */
+onActivated(() => {
+  load()
+})
+
+/**
  * `el-table` 插槽给出的行类型是 element-plus 内部的 `DefaultRow`，
  * 它不能直接传给形参是 `AdminBattle` 的函数（TS2345），所以在调用点集中断言一次。
  *
@@ -181,6 +207,16 @@ const asRow = (r: unknown) => r as AdminBattleView
 
     <el-card shadow="never">
       <div class="toolbar">
+        <el-pagination
+          v-if="total > PAGE_SIZE"
+          v-model:current-page="page"
+          :page-size="PAGE_SIZE"
+          :total="total"
+          layout="prev, pager, next, total"
+          size="small"
+          background
+          @current-change="load"
+        />
         <el-input-number
           v-model="userId"
           :controls="false"
@@ -251,7 +287,10 @@ const asRow = (r: unknown) => r as AdminBattleView
             <el-button size="small" text @click="openDetail(asRow(row))">详情</el-button>
           </template>
         </el-table-column>
-      </el-table>
+        <template #empty>
+          <el-empty :description="emptyText" :image-size="60" />
+        </template>
+</el-table>
     </el-card>
 
     <el-drawer v-model="detailDrawer" title="战报详情" size="42%">

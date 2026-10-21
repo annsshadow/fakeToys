@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import {onMounted, ref, onActivated} from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   fetchLevels,
@@ -10,6 +10,8 @@ import {
 } from '@/api'
 import { useAdminRole } from '@/utils/adminRole'
 
+/** 空态文案（2026-10-21 P5-8）：空表要说清「为什么空」。 */
+const emptyText = '没有匹配的关卡'
 const loading = ref(false)
 const levels = ref<AdminLevelView[]>([])
 // 2026-10-21（P5-6）：readonly 账号看不到写入口。
@@ -103,21 +105,117 @@ async function toggleEnabled(row: AdminLevelView) {
   }
 }
 
-async function onEdit(row: AdminLevelView) {
+/**
+ * 完整的关卡编辑（2026-10-21 P5-3）。
+ *
+ * 此前 UI 只有两个可写入口（`base_hp` 与 `enabled`），
+ * 而服务端的白名单有 **9** 个键 —— 于是 7 个字段
+ * （name / wave_count / difficulty / energy_cost / star_targets /
+ *   terrain_config / is_boss）**在界面上根本不存在**。
+ *
+ * 结果：运营想调「波次数」或「星级门槛」，只能去改数据库。
+ * 一个后台不能做的事，就是**不存在的能力**。
+ *
+ * 之前用 `ElMessageBox.prompt` 逐字段弹窗 —— 一次只能改一个字段，
+ * 改 7 个字段要弹 7 次。这里改成**一个对话框改一整行**。
+ */
+const editOpen = ref(false)
+const editSaving = ref(false)
+const editRow = ref<AdminLevelView | null>(null)
+const editForm = ref({
+  name: '',
+  base_hp: 0,
+  wave_count: 0,
+  difficulty: 0,
+  energy_cost: 0,
+  star_targets: [0, 0, 0] as number[],
+  is_boss: false,
+})
+
+/** 星级门槛的输入（逗号分隔的三个分数）。 */
+const starTargetsText = ref('0, 0, 0')
+
+function openEdit(row: AdminLevelView) {
+  editRow.value = row
+  editForm.value = {
+    name: row.name,
+    base_hp: row.base_hp,
+    wave_count: row.wave_count,
+    difficulty: row.difficulty,
+    energy_cost: row.energy_cost,
+    star_targets: [...(row.star_targets ?? [])],
+    is_boss: row.is_boss,
+  }
+  starTargetsText.value = (row.star_targets ?? []).join(', ')
+  editOpen.value = true
+}
+
+/**
+ * 解析星级门槛输入。
+ *
+ * 三个非负整数（1★/2★/3★ 的分数门槛），逗号或空格分隔。
+ * 解析失败**不静默** —— 静默会用空数组提交，服务端整单拒绝，
+ * 而运营看到的是一句与输入无关的 400。
+ */
+function parseStarTargets(text: string): number[] | null {
+  const parts = text
+    .split(/[,，\s]+/)
+    .map((x) => x.trim())
+    .filter(Boolean)
+  if (parts.length !== 3) return null
+  const nums: number[] = []
+  for (const p of parts) {
+    if (!/^\d+$/.test(p)) return null
+    nums.push(Number(p))
+  }
+  return nums
+}
+
+async function submitEdit() {
+  if (editSaving.value || !editRow.value) return
+  const stars = parseStarTargets(starTargetsText.value)
+  if (!stars) {
+    ElMessage.error('星级门槛格式应为三个非负整数（如 1000, 5000, 12000）')
+    return
+  }
+  if (editForm.value.base_hp <= 0) {
+    ElMessage.error('防线血量必须是正整数')
+    return
+  }
+  if (editForm.value.wave_count < 1 || editForm.value.wave_count > 50) {
+    ElMessage.error('波次数必须在 1..50')
+    return
+  }
+  if (editForm.value.difficulty <= 0) {
+    ElMessage.error('难度系数必须是正整数')
+    return
+  }
+  if (editForm.value.energy_cost < 0 || editForm.value.energy_cost > 100) {
+    ElMessage.error('体力消耗必须在 0..100')
+    return
+  }
+  editSaving.value = true
   try {
-    const { value } = await ElMessageBox.prompt(
-      `修改「${row.name}」的防线血量（当前 ${row.base_hp}）`,
-      '编辑关卡',
-      { inputValue: String(row.base_hp), inputPattern: /^\d+$/, inputErrorMessage: '必须是正整数' },
-    )
-    const res = await updateLevel(row.id, { base_hp: Number(value) })
-    Object.assign(row, res.level)
+    const res = await updateLevel(editRow.value.id, {
+      name: editForm.value.name.trim() || editRow.value.name,
+      base_hp: editForm.value.base_hp,
+      wave_count: editForm.value.wave_count,
+      difficulty: editForm.value.difficulty,
+      energy_cost: editForm.value.energy_cost,
+      star_targets: stars,
+      is_boss: editForm.value.is_boss,
+    })
+    Object.assign(editRow.value, res.level)
+    editOpen.value = false
     // 不显示「已保存」——那会让运营以为玩家侧也变了（第 23 条：生成器权威）
     ElMessage.success('已保存到规划表（不影响线上玩家）')
-  } catch {
-    /* 取消 */
+  } catch (e) {
+    ElMessage.error((e as Error).message)
+  } finally {
+    editSaving.value = false
   }
 }
+
 
 async function onRegen() {
   try {
@@ -158,6 +256,19 @@ function spawnText(spawns: unknown): string {
 }
 
 onMounted(load)
+
+/**
+ * 2026-10-21（P5-9）：缓存视图重新可见时刷新数据。
+ *
+ * 布局用 `keep-alive`（max=4）缓存视图，而每个视图此前**只在
+ * `onMounted` 加载一次** —— 于是「封禁一个用户 → 切到别的页 →
+ * 切回来」看到的还是**旧数据**，运营会以为操作没生效。
+ *
+ * `onActivated` 是 keep-alive 视图重新可见时的钩子。
+ */
+onActivated(() => {
+  load()
+})
 
 /**
  * `el-table` 插槽给出的行类型是 element-plus 内部的 `DefaultRow`，
@@ -246,14 +357,63 @@ const asRow = (r: unknown) => r as AdminLevelView
         <el-table-column label="操作" width="150" fixed="right">
           <template #default="{ row }">
             <el-button size="small" text @click="openWaves(asRow(row))">波次</el-button>
-            <el-button v-if="!isReadonly" size="small" text @click="onEdit(asRow(row))">改血量</el-button>
+            <el-button v-if="!isReadonly" size="small" text @click="openEdit(asRow(row))">编辑</el-button>
             <el-button v-if="!isReadonly" size="small" text @click="toggleEnabled(asRow(row))">
               {{ row.enabled ? '停用' : '启用' }}
             </el-button>
           </template>
         </el-table-column>
-      </el-table>
+        <template #empty>
+          <el-empty :description="emptyText" :image-size="60" />
+        </template>
+</el-table>
     </el-card>
+
+    <!--
+      完整的关卡编辑对话框（2026-10-21 P5-3）。
+      服务端白名单有 9 个键，此前界面只有 2 个入口 ——
+      另 7 个字段在后台**根本不存在**。
+    -->
+    <el-dialog v-model="editOpen" title="编辑关卡" width="520px">
+      <el-form label-width="110px" size="small">
+        <el-form-item label="名称">
+          <el-input v-model="editForm.name" placeholder="关卡名" />
+        </el-form-item>
+        <el-form-item label="防线血量">
+          <el-input-number v-model="editForm.base_hp" :min="1" :max="9999999" />
+        </el-form-item>
+        <el-form-item label="波次数">
+          <el-input-number v-model="editForm.wave_count" :min="1" :max="50" />
+        </el-form-item>
+        <el-form-item label="难度系数">
+          <el-input-number v-model="editForm.difficulty" :min="1" :max="9999" />
+        </el-form-item>
+        <el-form-item label="体力消耗">
+          <el-input-number v-model="editForm.energy_cost" :min="0" :max="100" />
+        </el-form-item>
+        <el-form-item label="星级门槛">
+          <el-input v-model="starTargetsText" placeholder="1★, 2★, 3★ 的分数门槛" />
+          <div class="muted" style="font-size: 12px; margin-top: 4px">
+            三个非负整数，逗号分隔。例如 <code>1000, 5000, 12000</code>
+          </div>
+        </el-form-item>
+        <el-form-item label="BOSS 关">
+          <el-switch v-model="editForm.is_boss" />
+        </el-form-item>
+      </el-form>
+      <el-alert
+        type="warning"
+        :closable="false"
+        show-icon
+        title="这些修改记录在规划表里，不影响线上玩家"
+        description="玩家侧的关卡由生成器产出（第 23 条产品决策）。后台改的值不会立刻生效 —— 那是「已生效」与「已记录」的区别。"
+        style="margin-bottom: 8px"
+      />
+      <template #footer>
+        <el-button @click="editOpen = false">取消</el-button>
+        <el-button type="primary" :loading="editSaving" @click="submitEdit">保存</el-button>
+      </template>
+    </el-dialog>
 
     <el-drawer v-model="waveDrawer" :title="`${waveTarget?.name ?? ''} · 波次编排`" size="46%">
       <el-table :data="waveRows" size="small">
@@ -261,7 +421,10 @@ const asRow = (r: unknown) => r as AdminLevelView
         <el-table-column label="刷怪">
           <template #default="{ row }">{{ spawnText(row.spawns) }}</template>
         </el-table-column>
-      </el-table>
+        <template #empty>
+          <el-empty :description="emptyText" :image-size="60" />
+        </template>
+</el-table>
     </el-drawer>
   </div>
 </template>

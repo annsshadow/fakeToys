@@ -78,6 +78,8 @@ const SLOT_LABEL: Record<string, string> = {
   charm: '挂件',
 }
 
+/** 空态文案（2026-10-21 P5-8）：空表要说清「为什么空」。 */
+const emptyText = '暂无数据'
 const loading = ref(false)
 const cfg = ref<ConfigResp | null>(null)
 const reactUsage = ref<Array<{ reaction: string; count: number }>>([])
@@ -269,7 +271,10 @@ onMounted(load)
                「运营后台的玩法文档站直接展示它」）在这张表上被丢掉了。
                第 83 轮修正的 5 条错误文案因此**一个都看不到**。 -->
           <el-table-column prop="descr" label="说明" min-width="150" />
-        </el-table>
+        <template #empty>
+          <el-empty :description="emptyText" :image-size="60" />
+        </template>
+</el-table>
         <p class="note">
           「溅射半径」一栏显示各反应**实际生效**的溅射半径
           （蒸汽爆发 120 / 过热 90 已接上真实范围伤害）；显示「单体」
@@ -286,7 +291,10 @@ onMounted(load)
         <el-table :data="Object.entries(cfg?.rating_weights ?? {}).map(([k, v]) => ({ k, v }))" size="small" border>
           <el-table-column prop="k" label="维度" />
           <el-table-column prop="v" label="权重" />
-        </el-table>
+        <template #empty>
+          <el-empty :description="emptyText" :image-size="60" />
+        </template>
+</el-table>
       </el-tab-pane>
 
       <!-- 元素矩阵 -->
@@ -326,7 +334,10 @@ onMounted(load)
             </template>
           </el-table-column>
           <el-table-column prop="descr" label="说明" min-width="150" />
-        </el-table>
+        <template #empty>
+          <el-empty :description="emptyText" :image-size="60" />
+        </template>
+</el-table>
       </el-tab-pane>
 
       <!-- 技能 -->
@@ -347,7 +358,10 @@ onMounted(load)
           <el-table-column prop="cooldown_ms" label="冷却" width="86" />
           <el-table-column prop="apply_stacks" label="层数" width="66" />
           <el-table-column prop="descr" label="说明" min-width="180" />
-        </el-table>
+        <template #empty>
+          <el-empty :description="emptyText" :image-size="60" />
+        </template>
+</el-table>
 
         <h4 style="margin-top: 16px">合成技能</h4>
         <el-table :data="cfg?.composite_skills ?? []" size="small" border stripe>
@@ -359,7 +373,10 @@ onMounted(load)
             </template>
           </el-table-column>
           <el-table-column prop="descr" label="说明" min-width="220" />
-        </el-table>
+        <template #empty>
+          <el-empty :description="emptyText" :image-size="60" />
+        </template>
+</el-table>
       </el-tab-pane>
 
       <!-- 专精 -->
@@ -397,7 +414,10 @@ onMounted(load)
             <template #default="{ row }">{{ row.unlock_level }}</template>
           </el-table-column>
           <el-table-column prop="descr" label="说明" min-width="200" />
-        </el-table>
+        <template #empty>
+          <el-empty :description="emptyText" :image-size="60" />
+        </template>
+</el-table>
       </el-tab-pane>
 
       <el-tab-pane label="数值规则" name="rules">
@@ -444,7 +464,10 @@ onMounted(load)
         <el-table :data="starRatioRows" size="small" border style="margin-bottom: 8px">
           <el-table-column prop="label" label="星级" width="100" />
           <el-table-column prop="v" label="占理论满分" width="140" />
-        </el-table>
+        <template #empty>
+          <el-empty :description="emptyText" :image-size="60" />
+        </template>
+</el-table>
         <p class="note">
           ⚠️ 结算时的得分速率裁剪锚点（<code>score_full_at_sec</code>）
           远低于实际通关时长，因此<strong>它从不生效</strong> ——
@@ -504,7 +527,10 @@ onMounted(load)
           <el-table-column label="星级门槛" min-width="160">
             <template #default="{ row }">{{ row.star_targets.join(' / ') }}</template>
           </el-table-column>
-        </el-table>
+        <template #empty>
+          <el-empty :description="emptyText" :image-size="60" />
+        </template>
+</el-table>
       </el-tab-pane>
 
       <!-- 实战统计 -->
@@ -529,7 +555,10 @@ onMounted(load)
               />
             </template>
           </el-table-column>
-        </el-table>
+        <template #empty>
+          <el-empty :description="emptyText" :image-size="60" />
+        </template>
+</el-table>
         <p v-if="topReaction" class="note">
           当前主流打法是「{{ topReaction.reaction }}」。若你卡在某一关，
           试试换一个<strong>还没被多数人用到</strong>的搭配。

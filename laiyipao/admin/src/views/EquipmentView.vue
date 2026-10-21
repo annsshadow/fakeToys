@@ -3,6 +3,8 @@ import { onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { fetchEquipment, type AdminEquipmentView } from '@/api'
 
+/** 空态文案（2026-10-21 P5-8）：空表要说清「为什么空」。 */
+const emptyText = '目录为空'
 const loading = ref(false)
 const equipment = ref<AdminEquipmentView[]>([])
 const gems = ref<import('@/api').SeedGem[]>([])
@@ -91,7 +93,10 @@ onMounted(load)
             <template #default="{ row }">{{ row.unlock_level }}</template>
           </el-table-column>
           <el-table-column prop="descr" label="效果" min-width="200" />
-        </el-table>
+        <template #empty>
+          <el-empty :description="emptyText" :image-size="60" />
+        </template>
+</el-table>
       </el-tab-pane>
 
       <!-- 宝石 -->
@@ -109,7 +114,10 @@ onMounted(load)
           <el-table-column prop="name" label="名称" min-width="130" />
           <el-table-column prop="attr" label="效果" min-width="120" />
           <el-table-column prop="descr" label="说明" min-width="200" />
-        </el-table>
+        <template #empty>
+          <el-empty :description="emptyText" :image-size="60" />
+        </template>
+</el-table>
       </el-tab-pane>
 
       <!-- 皮肤 -->
@@ -120,7 +128,10 @@ onMounted(load)
           <el-table-column prop="rarity" label="稀有度" width="90" />
           <el-table-column prop="passive" label="被动" min-width="140" />
           <el-table-column prop="descr" label="说明" min-width="220" />
-        </el-table>
+        <template #empty>
+          <el-empty :description="emptyText" :image-size="60" />
+        </template>
+</el-table>
       </el-tab-pane>
     </el-tabs>
   </div>

@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { onMounted, ref, computed } from 'vue'
+import {onMounted, ref, computed, onActivated} from 'vue'
 import { ElMessage } from 'element-plus'
 import { fetchDefenses, type AdminDefenseView } from '@/api'
 import { fmtTime } from '@/utils/format'
 
+/** 空态文案（2026-10-21 P5-8）：空表要说清「为什么空」。 */
+const emptyText = '还没有人设置防线'
 const loading = ref(false)
 const rows = ref<AdminDefenseView[]>([])
 const total = ref(0)
@@ -68,6 +70,19 @@ async function load() {
 const asRow = (r: unknown) => r as AdminDefenseView
 
 onMounted(load)
+
+/**
+ * 2026-10-21（P5-9）：缓存视图重新可见时刷新数据。
+ *
+ * 布局用 `keep-alive`（max=4）缓存视图，而每个视图此前**只在
+ * `onMounted` 加载一次** —— 于是「封禁一个用户 → 切到别的页 →
+ * 切回来」看到的还是**旧数据**，运营会以为操作没生效。
+ *
+ * `onActivated` 是 keep-alive 视图重新可见时的钩子。
+ */
+onActivated(() => {
+  load()
+})
 </script>
 
 <template>
@@ -132,7 +147,10 @@ onMounted(load)
         <el-table-column label="更新时间" width="155">
           <template #default="{ row }">{{ fmtTime(row.updated_at) }}</template>
         </el-table-column>
-      </el-table>
+        <template #empty>
+          <el-empty :description="emptyText" :image-size="60" />
+        </template>
+</el-table>
     </el-card>
   </div>
 </template>

@@ -546,12 +546,12 @@ func TestAdminListBattles(t *testing.T) {
 		t.Fatalf("结算失败：%v", err)
 	}
 
-	_, total, err := ts.AdminListBattles(ctx, uid, 1, 10, false)
+	_, total, err := ts.AdminListBattles(ctx, uid, 1, 10, false, 0)
 	if err != nil || total < 1 {
 		t.Fatalf("按用户+关卡过滤应命中：%d, %v", total, err)
 	}
 	// 第 123 轮：total_enemies 必须填上（生成器权威值），后台「守恒」列靠它做伪造判定
-	list, _, err := ts.AdminListBattles(ctx, uid, 1, 10, false)
+	list, _, err := ts.AdminListBattles(ctx, uid, 1, 10, false, 0)
 	if err != nil {
 		t.Fatalf("读战报失败：%v", err)
 	}
@@ -574,17 +574,17 @@ func TestAdminListBattles(t *testing.T) {
 		}
 	}
 	// 非匹配过滤 → 0
-	_, total, err = ts.AdminListBattles(ctx, uid, 99, 10, false)
+	_, total, err = ts.AdminListBattles(ctx, uid, 99, 10, false, 0)
 	if err != nil || total != 0 {
 		t.Errorf("level_id=99 不应命中：%d, %v", total, err)
 	}
 	// limit 夹紧
-	if _, _, err := ts.AdminListBattles(ctx, 0, 0, 0, false); err != nil {
+	if _, _, err := ts.AdminListBattles(ctx, 0, 0, 0, false, 0); err != nil {
 		t.Errorf("limit=0 应回落默认：%v", err)
 	}
 
 	broken := openBrokenService(t)
-	if _, _, err := broken.AdminListBattles(ctx, 0, 0, 10, false); err == nil {
+	if _, _, err := broken.AdminListBattles(ctx, 0, 0, 10, false, 0); err == nil {
 		t.Error("数据库故障时应报错")
 	}
 }
@@ -910,7 +910,7 @@ func TestAdminAnnouncements(t *testing.T) {
 	if !item.Published {
 		t.Error("published 应原样返回")
 	}
-	items, err := ts.AdminListAnnouncements(ctx)
+	items, err := ts.AdminListAnnouncements(ctx, 50, 0)
 	if err != nil || len(items) == 0 {
 		t.Fatalf("公告列表应非空：%v", err)
 	}
@@ -919,7 +919,7 @@ func TestAdminAnnouncements(t *testing.T) {
 	if _, err := broken.AdminCreateAnnouncement(ctx, "x", "y", false); err == nil {
 		t.Error("故障态应报错")
 	}
-	if _, err := broken.AdminListAnnouncements(ctx); err == nil {
+	if _, err := broken.AdminListAnnouncements(ctx, 50, 0); err == nil {
 		t.Error("故障态应报错")
 	}
 }
@@ -928,7 +928,7 @@ func TestAdminRedeemCodes(t *testing.T) {
 	ts := openTestService(t)
 	ctx := context.Background()
 
-	items, err := ts.AdminListRedeemCodes(ctx)
+	items, err := ts.AdminListRedeemCodes(ctx, 50, 0)
 	if err != nil {
 		t.Fatalf("兑换码列表失败：%v", err)
 	}
@@ -951,7 +951,7 @@ func TestAdminRedeemCodes(t *testing.T) {
 		t.Errorf("自动分配的 id 应为正，得 %v", created.ID)
 	}
 
-	after, err := ts.AdminListRedeemCodes(ctx)
+	after, err := ts.AdminListRedeemCodes(ctx, 50, 0)
 	if err != nil {
 		t.Fatalf("创建后列表失败：%v", err)
 	}
@@ -1011,7 +1011,7 @@ func TestAdminListAuditLogs(t *testing.T) {
 	adminID, username, _ := ts.newAdminFixture(t, "logs", 1)
 	ts.Audit(ctx, adminID, "svc_logs_probe", "t", "10.0.0.1", map[string]any{"a": 1})
 
-	items, err := ts.AdminListAuditLogs(ctx, 100)
+	items, err := ts.AdminListAuditLogs(ctx, 100, 0)
 	if err != nil {
 		t.Fatalf("审计列表失败：%v", err)
 	}
@@ -1024,12 +1024,12 @@ func TestAdminListAuditLogs(t *testing.T) {
 	if !found {
 		t.Error("探针审计行应出现在列表里")
 	}
-	if _, err := ts.AdminListAuditLogs(ctx, 0); err != nil {
+	if _, err := ts.AdminListAuditLogs(ctx, 0, 0); err != nil {
 		t.Errorf("limit=0 应回落默认：%v", err)
 	}
 
 	broken := openBrokenService(t)
-	if _, err := broken.AdminListAuditLogs(ctx, 10); err == nil {
+	if _, err := broken.AdminListAuditLogs(ctx, 10, 0); err == nil {
 		t.Error("故障态应报错")
 	}
 }

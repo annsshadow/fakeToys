@@ -396,7 +396,11 @@ func (s *Server) adminBattles(c *fiber.Ctx) error {
 	// 这一步是为了能直接回答「**哪一场**对局对不上」——
 	// 否则还得手工按 user_id 查战报再交叉比对 replay_verifications。
 	onlyMismatched := c.Query("only_mismatched") == "1" || c.Query("only_mismatched") == "true"
-	items, total, err := s.Svc.AdminListBattles(c.Context(), int64(userID), levelID, limit, onlyMismatched)
+	offset, err := queryInt(c, "offset", 0)
+	if err != nil {
+		return failErr(c, err)
+	}
+	items, total, err := s.Svc.AdminListBattles(c.Context(), int64(userID), levelID, limit, onlyMismatched, offset)
 	if err != nil {
 		return failErr(c, err)
 	}
@@ -636,7 +640,15 @@ func (s *Server) adminUpdateShop(c *fiber.Ctx) error {
 }
 
 func (s *Server) adminAnnouncements(c *fiber.Ctx) error {
-	items, err := s.Svc.AdminListAnnouncements(c.Context())
+	limit, err := queryInt(c, "limit", 50)
+	if err != nil {
+		return failErr(c, err)
+	}
+	offset, err := queryInt(c, "offset", 0)
+	if err != nil {
+		return failErr(c, err)
+	}
+	items, err := s.Svc.AdminListAnnouncements(c.Context(), limit, offset)
 	if err != nil {
 		return failErr(c, err)
 	}
@@ -664,7 +676,15 @@ func (s *Server) adminCreateAnnouncement(c *fiber.Ctx) error {
 }
 
 func (s *Server) adminRedeemCodes(c *fiber.Ctx) error {
-	items, err := s.Svc.AdminListRedeemCodes(c.Context())
+	limit, err := queryInt(c, "limit", 50)
+	if err != nil {
+		return failErr(c, err)
+	}
+	offset, err := queryInt(c, "offset", 0)
+	if err != nil {
+		return failErr(c, err)
+	}
+	items, err := s.Svc.AdminListRedeemCodes(c.Context(), limit, offset)
 	if err != nil {
 		return failErr(c, err)
 	}
@@ -715,7 +735,11 @@ func (s *Server) adminAuditLogs(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	items, err := s.Svc.AdminListAuditLogs(c.Context(), limit)
+	offset, err := queryInt(c, "offset", 0)
+	if err != nil {
+		return failErr(c, err)
+	}
+	items, err := s.Svc.AdminListAuditLogs(c.Context(), limit, offset)
 	if err != nil {
 		return failErr(c, err)
 	}

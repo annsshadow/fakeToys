@@ -61,7 +61,7 @@ func TestResolveAdminDBError(t *testing.T) {
 func TestRedeemCodesBrokenBranches(t *testing.T) {
 	broken := openBrokenService(t)
 	ctx := context.Background()
-	if _, err := broken.AdminListRedeemCodes(ctx); err == nil {
+	if _, err := broken.AdminListRedeemCodes(ctx, 50, 0); err == nil {
 		t.Error("故障态兑换码列表应报错")
 	}
 	if _, err := broken.AdminCreateRedeemCode(ctx, "X", map[string]int{"coin": 1}, 1, nil); err == nil {
@@ -722,7 +722,7 @@ func TestStatsMidwayFailures(t *testing.T) {
 		ts := openScratchService(t)
 		// COUNT(battle_records) 成功 → users 改名 → 列表 LEFT JOIN 查询失败。
 		ts.renameTable(t, "users", "users_bak")
-		_, _, err := ts.AdminListBattles(ctx, 0, 0, 10, false)
+		_, _, err := ts.AdminListBattles(ctx, 0, 0, 10, false, 0)
 		ts.renameTable(t, "users_bak", "users")
 		mustErr(t, err, "list battles")
 	})

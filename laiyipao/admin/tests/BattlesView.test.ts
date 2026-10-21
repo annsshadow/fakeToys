@@ -179,7 +179,13 @@ describe('BattlesView 列表渲染', () => {
     const wrapper = await mountBattles()
     await wrapper.findAll('button').find((b) => b.text() === '筛选')!.trigger('click')
     await flushPromises()
-    expect(fetchBattles).toHaveBeenLastCalledWith({ user_id: undefined, level_id: undefined, limit: 50 })
+    // 2026-10-21（P5-1）：现在带 offset（分页）。
+  expect(fetchBattles).toHaveBeenLastCalledWith({
+    user_id: undefined,
+    level_id: undefined,
+    limit: 50,
+    offset: 0,
+  })
 
     // 通过组件事件驱动两个 el-input-number 的 v-model（与真实输入等价）
     const nums = wrapper.findAllComponents(ElInputNumber)
@@ -189,7 +195,12 @@ describe('BattlesView 列表渲染', () => {
     await flushPromises()
     await wrapper.findAll('button').find((b) => b.text() === '筛选')!.trigger('click')
     await flushPromises()
-    expect(fetchBattles).toHaveBeenLastCalledWith({ user_id: 5, level_id: 7, limit: 50 })
+    expect(fetchBattles).toHaveBeenLastCalledWith({
+      user_id: 5,
+      level_id: 7,
+      limit: 50,
+      offset: 0,
+    })
     wrapper.unmount()
   })
 
