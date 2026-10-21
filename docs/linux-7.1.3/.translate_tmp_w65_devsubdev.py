@@ -1,6 +1,6 @@
 import os
 
-F = r"D:/WORKSPACE/linux-7.1.3/docs/系统文档/userspace-api/media/v4l/dev-subdev.md"
+F = r"<LINUX_DOCS_SRC>/docs/系统文档/userspace-api/media/v4l/dev-subdev.md"
 
 T = {
 "######## Sub-device Interface":

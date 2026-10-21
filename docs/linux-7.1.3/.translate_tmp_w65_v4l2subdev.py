@@ -1,6 +1,6 @@
 import os
 
-F = r"D:/WORKSPACE/linux-7.1.3/docs/系统文档/driver-api/media/v4l2-subdev.md"
+F = r"<LINUX_DOCS_SRC>/docs/系统文档/driver-api/media/v4l2-subdev.md"
 
 T = {
 "### V4L2 sub-devices":

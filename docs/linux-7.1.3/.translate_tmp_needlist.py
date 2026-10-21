@@ -1,6 +1,6 @@
 import json, re, os
 
-base = 'D:/WORKSPACE/linux-7.1.3/docs/系统文档'
+base = '<LINUX_DOCS_SRC>/docs/系统文档'
 d = json.load(open(base + '/.translate_workers.json', encoding='utf-8'))
 files = d['workers'][195]
 

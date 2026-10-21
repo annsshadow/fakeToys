@@ -1,6 +1,6 @@
 import json, re, os
 
-BASE = "D:/WORKSPACE/linux-7.1.3/docs/系统文档"
+BASE = "<LINUX_DOCS_SRC>/docs/系统文档"
 d = json.load(open(os.path.join(BASE, ".translate_dispatch_cold2.json")))
 ch = d["chunks"][0]
 

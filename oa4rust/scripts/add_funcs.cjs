@@ -1,5 +1,8 @@
 const fs = require('node:fs')
-const content = fs.readFileSync('D:/WORKSPACE/fakeToys/oa4rust-web/apps/desktop/src/views/ProcessDesigner.vue', 'utf8')
+const path = require('node:path')
+// 从脚本自身位置推导目标文件：不在仓库里硬编码任何人的本机绝对路径。
+const TARGET = path.resolve(__dirname, '../frontend/apps/desktop/src/views/ProcessDesigner.vue')
+const content = fs.readFileSync(TARGET, 'utf8')
 const marker = 'onUnmounted(() => {\n  document.removeEventListener'
 const idx = content.indexOf(marker)
 if (idx === -1) {
@@ -169,5 +172,5 @@ L.push('  selectedNode.value=null; selectedEdge.value=null; pushHistory()')
 L.push('}')
 L.push('function deleteArchive(idx:number) { processArchive.value.splice(idx,1) }')
 const nc = content.substring(0, idx) + L.join('\n') + content.substring(idx)
-fs.writeFileSync('D:/WORKSPACE/fakeToys/oa4rust-web/apps/desktop/src/views/ProcessDesigner.vue', nc)
+fs.writeFileSync(TARGET, nc)
 console.log('Lines:', nc.split('\n').length)

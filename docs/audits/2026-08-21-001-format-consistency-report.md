@@ -1,7 +1,7 @@
 # 格式一致性检查报告（format-consistency）
 
 - 生成时间：2026-08-21T13:34:03.552636+00:00
-- 扫描根目录：`D:/WORKSPACE/fakeToys/docs/linux-7.1.3`
+- 扫描根目录：`docs/linux-7.1.3`
 - 文件总数：3942　耗时：1.16s　脚本：`format_consistency.py`
 
 ## 1. YAML Frontmatter

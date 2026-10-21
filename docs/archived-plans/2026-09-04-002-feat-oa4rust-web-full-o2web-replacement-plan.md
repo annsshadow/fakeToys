@@ -341,7 +341,7 @@ Day 5 (Phase 5):   补漏、验证、TypeScript检查、构建验证
 
 ```bash
 # 查看当前状态
-cd D:/WORKSPACE/fakeToys
+cd <REPO_ROOT>
 grep -c "^export const.*Api = {" oa4rust-web/packages/apis/src/index.ts      # API模块数
 ls oa4rust-web/apps/desktop/src/views/*.vue | wc -l                          # 视图数
 grep "path:" oa4rust-web/apps/desktop/src/main.ts | wc -l                     # 路由数

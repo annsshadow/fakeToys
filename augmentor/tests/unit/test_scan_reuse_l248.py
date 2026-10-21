@@ -374,7 +374,7 @@ class TestRoutingDecisionIsUntouched:
 
 
 #: 判倒排赢时，产出第一个块之前 traced current 的上限（字节）。
-#: 现量（`D:/WORKSPACE/l248_peak_probe.py`，1200×120 那档，两次读数 2 858 048 /
+#: 现量（`<OUTSIDE_REPO>/l248_peak_probe.py`，1200×120 那档，两次读数 2 858 048 /
 #: 2 857 379）：真路 **2.86 MB**；手工复刻「判完路仍握着列号表与逐趟数组」那一档
 #: **21.83 MB**（142 800 项的 dict ≈ 16 MB + 两份 int64 出现数组 2.3 MB）。
 #: 8 MiB 这根线两侧各留 2.7～2.9 倍余量：pass 侧宽到不会被 numpy 临时抖动碰响，

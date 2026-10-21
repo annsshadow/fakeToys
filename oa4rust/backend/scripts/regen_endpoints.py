@@ -16,12 +16,12 @@ Exclusions (triaged in docs/audits/2026-08-24-002-final-coverage-sweep.md §六)
 import re
 from pathlib import Path
 
-BASE = Path(r'D:\WORKSPACE\fakeToys\oa4rust')
+BASE = Path(__file__).resolve().parents[1]  # oa4rust/backend（不硬编码任何人的本机绝对路径）
 ENDPOINTS_FILE = BASE / 'tests' / 'behavior_comparison' / 'endpoints.rs'
 CRATES_DIR = BASE / 'crates'
 # Java reference source tree (monorepo sibling); when absent the generator
 # degrades gracefully and leaves java_war/java_action empty (all comparisons SKIP).
-O2SERVER_DIR = BASE.parent / 'oa' / 'o2server'
+O2SERVER_DIR = BASE.parents[1] / 'oa' / 'o2server'
 
 SKIP_CRATES = {'parity', 'mcp_server'}
 

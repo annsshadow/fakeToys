@@ -1,6 +1,6 @@
 import os, json
 
-F = r"D:/WORKSPACE/linux-7.1.3/docs/系统文档/driver-api/usb/dwc3.md"
+F = r"<LINUX_DOCS_SRC>/docs/系统文档/driver-api/usb/dwc3.md"
 
 T = {
 "## Synopsys DesignWare Core SuperSpeed USB 3.0 Controller":

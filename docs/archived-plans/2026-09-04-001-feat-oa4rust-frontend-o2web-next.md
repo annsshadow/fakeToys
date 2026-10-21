@@ -108,7 +108,7 @@ export { ThemeProvider }   // 主题切换（新：o2web 不支持）
 ## 三、Monorepo 结构
 
 ```
-D:/WORKSPACE/fakeToys/
+<REPO_ROOT>/
 ├── oa4rust/                      # 现有 Rust 后端（不动）
 └── oa4rust-web/                  # 全新前端 monorepo
     ├── pnpm-workspace.yaml

@@ -1,5 +1,8 @@
 const fs = require('node:fs')
-const content = fs.readFileSync('D:/WORKSPACE/fakeToys/oa4rust-web/apps/desktop/src/views/FormDesigner.vue', 'utf8')
+const path = require('node:path')
+// 从脚本自身位置推导目标文件：不在仓库里硬编码任何人的本机绝对路径。
+const TARGET = path.resolve(__dirname, '../frontend/apps/desktop/src/views/FormDesigner.vue')
+const content = fs.readFileSync(TARGET, 'utf8')
 
 // Add advanced functions before onMounted
 const marker = 'onMounted(loadForms)'
@@ -67,5 +70,5 @@ const lines = [
 ].join('\n')
 
 const newContent = content.substring(0, idx) + lines + content.substring(idx)
-fs.writeFileSync('D:/WORKSPACE/fakeToys/oa4rust-web/apps/desktop/src/views/FormDesigner.vue', newContent)
+fs.writeFileSync(TARGET, newContent)
 console.log('Lines:', newContent.split('\n').length)

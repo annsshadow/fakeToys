@@ -13,7 +13,7 @@
 | Node.js | **≥ 20** | `run-once.bat` 会主动探测，低于 20 直接跳过该候选 |
 | npm | 任意随 Node 附带版本 | 脚本会逐个候选校验，不信任第一个 PATH 命中 |
 | Playwright Chromium | 由脚本自动装 | 每次任务先 `setup:browser` 再 `verify:browser` |
-| 仓库路径 | 任意 | 本机为 `D:\WORKSPACE\fakeToys\auto-checkin`，**不硬编码**在任务里，用 `%~dp0` |
+| 仓库路径 | 任意 | 本机为 `<REPO_ROOT>\auto-checkin`，**不硬编码**在任务里，用 `%~dp0` |
 
 代码仓库已包含全部脚本，**换机器只需复制 `auto-checkin/` 目录 + 建计划任务**。
 

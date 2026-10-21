@@ -1,5 +1,5 @@
 import os, re
-BASE="D:/WORKSPACE/linux-7.1.3/docs/系统文档"
+BASE="<LINUX_DOCS_SRC>/docs/系统文档"
 p=os.path.join(BASE,"sphinx-includes/subproject-index.md")
 orig=open(p,encoding='utf-8').read()
 print("BEFORE:",repr(orig))

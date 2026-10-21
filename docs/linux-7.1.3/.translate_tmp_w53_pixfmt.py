@@ -1,5 +1,5 @@
 import os
-F = r"D:/WORKSPACE/linux-7.1.3/docs/系统文档\userspace-api/media/v4l/pixfmt-yuv-planar.md"
+F = r"<LINUX_DOCS_SRC>/docs/系统文档\userspace-api/media/v4l/pixfmt-yuv-planar.md"
 m = {
 "######## Planar YUV formats": "######## 平面 YUV 格式",
 "Planar formats split luma and chroma data in separate memory regions. They": "平面格式将亮度（luma）和色度（chroma）数据分割在独立的内存区域中。它们",

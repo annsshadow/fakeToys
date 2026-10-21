@@ -1,6 +1,7 @@
 /** 一次性探针：复现 replay_vectors.json 的某个用例，导出完整 replay 事件流 + 渲染事件。 */
 import { readFileSync, writeFileSync } from 'node:fs'
-import { dirname, resolve } from 'node:path'
+import { tmpdir } from 'node:os'
+import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { equippedFromSnapshot, type BuildSnapshot } from '../src/game/replay'
 import { scoreRulesFromServer } from '../src/game/score'
@@ -14,7 +15,7 @@ const fixture = JSON.parse(
 const doc = JSON.parse(readFileSync(resolve(serverRoot, 'testdata/replay_vectors.json'), 'utf8'))
 
 const idx = Number(process.argv[2] ?? 1)
-const out = process.argv[3] ?? '<HOME>/AppData/Local/Temp/opencode/ts-replay.txt'
+const out = process.argv[3] ?? join(tmpdir(), 'ts-replay.txt')
 const c = doc.cases[idx]
 
 const level = fixture.levels.find((l: any) => l.id === c.level_id)

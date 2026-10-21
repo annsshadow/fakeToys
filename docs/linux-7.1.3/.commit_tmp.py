@@ -1,6 +1,6 @@
 import json, re, os, sys
 
-BASE = "D:/WORKSPACE/linux-7.1.3/docs/系统文档"
+BASE = "<LINUX_DOCS_SRC>/docs/系统文档"
 d = json.load(open(os.path.join(BASE, ".translate_dispatch_cold2.json")))
 chunk = set(p.replace("\\","/") for p in d["chunks"][0])
 zh_re = re.compile(r'[\u3400-\u4dbf\u4e00-\u9fff]')

@@ -1,5 +1,8 @@
 const fs = require('node:fs')
-let content = fs.readFileSync('D:/WORKSPACE/fakeToys/oa4rust-web/apps/desktop/src/views/ProcessDesigner.vue', 'utf8')
+const path = require('node:path')
+// 从脚本自身位置推导目标文件：不在仓库里硬编码任何人的本机绝对路径。
+const TARGET = path.resolve(__dirname, '../frontend/apps/desktop/src/views/ProcessDesigner.vue')
+let content = fs.readFileSync(TARGET, 'utf8')
 
 // === 1. Add path prediction state after tempEdge ===
 const tempEdgeMarker =
@@ -363,5 +366,5 @@ const newStyles = `
 content = content.replace(styleEndMarker, `${newStyles}</style>`)
 
 // Write back
-fs.writeFileSync('D:/WORKSPACE/fakeToys/oa4rust-web/apps/desktop/src/views/ProcessDesigner.vue', content)
+fs.writeFileSync(TARGET, content)
 console.log('Done. Lines:', content.split('\n').length)

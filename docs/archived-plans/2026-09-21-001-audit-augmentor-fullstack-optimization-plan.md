@@ -640,7 +640,7 @@ CLI 与 API/Web 之间存在 **3 倍以上的能力落差**，且没有任何机
 ### 本机验证环境（已就绪）
 
 ```
-Python: <HOME>\.workbuddy-ai\binaries\python\envs\aug\Scripts\python.exe
+Python: <HOME>/.workbuddy-ai/binaries\python\envs\aug\Scripts\python.exe
         （已按 requirements-dev.txt 安装，可跑全量测试）
 基线：  pytest -q  →  3061 passed, 3 skipped, 99.46% coverage, 91.73s
 ```

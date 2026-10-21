@@ -1,6 +1,6 @@
 import os, sys
 
-base = 'D:/WORKSPACE/linux-7.1.3/docs/系统文档'
+base = '<LINUX_DOCS_SRC>/docs/系统文档'
 lines = [x.strip() for x in open(base + '/.translate_need.txt', encoding='utf-8').read().splitlines() if x.strip()]
 start = int(sys.argv[1]) if len(sys.argv) > 1 else 0
 n = int(sys.argv[2]) if len(sys.argv) > 2 else 20

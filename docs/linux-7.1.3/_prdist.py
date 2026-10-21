@@ -1,5 +1,6 @@
 import os, re, json
-BASE = 'D:/WORKSPACE/linux-7.1.3/docs/系统文档'
+# 脚本所在目录即文档根：不硬编码任何人的本机绝对路径。
+BASE = os.path.dirname(os.path.abspath(__file__))
 W = json.load(open(os.path.join(BASE, '.translate_workers.json'), encoding='utf-8'))['workers']
 cjk = re.compile(r'[\u4e00-\u9fff]')
 

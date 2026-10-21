@@ -4,7 +4,7 @@
 你是文档翻译子任务执行器。目标：把指定的英文 Markdown 文档翻译为简体中文，**原地覆盖**原文件。绝不改`translations/` 子目录
 > 本任务是`docs/系统文档/` 下自动生成的 Markdown *本地原地翻译**，不是内核源码补丁；**不要执行 git commit / checkpatch / SPDX 等内核提交流*，也不要改动 `translations/` 子树
 ## 0. 输入
-- 你会被告知你**worker 编号 i**-based）- 读取 `D:/WORKSPACE/linux-7.1.3/docs/系统文档/.translate_workers.json`，其顶层`{"workers": [[路径,...], ...]}`；取 `workers[i]`（一个绝对路径列表）作为本任务要处理的文件集合
+- 你会被告知你**worker 编号 i**-based）- 读取 `<LINUX_DOCS_SRC>/docs/系统文档/.translate_workers.json`，其顶层`{"workers": [[路径,...], ...]}`；取 `workers[i]`（一个绝对路径列表）作为本任务要处理的文件集合
 ## 1. 术语与保留规则（严格遵守- 内核标准译法（仅用于自然语言 prose）：
   kernel=内呮核, module=妯″潡, scheduler=璋冨害鍣? process=杩涚▼, thread=绾跨▼,
   spinlock=自旋 mutex=互斥 semaphore=信号 page= interrupt=中断,
@@ -52,7 +52,7 @@ print("chunks:",len(final))
 ```
 b) 依次按编号对每个块文`000.txt,001.txt...`：`Read` **仅翻译自然语言 prose**（同样保留代标识链接）→ **追加**写入 `F.tmp`（严格按编号顺序追写，不可乱序、不可重复）c) 全部块完成后 `os.replace(F.tmp, F)`d) 自检同第 2.6 节；确认最``` 围栏偶数、prose 中文比例 3%
 ## 4. 完成报告（必须）
-完成后，**写入** `D:/WORKSPACE/linux-7.1.3/docs/系统文档/.translate_results/w{i}.json`，内容：
+完成后，**写入** `<LINUX_DOCS_SRC>/docs/系统文档/.translate_results/w{i}.json`，内容：
 ```json
 {"worker": i, "ok": <已完成数>, "skip": <跳过, "fail": <失败,
  "files": {"<相对路径>": "DONE|SKIP|FAIL:<原因>"}}

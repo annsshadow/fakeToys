@@ -106,7 +106,7 @@ This plan upgrades the oa4rust codebase across four parallel axes: (1) replace 2
 **Files:**
 - Modify: `crates/*/src/routes.rs` (crates with missing routes)
 - Reference: `docs/brainstorms/oa4rust-endpoint-inventory.md`
-- Reference: `D:\WORKSPACE\fakeToys\oa\o2server\` (Java source)
+- Reference: `<OUTSIDE_REPO>/oa/o2server/` (Java source)
 
 **Approach:**
 1. Parse `docs/brainstorms/oa4rust-endpoint-inventory.md` to extract crates with "partial" or "stub" status.
@@ -366,7 +366,7 @@ This plan upgrades the oa4rust codebase across four parallel axes: (1) replace 2
 ## Sources & References
 
 - **Origin document:** This plan was authored directly from a multi-direction request; no upstream requirements doc exists.
-- **Java reference:** `D:\WORKSPACE\fakeToys\oa\o2server\` (Maven multi-module JAX-RS service)
+- **Java reference:** `<OUTSIDE_REPO>/oa/o2server/` (Maven multi-module JAX-RS service)
 - **Endpoint inventory:** `docs/brainstorms/oa4rust-endpoint-inventory.md`
 - **Completion plan:** `docs/brainstorms/2026-08-04-oa4rust-completion-plan.md`
 - **Existing test infra:** `crates/shared/src/tests.rs`, `tests/behavior_compare.rs`, `tests/behavior_comparison/`

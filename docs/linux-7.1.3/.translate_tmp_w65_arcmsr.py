@@ -1,6 +1,6 @@
 import os
 
-F = r"D:/WORKSPACE/linux-7.1.3/docs/系统文档/scsi/arcmsr_spec.md"
+F = r"<LINUX_DOCS_SRC>/docs/系统文档/scsi/arcmsr_spec.md"
 
 T = {
 "## ARECA FIRMWARE SPEC":

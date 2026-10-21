@@ -1,6 +1,6 @@
 import os, re, json
 
-BASE = "D:/WORKSPACE/linux-7.1.3/docs/系统文档"
+BASE = "<LINUX_DOCS_SRC>/docs/系统文档"
 FIX = {
  "driver-api/xilinx/index.md": ("- [eemi](eemi)", "- [eemi](eemi)\n\n本页面收录 Xilinx FPGA 相关文档入口。"),
  "fpga/index.md": ("- [dfl](dfl)", "- [dfl](dfl)\n\n本页面收录 FPGA 相关子系统文档。"),

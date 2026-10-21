@@ -58,8 +58,8 @@ Generated from `oa/o2web/source/x_component_*/`:
 # docs/oa4rust/scripts/generate_cards.py
 import os, re, json
 
-source_dir = r'D:\WORKSPACE\fakeToys\oa\o2web\source'
-docs_dir = r'D:\WORKSPACE\fakeToys\docs\oa\modules\o2web'
+source_dir = r'oa\o2web\source'
+docs_dir = r'docs\oa\modules\o2web'
 
 for d in sorted(os.listdir(source_dir)):
     if not d.startswith('x_component_'):

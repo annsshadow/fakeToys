@@ -1,6 +1,6 @@
 import os, re, json
 
-BASE = "D:/WORKSPACE/linux-7.1.3/docs/系统文档"
+BASE = "<LINUX_DOCS_SRC>/docs/系统文档"
 
 # (path, [(old, new), ...])  light translations
 REPL = {

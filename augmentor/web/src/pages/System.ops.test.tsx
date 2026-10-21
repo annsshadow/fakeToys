@@ -145,8 +145,8 @@ const fx = vi.hoisted(() => {
   const STREAM_QUALITY = { total_input: 5, total_output: 2, processed: 5 }
   const MIGRATION = {
     migration_id: 'fd606983',
-    source_path: 'C:\\Users\\user\\AppData\\Local\\Temp\\l234feplbuc07\\ds\\mixed.json',
-    target_path: 'C:\\Users\\user\\AppData\\Local\\Temp\\l234feplbuc07\\ds\\mig.json',
+    source_path: 'D:\\data\\ds\\mixed.json',
+    target_path: 'D:\\data\\ds\\mig.json',
     total_items: 5,
     migrated_items: 5,
     failed_items: 0,

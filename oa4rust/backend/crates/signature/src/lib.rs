@@ -813,6 +813,13 @@ mod tests {
     use axum::http::{Request, StatusCode};
     use tower::util::ServiceExt;
 
+    /// 测试夹具密钥对 —— **自签、仅供本模块单元测试使用、不得复用到任何真实环境**。
+    ///
+    /// 证书主体是 `oa2rust test signer`（自签根），公钥证书 `TEST_CERT` 与本私钥成对。
+    /// 它没有保密价值（拿到即可自签任意内容），因此按仓库「Secrets & Environment Data」
+    /// 规则属于**允许入库的测试夹具密钥**——但该规则要求夹具必须可自证：
+    /// `test_fixture_key_pair_is_self_signed_and_marked_as_test` 断言它自签且主体带 `test`
+    /// 标记，换入真密钥当场红。
     const TEST_PRIVATE_KEY: &str = r#"-----BEGIN PRIVATE KEY-----
 MIIEuwIBADANBgkqhkiG9w0BAQEFAASCBKUwggShAgEAAoIBAQDYtYImjDsJZuR9
 hRuRVSkApAZJcsgZWFRbwNlj8bWvY/yuttvpCUgqOvRNSHsh9+czU03FSSfF6R0n
@@ -999,6 +1006,41 @@ S8ARr2vqmeZSYIJABzClXMa1aS2XpA4=
         let links = PdfSignatureService::verify_cert_chain(TEST_CERT)
             .expect("single self-signed cert forms a valid chain");
         assert_eq!(links.len(), 1);
+    }
+
+    /// 仓库规则「Secrets & Environment Data」把测试夹具密钥列为**唯一允许入库的私钥**，
+    /// 但要求它可自证。这条守卫就是那个自证：
+    ///
+    /// 1. 夹具证书**自签**（subject == issuer）——真签发链的证书不满足；
+    /// 2. 主体带 `test` 标记——真密钥的主体是真实主体名，不含 `test`；
+    /// 3. 夹具私钥与证书**配对**（私钥导出的公钥 == 证书里的公钥）——成对出现是夹具的定义。
+    ///
+    /// 任一条不满足即红 ⇒ 有人把真实密钥换进这个夹具时当场被拦下，而不是等到泄漏。
+    #[test]
+    fn test_fixture_key_pair_is_self_signed_and_marked_as_test() {
+        let links = PdfSignatureService::verify_cert_chain(TEST_CERT)
+            .expect("fixture cert parses into a chain");
+        assert!(
+            links[0].is_self_signed,
+            "夹具证书必须自签（subject == issuer），否则它不是测试夹具而是真签发链：subject={} issuer={}",
+            links[0].subject,
+            links[0].issuer
+        );
+        assert!(
+            links[0].subject.to_lowercase().contains("test"),
+            "夹具证书主体必须带 `test` 标记，以便一眼认出它不是真密钥：subject={}",
+            links[0].subject
+        );
+
+        let private_key = PdfSignatureService::parse_private_key(TEST_PRIVATE_KEY)
+            .expect("fixture private key parses");
+        let public_key = PdfSignatureService::parse_public_key(TEST_CERT)
+            .expect("fixture certificate parses");
+        assert_eq!(
+            private_key.public().as_ref(),
+            public_key.as_slice(),
+            "夹具私钥必须与夹具证书配对（成对出现是「测试夹具」的定义）"
+        );
     }
 }
 

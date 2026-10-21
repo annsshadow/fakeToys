@@ -16,8 +16,10 @@ if errorlevel 1 (
 
 REM Prefer the Node version used by the task, but fall back to stable npm shims.
 REM Validate each candidate instead of trusting a stale or broken first path.
+REM %LOCALAPPDATA% instead of a literal C:\Users\<name> path: same nvm location,
+REM without committing a real account name into the repo.
 set "NPM_CMD="
-call :try_npm "<HOME>\AppData\Local\nvm\v20.18.1\npm.cmd"
+call :try_npm "%LOCALAPPDATA%\nvm\v20.18.1\npm.cmd"
 call :try_npm "%APPDATA%\npm\npm.cmd"
 call :try_npm "%ProgramFiles%\nodejs\npm.cmd"
 for /f "delims=" %%I in ('where npm 2^>nul') do call :try_npm "%%I"

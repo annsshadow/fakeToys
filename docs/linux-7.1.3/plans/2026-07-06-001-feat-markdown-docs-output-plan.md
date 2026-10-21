@@ -116,7 +116,7 @@ deepened: 2026-07-06
 - `tools/docs/sphinx-build-wrapper` 的目录遍历和子进程调用风格- `tools/docs/sphinx-pre-install` 的依赖检查与错误提示风格
 **Execution note:** 先用 `process/subprocess.rst` `admin-guide/kernel-parameters.rst` 等代表文件手动验Pandoc 输出质量，确认标题层级、代码块、表格、交叉引用在转换后可接受，再固定后处理规则
 **Test scenarios:**
-- Happy path: HTML 文件成功转换为结构对应的 Markdown 文件- 缺失 pandoc: 脚本检测到 pandoc 不在 PATH 时打印安装提示并退1- 嵌套目录: `BUILDDIR/process/subdir/page.html`（位`BUILDDIR/<sphinxdir>/html/` 嵌套结构中）正确转换`BUILDDIR/markdown/process/subdir/page.md`- 交叉引用: Sphinx 生成的内部链接（`<a class="reference internal" href="../subdir/page.html#anchor">`）在 Markdown 中变`[text](subdir/page.md#anchor)`，相对路径正确- headerlink 清理: 页面中的 `¶` Permalink 链接Markdown 输出中不存在- flat-table 合并单元 包含 `colspan` `rowspan` `<table>` 触发脚本警告，该表格保留为原HTML 块而非损坏Markdown 表格- Rust doc 排除: `BUILDDIR` 中包Rust 生成HTML 子目录时，脚本跳过该目录，不产生对应Markdown 文件- 绝对路径: `--htmldir` 接收绝对路径（如 `D:/WORKSPACE/linux-7.1.3/Documentation/output/html`）时正常转换- Pandoc 版本检 脚本检测到 pandoc 版本低于 2.17 时打印警告并退1
+- Happy path: HTML 文件成功转换为结构对应的 Markdown 文件- 缺失 pandoc: 脚本检测到 pandoc 不在 PATH 时打印安装提示并退1- 嵌套目录: `BUILDDIR/process/subdir/page.html`（位`BUILDDIR/<sphinxdir>/html/` 嵌套结构中）正确转换`BUILDDIR/markdown/process/subdir/page.md`- 交叉引用: Sphinx 生成的内部链接（`<a class="reference internal" href="../subdir/page.html#anchor">`）在 Markdown 中变`[text](subdir/page.md#anchor)`，相对路径正确- headerlink 清理: 页面中的 `¶` Permalink 链接Markdown 输出中不存在- flat-table 合并单元 包含 `colspan` `rowspan` `<table>` 触发脚本警告，该表格保留为原HTML 块而非损坏Markdown 表格- Rust doc 排除: `BUILDDIR` 中包Rust 生成HTML 子目录时，脚本跳过该目录，不产生对应Markdown 文件- 绝对路径: `--htmldir` 接收绝对路径（如 `<LINUX_DOCS_SRC>/Documentation/output/html`）时正常转换- Pandoc 版本检 脚本检测到 pandoc 版本低于 2.17 时打印警告并退1
 **Verification:**
 - 对代表性文档抽样检查转换后Markdown：标题层级正确、代码块使用 fenced 语法、表格可识别、交叉引用链接可点击- `make markdowndocs` 整体流程退出码0
 ---

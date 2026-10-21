@@ -1,6 +1,6 @@
 import os, re, json
 
-BASE="D:/WORKSPACE/linux-7.1.3/docs/系统文档"
+BASE="<LINUX_DOCS_SRC>/docs/系统文档"
 with open('.translate_dispatch_final.json','r',encoding='utf-8') as f:
     paths = json.load(f)['chunks'][6]
 
