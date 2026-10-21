@@ -418,6 +418,7 @@ grep -rn "Record<string, unknown>" admin/src    # 0 处**业务使用**
 | `burn_cloud` 火区实现 | 见 §2 ②：会改 `replay_hash` → 存量战报永久失去可重放性，且要重跑 100 关平衡基线。规格留档待拍板 |
 | 文档站目录/搜索/深链等子项（P6-12 余项） | 本轮只落地了「装备图鉴」页签；侧边栏目录（仍 `el-tabs` 横排）、搜索、深链、`gems`/`skins`/`recipes` 展示、关卡地形与 BOSS 字段、移动端横向溢出均未做 |
 | `.debug-tag` 与 `rank.vue` 死分支（P6-4 余项） | `.debug-tag`（`battle.vue` 的 CSS 规则）与 `formatScore` 两分支同值（`rank.vue`）未清；不影响行为，属卫生项 |
+| 列表端点「一行坏数据炸掉整页」 | 二轮审计 P2 复核后确认是**有意的设计**（第 149 轮 fail-loud 清扫，`failloud_sweep_test.go` 在守）：反面是「静默显示成空」，那正是本仓库反复要消灭的缺陷。取舍已写进代码注释（`adminapi.go` 的 `AdminListRedeemCodes` / `AdminListAuditLogs`）。500 只回通用文案同样是**有意的安全姿态**（不泄漏 DB 报错），具体坏在哪行进服务端日志。要改 = 改一个有守卫的刻意决定，属产品决策 |
 | miniapp 全量测试真机复核 | 收尾数字 1080 为真机实测；受限环境复跑受临时目录 `EPERM` 间歇影响（1017~1043 波动）。**待确认**：真机复跑核对通过数 |
 
 

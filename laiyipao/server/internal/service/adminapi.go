@@ -737,6 +737,18 @@ func (s *Service) AdminListRedeemCodes(ctx context.Context, limit, offset int) (
 	if limit <= 0 || limit > 500 {
 		limit = 50
 	}
+	// ⚠️ fail-loud 的取舍（2026-10-21 二轮审计 P2 复核后确认是**有意设计**）：
+	// 坏 jsonb 会让**整页** 500 —— 一行坏数据挡住了另外 49 行好数据。
+	//
+	// 但这是**故意的**：第 149 轮的 fail-loud 清扫要求这些方法对坏
+	// jsonb **报错**（`failloud_sweep_test.go` 在守），反面是「静默显示成空」——
+	// 那正是本仓库反复要消灭的那类缺陷。
+	//
+	// 而 500 只回一句通用文案也是**有意的安全姿态**（不泄漏 DB 报错 / SQL 片段），
+	// 具体是哪一行坏，进服务端日志（见 httpapi/middleware.go 的 failErr）。
+	//
+	// 写在这里是为了让下一次审计**不要**再把它当新问题报一遍。
+	// 要改它 = 改一个有测试守卫的**刻意决定**，那是产品决策，不是修 bug。
 	rows, err := s.pool.Query(ctx,
 		`SELECT id, code, reward, max_uses, used_count, expires_at, enabled FROM redeem_codes ORDER BY id LIMIT $1 OFFSET $2`, limit, offset)
 	if err != nil {
@@ -809,6 +821,18 @@ func (s *Service) AdminListAuditLogs(ctx context.Context, limit, offset int) ([]
 	if err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM admin_audit_logs`).Scan(&total); err != nil {
 		return nil, 0, fmt.Errorf("admin admin_audit_logs count: %w", err)
 	}
+	// ⚠️ fail-loud 的取舍（2026-10-21 二轮审计 P2 复核后确认是**有意设计**）：
+	// 坏 jsonb 会让**整页** 500 —— 一行坏数据挡住了另外 49 行好数据。
+	//
+	// 但这是**故意的**：第 149 轮的 fail-loud 清扫要求这些方法对坏
+	// jsonb **报错**（`failloud_sweep_test.go` 在守），反面是「静默显示成空」——
+	// 那正是本仓库反复要消灭的那类缺陷。
+	//
+	// 而 500 只回一句通用文案也是**有意的安全姿态**（不泄漏 DB 报错 / SQL 片段），
+	// 具体是哪一行坏，进服务端日志（见 httpapi/middleware.go 的 failErr）。
+	//
+	// 写在这里是为了让下一次审计**不要**再把它当新问题报一遍。
+	// 要改它 = 改一个有测试守卫的**刻意决定**，那是产品决策，不是修 bug。
 	rows, err := s.pool.Query(ctx,
 		`SELECT id, admin_id, username, action, target, detail, created_at
 		 FROM admin_audit_logs ORDER BY id DESC LIMIT $1 OFFSET $2`, limit, offset)
