@@ -401,7 +401,7 @@ func (s *Service) AdminEquipment(ctx context.Context) (AdminEquipmentResp, error
 }
 
 // AdminListDefenses 返回全部防线。
-func (s *Service) AdminListDefenses(ctx context.Context, limit int) ([]AdminDefenseView, int64, error) {
+func (s *Service) AdminListDefenses(ctx context.Context, limit int, offset int) ([]AdminDefenseView, int64, error) {
 	if limit <= 0 || limit > 200 {
 		limit = 50
 	}
@@ -409,12 +409,19 @@ func (s *Service) AdminListDefenses(ctx context.Context, limit int) ([]AdminDefe
 	if err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM defenses`).Scan(&total); err != nil {
 		return nil, 0, err
 	}
+	// ⚠️ 2026-10-21（二轮审计 P2-6）：补 offset ——
+	// 此前只能看前 100 条，而 `total` 是全量 COUNT，于是
+	// 「共 N 条防线」却只看得到 100 条（而且漏掉的是**弱**防线，
+	// 因为按战力倒序）。
+	if offset < 0 {
+		offset = 0
+	}
 	rows, err := s.pool.Query(ctx, `
 		SELECT d.id, d.owner_id, u.nickname, d.name, d.power, d.element_coverage,
 		       d.mastery_done, d.wins, d.losses, d.shielded_until, d.updated_at,
 		       d.snapshot_hash
 		FROM defenses d JOIN users u ON u.id = d.owner_id
-		ORDER BY d.power DESC LIMIT $1`, limit)
+		ORDER BY d.power DESC LIMIT $1 OFFSET $2`, limit, offset)
 	if err != nil {
 		return nil, 0, fmt.Errorf("admin defenses: %w", err)
 	}
@@ -638,15 +645,42 @@ func validWalletCurrency(k string) bool {
 	if _, ok := walletColumns[k]; ok {
 		return true
 	}
-	return isWalletToken(k)
+	if isWalletToken(k) {
+		return true
+	}
+	// ⚠️ 2026-10-21（二轮审计 P2）：`equipment_<id>` 也是合法的 payload 键。
+	//
+	// 此前这里不认它 → `PUT /admin/shop/:id {"payload":{"equipment_5":1}}` 被 400 拒，
+	// 于是**后台改不了、删不掉**种子造出来的装备商品（读写不对称：
+	// 种子能造，后台不能改）。
+	//
+	// 判定引用生产代码的谓词（`isEquipmentPayloadKey`），别把前缀抄一遍。
+	return isEquipmentPayloadKey(k)
 }
 
 // AdminListAnnouncements 返回公告。
-func (s *Service) AdminListAnnouncements(ctx context.Context, limit, offset int) ([]AdminAnnouncementView, error) {
+func (s *Service) AdminListAnnouncements(ctx context.Context, limit, offset int) ([]AdminAnnouncementView, int64, error) {
+	// ⚠️ 2026-10-21（二轮审计 P2）：负 offset 必须夹到 0 ——
+	// 否则 PostgreSQL 报 `OFFSET must not be negative` → 整页 500。
+	if offset < 0 {
+		offset = 0
+	}
+	// ⚠️ 2026-10-21（二轮审计 P2-6）：`total` 必须是**全量行数**，
+	// 不是当前页的条数 —— 前端要拿它算页数。
+	var total int64
+	if err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM announcements`).Scan(&total); err != nil {
+		return nil, 0, fmt.Errorf("admin announcements count: %w", err)
+	}
+	// ⚠️ 2026-10-21：limit 必须夹住 ——
+	// `limit=0` 在 SQL 里是「**返回零行**」（不是「不限」），
+	// `limit=999999` 则是全表扫描。
+	if limit <= 0 || limit > 500 {
+		limit = 50
+	}
 	rows, err := s.pool.Query(ctx,
 		`SELECT id, title, body, published, published_at, created_at FROM announcements ORDER BY id DESC LIMIT $1 OFFSET $2`, limit, offset)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
 	var out []AdminAnnouncementView
@@ -656,14 +690,14 @@ func (s *Service) AdminListAnnouncements(ctx context.Context, limit, offset int)
 		var published bool
 		var publishedAt, createdAt *time.Time
 		if err := rows.Scan(&id, &title, &body, &published, &publishedAt, &createdAt); err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		out = append(out, AdminAnnouncementView{
 			ID: id, Title: title, Body: body, Published: published,
 			PublishedAt: publishedAt, CreatedAt: createdAt,
 		})
 	}
-	return out, rows.Err()
+	return out, total, rows.Err()
 }
 
 // AdminCreateAnnouncement 创建公告。
@@ -685,11 +719,28 @@ func (s *Service) AdminCreateAnnouncement(ctx context.Context, title, body strin
 }
 
 // AdminListRedeemCodes 返回兑换码。
-func (s *Service) AdminListRedeemCodes(ctx context.Context, limit, offset int) ([]AdminRedeemCodeView, error) {
+func (s *Service) AdminListRedeemCodes(ctx context.Context, limit, offset int) ([]AdminRedeemCodeView, int64, error) {
+	// ⚠️ 2026-10-21（二轮审计 P2）：负 offset 必须夹到 0 ——
+	// 否则 PostgreSQL 报 `OFFSET must not be negative` → 整页 500。
+	if offset < 0 {
+		offset = 0
+	}
+	// ⚠️ 2026-10-21（二轮审计 P2-6）：`total` 必须是**全量行数**，
+	// 不是当前页的条数 —— 前端要拿它算页数。
+	var total int64
+	if err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM redeem_codes`).Scan(&total); err != nil {
+		return nil, 0, fmt.Errorf("admin redeem_codes count: %w", err)
+	}
+	// ⚠️ 2026-10-21：limit 必须夹住 ——
+	// `limit=0` 在 SQL 里是「**返回零行**」（不是「不限」），
+	// `limit=999999` 则是全表扫描。
+	if limit <= 0 || limit > 500 {
+		limit = 50
+	}
 	rows, err := s.pool.Query(ctx,
 		`SELECT id, code, reward, max_uses, used_count, expires_at, enabled FROM redeem_codes ORDER BY id LIMIT $1 OFFSET $2`, limit, offset)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
 	var out []AdminRedeemCodeView
@@ -700,20 +751,20 @@ func (s *Service) AdminListRedeemCodes(ctx context.Context, limit, offset int) (
 		var expires *time.Time
 		var enabled bool
 		if err := rows.Scan(&id, &code, &rewardRaw, &maxUses, &used, &expires, &enabled); err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		var reward map[string]int
 		// fail-loud: a broken reward map would otherwise read as "this code
 		// grants nothing".
 		if err := json.Unmarshal(rewardRaw, &reward); err != nil {
-			return nil, fmt.Errorf("admin redeem codes: code %s has invalid reward jsonb: %w", code, err)
+			return nil, 0, fmt.Errorf("admin redeem codes: code %s has invalid reward jsonb: %w", code, err)
 		}
 		out = append(out, AdminRedeemCodeView{
 			ID: id, Code: code, Reward: reward, MaxUses: maxUses,
 			UsedCount: used, ExpiresAt: expires, Enabled: enabled,
 		})
 	}
-	return out, rows.Err()
+	return out, total, rows.Err()
 }
 
 // AdminCreateRedeemCode 创建兑换码。
@@ -743,15 +794,26 @@ func (s *Service) AdminCreateRedeemCode(ctx context.Context, code string, reward
 }
 
 // AdminListAuditLogs 返回操作审计。
-func (s *Service) AdminListAuditLogs(ctx context.Context, limit int, offset int) ([]AdminAuditLogView, error) {
+func (s *Service) AdminListAuditLogs(ctx context.Context, limit, offset int) ([]AdminAuditLogView, int64, error) {
 	if limit <= 0 || limit > 500 {
 		limit = 100
+	}
+	// ⚠️ 2026-10-21（二轮审计 P2）：负 offset / 负 limit 必须夹住 ——
+	// 否则 PostgreSQL 直接报 `OFFSET must not be negative` → 整页 500。
+	if offset < 0 {
+		offset = 0
+	}
+	// ⚠️ 2026-10-21（二轮审计 P2-6）：`total` 必须是**全量行数**，
+	// 不是当前页的条数 —— 前端要拿它算页数。
+	var total int64
+	if err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM admin_audit_logs`).Scan(&total); err != nil {
+		return nil, 0, fmt.Errorf("admin admin_audit_logs count: %w", err)
 	}
 	rows, err := s.pool.Query(ctx,
 		`SELECT id, admin_id, username, action, target, detail, created_at
 		 FROM admin_audit_logs ORDER BY id DESC LIMIT $1 OFFSET $2`, limit, offset)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
 	var out []AdminAuditLogView
@@ -761,7 +823,7 @@ func (s *Service) AdminListAuditLogs(ctx context.Context, limit int, offset int)
 		var detail []byte
 		var createdAt time.Time
 		if err := rows.Scan(&id, &adminID, &username, &action, &target, &detail, &createdAt); err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		var d any
 		// 2026-10-21: this used to be `_ = json.Unmarshal(detail, &d)`, so a
@@ -769,12 +831,12 @@ func (s *Service) AdminListAuditLogs(ctx context.Context, limit int, offset int)
 		// all". The write side already writes {"detail_error": ...}; the read
 		// side must not pretend a broken payload is an empty one.
 		if err := json.Unmarshal(detail, &d); err != nil {
-			return nil, fmt.Errorf("admin audit logs: entry %v has invalid detail jsonb: %w", id, err)
+			return nil, 0, fmt.Errorf("admin audit logs: entry %v has invalid detail jsonb: %w", id, err)
 		}
 		out = append(out, AdminAuditLogView{
 			ID: id, AdminID: adminID, Username: username, Action: action,
 			Target: target, Detail: d, CreatedAt: createdAt,
 		})
 	}
-	return out, rows.Err()
+	return out, total, rows.Err()
 }

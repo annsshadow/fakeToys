@@ -131,7 +131,7 @@ func (s *Server) adminLevels(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	return c.JSON(service.AdminLevelsResp{Items: items, Total: total})
+	return c.JSON(service.NormalizeNilSlices(service.AdminLevelsResp{Items: items, Total: total}))
 }
 
 func (s *Server) adminLevelWaves(c *fiber.Ctx) error {
@@ -205,7 +205,7 @@ func (s *Server) adminSkills(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	return c.JSON(data)
+	return c.JSON(service.NormalizeNilSlices(data))
 }
 
 func (s *Server) adminUpdateSkill(c *fiber.Ctx) error {
@@ -233,7 +233,7 @@ func (s *Server) adminEquipment(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	return c.JSON(data)
+	return c.JSON(service.NormalizeNilSlices(data))
 }
 
 // adminReactions 返回反应表（key + 中文名 + 各档数值）。
@@ -278,7 +278,7 @@ func (s *Server) adminUsers(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	return c.JSON(service.AdminUsersResp{Items: items, Total: total})
+	return c.JSON(service.NormalizeNilSlices(service.AdminUsersResp{Items: items, Total: total}))
 }
 
 // adminUserDetail 返回一个玩家的详情（构筑、钱包、最近战报、验真明细）。
@@ -297,7 +297,7 @@ func (s *Server) adminUserDetail(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	return c.JSON(detail)
+	return c.JSON(service.NormalizeNilSlices(detail))
 }
 
 func (s *Server) adminBanUser(c *fiber.Ctx) error {
@@ -423,7 +423,7 @@ func (s *Server) adminBattles(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	return c.JSON(service.AdminBattlesResp{Items: items, Total: total})
+	return c.JSON(service.NormalizeNilSlices(service.AdminBattlesResp{Items: items, Total: total}))
 }
 
 // adminRecomputes 结算重算审计台账（R1）。
@@ -461,7 +461,7 @@ func (s *Server) adminRecomputes(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	return c.JSON(service.AdminRecomputesResp{Items: items, Total: total})
+	return c.JSON(service.NormalizeNilSlices(service.AdminRecomputesResp{Items: items, Total: total}))
 }
 
 // adminRecomputeStats 重算总账 + 按关卡分布 + **闸门当前状态**。
@@ -625,11 +625,15 @@ func (s *Server) adminDefenses(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	items, total, err := s.Svc.AdminListDefenses(c.Context(), limit)
+	offset, err := queryInt(c, "offset", 0)
 	if err != nil {
 		return failErr(c, err)
 	}
-	return c.JSON(service.AdminDefensesResp{Items: items, Total: total})
+	items, total, err := s.Svc.AdminListDefenses(c.Context(), limit, offset)
+	if err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(service.NormalizeNilSlices(service.AdminDefensesResp{Items: items, Total: total}))
 }
 
 func (s *Server) adminEconomy(c *fiber.Ctx) error {
@@ -637,7 +641,7 @@ func (s *Server) adminEconomy(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	return c.JSON(data)
+	return c.JSON(service.NormalizeNilSlices(data))
 }
 
 func (s *Server) adminUpdateShop(c *fiber.Ctx) error {
@@ -667,11 +671,11 @@ func (s *Server) adminAnnouncements(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	items, err := s.Svc.AdminListAnnouncements(c.Context(), limit, offset)
+	items, total, err := s.Svc.AdminListAnnouncements(c.Context(), limit, offset)
 	if err != nil {
 		return failErr(c, err)
 	}
-	return c.JSON(service.AdminAnnouncementsResp{Items: items})
+	return c.JSON(service.NormalizeNilSlices(service.AdminAnnouncementsResp{Items: items, Total: total}))
 }
 
 func (s *Server) adminCreateAnnouncement(c *fiber.Ctx) error {
@@ -703,11 +707,11 @@ func (s *Server) adminRedeemCodes(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	items, err := s.Svc.AdminListRedeemCodes(c.Context(), limit, offset)
+	items, total, err := s.Svc.AdminListRedeemCodes(c.Context(), limit, offset)
 	if err != nil {
 		return failErr(c, err)
 	}
-	return c.JSON(service.AdminRedeemCodesResp{Items: items})
+	return c.JSON(service.NormalizeNilSlices(service.AdminRedeemCodesResp{Items: items, Total: total}))
 }
 
 func (s *Server) adminCreateRedeemCode(c *fiber.Ctx) error {
@@ -758,11 +762,11 @@ func (s *Server) adminAuditLogs(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	items, err := s.Svc.AdminListAuditLogs(c.Context(), limit, offset)
+	items, total, err := s.Svc.AdminListAuditLogs(c.Context(), limit, offset)
 	if err != nil {
 		return failErr(c, err)
 	}
-	return c.JSON(service.AdminAuditLogsResp{Items: items})
+	return c.JSON(service.NormalizeNilSlices(service.AdminAuditLogsResp{Items: items, Total: total}))
 }
 
 // ctxUnused 保留下划线避免未使用告警（中间件已封装 Context 传递）。

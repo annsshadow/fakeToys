@@ -73,7 +73,24 @@ func tsTypeOf(t reflect.Type, named map[reflect.Type]string) string {
 		if t.Elem().Kind() == reflect.Uint8 {
 			return "string"
 		}
-		return tsTypeOf(t.Elem(), named) + "[]"
+		elem := tsTypeOf(t.Elem(), named)
+		if elem == "" {
+			// 元素是**未注册的**具名 struct → 内联展开。
+			//
+			// ⚠️ 2026-10-21（二轮审计 P1）：此前这里直接返回 `"" + "[]"`
+			// = **`[]`** —— 一个「空元组」类型，声称「永远是空数组」。
+			// 真实数据是 12 个节点的对象数组，于是
+			// `Nodes[0].id` / `Nodes.length` 在 TS 上直接报错，
+			// 而用 `any` 绕过去的话就变成**静默恒为 0**。
+			//
+			// 正确做法：内联展开元素类型（inlineObject 已经会做这件事）。
+			inlined, err := inlineObject(t.Elem(), named)
+			if err != nil {
+				return "unknown"
+			}
+			elem = inlined
+		}
+		return elem + "[]"
 	case reflect.Array:
 		return tsTypeOf(t.Elem(), named) + "[]"
 	case reflect.Map:

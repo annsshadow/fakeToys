@@ -12,6 +12,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -57,7 +58,15 @@ type Service struct {
 	//
 	// 由 initRecomputeGate 在 New 里回填，而不是直接内联构造 ——
 	// 因为它的不符率回调要查库，而 s 在构造过程中还不存在。
-	gate *RecomputeGate
+	// gate 是**原子指针**（2026-10-21）。
+	//
+	// ⚠️ 此前它是普通字段，而 `PUT /admin/recomputes/mode` 会在**运行时**换它
+	// —— 结算热路径同时在读它。裸指针的读写是数据竞争
+	// （`go test -race` 能抓到）。
+	//
+	// 用 `atomic.Pointer` 的原因：换档是「整体换掉一个不可变对象」，
+	// 读方**永远拿到一个完整的 gate**（不会出现「读到一半换掉的」）。
+	gate atomic.Pointer[RecomputeGate]
 
 	// 整局重算的分支计数（见 recompute_engine.go）。
 	//
