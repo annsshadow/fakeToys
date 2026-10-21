@@ -70,7 +70,17 @@ func TestRedeemCodesBrokenBranches(t *testing.T) {
 }
 
 // TestComputeRatingPointsQueryFallback computeRating 读 mastery_points
-// 失败时必须**降级为 0** 继续算分，而不是让结算崩掉。
+// 失败时的行为。
+//
+// ⚠️ 2026-10-21（P3-1）：判据**反转**了 ——
+//
+// 此前这条测试要求「读不到点数 → 降级为 0 继续算分」。
+// 那正是缺陷本身：库里读不到专精点数时，评分里的专精加成**凭空消失**，
+// 而接口返回 200、一个看起来合理的数 —— 玩家看到「我的专精白点了」。
+//
+// 现在：查询**失败**必须报错；只有「这一行不存在」（新号没建进度行）
+// 才是 0 点的合法事实。
+//
 // 构造：故障库 + 带 mastery_nodes 的 build（只有非空 mastery_nodes 才会查点数）。
 func TestComputeRatingPointsQueryFallback(t *testing.T) {
 	broken := openBrokenService(t)
@@ -83,10 +93,10 @@ func TestComputeRatingPointsQueryFallback(t *testing.T) {
 		}
 	}
 	build := map[string]any{"mastery_nodes": []int{nodeID}}
-	// 不应 panic：点数查询失败 → points=0 → EvaluateMastery 照常返回。
-	r := broken.ComputeRatingFor(1, build)
-	if r.MasteryDone < 0 {
-		t.Errorf("降级后仍应产出合法评分，实际 %+v", r)
+	// 故障库 → 点数查询失败 → **必须报错**，不能给一个少了专精加成的假评分。
+	if _, err := broken.ComputeRatingFor(context.Background(), 1, build); err == nil {
+		t.Error("点数查询失败时 computeRating 应报错 —— " +
+			"静默降级成 0 点会让评分少掉专精加成，却返回 200 和一个看起来合理的值")
 	}
 }
 
@@ -835,7 +845,10 @@ func TestComputeRatingWithMasteryNodes(t *testing.T) {
 		"elements":      []string{"fire", "ice"},
 		"mastery_nodes": []int{nodeID},
 	}
-	r := ts.ComputeRatingFor(uid, build)
+	r, err := ts.ComputeRatingFor(ctx, uid, build)
+	if err != nil {
+		t.Fatalf("评分失败：%v", err)
+	}
 	if r.MasteryDone < 1 {
 		t.Errorf("带专精节点的评分 MasteryDone 应 ≥1，实际 %+v", r)
 	}

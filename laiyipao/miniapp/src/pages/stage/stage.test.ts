@@ -91,6 +91,28 @@ afterEach(() => {
   vi.clearAllMocks()
 })
 
+  /**
+   * 2026-10-21（P4-4）：地形**机制**。
+   *
+   * `TERRAIN_DESCR`（5 种地形的机制说明）此前**零 UI 消费** ——
+   * 选关页只显示地形**名字**，玩家无从知道油桶/潮汐闸/旋翼/崩塌掩体/蓄能塔
+   * 分别做什么，于是「这关有地形」看起来只是个图标。
+   */
+  it('P4-4：选关详情显示地形机制说明，而不只是地形名', async () => {
+    const { wrapper } = mountPage(Stage)
+    await flushPromises()
+    triggerUniHook(wrapper.vm, 'onLoad', { level: '2' })
+    await flushPromises()
+    const text = wrapper.text()
+    // 地形名 + 机制说明都在
+    expect(text).toContain('油桶')
+    // TERRAIN_DESCR.oil_drum 的真实文案：
+    // 「受到焰元素命中即引燃，爆炸并生成 8 秒火区」
+    expect(text).toMatch(/焰元素|引燃/)
+    expect(text).toMatch(/火区/)
+    wrapper.unmount()
+  })
+
 describe('stage.vue 选关页', () => {
   it('挂载后默认选中可解锁关（第 1 关），详情卡与开始按钮齐全，诊断可用时展示', async () => {
     const { wrapper } = mountPage(Stage)
@@ -116,7 +138,15 @@ describe('stage.vue 选关页', () => {
   })
 
   it('诊断返回 unclear → 不展示诊断卡；诊断失败 → 静默不阻塞', async () => {
-    mockApi.diagnose.mockResolvedValue({ stage: 'unclear' })
+    mockApi.diagnose.mockResolvedValue({
+      stage: 'unclear',
+      title: '',
+      detail: '',
+      suggestions: [],
+      confidence: 0,
+      failed_times: 0,
+      stuck: false,
+    })
     const { wrapper } = mountPage(Stage)
     await flushPromises()
     triggerUniHook(wrapper.vm, 'onLoad', {})

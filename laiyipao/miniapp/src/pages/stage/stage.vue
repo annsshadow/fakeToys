@@ -53,6 +53,16 @@
           <text class="muted">地形</text>
           <text>{{ selected.terrain.map((t) => terrainName(t.kind)).join('、') }}</text>
         </view>
+        <!--
+          2026-10-21（P4-4）：地形**机制**。
+          `TERRAIN_DESCR` 此前零消费 —— 选关页只显示地形**名字**，
+          玩家无从知道油桶/潮汐闸/旋翼/崩塌掩体/蓄能塔分别做什么，
+          于是「这关有地形」看起来只是个图标。
+        -->
+        <view v-for="(t, i) in selected.terrain" :key="i" class="terrain-note">
+          <text class="terrain-note-name">{{ terrainName(t.kind) }}</text>
+          <text class="terrain-note-descr">{{ terrainDescr(t.kind) }}</text>
+        </view>
         <view class="star-targets">
           <text class="muted">星级门槛</text>
           <text v-for="(s, i) in selected.star_targets" :key="i" class="target">
@@ -88,10 +98,21 @@ import { ref, computed, onMounted } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { useGameStore } from '@/store/game'
 import * as api from '@/api/client'
-import { TERRAIN_NAME } from '@/game/terrain'
+import { TERRAIN_NAME, TERRAIN_DESCR } from '@/game/terrain'
 import type { LevelSummary, TerrainKind } from '@/game/types'
 
 const store = useGameStore()
+
+/**
+ * 地形机制说明（2026-10-21 P4-4）。
+ *
+ * `TERRAIN_DESCR` 是引擎侧的地形说明表，此前**没有任何 UI 消费**。
+ * 未知地形回退成「（无机制说明）」而不是空串 ——
+ * 空串会让那一行看起来像没内容，而不是像「我不知道」。
+ */
+function terrainDescr(kind: TerrainKind): string {
+  return TERRAIN_DESCR[kind] ?? '（无机制说明）'
+}
 
 const curChapter = ref(1)
 const selectedId = ref(0)
@@ -290,6 +311,25 @@ onMounted(() => {
   justify-content: space-between;
   padding: 8rpx 0;
   font-size: 26rpx;
+}
+/* 地形机制说明（2026-10-21 P4-4）：只显示名字不够，玩家要知道它做什么 */
+.terrain-note {
+  display: flex;
+  flex-direction: row;
+  gap: 12rpx;
+  padding: 8rpx 0 8rpx 8rpx;
+  border-left: 4rpx solid rgba(88, 166, 255, 0.5);
+}
+.terrain-note-name {
+  flex-shrink: 0;
+  font-size: 24rpx;
+  color: #58a6ff;
+}
+.terrain-note-descr {
+  flex: 1;
+  font-size: 24rpx;
+  color: var(--muted, #9aa0a6);
+  line-height: 1.5;
 }
 
 .star-targets {

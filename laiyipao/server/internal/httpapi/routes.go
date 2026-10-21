@@ -328,10 +328,17 @@ func (s *Server) me(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
+	// 2026-10-21（P3-1）：评分**可能失败**（读不到专精点数）。
+	// 此前它把错误吞成 0 点，于是返回 200 + 一个少了专精加成的评分 ——
+	// 一个看起来合理但**错的**数字。失败就报失败。
+	rating, err := s.Svc.ComputeRatingFor(c.Context(), userID, build)
+	if err != nil {
+		return failErr(c, err)
+	}
 	return c.JSON(fiber.Map{
 		"user_id":      userID,
 		"build":        build,
-		"build_rating": s.Svc.ComputeRatingFor(userID, build),
+		"build_rating": rating,
 		"power":        s.Svc.ComputePowerFor(build),
 		"max_stage":    maxStage,
 	})
@@ -637,14 +644,28 @@ func (s *Server) getMastery(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	return c.JSON(fiber.Map{
+	return c.JSON(s.masteryState(c, pts, nodes, extra))
+}
+
+// masteryState 汇总专精状态。
+//
+// ⚠️ 2026-10-21（P3-7）：`GET /mastery` 与 `POST /mastery/reset` 的响应
+// 形状此前**不一致** —— reset 少了 `families`（专精系定义）。
+//
+// 后果：客户端重铸专精后如果靠这个响应刷新专精树，就必须**再拉一次**
+// `/mastery`；而更糟的是「两个端点形状一样」这个假设一旦被默认，
+// 下一个字段加在一边就会静默不同步。
+//
+// 现在两个端点**共用这一个函数** —— 形状不一致在结构上就不可能发生。
+func (s *Server) masteryState(c *fiber.Ctx, pts int, nodes []int, extra int64) fiber.Map {
+	return fiber.Map{
 		"points":      pts,
 		"nodes":       nodes,
 		"layer_limit": domain.PerLayerPickLimit,
 		"base_slots":  domain.BaseSkillSlots,
-		"total_slots": domain.BaseSkillSlots + extra,
+		"total_slots": domain.BaseSkillSlots + int(extra),
 		"families":    domain.AllMasteryFamilies(),
-	})
+	}
 }
 
 func (s *Server) allocateMastery(c *fiber.Ctx) error {
@@ -677,14 +698,11 @@ func (s *Server) resetMastery(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	return c.JSON(fiber.Map{
-		"reset_cleared": cleared,
-		"points":        pts,
-		"nodes":         nodes,
-		"layer_limit":   domain.PerLayerPickLimit,
-		"base_slots":    domain.BaseSkillSlots,
-		"total_slots":   domain.BaseSkillSlots + extra,
-	})
+	// 形状与 GET /mastery **完全一致**（共用 masteryState），只是多一个
+	// reset_cleared 说明「这次清掉了几个节点」。
+	state := s.masteryState(c, pts, nodes, extra)
+	state["reset_cleared"] = cleared
+	return c.JSON(state)
 }
 
 func (s *Server) tasks(c *fiber.Ctx) error {

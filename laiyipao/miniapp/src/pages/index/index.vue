@@ -114,6 +114,9 @@ const menus = [
   // 而这里没有入口 —— 服务端扣减逻辑齐全，玩家却拿不到道具。
   { path: '/pages/shop/shop', label: '商城', icon: '🛒' },
   { path: '/pages/mastery/mastery', label: '专精', icon: '🌲' },
+  // 反应图鉴（2026-10-21 P4-2/P4-3）：`/config.reactions` 与
+  // `reachableReactions` 此前**零 UI 消费** —— 玩家查不到「我能打出哪些反应」。
+  { path: '/pages/reactions/reactions', label: '反应', icon: '⚗️' },
   { path: '/pages/signin/signin', label: '签到', icon: '📅' },
   { path: '/pages/rank/rank', label: '排行', icon: '🏆' },
   { path: '/pages/verify/verify', label: '验真', icon: '🔍' },

@@ -96,6 +96,13 @@ export interface GameConfig {
   gem_qualities: Array<{ name: string; affix_count: number; mult: number }>
   skins: Array<Record<string, unknown>>
   mastery_families: import('@/game/types').MasteryFamily[]
+  /**
+   * 反应表（服务端权威）。
+   *
+   * 2026-10-21（P4-2）：字段补齐到服务端 `domain.ReactionSpec` 的全量 ——
+   * 此前少 `descr` / `spread_stacks` / `armor_shred_permille` / `knockback`，
+   * 而图鉴页要展示的就是这些（少一个字段就是少一条机制说明）。
+   */
   reactions: Array<{
     key: string
     name: string
@@ -103,8 +110,12 @@ export interface GameConfig {
     attack_weight_pct: number
     status_duration_ms: number
     aoe_radius: number
+    spread_stacks: number
     dispel_shield: boolean
     amplify_pct: number
+    armor_shred_permille: number
+    knockback: number
+    descr: string
   }>
   chapters: Array<{
     id: number

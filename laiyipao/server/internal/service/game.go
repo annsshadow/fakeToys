@@ -520,7 +520,11 @@ func (s *Service) SettleBattle(ctx context.Context, userID, tokenID int64, in do
 	if err != nil {
 		return SettleResp{}, err
 	}
-	resp.Rating = s.computeRating(ctx, userID, build)
+	rating, err := s.computeRating(ctx, userID, build)
+	if err != nil {
+		return SettleResp{}, err
+	}
+	resp.Rating = rating
 	resp.Power = computePower(build)
 	return resp, nil
 }
@@ -725,7 +729,16 @@ func (s *Service) loadMasteryNodes(ctx context.Context, userID int64) ([]int, er
 	return s.loadMasteryNodeRows(ctx, userID)
 }
 
-func (s *Service) computeRating(ctx context.Context, userID int64, build map[string]any) domain.BuildRating {
+// computeRating 算构筑评分。
+//
+// ⚠️ 2026-10-21（P3-1）：它**返回 error**了 —— 此前读 `mastery_points`
+// 失败时被静默当成 0，于是「专精加成凭空消失」而接口返回 200。
+// 症状是：玩家配了专精树，评分里那部分加成不见了，而**没有任何报错**。
+//
+// ��别：不是「读不到点数就让整次结算失败」的取舍 ——
+// 那一行**不存在**（新号还没建进度行）是合法事实，点数就是 0；
+// 只有**查询本身失败**（库挂了/连接断了）才是错误。
+func (s *Service) computeRating(ctx context.Context, userID int64, build map[string]any) (domain.BuildRating, error) {
 	in := domain.RatingInput{}
 	for _, elem := range buildElements(build) {
 		in.SkillElements = append(in.SkillElements, domain.Element(elem))
@@ -761,7 +774,11 @@ func (s *Service) computeRating(ctx context.Context, userID int64, build map[str
 		points := 0
 		if err := s.pool.QueryRow(ctx,
 			`SELECT mastery_points FROM user_progress WHERE user_id = $1`, userID).Scan(&points); err != nil {
-			points = 0
+			// 只有「这一行不存在」才是 0 点的合法事实；
+			// 查询本身失败必须报出去（否则评分会静默少掉专精加成）。
+			if !errors.Is(err, pgx.ErrNoRows) {
+				return domain.BuildRating{}, fmt.Errorf("load mastery points: %w", err)
+			}
 		}
 		// EvaluateMastery 需要「全部节点定义 + 已投入的 id 集合 + 剩余点数」。
 		// 全部节点从 AllMasteryFamilies() 展平（它是 8 系 × 3 层 × 4 选 2 的来源）。
@@ -776,7 +793,7 @@ func (s *Service) computeRating(ctx context.Context, userID int64, build map[str
 			in.ArmorBonus = eff.ArmorBonus
 		}
 	}
-	return domain.ComputeBuildRating(in, domain.DefaultRatingWeights())
+	return domain.ComputeBuildRating(in, domain.DefaultRatingWeights()), nil
 }
 
 // computePower 是**纯函数**：只解析 build 快照里的技能等级与专精节点数，

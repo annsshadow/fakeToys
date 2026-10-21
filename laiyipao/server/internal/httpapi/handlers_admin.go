@@ -117,7 +117,17 @@ func (s *Server) adminLevels(c *fiber.Ctx) error {
 		return failErr(c, err)
 	}
 	keyword := c.Query("keyword")
-	items, total, err := s.Svc.AdminListLevels(c.Context(), chapter, keyword)
+	// ⚠️ 2026-10-21（P3-4）：分页参数。
+	// limit=0 表示「不限制」（保持旧行为：一次拉全部 100 关）。
+	limit, err := queryInt(c, "limit", 0)
+	if err != nil {
+		return failErr(c, err)
+	}
+	offset, err := queryInt(c, "offset", 0)
+	if err != nil {
+		return failErr(c, err)
+	}
+	items, total, err := s.Svc.AdminListLevels(c.Context(), chapter, keyword, limit, offset)
 	if err != nil {
 		return failErr(c, err)
 	}

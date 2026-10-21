@@ -15,8 +15,18 @@ import (
 )
 
 // ComputeRatingFor / ComputePowerFor 是给 HTTP 层用的导出包装。
-func (s *Service) ComputeRatingFor(userID int64, build map[string]any) domain.BuildRating {
-	return s.computeRating(s.ctxBackground(), userID, build)
+//
+// ⚠️ 2026-10-21（P3-1）：`ComputeRatingFor` 现在**接 ctx 并返回 error**。
+//
+// 此前它用 `context.Background()` —— 请求的 ctx 被丢掉了：
+//  1. 客户端断开**不能**取消这条查询（连接池被白占着）；
+//  2. 它返回的是**一个值**，没有错误通道 —— 于是读不到专精点数时
+//     只能静默按 0 点算，评分里那部分加成凭空消失，接口照样 200。
+//
+// ��别：`ctxBackground()` 现在没有调用方了 —— 一个**看起来无害**的
+// 包装函数留在那里，会让下一个人以为「用 background ctx 是可以的」。
+func (s *Service) ComputeRatingFor(ctx context.Context, userID int64, build map[string]any) (domain.BuildRating, error) {
+	return s.computeRating(ctx, userID, build)
 }
 
 // ComputePowerFor 是给运营接口用的包装。
@@ -30,8 +40,6 @@ func (s *Service) ComputeRatingFor(userID int64, build map[string]any) domain.Bu
 func (s *Service) ComputePowerFor(build map[string]any) int64 {
 	return computePower(build)
 }
-
-func (s *Service) ctxBackground() context.Context { return context.Background() }
 
 // --- 专精点（I-3） ---
 
@@ -653,7 +661,10 @@ func (s *Service) SaveDefense(ctx context.Context, userID int64, in SaveDefenseI
 	}
 	elements := buildElements(build)
 	mastery, _ := build["mastery_nodes"].([]int)
-	rating := s.computeRating(ctx, userID, build)
+	rating, err := s.computeRating(ctx, userID, build)
+	if err != nil {
+		return DefenseView{}, err
+	}
 	power := computePower(build)
 
 	snapshot := map[string]any{

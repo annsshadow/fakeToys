@@ -34,6 +34,12 @@
       }
     },
     {
+      "path": "pages/reactions/reactions",
+      "style": {
+        "navigationBarTitleText": "反应图鉴"
+      }
+    },
+    {
       "path": "pages/shop/shop",
       "style": {
         "navigationBarTitleText": "商城"

@@ -451,6 +451,20 @@ func (s *Service) AdminGrantCurrency(ctx context.Context, userID int64, currency
 	if amount < 0 {
 		reason = "admin_revoke"
 	}
+	// ⚠️ 2026-10-21（P3-2）：**先确认用户存在**。
+	//
+	// 此前不存在性检查完全依赖 `grantWallet` 的报错形状：
+	// 钱包行读不到 → `pgx.ErrNoRows` → 被翻译成
+	// 「coin 不足（需要 100）」。
+	//
+	// 于是「给一个不存在的用户发币」报的是「**金币不足**」——
+	// 一个与真实原因**完全无关**的提示。运营会以为自己发多了、
+	// 或者怀疑货币名写错了，而真相是「这个用户 id 不存在」。
+	//
+	// 一条与真实原因无关的错误消息，比没有消息更坏：它把人引向错误的排查方向。
+	if err := s.assertUserExists(ctx, userID); err != nil {
+		return nil, err
+	}
 	out := map[string]int64{}
 	err := s.DB.Tx(ctx, func(tx txType) error {
 		if err := s.grantWallet(ctx, tx, userID,
@@ -465,6 +479,22 @@ func (s *Service) AdminGrantCurrency(ctx context.Context, userID int64, currency
 		return nil
 	})
 	return out, err
+}
+
+// assertUserExists 确认用户存在，不存在则 ErrNotFound。
+//
+// 2026-10-21（P3-2）：运营写操作的第一道门。
+// 「用户不存在」与「余额不足」是两件完全不同的事，错误消息必须分开说。
+func (s *Service) assertUserExists(ctx context.Context, userID int64) error {
+	var exists bool
+	if err := s.pool.QueryRow(ctx,
+		`SELECT EXISTS(SELECT 1 FROM users WHERE id = $1)`, userID).Scan(&exists); err != nil {
+		return fmt.Errorf("check user exists: %w", err)
+	}
+	if !exists {
+		return fmt.Errorf("%w: 用户 %d 不存在", ErrNotFound, userID)
+	}
+	return nil
 }
 
 func (s *Service) loadWalletTx(ctx context.Context, tx txType, userID int64) (Wallet, error) {

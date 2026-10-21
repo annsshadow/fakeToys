@@ -22,7 +22,7 @@ func TestAdminListLevelsFiltersActuallyFilter(t *testing.T) {
 	ts := openTestService(t)
 	ctx := context.Background()
 
-	full, _, err := ts.AdminListLevels(ctx, 0, "")
+	full, _, err := ts.AdminListLevels(ctx, 0, "", 0, 0)
 	if err != nil {
 		t.Fatalf("全量列表失败：%v", err)
 	}
@@ -33,7 +33,7 @@ func TestAdminListLevelsFiltersActuallyFilter(t *testing.T) {
 
 	// 按章节过滤：第 3 章（冻原）
 	for _, ch := range []int{3, 6} {
-		got, _, err := ts.AdminListLevels(ctx, ch, "")
+		got, _, err := ts.AdminListLevels(ctx, ch, "", 0, 0)
 		if err != nil {
 			t.Fatalf("章节 %d 过滤失败：%v", ch, err)
 		}
@@ -49,7 +49,7 @@ func TestAdminListLevelsFiltersActuallyFilter(t *testing.T) {
 	}
 
 	// 按关键词过滤：关卡名形如「冻原 · 41」，用「· 4」只能命中 40s
-	kwGot, _, err := ts.AdminListLevels(ctx, 0, "· 4")
+	kwGot, _, err := ts.AdminListLevels(ctx, 0, "· 4", 0, 0)
 	if err != nil {
 		t.Fatalf("关键词过滤失败：%v", err)
 	}
@@ -60,14 +60,14 @@ func TestAdminListLevelsFiltersActuallyFilter(t *testing.T) {
 
 	// LIKE 转义：搜通配符字面量「_」，必须 0 命中（关卡名里没有下划线）。
 	// 若没转义，「__」会被当通配符 → 全表命中。
-	underscore, _, err := ts.AdminListLevels(ctx, 0, "_")
+	underscore, _, err := ts.AdminListLevels(ctx, 0, "_", 0, 0)
 	if err != nil {
 		t.Fatalf("关键词过滤失败：%v", err)
 	}
 	if len(underscore) != 0 {
 		t.Errorf("搜通配符字面量「_」应 0 命中（关卡名无下划线），实际 %d —— LIKE 没转义，通配符被当真了", len(underscore))
 	}
-	pct, _, err := ts.AdminListLevels(ctx, 0, "%")
+	pct, _, err := ts.AdminListLevels(ctx, 0, "%", 0, 0)
 	if err != nil {
 		t.Fatalf("关键词过滤失败：%v", err)
 	}

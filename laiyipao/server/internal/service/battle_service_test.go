@@ -484,7 +484,13 @@ func TestComputeRatingForWrappers(t *testing.T) {
 		t.Fatalf("快照失败：%v", err)
 	}
 
-	r := ts.ComputeRatingFor(uid, build)
+	// 2026-10-21（P3-1）：ComputeRatingFor 现在接 ctx 并返回 error ——
+	// 此前它用 context.Background()（请求的 ctx 被丢掉），
+	// 且读不到专精点数时静默按 0 点算，评分少了那部分加成却照样返回。
+	r, err := ts.ComputeRatingFor(ctx, uid, build)
+	if err != nil {
+		t.Fatalf("评分失败：%v", err)
+	}
 	if r.ElementCoverage < 0 {
 		t.Errorf("ElementCoverage 异常：%+v", r)
 	}
@@ -504,15 +510,21 @@ func TestComputeRatingFallbacks(t *testing.T) {
 		t.Fatalf("读专精失败：%v", err)
 	}
 	build := map[string]any{"mastery_nodes": nodes, "elements": []string{"fire", "ice"}}
-	_ = ts.computeRating(ctx, uid, build)
+	if _, err := ts.computeRating(ctx, uid, build); err != nil {
+		t.Fatalf("正常构筑的评分不应失败：%v", err)
+	}
 
 	// 专精 ID 不存在 → EvaluateMastery 失败 → 按零加成处理（不得 panic / 不得报错）
 	badBuild := map[string]any{"mastery_nodes": []int{99999999}}
-	_ = ts.computeRating(ctx, uid, badBuild)
+	if _, err := ts.computeRating(ctx, uid, badBuild); err != nil {
+		t.Fatalf("无效专精 ID 应按零加成处理而不是报错：%v", err)
+	}
 
-	// 用户无 progress 行 → 点数查询失败 → points=0 兜底
+	// 用户无 progress 行 → 点数查询「查无此行」→ points=0 兜底（合法事实）
 	noProg := map[string]any{"mastery_nodes": []int{}}
-	_ = ts.computeRating(ctx, uid, noProg)
+	if _, err := ts.computeRating(ctx, uid, noProg); err != nil {
+		t.Fatalf("没有 progress 行应按 0 点兜底而不是报错：%v", err)
+	}
 	_ = uid
 }
 

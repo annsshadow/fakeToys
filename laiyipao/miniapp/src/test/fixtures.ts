@@ -120,8 +120,12 @@ export function makeConfig(over: Partial<GameConfig> = {}): GameConfig {
         attack_weight_pct: 300,
         status_duration_ms: 0,
         aoe_radius: 120,
+        spread_stacks: 0,
         dispel_shield: true,
         amplify_pct: 0,
+        armor_shred_permille: 0,
+        knockback: 0,
+        descr: '驱散护盾并造成溅射',
       },
     ],
     chapters: [

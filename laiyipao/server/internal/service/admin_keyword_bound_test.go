@@ -45,7 +45,7 @@ func TestAdminKeywordLengthIsCapped(t *testing.T) {
 		}
 	})
 	t.Run("AdminListLevels 超长 → ErrBadInput", func(t *testing.T) {
-		if _, _, err := ts.AdminListLevels(ctx, 0, overLimit); !errors.Is(err, ErrBadInput) {
+		if _, _, err := ts.AdminListLevels(ctx, 0, overLimit, 0, 0); !errors.Is(err, ErrBadInput) {
 			t.Errorf("超长搜索词应被 %v 拒绝，实际 %v", ErrBadInput, err)
 		}
 	})
@@ -53,7 +53,7 @@ func TestAdminKeywordLengthIsCapped(t *testing.T) {
 		if _, _, err := ts.AdminListUsers(ctx, atLimit, 50, 0); err != nil {
 			t.Errorf("恰好 %d 字符应放行，实际 %v", MaxAdminKeywordLen, err)
 		}
-		if _, _, err := ts.AdminListLevels(ctx, 0, atLimit); err != nil {
+		if _, _, err := ts.AdminListLevels(ctx, 0, atLimit, 0, 0); err != nil {
 			t.Errorf("恰好 %d 字符应放行，实际 %v", MaxAdminKeywordLen, err)
 		}
 	})
@@ -74,7 +74,7 @@ func TestAdminKeywordLengthIgnoresSurroundingWhitespace(t *testing.T) {
 	if _, _, err := ts.AdminListUsers(ctx, padded, 50, 0); err != nil {
 		t.Errorf("前后空白不该计入长度（先 trim 再数）：%v", err)
 	}
-	if _, _, err := ts.AdminListLevels(ctx, 0, padded); err != nil {
+	if _, _, err := ts.AdminListLevels(ctx, 0, padded, 0, 0); err != nil {
 		t.Errorf("前后空白不该计入长度（先 trim 再数）：%v", err)
 	}
 }

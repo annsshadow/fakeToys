@@ -57,7 +57,15 @@ func trimAdminKeyword(keyword string) (string, error) {
 // 运营选「第 3 章」看到 100 关，会以为「该章无数据」或干脆不看。
 // keyword 进 LIKE 前必须转义 `%` / `_` / `\`——
 // 搜索 "100%" 退化成全表匹配是「输入了东西却得到无过滤结果」。
-func (s *Service) AdminListLevels(ctx context.Context, chapter int, keyword string) ([]AdminLevelView, int64, error) {
+// AdminListLevels 列出关卡（运营后台列表）。
+//
+// ⚠️ 2026-10-21（P3-4）：现在带 `limit`/`offset` 分页，且 `total` 是
+// **真实总数**（COUNT(*)），不再是 `len(out)`。
+//
+// 此前 `total` 就是 `len(out)` —— 在没有分页时它恰好等于真实总数，
+// 看起来是对的；但一旦加了 limit，它就变成了「这次返回了几行」，
+// 于是前端分页器会显示「共 50 条」而实际有 100 关。
+func (s *Service) AdminListLevels(ctx context.Context, chapter int, keyword string, limit, offset int) ([]AdminLevelView, int64, error) {
 	query := `
 		SELECT l.id, l.chapter, l.name, l.seed, l.base_hp, l.wave_count, l.difficulty,
 		       l.energy_cost, l.star_targets, l.terrain_config, l.is_boss, l.enabled,
@@ -87,12 +95,29 @@ func (s *Service) AdminListLevels(ctx context.Context, chapter int, keyword stri
 		args = append(args, "%"+escaped+"%")
 		conds = append(conds, fmt.Sprintf("l.name LIKE $%d ESCAPE '\\'::char", len(args)))
 	}
+	whereClause := ""
 	if len(conds) > 0 {
-		query += "\n		WHERE " + strings.Join(conds, " AND ")
+		whereClause = " WHERE " + strings.Join(conds, " AND ")
+		query += "\n		" + whereClause
 	}
 	query += `
 		GROUP BY l.id
 		ORDER BY l.id`
+	// 真实总数：与列表用**同一组过滤条件**（否则分页器的「共 N 条」和
+	// 实际能翻到的条数对不上 —— 那是最容易被当成「数据丢了」的形状）。
+	var total int64
+	if err := s.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM levels l`+whereClause, args...).Scan(&total); err != nil {
+		return nil, 0, fmt.Errorf("admin levels count: %w", err)
+	}
+	if limit > 0 {
+		args = append(args, limit)
+		query += fmt.Sprintf("\n LIMIT $%d", len(args))
+		if offset > 0 {
+			args = append(args, offset)
+			query += fmt.Sprintf(" OFFSET $%d", len(args))
+		}
+	}
 	rows, err := s.pool.Query(ctx, query, args...)
 	if err != nil {
 		return nil, 0, fmt.Errorf("admin levels: %w", err)
@@ -159,7 +184,7 @@ func (s *Service) AdminListLevels(ctx context.Context, chapter int, keyword stri
 			AppliedToPlayers: false,
 		})
 	}
-	return out, int64(len(out)), rows.Err()
+	return out, total, rows.Err()
 }
 
 // AdminLevelRow 读回**单行**关卡配置（来自 `levels` 表）。

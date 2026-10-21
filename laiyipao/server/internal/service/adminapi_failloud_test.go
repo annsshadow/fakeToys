@@ -36,7 +36,7 @@ func TestAdminLevelEndpointsFailLoudOnBadJsonb(t *testing.T) {
 	}
 
 	// AdminListLevels 同样必须失败（该关在列表里）
-	if _, _, err := ts.AdminListLevels(ctx, 0, ""); err == nil {
+	if _, _, err := ts.AdminListLevels(ctx, 0, "", 0, 0); err == nil {
 		t.Errorf("AdminListLevels 应对坏 jsonb 报错（fail-loud），却静默成功了")
 	}
 }
