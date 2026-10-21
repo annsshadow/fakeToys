@@ -311,13 +311,37 @@ async function loadDefenses() {
   }
 }
 
+/**
+ * 防线快照用的**真实构筑**（2026-10-21 P4-7）。
+ *
+ * 此前这里硬编码 `equipment: []` / `mastery_nodes: []` ——
+ * 别人挑战你的防线时，本地模拟跑的是**一个不是你构筑的构筑**：
+ * 你的护甲、你的专精加成，全都不在快照里。
+ *
+ * 也就是说：防线保护的东西，和被挑战时模拟的东西，**不是同一份**。
+ */
+const defenseBuild = computed(() => ({
+  skills: store.equippedSkillIds,
+  equipment: store.equippedEquipmentIds,
+  mastery_nodes: store.equippedMasteryNodes,
+}))
+
+/**
+ * 存防线前确保构筑已加载（2026-10-21 P4-7）。
+ *
+ * 否则快照里的 `equipment` / `mastery_nodes` 是**空数组** ——
+ * 别人挑战时模拟的不是你的构筑。
+ */
+async function ensureBuildLoaded() {
+  await Promise.all([store.loadEquipment(), store.loadMasteryNodes()])
+}
+
 async function saveDefense() {
+  await ensureBuildLoaded()
   try {
     const res = await api.saveDefense({
       name: '我的防线',
-      skills: store.equippedSkillIds,
-      equipment: [],
-      mastery_nodes: [],
+      ...defenseBuild.value,
       works: DEFENSE_WORK_CODES,
       shield_hours: 0,
     })
@@ -333,12 +357,11 @@ async function saveDefense() {
 }
 
 async function toggleShield() {
+  await ensureBuildLoaded()
   try {
     const res = await api.saveDefense({
       name: myDefense.value?.name ?? '我的防线',
-      skills: store.equippedSkillIds,
-      equipment: [],
-      mastery_nodes: [],
+      ...defenseBuild.value,
       works: DEFENSE_WORK_CODES,
       shield_hours: shielded.value ? 0 : 24,
     })

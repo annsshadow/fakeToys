@@ -87,6 +87,17 @@ func (s *Server) Register(app *fiber.App) {
 	// 放在前端存的话重放方拿不到同一份槽位，I-6 直接失效。
 	me.Get("/loadout", s.getLoadout)
 	me.Put("/loadout", s.saveLoadout)
+	//
+	// 2026-10-21（P4-1）：装备的**获取与装配**入口。
+	//
+	// 此前装备的数值有效果（base_armor / base_bonus_pct 会被读进攻方），
+	// 但既没有获取途径、也没有装配入口 —— 18 件目录里 16 件玩家拿不到，
+	// 而且拿到的 2 件也不能换。于是「装备」在玩法上等于不存在，
+	// 而界面上还摆着 18 件装备的目录。
+	me.Get("/equipment", s.getEquipment)
+	// 整组替换（不是「装一件/卸一件」两个增量端点）——
+	// 增量端点会留下「同部位两件都 equipped」的中间态。
+	me.Put("/equipment", s.saveEquipment)
 	// 各关历史最好星级（level_stars 的 GREATEST）。选关页的星数/「已通关」
 	// 以此为准 —— 服务端没这个读端点的话，客户端的星图永远空白。
 	me.Get("/stars", s.myStars)
@@ -703,6 +714,31 @@ func (s *Server) resetMastery(c *fiber.Ctx) error {
 	state := s.masteryState(c, pts, nodes, extra)
 	state["reset_cleared"] = cleared
 	return c.JSON(state)
+}
+
+// getEquipment 返回装备目录 + 玩家的拥有/装配状态。
+func (s *Server) getEquipment(c *fiber.Ctx) error {
+	items, err := s.Svc.ListEquipment(c.Context(), userIDFrom(c))
+	if err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(fiber.Map{"items": items})
+}
+
+// saveEquipment 整组替换玩家的装配集合。
+func (s *Server) saveEquipment(c *fiber.Ctx) error {
+	var body struct {
+		// EquipmentIDs 是玩家**想要装备**的完整集合（不是增量）。
+		EquipmentIDs []int `json:"equipment_ids"`
+	}
+	if err := c.BodyParser(&body); err != nil {
+		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+	}
+	items, err := s.Svc.SetEquippedEquipment(c.Context(), userIDFrom(c), body.EquipmentIDs)
+	if err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(fiber.Map{"items": items})
 }
 
 func (s *Server) tasks(c *fiber.Ctx) error {

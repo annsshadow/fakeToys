@@ -417,6 +417,26 @@ func seedShop(ctx context.Context, tx pgx.Tx, res *SeedResult) error {
 		// 第 150 轮：宝石本体。payload 用保留键 `gem_instance` ——
 		// 它要造的是一颗**带随机词条的实体**，不是某种货币。
 		{9, "shop_gem", "随机宝石", "gem", map[string]int{"gem": domain.GemShopPrice}, map[string]int{"gem_instance": 1}, 3, false},
+		//
+		// 2026-10-21（P4-1）：装备商品。
+		//
+		// 此前 18 件装备里 16 件玩家**永远拿不到**：商城里没有对应商品，
+		// 也没有别的获取途径。而装备的数值是有效果的
+		// （`base_armor` / `base_bonus_pct` 会被读进攻方）——
+		// 玩家少了一个成长维度，界面上却还摆着 18 件装备的目录。
+		//
+		// 商城是「现在就拿到」的路径；等级解锁是「慢慢拿」的路径
+		// （结算时按等级补发，见 service/equipment.go）。两条路不冲突。
+		//
+		// payload 用 `equipment_<id>` 键 —— 装备**没有随机性**，
+		// 玩家买的就是目录里那**一件**。
+		// （宝石之所以用 `gem_instance`，是因为宝石的词条要随机 roll。）
+		{10, "shop_eq_weapon", "制式炮管", "equipment", map[string]int{"coin": 20000}, map[string]int{"equipment_1": 1}, 3, false},
+		{11, "shop_eq_helmet", "防砸盔", "equipment", map[string]int{"coin": 30000}, map[string]int{"equipment_4": 1}, 3, false},
+		{12, "shop_eq_armor", "拼接胸甲", "equipment", map[string]int{"coin": 40000}, map[string]int{"equipment_7": 1}, 3, false},
+		{13, "shop_eq_gloves", "劳保手套", "equipment", map[string]int{"coin": 15000}, map[string]int{"equipment_10": 1}, 3, false},
+		{14, "shop_eq_boots", "作战靴", "equipment", map[string]int{"coin": 20000}, map[string]int{"equipment_13": 1}, 3, false},
+		{15, "shop_eq_charm", "旧军牌", "equipment", map[string]int{"gem": 30}, map[string]int{"equipment_16": 1}, 1, false},
 	}
 	for _, it := range items {
 		priceRaw, err := json.Marshal(it.price)

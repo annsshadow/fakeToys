@@ -93,9 +93,10 @@ const AUTH_FIELDS = [
  */
 const KNOWN_UNCONSUMED: Record<string, string> = {
   avatar_url:
-    '服务端从无任何写入方：users.avatar_url 只有 DEFAULT 空串（migrations/00001_core.sql:12），' +
-    '全仓库没有任何 UPDATE 或 INSERT 给它赋值，所以它恒为空。展示它等于在页面上加一个永远不显示的分支。' +
-    '真正的闭合方式是补「设置头像」（需要对象存储 + 上传鉴权），属独立需求，不在本轮范围。',
+    '头像字段：users.avatar_url 只有 DEFAULT（空串，migrations/00001_core.sql:12），' +
+    '全仓库没有 UPDATE、没有 INSERT，也没有默认值覆盖 —— 所以它永远是空串。' +
+    '首页「我的」页不自动显示它、不缓存它（不落存储 + 不读缓存的字段 = 没人要的字段），' +
+    '需要时要另存 + 另读才有存储和读取权。',
 }
 
 function walk(dir: string, out: string[] = []): string[] {

@@ -578,6 +578,21 @@ func (s *Service) Buy(ctx context.Context, userID, itemID int64) (map[string]int
 				}
 				continue
 			}
+			// 2026-10-21（P4-1）：`equipment_<id>` 也不是货币 ——
+			// 它要发一件**具体装备**到 `user_equipment`。
+			//
+			// 此前 18 件装备里 16 件玩家永远拿不到：既没有获取途径，
+			// 商城里也没有对应的商品。装备的**战斗效果**一直存在
+			// （base_armor / base_bonus_pct 会被读进攻方），
+			// 但玩家碰不到它 —— 那等于没有（KNOWN_LIMITS 第 25 条）。
+			if eqID, ok := equipmentPayloadID(k); ok {
+				for i := 0; i < v; i++ {
+					if err := mintEquipment(ctx, tx, userID, eqID); err != nil {
+						return err
+					}
+				}
+				continue
+			}
 			grant[k] = int64(v)
 		}
 		if len(grant) > 0 {

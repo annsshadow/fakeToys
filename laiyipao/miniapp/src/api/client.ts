@@ -710,6 +710,50 @@ export interface OwnedGem {
  * 此前 `user_gems` 只有服务端内部读取（计入攻击者派生属性），
  * **没有任何面向玩家的读取面** —— 玩家买了也看不见自己有什么。
  */
+/**
+ * 玩家的一枚装备（目录 + 拥有/装配状态）。
+ *
+ * 2026-10-21（P4-1）：此前客户端**完全不知道**玩家有哪些装备 ——
+ * 背包页的「装备」区是**纯目录**（18 件摆在那儿，谁都能看），
+ * 但没有「我有哪些」「我穿了哪些」，更没有装配入口。
+ */
+export interface MyEquipment {
+  id: number
+  code: string
+  name: string
+  slot: string
+  tier: number
+  element: string
+  descr: string
+  base_armor: number
+  base_bonus_pct: number
+  unlock_level: number
+  /** 玩家是否拥有这一件 */
+  owned: boolean
+  /** 是否已装配 */
+  equipped: boolean
+  /** 持有实例的养成值（目前无效果，见 KNOWN_LIMITS 第 10 条） */
+  level: number
+  star: number
+}
+
+export function fetchMyEquipment() {
+  return request<{ items: MyEquipment[] }>('/me/equipment')
+}
+
+/**
+ * 整组替换装配集合。
+ *
+ * 传的是**完整集合**（不是增量）—— 服务端在一个事务里校验并替换，
+ * 不会出现「同部位两件都 equipped」的中间态。
+ */
+export function saveEquippedEquipment(equipmentIds: number[]) {
+  return request<{ items: MyEquipment[] }>('/me/equipment', {
+    method: 'PUT',
+    body: { equipment_ids: equipmentIds },
+  })
+}
+
 export function fetchGems() {
   return request<{ gems: OwnedGem[] }>('/me/gems')
 }

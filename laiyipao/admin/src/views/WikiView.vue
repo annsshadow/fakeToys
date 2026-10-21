@@ -15,6 +15,26 @@ interface ConfigResp {
   enemies: Array<{ id: number; code: string; name: string; category: string; hp: number; resist: Record<string, number>; descr: string }>
   skills: Array<{ id: number; name: string; element: string; family: string; kind: string; base_damage: number; heat_cost: number; cooldown_ms: number; pierce: number; aoe_radius: number; apply_stacks: number; descr: string }>
   composite_skills: Array<{ id: number; name: string; element: string; descr: string }>
+  // 装备目录（2026-10-21 P6-12）。
+  //
+  // ⚠️ 此前这个字段**全仓库零消费** —— 小程序端改从 `/me/equipment` 读
+  // （目录 + 拥有状态），而文档站也一直没展示它。
+  // 于是「玩家该穿什么、每件加多少」这个问题在**玩家面向的文档站上**
+  // 没有答案，而契约守卫（正确地）报告它是死字段。
+  //
+  // 修法不是删字段，而是**把它用起来**：装备目录正是玩家要查的东西。
+  equipment: Array<{
+    id: number
+    code: string
+    name: string
+    slot: string
+    tier: number
+    element: string
+    descr: string
+    base_armor: number
+    base_bonus_pct: number
+    unlock_level: number
+  }>
   // ⚠️ 字段名必须与 Go 侧 json tag 逐字一致（snake_case）。
   // 这两行曾经写成 PascalCase，而服务端一直下发 snake_case，
   // 于是反应表整列为空、章节下拉框没有选项 —— 且不报任何错。
@@ -46,6 +66,16 @@ function statusText(key: string, ms: number): string {
     : key === 'overheat' ? '眩晕'
     : '控制'
   return `${kind} ${(ms / 1000).toFixed(1)}s`
+}
+
+/** 部位中文名（与服务端 `SeedEquipment.Slot` 同名）。 */
+const SLOT_LABEL: Record<string, string> = {
+  weapon: '武器',
+  helmet: '头盔',
+  armor: '护甲',
+  gloves: '手套',
+  boots: '靴子',
+  charm: '挂件',
 }
 
 const loading = ref(false)
@@ -333,6 +363,43 @@ onMounted(load)
       </el-tab-pane>
 
       <!-- 专精 -->
+      <!-- 装备（P6-12）-->
+      <el-tab-pane label="装备图鉴" name="equipment">
+        <el-alert
+          type="info"
+          :closable="false"
+          show-icon
+          title="装备怎么生效"
+          description="装备提供护甲（减少漏怪造成的伤害）与通用攻击加成。**元素标签当前不参与任何结算** —— 按标签给加成的机制没有实现，所以这里不宣传它。一个部位同时只能装一件。"
+          style="margin-bottom: 12px"
+        />
+        <el-table :data="cfg?.equipment ?? []" size="small" border stripe>
+          <el-table-column prop="id" label="ID" width="55" />
+          <el-table-column prop="name" label="名称" min-width="130" />
+          <el-table-column label="部位" width="80">
+            <template #default="{ row }">{{ SLOT_LABEL[row.slot] ?? row.slot }}</template>
+          </el-table-column>
+          <el-table-column prop="tier" label="阶级" width="66" />
+          <el-table-column label="元素" width="80">
+            <template #default="{ row }">
+              <span :style="{ color: ELEMENT_COLOR[row.element] }">
+                {{ ELEMENT_LABEL[row.element] ?? row.element }}
+              </span>
+            </template>
+          </el-table-column>
+          <el-table-column label="护甲‰" width="76">
+            <template #default="{ row }">{{ row.base_armor }}</template>
+          </el-table-column>
+          <el-table-column label="攻击‰" width="76">
+            <template #default="{ row }">{{ row.base_bonus_pct }}</template>
+          </el-table-column>
+          <el-table-column label="解锁等级" width="90">
+            <template #default="{ row }">{{ row.unlock_level }}</template>
+          </el-table-column>
+          <el-table-column prop="descr" label="说明" min-width="200" />
+        </el-table>
+      </el-tab-pane>
+
       <el-tab-pane label="数值规则" name="rules">
         <!--
           这一页展示的是**分数与升级的规则本身**，不是内容数据。

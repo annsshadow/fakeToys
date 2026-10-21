@@ -114,18 +114,56 @@
       <view class="card">
         <text class="card-title">装备</text>
         <text class="muted" style="display: block; margin-bottom: 16rpx">
-          装备目前只提供**护甲**（减漏怪造成的伤害）与**通用增益**。
+          装备提供**护甲**（减漏怪造成的伤害）与**通用增益**。
           它的元素标签**当前不参与任何结算** ——
           按标签给加成这个机制没有实现，所以这里不再宣传它。
         </text>
-        <view v-for="e in equipment" :key="e.id" class="equip-row">
+
+        <!--
+          2026-10-21（P4-1）：这一段此前是**纯目录** ——
+          18 件装备摆在那儿，但玩家看不到「我有哪些」「我穿了哪些」，
+          也没有任何装配入口。而装备的数值**是有效果的**
+          （base_armor / base_bonus_pct 会被读进攻方），
+          所以那是一个「有效果、够不着」的系统。
+
+          现在：拥有的装备可以穿/脱（整组替换，服务端在一个事务里校验）。
+        -->
+        <view v-if="myEquipments.length === 0" class="dim">正在读取装备…</view>
+        <view v-for="e in myEquipments" :key="e.id" class="equip-row">
           <text class="tag" :class="'tag-' + e.element">{{ elementName(e.element as Element) }}</text>
           <view class="flex-1">
             <text class="skill-name">{{ e.name }}</text>
-            <text class="dim" style="display: block">{{ e.descr }}</text>
+            <text class="dim" style="display: block">
+              {{ e.descr }}
+            </text>
+            <text class="dim" style="display: block">
+              护甲 +{{ e.base_armor }}‰ · 攻击 +{{ e.base_bonus_pct }}‰ · 部位 {{ slotName(e.slot) }}
+            </text>
           </view>
-          <text class="dim">{{ slotName(e.slot) }} · T{{ e.tier }}</text>
+          <view class="flex-1" style="text-align: right">
+            <text v-if="!e.owned" class="dim">Lv{{ e.unlock_level }} 解锁</text>
+            <text v-else-if="e.equipped" class="dim" style="color: #7ee787">已装备</text>
+            <view
+              v-if="e.owned && !e.equipped"
+              class="btn btn-primary"
+              style="padding: 8rpx 20rpx; font-size: 24rpx"
+              @click="equip(e.id)"
+            >
+              装备
+            </view>
+            <view
+              v-else-if="e.equipped"
+              class="btn"
+              style="padding: 8rpx 20rpx; font-size: 24rpx"
+              @click="unequip(e.id)"
+            >
+              卸下
+            </view>
+          </view>
         </view>
+        <text v-if="equipError" class="dim" style="display: block; margin-top: 12rpx; color: #ff7b72">
+          {{ equipError }}
+        </text>
       </view>
 
       <!-- 宝石 -->
@@ -253,7 +291,68 @@ const allSkills = computed<SkillDef[]>(() => {
   return [...base, ...composite]
 })
 
-const equipment = computed<any[]>(() => store.config?.equipment ?? [])
+/**
+ * 玩家的装备（目录 + 拥有/装配状态）。
+ *
+ * 2026-10-21（P4-1）：这一段此前**不存在** ——
+ * 背包页的装备区是纯目录，玩家看不到自己有什么、也装不了。
+ */
+const myEquipments = ref<api.MyEquipment[]>([])
+const equipError = ref('')
+
+/** 装配请求在途标志：防止连点发出多个 PUT。 */
+const equipping = ref(false)
+
+async function loadEquipment() {
+  try {
+    const res = await api.fetchMyEquipment()
+    myEquipments.value = res.items ?? []
+  } catch (e) {
+    equipError.value = `装备读取失败：${(e as Error).message}`
+  }
+}
+
+/**
+ * 穿上某件装备。
+ *
+ * 服务端接受的是**完整集合**（不是增量），所以这里要先把同部位的旧件摘掉
+ * —— 否则服务端会以「同部位只能装一件」拒绝，而那个错误对玩家毫无意义。
+ */
+async function equip(id: number) {
+  if (equipping.value) return
+  const target = myEquipments.value.find((e) => e.id === id)
+  if (!target) return
+  equipping.value = true
+  equipError.value = ''
+  try {
+    const next = myEquipments.value
+      .filter((e) => e.equipped && e.slot !== target.slot)
+      .map((e) => e.id)
+    next.push(id)
+    const res = await api.saveEquippedEquipment(next)
+    myEquipments.value = res.items ?? myEquipments.value
+  } catch (e) {
+    equipError.value = `装备失败：${(e as Error).message}`
+  } finally {
+    equipping.value = false
+  }
+}
+
+/** 卸下某件装备。 */
+async function unequip(id: number) {
+  if (equipping.value) return
+  equipping.value = true
+  equipError.value = ''
+  try {
+    const next = myEquipments.value.filter((e) => e.equipped && e.id !== id).map((e) => e.id)
+    const res = await api.saveEquippedEquipment(next)
+    myEquipments.value = res.items ?? myEquipments.value
+  } catch (e) {
+    equipError.value = `卸下失败：${(e as Error).message}`
+  } finally {
+    equipping.value = false
+  }
+}
 const gems = computed<any[]>(() => store.config?.gems ?? [])
 
 /**
@@ -637,7 +736,9 @@ onMounted(async () => {
   // （未先经过 index/battle/me）store.build 为 null 或陈旧，levelOf 恒 0、
   // 升级花费恒按 1 级算，与玩家真实养成不符。两者并发拉取，互不阻塞。
   // 宝石（第 150 轮）与它们并发：它只影响下面那块「我的宝石」，不参与槽位逻辑。
-  await Promise.all([store.loadLoadout(), store.refreshProfile(), loadGems()])
+  // 2026-10-21（P4-1）：装备也要一起拉 ——
+  // 此前背包页的装备区是纯目录，玩家看不到自己有哪些、也装不了。
+  await Promise.all([store.loadLoadout(), store.refreshProfile(), loadGems(), loadEquipment()])
   selected.value = [...store.loadout]
   while (selected.value.length < 4) selected.value.push(0)
 })

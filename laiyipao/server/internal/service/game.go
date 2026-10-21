@@ -598,6 +598,21 @@ func (s *Service) applyProgress(ctx context.Context, tx pgx.Tx, userID int64, le
 		userID, domain.PlayerLevelDivisor); err != nil {
 		return 0, fmt.Errorf("unlock skills by level: %w", err)
 	}
+
+	// 装备同理按等级解锁（2026-10-21 P4-1）。
+	//
+	// 为什么必须有这一条：装备的**战斗效果**一直存在
+	// （`base_armor` / `base_bonus_pct` 会被读进攻方），
+	// 但 18 件目录里此前只有 2 件（注册时赠送）玩家拿得到，
+	// 而且**没有获取途径**。于是「装备系统」在玩法上等于不存在 ——
+	// 玩家少了一个成长维度，而界面上还摆着 18 件装备的目录。
+	//
+	// 幂等（ON CONFLICT DO NOTHING）：老玩家任意一场结算即回填。
+	// 新解锁的装备**默认不装备** —— 让玩家自己选，
+	// 否则「自动穿上」会悄悄改变他的构筑。
+	if err := grantEquipmentByLevel(ctx, tx, userID); err != nil {
+		return 0, err
+	}
 	return newMax, nil
 }
 

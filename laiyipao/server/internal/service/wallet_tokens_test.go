@@ -100,7 +100,10 @@ func scanShopKeys(t *testing.T, ts *testService) []shopKey {
 					// 直接引用生产代码的常量 —— 写死字符串的话，
 					// 两边拼错的表现是「买了什么都没发生」，
 					// 而那恰好是最难排查的一类症状。
-					Allowed: isCol || isWalletToken(k) || k == gemInstanceKey,
+					// 2026-10-21（P4-1）：`equipment_<id>` 也是保留的非货币键 ——
+					// 它要发一件**具体装备**到 `user_equipment`。
+					// 与 `gem_instance` 同理，判定引用生产代码，不抄前缀。
+					Allowed: isCol || isWalletToken(k) || k == gemInstanceKey || isEquipmentPayloadKey(k),
 				})
 			}
 		}

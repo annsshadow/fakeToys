@@ -9,6 +9,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 
 import * as api from '@/api/client'
+import type { MyEquipment } from '@/api/client'
 import type { GameConfig } from '@/api/client'
 import { setTokenInternal } from '@/api/client'
 import { defaultAttacker, type Attacker } from '@/game/damage'
@@ -172,6 +173,43 @@ export const useGameStore = defineStore('game', () => {
   const loadout = ref<number[]>([0, 0, 0, 0])
 
   /** 已装备技能的元素（用于界面显示搭配覆盖） */
+  /**
+   * 2026-10-21（P4-7）：已装备的装备 id 与已点亮的专精节点 id。
+   *
+   * 它们是**防线快照**的组成部分 —— 此前快照里写的是
+   * `equipment: []` / `mastery_nodes: []`，于是别人挑战你的防线时，
+   * 本地模拟跑的是**一个不是你构筑的构筑**：
+   * 你的护甲、你的专精加成全都不在快照里。
+   */
+  const equipment = ref<MyEquipment[]>([])
+  const masteryNodes = ref<number[]>([])
+
+  /** 已装配的装备 id（去重、只留已装备的）。 */
+  const equippedEquipmentIds = computed<number[]>(() =>
+    equipment.value.filter((e) => e.equipped).map((e) => e.id),
+  )
+
+  /** 已点亮的专精节点 id。 */
+  const equippedMasteryNodes = computed<number[]>(() => masteryNodes.value.slice())
+
+  async function loadEquipment(): Promise<void> {
+    try {
+      const res = await api.fetchMyEquipment()
+      equipment.value = res.items ?? []
+    } catch (e) {
+      console.warn('[来一炮] 加载装备失败', (e as Error).message)
+    }
+  }
+
+  async function loadMasteryNodes(): Promise<void> {
+    try {
+      const res = await api.fetchMastery()
+      masteryNodes.value = res.nodes ?? []
+    } catch (e) {
+      console.warn('[来一炮] 加载专精失败', (e as Error).message)
+    }
+  }
+
   const equippedElements = computed<Element[]>(() => {
     const out: Element[] = []
     for (const id of loadout.value) {
@@ -490,6 +528,12 @@ export const useGameStore = defineStore('game', () => {
     build,
     equippedSkillIds,
     loadout,
+    equipment,
+    masteryNodes,
+    equippedEquipmentIds,
+    equippedMasteryNodes,
+    loadEquipment,
+    loadMasteryNodes,
     enemyMap,
     skillMap,
     levelMap,

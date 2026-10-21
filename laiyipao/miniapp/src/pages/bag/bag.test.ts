@@ -13,6 +13,14 @@ import { mountPage } from '../../test/page'
 import { makeConfig, makeSkill } from '../../test/fixtures'
 import type { GameConfig } from '@/api/client'
 
+/**
+ * 2026-10-21（P4-1）：背包页的装备区此前是**纯目录**（从 /config 读 18 件），
+ * 玩家看不到自己有哪些、也装不了。
+ * 现在它读 `/me/equipment`（目录 + 拥有/装配状态）。
+ */
+const fetchMyEquipment = vi.hoisted(() => vi.fn())
+const saveEquippedEquipment = vi.hoisted(() => vi.fn())
+
 vi.mock('@/api/client', () => ({
   guestLogin: vi.fn(),
   fetchConfigIfVersion: vi.fn(),
@@ -33,9 +41,71 @@ vi.mock('@/api/client', () => ({
   saveProfile: vi.fn(),
   login: vi.fn(),
   saveLastUsername: vi.fn(),
+  fetchMyEquipment,
+  saveEquippedEquipment,
 }))
 
 const mockApi = vi.mocked(api, true)
+
+/**
+ * `/me/equipment` 的响应（2026-10-21 P4-1）。
+ *
+ * 形状与服务端 `service.EquipmentView` 一致：目录全量 + owned/equipped 标记。
+ */
+function equipmentFixture() {
+  return {
+    items: [
+      {
+        id: 1,
+        code: 'w_p1',
+        name: '制式炮管',
+        slot: 'weapon',
+        tier: 1,
+        element: 'kinetic',
+        descr: '军方量产的基础炮管。攻击力 +50‰。',
+        base_armor: 0,
+        base_bonus_pct: 50,
+        unlock_level: 1,
+        owned: true,
+        equipped: true,
+        level: 1,
+        star: 1,
+      },
+      {
+        id: 7,
+        code: 'a_p1',
+        name: '拼接胸甲',
+        slot: 'armor',
+        tier: 1,
+        element: 'kinetic',
+        descr: '用废旧钢板拼成，聊胜于无。护甲 +35‰，攻击力 +25‰。',
+        base_armor: 35,
+        base_bonus_pct: 25,
+        unlock_level: 6,
+        owned: true,
+        equipped: false,
+        level: 1,
+        star: 1,
+      },
+      {
+        id: 9,
+        code: 'a_p3',
+        name: '反应装甲',
+        slot: 'armor',
+        tier: 3,
+        element: 'fire',
+        descr: '受热变形的重型装甲。护甲 +110‰，攻击力 +120‰。',
+        base_armor: 110,
+        base_bonus_pct: 120,
+        unlock_level: 50,
+        owned: false,
+        equipped: false,
+        level: 1,
+        star: 1,
+      },
+    ],
+  }
+}
 
 let um: ReturnType<typeof installUniMock>
 
@@ -91,6 +161,16 @@ beforeEach(() => {
   // 宝石默认空：用例需要时各自覆盖。不设默认的话 loadGems 会靠 catch 兜住
   // undefined，那条路径能跑但是在测「拉到 undefined」，不是测「拉到空列表」。
   mockApi.fetchGems.mockResolvedValue({ gems: [] })
+  // 装备（2026-10-21 P4-1）：背包页的装备区现在读 `/me/equipment`。
+  mockApi.fetchMyEquipment.mockResolvedValue(equipmentFixture())
+  mockApi.saveEquippedEquipment.mockImplementation((ids: number[]) =>
+    Promise.resolve({
+      items: equipmentFixture().items.map((e) => ({
+        ...e,
+        equipped: ids.includes(e.id),
+      })),
+    }),
+  )
   mockApi.saveLoadout.mockImplementation((ids: number[]) =>
     Promise.resolve({ skill_ids: ids }),
   )
@@ -303,9 +383,15 @@ describe('bag.vue 背包页', () => {
     // 穿透/溅射条件渲染：燃烧弹有溅射、穿甲弹无溅射（v-if 两侧分支）
     expect(wrapper.text()).toContain('穿透 2')
     expect(wrapper.text()).toContain('溅射 60')
-    // 装备行：已知槽位映射 + 未知槽位回退
-    expect(wrapper.text()).toContain('武器 · T2')
-    expect(wrapper.text()).toContain('ring · T1')
+    // 装备行（2026-10-21 P4-1）：现在读 `/me/equipment`（目录 + 拥有状态），
+    // 所以显示的是「我的装备」，而不是纯目录。
+    expect(wrapper.text()).toContain('制式炮管')
+    expect(wrapper.text()).toContain('拼接胸甲')
+    // 未拥有的显示解锁等级，已拥有的显示装备/卸下入口
+    expect(wrapper.text()).toContain('Lv50 解锁')
+    expect(wrapper.text()).toContain('已装备')
+    expect(wrapper.text()).toContain('装备')
+    expect(wrapper.text()).toContain('卸下')
     // 宝石
     expect(wrapper.text()).toContain('元素石')
   })
@@ -495,4 +581,61 @@ describe('bag.vue 背包页', () => {
     // 升级花费 = base_cost(100) × 当前等级(3) = 300；钱包 coin=1 → 不足
     expect(burnRow.text()).toContain('金币不足（300）')
   })
+
+  /**
+   * 2026-10-21（P4-1）：装备/卸下。
+   *
+   * 此前背包页的装备区是**纯目录** —— 玩家看得到 18 件装备，
+   * 但既不知道哪些是自己的，也装不了。而装备的数值**是有效果的**
+   * （护甲 / 攻击加成会被读进攻方），所以那是一个「有效果、够不着」的系统。
+   *
+   * 判据：装配请求发的是**完整集合**（服务端整组替换），
+   * 且同部位换装时旧的那件被自动摘掉。
+   */
+  it('P4-1：装备与卸下都提交完整集合', async () => {
+    const { wrapper } = mountPage(Bag)
+    await flushPromises()
+
+    // 「拼接胸甲」是已拥有但未装配的 → 点「装备」
+    const rows = wrapper.findAll('.equip-row')
+    const armorRow = rows.find((r) => r.text().includes('拼接胸甲'))
+    expect(armorRow, '找不到「拼接胸甲」那一行').toBeTruthy()
+    const equipBtn = armorRow!.findAll('.btn').find((b) => b.text() === '装备')
+    expect(equipBtn, '找不到「装备」按钮').toBeTruthy()
+    await equipBtn!.trigger('click')
+    await flushPromises()
+
+    // 提交的是完整集合：已装备的「制式炮管」+ 新装的「拼接胸甲」
+    expect(mockApi.saveEquippedEquipment).toHaveBeenCalledTimes(1)
+    const sent = mockApi.saveEquippedEquipment.mock.calls[0]![0] as number[]
+    expect(sent).toContain(1) // 制式炮管
+    expect(sent).toContain(7) // 拼接胸甲
+  })
+
+  it('P4-1：同部位换装时旧的自动摘掉', async () => {
+    const { wrapper } = mountPage(Bag)
+    await flushPromises()
+    const rows = wrapper.findAll('.equip-row')
+    const armorRow = rows.find((r) => r.text().includes('拼接胸甲'))
+    const equipBtn = armorRow!.findAll('.btn').find((b) => b.text() === '装备')
+    await equipBtn!.trigger('click')
+    await flushPromises()
+    const sent = mockApi.saveEquippedEquipment.mock.calls[0]![0] as number[]
+    // 制式炮管是 weapon，拼接胸甲是 armor —— 不同部位，两件都在
+    expect(sent).toHaveLength(2)
+  })
+
+  it('P4-1：卸下提交剩余集合', async () => {
+    const { wrapper } = mountPage(Bag)
+    await flushPromises()
+    const rows = wrapper.findAll('.equip-row')
+    const weaponRow = rows.find((r) => r.text().includes('制式炮管'))
+    const unequipBtn = weaponRow!.findAll('.btn').find((b) => b.text() === '卸下')
+    expect(unequipBtn, '找不到「卸下」按钮').toBeTruthy()
+    await unequipBtn!.trigger('click')
+    await flushPromises()
+    const sent = mockApi.saveEquippedEquipment.mock.calls[0]![0] as number[]
+    expect(sent).not.toContain(1)
+  })
+
 })
