@@ -37,7 +37,7 @@ cd laiyipao/server
 export DATABASE_URL="postgres://postgres@127.0.0.1:5432/laiyipao?sslmode=disable"
 export BOOTSTRAP_ADMIN_PASS="admin12345"   # 少于 10 位会被拒绝引导
 
-go run ./cmd/migrate   # 建表（16 个 goose 迁移，50 张业务表）
+go run ./cmd/migrate   # 建表（17 个 goose 迁移，50 张业务表）
 go run ./cmd/seed      # 写入游戏内容（首次必须执行）
 go run ./cmd/api       # 监听 :8080
 ```

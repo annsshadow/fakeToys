@@ -21,6 +21,14 @@
       <view class="top-right">
         <text class="wave-text">波次 {{ waveText }}</text>
         <text class="kill-text">击杀 {{ engine?.kills ?? 0 }}</text>
+        <!--
+          2026-10-21（P4-5）：放弃入口。
+          此前体力在开战时就扣了，而页面**没有**任何放弃路径 ——
+          中途退出等于「什么都没发生，但资源没了」。
+        -->
+        <view v-if="!settled" class="abandon-btn" @click="abandon">
+          {{ abandoning ? '处理中…' : '放弃' }}
+        </view>
       </view>
     </view>
 
@@ -332,11 +340,13 @@ async function setup() {
   }
 }
 
-let settled = false
+// 2026-10-21（P4-5）：改成 ref —— 「放弃」按钮要在模板里读它
+//（`v-if="!settled"`），普通 let 不是响应式的，模板不会跟着更新。
+const settled = ref(false)
 
 async function settle(eng: BattleEngine) {
-  if (settled) return
-  settled = true
+  if (settled.value) return
+  settled.value = true
   if (loopStarted && renderer.value) {
     renderer.value.stop()
     loopStarted = false
@@ -400,6 +410,48 @@ function backToStage() {
   uni.navigateBack()
 }
 
+/**
+ * 放弃这一局，退回体力（2026-10-21 P4-5）。
+ *
+ * 此前**没有放弃路径** —— 体力在开战时就扣了，
+ * 玩家中途退出就等于「什么都没发生，但资源没了」。
+ *
+ * 放弃会**作废**这枚开局凭证（服务端标记为已用），
+ * 所以放弃之后不能再结算这一局 —— 那是刻意的：
+ * 放弃与结算必须是**互斥**的两条路，否则能「打完再退」。
+ */
+const abandoning = ref(false)
+
+async function abandon() {
+  if (abandoning.value || !tokenId.value) return
+  const ok = await new Promise<boolean>((resolve) => {
+    uni.showModal({
+      title: '放弃这一局？',
+      content: '体力会退还，但这一局没有任何战报与奖励。',
+      confirmText: '放弃',
+      cancelText: '继续打',
+      success: (res) => resolve(!!res.confirm),
+      fail: () => resolve(false),
+    })
+  })
+  if (!ok) return
+  abandoning.value = true
+  try {
+    const res = await api.abandonBattle(tokenId.value)
+    await store.refreshWallet()
+    uni.showToast({
+      title: res.refunded_energy > 0 ? `已放弃，退回 ${res.refunded_energy} 体力` : '已放弃',
+      icon: 'none',
+    })
+    settled.value = true
+    setTimeout(() => uni.navigateBack(), 800)
+  } catch (e) {
+    uni.showToast({ title: (e as Error).message, icon: 'none' })
+  } finally {
+    abandoning.value = false
+  }
+}
+
 onLoad(async (query) => {
   levelId.value = Number(query?.level ?? 1)
   await setup()
@@ -426,6 +478,16 @@ onUnload(() => {
   position: absolute;
   top: 0;
   left: 0;
+}
+
+.abandon-btn {
+  margin-top: 10rpx;
+  padding: 6rpx 18rpx;
+  border-radius: 10rpx;
+  background: rgba(255, 123, 114, 0.22);
+  color: #ff7b72;
+  font-size: 22rpx;
+  text-align: center;
 }
 
 .overlay-top {

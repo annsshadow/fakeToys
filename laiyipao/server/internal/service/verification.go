@@ -63,12 +63,42 @@ func (s *Service) recordVerification(ctx context.Context, v verifier, battleID i
 	} else {
 		userArg = v.userID
 	}
-	if _, err := s.pool.Exec(ctx,
+	//
+	// 2026-10-21（P3-5）：**幂等**。
+	//
+	// 此前这里是无条件 INSERT —— 同一场战报重复验真 200 次就写 200 行
+	// （`middleware.go` 的限流注释里记着这个实测事实）。
+	//
+	// 后果不是「表大了点」：
+	//   1. 写放大：限流只是缓解，不是幂等；
+	//   2. **统计口径被污染**：后台的「验真一致率」是 checked/mismatched
+	//      两个计数，同一局验 20 次，分母就多 19；
+	//   3. 真正的结论（「这一局对不上」）被 200 条几乎一样的记录淹没。
+	//
+	// 幂等的定义：同一场战报 + 同一个验真者 + **同一个 actual_hash**
+	// → 只算一条。
+	//
+	// 「同一个 actual_hash」是关键：换了哈希提交是**新信息**
+	// （可能推翻了之前的结论），必须留下。
+	//
+	// 唯一索引建在 `COALESCE(verifier_id, admin_verifier_id)` 上 ——
+	// 因为二者恰好一个非空，而 NULL 在唯一索引里「都算相等」，
+	// 直接用两个原始列会让**所有 admin 验真**互相冲突。
+	// （migration 00017）
+	tag, err := s.pool.Exec(ctx,
 		`INSERT INTO replay_verifications
 		   (battle_id, verifier_id, admin_verifier_id, expected_hash, actual_hash, matched)
-		 VALUES ($1,$2,$3,$4,$5,$6)`,
-		battleID, userArg, adminArg, expected, actual, matched); err != nil {
+		 VALUES ($1,$2,$3,$4,$5,$6)
+		 ON CONFLICT (battle_id, COALESCE(verifier_id, admin_verifier_id), actual_hash)
+		 DO NOTHING`,
+		battleID, userArg, adminArg, expected, actual, matched)
+	if err != nil {
 		return fmt.Errorf("record verification: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		// 重复的验真 —— 不是错误，是**同一条结论**。
+		// 返回 nil 让调用方照常拿到 VerifyResult（结论不变）。
+		return nil
 	}
 	return nil
 }

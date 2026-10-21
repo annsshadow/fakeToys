@@ -296,21 +296,21 @@ grep -rn "Record<string, unknown>" admin/src    # 0 命中
 ### P3
 - [x] P3-1 `/me` ctx + 吞错 —— `ComputeRatingFor` 接 ctx + 返回 error；点数查询失败不再静默按 0 点算
 - [x] P3-2 grant 用户不存在 —— 先查用户存在，报「用户不存在」而不是「金币不足」
-- [ ] P3-3 重算档位 HTTP 读写
+- [x] P3-3 重算档位 HTTP 读写 —— `GET/PUT /admin/recomputes/mode`（PUT 需 `requireWritable` + 确认口令）+ 后台切档 UI
 - [x] P3-4 levels 分页 + 真实 total —— `limit`/`offset` + `COUNT(*)`
-- [ ] P3-5 验真幂等
-- [ ] P3-6 regenerate 护栏
+- [x] P3-5 验真幂等 —— 迁移 00017 唯一索引 + `ON CONFLICT DO NOTHING`
+- [x] P3-6 regenerate 护栏 —— 需 `confirm: "regenerate"` 显式确认口令
 - [x] P3-7 `/mastery/reset` 响应形状 —— 与 `GET /mastery` 共用 `masteryState`
 - [x] P3-8 审计 detail fail-loud（`adminapi.go` 的 `AdminListAuditLogs`）
 
 ### P4
-- [ ] P4-1 装备获取 + 装备/卸下
+- [x] P4-1 装备获取 + 装备/卸下 —— `GET/PUT /me/equipment` + 商城 6 件 + 等级解锁 + 背包 UI
 - [x] P4-2 反应图鉴 —— 新增 `pages/reactions/reactions.vue`，消费 `/config.reactions` 全字段
 - [x] P4-3 `reachableReactions` 接线 —— 首页/图鉴页标出「我的构筑可达」
 - [x] P4-4 地形机制 —— 选关页显示 `TERRAIN_DESCR`
-- [ ] P4-5 战斗退出
+- [x] P4-5 战斗退出 —— `POST /battle/abandon` 退体力与复活币 + 战斗页「放弃」入口
 - [x] P4-6 体力净消耗 —— `drop_rates` 随 config 下发，选关页显示「通关净消耗 N」
-- [ ] P4-7 防线快照真实内容
+- [x] P4-7 防线快照真实内容 —— 快照带真实装备与专精（store 新增 `equippedEquipmentIds`/`equippedMasteryNodes`）
 
 ### P5
 - [ ] P5-1 分页（战报/重算台账/审计/兑换码/公告/商城）
@@ -326,7 +326,8 @@ grep -rn "Record<string, unknown>" admin/src    # 0 命中
 
 ### P6
 - [x] P6-9 miniapp 体积闸门 —— `scripts/size-report.mjs` + CI（实测 245 KB / 预算 1536 KB）
-- [ ] P6-1 ~ P6-8、P6-10 ~ P6-12（见上表）
+- [x] P6-12（部分）文档站 —— 新增「装备图鉴」页（`/config.equipment` 从此有消费方）
+- [ ] P6-1 ~ P6-8、P6-10 ~ P6-11（见上表）
 
 ---
 

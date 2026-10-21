@@ -39,6 +39,51 @@ func (s *Service) SetRecomputeMode(mode string) error {
 	return nil
 }
 
+// RecomputeModeState 是重算闸门的**当前状态快照**（给后台看的）。
+//
+// ⚠️ 2026-10-21（P3-3）：此前档位**没有任何 HTTP 端点**可读可改 ——
+// 运营看着后台的「重算审计」页，知道有「档位」这个东西，
+// 却既看不到当前是哪个档、也切不了。
+//
+// `mode` 与 `configured_mode` 的区别很重要（两者不一致 = 被熔断降级了）：
+//   - mode            —— **现在实际生效**的档；
+//   - configured_mode —— 配置里写的档；
+//   - demoted        —— enforce 被熔断降成了 shadow
+//     （此时 enforce 该拒发的奖励正在**放行**）。
+type RecomputeModeState struct {
+	// Mode 是当前**实际生效**的档。
+	Mode string `json:"mode"`
+	// ConfiguredMode 是配置里写的档。
+	ConfiguredMode string `json:"configured_mode"`
+	// Demoted 为真 = enforce 已被熔断降级。
+	Demoted bool `json:"demoted"`
+	// DemotedReason 说明为什么被降级（为空表示没降级）。
+	DemotedReason string `json:"demoted_reason"`
+	// BreakerRatePermille 是熔断阈值（不符率千分比）。
+	BreakerRatePermille int `json:"breaker_rate_permille"`
+	// BreakerMinSamples 是熔断所需的最少样本数。
+	BreakerMinSamples int `json:"breaker_min_samples"`
+}
+
+// RecomputeModeState 读当前闸门状态。
+func (s *Service) RecomputeModeState() RecomputeModeState {
+	out := RecomputeModeState{
+		Mode:           s.RecomputeMode(),
+		ConfiguredMode: s.Cfg.SettleRecomputeMode,
+	}
+	if g := s.gate; g != nil {
+		// 读**引擎侧**状态：S 段永不降级（见 RecomputeScope 的注释），
+		// 所以「被降级了」本身就直接说明是引擎在放行。
+		demoted, reason, _ := g.Demoted(ScopeEngine)
+		out.Demoted = demoted
+		out.DemotedReason = reason
+		out.Mode = g.EffectiveMode(ScopeEngine)
+		out.BreakerRatePermille = MaxBreakerRate
+		out.BreakerMinSamples = MinBreakerSamples
+	}
+	return out
+}
+
 // RecomputeMode 读当前生效的档位。
 //
 // 读的是 **gate 里的**，不是 `Cfg` 里的 ——

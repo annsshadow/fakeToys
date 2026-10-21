@@ -17,12 +17,15 @@
  * 值班的人会以为防护开着。
  */
 import { computed, onMounted, ref } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   fetchRecomputes,
   fetchRecomputeStats,
+  fetchRecomputeMode,
+  setRecomputeMode,
   type RecomputeView,
   type RecomputeLevelStat,
+  type RecomputeModeState,
   type RecomputeSummary,
 } from '@/api'
 import { fmtTime } from '@/utils/format'
@@ -152,6 +155,57 @@ async function loadStats() {
   }
 }
 
+/**
+ * 重算档位（2026-10-21 P3-3）。
+ *
+ * 此前档位**没有任何入口** —— 运营知道有「档位」这回事，
+ * 却既看不到当前是哪个档、也切不了。而把 enforce 改成 off
+ * 等于**关掉反作弊校验**，所以它必须是一次显式的、留痕的动作。
+ */
+const modeState = ref<RecomputeModeState | null>(null)
+const modeSaving = ref(false)
+
+/** 档位的中文名 + 各自意味着什么。 */
+const MODE_LABEL: Record<string, { text: string; desc: string }> = {
+  off: { text: '关闭', desc: '完全不重算、不记录台账 —— 等于关掉反作弊校验。' },
+  shadow: { text: '影子', desc: '照常重算并记录，但**不拒发**奖励（只观察，不处置）。' },
+  enforce: { text: '强制', desc: '重算且不符即拒发奖励（正常的防护档）。' },
+}
+
+async function loadMode() {
+  try {
+    modeState.value = await fetchRecomputeMode()
+  } catch (e) {
+    // 拿不到档位**不阻断**审计页：台账才是这个页面的主内容。
+    ElMessage.warning(`档位读取失败：${(e as Error).message}`)
+    modeState.value = null
+  }
+}
+
+async function switchMode(next: string) {
+  if (modeSaving.value || next === modeState.value?.mode) return
+  const info = MODE_LABEL[next]
+  try {
+    await ElMessageBox.confirm(
+      `把重算档位切到「${info?.text ?? next}」？${info?.desc ?? ''}` +
+        (next === 'off' ? '\n\n**这等于关掉反作弊校验。**' : ''),
+      '切换重算档位',
+      { type: next === 'off' ? 'error' : 'warning' },
+    )
+  } catch {
+    return // 取消
+  }
+  modeSaving.value = true
+  try {
+    modeState.value = await setRecomputeMode(next)
+    ElMessage.success(`档位已切到 ${next}`)
+  } catch (e) {
+    ElMessage.error(`切档失败：${(e as Error).message}`)
+  } finally {
+    modeSaving.value = false
+  }
+}
+
 async function load() {
   loading.value = true
   try {
@@ -173,7 +227,7 @@ async function load() {
 function reloadAll() {
   // 两个请求并发：任一失败各自的提示里已经写明了后果，
   // 所以这里不串行 —— 串行会让一次总账超时把证据列表也拖住。
-  return Promise.all([load(), loadStats()])
+  return Promise.all([load(), loadStats(), loadMode()])
 }
 
 onMounted(reloadAll)
@@ -196,6 +250,48 @@ const asLevel = (r: unknown) => r as RecomputeLevelStat
 
 <template>
   <div>
+    <!--
+      重算档位（2026-10-21 P3-3）：此前它**不可读也不可改** ——
+      运营知道有「档位」这回事，却看不到当前是哪个档、也切不了。
+
+      ⚠️ `mode` 与 `configured_mode` 不一致 = 被熔断降级了
+      （此时 enforce 该拒发的奖励正在**放行**）—— 这是最该被看见的状态。
+    -->
+    <el-card v-if="modeState" shadow="never" style="margin-bottom: 12px">
+      <div class="toolbar">
+        <span class="toolbar-label">重算档位</span>
+        <el-tag
+          :type="modeState.demoted ? 'warning' : modeState.mode === 'enforce' ? 'success' : 'info'"
+          size="small"
+        >
+          生效中：{{ modeState.mode }}
+        </el-tag>
+        <el-tag v-if="modeState.demoted" type="warning" size="small">
+          配置为 {{ modeState.configured_mode }}（已被熔断降级）
+        </el-tag>
+        <el-tag v-else-if="modeState.configured_mode !== modeState.mode" type="info" size="small">
+          配置为 {{ modeState.configured_mode }}
+        </el-tag>
+        <span class="toolbar-spacer" />
+        <el-button
+          v-for="m in ['enforce', 'shadow', 'off']"
+          :key="m"
+          size="small"
+          :disabled="modeSaving || modeState.mode === m"
+          :type="modeState.mode === m ? 'primary' : 'default'"
+          @click="switchMode(m)"
+        >
+          切到 {{ m }}
+        </el-button>
+      </div>
+      <p class="muted" style="margin: 0">
+        {{ MODE_LABEL[modeState.mode]?.desc ?? '' }}
+        <template v-if="modeState.demoted">
+          <br />降级原因：{{ modeState.demoted_reason || '（未记录）' }}
+        </template>
+      </p>
+    </el-card>
+
     <!--
       闸门状态放在最上面，且用 alert 而不是普通卡片：
       这是唯一一个「数字正常、行为却已经变了」的状态，

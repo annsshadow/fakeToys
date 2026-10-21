@@ -135,7 +135,7 @@ func TestE2EAdminUpdateLevelAndRegenerate(t *testing.T) {
 	_, tok := e.newAdmin(t, "lvl")
 	t.Cleanup(func() {
 		// 关卡是全局内容：改完必须恢复，不能污染后续用例与开发库
-		e.post(t, "/api/v1/admin/levels/regenerate", tok, nil)
+		e.post(t, "/api/v1/admin/levels/regenerate", tok, map[string]any{"confirm": "regenerate"})
 	})
 
 	// 非法路径 / 空 patch / 坏 JSON
@@ -188,7 +188,7 @@ func TestE2EAdminUpdateLevelAndRegenerate(t *testing.T) {
 	// 第 116 轮起：regenerate **保留**运营自定义的 base_hp（与后台确认文案一致），
 	// 只把生成器内容（波次/难度/星级/地形）同步回来。
 	// 旧断言「base_hp 恢复生成器默认值」记录的是缺陷行为，本轮翻案。
-	status, body = e.post(t, "/api/v1/admin/levels/regenerate", tok, nil)
+	status, body = e.post(t, "/api/v1/admin/levels/regenerate", tok, map[string]any{"confirm": "regenerate"})
 	if status != 200 || num(body, "generated") != 100 {
 		t.Errorf("regenerate 应生成 100 关：%d %v", status, body)
 	}

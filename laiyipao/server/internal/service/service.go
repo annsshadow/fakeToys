@@ -707,6 +707,35 @@ func spendToken(ctx context.Context, tx pgx.Tx, userID int64, token string, reas
 // 否则买了也看不见。
 //
 // 按需查询：只查调用方点名的那些 token。
+// grantToken 归还一个道具（`spendToken` 的逆操作）。
+//
+// ⚠️ 2026-10-21（P4-5）：放弃战斗时退复活币用的就是它。
+//
+// 为什么需要一个「归还」而不是直接 UPDATE：
+//   - 余额有 `CHECK (balance >= 0)` 约束；
+//   - **流水必须留痕** —— 道具的每次增减都要能对账。
+//     少写一条流水，运营看到的道具余额就与消耗对不上，
+//     而「道具凭空多了」和「道具凭空少了」一样难查。
+func (s *Service) grantToken(ctx context.Context, tx txType, userID int64, token string, amount int64, reason string, refID int64) error {
+	if amount <= 0 {
+		return nil
+	}
+	var balance int64
+	if err := tx.QueryRow(ctx,
+		`UPDATE user_tokens SET balance = balance + $3, updated_at = now()
+		 WHERE user_id = $1 AND token = $2
+		 RETURNING balance`, userID, token, amount).Scan(&balance); err != nil {
+		return fmt.Errorf("grant token %s: %w", token, err)
+	}
+	if _, err := tx.Exec(ctx,
+		`INSERT INTO wallet_flows (user_id, currency, delta, balance, reason, ref_id)
+		 VALUES ($1,$2,$3,$4,$5,$6)`,
+		userID, token, amount, balance, reason, refID); err != nil {
+		return fmt.Errorf("insert token grant flow: %w", err)
+	}
+	return nil
+}
+
 func (s *Service) TokenBalance(ctx context.Context, userID int64, tokens []string) (map[string]int64, error) {
 	out := map[string]int64{}
 	if len(tokens) == 0 {

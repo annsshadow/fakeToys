@@ -110,7 +110,11 @@ describe('api/index 关卡', () => {
 
   it('regenerateLevels：POST 重新生成', async () => {
     echoArgs()
-    await expect(regenerateLevels()).resolves.toEqual({ __args: ['/admin/levels/regenerate'] })
+    // 2026-10-21（P3-6）：重建全部 100 关必须带确认口令 ——
+    // 这是最重的写操作（覆盖运营手工调过的所有关卡值，且不可回滚）。
+    await expect(regenerateLevels()).resolves.toEqual({
+      __args: ['/admin/levels/regenerate', { confirm: 'regenerate' }],
+    })
   })
 
   it('fetchLevelWaves：GET 关卡波次', async () => {

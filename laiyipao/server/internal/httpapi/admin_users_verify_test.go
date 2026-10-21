@@ -1,5 +1,10 @@
 package httpapi
 
+import (
+	"fmt"
+	"sync/atomic"
+)
+
 // 运营用户列表里的**验真统计**。
 //
 // ## 要解决的是「不可执行的数字」
@@ -73,11 +78,23 @@ func newSettledBattle(t *testing.T, e *e2e, playerTok string) int64 {
 // 为什么不走 `POST /battle/verify`：那个端点会拿**客户端提供的** actual
 // 与库里存的 expected 比。我们要造的是「不匹配」这一事实，
 // 用端点也能造，但用 SQL 更直接，且不依赖端点实现。
+// verificationSeq 让每次写入的 actual_hash **互不相同**。
+//
+// ⚠️ 2026-10-21（P3-5）：`replay_verifications` 现在有唯一索引
+// （battle_id + 验真者 + actual_hash）—— 同一场、同一验真者、同一个哈希
+// 只算一条（重复提交是**写放大**，还会污染「验真一致率」的分母）。
+//
+// 这些用例要造的是「这一局被验了 N 次」，所以每次写入必须是**不同的提交**：
+// 真实的 N 次验真也确实是 N 个不同的哈希（或至少 N 次不同的尝试）。
+var verificationSeq atomic.Int64
+
 func recordVerification(t *testing.T, e *e2e, battleID, verifierID int64, matched bool) {
 	t.Helper()
+	seq := verificationSeq.Add(1)
 	_, err := e.pool.Exec(t.Context(),
 		`INSERT INTO replay_verifications (battle_id, verifier_id, expected_hash, actual_hash, matched)
-		 VALUES ($1,$2,'expected-hash','actual-hash',$3)`, battleID, verifierID, matched)
+		 VALUES ($1,$2,'expected-hash',$3,$4)`,
+		battleID, verifierID, fmt.Sprintf("actual-hash-%d", seq), matched)
 	if err != nil {
 		t.Fatalf("写验真记录失败：%v", err)
 	}

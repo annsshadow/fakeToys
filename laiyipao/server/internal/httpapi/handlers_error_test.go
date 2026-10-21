@@ -127,7 +127,10 @@ func TestHandlerErrorBranchesOnBrokenPool(t *testing.T) {
 		{"adminLevels", "GET", "/x", "", false, 0, s.adminLevels},
 		{"adminLevelWaves", "GET", "/x/1", "", true, 0, s.adminLevelWaves},
 		{"adminUpdateLevel", "PUT", "/x/1", `{"name":"x"}`, true, 0, s.adminUpdateLevel},
-		{"adminRegenerateLevels", "POST", "/x", "", false, 0, s.adminRegenerateLevels},
+		// 2026-10-21（P3-6）：重建全部 100 关现在需要 `confirm: "regenerate"`
+		// ——没有确认口令的请求在**到达数据库之前**就被 400 挡掉，
+		// 所以这个用例要带上确认口令才能走到「数据库故障」分支。
+		{"adminRegenerateLevels", "POST", "/x", `{"confirm":"regenerate"}`, false, 0, s.adminRegenerateLevels},
 		{"adminSkills", "GET", "/x", "", false, 0, s.adminSkills},
 		{"adminUpdateSkill", "PUT", "/x/1", `{"name":"x"}`, true, 0, s.adminUpdateSkill},
 		{"adminEquipment", "GET", "/x", "", false, 0, s.adminEquipment},

@@ -206,8 +206,15 @@ export function updateLevel(id: number, patch: AdminLevelPatch) {
   return api.put<AdminLevelResp>(`/admin/levels/${id}`, patch)
 }
 
+/**
+ * 用生成器重建全部 100 关。
+ *
+ * ⚠️ 2026-10-21（P3-6）：现在必须带 `confirm: 'regenerate'` ——
+ * 这是**最重的写操作**（一次覆盖运营手工调过的所有关卡值，且不可回滚），
+ * 服务端要求显式确认口令。
+ */
 export function regenerateLevels() {
-  return api.post<AdminRegenerateResp>('/admin/levels/regenerate')
+  return api.post<AdminRegenerateResp>('/admin/levels/regenerate', { confirm: 'regenerate' })
 }
 
 export function fetchLevelWaves(levelId: number) {
@@ -327,6 +334,35 @@ export function fetchRecomputes(
  */
 export function fetchRecomputeStats(hours = 24) {
   return api.get<RecomputeSummary>(`/admin/recomputes/stats?hours=${hours}`)
+}
+
+/**
+ * 重算闸门状态（2026-10-21 P3-3）。
+ *
+ * `mode` 是**实际生效**的档，`configured_mode` 是配置里写的档。
+ * 两者不一致 = 被熔断降级了 —— 那时 enforce 该拒发的奖励正在**放行**。
+ */
+export interface RecomputeModeState {
+  mode: string
+  configured_mode: string
+  demoted: boolean
+  demoted_reason: string
+  breaker_rate_permille: number
+  breaker_min_samples: number
+}
+
+export function fetchRecomputeMode() {
+  return api.get<RecomputeModeState>('/admin/recomputes/mode')
+}
+
+/**
+ * 切换重算档位。
+ *
+ * ⚠️ 破坏性操作：把 enforce 改成 off 等于关掉反作弊校验。
+ * 所以服务端要求带 `confirm: 'confirm'` —— 一个手滑不该能关掉校验。
+ */
+export function setRecomputeMode(mode: string) {
+  return api.put<RecomputeModeState>('/admin/recomputes/mode', { mode, confirm: 'confirm' })
 }
 
 // ---------- 反应表 ----------

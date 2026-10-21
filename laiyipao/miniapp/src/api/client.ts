@@ -870,6 +870,19 @@ export function startBattle(levelId: number) {
   return request<BattleTokenResp>('/battle/token', { method: 'POST', body: { level_id: levelId } })
 }
 
+/**
+ * 放弃一场未结算的战斗，退回开战时扣掉的体力（2026-10-21 P4-5）。
+ *
+ * 此前**没有放弃路径** —— 玩家中途退出，体力已经扣了，
+ * 却什么都没有发生（没有战报、没有奖励）。
+ */
+export function abandonBattle(tokenId: number) {
+  return request<{ refunded_energy: number; abandoned: boolean }>('/battle/abandon', {
+    method: 'POST',
+    body: { token_id: tokenId },
+  })
+}
+
 export function settleBattle(payload: any) {
   return request<any>('/battle/settle', { method: 'POST', body: payload })
 }

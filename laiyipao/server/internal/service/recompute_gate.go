@@ -272,6 +272,24 @@ func (g *RecomputeGate) Demoted(scope RecomputeScope) (bool, string, time.Time) 
 	return true, d.reason, d.at
 }
 
+// EffectiveMode 返回该 scope **实际生效**的档位。
+//
+// 与 `Mode()` 的区别：`Mode()` 是**配置**的档位，
+// 而熔断可能把 enforce 降成 shadow —— 那时实际生效的是 shadow。
+//
+// ⚠️ 2026-10-21（P3-3）：后台要显示「现在到底哪个档在生效」，
+// 而此前只有 `Mode()`（配置值）可读 ——
+// 于是「被熔断降级了」这件事在**档位**这一栏看不出来，
+// 只能从另一页的告警条里推断。
+func (g *RecomputeGate) EffectiveMode(scope RecomputeScope) string {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	if d := g.demoted[scope]; d.to != "" {
+		return d.to
+	}
+	return g.mode
+}
+
 // RecomputeScope 标明「这次裁决是为哪一类重算做的」。
 //
 // # 为什么必须区分两类，而不能只有一个总开关

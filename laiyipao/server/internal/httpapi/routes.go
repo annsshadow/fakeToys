@@ -133,6 +133,8 @@ func (s *Server) Register(app *fiber.App) {
 	// 额度与理由见 middleware.go 的 authRateLimit。
 	battle.Post("/settle", authRateLimit("settle", settleLimit), s.settleBattle)
 	battle.Post("/verify", authRateLimit("verify", verifyLimit), s.verifyReplay)
+	// 2026-10-21（P4-5）：放弃战斗并退回开战时扣掉的资源。
+	battle.Post("/abandon", s.abandonBattle)
 	battle.Get("/:id/replay", s.getReplay)
 
 	mastery := v1.Group("/mastery", requireUser(s.Svc))
@@ -226,6 +228,11 @@ func (s *Server) Register(app *fiber.App) {
 	//   后者一旦存在就会把 /stats 当成 id 匹配掉。
 	adm.Get("/recomputes", s.adminRecomputes)
 	adm.Get("/recomputes/stats", s.adminRecomputeStats)
+	// 2026-10-21（P3-3）：档位可读可改。
+	adm.Get("/recomputes/mode", s.adminRecomputeMode)
+	// 切档是**写操作**，而且是「关掉反作弊校验」那种写 ——
+	// readonly 账号绝不能做（它会 403，而不是被静默地切成功）。
+	adm.Put("/recomputes/mode", requireWritable(), s.adminSetRecomputeMode)
 	adm.Get("/defenses", s.adminDefenses)
 	adm.Get("/economy", s.adminEconomy)
 	adm.Put("/shop/:id", requireWritable(), s.adminUpdateShop)
@@ -562,6 +569,27 @@ func (s *Server) getReplay(c *fiber.Ctx) error {
 		return failErr(c, err)
 	}
 	return c.JSON(info)
+}
+
+// abandonBattle 放弃一场未结算的战斗，退回体力（与复活币）。
+//
+// ⚠️ 2026-10-21（P4-5）：此前**没有放弃路径** ——
+// 玩家中途退出，体力已经扣了，却什么都没有发生。
+func (s *Server) abandonBattle(c *fiber.Ctx) error {
+	var body struct {
+		TokenID int64 `json:"token_id"`
+	}
+	if err := c.BodyParser(&body); err != nil {
+		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+	}
+	if body.TokenID <= 0 {
+		return fail(c, fiber.StatusBadRequest, "bad_input", "token_id 非法")
+	}
+	refunded, err := s.Svc.AbandonBattle(c.Context(), userIDFrom(c), body.TokenID)
+	if err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(fiber.Map{"refunded_energy": refunded, "abandoned": true})
 }
 
 func (s *Server) verifyReplay(c *fiber.Ctx) error {

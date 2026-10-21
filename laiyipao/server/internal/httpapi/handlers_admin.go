@@ -163,7 +163,35 @@ func (s *Server) adminUpdateLevel(c *fiber.Ctx) error {
 	return c.JSON(service.AdminLevelResp{Level: lvl})
 }
 
+// adminRegenerateLevels 用生成器重建全部关卡。
+//
+// ⚠️ 2026-10-21（P3-6）：现在需要**显式确认口令**。
+//
+// 为什么：这是**最重的写操作** —— 一次调用重建全部 100 关，
+// 覆盖运营手工调过的所有值（血量/波次/星级门槛/地形…）。
+//
+// 此前它**无任何服务端护栏**：UI 有 `ElMessageBox.confirm`，
+// 但那只是前端的提示 —— 任何人拿一枚管理员令牌直接打这个端点，
+// 就能把 100 关全部重置，而且**不可回滚**（没有版本表、没有快照）。
+//
+// 所以：请求体里必须带 `confirm: "regenerate"`，否则 400。
+// 一次手滑（或者一个脚本误调）不该重置整张表。
 func (s *Server) adminRegenerateLevels(c *fiber.Ctx) error {
+	var body struct {
+		// Confirm 必须是 "regenerate" —— 显式确认。
+		Confirm string `json:"confirm"`
+	}
+	// 空 body 也允许（老客户端没带这个字段）—— 但那样就必须拒绝。
+	// 这里刻意**要求**带：破坏性操作的确认口令不该有「兼容旧客户端」的例外。
+	if len(bytes.TrimSpace(c.Body())) > 0 {
+		if err := c.BodyParser(&body); err != nil {
+			return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+		}
+	}
+	if body.Confirm != "regenerate" {
+		return fail(c, fiber.StatusBadRequest, "bad_input",
+			"重建全部 100 关需要显式确认：请求体里带 confirm: \"regenerate\"")
+	}
 	n, err := s.Svc.AdminRegenerateLevels(c.Context())
 	if err != nil {
 		return failErr(c, err)
@@ -436,6 +464,44 @@ func (s *Server) adminRecomputeStats(c *fiber.Ctx) error {
 		return failErr(c, err)
 	}
 	return c.JSON(sum)
+}
+
+// adminRecomputeMode 读重算闸门的当前状态。
+//
+// 2026-10-21（P3-3）：此前档位**没有任何 HTTP 端点**可读 ——
+// 运营看着「重算审计」页，知道有「档位」这个东西，
+// 却既看不到当前是哪个档、也切不了。
+//
+// `mode` 与 `configured_mode` 的区别很重要：两者不一致 = 被熔断降级了
+// （此时 enforce 该拒发的奖励正在**放行**）。
+func (s *Server) adminRecomputeMode(c *fiber.Ctx) error {
+	return c.JSON(s.Svc.RecomputeModeState())
+}
+
+// adminSetRecomputeMode 切换重算处置档位。
+//
+// 这是**破坏性操作**：把 enforce 改成 off，等于关掉了反作弊校验。
+// 所以：① 必须带确认口令；② 写进审计日志；③ 非法档位**不静默降级**。
+func (s *Server) adminSetRecomputeMode(c *fiber.Ctx) error {
+	var body struct {
+		Mode string `json:"mode"`
+		// Confirm 必须是 "confirm" —— 防止误触（一个手滑就把校验关了）。
+		Confirm string `json:"confirm"`
+	}
+	if err := c.BodyParser(&body); err != nil {
+		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+	}
+	if body.Confirm != "confirm" {
+		return fail(c, fiber.StatusBadRequest, "bad_input",
+			"切档需要显式确认：请求体里带 confirm: \"confirm\"")
+	}
+	prev := s.Svc.RecomputeMode()
+	if err := s.Svc.SetRecomputeMode(body.Mode); err != nil {
+		return fail(c, fiber.StatusBadRequest, "bad_input", err.Error())
+	}
+	s.Svc.Audit(c.Context(), adminIDFrom(c), "set_recompute_mode", body.Mode, c.IP(),
+		fiber.Map{"from": prev, "to": body.Mode})
+	return c.JSON(s.Svc.RecomputeModeState())
 }
 
 // adminBattleDetail 返回单场战报的**详情**。
