@@ -7,7 +7,7 @@
 | 迁移完成度 / 端点数 | `oa4rust/backend/docs/brainstorms/oa4rust-endpoint-inventory.md`、`oa4rust-migration-status.md`（脚本生成） | 引用，不手工改数字 |
 | API 明细 | 运行时 `/openapi.json` + 各 crate `routes.rs` | 讲结构与模式，不抄全量清单 |
 | 安全审计 | `oa4rust/backend/docs/audits/YYYY-MM-DD-security-audit.md` | 引用结论 |
-| 部署 / 回滚 | `backend/docs/ops/REALIZE_RUNBOOK.md` §4.2、`deploy/nginx.conf` | 引用上线判据与回退口径 |
+| 部署 / 回滚 | `backend/docs/ops/REALIZE_RUNBOOK.md` §4.2（待确认：该文件当前不在仓库中）、`deploy/nginx.conf` | 引用上线判据与回退口径 |
 | 本文档集 | `docs/oa4rust/` | **入口与导读**：架构、流程、约定、FAQ |
 
 **规则**：生成类数字（crate 数、handler 数、迁移数）在本文档集中出现时必须标注"以 XX 为准"；发现不一致时，改权威源 + 重新生成，而不是手改本文档。
@@ -20,7 +20,7 @@
 | --- | --- |
 | 新增/修改/删除后端路由 | 更新三端契约 fixture（`oa4rust/tests/contracts/`）+ 前端 `@oa4rust/apis`；移动端按需暴露；跑 `pnpm test` |
 | 新增数据库对象 | `migrations/NNN_xxx.sql` **成对**提供 `NNN_xxx_rollback.sql`；命名连续编号 |
-| 新增/删除 crate | workspace `Cargo.toml` members + `lib.rs` merge + 重新跑 `backend/scripts/regen_endpoints.py` 刷新 inventory |
+| 新增/删除 crate | workspace `Cargo.toml` members + `lib.rs` merge + 重新跑 `backend/scripts/regen_endpoints.py` 刷新 inventory（待确认：该脚本当前实际产出 `tests/behavior_comparison/endpoints.rs`，清单自述生成器 `scripts/gen_inventory.py` 不在 `backend/scripts/`） |
 | 安全例外 | `security/rustsec-exceptions.toml` 带到期日 + `rustsec-db.rev` 抬版 + 审计记录 |
 | 配置项（env） | `.env.example` 同步 + 本目录 `05-environment.md` 更新 |
 | 公开 API 行为变化 | 审计对齐记录（`docs/audits/`）+ OpenAPI 注解（utoipa） |
@@ -62,9 +62,9 @@ pnpm test && pnpm typecheck && pnpm lint:check && pnpm build
 | 周期 | 动作 | 依据 |
 | --- | --- | --- |
 | 每日（CI） | `cargo audit`（浮动门，`--deny unsound/vulnerable`）；`pnpm audit` | `docs/security/rustsec-audit.md` |
-| 每次真实化推进 | `regen_endpoints.py` 刷新 inventory / migration-status；更新本文档集速览数字 | 迁移状态文档头部说明 |
+| 每次真实化推进 | `regen_endpoints.py` 刷新 inventory / migration-status（待确认：该脚本当前实际产出 `tests/behavior_comparison/endpoints.rs`）；更新本文档集速览数字 | 迁移状态文档头部说明 |
 | 安全例外到期前 | 复验可达性：升版本或续期（必须留审计记录） | rustsec-exceptions.toml 到期日 |
-| 每次发布 | 静态门禁全绿 + live E2E 通过即上线；回滚 = 回退上一 Rust 版本 | `backend/docs/ops/REALIZE_RUNBOOK.md` §4.2 |
+| 每次发布 | 静态门禁全绿 + live E2E 通过即上线；回滚 = 回退上一 Rust 版本 | `backend/docs/ops/REALIZE_RUNBOOK.md` §4.2（待确认：该文件当前不在仓库中） |
 
 ## 7. 已知待办与风险登记（2026-10-14 快照）
 
