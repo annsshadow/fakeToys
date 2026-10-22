@@ -24,3 +24,6 @@ file_assemble_control = { path = "../file_assemble_control" }
 [dev-dependencies]
 tower.workspace = true
 async-trait.workspace = true
+
+[lints]
+workspace = true

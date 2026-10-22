@@ -19,3 +19,6 @@ anyhow.workspace = true
 chrono.workspace = true
 
 shared = { path = "../shared" }
+
+[lints]
+workspace = true

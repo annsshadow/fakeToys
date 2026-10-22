@@ -18,3 +18,6 @@ uuid.workspace = true
 tower.workspace = true
 
 shared = { path = "../shared" }
+
+[lints]
+workspace = true

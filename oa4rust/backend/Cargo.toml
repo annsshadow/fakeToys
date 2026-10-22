@@ -227,6 +227,25 @@ rust-version = "1.85"
 version = "0.1.0"
 publish = false
 
+# ── 编译告警零容忍 ────────────────────────────────────────────────────────────
+# 把 rustc 的 warnings 组整体升到 deny：任何一个编译告警都会让 cargo
+# build / check / test / clippy 直接失败，而不是只打印一行 "warning:"。
+#
+# 为什么要写进清单而不是只靠 CI 的 `cargo clippy -- -D warnings`：
+#   - 本地开发跑的是 `cargo build` / `cargo test`，不经过 CI，告警会在本地
+#     一路堆积，等到 PR 才被 CI 拦下；
+#   - 清单里的 deny 对**所有** cargo 入口生效（含 IDE 的 check-on-save），
+#     不存在"这条路径没加 -D warnings"的缺口。
+#
+# 生效前提：每个成员 crate 的 Cargo.toml 里有 `[lints] workspace = true`
+# （96 个 crates/* 与根包均已加）。依赖树（registry / git 源）不受影响：
+# cargo 对它们传 `--cap-lints allow`，第三方代码的告警不会拖垮本仓库构建。
+#
+# 源码里的 `#![allow(...)]`（如 crates/*_assemble_control 的 dead_code）仍然
+# 优先于这里的 deny —— 那是逐个用例确认过的豁免，不是整体降级。
+[workspace.lints.rust]
+warnings = "deny"
+
 [dev-dependencies]
 oa4rust = { path = "." }
 reqwest = { version = "0.12", features = ["json", "rustls-tls", "multipart"] }
@@ -311,4 +330,8 @@ lto = "thin"
 codegen-units = 1
 strip = "symbols"
 incremental = false
+
+# 根包（bin `oa4rust` / lib `oa4rust`）同样继承 [workspace.lints.rust] 的 deny(warnings)。
+[lints]
+workspace = true
 
