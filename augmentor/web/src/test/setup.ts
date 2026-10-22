@@ -48,48 +48,28 @@ import { message, notification } from 'antd'
 // 显式写了 `timeout` 的调用以调用点为准（本仓页面级用例已统一为 10000）。
 configure({ asyncUtilTimeout: 10000 })
 
-afterEach(async () => {
-  // 顺序很关键：**先销毁 antd 的静态提示，再卸载组件**。
-  // antd 的 `message` / `notification` 是模块级单例，带 3s 自动关闭计时器；
-  // 若按「先 cleanup 再 destroy」的顺序，destroy 触发的状态更新会打在被拆掉的树上，
-  // React 19 的调度器把这次渲染排到 `setImmediate`，等它跑时 jsdom 已经销毁 ⇒
-  // `react-dom` 读 `window` 抛 `ReferenceError: window is not defined`，
-  // vitest 记为 Unhandled Error（用例全过、步骤仍红）。
-  // 2026-10-22 CI 实测：这个形状的未捕获异常 3 → 13 条不等，全部来自
-  // `System.backup.test.tsx` 那些走 antd warning 的用例。
-  // `await act(async () => …)` 不是仪式：act 的异步形态会把 React 的调度队列
-  // 走完再返回，等于在拆环境前把 pending 渲染冲干净。
-  await act(async () => {
+afterEach(() => {
+  // **同步 act，不是异步 act**：React 19 把 useEffect 的 passive effects 提交走
+  // `scheduleCallback(NormalPriority, () => { schedulerEvent = window.event;
+  // flushPassiveEffects() })` —— 一个 **setImmediate**（macrotask）。异步 act
+  // （`await act(async () => {})`）只保证冲干净微任务，返回时那个 setImmediate 还没跑，
+  // 于是 passive effects 活到 worker 拆环境之后，`react-dom` 读 `window` 抛
+  // `ReferenceError: window is not defined`，vitest 记为 Unhandled Error
+  // （用例全过、步骤仍红）。同步 act 在调用内就把 passive effects 提交完，
+  // 根本不往 setImmediate 上排。
+  // 2026-10-22 CI 实测三版的差异：异步 act 版 3 条 → 「等一个 setImmediate」版 1~2 条
+  // （等 macrotask 会唤醒新的悬挂工作，越冲越多）→ 同步 act 版 0 条。
+  act(() => {
     cleanup()
   })
+  // 顺序：先卸载再销毁。antd 的 `message` / `notification` 是模块级单例、带 3s
+  // 自动关闭计时器；destroy 自己也会触发一次状态更新（通知盒子卸载），同样要在
+  // 同步 act 里冲干净。包 try 是防个别文件没挂载过 antd 时的边缘情况。
   try {
     message.destroy()
     notification.destroy()
   } catch {
     /* 没有挂载过 antd 时 destroy 是无操作；兜底不让清场自己炸 */
   }
-  // destroy 自己也会触发一次状态更新（通知盒子卸载）—— 那一次同样要冲干净，
-  // 否则它会被排到 `setImmediate`，等 React 19 的调度器跑它时 jsdom 已经销毁，
-  // `react-dom` 读 `window` 抛 `ReferenceError: window is not defined`。
-  // 2026-10-22 CI 实测：少这一句就是 13 条未捕获异常（全来自 System.backup.test.tsx）。
-  //
-  // **光有 act 还不够**：act 的异步形态只保证冲干净**微任务**队列，而 React 19 的
-  // 调度器（`scheduler` 包）在 Node 侧把渲染任务排在 `setImmediate` —— 那是
-  // **macrotask**，`await act(async () => {})` 返回时它可能还没跑。于是渲染活到
-  // worker 拆环境之后，栈是 `react-dom-client.development.js → Immediate.
-  // performWorkUntilDeadline → processImmediate`。
-  // 2026-10-22 CI 实测：3 条降到这里还剩 1 条，来源 `Analysis.test.tsx`（本机单跑
-  // 不复现，2 worker 并行下才偶发）—— 属时序竞态，不是某个用例写错。
-  // 修法是显式让出一个 macrotask：等一个 `setImmediate`，React 的渲染任务
-  // （同一机制，先入队）就在它之前跑完。
-  // （不直接 `import { setImmediate } from 'node:timers'`：本项目 tsconfig 不带
-  //  node 类型，直接写会 TS2304；也不假设它一定存在 —— 浏览器侧回落到 setTimeout。）
-  await act(async () => {
-    await new Promise<void>((resolve) => {
-      const yieldToMacrotask = (globalThis as { setImmediate?: (cb: () => void) => void })
-        .setImmediate
-      if (typeof yieldToMacrotask === 'function') yieldToMacrotask(() => resolve())
-      else setTimeout(resolve, 0)
-    })
-  })
+  act(() => {})
 })
