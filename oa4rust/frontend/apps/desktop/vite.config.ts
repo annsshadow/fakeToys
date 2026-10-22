@@ -10,9 +10,11 @@ export default defineConfig({
   plugins: [vue(), UnoCSS()],
   resolve: {
     alias: {
-      '@oa4rust/sdk': resolve(__dirname, '../../packages/sdk/src'),
-      '@oa4rust/ui': resolve(__dirname, '../../packages/ui/src'),
-      '@oa4rust/locales': resolve(__dirname, '../../packages/locales/src'),
+      // 用 import.meta.dirname 而非 __dirname：Vite 的 configLoader 'native'（未来默认）
+      // 不支持 __dirname，构建时会打 "unsupported by configLoader: 'native'" 告警。
+      '@oa4rust/sdk': resolve(import.meta.dirname, '../../packages/sdk/src'),
+      '@oa4rust/ui': resolve(import.meta.dirname, '../../packages/ui/src'),
+      '@oa4rust/locales': resolve(import.meta.dirname, '../../packages/locales/src'),
     },
   },
   server: {
