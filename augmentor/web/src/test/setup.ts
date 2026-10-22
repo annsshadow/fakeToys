@@ -34,11 +34,21 @@
  */
 import '@testing-library/jest-dom/vitest'
 import { cleanup } from '@testing-library/react'
+import { act } from 'react'
 import { afterEach } from 'vitest'
 import { message, notification } from 'antd'
 
-afterEach(() => {
-  cleanup()
+afterEach(async () => {
+  // `await act(async () => …)` 不是仪式：React 19 的调度器把渲染任务排到
+  // `setImmediate`（`Immediate.performWorkUntilDeadline` → `processImmediate`），
+  // 用例结束时若还有一次 pending render，它会在**环境已销毁之后**才跑，
+  // `react-dom` 读 `window` 抛 `ReferenceError: window is not defined`，
+  // vitest 记为 Unhandled Error（用例全过、步骤仍红）。
+  // 2026-10-22 CI 实测：3 条这样的未捕获异常。act 的异步形态会把调度队列
+  // 走完再返回，等于在拆环境前把 pending 渲染冲干净。
+  await act(async () => {
+    cleanup()
+  })
   try {
     message.destroy()
     notification.destroy()
