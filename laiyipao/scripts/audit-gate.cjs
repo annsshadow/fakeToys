@@ -96,7 +96,7 @@ function checkOverrides(yamlTxt, baseTxt) {
       fail: true,
       msg: `override 不在 pnpm-workspace.yaml 里了: ${missing.map((m) => m[0]).join(", ")}`,
       hint: [
-        "删掉 override 会让 miniapp 漏洞数涨回 58（3/18/28/9）。",
+        "删掉 override 会让 miniapp 的漏洞计数立刻涨回去（vite / vue 家族那几条尤其明显）。",
         "确认是故意为之再删，并同步改 audit-baseline.ini。",
       ],
     };
