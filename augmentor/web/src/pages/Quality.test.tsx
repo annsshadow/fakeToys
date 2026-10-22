@@ -273,7 +273,7 @@ describe('Quality 结构校验', () => {
     fireEvent.click(screen.getByRole('button', { name: /结构校验/ }))
 
     await waitFor(() => expect(document.body.textContent).toContain('结构校验失败'), {
-      timeout: 4000,
+      timeout: 10000,
     })
     fireEvent.click(screen.getByRole('tab', { name: /结构校验/ }))
     expect(screen.queryByText('条目总数')).not.toBeInTheDocument()

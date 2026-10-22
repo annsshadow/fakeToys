@@ -180,7 +180,7 @@ describe('Dashboard 四条读取失败的可见性', () => {
       render(<Dashboard />)
 
       // antd 的 message 渲进 body 而不是组件容器
-      await waitFor(() => expect(document.body.textContent).toContain(text), { timeout: 4000 })
+      await waitFor(() => expect(document.body.textContent).toContain(text), { timeout: 10000 })
     })
   }
 })

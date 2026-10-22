@@ -103,7 +103,10 @@ DOCS = (ARCH, LEDGER)
 #: 「写账的动作本身会造新账」的又一次实测 —— 增量全部来自**结案散文**，不是产品码。
 CEILING = {
     ARCH: {"dead_line": 0, "unresolved_source": 0, "ambiguous_line": 0,
-           "ambiguous_file": 0, "bare": 15, "scratch_missing": 29},
+           # 2026-10-22 重钉 15 → **14**：bare 少一条。已用「stash 全部本地改动后重跑」
+           # 对照：HEAD 读数同为 14 ⇒ 存量位移，与本轮改动无关（按 A127 / L180 口径就地
+           # 重钉；棘轮降格要留一句，这句就是）。
+           "ambiguous_file": 0, "bare": 14, "scratch_missing": 29},
     LEDGER: {"dead_line": 0, "unresolved_source": 0, "ambiguous_line": 68,
              "ambiguous_file": 145, "bare": 145, "scratch_missing": 113},
 }
@@ -450,7 +453,13 @@ MEASURED = {
     #: 插 import 后，架构文档里 max_workers 形参清单的 export.py 行号格落到非代码行，
     #: 按先例降级名锚——行号引用退出 line_refs 桶（−1），文件名反引号 token 转入
     #: file_tokens 桶（+1），漂移桶不动（该格原本就在其中）。
-    ARCH: {"line_refs": 38, "file_tokens": 248, "code_but_no_name_match": 34},
+    # 2026-10-22 重钉（38 / 248 / 34 → **39 / 257 / 33**）：三格一起动，逐格归因 ——
+    # `line_refs` +1（多一条 `f.py:NNN` 形状）、`file_tokens` +9（多九个裸文件名反引号
+    # token）、`code_but_no_name_match` −1（一条原落在漂移档的行引用改判名字锚）。
+    # 已用「stash 全部本地改动后重跑」对照：HEAD 读数同为 39 / 257 / 33 ⇒ 存量位移、
+    # 与本轮改动无关（ARCHITECTURE.md 亦无任何指向本轮改动文件的引用可查）。
+    # 按「动案面要重跑普查再改这里」条款就地重钉；三档硬 0 与 ambiguous 各档原地未动。
+    ARCH: {"line_refs": 39, "file_tokens": 257, "code_but_no_name_match": 33},
     #: L153 面位移（37 → 34）：config/quality 接 require_ratio_list 插行后，3 条 config.py
     #: 历史行引用的被引行换位、退出本档。案面=产品布局变更，按「数字搬进常量」条款重钉。
     #: **L100 批②（产品码插行 ⇒ 账本 A144 那一行被顶红，三格同时动）**：批② 给 `augmentor/checkpoint.py`
@@ -544,7 +553,11 @@ MEASURED = {
     #: 的结案句时点名的新守卫文件是**文件 token 形状**（不带行号），所以只加 token、
     #: 不动 line_refs 与漂移档。同一格改到的状态列把「无代码路径读取」换成「12 只仍无读者」，
     #: 那是谓词纠正而不是引用增减。写账的动作本身会造新账 —— 本文件注释里那句话的第 N 次复现。
-    LEDGER: {"line_refs": 264, "file_tokens": 1668, "code_but_no_name_match": 148},
+    # 2026-10-22 重钉（file_tokens 1668 → **1672**、code_but_no_name_match 148 → **139**）：
+    # 卷一账本的裸文件名 token 多四个、漂移档少九条。已用「stash 全部本地改动后重跑」
+    # 对照：HEAD 读数同为 1672 / 139 ⇒ 存量位移，与本轮改动无关。按「动案面要重跑普查
+    # 再改这里」条款就地重钉；`line_refs` 264 与各档硬 0 原地未动。
+    LEDGER: {"line_refs": 264, "file_tokens": 1672, "code_but_no_name_match": 139},
     #: L156 面位移（290 → 285）：streaming.py 插 `StreamConfig.__post_init__` 后，账本 5 条
     #: streaming.py 历史行引用（A145 行 2 条、A147 行 3 条）被引行换位、退出本档，按
     #: L151 / L153 / L154 先例降成名字锚（「原 N 行」）：line_refs −5、漂移 147 →

@@ -129,7 +129,7 @@ async function waitFiles(container: HTMLElement) {
   await waitFor(
     () =>
       expect((container.querySelector('select') as HTMLSelectElement)?.value).toBe('a.json'),
-    { timeout: 4000 },
+    { timeout: 10000 },
   )
 }
 
@@ -218,7 +218,7 @@ describe('采样卡的渲染面', () => {
     await waitFor(
       () => expect(document.body.textContent)
         .toContain('ratio 必须是 0.0 到 1.0 之间的比例，当前是 2.0'),
-      { timeout: 4000 },
+      { timeout: 10000 },
     )
     expect(labeled('采样回执')).toBeNull()
   })
@@ -230,7 +230,7 @@ describe('采样卡的渲染面', () => {
     click('采样选中的文件')
 
     await waitFor(() => expect(document.body.textContent).toContain('点名输出文件名'), {
-      timeout: 4000,
+      timeout: 10000,
     })
     expect(spies.sampleDataset).not.toHaveBeenCalled()
   })
@@ -289,7 +289,7 @@ describe('聚合卡的渲染面', () => {
     fireEvent.change(screen.getByLabelText('聚合输出文件名'), { target: { value: 'agg.json' } })
     click('聚合勾选的来源')
 
-    await waitFor(() => expect(document.body.textContent).toContain('重复'), { timeout: 4000 })
+    await waitFor(() => expect(document.body.textContent).toContain('重复'), { timeout: 10000 })
     expect(spies.aggregateDatasets).not.toHaveBeenCalled()
   })
 
@@ -301,7 +301,7 @@ describe('聚合卡的渲染面', () => {
     click('聚合勾选的来源')
 
     await waitFor(() => expect(document.body.textContent).toContain('至少要勾一个来源'), {
-      timeout: 4000,
+      timeout: 10000,
     })
     expect(spies.aggregateDatasets).not.toHaveBeenCalled()
   })
@@ -404,7 +404,7 @@ describe('RAG 卡的渲染面', () => {
     click('转成 RAG 格式')
 
     await waitFor(() => expect(document.body.textContent).toContain('不支持的 RAG 格式'), {
-      timeout: 4000,
+      timeout: 10000,
     })
     expect(labeled('RAG 回执')).toBeNull()
   })

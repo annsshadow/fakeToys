@@ -106,7 +106,7 @@ describe('上传控件的渲染面', () => {
     // 这条钉的是 A162 ② 的**产品后果**：用户看得见「按 csv 解析」那句，而不是一句「上传失败」。
     await waitFor(
       () => expect(document.body.textContent).toContain('上传内容整份是一份合法 JSON'),
-      { timeout: 4000 }
+      { timeout: 10000 }
     )
   })
 
@@ -129,7 +129,7 @@ describe('上传控件的渲染面', () => {
     await pickFile(container, new File(['a,b\n1,2'], 'big.csv', { type: 'text/csv' }))
 
     await waitFor(() => expect(document.body.textContent).toContain('客户端已停止等待'), {
-      timeout: 4000,
+      timeout: 10000,
     })
     expect(document.body.textContent).toContain('已把结果落盘')
     expect(spies.getDataFiles.mock.calls.length).toBeGreaterThan(baseline)

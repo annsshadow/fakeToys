@@ -39,7 +39,13 @@ import re
 import pytest
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-SKIP_PARTS = ("/tests/", "test_", "/.venv/", "/web/", "node_modules", "/__pycache__/")
+# `/Temp/` 必须排除：那是**未入仓**的取证草稿目录，里面躺着各轮尺子的历史副本
+# （`Temp/l57/head/augmentor/...` 一整棵树）。不排除的话，本地普查把历史副本也算成
+# 产品码 —— 2026-10-22 实测 A 族 301 vs 常数 0、名册里整片 Temp 条目，而 CI 的干净
+# 克隆没有 Temp、一直是绿的。尺子量的是**当前产品码**，历史副本由 git 负责。
+# （这与 a184 的索引口径不矛盾：那边把 Temp 留在索引里，是为了让账本里的取证脚本
+#  引用解析成「指向工件」而不是「指向不存在的文件」—— 两把尺子要的东西不同。）
+SKIP_PARTS = ("/tests/", "test_", "/.venv/", "/web/", "node_modules", "/__pycache__/", "/Temp/")
 
 SITE = re.compile(r"^\s*(?:self\.)?([A-Za-z_]\w*)\s*=\s*\1\s+or\s+(.+)$")
 EMPTY_DEFAULTS = frozenset({"[]", "{}", "()", "set()", "dict()", "list()", '""', "''"})

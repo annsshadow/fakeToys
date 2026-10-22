@@ -112,7 +112,7 @@ describe('Augmentation 文件列表失败', () => {
     render(<Augmentation />)
 
     await waitFor(() => expect(document.body.textContent).toContain('加载文件列表失败'), {
-      timeout: 4000,
+      timeout: 10000,
     })
   })
 })

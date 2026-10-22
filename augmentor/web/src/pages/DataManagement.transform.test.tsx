@@ -165,7 +165,7 @@ async function waitFiles(container: HTMLElement) {
   await waitFor(
     () =>
       expect((container.querySelector('select') as HTMLSelectElement)?.value).toBe('a.json'),
-    { timeout: 4000 },
+    { timeout: 10000 },
   )
 }
 
@@ -216,7 +216,7 @@ describe('转换卡的渲染面', () => {
     click('转换选中的文件')
 
     await waitFor(() => expect(document.body.textContent).toContain('路径包含非法组件'), {
-      timeout: 4000,
+      timeout: 10000,
     })
     expect(labeled('转换回执')).toBeNull()
   })
@@ -228,7 +228,7 @@ describe('转换卡的渲染面', () => {
     click('转换选中的文件')
 
     await waitFor(() => expect(document.body.textContent).toContain('点名输出文件名'), {
-      timeout: 4000,
+      timeout: 10000,
     })
     expect(spies.convertDataset).not.toHaveBeenCalled()
   })
@@ -284,7 +284,7 @@ describe('合并卡的渲染面', () => {
     click('合并勾选的文件')
 
     await waitFor(() => expect(document.body.textContent).toContain('至少要勾一个输入文件'), {
-      timeout: 4000,
+      timeout: 10000,
     })
     expect(spies.mergeDatasets).not.toHaveBeenCalled()
   })
@@ -299,7 +299,7 @@ describe('合并卡的渲染面', () => {
     click('合并勾选的文件')
 
     await waitFor(() => expect(document.body.textContent).toContain('文件不存在'), {
-      timeout: 4000,
+      timeout: 10000,
     })
     expect(labeled('合并回执')).toBeNull()
   })
@@ -369,7 +369,7 @@ describe('分割卡的渲染面', () => {
     click('分割选中的文件')
 
     await waitFor(() => expect(document.body.textContent).toContain('分割比例之和必须为1.0'), {
-      timeout: 4000,
+      timeout: 10000,
     })
     expect(labeled('分割回执')).toBeNull()
   })

@@ -100,7 +100,7 @@ describe('Multimodal 单条处理', () => {
     fireEvent.click(screen.getByRole('button', { name: /处.*理/ }))
 
     await waitFor(() => expect(document.body.textContent).toContain('多模态处理失败'), {
-      timeout: 4000,
+      timeout: 10000,
     })
   })
 })

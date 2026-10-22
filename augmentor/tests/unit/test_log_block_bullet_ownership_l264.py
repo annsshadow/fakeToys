@@ -46,6 +46,7 @@ parametrize 三面冻成现量数，本守卫走名册字典循环，那两把�
 
 跑法：`python -m pytest tests/unit/test_log_block_bullet_ownership_l264.py -q --no-cov`
 """
+import functools
 import re
 import subprocess
 
@@ -73,16 +74,36 @@ WIP_HEADS = ("WIP on ", "index on ")
 SUBJECT_CACHE = {}
 
 
+@functools.lru_cache(maxsize=1)
+def ref_face():
+    """`--remotes --tags` 可达的全哈希集合（判据面，与 l270 的 `reachable()` 同口径）。
+
+    **2026-10-22 新增**：`subject()` 原来只问「对象存不存在」（`rev-parse --verify`），
+    而作者机器上留着旧 lineage 的未 gc 对象（reflog / 悬空提交 / 重写前的分支）⇒
+    同一份账本在本地解析得出 100+ 处、在 CI 的干净克隆里只有 1 处 —— 实测本地
+    `same_round 70 / cross_named 20` vs 常数 `0 / 0`。判据必须环境无关，所以
+    「解析得到」的口径与 l270 / l98 对齐：对象在不在**远端 ref 面**上。
+    """
+    return frozenset(subprocess.run(
+        ["git", "-C", str(ROOT), "rev-list", "--remotes", "--tags"],
+        capture_output=True, text=True, encoding="utf-8", errors="replace").stdout.split())
+
+
 def subject(short_hash):
-    """问 git 这枚短哈希是什么提交的主题；查不到返回 None（含 ambiguous 被拒）"""
+    """问 git 这枚短哈希是什么提交的主题；查不到返回 None（含 ambiguous 被拒）
+
+    「查得到」的判据是 **ref 面可达**（见 `ref_face`），不是「对象还在磁盘上」——
+    后者在作者机器与 CI 干净克隆之间会给出一套半的答案。
+    """
     if short_hash in SUBJECT_CACHE:
         return SUBJECT_CACHE[short_hash]
-    got = subprocess.run(
+    p = subprocess.run(
         ["git", "-C", str(ROOT), "rev-parse", "--verify", "-q", short_hash + "^{commit}"],
-        capture_output=True, text=True, encoding="utf-8", errors="replace").returncode == 0
+        capture_output=True, text=True, encoding="utf-8", errors="replace")
+    full = p.stdout.strip()
     out = None
-    if got:
-        p = subprocess.run(["git", "-C", str(ROOT), "show", "-s", "--format=%s", short_hash],
+    if p.returncode == 0 and full in ref_face():
+        p = subprocess.run(["git", "-C", str(ROOT), "show", "-s", "--format=%s", full],
                            capture_output=True, text=True, encoding="utf-8", errors="replace")
         out = p.stdout.strip() or None
     SUBJECT_CACHE[short_hash] = out

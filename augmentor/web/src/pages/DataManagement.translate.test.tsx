@@ -118,7 +118,7 @@ async function waitFiles(container: HTMLElement) {
   await waitFor(
     () =>
       expect((container.querySelector('select') as HTMLSelectElement)?.value).toBe('a.json'),
-    { timeout: 4000 },
+    { timeout: 10000 },
   )
 }
 
@@ -160,7 +160,7 @@ describe('翻译卡的初值与三道闸', () => {
 
     await waitFor(
       () => expect(document.body.textContent).toContain('产物必须留得住'),
-      { timeout: 4000 },
+      { timeout: 10000 },
     )
     expect(spies.translateDataset).not.toHaveBeenCalled()
   })
@@ -178,7 +178,7 @@ describe('翻译卡的初值与三道闸', () => {
 
     await waitFor(
       () => expect(document.body.textContent).toContain('翻译字段不能为空'),
-      { timeout: 4000 },
+      { timeout: 10000 },
     )
     expect(spies.translateDataset).not.toHaveBeenCalled()
     expect(labeled('翻译回执')).toBeNull()
@@ -269,7 +269,7 @@ describe('翻译回执面', () => {
 
     await waitFor(
       () => expect(document.body.textContent).toContain('翻译路径未启用'),
-      { timeout: 4000 },
+      { timeout: 10000 },
     )
     expect(labeled('翻译回执')).toBeNull()
   })

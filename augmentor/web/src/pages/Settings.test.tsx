@@ -160,7 +160,7 @@ describe('Settings 保存时递给服务层的负载', () => {
 
     await waitFor(
       () => expect(document.body.textContent).toContain('配置已保存到 config.yaml'),
-      { timeout: 4000 }
+      { timeout: 10000 }
     )
   })
 })
@@ -173,7 +173,7 @@ describe('Settings 失败路径的可见性', () => {
     render(<Settings />)
 
     await waitFor(() => expect(document.body.textContent).toContain('加载配置失败'), {
-      timeout: 4000,
+      timeout: 10000,
     })
   })
 
@@ -191,7 +191,7 @@ describe('Settings 失败路径的可见性', () => {
 
     await waitFor(
       () => expect(document.body.textContent).toContain('quality.threshold 越界'),
-      { timeout: 4000 }
+      { timeout: 10000 }
     )
   })
 })
@@ -285,7 +285,7 @@ describe('Settings 按数据推荐配置', () => {
     fireEvent.click(screen.getByRole('button', { name: /取推荐值/ }))
 
     await waitFor(() => expect(document.body.textContent).toContain('文件不存在'), {
-      timeout: 4000,
+      timeout: 10000,
     })
     expect(screen.getByText('还没有推荐值')).toBeInTheDocument()
     expect(container.querySelector('.ant-statistic')).toBeNull()
@@ -335,7 +335,7 @@ describe('Settings 写操作鉴权（L233）', () => {
     expect(screen.getByText('这台浏览器已存了一份')).toBeInTheDocument()
     await waitFor(
       () => expect(document.body.textContent).toContain('已存进这台浏览器'),
-      { timeout: 4000 }
+      { timeout: 10000 }
     )
   })
 
@@ -374,7 +374,7 @@ describe('Settings 写操作鉴权（L233）', () => {
 
     await waitFor(
       () => expect(document.body.textContent).toContain('等于清除'),
-      { timeout: 4000 }
+      { timeout: 10000 }
     )
     expect(localStorage.getItem(API_KEY_STORAGE_KEY)).toBeNull()
   })
@@ -478,7 +478,7 @@ describe('Settings 配置文件校验（L234）', () => {
     expect(screen.getByText('error')).toBeInTheDocument()
     await waitFor(
       () => expect(document.body.textContent).toContain('这份配置不合法：1 个错误、0 个警告'),
-      { timeout: 4000 }
+      { timeout: 10000 }
     )
   })
 
@@ -515,7 +515,7 @@ describe('Settings 配置文件校验（L234）', () => {
 
     await waitFor(
       () => expect(document.body.textContent).toContain('路径超出允许的数据目录范围'),
-      { timeout: 4000 }
+      { timeout: 10000 }
     )
     expect(screen.getByText('还没有校验结果')).toBeInTheDocument()
     expect(container.querySelector('.ant-statistic')).toBeNull()

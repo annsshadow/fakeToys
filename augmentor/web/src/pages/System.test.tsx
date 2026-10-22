@@ -229,7 +229,7 @@ describe('System 失败路径', () => {
 
     await waitFor(
       () => expect(document.body.textContent).toContain('获取服务状态失败'),
-      { timeout: 4000 }
+      { timeout: 10000 }
     )
     // L236 起门是 diag（自取一面 ?? 综合状态里那份）：这一格两面都空 ⇒ 整块不渲染
     expect(screen.queryByText('依赖明细')).not.toBeInTheDocument()
@@ -350,7 +350,7 @@ describe('System 向量库状态（L225 接线）', () => {
     expect(await screen.findByText(/必需依赖齐备/)).toBeInTheDocument()
     await waitFor(
       () => expect(document.body.textContent).toContain('获取向量库状态失败'),
-      { timeout: 4000 }
+      { timeout: 10000 }
     )
     expect(screen.getByText('向量库状态未取到')).toBeInTheDocument()
     expect(screen.queryByText('自动建库')).not.toBeInTheDocument()

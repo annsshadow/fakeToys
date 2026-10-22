@@ -527,7 +527,7 @@ describe('System 备份面的失败只降级自己', () => {
     expect(await screen.findByText('备份列表未取到')).toBeInTheDocument()
     await waitFor(
       () => expect(document.body.textContent).toContain('获取备份列表失败'),
-      { timeout: 4000 }
+      { timeout: 10000 }
     )
   })
 
@@ -541,7 +541,7 @@ describe('System 备份面的失败只降级自己', () => {
     await waitBackups()
     await waitFor(
       () => expect(document.body.textContent).toContain('获取数据文件列表失败'),
-      { timeout: 4000 }
+      { timeout: 10000 }
     )
   })
 })

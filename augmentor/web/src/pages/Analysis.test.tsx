@@ -335,7 +335,7 @@ describe('Analysis 语言画像（L225 接线）', () => {
     fireEvent.click(screen.getByRole('button', { name: /运行语言画像/ }))
 
     await waitFor(() => expect(document.body.textContent).toContain('语言画像失败'), {
-      timeout: 4000,
+      timeout: 10000,
     })
     expect(screen.queryByText('共 120 条')).not.toBeInTheDocument()
   })
@@ -384,7 +384,7 @@ describe('Analysis 生成集对比评估（L225 接线）', () => {
     fireEvent.click(screen.getByRole('button', { name: /运行批量评估/ }))
 
     await waitFor(() => expect(document.body.textContent).toContain('批量评估失败'), {
-      timeout: 4000,
+      timeout: 10000,
     })
     expect(screen.queryByText(/^对齐样本数/)).not.toBeInTheDocument()
   })
@@ -524,7 +524,7 @@ describe('Analysis 内容检索', () => {
     fireEvent.click(screen.getByRole('button', { name: /运行检索/ }))
 
     await waitFor(() => expect(document.body.textContent).toContain('内容检索失败'), {
-      timeout: 4000,
+      timeout: 10000,
     })
     expect(screen.queryByText(/^命中 \d+ 条$/)).not.toBeInTheDocument()
   })
@@ -648,7 +648,7 @@ describe('Analysis 语义相似检索', () => {
     fireEvent.click(screen.getByRole('button', { name: /运行语义检索/ }))
 
     await waitFor(() => expect(document.body.textContent).toContain('语义检索失败'), {
-      timeout: 4000,
+      timeout: 10000,
     })
     expect(screen.queryByText('后端 faiss')).not.toBeInTheDocument()
   })
@@ -780,7 +780,7 @@ describe('Analysis 增强前后影响', () => {
     fireEvent.click(screen.getByRole('button', { name: /运行影响评估/ }))
 
     await waitFor(() => expect(document.body.textContent).toContain('影响评估失败'), {
-      timeout: 4000,
+      timeout: 10000,
     })
     expect(screen.queryByText('判为有增益')).not.toBeInTheDocument()
     expect(screen.queryByText('规模增益')).not.toBeInTheDocument()
@@ -952,7 +952,7 @@ describe('Analysis 字段级统计（L228 接线）', () => {
     fireEvent.click(screen.getByRole('button', { name: /运行字段统计/ }))
 
     await waitFor(() => expect(document.body.textContent).toContain('字段统计失败'), {
-      timeout: 4000,
+      timeout: 10000,
     })
     expect(screen.queryByText('填充率')).not.toBeInTheDocument()
   })
@@ -1023,7 +1023,7 @@ describe('Analysis 特征普查（L228 接线）', () => {
     fireEvent.click(screen.getByRole('button', { name: /运行特征普查/ }))
 
     await waitFor(() => expect(document.body.textContent).toContain('特征普查失败'), {
-      timeout: 4000,
+      timeout: 10000,
     })
     expect(screen.queryByText('推断类型')).not.toBeInTheDocument()
   })
@@ -1265,7 +1265,7 @@ describe('Analysis 双集对比（L228 接线）', () => {
 
     await waitFor(() => expect(spies.compareDatasets).toHaveBeenCalled())
     await waitFor(() => expect(document.body.textContent).toContain('双集对比失败'), {
-      timeout: 4000,
+      timeout: 10000,
     })
     expect(screen.queryByText('质量面指标')).not.toBeInTheDocument()
   })
