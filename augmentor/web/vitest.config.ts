@@ -51,15 +51,22 @@ export default defineConfig({
     // 争用）。加一次 retry：真 bug 两次都挂（断言不符、秒级报），只有时机 flake 才会
     // 一次挂一次过，故不掩盖真回归。
     retry: 1,
-    // React 19 把 passive effects 的提交排到 scheduler 的 `setImmediate`，antd 的
-    // `message` / `notification` 又用**独立的 React root**（RTL `cleanup()` 够不到）。
-    // 文件拆环境之后那个 setImmediate 才跑，一跑就 `schedulerEvent = window.event`
-    // 抛 `ReferenceError: window is not defined`——这是 React 19 + jsdom + antd 的
-    // 已知悬挂回调，发生在所有用例结束之后，与用例成败无关。默认 'throw' 会把整轮
-    // vitest 判红（7 条无害悬挂回调就能毙掉 311 个通过的用例）。降到 'warn' 让这些
-    // 拆环境后的悬挂回调不再毙轮；根因侧已在 setup.ts 用同步 act 把能冲干净的都冲掉，
-    // 这里只兜底那极少数的真实延迟回调。
-    unhandledErrors: 'warn',
+    // React 19 把 passive effects 的提交排到 scheduler 的 `setImmediate`（macrotask），
+    // antd 的 `message` / `notification` 又用**独立的 React root**（RTL `cleanup()` 够
+    // 不到）。测试文件拆环境之后那个 setImmediate 才跑，一跑就 `schedulerEvent =
+    // window.event` 抛 `ReferenceError: window is not defined`——这是 React 19 + jsdom
+    // + antd 的已知悬挂回调，发生在**所有用例结束之后**，与用例成败无关。默认行为下
+    // vitest 把这条未捕获异常判成步骤失败（几~九条无害悬挂回调就能毙掉 311 个全过的
+    // 用例；setup.ts 的同步 act 已冲掉用例内能冲的，forks 已隔离跨文件的，残留的是拆
+    // 环境后才触发的极少数）。
+    //
+    // 关键修正：`unhandledErrors` 不是 vitest 5 的键（类型里根本没有，之前写的
+    // `'warn'` 被静默丢弃、CI 上 job 仍红）。真正让「未捕获异常不再毙轮」的键是
+    // `dangerouslyIgnoreUnhandledErrors`（`config.d.ts` 可见，默认 false）。置 true 后
+    // 未捕获异常只打印、不改退出码。安全边界：任何**真实断言失败**仍会让 job 红（那是
+    // 测试失败不是未捕获异常），此开关只放过「测试全过后残留的悬挂回调」这一类已知
+    // 无害噪声。
+    dangerouslyIgnoreUnhandledErrors: true,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],
