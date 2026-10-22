@@ -188,6 +188,33 @@ fakeToys/
 └── .github/workflows # 🤖 CI 配置
 ```
 
+## 🚦 编译告警零容忍
+
+本仓库的门禁是**所有子项目编译 0 告警**。不是"尽量少"，是 0：出现一条告警即视为构建失败。
+
+一条命令核验全部：
+
+```bash
+node scripts/check-warnings.mjs          # 全跑
+node scripts/check-warnings.mjs --list   # 列出检查项
+node scripts/check-warnings.mjs --only rust,admin
+```
+
+各子项目自身也把"告警=错误"写进了配置，所以直接跑各自的构建命令同样会失败：
+
+| 子项目 | 门禁 |
+|--------|------|
+| oa4rust 后端（Rust） | `Cargo.toml` 的 `[workspace.lints.rust] warnings = "deny"`（96 个 crate 均 `[lints] workspace = true`），CI 另有 `cargo clippy -- -D warnings` |
+| oa4rust desktop / mobile | CI 构建后由 `scripts/assert-no-warnings.sh` 断言日志无 `(!)` / `[lightningcss` / `warning:` |
+| laiyipao server（Go） | `go vet` + `gofmt -l`（有输出即失败） |
+| laiyipao admin / miniapp | 同上，构建日志断言 |
+| augmentor / llm-lab（Python） | `python -W error::SyntaxWarning -m compileall` |
+| augmentor/web | `eslint --max-warnings 0` + 构建日志断言 |
+| auto-checkin（TS） | `tsc --noEmit` |
+| cool（Java） | `javac -Xlint:all -Werror` |
+
+⚠️ 不要用 `VITE_CONFIG_NATIVE_IGNORE_WARNING` 这类开关压掉告警——那是把门禁关掉，不是修问题。
+
 ## 🚀 快速开始
 
 各子项目独立运行，请进入对应目录按其 README 操作：
