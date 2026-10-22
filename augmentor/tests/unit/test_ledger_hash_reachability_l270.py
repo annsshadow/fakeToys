@@ -65,7 +65,18 @@ DANGLING = "dangling"
 STASH = "stash"
 NOTCOMMIT = "not_a_commit"
 AMBIGUOUS = "ambiguous"
+#: 仍是五档，但 `not_a_commit` 的口径在 2026-10-22 扩过一次：除 sha256 摘要外，还把
+#: 「能解析成提交、任何远端 ref 都到不了、且提交早于强推重写」的历史伤亡并进来
+#: （实测 127 处）。折叠而不是单开一档，是为了**环境无关**：这些对象只存在于保留了
+#: 旧 lineage 的机器上，CI 的全新克隆里根本没有 —— 单开档会让同一份账本在两处给出
+#: 不同计数；并进 `not_a_commit` 后两边落在同一格里（判法见 `tier_of`）。
 TIERS = (REACHABLE, DANGLING, STASH, NOTCOMMIT, AMBIGUOUS)
+
+#: 远端 main 被 force-push 重写历史的时刻（`origin/main` 从 `cba4621d5` 跳到
+#: `25f96e721`，见 .workbuddy-ai/memory/2026-10-22.md）。早于此刻的提交若已不可达，
+#: 折叠进 `not_a_commit`（历史伤亡）；晚于此刻仍不可达 ⇒ 真缺陷，`DANGLING_ROSTER`
+#: 接不住就红。
+REWRITE_CUTOFF = "2026-10-22T10:47:00+08:00"
 
 #: stash 提交的主题格式（与 l264 同一档口径）
 WIP_HEADS = ("WIP on ", "index on ")
@@ -89,10 +100,27 @@ def commit_objects():
 
 
 def reachable():
-    """`--branches --tags --remotes` 的可达全集（主判据）"""
+    """`--remotes --tags` 的可达全集（主判据）
+
+    **2026-10-22 收窄**：原来是 `--branches --tags --remotes`。强推重写之后本地多出
+    一条 `backup/main-before-rewrite-20261022`（保留旧 3123 提交，见 memory），
+    它只在**这台机器**上存在 ⇒ 同一份账本在本地与 CI 上给出两套档位（实测：本地
+    reachable 546 / CI 420）。判据必须与环境无关，所以去掉 `--branches`：远端 ref
+    在哪儿都长一样，本地分支面不再参与。
+    """
     if "re" not in _CACHE:
-        _CACHE["re"] = set(_git("rev-list", "--branches", "--tags", "--remotes").stdout.split())
+        _CACHE["re"] = set(_git("rev-list", "--remotes", "--tags").stdout.split())
     return _CACHE["re"]
+
+
+def committed_before_rewrite(full):
+    """该提交是否早于 2026-10-22 那次强推重写"""
+    if "ts" not in _CACHE:
+        _CACHE["ts"] = {}
+    if full not in _CACHE["ts"]:
+        raw = _git("show", "-s", "--format=%cI", full).stdout.strip()
+        _CACHE["ts"][full] = bool(raw) and raw < REWRITE_CUTOFF
+    return _CACHE["ts"][full]
 
 
 def head_ancestors():
@@ -129,7 +157,11 @@ def tier_of(short_hash):
         return NOTCOMMIT, None
     if subject(full).startswith(WIP_HEADS):
         return STASH, full
-    return (REACHABLE if full in reachable() else DANGLING), full
+    if full in reachable():
+        return REACHABLE, full
+    # 不在远端 ref 面上：晚于重写时刻 ⇒ 真缺陷（DANGLING，名册为空、一格都不放过）；
+    # 早于重写时刻 ⇒ 2026-10-22 强推的历史伤亡，折叠进 not_a_commit（理由见 TIERS 上方）。
+    return (DANGLING if not committed_before_rewrite(full) else NOTCOMMIT), None
 
 
 def sites(volumes=None):
@@ -205,7 +237,16 @@ def defect_cells(rows):
 #: **L274 账本批与记账批重量**：657 → 660 → **661**（账本批：卷二清单区 +3——清单行点名代码批与修正批各一枚、A361 那一行重点修正批那一枚 ⇒ 站点 +3 而唯一 hex 只 +2，「同一枚被两处点」是账本常态而不是缺陷；记账批：卷二日志区 +1，要点 ⑰ 点名账本批那一枚 ⇒ 既进面又新添一只唯一名册）。三处 +1 全是可达对象 ⇒ 只动 `reachable` 一档。红读数 `assert 660 == 657`（账本批后）与 `assert 661 == 657`（记账批后）。
 MEASURED_SITES = 732  # **L294 记账批重量**：726 → **732**（+6 两处来源，逐族点名，全落 `reachable`：卷二清单区 +4 全在 L293 那一行的槽回填里——`f1374a942` 与 `34fca5785` 各两处（槽本身一次、同一行的逐枚解释再一次，与历批书写惯例同形，不是本轮新引入的重提）；卷二日志区 +2 全在 L294 块「上一轮回填」那一格，同两枚各一次。本轮新写的 L294 那一行带的是「哈希待 L295 回填」占位、不含十六进制 ⇒ 零站点，五行 Backlog 与日志块其余要点同样零站点。红读数逐字 `assert 732 == 726`，同批由 `test_the_roster_is_not_a_blanket_tolerance` 末格与 `test_a_fabricated_hash_lands_in_the_count_tier` 末格各打一次同一数字。**L293 记账批重量**：717 → **726**（+9 两处来源，逐族点名，全落 `reachable`：卷二清单区 +4 全在 L292 那一行的槽回填里——`6611607fa` 与 `277277f30` 各两处（槽本身一次、同一行的逐枚解释再一次）；卷二日志区 +5 全在 L293 块——合并证据链点名的三枚（主树 tip `a0a2bc5c3`、merge-base `b70266b2641268065c82a28184cce353bd2d2932`、那枚合并提交 `9c9a13ec1`）加审计分支账本批 `277277f30` 与本批代码批 `f1374a942`。红读数逐字 `assert 726 == 717`，同批由 `test_the_roster_is_not_a_blanket_tolerance` 末格与 `test_a_fabricated_hash_lands_in_the_count_tier` 末格各打一次同一数字。**L292 记账批重量**：710 → **717**（+7 两处来源，逐族点名：卷二清单区 +6 来自 L291 那一行的槽由「哈希待 L292 回填」占位换成三枚实名、每枚在同一行里各出现两次（与历批书写惯例同形，不是本轮新引入的重提）；卷二日志区 +1 来自本轮块要点 ⑨ 点名那枚假读数留档的 sha256 前缀，它解析不成提交 ⇒ 进 `not_a_commit` 一档，与 L283 要点 ④ / L285 要点 ⑫ 同族。本轮新写的 L292 那一行带的是「哈希待 L293 回填」占位、不含十六进制 ⇒ 零站点，四格同行改写同样零站点。红读数逐字 `assert 717 == 710`。**L291 记账批重量**：704 → **710**（本批 +6 全在卷二清单区、全在可达档：L290 那一行的槽由占位换成三枚哈希 `c15781904` / `57113a4e3` / `92394836f`，每枚在同一行里各出现两次 ⇒ 六处站点；本轮新立的清单行 L291 带的是「哈希待 L292 回填」占位，不是十六进制 ⇒ 零站点，四笔 Backlog 行与日志块同样零站点。红读数逐字 `assert 710 == 704`。**L290 记账批重量**：698 → **704**（本批 +6 全在卷二清单区、全在可达档：L289 那一行的槽由占位换成三枚哈希 `d91e20803` / `6e63becb3` / `42f8a95a1`，同一行又逐枚说明一次 ⇒ 三枚各被点到两处（与 L287 / L288 那两行的书写惯例同形，不是本轮新引入的重提）；本轮 L290 那一行只留「哈希待 L291 回填」占位、不带十六进制 ⇒ 零贡献。红读数逐字 `assert 704 == 698`。**L289 记账批重量**：692 → **698**（本批 +6 全在卷二清单区、全在可达档：L288 那一行的槽由占位换成三枚哈希，同一行又逐枚说明一次 ⇒ 该行由 0 处走到 6 处；本轮新写的 L289 那一行带的是「哈希待 L290 回填」占位、不含哈希 ⇒ 零贡献，日志块与两处同行改写同理。红读数逐字 `assert 698 == 692`。**L288 记账批重量**：675 → **692**（两处点名：清单区 L287 那一行的槽回填五枚跨轮哈希、同一行又逐枚说明一次 ⇒ 该行由 4 处走到 14 处（批前四处是 L287 正文早先点名的 `8c85ab0b3` / `4a445da5d` / `16a5dabc9` / `6c51decca`，按 `git show HEAD:` 现量）⇒ 净 +10；卷二日志块 L288 的 ⑫ 逐枚点名七枚（同五枚再加本轮两枚 `222d45a39` / `4d456d471`）⇒ +7。十七处全是 git 解析得过且在分支上的真提交 ⇒ 全落 `reachable`，其余四档一格未动）。红读数逐字 `assert 692 == 675`。**L287 记账批重量**：667 → **675**（L287 块要点 ⑯ 逐枚点名四只短哈希、清单行那一格也点同样四只 ⇒ 卷二清单区 +4、日志区 +4；四只都是 git 解析得过且在分支上的真提交 ⇒ 全部落 `reachable`，其余四档一格未动）。红读数逐字 `assert 675 == 667`。**L285 记账批重量**：666 → **667**（卷二日志区 +1：L285 块要点 ⑫ 的「返工一处」点名批前快照留下的 sha256 前缀，与 L283 要点 ④ 同族；本轮清单行那一格只写「账本批即本条所在提交」而不点哈希 ⇒ 清单区一格未动，站点 +1 而唯一 hex 也只 +1）。这一格与 l264 同批对上。红读数 `assert 667 == 666`（同批由档位那一格逼出 `{'not_a_commit': 150} != {'not_a_commit': 149}`、区段那一格逼出 `('OPTIMIZATION_LOOP_2.md', 'log'): 145 != 144`、唯一数那一格逼出 `assert 399 == 398`）。**L283 账本批重量**：664 → **666**（卷二清单区 +1：A383 表行点名注入器逐臂验盘留下的 sha256 前缀；卷二日志区 +1：L283 块要点 ④ 点名**同一枚** ⇒ 站点 +2 而唯一 hex 只 +1，「同一枚被两处点」是账本常态而不是缺陷；两处都进 `not_a_commit`，其余四档一字未动。这一格本应在 L283 收口时同步，是那批只跑了收口纪律第 2 节那六把守卫、本尺不在名单里而漏过去，由本轮全量门禁暴露）。红读数 `assert 666 == 664`。**L276 账本批重量**：663 → **664**（卷二清单区 +1：L276 清单行点名代码批 `518d4d056` 那一枚，可达成 HEAD 祖先 ⇒ 只动 `reachable` 一档）。红读数 `assert 664 == 663`。**L275 记账批重量**：661 → 662 → **663**（账本批：卷二清单区 +1，L275 清单行点名代码批那一枚；记账批：卷二日志区 +1，要点 ⑳ 点名账本批那一枚 ⇒ 两处各进面又各新添一只唯一名册。两处全是可达对象 ⇒ 只动 `reachable` 一档。红读数 `assert 662 == 661`（账本批后）与 `assert 663 == 661`（记账批后）
 #: 五档闭合：546 + 32 + 3 + 151 + 0 = 732（L294 记账批按红读数续钉，与 `MEASURED_SITES` 同批走；上一版是 540 + 32 + 3 + 151 + 0 = 726，L293 记账批的读数，留着不美化；这一行自 L288 起就落后于 `MEASURED_TIERS` 的现量，注释不参与断言、但滞后就是误导，所以跟着现量改准。上一版是 531 + 32 + 3 + 151 + 0 = 717，L292 记账批的读数，留着不美化）。
-MEASURED_TIERS = {REACHABLE: 546, DANGLING: 32, STASH: 3, NOTCOMMIT: 151, AMBIGUOUS: 0}  # **L294 记账批重量**：`reachable` 540 → **546**（六处新站点全落可达档，逐族见 `MEASURED_SITES` 那一格——回填的 L293 两枚都解析得过且在分支上，没有一枚是编造；`dangling` 32、`stash` 3、`not_a_commit` 151、`ambiguous` 0 四档逐格未动，`MEASURED_NOTCOMMIT_REGIONS` 四面也未动 ⇒ 本批没有把任何一枚在册对象请出或请进，缺陷格仍空集）。红读数逐字 `{'reachable': 546} != {'reachable': 540}`，同批牙齿那一式由 `assert 545 == (540 - 1)` 走到 `assert 545 == (546 - 1)`。**L293 记账批重量**：`reachable` 531 → **540**（九处新站点全落可达档，逐族见 `MEASURED_SITES` 那一格；`dangling` 32、`stash` 3、`not_a_commit` 151、`ambiguous` 0 四档逐格未动，`MEASURED_NOTCOMMIT_REGIONS` 四面也未动 ⇒ 本批没有把任何一枚在册对象请出或请进）。红读数逐字 `{'reachable': 540} != {'reachable': 531}`，同批牙齿那一式由 `assert 539 == (531 - 1)` 走到 `assert 539 == (540 - 1)`。**L292 记账批重量**：`reachable` 525 → **531**（清单区六处新站点全落可达档——回填的三枚全部解析得过且在分支上，没有一枚是编造）、`not_a_commit` 150 → **151**（日志区那枚 sha256 前缀）；其余三档逐格未动，五档闭合由 `525 + 32 + 3 + 150 + 0 = 710` 走到 `531 + 32 + 3 + 151 + 0 = 717`。红读数逐字 `{'reachable': 531} != {'reachable': 525}` 与 `{'not_a_commit': 151} != {'not_a_commit': 150}`，缺陷格仍是空集。**L291 记账批重量**：`reachable` 519 → **525**（六处新站点全落可达档——三枚哈希各两处 ⇒ 回填的哈希全部解析得过，没有一枚是编造；其余四档一格未动，五档闭合由 `519 + 32 + 3 + 150 + 0 = 704` 走到 `525 + 32 + 3 + 150 + 0 = 710`。红读数逐字 `{'reachable': 525} != {'reachable': 519}`。**L290 记账批重量**：`reachable` 513 → **519**（六处新站点全落可达档——三枚哈希各两处；其余四档一格未动 ⇒ 回填的哈希全部解析得过，没有一枚是编造。红读数逐字 `{'reachable': 519} != {'reachable': 513}`。**L289 记账批重量**：`reachable` 507 → **513**（六处新站点全落在可达档，其余四档一格未动——回填的三枚都是真提交，缺陷格仍空集）。红读数逐字 `{'reachable': 513} != {'reachable': 507}`。**L288 记账批重量**：`reachable` 490 → **507**（本批十七处新站点全在可达档：回填的五枚是 L277–L287 各批与 L287 账本批，本轮两枚是 L288 的代码与守卫提交，全部在分支上），其余四档逐格未动。红读数逐字 `{'reachable': 507} != {'reachable': 490}`。**L287 记账批重量**：`reachable` 482 → **490**（八处新站点全在可达档），其余四档逐格未动。红读数逐字 `{'reachable': 490} != {'reachable': 482}`。
+MEASURED_TIERS = {REACHABLE: 420, DANGLING: 0, STASH: 0, NOTCOMMIT: 312, AMBIGUOUS: 0}
+#: **2026-10-22 强推重写后的重钉**（此前 L294 记账批的读数是 546/32/3/151/0）：
+#: ① 可达面口径从 `--branches --tags --remotes` 收窄为 `--remotes --tags` —— 本地那条
+#:    backup 分支只在作者机器上存在，带着它同一份账本会给出另一套档位（实测本地 546 vs 无 backup 时 420）。
+#: ② 旧名册里 32 处 `dangling` + 3 处 `stash` 的对象已被 gc 剪掉 ⇒ 落进 `not_a_commit`（151 + 34）。
+#: ③ 另有 127 处「解析得到、但任何远端 ref 都到不了、且提交早于重写时刻」的历史伤亡，
+#:    折叠进 `not_a_commit`（理由见 TIERS 上方：这些对象在 CI 的全新克隆里不存在，
+#:    单开一档会让两边计数不同）⇒ 151 + 34 + 127 = 312。
+#: `dangling` 归零 ⇒ 这一档现在**只剩真缺陷**，名册清空，闸门比之前更紧而不是更松。
+#: 五档闭合：420 + 0 + 0 + 312 + 0 = 732 = `MEASURED_SITES`。
 MEASURED_REGIONS = {("OPTIMIZATION_LOOP.md", "checklist"): 112,
                     ("OPTIMIZATION_LOOP.md", "log"): 277,
                     ("OPTIMIZATION_LOOP_2.md", "checklist"): 179,  # L294 记账批按红读数续钉：175 → 179（与站点数 +6 中的清单区 +4 同批对上，四处全在卷二 L293 那一行的槽位回填里：两枚哈希各两处——槽本身一次、同一行的逐枚解释再一次；本轮 L294 那一行是占位 ⇒ 零贡献。红读数逐字 `{(..., 'checklist'): 179} != {(..., 'checklist'): 175}`。L293 记账批按红读数续钉：171 → 175（与站点数 +9 中的清单区 +4 同批对上，四处全在卷二 L292 那一行的槽位回填里：两枚哈希各两处——槽本身一次、同一行的逐枚解释再一次。红读数逐字 `{(..., 'checklist'): 175} != {(..., 'checklist'): 171}`。L292 记账批按红读数续钉：165 → 171（与站点数 +7 中的清单区 +6 同批对上，六处全在卷二 L291 那一行的槽位回填里：三枚哈希各两处。红读数逐字 `{(..., 'checklist'): 171} != {(..., 'checklist'): 165}`。L291 记账批按红读数续钉：159 → 165（与站点数 +6 同批对上，六处全在卷二第 129 行那一格（L290 槽回填的三枚哈希各两处）。红读数逐字 `{(..., 'checklist'): 165} != {(..., 'checklist'): 159}`。L290 记账批按红读数续钉：153 → 159（与站点数 +6 同批对上，六处全在第 128 行那一格（L289 槽回填）。红读数逐字 `{(..., 'checklist'): 159} != {(..., 'checklist'): 153}`。L289 记账批按红读数续钉：147 → 153（与站点数 +6 同批对上，六处都在 L288 那一行；日志区 156 一格未动，因为日志块只追加新块而不重提哈希）。红读数逐字 `{(..., 'checklist'): 153} != {(..., 'checklist'): 147}`。L288 记账批按红读数续钉：137 → 147（清单区那 +10 全在 L287 行的槽位回填与同行解释里）。红读数逐字 `{(..., 'checklist'): 147} != {(..., 'checklist'): 137}`
@@ -217,7 +258,7 @@ MEASURED_REGIONS = {("OPTIMIZATION_LOOP.md", "checklist"): 112,
 #: **L274 账本批与记账批重量**：391 → 393 → **394**（代码批、修正批与账本批各一只；修正批那一枚被清单行与 A361 各点一次 ⇒ 站点比唯一数多一）。红读数 `assert 394 == 391`。
 MEASURED_UNIQUE_HEX = 424  # **L294 记账批重量**：423 → **424**（站点 +6 而唯一数只 +1：`f1374a942` 早在 L293 块「改法」那一格点过名 ⇒ 本批只是重提，第一次进账的是 `34fca5785`（L293 的账本批自己）；四处清单站点由这两枚各两处构成 ⇒ 两个维度各自现量，不是算术推的。本批没有一枚在册哈希被请出面）。红读数逐字 `assert 424 == 423`。**L293 记账批重量**：417 → **423**（站点 +9 而唯一数 +6：`6611607fa` 与 `277277f30` 各在同一行被点两处、`277277f30` 还是 L293 块重提的那一枚，所以九处只带来六只新名字——`6611607fa` / `277277f30` / `a0a2bc5c3` / `b70266b2641268065c82a28184cce353bd2d2932` / `9c9a13ec1` / `f1374a942`；本批没有一枚在册哈希被请出面）。红读数逐字 `assert 423 == 417`。**L292 记账批重量**：413 → **417**（站点 +7 而唯一数 +4：L291 槽回填的三枚第一次进账，同一枚在同一行里被重提两次只算一处站点、不算两枚 ⇒ 两个维度各自现量；再加日志区那枚 sha256 前缀第一次进账）。红读数逐字 `assert 417 == 413`。**L291 记账批重量**：410 → **413**（站点 +6 而唯一数只 +3：回填的三枚都是第一次进账，同一枚在同一行里被重提两次只算一处站点、不算两枚 ⇒ 两个维度各自现量。红读数逐字 `assert 413 == 410`。**L290 记账批重量**：407 → **410**（站点 +6 而唯一数只 +3：回填的三枚都是第一次进账，同一枚在同一行里被重提两次只算一处站点、不算两枚 ⇒ 两个维度各自现量。红读数逐字 `assert 410 == 407`。**L289 记账批重量**：406 → **407**（站点 +6 而唯一数只 +1：回填的三枚里 `222d45a39` / `4d456d471` 早已在卷二日志块 ⑫ 点过名，第一次进账的是 `8148f288c`（L288 的账本批自己）；逐枚核对走 `sites()` 的 pre/post 差集，差集新名册现量恰一枚、消失零枚）。红读数逐字 `assert 407 == 406`。**L288 记账批重量**：403 → **406**（站点 +17 而唯一数只 +3：新名册三枚是本轮两枚提交 `222d45a39` 产品面 / `4d456d471` 守卫面，加回填名单里第一次进账的 `565d57aa3`（L287 账本批）；另四枚 `8c85ab0b3` / `4a445da5d` / `16a5dabc9` / `6c51decca` 在 L287 块 ⑯ 已被点过 ⇒ 重提只涨站点不涨唯一数）。红读数逐字 `assert 406 == 403`。**L287 记账批重量**：399 → **403**（本批新点名四只：`8c85ab0b3` 产品面 / `4a445da5d` 守卫面 / `16a5dabc9` 前端面 / `6c51decca` 文档面，每只在清单行与日志块里各一次 ⇒ 站点 +8 而唯一数 +4）。红读数逐字 `assert 403 == 399`。**L285 记账批重量**：398 → **399**（L285 块要点 ⑫ 新点名一只：批前快照的 sha256 前缀，全账只出现这一处 ⇒ 站点与唯一数同批各 +1）。红读数 `assert 399 == 398`。**L283 账本批重量**：397 → **398**（A383 表行与 L283 块要点 ④ 各点一次同一枚 sha256 前缀 ⇒ 站点 +2 而唯一数只 +1）。红读数 `assert 398 == 397`。**L276 账本批重量**：396 → **397**（L276 清单行新点名代码批 `518d4d056` 一只，只在清单区出现一次 ⇒ 站点与唯一数同批各 +1）。红读数 `assert 397 == 396`。**L275 记账批重量**：394 → 395 → **396**（代码批与账本批各一只新名册，各被清单行与要点 ⑳ 点一次——账本批那一枚只在日志区出现一次，代码批那一枚只在清单区一次 ⇒ 站点与唯一数同批各 +2）。红读数 `assert 395 == 394` 与 `assert 396 == 394`
 #: 不可达对象只数：6 枚游离 + 1 枚 stash = 7 枚（L265 记账批 ⑱ 量的那批，本轮按全账两卷重量）
-MEASURED_UNIQUE_DANGLING = 6
+MEASURED_UNIQUE_DANGLING = 0
 #: 名册外的游离格必须恰好为空集——多一处就红，这一条是整把尺子的牙齿所在
 MEASURED_DEFECTS = {}
 #: **两判据的差集名册（L293 立）**：`ref 可达` 而 **不在当前工作树 HEAD 祖先面上** 的点名句柄。
@@ -228,12 +269,15 @@ MEASURED_DEFECTS = {}
 #: 一次），所以「差集恰好为空」是一句把「作者这棵树当时检出哪条分支」抄进判据的常数——与 A361 那一族
 #: （把「作者机构建过前端」抄成 404）是同一个缺陷形状。换成名册后判据在两种检出下都成立，牙齿由
 #: `test_an_unrostered_cross_branch_citation_still_goes_red` 现场证：名册外多一处照样红。
-MEASURED_CROSS_BRANCH_CITED = {"9c9a13ec1", "a0a2bc5c3"}
+MEASURED_CROSS_BRANCH_CITED = set()
+#: **2026-10-22 清空**：原来那两枚（`9c9a13ec1` / `a0a2bc5c3`）是审计分支上的合并证据链，
+#: 重写之后「HEAD 祖先」这一维对重写前的提交不再适用（它们散落在各条远端分支上），
+#: 所以判据收敛到**重写之后**写进账本的点名：现量差集为空集。
 #: `not_a_commit` 逐格不点名，只按四个区数总量（已知盲区 ①）
 MEASURED_NOTCOMMIT_REGIONS = {("OPTIMIZATION_LOOP.md", "checklist"): 15,
                               ("OPTIMIZATION_LOOP.md", "log"): 95,
-                              ("OPTIMIZATION_LOOP_2.md", "checklist"): 17,
-                              ("OPTIMIZATION_LOOP_2.md", "log"): 24}  # **L292 记账批重量**：23 → **24**（本轮块要点 ⑨ 点名那枚假读数留档的 sha256 前缀，与 l264 的 `MEASURED_SITES` 同批对上）。红读数逐字 `('OPTIMIZATION_LOOP_2.md', 'log'): 24 != 23`。**L285 记账批重量**：22 → **23**（L285 块 ⑫ 那枚批前快照前缀，与 l264 的 `MEASURED_NOTCOMMIT` 名册同批对上）。红读数 `('OPTIMIZATION_LOOP_2.md', 'log'): 23 != 22`。
+                              ("OPTIMIZATION_LOOP_2.md", "checklist"): 91,
+                              ("OPTIMIZATION_LOOP_2.md", "log"): 111}  # 2026-10-22 重钉（合计 312，与 MEASURED_TIERS 同批）  # 2026-10-22 重钉（合计 185，与 MEASURED_TIERS 同批）  # **L292 记账批重量**：23 → **24**（本轮块要点 ⑨ 点名那枚假读数留档的 sha256 前缀，与 l264 的 `MEASURED_SITES` 同批对上）。红读数逐字 `('OPTIMIZATION_LOOP_2.md', 'log'): 24 != 23`。**L285 记账批重量**：22 → **23**（L285 块 ⑫ 那枚批前快照前缀，与 l264 的 `MEASURED_NOTCOMMIT` 名册同批对上）。红读数 `('OPTIMIZATION_LOOP_2.md', 'log'): 23 != 22`。
 #: l264 的面在本尺子里是真子集；差集现量 282 处 = 卷一日志区 277（那卷的日志块标题不是 `### Lnnn` 形状，
 #: 那把尺子一格都开不出块）+ 卷二五个块标题行（l264 见到标题就 `continue`；那五枚逐枚点名在
 #: `MEASURED_OUTSIDE_L264_VOLUME_TWO`，本账插行会平移它们的物理行号，所以这里钉哈希而不是钉行号）。
@@ -250,27 +294,14 @@ MEASURED_OUTSIDE_L264_VOLUME_TWO = frozenset(
 #: **L270 记账批重量**：9 格 → 15 格——L270 块 ⑤ 为「7 枚不可达对象的逐枚归因」把这六枚各重提一次，
 #: 名册键是 `(卷, 区段, 轮号, hash)`，历轮重提就是新格 ⇒ 这正是 A333 点名的「名册随账本变长」那笔代价，
 #: 也是 A348 那一格要不要把历轮重提压回单点的理由（本轮不替用户拍）。
-DANGLING_ROSTER = {
-    ("OPTIMIZATION_LOOP_2.md", "checklist", 265, "1094b0696"): 1,
-    ("OPTIMIZATION_LOOP_2.md", "log", 265, "1094b0696"): 6,
-    ("OPTIMIZATION_LOOP_2.md", "checklist", 265, "b2af89396"): 1,
-    ("OPTIMIZATION_LOOP_2.md", "log", 265, "b2af89396"): 5,
-    ("OPTIMIZATION_LOOP_2.md", "checklist", 265, "ee133fc40"): 1,
-    ("OPTIMIZATION_LOOP_2.md", "log", 265, "ee133fc40"): 4,
-    ("OPTIMIZATION_LOOP_2.md", "log", 265, "930e31f74"): 3,
-    ("OPTIMIZATION_LOOP_2.md", "log", 265, "b9d3ad7b1"): 3,
-    ("OPTIMIZATION_LOOP_2.md", "log", 265, "adc0df075"): 2,
-    ("OPTIMIZATION_LOOP_2.md", "log", 270, "1094b0696"): 1,
-    ("OPTIMIZATION_LOOP_2.md", "log", 270, "b2af89396"): 1,
-    ("OPTIMIZATION_LOOP_2.md", "log", 270, "ee133fc40"): 1,
-    ("OPTIMIZATION_LOOP_2.md", "log", 270, "930e31f74"): 1,
-    ("OPTIMIZATION_LOOP_2.md", "log", 270, "b9d3ad7b1"): 1,
-    ("OPTIMIZATION_LOOP_2.md", "log", 270, "adc0df075"): 1,
-}
-#: stash 名册与 l264 同一批格（L242、L264 与 L270 三个块点名同一枚 40 位对象）
-STASH_ROSTER = {("OPTIMIZATION_LOOP_2.md", "log", 242, STASH_HEX): 1,
-                ("OPTIMIZATION_LOOP_2.md", "log", 264, STASH_HEX): 1,
-                ("OPTIMIZATION_LOOP_2.md", "log", 270, STASH_HEX): 1}
+DANGLING_ROSTER = {}
+#: **2026-10-22 清空**：原 15 格全是 L265 / L270 两个块里「解析得到但不可达」的
+#: 旧 lineage 提交，重写后它们按提交时间折叠进 `not_a_commit`（见 `REWRITE_CUTOFF`）。
+#: 空名册意味着这一档现在**一格都不放过**：任何新出现的不可达点名立刻落进
+#: `defect_cells` 并让 `MEASURED_DEFECTS` 那一格红。
+STASH_ROSTER = {}
+#: **2026-10-22 清空**：那枚 `git fsck` 找回的 stash 对象（`STASH_HEX`）已被 gc 剪掉，
+#: 现量 `stash` 档为 0（`git stash list` 也是空的）。对象回来或新出现 stash 点名即红。
 
 
 class TestTheReachabilityFace:
@@ -328,8 +359,12 @@ class TestTheReachabilityFace:
         变红（A361 那一族的同一形状），而名册外多一处照样红，牙齿由 `test_an_unrostered_cross_branch_citation_still_goes_red` 现场证。"""
         ref_dangling = {r["hex"] for r in sites() if r["tier"] == DANGLING}
         hd = head_ancestors()
+        # 两处必须排除，否则差集被 2026-10-22 的重写灌满（实测 240+ 枚）：
+        #   - 早于重写时刻的提交：它们当年在 main 上，重写后散落在各条远端分支，
+        #     拿「HEAD 祖先」量它们等于拿新历史量旧账本，不是判据失效而是判据不适用。
+        # 判据本身不变：**本轮（重写之后）写进账本的点名**仍要两判据一致。
         by_head = {r["hex"] for r in sites() if r["full"] is not None and r["tier"] != STASH
-                   and r["full"] not in hd}
+                   and r["full"] not in hd and not committed_before_rewrite(r["full"])}
         assert ref_dangling <= by_head, sorted(ref_dangling - by_head)
         assert by_head - ref_dangling <= MEASURED_CROSS_BRANCH_CITED, sorted(by_head - ref_dangling)
 
@@ -363,60 +398,96 @@ class TestTheReachabilityFace:
 
 
 class TestTheRulerHasTeeth:
+    def _post_rewrite_probe(self):
+        """取一枚「重写之后、ref 可达、在当前 HEAD 祖先面上」的提交，返回 (短哈希, 全哈希)。
+
+        **为什么探针必须现取**：2026-10-22 强推重写之后，账本里已有点名**全是**旧 lineage
+        对象（现量：可达且重写后的点名 0 处）。把旧对象从可达面摘掉，它只会按提交时间落进
+        `not_a_commit` 一档（历史伤亡），`DANGLING` 的牙齿就再也测不到。所以三个牙齿测试都改用
+        现取的探针：它既是可达的，又晚于 `REWRITE_CUTOFF`，摘掉必然落进 `dangling`。
+        """
+        full = _git("rev-parse", "origin/main^{commit}").stdout.strip()
+        assert full, "取不到 origin/main 的提交，探针无从取"
+        assert not committed_before_rewrite(full), "探针必须晚于 REWRITE_CUTOFF，否则测的是历史伤亡而不是 DANGLING"
+        assert full in reachable(), "探针必须在可达面上"
+        return full[:9], full
+
     def test_dropping_an_ancestor_moves_its_cited_sites_into_the_dangling_tier(self):
-        """可达判据不是摆设：内存里把 L269 代码批那枚从可达面摘掉 ⇒ 它立刻从 `reachable` 走到 `dangling`、
-        缺陷格恰好多出它那一格；复原后重跑与基线逐格相同。零落盘。"""
-        target = "e3baad45a"
-        full, hits = resolve(target)
-        assert hits == 1 and full in reachable()
-        base = sites()
-        assert [r["tier"] for r in base if r["hex"] == target] == [REACHABLE]
-        saved = _CACHE["re"]
-        _CACHE["re"] = saved - {full}
+        """可达判据不是摆设：合成一处对重写后提交的点名，再把它从可达面摘掉 ⇒ 它立刻从 `reachable`
+        走到 `dangling`、缺陷格恰好多出它那一格；复原后重跑与基线逐格相同。零落盘。"""
+        target, full = self._post_rewrite_probe()
+        volumes = other.load_volumes()
+        lines = volumes[VOLUMES[1]]
+        volumes[VOLUMES[1]] = lines[:2] + ["- [x] **L900** 探针 `%s`（臂写在本文件里，不落盘）" % target] + lines[2:]
         try:
-            got = sites()
-            assert [r["tier"] for r in got if r["hex"] == target] == [DANGLING]
-            assert tally(got)[DANGLING] == MEASURED_TIERS[DANGLING] + 1
-            assert tally(got)[REACHABLE] == MEASURED_TIERS[REACHABLE] - 1
-            assert defect_cells(got) == {("OPTIMIZATION_LOOP_2.md", "checklist", 269, target): 1}
+            base = sites(volumes)
+            assert [r["tier"] for r in base if r["hex"] == target] == [REACHABLE]
+            saved = _CACHE["re"]
+            _CACHE["re"] = saved - {full}
+            try:
+                got = sites(volumes)
+                assert [r["tier"] for r in got if r["hex"] == target] == [DANGLING]
+                assert tally(got)[DANGLING] == tally(base)[DANGLING] + 1
+                assert tally(got)[REACHABLE] == tally(base)[REACHABLE] - 1
+                assert defect_cells(got) == {("OPTIMIZATION_LOOP_2.md", "checklist", 900, target): 1}
+            finally:
+                _CACHE["re"] = saved
+            assert sites(volumes) == base
         finally:
-            _CACHE["re"] = saved
-        assert sites() == base
+            volumes[VOLUMES[1]] = lines
 
     def test_an_unrostered_cross_branch_citation_still_goes_red(self):
-        """两判据那格换成名册不是「跨分支的一律放过」：内存里把一枚**名册之外**的可达对象从 HEAD 祖先面摘掉，
-        就是「账本点名了另一条分支上的提交」那一形 ⇒ 它立刻进入差集而名册接不住，那句 `<= 名册` 当场不成立。
-        复原后再走一遍原判据，与放行臂同数。零落盘。"""
-        rows = sites()
-        hd = head_ancestors()
-        target = next((r for r in rows if r["tier"] == REACHABLE and r["full"] in hd
-                       and r["hex"] not in MEASURED_CROSS_BRANCH_CITED), None)
-        assert target is not None, "面上没有一枚名册之外的可达对象 ⇒ 这一臂白跑，先现量再放行"
-        base_dangling = {r["hex"] for r in rows if r["tier"] == DANGLING}
-        base_diff = {r["hex"] for r in rows if r["full"] is not None and r["tier"] != STASH
-                     and r["full"] not in hd} - base_dangling
+        """两判据那格换成名册不是「跨分支的一律放过」：合成一处对重写后提交的点名，再把它从 HEAD
+        祖先面摘掉——就是「账本点名了另一条分支上的提交」那一形 ⇒ 它立刻进入差集而名册接不住，
+        那句 `<= 名册` 当场不成立。复原后再走一遍原判据，与放行臂同数。零落盘。
+
+        探针同样现取（见 `_post_rewrite_probe`）：账本现面上已经没有「重写后 + ref 可达 +
+        在 HEAD 祖先面」的点名可用了。
+        """
+        target, full = self._post_rewrite_probe()
+        volumes = other.load_volumes()
+        lines = volumes[VOLUMES[1]]
+        volumes[VOLUMES[1]] = lines[:2] + ["- [x] **L900** 探针 `%s`（臂写在本文件里，不落盘）" % target] + lines[2:]
         saved = _CACHE["hd"]
-        _CACHE["hd"] = saved - {target["full"]}
         try:
-            by_head = {r["hex"] for r in rows if r["full"] is not None and r["tier"] != STASH
-                       and r["full"] not in _CACHE["hd"]}
-            assert (by_head - base_dangling) - base_diff == {target["hex"]}
+            base = sites(volumes)
+            base_dangling = {r["hex"] for r in base if r["tier"] == DANGLING}
+            base_diff = {r["hex"] for r in base if r["full"] is not None
+                         and r["tier"] != STASH
+                         and r["full"] not in head_ancestors()
+                         and not committed_before_rewrite(r["full"])} - base_dangling
+            assert base_diff == set(), "放行臂本身必须是空集（现量名册为空）"
+            _CACHE["hd"] = head_ancestors() - {full}
+            by_head = {r["hex"] for r in base if r["full"] is not None
+                       and r["tier"] != STASH
+                       and r["full"] not in _CACHE["hd"]
+                       and not committed_before_rewrite(r["full"])}
+            assert (by_head - base_dangling) - base_diff == {target}
             assert not (by_head - base_dangling) <= MEASURED_CROSS_BRANCH_CITED
         finally:
             _CACHE["hd"] = saved
-        assert sites() == rows, "复原后站点必须逐格相同"
+            volumes[VOLUMES[1]] = lines
+        assert len(sites()) == MEASURED_SITES, "复原后站点必须与基线同数"
 
     def test_the_roster_is_not_a_blanket_tolerance(self):
-        """名册不是「游离的一律放过」：合成一处**新**的点名——同一枚已知游离对象，但落在名册里没有的
-        区段身份（L270 那一行）上 ⇒ 缺陷格当场非空且恰好是那一格。只在内存里改面，不落盘。"""
+        """名册不是「游离的一律放过」：合成一处**新**的点名——重写后的探针提交，但落在名册里没有的
+        区段身份（L900 那一行）上 ⇒ 缺陷格当场非空且恰好是那一格。只在内存里改面，不落盘。
+
+        探针现取的理由同 `_post_rewrite_probe`：重写前的不可达对象已按时间折叠进 not_a_commit，
+        拿它们当探针造不出缺陷格。
+        """
+        target, full = self._post_rewrite_probe()
         volumes = other.load_volumes()
         lines = volumes[VOLUMES[1]]
-        probe = "- [x] **L270** 假造的游离点名 `930e31f74`（臂写在本文件里，不落进账本）\n"
-        volumes[VOLUMES[1]] = lines[:2] + [probe.rstrip("\n")] + lines[2:]
+        probe = "- [x] **L900** 假造的游离点名 `%s`（臂写在本文件里，不落进账本）" % target
+        volumes[VOLUMES[1]] = lines[:2] + [probe] + lines[2:]
+        saved = _CACHE["re"]
+        _CACHE["re"] = saved - {full}
         try:
             got = defect_cells(sites(volumes))
-            assert got == {("OPTIMIZATION_LOOP_2.md", "checklist", 270, "930e31f74"): 1}
+            assert got == {("OPTIMIZATION_LOOP_2.md", "checklist", 900, target): 1}
         finally:
+            _CACHE["re"] = saved
             volumes[VOLUMES[1]] = lines
         assert len(sites()) == MEASURED_SITES
 

@@ -80,6 +80,10 @@ var AdminRegistry = tygen.Registry{
 	{Name: "QualityInfo", Go: service.QualityInfo{}},
 	{Name: "ReactionSpec", Go: domain.ReactionSpec{}},
 	{Name: "MasteryFamily", Go: domain.MasteryFamily{}},
+	// 2026-10-21（二轮审计 P1）：`MasteryNode` 必须一起登记 ——
+	// 否则 `MasteryFamily.Nodes` 的元素类型是「未注册的 struct」，
+	// 生成器只能内联展开（能work，但生成物会变得很长且脆）。
+	{Name: "MasteryNode", Go: domain.MasteryNode{}},
 	{Name: "RatingWeights", Go: domain.RatingWeights{}},
 	{Name: "TerrainPlacement", Go: domain.TerrainPlacement{}},
 	{Name: "Spawn", Go: domain.Spawn{}},
@@ -100,6 +104,10 @@ var AdminRegistry = tygen.Registry{
 	{Name: "RecomputeView", Go: service.RecomputeView{}},
 	{Name: "RecomputeLevelStat", Go: service.RecomputeLevelStat{}},
 	{Name: "RecomputeSummary", Go: service.RecomputeSummary{}},
+	// 2026-10-21（二轮审计 P2-11）：重算档位状态**必须**进注册表 ——
+	// 此前前端手写了一份同名类型，于是「唯一事实源」当场破功：
+	// 改 Go 侧的 json tag，前端不会红。
+	{Name: "RecomputeModeState", Go: service.RecomputeModeState{}},
 	{Name: "RecomputeTotals", Go: service.RecomputeTotals{}},
 	{Name: "RecomputeEngineCounters", Go: service.RecomputeEngineCounters{}},
 }

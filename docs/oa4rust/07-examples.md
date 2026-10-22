@@ -103,7 +103,7 @@ curl http://localhost:3000/openapi.json -o openapi.json
 4. 在 `crates/<module>/src/tests.rs` 补手写单测（生成测试走 `scripts/generate_handler_tests.py`）。
 5. 更新三端契约 fixture（`tests/contracts/`）与前端 `@oa4rust/apis`；移动端按需在 `services/index.ts` 暴露。
 6. 门禁：`cargo check --workspace --locked && cargo test --workspace --lib --locked`；workspace 根 `pnpm test && pnpm typecheck && pnpm lint:check`。
-7. 重新运行 `backend/scripts/regen_endpoints.py` 刷新迁移状态文档（单一信息源）。
+7. 重新运行 `backend/scripts/regen_endpoints.py` 刷新迁移状态文档（单一信息源）（待确认：该脚本当前实际产出 `tests/behavior_comparison/endpoints.rs`；清单文档自述的生成器 `scripts/gen_inventory.py` 不在 `backend/scripts/`）。
 
 ## 7. 数据迁移演练（本地全量）
 
@@ -111,7 +111,7 @@ curl http://localhost:3000/openapi.json -o openapi.json
 cd oa4rust/backend
 docker compose up -d postgres
 cargo run -- --migrate-only
-# → migrations: ~108 applied（全量后约 379 表）
+# → migrations: ~111 applied（全量后约 379 表）
 # parity 全量验证：
 cargo test -p parity --lib --locked      # 期望 4143/4143
 ```

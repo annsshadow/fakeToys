@@ -100,6 +100,8 @@ type AdminShopItemResp struct {
 // AdminAnnouncementsResp 是 `GET /admin/announcements` 的响应。
 type AdminAnnouncementsResp struct {
 	Items []AdminAnnouncementView `json:"items"`
+	// Total 是**全量行数**（不是当前页条数）—— 前端拿它算页数。
+	Total int64 `json:"total"`
 }
 
 // AdminAnnouncementResp 是 `POST /admin/announcements` 的响应。
@@ -110,6 +112,8 @@ type AdminAnnouncementResp struct {
 // AdminRedeemCodesResp 是 `GET /admin/redeem-codes` 的响应。
 type AdminRedeemCodesResp struct {
 	Items []AdminRedeemCodeView `json:"items"`
+	// Total 是**全量行数**（不是当前页条数）—— 前端拿它算页数。
+	Total int64 `json:"total"`
 }
 
 // AdminRedeemCodeResp 是 `POST /admin/redeem-codes` 的响应。
@@ -120,6 +124,8 @@ type AdminRedeemCodeResp struct {
 // AdminAuditLogsResp 是 `GET /admin/audit-logs` 的响应。
 type AdminAuditLogsResp struct {
 	Items []AdminAuditLogView `json:"items"`
+	// Total 是**全量行数**（不是当前页条数）—— 前端拿它算页数。
+	Total int64 `json:"total"`
 }
 
 // AdminReactionsResp 是 `GET /admin/reactions` 的响应。

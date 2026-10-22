@@ -66,8 +66,19 @@ jobs:
       - name: Run Biome gate on the whole frontend
         run: pnpm lint
       - name: Build desktop
-        run: pnpm build
+        # 0 告警门禁：Vite/Rollup/lightningcss 的告警不改变退出码，构建照样 exit 0。
+        # 只判退出码等于没判，所以把日志落盘再断言一次（判据见 scripts/assert-no-warnings.sh）。
+        run: |
+          set -o pipefail
+          pnpm build 2>&1 | tee /tmp/build-desktop.log
+          bash "$GITHUB_WORKSPACE/scripts/assert-no-warnings.sh" /tmp/build-desktop.log "oa4rust desktop"
       - name: Build mobile (uni-app H5)
-        run: pnpm --filter @oa4rust/mobile build:h5
+        run: |
+          set -o pipefail
+          pnpm --filter @oa4rust/mobile build:h5 2>&1 | tee /tmp/build-mobile-h5.log
+          bash "$GITHUB_WORKSPACE/scripts/assert-no-warnings.sh" /tmp/build-mobile-h5.log "oa4rust mobile (H5)"
       - name: Build mobile (WeChat mini program)
-        run: pnpm --filter @oa4rust/mobile build:mp-weixin
+        run: |
+          set -o pipefail
+          pnpm --filter @oa4rust/mobile build:mp-weixin 2>&1 | tee /tmp/build-mobile-mp.log
+          bash "$GITHUB_WORKSPACE/scripts/assert-no-warnings.sh" /tmp/build-mobile-mp.log "oa4rust mobile (mp-weixin)"

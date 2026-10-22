@@ -6,5 +6,14 @@
   // 而 `type-check` 一路绿。这里把测试文件纳入编译范围，让同类缺陷在 tsc 阶段就出声，
   // 不用等到 vitest 运行时才炸。与 miniapp 的同名门禁（`type-check:test`）同一口径。
   "extends": "./tsconfig.json",
-  "include": ["vitest.config.ts", "tests/**/*.ts"]
+  // ⚠️ 2026-10-21（二轮审计 P1-5）：`src/**` **必须**在编译范围内 ——
+  //
+  // 此前 include 只有 `vitest.config.ts` 与 `tests/**/*.ts`，于是：
+  //   - `src/env.d.ts` 里的 `declare module '*.vue'` 不在作用域
+  //     → 测试里 `import X from '@/views/X.vue'` 全部报 TS2307；
+  //   - 于���这个门禁**根本跑不起来**（CI 也没跑它），它守的东西等于没守。
+  //
+  // 带上 `src/**` 之后，测试与被测代码在**同一次** tsc 里编译 ——
+  // 这才是「测试面类型门禁」该有的样子。
+  "include": ["vitest.config.ts", "tests/**/*.ts", "src/**/*.ts", "src/**/*.d.ts", "src/**/*.vue"]
 }

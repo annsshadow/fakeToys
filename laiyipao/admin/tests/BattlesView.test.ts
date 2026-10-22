@@ -24,6 +24,10 @@ function battleFixture(overrides: Partial<AdminBattleView> = {}): AdminBattleVie
   return {
     id: 1,
     user_id: 9,
+    // nickname 是**必填**（服务端 AdminBattleView 一直返回它）——
+    // 之前夹具里没有，于是类型门禁红了：这正是「夹具与真实类型不同形」
+    // 的那类漂移。
+    nickname: '测试玩家',
     level_id: 3,
     result: 'win',
     stars: 3,

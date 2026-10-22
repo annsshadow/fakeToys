@@ -159,7 +159,12 @@ def git_history() -> List[Tuple[str, str]]:
     换口径后六档现量（15/24/15/69/占位 0/R6 四格白名单）逐格实测复现，一格没动。
     """
     try:
-        cp = subprocess.run(["git", "log", "--topo-order", "--format=%H\t%s", "HEAD"],
+        # 2026-10-22：`HEAD` → `--remotes --tags`。强推重写之后，账本点名的提交有相当一部分
+        # 只在**别的分支**上（本树 HEAD 是重写后的 main），拿 HEAD 建表会把它们一律读成
+        # 「解析不到」——实测 69 枚里有大半对象完好、只是不在 HEAD 祖先面上。判据要的是
+        # 「槽内哈希在本仓历史里、且相对时序可信」，与当前检出哪条分支无关，所以口径取远端
+        # ref 面（与 l270 的 `reachable()` 同一口径，两把尺子不再各说各话）。
+        cp = subprocess.run(["git", "log", "--topo-order", "--format=%H\t%s", "--remotes", "--tags"],
                             cwd=str(REPO_ROOT), capture_output=True, text=True,
                             encoding="utf-8", errors="replace", timeout=120)
     except OSError as exc:

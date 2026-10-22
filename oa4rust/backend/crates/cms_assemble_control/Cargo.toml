@@ -22,3 +22,6 @@ search = { path = "../../crates/search" }
 
 [dev-dependencies]
 chrono.workspace = true
+
+[lints]
+workspace = true

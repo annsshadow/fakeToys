@@ -49,7 +49,7 @@ Go 在没有 `json` tag 时按**字段名原文（PascalCase）**序列化。
 |---|---|
 | `miniapp/src/api/client.ts` 的 `GameConfig` | `Output/A/B/Key/Name/StartLevel/EndLevel/BossEnemyId/TerrainKind` |
 | `admin/src/views/WikiView.vue` 的本地类型 | `reactions` / `chapters` 两组 |
-| `admin/src/api/index.ts` / 服务端 `domain.Diagnose` | 见 [05 §3.8](./05-api-reference.md#38-诊断) 的不一致记录 |
+| 服务端 `domain.Diagnose` | 曾缺 `json` tag 下发 PascalCase，2026-10-21 已修复（见 [05 §3.8](./05-api-reference.md#38-诊断)） |
 
 判据：**新增接口字段时，Go 侧 tag 与 TS 侧接口必须逐字写在同一处**（写在同一轮提交里），
 否则就必须有契约测试覆盖。
@@ -457,11 +457,11 @@ go run ./cmd/vectors -check   # 只校验是否为最新，不写盘（CI 用）
 
 | # | 缺口 | 状态 |
 |---|---|---|
-| 1 | `/diagnose` 下发 PascalCase（`domain.Diagnose` 无 json tag），客户端读小写 → 诊断卡空白 | **未修**，见 [05 §3.8](./05-api-reference.md#38-诊断) |
+| 1 | `/diagnose` 曾下发 PascalCase（`domain.Diagnose` 无 json tag），客户端读小写 → 诊断卡空白 | **已修**（2026-10-21：补 snake_case tag，并新增 `failed_times` / `stuck`），见 [05 §3.8](./05-api-reference.md#38-诊断) |
 | 2 | 反应数值表、关卡种子仍是「手工同步的两份副本」，靠夹具锁 | 已接受（夹具足够） |
 | 3 | `A` 段（攻方系数）服务端无法独立重算 | 已知边界，R1 整局重算的目标 |
 | 4 | 防线挑战胜负客户端裁决 | 已知边界第 3 条（DECISIONS D4 已补 S 段） |
 | 5 | `card_picks` 对旧战报缺失时只能「看哈希是否巧合相符」 | 已声明 |
 | 6 | `game_configs` 表当前不被读取路径消费 | 预留 |
 
-第 1 条是唯一的**未修缺陷**，其余都是经过论证的取舍。
+第 1 条已于 2026-10-21 修复（曾是该清单里唯一的未修缺陷）；其余都是经过论证的取舍。

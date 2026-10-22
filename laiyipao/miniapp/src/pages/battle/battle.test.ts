@@ -117,6 +117,8 @@ class FakeRenderer {
   viewport: [number, number] | null = null
   started = false
   stopped = false
+  /** 当前倍速（真实渲染器会按它重建逻辑时钟） */
+  speed = 1
   constructor(canvas: any, engine: any) {
     this.canvas = canvas
     this.engine = engine
@@ -124,6 +126,9 @@ class FakeRenderer {
   }
   setViewport(w: number, h: number) {
     this.viewport = [w, h]
+  }
+  setSpeed(mult: number) {
+    this.speed = mult
   }
   start(cb: (dt: number) => void) {
     this.started = true
@@ -137,7 +142,14 @@ class FakeRenderer {
 
 vi.mock('@/game/engine', () => ({ BattleEngine: FakeEngine, TICK_MS: TICK }))
 vi.mock('@/game/replay', () => ({ equippedFromSnapshot: vi.fn() }))
-vi.mock('@/render/canvas', () => ({ BattleRenderer: FakeRenderer }))
+// 渲染层只替掉 BattleRenderer（渲染细节由 canvas.test.ts 覆盖），
+// 倍速换算（BATTLE_SPEED_STEPS / normalizeSpeed / logicIntervalMs）**用真货** ——
+// 在这里再抄一份公式，等于让「页面按 6.25ms 建时钟」变成自证，
+// 真实换算写错了也测不出来。
+vi.mock('@/render/canvas', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/render/canvas')>()
+  return { ...actual, BattleRenderer: FakeRenderer }
+})
 
 const mockApi = vi.mocked(api, true)
 const replayModule = await import('@/game/replay')
@@ -504,6 +516,67 @@ describe('battle.vue 战斗页', () => {
     expect(renderer.stopped).toBe(false)
     triggerUniHook(wrapper.vm, 'onUnload')
     expect(renderer.stopped).toBe(true)
+  })
+})
+
+describe('battle.vue 倍速档位', () => {
+  it('档位渲染为 1/2/4/8×，点选后交给渲染器并持久化', async () => {
+    const Battle = await loadPage()
+    const { wrapper } = mountPage(Battle)
+    await setupDone(wrapper)
+    const renderer = FakeRenderer.instances[0]!
+    // 建逻辑时钟前就把持久化档位交进去（默认 1×）
+    expect(renderer.speed).toBe(1)
+
+    const chips = wrapper.findAll('.speed-chip')
+    expect(chips.map((c) => c.text())).toEqual(['1×', '2×', '4×', '8×'])
+    // 当前档位高亮
+    expect(chips[0]!.classes()).toContain('on')
+
+    await chips[3]!.trigger('click')
+    expect(renderer.speed).toBe(8)
+    expect(chips[3]!.classes()).toContain('on')
+    expect(chips[0]!.classes()).not.toContain('on')
+    expect(um.mock.setStorageSync).toHaveBeenCalledWith('lyp_battle_speed', '8')
+
+    // 点已选中的档位 → 幂等，不再写存储
+    um.mock.setStorageSync.mockClear()
+    await chips[3]!.trigger('click')
+    expect(um.mock.setStorageSync).not.toHaveBeenCalled()
+  })
+
+  it('持久化的 8× 在开局时就生效（不必每次重开都点一遍）', async () => {
+    um.storage.set('lyp_battle_speed', '8')
+    const Battle = await loadPage()
+    const { wrapper } = mountPage(Battle)
+    await setupDone(wrapper)
+    expect(FakeRenderer.instances[0]!.speed).toBe(8)
+    expect(wrapper.findAll('.speed-chip')[3]!.classes()).toContain('on')
+  })
+
+  it('存储里是脏值（空串 / 非数字 / 0）→ 回落到 1×', async () => {
+    um.storage.set('lyp_battle_speed', 'NaN')
+    const Battle = await loadPage()
+    const { wrapper } = mountPage(Battle)
+    await setupDone(wrapper)
+    expect(FakeRenderer.instances[0]!.speed).toBe(1)
+  })
+
+  it('无 canvas 的降级路径同样换挡：定时器间隔按倍速缩短', async () => {
+    mockQueryNode(null)
+    const Battle = await loadPage()
+    const { wrapper } = mountPage(Battle)
+    // 只观察间隔，不依赖定时器真的触发（否则就是一条 flaky 的计时测试）
+    const spy = vi.spyOn(globalThis, 'setInterval')
+    await setupDone(wrapper)
+    expect(spy.mock.calls.map((c) => Number(c[1]))).toContain(TICK) // 1× → 50ms
+
+    spy.mockClear()
+    await wrapper.findAll('.speed-chip')[3]!.trigger('click') // 8×
+    expect(spy.mock.calls.map((c) => Number(c[1]))).toEqual([TICK / 8]) // 6.25ms
+
+    spy.mockRestore()
+    triggerUniHook(wrapper.vm, 'onUnload')
   })
 })
 

@@ -14,3 +14,6 @@ captcha.workspace = true
 
 [dev-dependencies]
 chrono.workspace = true
+
+[lints]
+workspace = true

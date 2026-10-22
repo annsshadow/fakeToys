@@ -30,10 +30,17 @@
 
 | 依赖 | 版本 | 检查 |
 |---|---|---|
-| Go | 1.26.3 | `go version` |
+| Go | 1.26.10 | `go version` |
 | PostgreSQL | 15+ | `psql --version` |
 | Node | 20+ | `node -v` |
 | pnpm | 11 | `pnpm -v` |
+
+> ⚠️ Go 的下限是 **1.26.10**，不是「大致 1.26」。1.26.9 及以下含
+> `GO-2026-6809`（`crypto/x509` 不拒绝被攻破的中间证书），而本服务的调用链
+> **代码可达**（`service.RecordRecompute → fmt.Fprintf → x509.Certificate.Verify`）——
+> CI 的 govulncheck 闸门会直接红。想降版本之前先看
+> `.github/workflows/laiyipao-ci.yml` 的 `dependency-audit` 一节：
+> 那条闸门的判据是「**代码可达**的漏洞必须为 0」，不是「漏洞库里有几条」。
 
 数据库默认用 `trust` 认证（仅本机开发）。**生产必须改**：
 见 §6.1 的连接串与 `pg_hba.conf` 说明。
@@ -44,7 +51,7 @@
 # 1) 建库
 createdb laiyipao
 
-# 2) 迁移（16 个 goose 迁移，50 张业务表）
+# 2) 迁移（18 个 goose 迁移，50 张业务表）
 cd laiyipao/server
 export DATABASE_URL="postgres://postgres@127.0.0.1:5432/laiyipao?sslmode=disable"
 export BOOTSTRAP_ADMIN_PASS="<至少 10 位，缺省会拒绝启动>"
@@ -100,6 +107,7 @@ cd laiyipao/admin   && pnpm install && pnpm dev          # :5175
 | `MIGRATIONS_ON_BOOT` | `true` | 见 §3.2 的取舍 |
 | `ACCESS_TTL` | `2h` | 访问令牌有效期 |
 | `REFRESH_TTL` | `720h` | 刷新令牌有效期 |
+| `CORS_ALLOW_ORIGINS` | 空 | 跨域来源白名单（逗号分隔，逐项去空白）；dev 默认放行 `*`、prod 默认不发送任何 CORS 头（语义见 §2 末尾注释） |
 
 ### 数据库连接池
 
@@ -300,8 +308,8 @@ cd .. && pwsh -NoProfile -File scripts/e2e.ps1
       259 个 DB 测试自然跳过，这属于已知行为，不是回归。
       本地需 `go test ./... -count=1 -timeout 1200s` 在**有 PG** 的前提下跑，
       方能进入「零 SKIP」的真门槛。）
-- [ ] `npx vitest run --config vitest.config.ts` 通过
-      （miniapp）；`cd ../admin && npx vitest run` 亦需全绿
+- [ ] `pnpm vitest run --config vitest.config.ts` 通过
+      （miniapp）；`cd ../admin && pnpm vitest run` 亦需全绿
 - [ ] 双端 `npx tsc --noEmit` 无错误
 - [ ] `gofmt -l server` 输出为空、`go vet ./...` 无输出
 - [ ] `go run ./cmd/vectors -check` 全 OK

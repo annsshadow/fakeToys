@@ -2668,17 +2668,20 @@ button:focus-visible{outline:2px solid var(--color-primary);outline-offset:2px}
 .tracking-normal{letter-spacing:0}
 .tracking-wide{letter-spacing:0.025em}
 /* Transform utilities */
-.hover\\:scale-105:hover{transform:scale(1.05)}
-.hover\\:brightness-110:hover{filter:brightness(1.1)}
+/* 变体类名里的 `:` 只能转义一次（`.hover\:x`）。写成 `\\:` 时 `\\` 会被解析为
+   一个转义后的反斜杠，后面的 `:scale-105` 就成了伪类 —— 既选不中元素，也会让
+   lightningcss 在压缩阶段报 "not recognized as a valid pseudo-class"。 */
+.hover\:scale-105:hover{transform:scale(1.05)}
+.hover\:brightness-110:hover{filter:brightness(1.1)}
 /* Active state */
-.active\\:bg-primary-active:active{background:rgba(59,130,246,0.2)}
-.active\\:border-primary-active:active{border-color:var(--color-primary)}
+.active\:bg-primary-active:active{background:rgba(59,130,246,0.2)}
+.active\:border-primary-active:active{border-color:var(--color-primary)}
 /* Disabled state */
-.disabled\\:opacity-50:disabled{opacity:0.5}
-.disabled\\:cursor-not-allowed:disabled{cursor:not-allowed}
+.disabled\:opacity-50:disabled{opacity:0.5}
+.disabled\:cursor-not-allowed:disabled{cursor:not-allowed}
 /* Focus state */
-.focus\\:ring-2:focus{outline:none;box-shadow:0 0 0 2px var(--color-primary)}
-.focus\\:border-primary:focus{border-color:var(--color-primary)}
+.focus\:ring-2:focus{outline:none;box-shadow:0 0 0 2px var(--color-primary)}
+.focus\:border-primary:focus{border-color:var(--color-primary)}
 /* Print utilities */
 @media print{.no-print{display:none!important}}
 /* Reduced motion */

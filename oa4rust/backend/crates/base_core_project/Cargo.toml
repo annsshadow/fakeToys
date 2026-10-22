@@ -13,3 +13,6 @@ shared = { path = "../shared" }
 [dev-dependencies]
 tokio = { workspace = true }
 tower = { workspace = true, features = ["util"] }
+
+[lints]
+workspace = true

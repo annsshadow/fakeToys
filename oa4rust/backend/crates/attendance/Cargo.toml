@@ -17,3 +17,6 @@ uuid.workspace = true
 chrono = { version = "0.4", features = ["serde"] }
 
 shared = { path = "../shared" }
+
+[lints]
+workspace = true

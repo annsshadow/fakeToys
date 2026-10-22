@@ -11,7 +11,6 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import ElementPlus from 'element-plus'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { provide } from 'vue'
 
 const fetchUsers = vi.hoisted(() => vi.fn())
 const adminMe = vi.hoisted(() => vi.fn())

@@ -22,3 +22,6 @@ md5.workspace = true
 urlencoding.workspace = true
 
 shared = { path = "../shared" }
+
+[lints]
+workspace = true

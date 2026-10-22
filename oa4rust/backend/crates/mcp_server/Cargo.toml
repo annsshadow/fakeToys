@@ -107,3 +107,6 @@ query_service_processing = { path = "../query_service_processing" }
 
 [dev-dependencies]
 tower.workspace = true
+
+[lints]
+workspace = true

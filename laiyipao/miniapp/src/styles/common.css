@@ -66,6 +66,9 @@ page {
  * **不存在**的行为（注释是最容易让所有人以为已经做了的形态）。
  */
 .safe-bottom {
+  /* 兜底先写一条：不支持 env() 的运行时会把整条 calc() 声明丢掉，
+     于是底部内边距直接变 0（内容贴到屏幕边缘）。 */
+  padding-bottom: 24rpx;
   padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
 }
 

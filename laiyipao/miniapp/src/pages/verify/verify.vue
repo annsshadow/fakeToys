@@ -201,6 +201,10 @@ async function fetchReplay() {
     replayInfo.value = await api.getReplay(id)
   } catch (e) {
     errMsg.value = (e as Error).message
+    // ⚠️ 2026-10-21（二轮审计 P2-11）：失败时**清掉上一次的结论** ——
+    // 否则页面同时显示「一致 —— 分数可复现」和一行错误，
+    // 玩家会以为验真通过了。
+    outcome.value = null
   }
 }
 

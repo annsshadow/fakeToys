@@ -146,7 +146,12 @@ jobs:
       - name: Run Vitest tests
         run: pnpm test
       - name: Build (vue-tsc + vite)
-        run: pnpm build
+        # 0 告警门禁：构建退出码为 0 不代表没有告警（Vite/Rollup/lightningcss 都是
+        # "打印一行 (!) 然后继续"），所以落盘后由 assert-no-warnings.sh 断言。
+        run: |
+          set -o pipefail
+          pnpm build 2>&1 | tee /tmp/build-admin.log
+          bash "$GITHUB_WORKSPACE/scripts/assert-no-warnings.sh" /tmp/build-admin.log "laiyipao admin"
       - name: Size budget (first-load) must stay within budget
         # `pnpm size:check` 量的是**首屏**体积（index.html 入口的静态 import 闭包），
         # 不是 dist 总量 —— 路由是代码分割的，dist 总量会把懒加载页也算进来。
@@ -213,12 +218,30 @@ jobs:
             echo "自查：npx vue-tsc --noEmit 2>&1 | grep -i 'search string not found'"
             exit 1
           fi
+      # 测试面类型门禁（2026-10-21 补上）。
+      #
+      # ⚠️ 这一步此前**根本跑不起来**：`tsconfig.vitest.json` 的 include 只有
+      # `tests/**/*.ts`，`src/**` 不在编译范围内 → `src/env.d.ts` 里的
+      # `declare module '*.vue'` 不在作用域 → 测试里的 `import X from '*.vue'`
+      # 全部报 TS2307 → 门禁在检查任何东西之前就死了。
+      #
+      # 而且 CI 从来没跑过它 —— 于是「测试面类型门禁」守的东西等于没守：
+      # 4 个测试文件引用着已改名的类型（AdminUser → AdminUserView 等），
+      # 一直没人发现。
+      - name: Type-check the test sources too
+        run: pnpm type-check:test
       - name: Run Vitest tests
         run: pnpm test
       - name: Build H5
-        run: pnpm build:h5
+        run: |
+          set -o pipefail
+          pnpm build:h5 2>&1 | tee /tmp/build-miniapp-h5.log
+          bash "$GITHUB_WORKSPACE/scripts/assert-no-warnings.sh" /tmp/build-miniapp-h5.log "laiyipao miniapp (H5)"
       - name: Build WeChat mini program
-        run: pnpm build:mp-weixin
+        run: |
+          set -o pipefail
+          pnpm build:mp-weixin 2>&1 | tee /tmp/build-miniapp-mp.log
+          bash "$GITHUB_WORKSPACE/scripts/assert-no-warnings.sh" /tmp/build-miniapp-mp.log "laiyipao miniapp (mp-weixin)"
       # 小程序主包体积闸门（2026-10-21 P6-9）。
       #
       # 此前 admin 有 `size:check`，miniapp **没有** —— 而微信主包上限是
@@ -240,6 +263,13 @@ jobs:
   #    连接去同步、TLS 握手消息无上限等，都是**对外服务**的形状。
   #    改成 go.mod 一行 + 复扫归零，但工具链和漏洞库都会动，
   #    没有这道闸门，下一次 CVE 发布只会悄悄进来。
+  #
+  #    2026-10-22 第二轮：go1.26.9 上又扫出 GO-2026-6809（crypto/x509
+  #    不拒绝被攻破的中间证书），调用链 **代码可达**
+  #    （service.RecordRecompute → fmt.Fprintf → x509.Certificate.Verify），
+  #    修于 go1.26.10。同样只是 go.mod 一行（`go 1.26.9` → `go 1.26.10`），
+  #    go.sum 未动 —— setup-go 走 go-version-file，会自动装新工具链。
+  #    这正是「闸门」的价值：代码一行没改，红是漏洞库长出来的。
   #
   # 2. **pnpm audit 是回归闸门，不是「必须 0」。** 剩下的 39 条全挂在
   #    @dcloudio 构建链/测试链上，@dcloudio/vite-plugin-uni 声明的是

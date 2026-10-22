@@ -58,6 +58,7 @@ import type {
   AdminWavesResp,
   Dashboard,
   RecomputeLevelStat,
+  RecomputeModeState,
   RecomputeSummary,
   RecomputeView,
   SeedGem,
@@ -107,6 +108,7 @@ export type {
   AdminWavesResp,
   Dashboard,
   RecomputeLevelStat,
+  RecomputeModeState,
   RecomputeSummary,
   RecomputeView,
   SeedGem,
@@ -360,19 +362,21 @@ export function fetchRecomputeStats(hours = 24) {
 }
 
 /**
- * 重算闸门状态（2026-10-21 P3-3）。
+ * 重算闸门状态 —— **类型来自生成物**（`./types.gen`）。
  *
- * `mode` 是**实际生效**的档，`configured_mode` 是配置里写的档。
- * 两者不一致 = 被熔断降级了 —— 那时 enforce 该拒发的奖励正在**放行**。
+ * ⚠️ 2026-10-21（二轮审计 P1）：此前这里**手写**了一份同名类型，
+ * 而它没有进服务端的类型注册表 —— 于是「唯一事实源」当场破功：
+ * 改 Go 侧的 json tag，前端**不会红**。
+ *
+ * 现在它由 `cmd/tygen` 生成，改一处两端同时变。
+ *
+ * 语义（服务端 `RecomputeModeState` 的注释是权威）：
+ *   - `mode` / `skills_mode` —— **权威档位**。S 段（replay_skills）
+ *     才是真正「拒发奖励」的那一段，且它**永不**被熔断降级。
+ *   - `engine_mode` —— 引擎侧（整局 `replay_hash`）实际生效的档，
+ *     它**可以被熔断降级**。
+ *   - `enforcing` —— S 段此刻是否会拒发奖励。
  */
-export interface RecomputeModeState {
-  mode: string
-  configured_mode: string
-  demoted: boolean
-  demoted_reason: string
-  breaker_rate_permille: number
-  breaker_min_samples: number
-}
 
 export function fetchRecomputeMode() {
   return api.get<RecomputeModeState>('/admin/recomputes/mode')
@@ -404,8 +408,13 @@ export function fetchReactions() {
 
 // ---------- 防线 ----------
 
-export function fetchDefenses(limit = 50) {
-  return api.get<AdminDefensesResp>(`/admin/defenses?limit=${limit}`)
+/**
+ * 防线列表（2026-10-21 P2-6）：带 offset ——
+ * 此前只能看前 100 条，而 `total` 是全量 COUNT，
+ * 于是「共 N 条防线」却只看得到 100 条（漏掉的还是**弱**防线，按战力倒序）。
+ */
+export function fetchDefenses(limit = 50, offset = 0) {
+  return api.get<AdminDefensesResp>(`/admin/defenses?limit=${limit}&offset=${offset}`)
 }
 
 // ---------- 经济 / 商城 / 公告 / 兑换码 ----------
@@ -418,16 +427,16 @@ export function updateShopItem(id: number, patch: AdminShopPatch) {
   return api.put<AdminShopItemResp>(`/admin/shop/${id}`, patch)
 }
 
-export function fetchAnnouncements() {
-  return api.get<AdminAnnouncementsResp>('/admin/announcements')
+export function fetchAnnouncements(limit = 50, offset = 0) {
+  return api.get<AdminAnnouncementsResp>(`/admin/announcements?limit=${limit}&offset=${offset}`)
 }
 
 export function createAnnouncement(payload: { title: string; body: string; published: boolean }) {
   return api.post<AdminAnnouncementResp>('/admin/announcements', payload)
 }
 
-export function fetchRedeemCodes() {
-  return api.get<AdminRedeemCodesResp>('/admin/redeem-codes')
+export function fetchRedeemCodes(limit = 50, offset = 0) {
+  return api.get<AdminRedeemCodesResp>(`/admin/redeem-codes?limit=${limit}&offset=${offset}`)
 }
 
 export function createRedeemCode(payload: {

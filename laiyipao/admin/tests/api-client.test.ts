@@ -120,8 +120,8 @@ describe('api/client request', () => {
     fetchMock.mockRejectedValueOnce(new TypeError('Failed to fetch'))
     const err = await client.api.get('/admin/dashboard').catch((e) => e)
     expect(err).toMatchObject({ name: 'ApiError', status: 0, code: 'network_error' })
-    expect(err.message).toContain('无法连接后端服务')
-    expect(err.message).toContain('Failed to fetch')
+    expect((err as Error).message).toContain('无法连接后端服务')
+    expect((err as Error).message).toContain('Failed to fetch')
   })
 
   it('非 2xx 且后端返回标准错误体：透传 status / code / message', async () => {
@@ -149,10 +149,10 @@ describe('api/client request', () => {
     fetchMock.mockResolvedValueOnce(mockResp({ ok: true, status: 200, text: raw }))
     const err = await client.api.get('/admin/dashboard').catch((e) => e)
     expect(err).toMatchObject({ status: 200, code: 'bad_json' })
-    expect(err.message).toContain('响应不是合法 JSON')
+    expect((err as Error).message).toContain('响应不是合法 JSON')
     // slice(0, 200) 截断：消息不应包含整段原文
-    expect(err.message.length).toBeLessThan(raw.length)
-    expect(err.message).toContain('<html>')
+    expect((err as Error).message.length).toBeLessThan(raw.length)
+    expect((err as Error).message).toContain('<html>')
   })
 
   it('2xx 空 body（204 风格）：返回 null 而不是抛错', async () => {

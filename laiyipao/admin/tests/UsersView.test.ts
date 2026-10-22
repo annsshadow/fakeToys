@@ -8,7 +8,7 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import ElementPlus from 'element-plus'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { AdminUser } from '@/api'
+import type { AdminUserView } from '@/api'
 
 const fetchUsers = vi.hoisted(() => vi.fn())
 const banUser = vi.hoisted(() => vi.fn())
@@ -24,7 +24,7 @@ vi.mock('element-plus', async (importOriginal) => {
 
 import UsersView from '@/views/UsersView.vue'
 
-function userFixture(overrides: Partial<AdminUser> = {}): AdminUser {
+function userFixture(overrides: Partial<AdminUserView> = {}): AdminUserView {
   return {
     id: 1,
     nickname: '玩家甲',
@@ -43,7 +43,7 @@ function userFixture(overrides: Partial<AdminUser> = {}): AdminUser {
   }
 }
 
-async function mountUsers(items: AdminUser[] = [], total = items.length) {
+async function mountUsers(items: AdminUserView[] = [], total = items.length) {
   fetchUsers.mockResolvedValue({ items, total })
   const wrapper = mount(UsersView, { global: { plugins: [ElementPlus] } })
   await flushPromises()
@@ -51,17 +51,17 @@ async function mountUsers(items: AdminUser[] = [], total = items.length) {
 }
 
 type Vm = {
-  statusOf: (u: AdminUser) => { text: string; type: string }
-  suspicious: (u: AdminUser) => boolean
+  statusOf: (u: AdminUserView) => { text: string; type: string }
+  suspicious: (u: AdminUserView) => boolean
   offset: number
   limit: number
   keyword: string
   load: () => Promise<void>
   prevPage: () => void
   nextPage: () => void
-  onBan: (u: AdminUser) => Promise<void>
-  onUnban: (u: AdminUser) => Promise<void>
-  onGrant: (u: AdminUser) => Promise<void>
+  onBan: (u: AdminUserView) => Promise<void>
+  onUnban: (u: AdminUserView) => Promise<void>
+  onGrant: (u: AdminUserView) => Promise<void>
 }
 
 beforeEach(() => {
@@ -402,8 +402,8 @@ describe('UsersView 验真信号三态', () => {
     // 后台连旧版服务端时这两个字段不存在。此时必须显示「未验真」，
     // 而不是 `undefined` —— 页面上的 "undefined" 会让运营以为出了 bug。
     const legacy = userFixture({ id: 9, nickname: '旧版' })
-    delete (legacy as Partial<AdminUser>).verify_checked
-    delete (legacy as Partial<AdminUser>).verify_mismatched
+    delete (legacy as Partial<AdminUserView>).verify_checked
+    delete (legacy as Partial<AdminUserView>).verify_mismatched
     const wrapper = await mountUsers([legacy])
     expect(wrapper.text()).toContain('未验真')
     expect(wrapper.text()).not.toContain('undefined')

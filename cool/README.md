@@ -55,9 +55,14 @@ set COOL_OA_SECRET=<your_oa_secret>
 ### 直接运行
 
 ```bash
-javac cool.java
-java net.coolcollege.login.helper.EncryptUtil
+# 源码文件名必须与 public 类名一致：EncryptUtil.java
+javac -cp <path-to>/commons-codec-1.17.1.jar -d . EncryptUtil.java
+java -cp .:<path-to>/commons-codec-1.17.1.jar net.coolcollege.login.helper.EncryptUtil
 ```
+
+Windows 上直接用 `compile.bat`：它会自动在 `lib\commons-codec*.jar` 或环境变量
+`COMMONS_CODEC_JAR` 里找依赖，并以 `-Xlint:all -Werror` 编译（**0 告警**门禁，
+任何告警都会让编译失败）。
 
 ### 集成到其他系统
 

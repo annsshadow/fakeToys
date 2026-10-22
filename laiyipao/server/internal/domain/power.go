@@ -7,22 +7,38 @@ package domain
 
 // MasteryNode 是专精树的一个节点（I-3）。
 type MasteryNode struct {
-	ID        int
-	Family    string
-	Layer     int // 1..3
-	Slot      int // 0..3
-	Name      string
-	Kind      string // element_cap/reaction_mult/heat_cap/extra_slot/mechanic/armor
-	Value     int
-	PrereqFam string
-	PrereqLay int
+	// ⚠️ 2026-10-21：同样**必须**有 json tag —— 两端客户端读的是
+	// `id` / `family` / `layer` / `slot` / `name` / `kind` / `value` /
+	// `prereq_family` / `prereq_layer`（见 miniapp/src/game/types.ts）。
+	// 缺 tag 时 wire 上是大写字段名，客户端**一个都读不到**。
+	ID        int    `json:"id"`
+	Family    string `json:"family"`
+	Layer     int    `json:"layer"` // 1..3
+	Slot      int    `json:"slot"`  // 0..3
+	Name      string `json:"name"`
+	Kind      string `json:"kind"` // element_cap/reaction_mult/heat_cap/extra_slot/mechanic/armor
+	Value     int    `json:"value"`
+	PrereqFam string `json:"prereq_family"`
+	PrereqLay int    `json:"prereq_layer"`
 }
 
 // MasteryFamily 是专精树的一系。
 type MasteryFamily struct {
-	Family string
-	Name   string
-	Nodes  []MasteryNode
+	// ⚠️ 2026-10-21：这三个字段此前**没有 json tag**，
+	// 于是 wire 上的键是大写的 `Family` / `Name` / `Nodes`。
+	//
+	// 而两端客户端都读**小写**：
+	//   - 小程序专精页 `families.find(x => x.family === curFamily)` → 永远匹配不上
+	//     → **整棵专精树不渲染**；
+	//   - 后台文档站 `f.nodes.filter(...)` → TypeError。
+	//
+	// 两边的测试都是绿的，因为**夹具按前端形状写**——
+	// 正是本仓库反复要消灭的「fixture 写前端形状 → 永远绿」形态。
+	//
+	// 修法在服务端：让 wire 符合两端**已经**在读的名字。
+	Family string        `json:"family"`
+	Name   string        `json:"name"`
+	Nodes  []MasteryNode `json:"nodes"`
 }
 
 // masteryFamilyOrder 八系固定顺序，TS 侧 mastery.ts 必须一致。

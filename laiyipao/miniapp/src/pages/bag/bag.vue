@@ -135,7 +135,9 @@
 
           现在：拥有的装备可以穿/脱（整组替换，服务端在一个事务里校验）。
         -->
-        <view v-if="myEquipments.length === 0" class="dim">正在读取装备…</view>
+        <view v-if="myEquipments.length === 0" class="dim">
+          {{ equipError ? '装备读取失败（见下方提示）' : '正在读取装备…' }}
+        </view>
         <view v-for="e in myEquipments" :key="e.id" class="equip-row">
           <text class="tag" :class="'tag-' + e.element">{{ elementName(e.element as Element) }}</text>
           <view class="flex-1">
@@ -743,8 +745,13 @@ onMounted(async () => {
   // 2026-10-21（P4-1）：装备也要一起拉 ——
   // 此前背包页的装备区是纯目录，玩家看不到自己有哪些、也装不了。
   loading.value = true
-  await Promise.all([store.loadLoadout(), store.refreshProfile(), loadGems(), loadEquipment()])
-  loading.value = false
+  try {
+    await Promise.all([store.loadLoadout(), store.refreshProfile(), loadGems(), loadEquipment()])
+  } finally {
+    // ⚠️ 用 finally：没有它，一次抛错就把 loading 永久留在 true，
+    // 页面从此一直显示「加载中」。
+    loading.value = false
+  }
   selected.value = [...store.loadout]
   while (selected.value.length < 4) selected.value.push(0)
 })

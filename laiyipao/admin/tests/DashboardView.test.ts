@@ -10,7 +10,7 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import ElementPlus from 'element-plus'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { DashboardResp } from '@/api'
+import type { Dashboard } from '@/api'
 import { __resetReactionLabelCache } from '@/reactions'
 
 const fetchDashboard = vi.hoisted(() => vi.fn())
@@ -25,7 +25,7 @@ vi.mock('echarts/core', () => ({ use: vi.fn(), init: echartsInit }))
 
 import DashboardView from '@/views/DashboardView.vue'
 
-function dashboardFixture(overrides: Partial<DashboardResp> = {}): DashboardResp {
+function dashboardFixture(overrides: Partial<Dashboard> = {}): Dashboard {
   return {
     users: { total: 1200, guests: 300, wechat: 900, banned: 5, new_today: 12 },
     battles: { total: 0, today: 3, wins: 0, avg_duration_ms: 9000 },
@@ -179,8 +179,8 @@ describe('DashboardView 图表渲染', () => {
   })
 
   it('加载期间离开页面：refs 已置空，renderCharts 判空跳过、不炸不泄漏', async () => {
-    let resolveFetch!: (v: DashboardResp) => void
-    fetchDashboard.mockReturnValueOnce(new Promise<DashboardResp>((r) => (resolveFetch = r)))
+    let resolveFetch!: (v: Dashboard) => void
+    fetchDashboard.mockReturnValueOnce(new Promise<Dashboard>((r) => (resolveFetch = r)))
 
     const wrapper = mount(DashboardView, { global: { plugins: [ElementPlus] } })
     await flushPromises()

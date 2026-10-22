@@ -14,7 +14,12 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    chunkSizeWarningLimit: 800,
+    // 1200 kB 而非默认 500 kB：本项目的两个 vendor chunk 是**第三方库本体**
+    // （antd-vendor ≈1055 kB、echarts-vendor ≈1134 kB，均为未压缩体积），
+    // 应用自身代码的最大 chunk 只有 ≈59 kB。阈值定在"刚好覆盖这两个已测量
+    // 的 vendor 体积"上，而不是无脑放大：一旦应用代码或新引入的库把 chunk
+    // 顶到 1200 kB 以上，构建仍会告警。
+    chunkSizeWarningLimit: 1200,
     rollupOptions: {
       output: {
         // ⚠️ Vite 8（Rolldown 构建）只接受函数形式的 manualChunks，

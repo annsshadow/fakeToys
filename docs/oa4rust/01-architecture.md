@@ -28,7 +28,7 @@ OA4Rust 是 **O2OA 开源办公平台（Java 版 o2server）的 Rust 重写项�
    │    trace → security_headers → cors → rate_limit                     │
    │      → csrf → auth(会话识别) → authorize(RBAC) → 业务 handler         │
    │                                                                     │
-   │  lib.rs create_app(): 约 80 个 crate 路由 .merge() 成一棵 Router      │
+   │  lib.rs create_app(): 84 个 crate 路由 .merge() 成一棵 Router       │
    │  （构造需 64MB 栈，见 .cargo/config.toml /STACK 说明）                 │
    └──────────┬──────────────────────┬───────────────────┬───────────────┘
               │ deadpool-postgres     │ Redis（可选）      │ BlobStorage 抽象
