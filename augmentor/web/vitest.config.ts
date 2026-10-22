@@ -23,12 +23,13 @@ export default defineConfig({
     // 总墙钟约 +30s（37s→68s），换 CI 上的确定性。全串行（fileParallelism:
     // false）更保险但容器实测超过 12 分钟，不进 CI 闸门。（2026-10-22 曾试全串行，
     // 未捕获 window 报错 7→26 反增、断言 flake 挪到 transform，已回退。）
-    // 2026-10-22 第五轮改用 **forks**（进程隔离，而非默认 threads）：默认 threads
+    // 2026-10-22 第五/六轮改用 **forks**（进程隔离，而非默认 threads）：默认 threads
     // 池里所有测试文件共享**同一 worker 进程的事件循环**，React 19 把 passive effects
     // 排到 `setImmediate` 的悬挂回调会在文件 N 拆环境后、文件 N+1 运行时才醒，跨文件
-    // 读到已销毁的 `window` ⇒ 每轮**换个文件**红（A322→RAG→transform）且 window 报错
-    // 累计（串行反增到 26）。forks 让每份文件独占一个子进程，事件循环彼此隔离，悬挂
-    // macrotask 随进程结束而亡、跨不过程序边界。maxWorkers 保留 2 控制并行度。
+    // 读到已销毁的 `window` ⇒ 每轮换个文件红（A322→RAG→transform）且 window 报错
+    // 累计（串行反增到 26）。forks 让每份文件独占一个子进程，悬挂 macrotask 随进程
+    // 结束而亡、跨不过程序边界（CI 实测 window 报错 26→2）。`maxWorkers: 1` 实测
+    // 本机反慢、flake 不减（证明 flake 非 CPU 争用），回退到 2 控制墙钟。
     pool: 'forks',
     maxWorkers: 2,
     minWorkers: 1,
@@ -42,6 +43,14 @@ export default defineConfig({
     // RTL waitFor + 若干 setup 头寸」留余量。
     testTimeout: 35000,
     hookTimeout: 35000,
+    // React 19 把 passive effects 的提交排到 scheduler 的 setImmediate（macrotask），
+    // 在 CI 受限 runner + jsdom + antd 争用下，`fireEvent` 后那次重渲染偶尔没在下个
+    // `click` 前 commit ⇒ handler 读到旧 state、静默 no-op、spy 断言 flake——且每轮
+    // 随机落到不同文件（A322→RAG→transform），本地常态负载下必过。这类「非逻辑、纯
+    // 时机」的 flake 用 worker 配置治不了（串行化到 1 worker 实测反而更糟，证明非 CPU
+    // 争用）。加一次 retry：真 bug 两次都挂（断言不符、秒级报），只有时机 flake 才会
+    // 一次挂一次过，故不掩盖真回归。
+    retry: 1,
     // React 19 把 passive effects 的提交排到 scheduler 的 `setImmediate`，antd 的
     // `message` / `notification` 又用**独立的 React root**（RTL `cleanup()` 够不到）。
     // 文件拆环境之后那个 setImmediate 才跑，一跑就 `schedulerEvent = window.event`

@@ -173,7 +173,7 @@ describe('翻译卡的初值与三道闸', () => {
     ack()
     click()
 
-    await screen.findByText(/翻译字段不能为空/, undefined, { timeout: 15000 })
+    await screen.findByText(/翻译字段不能为空/, undefined, { timeout: 30000 })
     expect(spies.translateDataset).not.toHaveBeenCalled()
     expect(labeled('翻译回执')).toBeNull()
   })
