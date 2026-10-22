@@ -63,9 +63,12 @@ jobs:
           pip install -r requirements-dev.txt
 
       - name: Byte-compile all sources
+        # -W error::SyntaxWarning：把「invalid escape sequence」这类**只打印不报错**的
+        # 编译期告警升级为错误。此前这里是裸 compileall —— 告警在 CI 日志里滚过去，
+        # 退出码仍然是 0，等于没有门禁。
         run: |
           set -euo pipefail
-          python -m compileall -q augmentor api cli.py
+          python -W error::SyntaxWarning -m compileall -q augmentor api cli.py
 
       - name: Run tests with coverage gate
         # pytest.ini 中已配置 --cov-fail-under=80，覆盖率不足会直接失败
@@ -124,7 +127,11 @@ jobs:
         run: npx tsc --noEmit
 
       - name: Build
-        run: npm run build
+        # 0 告警门禁：chunk 体积等 Rollup 告警不改退出码，必须断言日志。
+        run: |
+          set -o pipefail
+          npm run build 2>&1 | tee /tmp/build-web.log
+          bash "$GITHUB_WORKSPACE/scripts/assert-no-warnings.sh" /tmp/build-web.log "augmentor web"
 
       - name: Upload dist
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02

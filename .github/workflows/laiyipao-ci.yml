@@ -146,7 +146,12 @@ jobs:
       - name: Run Vitest tests
         run: pnpm test
       - name: Build (vue-tsc + vite)
-        run: pnpm build
+        # 0 告警门禁：构建退出码为 0 不代表没有告警（Vite/Rollup/lightningcss 都是
+        # "打印一行 (!) 然后继续"），所以落盘后由 assert-no-warnings.sh 断言。
+        run: |
+          set -o pipefail
+          pnpm build 2>&1 | tee /tmp/build-admin.log
+          bash "$GITHUB_WORKSPACE/scripts/assert-no-warnings.sh" /tmp/build-admin.log "laiyipao admin"
       - name: Size budget (first-load) must stay within budget
         # `pnpm size:check` 量的是**首屏**体积（index.html 入口的静态 import 闭包），
         # 不是 dist 总量 —— 路由是代码分割的，dist 总量会把懒加载页也算进来。
@@ -228,9 +233,15 @@ jobs:
       - name: Run Vitest tests
         run: pnpm test
       - name: Build H5
-        run: pnpm build:h5
+        run: |
+          set -o pipefail
+          pnpm build:h5 2>&1 | tee /tmp/build-miniapp-h5.log
+          bash "$GITHUB_WORKSPACE/scripts/assert-no-warnings.sh" /tmp/build-miniapp-h5.log "laiyipao miniapp (H5)"
       - name: Build WeChat mini program
-        run: pnpm build:mp-weixin
+        run: |
+          set -o pipefail
+          pnpm build:mp-weixin 2>&1 | tee /tmp/build-miniapp-mp.log
+          bash "$GITHUB_WORKSPACE/scripts/assert-no-warnings.sh" /tmp/build-miniapp-mp.log "laiyipao miniapp (mp-weixin)"
       # 小程序主包体积闸门（2026-10-21 P6-9）。
       #
       # 此前 admin 有 `size:check`，miniapp **没有** —— 而微信主包上限是
