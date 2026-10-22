@@ -72,5 +72,24 @@ afterEach(async () => {
   // 否则它会被排到 `setImmediate`，等 React 19 的调度器跑它时 jsdom 已经销毁，
   // `react-dom` 读 `window` 抛 `ReferenceError: window is not defined`。
   // 2026-10-22 CI 实测：少这一句就是 13 条未捕获异常（全来自 System.backup.test.tsx）。
-  await act(async () => {})
+  //
+  // **光有 act 还不够**：act 的异步形态只保证冲干净**微任务**队列，而 React 19 的
+  // 调度器（`scheduler` 包）在 Node 侧把渲染任务排在 `setImmediate` —— 那是
+  // **macrotask**，`await act(async () => {})` 返回时它可能还没跑。于是渲染活到
+  // worker 拆环境之后，栈是 `react-dom-client.development.js → Immediate.
+  // performWorkUntilDeadline → processImmediate`。
+  // 2026-10-22 CI 实测：3 条降到这里还剩 1 条，来源 `Analysis.test.tsx`（本机单跑
+  // 不复现，2 worker 并行下才偶发）—— 属时序竞态，不是某个用例写错。
+  // 修法是显式让出一个 macrotask：等一个 `setImmediate`，React 的渲染任务
+  // （同一机制，先入队）就在它之前跑完。
+  // （不直接 `import { setImmediate } from 'node:timers'`：本项目 tsconfig 不带
+  //  node 类型，直接写会 TS2304；也不假设它一定存在 —— 浏览器侧回落到 setTimeout。）
+  await act(async () => {
+    await new Promise<void>((resolve) => {
+      const yieldToMacrotask = (globalThis as { setImmediate?: (cb: () => void) => void })
+        .setImmediate
+      if (typeof yieldToMacrotask === 'function') yieldToMacrotask(() => resolve())
+      else setTimeout(resolve, 0)
+    })
+  })
 })
