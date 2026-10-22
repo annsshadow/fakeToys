@@ -39,14 +39,14 @@ import { act, cleanup, configure } from '@testing-library/react'
 import { afterEach } from 'vitest'
 import { message, notification } from 'antd'
 
-// 异步工具（waitFor / findAllBy* 等）的默认超时 1000 → 10000。理由与
-// vitest.config.ts 里 `testTimeout: 20000` 同源：GitHub runner 是 4 核、
+// 异步工具（waitFor / findBy* 等）**无显式预算**的默认超时。理由与
+// vitest.config.ts 里 `testTimeout: 35000` 同源：GitHub runner 是 4 核、
 // vitest 又被刻意收敛到 2 worker，jsdom + antd 的挂载渲染在争用下会慢一个量级。
-// 2026-10-22 实测：`DataManagement.*` 三份用例的等待预算 4000ms 在 CI 上
-// 偶发击穿（本机单跑 9/9 必过、全量并行偶发 1 条），那一次等了 5574ms。
-// 抬预算不掩盖真失败 —— 真失败是断言不符、秒级即报，不会拖到 10s。
-// 显式写了 `timeout` 的调用以调用点为准（本仓页面级用例已统一为 10000）。
-configure({ asyncUtilTimeout: 10000 })
+// 2026-10-22 第四轮：`DataManagement.sample` RAG 用例的 `waitFor`（无显式预算）在
+// CI 上整文件 31s 击穿（本机 9s），10s 不够 ⇒ 升到 30s。显式写了 `timeout` 的
+// 调用以调用点为准（本仓页面级用例已统一为 10000~15000）。真失败仍秒级报，
+// 30s 只兜 2 worker 争用下的挂载延迟 flake。
+configure({ asyncUtilTimeout: 30000 })
 
 afterEach(() => {
   // **同步 act，不是异步 act**：React 19 把 useEffect 的 passive effects 提交走

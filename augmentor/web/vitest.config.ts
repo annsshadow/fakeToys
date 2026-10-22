@@ -27,9 +27,13 @@ export default defineConfig({
     // 页面级组件测试（L104–L113）落地后，测试文件从 2 份增至 13 份。jsdom + antd
     // 的挂载渲染很重，CPU 紧张时挂载期的 `waitFor` 可能超过默认的 5s
     // testTimeout（单文件跑必过、多文件并行才偶发）。20s 给足挂载头寸，
-    // 不掩盖真失败（真失败是断言不符、秒级即报，不会拖到 20s）。
-    testTimeout: 20000,
-    hookTimeout: 20000,
+    // 不掩盖真失败（真失败是断言不符、秒级即报，不会拖到 30s）。
+    // 2026-10-22 第四轮再抬：`DataManagement.sample` RAG 用例的 `waitFor` 无显式预算，
+    // 走 RTL 的 `asyncUtilTimeout`，在 2 worker + jsdom + antd 争用下整文件 31s（CI 实测），
+    // 默认 10s 不够。真失败仍秒级报。testTimeout / hookTimeout 抬到 35s 给「一次 30s
+    // RTL waitFor + 若干 setup 头寸」留余量。
+    testTimeout: 35000,
+    hookTimeout: 35000,
     // React 19 把 passive effects 的提交排到 scheduler 的 `setImmediate`，antd 的
     // `message` / `notification` 又用**独立的 React root**（RTL `cleanup()` 够不到）。
     // 文件拆环境之后那个 setImmediate 才跑，一跑就 `schedulerEvent = window.event`
