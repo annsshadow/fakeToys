@@ -30,10 +30,17 @@
 
 | 依赖 | 版本 | 检查 |
 |---|---|---|
-| Go | 1.26.9 | `go version` |
+| Go | 1.26.10 | `go version` |
 | PostgreSQL | 15+ | `psql --version` |
 | Node | 20+ | `node -v` |
 | pnpm | 11 | `pnpm -v` |
+
+> ⚠️ Go 的下限是 **1.26.10**，不是「大致 1.26」。1.26.9 及以下含
+> `GO-2026-6809`（`crypto/x509` 不拒绝被攻破的中间证书），而本服务的调用链
+> **代码可达**（`service.RecordRecompute → fmt.Fprintf → x509.Certificate.Verify`）——
+> CI 的 govulncheck 闸门会直接红。想降版本之前先看
+> `.github/workflows/laiyipao-ci.yml` 的 `dependency-audit` 一节：
+> 那条闸门的判据是「**代码可达**的漏洞必须为 0」，不是「漏洞库里有几条」。
 
 数据库默认用 `trust` 认证（仅本机开发）。**生产必须改**：
 见 §6.1 的连接串与 `pg_hba.conf` 说明。

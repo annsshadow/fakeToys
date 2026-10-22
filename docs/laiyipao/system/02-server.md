@@ -1,6 +1,6 @@
 # 02 · 服务端（server）
 
-> Go 1.26.9 + Fiber v2 + pgx v5 + PostgreSQL 15+。
+> Go 1.26.10 + Fiber v2 + pgx v5 + PostgreSQL 15+。
 > 本文按「目录 → 分层规则 → 各包职责 → 核心流程 → 事务约定 → 测试体系」展开。
 > 接口形状见 [05](./05-api-reference.md)，表结构见 [06](./06-data-model.md)。
 

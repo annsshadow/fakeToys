@@ -253,6 +253,13 @@ jobs:
   #    改成 go.mod 一行 + 复扫归零，但工具链和漏洞库都会动，
   #    没有这道闸门，下一次 CVE 发布只会悄悄进来。
   #
+  #    2026-10-22 第二轮：go1.26.9 上又扫出 GO-2026-6809（crypto/x509
+  #    不拒绝被攻破的中间证书），调用链 **代码可达**
+  #    （service.RecordRecompute → fmt.Fprintf → x509.Certificate.Verify），
+  #    修于 go1.26.10。同样只是 go.mod 一行（`go 1.26.9` → `go 1.26.10`），
+  #    go.sum 未动 —— setup-go 走 go-version-file，会自动装新工具链。
+  #    这正是「闸门」的价值：代码一行没改，红是漏洞库长出来的。
+  #
   # 2. **pnpm audit 是回归闸门，不是「必须 0」。** 剩下的 39 条全挂在
   #    @dcloudio 构建链/测试链上，@dcloudio/vite-plugin-uni 声明的是
   #    `"vite": "5.2.8"` 这种精确 pin，强推版本会打破它、构建假红。

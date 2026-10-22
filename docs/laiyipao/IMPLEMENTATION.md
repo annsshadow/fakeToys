@@ -242,7 +242,7 @@ pnpm vitest run src/test/contract_coverage.test.ts
 
 | 项 | 状态 |
 |---|---|
-| Go 测试 | **13 个含测试包全绿**（2026-10-21 三端优化收尾复测：Go 1.26.9 + PostgreSQL 17；此前 2026-10-13 实测为 12 包 / Go 1.26.3 / PostgreSQL 18.6，当时快照保留）。`internal/service` 全套约 163s；孤儿库残留 **0 个**；开发库测试不再写入 |
+| Go 测试 | **13 个含测试包全绿**（2026-10-22 复测：Go 1.26.10 + PostgreSQL 16.15；此前 2026-10-21 为 Go 1.26.9 + PostgreSQL 17，2026-10-13 为 12 包 / Go 1.26.3 / PostgreSQL 18.6，当时快照保留）。`internal/service` 全套约 147s；孤儿库残留 **0 个**；开发库测试不再写入 |
 | TS 测试 | miniapp **1092** 通过 + 2 跳过（`i6.e2e.test.ts` 需 `LYP_E2E=1` + 运行中的服务端）· admin **321** 全绿（详见 `docs/plans/2026-10-21-laiyipao-three-end-optimization.md` 收尾核验；数字为 2026-10-22 加倍速档位 + 文档站目录/搜索/深链后的复测值，`--no-file-parallelism` 串行跑 —— 并行跑在 Windows 上偶发丢测试文件，只报少不报红） |
 | `go vet` / `gofmt -l` | 干净 |
 | `vue-tsc`（admin + miniapp） | 0 error |

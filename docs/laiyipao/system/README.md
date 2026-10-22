@@ -86,7 +86,7 @@ D1–D5 落地轮次，含结算重算闸门 R1、宝石洗练、道具消费闭
 
 | 维度 | server | miniapp | admin |
 |---|---|---|---|
-| 语言 / 框架 | Go 1.26.9 / Fiber v2 | TypeScript 5.9 / uni-app 3 / Vue 3.4 | TypeScript 5.9 / Vue 3.5 / Vite 8 |
+| 语言 / 框架 | Go 1.26.10 / Fiber v2 | TypeScript 5.9 / uni-app 3 / Vue 3.4 | TypeScript 5.9 / Vue 3.5 / Vite 8 |
 | 状态管理 | 无（请求级） | Pinia 2 | Pinia 3（仅登录态） |
 | UI | — | 自绘 Canvas + 原生组件 | Element Plus 2.14（按需引入） |
 | 数据访问 | pgx v5 + goose | `uni.request` | `fetch` |
