@@ -39,12 +39,15 @@ import { afterEach } from 'vitest'
 import { message, notification } from 'antd'
 
 afterEach(async () => {
-  // `await act(async () => …)` 不是仪式：React 19 的调度器把渲染任务排到
-  // `setImmediate`（`Immediate.performWorkUntilDeadline` → `processImmediate`），
-  // 用例结束时若还有一次 pending render，它会在**环境已销毁之后**才跑，
+  // 顺序很关键：**先销毁 antd 的静态提示，再卸载组件**。
+  // antd 的 `message` / `notification` 是模块级单例，带 3s 自动关闭计时器；
+  // 若按「先 cleanup 再 destroy」的顺序，destroy 触发的状态更新会打在被拆掉的树上，
+  // React 19 的调度器把这次渲染排到 `setImmediate`，等它跑时 jsdom 已经销毁 ⇒
   // `react-dom` 读 `window` 抛 `ReferenceError: window is not defined`，
   // vitest 记为 Unhandled Error（用例全过、步骤仍红）。
-  // 2026-10-22 CI 实测：3 条这样的未捕获异常。act 的异步形态会把调度队列
+  // 2026-10-22 CI 实测：这个形状的未捕获异常 3 → 13 条不等，全部来自
+  // `System.backup.test.tsx` 那些走 antd warning 的用例。
+  // `await act(async () => …)` 不是仪式：act 的异步形态会把 React 的调度队列
   // 走完再返回，等于在拆环境前把 pending 渲染冲干净。
   await act(async () => {
     cleanup()
@@ -55,4 +58,9 @@ afterEach(async () => {
   } catch {
     /* 没有挂载过 antd 时 destroy 是无操作；兜底不让清场自己炸 */
   }
+  // destroy 自己也会触发一次状态更新（通知盒子卸载）—— 那一次同样要冲干净，
+  // 否则它会被排到 `setImmediate`，等 React 19 的调度器跑它时 jsdom 已经销毁，
+  // `react-dom` 读 `window` 抛 `ReferenceError: window is not defined`。
+  // 2026-10-22 CI 实测：少这一句就是 13 条未捕获异常（全来自 System.backup.test.tsx）。
+  await act(async () => {})
 })

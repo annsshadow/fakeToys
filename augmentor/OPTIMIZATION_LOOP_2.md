@@ -3673,7 +3673,8 @@ A282 / A280 / A278 / A276 / A271 / A272 / A273）与 A326 / A327 一律不动。
   **这份复跑读数就是 L240 的终态基准，也是下一轮（L241）要比对的那一格。**
 - **记账批自己抓到的两处，原样入册不覆盖前文**：
   ① 上面批写脚本里那句复验断言（`pairs == newlines`）的量的是「**每一个 `
-` 都前接一个 ``**」
+` 都前接一个 `
+`**」
   ⇒ 它足以证明「无孤立 LF」，配上 `crlf = b"
 " in raw` 为真与 `pairs > 0` 才是「纯 CRLF」。
   第一版把它写成「证明纯 CRLF」，**说的是判据的一半**：单看 `pairs == newlines` 在空文件上恒真。
@@ -4884,7 +4885,7 @@ L232 清单行里 790 → 791 的重钉没有被这次追加再平移。**账本
 - ⑦ **缺陷档写成精确相等而不是上界**：`names(sites(), UNNAMED) == set()` 与 `MEASURED_COUNTS[UNNAMED] == 0` 两格同断言（写成上界就允许一格回退）；反向臂 `test_arm_dropping_the_named_round_falls_into_the_unnamed_defect` 与 `test_arm_pointing_at_another_rounds_commit_without_naming_it` 各自删掉一处点名 ⇒ 缺陷档立刻 1 格，那个 0 不是恒真。
 - ⑧ **已知盲区三格写明，不装**：一是不带反引号的裸 hex 不进面（臂 `test_arm_a_negative_prose_shape_is_not_a_site` 钉住这一维确实是形状判据而不是「反正都会红」）；二是 ambiguous 短哈希被 `--verify` 拒 ⇒ 落 `not_a_commit`，名册是精确集合相等，撞车即红；三是 sha256 前缀若与某提交前缀撞车会被当成提交，概率极低而一旦撞车必落进非本块档而红。
 - ⑨ **六臂自证（`TestRulerBites`）全部内存改写、零落盘**：搬错块 / 删点名 / 造一枚 git 里没有的哈希 / 删标签里的轮号 / 把一处本块引用换成那枚 stash / 把反引号去掉。六臂各自红的档位与常数一一对应，没有一支是靠查标题。
-- ⑩ **全量门禁第一轮 2 红，红的是新守卫自己的缺陷**：`test_subprocess_text_decoding` 规则 A（文本模式必须显式给编码，**无豁免档**）判 `tests/unit/test_log_block_bullet_ownership_l264.py:79` 与 `tests/unit/test_log_block_bullet_ownership_l264.py:308` 两处 `text=True` 没传 `encoding=` ⇒ 父进程按 `locale.getpreferredencoding()` 解码，中文 Windows 是 **cp936**。这不是形式问题：本仓提交主题带中文，cp936 解 UTF-8 字节在本机是 mojibake 而 `L(\d{1,3})` 恰好还能从里面吃到轮号（所以新守卫自己 24 支全绿），换一台机器或换一个字节序列就是 `UnicodeDecodeError` 炸在采集阶段。按该守卫自己写的修法补 `encoding="utf-8", errors="replace"` 两处；第二支的改写让该文件 331 → 332 行，而两处站点行号未平移。
+- ⑩ **全量门禁第一轮 2 红，红的是新守卫自己的缺陷**：`test_subprocess_text_decoding` 规则 A（文本模式必须显式给编码，**无豁免档**）判 `tests/unit/test_log_block_bullet_ownership_l264.py:82` 与 `tests/unit/test_log_block_bullet_ownership_l264.py:437` 两处 `text=True` 没传 `encoding=` ⇒ 父进程按 `locale.getpreferredencoding()` 解码，中文 Windows 是 **cp936**。这不是形式问题：本仓提交主题带中文，cp936 解 UTF-8 字节在本机是 mojibake 而 `L(\d{1,3})` 恰好还能从里面吃到轮号（所以新守卫自己 24 支全绿），换一台机器或换一个字节序列就是 `UnicodeDecodeError` 炸在采集阶段。按该守卫自己写的修法补 `encoding="utf-8", errors="replace"` 两处；第二支的改写让该文件 331 → 332 行，而两处站点行号未平移。
 - ⑪ **为什么走规则 A 补编码，而不是登记进 `BYTE_MODE_ALLOWLIST`**：规则 B 的登记要求「父进程不解码文本 + 用具名编解码器 + 子进程钉 `PYTHONIOENCODING`」三格同时成立，而本守卫解的**正是文本**（git 主题）⇒ 登记等于承认要解码却不给编码。规则 A 无豁免是 L195 立这把尺子的原意，不改尺子。
 - ⑫ **A333 预言的裸行号漂移本轮实测到一次**：L263 的 ⑬ 写着「L232 自指 823 → 824 同行改写净 0」，而 `git show 08c0617d4` 复核第 70 行那一格**仍是 823**——那句改写从未落地。本批实测 `docs/augmentor/API.md:1139` 那条引用在**第 825 行**（L263 的清单行 +1 推的，本批清单行再 +1）⇒ operative 按现量重钉，并在链尾补上 L263 那一格缺失的归因。其余 13 处「本账第 NNN 行」写在日志块里，是各自写下当时的读数、属历史陈述，**批量改写等于伪造历史** ⇒ 口径留给 A333 的尺子，本轮不动。
 - ⑬ **净行数与落盘形状**：本账 4712 → **4730** 行（净 +18 = 清单区 +1、L232 自指与链尾同行改写净 0、日志块自身 +17 = 前置空行 1 + 标题 1 + 段内空行 1 + 要点 14）。批写走 `read_bytes().decode()` 归一、不经通用换行翻译；落盘后 crlf **0** / 内容级裸 CR **1** / 以换行结尾三格不变（由 `test_backlog_closure_l242` 的 `test_line_endings_are_the_documented_shape` 现场验）。**卷一一格未动** ⇒ l98 那六个哈希槽数字不动。前端三门禁**不适用**（本轮 web 零改动）。
