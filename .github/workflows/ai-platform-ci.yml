@@ -49,6 +49,18 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
+      - name: Fetch all remote-tracking refs
+        # 账本那几把尺子（l264 / l270 / l98）的判据面是 `git rev-list --remotes --tags`。
+        #
+        # 上面这个 `ref: <sha>` + fetch-depth:0 的组合只把**那一个提交**的历史取下来，
+        # 不建 `refs/remotes/origin/*` —— 实测 CI 上 `--remotes --tags` 只返回 1 笔，
+        # 于是账本里点名的跨分支提交被一律读成「解析不到」：l270 的 not_a_commit
+        # 量到 731，而同一份账本在完整克隆上是 312。判据本身没错，是 CI 看不到 ref 面。
+        #
+        # 这一步把远端分支面补回来（与本地 `git fetch origin` 同口径），账本尺子才量的是
+        # 「账本 vs 仓库」而不是「账本 vs 这一次检出」。
+        run: git fetch --no-tags --prune origin '+refs/heads/*:refs/remotes/origin/*'
+
       - name: Set up Python
         uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b
         with:
