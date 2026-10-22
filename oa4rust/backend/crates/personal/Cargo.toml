@@ -32,3 +32,6 @@ sms = { path = "../sms" }
 
 [dev-dependencies]
 tower.workspace = true
+
+[lints]
+workspace = true

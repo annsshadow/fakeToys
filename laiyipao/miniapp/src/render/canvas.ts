@@ -32,6 +32,48 @@ import type { Enemy, Projectile } from '../game/types'
 const GRID_DIVISIONS = 10
 
 /**
+ * 战斗倍速档位（2026-10-22，测试便利）。
+ *
+ * ## 为什么倍速只能动「墙钟」，不能动 TICK_MS
+ *
+ * 引擎是定步长的：`step()` 一次推进 `TICK_MS`（50ms）的模拟时间，
+ * 事件序列、命中帧、回放哈希全部由「第几次 step」决定。
+ * 若把 TICK_MS 改成 50/8 = 6.25ms 来提速，那是**改模拟步长** ——
+ * 冷却、移动、伤害结算的离散化都变了，同一份输入会跑出另一条事件序列，
+ * I-6 的「任何人可重放验真」当场失效。
+ *
+ * 所以倍速只改「每墙钟秒跑多少次 step」：TICK_MS 恒为 50，
+ * 8× 就是每秒 160 步。模拟轨迹与 1× 逐 tick 完全一致，
+ * 只是压缩了等待时间。
+ */
+export const BATTLE_SPEED_STEPS = [1, 2, 4, 8] as const
+
+/** 倍速上限。改这里之前先读 `BATTLE_SPEED_STEPS` 上方那段。 */
+export const MAX_BATTLE_SPEED = 8
+
+/**
+ * 把外部传入的倍速钳到合法区间。
+ *
+ * 非有限值 / NaN / 0 / 负数一律回落到 1 —— 倍速是**加速**，
+ * 「0.5× 慢放」不在需求里，静默当成 1× 比让定时器除出 Infinity 好。
+ */
+export function normalizeSpeed(mult: number): number {
+  if (!Number.isFinite(mult) || mult <= 1) return 1
+  return Math.min(mult, MAX_BATTLE_SPEED)
+}
+
+/**
+ * 逻辑时钟的实际间隔（ms）。8× ⇒ 6.25ms。
+ *
+ * ⚠️ 平台下限：浏览器把定时器钳到 ~4ms，微信小程序基础库的
+ * setInterval 粒度更粗（实测 ~10ms 起）。因此 8× 在 H5 上能跑满，
+ * 在真机上可能只到 3~5× —— 它是**测试辅助**，不承诺精确倍率。
+ */
+export function logicIntervalMs(speed: number): number {
+  return Math.max(1, TICK_MS / normalizeSpeed(speed))
+}
+
+/**
  * 剔除余量（逻辑单位）。敌人在这一步被视为半径 ~30 的圆，
  * 留一点外扩避免边缘上的敌人在完全离开画面前被闪断。
  */
@@ -167,6 +209,10 @@ export class BattleRenderer {
   private drawTimer: number | null = null
   private lastTs = 0
   private running = false
+  /** 逻辑时钟倍速（1 = 实时）。只影响墙钟，见 `BATTLE_SPEED_STEPS`。 */
+  private speed = 1
+  /** `start()` 收到的逻辑回调 —— 换挡重启定时器时要复用它。 */
+  private loopFn: ((dtMs: number) => void) | null = null
 
   /** 传给构造函数的画布。只用来推算设备像素比（dpr），不参与绘制。 */
   private readonly canvasRef: HTMLCanvasElement | { width: number; height: number }
@@ -1046,12 +1092,10 @@ export class BattleRenderer {
   start(loop: (dtMs: number) => void): void {
     if (this.running) return
     this.running = true
+    this.loopFn = loop
 
-    // 1) 逻辑时钟：固定步长
-    this.logicTimer = setInterval(() => {
-      if (!this.running) return
-      loop(TICK_MS)
-    }, TICK_MS) as unknown as number
+    // 1) 逻辑时钟：固定步长（间隔随倍速缩放，步长不变）
+    this.startLogicClock()
 
     // 2) 绘制时钟：跟随刷新率。
     // rAF 在无浏览器环境（Node 测试、部分小程序基础库）下可能不存在，
@@ -1074,16 +1118,57 @@ export class BattleRenderer {
     }
   }
 
+  /**
+   * 启动逻辑时钟（间隔 = `logicIntervalMs(倍速)`）。
+   *
+   * 倍速走「缩短定时器间隔」而不是「每个 tick 多跑几步」：
+   * 后者会变成「每 50ms 突然推进 8 步、然后静止 50ms」，
+   * 画面上的运动是一顿一顿的（20 次/秒的跳变）；前者是平滑的。
+   */
+  private startLogicClock(): void {
+    this.logicTimer = setInterval(() => {
+      if (!this.running) return
+      this.loopFn?.(TICK_MS)
+    }, logicIntervalMs(this.speed)) as unknown as number
+  }
+
+  private stopLogicClock(): void {
+    if (this.logicTimer !== null) {
+      clearInterval(this.logicTimer as unknown as ReturnType<typeof setInterval>)
+      this.logicTimer = null
+    }
+  }
+
+  /**
+   * 换挡（2026-10-22）。
+   *
+   * 允许在运行中调用：先停旧定时器再按新间隔重建。
+   * ⚠️ 不先停就重建会**留下两个时钟**，倍速会变成平方级 ——
+   * 而且症状只是「怎么突然这么快」，看不出是定时器叠加。
+   *
+   * 未 start() 时只记下档位，等 start() 按新档位建时钟。
+   */
+  setSpeed(mult: number): void {
+    const next = normalizeSpeed(mult)
+    if (next === this.speed) return
+    this.speed = next
+    if (!this.running) return
+    this.stopLogicClock()
+    this.startLogicClock()
+  }
+
+  /** 当前倍速（供页面回显）。 */
+  getSpeed(): number {
+    return this.speed
+  }
+
   stop(): void {
     this.running = false
     if (this.rafId !== null) {
       cancelAnimationFrame(this.rafId)
       this.rafId = null
     }
-    if (this.logicTimer !== null) {
-      clearInterval(this.logicTimer as unknown as ReturnType<typeof setInterval>)
-      this.logicTimer = null
-    }
+    this.stopLogicClock()
     if (this.drawTimer !== null) {
       clearInterval(this.drawTimer as unknown as ReturnType<typeof setInterval>)
       this.drawTimer = null

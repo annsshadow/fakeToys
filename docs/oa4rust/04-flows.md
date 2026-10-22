@@ -54,9 +54,9 @@
 ```
 待办列表 → GET 任务列表（processplatform_assemble_surface 族，487 handler）
    ↓
-任务详情 → 表单数据（xform 契约：frontend/src/contracts/xform.ts）
+任务详情 → 表单数据（xform 契约：frontend/apps/desktop/src/contracts/xform.ts）
    ↓
-审批动作 → POST /api/task/{id}/complete（通过）｜/api/task/{id}/reject（驳回）
+审批动作 → POST /api/task/{id}/complete（通过）｜/api/task/{id}/reject（驳回）（注册于 processplatform_service_processing）
    ↓
 引擎推进 → processplatform_service_processing（113 handler）路由流转
    ↓
@@ -91,7 +91,7 @@ handler（file_assemble_control，94 handler）
 选择：storage_from_env() 按环境变量决定实现
 ```
 
-下载/预览配套：`preview` crate（文档预览）、`signature` crate（PDF 签名，lopdf 0.42）。移动端 `doc` 页面走 `uni.uploadFile` 上传 + 下载预览。
+下载/预览配套：`preview` crate（文档预览）、`signature` crate（PDF 签名，lopdf 0.45）。移动端 `doc` 页面走 `uni.uploadFile` 上传 + 下载预览。
 
 ## 7. 数据库迁移流（启动内嵌）
 
@@ -112,7 +112,7 @@ handler（file_assemble_control，94 handler）
 
 ## 8. 部署与回滚流（Rust 版本内）
 
-**口径（2026-10-14 定案）**：本项目从未上线、无 Java 存量系统——不存在"从 o2server 切流 / 回切 Java"的运维动作。上线判据见 `backend/docs/ops/REALIZE_RUNBOOK.md` §4.2：全部静态门禁 + 仓内 live E2E 通过即上线。
+**口径（2026-10-14 定案）**：本项目从未上线、无 Java 存量系统——不存在"从 o2server 切流 / 回切 Java"的运维动作。上线判据见 `backend/docs/ops/REALIZE_RUNBOOK.md` §4.2（待确认：该文件当前不在仓库中）：全部静态门禁 + 仓内 live E2E 通过即上线。
 
 - **部署**：`cargo build --release` 单二进制 + `pnpm build` 前端产物；`backend/deploy/nginx.conf` 为反代模板（按需自改）。`deploy/` 下其余切流脚本为早期灰度方案遗留，仅作归档参考。
 - **回滚**：回退到**上一 Rust 版本**的二进制 + 对应迁移回滚脚本（手工执行 `*_rollback.sql`），无跨系统回滚。

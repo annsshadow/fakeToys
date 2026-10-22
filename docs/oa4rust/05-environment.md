@@ -7,7 +7,7 @@
 | 依赖 | 版本要求 | 说明 |
 | --- | --- | --- |
 | Rust 工具链 | **1.85+**（`[workspace.package] rust-version = "1.85"`） | CI 供应链扫描固定用 Rust 1.88.0（与应用最低版本是两个独立约束） |
-| PostgreSQL | **14+**（docker-compose 用 postgres:14） | 主库；生产另有 PostgreSQL 17 实测记录 |
+| PostgreSQL | **14+**（docker-compose 用 postgres:14） | 主库；生产另有 PostgreSQL 17 实测记录（待确认：仓库文档中未找到该实测记录） |
 | MySQL 8（可选） | 8.x | 多数据库兼容验证用（`SqlDialect` + rewriter） |
 | Redis（可选但推荐） | 7.x（redis:7-alpine） | 会话存储与分布式限流的**默认后端**；不可达自动降级内存+DB |
 
@@ -17,7 +17,7 @@
 | --- | --- | --- |
 | Node.js | 22 LTS（workspace 管理版 22.22.2 亦可） | Vite 8 要求 |
 | pnpm | **11.25.0**（`packageManager` 字段固定） | workspace 根执行 `pnpm install` |
-| 浏览器（E2E） | Playwright 1.62.1 | `pnpm test:e2e` 需先装浏览器 |
+| 浏览器（E2E） | Playwright 1.64.0 | `pnpm test:e2e` 需先装浏览器 |
 
 ### Windows 本机 GNU 编译（可选）
 
@@ -57,7 +57,7 @@ cd oa4rust/backend && docker compose up -d
 
 ## 4. 数据库迁移
 
-- 目录：`oa4rust/backend/migrations/`（顶层 205 个 `.sql`，编号 001–108 + `archive/` 归档）。
+- 目录：`oa4rust/backend/migrations/`（顶层 207 个 `.sql`，其中 111 正向 + 96 回滚；正向编号 001–109 + `archive/` 归档）。
 - **启动自动幂等执行**，无需手工 SQL；`--migrate-only` 供流水线单独跑迁移。
 - 全量迁移后约 **379 张表**（parity 全量测试的实测基准）。
 

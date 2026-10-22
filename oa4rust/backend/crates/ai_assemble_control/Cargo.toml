@@ -19,3 +19,6 @@ tower.workspace = true
 reqwest = { workspace = true, features = ["json", "rustls-tls", "stream"] }
 futures-util.workspace = true
 async-stream = "0.3"
+
+[lints]
+workspace = true

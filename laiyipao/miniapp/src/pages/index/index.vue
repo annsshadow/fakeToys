@@ -224,11 +224,20 @@ onShow(async () => {
 
 <style scoped>
 .home {
-  padding-top: 100rpx;
+  /*
+   * 顶栏现在**含状态栏**（2026-10-21 P6-2），高度 = 状态栏 + 72rpx 头像 + 内边距。
+   * 而这里的偏移是**写死的 100rpx** —— 顶栏一长，构筑评分卡就被盖住了。
+   *
+   * 修法：顶栏改成 sticky（仍固定在顶部，但**在文档流里占位**），
+   * 内容自然从它下面开始，写死的偏移就不需要了。
+   */
+  padding-top: 0;
 }
 
 .topbar {
-  position: fixed;
+  position: sticky;
+  top: 0;
+  z-index: 10;
   top: 0;
   left: 0;
   right: 0;

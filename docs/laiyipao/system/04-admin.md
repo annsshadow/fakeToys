@@ -22,12 +22,14 @@ admin/
 │  ├─ layouts/AdminLayout.vue   侧边栏 / 顶栏 / 登出
 │  ├─ api/client.ts      fetch 封装、令牌、401 处理、令牌验真缓存
 │  ├─ api/index.ts       全部管理端点 + 类型定义（与 routes.go 一一对应）
+│  ├─ api/types.gen.ts   由 `go run ./cmd/tygen` 从 Go 响应结构生成（`-check` 守漂移）
 │  ├─ views/             12 个视图
 │  ├─ reactions.ts       反应 key → 中文名（看板与文档站共用）
 │  ├─ utils/format.ts    数字/时间格式化
+│  ├─ utils/adminRole.ts 角色可写判定（与服务端 requireWritable 同源）
 │  ├─ styles/main.css
 │  └─ components.d.ts    由 unplugin-vue-components 生成
-└─ tests/                24 个 Vitest 用例（含体积与 CSP 守卫）
+└─ tests/                27 个 Vitest 用例（含体积与 CSP 守卫）
 ```
 
 ---
@@ -94,6 +96,8 @@ const TOKEN_KEY = 'lyp_admin_token'
 ### 3.2 端点封装（`api/index.ts`）
 
 与 `server/internal/httpapi/routes.go` **一一对应**，每条都带类型定义。
+响应类型的权威副本是 `api/types.gen.ts` —— 由 `go run ./cmd/tygen` 从 Go
+结构生成，CI 跑 `-check`：改了 Go 结构忘了重新生成会是**红构建**而不是静默漂移。
 几条必须知道的字段语义（都在源码注释里）：
 
 | 字段 | 语义 | 误读后果 |
@@ -135,10 +139,12 @@ stage_funnel[{level_id,attempts,clears}]
 
 ### 4.2 关卡配置
 
-- 列表：`GET /admin/levels?chapter=&keyword=`（两个筛选都会传到服务端）。
+- 列表：`GET /admin/levels?chapter=&keyword=&limit=&offset=`（筛选与分页都会传到服务端；`limit=0` 表示一次拉全部）。
 - 编辑：`PUT /admin/levels/:id`，只提交改动字段。
 - 波次：`GET /admin/levels/:id/waves`（只读）。
 - 重生成：`POST /admin/levels/regenerate`（重跑生成器并落库）。
+  ⚠️ 请求体必须带 `confirm: "regenerate"`（P3-6）—— 它一次覆盖全部 100 关且不可回滚，
+  不能只靠前端确认框。
 
 **必须理解的语义**（`DECISIONS D1`）：
 
@@ -149,8 +155,8 @@ stage_funnel[{level_id,attempts,clears}]
 
 ### 4.3 战斗记录与验真
 
-- 列表：`GET /admin/battles?user_id=&level_id=&only_mismatched=1&limit=`
-- 详情：`GET /admin/battles/:id`
+- 列表：`GET /admin/battles?user_id=&level_id=&only_mismatched=1&limit=&offset=`
+- 详情：`GET /admin/battles/:id`（P2-1 起返回战报详情本身，不再是重放信息）
 - 验真：`POST /admin/battles/:id/verify {replay_hash}`
 
 **验真端点不重算哈希** —— 服务端没有引擎参与这条路径。
@@ -168,6 +174,8 @@ stage_funnel[{level_id,attempts,clears}]
 |---|---|
 | `GET /admin/recomputes?user_id=&level_id=&only_mismatch=1` | 单条台账 |
 | `GET /admin/recomputes/stats?hours=24` | 总账 + 按关卡分布 + 闸门状态 |
+| `GET /admin/recomputes/mode` | 读当前档位（P3-3） |
+| `PUT /admin/recomputes/mode` | 切档（P3-3）：`{mode, confirm:"confirm"}`，写审计；`readonly` 一律 403 |
 
 `stats` 的 `engine` 段是**唯一能回答「校验到底有没有在跑」**的读数：
 
@@ -185,6 +193,7 @@ verified / mismatch / cannot_run / skipped / settled_total / verified_permille /
 ### 4.5 用户管理
 
 - 搜索：`GET /admin/users?keyword=&limit=&offset=`
+- 详情：`GET /admin/users/:id`（P5-7：构筑、钱包、最近战报、验真明细）
 - 封禁/解封：`POST /admin/users/:id/ban|unban`
 - 发币/回收：`POST /admin/users/:id/grant {currency, amount}`
 
@@ -287,7 +296,7 @@ connect-src 'self' https:
 
 ## 8. 测试
 
-24 个用例，按职责分四类：
+27 个用例，按职责分四类：
 
 | 类型 | 代表 | 说明 |
 |---|---|---|

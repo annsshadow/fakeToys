@@ -308,9 +308,21 @@ func (s *Service) Diagnose(ctx context.Context, userID int64, levelID, failedTim
 	if err != nil {
 		return domain.Diagnose{}, err
 	}
-	// The client-provided value is only honoured when it is LARGER than what
-	// we computed -- that is "the player says they have failed more often",
-	// which is closer to the moment than our record is.
+	// The client-provided value may only be **one ahead** of what we
+	// computed: that is the battle that is currently in flight (it has
+	// not been written to `battle_records` yet), so our record is one
+	// behind the moment.
+	//
+	// ⚠️ 2026-10-21（二轮审计 P2）：此前是「客户端报多少就认多少」——
+	// 客户端传 `failed_times=999999` 就能把计数抬到任意大，
+	// 于是服务端的**权威计数被客户端的猜测推翻**，
+	// 第一次挑战就能拿到「卡关诊断」卡。
+	// 那正是 P2-7 要消灭的东西（「让客户端自己报」= 让它自己编）。
+	//
+	// 现在只允许「比我们多 1」（在途的那一局）。
+	if failedTimes > realFailed+1 {
+		failedTimes = realFailed + 1
+	}
 	if failedTimes > realFailed {
 		realFailed = failedTimes
 	}
@@ -385,6 +397,14 @@ func (s *Service) Diagnose(ctx context.Context, userID int64, levelID, failedTim
 //
 // Never played the level -> 0 (never failed).
 func (s *Service) countConsecutiveLosses(ctx context.Context, userID int64, levelID int) (int, error) {
+	// ⚠️ LIMIT 20 会把计数**封顶在 20**（连输 50 次也只数到 20）。
+	//
+	// 这**不影响**判定：`FailedTimes` 只作阈值用
+	// （`domain.StuckThreshold = 2`、`reactionsLow := ... >= 2`），
+	// 20 和 50 落在同一个区间。而且这个数字**不显示**给玩家。
+	//
+	// 之所以写在这里：2026-10-21 的二轮审计把它标成了 P2，
+	// 复核后确认**无害** —— 记下来是为了下一次审计不要再重复报一遍。
 	rows, err := s.pool.Query(ctx,
 		`SELECT result FROM battle_records
 		 WHERE user_id = $1 AND level_id = $2

@@ -35,14 +35,15 @@ function check(name, got, wantFail) {
 console.log(`基线 ${baseTxt.length} 字节 / workspace ${yamlTxt.length} 字节\n`);
 
 console.log("=== checkCounts ===");
-check("A miniapp 现状 3/13/16/7 (=39) 对基线 39",
-  gate.checkCounts("miniapp", mk(3, 13, 16, 7), baseTxt), false);
-check("B 变体 删掉 vite override 后回到 3/18/28/9 (=58)",
-  gate.checkCounts("miniapp", mk(3, 18, 28, 9), baseTxt), true);
-check("C 变体 新增 1 条 critical (=40)",
-  gate.checkCounts("miniapp", mk(4, 13, 16, 7), baseTxt), true);
-check("D 变体 降到 3/10/10/5 (=28) 应提示更新基线而不拦",
-  gate.checkCounts("miniapp", mk(3, 10, 10, 5), baseTxt), false);
+// 2026-10-22 第三轮：基线从 39 降到 3（0/1/2/0），用例跟着现量走。
+check("A miniapp 现状 0/1/2/0 (=3) 对基线 3",
+  gate.checkCounts("miniapp", mk(0, 1, 2, 0), baseTxt), false);
+check("B 变体 涨到 0/2/2/0 (=4) 必须拦下",
+  gate.checkCounts("miniapp", mk(0, 2, 2, 0), baseTxt), true);
+check("C 变体 冒出 1 条 critical (=4)",
+  gate.checkCounts("miniapp", mk(1, 1, 2, 0), baseTxt), true);
+check("D 变体 降到 0/0/1/0 (=1) 应提示更新基线而不拦",
+  gate.checkCounts("miniapp", mk(0, 0, 1, 0), baseTxt), false);
 check("E admin 现状 0/0/0/0 对基线 0",
   gate.checkCounts("admin", mk(0, 0, 0, 0), baseTxt), false);
 check("F 变体 admin 冒出 1 条 high",
@@ -51,13 +52,15 @@ check("G 变体 基线里没有该项目段 -> 必须拦下而不是静默放行
   gate.checkCounts("nonexistent", mk(0, 0, 0, 0), baseTxt), true);
 
 console.log("\n=== checkOverrides ===");
-check("H 现状 4 条齐全", gate.checkOverrides(yamlTxt, baseTxt), false);
-check("I 变体 删掉 vite 那行", gate.checkOverrides(yamlTxt.replace(/^\s*"vite": 5\.4\.21$/m, ""), baseTxt), true);
-check("J 变体 把 vite 改回 5.2.8", gate.checkOverrides(yamlTxt.replace('"vite": 5.4.21', '"vite": 5.2.8'), baseTxt), true);
+check("H 现状 29 条齐全", gate.checkOverrides(yamlTxt, baseTxt), false);
+check("I 变体 删掉 vite 那行", gate.checkOverrides(yamlTxt.replace(/^\s*"vite": 6\.4\.4$/m, ""), baseTxt), true);
+check("J 变体 把 vite 改回 5.2.8（dcloudio 的 peer 锁）", gate.checkOverrides(yamlTxt.replace('"vite": 6.4.4', '"vite": 5.2.8'), baseTxt), true);
 check("K 变体 删掉 ws 那行", gate.checkOverrides(yamlTxt.replace(/^\s*"ws": 8\.21\.0$/m, ""), baseTxt), true);
 check("L 变体 把 postcss 退回 8.5.6", gate.checkOverrides(yamlTxt.replace('"postcss": 8.5.28', '"postcss": 8.5.6'), baseTxt), true);
 check("M 变体 overrides 整段清空", gate.checkOverrides("", baseTxt), true);
+check("N 变体 删掉 vue 家族那条（跨大版本那批也受同一道闸门管）",
+  gate.checkOverrides(yamlTxt.replace(/^\s*"@vue\/server-renderer": 3\.5\.42$/m, ""), baseTxt), true);
 
-const total = 13;
+const total = 14;
 console.log(`\n${bad === 0 ? "全部通过" : `${bad} 条不符`}：${total} 个用例`);
 process.exit(bad === 0 ? 0 : 1);

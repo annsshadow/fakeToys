@@ -57,12 +57,6 @@ func adminVerifier(id int64) verifier { return verifier{adminID: id, isAdmin: tr
 
 // recordVerification 把一条验真结果写进 replay_verifications。
 func (s *Service) recordVerification(ctx context.Context, v verifier, battleID int64, expected, actual string, matched bool) error {
-	var userArg, adminArg any
-	if v.isAdmin {
-		adminArg = v.adminID
-	} else {
-		userArg = v.userID
-	}
 	//
 	// 2026-10-21（P3-5）：**幂等**。
 	//
@@ -85,13 +79,18 @@ func (s *Service) recordVerification(ctx context.Context, v verifier, battleID i
 	// 因为二者恰好一个非空，而 NULL 在唯一索引里「都算相等」，
 	// 直接用两个原始列会让**所有 admin 验真**互相冲突。
 	// （migration 00017）
-	tag, err := s.pool.Exec(ctx,
-		`INSERT INTO replay_verifications
-		   (battle_id, verifier_id, admin_verifier_id, expected_hash, actual_hash, matched)
-		 VALUES ($1,$2,$3,$4,$5,$6)
-		 ON CONFLICT (battle_id, COALESCE(verifier_id, admin_verifier_id), actual_hash)
-		 DO NOTHING`,
-		battleID, userArg, adminArg, expected, actual, matched)
+	//
+	// ⚠️ 2026-10-21（00018）：ON CONFLICT 的目标**必须与部分索引逐字一致**
+	// （含 WHERE 谓词）。
+	//
+	// 00017 用的是 `COALESCE(verifier_id, admin_verifier_id)` ——
+	// 它把 `users.id` 与 `admin_users.id` **两个独立的 ID 空间折叠成一个数**，
+	// 于是「运营（id=1）与玩家（id=1）验同一场战报的同一哈希」会互相冲突，
+	// 运营那一行被 `DO NOTHING` **静默丢弃**，而接口照样返回 matched=true。
+	//
+	// 00018 拆成两个部分索引，各自只覆盖自己那类验真者；
+	// 这里对应地分成两条 INSERT。
+	tag, err := s.pool.Exec(ctx, insertVerificationSQL(v), insertVerificationArgs(v, battleID, expected, actual, matched)...)
 	if err != nil {
 		return fmt.Errorf("record verification: %w", err)
 	}
@@ -101,6 +100,33 @@ func (s *Service) recordVerification(ctx context.Context, v verifier, battleID i
 		return nil
 	}
 	return nil
+}
+
+// insertVerificationSQL 按验真者类型选对应的 INSERT。
+//
+// 两条 SQL 的差别只有「冲突目标 + 谓词」——
+// 00018 的两个部分索引各自只覆盖自己那类验真者。
+func insertVerificationSQL(v verifier) string {
+	if v.isAdmin {
+		return `INSERT INTO replay_verifications
+		   (battle_id, verifier_id, admin_verifier_id, expected_hash, actual_hash, matched)
+		 VALUES ($1,NULL,$2,$3,$4,$5)
+		 ON CONFLICT (battle_id, admin_verifier_id, actual_hash) WHERE verifier_id IS NULL
+		 DO NOTHING`
+	}
+	return `INSERT INTO replay_verifications
+		   (battle_id, verifier_id, admin_verifier_id, expected_hash, actual_hash, matched)
+		 VALUES ($1,$2,NULL,$3,$4,$5)
+		 ON CONFLICT (battle_id, verifier_id, actual_hash) WHERE admin_verifier_id IS NULL
+		 DO NOTHING`
+}
+
+// insertVerificationArgs 是 insertVerificationSQL 的配套参数。
+func insertVerificationArgs(v verifier, battleID int64, expected, actual string, matched bool) []any {
+	if v.isAdmin {
+		return []any{battleID, v.adminID, expected, actual, matched}
+	}
+	return []any{battleID, v.userID, expected, actual, matched}
 }
 
 // compareAndRecord 是验真的共用实现。

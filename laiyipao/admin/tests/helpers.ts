@@ -6,6 +6,7 @@
  * ElMessage 保持真实实现，断言直接查 document.body 上真实渲染出的消息条。
  */
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
+import type { Component, Plugin } from 'vue'
 import ElementPlus from 'element-plus'
 import { nextTick } from 'vue'
 import { vi } from 'vitest'
@@ -39,8 +40,8 @@ export function mountEl<T>(comp: T, options: Record<string, unknown> = {}): VueW
   return mount(comp as never, {
     ...rest,
     global: {
-      plugins: [ElementPlus, ...(g.plugins ?? [])],
-      components: g.components,
+      plugins: [ElementPlus, ...((g.plugins ?? []) as Plugin[])] as Array<Plugin | [Plugin, ...any[]]>,
+      components: g.components as Record<string, object | Component> | undefined,
     },
   })
 }

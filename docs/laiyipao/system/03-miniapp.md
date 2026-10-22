@@ -45,7 +45,8 @@ miniapp/src/
 ├─ render/      Canvas 2D 渲染层（只读引擎状态）
 ├─ api/         请求封装（令牌、刷新、304、错误）
 ├─ store/       Pinia 全局状态（配置 / 钱包 / 进度 / 构筑）
-├─ pages/       10 个页面
+├─ pages/       12 个页面
+├─ utils/       通用工具（反应名映射、状态栏高度）
 ├─ test/        测试基础设施（uni stub、page helper、契约覆盖）
 ├─ testkit/     测试工具（注释剥离等）
 ├─ App.vue      应用壳
@@ -232,6 +233,9 @@ pages/battle/battle.vue
         └ api.settleBattle(payload)
               ├ 成功 → 展示星级/掉落/裁剪提示 → store.setMaxStage → refreshProfile
               └ 失败 → 展示错误 + 本地 replay_hash（供人工比对）
+
+战斗中还可「放弃」（P4-5）：api.abandonBattle(tokenId) 退回体力（与复活币），
+服务端把该凭证置为已用 —— 放弃后不能再结算这一局，那是刻意的。
 ```
 
 页面生命周期有三个 **await 窗口**需要显式防退出
@@ -364,20 +368,22 @@ clearTokens()                                          // ← 再清
 
 ---
 
-## 7. 页面（`pages/`，10 个）
+## 7. 页面（`pages/`，12 个）
 
 | 页面 | 路径 | 职责 | 调用接口 |
 |---|---|---|---|
 | 首页 | `pages/index/index` | 资源栏、入口导航、当前进度 | 无（读 store） |
 | 关卡 | `pages/stage/stage` | 章节切换、关卡列表、星级、诊断 | `fetchMyStars` / `diagnose` |
-| 战斗 | `pages/battle/battle` | Canvas 战斗、手牌、结算 | `startBattle` / `settleBattle` |
-| 背包 | `pages/bag/bag` | 出战槽位、技能升级、熔炼、宝石洗练 | `fetchGems` / `upgradeSkill` / `synthesizeSkills` / `washGem` |
+| 战斗 | `pages/battle/battle` | Canvas 战斗、手牌、结算、放弃 | `startBattle` / `settleBattle` / `abandonBattle` |
+| 背包 | `pages/bag/bag` | 出战槽位、技能升级、熔炼、宝石洗练、装备装配 | `fetchGems` / `upgradeSkill` / `synthesizeSkills` / `washGem` / `fetchMyEquipment` / `saveEquippedEquipment` |
 | 专精 | `pages/mastery/mastery` | 三层树、分配、重铸 | `fetchMastery` / `allocateMastery` / `resetMastery` |
+| 反应 | `pages/reactions/reactions` | 反应图鉴、当前构筑可触发的反应 | 无（读 `/config` 的 `reactions`） |
 | 商城 | `pages/shop/shop` | 商品分组、购买、售罄 | `fetchShop` / `buyItem` / `fetchWallet` |
 | 签到 | `pages/signin/signin` | 七日签到、任务、兑换码 | `fetchSignInCalendar` / `fetchSignInStatus` / `signIn` / `fetchTasks` / `claimTask` / `redeem` |
 | 排行榜 | `pages/rank/rank` | 战力 / 关卡 / 效率三榜 | `fetchLeaderboard` |
 | 战绩验真 | `pages/verify/verify` | 输入 battle_id → 本地重放比对 | `getReplay` / `verifyReplay` |
 | 我的 | `pages/me/me` | 构筑概览、防线保存/挑战、登出 | `fetchDefenses` / `saveDefense` / `challengeDefense` / `fetchLevel` / `logout` |
+| 登录 | `pages/login/login` | 账号口令登录（`PLAYER_LOGIN_REQUIRED` 时进入） | `login`（`POST /auth/login`） |
 
 ### 7.1 关卡页
 
@@ -398,6 +404,9 @@ clearTokens()                                          // ← 再清
 - 熔炼：材料不齐时**不渲染入口**（`ENGINEERING.md` 第 19 条）。
 - 宝石：`GET /me/gems` 列出实例，`POST /me/gems/:id/wash` 消耗 1 枚洗练券
   重 roll 词条（品质不变）。
+- 装备（P4-1）：`GET /me/equipment` 返回目录 + 拥有/装配状态，
+  `PUT /me/equipment` 整组替换（`equipment_ids`）—— 不用「装一件/卸一件」
+  的增量端点，避免出现「同部位两件都 equipped」的中间态。
 
 ### 7.3 专精页
 

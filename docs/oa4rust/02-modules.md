@@ -59,7 +59,7 @@
 | `realtime` | WebSocket 实时协议：`/ws/realtime`、`/ws/realtime/room/{room_id}`、`/ws/realtime/room/{room_id}/stats`；`RealtimeManager` 房间管理 |
 | `search` | 全文/ANN 检索服务 |
 | `preview` | 文档预览 |
-| `signature` | PDF/文档签名（lopdf 0.42 解析签名） |
+| `signature` | PDF/文档签名（lopdf 0.45 解析签名） |
 | `parity` | 与 Java 基准的行为对齐测试集（4143 用例） |
 | `ldap` | LDAP 认证 + 定时同步 worker（`LDAP_SYNC_ENABLE` 门控，幂等） |
 | `sms` / `captcha_store` | 短信与验证码存储适配（待迁移项） |
@@ -107,7 +107,7 @@
 
 | 设施 | 位置 | 作用 |
 | --- | --- | --- |
-| 迁移状态跟踪 | `backend/docs/brainstorms/oa4rust-migration-status.md`、`oa4rust-endpoint-inventory.md` | 单一信息源：`regen_endpoints.py` / `extract_endpoints.py` 静态扫描生成 |
+| 迁移状态跟踪 | `backend/docs/brainstorms/oa4rust-migration-status.md`、`oa4rust-endpoint-inventory.md` | 单一信息源：静态扫描生成（待确认：清单文档自述由 `scripts/gen_inventory.py` 生成，但该脚本当前不在 `backend/scripts/`；现存 `regen_endpoints.py` 实际产出 `tests/behavior_comparison/endpoints.rs`，`extract_endpoints.py` 产出 `endpoints.csv/json`） |
 | 行为对齐测试 | `backend/tests/parity/`、`parity_suite.rs`、`behavior_comparison/` | 与 o2server v9 基准比对 |
 | 生成的 handler 测试 | 各 crate `tests_generated.rs`；`backend/scripts/generate_handler_tests.py` | 覆盖全部 handler 的冒烟/分支 |
 | 三端契约守卫 | `oa4rust/tests/contracts/` | desktop/mobile 端点 × 后端注册路由 fixture 对账、空 catch 守卫、生产序列化检查、schema 校验 |

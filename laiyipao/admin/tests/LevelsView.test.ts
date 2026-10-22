@@ -9,7 +9,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { ElDrawer, ElSelect } from 'element-plus'
 import ElementPlus from 'element-plus'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { AdminLevel } from '@/api'
+import type { AdminLevelView } from '@/api'
 
 const fetchLevels = vi.hoisted(() => vi.fn())
 const updateLevel = vi.hoisted(() => vi.fn())
@@ -25,7 +25,7 @@ vi.mock('element-plus', async (importOriginal) => {
 
 import LevelsView from '@/views/LevelsView.vue'
 
-function levelFixture(overrides: Partial<AdminLevel> = {}): AdminLevel {
+function levelFixture(overrides: Partial<AdminLevelView> = {}): AdminLevelView {
   return {
     id: 1,
     chapter: 1,
@@ -37,15 +37,26 @@ function levelFixture(overrides: Partial<AdminLevel> = {}): AdminLevel {
     energy_cost: 6,
     is_boss: false,
     enabled: true,
-    terrain_config: [{ kind: 'oil_drum' }, { kind: 'mystery_terrain' }],
+    terrain_config: [
+      { kind: 'oil_drum', x: 600, y: 600, param: 50 },
+      { kind: 'mystery_terrain', x: 1, y: 1, param: 1 },
+    ],
     star_targets: [60, 120, 180],
+    // attempts / clears 是**必填**（服务端一直返回）——
+    // 此前夹具里没有，于是类型门禁红了。
+    attempts: 12,
+    clears: 8,
+    // 第 23 条产品决策：这两个字段是**必填**（服务端一直返回）——
+    // 此前夹具里没有，于是类型门禁红了。
+    player_authority: 'generator',
+    applied_to_players: false,
     clear_rate: 55,
     avg_wave: 3.2,
     ...overrides,
   }
 }
 
-async function mountLevels(items: AdminLevel[] = [], total = items.length) {
+async function mountLevels(items: AdminLevelView[] = [], total = items.length) {
   fetchLevels.mockResolvedValue({ items, total })
   const wrapper = mount(LevelsView, { global: { plugins: [ElementPlus] } })
   await flushPromises()
@@ -61,7 +72,7 @@ describe('LevelsView 列表渲染', () => {
     const wrapper = await mountLevels([
       levelFixture({ id: 1, difficulty: 1000, clear_rate: 60 }),
       levelFixture({ id: 2, difficulty: 1500, clear_rate: 30, terrain_config: [] }),
-      levelFixture({ id: 3, difficulty: 3000, clear_rate: 15, terrain_config: undefined as unknown as AdminLevel['terrain_config'] }),
+      levelFixture({ id: 3, difficulty: 3000, clear_rate: 15, terrain_config: undefined as unknown as AdminLevelView['terrain_config'] }),
       levelFixture({ id: 4, difficulty: 4000, clear_rate: 5, enabled: false }),
     ])
     const text = wrapper.text()
@@ -112,7 +123,7 @@ describe('LevelsView 启停开关', () => {
     const row = levelFixture({ enabled: false })
     updateLevel.mockResolvedValueOnce({ level: { ...row, enabled: true } })
     const wrapper = await mountLevels([row])
-    const vm = wrapper.vm as unknown as { toggleEnabled: (r: AdminLevel) => Promise<void> }
+    const vm = wrapper.vm as unknown as { toggleEnabled: (r: AdminLevelView) => Promise<void> }
     await vm.toggleEnabled(row)
     await flushPromises()
 
@@ -126,7 +137,7 @@ describe('LevelsView 启停开关', () => {
     const row = levelFixture({ enabled: true })
     updateLevel.mockResolvedValueOnce({ level: { ...row, enabled: false } })
     const wrapper = await mountLevels([row])
-    const vm = wrapper.vm as unknown as { toggleEnabled: (r: AdminLevel) => Promise<void> }
+    const vm = wrapper.vm as unknown as { toggleEnabled: (r: AdminLevelView) => Promise<void> }
     await vm.toggleEnabled(row)
     await flushPromises()
     expect(document.body.textContent).toContain('第1关 已停用')
@@ -136,7 +147,7 @@ describe('LevelsView 启停开关', () => {
   it('启停失败：弹出错误消息', async () => {
     updateLevel.mockRejectedValueOnce(new Error('并发冲突'))
     const wrapper = await mountLevels([levelFixture()])
-    const vm = wrapper.vm as unknown as { toggleEnabled: (r: AdminLevel) => Promise<void> }
+    const vm = wrapper.vm as unknown as { toggleEnabled: (r: AdminLevelView) => Promise<void> }
     await vm.toggleEnabled(levelFixture())
     await flushPromises()
     expect(document.body.textContent).toContain('并发冲突')
@@ -150,7 +161,7 @@ describe('LevelsView 完整编辑（P5-3）', () => {
     updateLevel.mockResolvedValueOnce({ level: { ...row, base_hp: 500, wave_count: 7 } })
     const wrapper = await mountLevels([row])
     const vm = wrapper.vm as unknown as {
-      openEdit: (r: AdminLevel) => void
+      openEdit: (r: AdminLevelView) => void
       submitEdit: () => Promise<void>
       editForm: { base_hp: number; wave_count: number; star_targets: number[] }
       starTargetsText: string
@@ -180,7 +191,7 @@ describe('LevelsView 完整编辑（P5-3）', () => {
   it('星级门槛格式非法：不提交，并说清原因', async () => {
     const wrapper = await mountLevels([levelFixture()])
     const vm = wrapper.vm as unknown as {
-      openEdit: (r: AdminLevel) => void
+      openEdit: (r: AdminLevelView) => void
       submitEdit: () => Promise<void>
       starTargetsText: string
     }
@@ -199,7 +210,7 @@ describe('LevelsView 完整编辑（P5-3）', () => {
   it('防线血量非正：不提交', async () => {
     const wrapper = await mountLevels([levelFixture()])
     const vm = wrapper.vm as unknown as {
-      openEdit: (r: AdminLevel) => void
+      openEdit: (r: AdminLevelView) => void
       submitEdit: () => Promise<void>
       editForm: { base_hp: number }
       starTargetsText: string
@@ -216,7 +227,7 @@ describe('LevelsView 完整编辑（P5-3）', () => {
     updateLevel.mockRejectedValueOnce(new Error('并发冲突'))
     const wrapper = await mountLevels([levelFixture()])
     const vm = wrapper.vm as unknown as {
-      openEdit: (r: AdminLevel) => void
+      openEdit: (r: AdminLevelView) => void
       submitEdit: () => Promise<void>
     }
     vm.openEdit(levelFixture())
@@ -326,7 +337,7 @@ describe('LevelsView 工具栏与操作列交互', () => {
   it('抽屉关闭走 v-model 的 onUpdate 处理器', async () => {
     fetchLevelWaves.mockResolvedValue({ waves: [] })
     const wrapper = await mountLevels([levelFixture()])
-    const vm = wrapper.vm as unknown as { openWaves: (r: AdminLevel) => Promise<void>; waveDrawer: boolean }
+    const vm = wrapper.vm as unknown as { openWaves: (r: AdminLevelView) => Promise<void>; waveDrawer: boolean }
     await vm.openWaves(levelFixture())
     await flushPromises()
     expect(vm.waveDrawer).toBe(true)
@@ -348,7 +359,7 @@ describe('LevelsView 波次抽屉', () => {
     })
     const wrapper = await mountLevels([levelFixture({ name: '试炼一' })])
     const vm = wrapper.vm as unknown as {
-      openWaves: (r: AdminLevel) => Promise<void>
+      openWaves: (r: AdminLevelView) => Promise<void>
       waveDrawer: boolean
     }
     await vm.openWaves(levelFixture({ id: 7, name: '试炼一' }))
@@ -367,7 +378,7 @@ describe('LevelsView 波次抽屉', () => {
   it('波次接口失败：弹错误且抽屉已打开（用户能看到失败重试入口）', async () => {
     fetchLevelWaves.mockRejectedValueOnce(new Error('波次查询失败'))
     const wrapper = await mountLevels()
-    const vm = wrapper.vm as unknown as { openWaves: (r: AdminLevel) => Promise<void>; waveDrawer: boolean }
+    const vm = wrapper.vm as unknown as { openWaves: (r: AdminLevelView) => Promise<void>; waveDrawer: boolean }
     await vm.openWaves(levelFixture())
     await flushPromises()
     expect(vm.waveDrawer).toBe(true)
@@ -377,7 +388,7 @@ describe('LevelsView 波次抽屉', () => {
 
   it('抽屉在无目标行时打开不炸：标题回退为空串（防御分支）', async () => {
     const wrapper = await mountLevels()
-    const vm = wrapper.vm as unknown as { waveDrawer: boolean; waveTarget: AdminLevel | null }
+    const vm = wrapper.vm as unknown as { waveDrawer: boolean; waveTarget: AdminLevelView | null }
     vm.waveDrawer = true
     vm.waveTarget = null
     await flushPromises()

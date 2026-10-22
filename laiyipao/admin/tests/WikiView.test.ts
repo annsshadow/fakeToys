@@ -4,10 +4,16 @@
  * 文档站直接读线上 /config：字段名与 Go json tag 的对齐（reactions/chapters
  * 曾因 PascalCase 静默空白）靠渲染断言兜底；抗性条的正负与钳制、
  * 实战分布的排序与「主流打法」提示、dashboard 失败时的静默降级都要锁。
+ *
+ * 2026-10-22 加目录 / 搜索 / 深链后，本文件多了三组用例：
+ *  - 目录锚点必须都能在 DOM 里找到（`SECTIONS` 与模板 id 的漂移守卫）
+ *  - 深链 `?tab=&anchor=&focus=` 的解析与回落
+ *  - 搜索命中的跳转（含「关卡焦点要先切章节」这条最容易漏的联动）
  */
 import { flushPromises, mount } from '@vue/test-utils'
 import { ElSelect } from 'element-plus'
 import ElementPlus from 'element-plus'
+import { createMemoryHistory, createRouter, type Router } from 'vue-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const apiGet = vi.hoisted(() => vi.fn())
@@ -72,8 +78,26 @@ const configFixture = () => ({
   ],
 })
 
-async function mountWiki() {
-  const wrapper = mount(WikiView, { global: { plugins: [ElementPlus] } })
+/**
+ * 挂载辅助。
+ *
+ * ⚠️ 必须提供真实 router：文档站的「深链」就是 URL（`?tab=&anchor=&focus=`），
+ * 组件通过 `useRoute()/useRouter()` 读写它。用 `createMemoryHistory`
+ * 而不是真实 hash history —— 后者会去改 `window.location.hash`，
+ * 而 `client_unauthorized.test.ts` 正在别处断言 hash 不被改动。
+ */
+let lastRouter: Router
+
+async function mountWiki(query: Record<string, string> = {}) {
+  const router = createRouter({
+    history: createMemoryHistory(),
+    routes: [{ path: '/wiki', name: 'wiki', component: { template: '<div />' } }],
+  })
+  await router.push({ path: '/wiki', query })
+  await router.isReady()
+  lastRouter = router
+
+  const wrapper = mount(WikiView, { global: { plugins: [ElementPlus, router] } })
   await flushPromises()
   return wrapper
 }
@@ -259,7 +283,7 @@ describe('WikiView 敌人抗性图鉴', () => {
 })
 
 describe('WikiView 技能/专精/关卡页签', () => {
-  it('页签切换走 tabs 的 v-model；关卡下拉 v-model 联动章节过滤', async () => {
+  it('目录切节（不再是 el-tabs）；关卡下拉 v-model 联动章节过滤', async () => {
     const wrapper = await mountWiki()
     const text = wrapper.text()
     expect(text).toContain('火弹')
@@ -270,11 +294,16 @@ describe('WikiView 技能/专精/关卡页签', () => {
     expect(text).toContain('初见')
     expect(text).not.toContain('进阶')
 
-    // 点击「技能图鉴」页签 → el-tabs 发出 update:modelValue
-    await wrapper.findAll('.el-tabs__item').find((t) => t.text() === '技能图鉴')!.trigger('click')
+    // 点左侧目录的「技能图鉴」
+    const navItem = wrapper.findAll('.nav-item').find((t) => t.text() === '技能图鉴')!
+    expect(navItem, '目录里没有「技能图鉴」').toBeTruthy()
+    await navItem.trigger('click')
     await flushPromises()
     const vm = wrapper.vm as unknown as { activeTab: string }
     expect(vm.activeTab).toBe('skills')
+    // 目录点击要写回 URL —— 否则「复制地址栏」分享不到当前这一节
+    expect(lastRouter.currentRoute.value.query.tab).toBe('skills')
+    expect(navItem.classes()).toContain('on')
 
     // 章节下拉切换到第 2 章（v-model 处理器真实执行）
     const select = wrapper.findComponent(ElSelect)
@@ -282,6 +311,179 @@ describe('WikiView 技能/专精/关卡页签', () => {
     await flushPromises()
     expect(wrapper.text()).toContain('进阶')
     expect(vm.activeTab).toBe('skills')
+    wrapper.unmount()
+  })
+})
+
+describe('WikiView 目录（2026-10-22）', () => {
+  it('每个目录锚点都能在 DOM 里找到（SECTIONS 与模板 id 的漂移守卫）', async () => {
+    // ⚠️ 这条守的是**两处手写 id 的一致性**：SECTIONS 里写着 `reactions`，
+    // 模板里写着 `id="reactions"`。改一处忘另一处时页面不报错，
+    // 只是点目录「什么都不发生」—— 那种缺陷没人会主动测。
+    const wrapper = await mountWiki()
+    const anchors: string[] = []
+    // 从 DOM 反查：目录里每个二级项都带 href=#/wiki?tab=x&anchor=y
+    for (const a of wrapper.findAll('.nav-sub-item')) {
+      const href = a.attributes('href') ?? ''
+      const m = /[?&]anchor=([^&]+)/.exec(href)
+      if (m) anchors.push(decodeURIComponent(m[1]!))
+    }
+    expect(anchors.length).toBeGreaterThanOrEqual(6) // basics 2 + skills 2 + rules 2
+    for (const id of anchors) {
+      // ⚠️ 用 wrapper.find 而不是 document.getElementById：
+      // vue-test-utils 默认挂载在**游离**容器里，不在 document 树上。
+      expect(wrapper.find(`#${id}`).exists(), `目录里的锚点 #${id} 在页面上不存在`).toBe(true)
+    }
+    wrapper.unmount()
+  })
+
+  it('目录项是真链接（href 指向 #/wiki?tab=…），可复制 / 新标签打开', async () => {
+    const wrapper = await mountWiki()
+    const items = wrapper.findAll('.nav-item')
+    expect(items.length).toBe(8) // 8 个 section
+    const enemies = items.find((t) => t.text() === '敌人抗性图鉴')!
+    expect(enemies.attributes('href')).toContain('/wiki?tab=enemies')
+    // 默认节（basics）不带 tab 参数，链接更短
+    expect(items[0]!.attributes('href')).not.toContain('tab=')
+    wrapper.unmount()
+  })
+})
+
+describe('WikiView 深链（2026-10-22）', () => {
+  it('?tab= 直接落到对应章节', async () => {
+    const wrapper = await mountWiki({ tab: 'equipment' })
+    const vm = wrapper.vm as unknown as { activeTab: string }
+    expect(vm.activeTab).toBe('equipment')
+    // 当前节的目录项高亮
+    expect(wrapper.findAll('.nav-item').find((t) => t.text() === '装备图鉴')!.classes()).toContain('on')
+    wrapper.unmount()
+  })
+
+  it('?tab=&focus=enemy:2 会高亮那一行（不是只切了页）', async () => {
+    const wrapper = await mountWiki({ tab: 'enemies', focus: 'enemy:2' })
+    await flushPromises()
+    const rows = wrapper.findAll('.el-table__row')
+    const focused = rows.filter((r) => r.classes().includes('row-focus'))
+    expect(focused.length, '没有任何行拿到 row-focus —— 搜索/深链跳过去也看不出跳到哪').toBe(1)
+    expect(focused[0]!.text()).toContain('熔岩龙')
+    wrapper.unmount()
+  })
+
+  it('?focus=level:6 先把章节切到第 2 章（否则那一行根本不在表里）', async () => {
+    const wrapper = await mountWiki({ tab: 'levels', focus: 'level:6' })
+    await flushPromises()
+    const vm = wrapper.vm as unknown as { activeChapter: number }
+    expect(vm.activeChapter).toBe(2)
+    expect(wrapper.text()).toContain('进阶')
+    const focused = wrapper.findAll('.el-table__row').filter((r) => r.classes().includes('row-focus'))
+    expect(focused.length).toBe(1)
+    expect(focused[0]!.text()).toContain('进阶')
+    wrapper.unmount()
+  })
+
+  it('非法深链（未知 tab / 畸形 focus）→ 回落到核心规则，不抛错', async () => {
+    const wrapper = await mountWiki({ tab: 'nope', focus: 'bogus' })
+    const vm = wrapper.vm as unknown as { activeTab: string; focus: unknown }
+    expect(vm.activeTab).toBe('basics')
+    expect(vm.focus).toBeNull()
+    // 不认识的 focus 前缀（缺冒号 / 未知 kind）都按「没有焦点」处理
+    const w2 = await mountWiki({ tab: 'enemies', focus: 'enemy' })
+    expect((w2.vm as unknown as { focus: unknown }).focus).toBeNull()
+    const w3 = await mountWiki({ tab: 'enemies', focus: 'unknownkind:1' })
+    expect((w3.vm as unknown as { focus: unknown }).focus).toBeNull()
+    wrapper.unmount()
+    w2.unmount()
+    w3.unmount()
+  })
+
+  it('?anchor= 写进 URL 后能被回读（目录二级项与深链是同一套 key）', async () => {
+    const wrapper = await mountWiki()
+    const sub = wrapper.findAll('.nav-sub-item').find((a) => a.text() === '合成技能')!
+    await sub.trigger('click')
+    await flushPromises()
+    expect(lastRouter.currentRoute.value.query).toMatchObject({ tab: 'skills', anchor: 'composite' })
+    wrapper.unmount()
+  })
+})
+
+describe('WikiView 搜索（2026-10-22）', () => {
+  async function search(wrapper: Awaited<ReturnType<typeof mountWiki>>, q: string) {
+    await wrapper.find('.search-input').setValue(q)
+    await flushPromises()
+  }
+
+  it('跨类型命中：技能名 / 敌人名 / 关卡名都能搜到', async () => {
+    const wrapper = await mountWiki()
+    await search(wrapper, '熔岩龙')
+    let hits = wrapper.findAll('.search-hit')
+    expect(hits.length).toBe(1)
+    expect(hits[0]!.text()).toContain('敌人')
+
+    await search(wrapper, '火弹')
+    hits = wrapper.findAll('.search-hit')
+    expect(hits[0]!.text()).toContain('技能')
+
+    await search(wrapper, '初见')
+    hits = wrapper.findAll('.search-hit')
+    expect(hits[0]!.text()).toContain('关卡')
+    wrapper.unmount()
+  })
+
+  it('点命中 → 切到对应章节并高亮那一行', async () => {
+    const wrapper = await mountWiki()
+    await search(wrapper, '超导融合')
+    await wrapper.findAll('.search-hit')[0]!.trigger('click')
+    await flushPromises()
+
+    const vm = wrapper.vm as unknown as { activeTab: string; searchOpen: boolean }
+    expect(vm.activeTab).toBe('skills')
+    expect(vm.searchOpen).toBe(false) // 选中后收起面板
+    const focused = wrapper.findAll('.el-table__row').filter((r) => r.classes().includes('row-focus'))
+    expect(focused.length).toBe(1)
+    expect(focused[0]!.text()).toContain('超导融合')
+    expect(lastRouter.currentRoute.value.query.focus).toBe('composite:9')
+    wrapper.unmount()
+  })
+
+  it('搜关卡名 → 章节联动（第 2 章的关要能跳过去）', async () => {
+    const wrapper = await mountWiki()
+    await search(wrapper, '进阶')
+    await wrapper.findAll('.search-hit')[0]!.trigger('click')
+    await flushPromises()
+    const vm = wrapper.vm as unknown as { activeTab: string; activeChapter: number }
+    expect(vm.activeTab).toBe('levels')
+    expect(vm.activeChapter).toBe(2)
+    wrapper.unmount()
+  })
+
+  it('无命中 → 空态文案；回车不崩（没有第一条可跳）', async () => {
+    const wrapper = await mountWiki()
+    await search(wrapper, '不存在的东西')
+    expect(wrapper.text()).toContain('没有匹配「不存在的东西」的内容')
+    await wrapper.find('.search-input').trigger('keydown.enter')
+    await flushPromises()
+    const vm = wrapper.vm as unknown as { activeTab: string }
+    expect(vm.activeTab).toBe('basics') // 原地不动
+    wrapper.unmount()
+  })
+
+  it('回车跳第一条；命中超过 20 条时给出「还有 N 条」的提示', async () => {
+    // 造 25 个同名技能，验证截断 + 提示
+    apiGet.mockResolvedValueOnce({
+      ...configFixture(),
+      skills: Array.from({ length: 25 }, (_, i) => ({
+        id: 100 + i, name: `测试技能${i}`, element: 'fire', family: 'flame', kind: 'active',
+        base_damage: 1, heat_cost: 1, cooldown_ms: 1, pierce: 0, aoe_radius: 0, apply_stacks: 1, descr: '测试',
+      })),
+    })
+    const wrapper = await mountWiki()
+    await search(wrapper, '测试技能')
+    expect(wrapper.findAll('.search-hit').length).toBe(20)
+    expect(wrapper.text()).toContain('共 25 条')
+
+    await wrapper.find('.search-input').trigger('keydown.enter')
+    await flushPromises()
+    expect((wrapper.vm as unknown as { activeTab: string }).activeTab).toBe('skills')
     wrapper.unmount()
   })
 })

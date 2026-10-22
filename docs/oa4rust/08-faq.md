@@ -4,7 +4,7 @@
 
 ### Q1：`create_app` 阶段栈溢出（Stack overflow）
 
-**根因**：`create_app` 将约 80 个 crate 的路由 `.merge()` 为巨型 axum Router，构造需约 **64MB 栈**（已确认是栈大小需求，非无限递归）。
+**根因**：`create_app` 将 84 个 crate 的路由 `.merge()` 为巨型 axum Router，构造需约 **64MB 栈**（已确认是栈大小需求，非无限递归）。
 **对策**：Windows-MSVC 已由 `backend/.cargo/config.toml` 的 `/STACK:67108864` 解决（仅主线程）。若自行改启动结构（如把 `create_app` 挪到 worker 线程），必须自行提供大栈线程——参考 `lib.rs` 中 `cors_guard` 测试的 64MB 显式栈写法（Linux/CI 上链接参数不生效，测试必须用显式线程）。
 
 ### Q2：Windows GNU 目标链接失败 / `0xC0000139`（STATUS_ENTRYPOINT_NOT_FOUND）
@@ -46,7 +46,7 @@
 
 ### Q9：想回滚某次迁移
 
-启动逻辑**不做自动回滚**。手工执行对应的 `NNN_description_rollback.sql`（所有历史迁移均成对提供）。生产回滚属高危操作，先在测试环境演练。
+启动逻辑**不做自动回滚**。手工执行对应的 `NNN_description_rollback.sql`（多数历史迁移成对提供；001–021 等 15 个早期迁移无回滚文件）。生产回滚属高危操作，先在测试环境演练。
 
 ### Q10：MySQL 兼容报 SQL 语法错
 
@@ -96,6 +96,6 @@
 | 症状 | 常见误判 | 实际 |
 | --- | --- | --- |
 | 端口 81/8001 混淆 | — | 与本项目无关（那是 BMP 门禁链路的坑）；oa4rust 固定 **:3000**，o2server 基准容器（开发期 parity 用）docker :18080 |
-| `migrations: 0 applied, 108 skipped` | 以为迁移坏了 | 幂等：已应用即跳过，属正常 |
+| `migrations: 0 applied, 111 skipped` | 以为迁移坏了 | 幂等：已应用即跳过，属正常 |
 | `/openapi.json` 打不开 Swagger UI | 以为有网页 | 当前仅暴露 JSON 端点（utoipa ApiDoc）；Swagger UI zip 已在 backend 目录备用但未挂载 |
 | 移动端接口 401 | 以为 token 通道坏了 | 现状 Cookie 模型，原生/小程序通道未补齐（见 Q7） |

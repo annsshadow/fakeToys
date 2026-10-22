@@ -184,3 +184,8 @@ Temp
 .workbuddy
 .workbuddy-ai
 .zcode
+
+# 备份文件不入库：*.bak 曾以测试备份形态被 git 跟踪（2026-10-21 清理，
+# 见 docs/plans/2026-10-21-laiyipao-three-end-optimization.md P6 附加清理）。
+# 备份要么不进工作树，要么进 .gitignore —— 入库的备份只会误导后来者。
+*.bak

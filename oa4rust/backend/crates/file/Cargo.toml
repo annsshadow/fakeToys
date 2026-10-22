@@ -19,3 +19,6 @@ uuid.workspace = true
 anyhow.workspace = true
 chrono.workspace = true
 tower = "0.5"
+
+[lints]
+workspace = true

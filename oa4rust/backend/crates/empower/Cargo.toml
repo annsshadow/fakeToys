@@ -21,3 +21,6 @@ auth = { path = "../auth" }
 
 [dev-dependencies]
 tower = "0.5"
+
+[lints]
+workspace = true

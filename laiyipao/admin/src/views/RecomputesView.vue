@@ -17,6 +17,7 @@
  * 值班的人会以为防护开着。
  */
 import {computed, onMounted, ref, onActivated} from 'vue'
+import { useAdminRole } from '@/utils/adminRole'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   fetchRecomputes,
@@ -33,6 +34,8 @@ import { fmtTime } from '@/utils/format'
 /** 空态文案（2026-10-21 P5-8）：空表要说清「为什么空」。 */
 const emptyText = '没有匹配的重算记录'
 const loading = ref(false)
+// 2026-10-21（P5-6 / 二轮审计 P2-3）：readonly 账号看不到写入口。
+const { isReadonly } = useAdminRole()
 const statsLoading = ref(false)
 const rows = ref<RecomputeView[]>([])
 const total = ref(0)
@@ -58,6 +61,10 @@ const engineAlertType = computed<'error' | 'warning' | null>(() => {
 const userId = ref<number | undefined>(undefined)
 const levelId = ref<number | undefined>(undefined)
 const onlyMismatch = ref(true)
+/** 台账分页（2026-10-21 P2-6）：此前 limit 写死 50 且**没有分页器**，
+ *  而右上角显示的是**全量** total —— 于是「第 51 条起不可达」。 */
+const LEDGER_PAGE_SIZE = 50
+const ledgerPage = ref(1)
 const hours = ref(24)
 
 /** 不符字段 → 中文。未知字段回落到原值，不要吞掉。 */
@@ -215,7 +222,8 @@ async function load() {
       user_id: userId.value,
       level_id: levelId.value,
       only_mismatch: onlyMismatch.value || undefined,
-      limit: 50,
+      limit: LEDGER_PAGE_SIZE,
+      offset: (ledgerPage.value - 1) * LEDGER_PAGE_SIZE,
     })
     rows.value = res.items
     total.value = res.total
@@ -243,8 +251,21 @@ onMounted(reloadAll)
  *
  * `onActivated` 是 keep-alive 视图重新可见时的钩子。
  */
+/**
+   * `onActivated` 在**首次挂载**时也会触发（vue 给 keep-alive 的子组件
+   * 打标记并把钩子排进 post-render 队列），而 `onMounted` 已经加载过一次 ——
+   * 两者都留着 = 每进一次页面发**两份**请求，还留下一个
+   * 「后到的先渲染」的乱序窗口。
+   *
+   * 所以：首次的 `onActivated` 跳过，之后的才刷新。
+   */
+  let activatedOnce = false
 onActivated(() => {
-  reloadAll()
+    if (!activatedOnce) {
+    activatedOnce = true
+    return
+  }
+reloadAll()
 })
 
 /**
@@ -276,24 +297,34 @@ const asLevel = (r: unknown) => r as RecomputeLevelStat
       <div class="toolbar">
         <span class="toolbar-label">重算档位</span>
         <el-tag
-          :type="modeState.demoted ? 'warning' : modeState.mode === 'enforce' ? 'success' : 'info'"
+          :type="modeState.enforcing ? 'success' : 'warning'"
           size="small"
         >
           生效中：{{ modeState.mode }}
         </el-tag>
+        <!--
+          2026-10-21（二轮审计 P1）：熔断只影响**引擎侧**，
+          不影响 S 段（真正拒发奖励的那一段）。
+          此前这里写的是「已被熔断降级」，
+          运营会误以为整个防护都失效了。
+        -->
         <el-tag v-if="modeState.demoted" type="warning" size="small">
-          配置为 {{ modeState.configured_mode }}（已被熔断降级）
+          引擎侧已被熔断降为 {{ modeState.engine_mode }}
         </el-tag>
-        <el-tag v-else-if="modeState.configured_mode !== modeState.mode" type="info" size="small">
-          配置为 {{ modeState.configured_mode }}
+        <el-tag v-if="modeState.skills_mode !== modeState.engine_mode" type="info" size="small">
+          S 段：{{ modeState.skills_mode }}
+        </el-tag>
+        <el-tag v-if="modeState.enforcing" type="success" size="small">
+          正在拒发不符上报
         </el-tag>
         <span class="toolbar-spacer" />
         <el-button
           v-for="m in ['enforce', 'shadow', 'off']"
+          v-if="!isReadonly"
           :key="m"
           size="small"
-          :disabled="modeSaving || modeState.mode === m"
-          :type="modeState.mode === m ? 'primary' : 'default'"
+          :disabled="modeSaving || modeState.configured_mode === m"
+          :type="modeState.configured_mode === m ? 'primary' : 'default'"
           @click="switchMode(m)"
         >
           切到 {{ m }}
@@ -319,7 +350,7 @@ const asLevel = (r: unknown) => r as RecomputeLevelStat
       :closable="false"
       style="margin-bottom: 12px"
       title="熔断已触发：引擎侧不再拒发奖励"
-      :description="`配置档位是 ${summary.configured_mode}，但近 ${hours} 小时不符率超阈值后已自动降级为 ${summary.mode}。本该拒发的上报正在被放行。原因：${summary.demoted_reason}。修复后需人工把 SETTLE_RECOMPUTE_MODE 改回 enforce —— 不会自动升档。`"
+      :description="`配置档位是 ${summary.configured_mode}，但近 ${hours} 小时不符率超阈值后已自动降级为 ${summary.engine_mode}。本该拒发的上报正在被放行。原因：${summary.demoted_reason}。修复后需人工把 SETTLE_RECOMPUTE_MODE 改回 enforce —— 不会自动升档。 注意：熔断**只影响引擎侧**，S 段（replay_skills）照常拒发不符上报。`"
     />
 
     <!--
@@ -346,6 +377,16 @@ const asLevel = (r: unknown) => r as RecomputeLevelStat
 
     <el-card shadow="never" class="mb">
       <div class="toolbar">
+        <el-pagination
+          v-if="total > LEDGER_PAGE_SIZE"
+          v-model:current-page="ledgerPage"
+          :page-size="LEDGER_PAGE_SIZE"
+          :total="total"
+          layout="prev, pager, next, total"
+          size="small"
+          background
+          @current-change="load"
+        />
         <span class="muted">统计窗口</span>
         <el-select v-model="hours" size="small" style="width: 130px" @change="loadStats">
           <el-option :value="1" label="最近 1 小时" />
@@ -360,13 +401,21 @@ const asLevel = (r: unknown) => r as RecomputeLevelStat
         <div class="stat">
           <div class="stat-label">生效档位</div>
           <div class="stat-value">
-            <el-tag v-if="summary" :type="summary.mode === 'enforce' ? 'success' : 'warning'" size="small">
+            <el-tag v-if="summary" :type="summary.enforcing ? 'success' : 'warning'" size="small">
               {{ summary.mode }}
             </el-tag>
             <span v-else class="muted">—</span>
           </div>
-          <div v-if="summary && summary.configured_mode !== summary.mode" class="stat-note danger">
-            配置值 {{ summary.configured_mode }}，已被降级
+          <!--
+            ⚠️ 2026-10-21（二轮审计 P1）：比较的是 **engine_mode**，
+            不是 mode —— `mode` 现在是 S 段的档位，而 S 段**永不**被降级，
+            拿它比会**永远**相等，于是这条告警会静默消失。
+          -->
+          <div v-if="summary && summary.configured_mode !== summary.engine_mode" class="stat-note danger">
+            配置值 {{ summary.configured_mode }}，引擎侧已被降级为 {{ summary.engine_mode }}
+          </div>
+          <div v-if="summary && summary.skills_mode !== summary.engine_mode" class="stat-note muted">
+            S 段仍是 {{ summary.skills_mode }}（照常拒发不符上报）
           </div>
         </div>
         <div class="stat">

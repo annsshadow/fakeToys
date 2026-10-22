@@ -11,7 +11,7 @@ import {
   type AdminUserView,
 } from '@/api'
 import { useAdminRole } from '@/utils/adminRole'
-import { fmtTime } from '@/utils/format'
+import { fmtTime, isCancel } from '@/utils/format'
 
 /** 空态文案（2026-10-21 P5-8）：空表要说清「为什么空」。 */
 const emptyText = '没有匹配的用户'
@@ -33,16 +33,31 @@ const detailDrawer = ref(false)
 const detailLoading = ref(false)
 const detail = ref<AdminUserDetailResp | null>(null)
 
+/**
+ * 详情请求的**序号**（2026-10-21 二轮审计 P2-9）。
+ *
+ * 慢网下点 A 的详情 → 立刻点 B 的详情 → A 的响应后到 →
+ * `detail.value` 被写成 **A 的数据**，而抽屉在运营心智里是 B。
+ * 运营据此下判断就是错数据。
+ *
+ * 序号守卫：只接受**最新一次**请求的响应。
+ */
+let detailReqSeq = 0
+
 async function openDetail(u: AdminUserView) {
+  const seq = ++detailReqSeq
   detailDrawer.value = true
   detailLoading.value = true
   detail.value = null
   try {
-    detail.value = await fetchUserDetail(u.id)
+    const res = await fetchUserDetail(u.id)
+    if (seq !== detailReqSeq) return // 已经有更新的请求了
+    detail.value = res
   } catch (e) {
+    if (seq !== detailReqSeq) return
     ElMessage.error(`玩家详情加载失败：${(e as Error).message}`)
   } finally {
-    detailLoading.value = false
+    if (seq === detailReqSeq) detailLoading.value = false
   }
 }
 const total = ref(0)
@@ -139,8 +154,12 @@ async function onBan(u: AdminUserView) {
     const res = await banUser(u.id, value.trim())
     Object.assign(u, res.user)
     ElMessage.success('已封禁')
-  } catch {
-    /* 取消 */
+  } catch (e) {
+    // ⚠️ 「取消」与「失败」必须分开（2026-10-21 二轮审计 P2-2）：
+    // 此前一个 `catch { /* 取消 */ }` 把两者都吞了 —— readonly 账号点「封禁」
+    // 得到 403，**屏幕上什么都没有发生**（连 toast 都没有）。
+    if (isCancel(e)) return
+    ElMessage.error(`封禁失败：${(e as Error).message}`)
   }
 }
 
@@ -224,8 +243,10 @@ async function onGrant(u: AdminUserView) {
         ? `已回收 ${CURRENCY_LABEL[currency]} ${-amount}`
         : `已发放 ${CURRENCY_LABEL[currency]} ${amount}`,
     )
-  } catch {
-    /* 取消 */
+  } catch (e) {
+    // 「取消」与「失败」分开（2026-10-21 二轮审计 P2-2）。
+    if (isCancel(e)) return
+    ElMessage.error(`发放失败：${(e as Error).message}`)
   }
 }
 
@@ -240,8 +261,21 @@ onMounted(load)
  *
  * `onActivated` 是 keep-alive 视图重新可见时的钩子。
  */
+/**
+   * `onActivated` 在**首次挂载**时也会触发（vue 给 keep-alive 的子组件
+   * 打标记并把钩子排进 post-render 队列），而 `onMounted` 已经加载过一次 ——
+   * 两者都留着 = 每进一次页面发**两份**请求，还留下一个
+   * 「后到的先渲染」的乱序窗口。
+   *
+   * 所以：首次的 `onActivated` 跳过，之后的才刷新。
+   */
+  let activatedOnce = false
 onActivated(() => {
-  load()
+    if (!activatedOnce) {
+    activatedOnce = true
+    return
+  }
+load()
 })
 
 /**
@@ -274,6 +308,7 @@ const asRow = (r: unknown) => r as AdminUserView
           v-model="keyword"
           placeholder="按昵称 / ID 搜索"
           clearable
+          @clear="((offset = 0), load())"
           style="width: 220px"
           @keyup.enter="((offset = 0), load())"
         />

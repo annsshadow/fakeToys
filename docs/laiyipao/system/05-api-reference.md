@@ -1,6 +1,6 @@
 # 05 · 接口参考
 
-> 服务端共 **66 个 HTTP 端点**：玩家侧 37（含 2 个健康检查）+ 管理端 29。
+> 服务端共 **73 个 HTTP 端点**：玩家侧 42（含 2 个健康检查与公开端点）+ 管理端 31。
 > 本文是 `server/internal/httpapi/routes.go` 的对照表，字段名以 Go 的 `json` tag 为准。
 
 ---
@@ -57,72 +57,78 @@
 
 | # | 方法 | 路径 | 限流 | 说明 |
 |---|---|---|---|---|
-| 9 | GET | `/me` | — | 身份 + 构筑 + 评分 + 战力 + 最高关 |
-| 10 | GET | `/me/loadout` | — | 出战槽位 |
-| 11 | PUT | `/me/loadout` | — | 保存出战槽位 |
-| 12 | GET | `/me/stars` | — | 各关历史最好星级 |
-| 13 | POST | `/me/skills/:id/upgrade` | — | 技能升一级 |
-| 14 | POST | `/me/skills/synthesize` | — | 技能熔炼 |
-| 15 | GET | `/me/gems` | — | 持有宝石列表 |
-| 16 | POST | `/me/gems/:id/wash` | — | 洗练宝石 |
-| 17 | POST | `/me/logout` | — | 登出（吊销全部 refresh + 轮换 guest_token） |
-| 18 | GET | `/wallet` | — | 钱包（含体力恢复与道具余额） |
-| 19 | GET | `/levels/:id` | — | 单关完整数据（含 waves） |
-| 20 | POST | `/battle/token` | — | 开局凭证 |
-| 21 | POST | `/battle/settle` | 60/min 用户 | 结算 |
-| 22 | POST | `/battle/verify` | 20/min 用户 | 验真 |
-| 23 | GET | `/battle/:id/replay` | — | 取回重放信息（限本人） |
-| 24 | GET | `/mastery` | — | 专精状态 |
-| 25 | POST | `/mastery/allocate` | — | 分配专精点 |
-| 26 | POST | `/mastery/reset` | — | 重铸（消耗道具） |
-| 27 | GET | `/tasks` | — | 任务列表（`?scope=daily\|weekly\|achievement`） |
-| 28 | POST | `/tasks/:id/claim` | — | 领取任务奖励 |
-| 29 | GET | `/shop` | — | 商城（含今日已购次数） |
-| 30 | POST | `/shop/:id/buy` | — | 购买 |
-| 31 | POST | `/signin` | — | 每日签到 |
-| 32 | GET | `/signin/calendar` | — | 七日奖励表 |
-| 33 | GET | `/signin/status` | — | 签到状态 |
-| 34 | POST | `/redeem` | 5/min IP + 20/min 用户 | 兑换码 |
-| 35 | GET | `/diagnose` | — | 卡关诊断 |
-| 36 | GET | `/defenses` | — | 防线（我的 + 候选） |
-| 37 | POST | `/defenses/save` | — | 保存防线快照 |
-| 38 | POST | `/defenses/:id/challenge` | — | 挑战防线 |
+| 10 | GET | `/me` | — | 身份 + 构筑 + 评分 + 战力 + 最高关 |
+| 11 | GET | `/me/loadout` | — | 出战槽位 |
+| 12 | PUT | `/me/loadout` | — | 保存出战槽位 |
+| 13 | GET | `/me/equipment` | — | 装备目录 + 拥有/装配状态 |
+| 14 | PUT | `/me/equipment` | — | 整组替换装配（`equipment_ids`） |
+| 15 | GET | `/me/stars` | — | 各关历史最好星级 |
+| 16 | POST | `/me/skills/:id/upgrade` | — | 技能升一级 |
+| 17 | POST | `/me/skills/synthesize` | — | 技能熔炼 |
+| 18 | GET | `/me/gems` | — | 持有宝石列表 |
+| 19 | POST | `/me/gems/:id/wash` | — | 洗练宝石 |
+| 20 | POST | `/me/logout` | — | 登出（吊销全部 refresh + 轮换 guest_token） |
+| 21 | GET | `/wallet` | — | 钱包（含体力恢复与道具余额） |
+| 22 | GET | `/levels/:id` | — | 单关完整数据（含 waves） |
+| 23 | POST | `/battle/token` | — | 开局凭证 |
+| 24 | POST | `/battle/settle` | 60/min 用户 | 结算 |
+| 25 | POST | `/battle/verify` | 20/min 用户 | 验真 |
+| 26 | POST | `/battle/abandon` | — | 放弃战斗并退回体力 |
+| 27 | GET | `/battle/:id/replay` | — | 取回重放信息（限本人） |
+| 28 | GET | `/mastery` | — | 专精状态 |
+| 29 | POST | `/mastery/allocate` | — | 分配专精点 |
+| 30 | POST | `/mastery/reset` | — | 重铸（消耗道具） |
+| 31 | GET | `/tasks` | — | 任务列表（`?scope=daily\|weekly\|achievement`） |
+| 32 | POST | `/tasks/:id/claim` | — | 领取任务奖励 |
+| 33 | GET | `/shop` | — | 商城（含今日已购次数） |
+| 34 | POST | `/shop/:id/buy` | — | 购买 |
+| 35 | POST | `/signin` | — | 每日签到 |
+| 36 | GET | `/signin/calendar` | — | 七日奖励表 |
+| 37 | GET | `/signin/status` | — | 签到状态 |
+| 38 | POST | `/redeem` | 5/min IP + 20/min 用户 | 兑换码 |
+| 39 | GET | `/diagnose` | — | 卡关诊断 |
+| 40 | GET | `/defenses` | — | 防线（我的 + 候选） |
+| 41 | POST | `/defenses/save` | — | 保存防线快照 |
+| 42 | POST | `/defenses/:id/challenge` | — | 挑战防线 |
 
-> 编号 1–37 是玩家侧，38 是防线挑战；总数 37 个玩家端点 + 29 个管理端点 = 66。
-> （上表把健康检查与公开端点计入玩家侧。）
+> 编号 1–9 是公开端点（计入玩家侧总数），10–42 需玩家认证；
+> 玩家侧共 42 个 + 管理端 31 个 = 73。
 
 ### 2.3 管理端（`requireAdmin`，写操作另挂 `requireWritable`）
 
 | # | 方法 | 路径 | 可写角色 | 说明 |
 |---|---|---|---|---|
-| 39 | POST | `/admin/logout` | 全部 | 吊销本管理员全部会话 |
-| 40 | GET | `/admin/me` | — | 当前管理员 |
-| 41 | GET | `/admin/dashboard` | — | 看板聚合 |
-| 42 | GET | `/admin/levels` | — | 关卡列表（`?chapter=&keyword=`） |
-| 43 | GET | `/admin/levels/:id/waves` | — | 关卡波次 |
-| 44 | PUT | `/admin/levels/:id` | admin/ops | 改关卡 |
-| 45 | POST | `/admin/levels/regenerate` | admin/ops | 重生成 100 关 |
-| 46 | GET | `/admin/skills` | — | 技能 + 配方 |
-| 47 | PUT | `/admin/skills/:id` | admin/ops | 改技能 |
-| 48 | GET | `/admin/equipment` | — | 装备/宝石/皮肤 |
-| 49 | GET | `/admin/reactions` | — | 反应表（含中文名与说明） |
-| 50 | GET | `/admin/users` | — | 用户列表 |
-| 51 | POST | `/admin/users/:id/ban` | admin/ops | 封禁 |
-| 52 | POST | `/admin/users/:id/unban` | admin/ops | 解封 |
-| 53 | POST | `/admin/users/:id/grant` | admin/ops | 发币/回收 |
-| 54 | GET | `/admin/battles` | — | 战报列表 |
-| 55 | GET | `/admin/battles/:id` | — | 战报详情 |
-| 56 | POST | `/admin/battles/:id/verify` | admin/ops | 运营验真 |
-| 57 | GET | `/admin/recomputes` | — | 重算台账 |
-| 58 | GET | `/admin/recomputes/stats` | — | 重算总账 + 分布 + 闸门 |
-| 59 | GET | `/admin/defenses` | — | 防线列表 |
-| 60 | GET | `/admin/economy` | — | 货币流水 + 商城 |
-| 61 | PUT | `/admin/shop/:id` | admin/ops | 改商品 |
-| 62 | GET | `/admin/announcements` | — | 公告列表 |
-| 63 | POST | `/admin/announcements` | admin/ops | 创建公告 |
-| 64 | GET | `/admin/redeem-codes` | — | 兑换码列表 |
-| 65 | POST | `/admin/redeem-codes` | admin/ops | 创建兑换码 |
-| 66 | GET | `/admin/audit-logs` | — | 审计日志 |
+| 43 | POST | `/admin/logout` | 全部 | 吊销本管理员全部会话 |
+| 44 | GET | `/admin/me` | — | 当前管理员 |
+| 45 | GET | `/admin/dashboard` | — | 看板聚合 |
+| 46 | GET | `/admin/levels` | — | 关卡列表（`?chapter=&keyword=&limit=&offset=`） |
+| 47 | GET | `/admin/levels/:id/waves` | — | 关卡波次 |
+| 48 | PUT | `/admin/levels/:id` | admin/ops | 改关卡 |
+| 49 | POST | `/admin/levels/regenerate` | admin/ops | 重生成 100 关（需 `confirm:"regenerate"`） |
+| 50 | GET | `/admin/skills` | — | 技能 + 配方 |
+| 51 | PUT | `/admin/skills/:id` | admin/ops | 改技能 |
+| 52 | GET | `/admin/equipment` | — | 装备/宝石/皮肤 |
+| 53 | GET | `/admin/reactions` | — | 反应表（含中文名与说明） |
+| 54 | GET | `/admin/users` | — | 用户列表 |
+| 55 | GET | `/admin/users/:id` | — | 玩家详情（构筑/钱包/最近战报/验真明细） |
+| 56 | POST | `/admin/users/:id/ban` | admin/ops | 封禁 |
+| 57 | POST | `/admin/users/:id/unban` | admin/ops | 解封 |
+| 58 | POST | `/admin/users/:id/grant` | admin/ops | 发币/回收 |
+| 59 | GET | `/admin/battles` | — | 战报列表 |
+| 60 | GET | `/admin/battles/:id` | — | 战报详情 |
+| 61 | POST | `/admin/battles/:id/verify` | admin/ops | 运营验真 |
+| 62 | GET | `/admin/recomputes` | — | 重算台账 |
+| 63 | GET | `/admin/recomputes/stats` | — | 重算总账 + 分布 + 闸门 |
+| 64 | GET | `/admin/recomputes/mode` | — | 读重算档位 |
+| 65 | PUT | `/admin/recomputes/mode` | admin/ops | 切重算档位（需 `confirm:"confirm"`） |
+| 66 | GET | `/admin/defenses` | — | 防线列表 |
+| 67 | GET | `/admin/economy` | — | 货币流水 + 商城 |
+| 68 | PUT | `/admin/shop/:id` | admin/ops | 改商品 |
+| 69 | GET | `/admin/announcements` | — | 公告列表 |
+| 70 | POST | `/admin/announcements` | admin/ops | 创建公告 |
+| 71 | GET | `/admin/redeem-codes` | — | 兑换码列表 |
+| 72 | POST | `/admin/redeem-codes` | admin/ops | 创建兑换码 |
+| 73 | GET | `/admin/audit-logs` | — | 审计日志 |
 
 ---
 
@@ -338,6 +344,24 @@
 - 洗练消耗 1 枚 `gem_wash_token`，品质不变，词条重 roll。
 - 余额不足 → 400；宝石不属于本人 → 404。
 
+#### `GET /api/v1/me/equipment` / `PUT /api/v1/me/equipment`
+
+```json
+// GET → { "items": [ { "id": 1, "code": "…", "name": "…", "slot": "weapon",
+//                      "tier": 1, "element": "fire", "descr": "…",
+//                      "base_armor": 0, "base_bonus_pct": 500,
+//                      "unlock_level": 1, "owned": true, "equipped": true,
+//                      "level": 1, "star": 1 } ] }
+// PUT 请求 { "equipment_ids": [1, 10] }
+// PUT 响应 → 同 GET 形状（整组替换后的状态）
+```
+
+- GET 返回**全部目录** + 该玩家的拥有/装配状态（P4-1）—— 玩家要能看见
+  「18 件里我只有 2 件」，未拥有件的 `unlock_level` 本身就是目标。
+- PUT 是**整组替换**（不是「装一件/卸一件」两个增量端点）——
+  增量端点会留下「同部位两件都 equipped」的中间态。
+- 校验：必须是已拥有的装备；同部位冲突 → 400。
+
 ### 3.4 钱包与关卡
 
 #### `GET /api/v1/wallet`
@@ -448,6 +472,18 @@
 - 只比对「提交值」与「结算时记录值」，**不重算**。
 - 只能验自己的战报（他人战报与不存在返回同一个 404）。
 - `replay_hash` 长度上限 64。
+
+#### `POST /api/v1/battle/abandon`
+
+```json
+// 请求 { "token_id": 123 }
+// 响应 { "refunded_energy": 5, "abandoned": true }
+```
+
+- P4-5：中途退出不再白扣体力。服务端把该凭证置为已用并退回开战扣掉的
+  体力（若买过复活币一并退）。
+- 放弃后**不能再结算**这一局（重复结算会被 `ErrTokenUsed` 拒）—— 那是刻意的。
+- 已结算 / 已放弃的 token → 400。
 
 #### `GET /api/v1/battle/:id/replay`
 
@@ -578,24 +614,27 @@
 
 ### 3.8 诊断
 
-#### `GET /api/v1/diagnose?level_id=5&failed_times=2`
+#### `GET /api/v1/diagnose?level_id=5`
 
 ```json
 {
-  "Stage": "no_reaction",
-  "Title": "你的构筑几乎打不出元素反应",
-  "Detail": "已装载元素：fire；本关敌人……",
-  "Suggestions": ["再带一种不同元素的技能", "……"],
-  "Confidence": 75
+  "stage": "no_reaction",
+  "title": "你的构筑几乎打不出元素反应",
+  "detail": "已装载元素：fire；本关敌人……",
+  "suggestions": ["再带一种不同元素的技能", "……"],
+  "confidence": 75,
+  "failed_times": 2,
+  "stuck": true
 }
 ```
 
-> ⚠️ **已知不一致（文档如实记录）**：`domain.Diagnose` 没有 `json` tag，
-> 因此实际下发的是 **PascalCase**（`Stage` / `Title` / `Detail` / `Suggestions` / `Confidence`）。
-> 而 `miniapp/src/pages/stage/stage.vue` 读的是 `d.stage` / `d.confidence` / `d.title` /
-> `d.detail` / `d.suggestions`（小写），因此诊断卡会渲染成空白（置信度后面没有数字）。
-> 修法是给该结构补 snake_case tag（并同步客户端或直接改客户端），
-> 这属于 `ENGINEERING.md` 第 4 条「跨端字段名显式约定」的典型违例。
+- `failed_times`（连续失败次数）由**服务端**按 `battle_records` 实况计算（P2-7）——
+  此前它来自客户端 `?failed_times=` 且被硬编码成 2，于是每个玩家第一次失败
+  就看到「卡关」诊断卡。客户端传值只在**大于**服务端实况时才被采纳。
+- `stuck` = 连续失败达到 `StuckThreshold`（2），客户端据此决定是否展示卡片；
+  没有它，诊断卡会对所有人说同一句话。
+- 历史备注：该结构曾因缺 `json` tag 下发 PascalCase、与客户端小写读取对不上
+  （诊断卡渲染成空白），2026-10-21 已补 snake_case tag 修复。
 
 ### 3.9 防线
 
@@ -719,7 +758,7 @@
 
 ### 4.3 关卡
 
-#### `GET /api/v1/admin/levels?chapter=2&keyword=冻原`
+#### `GET /api/v1/admin/levels?chapter=2&keyword=冻原&limit=50&offset=0`
 
 ```json
 {
@@ -751,10 +790,13 @@
 #### `POST /api/v1/admin/levels/regenerate`
 
 ```json
+// 请求 { "confirm": "regenerate" }
 { "generated": 100 }
 ```
 
 重跑生成器并 upsert `levels` / `level_waves`。同样**不影响玩家路径**。
+⚠️ 请求体必须带 `confirm: "regenerate"`（P3-6）：它一次覆盖全部 100 关、
+不可回滚，不能只靠前端确认框把关。
 
 ### 4.4 技能 / 装备 / 反应
 
@@ -824,6 +866,12 @@
 > `verify_checked=0 && verify_mismatched=0` 表示**从没被验真过（未知）**，
 > 不是「干净」。两个字段必须一起看。
 
+#### `GET /api/v1/admin/users/:id`
+
+P5-7：单个玩家的详情 —— 构筑、钱包、最近战报、验真明细。
+此前后台只能看到用户列表的一行，「他最近打了什么 / 钱去哪了」无处可查；
+一个不能看的详情比没有这个功能更糟：它让运营以为「没有信息」意味着「没有问题」。
+
 #### `POST /api/v1/admin/users/:id/ban`
 
 ```json
@@ -852,7 +900,7 @@
 
 ### 4.6 战报与验真
 
-#### `GET /api/v1/admin/battles?user_id=&level_id=&only_mismatched=1&limit=50`
+#### `GET /api/v1/admin/battles?user_id=&level_id=&only_mismatched=1&limit=50&offset=0`
 
 ```json
 {
@@ -931,6 +979,17 @@
 - `engine` 与 `totals` 口径不同：前者含所有走到重算的局（进程内计数，从启动算起），
   后者只含台账里的（台账只记不符）。混用会把「校验没跑」误判成「没问题」。
 
+#### `GET /api/v1/admin/recomputes/mode` · `PUT /api/v1/admin/recomputes/mode`
+
+```json
+// GET → { "mode": "shadow", "configured_mode": "enforce", "demoted": true, … }
+// PUT 请求 { "mode": "shadow", "confirm": "confirm" }   // 响应同 GET
+```
+
+P3-3：档位从「只能改环境变量重启」变成运营可读可切。
+PUT 是**破坏性写**（把 enforce 切成 off 等于关掉反作弊校验）：
+必须带 `confirm: "confirm"`、写审计（`set_recompute_mode`）、`readonly` 一律 403。
+
 ### 4.8 防线 / 经济 / 内容 / 审计
 
 #### `GET /api/v1/admin/defenses?limit=50`
@@ -983,7 +1042,7 @@
 
 审计动作全集：`logout` / `update_level` / `regenerate_levels` / `update_skill` /
 `ban_user` / `unban_user` / `grant_currency` / `revoke_currency` / `battle_verify` /
-`update_shop_item` / `create_announcement` / `create_redeem_code`。
+`update_shop_item` / `create_announcement` / `create_redeem_code` / `set_recompute_mode`。
 
 ---
 
@@ -999,7 +1058,7 @@
 | `POST /redeem` | IP | 5/min | 挡兑换码爆破 |
 | `POST /redeem` | 用户 | 20/min | 挡「换 IP 继续试」 |
 | `POST /battle/settle` | 用户 | 60/min | 写放大路径 |
-| `POST /battle/verify` | 用户 | 20/min | 写放大路径（无幂等键） |
+| `POST /battle/verify` | 用户 | 20/min | 写放大路径（00017 起同人同哈希幂等） |
 
 超限返回 429 + `rate_limited`。**限流是进程内计数**：多副本部署时实际额度是
 `N × 配置值`，上多副本前必须换共享计数器。

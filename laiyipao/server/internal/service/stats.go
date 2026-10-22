@@ -404,16 +404,37 @@ func (s *Service) AdminSetUserStatus(ctx context.Context, userID int64, banned b
 		return AdminUserView{}, err
 	}
 	var v AdminUserView
+	// ⚠️ 2026-10-21（二轮审计 P1-1）：验真两列**必须**一起查。
+	//
+	// 此前这个回读只 SELECT 了 10 列，**没有** `v.checked / v.mismatched`，
+	// 所以 `AdminUserView.VerifyChecked/VerifyMismatched` 恒为 0。
+	//
+	// 而后台封禁/解封后做的是 `Object.assign(row, res.user)` ——
+	// 于是那两列被 0 覆盖，「不匹配 3/5」（红）当场变成「未验真」（灰）。
+	// 运营在封禁后第一眼看到的结论是**错的**，而且方向是「看起来更干净」。
+	//
+	// 那段注释自己写过这句话：「最不可信的那批用户看起来最干净」。
+	// 这里就是那个坑的入口。
 	err = s.pool.QueryRow(ctx, `
 		SELECT u.id, u.nickname, u.is_guest, u.status,
 		       COALESCE(p.max_stage, 0), COALESCE(p.level_exp, 0),
-		       COALESCE(w.coin, 0), COALESCE(w.gem, 0), u.created_at, u.last_login_at
+		       COALESCE(w.coin, 0), COALESCE(w.gem, 0), u.created_at, u.last_login_at,
+		       COALESCE(v.checked, 0), COALESCE(v.mismatched, 0)
 		FROM users u
 		LEFT JOIN user_progress p ON p.user_id = u.id
 		LEFT JOIN user_wallets w ON w.user_id = u.id
+		LEFT JOIN (
+			SELECT br.user_id,
+			       COUNT(*) AS checked,
+			       COUNT(*) FILTER (WHERE NOT rv.matched) AS mismatched
+			FROM replay_verifications rv
+			JOIN battle_records br ON br.id = rv.battle_id
+			GROUP BY br.user_id
+		) v ON v.user_id = u.id
 		WHERE u.id = $1`, userID).
 		Scan(&v.ID, &v.Nickname, &v.IsGuest, &v.Status, &v.MaxStage,
-			&v.Power, &v.Coin, &v.Gem, &v.CreatedAt, &v.LastLoginAt)
+			&v.Power, &v.Coin, &v.Gem, &v.CreatedAt, &v.LastLoginAt,
+			&v.VerifyChecked, &v.VerifyMismatched)
 	return v, err
 }
 
@@ -549,6 +570,15 @@ type AdminBattleView struct {
 func (s *Service) AdminListBattles(ctx context.Context, userID int64, levelID int, limit int, onlyMismatched bool, offset int) ([]AdminBattleView, int64, error) {
 	if limit <= 0 || limit > 200 {
 		limit = 50
+	}
+	// ⚠️ 2026-10-21（二轮审计 P2）：负 offset 必须夹到 0。
+	//
+	// `queryInt` **不**拒绝负数（`Atoi("-1")` 成功）→ 负 offset 原样进 SQL
+	// → PostgreSQL `ERROR: OFFSET must not be negative` → **整页 500**。
+	//
+	// 一个运营手滑打出来的负号，不该让整页报错。
+	if offset < 0 {
+		offset = 0
 	}
 
 	// 验真统计同样走**子查询预聚合**：一场战斗可以被验真多次，

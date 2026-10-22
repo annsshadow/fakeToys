@@ -24,3 +24,6 @@ hex.workspace = true
 tower.workspace = true
 tokio = { workspace = true, features = ["full"] }
 
+
+[lints]
+workspace = true

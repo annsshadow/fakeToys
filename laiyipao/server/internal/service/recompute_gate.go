@@ -146,7 +146,7 @@ const RecomputeEngineVersionSkillsOnly = "skills-only/v1"
 const RecomputeEngineVersionNone = "none"
 
 // Gate 返回重算闸门。
-func (s *Service) Gate() *RecomputeGate { return s.gate }
+func (s *Service) Gate() *RecomputeGate { return s.gate.Load() }
 
 // recomputeVerdict 返回「当前实际生效的档位」与「是否 enforce」。
 //
@@ -155,12 +155,13 @@ func (s *Service) Gate() *RecomputeGate { return s.gate }
 //
 // scope 决定本裁决是否允许被熔断降级，见 RecomputeScope 的注释。
 func (s *Service) recomputeVerdict(ctx context.Context, scope RecomputeScope) (mode string, enforce bool) {
-	if s.gate == nil {
+	g := s.gate.Load()
+	if g == nil {
 		// 闸门恒不为 nil（New 里必建）。这里仍兜一层：
 		// 结算路径上 nil 指针 panic 的代价，远高于「退到最保守档」。
 		return RecomputeOff, false
 	}
-	d := s.gate.Decide(ctx, timeNow(), scope)
+	d := g.Decide(ctx, timeNow(), scope)
 	return d.Mode, d.Enforce
 }
 
@@ -171,7 +172,9 @@ func (s *Service) recomputeVerdict(ctx context.Context, scope RecomputeScope) (m
 // 闸门的不符率回调要查库（s.pool），而 s 在构造过程中还不存在。
 // 所以先建 svc、再回填 gate —— Go 里打破构造期循环依赖的常规手法。
 func (s *Service) initRecomputeGate() {
-	s.gate = NewRecomputeGate(s.Cfg.SettleRecomputeMode, s.recomputeMismatchRate)
+	// 先构造好新 gate，再**一次性**换上去 ——
+	// 中间不存在「Cfg 已改、gate 未换」的窗口。
+	s.gate.Store(NewRecomputeGate(s.Cfg.SettleRecomputeMode, s.recomputeMismatchRate))
 
 	if !ValidRecomputeMode(s.Cfg.SettleRecomputeMode) {
 		// fail loud（AGENTS #11）：非法值**静默**退到 off 会让
@@ -794,11 +797,23 @@ type RecomputeTotals struct {
 //
 // `demoted` 就是为了让「我们正在放过本该拒掉的东西」无法被忽略。
 type RecomputeSummary struct {
-	// Mode 是**实际生效**的档位（可能已被熔断降级）。
+	// Mode 是**权威档位** —— 此刻真正生效的那一档（**等于 SkillsMode**）。
+	//
+	// ⚠️ 2026-10-21（二轮审计 P1）：拒发奖励的是 **S 段**（replay_skills），
+	// 而 S 段**永不**被熔断降级。此前这里报的是**引擎侧**档位（可降级），
+	// 于是熔断一触发，界面就宣称「本该拒发的奖励正在放行」—— **那是错的**。
 	Mode string `json:"mode"`
+
+	// EngineMode 是**引擎侧**实际生效的档（**可被熔断降级**）。
+	EngineMode string `json:"engine_mode"`
+	// SkillsMode 是 **S 段**实际生效的档（**永不**被熔断降级）。
+	SkillsMode string `json:"skills_mode"`
+	// Enforcing = S 段此刻**是否会拒发奖励**（运营最需要的那个布尔值）。
+	Enforcing bool `json:"enforcing"`
 	// ConfiguredMode 是配置值，用于区分「本来配的就是 shadow」与「被熔断了」。
 	ConfiguredMode string `json:"configured_mode"`
-	// Demoted 为真表示 enforce 已被熔断降级 —— 此时**奖励在放行**。
+	// Demoted 为真表示**引擎侧** enforce 已被熔断降级 —— 此时**引擎侧**的奖励在放行。
+	// ⚠️ 它**不代表**整个防护失效：S 段照常拒发。
 	Demoted bool `json:"demoted"`
 	// DemotedReason 为空表示未降级。
 	DemotedReason string `json:"demoted_reason"`
@@ -828,21 +843,29 @@ func (s *Service) AdminRecomputeSummary(ctx context.Context, since time.Time, le
 		Levels:              []RecomputeLevelStat{},
 		ConfiguredMode:      RecomputeOff,
 		Mode:                RecomputeOff,
+		EngineMode:          RecomputeOff,
+		SkillsMode:          RecomputeOff,
 		// 引擎侧累计计数。放在最前面填：它是**唯一一个**
 		// 「校验到底有没有在跑」的读数，其余字段都来自台账，
 		// 而台账在「从不不符」时是空的。
 		Engine: s.engineTotals(),
 	}
-	if s.gate != nil {
-		sum.ConfiguredMode = s.gate.Mode()
+	if g := s.gate.Load(); g != nil {
+		sum.ConfiguredMode = g.Mode()
 		// 这里读的是**引擎**侧状态：S 段永不降级（见 RecomputeScope），
 		// 所以「被降级了」这件事本身就直接说明是引擎在放行。
-		demoted, reason, _ := s.gate.Demoted(ScopeEngine)
+		demoted, reason, _ := g.Demoted(ScopeEngine)
 		sum.Demoted = demoted
 		sum.DemotedReason = reason
-		// 实际生效档位 = 配置档位，除非被熔断降到更松的那档。
-		eff, _ := s.recomputeVerdict(ctx, ScopeEngine)
-		sum.Mode = eff
+		// 引擎侧实际生效档位 = 配置档位，除非被熔断降到更松的那档。
+		// 用 EffectiveMode 而不是 recomputeVerdict：状态端点是**读**，
+		// 不该顺手触发一次熔断判定（Decide 有副作用）。
+		sum.EngineMode = g.EffectiveMode(ScopeEngine)
+		// S 段实际生效档位 —— **永不**被熔断降级。
+		sum.SkillsMode = g.EffectiveMode(ScopeSkills)
+		// 权威档位 = S 段：**拒发奖励的是它**。
+		sum.Mode = sum.SkillsMode
+		sum.Enforcing = sum.SkillsMode == RecomputeEnforce
 	}
 
 	var rejected int

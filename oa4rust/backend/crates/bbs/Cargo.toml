@@ -22,3 +22,6 @@ tower = "0.5"
 
 [dev-dependencies]
 tower.workspace = true
+
+[lints]
+workspace = true

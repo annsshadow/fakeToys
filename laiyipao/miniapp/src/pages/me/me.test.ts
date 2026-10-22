@@ -41,6 +41,11 @@ vi.mock('@/api/client', () => ({
   saveDefense: vi.fn(),
   challengeDefense: vi.fn(),
   fetchLevel: vi.fn(),
+  // 2026-10-21（P4-7 二轮审计 P2-9）：存防线前**必须**先把构筑加载出来 ——
+  // 否则会存一份 `equipment: [] / mastery_nodes: []` 的空快照，
+  // 正是 P4-7 要消灭的缺陷。所以这两条现在被页面真正依赖。
+  fetchMyEquipment: vi.fn(),
+  fetchMastery: vi.fn(),
 }))
 
 vi.mock('@/game/defense', async (importOriginal) => {
@@ -102,6 +107,29 @@ beforeEach(() => {
   mockApi.fetchWallet.mockResolvedValue({ coin: 1, gem: 2, energy: 3, keys: 4, tokens: {} })
   mockApi.fetchMe.mockResolvedValue({ user_id: 7, build: null, build_rating: null, power: 9 } as any)
   mockApi.fetchLoadout.mockResolvedValue({ skill_ids: [1] })
+  // 构筑（装备 + 专精）：默认给一份**非空**的构筑 ——
+  // 页面在构筑为空时会中止保存（那是对的）。
+  mockApi.fetchMyEquipment.mockResolvedValue({
+    items: [
+      {
+        id: 1,
+        code: 'w_p1',
+        name: '制式炮管',
+        slot: 'weapon',
+        tier: 1,
+        element: 'kinetic',
+        descr: '',
+        base_armor: 0,
+        base_bonus_pct: 50,
+        unlock_level: 1,
+        owned: true,
+        equipped: true,
+        level: 1,
+        star: 1,
+      },
+    ],
+  })
+  mockApi.fetchMastery.mockResolvedValue({ points: 3, nodes: [11], families: [] })
   mockApi.fetchDefenses.mockResolvedValue({
     mine: defenseView({ shielded_until: '2099-01-02T00:00:00Z', my_attempts_today: 2 } as any),
     candidates: [defenseView()],

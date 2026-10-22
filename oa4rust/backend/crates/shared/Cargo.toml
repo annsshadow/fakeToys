@@ -37,3 +37,6 @@ redis.workspace = true
 tokio-cron-scheduler = "0.10"
 
 [dev-dependencies]
+
+[lints]
+workspace = true

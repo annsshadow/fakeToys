@@ -2,8 +2,11 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
+
+	"github.com/jackc/pgx/v5"
 )
 
 // AdminUserDetailResp 是后台「玩家详情」抽屉的响应（2026-10-21 P5-7）。
@@ -86,6 +89,16 @@ func (s *Service) AdminUserDetail(ctx context.Context, userID int64) (AdminUserD
 			&u.Power, &u.Coin, &u.Gem, &u.CreatedAt, &u.LastLoginAt,
 			&u.VerifyChecked, &u.VerifyMismatched)
 	if err != nil {
+		// ⚠️ 2026-10-21（二轮审计）：「不存在」与「查不了」必须分开。
+		//
+		// 此前一律包成普通错误 → `failErr` 不匹配任何哨兵 → **500**，
+		// 于是「查一个不存在的用户」和「数据库挂了」返回同一种响应。
+		//
+		// 对照：同轮的 `AdminBattleDetail` 做了这个区分（运营端本来就能
+		// 列全部战报，没有预言机要防），这里是对称的。
+		if errors.Is(err, pgx.ErrNoRows) {
+			return AdminUserDetailResp{}, fmt.Errorf("%w: 用户 %d 不存在", ErrNotFound, userID)
+		}
 		return AdminUserDetailResp{}, fmt.Errorf("load user detail: %w", err)
 	}
 	out.User = u

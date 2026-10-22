@@ -176,8 +176,21 @@ onMounted(load)
  *
  * `onActivated` 是 keep-alive 视图重新可见时的钩子。
  */
+/**
+   * `onActivated` 在**首次挂载**时也会触发（vue 给 keep-alive 的子组件
+   * 打标记并把钩子排进 post-render 队列），而 `onMounted` 已经加载过一次 ——
+   * 两者都留着 = 每进一次页面发**两份**请求，还留下一个
+   * 「后到的先渲染」的乱序窗口。
+   *
+   * 所以：首次的 `onActivated` 跳过，之后的才刷新。
+   */
+  let activatedOnce = false
 onActivated(() => {
-  load()
+    if (!activatedOnce) {
+    activatedOnce = true
+    return
+  }
+load()
 })
 
 /**
@@ -229,7 +242,7 @@ const asRow = (r: unknown) => r as AdminBattleView
           placeholder="关卡 ID"
           style="width: 120px"
         />
-        <el-button @click="load">筛选</el-button>
+        <el-button @click="((page = 1), load())">筛选</el-button>
         <el-checkbox v-model="onlyMismatched" style="margin-left: 12px">
           只看验真不匹配
         </el-checkbox>

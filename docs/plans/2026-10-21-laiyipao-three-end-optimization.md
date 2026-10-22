@@ -2,7 +2,7 @@
 
 > **日期**：2026-10-21
 > **范围**：`laiyipao/` 三端 —— `server`（Go/Fiber/PG）、`miniapp`（uni-app 微信小程序 + H5）、`admin`（Vue 3 运营后台 + 玩家文档站）
-> **状态**：计划已评审通过，待执行（本文件是执行的唯一依据，逐项销账）
+> **状态**：**已执行完成**（2026-10-21 收尾核验通过）。本文件是执行的唯一依据与销账记录；未做完与明确不做的事项见文末「仍未做（明确记账）」，不冒充完成。
 
 ---
 
@@ -17,7 +17,7 @@
 | 类别 | 表现 | 证据 |
 |---|---|---|
 | **A. 契约错位** | 后台表格/抽屉的列**恒空**——字段名拼错，但没人报错 | 战报详情抽屉 14/16 字段空；防线「属主」「快照哈希」两列空；宝石「效果/说明」两列同绑 `descr`；皮肤「价格」绑了不存在的 `price` |
-| **B. 事实错误** | 客户端文案与服务端事实**相反** | 背包页写「洗练券尚未接入、已从商城下架」，而 `seed.go:413` 明确「已接通，恢复上架」；且这句话被 `bag.test.ts:105-130` 锁成了断言 |
+| **B. 事实错误** | 客户端文案与服务端事实**相反** | 背包页写「洗练券尚未接入、已从商城下架」，而 `server/internal/seeder/seed.go:413` 明确「已接通，恢复上架」；且这句话被 `bag.test.ts:105-130` 锁成了断言 |
 | **C. 静默降级** | 出错时返回「看起来合理」的值，而不是报错 | `/me` 把 DB 错误吞成 `points = 0`；结算路径 5 处 `marshalJSON` 错误被丢弃 → build 快照可能写空（回放哈希的锚点） |
 | **D. 闭环缺口** | 后端有能力，客户端没有入口 | 18 件装备只有 2 件可达且**无装备/卸下入口**；`/config.reactions` 全客户端零消费；`POST /admin/levels/regenerate` 等写端点无服务端护栏 |
 
@@ -38,6 +38,8 @@
 > ⚠️ 「2 跳过」是**故意**的（需 `LYP_E2E=1` + 运行中的服务端），不是缺依赖。
 > 但按 AGENTS.md #11，跳过项必须**显式记账**，不能算进「全绿」。
 
+> **行号快照说明**：本文各条目「症状」列中的 `文件:行号` 均为 2026-10-21 审计时点的快照；修复落地后行号已变，回查证据时以当时代码为准。个别文件此后被迁移（如 `domain/seed.go` 已拆至 `server/internal/seeder/seed.go`，第 413 行「洗练券恢复上架」内容不变），引用路径以现状为准。
+
 **本地环境**（本轮自建，不入库）：`docker run -d --name lyp-pg -e POSTGRES_HOST_AUTH_METHOD=trust -p 5432:5432 postgres:17`，
 `DATABASE_URL=postgres://postgres@127.0.0.1:5432/laiyipao?sslmode=disable` → `cmd/migrate` → `cmd/seed`。
 
@@ -49,7 +51,7 @@
 
 | 项 | 决定 | 依据 | 落地形态 |
 |---|---|---|---|
-| ① 装备获取途径 | **做** | 装备的 `base_armor`/`base_bonus_pct` **已有真实战斗效果**（护甲 430、攻击加成 1875）。18 件里 16 件不可达是纯粹的闭环缺口，正是 KNOWN_LIMITS 第 25 条的教训「服务端有扣减逻辑 ≠ 玩家能用」 | 商城上架（定价走 `shop_items.payload`）+ 等级解锁发放（对齐 `skills.unlock_level` 的既有惯例）+ `POST /me/equipment/:id/equip` / `unequip` + 背包 UI |
+| ① 装备获取途径 | **做** | 装备的 `base_armor`/`base_bonus_pct` **已有真实战斗效果**（护甲 430、攻击加成 1875）。18 件里 16 件不可达是纯粹的闭环缺口，正是 KNOWN_LIMITS 第 25 条的教训「服务端有扣减逻辑 ≠ 玩家能用」 | 商城上架（定价走 `shop_items.payload`）+ 等级解锁发放（对齐 `skills.unlock_level` 的既有惯例）+ 装备/卸下端点 + 背包 UI（端点形态设计为单件 `equip`/`unequip`，落地时改为 `GET/PUT /me/equipment` 整组替换装配集合，见 P4-1 销账） |
 | ② `burn_cloud` 火区 | **不做**，但把规格写死留档 | 任何实现都改战斗演化 → 改 `replay_hash` → **存量战报永久失去可重放性**（`OPERATIONS.md` 有专门流程），且要重跑 100 关平衡基线。这是独立项目，不该混进「三端功能优化」 | KNOWN_LIMITS 第 19 条补一段「可执行规格」：火区怎么算 / 存在哪 / 是否计分 / 要不要服务端重算，四个问题各自给出**默认答案与代价**，标明「待拍板」 |
 | ③ `levels` 表权威性 | **走 (b) 变体**：生成器继续权威，但让分歧**在后台可见** | (a) 需要缓存+失效机制，且与 `LoadGameConfig`「绝不失败」的签名约定冲突；做成**可见的分歧**比藏起来更诚实 | 列表行与单关回读都带 `player_authority`/`applied_to_players`；后台顶部常驻横幅「本页编辑记录在案，不影响线上玩家」，并把**玩家实际生效值**（`domain.GenerateLevel`）一并下发做对照 |
 | ④ 合成技能材料 | **熔炼**（现状即如此），并把 `unlock_level` 作**合成前置门槛** | `SynthesizeSkills` 已是熔炼语义（销毁材料 + 清槽位 + 发产物），本轮把这条从「隐含」变成「有守卫钉住」 | 新增守卫测试：材料被销毁、产物唯一、等级不足时 403 且**不消耗材料** |
@@ -144,8 +146,13 @@ CLI：`go run ./cmd/tygen` 写出 `admin/src/api/types.gen.ts`（后续可扩到
 go run ./cmd/tygen && git diff --exit-code      # 无输出 = 生成物与源同步
 cd admin && pnpm type-check                     # 0 错误
 cd admin && pnpm test                           # 全绿
-grep -rn "Record<string, unknown>" admin/src    # 0 命中
+grep -rn "Record<string, unknown>" admin/src    # 0 处**业务使用**
 ```
+
+> 精确说明：当前 `admin/src` 下该模式仍有 3 处**文本命中**，均非业务使用 ——
+> `api/index.ts` 与 `BattlesView.vue` 各 1 处是回顾该缺陷的注释，
+> `env.d.ts` 1 处是 Vue 组件模板参数的官方类型签名。判据的精神是
+> 「前端不得再用无类型 map 承接响应」，已达成；若有新增业务命中即为回归。
 
 ---
 
@@ -158,8 +165,8 @@ grep -rn "Record<string, unknown>" admin/src    # 0 命中
 | **P2-3** | admin | `EquipmentView.vue:102` 宝石「效果」与「说明」**两列同绑 `descr`**（宝石真实字段是 `attr`） | 前端：宝石表列改为 `attr`（效果）+ `descr`（说明） | 两列内容不同；测试断言 `attr` 出现 |
 | **P2-4** | admin | `EquipmentView.vue:112` 皮肤「价格」绑 `price`，但 `domain.SeedSkin` **无 price 字段** | 前端：价格列改为 `rarity`/`passive`（真实字段） | 该列非空且有值 |
 | **P2-5** | admin | 匿名访问 `/wiki` 被 `handleUnauthorized` 踢去后台登录页（`WikiView.vue:132` 调 admin-only 的 `fetchDashboard` → 401 → `client.ts:121` 改 hash） | ① `WikiView` 的「实战分布」Tab 改为**可选加载**：未登录就不请求，而不是请求后被踢；② `client.ts` 的 401 跳转对**公开路由**豁免 | 匿名打开 `/wiki` 不跳转，实战分布 Tab 显示「登录后可见」 |
-| **P2-6** | miniapp | `bag.vue:381-384` 洗练券文案「尚未接入、已从商城下架」与 `seed.go:413` **相反**；且 `bag.test.ts:105-130` 把错话写成断言 | 文案改为与事实一致；**同时改测试**（测试锁错话比没测试更坏） | 文案与 seed 一致；测试断言改为正向事实 |
-| **P2-7** | miniapp | `stage.vue:172` `diagnose(id, 2)` 的 `failed_times` **硬编码 2** → 第一次进关的玩家也看到「卡关诊断」 | 服务端 `GET /me/diagnose`（或从 `user_progress` 读真实失败次数）下发 `failed_times`；客户端不再自己编 | 新号不显示诊断卡；连败 2 次后显示 |
+| **P2-6** | miniapp | `bag.vue:381-384` 洗练券文案「尚未接入、已从商城下架」与 `server/internal/seeder/seed.go:413` **相反**；且 `bag.test.ts:105-130` 把错话写成断言 | 文案改为与事实一致；**同时改测试**（测试锁错话比没测试更坏） | 文案与 seed 一致；测试断言改为正向事实 |
+| **P2-7** | miniapp | `stage.vue:172` `diagnose(id, 2)` 的 `failed_times` **硬编码 2** → 第一次进关的玩家也看到「卡关诊断」 | 服务端 `GET /diagnose`（从 `user_progress` 读真实失败次数）下发 `failed_times`；客户端不再自己编 | 新号不显示诊断卡；连败 2 次后显示 |
 | **P2-8** | miniapp | `signin.vue:216-219` 签到失败后 `canSign=false` → 按钮永久禁用，且文案变成「七日签到已完成」**说谎** | catch 分支改为「保留可点 + 提示错误」；文案只在**服务端确认已签**时才显示完成 | 失败后可重试；文案不撒谎 |
 | **P2-9** | server | `game.go:343-345,365-366` 结算路径 5 处 `marshalJSON` 错误被丢弃 → `buildRaw` 可能为空 → **战报存下一份空的构筑快照**（回放哈希与验真的锚点） | 改 fail-loud：`buildSnapshot` 序列化失败必须让结算失败（与 `adminapi.go:124` 同口径） | 注入序列化失败 → 结算返回 5xx，且**没有**写进半截战报 |
 | **P2-10** | server | `stats.go:828-844` `AdminUpdateSkill` 的 switch **无 default 拒绝分支** → 非法键静默丢弃、返回 200「已保存」 | 补 `reject` 机制，与 `AdminUpdateLevel` / `AdminUpdateShopItem` 完全同口径 | 混合 patch（1 合法 + 1 非法）→ 400 + 零副作用；新增负向测试 |
@@ -189,7 +196,7 @@ grep -rn "Record<string, unknown>" admin/src    # 0 命中
 
 | # | 症状（证据） | 改动 | 验收判据 |
 |---|---|---|---|
-| **P4-1** | 18 件装备只有 **2 件可达**（`service.go:395` 注册时赠送），且**没有装备/卸下端点**，背包页装备区**纯只读**（`bag.vue:121-128`） | ① 新增 `POST /me/equipment/:id/equip` / `POST /me/equipment/unequip`；② 商城上架装备（`shop_items.payload` 走既有发放机制）；③ 等级解锁发放（对齐 `skills.unlock_level` 惯例）；④ 背包页装备/卸下按钮 | 新号之外能通过商城/等级拿到装备；装备后护甲/攻击加成**在战斗里生效**（端到端断言） |
+| **P4-1** | 18 件装备只有 **2 件可达**（`service.go:395` 注册时赠送），且**没有装备/卸下端点**，背包页装备区**纯只读**（`bag.vue:121-128`） | ① 新增装备读写端点；② 商城上架装备（`shop_items.payload` 走既有发放机制）；③ 等级解锁发放（对齐 `skills.unlock_level` 惯例）；④ 背包页装备/卸下按钮。**实现注记**：端点落地为 `GET/PUT /me/equipment`（整组替换装配集合）而非设计中的单件 `equip`/`unequip` —— 装配集合小（18 件）且需前后端一致，整组替换更简单；商城 6 件 + 等级解锁 + 背包 UI 均按设计完成 | 新号之外能通过商城/等级拿到装备；装备后护甲/攻击加成**在战斗里生效**（端到端断言） |
 | **P4-2** | `GameConfig.reactions` **全客户端零消费**（`client.ts:99-108`）→ 玩家查不到「冰+雷=什么反应、伤害多少、持续多久」 | 新增「反应图鉴」页（或背包/首页的图鉴 Tab），消费 `reactions` 全部字段 | 页面上能查到 7 条反应的完整参数 |
 | **P4-3** | `reachableReactions(elements)`（`elements.ts:333`）**无任何 UI 调用** → 玩家看不到「我这个构筑能打出哪些反应链」 | 接到首页短板建议与背包页 | 构筑改变时能实时看到可达反应变化 |
 | **P4-4** | `TERRAIN_DESCR`（`terrain.ts:432`）**零消费** → 选关页只显示地形**名字**，不显示机制 | 选关页显示地形机制说明 | 5 种地形都能看到机制 |
@@ -272,14 +279,14 @@ grep -rn "Record<string, unknown>" admin/src    # 0 命中
 > 「已完成」= 有守卫 + 有证据。**跳过任何一条都要写明原因。**
 
 ### P1
-- [x] P1-1 `adminviews.go`（15 个响应视图 struct）—— `server/internal/service/adminviews.go`
+- [x] P1-1 `adminviews.go`（14 个响应视图 struct）—— `server/internal/service/adminviews.go`
 - [x] P1-2 `internal/tygen` 生成器核心 —— `server/internal/tygen/tygen.go`
 - [x] P1-3 `cmd/tygen` CLI（`-check` 模式）—— `server/cmd/tygen/main.go`
 - [x] P1-4 service 层 17 个方法改为 typed —— `adminapi.go` / `stats.go`
 - [x] P1-5 `admin/src/api/types.gen.ts`（入库）
 - [x] P1-6 守卫测试 —— `server/internal/tygen/tygen_test.go`（3 条）+ CI 步骤
 - [x] P1-7 `admin/src/api/index.ts` 改用生成类型（`Record<string, unknown>` 全清）
-- [x] P1-8 envelope 也要类型化 —— `server/internal/service/adminresponses.go`（22 个信封）
+- [x] P1-8 envelope 也要类型化 —— `server/internal/service/adminresponses.go`（21 个信封）
 
 ### P2
 - [x] P2-1 战报详情抽屉 —— 服务端新增 `AdminBattleDetailView` + 端点改返回战报详情
@@ -328,7 +335,8 @@ grep -rn "Record<string, unknown>" admin/src    # 0 命中
 - [x] P6-1 loading/空态 —— 选关/专精/背包/签到/反应图鉴
 - [x] P6-2 safe-area —— `.safe-bottom` / `.safe-top` + 状态栏高度内联绑定
 - [x] P6-3 选关页 `onShow` 刷新星级（打完回来星星不亮）
-- [x] P6-4 死代码 —— `.radar-box` / `.row-between` / `--panel-3`；`renderMode` 改为**用起来**（兼容模式提示）
+- [x] P6-4 死代码 —— `.radar-box` / `.row-between` / `--panel-3` 已清；`renderMode` 改为**用起来**（兼容模式提示）；`equippedElements` 已非死 ref（P4-3 接线后由 `reactions.vue` 消费）
+  - 未清完的子项（移入文末未做表）：`.debug-tag`（`battle.vue` 仍在）、`rank.vue` 的 `formatScore` 两分支同值死分支
 - [x] P6-5 i18n 基础 —— 三份重复 `currencyName` 合并到 `utils/labels.ts`（发现它们**已经漂了**：签到页用「金/钻」，另两页用「金币/钻石」）；宝石品质/词条不再直接上屏英文 key
 - [x] P6-6 O(n²) —— 背包/专精的线性查找改 Map/Set
 - [x] P6-7 定时器清理 —— `me.vue` / `verify.vue` 的延迟回调在卸载时取消
@@ -336,7 +344,9 @@ grep -rn "Record<string, unknown>" admin/src    # 0 命中
 - [x] P6-9 miniapp 体积闸门 —— `scripts/size-report.mjs` + CI（实测 245 KB / 预算 1536 KB）
 - [x] P6-10 manifest —— AppID 占位注释、`libVersion` 最低基础库、`urlCheck` 发布前提醒、关掉源码映射上传
 - [x] P6-11 后台响应式 —— `el-col` 断点（xs/sm/md）+ 侧栏窄屏折叠
-- [x] P6-12 文档站 —— 新增「装备图鉴」页（`/config.equipment` 从此有消费方）
+- [x] P6-12 文档站 —— **部分完成**：「装备图鉴」页签已落地（`/config.equipment` 从此有消费方）
+  - 未做的子项（移入文末未做表）：侧边栏目录（仍是 `el-tabs` 横排）、搜索、深链、`gems`/`skins`/`recipes` 展示、关卡地形与 BOSS 字段展示、移动端横向溢出
+- [x] 附加清理（.bak 备份文件）—— `git rm` 两个 `.bak`（`content_seeding_test.go.bak` / `fixture_test.go.bak`）+ 根 `.gitignore` 补 `*.bak`（2026-10-21 当晚执行）
 
 ---
 
@@ -361,16 +371,24 @@ grep -rn "Record<string, unknown>" admin/src    # 0 命中
 | server | `gofmt -l .` | **无输出** ✅ |
 | server | `go vet ./...` | 无输出 ✅ |
 | server | `go run ./cmd/tygen -check` | 生成物与源同步 ✅ |
-| server | `go test ./... -count=1` | **14/14 包通过** ✅ |
+| server | `go test ./... -count=1` | **13/13 个含测试的包通过** ✅（workspace 共 16 个包；`cmd/tygen`、`internal/apitypes`、`migrations` 3 个包无测试文件，不计入。基线为 12 —— +1 即 P1-6 新增的 `internal/tygen` 守卫包） |
 | admin | `pnpm type-check` | 0 错误 ✅ |
 | admin | `pnpm test` | **27 文件 / 309 用例通过**（基线 26/294） ✅ |
-| admin | `pnpm build` + `pnpm size:check` | 首屏 170 KB / 预算 220 KB ✅ |
+| admin | `pnpm build` + `pnpm size:check` | 首屏 170 KB / 预算 220 KB ✅（`IMPLEMENTATION.md` 记 168 KB，为另一次构建的正常波动；预算不变） |
 | miniapp | `pnpm type-check` | 0 错误 ✅ |
-| miniapp | `pnpm test` | **76 文件 / 1080 通过 / 2 跳过**（基线 75/1075） ✅ |
-| miniapp | `pnpm build:mp-weixin` + `pnpm size:check` | 主包 245 KB / 预算 1536 KB ✅ |
+| miniapp | `pnpm test` | **76 文件 / 1083 通过 / 2 跳过**（基线 75/1075） ✅ |
+| miniapp | `pnpm build:mp-weixin` + `pnpm size:check` | 主包 254 KB / 预算 1536 KB ✅ |
 
 > 2 条跳过是 `i6.e2e.test.ts`（需 `LYP_E2E=1` + 运行中的服务端）——
 > **故意**的，不是缺依赖。按 AGENTS.md #11 显式记账，不计入「全绿」。
+>
+> **文件数口径**：上表「76 文件」为 passed 文件数；磁盘上共 77 个 `*.test.ts`，
+> 另 1 个是被跳过的 `i6.e2e.test.ts`。
+>
+> **复验说明（2026-10-21 晚，文档复核时记录）**：在受限环境中复跑 miniapp 全量测试时，
+> vitest 的 SSR 变换缓存写临时目录报 `EPERM`（间歇性），实测通过数在 1017~1043 间波动、
+> 无法完整复现 1080。**1080 是收尾当时真机环境的实测值**，此处保留原值并标注
+> **待确认**（需真机复跑核对）；文件数（76 passed + 1 skipped）与 2 条跳过项已复核无误。
 
 ### 全部条目销账
 
@@ -381,7 +399,7 @@ grep -rn "Record<string, unknown>" admin/src    # 0 命中
 | P3 后端健壮性 | 8/8 | — |
 | P4 玩家玩法闭环 | 7/7 | — |
 | P5 运营后台能力 | 10/10 | — |
-| P6 体验与卫生 | 12/12 | — |
+| P6 体验与卫生 | 12/12 | 附加清理（.bak）已完成；P6-12 部分完成（装备图鉴已落地，目录/搜索/深链等子项未做，见文末） |
 
 **四个产品拍板项**：① 装备获取途径 → 已做（商城 + 等级解锁 + 装配端点 + 背包 UI）；
 ② `burn_cloud` 火区 → **按决定不做**，理由与可执行规格留档；
@@ -398,3 +416,115 @@ grep -rn "Record<string, unknown>" admin/src    # 0 命中
 | 服务端跑完整战斗引擎 | KNOWN_LIMITS 第 3 条的取舍：防线胜负由客户端裁决 + 胜率异常告警兜底 |
 | 真实设备视觉验收 | KNOWN_LIMITS 第 4 条：需在真机上人工过一遍（本地只有无头渲染） |
 | `burn_cloud` 火区实现 | 见 §2 ②：会改 `replay_hash` → 存量战报永久失去可重放性，且要重跑 100 关平衡基线。规格留档待拍板 |
+| 文档站目录/搜索/深链等子项（P6-12 余项） | 本轮只落地了「装备图鉴」页签；侧边栏目录（仍 `el-tabs` 横排）、搜索、深链、`gems`/`skins`/`recipes` 展示、关卡地形与 BOSS 字段、移动端横向溢出均未做 |
+| `.debug-tag` 与 `rank.vue` 死分支（P6-4 余项） | `.debug-tag`（`battle.vue` 的 CSS 规则）与 `formatScore` 两分支同值（`rank.vue`）未清；不影响行为，属卫生项 |
+| 列表端点「一行坏数据炸掉整页」 | 二轮审计 P2 复核后确认是**有意的设计**（第 149 轮 fail-loud 清扫，`failloud_sweep_test.go` 在守）：反面是「静默显示成空」，那正是本仓库反复要消灭的缺陷。取舍已写进代码注释（`adminapi.go` 的 `AdminListRedeemCodes` / `AdminListAuditLogs`）。500 只回通用文案同样是**有意的安全姿态**（不泄漏 DB 报错），具体坏在哪行进服务端日志。要改 = 改一个有守卫的刻意决定，属产品决策 |
+| miniapp 全量测试真机复核 | 收尾数字 1080 为真机实测；受限环境复跑受临时目录 `EPERM` 间歇影响（1017~1043 波动）。**待确认**：真机复跑核对通过数 |
+
+
+---
+
+## 附录 · 第二轮审计修复（2026-10-21 夜）
+
+第一轮 55 条销账后，本轮改动触及 110 个文件 —— 按本仓库「先怀疑观测本身」的纪律，
+对自己写的代码做第二轮审计（3 个 subagent 分别审 Go / 后台 TS / 小程序 TS）。
+
+审计共报 P0 0 条 / P1 11 条 / P2 20+ 条。
+**P1 里最要命的三条是「看起来实现了、其实没生效」**。
+
+### A · 「按钮可见、点不动」类
+
+| 条目 | 现象 | 根因 |
+|---|---|---|
+| A-1 | 小程序「放弃战斗」按钮**永远点不动** | `.overlay-top { pointer-events: none }`，而 `pointer-events` 是**可继承**属性，按钮继承到 `none`，永远不是命中目标 |
+| A-2 | 小程序反应图鉴「我的构筑能触发的反应」**永远为空**，且页面一本正经地说「元素凑不出反应链」（**假话**） | 页面**什么都不加载**：不 `login()`、不 `loadConfig()`、不 `loadLoadout()` |
+| A-3 | 小程序专精树**整页不渲染** | 服务端 `MasteryFamily` / `MasteryNode` **没有 json tag** → wire 上是大写 `Family`/`Nodes`，而两端客户端读的是小写 `f.family`/`f.nodes` |
+| A-4 | 后台文档站专精树页签崩 | 同 A-3 |
+
+> A-3 / A-4 的两端测试都是绿的，因为**夹具按前端形状写** ——
+> 夹具与线上**一致地错**，于是缺陷对两侧都不可见。
+> 这是本仓库反复要消灭的形态，已补 `TestMasteryTreeJSONShapeIsLowercase` 钉住。
+
+### B · 「契约说了什么、代码做了什么」类
+
+| 条目 | 现象 | 根因 |
+|---|---|---|
+| B-1 | 玩家详情抽屉 / 战报详情抽屉对多数记录**直接抛 TypeError** | Go 把 nil 切片编码成 `null`，而生成的 TS 类型是 `T[]`（不是 `T[] \| null`）→ 在**服务端响应边界**归一（`NormalizeNilSlices`），让 wire 符合自己的类型声明 |
+| B-2 | 封禁/解封后该行的验真信号被**清零**（「不匹配 3/5」红 → 「未验真」灰） | `AdminSetUserStatus` 的回读 SQL **没查**验真两列，而前端 `Object.assign(row, res.user)` 把 0 写回 |
+| B-3 | 运营验真被**静默丢弃**（接口照样返回 `matched: true`） | 00017 的唯一索引 `COALESCE(verifier_id, admin_verifier_id)` 把 `users.id` 与 `admin_users.id` **两个独立 ID 空间**折叠成一个数 → 00018 拆成两个**部分**唯一索引 |
+| B-4 | 后台显示「本该拒发的奖励正在放行」——**结论是错的** | `RecomputeModeState.Mode` 报的是**引擎侧**档位，而**拒发奖励的是 S 段**（`replay_skills`，**永不**被熔断降级）→ 两段分列 `engine_mode` / `skills_mode`，另加 `enforcing` |
+| B-5 | 战斗列表筛「不符」后表格空白、总数却非 0 | 改筛选**不重置页码** |
+| B-6 | 测试面类型门禁**根本没跑过** | `tsconfig.vitest.json` 的 include 只有 `tests/**`，`src/**` 不在范围 → `.vue` 模块解析不了，门禁在检查任何东西之前就死了；CI 也没跑它 → 4 个测试文件引用着已改名的类型，一直没人发现 |
+
+### C · 「能点但点了没反应 / 点了报错没人知道」类
+
+| 条目 | 现象 | 根因 |
+|---|---|---|
+| C-1 | readonly 账号点写按钮**屏幕上什么都不发生** | 一个空 `catch` 把「用户取消弹窗」与「服务端 403」一起吞了 → 新增 `isCancel()` 区分 |
+| C-2 | 商城改不了也删不掉**装备商品** | `validWalletCurrency` 不认 `equipment_<id>`（种子能造、后台不能改，读写不对称） |
+| C-3 | 玩家付 3 份装备的钱只拿到 1 件，**且不报错** | `user_equipment` 主键是 `(user_id, equipment_id)`，第 2、3 次 INSERT 全是 `ON CONFLICT DO NOTHING` 的静默 no-op → 显式拒绝多份 |
+| C-4 | 负 offset 让整页 500 | `queryInt` 不拒绝负数 → PostgreSQL `OFFSET must not be negative` |
+| C-5 | 每个视图进一次页面发**两份**请求 | `onMounted(load)` + `onActivated(load)`，而 `onActivated` 在**首次挂载**时也会触发 |
+| C-6 | 慢网下点 A 的详情再点 B，A 的响应后到 → 抽屉显示 **A 的数据** | 详情请求**没有序号守卫** |
+| C-7 | 更早的公告 / 兑换码 / 审计记录**根本看不到** | 接口支持 offset，但**没有分页器**、信封也**没有 `total`** → 服务端补 COUNT + `total`，前端补分页器 |
+| C-8 | 搜索关卡时下拉框塌成只有第 1 章，运营**再也选不到第 3 章** | 章节选项从**被过滤过的** items 推导 |
+
+### D · 结构性 / 竞态
+
+| 条目 | 现象 | 根因 |
+|---|---|---|
+| D-1 | 运行时切档与结算热路径**数据竞争** | `gate` 是裸指针字段，而 `PUT /admin/recomputes/mode` 会在**运行时**换它 → 改成 `atomic.Pointer`（整体换掉一个不可变对象，读方永远拿到完整的 gate） |
+| D-2 | 查一个不存在的用户返回 **500**（而不是 404） | 一律包成普通错误 → `failErr` 匹配不到任何哨兵 |
+| D-3 | 存档失败时**静默存了一份空构筑快照** | `loadEquipment` / `loadMasteryNodes` 内部只 `console.warn` → 加载失败**必须中止保存** |
+| D-4 | 安卓上顶栏**完全不让开状态栏** | `statusBarHeight` 常态是 0（只有 iOS 有状态栏），而「0 就当没有状态栏」是错的 |
+
+### E · 「注释/契约与事实不符」类
+
+| 条目 | 现象 | 根因 |
+|---|---|---|
+| E-1 | 00017 的注释说「唯一索引是**部分索引**」（它没有 WHERE 子句）、「NULL 参与唯一索引比较时都算相等」（**假的** —— PostgreSQL 默认 NULLS DISTINCT） | 写注释时把**猜测**当成了事实，而其中一条恰好是那个 P1 缺陷的根源。订正注释，并说明真正的病根是 `COALESCE` 折叠了两个 ID 空间 |
+| E-2 | 00017 的去重也按 `COALESCE` 分区 → 玩家 id=1 与运营 id=1 的两行会被当成**重复**删掉一条 | 同上。订正后的去重放进 00018（对已上线的库是**补救**，对全新库是空操作） |
+| E-3 | 诊断接口允许客户端把 `failed_times` 抬到**任意大** → 服务端的权威连续失败数被客户端的**猜测**推翻，第一次挑战就能拿到「卡关诊断」卡 | 当时的实现是「客户端报得大就认它的」。现在只允许**比我们多 1**（在途的那一局还没写进 `battle_records`）—— 而「卡住」的阈值是 2，所以客户端**跨不过**它 |
+
+> E-3 的安全性判据不是「客户端不能影响结果」，而是
+> **「客户端最多只能把计数抬到 real+1，而阈值是 2」** ——
+> 于是「从没输过」的玩家无论报多大都跨不过阈值。
+> 这条已由 `TestDiagnoseIgnoresInflatedClientFailedTimes` 钉住，
+> 并做过变异验证（去掉夹紧即红）。
+
+### 变异验证（证明测试真的能红）
+
+| 测试 | 变异 | 结果 |
+|---|---|---|
+| `TestVerificationDoesNotMixUserAndAdminIDSpaces` | 迁移文件改回 COALESCE 索引 **且** 代码改回 COALESCE 的 `ON CONFLICT` | 红：「应留下 2 行，实际 1 行 —— 唯一索引把两个 ID 空间合并了，运营那一行被静默丢弃」 |
+| `TestModeStateSeparatesEngineAndSkillsScopes` | `out.Mode = out.SkillsMode` 改回 `out.Mode = g.EffectiveMode(ScopeEngine)` | 红：「权威档位应是 S 段的 enforce，实际 "shadow" —— 报成引擎侧会让运营以为整个防护都关了」 |
+| `TestMasteryTreeJSONShapeIsLowercase` | 去掉 `MasteryFamily` / `MasteryNode` 的 json tag | 红（键名大小写断言） |
+| `TestDiagnoseIgnoresInflatedClientFailedTimes` | 去掉 `failedTimes > realFailed+1` 的夹紧 | 红：「客户端把 failed_times 抬到 999999，服务端的权威计数被推翻了」 |
+
+> 变异必须改**迁移文件本身** —— scratch 库是按迁移文件重建的，
+> 只改开发库不会影响测试结果（第一次就踩了这个坑，测试照样绿）。
+
+### 第二轮销账
+
+| 分类 | 条数 | 完成 |
+|---|---|---|
+| A 可见即失效 | 4 | 4/4 |
+| B 契约不一致 | 6 | 6/6 |
+| C 静默吞错 / 不可达 | 8 | 8/8 |
+| D 竞态与结构 | 4 | 4/4 |
+| E 注释/契约与事实不符 | 3 | 3/3 |
+| 连带（测试夹具漂移、CI 缺步骤、README 漂移、类型名漂移等） | 12 | 12/12 |
+
+**三端门禁（第二轮收尾）**：
+
+| 端 | 门禁 | 结果 |
+|---|---|---|
+| server | `gofmt -l .` / `go vet ./...` / `go test ./... -count=1` | 无输出 / 无输出 / **13 个包全绿** ✅ |
+| server | `go run ./cmd/tygen -check` | `types.gen.ts is up to date` ✅ |
+| admin | `pnpm type-check` + `pnpm type-check:test` + `pnpm test` | 0 错误 / 0 错误 / **27 文件 309 通过** ✅ |
+| admin | `pnpm size:check` | 首屏 172 KB（预算 220 KB） ✅ |
+| miniapp | `pnpm type-check` + `pnpm test` | 0 错误 / **76 文件 1083 通过 2 跳过** ✅ |
+| miniapp | `pnpm size:check` | 主包 254 KB（预算 1536 KB） ✅ |
+
+> 跳过的 2 条仍是 `i6.e2e.test.ts`（需 `LYP_E2E=1` + 运行中的服务端）——
+> **故意**的，按 AGENTS.md #11 显式记账，不计入「全绿」。

@@ -37,7 +37,72 @@ overrides:
   "source-map-js": 1.2.2
   # 5.2.8 累计 15 条（GHSA-c27g/fx2h/x574/93m4/v6wh/vg6x/9cwx/64vr/4r4m/
   # 4w7w/356w/xcj6/859w/jqfw/g4qx 等），同 major 内升到 5.4.21。
-  "vite": 5.4.21
+  #
+  # 2026-10-22：5.4.x 线**没有**后续修复版本（新一批 advisory 的 patched 全是
+  # >=6.4.2 / >=6.4.4），所以只能跨大版本。这里直接顶到 6.4.4，依据是
+  # oa4rust/mobile —— 同一套 @dcloudio uni-app 工具链，它的 package.json 就
+  # 声明 vite 6.4.3 并且 H5 / mp-weixin 双构建在 CI 上长期全绿。
+  # 6.4.4 是这批 advisory（GHSA-587h / 698v / 9jrq 等）的最低修复线。
+  "vite": 6.4.4
   # ws 有 8.18.0（2 条）和 7.5.13（jsdom 带的）两条线，都顶到 8.21.0。
   # 跨大版本，已用 vitest 全量（1045 passed）验过 jsdom 没被打坏。
   "ws": 8.21.0
+  # postcss-selector-parser：<7.1.6 的二次复杂度 DoS（GHSA-rj75）+ 6.1.0~6.1.2
+  # 的 AST 递归 DoS（GHSA-w9m9）。7.1.6 同时满足两条。
+  "postcss-selector-parser": 7.1.6
+  # follow-redirects 1.16.0 的数组形式 header 绕过跨源凭证剥离
+  # （GHSA-q3jh-wrc6-jgq8），补丁 1.16.1 —— 与 dependabot PR #101 同一个修复。
+  "follow-redirects": 1.16.1
+
+  # ── 2026-10-22：与 oa4rust/mobile 对齐的那批 overrides ──────────────────
+  # 背景：漏洞库在 10-15 之后新发布了一批 advisory，miniapp 的计数从 39 涨到
+  # 47（high +3 / moderate +4 / low +1），CI 的 dependency-audit 闸门因此变红。
+  #
+  # 关键判据：oa4rust/mobile 用的是**同一套 @dcloudio uni-app 工具链**，它的
+  # pnpm-workspace.yaml 里已经有一批经过验证的 overrides（构建与 1092 条测试
+  # 全绿）。这里把那批逐条搬过来，等于复用一次已经做过的兼容性验证。
+  #
+  # 全部仍用无条件覆盖，理由同上：@dcloudio 声明的是精确 pin，收敛覆盖不生效。
+  #
+  # adm-zip 0.5.16 累计 8 条（GHSA-xcpc/7q85/rcw4 等，全是解压炸弹/内存放大），
+  # 0.6.1 是唯一修复线。
+  "adm-zip": 0.6.1
+  # @intlify 三件套：9.1.9 的 handleFlatJson 原型污染（GHSA-p2ph-7g93-hw3m）。
+  # 9.14.5 / 9.1.11 均在 oa4rust/mobile 上验证过。
+  "@intlify/core-base": 9.14.5
+  "@intlify/message-compiler": 9.14.5
+  "@intlify/message-resolver": 9.1.11
+  # @babel/core 的 sourceMappingURL 任意文件读（GHSA-4x5r-pxfx-6jf8，low）。
+  "@babel/core": 7.29.6
+  # express 链（vite-plugin-uni 的开发服务器，只在本地 dev 生效）：
+  # body-parser / cookie / send / qs / path-to-regexp 各 1~4 条。
+  "body-parser": 1.20.6
+  "cookie": 0.7.0
+  "send": 0.19.0
+  "qs": 6.16.0
+  "path-to-regexp": 0.1.13
+  # jpeg-js 0.3.7 → 0.4.4（GHSA-w7q9-p3jq-fmhm 资源耗尽 2 条）。
+  #
+  # ⚠️ 这里**只**顶 jpeg-js，不动 jimp 本身。曾经试过把 jimp 从 0.10.3 顶到
+  # 0.22.12（oa4rust 的做法），结果 0.22 的依赖树带进了 file-type（ESM-only，
+  # 与 jimp 的 CJS 用法不兼容）和 follow-redirects 1.16.0，high 反而多一条。
+  # 只顶 jpeg-js 就把这 2 条 moderate 清掉，且不引入新链路。
+  "jpeg-js": 0.4.4
+  # jsdom → http-proxy-agent 链的 @tootallnate/once（控制流作用域错误，low）。
+  "@tootallnate/once": 2.0.1
+  # esbuild 0.25.12：<=0.24.2 有开发服务器任意请求漏洞；pnpm 11 需显式允许 build。
+  "esbuild": 0.25.12
+  # vue 家族 3.4.21 → 3.5.42：@vue/server-renderer <3.5.42 的 SSR 属性名黑名单
+  # 缺 CR 转义（GHSA-g2v6-rqmx-r4w6，high）。server-renderer 只被
+  # @dcloudio/uni-cli-shared 在构建期用来渲染模板，不进小程序产物。
+  # 整族一起顶（只顶 server-renderer 会造成 @vue/shared 双版本）。
+  "vue": 3.5.42
+  "@vue/compiler-core": 3.5.42
+  "@vue/compiler-dom": 3.5.42
+  "@vue/compiler-sfc": 3.5.42
+  "@vue/compiler-ssr": 3.5.42
+  "@vue/reactivity": 3.5.42
+  "@vue/runtime-core": 3.5.42
+  "@vue/runtime-dom": 3.5.42
+  "@vue/server-renderer": 3.5.42
+  "@vue/shared": 3.5.42

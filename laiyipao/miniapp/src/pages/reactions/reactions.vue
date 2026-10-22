@@ -59,7 +59,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
+import { onLoad } from '@dcloudio/uni-app'
 import { useGameStore } from '@/store/game'
 import { reachableReactions, type ReactionKey } from '@/game/elements'
 
@@ -97,6 +98,34 @@ const myReactions = computed<ReactionKey[]>(() => {
 function reactionName(key: string): string {
   return allReactions.value.find((r) => r.key === key)?.name ?? key
 }
+
+/**
+ * 加载本页需要的数据。
+ *
+ * ⚠️ 2026-10-21（P1-2）：此前这个页面**什么都不加载** ——
+ * 不 `login()`、不 `loadConfig()`、不 `loadLoadout()`。
+ *
+ * 后果：「我的构筑能触发的反应」**永远是空的**，
+ * 而空的时候页面会**一本正经地说**「当前出战技能的元素凑不出任何反应链」
+ * —— 一句**假话**（玩家明明是火+冰构筑）。
+ *
+ * 而且测试是绿的：测试自己手工调了 `store.loadLoadout()`，
+ * 替页面做了页面该做的事。
+ */
+async function loadPage(): Promise<void> {
+  if (!store.loggedIn) await store.login()
+  await store.loadConfig()
+  await store.loadLoadout()
+}
+
+onLoad(() => {
+  void loadPage()
+})
+
+onMounted(() => {
+  // onLoad 在 H5 上可能早于组件挂载，这里补一次（loadPage 本身幂等）。
+  void loadPage()
+})
 </script>
 
 <style scoped>

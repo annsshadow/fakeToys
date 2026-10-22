@@ -23,3 +23,6 @@ md5.workspace = true
 urlencoding.workspace = true
 sqlparser.workspace = true
 tower.workspace = true
+
+[lints]
+workspace = true

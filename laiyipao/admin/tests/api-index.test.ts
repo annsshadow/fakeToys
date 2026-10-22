@@ -193,8 +193,18 @@ describe('api/index 战报与防线', () => {
 
   it('fetchDefenses：默认 limit=50，可显式覆盖', async () => {
     echoArgs()
-    await expect(fetchDefenses()).resolves.toEqual({ __args: ['/admin/defenses?limit=50'] })
-    await expect(fetchDefenses(100)).resolves.toEqual({ __args: ['/admin/defenses?limit=100'] })
+    // 2026-10-21（P2-6）：防线列表带 offset ——
+    // 此前只能看前 100 条，而 total 是全量 COUNT，
+    // 于是「第 N 条防线」不可达（漏掉的还是弱防线，按战力倒序）。
+    await expect(fetchDefenses()).resolves.toEqual({
+      __args: ['/admin/defenses?limit=50&offset=0'],
+    })
+    await expect(fetchDefenses(100)).resolves.toEqual({
+      __args: ['/admin/defenses?limit=100&offset=0'],
+    })
+    await expect(fetchDefenses(50, 100)).resolves.toEqual({
+      __args: ['/admin/defenses?limit=50&offset=100'],
+    })
   })
 })
 
@@ -202,14 +212,22 @@ describe('api/index 经济与运营内容', () => {
   it('fetchEconomy / updateShopItem', async () => {
     echoArgs()
     await expect(fetchEconomy()).resolves.toEqual({ __args: ['/admin/economy'] })
-    await expect(updateShopItem(4, { price: 120 })).resolves.toEqual({
-      __args: ['/admin/shop/4', { price: 120 }],
+    // ⚠️ price 是「货币 → 数量」的 map（服务端 JSONB），不是数字 ——
+    // 发数字过去服务端会整单拒绝。
+    await expect(updateShopItem(4, { price: { coin: 120 } })).resolves.toEqual({
+      __args: ['/admin/shop/4', { price: { coin: 120 } }],
     })
   })
 
   it('公告：列表 + 创建', async () => {
     echoArgs()
-    await expect(fetchAnnouncements()).resolves.toEqual({ __args: ['/admin/announcements'] })
+    // 2026-10-21（P2-6）：公告列表带 offset（此前更早的公告不可达）。
+    await expect(fetchAnnouncements()).resolves.toEqual({
+      __args: ['/admin/announcements?limit=50&offset=0'],
+    })
+    await expect(fetchAnnouncements(50, 50)).resolves.toEqual({
+      __args: ['/admin/announcements?limit=50&offset=50'],
+    })
     const payload = { title: 'T', body: 'B', published: true }
     await expect(createAnnouncement(payload)).resolves.toEqual({
       __args: ['/admin/announcements', payload],
@@ -218,7 +236,10 @@ describe('api/index 经济与运营内容', () => {
 
   it('兑换码：列表 + 创建（过期时间随 payload 透传）', async () => {
     echoArgs()
-    await expect(fetchRedeemCodes()).resolves.toEqual({ __args: ['/admin/redeem-codes'] })
+    // 2026-10-21（P2-6）：兑换码列表带 offset。
+    await expect(fetchRedeemCodes()).resolves.toEqual({
+      __args: ['/admin/redeem-codes?limit=50&offset=0'],
+    })
     const payload = { code: 'LYP-1', reward: { coin: 100 }, max_uses: 5, expires_at: '2026-12-31T00:00:00Z' }
     await expect(createRedeemCode(payload)).resolves.toEqual({
       __args: ['/admin/redeem-codes', payload],

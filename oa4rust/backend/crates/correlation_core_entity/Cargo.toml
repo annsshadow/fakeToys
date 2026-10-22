@@ -22,3 +22,6 @@ shared = { path = "../shared" }
 
 [dev-dependencies]
 tower.workspace = true
+
+[lints]
+workspace = true

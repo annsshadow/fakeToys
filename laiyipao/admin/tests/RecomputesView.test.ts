@@ -47,6 +47,12 @@ function row(over: Record<string, unknown> = {}) {
 function summary(over: Record<string, unknown> = {}) {
   return {
     mode: 'enforce',
+    // 2026-10-21（二轮审计 P1）：两个 scope 分开报。
+    //   mode / skills_mode —— S 段（真正拒发奖励的那一段），永不降级；
+    //   engine_mode        —— 引擎侧，可被熔断降级。
+    engine_mode: 'enforce',
+    skills_mode: 'enforce',
+    enforcing: true,
     configured_mode: 'enforce',
     demoted: false,
     demoted_reason: '',
@@ -77,7 +83,11 @@ describe('闸门状态：熔断告警（这个页面的核心）', () => {
     fetchRecomputeStats.mockResolvedValue(
       summary({
         demoted: true,
-        mode: 'shadow',
+        // 引擎侧被降级；S 段**没有**被降级。
+        mode: 'enforce',
+        engine_mode: 'shadow',
+        skills_mode: 'enforce',
+        enforcing: true,
         configured_mode: 'enforce',
         demoted_reason: '近 1000 次重算中 300 次不符（30%，上限 20‰）',
       }),
@@ -93,10 +103,18 @@ describe('闸门状态：熔断告警（这个页面的核心）', () => {
     expect(text).toContain('30%')
     // 「人工升档」这个动作必须写在告警里，否则修完没人知道要改回去
     expect(text).toContain('人工')
+    // ⚠️ 2026-10-21（二轮审计 P1）：熔断**只影响引擎侧**。
+    // S 段（replay_skills）才是真正拒发奖励的那一段，且它永不降级。
+    // 告警里若不说清这一点，运营会以为整个防护都关了 ——
+    // 于是去查错的方向、甚至把不需要改的 S 段也改掉。
+    expect(text).toContain('只影响引擎侧')
+    expect(text).toContain('S 段')
   })
 
   it('demoted=false 时不出现告警（反复误报的告警等于没有告警）', async () => {
-    fetchRecomputeStats.mockResolvedValue(summary({ demoted: false, mode: 'enforce' }))
+    fetchRecomputeStats.mockResolvedValue(
+      summary({ demoted: false, mode: 'enforce', engine_mode: 'enforce', skills_mode: 'enforce' }),
+    )
     const wrapper = await mountView()
     expect(wrapper.find('.el-alert').exists()).toBe(false)
   })
@@ -109,13 +127,25 @@ describe('闸门状态：熔断告警（这个页面的核心）', () => {
     // 各自**独立挂载**：改 mock 之后必须重新 mount，
     // 因为 onMounted 只在挂载时拉一次，settle 不会重跑它。
     fetchRecomputeStats.mockResolvedValue(
-      summary({ demoted: true, mode: 'shadow', configured_mode: 'enforce' }),
+      summary({
+        demoted: true,
+        mode: 'enforce',
+        engine_mode: 'shadow',
+        skills_mode: 'enforce',
+        configured_mode: 'enforce',
+      }),
     )
     const demoted = await mountView()
     expect(demoted.text()).toContain('已被降级')
 
     fetchRecomputeStats.mockResolvedValue(
-      summary({ demoted: false, mode: 'shadow', configured_mode: 'shadow' }),
+      summary({
+        demoted: false,
+        mode: 'shadow',
+        engine_mode: 'shadow',
+        skills_mode: 'shadow',
+        configured_mode: 'shadow',
+      }),
     )
     const shadowByConfig = await mountView()
     expect(shadowByConfig.text()).not.toContain('已被降级')
@@ -274,7 +304,7 @@ describe('部分失败时的降级行为', () => {
 
   it('列表接口挂了要提示，且不假装有数据', async () => {
     fetchRecomputes.mockRejectedValue(new Error('boom'))
-    const wrapper = await mountView()
+    await mountView()
     expect(bodyText()).toContain('重算台账加载失败')
   })
 })

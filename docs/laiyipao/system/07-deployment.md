@@ -11,12 +11,18 @@
 
 | 组件 | 版本 | 用途 |
 |---|---|---|
-| Go | **1.26.3** | 后端编译 |
+| Go | **1.26.10** | 后端编译（下限不是随手写的，见下） |
 | PostgreSQL | **15+** | 数据库（需要 `num_nonnulls`、`GENERATED … AS IDENTITY`） |
 | Node | **20+** | 前端构建 |
 | pnpm | 11 | 依赖管理 |
 | nginx | 任意稳定版 | 反代 + 静态托管 |
 | systemd | 任意 | 服务托管 |
+
+后端 Go 的下限是 **1.26.10**，不是「大致 1.26」：1.26.9 及以下含
+`GO-2026-6809`（`crypto/x509` 不拒绝被攻破的中间证书），而本服务的调用链
+**代码可达**（`service.RecordRecompute → fmt.Fprintf → x509.Certificate.Verify`），
+CI 的 govulncheck 闸门会直接红。升级方式只是 `go.mod` 一行 ——
+`setup-go` 走 `go-version-file`，会自动装新工具链，`go.sum` 不用动。
 
 前端工具链版本有**硬锁**，不要随手升级：
 
@@ -151,7 +157,7 @@ sudo -u postgres psql -c "CREATE DATABASE laiyipao OWNER laiyipao_app;"
 cd laiyipao/server
 export DATABASE_URL="postgres://laiyipao_app:<PASSWORD>@127.0.0.1:5432/laiyipao?sslmode=disable"
 
-go run ./cmd/migrate      # 15 个迁移，50 张表
+go run ./cmd/migrate      # 18 个迁移，50 张表
 go run ./cmd/seed         # 首次必须执行：敌人/技能/装备/关卡/签到/任务/商城/兑换码
 ```
 
@@ -386,8 +392,8 @@ DATABASE_URL=… ./bin/lyp-migrate
 
 ### 7.3 不要盲目 `-down`
 
-`00011` / `00013` / `00014` / `00015` 的 Down 都是**有损**的
-（删运营验真记录 / 丢历史周期 / 丢已洗练词条 / 丢重算证据）。
+`00011` / `00013` / `00014` / `00015` / `00016` 的 Down 都是**有损**的
+（删运营验真记录 / 丢历史周期 / 丢已洗练词条 / 丢重算证据 / 共享账号失去口令登录能力）。
 回滚前先看迁移文件头部的说明，并做备份。
 
 ---

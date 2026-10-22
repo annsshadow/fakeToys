@@ -20,3 +20,6 @@ tower.workspace = true
 [dev-dependencies]
 tokio-postgres = "0.7"
 tower.workspace = true
+
+[lints]
+workspace = true

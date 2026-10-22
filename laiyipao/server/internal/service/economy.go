@@ -586,10 +586,22 @@ func (s *Service) Buy(ctx context.Context, userID, itemID int64) (map[string]int
 			// （base_armor / base_bonus_pct 会被读进攻方），
 			// 但玩家碰不到它 —— 那等于没有（KNOWN_LIMITS 第 25 条）。
 			if eqID, ok := equipmentPayloadID(k); ok {
-				for i := 0; i < v; i++ {
-					if err := mintEquipment(ctx, tx, userID, eqID); err != nil {
-						return err
-					}
+				// ⚠️ 2026-10-21（二轮审计 P2）：多份要**显式拒绝**。
+				//
+				// `user_equipment` 的主键是 `(user_id, equipment_id)` —— 一个人
+				// 不能持有同一件装备的两份。所以第 2、3 次 INSERT 全是
+				// `ON CONFLICT DO NOTHING` 的静默 no-op：玩家付了 3 份的钱，
+				// 只拿到 1 件，而且**不报任何错**。
+				//
+				// 装备**没有随机性**（不像宝石要 roll 词条），所以「多份」
+				// 是一个**产品决策**而不是数据模型问题 —— 在这里显式拒绝，
+				// 让运营改 payload 时立刻知道「这件商品不支持多份」。
+				if v > 1 {
+					return fmt.Errorf("%w: 装备不支持多份（同一部位只能装一件），请把数量设为 1",
+						ErrBadInput)
+				}
+				if err := mintEquipment(ctx, tx, userID, eqID); err != nil {
+					return err
 				}
 				continue
 			}

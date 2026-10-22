@@ -18,7 +18,7 @@
  * | `@dcloudio/types` | `@dcloudio/uni-app` 的 `peerDependencies['@dcloudio/types']` | `3.4.31` |
  * | `@dcloudio/*`（20 个） | 它们彼此按精确版本引用，成套发布 | 任何分裂都装不出可用 uni-app |
  * | `typescript` | `vue-tsc` 的 `peerDependencies.typescript` | 区间，必须满足 |
- * | `vitest` / `coverage-v8` | `vitest` 的 `peerDependencies.vite` | 区间，与 dcloudio 的锁互斥 |
+ * | `vitest` / `coverage-v8` | `vitest` 的 `peerDependencies.vite` | 区间；必须覆盖 `pnpm-workspace.yaml` 里 override 的 vite |
  *
  * 契约一旦变了（peer 变区间、版本号变），这里先红 —— 红的时候要做的是
  * **重新跑 `type-check` + 全量测试 + `build:h5` + `build:mp-weixin` 四件套**，
@@ -32,6 +32,8 @@
  * 实践中 vue 3.4 上 pinia 工作正常。
  */
 import { describe, it, expect } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import pkg from '../../package.json'
 import uniPluginPkg from '@dcloudio/vite-plugin-uni/package.json'
 import vueTscPkg from 'vue-tsc/package.json'
@@ -200,17 +202,64 @@ describe('工具链 pin 守卫（dependabot 多次打破过，勿删）', () => 
     ).toBeTruthy()
   })
 
-  it('vitest / coverage-v8 必须留在 2.x 线（与 vite 5.2.8 兼容的最后一条）', () => {
-    // vitest >= 5 的 peerDependencies.vite 是 "^6.4.0 || ^7.0.0 || ^8.0.0"
-    // （见 node_modules/vitest/package.json），与 dcloudio 的精确 5.2.8 互斥。
+  it('vitest / coverage-v8 成套，且 vitest 的 peer vite 区间必须覆盖我们 override 的 vite', () => {
+    // 这条断言的历史：2026-10 之前 vite 被 dcloudio 钉在 5.2.8，而 vitest 5+ 的
+    // peerDependencies.vite 是 "^6.4.0 || ^7.0.0 || ^8.0.0" —— 两者互斥，所以当时
+    // 只能把 vitest 按死在 ^2.1.9。
+    //
+    // 2026-10-22 变了：5.4.x 线没有新一批 advisory 的修复版本，vite 只能跨大版本，
+    // 于是 pnpm-workspace.yaml 把 vite override 到 6.4.4（依据是 oa4rust/mobile：
+    // 同一套 dcloudio 工具链，package.json 直接声明 vite 6.4.3 且双构建长期全绿）。
+    // vite 到 6.4.4 之后，vitest 2.x 反而成了瓶颈：它的 2 条 critical（tinypool
+    // 原型污染 RCE）+ 2 条 moderate（@vitest/mocker 路径穿越）在 2.x 线没有修复版。
+    // 升到 4.1.12 一次清掉四条，且 4.1.12 的 peer 区间覆盖 6.4.4。
+    //
+    // 判据不再写死版本号，而是**读 vitest 自己声明的 peer 区间**，再与
+    // pnpm-workspace.yaml 里 override 的 vite 主版本比对 —— 下次谁再动 vitest，
+    // 只要它要求的 vite 主版本超出我们 override 的那一条，这里就红。
+    const vitestPkg = readFileSync(
+      fileURLToPath(new URL('../../node_modules/vitest/package.json', import.meta.url)),
+      'utf8',
+    )
+    const peerVite = (JSON.parse(vitestPkg) as { peerDependencies?: { vite?: string } })
+      .peerDependencies?.vite
     expect(
-      declared['vitest'],
-      'vitest 必须留在 ^2.1.9。vitest 5+ 的 peer 硬性要求 vite >= 6.4 —— ' +
-        '升它会再次打破 dcloudio 的锁，症状与本文件头部表格里那几行一模一样。',
-    ).toBe('^2.1.9')
+      peerVite,
+      'vitest 的 package.json 里读不到 peerDependencies.vite —— 它若不再声明 vite 要求，' +
+        '本断言失去依据，先确认新契约再改这里。',
+    ).toBeTruthy()
+
+    // override 的 vite 主版本：从 pnpm-workspace.yaml 的 `"vite": x.y.z` 取。
+    const workspaceYaml = readFileSync(
+      fileURLToPath(new URL('../../pnpm-workspace.yaml', import.meta.url)),
+      'utf8',
+    )
+    const overrideVite = /^\s*"vite":\s*([0-9][0-9.]*)\s*$/m.exec(workspaceYaml)?.[1]
     expect(
-      declared['@vitest/coverage-v8'],
-      'coverage-v8 必须与 vitest 同为 2.x 线（2.1.9 的 peer 就是 vitest 2.1.9）。',
-    ).toBe('2.1.9')
+      overrideVite,
+      'pnpm-workspace.yaml 里找不到 `"vite": x.y.z` 的 override —— 本守卫靠它取' +
+        '「实际解析到的 vite」，取不到就没法判断 vitest 的 peer 是否被满足。',
+    ).toBeTruthy()
+    const overrideMajor = String(overrideVite).split('.')[0]
+
+    // peer 形如 "^6.0.0 || ^7.0.0 || ^8.0.0"：把每个分支的主版本抠出来比。
+    const peerMajors = [...String(peerVite).matchAll(/\^?(\d+)\./g)].map((m) => m[1])
+    expect(
+      peerMajors,
+      `vitest 的 peer vite 是 "${peerVite}"，一个主版本都解析不出来 —— ` +
+        '区间写法变了，先确认语义再改本守卫。',
+    ).not.toHaveLength(0)
+    expect(
+      peerMajors,
+      `vitest 要求 vite "${peerVite}"，而 pnpm-workspace.yaml 把 vite override 到 ` +
+        `${overrideVite}（主版本 ${overrideMajor}）。两者不相容时 vitest 会装不上或` +
+        '在运行期炸。要么把 override 顶到 vitest 接受的线，要么把 vitest 降回去。',
+    ).toContain(overrideMajor)
+
+    // 两个包必须同一条线：coverage-v8 的 peer 就是精确的 vitest 版本。
+    expect(
+      declared['@vitest/coverage-v8']?.replace(/^[\^~]/, ''),
+      'coverage-v8 必须与 vitest 同版本（它的 peerDependencies.vitest 是精确值）。',
+    ).toBe(declared['vitest']?.replace(/^[\^~]/, ''))
   })
 })

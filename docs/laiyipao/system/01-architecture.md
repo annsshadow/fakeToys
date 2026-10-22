@@ -110,7 +110,7 @@
 3. compress          gzip（必须在任何写响应体的中间件之前）
 4. requestLogger     记录 X-Request-Duration
 5. cors              按 Env 决定是否发 CORS 头
-6. perIPLimiter      （仅未认证端点：guest / wechat / refresh / redeem / admin-login）
+6. perIPLimiter      （仅未认证端点：guest / wechat / refresh / login / redeem / admin-login）
 7. requireUser       解析 Bearer → Locals["user_id"]（每次都查 users.status）
    requireAdmin      解析 Bearer → Locals["admin_id","admin_role"]（查会话 + status）
 8. requireWritable   （仅管理端写操作）角色白名单 admin/ops
@@ -167,6 +167,11 @@
 | **玩家 refresh token** | 请求体 | 随机串，SHA-256 摘要落 `refresh_tokens` | 条件 UPDATE（未吊销 + 未过期），**轮换** | 登出吊销全部 / 封禁 |
 | **游客凭证 guest_token** | 请求体 + 本地存储 | 24 字节随机串，存 `users.guest_token` | 直接查表 | **登出时轮换** |
 | **管理员 access token** | `Authorization: Bearer` | HS256 JWT，`kind="admin"`，载荷含 `sid` | 验签 + 查 `admin_tokens`（摘要、吊销、过期）+ 查 `admin_users.status` | 到期（2h）/ 后台登出吊销全部 |
+
+> 玩家侧还有第四种**入门方式**（不是新令牌类型）：`POST /auth/login`
+> 用户名 + 口令（迁移 00016 给 `users` 加 `username` / `password_hash`，
+> 部分唯一索引）。它与游客登录签发**同一种** `kind=user` 令牌，权限面完全一样，
+> 存在的理由是测试环境的共享账号（`PLAYER_LOGIN_REQUIRED`，见 07 §2.4）。
 
 ### 4.1 为什么玩家侧要三个凭证
 
@@ -415,7 +420,7 @@ admin                    server                        miniapp
   │                        │   ⚠️ 玩家路径读的是 GenerateLevel，
   │                        │      不是 levels 表 → 本次编辑不生效
   │                        │                             │
-  ├─ POST /admin/levels/regenerate ▶ 重生成 100 关并落库（同样不影响玩家路径）
+  ├─ POST /admin/levels/regenerate ▶ 重生成 100 关并落库（需 confirm 口令，同样不影响玩家路径）
   │                        │                             │
   │                        │  /config 的 version 是内容哈希 → 代码没变就不变
   │                        │                             │

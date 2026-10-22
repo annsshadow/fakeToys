@@ -10,7 +10,7 @@
  * 打桩记录所有调用，从而能断言"确实画了背景/敌人/弹丸/地形/HUD"。
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { BattleRenderer } from './canvas'
+import { BattleRenderer, BATTLE_SPEED_STEPS, MAX_BATTLE_SPEED, logicIntervalMs, normalizeSpeed } from './canvas'
 import { BattleEngine, TICK_MS } from '../game/engine'
 import { defaultAttacker } from '../game/damage'
 import type { Enemy, EnemyDef, FloatText, GeneratedLevel, SkillDef } from '../game/types'
@@ -681,5 +681,101 @@ describe('BattleRenderer 分支覆盖（假引擎直驱绘制分支）', () => {
     await new Promise((res) => setTimeout(res, TICK_MS * 3))
     expect(ticks).toBe(before)
     r.stop() // 清掉两个定时器，避免污染下一个用例
+  })
+})
+
+describe('战斗倍速（2026-10-22）', () => {
+  const canvas = makeCanvas()
+  const makeRenderer = (engine: BattleEngine) =>
+    new BattleRenderer(canvas as unknown as HTMLCanvasElement, engine)
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('换算：非法值一律回落 1×，上限 8×，间隔 = TICK_MS / 倍速', () => {
+    // 非有限值 / 0 / 负数 → 1×（倍速是加速，慢放不在需求里）
+    expect(normalizeSpeed(NaN)).toBe(1)
+    expect(normalizeSpeed(Infinity)).toBe(1) // !isFinite → 1
+    expect(normalizeSpeed(0)).toBe(1)
+    expect(normalizeSpeed(-4)).toBe(1)
+    // 上限钳制：手输 99 也不能把定时器压到 0.5ms
+    expect(normalizeSpeed(99)).toBe(MAX_BATTLE_SPEED)
+    expect(MAX_BATTLE_SPEED).toBe(8)
+    // 档位表就是 UI 会渲染的那四个
+    expect([...BATTLE_SPEED_STEPS]).toEqual([1, 2, 4, 8])
+
+    expect(logicIntervalMs(1)).toBe(TICK_MS)
+    expect(logicIntervalMs(2)).toBe(TICK_MS / 2)
+    expect(logicIntervalMs(8)).toBe(TICK_MS / 8)
+    // 间隔永不为 0 —— 否则 setInterval 会退化成「尽快执行」的空转
+    expect(logicIntervalMs(1000)).toBeGreaterThan(0)
+  })
+
+  it('换挡改的是步频而不是步长：8× 下同样 100ms 推进的 tick 数是 1× 的 8 倍', () => {
+    // ⚠️ 用假时钟而不是真实等待：真实定时器的抖动会让这条测试变成 flaky，
+    // 而它要证明的是「每秒跑多少步」这个结构关系，不是计时精度。
+    vi.useFakeTimers()
+    const r = makeRenderer(mkEngine())
+    let ticks = 0
+    r.start(() => {
+      ticks++
+    })
+
+    vi.advanceTimersByTime(100)
+    expect(ticks).toBe(2) // 100ms / 50ms
+
+    r.setSpeed(8)
+    expect(r.getSpeed()).toBe(8)
+    ticks = 0
+    vi.advanceTimersByTime(100)
+    expect(ticks).toBe(16) // 100ms / 6.25ms
+
+    r.stop()
+  })
+
+  it('换挡不叠加定时器：连换三档后步频仍是当前档位的步频（不是平方级）', () => {
+    vi.useFakeTimers()
+    const r = makeRenderer(mkEngine())
+    let ticks = 0
+    r.start(() => {
+      ticks++
+    })
+    // 若 setSpeed 只建不清，旧时钟会一起留着 —— 步数会翻倍
+    r.setSpeed(2)
+    r.setSpeed(4)
+    r.setSpeed(8)
+    ticks = 0
+    vi.advanceTimersByTime(100)
+    expect(ticks).toBe(16)
+    r.stop()
+  })
+
+  it('未 start 时换挡只记档位；start 后按该档位建时钟', () => {
+    vi.useFakeTimers()
+    const r = makeRenderer(mkEngine())
+    r.setSpeed(4)
+    expect(r.getSpeed()).toBe(4)
+
+    let ticks = 0
+    r.start(() => {
+      ticks++
+    })
+    vi.advanceTimersByTime(100)
+    expect(ticks).toBe(8) // 100 / 12.5
+    r.stop()
+  })
+
+  it('stop 之后换挡不会把时钟重新拉起来', () => {
+    vi.useFakeTimers()
+    const r = makeRenderer(mkEngine())
+    let ticks = 0
+    r.start(() => {
+      ticks++
+    })
+    r.stop()
+    r.setSpeed(8)
+    vi.advanceTimersByTime(500)
+    expect(ticks).toBe(0)
   })
 })
