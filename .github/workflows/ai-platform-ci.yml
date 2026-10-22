@@ -61,14 +61,6 @@ jobs:
         # 「账本 vs 仓库」而不是「账本 vs 这一次检出」。
         run: git fetch --no-tags --prune origin '+refs/heads/*:refs/remotes/origin/*'
 
-      - name: DIAG ref face (temporary)
-        run: |
-          echo "PWD=$(pwd)"
-          echo "branch-r=$(git branch -r 2>/dev/null | wc -l)"
-          echo "tag=$(git tag | wc -l)"
-          echo "revlist=$(git rev-list --remotes --tags 2>/dev/null | wc -l)"
-          echo "objects=$(git cat-file --batch-all-objects --batch-check 2>/dev/null | grep -c ' commit ')"
-          git branch -r 2>/dev/null | head -5
 
       - name: Set up Python
         uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b
@@ -83,17 +75,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
 
-      - name: DIAG ruler view (temporary)
-        working-directory: augmentor
-        run: |
-          python - <<'PY'
-          import sys
-          sys.path.insert(0, '.')
-          from tests.unit import test_ledger_hash_reachability_l270 as m
-          print('module ROOT =', m.ROOT)
-          print('reachable set =', len(m.reachable()))
-          print('commit objects =', len(m.commit_objects()))
-          PY
 
       - name: Byte-compile all sources
         # -W error::SyntaxWarning：把「invalid escape sequence」这类**只打印不报错**的

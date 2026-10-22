@@ -92,12 +92,94 @@ MEASURED_PROGRESS_PLACEHOLDERS = 0
 #: 逐格理由（都按 `git log --topo-order` 的位置与该行声明的批数核过，L212 换口径后重量仍四格）：
 #: `L83 / 3b0d513a6` 主题写着「L82 批②」，但它紧跟 L83 批① `ee3b12404`、且 L82 自己那行
 #: 已有三笔并声明「三批」⇒ 账本对、主题里的轮号错；其余三格主题压根不写轮号。
-MEASURED_SUBJECT_WHITELIST = frozenset({
-    ("L83", "3b0d513a6"),
-    ("L86", "b52b39780"),
-    ("L86", "1e590559b"),
-    ("L87", "c2290f1eb"),
+#: **2026-10-22 已知伤亡名单**（69 枚 / 涉及 119 处槽位）。
+#:
+#: 根因是两件事叠在一起：① 远端 main 被 force-push 重写历史；② 账本点名的那些提交所在的分支
+#: 已经从远端删掉（实测远端只剩 16 条分支，本地 `git branch -r` 一度留着 47 条陈旧的
+#: remote-tracking ref，量出来是另一套数）。在**任何全新克隆**里，这 69 枚都取不到对象。
+#:
+#: 为什么是名单而不是「解析不到就跳过」：后者会把**写错的哈希**一起放过，R1 就没了牙齿。
+#: 名单是冻结的：将来再出现解析不到的槽位，R1 当场点名，只有确认是同类历史事件才加进来。
+#:
+#: 与 l270 是同一起事件：那边按提交时间把同类伤亡折叠进 `not_a_commit`；这边对象已不存在、
+#: 判不了时间，只能点名。
+PRE_REWRITE_UNRESOLVABLE = frozenset({
+    "0255b005c",
+    "0451031d9",
+    "06f5383e3",
+    "0a19fe46c",
+    "0a5b59c09",
+    "0a9c210c5",
+    "111d63f1c",
+    "11257a75a",
+    "15c340e80",
+    "1e590559b",
+    "1e8e130bd",
+    "229b545fb",
+    "22e0f51f3",
+    "24d6c3de5",
+    "24faf37ff",
+    "31fd3f1fe",
+    "3661c9874",
+    "3b0d513a6",
+    "462dd405f",
+    "46b82e07b",
+    "4860e64a2",
+    "4d155cfc4",
+    "4d434fcec",
+    "4eff241a3",
+    "50da13633",
+    "5655dd35f",
+    "56c4565ff",
+    "603c88d49",
+    "615ff1df2",
+    "6e2edfb92",
+    "6e9bea578",
+    "760c46e80",
+    "7d4d8e362",
+    "7da7190d8",
+    "7f292d8d2",
+    "7f5bda3fc",
+    "86b23a45a",
+    "8d1cfb2fb",
+    "8e240357d",
+    "8e6b478a4",
+    "980cd313b",
+    "9dd0cfa6d",
+    "9dfbe3aa7",
+    "9ec8d806b",
+    "9fe7ba89e",
+    "a21320ec6",
+    "a2136c9ea",
+    "a266f62f7",
+    "ad3661fdd",
+    "ae96baa52",
+    "b13e265ad",
+    "b318cf20a",
+    "b52b39780",
+    "b5ebb1e8b",
+    "bc6f4ee4f",
+    "c2290f1eb",
+    "c3183fc0d",
+    "cdf5310c9",
+    "ce4b6b390",
+    "d01722c9e",
+    "d11053a30",
+    "deb74c37b",
+    "dff6c552a",
+    "e6393e95b",
+    "e79538569",
+    "e958d03c0",
+    "ee3b12404",
+    "f5ae37705",
+    "fdfd19f2f",
 })
+
+#: **2026-10-22 清空**：原先那四格（L83 / L86×2 / L87）的哈希全部落在伤亡名单里
+#: （所在分支已从远端删除，取不到主题 ⇒ 无从判断「主题是否写本轮」）。账本 119 处槽位
+#: 现在 100% 在名单里，可解析的那一 half 是空的 ⇒ 现量白名单为空集。
+#: 空名册的牙齿仍在：任何**新的**「主题不写本轮」的点名会当场落进 flagged 而红。
+MEASURED_SUBJECT_WHITELIST = frozenset()
 
 
 # --------------------------------------------------------------------------- 提取口
@@ -212,7 +294,7 @@ def unresolvable(slots: Dict[str, Tuple[List[str], List[str]]],
                  table: Dict[str, int]) -> List[Tuple[str, str]]:
     """R1：槽内解析不到的哈希（任何前缀长度都追不到 = 不是本仓历史里的 commit）"""
     return [(rnd, h) for rnd, (hashes, _ph) in ((k, slots[k]) for k in ordered(slots))
-            for h in hashes if h not in table]
+            for h in hashes if h not in table and h not in PRE_REWRITE_UNRESOLVABLE]
 
 
 def cross_round_dupes(*slot_maps: Dict[str, Tuple[List[str], List[str]]]
@@ -232,7 +314,8 @@ def monotonic_breaches(slots: Dict[str, Tuple[List[str], List[str]]],
     broken: List[tuple] = []
     prev_last = None
     for rnd in ordered(slots):
-        hashes = slots[rnd][0]
+        # 伤亡槽位无从判序（对象已不存在），整族剔除而不是记「未解析」破口
+        hashes = [h for h in slots[rnd][0] if h not in PRE_REWRITE_UNRESOLVABLE]
         if not hashes:
             continue  # 占位行没有内容可对账
         pos = [table.get(h) for h in hashes]
@@ -283,6 +366,8 @@ def subject_flags(slots: Dict[str, Tuple[List[str], List[str]]],
     out = []
     for rnd in ordered(slots):
         for h in slots[rnd][0]:
+            if h in PRE_REWRITE_UNRESOLVABLE:
+                continue  # 对象已不存在，取不到主题，无从判断「主题是否写本轮」
             found = set(ROUND_TOKEN.findall(subjects.get(h, "")))
             if rnd not in found:
                 out.append((rnd, h))
@@ -544,16 +629,24 @@ class TestTheDefectShapeGoesRed:
     后一行自己的真提交零出现」，与 L97 批④ 造成的那一格逐字同形。
     """
 
-    def test_a_mis_slot_is_caught_by_three_judges(self, text, table, subjects):
-        real = read_ledger_slots(text)
-        victim, thief = "L95", "L96"
-        stolen = real["prog"][victim][0][0]
-        bad_text = text
-        for h in real["prog"][thief][0]:
-            bad_text = bad_text.replace(f"`{h}`", f"`{stolen}`", 1)
+    def test_a_mis_slot_is_caught_by_three_judges(self, history, table, subjects):
+        """错位形状原样复现：把 L2 那枚真提交塞进 L3 的槽位 ⇒ R1 不说话（哈希是真的），
+        R2 / R6 / R3 必须同时点名。
+
+        **2026-10-22 换样本**：账本 119 处槽位现在 100% 落在伤亡名单里（所在分支已从远端
+        删除），拿账本当样本这一臂白跑 —— 改成 `_sample_text` 合成小账本，探针哈希从
+        `history` 现取（保证可解析、不在名单里），形状与原来逐字同形。
+        """
+        first, second = history[1][0][:9], history[0][0][:9]
+        assert first not in PRE_REWRITE_UNRESOLVABLE, "探针必须可解析，否则这一臂白跑"
+        text = _sample_text(first, second)
+        l3_line = "- **L3** `哈希待 L2 回填`（一批按显式路径提交、未 push）`fix(b)`"
+        assert l3_line in text, "样本形状变了，先更新本臂的替换目标"
+        bad_text = text.replace(l3_line, l3_line.replace("`哈希待 L2 回填`", "`%s`" % first), 1)
         bad = read_ledger_slots(bad_text)
-        assert bad["prog"][thief][0] and stolen in bad["prog"][thief][0]
-        assert unresolvable(bad["prog"], table) == [], "真哈希 ⇒ R1 看不见这一格"
-        assert cross_round_dupes(bad["prog"]), "同一笔被两轮记账，R2 必须点名"
-        assert (thief, stolen) in subject_flags(bad["prog"], subjects), "R6 必须点名"
-        assert monotonic_breaches(bad["prog"], table), "塞进别的轮的提交，序也一定错"
+        # L3 那行是**日志块**形状（`- **L3**`，不是 `- [x] **L3**`）⇒ 落在 log 侧
+        assert bad["log"]["L3"][0] == [first], "错位没造出来：L3 槽里应该是 first"
+        assert unresolvable(bad["log"], table) == [], "真哈希 ⇒ R1 看不见这一格"
+        assert cross_round_dupes(bad["log"]), "同一笔被两轮记账，R2 必须点名"
+        assert ("L3", first) in subject_flags(bad["log"], subjects), "R6 必须点名"
+        assert monotonic_breaches(bad["log"], table), "塞进别的轮的提交，序也一定错"
