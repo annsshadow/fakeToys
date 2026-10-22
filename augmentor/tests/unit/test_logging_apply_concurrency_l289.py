@@ -55,6 +55,7 @@ import ast
 import contextlib
 import logging
 import threading
+import time
 from pathlib import Path
 from typing import Dict, List
 
@@ -346,6 +347,18 @@ def test_injection_r1_null_lock_reproduces_the_duplicate_handlers(tmp_path, monk
     再写就只剩噪声，判据会被搅浑。
     """
     monkeypatch.setattr(logging_setup, "_APPLY_LOCK", contextlib.nullcontext())
+    # 把开文件 handler 这一跳人为加宽：无锁时，两条支能不能同时站在「读 _APPLIED 还
+    # 是 None、装完才写 _APPLIED」的窗口里，是这条牙有没有牙的关键。不加宽时本机本地盘
+    # 开文件太快 + GIL 串行，16 支齐发常被第一条串行吃完（它先把 _APPLIED 写上），剩下
+    # 15 支全是快路、只装一套 ⇒ 牙变假阴性（_INSTALLED == baseline）。CI 负载一波动就
+    # 偶发红。这里只在测试里把开文件这一跳睡 20ms，让多条支确定地同时站在临界段里，
+    # 翻倍判据才稳定可复现。生产代码一字未动。
+    orig_open = logging_setup._open_file_handler
+    monkeypatch.setattr(
+        logging_setup,
+        "_open_file_handler",
+        lambda p: (time.sleep(0.02), orig_open(p))[1],
+    )
     cfg_path = _config_with_logging(tmp_path)
     baseline = _single_load_baseline(cfg_path)
     logging_setup._detach_installed(logging.getLogger())

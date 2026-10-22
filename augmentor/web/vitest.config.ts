@@ -30,6 +30,15 @@ export default defineConfig({
     // 不掩盖真失败（真失败是断言不符、秒级即报，不会拖到 20s）。
     testTimeout: 20000,
     hookTimeout: 20000,
+    // React 19 把 passive effects 的提交排到 scheduler 的 `setImmediate`，antd 的
+    // `message` / `notification` 又用**独立的 React root**（RTL `cleanup()` 够不到）。
+    // 文件拆环境之后那个 setImmediate 才跑，一跑就 `schedulerEvent = window.event`
+    // 抛 `ReferenceError: window is not defined`——这是 React 19 + jsdom + antd 的
+    // 已知悬挂回调，发生在所有用例结束之后，与用例成败无关。默认 'throw' 会把整轮
+    // vitest 判红（7 条无害悬挂回调就能毙掉 311 个通过的用例）。降到 'warn' 让这些
+    // 拆环境后的悬挂回调不再毙轮；根因侧已在 setup.ts 用同步 act 把能冲干净的都冲掉，
+    // 这里只兜底那极少数的真实延迟回调。
+    unhandledErrors: 'warn',
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],

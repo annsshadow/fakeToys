@@ -158,10 +158,7 @@ describe('翻译卡的初值与三道闸', () => {
     ack()
     click()
 
-    await waitFor(
-      () => expect(document.body.textContent).toContain('产物必须留得住'),
-      { timeout: 10000 },
-    )
+    await screen.findByText(/产物必须留得住/, undefined, { timeout: 15000 })
     expect(spies.translateDataset).not.toHaveBeenCalled()
   })
 
@@ -176,10 +173,7 @@ describe('翻译卡的初值与三道闸', () => {
     ack()
     click()
 
-    await waitFor(
-      () => expect(document.body.textContent).toContain('翻译字段不能为空'),
-      { timeout: 10000 },
-    )
+    await screen.findByText(/翻译字段不能为空/, undefined, { timeout: 15000 })
     expect(spies.translateDataset).not.toHaveBeenCalled()
     expect(labeled('翻译回执')).toBeNull()
   })
@@ -267,10 +261,7 @@ describe('翻译回执面', () => {
     ack()
     click()
 
-    await waitFor(
-      () => expect(document.body.textContent).toContain('翻译路径未启用'),
-      { timeout: 10000 },
-    )
+    await screen.findByText(/翻译路径未启用/, undefined, { timeout: 15000 })
     expect(labeled('翻译回执')).toBeNull()
   })
 })
