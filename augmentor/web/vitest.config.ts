@@ -19,14 +19,17 @@ export default defineConfig({
     // 4 核 runner 上 20 文件并行，DataManagement.transform 的转换点击用例
     // 20s 内没观察到调用（受限容器更糟：worker 启动超时、总耗时 257s vs
     // 本机 37s）。抬 testTimeout 治标（5s→20s 已经抬过一次），并行度才是根因。
-    // 2026-10-22 第五轮改用**全串行**（`fileParallelism: false`）：
-    // 2 worker 并行下，4 份重 antd 的 `DataManagement.*` 文件两两配对互抢 CPU，
-    // React 19 的 passive-effect 提交被 scheduler 延迟，`fireEvent` 后的状态没在
-    // 下一次 `click` 前 commit ⇒ 不同文件轮流 flake（A322 → RAG），且拆环境后残留的
-    // setImmediate 读 `window` 抛错。串行后每份文件独占 worker、无互抢，提交及时、
-    // 不再「换个文件又红」。旧「12 分钟」读数出自 2 核受限容器；当前 4 核 runner
-    // 串行全量实测约 2~3 分钟（墙钟 < 30min 闸），换 CI 确定性值得。
-    fileParallelism: false,
+    // GitHub runner 是 4 核，留一半给主进程与 I/O；本机多核 Worker 会被限到 2，
+    // 总墙钟约 +30s（37s→68s），换 CI 上的确定性。全串行（fileParallelism:
+    // false）更保险但容器实测超过 12 分钟，不进 CI 闸门。（2026-10-22 曾试全串行，
+    // 未捕获 window 报错 7→26 反增、断言 flake 挪到 transform，已回退。）
+    // 2026-10-22 第五轮改用 **forks**（进程隔离，而非默认 threads）：默认 threads
+    // 池里所有测试文件共享**同一 worker 进程的事件循环**，React 19 把 passive effects
+    // 排到 `setImmediate` 的悬挂回调会在文件 N 拆环境后、文件 N+1 运行时才醒，跨文件
+    // 读到已销毁的 `window` ⇒ 每轮**换个文件**红（A322→RAG→transform）且 window 报错
+    // 累计（串行反增到 26）。forks 让每份文件独占一个子进程，事件循环彼此隔离，悬挂
+    // macrotask 随进程结束而亡、跨不过程序边界。maxWorkers 保留 2 控制并行度。
+    pool: 'forks',
     maxWorkers: 2,
     minWorkers: 1,
     // 页面级组件测试（L104–L113）落地后，测试文件从 2 份增至 13 份。jsdom + antd
