@@ -19,9 +19,14 @@ export default defineConfig({
     // 4 核 runner 上 20 文件并行，DataManagement.transform 的转换点击用例
     // 20s 内没观察到调用（受限容器更糟：worker 启动超时、总耗时 257s vs
     // 本机 37s）。抬 testTimeout 治标（5s→20s 已经抬过一次），并行度才是根因。
-    // GitHub runner 是 4 核，留一半给主进程与 I/O；本机多核 Worker 会被限到 2，
-    // 总墙钟约 +30s（37s→68s），换 CI 上的确定性。全串行（fileParallelism:
-    // false）更保险但容器实测超过 12 分钟，不进 CI 闸门。
+    // 2026-10-22 第五轮改用**全串行**（`fileParallelism: false`）：
+    // 2 worker 并行下，4 份重 antd 的 `DataManagement.*` 文件两两配对互抢 CPU，
+    // React 19 的 passive-effect 提交被 scheduler 延迟，`fireEvent` 后的状态没在
+    // 下一次 `click` 前 commit ⇒ 不同文件轮流 flake（A322 → RAG），且拆环境后残留的
+    // setImmediate 读 `window` 抛错。串行后每份文件独占 worker、无互抢，提交及时、
+    // 不再「换个文件又红」。旧「12 分钟」读数出自 2 核受限容器；当前 4 核 runner
+    // 串行全量实测约 2~3 分钟（墙钟 < 30min 闸），换 CI 确定性值得。
+    fileParallelism: false,
     maxWorkers: 2,
     minWorkers: 1,
     // 页面级组件测试（L104–L113）落地后，测试文件从 2 份增至 13 份。jsdom + antd
