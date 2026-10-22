@@ -27,6 +27,22 @@
         <text class="wave-text">波次 {{ waveText }}</text>
         <text class="kill-text">击杀 {{ engine?.kills ?? 0 }}</text>
         <!--
+          倍速档位（2026-10-22）。
+          加它是因为「等一波打完」是测试时最耗时间的一件事：1× 跑完一局
+          要几分钟，改一行数值就得重跑一次。
+          倍速只压缩等待，不改模拟 —— 理由见 render/canvas.ts 的
+          `BATTLE_SPEED_STEPS`（动 TICK_MS 会毁掉 I-6 的可重放性）。
+        -->
+        <view v-if="!settled" class="speed-row">
+          <view
+            v-for="s in SPEED_STEPS"
+            :key="s"
+            class="speed-chip"
+            :class="{ on: speed === s }"
+            @click="setSpeed(s)"
+          >{{ s }}×</view>
+        </view>
+        <!--
           2026-10-21（P4-5）：放弃入口。
           此前体力在开战时就扣了，而页面**没有**任何放弃路径 ——
           中途退出等于「什么都没发生，但资源没了」。
@@ -117,9 +133,14 @@ import { ref, computed, getCurrentInstance, triggerRef } from 'vue'
 import { onLoad, onUnload } from '@dcloudio/uni-app'
 import { useGameStore } from '@/store/game'
 import * as api from '@/api/client'
-import { BattleEngine, TICK_MS } from '@/game/engine'
+import { BattleEngine } from '@/game/engine'
 import { equippedFromSnapshot } from '@/game/replay'
-import { BattleRenderer } from '@/render/canvas'
+import {
+  BattleRenderer,
+  BATTLE_SPEED_STEPS,
+  logicIntervalMs,
+  normalizeSpeed,
+} from '@/render/canvas'
 import { ELEMENT_NAME, type Element } from '@/game/elements'
 import { scoreRulesFromServer } from '@/game/score'
 import type { Card, EquippedSkill } from '@/game/heatmap'
@@ -153,6 +174,54 @@ const tokenId = ref(0)
  */
 const renderMode = ref<'pending' | 'raf' | 'fallback'>('pending')
 const levelId = ref(1)
+
+/** 可选档位（与渲染层逻辑时钟共用一份定义，避免两处各写一套数字）。 */
+const SPEED_STEPS = BATTLE_SPEED_STEPS
+
+/** 倍速的持久化键。 */
+const SPEED_KEY = 'lyp_battle_speed'
+
+/**
+ * 倍速（2026-10-22，测试便利）。
+ *
+ * 为什么持久化：调数值时同一关要反复重开，每次进战斗都重新点一遍
+ * 档位纯属浪费；而档位在 HUD 上一直可见，误留 8× 也一眼能发现。
+ */
+const speed = ref(loadSpeed())
+
+function loadSpeed(): number {
+  try {
+    const n = Number(uni.getStorageSync(SPEED_KEY))
+    return Number.isFinite(n) && n > 1 ? normalizeSpeed(n) : 1
+  } catch {
+    // 存储不可用（隐私模式 / 老基础库）不该让战斗开不起来 —— 退回 1×
+    return 1
+  }
+}
+
+/**
+ * 换挡。
+ *
+ * 三条路径都要跟着换：
+ *   - 有渲染器 → 交给它重建逻辑时钟
+ *   - 无 canvas 的降级路径 → 本页自己的定时器，重建
+ *   - 还没开局 → 只记下档位，setup() 建时钟时读 speed
+ */
+function setSpeed(mult: number): void {
+  const next = normalizeSpeed(mult)
+  if (next === speed.value) return
+  speed.value = next
+  try {
+    uni.setStorageSync(SPEED_KEY, String(next))
+  } catch {
+    // 写失败只是下次进来回到 1×，不影响本局
+  }
+  if (renderer.value) {
+    renderer.value.setSpeed(next)
+  } else if (timerId) {
+    startFallbackLoop()
+  }
+}
 
 let loopStarted = false
 let timerId: ReturnType<typeof setInterval> | null = null
@@ -227,6 +296,42 @@ function getCanvas(): Promise<any | null> {
       })
       .exec()
   })
+}
+
+/**
+ * 无 canvas 时的逻辑推进（与渲染器的逻辑时钟等价，同样受倍速影响）。
+ *
+ * 抽成具名函数是为了换挡时能重建定时器 —— 此前它是 setup() 里的一个
+ * 内联闭包，倍速改不到它，于是「兼容模式」下档位是个摆设。
+ */
+function fallbackTick(): void {
+  // ⚠️ 必须显式还原类型：`engine` 是 ref，Vue 的 `UnwrapRef` 会把类实例的
+  // **类型**摊成结构映射（私有成员不在 keyof 里 → 方法看起来全丢了），
+  // 而运行时的值仍是那个原始实例（reactive 不代理类实例）。
+  // 不还原的话，`settle(eng)` 会报「缺 49 个属性」——一个纯类型假象。
+  const eng = engine.value as BattleEngine | null
+  if (!eng) return
+  const events = eng.step()
+  // 同上：step() 的内部写不走响应式代理，需手动触发
+  triggerRef(engine)
+  if (renderer.value) renderer.value.handleEvents(events)
+  if (eng.phase === 'card_select') hand.value = [...eng.deck.hand]
+  if (eng.phase === 'won' || eng.phase === 'lost') {
+    if (timerId) {
+      clearInterval(timerId)
+      timerId = null
+    }
+    void settle(eng)
+  }
+}
+
+/** 按当前倍速（重新）启动降级定时器。重复调用是安全的。 */
+function startFallbackLoop(): void {
+  if (timerId) {
+    clearInterval(timerId)
+    timerId = null
+  }
+  timerId = setInterval(fallbackTick, logicIntervalMs(speed.value))
 }
 
 async function setup() {
@@ -321,6 +426,9 @@ async function setup() {
       // 视口用 CSS 像素（逻辑缩放基准），而 canvas 内部是 dpr 放大后的像素。
       // 两者混用会把画面缩小 dpr 倍 —— 表现为"画布空白/元素挤在角落"。
       r.setViewport(canvasW.value, canvasH.value)
+      // 持久化的档位要在建时钟**之前**交进去：start() 会按当前档位建
+      // 逻辑时钟，之后再 setSpeed 也能生效，但会白建一次再拆掉。
+      r.setSpeed(speed.value)
       renderer.value = r
       renderMode.value = 'raf'
       r.start(() => {
@@ -341,17 +449,7 @@ async function setup() {
     } else {
       renderMode.value = 'fallback'
       // 拿不到 canvas 时用定时器推进，保证逻辑仍可运行（便于自动化测试与无 canvas 环境）
-      timerId = setInterval(() => {
-        const events = eng.step()
-        // 同上：step() 的内部写不走响应式代理，需手动触发
-        triggerRef(engine)
-        if (renderer.value) renderer.value.handleEvents(events)
-        if (eng.phase === 'card_select') hand.value = [...eng.deck.hand]
-        if (eng.phase === 'won' || eng.phase === 'lost') {
-          if (timerId) clearInterval(timerId)
-          void settle(eng)
-        }
-      }, TICK_MS)
+      startFallbackLoop()
     }
   } catch (e) {
     startError.value = (e as Error).message
@@ -561,6 +659,40 @@ onUnload(() => {
   color: #ffd33d;
   font-size: 20rpx;
   text-align: center;
+}
+
+/**
+ * 倍速档位。
+ *
+ * ⚠️ 与 `.abandon-btn` 同一条坑：`.overlay-top` 有 `pointer-events: none`，
+ * 而它是**可继承**属性 —— 不写 `auto`，四个档位看起来正常但一个都点不动。
+ */
+.speed-row {
+  pointer-events: auto;
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+  gap: 8rpx;
+  margin-top: 10rpx;
+}
+
+.speed-chip {
+  /* 24rpx ≈ 12px 字号 + 上下 6rpx 内边距 → 触控高度约 34rpx，
+     比「放弃」按钮略小，避免遮挡画面中央的战场 */
+  padding: 4rpx 12rpx;
+  border-radius: 8rpx;
+  border: 1rpx solid var(--border);
+  background: rgba(0, 0, 0, 0.45);
+  color: var(--muted);
+  font-size: 20rpx;
+  line-height: 1.4;
+}
+
+.speed-chip.on {
+  border-color: rgba(126, 231, 135, 0.6);
+  background: rgba(126, 231, 135, 0.16);
+  color: #7ee787;
+  font-weight: 600;
 }
 
 .overlay-top {
