@@ -10,7 +10,7 @@
 ## TD-1 config.yaml 被运行时重写，注释与占位符丢失
 
 - **登记日**：2026-09-22
-- **位置**：`augmentor/augmentor/config.py:1274`（`save_config()` 内 `yaml.safe_dump(data, ...)`；2026-10-14 复核更新行号，原登记 `:423`，代码重构后漂移）
+- **位置**：`augmentor/augmentor/config.py:1283`（`save_config()` 内 `yaml.safe_dump(data, ...)`；2026-10-14 自 `:423` 复核更新为 `:1274`，2026-10-22 再核自 `:1274` 漂移至此，代码重构后行号持续变动）
 - **现象**：任何触发"保存配置"的运行时路径都会把内存态配置 dump 回 `config.yaml`，导致：
   1. 全部中文结构注释（约 300 行）被删除；
   2. `api_key: ${BAIDU_API_KEY}` 等环境变量占位符被替换为空值（如 `base_url: ''`）。
