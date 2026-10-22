@@ -336,8 +336,11 @@ describe('聚合卡的渲染面', () => {
     fireEvent.change(screen.getByLabelText('聚合输出文件名'), { target: { value: 'agg.json' } })
     click('聚合勾选的来源')
 
+    // 10000 而不是文件里惯常的 4000：这一条走的是**拒绝路径**（antd message.warning），
+    // 在 4 核 CI runner 上挂载 + waitFiles + 三次交互很容易吃掉 4s 预算
+    // （2026-10-22 实测 5574ms 超时）。断言本身不变，只是把预算给够。
     await waitFor(() => expect(document.body.textContent).toContain('不支持的聚合策略'), {
-      timeout: 4000,
+      timeout: 10000,
     })
     expect(labeled('聚合回执')).toBeNull()
   })

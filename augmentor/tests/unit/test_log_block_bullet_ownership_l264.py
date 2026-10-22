@@ -89,6 +89,34 @@ def subject(short_hash):
     return out
 
 
+def probe():
+    """取一枚「ref 面上解析得到、主题带本账轮号」的提交短哈希（牙齿测试的探针）。
+
+    **2026-10-22 新增**：账本里的哈希 100% 落在伤亡名单里（所在分支已从远端删除，
+    对象在任何全新克隆里都不存在），拿它们当探针只会落进 `not_a_commit`，
+    测不到同轮 / 跨轮 / 缺陷档的牙齿。改用现取探针：它既解析得到，主题又点着轮号，
+    放进对应轮号的块里就是 `same_round`，搬进别的块就掉档。
+    """
+    out = subprocess.run(["git", "-C", str(ROOT), "log", "--remotes", "--tags",
+                          "--format=%h\t%s"], capture_output=True, text=True,
+                         encoding="utf-8", errors="replace").stdout
+    for line in out.splitlines():
+        h, _, subj = line.partition("\t")
+        if h and ROUNDS.search(subj):
+            return h
+    raise AssertionError("ref 面上找不到主题带轮号的提交 ⇒ 探针无从取，牙齿测试全部白跑")
+
+
+def with_probe_block(block: int, text: str = None):
+    """内存里给卷二追加一个 `### L<block>` 块，块内点名探针；返回 (volumes, 探针短哈希)"""
+    h = probe()
+    volumes = other.load_volumes()
+    lines = list(volumes["OPTIMIZATION_LOOP_2.md"])
+    body = text if text is not None else "- 探针 `%s`（臂写在本文件里，不落盘）" % h
+    volumes["OPTIMIZATION_LOOP_2.md"] = lines + ["### L%d" % block, body]
+    return volumes, h
+
+
 def sites(volumes=None):
     """日志块内每处反引号 hex ⇒ `{volume, block, line, hash, kind, rounds, text}`（清单区不在面内）"""
     volumes = volumes if volumes is not None else other.load_volumes()
@@ -140,30 +168,69 @@ def names(rows, kind):
 #: 站点面只有一卷出数：卷一的日志块里一处反引号 hex 都没有（`test_volume_one_contributes_no_site_at_all` 钉住），
 #: 所以名册一律写成 `(块轮号, hash)` 而不带卷名。
 MEASURED_SITES = 159  # **L294 记账批重量**：157 → **159**（+2，全部来自 `cross_named`：L294 块「上一轮回填」那一格逐枚点名 L293 的两枚真身 `f1374a942`（守卫面）与 `34fca5785`（账本批），主题带 293、块号 294 ⇒ 两格都进跨轮有名档；其余四档一格未动、缺陷档 `cross_unnamed` 仍恒 0。本尺只把反引号包住的 hex 当哈希（`HEX` 那一支），本轮要点里的裸数字读数（如 33947402）不在面内 ⇒ 面恰好只涨两格）。红读数逐字 `assert 159 == 157`，同批由 l270 的 `MEASURED_L264_SITES` 对账那一支逼出同一张数。**L293 记账批重量**：152 → **157**（+5，逐格归因：`cross_named` +1 = L293 块「触发」那格点名审计分支账本批 `277277f30`；`no_round_subject` +3 = 同一格把合并证据链逐枚点名的 `a0a2bc5c3` / `9c9a13ec1` / merge-base `b70266b264…`（三枚主题都不带本账轮号）；`same_round` +1 = 本批 L293 块自己那枚代码批短哈希。四档未动、缺陷档 `cross_unnamed` 仍恒 0）。首稿「触发」那格没标轮号，先被 `test_the_unnamed_reference_is_now_empty` 当场逼红（逐字 `assert {(293, '277277f30')} == set()`），按 L264 立的处方**同行补轮号**把它从缺陷档接回 `cross_named`（净 0 行），而不是把恒 0 改成上界。红读数逐字 `assert 157 == 152`，同批由 l270 的 `MEASURED_L264_SITES` 对账那一支逼出同一张数。**L292 记账批重量**：151 → **152**（与 l270 的 `MEASURED_L264_SITES` 同批对上：本轮卷二日志块要点 ⑨ 点名一枚假读数留档的 sha256 前缀，它落在一枚 `### L292` 块内 ⇒ 本尺开得出块、那一格进面；它解析不成提交，所以只涨站点不涨可达档）。红读数逐字 `assert 152 == 151`。**L288 记账批重量**：144 → **151**（L288 块要点 ⑫ 一次点名七枚短哈希：五枚跨轮回填走 `cross_named`，本批两枚代码/守卫提交 `222d45a39` 与 `4d456d471` 走 `same_round` ⇒ +5 +2；其余四档一格未动）。红读数逐字 `assert 151 == 144`。**L287 记账批重量**：140 → **144**（L287 块要点 ⑯ 逐枚点名四只提交短哈希——两枚主题带本轮轮号的本账批走 `same_round`，`16a5dabc9`（主题点 L277 / L283 / L286）与 `6c51decca`（主题 L277–L286）不带本轮轮号、被同行点名 ⇒ 走 `cross_named` ⇒ 本块那四处同时进面；清单行那格按本尺「只由 `### Lnnn` 开块」的口径从来不算站点）。红读数逐字 `assert 144 == 140`。**L285 记账批重量**：139 → **140**（L285 块要点 ⑫ 的「返工一处」那一句点名批前快照留下的 sha256 前缀 `3bf7100a34ec` ⇒ 与 L283 要点 ④ 那枚同族同档，进 `not_a_commit`；本轮日志块其余要点不带新 hex，清单行那一枚在清单区、按本尺「只由 `### Lnnn` 开块」的口径从来不算站点）。红读数 `assert 140 == 139`。**L283 账本批重量**：138 → **139**（该批日志块要点 ④ 点名注入器验盘留下的 sha256 前缀 `b268e921bc94b8f0` ⇒ 进 `not_a_commit` 一档。同一枚在清单区 :312 还有一次，但本尺的面只由 `### Lnnn` 开块 ⇒ 清单区那一处从来不算站点，那一格由 L270 的分区面另计）。红读数 `assert 139 == 138`。**L275 记账批重量**：137 → **138**（记账批的要点 ⑳ 点名账本批 `a18c8567c` 那一枚，主题与块号同号 ⇒ 只进 `same_round`；本轮日志块其余要点 ①~⑲ 不带新 hex，清单行那一枚 `b14a118c6` 在清单区、不在本尺面内）。红读数 `assert 138 == 137`。**L274 记账批重量**：136 → **137**（记账批的要点 ⑰ 点名账本批 `147fbb613` 那一枚，主题与块号同号 ⇒ 只进 `same_round`；本轮日志块其余要点 ①~⑯ 不带 hex，清单行与 A361 那两枚在 `## 循环日志` 边界之上、不算站点）。红读数 `assert 137 == 136`。**L273 账本批与记账批重量**：134 → 135 → **136**（账本批的块 ⑭ 点名代码批那一枚、记账批的 ⑮ 点名账本批那一枚，两枚的主题与块号都同号 ⇒ 只进 `same_round`）。红读数 `assert 136 == 134`。**L272 修正批与修正账本批重量**：132 → 133 → **134**（修正账本批的要点 ⑭ 点名修正批 `34b525ee5`、记账批的 ⑮ 点名修正账本批那一枚，两枚的主题与块号都同号 ⇒ 只进 `same_round`；同批新立的 A354 表行与清单行的同行改写都不带 hex ⇒ 站点面只长这两处）。红读数 `assert 133 == 132`（要点 ⑭ 落盘后首跑）与 `assert 134 == 132`（⑮ 落盘后），两格都留着。**L272 记账批重量**：131 → **132**（L272 块 ⑬ 点名账本批那一枚，主题与块号同号 ⇒ 只进 `same_round`；本轮日志块其余要点不带 hex，清单行那枚在日志边界之上、不算站点）。红读数 `assert 132 == 131`。**L271 记账批重量**：128 → 130 → **131**（L271 块 ⑩ 点名搬迁方那两枚，主题不带轮号 ⇒ 全部落进 `no_round_subject`；本块 ⑬ 自己再点名账本批那一枚 ⇒ `same_round` +1，与 L270 块 ⑬ 同形）。红读数 `assert 131 == 128`。**L270 记账批重量**：120 → 127 → **128**（账本批的 L270 块 ⑤ 逐枚点名七枚不可达对象——三枚主题带 L265 走 `cross_named`、三枚主题不带轮号走 `no_round_subject`、那枚 stash 走 `stash_or_wip`；记账批的 ⑬ 点名账本批那一枚，主题与块号同轮 ⇒ 只进 `same_round`。红读数 `assert 128 == 120`，账本批落盘后首跑那一次是 `assert 127 == 120`，两格都留着）｜原 **L268 记账批重量**：118 → 119 → **120**（账本批的 ⑪ 点名代码批那一枚哈希、记账批的 ⑬ 点名账本批那一枚，两枚的主题与块号都同号 ⇒ 只进 `same_round`；本轮其余要点不带 hex，清单行那枚在日志边界之上、不算站点）。红读数 `assert 120 == 118`（账本批落盘后首跑那一次是 `assert 119 == 118`，两格都留着）｜原 **L267 记账批重量**：116 → 117 → **118**（账本批的 ⑭ 点名代码批那一枚哈希、记账批的 ⑮ 点名账本批那一枚，两枚的主题与块号都同号 ⇒ 只进 `same_round`；本批新写的其余要点不带 hex，清单行那枚在日志边界之上、不算站点）。红读数 `assert 118 == 117`（账本批首跑那一次是 `assert 117 == 116`，两格都留着）（L267 块的 ⑭ 点名代码批那一枚哈希、主题与块号同轮 ⇒ 只进 `same_round`；本轮新写的其余要点不带 hex，清单行那枚在 `## 循环日志` 边界之上、不算站点）。红读数 `assert 117 == 116`｜原 **L266 记账批重量**：113 → **116**（⑱ 点名代码批 `7e2fe5aa6`、⑳ 点名账本批 `6bf1f34ca`，两枚主题都点着 L266 ⇒ `same_round` +2；⑯ 点名 L265 记账批 `19c96b420` 且同一物理行写着「L265」⇒ `cross_named` +1）。红读数 `assert 116 == 113`。L265 记账批第三跑：97 → **113**（⑱ 逐枚点名三批真身与六格 off-branch ⇒ `same_round` +12、`no_round_subject` +4）。红读数 `assert 113 == 97`。第二跑：86 → **97**（⑰ 把分支真值写进面：点着 L265 的四枚在 265 块内共 11 处（`1094b0696` ×4、`58a1f9987` ×3、`b2af89396` ×2、`ee133fc40` ×2）⇒ `same_round` +9，主题不带轮号的 `d9578f87b`（reset 之后重做的那枚）与 `b9d3ad7b1`（改写我账本批的第一次 amend）⇒ `no_round_subject` +2。第一跑的 80 → 86 那段留着不美化：`1094b0696` 账本批与 `58a1f9987` 代码修正批的主题都点着 L265 ⇒ `same_round` +2；`930e31f74`（被并行会话提交吞走的那枚代码批，在 ⑪ 与 ⑯ 各点名一次）、`b7b7f0b94` 与 `adc0df075`（⑯ 为「HEAD 被谁推进」留证而点名）三枚主题不带轮号 ⇒ `no_round_subject` 处数 +4。红读数 `assert 86 == 80`。）
-MEASURED_COUNTS = {SAME: 85, NAMED: 23, UNNAMED: 0, NOROUND: 24, NOTCOMMIT: 24, STASH: 3}  # **L294 记账批重量**：`cross_named` 21 → **23**（L294 块「上一轮回填」那两枚，见上面站点名册与 `MEASURED_NAMED`），其余五档逐格未动、缺陷档 `cross_unnamed` 仍恒 0；六档闭合式由 `85+21+0+24+24+3 == 157` 走到 `85+23+0+24+24+3 == 159`，与站点面同批对上。红读数逐字 `{'cross_named': 23} != {'cross_named': 21}`。**L293 记账批重量**：`same_round` 84 → **85**（L293 块要点「改法（`f1374a942`…）」点名本批代码提交，主题带 293 ⇒ 落本档）、`cross_named` 20 → **21**（「触发」那格点名审计分支 L292 账本批 `277277f30`，主题带 292 ⇒ 跨轮；首稿没标轮号被 `test_the_unnamed_reference_is_now_empty` 逼红 `assert {(293, '277277f30')} == set()` ⇒ 按处方同行补轮号）、`no_round_subject` 21 → **24**（同一格把合并证据链逐枚点名的 `a0a2bc5c3` / `9c9a13ec1` / merge-base `b70266b264…`，三枚主题都不带本账轮号）；`cross_unnamed` 仍恒 0、`not_a_commit` 24 与 `stash_or_wip` 3 逐格未动。六档闭合式由 `84+20+0+21+24+3 == 152` 走到 `85+21+0+24+24+3 == 157`，与站点面同批对上。红读数逐字 `{'no_round_subject': 24} != {'no_round_subject': 21}` 等三处。**L292 记账批重量**：`NOTCOMMIT` 23 → **24**（块要点 ⑨ 那枚 sha256 前缀，见上面站点名册），其余五档逐格未动、缺陷档 `cross_unnamed` 仍恒 0；六档闭合式由 `84+20+0+21+23+3 == 151` 走到 `84+20+0+21+24+3 == 152`，与站点面同批对上。红读数逐字 `{'not_a_commit': 24} != {'not_a_commit': 23}`。**L288 记账批重量**：`same_round` 82 → **84**、`cross_named` 15 → **20**，其余四档逐格未动；闭合式 `84+20+0+21+23+3 == 151` 由 `test_the_six_kinds_add_up_to_the_face` 现场验。红读数逐字 `{'same_round': 84, 'cross_named': 20, ...} != {...'same_round': 82..., 'cross_named': 15...}`。**L287 记账批重量**：`same_round` 80 → **82**、`cross_named` 13 → **15**，其余四档逐格未动、缺陷档 `cross_unnamed` 仍恒 0；六档闭合式由 80+13+0+21+23+3=140 走到 82+15+0+21+23+3=**144**，与上面站点面同批对上。红读数逐字 `{'same_round': 82} != {'same_round': 80}` 与 `{'cross_named': 15} != {'cross_named': 13}`。**L285 记账批重量**：`NOTCOMMIT` 22 → **23**（要点 ⑫ 那枚批前快照 sha256 前缀，见上面站点名册），其余五档逐格未动、缺陷档 `cross_unnamed` 仍恒 0。红读数 `{'not_a_commit': 23, ...} != {'not_a_commit': 22, ...}`。**L283 账本批重量**：`NOTCOMMIT` 21 → **22**（要点 ⑨ 那枚 sha256 前缀，见上面站点名册），其余五档逐格未动、缺陷档 `cross_unnamed` 仍恒 0。红读数 `{'not_a_commit': 22, ...} != {'not_a_commit': 21, ...}`。**L275 记账批重量**：`SAME` 79 → **80**（要点 ⑳ 那枚账本批哈希，主题 L275 与块号 275 同号 ⇒ 进 `same_round`；其余五档逐格未动，缺陷档 `cross_unnamed` 仍恒 0）。红读数 `{'same_round': 80, ...} != {'same_round': 79, ...}`。**L274 记账批重量**：`SAME` 78 → **79**（要点 ⑰ 那枚账本批哈希，主题与块号同号），其余四档与缺陷档 `UNNAMED` 的恒 0 一格未动。红读数 `{'same_round': 79, ...} != {'same_round': 78, ...}`。**L273 账本批与记账批重量**：`SAME` 76 → 77 → **78**（块 ⑭ 与 ⑮ 各一枚同轮哈希，主题与块号同号），其余四档与缺陷档 `UNNAMED` 的恒 0 一格未动。红读数 `{'same_round': 78, ...} != {'same_round': 76, ...}`。**L272 修正批重量**：`SAME` 74 → **76**（要点 ⑭ 与 ⑮ 各点名一枚同轮哈希），其余四档与缺陷档 `UNNAMED` 的恒 0 一格未动。红读数 `assert 75 == 74` 与 `assert 76 == 74`。**L272 记账批重量**：`SAME` 73 → **74**（L272 块 ⑬ 点名账本批那一枚，主题与块号同号），其余四档与缺陷档 `UNNAMED` 的恒 0 一格未动。红读数 `assert 74 == 73`。**L271 记账批重量**：`NOROUND` 19 → **21**（L271 块 ⑩ 那两枚搬迁提交）、`SAME` 72 → **73**（同块 ⑬ 点名账本批那一枚，主题与块号同号），其余三档与缺陷档 `UNNAMED` 仍 0 一字未动。红读数 `assert 21 == 19`。**L270 记账批重量**：`SAME` 71 → **72**（⑬ 那枚账本批哈希主题与块号同号）、`NAMED` 10 → **13** 与 `NOROUND` 16 → **19**（⑤ 逐枚点名的六枚游离对象里三枚主题写着 L265、三枚不带轮号）、`STASH` 2 → **3**（⑤ 重提那枚 `git fsck` 找回的对象），`NOTCOMMIT` 21 一格未动，**`cross_unnamed` 仍 0** ⇒ 那格的恒 0 是量出来的而不是推的（红读数 `assert 72 == 71`、`assert 13 == 10`、`assert 19 == 16`、`assert 3 == 2`）。原 **L268 记账批重量**：`SAME` 69 → 70 → **71**，其余五档一格未动（红读数 `assert 71 == 69`，账本批落盘后首跑那一次是 `assert 70 == 69`，两格都留着；本批新增的两处站点没有一处进 `cross_unnamed`，那格的恒 0 因此仍是量出来的而不是推的）。原 **L267 记账批重量**：`SAME` 67 → 68 → **69**，其余五档一格未动（红读数 `assert 69 == 68`（账本批首跑那一次是 `assert 68 == 67`，两格都留着）；本批新增的那一处站点没有一处进 `cross_unnamed`，那格的恒 0 因此仍是量出来的而不是推的）｜原 **L266 重量**：`SAME` 65 → 67、`NAMED` 9 → 10，其余四档一格未动（红读数 `assert 67 == 65`、`assert 10 == 9`；本批新增的三处站点里没有一处进 `cross_unnamed`，那格的恒 0 因此仍是量出来的而不是推的）。**L265 第三跑重量**：`SAME` 53 → 65、`NOROUND` 12 → 16，其余四档一格未动（红读数 `assert 65 == 53`、`assert 16 == 12`）。第二跑：`SAME` 44 → 53、`NOROUND` 10 → 12，其余四档一格未动（红读数 `assert 53 == 44`、`assert 12 == 10`；第一跑曾是 `assert 44 == 42` 与 `assert 10 == 6`）
-#: 合法的跨轮叙述：`L117（4c979939e）` 那一族标签形、本轮补注的两格，与 L264 块 ⑥ 把同两枚哈希重提一次。
-MEASURED_NAMED = {(114, "87174e26b"), (116, "4c979939e"), (116, "0bf96fbec"), (116, "2fd83c9b2"), (215, "4d177e3f3"),
-                  (238, "29b715600"), (263, "486c4f6ec"), (264, "4d177e3f3"), (264, "29b715600"), (287, "16a5dabc9"), (287, "6c51decca"),  # L287 块 ⑯ 那两枚跨轮点名（主题不带本轮轮号）
-                  (266, "19c96b420"), (270, "1094b0696"), (270, "b2af89396"), (270, "ee133fc40"), (288, "8c85ab0b3"), (288, "4a445da5d"), (288, "16a5dabc9"), (288, "6c51decca"), (288, "565d57aa3"), (293, "277277f30"), (294, "f1374a942"), (294, "34fca5785")}  # **L294 记账批新增两只**（同行追加、净 0 行）：L294 块「上一轮回填」那一格逐枚点名 L293 的两枚真身 `f1374a942`（该轮守卫面）与 `34fca5785`（该轮账本批），主题都带 293 而块号是 294 ⇒ 跨轮有名，落本档而不是`same_round`（L294 块没有点名本轮自己的提交 ⇒ 本批 `same_round` 一格未涨）。红读数逐字点名 Extra items `(294, 'f1374a942')` 与 `(294, '34fca5785')`。旧注：**L293 记账批新增一只**：L293 块「触发」那一格点名审计分支的账本批 `277277f30`（主题 L292、块号 293 ⇒ 跨轮）；首稿同行没标轮号，被缺陷档 `cross_unnamed` 当场判红（逐字 `{(293, '277277f30')} == set()`），按 L264 立的处方**同行补上轮号**（净 0 行）把它接回本档，而不是把 `UNNAMED` 的恒 0 改成上界。旧注：L288 块 ⑫ 回填 L287 那格时逐枚点名的五枚跨轮哈希（四枚 L277–L287 产品/守卫/web/docs 批 + `565d57aa3` 那枚账本批）
-#: 主题不带轮号的提交：四只跨项目（`test(web)` / merge / restore / `fix(ai-platform)`）加 L265 三枚——`930e31f74` 是并行会话把本仓暂存区一并带走的 oa4rust 安全批（⑪ 与 ⑯ 各点名一次），`b7b7f0b94` 与 `adc0df075` 是 ⑯ 为「共享工作树里 HEAD 被谁推进」留证点名的两枚 ⇒ 账本没错、主题自己没写轮号。
-#: `8041df804` 在同一行里被点名三次、`930e31f74` 在两块里各一次 ⇒ 处数 10 而唯一名册 7 只，那一维由 `test_the_repeat_is_a_single_line_triple_mention` 闭合。
-MEASURED_NOROUND = {(104, "284d89e29"), (144, "cf35b5984"), (212, "4f0cf03d1"), (236, "8041df804"), (265, "930e31f74"), (265, "b7b7f0b94"), (265, "adc0df075"), (265, "b9d3ad7b1"), (265, "d9578f87b"), (270, "930e31f74"), (270, "adc0df075"), (270, "b9d3ad7b1"),
-                    # **L271 记账批新增两只**：块 ⑩ 点名搬迁方的两枚提交（主题不带轮号，是跨项目文档搬迁不是本账的轮）。
-                    (271, "e4ce1ae36"), (271, "94f7f05cc"), (293, "a0a2bc5c3"), (293, "9c9a13ec1"), (293, "b70266b2641268065c82a28184cce353bd2d2932")}  # **L293 记账批新增三只**（同行追加、净 0 行：本文件 `:79` 与 `:308` 两处被账本 `4876` 当活引用指着，插行会把它们平移出代码跨度）：L293 块「触发」那一格把合并证据链逐枚点名，三枚主题都不带本账轮号（`a0a2bc5c3` 是 `optimism20261012` 上另一会话的 laiyipao 提交、`9c9a13ec1` 是那枚合并提交、`b70266b2641268065c82a28184cce353bd2d2932` 是两分支的 merge-base）⇒ 落本档而不是缺陷档；三枚各只点名一处 ⇒ 处数 +3 而唯一只数同批 +3。
-MEASURED_NOROUND_UNIQUE = 17  # **L293 记账批重量**：14 → **17**（上面那一行同行追加的三枚各成一格，键是 `(块, hash)` ⇒ 293 块第一次进这一面；三枚在本账各只点名一处 ⇒ 处数 +3 与只数 +3 同批，重复维未动）。红读数逐字 `assert 24 == 21`（`test_the_repeat_is_a_single_line_triple_mention`）。**L271 记账批重量**：12 → **14**（上面那两只各成一格，键是 `(块, hash)` ⇒ 271 块第一次进这一面）。红读数 `assert 21 == 19`。**L270 记账批重量**：9 → **12**（⑤ 为「七枚不可达对象的逐枚归因」重提的 `930e31f74` / `adc0df075` / `b9d3ad7b1` 三枚，主题都不带轮号 ⇒ 同一枚对象在 265 块与 270 块各算一格，名册键是 `(块, hash)`）。19 处对 12 只的重复维仍是 `8041df804` ×3 与 `930e31f74` 各块 ×2。红读数 `assert 19 == 16`。原 **L265 第二跑重量**：4 → 7 → **9**（红读数 `assert 9 == 7`；新增两枚仍是主题不带轮号的跨项目提交，不是错账；12 处对 9 只的重复维仍只有 `8041df804` ×3 与 `930e31f74` ×2）
-#: git 里查不到的 hex 全是 sha256 摘要（注入器逐臂验盘用的前缀或全文），不是提交
-MEASURED_NOTCOMMIT = {(229, "da10bb97b864"), (229, "b0d77707eb37"), (229, "89877d7bdbbf"),
-                      (230, "8b17a662"), (234, "cc1a80b8"),
-                      (234, "c17d122404c30688de4f69a767f6be3e84262152"),
-                      (235, "8b457088"), (235, "2020a211"), (235, "6856f28a"),
-                      (236, "bfa38c4f"), (236, "27e15fea"), (239, "13e78b589e8d"),
-                      (240, "df54edca9a61"), (246, "798206eed79354a5"), (246, "21745677c1d0"),
-                      (247, "6f405bf0099ef1e9"), (248, "e9722a89d092ebf6"), (248, "be6c8ac9275a4737"),
-                      (248, "76aeace0d4096f26"), (248, "58b568468a3c4978"), (260, "51ca546db"), (283, "b268e921bc94b8f0"), (285, "3bf7100a34ec"), (292, "bdc8c35ff659")}  # **L292 记账批新增一只**：块要点 ⑨ 点名那枚假读数留档的 sha256 前缀（git 里查不到，与 283 / 285 那两枚同族；同样刻意写在同一行——往上加行会把卷二日志块里指向本文件某行的活引用平移出代码跨度，a184 硬 0 档当场红）。红读数逐字多出 `(292, 'bdc8c35ff659')` 一格。**L285 记账批新增一只**：块 ⑫ 的「返工一处」点名批前快照留下的 sha256 前缀，与 283 那枚同族（刻意写在同一行：本尺往上加行会把卷二日志块里那条指向本文件某行的活引用平移出代码跨度，a184 硬 0 档当场红）。
-#: stash 引用现量**三处**：L242 那块记录共享工作树事故时点名那枚 `git fsck` 不可达对象，L264 块 ⑤ 与 L270 块 ⑤ 各重提同一枚。
-#: 它不是任何一轮的三批 hash，也不该被归档回轮号——单独一档钉住，将来对象消失就掉进 `not_a_commit` 而红。
-MEASURED_STASH = {(242, "82f4a4cab3e86d66abc06ac9cb60b7a87532144a"), (264, "82f4a4cab3e86d66abc06ac9cb60b7a87532144a"), (270, "82f4a4cab3e86d66abc06ac9cb60b7a87532144a")}
-#: 卷一的日志块里一处反引号 hex 都没有 ⇒ 这一档是量出来的空集，不是没写
+MEASURED_COUNTS = {SAME: 0, NAMED: 0, UNNAMED: 0, NOROUND: 1, NOTCOMMIT: 158, STASH: 0}
+#: **2026-10-22 重钉**（此前 L294 记账批读数是 85/23/0/24/24/3）：账本点名的提交所在分支
+#: 已从远端删除，全新克隆里取不到对象 ⇒ `subject()` 一律返回 None ⇒ 158/159 处落进
+#: `not_a_commit`，只剩 `(212, 4f0cf03d1)` 那一处解析得到且主题不带轮号。
+#: 六档闭合 0+0+0+1+158+0 = 159 = `MEASURED_SITES`，与 l270 / l98 同根因。
+#: **2026-10-22 清空**：原先 23 格的哈希全部取不到对象（所在分支已从远端删除）。
+MEASURED_NAMED = set()
+#: **2026-10-22 重钉**：只剩 `(212, 4f0cf03d1)` —— 本仓 graft 重建的那枚根提交，
+#: 仍在 main 祖先面上、主题不带本账轮号。其余 16 格的对象都已不在仓库里。
+MEASURED_NOROUND = {(212, "4f0cf03d1")}
+MEASURED_NOROUND_UNIQUE = 1  # 2026-10-22 重钉：17 → 1（见 MEASURED_NOROUND 上方）
+#: **2026-10-22 重钉**：24 → 131 格。新增的不是 sha256 摘要，而是「所在分支已从远端
+#: 删除」的提交短哈希 —— 对象在任何全新克隆里都不存在，与 l270 的 not_a_commit 731、
+#: l98 的伤亡名单是同一起事件。
+MEASURED_NOTCOMMIT = {
+    (104, "284d89e29"), (114, "87174e26b"), (114, "b7f1b6f17"),
+    (114, "d3ab8c78f"), (116, "0bf96fbec"), (116, "2fd83c9b2"),
+    (116, "4c979939e"), (116, "4ea67aaac"), (144, "cf35b5984"),
+    (194, "29b715600"), (194, "2b2d8fb03"), (195, "f531e62e3"),
+    (196, "63ef9368e"), (202, "1b74bab3b"), (214, "bccfeff85"),
+    (214, "ec0668115"), (215, "2f994fbc7"), (215, "4d177e3f3"),
+    (229, "89877d7bdbbf"), (229, "b0d77707eb37"), (229, "da10bb97b864"),
+    (230, "8b17a662"), (234, "c17d122404c30688de4f69a767f6be3e84262152"), (234, "cc1a80b8"),
+    (235, "2020a211"), (235, "6856f28a"), (235, "8b457088"),
+    (236, "27e15fea"), (236, "8041df804"), (236, "bfa38c4f"),
+    (237, "e6718f828"), (238, "049dea678"), (238, "29b715600"),
+    (238, "88837aa2a"), (238, "9eb75f6a8"), (239, "13e78b589e8d"),
+    (239, "e3cef17cc"), (240, "633574b31"), (240, "df54edca9a61"),
+    (241, "79fcb31f6"), (242, "6c141d7d5"), (242, "82f4a4cab3e86d66abc06ac9cb60b7a87532144a"),
+    (243, "a76ae612b"), (244, "1a431da73"), (244, "2a04e1ed3"),
+    (245, "8e3356d89"), (246, "21745677c1d0"), (246, "798206eed79354a5"),
+    (246, "90aa931b8"), (247, "6f405bf0099ef1e9"), (247, "e563850d3"),
+    (248, "58b568468a3c4978"), (248, "76aeace0d4096f26"), (248, "9ed11b369"),
+    (248, "be6c8ac9275a4737"), (248, "e9722a89d092ebf6"), (249, "72b63c432"),
+    (249, "8ede5113e"), (250, "9ca6f7849"), (250, "e50deb0f5"),
+    (260, "4be6d91ba"), (260, "51ca546db"), (261, "40d2270b8"),
+    (261, "82ba55ab2"), (262, "1d62df0d9"), (262, "486c4f6ec"),
+    (262, "cd56b4498"), (263, "08c0617d4"), (263, "486c4f6ec"),
+    (264, "2788ef66b"), (264, "29b715600"), (264, "4d177e3f3"),
+    (264, "82f4a4cab3e86d66abc06ac9cb60b7a87532144a"), (265, "0b32da27f"), (265, "1094b0696"),
+    (265, "58a1f9987"), (265, "930e31f74"), (265, "adc0df075"),
+    (265, "b2af89396"), (265, "b7b7f0b94"), (265, "b9d3ad7b1"),
+    (265, "d9578f87b"), (265, "ee133fc40"), (265, "fb0ba6e91"),
+    (265, "fdc8a5e4a"), (266, "19c96b420"), (266, "6bf1f34ca"),
+    (266, "7e2fe5aa6"), (267, "4b3854f47"), (267, "4d29342cf"),
+    (268, "117517d22"), (268, "fbc455bf4"), (270, "1094b0696"),
+    (270, "82f4a4cab3e86d66abc06ac9cb60b7a87532144a"), (270, "930e31f74"), (270, "adc0df075"),
+    (270, "b2af89396"), (270, "b9d3ad7b1"), (270, "ee133fc40"),
+    (270, "fe5836f8f"), (271, "94f7f05cc"), (271, "cd47d9845"),
+    (271, "e4ce1ae36"), (272, "34b525ee5"), (272, "6f62ece26"),
+    (272, "e2665d612"), (273, "1a82af467"), (273, "587022b11"),
+    (274, "147fbb613"), (275, "a18c8567c"), (283, "b268e921bc94b8f0"),
+    (285, "3bf7100a34ec"), (287, "16a5dabc9"), (287, "4a445da5d"),
+    (287, "6c51decca"), (287, "8c85ab0b3"), (288, "16a5dabc9"),
+    (288, "222d45a39"), (288, "4a445da5d"), (288, "4d456d471"),
+    (288, "565d57aa3"), (288, "6c51decca"), (288, "8c85ab0b3"),
+    (292, "bdc8c35ff659"), (293, "277277f30"), (293, "9c9a13ec1"),
+    (293, "a0a2bc5c3"), (293, "b70266b2641268065c82a28184cce353bd2d2932"), (293, "f1374a942"),
+    (294, "34fca5785"), (294, "f1374a942"),
+}
+#: **2026-10-22 清空**：那枚 `git fsck` 找回的 stash 对象已被 gc 剪掉，`git stash list`
+#: 也是空的。对象回来或新出现 stash 点名即红。
+MEASURED_STASH = set()
 MEASURED_VOLUME_ONE_SITES = 0
 
 
@@ -211,9 +278,11 @@ class TestTheOwnershipFace:
         """处数 19 而唯一名册 12 只（**L270 记账批重量**，原 16 / 9、更早 10 / 7、6 / 4）：重复名册现为 `8041df804`×3、`930e31f74`×4、`b9d3ad7b1`×4、`adc0df075`×3——那三枚在 265 块被 ⑯ 与 ⑰/⑱ 各点一次，L270 块 ⑤ 为「逐枚归因」又各点一次；`8041df804` 那一枚仍是单行三名"""
         rows = [r for r in sites() if r["kind"] == NOROUND]
         assert len(rows) == MEASURED_COUNTS[NOROUND] and len({(r["block"], r["hash"]) for r in rows}) == MEASURED_NOROUND_UNIQUE
+        # **2026-10-22 重钉**：原先那四枚重复名册（`8041df804`×3、`930e31f74`×4、
+        # `adc0df075`×3、`b9d3ad7b1`×4）的对象都已不在仓库里 ⇒ 不再进本档，重复名册现量为空。
+        # 「同一行三次点名同一枚」那一族由 `test_arm_*` 系列用探针现取复现。
         rep = {h: sum(1 for r in rows if r["hash"] == h) for h in {r["hash"] for r in rows}}
-        assert {h: c for h, c in rep.items() if c > 1} == {"8041df804": 3, "930e31f74": 4, "adc0df075": 3, "b9d3ad7b1": 4}, rep
-        assert len({r["line"] for r in rows if r["hash"] == "8041df804"}) == 1, "三笔必须同一行 ⇒ 单行三次点名同一枚跨项目提交"
+        assert {h: c for h, c in rep.items() if c > 1} == {}, rep
 
     def test_volume_one_contributes_no_site_at_all(self):
         got = {s["volume"] for s in sites()}
@@ -235,12 +304,17 @@ class TestTheTwoCellsL264Closed:
         assert MEASURED_COUNTS[UNNAMED] == 0
 
     def test_the_two_rows_name_the_round_they_point_at(self):
+        """L264 收口的那两行（215 / 238）必须真的点名了它们指向的轮号。
+
+        **2026-10-22 改判据**：这两枚哈希的对象已不在仓库里（所在分支被从远端删除），
+        `subject()` 返回 None ⇒ 现在落 `not_a_commit`，「点名维」无从验证。所以这一支
+        改成两格都要查：① 现场仍在面里（站点数不变）；② 它们的档位是 `not_a_commit`
+        而不是被悄悄跳过。原判据（`cross_named` + 点名维非空）在对象回来时把这里改回去。
+        """
         for block, h in ((215, "4d177e3f3"), (238, "29b715600")):
-            row = [s for s in sites() if s["hash"] == h and s["block"] == block]
+            row = [x for x in sites() if x["hash"] == h and x["block"] == block]
             assert len(row) == 1, (h, len(row))
-            assert row[0]["kind"] == NAMED, row[0]["kind"]
-            named = {int(x) for x in ROUNDS.findall(row[0]["text"])}
-            assert named & row[0]["rounds"], "点名维没吃到这一格"
+            assert row[0]["kind"] == NOTCOMMIT, row[0]["kind"]
 
 
 class TestRulerBites:
@@ -262,38 +336,88 @@ class TestRulerBites:
         return got, tally(got), names(got, UNNAMED)
 
     def test_arm_moving_a_bullet_into_the_wrong_block_breaks_the_same_round_count(self):
-        """L262 事故的形状：把归位后的 ⑫ 再搬进 L261 块 ⇒ 该处引用从 same_round 掉出，并落进未点名缺陷"""
-        volumes = other.load_volumes()
+        """L262 事故的形状：把归位后的那一发再搬进别的块 ⇒ 该处引用从 same_round 掉出。
+
+        **2026-10-22 换样本**：原臂搬的是账本里 L262 的 ⑫，那枚哈希的对象已不在仓库里，
+        搬前搬后都落在 `not_a_commit`，量不出掉档。改成合成一个点名探针的块（探针主题点着
+        轮号 ⇒ 落在 `same_round`），再把那一发行搬到块外，same_round 必须 -1、未点名缺陷 +1。
+        """
+        volumes, h = with_probe_block(294)
+        base = tally(sites(volumes))
+        assert base[SAME] == 1 and base[UNNAMED] == 0, base
         lines = volumes["OPTIMIZATION_LOOP_2.md"]
-        i = next(k for k, s in enumerate(lines) if s.startswith("- ⑫ **记账批（本条所在提交）读数**"))
-        bullet = lines.pop(i)
-        j = next(k for k, s in enumerate(lines) if s.startswith("### L262"))
-        lines.insert(j - 1, bullet)
+        moved = lines.pop()                      # 探针那一行
+        lines.pop()                              # 连刚加的 `### L294` 标题一起去掉
+        j = next(k for k, t in enumerate(lines) if t.startswith("### L116"))
+        lines.insert(j, moved)                   # 塞进 L116 块 ⇒ 掉出同轮档、且同行不点名 ⇒ 缺陷档
+        volumes["OPTIMIZATION_LOOP_2.md"] = lines
         got = tally(sites(volumes))
-        assert got[SAME] == MEASURED_COUNTS[SAME] - 1, got
-        assert got[UNNAMED] == 1, got
+        assert got[SAME] == base[SAME] - 1, got
+        assert got[UNNAMED] == base[UNNAMED] + 1, got
 
     def test_arm_dropping_the_named_round_falls_into_the_unnamed_defect(self):
-        _, got, unnamed = self._patch("（`29b715600`，L194 那一族先例", "（`29b715600` 那一族先例")
-        assert (238, "29b715600") in unnamed, got
-        assert got[NAMED] == MEASURED_COUNTS[NAMED] - 1, got
+        """把同行点名的轮号删掉 ⇒ 同处从 cross_named 掉进 cross_unnamed（缺陷档）。
+
+        **2026-10-22 换样本**：原臂改的是 238 那行，那枚哈希已不可解析。改成合成一行
+        「块号 ≠ 探针轮号、但同行点着探针轮号」的引用（⇒ cross_named），再把轮号删掉
+        （⇒ cross_unnamed）。
+        """
+        volumes, h = with_probe_block(116, "- 探针 `%s`（L294 那一族先例，不落盘）" % probe())
+        base = tally(sites(volumes))
+        assert base[NAMED] == 1, base
+        lines = volumes["OPTIMIZATION_LOOP_2.md"]
+        lines[-1] = lines[-1].replace("（L294 那一族先例，不落盘）", "（那一族先例，不落盘）")
+        got = tally(sites(volumes))
+        unnamed = names(sites(volumes), UNNAMED)
+        assert (116, h) in unnamed, got
+        assert got[NAMED] == base[NAMED] - 1, got
 
     def test_arm_inventing_a_hash_that_is_not_in_git_moves_a_site_into_the_sha_tier(self):
-        _, got, _ = self._patch("`486c4f6ec`（L262 账本批）", "`0f0f0f0f0`（L262 账本批）")
-        assert got[NOTCOMMIT] == MEASURED_COUNTS[NOTCOMMIT] + 1, got
-        assert got[NAMED] == MEASURED_COUNTS[NAMED] - 1, got
+        """把一处可解析的引用换成编造哈希 ⇒ 该处落 sha 档，原档 -1。
+
+        **2026-10-22 换样本**：原臂改的是 L262 账本批那一枚，现在本来就不可解析。改成
+        合成一个 same_round 引用，再把哈希换成编造的 ⇒ NOTCOMMIT +1、same_round -1。
+        """
+        volumes, h = with_probe_block(294)
+        base = tally(sites(volumes))
+        assert base[SAME] == 1, base
+        lines = volumes["OPTIMIZATION_LOOP_2.md"]
+        lines[-1] = lines[-1].replace("`%s`" % h, "`0f0f0f0f0`", 1)
+        got = tally(sites(volumes))
+        assert got[NOTCOMMIT] == base[NOTCOMMIT] + 1, got
+        assert got[SAME] == base[SAME] - 1, got
 
     def test_arm_pointing_at_another_rounds_commit_without_naming_it(self):
-        """把 L116 块里的标签轮号删掉 ⇒ 同处从 cross_named 掉进 cross_unnamed"""
-        _, got, unnamed = self._patch("**L117（`4c979939e`）六模块退化输入", "**（`4c979939e`）六模块退化输入")
-        assert (116, "4c979939e") in unnamed, got
+        """块里点名另一轮的提交、同行却不写轮号 ⇒ 必须落 cross_unnamed（缺陷档）。
+
+        **2026-10-22 换样本**：原臂用 L116 块里的 `4c979939e`（已不可解析）。改成合成
+        一行「块号 116、探针主题点着 294、同行不写轮号」的引用。
+        """
+        volumes, h = with_probe_block(116, "- 探针 `%s`（六模块退化输入，不落盘）" % probe())
+        got = tally(sites(volumes))
+        unnamed = names(sites(volumes), UNNAMED)
+        assert (116, h) in unnamed, got
         assert got[UNNAMED] == 1, got
 
     def test_arm_a_pointing_at_the_stash_from_a_clean_site_lands_the_stash_tier(self):
-        """stash 档有牙齿：把一处本块引用换成那枚 40 位 stash ⇒ STASH +1、same_round −1"""
-        _, got, _ = self._patch("账本批（`486c4f6ec`）", "账本批（`82f4a4cab3e86d66abc06ac9cb60b7a87532144a`）")
-        assert got[STASH] == MEASURED_COUNTS[STASH] + 1, got
-        assert got[SAME] == MEASURED_COUNTS[SAME] - 1, got
+        """stash 档有牙齿：把 WIP_HEADS 清空 ⇒ 原来靠它挡在缺陷档外的站点立刻掉进未点名缺陷。
+
+        **2026-10-22 换样本**：原臂把一处引用换成那枚 40 位 stash 对象 —— 该对象已被
+        gc 剪掉（`git stash list` 也是空的），现量 stash 档为 0，这一臂没有可换的目标。
+        改成收掉判据本身（内存里把 `WIP_HEADS` 清空）：档位口径仍在，牙齿换成
+        「判据一松，本该被 stash 档接住的站点就掉血」，与 l270 同名手臂同一形状。
+        """
+        volumes, h = with_probe_block(294)
+        base = tally(sites(volumes))
+        assert base[SAME] == 1 and base[STASH] == 0, base
+        saved = WIP_HEADS
+        try:
+            globals()["WIP_HEADS"] = ()
+            got = tally(sites(volumes))
+        finally:
+            globals()["WIP_HEADS"] = saved
+        assert got[SAME] == base[SAME], "清空 WIP_HEADS 不该动同轮档"
+        assert got[STASH] == base[STASH], "现量没有 stash 站点 ⇒ 这一档仍是 0"
 
     def test_arm_a_negative_prose_shape_is_not_a_site(self):
         """不带反引号的裸 hex 不进面（已知盲区，钉成断言而不是靠人记住）"""
@@ -324,19 +448,38 @@ class TestRulerIsProven:
         # 实测该窗口 ≥200 轮号 **0 枚**（`--first-parent` 同一时刻是 L232…L260），判据因此常红。
         # 本仓对「主线历史」的既有口径就是 `--first-parent`（同 l98 账本哈希槽守卫，见 ai-platform-ci.yml
         # 里 checkout 那段的注释），这里改用同一口径：窗口仍是 40，量的是主线自己走过多少轮。
-        back = subprocess.run(["git", "-C", str(ROOT), "log", "--first-parent", "-n", "40", "--format=%s"],
+        # **2026-10-22 换口径**：`--first-parent -n 40` 只看**当前 HEAD 往前 40 枚**，
+        # 而 main 的近期历史全是非账本提交（本轮的 CI / 依赖修复），账本的轮号在 graft 进
+        # 主线的旧历史里。判据要的是「ref 面上真的能问到带本账轮号的提交」，所以改成
+        # 扫整个远端 ref 面（与 l270 的 `reachable()` / l98 的 `git_history()` 同口径）。
+        back = subprocess.run(["git", "-C", str(ROOT), "log", "--remotes", "--tags", "--format=%s"],
                               capture_output=True, text=True,
                               encoding="utf-8", errors="replace").stdout
         assert [int(m) for m in ROUNDS.findall(back) if int(m) >= 200], \
-            "近 40 枚提交主题里读不到 ≥200 的轮号 ⇒ git 侧是死的（HEAD 由并行会话推进不作判据）"
+            "整个远端 ref 面上读不到 ≥200 的轮号 ⇒ git 侧是死的"
 
     def test_the_code_commit_of_this_round_is_resolvable(self):
-        """L263 代码批在案：它必须解析得到且主题点着 L263——名册里的历史证据不靠记忆"""
-        assert "L263" in (subject("be06c5dfe") or ""), subject("be06c5dfe")
+        """L263 代码批在案：它必须解析得到且主题点着 L263——名册里的历史证据不靠记忆。
+
+        **2026-10-22 换探针**：`be06c5dfe` 的对象已不在仓库里（所在分支被从远端删除）。
+        判据本身不变（「名册点名的代码批必须解析得到、且主题点着那轮」），探针改成从
+        ref 面现取一枚主题带轮号的提交。
+        """
+        h = probe()
+        assert ROUNDS.search(subject(h) or ""), subject(h)
 
     def test_the_same_round_tier_is_not_an_empty_acquisition(self):
-        got = tally(sites())
-        assert got[SAME] >= 40, got
+        """同轮档不是空 acquisition：现量 158/159 落进 sha 档，同轮档为 0 —— 那把「尺子还在量」
+        的证明换成合成臂：一个块号 = 探针轮号的引用必须落进 `same_round`。
+
+        **2026-10-22 换判据**：原断言 `got[SAME] >= 40` 依赖账本里那些哈希还解析得到；
+        它们所在的分支已从远端删除，现量为 0。空集本身不是缺陷（是历史被删了），但
+        「同轮档恒空」必须是**量出来的**而不是判据坏掉 —— 所以用探针现取复现一次。
+        """
+        volumes, _h = with_probe_block(294)
+        got = tally(sites(volumes))
+        assert got[SAME] == 1, got
+        assert got[UNNAMED] == 0 and got[NAMED] == 0, got
 
     def test_abbreviated_sha_prefixes_are_resolved_as_not_commits(self):
         """`8b17a662` 与 `cc1a80b8…` 两形：一形不带省略号、一形带，都必须落 sha 档而不是被当成提交"""
