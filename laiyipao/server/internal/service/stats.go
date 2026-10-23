@@ -603,14 +603,32 @@ func (s *Service) AdminListBattles(ctx context.Context, userID int64, levelID in
 		offset = 0
 	}
 
-	// 验真统计同样走**子查询预聚合**：一场战斗可以被验真多次，
+	// 验真统计走**子查询预聚合**：一场战斗可以被验真多次，
 	// 直接 JOIN 会放大行数，让分页切在错误粒度上。
-	const vsub = `LEFT JOIN (
+	//
+	// 2026-10-24：按用户过滤时（userID != 0，典型如后台玩家详情），
+	// 子查询从**全表** GROUP BY 收窄为「只聚合该用户的战报」——
+	// 否则每次分页都对整张 replay_verifications 做聚合，
+	// 验真记录增长后即全表扫描。userID = 0（运营全量视图）
+	// 无法收窄，保持全表聚合，语义不变。
+	// 两种形态对**结果**完全等价：外层 WHERE 已把行限制在
+	// 该用户的战报上，收窄只是让聚合少扫数据。
+	vsub := `LEFT JOIN (
 		SELECT battle_id,
 		       COUNT(*) AS checked,
 		       COUNT(*) FILTER (WHERE NOT matched) AS mismatched
 		FROM replay_verifications GROUP BY battle_id
 	) v ON v.battle_id = br.id`
+	if userID != 0 {
+		vsub = `LEFT JOIN (
+		SELECT battle_id,
+		       COUNT(*) AS checked,
+		       COUNT(*) FILTER (WHERE NOT matched) AS mismatched
+		FROM replay_verifications
+		WHERE battle_id IN (SELECT id FROM battle_records WHERE user_id = $1)
+		GROUP BY battle_id
+	) v ON v.battle_id = br.id`
+	}
 
 	// 过滤条件写成 `COALESCE(v.mismatched, 0) > 0` 而不是 `v.mismatched > 0`。
 	//

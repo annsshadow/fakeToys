@@ -26,16 +26,16 @@ import (
 // 只能打印警告后降级（服务要能起来）；这里是显式调用，
 // 调用方有机会处理。
 //
-// 并发安全：它替换整个 gate 指针。当前调用方都是启动期或测试期，
-// 没有并发切档的需求；若将来要支持热切换，得改成 `atomic.Pointer`
-// 并给 gate 内部加读写锁 —— 那时再说，不提前做。
+// 并发安全：档位的运行期唯一真相是 gate（`atomic.Pointer` 整体替换），
+// 本函数只换 gate、**不写 `s.Cfg`** —— Cfg 是 New 时的值拷贝，
+// 运行期写它会与 `RecomputeModeState` 等读侧构成数据竞争
+// （2026-10-24 修；曾经的写法是 `s.Cfg.SettleRecomputeMode = mode`）。
 func (s *Service) SetRecomputeMode(mode string) error {
 	if !ValidRecomputeMode(mode) {
 		return fmt.Errorf("非法的重算档位 %q（合法值：%s）",
 			mode, strings.Join(RecomputeModes, "/"))
 	}
-	s.Cfg.SettleRecomputeMode = mode
-	s.initRecomputeGate()
+	s.initRecomputeGateWith(mode)
 	return nil
 }
 
@@ -63,7 +63,8 @@ type RecomputeModeState struct {
 	//
 	// 引擎侧的真实档位在 EngineMode 里。
 	Mode string `json:"mode"`
-	// ConfiguredMode 是配置里写的档（原始值，从未被改过）。
+	// ConfiguredMode 是当前配置档位（运行期切档后的值）。
+	// 与 EngineMode 的区别：它**未经熔断降级**——两者不一致即被熔断了。
 	ConfiguredMode string `json:"configured_mode"`
 	// EngineMode 是**引擎侧**（S 段之外的整局重算）实际生效的档。
 	// 它**可以被熔断降级** —— 降级时奖励在放行，但**只限引擎侧**。
@@ -87,31 +88,47 @@ type RecomputeModeState struct {
 }
 
 // RecomputeModeState 读当前闸门状态。
+//
+// ConfiguredMode 读 **gate**（atomic.Pointer 整体替换后的 mode），
+// 不读 `s.Cfg` —— 后者是 New 时的值拷贝，运行期切档不再写它
+// （2026-10-24 修数据竞争；曾经 PUT /admin/recomputes/mode 与
+// GET 同端点并发即 race）。它与 AdminRecomputeSummary.ConfiguredMode
+// 同源（都来自 g.Mode()），口径统一。
+//
+// 整个快照**单次 Load**：并发切档时不会出现「configured 来自旧 gate、
+// skills 来自新 gate」的混合读数。
 func (s *Service) RecomputeModeState() RecomputeModeState {
+	g := s.gate.Load()
+	if g == nil {
+		// 闸门恒不为 nil（New 里必建）。兜底退 off，与 recomputeVerdict 一致。
+		return RecomputeModeState{
+			Mode:           RecomputeOff,
+			ConfiguredMode: RecomputeOff,
+			EngineMode:     RecomputeOff,
+			SkillsMode:     RecomputeOff,
+		}
+	}
+	// 档位的运行期唯一真相在 gate。
+	configured := g.Mode()
 	out := RecomputeModeState{
-		Mode:           s.RecomputeMode(),
-		ConfiguredMode: s.Cfg.SettleRecomputeMode,
+		Mode:           configured,
+		ConfiguredMode: configured,
 	}
-	if g := s.gate.Load(); g != nil {
-		// 引擎侧（S 段之外的整局重算）—— **可被熔断降级**。
-		//
-		// 用 EffectiveMode 而不是 Decide：状态端点是**读**，
-		// 不该顺手触发一次熔断判定（Decide 有副作用）。
-		out.EngineMode = g.EffectiveMode(ScopeEngine)
-		demoted, reason, _ := g.Demoted(ScopeEngine)
-		out.Demoted = demoted
-		out.DemotedReason = reason
-		// S 段（replay_skills）—— **永不**被熔断降级。
-		out.SkillsMode = g.EffectiveMode(ScopeSkills)
-		// 权威档位 = S 段：**拒发奖励的是它**。
-		out.Mode = out.SkillsMode
-		out.Enforcing = out.SkillsMode == RecomputeEnforce
-		out.BreakerRatePermille = MaxBreakerRate
-		out.BreakerMinSamples = MinBreakerSamples
-	} else {
-		out.EngineMode = RecomputeOff
-		out.SkillsMode = RecomputeOff
-	}
+	// 引擎侧（S 段之外的整局重算）—— **可被熔断降级**。
+	//
+	// 用 EffectiveMode 而不是 Decide：状态端点是**读**，
+	// 不该顺手触发一次熔断判定（Decide 有副作用）。
+	out.EngineMode = g.EffectiveMode(ScopeEngine)
+	demoted, reason, _ := g.Demoted(ScopeEngine)
+	out.Demoted = demoted
+	out.DemotedReason = reason
+	// S 段（replay_skills）—— **永不**被熔断降级。
+	out.SkillsMode = g.EffectiveMode(ScopeSkills)
+	// 权威档位 = S 段：**拒发奖励的是它**。
+	out.Mode = out.SkillsMode
+	out.Enforcing = out.SkillsMode == RecomputeEnforce
+	out.BreakerRatePermille = MaxBreakerRate
+	out.BreakerMinSamples = MinBreakerSamples
 	return out
 }
 

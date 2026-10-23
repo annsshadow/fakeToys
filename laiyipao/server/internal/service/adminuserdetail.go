@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -58,6 +59,20 @@ type AdminVerificationView struct {
 }
 
 // AdminUserDetail 读一个玩家的详情。
+//
+// # 并发形状（2026-10-24）
+//
+// 曾经的 12 次往返全程串行（用户行 1 + LoadWallet 3 + LoadMastery 2 +
+// Loadout 1 + equipment 1 + AdminListBattles 2 + verifications 1 +
+// 流水 1）——后台每开一个玩家详情多等约 10 个 RTT。第 2)~7) 段互不依赖，
+// 用 WaitGroup 并发（pgxpool 并发安全；唯一的写 regen 只碰 user_wallets，
+// 与其余段读的表不重叠）。
+//
+// 错误语义保持不变：
+//   - 用户行段**保持顺序执行**——它的 `ErrNotFound`→404 必须确定，
+//     不能被其他段的错误抢先；
+//   - 其余段的错误按**段序**收集、按段序优先返回——与改动前
+//     「逐段串行返回第一个错误」完全一致，不因调度顺序改变用户可见的错误。
 func (s *Service) AdminUserDetail(ctx context.Context, userID int64) (AdminUserDetailResp, error) {
 	out := AdminUserDetailResp{}
 
@@ -103,80 +118,133 @@ func (s *Service) AdminUserDetail(ctx context.Context, userID int64) (AdminUserD
 	}
 	out.User = u
 
-	// 2) 钱包
-	wallet, err := s.LoadWallet(ctx, userID)
-	if err != nil {
-		return AdminUserDetailResp{}, fmt.Errorf("load user wallet: %w", err)
+	// 2)~7) 并发段。段序 = 曾经的串行执行顺序；errs[i] 非 nil 即该段失败，
+	// wg.Wait() 后按序优先返回——与串行版的「第一个错误」一致。
+	var (
+		wg            sync.WaitGroup
+		wallet        Wallet
+		nodes         []int
+		skillIDs      []int
+		equipmentIDs  []int
+		battles       []AdminBattleView
+		verifications []AdminVerificationView
+		flowCount     int
+		errs          [7]error
+	)
+	seg := func(i int, fn func()) {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			fn()
+		}()
 	}
+
+	// 2) 钱包（含体力 regen 写——与其余段读的表不重叠，可并发）
+	seg(0, func() {
+		var err error
+		wallet, err = s.LoadWallet(ctx, userID)
+		if err != nil {
+			errs[0] = fmt.Errorf("load user wallet: %w", err)
+		}
+	})
+
+	// 3) 专精节点
+	seg(1, func() {
+		var err error
+		_, nodes, err = s.LoadMastery(ctx, userID)
+		if err != nil {
+			errs[1] = fmt.Errorf("load user mastery: %w", err)
+		}
+	})
+
+	// 4) 出战槽位
+	seg(2, func() {
+		var err error
+		skillIDs, err = s.Loadout(ctx, userID)
+		if err != nil {
+			errs[2] = fmt.Errorf("load user loadout: %w", err)
+		}
+	})
+
+	// 5) 装备
+	seg(3, func() {
+		rows, err := s.pool.Query(ctx,
+			`SELECT equipment_id FROM user_equipment WHERE user_id = $1 AND equipped ORDER BY slot`, userID)
+		if err != nil {
+			errs[3] = fmt.Errorf("load user equipment: %w", err)
+			return
+		}
+		defer rows.Close()
+		for rows.Next() {
+			var id int
+			if err := rows.Scan(&id); err != nil {
+				errs[3] = err
+				return
+			}
+			equipmentIDs = append(equipmentIDs, id)
+		}
+	})
+
+	// 6) 最近战报
+	seg(4, func() {
+		var err error
+		battles, _, err = s.AdminListBattles(ctx, userID, 0, 10, false, 0)
+		if err != nil {
+			errs[4] = fmt.Errorf("load user battles: %w", err)
+		}
+	})
+
+	// 7) 最近验真记录
+	seg(5, func() {
+		vrows, err := s.pool.Query(ctx, `
+		SELECT id, battle_id, verifier_id, admin_verifier_id,
+		       expected_hash, actual_hash, matched, created_at
+		FROM replay_verifications
+		WHERE verifier_id = $1 OR battle_id IN (SELECT id FROM battle_records WHERE user_id = $1)
+		ORDER BY id DESC LIMIT 10`, userID)
+		if err != nil {
+			errs[5] = fmt.Errorf("load user verifications: %w", err)
+			return
+		}
+		defer vrows.Close()
+		for vrows.Next() {
+			var v AdminVerificationView
+			if err := vrows.Scan(&v.ID, &v.BattleID, &v.VerifierID, &v.AdminID,
+				&v.Expected, &v.Actual, &v.Matched, &v.CreatedAt); err != nil {
+				errs[5] = err
+				return
+			}
+			verifications = append(verifications, v)
+		}
+	})
+
+	// 8) 流水条数
+	seg(6, func() {
+		if err := s.pool.QueryRow(ctx,
+			`SELECT COUNT(*) FROM wallet_flows WHERE user_id = $1`, userID).Scan(&flowCount); err != nil {
+			errs[6] = fmt.Errorf("count user flows: %w", err)
+		}
+	})
+
+	wg.Wait()
+	for _, err := range errs {
+		if err != nil {
+			return AdminUserDetailResp{}, err
+		}
+	}
+
 	out.Wallet = map[string]int64{
 		"coin":   wallet.Coin,
 		"gem":    wallet.Gem,
 		"energy": wallet.Energy,
 		"keys":   wallet.Keys,
 	}
-
-	// 3) 专精节点
-	_, nodes, err := s.LoadMastery(ctx, userID)
-	if err != nil {
-		return AdminUserDetailResp{}, fmt.Errorf("load user mastery: %w", err)
-	}
 	out.MasteryNodes = nodes
-
-	// 4) 出战槽位 + 装备
-	ids, err := s.Loadout(ctx, userID)
-	if err != nil {
-		return AdminUserDetailResp{}, fmt.Errorf("load user loadout: %w", err)
-	}
-	out.EquippedSkills = ids
-
-	rows, err := s.pool.Query(ctx,
-		`SELECT equipment_id FROM user_equipment WHERE user_id = $1 AND equipped ORDER BY slot`, userID)
-	if err != nil {
-		return AdminUserDetailResp{}, fmt.Errorf("load user equipment: %w", err)
-	}
-	for rows.Next() {
-		var id int
-		if err := rows.Scan(&id); err != nil {
-			rows.Close()
-			return AdminUserDetailResp{}, err
-		}
-		out.EquippedEquipment = append(out.EquippedEquipment, id)
-	}
-	rows.Close()
-
-	// 5) 最近战报
-	battles, _, err := s.AdminListBattles(ctx, userID, 0, 10, false, 0)
-	if err != nil {
-		return AdminUserDetailResp{}, fmt.Errorf("load user battles: %w", err)
-	}
+	out.EquippedSkills = skillIDs
+	out.EquippedEquipment = equipmentIDs
 	out.RecentBattles = battles
-
-	// 6) 最近验真记录
-	vrows, err := s.pool.Query(ctx, `
-		SELECT id, battle_id, verifier_id, admin_verifier_id,
-		       expected_hash, actual_hash, matched, created_at
-		FROM replay_verifications
-		WHERE verifier_id = $1 OR battle_id IN (SELECT id FROM battle_records WHERE user_id = $1)
-		ORDER BY id DESC LIMIT 10`, userID)
-	if err != nil {
-		return AdminUserDetailResp{}, fmt.Errorf("load user verifications: %w", err)
-	}
-	for vrows.Next() {
-		var v AdminVerificationView
-		if err := vrows.Scan(&v.ID, &v.BattleID, &v.VerifierID, &v.AdminID,
-			&v.Expected, &v.Actual, &v.Matched, &v.CreatedAt); err != nil {
-			vrows.Close()
-			return AdminUserDetailResp{}, err
-		}
-		out.Verifications = append(out.Verifications, v)
-	}
-	vrows.Close()
-
-	// 7) 流水条数
-	if err := s.pool.QueryRow(ctx,
-		`SELECT COUNT(*) FROM wallet_flows WHERE user_id = $1`, userID).Scan(&out.FlowCount); err != nil {
-		return AdminUserDetailResp{}, fmt.Errorf("count user flows: %w", err)
-	}
+	out.Verifications = verifications
+	out.FlowCount = flowCount
 
 	return out, nil
 }
