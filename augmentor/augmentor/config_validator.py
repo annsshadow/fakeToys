@@ -569,7 +569,10 @@ class ConfigValidator:
         except yaml.YAMLError as e:
             result.add_error("yaml", f"YAML解析错误: {str(e)}")
             return result
-        except Exception as e:
+        except (OSError, UnicodeDecodeError) as e:
+            # open/read 这一小段的真实失败族：文件系统侧（OSError，含权限被拒）
+            # 与字节不是 UTF-8。别的异常是编程错误，不该被压成一条「读取文件错误」
+            # 的校验结论 —— 那会把缺陷洗成用户配置问题。
             result.add_error("file", f"读取文件错误: {str(e)}")
             return result
         

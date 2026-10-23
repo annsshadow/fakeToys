@@ -283,7 +283,14 @@ class CheckpointManager:
             
             logger.info(f"加载断点: {task_id}, 已处理: {checkpoint.processed_items}/{checkpoint.total_items}")
             return checkpoint
-        except Exception as e:
+        except (OSError, UnicodeError, ValueError, TypeError, KeyError) as e:
+            # 这一族是「盘上这份断点确实用不了」的真实来路：读盘（OSError /
+            # UnicodeDecodeError）、JSON 坏（JSONDecodeError 是 ValueError）、
+            # 键值形状不对（int(k) 的 ValueError、CheckpointData(**data) 与
+            # 缺键的 TypeError/KeyError）。收窄的理由写在本函数上方 _save_checkpoint
+            # 的 docstring 里：把任何异常都翻译成「这个任务没有断点」，等于让一次
+            # 编程错误把已完成的整段工作变没了。编程错误（AttributeError 等）现在
+            # 会上抛，不再有「没有断点」这个假答案。
             logger.error(f"加载断点失败: {e}")
             return None
     
@@ -314,7 +321,11 @@ class CheckpointManager:
             data = asdict(checkpoint)
             atomic_write_json(checkpoint_path, data)
             return True
-        except Exception as e:
+        except (OSError, TypeError, ValueError) as e:
+            # 只收「这一批确实写不进去」的真实失败族：盘满/被占（OSError）、
+            # 字段形状不合法（asdict 的 TypeError）、值序列化不了（json 的
+            # TypeError/ValueError）。除此之外的异常是编程错误，不该被翻译成
+            # 「写失败」的假判决 —— 那会让调用方看着返回值做错误的删除决策。
             logger.error(f"保存断点失败: {e}")
             return False
     
@@ -365,7 +376,9 @@ class CheckpointManager:
             state.pending_completed.clear()
             state.pending_failed.clear()
 
-        except Exception as e:
+        except (OSError, TypeError, ValueError) as e:
+            # 与 _save_checkpoint 同口径：目录建不了、文件被占、序列化不了都算
+            # 「这一批没写成」；其余异常是编程错误，上抛而不是伪装成写入失败。
             logger.error(f"保存增量失败: {e}")
 
 
@@ -384,14 +397,19 @@ class CheckpointManager:
         
         try:
             text = delta_path.read_text(encoding='utf-8')
-        except Exception as e:
+        except (OSError, UnicodeDecodeError) as e:
+            # 读不出只有两种真实来路：文件系统侧（OSError，含并发删除）与字节不是
+            # UTF-8（UnicodeDecodeError）。两者都判「重建」；别的异常不该把一次
+            # 编程错误静默降级成空增量。
             logger.warning(f"增量文件读不出，将重建: {delta_path}, {e}")
             return empty
-        
+
         records: List[Dict] = []
         try:
             whole = json.loads(text)
-        except Exception:
+        except json.JSONDecodeError:
+            # text 恒为 str，json.loads 对坏文本只抛 JSONDecodeError；别族异常
+            # （如递归深度爆栈）是事故，让它响而不是假装「整份都不是一个批次」。
             whole = None
         if isinstance(whole, dict):
             # 旧格式（或只写了一行的新格式）：整份就是一个批次记录，形状与新格式逐键相同
@@ -403,8 +421,9 @@ class CheckpointManager:
                     continue
                 try:
                     record = json.loads(line)
-                except Exception as e:
-                    # 崩溃时最可能截断的就是尾行：跳它，不跳整份
+                except json.JSONDecodeError as e:
+                    # 崩溃时最可能截断的就是尾行：跳它，不跳整份。只跳「这一行不是
+                    # 合法 JSON」；别族异常是事故，不借这个 continue 咽掉。
                     logger.warning(f"跳过增量坏行: {delta_path}, {e}")
                     continue
                 if isinstance(record, dict):

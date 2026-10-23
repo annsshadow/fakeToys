@@ -27,8 +27,10 @@
    出声的是 `message` 的主干与 `ignored_keys`。把 `success` 改成 false 会让既有
    客户端把「你的请求合法但我没动手」读成「服务端出错」，那是另一格契约。
 3. **反证必须存在**：光测「空写入不落盘」不够 —— 把落盘整个关掉也能让它绿。所以同
-   一份取证房里必须再测一次「真写入照样落盘、照样作废缓存、注释照样被抹掉」，两条
-   一起才把「只在有写入时落盘」这个**条件**钉住。
+   一份取证房里必须再测一次「真写入照样落盘、照样作废缓存」，两条一起才把「只在
+   有写入时落盘」这个**条件**钉住。〔AU-Q1 订正：这一条从前还写着「注释照样被抹掉」，
+   那是 A152② 未修时的已知限制；round-trip 保存落地后真写入连注释一起保留，反向
+   护栏随之改成断言注释存活（见 TestTheShippedCommentsSurvive 那一支）。〕
 
 顺带说清 L88 那四条写面用例为什么本轮改了载荷：它们 POST 的 `variants_per_item`
 **不是 `AugmentationConfig` 的字段**（真名 `variants_per_seed`），从前能绿正是因为
@@ -147,11 +149,14 @@ class TestTheShippedCommentsSurvive:
         http.post("/api/config", json={"web": {"port": 9000}})
         assert _comment_lines(path.read_bytes()) == _comment_lines(pristine)
 
-    def test_real_write_still_drops_them_and_persists(self, room):
-        """反向护栏：真写入照旧落盘（连「注释被 `safe_dump` 抹掉」也照旧）
+    def test_real_write_persists_and_keeps_the_comments(self, room):
+        """反向护栏：真写入照旧落盘，且 AU-Q1 之后连注释一起保留
 
         没有这一条，「空写入不落盘」可以用「谁都不落盘」蒙过去。它同时钉住本轮
-        没有把 `save_config` 的既有能力改窄：改的只是**触发条件**。
+        没有把 `save_config` 的既有能力改窄：改的只是**触发条件**。〔AU-Q1 订正：
+        这一支从前断言 `safe_dump` 把注释抹到 0 行，钉的是 A152② 未修时的已知限制；
+        round-trip 保存落地后改成断言注释一行不少 —— 判据的方向从「缺陷照旧」换成了
+        「缺陷已修且不许复发」。〕
         """
         http, path, config, pristine = room
         assert getattr(config.augmentation, REAL_KEY) != REAL_VALUE
@@ -164,7 +169,8 @@ class TestTheShippedCommentsSurvive:
 
         written = path.read_bytes()
         assert written != pristine
-        assert _comment_lines(written) == 0, "`safe_dump` 整份重写不该还剩注释"
+        assert _comment_lines(written) == _comment_lines(pristine), \
+            "AU-Q1 之后真写入必须连注释一起保留（round-trip 保存）"
         import yaml
         on_disk = yaml.safe_load(written.decode("utf-8"))
         assert on_disk["augmentation"][REAL_KEY] == REAL_VALUE

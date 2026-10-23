@@ -307,15 +307,22 @@ class TestTheRulerHasTeeth:
         assert path.read_bytes() != before, "旧写法必须把旧内容写坏，否则这一支没牙"
 
     def test_arm_old_open_shape_reds_the_site_face(self):
-        """内存里把源码改回 `open(config_path, 'w')` 那一形 ⇒ 形状面当场红"""
+        """内存里把源码改回 `open(config_path, 'w')` 那一形 ⇒ 形状面当场红
+
+        AU-Q1 之后写回的形状多了一支 round-trip 分支（`_dump_roundtrip_document`），
+        锚点按新形状对齐；这一臂判的仍是同一件事 —— 退化成截断直写时，
+        写模式 `open` 出现且 `atomic_write_text` 消失。
+        """
         text = CONFIG_PY.read_text(encoding="utf-8")
-        old_pair = (
-            '    text = yaml.safe_dump(data, allow_unicode=True, sort_keys=False)\n'
+        write_pair = (
+            '    text = _dump_roundtrip_document(data, config_path)\n'
+            '    if text is None:\n'
+            '        text = yaml.safe_dump(data, allow_unicode=True, sort_keys=False)\n'
             '    atomic_write_text(Path(config_path), text.replace("\\n", os.linesep))\n'
         )
-        assert old_pair in text, "锚点不在：本轮写回的形状变了，先对齐再谈削弱"
+        assert write_pair in text, "锚点不在：本轮写回的形状变了，先对齐再谈削弱"
         weakened = text.replace(
-            old_pair,
+            write_pair,
             '    with open(config_path, "w", encoding="utf-8") as f:\n'
             "        yaml.safe_dump(data, f, allow_unicode=True, sort_keys=False)\n",
         )

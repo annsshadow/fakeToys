@@ -1280,8 +1280,91 @@ def save_config(config: AppConfig, config_path: str = "config.yaml") -> None:
     # 而配置写的是 YAML —— 同一条边在 `json` 面之外，本轮把它接进同一把工具。
     # 行尾形状逐字节照旧：旧写法走 text 模式，每个 `\n` 由平台翻成行尾（Windows 是 `\r\n`），
     # 而 `atomic_write_text` 用 `newline=""` 不翻译，所以这里显式按 `os.linesep` 展开。
-    text = yaml.safe_dump(data, allow_unicode=True, sort_keys=False)
+    text = _dump_roundtrip_document(data, config_path)
+    if text is None:
+        text = yaml.safe_dump(data, allow_unicode=True, sort_keys=False)
     atomic_write_text(Path(config_path), text.replace("\n", os.linesep))
+
+
+def _dump_roundtrip_document(data: Dict[str, Any], config_path: str) -> Optional[str]:
+    """round-trip 序列化配置：保留原文件里的注释与排版（A152②）
+
+    为什么需要它：整份 `safe_dump` 只认 data 里的键值，原文件的注释、空行排版
+    一律丢失，而本仓把判据写在配置注释里（默认值的定标理由、迁移写法），
+    「保存一次 = 删掉说明书」是不可接受的静默丢失。
+
+    做法：用 ruamel.yaml 的 round-trip 模式重新加载原文件，把 data 就地合并进去
+    （只更新值、不重建文档），再序列化回文本。任何一步不成立都返回 None，由调用方
+    回落改前的 safe_dump：
+
+    - ruamel.yaml 没装（ImportError）—— 记一条 warning，不阻断保存；
+    - 原文件不存在、读不动（OSError / UnicodeDecodeError / YAMLError）；
+    - 原文件不是一个映射（标量或列表）—— 没有可更新的键位。
+
+    读两次文件是刻意的：safe_load 那份喂合并语义（既有顶层键、占位符），
+    round-trip 那份喂注释，两侧同源同内容，代价只是一次很少发生的配置写。
+
+    Args:
+        data: 即将落盘的配置字典（已含 models.default 与占位符处理的结果）
+        config_path: 现有配置文件路径
+
+    Returns:
+        保留注释的 YAML 文本；无法 round-trip 时为 None
+    """
+    try:
+        import io
+        from ruamel.yaml import YAML
+        from ruamel.yaml.error import YAMLError as _RuamelYAMLError
+    except ImportError:
+        logger.warning("ruamel.yaml 不可用，本次配置保存将丢失注释（A152②）")
+        return None
+    try:
+        with open(config_path, "r", encoding="utf-8") as f:
+            doc = YAML().load(f)
+    except (OSError, UnicodeDecodeError, _RuamelYAMLError):
+        return None
+    if not isinstance(doc, dict):
+        return None
+    _merge_roundtrip_document(doc, data)
+    stream = io.StringIO()
+    serializer = YAML()
+    serializer.allow_unicode = True
+    # 缩进与改前 pyyaml 的写盘形状对齐（映射 2、序列 2、短横线不额外缩进），
+    # 让「新写进去的键」与旧 writer 的排版一致；原文件里已有的节不受影响。
+    serializer.indent(mapping=2, sequence=2, offset=0)
+    serializer.dump(doc, stream)
+    return stream.getvalue()
+
+
+def _merge_roundtrip_document(doc: Dict[str, Any], data: Dict[str, Any]) -> None:
+    """把 data 就地并进 round-trip 文档：只改值，注释与排版不动
+
+    三条规则：
+
+    1. **键值已经相等的整格跳过**。AppConfig 不建模的顶层段在调用方已并进 data，
+       跳过它们才能保住那些段里的注释（被普通 dict 顶掉等于注释白保留）。
+       模型条目里没改动的字段同理原样留驻。
+    2. **两边都是映射才递归**，其余（标量、列表）整格顶替 —— 与改前
+       「整节重写」对可建模节的语义一致。
+    3. **doc 里有、data 里没有的键要删掉**。写侧是「丢密」的权威：明文密钥在
+       调用方已被 pop 出 data（只保留 ENV_VAR 占位符），整份 safe_dump 时代
+       这些键自然不落盘；round-trip 若只合并不删除，明文密钥就会从原文件里
+       存活下来 —— 那是比丢注释更坏的一格。未建模顶层段走规则 1 整格跳过，
+       进不到这一条。
+
+    Args:
+        doc: round-trip 加载出来的文档（就地修改）
+        data: 要写入的配置字典
+    """
+    for key, value in data.items():
+        if key in doc and doc[key] == value:
+            continue
+        if isinstance(value, dict) and isinstance(doc.get(key), dict):
+            _merge_roundtrip_document(doc[key], value)
+        else:
+            doc[key] = value
+    for key in [k for k in doc if k not in data]:
+        del doc[key]
 
 
 def apply_section_update(section: Any, updates: Dict[str, Any]) -> list:

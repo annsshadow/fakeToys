@@ -7,6 +7,10 @@
 
 requests>=2.28.0,<3.0.0
 pyyaml>=6.0.3,<7.0.0
+# 配置保存的 round-trip 加载器（A152②）：`yaml.safe_dump` 不回写注释，而
+# 出厂 config.yaml 的注释里住的是判据本身；缺它时 save_config 降级为整份
+# safe_dump 并记 warning（见 augmentor/config.py 的 _dump_roundtrip_document）。
+ruamel.yaml>=0.17.0,<1.0.0
 numpy>=1.21.0,<3.0.0
 
 fastapi>=0.78.0,<1.0.0

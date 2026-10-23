@@ -178,7 +178,7 @@ CEILING = {
     # `.error` / `.results` / `.loads` 这类代码标识符的屬性访问也走这一档（HEAD 里
     # `json.loads` 已被同样计入 6 次）—— 属判据把「反引号形状」一律当路径的粗糙处。
     # 与 `scratch` 那一格联动记账（同一批引用的两副面孔），见上一格注释。
-    "scratch_missing": 633,
+    "scratch_missing": 634,
 # L154 面位移：config.py / config_validator.py 插行后 4 条行引用降名字锚（L1 两条 +
 # 架构文档两条），裸名形状入 ambiguous 桶（见下方实测值）；守卫 docstring 与静态面
 # 注释新引 A140 现量房那支普查脚本名，scratch 随之 +1。案面=产品布局变更，按「动
