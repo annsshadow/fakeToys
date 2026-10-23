@@ -3249,19 +3249,6 @@ pub async fn file_list_id_prev_count_referencetype_referenceType(
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
-pub async fn file_referencetype_referenceType_reference_reference(
-    pool: Extension<Pool>,
-    axum::extract::Path((reference_type, reference)): axum::extract::Path<(String, String)>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
-    file_list_referencetype_referenceType_reference_reference(
-        pool,
-        axum::extract::Path((reference_type.clone(), reference.clone())),
-    )
-    .await
-}
-
-#[axum::debug_handler]
-#[allow(non_snake_case)]
 pub async fn file_upload_referencetype_referenceType_reference_reference_scale_scale(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,

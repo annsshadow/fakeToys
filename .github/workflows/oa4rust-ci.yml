@@ -25,6 +25,12 @@ jobs:
     defaults:
       run:
         working-directory: oa4rust/backend
+    env:
+      # sccache 编译缓存：RUSTC_WRAPPER 把 rustc 调用代理给 sccache，
+      # SCCACHE_GHA_ENABLED 启用 GitHub Actions cache 后端（缓存条目随
+      # Cargo.lock/源码变化自动失效），避免每次 CI 全量重编。
+      SCCACHE_GHA_ENABLED: "true"
+      RUSTC_WRAPPER: sccache
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - name: Install Rust
@@ -37,6 +43,11 @@ jobs:
           # minimal profile 默认不含 rustfmt/clippy，显式补齐（Check formatting /
           # Clippy 两步依赖这两个组件，缺了即 "cargo-fmt is not installed" 红）。
           components: clippy, rustfmt
+      # sccache-action 安装 sccache 二进制；配合 job 级 env 的
+      # RUSTC_WRAPPER=sccache + SCCACHE_GHA_ENABLED 走 GHA cache 后端。
+      # 必须位于首个 cargo 调用（Cache cargo registry 之后的各 run）之前。
+      - name: Setup sccache
+        uses: mozilla-actions/sccache-action@7d986dd989559c6ecdb630a3fd2557667be217ad # v0.0.9
       - name: Cache cargo registry
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
@@ -61,6 +72,10 @@ jobs:
     defaults:
       run:
         working-directory: oa4rust/backend
+    env:
+      # sccache 编译缓存（同 quality job）：GHA cache 后端跨 run 复用编译产物。
+      SCCACHE_GHA_ENABLED: "true"
+      RUSTC_WRAPPER: sccache
     services:
       # crates/shared/src/testing.rs 的 test_pool() 硬编码
       # postgres://o2server:password@localhost:5432/oa4rust，且 parity 的
@@ -87,6 +102,11 @@ jobs:
           # SIGSEGV（stack overflow ICE），CI 全部 rust job 失败；
           # 2026-09-30 main 门禁在 1.98.1 上全绿。
           toolchain: 1.98.1
+      # sccache-action 安装 sccache 二进制；配合 job 级 env 的
+      # RUSTC_WRAPPER=sccache + SCCACHE_GHA_ENABLED 走 GHA cache 后端。
+      # 必须位于首个 cargo 调用（Cache cargo registry 之后的各 run）之前。
+      - name: Setup sccache
+        uses: mozilla-actions/sccache-action@7d986dd989559c6ecdb630a3fd2557667be217ad # v0.0.9
       - name: Cache cargo registry
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
@@ -142,6 +162,10 @@ jobs:
     defaults:
       run:
         working-directory: oa4rust/backend
+    env:
+      # sccache 编译缓存（同 quality job）：GHA cache 后端跨 run 复用编译产物。
+      SCCACHE_GHA_ENABLED: "true"
+      RUSTC_WRAPPER: sccache
     services:
       postgres:
         image: postgres@sha256:f1c3376c26f2609ab9f29f71f824103fe2fcd8ee0346485cb6122a4f93df6f94
@@ -165,6 +189,11 @@ jobs:
           # SIGSEGV（stack overflow ICE），CI 全部 rust job 失败；
           # 2026-09-30 main 门禁在 1.98.1 上全绿。
           toolchain: 1.98.1
+      # sccache-action 安装 sccache 二进制；配合 job 级 env 的
+      # RUSTC_WRAPPER=sccache + SCCACHE_GHA_ENABLED 走 GHA cache 后端。
+      # 必须位于首个 cargo 调用（Cache cargo registry 之后的各 run）之前。
+      - name: Setup sccache
+        uses: mozilla-actions/sccache-action@7d986dd989559c6ecdb630a3fd2557667be217ad # v0.0.9
       - name: Cache cargo registry
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
@@ -222,6 +251,10 @@ jobs:
       DATABASE_URL: postgres://o2server:password@localhost:5432/oa4rust
       DATABASE_DIALECT: postgres
       RUST_LOG: warn
+      # sccache 编译缓存（同 quality job）：本 job 含 `cargo build --bin oa4rust`
+      # 全量编译，是四个 rust job 中收益最大的一个。
+      SCCACHE_GHA_ENABLED: "true"
+      RUSTC_WRAPPER: sccache
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
@@ -233,6 +266,11 @@ jobs:
           # 2026-09-30 main 门禁在 1.98.1 上全绿。
           toolchain: 1.98.1
 
+      # sccache-action 安装 sccache 二进制；配合 job 级 env 的
+      # RUSTC_WRAPPER=sccache + SCCACHE_GHA_ENABLED 走 GHA cache 后端。
+      # 必须位于首个 cargo 调用（Cache cargo registry 之后的各 run）之前。
+      - name: Setup sccache
+        uses: mozilla-actions/sccache-action@7d986dd989559c6ecdb630a3fd2557667be217ad # v0.0.9
       - name: Cache cargo registry
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:

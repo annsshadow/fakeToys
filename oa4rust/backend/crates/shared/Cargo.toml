@@ -14,6 +14,14 @@ sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "postgres", "macro
 deadpool-postgres.workspace = true
 postgres-types.workspace = true
 deadpool.workspace = true
+# DB_TLS 开启时 deadpool 池的 TLS connector（与 sqlx 的 rustls 后端同根证书源）。
+# rustls/tokio-rustls/webpki-roots 已在依赖图中（reqwest），此处仅显式声明
+# ring provider 与直接使用。tokio-postgres-rustls 负责桥接 tokio-postgres 0.7。
+# 注意：rustls 的 default 特性含 aws-lc-rs（拉 aws-lc-sys/cmake/nasm），
+# 这里显式关闭 default 只取 ring 后端，保持与既有依赖图一致。
+tokio-postgres-rustls = "0.14"
+rustls = { version = "0.23", default-features = false, features = ["std", "tls12", "ring"] }
+webpki-roots = "0.26"
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
