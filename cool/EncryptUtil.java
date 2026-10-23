@@ -166,27 +166,6 @@ public class EncryptUtil {
         return MD5(key + thirdSecret);
     }
 
-    /**
-     * AES加密
-     *
-     * @param data 密文
-     * @return
-     */
-    public static String decryptData(String data, byte[] key) throws Exception {
-        try {
-            byte[] encrypted1 = Base64.decodeBase64(data.getBytes(CHARSET
-            ));
-            Cipher cipher = Cipher.getInstance(AES);
-            SecretKeySpec keySpec = new SecretKeySpec(key, AES_ALGORITHM);
-            cipher.init(Cipher.DECRYPT_MODE, keySpec);
-            byte[] original = cipher.doFinal(encrypted1);
-            String originalString = new String(original, CHARSET);
-            return originalString;
-        } catch (Exception e) {
-            throw e;
-        }
-    }
-
     public static void main(String[] args) {
         String coolKey = System.getenv("COOL_OA_KEY");
         String coolSecret = System.getenv("COOL_OA_SECRET");

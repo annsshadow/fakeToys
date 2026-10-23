@@ -1,0 +1,22 @@
+# llm-lab 工具配置（2026-10-23 增补）。
+#
+# 只放工具配置，不放 [project]/[build-system] —— 这是个教学仓库，
+# 按脚本方式运行，不做打包。加它是为了给 ruff / pytest 一个统一基线，
+# 而不是引入构建流程。
+#
+# torch **不在此锁版本**：requirements-torch.txt 已说明 torch 需与
+# Python/CUDA 匹配，写死版本会破坏那条灵活性。可复现性靠「记录当时验证过的
+# 版本」而不是硬钉。
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+# 行宽 100 与仓库其它 Python 项目保持一致；不钉 target-version，
+# 让 ruff 用它自己推断的解释器版本，避免旧版 ruff 不认新 py3xx 而报错。
+line-length = 100
+
+[tool.ruff.lint]
+# E/F 必开（语法/未用名），W 空白，I import 排序 —— 最小但有意义的一组。
+select = ["E", "F", "W", "I"]
