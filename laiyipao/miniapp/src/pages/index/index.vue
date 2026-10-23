@@ -32,6 +32,33 @@
     </view>
 
     <view v-else class="pad">
+      <!--
+        公告（2026-10-23）。
+        此前 `announcements` 表与后台的增删查全都在，唯独玩家端零入口 ——
+        运营发的公告只有运营自己看得见。这是闭环缺口，不是新功能。
+
+        位置在构筑评分之前：它是时效性内容，过期了就没价值；
+        而构筑评分玩家每次进来都会看到，往后放一点没有损失。
+      -->
+      <view v-if="announcements.length" class="card">
+        <view class="card-title">
+          <text>公告</text>
+          <text class="dim">共 {{ announcements.length }} 条</text>
+        </view>
+        <view
+          v-for="a in announcements"
+          :key="a.id"
+          class="ann-item"
+          @click="toggleAnn(a.id)"
+        >
+          <view class="ann-head">
+            <text class="ann-title">{{ a.title }}</text>
+            <text class="dim mono">{{ formatAnnDate(a.published_at) }}</text>
+          </view>
+          <text class="ann-body" :class="{ clamped: !expanded.has(a.id) }">{{ a.body }}</text>
+        </view>
+      </view>
+
       <!-- 构筑评分（I-7）：主指标不是"战力 9999" -->
       <view class="card">
         <view class="card-title">
@@ -95,12 +122,52 @@
 
 <script setup lang="ts">
 import { useStatusBarPad } from '@/utils/statusBar'
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
+import { onShareAppMessage } from '@dcloudio/uni-app'
 import { useGameStore } from '@/store/game'
+import * as api from '@/api/client'
+import type { Announcement } from '@/api/client'
+import { indexShare } from '@/utils/share'
 import { ELEMENT_ORDER, ELEMENT_NAME, ELEMENT_COLOR } from '@/game/elements'
 
 const store = useGameStore()
+
+/**
+ * 公告（2026-10-23）。
+ *
+ * 拉取失败**不影响首页** —— 公告是次要内容，为它整页报错是错的取舍。
+ * 但也不静默假装成功：失败时列表保持为空（不渲染空卡片），
+ * 并在控制台留一条 warn。判据是「不显示假数据」，而不是「永不报错」。
+ */
+const announcements = ref<Announcement[]>([])
+const expanded = ref<Set<number>>(new Set())
+
+async function loadAnnouncements(): Promise<void> {
+  try {
+    const res = await api.fetchAnnouncements(3)
+    announcements.value = res.items ?? []
+  } catch (e) {
+    // 服务端不可达时首页本身会走 loginError 分支，这里不重复报错
+    console.warn('[公告] 拉取失败，本次不展示：', (e as Error).message)
+    announcements.value = []
+  }
+}
+
+function toggleAnn(id: number): void {
+  const next = new Set(expanded.value)
+  if (next.has(id)) next.delete(id)
+  else next.add(id)
+  expanded.value = next
+}
+
+/** 公告日期：只到「月-日」。玩家不关心秒，写全反而占位。 */
+function formatAnnDate(iso: string | null): string {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ''
+  return `${d.getMonth() + 1}-${String(d.getDate()).padStart(2, '0')}`
+}
 
 /** 顶部让开状态栏（2026-10-21 P6-2）。 */
 const { statusBarPad } = useStatusBarPad()
@@ -213,13 +280,33 @@ async function retry() {
   await store.login()
 }
 
+/**
+ * 首次进入是否已拉过公告。
+ *
+ * uni-app 的顺序是 onLoad → onShow → mounted，所以首次进入时 `onShow`
+ * 早于 `onMounted`。用它区分「首次」与「从别的页面返回」：
+ * 首次由 onMounted 拉一次，返回时才由 onShow 刷新 —— 否则首屏会发两次请求。
+ */
+let annLoadedOnce = false
+
 onMounted(async () => {
   if (!store.loggedIn) await store.login()
+  annLoadedOnce = true
+  void loadAnnouncements()
 })
 
 onShow(async () => {
   if (store.loggedIn) await store.refreshProfile()
+  if (annLoadedOnce) void loadAnnouncements()
 })
+
+/**
+ * 分享（2026-10-23）。
+ *
+ * 此前全仓 0 处 `onShareAppMessage` —— 微信小程序**唯一免费获客通道**缺失。
+ * 文案与路径由 `utils/share.ts` 生成，便于在不需要挂载页面的情况下断言。
+ */
+onShareAppMessage(() => indexShare())
 </script>
 
 <style scoped>
@@ -446,5 +533,51 @@ onShow(async () => {
 .elem-name {
   font-size: 24rpx;
   color: var(--muted);
+}
+
+/*
+ * 公告。
+ *
+ * 折叠用 `-webkit-line-clamp` 而不是截断字符串：
+ * 截断会改内容（玩家看到的是残缺的正文），折叠只是视觉收起，展开后仍是原文。
+ * 小程序 WebView 与 Skyline 都支持该属性。
+ */
+.ann-item {
+  padding: 16rpx 0;
+  border-top: 1rpx solid rgba(255, 255, 255, 0.06);
+}
+
+.ann-item:first-of-type {
+  border-top: none;
+}
+
+.ann-head {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16rpx;
+}
+
+.ann-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--text);
+  flex: 1;
+}
+
+.ann-body {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 24rpx;
+  line-height: 1.6;
+  color: var(--muted);
+  margin-top: 8rpx;
+  white-space: pre-wrap;
+}
+
+.ann-body.clamped {
+  -webkit-line-clamp: 2;
 }
 </style>

@@ -33,6 +33,11 @@ vi.mock('@/api/client', () => ({
   saveProfile: vi.fn(),
   login: vi.fn(),
   saveLastUsername: vi.fn(),
+  // 公告（2026-10-23）：首页现在会拉一次公告。
+  // 不给 mock 的话 `api.fetchAnnouncements` 是 undefined，
+  // 首页在 onMounted 里会抛 —— 而抛在异步里，症状是「公告区不出现」，
+  // 不会让任何既有断言变红（典型的静默失效）。
+  fetchAnnouncements: vi.fn(),
 }))
 
 const mockApi = vi.mocked(api, true)
@@ -64,6 +69,8 @@ beforeEach(() => {
     build_rating: { total: 42, element_coverage: 5, reaction_coverage: 7, mastery_done: 8, equipment_synergy: 6, mechanic_depth: 4, weaknesses: ['缺少冰系'] },
     power: 9,
   } as any)
+  // 缺省：没有公告（绝大多数断言与公告无关，不该被它干扰）
+  mockApi.fetchAnnouncements.mockResolvedValue({ items: [] })
 })
 
 afterEach(() => {
@@ -211,5 +218,55 @@ describe('index.vue 首页', () => {
     triggerUniHook(wrapper.vm, 'onShow')
     await flushPromises()
     expect(mockApi.fetchWallet).not.toHaveBeenCalled()
+  })
+
+  // ── 公告（2026-10-23）────────────────────────────────────────────
+  // 这组断言盯的是「闭环」：服务端有公告表与后台，玩家端此前零入口。
+  // 只断言「渲染了标题」是不够的 —— 还得断言**没有公告时不画空卡片**，
+  // 否则「永远画一张空卡片」也能让第一条绿。
+
+  it('有公告 → 渲染标题与正文，默认折叠，点击展开', async () => {
+    mockApi.fetchAnnouncements.mockResolvedValue({
+      items: [
+        { id: 2, title: '双倍掉落', body: '周末两天所有关卡金币翻倍', published_at: '2026-10-23T02:00:00Z' },
+        { id: 1, title: '开服公告', body: '欢迎来到来一炮', published_at: '2026-10-20T02:00:00Z' },
+      ],
+    })
+    mountPage()
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('双倍掉落')
+    expect(wrapper.text()).toContain('周末两天所有关卡金币翻倍')
+    expect(wrapper.text()).toContain('共 2 条')
+    // 默认折叠：正文带 clamped 类（视觉收起，内容不截断）
+    const bodies = wrapper.findAll('.ann-body')
+    expect(bodies.length).toBe(2)
+    expect(bodies[0].classes()).toContain('clamped')
+    // 点击第一条 → 展开
+    await wrapper.findAll('.ann-item')[0].trigger('click')
+    expect(wrapper.findAll('.ann-body')[0].classes()).not.toContain('clamped')
+    // 再点一次 → 收回
+    await wrapper.findAll('.ann-item')[0].trigger('click')
+    expect(wrapper.findAll('.ann-body')[0].classes()).toContain('clamped')
+  })
+
+  it('无公告 → 不渲染空卡片（公告区整块消失）', async () => {
+    mockApi.fetchAnnouncements.mockResolvedValue({ items: [] })
+    mountPage()
+    await flushPromises()
+    expect(wrapper.findAll('.ann-item').length).toBe(0)
+    expect(wrapper.text()).not.toContain('共 0 条')
+    // 首页主体仍正常
+    expect(wrapper.text()).toContain('构筑评分')
+  })
+
+  it('公告拉取失败 → 首页不受影响，且不显示假数据', async () => {
+    mockApi.fetchAnnouncements.mockRejectedValue(new Error('network down'))
+    mountPage()
+    await flushPromises()
+    expect(wrapper.findAll('.ann-item').length).toBe(0)
+    expect(wrapper.text()).toContain('构筑评分')
+    // 失败不能变成「0 条公告」这种看起来正常的状态
+    expect(wrapper.text()).not.toContain('共 0 条')
   })
 })

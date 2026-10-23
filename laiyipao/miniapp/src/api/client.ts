@@ -979,6 +979,43 @@ export function fetchLeaderboard(type = 'power') {
   return request<any>(`/leaderboard?type=${type}`)
 }
 
+/**
+ * 我的排名（2026-10-23）。
+ *
+ * `rank = 0` 是「无有效成绩」的哨兵，**不是**「第 0 名」。
+ * 页面必须把它显示成「暂无成绩」，否则玩家会看到一个不存在的名次。
+ */
+export interface MyRank {
+  kind: string
+  rank: number
+  total: number
+  score: number
+}
+
+export function fetchMyRank(type = 'power') {
+  return request<MyRank>(`/me/rank?type=${type}`)
+}
+
+/**
+ * 公告（2026-10-23）。
+ *
+ * 服务端只下发**已发布**的公告，所以这里没有 `published` 字段可判 ——
+ * 拿到就是要展示的。空列表是完全正常的状态（新服/新活动前）。
+ *
+ * 为什么单列一个类型而不是 `any`：`body` 会被直接铺进页面，
+ * 字段拼错在 `any` 下不会报错（本仓库 A/B 两类缺陷的根源）。
+ */
+export interface Announcement {
+  id: number
+  title: string
+  body: string
+  published_at: string | null
+}
+
+export function fetchAnnouncements(limit = 5) {
+  return request<{ items: Announcement[] }>(`/announcements?limit=${limit}`)
+}
+
 export function fetchDefenses() {
   return request<any>('/defenses')
 }

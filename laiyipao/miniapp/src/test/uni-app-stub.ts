@@ -40,14 +40,33 @@ export const onPullDownRefresh = createHook('onPullDownRefresh')
 export const onShareAppMessage = createHook('onShareAppMessage')
 export const onResize = createHook('onResize')
 
-/** 测试辅助：手动触发组件实例上注册的 uni 生命周期回调 */
+/**
+ * 测试辅助：手动触发组件实例上注册的 uni 生命周期回调。
+ *
+ * 返回**最后一个**回调的返回值。
+ *
+ * # 为什么要返回值（2026-10-23）
+ *
+ * `onShareAppMessage(() => ({ title, path }))` 的产物**就是回调的返回值** ——
+ * 微信拿它当分享卡片内容。若替身只调用、丢弃返回值，测试就只能断言
+ * 「注册了一个回调」，而断言不了「分享出去的是什么」。
+ *
+ * 那正是本仓库在 `Math.cos` 那次栽过的形态：断言了「表存在」，
+ * 却没断言「运行时用的是表」。分享这条更糟 —— 卡片内容错了，
+ * 只有分享出去的人看得见。
+ *
+ * 返回最后一个而非第一个：同页面重复注册时，微信的行为是**后者覆盖前者**，
+ * 测试应该跟着同一个语义。
+ */
 export function triggerUniHook(
   vm: { $?: unknown } | null | undefined,
   name: string,
   arg?: unknown,
-): void {
+): unknown {
   const inst = vm?.$ as Record<string, any> | undefined
   const hooks = inst?.[HOOKS_KEY]?.[name] as HookFn[] | undefined
-  if (!hooks) return
-  for (const h of [...hooks]) h(arg)
+  if (!hooks) return undefined
+  let out: unknown
+  for (const h of [...hooks]) out = h(arg)
+  return out
 }

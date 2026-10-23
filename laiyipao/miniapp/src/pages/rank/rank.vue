@@ -24,19 +24,41 @@
           <text class="rank-score mono">{{ formatScore(it.score) }}</text>
         </view>
       </view>
+
+      <!--
+        我的排名（2026-10-23）。
+        此前只回前 50 条，而 `me` 高亮只在前 50 内有效 ——
+        未进前 50 的玩家在榜上找不到自己，也不知道总共有多少人。
+      -->
+      <view v-if="myRank" class="card my-rank">
+        <view class="my-rank-row">
+          <text class="muted">我的排名</text>
+          <text v-if="myRank.rank > 0" class="my-rank-no mono">
+            第 {{ myRank.rank }} / 共 {{ myRank.total }} 人
+          </text>
+          <text v-else class="my-rank-none">暂无成绩</text>
+        </view>
+        <text v-if="myRank.rank > 0" class="dim">我的{{ curLabel }}：{{ formatScore(myRank.score) }}</text>
+        <text v-else class="dim">{{ noScoreHint }}</text>
+      </view>
     </view>
   </view>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { onLoad, onShareAppMessage } from '@dcloudio/uni-app'
 import { useGameStore } from '@/store/game'
 import * as api from '@/api/client'
+import type { MyRank } from '@/api/client'
+import { rankShare } from '@/utils/share'
 
 const store = useGameStore()
 const curType = ref('power')
 const items = ref<any[]>([])
 const loading = ref(false)
+/** 我的排名。null 表示还没拿到（加载中或失败）—— 此时不渲染那一块，不显示假名次。 */
+const myRank = ref<MyRank | null>(null)
 // 第 136 轮：请求序号（模块级 let，非 ref —— 无需响应式）。
 let loadSeq = 0
 
@@ -45,6 +67,20 @@ const tabs = [
   { key: 'stage', label: '关卡榜' },
   { key: 'efficiency', label: '效率榜' },
 ]
+
+const curLabel = computed(() => tabs.find((t) => t.key === curType.value)?.label ?? '排名')
+
+/** 无成绩时的提示：三种榜的原因不同，不能一句话打发。 */
+const noScoreHint = computed(() => {
+  switch (curType.value) {
+    case 'stage':
+      return '通关任意一关后就会出现在关卡榜上。'
+    case 'efficiency':
+      return '通关一次并记录战力后才会进效率榜。'
+    default:
+      return '打一局战斗积累成长值后就会出现在战力榜上。'
+  }
+})
 
 const curDesc = computed(() => {
   switch (curType.value) {
@@ -70,13 +106,20 @@ async function load() {
   const type = curType.value
   loading.value = true
   try {
-    const res = await api.fetchLeaderboard(type)
+    // 两个请求并发：榜单是公开的、我的排名需要鉴权，互不依赖。
+    // ⚠️ 我的排名**失败不能连累榜单** —— 榜照样能看，只是少一条「我在哪」。
+    const [res, mine] = await Promise.all([
+      api.fetchLeaderboard(type),
+      api.fetchMyRank(type).catch(() => null),
+    ])
     if (seq !== loadSeq) return // 已有更新的请求，丢弃本陈旧响应
     items.value = res.items ?? []
+    myRank.value = mine
   } catch (e) {
     if (seq !== loadSeq) return
     uni.showToast({ title: (e as Error).message, icon: 'none' })
     items.value = []
+    myRank.value = null
   } finally {
     if (seq === loadSeq) loading.value = false
   }
@@ -84,8 +127,37 @@ async function load() {
 
 function switchTab(key: string) {
   curType.value = key
+  // 先清掉旧榜的名次：否则切 tab 的一瞬间会显示**上一个榜**的名次，
+  // 而那两个数字看起来都合理，玩家不会察觉是错的。
+  myRank.value = null
   load()
 }
+
+/**
+ * 深链（2026-10-23）。
+ *
+ * 分享出去的 `?type=stage` 必须真的选中对应 tab —— 否则「分享了一个
+ * 到不了的位置」：点进来看到的仍是战力榜。
+ * 未识别的 type 静默回落到默认榜（分享链接可能来自旧版本）。
+ */
+onLoad((q?: Record<string, string>) => {
+  const t = q?.type
+  if (t && tabs.some((x) => x.key === t)) curType.value = t
+})
+
+/**
+ * 分享（2026-10-23）。
+ *
+ * 名次取自 `myRank`；没拿到时 `rank=0`，文案退回邀请式 ——
+ * 不能写「排第 0」。
+ */
+onShareAppMessage(() =>
+  rankShare({
+    label: curLabel.value,
+    rank: myRank.value?.rank ?? 0,
+    type: curType.value,
+  }),
+)
 
 onMounted(async () => {
   if (!store.loggedIn) await store.login()
@@ -155,5 +227,28 @@ onMounted(async () => {
   font-size: 26rpx;
   color: var(--ok);
   font-weight: 600;
+}
+
+.my-rank {
+  margin-top: 16rpx;
+}
+
+.my-rank-row {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 8rpx;
+}
+
+.my-rank-no {
+  font-size: 28rpx;
+  color: var(--fire);
+  font-weight: 700;
+}
+
+.my-rank-none {
+  font-size: 26rpx;
+  color: var(--muted);
 }
 </style>
