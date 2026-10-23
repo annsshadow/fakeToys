@@ -1034,8 +1034,8 @@ S8ARr2vqmeZSYIJABzClXMa1aS2XpA4=
 
         let private_key = PdfSignatureService::parse_private_key(TEST_PRIVATE_KEY)
             .expect("fixture private key parses");
-        let public_key = PdfSignatureService::parse_public_key(TEST_CERT)
-            .expect("fixture certificate parses");
+        let public_key =
+            PdfSignatureService::parse_public_key(TEST_CERT).expect("fixture certificate parses");
         assert_eq!(
             private_key.public().as_ref(),
             public_key.as_slice(),
