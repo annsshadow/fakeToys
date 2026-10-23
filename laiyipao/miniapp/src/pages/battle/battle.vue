@@ -1,11 +1,5 @@
 ﻿<template>
-  <!--
-    首次触摸即解锁音频（2026-10-23）。
-    微信与 iOS 都要求音频在用户手势之后才能播；进入战斗本身是一次点击，
-    但它发生在**上一个页面**。放在根节点上，玩家碰一下屏幕就解锁，
-    而不必等到某个特定按钮。
-  -->
-  <view class="page-root battle-page" @touchstart="unlockSfx()">
+  <view class="page-root battle-page" @click="unlockSfx()">
     <!-- 画布：整个战斗画面 -->
     <canvas
       id="battle-canvas"
@@ -63,7 +57,7 @@
           {{ abandoning ? '处理中…' : '放弃' }}
         </view>
         <!-- 暂停（2026-10-23）：切后台会自动暂停，回来由玩家自己点继续。 -->
-        <view v-if="!settled && !paused" class="pause-btn" @click="doPause">暂停</view>
+        <view v-if="!settled && !paused" class="pause-btn" @click="doPause()">暂停</view>
       </view>
     </view>
 
@@ -162,6 +156,14 @@ import { BattleEngine } from '@/game/engine'
 import { equippedFromSnapshot } from '@/game/replay'
 import { battleShare } from '@/utils/share'
 import { playBattleEvents } from '@/audio/battle-sfx'
+// 音效解锁（2026-10-23）：模板根节点的 `@touchstart="unlockSfx()"` 是**第二道保险**。
+//
+// 主入口在 `stage.vue` 的「开始战斗」——那是一次真实的用户手势，且发生在
+// 进入战斗之前，所以第一发子弹就有声音。这里再兜一次：玩家在战斗页碰一下
+// 屏幕也能解锁，不必等到某个特定按钮。
+//
+// 微信与 iOS 都要求音频在用户手势之后才能播；`unlockSfx()` 会在同一帧里
+// 播一次 0 音量的 tap 把手势用掉（理由见 audio/sfx.ts）。
 import { initSfx, unlockSfx, isMuted, setMuted, playSfx } from '@/audio/sfx'
 import {
   BattleRenderer,
@@ -462,6 +464,9 @@ async function setup() {
       r.setSpeed(speed.value)
       renderer.value = r
       renderMode.value = 'raf'
+      // 若在 `await getCanvas()` 期间已经 onHide 过，渲染器此刻才刚建好 ——
+      // 把「暂停意图」补交给它，否则 UI 显示暂停而时钟在跑。
+      if (paused.value) r.pause()
       r.start(() => {
         // 暂停守卫（2026-10-23）。
         //
@@ -705,12 +710,25 @@ function toggleMute(): void {
 function playSfxTap(): void {
   playSfx('tap')
 }
-/** 暂停是由「切后台」触发的（用于 onShow 时决定是否提示）。 */
-let pausedByHide = false
+/**
+ * 暂停是由「切后台」触发的（模板里据此显示不同提示）。
+ *
+ * ⚠️ 必须是 `ref`，不能是普通 `let`：模板在 `v-if="paused"` 块里读它。
+ * 第一版是 `let`，于是「玩家先手动点暂停（pausedByHide=false，遮罩已渲染），
+ * 随后切后台（改成 true）」这个组合下，遮罩**不会重渲染** ——
+ * 提示永远停在「战斗时间不会流逝」而少了「切到后台时自动暂停了」。
+ */
+const pausedByHide = ref(false)
 
-function doPause(): void {
+/**
+ * 暂停。
+ *
+ * `reason` 决定遮罩上的说明文案，也决定 `onShow` 时的行为（两者都不自动恢复）。
+ */
+function doPause(reason: 'user' | 'hide' = 'user'): void {
   if (paused.value || settled.value) return
   paused.value = true
+  pausedByHide.value = reason === 'hide'
   if (renderer.value) renderer.value.pause()
   if (timerId) {
     // 降级路径（无 canvas）：本页自己的定时器也要停
@@ -722,23 +740,32 @@ function doPause(): void {
 function doResume(): void {
   if (!paused.value) return
   paused.value = false
-  pausedByHide = false
+  pausedByHide.value = false
   if (renderer.value) renderer.value.resume()
   else if (loopStarted || engine.value) startFallbackLoop()
 }
 
 onHide(() => {
-  // 只有「战斗进行中」才需要暂停：已结算或还没开局时切后台无所谓。
-  if (!settled.value && engine.value) {
-    doPause()
-    pausedByHide = true
-  }
+  // 判据不是 `engine.value` —— 而是「战斗已开始、尚未结算」。
+  //
+  // 用 `engine.value` 会漏掉一个真实窗口：`eng.start()` 之后、`r.start()` 之前
+  // 有一次 `await getCanvas()`。那期间 engine 已存在、renderer 还是 null、
+  // timerId 也是 null —— 走 `engine.value` 分支会 `paused=true` 但两条时钟都没起，
+  // 随后 setup 继续 `r.start()`，只能靠 loop 里的 `if (paused) return` 兜住。
+  // 那行守卫是**第二道防线**，不该成为唯一防线。
+  if (settled.value || startError.value) return
+  doPause('hide')
 })
 
 onShow(() => {
-  // 不自动恢复。这里只把「因切后台而暂停」这件事**显式化**：
-  // 遮罩已经由 `paused` 驱动，玩家点「继续」即可。
-  // 保留这个钩子是为了让「暂停原因」可被测试断言（见 battle.test.ts）。
+  // 不自动恢复：回来就继续，玩家会发现自己离开的几秒里防线被打掉一半。
+  //
+  // 这里做一次**对账**：`paused` 是 UI 状态，`renderer.pause()` 是时钟状态，
+  // 两者若不一致（例如渲染器尚未 start 时先暂停过），以渲染器为准把 UI 纠正过来。
+  // 没有这次对账，`isPaused()` 就是个没人读的字段。
+  if (!paused.value && renderer.value?.isPaused()) {
+    paused.value = true
+  }
 })
 
 /**
@@ -749,7 +776,14 @@ onShow(() => {
  */
 onShareAppMessage(() =>
   battleShare({
-    settled: settled.value && !settleResult.value?.error,
+    // ⚠️ 判据是「**结果对象已就位**且没有错误」，不是「settled 已置位」。
+    //
+    // `settled.value = true` 在 settle() 的第一行，而 settleResult 要等
+    // `await api.settleBattle` 返回后才赋值。这段窗口（弱网可达数秒）里
+    // settleResult 是 null，`?.error` 得到 undefined，`!undefined === true`
+    // → 走「已结算」分支，星级/分数取 `?? 0` —— 分享出去是
+    // 「第 3 关 0 星 · 0 分」。share.ts 的注释专门写了要防这个。
+    settled: !!settleResult.value && !settleResult.value.error,
     levelId: levelId.value,
     stars: Number(settleResult.value?.stars ?? 0),
     score: Number(settleResult.value?.score ?? 0),

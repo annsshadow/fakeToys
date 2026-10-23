@@ -54,9 +54,17 @@ let initialized = false
  * 小程序包内绝对路径 `/static/...` 与 H5 dev 的根路径都正确；
  * H5 若要部署在子路径，需要显式设置 vite 的 `base`（而不是靠 `"./"`）。
  */
+export function assetPrefixFor(base: string): string {
+  // 空串 → 根路径。其余原样保留：
+  //   '/'      → 根部署（H5 dev、小程序包内绝对路径）
+  //   './'     → 相对文档 URL（uni 的 H5 默认，部署在子路径时也对）
+  //   '/game/' → 显式子路径
+  return base === '' ? '/' : base
+}
+
 function assetPrefix(): string {
   const base = (import.meta as { env?: { BASE_URL?: string } }).env?.BASE_URL ?? '/'
-  return base === './' || base === '' ? '/' : base
+  return assetPrefixFor(base)
 }
 
 /** 读取持久化的静音偏好。幂等，可重复调用。 */
@@ -79,7 +87,27 @@ export function initSfx(): void {
  */
 export function unlockSfx(): void {
   initSfx()
+  if (unlocked) return
   unlocked = true
+  // ⚠️ 只置标志是不够的 —— 必须在**用户手势的同一帧**里真的播一次。
+  //
+  // 微信小程序的 `InnerAudioContext` 不挑手势，但 H5 侧 uni 映射到
+  // `HTMLAudioElement`：iOS Safari 要求**首次 `play()` 本身**发生在手势调用栈里，
+  // 否则返回 rejected promise —— 而 `playSfx` 的 `try/catch` 会把它吞掉。
+  // 症状是「H5 完全静音，且没有任何报错」。
+  //
+  // 而真正的第一次播放发生在 `setInterval` 的逻辑时钟里，那时手势早已过期。
+  // 所以在这里播一次 **0 音量**的 tap 把手势用掉，代价是 22ms 的静音。
+  try {
+    const a = ctxFor('tap')
+    const prev = a.volume
+    a.volume = 0
+    a.play()
+    a.stop()
+    a.volume = prev
+  } catch {
+    // 部分基础库在无音频设备时抛；解锁失败不该影响战斗
+  }
 }
 
 /** 音频是否已解锁（供测试与调试）。 */

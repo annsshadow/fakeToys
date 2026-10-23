@@ -13,6 +13,7 @@ import { installUniMock } from '../../test/uni-mock'
 import { triggerUniHook } from '../../test/uni-app-stub'
 import { mountPage } from '../../test/page'
 import { makeConfig, makeLevel } from '../../test/fixtures'
+import { isSfxUnlocked, __resetSfxForTest } from '@/audio/sfx'
 
 vi.mock('@/api/client', () => ({
   guestLogin: vi.fn(),
@@ -41,6 +42,7 @@ let um: ReturnType<typeof installUniMock>
 
 beforeEach(() => {
   um = installUniMock()
+  __resetSfxForTest() // 音效解锁态是模块级单例，用例之间必须复位
   mockApi.guestLogin.mockResolvedValue({
     access_token: 'a',
     refresh_token: 'r',
@@ -270,6 +272,23 @@ describe('stage.vue 选关页', () => {
     store.wallet.energy = 0
     await wrapper.find('.btn-primary').trigger('click')
     expect(um.mock.navigateTo).toHaveBeenCalledWith({ url: '/pages/battle/battle?level=2' })
+  })
+
+  // 音效解锁（2026-10-23）：整条音效链的唯一闸门。
+  //
+  // 删掉 `startBattle` 里那行 `unlockSfx()`，`playSfx` 永远在第一行
+  // `if (!unlocked || muted) return` 返回 —— 没有报错、没有视觉变化、
+  // 所有测试绿，线上整局静音。所以必须有一条断言盯着这个手势点。
+  it('startBattle：在用户手势里解锁音频（否则整局静音且无任何报错）', async () => {
+    const { wrapper, store } = mountPage(Stage)
+    await flushPromises()
+    store.setMaxStage(1)
+    triggerUniHook(wrapper.vm, 'onLoad', { level: '2' })
+    await flushPromises()
+
+    expect(isSfxUnlocked()).toBe(false) // 进页面前未解锁
+    await wrapper.find('.btn-primary').trigger('click')
+    expect(isSfxUnlocked()).toBe(true)
   })
 
   it('onMounted：未登录时自动登录', async () => {

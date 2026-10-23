@@ -368,6 +368,56 @@ describe('BattleRenderer 无头渲染', () => {
     r.stop()
   })
 
+  it('pause 取消 rAF 帧循环，resume 重新注册（否则画面冻住却仍在每帧重绘）', () => {
+    // 这是「停两条时钟」里**绘制那一半**的判据。
+    // 4 条既有暂停用例全部只数逻辑回调，删掉 pause() 里的
+    // cancelAnimationFrame / clearInterval(drawTimer) 两块，它们全绿 ——
+    // 而症状是「画面冻在最后一帧但 rAF 仍在跑」，中低端机上白烧 GPU。
+    const frames: Array<(ts: number) => void> = []
+    vi.stubGlobal('requestAnimationFrame', (cb: (ts: number) => void) => {
+      frames.push(cb)
+      return frames.length as unknown as number
+    })
+    const cancelSpy = vi.fn()
+    vi.stubGlobal('cancelAnimationFrame', cancelSpy)
+
+    const r = makeRenderer(fakeEngine())
+    r.start(() => {})
+    expect(frames.length).toBe(1)
+
+    r.pause()
+    expect(cancelSpy).toHaveBeenCalledTimes(1) // 帧回调被取消
+
+    r.resume()
+    expect(frames.length).toBe(2) // 重新注册了一帧
+    r.stop()
+    vi.unstubAllGlobals()
+  })
+
+  it('暂停期间换的档位在 resume 后生效（否则「暂停中改成 4×」会静默丢失）', async () => {
+    // 存在 rAF → 绘制时钟走 rAF，不调 setInterval，
+    // 于是 setInterval 的调用全部来自逻辑时钟，可以精确断言间隔。
+    vi.stubGlobal('requestAnimationFrame', () => 1 as unknown as number)
+    vi.stubGlobal('cancelAnimationFrame', () => {})
+    const intervalSpy = vi.spyOn(globalThis, 'setInterval')
+
+    const e = mkEngine()
+    const r = makeRenderer(e)
+    e.start()
+    r.start(() => { e.step() })
+    expect(intervalSpy.mock.calls.at(-1)![1]).toBe(logicIntervalMs(1))
+
+    r.pause()
+    r.setSpeed(4) // 暂停中换挡：只记档位，不重建时钟
+    r.resume()
+
+    const lastDelay = intervalSpy.mock.calls.at(-1)![1]
+    expect(lastDelay).toBe(logicIntervalMs(4))
+    r.stop()
+    intervalSpy.mockRestore()
+    vi.unstubAllGlobals()
+  })
+
   it('pause / resume 重复调用是幂等的，stop 会清掉暂停态', async () => {
     const e = mkEngine()
     const r = makeRenderer(e)

@@ -260,6 +260,57 @@ describe('index.vue 首页', () => {
     expect(wrapper.text()).toContain('构筑评分')
   })
 
+  // ── 分享（2026-10-23）────────────────────────────────────────────
+  // 判据是**行为**：微信真正用的就是回调的返回值。
+  // 只断言「注册了回调」不够 —— 卡片内容错了只有分享出去的人看得见。
+
+  it('分享 → 返回首页标题与路径', async () => {
+    mountPage()
+    await flushPromises()
+    const payload = triggerUniHook(wrapper.vm, 'onShareAppMessage', { from: 'menu' }) as {
+      title: string
+      path: string
+    }
+    expect(payload.title).toBe('来一炮 · 塔防 + 元素反应')
+    expect(payload.path).toBe('/pages/index/index')
+  })
+
+  it('公告请求在途时再次 onShow → 不并发第二次请求', async () => {
+    // 首次请求挂起，模拟弱网
+    let resolveFirst: (v: any) => void = () => {}
+    mockApi.fetchAnnouncements.mockImplementation(
+      () => new Promise((r) => (resolveFirst = r)) as any,
+    )
+    mountPage()
+    await flushPromises()
+    expect(mockApi.fetchAnnouncements).toHaveBeenCalledTimes(1)
+
+    // 切后台再回来：annLoadedOnce 已是 true，但请求还没回来
+    triggerUniHook(wrapper.vm, 'onShow')
+    await flushPromises()
+    expect(mockApi.fetchAnnouncements).toHaveBeenCalledTimes(1) // in-flight 去重
+
+    resolveFirst({ items: [] })
+    await flushPromises()
+  })
+
+  it('公告拉取失败 → 保留已展示内容（一次抖动不该把公告抹掉）', async () => {
+    mockApi.fetchAnnouncements.mockResolvedValue({
+      items: [{ id: 1, title: '维护公告', body: '今晚停机', published_at: null }],
+    })
+    mountPage()
+    await flushPromises()
+    expect(wrapper.text()).toContain('维护公告')
+
+    // 第二次刷新失败
+    mockApi.fetchAnnouncements.mockRejectedValue(new Error('network down'))
+    triggerUniHook(wrapper.vm, 'onShow')
+    await flushPromises()
+
+    // 内容仍在 —— 清空会让玩家以为运营撤了公告
+    expect(wrapper.text()).toContain('维护公告')
+  })
+
   it('公告拉取失败 → 首页不受影响，且不显示假数据', async () => {
     mockApi.fetchAnnouncements.mockRejectedValue(new Error('network down'))
     mountPage()

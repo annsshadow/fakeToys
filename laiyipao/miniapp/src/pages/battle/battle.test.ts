@@ -21,6 +21,7 @@ import { installUniMock } from '../../test/uni-mock'
 import { triggerUniHook } from '../../test/uni-app-stub'
 import { mountPage } from '../../test/page'
 import { makeConfig, makeLevel } from '../../test/fixtures'
+import { __resetSfxForTest } from '@/audio/sfx'
 
 vi.mock('@/api/client', () => ({
   guestLogin: vi.fn(),
@@ -215,6 +216,7 @@ async function loadPage() {
 
 beforeEach(() => {
   um = installUniMock()
+  __resetSfxForTest() // 音效解锁态是模块级单例
   FakeEngine.instances.length = 0
   FakeRenderer.instances.length = 0
   mockApi.guestLogin.mockResolvedValue({
@@ -610,6 +612,48 @@ describe('battle.vue 暂停（2026-10-23）', () => {
     expect(renderer.paused).toBe(false)
   })
 
+  it('手动暂停后切后台 → 保持暂停，暂停原因不被覆盖为「切后台」', async () => {
+    const Battle = await loadPage()
+    const { wrapper } = mountPage(Battle)
+    await setupDone(wrapper)
+    const renderer = FakeRenderer.instances[0]!
+
+    await wrapper.find('.pause-btn').trigger('click')
+    expect(renderer.paused).toBe(true)
+    expect(wrapper.text()).not.toContain('切到后台时自动暂停了')
+
+    triggerUniHook(wrapper.vm, 'onHide')
+    await flushPromises()
+    // 已经在暂停中：原因仍是玩家自己点的，遮罩文案不该被改写
+    expect(renderer.paused).toBe(true)
+    expect(wrapper.text()).not.toContain('切到后台时自动暂停了')
+  })
+
+  it('无 canvas 降级路径：暂停停掉本页定时器，点继续后恢复推进', async () => {
+    // 这条走的是 `renderer === null` 的分支：`doPause` 里 clearInterval(timerId)、
+    // `doResume` 里 startFallbackLoop()。删掉前者，定时器仍在空转；
+    // 删掉后者，页面会永远停在「已暂停」遮罩上 —— 而 4 条 FakeRenderer 用例都发现不了。
+    mockQueryNode(null)
+    const Battle = await loadPage()
+    const { wrapper } = mountPage(Battle)
+    await setupDone(wrapper)
+    const eng = FakeEngine.instances[0]!
+    eng.winAtStep = Infinity // 别让它自己结束，否则表就停了
+
+    await new Promise((r) => setTimeout(r, TICK * 4))
+    const before = eng.stepCount
+    expect(before).toBeGreaterThan(0)
+
+    triggerUniHook(wrapper.vm, 'onHide')
+    await flushPromises()
+    await new Promise((r) => setTimeout(r, TICK * 4))
+    expect(eng.stepCount).toBe(before) // 定时器已停，一步都不走
+
+    await wrapper.find('.pause-go').trigger('click')
+    await new Promise((r) => setTimeout(r, TICK * 4))
+    expect(eng.stepCount).toBeGreaterThan(before) // 恢复后继续
+  })
+
   it('已结算后切后台不暂停（没什么可暂停的）', async () => {
     const Battle = await loadPage()
     const { wrapper } = mountPage(Battle)
@@ -692,6 +736,34 @@ describe('battle.vue 分享（2026-10-23）', () => {
     expect(payload.title).toContain('第 3 关')
     expect(payload.title).toContain('3 星')
     expect(payload.title).toContain('555 分')
+  })
+
+  it('结算**在途** → 退回通用文案（此窗口 settleResult 还是 null，stars/score 取 ?? 0）', async () => {
+    // `settled.value = true` 在 settle() 第一行，而 settleResult 要等
+    // await settleBattle 返回后才赋值。弱网下这个窗口可达数秒 ——
+    // 此时若按「settled 已置位」判断，分享出去就是「第 3 关 0 星 · 0 分」。
+    let resolveSettle: (v: any) => void = () => {}
+    mockApi.settleBattle.mockImplementation(
+      () => new Promise((r) => (resolveSettle = r)) as any,
+    )
+    const Battle = await loadPage()
+    const { wrapper } = mountPage(Battle)
+    await setupDone(wrapper)
+    const eng = FakeEngine.instances[0]!
+    eng.winAtStep = 1
+    FakeRenderer.instances[0]!.loop!(TICK)
+    await flushPromises() // 结算请求已发出但未返回
+
+    const payload = triggerUniHook(wrapper.vm, 'onShareAppMessage', { from: 'menu' }) as {
+      title: string
+    }
+    expect(payload.title).toBe('来一炮 · 塔防 + 元素反应')
+    expect(payload.title).not.toContain('0 星')
+    expect(payload.title).not.toContain('0 分')
+
+    // 放行，避免挂起的 Promise 泄漏到后续用例
+    resolveSettle({ win: true, stars: 3, score: 555, loot: {} })
+    await flushPromises()
   })
 
   it('结算失败 → 退回通用文案（失败时 stars 恒为 0，那更假）', async () => {

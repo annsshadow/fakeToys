@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <view class="page-root home">
     <!-- 顶部资源栏 -->
     <view class="topbar safe-top" :style="{ paddingTop: statusBarPad }">
@@ -143,14 +143,30 @@ const store = useGameStore()
 const announcements = ref<Announcement[]>([])
 const expanded = ref<Set<number>>(new Set())
 
+/**
+ * 是否有请求在途。
+ *
+ * ⚠️ 光靠 `annLoadedOnce` 去重是不够的：它在**请求发出之前**就置位，
+ * 于是首次请求在途时页面再 `onShow`（切后台回来、H5 路由抖动）会并发发出
+ * 第二个请求 —— 首屏两次 `/announcements`。这个标志管的是「同时只跑一个」。
+ */
+let annInflight = false
+
 async function loadAnnouncements(): Promise<void> {
+  if (annInflight) return
+  annInflight = true
   try {
     const res = await api.fetchAnnouncements(3)
     announcements.value = res.items ?? []
   } catch (e) {
-    // 服务端不可达时首页本身会走 loginError 分支，这里不重复报错
-    console.warn('[公告] 拉取失败，本次不展示：', (e as Error).message)
-    announcements.value = []
+    // ⚠️ 失败时**保留已有内容**，不清空。
+    //
+    // 清空会让一次网络抖动把玩家正在看的公告抹掉 —— 而「公告消失」
+    // 看起来像运营撤了公告，不像网络问题。服务端不可达时首页本身
+    // 会走 loginError 分支，这里只留一条 warn。
+    console.warn('[公告] 拉取失败，保留已有内容：', (e as Error).message)
+  } finally {
+    annInflight = false
   }
 }
 

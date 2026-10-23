@@ -203,6 +203,10 @@ describe('rank.vue 排行榜', () => {
     // 异步体在第一个 await 处让出，所以在 flush 之前触发 onLoad 与真实顺序等价。
     triggerUniHook(wrapper.vm, 'onLoad', { type: 'stage' })
     await flushPromises()
+    // ⚠️ 必须同时断言**次数**：只断言 `toHaveBeenCalledWith('stage')` 时，
+    // 「onMounted 先按 power 拉一次、onLoad 再补一次 stage」这种实现照样绿，
+    // 而那正是「首次用错类型 + 多发一次请求」的形态。
+    expect(mockApi.fetchLeaderboard).toHaveBeenCalledTimes(1)
     expect(mockApi.fetchLeaderboard).toHaveBeenCalledWith('stage')
     expect(wrapper.text()).toContain('按最高通关关卡排名。')
   })
@@ -211,6 +215,7 @@ describe('rank.vue 排行榜', () => {
     const { wrapper } = mountPage(Rank)
     triggerUniHook(wrapper.vm, 'onLoad', { type: 'nope' })
     await flushPromises()
+    expect(mockApi.fetchLeaderboard).toHaveBeenCalledTimes(1)
     expect(mockApi.fetchLeaderboard).toHaveBeenCalledWith('power')
   })
 
