@@ -123,6 +123,8 @@ Windows 计划任务应调用 `run-once.bat`。该脚本会先执行 `npm run se
 
 面板地址/口令通过环境变量控制（写在 `.env`）：`PANEL_HOST`、`PANEL_PORT`、`PANEL_TOKEN`。
 
+设置了 `PANEL_TOKEN` 后，仅 `/api/` 接口需要凭据——面板 HTML/CSS/JS 与失败截图等静态资源不带头即可加载（静态面不含敏感数据，敏感面全在 API）。凭据**只走 `X-Token` 请求头**：不接受 `?token=` 查询参数（查询串会进入代理/访问日志）；面板前端会在首次访问时把 URL 里的 `?token=` 转成该头并清理地址栏，因此 token 仍可能短暂进入浏览器历史——远程暴露面板时建议直接配强随机 token。
+
 ---
 
 ## 面板功能（2026 科技风）

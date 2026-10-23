@@ -14,6 +14,24 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
+# 迁移目录：oa4rust/backend/migrations（三端归一后从 oa4rust/migrations 迁入）。
+# 曾经的路径缺 backend/ 一段，--process-form 必抛 FileNotFoundError，
+# 而 CI 的 job 级 continue-on-error 把它掩盖成了静默失败（2026-10-24 修）。
+MIGRATION_091 = (
+    REPO_ROOT / "oa4rust" / "backend" / "migrations"
+    / "091_seed_real_process_definition.sql"
+)
+
+
+def read_migration_091() -> str:
+    """读取迁移 091 的 SQL 文本（fail-loud：不存在即报清晰错误）。"""
+    if not MIGRATION_091.is_file():
+        raise SystemExit(
+            f"迁移文件不存在：{MIGRATION_091}\n"
+            "  请确认 oa4rust/backend/migrations/ 目录结构未被改动。"
+        )
+    return MIGRATION_091.read_text(encoding="utf-8")
+
 BASE = "http://127.0.0.1:18080"
 CREDENTIAL = "xadmin"
 PASSWORD = "o2oa@2022"
@@ -123,7 +141,7 @@ def seed_org_domain(token: str) -> None:
 
 def load_091_process_definition() -> dict:
     """从迁移 091 提取 process_definition JSON。"""
-    text = open(REPO_ROOT / "oa4rust/migrations/091_seed_real_process_definition.sql", encoding="utf-8").read()
+    text = read_migration_091()
     start = text.index("'{", text.index("process_definition"))
     end = text.index("}'::jsonb", start)
     return json.loads(text[start + 1:end + 1])
@@ -131,7 +149,7 @@ def load_091_process_definition() -> dict:
 
 def load_091_form_definition() -> str:
     """从迁移 091 提取 form definition JSON 文本。"""
-    text = open(REPO_ROOT / "oa4rust/migrations/091_seed_real_process_definition.sql", encoding="utf-8").read()
+    text = read_migration_091()
     start = text.index("'{", text.index("INSERT INTO x_cms_form"))
     end = text.index("}',", start)
     return text[start + 1:end + 1]

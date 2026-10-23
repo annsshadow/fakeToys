@@ -8,7 +8,9 @@ use axum::{
 use deadpool_postgres::Pool;
 use serde::Deserialize;
 use serde_json::{json, Value};
-use sha2::Digest;
+// sha1 0.11 自带 Digest trait（digest 0.11）；不可再用 sha2 0.10 的
+// re-export——两个 digest 大版本不互通（2026-10-24 修构建断裂）。
+use sha1::Digest;
 use shared::error::AppError;
 use shared::response::ActionResult;
 use shared::session::SessionManager;
@@ -323,7 +325,7 @@ pub async fn qiyeweixin_jssdk_sign(
         "jsapi_ticket={}&noncestr={}&timestamp={}&url={}",
         ticket, nonce_str, timestamp, req.url
     );
-    let signature = format!("{:x}", sha1::Sha1::digest(text.as_bytes()));
+    let signature = hex::encode(sha1::Sha1::digest(text.as_bytes()));
 
     Ok(AxumJson(ActionResult::success(json!({
         "signature": signature,

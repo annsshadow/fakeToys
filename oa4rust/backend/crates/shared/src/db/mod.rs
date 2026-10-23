@@ -33,7 +33,7 @@ impl From<deadpool_postgres::PoolError> for DbError {
 /// 硬编码 `max_connections(20)`，两处各写各的。现统一由本结构派生：
 ///   - `DB_POOL_MAX_SIZE`  最大连接数（默认 20；非法值回退默认，最小钳到 1）
 ///   - `DB_POOL_MIN_IDLE`  最小空闲连接（默认 0 不预热，避免无库环境启动即建连；
-///                         仅 SeaORM 池生效——deadpool 的 PoolBuilder 无 min_idle API）
+///     仅 SeaORM 池生效——deadpool 的 PoolBuilder 无 min_idle API）
 ///   - `DB_TLS`            "1"/"true"/"on"/"yes" 开启 TLS（默认关，本地开发 NoTls）
 ///
 /// TLS 语义（不引入任何真实凭证）：

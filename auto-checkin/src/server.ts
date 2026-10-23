@@ -65,11 +65,16 @@ export function createApp(config: AppConfig): express.Express {
   const app = express();
   app.use(express.json());
 
-  // 可选访问口令：设置了 PANEL_TOKEN 时，除首页外的 API 需带 X-Token 头。
+  // 可选访问口令：设置了 PANEL_TOKEN 时，仅 /api/ 需带 X-Token 头。
   // 不接受 ?token= 查询参数——查询串会进入代理/访问日志，容易泄漏。
   app.use((req, res, next) => {
     if (!config.panel.token) return next();
-    if (req.path === "/" || req.path.startsWith("/assets")) return next();
+    // 只守 API：静态资源（面板 HTML/CSS/JS 与失败截图）不带头即可访问。
+    // 曾经的放行清单是 "/" 与 /assets*，但 public/ 实际只有 index.html、
+    // style.css、app.js（根路径），截图在 /screenshots/ 下——设了 PANEL_TOKEN
+    // 后 CSS/JS/截图全部 401，面板不可用（2026-10-24 修）。敏感数据全在
+    // /api/ 之下，静态面不含敏感内容，故按前缀整体放行。
+    if (!req.path.startsWith("/api/")) return next();
     const token = req.header("X-Token");
     if (token !== config.panel.token) {
       res.status(401).json({ error: "unauthorized" });
@@ -101,7 +106,7 @@ export function createApp(config: AppConfig): express.Express {
 
   // 历史记录（最近 N 条）
   app.get("/api/records", (req, res) => {
-    const limit = Math.min(Number(req.query.limit) || 100, 500);
+    const limit = Math.min(Math.max(Number(req.query.limit) || 100, 1), 500);
     const all = getAllRecords();
     res.json(all.slice(-limit).reverse());
   });

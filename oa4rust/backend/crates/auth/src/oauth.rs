@@ -8,6 +8,10 @@ use hmac::{Hmac, Mac};
 use serde::Deserialize;
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
+// sha1 0.11 的 Digest（digest 0.11）与 sha2 0.10 的 Digest（digest 0.10）
+// 是不同 trait：Sha1::digest 必须由 sha1 自己的 trait 提供。匿名导入避免
+// 与上一行的 sha2::Digest 命名冲突（2026-10-24 修构建断裂）。
+use sha1::Digest as _;
 use shared::error::AppError;
 use shared::response::ActionResult;
 use shared::session::SessionManager;
@@ -124,7 +128,7 @@ pub fn verify_wechat_signature(token: &str, signature: &str, timestamp: &str, no
     let mut items = [token, timestamp, nonce];
     items.sort();
     let text = items.concat();
-    let hash = format!("{:x}", sha1::Sha1::digest(text.as_bytes()));
+    let hash = hex::encode(sha1::Sha1::digest(text.as_bytes()));
     // 常量时间比较，防计时侧信道（signature 来自不可信请求体）。
     if hash.len() != signature.len() {
         return false;

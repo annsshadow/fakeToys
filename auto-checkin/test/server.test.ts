@@ -104,3 +104,32 @@ test("未设置口令时接口直接放行", async () => {
     assert.equal(res.status, 200);
   });
 });
+
+test("口令启用时：面板静态资源放行、API 仍守（2026-10-24 面板 401 缺陷回归）", async () => {
+  await withServer("secret", async (base) => {
+    // 曾经的放行清单是 "/" 与 /assets*，与实际文件布局（根路径 style.css/app.js）
+    // 不符，导致设了 PANEL_TOKEN 后 CSS/JS 全 401、面板不可用。
+    for (const p of ["/", "/style.css", "/app.js"]) {
+      const r = await fetch(`${base}${p}`);
+      assert.equal(r.status, 200, `${p} 应放行（静态资源不属敏感面）`);
+    }
+    // 静态面不存在的文件：应落到 static 的 404，而非被口令中间件 401——
+    // 证明放行规则没有把"任意路径都返回 200"
+    const missing = await fetch(`${base}/screenshots/definitely-not-here.png`);
+    assert.equal(missing.status, 404, "静态缺失文件应为 404（static 落空），而非 401");
+    // API 面依旧只认 X-Token 头
+    const api = await fetch(`${base}/api/stats`);
+    assert.equal(api.status, 401);
+  });
+});
+
+test("历史记录：limit 下限夹取（负值不静默丢数据）", async () => {
+  await withServer("", async (base) => {
+    addRecord(record("limit-clamp"));
+    // ?limit=-5：未夹取时 slice(5) 静默丢掉前若干条；夹取后等价于 limit=1
+    const r = await (await fetch(`${base}/api/records?limit=-5`)).json();
+    assert.equal(r.length, 1, "?limit=-5 应被夹到 1，返回最近 1 条而非空集");
+    const zero = await (await fetch(`${base}/api/records?limit=0`)).json();
+    assert.ok(zero.length >= 1, "?limit=0 走默认 100，不应被夹成 0 条");
+  });
+});
