@@ -8,7 +8,7 @@
 
 ## 1. 运行入口与启动序列
 
-五个可执行入口，都在 `server/cmd/` 下：
+六个可执行入口，都在 `server/cmd/` 下：
 
 | 命令 | 作用 | 典型用法 |
 |---|---|---|
@@ -17,6 +17,7 @@
 | `cmd/seed` | 写入游戏内容（幂等 upsert） | 首次部署必须执行 |
 | `cmd/vectors` | 从 Go 真相源导出跨端契约夹具 | `-check` 供 CI 校验 |
 | `cmd/tygen` | 从 Go 响应结构生成后台 TS 类型（`admin/src/api/types.gen.ts`） | `-check` 供 CI 校验漂移 |
+| `cmd/prune` | 按保留期清理历史数据（**默认 dry-run**，`--apply` 才删） | `go run ./cmd/prune --days=30`，见 `OPERATIONS.md` §6.4 |
 
 `cmd/api` 的启动顺序是**硬性**的，任一步失败直接退出并打印原因：
 

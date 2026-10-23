@@ -429,3 +429,69 @@ const PREFIX = BASE === './' || BASE === '' ? '/' : BASE
 | F3 榜单缓存按 `(kind, limit)` 分键 | 按 `kind` 分键，查询固定取 200 行后切片 | 一个榜只有一个缓存条目，键更简单；多取 150 行的代价可忽略 |
 | S1 计划里写「8 个音效 < 120 KB」 | 实测 **65.5 KB** | — |
 | 计划外新增 | `Service.FlushStatsCache()` / `LeaderboardCacheKinds()` / `triggerUniHook` 返回值 | 前两个是测试与运维需要的最小口子；第三个让分享断言变成**行为**断言而不是源码扫描 |
+
+---
+
+## 6. 独立审计与修复（2026-10-23 晚）
+
+代码全部落地、5 个提交推送之后，做了一轮**独立审计**：两个 agent 分别对抗性审查
+服务端与小程序端，口径是「找出**看起来完成、其实没生效**的地方」，每条必须给
+文件:行号 + 症状 + 判据失效点。审计报 28 条，逐条复核后确认 **8 条真缺陷 + 6 条测试缺口**，
+其余 14 条是重复或已在文档记账。
+
+### 6.1 真缺陷（已修）
+
+| # | 缺陷 | 症状 | 修法 |
+|---|---|---|---|
+| A1 | **`MyRank` 与 `Leaderboard` 并列口径不一致** | 同分两人在榜上是第 1/第 2，而 `/me/rank` 给两人都算第 1。玩家看到「我的排名 第 1」而榜上自己高亮在第 2 条。效率榜（`MIN(min_power_clear)`）并列极常见 | 名次判据从「只比分数」改成**双键**（分数 + `user_id`），与 `ORDER BY score, u.id` 逐字对应 |
+| A2 | **第一版的测试把错误口径固定成了期望** | `TestMyRankTiesCountOnce` 断言「同分两人都是第 1」——谁按计划把实现改对，它反而变红 | 改为 `TestMyRankTieBreaksByUserID`：断言 a=1、b=2，且与列表第 1/2 条逐条对齐 |
+| A3 | **榜单缓存与 `/me/rank` 不一致** | 列表 15 秒陈旧、名次实时，同一屏两个数字来自不同快照 | `SettleBattle` 成功后 `flushLeaderboards()`（只榜单，不动看板）。玩家打完 → 打开排行页 → 两者都新 |
+| A4 | **`sliceLeaderboard` 泄漏 cap** | `all[:limit]` 的 cap 仍是 200，调用方 `append` 会写进缓存底层数组 —— 榜单内容随机变化且无报错 | 三索引切片 `all[:limit:limit]`，把口头契约变成结构约束；加 `cap(got)==limit` 断言 |
+| A5 | **看板缓存测试的断言恒真** | `if d.Users.Total < 0`（`COUNT(*)` 永不为负）—— 「缓存返回快照而不是零值」这半条完全没验 | 先造一个用户，断言 `second.Total == first.Total && first.Total >= 1`，并加 `len(DailyActive)==14` |
+| A6 | **公告 limit 越界退回缺省而不是夹到上限** | `?limit=100` 返回 5 条：比请求少、也比上限少，且不报错。原断言 `len <= max` 区分不出 | 拆成两段式（`<=0` 回缺省、`>max` 夹到 max），断言**恰好等于 20** |
+| A7 | **结算在途时分享拼出「0 星 0 分」** | `settled` 在 `settle()` 第一行置位，`settleResult` 要等接口返回才赋值。弱网数秒内转发，卡片是「第 3 关 0 星 · 0 分」 | 谓词改成 `!!settleResult.value && !settleResult.value.error` |
+| A8 | **公告请求无在途去重，且失败会清空已展示内容** | 首次请求在途时再 `onShow` 会并发第二次；一次抖动把公告抹掉（看起来像运营撤了公告） | 加 `annInflight` 标志；失败分支保留旧值 |
+
+另外 4 条小修：
+
+- `MyRank` 未知 kind 现在**规范化**为 `power` 再回显（与 `routes.go`「响应的 type 必须与数据同一件事」同一条纪律）。
+- `pausedByHide` 从 `let` 改成 `ref`（模板依赖它；非响应式时「手动暂停后又切后台」的提示不会更新）。
+- `onHide` 的守卫从 `engine.value` 改成 `!settled && !startError`：前者会漏掉 `eng.start()` 到 `r.start()` 之间那次 `await getCanvas()` 的窗口；并在 `r.start()` 后补一次 `if (paused) r.pause()`。
+- 音效资源路径 `'./'` 不再归一成 `'/'`：H5 部署在子路径时那样会 404。抽成 `assetPrefixFor(base)` 并对三种 base 各断言一次。
+
+### 6.2 测试缺口（已补）
+
+| 缺口 | 为什么重要 | 补法 |
+|---|---|---|
+| `share.ts` 纯函数零单测（计划点名 `src/test/share.test.ts` 但没建） | 删掉首页 `onShareAppMessage` 整行、或让 `indexShare()` 返回空 path，**1130 条测试全绿**，而微信卡片点进去是空白页 | 新建 `utils/share.test.ts` 8 条 + 首页分享断言 1 条 |
+| `unlockSfx` 接线零覆盖 | 删掉 `stage.vue` 那行，`playSfx` 永远在第一个 `if` 返回 —— 无报错、无视觉变化、全绿，线上整局静音 | `stage.test.ts` 加「开始战斗后 `isSfxUnlocked()` 为 true」 |
+| `pause()` 只测了逻辑时钟那半 | 删掉 `cancelAnimationFrame` / `clearInterval(drawTimer)`，4 条既有暂停用例全绿，而画面冻住却仍在每帧重绘 | 假 rAF：`pause` 断言 `cancelAnimationFrame` 被调、`resume` 断言重新注册 |
+| 暂停中换挡是否真的生效 | 既有断言只要求「步数变多」，用旧档位也成立 | spy `setInterval`，断言 `resume` 后间隔 == `logicIntervalMs(4)` |
+| fallback（无 canvas）路径的暂停零覆盖 | 删掉 `doResume` 里的 `startFallbackLoop()`，页面永远停在「已暂停」遮罩上 | 加一条 `mockQueryNode(null)` 的暂停/恢复用例 |
+| `ttlCache` 无并发用例 | 去掉 `mu.Lock` 时 `-race` 也抓不到（没有用例并发进入临界区） | 1 写 4 读 + `flush`，靠 `-race` 兜底 |
+| `prune` 退出码只测到 `parseOpts` | 把 `os.Exit(2)` 改成 1，测试全绿而脚本 `$? -eq 2` 静默失效 | `main` 拆成 `runCLI(args, out, err) int`，直接断言返回码；并断言「参数校验先于连库」 |
+| 深链测试抓不到「两次请求」 | `toHaveBeenCalledWith('stage')` 在「先按 power 拉一次、再补 stage」时照样绿 | 加 `toHaveBeenCalledTimes(1)` |
+
+### 6.3 无法单测覆盖的一处（显式记账）
+
+**战斗页根节点的 `@click="unlockSfx()"`**（音效解锁的第二道保险）。
+
+- 它在 uni 的构建产物里是 `bindtap="{{Q}}"`（已用
+  `dist/build/mp-weixin/pages/battle/battle.wxml` 核对），**真实环境有效**；
+- 但 jsdom 下 `<view>` 是自定义元素，VTU 的 `trigger('click')` 触发不到它 ——
+  试过 `trigger('touchstart')`、`trigger('click')`、`dispatchEvent(new Event(...))`，
+  元素上都没有 `_vei` 监听器。
+
+所以这条**不写测试，也不假装测了**。主链路（`stage.vue` → `unlockSfx`）有单测，
+兜底靠构建产物 + 真机。这与「用源码扫描冒充行为断言」是两回事：前者是承认测不到，
+后者是假装测到了。
+
+### 6.4 审计后的门禁
+
+| 端 | 结果 |
+|---|---|
+| server `gofmt -l` / `go vet` / `go build` | 无输出 / 无输出 / ✅ |
+| server `go test` | 9 包通过（含 `cmd/prune` 的 10 条、`internal/domain` 的文档守卫）；其余 6 包仍因**无 PG** 红，失败原因全部是连接失败 |
+| miniapp `vitest` | **79 文件 / 1150 通过 / 2 跳过** |
+| miniapp `vue-tsc` | 0 error |
+| miniapp 构建 | `build:mp-weixin` ✅（音效路径实测 `/static/sfx/*.wav`）· `build:h5` ✅（实测 `./static/sfx/*.wav`，子路径部署正确） |

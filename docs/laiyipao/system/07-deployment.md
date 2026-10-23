@@ -157,7 +157,7 @@ sudo -u postgres psql -c "CREATE DATABASE laiyipao OWNER laiyipao_app;"
 cd laiyipao/server
 export DATABASE_URL="postgres://laiyipao_app:<PASSWORD>@127.0.0.1:5432/laiyipao?sslmode=disable"
 
-go run ./cmd/migrate      # 18 个迁移，50 张表
+go run ./cmd/migrate      # 19 个迁移，50 张表
 go run ./cmd/seed         # 首次必须执行：敌人/技能/装备/关卡/签到/任务/商城/兑换码
 ```
 
