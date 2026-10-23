@@ -1,12 +1,15 @@
 // Copyright (C) 2026 annsshadow
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
-import { join } from "node:path";
+import { readFileSync, writeFileSync, renameSync, mkdirSync, existsSync } from "node:fs";
+import { resolve, join } from "node:path";
 import { ROOT_DIR } from "./config.js";
 import type { CheckinResult } from "./types.js";
 
-const DATA_DIR = join(ROOT_DIR, "data");
+// 数据目录默认在项目内；测试等场景可用 AUTO_CHECKIN_DATA_DIR 指到别处
+const DATA_DIR = process.env.AUTO_CHECKIN_DATA_DIR
+  ? resolve(process.env.AUTO_CHECKIN_DATA_DIR)
+  : join(ROOT_DIR, "data");
 mkdirSync(DATA_DIR, { recursive: true });
 const DB_PATH = join(DATA_DIR, "records.json");
 
@@ -14,21 +17,47 @@ interface Db {
   records: CheckinResult[];
 }
 
-function read(): Db {
+// 内存缓存：读多写少，避免每个 /api/stats 请求都全量读盘。
+// 写操作（addRecord）会同步刷新缓存并递增版本号，缓存即失效。
+let cache: Db | null = null;
+let version = 0;
+
+/** 记录库版本号：每次写入 +1，供上层（如面板统计）判断缓存是否过期 */
+export function getStoreVersion(): number {
+  return version;
+}
+
+function readFromDisk(): Db {
   if (!existsSync(DB_PATH)) return { records: [] };
   try {
-    return JSON.parse(readFileSync(DB_PATH, "utf-8")) as Db;
+    const db = JSON.parse(readFileSync(DB_PATH, "utf-8")) as Db;
+    if (!Array.isArray(db.records)) return { records: [] };
+    return db;
   } catch {
     return { records: [] };
   }
 }
 
+function read(): Db {
+  if (cache) return cache;
+  const db = readFromDisk();
+  cache = db;
+  return db;
+}
+
 function persist(db: Db): void {
-  writeFileSync(DB_PATH, JSON.stringify(db, null, 2));
+  // 原子写入：先写临时文件再 rename，避免半截 JSON 或崩溃时丢失全部记录
+  const tmp = `${DB_PATH}.tmp`;
+  writeFileSync(tmp, JSON.stringify(db, null, 2));
+  renameSync(tmp, DB_PATH);
+  cache = db;
+  version++;
 }
 
 export function addRecord(result: CheckinResult): void {
-  const db = read();
+  // 写入前以磁盘最新内容为基准：记录文件可能被进程外改动（补跑/修复脚本），
+  // 直接沿用内存旧快照会把它们覆盖掉。
+  const db = readFromDisk();
   db.records.push(result);
   // 仅保留最近 2000 条，避免文件无限膨胀
   if (db.records.length > 2000) db.records = db.records.slice(-2000);

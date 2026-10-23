@@ -16,6 +16,63 @@ export function isRunning(): boolean {
 }
 
 /**
+ * 同时运行的站点上限。站点之间相互独立，但每个站点都会开一个 Chromium
+ * 持久化上下文，全部并行会争抢 CPU/内存，因此限制并发数而不是完全串行。
+ */
+const MAX_CONCURRENT_SITES = 2;
+
+/**
+ * 有界并发地映射一组任务：
+ * - 保持结果顺序与输入一致；
+ * - 单个任务抛错不会中断其他任务（先让全部任务跑完再抛出第一个错误）。
+ */
+export async function mapWithConcurrency<T, R>(
+  items: T[],
+  limit: number,
+  fn: (item: T, index: number) => Promise<R>,
+): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let cursor = 0;
+  const workers = Array.from({ length: Math.max(1, Math.min(limit, items.length)) }, async () => {
+    for (;;) {
+      const i = cursor++;
+      if (i >= items.length) return;
+      results[i] = await fn(items[i], i);
+    }
+  });
+  const settled = await Promise.allSettled(workers);
+  const firstError = settled.find((s) => s.status === "rejected");
+  if (firstError && firstError.status === "rejected") throw firstError.reason;
+  return results;
+}
+
+function failedResult(adapter: SiteAdapter, message: string): CheckinResult {
+  return {
+    siteId: adapter.id,
+    siteName: adapter.name,
+    timestamp: new Date().toISOString(),
+    status: "failed",
+    reward: null,
+    balance: null,
+    currency: null,
+    message,
+    screenshot: null,
+    durationMs: 0,
+  };
+}
+
+/** 运行单个适配器，落库并返回结果。任何异常都收敛为 failed 结果，绝不让单站拖垮整体。 */
+async function runOneSafe(adapter: SiteAdapter, config: AppConfig): Promise<CheckinResult> {
+  try {
+    return await runOne(adapter, config);
+  } catch (err) {
+    const result = failedResult(adapter, `运行异常：${(err as Error).message}`);
+    addRecord(result);
+    return result;
+  }
+}
+
+/**
  * 运行单个适配器，落库并返回结果。
  *
  * @param existingContext 复用已有浏览器上下文。手动登录流程（login）已经持有
@@ -80,16 +137,7 @@ async function runOne(
     addRecord(result);
     return result;
   } catch (err) {
-    const result: CheckinResult = {
-      ...base,
-      status: "failed",
-      reward: null,
-      balance: null,
-      currency: null,
-      message: `运行异常：${(err as Error).message}`,
-      screenshot: null,
-      durationMs: Date.now() - start,
-    };
+    const result = failedResult(adapter, `运行异常：${(err as Error).message}`);
     siteLog.error(result.message);
     addRecord(result);
     return result;
@@ -112,7 +160,7 @@ export async function runSiteInContext(
   return runOne(adapter, config, context);
 }
 
-/** 运行全部站点（串行，避免同时开多个浏览器占用资源） */
+/** 运行全部站点（有界并发，单站故障互不影响；结果顺序与 adapters 一致） */
 export async function runAll(config: AppConfig): Promise<CheckinResult[]> {
   if (running) {
     createLogger("runner").warn("已有任务在运行，跳过本次触发");
@@ -125,16 +173,14 @@ export async function runAll(config: AppConfig): Promise<CheckinResult[]> {
   }
 
   running = true;
-  const results: CheckinResult[] = [];
   try {
-    for (const adapter of adapters) {
-      results.push(await runOne(adapter, config));
-    }
+    return await mapWithConcurrency(adapters, MAX_CONCURRENT_SITES, (adapter) =>
+      runOneSafe(adapter, config),
+    );
   } finally {
     running = false;
     releaseRunLock();
   }
-  return results;
 }
 
 /** 运行单个指定站点 */

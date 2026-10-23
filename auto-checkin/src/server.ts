@@ -8,7 +8,7 @@ import { dirname } from "node:path";
 import type { AppConfig } from "./types.js";
 import { adapters } from "./sites/index.js";
 import { getCredentials } from "./config.js";
-import { computeSiteStats, computeTrend, getAllRecords, type StatsSummary } from "./store.js";
+import { computeSiteStats, computeTrend, getAllRecords, getStoreVersion, type StatsSummary } from "./store.js";
 import { runAll, runSite, isRunning } from "./runner.js";
 import { shouldFailRun } from "./run-status.js";
 import { createLogger } from "./logger.js";
@@ -29,7 +29,13 @@ export function setNextRunAt(iso: string | null): void {
   nextRunAt = iso;
 }
 
+// 统计摘要缓存：记录库版本号不变就复用上次计算结果，
+// 只有发生写入（签到落库）后才重新计算。
+let summaryCache: { version: number; summary: StatsSummary } | null = null;
+
 function buildSummary(): StatsSummary {
+  const version = getStoreVersion();
+  if (summaryCache && summaryCache.version === version) return summaryCache.summary;
   const sites = adapters.map((a) => computeSiteStats(a.id, a.name));
   const totalRuns = sites.reduce((s, x) => s + x.totalRuns, 0);
   const failedRuns = sites.reduce((s, x) => s + x.failedRuns, 0);
@@ -50,18 +56,21 @@ function buildSummary(): StatsSummary {
         ? Math.round(durationSites.reduce((s, x) => s + x.avgDurationMs, 0) / durationSites.length)
         : 0,
   };
-  return { sites, totals, generatedAt: new Date().toISOString() };
+  const summary: StatsSummary = { sites, totals, generatedAt: new Date().toISOString() };
+  summaryCache = { version, summary };
+  return summary;
 }
 
-export function startServer(config: AppConfig): void {
+export function createApp(config: AppConfig): express.Express {
   const app = express();
   app.use(express.json());
 
-  // 可选访问口令：设置了 PANEL_TOKEN 时，除首页外的 API 需带 ?token= 或 X-Token 头
+  // 可选访问口令：设置了 PANEL_TOKEN 时，除首页外的 API 需带 X-Token 头。
+  // 不接受 ?token= 查询参数——查询串会进入代理/访问日志，容易泄漏。
   app.use((req, res, next) => {
     if (!config.panel.token) return next();
     if (req.path === "/" || req.path.startsWith("/assets")) return next();
-    const token = req.header("X-Token") || (req.query.token as string | undefined);
+    const token = req.header("X-Token");
     if (token !== config.panel.token) {
       res.status(401).json({ error: "unauthorized" });
       return;
@@ -132,6 +141,11 @@ export function startServer(config: AppConfig): void {
     res.json({ ok: true, message: `已开始运行 ${siteId}` });
   });
 
+  return app;
+}
+
+export function startServer(config: AppConfig): void {
+  const app = createApp(config);
   app.listen(config.panel.port, config.panel.host, () => {
     log.info(`Web 面板已启动： http://${config.panel.host}:${config.panel.port}`);
     if (config.panel.token) log.info("已启用访问口令（PANEL_TOKEN）");
