@@ -11,6 +11,7 @@ package service
 //   · `ttl<=0` 不短路 → 「关闭缓存」这个开关变成摆设
 
 import (
+	"sync"
 	"testing"
 	"time"
 )
@@ -64,36 +65,96 @@ func TestTTLCacheFlush(t *testing.T) {
 	}
 }
 
-// TestSliceLeaderboard 截断不复制、不越界。
+// TestSliceLeaderboard 截断不越界，且 **cap 必须等于 len**。
+//
+// # 为什么 cap 也要断言
+//
+// `all[:limit]` 的 cap 仍是底层数组的长度。调用方一旦 `append`，
+// 就会写进缓存那份底层数组的第 limit+1 个位置 —— 榜单内容随机变化，
+// 且没有任何报错。`ttlcache` 的「调用方必须只读」是口头契约，编译器不检查；
+// 三索引切片 `all[:limit:limit]` 把它变成结构约束。
+//
+// 这条断言的作用就是：谁把三索引改回两索引，这里立刻红。
 func TestSliceLeaderboard(t *testing.T) {
-	all := []LeaderboardEntry{{UserID: 1}, {UserID: 2}, {UserID: 3}}
-	if got := sliceLeaderboard(all, 2); len(got) != 2 || got[1].UserID != 2 {
+	all := make([]LeaderboardEntry, 3, 200) // 模拟缓存那份「cap=200」的切片
+	for i := range all {
+		all[i].UserID = int64(i + 1)
+	}
+
+	got := sliceLeaderboard(all, 2)
+	if len(got) != 2 || got[1].UserID != 2 {
 		t.Fatalf("limit=2 应取前两条，实际 %+v", got)
 	}
-	// limit 大于长度：原样返回（不 panic、不补零）
-	if got := sliceLeaderboard(all, 50); len(got) != 3 {
-		t.Fatalf("limit=50 应返回全部 3 条，实际 %d 条", len(got))
+	if cap(got) != 2 {
+		t.Fatalf("cap 必须被夹到 2（否则 append 会写进缓存底层数组），实际 %d", cap(got))
+	}
+
+	// limit 大于长度：原样返回（不 panic、不补零），cap 同样收紧
+	all2 := sliceLeaderboard(all, 50)
+	if len(all2) != 3 {
+		t.Fatalf("limit=50 应返回全部 3 条，实际 %d 条", len(all2))
+	}
+	if cap(all2) != 3 {
+		t.Fatalf("limit 超长时 cap 也必须等于 len，实际 %d", cap(all2))
+	}
+
+	// 实证：对返回值 append 不得污染原切片
+	_ = append(got, LeaderboardEntry{UserID: 999})
+	if all[2].UserID != 3 {
+		t.Fatalf("append 污染了底层数组：all[2].UserID=%d", all[2].UserID)
 	}
 }
 
-// TestLeaderboardCacheKindsCoverTheThreeBoards 缓存键必须覆盖三个榜。
+// TestTTLCacheConcurrentAccess 并发读写下不 panic、不撕裂。
 //
-// 这条守的是「加榜时忘了改缓存初始化」：`leaderboardCache[kind]` 取不到时
-// 代码会走 `ok == false` 分支**静默跳过缓存**（不报错、功能正常、只是慢）。
-// 那种失效没有任何症状，只能靠名单对拍发现。
-func TestLeaderboardCacheKindsCoverTheThreeBoards(t *testing.T) {
-	got := LeaderboardCacheKinds()
-	want := map[string]bool{"power": false, "stage": false, "efficiency": false}
-	for _, k := range got {
-		if _, ok := want[k]; !ok {
-			t.Errorf("缓存里出现了未知榜名 %q", k)
-			continue
+// # 为什么要它
+//
+// `get` 返回的是切片头（3 个字），`put` 会整体替换 `c.val`。若把 `mu.Lock`
+// 删掉或把 `put` 改成「原地改元素」，读方可能拿到撕裂的切片头 ——
+// 这类失效**只能靠 `-race` 发现**，而单 goroutine 用例永远触发不了它。
+//
+// 断言刻意只要求「不 panic + 结构自洽」：并发下读到的值是新是旧都合法，
+// 真正的判据是 `go test -race` 不报数据竞争。
+func TestTTLCacheConcurrentAccess(t *testing.T) {
+	var c ttlCache[[]int]
+	var writer, readers sync.WaitGroup
+	stop := make(chan struct{})
+
+	writer.Add(1)
+	go func() {
+		defer writer.Done()
+		for i := 0; i < 2000; i++ {
+			c.put([]int{i, i + 1, i + 2}, time.Now())
+			if i%100 == 0 {
+				c.flush()
+			}
 		}
-		want[k] = true
+	}()
+
+	// ⚠️ 写者与读者用**两个** WaitGroup：写者结束时关 stop 让读者退出。
+	// 合成一个会死锁（读者等 stop，主协程等 readers）。
+	for r := 0; r < 4; r++ {
+		readers.Add(1)
+		go func() {
+			defer readers.Done()
+			for {
+				select {
+				case <-stop:
+					return
+				default:
+				}
+				if v, ok := c.get(time.Now(), time.Hour); ok {
+					// 长度必须恒为 3：读到撕裂的切片头时这里会崩
+					if len(v) != 3 {
+						t.Errorf("读到长度 %d 的切片，期望 3", len(v))
+						return
+					}
+				}
+			}
+		}()
 	}
-	for k, seen := range want {
-		if !seen {
-			t.Errorf("榜 %q 没有缓存条目 —— 它会静默地每次都查库", k)
-		}
-	}
+
+	writer.Wait()
+	close(stop)
+	readers.Wait()
 }

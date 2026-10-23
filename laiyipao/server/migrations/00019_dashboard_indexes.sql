@@ -45,3 +45,13 @@ CREATE INDEX IF NOT EXISTS idx_battle_records_created
 
 CREATE INDEX IF NOT EXISTS idx_wallet_flows_created
     ON wallet_flows (created_at);
+
+-- +goose Down
+--
+-- 下行只删索引，不动数据 —— 索引是纯附加结构，删掉不影响任何行的语义，
+-- 只是看板那几段范围扫描会退回顺序扫描。
+--
+-- ⚠️ 本子项目此前**没有**任何 `_rollback.sql` 文件（那是 oa4rust 的惯例），
+-- 下行统一走 goose 的 Down 段（`go run ./cmd/migrate -down`）。
+DROP INDEX IF EXISTS idx_wallet_flows_created;
+DROP INDEX IF EXISTS idx_battle_records_created;

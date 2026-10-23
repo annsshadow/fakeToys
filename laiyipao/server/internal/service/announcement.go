@@ -41,13 +41,20 @@ const (
 //
 // 判据（`announcement_test.go`）：
 //   - 未发布的绝不出现（`WHERE published`）；
-//   - `limit` 越界被夹住，而不是报错 —— 这是个展示型端点，
-//     客户端传错一个数不该让首屏整块消失；
+//   - `limit` 越界**夹到边界**而不是回落到缺省值 —— 这是两件事：
+//     `?limit=100` 期望「尽可能多」，给它 5 条是**比请求更少、也比上限更少**，
+//     且不报错。第一版就是 `limit <= 0 || limit > max { limit = default }`，
+//     于是 100 和 0 得到同一个结果，判据也区分不出来；
 //   - 排序按 `published_at DESC NULLS LAST, id DESC`：
 //     同一秒发布的两条靠 id 稳定排序，否则分页/重取会抖动。
 func (s *Service) ListAnnouncements(ctx context.Context, limit int) ([]AnnouncementView, error) {
-	if limit <= 0 || limit > maxAnnouncementLimit {
+	switch {
+	case limit <= 0:
+		// 没传 / 传了非正数 → 缺省条数
 		limit = defaultAnnouncementLimit
+	case limit > maxAnnouncementLimit:
+		// 超出上限 → **夹到上限**，不是退回缺省
+		limit = maxAnnouncementLimit
 	}
 	rows, err := s.pool.Query(ctx, `
 		SELECT id, title, body, published_at

@@ -22,28 +22,83 @@ func TestDashboardServedFromCache(t *testing.T) {
 	ts := openScratchService(t)
 	ctx := context.Background()
 
-	// 第一次：冷缓存，真的查库
-	if _, err := ts.AdminDashboard(ctx); err != nil {
+	// ⚠️ 必须先造一个用户。scratch 库是「迁移 + 种子」，**不含任何 users 行**，
+	// 于是 `Users.Total` 恒为 0 —— 而第一版断言写的是 `Total < 0`（COUNT(*) 永不为负），
+	// 那是一条**不可能失败**的断言，等于没验「缓存返回的是快照而不是零值」。
+	ts.newUser(t, ctx)
+
+	first, err := ts.AdminDashboard(ctx)
+	if err != nil {
 		t.Fatalf("首次 AdminDashboard 失败：%v", err)
+	}
+	if first.Users.Total < 1 {
+		t.Fatalf("夹具自检失败：刚造了用户，Total 应 >= 1，实际 %d", first.Users.Total)
 	}
 
 	// 把看板要用的一张表改名 —— 之后任何一次真实查询都必然报错
 	ts.renameTable(t, "users", "users_bak")
 	defer ts.renameTable(t, "users_bak", "users")
 
-	d, err := ts.AdminDashboard(ctx)
+	second, err := ts.AdminDashboard(ctx)
 	if err != nil {
 		t.Fatalf("TTL 内第二次调用应命中缓存（表已改名，查库必失败），实际报错：%v", err)
 	}
-	// 命中的是**第一次的快照**，不是零值 —— 零值会让「缓存」退化成「返回空」
-	if d.Users.Total < 0 {
-		t.Fatalf("缓存返回了异常快照：%+v", d.Users)
+
+	// 核心判据：命中的是**第一次的快照**，不是零值 Dashboard。
+	// 零值会让「缓存」退化成「返回空看板」，而运营会看到一片 0。
+	if second.Users.Total != first.Users.Total {
+		t.Errorf("缓存快照应等于首次结果：first.Users.Total=%d second.Users.Total=%d",
+			first.Users.Total, second.Users.Total)
+	}
+	// DAU 恒有 14 个日桶（generate_series 决定），零值 Dashboard 的 DailyActive 是 nil。
+	// 这条同时证明「非零值」与「结构完整」。
+	if len(second.DailyActive) != 14 {
+		t.Errorf("缓存快照的 DailyActive 应有 14 个日桶，实际 %d 个 —— "+
+			"说明 get 未命中时返回了零值却报告命中", len(second.DailyActive))
 	}
 
 	// 手动失效后必须重新查库（此时表还是改名的，所以必须报错）
 	ts.FlushStatsCache()
 	if _, err := ts.AdminDashboard(ctx); err == nil {
 		t.Fatal("FlushStatsCache 之后应重新查库并因表缺失而报错")
+	}
+}
+
+// TestSettleFlushesLeaderboardCache 结算成功后**榜单缓存必须失效**。
+//
+// # 为什么这条不能省
+//
+// 榜单缓存 15 秒，而 `/me/rank` 刻意不缓存（刚打完看旧名次最像 bug）。
+// 两者一快一慢，同一屏上就会自相矛盾：「我的排名 第 5」配一份 15 秒前的列表。
+// 结算是最关键的写路径 —— 它改变的正是榜单分数，所以必须由它来失效缓存。
+//
+// 判据：结算后把底表改名，`Leaderboard` 必须报错（说明它真的重新查库了）。
+func TestSettleFlushesLeaderboardCache(t *testing.T) {
+	ts := openScratchService(t)
+	ctx := context.Background()
+	uid := ts.newUser(t, ctx)
+
+	// 先填充缓存
+	if _, err := ts.Leaderboard(ctx, "power", 50); err != nil {
+		t.Fatalf("首次 Leaderboard 失败：%v", err)
+	}
+
+	// 打一局并结算（失败局即可，走完整结算事务）
+	tp, err := ts.StartBattle(ctx, uid, 1)
+	if err != nil {
+		t.Fatalf("开局失败：%v", err)
+	}
+	if _, err := ts.SettleBattle(ctx, uid, tp.TokenID, loseSettleInput()); err != nil {
+		t.Fatalf("结算失败：%v", err)
+	}
+
+	// 表没了 → 若缓存仍有效，Leaderboard 会「成功」；被 flush 了则必然报错
+	ts.renameTable(t, "user_progress", "user_progress_bak")
+	defer ts.renameTable(t, "user_progress_bak", "user_progress")
+
+	if _, err := ts.Leaderboard(ctx, "power", 50); err == nil {
+		t.Fatal("结算后榜单缓存应已失效（否则玩家刚打完会看到 15 秒前的旧榜），" +
+			"实际仍返回成功 = 缓存没被 flush")
 	}
 }
 

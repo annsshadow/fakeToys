@@ -128,34 +128,68 @@ func TestMyRankWithoutScore(t *testing.T) {
 	}
 }
 
-// TestMyRankTiesCountOnce 并列时的口径：分数相同的人名次相同吗？
+// TestMyRankTieBreaksByUserID 同分时的名次口径必须与榜单**列表下标**一致。
 //
-// 本实现的口径是「严格优于我的人数 + 1」，所以**并列同分的人名次相同**
-// （标准竞赛排名，1,1,3 而不是 1,2,3）。这条把它钉住 ——
-// 否则将来有人改成「数 >= 我的人数」会得到 1,2,3，
-// 而两种口径都"看起来合理"，没有断言就永远发现不了改了。
-func TestMyRankTiesCountOnce(t *testing.T) {
-	ts := openScratchService(t)
-	ctx := context.Background()
+// # 这条测试的第一版是错的，值得记下来
+//
+// 第一版断言「同分的两人都是第 1」—— 那是竞赛排名（1,1,3）口径。
+// 而 `Leaderboard` 的名次是**行号**（1,2,3），排序是
+// `ORDER BY score DESC, u.id ASC`。于是同分的两人在榜上一个是第 1、
+// 一个是第 2，而 `/me/rank` 给两人都算第 1 ——
+// 玩家看到「我的排名 第 1」而榜上自己高亮在第 2 条。
+//
+// 那条测试**把错误口径固定成了期望**：谁按计划把实现改对，它反而变红。
+// 现在两边都用双键（分数 + user_id），判据是「名次 == 列表下标 + 1」。
+func TestMyRankTieBreaksByUserID(t *testing.T) {
+	for _, kind := range []string{"power", "efficiency"} {
+		t.Run(kind, func(t *testing.T) {
+			ts := openScratchService(t)
+			ctx := context.Background()
 
-	a := ts.newUser(t, ctx)
-	b := ts.newUser(t, ctx)
-	// 两人同分（战力榜）
-	ts.exec(t, `UPDATE user_progress SET level_exp = 5000 WHERE user_id = $1`, a)
-	ts.exec(t, `UPDATE user_progress SET level_exp = 5000 WHERE user_id = $1`, b)
+			// a 先建 → id 更小 → 同分时排在前面
+			a := ts.newUser(t, ctx)
+			b := ts.newUser(t, ctx)
+			if kind == "power" {
+				ts.exec(t, `UPDATE user_progress SET level_exp = 5000 WHERE user_id = $1`, a)
+				ts.exec(t, `UPDATE user_progress SET level_exp = 5000 WHERE user_id = $1`, b)
+			} else {
+				ts.exec(t, `INSERT INTO level_stars (user_id, level_id, stars, best_score, clears, min_power_clear)
+				            VALUES ($1, 5, 3, 1000, 1, 300)`, a)
+				ts.exec(t, `INSERT INTO level_stars (user_id, level_id, stars, best_score, clears, min_power_clear)
+				            VALUES ($1, 5, 3, 1000, 1, 300)`, b)
+			}
 
-	for _, uid := range []int64{a, b} {
-		mr, err := ts.MyRank(ctx, uid, "power")
-		if err != nil {
-			t.Fatalf("MyRank 失败：%v", err)
-		}
-		if mr.Rank != 1 {
-			t.Errorf("并列同分应同为第 1（1,1,3 口径），实际 rank=%d（user %d）", mr.Rank, uid)
-		}
+			want := map[int64]int{a: 1, b: 2}
+			for uid, wantRank := range want {
+				mr, err := ts.MyRank(ctx, uid, kind)
+				if err != nil {
+					t.Fatalf("MyRank(%s) 失败：%v", kind, err)
+				}
+				if mr.Rank != wantRank {
+					t.Errorf("%s 榜：user %d 同分时名次应为 %d（id 小者在前），实际 %d",
+						kind, uid, wantRank, mr.Rank)
+				}
+			}
+
+			// 与列表逐条对齐：这是「两个端点同口径」的最终判据
+			items, err := ts.Leaderboard(ctx, kind, 50)
+			if err != nil {
+				t.Fatalf("Leaderboard(%s) 失败：%v", kind, err)
+			}
+			for uid, wantRank := range want {
+				if len(items) < wantRank {
+					t.Fatalf("%s 榜只回 %d 条，取不到第 %d 名", kind, len(items), wantRank)
+				}
+				if got := items[wantRank-1].UserID; got != uid {
+					t.Errorf("%s 榜：第 %d 名是 user %d，而 MyRank 说 user %d 是第 %d 名 —— "+
+						"并列处理已经分叉", kind, wantRank, got, uid, wantRank)
+				}
+			}
+		})
 	}
 }
 
-// TestMyRankUnknownKindFallsBackToPower 未识别的 kind 走 power 分支。
+// TestMyRankUnknownKindFallsBackToPower 未识别的 kind 走 power 分支**且回显 power**。
 //
 // 这一条是**防御性**的：路由层已经校验过 kind，正常路径到不了这里。
 // 但它保证「service 被别处直接调用时」不会因为 kind 拼错而
@@ -173,7 +207,10 @@ func TestMyRankUnknownKindFallsBackToPower(t *testing.T) {
 	if mr.Score != 42 {
 		t.Errorf("未知 kind 应回落到 power（score=level_exp=42），实际 score=%d", mr.Score)
 	}
-	if mr.Kind != "not-a-kind" {
-		t.Errorf("kind 应原样回显以便排查，实际 %q", mr.Kind)
+	// ⚠️ kind 必须回显**规范化后**的值，而不是原始输入。
+	// 与 `routes.go` 的「响应里的 type 必须与实际返回的数据是同一件事」同一条纪律：
+	// 回显 "not-a-kind" 会让调用方在「某个榜」的标题下展示战力榜数据。
+	if mr.Kind != "power" {
+		t.Errorf("未知 kind 应回显规范化后的 %q，实际 %q", "power", mr.Kind)
 	}
 }

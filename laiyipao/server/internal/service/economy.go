@@ -141,14 +141,18 @@ func (s *Service) Leaderboard(ctx context.Context, kind string, limit int) ([]Le
 
 // sliceLeaderboard 按 limit 截断。
 //
-// ⚠️ 返回的是**同一个底层数组的切片**（不复制）：调用方只读。
-// 复制 200 个结构体不值得，而共享的代价是「谁改了它就污染缓存」——
-// 本仓库两个调用点（HTTP 编码、MyRank 的对照测试）都只读。
+// ⚠️ 用的是**三索引切片** `all[:limit:limit]`，不是 `all[:limit]`。
+//
+// 后者的 cap 仍是 200，于是调用方一旦 `append`，就会写进缓存那份底层数组的
+// 第 limit+1 个位置 —— 榜单内容随机变化，且没有任何报错。
+// `ttlcache` 的「调用方必须只读」是**口头契约**，编译器不检查；
+// 三索引切片把它变成**结构约束**（append 会分配新数组）。
+// `TestSliceLeaderboard` 有一条 `cap(got) == limit` 钉住这一点。
 func sliceLeaderboard(all []LeaderboardEntry, limit int) []LeaderboardEntry {
 	if limit >= len(all) {
-		return all
+		return all[:len(all):len(all)]
 	}
-	return all[:limit]
+	return all[:limit:limit]
 }
 
 // leaderboardScoresSQL 是「用户 → 该榜分数」的**唯一**定义。
@@ -213,12 +217,33 @@ type MyRank struct {
 
 // MyRank 计算玩家在指定榜单上的名次。
 //
-// 名次口径 = 「严格优于我的人数」+ 1，与 `Leaderboard` 的列表下标一致
-// （并列时按 user_id 升序，先出现的名次更靠前 —— 两者用同一条
-// `leaderboardOrderSQL`，所以并列处的行为也一致）。
+// # 名次口径：必须与 Leaderboard 的列表下标逐字一致
+//
+// `Leaderboard` 的名次是**行号**（1,2,3…），排序是
+// `ORDER BY s.score <dir>, u.id ASC`。所以「优于我」不能只比分数 ——
+// 同分时 id 小的排在我前面。
+//
+// 第一版只比了分数（`s.score > me.score`），于是并列同分的两人
+// **都拿到第 1 名**，而列表里一个是第 1、一个是第 2。
+// 玩家会看到「我的排名 第 1」而榜上自己高亮在第 2 条 ——
+// 效率榜（`MIN(min_power_clear)`）并列极常见，这条不是理论问题。
+//
+// 现在的判据是**双键**，与 `ORDER BY` 的两列一一对应：
+//
+//	DESC 榜：s.score > me.score OR (s.score = me.score AND s.user_id < $1)
+//	ASC  榜：s.score < me.score OR (s.score = me.score AND s.user_id < $1)
+//
+// 于是 rank 恒等于「我在完整榜上的下标 + 1」，由
+// `TestMyRankMatchesLeaderboardOrder`（含同分用例）钉住。
 func (s *Service) MyRank(ctx context.Context, userID int64, kind string) (MyRank, error) {
 	// 与 Leaderboard 同源：分数定义 + 排序方向都不在这里另写一份。
 	scores := leaderboardScoresSQL(kind)
+	// ⚠️ 未知 kind 必须**规范化**成 power，而不是「用 power 的数据 + 回显原始 kind」。
+	// `routes.go` 里同一条纪律：响应里的 type 必须与实际返回的数据是同一件事，
+	// 否则调用方会在「日榜」标题下显示战力榜数据且无法察觉。
+	if kind != "stage" && kind != "efficiency" {
+		kind = "power"
+	}
 	cmp := ">"
 	if leaderboardOrderSQL(kind) == "ASC" {
 		// 效率榜「分数越低越好」，所以优于我 = 比我小
@@ -231,7 +256,9 @@ func (s *Service) MyRank(ctx context.Context, userID int64, kind string) (MyRank
 		    COALESCE((SELECT score FROM me), 0)::bigint,
 		    (SELECT COUNT(*) FROM scores),
 		    CASE WHEN NOT EXISTS (SELECT 1 FROM me) THEN 0
-		         ELSE (SELECT COUNT(*) FROM scores s, me WHERE s.score ` + cmp + ` me.score) + 1
+		         ELSE (SELECT COUNT(*) FROM scores s, me
+		                WHERE s.score ` + cmp + ` me.score
+		                   OR (s.score = me.score AND s.user_id < $1)) + 1
 		    END`
 	var out MyRank
 	out.Kind = kind

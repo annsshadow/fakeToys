@@ -132,10 +132,26 @@ func New(db *store.DB, cfg config.Config) *Service {
 
 // FlushStatsCache 立刻失效看板与榜单缓存。
 //
-// 用途：测试里「造数据 → 读看板」需要新值；将来接运营的「刷新」按钮也用它。
-// 不暴露 HTTP 端点（本轮不做那个按钮，避免扩大范围）。
+// ⚠️ **生产代码里没有调用方**，这一点必须说清（不要以为它接了运维按钮）：
+//   - 榜单缓存由 `SettleBattle` 在结算成功后自动 flush（见那里的注释）；
+//   - 看板缓存**故意不随写操作失效** —— 30 秒正是它存在的理由，
+//     而结算在活跃期几秒一次，flush 它等于把缓存取消掉；
+//   - 运维想让看板立刻刷新，手段是把 `DASHBOARD_CACHE_TTL` 设成 `0` 重启
+//     （不需要发版），或等 30 秒。
+//
+// 保留它的唯一用途是**测试**（「造数据 → 读看板」需要新值）。
+// 不做成 HTTP 端点是有意的：一个没人点的「刷新」按钮比没有更糟 ——
+// 它会让运营以为看板是实时的。
 func (s *Service) FlushStatsCache() {
 	s.dashboardCache.flush()
+	s.flushLeaderboards()
+}
+
+// flushLeaderboards 只失效榜单缓存。
+//
+// 与 `FlushStatsCache` 拆开是因为两者的**触发频率差两个数量级**：
+// 结算（几秒一次）只该动榜单；看板（30 秒窗口）不该被结算打断。
+func (s *Service) flushLeaderboards() {
 	for _, c := range s.leaderboardCache {
 		c.flush()
 	}

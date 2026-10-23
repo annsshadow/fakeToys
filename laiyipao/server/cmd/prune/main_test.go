@@ -9,6 +9,8 @@ package main
 // 判据全部是「拒绝」：这里没有一条断言在证明「能删」，全在证明「删不了」。
 
 import (
+	"bytes"
+	"io"
 	"strings"
 	"testing"
 )
@@ -92,5 +94,58 @@ func TestPruneTargetsNeverIncludeWalletFlows(t *testing.T) {
 		if strings.TrimSpace(p.why) == "" {
 			t.Fatalf("%s 缺少 why 说明 —— 运维看到一串表名只会凭感觉加表", p.table)
 		}
+	}
+}
+
+// TestRunCLIExitCodes 退出码是**对外契约**，必须直接断言。
+//
+// # 为什么不能只测 parseOpts
+//
+// 脚本里靠 `$? -eq 2` 区分「参数错了（别重试）」与「执行失败（可重试）」。
+// 第一版把 `os.Exit(2)` 写在 main 里，测试只能断言 parseOpts 返回 error ——
+// 有人把 2 改成 1，测试全绿而脚本静默失效。
+//
+// 另一条判据：**参数校验必须先于连库**。否则没配 DATABASE_URL 的机器上，
+// 「参数错了」会被报成「连不上库」（退出码 1），运维去查网络。
+// 这两条合起来构成一个稳定断言：无 PG 环境与有 PG 环境下，返回值都是 2。
+func TestRunCLIExitCodes(t *testing.T) {
+	cases := []struct {
+		name string
+		args []string
+		want int
+	}{
+		{"缺 --days", nil, 2},
+		{"--days 过短", []string{"--days=3"}, 2},
+		{"--days 为负", []string{"--days=-1"}, 2},
+		{"batch 越界", []string{"--days=30", "--batch=0"}, 2},
+		{"未知表", []string{"--days=30", "--table=wallet_flows"}, 2},
+		{"未知 flag", []string{"--days=30", "--nope"}, 2},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			got := runCLI(c.args, io.Discard, io.Discard)
+			if got != c.want {
+				t.Errorf("退出码 = %d，期望 %d（参数错误必须是 2，且必须发生在连库之前）", got, c.want)
+			}
+		})
+	}
+}
+
+// TestRunCLIErrorGoesToStderr 错误信息必须写 stderr，stdout 保持干净。
+//
+// 判据来自实际用法：`go run ./cmd/prune --days=30 > report.txt` 时，
+// 报告进文件、错误留在终端。混在一起会让「报告里多了一行参数错误」
+// 看起来像正常输出。
+func TestRunCLIErrorGoesToStderr(t *testing.T) {
+	var out, errBuf bytes.Buffer
+	code := runCLI([]string{"--days=3"}, &out, &errBuf)
+	if code != 2 {
+		t.Fatalf("退出码 = %d，期望 2", code)
+	}
+	if out.Len() != 0 {
+		t.Errorf("stdout 应为空，实际 %q", out.String())
+	}
+	if !strings.Contains(errBuf.String(), "参数错误") {
+		t.Errorf("stderr 应含「参数错误」，实际 %q", errBuf.String())
 	}
 }

@@ -20,19 +20,16 @@ import (
 )
 
 func TestListAnnouncementsOnlyPublished(t *testing.T) {
-	ts := openTestService(t)
+	// ⚠️ 用**一次性库**，不用共享库。
+	//
+	// 第一版用的是 `openTestService`（共享库），只清自己 `ann_probe_%` 的行，
+	// 然后断言「这两条落在全局前 20 里」—— 而共享库里同包的其它用例
+	// （如 `TestAdminAnnouncements`）会写已发布公告。探针行会被无关用例
+	// 挤出 20 名之外而**因无关原因变红**，这正是
+	// `TestLeaderboardKinds` 在 2026-10-21 改一次性库时记下的同一条教训：
+	// **依赖「表还不够脏」的断言不是断言，是运气。**
+	ts := openScratchService(t)
 	ctx := context.Background()
-
-	// 共用库会被上百个用例依次打开，不能假设公告表是空的 ——
-	// 先清掉本用例自己的前缀（其它用例不会写这张表，但清干净更稳）。
-	if _, err := ts.db.Pool.Exec(ctx,
-		`DELETE FROM announcements WHERE title LIKE 'ann_probe_%'`); err != nil {
-		t.Fatalf("清理探针公告失败：%v", err)
-	}
-	t.Cleanup(func() {
-		_, _ = ts.db.Pool.Exec(context.Background(),
-			`DELETE FROM announcements WHERE title LIKE 'ann_probe_%'`)
-	})
 
 	now := time.Now()
 	insert := func(title string, published bool, at *time.Time) {
@@ -45,61 +42,67 @@ func TestListAnnouncementsOnlyPublished(t *testing.T) {
 	}
 	older := now.Add(-2 * time.Hour)
 	newer := now.Add(-1 * time.Hour)
-	insert("ann_probe_draft", false, nil) // 草稿：绝不能出现
-	insert("ann_probe_old", true, &older) // 已发布，较旧
-	insert("ann_probe_new", true, &newer) // 已发布，较新
+	insert("draft", false, nil) // 草稿：绝不能出现
+	insert("old", true, &older) // 已发布，较旧
+	insert("new", true, &newer) // 已发布，较新
 
 	items, err := ts.ListAnnouncements(ctx, 20)
 	if err != nil {
 		t.Fatalf("ListAnnouncements 失败：%v", err)
 	}
 
-	seen := map[string]int{}
-	for i, a := range items {
-		seen[a.Title] = i
+	// 干净库里只有这三条 → 结果必须**恰好**两条，且顺序固定。
+	// 断言「恰好」而不是「包含」，才能同时抓住「多给了」和「少给了」。
+	if len(items) != 2 {
+		t.Fatalf("干净库只应有 2 条已发布公告，实际 %d 条：%+v", len(items), items)
 	}
-	if _, ok := seen["ann_probe_draft"]; ok {
-		t.Errorf("未发布的公告泄漏到玩家侧：%+v", items)
+	if items[0].Title != "new" || items[1].Title != "old" {
+		t.Fatalf("应按 published_at 倒序（new, old），实际 %q, %q",
+			items[0].Title, items[1].Title)
 	}
-	oldIdx, hasOld := seen["ann_probe_old"]
-	newIdx, hasNew := seen["ann_probe_new"]
-	if !hasOld || !hasNew {
-		t.Fatalf("已发布的公告没有全部返回（old=%v new=%v）：%+v", hasOld, hasNew, items)
-	}
-	// 倒序：新的在前
-	if newIdx > oldIdx {
-		t.Errorf("应按 published_at 倒序（新在前），实际 new@%d old@%d", newIdx, oldIdx)
+	// 玩家侧响应不得带 published 字段（它恒为 true，回传只会诱导客户端写无效判断）
+	// —— 这里用结构体字段数间接守：JSON 里出现 published 说明类型被换回了后台那份。
+	if items[0].ID == 0 {
+		t.Errorf("公告 ID 未填充：%+v", items[0])
 	}
 }
 
-// TestListAnnouncementsLimitClamped limit 越界必须被夹住，而不是报错或原样透传。
+// TestListAnnouncementsLimitClamped limit 越界必须**夹到边界**，不是回落到缺省。
+//
+// 这两件事的差别是可观测的：
+//
+//	请求 100 条 → 夹到上限 20（合理：客户端要「尽可能多」）
+//	请求 100 条 → 退回缺省 5（不合理：比请求少、也比上限少，还不报错）
+//
+// 第一版实现是后者，而当时的断言只写了 `len <= max` ——
+// 返回 20、返回 5、甚至返回 0 都能过。现在断言**恰好等于 20**。
 func TestListAnnouncementsLimitClamped(t *testing.T) {
-	ts := openTestService(t)
+	ts := openScratchService(t)
 	ctx := context.Background()
 
 	now := time.Now()
+	// 插入 max+5 条，保证「夹到 20」与「退回 5」可区分
 	for i := 0; i < maxAnnouncementLimit+5; i++ {
 		at := now.Add(-time.Duration(i) * time.Minute)
 		if _, err := ts.db.Pool.Exec(ctx,
 			`INSERT INTO announcements (title, body, published, published_at) VALUES ($1,$2,TRUE,$3)`,
-			fmt.Sprintf("ann_probe_bulk_%d", i), "x", at); err != nil {
+			fmt.Sprintf("bulk_%d", i), "x", at); err != nil {
 			t.Fatalf("批量写公告失败：%v", err)
 		}
 	}
-	t.Cleanup(func() {
-		_, _ = ts.db.Pool.Exec(context.Background(),
-			`DELETE FROM announcements WHERE title LIKE 'ann_probe_bulk_%'`)
-	})
 
-	// 超上限：夹到 maxAnnouncementLimit
+	// 超上限：夹到 maxAnnouncementLimit（不是缺省值）
 	items, err := ts.ListAnnouncements(ctx, 100000)
 	if err != nil {
 		t.Fatalf("ListAnnouncements(100000) 失败：%v", err)
 	}
-	if len(items) > maxAnnouncementLimit {
-		t.Errorf("limit=100000 应被夹到 %d，实际返回 %d 条", maxAnnouncementLimit, len(items))
+	if len(items) != maxAnnouncementLimit {
+		t.Errorf("limit=100000 应夹到 %d 条，实际 %d 条 —— "+
+			"若为 %d 说明越界被当成「没传」回落到缺省值",
+			maxAnnouncementLimit, len(items), defaultAnnouncementLimit)
 	}
-	// 非正数：回落到缺省值，而不是「返回零行」
+
+	// 非正数：回落到缺省值（不是 0 行、不是上限）
 	items, err = ts.ListAnnouncements(ctx, 0)
 	if err != nil {
 		t.Fatalf("ListAnnouncements(0) 失败：%v", err)
@@ -110,6 +113,14 @@ func TestListAnnouncementsLimitClamped(t *testing.T) {
 	// 负数同样不报错
 	if _, err := ts.ListAnnouncements(ctx, -3); err != nil {
 		t.Errorf("limit=-3 不应报错（展示型端点），实际：%v", err)
+	}
+	// 合法区间内的值必须**原样生效**（既不夹也不回落）
+	items, err = ts.ListAnnouncements(ctx, 3)
+	if err != nil {
+		t.Fatalf("ListAnnouncements(3) 失败：%v", err)
+	}
+	if len(items) != 3 {
+		t.Errorf("limit=3 应返回 3 条，实际 %d 条", len(items))
 	}
 }
 

@@ -526,6 +526,24 @@ func (s *Service) SettleBattle(ctx context.Context, userID, tokenID int64, in do
 	}
 	resp.Rating = rating
 	resp.Power = computePower(build)
+
+	// 结算成功后立刻让**榜单**缓存失效（2026-10-23）。
+	//
+	// # 为什么必须在这里
+	//
+	// 榜单缓存 15 秒，而 `/me/rank` 刻意**不缓存**（玩家刚打完看到旧名次
+	// 最容易被当成 bug）。两者一快一慢，同一屏上就会自相矛盾：
+	// 「我的排名 第 5」配着一份 15 秒前的列表 —— 玩家可能不在那 50 条里，
+	// 或高亮在旧位置。
+	//
+	// 结算是最关键的写路径：它改变的正是榜单分数。在这里 flush，
+	// 玩家打完 → 打开排行页 → 列表与名次都是新的。
+	// 剩下能看到的陈旧只来自「别人打完」，那对本人无感。
+	//
+	// ⚠️ 只 flush 榜单，**不 flush 看板**：看板 30 秒的缓存正是它存在的理由，
+	// 而结算在活跃期几秒一次，flush 它等于把缓存取消掉。
+	s.flushLeaderboards()
+
 	return resp, nil
 }
 

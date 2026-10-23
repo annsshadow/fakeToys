@@ -34,6 +34,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"time"
 
@@ -85,8 +86,13 @@ const maxBatch = 50000
 // 抽成函数是为了能在**没有数据库**的情况下测（本机与 CI 都可能没有 PG，
 // 而参数校验恰恰是最该被测的部分 —— 它决定了「误删」能不能发生）。
 func parseOpts(args []string) (opts, error) {
+	return parseOptsTo(args, os.Stderr)
+}
+
+// parseOptsTo 与 parseOpts 相同，但可指定 flag 的输出目标（测试用 io.Discard）。
+func parseOptsTo(args []string, out io.Writer) (opts, error) {
 	fs := flag.NewFlagSet("prune", flag.ContinueOnError)
-	fs.SetOutput(os.Stderr)
+	fs.SetOutput(out)
 	days := fs.Int("days", 0, "保留天数（必填，>= 7）")
 	apply := fs.Bool("apply", false, "真的执行删除（默认只统计）")
 	batch := fs.Int("batch", 5000, "每批删除行数（避免长事务锁表）")
@@ -128,10 +134,28 @@ func knownTables() []string {
 }
 
 func main() {
-	o, err := parseOpts(os.Args[1:])
+	os.Exit(runCLI(os.Args[1:], os.Stdout, os.Stderr))
+}
+
+// runCLI 返回**退出码**，而不是自己调 os.Exit。
+//
+// # 为什么要这么拆
+//
+// 退出码是这个命令的对外契约：脚本里 `if [ $? -eq 2 ]` 用它区分
+// 「参数错了」（不要重试）与「执行失败」（可以重试）。
+// 而 `os.Exit` 无法在测试里断言 —— 第一版把 `os.Exit(2)` 写在 main 里，
+// 于是「退出码 2」这条判据只测到了 `parseOpts` 的 error，
+// 有人把 2 改成 1 时测试全绿、脚本静默失效。
+//
+// 现在 `main` 只剩一行，测试直接断言返回值。
+//
+// ⚠️ 参数校验必须**先于**连库：否则没配 DATABASE_URL 的机器上
+// 会把「参数错了」报成「连不上库」（退出码 1），而运维会去查网络。
+func runCLI(args []string, stdout, stderr io.Writer) int {
+	o, err := parseOptsTo(args, stderr)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "参数错误:", err)
-		os.Exit(2)
+		fmt.Fprintln(stderr, "参数错误:", err)
+		return 2
 	}
 
 	cfg := config.Load()
@@ -140,25 +164,26 @@ func main() {
 
 	db, err := store.Open(ctx, cfg)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "连接数据库失败:", err)
-		os.Exit(1)
+		fmt.Fprintln(stderr, "连接数据库失败:", err)
+		return 1
 	}
 	defer db.Close()
 
-	if err := run(ctx, db, o); err != nil {
-		fmt.Fprintln(os.Stderr, "FATAL:", err)
-		os.Exit(1)
+	if err := run(ctx, db, o, stdout); err != nil {
+		fmt.Fprintln(stderr, "FATAL:", err)
+		return 1
 	}
+	return 0
 }
 
 // run 执行清理。返回错误时退出码 1。
-func run(ctx context.Context, db *store.DB, o opts) error {
+func run(ctx context.Context, db *store.DB, o opts, out io.Writer) error {
 	cutoff := time.Now().AddDate(0, 0, -o.Days)
 	mode := "DRY-RUN（不会删除任何数据）"
 	if o.Apply {
 		mode = "APPLY（会真的删除）"
 	}
-	fmt.Printf("保留期：%d 天，截止 %s\n模式：%s\n\n", o.Days, cutoff.Format(time.RFC3339), mode)
+	fmt.Fprintf(out, "保留期：%d 天，截止 %s\n模式：%s\n\n", o.Days, cutoff.Format(time.RFC3339), mode)
 
 	for _, t := range pruneTargets {
 		if o.Target != "" && t.table != o.Target {
@@ -170,7 +195,7 @@ func run(ctx context.Context, db *store.DB, o opts) error {
 			`SELECT COUNT(*) FROM `+t.table+` WHERE created_at < $1`, cutoff).Scan(&n); err != nil {
 			return fmt.Errorf("统计 %s 失败: %w", t.table, err)
 		}
-		fmt.Printf("%-22s 待删 %8d 行\n    %s\n", t.table, n, t.why)
+		fmt.Fprintf(out, "%-22s 待删 %8d 行\n    %s\n", t.table, n, t.why)
 		if !o.Apply || n == 0 {
 			continue
 		}
@@ -178,12 +203,12 @@ func run(ctx context.Context, db *store.DB, o opts) error {
 		if err != nil {
 			return fmt.Errorf("清理 %s 失败（已删 %d 行）: %w", t.table, deleted, err)
 		}
-		fmt.Printf("%-22s 已删 %8d 行\n", t.table, deleted)
+		fmt.Fprintf(out, "%-22s 已删 %8d 行\n", t.table, deleted)
 	}
 
 	if !o.Apply {
-		fmt.Println("\n以上为统计结果。确认无误后加 --apply 执行。")
-		fmt.Println("⚠️ 删除不可逆：battle_records 一旦删除，对应战报的回放与验真将永久失效。")
+		fmt.Fprintln(out, "\n以上为统计结果。确认无误后加 --apply 执行。")
+		fmt.Fprintln(out, "⚠️ 删除不可逆：battle_records 一旦删除，对应战报的回放与验真将永久失效。")
 	}
 	return nil
 }
