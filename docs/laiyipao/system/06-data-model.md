@@ -1,6 +1,6 @@
 # 06 · 数据模型
 
-> PostgreSQL 15+，**50 张表**，18 个 goose 迁移（`server/migrations/00001…00018`）。
+> PostgreSQL 15+，**50 张表**，19 个 goose 迁移（`server/migrations/00001…00019`）。
 > 迁移通过 `embed.go` 嵌入二进制，运行时从内存读，不依赖部署目录里的 `.sql` 文件。
 
 ---

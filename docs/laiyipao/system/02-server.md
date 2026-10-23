@@ -69,7 +69,7 @@ server/
 │  ├─ store/        pgx 连接池、goose 迁移、时区钉死
 │  ├─ tygen/        TS 类型生成器实现（读 apitypes 注册表）
 │  └─ testutil/     测试辅助（scratchdb：真实 PG 临时库）
-├─ migrations/      18 个 goose 迁移（00001…00018）+ embed.go
+├─ migrations/      19 个 goose 迁移（00001…00019）+ embed.go
 ├─ testdata/        跨端契约夹具（由 cmd/vectors 生成）
 └─ test/            端到端辅助
 ```

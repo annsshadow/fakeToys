@@ -51,7 +51,7 @@
 # 1) 建库
 createdb laiyipao
 
-# 2) 迁移（18 个 goose 迁移，50 张业务表）
+# 2) 迁移（19 个 goose 迁移，50 张业务表）
 cd laiyipao/server
 export DATABASE_URL="postgres://postgres@127.0.0.1:5432/laiyipao?sslmode=disable"
 export BOOTSTRAP_ADMIN_PASS="<至少 10 位，缺省会拒绝启动>"
@@ -86,7 +86,7 @@ cd laiyipao/admin   && pnpm install && pnpm dev          # :5175
 
 ---
 
-## 2. 环境变量（全部 23 个）
+## 2. 环境变量（全部 25 个）
 
 ### 必填（生产）
 
@@ -141,6 +141,8 @@ cd laiyipao/admin   && pnpm install && pnpm dev          # :5175
 | `MIN_BATTLE_DURATION` | `15s` | 「清完全场」的最短合理时长，短于此的**胜利**上报会被拒 |
 | `SETTLE_RECOMPUTE_MODE` | `enforce` | 服务端重算的处置档位，`off` / `shadow` / `enforce`。**不发版即可切换**，改环境变量重启生效 |
 | `OFFLINE_CAP_HOURS` | `12` | 离线收益累计上限 |
+| `DASHBOARD_CACHE_TTL` | `30s` | 运营看板的进程内缓存有效期。**设成 `0` 即关闭缓存**（每次都查库）—— 排查「数字为什么不动」时先关它，不需要发版 |
+| `LEADERBOARD_CACHE_TTL` | `15s` | 三个榜单的进程内缓存有效期。`0` = 关闭。⚠️ `/me/rank`（我的排名）**不受它影响**，永远实时 |
 | `PLAYER_LOGIN_REQUIRED` | `false` | 玩家是否必须用账号口令登录。开启后 `/auth/guest` 一律 403，并引导一个**与超管同名同口令**的共享测试账号（测试环境用，详见 §2.4） |
 
 #### `PLAYER_LOGIN_REQUIRED` 怎么用（测试环境）
@@ -392,6 +394,65 @@ host    laiyipao   laiyipao_app   10.0.0.0/8    scram-sha-256
 ```
 
 并用 `scram-sha-256` 而非 `md5`。
+
+---
+
+## 6.4 数据保留与清理
+
+> 2026-10-23 新增。此前仓库里**没有任何**清理/归档/分区机制，
+> 而下面三张表都是「每局一条」量级的只增表。
+
+### 先看会删多少（默认 dry-run）
+
+```bash
+cd server
+go run ./cmd/prune --days=30
+```
+
+输出每张表的待删行数与「为什么这张表可以删」。**这一步不会删任何东西。**
+
+### 真的删
+
+```bash
+go run ./cmd/prune --days=30 --apply
+```
+
+### 四张表的处置
+
+| 表 | 默认保留 | 删了会怎样 |
+|---|---|---|
+| `battle_records` | 建议 ≥ 30 天 | **旧战报的回放（`/battle/:id/replay`）与验真永久失效**；`replay_verifications` 会因外键 CASCADE 一起被删 |
+| `replay_verifications` | 建议 ≥ 30 天 | 只影响「谁在什么时候验过哪一场」的排查记录，不参与结算 |
+| `admin_audit_logs` | 建议 ≥ 90 天 | 后台操作审计消失。**保留期应不短于内部合规要求**，默认 30 天对多数场景偏短 |
+| `wallet_flows` | **永不删** | 它是经济系统的原始凭证。删了之后「这个玩家的金币怎么来的」永远无法追 |
+
+`wallet_flows` 要压缩只能**归档到冷表**：
+
+```sql
+-- 在维护窗口执行。先把老数据搬走，再删本表对应行。
+CREATE TABLE IF NOT EXISTS wallet_flows_archive (LIKE wallet_flows INCLUDING ALL);
+WITH moved AS (
+  DELETE FROM wallet_flows WHERE created_at < now() - interval '180 days'
+  RETURNING *
+)
+INSERT INTO wallet_flows_archive SELECT * FROM moved;
+```
+
+⚠️ 归档表**不进任何查询**，所以它只解决体积，不解决「查得到」。
+需要长期可查的话，导出到对象存储而不是留在同一个库里。
+
+### 两条硬约束（写死在命令里，不可绕过）
+
+1. **`--days` 没有默认值**，且不得小于 **7**。战报要支撑验真 / 回放 / 客服申诉
+   三条业务，短于 7 天会删掉仍在用的数据。
+2. **`--apply` 才真删**。默认只统计 —— 这个命令最可能的用法是
+   `ssh prod` 之后顺手跑一下，所以默认必须是无害的那一侧。
+
+### 建议的节奏
+
+- 先连续两周只跑 dry-run，观察「30 天前的战报有多少」的实际曲线。
+- 曲线平稳后再开 `--apply`，并把它放进 systemd timer（每周一次）。
+- `admin_audit_logs` 单独用更大的 `--days` 跑，不要和战报同一个值。
 
 ---
 

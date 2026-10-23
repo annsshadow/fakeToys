@@ -52,6 +52,7 @@
 | 7 | GET | `/api/v1/config` | — | 全量配置（支持 `?if_version=` → 304） |
 | 8 | GET | `/api/v1/leaderboard` | — | 排行榜（`?type=power\|stage\|efficiency`） |
 | 9 | POST | `/api/v1/admin/login` | 5/min IP | 管理员登录 |
+| 74 | GET | `/api/v1/announcements` | — | 公告（仅已发布，`?limit=` 夹在 1..20，缺省 5）· 2026-10-23 追加 |
 
 ### 2.2 玩家（`requireUser`）
 
@@ -90,9 +91,15 @@
 | 40 | GET | `/defenses` | — | 防线（我的 + 候选） |
 | 41 | POST | `/defenses/save` | — | 保存防线快照 |
 | 42 | POST | `/defenses/:id/challenge` | — | 挑战防线 |
+| 75 | GET | `/me/rank` | — | 我的排名（`?type=`，返回 `{kind,rank,total,score}`）· 2026-10-23 追加 |
 
 > 编号 1–9 是公开端点（计入玩家侧总数），10–42 需玩家认证；
 > 玩家侧共 42 个 + 管理端 31 个 = 73。
+>
+> **2026-10-23 追加 74 / 75 两个端点，编号不重排** —— 与
+> `KNOWN_LIMITS.md` 同一条约定：编号是外部引用锚，重排会让所有
+> 「见第 N 个端点」的引用失效。所以 74 排在 2.1 表尾、75 排在 2.2 表尾。
+> 当前总计：玩家侧 44 个 + 管理端 31 个 = **75**。
 
 ### 2.3 管理端（`requireAdmin`，写操作另挂 `requireWritable`）
 
