@@ -17,7 +17,10 @@ overrides:
   'jimp@0.10.3': '0.22.12'
   'jpeg-js@0.3.7': '0.4.4'
   'path-to-regexp@0.1.10': '0.1.13'
-  'postcss-selector-parser@6.1.2': '6.1.3'
+  # postcss-selector-parser <7.1.6：flat selector 解析的二次复杂度（ReDoS 面）。
+  # 旧覆盖只抬到 6.1.3，仍 <7.1.6；改用范围覆盖强制到 7.1.6（该版本已在依赖树中，
+  # 2 个依赖已在用，兼容性已验证过一次）。6→7 为跨主版本，前端 web 构建需 Docker 复核。
+  'postcss-selector-parser@<7.1.6': '7.1.6'
   # source-map-js 1.2.1：event-loop DoS（indexed source-map section offsets）。
   # 目标版本 1.2.2 已在依赖树中（desktop vue 3.5.42 链），补丁级兼容。
   'source-map-js@1.2.1': '1.2.2'
