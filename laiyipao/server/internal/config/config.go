@@ -125,6 +125,22 @@ type Config struct {
 	// 代价是这个登录端点同时成为**超管口令的爆破面** ——
 	// 所以它的限流比游客建号严得多（见 middleware.go 的 playerLoginLimit）。
 	PlayerLoginRequired bool
+
+	// MetricsEnabled 打开 `GET /metrics`（Prometheus 文本格式，当前暴露
+	// 看板/榜单缓存命中/未命中计数）。默认**关**。
+	//
+	// 为什么默认关而不是默认开：指标端点虽只含非敏感计数，但「多一个
+	// 公开端点就多一个面」，而缓存命中率对**运维**有意义、对公网无意义。
+	// 所以由运维显式打开（并配反向代理只放行内网/抓取端）—— 这是一个
+	// 需要人做的决定，与 CORS 白名单同一条纪律。
+	MetricsEnabled bool
+
+	// PprofAddr 非空时在该地址（建议 `127.0.0.1:6060`）启动一个**独立**的
+	// pprof server（net/http/pprof），与主 API 端口分离；默认空 = 不启动。
+	//
+	// 用独立回环地址而不是挂在主 app 上：profiling 端点绝不该走到公网面，
+	// 而主端口是对外的。默认不启动，需要抓 CPU/堆火焰图时由运维显式开。
+	PprofAddr string
 }
 
 func env(key, def string) string {
@@ -237,6 +253,9 @@ func Load() Config {
 		BootstrapAdminPass: env("BOOTSTRAP_ADMIN_PASS", "admin12345"),
 
 		PlayerLoginRequired: envBool("PLAYER_LOGIN_REQUIRED", false),
+
+		MetricsEnabled: envBool("METRICS_ENABLED", false),
+		PprofAddr:      env("PPROF_ADDR", ""),
 	}
 
 	if cfg.Env == "prod" {

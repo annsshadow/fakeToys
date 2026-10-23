@@ -524,6 +524,25 @@ const (
 	settleLimit   = 60
 	verifyLimit   = 20
 	perUserRedeem = 20
+
+	// battleTokenLimit 是开战铸造 token 的每用户每分钟上限。
+	//
+	// 每次 `POST /battle/token` 都**插一行 battle_tokens + 一行钱包流水**
+	//（见 service.StartBattle 的事务）。体力会随时间回复，所以「反复开战
+	// 不结算」能在体力允许的范围内无限造 token 行 —— 这是**写放大**面。
+	// 正常玩家一分钟打不了几关（还得真的打完），120 给足余量；
+	// 对刷量脚本则是硬顶。按用户而非 IP：开战在登录态，且同一 NAT 下
+	// 多个真实玩家不该互相挤占（见 perIPLimiter 的 NAT 说明）。
+	battleTokenLimit = 120
+
+	// economyWriteLimit 是「花自己资源」的写端点每用户每分钟上限：
+	// 买 / 领 / 签 / 洗 / 升 / 熔 / 分配 / 重铸 / 挑战 / 放弃 / 存配装。
+	//
+	// 这些端点花的是**玩家自己的**钱或道具，经济上无法靠刷量获利
+	//（不可能花超过自己拥有的），所以限流防的不是套利，而是**写放大**：
+	// 每个动作都落库，无限制时一个账号能把库写爆（自我 DoS）并拖慢全站。
+	// 60/分钟对任何真实操作都绰绰有余；NAT 安全，因为按 user_id 计。
+	economyWriteLimit = 60
 )
 
 // authRateLimit 返回按登录身份计数的限流中间件。

@@ -53,6 +53,12 @@ func (s *Server) Register(app *fiber.App) {
 
 	app.Get("/healthz", s.healthz)
 	app.Get("/readyz", s.readyz)
+	// 指标端点：仅在 METRICS_ENABLED=true 时注册。默认不挂，理由见
+	// config.MetricsEnabled —— 缓存命中率对运维有意义、对公网无意义，
+	// 多一个公开端点就多一个面，所以默认朝安全的一侧倒。
+	if s.Svc.Cfg.MetricsEnabled {
+		app.Get("/metrics", s.metrics)
+	}
 
 	v1 := app.Group("/api/v1")
 
@@ -94,7 +100,7 @@ func (s *Server) Register(app *fiber.App) {
 	// 出战技能配置。必须在服务端持久化 —— 槽位参与回放哈希计算，
 	// 放在前端存的话重放方拿不到同一份槽位，I-6 直接失效。
 	me.Get("/loadout", s.getLoadout)
-	me.Put("/loadout", s.saveLoadout)
+	me.Put("/loadout", authRateLimit("loadout", economyWriteLimit), s.saveLoadout)
 	//
 	// 2026-10-21（P4-1）：装备的**获取与装配**入口。
 	//
@@ -105,7 +111,7 @@ func (s *Server) Register(app *fiber.App) {
 	me.Get("/equipment", s.getEquipment)
 	// 整组替换（不是「装一件/卸一件」两个增量端点）——
 	// 增量端点会留下「同部位两件都 equipped」的中间态。
-	me.Put("/equipment", s.saveEquipment)
+	me.Put("/equipment", authRateLimit("equip", economyWriteLimit), s.saveEquipment)
 	// 各关历史最好星级（level_stars 的 GREATEST）。选关页的星数/「已通关」
 	// 以此为准 —— 服务端没这个读端点的话，客户端的星图永远空白。
 	me.Get("/stars", s.myStars)
@@ -141,14 +147,14 @@ func (s *Server) Register(app *fiber.App) {
 	levels.Get("/:id", s.getLevel)
 
 	battle := v1.Group("/battle", requireUser(s.Svc))
-	battle.Post("/token", s.startBattle)
+	battle.Post("/token", authRateLimit("battletoken", battleTokenLimit), s.startBattle)
 	// 结算与验真是**写放大**路径：每次调用都无条件落库一行，
 	// 且没有幂等键挡住重复（实测同一场战报重复验真 200 次 → 200 行）。
 	// 额度与理由见 middleware.go 的 authRateLimit。
 	battle.Post("/settle", authRateLimit("settle", settleLimit), s.settleBattle)
 	battle.Post("/verify", authRateLimit("verify", verifyLimit), s.verifyReplay)
 	// 2026-10-21（P4-5）：放弃战斗并退回开战时扣掉的资源。
-	battle.Post("/abandon", s.abandonBattle)
+	battle.Post("/abandon", authRateLimit("battleabandon", economyWriteLimit), s.abandonBattle)
 	battle.Get("/:id/replay", s.getReplay)
 
 	mastery := v1.Group("/mastery", requireUser(s.Svc))
@@ -202,8 +208,8 @@ func (s *Server) Register(app *fiber.App) {
 
 	defenses := v1.Group("/defenses", requireUser(s.Svc))
 	defenses.Get("/", s.listDefenses)
-	defenses.Post("/save", s.saveDefense)
-	defenses.Post("/:id/challenge", s.challengeDefense)
+	defenses.Post("/save", authRateLimit("savedefense", economyWriteLimit), s.saveDefense)
+	defenses.Post("/:id/challenge", authRateLimit("challenge", economyWriteLimit), s.challengeDefense)
 
 	// ---- 管理端 ----
 	adminLogin := v1.Group("/admin")

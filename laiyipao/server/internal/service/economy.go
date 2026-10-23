@@ -101,13 +101,30 @@ func (s *Service) Leaderboard(ctx context.Context, kind string, limit int) ([]Le
 	if limit <= 0 || limit > 200 {
 		limit = 50
 	}
-	now := time.Now()
-	if c, ok := s.leaderboardCache[kind]; ok {
-		if cached, hit := c.get(now, s.Cfg.LeaderboardCacheTTL); hit {
-			return sliceLeaderboard(cached, limit), nil
-		}
+	all, err := s.leaderboardAll(ctx, kind)
+	if err != nil {
+		return nil, err
 	}
+	return sliceLeaderboard(all, limit), nil
+}
 
+// leaderboardAll 取榜单全量（固定 leaderboardCacheRows 行）。
+//
+// cached 的 kind 走 singleflight —— TTL 到期那一刻的并发未命中只查一次库，
+// 不再惊群；未知 kind（不在 leaderboardCache 里）直接查库、不缓存，
+// 与旧行为逐字一致。
+func (s *Service) leaderboardAll(ctx context.Context, kind string) ([]LeaderboardEntry, error) {
+	if c, ok := s.leaderboardCache[kind]; ok {
+		return c.getOrLoad(time.Now(), s.Cfg.LeaderboardCacheTTL, func() ([]LeaderboardEntry, error) {
+			return s.leaderboardQuery(ctx, kind)
+		})
+	}
+	return s.leaderboardQuery(ctx, kind)
+}
+
+// leaderboardQuery 是真正的榜单查询。缓存与单飞逻辑只在上面一层，
+// 这样「查什么」与「缓存多久 / 是否单飞」不互相纠缠。
+func (s *Service) leaderboardQuery(ctx context.Context, kind string) ([]LeaderboardEntry, error) {
 	rows, err := s.pool.Query(ctx, `
 		WITH scores AS (`+leaderboardScoresSQL(kind)+`)
 		SELECT u.id, u.nickname, u.avatar_url, s.score
@@ -133,10 +150,7 @@ func (s *Service) Leaderboard(ctx context.Context, kind string, limit int) ([]Le
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
-	if c, ok := s.leaderboardCache[kind]; ok {
-		c.put(out, now)
-	}
-	return sliceLeaderboard(out, limit), nil
+	return out, nil
 }
 
 // sliceLeaderboard 按 limit 截断。

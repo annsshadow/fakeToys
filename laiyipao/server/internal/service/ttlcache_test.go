@@ -11,7 +11,9 @@ package service
 //   · `ttl<=0` 不短路 → 「关闭缓存」这个开关变成摆设
 
 import (
+	"errors"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -157,4 +159,113 @@ func TestTTLCacheConcurrentAccess(t *testing.T) {
 	writer.Wait()
 	close(stop)
 	readers.Wait()
+}
+
+// TestTTLCacheGetOrLoadSingleflight：并发未命中只加载一次（缓存击穿防护）。
+//
+// # 判据为什么是「loader 调用次数 == 1」
+//
+// 若把 `getOrLoad` 改回「各自 get / 各自 load / 各自 put」的旧形状，
+// TTL 到期那一刻 N 个并发请求会各跑一遍 loader —— 看板是 9 段查询、
+// 榜单是 3 次 GROUP BY。这里的 loader 用一个原子计数器点名跑了几遍。
+//
+// loader 故意阻塞在 release 上：在它放行前，没有任何请求能靠缓存完成，
+// 所以「调用次数」与 goroutine 调度时序无关，恒为 1 才是对的值。
+func TestTTLCacheGetOrLoadSingleflight(t *testing.T) {
+	var c ttlCache[int]
+	var loads int32
+	release := make(chan struct{})
+	load := func() (int, error) {
+		atomic.AddInt32(&loads, 1)
+		<-release // 阻塞，逼所有并发方pile up成等待者
+		return 7, nil
+	}
+
+	const n = 8
+	results := make([]int, n)
+	errs := make([]error, n)
+	var wg sync.WaitGroup
+	for i := 0; i < n; i++ {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			results[i], errs[i] = c.getOrLoad(time.Now(), time.Minute, load)
+		}(i)
+	}
+	// 给足时间让所有 goroutine 进入 getOrLoad（loader 阻塞中，它们必然
+	// 停在锁段内：要么当上 loader 阻塞在 load()，要么成为等待者阻塞在 <-done）。
+	time.Sleep(50 * time.Millisecond)
+	close(release)
+	wg.Wait()
+
+	if got := atomic.LoadInt32(&loads); got != 1 {
+		t.Fatalf("singleflight 失效：loader 被并发调用了 %d 次，期望 1 次", got)
+	}
+	for i := 0; i < n; i++ {
+		if errs[i] != nil || results[i] != 7 {
+			t.Fatalf("第 %d 个调用方应拿到 v=7 err=nil，实际 v=%d err=%v", i, results[i], errs[i])
+		}
+	}
+}
+
+// TestTTLCacheGetOrLoadErrorNotCached：失败不缓存，成功才缓存。
+//
+// 与 AdminDashboard 的「错误不缓存」注释对应：一次失败若被固化进缓存，
+// 运营会连续看到同一条报错，而数据库其实已经好了。
+func TestTTLCacheGetOrLoadErrorNotCached(t *testing.T) {
+	var c ttlCache[int]
+	var loads int32
+	boom := errors.New("boom")
+
+	if _, err := c.getOrLoad(time.Now(), time.Minute, func() (int, error) {
+		atomic.AddInt32(&loads, 1)
+		return 0, boom
+	}); !errors.Is(err, boom) {
+		t.Fatalf("应把 loader 的错误原样返回，实际 %v", err)
+	}
+	// 失败未被缓存：第二次调用重新走 loader 并成功
+	v, err := c.getOrLoad(time.Now(), time.Minute, func() (int, error) {
+		atomic.AddInt32(&loads, 1)
+		return 5, nil
+	})
+	if err != nil || v != 5 {
+		t.Fatalf("失败后应重试并成功，实际 v=%d err=%v", v, err)
+	}
+	if got := atomic.LoadInt32(&loads); got != 2 {
+		t.Fatalf("失败不应被缓存：loader 应已被调用 2 次，实际 %d", got)
+	}
+	// 成功已被缓存：第三次调用命中，不再跑 loader
+	v, err = c.getOrLoad(time.Now(), time.Minute, func() (int, error) {
+		atomic.AddInt32(&loads, 1)
+		return 999, nil
+	})
+	if err != nil || v != 5 {
+		t.Fatalf("成功后应命中缓存值 5，实际 v=%d err=%v", v, err)
+	}
+	if got := atomic.LoadInt32(&loads); got != 2 {
+		t.Fatalf("成功应被缓存：loader 调用次数应仍为 2，实际 %d", got)
+	}
+}
+
+// TestTTLCacheGetOrLoadCountsHitsMisses：命中/未命中计数（/metrics 的数据源）。
+//
+// 缓存命中率是这两个缓存**唯一**的健康信号，且它的失效全是静默的
+// （TTL 设太小 → 命中率掉到 0，没有任何报错，只是变慢）。计数器错了，
+// /metrics 就会把「缓存没在工作」显示成「命中率良好」—— 比没有指标更坏。
+func TestTTLCacheGetOrLoadCountsHitsMisses(t *testing.T) {
+	var c ttlCache[int]
+	// 第一次：未命中 → 走 loader
+	if _, err := c.getOrLoad(time.Now(), time.Minute, func() (int, error) { return 1, nil }); err != nil {
+		t.Fatalf("加载失败: %v", err)
+	}
+	if h, m := c.Stats(); h != 0 || m != 1 {
+		t.Fatalf("首次后应 hits=0 misses=1，实际 hits=%d misses=%d", h, m)
+	}
+	// 第二次：命中
+	if _, err := c.getOrLoad(time.Now(), time.Minute, func() (int, error) { return 2, nil }); err != nil {
+		t.Fatalf("加载失败: %v", err)
+	}
+	if h, m := c.Stats(); h != 1 || m != 1 {
+		t.Fatalf("第二次后应 hits=1 misses=1，实际 hits=%d misses=%d", h, m)
+	}
 }

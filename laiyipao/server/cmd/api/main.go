@@ -8,12 +8,16 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+
+	// 注册 /debug/pprof/* 到 DefaultServeMux，供 startPprof 的独立 server 使用。
+	_ "net/http/pprof"
 
 	"github.com/laiyipao/server/internal/config"
 	"github.com/laiyipao/server/internal/httpapi"
@@ -106,6 +110,12 @@ func run() error {
 
 	app := buildApp(svc)
 
+	// pprof：仅在 PPROF_ADDR 非空时启动独立 server（默认不启动）。
+	// 与主 API 端口分离，且只建议用回环地址 —— 见 config.PprofAddr。
+	if cfg.PprofAddr != "" {
+		startPprof(cfg.PprofAddr)
+	}
+
 	// 优雅退出：收到 SIGINT/SIGTERM 后给在途请求 10 秒收尾
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
@@ -150,4 +160,19 @@ func buildApp(svc *service.Service) *fiber.App {
 	})
 	httpapi.New(svc).Register(app)
 	return app
+}
+
+// startPprof 在独立地址启动 net/http/pprof（CPU/堆/goroutine 火焰图）。
+//
+// 独立于主 fiber app 而不是挂在它上面：主服务跑在 fasthttp 上，
+// 混在一个监听里要么引 adaptor、要么起第二个 server；后者更干净，
+// 也天然把 profiling 端点和公网 API 端口分开（默认只绑回环）。
+// 进程退出即随之结束，不接入优雅关闭 —— 它是排障工具，不是常驻面。
+func startPprof(addr string) {
+	go func() {
+		fmt.Printf("[来一炮 server] pprof 监听 %s（/debug/pprof）\n", addr)
+		if err := http.ListenAndServe(addr, nil); err != nil && err != http.ErrServerClosed {
+			fmt.Fprintln(os.Stderr, "pprof server 退出:", err)
+		}
+	}()
 }

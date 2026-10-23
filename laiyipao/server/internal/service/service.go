@@ -157,6 +157,28 @@ func (s *Service) flushLeaderboards() {
 	}
 }
 
+// CacheStats 是进程内缓存的命中/未命中快照（getOrLoad 口径）。
+type CacheStats struct {
+	DashboardHits, DashboardMisses     int64
+	LeaderboardHits, LeaderboardMisses int64
+}
+
+// CacheStats 汇总看板与三个榜单缓存的命中/未命中计数，供 /metrics 观测。
+//
+// 为什么值得暴露：缓存命中率是这两个缓存**唯一**的健康信号 ——
+// 命中率骤降意味着 TTL 被设太小或击穿没被单飞兜住，而这两者都不会报错，
+// 只是变慢。没有它，线上只能看到「看板接口偶发变慢」这种说不清的现象。
+func (s *Service) CacheStats() CacheStats {
+	var st CacheStats
+	st.DashboardHits, st.DashboardMisses = s.dashboardCache.Stats()
+	for _, c := range s.leaderboardCache {
+		h, m := c.Stats()
+		st.LeaderboardHits += h
+		st.LeaderboardMisses += m
+	}
+	return st
+}
+
 // --- 账号 ---
 
 // User 是玩家公开信息。

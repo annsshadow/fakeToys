@@ -87,16 +87,10 @@ type StageFunnel struct {
 // 错误**不缓存**：一次失败如果被缓存 30 秒，运营会看到连续两次同样的
 // 报错，而第二次其实数据库已经好了。
 func (s *Service) AdminDashboard(ctx context.Context) (Dashboard, error) {
-	now := time.Now()
-	if d, ok := s.dashboardCache.get(now, s.Cfg.DashboardCacheTTL); ok {
-		return d, nil
-	}
-	d, err := s.adminDashboardUncached(ctx)
-	if err != nil {
-		return d, err
-	}
-	s.dashboardCache.put(d, now)
-	return d, nil
+	// singleflight：TTL 到期那一刻的并发未命中只跑一次查询，不惊群。
+	return s.dashboardCache.getOrLoad(time.Now(), s.Cfg.DashboardCacheTTL, func() (Dashboard, error) {
+		return s.adminDashboardUncached(ctx)
+	})
 }
 
 // adminDashboardUncached 是真正的查询。缓存逻辑只在上面一层，
