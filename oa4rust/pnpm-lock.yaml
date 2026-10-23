@@ -228,16 +228,16 @@ importers:
     dependencies:
       '@dcloudio/uni-app':
         specifier: 3.0.0-alpha-5020620260914001
-        version: 3.0.0-alpha-5020620260914001(@dcloudio/types@3.4.32)(postcss@8.5.26)(rollup@4.63.1)(supports-color@5.5.0)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13))(vue@3.5.42(typescript@5.9.3))
+        version: 3.0.0-alpha-5020620260914001(@dcloudio/types@3.4.32)(postcss@8.5.26)(rollup@4.63.1)(supports-color@5.5.0)(vite@6.4.4(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13))(vue@3.5.42(typescript@5.9.3))
       '@dcloudio/uni-app-plus':
         specifier: 3.0.0-alpha-5020620260914001
-        version: 3.0.0-alpha-5020620260914001(postcss@8.5.26)(rollup@4.63.1)(supports-color@5.5.0)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13))(vue@3.5.42(typescript@5.9.3))
+        version: 3.0.0-alpha-5020620260914001(postcss@8.5.26)(rollup@4.63.1)(supports-color@5.5.0)(vite@6.4.4(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13))(vue@3.5.42(typescript@5.9.3))
       '@dcloudio/uni-components':
         specifier: 3.0.0-alpha-5020620260914001
-        version: 3.0.0-alpha-5020620260914001(postcss@8.5.26)(rollup@4.63.1)(supports-color@5.5.0)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13))(vue@3.5.42(typescript@5.9.3))
+        version: 3.0.0-alpha-5020620260914001(postcss@8.5.26)(rollup@4.63.1)(supports-color@5.5.0)(vite@6.4.4(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13))(vue@3.5.42(typescript@5.9.3))
       '@dcloudio/uni-h5':
         specifier: 3.0.0-alpha-5020620260914001
-        version: 3.0.0-alpha-5020620260914001(postcss@8.5.26)(rollup@4.63.1)(supports-color@5.5.0)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13))(vue@3.5.42(typescript@5.9.3))
+        version: 3.0.0-alpha-5020620260914001(postcss@8.5.26)(rollup@4.63.1)(supports-color@5.5.0)(vite@6.4.4(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13))(vue@3.5.42(typescript@5.9.3))
       '@dcloudio/uni-i18n':
         specifier: 3.0.0-alpha-5020620260914001
         version: 3.0.0-alpha-5020620260914001
@@ -262,7 +262,7 @@ importers:
         version: 3.4.32
       '@dcloudio/vite-plugin-uni':
         specifier: 3.0.0-alpha-5020620260914001
-        version: 3.0.0-alpha-5020620260914001(postcss@8.5.26)(rollup@4.63.1)(supports-color@5.5.0)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13))(vue@3.5.42(typescript@5.9.3))
+        version: 3.0.0-alpha-5020620260914001(postcss@8.5.26)(rollup@4.63.1)(supports-color@5.5.0)(vite@6.4.4(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13))(vue@3.5.42(typescript@5.9.3))
       '@oa4rust/sdk':
         specifier: workspace:*
         version: link:../frontend/packages/sdk
@@ -276,8 +276,8 @@ importers:
         specifier: ^5.8.0
         version: 5.9.3
       vite:
-        specifier: 6.4.3
-        version: 6.4.3(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13)
+        specifier: 6.4.4
+        version: 6.4.4(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13)
       vue-demi:
         specifier: ^0.14.10
         version: 0.14.10(vue@3.5.42(typescript@5.9.3))
@@ -3861,8 +3861,8 @@ packages:
     peerDependencies:
       vue: 3.5.42
 
-  vite@6.4.3:
-    resolution: {integrity: sha512-NTKlcQjlAK7MlQoyb6LgaqHc8sso/pVyUJYWMws3jg21uTJw/LddqIFPcPqP6PzpgbIcZyKI85sFE4HBrQDA8A==}
+  vite@6.4.4:
+    resolution: {integrity: sha512-xGjU/SyjeNyb0E4KxXBvYz/1C+3JXuujvf2hXNOtnlcE+58o5ajd9N2/n2VhkiJvpCP2qQasnUpx5PXNeI+p1Q==}
     engines: {node: ^18.0.0 || ^20.0.0 || >=22.0.0}
     hasBin: true
     peerDependencies:
@@ -5001,10 +5001,10 @@ snapshots:
 
   '@dcloudio/types@3.4.32': {}
 
-  '@dcloudio/uni-app-plus@3.0.0-alpha-5020620260914001(postcss@8.5.26)(rollup@4.63.1)(supports-color@5.5.0)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13))(vue@3.5.42(typescript@5.9.3))':
+  '@dcloudio/uni-app-plus@3.0.0-alpha-5020620260914001(postcss@8.5.26)(rollup@4.63.1)(supports-color@5.5.0)(vite@6.4.4(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13))(vue@3.5.42(typescript@5.9.3))':
     dependencies:
       '@dcloudio/uni-app-uts': 3.0.0-alpha-5020620260914001(postcss@8.5.26)(rollup@4.63.1)(supports-color@5.5.0)
-      '@dcloudio/uni-app-vite': 3.0.0-alpha-5020620260914001(postcss@8.5.26)(rollup@4.63.1)(supports-color@5.5.0)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13))(vue@3.5.42(typescript@5.9.3))
+      '@dcloudio/uni-app-vite': 3.0.0-alpha-5020620260914001(postcss@8.5.26)(rollup@4.63.1)(supports-color@5.5.0)(vite@6.4.4(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13))(vue@3.5.42(typescript@5.9.3))
       '@dcloudio/uni-app-vue': 3.0.0-alpha-5020620260914001
       debug: 4.3.7(supports-color@5.5.0)
       fs-extra: 10.1.0
@@ -5054,14 +5054,14 @@ snapshots:
       - supports-color
       - ts-node
 
-  '@dcloudio/uni-app-vite@3.0.0-alpha-5020620260914001(postcss@8.5.26)(rollup@4.63.1)(supports-color@5.5.0)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13))(vue@3.5.42(typescript@5.9.3))':
+  '@dcloudio/uni-app-vite@3.0.0-alpha-5020620260914001(postcss@8.5.26)(rollup@4.63.1)(supports-color@5.5.0)(vite@6.4.4(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13))(vue@3.5.42(typescript@5.9.3))':
     dependencies:
       '@dcloudio/uni-cli-shared': 3.0.0-alpha-5020620260914001(postcss@8.5.26)(rollup@4.63.1)(supports-color@5.5.0)
       '@dcloudio/uni-i18n': 3.0.0-alpha-5020620260914001
       '@dcloudio/uni-nvue-styler': 3.0.0-alpha-5020620260914001
       '@dcloudio/uni-shared': 3.0.0-alpha-5020620260914001
       '@rollup/pluginutils': 5.1.0(rollup@4.63.1)
-      '@vitejs/plugin-vue': 5.2.4(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13))(vue@3.5.42(typescript@5.9.3))
+      '@vitejs/plugin-vue': 5.2.4(vite@6.4.4(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13))(vue@3.5.42(typescript@5.9.3))
       '@vue/compiler-dom': 3.5.42
       '@vue/compiler-sfc': 3.5.42
       debug: 4.3.7(supports-color@5.5.0)
@@ -5079,11 +5079,11 @@ snapshots:
 
   '@dcloudio/uni-app-vue@3.0.0-alpha-5020620260914001': {}
 
-  '@dcloudio/uni-app@3.0.0-alpha-5020620260914001(@dcloudio/types@3.4.32)(postcss@8.5.26)(rollup@4.63.1)(supports-color@5.5.0)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13))(vue@3.5.42(typescript@5.9.3))':
+  '@dcloudio/uni-app@3.0.0-alpha-5020620260914001(@dcloudio/types@3.4.32)(postcss@8.5.26)(rollup@4.63.1)(supports-color@5.5.0)(vite@6.4.4(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13))(vue@3.5.42(typescript@5.9.3))':
     dependencies:
       '@dcloudio/types': 3.4.32
       '@dcloudio/uni-cloud': 3.0.0-alpha-5020620260914001(postcss@8.5.26)(rollup@4.63.1)(supports-color@5.5.0)
-      '@dcloudio/uni-components': 3.0.0-alpha-5020620260914001(postcss@8.5.26)(rollup@4.63.1)(supports-color@5.5.0)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13))(vue@3.5.42(typescript@5.9.3))
+      '@dcloudio/uni-components': 3.0.0-alpha-5020620260914001(postcss@8.5.26)(rollup@4.63.1)(supports-color@5.5.0)(vite@6.4.4(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13))(vue@3.5.42(typescript@5.9.3))
       '@dcloudio/uni-console': 3.0.0-alpha-5020620260914001(postcss@8.5.26)(rollup@4.63.1)(supports-color@5.5.0)
       '@dcloudio/uni-i18n': 3.0.0-alpha-5020620260914001
       '@dcloudio/uni-push': 3.0.0-alpha-5020620260914001(postcss@8.5.26)(rollup@4.63.1)(supports-color@5.5.0)
@@ -5176,10 +5176,10 @@ snapshots:
       - supports-color
       - ts-node
 
-  '@dcloudio/uni-components@3.0.0-alpha-5020620260914001(postcss@8.5.26)(rollup@4.63.1)(supports-color@5.5.0)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13))(vue@3.5.42(typescript@5.9.3))':
+  '@dcloudio/uni-components@3.0.0-alpha-5020620260914001(postcss@8.5.26)(rollup@4.63.1)(supports-color@5.5.0)(vite@6.4.4(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13))(vue@3.5.42(typescript@5.9.3))':
     dependencies:
       '@dcloudio/uni-cloud': 3.0.0-alpha-5020620260914001(postcss@8.5.26)(rollup@4.63.1)(supports-color@5.5.0)
-      '@dcloudio/uni-h5': 3.0.0-alpha-5020620260914001(postcss@8.5.26)(rollup@4.63.1)(supports-color@5.5.0)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13))(vue@3.5.42(typescript@5.9.3))
+      '@dcloudio/uni-h5': 3.0.0-alpha-5020620260914001(postcss@8.5.26)(rollup@4.63.1)(supports-color@5.5.0)(vite@6.4.4(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13))(vue@3.5.42(typescript@5.9.3))
       '@dcloudio/uni-i18n': 3.0.0-alpha-5020620260914001
     transitivePeerDependencies:
       - '@nuxt/kit'
@@ -5203,12 +5203,12 @@ snapshots:
       - supports-color
       - ts-node
 
-  '@dcloudio/uni-h5-vite@3.0.0-alpha-5020620260914001(postcss@8.5.26)(rollup@4.63.1)(supports-color@5.5.0)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13))':
+  '@dcloudio/uni-h5-vite@3.0.0-alpha-5020620260914001(postcss@8.5.26)(rollup@4.63.1)(supports-color@5.5.0)(vite@6.4.4(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13))':
     dependencies:
       '@dcloudio/uni-cli-shared': 3.0.0-alpha-5020620260914001(postcss@8.5.26)(rollup@4.63.1)(supports-color@5.5.0)
       '@dcloudio/uni-shared': 3.0.0-alpha-5020620260914001
       '@rollup/pluginutils': 5.1.0(rollup@4.63.1)
-      '@vitejs/plugin-basic-ssl': 1.2.0(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13))
+      '@vitejs/plugin-basic-ssl': 1.2.0(vite@6.4.4(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13))
       '@vue/compiler-dom': 3.5.42
       '@vue/compiler-sfc': 3.5.42
       '@vue/server-renderer': 3.5.42
@@ -5231,9 +5231,9 @@ snapshots:
       '@dcloudio/uni-shared': 3.0.0-alpha-5020620260914001
       '@vue/server-renderer': 3.5.42
 
-  '@dcloudio/uni-h5@3.0.0-alpha-5020620260914001(postcss@8.5.26)(rollup@4.63.1)(supports-color@5.5.0)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13))(vue@3.5.42(typescript@5.9.3))':
+  '@dcloudio/uni-h5@3.0.0-alpha-5020620260914001(postcss@8.5.26)(rollup@4.63.1)(supports-color@5.5.0)(vite@6.4.4(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13))(vue@3.5.42(typescript@5.9.3))':
     dependencies:
-      '@dcloudio/uni-h5-vite': 3.0.0-alpha-5020620260914001(postcss@8.5.26)(rollup@4.63.1)(supports-color@5.5.0)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13))
+      '@dcloudio/uni-h5-vite': 3.0.0-alpha-5020620260914001(postcss@8.5.26)(rollup@4.63.1)(supports-color@5.5.0)(vite@6.4.4(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13))
       '@dcloudio/uni-h5-vue': 3.0.0-alpha-5020620260914001
       '@dcloudio/uni-i18n': 3.0.0-alpha-5020620260914001
       '@dcloudio/uni-shared': 3.0.0-alpha-5020620260914001
@@ -5360,7 +5360,7 @@ snapshots:
       - supports-color
       - ts-node
 
-  '@dcloudio/vite-plugin-uni@3.0.0-alpha-5020620260914001(postcss@8.5.26)(rollup@4.63.1)(supports-color@5.5.0)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13))(vue@3.5.42(typescript@5.9.3))':
+  '@dcloudio/vite-plugin-uni@3.0.0-alpha-5020620260914001(postcss@8.5.26)(rollup@4.63.1)(supports-color@5.5.0)(vite@6.4.4(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13))(vue@3.5.42(typescript@5.9.3))':
     dependencies:
       '@babel/core': 7.29.6(supports-color@5.5.0)
       '@babel/plugin-syntax-import-meta': 7.10.4(@babel/core@7.29.6(supports-color@5.5.0))
@@ -5370,9 +5370,9 @@ snapshots:
       '@dcloudio/uni-nvue-styler': 3.0.0-alpha-5020620260914001
       '@dcloudio/uni-shared': 3.0.0-alpha-5020620260914001
       '@rollup/pluginutils': 5.1.0(rollup@4.63.1)
-      '@vitejs/plugin-legacy': 5.3.2(supports-color@5.5.0)(terser@5.51.2)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13))
-      '@vitejs/plugin-vue': 5.2.4(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13))(vue@3.5.42(typescript@5.9.3))
-      '@vitejs/plugin-vue-jsx': 3.1.0(supports-color@5.5.0)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13))(vue@3.5.42(typescript@5.9.3))
+      '@vitejs/plugin-legacy': 5.3.2(supports-color@5.5.0)(terser@5.51.2)(vite@6.4.4(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13))
+      '@vitejs/plugin-vue': 5.2.4(vite@6.4.4(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13))(vue@3.5.42(typescript@5.9.3))
+      '@vitejs/plugin-vue-jsx': 3.1.0(supports-color@5.5.0)(vite@6.4.4(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13))(vue@3.5.42(typescript@5.9.3))
       '@vue/compiler-core': 3.5.42
       '@vue/compiler-dom': 3.5.42
       '@vue/compiler-sfc': 3.5.42
@@ -5391,7 +5391,7 @@ snapshots:
       source-map-js: 1.2.2
       terser: 5.51.2
       unplugin-auto-import: 19.1.0
-      vite: 6.4.3(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13)
+      vite: 6.4.4(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13)
     transitivePeerDependencies:
       - '@nuxt/kit'
       - '@vueuse/core'
@@ -6286,11 +6286,11 @@ snapshots:
       unplugin-utils: 0.3.2
       vite: 8.3.4(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.13)
 
-  '@vitejs/plugin-basic-ssl@1.2.0(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13))':
+  '@vitejs/plugin-basic-ssl@1.2.0(vite@6.4.4(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13))':
     dependencies:
-      vite: 6.4.3(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13)
+      vite: 6.4.4(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13)
 
-  '@vitejs/plugin-legacy@5.3.2(supports-color@5.5.0)(terser@5.51.2)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13))':
+  '@vitejs/plugin-legacy@5.3.2(supports-color@5.5.0)(terser@5.51.2)(vite@6.4.4(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13))':
     dependencies:
       '@babel/core': 7.29.6(supports-color@5.5.0)
       '@babel/preset-env': 7.29.7(@babel/core@7.29.6(supports-color@5.5.0))(supports-color@5.5.0)
@@ -6301,23 +6301,23 @@ snapshots:
       regenerator-runtime: 0.14.1
       systemjs: 6.15.1
       terser: 5.51.2
-      vite: 6.4.3(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13)
+      vite: 6.4.4(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13)
     transitivePeerDependencies:
       - supports-color
 
-  '@vitejs/plugin-vue-jsx@3.1.0(supports-color@5.5.0)(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13))(vue@3.5.42(typescript@5.9.3))':
+  '@vitejs/plugin-vue-jsx@3.1.0(supports-color@5.5.0)(vite@6.4.4(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13))(vue@3.5.42(typescript@5.9.3))':
     dependencies:
       '@babel/core': 7.29.6(supports-color@5.5.0)
       '@babel/plugin-transform-typescript': 7.29.7(@babel/core@7.29.6(supports-color@5.5.0))(supports-color@5.5.0)
       '@vue/babel-plugin-jsx': 1.5.0(@babel/core@7.29.6(supports-color@5.5.0))(supports-color@5.5.0)
-      vite: 6.4.3(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13)
+      vite: 6.4.4(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13)
       vue: 3.5.42(typescript@5.9.3)
     transitivePeerDependencies:
       - supports-color
 
-  '@vitejs/plugin-vue@5.2.4(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13))(vue@3.5.42(typescript@5.9.3))':
+  '@vitejs/plugin-vue@5.2.4(vite@6.4.4(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13))(vue@3.5.42(typescript@5.9.3))':
     dependencies:
-      vite: 6.4.3(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13)
+      vite: 6.4.4(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13)
       vue: 3.5.42(typescript@5.9.3)
 
   '@vitejs/plugin-vue@5.2.4(vite@8.3.4(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.13))(vue@3.5.42(typescript@5.9.3))':
@@ -8106,7 +8106,7 @@ snapshots:
       evtd: 0.2.4
       vue: 3.5.42(typescript@5.9.3)
 
-  vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13):
+  vite@6.4.4(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13):
     dependencies:
       esbuild: 0.25.12
       fdir: 6.5.0(picomatch@4.0.7)
