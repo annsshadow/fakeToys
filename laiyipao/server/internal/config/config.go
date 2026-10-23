@@ -80,6 +80,24 @@ type Config struct {
 	// 离线收益
 	OfflineCapHours int
 
+	// DashboardCacheTTL / LeaderboardCacheTTL 是看板与榜单的进程内缓存有效期
+	// （2026-10-23）。
+	//
+	// # 为什么这两个端点是「可以旧 30 秒」的
+	//
+	//   - 看板：运营看的是趋势与异常，30 秒前的数字不改变任何决策；
+	//     而它每次要跑 9 段全表聚合（5 个 COUNT(*)、14 桶 DAU、100 关漏斗）。
+	//   - 榜单：玩家看的是名次，15 秒的陈旧不会有人察觉；
+	//     而它是 `level_stars JOIN users` 的全表 GROUP BY。
+	//
+	// # 为什么用环境变量而不是写死
+	//
+	// 设成 `0` 即**关闭缓存**（`ttlCache.get` 对 `ttl <= 0` 恒不命中）。
+	// 排查「数字为什么不动」时第一件事就是关掉它 —— 那必须是运维能做、
+	// 且不需要发版的动作。
+	DashboardCacheTTL   time.Duration
+	LeaderboardCacheTTL time.Duration
+
 	// 默认管理员（仅在 admin_users 为空时引导创建）
 	BootstrapAdminUser string
 	BootstrapAdminPass string
@@ -210,6 +228,10 @@ func Load() Config {
 		SettleRecomputeMode: env("SETTLE_RECOMPUTE_MODE", "enforce"),
 
 		OfflineCapHours: envInt("OFFLINE_CAP_HOURS", 12),
+
+		// 30s / 15s：见字段注释里的取舍。0 = 关闭缓存。
+		DashboardCacheTTL:   envDuration("DASHBOARD_CACHE_TTL", 30*time.Second),
+		LeaderboardCacheTTL: envDuration("LEADERBOARD_CACHE_TTL", 15*time.Second),
 
 		BootstrapAdminUser: env("BOOTSTRAP_ADMIN_USER", "admin"),
 		BootstrapAdminPass: env("BOOTSTRAP_ADMIN_PASS", "admin12345"),

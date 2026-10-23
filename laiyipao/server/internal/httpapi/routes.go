@@ -80,6 +80,14 @@ func (s *Server) Register(app *fiber.App) {
 
 	v1.Get("/config", s.getConfig)
 	v1.Get("/leaderboard", s.leaderboard)
+	// 公告（玩家侧，2026-10-23）。
+	//
+	// ⚠️ 这条路由此前**不存在** —— `announcements` 表、后台的增删查全都有，
+	// 唯独玩家端没有任何读入口。也就是说运营发的公告**只有运营自己看得见**。
+	//
+	// 不挂 `requireUser`：公告是公开内容，且首页首屏在登录完成前就要能显示它。
+	// 与 `/config`、`/leaderboard` 同级。
+	v1.Get("/announcements", s.announcements)
 
 	me := v1.Group("/me", requireUser(s.Svc))
 	me.Get("/", s.me)
@@ -101,6 +109,12 @@ func (s *Server) Register(app *fiber.App) {
 	// 各关历史最好星级（level_stars 的 GREATEST）。选关页的星数/「已通关」
 	// 以此为准 —— 服务端没这个读端点的话，客户端的星图永远空白。
 	me.Get("/stars", s.myStars)
+	// 我的排名（2026-10-23）。
+	//
+	// `GET /leaderboard` 只回前 N 条，而客户端只能在**这 N 条里**高亮自己。
+	// 未进前 N 的玩家在榜上找不到自己，也不知道总共有多少人。
+	// 独立端点而不是给公开榜单加可选鉴权 —— 理由见 service.MyRank 的注释。
+	me.Get("/rank", s.myRank)
 	// 技能升级：消耗金币把一个已拥有技能升一级。
 	//
 	// ⚠️ 挂在 /me 组下（带 requireUser），因为它要花**玩家自己的**钱。
@@ -665,6 +679,45 @@ func (s *Server) leaderboard(c *fiber.Ctx) error {
 	// 回显**规范化之后**的 kind，而不是原样回显请求值 ——
 	// 响应里的 type 必须与实际返回的数据是同一件事。
 	return c.JSON(fiber.Map{"type": kind, "items": items})
+}
+
+// announcements 下发**已发布**的公告（玩家侧）。
+//
+// limit 走 `queryInt` 而不是 `c.Query("limit", "5")`：
+// 后者在 `?limit=` 时会吞掉空串返回默认值，而 `?limit=abc` 会静默变成 0
+// —— 与 `leaderboard` 里那段注释是同一条道理，两处必须一致。
+// 越界由 service 层夹住（它是展示型端点，传错一个数不该让首屏整块消失）。
+func (s *Server) announcements(c *fiber.Ctx) error {
+	limit, err := queryInt(c, "limit", 0)
+	if err != nil {
+		return failErr(c, err)
+	}
+	items, err := s.Svc.ListAnnouncements(c.Context(), limit)
+	if err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(fiber.Map{"items": items})
+}
+
+// myRank 返回「我在榜上的位置」。
+//
+// kind 的校验与 `leaderboard` 同口径（先 `Has` 再取 raw 再校验），
+// 不能写成 `c.Query("type","power")` —— 那会把 `?type=` 吞成默认值，
+// 而「显式传空」与「没传」是两种输入（见 leaderboard 里那段注释）。
+func (s *Server) myRank(c *fiber.Ctx) error {
+	kind := "power"
+	if c.Context().QueryArgs().Has("type") {
+		kind = c.Query("type")
+	}
+	if !leaderboardKinds[kind] {
+		return fail(c, fiber.StatusBadRequest, "bad_input",
+			"type 只能是 power / stage / efficiency")
+	}
+	out, err := s.Svc.MyRank(c.Context(), userIDFrom(c), kind)
+	if err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(out)
 }
 
 func (s *Server) getMastery(c *fiber.Ctx) error {

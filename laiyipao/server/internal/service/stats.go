@@ -73,7 +73,35 @@ type StageFunnel struct {
 }
 
 // AdminDashboard 汇总看板数据。
+//
+// # 缓存（2026-10-23）
+//
+// 这个函数串了 9 段查询，其中 5 段是全表 `COUNT(*)`/`AVG`，DAU 是
+// 14 个日桶的范围扫描，漏斗是全表 `GROUP BY level_id`。运营看板
+// 对 30 秒的陈旧不敏感（看的是趋势与异常），所以整包缓存。
+//
+// ⚠️ **它确实会返回旧数据**，这是有意的取舍，不是缺陷：
+// 刚打完一局的运营在看板上 30 秒内看不到这一局。要立刻看到，
+// 把 `DASHBOARD_CACHE_TTL` 设成 0 重启即可（不需要发版）。
+//
+// 错误**不缓存**：一次失败如果被缓存 30 秒，运营会看到连续两次同样的
+// 报错，而第二次其实数据库已经好了。
 func (s *Service) AdminDashboard(ctx context.Context) (Dashboard, error) {
+	now := time.Now()
+	if d, ok := s.dashboardCache.get(now, s.Cfg.DashboardCacheTTL); ok {
+		return d, nil
+	}
+	d, err := s.adminDashboardUncached(ctx)
+	if err != nil {
+		return d, err
+	}
+	s.dashboardCache.put(d, now)
+	return d, nil
+}
+
+// adminDashboardUncached 是真正的查询。缓存逻辑只在上面一层，
+// 这样「查什么」与「缓存多久」不会互相纠缠。
+func (s *Service) adminDashboardUncached(ctx context.Context) (Dashboard, error) {
 	var d Dashboard
 
 	scan := func(q string, dest ...any) error {

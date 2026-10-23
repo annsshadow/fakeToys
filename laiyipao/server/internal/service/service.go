@@ -81,6 +81,37 @@ type Service struct {
 	recomputeMismatch  int64
 	recomputeCannotRun int64
 	recomputeSkipped   int64
+
+	// 进程内缓存（2026-10-23）。语义与取舍见 `ttlcache.go` 与 config 的同名字段。
+	//
+	// ⚠️ 它们**按 Service 实例隔离**：每个 `New` 出来的服务各自一份。
+	// 这不是疏忽 —— 测试里每个用例新建一个 Service，于是「改完数据再读」
+	// 天然读到新值；而线上只有一个实例，缓存才真正生效。
+	// 若哪天改成全局单例，`dashboard_funnel_test` 那类「造数据→读看板」
+	// 的用例会开始读到上一个用例的快照。
+	dashboardCache ttlCache[Dashboard]
+	// leaderboardCache 按 kind 分键。三个键在 New 里一次建好，
+	// 之后**只读这个 map**（不再增删），所以不需要外层锁。
+	leaderboardCache map[string]*ttlCache[[]LeaderboardEntry]
+}
+
+// leaderboardCacheKinds 是与 `leaderboardKinds` 同步的三个榜。
+//
+// 这里单独列一份是因为 `leaderboardKinds` 在 httpapi 包（校验用），
+// 而缓存初始化发生在 service 包。两处都由
+// `TestLeaderboardCacheCoversEveryKind` 对齐。
+var leaderboardCacheKinds = []string{"power", "stage", "efficiency"}
+
+// LeaderboardCacheKinds 返回缓存覆盖的榜名（副本）。
+//
+// 导出它是为了让 `httpapi` 的校验名单（`leaderboardKinds`）能与之对拍：
+// 两处各自硬编码三个字符串，**加第四个榜时只改一处**，另一处不会报错 ——
+// 症状是新榜没有缓存（性能问题），或者能查但路由拒绝（功能问题）。
+// 判据见 `TestEveryLeaderboardKindHasCache`。
+func LeaderboardCacheKinds() []string {
+	out := make([]string, len(leaderboardCacheKinds))
+	copy(out, leaderboardCacheKinds)
+	return out
 }
 
 // New 构造服务。
@@ -91,8 +122,23 @@ func New(db *store.DB, cfg config.Config) *Service {
 		JWT:  auth.NewSigner(cfg.JWTSecret, cfg.AccessTTL),
 		pool: db.Pool,
 	}
+	s.leaderboardCache = make(map[string]*ttlCache[[]LeaderboardEntry], len(leaderboardCacheKinds))
+	for _, kind := range leaderboardCacheKinds {
+		s.leaderboardCache[kind] = &ttlCache[[]LeaderboardEntry]{}
+	}
 	s.initRecomputeGate()
 	return s
+}
+
+// FlushStatsCache 立刻失效看板与榜单缓存。
+//
+// 用途：测试里「造数据 → 读看板」需要新值；将来接运营的「刷新」按钮也用它。
+// 不暴露 HTTP 端点（本轮不做那个按钮，避免扩大范围）。
+func (s *Service) FlushStatsCache() {
+	s.dashboardCache.flush()
+	for _, c := range s.leaderboardCache {
+		c.flush()
+	}
 }
 
 // --- 账号 ---

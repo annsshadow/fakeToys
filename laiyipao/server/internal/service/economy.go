@@ -79,50 +79,47 @@ type LeaderboardEntry struct {
 	Detail    string `json:"detail,omitempty"`
 }
 
+// leaderboardCacheRows 是缓存里存的行数（也是单次查询取的行数）。
+//
+// 取 200 与 `limit` 的上界一致。做法是「总是取满 200 行、再按 limit 切片」：
+// 这样每个榜只有**一个**缓存条目，不必为 limit=10 / limit=50 各存一份。
+// 多取的 150 行是 150 个 `(id,nickname,avatar,score)`，代价可以忽略，
+// 换来的是「缓存键只有 kind」这件简单的事。
+const leaderboardCacheRows = 200
+
 // Leaderboard 返回指定榜单。
 //
 // 三种榜单对应三种不同的"强"：战力榜=资源总量，效率榜=技巧，
 // 关卡榜=进度。分开排才能让低养成高技巧的玩家也有位置。
+//
+// # 缓存（2026-10-23）
+//
+// 三个榜都是 `level_stars JOIN users` 的全表 `GROUP BY` + 排序。
+// 玩家每进一次排行页就算一次，而 15 秒的陈旧没人察觉。
+// 取舍与关闭方式见 `config.LeaderboardCacheTTL`。
 func (s *Service) Leaderboard(ctx context.Context, kind string, limit int) ([]LeaderboardEntry, error) {
 	if limit <= 0 || limit > 200 {
 		limit = 50
 	}
-	var rows interface {
-		Next() bool
-		Scan(...any) error
-		Err() error
-		Close()
+	now := time.Now()
+	if c, ok := s.leaderboardCache[kind]; ok {
+		if cached, hit := c.get(now, s.Cfg.LeaderboardCacheTTL); hit {
+			return sliceLeaderboard(cached, limit), nil
+		}
 	}
-	var err error
 
-	switch kind {
-	case "stage":
-		rows, err = s.pool.Query(ctx, `
-			SELECT u.id, u.nickname, u.avatar_url, MAX(ls.level_id)
-			FROM level_stars ls JOIN users u ON u.id = ls.user_id
-			WHERE ls.clears > 0
-			GROUP BY u.id, u.nickname, u.avatar_url
-			ORDER BY 4 DESC, u.id ASC LIMIT $1`, limit)
-	case "efficiency":
-		// 效率榜：通关时使用的最低战力越低越靠前（L-2）
-		rows, err = s.pool.Query(ctx, `
-			SELECT u.id, u.nickname, u.avatar_url, MIN(ls.min_power_clear)
-			FROM level_stars ls JOIN users u ON u.id = ls.user_id
-			WHERE ls.min_power_clear > 0
-			GROUP BY u.id, u.nickname, u.avatar_url
-			ORDER BY 4 ASC, u.id ASC LIMIT $1`, limit)
-	default: // "power"
-		rows, err = s.pool.Query(ctx, `
-			SELECT u.id, u.nickname, u.avatar_url, p.level_exp
-			FROM user_progress p JOIN users u ON u.id = p.user_id
-			ORDER BY 4 DESC, u.id ASC LIMIT $1`, limit)
-	}
+	rows, err := s.pool.Query(ctx, `
+		WITH scores AS (`+leaderboardScoresSQL(kind)+`)
+		SELECT u.id, u.nickname, u.avatar_url, s.score
+		FROM scores s JOIN users u ON u.id = s.user_id
+		ORDER BY s.score `+leaderboardOrderSQL(kind)+`, u.id ASC
+		LIMIT $1`, leaderboardCacheRows)
 	if err != nil {
 		return nil, fmt.Errorf("leaderboard %s: %w", kind, err)
 	}
 	defer rows.Close()
 
-	out := make([]LeaderboardEntry, 0, limit)
+	out := make([]LeaderboardEntry, 0, leaderboardCacheRows)
 	rank := 1
 	for rows.Next() {
 		var e LeaderboardEntry
@@ -133,7 +130,115 @@ func (s *Service) Leaderboard(ctx context.Context, kind string, limit int) ([]Le
 		rank++
 		out = append(out, e)
 	}
-	return out, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	if c, ok := s.leaderboardCache[kind]; ok {
+		c.put(out, now)
+	}
+	return sliceLeaderboard(out, limit), nil
+}
+
+// sliceLeaderboard 按 limit 截断。
+//
+// ⚠️ 返回的是**同一个底层数组的切片**（不复制）：调用方只读。
+// 复制 200 个结构体不值得，而共享的代价是「谁改了它就污染缓存」——
+// 本仓库两个调用点（HTTP 编码、MyRank 的对照测试）都只读。
+func sliceLeaderboard(all []LeaderboardEntry, limit int) []LeaderboardEntry {
+	if limit >= len(all) {
+		return all
+	}
+	return all[:limit]
+}
+
+// leaderboardScoresSQL 是「用户 → 该榜分数」的**唯一**定义。
+//
+// # 为什么抽出来（2026-10-23）
+//
+// 这一段的三个分支此前**内联在 Leaderboard 里**。加 `/me/rank` 时如果照抄一份，
+// 就会出现两份「效率榜取 MIN、其余取 MAX」的实现 —— 而它们只在
+// 「排序方向」与「过滤条件」上分叉。分叉之后**症状是静默的**：
+// 榜单按 A 规则排、我的名次按 B 规则算，玩家看到「我在榜上第 3，
+// 但榜上第 3 不是我」，且没有任何报错。
+//
+// 现在两个端点共用这一个字符串，排序方向也共用 `leaderboardOrderSQL`。
+// 判据由 `TestMyRankMatchesLeaderboardOrder` 钉住（三榜各一次）。
+func leaderboardScoresSQL(kind string) string {
+	switch kind {
+	case "stage":
+		// 关卡榜：最高通关关卡
+		return `SELECT user_id, MAX(level_id)::bigint AS score
+		        FROM level_stars WHERE clears > 0 GROUP BY user_id`
+	case "efficiency":
+		// 效率榜：通关时使用的最低战力越低越靠前（L-2）
+		return `SELECT user_id, MIN(min_power_clear) AS score
+		        FROM level_stars WHERE min_power_clear > 0 GROUP BY user_id`
+	default: // "power"
+		// 战力榜：累计成长值
+		return `SELECT user_id, level_exp AS score FROM user_progress`
+	}
+}
+
+// leaderboardOrderSQL 是排序方向。返回值只可能是两个字面量之一 ——
+// 它会被拼进 SQL，**不能**接受任何外部输入。
+func leaderboardOrderSQL(kind string) string {
+	if kind == "efficiency" {
+		return "ASC"
+	}
+	return "DESC"
+}
+
+// MyRank 是「我在榜上的位置」（2026-10-23）。
+//
+// # 它补的是什么
+//
+// `Leaderboard` 只回前 N 条，而 `rank.vue` 的「是我」高亮**只在前 50 内有效**。
+// 未进前 50 的玩家在榜上找不到自己，也不知道总共有多少人 ——
+// 这是「有榜单但玩家用不上」的典型形态。
+//
+// # 为什么是独立端点而不是给 `/leaderboard` 加可选鉴权
+//
+// `/leaderboard` 是公开端点。给它加「带了 token 就多返回 me」会让同一个
+// URL 因请求头不同而返回不同形状 —— 缓存、调试、契约测试都要跟着分叉。
+// 独立端点挂在 `/me` 下，鉴权是它的全部意义，不引入隐式分支。
+//
+// `rank = 0` 表示**无有效成绩**（例如从未通关时的关卡榜）。
+// 不能返回 1：那会让「没成绩的人」看起来是榜首。
+type MyRank struct {
+	Kind  string `json:"kind"`
+	Rank  int    `json:"rank"`
+	Total int64  `json:"total"`
+	Score int64  `json:"score"`
+}
+
+// MyRank 计算玩家在指定榜单上的名次。
+//
+// 名次口径 = 「严格优于我的人数」+ 1，与 `Leaderboard` 的列表下标一致
+// （并列时按 user_id 升序，先出现的名次更靠前 —— 两者用同一条
+// `leaderboardOrderSQL`，所以并列处的行为也一致）。
+func (s *Service) MyRank(ctx context.Context, userID int64, kind string) (MyRank, error) {
+	// 与 Leaderboard 同源：分数定义 + 排序方向都不在这里另写一份。
+	scores := leaderboardScoresSQL(kind)
+	cmp := ">"
+	if leaderboardOrderSQL(kind) == "ASC" {
+		// 效率榜「分数越低越好」，所以优于我 = 比我小
+		cmp = "<"
+	}
+	q := `
+		WITH scores AS (` + scores + `),
+		     me AS (SELECT score FROM scores WHERE user_id = $1)
+		SELECT
+		    COALESCE((SELECT score FROM me), 0)::bigint,
+		    (SELECT COUNT(*) FROM scores),
+		    CASE WHEN NOT EXISTS (SELECT 1 FROM me) THEN 0
+		         ELSE (SELECT COUNT(*) FROM scores s, me WHERE s.score ` + cmp + ` me.score) + 1
+		    END`
+	var out MyRank
+	out.Kind = kind
+	if err := s.pool.QueryRow(ctx, q, userID).Scan(&out.Score, &out.Total, &out.Rank); err != nil {
+		return MyRank{}, fmt.Errorf("my rank %s: %w", kind, err)
+	}
+	return out, nil
 }
 
 // --- 签到 / 离线 / 兑换 / 商店 ---
