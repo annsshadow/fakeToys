@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 渲染层无头冒烟测试。
  *
  * 为什么需要这个：真实浏览器验证受限于"标签页隐藏时 rAF 被冻结、
@@ -287,6 +287,105 @@ describe('BattleRenderer 无头渲染', () => {
     const afterStop = steps
     await new Promise((res) => setTimeout(res, TICK_MS * 3))
     expect(steps).toBe(afterStop) // stop 后不再推进
+  })
+
+  // ── 暂停 / 恢复（2026-10-23）──────────────────────────────────────
+  // 加暂停的直接动因是「切后台回来战斗已经推进了一段」——
+  // 逻辑时钟是 setInterval，与页面可见性无关（当初为了后台也能跑逻辑刻意做的）。
+  // 副作用是「切后台会怎样」取决于平台对后台定时器的处置，未定义。
+
+  it('pause 后不再推进；resume 后继续推进', async () => {
+    const e = mkEngine()
+    const r = makeRenderer(e)
+    e.start()
+    let steps = 0
+    r.start(() => { steps++ })
+    await new Promise((res) => setTimeout(res, TICK_MS * 3))
+    expect(steps).toBeGreaterThan(0)
+
+    r.pause()
+    expect(r.isPaused()).toBe(true)
+    const afterPause = steps
+    await new Promise((res) => setTimeout(res, TICK_MS * 4))
+    expect(steps).toBe(afterPause) // 暂停期间一步都不走
+
+    r.resume()
+    expect(r.isPaused()).toBe(false)
+    await new Promise((res) => setTimeout(res, TICK_MS * 3))
+    expect(steps).toBeGreaterThan(afterPause) // 恢复后继续
+    r.stop()
+  })
+
+  it('暂停期间换挡不重建时钟（否则会留下野定时器，战斗在"已暂停"下继续跑）', async () => {
+    const e = mkEngine()
+    const r = makeRenderer(e)
+    e.start()
+    let steps = 0
+    r.start(() => { steps++ })
+    await new Promise((res) => setTimeout(res, TICK_MS * 2))
+
+    r.pause()
+    const afterPause = steps
+    // 暂停中换挡：只记档位
+    r.setSpeed(4)
+    expect(r.getSpeed()).toBe(4)
+    await new Promise((res) => setTimeout(res, TICK_MS * 4))
+    expect(steps).toBe(afterPause) // 换挡没有把时钟偷偷重启
+
+    // 恢复后按新档位跑（间隔更短，同样墙钟内步数更多）
+    r.resume()
+    await new Promise((res) => setTimeout(res, TICK_MS * 4))
+    expect(steps).toBeGreaterThan(afterPause)
+    r.stop()
+  })
+
+  it('暂停不改变「elapsedMs = tick × TICK_MS」—— 回放哈希不受暂停影响的结构性判据', async () => {
+    // 结算上报的 duration_ms 由 elapsedMs 推出，而 elapsedMs 只在 step() 内
+    // 随 tick 同步自增。暂停只要**不 step**，两者就一起冻住 ——
+    // 于是「暂停 5 秒再结算」与「不暂停直接结算」的 duration 完全一致。
+    //
+    // 若将来有人「贴心地」把暂停期间的墙钟时间补进 elapsedMs，
+    // 这条断言会立刻红；而线上症状是所有暂停过的战报都无法被重放验证。
+    const e = mkEngine()
+    const r = makeRenderer(e)
+    e.start()
+    r.start(() => { e.step() })
+
+    await new Promise((res) => setTimeout(res, TICK_MS * 4))
+    const t1 = e.tick
+    expect(t1).toBeGreaterThan(0)
+    expect(e.elapsedMs).toBe(t1 * TICK_MS)
+
+    r.pause()
+    await new Promise((res) => setTimeout(res, TICK_MS * 5))
+    expect(e.tick).toBe(t1) // 暂停期间一步都不走
+    expect(e.elapsedMs).toBe(t1 * TICK_MS) // 时长也没被补进去
+
+    r.resume()
+    await new Promise((res) => setTimeout(res, TICK_MS * 3))
+    expect(e.tick).toBeGreaterThan(t1)
+    expect(e.elapsedMs).toBe(e.tick * TICK_MS) // 恢复后仍严格同步
+    r.stop()
+  })
+
+  it('pause / resume 重复调用是幂等的，stop 会清掉暂停态', async () => {
+    const e = mkEngine()
+    const r = makeRenderer(e)
+    e.start()
+    let steps = 0
+    r.start(() => { steps++ })
+    r.pause()
+    r.pause() // 重复暂停：不该抛，也不该改变状态
+    expect(r.isPaused()).toBe(true)
+    r.resume()
+    r.resume() // 重复恢复：不该起两个时钟
+    await new Promise((res) => setTimeout(res, TICK_MS * 4))
+    const after = steps
+    // 两个时钟叠加会让步数翻倍；这里只要求「正常频率」，不精确断言
+    expect(after).toBeGreaterThan(0)
+    expect(after).toBeLessThanOrEqual(8)
+    r.stop()
+    expect(r.isPaused()).toBe(false)
   })
 
   it('视口随尺寸变化而缩放（横屏/竖屏都应可用）', () => {

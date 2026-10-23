@@ -75,6 +75,8 @@ class FakeEngine {
   taken: string[] = []
   discarded: string[] = []
   skipped = 0
+  /** step() 返回的事件（音效接线的判据：页面必须把它们交给 playBattleEvents） */
+  events: unknown[] = []
   settleToken = 0
 
   constructor(options: any) {
@@ -89,7 +91,7 @@ class FakeEngine {
       this.phase = 'card_select'
     }
     if (this.stepCount >= this.winAtStep) this.phase = this.endPhase
-    return []
+    return this.events as any[]
   }
   takeCard(id: string) {
     this.taken.push(id)
@@ -119,6 +121,8 @@ class FakeRenderer {
   stopped = false
   /** 当前倍速（真实渲染器会按它重建逻辑时钟） */
   speed = 1
+  /** 暂停态（2026-10-23）。真实渲染器会停掉两条时钟，替身只记状态。 */
+  paused = false
   constructor(canvas: any, engine: any) {
     this.canvas = canvas
     this.engine = engine
@@ -136,11 +140,20 @@ class FakeRenderer {
   }
   stop() {
     this.stopped = true
+    this.paused = false
+  }
+  pause() {
+    this.paused = true
+  }
+  resume() {
+    this.paused = false
   }
   handleEvents(_events: unknown[]) {}
 }
 
 vi.mock('@/game/engine', () => ({ BattleEngine: FakeEngine, TICK_MS: TICK }))
+// 音效映射本身由 audio/battle-sfx.test.ts 覆盖；这里只守「页面有没有接线」。
+vi.mock('@/audio/battle-sfx', () => ({ playBattleEvents: vi.fn() }))
 vi.mock('@/game/replay', () => ({ equippedFromSnapshot: vi.fn() }))
 // 渲染层只替掉 BattleRenderer（渲染细节由 canvas.test.ts 覆盖），
 // 倍速换算（BATTLE_SPEED_STEPS / normalizeSpeed / logicIntervalMs）**用真货** ——
@@ -152,6 +165,8 @@ vi.mock('@/render/canvas', async (importOriginal) => {
 })
 
 const mockApi = vi.mocked(api, true)
+const battleSfxModule = await import('@/audio/battle-sfx')
+const playBattleEventsMock = vi.mocked(battleSfxModule.playBattleEvents)
 const replayModule = await import('@/game/replay')
 const equippedFromSnapshotMock = vi.mocked(replayModule.equippedFromSnapshot)
 
@@ -516,6 +531,183 @@ describe('battle.vue 战斗页', () => {
     expect(renderer.stopped).toBe(false)
     triggerUniHook(wrapper.vm, 'onUnload')
     expect(renderer.stopped).toBe(true)
+  })
+})
+
+describe('battle.vue 暂停（2026-10-23）', () => {
+  // 加暂停的动因是「切后台回来战斗已经推进了一段」：
+  // 逻辑时钟是 setInterval，与页面可见性无关（当初为后台也能跑逻辑刻意做的），
+  // 于是「切后台会怎样」取决于平台对后台定时器的处置 —— 未定义。
+  //
+  // 断言分三层：
+  //   1. UI：按钮能暂停，遮罩出现，点继续能恢复；
+  //   2. 引擎：暂停期间**一次 step 都没有**（多一道守卫，不只依赖定时器停掉）；
+  //   3. 切后台：onHide 自动暂停，onShow **不自动恢复**。
+
+  it('点暂停 → 渲染器 pause、遮罩出现；点继续 → resume、遮罩消失', async () => {
+    const Battle = await loadPage()
+    const { wrapper } = mountPage(Battle)
+    await setupDone(wrapper)
+    const renderer = FakeRenderer.instances[0]!
+    expect(renderer.paused).toBe(false)
+
+    await wrapper.find('.pause-btn').trigger('click')
+    expect(renderer.paused).toBe(true)
+    expect(wrapper.find('.pause-overlay').exists()).toBe(true)
+    expect(wrapper.text()).toContain('已暂停')
+    // 暂停时「暂停」按钮自己消失（避免重复点）
+    expect(wrapper.find('.pause-btn').exists()).toBe(false)
+
+    await wrapper.find('.pause-go').trigger('click')
+    expect(renderer.paused).toBe(false)
+    expect(wrapper.find('.pause-overlay').exists()).toBe(false)
+  })
+
+  it('暂停期间即使有人调了帧回调，引擎也不推进（不依赖定时器真的停掉）', async () => {
+    const Battle = await loadPage()
+    const { wrapper } = mountPage(Battle)
+    await setupDone(wrapper)
+    const eng = FakeEngine.instances[0]!
+    const renderer = FakeRenderer.instances[0]!
+
+    // 先跑一步确认链路通
+    renderer.loop!(TICK)
+    const before = eng.stepCount
+    expect(before).toBeGreaterThan(0)
+
+    await wrapper.find('.pause-btn').trigger('click')
+    // 模拟「平台在暂停后仍补发了一次帧回调」：这是真实存在的场景
+    renderer.loop!(TICK)
+    renderer.loop!(TICK)
+    expect(eng.stepCount).toBe(before) // 一步都不能走
+
+    await wrapper.find('.pause-go').trigger('click')
+    renderer.loop!(TICK)
+    expect(eng.stepCount).toBe(before + 1) // 恢复后正常推进
+  })
+
+  it('onHide 自动暂停；onShow 不自动恢复（仍需玩家点继续）', async () => {
+    const Battle = await loadPage()
+    const { wrapper } = mountPage(Battle)
+    await setupDone(wrapper)
+    const renderer = FakeRenderer.instances[0]!
+
+    triggerUniHook(wrapper.vm, 'onHide')
+    await flushPromises() // 钩子是同步的，DOM 重渲染是异步的
+    expect(renderer.paused).toBe(true)
+    expect(wrapper.find('.pause-overlay').exists()).toBe(true)
+    // 遮罩上说明「是切后台导致的」，而不是无来由地暂停
+    expect(wrapper.text()).toContain('切到后台时自动暂停了')
+
+    triggerUniHook(wrapper.vm, 'onShow')
+    await flushPromises()
+    // 关键：回来**不自动继续** —— 自动继续会让玩家发现自己离开的几秒里
+    // 防线被打掉一半，那是比「等你点继续」糟糕得多的体感
+    expect(renderer.paused).toBe(true)
+    expect(wrapper.find('.pause-overlay').exists()).toBe(true)
+
+    await wrapper.find('.pause-go').trigger('click')
+    expect(renderer.paused).toBe(false)
+  })
+
+  it('已结算后切后台不暂停（没什么可暂停的）', async () => {
+    const Battle = await loadPage()
+    const { wrapper } = mountPage(Battle)
+    await setupDone(wrapper)
+    const eng = FakeEngine.instances[0]!
+    const renderer = FakeRenderer.instances[0]!
+    // 推到 won 触发结算
+    eng.winAtStep = 1
+    renderer.loop!(TICK)
+    await flushPromises()
+    expect(mockApi.settleBattle).toHaveBeenCalled()
+
+    triggerUniHook(wrapper.vm, 'onHide')
+    await flushPromises()
+    expect(renderer.paused).toBe(false)
+    expect(wrapper.find('.pause-overlay').exists()).toBe(false)
+  })
+})
+
+describe('battle.vue 音效接线（2026-10-23）', () => {
+  // 映射规则由 audio/battle-sfx.test.ts 覆盖。这里只守一件更基础的事：
+  // 页面**真的把事件交给了音效层**。
+  // 不守这条的话，最可能的失效是「音效模块写好了、测试全绿、页面没接」——
+  // 而那正是本仓库「有写无读」那类缺陷。
+
+  it('每帧的事件都交给 playBattleEvents', async () => {
+    const Battle = await loadPage()
+    const { wrapper } = mountPage(Battle)
+    await setupDone(wrapper)
+    const eng = FakeEngine.instances[0]!
+    const renderer = FakeRenderer.instances[0]!
+
+    eng.events = [{ type: 'fire', slot: 0, skillId: 1 }]
+    renderer.loop!(TICK)
+    expect(playBattleEventsMock).toHaveBeenCalledWith([{ type: 'fire', slot: 0, skillId: 1 }])
+  })
+
+  it('静音开关：点一下写入存储并换图标，再点一下取消', async () => {
+    const Battle = await loadPage()
+    const { wrapper } = mountPage(Battle)
+    await setupDone(wrapper)
+
+    const chip = wrapper.find('.mute-chip')
+    expect(chip.text()).toBe('🔊')
+    await chip.trigger('click')
+    expect(wrapper.find('.mute-chip').text()).toBe('🔇')
+    expect(um.mock.setStorageSync).toHaveBeenCalledWith('lyp_sfx_muted', '1')
+
+    await wrapper.find('.mute-chip').trigger('click')
+    expect(wrapper.find('.mute-chip').text()).toBe('🔊')
+    expect(um.mock.setStorageSync).toHaveBeenLastCalledWith('lyp_sfx_muted', '0')
+  })
+})
+
+describe('battle.vue 分享（2026-10-23）', () => {
+  it('未结算 → 通用文案，不出现分数（此时分数还没有权威值）', async () => {
+    const Battle = await loadPage()
+    const { wrapper } = mountPage(Battle)
+    await setupDone(wrapper)
+    const payload = triggerUniHook(wrapper.vm, 'onShareAppMessage', { from: 'menu' }) as {
+      title: string
+      path: string
+    }
+    expect(payload.title).toBe('来一炮 · 塔防 + 元素反应')
+    expect(payload.title).not.toContain('分')
+    expect(payload.path).toBe('/pages/index/index')
+  })
+
+  it('已结算 → 标题带关卡/星级/分数', async () => {
+    const Battle = await loadPage()
+    const { wrapper } = mountPage(Battle)
+    await setupDone(wrapper)
+    const eng = FakeEngine.instances[0]!
+    eng.winAtStep = 1
+    FakeRenderer.instances[0]!.loop!(TICK)
+    await flushPromises()
+    const payload = triggerUniHook(wrapper.vm, 'onShareAppMessage', { from: 'menu' }) as {
+      title: string
+    }
+    expect(payload.title).toContain('第 3 关')
+    expect(payload.title).toContain('3 星')
+    expect(payload.title).toContain('555 分')
+  })
+
+  it('结算失败 → 退回通用文案（失败时 stars 恒为 0，那更假）', async () => {
+    mockApi.settleBattle.mockRejectedValue(new Error('结算失败'))
+    const Battle = await loadPage()
+    const { wrapper } = mountPage(Battle)
+    await setupDone(wrapper)
+    const eng = FakeEngine.instances[0]!
+    eng.winAtStep = 1
+    FakeRenderer.instances[0]!.loop!(TICK)
+    await flushPromises()
+    const payload = triggerUniHook(wrapper.vm, 'onShareAppMessage', { from: 'menu' }) as {
+      title: string
+    }
+    expect(payload.title).toBe('来一炮 · 塔防 + 元素反应')
+    expect(payload.title).not.toContain('0 星')
   })
 })
 

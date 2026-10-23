@@ -12,6 +12,8 @@
     "type-check:test": "tsc --noEmit -p tsconfig.vitest.json",
     "size": "node scripts/size-report.mjs",
     "size:check": "node scripts/size-report.mjs --check",
+    "sfx:gen": "node scripts/gen-sfx.mjs",
+    "sfx:check": "node scripts/gen-sfx.mjs --check",
     "test": "vitest run --config vitest.config.ts",
     "test:watch": "vitest --config vitest.config.ts"
   },

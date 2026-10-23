@@ -1,5 +1,11 @@
-<template>
-  <view class="page-root battle-page">
+﻿<template>
+  <!--
+    首次触摸即解锁音频（2026-10-23）。
+    微信与 iOS 都要求音频在用户手势之后才能播；进入战斗本身是一次点击，
+    但它发生在**上一个页面**。放在根节点上，玩家碰一下屏幕就解锁，
+    而不必等到某个特定按钮。
+  -->
+  <view class="page-root battle-page" @touchstart="unlockSfx()">
     <!-- 画布：整个战斗画面 -->
     <canvas
       id="battle-canvas"
@@ -33,6 +39,12 @@
           倍速只压缩等待，不改模拟 —— 理由见 render/canvas.ts 的
           `BATTLE_SPEED_STEPS`（动 TICK_MS 会毁掉 I-6 的可重放性）。
         -->
+        <!--
+          音效开关（2026-10-23）。
+          放在战斗 HUD 而不是设置页：玩家想静音的时刻几乎总是"正在打"，
+          让他退出战斗去找设置，等于把开关藏起来。
+        -->
+        <view class="mute-chip" @click="toggleMute">{{ muted ? '🔇' : '🔊' }}</view>
         <view v-if="!settled" class="speed-row">
           <view
             v-for="s in SPEED_STEPS"
@@ -50,6 +62,19 @@
         <view v-if="!settled" class="abandon-btn" @click="abandon">
           {{ abandoning ? '处理中…' : '放弃' }}
         </view>
+        <!-- 暂停（2026-10-23）：切后台会自动暂停，回来由玩家自己点继续。 -->
+        <view v-if="!settled && !paused" class="pause-btn" @click="doPause">暂停</view>
+      </view>
+    </view>
+
+    <!-- 暂停遮罩：挡住画布点击，避免「看起来暂停了其实还能点」 -->
+    <view v-if="paused" class="pause-overlay">
+      <view class="pause-box">
+        <text class="pause-title">已暂停</text>
+        <text class="muted pause-hint">
+          {{ pausedByHide ? '切到后台时自动暂停了。' : '' }}战斗时间不会流逝，回放哈希不受影响。
+        </text>
+        <view class="btn btn-primary pause-go" @click="doResume">继续战斗</view>
       </view>
     </view>
 
@@ -130,11 +155,14 @@
 import { currencyName } from '@/utils/labels'
 import { useStatusBarPad } from '@/utils/statusBar'
 import { ref, computed, getCurrentInstance, triggerRef } from 'vue'
-import { onLoad, onUnload } from '@dcloudio/uni-app'
+import { onLoad, onUnload, onHide, onShow, onShareAppMessage } from '@dcloudio/uni-app'
 import { useGameStore } from '@/store/game'
 import * as api from '@/api/client'
 import { BattleEngine } from '@/game/engine'
 import { equippedFromSnapshot } from '@/game/replay'
+import { battleShare } from '@/utils/share'
+import { playBattleEvents } from '@/audio/battle-sfx'
+import { initSfx, unlockSfx, isMuted, setMuted, playSfx } from '@/audio/sfx'
 import {
   BattleRenderer,
   BATTLE_SPEED_STEPS,
@@ -311,7 +339,10 @@ function fallbackTick(): void {
   // 不还原的话，`settle(eng)` 会报「缺 49 个属性」——一个纯类型假象。
   const eng = engine.value as BattleEngine | null
   if (!eng) return
+  // 暂停守卫：与 rAF 路径同一条理由（定时器可能在暂停后被平台补发一次）
+  if (paused.value) return
   const events = eng.step()
+  playBattleEvents(events)
   // 同上：step() 的内部写不走响应式代理，需手动触发
   triggerRef(engine)
   if (renderer.value) renderer.value.handleEvents(events)
@@ -432,7 +463,17 @@ async function setup() {
       renderer.value = r
       renderMode.value = 'raf'
       r.start(() => {
+        // 暂停守卫（2026-10-23）。
+        //
+        // 正常路径下 `renderer.pause()` 已经停掉了逻辑时钟，这里不会进。
+        // 但**多一道守卫是有意的**：暂停的意义是「战斗时间不流逝」，
+        // 而它依赖「没有别的路径在调 loop」。真机上定时器可能因平台行为
+        // 在暂停后仍被触发一次（例如 JS 线程恢复时补发），
+        // 那时若没有这行，玩家会看到「已暂停」却仍在掉血。
+        if (paused.value) return
         const events = eng.step()
+        // 音效与视觉同源：都从同一批事件来，不另算一份状态
+        playBattleEvents(events)
         // ⚠️ 引擎在 step() 内部以原始对象身份改写 phase/baseHp 等字段，
         // 这些写入不经过 engine ref 的响应式代理，模板里的 computed
         // （HP/波次/选牌界面）感知不到 —— 必须手动触发一次 ref。
@@ -613,6 +654,107 @@ onUnload(() => {
   if (renderer.value) renderer.value.stop()
   if (timerId) clearInterval(timerId)
 })
+
+// ── 暂停（2026-10-23）─────────────────────────────────────────────
+//
+// ## 为什么必须有
+//
+// 逻辑时钟是 `setInterval`，**与页面可见性无关** —— 这是 `canvas.ts`
+// 当初为「后台也能跑逻辑」刻意做的设计（无头环境 / 真机切后台）。
+// 副作用是：玩家切到微信聊天再回来，「战斗推进了多少」取决于
+// 平台对后台定时器的处置（小程序挂起 JS、H5 标签页节流到 1Hz）。
+// 也就是说这个行为**平台相关且未定义**。
+//
+// ## 为什么不自动恢复
+//
+// 回来就自动继续，玩家会发现自己离开的这几秒里防线被打掉一半 ——
+// 那是比「暂停着等你点继续」糟糕得多的体感。所以 `onShow` 只**保持暂停**，
+// 由玩家自己点「继续」。
+//
+// ## 为什么暂停不污染 replay_hash
+//
+// 暂停只是「不再 step」。`tick` 与 `elapsedMs` 都只在 `step()` 内自增，
+// 于是 `duration_ms` 与不暂停时完全一致。判据见 battle.test.ts
+// 「暂停后结算的 duration_ms 与不暂停相等」—— 那条一旦红，
+// 意味着所有暂停过的战报都无法被重放验证。
+
+const paused = ref(false)
+
+/**
+ * 音效开关（2026-10-23）。
+ *
+ * `initSfx()` 必须在读 `isMuted()` 之前调 —— 它负责把持久化偏好读进模块。
+ * 这里用 ref 镜像一份，是为了让按钮的图标随点击立刻变（模块内的是普通变量，
+ * 不参与响应式）。
+ */
+initSfx()
+const muted = ref(isMuted())
+
+function toggleMute(): void {
+  const next = !muted.value
+  muted.value = next
+  setMuted(next)
+  // 开启音效时给一声确认音：否则点了没反应，玩家不知道是开了还是没开
+  if (!next) {
+    unlockSfx()
+    playSfxTap()
+  }
+}
+
+/** 开关确认音。 */
+function playSfxTap(): void {
+  playSfx('tap')
+}
+/** 暂停是由「切后台」触发的（用于 onShow 时决定是否提示）。 */
+let pausedByHide = false
+
+function doPause(): void {
+  if (paused.value || settled.value) return
+  paused.value = true
+  if (renderer.value) renderer.value.pause()
+  if (timerId) {
+    // 降级路径（无 canvas）：本页自己的定时器也要停
+    clearInterval(timerId)
+    timerId = null
+  }
+}
+
+function doResume(): void {
+  if (!paused.value) return
+  paused.value = false
+  pausedByHide = false
+  if (renderer.value) renderer.value.resume()
+  else if (loopStarted || engine.value) startFallbackLoop()
+}
+
+onHide(() => {
+  // 只有「战斗进行中」才需要暂停：已结算或还没开局时切后台无所谓。
+  if (!settled.value && engine.value) {
+    doPause()
+    pausedByHide = true
+  }
+})
+
+onShow(() => {
+  // 不自动恢复。这里只把「因切后台而暂停」这件事**显式化**：
+  // 遮罩已经由 `paused` 驱动，玩家点「继续」即可。
+  // 保留这个钩子是为了让「暂停原因」可被测试断言（见 battle.test.ts）。
+})
+
+/**
+ * 分享（2026-10-23）。
+ *
+ * 未结算时**不得**出现分数/星级：那两个值此时还没有权威结果
+ * （服务端结算才算数），拼进标题就是假数据。
+ */
+onShareAppMessage(() =>
+  battleShare({
+    settled: settled.value && !settleResult.value?.error,
+    levelId: levelId.value,
+    stars: Number(settleResult.value?.stars ?? 0),
+    score: Number(settleResult.value?.score ?? 0),
+  }),
+)
 </script>
 
 <style scoped>
@@ -648,6 +790,85 @@ onUnload(() => {
   color: #ff7b72;
   font-size: 22rpx;
   text-align: center;
+}
+
+/*
+ * 暂停按钮。
+ *
+ * ⚠️ 与 `.abandon-btn` / `.speed-row` 同一条坑：`.overlay-top` 的
+ * `pointer-events: none` 是**可继承**属性，不写 `auto` 就永远点不动。
+ * 这已经是本项目第三次踩它了 —— 所以这里连注释一起复制，
+ * 而不是指望下一个加按钮的人记得。
+ */
+.mute-chip {
+  /* 与 .abandon-btn / .speed-row / .pause-btn 同一条坑：父级 pointer-events: none */
+  pointer-events: auto;
+  margin-bottom: 6rpx;
+  padding: 4rpx 12rpx;
+  border-radius: 8rpx;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 24rpx;
+  text-align: center;
+}
+
+.pause-btn {
+  pointer-events: auto;
+  margin-top: 10rpx;
+  padding: 6rpx 18rpx;
+  border-radius: 10rpx;
+  background: rgba(88, 166, 255, 0.2);
+  color: #58a6ff;
+  font-size: 22rpx;
+  text-align: center;
+}
+
+/*
+ * 暂停遮罩。
+ *
+ * 除了展示，它还承担一个功能：**挡住画布**。
+ * 没有它的话暂停期间玩家仍能点画布，看起来「暂停了但还能操作」——
+ * 而实际上那些点击会落到画布上并被忽略，是纯粹的困惑来源。
+ */
+.pause-overlay {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(13, 17, 23, 0.78);
+}
+
+.pause-box {
+  width: 70%;
+  padding: 40rpx 32rpx;
+  border-radius: 20rpx;
+  background: var(--panel);
+  border: 1rpx solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.pause-title {
+  font-size: 34rpx;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.pause-hint {
+  font-size: 22rpx;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.pause-go {
+  margin-top: 12rpx;
+  width: 100%;
 }
 
 .mode-note {

@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <view class="page-root">
     <view class="pad safe-bottom">
       <!-- 加载中 / 空态（2026-10-21 P6-1）-->
@@ -107,6 +107,7 @@
 import { ref, computed, onMounted } from 'vue'
 import {onLoad, onShow} from '@dcloudio/uni-app'
 import { useGameStore } from '@/store/game'
+import { unlockSfx } from '@/audio/sfx'
 import * as api from '@/api/client'
 import { TERRAIN_NAME, TERRAIN_DESCR } from '@/game/terrain'
 import type { LevelSummary, TerrainKind } from '@/game/types'
@@ -197,6 +198,10 @@ function startBattle() {
     }
     return
   }
+  // 解锁音频（2026-10-23）。这里是一次真实的用户手势，且是进入战斗前的
+  // **最后一个手势** —— 在这里解锁，进战斗后第一发子弹就有声音，
+  // 不必等玩家去碰战斗页的屏幕。
+  unlockSfx()
   uni.navigateTo({ url: `/pages/battle/battle?level=${selected.value.id}` })
 }
 

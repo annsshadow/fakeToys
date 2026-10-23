@@ -209,6 +209,15 @@ export class BattleRenderer {
   private drawTimer: number | null = null
   private lastTs = 0
   private running = false
+  /**
+   * 是否处于暂停（2026-10-23）。
+   *
+   * 与 `running` 分开：`running` 表示「这个渲染器还在服役」，
+   * `paused` 表示「服役中但暂时不推进」。合用一个布尔会让
+   * 「暂停后换挡」无法区分「已停止」与「已暂停」，从而在暂停期间
+   * 重建出一个野定时器。
+   */
+  private paused = false
   /** 逻辑时钟倍速（1 = 实时）。只影响墙钟，见 `BATTLE_SPEED_STEPS`。 */
   private speed = 1
   /** `start()` 收到的逻辑回调 —— 换挡重启定时器时要复用它。 */
@@ -1092,12 +1101,24 @@ export class BattleRenderer {
   start(loop: (dtMs: number) => void): void {
     if (this.running) return
     this.running = true
+    this.paused = false
     this.loopFn = loop
 
     // 1) 逻辑时钟：固定步长（间隔随倍速缩放，步长不变）
     this.startLogicClock()
 
     // 2) 绘制时钟：跟随刷新率。
+    this.startDrawClock()
+  }
+
+  /**
+   * 启动绘制时钟（rAF 优先，缺失时降级为定时器）。
+   *
+   * 抽出来是为了让 `resume()` 能重建它 —— 暂停时两条时钟都要停，
+   * 只停逻辑时钟的话画面会**冻在一帧上但仍在重绘**，
+   * 在中低端机上白白烧 GPU（而且看起来像卡死）。
+   */
+  private startDrawClock(): void {
     // rAF 在无浏览器环境（Node 测试、部分小程序基础库）下可能不存在，
     // 此时降级为定时器绘制，保证逻辑与绘制都不会因缺少 rAF 而崩溃。
     if (typeof requestAnimationFrame === 'function') {
@@ -1116,6 +1137,48 @@ export class BattleRenderer {
         if (this.running) this.draw(TICK_MS)
       }, TICK_MS) as unknown as number
     }
+  }
+
+  /**
+   * 暂停（2026-10-23）。
+   *
+   * 停**两条**时钟：逻辑（`setInterval`）与绘制（rAF / 定时器）。
+   *
+   * # 为什么暂停是安全的（不影响 I-6）
+   *
+   * 暂停只是「不再调用 `loopFn`」。引擎的 `tick` 与 `elapsedMs` 都只在
+   * `step()` 内自增，不 step 就不前进 —— 于是 `duration_ms` 与 `replay_hash`
+   * 与「不暂停直接打完」完全一致。判据见 `battle.test.ts` 的
+   * 「暂停 5 秒再结算，duration_ms 与不暂停相等」。
+   *
+   * 若改成「暂停时把墙钟时间补进 elapsedMs」，那条判据会立刻红 ——
+   * 而线上症状是「所有暂停过的战报都无法被重放验证」。
+   */
+  pause(): void {
+    if (!this.running || this.paused) return
+    this.paused = true
+    this.stopLogicClock()
+    if (this.rafId !== null) {
+      cancelAnimationFrame(this.rafId)
+      this.rafId = null
+    }
+    if (this.drawTimer !== null) {
+      clearInterval(this.drawTimer as unknown as ReturnType<typeof setInterval>)
+      this.drawTimer = null
+    }
+  }
+
+  /** 恢复。重复调用安全（未暂停时是 no-op）。 */
+  resume(): void {
+    if (!this.running || !this.paused) return
+    this.paused = false
+    this.startLogicClock()
+    this.startDrawClock()
+  }
+
+  /** 当前是否处于暂停（供页面回显）。 */
+  isPaused(): boolean {
+    return this.paused
   }
 
   /**
@@ -1153,6 +1216,9 @@ export class BattleRenderer {
     if (next === this.speed) return
     this.speed = next
     if (!this.running) return
+    // 暂停期间**只记档位、不重建时钟** —— 重建会在暂停态下
+    // 起一个野定时器，战斗悄悄继续跑，而画面上显示「已暂停」。
+    if (this.paused) return
     this.stopLogicClock()
     this.startLogicClock()
   }
@@ -1164,6 +1230,7 @@ export class BattleRenderer {
 
   stop(): void {
     this.running = false
+    this.paused = false
     if (this.rafId !== null) {
       cancelAnimationFrame(this.rafId)
       this.rafId = null
