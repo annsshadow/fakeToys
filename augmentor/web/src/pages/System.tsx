@@ -494,11 +494,24 @@ export default function System() {
               }
             />
           </Col>
+          <Col span={6}>
+            <Statistic
+              title="累计生成耗时（秒）"
+              value={
+                status
+                  ? status.model_generate_seconds === null
+                    ? '无后端'
+                    : Number(status.model_generate_seconds.toFixed(1))
+                  : '-'
+              }
+            />
+          </Col>
         </Row>
         <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75 }}>
-          「无后端」是 <code>null</code>，不是 0：管道拉不动或没有模型后端时这两键回 <code>null</code>，
+          「无后端」是 <code>null</code>，不是 0：管道拉不动或没有模型后端时这几键回 <code>null</code>，
           与「后端在、重试过 0 次」是两句话，所以这里不把 <code>null</code> 折成 0。它们只住在
           <code>/api/status</code>——<code>/api/health</code> 刻意不含（容器探针依赖那一条，明令不加可能失败的字段）。
+          累计生成耗时只算真实 API 调用的墙上时间，不含缓存命中与退避等待。
         </div>
       </Card>
 

@@ -550,6 +550,7 @@ export interface StatusResponse {
    */
   model_retry_count: number | null
   model_retry_wait_seconds: number | null
+  model_generate_seconds: number | null
   dependencies: DependencyDiagnostics
 }
 

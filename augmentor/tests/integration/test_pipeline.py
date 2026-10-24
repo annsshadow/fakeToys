@@ -844,3 +844,75 @@ class TestPipelineExtended2:
         assert "input_count" in report
         assert "output_count" in report
         assert "task_id" in report
+
+
+class _RecordingScorer:
+    """记录调用的替身 scorer：把多样性过滤还原为它的唯一语义
+
+    真实 scorer 的多样性分依赖嵌入模型、数值随环境漂；替身把
+    「与 existing_generated 重复/过近的变体被丢」还原成可确定性
+    观测的形状——本处要钉的是「过滤发不发生」，不是分数多少。
+    """
+
+    def __init__(self):
+        self.score_existing_args = []   # 并行路 score() 收到的 existing
+        self.filter_existing_args = []  # 串行路 filter_by_quality() 收到的 existing
+
+    def score(self, original, generated, output, existing_generated=None):
+        from types import SimpleNamespace
+        self.score_existing_args.append(existing_generated)
+        return SimpleNamespace(passed=generated not in (existing_generated or []))
+
+    def filter_by_quality(self, items, existing_generated=None):
+        self.filter_existing_args.append(existing_generated)
+        existing = set(existing_generated or [])
+        return [i for i in items if i["generated"] not in existing]
+
+
+class TestParallelSerialDivergencePin:
+    """2026-10-24 登记：并行/串行两条路径的多样性过滤口径分歧，钉住现状
+
+    # 分歧本体
+
+    同一配置、同一条种子、同一个 `existing_generated`：
+
+    - **串行路**（`augment_seed` → `filter_by_quality`）：多样性过滤生效，
+      与已生成集合重复的变体被丢；
+    - **并行路**（`_process_single_item` → `score`）：**不传** existing，
+      多样性过滤整支缺席，重复变体原样进产物。
+
+    `use_parallel=True/False` 因此产出不同口径的数据集。是否对齐是产品
+    决策（并行路要跨线程共享 existing 集合并加锁），本类只钉住差异本身，
+    防止它在无人决定的情况下静默漂移；对齐时请连同本类一起改。
+    """
+
+    def test_parallel_path_drops_diversity_filter_serial_keeps_it(self, pipeline, monkeypatch):
+        scorer = _RecordingScorer()
+        monkeypatch.setattr(pipeline, "quality_scorer", scorer)
+
+        seed = {"instruction": "原始问题", "input": "", "output": "原始回答"}
+        existing = ["变体问题 0"]  # FakeModelBackend 固定产出的第一条变体
+
+        # 并行路：_process_single_item 的形态（邮箱取结果）
+        import queue as _queue
+        q = _queue.Queue()
+        pipeline._process_single_item(0, seed, True, q, None)
+        _, ok, parallel_out = q.get()
+        assert ok, "并行路处理应成功"
+
+        # 串行路：augment_seed 的形态
+        serial_out = pipeline.augment_seed(
+            seed, use_quality_check=True, existing_generated=existing
+        )
+
+        parallel_texts = [v["instruction"] for v in parallel_out]
+        serial_texts = [v["instruction"] for v in serial_out]
+
+        # 分歧本体：existing 里的变体，串行路丢、并行路留
+        assert "变体问题 0" not in serial_texts, "串行路应过滤 existing 里的重复变体"
+        assert "变体问题 0" in parallel_texts, "并行路不过多样性过滤，应原样保留"
+        # call 级证据：并行路根本没把 existing 传给 scorer
+        assert scorer.filter_existing_args == [existing], "串行路应收到 existing"
+        assert scorer.score_existing_args, "并行路应调过 score()"
+        assert all(a is None for a in scorer.score_existing_args), \
+            "并行路调 score() 时未传 existing_generated——分歧的根"

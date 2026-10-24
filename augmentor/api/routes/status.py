@@ -24,8 +24,9 @@ class StatusResponse(BaseModel):
     """状态响应结构
 
     `model_retry_count` / `model_retry_wait_seconds`（L66 后端重试统计的 API 出口）
-    放在这里而非 `/api/health`：health 被容器探针依赖、明令「不加会阻塞或可能失败的
-    字段」，而 status 本就在 try 里读 `p.model_backend`。管道缺失时两键为 `None`
+    与 `model_generate_seconds`（2026-10-24：真实 API 调用累计耗时）放在这里而非
+    `/api/health`：health 被容器探针依赖、明令「不加会阻塞或可能失败的
+    字段」，而 status 本就在 try 里读 `p.model_backend`。管道缺失时几键为 `None`
     （区分「没有后端」与「后端重试过 0 次」）。
     """
     status: str
@@ -34,6 +35,7 @@ class StatusResponse(BaseModel):
     model_available: bool
     model_retry_count: Optional[int]
     model_retry_wait_seconds: Optional[float]
+    model_generate_seconds: Optional[float]
     dependencies: dict
 
 
@@ -52,6 +54,7 @@ async def get_status():
     """获取服务综合状态"""
     model_retry_count = None
     model_retry_wait_seconds = None
+    model_generate_seconds = None
     try:
         p = get_pipeline()
         default_model = p.config.default_model
@@ -59,6 +62,7 @@ async def get_status():
         if p.model_backend is not None:
             model_retry_count = p.model_backend.retry_count
             model_retry_wait_seconds = p.model_backend.retry_wait_seconds
+            model_generate_seconds = p.model_backend.total_generate_seconds
     except Exception as e:
         # 原文只落服务端日志、不进响应体，与 `deps` 的 500 支同一口径；从前这一格连日志都不留
         logger.warning(f"读取管道状态失败，按模型后端不可用回执: {e}")
@@ -73,5 +77,6 @@ async def get_status():
         model_available=model_available,
         model_retry_count=model_retry_count,
         model_retry_wait_seconds=model_retry_wait_seconds,
+        model_generate_seconds=model_generate_seconds,
         dependencies=deps.to_dict(),
     ).model_dump()

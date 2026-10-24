@@ -733,13 +733,19 @@ def card_block(source: str, title: str) -> str:
 class TestTheRenderingFaceOwnsWhatTheTypesNowCarry:
     """类型面补齐之后，页面上必须真有读数——否则这一轮只是把死面从后端挪到前端"""
 
-    def test_the_two_retry_keys_are_rendered_and_null_stays_apart_from_zero(self):
-        """`null` 要渲染成「无后端」，不是 0：后端那两键的语义是「没有后端」vs「重试过 0 次」"""
+    def test_the_status_keys_are_rendered_and_null_stays_apart_from_zero(self):
+        """`null` 要渲染成「无后端」，不是 0：后端这几键的语义是「没有后端」vs「重试过 0 次」
+
+        2026-10-24 加第三键 `model_generate_seconds`（真实 API 调用累计耗时）后，
+        同族判据从两键扩到三键——页面读数与类型面同步长，这是 L237 立下的规矩：
+        类型面补齐之后页面上必须真有读数，否则只是把死面从后端挪到前端。
+        """
         block = card_block(SYSTEM_TSX.read_text(encoding="utf-8"), "服务状态")
-        for key in ("model_retry_count", "model_retry_wait_seconds"):
+        for key in ("model_retry_count", "model_retry_wait_seconds",
+                    "model_generate_seconds"):
             assert f"status.{key} === null" in block, key
             assert f"status.{key}" in block
-        assert block.count("'无后端'") == 2
+        assert block.count("'无后端'") == 3
         # 同一张卡里不许出现把 null 折成 0 的哨兵（扫描面已收窄到这张卡）
         assert "?? 0" not in block
         assert "|| 0" not in block

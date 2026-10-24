@@ -122,6 +122,7 @@ class TestStatusRetryStats:
         class _Zero:
             retry_count = 0
             retry_wait_seconds = 0.0
+            total_generate_seconds = 0.0
 
         payload = self._client_with_backend(monkeypatch, _Zero()).get("/api/status").json()
         assert payload["model_available"] is True
@@ -133,10 +134,12 @@ class TestStatusRetryStats:
         class _Retried:
             retry_count = 2
             retry_wait_seconds = 4.5
+            total_generate_seconds = 12.25
 
         payload = self._client_with_backend(monkeypatch, _Retried()).get("/api/status").json()
         assert payload["model_retry_count"] == 2
         assert payload["model_retry_wait_seconds"] == pytest.approx(4.5)
+        assert payload["model_generate_seconds"] == pytest.approx(12.25)
 
     def test_degraded_pipeline_leaves_retry_keys_present_as_none(self, monkeypatch):
         """管道整体抛异常时，两键仍存在且为 `None`（响应契约不能因降级而少键）

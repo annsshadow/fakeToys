@@ -18,10 +18,12 @@ from .validation import require_count, require_positive, require_ratio, require_
 
 logger = logging.getLogger(__name__)
 
-try:
-    import requests as _requests
-except ImportError:  # pragma: no cover - requests 是核心依赖，缺失时降级为状态码判断
-    _requests = None
+# requests 是核心依赖，但**只有 classify_error 判网络层错误时才需要**。
+# 曾经在模块顶层 import：它在 augmentor/__init__.py 第一条 import 链上
+# （config → retry），每次 CLI 启动 / import augmentor 都要付 ~210ms
+# （requests 含 charset_normalizer），而本地命令（profile/clean/convert/
+# validate…）永远走不到这里。改为函数内惰性导入（2026-10-24）：
+# sys.modules 已缓存首次导入，后续调用只剩一次 dict 查找。
 
 # 值得重试的 HTTP 状态码：限流、请求超时、上游临时故障
 RETRYABLE_STATUS_CODES = frozenset({408, 425, 429, 500, 502, 503, 504})
@@ -347,8 +349,13 @@ def classify_error(exc: BaseException) -> Tuple[bool, Optional[float]]:
     Returns:
         ``(是否可重试, 建议等待秒数)``
     """
-    if _requests is not None and isinstance(
-        exc, (_requests.exceptions.ConnectionError, _requests.exceptions.Timeout)
+    # requests 惰性导入：缺失时降级为状态码判断（与曾经的顶层 try/except 同语义）。
+    try:
+        import requests
+    except ImportError:  # pragma: no cover - requests 是核心依赖，正常环境必装
+        requests = None
+    if requests is not None and isinstance(
+        exc, (requests.exceptions.ConnectionError, requests.exceptions.Timeout)
     ):
         return True, None
 

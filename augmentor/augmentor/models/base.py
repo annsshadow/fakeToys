@@ -7,6 +7,7 @@ import hashlib
 import json
 import logging
 import threading
+import time
 from abc import ABC, abstractmethod
 from typing import Optional
 from ..config import (DEFAULT_REQUEST_TIMEOUT, REQUEST_TIMEOUT_RANGE, ModelConfig)
@@ -159,6 +160,11 @@ class ModelBackend(ABC):
         # 见 `generate`）。
         self._retry_count = 0
         self._retry_wait_seconds = 0.0
+        # 2026-10-24：真实 API 调用的**累计耗时**（秒）。LLM 延迟是全系统唯一真
+        # 瓶颈，而此前只有次数统计——「平均每次 8 秒」这种最该被看见的数字
+        # 没有任何出口。只累计 _call_api 的墙上时间：不含退避等待
+        # （那在 _retry_wait_seconds 里）、不含缓存命中（那不走 _attempt）。
+        self._total_generate_seconds = 0.0
         self._lock = threading.Lock()
         self._session = None  # 连接池会话
         self._default_attempts = (
@@ -380,12 +386,21 @@ class ModelBackend(ABC):
         def _attempt() -> str:
             with self._lock:
                 self._request_count += 1
+            started = time.monotonic()
             try:
                 return self._call_api(prompt)
             except Exception:
                 with self._lock:
                     self._error_count += 1
                 raise
+            finally:
+                # 只计 _call_api 的墙上时间（成功与失败路都计——耗时的
+                # 大头恰可能是「慢到超时」的那几次）。锁内累加，与其余
+                # 统计同族；debug 日志只记长度不记内容（prompt 可能含敏感数据）。
+                elapsed = time.monotonic() - started
+                with self._lock:
+                    self._total_generate_seconds += elapsed
+                logger.debug("模型调用完成：prompt %d 字符，耗时 %.3fs", len(prompt), elapsed)
 
         def _record_retry(_attempt_no: int, _exc: BaseException, wait: float) -> None:
             # 每发生一次「等待后重发」就累计一次。走 `on_retry` 而不是 `with_retries`
@@ -443,7 +458,12 @@ class ModelBackend(ABC):
     def retry_wait_seconds(self) -> float:
         """累计因重试而等待的总秒数（退避与服务端 `Retry-After` 两支都算；A66）"""
         return self._retry_wait_seconds
-    
+
+    @property
+    def total_generate_seconds(self) -> float:
+        """真实 API 调用的累计耗时（秒；不含缓存命中与退避等待；2026-10-24）"""
+        return self._total_generate_seconds
+
     def reset_stats(self):
         """重置统计信息"""
         with self._lock:
@@ -451,6 +471,7 @@ class ModelBackend(ABC):
             self._error_count = 0
             self._retry_count = 0
             self._retry_wait_seconds = 0.0
+            self._total_generate_seconds = 0.0
     
     def close(self):
         """关闭连接

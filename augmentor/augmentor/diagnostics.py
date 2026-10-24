@@ -7,6 +7,7 @@
 与问题定位（哪些增强特性可用、哪些已降级）。
 """
 
+import functools
 import importlib
 import logging
 from dataclasses import dataclass, field
@@ -85,11 +86,20 @@ _DEGRADED_HINTS = {
 }
 
 
+@functools.lru_cache(maxsize=1)
 def check_dependencies() -> DiagnosticsReport:
     """探测可选依赖可用性并给出降级提示
 
     Returns:
         DiagnosticsReport 实例
+
+    2026-10-24：结果**进程内缓存**。`/api/status` 每次请求都调本函数，
+    而缺席模块的失败导入要爬整棵依赖树（`sentence_transformers` 缺席时
+    最贵）——进程内的依赖集合不会变，重复探测是纯浪费。
+    需要强制重探（测试装了新模块、或诊断本身可疑）时，用 lru_cache
+    自带的清理出口清缓存——`functools.lru_cache` 装饰器的标准用法。
+    返回的 report 是共享对象：调用方只读（`to_dict` 每次都构造新
+    dict/list），不要就地改它。
     """
     report = DiagnosticsReport()
     for name, module in OPTIONAL_DEPENDENCIES.items():

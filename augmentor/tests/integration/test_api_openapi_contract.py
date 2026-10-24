@@ -172,7 +172,8 @@ CALLS = {
     ("GET", "/api/status"): _Case(
         request=lambda c: c.get("/api/status"),
         keys=_keys("status", "version", "model_default", "model_available",
-                   "model_retry_count", "model_retry_wait_seconds", "dependencies"),
+                   "model_retry_count", "model_retry_wait_seconds",
+                   "model_generate_seconds", "dependencies"),
     ),
     # ---------- privacy ----------
     ("GET", "/api/privacy/patterns"): _Case(

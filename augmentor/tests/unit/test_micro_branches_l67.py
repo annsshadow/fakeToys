@@ -109,7 +109,15 @@ class TestDiagnosticsYamlMissing:
             return name != "yaml"
 
         monkeypatch.setattr(diag, "_importable", fake_importable)
-        report = check_dependencies()
+        # check_dependencies 自 2026-10-24 起结果进程内缓存：patch 了探测函数
+        # 就必须先清缓存，否则拿到的是先前用例缓存的**真**报告（本机 yaml 在位），
+        # 「缺失降级」这条路根本不会被执行。finally 里再清一次：别让这份
+        # 「yaml 缺失」的假报告漏给后续用例。
+        check_dependencies.cache_clear()
+        try:
+            report = check_dependencies()
+        finally:
+            check_dependencies.cache_clear()
         assert "yaml" in report.missing or not report.all_required_present
         assert any("yaml" in d for d in report.degraded_features)
 
