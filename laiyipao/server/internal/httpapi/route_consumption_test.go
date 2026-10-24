@@ -37,6 +37,10 @@ var KNOWN_UNSERVED = map[string]string{
 	"POST /api/v1/auth/wechat": "微信登录通道受 WECHAT_ENABLED 开关与 AppID/Secret 外部凭证门禁。" +
 		"未配置时服务端返回明确的 501 而不是静默降级成游客登录；客户端接上它需要真机 + 真凭证，" +
 		"在本仓库的自动化验证里无法成立（见 README「已知边界」第 2 条）。",
+	"GET /metrics": "Prometheus 指标端点：消费方是仓库**外**的抓取器（Prometheus/Grafana），" +
+		"本仓库没有任何客户端会调它；且受 METRICS_ENABLED 开关门禁、默认不注册" +
+		"（见 docs/laiyipao/OPERATIONS.md §2 环境变量表）——接上它需要外部抓取基础设施，" +
+		"不在本仓验证面内。",
 }
 
 var routeRe = regexp.MustCompile(`([A-Za-z_][A-Za-z0-9_]*)\.(Get|Post|Put|Patch|Delete)\("([^"]*)"`)
