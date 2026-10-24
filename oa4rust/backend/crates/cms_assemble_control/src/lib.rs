@@ -10294,26 +10294,53 @@ pub async fn correlation_create_u3(
         return Err(AppError::BadRequest("relatedDocId(s) required".to_string()));
     }
     let correlation_type = u2_body_str(&body, "correlationType").unwrap_or_default();
+    // 批量关联（2026-10-24）：逐对「DELETE+INSERT」= 2N 次串行往返。
+    // doc_id / correlation_type 对全批相同 ⇒ DELETE 用 related_doc_id = ANY($2)；
+    // INSERT 用多行 VALUES（id 由 gen_random_uuid() 服务端生成，不占参数位）。
+    // 原子性不变（同一个 tx），中途失败照旧整体回滚。
+    //
+    // 口径细节：relatedDocIds 可能含重复目标——逐条版对重复对是「删旧+插新」
+    // 互相抵消、终态每目标 1 行；一次性多行 INSERT 会写成 N 行（表上若有唯一
+    // 约束还会直接冲突）⇒ 批插前先去重（保序）。created 按**去重前**的原始
+    // 对数计——与逐条版一致（它每次 INSERT 都计 1，含重复对）。
+    let created = related.len() as u64;
+    let mut seen = std::collections::HashSet::new();
+    related.retain(|t| seen.insert(t.clone()));
+
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
-    // 批量关联「逐对删旧+插新」须整体原子：中途失败不得留下部分关联的半成品集合。
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
-    let mut created = 0u64;
+    tx.execute(
+        "DELETE FROM x_cms_correlation WHERE doc_id = $1 AND related_doc_id = ANY($2)",
+        &[&doc_id, &related],
+    )
+    .await
+    .map_err(|_| AppError::Internal)?;
+    use deadpool_postgres::tokio_postgres::types::ToSql;
+    let mut values_sql = Vec::with_capacity(related.len());
+    // 占位符：$1 = doc_id；targets 依次占 $2..；correlation_type 收尾。
+    let mut params: Vec<Box<dyn ToSql + Sync + Send>> = Vec::with_capacity(related.len() + 2);
+    params.push(Box::new(doc_id.clone()));
     for target in &related {
-        tx.execute(
-            "DELETE FROM x_cms_correlation WHERE doc_id = $1 AND related_doc_id = $2",
-            &[&doc_id, &target],
-        )
+        values_sql.push(format!(
+            "(gen_random_uuid()::text, $1, ${}, ${})",
+            params.len() + 1,
+            related.len() + 2
+        ));
+        params.push(Box::new(target.clone()));
+    }
+    params.push(Box::new(correlation_type.clone()));
+    let sql = format!(
+        "INSERT INTO x_cms_correlation (id, doc_id, related_doc_id, correlation_type) VALUES {}",
+        values_sql.join(", ")
+    );
+    let refs: Vec<&(dyn ToSql + Sync)> = params
+        .iter()
+        .map(|v| v.as_ref() as &(dyn ToSql + Sync))
+        .collect();
+    let _ = tx
+        .execute(&sql, &refs)
         .await
         .map_err(|_| AppError::Internal)?;
-        created += tx
-            .execute(
-                "INSERT INTO x_cms_correlation (id, doc_id, related_doc_id, correlation_type) \
-                 VALUES (gen_random_uuid()::text, $1, $2, $3)",
-                &[&doc_id, &target, &correlation_type],
-            )
-            .await
-            .map_err(|_| AppError::Internal)?;
-    }
     tx.commit().await.map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -10350,26 +10377,53 @@ pub async fn correlation_update_u3(
         return Err(AppError::BadRequest("relatedDocId(s) required".to_string()));
     }
     let correlation_type = u2_body_str(&body, "correlationType").unwrap_or_default();
+    // 批量关联（2026-10-24）：逐对「DELETE+INSERT」= 2N 次串行往返。
+    // doc_id / correlation_type 对全批相同 ⇒ DELETE 用 related_doc_id = ANY($2)；
+    // INSERT 用多行 VALUES（id 由 gen_random_uuid() 服务端生成，不占参数位）。
+    // 原子性不变（同一个 tx），中途失败照旧整体回滚。
+    //
+    // 口径细节：relatedDocIds 可能含重复目标——逐条版对重复对是「删旧+插新」
+    // 互相抵消、终态每目标 1 行；一次性多行 INSERT 会写成 N 行（表上若有唯一
+    // 约束还会直接冲突）⇒ 批插前先去重（保序）。updated 按**去重前**的原始
+    // 对数计——与逐条版一致（它每次 INSERT 都计 1，含重复对）。
+    let updated = related.len() as u64;
+    let mut seen = std::collections::HashSet::new();
+    related.retain(|t| seen.insert(t.clone()));
+
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
-    // 批量关联「逐对删旧+插新」须整体原子：中途失败不得留下部分关联的半成品集合。
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
-    let mut updated = 0u64;
+    tx.execute(
+        "DELETE FROM x_cms_correlation WHERE doc_id = $1 AND related_doc_id = ANY($2)",
+        &[&doc_id, &related],
+    )
+    .await
+    .map_err(|_| AppError::Internal)?;
+    use deadpool_postgres::tokio_postgres::types::ToSql;
+    let mut values_sql = Vec::with_capacity(related.len());
+    // 占位符：$1 = doc_id；targets 依次占 $2..；correlation_type 收尾。
+    let mut params: Vec<Box<dyn ToSql + Sync + Send>> = Vec::with_capacity(related.len() + 2);
+    params.push(Box::new(doc_id.clone()));
     for target in &related {
-        tx.execute(
-            "DELETE FROM x_cms_correlation WHERE doc_id = $1 AND related_doc_id = $2",
-            &[&doc_id, &target],
-        )
+        values_sql.push(format!(
+            "(gen_random_uuid()::text, $1, ${}, ${})",
+            params.len() + 1,
+            related.len() + 2
+        ));
+        params.push(Box::new(target.clone()));
+    }
+    params.push(Box::new(correlation_type.clone()));
+    let sql = format!(
+        "INSERT INTO x_cms_correlation (id, doc_id, related_doc_id, correlation_type) VALUES {}",
+        values_sql.join(", ")
+    );
+    let refs: Vec<&(dyn ToSql + Sync)> = params
+        .iter()
+        .map(|v| v.as_ref() as &(dyn ToSql + Sync))
+        .collect();
+    let _ = tx
+        .execute(&sql, &refs)
         .await
         .map_err(|_| AppError::Internal)?;
-        updated += tx
-            .execute(
-                "INSERT INTO x_cms_correlation (id, doc_id, related_doc_id, correlation_type) \
-                 VALUES (gen_random_uuid()::text, $1, $2, $3)",
-                &[&doc_id, &target, &correlation_type],
-            )
-            .await
-            .map_err(|_| AppError::Internal)?;
-    }
     tx.commit().await.map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([

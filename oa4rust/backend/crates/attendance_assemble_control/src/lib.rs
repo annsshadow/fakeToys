@@ -7807,7 +7807,7 @@ pub async fn v2_group_rebuild_detail_group_date(
         return Ok(Json(ActionResult::error("auto group cannot be rebuilt")));
     }
 
-    let participate: Vec<String> = group
+    let mut participate: Vec<String> = group
         .get::<_, Option<String>>("participate_list")
         .unwrap_or_default()
         .split(',')
@@ -7819,24 +7819,63 @@ pub async fn v2_group_rebuild_detail_group_date(
         return Ok(Json(ActionResult::error("group has no participants")));
     }
 
-    // 全员逐人「删旧明细+插新明细」重算须整体原子：中途失败不得留下部分人已重算、
-    // 其余人旧明细残留的不一致考勤集合。
+    // 批量重算（2026-10-24）：曾经的逐人「DELETE+INSERT」= 2N 次串行往返。
+    // date 对全员相同 ⇒ DELETE 用 `person_id = ANY($2)` 一条完成；
+    // INSERT 用多行 VALUES。原子性不变（同一个 tx），中途失败照旧整体回滚。
+    //
+    // 两个口径细节（与逐条版逐位一致）：
+    //   1. participate_list 是逗号串，**可能含重复 person**。逐条版对重复项
+    //      是「删旧+插新」互相抵消、终态 1 行；一次性多行 INSERT 会写成 N 行
+    //      ⇒ 批插前先去重（保序）。
+    //   2. personsRebuilt 按**去重前**的原始长度计——逐条版就是这个口径。
+    let persons_rebuilt = participate.len();
+    let mut seen = std::collections::HashSet::new();
+    participate.retain(|p| seen.insert(p.clone()));
+
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
-    for person in &participate {
-        tx.execute(
-            "DELETE FROM x_attendance_detail WHERE person_id = $1 AND date = $2",
-            &[person, &date],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
-        let new_id = uuid::Uuid::new_v4().to_string();
-        tx.execute(
-            "INSERT INTO x_attendance_detail (id, person_id, date, status, creator_person, create_time, update_time) \
-                 VALUES ($1, $2, $3, 'init', $4, NOW(), NOW())",
-            &[&new_id, person, &date, &session.person_unique],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
+    tx.execute(
+        "DELETE FROM x_attendance_detail WHERE date = $1 AND person_id = ANY($2)",
+        &[&date, &participate],
+    )
+    .await
+    .map_err(|_| AppError::Internal)?;
+
+    use deadpool_postgres::tokio_postgres::types::ToSql;
+    // 每行 4 个参数（id / person_id / date / creator_person）；
+    // status 与两个时间戳是 SQL 字面量，不占参数位。
+    const ROW_PARAMS: usize = 4;
+    for chunk in participate.chunks(65535 / ROW_PARAMS) {
+        let mut values_sql = Vec::with_capacity(chunk.len());
+        let mut params: Vec<Box<dyn ToSql + Sync + Send>> =
+            Vec::with_capacity(chunk.len() * ROW_PARAMS);
+        for person in chunk {
+            // 占位符全局连续，不按行重置——否则参数错位且不报错。
+            let base = params.len() + 1;
+            values_sql.push(format!(
+                "(${}, ${}, ${}, 'init', ${}, NOW(), NOW())",
+                base,
+                base + 1,
+                base + 2,
+                base + 3
+            ));
+            params.push(Box::new(uuid::Uuid::new_v4().to_string()));
+            params.push(Box::new(person.clone()));
+            params.push(Box::new(date.to_string()));
+            params.push(Box::new(session.person_unique.clone()));
+        }
+        let sql = format!(
+            "INSERT INTO x_attendance_detail \
+             (id, person_id, date, status, creator_person, create_time, update_time) \
+             VALUES {}",
+            values_sql.join(", ")
+        );
+        let refs: Vec<&(dyn ToSql + Sync)> = params
+            .iter()
+            .map(|v| v.as_ref() as &(dyn ToSql + Sync))
+            .collect();
+        tx.execute(&sql, &refs)
+            .await
+            .map_err(|_| AppError::Internal)?;
     }
     tx.commit().await.map_err(|_| AppError::Internal)?;
 
@@ -7845,7 +7884,7 @@ pub async fn v2_group_rebuild_detail_group_date(
             ("value".to_string(), Value::Bool(true)),
             (
                 "personsRebuilt".to_string(),
-                Value::Number(serde_json::Number::from(participate.len() as i64)),
+                Value::Number(serde_json::Number::from(persons_rebuilt as i64)),
             ),
         ]),
     ))))

@@ -95,3 +95,27 @@ mod tests {
         assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
     }
 }
+
+#[cfg(test)]
+mod datasource_batch_insert_tests {
+    use super::super::datasource_row_placeholders;
+
+    #[test]
+    fn datasource_placeholders_are_globally_sequential() {
+        // 多行 INSERT 的占位符必须全局连续（$1..$10, $11..$20 …）：
+        // 按行重置编号会让第二行起参数整体错位——且不报错，
+        // 只是静默写错值（2026-10-24 多行 VALUES 改造的回归钉）。
+        const COLS: usize = 10; // 与 lib.rs 的 DATASOURCE_COLS 一致
+        let mut all: Vec<String> = Vec::new();
+        let mut base = 1;
+        for _ in 0..3 {
+            all.extend(datasource_row_placeholders(base));
+            base += COLS;
+        }
+        let expected: Vec<String> = (1..=30).map(|n| format!("${n}")).collect();
+        assert_eq!(all, expected);
+    }
+
+    // 参数上限不变量（DATASOURCE_MAX_ROWS × COLS ≤ 65535）是编译期性质，
+    // 已改为 lib.rs 里的 const 断言——运行时断言恒真，clippy deny 门下报错。
+}

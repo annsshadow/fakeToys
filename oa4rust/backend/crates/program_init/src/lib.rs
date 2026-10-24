@@ -364,7 +364,7 @@ pub async fn external_datasources_set(
         }
     }
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let configured: i64 = client
         .query_one("SELECT count(*) AS n FROM init_external_datasource", &[])
         .await
@@ -376,29 +376,95 @@ pub async fn external_datasources_set(
         )));
     }
 
-    for ds in &req.external_data_sources {
-        client
-            .execute(
-                "INSERT INTO init_external_datasource \
-                 (id, name, unique_name, enable, host, port, database_name, user_name, password, url) \
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
-                &[
-                    &uuid::Uuid::new_v4().to_string(),
-                    &ds.name.trim().to_string(),
-                    &if ds.unique_name.trim().is_empty() { None } else { Some(ds.unique_name.trim().to_string()) },
-                    &ds.enable,
-                    &if ds.host.trim().is_empty() { None } else { Some(ds.host.trim().to_string()) },
-                    &ds.port,
-                    &if ds.database.trim().is_empty() { None } else { Some(ds.database.trim().to_string()) },
-                    &if ds.user.trim().is_empty() { None } else { Some(ds.user.trim().to_string()) },
-                    &if ds.password.is_empty() { None } else { Some(ds.password.clone()) },
-                    &if ds.url.trim().is_empty() { None } else { Some(ds.url.trim().to_string()) },
-                ],
-            )
+    // 事务 + 多行 VALUES（2026-10-24）：
+    //
+    // 曾经的逐条 INSERT **无事务**——中途失败会留下部分数据源配置，
+    // 而入口刚校验过「已配置则拒绝」，重试即坏（正确性）。多行 VALUES
+    // 再把 N 次往返压成 1 次（性能）。仍按 PostgreSQL 65535 参数上限
+    // 分片——管理面一次性写入现实到不了上限，但边界要防。
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    use deadpool_postgres::tokio_postgres::types::ToSql;
+    for chunk in req.external_data_sources.chunks(DATASOURCE_MAX_ROWS) {
+        let mut values_sql = Vec::with_capacity(chunk.len());
+        let mut params: Vec<Box<dyn ToSql + Sync + Send>> =
+            Vec::with_capacity(chunk.len() * DATASOURCE_COLS);
+        for ds in chunk {
+            // 占位符全局连续（$1..$10N），不按行重置——否则参数错位。
+            let ph = datasource_row_placeholders(params.len() + 1);
+            values_sql.push(format!("({})", ph.join(",")));
+            params.push(Box::new(uuid::Uuid::new_v4().to_string()));
+            params.push(Box::new(ds.name.trim().to_string()));
+            params.push(Box::new(if ds.unique_name.trim().is_empty() {
+                None
+            } else {
+                Some(ds.unique_name.trim().to_string())
+            }));
+            params.push(Box::new(ds.enable));
+            params.push(Box::new(if ds.host.trim().is_empty() {
+                None
+            } else {
+                Some(ds.host.trim().to_string())
+            }));
+            params.push(Box::new(ds.port));
+            params.push(Box::new(if ds.database.trim().is_empty() {
+                None
+            } else {
+                Some(ds.database.trim().to_string())
+            }));
+            params.push(Box::new(if ds.user.trim().is_empty() {
+                None
+            } else {
+                Some(ds.user.trim().to_string())
+            }));
+            params.push(Box::new(if ds.password.is_empty() {
+                None
+            } else {
+                Some(ds.password.clone())
+            }));
+            params.push(Box::new(if ds.url.trim().is_empty() {
+                None
+            } else {
+                Some(ds.url.trim().to_string())
+            }));
+        }
+        let sql = format!(
+            "INSERT INTO init_external_datasource \
+             (id, name, unique_name, enable, host, port, database_name, user_name, password, url) \
+             VALUES {}",
+            values_sql.join(", ")
+        );
+        let refs: Vec<&(dyn ToSql + Sync)> = params
+            .iter()
+            .map(|v| v.as_ref() as &(dyn ToSql + Sync))
+            .collect();
+        tx.execute(&sql, &refs)
             .await
             .map_err(|_| AppError::Internal)?;
     }
+    tx.commit().await.map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(json!({ "value": true }))))
+}
+
+/// init_external_datasource 的列数（与 INSERT 列表逐列对应）。
+const DATASOURCE_COLS: usize = 10;
+
+/// 单条多行 INSERT 的最大行数：PostgreSQL 协议参数上限 65535。
+const DATASOURCE_MAX_ROWS: usize = 65535 / DATASOURCE_COLS;
+
+// 编译期不变量：单语句参数数不得超 PostgreSQL 协议上限。
+// 用 const 断言而不是运行时测试——这是纯编译期性质，运行时断言是恒真式
+// （clippy::assertions_on_constants 在 deny(warnings) 下直接是错误）。
+const _: () = assert!(DATASOURCE_MAX_ROWS * DATASOURCE_COLS <= 65535);
+const _: () = assert!(DATASOURCE_MAX_ROWS >= 1);
+
+/// 一行多值 INSERT 的占位符：`$base+1 .. $base+COLS`。
+///
+/// 全局连续由调用方保证（base 传「已收集参数数 + 1」）——按行重置
+/// 编号会让第二行起参数整体错位，且错位不报错、只是静默写错值。
+fn datasource_row_placeholders(base: usize) -> Vec<String> {
+    (0..DATASOURCE_COLS)
+        .map(|k| format!("${}", base + k))
+        .collect()
 }
 
 /// GET /api/externaldatasources/set/cancel —— 清除尚未落实的配置

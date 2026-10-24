@@ -271,15 +271,37 @@ pub async fn login(
         Some(ldap_auth::LdapAuthOutcome::Success) => true, // LDAP 认证成功
         Some(ldap_auth::LdapAuthOutcome::Failed) => {
             // LDAP 凭据无效，回退到数据库密码校验
-            password::verify_password(&req.password, &password_hash, "", legacy_compat, None)
+            // bcrypt 是 60-100ms 级 CPU 活，走 spawn_blocking（2026-10-24）
+            password::verify_password_async(
+                req.password.clone(),
+                password_hash.clone(),
+                String::new(),
+                legacy_compat,
+                None,
+            )
+            .await
         }
         None => {
             // LDAP 未启用（Disabled 或 from_env 返回 None），走数据库密码校验
-            password::verify_password(&req.password, &password_hash, "", legacy_compat, None)
+            password::verify_password_async(
+                req.password.clone(),
+                password_hash.clone(),
+                String::new(),
+                legacy_compat,
+                None,
+            )
+            .await
         }
         // Error 和 Disabled 已通过 Err/None 路径处理，此处为防御性分支
         Some(_) => {
-            password::verify_password(&req.password, &password_hash, "", legacy_compat, None)
+            password::verify_password_async(
+                req.password.clone(),
+                password_hash.clone(),
+                String::new(),
+                legacy_compat,
+                None,
+            )
+            .await
         }
     };
     if !valid {

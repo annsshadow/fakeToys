@@ -28,7 +28,7 @@ mod tests {
     #[tokio::test]
     async fn test_application_list_route_not_registered_here() {
         let pool = build_test_pool();
-        let app = crate::program_center_core_entity_router(pool).await;
+        let app = crate::program_center_core_entity_router(pool);
 
         let response = app
             .clone()
@@ -48,7 +48,7 @@ mod tests {
     #[tokio::test]
     async fn test_script_list_route_not_registered_here() {
         let pool = build_test_pool();
-        let app = crate::program_center_core_entity_router(pool).await;
+        let app = crate::program_center_core_entity_router(pool);
 
         let response = app
             .clone()
@@ -68,7 +68,7 @@ mod tests {
     #[tokio::test]
     async fn test_invoke_list_route_not_registered_here() {
         let pool = build_test_pool();
-        let app = crate::program_center_core_entity_router(pool).await;
+        let app = crate::program_center_core_entity_router(pool);
 
         let response = app
             .clone()
@@ -88,7 +88,7 @@ mod tests {
     #[tokio::test]
     async fn test_agent_list_route_not_registered_here() {
         let pool = build_test_pool();
-        let app = crate::program_center_core_entity_router(pool).await;
+        let app = crate::program_center_core_entity_router(pool);
 
         let response = app
             .clone()
@@ -108,7 +108,7 @@ mod tests {
     #[tokio::test]
     async fn test_structure_list_route_not_registered_here() {
         let pool = build_test_pool();
-        let app = crate::program_center_core_entity_router(pool).await;
+        let app = crate::program_center_core_entity_router(pool);
 
         let response = app
             .clone()
@@ -128,7 +128,7 @@ mod tests {
     #[tokio::test]
     async fn test_application_create_route_not_registered_here() {
         let pool = build_test_pool();
-        let app = crate::program_center_core_entity_router(pool).await;
+        let app = crate::program_center_core_entity_router(pool);
 
         let body = serde_json::json!({
             "name": "Test App",
@@ -154,7 +154,7 @@ mod tests {
     #[tokio::test]
     async fn test_application_update_route_not_registered_here() {
         let pool = build_test_pool();
-        let app = crate::program_center_core_entity_router(pool).await;
+        let app = crate::program_center_core_entity_router(pool);
 
         let body = serde_json::json!({
             "name": "Updated App"
@@ -179,7 +179,7 @@ mod tests {
     #[tokio::test]
     async fn test_application_delete_route_not_registered_here() {
         let pool = build_test_pool();
-        let app = crate::program_center_core_entity_router(pool).await;
+        let app = crate::program_center_core_entity_router(pool);
 
         let response = app
             .clone()
@@ -199,7 +199,7 @@ mod tests {
     #[tokio::test]
     async fn test_invoke_create_route_not_registered_here() {
         let pool = build_test_pool();
-        let app = crate::program_center_core_entity_router(pool).await;
+        let app = crate::program_center_core_entity_router(pool);
 
         let body = serde_json::json!({
             "name": "Test Invoke"
@@ -224,7 +224,7 @@ mod tests {
     #[tokio::test]
     async fn test_agent_create_route_not_registered_here() {
         let pool = build_test_pool();
-        let app = crate::program_center_core_entity_router(pool).await;
+        let app = crate::program_center_core_entity_router(pool);
 
         let body = serde_json::json!({
             "name": "Test Agent"
@@ -249,7 +249,7 @@ mod tests {
     #[tokio::test]
     async fn test_structure_create_route_not_registered_here() {
         let pool = build_test_pool();
-        let app = crate::program_center_core_entity_router(pool).await;
+        let app = crate::program_center_core_entity_router(pool);
 
         let body = serde_json::json!({
             "name": "Test Structure",
@@ -275,7 +275,7 @@ mod tests {
     #[tokio::test]
     async fn test_unknown_route_returns_404() {
         let pool = build_test_pool();
-        let app = crate::program_center_core_entity_router(pool).await;
+        let app = crate::program_center_core_entity_router(pool);
 
         let response = app
             .clone()
@@ -316,7 +316,7 @@ mod tests {
     #[tokio::test]
     async fn test_program_center_core_entity_router_builds() {
         let pool = build_test_pool();
-        let router = crate::program_center_core_entity_router(pool).await;
+        let router = crate::program_center_core_entity_router(pool);
         // Verify router is non-empty by checking it has at least one route
         assert!(
             format!("{:?}", router) != "Router {}",

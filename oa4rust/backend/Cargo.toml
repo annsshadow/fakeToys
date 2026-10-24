@@ -321,6 +321,14 @@ urlencoding = "2"
   x509-parser = "0.16"
   p256 = "0.13"
 
+# 开发构建：debuginfo 收敛为行号表。Windows 上完整 debuginfo 的 .pdb
+# 曾累积到 174GB（1449 个文件，占 target 331GB 的大头），多次构建后
+# 把开发盘写满、编译开始随机失败（os error 112 磁盘满）。
+# line-tables-only 保留 panic backtrace 的文件:行号（排障主力），
+# 去掉变量/类型详情，pdb 体积缩小一个数量级。CI（ubuntu）不受影响。
+[profile.dev]
+debug = "line-tables-only"
+
 # 发布构建优化：此前无 [profile.release]，二进制 125MB/未裁剪、codegen-units=16、无 LTO。
 # thin-LTO + 单 codegen 单元跨 crate 内联热路径；strip 去符号大幅缩小体积。
 # 保留默认 panic="unwind"：Web 服务需 axum 捕获 handler panic 转 500，不能 abort 整进程。

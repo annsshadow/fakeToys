@@ -10688,7 +10688,12 @@ pub async fn u3_collect_resetpassword_put(
             "credential and password are required",
         )));
     }
-    let hash = bcrypt::hash(&password, bcrypt::DEFAULT_COST).map_err(|_| AppError::Internal)?;
+    // bcrypt::hash 是 60-100ms 级 CPU 活：移出 async worker（2026-10-24），
+    // 否则登录/改密高峰时 tokio worker 被哈希占满、连接池排队。
+    let hash = tokio::task::spawn_blocking(move || bcrypt::hash(&password, bcrypt::DEFAULT_COST))
+        .await
+        .map_err(|_| AppError::Internal)?
+        .map_err(|_| AppError::Internal)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let n = client
         .execute(
@@ -10777,12 +10782,22 @@ pub async fn u3_config_change_password_post(
     let old_ok = if old_password.is_empty() {
         false
     } else {
-        bcrypt::verify(&old_password, &stored).unwrap_or(false)
+        // bcrypt 是 60-100ms 级 CPU 活：移出 async worker（2026-10-24）。
+        // 闭包持 owned String；JoinHandle 出错时 fail-closed 判不匹配。
+        tokio::task::spawn_blocking(move || bcrypt::verify(&old_password, &stored))
+            .await
+            .unwrap_or(Ok(false))
+            .unwrap_or(false)
     };
     if !old_ok {
         return Ok(Json(ActionResult::error("old password mismatch")));
     }
-    let hash = bcrypt::hash(&new_password, bcrypt::DEFAULT_COST).map_err(|_| AppError::Internal)?;
+    // 同上：bcrypt::hash 也是重 CPU 活，移出 async worker。
+    let hash =
+        tokio::task::spawn_blocking(move || bcrypt::hash(&new_password, bcrypt::DEFAULT_COST))
+            .await
+            .map_err(|_| AppError::Internal)?
+            .map_err(|_| AppError::Internal)?;
     client
         .execute(
             "UPDATE auth_person SET password_hash = $1, updated_at = NOW() WHERE unique_id = $2",

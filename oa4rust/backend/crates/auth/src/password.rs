@@ -130,6 +130,32 @@ pub fn verify_password(
     false
 }
 
+/// `verify_password` 的 async 包装：bcrypt 是 60-100ms 级纯 CPU 活
+/// （cost 10），在 async handler 里内联执行会占满 tokio worker——
+/// 连接池排队、其余请求一起变慢（登录路径的放大器）。
+/// 移进 `spawn_blocking` 线程池；语义与同步版逐一相同
+/// （bcrypt crate 本身是同步 API，闭包持 owned String，Send 无碍）。
+/// JoinHandle 出错（worker  panic）时 fail-closed 返回 false。
+pub async fn verify_password_async(
+    plain: String,
+    stored: String,
+    key: String,
+    legacy_compat: bool,
+    encrypt_type: Option<String>,
+) -> bool {
+    tokio::task::spawn_blocking(move || {
+        verify_password(
+            &plain,
+            &stored,
+            &key,
+            legacy_compat,
+            encrypt_type.as_deref(),
+        )
+    })
+    .await
+    .unwrap_or(false)
+}
+
 /// 检查密码哈希是否需要升级（MD5/DES -> bcrypt）
 pub fn needs_rehash(stored: &str) -> bool {
     !stored.starts_with(BCRYPT_PREFIX)
