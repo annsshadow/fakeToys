@@ -326,3 +326,35 @@
 ### 11.6 复核通过的判据（摘）
 
 clippy 失败已实跑复现；auto-checkin public/ 仅 3 文件且无 assets；server.ts:104 负 limit；laiyipao 竞态三读点 + `initRecomputeGate` 生产调用点（service.go:129 / recompute_mode_setter.go:38）；adminuserdetail.go 全段在位；stats.go:612 全表 GROUP BY；password.rs bcrypt 无 spawn_blocking；program_init 0 transaction；retry.py:22 顶层 `import requests as _requests`；base.py 无 total_generate_seconds；diagnostics 无 lru_cache（test_diagnostics.py 有 2 处 monkeypatch，实施时先读）；govulncheck@latest；behavior_compare.rs 不存在；check-warnings label 97；9 个死脚本全部引用 oa4rust-web；rust-env.sh 版本硬编码行。
+
+---
+
+## 12. 最终验证阶段的额外收口（2026-10-24，提交推送后）
+
+CI 复盘发现 laiyipao CI 在**本轮开始前的 main（88681f239）上就已失败**（gh run 39989752210 实证）——10-23 轮留下了若干红守卫。本轮顺手收口 3 个，剩余 2 个 ownership 守卫同批修复：
+
+| 守卫 | 根因 | 修复 | commit |
+|---|---|---|---|
+| TestOpsDocMatchesReality | 10-23 观测轮加 METRICS_ENABLED/PPROF_ADDR 未进运维手册 | OPERATIONS.md §2 补两行（计数 25→27） | 88a149d9e |
+| TestEveryRouteHasClientCaller | 同上：`/metrics` 无客户端调用方且未登记豁免 | KNOWN_UNSERVED 补 `GET /metrics`（理由带 METRICS_ENABLED + OPERATIONS.md §2 锚点） | f2fcf4177 |
+| TestOwnershipExemptionKeysAreStillPresent | Leaderboard 重构后旧豁免键失效 | 删失效键（失效豁免比没有豁免更糟） | e7051f065 |
+| TestUserScopedQueriesMustFilterByOwner | adminDashboardUncached 3 条 battle_records 聚合无归属过滤 | 按守卫规矩登记豁免（管理面、只吐计数、admin 组门禁后） | e7051f065 |
+
+存量失败中的 task-claim 家族（TestE2ETasksClaim / TestClaimTaskService / TestConcurrentClaimTaskOnlyOnce / TestLockChallengeStateCountersBeforeWallets / TestTxMidwayFailures）在预轮 CI 失败、本轮两次 CI 均未复现——时序性抖动，代码未动，留档观察。
+
+## 13. 全量验证汇总（本机 + CI）
+
+| 门禁 | 结果 |
+|---|---|
+| oa4rust `cargo clippy --workspace --all-targets` | **全绿**（修复前 main 因 auth 编译断裂 + shared clippy 双失败） |
+| oa4rust `cargo fmt --all -- --check` | 通过 |
+| oa4rust 改动 crate 单测 | auth 99 / program_init 46（含 2 新）/ core_entity 20 / attendance 48 / cms 337 / mcp_server lib 19 全过 |
+| mount_coverage_guard / designer_route_match | 通过（差集为空；路由形状不回归） |
+| laiyipao `go build/vet/gofmt` | clean |
+| laiyipao 全量 `go test` | DB-free 全过；DB 用例无 PG 跳过；**CI（有 PG）侧存量红守卫 4/4 收口** |
+| auto-checkin `npm test` + `tsc --noEmit` | 40/40 + 0 错；新增 auto-checkin CI 生产环境已跑（success） |
+| augmentor 全量单测 | 8632 passed / 1 failed（`test_parametrize_blind_face_l98`——stash 对照证实的存量失败，与本轮无关） |
+| check-warnings.mjs | rust-lints / auto-checkin（含 npm test）/ llm-lab-tests（requires 守门 SKIP）等项验证通过 |
+| YAML 语法（3 个改动 workflow + 1 新增） | 全部合法 |
+
+**环境限制（fail-loud）**：本机无 PostgreSQL（原生 PG 15 仅客户端无数据目录、initdb 被安全策略拦截、Docker Desktop 未运行），DB 集成用例全部标注「待 PG」；本机 loopback 对关闭端口的拒绝被延迟到 ~2s（全端口现象），放大了 DB 触达测试的耗时。oa4rust 的 arity_probe（4600+ 请求逐一带 DB 触达）因此未能在本机跑完，其 `build_core_router` 已成功构建（无路由冲突的权威判据），请求循环待 CI 验证。
