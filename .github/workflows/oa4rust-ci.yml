@@ -226,6 +226,15 @@ jobs:
   behavior-compare:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    # 2026-10-24 定位说明：本 job 的**当前价值**是三件事——① 双栈播种基线
+    # （Rust seeds + seed_java.py --process-form 对真 o2server）；② Rust 服务
+    # 启动冒烟（含表迁移 + /health）；③ u2_probe 之外没有别的 route-conflict
+    # 常驻面。比较器本体（tests/behavior_compare.rs）**尚不存在**（W12 待办），
+    # 「Run behavior comparison」一步恒发 notice 跳过；report_check / cluster
+    # 两步因此也恒空转。故保留本 job 跑 push（播种与启动冒烟是真覆盖），
+    # 但不为不存在的比较器再加码；比较器落地时本 job 自动升级为真比较。
+    # u2_probe 已移至 integration-tests job 常驻（2026-10-24 去重）——
+    # 本 job 曾重复跑同一探针，白等一次全量 test 构建。
     outputs:
       java_not_ready: ${{ steps.readiness.outputs.java_not_ready }}
       report_produced: ${{ steps.report_check.outputs.report_produced }}
@@ -304,9 +313,7 @@ jobs:
       - name: Build server binary
         run: cargo build --bin oa4rust
 
-      # 路由无冲突冒烟测试（仅依赖 postgres，与 Java 容器无关）
-      - name: Route-conflict probe (u2_probe)
-        run: cargo test --test u2_probe
+      # u2_probe（路由无冲突冒烟）已移到 integration-tests job 常驻，此处不再重复。
 
       # 启动 Rust 服务（启动时自动应用表迁移），等待 /health 就绪。
       # 用 nohup 使后台进程跨 step 存活（否则 step 结束会被回收）。

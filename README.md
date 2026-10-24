@@ -32,7 +32,7 @@
 | 💥 **[laiyipao](laiyipao/)** | 塔防+元素反应小程序游戏，CI 全面落地（Go/Vue/uni-app 三端自动化测试）；确定性战斗引擎、回放验真机制 | Go · Fiber · uni-app · Vue3 · PostgreSQL |
 | 🧪 **[augmentor](augmentor/)** | AI 训练数据增强工具 v3.0，68 个 REST 端点、7872 单测 97% 覆盖；React 11 页面、配置写入闭环、性能优化 | Python · FastAPI · React · Ant Design |
 | ✅ **[auto-checkin](auto-checkin/)** | 大模型公益站自动签到面板，三站点（vyceai/agentrouter/justwoker）成熟；自动化测试+诊断完整、隐私本地化 | Node · Playwright · Express |
-| 🧠 **[llm-lab](llm-lab/)** | 从零学大模型训练教学项目，11 篇中文讲义 + 32 个验证用例；手写 autograd + GPT 训练栈、梯度校验机制 | Python · NumPy · PyTorch |
+| 🧠 **[llm-lab](llm-lab/)** | 从零学大模型训练教学项目，11 篇中文讲义 + 38 个验证用例；手写 autograd + GPT 训练栈、梯度校验机制 | Python · NumPy · PyTorch |
 | 🔐 **[cool](cool/)** | Cool College OA 免登 Token 生成工具 | Java · AES/MD5 |
 
 ---
@@ -151,7 +151,7 @@ npm start  # 启动定时签到 + Web 面板
 
 **学习资源**
 - 11 篇中文讲义：分词、注意力、Transformer、训练、微调、对齐、评估
-- 32 个验证用例：数值梯度校验、KV cache 等价性、端到端冒烟测试
+- 38 个验证用例：数值梯度校验、KV cache 等价性、端到端冒烟测试
 - 可视化：注意力热力图、尺度实验（参数量 vs loss）
 
 ```bash

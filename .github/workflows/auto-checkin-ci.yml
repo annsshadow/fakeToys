@@ -1,0 +1,53 @@
+# auto-checkin（签到机器人 + 本地面板）CI：typecheck + 全量测试。
+#
+# 背景：auto-checkin 曾是仓库里最活跃却零 CI 覆盖的子项目——35+ 个测试与
+# typecheck 只靠会话内手工跑。2026-10-24 修「口令模式下面板不可用」时，
+# 根因之一正是没有门禁：那个 bug 有测试也没抓住（只测了 API、没测静态路径）。
+#
+# 对齐仓库既有约定（见 laiyipao-ci.yml / ai-platform-ci.yml）：
+#   - 文件名 <子项目>-<用途>.yml，放在仓库根 .github/workflows/
+#   - 动作一律 pin 到 commit SHA（checkout / setup-node 的 SHA 与其余 workflow 复用）
+#   - **不带 paths 过滤**：带 paths 的 workflow 永不可设为 required check
+#     （GitHub 对不触发的 PR 显示 Expected-waiting，PR 永远无法合并）。
+#     本 workflow 便宜（约 1~2 分钟），无条件全跑是刻意选择。
+name: auto-checkin CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: auto-checkin-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: auto-checkin/package-lock.json
+
+      - name: Install dependencies
+        working-directory: auto-checkin
+        run: npm ci --no-audit --no-fund
+
+      # 类型面：tsc --noEmit 0 错（测试是 .ts，tsx 直接跑不过类型关）
+      - name: Typecheck
+        working-directory: auto-checkin
+        run: npx tsc --noEmit
+
+      # 行为面：node:test 全量（面板口令边界、stats 缓存、原子写、并行签到…）
+      - name: Test
+        working-directory: auto-checkin
+        run: npm test

@@ -25,8 +25,12 @@ function isSiteReady(siteId: string, authType: "password" | "oauth"): boolean {
 }
 
 let nextRunAt: string | null = null;
-export function setNextRunAt(iso: string | null): void {
+// 不可估算时的回退说明（步进/列表 cron 暂不能算出具体时刻）。
+// 没有它，面板会把「已排定但算不出时间」显示成「空闲待命」——那是句假话。
+let nextRunNote: string | null = null;
+export function setNextRunAt(iso: string | null, note: string | null = null): void {
   nextRunAt = iso;
+  nextRunNote = iso ? null : note;
 }
 
 // 统计摘要缓存：记录库版本号不变就复用上次计算结果，
@@ -90,7 +94,7 @@ export function createApp(config: AppConfig): express.Express {
 
   // 统计总览
   app.get("/api/stats", (_req, res) => {
-    res.json({ ...buildSummary(), nextRunAt, running: isRunning() });
+    res.json({ ...buildSummary(), nextRunAt, nextRunNote, running: isRunning() });
   });
 
   // 每日奖励趋势（用于折线图）

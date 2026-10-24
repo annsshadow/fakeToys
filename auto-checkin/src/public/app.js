@@ -44,7 +44,9 @@ function renderLive(data) {
     text.textContent = "签到运行中…";
   } else {
     dot.className = "live-dot idle";
-    text.textContent = data.nextRunAt ? `下次 ${fmtTime(data.nextRunAt, true)}` : "空闲待命";
+    text.textContent = data.nextRunAt
+      ? `下次 ${fmtTime(data.nextRunAt, true)}`
+      : (data.nextRunNote || "空闲待命");
   }
 }
 

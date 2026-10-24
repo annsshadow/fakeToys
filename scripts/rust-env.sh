@@ -9,6 +9,18 @@
 MSVC_DIR="/c/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.44.35207"
 SDK_LIB="/c/Program Files (x86)/Windows Kits/10/Lib/10.0.26100.0"
 
+# fail-loud：版本号是硬编码的，VS/SDK 升级后目录会变。曾经的脚本对不存在的
+# 路径静默照常 export，症状是下游 link.exe 找不到、LNK1181——排障时很难想到
+# 根因在「这个脚本指向了一个已被卸载的版本目录」（2026-10-24 加）。
+for d in "$MSVC_DIR" "$SDK_LIB"; do
+  if [ ! -d "$d" ]; then
+    echo "[rust-env] 目录不存在：$d" >&2
+    echo "[rust-env] VS/SDK 版本可能已升级。请把上面 MSVC_DIR / SDK_LIB 改成实际版本，" >&2
+    echo "[rust-env] 可用 'ls \"/c/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/\"' 查看。" >&2
+    return 1
+  fi
+done
+
 export PATH="$MSVC_DIR/bin/Hostx64/x64:$PATH"
 export LIB="$(cygpath -w "$MSVC_DIR/lib/x64");$(cygpath -w "$SDK_LIB/ucrt/x64");$(cygpath -w "$SDK_LIB/um/x64")"
 

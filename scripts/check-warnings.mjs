@@ -88,6 +88,18 @@ function checkLintsCoverage() {
   return { ok: missing.length === 0, hits: missing.map((m) => `${m.slice(ROOT.length + 1)} 缺少 [lints] workspace = true`) }
 }
 
+// crate 数量动态数：曾经 label 里硬编码「97 crates」，crate 增删后静默漂移
+// （实测 96 个目录 + 根包）。label 只该描述现状，不该是一个要人维护的常数。
+const RUST_CRATE_COUNT =
+  1 + readdirSync(join(ROOT, 'oa4rust', 'backend', 'crates'), { withFileTypes: true })
+    .filter((d) => d.isDirectory()).length
+
+/** 某 Python 模块在当前 `python` 下是否可导入（用于 requires 守门，同 java 项范式）。 */
+function hasPythonModule(module) {
+  const run = spawnSync('python', ['-c', `import ${module}`], { env, shell: true, encoding: 'utf8' })
+  return run.status === 0
+}
+
 const CHECKS = [
   {
     id: 'rust-lints',
@@ -96,7 +108,7 @@ const CHECKS = [
   },
   {
     id: 'rust',
-    label: 'oa4rust/backend (Rust, 97 crates)',
+    label: `oa4rust/backend (Rust, ${RUST_CRATE_COUNT} crates)`,
     cwd: 'oa4rust/backend',
     cmd: 'cargo clippy --workspace --all-targets --message-format=short',
     pattern: PATTERNS.rust,
@@ -145,9 +157,11 @@ const CHECKS = [
   },
   {
     id: 'auto-checkin',
-    label: 'auto-checkin (TypeScript)',
+    label: 'auto-checkin (TypeScript, typecheck + 测试)',
     cwd: 'auto-checkin',
-    cmd: 'npx tsc --noEmit',
+    // 2026-10-24 补上 npm test：此前只有 tsc，而「口令模式下面板不可用」
+    // 那类 bug 恰好只在行为面暴露（静态路径 401），类型面全绿也抓不到。
+    cmd: 'npx tsc --noEmit && npm test',
     pattern: PATTERNS.tsc,
     timeout: 5 * 60 * 1000,
   },
@@ -174,6 +188,18 @@ const CHECKS = [
     cmd: 'python -W error::SyntaxWarning -m compileall -q -f -x "(node_modules|__pycache__|\\.venv)" .',
     pattern: PATTERNS.python,
     timeout: 5 * 60 * 1000,
+  },
+  {
+    id: 'llm-lab-tests',
+    label: 'llm-lab (pytest 行为面)',
+    cwd: 'llm-lab',
+    cmd: 'python -m pytest -q --no-header -p no:cacheprovider',
+    pattern: PATTERNS.python,
+    // requires 守门（同 java 项范式）：解释器没装 pytest 时 SKIP 并说明，
+    // 不像命令失败那样制造环境性红。本机 managed python 无 pytest；
+    // 装了的开发机（或 CI 的 python）会自动接上这一项。
+    requires: () => (hasPythonModule('pytest') ? true : '当前 python 无 pytest 模块'),
+    timeout: 10 * 60 * 1000,
   },
   {
     id: 'java',

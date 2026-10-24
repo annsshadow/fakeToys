@@ -306,7 +306,10 @@ jobs:
         working-directory: laiyipao/server
         run: |
           set -uo pipefail
-          go install golang.org/x/vuln/cmd/govulncheck@latest
+          # 钉到具体版本：全仓供应链纪律是「动作/工具一律 pin」，@latest 是
+          # 会随上游发布漂移的移动靶（新版判据变化会让同一份代码莫名红/绿）。
+          # 升级方式：改下面这行 + 本地跑一遍确认无可达漏洞。
+          go install golang.org/x/vuln/cmd/govulncheck@v1.9.0
           # 这里**故意不加** set -e，也不用 govulncheck 的退出码当判据。
           #
           # 实测 govulncheck 找到漏洞时退出码是 3。在 set -euo pipefail 下，

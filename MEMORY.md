@@ -1,2 +1,6 @@
-- [OA4Rust API层优化2026-09-07](oa4rust-api-optimization-sept-2026-07.md) — 删除53个重复属性+修复类型注解,零TS错误,前端main bundle 1124KB→96KB(-91%),lazy load 85 views
-- [OA4Rust 最终状态2026-09-07](oa4rust-final-status-sept-2026-07.md) — 100%路径覆盖率，TS零错误，bundle 1124KB→96KB(-91%)
+# 历史里程碑（2026-09-07）
+
+以下两条的原始文档已在仓库清理中移除（链接已失效），事实记录保留：
+
+- **OA4Rust API 层优化**：删除 53 个重复属性 + 修复类型注解，零 TS 错误，前端 main bundle 1124KB→96KB（-91%），lazy load 85 views
+- **OA4Rust 最终状态**：100% 路径覆盖率，TS 零错误，bundle 1124KB→96KB（-91%）
