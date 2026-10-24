@@ -87,6 +87,19 @@ pub async fn create_app(
             session_manager.clone(),
         ))
         .merge(personal::router(pool.clone(), session_manager.clone()))
+        // 2026-10-24 补挂：以下 4 个 crate 的 router 早已实现且被前端实际调用，
+        // 但从未 merge 进 create_app（生产全 404，契约 fixture 只校验 crate 内
+        // .route() 字面量、不校验挂载，故测试全绿也没发现）。路由冲突预演零重叠。
+        // 守卫测试见 tests/mount_coverage_guard.rs。
+        // 注意 empower 的 router 函数在 router 模块内（crate 根无同名 fn），
+        // 故走模块路径。
+        .merge(empower::router::router(
+            pool.clone(),
+            session_manager.clone(),
+        ))
+        .merge(organization_assemble_personal::router(pool.clone()))
+        .merge(organization_assemble_authentication::router(pool.clone()))
+        .merge(base_core_project::router(pool.clone()))
         .merge(cms_control::cms_control_router(pool.clone()))
         .merge(control::control_router(pool.clone()))
         .merge(personal_extend::personal_extend_router(
@@ -139,7 +152,7 @@ pub async fn create_app(
         .merge(jpush_assemble_control::router(pool.clone()))
         .merge(processplatform_core_entity::router(pool.clone()))
         .merge(portal_core_entity::router(pool.clone()))
-        .merge(program_center_core_entity::router(pool.clone()).await)
+        .merge(program_center_core_entity::router(pool.clone()))
         .merge(processplatform_core_express::router(pool.clone()))
         .merge(query_core_entity::router(pool.clone()))
         .merge(general_core_entity::router(pool.clone()))
