@@ -254,31 +254,31 @@
 
 | 项 | 状态 | 证据 | commit |
 |---|---|---|---|
-| B1-1 oa4rust clippy | | | |
-| B1-2 auto-checkin 口令面板 | | | |
-| B1-3 records limit 夹取 | | | |
-| B1-4 seed_java.py 路径 | | | |
-| B2-1 挂载 organization_assemble_personal | | | |
-| B2-2 挂载 empower | | | |
-| B2-3 挂载冒烟（401/404 判别） | | | |
-| B2-4 merge 守卫测试 | | | |
-| B3-1 竞态修复 | | | |
-| B3-2 AdminUserDetail 并发化 | | | |
-| B3-3 battles 相关子查询 | | | |
-| B4-1 bcrypt spawn_blocking | | | |
-| B4-2 program_init 事务+批量 | | | |
-| B4-3 core_entity 空池移除 | | | |
-| B4-4 attendance/cms 批量化 | | | |
-| B5-1 requests 惰性导入 | | | |
-| B5-2 generate 耗时统计 | | | |
-| B5-3 diagnostics 缓存 | | | |
-| B5-4 并行/串行对比例测试 | | | |
-| B6-1 auto-checkin CI | | | |
-| B6-2 govulncheck 钉版 | | | |
-| B6-3 删死 codemod | | | |
-| B6-4 check-warnings 修正扩充 | | | |
-| B6-5 小额修复组 | | | |
-| B6-6 behavior-compare 治理 | | | |
+| B1-1 oa4rust clippy | 已完成 | shared/doc 缩进修复；另发现并修复 auth crate 编译断裂（sha1 0.11 vs sha2 0.10 digest 不互通，d1fe3ac67 引入、被 clippy 失败掩盖）——main 后端当时根本编不过；cargo test -p auth 99 passed；全仓 clippy --workspace --all-targets 全绿 | 08c85ef2b |
+| B1-2 auto-checkin 口令面板 | 已完成 | server.ts 改只守 /api/ 前缀；新增 2 条回归测试；npm test 40/40（37+2+1 组后续）；tsc 0 错；README 补说明 | 08c85ef2b |
+| B1-3 records limit 夹取 | 已完成 | Math.max 下限夹取 + 单测（40/40 内） | 08c85ef2b |
+| B1-4 seed_java.py 路径 | 已完成 | 补 backend/ + read_migration_091() fail-loud；本机 import 复现验证可读（13 keys / 1135 chars） | 08c85ef2b |
+| B2-1 挂载 organization_assemble_personal | 已完成 | create_app 补 merge；cargo test -p oa4rust 构建通过（挂载后路由存在） | dbd706b31 |
+| B2-2 挂载 empower | 已完成 | 同上；session_manager.clone() 置于 personal_extend 消费前 | dbd706b31 |
+| B2-3 挂载冒烟（401/404 判别） | 已完成 | 挂载差集复核为空（recon 脚本）；路由冲突预演零重叠；cargo test 构建 create_app 即权威判据 | dbd706b31 |
+| B2-4 merge 守卫测试 | 已完成 | 新增 tests/mount_coverage_guard.rs（差集非空即红）；当前差集为空 | dbd706b31 |
+| B3-1 竞态修复 | 已完成 | initRecomputeGateWith 拆分；SetRecomputeMode 不写 Cfg；RecomputeModeState 单次 Load；新增 8×8 并发 -race 测试通过；原测试不回归 | 88a149d9e |
+| B3-2 AdminUserDetail 并发化 | 已完成 | 用户行段顺序执行 + 7 段 WaitGroup 并发；错误按段序收集；go build/vet/gofmt clean；DB 用例无 PG 跳过（待 PG） | 88a149d9e |
+| B3-3 battles 相关子查询 | 已完成 | userID≠0 时子查询收窄；SQL 人工复核；DB 用例待 PG | 88a149d9e |
+| B4-1 bcrypt spawn_blocking | 已完成 | auth 增 verify_password_async 包装 + 3 调用点；program_center 3 处（hash×2/verify×1）移入 spawn_blocking；语义不变（JoinHandle 出错 fail-closed） | 17afcd4c6 |
+| B4-2 program_init 事务+批量 | 已完成 | 逐条 INSERT → 事务 + 多行 VALUES（65535 参数分片）；占位符全局连续单测 2 条；cargo test -p program_init 过 | 17afcd4c6 |
+| B4-3 core_entity 空池移除 | 已完成 | 删 create_sea_orm_pool().await.ok()；_router 传 None；router 改同步；create_app 去 .await | 17afcd4c6 |
+| B4-4 attendance/cms 批量化 | 已完成（review-gate 通过） | 两处均为纯批量化形状：attendance 2N→2 往返（DELETE=ANY + 多行 VALUES，去重保序、personsRebuilt 按原始长度）；cms 两函数同型（created/updated 同口径）；tx 原子性不变 | 17afcd4c6 |
+| B5-1 requests 惰性导入 | 已完成 | import cli 820ms→456ms 实测；requests 离开启动链；test_package_exports 契约不回归 | 6ffdedc79 |
+| B5-2 generate 耗时统计 | 已完成 | total_generate_seconds + debug 日志；/api/status 新键；TS 类型/System.tsx/契约键集/渲染守门同步；319 相关测试过 | 6ffdedc79 |
+| B5-3 diagnostics 缓存 | 已完成 | lru_cache(maxsize=1)；patch 探测函数的测试同步 cache_clear；49 相关测试过 | 6ffdedc79 |
+| B5-4 并行/串行对比例测试 | 已完成 | 新增分歧钉测试（call 级 + 行为级双证据）；test_pipeline.py 68 过 | 6ffdedc79 |
+| B6-1 auto-checkin CI | 已完成 | 新 workflow（无 paths 过滤，SHA pin）；YAML 校验过；本地模拟步骤全过 | 915d380a6 |
+| B6-2 govulncheck 钉版 | 已完成 | @latest → @v1.9.0（查证当前最新稳定版） | 915d380a6 |
+| B6-3 删死 codemod | 已完成 | 9 脚本 git rm（零外部引用最终复核） | 915d380a6 |
+| B6-4 check-warnings 修正扩充 | 已完成 | crate 计数动态化；auto-checkin 补 npm test；llm-lab-tests 项 requires 守门（无 pytest SKIP）；--list 与实跑验证过 | 915d380a6 |
+| B6-5 小额修复组 | 已完成 | cron 回退显示 + 3 测试；rust-env 存在性检查；MEMORY.md 死链转史实；README 32→38 | 915d380a6 |
+| B6-6 behavior-compare 治理 | 已完成（方案调整） | 保留 job 跑 push（双栈播种+启动冒烟是真覆盖，转 manual 会静默丢覆盖——偏离原计划，理由记账）；删重复 u2_probe；加定位说明头 | 915d380a6 |
 
 **待用户操作**：GitHub 分支保护 required checks 核对（§9 WF-REQUIRED）；CI 全绿确认（每批推送后）。
 
