@@ -156,9 +156,9 @@ func exemptionKey(q unscopedQuery) string {
 // ⚠️ 键的构造见 `exemptionKey`：它曾经是 `文件:行号`，漂移过四次，
 // 现在是语义键（函数名 + 表名），加注释不会再让它失效。
 var ownershipExemptions = map[string]string{
-	"economy.go.Leaderboard:user_progress": "排行榜本就跨用户 —— 它返回全服前 N 名，" +
-		"而返回列里没有别人的任何私有数据（只有 nickname / avatar / level_exp）。" +
-		"这不是「第 75 轮那个洞」的同类：那里泄露的是 build_snapshot + seed。",
+	"stats.go.adminDashboardUncached:battle_records": "运营看板的三条聚合（reactions 直方图 / 近 14 日 DAU / 关卡胜率分布）" +
+		"本就跨用户：只吐计数、不返回任何一行的私有数据；端点挂在 admin 路由组" +
+		"（routes.go 的 adm 组，requireAdmin 之后）。按 user_id 过滤会让看板永远只显示一个人。",
 	"progression.go.ChallengeDefense:defenses": "「挑战别人的防线」本身就是玩法：读 `defenses WHERE id = $1` " +
 		"是为了拿到 owner_id 做后续判定。归属检查在**同一事务内**紧接着做：" +
 		"`if ownerID == userID { return ErrForbidden }`。" +
