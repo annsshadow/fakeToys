@@ -892,10 +892,19 @@ func TestE2ETasksClaim(t *testing.T) {
 	}
 
 	// 完成后领取 → 200；重复领取 → 403
+	//
+	// ⚠️ 日期必须用**服务端口径**的「今天」（Go 本地日期的零点，即 service 包里
+	// periodStart(now,"daily") 的算法），不能用 SQL 的 CURRENT_DATE：
+	// 本环境 PG 会话是 Asia/Shanghai、Go 本地是 UTC，16:00–24:00 UTC 这 8 小时里
+	// 两者差一天 —— 夹具按 PG 日写行、ClaimTask 按 Go 日读行，会读成 0/30。
+	// 跨包拿不到 periodStart（未导出），这里按同一算法算一次；两处若漂了，
+	// service 包的 TestTaskFixturesUseServiceDay 会红。
+	nowLocal := time.Now()
+	day := time.Date(nowLocal.Year(), nowLocal.Month(), nowLocal.Day(), 0, 0, 0, 0, nowLocal.Location())
 	e.exec(t, `INSERT INTO user_tasks (user_id, task_id, task_date, progress)
-	           VALUES ($1,$2,CURRENT_DATE,(SELECT target FROM tasks WHERE id=$2))
+	           VALUES ($1,$2,$3,(SELECT target FROM tasks WHERE id=$2))
 	           ON CONFLICT (user_id, task_id, task_date) DO UPDATE SET progress = EXCLUDED.progress`,
-		uid, taskID)
+		uid, taskID, day)
 	status, body = e.post(t, fmt.Sprintf("/api/v1/tasks/%d/claim", taskID), tok, nil)
 	if status != 200 {
 		t.Fatalf("完成任务领取应 200，实际 %d %v", status, body)

@@ -230,12 +230,18 @@ func TestLockChallengeStateCountersBeforeWallets(t *testing.T) {
 
 	// 预建 counters 行 —— 未提交的行对别的连接不可见，
 	// 探测时找不到 ≠ 没被锁（这个坑记在下面）。
+	//
+	// ⚠️ challenge_date 必须用**服务端口径**的今天（与 dailyChallengeCountersTx
+	// 写入的那一天相同），不能用 CURRENT_DATE：本环境 PG=Asia/Shanghai、Go=UTC，
+	// 16:00–24:00 UTC 差一天 —— 预建行落在 PG 日、服务端按 Go 日去找，
+	// 会自己去建一行新的，锁探测就打在**另一行**上，这条用例会静默失去意义。
+	day := periodStart(nowFunc(), "daily")
 	for _, id := range []int64{lo, hi} {
 		if _, err := ts.pool.Exec(ctx, `
 			INSERT INTO user_daily_challenges (user_id, challenge_date, attempts, stolen_times)
-			VALUES ($1, CURRENT_DATE, 0, 0)
-			ON CONFLICT (user_id, challenge_date) DO UPDATE SET challenge_date = CURRENT_DATE`,
-			id); err != nil {
+			VALUES ($1, $2, 0, 0)
+			ON CONFLICT (user_id, challenge_date) DO UPDATE SET challenge_date = EXCLUDED.challenge_date`,
+			id, day); err != nil {
 			t.Fatalf("预建 counters[%d] 失败：%v", id, err)
 		}
 	}
@@ -248,9 +254,9 @@ func TestLockChallengeStateCountersBeforeWallets(t *testing.T) {
 	defer func() { _ = holder.Rollback(ctx) }()
 	if _, err := holder.Exec(ctx, `
 		INSERT INTO user_daily_challenges (user_id, challenge_date, attempts, stolen_times)
-		VALUES ($1, CURRENT_DATE, 0, 0)
-		ON CONFLICT (user_id, challenge_date) DO UPDATE SET challenge_date = CURRENT_DATE`,
-		hi); err != nil {
+		VALUES ($1, $2, 0, 0)
+		ON CONFLICT (user_id, challenge_date) DO UPDATE SET challenge_date = EXCLUDED.challenge_date`,
+		hi, day); err != nil {
 		t.Fatalf("占住 counters[%d] 失败：%v", hi, err)
 	}
 

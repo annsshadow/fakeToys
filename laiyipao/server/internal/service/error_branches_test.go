@@ -243,8 +243,14 @@ func TestTxMidwayFailures(t *testing.T) {
 		}
 		// 奖励改成未知币种：预检/领取都成功，grantWallet 业务失败
 		ts.exec(t, `UPDATE tasks SET reward = '{"diamonds":5}' WHERE id = $1`, taskID)
+		// ⚠️ 日期必须用**服务端口径**的「今天」，不能用 SQL 的 CURRENT_DATE：
+		// 本环境 PG 会话是 Asia/Shanghai、Go 本地是 UTC，16:00–24:00 UTC 这 8 小时里
+		// 两者差一天 —— 夹具按 PG 日写行、ClaimTask 按 Go 日读行，于是读到 0/30
+		// （2026-10-25 16:00 UTC 的 CI 实测：错误是「任务未完成（0/30）」而不是
+		// 期望的「未知货币」）。periodStart 是产码唯一口径，测试直接复用它。
+		day := periodStart(nowFunc(), "daily")
 		ts.exec(t, `INSERT INTO user_tasks (user_id, task_id, task_date, progress)
-		            VALUES ($1,$2,CURRENT_DATE,$3)`, uid, taskID, target)
+		            VALUES ($1,$2,$3,$4)`, uid, taskID, day, target)
 		_, err := ts.ClaimTask(ctx, uid, taskID)
 		mustErr(t, err, "未知货币")
 	})

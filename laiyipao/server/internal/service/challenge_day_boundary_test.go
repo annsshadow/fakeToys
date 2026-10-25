@@ -236,3 +236,78 @@ func readFileInPackage(t *testing.T, name string) string {
 	}
 	return string(raw)
 }
+
+// TestTaskFixturesUseServiceDay 把「日界口径」守卫从产码扩到**测试夹具**。
+//
+// # 为什么需要（2026-10-25 实测红过一次）
+//
+// `TestServiceHasNoCurrentDateInBusinessDaySQL` 只扫非 `_test.go`，于是夹具
+// 可以继续用 `CURRENT_DATE` 写「今天」的 `user_tasks` 行 —— 而 `ClaimTask`
+// 按 Go 的 `periodStart(nowFunc(), "daily")` 读同一行。
+//
+// 本环境 PG 会话是 `Asia/Shanghai`、Go 本地是 UTC，**16:00–24:00 UTC 这 8 小时
+// 两者差一天**：夹具按 PG 日写、服务端按 Go 日读 → 读到 progress 0 →
+// 报「任务未完成（0/30）」而不是用例期望的业务错误。
+// 2026-10-25 16:00 UTC 的 CI 就是在这个窗口里红的（`TestTxMidwayFailures/ClaimTask`）。
+//
+// # 范围（刻意窄）
+//
+// 只钉「**写当期行**」这一种形态：`INSERT INTO user_tasks / user_task_events /
+// user_daily_challenges` 且语句里带 `CURRENT_DATE`。
+// 用 `CURRENT_DATE - N` **造历史数据**是合法的（`achievement_epoch_test` 就是），
+// 不在本守卫范围 —— 所以判据不是「测试里不许出现 CURRENT_DATE」。
+func TestTaskFixturesUseServiceDay(t *testing.T) {
+	// 当期行落在「哪一天」必须与产码同源的表
+	currentPeriodTables := []string{"user_tasks", "user_task_events", "user_daily_challenges"}
+
+	entries, err := os.ReadDir(".")
+	if err != nil {
+		t.Fatalf("读包目录失败：%v", err)
+	}
+
+	var offenders []string
+	scanned := 0
+
+	for _, e := range entries {
+		name := e.Name()
+		if e.IsDir() || !strings.HasSuffix(name, "_test.go") {
+			continue
+		}
+		scanned++
+		code := stripGoComments(readFileInPackage(t, name))
+
+		for _, table := range currentPeriodTables {
+			needle := "INSERT INTO " + table
+			idx := 0
+			for {
+				at := strings.Index(code[idx:], needle)
+				if at < 0 {
+					break
+				}
+				start := idx + at
+				idx = start + len(needle)
+				// 取语句窗口：INSERT 起 400 字符内（够覆盖跨行的列清单与 VALUES）
+				end := start + 400
+				if end > len(code) {
+					end = len(code)
+				}
+				if strings.Contains(code[start:end], "CURRENT_DATE") {
+					line := strings.Count(code[:start], "\n") + 1
+					offenders = append(offenders,
+						name+":"+itoa(int64(line))+": INSERT INTO "+table+" 用了 CURRENT_DATE")
+				}
+			}
+		}
+	}
+
+	if scanned == 0 {
+		t.Fatal("没有扫到任何 _test.go —— 守卫失效（可能工作目录不对）")
+	}
+	if len(offenders) > 0 {
+		t.Errorf("测试夹具用 CURRENT_DATE 写「当期」行，与服务端 Go 日口径不一致：\n  %s\n\n"+
+			"改法：用 periodStart(nowFunc(), \"daily\") 算日期并作为参数传入。\n"+
+			"（本环境 PG=Asia/Shanghai、Go=UTC，16:00–24:00 UTC 差一天，\n"+
+			" 夹具写进去的行服务端读不到 → 报「任务未完成（0/30）」。）",
+			strings.Join(offenders, "\n  "))
+	}
+}

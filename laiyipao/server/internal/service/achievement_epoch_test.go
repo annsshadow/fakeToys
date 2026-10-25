@@ -216,11 +216,18 @@ func TestAchievementMigrationConsolidatesRows(t *testing.T) {
 	u2 := scratch.newUser(t, ctx)
 
 	// u1：三天三行，progress 递减（1 / 5 / 3），只有第一行已领取
+	//
+	// ⚠️ 日期以**服务端口径**的今天为锚，不用 SQL 的 CURRENT_DATE：
+	// 本环境 PG=Asia/Shanghai、Go=UTC，16:00–24:00 UTC 差一天。achievement
+	// 作用域按固定 epoch 聚合、这些日期只是数据，但统一口径可以避免
+	// 「将来 scope 改 daily 时这条夹具悄悄变成时间炸弹」。
+	day := periodStart(nowFunc(), "daily")
 	scratch.exec(t, `
 		INSERT INTO user_tasks (user_id, task_id, task_date, progress, claimed_at)
-		VALUES ($1, $2, CURRENT_DATE - 2, 1, TIMESTAMPTZ '2026-01-02 03:04:05+00'),
-		       ($1, $2, CURRENT_DATE - 1, 5, NULL),
-		       ($1, $2, CURRENT_DATE,     3, NULL)`, u1, achID)
+		VALUES ($1, $2, $3, 1, TIMESTAMPTZ '2026-01-02 03:04:05+00'),
+		       ($1, $2, $4, 5, NULL),
+		       ($1, $2, $5, 3, NULL)`,
+		u1, achID, day.AddDate(0, 0, -2), day.AddDate(0, 0, -1), day)
 
 	// 记下**迁移前**的 claimed_at —— 迁移不得改写它。
 	//
@@ -240,7 +247,7 @@ func TestAchievementMigrationConsolidatesRows(t *testing.T) {
 	// u2：一行，未领取
 	scratch.exec(t, `
 		INSERT INTO user_tasks (user_id, task_id, task_date, progress, claimed_at)
-		VALUES ($1, $2, CURRENT_DATE, 7, NULL)`, u2, achID)
+		VALUES ($1, $2, $3, 7, NULL)`, u2, achID, day)
 
 	// —— 执行**迁移文件里那条真 SQL** ——
 	//

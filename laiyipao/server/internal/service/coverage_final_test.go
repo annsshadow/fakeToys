@@ -385,8 +385,10 @@ func TestClaimTaskRewardJSONError(t *testing.T) {
 		t.Skipf("无 daily 任务：%v", err)
 	}
 	ts.exec(t, `UPDATE tasks SET reward = '"boom"'::jsonb WHERE id = $1`, taskID)
+	// 日期用服务端口径（periodStart），不用 CURRENT_DATE——两者在
+	// 16:00–24:00 UTC 差一天，夹具写进去的行 ClaimTask 读不到。
 	ts.exec(t, `INSERT INTO user_tasks (user_id, task_id, task_date, progress)
-	            VALUES ($1,$2,CURRENT_DATE,$3)`, uid, taskID, target)
+	            VALUES ($1,$2,$3,$4)`, uid, taskID, periodStart(nowFunc(), "daily"), target)
 	_, err := ts.ClaimTask(ctx, uid, taskID)
 	mustErr(t, err, "")
 }

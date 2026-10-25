@@ -575,10 +575,13 @@ func TestClaimTaskService(t *testing.T) {
 	}
 
 	// 完成 → 领取 → 重复领取（RowsAffected=0 分支）
+	// ⚠️ 日期用服务端口径（periodStart），不用 CURRENT_DATE——两者在
+	// 16:00–24:00 UTC 差一天，夹具写进 PG 日、ClaimTask 读 Go 日会读成 0/30。
+	day := periodStart(nowFunc(), "daily")
 	ts.exec(t, `INSERT INTO user_tasks (user_id, task_id, task_date, progress)
-	            VALUES ($1,$2,CURRENT_DATE,$3)
+	            VALUES ($1,$2,$3,$4)
 	            ON CONFLICT (user_id, task_id, task_date) DO UPDATE SET progress = EXCLUDED.progress`,
-		uid, taskID, target)
+		uid, taskID, day, target)
 	reward, err := ts.ClaimTask(ctx, uid, taskID)
 	if err != nil || len(reward) == 0 {
 		t.Fatalf("领取应成功并返回奖励：%v, %v", reward, err)

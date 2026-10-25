@@ -246,11 +246,15 @@ func TestConcurrentClaimTaskOnlyOnce(t *testing.T) {
 	}
 	ts.scalar(t, ctx, `SELECT target FROM tasks WHERE id = $1`, taskID) // 确认存在
 	target := ts.scalar(t, ctx, `SELECT target FROM tasks WHERE id = $1`, taskID)
+	// ⚠️ 日期用服务端口径（periodStart），不用 CURRENT_DATE：本环境
+	// PG=Asia/Shanghai、Go=UTC，16:00–24:00 UTC 差一天，夹具写进去的行
+	// 服务端读不到 → 所有 worker 都撞「任务未完成」，这条并发用例静默失效。
+	day := periodStart(nowFunc(), "daily")
 	if _, err := ts.pool.Exec(ctx,
 		`INSERT INTO user_tasks (user_id, task_id, task_date, progress)
-		 VALUES ($1,$2,CURRENT_DATE,$3)
+		 VALUES ($1,$2,$3,$4)
 		 ON CONFLICT (user_id, task_id, task_date) DO UPDATE SET progress = EXCLUDED.progress`,
-		userID, taskID, target); err != nil {
+		userID, taskID, day, target); err != nil {
 		t.Fatalf("预置任务进度失败：%v", err)
 	}
 	before := ts.wallet(t, ctx, userID)

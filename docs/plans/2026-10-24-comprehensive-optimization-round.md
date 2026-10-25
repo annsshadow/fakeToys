@@ -563,3 +563,38 @@ Docker smoke，而那个 workflow 带 `paths: augmentor/**` 过滤——
 `check-warnings --only ...augmentor-web` 5 项 4 通过 1 跳过（llm-lab-tests 本机无 pytest）；
 顺带把其余 5 个前端/TS 项全跑一遍（desktop 79s / mobile 34s / admin 10s /
 miniapp 14s / auto-checkin 6s）**全 PASS**，确认没有第二处藏着的红。
+
+### R7 — 修 laiyipao「日界双口径」时间炸弹（2026-10-25 深夜，排查 CI 红时发现）
+
+**怎么发现的**：修完 augmentor/web 后重推，`laiyipao CI` 的
+`Server build, vet & test (PostgreSQL)` 红了 —— 而该提交只动了 augmentor/web。
+失败的用例是 `TestTxMidwayFailures/ClaimTask发放奖励失败`：
+期望错误含「未知货币」，实际拿到「无权访问: 任务未完成（0/30）」。
+
+**根因（项目自己的文档早有记载）**：`challenge_day_boundary_test.go` 写着
+「本环境 PG 会话是 `Asia/Shanghai`、容器里 `time.Local` 常为 UTC」——
+**Go 的「今天」与 PG 的「今天」每天有 8 小时不一致（16:00–24:00 UTC）**。
+- 产码早已统一到 Go 口径（`periodStart(nowFunc(), "daily")`，
+  `economy.go`/`progression.go` 的注释记着「原来用 CURRENT_DATE，由 PG 会话时区折算」）；
+- **测试夹具没跟上**：仍用 SQL `CURRENT_DATE` 写「今天」的行，
+  而 `ClaimTask` 按 Go 日去读 → 读到 progress 0 → 报「任务未完成」。
+
+这次 CI 正好在 **16:00 UTC**（= 北京 00:00）跑，踩在窗口上。反证：前两次提交
+（08:02 / 09:37 UTC）同一用例都是绿的。
+
+**修法（6 处夹具 + 1 道守卫）**：
+- `error_branches_test.go`（实际红的那处）、`battle_service_test.go`、
+  `coverage_final_test.go`、`concurrency_test.go`、`achievement_epoch_test.go`、
+  `challenge_lock_order_test.go` —— 全部改用 `periodStart(nowFunc(), "daily")`
+  （跨包的 `httpapi/routes_e2e_test.go` 按同一算法算本地日期，并注明来源）；
+- 新增守卫 `TestTaskFixturesUseServiceDay`：扫 `_test.go` 里
+  `INSERT INTO user_tasks / user_task_events / user_daily_challenges` 且语句内
+  出现 `CURRENT_DATE` 的形态。**刻意窄**——用 `CURRENT_DATE - N` 造历史数据是合法的
+  （`achievement_epoch_test` 原本就是），不在范围内。
+
+**为什么不是「测试写错了」这么简单**：其中两处（`challenge_lock_order_test`、
+`concurrency_test`）在日界错位时会**静默失去意义**——锁探测打在服务端根本不会碰的
+另一行上、并发用例的 worker 全撞「任务未完成」。这类「绿着但没测到东西」比红更危险。
+
+**验证**：守卫两方向实测（改回 `CURRENT_DATE` → 点名 `coverage_final_test.go:390` 红；
+还原 → 绿）；`go vet`/`gofmt` 干净；6 处夹具的 DB 用例交 CI 真库验证。
