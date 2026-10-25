@@ -139,10 +139,15 @@ func (s *Service) AdminUserDetail(ctx context.Context, userID int64) (AdminUserD
 		}()
 	}
 
-	// 2) 钱包（含体力 regen 写——与其余段读的表不重叠，可并发）
+	// 2) 钱包（**只读**：GET 不写库，体力按公式投影）
+	//
+	// 2026-10-25（R3，LY-GAP-2）：原先走 LoadWallet，会顺手做体力 regen 的
+	// UPDATE——读端点带写副作用（readonly 运营账号绕过写门、读副本会失败、
+	// 审计出现无主动触发的写入）。改走 LoadWalletReadOnly：同一公式投影，
+	// 显示值与玩家侧结算后一致，但不落库。
 	seg(0, func() {
 		var err error
-		wallet, err = s.LoadWallet(ctx, userID)
+		wallet, err = s.LoadWalletReadOnly(ctx, userID)
 		if err != nil {
 			errs[0] = fmt.Errorf("load user wallet: %w", err)
 		}

@@ -455,3 +455,17 @@ CI 复盘发现 laiyipao CI 在**本轮开始前的 main（88681f239）上就已
 |---|---|---|
 | FI002-MISSING-COLUMNS | 41 对「迁移缺列」（见 `docs/audits/artifacts/fi002_unknown_columns.tsv`） | 修法是按 101 范式补幂等 ADD COLUMN，但**列类型**须对 live DB 复核；本机无 PG，盲写类型会让 fresh DB 出现新的类型不匹配错误（比现状更糟）。有库轮次按「先查 live information_schema 类型 → 生成迁移 → fresh DB 跑集成测试」执行 |
 | FI002-LEGACY-TABLES | 7 对遗留表引用（`pp_c_touch_*`、`x_process_transition`） | 这些表不是 migrations 建的（Java 时代遗留）；补建表需要先定 schema 归属与索引，且 touch/transition 端点的语义要确认，属独立任务 |
+
+### R3 — laiyipao 剩余性能项与读端点副作用
+
+| 项 | 处置 | 依据 |
+|---|---|---|
+| LY-PERF-1 SettleBattle 复用 build 快照 | **关闭（不做）** | 两处加载形态不同：`replaySkillsSegment` 是 5 字段投影（slot/skill_id/**按等级解析的** base_damage/apply_stacks/heat_cost），`LoadBuildSnapshot` 是给回放哈希用的 JSON map。复用要从另一形状重推 S 段字符串——而 S 段是与客户端上报**逐字节比对**的反作弊判据，格式稍变即把所有正常对局判成伪造。收益仅「结算路径约 13 次往返里省 1 次」。风险/收益不成比例 |
+| LY-PERF-3 LoadWallet 合并 | **已做** | 体力恢复 UPDATE 与随后的读钱包 SELECT 合并成 `UPDATE ... RETURNING`：3→2 往返（省的是每次进页面 fetchWallet 最热的一次）。语义逐位保持：行不存在 → UPDATE 命中 0 行 → RETURNING 无行 → 同一个 ErrNotFound 分支；RETURNING 返回更新后的 energy 与 energy_updated_at |
+| LY-PERF-5 requireAdmin 三查合一 | **已做** | 每后台请求 3 次往返（admin_tokens → admin_users.status → admin_users.role）合并为一条 JOIN。判定顺序逐位保持：会话存在 → 未吊销 → 未过期 → 未停用（FK ON DELETE CASCADE 保证 token 行的 admin 必存在）。`ResolveAdmin` 保留为「只要身份」的委托入口（17 处测试断言的是会话有效性语义，不必为多一个返回值改写）；零调用的 `AdminRole` 删除 |
+| LY-GAP-2 后台详情触发体力 regen 写 | **已做** | 读端点带写副作用的三条具体坏处：readonly 运营账号绕过写门、只读副本下会失败、审计出现无主动触发的写入。新增 `LoadWalletReadOnly`：同一公式**投影**（不结算、不推进 energy_updated_at），显示值与玩家侧一致；顺带省掉 TokenBalance 一次往返。体力参数提到包级常量（两处共用防漂）。新增静态守卫 `TestAdminUserDetailNeverWritesWallet` 钉住「详情页不得走回 LoadWallet」 |
+
+**验证**：`go build ./...` / `go vet ./...` / `gofmt` 全净；静态守卫
+（ownership 扫描 / 路由消费 / 文档漂移 / readonly 白名单）全过；
+新守卫 `TestAdminUserDetailNeverWritesWallet` 通过。DB 集成用例无 PG 跳过（待 CI）。
+剩余两处 `LoadWallet` 调用都在**写**端点（签到、结算），副作用属预期。

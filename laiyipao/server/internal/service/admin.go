@@ -89,7 +89,8 @@ func (s *Service) AdminLogin(ctx context.Context, username, password string) (Ad
 	}, nil
 }
 
-// ResolveAdmin 解析管理员 access token。
+// ResolveAdminSession 解析管理员 access token，并**一次查询**带回会话有效性
+// 与角色。
 //
 // ⚠️ 必须查 admin_users.status。
 // 只验签名的话，管理员离职/降权后，他手上的 token 在整个 access TTL
@@ -102,48 +103,64 @@ func (s *Service) AdminLogin(ctx context.Context, username, password string) (Ad
 // 一枚**签名仍然合法**的 JWT 也必须立刻失效 —— 这是把「登出」
 // 从纯前端清 localStorage 升级成服务端真切断（与玩家侧 refresh
 // token 吊销同形态）。
-func (s *Service) ResolveAdmin(ctx context.Context, token string) (int64, error) {
+//
+// ⚠️ 2026-10-25（R3）：token 行与 admin_users 行**合并成一条 JOIN**。
+// 原先是 requireAdmin 里三次往返（admin_tokens → admin_users.status →
+// admin_users.role），每次后台请求都付；role 本来就是同一行的列，
+// 分两次查纯属历史拆分。判定顺序逐位保持：会话存在 → 未吊销 → 未过期 →
+// 账号未停用（FK ON DELETE CASCADE 保证 token 行的 admin 必存在，
+// 故「查不到行」与「会话不存在」同义）。
+func (s *Service) ResolveAdminSession(ctx context.Context, token string) (int64, string, error) {
 	claims, err := s.JWT.Verify(token)
 	if err != nil {
-		return 0, fmt.Errorf("%w: %s", ErrUnauthorized, err)
+		return 0, "", fmt.Errorf("%w: %s", ErrUnauthorized, err)
 	}
 	if claims.Kind != "admin" {
-		return 0, fmt.Errorf("%w: 令牌类型不匹配", ErrUnauthorized)
+		return 0, "", fmt.Errorf("%w: 令牌类型不匹配", ErrUnauthorized)
 	}
 	if claims.Sid == "" {
 		// 第 155 轮之前签发的存量管理员令牌没有 sid —— 它们随 2h TTL
 		// 自然消亡，不需要数据迁移；新令牌由 AdminLogin 签发、恒带 sid。
-		return 0, fmt.Errorf("%w: 管理员会话不存在", ErrUnauthorized)
+		return 0, "", fmt.Errorf("%w: 管理员会话不存在", ErrUnauthorized)
 	}
 	var revoked bool
 	var expiresAt time.Time
+	var status int
+	var role string
+	// 一条 JOIN 取齐：会话行 + 账号状态 + 角色。WHERE 带 admin_id 而非
+	// claims.Sub —— token_hash 已唯一确定会话，用会话行的 admin_id 更诚实
+	// （token 里的 Sub 只是签发时的快照）。
 	if err := s.pool.QueryRow(ctx,
-		`SELECT revoked_at IS NOT NULL, expires_at
-		 FROM admin_tokens WHERE token_hash = $1`,
-		HashRefreshToken(claims.Sid)).Scan(&revoked, &expiresAt); err != nil {
+		`SELECT t.revoked_at IS NOT NULL, t.expires_at, u.status, u.role
+		   FROM admin_tokens t
+		   JOIN admin_users u ON u.id = t.admin_id
+		  WHERE t.token_hash = $1`,
+		HashRefreshToken(claims.Sid)).Scan(&revoked, &expiresAt, &status, &role); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return 0, fmt.Errorf("%w: 管理员会话不存在", ErrUnauthorized)
+			return 0, "", fmt.Errorf("%w: 管理员会话不存在", ErrUnauthorized)
 		}
-		return 0, fmt.Errorf("查管理员会话: %w", err)
+		return 0, "", fmt.Errorf("查管理员会话: %w", err)
 	}
 	if revoked {
-		return 0, fmt.Errorf("%w: 会话已登出吊销", ErrUnauthorized)
+		return 0, "", fmt.Errorf("%w: 会话已登出吊销", ErrUnauthorized)
 	}
 	if !expiresAt.After(timeNow()) {
-		return 0, fmt.Errorf("%w: 会话已过期", ErrUnauthorized)
-	}
-	var status int
-	if err := s.pool.QueryRow(ctx,
-		`SELECT status FROM admin_users WHERE id = $1`, claims.Sub).Scan(&status); err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return 0, fmt.Errorf("%w: 管理员不存在", ErrUnauthorized)
-		}
-		return 0, err
+		return 0, "", fmt.Errorf("%w: 会话已过期", ErrUnauthorized)
 	}
 	if status != 1 {
-		return 0, fmt.Errorf("%w: 管理员已停用", ErrForbidden)
+		return 0, "", fmt.Errorf("%w: 管理员已停用", ErrForbidden)
 	}
-	return claims.Sub, nil
+	return claims.Sub, role, nil
+}
+
+// ResolveAdmin 只要身份、不要角色时的入口（委托 ResolveAdminSession，零额外查询）。
+//
+// 保留它是为了语义分层：大量测试断言的是「这枚 token 能不能用」
+// （吊销/过期/停用/类型不符），与角色无关；它们不必为了多一个返回值改写。
+// 需要角色的调用方（requireAdmin）走 ResolveAdminSession。
+func (s *Service) ResolveAdmin(ctx context.Context, token string) (int64, error) {
+	id, _, err := s.ResolveAdminSession(ctx, token)
+	return id, err
 }
 
 // AdminLogout 吊销该管理员的**全部**后台会话（幂等，返回吊销条数）。
@@ -172,24 +189,6 @@ func (s *Service) AdminMe(ctx context.Context, adminID int64) (AdminUser, error)
 		return AdminUser{}, fmt.Errorf("%w: admin", ErrUnauthorized)
 	}
 	return a, nil
-}
-
-// AdminRole 返回管理账号的角色（'admin'/'ops'/'readonly'，见 00007 迁移注释）。
-//
-// ⚠️ 第 127 轮：这个列**历史上从未被任何端点消费过** —— 一个
-// readonly 账号和 admin 账号能做的事完全一样（封禁、发币、改关卡/商城）。
-// 它是「纸面角色」。requireAdmin 现在把角色写进 Locals，
-// requireWritable 据此拒绝 readonly 的写操作。
-func (s *Service) AdminRole(ctx context.Context, adminID int64) (string, error) {
-	var role string
-	err := s.pool.QueryRow(ctx, `SELECT role FROM admin_users WHERE id = $1`, adminID).Scan(&role)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return "", fmt.Errorf("%w: 管理员不存在", ErrUnauthorized)
-		}
-		return "", fmt.Errorf("load admin role: %w", err)
-	}
-	return role, nil
 }
 
 // EnsureContentSeeded 是启动期的内容表体检（第 128/129 轮）：

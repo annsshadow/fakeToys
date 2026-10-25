@@ -898,11 +898,17 @@ var walletTokens = map[string]bool{
 // isWalletToken 报告这个货币是不是道具。
 func isWalletToken(currency string) bool { return walletTokens[currency] }
 
+// 体力恢复参数。提到包级：LoadWallet（结算并写库）与 LoadWalletReadOnly
+// （只投影不写库）必须用同一组数，两处各写一份就会漂。
+const (
+	walletEnergyPerInterval = 6 * time.Minute
+	walletEnergyMax         = 120
+)
+
 // LoadWallet 读取钱包并顺带做体力恢复。
 func (s *Service) LoadWallet(ctx context.Context, userID int64) (Wallet, error) {
-	// 体力每 6 分钟恢复 1 点，上限 120
-	const energyPerInterval = 6 * time.Minute
-	const energyMax = 120
+	const energyPerInterval = walletEnergyPerInterval
+	const energyMax = walletEnergyMax
 	//
 	// ⚠️ 第 86 轮：`energy_updated_at` 必须按**整间隔**推进，而不是推到 now()。
 	//
@@ -943,7 +949,18 @@ func (s *Service) LoadWallet(ctx context.Context, userID int64) (Wallet, error) 
 	// 顺带：`LEAST($2::int, …)` 之外还要保证**扣能量时不回推时间戳** ——
 	// 原写法本来就没回推，保持不变。
 	const energyIntervalSecs = int64(energyPerInterval / time.Second)
-	if _, err := s.pool.Exec(ctx, `
+	// 2026-10-25（R3）：体力恢复 UPDATE 与随后的读钱包 SELECT **合成一条**
+	// （UPDATE ... RETURNING）。两者本就是同一行、同一时刻的状态，
+	// 分两次往返纯属历史拆分；本函数挂在每次进页面都会拉的
+	// fetchWallet 上，省下的是最热路径的一次往返。
+	//
+	// 语义逐位保持：
+	//   - 行不存在 → UPDATE 命中 0 行 → RETURNING 无行 → ErrNoRows，
+	//     与原「Exec 成功 + SELECT ErrNoRows」落到同一个 ErrNotFound 分支；
+	//   - RETURNING 返回的是**更新后**的值（energy 与 energy_updated_at 都含
+	//     本次恢复），与原 SELECT 读到的一致。
+	var w Wallet
+	err := s.pool.QueryRow(ctx, `
 		WITH k AS (
 		  SELECT GREATEST(0, FLOOR(EXTRACT(EPOCH FROM (now() - energy_updated_at)) / $3))::int AS n
 		    FROM user_wallets WHERE user_id = $1
@@ -954,19 +971,16 @@ func (s *Service) LoadWallet(ctx context.Context, userID int64) (Wallet, error) 
 		                       + make_interval(secs => (k.n * $3)::double precision),
 		       updated_at = now()
 		  FROM k
-		 WHERE w.user_id = $1`, userID, energyMax, energyIntervalSecs); err != nil {
-		return Wallet{}, fmt.Errorf("regen energy: %w", err)
-	}
-
-	var w Wallet
-	err := s.pool.QueryRow(ctx,
-		`SELECT coin, gem, energy, keys, energy_updated_at FROM user_wallets WHERE user_id = $1`, userID).
+		 WHERE w.user_id = $1
+		RETURNING w.coin, w.gem, w.energy, w.keys, w.energy_updated_at`,
+		userID, energyMax, energyIntervalSecs).
 		Scan(&w.Coin, &w.Gem, &w.Energy, &w.Keys, &w.EnergyUpdatedAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return Wallet{}, fmt.Errorf("%w: wallet for user %d", ErrNotFound, userID)
 	}
 	if err != nil {
-		return Wallet{}, fmt.Errorf("load wallet: %w", err)
+		// 恢复与读取已合并，故错误可能来自任一侧——消息里点明，便于排查。
+		return Wallet{}, fmt.Errorf("regen+load wallet: %w", err)
 	}
 	// 道具余额：未持有过的补 0（TokenBalance 内部按传入列表补齐）。
 	//
@@ -975,6 +989,43 @@ func (s *Service) LoadWallet(ctx context.Context, userID int64) (Wallet, error) 
 	w.Tokens, err = s.TokenBalance(ctx, userID, WalletTokenKinds)
 	if err != nil {
 		return Wallet{}, err
+	}
+	return w, nil
+}
+
+// LoadWalletReadOnly 读钱包**不写库**，体力按同一公式**投影**出「此刻应有的值」。
+//
+// 为什么需要它（2026-10-25，R3，LY-GAP-2）：
+//
+// 后台玩家详情是 GET，却经 LoadWallet 触发了体力 regen 的 UPDATE——
+// 读端点带写副作用有三个具体坏处：
+//  1. `readonly` 角色的运营账号本应完全无写权（requireWritable 的语义），
+//     但这个写发生在 GET 里，绕过了那层门；
+//  2. 只读副本/读路由下会失败（写语句打不出去）；
+//  3. 审计面「谁改了什么」出现没人主动触发的写入。
+//
+// 语义选择：**投影**而不是「直接显示落库值」——否则运营看到的是
+// 「玩家说还有 20 点，后台显示 5 点」这种对不上账的形态。投影用的是
+// LoadWallet 同一组常量与同一公式（不结算、不推进 energy_updated_at），
+// 所以显示值与玩家侧结算后会看到的一致。
+//
+// 不返回 Tokens：调用方（后台详情）只用 coin/gem/energy/keys，
+// 省掉一次 TokenBalance 往返。
+func (s *Service) LoadWalletReadOnly(ctx context.Context, userID int64) (Wallet, error) {
+	intervalSecs := int64(walletEnergyPerInterval / time.Second)
+	var w Wallet
+	err := s.pool.QueryRow(ctx, `
+		SELECT coin, gem,
+		       LEAST($2::int, energy + GREATEST(0, FLOOR(EXTRACT(EPOCH FROM (now() - energy_updated_at)) / $3))::int) AS energy,
+		       keys, energy_updated_at
+		  FROM user_wallets WHERE user_id = $1`,
+		userID, walletEnergyMax, intervalSecs).
+		Scan(&w.Coin, &w.Gem, &w.Energy, &w.Keys, &w.EnergyUpdatedAt)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return Wallet{}, fmt.Errorf("%w: wallet for user %d", ErrNotFound, userID)
+	}
+	if err != nil {
+		return Wallet{}, fmt.Errorf("load wallet (read-only): %w", err)
 	}
 	return w, nil
 }

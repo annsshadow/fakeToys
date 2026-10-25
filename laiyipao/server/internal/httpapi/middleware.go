@@ -135,12 +135,7 @@ func requireAdmin(s *service.Service) fiber.Handler {
 		if token == "" {
 			return fail(c, fiber.StatusUnauthorized, "unauthorized", "缺少 Authorization 头")
 		}
-		adminID, err := s.ResolveAdmin(c.Context(), token)
-		if err != nil {
-			return failErr(c, err)
-		}
-		// 第 127 轮：连同角色一起解析，供 requireWritable 使用。
-		role, err := s.AdminRole(c.Context(), adminID)
+		adminID, role, err := s.ResolveAdminSession(c.Context(), token)
 		if err != nil {
 			return failErr(c, err)
 		}
