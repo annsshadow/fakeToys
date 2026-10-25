@@ -562,3 +562,28 @@ jobs:
           python-version: "3.x"
       - name: Verify OpenAPI security scheme is present
         run: python scripts/check_openapi_security.py
+
+  # FI-002 静态列扫描（2026-10-25，OA-FI002-CI 收口）
+  #
+  # FI-002 那轮用「代码 SQL 字面量 vs live PG information_schema」对撞，一次挖出
+  # 约 50 个运行时必然 500 的 handler。方法有效但只活在文档里——本 job 把它固化为
+  # 无需活库的静态版：解析 migrations/*.sql 得 (table, column) 宇宙，扫
+  # crates/*/src 的 SQL 字面量，与 docs/audits/artifacts/fi002_unknown_columns.tsv
+  # 基线做**棘轮**（新增未知对即红；缺口修掉会提示收敛）。
+  #
+  # 与 live-DB 版的分工：静态版保证「migrations 与代码 SQL 不脱节」这一必要条件，
+  # 覆盖不了权限/数据问题；它跑在每次 push，成本秒级。
+  fi002-column-scan:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: oa4rust/backend
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.x"
+      - name: FI-002 static column scan (ratchet against baseline)
+        run: python scripts/fi002_column_scan.py

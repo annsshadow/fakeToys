@@ -1,0 +1,604 @@
+#!/usr/bin/env python3
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+"""FI-002 静态列扫描：handler SQL 字面量引用的 (table, column) 对撞 migrations 的 schema。
+
+## 为什么有这个脚本
+
+FI-002（docs/audits/found-issues.md）用「代码 SQL 字面量 vs live PG information_schema」
+对撞，一次挖出约 50 个运行时必然 500 的 handler——且全部被既有测试漏过。那轮的方法
+有效但只存在于文档里，没有固化；本轮把它做成**无需活库**的静态版并接入 CI：
+
+- **schema 宇宙**：解析 `migrations/*.sql`（运行器从盘读、按文件名序应用）的
+  CREATE TABLE / ALTER TABLE ADD|DROP COLUMN / RENAME，得到 (table, column) 全集；
+- **代码引用**：扫 `crates/*/src`、`src/` 的 Rust 字符串字面量，抽取表引用
+  （FROM/JOIN/UPDATE/INSERT INTO/DELETE FROM）与列引用（限定列、INSERT 列清单、
+  UPDATE SET、单表 SELECT 裸列），用同字面量内的别名映射解析；
+- **棘轮**：与 `docs/audits/artifacts/fi002_unknown_columns.tsv` 基线对比，
+  **新增**未知 (table, column) 对即退出 1；基线只能人工复核后 `--update-baseline` 收敛。
+
+## 口径与已知边界（fail-loud）
+
+- 只认**静态字面量**；`format!` 里的 `{}` 动态表名/列名会被跳过（无法静态判定），
+  跳过数在输出里明示，不静默；
+- 动态表名（`FROM {table}`）的整条 SQL 仍会解析静态部分，表名侧记入 skipped；
+- `information_schema` / `pg_catalog` 等系统表不在 migrations 里，作为已知外部前缀跳过；
+- CTE（`WITH x AS (...)`）的别名不映射回基表，其限定列按「未解析限定符」计数
+  并明示（不计入违规）；
+- 多表查询的裸列（无别名限定）无法归属，跳过并计数。
+
+## 用法
+
+    python scripts/fi002_column_scan.py                 # 棘轮模式（CI 用）
+    python scripts/fi002_column_scan.py --report        # 打印全部未知对（含基线内）
+    python scripts/fi002_column_scan.py --update-baseline  # 人工复核后重写基线
+"""
+
+from __future__ import annotations
+
+import argparse
+import re
+import sys
+from pathlib import Path
+
+BACKEND = Path(__file__).resolve().parents[1]
+MIGRATIONS = BACKEND / "migrations"
+BASELINE = BACKEND / "docs" / "audits" / "artifacts" / "fi002_unknown_columns.tsv"
+SRC_ROOTS = [BACKEND / "src", BACKEND / "crates"]
+
+# 系统 schema 前缀：不在 migrations 里，按设计跳过
+SYSTEM_SCHEMAS = {
+    "information_schema",
+    "pg_catalog",
+    "pg_class",
+    "pg_namespace",
+    "pg_index",
+    "pg_attribute",
+    "pg_constraint",
+    # 迁移运行器自建的追踪表（shared/src/migrate.rs），不在 migrations 里
+    "schema_migrations",
+}
+
+SQL_KEYWORDS = {
+    "select", "insert", "update", "delete", "from", "join", "where", "set",
+    "values", "into", "on", "and", "or", "not", "null", "order", "group",
+    "by", "having", "limit", "offset", "as", "left", "right", "inner",
+    "outer", "cross", "full", "union", "all", "distinct", "case", "when",
+    "then", "else", "end", "is", "in", "exists", "between", "like", "ilike",
+    "asc", "desc", "true", "false", "returning", "conflict", "do", "nothing",
+    "with", "recursive", "interval", "now", "current_timestamp", "coalesce",
+}
+
+CONSTRAINT_STARTERS = {
+    "constraint", "primary", "foreign", "unique", "check", "exclude", "like",
+}
+
+
+def strip_sql_comments(text: str) -> str:
+    """去掉 -- 行注释与 /* */ 块注释（字符串字面量内的不动，迁移里无此情况）。"""
+    text = re.sub(r"/\*.*?\*/", " ", text, flags=re.S)
+    return re.sub(r"--[^\n]*", "", text)
+
+
+def split_top_level(body: str, sep: str = ",") -> list[str]:
+    """按顶层分隔符切分（忽略括号内的分隔符，如 NUMERIC(10,2)、CHECK (a,b)）。"""
+    parts, depth, cur = [], 0, []
+    for ch in body:
+        if ch == "(":
+            depth += 1
+        elif ch == ")":
+            depth -= 1
+        if ch == sep and depth == 0:
+            parts.append("".join(cur))
+            cur = []
+        else:
+            cur.append(ch)
+    if cur:
+        parts.append("".join(cur))
+    return parts
+
+
+IDENT = r'(?:"([^"]+)"|([A-Za-z_][A-Za-z0-9_]*))'
+
+
+def ident_of(m: re.Match) -> str:
+    """第一个 IDENT 的值（CREATE TABLE 用）。"""
+    return ident_at(m, 0)
+
+
+def ident_at(m: re.Match, idx: int) -> str:
+    """第 idx 个 IDENT 的值（0 起）。
+
+    每个 IDENT 贡献两个捕获组（带引号 / 不带引号）。**不能**用
+    `m.group(1) or m.group(2)` 取第二个 IDENT——那样 ALTER TABLE 的列名
+    会读到表名，把表自己当列加进宇宙（2026-10-25 实测：auth_person 因此
+    只剩 13 真列 + 1 个假列）。
+    """
+    quoted = m.group(2 * idx + 1)
+    bare = m.group(2 * idx + 2)
+    return (quoted or bare or "").strip()
+
+
+def parse_create_table(body: str) -> list[str]:
+    """从 CREATE TABLE 的括号体里提取列名（跳过表级约束）。"""
+    cols: list[str] = []
+    for item in split_top_level(body):
+        item = item.strip()
+        if not item:
+            continue
+        low = item.lower()
+        first = low.split(None, 1)[0].rstrip("(")
+        if first in CONSTRAINT_STARTERS:
+            # PRIMARY KEY (a, b) / UNIQUE (a) 形式：括号内是列
+            m = re.match(r"(?:primary\s+key|unique)\s*\(([^)]*)\)", low)
+            if m:
+                for c in m.group(1).split(","):
+                    c = c.strip().strip('"')
+                    if c:
+                        cols.append(c)
+            continue
+        m = re.match(IDENT, item)
+        if m:
+            cols.append(ident_of(m).lower())
+    return cols
+
+
+def build_universe() -> tuple[dict[str, set[str]], list[str]]:
+    """解析全部正向迁移，返回 (table -> columns, 解析告警)。"""
+    universe: dict[str, set[str]] = {}
+    warnings: list[str] = []
+    files = sorted(
+        p for p in MIGRATIONS.glob("*.sql") if not p.name.endswith("_rollback.sql")
+    )
+    if not files:
+        raise SystemExit(f"未找到迁移文件：{MIGRATIONS}")
+
+    for f in files:
+        text = strip_sql_comments(f.read_text(encoding="utf-8"))
+
+        # CREATE TABLE [IF NOT EXISTS] name ( body )
+        for m in re.finditer(
+            r"CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?" + IDENT + r"\s*\(",
+            text,
+            re.I,
+        ):
+            table = ident_of(m).lower()
+            start = m.end()
+            depth, i = 1, start
+            while i < len(text) and depth > 0:
+                if text[i] == "(":
+                    depth += 1
+                elif text[i] == ")":
+                    depth -= 1
+                i += 1
+            body = text[start : i - 1]
+            cols = parse_create_table(body)
+            if not cols:
+                warnings.append(f"{f.name}: CREATE TABLE {table} 未解析出列")
+            universe.setdefault(table, set()).update(cols)
+
+        # ALTER TABLE 语句级扫描：一条 ALTER 可带**多个** ADD/DROP COLUMN
+        # （逗号分隔，如 018 一次加 7 列）。按 `;` 切语句，逐语句处理。
+        for stmt_m in re.finditer(
+            r"ALTER\s+TABLE\s+(?:IF\s+EXISTS\s+)?" + IDENT + r"([^;]*);",
+            text,
+            re.I,
+        ):
+            table = ident_at(stmt_m, 0).lower()
+            body = stmt_m.group(3)
+
+            # ADD COLUMN [IF NOT EXISTS] col
+            for m in re.finditer(
+                r"\bADD\s+COLUMN\s+(?:IF\s+NOT\s+EXISTS\s+)?" + IDENT, body, re.I
+            ):
+                universe.setdefault(table, set()).add(ident_at(m, 0).lower())
+
+            # DROP COLUMN [IF EXISTS] col
+            for m in re.finditer(
+                r"\bDROP\s+COLUMN\s+(?:IF\s+EXISTS\s+)?" + IDENT, body, re.I
+            ):
+                if table in universe:
+                    universe[table].discard(ident_at(m, 0).lower())
+
+            # RENAME TO new（表重命名）
+            m = re.match(r"\s*RENAME\s+TO\s+" + IDENT, body, re.I)
+            if m:
+                new = ident_at(m, 0).lower()
+                if table == new:
+                    # 011 的「大写→小写」重命名：大小写不敏感建模下是 no-op
+                    continue
+                if table in universe:
+                    universe[new] = universe.pop(table)
+                # 旧表不在宇宙内：表不是 migrations 建的（遗留库），
+                # 其引用会以「表不在 migrations」出现在违规里，由基线登记
+
+    return universe, warnings
+
+
+# ── Rust 字面量提取 ──────────────────────────────────────────────────────────
+
+def unescape_rust(body: str) -> str:
+    """把 Rust 字面量的转义还原成运行期字符串。
+
+    **必须做**：源码里的行续接（反斜杠 + 换行）在运行期被吃掉，不还原就会
+    让 `WITH RECURSIVE chain AS (...),\n seeds AS (...)` 这种多行 CTE 的
+    正则失配——实测把 seeds/sub_groups/tree 当成幽灵表。
+    """
+    body = body.replace("\\\n", "")  # 行续接：反斜杠 + 换行
+    body = body.replace('\\"', '"')
+    body = body.replace("\\n", " ").replace("\\t", " ").replace("\\r", " ")
+    return body
+
+
+LITERAL_RE = re.compile(
+    r'r#"(?P<raw>.*?)"#|r"(?P<raw2>[^"]*)"|"(?P<norm>(?:[^"\\]|\\.)*)"',
+    re.S,
+)
+
+
+def cfg_test_ranges(text: str) -> list[tuple[int, int]]:
+    """`#[cfg(test)] mod ... { ... }` 的字节区间。
+
+    文件内测试模块里的 SQL 是夹具（常打 users/t/x_probe 这类虚构表），
+    不该进棘轮。按花括号配平取块区间——比「见到 cfg(test) 就切掉后半文件」
+    精确，避免误伤测试模块之后的产码。
+    """
+    ranges = []
+    for m in re.finditer(r"#\[cfg\(test\)\]\s*(?:\n\s*)*mod\s+[A-Za-z0-9_]+\s*\{", text):
+        start = m.start()
+        i = m.end() - 1  # 指向 '{'
+        depth = 0
+        while i < len(text):
+            if text[i] == "{":
+                depth += 1
+            elif text[i] == "}":
+                depth -= 1
+                if depth == 0:
+                    break
+            i += 1
+        ranges.append((start, i + 1))
+    return ranges
+
+
+def rust_literals(path: Path):
+    """产出 (行号, 字面量内容)。只取含 SQL 关键词、且不在 #[cfg(test)] 模块内的。"""
+    try:
+        text = path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return
+    skip = cfg_test_ranges(text)
+    for m in LITERAL_RE.finditer(text):
+        if any(a <= m.start() < b for a, b in skip):
+            continue
+        body = m.group("raw") or m.group("raw2") or m.group("norm") or ""
+        if not body:
+            continue
+        low = body.lower()
+        if not re.search(r"\b(select|insert|update|delete)\b", low):
+            continue
+        if not re.search(r"\b(from|into|set|join|table)\b", low):
+            continue
+        line = text.count("\n", 0, m.start()) + 1
+        yield line, unescape_rust(body)
+
+
+QUALIFIED_RE = re.compile(r"\b([A-Za-z_][A-Za-z0-9_]*)\.([A-Za-z_][A-Za-z0-9_]*)\b")
+TABLE_REF_RE = re.compile(
+    r"\b(?:from|join|update|insert\s+into|delete\s+from)\s+"
+    r'("([^"]+)"|([A-Za-z_][A-Za-z0-9_]*))'
+    r"(?:\s+(?:as\s+)?([A-Za-z_][A-Za-z0-9_]*))?",
+    re.I,
+)
+INSERT_COLS_RE = re.compile(
+    r"\binsert\s+into\s+(\"[^\"]+\"|[A-Za-z_][A-Za-z0-9_]*)\s*\(([^)]*)\)", re.I
+)
+SET_CLAUSE_RE = re.compile(r"\bset\s+(.*?)(?:\bwhere\b|\breturning\b|$)", re.I | re.S)
+SELECT_LIST_RE = re.compile(r"\bselect\s+(.*?)\s+\bfrom\b", re.I | re.S)
+
+
+def analyze_sql(sql: str) -> tuple[set[tuple[str, str]], dict[str, int]]:
+    """从一条 SQL 字面量抽取 (table, column) 引用，返回 (pairs, 统计)。"""
+    stats = {"unresolved_qualifier": 0, "ambiguous_bare": 0, "dynamic": 0}
+    pairs: set[tuple[str, str]] = set()
+
+    # 含 {…} 的是 format! 模板：部分 SQL（常见是 {ANCESTOR_CTE} 这类 CTE 片段）
+    # 不在本字面量里，CTE 名无从识别。此类字面量**只报能正向解析的引用**
+    # （表在 migrations 宇宙内），不报「表不在 migrations」——否则 CTE 名会被
+    # 当成幽灵表（实测：chain / events / seeds / tree / sub_groups 全是这种）。
+    dynamic = "{" in sql and "}" in sql
+    if dynamic:
+        stats["dynamic"] += 1
+
+    # CTE 名（WITH x AS (...)、WITH RECURSIVE a AS (...), b AS (...)）：
+    # 它们是查询内临时关系，不是基表——当表用会报一堆假违规
+    # （实测：base / chain / hit / events / gs 全是 CTE）。
+    cte_names: set[str] = set()
+    for m in re.finditer(
+        r"(?:\bwith\b(?:\s+recursive)?|,)\s*([A-Za-z_][A-Za-z0-9_]*)"
+        r"(?:\s*\([^()]*\))?\s+as\s*\(",
+        sql,
+        re.I,
+    ):
+        cte_names.add(m.group(1).lower())
+
+    # 表引用 + 别名映射
+    alias: dict[str, str] = {}
+    tables: list[str] = []
+    for m in TABLE_REF_RE.finditer(sql):
+        raw = m.group(1)
+        table = (m.group(2) or m.group(3) or "").strip('"').lower()
+        if not table:
+            continue
+        # 系统 schema（information_schema / pg_catalog / pg_class …）不是 migrations 建的表
+        if table in SYSTEM_SCHEMAS:
+            continue
+        # CTE 名不是基表
+        if table in cte_names:
+            continue
+        # schema 限定写法（information_schema.columns）：表名后紧跟 '.' 的是 schema
+        tail = sql[m.end(1):m.end(1) + 1]
+        if tail == ".":
+            continue
+        ali = (m.group(4) or "").lower()
+        if ali and ali not in SQL_KEYWORDS:
+            alias[ali] = table
+        if table not in tables:
+            tables.append(table)
+
+    # 限定列 ref.col
+    for m in QUALIFIED_RE.finditer(sql):
+        left, right = m.group(1).lower(), m.group(2).lower()
+        if left in SYSTEM_SCHEMAS:
+            continue
+        if left in cte_names:
+            stats["unresolved_qualifier"] += 1
+        elif left in alias:
+            pairs.add((alias[left], right))
+        elif left in tables:
+            pairs.add((left, right))
+        else:
+            # 可能是 CTE 别名 / 函数命名空间 / schema 限定；不计违规
+            stats["unresolved_qualifier"] += 1
+
+    # INSERT 列清单
+    for m in INSERT_COLS_RE.finditer(sql):
+        table = m.group(1).strip('"').lower()
+        if table in SYSTEM_SCHEMAS or table in cte_names:
+            continue
+        for c in m.group(2).split(","):
+            c = c.strip().strip('"').lower()
+            if c and re.fullmatch(r"[a-z_][a-z0-9_]*", c):
+                pairs.add((table, c))
+
+    # UPDATE SET 列（单表；多表 UPDATE 的 SET 列无法归属）
+    if tables and len(tables) == 1:
+        for m in SET_CLAUSE_RE.finditer(sql):
+            for item in split_top_level(m.group(1)):
+                mm = re.match(r"\s*([A-Za-z_][A-Za-z0-9_]*)\s*=", item)
+                if mm:
+                    pairs.add((tables[0], mm.group(1).lower()))
+
+    # 单表 SELECT 裸列
+    if tables and len(tables) == 1:
+        for m in SELECT_LIST_RE.finditer(sql):
+            for item in split_top_level(m.group(1)):
+                item = item.strip()
+                if not item or item == "*" or item.endswith("*"):
+                    continue
+                mm = re.match(r"([A-Za-z_][A-Za-z0-9_]*)", item)
+                if not mm:
+                    continue
+                name = mm.group(1).lower()
+                # 函数调用（count( / coalesce( ...）或关键字不算裸列；
+                # 限定列（u.id / 表名.列）由 QUALIFIED_RE 负责，这里必须跳过——
+                # 否则别名会被当成列名（实测：x_org_unit.u2、x_work.w 一批假违规）。
+                if "(" in item or "." in item or name in SQL_KEYWORDS:
+                    continue
+                pairs.add((tables[0], name))
+    elif len(tables) > 1:
+        stats["ambiguous_bare"] += 1
+
+    return pairs, stats
+
+
+CTE_DEF_RE = re.compile(
+    r"(?:\bwith\b(?:\s+recursive)?|,)\s*([A-Za-z_][A-Za-z0-9_]*)"
+    r"(?:\s*\([^()]*\))?\s+as\s*\(",
+    re.I,
+)
+
+
+def collect_cte_names() -> set[str]:
+    """全仓 CTE 名集合。
+
+    单个 SQL 片段（如 `UNION SELECT ... JOIN sub_groups sg`）里的 CTE 名
+    在其外层模板里定义——只看单条字面量认不出。CTE 名是**查询内**临时关系，
+    但本仓按约定跨片段复用，故全仓收集后统一当非基表处理。
+    """
+    names: set[str] = set()
+    for root in SRC_ROOTS:
+        if not root.exists():
+            continue
+        for path in sorted(root.rglob("*.rs")):
+            for _, sql in rust_literals(path):
+                for m in CTE_DEF_RE.finditer(sql):
+                    names.add(m.group(1).lower())
+    return names
+
+
+def scan_code(universe: dict[str, set[str]]):
+    """返回 (violations, 统计)。violations: {(table, column): [evidence...]}"""
+    violations: dict[tuple[str, str], list[str]] = {}
+    global_cte = collect_cte_names()
+    stats = {
+        "files": 0,
+        "literals": 0,
+        "pairs": 0,
+        "unresolved": 0,
+        "ambiguous": 0,
+        "dynamic": 0,
+        "test_refs": 0,
+        "dynamic_unknown_table": 0,
+        "cte_refs": 0,
+    }
+
+    for root in SRC_ROOTS:
+        if not root.exists():
+            continue
+        for path in sorted(root.rglob("*.rs")):
+            rel = path.relative_to(BACKEND).as_posix()
+            stats["files"] += 1
+            for line, sql in rust_literals(path):
+                stats["literals"] += 1
+                pairs, st = analyze_sql(sql)
+                stats["unresolved"] += st["unresolved_qualifier"]
+                stats["ambiguous"] += st["ambiguous_bare"]
+                stats["dynamic"] += st["dynamic"]
+                is_test_file = "test" in path.name.lower()
+                for table, col in pairs:
+                    stats["pairs"] += 1
+                    if is_test_file:
+                        # 测试文件的 SQL 常打虚构表（users/t/x_probe）——不计违规
+                        stats["test_refs"] += 1
+                        continue
+                    if table not in universe:
+                        if table in global_cte:
+                            # 别处定义的 CTE 名（片段引用），不是基表
+                            stats["cte_refs"] += 1
+                            continue
+                        if st["dynamic"]:
+                            # 动态模板里的未知表多半是占位符展开的 CTE/临时表
+                            stats["dynamic_unknown_table"] += 1
+                            continue
+                        violations.setdefault((table, col), []).append(
+                            f"{rel}:{line} 表 {table} 不在 migrations"
+                        )
+                    elif col not in universe[table]:
+                        violations.setdefault((table, col), []).append(
+                            f"{rel}:{line}"
+                        )
+    return violations, stats
+
+
+# ── 基线棘轮 ────────────────────────────────────────────────────────────────
+
+
+def load_baseline() -> set[tuple[str, str]]:
+    if not BASELINE.exists():
+        return set()
+    known = set()
+    for raw in BASELINE.read_text(encoding="utf-8").splitlines():
+        if not raw or raw.startswith("#"):
+            continue
+        parts = raw.split("\t")
+        if len(parts) >= 2:
+            known.add((parts[0].strip().lower(), parts[1].strip().lower()))
+    return known
+
+
+# 基线条目分类理由（人工复核结论，2026-10-25）
+REASON_LEGACY_TABLE = (
+    "遗留表：Java 时代建的表，migrations 从不创建（011 只做大小写重命名）。"
+    "引用它的 handler 在 fresh DB 上会 500；修法需先决定这些表归谁建，"
+    "待有库轮次（本机无 PG，盲建表风险 > 收益）"
+)
+REASON_MISSING_COLUMN = (
+    "迁移缺列：handler 引用但 migrations 未建（与 FI-002 同类）。"
+    "fresh DB 上该 SQL 必 500；修法按 101 的范式补幂等 ADD COLUMN，"
+    "但列类型须对 live DB 复核，待有库轮次"
+)
+
+
+def write_baseline(violations: dict[tuple[str, str], list[str]], universe: dict[str, set[str]]) -> None:
+    BASELINE.parent.mkdir(parents=True, exist_ok=True)
+    lines = [
+        "# FI-002 静态列扫描基线（2026-10-25 建立）",
+        "#",
+        "# 语义：本文件登记的 (table, column) 对是**已人工复核、暂未修**的已知缺口。",
+        "# 棘轮：新增未知对 → CI 红（scripts/fi002_column_scan.py 退出 1）；",
+        "#       缺口被修掉 → 提示收敛（复核后 --update-baseline）。",
+        "# 修完一条就从基线删一条；**不要**为了绿而往这里加新条目。",
+        "#",
+        "# 格式：table<TAB>column<TAB>首条证据<TAB>复核理由",
+        "# 由 scripts/fi002_column_scan.py --update-baseline 生成，勿手改证据列。",
+    ]
+    legacy = missing = 0
+    for (table, col) in sorted(violations):
+        evidence = violations[(table, col)][0]
+        if table not in universe:
+            reason = REASON_LEGACY_TABLE
+            legacy += 1
+        else:
+            reason = REASON_MISSING_COLUMN
+            missing += 1
+        lines.append(f"{table}\t{col}\t{evidence}\t{reason}")
+    lines.append("")
+    lines.append(f"# 合计 {len(violations)} 对：遗留表 {legacy}、迁移缺列 {missing}")
+    BASELINE.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description="FI-002 静态列扫描")
+    ap.add_argument("--report", action="store_true", help="打印全部未知对（含基线内）")
+    ap.add_argument("--update-baseline", action="store_true", help="重写基线文件")
+    args = ap.parse_args()
+
+    universe, warnings = build_universe()
+    total_cols = sum(len(v) for v in universe.values())
+    violations, stats = scan_code(universe)
+
+    print(
+        f"[fi002] schema 宇宙：{len(universe)} 表 / {total_cols} 列"
+        f"（{len(list(MIGRATIONS.glob('*.sql')))} 个迁移文件）"
+    )
+    print(
+        f"[fi002] 扫描：{stats['files']} 文件 / {stats['literals']} SQL 字面量 / "
+        f"{stats['pairs']} 列引用；跳过：未解析限定符 {stats['unresolved']}、"
+        f"多表裸列 {stats['ambiguous']}、动态模板 {stats['dynamic']}、"
+        f"测试文件引用 {stats['test_refs']}、动态模板内未知表 {stats['dynamic_unknown_table']}"
+    )
+    if warnings:
+        for w in warnings[:10]:
+            print(f"[fi002] 解析告警：{w}", file=sys.stderr)
+        if len(warnings) > 10:
+            print(f"[fi002] 另有 {len(warnings) - 10} 条解析告警（略）", file=sys.stderr)
+
+    if args.update_baseline:
+        write_baseline(violations, universe)
+        print(f"[fi002] 基线已重写：{BASELINE.relative_to(BACKEND)}（{len(violations)} 对）")
+        return 0
+
+    baseline = load_baseline()
+    current = set(violations)
+    new = sorted(current - baseline)
+    resolved = sorted(baseline - current)
+
+    if args.report:
+        for (table, col) in sorted(current):
+            mark = "基线内" if (table, col) in baseline else "**新增**"
+            print(f"  [{mark}] {table}.{col}  {violations[(table, col)][0]}")
+
+    if resolved:
+        print(
+            f"[fi002] 基线可收敛：{len(resolved)} 对已不再出现"
+            f"（如 {', '.join(f'{t}.{c}' for t, c in resolved[:5])}）——"
+            "复核后用 --update-baseline 收敛",
+            file=sys.stderr,
+        )
+
+    if new:
+        print(f"\n[fi002] FAIL：{len(new)} 对新增未知 (table, column)", file=sys.stderr)
+        for table, col in new:
+            print(f"  {table}.{col}  {violations[(table, col)][0]}", file=sys.stderr)
+        print(
+            "\n修复：补迁移加列 / 改 SQL 拼写 / 若为扫描器误报则改进脚本或加基线并写明理由",
+            file=sys.stderr,
+        )
+        return 1
+
+    print(f"[fi002] OK：{len(current)} 对未知（均在基线内，无新增）")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

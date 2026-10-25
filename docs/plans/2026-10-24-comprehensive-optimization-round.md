@@ -408,3 +408,50 @@ CI 复盘发现 laiyipao CI 在**本轮开始前的 main（88681f239）上就已
 - **验证**：`cargo test -p shared` 167 passed（含 2 新）；`contract_alias_parity`
   全栈 73 对全过；`u2_probe_full_app_build`（create_app 全量构建，axum 冲突权威
   判据）过；`mount_coverage_guard`/`designer_route_match` 不回归；fmt/clippy 全净。
+
+### R2 — OA-FI002-CI：静态列扫描固化 + CI 棘轮
+
+**结论：FI-002 的「代码 SQL vs schema 对撞」方法固化为无需活库的静态脚本并接入 CI；
+首跑即挖出 48 对真实缺口（7 遗留表 + 41 迁移缺列），全部登记基线并标「待有库轮次」。**
+
+- **落地**：`oa4rust/backend/scripts/fi002_column_scan.py`
+  - schema 宇宙：解析 `migrations/*.sql`（209 个正向迁移）→ 379 表 / 5096 列；
+  - 代码引用：扫 `crates/*/src` + `src/` 的 Rust 字符串字面量（4345 条含 SQL），
+    抽表引用/别名映射/限定列/INSERT 列清单/UPDATE SET/单表 SELECT 裸列；
+  - 棘轮：对 `docs/audits/artifacts/fi002_unknown_columns.tsv` 基线，新增未知对
+    退出 1，缺口修掉提示收敛。
+- **CI**：`oa4rust-ci.yml` 新增 `fi002-column-scan` job（秒级、无需 PG）。
+- **开发过程中修掉的 7 类误报（都留了注释，防复发）**：
+  1. `ident_of` 只读第一个 IDENT → ALTER 的列名读成表名（auth_person 曾只剩
+     13 真列 + 1 个假列）；
+  2. 单列 ADD COLUMN 正则认不出**多列 ALTER**（018 一次加 7 列）→ 改语句级扫描；
+  3. RENAME 大小写归一后成了「同名」告警 → 视为 no-op；
+  4. CTE 名当表（`WITH RECURSIVE chain AS (...)`）→ 解析 CTE 定义 + 全仓 CTE 名集合
+     （片段引用外层模板里的 CTE）；
+  5. Rust 行续接（`\` + 换行）残留在提取文本里 → 反转义；
+  6. SELECT 裸列分支把限定列的别名当列名（`SELECT u2.id` → 列 `u2`）；
+  7. `information_schema` / `pg_class` / `schema_migrations` 等系统表；
+  另：测试文件与 `#[cfg(test)]` 模块的夹具 SQL（虚构表 users/t/x_probe）不计违规。
+- **首跑发现（48 对，全部进基线）**：
+  - **遗留表 7 对**：`pp_c_touch_detained|expire|passexpired.xupdatetime`、
+    `x_process_transition.{condition,id,to_activity,work_id}`——Java 时代建的表，
+    migrations 从不创建（011 只做大小写重命名）。引用它们的 handler 在 fresh DB
+    上会 500；修法要先定「这些表归谁建」，转 §9 新台账。
+  - **迁移缺列 41 对**（与 FI-002 同类，fresh DB 必 500）：
+    `auth_person_identity.person_id`、`x_meeting_checkin.{meeting_id,person,checkin_time}`、
+    `x_bbs_section.creator`、`x_cms_index.status`、`x_portal.{config,pages}`、
+    `x_express_subscribe.{xcallback,xcompany,xtrackingnumber}`、`x_program_*` 10 对、
+    `pp_c_draft.xstatus`、`pp_c_keylock.{xidentity,xtitle}`、`pp_e_file.xcontent`、
+    `pp_e_script.xcode` 等。修法按 101 的范式补幂等 ADD COLUMN，但**列类型须对
+    live DB 复核**——本机无 PG，盲写类型会让 fresh DB 出现新错，故整批转 §9 新台账
+    （「有库轮次」执行），不在此盲改。
+- **验证**：基线态退出 0（「48 对未知均在基线内」）；临时把
+  `FROM x_cms_index` 改成 `x_cms_index_typo` → 退出 1 并点名 8 对新违规（已还原）；
+  YAML 合法（7 个 job）。
+
+#### §9 台账新增（R2 发现，均需活库）
+
+| ID | 事项 | 不做理由 |
+|---|---|---|
+| FI002-MISSING-COLUMNS | 41 对「迁移缺列」（见 `docs/audits/artifacts/fi002_unknown_columns.tsv`） | 修法是按 101 范式补幂等 ADD COLUMN，但**列类型**须对 live DB 复核；本机无 PG，盲写类型会让 fresh DB 出现新的类型不匹配错误（比现状更糟）。有库轮次按「先查 live information_schema 类型 → 生成迁移 → fresh DB 跑集成测试」执行 |
+| FI002-LEGACY-TABLES | 7 对遗留表引用（`pp_c_touch_*`、`x_process_transition`） | 这些表不是 migrations 建的（Java 时代遗留）；补建表需要先定 schema 归属与索引，且 touch/transition 端点的语义要确认，属独立任务 |
