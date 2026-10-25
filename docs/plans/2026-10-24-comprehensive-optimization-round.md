@@ -469,3 +469,16 @@ CI 复盘发现 laiyipao CI 在**本轮开始前的 main（88681f239）上就已
 （ownership 扫描 / 路由消费 / 文档漂移 / readonly 白名单）全过；
 新守卫 `TestAdminUserDetailNeverWritesWallet` 通过。DB 集成用例无 PG 跳过（待 CI）。
 剩余两处 `LoadWallet` 调用都在**写**端点（签到、结算），副作用属预期。
+
+### R4 — CI 与工程台账收口
+
+| 项 | 处置 | 依据 |
+|---|---|---|
+| WARN-CI（check-warnings 接入 CI） | **已做（改方案）** | 原顾虑是「全量 check-warnings 含 Rust clippy（30min），与 oa4rust CI 重复」。改为只跑**廉价项**：新增 `.github/workflows/warnings-gate.yml` → `--only rust-lints,llm-lab,llm-lab-tests,java`（合计约 1 分钟）。覆盖的是此前**完全没有 CI** 的三块：llm-lab 的字节码编译与 pytest（38 用例）、cool 的 `javac -Xlint:all -Werror`、以及「每个 workspace 成员都继承 `[lints]`」静态守卫（漏写无症状失效，只有这条扫描能发现）。不带 paths 过滤（保留将来可设为 required 的可能） |
+| COOL-CI（jar 来源） | **已定并落地** | commons-codec **1.17.1**（与 `cool/README.md` 记录一致），CI 从 Maven Central 下载后按官方 **SHA-1 `973638b7…0579`** 校验。该 SHA-1 由两路互证：Maven Central 的 `.sha1` 文件 + 本机 `~/.m2` 里独立下载的同一版本 jar 实测一致；`javac -Xlint:all -Werror` 用该 jar 编译 `EncryptUtil.java` 通过 |
+| WF-REQUIRED（required checks 核对） | **已核对并给出精确清单（不代改）** | 实测：main 无 classic branch protection，走 **rulesets**。`laiyipaoCIRuleset`（active）已要求 3 个 context，且与现行 job 名**逐字一致**：`Server build, vet & test (PostgreSQL)` / `Miniapp type-check, test & build` / `Admin type-check, test & build`。**未纳入 required 的**（按「确定性」排序，建议按此追加）：`quality`、`fi002-column-scan`、`openapi-guard`、`contract-gate`（三端契约）、`test`（auto-checkin）、`Dependency vulnerability gate`。**不建议**纳入：`integration-tests`/`unit-tests`（依赖 PG，本轮实测过 flaky）、`behavior-compare`（含 continue-on-error 段）。改法（用户执行一次即可）：GitHub → Settings → Rules → `laiyipaoCIRuleset` → 勾选上述 context，或用 `gh api --method PUT repos/:owner/:repo/rulesets/24845982` 提交完整 rules 数组。**没有代改的理由**：当前所有直推都走 admin bypass（推送时提示「bypassed N required status checks」），加 required 只增加 bypass 提示、不产生实际拦截；而一旦真正启用，任何 flaky job 都会卡住合并——需要先积累若干次全绿运行再启用 |
+| 附带修复：oa4rust 夹具并发 flaky | **已修** | CI 实测（run 40181402605，R2 提交——该提交只动脚本/文档）：`personal::u2_custom_put_get_delete_roundtrip` 偶发 E23505 `auth_person_unique_id_key`。根因：`auth_person` 的 `id` 与 `unique_id` **各有一个唯一索引**，而 `ON CONFLICT` 只能指定一个仲裁索引；两个测试并发插同一行时 PG 可能先在 unique_id 索引上判冲突。修法：`upsert_fixture_person` 重试（每次重跑 DELETE 清残留），3 次仍失败才 fail-loud |
+| 附带修复：laiyipao admin size 检查 flaky | **已修** | CI 实测（run 40181786246，R3 提交——只动 Go）：`Admin type-check, test & build` 在 `size:check` 红，报「dist 比源文件旧」。实测 vite 构建仅 0.6s，`dist/index.html` 写于 09:43:41.35、检查在 .44 跑——同秒内检出阶段某源文件 mtime 反超不到 0.1s（8 次运行 1 次）。修法：加 2 秒容差（抓「上次构建」的分钟级陈旧足够，又远小于人「改完再敲命令」的间隔）。两方向实测：源文件 = dist+1s → 退出 0；dist+10s → 退出 2 |
+
+**验证**：warnings-gate 本地实跑 4 项（rust-lints/llm-lab/java PASS、llm-lab-tests 本机无 pytest 故 SKIP，
+CI 有 pytest 会实跑）；YAML 合法；size:check 容差两方向实测；夹具重试逻辑编译通过。

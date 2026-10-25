@@ -1,0 +1,56 @@
+# 跨子项目告警门禁（check-warnings.mjs 的廉价项）
+#
+# 为什么单独一个 workflow：各子项目的 CI 只覆盖自己的工具链，而下面这些此前没有
+# 任何 CI 在跑——
+#   - llm-lab 的字节码编译与 pytest（38 个用例，含梯度校验/端到端冒烟）；
+#   - cool 的 `javac -Xlint:all -Werror`（需要 commons-codec jar，开发机通常没有，
+#     于是这项门禁在本地长期处于 SKIP 状态）；
+#   - 「每个 workspace 成员都继承 [lints] workspace = true」这条静态守卫——
+#     它不属于任何单个子项目：漏写的成员**无症状失效**（告警不再被 deny），
+#     只有这条扫描能发现。
+#
+# 只跑**廉价项**（合计约 1 分钟）：Rust clippy（30 分钟）、Vite 构建、Go 测试
+# 都留在各自 workflow，本 job 不重复。
+#
+# ⚠️ 不带 paths 过滤：带 paths 的 workflow 永不可设为 required check
+# （GitHub 对未触发的 PR 显示 Expected-waiting，PR 永远无法合并）。仓库既有教训。
+name: warnings-gate
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  warnings-gate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "22"
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.x"
+
+      - name: Install pytest (llm-lab-tests 项需要)
+        run: python -m pip install --quiet pytest
+
+      # cool 的 javac 门禁需要 commons-codec。版本与 cool/README.md 记录的一致
+      # （1.17.1）；下载后按 Maven Central 发布的 SHA-1 校验，避免供应链上
+      # 「拿到什么编什么」。
+      - name: Fetch commons-codec (cool javac 项)
+        run: |
+          set -euo pipefail
+          mkdir -p cool/lib
+          curl -fsSL -o cool/lib/commons-codec-1.17.1.jar \
+            https://repo1.maven.org/maven2/commons-codec/commons-codec/1.17.1/commons-codec-1.17.1.jar
+          echo "973638b7149d333563584137ebf13a691bb60579  cool/lib/commons-codec-1.17.1.jar" | sha1sum -c -
+
+      - name: Cross-subproject warning gates
+        run: node scripts/check-warnings.mjs --only rust-lints,llm-lab,llm-lab-tests,java

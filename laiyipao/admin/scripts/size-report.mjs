@@ -97,7 +97,21 @@ const src = newestMtime(join(root, 'src'), new Set(['components.d.ts']))
 const cfg = newestMtime(root, new Set(['node_modules', 'dist', '.git', 'coverage', 'public', 'scripts']))
 const newestSrc = Math.max(src.newest, cfg.newest)
 
-if (distMtime < newestSrc) {
+/**
+ * ⚠️ 容差（2026-10-25）：mtime 比较本身有亚秒级竞态。
+ *
+ * CI 实测（run 40181786246）：vite 构建只花 0.6s，`dist/index.html` 写于
+ * 09:43:41.35，而 size:check 在 09:43:41.44 跑——同一个 1 秒窗口里，
+ * 检出阶段写入的某个源文件（src/views/ContentView.vue）mtime 比 dist
+ * 晚了不到 0.1s，于是这道检查偶发假红（8 次运行里 1 次）。
+ *
+ * 本检查的目的是抓「dist 是上一次构建的」（分钟级陈旧），不是抓亚秒顺序。
+ * 2 秒容差足以覆盖文件系统时间戳抖动，又远小于「忘了重建」的真实间隔
+ * （人改完文件再敲命令不可能 2 秒内完成）。
+ */
+const MTIME_SKEW_MS = 2000
+
+if (distMtime + MTIME_SKEW_MS < newestSrc) {
   console.error('*** dist 比源文件旧 —— 这份产物是上一次构建的，报告会是错的。***')
   console.error(`    最新的源文件：${src.newestRel || cfg.newestRel}`)
   console.error('    请先 `npm run build:only`（`build` 会先跑 vue-tsc，慢一点）。')

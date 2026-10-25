@@ -380,6 +380,53 @@ mod u2_contract {
     }
 
     /// 幂等建表 + 管理员/普通用户会话夹具；返回 (user_token, admin_token)
+    /// 并发安全的夹具人员 upsert。
+    ///
+    /// # 为什么需要重试（2026-10-25，CI 实测 flaky）
+    ///
+    /// `auth_person` 上 `id` 与 `unique_id` **各有一个唯一索引**，而
+    /// `ON CONFLICT` 只能指定**一个**仲裁索引（PostgreSQL 不支持一条 INSERT
+    /// 带多个 ON CONFLICT 子句）。两个测试并发插同一行（同 id、同 unique_id）
+    /// 时，PostgreSQL 可能先在 `unique_id` 索引上判冲突——那不是仲裁索引，
+    /// 于是直接抛 E23505，把其中一个测试随机打红：
+    ///
+    ///   duplicate key value violates unique constraint "auth_person_unique_id_key"
+    ///   Key (unique_id)=(u2-admin@P) already exists.
+    ///
+    /// 重试时**重跑一次 DELETE**（此时对方已提交，残留可见），第二次必然走
+    /// ON CONFLICT (id) 的 UPDATE 分支。三次仍失败则 fail-loud（说明不是竞态
+    /// 而是真正的数据问题）。
+    async fn upsert_fixture_person(client: &deadpool_postgres::Client, pid: &str, uid: &str) {
+        for attempt in 0..3 {
+            // 清「同 unique_id 但不同 id」的残留：ON CONFLICT (id) 覆盖不到它
+            client
+                .execute(
+                    "DELETE FROM auth_person WHERE unique_id = $1 AND id <> $2",
+                    &[&uid, &pid],
+                )
+                .await
+                .unwrap();
+            let res = client
+                .execute(
+                    "INSERT INTO auth_person (id, unique_id, name, password_hash) \
+                     VALUES ($1, $2, $3, 'u2-test-noop') \
+                     ON CONFLICT (id) DO UPDATE SET unique_id = EXCLUDED.unique_id",
+                    &[&pid, &uid, &uid],
+                )
+                .await;
+            match res {
+                Ok(_) => return,
+                Err(e) if is_unique_violation(&e) && attempt < 2 => continue,
+                Err(e) => panic!("夹具 upsert 失败（{pid} / {uid}）：{e}"),
+            }
+        }
+    }
+
+    /// 这个错误是不是唯一键冲突（SQLSTATE 23505）。
+    fn is_unique_violation(e: &deadpool_postgres::tokio_postgres::Error) -> bool {
+        e.code() == Some(&deadpool_postgres::tokio_postgres::error::SqlState::UNIQUE_VIOLATION)
+    }
+
     async fn fixture() -> (shared::Pool, String, String, String, String, SessionManager) {
         let pool = test_pool();
         let client = pool.get().await.unwrap();
@@ -539,26 +586,7 @@ mod u2_contract {
         let admin_uid = "u2-admin@P";
         for uid in [user_uid, admin_uid] {
             let pid = format!("u2-person-{}", uid.trim_end_matches("@P"));
-            // 先按 unique_id 清掉"同 unique_id 但不同 id"的历史残留：auth_person 的
-            // unique_id 带 UNIQUE 约束，ON CONFLICT (id) 覆盖不到它——共享测试库里
-            // 若别的用例先以不同 id 插了同一 unique_id，这里会 E23505 崩（flaky）。
-            // 删除后再 UPSERT by id，使夹具与 DB 既有状态无关、顺序无关。
-            client
-                .execute(
-                    "DELETE FROM auth_person WHERE unique_id = $1 AND id <> $2",
-                    &[&uid.to_string(), &pid],
-                )
-                .await
-                .unwrap();
-            client
-                .execute(
-                    "INSERT INTO auth_person (id, unique_id, name, password_hash) \
-                 VALUES ($1, $2, $3, 'u2-test-noop') \
-                 ON CONFLICT (id) DO UPDATE SET unique_id = EXCLUDED.unique_id",
-                    &[&pid, &uid.to_string(), &uid.to_string()],
-                )
-                .await
-                .unwrap();
+            upsert_fixture_person(&client, &pid, uid).await;
         }
         // admin 角色
         client
