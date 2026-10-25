@@ -216,6 +216,45 @@ impl PermissionRegistry {
         registry.register_prefix("/api/person/password", PermissionLevel::Authenticated);
         // GET icon is public per R8 (头像端点无权限也可访问)
         registry.register_prefix("/api/person/icon", PermissionLevel::Public);
+        // ── o2server 契约路径别名（2026-10-24 R1，OA-P0-1 收口）────────────
+        // 与 AUTH_EXEMPT_PATHS 的别名镜像严格配对（双锁一致性：豁免 ⟺ Public）。
+        // 旧路径公开/自服务的形态，别名必须同权——少一条就是「豁免了但
+        // 注册表不 Public」的 401 死态，多一条（如把 empower 族标 Public）
+        // 就是匿名可写。
+        registry.register_prefix(
+            "/api/organization/assemble/personal/reset",
+            PermissionLevel::Public,
+        );
+        registry.register_exact(
+            "/api/organization/assemble/personal/regist",
+            PermissionLevel::Public,
+        );
+        registry.register_prefix(
+            "/api/organization/assemble/personal/custom",
+            PermissionLevel::Public,
+        );
+        registry.register_prefix(
+            "/api/organization/assemble/personal/definition",
+            PermissionLevel::Public,
+        );
+        registry.register_prefix(
+            "/api/organization/assemble/personal/icon",
+            PermissionLevel::Public,
+        );
+        registry.register_prefix(
+            "/api/organization/assemble/personal/person/icon",
+            PermissionLevel::Public,
+        );
+        // 契约别名的兜底档位（2026-10-24 R1）：镜像旧径 /api/person 的 catch-all
+        // （下方 line ~390 同款）。**不能省**：check_permission 对注册表未命中的
+        // 路径（None）早退 Authenticated 且**不 consult requires_admin**——少了这条，
+        // 别名下的 empower/person/signature 等写操作就绕过了 admin 门禁
+        // （旧径命中 /api/person 兜底，写要 admin；别名不要 = 安全弱化）。
+        // 上面的 Public 条目均长于本前缀，最长前缀优先下不受影响。
+        registry.register_prefix(
+            "/api/organization/assemble/personal",
+            PermissionLevel::Authenticated,
+        );
         // 新注册的管理后台端点（AI、CMS、file 等扩展模块）：Authenticated 级别，
         // 写操作保护由 requires_admin 函数独立处理（仅 person/unit/role/group 需要 admin）
         registry.register_prefix("/api/ai", PermissionLevel::Authenticated);

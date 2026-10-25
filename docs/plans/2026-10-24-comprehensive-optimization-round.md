@@ -358,3 +358,53 @@ CI 复盘发现 laiyipao CI 在**本轮开始前的 main（88681f239）上就已
 | YAML 语法（3 个改动 workflow + 1 新增） | 全部合法 |
 
 **环境限制（fail-loud）**：本机无 PostgreSQL（原生 PG 15 仅客户端无数据目录、initdb 被安全策略拦截、Docker Desktop 未运行），DB 集成用例全部标注「待 PG」；本机 loopback 对关闭端口的拒绝被延迟到 ~2s（全端口现象），放大了 DB 触达测试的耗时。oa4rust 的 arity_probe（4600+ 请求逐一带 DB 触达）因此未能在本机跑完，其 `build_core_router` 已成功构建（无路由冲突的权威判据），请求循环待 CI 验证。
+
+---
+
+## 14. 延期台账清算（2026-10-25，R1–R6）
+
+> 用户指示「继续完成剩余所有台账并验证」。§9 台账 18 项逐项可行性评估后分期实施；
+> 本节记录每项的处置结果。口径不变：**已完成 = 有改动 + 有构建/测试证据**。
+
+### R1 — OA-P0-1 余量：契约路径别名补齐（原判「产品/契约决策」，本轮落地）
+
+**结论：契约 76 条中 73 条补齐别名，3 条有意不映射（安全/冲突理由），中间件四张表
+镜像补齐且 parity 实测为 0。**
+
+- **旧结论的假象**：routing-completion-plan（2026-09-03）称「NEEDS 73 ROUTES」——
+  复核发现路由早已存在于 `/api/person/*`、`/api/reset/*`（personal/empower/
+  personal_extend/control 四 crate），缺的只是**契约基路径** `/api/organization/
+  assemble/personal/*` 的接线。
+- **落地**：三个 crate 的 router 内新增「契约路径别名」段，共 **73 条**路由原样委托
+  同一 handler（personal 57 / empower 14 / personal_extend 2）。旧路径行为零变化。
+- **3 条有意不映射**：
+  1. `GET regist|reset/check/password/{password}`（2 条）——口令入 URL 的旧形态，
+     Rust 侧已按「十类功能1 安全重设计」改 POST body；别名回 GET 是安全回退；
+  2. `POST custom/{name}/mockputtopost`——与 organization_assemble_personal 既有路由
+     `custom/{id}/mockputtopost`（POST）同形，双注册会 axum panic；该契约路径
+     已由既有路由服务。
+- **契约数据怪癖**：`managerCreate|POST|empower` 的 path 字段是 "empower"（提取器
+  取了类级路径），实际在 `/api/person/empower/manager`——按 key 覆写映射
+  （不覆写就与 create 双注册同路径，u2_probe 实测抓到 panic）。
+- **中间件 parity（本轮最深的一处）**：别名要可用且不能削弱安全，四张表必须镜像——
+  `constants.rs` 豁免 +13（**不含** mockdeletetoget 两条：旧径本就要登录，给别名
+  加豁免是弱化不是对齐）、限流 +3、`ADMIN_WRITE_PREFIXES` +1；`rbac.rs` 注册表
+  +7（6 条 Public 镜像 + 1 条别名兜底 Authenticated）。**兜底条不能省**：
+  `check_permission` 对注册表未命中路径早退 Authenticated 且不 consult
+  `requires_admin`——少了它，别名下的 empower 等写操作绕过 admin 门禁
+  （单测实测抓到：裸 requires_admin 比对发现 `PUT .../personal/reset` 不一致，
+  深挖后定位到 None 早退这条控制流）。
+- **守卫（两道，表同源 `shared::middleware::contract_alias::CONTRACT_ALIAS_PAIRS`）**：
+  1. `shared` crate 单测 `contract_alias_parity_tests`：73 对的豁免/限流/Public/
+     **有效 admin**（复刻 check_permission 控制流，非裸 requires_admin）四项逐一相等；
+     外加双锁单向不变式（豁免 ⟹ Public，禁 401 死态）；
+  2. `oa4rust` 集成测试 `tests/contract_alias_parity.rs`：全栈 oneshot 实测 73 对
+     状态码逐对相等 + 别名非 404（匿名臂证明 exempt/Public parity；admin parity
+     由单测把守——匿名请求两侧都 401，看不见 admin 差异）。
+- **行为变更登记**：既有路由 `POST /api/organization/assemble/personal/custom/{id}/mockputtopost`
+  从「仅要会话」变为「要 admin」（别名兜底 Authenticated + ADMIN_WRITE_PREFIXES 的
+  连带效果）。理由：其旧径同族 `POST /api/person/custom/{name}` 在契约语义里是
+  admin 操作；前端无此调用（grep 实证）；handler 自体仍有 require_session。
+- **验证**：`cargo test -p shared` 167 passed（含 2 新）；`contract_alias_parity`
+  全栈 73 对全过；`u2_probe_full_app_build`（create_app 全量构建，axum 冲突权威
+  判据）过；`mount_coverage_guard`/`designer_route_match` 不回归；fmt/clippy 全净。

@@ -354,6 +354,70 @@ pub fn router(pool: Pool, session_manager: SessionManager) -> Router {
         .route("/api/person/exmail/sso", get(u2::exmail_sso))
         .route("/api/person/exmail", get(u2::exmail_callback_get))
         .route("/api/person/exmail", post(u2::exmail_callback_post))
+        // ── o2server 契约路径别名（2026-10-24 R1，OA-P0-1 收口）────────────
+        // 契约（scripts/all_java_handlers.json 的 x_organization_assemble_personal，
+        // 76 条）以 /api/organization/assemble/personal/ 为基路径；Rust 前端一直调
+        // /api/person/* 与 /api/reset/*。此处把契约路径**原样委托同一 handler**，
+        // 旧路径行为零变化（前提是 shared 中间件四张表——豁免/限流/权限/admin——
+        // 已按别名形态补齐且 parity 为 0，见 tests 的契约别名守卫）。
+        // 每条注释 <- 后是该别名委托的旧路由；handler 相同则行为逐位相同。
+        .route("/api/organization/assemble/personal/custom/manager/person/{person}/name/{name}", get(u2::custom_manager_get))  // <- GET /api/person/custom/manager/person/{person}/name/{name} [u2::custom_manager_get]
+        .route("/api/organization/assemble/personal/custom/manager/person/{person}/name/{name}", put(u2::custom_manager_edit))  // <- PUT /api/person/custom/manager/person/{person}/name/{name} [u2::custom_manager_edit]
+        .route("/api/organization/assemble/personal/custom/manager/person/{person}/name/{name}/mockputtopost", post(u2::custom_manager_edit))  // <- POST /api/person/custom/manager/person/{person}/name/{name}/mockputtopost [u2::custom_manager_edit]
+        .route("/api/organization/assemble/personal/custom/{name}", delete(u2::custom_delete))  // <- DELETE /api/person/custom/{name} [u2::custom_delete]
+        .route("/api/organization/assemble/personal/custom/{name}", get(u2::custom_get))  // <- GET /api/person/custom/{name} [u2::custom_get]
+        .route("/api/organization/assemble/personal/custom/{name}", put(u2::custom_edit))  // <- PUT /api/person/custom/{name} [u2::custom_edit]
+        .route("/api/organization/assemble/personal/custom/{name}/mockdeletetoget", get(u2::custom_delete))  // <- GET /api/person/custom/{name}/mockdeletetoget [u2::custom_delete]
+        .route("/api/organization/assemble/personal/definition/{name}", delete(u2::definition_delete))  // <- DELETE /api/person/definition/{name} [u2::definition_delete]
+        .route("/api/organization/assemble/personal/definition/{name}", get(u2::definition_get))  // <- GET /api/person/definition/{name} [u2::definition_get]
+        .route("/api/organization/assemble/personal/definition/{name}", put(u2::definition_edit))  // <- PUT /api/person/definition/{name} [u2::definition_edit]
+        .route("/api/organization/assemble/personal/definition/{name}/mockdeletetoget", get(u2::definition_delete))  // <- GET /api/person/definition/{name}/mockdeletetoget [u2::definition_delete]
+        .route("/api/organization/assemble/personal/definition/{name}/mockputtopost", post(u2::definition_edit))  // <- POST /api/person/definition/{name}/mockputtopost [u2::definition_edit]
+        .route("/api/organization/assemble/personal/empower/list/person/{flag}", get(u2::empower_list_with_person))  // <- GET /api/person/empower/list/person/{flag} [u2::empower_list_with_person]
+        .route("/api/organization/assemble/personal/empower/list/{id}/next/{count}", get(u2::empower_list_next))  // <- GET /api/person/empower/list/{id}/next/{count} [u2::empower_list_next]
+        .route("/api/organization/assemble/personal/empower/list/{id}/prev/{count}", get(u2::empower_list_prev))  // <- GET /api/person/empower/list/{id}/prev/{count} [u2::empower_list_prev]
+        .route("/api/organization/assemble/personal/empower/manager/{id}/mockdeletetoget", get(empower::manager_delete))  // <- GET /api/person/empower/manager/{id}/mockdeletetoget [empower::manager_delete]
+        .route("/api/organization/assemble/personal/empower/manager/{id}/mockputtopost", post(empower::manager_update))  // <- POST /api/person/empower/manager/{id}/mockputtopost [empower::manager_update]
+        .route("/api/organization/assemble/personal/empower/{id}/mockdeletetoget", get(empower::delete))  // <- GET /api/person/empower/{id}/mockdeletetoget [empower::delete]
+        .route("/api/organization/assemble/personal/empower/{id}/mockputtopost", post(empower::update))  // <- POST /api/person/empower/{id}/mockputtopost [empower::update]
+        .route("/api/organization/assemble/personal/empowerlog/list/currentperson/paging/{page}/size/{size}", post(u2::log_currentperson_paging))  // <- POST /api/person/empowerlog/list/currentperson/paging/{page}/size/{size} [u2::log_currentperson_paging]
+        .route("/api/organization/assemble/personal/empowerlog/list/to/currentperson/paging/{page}/size/{size}", post(u2::log_to_currentperson_paging))  // <- POST /api/person/empowerlog/list/to/currentperson/paging/{page}/size/{size} [u2::log_to_currentperson_paging]
+        .route("/api/organization/assemble/personal/empowerlog/list/{id}/next/{count}", get(u2::log_list_next))  // <- GET /api/person/empowerlog/list/{id}/next/{count} [u2::log_list_next]
+        .route("/api/organization/assemble/personal/empowerlog/list/{id}/prev/{count}", get(u2::log_list_prev))  // <- GET /api/person/empowerlog/list/{id}/prev/{count} [u2::log_list_prev]
+        .route("/api/organization/assemble/personal/empowerlog/manager/list/paging/{page}/size/{size}", post(u2::log_manager_paging))  // <- POST /api/person/empowerlog/manager/list/paging/{page}/size/{size} [u2::log_manager_paging]
+        .route("/api/organization/assemble/personal/empowerlog/{id}", delete(u2::log_delete))  // <- DELETE /api/person/empowerlog/{id} [u2::log_delete]
+        .route("/api/organization/assemble/personal/empowerlog/{id}/mockdeletetoget", get(u2::log_delete))  // <- GET /api/person/empowerlog/{id}/mockdeletetoget [u2::log_delete]
+        .route("/api/organization/assemble/personal/exmail", get(u2::exmail_callback_get))  // <- GET /api/person/exmail [u2::exmail_callback_get]
+        .route("/api/organization/assemble/personal/exmail", post(u2::exmail_callback_post))  // <- POST /api/person/exmail [u2::exmail_callback_post]
+        .route("/api/organization/assemble/personal/exmail/list/title/passive", get(u2::exmail_list_title_passive))  // <- GET /api/person/exmail/list/title/passive [u2::exmail_list_title_passive]
+        .route("/api/organization/assemble/personal/exmail/new/count", get(u2::exmail_new_count))  // <- GET /api/person/exmail/new/count [u2::exmail_new_count]
+        .route("/api/organization/assemble/personal/exmail/new/count/passive", get(u2::exmail_new_count_passive))  // <- GET /api/person/exmail/new/count/passive [u2::exmail_new_count_passive]
+        .route("/api/organization/assemble/personal/exmail/sso", get(u2::exmail_sso))  // <- GET /api/person/exmail/sso [u2::exmail_sso]
+        .route("/api/organization/assemble/personal/icon/{person}", get(icon::get))  // <- GET /api/person/icon/{person} [icon::get]
+        .route("/api/organization/assemble/personal/password", put(password::change))  // <- PUT /api/person/password [password::change]
+        .route("/api/organization/assemble/personal/password/mockputtopost", post(password::change))  // <- POST /api/person/password/mockputtopost [password::change]
+        .route("/api/organization/assemble/personal/person", get(get_person))  // <- GET /api/person [get_person]
+        .route("/api/organization/assemble/personal/person", put(edit_person))  // <- PUT /api/person [edit_person]
+        .route("/api/organization/assemble/personal/person/icon", post(u2::set_icon_octet_stream))  // <- POST /api/person/icon [u2::set_icon_octet_stream]
+        .route("/api/organization/assemble/personal/person/icon/mockputtopost", post(u2::upload_multipart_alias))  // <- POST /api/person/icon/mockputtopost [u2::upload_multipart_alias]
+        .route("/api/organization/assemble/personal/person/mockputtopost", post(edit_person))  // <- POST /api/person/mockputtopost [edit_person]
+        .route("/api/organization/assemble/personal/person/password", put(password::change))  // <- PUT /api/person/password [password::change]
+        .route("/api/organization/assemble/personal/person/password/mockputtopost", post(password::change))  // <- POST /api/person/password/mockputtopost [password::change]
+        .route("/api/organization/assemble/personal/regist", post(regist::register))  // <- POST /api/person/regist [regist::register]
+        .route("/api/organization/assemble/personal/regist/captcha/width/{width}/height/{height}", get(auth::captcha::captcha_with_size))  // <- GET /api/person/regist/captcha/width/{width}/height/{height} [auth::captcha::captcha_with_size]
+        .route("/api/organization/assemble/personal/regist/check/mobile/{mobile}", get(regist::check_mobile))  // <- GET /api/person/regist/check/mobile/{mobile} [regist::check_mobile]
+        .route("/api/organization/assemble/personal/regist/check/name/{name}", get(regist::check_name))  // <- GET /api/person/regist/check/name/{name} [regist::check_name]
+        .route("/api/organization/assemble/personal/regist/code/mobile/{mobile}", get(u2::regist_code_mobile))  // <- GET /api/person/regist/code/mobile/{mobile} [u2::regist_code_mobile]
+        .route("/api/organization/assemble/personal/regist/mode", get(u2::regist_mode))  // <- GET /api/person/regist/mode [u2::regist_mode]
+        .route("/api/organization/assemble/personal/reset", put(reset::reset_password))  // <- PUT /api/reset [reset::reset_password]
+        .route("/api/organization/assemble/personal/reset/check/credential/{credential}", get(reset::check_credential))  // <- GET /api/reset/check/credential/{credential} [reset::check_credential]
+        .route("/api/organization/assemble/personal/reset/code/credential/{credential}", get(reset::send_code))  // <- GET /api/reset/code/credential/{credential} [reset::send_code]
+        .route("/api/organization/assemble/personal/reset/mockputtopost", post(reset::reset_password_mockputtopost))  // <- POST /api/reset/mockputtopost [reset::reset_password_mockputtopost]
+        .route("/api/organization/assemble/personal/reset/password/anonymous", post(reset::reset_password_anonymous))  // <- POST /api/reset/password/anonymous [reset::reset_password_anonymous]
+        .route("/api/organization/assemble/personal/signature/delete/{id}", get(signature::delete))  // <- GET /api/person/signature/delete/{id} [signature::delete]
+        .route("/api/organization/assemble/personal/signature/list", get(signature::list))  // <- GET /api/person/signature/list [signature::list]
+        .route("/api/organization/assemble/personal/signature/list/person/{flag}", get(u2::signature_list_person))  // <- GET /api/person/signature/list/person/{flag} [u2::signature_list_person]
+        .route("/api/organization/assemble/personal/signature/upload", post(signature::upload))  // <- POST /api/person/signature/upload [signature::upload]
         .layer(Extension(pool))
         .layer(Extension(session_manager))
         .layer(Extension(reset_store))

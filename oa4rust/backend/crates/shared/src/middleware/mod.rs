@@ -11,6 +11,7 @@
 //   rate_limit_distributed.rs — Redis 分布式限流（plan002 U7c，env 门控）
 
 pub mod constants;
+pub mod contract_alias;
 pub mod rate_limit_distributed;
 pub mod rbac;
 pub mod security;

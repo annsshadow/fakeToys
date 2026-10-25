@@ -127,8 +127,15 @@ pub(crate) fn path_starts_with_segment(path: &str, prefix: &str) -> bool {
 /// 需要 admin 角色。自服务端点（改密、头像）豁免。
 pub(crate) fn requires_admin(method: &axum::http::Method, path: &str) -> bool {
     if matches!(method.as_str(), "POST" | "PUT" | "DELETE") {
+        // 自服务写豁免：旧路径两支 + o2server 契约别名同权形态（2026-10-24 R1）。
+        // 别名漏豁免的后果：契约客户端改自己的密码/传头像要被 admin 权——
+        // 与旧路径行为不一致（旧径这两支登录即可）。
         if path_starts_with_segment(path, "/api/person/password")
             || path_starts_with_segment(path, "/api/person/icon")
+            || path_starts_with_segment(path, "/api/organization/assemble/personal/password")
+            || path_starts_with_segment(path, "/api/organization/assemble/personal/person/password")
+            || path_starts_with_segment(path, "/api/organization/assemble/personal/person/icon")
+            || path_starts_with_segment(path, "/api/organization/assemble/personal/icon")
         {
             return false;
         }
@@ -410,6 +417,91 @@ mod security_audit_tests {
                 is_auth_exempt(path),
                 "只读端点 {path} 应保持匿名可达（o2server 对齐）"
             );
+        }
+    }
+}
+
+// o2server 契约路径别名 ↔ 旧路径 的中间件判定 parity（2026-10-24 R1）
+//
+// 别名路由（/api/organization/assemble/personal/*）在三个 crate 里原样委托
+// 旧路径（/api/person/*、/api/reset/*）的同一 handler。路由层 parity 由
+// tests/contract_alias_parity.rs（全栈 oneshot 实测）把守；本文件把守
+// **中间件判定层** parity——四张表（豁免 / 限流 / 权限注册表 / admin 写）
+// 任一表忘了给别名补镜像，这里就红：
+//   - exempt 忘补 → 契约客户端匿名注册/重置平白 401（功能回归）
+//   - admin 忘补 → 契约客户端绕过 admin 门禁（安全弱化）
+//   - 多补（如给 mockdeletetoget 加豁免）→ 别名比旧径更宽松（安全弱化）
+// 表由 Temp/r1_gen_aliases.py 从契约 JSON + 已注册路由生成，勿手改。
+
+#[cfg(test)]
+mod contract_alias_parity_tests {
+    use super::{is_auth_exempt, is_auth_rate_limited, requires_admin};
+    use crate::middleware::contract_alias::CONTRACT_ALIAS_PAIRS;
+    use crate::middleware::rbac::{is_registry_public, PermissionLevel, PermissionRegistry};
+    use axum::http::Method;
+
+    /// 复刻 `check_permission` 的控制流算「有效 admin 要求」。
+    ///
+    /// 不能直接比 `requires_admin` 的裸输出：它对注册表未命中（None）的路径
+    /// 永远不会被 consult（None 早退 Authenticated），而旧径 /api/person/* 命中
+    /// catch-all Authenticated——裸比会同时漏掉「别名绕不过 admin」和
+    /// 「Public 路径本就不查 admin」两种情形。有效值才是用户可见的判定。
+    fn effective_admin(method: &Method, path: &str) -> bool {
+        match PermissionRegistry::with_defaults().get_permission(path) {
+            // Public 直接放行；None 早退 Authenticated 且不查 admin。
+            Some(PermissionLevel::Public) | None => false,
+            // Authenticated 才 consult requires_admin。
+            Some(PermissionLevel::Authenticated) => requires_admin(method, path),
+            // Admin/Role/Group/Owner/Forbidden 级不走 requires_admin 这支
+            // （本表 73 对路径不涉），按「不因 admin 写门拦」记。
+            _ => false,
+        }
+    }
+
+    #[test]
+    fn alias_middleware_decisions_match_old_paths() {
+        let mut checked = 0usize;
+        for (m, alias, om, old) in CONTRACT_ALIAS_PAIRS {
+            let method: Method = m.parse().expect("合法 HTTP 方法");
+            let old_method: Method = om.parse().expect("合法 HTTP 方法");
+            assert_eq!(
+                is_auth_exempt(alias),
+                is_auth_exempt(old),
+                "豁免判定不一致：{m} {alias} vs 旧径 {old}"
+            );
+            assert_eq!(
+                is_auth_rate_limited(alias),
+                is_auth_rate_limited(old),
+                "限流判定不一致：{m} {alias} vs 旧径 {old}"
+            );
+            assert_eq!(
+                is_registry_public(alias),
+                is_registry_public(old),
+                "权限注册表 Public 判定不一致：{m} {alias} vs 旧径 {old}"
+            );
+            assert_eq!(
+                effective_admin(&method, alias),
+                effective_admin(&old_method, old),
+                "有效 admin 判定不一致：{m} {alias} vs 旧径 {om} {old}"
+            );
+            checked += 1;
+        }
+        assert!(checked >= 70, "测试表意外缩小：仅 {checked} 对");
+    }
+
+    #[test]
+    fn no_alias_is_exempt_but_not_public() {
+        // 双锁单向不变式：豁免了就必须 Public——否则「不插 Session + 要 Session」
+        // = 对所有人 401 的死态（exempt_authorize_parity.rs 同款判据）。
+        // 反方向（Public 但非豁免）允许存在：旧径 mockdeletetoget 家族就是，
+        // 别名照旧镜像（parity 优先于洁癖），由上一个测试把守。
+        for (m, alias, ..) in CONTRACT_ALIAS_PAIRS {
+            if is_auth_exempt(alias) {
+                assert!(
+                    is_registry_public(alias),
+                    "别名 {m} {alias} 豁免但注册表非 Public = 401 死态"
+                );
+            }
         }
     }
 }

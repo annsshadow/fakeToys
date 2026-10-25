@@ -58,6 +58,21 @@ pub fn personal_extend_router(pool: Pool, session_manager: SessionManager) -> Ro
             "/api/personal/face/delete/{id}",
             post(personal::face_delete),
         )
+        // ── o2server 契约路径别名（2026-10-24 R1，OA-P0-1 收口）────────────
+        // 契约（scripts/all_java_handlers.json 的 x_organization_assemble_personal，
+        // 76 条）以 /api/organization/assemble/personal/ 为基路径；Rust 前端一直调
+        // /api/person/* 与 /api/reset/*。此处把契约路径**原样委托同一 handler**，
+        // 旧路径行为零变化（前提是 shared 中间件四张表——豁免/限流/权限/admin——
+        // 已按别名形态补齐且 parity 为 0，见 tests 的契约别名守卫）。
+        // 每条注释 <- 后是该别名委托的旧路由；handler 相同则行为逐位相同。
+        .route(
+            "/api/organization/assemble/personal/person/icon",
+            get(avatar::get_current_icon),
+        ) // <- GET /api/person/icon [avatar::get_current_icon]
+        .route(
+            "/api/organization/assemble/personal/person/icon",
+            put(avatar::upload),
+        ) // <- PUT /api/person/icon [avatar::upload]
         .layer(axum::extract::Extension(pool))
         .layer(axum::extract::Extension(session_manager))
 }

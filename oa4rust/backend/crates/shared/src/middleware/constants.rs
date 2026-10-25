@@ -56,6 +56,29 @@ pub const AUTH_EXEMPT_PATHS: &[&str] = &[
     "/api/reset/code",
     "/api/reset/check",
     "/api/reset/set",
+    // ── o2server 契约路径别名豁免镜像（2026-10-24 R1，OA-P0-1 收口）────────
+    // /api/organization/assemble/personal/* 是 Java 契约基路径，Rust 侧由
+    // personal / empower / personal_extend 三个 crate 的 contract alias 路由
+    // 原样委托同一 handler（旧路径 /api/person/*、/api/reset/* 行为零变化）。
+    // 以下每条都是旧路径豁免状态的镜像：旧路径匿名可达，别名必须同权，
+    // 否则契约客户端（匿名注册/重置/自定义字段读取）会平白吃 401。
+    // 双锁一致性（豁免 ⟺ 注册表 Public）见 rbac.rs 同批补齐的 6 条前缀。
+    // ⚠️ 不含 custom/{name}/mockdeletetoget 与 definition/{name}/mockdeletetoget：
+    // 这两条旧径本身就没进豁免表（要登录），别名跟着要登录——给别名加豁免
+    // 会让它比旧径更宽松，那是弱化不是对齐。
+    "/api/organization/assemble/personal/reset",
+    "/api/organization/assemble/personal/reset/check/credential/{credential}",
+    "/api/organization/assemble/personal/reset/code/credential/{credential}",
+    "/api/organization/assemble/personal/reset/password/anonymous",
+    "/api/organization/assemble/personal/regist",
+    "/api/organization/assemble/personal/custom/{name}",
+    "/api/organization/assemble/personal/custom/manager/person/{person}/name/{name}",
+    "/api/organization/assemble/personal/custom/manager/person/{person}/name/{name}/mockputtopost",
+    "/api/organization/assemble/personal/definition/{name}",
+    "/api/organization/assemble/personal/definition/{name}/mockputtopost",
+    "/api/organization/assemble/personal/icon/{person}",
+    "/api/organization/assemble/personal/person/icon",
+    "/api/organization/assemble/personal/person/icon/mockputtopost",
     // 系统初始化（仅系统未初始化时；见 system_uninitialized）
     "/api/secret/check",
     "/api/secret/set",
@@ -364,6 +387,8 @@ pub const AUTH_RATE_LIMIT_EXACT: &[&str] = &[
     // 四轮 §三.7：注册与验证码校验显式公开后必须限流，否则匿名侧变成
     // 无上限批量建号 / 验证码暴力枚举（rate_limit_middleware 对「豁免且未列限流」直接跳过）。
     "/api/person/regist",
+    // 契约别名同限流（2026-10-24 R1）：匿名面等权，防批量建号/验证码枚举
+    "/api/organization/assemble/personal/regist",
     "/api/secret/captcha/verify",
 ];
 pub const AUTH_RATE_LIMIT_PREFIXES: &[&str] = &[
@@ -372,6 +397,9 @@ pub const AUTH_RATE_LIMIT_PREFIXES: &[&str] = &[
     "/api/authentication/safe",       // 安全注销
     "/api/authentication/switchuser", // 用户切换
     "/api/person/regist/code",        // 注册验证码发送
+    // 契约别名同限流（2026-10-24 R1）
+    "/api/organization/assemble/personal/regist/code",
+    "/api/organization/assemble/personal/reset",
     "/api/reset",
     "/api/secret/check",
     "/api/secret/set",
@@ -441,6 +469,11 @@ pub const ADMIN_WRITE_PREFIXES: &[&str] = &[
     "/api/group",
     "/api/organization/person",
     "/api/organization/group",
+    // o2server 契约路径别名（2026-10-24 R1）：/api/organization/assemble/personal/*
+    // 的写操作与旧路径 /api/person/* 同权——旧径写要 admin，别名也要，
+    // 否则契约客户端可绕过 admin 门禁（自服务的改密/头像两支由
+    // requires_admin 内的例外条款同权豁免，见 security.rs）。
+    "/api/organization/assemble/personal",
 ];
 
 // plan006 U5 前缀豁免：覆盖带动态路径段的只读查询端点
