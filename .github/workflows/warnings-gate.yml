@@ -7,7 +7,12 @@
 #     于是这项门禁在本地长期处于 SKIP 状态）；
 #   - 「每个 workspace 成员都继承 [lints] workspace = true」这条静态守卫——
 #     它不属于任何单个子项目：漏写的成员**无症状失效**（告警不再被 deny），
-#     只有这条扫描能发现。
+#     只有这条扫描能发现；
+#   - augmentor/web 的类型检查与 lint。它唯一的门禁是 ai-platform-ci 的
+#     Docker image smoke test，而那个 workflow 带 `paths: augmentor/**` 过滤——
+#     **带 paths 的 workflow 永远不能设为 required check**（本仓既有教训）。
+#     2026-10-25 实测：`model_generate_seconds` 加进契约时漏更两个测试夹具，
+#     tsc 红了，靠这道无过滤的门才能第一时间看见。
 #
 # 只跑**廉价项**（合计约 1 分钟）：Rust clippy（30 分钟）、Vite 构建、Go 测试
 # 都留在各自 workflow，本 job 不重复。
@@ -52,5 +57,10 @@ jobs:
             https://repo1.maven.org/maven2/commons-codec/commons-codec/1.17.1/commons-codec-1.17.1.jar
           echo "973638b7149d333563584137ebf13a691bb60579  cool/lib/commons-codec-1.17.1.jar" | sha1sum -c -
 
+      # augmentor/web 的 build+lint 需要依赖；npm ci 走 lockfile，可缓存
+      - name: Install augmentor/web dependencies
+        working-directory: augmentor/web
+        run: npm ci
+
       - name: Cross-subproject warning gates
-        run: node scripts/check-warnings.mjs --only rust-lints,llm-lab,llm-lab-tests,java
+        run: node scripts/check-warnings.mjs --only rust-lints,llm-lab,llm-lab-tests,java,augmentor-web

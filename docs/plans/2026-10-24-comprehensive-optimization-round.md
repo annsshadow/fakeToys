@@ -533,3 +533,33 @@ CI 有 pytest 会实跑）；YAML 合法；size:check 容差两方向实测；�
 
 **本机环境限制（fail-loud，与 §13 同）**：无 PostgreSQL，DB 集成用例本机跳过；
 但 CI 有真库，上述所有 DB 面已由 CI 验证。
+
+### R6 — 修 main 上的活红：augmentor/web 类型检查（2026-10-25 深夜，排查 Dependabot PR 时发现）
+
+**怎么发现的**：PR #102（Dependabot npm_and_yarn）大部分检查绿，但
+`Docker image smoke test` 红。回查该 job 历史：10-23 全绿、10-24 起连续两次红
+→ **不是依赖升级引入的，是 main 自己坏了**。
+
+**根因**：`ai-platform-ci` 的 Docker 构建里 `npm run build` = `tsc --noEmit && vite build`，
+而 `augmentor/web/src/pages/System.test.tsx` 的两个 `StatusResponse` 夹具缺
+`model_generate_seconds`——该字段加进契约时只改了 `types/api.ts` 与 `System.tsx`，
+**漏了带类型标注的测试夹具**（夹具文件自己的注释就写着「少一键当场 typecheck 红」，
+这次正好是它自己漏了）。TS2741 × 2。
+
+**修法**：
+- 两个夹具补字段：`HEALTHY` 用 `12.5`（带小数才能钉住 `toFixed(1)` 没被截断）、
+  `DEGRADED` 用 `null`（沿用「管道缺失 → null 而不是 0」的契约语义）；
+- 两个用例补断言 `累计生成耗时（秒）`：`12.5` / `无后端`——让新字段真正被测到，
+  而不只是「编译过了」；
+- 夹具注释里记下这次事故，防止同类漏更再发生。
+
+**顺带补上结构性缺口**：`augmentor/web` 此前**唯一的门禁**是 `ai-platform-ci` 的
+Docker smoke，而那个 workflow 带 `paths: augmentor/**` 过滤——
+**带 paths 的 workflow 永远不能设为 required check**（本仓 `auto-checkin-ci` 头注释里
+就记着这条教训）。所以给它一个**无过滤**的快速门：`warnings-gate` 增加
+`augmentor-web` 项（`npm ci` + `build && lint`，约 55s）。
+
+**验证**：`npx tsc --noEmit` 干净；`System.test.tsx` 13 用例全过（含 2 条新断言）；
+`check-warnings --only ...augmentor-web` 5 项 4 通过 1 跳过（llm-lab-tests 本机无 pytest）；
+顺带把其余 5 个前端/TS 项全跑一遍（desktop 79s / mobile 34s / admin 10s /
+miniapp 14s / auto-checkin 6s）**全 PASS**，确认没有第二处藏着的红。

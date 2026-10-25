@@ -91,9 +91,14 @@ import type { StatusResponse } from '../types/api'
 /**
  * 两只夹具都标了 `: StatusResponse`
  *
- * 契约里 `model_retry_count` / `model_retry_wait_seconds` 是**必填**（管道缺失时回 `null`，
- * 不是省掉这一键），所以夹具必须带上；标了类型之后少一键当场 typecheck 红，
- * 不会等到渲染面上出现一只空格子才发现。
+ * 契约里 `model_retry_count` / `model_retry_wait_seconds` / `model_generate_seconds`
+ * 都是**必填**（管道缺失时回 `null`，不是省掉这一键），所以夹具必须带上；
+ * 标了类型之后少一键当场 typecheck 红，不会等到渲染面上出现一只空格子才发现。
+ *
+ * ⚠️ 2026-10-25：`model_generate_seconds`（累计生成耗时）加进契约时只改了类型与渲染，
+ * 忘了这两个夹具 —— `tsc --noEmit` 于是在 Docker 镜像构建里红了三天
+ * （ai-platform-ci 的 Docker image smoke test，从 10-24 起），并卡住 Dependabot PR。
+ * 教训：**加必填字段时，带类型标注的夹具就是编译器替你守的那道门，别绕过它**。
  */
 const HEALTHY: StatusResponse = {
   status: 'ok',
@@ -102,6 +107,8 @@ const HEALTHY: StatusResponse = {
   model_available: true,
   model_retry_count: 0,
   model_retry_wait_seconds: 0,
+  // 12.5 而不是整数：渲染面做 toFixed(1)，用带小数的值才能钉住「没被截成 12」
+  model_generate_seconds: 12.5,
   dependencies: {
     installed: { pandas: true, chromadb: true },
     missing: [],
@@ -118,6 +125,7 @@ const DEGRADED: StatusResponse = {
   model_available: false,
   model_retry_count: null,
   model_retry_wait_seconds: null,
+  model_generate_seconds: null,
   dependencies: {
     installed: { pandas: true, faiss: false },
     missing: ['faiss'],
@@ -196,6 +204,8 @@ describe('System 模型重试读数（L237 补渲染）', () => {
 
     await waitFor(() => expect(statistic(container, '模型重试次数')).toBe('0'))
     expect(statistic(container, '重试等待（秒）')).toBe('0')
+    // 累计生成耗时同一套 null 语义：有后端就该是数字，且保留一位小数
+    expect(statistic(container, '累计生成耗时（秒）')).toBe('12.5')
     expect(screen.queryAllByText('无后端')).toHaveLength(0)
   })
 
@@ -206,6 +216,7 @@ describe('System 模型重试读数（L237 补渲染）', () => {
 
     await waitFor(() => expect(statistic(container, '模型重试次数')).toBe('无后端'))
     expect(statistic(container, '重试等待（秒）')).toBe('无后端')
+    expect(statistic(container, '累计生成耗时（秒）')).toBe('无后端')
     expect(statistic(container, '模型重试次数')).not.toBe('0')
   })
 
