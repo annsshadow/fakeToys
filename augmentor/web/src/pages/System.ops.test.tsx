@@ -176,6 +176,9 @@ vi.mock('../services/api', async (importOriginal) => {
     model_available: true,
     model_retry_count: 0,
     model_retry_wait_seconds: 0,
+    // 契约必填（无后端时回 null）；夹具走的是未标注类型的 mockResolvedValue，
+    // tsc 管不到，漏了就会在渲染面崩 —— 2026-10-25 就是这么红的
+    model_generate_seconds: 3.2,
     dependencies: {
       installed: { pandas: true },
       missing: [],

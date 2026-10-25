@@ -82,6 +82,19 @@ const MIGRATION_RULE_OPTIONS = [
  * 两面数据**逐字节相同**（同一次实测），因此它涨的是取法不是数据；首载失败时退回综合状态
  * 里那一份，刷新失败时留着上一次读数——不为了「独立」把已经拿到的东西丢掉。
  */
+/**
+ * 累计生成耗时的渲染值。
+ *
+ * ⚠️ 用 `== null`（松散比较）而不是 `=== null`：契约明示「无后端」回 `null`，
+ * 但**旧后端根本不发这个键**（运行时是 `undefined`）。2026-10-25 实测：
+ * 只判 `=== null` 时 `undefined.toFixed(1)` 直接把整个 System 页抛崩
+ * （`System.ops.test.tsx` 就是这么红的），一个缺失字段毁掉整页。
+ * 缺键与 null 同渲染「无后端」，0 仍然是 0（「后端在、生成过 0 秒」是另一句话）。
+ */
+function formatSeconds(v: number | null | undefined): string | number {
+  return v == null ? '无后端' : Number(v.toFixed(1))
+}
+
 export default function System() {
   const [status, setStatus] = useState<StatusResponse | null>(null)
   const [loading, setLoading] = useState(false)
@@ -475,7 +488,7 @@ export default function System() {
               title="模型重试次数"
               value={
                 status
-                  ? status.model_retry_count === null
+                  ? status.model_retry_count == null
                     ? '无后端'
                     : status.model_retry_count
                   : '-'
@@ -487,7 +500,7 @@ export default function System() {
               title="重试等待（秒）"
               value={
                 status
-                  ? status.model_retry_wait_seconds === null
+                  ? status.model_retry_wait_seconds == null
                     ? '无后端'
                     : status.model_retry_wait_seconds
                   : '-'
@@ -497,13 +510,7 @@ export default function System() {
           <Col span={6}>
             <Statistic
               title="累计生成耗时（秒）"
-              value={
-                status
-                  ? status.model_generate_seconds === null
-                    ? '无后端'
-                    : Number(status.model_generate_seconds.toFixed(1))
-                  : '-'
-              }
+              value={status ? formatSeconds(status.model_generate_seconds) : '-'}
             />
           </Col>
         </Row>

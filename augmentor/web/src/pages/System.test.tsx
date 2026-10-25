@@ -220,6 +220,25 @@ describe('System 模型重试读数（L237 补渲染）', () => {
     expect(statistic(container, '模型重试次数')).not.toBe('0')
   })
 
+  it('旧后端根本没下发该键时按「无后端」渲染，不把整页抛崩', async () => {
+    // 运行期「缺键」= 属性为 undefined（JSON 里没这个键）。旧后端就是这种形状。
+    // 2026-10-25 实测：只判 `=== null` 时 undefined.toFixed(1) 抛 TypeError，
+    // 整个 <System> 崩掉 —— 一个缺失字段毁掉整页。
+    const LEGACY = {
+      ...HEALTHY,
+      model_generate_seconds: undefined,
+    } as unknown as StatusResponse
+    spies.getServiceStatus.mockResolvedValue(LEGACY)
+
+    const { container } = render(<System />)
+
+    await waitFor(() =>
+      expect(statistic(container, '累计生成耗时（秒）')).toBe('无后端')
+    )
+    // 其余两格不受影响
+    expect(statistic(container, '模型重试次数')).toBe('0')
+  })
+
   it('卡上写明这两键只在 status 上、health 刻意不含', async () => {
     spies.getServiceStatus.mockResolvedValue(HEALTHY)
 
