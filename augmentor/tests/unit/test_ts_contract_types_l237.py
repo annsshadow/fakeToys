@@ -743,7 +743,15 @@ class TestTheRenderingFaceOwnsWhatTheTypesNowCarry:
         block = card_block(SYSTEM_TSX.read_text(encoding="utf-8"), "服务状态")
         for key in ("model_retry_count", "model_retry_wait_seconds",
                     "model_generate_seconds"):
-            assert f"status.{key} === null" in block, key
+            # ⚠️ 判据是 `== null`（松散），不是 `=== null`。
+            #
+            # 2026-10-25 实测：只判 `=== null` 时，**旧后端根本不发这些键**
+            # （运行时 undefined）—— `undefined.toFixed(1)` 直接把整个 System 页
+            # 抛崩（Docker 镜像构建里红了一次，前端 312 用例也红过），
+            # 另两格则渲染出字面量 "undefined"。
+            # `== null` 同时覆盖 null 与 undefined，而 **0 仍然是 0**
+            # （`0 == null` 为 false），本测试要守的「null 不折成 0」原样成立。
+            assert f"status.{key} == null" in block, key
             assert f"status.{key}" in block
         assert block.count("'无后端'") == 3
         # 同一张卡里不许出现把 null 折成 0 的哨兵（扫描面已收窄到这张卡）
