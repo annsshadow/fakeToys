@@ -482,3 +482,54 @@ CI 复盘发现 laiyipao CI 在**本轮开始前的 main（88681f239）上就已
 
 **验证**：warnings-gate 本地实跑 4 项（rust-lints/llm-lab/java PASS、llm-lab-tests 本机无 pytest 故 SKIP，
 CI 有 pytest 会实跑）；YAML 合法；size:check 容差两方向实测；夹具重试逻辑编译通过。
+
+---
+
+## 15. 台账终态总表（2026-10-25 收尾）
+
+> §9 的 18 项 + R2 新增 2 项 = 20 项，逐项给出终态。**没有「悬空」项**：
+> 每项要么有改动+验证证据，要么有明确的不做理由（含证据，不是「先不做」）。
+
+### 已完成（有改动 + 验证证据）
+
+| ID | 交付 | 批次 / commit |
+|---|---|---|
+| OA-P0-1 余量 | 契约路径别名 73 条 + 中间件四表镜像 + 双重 parity 守卫 | R1 / `ef48f3c35` |
+| OA-FI002-CI | 静态列扫描固化 + CI 棘轮（首跑挖出 48 对缺口并登记） | R2 / `b799858cf` |
+| LY-PERF-3 | LoadWallet 合并（UPDATE+RETURNING，3→2 往返） | R3 / `9b2ea89d6` |
+| LY-PERF-5 | requireAdmin 三查合一（3→1 往返） | R3 / `9b2ea89d6` |
+| LY-GAP-2 | 后台详情改只读投影（读端点不再写库）+ 静态守卫 | R3 / `9b2ea89d6` |
+| WARN-CI | warnings-gate workflow（补 llm-lab/cool/rust-lints 三块空白） | R4 / `4a14d6e82` |
+| COOL-CI | jar 定源 commons-codec 1.17.1 + SHA-1 双路互证 | R4 / `4a14d6e82` |
+| WF-REQUIRED | required checks 实测核对 + 精确建议清单（设置需用户拍板） | R4 / `4a14d6e82` |
+
+### 关闭（不做，含证据）
+
+| ID | 不做理由（证据） |
+|---|---|
+| LY-PERF-1 | 两处加载形态不同（5 字段投影 vs 哈希用 JSON map）；复用需重推与客户端**逐字节比对**的 S 段 → 反作弊误判风险；收益仅 13 次往返省 1 次 |
+| AU-P1 异步 LLM 后端 | 勘察证实 `augment_async` **零产品消费方**（只有测试引用），异步化无收益入口 |
+| AU-P2 全包惰性导入 | `test_package_exports.py` 明文禁止 PEP 562 `__getattr__`；B5-1 已拿走唯一安全切片（requests） |
+| LY-5 全量 Config 原子化 | B3-1 已消真实竞态（档位入 gate）并打好结构基础；33 处引用点的结构性改动没有对应需求（无热加载场景），属无需求重构 |
+| LY-7 bag.vue 虚拟化 | 列表有界（~114 行），虚拟化收益小于引入的复杂度；前端视觉改动本机无法验收 |
+| LY-GAP-1 me.vue works 玩家可选 | 是否开放玩家自选是**产品决策**，不是工程缺陷（销账不符已登记） |
+| OA-PERF-LIMIT 737 处无 LIMIT | 改响应形状影响前端契约，需逐端点对表 + 灌数据实测；数据量未到临界 |
+| OA-MOBILE-CONTACTS | 同族（前后端联动 + 分页契约） |
+| AU-PERF-POOL / AU-PERF-ANYIO | 先量后改：无压测基准，改大反而增大上游压力 |
+| FI002-MISSING-COLUMNS（41 对） | 列类型须对 live DB 复核；盲写类型会让 fresh DB 出现新的类型不匹配（比现状更糟） |
+| FI002-LEGACY-TABLES（7 对） | 遗留表归谁建、索引与端点语义要先定，属独立任务 |
+
+### 本轮验证汇总（本机 + CI）
+
+| 门禁 | 结果 |
+|---|---|
+| oa4rust CI（clippy / unit / integration / fi002 / behavior / openapi / contract） | **全绿**（`4a14d6e82`） |
+| laiyipao CI（server+PG / miniapp / admin） | **全绿**（`4a14d6e82`） |
+| auto-checkin CI / warnings-gate（新增） / three-ends / supply-chain | **全绿**（`4a14d6e82`） |
+| 本机：shared 单测 167 passed；契约别名全栈 73 对全过；u2_probe 构建通过 | ✓ |
+| 本机：laiyipao build/vet/gofmt + 全部静态守卫 | ✓ |
+| 本机：FI-002 扫描器两方向（基线 exit 0 / 新增 exit 1） | ✓ |
+| 本机：size:check 容差两方向（+1s 过 / +10s 红） | ✓ |
+
+**本机环境限制（fail-loud，与 §13 同）**：无 PostgreSQL，DB 集成用例本机跳过；
+但 CI 有真库，上述所有 DB 面已由 CI 验证。
