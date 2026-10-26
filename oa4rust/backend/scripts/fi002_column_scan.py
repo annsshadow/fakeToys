@@ -311,6 +311,23 @@ INSERT_COLS_RE = re.compile(
 )
 SET_CLAUSE_RE = re.compile(r"\bset\s+(.*?)(?:\bwhere\b|\breturning\b|$)", re.I | re.S)
 SELECT_LIST_RE = re.compile(r"\bselect\s+(.*?)\s+\bfrom\b", re.I | re.S)
+# B-6 修复（2026-10-26）：`SELECT DISTINCT col, ...` 的 DISTINCT 原先落在 group(1)
+# 的第一个 split 项里，被裸列分支按「关键字」静默跳过 ⇒ 首列 col 永不被抽取
+# （P0-6 反向注入 `SELECT DISTINCT process_key_typo, ...` 实证：改首列漏检）。
+# 修法不改正则（惰性 `*?` 量词会先取 0 次、让 `.*?` 吸收 DISTINCT，正则改不动），
+# 改为**抽取后**剥掉列表体开头的 DISTINCT / ALL 修饰词。
+SELECT_MODIFIERS = re.compile(r"^(?:distinct|all)\s+", re.I)
+
+
+def strip_select_modifiers(list_body: str) -> str:
+    """剥掉 SELECT 列表体开头的 DISTINCT / ALL（可重复），让首列真正参与抽取。"""
+    s = list_body
+    while True:
+        s2 = SELECT_MODIFIERS.sub("", s, count=1)
+        if s2 == s:
+            break
+        s = s2
+    return s
 # WHERE 片段：从首个 where 到 returning/order/group/having/limit/window 或结尾
 WHERE_TAIL_RE = re.compile(
     r"\bwhere\b(.*?)(?:\breturning\b|\border\s+by\b|\bgroup\s+by\b|\bhaving\b"
@@ -492,7 +509,7 @@ def analyze_sql(sql: str) -> tuple[set[tuple[str, str]], dict[str, int]]:
     # 单表 SELECT 裸列
     if tables and len(tables) == 1:
         for m in SELECT_LIST_RE.finditer(sql):
-            for item in split_top_level(m.group(1)):
+            for item in split_top_level(strip_select_modifiers(m.group(1))):
                 item = item.strip()
                 if not item or item == "*" or item.endswith("*"):
                     continue
@@ -525,7 +542,7 @@ def analyze_sql(sql: str) -> tuple[set[tuple[str, str]], dict[str, int]]:
         # ORDER BY rank、cms `field_name AS name` + ORDER BY name 全是假阳性。
         aliases: set[str] = set()
         for sm in SELECT_LIST_RE.finditer(sql):
-            for item in split_top_level(sm.group(1)):
+            for item in split_top_level(strip_select_modifiers(sm.group(1))):
                 s = item.strip()
                 am = re.search(r"\bas\s+\"?([A-Za-z_][A-Za-z0-9_]*)\"?\s*$", s, re.I) or \
                     re.search(r"\)\s+\"?([A-Za-z_][A-Za-z0-9_]*)\"?\s*$", s)
