@@ -196,6 +196,21 @@ F-3（`relation "PP_E_APPLICATION" does not exist` ×2），并暴露 F-5~F-8 �
 根因全是「本机无编译器 ⇒ CI 首编」的反馈类错误，非逻辑回归。其余 workflow
 （laiyipao/three-ends/auto-checkin/supply-chain/warnings-gate）全程绿。
 
+**外部服务遗留（2026-10-26，非代码缺陷）**：
+
+- **PR #102 合并**（`273595c`）：Dependabot 自动提的依赖安全修复 PR
+  （body-parser 1.20.8→1.20.9 修 CVE-2026-111181；undici 8.10.2→8.12.3 修 4 高危 CVE + 1 中危）。
+  PR 自身 CI 在旧 base 上红（`augmentor/web` 的 `model_generate_seconds` 类型缺失），
+  但 main 已在 base 之后独立修好该类型（`api.ts:553` + `System.test.tsx:111/128`），
+  合并后 `AI platform CI` 3/3 全绿（含之前红的 `Docker smoke test` / `Frontend build`）——
+  **那个"遗留"已自然消失，非真缺陷**。
+- **Dependabot Updates workflow 红**（run `40295641134` @ `273595c`）：
+  Dependabot 更新器在 08:56 处理 `vite` 时报 `unknown_error`，整个 updater 容器 exit 1。
+  **这是 GitHub 托管的 `dynamic/dependabot/dependabot-updates` workflow，本地无法 rerun
+  （`gh run rerun` 403 拒绝）**。属服务侧行为：① 大概率瞬态，下轮 scheduled 自愈；
+  ② 若持续，需读 GitHub 端 Dependabot 日志（write access）+ 改 vite 版本约束
+  （依赖策略决策，非单方可决）。**登记观察，不改代码**。
+
 **环境限制（fail-loud，三重）**：① 本机无 PostgreSQL（原生仅客户端、Docker 未运行），DB 面全部标注
 「待 CI 真库」；② 本机 **Rust 编译不可用**——GNU 工具链缺 gcc/dlltool、无 MSVC 工具链
 （ring/parking_lot_core 原生构建必败），故全部 Rust 改动的验证口径是「rustfmt（CI 同版本 1.98.1）
