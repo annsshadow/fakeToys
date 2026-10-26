@@ -542,6 +542,8 @@ PK `(user_id, token)`；索引 `(token)`。
 | `00015_settle_recompute_audit.sql` | `settle_recomputes` | 是（丢历史证据） |
 | `00016_player_account.sql` | `users.username` / `password_hash` + 部分唯一索引 | **是**（共享账号退回登不上的游客号） |
 | `00017_verification_idempotency.sql` | `replay_verifications` 幂等唯一索引（先删重复行） | 否（Up 删的是重复行，Down 只删索引） |
+| `00018_verification_verifier_kind.sql` | 订正 00017 把「玩家 `users.id`」与「运营 `admin_users.id`」两个独立 ID 空间折叠进同一个 COALESCE 唯一索引的碰撞：先按各自空集合重新去重，再删旧索引、改建**两条部分唯一索引**（玩家 `WHERE admin_verifier_id IS NULL` / 运营 `WHERE verifier_id IS NULL`） | 是（Down 段恢复 00017 的 COALESCE 单索引；已被 00017 误删的重复行找不回来，且重 Up 前需先删重复行，否则部分索引建成即报冲突） |
+| `00019_dashboard_indexes.sql` | 看板时间范围扫描的索引：`battle_records(created_at, user_id)`（14 天 DAU 走 index-only scan）+ `wallet_flows(created_at)`（货币净流量聚合） | 否（纯 `CREATE INDEX` / `DROP INDEX`，不动数据；非 CONCURRENTLY 是刻意的——本仓迁移在单事务里跑） |
 
 有损回滚必须在迁移文件里写明「为什么不对称」—— 否则半年后
 下一个人会以为只是漏写了 Down。

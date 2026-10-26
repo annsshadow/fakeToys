@@ -57,7 +57,7 @@ cd oa4rust/backend && docker compose up -d
 
 ## 4. 数据库迁移
 
-- 目录：`oa4rust/backend/migrations/`（顶层 207 个 `.sql`，其中 111 正向 + 96 回滚；正向编号 001–109 + `archive/` 归档）。
+- 目录：`oa4rust/backend/migrations/`（顶层 213 个 `.sql`，其中 114 正向 + 99 回滚；正向编号 001–112 + `archive/` 归档）。
 - **启动自动幂等执行**，无需手工 SQL；`--migrate-only` 供流水线单独跑迁移。
 - 全量迁移后约 **379 张表**（parity 全量测试的实测基准）。
 

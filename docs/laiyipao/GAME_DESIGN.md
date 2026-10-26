@@ -483,7 +483,7 @@
 
 > ⚠️ `defense_snapshots` 与 `terrain_config` **不存在** ——
 > 防线快照存在 `defenses` 表内，地形配置存在 `level_terrains` 内。
-> 迁移文件以 `server/migrations/` 为准（00001~00008）。
+> 迁移文件以 `server/migrations/` 为准（当前 00001~00019，本段写于早期，编号随开发推进增长）。
 
 ---
 

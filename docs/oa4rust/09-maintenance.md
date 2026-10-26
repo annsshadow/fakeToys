@@ -66,7 +66,7 @@ pnpm test && pnpm typecheck && pnpm lint:check && pnpm build
 | 安全例外到期前 | 复验可达性：升版本或续期（必须留审计记录） | rustsec-exceptions.toml 到期日 |
 | 每次发布 | 静态门禁全绿 + live E2E 通过即上线；回滚 = 回退上一 Rust 版本 | `backend/docs/ops/REALIZE_RUNBOOK.md` §4.2（待确认：该文件当前不在仓库中） |
 
-## 7. 已知待办与风险登记（2026-10-14 快照）
+## 7. 已知待办与风险登记（2026-10-26 快照）
 
 | 项 | 状态 | 位置 |
 | --- | --- | --- |
@@ -77,6 +77,8 @@ pnpm test && pnpm typecheck && pnpm lint:check && pnpm build
 | rsa 0.9.10 例外 | 2026-11-08 到期（仅 dev-dependency 可达） | 同上 |
 | `spent` 精确耗时 | 未实现（信封恒 0，对齐 o2server v9 行为） | response.rs 注释 |
 | 平均 DB 真实化率 13.8% | done crate 仍有深层 DB 化空间（handler 已无桩） | endpoint-inventory |
+| FI-002 列完整性扫描 | **已收口**：`scripts/fi002_column_scan.py` 固化（WHERE/ORDER BY/引号列/视图投影列/大小写关系全盲补），基线 7→0；CI 棘轮 `fi002-column-scan` job 每轮跑，新增违规即红。2026-10-26 批次 105–112 迁移收口 fresh-DB 500 端点（含 `PP_E_APPLICATION` 视图、`x_program_field.sort_order`、`x_work.category` 等），`schema_diff.py` 对账脚本入库 | `backend/scripts/fi002_column_scan.py`、`backend/scripts/schema_diff.py`、`migrations/105–112` |
+| fresh-DB 500 端点收口台账 | 第三轮全量收口完成，台账存档于 `fakeToys/docs/plans/2026-10-26-fresh-db-500-closure-round.md`（F-1~F-8/FX-1 缺陷 + B-1~B-7 扫描器盲区，B 族全收口） | 该计划文档 |
 
 ## 8. 求助路径
 

@@ -111,7 +111,9 @@ curl http://localhost:3000/openapi.json -o openapi.json
 cd oa4rust/backend
 docker compose up -d postgres
 cargo run -- --migrate-only
-# → migrations: ~111 applied（全量后约 379 表）
+# → migrations: ~114 applied（全量后约 379 表；含 2026-10-26 批次 105–112）
+# FI-002 列完整性棘轮（防 handler 引用不存在的列）：
+python scripts/fi002_column_scan.py      # 基线态 exit 0；新增违规即红
 # parity 全量验证：
 cargo test -p parity --lib --locked      # 期望 4143/4143
 ```

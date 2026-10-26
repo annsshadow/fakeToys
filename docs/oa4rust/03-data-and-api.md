@@ -123,7 +123,7 @@
 
 ## 8. 数据库迁移约定
 
-- 目录：`oa4rust/backend/migrations/`（顶层 207 个 `.sql` 文件，其中 111 正向 + 96 `*_rollback.sql`；正向编号至 109；历史归档在 `archive/`）。
+- 目录：`oa4rust/backend/migrations/`（顶层 213 个 `.sql` 文件，其中 114 正向 + 99 `*_rollback.sql`；正向编号至 112；历史归档在 `archive/`）。
 - 命名：正向 `NNN_description.sql`；回滚 `NNN_description_rollback.sql`（启动时**忽略**）；历史归档 `archive/`（忽略）。
 - 执行：启动自动幂等执行（`run_migrations`），无需手工 SQL；`--migrate-only` 仅跑迁移后退出（CI/部署流水线用）。
 - **成对约定**：新增正向迁移必须同时提供 `*_rollback.sql`（001–021 等 15 个早期迁移无回滚文件，其余历史迁移均为成对文件）。
