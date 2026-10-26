@@ -2913,7 +2913,7 @@ pub async fn control_workorworkcompleted_workOrWorkCompleted(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT xid, xtitle, xperson, xidentity, \"xcreateTime\", \"xupdateTime\" FROM PP_C_KEYLOCK WHERE xwork = $1",
+            "SELECT xid, xtitle, xperson, xidentity, create_time AS \"xcreateTime\", update_time AS \"xupdateTime\" FROM PP_C_KEYLOCK WHERE xwork = $1",
             &[&workOrWorkCompleted],
         )
         .await
@@ -25069,7 +25069,7 @@ pub async fn snap_u2_workcompleted_type_snapworkcompleted(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     u2_snap_by_type(
         &pool,
-        "xworkCompleted",
+        "\"xworkCompleted\"",
         &work_completed,
         "snapWorkCompleted",
     )
@@ -25083,7 +25083,7 @@ pub async fn snap_u2_workcompleted_type_abandonedworkcompleted(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     u2_snap_by_type(
         &pool,
-        "xworkCompleted",
+        "\"xworkCompleted\"",
         &work_completed,
         "abandonedWorkCompleted",
     )
@@ -25332,7 +25332,7 @@ pub async fn attachment_u2_get_by_workcompleted(
     pool: Extension<Pool>,
     axum::extract::Path((id, work_completed)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let row = u2_att_get_with_check(&pool, &id, "xworkCompleted", &work_completed).await?;
+    let row = u2_att_get_with_check(&pool, &id, "\"xworkCompleted\"", &work_completed).await?;
     match row {
         Some(row) => Ok(Json(ActionResult::success(u2_att_json(&row)))),
         None => Ok(Json(ActionResult::error("attachment not found"))),
@@ -25508,7 +25508,7 @@ pub async fn attachment_id_workorworkcompleted_workOrWorkCompleted(
     let row = u2_att_get_with_check(&pool, &id, "xwork", &flag).await?;
     let row = match row {
         Some(r) => Some(r),
-        None => u2_att_get_with_check(&pool, &id, "xworkCompleted", &flag).await?,
+        None => u2_att_get_with_check(&pool, &id, "\"xworkCompleted\"", &flag).await?,
     };
     match row {
         Some(r) => Ok(Json(ActionResult::success(u2_att_json(&r)))),
@@ -25660,7 +25660,10 @@ async fn u2_read_multipart_file(
 }
 
 /// 上传统一入口：persist(带回读校验) + 写 pp_c_attachment 元数据行。
-/// ref_col 仅接受内部常量（"xwork" / "xworkCompleted"），非用户输入。
+/// ref_col 仅接受内部常量（"xwork" / "\"xworkCompleted\""），非用户输入。
+/// ⚠️ 混合大小写列名必须带 SQL 引号传入：PostgreSQL 对不带引号的标识符折叠成
+/// 小写，`xworkCompleted` 会变成 `xworkcompleted`，与 DDL 的 "xworkCompleted"
+/// （migrations/065）不是同一个列——CI PG 日志实证过 5 处这类 500（F-6）。
 #[allow(clippy::too_many_arguments)]
 async fn u2_att_store_new(
     pool: &Pool,
@@ -25948,7 +25951,7 @@ pub async fn attachment_u2b_upload_workcompleted(
         &id,
         &name,
         bytes,
-        "xworkCompleted",
+        "\"xworkCompleted\"",
         &wc,
     )
     .await
@@ -27021,7 +27024,7 @@ pub async fn attachment_u2b_copy_to_workcompleted(
         &pool,
         &session.person_unique,
         &body,
-        "xworkCompleted",
+        "\"xworkCompleted\"",
         &wc,
         false,
     )
@@ -27039,7 +27042,7 @@ pub async fn attachment_u2b_copy_to_workcompleted_soft(
         &pool,
         &session.person_unique,
         &body,
-        "xworkCompleted",
+        "\"xworkCompleted\"",
         &wc,
         true,
     )
@@ -27207,7 +27210,7 @@ pub async fn attachment_u2b_delete_by_workcompleted(
     session: Extension<shared::session::Session>,
     axum::extract::Path((id, wc)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let exists = u2_att_get_with_check(&pool, &id, "xworkCompleted", &wc).await?;
+    let exists = u2_att_get_with_check(&pool, &id, "\"xworkCompleted\"", &wc).await?;
     if exists.is_none() {
         return Ok(Json(ActionResult::error("attachment not found")));
     }
@@ -27258,7 +27261,7 @@ pub async fn attachment_u2b_get_by_wc_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path((id, wc)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let row = u2_att_get_with_check(&pool, &id, "xworkCompleted", &wc).await?;
+    let row = u2_att_get_with_check(&pool, &id, "\"xworkCompleted\"", &wc).await?;
     match row {
         Some(r) => Ok(Json(ActionResult::success(u2_att_json(&r)))),
         None => Ok(Json(ActionResult::error("attachment not found"))),
@@ -28560,8 +28563,8 @@ macro_rules! u2_att_ext_download_handler {
 
 u2_att_ext_download_handler!(attachment_u2c_download_work_stream_ext, "xwork");
 u2_att_ext_download_handler!(attachment_u2c_download_work_ext, "xwork");
-u2_att_ext_download_handler!(attachment_u2c_download_wc_stream_ext, "xworkCompleted");
-u2_att_ext_download_handler!(attachment_u2c_download_wc_ext, "xworkCompleted");
+u2_att_ext_download_handler!(attachment_u2c_download_wc_stream_ext, "\"xworkCompleted\"");
+u2_att_ext_download_handler!(attachment_u2c_download_wc_ext, "\"xworkCompleted\"");
 
 // ── invoice 文档信息/下载 ×2（StorageObject on x_general_invoice）──
 // 对齐 o2server ActionGetInvoiceInfo / ActionDownloadInvoice（原 u2_capability_unavailable 桩已替换）。
@@ -28739,8 +28742,14 @@ pub async fn task_list_date_hour_exclude_draft_manage(
     let _ = (hour, is_exclude_draft);
     let rows = client
         .query(
+            // F-8：pp_c_task."xcreateTime" 是 TEXT（032:529 建表），TO_CHAR(text, …)
+            // 函数不存在——CI PG 日志实证过这个 500。改文本安全等价形式：
+            // LEFT(col, 10) = $1。依据：本仓全族 "xcreateTime" 列按 ISO 前缀
+            // （'YYYY-MM-DD HH:MI:SS'）存储——多处以 ORDER BY "xcreateTime" DESC
+            // 依赖字典序即时间序。不选 `"xcreateTime"::timestamp` 铸造：存量脏值
+            // （空串/非时间文本）会让整条查询运行时 500，比现状更糟。
             "SELECT xid, xtitle, xperson, \"xcreateTime\" FROM PP_C_TASK \
-             WHERE TO_CHAR(\"xcreateTime\", 'YYYY-MM-DD') = $1 ORDER BY \"xcreateTime\" DESC LIMIT 50",
+             WHERE LEFT(\"xcreateTime\", 10) = $1 ORDER BY \"xcreateTime\" DESC LIMIT 50",
             &[&date],
         )
         .await

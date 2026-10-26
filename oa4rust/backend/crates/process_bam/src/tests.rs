@@ -37,11 +37,17 @@ mod tests {
 
     #[tokio::test]
     async fn test_state_summary() {
-        let pool = build_test_pool();
-        let app = crate::router(pool);
+        // F-4（2026-10-26 第三轮）：本测试原先用**无连接池**断言 500——那断的是
+        // 「连不上库」，不是行为；x_process_bam.status 缺失导致的 500 它同样照过
+        // （F-1，CI PG 日志实证）。改为：无库显式跳过；有库断行为——迁移 112 补了
+        // status 列后应为 200，且四个计数键必须在场。
+        if !shared::testing::is_db_available().await {
+            eprintln!("skipping test_state_summary: DB not reachable");
+            return;
+        }
+        let app = crate::router(shared::testing::test_pool());
 
         let response = app
-            .clone()
             .oneshot(
                 Request::builder()
                     .uri("/api/process/state/summary")
@@ -50,17 +56,28 @@ mod tests {
             )
             .await
             .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
 
-        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+        let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        let data = &json["data"];
+        for key in ["totalProcesses", "running", "completed", "expired"] {
+            assert!(data.get(key).is_some(), "summary 缺键 {key}: {json}");
+        }
     }
 
     #[tokio::test]
     async fn test_state_running() {
-        let pool = build_test_pool();
-        let app = crate::router(pool);
+        // 同 test_state_summary：原无库断言 500 断的不是行为。
+        if !shared::testing::is_db_available().await {
+            eprintln!("skipping test_state_running: DB not reachable");
+            return;
+        }
+        let app = crate::router(shared::testing::test_pool());
 
         let response = app
-            .clone()
             .oneshot(
                 Request::builder()
                     .uri("/api/process/state/running")
@@ -69,17 +86,29 @@ mod tests {
             )
             .await
             .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
 
-        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+        let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        let data = &json["data"];
+        for key in ["runningCount", "applications"] {
+            assert!(data.get(key).is_some(), "running 缺键 {key}: {json}");
+        }
     }
 
     #[tokio::test]
     async fn test_state_organization() {
-        let pool = build_test_pool();
-        let app = crate::router(pool);
+        // 原无库断言 500。该查询（x_process_bam JOIN x_process_organization）
+        // 不涉及 F-1 的 status 列，fresh DB 上本就应 200。
+        if !shared::testing::is_db_available().await {
+            eprintln!("skipping test_state_organization: DB not reachable");
+            return;
+        }
+        let app = crate::router(shared::testing::test_pool());
 
         let response = app
-            .clone()
             .oneshot(
                 Request::builder()
                     .uri("/api/process/state/organization")
@@ -88,7 +117,15 @@ mod tests {
             )
             .await
             .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
 
-        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+        let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        assert!(
+            json["data"].get("organizations").is_some(),
+            "organization 缺 organizations 键: {json}"
+        );
     }
 }
