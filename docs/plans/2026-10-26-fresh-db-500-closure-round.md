@@ -170,7 +170,7 @@ F-3（`relation "PP_E_APPLICATION" does not exist` ×2），并暴露 F-5~F-8 �
 | P0-2 x_work.category | **已完成（经波折）** | 112 首版**漏写**此 ALTER——WHERE 盲补前它隐身，P1-1 增强扫描首跑当即抓出，同批补进 112（5148→5149 列）。「尺子抓出尺子建造者的遗漏」的实证 | `2148b7f2b`（补列）；`e09753e3b`（112 主体） |
 | P0-3 PP_E_APPLICATION 视图 | **已完成** | pg_class relname+relkind 守卫、不存在才建（刻意不用 OR REPLACE）；定义照 archive/089 且与 032 DDL 逐列核对 | `e09753e3b` |
 | P0-4 遗留表 4 张 | **已完成** | 3× pp_c_touch_*（xupdatetime，不照抄 089 旧驼峰）+ x_process_transition（6 列 + gateway_instance 索引，列全部来自 handler）；FI002-LEGACY-TABLES 收尾 | `e09753e3b` |
-| P0-5 process_bam 假 500 测试 | **已完成** | 三用例改 is_db_available 门 + 行为断言（200 + 响应键）；保留 router 构建与 ActionResult 纯测试 | `88883a262` |
+| P0-5 process_bam 假 500 测试 | **已完成 + 真库验证** | 三用例改 is_db_available 门 + 行为断言（200 + 响应键）；保留 router 构建与 ActionResult 纯测试。**§5.2 有库轮次**：三端点 handler SQL 真库直跑全通（state_summary FILTER 谓词 + state_running + state_organization JOIN，fresh 空表 count=0 诚实） | `88883a262`；真库验证 `846a143cd` |
 | P0-6 FI-002 基线收敛 | **已完成** | 7→0（`e09753e3b`）；P1-1 后余 2 对视图投影列登记（`2148b7f2b`）。两方向验证：基线态 exit 0；反向注入 exit 1 并点名（SELECT 列打错 → lib.rs:63；WHERE 列打错 → lib.rs:17，均已还原） | `e09753e3b`、`2148b7f2b` |
 | P0-7 FX-1 夹具 E23505（main 当前红） | **已完成** | shared::testing::upsert_fixture_person（DELETE 残留 + DO UPDATE + 23505 重试×3 fail-loud，判据与 R4 personal 版逐字一致）；18 处四列形态迁移 + bbs 两处七列形态内联同范式助手；CI unit-tests 转绿待确认 | `650833674` |
 | P0-8 F-5~F-8（CI 实证四缺陷） | **已完成** | F-5 补 sort_order INTEGER（`e09753e3b`）；F-6 十一处 ref_col/work_col 常量引号化（先转义形态，后改 raw string `r#""x""#` 绕开 quoted_key_guard 误伤——见 §2.4）；F-7 别名化 ×4（2916 + **8764/8797/8809 三处同型**，后者是 P1-1 扫描新抓出的）；F-8 TO_CHAR(text)→LEFT(col,10)（ISO 前缀假设有全族 ORDER BY 先例，注释明示） | `e09753e3b`、`88883a262`、`2148b7f2b`、`7014a465b` |
