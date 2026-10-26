@@ -67,6 +67,8 @@ oa4rust/backend/scripts/**
 !oa4rust/backend/scripts/validate_rustsec_exceptions.py
 # S4 pilot 日志离线门禁（独立 workflow 调用）。
 !oa4rust/backend/scripts/pilot_gate.py
+# live DB 对账脚本：111/112 声明列 ↔ information_schema 形状分叉检测（有库轮次）
+!oa4rust/backend/scripts/schema_diff.py
 
 # log
 *.log
