@@ -110,7 +110,7 @@ F-3（`relation "PP_E_APPLICATION" does not exist` ×2），并暴露 F-5~F-8 �
 | **F-7 家族比 F-7 大** | F-7 只修了 `lib.rs:2916`；P1-1 增强扫描当次抓出同型三处：`8764`（keylock_lock SELECT）、`8797`（mockputtopost UPDATE SET）、`8809`（回读 SELECT）——「修一处同型」靠肉眼必漏，尺子补盲后当场现形 | 同批修（别名化 / SET 改小写列） |
 | **112 首版漏写 F-2** | WHERE 盲补前 `x_work.category` 隐身，基线 7→0 的「全绿」是假绿；P1-1 首跑当即点名 | 补进 112（宇宙 5148→5149） |
 | **F-6 与 quoted_key_guard 相撞** | F-6 的引号常量写成转义形态会撞 `tests/quoted_key_guard.rs` 的转义引号键禁则（那防 row.get/payload 的 JSON 键缺陷，与 SQL 标识符引用同形不同义） | 改 raw string `r#""x""#`——运行期值相同、无 backslash 字形、守卫天然不误伤；契约注释写明缘由。Python 模拟全仓 608 文件 0 违例 |
-| **本机 Rust 编译不可用** | GNU 工具链缺 gcc/dlltool（ring/parking_lot_core 建不了），无 MSVC 工具链——10-11/12 能编是当时有 MinGW，现已不在 | fail-loud：本机只做 rustfmt（语法+格式，CI 同版本 1.98.1）+ Python 端口算法实跑 + 人工类型/borrow 复审；编译与测试执行全部交 CI |
+| **本机 Rust 编译不可用** | GNU 工具链缺 gcc/dlltool（ring/parking_lot_core 建不了），无 MSVC 工具链——10-11/12 能编是当时有 MinGW，现已不在 | fail-loud：本机只做 rustfmt（语法+格式，CI 同版本 1.98.1）+ Python 端口算法实跑 + 人工类型/borrow 复审；编译与测试执行全部交 CI。**实际发生两轮反馈循环**（见 §5 末）：① 3 处 `&c` 撞 needless_borrow（client 形参本就是 `&Client`，`&c` 即 `&&Client`）——本机审计脚本初版还找错了绑定（找到隔壁函数的 `let c =`），二审改为「找所在函数形参」才定位准；② `Path::file_name()` 返回 `Option<&OsStr>` 被当成 `DirEntry::file_name()` 的 owned 用（E0599）。两轮各约 10 分钟 CI，终态全绿 |
 | **沙箱代理间歇性阻断 GitHub 写操作** | 第 5 次推送起 SSH 被 198.18.x.x 关闭、HTTPS schannel/openssl 握手失败、gh POST 全 EOF（GET 正常）；重试后 SSH 恢复 | 重试成功；备选 GitHub Git Database API 当时同样被断（POST EOF），未采用 |
 
 ---
@@ -178,6 +178,23 @@ F-3（`relation "PP_E_APPLICATION" does not exist` ×2），并暴露 F-5~F-8 �
 | P1-2 引号大写标识符检查 | **已完成** | tests/quoted_relation_guard.rs：大小写敏感核对引号大写关系 ↔ 生效迁移 CREATE；反向注入 5 形态 + 负对照 4 项；算法经 Python 端口对 612 真实文件实跑 0 违例 | `7014a465b` |
 | P1-3 format! 插值常量守卫 | **已完成** | tests/sql_ident_constant_guard.rs：五个 SQL 插值 helper 的首字面量（列参数）必须小写或已引号；反向注入 5 形态 + 负对照；真树 612 文件 0 违例 | `7014a465b` |
 | P2-1 archive/089 警示 | **已完成** | migrations/archive/README.md：089 冷藏原因 + 「勿重启用」+ 修正版在 112 + 守卫把守 | 本文档提交 |
+
+### 5.1 CI 反馈循环与终态（2026-10-26，gh 实跑）
+
+| 提交 | oa4rust CI | 说明 |
+|---|---|---|
+| `650833674`（P0-7） | 绿 | FX-1 修复后 unit-tests 转绿（R8 时代那次红的直接修复） |
+| `e09753e3b`（112） | 绿 | 112 fresh PG 应用 + FI-002 棘轮 job 绿 |
+| `88883a262`（P0-5/P0-8） | 绿 | process_bam 行为测试 + F-6/F-7/F-8 SQL 修 |
+| `2148b7f2b`（P1-1） | **红** | quality：message:206 needless_borrow（P0-7 迁移的 `&c` 家族） |
+| `7014a465b`（P1-2/P1-3） | **红** | 同一错误（修复未含在该提交） |
+| `4e90ed1f8`（台账） | **红** | quality：quoted_relation_guard 的 `Path::file_name()` Option（E0599） |
+| `69be59402`（clippy 反馈修） | — | 3 处 needless borrow + drop 移除 |
+| `84d068905`（file_name 修） | **全绿** | 8/8 job（quality/unit-tests/integration/behavior-compare/fi002/openapi/behavior-gate）；两把新守卫首次真正编译执行并通过 |
+
+**main  transient red 时长约 50 分钟**（`2148b7f2b`→`84d068905` 之间三个提交的 oa4rust CI 红），
+根因全是「本机无编译器 ⇒ CI 首编」的反馈类错误，非逻辑回归。其余 workflow
+（laiyipao/three-ends/auto-checkin/supply-chain/warnings-gate）全程绿。
 
 **环境限制（fail-loud，三重）**：① 本机无 PostgreSQL（原生仅客户端、Docker 未运行），DB 面全部标注
 「待 CI 真库」；② 本机 **Rust 编译不可用**——GNU 工具链缺 gcc/dlltool、无 MSVC 工具链
