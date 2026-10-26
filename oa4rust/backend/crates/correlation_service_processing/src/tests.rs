@@ -107,13 +107,8 @@ async fn seed_admin_session() -> shared::session::Session {
         )
         .await
         .unwrap();
-    client
-        .execute(
-            "INSERT INTO auth_person (id, unique_id, name, password_hash) VALUES ('u-u2c-admin', 'u-u2c-admin', 'u2c admin', 'x') ON CONFLICT (id) DO NOTHING",
-            &[],
-        )
-        .await
-        .unwrap();
+    shared::testing::upsert_fixture_person(&client, "u-u2c-admin", "u-u2c-admin", "u2c admin")
+        .await;
     client
         .execute(
             "INSERT INTO auth_person_role (person_id, role_id, unit_id) VALUES ('u-u2c-admin', 'u2c-role-admin', 'u2c-unit') ON CONFLICT DO NOTHING",

@@ -203,13 +203,8 @@ mod security_gate_tests {
         )
         .await
         .unwrap();
-        c.execute(
-            "INSERT INTO auth_person (id, unique_id, name, password_hash) \
-             VALUES ($1, $1, 'b22 message admin', 'x') ON CONFLICT (id) DO NOTHING",
-            &[&ADMIN_PERSON.to_string()],
-        )
-        .await
-        .unwrap();
+        shared::testing::upsert_fixture_person(&c, ADMIN_PERSON, ADMIN_PERSON, "b22 message admin")
+            .await;
         c.execute(
             "INSERT INTO auth_person_role (person_id, role_id, unit_id) \
              VALUES ($1, 'b22-role-admin', 'b22-unit') ON CONFLICT DO NOTHING",

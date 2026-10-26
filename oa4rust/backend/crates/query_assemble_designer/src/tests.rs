@@ -30,13 +30,8 @@ async fn seed_admin_role(c: &deadpool_postgres::Client) {
     )
     .await
     .unwrap();
-    c.execute(
-        "INSERT INTO auth_person (id, unique_id, name, password_hash) \
-         VALUES ($1, $1, 'b20 designer admin', 'x') ON CONFLICT (id) DO NOTHING",
-        &[&ADMIN_PERSON.to_string()],
-    )
-    .await
-    .unwrap();
+    shared::testing::upsert_fixture_person(&c, ADMIN_PERSON, ADMIN_PERSON, "b20 designer admin")
+        .await;
     c.execute(
         "INSERT INTO auth_person_role (person_id, role_id, unit_id) \
          VALUES ($1, 'b20-role-admin', 'b20-unit') ON CONFLICT DO NOTHING",
@@ -1007,13 +1002,7 @@ async fn input_create_writes_text_create_time_ok() {
     )
     .await
     .unwrap();
-    c.execute(
-        "INSERT INTO auth_person (id, unique_id, name, password_hash) VALUES ($1,$1,'input admin','x') \
-         ON CONFLICT (id) DO NOTHING",
-        &[&ADMIN.to_string()],
-    )
-    .await
-    .unwrap();
+    shared::testing::upsert_fixture_person(&c, ADMIN, ADMIN, "input admin").await;
     c.execute(
         "INSERT INTO auth_person_role (person_id, role_id, unit_id) VALUES ($1,'u-qd-input-role','u') \
          ON CONFLICT DO NOTHING",

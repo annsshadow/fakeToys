@@ -242,12 +242,7 @@ mod security_gate_tests {
         )
         .await
         .unwrap();
-        c.execute(
-            "INSERT INTO auth_person (id, unique_id, name, password_hash) VALUES ($1, $1, 'r48s admin', 'x') ON CONFLICT (id) DO NOTHING",
-            &[&person],
-        )
-        .await
-        .unwrap();
+        shared::testing::upsert_fixture_person(&c, &person, &person, "r48s admin").await;
         c.execute(
             "INSERT INTO auth_person_role (person_id, role_id, unit_id) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING",
             &[&person, &format!("r48s-role-{tag}"), &format!("r48s-unit-{tag}")],
@@ -1598,12 +1593,7 @@ mod r419_gate_tests {
         )
         .await
         .unwrap();
-        c.execute(
-            "INSERT INTO auth_person (id, unique_id, name, password_hash) VALUES ($1, $1, 'r419 admin', 'x') ON CONFLICT (id) DO NOTHING",
-            &[&ADMIN.to_string()],
-        )
-        .await
-        .unwrap();
+        shared::testing::upsert_fixture_person(&c, ADMIN, ADMIN, "r419 admin").await;
         c.execute(
             "INSERT INTO auth_person_role (person_id, role_id, unit_id) VALUES ($1, 'r419-role-admin', 'r419-unit') ON CONFLICT DO NOTHING",
             &[&ADMIN.to_string()],

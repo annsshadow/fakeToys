@@ -785,12 +785,7 @@ mod u2_contract {
         )
         .await
         .unwrap();
-        c.execute(
-            "INSERT INTO auth_person (id, unique_id, name, password_hash) VALUES ($1, $1, 'r48 admin', 'x') ON CONFLICT (id) DO NOTHING",
-            &[&person.to_string()],
-        )
-        .await
-        .unwrap();
+        shared::testing::upsert_fixture_person(&c, person, person, "r48 admin").await;
         c.execute(
             "INSERT INTO auth_person_role (person_id, role_id, unit_id) VALUES ($1, 'r48-role-admin', 'r48-unit') ON CONFLICT DO NOTHING",
             &[&person.to_string()],

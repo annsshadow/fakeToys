@@ -703,14 +703,7 @@ mod security_gate_tests {
             )
             .await
             .unwrap();
-        client
-            .execute(
-                "INSERT INTO auth_person (id, unique_id, name, password_hash) \
-                 VALUES ($1, $2, $3, 'x') ON CONFLICT (id) DO NOTHING",
-                &[&person, &person, &person],
-            )
-            .await
-            .unwrap();
+        shared::testing::upsert_fixture_person(&client, &person, &person, &person).await;
         client
             .execute(
                 "INSERT INTO auth_person_role (person_id, role_id, unit_id) VALUES ($1, $2, $3) \

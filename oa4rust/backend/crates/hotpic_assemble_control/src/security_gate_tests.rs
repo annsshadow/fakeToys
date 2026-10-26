@@ -142,13 +142,7 @@ mod security_gate_tests {
             )
             .await
             .unwrap();
-            c.execute(
-                "INSERT INTO auth_person (id, unique_id, name, password_hash) \
-                 VALUES ($1,$1,'hotpic gate admin','x') ON CONFLICT (id) DO NOTHING",
-                &[&ADMIN.to_string()],
-            )
-            .await
-            .unwrap();
+            shared::testing::upsert_fixture_person(&c, ADMIN, ADMIN, "hotpic gate admin").await;
             c.execute(
                 "INSERT INTO auth_person_role (person_id, role_id, unit_id) \
                  VALUES ($1,$2,'hotpic-gate-unit') ON CONFLICT DO NOTHING",

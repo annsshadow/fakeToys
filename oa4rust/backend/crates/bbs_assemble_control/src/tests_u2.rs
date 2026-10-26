@@ -20,6 +20,34 @@ fn app() -> axum::Router {
     crate::router(shared::testing::mock_pool())
 }
 
+/// FX-1 同族的七列夹具人（多 salt/created_at/updated_at 三列，不走公共助手）：
+/// `auth_person` 的 unique_id 索引不在 `ON CONFLICT (id)` 仲裁范围内，两个用例
+/// 并发 seed 同一探针行会 E23505——照 `shared::testing::upsert_fixture_person`
+/// 的重试范式内联实现（先 DELETE 同 unique_id 残留，再 DO UPDATE，三次 fail-loud）。
+async fn upsert_section_probe(c: &deadpool_postgres::Client) {
+    for attempt in 0..3 {
+        c.execute(
+            "DELETE FROM auth_person WHERE unique_id = 'u2-admin-section-probe' AND id <> 'u2-admin-section-probe'",
+            &[],
+        )
+        .await
+        .unwrap();
+        let res = c
+            .execute(
+                "INSERT INTO auth_person (id, unique_id, name, password_hash, salt, created_at, updated_at) \
+                 VALUES ('u2-admin-section-probe', 'u2-admin-section-probe', 'probe-admin', 'probe-not-a-login', '', NOW(), NOW()) \
+                 ON CONFLICT (id) DO UPDATE SET unique_id = EXCLUDED.unique_id",
+                &[],
+            )
+            .await;
+        match res {
+            Ok(_) => return,
+            Err(e) if shared::testing::is_unique_violation(&e) && attempt < 2 => continue,
+            Err(e) => panic!("夹具 upsert_section_probe 失败：{e}"),
+        }
+    }
+}
+
 async fn status(method: Method, uri: &str) -> StatusCode {
     app()
         .oneshot(
@@ -788,7 +816,13 @@ async fn test_role_save_bind_and_query_roundtrip() {
         let pool = test_pool();
         let client = pool.get().await.unwrap();
         client.execute("INSERT INTO auth_role (id, name) VALUES ('u2-test-admin-role','admin') ON CONFLICT (id) DO NOTHING", &[]).await.expect("seed admin role");
-        client.execute("INSERT INTO auth_person (id, unique_id, name, password_hash) VALUES ('u2-admin-person','u2-admin-carol','Carol','x') ON CONFLICT (id) DO NOTHING", &[]).await.expect("seed admin person");
+        shared::testing::upsert_fixture_person(
+            &client,
+            "u2-admin-person",
+            "u2-admin-carol",
+            "Carol",
+        )
+        .await;
         client.execute("INSERT INTO auth_person_role (person_id, role_id, unit_id) VALUES ('u2-admin-person','u2-test-admin-role','u2-unit') ON CONFLICT DO NOTHING", &[]).await.expect("bind admin role");
     }
 
@@ -948,14 +982,7 @@ async fn test_section_crud_roundtrip() {
     // 版块写（create/save）自本批起收 admin 门：先造 admin 探针身份（幂等，测后清理）。
     {
         let c = pool.get().await.unwrap();
-        c.execute(
-            "INSERT INTO auth_person (id, unique_id, name, password_hash, salt, created_at, updated_at) \
-             VALUES ('u2-admin-section-probe', 'u2-admin-section-probe', 'probe-admin', 'probe-not-a-login', '', NOW(), NOW()) \
-             ON CONFLICT (id) DO NOTHING",
-            &[],
-        )
-        .await
-        .unwrap();
+        upsert_section_probe(&c).await;
         c.execute(
             "INSERT INTO auth_role (id, name, created_at, updated_at) \
              SELECT 'u2-admin-section-probe-role', 'admin', NOW(), NOW() \
@@ -1069,14 +1096,7 @@ async fn test_section_crud_roundtrip() {
     // 造临时 admin 探针身份（唯一前缀，测后清理；复用既有 admin 角色若存在）
     {
         let c = pool.get().await.unwrap();
-        c.execute(
-            "INSERT INTO auth_person (id, unique_id, name, password_hash, salt, created_at, updated_at) \
-             VALUES ('u2-admin-section-probe', 'u2-admin-section-probe', 'probe-admin', 'probe-not-a-login', '', NOW(), NOW()) \
-             ON CONFLICT (id) DO NOTHING",
-            &[],
-        )
-        .await
-        .unwrap();
+        upsert_section_probe(&c).await;
         c.execute(
             "INSERT INTO auth_role (id, name, created_at, updated_at) \
              SELECT 'u2-admin-section-probe-role', 'admin', NOW(), NOW() \
@@ -1326,15 +1346,13 @@ async fn test_shutup_create_and_delete_require_admin() {
             )
             .await
             .expect("seed admin role");
-        client
-            .execute(
-                "INSERT INTO auth_person (id, unique_id, name, password_hash) \
-                 VALUES ('u2-shutup-admin-person','u2-shutup-admin','ShutupAdmin','x') \
-                 ON CONFLICT (id) DO NOTHING",
-                &[],
-            )
-            .await
-            .expect("seed admin person");
+        shared::testing::upsert_fixture_person(
+            &client,
+            "u2-shutup-admin-person",
+            "u2-shutup-admin",
+            "ShutupAdmin",
+        )
+        .await;
         client
             .execute(
                 "INSERT INTO auth_person_role (person_id, role_id, unit_id) \

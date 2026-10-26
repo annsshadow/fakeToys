@@ -248,13 +248,13 @@ mod security_gate_tests {
         )
         .await
         .unwrap();
-        c.execute(
-            "INSERT INTO auth_person (id, unique_id, name, password_hash) \
-             VALUES ($1, $1, 'b21 attendance admin', 'x') ON CONFLICT (id) DO NOTHING",
-            &[&ADMIN_PERSON.to_string()],
+        shared::testing::upsert_fixture_person(
+            &c,
+            ADMIN_PERSON,
+            ADMIN_PERSON,
+            "b21 attendance admin",
         )
-        .await
-        .unwrap();
+        .await;
         c.execute(
             "INSERT INTO auth_person_role (person_id, role_id, unit_id) \
              VALUES ($1, 'b21-role-admin', 'b21-unit') ON CONFLICT DO NOTHING",

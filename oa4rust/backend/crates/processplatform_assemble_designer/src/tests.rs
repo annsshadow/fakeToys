@@ -504,13 +504,7 @@ async fn test_pp_process_writes_require_owner() {
         )
         .await
         .unwrap();
-        c.execute(
-            "INSERT INTO auth_person (id, unique_id, name, password_hash) \
-             VALUES ($1,$1,'pp gate admin','x') ON CONFLICT (id) DO NOTHING",
-            &[&ADMIN.to_string()],
-        )
-        .await
-        .unwrap();
+        shared::testing::upsert_fixture_person(&c, ADMIN, ADMIN, "pp gate admin").await;
         c.execute(
             "INSERT INTO auth_person_role (person_id, role_id, unit_id) \
              VALUES ($1,$2,'pp-gate-unit') ON CONFLICT DO NOTHING",

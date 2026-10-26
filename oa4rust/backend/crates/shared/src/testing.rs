@@ -68,6 +68,59 @@ pub async fn is_db_available() -> bool {
     )
 }
 
+/// 并发安全的夹具人：幂等 upsert 一个 `auth_person` 行（pid=uid=person_unique 亦可分开传）。
+///
+/// # 为什么需要重试（2026-10-25 R4 首修于 `personal` crate；2026-10-26 第三轮
+/// # FX-1 抬升为 shared 公共助手并迁移全仓 18 处同型夹具）
+///
+/// `auth_person` 的 `id` 与 `unique_id` **各有一个唯一索引**，而 `ON CONFLICT`
+/// 只能指定**一个**仲裁索引（PostgreSQL 不支持一条 INSERT 带多个 ON CONFLICT
+/// 子句）。两个测试并发插同一行（同 id、同 unique_id）时，PostgreSQL 可能先在
+/// `unique_id` 索引上判冲突——那不是仲裁索引，于是直接 E23505，把其中一个测试
+/// 随机打红：
+///
+///   duplicate key value violates unique constraint "auth_person_unique_id_key"
+///
+/// 修法：先 DELETE「同 unique_id 但不同 id」的残留（ON CONFLICT (id) 覆盖不到
+/// 的那类），再 `ON CONFLICT (id) DO UPDATE`；重试时对方已提交、残留可见，
+/// 第二次必然走 UPDATE 分支。三次仍失败才 panic——说明不是竞态而是真数据问题。
+pub async fn upsert_fixture_person(
+    client: &deadpool_postgres::Client,
+    pid: &str,
+    uid: &str,
+    name: &str,
+) {
+    for attempt in 0..3 {
+        // 清「同 unique_id 但不同 id」的残留：ON CONFLICT (id) 覆盖不到
+        client
+            .execute(
+                "DELETE FROM auth_person WHERE unique_id = $1 AND id <> $2",
+                &[&uid, &pid],
+            )
+            .await
+            .unwrap();
+        let res = client
+            .execute(
+                "INSERT INTO auth_person (id, unique_id, name, password_hash) \
+                 VALUES ($1, $2, $3, 'u2-test-noop') \
+                 ON CONFLICT (id) DO UPDATE SET unique_id = EXCLUDED.unique_id",
+                &[&pid, &uid, &name],
+            )
+            .await;
+        match res {
+            Ok(_) => return,
+            Err(e) if is_unique_violation(&e) && attempt < 2 => continue,
+            Err(e) => panic!("夹具 upsert_fixture_person 失败（{pid} / {uid}）：{e}"),
+        }
+    }
+}
+
+/// 这个错误是不是唯一键冲突（SQLSTATE 23505）。
+/// 判据形态与 R4 在 `personal` crate 落地的版本逐字一致（两处实现同族同理）。
+pub fn is_unique_violation(e: &deadpool_postgres::tokio_postgres::Error) -> bool {
+    e.code() == Some(&deadpool_postgres::tokio_postgres::error::SqlState::UNIQUE_VIOLATION)
+}
+
 /// 尝试连接默认测试 Redis（redis://127.0.0.1:6379），超时 2s。
 ///
 /// Redis 在本项目中是**可选依赖**（见 `crate::redis` 顶部注释：不可达时降级为
