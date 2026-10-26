@@ -95,11 +95,23 @@ F-3（`relation "PP_E_APPLICATION" does not exist` ×2），并暴露 F-5~F-8 �
 
 | ID | 盲区 | 证据 |
 |---|---|---|
-| B-1 | FI-002 不抽 WHERE/FILTER 子句裸列（只抽限定列/INSERT 清单/UPDATE SET/单表 SELECT 裸列，`scripts/fi002_column_scan.py:348-401`） | F-1 的 `status = 'running'`、F-2 的 `category = $1` 完全不可见；`x_process_transition` 的 WHERE 列（gateway_instance/deleted_at）也没进基线（`docs/audits/artifacts/fi002_unknown_columns.tsv:13-16` 只记了 SELECT 清单 4 列）；**ORDER BY 列同类不可见**（F-5 的 sort_order） |
-| B-2 | 标识符大小写折叠（`analyze_sql` 去引号 + lower，`:329`） | `"PP_E_APPLICATION"` 被折成 `pp_e_application`（表存在、列也齐）⇒ 缺**关系**（视图）不可见（F-3）；**列级同病**：DDL 的 `"xworkCompleted"`（混合大小写）与 SQL 里不加引号的 `xworkCompleted` 折合后相同 ⇒ F-6 的引号缺失不可见 |
-| B-3 | `SYSTEM_SCHEMAS` 缺 `pg_stat_activity` | P1 补 WHERE 抽取后它会立刻被误报（`query_service_processing/src/lib.rs:215`），须同批入名单 |
-| B-4 | SELECT 清单里**带引号的裸列**被静默跳过（裸列分支的 `re.match` 从引号起始即不匹配） | F-7 的 `"xcreateTime"` 因此没进 FI-002 违规集——引号列既不走 QUALIFIED_RE（无 `alias.` 形态）也不走裸列分支 |
-| B-5 | `format!` 动态模板的 `{}` 插值内容不可见 | F-6 的 `ref_col` 常量（`"xworkCompleted"` 裸串）经模板插值，静态扫描无从判定；只能靠「插值常量白名单」式守卫（P1-3） |
+| B-1 | FI-002 不抽 WHERE/FILTER 子句裸列（只抽限定列/INSERT 清单/UPDATE SET/单表 SELECT 裸列，`scripts/fi002_column_scan.py:348-401`） | F-1 的 `status = 'running'`、F-2 的 `category = $1` 完全不可见；`x_process_transition` 的 WHERE 列（gateway_instance/deleted_at）也没进基线（`docs/audits/artifacts/fi002_unknown_columns.tsv:13-16` 只记了 SELECT 清单 4 列）；**ORDER BY 列同类不可见**（F-5 的 sort_order）。**P1-1 已补抽**（含别名豁免，见 §5） |
+| B-2 | 标识符大小写折叠（`analyze_sql` 去引号 + lower，`:329`） | `"PP_E_APPLICATION"` 被折成 `pp_e_application`（表存在、列也齐）⇒ 缺**关系**（视图）不可见（F-3）；**列级同病**：DDL 的 `"xworkCompleted"`（混合大小写）与 SQL 里不加引号的 `xworkCompleted` 折合后相同 ⇒ F-6 的引号缺失不可见。关系级已由 P1-2 守卫大小写敏感地把守；列级折叠保留（折叠是判据需要，全建模大小写敏感成本过高） |
+| B-3 | `SYSTEM_SCHEMAS` 缺 `pg_stat_activity` | P1-1 补 WHERE 抽取后它会立刻被误报（`query_service_processing/src/lib.rs:215`），已同批入名单 |
+| B-4 | SELECT 清单里**带引号的裸列**被静默跳过（裸列分支的 `re.match` 从引号起始即不匹配） | F-7 的 `"xcreateTime"` 因此没进 FI-002 违规集——引号列既不走 QUALIFIED_RE（无 `alias.` 形态）也不走裸列分支。**P1-1 已补认**（SELECT 清单与 UPDATE SET 两分支） |
+| B-5 | `format!` 动态模板的 `{}` 插值内容不可见 | F-6 的 `ref_col` 常量（`"xworkCompleted"` 裸串）经模板插值，静态扫描无从判定；**P1-3 已用「helper 家族首字面量必须引号」的 targeted 守卫把守**（通用 format! 语义分析不可行，边界记在守卫头部） |
+| B-6 | `SELECT DISTINCT` 的**首列**被 `distinct` 关键字吞掉 | P0-6 反向注入时实证：`SELECT DISTINCT process_key_typo, ...` 的首列永不被抽取（裸列分支 `re.match` 命中 "distinct" 即按关键字跳过）。**未修**——修法要把 DISTINCT 从列表段剥离，收益仅「首列早几轮被发现」，F-1/F-5 主盲区已补；登记留待 |
+| B-7 | 视图投影列不进宇宙 | P1-1 分判出的 `pp_e_application.xkey/xterminal` 即此类：112 建的 `"PP_E_APPLICATION"` 视图投影列，经大小写折叠归属到表。按基线登记（理由见 tsv），表级检查不受影响；视图存在性由 P1-2 把守。大小写敏感的关系建模（把 B-2/B-7 一起根治）成本过高，留待 |
+
+### 2.4 实施期新发现（2026-10-26 深夜，P0/P1 执行中登记）
+
+| 发现 | 详情 | 处置 |
+|---|---|---|
+| **F-7 家族比 F-7 大** | F-7 只修了 `lib.rs:2916`；P1-1 增强扫描当次抓出同型三处：`8764`（keylock_lock SELECT）、`8797`（mockputtopost UPDATE SET）、`8809`（回读 SELECT）——「修一处同型」靠肉眼必漏，尺子补盲后当场现形 | 同批修（别名化 / SET 改小写列） |
+| **112 首版漏写 F-2** | WHERE 盲补前 `x_work.category` 隐身，基线 7→0 的「全绿」是假绿；P1-1 首跑当即点名 | 补进 112（宇宙 5148→5149） |
+| **F-6 与 quoted_key_guard 相撞** | F-6 的引号常量写成转义形态会撞 `tests/quoted_key_guard.rs` 的转义引号键禁则（那防 row.get/payload 的 JSON 键缺陷，与 SQL 标识符引用同形不同义） | 改 raw string `r#""x""#`——运行期值相同、无 backslash 字形、守卫天然不误伤；契约注释写明缘由。Python 模拟全仓 608 文件 0 违例 |
+| **本机 Rust 编译不可用** | GNU 工具链缺 gcc/dlltool（ring/parking_lot_core 建不了），无 MSVC 工具链——10-11/12 能编是当时有 MinGW，现已不在 | fail-loud：本机只做 rustfmt（语法+格式，CI 同版本 1.98.1）+ Python 端口算法实跑 + 人工类型/borrow 复审；编译与测试执行全部交 CI |
+| **沙箱代理间歇性阻断 GitHub 写操作** | 第 5 次推送起 SSH 被 198.18.x.x 关闭、HTTPS schannel/openssl 握手失败、gh POST 全 EOF（GET 正常）；重试后 SSH 恢复 | 重试成功；备选 GitHub Git Database API 当时同样被断（POST EOF），未采用 |
 
 ---
 
@@ -142,7 +154,7 @@ F-3（`relation "PP_E_APPLICATION" does not exist` ×2），并暴露 F-5~F-8 �
 | 不改 handler 的 `status` 过滤语义（如改查 running/completed/expired 计数器列） | 无 live DB 证据，猜 Java 时代语义的风险 > 收益；补列是保守解 |
 | 不动约 80 处不带引号 `PP_E_*` 引用 | 折叠正确、指向已建表，无事 |
 | 不重启用 archive/089 | 它同时含「views over nonexistent uppercase tables」的致命伤；只取其 PP_E_APPLICATION 视图定义的**修正版**进 112 |
-| **需用户：确认 oa4rust CI 对 R8（111 迁移）全绿** | ~~本机 `gh` 未认证（本轮尝试登录，见对话）~~ **已核对（2026-10-26）**：behavior-compare 绿 ⇒ 111 fresh PG 应用干净；unit-tests 红 ⇒ FX-1 夹具家族病（P0-7），与 R8 无关 |
+| **需用户：确认 R8 之后六连推的 CI 全绿** | 本机 `gh` 已登录并核对过 R8 当时状态（behavior-compare 绿 ⇒ 111 fresh PG 干净；unit-tests 红 ⇒ FX-1）。本轮 P0/P1 六个提交（`650833674`/`e09753e3b`/`88883a262`/`2148b7f2b`/`7014a465b` + 本文档）的 CI 需在 GitHub 确认，**重点是 P1-2/P1-3 两把新守卫测试**：它们只经过 rustfmt 语法校验 + Python 端口算法实跑 + 人工类型/borrow 复审（本机无 C 编译器，Rust 编译未验），CI 是它们第一次真正编译执行 |
 | **需用户：WF-REQUIRED** | GitHub ruleset 追加 6 个 required context（精确清单见 10-24 文档 §14 R4），需页面操作 |
 | 111 的 41 列类型为「代码绑定」推定 | `ADD COLUMN IF NOT EXISTS` 不覆盖 live 已有列（不会改坏 live），但 fresh 与 live 形状可能分叉；有库轮次用 information_schema 复核 |
 
@@ -154,22 +166,26 @@ F-3（`relation "PP_E_APPLICATION" does not exist` ×2），并暴露 F-5~F-8 �
 
 | 项 | 状态 | 证据 | commit |
 |---|---|---|---|
-| P0-1 x_process_bam.status | 待实施 | | |
-| P0-2 x_work.category | 待实施 | | |
-| P0-3 PP_E_APPLICATION 视图 | 待实施 | | |
-| P0-4 遗留表 4 张 | 待实施 | | |
-| P0-5 process_bam 假 500 测试 | 待实施 | | |
-| P0-6 FI-002 基线收敛 | 待实施 | | |
-| P0-7 FX-1 夹具 E23505（main 当前红） | 待实施 | | |
-| P0-8 F-5~F-8（CI 实证四缺陷） | 待实施 | | |
-| P1-1 WHERE/ORDER BY/引号列抽取 | 待实施 | | |
-| P1-2 引号大写标识符检查 | 待实施 | | |
-| P1-3 format! 插值常量守卫 | 待实施 | | |
-| P2-1 archive/089 警示 | 待实施 | | |
+| P0-1 x_process_bam.status | **已完成** | 112 幂等 ALTER（代码绑定 TEXT）；fi002 宇宙 5137→5148 列；行为待 CI 真库 | `e09753e3b` |
+| P0-2 x_work.category | **已完成（经波折）** | 112 首版**漏写**此 ALTER——WHERE 盲补前它隐身，P1-1 增强扫描首跑当即抓出，同批补进 112（5148→5149 列）。「尺子抓出尺子建造者的遗漏」的实证 | `2148b7f2b`（补列）；`e09753e3b`（112 主体） |
+| P0-3 PP_E_APPLICATION 视图 | **已完成** | pg_class relname+relkind 守卫、不存在才建（刻意不用 OR REPLACE）；定义照 archive/089 且与 032 DDL 逐列核对 | `e09753e3b` |
+| P0-4 遗留表 4 张 | **已完成** | 3× pp_c_touch_*（xupdatetime，不照抄 089 旧驼峰）+ x_process_transition（6 列 + gateway_instance 索引，列全部来自 handler）；FI002-LEGACY-TABLES 收尾 | `e09753e3b` |
+| P0-5 process_bam 假 500 测试 | **已完成** | 三用例改 is_db_available 门 + 行为断言（200 + 响应键）；保留 router 构建与 ActionResult 纯测试 | `88883a262` |
+| P0-6 FI-002 基线收敛 | **已完成** | 7→0（`e09753e3b`）；P1-1 后余 2 对视图投影列登记（`2148b7f2b`）。两方向验证：基线态 exit 0；反向注入 exit 1 并点名（SELECT 列打错 → lib.rs:63；WHERE 列打错 → lib.rs:17，均已还原） | `e09753e3b`、`2148b7f2b` |
+| P0-7 FX-1 夹具 E23505（main 当前红） | **已完成** | shared::testing::upsert_fixture_person（DELETE 残留 + DO UPDATE + 23505 重试×3 fail-loud，判据与 R4 personal 版逐字一致）；18 处四列形态迁移 + bbs 两处七列形态内联同范式助手；CI unit-tests 转绿待确认 | `650833674` |
+| P0-8 F-5~F-8（CI 实证四缺陷） | **已完成** | F-5 补 sort_order INTEGER（`e09753e3b`）；F-6 十一处 ref_col/work_col 常量引号化（先转义形态，后改 raw string `r#""x""#` 绕开 quoted_key_guard 误伤——见 §2.4）；F-7 别名化 ×4（2916 + **8764/8797/8809 三处同型**，后者是 P1-1 扫描新抓出的）；F-8 TO_CHAR(text)→LEFT(col,10)（ISO 前缀假设有全族 ORDER BY 先例，注释明示） | `e09753e3b`、`88883a262`、`2148b7f2b`、`7014a465b` |
+| P1-1 WHERE/ORDER BY/引号列抽取 | **已完成** | analyze_sql 增抽 WHERE/FILTER 裸列（剥子查询、排 cast/函数/关键字）+ ORDER BY/GROUP BY 裸列 + SELECT/SET 引号列（B-4）+ pg_stat_activity 入 SYSTEM_SCHEMAS + SELECT 别名豁免。首跑 9 对逐条分判：4 假阳性（别名）/2 真缺陷/2 视图投影列/1 自身遗漏 | `2148b7f2b` |
+| P1-2 引号大写标识符检查 | **已完成** | tests/quoted_relation_guard.rs：大小写敏感核对引号大写关系 ↔ 生效迁移 CREATE；反向注入 5 形态 + 负对照 4 项；算法经 Python 端口对 612 真实文件实跑 0 违例 | `7014a465b` |
+| P1-3 format! 插值常量守卫 | **已完成** | tests/sql_ident_constant_guard.rs：五个 SQL 插值 helper 的首字面量（列参数）必须小写或已引号；反向注入 5 形态 + 负对照；真树 612 文件 0 违例 | `7014a465b` |
+| P2-1 archive/089 警示 | **已完成** | migrations/archive/README.md：089 冷藏原因 + 「勿重启用」+ 修正版在 112 + 守卫把守 | 本文档提交 |
 
-**环境限制（fail-loud）**：本机无 PostgreSQL（原生仅客户端、Docker 未运行），DB 面全部标注
-「待 CI 真库」；本机 `gh` 已于本轮登录（`annsshadow`，keyring）；FI-002 扫描器为纯 stdlib，
-本机用 Python 3.12 实跑（计划文档里记的 `C:/Python314/python.exe` 本机不存在，口径差异在此登记）。
+**环境限制（fail-loud，三重）**：① 本机无 PostgreSQL（原生仅客户端、Docker 未运行），DB 面全部标注
+「待 CI 真库」；② 本机 **Rust 编译不可用**——GNU 工具链缺 gcc/dlltool、无 MSVC 工具链
+（ring/parking_lot_core 原生构建必败），故全部 Rust 改动的验证口径是「rustfmt（CI 同版本 1.98.1）
+语法+格式 + Python 端口算法实跑 + 人工类型/borrow 复审」，编译与测试执行交 CI；③ 沙箱代理
+间歇性阻断 GitHub 写操作（SSH 被关 / HTTPS 握手败 / gh POST EOF，GET 正常），推送重试后恢复。
+`gh` 已于本轮登录（keyring）；FI-002 扫描器为纯 stdlib，本机用 Python 3.12 实跑
+（前序文档记的 `C:/Python314/python.exe` 本机不存在，口径差异在此登记）。
 
 ---
 
