@@ -7,12 +7,5 @@
 #
 # 格式：table<TAB>column<TAB>首条证据<TAB>复核理由
 # 由 scripts/fi002_column_scan.py --update-baseline 生成，勿手改证据列。
-pp_c_touch_detained	xupdatetime	crates/processplatform_assemble_surface/src/lib.rs:20351 表 pp_c_touch_detained 不在 migrations	遗留表：Java 时代建的表，migrations 从不创建（011 只做大小写重命名）。引用它的 handler 在 fresh DB 上会 500；修法需先决定这些表归谁建，待有库轮次（本机无 PG，盲建表风险 > 收益）
-pp_c_touch_expire	xupdatetime	crates/processplatform_assemble_surface/src/lib.rs:20311 表 pp_c_touch_expire 不在 migrations	遗留表：Java 时代建的表，migrations 从不创建（011 只做大小写重命名）。引用它的 handler 在 fresh DB 上会 500；修法需先决定这些表归谁建，待有库轮次（本机无 PG，盲建表风险 > 收益）
-pp_c_touch_passexpired	xupdatetime	crates/processplatform_assemble_surface/src/lib.rs:20331 表 pp_c_touch_passexpired 不在 migrations	遗留表：Java 时代建的表，migrations 从不创建（011 只做大小写重命名）。引用它的 handler 在 fresh DB 上会 500；修法需先决定这些表归谁建，待有库轮次（本机无 PG，盲建表风险 > 收益）
-x_process_transition	condition	crates/processplatform_service_processing/src/lib.rs:3916 表 x_process_transition 不在 migrations	遗留表：Java 时代建的表，migrations 从不创建（011 只做大小写重命名）。引用它的 handler 在 fresh DB 上会 500；修法需先决定这些表归谁建，待有库轮次（本机无 PG，盲建表风险 > 收益）
-x_process_transition	id	crates/processplatform_service_processing/src/lib.rs:3916 表 x_process_transition 不在 migrations	遗留表：Java 时代建的表，migrations 从不创建（011 只做大小写重命名）。引用它的 handler 在 fresh DB 上会 500；修法需先决定这些表归谁建，待有库轮次（本机无 PG，盲建表风险 > 收益）
-x_process_transition	to_activity	crates/processplatform_service_processing/src/lib.rs:3916 表 x_process_transition 不在 migrations	遗留表：Java 时代建的表，migrations 从不创建（011 只做大小写重命名）。引用它的 handler 在 fresh DB 上会 500；修法需先决定这些表归谁建，待有库轮次（本机无 PG，盲建表风险 > 收益）
-x_process_transition	work_id	crates/processplatform_service_processing/src/lib.rs:3916 表 x_process_transition 不在 migrations	遗留表：Java 时代建的表，migrations 从不创建（011 只做大小写重命名）。引用它的 handler 在 fresh DB 上会 500；修法需先决定这些表归谁建，待有库轮次（本机无 PG，盲建表风险 > 收益）
 
-# 合计 7 对：遗留表 7、迁移缺列 0
+# 合计 0 对：遗留表 0、迁移缺列 0
