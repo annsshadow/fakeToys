@@ -7,7 +7,5 @@
 #
 # 格式：table<TAB>column<TAB>首条证据<TAB>复核理由
 # 由 scripts/fi002_column_scan.py --update-baseline 生成，勿手改证据列。
-pp_e_application	xkey	crates/processplatform_assemble_surface/src/lib.rs:887	视图投影列：migrations/112 建的 "PP_E_APPLICATION" 视图投影 xid AS xkey / xid AS xterminal；handler 引用经大小写折叠归属到 pp_e_application 表（表无此列，属视图独有）。表的列检查不受影响；视图存在性由 P1-2 引号大写标识符守卫把守
-pp_e_application	xterminal	crates/processplatform_assemble_surface/src/lib.rs:975	视图投影列：migrations/112 建的 "PP_E_APPLICATION" 视图投影 xid AS xkey / xid AS xterminal；handler 引用经大小写折叠归属到 pp_e_application 表（表无此列，属视图独有）。表的列检查不受影响；视图存在性由 P1-2 引号大写标识符守卫把守
 
-# 合计 2 对：遗留表 0、迁移缺列 0、视图投影列 2
+# 合计 0 对：遗留表 0、迁移缺列 0、视图投影列 0

@@ -101,7 +101,7 @@ F-3（`relation "PP_E_APPLICATION" does not exist` ×2），并暴露 F-5~F-8 �
 | B-4 | SELECT 清单里**带引号的裸列**被静默跳过（裸列分支的 `re.match` 从引号起始即不匹配） | F-7 的 `"xcreateTime"` 因此没进 FI-002 违规集——引号列既不走 QUALIFIED_RE（无 `alias.` 形态）也不走裸列分支。**P1-1 已补认**（SELECT 清单与 UPDATE SET 两分支） |
 | B-5 | `format!` 动态模板的 `{}` 插值内容不可见 | F-6 的 `ref_col` 常量（`"xworkCompleted"` 裸串）经模板插值，静态扫描无从判定；**P1-3 已用「helper 家族首字面量必须引号」的 targeted 守卫把守**（通用 format! 语义分析不可行，边界记在守卫头部） |
 | B-6 | `SELECT DISTINCT` 的**首列**被 `distinct` 关键字吞掉 | P0-6 反向注入时实证：`SELECT DISTINCT process_key_typo, ...` 的首列永不被抽取（裸列分支 `re.match` 命中 "distinct" 即按关键字跳过）。**已修（2026-10-26 深夜，本批）**：`analyze_sql` 抽取后对 SELECT 列表体剥掉 `DISTINCT`/`ALL` 前缀（`strip_select_modifiers`，正则惰性量词改不动、改在抽取后处理），两向验证：基线态 exit 0；注入 `process_key_typo` exit 1 并点名 `lib.rs:63`（已还原） |
-| B-7 | 视图投影列不进宇宙 | P1-1 分判出的 `pp_e_application.xkey/xterminal` 即此类：112 建的 `"PP_E_APPLICATION"` 视图投影列，经大小写折叠归属到表。按基线登记（理由见 tsv），表级检查不受影响；视图存在性由 P1-2 把守。大小写敏感的关系建模（把 B-2/B-7 一起根治）成本过高，留待 |
+| B-7 | 视图投影列不进宇宙 | **已收口（2026-10-26 深夜，B-6 同批之后）**：`build_universe` 增认 `CREATE VIEW ... AS SELECT ... FROM base`，把投影列（裸列 + `AS alias` 别名）并入折叠小写表名宇宙。`"PP_E_APPLICATION"` 的 xkey/xterminal 因此进 `pp_e_application` 宇宙（该表从 24 列扩到 26），基线 2→0 收敛。反向注入自证：`SELECT xkey_typo FROM "PP_E_APPLICATION"` 被抓 `('pp_e_application','xkey_typo')`。仍留待的只有 B-2 的关系名大小写敏感建模（根治需建大小写关系宇宙，成本过高） |
 
 ### 2.4 实施期新发现（2026-10-26 深夜，P0/P1 执行中登记）
 

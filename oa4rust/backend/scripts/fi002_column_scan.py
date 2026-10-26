@@ -36,9 +36,13 @@ FI-002（docs/audits/found-issues.md）用「代码 SQL 字面量 vs live PG inf
   表达式内部的列不被抽取（如 `ORDER BY to_char(x, ...)` 的 x）；
 - **仍未覆盖**：`format!` 模板 `{}` 插值内容（F-6 的 ref_col 家族，靠 P1-3
   白名单守卫）；SELECT 别名被 ORDER BY/GROUP BY 引用时按别名豁免（P1-1 实测
-  收口：search 三处 `ts_rank(...) AS rank`、cms `field_name AS name`）；
-  视图（CREATE VIEW）的投影列不进宇宙——`"PP_E_APPLICATION"` 的 xkey/xterminal
-  按基线登记（大小写敏感的关系名建模是 B-2，留待后续）。
+  收口：search 三处 `ts_rank(...) AS rank`、cms `field_name AS name`）。
+- **已收口（2026-10-26）**：视图（CREATE VIEW）的投影列——`build_universe`
+  增认 `CREATE VIEW ... AS SELECT ... FROM base`，把投影列（裸列 + `AS alias`
+  别名）并入折叠小写表名宇宙（B-7）。`"PP_E_APPLICATION"` 的 xkey/xterminal
+  因此进 `pp_e_application` 宇宙，不再登记基线。反向注入自证：
+  `SELECT xkey_typo FROM "PP_E_APPLICATION"` 被抓。仍留待的只有 B-2 的
+  关系名大小写敏感建模（成本过高，登记）。
 
 ## 用法
 
@@ -193,6 +197,41 @@ def build_universe() -> tuple[dict[str, set[str]], list[str]]:
             if not cols:
                 warnings.append(f"{f.name}: CREATE TABLE {table} 未解析出列")
             universe.setdefault(table, set()).update(cols)
+
+        # CREATE VIEW [IF NOT EXISTS] name AS SELECT ... FROM base_table
+        # B-7 收口（2026-10-26）：视图投影列（含 AS alias 的别名）并入折叠小写的
+        # 表名宇宙。112 建的 "PP_E_APPLICATION" 视图投影 xid AS xkey / xid AS
+        # xterminal——这两个是**视图层别名**，不是基表 pp_e_application 的物理列。
+        # 扫描器按 B-2 把 "PP_E_APPLICATION" 折叠到小写 pp_e_application 后查列，
+        # 表宇宙里没有 xkey/xterminal 故登记基线。此处把视图 SELECT 清单的投影列
+        # （裸列 + AS 别名）并入同名表的宇宙，让扫描侧命中而不再误登记。
+        for vm in re.finditer(
+            r"CREATE\s+VIEW\s+(?:IF\s+NOT\s+EXISTS\s+)?" + IDENT + r"\s+AS\b",
+            text,
+            re.I,
+        ):
+            vname = ident_of(vm).lower()
+            rest = text[vm.end():]
+            sm = re.search(r"\bselect\b(.*?)\bfrom\b", rest, re.I | re.S)
+            if not sm:
+                continue
+            proj: set[str] = set()
+            for item in split_top_level(sm.group(1)):
+                s = item.strip()
+                if not s:
+                    continue
+                am = re.search(r"\bas\s+\"?([A-Za-z_][A-Za-z0-9_]*)\"?\s*$", s, re.I)
+                if am:
+                    proj.add(am.group(1).lower())
+                else:
+                    mm = re.match(r"\"?([A-Za-z_][A-Za-z0-9_]*)\"?", s)
+                    if mm and mm.group(1).lower() not in SQL_KEYWORDS:
+                        proj.add(mm.group(1).lower())
+            fm = re.search(r"\bfrom\s+(\"[^\"]+\"|[A-Za-z_][A-Za-z0-9_]*)", rest, re.I)
+            if fm:
+                base = fm.group(1).strip('"').lower()
+                universe.setdefault(base, set()).update(proj)
+                universe.setdefault(vname, set()).update(proj)
 
         # ALTER TABLE 语句级扫描：一条 ALTER 可带**多个** ADD/DROP COLUMN
         # （逗号分隔，如 018 一次加 7 列）。按 `;` 切语句，逐语句处理。
