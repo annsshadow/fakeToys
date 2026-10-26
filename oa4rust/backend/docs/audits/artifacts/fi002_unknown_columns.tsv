@@ -7,53 +7,12 @@
 #
 # 格式：table<TAB>column<TAB>首条证据<TAB>复核理由
 # 由 scripts/fi002_column_scan.py --update-baseline 生成，勿手改证据列。
-auth_person_identity	person_id	crates/auth/src/lib.rs:348	迁移缺列：handler 引用但 migrations 未建（与 FI-002 同类）。fresh DB 上该 SQL 必 500；修法按 101 的范式补幂等 ADD COLUMN，但列类型须对 live DB 复核，待有库轮次
-pp_c_draft	xstatus	crates/processplatform_assemble_surface/src/lib.rs:7712	迁移缺列：handler 引用但 migrations 未建（与 FI-002 同类）。fresh DB 上该 SQL 必 500；修法按 101 的范式补幂等 ADD COLUMN，但列类型须对 live DB 复核，待有库轮次
-pp_c_keylock	xidentity	crates/processplatform_assemble_surface/src/lib.rs:2916	迁移缺列：handler 引用但 migrations 未建（与 FI-002 同类）。fresh DB 上该 SQL 必 500；修法按 101 的范式补幂等 ADD COLUMN，但列类型须对 live DB 复核，待有库轮次
-pp_c_keylock	xtitle	crates/processplatform_assemble_surface/src/lib.rs:2916	迁移缺列：handler 引用但 migrations 未建（与 FI-002 同类）。fresh DB 上该 SQL 必 500；修法按 101 的范式补幂等 ADD COLUMN，但列类型须对 live DB 复核，待有库轮次
 pp_c_touch_detained	xupdatetime	crates/processplatform_assemble_surface/src/lib.rs:20351 表 pp_c_touch_detained 不在 migrations	遗留表：Java 时代建的表，migrations 从不创建（011 只做大小写重命名）。引用它的 handler 在 fresh DB 上会 500；修法需先决定这些表归谁建，待有库轮次（本机无 PG，盲建表风险 > 收益）
 pp_c_touch_expire	xupdatetime	crates/processplatform_assemble_surface/src/lib.rs:20311 表 pp_c_touch_expire 不在 migrations	遗留表：Java 时代建的表，migrations 从不创建（011 只做大小写重命名）。引用它的 handler 在 fresh DB 上会 500；修法需先决定这些表归谁建，待有库轮次（本机无 PG，盲建表风险 > 收益）
 pp_c_touch_passexpired	xupdatetime	crates/processplatform_assemble_surface/src/lib.rs:20331 表 pp_c_touch_passexpired 不在 migrations	遗留表：Java 时代建的表，migrations 从不创建（011 只做大小写重命名）。引用它的 handler 在 fresh DB 上会 500；修法需先决定这些表归谁建，待有库轮次（本机无 PG，盲建表风险 > 收益）
-pp_e_file	xcontent	crates/processplatform_assemble_designer/src/lib.rs:1131	迁移缺列：handler 引用但 migrations 未建（与 FI-002 同类）。fresh DB 上该 SQL 必 500；修法按 101 的范式补幂等 ADD COLUMN，但列类型须对 live DB 复核，待有库轮次
-pp_e_script	xcode	crates/processplatform_assemble_designer/src/lib.rs:3186	迁移缺列：handler 引用但 migrations 未建（与 FI-002 同类）。fresh DB 上该 SQL 必 500；修法按 101 的范式补幂等 ADD COLUMN，但列类型须对 live DB 复核，待有库轮次
-x_attendance_appeal_info	appeal_date	crates/attendance/src/lib.rs:485	迁移缺列：handler 引用但 migrations 未建（与 FI-002 同类）。fresh DB 上该 SQL 必 500；修法按 101 的范式补幂等 ADD COLUMN，但列类型须对 live DB 复核，待有库轮次
-x_attendance_appeal_info	reason	crates/attendance/src/lib.rs:485	迁移缺列：handler 引用但 migrations 未建（与 FI-002 同类）。fresh DB 上该 SQL 必 500；修法按 101 的范式补幂等 ADD COLUMN，但列类型须对 live DB 复核，待有库轮次
-x_attendance_statistic_dd_unit_day	o2_user	crates/attendance_assemble_control/src/lib.rs:7003	迁移缺列：handler 引用但 migrations 未建（与 FI-002 同类）。fresh DB 上该 SQL 必 500；修法按 101 的范式补幂等 ADD COLUMN，但列类型须对 live DB 复核，待有库轮次
-x_attendance_statistic_dd_unit_month	o2_user	crates/attendance_assemble_control/src/lib.rs:6993	迁移缺列：handler 引用但 migrations 未建（与 FI-002 同类）。fresh DB 上该 SQL 必 500；修法按 101 的范式补幂等 ADD COLUMN，但列类型须对 live DB 复核，待有库轮次
-x_bbs_section	creator	crates/bbs_assemble_control/src/u2.rs:1555	迁移缺列：handler 引用但 migrations 未建（与 FI-002 同类）。fresh DB 上该 SQL 必 500；修法按 101 的范式补幂等 ADD COLUMN，但列类型须对 live DB 复核，待有库轮次
-x_bbs_subject_attachment	extension	crates/bbs_assemble_control/src/u2.rs:2574	迁移缺列：handler 引用但 migrations 未建（与 FI-002 同类）。fresh DB 上该 SQL 必 500；修法按 101 的范式补幂等 ADD COLUMN，但列类型须对 live DB 复核，待有库轮次
-x_cms_index	status	crates/cms_core_entity/src/lib.rs:338	迁移缺列：handler 引用但 migrations 未建（与 FI-002 同类）。fresh DB 上该 SQL 必 500；修法按 101 的范式补幂等 ADD COLUMN，但列类型须对 live DB 复核，待有库轮次
-x_cms_viewfieldconfig	creator	crates/cms_assemble_control/src/lib.rs:7386	迁移缺列：handler 引用但 migrations 未建（与 FI-002 同类）。fresh DB 上该 SQL 必 500；修法按 101 的范式补幂等 ADD COLUMN，但列类型须对 live DB 复核，待有库轮次
-x_console_message	xtoken	crates/console/src/lib.rs:185	迁移缺列：handler 引用但 migrations 未建（与 FI-002 同类）。fresh DB 上该 SQL 必 500；修法按 101 的范式补幂等 ADD COLUMN，但列类型须对 live DB 复核，待有库轮次
-x_express_subscribe	xcallback	crates/express/src/lib.rs:135	迁移缺列：handler 引用但 migrations 未建（与 FI-002 同类）。fresh DB 上该 SQL 必 500；修法按 101 的范式补幂等 ADD COLUMN，但列类型须对 live DB 复核，待有库轮次
-x_express_subscribe	xcompany	crates/express/src/lib.rs:135	迁移缺列：handler 引用但 migrations 未建（与 FI-002 同类）。fresh DB 上该 SQL 必 500；修法按 101 的范式补幂等 ADD COLUMN，但列类型须对 live DB 复核，待有库轮次
-x_express_subscribe	xtrackingnumber	crates/express/src/lib.rs:135	迁移缺列：handler 引用但 migrations 未建（与 FI-002 同类）。fresh DB 上该 SQL 必 500；修法按 101 的范式补幂等 ADD COLUMN，但列类型须对 live DB 复核，待有库轮次
-x_general_assemble_excel	flag	crates/general_assemble_control/src/lib.rs:1311	迁移缺列：handler 引用但 migrations 未建（与 FI-002 同类）。fresh DB 上该 SQL 必 500；修法按 101 的范式补幂等 ADD COLUMN，但列类型须对 live DB 复核，待有库轮次
-x_general_assemble_excel	name	crates/general_assemble_control/src/lib.rs:1148	迁移缺列：handler 引用但 migrations 未建（与 FI-002 同类）。fresh DB 上该 SQL 必 500；修法按 101 的范式补幂等 ADD COLUMN，但列类型须对 live DB 复核，待有库轮次
-x_general_assemble_office	html_content	crates/general_assemble_control/src/lib.rs:2007	迁移缺列：handler 引用但 migrations 未建（与 FI-002 同类）。fresh DB 上该 SQL 必 500；修法按 101 的范式补幂等 ADD COLUMN，但列类型须对 live DB 复核，待有库轮次
-x_meeting_checkin	checkin_time	crates/meeting_assemble_control/src/lib.rs:2347	迁移缺列：handler 引用但 migrations 未建（与 FI-002 同类）。fresh DB 上该 SQL 必 500；修法按 101 的范式补幂等 ADD COLUMN，但列类型须对 live DB 复核，待有库轮次
-x_meeting_checkin	meeting_id	crates/meeting_assemble_control/src/lib.rs:2347	迁移缺列：handler 引用但 migrations 未建（与 FI-002 同类）。fresh DB 上该 SQL 必 500；修法按 101 的范式补幂等 ADD COLUMN，但列类型须对 live DB 复核，待有库轮次
-x_meeting_checkin	person	crates/meeting_assemble_control/src/lib.rs:2347	迁移缺列：handler 引用但 migrations 未建（与 FI-002 同类）。fresh DB 上该 SQL 必 500；修法按 101 的范式补幂等 ADD COLUMN，但列类型须对 live DB 复核，待有库轮次
-x_portal	config	crates/portal/src/lib.rs:55	迁移缺列：handler 引用但 migrations 未建（与 FI-002 同类）。fresh DB 上该 SQL 必 500；修法按 101 的范式补幂等 ADD COLUMN，但列类型须对 live DB 复核，待有库轮次
-x_portal	pages	crates/portal/src/lib.rs:55	迁移缺列：handler 引用但 migrations 未建（与 FI-002 同类）。fresh DB 上该 SQL 必 500；修法按 101 的范式补幂等 ADD COLUMN，但列类型须对 live DB 复核，待有库轮次
-x_portal_layout	category	crates/portal_assemble_surface/src/lib.rs:572	迁移缺列：handler 引用但 migrations 未建（与 FI-002 同类）。fresh DB 上该 SQL 必 500；修法按 101 的范式补幂等 ADD COLUMN，但列类型须对 live DB 复核，待有库轮次
-x_portal_layout	content	crates/portal_assemble_surface/src/lib.rs:572	迁移缺列：handler 引用但 migrations 未建（与 FI-002 同类）。fresh DB 上该 SQL 必 500；修法按 101 的范式补幂等 ADD COLUMN，但列类型须对 live DB 复核，待有库轮次
-x_portal_layout	name	crates/portal_assemble_surface/src/lib.rs:572	迁移缺列：handler 引用但 migrations 未建（与 FI-002 同类）。fresh DB 上该 SQL 必 500；修法按 101 的范式补幂等 ADD COLUMN，但列类型须对 live DB 复核，待有库轮次
-x_portal_page_version	content	crates/portal_assemble_designer/src/lib.rs:1973	迁移缺列：handler 引用但 migrations 未建（与 FI-002 同类）。fresh DB 上该 SQL 必 500；修法按 101 的范式补幂等 ADD COLUMN，但列类型须对 live DB 复核，待有库轮次
-x_process_organization	name	crates/process_bam/src/lib.rs:122	迁移缺列：handler 引用但 migrations 未建（与 FI-002 同类）。fresh DB 上该 SQL 必 500；修法按 101 的范式补幂等 ADD COLUMN，但列类型须对 live DB 复核，待有库轮次
 x_process_transition	condition	crates/processplatform_service_processing/src/lib.rs:3916 表 x_process_transition 不在 migrations	遗留表：Java 时代建的表，migrations 从不创建（011 只做大小写重命名）。引用它的 handler 在 fresh DB 上会 500；修法需先决定这些表归谁建，待有库轮次（本机无 PG，盲建表风险 > 收益）
 x_process_transition	id	crates/processplatform_service_processing/src/lib.rs:3916 表 x_process_transition 不在 migrations	遗留表：Java 时代建的表，migrations 从不创建（011 只做大小写重命名）。引用它的 handler 在 fresh DB 上会 500；修法需先决定这些表归谁建，待有库轮次（本机无 PG，盲建表风险 > 收益）
 x_process_transition	to_activity	crates/processplatform_service_processing/src/lib.rs:3916 表 x_process_transition 不在 migrations	遗留表：Java 时代建的表，migrations 从不创建（011 只做大小写重命名）。引用它的 handler 在 fresh DB 上会 500；修法需先决定这些表归谁建，待有库轮次（本机无 PG，盲建表风险 > 收益）
 x_process_transition	work_id	crates/processplatform_service_processing/src/lib.rs:3916 表 x_process_transition 不在 migrations	遗留表：Java 时代建的表，migrations 从不创建（011 只做大小写重命名）。引用它的 handler 在 fresh DB 上会 500；修法需先决定这些表归谁建，待有库轮次（本机无 PG，盲建表风险 > 收益）
-x_program_callback_registration	source	crates/program_center/src/lib.rs:4786	迁移缺列：handler 引用但 migrations 未建（与 FI-002 同类）。fresh DB 上该 SQL 必 500；修法按 101 的范式补幂等 ADD COLUMN，但列类型须对 live DB 复核，待有库轮次
-x_program_deploy	status	crates/program_center/src/lib.rs:4203	迁移缺列：handler 引用但 migrations 未建（与 FI-002 同类）。fresh DB 上该 SQL 必 500；修法按 101 的范式补幂等 ADD COLUMN，但列类型须对 live DB 复核，待有库轮次
-x_program_message_log	message_type	crates/program_center/src/lib.rs:7822	迁移缺列：handler 引用但 migrations 未建（与 FI-002 同类）。fresh DB 上该 SQL 必 500；修法按 101 的范式补幂等 ADD COLUMN，但列类型须对 live DB 复核，待有库轮次
-x_program_message_log	user_id	crates/program_center/src/lib.rs:7822	迁移缺列：handler 引用但 migrations 未建（与 FI-002 同类）。fresh DB 上该 SQL 必 500；修法按 101 的范式补幂等 ADD COLUMN，但列类型须对 live DB 复核，待有库轮次
-x_program_module	vip	crates/program_center/src/lib.rs:5676	迁移缺列：handler 引用但 migrations 未建（与 FI-002 同类）。fresh DB 上该 SQL 必 500；修法按 101 的范式补幂等 ADD COLUMN，但列类型须对 live DB 复核，待有库轮次
-x_program_output	select_file	crates/program_center/src/lib.rs:7067	迁移缺列：handler 引用但 migrations 未建（与 FI-002 同类）。fresh DB 上该 SQL 必 500；修法按 101 的范式补幂等 ADD COLUMN，但列类型须对 live DB 复核，待有库轮次
-x_program_script	imported_content	crates/program_center/src/lib.rs:8569	迁移缺列：handler 引用但 migrations 未建（与 FI-002 同类）。fresh DB 上该 SQL 必 500；修法按 101 的范式补幂等 ADD COLUMN，但列类型须对 live DB 复核，待有库轮次
-x_program_sync_log	action	crates/program_center/src/lib.rs:657	迁移缺列：handler 引用但 migrations 未建（与 FI-002 同类）。fresh DB 上该 SQL 必 500；修法按 101 的范式补幂等 ADD COLUMN，但列类型须对 live DB 复核，待有库轮次
-x_program_sync_log	event_type	crates/program_center/src/lib.rs:4755	迁移缺列：handler 引用但 migrations 未建（与 FI-002 同类）。fresh DB 上该 SQL 必 500；修法按 101 的范式补幂等 ADD COLUMN，但列类型须对 live DB 复核，待有库轮次
-x_program_sync_log	org_id	crates/program_center/src/lib.rs:4755	迁移缺列：handler 引用但 migrations 未建（与 FI-002 同类）。fresh DB 上该 SQL 必 500；修法按 101 的范式补幂等 ADD COLUMN，但列类型须对 live DB 复核，待有库轮次
 
-# 合计 48 对：遗留表 7、迁移缺列 41
+# 合计 7 对：遗留表 7、迁移缺列 0
