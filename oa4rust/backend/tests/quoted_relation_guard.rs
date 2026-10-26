@@ -201,9 +201,11 @@ fn parse_created_name(text: &str, after_create: usize) -> Option<String> {
             && text[i..i + w.len()].eq_ignore_ascii_case(w)
             && (i + w.len() >= bytes.len() || !is_ident_byte(bytes[i + w.len()]))
     };
+    // 先算布尔再改 i——闭包捕获 i 会与后面的 `i += 5` 撞 borrow check
+    // （NLL 在 is_word 最后一次使用后结束借用，无需显式 drop；显式 drop 反而会踩
+    // clippy::drop_non_drop——suspicious 组默认告警，-D warnings 下即错误）。
     let is_table = is_word("table");
     let is_view = is_word("view");
-    drop(is_word);
     if is_table {
         i += 5;
     } else if is_view {

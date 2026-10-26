@@ -203,7 +203,7 @@ mod security_gate_tests {
         )
         .await
         .unwrap();
-        shared::testing::upsert_fixture_person(&c, ADMIN_PERSON, ADMIN_PERSON, "b22 message admin")
+        shared::testing::upsert_fixture_person(c, ADMIN_PERSON, ADMIN_PERSON, "b22 message admin")
             .await;
         c.execute(
             "INSERT INTO auth_person_role (person_id, role_id, unit_id) \

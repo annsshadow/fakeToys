@@ -30,7 +30,7 @@ async fn seed_admin_role(c: &deadpool_postgres::Client) {
     )
     .await
     .unwrap();
-    shared::testing::upsert_fixture_person(&c, ADMIN_PERSON, ADMIN_PERSON, "b20 designer admin")
+    shared::testing::upsert_fixture_person(c, ADMIN_PERSON, ADMIN_PERSON, "b20 designer admin")
         .await;
     c.execute(
         "INSERT INTO auth_person_role (person_id, role_id, unit_id) \

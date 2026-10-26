@@ -249,7 +249,7 @@ mod security_gate_tests {
         .await
         .unwrap();
         shared::testing::upsert_fixture_person(
-            &c,
+            c,
             ADMIN_PERSON,
             ADMIN_PERSON,
             "b21 attendance admin",
