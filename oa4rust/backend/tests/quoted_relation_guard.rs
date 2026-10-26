@@ -243,7 +243,12 @@ fn created_relations(migrations_dir: &Path) -> HashSet<String> {
     if let Ok(entries) = fs::read_dir(migrations_dir) {
         for e in entries.flatten() {
             let p = e.path();
-            let name = p.file_name().to_string_lossy().into_owned();
+            // Path::file_name() 返回 Option<&OsStr>（DirEntry::file_name() 才是
+            // owned OsString——mount_coverage_guard 用的是后者，此处是 Path）。
+            let name = p
+                .file_name()
+                .map(|n| n.to_string_lossy().into_owned())
+                .unwrap_or_default();
             if p.is_file()
                 && name.ends_with(".sql")
                 && !name.ends_with("_rollback.sql")
