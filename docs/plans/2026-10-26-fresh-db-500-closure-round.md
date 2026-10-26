@@ -156,7 +156,7 @@ F-3（`relation "PP_E_APPLICATION" does not exist` ×2），并暴露 F-5~F-8 �
 | 不重启用 archive/089 | 它同时含「views over nonexistent uppercase tables」的致命伤；只取其 PP_E_APPLICATION 视图定义的**修正版**进 112 |
 | **需用户：追加 6 项 required context 进 `laiyipaoCIRuleset`（WF-REQUIRED）** | **已落地（2026-10-26，用户操作）**：ruleset `24845982` 的 `required_status_checks` 由 3→9，逐字命中 §479 权威清单（quality / fi002-column-scan / openapi-guard / contract-gate / test / Dependency vulnerability gate）；明确排除项（integration-tests/unit-tests/behavior-compare）未误加。fail-loud 两点：① `bypass_mode: "always"`——admin 可无限制 bypass，required 只对 PR 流程与协作成员生效，不拦你本人直推；② 本轮 P1-2/P1-3 两把新守卫随 `quality` 一起 block 合并，其偶发假阳性（B-6/B-7 类）也会卡合并——守卫是"宁可红也不放"设计，可接受 |
 | **需用户：WF-REQUIRED** | GitHub ruleset 追加 6 个 required context（精确清单见 10-24 文档 §14 R4），需页面操作 |
-| 111 的 41 列类型为「代码绑定」推定 | `ADD COLUMN IF NOT EXISTS` 不覆盖 live 已有列（不会改坏 live），但 fresh 与 live 形状可能分叉；有库轮次用 information_schema 复核 |
+| 111 的 41 列类型为「代码绑定」推定 | **已复核（2026-10-26，用户启动 Docker 后）**：`lyp-pg`（postgres:17）复用为 oa4rust 测试库（建 `o2server` 角色 + `oa4rust` 库），001→112 全应用。information_schema 抽样：112 的 6 列全在位（status TEXT / sort_order INTEGER / category TEXT / gateway_instance TEXT / xupdatetime TIMESTAMP + x_process_transition 建表），111 抽样 5 列（person_id / xidentity / checkin_time / vip / xcontent）类型符代码绑定。`PP_E_APPLICATION` 视图已建。rollback 验证：112 rollback 干净回退（视图 + 4 表全删），重 apply 幂等。**分叉实证**：fresh 库 `auth_person_identity.person_id` 为 TEXT（111 补），live 若 VARCHAR 则形状不同——但 VARCHAR/TEXT 对 String 绑定等价，无行为影响。库已恢复全量 fresh 终态 |
 
 ---
 
@@ -218,6 +218,34 @@ F-3（`relation "PP_E_APPLICATION" does not exist` ×2），并暴露 F-5~F-8 �
 间歇性阻断 GitHub 写操作（SSH 被关 / HTTPS 握手败 / gh POST EOF，GET 正常），推送重试后恢复。
 `gh` 已于本轮登录（keyring）；FI-002 扫描器为纯 stdlib，本机用 Python 3.12 实跑
 （前序文档记的 `C:/Python314/python.exe` 本机不存在，口径差异在此登记）。
+
+### 5.2 有库轮次（2026-10-26 深夜，用户启动 Docker 后实跑）
+
+**容器复用**：用户启动的 `lyp-pg`（postgres:17，原为 laiyipao 库）复用为 oa4rust 测试库——
+建 `o2server` 角色（LOGIN SUPERUSER）+ `oa4rust` 库，001→112 全应用（114 个迁移，
+`037`/`051` 需先手动建 `schema_migrations` 追踪表——它是迁移运行器 DDL 建的，不在目录里）。
+`shared::testing::test_pool()` 默认连接串 `postgres://o2server:password@localhost:5432/oa4rust`
+对容器验证可连。**一个容器两副身份**（laiyipao 继续用它的 `laiyipao` 库，oa4rust 测试用新 `oa4rust` 库）。
+
+**验证结果（真库直跑，非 CI 推定）**：
+
+| 项 | 方式 | 结果 |
+|---|---|---|
+| 112 的 6 列 | `information_schema.columns` | 全在位、类型符代码绑定（status TEXT / sort_order INTEGER / category TEXT / gateway_instance TEXT / xupdatetime TIMESTAMP） |
+| 111 抽样 5 列 | `information_schema.columns` | 类型符绑定；`person_id` 在 fresh 库是 TEXT（111 补），live 若 VARCHAR 则形状分叉——VARCHAR/TEXT 对 String 绑定等价，**无行为影响** |
+| `PP_E_APPLICATION` 视图 | `pg_views` | 已建 |
+| 112 rollback | 应用→rollback→重 apply | 干净回退（视图 + 4 表全删）、重 apply 幂等 |
+| F-1/F-2/F-5 SQL | 真库直跑 | 通过（fresh 空表 count=0，诚实） |
+| F-3 视图查询 | 真库直跑 | 通过（混合大小写列需引号——F-6 类实证） |
+| F-7 keylock 别名 | 真库直跑 | 通过 |
+| **F-8 旧形态** | `TO_CHAR("xcreateTime",'YYYY-MM-DD')` 于 TEXT 列 | **实证 `to_char(text, unknown) does not exist`——坐实原 handler 的 500 是真实缺陷，非推定** |
+| F-8 新形态 | `LEFT("xcreateTime",10)` | 通过 |
+
+**本轮最大增量**：F-8 从「待 live 数据样本确认 `pp_c_task."xcreateTime"` 文本格式」变成
+**已实证**——旧形态 `TO_CHAR(text)` 在真库上确报 `function to_char(text, unknown) does not exist`，
+新形态 `LEFT(col,10)` 通过，修法正确且无运行时风险（脏值不触发 500，因是纯文本前缀匹配）。
+
+库已恢复全量 fresh 终态（112 重 apply 后），`test_pool()` 可直连，后续第四轮可对着真库跑行为测试。
 
 ---
 
