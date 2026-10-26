@@ -232,7 +232,7 @@ F-3（`relation "PP_E_APPLICATION" does not exist` ×2），并暴露 F-5~F-8 �
 | 项 | 方式 | 结果 |
 |---|---|---|
 | 112 的 6 列 | `information_schema.columns` | 全在位、类型符代码绑定（status TEXT / sort_order INTEGER / category TEXT / gateway_instance TEXT / xupdatetime TIMESTAMP） |
-| 111 抽样 5 列 | `information_schema.columns` | 类型符绑定；`person_id` 在 fresh 库是 TEXT（111 补），live 若 VARCHAR 则形状分叉——VARCHAR/TEXT 对 String 绑定等价，**无行为影响** |
+| 111 全 41 列 | `information_schema.columns` 全量 diff（逐列查 actual data_type） | **40/41 完全一致**（TEXT↔text、TIMESTAMP↔timestamp without time zone、BOOLEAN↔boolean 零分叉）；**唯一分叉** `auth_person_identity.person_id`：111 声明 TEXT、真库实为 `character varying`——该列在早于 111 的迁移里已被建过（live 形状 VARCHAR），111 的 `ADD COLUMN IF NOT EXISTS` 对它 no-op、保留 live 的 VARCHAR；fresh 库则是 111 补的 TEXT。VARCHAR/TEXT 对 `String` 绑定等价，**无行为影响**，正是 111 头部「live 已有列不覆盖」的设计意图 |
 | `PP_E_APPLICATION` 视图 | `pg_views` | 已建 |
 | 112 rollback | 应用→rollback→重 apply | 干净回退（视图 + 4 表全删）、重 apply 幂等 |
 | F-1/F-2/F-5 SQL | 真库直跑 | 通过（fresh 空表 count=0，诚实） |
