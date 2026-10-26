@@ -96,12 +96,12 @@ F-3（`relation "PP_E_APPLICATION" does not exist` ×2），并暴露 F-5~F-8 �
 | ID | 盲区 | 证据 |
 |---|---|---|
 | B-1 | FI-002 不抽 WHERE/FILTER 子句裸列（只抽限定列/INSERT 清单/UPDATE SET/单表 SELECT 裸列，`scripts/fi002_column_scan.py:348-401`） | F-1 的 `status = 'running'`、F-2 的 `category = $1` 完全不可见；`x_process_transition` 的 WHERE 列（gateway_instance/deleted_at）也没进基线（`docs/audits/artifacts/fi002_unknown_columns.tsv:13-16` 只记了 SELECT 清单 4 列）；**ORDER BY 列同类不可见**（F-5 的 sort_order）。**P1-1 已补抽**（含别名豁免，见 §5） |
-| B-2 | 标识符大小写折叠（`analyze_sql` 去引号 + lower，`:329`） | `"PP_E_APPLICATION"` 被折成 `pp_e_application`（表存在、列也齐）⇒ 缺**关系**（视图）不可见（F-3）；**列级同病**：DDL 的 `"xworkCompleted"`（混合大小写）与 SQL 里不加引号的 `xworkCompleted` 折合后相同 ⇒ F-6 的引号缺失不可见。关系级已由 P1-2 守卫大小写敏感地把守；列级折叠保留（折叠是判据需要，全建模大小写敏感成本过高） |
+| B-2 | 标识符大小写折叠（`analyze_sql` 去引号 + lower，`:329`） | **已收口（2026-10-26，B-7 同批之后）**：`build_universe` 对带引号含大写的关系名保留原始大小写独立建模（小写表名走常规折叠路径不变），`analyze_sql` 的 TABLE_REF 对含大写的引号名按原始大小写查宇宙。全仓 5 个带引号含大写关系名（FILE_FOLDER/FILE_FILE/FILE_PERMISSION/FILE_SHARE/PP_E_APPLICATION）补进大小写键。**双向验证**：查 "PP_E_APPLICATION" 的 xkey 命中、查 pp_e_application 的 xid 走小写折叠、大写幽灵列注入被点名；全仓基线态 exit 0、零新增违规。**B-1~B-7 全收口，无留待项** |
 | B-3 | `SYSTEM_SCHEMAS` 缺 `pg_stat_activity` | P1-1 补 WHERE 抽取后它会立刻被误报（`query_service_processing/src/lib.rs:215`），已同批入名单 |
 | B-4 | SELECT 清单里**带引号的裸列**被静默跳过（裸列分支的 `re.match` 从引号起始即不匹配） | F-7 的 `"xcreateTime"` 因此没进 FI-002 违规集——引号列既不走 QUALIFIED_RE（无 `alias.` 形态）也不走裸列分支。**P1-1 已补认**（SELECT 清单与 UPDATE SET 两分支） |
 | B-5 | `format!` 动态模板的 `{}` 插值内容不可见 | F-6 的 `ref_col` 常量（`"xworkCompleted"` 裸串）经模板插值，静态扫描无从判定；**P1-3 已用「helper 家族首字面量必须引号」的 targeted 守卫把守**（通用 format! 语义分析不可行，边界记在守卫头部） |
 | B-6 | `SELECT DISTINCT` 的**首列**被 `distinct` 关键字吞掉 | P0-6 反向注入时实证：`SELECT DISTINCT process_key_typo, ...` 的首列永不被抽取（裸列分支 `re.match` 命中 "distinct" 即按关键字跳过）。**已修（2026-10-26 深夜，本批）**：`analyze_sql` 抽取后对 SELECT 列表体剥掉 `DISTINCT`/`ALL` 前缀（`strip_select_modifiers`，正则惰性量词改不动、改在抽取后处理），两向验证：基线态 exit 0；注入 `process_key_typo` exit 1 并点名 `lib.rs:63`（已还原） |
-| B-7 | 视图投影列不进宇宙 | **已收口（2026-10-26 深夜，B-6 同批之后）**：`build_universe` 增认 `CREATE VIEW ... AS SELECT ... FROM base`，把投影列（裸列 + `AS alias` 别名）并入折叠小写表名宇宙。`"PP_E_APPLICATION"` 的 xkey/xterminal 因此进 `pp_e_application` 宇宙（该表从 24 列扩到 26），基线 2→0 收敛。反向注入自证：`SELECT xkey_typo FROM "PP_E_APPLICATION"` 被抓 `('pp_e_application','xkey_typo')`。仍留待的只有 B-2 的关系名大小写敏感建模（根治需建大小写关系宇宙，成本过高） |
+| B-7 | 视图投影列不进宇宙 | **已收口（2026-10-26 深夜，B-6 同批之后）**：`build_universe` 增认 `CREATE VIEW ... AS SELECT ... FROM base`，把投影列（裸列 + `AS alias` 别名）并入折叠小写表名宇宙。`"PP_E_APPLICATION"` 的 xkey/xterminal 因此进 `pp_e_application` 宇宙（该表从 24 列扩到 26），基线 2→0 收敛。反向注入自证：`SELECT xkey_typo FROM "PP_E_APPLICATION"` 被抓 `('pp_e_application','xkey_typo')`。**B-7 与 B-2 同批收口（大小写关系建模）**，无留待项 |
 
 ### 2.4 实施期新发现（2026-10-26 深夜，P0/P1 执行中登记）
 

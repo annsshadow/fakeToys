@@ -41,8 +41,14 @@ FI-002（docs/audits/found-issues.md）用「代码 SQL 字面量 vs live PG inf
   增认 `CREATE VIEW ... AS SELECT ... FROM base`，把投影列（裸列 + `AS alias`
   别名）并入折叠小写表名宇宙（B-7）。`"PP_E_APPLICATION"` 的 xkey/xterminal
   因此进 `pp_e_application` 宇宙，不再登记基线。反向注入自证：
-  `SELECT xkey_typo FROM "PP_E_APPLICATION"` 被抓。仍留待的只有 B-2 的
-  关系名大小写敏感建模（成本过高，登记）。
+  `SELECT xkey_typo FROM "PP_E_APPLICATION"` 被抓。
+- **已收口（2026-10-26，B-2）**：关系名大小写折叠——`build_universe` 对带引号
+  含大写的关系名保留原始大小写独立建模（小写表名走常规折叠路径不变），
+  `analyze_sql` 的 TABLE_REF 对含大写的引号名按原始大小写查宇宙。全仓 5 个
+  带引号含大写关系名（FILE_FOLDER/FILE_FILE/FILE_PERMISSION/FILE_SHARE/
+  PP_E_APPLICATION）补进大小写键。双向验证：查 "PP_E_APPLICATION" 的 xkey
+  命中、查 pp_e_application 的 xid 走小写折叠、大写幽灵列注入被点名；全仓
+  基线态 exit 0、零新增违规。**至此 B-1~B-7 全收口，无留待项**。
 
 ## 用法
 
@@ -197,6 +203,13 @@ def build_universe() -> tuple[dict[str, set[str]], list[str]]:
             if not cols:
                 warnings.append(f"{f.name}: CREATE TABLE {table} 未解析出列")
             universe.setdefault(table, set()).update(cols)
+            # B-2 收口（2026-10-26）：带引号且含大写字母的关系名保留原始大小写
+            # 独立建模。PostgreSQL 对引号标识符大小写敏感——"X_PP_C_TASK" 与
+            # x_pp_c_task 是不同关系。折叠小写会让「引号大写表引用」误查小写表的列。
+            # 仅对含大写的引号名建镜像键（小写表名走常规折叠路径，不受影响）。
+            raw_ident = ident_of(m)
+            if raw_ident != raw_ident.lower():
+                universe.setdefault(raw_ident, set()).update(cols)
 
         # CREATE VIEW [IF NOT EXISTS] name AS SELECT ... FROM base_table
         # B-7 收口（2026-10-26）：视图投影列（含 AS alias 的别名）并入折叠小写的
@@ -232,6 +245,10 @@ def build_universe() -> tuple[dict[str, set[str]], list[str]]:
                 base = fm.group(1).strip('"').lower()
                 universe.setdefault(base, set()).update(proj)
                 universe.setdefault(vname, set()).update(proj)
+                # B-2 收口：带引号含大写的视图名保留原始大小写独立建模
+                vname_raw = ident_of(vm)
+                if vname_raw != vname_raw.lower():
+                    universe.setdefault(vname_raw, set()).update(proj)
 
         # ALTER TABLE 语句级扫描：一条 ALTER 可带**多个** ADD/DROP COLUMN
         # （逗号分隔，如 018 一次加 7 列）。按 `;` 切语句，逐语句处理。
@@ -493,6 +510,13 @@ def analyze_sql(sql: str) -> tuple[set[tuple[str, str]], dict[str, int]]:
         table = (m.group(2) or m.group(3) or "").strip('"').lower()
         if not table:
             continue
+        # B-2 收口（2026-10-26）：带引号且含大写字母的关系名保留原始大小写——
+        # PostgreSQL 引号标识符大小写敏感，"X_PP_C_TASK" 与 x_pp_c_task 不同。
+        # 折叠小写会让这类引用误查小写表的列（B-2 盲区）。此处对含大写的引号
+        # 名按原始大小写查宇宙，小写/不带引号名走常规折叠路径不变。
+        quoted_name = m.group(2)  # 引号内原始文本（可能大写），None 表示裸名
+        if quoted_name is not None and quoted_name != quoted_name.lower():
+            table = quoted_name  # 保留原始大小写
         # 系统 schema（information_schema / pg_catalog / pg_class …）不是 migrations 建的表
         if table in SYSTEM_SCHEMAS:
             continue
