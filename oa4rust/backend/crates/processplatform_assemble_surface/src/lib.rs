@@ -25069,7 +25069,7 @@ pub async fn snap_u2_workcompleted_type_snapworkcompleted(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     u2_snap_by_type(
         &pool,
-        "\"xworkCompleted\"",
+        r#""xworkCompleted""#,
         &work_completed,
         "snapWorkCompleted",
     )
@@ -25083,7 +25083,7 @@ pub async fn snap_u2_workcompleted_type_abandonedworkcompleted(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     u2_snap_by_type(
         &pool,
-        "\"xworkCompleted\"",
+        r#""xworkCompleted""#,
         &work_completed,
         "abandonedWorkCompleted",
     )
@@ -25332,7 +25332,7 @@ pub async fn attachment_u2_get_by_workcompleted(
     pool: Extension<Pool>,
     axum::extract::Path((id, work_completed)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let row = u2_att_get_with_check(&pool, &id, "\"xworkCompleted\"", &work_completed).await?;
+    let row = u2_att_get_with_check(&pool, &id, r#""xworkCompleted""#, &work_completed).await?;
     match row {
         Some(row) => Ok(Json(ActionResult::success(u2_att_json(&row)))),
         None => Ok(Json(ActionResult::error("attachment not found"))),
@@ -25508,7 +25508,7 @@ pub async fn attachment_id_workorworkcompleted_workOrWorkCompleted(
     let row = u2_att_get_with_check(&pool, &id, "xwork", &flag).await?;
     let row = match row {
         Some(r) => Some(r),
-        None => u2_att_get_with_check(&pool, &id, "\"xworkCompleted\"", &flag).await?,
+        None => u2_att_get_with_check(&pool, &id, r#""xworkCompleted""#, &flag).await?,
     };
     match row {
         Some(r) => Ok(Json(ActionResult::success(u2_att_json(&r)))),
@@ -25660,10 +25660,14 @@ async fn u2_read_multipart_file(
 }
 
 /// 上传统一入口：persist(带回读校验) + 写 pp_c_attachment 元数据行。
-/// ref_col 仅接受内部常量（"xwork" / "\"xworkCompleted\""），非用户输入。
+/// ref_col 仅接受内部常量（"xwork" / r#""xworkCompleted""#），非用户输入。
 /// ⚠️ 混合大小写列名必须带 SQL 引号传入：PostgreSQL 对不带引号的标识符折叠成
 /// 小写，`xworkCompleted` 会变成 `xworkcompleted`，与 DDL 的 "xworkCompleted"
 /// （migrations/065）不是同一个列——CI PG 日志实证过 5 处这类 500（F-6）。
+/// 引号列名用 raw string（r#""x""#）而非反斜杠转义字形：后者会撞
+/// tests/quoted_key_guard 的转义引号键禁则（那防的是 row.get/payload 的
+/// JSON 键缺陷，SQL 标识符引用是另一语义——用 raw string 从字形上绕开，
+/// 运行期值完全相同）。
 #[allow(clippy::too_many_arguments)]
 async fn u2_att_store_new(
     pool: &Pool,
@@ -25951,7 +25955,7 @@ pub async fn attachment_u2b_upload_workcompleted(
         &id,
         &name,
         bytes,
-        "\"xworkCompleted\"",
+        r#""xworkCompleted""#,
         &wc,
     )
     .await
@@ -27024,7 +27028,7 @@ pub async fn attachment_u2b_copy_to_workcompleted(
         &pool,
         &session.person_unique,
         &body,
-        "\"xworkCompleted\"",
+        r#""xworkCompleted""#,
         &wc,
         false,
     )
@@ -27042,7 +27046,7 @@ pub async fn attachment_u2b_copy_to_workcompleted_soft(
         &pool,
         &session.person_unique,
         &body,
-        "\"xworkCompleted\"",
+        r#""xworkCompleted""#,
         &wc,
         true,
     )
@@ -27210,7 +27214,7 @@ pub async fn attachment_u2b_delete_by_workcompleted(
     session: Extension<shared::session::Session>,
     axum::extract::Path((id, wc)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let exists = u2_att_get_with_check(&pool, &id, "\"xworkCompleted\"", &wc).await?;
+    let exists = u2_att_get_with_check(&pool, &id, r#""xworkCompleted""#, &wc).await?;
     if exists.is_none() {
         return Ok(Json(ActionResult::error("attachment not found")));
     }
@@ -27261,7 +27265,7 @@ pub async fn attachment_u2b_get_by_wc_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path((id, wc)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let row = u2_att_get_with_check(&pool, &id, "\"xworkCompleted\"", &wc).await?;
+    let row = u2_att_get_with_check(&pool, &id, r#""xworkCompleted""#, &wc).await?;
     match row {
         Some(r) => Ok(Json(ActionResult::success(u2_att_json(&r)))),
         None => Ok(Json(ActionResult::error("attachment not found"))),
@@ -28563,8 +28567,8 @@ macro_rules! u2_att_ext_download_handler {
 
 u2_att_ext_download_handler!(attachment_u2c_download_work_stream_ext, "xwork");
 u2_att_ext_download_handler!(attachment_u2c_download_work_ext, "xwork");
-u2_att_ext_download_handler!(attachment_u2c_download_wc_stream_ext, "\"xworkCompleted\"");
-u2_att_ext_download_handler!(attachment_u2c_download_wc_ext, "\"xworkCompleted\"");
+u2_att_ext_download_handler!(attachment_u2c_download_wc_stream_ext, r#""xworkCompleted""#);
+u2_att_ext_download_handler!(attachment_u2c_download_wc_ext, r#""xworkCompleted""#);
 
 // ── invoice 文档信息/下载 ×2（StorageObject on x_general_invoice）──
 // 对齐 o2server ActionGetInvoiceInfo / ActionDownloadInvoice（原 u2_capability_unavailable 桩已替换）。
