@@ -154,7 +154,7 @@ F-3（`relation "PP_E_APPLICATION" does not exist` ×2），并暴露 F-5~F-8 �
 | 不改 handler 的 `status` 过滤语义（如改查 running/completed/expired 计数器列） | 无 live DB 证据，猜 Java 时代语义的风险 > 收益；补列是保守解 |
 | 不动约 80 处不带引号 `PP_E_*` 引用 | 折叠正确、指向已建表，无事 |
 | 不重启用 archive/089 | 它同时含「views over nonexistent uppercase tables」的致命伤；只取其 PP_E_APPLICATION 视图定义的**修正版**进 112 |
-| **需用户：确认 R8 之后六连推的 CI 全绿** | 本机 `gh` 已登录并核对过 R8 当时状态（behavior-compare 绿 ⇒ 111 fresh PG 干净；unit-tests 红 ⇒ FX-1）。本轮 P0/P1 六个提交（`650833674`/`e09753e3b`/`88883a262`/`2148b7f2b`/`7014a465b` + 本文档）的 CI 需在 GitHub 确认，**重点是 P1-2/P1-3 两把新守卫测试**：它们只经过 rustfmt 语法校验 + Python 端口算法实跑 + 人工类型/borrow 复审（本机无 C 编译器，Rust 编译未验），CI 是它们第一次真正编译执行 |
+| **需用户：追加 6 项 required context 进 `laiyipaoCIRuleset`（WF-REQUIRED）** | **已落地（2026-10-26，用户操作）**：ruleset `24845982` 的 `required_status_checks` 由 3→9，逐字命中 §479 权威清单（quality / fi002-column-scan / openapi-guard / contract-gate / test / Dependency vulnerability gate）；明确排除项（integration-tests/unit-tests/behavior-compare）未误加。fail-loud 两点：① `bypass_mode: "always"`——admin 可无限制 bypass，required 只对 PR 流程与协作成员生效，不拦你本人直推；② 本轮 P1-2/P1-3 两把新守卫随 `quality` 一起 block 合并，其偶发假阳性（B-6/B-7 类）也会卡合并——守卫是"宁可红也不放"设计，可接受 |
 | **需用户：WF-REQUIRED** | GitHub ruleset 追加 6 个 required context（精确清单见 10-24 文档 §14 R4），需页面操作 |
 | 111 的 41 列类型为「代码绑定」推定 | `ADD COLUMN IF NOT EXISTS` 不覆盖 live 已有列（不会改坏 live），但 fresh 与 live 形状可能分叉；有库轮次用 information_schema 复核 |
 

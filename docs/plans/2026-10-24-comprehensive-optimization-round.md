@@ -501,7 +501,7 @@ CI 有 pytest 会实跑）；YAML 合法；size:check 容差两方向实测；�
 | LY-GAP-2 | 后台详情改只读投影（读端点不再写库）+ 静态守卫 | R3 / `9b2ea89d6` |
 | WARN-CI | warnings-gate workflow（补 llm-lab/cool/rust-lints 三块空白） | R4 / `4a14d6e82` |
 | COOL-CI | jar 定源 commons-codec 1.17.1 + SHA-1 双路互证 | R4 / `4a14d6e82` |
-| WF-REQUIRED | required checks 实测核对 + 精确建议清单（设置需用户拍板） | R4 / `4a14d6e82` |
+| WF-REQUIRED | required checks 实测核对 + 精确建议清单 | R4 / `4a14d6e82`；**已落地 2026-10-26**：ruleset `24845982` 的 `required_status_checks` 3→9，逐字命中 §479 六项追加清单，排除项未误加（详见 10-26 文档 §4「需用户项」终态回填） |
 
 ### 关闭（不做，含证据）
 
