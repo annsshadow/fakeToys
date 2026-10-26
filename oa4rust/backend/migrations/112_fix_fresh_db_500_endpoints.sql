@@ -42,6 +42,15 @@ IF TO_REGCLASS('public.x_process_bam') IS NOT NULL THEN
     ALTER TABLE "x_process_bam" ADD COLUMN IF NOT EXISTS "status" TEXT;
 END IF;
 
+-- ── F-2 x_work.category ───────────────────────────────────────────
+-- processplatform_assemble_bam/src/lib.rs:2207（state_category_trigger，admin 门）：
+--   FROM x_work WHERE deleted_at IS NULL AND category = $1
+-- 020:4-15 建的 x_work 无 category（宇宙 28 列确认）。CI PG 日志未直接实证
+-- （该端点的测试不断言成功），但 fresh DB 上同必 500。
+IF TO_REGCLASS('public.x_work') IS NOT NULL THEN
+    ALTER TABLE "x_work" ADD COLUMN IF NOT EXISTS "category" TEXT;
+END IF;
+
 -- ── F-5 x_program_field.sort_order ───────────────────────────────
 -- program_center/src/lib.rs:3838：ORDER BY entity, sort_order。
 -- 该列只进 ORDER BY、不被 SELECT/读取 ⇒ 类型无代码约束，按 Java sort_order

@@ -13,7 +13,9 @@ FI-002（docs/audits/found-issues.md）用「代码 SQL 字面量 vs live PG inf
   CREATE TABLE / ALTER TABLE ADD|DROP COLUMN / RENAME，得到 (table, column) 全集；
 - **代码引用**：扫 `crates/*/src`、`src/` 的 Rust 字符串字面量，抽取表引用
   （FROM/JOIN/UPDATE/INSERT INTO/DELETE FROM）与列引用（限定列、INSERT 列清单、
-  UPDATE SET、单表 SELECT 裸列），用同字面量内的别名映射解析；
+  UPDATE SET、单表 SELECT 裸列、**WHERE/FILTER 裸列、ORDER BY/GROUP BY 裸列**——
+  后三者为 2026-10-26 P1-1 补抽，补前 F-1/F-5 两个 fresh-DB 500 从盲区漏过），
+  用同字面量内的别名映射解析；
 - **棘轮**：与 `docs/audits/artifacts/fi002_unknown_columns.tsv` 基线对比，
   **新增**未知 (table, column) 对即退出 1；基线只能人工复核后 `--update-baseline` 收敛。
 
@@ -25,7 +27,18 @@ FI-002（docs/audits/found-issues.md）用「代码 SQL 字面量 vs live PG inf
 - `information_schema` / `pg_catalog` 等系统表不在 migrations 里，作为已知外部前缀跳过；
 - CTE（`WITH x AS (...)`）的别名不映射回基表，其限定列按「未解析限定符」计数
   并明示（不计入违规）；
-- 多表查询的裸列（无别名限定）无法归属，跳过并计数。
+- 多表查询的裸列（无别名限定）无法归属，跳过并计数；WHERE/ORDER BY/GROUP BY
+  的新抽取沿用同一「仅单表」口径；
+- WHERE 抽取前先剥掉含 SELECT 的子查询（否则 `EXISTS (SELECT 1 FROM
+  information_schema.columns WHERE table_name=...)` 的内层裸列会归属到外层表，
+  实测 attendance:1114 假阳性）；`$N::type` 铸造、函数调用、关键字均已排除；
+- SELECT 清单/UPDATE SET/ORDER BY/GROUP BY 的表达式项（含 `(`）整项跳过——
+  表达式内部的列不被抽取（如 `ORDER BY to_char(x, ...)` 的 x）；
+- **仍未覆盖**：`format!` 模板 `{}` 插值内容（F-6 的 ref_col 家族，靠 P1-3
+  白名单守卫）；SELECT 别名被 ORDER BY/GROUP BY 引用时按别名豁免（P1-1 实测
+  收口：search 三处 `ts_rank(...) AS rank`、cms `field_name AS name`）；
+  视图（CREATE VIEW）的投影列不进宇宙——`"PP_E_APPLICATION"` 的 xkey/xterminal
+  按基线登记（大小写敏感的关系名建模是 B-2，留待后续）。
 
 ## 用法
 
@@ -57,6 +70,10 @@ SYSTEM_SCHEMAS = {
     "pg_constraint",
     # 迁移运行器自建的追踪表（shared/src/migrate.rs），不在 migrations 里
     "schema_migrations",
+    # PG 系统视图：query_service_processing/src/lib.rs:215 的
+    # `FROM pg_stat_activity WHERE datname = ...`——补 WHERE 抽取后它会被
+    # 误报成「表不在 migrations」，须与 information_schema 同批入名单（P1-1）。
+    "pg_stat_activity",
 }
 
 SQL_KEYWORDS = {
@@ -294,6 +311,97 @@ INSERT_COLS_RE = re.compile(
 )
 SET_CLAUSE_RE = re.compile(r"\bset\s+(.*?)(?:\bwhere\b|\breturning\b|$)", re.I | re.S)
 SELECT_LIST_RE = re.compile(r"\bselect\s+(.*?)\s+\bfrom\b", re.I | re.S)
+# WHERE 片段：从首个 where 到 returning/order/group/having/limit/window 或结尾
+WHERE_TAIL_RE = re.compile(
+    r"\bwhere\b(.*?)(?:\breturning\b|\border\s+by\b|\bgroup\s+by\b|\bhaving\b"
+    r"|\blimit\b|\bwindow\b|\bfetch\b|$)",
+    re.I | re.S,
+)
+# ORDER BY / GROUP BY 的列表段（裸列按逗号切分后取首标识符）
+ORDER_GROUP_RE = re.compile(
+    r"\b(?:order|group)\s+by\b(.*?)(?:\blimit\b|\boffset\b|\bfor\b|\bwindow\b|$)",
+    re.I | re.S,
+)
+# 裸列判定：标识符后跟比较/成员/模式运算符。
+# 负向断言排除：`.col`（限定列，QUALIFIED_RE 负责）、`$1`（参数）、
+# `::type`（强制转换——实测 `($1::text IS NULL OR ...)` 会被误判成裸列 text）。
+BARE_COL_RE = re.compile(
+    r"(?<![.\w$:])([A-Za-z_][A-Za-z0-9_]*)\s*"
+    r"(?:=|<>|!=|<=|>=|<|>|\bis\b|\bin\b|\blike\b|\bilike\b|\bbetween\b)",
+    re.I,
+)
+
+
+def strip_subqueries(text: str) -> str:
+    """删掉含 SELECT 的括号子查询（保留其余括号内容）。
+
+    为什么必须做：`... AND EXISTS (SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'x' AND column_name = 'y')` 若不剥子查询，子查询里的
+    裸列（table_name/column_name）会被归属到外层表——实测
+    attendance_assemble_control/src/lib.rs:1114 就是这个形状的假阳性。
+    """
+    out: list[str] = []
+    i = 0
+    n = len(text)
+    while i < n:
+        ch = text[i]
+        if ch == "(":
+            depth = 0
+            j = i
+            while j < n:
+                if text[j] == "(":
+                    depth += 1
+                elif text[j] == ")":
+                    depth -= 1
+                    if depth == 0:
+                        break
+                j += 1
+            inner = text[i + 1 : j]
+            if re.search(r"\bselect\b", inner, re.I):
+                i = j + 1  # 整段子查询丢弃
+                continue
+        out.append(ch)
+        i += 1
+    return "".join(out)
+
+
+def bare_cols_in_clause(clause: str) -> set[str]:
+    """从一个子句片段抽裸列名（小写）。函数调用/关键字/参数/ cast 均已排除。"""
+    cols: set[str] = set()
+    for m in BARE_COL_RE.finditer(clause):
+        name = m.group(1).lower()
+        if name in SQL_KEYWORDS:
+            continue
+        # 标识符后紧跟 '(' 的是函数调用（count(/ now()），不是列
+        tail = clause[m.end(1) :].lstrip()
+        if tail.startswith("("):
+            continue
+        cols.add(name)
+    return cols
+
+
+def bare_cols_in_list(segment: str) -> set[str]:
+    """ORDER BY / GROUP BY 列表段：按逗号切，每项取首标识符。
+
+    与 SELECT 清单分支同口径：含 '(' 的项（函数/聚合表达式）整项跳过——
+    表达式内部的列不被抽取（既有 SELECT 分支的同款边界，保持一致）。
+    带引号的裸列（"xcreateTime"）去引号后参与判定（B-4 同款修复）。
+    """
+    cols: set[str] = set()
+    for item in split_top_level(segment):
+        item = item.strip().strip('"')
+        if not item or item == "*" or item.endswith("*"):
+            continue
+        if "(" in item or "." in item:
+            continue
+        mm = re.match(r"([A-Za-z_][A-Za-z0-9_]*)", item)
+        if not mm:
+            continue
+        name = mm.group(1).lower()
+        if name in SQL_KEYWORDS:
+            continue
+        cols.add(name)
+    return cols
 
 
 def analyze_sql(sql: str) -> tuple[set[tuple[str, str]], dict[str, int]]:
@@ -374,7 +482,10 @@ def analyze_sql(sql: str) -> tuple[set[tuple[str, str]], dict[str, int]]:
     if tables and len(tables) == 1:
         for m in SET_CLAUSE_RE.finditer(sql):
             for item in split_top_level(m.group(1)):
-                mm = re.match(r"\s*([A-Za-z_][A-Za-z0-9_]*)\s*=", item)
+                # B-4 修复：SET "xupdateTime" = NOW() 的引号列原先被
+                # re.match 的引号开头跳过——去引号后再匹配（INSERT 清单分支
+                # 一直是这个口径，此处对齐）。
+                mm = re.match(r"\s*\"?([A-Za-z_][A-Za-z0-9_]*)\"?\s*=", item)
                 if mm:
                     pairs.add((tables[0], mm.group(1).lower()))
 
@@ -385,7 +496,11 @@ def analyze_sql(sql: str) -> tuple[set[tuple[str, str]], dict[str, int]]:
                 item = item.strip()
                 if not item or item == "*" or item.endswith("*"):
                     continue
-                mm = re.match(r"([A-Za-z_][A-Za-z0-9_]*)", item)
+                # B-4 修复：`"xcreateTime"` 这类带引号裸列原先以引号开头、
+                # re.match 直接失配被静默跳过（F-7 的 pp_c_keylock."xcreateTime"
+                # 因此没进过违规集）。去引号后再匹配——INSERT 清单分支一直是
+                # 这个口径，此处对齐。
+                mm = re.match(r"\"?([A-Za-z_][A-Za-z0-9_]*)\"?", item.strip('"'))
                 if not mm:
                     continue
                 name = mm.group(1).lower()
@@ -397,6 +512,32 @@ def analyze_sql(sql: str) -> tuple[set[tuple[str, str]], dict[str, int]]:
                 pairs.add((tables[0], name))
     elif len(tables) > 1:
         stats["ambiguous_bare"] += 1
+
+    # ── WHERE / FILTER / ORDER BY / GROUP BY 裸列（P1-1 补抽，2026-10-26）──
+    # 原扫描器只抽 SELECT 清单/SET/INSERT 清单/限定列，WHERE 与 ORDER BY 里的
+    # 裸列完全不可见——F-1（x_process_bam.status，WHERE/FILTER 里）与 F-5
+    # （x_program_field.sort_order，ORDER BY 里）正是从这个盲区漏进 fresh DB 500 的。
+    # 归属口径与上面一致：仅单表查询（多表无法归属，跳过并计数）。
+    if tables and len(tables) == 1:
+        table = tables[0]
+        # SELECT 别名集合：`expr AS alias` / `expr alias`。ORDER BY/GROUP BY
+        # 引用别名不是基表列——实测 search 三处 `ts_rank(...) AS rank` +
+        # ORDER BY rank、cms `field_name AS name` + ORDER BY name 全是假阳性。
+        aliases: set[str] = set()
+        for sm in SELECT_LIST_RE.finditer(sql):
+            for item in split_top_level(sm.group(1)):
+                s = item.strip()
+                am = re.search(r"\bas\s+\"?([A-Za-z_][A-Za-z0-9_]*)\"?\s*$", s, re.I) or \
+                    re.search(r"\)\s+\"?([A-Za-z_][A-Za-z0-9_]*)\"?\s*$", s)
+                if am:
+                    aliases.add(am.group(1).lower())
+        for wm in WHERE_TAIL_RE.finditer(sql):
+            clause = strip_subqueries(wm.group(1))
+            for col in bare_cols_in_clause(clause) - aliases:
+                pairs.add((table, col))
+        for om in ORDER_GROUP_RE.finditer(sql):
+            for col in bare_cols_in_list(om.group(1)) - aliases:
+                pairs.add((table, col))
 
     return pairs, stats
 
@@ -507,6 +648,22 @@ REASON_MISSING_COLUMN = (
     "fresh DB 上该 SQL 必 500；修法按 101 的范式补幂等 ADD COLUMN，"
     "但列类型须对 live DB 复核，待有库轮次"
 )
+# 视图投影列（P1-1 登记，2026-10-26）："PP_E_APPLICATION"（112 建的视图）
+# 投影 xid AS xkey / xid AS xterminal，handler（surface:887/975）经大小写
+# 折叠把引用归属到 pp_e_application 表（表无这两列）。扫描器宇宙只建模表、
+# 不建模视图的关系名大小写（B-2），故这两对按「视图投影列」登记基线；
+# 视图若被删/改，由 P1-2「引号大写标识符必须在 migrations 有对应 CREATE」
+# 守卫负责——两把尺子分工，不互相依赖。
+VIEW_PROJECTED = {
+    ("pp_e_application", "xkey"),
+    ("pp_e_application", "xterminal"),
+}
+REASON_VIEW_COLUMN = (
+    "视图投影列：migrations/112 建的 \"PP_E_APPLICATION\" 视图投影 "
+    "xid AS xkey / xid AS xterminal；handler 引用经大小写折叠归属到 "
+    "pp_e_application 表（表无此列，属视图独有）。表的列检查不受影响；"
+    "视图存在性由 P1-2 引号大写标识符守卫把守"
+)
 
 
 def write_baseline(violations: dict[tuple[str, str], list[str]], universe: dict[str, set[str]]) -> None:
@@ -522,18 +679,23 @@ def write_baseline(violations: dict[tuple[str, str], list[str]], universe: dict[
         "# 格式：table<TAB>column<TAB>首条证据<TAB>复核理由",
         "# 由 scripts/fi002_column_scan.py --update-baseline 生成，勿手改证据列。",
     ]
-    legacy = missing = 0
+    legacy = missing = view = 0
     for (table, col) in sorted(violations):
         evidence = violations[(table, col)][0]
         if table not in universe:
             reason = REASON_LEGACY_TABLE
             legacy += 1
+        elif (table, col) in VIEW_PROJECTED:
+            reason = REASON_VIEW_COLUMN
+            view += 1
         else:
             reason = REASON_MISSING_COLUMN
             missing += 1
         lines.append(f"{table}\t{col}\t{evidence}\t{reason}")
     lines.append("")
-    lines.append(f"# 合计 {len(violations)} 对：遗留表 {legacy}、迁移缺列 {missing}")
+    lines.append(
+        f"# 合计 {len(violations)} 对：遗留表 {legacy}、迁移缺列 {missing}、视图投影列 {view}"
+    )
     BASELINE.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 

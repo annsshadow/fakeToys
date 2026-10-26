@@ -8761,7 +8761,7 @@ pub async fn keylock_lock(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT xid, xtitle, xperson, xidentity, \"xcreateTime\", \"xupdateTime\" FROM PP_C_KEYLOCK WHERE xid = $1",
+            "SELECT xid, xtitle, xperson, xidentity, create_time AS \"xcreateTime\", update_time AS \"xupdateTime\" FROM PP_C_KEYLOCK WHERE xid = $1",
             &[&id],
         )
         .await
@@ -8794,7 +8794,7 @@ pub async fn keylock_lock_mockputtopost(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
-            "UPDATE PP_C_KEYLOCK SET \"xupdateTime\" = NOW() WHERE xid = $1",
+            "UPDATE PP_C_KEYLOCK SET update_time = NOW() WHERE xid = $1",
             &[&id],
         )
         .await
@@ -8806,7 +8806,7 @@ pub async fn keylock_lock_mockputtopost(
 
     let row = client
         .query_opt(
-            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_KEYLOCK WHERE xid = $1",
+            "SELECT xid, create_time AS \"xcreateTime\", update_time AS \"xupdateTime\" FROM PP_C_KEYLOCK WHERE xid = $1",
             &[&id],
         )
         .await
