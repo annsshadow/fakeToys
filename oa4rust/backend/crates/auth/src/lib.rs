@@ -897,7 +897,7 @@ pub async fn role_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, name, description FROM auth_role WHERE deleted_at IS NULL",
+            "SELECT id, name, description FROM auth_role WHERE deleted_at IS NULL LIMIT 50",
             &[],
         )
         .await

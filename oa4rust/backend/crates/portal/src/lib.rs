@@ -567,7 +567,7 @@ pub async fn dict_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, name, app_name, app_data, creator, create_time FROM x_portal_dict WHERE deleted_at IS NULL ORDER BY create_time DESC",
+            "SELECT id, name, app_name, app_data, creator, create_time FROM x_portal_dict WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 100",
             &[],
         )
         .await

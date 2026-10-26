@@ -1491,7 +1491,7 @@ pub async fn query_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value
 
     let rows = client
         .query(
-            "SELECT id, name, category, creator, create_time FROM x_query_design WHERE deleted_at IS NULL ORDER BY create_time DESC",
+            "SELECT id, name, category, creator, create_time FROM x_query_design WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 100",
             &[],
         )
         .await

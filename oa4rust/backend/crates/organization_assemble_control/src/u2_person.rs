@@ -383,7 +383,8 @@ pub async fn person_list_like(pool: Extension<Pool>, Json(body): Json<Value>) ->
     let client = client_of(&pool).await?;
     let key = normalize_key(opt(&body, &["key", "name"]).unwrap_or_default());
     if key.is_empty() {
-        let sql = format!("SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NULL");
+        let sql =
+            format!("SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NULL LIMIT 100");
         let rows = client
             .query(&sql, &[])
             .await
@@ -392,7 +393,7 @@ pub async fn person_list_like(pool: Extension<Pool>, Json(body): Json<Value>) ->
     }
     let pattern = format!("%{}%", shared::db::escape_like(&key));
     let sql = format!(
-        "SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NULL AND name ILIKE $1"
+        "SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NULL AND name ILIKE $1 LIMIT 100"
     );
     let rows = client
         .query(&sql, &[&pattern])

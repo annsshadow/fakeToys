@@ -3198,7 +3198,7 @@ pub async fn config_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, key, value, category, creator, create_time FROM x_program_config ORDER BY create_time DESC",
+            "SELECT id, key, value, category, creator, create_time FROM x_program_config ORDER BY create_time DESC LIMIT 100",
             &[],
         )
         .await
@@ -3252,7 +3252,7 @@ pub async fn config_list_application(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, key, value, category, creator, create_time FROM x_program_config ORDER BY create_time DESC",
+            "SELECT id, key, value, category, creator, create_time FROM x_program_config ORDER BY create_time DESC LIMIT 100",
             &[],
         )
         .await
@@ -3306,7 +3306,7 @@ pub async fn config_list_dump_data(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, key, value, category, creator, create_time FROM x_program_config ORDER BY create_time DESC",
+            "SELECT id, key, value, category, creator, create_time FROM x_program_config ORDER BY create_time DESC LIMIT 100",
             &[],
         )
         .await
@@ -3360,7 +3360,7 @@ pub async fn config_list_dump_data_current_node(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, key, value, category, creator, create_time FROM x_program_config ORDER BY create_time DESC",
+            "SELECT id, key, value, category, creator, create_time FROM x_program_config ORDER BY create_time DESC LIMIT 100",
             &[],
         )
         .await
@@ -3414,7 +3414,7 @@ pub async fn config_list_entity(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, key, value, category, creator, create_time FROM x_program_config ORDER BY create_time DESC",
+            "SELECT id, key, value, category, creator, create_time FROM x_program_config ORDER BY create_time DESC LIMIT 100",
             &[],
         )
         .await

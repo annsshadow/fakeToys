@@ -62,7 +62,7 @@ pub async fn unit_list_all(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id FROM x_org_unit WHERE deleted_at IS NULL ORDER BY level, id",
+            "SELECT id FROM x_org_unit WHERE deleted_at IS NULL ORDER BY level, id LIMIT 100",
             &[],
         )
         .await

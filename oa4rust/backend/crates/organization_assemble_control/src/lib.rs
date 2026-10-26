@@ -403,7 +403,7 @@ pub async fn organization_assemble_control_person_list_like(
 
     let rows = client
         .query(
-            "SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person WHERE name ILIKE $1 AND deleted_at IS NULL ORDER BY create_time DESC",
+            "SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person WHERE name ILIKE $1 AND deleted_at IS NULL ORDER BY create_time DESC LIMIT 100",
             &[&like_pattern],
         )
         .await

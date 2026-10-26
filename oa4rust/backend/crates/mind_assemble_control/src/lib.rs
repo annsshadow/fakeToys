@@ -153,7 +153,7 @@ pub async fn list_folders(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
 
     let rows = client
         .query(
-            "SELECT id, name, content, creator, create_time FROM x_mind WHERE parent_id IS NULL AND deleted_at IS NULL ORDER BY create_time DESC",
+            "SELECT id, name, content, creator, create_time FROM x_mind WHERE parent_id IS NULL AND deleted_at IS NULL ORDER BY create_time DESC LIMIT 100",
             &[],
         )
         .await

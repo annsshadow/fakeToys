@@ -553,7 +553,7 @@ pub async fn list_current_person(
     let rows = client
         .query(
             "SELECT id, from_person, to_person, role_id, enabled, created_at, updated_at \
-             FROM x_empower WHERE from_person = $1 AND deleted_at IS NULL ORDER BY created_at DESC",
+             FROM x_empower WHERE from_person = $1 AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 100",
             &[&current_person],
         )
         .await
@@ -599,7 +599,7 @@ pub async fn list_current_person_enable(
     let rows = client
         .query(
             "SELECT id, from_person, to_person, role_id, enabled, created_at, updated_at \
-             FROM x_empower WHERE from_person = $1 AND enabled = true AND deleted_at IS NULL ORDER BY created_at DESC",
+             FROM x_empower WHERE from_person = $1 AND enabled = true AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 100",
             &[&current_person],
         )
         .await
@@ -645,7 +645,7 @@ pub async fn list_to(
     let rows = client
         .query(
             "SELECT id, from_person, to_person, role_id, enabled, created_at, updated_at \
-             FROM x_empower WHERE to_person = $1 AND deleted_at IS NULL ORDER BY created_at DESC",
+             FROM x_empower WHERE to_person = $1 AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 100",
             &[&current_person],
         )
         .await
