@@ -89,12 +89,15 @@ REPO = ROOT.parent
 DOCS_DIR = REPO / "docs" / "augmentor"
 
 IDX_SKIP = frozenset({".git", "__pycache__", ".pytest_cache", "node_modules",
-                        ".backups", "dist"})
+                        ".backups", "dist", "coverage"})
 # `.backups` = 套件自写的运行时快照目录（gitignored，不入仓）：索引收它会让测试套件
 # 每跑一次全量门禁就为下一次普查造出新的文件名候选（`index.json`/`snap.json`），
 # 引用被翻进 ambiguous 欠账档、棘轮自伤（L145，B215）。SCAN_SKIP 一直有它，索引侧对齐。
 # `dist` = 前端构建产物（同样 gitignored）：跑没跑过 npm run build 会让文件数与引用数
 # 跟着变，而 CI 克隆里没有它——与 `.backups` 同一条「读数不能被本机状态改写」理由。
+# `coverage` = 覆盖率报告目录（`npm run test:coverage` 生成，gitignored）：同一理由。
+# 2026-10-27 实测：作者树跑过一次覆盖率后有 3 只 `web/coverage/*.js` 被算进语料，
+# `files_seen` 627 而干净克隆 624 —— 读数跟着本机跑没跑过覆盖率变，就是这条要挡的。
 SCAN_SKIP = IDX_SKIP | {"bak", "htmlcov", ".venv", "venv", ".mypy_cache"}
 #: 顶层（ROOT 直接子级）的未入仓用户数据目录，仅按「恰好是 ROOT 的子目录」逐层判，
 #: 不误伤嵌套的 `augmentor/data` 包（包里 `image.py`/`cleaner.py` 是入仓产品码，
@@ -102,6 +105,14 @@ SCAN_SKIP = IDX_SKIP | {"bak", "htmlcov", ".venv", "venv", ".mypy_cache"}
 #: 若用 IDX_SKIP 那种「任意深度的同名目录」跳过法，会把 `augmentor/data` 包也抹掉，
 #: 于是 `augmentor/data/image.py` 翻成 dead_path（L178 首版因此红 2 条，已回退改此法）。
 TOPLEVEL_SKIP = frozenset({"data", "bak"})
+
+#: 运行期输出目录：这些名字属于「训练/推理跑出来的东西」，不是仓内命名空间。
+#: 引用它们是散文里的示例路径（`checkpoints/…`），既不是死链、也不该落进「不入仓草稿」
+#: 两档 —— 按**名字**判，不看磁盘上有没有这个目录。理由与 `.backups` / `dist` / `coverage`
+#: 同源：作者树跑过一次训练就会多出 `checkpoints/`，而干净克隆没有；若按磁盘判，
+#: 同一条引用在 CI 落 `scratch_missing`、在作者树落 `runtime_ns`，`runtime_ns` 这条棘轮
+#: 就永远只能在作者树上跑（2026-10-27 CI 首轮红正是这个形状：1 vs 0）。
+RUNTIME_DIRS = frozenset({"checkpoints"})
 SRC_EXT = frozenset({".py", ".ts", ".tsx", ".js", ".jsx", ".vue"})
 DOC_EXT = frozenset({".md", ".yaml", ".yml", ".toml", ".sql", ".ini", ".cfg",
                      ".json", ".txt"})
@@ -165,12 +176,14 @@ CEILING = {
     # 时其中 1 条（原 docs/ARCHITECTURE.md）改写后仍有多候选，故净 +34。逐条判定见
     # 10-27 计划 §2 的增量探针。
     "ambiguous": 497,
-    # 2026-10-22 重钉 0 → **1**：唯一一条是 OPTIMIZATION_LOOP_2.md 第 3192 行 A315 那段
-    # 散文举例「顶层三处」范围不够时写的运行期产物路径（checkpoints/ckpt.json，反引号
-    # 形状）——它正是本档的语义（"没有 ⇒ 单独成档 runtime_ns，判它死等于把散文当契约"）：
-    # 父段 checkpoints 在源码目录集里、文件不在索引，于是按运行期示例路径记账而不是按死链红。
+    # 2026-10-22 重钉 0 → **1**：唯一一条是 OPTIMIZATION_LOOP_2.md A315 那段散文举例的
+    # 运行期产物路径（checkpoints/…，反引号形状）——它正是本档的语义（"没有 ⇒ 单独成档
+    # runtime_ns，判它死等于把散文当契约"）。
+    # 2026-10-27 订正判据：原先按「父段在源码目录集里」推，而那个目录只有跑过训练的作者树
+    # 才存在 ⇒ CI 干净克隆把同一条引用记成 `scratch_missing`（首轮 CI 红：1 vs 0）。
+    # 现在改由 `RUNTIME_DIRS` 按**名字**判，作者树与干净克隆都读到 1。
     # 同族先例：data/* 示例路径曾在本档积过 30 条。
-    # （本注释刻意不再用反引号复述那条路径 —— 反引号形状会被普查收成新引用，
+    # （本注释刻意不用反引号复述那条路径 —— 反引号形状会被普查收成新引用，
     #  第一版就这么自己给自己造了第 2 条。）
     "runtime_ns": 1,
     #: `scratch` / `scratch_missing` **不进 CEILING**：两格的分界线是 Temp/ 里有没有同名
@@ -586,8 +599,14 @@ def reference_state(ref, dirs, index, src):
             states.append(("live", live))
         elif bucket == "unresolved_source":
             # 父目录判据必须用 augmentor 相对坐标：`dirs` 就是从 augmentor 里算出来的。
+            head = pathlib.PurePath(cand).parts[0] if pathlib.PurePath(cand).parts else ""
             parent = "/".join(pathlib.PurePath(cand).parts[:-1])
-            states.append(("runtime_ns" if parent not in dirs else "dead_path", None))
+            if head in RUNTIME_DIRS:
+                # 运行期输出目录：按**名字**判，不赌磁盘上有没有（否则同一条示例路径
+                # 在作者树与干净克隆里会落进两个不同的档，见 RUNTIME_DIRS 注释）。
+                states.append(("runtime_ns", None))
+            else:
+                states.append(("runtime_ns" if parent not in dirs else "dead_path", None))
         else:
             states.append((bucket, None))
     for want in _LIVE_ORDER:
