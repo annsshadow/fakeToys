@@ -58,7 +58,22 @@ func newE2E(t *testing.T) *e2e {
 // 于是测试之间开始互相依赖（这正是本仓反复吃过亏的地方）。
 func newE2EWith(t *testing.T, mutate func(*config.Config)) *e2e {
 	t.Helper()
+	// DSN 优先级：TEST_DATABASE_URL → DATABASE_URL → 本机缺省。
+	//
+	// 为什么要补 DATABASE_URL：此前只认 TEST_DATABASE_URL，于是设了
+	// `DATABASE_URL` 的人（`scratchdb` 认它，`internal/service`/`store` 的用例
+	// 因此正常跑）会看到本包 **74 条 e2e 全部 SKIP** —— 而 Skip 不是失败，
+	// 报表只显示「6 秒跑完、26.6% 覆盖」，看起来像「测试写得浅」，
+	// 实际是一条都没跑。2026-10-27 实测：补上库并让 DSN 生效后，
+	// 同一个包从 26.6% 变成 86.0%，耗时 6.5s → 89s。
+	//
+	// 注意本包需要的是**已 migrate + seed 的 laiyipao 库**（CI 的做法见
+	// laiyipao-ci.yml：CREATE DATABASE laiyipao → cmd/migrate → cmd/seed），
+	// 与 scratchdb 每次现建的一次性库不是一回事。
 	dsn := os.Getenv("TEST_DATABASE_URL")
+	if dsn == "" {
+		dsn = os.Getenv("DATABASE_URL")
+	}
 	if dsn == "" {
 		dsn = "postgres://postgres@127.0.0.1:5432/laiyipao?sslmode=disable"
 	}
@@ -74,7 +89,15 @@ func newE2EWith(t *testing.T, mutate func(*config.Config)) *e2e {
 	defer cancel()
 	db, err := store.Open(ctx, cfg)
 	if err != nil {
-		t.Skipf("无可用测试数据库（%s），跳过：%v", dsn, err)
+		// 提示要写出「怎么让它跑起来」。此前只有一句「无可用测试数据库」，
+		// 于是「74 条 e2e 全跳过」这件事在 CI 日志里看起来像正常的 Skip。
+		t.Skipf("无可用测试数据库（%s），跳过：%v\n"+
+			"  要跑本包 e2e，需要一个**已 migrate + seed 的 laiyipao 库**：\n"+
+			"    CREATE DATABASE laiyipao ENCODING 'UTF8';\n"+
+			"    DATABASE_URL=%s go run ./cmd/migrate\n"+
+			"    DATABASE_URL=%s go run ./cmd/seed\n"+
+			"  然后设 TEST_DATABASE_URL（或 DATABASE_URL）指向它再跑测试。",
+			dsn, err, dsn, dsn)
 	}
 	probe, probeCancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer probeCancel()
