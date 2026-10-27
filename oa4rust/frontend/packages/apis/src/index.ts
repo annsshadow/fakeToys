@@ -88,9 +88,15 @@ export const orgApi = {
     api.post(`/api/organization/assemble/control/group/${flag}/delete/member`, data),
 
   // 人员
-  /** 分页人员列表（后端 POST person/list/filter/{page}/size/{size}；keyword 无后端字段，保留参数但不下发）。 */
+  /**
+   * 分页人员列表（后端 POST person/list/filter/{page}/size/{size}；keyword 无后端字段，
+   * 保留参数但不下发）。
+   *
+   * `count` 是后端 `person_list_filter_paging` 的 COUNT(*) 字段，不是 `total`；
+   * 这里不要套 `PagedResponse`——那是另一套字段名，读 `total` 会永远 undefined。
+   */
   personList: (page: number, size: number, _keyword?: string) =>
-    api.post<PagedResponse<import('@oa4rust/sdk').O2User>>(
+    api.post<{ count: number; page: number; size: number; data: import('@oa4rust/sdk').O2User[] }>(
       `/api/organization/assemble/control/person/list/filter/${page}/size/${size}`,
       {},
     ),

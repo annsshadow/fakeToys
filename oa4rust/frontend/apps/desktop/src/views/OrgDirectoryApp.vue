@@ -18,6 +18,13 @@
         <button class="run-btn" :disabled="busy" @click="runCurrentTab">{{ busy ? '查询中…' : '▶ 查询本页' }}</button>
       </div>
       <div v-if="rows.length" class="result-meta">命中 {{ rows.length }} 行 · 最近动作 {{ lastAction }}</div>
+      <!-- 人员页：服务端分页（后端已 clamp page/size，并返回 count）-->
+      <div v-if="tab === 'person'" class="pager-bar">
+        <button class="run-btn" :disabled="busy" @click="loadPersonFilter">按页查询人员</button>
+        <button class="page-btn" :disabled="busy || personPage <= 1" @click="personFilterPage(-1)">上一页</button>
+        <span class="result-meta">第 {{ personPage }} / {{ personPageTotalPages }} 页 · 共 {{ personCount }} 人</span>
+        <button class="page-btn" :disabled="busy || personPage >= personPageTotalPages" @click="personFilterPage(1)">下一页</button>
+      </div>
       <div class="table-wrap">
         <table v-if="rows.length" class="data-table">
           <thead>
@@ -82,6 +89,12 @@ const tab = ref<Tab>('person')
 const busy = ref(false)
 const rows = ref<Record<string, unknown>[]>([])
 const lastAction = ref('—')
+// 服务端分页：页码/页大小/总数都由后端 person_list_filter_paging 负责，
+// 前端只按 count 算总页数；不把「本页拿到几行」当成总人数。
+const personPage = ref(1)
+const personPageSize = 20
+const personCount = ref(0)
+const personPageTotalPages = computed(() => Math.max(1, Math.ceil(personCount.value / personPageSize)))
 
 const tabHint = computed(
   () =>
@@ -136,6 +149,38 @@ async function collect(label: string, p: Promise<unknown>): Promise<void> {
 }
 
 // ── 人员 ────────────────────────────────────────────────────────────
+// 后端 person_list_filter_paging 返回 { count, page, size, data }，包在
+// ActionResult.data 里；count 是全表计数，data 才是当前页。
+interface PagedPeople {
+  count?: number
+  page?: number
+  size?: number
+  data?: unknown
+}
+async function loadPersonFilter(): Promise<void> {
+  busy.value = true
+  try {
+    const resp = await api.post<unknown>(
+      `/api/organization/assemble/control/person/list/filter/${personPage.value}/size/${personPageSize}`,
+      {},
+    )
+    const page = (resp as { data?: PagedPeople }).data
+    const list = Array.isArray(page?.data) ? (page.data as Record<string, unknown>[]) : []
+    personCount.value = Number(page?.count ?? list.length)
+    rows.value = list
+    lastAction.value = `人员过滤 · 第 ${page?.page ?? personPage.value} 页（${list.length}/${personCount.value} 行）`
+  } catch {
+    toast.error('人员过滤查询失败')
+  } finally {
+    busy.value = false
+  }
+}
+async function personFilterPage(delta: number): Promise<void> {
+  const next = personPage.value + delta
+  if (next < 1 || next > personPageTotalPages.value) return
+  personPage.value = next
+  await loadPersonFilter()
+}
 function runPerson(): void {
   void runAll([
     async () => collect('全量人员(all/object)', await api.get('/api/person/list/all/object')),
@@ -486,6 +531,9 @@ async function orgAuth(op: string): Promise<void> {
 .hint { font-size: 12px; color: var(--text-muted) }
 .run-btn { padding: 6px 16px; background: var(--color-primary); color: #000; border: none; border-radius: var(--radius-md); font-size: 12px; font-weight: 600; cursor: pointer }
 .run-btn:disabled { opacity: 0.5 }
+.page-btn { padding: 6px 12px; background: transparent; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); color: var(--text-secondary); font-size: 12px; cursor: pointer }
+.page-btn:disabled { opacity: 0.4; cursor: not-allowed }
+.pager-bar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px }
 .result-meta { font-size: 12px; color: var(--text-secondary); font-family: 'JetBrains Mono', monospace }
 .table-wrap { overflow: auto }
 .data-table { width: 100%; border-collapse: collapse; font-size: 12px }

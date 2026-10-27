@@ -120,8 +120,11 @@
     <div class="settings-card glass-card">
       <h3>授权委托</h3>
       <div class="emp-tabs">
-        <button class="emp-tab" :class="{on:empScope==='mine'}" @click="loadEmpower('mine')">我发出的（{{ empMine.length }}）</button>
-        <button class="emp-tab" :class="{on:empScope==='to'}" @click="loadEmpower('to')">授权给我（{{ empTo.length }}）</button>
+        <button class="emp-tab" :class="{on:empScope==='mine'}" @click="loadEmpower('mine')">我发出的（{{ empMineTotal }}）</button>
+        <button class="emp-tab" :class="{on:empScope==='to'}" @click="loadEmpower('to')">授权给我（{{ empToTotal }}）</button>
+      </div>
+      <div v-if="(empScope==='mine'?empMineTotal:empToTotal) > (empScope==='mine'?empMine:empTo).length" class="emp-note">
+        后端只返回前 {{ (empScope==='mine'?empMine:empTo).length }} 条（总 {{ empScope==='mine'?empMineTotal:empToTotal }} 条）
       </div>
       <div v-if="(empScope==='mine'?empMine:empTo).length===0" class="emp-empty">暂无授权记录</div>
       <div v-else class="emp-list">
@@ -556,6 +559,10 @@ interface Emp {
 const empScope = ref<'mine' | 'to'>('mine')
 const empMine = ref<Emp[]>([])
 const empTo = ref<Emp[]>([])
+// 两个列表接口都是分页形状：data 是当前页（后端 LIMIT 100），count 是全表总数。
+// 页签显示 count，避免「拿到 100 条就说共有 100 条」。
+const empMineTotal = ref(0)
+const empToTotal = ref(0)
 async function loadEmpower(scope: 'mine' | 'to') {
   empScope.value = scope
   try {
@@ -565,11 +572,22 @@ async function loadEmpower(scope: 'mine' | 'to') {
         ? await api.get('/api/person/empower/list/currentperson')
         : await api.get('/api/person/empower/list/to')
     const list = (r.data ?? []) as Emp[]
-    if (scope === 'mine') empMine.value = list
-    else empTo.value = list
+    const total = Number(r.count ?? list.length)
+    if (scope === 'mine') {
+      empMine.value = list
+      empMineTotal.value = total
+    } else {
+      empTo.value = list
+      empToTotal.value = total
+    }
   } catch {
-    if (scope === 'mine') empMine.value = []
-    else empTo.value = []
+    if (scope === 'mine') {
+      empMine.value = []
+      empMineTotal.value = 0
+    } else {
+      empTo.value = []
+      empToTotal.value = 0
+    }
   }
 }
 async function toggleEmpower(e: Emp, on: boolean) {
@@ -810,6 +828,7 @@ async function loadPersonalTwin2() {
 .emp-tab{padding:4px 12px;border-radius:12px;border:1px solid var(--border-subtle);background:var(--bg-elevated);color:var(--text-secondary);cursor:pointer;font-size:12px}
 .emp-tab.on{border-color:var(--color-primary);color:var(--color-primary);background:var(--color-primary-soft)}
 .emp-empty{color:var(--text-muted);font-size:13px;padding:12px;text-align:center}
+.emp-note{color:var(--text-muted);font-size:12px;padding:0 0 8px}
 .emp-list{display:flex;flex-direction:column;gap:8px}
 .emp-item{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg-elevated);border-radius:var(--radius-md)}
 .emp-info{display:flex;align-items:center;gap:10px}

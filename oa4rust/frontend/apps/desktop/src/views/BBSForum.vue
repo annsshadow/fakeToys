@@ -543,7 +543,7 @@ async function openSectionInfo(sec: Section): Promise<void> {
 // 运行时会 500，故全部改调 fmt 参数化路由，与后端 routes.rs 注册一致）：
 //  · 全部/推荐/精华 → PUT subject/{index,recommended,creamed}/list/page/{p}/count/{n}
 //  · 我的 → POST subject/filter/listsubjectinfo/page/{p}/count/{n} body.creator=本人
-//  · 关键词 → PUT subject/search/list/page/1/count/{n} body.keyword
+//  · 关键词 → PUT subject/search/list/page/{p}/count/{n} body.keyword（p 跟随当前页）
 //  · 版块筛选 → GET /api/bbs/subject/list/{sectionId}（bbs crate 已注册）
 const {
   data: topicsData,
@@ -554,7 +554,7 @@ const {
   queryFn: async () => {
     let resp: { data?: unknown }
     if (searchQuery.value) {
-      resp = (await api.put(`/api/bbs/assemble/control/subject/search/list/page/1/count/${pageSize}`, {
+      resp = (await api.put(`/api/bbs/assemble/control/subject/search/list/page/${page.value}/count/${pageSize}`, {
         keyword: searchQuery.value,
       })) as { data?: unknown }
     } else if (selectedSection.value) {
