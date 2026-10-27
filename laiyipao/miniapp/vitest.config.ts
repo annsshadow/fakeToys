@@ -79,6 +79,16 @@ export default defineConfig({
       // 编译后不产生任何运行时代码 —— 覆盖率对它恒为 0%，纳入统计只会
       // 拉低总分而无法被任何测试"覆盖"，故按纯类型模块豁免。
       exclude: [...coverageConfigDefaults.exclude, 'src/test/**', 'src/game/types.ts'],
+      // 覆盖率 ratchet（2026-10-27 建立）：实测 语句 94.35 / 分支 89.95 / 函数 93.32 /
+      // 行 95.26，各留 ~1pt 余量（v8 计数随 Node 版本有零点几个百分点抖动）。
+      // 注意 `src/game/**` 的平衡性用例要跑完整 100 关模拟，覆盖率跑一次约 1 分钟，
+      // 所以本地验证时用它自己的 reportsDirectory（见 .gitignore 的 coverage-run*）。
+      thresholds: {
+        statements: 93,
+        branches: 88,
+        functions: 92,
+        lines: 94,
+      },
     },
   },
   // 契约向量在 server/testdata/ 下，物理路径必须解析到那里。
