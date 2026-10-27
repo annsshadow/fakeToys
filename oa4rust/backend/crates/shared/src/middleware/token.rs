@@ -179,3 +179,142 @@ pub async fn auth_middleware(
         None => AppError::Unauthorized.into_response(),
     }
 }
+
+#[cfg(test)]
+mod token_parsing_tests {
+    use super::*;
+    use axum::http::HeaderValue;
+
+    // ──────────────────────────────────────────────────────────────────────
+    // 这一组只测**凭据提取**（纯函数），不测中间件。
+    //
+    // 提取逻辑是整条认证链的入口：它多接受一种格式，就等于多开一个绕过口；
+    // 它少接受一种，用户就登不上。`src/tests.rs` 已经钉住了「Cookie 优先」
+    // 与「空 Cookie 不回退 Bearer」两条主契约，这里补的是**解析器的边界**：
+    // 多个 Cookie 头、带引号的值、畸形片段、非 UTF-8、大小写与前缀形式。
+    // ──────────────────────────────────────────────────────────────────────
+
+    fn cookie_headers(values: &[&str]) -> HeaderMap {
+        let mut headers = HeaderMap::new();
+        for v in values {
+            headers.append(header::COOKIE, HeaderValue::from_str(v).unwrap());
+        }
+        headers
+    }
+
+    #[test]
+    fn session_cookie_scans_every_cookie_header() {
+        // 浏览器可以把 cookie 拆到多个 Cookie 头里；只看第一个会漏掉会话。
+        let headers = cookie_headers(&["theme=dark", "oa4rust_session=abc"]);
+        assert_eq!(session_cookie(&headers), Some("abc"));
+    }
+
+    #[test]
+    fn session_cookie_picks_the_named_pair_out_of_a_list() {
+        let headers = cookie_headers(&["a=1; oa4rust_session=xyz; b=2"]);
+        assert_eq!(session_cookie(&headers), Some("xyz"));
+    }
+
+    #[test]
+    fn session_cookie_unquotes_the_value() {
+        // 带引号的 cookie 值必须被剥掉引号，否则查库查不到、表现为「随机掉登录」。
+        let headers = cookie_headers(&[r#"oa4rust_session="abc""#]);
+        assert_eq!(session_cookie(&headers), Some("abc"));
+    }
+
+    #[test]
+    fn session_cookie_skips_malformed_segments() {
+        // 没有 '=' 的片段、空片段都要跳过而不是整体放弃。
+        let headers = cookie_headers(&["garbage; ; =novalue; oa4rust_session=ok"]);
+        assert_eq!(session_cookie(&headers), Some("ok"));
+    }
+
+    #[test]
+    fn session_cookie_ignores_non_utf8_header_values() {
+        // 非 UTF-8 的 Cookie 头不能让提取逻辑 panic 或提前返回：
+        // 跳过它，继续看下一个头。
+        let mut headers = HeaderMap::new();
+        headers.append(header::COOKIE, HeaderValue::from_bytes(b"\xff\xfe").unwrap());
+        headers.append(
+            header::COOKIE,
+            HeaderValue::from_str("oa4rust_session=after-binary").unwrap(),
+        );
+        assert_eq!(session_cookie(&headers), Some("after-binary"));
+    }
+
+    #[test]
+    fn session_cookie_returns_none_when_absent() {
+        assert_eq!(session_cookie(&cookie_headers(&["theme=dark"])), None);
+        assert_eq!(session_cookie(&HeaderMap::new()), None);
+    }
+
+    #[test]
+    fn bearer_prefix_is_case_sensitive() {
+        // `bearer` / `BEARER` 一律不认：放宽大小写会让代理/网关上的
+        // 非标准头意外通过，属于认证面扩大。
+        for value in ["bearer tok", "BEARER tok", "Bearer", "Bearerx tok"] {
+            let mut headers = HeaderMap::new();
+            headers.insert(header::AUTHORIZATION, HeaderValue::from_str(value).unwrap());
+            assert_eq!(
+                extract_authentication(&headers),
+                None,
+                "must reject authorization value {value:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn bearer_value_is_trimmed_and_empties_rejected() {
+        let mut headers = HeaderMap::new();
+        headers.insert(
+            header::AUTHORIZATION,
+            HeaderValue::from_str("Bearer   tok-with-spaces  ").unwrap(),
+        );
+        assert_eq!(
+            extract_authentication(&headers),
+            Some(Authentication::Bearer("tok-with-spaces".to_string()))
+        );
+
+        headers.insert(
+            header::AUTHORIZATION,
+            HeaderValue::from_str("Bearer    ").unwrap(),
+        );
+        assert_eq!(
+            extract_authentication(&headers),
+            None,
+            "blank bearer token must not authenticate"
+        );
+    }
+
+    #[test]
+    fn empty_session_cookie_does_not_fall_back_to_bearer() {
+        // 与 src/tests.rs 同一条契约，这里从 token() 侧再钉一次：
+        // 空 Cookie 得到的是空 token，而不是 Bearer 的值。
+        let mut headers = cookie_headers(&["oa4rust_session="]);
+        headers.insert(
+            header::AUTHORIZATION,
+            HeaderValue::from_str("Bearer bearer-token").unwrap(),
+        );
+
+        assert_eq!(
+            extract_token_from_headers(&headers),
+            None,
+            "空 Cookie 必须短路，不得回退 Bearer"
+        );
+    }
+
+    #[test]
+    fn token_accessor_returns_inner_value_for_both_variants() {
+        assert_eq!(Authentication::Cookie("c".into()).token(), "c");
+        assert_eq!(Authentication::Bearer("b".into()).token(), "b");
+    }
+
+    #[test]
+    fn extract_token_from_headers_matches_authentication() {
+        let headers = cookie_headers(&["oa4rust_session=abc"]);
+        assert_eq!(extract_token_from_headers(&headers), Some("abc".to_string()));
+
+        let headers = HeaderMap::new();
+        assert_eq!(extract_token_from_headers(&headers), None);
+    }
+}

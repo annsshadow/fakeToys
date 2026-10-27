@@ -73,6 +73,16 @@ impl RateLimiter {
             .filter(|s| !s.trim().is_empty())
             .unwrap_or_else(|| "redis://127.0.0.1:6379".to_string());
 
+        // 已在 tokio 运行时里时不能再建新运行时：`Runtime::new()` 会直接
+        // panic（"Cannot start a runtime from within a runtime"）。
+        // SessionManager::init_redis 一直有这道守卫，这里补齐 ——
+        // 两个 init_redis 是同一条启动链上的兄弟调用，一个能优雅降级、
+        // 另一个直接 panic，属于实现漂移。
+        // 运行时内的调用方应改用 `init_redis_async()`。
+        if tokio::runtime::Handle::try_current().is_ok() {
+            return false;
+        }
+
         let rt = match tokio::runtime::Runtime::new() {
             Ok(r) => r,
             Err(_) => return false,
@@ -283,5 +293,210 @@ impl RateLimiter {
             }
         }
         self.attempts.write().await.remove(key);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ──────────────────────────────────────────────────────────────────────
+    // 这一组补的是**内存滑动窗口自身的簿记**，不是限流决策。
+    //
+    // `middleware/rate_limit_distributed.rs` 已经覆盖了「决策」与「Redis 降级」，
+    // 但那个文件用的是注入计数器，`attempts` 这张表怎么增、怎么清、怎么按 key 隔离
+    // 没人验。而它错了不会让请求被误拒——只会让内存缓慢增长或让「重置密码后
+    // 仍然被限流」，两者都极难从功能上发现。
+    // ──────────────────────────────────────────────────────────────────────
+
+    async fn attempts_of(limiter: &RateLimiter, key: &str) -> usize {
+        limiter
+            .attempts
+            .read()
+            .await
+            .get(key)
+            .map(|v| v.len())
+            .unwrap_or(0)
+    }
+
+    #[tokio::test]
+    async fn new_limiter_starts_with_empty_table() {
+        // 新实例必须空表：非空意味着进程级共享状态（跨租户串扰 + 测试互相污染）。
+        let limiter = RateLimiter::new();
+        assert!(limiter.attempts.read().await.is_empty());
+        // Default 与 new 等价
+        let default_limiter = RateLimiter::default();
+        assert!(default_limiter.attempts.read().await.is_empty());
+    }
+
+    #[tokio::test]
+    async fn memory_window_allows_up_to_max_then_rejects_with_observable_message() {
+        let limiter = RateLimiter::new();
+        for _ in 0..2 {
+            limiter
+                .check_rate_limit("1.1.1.1", 2, 1)
+                .await
+                .expect("within budget");
+        }
+
+        let err = limiter
+            .check_rate_limit("1.1.1.1", 2, 1)
+            .await
+            .expect_err("3rd attempt must be rejected");
+
+        // 拒绝时**不能**把这次尝试也记进窗口（否则窗口会被失败请求继续填充，
+        // 越限之后恢复时间被无限推后）。
+        assert_eq!(attempts_of(&limiter, "1.1.1.1").await, 2);
+        match err {
+            AppError::BadRequest(msg) => {
+                assert!(msg.contains('2'), "message should carry the count: {msg}");
+                assert!(msg.contains("1 minutes"), "message should carry the window: {msg}");
+            }
+            other => panic!("expected BadRequest, got {other:?}"),
+        }
+    }
+
+    #[tokio::test]
+    async fn budgets_are_isolated_per_key() {
+        let limiter = RateLimiter::new();
+        limiter.check_rate_limit("a", 1, 1).await.unwrap();
+
+        // a 已用满，b 不受影响
+        assert!(limiter.check_rate_limit("a", 1, 1).await.is_err());
+        assert!(limiter.check_rate_limit("b", 1, 1).await.is_ok());
+        assert_eq!(attempts_of(&limiter, "a").await, 1);
+        assert_eq!(attempts_of(&limiter, "b").await, 1);
+    }
+
+    #[tokio::test]
+    async fn reset_clears_only_the_named_key() {
+        // 登录成功后调 reset：必须只清掉自己的 key，否则一次成功登录会把
+        // 别人的失败计数也抹掉（等于给攻击者免费重试）。
+        let limiter = RateLimiter::new();
+        limiter.check_rate_limit("alice", 5, 1).await.unwrap();
+        limiter.check_rate_limit("bob", 5, 1).await.unwrap();
+
+        limiter.reset("alice").await;
+
+        assert_eq!(attempts_of(&limiter, "alice").await, 0);
+        assert_eq!(attempts_of(&limiter, "bob").await, 1);
+        assert!(limiter.attempts.read().await.get("alice").is_none());
+    }
+
+    #[tokio::test]
+    async fn record_failure_consumes_budget_like_a_check() {
+        // record_failure 是「失败但不算一次正常请求」的入口（如登录密码错），
+        // 它必须同样占用额度，否则暴力破解可以无限重试。
+        let limiter = RateLimiter::new();
+        limiter.record_failure("2.2.2.2").await;
+        limiter.record_failure("2.2.2.2").await;
+
+        assert_eq!(attempts_of(&limiter, "2.2.2.2").await, 2);
+        assert!(limiter.check_rate_limit("2.2.2.2", 2, 60).await.is_err());
+    }
+
+    #[tokio::test]
+    async fn cleanup_drops_entries_older_than_one_hour_and_emptied_keys() {
+        // 清理窗口固定 1 小时（与 check 的 window_minutes 无关）：这是防内存泄漏的
+        // 唯一机制，只保留「最近一小时内出现过」的 key。
+        let limiter = RateLimiter::new();
+        let now = Instant::now();
+        {
+            let mut table = limiter.attempts.write().await;
+            table.insert("stale".to_string(), vec![now - Duration::from_secs(7200)]);
+            table.insert(
+                "mixed".to_string(),
+                vec![now - Duration::from_secs(7200), now - Duration::from_secs(1)],
+            );
+            table.insert("fresh".to_string(), vec![now - Duration::from_secs(1)]);
+        }
+
+        limiter.cleanup_in_memory().await;
+
+        let table = limiter.attempts.read().await;
+        assert!(!table.contains_key("stale"), "全过期的 key 必须整条删除");
+        assert_eq!(table.get("mixed").map(Vec::len), Some(1), "只删过期的时间戳");
+        assert_eq!(table.get("fresh").map(Vec::len), Some(1));
+    }
+
+    #[tokio::test]
+    async fn cleanup_is_also_reachable_through_public_cleanup() {
+        // `cleanup()` 是给外部定时器用的公开入口，语义必须与 cleanup_in_memory 一致。
+        let limiter = RateLimiter::new();
+        limiter
+            .attempts
+            .write()
+            .await
+            .insert("x".to_string(), vec![Instant::now() - Duration::from_secs(7200)]);
+
+        limiter.cleanup().await;
+
+        assert!(limiter.attempts.read().await.is_empty());
+    }
+
+    #[tokio::test]
+    async fn check_prunes_attempts_outside_the_requested_window() {
+        // 窗口过期必须**逐次**判定，而不是等 1 小时清理任务：
+        // 否则「1 分钟内 3 次」的限制在 3 次之后仍然生效，用户要等一小时才能重试。
+        let limiter = RateLimiter::new();
+        limiter.attempts.write().await.insert(
+            "3.3.3.3".to_string(),
+            vec![Instant::now() - Duration::from_secs(90)],
+        );
+
+        // 窗口 1 分钟，90 秒前的记录已出窗 → 允许
+        assert!(limiter.check_rate_limit("3.3.3.3", 1, 1).await.is_ok());
+        // 且旧记录被剔除，只剩本次
+        assert_eq!(attempts_of(&limiter, "3.3.3.3").await, 1);
+    }
+
+    #[tokio::test]
+    async fn init_redis_inside_runtime_declines() {
+        // 与 SessionManager 同构：运行时不 block_on，返回 false 由调用方走 async 版。
+        let limiter = RateLimiter::new();
+        assert!(!limiter.init_redis());
+        assert!(limiter.get_redis_pool().is_none());
+    }
+
+    #[tokio::test]
+    async fn init_redis_async_is_idempotent_and_never_blocks_rate_limiting() {
+        // 不断言「连不上 Redis」——测试机可能真的配了 REDIS_URL（.env / CI service）。
+        // 断言的是两条与环境无关的契约：
+        //   1. 重复调用不 panic、不重建连接池（幂等）；
+        //   2. 无论 Redis 是否可用，内存限流始终能兜住。
+        let limiter = RateLimiter::new();
+        let first = limiter.init_redis_async().await;
+        let second = limiter.init_redis_async().await;
+
+        if first {
+            assert!(second, "已初始化后必须直接返回 true");
+            assert!(limiter.get_redis_pool().is_some());
+        }
+
+        assert!(
+            limiter.check_rate_limit("4.4.4.4", 1, 1).await.is_ok(),
+            "Redis 状态不得影响首次请求放行"
+        );
+        assert!(
+            limiter.check_rate_limit("4.4.4.4", 1, 1).await.is_err(),
+            "第二次必须被拒（内存窗口生效）"
+        );
+    }
+
+    #[tokio::test]
+    async fn injected_counter_bypasses_the_redis_url_gate() {
+        // 测试注入是「有意模拟」，不受 REDIS_URL 门控约束 —— 否则所有
+        // 分布式限流的用例都得依赖环境变量才能跑。
+        struct AlwaysOne;
+        #[async_trait::async_trait]
+        impl crate::middleware::rate_limit_distributed::WindowCounter for AlwaysOne {
+            async fn incr_window(&self, _key: &str, _window_secs: i64) -> anyhow::Result<u64> {
+                Ok(1)
+            }
+        }
+
+        let limiter = RateLimiter::new();
+        limiter.set_window_counter_override_for_test(Some(Arc::new(AlwaysOne)));
+        assert!(limiter.active_window_counter().await.is_some());
     }
 }

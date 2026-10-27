@@ -682,3 +682,248 @@ impl SessionManager {
         tracing::info!(expired_count = expired.len(), "cleaned up expired sessions");
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ──────────────────────────────────────────────────────────────────────
+    // 为什么这一组只测「无 pool / 无 redis」路径
+    //
+    // SessionManager 有三层存储：内存 HashMap → Redis → PostgreSQL。其中 Redis 与
+    // PG 两条分支要求真实外部服务，单测里只能靠 mock 才有意义（而 mock 掉连接层
+    // 等于不测连接层）。剩下的**内存层**恰恰是最容易出错、也最容易漏测的部分：
+    // 过期判定、惰性清除、按人批量注销——这三条都直接决定「登出到底有没有生效」。
+    //
+    // 之前这里只有 17% 覆盖，原因不是难写，而是构造函数会 spawn 后台任务
+    // （sweeper / threshold scanner），必须在 tokio 运行时里才不 panic，
+    // 而调用方从没在测试里建过它。
+    // ──────────────────────────────────────────────────────────────────────
+
+    fn manager_with_ttl(ttl_seconds: u64) -> SessionManager {
+        SessionManager::with_config(AuthConfig {
+            public_origin: "http://localhost:3000".to_string(),
+            cookie_secure: false,
+            session_ttl_seconds: ttl_seconds,
+        })
+    }
+
+    fn session_at(token: &str, person: &str, created: NaiveDateTime, expires: NaiveDateTime) -> Session {
+        Session {
+            token: token.to_string(),
+            person_unique: person.to_string(),
+            created_at: created,
+            expires_at: expires,
+        }
+    }
+
+    async fn count(manager: &SessionManager) -> usize {
+        manager.sessions.read().await.len()
+    }
+
+    #[tokio::test]
+    async fn new_manager_has_no_sessions_and_rejects_unknown_token() {
+        // 空管理器不能「凭 token 猜出会话」——未知 token 必须返回 None 而不是新建。
+        let manager = SessionManager::new();
+        assert_eq!(count(&manager).await, 0);
+        assert!(manager.validate_session("never-issued").await.is_none());
+        assert_eq!(count(&manager).await, 0, "拒绝未知 token 时不应写入任何条目");
+    }
+
+    #[tokio::test]
+    async fn default_matches_new() {
+        // Default 与 new 必须等价，否则 `#[derive(Default)]` 的调用方会拿到不同配置。
+        let manager = SessionManager::default();
+        assert_eq!(manager.auth_config.session_ttl_seconds, DEFAULT_SESSION_TTL_SECONDS);
+        assert!(manager.pool.is_none());
+    }
+
+    #[tokio::test]
+    async fn create_session_applies_configured_ttl_not_hardcoded_default() {
+        // TTL 必须来自 AuthConfig。写死 7200 的症状是「改了配置但会话时长不变」，
+        // 而这在功能上完全看不出来。
+        let manager = manager_with_ttl(60);
+        let session = manager
+            .create_session("person-a".to_string(), "tok-a".to_string())
+            .await
+            .expect("no pool means no threshold rejection");
+
+        assert_eq!(session.token, "tok-a");
+        assert_eq!(session.person_unique, "person-a");
+        assert_eq!(
+            (session.expires_at - session.created_at).num_seconds(),
+            60
+        );
+    }
+
+    #[tokio::test]
+    async fn create_then_validate_roundtrips_the_same_session() {
+        let manager = manager_with_ttl(600);
+        manager
+            .create_session("person-a".to_string(), "tok-a".to_string())
+            .await
+            .unwrap();
+
+        let got = manager.validate_session("tok-a").await.expect("valid session");
+        assert_eq!(got.person_unique, "person-a");
+        assert_eq!(got.token, "tok-a");
+    }
+
+    #[tokio::test]
+    async fn validate_evicts_expired_entry_instead_of_leaving_it() {
+        // 惰性清除：过期会话被访问时必须**顺手删掉**。
+        // 不删的话，不活跃会话会随运行时长无限累积（内存泄漏），
+        // 而症状只是「内存慢慢涨」，几乎不可能在功能测试里发现。
+        let manager = manager_with_ttl(0); // ttl=0 → expires_at == created_at → 立刻过期
+        manager
+            .create_session("person-a".to_string(), "tok-a".to_string())
+            .await
+            .unwrap();
+        assert_eq!(count(&manager).await, 1, "创建时先写入内存");
+
+        assert!(manager.validate_session("tok-a").await.is_none());
+        assert_eq!(count(&manager).await, 0, "过期会话必须被清除");
+    }
+
+    #[tokio::test]
+    async fn validate_keeps_valid_entry_cached() {
+        // 有效会话不能被误删（过度清除的表现是「随机掉登录」）。
+        let manager = manager_with_ttl(600);
+        manager
+            .create_session("person-a".to_string(), "tok-a".to_string())
+            .await
+            .unwrap();
+
+        assert!(manager.validate_session("tok-a").await.is_some());
+        assert_eq!(count(&manager).await, 1);
+    }
+
+    #[tokio::test]
+    async fn remove_session_removes_only_the_target_token() {
+        let manager = manager_with_ttl(600);
+        for (person, token) in [("p1", "t1"), ("p2", "t2")] {
+            manager
+                .create_session(person.to_string(), token.to_string())
+                .await
+                .unwrap();
+        }
+
+        manager.remove_session("t1").await;
+
+        assert!(manager.validate_session("t1").await.is_none());
+        assert!(manager.validate_session("t2").await.is_some());
+        assert_eq!(count(&manager).await, 1);
+    }
+
+    #[tokio::test]
+    async fn remove_sessions_by_person_spares_other_people() {
+        // 「删人」必须只清掉这个人的全部会话，不能牵连别人。
+        let manager = manager_with_ttl(600);
+        for (person, token) in [("alice", "a1"), ("alice", "a2"), ("bob", "b1")] {
+            manager
+                .create_session(person.to_string(), token.to_string())
+                .await
+                .unwrap();
+        }
+
+        manager.remove_sessions_by_person("alice").await;
+
+        assert!(manager.validate_session("a1").await.is_none());
+        assert!(manager.validate_session("a2").await.is_none());
+        assert!(manager.validate_session("b1").await.is_some(), "bob 的会话被误删");
+        assert_eq!(count(&manager).await, 1);
+    }
+
+    #[tokio::test]
+    async fn broadcast_logout_without_pool_is_a_noop() {
+        // 单实例模式下没有 threshold 表可查：必须**保持现状**而不是清空会话。
+        // 清空的话，单实例部署里每次调用都会把所有人踢下线。
+        let manager = manager_with_ttl(600);
+        manager
+            .create_session("alice".to_string(), "a1".to_string())
+            .await
+            .unwrap();
+
+        manager.broadcast_logout("alice").await;
+
+        assert_eq!(count(&manager).await, 1);
+        assert!(manager.validate_session("a1").await.is_some());
+    }
+
+    #[tokio::test]
+    async fn check_token_threshold_without_pool_never_rejects() {
+        // 无池时阈值检查返回 false（不拒绝登录）。返回 true 会让所有登录失败。
+        let manager = manager_with_ttl(600);
+        assert!(
+            !manager
+                .check_token_threshold(Utc::now().naive_utc(), "anyone")
+                .await
+        );
+    }
+
+    #[tokio::test]
+    async fn cleanup_expired_sessions_drops_only_expired_entries() {
+        let manager = manager_with_ttl(600);
+        let now = Utc::now().naive_utc();
+        {
+            let mut map = manager.sessions.write().await;
+            map.insert(
+                "stale".to_string(),
+                session_at(
+                    "stale",
+                    "p1",
+                    now - Duration::seconds(120),
+                    now - Duration::seconds(60),
+                ),
+            );
+            map.insert(
+                "live".to_string(),
+                session_at(
+                    "live",
+                    "p1",
+                    now - Duration::seconds(10),
+                    now + Duration::seconds(60),
+                ),
+            );
+        }
+
+        manager.cleanup_expired_sessions().await;
+
+        let map = manager.sessions.read().await;
+        assert!(!map.contains_key("stale"), "过期条目未被清扫");
+        assert!(map.contains_key("live"), "未过期条目被误清扫");
+    }
+
+    #[tokio::test]
+    async fn cleanup_on_empty_manager_is_harmless() {
+        // 清扫器每 300s 跑一次，空表是常态：不能因为「没有过期项」就 panic 或写日志爆炸。
+        let manager = manager_with_ttl(600);
+        manager.cleanup_expired_sessions().await;
+        assert_eq!(count(&manager).await, 0);
+    }
+
+    #[tokio::test]
+    async fn init_redis_inside_runtime_declines_instead_of_panicking() {
+        // 已有 tokio 运行时的情况下不能再 block_on —— 实现选择「返回 false 让调用方
+        // 走 init_redis_async」。如果这里 panic，所有在 async 上下文里构造
+        // SessionManager 的路径都会炸。
+        let manager = manager_with_ttl(600);
+        assert!(!manager.init_redis());
+        assert!(manager.redis_pool.lock().unwrap().is_none());
+    }
+
+    #[tokio::test]
+    async fn managers_do_not_share_state() {
+        // 每个实例独立持有 HashMap。共享（比如误用 static）会让并行测试互相串扰，
+        // 也会让「登出只影响自己」这个语义在单实例多租户下失效。
+        let a = manager_with_ttl(600);
+        let b = manager_with_ttl(600);
+        a.create_session("p".to_string(), "t".to_string())
+            .await
+            .unwrap();
+
+        assert_eq!(count(&a).await, 1);
+        assert_eq!(count(&b).await, 0);
+        assert!(b.validate_session("t").await.is_none());
+    }
+}
