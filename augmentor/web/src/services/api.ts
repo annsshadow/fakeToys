@@ -1,5 +1,22 @@
 import axios from 'axios'
+import { z } from 'zod'
 
+import {
+  analyzeResponseSchema,
+  augmentProgressSchema,
+  checkpointListResponseSchema,
+  createVersionResponseSchema,
+  dataFileListResponseSchema,
+  dataPageResponseSchema,
+  dedupResponseSchema,
+  qualityEvaluationResponseSchema,
+  startAugmentResponseSchema,
+  uploadResponseSchema,
+  versionDataResponseSchema,
+  versionListResponseSchema,
+  visualizeResponseSchema,
+  zodErrorMessage,
+} from '../schemas/main-schemas'
 import type {
   AggregateResponse, AnalyzeResponse,
   AnnotateResponse,
@@ -221,10 +238,55 @@ export const bulkErrorDetail = (error: unknown, fallback: string): string => {
   return apiErrorDetail(error, fallback)
 }
 
+// ============ 运行时契约校验（Z 批次，10-26-r4 §5）============
+
+/**
+ * 运行时契约校验的集中入口
+ *
+ * 背景：`types/api.ts` 的接口全是编译期声明，`axios` 的 `response.data` 是 `any`，
+ * 后端响应形态漂移（少回键 / 类型错 / 键名变更）`tsc` 发现不了，页面只能靠
+ * undefined 兜底或崩。本函数把主链路的 14 个函数接上 zod schema，在返回前跑
+ * `safeParse`，契约漂移在**运行时**被抓住。
+ *
+ * 校验失败语义：抛 `Error`，消息是 `zodErrorMessage()` 生成的可定位中文文案
+ * （接口名 + 第一个出问题的字段 + issue code），与 `apiErrorDetail` 的收口判据同族——
+ * 不裸抛 zod 内部措辞。调用方（页面）的 `catch` 拿到的是 `error.message`，
+ * 与既有的 `message.error(apiErrorDetail(err, ...))` 模式兼容（`apiErrorDetail`
+ * 对非 HTTP 错误的 `error` 取 `fallback`，所以这里的 `Error` 会落到 `fallback`，
+ * 而 `fallback` 由调用方传成「响应格式异常」类文案，见各页面的既有 catch）。
+ *
+ * 通过后返回**原始** `response.data`，不是 `parsed.data`：zod 默认会剥掉 schema
+ * 未声明的键，返回克隆会让调用方看到的对象与后端实发的不一致（也会改变
+ * `toBe` 之类的对象身份断言）。校验只负责「形状不对就抛」，不负责裁剪。
+ *
+ * 覆盖范围：`services/api.ts` 里被接上 schema 的那 14 个函数；
+ * 其余保持原样（全量接线是 Z-FULL 后续轮次，见 §7）。
+ */
+const checkedResponse = async <T>(
+  name: string,
+  schema: z.ZodType,
+  action: () => Promise<AxiosResponseLike>
+): Promise<T> => {
+  const response = await action()
+  const parsed = schema.safeParse(response.data)
+  if (!parsed.success) {
+    throw new Error(zodErrorMessage(name, parsed.error.issues))
+  }
+  return response.data as T
+}
+
+/** axios 响应的最小形状（本层不 import AxiosResponse 全类型，避免循环依赖） */
+interface AxiosResponseLike {
+  data: unknown
+}
+
 // 数据管理
 export const getDataFiles = async (): Promise<DataFileListResponse> => {
-  const response = await api.get('/data/list')
-  return response.data
+  return checkedResponse<DataFileListResponse>(
+    'getDataFiles',
+    dataFileListResponseSchema,
+    () => api.get('/data/list')
+  )
 }
 
 /**
@@ -236,8 +298,11 @@ export const getDataFiles = async (): Promise<DataFileListResponse> => {
  * 都算，而 `params` 对象要靠字符间隔绑回调用，同一路径两员调用时它分辨不了。
  */
 export const getBackupSourceCandidates = async (): Promise<DataFileListResponse> => {
-  const response = await api.get('/data/list?all_files=true')
-  return response.data
+  return checkedResponse<DataFileListResponse>(
+    'getBackupSourceCandidates',
+    dataFileListResponseSchema,
+    () => api.get('/data/list?all_files=true')
+  )
 }
 
 /**
@@ -254,10 +319,14 @@ export const loadData = async (
   pageSize: number,
   search: string
 ): Promise<DataPageResponse> => {
-  const response = await api.get(`/data/load/${filename}`, {
-    params: { page, page_size: pageSize, search },
-  })
-  return response.data
+  return checkedResponse<DataPageResponse>(
+    'loadData',
+    dataPageResponseSchema,
+    () =>
+      api.get(`/data/load/${filename}`, {
+        params: { page, page_size: pageSize, search },
+      })
+  )
 }
 
 /**
@@ -305,10 +374,11 @@ export const uploadData = async (
   const formData = new FormData()
   formData.append('file', file)
   formData.append('input_format', inputFormat)
-  const response = await api.post('/data/upload', formData, {
-    timeout: BULK_REQUEST_TIMEOUT_MS,
-  })
-  return response.data
+  return checkedResponse<UploadResponse>('uploadData', uploadResponseSchema, () =>
+    api.post('/data/upload', formData, {
+      timeout: BULK_REQUEST_TIMEOUT_MS,
+    })
+  )
 }
 
 export const exportData = async (
@@ -336,41 +406,58 @@ export const startAugmentation = async (
   useDedup: boolean,
   useCheckpoint: boolean
 ): Promise<StartAugmentResponse> => {
-  const response = await api.post('/augment/start', {
-    input_file: inputFile,
-    output_file: outputFile,
-    use_quality: useQuality,
-    use_dedup: useDedup,
-    use_checkpoint: useCheckpoint,
-  })
-  return response.data
+  return checkedResponse<StartAugmentResponse>(
+    'startAugmentation',
+    startAugmentResponseSchema,
+    () =>
+      api.post('/augment/start', {
+        input_file: inputFile,
+        output_file: outputFile,
+        use_quality: useQuality,
+        use_dedup: useDedup,
+        use_checkpoint: useCheckpoint,
+      })
+  )
 }
 
 export const getProgress = async (): Promise<AugmentProgress> => {
-  const response = await api.get('/augment/progress')
-  return response.data
+  return checkedResponse<AugmentProgress>(
+    'getProgress',
+    augmentProgressSchema,
+    () => api.get('/augment/progress')
+  )
 }
 
 export const getCheckpoints = async (): Promise<CheckpointListResponse> => {
-  const response = await api.get('/augment/checkpoints')
-  return response.data
+  return checkedResponse<CheckpointListResponse>(
+    'getCheckpoints',
+    checkpointListResponseSchema,
+    () => api.get('/augment/checkpoints')
+  )
 }
 
 // 数据分析
 export const analyzeData = async (filename: string): Promise<AnalyzeResponse> => {
-  const response = await api.get(`/analyze/${filename}`)
-  return response.data
+  return checkedResponse<AnalyzeResponse>('analyzeData', analyzeResponseSchema, () =>
+    api.get(`/analyze/${filename}`)
+  )
 }
 
 export const visualizeData = async (filename: string): Promise<VisualizeResponse> => {
-  const response = await api.get(`/visualize/${filename}`)
-  return response.data
+  return checkedResponse<VisualizeResponse>(
+    'visualizeData',
+    visualizeResponseSchema,
+    () => api.get(`/visualize/${filename}`)
+  )
 }
 
 // 版本管理
 export const getVersions = async (): Promise<VersionListResponse> => {
-  const response = await api.get('/versions')
-  return response.data
+  return checkedResponse<VersionListResponse>(
+    'getVersions',
+    versionListResponseSchema,
+    () => api.get('/versions')
+  )
 }
 
 export const createVersion = async (
@@ -383,8 +470,11 @@ export const createVersion = async (
   // `filename=a` 外加一个野键 `b.json`），编码交给 axios，键名仍是契约里的 `filename`。
   // `params` 块紧贴调用（同 L231 为 `createBackup` 定下的口径），别让绑定窗口去够它。
   const body = { label, description }
-  const response = await api.post('/versions/create', body, { params: { filename } })
-  return response.data
+  return checkedResponse<CreateVersionResponse>(
+    'createVersion',
+    createVersionResponseSchema,
+    () => api.post('/versions/create', body, { params: { filename } })
+  )
 }
 
 export const getVersion = async (versionId: string): Promise<VersionDetail> => {
@@ -393,8 +483,11 @@ export const getVersion = async (versionId: string): Promise<VersionDetail> => {
 }
 
 export const getVersionData = async (versionId: string): Promise<VersionDataResponse> => {
-  const response = await api.get(`/versions/${versionId}/data`)
-  return response.data
+  return checkedResponse<VersionDataResponse>(
+    'getVersionData',
+    versionDataResponseSchema,
+    () => api.get(`/versions/${versionId}/data`)
+  )
 }
 
 export const diffVersions = async (
@@ -430,22 +523,27 @@ export const evaluateQuality = async (
   inputFile: string,
   threshold: number = 0.6
 ): Promise<QualityEvaluationResponse> => {
-  const response = await api.post('/quality/evaluate', {
-    input_file: inputFile,
-    threshold,
-  })
-  return response.data
+  return checkedResponse<QualityEvaluationResponse>(
+    'evaluateQuality',
+    qualityEvaluationResponseSchema,
+    () =>
+      api.post('/quality/evaluate', {
+        input_file: inputFile,
+        threshold,
+      })
+  )
 }
 
 export const dedupData = async (
   inputFile: string,
   threshold: number = 0.9
 ): Promise<DedupResponse> => {
-  const response = await api.post('/quality/dedup', {
-    input_file: inputFile,
-    threshold,
-  })
-  return response.data
+  return checkedResponse<DedupResponse>('dedupData', dedupResponseSchema, () =>
+    api.post('/quality/dedup', {
+      input_file: inputFile,
+      threshold,
+    })
+  )
 }
 
 export const qualityReport = async (

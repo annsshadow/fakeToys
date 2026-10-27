@@ -53,6 +53,21 @@ function respondWith(data: unknown) {
   return data
 }
 
+/**
+ * 同一个 verb 连续多次调用、每次要不同响应时用
+ *
+ * Z 批次给主链路函数接上 zod 校验后，「`respondWith({})` 一把梭」不再成立：
+ * 校验会按各端点的真实契约逐键判型。这里按调用顺序排队响应。
+ */
+function respondWithSequence(...datas: unknown[]) {
+  for (const data of datas) {
+    instance.get.mockResolvedValueOnce({ data })
+    instance.post.mockResolvedValueOnce({ data })
+    instance.put.mockResolvedValueOnce({ data })
+    instance.delete.mockResolvedValueOnce({ data })
+  }
+}
+
 beforeEach(() => {
   instance.get.mockReset()
   instance.post.mockReset()
@@ -141,16 +156,17 @@ describe('写操作鉴权（L233）', () => {
 
 describe('数据管理', () => {
   it('getDataFiles 请求 /data/list 并解包 data', async () => {
-    const payload = [{ name: 'a.json' }]
+    const payload = { files: [{ name: 'a.json', path: 'data/a.json', size: 12 }] }
     respondWith(payload)
 
+    // 校验通过后返回的是**原始** response.data（不是 zod 的 parse 克隆），身份不变
     await expect(api.getDataFiles()).resolves.toBe(payload)
     expect(instance.get).toHaveBeenCalledWith('/data/list')
   })
 
   // A304 / L251：宽档只有备份源那一格在用，所以钉的是「query 挂在路径串上、没有 params 对象」
   it('getBackupSourceCandidates 走 all_files=true 档，且不再传 params', async () => {
-    const payload = [{ name: 'p.json' }]
+    const payload = { files: [{ name: 'p.json', path: 'data/p.json', size: 3 }] }
     respondWith(payload)
 
     await expect(api.getBackupSourceCandidates()).resolves.toBe(payload)
@@ -159,7 +175,7 @@ describe('数据管理', () => {
   })
 
   it('loadData 把 pageSize 映射为 page_size，并带上 search', async () => {
-    respondWith({ items: [] })
+    respondWith({ total: 0, page: 2, page_size: 50, items: [], indices: [] })
 
     await api.loadData('a.json', 2, 50, '关键词')
 
@@ -190,7 +206,7 @@ describe('数据管理', () => {
   })
 
   it('uploadData 以 multipart 提交，字段名必须是 file', async () => {
-    respondWith({ ok: true })
+    respondWith({ success: true, path: 'data/a.json', count: 1 })
     const file = new File(['{}'], 'a.json', { type: 'application/json' })
 
     await api.uploadData(file)
@@ -208,7 +224,7 @@ describe('数据管理', () => {
     // 这一格钉的是「UI 能选到的那档真的发得出去」：后端「显式声明 > 扩展名」，
     // 而 `<input type=file>` 只能给裸文件名，无扩展名/扩展名与内容不符的进料
     // 全靠这个字段救（A132 ③ 的产品面）。字段名拼错 = 后端默默按扩展名走 = 静默失效。
-    respondWith({ ok: true })
+    respondWith({ success: true, path: 'data/mystery.json', count: 2 })
     const file = new File(['a,b\n1,2'], 'mystery.dat', { type: 'application/octet-stream' })
 
     await api.uploadData(file, 'csv')
@@ -236,7 +252,7 @@ describe('数据管理', () => {
 
 describe('数据增强', () => {
   it('startAugmentation 把 camelCase 参数映射为 snake_case 请求体', async () => {
-    respondWith({ task_id: 't1' })
+    respondWith({ success: true, message: '任务已启动' })
 
     await api.startAugmentation('in.json', 'out.json', true, false, true)
 
@@ -250,7 +266,8 @@ describe('数据增强', () => {
   })
 
   it('getProgress / getCheckpoints 分别请求各自端点', async () => {
-    respondWith({})
+    // 两形态互斥（`checkpoint.get_progress`）：空态只有 status 一键
+    respondWithSequence({ status: 'no_checkpoint' }, { checkpoints: [] })
 
     await api.getProgress()
     await api.getCheckpoints()
@@ -262,7 +279,11 @@ describe('数据增强', () => {
 
 describe('数据分析', () => {
   it('analyzeData / visualizeData 把文件名拼进路径', async () => {
-    respondWith({})
+    // 后端三个分析字段都是 Dict[str, Any]，内层不做严格断言
+    respondWithSequence(
+      { coverage_analysis: {}, statistics: {}, dedup_report: {} },
+      { charts: {} }
+    )
 
     await api.analyzeData('a.json')
     await api.visualizeData('b.json')
@@ -274,13 +295,13 @@ describe('数据分析', () => {
 
 describe('版本管理', () => {
   it('getVersions 请求 /versions', async () => {
-    respondWith([])
+    respondWith({ versions: [] })
     await api.getVersions()
     expect(instance.get).toHaveBeenCalledWith('/versions')
   })
 
   it('createVersion 用 params 传 filename、用请求体传 label/description', async () => {
-    respondWith({ id: 'v1' })
+    respondWith({ success: true, version_id: 'v1' })
 
     await api.createVersion('a.json', '标签', '说明')
 
@@ -294,7 +315,7 @@ describe('版本管理', () => {
   })
 
   it('createVersion 把带 & 与 # 的文件名原样交给 params，不做任何字符串拼接', async () => {
-    respondWith({ id: 'v1' })
+    respondWith({ success: true, version_id: 'v1' })
 
     await api.createVersion('a&b#c.json', '标签', '说明')
 
@@ -305,7 +326,8 @@ describe('版本管理', () => {
   })
 
   it('getVersion / getVersionData 命中正确的子路径', async () => {
-    respondWith({})
+    // `getVersion` 本轮未接 zod（§7 Z-FULL），只有 `getVersionData` 吃契约校验
+    respondWithSequence({}, { items: [] })
 
     await api.getVersion('v1')
     await api.getVersionData('v1')
@@ -354,7 +376,16 @@ describe('版本管理', () => {
 
 describe('质量评估', () => {
   it('evaluateQuality 默认阈值 0.6', async () => {
-    respondWith({})
+    respondWith({
+      total_samples: 0,
+      passed_samples: 0,
+      filtered_samples: 0,
+      pass_rate: 0,
+      avg_score: 0,
+      threshold: 0.6,
+      semantic_evaluated: false,
+      effective_weights: [],
+    })
 
     await api.evaluateQuality('a.json')
 
@@ -365,7 +396,13 @@ describe('质量评估', () => {
   })
 
   it('dedupData 默认阈值 0.9（比质量阈值更严）', async () => {
-    respondWith({})
+    respondWith({
+      original_count: 0,
+      deduplicated_count: 0,
+      removed_count: 0,
+      duplicate_groups: 0,
+      kept_indices: [],
+    })
 
     await api.dedupData('a.json')
 
@@ -713,7 +750,7 @@ describe('大块请求的每请求超时', () => {
   })
 
   it('uploadData 把 timeout 作为第三个实参交给 axios', async () => {
-    respondWith({ ok: true })
+    respondWith({ success: true, path: 'data/a.json', count: 1 })
 
     await api.uploadData(new File(['{}'], 'a.json', { type: 'application/json' }))
 
@@ -732,7 +769,7 @@ describe('大块请求的每请求超时', () => {
   })
 
   it('短请求（列表 / 状态）不传 per-request config，继续吃 30 s 默认档', async () => {
-    respondWith({})
+    respondWith({ files: [] })
 
     await api.getDataFiles()
     await api.getServiceStatus()
@@ -927,3 +964,77 @@ describe('系统那一族的请求体与哨兵（L234）', () => {
     expect(sent(1)).toEqual({ path: 'config.yaml' })
   })
 })
+
+/**
+ * 运行时契约校验（Z 批次，计划 §5）
+ *
+ * 静态一侧（zod 键集 vs 后端 `response_model`）由
+ * `src/schemas/main-schemas.conformance.test.ts` 守；这里守**行为**：
+ * 坏响应必须抛、好响应必须原样返回（不是 zod 的裁剪克隆）、可空字段必须放宽。
+ *
+ * 这些用例和上一层的 fixture 改动是同一件事的两面：接 zod 之前，`respondWith({})`
+ * 之类的「形状无关」fixture 全绿，= 契约测试其实没在测契约。
+ */
+describe('运行时契约校验（Z 批次）', () => {
+  it('响应少键时抛可定位的错误，且不把 zod 内部措辞裸透给页面', async () => {
+    // `DataFileInfo` 要求 name/path/size 三键，这里只给 name
+    respondWith({ files: [{ name: 'a.json' }] })
+
+    await expect(api.getDataFiles()).rejects.toThrow(
+      '接口 getDataFiles 的响应不符合契约：字段「files.0.path」（invalid_type）'
+    )
+  })
+
+  it('通过校验后返回原始 response.data，schema 未声明的键不被剥掉', async () => {
+    const payload = { files: [], extra_from_backend: 'keep-me' }
+    respondWith(payload)
+
+    await expect(api.getDataFiles()).resolves.toBe(payload)
+  })
+
+  it('版本 label 可为 null（后端 Optional[str] 且不排除 null）', async () => {
+    respondWith({
+      versions: [
+        {
+          version_id: 'v1',
+          label: null,
+          description: '',
+          created_at: '2026-10-26T10:00:00',
+          item_count: 0,
+        },
+      ],
+    })
+
+    await expect(api.getVersions()).resolves.toMatchObject({
+      versions: [{ version_id: 'v1', label: null }],
+    })
+  })
+
+  it('进度两形态都收：空态 status、任务态 11 字段（无 status）', async () => {
+    respondWithSequence(
+      { status: 'no_checkpoint' },
+      {
+        task_id: 't1',
+        total_items: 10,
+        processed_items: 4,
+        failed_items: 0,
+        progress: 0.4,
+        progress_percent: '40.0%',
+        elapsed_time: '0:00:04',
+        remaining_time: '0:00:06',
+        start_time: '2026-10-26T10:00:00',
+        last_update: '2026-10-26T10:00:04',
+      }
+    )
+
+    await expect(api.getProgress()).resolves.toEqual({ status: 'no_checkpoint' })
+    await expect(api.getProgress()).resolves.toMatchObject({ task_id: 't1', progress: 0.4 })
+  })
+
+  it('进度两形态都不匹配时抛（`{}` 是空转绿的高危形状）', async () => {
+    respondWith({})
+
+    await expect(api.getProgress()).rejects.toThrow('接口 getProgress 的响应不符合契约')
+  })
+})
+
