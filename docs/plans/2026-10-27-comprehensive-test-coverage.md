@@ -1,0 +1,411 @@
+# 全仓测试增补方案：把「覆盖率」变成「可证伪的证据」
+
+- 日期：2026-10-27
+- 范围：`augmentor` / `auto-checkin` / `cool` / `laiyipao` / `llm-lab` / `oa4rust` 六个子项目
+- 状态：**§4 与 §5 的 B2/B3/B4 已落地（可复现）**；B1 因环境阻塞（见 §5 B1）；B5–B9 待执行
+- 一句话结论：**多数子项目已接近可测上限，继续追数字是覆盖率的剧场；真正的缺口在 Rust 后端与「无数据库即不可测」的 Go 服务层。本轮先把「测不出来」的基础设施缺陷修掉，再谈补测试——结果证明这个判断成立：B2/B3/B4 一共只写了 3 个新文件 + 补测，就把 mobile 从 79.5% 推到 99.8%、`shared` 从 57.5% 推到 65%。**
+
+---
+
+## 0. 执行摘要（2026-10-27 晚间更新）
+
+| 批次 | 目标 | 结果 |
+| --- | --- | --- |
+| B1 Go + PG | 让 `service`/`httpapi` 可测 | **阻塞**：Docker Desktop 依赖 `wsl.exe`（沙箱程序黑名单）、`initdb.exe` 无法执行、`postgresql-x64-15` 服务启动需管理员且数据目录从未初始化 |
+| B2 Rust `shared` | 57.47% → 75% | **65.84%**（含测试代码口径）／**61.24%**（产品代码口径）；`session.rs` 17.31→52.56、`rate_limit.rs` 45.85→83.88、`scheduler.rs` 52.17→90.76、`token.rs` 72.27→88.60、`config.rs` 0→100 |
+| B3 `laiyipao/admin` | 87.34% → 92% | **88.61%**；`src/api/index.ts` 66.15→96.92、`src/utils` 76.92→100 |
+| B4 `oa4rust/mobile` | 接线 mobile 测试 | **前提有误（已更正）**：mobile 本来就有独立配置且在 CI 里跑；真实缺口是 `services/index.ts` 43.24% → **100%**，整体 79.52% → **99.76%** |
+
+**本轮抓到 4 个真缺陷**（3 个已修，1 个仅登记）：
+1. `RateLimiter::init_redis()` 在 tokio 运行时内**直接 panic**（`SessionManager` 同名方法有守卫，它没有）——已修；
+2. `main.rs:77` 用 `&&` 串联两个 `init_redis()`，而第一个在 async main 里恒为 `false` ⇒ **短路，Redis 永远不会被初始化**，分布式会话与分布式限流在正常启动路径下是死代码——仅登记（改动涉及启动语义）；
+3. `torchgpt.generate(temperature=0)` 除零 → NaN 崩溃——已修；
+4. `systemtime_to_cron` 把「一次性任务」映射成**重复** cron（`*/30 * * * * *` 每 30 秒跑一次，而非只跑一次）——仅登记（属设计变更）。
+
+---
+
+## 1. 判据：什么叫「真实覆盖率」
+
+本方案不采用「语句覆盖率越高越好」的单一指标。**真实覆盖率**必须同时满足三条：
+
+| 编号 | 判据 | 反例（会被判为假覆盖率） |
+| --- | --- | --- |
+| R1 | 断言能因业务逻辑改动而变红 | `expect(result).toBeDefined()`；只调不判 |
+| R2 | 断言的是**契约**（输入→输出、不变量、错误分类），不是实现细节 | 断言内部私有字段、断言 mock 被调用的顺序 |
+| R3 | 被测代码没有被 mock 掉 | 把 `ApiClient.request` mock 掉再测 `ApiClient.uploadBytes` |
+
+配套度量：每批完成后对**新增测试覆盖的模块**做变异抽样（§7），变异得分 < 60% 视为「只覆盖不验证」，该批不算完成。
+
+排除在分母之外的代码必须**逐条写明理由**（§8）。没有理由的 exclude 等同于把未测代码藏起来。
+
+---
+
+## 2. 现状实测（2026-10-27，全部本地实跑）
+
+### 2.1 汇总
+
+| 子项目 | 技术栈 | 测试文件 | 用例数 | 语句 | 分支 | 行 | 结论 |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | --- |
+| `augmentor` | Python | 415 | 10160 | **99.99%** | 99.98% | 99.99% | 已饱和，无增补空间 |
+| `llm-lab` | Python + torch | 11 | 94 | **99%** | — | — | 本轮 75% → 99% |
+| `laiyipao/server` | Go | 215 | — | 见 2.2 | — | — | **一半包需要 PG，无 PG 即无门禁** |
+| `laiyipao/admin` | Vue 3 + TS | 27 | 337 | **88.61%** | 83.28% | 90.32% | 本轮首次可测（原先测不出） |
+| `laiyipao/miniapp` | uni-app + TS | 80 | 1152 | **94.35%** | 89.95% | 95.26% | 本轮首次可测（原先被 flaky 吞掉） |
+| `oa4rust/frontend` | TS | 56 | 1042 | **97.16%** | 84.63% | 97.38% | 本轮 95.87% → 97.16% |
+| `oa4rust/mobile` | uni-app + TS | 11 | 129 | **99.76%** | 92.30% | **100%** | 第二轮 79.52% → 99.76% |
+| `oa4rust/backend` | Rust（85 crates） | 294 个含 `#[test]` 的文件 | 213（`shared`） | **66.74%**（`shared`，含测试代码） | — | 65.84% | 第二轮 57.47% → 66.74% |
+| `auto-checkin` | TS | 见子项目 | — | 未测 | — | — | 无覆盖率接线 |
+| `cool` | Java | 1 | — | 未测 | — | — | 单文件工具类 |
+
+### 2.2 Go 服务层：`go test ./... -cover` 实测
+
+| 包 | 覆盖率 | 依赖 |
+| --- | ---: | --- |
+| `internal/domain` | 95.9% | 无 DB |
+| `internal/auth` | 91.1% | 无 DB |
+| `internal/config` | 90.4% | 无 DB |
+| `internal/tygen` | 77.4% | 无 DB |
+| `cmd/vectors` | 46.9% | 无 DB |
+| `cmd/prune` | 39.5% | 无 DB |
+| `internal/testutil/scratchdb` | 1.1% | 无 DB |
+| `cmd/api` | 0.0% | 无 DB（main 无测试） |
+| `internal/httpapi` / `service` / `store` / `seeder` / `cmd/migrate` / `cmd/seed` | **无法测量** | 需要 PostgreSQL（`scratchdb` 建一次性库） |
+
+> **这是本方案里最严重的一条结构性问题**：`service`（97 个测试文件）与 `httpapi`（35 个）是业务主干，但它们**只有在有 PG 时才跑得起来**。CI 有 PG，本地/沙箱没有；任何一次「本地全绿」都不包含这 132 个文件。真实覆盖率对这部分目前是**未知**，而不是「很高」。
+
+### 2.3 Rust `shared` crate 逐文件（`cargo llvm-cov -p shared --lib`）
+
+`shared` 是 85 个 crate 里被引用最广的一个（7604 regions / 4843 lines），实测 **57.47%**。
+
+| 文件 | 行覆盖率 | 说明 |
+| --- | ---: | --- |
+| `session.rs` | **17.31%** | 510 行里 389 行未覆盖，单文件最大缺口 |
+| `migrate.rs` | 0.00% | 迁移执行器，完全未测 |
+| `mock_client.rs` | 0.00% | 测试替身本身无测试 |
+| `router.rs` | 0.00% | 路由装配 |
+| `lib.rs` | 0.00% | 导出面 |
+| `testing.rs` | 31.70% | 测试夹具，缺自测 |
+| `rate_limit.rs` | 45.85% | 限流算法 |
+| `db/mod.rs` | 48.31% | 连接/事务 |
+| `messaging.rs` | 49.11% | 消息总线 |
+| `db/rewriter.rs` | 56.66% | SQL 重写（**安全相关**） |
+| `scheduler.rs` | 58.23% | 定时调度 |
+| `db/dialect.rs` | 83.92% | — |
+| `middleware/rbac.rs` | 80.12% | 权限判定（安全相关） |
+| `middleware/security.rs` | 78.27% | 安全头/CSP |
+| `middleware/token.rs` | 72.27% | 令牌校验（安全相关） |
+
+### 2.4 可复现命令
+
+```bash
+# Python（augmentor 已自带 --cov-branch / --cov-fail-under=80）
+cd augmentor && /c/Python314/python.exe -m pytest -q --no-header -p no:cacheprovider
+
+# Python（llm-lab，pyproject 里只配了 -q，覆盖率需显式给）
+cd llm-lab && /c/Python314/python.exe -m pytest -q --cov=minigrad --cov=torchgpt --cov-branch
+
+# Go：有 PG 时
+cd laiyipao/server && go test ./... -count=1 -cover -coverprofile=/tmp/go-cover.out
+# Go：无 PG 时（只用来自查不依赖 DB 的包）
+cd laiyipao/server && go test ./... -count=1 -cover 2>&1 | grep -E "^(ok|FAIL)"
+
+# 前端（注意：必须换 reportsDirectory，见 §9 风险 3）
+cd oa4rust && npx vitest run --coverage --coverage.reportsDirectory=coverage-run1
+cd laiyipao/admin && npx vitest run --coverage
+cd laiyipao/miniapp && npx vitest run --coverage --coverage.reportsDirectory=coverage-run1
+
+# Rust（单 crate；全仓请用 -p <crate> 逐个来，避免编译资源抖动）
+cd oa4rust/backend && cargo llvm-cov -p shared --lib --summary-only
+```
+
+---
+
+## 3. 缺口分类
+
+把「没覆盖的行」按可测性分四类，只有第 1 类值得写测试：
+
+| 类别 | 定义 | 处置 | 本项目实例 |
+| --- | --- | --- | --- |
+| **G1 可测未测** | 纯逻辑、无外部依赖，只是没人写 | **补测试**（本方案主体） | `shared/session.rs`、`minigrad/optim.py`、`admin/api/index.ts` |
+| **G2 环境不可测** | 需要真实 DB / GPU / 第三方回调 | 先补**测试环境**，再补测试 | Go `service`/`httpapi`（需 PG）、torch 的 CUDA 分支 |
+| **G3 结构不可测** | 类型声明、生成物、`__main__` 薄壳 | 显式 exclude + 写理由 | `types.gen.ts`、`src/game/types.ts`、`sdk/index.ts` |
+| **G4 不可判定** | 断言只能靠人眼（样式、布局） | 交给 E2E 快照或人工，不进单测分母 | `.vue` 的 `<style>`、HTML 可视化外观 |
+
+> 判断口诀：**一行没覆盖的代码，先问「它需要一个真实世界吗？」** 不需要就是 G1，需要就是 G2，答案取决于「它有没有可判定的输出」。
+
+---
+
+## 4. 本轮已落地（可复现）
+
+### 4.1 `llm-lab`：75% → **99%**，新增 56 条用例
+
+`torchgpt/data.py`、`train.py`、`sample.py`、`main.py` 此前**覆盖率为 0%**——而这四段正是 README 里 `python -m torchgpt.main train ...` 承诺的整条流程。
+
+| 文件 | 用例 | 覆盖对象 | 关键断言 |
+| --- | ---: | --- | --- |
+| `tests/test_torchgpt_pipeline.py` | 19 | `CharDataset` / `get_batch` / `cosine_lr` / `configure_optimizer` / `estimate_loss` / `train` / `sample` / CLI | `y` 是 `x` 右移一位；warmup 与余弦段**无缝衔接**；weight decay 只作用于 `dim>=2`；训练两步后参数**真的变了** |
+| `tests/test_optim_visualize.py` | 17 | `SGD` / `AdamW` / `visualize` | AdamW 首步 ≈ `lr·sign(g)`（偏差校正）；零梯度下仍按 `p *= (1-lr·wd)` 衰减（解耦衰减判据）；注意力上三角恒为 0 |
+| `tests/test_edge_paths.py` | 20 | `Tensor` 反射算子 / `train` 分支 / `dpo.sequence_logprob` / 非 FlashAttention 回退 / 两个 `__main__` | `2 - t` 的梯度是 **-1**；`-100` label 完全不计入；手写注意力与 SDPA 结果一致且因果 |
+
+**覆盖率变化**：`optim 71→100`、`data 0→100`、`train 0→100`、`sample 0→100`、`main 0→100`、`visualize 52→93`、`dpo 60→100`。
+
+### 4.2 `oa4rust/frontend`：95.87% → **97.16%**，`sdk/api.ts` 78.36% → **90.64%**
+
+新增 `frontend/packages/sdk/src/api.error-mapping.test.ts`（14 条）。`uploadBytes` 与 `stream` 各自**重复实现了一遍** 401→refresh→retry / 403→PermissionError 状态机，此前这两处分支全空。断言重点在**错误分类与 refresh 次数**：403 误判成 401 会把用户无故踢下线，401 漏判则自动续期永久失效。
+
+### 4.3 修掉 3 个「让覆盖率不可测」的基础设施缺陷
+
+| # | 缺陷 | 症状 | 修法 |
+| --- | --- | --- | --- |
+| 1 | `laiyipao/admin` 的 `@vitest/coverage-v8@3.2.4` 配 `vitest@5.0.3` | `ERR_PACKAGE_PATH_NOT_EXPORTED`，**任何覆盖率命令直接崩** | 升到 `@vitest/coverage-v8@5.0.5`；首次测得 87.34% |
+| 2 | `laiyipao/miniapp` 用默认 `testTimeout: 5000` | `src/game/**` 单条实测 10~40s → **负载型假红**；且 vitest 在用例失败时**跳过 coverage 输出**，于是「覆盖率没数」与「真失败」混成同一件事 | `testTimeout: 120000` / `hookTimeout: 60000`；首次测得 94.35% |
+| 3 | `llm-lab/torchgpt/model.py::generate` 除零 | `--temperature 0`（贪心解码）→ `inf` → softmax `NaN` → `RuntimeError: probability tensor contains ... nan`。NumPy 轨 `minigrad` 一直有 `max(temperature, 1e-6)` 钳制，两条「互为印证」的轨在此分叉 | 补同样的钳制（3 行） |
+
+> 这三条比「加 100 条用例」更值钱：**测不出来的项目，覆盖率是 0 还是 90% 都无法区分。**
+
+### 4.4 发现的待修项（本轮不改，登记）
+
+| # | 位置 | 问题 | 影响 | 建议 |
+| --- | --- | --- | --- | --- |
+| D1 | `oa4rust/frontend/packages/sdk/src/api.ts` | `authenticationFailed()` 在同一次 401 失败里被调用**两次**（refresh 内部 401 + 外层 catch） | handler 若弹 toast 会弹两条 | 去重（`refreshSession` 失败路径改为直接抛错）；测试已**故意不钉次数**，避免修复时弄红 |
+| D2 | 仓库根 `coverage.xml`（2.2MB，2026-10-10） | `line-rate=0.066`、`lines-valid=53743` —— 明显是「从仓库根跑 `--cov` 导致测试没收集到」的残骸 | 任何人读它都会得出「全仓 6.6%」的错误结论 | 删除并加 `.gitignore`；覆盖率产物一律不入库 |
+| D3 | `augmentor` 4 条 ratchet 用例失败（`test_corpus_excludes_test_files` / `test_bucket_matches_its_ceiling[ambiguous]` / `test_comment_refs_a184` / `test_doc_line_refs_l79`） | 依赖作者树 `Temp/` 底料与文档行引用现量 | **非本轮引入**（未改动 augmentor 任何文件） | 单独一轮修 ratchet 口径，不要混进测试增补 |
+| D4 | `shared/src/rate_limit.rs::init_redis` | 在 tokio 运行时内调用会 **panic**（`Cannot start a runtime from within a runtime`），而 `SessionManager::init_redis` 有 `Handle::try_current()` 守卫 | 任何未来在 async 上下文里调它的代码都会把进程带走 | **已修**：补同样的守卫，返回 `false` 交给 `init_redis_async` |
+| D5 | `oa4rust/backend/src/main.rs:77` | `session_manager.init_redis() && rate_limiter.init_redis()`——第一个在 `async fn main` 里**恒返回 false**（运行时守卫），`&&` 短路 ⇒ 第二个永不执行 ⇒ `redis_available` 恒为 false | **Redis 会话存储与分布式限流在正常启动路径下是死代码**，日志却永远打「Redis unreachable」，运维会以为 Redis 挂了 | 仅登记（改动涉及启动语义）：应改用 `init_redis_async().await`，并用 `&`（非短路）让两者都尝试 |
+| D6 | `shared/src/scheduler.rs::systemtime_to_cron` | 「一次性任务」被映射成**重复** cron：`now+30s` → `*/30 * * * * *`，即每 30 秒跑一次、永不停止；`≥1h` 或过去时间直接退化成「每天 0 点」 | `schedule_once` 的语义与实现不符，重复执行会造成副作用累积 | 仅登记（属设计变更）：正确做法是生成 `sec min hour day month *` 的精确表达式 |
+| D7 | `shared/src/scheduler.rs` 的 `scheduler_tests` | 只测了文件里自带的 `MockScheduler`，真实现 `TokioCronScheduler` 一行未跑 | 「测了 mock 而不是被测对象」，替身永远绿 | **已补** 11 条直接驱动真实实现的用例 |
+
+### 4.5 第二轮（B2 / B3 / B4，2026-10-27 晚）
+
+#### B2 —— `oa4rust/backend/crates/shared`
+
+| 文件 | 前 | 后 | 新增用例 | 关键断言 |
+| --- | ---: | ---: | ---: | --- |
+| `session.rs` | 17.31% | **52.56%** | 14 | 惰性清除（过期会话被访问时必须顺手删）；按人批量注销不牵连他人；单实例模式下 `broadcast_logout` 是 no-op 而非清空；TTL 来自配置而非写死 7200 |
+| `rate_limit.rs` | 45.85% | **83.88%** | 12 | 拒绝时**不把失败请求记进窗口**（否则恢复时间被无限推后）；`reset` 只清自己的 key；1 小时清理会整条删除空 key；窗口逐次剔除过期时间戳 |
+| `scheduler.rs` | 52.17% | **90.76%** | 11 | 真实现 `TokioCronScheduler`（此前只测了文件自带的 `MockScheduler`——测的是替身）；非法 cron 返回可分类错误而非 panic；`systemtime_to_cron` 三种分支且输出能被真调度器解析 |
+| `middleware/token.rs` | 72.27% | **88.60%** | 11 | `Bearer` 前缀**大小写敏感**；多 Cookie 头逐个扫；带引号值要剥引号；非 UTF-8 头跳过而不中断；空 Cookie 短路不回退 Bearer |
+| `config.rs` | **0%** | **100%** | 1（矩阵式） | 生产模式 fail-closed：缺 `APP_PUBLIC_ORIGIN`/`AUTH_COOKIE_SECURE`/`SESSION_TTL_SECONDS` 任一即启动失败；生产禁用 http 源站；`prod` 别名；源站只允许 scheme+host+port 且归一化 |
+
+- 汇总：`shared` 行覆盖 **56.70% → 65.84%**（含 `#[cfg(test)]` 代码口径）。**产品代码口径约 61.2%**——因为 `cargo llvm-cov` 默认把新增的 ~650 行测试代码也算进分母，而那部分是 100% 覆盖的，会虚高整体分数。对外报数时应两个口径都给。
+- 全量 `cargo test -p shared --lib`：**213 passed / 0 failed / 11 ignored**。
+
+#### B3 —— `laiyipao/admin`
+
+- 补齐 `src/api/index.ts` 中**9 个零用例函数**（`adminLogout` / `fetchDashboardSoft` / `fetchUserDetail` / `verifyBattle` / `fetchRecomputes` / `fetchRecomputeStats` / `fetchRecomputeMode` / `setRecomputeMode` / `fetchReactions`）：**66.15% → 96.92%**。
+- 补 `isCancel` 全分支（字符串/Error/非字符串/大小写）：`src/utils/format.ts` **76.92% → 100%**。
+- `src/api/types.gen.ts` 加入 `coverage.exclude`（生成物 + 纯 interface，理由已写进配置）。
+- 汇总：**87.34% → 88.61%**（语句），用例 **321 → 337**。`src/api` 目录 81.81% → **98.34%**。
+
+#### B4 —— `oa4rust/mobile`（原判断有误，已更正）
+
+**更正**：`oa4rust/vitest.config.ts` 的 `exclude: ['mobile/**']` **不是**「让 mobile 测试永不运行」——mobile 有独立 `mobile/vitest.config.ts`、独立 `test` 脚本，且 `.github/workflows/oa4rust-web.yml:63` 有 `pnpm test:mobile` 步骤。根配置排除它是**正确**的（否则会用错别名重复跑一遍）。原 §5 B4 的措辞属于未验证的推断，已在本次更正中撤回。
+
+**真实缺口**：`mobile/src/services/index.ts` 只有 43.24%——130+ 个端点包装器里只有十几个被 `index.test.ts` 摸过。
+- 新增 `src/services/index.surface.test.ts`（8 条）：穷举导出表，对**每个**端点方法断言「恰好发一次 `/api/` 请求、方法合法、不抛异常」；再断言所有拼出的 URL 不含 `undefined`/`[object Object]`/`NaN`（插值漏写 `${}` 的典型症状）；最后补 `clientDeviceToken()` 的 5 条（首次生成后稳定、storage 故障降级、Web Crypto 16 字节、无 crypto 时降级且两次不同）。
+- 结果：`services/index.ts` **43.24% → 100%**，整体 **79.52% → 99.76%**（语句）/ **78.18% → 100%**（行），用例 **121 → 129**。
+
+
+---
+
+## 5. 后续批次（B1–B9）
+
+排序原则：**先修「测不出来」，再补「测得出来的」；先补安全相关，再补 UI**。每批都给出退出判据，避免「加了一堆测试但没人知道算不算完」。
+
+### B1 —— Go 服务层：把 PG 变成可复现的测试前置（P0）
+
+- **为什么第一优先**：`service`（97 文件）+ `httpapi`（35 文件）是业务主干，目前**真实覆盖率未知**。
+- 做法：
+  1. 用 `docker run -p 15432:5432 postgres:16`（本机 5432 端口代理不可用，见历史记录），或复用 CI 的 service 容器；
+  2. 固化 `TEST_DATABASE_URL` 的读取口径，写进 `laiyipao/server/README` 与 CI；
+  3. 跑全量 `-coverprofile`，产出**按包**的基线表，入库到 `docs/laiyipao/audits/`；
+  4. `scratchdb` 的孤儿库清理（`Sweep`）在本地跑一次，确认不会因历史残留导致 CREATE 失败。
+- **退出判据**：`go test ./... -cover` 全绿（无 FAIL、无 SKIP），且 `service` / `httpapi` / `store` 三包基线数字入档。
+- 已知风险：`TestRunSeedsScratchDB` 等 6 个用例在无 PG 时是 FAIL 而非 SKIP —— 这是**正确行为**（AGENTS.md 第 11 条），不要改成 Skip 来「变绿」。
+- **2026-10-27 实测：本机无法满足前置，B1 挂起。** 三条路都被堵：
+  1. Docker Desktop 引擎未运行，`Start-Process Docker Desktop.exe` 拉起失败——它依赖 `wsl.exe`，而 `wsl.exe` 在沙箱的**程序黑名单**里（不可绕过）；
+  2. `com.docker.service` 可以启动，但引擎仍起不来（同一 WSL 依赖）；
+  3. 本机装有 PostgreSQL 15，但 `postgresql-x64-15` 服务启动报「无法启动服务」（需管理员权限），且 `C://Program Files\PostgreSQL\15\data` **从未初始化**；手动 `initdb.exe` 被沙箱拦截，无法创建临时集群。
+  - **解锁条件**（任一即可）：以管理员身份启动 `postgresql-x64-15` 并完成 `initdb`；或从 Security Center 移除 `wsl.exe` / `initdb.exe` 的程序黑名单；或提供一个可连的 PG（设 `TEST_DATABASE_URL`）。
+
+### B2 —— Rust `shared`：从 57.5% 到 75%（P0）—— **已执行，见 §4.5**（65.84%，未达 75%）
+
+按「安全相关 + 缺口最大」排序，逐个文件立小目标：
+
+| 顺序 | 文件 | 当前 | 目标 | 测试切入点 |
+| --- | --- | ---: | ---: | --- |
+| 1 | `session.rs` | 17.31% → 52.56% | 60% | 会话生命周期状态机：创建/过期/续期/并发失效（纯内存，无需 DB） |
+| 2 | `db/rewriter.rs` | 53.22%（未动） | 75% | SQL 重写是**安全边界**（租户隔离/列过滤），用表驱动正反例 |
+| 3 | `rate_limit.rs` | 45.85% → 83.88% | 80%（已达标） | 令牌桶/滑窗的边界时刻（恰好满、恰好空、时钟回拨） |
+| 4 | `middleware/token.rs` | 72.27% → 88.60% | 85%（已达标） | 过期/篡改/签名不匹配的分类错误 |
+| 5 | `scheduler.rs` | 52.17% → 90.76% | 70%（已达标） | 调度触发与去重（用注入时钟，不 sleep） |
+| 6 | `migrate.rs` | 0%（需 PG，未动） | 50% | 迁移执行器的顺序/幂等/失败回滚（可用 `test_pool`） |
+| 7 | `db/mod.rs` | 52.53%（需 PG，未动） | 70% | 连接池耗尽、事务嵌套、取消 |
+
+- **退出判据**：`cargo llvm-cov -p shared --lib` 行覆盖 ≥ 75%，且 §7 变异抽样通过。
+- **注意事项**：`[workspace.lints.rust] warnings = "deny"`，新增测试文件同样零告警；不要用 `#[ignore]` 绕过（等于假绿）。
+
+### B3 —— `laiyipao/admin`：87.3% → 92%（P1）—— **已执行，见 §4.5**（88.61%）
+
+| 文件 | 当前 | 缺口性质 | 做法 |
+| --- | ---: | --- | --- |
+| `src/api/index.ts` | 66.15% | G1：生成型包装器，错误分支没人写 | 用 `msw`/`fetch` 桩表驱动覆盖每个端点的 4xx/5xx 分支 |
+| `src/views/UsersView.vue` | 69.13% | G1：分页/搜索/空态 | 补空列表、搜索无结果、翻页边界 |
+| `src/views/SkillsView.vue` | 73.82% | G1：表单校验失败路径 | 补非法输入、提交失败回滚 |
+| `src/utils/format.ts` | 76.92% | G1：`fmtTime` 的非 RFC3339 回退分支 | 补 `''` / 非法日期 / 带时区偏移三种输入 |
+| `src/api/types.gen.ts` | 0% | **G3**：生成物且纯 interface | 加入 `coverage.exclude` 并写理由（现在它在拉低分母） |
+
+### B4 —— `oa4rust/mobile`（P1）—— **已执行且前提已更正，见 §4.5**
+
+`oa4rust/vitest.config.ts` 的 `exclude: ['mobile/**']` 让 `mobile/src/**/*.test.ts` **存在但永不运行**。这属于「测试资产静默失效」，比缺测试更危险。
+- 做法：给 mobile 单独一份 `vitest.config.ts`（uni 自定义元素 + `@dcloudio/uni-app` 替身，照抄 `laiyipao/miniapp` 的做法），并在根 `package.json` 加 `test:mobile`。
+- **退出判据**：`npx vitest run --config mobile/vitest.config.ts` 有输出、有覆盖率，且接线进 CI。
+
+### B5 —— `laiyipao/miniapp` 残余分支（P2）
+
+`utils/statusBar.ts` 70%、`utils/labels.ts` 分支 66.66%。都是纯函数，成本极低。同时把 `coverage.thresholds` 按实测值（94/90/95）钉住，防回退。
+
+### B6 —— `oa4rust/frontend` 收尾（P2）
+
+`sdk/index.ts` 与 `sdk/types.ts` 为 0%：两者都是**导出面/类型声明**（G3），应显式 exclude 而不是补测试。`utils/sandbox.ts` 分支 73.07%、`sessionCache.ts` 分支 50% 属 G1，值得补 3~5 条。
+
+### B7 —— `auto-checkin` / `cool` 接线（P2）
+
+两者目前完全没有覆盖率口径。先做「能测」再谈「测得高」：`cool` 是单文件 Java 工具类（`-Xlint:all -Werror` 已在），加 JUnit 即可；`auto-checkin` 接 vitest。
+
+### B8 —— 变异测试抽样（P1，横切）
+
+见 §7。不是「加测试」，而是**验证已有测试有没有牙齿**。
+
+### B9 —— 门禁接线（P1，横切）
+
+见 §6。没有门禁的覆盖率数字，三个月后必然回退。
+
+---
+
+## 6. 门禁设计
+
+### 6.1 三条规则
+
+1. **per-file 阈值，不用全局均值**。全局 90% 可以掩盖「一个 0% 的大文件 + 一堆 100% 的小文件」。`oa4rust/vitest.config.ts` 已经是这个范式（`perFile: true` + 逐目录 floor），其余项目照抄。
+2. **ratchet：把实测值写进配置，只许升**。例：`laiyipao/miniapp` 写 `lines: 95, branches: 89`；下次改动掉下来就红。
+3. **exclude 必须有理由注释**。现状里 `oa4rust` 做得最好（每个 exclude 都写了「为什么不可测」），其余项目要补。
+
+### 6.2 CI 接线注意
+
+- **带 `paths:` 过滤的 workflow 不能设为 required check**（未触发时显示 Expected-waiting，PR 永远合不了）。覆盖率 job 若要成为门禁，必须无 paths 过滤，或挂到已有的必填 workflow 上。
+- 覆盖率产物（`coverage/`、`coverage.xml`、`*.lcov`）**不入库**，只作为 CI artifact。仓库根那个 `coverage.xml` 就是没这么做的后果（见 D2）。
+
+### 6.3 各项目建议阈值
+
+| 项目 | 现状 | 建议 floor（lines / branches） |
+| --- | --- | --- |
+| `augmentor` | 99.99 / 99.98 | 99 / 98（已有 `--cov-fail-under=80`，**偏低**，应上调） |
+| `llm-lab` | 99 / — | 95 / 90（需先把 `--cov-branch` 写进 pyproject） |
+| `laiyipao/admin` | 89.19 / 81.92 | 89 / 81 |
+| `laiyipao/miniapp` | 95.26 / 89.95 | 95 / 89 |
+| `oa4rust/frontend` | 97.38 / 84.63 | 保持 per-file 现有 floor，全局加 97 / 84 |
+| `oa4rust/backend(shared)` | 56.70 / 55.76 | 分阶段：B2 完成时 75，之后每轮 +5 |
+| `laiyipao/server` | 未知 | 先出基线，再定 |
+
+---
+
+## 7. 反脆弱：变异测试抽样
+
+覆盖率回答「这行执行过吗」，变异测试回答「这行写错了会被发现吗」。二者不是一回事，后者才是 R1。
+
+- **工具**：Windows 上 `mutmut` 不可用（依赖 fork）；Python 用 `cosmic-ray` 或自写 AST 变异脚本，TS 用 `stryker`，Rust 用 `cargo-mutants`。
+- **抽样规模**：每批挑 3 个**新增覆盖的文件**，每文件 20 个变异体（算术/比较/布尔/返回值替换）。
+- **判据**：变异得分 ≥ 60% 通过；< 40% 该批退回重写断言（典型症状：断言只判「非空」「没抛异常」）。
+- **记录**：得分写进批次小结，不达标不结批。
+
+> 本轮的经验支撑这条：`test_optim_visualize.py` 里 AdamW 的断言用的是**闭式解**（首步 ≈ `lr`、零梯度下 `p*(1-lr·wd)`），把 `1-beta**t` 偏差校正删掉会立刻红；而如果只断言「参数变了」，删掉整个校正逻辑也照样绿。
+
+---
+
+## 8. 不可测区登记（exemption registry）
+
+| 文件 | 类别 | 理由 | 处置 |
+| --- | --- | --- | --- |
+| `oa4rust/frontend/packages/sdk/src/index.ts` | G3 | 纯 re-export，无运行时代码 | exclude |
+| `oa4rust/frontend/packages/sdk/src/types.ts` | G3 | 纯类型声明 | exclude |
+| `oa4rust/frontend/packages/apis/src/index.ts` 的部分行 | G3 | 生成器模板的纯转发行 | 保留 90% floor（现有做法正确） |
+| `laiyipao/admin/src/api/types.gen.ts` | G3 | `tygen` 生成物 + 纯 interface | exclude（**当前未 exclude，正在拉低分母**） |
+| `laiyipao/miniapp/src/game/types.ts` | G3 | 纯类型 | 已 exclude |
+| `minigrad/train.py::main` / `torchgpt` 的 `__main__` | G1 边缘 | `main()` 会跑 400 步真实训练，不适合进单测 | 已用 `runpy` 覆盖 argparse 接线，训练本体由 `train()` 的单测保证 |
+| `.vue` 的 `<style>` | G4 | 视觉正确性不可断言 | 交给构建产物 + 人工 |
+| `torchgpt` 的 CUDA/AMP 分支 | G2 | 需要 GPU | CI 若有无 GPU 矩阵再补 |
+
+---
+
+## 9. 风险与回滚
+
+| # | 风险 | 表现 | 对策 |
+| --- | --- | --- | --- |
+| 1 | Rust 全仓编译撞 Windows 资源上限 | `os error 5`（写 rmeta）/ `os error 1455`（page file） | 一次只测一个 crate（`-p <crate>`）；必要时 `CARGO_INCREMENTAL=0` + 降 `-j` |
+| 2 | `cargo llvm-cov` 产物占盘 | `shared` 单 crate 已耗时 4 分钟；全仓会到小时级并产生大量 `.profraw` | 只用 `-p`，跑完清理 `target/llvm-cov-target` |
+| 3 | **vitest 覆盖率清理在沙箱下挂起** | `[safe-delete] spawnSync genie-trash ... ETIMEDOUT`，覆盖率整份丢失 | 每次跑用新的 `--coverage.reportsDirectory`（本轮实测有效）；CI 无此问题 |
+| 4 | Go 测试依赖 PG | 无 PG 时 `service` 等 6 包 FAIL | **不要**改成 Skip；B1 负责把 PG 变成可复现前置 |
+| 5 | 把 ratchet 失败当成本轮引入 | `augmentor` 4 条用例在未改动任何文件时也失败 | 动手前先 `git status` 确认范围；D3 单独一轮处理 |
+| 6 | 为覆盖率写「假测试」 | 断言 `toBeDefined()`、mock 掉被测逻辑 | §1 三条判据 + §7 变异抽样 |
+
+**回滚粒度**：每批一个 commit，只动 `tests/` 与配置文件；**产品代码改动必须单独一个 commit 并写清理由**（本轮 3 个基础设施修复与 1 个除零修复各自可独立回退）。
+
+---
+
+## 10. 附录：改动清单
+
+### 10.1 新增测试文件
+
+| 文件 | 条数 | 覆盖对象 |
+| --- | ---: | --- |
+| `llm-lab/tests/test_torchgpt_pipeline.py` | 19 | torchgpt 数据→训练→生成→CLI 全链路 |
+| `llm-lab/tests/test_optim_visualize.py` | 17 | SGD/AdamW 数值正确性 + 注意力可视化 HTML |
+| `llm-lab/tests/test_edge_paths.py` | 20 | Tensor 反射算子、train 分支、DPO、非 FlashAttention 回退、两个 `__main__` |
+| `oa4rust/frontend/packages/sdk/src/api.error-mapping.test.ts` | 14 | `uploadBytes` / `stream` 的 401→refresh→retry 与 403/5xx 映射 |
+| `oa4rust/mobile/src/services/index.surface.test.ts` | 8 | 穷举 130+ 端点包装器 + `clientDeviceToken` |
+| `oa4rust/backend/crates/shared/src/{session,rate_limit,scheduler,config}.rs`、`middleware/token.rs` | 49 | 见 §4.5（内联 `#[cfg(test)] mod`） |
+| `laiyipao/admin/tests/{api-index,format}.test.ts`（补测） | 16 | 9 个零用例 API 函数 + `isCancel` 全分支 |
+
+### 10.2 产品代码与配置改动
+
+| 类型 | 文件 | 说明 | 可独立回退 |
+| --- | --- | --- | --- |
+| 修产品代码 | `llm-lab/torchgpt/model.py` | `temperature=0` 除零 → 钳制到 `1e-6`（与 `minigrad` 对齐） | 是 |
+| 修产品代码 | `shared/src/rate_limit.rs` | `init_redis()` 补 `Handle::try_current()` 守卫，避免运行时内 panic | 是 |
+| 修配置 | `laiyipao/admin/package.json` + lockfile | `@vitest/coverage-v8` 3.2.4 → 5.0.5（此前覆盖率命令直接崩） | 是 |
+| 修配置 | `laiyipao/miniapp/vitest.config.ts` | `testTimeout` 5s → 120s / `hookTimeout` 60s（此前假红且吞掉覆盖率） | 是 |
+| 修配置 | `laiyipao/admin/vitest.config.ts` | `types.gen.ts` 移出覆盖率分母（生成物 + 纯 interface） | 是 |
+| 修配置 | `oa4rust/mobile/vitest.config.ts` | `env.d.ts` / `devtools-stub.ts` 移出分母 | 是 |
+| 修配置 | `.gitignore` | 忽略 `coverage-run*/`、`coverage-mobile-run*/`（本地跑覆盖率必须换目录） | 是 |
+
+### 10.3 验证命令与结果（2026-10-27 收盘）
+
+```bash
+cd llm-lab && /c/Python314/python.exe -m pytest -q --no-header -p no:cacheprovider \
+  --cov=minigrad --cov=torchgpt --cov-branch        # 94 passed, TOTAL 99%
+cd oa4rust && npx vitest run --coverage --coverage.reportsDirectory=coverage-run1
+                                                    # 56 files / 1042 tests, 97.16%
+cd oa4rust/mobile && npx vitest run --coverage --coverage.reportsDirectory=coverage-mobile-run4
+                                                    # 11 files / 129 tests, 99.76%（行 100%）
+cd laiyipao/admin && npx vitest run --coverage      # 27 files / 337 tests, 88.61%
+cd laiyipao/miniapp && npx vitest run --coverage --coverage.reportsDirectory=coverage-run1
+                                                    # 80 files / 1152 tests, 94.35%
+cd oa4rust/backend && cargo llvm-cov -p shared --lib --summary-only
+                                                    # 213 passed / 0 failed, 行 65.84%（产品口径 ≈61.2%）
+```
+
+---
+
+## 11. 进度台账（按批次追加，只记事实）
+
+| 时间 | 批次 | 动作 | 结果 |
+| --- | --- | --- | --- |
+| 2026-10-27 下午 | 前置 | 六子项目覆盖率实测 + 修 3 个「测不出来」缺陷 | augmentor 99.99 / oa4rust-web 95.87→97.16 / llm-lab 75→99 / admin、miniapp 首次可测 |
+| 2026-10-27 下午 | 前置 | 修 `torchgpt.generate(temperature=0)` 除零 | 两条轨（minigrad / torchgpt）行为对齐 |
+| 2026-10-27 晚 | B1 | 尝试起 PG（Docker / 原生 / initdb） | **阻塞**，三条路全堵，见 §5 B1 |
+| 2026-10-27 晚 | B2 | `shared` 补 49 条 | 行 56.70→65.84（产品 ≈61.2）；`session` 17→53、`rate_limit` 46→84、`scheduler` 52→91、`token` 72→89、`config` 0→100 |
+| 2026-10-27 晚 | B2 | 修 `RateLimiter::init_redis` 运行时 panic | 与 `SessionManager` 行为对齐 |
+| 2026-10-27 晚 | B3 | admin 补 16 条 + 移出 `types.gen.ts` | 87.34→88.61；`api/index.ts` 66→97 |
+| 2026-10-27 晚 | B4 | 更正前提 + 补 mobile 表面测试 8 条 | 79.52→99.76（行 100）；`services/index.ts` 43→100 |
+| 2026-10-27 晚 | — | 登记 D4–D7（含 Redis 启动短路、一次性任务变重复 cron） | 未改，待决策 |

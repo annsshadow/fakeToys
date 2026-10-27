@@ -29,6 +29,13 @@ oa4rust/mobile/coverage/
 oa4rust/mobile/coverage-mobile/
 augmentor/web/coverage/
 
+# vitest 覆盖率报告的「带序号目录」变体。
+# 本机（沙箱 safe-delete shim）删除已存在的 coverage/ 会 ETIMEDOUT，导致整份报告丢失，
+# 所以本地验证时改用 `--coverage.reportsDirectory=coverage-runN` 逐个新目录；
+# 这些目录同样是产物，一律不入库。
+coverage-run*/
+coverage-mobile-run*/
+
 # IDE
 .idea/
 .vscode/
