@@ -101,6 +101,28 @@ def test_adamw_first_step_is_about_lr_when_decay_disabled():
     assert opt.v[0][0] == pytest.approx(0.05)  # (1-0.95)*1
 
 
+def test_adamw_constant_gradient_moves_exactly_lr_every_step():
+    """恒定梯度下，偏差校正后**每一步**的位移都必须恰好等于 lr。
+
+    为什么不能只验第一步（变异测试抓出来的）：``m/(1-b1**t)`` 在 t=1 时
+    分母是 ``1-b1``，与「写死成 ``1-b1``」完全等价 —— 把指数去掉，
+    只验第一步的用例照样全绿（实测 M1 变异体存活 17/17）。
+    从第二步起两者才分叉：t=2 时正确分母是 0.19，写死成 0.1 会让步长变成 1.9 倍。
+
+    因此这里连走 5 步，断言每一步位移都 == lr（恒定梯度下 Adam 的标准行为）。
+    """
+    p = Tensor(np.array([10.0]))
+    p.grad = np.array([1.0])
+    opt = AdamW([p], lr=0.1, weight_decay=0.0)
+
+    previous = p.data[0]
+    for step in range(1, 6):
+        opt.step()
+        delta = previous - p.data[0]
+        assert delta == pytest.approx(0.1, abs=1e-6), f"第 {step} 步位移 {delta}，应为 0.1"
+        previous = p.data[0]
+
+
 def test_adamw_weight_decay_is_decoupled_from_gradient():
     """零梯度时权重仍按 p *= (1 - lr*wd) 衰减 —— 解耦衰减的直接判据。
 
