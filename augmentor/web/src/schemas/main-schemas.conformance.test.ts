@@ -5,13 +5,25 @@
  *
  * `services/api.ts` 的 zod 校验解决的是「运行时形状不对就抛」，但**schema 自己写错**
  * 时它抓不到——schema 与后端一致地错、或者把必填写成可选，`safeParse` 照样绿。
- * 本文件的判据是：把 `augmentor/api` 下路由文件的 `class X(BaseModel)` 字段名与
- * 可选性**直接解析出来**，和 zod 的 key 集逐键比对。这样 zod 的 ground truth
- * 不靠人复述，而是后端源码本身。
+ * 本文件的判据是：把 `augmentor/api` 下路由文件的响应模型字段名与可选性**直接解析出来**，
+ * 和 zod 的 key 集逐键比对。这样 zod 的 ground truth 不靠人复述，而是后端源码本身。
  *
- * 本机没有 augmentor 的 Python 解释器（`fastapi`/`pydantic` 均不可用，见计划 §8），
+ * 本机没有 augmentor 的 Python 运行时（`fastapi`/`pydantic` 均不可用，见计划 §8），
  * 所以不走 `TestClient` 生成真实响应——那一路的运行时证据由后端的 pytest 套件提供，
  * 本文件只守「两侧声明是否同形」。
+ *
+ * ## Z-FULL（10-27 计划 §3）：覆盖面从 15 个模型扩到全部 85 个
+ *
+ * `full-schemas.ts` 每个 schema 上方那行注释就是它与后端类的映射
+ * （`文件:行号 → 类名`），本文件**直接读那行注释**建表，而不是手抄 70 条
+ * ——手抄的映射会在后端搬类时静默失效，而注释就在被守卫的文件里。
+ *
+ * 同时补上三类此前解析不到的响应模型：
+ * - **继承**：`ConfigUpdateResponse(MessageResponse)` / `VersionDetailResponse(VersionInfo)`
+ *   ⇒ 基类字段先合并，再比键集；
+ * - **dataclass**：`AuditReport`（`augmentor/audit.py`）不是 pydantic 类，
+ *   但 FastAPI 支持 dataclass 作 `response_model`，字段形状同一套解析；
+ * - **路由覆盖**：扫 `response_model=` 的类名，要求每个都有 schema（防「新端点没接线」）。
  *
  * ## 防恒真的三道锁
  *
@@ -19,17 +31,15 @@
  *    返回 `null` 而不是空数组（空数组会让「⊆」永远成立）。
  * 2. **字面量锚点**：`VersionInfo` 的键集写成字面量数组，解析器若退化成空转立刻红。
  * 3. **反向注入**：给键集人为多塞/少塞一个键，断言比对函数真的能报出差异。
- *
- * 只覆盖本批接了 zod 的 13 个响应模型（`dataFileInfoSchema` 是
- * `dataFileListResponseSchema` 的元素，单独列一行）。
  */
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
 
+import * as fullSchemas from './full-schemas'
 import {
   analyzeResponseSchema,
   augmentProgressSchema,
@@ -48,14 +58,22 @@ import {
   visualizeResponseSchema,
 } from './main-schemas'
 
-/** `augmentor/api`：本文件在 `augmentor/web/src/schemas/`，上三级就是 `augmentor/` */
-const API_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '../../../api')
+/** `augmentor/`：本文件在 `augmentor/web/src/schemas/`，上三级就是项目根 */
+const AUGMENTOR_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '../../..')
+/** `augmentor/api`：路由与 schemas.py 的根 */
+const API_DIR = resolve(AUGMENTOR_DIR, 'api')
 
-/** pydantic 模型里的一个字段 */
+/** pydantic / dataclass 模型里的一个字段 */
 interface ModelField {
   name: string
   /** 有 `= 默认值`（含 `= None`）⇒ 键可能缺席；无默认值 ⇒ 响应里恒在 */
   hasDefault: boolean
+}
+
+/** 一个类的解析结果（含继承合并后的字段） */
+interface ParsedModel {
+  fields: ModelField[]
+  bases: string[]
 }
 
 /**
@@ -65,10 +83,19 @@ interface ModelField {
  * 每字段一行注解、docstring 用 `"""`。解析不到类时返回 `null`——**不返回空数组**，
  * 空数组会让后续的集合包含判断恒真。
  */
-function parseModelFields(source: string, className: string): ModelField[] | null {
+function parseOwnFields(source: string, className: string): ParsedModel | null {
   const lines = source.split(/\r?\n/)
-  const start = lines.findIndex((line) => line.startsWith(`class ${className}(`))
+  // 两种类头都要认：pydantic 的 `class X(BaseModel):` 与 dataclass 的 `class X:`
+  const start = lines.findIndex((line) => new RegExp(`^class\\s+${className}\\s*(\\(|:)`).test(line))
   if (start === -1) return null
+
+  const header = /^class\s+\w+\s*(?:\(([^)]*)\))?\s*:/.exec(lines[start])
+  const bases = header?.[1]
+    ? header[1]
+        .split(',')
+        .map((base) => base.trim())
+        .filter((base) => base.length > 0)
+    : []
 
   const fields: ModelField[] = []
   let inDocstring = false
@@ -96,7 +123,64 @@ function parseModelFields(source: string, className: string): ModelField[] | nul
     fields.push({ name, hasDefault: annotation.includes('=') })
   }
 
-  return fields
+  return { fields, bases }
+}
+
+/**
+ * `{类名: {file, source}}` —— 解析继承时要跨文件找基类
+ *
+ * 只扫 `augmentor/api/**` 与 Python 包内的 `augmentor/augmentor/audit.py`（dataclass
+ * 响应模型）。同一类名出现两次是案面出了歧义，直接抛错而不是让后一个静默覆盖。
+ */
+function pythonClassIndex(): Map<string, { file: string; source: string }> {
+  const index = new Map<string, { file: string; source: string }>()
+  const files = readdirSync(API_DIR, { recursive: true, encoding: 'utf8' })
+    .filter((name) => name.endsWith('.py'))
+    .map((name) => resolve(API_DIR, name))
+  // dataclass 响应模型在 Python 包内（`augmentor/augmentor/audit.py`），路径按注释写法解析
+  files.push(resolve(AUGMENTOR_DIR, 'augmentor/audit.py'))
+
+  for (const path of files) {
+    const source = readFileSync(path, 'utf8')
+    for (const match of source.matchAll(/^class\s+(\w+)\s*(?:\(|:)/gm)) {
+      const name = match[1]
+      if (index.has(name)) {
+        throw new Error(`类名 ${name} 在 ${path} 与 ${index.get(name)!.file} 重复`)
+      }
+      index.set(name, { file: path, source })
+    }
+  }
+  return index
+}
+
+const CLASS_INDEX = pythonClassIndex()
+
+/** 递归解析字段：基类字段在前、自身字段在后（与 pydantic 的序列化顺序一致） */
+function parseModelFields(className: string): ModelField[] | null {
+  const resolveClass = (name: string, seen: Set<string>): ModelField[] | null => {
+    if (seen.has(name)) return null // 循环继承是坏案面：判 null，让上面的断言响
+    seen.add(name)
+    const entry = CLASS_INDEX.get(name)
+    if (!entry) return null
+    const parsed = parseOwnFields(entry.source, name)
+    if (!parsed) return null
+    const inherited: ModelField[] = []
+    for (const base of parsed.bases) {
+      if (base === 'BaseModel' || base === 'object') continue
+      const baseFields = resolveClass(base, seen)
+      if (baseFields === null) return null
+      inherited.push(...baseFields)
+    }
+    return [...inherited, ...parsed.fields]
+  }
+  return resolveClass(className, new Set())
+}
+
+/** 某个类定义所在文件里，`class <name>(` 的行号（注释里的映射必须与它一致） */
+function classLine(source: string, className: string): number | null {
+  const lines = source.split(/\r?\n/)
+  const idx = lines.findIndex((line) => new RegExp(`^class\\s+${className}\\s*(\\(|:)`).test(line))
+  return idx === -1 ? null : idx + 1
 }
 
 /**
@@ -147,45 +231,83 @@ function acceptsMissing(schema: z.ZodType, key: string): boolean {
 interface ModelCase {
   schema: z.ZodType
   className: string
-  /** 相对 `augmentor/api/` 的路径 */
+  /** 相对 `augmentor/` 的路径 */
   file: string
+  /** 注释里声明的行号（仅生成的 full-schemas 有） */
+  line?: number
 }
 
+/** 主链路 15 个（Z 批次）——schema 变量名与类名不同名，必须显式列 */
 const MODELS: ModelCase[] = [
-  { schema: dataFileInfoSchema, className: 'DataFileInfo', file: 'routes/data.py' },
-  { schema: dataFileListResponseSchema, className: 'DataFileListResponse', file: 'routes/data.py' },
-  { schema: dataPageResponseSchema, className: 'DataLoadResponse', file: 'routes/data.py' },
-  { schema: uploadResponseSchema, className: 'DataUploadResponse', file: 'routes/data.py' },
-  { schema: analyzeResponseSchema, className: 'DatasetAnalysisResponse', file: 'routes/data.py' },
-  { schema: visualizeResponseSchema, className: 'VisualizeResponse', file: 'routes/data.py' },
-  { schema: startAugmentResponseSchema, className: 'MessageResponse', file: 'schemas.py' },
-  { schema: checkpointListResponseSchema, className: 'CheckpointListResponse', file: 'routes/augment.py' },
-  { schema: augmentProgressSchema, className: 'AugmentProgressResponse', file: 'routes/augment.py' },
-  { schema: versionInfoSchema, className: 'VersionInfo', file: 'routes/version.py' },
-  { schema: versionListResponseSchema, className: 'VersionListResponse', file: 'routes/version.py' },
-  { schema: createVersionResponseSchema, className: 'VersionCreateResponse', file: 'routes/version.py' },
-  { schema: versionDataResponseSchema, className: 'VersionDataResponse', file: 'routes/version.py' },
+  { schema: dataFileInfoSchema, className: 'DataFileInfo', file: 'api/routes/data.py' },
+  {
+    schema: dataFileListResponseSchema,
+    className: 'DataFileListResponse',
+    file: 'api/routes/data.py',
+  },
+  { schema: dataPageResponseSchema, className: 'DataLoadResponse', file: 'api/routes/data.py' },
+  { schema: uploadResponseSchema, className: 'DataUploadResponse', file: 'api/routes/data.py' },
+  { schema: analyzeResponseSchema, className: 'DatasetAnalysisResponse', file: 'api/routes/data.py' },
+  { schema: visualizeResponseSchema, className: 'VisualizeResponse', file: 'api/routes/data.py' },
+  { schema: startAugmentResponseSchema, className: 'MessageResponse', file: 'api/schemas.py' },
+  {
+    schema: checkpointListResponseSchema,
+    className: 'CheckpointListResponse',
+    file: 'api/routes/augment.py',
+  },
+  {
+    schema: augmentProgressSchema,
+    className: 'AugmentProgressResponse',
+    file: 'api/routes/augment.py',
+  },
+  { schema: versionInfoSchema, className: 'VersionInfo', file: 'api/routes/version.py' },
+  { schema: versionListResponseSchema, className: 'VersionListResponse', file: 'api/routes/version.py' },
+  {
+    schema: createVersionResponseSchema,
+    className: 'VersionCreateResponse',
+    file: 'api/routes/version.py',
+  },
+  { schema: versionDataResponseSchema, className: 'VersionDataResponse', file: 'api/routes/version.py' },
   {
     schema: qualityEvaluationResponseSchema,
     className: 'QualityEvaluateResponse',
-    file: 'routes/quality.py',
+    file: 'api/routes/quality.py',
   },
-  { schema: dedupResponseSchema, className: 'DedupResponse', file: 'routes/quality.py' },
+  { schema: dedupResponseSchema, className: 'DedupResponse', file: 'api/routes/quality.py' },
 ]
 
-/** 源文件只读一次（15 个模型命中 5 个文件） */
+const FULL_SCHEMA_MODULE = fullSchemas as unknown as Record<string, z.ZodType>
+
+/**
+ * `full-schemas.ts` 里「`文件:行号` → 类名 + export const 变量名」的映射
+ *
+ * 正则贴着生成器的输出形状写；生成器改了注释格式，这里会解析出 0 条，
+ * 下面的「覆盖面非空」断言当场红——不会退化成「什么都没比也全绿」。
+ */
+const FULL_MODELS: ModelCase[] = [
+  ...readFileSync(resolve(AUGMENTOR_DIR, 'web/src/schemas/full-schemas.ts'), 'utf8').matchAll(
+    /\/\*\* `([^`]+):(\d+)` → (\w+) \*\/\r?\nexport const (\w+) = z\.object\(/g
+  ),
+].map((match) => {
+  const [, file, line, className, schemaName] = match
+  const schema = FULL_SCHEMA_MODULE[schemaName]
+  if (!schema) throw new Error(`full-schemas.ts 里找不到导出 ${schemaName}`)
+  return { schema, className, file, line: Number(line) }
+})
+
+/** 源文件只读一次 */
 const sourceCache = new Map<string, string>()
 function readSource(relativePath: string): string {
   const cached = sourceCache.get(relativePath)
   if (cached !== undefined) return cached
-  const text = readFileSync(resolve(API_DIR, relativePath), 'utf8')
+  const text = readFileSync(resolve(AUGMENTOR_DIR, relativePath), 'utf8')
   sourceCache.set(relativePath, text)
   return text
 }
 
 describe('schema 解析器自证（防恒真）', () => {
   it('能从 version.py 读出 VersionInfo 的完整字段（字面量锚点）', () => {
-    const fields = parseModelFields(readSource('routes/version.py'), 'VersionInfo')
+    const fields = parseModelFields('VersionInfo')
 
     expect(fields?.map((field) => field.name)).toEqual([
       'version_id',
@@ -199,11 +321,42 @@ describe('schema 解析器自证（防恒真）', () => {
   })
 
   it('解析不到的类返回 null，而不是空数组', () => {
-    expect(parseModelFields(readSource('routes/version.py'), 'NoSuchModel')).toBeNull()
+    expect(parseModelFields('NoSuchModel')).toBeNull()
+  })
+
+  it('继承会先合并基类字段（ConfigUpdateResponse / VersionDetailResponse）', () => {
+    expect(parseModelFields('ConfigUpdateResponse')?.map((field) => field.name)).toEqual([
+      'success',
+      'message',
+      'ignored_keys',
+    ])
+    expect(parseModelFields('VersionDetailResponse')?.map((field) => field.name)).toEqual([
+      'version_id',
+      'label',
+      'description',
+      'created_at',
+      'item_count',
+      'metadata',
+    ])
+  })
+
+  it('dataclass 响应模型也能解析（AuditReport）', () => {
+    const fields = parseModelFields('AuditReport')
+    expect(fields?.map((field) => field.name)).toEqual([
+      'total_items',
+      'pii_matches',
+      'duplicate_count',
+      'duplicate_rate',
+      'empty_field_rate',
+      'leak_count',
+      'leak_rate',
+      'findings',
+      'ready',
+    ])
   })
 
   it('反向注入：键集多一个 / 少一个都必须被报出来', () => {
-    const expected = parseModelFields(readSource('routes/version.py'), 'VersionInfo')
+    const expected = parseModelFields('VersionInfo')
     expect(expected).not.toBeNull()
     const names = expected!.map((field) => field.name)
 
@@ -213,23 +366,57 @@ describe('schema 解析器自证（防恒真）', () => {
   })
 })
 
+const ALL_MODELS = [...MODELS, ...FULL_MODELS]
+
 describe('zod schema ↔ 后端 response_model 契约', () => {
-  it('覆盖面非空：15 个模型、53 个字段', () => {
+  it('覆盖面非空：85 个模型、全部字段都可解析', () => {
     expect(MODELS).toHaveLength(15)
+    expect(FULL_MODELS).toHaveLength(70)
+    expect(ALL_MODELS).toHaveLength(85)
 
     let pythonFields = 0
-    for (const model of MODELS) {
-      const fields = parseModelFields(readSource(model.file), model.className)
+    for (const model of ALL_MODELS) {
+      const fields = parseModelFields(model.className)
       expect(fields, `${model.file} 里找不到 ${model.className}`).not.toBeNull()
       expect(fields!.length, `${model.className} 解析出 0 个字段`).toBeGreaterThan(0)
       pythonFields += fields!.length
     }
-    expect(pythonFields).toBe(53)
+    expect(pythonFields).toBe(389)
   })
 
-  for (const model of MODELS) {
+  it('full-schemas 的「文件:行号」映射与类定义现量一致', () => {
+    for (const model of FULL_MODELS) {
+      const actual = classLine(readSource(model.file), model.className)
+      expect(actual, `${model.file} 里找不到 ${model.className}`).not.toBeNull()
+      expect(actual, `${model.className} 注释行号与现量不符`).toBe(model.line)
+    }
+  })
+
+  it('每个路由的 response_model 都有 schema（防新端点漏接线）', () => {
+    const routeFiles = readdirSync(API_DIR, { recursive: true, encoding: 'utf8' })
+      .filter((name) => name.endsWith('.py'))
+      .map((name) => resolve(API_DIR, name))
+    routeFiles.push(resolve(API_DIR, 'main.py'))
+
+    // `response_model=List[X]` 这类 typing 容器不是模型，单独排除；其余类名必须是 schema
+    const TYPING = new Set(['List', 'Optional', 'Dict', 'Union', 'Any'])
+    const declared = new Set<string>()
+    for (const path of routeFiles) {
+      const source = readFileSync(path, 'utf8')
+      for (const match of source.matchAll(/response_model\s*=\s*(\w+)/g)) {
+        if (!TYPING.has(match[1])) declared.add(match[1])
+      }
+    }
+
+    const covered = new Set(ALL_MODELS.map((model) => model.className))
+    const missing = [...declared].filter((name) => !covered.has(name)).sort()
+    expect(declared.size).toBeGreaterThan(70)
+    expect(missing).toEqual([])
+  })
+
+  for (const model of ALL_MODELS) {
     it(`${model.className}：键集与必填性都对齐`, () => {
-      const pythonFields = parseModelFields(readSource(model.file), model.className)
+      const pythonFields = parseModelFields(model.className)
       expect(pythonFields).not.toBeNull()
 
       const expectedKeys = pythonFields!.map((field) => field.name)

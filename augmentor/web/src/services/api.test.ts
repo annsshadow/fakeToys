@@ -30,6 +30,8 @@ vi.mock('axios', () => ({
   default: { create: mocks.create },
 }))
 
+import { respondWithOk as installOkResponses } from '../test/valid-response'
+
 import * as api from './api'
 
 const { instance } = mocks
@@ -66,6 +68,17 @@ function respondWithSequence(...datas: unknown[]) {
     instance.put.mockResolvedValueOnce({ data })
     instance.delete.mockResolvedValueOnce({ data })
   }
+}
+
+/**
+ * 让本轮请求收到「按 URL 现算的合法响应」（Z-FULL 收尾）
+ *
+ * 只给**不读返回值**的用例用：`respondWith({})` 那批 fixture 只负责让 `await` 落地，
+ * 接了 zod 之后它们集体成了坏响应。合法形状从 schema 现算（见 `test/valid-response.ts`），
+ * 不在测试里手抄第二份会过期的假后端。
+ */
+function respondWithOk() {
+  installOkResponses(instance)
 }
 
 beforeEach(() => {
@@ -186,7 +199,7 @@ describe('数据管理', () => {
 
   it('updateDataItem 用 PUT 传请求体、用查询参数传 index', async () => {
     const item = { instruction: 'q', output: 'a' }
-    respondWith({ ok: true })
+    respondWithOk()
 
     await api.updateDataItem('a.json', 7, item)
 
@@ -196,7 +209,7 @@ describe('数据管理', () => {
   })
 
   it('deleteDataItem 用 DELETE 并带 index 查询参数', async () => {
-    respondWith({ ok: true })
+    respondWithOk()
 
     await api.deleteDataItem('a.json', 3)
 
@@ -234,7 +247,7 @@ describe('数据管理', () => {
   })
 
   it('exportData 透传 input_file / output_dir / formats', async () => {
-    respondWith({ ok: true })
+    respondWithOk()
 
     await api.exportData('in.json', 'out', ['jsonl', 'csv'])
 
@@ -326,8 +339,8 @@ describe('版本管理', () => {
   })
 
   it('getVersion / getVersionData 命中正确的子路径', async () => {
-    // `getVersion` 本轮未接 zod（§7 Z-FULL），只有 `getVersionData` 吃契约校验
-    respondWithSequence({}, { items: [] })
+    // 两只都接了 zod（Z-FULL）：响应按 URL 各自现算，本用例只断言路径
+    respondWithOk()
 
     await api.getVersion('v1')
     await api.getVersionData('v1')
@@ -337,7 +350,7 @@ describe('版本管理', () => {
   })
 
   it('diffVersions 传两个版本号', async () => {
-    respondWith({})
+    respondWithOk()
 
     await api.diffVersions('v1', 'v2')
 
@@ -348,7 +361,7 @@ describe('版本管理', () => {
   })
 
   it('rollbackVersion 用 POST 到 rollback 子路径', async () => {
-    respondWith({})
+    respondWithOk()
 
     await api.rollbackVersion('v1')
 
@@ -356,7 +369,7 @@ describe('版本管理', () => {
   })
 
   it('deleteVersion 用 DELETE', async () => {
-    respondWith({})
+    respondWithOk()
 
     await api.deleteVersion('v1')
 
@@ -364,7 +377,7 @@ describe('版本管理', () => {
   })
 
   it('getVersionHistory 默认 limit=20，可覆盖', async () => {
-    respondWith([])
+    respondWithOk()
 
     await api.getVersionHistory()
     await api.getVersionHistory(5)
@@ -413,7 +426,7 @@ describe('质量评估', () => {
   })
 
   it('qualityReport / runBenchmark 默认阈值 0.6，可覆盖', async () => {
-    respondWith({})
+    respondWithOk()
 
     await api.qualityReport('a.json')
     await api.runBenchmark('a.json', 0.75)
@@ -429,7 +442,7 @@ describe('质量评估', () => {
   })
 
   it('cleanData / annotateData 只传 input_file', async () => {
-    respondWith({})
+    respondWithOk()
 
     await api.cleanData('a.json')
     await api.annotateData('a.json')
@@ -441,13 +454,13 @@ describe('质量评估', () => {
 
 describe('导出', () => {
   it('getExportFormats 请求 /export/formats', async () => {
-    respondWith([])
+    respondWithOk()
     await api.getExportFormats()
     expect(instance.get).toHaveBeenCalledWith('/export/formats')
   })
 
   it('previewExport 默认 size=5', async () => {
-    respondWith({})
+    respondWithOk()
 
     await api.previewExport('a.json', 'alpaca')
 
@@ -459,7 +472,7 @@ describe('导出', () => {
   })
 
   it('batchExport 透传 datasets / output_dir / formats', async () => {
-    respondWith({})
+    respondWithOk()
 
     await api.batchExport({ d1: 'a.json' }, 'out', ['jsonl'])
 
@@ -477,13 +490,13 @@ describe('导出', () => {
 
 describe('多模态', () => {
   it('getMultimodalFormats 请求 /multimodal/formats', async () => {
-    respondWith([])
+    respondWithOk()
     await api.getMultimodalFormats()
     expect(instance.get).toHaveBeenCalledWith('/multimodal/formats')
   })
 
   it('processMultimodal 同时传 text/image/audio 三个字段', async () => {
-    respondWith({})
+    respondWithOk()
 
     await api.processMultimodal('文本', 'img.png', 'a.wav')
 
@@ -495,7 +508,7 @@ describe('多模态', () => {
   })
 
   it('scanMultimodal 传 directory', async () => {
-    respondWith({})
+    respondWithOk()
 
     await api.scanMultimodal('/data/dir')
 
@@ -505,7 +518,7 @@ describe('多模态', () => {
 
 describe('配置与健康检查', () => {
   it('getConfig / getModels / healthCheck 各自命中端点', async () => {
-    respondWith({})
+    respondWithOk()
 
     await api.getConfig()
     await api.getModels()
@@ -517,7 +530,7 @@ describe('配置与健康检查', () => {
   })
 
   it('updateConfig 用 POST 提交整份配置', async () => {
-    respondWith({})
+    respondWithOk()
     const config = { quality: { threshold: 0.7 } }
 
     await api.updateConfig(config)
@@ -528,7 +541,7 @@ describe('配置与健康检查', () => {
 
 describe('服务状态与演示数据', () => {
   it('getServiceStatus 请求 /status（不是 /health）', async () => {
-    respondWith({})
+    respondWithOk()
 
     await api.getServiceStatus()
 
@@ -547,7 +560,7 @@ describe('服务状态与演示数据', () => {
 
 describe('隐私脱敏', () => {
   it('getPiiPatterns 请求 /privacy/patterns', async () => {
-    respondWith({})
+    respondWithOk()
 
     await api.getPiiPatterns()
 
@@ -555,7 +568,7 @@ describe('隐私脱敏', () => {
   })
 
   it('sanitizeData 默认不传 fields、include_extra 为 false', async () => {
-    respondWith({})
+    respondWithOk()
 
     await api.sanitizeData('a.json')
 
@@ -567,7 +580,7 @@ describe('隐私脱敏', () => {
   })
 
   it('sanitizeData 可指定 fields 并打开增强模式', async () => {
-    respondWith({})
+    respondWithOk()
 
     await api.sanitizeData('a.json', ['instruction'], true)
 
@@ -581,7 +594,7 @@ describe('隐私脱敏', () => {
 
 describe('泄漏检测与就绪审计', () => {
   it('checkLeakage 传 train_file / test_file，模糊阈值默认 0.8', async () => {
-    respondWith({})
+    respondWithOk()
 
     await api.checkLeakage('train.json', 'test.json')
 
@@ -593,7 +606,7 @@ describe('泄漏检测与就绪审计', () => {
   })
 
   it('checkLeakage 的模糊阈值可覆盖', async () => {
-    respondWith({})
+    respondWithOk()
 
     await api.checkLeakage('train.json', 'test.json', 0.5)
 
@@ -605,7 +618,7 @@ describe('泄漏检测与就绪审计', () => {
   })
 
   it('auditDataset 不传参照集时 reference_file 为 undefined', async () => {
-    respondWith({})
+    respondWithOk()
 
     await api.auditDataset('a.json')
 
@@ -616,7 +629,7 @@ describe('泄漏检测与就绪审计', () => {
   })
 
   it('auditDataset 可带参照集', async () => {
-    respondWith({})
+    respondWithOk()
 
     await api.auditDataset('a.json', 'ref.json')
 
@@ -629,7 +642,7 @@ describe('泄漏检测与就绪审计', () => {
 
 describe('离群点与画像', () => {
   it('detectOutliers 默认 method=zscore、threshold=3、field=length', async () => {
-    respondWith({})
+    respondWithOk()
 
     await api.detectOutliers('a.json')
 
@@ -642,7 +655,7 @@ describe('离群点与画像', () => {
   })
 
   it('detectOutliers 的三个参数都可覆盖', async () => {
-    respondWith({})
+    respondWithOk()
 
     await api.detectOutliers('a.json', 'iqr', 1.5, 'output')
 
@@ -655,7 +668,7 @@ describe('离群点与画像', () => {
   })
 
   it('profileDataset 只传 input_file（save 交给后端默认值 false）', async () => {
-    respondWith({})
+    respondWithOk()
 
     await api.profileDataset('a.json')
 
@@ -759,7 +772,7 @@ describe('大块请求的每请求超时', () => {
   })
 
   it('exportData / batchExport 同样带档', async () => {
-    respondWith({})
+    respondWithOk()
 
     await api.exportData('a.json', 'out', ['jsonl'])
     await api.batchExport({ d: 'a.json' }, 'out', ['jsonl'])
@@ -769,7 +782,7 @@ describe('大块请求的每请求超时', () => {
   })
 
   it('短请求（列表 / 状态）不传 per-request config，继续吃 30 s 默认档', async () => {
-    respondWith({ files: [] })
+    respondWithOk()
 
     await api.getDataFiles()
     await api.getServiceStatus()
@@ -894,7 +907,7 @@ describe('系统那一族的请求体与哨兵（L234）', () => {
   const url = (n = 0) => instance.post.mock.calls[n][0]
 
   it('monitor 只送 input_file；auto-test 的 suite 空串整键不送，给了才送', async () => {
-    respondWith({})
+    respondWithOk()
 
     await api.runQualityMonitor('mixed.json')
     await api.runDatasetAutoTest('mixed.json')
@@ -911,7 +924,7 @@ describe('系统那一族的请求体与哨兵（L234）', () => {
   })
 
   it('migrate 的 rules 空数组整键不送（空数组等于三条全用，不是「不迁移」）', async () => {
-    respondWith({})
+    respondWithOk()
 
     await api.migrateDataset('mixed.json', 'mig.json', { rules: [] })
     await api.migrateDataset('mixed.json', 'mig.json', { rules: ['rename_output'] })
@@ -925,7 +938,7 @@ describe('系统那一族的请求体与哨兵（L234）', () => {
   })
 
   it('stream 的三格空档与 chunk_size 0 全都不送，给了才按 snake_case 送出去', async () => {
-    respondWith({})
+    respondWithOk()
 
     // 页面默认档：operation 与 output_format 都是空串，chunk_size 是 null
     await api.streamProcess('mixed.json', 'out.jsonl', {
@@ -954,7 +967,7 @@ describe('系统那一族的请求体与哨兵（L234）', () => {
   })
 
   it('validate-config 的 path 空串不送（省略 = 校验服务自己那份），给了才送', async () => {
-    respondWith({})
+    respondWithOk()
 
     await api.validateConfigFile({ path: '' })
     await api.validateConfigFile({ path: 'config.yaml' })

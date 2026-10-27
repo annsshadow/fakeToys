@@ -33,17 +33,20 @@ vi.mock('axios', () => ({
   default: { create: mocks.create },
 }))
 
+import { respondWithOk as installOkResponses } from '../test/valid-response'
+
 import * as api from './api'
 
 const { instance } = mocks
 
-/** 让下一次请求返回给定的 data */
-function respondWith(data: unknown) {
-  instance.get.mockResolvedValue({ data })
-  instance.post.mockResolvedValue({ data })
-  instance.put.mockResolvedValue({ data })
-  instance.delete.mockResolvedValue({ data })
-  return data
+/**
+ * 合法响应按 URL 现算（Z-FULL 收尾）
+ *
+ * 本文件只断言请求体里**没写什么**，响应形状无关；`respondWith({})` 在全量接线后
+ * 会被校验层判成坏响应，于是统一改用这份从 schema 现算的 fixture。
+ */
+function respondWithOk() {
+  installOkResponses(instance)
 }
 
 beforeEach(() => {
@@ -55,7 +58,7 @@ beforeEach(() => {
 
 describe('省略可选 opts 时不写第二套默认（default-arg 分支契约）', () => {
   it('compareDatasets：三个可选键都不进请求体', async () => {
-    respondWith({})
+    respondWithOk()
     await api.compareDatasets('a.json', 'b.json')
     expect(instance.post).toHaveBeenCalledWith('/dataset/compare', {
       dataset_a: 'a.json',
@@ -64,7 +67,7 @@ describe('省略可选 opts 时不写第二套默认（default-arg 分支契约�
   })
 
   it('convertDataset：目标/源格式都不进请求体（source_format 的空串哨兵走 falsy 侧）', async () => {
-    respondWith({})
+    respondWithOk()
     await api.convertDataset('in.json', 'out.xlsx')
     expect(instance.post).toHaveBeenCalledWith('/dataset/convert', {
       input_file: 'in.json',
@@ -73,7 +76,7 @@ describe('省略可选 opts 时不写第二套默认（default-arg 分支契约�
   })
 
   it('mergeDatasets：deduplicate 不传，默认住在服务端请求模型里', async () => {
-    respondWith({})
+    respondWithOk()
     await api.mergeDatasets(['a.json', 'b.json'], 'merged.json')
     expect(instance.post).toHaveBeenCalledWith('/dataset/merge', {
       inputs: ['a.json', 'b.json'],
@@ -82,7 +85,7 @@ describe('省略可选 opts 时不写第二套默认（default-arg 分支契约�
   })
 
   it('splitDataset：七个旋钮一个都不写', async () => {
-    respondWith({})
+    respondWithOk()
     await api.splitDataset('in.json', 'out_dir')
     expect(instance.post).toHaveBeenCalledWith('/dataset/split', {
       input_file: 'in.json',
@@ -91,7 +94,7 @@ describe('省略可选 opts 时不写第二套默认（default-arg 分支契约�
   })
 
   it('sampleDataset：method/size/ratio/seed/stratify_key 都不写', async () => {
-    respondWith({})
+    respondWithOk()
     await api.sampleDataset('in.json', 'out.json')
     expect(instance.post).toHaveBeenCalledWith('/dataset/sample', {
       input_file: 'in.json',
@@ -100,7 +103,7 @@ describe('省略可选 opts 时不写第二套默认（default-arg 分支契约�
   })
 
   it('aggregateDatasets：strategy/target_size 都不写（datasets 是 名称→路径 映射）', async () => {
-    respondWith({})
+    respondWithOk()
     await api.aggregateDatasets({ a: 'a.json', b: 'b.json' }, 'agg.json')
     expect(instance.post).toHaveBeenCalledWith('/dataset/aggregate', {
       datasets: { a: 'a.json', b: 'b.json' },
@@ -109,7 +112,7 @@ describe('省略可选 opts 时不写第二套默认（default-arg 分支契约�
   })
 
   it('convertToRag：format 的空串哨兵走 falsy 侧，不进 query 语义的请求体', async () => {
-    respondWith({})
+    respondWithOk()
     await api.convertToRag('in.json', 'out.jsonl')
     expect(instance.post).toHaveBeenCalledWith('/dataset/rag', {
       input_file: 'in.json',
@@ -118,7 +121,7 @@ describe('省略可选 opts 时不写第二套默认（default-arg 分支契约�
   })
 
   it('semanticSearch：top_k/text_key 省略，默认由服务端请求模型说话', async () => {
-    respondWith({})
+    respondWithOk()
     await api.semanticSearch('in.json', '猫')
     expect(instance.post).toHaveBeenCalledWith('/dataset/semantic-search', {
       input_file: 'in.json',
@@ -127,7 +130,7 @@ describe('省略可选 opts 时不写第二套默认（default-arg 分支契约�
   })
 
   it('registerDependencyDataset：description/tags/registry_path 都不写', async () => {
-    respondWith({})
+    respondWithOk()
     await api.registerDependencyDataset('my-set', 'a.json')
     expect(instance.post).toHaveBeenCalledWith(
       '/system/dependency/datasets',
@@ -137,7 +140,7 @@ describe('省略可选 opts 时不写第二套默认（default-arg 分支契约�
   })
 
   it('migrateDataset：rules 的空数组哨兵走 falsy 侧', async () => {
-    respondWith({})
+    respondWithOk()
     await api.migrateDataset('in.json', 'out.json')
     expect(instance.post).toHaveBeenCalledWith('/system/migrate', {
       input_file: 'in.json',
@@ -146,7 +149,7 @@ describe('省略可选 opts 时不写第二套默认（default-arg 分支契约�
   })
 
   it('streamProcess：operation/chunk_size/output_format 都不写', async () => {
-    respondWith({})
+    respondWithOk()
     await api.streamProcess('in.json', 'out.json')
     expect(instance.post).toHaveBeenCalledWith('/system/stream', {
       input_file: 'in.json',
@@ -157,7 +160,7 @@ describe('省略可选 opts 时不写第二套默认（default-arg 分支契约�
 
 describe('省略可选目录参数时 query 键不出现（listBackups / 血缘两族）', () => {
   it('listBackups 不送 backup_dir，落点由服务端白名单首根决定', async () => {
-    respondWith({})
+    respondWithOk()
     await api.listBackups()
     expect(instance.get).toHaveBeenCalledWith('/system/backups', {
       params: {},
@@ -165,7 +168,7 @@ describe('省略可选目录参数时 query 键不出现（listBackups / 血缘�
   })
 
   it('restoreBackup 不送 backup_dir（目标已存在则整份覆盖，服务端口径）', async () => {
-    respondWith({})
+    respondWithOk()
     await api.restoreBackup('bk-1', 'restored.json')
     expect(instance.post).toHaveBeenCalledWith(
       '/system/backups/bk-1/restore',
@@ -175,7 +178,7 @@ describe('省略可选目录参数时 query 键不出现（listBackups / 血缘�
   })
 
   it('listDependencyDatasets 不送 registry_path', async () => {
-    respondWith({})
+    respondWithOk()
     await api.listDependencyDatasets()
     expect(instance.get).toHaveBeenCalledWith('/system/dependency/datasets', {
       params: { registry_path: undefined },

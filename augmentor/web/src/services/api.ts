@@ -2,6 +2,68 @@ import axios from 'axios'
 import { z } from 'zod'
 
 import {
+  aggregateResponseSchema,
+  annotateResponseSchema,
+  auditReportSchema,
+  autoConfigResponseSchema,
+  backupCleanupResponseSchema,
+  backupInfoResponseSchema,
+  backupListResponseSchema,
+  backupVerifyResponseSchema,
+  batchExportResponseSchema,
+  benchmarkResponseSchema,
+  cleanResponseSchema,
+  compareResponseSchema,
+  configResponseSchema,
+  configUpdateResponseSchema,
+  configValidationResponseSchema,
+  convertResponseSchema,
+  datasetInfoResponseSchema,
+  demoItemSchema,
+  dependenciesResponseSchema,
+  dependencyDatasetListResponseSchema,
+  dependencyGraphResponseSchema,
+  evaluateResponseSchema,
+  exportFormatsResponseSchema,
+  exportResponseSchema,
+  featuresResponseSchema,
+  healthGateResponseSchema,
+  healthResponseSchema,
+  impactResponseSchema,
+  languageProfileResponseSchema,
+  leakageResponseSchema,
+  mergeResponseSchema,
+  migrationResponseSchema,
+  modelsResponseSchema,
+  multimodalFormatsResponseSchema,
+  multimodalRecordResponseSchema,
+  multimodalScanResponseSchema,
+  outlierResponseSchema,
+  piiPatternsResponseSchema,
+  previewResponseSchema,
+  profilingResponseSchema,
+  qualityReportResponseSchema,
+  qualitySnapshotResponseSchema,
+  ragResponseSchema,
+  restoreBackupResponseSchema,
+  sampleResponseSchema,
+  sanitizeResponseSchema,
+  searchResponseSchema,
+  semanticSearchResponseSchema,
+  splitResponseSchema,
+  statisticsResponseSchema,
+  statusResponseSchema,
+  streamReportResponseSchema,
+  successResponseSchema,
+  testSuiteResponseSchema,
+  translateResponseSchema,
+  validationResponseSchema,
+  vectorStatusResponseSchema,
+  versionDetailResponseSchema,
+  versionDiffResponseSchema,
+  versionHistoryResponseSchema,
+} from '../schemas/full-schemas'
+import {
   analyzeResponseSchema,
   augmentProgressSchema,
   checkpointListResponseSchema,
@@ -259,8 +321,9 @@ export const bulkErrorDetail = (error: unknown, fallback: string): string => {
  * 未声明的键，返回克隆会让调用方看到的对象与后端实发的不一致（也会改变
  * `toBe` 之类的对象身份断言）。校验只负责「形状不对就抛」，不负责裁剪。
  *
- * 覆盖范围：`services/api.ts` 里被接上 schema 的那 14 个函数；
- * 其余保持原样（全量接线是 Z-FULL 后续轮次，见 §7）。
+ * 覆盖范围：`services/api.ts` 里被接上 schema 的全部 78 个端点函数（Z-FULL，10-27 计划 §4）。
+ * `checkedResponse` 给「一只函数 = 一次请求」的 14 只；`checkedData` 给已有响应对象、
+ * 只差校验那一步的其余 64 只。
  */
 const checkedResponse = async <T>(
   name: string,
@@ -278,6 +341,24 @@ const checkedResponse = async <T>(
 /** axios 响应的最小形状（本层不 import AxiosResponse 全类型，避免循环依赖） */
 interface AxiosResponseLike {
   data: unknown
+}
+
+/**
+ * 校验**已经取回**的响应体（Z-FULL）
+ *
+ * 与 `checkedResponse` 同一条口径（失败抛中文可定位 `Error`、通过返回原始对象而不是
+ * `parsed.data`），差别只在调用形态：这 64 只函数的请求参数各不相同，硬套
+ * 「把请求包成 callback」的写法要给每只再造一个闭包，收益只是少一行。
+ *
+ * 为什么类型参数不能省：`response.data` 是 `any`，`checkedData<T>` 的返回类型是**函数签名的
+ * 唯一来源**。去掉 `<T>` 会让 64 只函数的返回类型退化成 `any`，`tsc` 再也看不见页面侧的误用。
+ */
+const checkedData = <T>(name: string, schema: z.ZodType, data: unknown): T => {
+  const parsed = schema.safeParse(data)
+  if (!parsed.success) {
+    throw new Error(zodErrorMessage(name, parsed.error.issues))
+  }
+  return data as T
 }
 
 // 数据管理
@@ -345,7 +426,7 @@ export const updateDataItem = async (
   const response = await api.put(`/data/update/${filename}`, item, {
     params: { index },
   })
-  return response.data
+  return checkedData<MutationResponse>('updateDataItem', successResponseSchema, response.data)
 }
 
 export const deleteDataItem = async (
@@ -355,7 +436,7 @@ export const deleteDataItem = async (
   const response = await api.delete(`/data/delete/${filename}`, {
     params: { index },
   })
-  return response.data
+  return checkedData<MutationResponse>('deleteDataItem', successResponseSchema, response.data)
 }
 
 /**
@@ -395,7 +476,7 @@ export const exportData = async (
     },
     { timeout: BULK_REQUEST_TIMEOUT_MS }
   )
-  return response.data
+  return checkedData<DatasetExportResponse>('exportData', exportResponseSchema, response.data)
 }
 
 // 数据增强
@@ -479,7 +560,7 @@ export const createVersion = async (
 
 export const getVersion = async (versionId: string): Promise<VersionDetail> => {
   const response = await api.get(`/versions/${versionId}`)
-  return response.data
+  return checkedData<VersionDetail>('getVersion', versionDetailResponseSchema, response.data)
 }
 
 export const getVersionData = async (versionId: string): Promise<VersionDataResponse> => {
@@ -498,24 +579,24 @@ export const diffVersions = async (
     version1,
     version2,
   })
-  return response.data
+  return checkedData<VersionDiffResponse>('diffVersions', versionDiffResponseSchema, response.data)
 }
 
 export const rollbackVersion = async (versionId: string): Promise<MutationResponse> => {
   const response = await api.post(`/versions/${versionId}/rollback`)
-  return response.data
+  return checkedData<MutationResponse>('rollbackVersion', successResponseSchema, response.data)
 }
 
 export const deleteVersion = async (versionId: string): Promise<MutationResponse> => {
   const response = await api.delete(`/versions/${versionId}`)
-  return response.data
+  return checkedData<MutationResponse>('deleteVersion', successResponseSchema, response.data)
 }
 
 export const getVersionHistory = async (
   limit: number = 20
 ): Promise<VersionHistoryResponse> => {
   const response = await api.get('/versions/history', { params: { limit } })
-  return response.data
+  return checkedData<VersionHistoryResponse>('getVersionHistory', versionHistoryResponseSchema, response.data)
 }
 
 // 质量评估
@@ -554,17 +635,17 @@ export const qualityReport = async (
     input_file: inputFile,
     threshold,
   })
-  return response.data
+  return checkedData<QualityReportResponse>('qualityReport', qualityReportResponseSchema, response.data)
 }
 
 export const cleanData = async (inputFile: string): Promise<CleanResponse> => {
   const response = await api.post('/quality/clean', { input_file: inputFile })
-  return response.data
+  return checkedData<CleanResponse>('cleanData', cleanResponseSchema, response.data)
 }
 
 export const annotateData = async (inputFile: string): Promise<AnnotateResponse> => {
   const response = await api.post('/quality/annotate', { input_file: inputFile })
-  return response.data
+  return checkedData<AnnotateResponse>('annotateData', annotateResponseSchema, response.data)
 }
 
 export const runBenchmark = async (
@@ -575,13 +656,13 @@ export const runBenchmark = async (
     input_file: inputFile,
     threshold,
   })
-  return response.data
+  return checkedData<BenchmarkResponse>('runBenchmark', benchmarkResponseSchema, response.data)
 }
 
 // 导出
 export const getExportFormats = async (): Promise<ExportFormatsResponse> => {
   const response = await api.get('/export/formats')
-  return response.data
+  return checkedData<ExportFormatsResponse>('getExportFormats', exportFormatsResponseSchema, response.data)
 }
 
 export const previewExport = async (
@@ -594,7 +675,7 @@ export const previewExport = async (
     format,
     size,
   })
-  return response.data
+  return checkedData<ExportPreviewResponse>('previewExport', previewResponseSchema, response.data)
 }
 
 export const batchExport = async (
@@ -611,13 +692,13 @@ export const batchExport = async (
     },
     { timeout: BULK_REQUEST_TIMEOUT_MS }
   )
-  return response.data
+  return checkedData<BatchExportResponse>('batchExport', batchExportResponseSchema, response.data)
 }
 
 // 多模态
 export const getMultimodalFormats = async (): Promise<MultimodalFormatsResponse> => {
   const response = await api.get('/multimodal/formats')
-  return response.data
+  return checkedData<MultimodalFormatsResponse>('getMultimodalFormats', multimodalFormatsResponseSchema, response.data)
 }
 
 /**
@@ -632,20 +713,20 @@ export const processMultimodal = async (
   audio?: string
 ): Promise<MultimodalRecord> => {
   const response = await api.post('/multimodal/process', { text, image, audio })
-  return response.data
+  return checkedData<MultimodalRecord>('processMultimodal', multimodalRecordResponseSchema, response.data)
 }
 
 export const scanMultimodal = async (
   directory: string
 ): Promise<MultimodalScanResponse> => {
   const response = await api.post('/multimodal/scan', { directory })
-  return response.data
+  return checkedData<MultimodalScanResponse>('scanMultimodal', multimodalScanResponseSchema, response.data)
 }
 
 // 配置管理
 export const getConfig = async (): Promise<AppConfig> => {
   const response = await api.get('/config')
-  return response.data
+  return checkedData<AppConfig>('getConfig', configResponseSchema, response.data)
 }
 
 /**
@@ -656,18 +737,18 @@ export const getConfig = async (): Promise<AppConfig> => {
  */
 export const updateConfig = async (config: unknown): Promise<UpdateConfigResponse> => {
   const response = await api.post('/config', config)
-  return response.data
+  return checkedData<UpdateConfigResponse>('updateConfig', configUpdateResponseSchema, response.data)
 }
 
 export const getModels = async (): Promise<ModelsResponse> => {
   const response = await api.get('/models')
-  return response.data
+  return checkedData<ModelsResponse>('getModels', modelsResponseSchema, response.data)
 }
 
 // 健康检查
 export const healthCheck = async (): Promise<HealthResponse> => {
   const response = await api.get('/health')
-  return response.data
+  return checkedData<HealthResponse>('healthCheck', healthResponseSchema, response.data)
 }
 
 // ============ 服务综合状态 ============
@@ -680,7 +761,7 @@ export const healthCheck = async (): Promise<HealthResponse> => {
  */
 export const getServiceStatus = async (): Promise<StatusResponse> => {
   const response = await api.get('/status')
-  return response.data
+  return checkedData<StatusResponse>('getServiceStatus', statusResponseSchema, response.data)
 }
 
 // ============ 内置演示数据 ============
@@ -692,14 +773,14 @@ export const getServiceStatus = async (): Promise<StatusResponse> => {
  */
 export const getDemoData = async (): Promise<DataItem[]> => {
   const response = await api.get('/demo/data')
-  return response.data
+  return checkedData<DataItem[]>('getDemoData', z.array(demoItemSchema), response.data)
 }
 
 // ============ 隐私脱敏 ============
 
 export const getPiiPatterns = async (): Promise<PiiPatternsResponse> => {
   const response = await api.get('/privacy/patterns')
-  return response.data
+  return checkedData<PiiPatternsResponse>('getPiiPatterns', piiPatternsResponseSchema, response.data)
 }
 
 /**
@@ -718,7 +799,7 @@ export const sanitizeData = async (
     fields,
     include_extra: includeExtra
   })
-  return response.data
+  return checkedData<SanitizeResponse>('sanitizeData', sanitizeResponseSchema, response.data)
 }
 
 // ============ 训练/测试集泄漏检测 ============
@@ -733,7 +814,7 @@ export const checkLeakage = async (
     test_file: testFile,
     fuzzy_threshold: fuzzyThreshold
   })
-  return response.data
+  return checkedData<LeakageResponse>('checkLeakage', leakageResponseSchema, response.data)
 }
 
 // ============ 数据集就绪审计 ============
@@ -751,7 +832,7 @@ export const auditDataset = async (
     input_file: inputFile,
     reference_file: referenceFile
   })
-  return response.data
+  return checkedData<AuditResponse>('auditDataset', auditReportSchema, response.data)
 }
 
 // ============ 离群点与画像 ============
@@ -768,12 +849,12 @@ export const detectOutliers = async (
     threshold,
     field
   })
-  return response.data
+  return checkedData<OutliersResponse>('detectOutliers', outlierResponseSchema, response.data)
 }
 
 export const profileDataset = async (inputFile: string): Promise<ProfilingResponse> => {
   const response = await api.post('/quality/profiling', { input_file: inputFile })
-  return response.data
+  return checkedData<ProfilingResponse>('profileDataset', profilingResponseSchema, response.data)
 }
 
 // ============ 语言画像 / 批量评估 / 向量库状态（A279 第一批接线，L225） ============
@@ -791,7 +872,7 @@ export const languageProfile = async (
     input_file: inputFile,
     text_key: textKey
   })
-  return response.data
+  return checkedData<LanguageProfileResponse>('languageProfile', languageProfileResponseSchema, response.data)
 }
 
 /**
@@ -812,7 +893,7 @@ export const evaluateDataset = async (
     reference_file: referenceFile,
     include_details: includeDetails
   })
-  return response.data
+  return checkedData<EvaluateResponse>('evaluateDataset', evaluateResponseSchema, response.data)
 }
 
 /**
@@ -824,7 +905,7 @@ export const evaluateDataset = async (
  */
 export const getVectorStatus = async (): Promise<VectorStatusResponse> => {
   const response = await api.get('/dataset/vector-status')
-  return response.data
+  return checkedData<VectorStatusResponse>('getVectorStatus', vectorStatusResponseSchema, response.data)
 }
 
 // ============ 内容检索 / 结构校验 / 配置推荐（A279 第二批接线，L226） ============
@@ -850,7 +931,7 @@ export const searchDataset = async (
     limit: opts.limit,
     offset: opts.offset
   })
-  return response.data
+  return checkedData<SearchResponse>('searchDataset', searchResponseSchema, response.data)
 }
 
 /**
@@ -867,7 +948,7 @@ export const validateDataset = async (
     input_file: inputFile,
     preset
   })
-  return response.data
+  return checkedData<DatasetValidationResponse>('validateDataset', validationResponseSchema, response.data)
 }
 
 /**
@@ -880,7 +961,7 @@ export const autoConfigRecommend = async (
   inputFile: string
 ): Promise<AutoConfigResponse> => {
   const response = await api.post('/dataset/auto-config', { input_file: inputFile })
-  return response.data
+  return checkedData<AutoConfigResponse>('autoConfigRecommend', autoConfigResponseSchema, response.data)
 }
 
 // ============ 影响评估 / 语义检索（A279 第三批接线，L227） ============
@@ -905,7 +986,7 @@ export const assessImpact = async (
     text_field: opts.textField,
     min_scale_gain: opts.minScaleGain,
   })
-  return response.data
+  return checkedData<ImpactResponse>('assessImpact', impactResponseSchema, response.data)
 }
 
 /**
@@ -926,7 +1007,7 @@ export const semanticSearch = async (
     top_k: opts.topK,
     text_key: opts.textKey,
   })
-  return response.data
+  return checkedData<SemanticSearchResponse>('semanticSearch', semanticSearchResponseSchema, response.data)
 }
 
 // ============ 字段级统计 / 特征普查 / 双集对比（A279 第四批接线，L228） ============
@@ -948,7 +1029,7 @@ export const datasetStats = async (
     input_file: inputFile,
     fields: opts.fields,
   })
-  return response.data
+  return checkedData<StatisticsResponse>('datasetStats', statisticsResponseSchema, response.data)
 }
 
 /**
@@ -962,7 +1043,7 @@ export const detectFeatures = async (
   inputFile: string
 ): Promise<FeaturesResponse> => {
   const response = await api.post('/dataset/features', { input_file: inputFile })
-  return response.data
+  return checkedData<FeaturesResponse>('detectFeatures', featuresResponseSchema, response.data)
 }
 
 /**
@@ -985,7 +1066,7 @@ export const compareDatasets = async (
     name_b: opts.nameB,
     key_fields: opts.keyFields,
   })
-  return response.data
+  return checkedData<CompareResponse>('compareDatasets', compareResponseSchema, response.data)
 }
 
 // ============ 写盘型变换：convert / merge / split（A279 第五批接线，L229） ============
@@ -1010,7 +1091,7 @@ export const convertDataset = async (
     target_format: opts.targetFormat,
     source_format: opts.sourceFormat || undefined,
   })
-  return response.data
+  return checkedData<ConvertResponse>('convertDataset', convertResponseSchema, response.data)
 }
 
 /**
@@ -1030,7 +1111,7 @@ export const mergeDatasets = async (
     output_file: outputFile,
     deduplicate: opts.deduplicate,
   })
-  return response.data
+  return checkedData<MergeResponse>('mergeDatasets', mergeResponseSchema, response.data)
 }
 
 /**
@@ -1066,7 +1147,7 @@ export const splitDataset = async (
     stratify_key: opts.stratifyKey,
     shuffle: opts.shuffle,
   })
-  return response.data
+  return checkedData<SplitResponse>('splitDataset', splitResponseSchema, response.data)
 }
 
 // ============ 采样 / 聚合 / RAG 转换（A279 第六批接线，L230） ============
@@ -1104,7 +1185,7 @@ export const sampleDataset = async (
     seed: opts.seed,
     stratify_key: opts.stratifyKey,
   })
-  return response.data
+  return checkedData<SampleResponse>('sampleDataset', sampleResponseSchema, response.data)
 }
 
 /**
@@ -1128,7 +1209,7 @@ export const aggregateDatasets = async (
     strategy: opts.strategy,
     target_size: opts.targetSize,
   })
-  return response.data
+  return checkedData<AggregateResponse>('aggregateDatasets', aggregateResponseSchema, response.data)
 }
 
 /**
@@ -1150,7 +1231,7 @@ export const convertToRag = async (
     output_file: outputFile,
     format: opts.format || undefined,
   })
-  return response.data
+  return checkedData<RagResponse>('convertToRag', ragResponseSchema, response.data)
 }
 
 // ============ 系统 · 数据备份（A279 第七批接线，L231） ============
@@ -1168,7 +1249,7 @@ export const listBackups = async (backupDir?: string): Promise<BackupListRespons
   const response = await api.get('/system/backups', {
     params: { backup_dir: backupDir || undefined },
   })
-  return response.data
+  return checkedData<BackupListResponse>('listBackups', backupListResponseSchema, response.data)
 }
 
 /**
@@ -1191,7 +1272,7 @@ export const createBackup = async (
   const response = await api.post('/system/backups', body, {
     params: { backup_dir: opts.backupDir || undefined },
   })
-  return response.data
+  return checkedData<BackupInfo>('createBackup', backupInfoResponseSchema, response.data)
 }
 
 /**
@@ -1212,7 +1293,7 @@ export const restoreBackup = async (
     { output_file: outputFile },
     { params: { backup_dir: backupDir || undefined } }
   )
-  return response.data
+  return checkedData<RestoreBackupResponse>('restoreBackup', restoreBackupResponseSchema, response.data)
 }
 
 /**
@@ -1228,7 +1309,7 @@ export const deleteBackup = async (
   const response = await api.delete(`/system/backups/${encodeURIComponent(backupId)}`, {
     params: { backup_dir: backupDir || undefined },
   })
-  return response.data
+  return checkedData<MutationResponse>('deleteBackup', successResponseSchema, response.data)
 }
 
 /**
@@ -1245,7 +1326,7 @@ export const verifyBackups = async (
   const response = await api.get('/system/backups/verify', {
     params: { backup_id: opts.backupId || undefined, backup_dir: opts.backupDir || undefined },
   })
-  return response.data
+  return checkedData<BackupVerifyResponse>('verifyBackups', backupVerifyResponseSchema, response.data)
 }
 
 /**
@@ -1263,7 +1344,7 @@ export const cleanupBackups = async (
   const response = await api.post('/system/backups/cleanup', body, {
     params: { backup_dir: opts.backupDir || undefined },
   })
-  return response.data
+  return checkedData<BackupCleanupResponse>('cleanupBackups', backupCleanupResponseSchema, response.data)
 }
 
 // ============ 系统 · 数据集血缘（A279 第八批接线，L232） ============
@@ -1284,7 +1365,7 @@ export const listDependencyDatasets = async (
   const response = await api.get('/system/dependency/datasets', {
     params: { registry_path: registryPath || undefined },
   })
-  return response.data
+  return checkedData<DatasetRegistryListResponse>('listDependencyDatasets', dependencyDatasetListResponseSchema, response.data)
 }
 
 /**
@@ -1317,7 +1398,7 @@ export const registerDependencyDataset = async (
   const response = await api.post('/system/dependency/datasets', body, {
     params: { registry_path: opts.registryPath || undefined },
   })
-  return response.data
+  return checkedData<DatasetRegistryEntry>('registerDependencyDataset', datasetInfoResponseSchema, response.data)
 }
 
 /**
@@ -1335,7 +1416,7 @@ export const getDependencyGraph = async (
   const response = await api.get('/system/dependency/graph', {
     params: { registry_path: registryPath || undefined },
   })
-  return response.data
+  return checkedData<DependencyGraphResponse>('getDependencyGraph', dependencyGraphResponseSchema, response.data)
 }
 
 // ============ 系统 · 监控 / 自测 / 迁移 / 流式 / 配置校验（A279 第九批接线，L234） ============
@@ -1349,7 +1430,7 @@ export const getDependencyGraph = async (
  */
 export const runQualityMonitor = async (inputFile: string): Promise<QualitySnapshotResponse> => {
   const response = await api.post('/system/monitor', { input_file: inputFile })
-  return response.data
+  return checkedData<QualitySnapshotResponse>('runQualityMonitor', qualitySnapshotResponseSchema, response.data)
 }
 
 /**
@@ -1369,7 +1450,7 @@ export const runDatasetAutoTest = async (
     input_file: inputFile,
     suite: opts.suite || undefined,
   })
-  return response.data
+  return checkedData<TestSuiteResponse>('runDatasetAutoTest', testSuiteResponseSchema, response.data)
 }
 
 /**
@@ -1393,7 +1474,7 @@ export const migrateDataset = async (
     output_file: outputFile,
     rules: opts.rules && opts.rules.length > 0 ? opts.rules : undefined,
   })
-  return response.data
+  return checkedData<MigrationResponse>('migrateDataset', migrationResponseSchema, response.data)
 }
 
 /**
@@ -1418,7 +1499,7 @@ export const streamProcess = async (
     chunk_size: opts.chunkSize && opts.chunkSize > 0 ? opts.chunkSize : undefined,
     output_format: opts.outputFormat || undefined,
   })
-  return response.data
+  return checkedData<StreamReportResponse>('streamProcess', streamReportResponseSchema, response.data)
 }
 
 /**
@@ -1436,7 +1517,7 @@ export const validateConfigFile = async (
   const response = await api.post('/system/validate-config', {
     path: opts.path || undefined,
   })
-  return response.data
+  return checkedData<ConfigValidationResponse>('validateConfigFile', configValidationResponseSchema, response.data)
 }
 
 // ============ 质量 · 健康门禁（A279 第十批接线，L235） ============
@@ -1486,7 +1567,7 @@ export const healthGate = async (
     completeness_min: opts.completenessMin,
     block_on_warning: opts.blockOnWarning,
   })
-  return response.data
+  return checkedData<HealthGateResponse>('healthGate', healthGateResponseSchema, response.data)
 }
 
 /**
@@ -1504,7 +1585,7 @@ export const healthGate = async (
  */
 export const systemDependencies = async (): Promise<DependencyDiagnostics> => {
   const response = await api.get('/system/dependencies')
-  return response.data
+  return checkedData<DependencyDiagnostics>('systemDependencies', dependenciesResponseSchema, response.data)
 }
 
 /**
@@ -1546,5 +1627,5 @@ export const translateDataset = async (
     text_key: opts.textKey,
     keep_original: opts.keepOriginal,
   })
-  return response.data
+  return checkedData<TranslateResponse>('translateDataset', translateResponseSchema, response.data)
 }
