@@ -68,7 +68,9 @@ describe('BBSForum contracts', () => {
     // 钉 URL 字面量本身（与调用换行布局无关）。
     expect(source).toContain('`/api/bbs/assemble/control/subject/index/list/page/${page.value}/count/${pageSize}`')
     expect(source).toContain('`/api/bbs/assemble/control/subject/creamed/list/page/${page.value}/count/${pageSize}`')
-    expect(source).toContain('`/api/bbs/assemble/control/subject/search/list/page/1/count/${pageSize}`')
+    // 搜索跟随页码（2026-10-27 OA-LIMIT-OFFSET）：page 从硬编码 1 改为 page.value，
+    // 路由形状不变，仍是后端注册的 fmt 参数化路由 subject/search/list/page/{page}/count/{count}。
+    expect(source).toContain('`/api/bbs/assemble/control/subject/search/list/page/${page.value}/count/${pageSize}`')
     expect(source).toContain(
       '`/api/bbs/assemble/control/subject/filter/listsubjectinfo/page/${page.value}/count/${pageSize}`',
     )

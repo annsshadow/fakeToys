@@ -1785,13 +1785,13 @@
       ],
       "status": "implemented",
       "replacementClaim": true,
-      "decision": "关键词搜索改调已注册 PUT 参数化路由 subject/search/list/page/1/count/N（body.keyword），后端 u2_subject_search_page 参数化 ILIKE + 通配符转义（无注入通配扫描）；旧 POST 短路径（后端仅注册无参 GET、运行时 500）不再调用。",
+      "decision": "关键词搜索改调已注册 PUT 参数化路由 subject/search/list/page/{page}/count/{count}（body.keyword，page 跟随页码），后端 u2_subject_search_page 参数化 ILIKE + 通配符转义（无注入通配扫描）；旧 POST 短路径（后端仅注册无参 GET、运行时 500）不再调用。",
       "blockerCodes": [],
       "evidence": {
         "frontend": [
           {
             "file": "oa4rust/frontend/apps/desktop/src/views/BBSForum.vue",
-            "contains": "`/api/bbs/assemble/control/subject/search/list/page/1/count/${pageSize}`"
+            "contains": "`/api/bbs/assemble/control/subject/search/list/page/${page.value}/count/${pageSize}`"
           }
         ],
         "routing": [
