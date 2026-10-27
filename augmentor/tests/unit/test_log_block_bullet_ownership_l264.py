@@ -110,27 +110,40 @@ def subject(short_hash):
     return out
 
 
-def probe():
+def probe(round_no=None):
     """取一枚「ref 面上解析得到、主题带本账轮号」的提交短哈希（牙齿测试的探针）。
 
     **2026-10-22 新增**：账本里的哈希 100% 落在伤亡名单里（所在分支已从远端删除，
     对象在任何全新克隆里都不存在），拿它们当探针只会落进 `not_a_commit`，
     测不到同轮 / 跨轮 / 缺陷档的牙齿。改用现取探针：它既解析得到，主题又点着轮号，
     放进对应轮号的块里就是 `same_round`，搬进别的块就掉档。
+
+    **2026-10-27 收紧**：带 `round_no` 时必须取**主题点着这一轮**的提交，不能只取
+    「最新一枚带轮号的」。本轮修复提交 `test(augmentor): 重钉 L224 …` 只因主题里
+    提到 `L224`（它指的是测试文件名），就把探针从 L294 的提交换走，五支注入臂当场
+    假红（`cross_unnamed: 1`）——臂的块号是写死的，探针却按「谁最新」漂移，这不是
+    判据在量账，是账在量判据。无参调用保持旧语义（任何带轮号的提交都行），只给
+    `test_the_code_commit_of_this_round_is_resolvable` 那种「只要 git 活着」的用例用。
     """
     out = subprocess.run(["git", "-C", str(ROOT), "log", "--remotes", "--tags",
                           "--format=%h\t%s"], capture_output=True, text=True,
                          encoding="utf-8", errors="replace").stdout
     for line in out.splitlines():
         h, _, subj = line.partition("\t")
-        if h and ROUNDS.search(subj):
+        if not (h and ROUNDS.search(subj)):
+            continue
+        if round_no is None or round_no in {int(x) for x in ROUNDS.findall(subj)}:
             return h
     raise AssertionError("ref 面上找不到主题带轮号的提交 ⇒ 探针无从取，牙齿测试全部白跑")
 
 
-def with_probe_block(block: int, text: str = None):
-    """内存里给卷二追加一个 `### L<block>` 块，块内点名探针；返回 (volumes, 探针短哈希)"""
-    h = probe()
+def with_probe_block(block: int, text: str = None, probe_round: int = None):
+    """内存里给卷二追加一个 `### L<block>` 块，块内点名探针；返回 (volumes, 探针短哈希)
+
+    `probe_round` 缺省等于 `block`（同轮臂：探针主题点着块号 ⇒ `same_round`）；
+    跨轮臂传另一轮的号，探针主题就点着那个号，文本里也才写得出「L294 那一族」这种叙述。
+    """
+    h = probe(block if probe_round is None else probe_round)
     volumes = other.load_volumes()
     lines = list(volumes["OPTIMIZATION_LOOP_2.md"])
     body = text if text is not None else "- 探针 `%s`（臂写在本文件里，不落盘）" % h
@@ -383,7 +396,8 @@ class TestRulerBites:
         「块号 ≠ 探针轮号、但同行点着探针轮号」的引用（⇒ cross_named），再把轮号删掉
         （⇒ cross_unnamed）。
         """
-        volumes, h = with_probe_block(116, "- 探针 `%s`（L294 那一族先例，不落盘）" % probe())
+        volumes, h = with_probe_block(
+            116, "- 探针 `%s`（L294 那一族先例，不落盘）" % probe(294), probe_round=294)
         base = tally(sites(volumes))
         assert base[NAMED] == 1, base
         lines = volumes["OPTIMIZATION_LOOP_2.md"]
@@ -414,7 +428,8 @@ class TestRulerBites:
         **2026-10-22 换样本**：原臂用 L116 块里的 `4c979939e`（已不可解析）。改成合成
         一行「块号 116、探针主题点着 294、同行不写轮号」的引用。
         """
-        volumes, h = with_probe_block(116, "- 探针 `%s`（六模块退化输入，不落盘）" % probe())
+        volumes, h = with_probe_block(
+            116, "- 探针 `%s`（六模块退化输入，不落盘）" % probe(294), probe_round=294)
         got = tally(sites(volumes))
         unnamed = names(sites(volumes), UNNAMED)
         assert (116, h) in unnamed, got
