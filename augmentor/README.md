@@ -489,3 +489,4 @@ python -m pytest tests/ --cov=augmentor --cov-report=html
 - [API 文档](../docs/augmentor/API.md)
 - [架构文档](../docs/augmentor/ARCHITECTURE.md)
 - [部署文档](../docs/augmentor/DEPLOYMENT.md)
+- [常见问题（FAQ）](../docs/augmentor/FAQ.md)

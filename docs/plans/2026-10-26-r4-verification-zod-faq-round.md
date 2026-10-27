@@ -177,14 +177,22 @@ V-3 的负对照、V-5 的灌数据回归是**必须项**（防止验证空转�
 
 ## 6. D 批次 — 文档 FAQ（两份，排期已存在的收尾项）
 
-### D-1 `augmentor/docs/FAQ.md`（OPTIMIZATION_PLAN §3.3 待办）
+### D-1 `docs/augmentor/FAQ.md`（OPTIMIZATION_PLAN §3.3 待办）
+
+> **落点订正**：原计划写 `augmentor/docs/FAQ.md`。执行时发现 `augmentor/README.md` 的
+> §文档 已声明「详细文档汇总到仓库根 `docs/augmentor/`（2026-10-14 迁出）」，
+> 即 `augmentor/docs/` 是被废弃的旧布局。按仓库更近、更权威的约定落到
+> `docs/augmentor/FAQ.md`，并在 `docs/augmentor/README.md` 与 `augmentor/README.md`
+> 两处文档索引补链接——不新造第二个 docs 目录。
 
 - 内容面（从 `OPTIMIZATION_PLAN.md` / `README.md` / 端点契约中抽取，不新造事实）：
-  ① 多模型后端怎么选/切（ERNIE/OpenAI/Ollama/Claude/Gemini 的降级顺序与 `DiskCache` 命中）；
+  ① 多模型后端怎么选/切（ERNIE/OpenAI/Ollama/Claude/Gemini 的**选型与切换**——勘察确认
+  **不存在跨厂商自动降级链**，FAQ 按实现写，订正见 §8；以及 `DiskCache` 什么条件下命中）；
   ② 数据格式 13 种（`ExportFormat` 枚举为准）互转边界（L16/L20 收口的「容器 vs 行内 schema」）；
   ③ 数据安全三件套（脱敏 / 泄漏检测 / 就绪审计）的触发时机；
   ④ 路径白名单（`web.data_roots` 出厂 `["data"]`，F-07/F-08 的读/写不对称语义）；
-  ⑤ 性能热点现状（dedup 20MB / 流式 1.66MB / 倒排搜索 7.96ms——均引 §2.2 实测值，不写"约"）。
+  ⑤ 性能热点现状（dedup 20MB / 流式 1.66MB / 倒排搜索 7.96ms——dedup 与流式引 §2.2 实测值，
+  倒排 7.96ms 出自 `OPTIMIZATION_LOOP.md` 的 L13 条目，**不在 §2.2**，不写"约"）。
 - **纪律**：所有数字/行为必须能指回 `OPTIMIZATION_PLAN.md` 或代码锚点（file:line），
   指不回的删掉不写（与 10-24 F-06「文档漂移」同类风险，FAQ 是新文档，出生即带锚点）。
 
@@ -206,6 +214,7 @@ V-3 的负对照、V-5 的灌数据回归是**必须项**（防止验证空转�
 | ID | 事项 | 不做理由 |
 |---|---|---|
 | L-REST | 737 处无 LIMIT 的**全量**治理 | 抽样已覆盖热点（L 批次）；全量需逐端点灌数据压测 + 前端分页契约逐端点对表（10-24 原判延期理由未失效，本轮只是把"最痛的那几处"摘出来先做） |
+| L-SKIP-LEDGER | 本轮跳过的 **14 处**候选的逐条名册（端点名 + 理由 + 前端消费方式） | 本轮只把 8 处命中项的改动写进 §8；跳过项的分类计数进了 commit message，逐条名册未落盘，且分类相加为 16 ≠ 14（类别可能重叠）。数字以「14 处」为权威，名册在下一轮 LIMIT 抽样时补齐——**不当作已完成** |
 | Z-FULL | 43 个服务函数**全量**接 zod | 主链路 10~15 个先接（Z 批次）；全量接线是「契约全量机器化」独立轮次，且每接一个要写一份 conformance 测试，一次做完回归面太大 |
 | OA-LIMIT-OFFSET | 后端加 OFFSET/翻页控件联动 | 前端无翻页控件的端点只加 LIMIT（截断到前 N），不加 OFFSET；做完整分页是前后端联动需求，转产品决策 |
 | BOM-FAQ | augmentor FAQ 里写"如何部署 Docker 生产" | `docker/` 目录 + README 已有；FAQ 不重复运维文档（防漂移），只写"高频使用问题" |
@@ -217,9 +226,26 @@ V-3 的负对照、V-5 的灌数据回归是**必须项**（防止验证空转�
 | 项 | 状态 | 证据 | commit |
 |---|---|---|---|
 | V-1~V-6 有库行为验证 | **已完成** | 真库（lyp-pg / oa4rust 库 / o2server）直跑记录：V-1 state_summary FILTER 四键 + state_running 0 行；V-2 state_category_trigger 0 行；V-3 视图查询 0 行 + **负对照**（DROP VIEW 后 `relation does not exist`，还原 112 后在位）；V-4 keylock 别名 0 行；V-5 **灌数据回归**（ISO 文本 1 命中、脏值不命中不 500）+ **负对照**（`TO_CHAR(text)` 实证 `function to_char(text, unknown) does not exist`——F-8 原缺陷形态真库复现，LEFT 改法正确）；V-6 遗留 4 表 SELECT/UPDATE 全部可执行（UPDATE 加 `WHERE FALSE` 保护，0 行副作用）。库已恢复 fresh 终态 | — |
-| L 批次 LIMIT 抽样 | 待实施 | 候选端点清单（三把尺子判定记录）+ 每处 grep 前端 + 真库实跑 | — |
-| Z 批次 zod | 待实施 | conformance 测试 + `npm test` / `tsc` / `eslint` 三关门 | — |
-| D-1/D-2 FAQ | 待实施 | 锚点指回检查（逐句可指回 §号/file:line） | — |
+| L 批次 LIMIT 抽样 | **已完成** | 8 处热点 → **16 条 LIMIT**（9 个文件）：org_express `unit_list_all`、org_control `person_list_like` + `u2_person` 两分支、portal `dict_list`、program_center `config_list` 同族 5 处、auth `role_list`（50）、empower 3 处、mind `list_folders`、query `query_list`。跳过 14 处（逐条名册缺口见 §7 L-SKIP-LEDGER）。验证：真库逐条直跑通过（fresh 空表 0 行 / 非空表截断正确）、`cargo fmt --check` 8 个改动 crate 通过、`fi002_column_scan.py` 基线态 exit 0；`cargo test` / clippy 交 CI（本机无编译器） | `12c59474e` |
+| Z 批次 zod | **已完成** | `zod@4.6.7` + `@types/node`（仅 devDependency）；schema 以 pydantic `response_model` 为唯一 ground truth（15 模型 / 53 字段），`checkedResponse<T>` 接 14 个主链路函数、校验通过返回**原始** `response.data`（不是 zod 的裁剪克隆）。`main-schemas.conformance.test.ts` 静态解析 Python 类做双向键集 + 必填性比对（反向注入自证：改 `version_id` 后守卫变红、还原后绿）；`api.test.ts` 16 处与后端契约不符的旧 fixture 改为契约形状，另补 5 条运行时行为测试。门禁：vitest **336 passed** / `tsc --noEmit` 0 错 / `eslint --max-warnings 0` 0 / `vite build` 通过 / `check-warnings --only augmentor-web` PASS | `373548cf2` |
+| D-1/D-2 FAQ | **已完成** | 新增 `docs/augmentor/FAQ.md`（5 组问答：模型选型 / 13 种格式 / 安全三件套 / 路径白名单 / 性能热点，落点按 README 的文档迁移约定订正，见 §6-D1）与 `oa4rust/docs/FAQ.md`（3 条骨架：fresh-DB 500 防线 / 73 条契约别名与四表镜像 / 本机无编译器的验证口径），两处文档索引已补链接。锚点逐条核对：FAQ 的 31 条代码引用用 A184 的同一把尺子逐条判定为 `live`，文档引用用 §号。A184 普查改动前后**逐格相同**（files 628 / refs 6167 / 四档死链 0 / ambiguous 462 / runtime_ns 1 / scratch_missing 1365） | 本提交 |
+
+**D 批次的订正、环境事实与已知缺口（fail-loud，不写「已完成」了事）**
+
+1. **「多模型降级顺序」是计划里的错误措辞**。实现勘察（`augmentor/models/factory.py` 的
+   `MODEL_BACKENDS` 表 + `augmentor/models/base.py` 的同后端重试）确认：**没有跨厂商自动降级链**，
+   一次请求只打 `models.default` 选中的那一个后端。FAQ 按事实写「单后端 + 同后端内重试」，
+   §6-D1 的要求文字已同步改写，不留两份互相矛盾的说明。
+2. **本机没有 augmentor 的 Python 运行时**（无 fastapi / pydantic；为跑 A184 文档引用守卫，
+   另在系统 Python 3.12 装了 pytest 9.1.1，仅本机工具、不入仓）。因此后端 pytest 与
+   `TestClient` 真实响应夹具**本机跑不了**：Z 批次的跨语言一致性用「静态解析 `response_model`」
+   替代，运行时证据由 CI 的 pytest 套件提供——**不声称「本机已验证后端」**。
+3. **L 批次跳过项的逐条名册缺失**：commit message 只留分类计数，且分类相加 16 ≠ 14。
+   已在 §7 立 `L-SKIP-LEDGER`，把补齐责任留给下一轮，不把缺口写成完成。
+4. **FAQ 落在 `docs/augmentor/` 后不在 A184 的扫描面内**：那把尺子扫的是 augmentor 项目内的
+   Markdown 与代码注释，仓库根 `docs/` 不在其中。所以本轮 31 条代码引用虽已逐条判定 `live`，
+   日后搬行**不会自动变红**——属已知缺口，登记在此；要补自动化须把 `docs/` 纳入扫描面，
+   那是独立改动（会一并收进 `docs/plans/` 的存量引用），不在本批夹带。
 
 **待用户操作**：CI 全绿确认（每批推送后，gh 登录态沿用 10-26 的 keyring）；
 若 V 批次发现 10-26 某项实际未生效（库上缺列/缺视图），fail-loud 升级 P0，不在本批内私下修。

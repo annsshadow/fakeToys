@@ -6,6 +6,7 @@
 - [架构说明](ARCHITECTURE.md)
 - [API 文档](API.md)
 - [部署指南](DEPLOYMENT.md)
+- [常见问题（FAQ）](FAQ.md)
 
 ---
 
