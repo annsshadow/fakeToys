@@ -3,7 +3,7 @@
 | ID | 登记日 | 模块 | 摘要 | 优先级 | 状态 |
 |----|--------|------|------|--------|------|
 | TD-1 | 2026-09-22 | augmentor | config 保存时重写 config.yaml 丢注释、清占位符 | 低 | 已修复（AU-Q1, 2026-10-24） |
-| TD-2 | 2026-09-22 | oa4rust-web | file-type 16.5.4 传递依赖漏洞（Dependabot #127），补丁不兼容暂不处理 | 低 | 已接受 |
+| TD-2 | 2026-09-22 | oa4rust-web | file-type 16.5.4 传递依赖漏洞（Dependabot #127） | 低 | 已修复（2026-10-27，依赖链已移除） |
 | TD-3 | 2026-10-24 | augmentor | chromadb 1.5.9（已是最新版）4 条服务端漏洞（预认证 RCE / 越权 / RBAC），上游无补丁 | 中 | 已接受（嵌入式用法不可达） |
 
 ---
@@ -25,18 +25,19 @@
 
 ---
 
-## TD-2 file-type 传递依赖漏洞（Dependabot #127）补丁不兼容，暂不处理
+## TD-2 file-type 传递依赖漏洞（Dependabot #127）—— 已通过移除依赖链修复
 
-- **登记日**：2026-09-22
-- **告警**：GitHub Dependabot #127，GHSA-5v7r-6r5c-r473，medium。
-- **依赖链**：`@dcloudio/uni-mp-weixin`（uni-app 微信小程序构建工具链，dev-only）→ `jimp@0.22.12` → `@jimp/core` → `file-type@16.5.4`。
+- **登记日**：2026-09-22　**关闭日**：2026-10-27
+- **告警**：GitHub Dependabot #227（原 #127），GHSA-5v7r-6r5c-r473，medium。
+- **原依赖链**：`@dcloudio/uni-mp-weixin`（uni-app 微信小程序构建工具链，dev-only）→ `jimp@0.22.12` → `@jimp/core` → `file-type@16.5.4`。
 - **漏洞**：file-type ASF 解析器对畸形输入（零长度 sub-header）陷入无限循环（DoS）。影响范围 `>=13.0.0 <21.3.1`，补丁版 `21.3.1`。
-- **为何暂不修**：
-  1. 补丁版 `file-type@21.3.1` 为 **ESM-only + node>=20**，而 jimp 0.22.12 用 CJS `require` 加载它，override 到 21.x 会直接破坏构建；
-  2. 无攻击面：file-type 仅在小程序**构建期**解析项目自有图片资源时被调用，不处理外部/用户输入，无法被远程触发；
-  3. 属 dev 依赖，不进任何运行时产物。
-- **正解（依赖上游）**：待 uni-app 工具链升级到基于 `jimp@1.6.x` 的版本（该版把图片解析拆为 `@jimp/js-*` 独立插件，不再依赖老 file-type），漏洞自然消失。当前 uni-app 为 `3.0.0-alpha` 预发布版，不宜为此单独魔改上游工具链。
-- **决策记录**：2026-09-22 在 Dependabot 标记为 "risk is tolerable" / 登记为已接受技术债。对比项 #126（uuid）已于同日 override 修复。
+- **为何不能靠升 file-type 修**（复核于 2026-10-27，结论与登记日一致）：
+  1. 补丁版 `file-type@21.3.1` 是 **ESM-only + node>=20**，且 API 从 `fromBuffer` 改名 `fileTypeFromBuffer`；`@jimp/core` 是 CJS `require("file-type").default.fromBuffer(...)`，强推直接 TypeError；
+  2. 坏点是 `jimp.read(Buffer)` 这条**唯一**被用到的路径（automator 截图/二维码解码），type-check/单测/构建都发现不了，属静默失败；
+  3. 还会额外带进 4 个传递依赖（strtok3 10 / token-types 6 / uint8array-extras / @tokenizer/inflate），供应面反而变大。
+- **实际修法（2026-10-27）**：不再抬 jimp，**撤掉** 2026-09-22 加的 `jimp@0.10.3 → 0.22.12` override，让 jimp 回到 `@dcloudio/uni-mp-weixin` 精确 pin 的 `0.10.3`（其链上是 `file-type@9.0.0`，不在受影响区间），原先靠抬 jimp 绕开的 phin 2.9.3 改为直接 `'phin@<3.7.1': '3.7.1'` 覆盖。见 `oa4rust/pnpm-workspace.yaml` 的 overrides 注释。
+- **安全性论证**：jimp 在 oa4rust 中只被 `@dcloudio/uni-mp-weixin/lib/uni.automator.js` 引用（二维码解码，传 Buffer），本仓未启用 automator；phin 3 是 promise-only，而 @jimp/core 的回调式调用只在 `jimp.read(远程 URL)` 时触发，该路径既不启用也不受影响。
+- **验证**：`pnpm audit` 从 2 条（file-type + body-parser）降到 0；typecheck / lint / build(desktop) / build:h5 / build:mp-weixin 全绿且零告警，mobile 单测 121 条通过。
 
 ---
 

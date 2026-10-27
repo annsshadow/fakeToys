@@ -35,15 +35,19 @@ function check(name, got, wantFail) {
 console.log(`基线 ${baseTxt.length} 字节 / workspace ${yamlTxt.length} 字节\n`);
 
 console.log("=== checkCounts ===");
-// 2026-10-22 第三轮：基线从 39 降到 3（0/1/2/0），用例跟着现量走。
-check("A miniapp 现状 0/1/2/0 (=3) 对基线 3",
-  gate.checkCounts("miniapp", mk(0, 1, 2, 0), baseTxt), false);
-check("B 变体 涨到 0/2/2/0 (=4) 必须拦下",
-  gate.checkCounts("miniapp", mk(0, 2, 2, 0), baseTxt), true);
-check("C 变体 冒出 1 条 critical (=4)",
-  gate.checkCounts("miniapp", mk(1, 1, 2, 0), baseTxt), true);
-check("D 变体 降到 0/0/1/0 (=1) 应提示更新基线而不拦",
-  gate.checkCounts("miniapp", mk(0, 0, 1, 0), baseTxt), false);
+// 2026-10-27 第四轮：基线降到 0（0/0/0/0），用例跟着现量走。
+// 基线为 0 之后「降了提示更新基线」这个分支在真实基线上无法触发，
+// 所以 D 用例改用**合成基线**（total=3）单独覆盖那条分支——分支还在，
+// 只是不再由真实数据顺带覆盖。
+const SYNTH_BASE = "[miniapp]\ncritical = 0\nhigh = 1\nmoderate = 2\nlow = 0\ntotal = 3\n";
+check("A miniapp 现状 0/0/0/0 (=0) 对基线 0",
+  gate.checkCounts("miniapp", mk(0, 0, 0, 0), baseTxt), false);
+check("B 变体 涨到 0/1/0/0 (=1) 必须拦下",
+  gate.checkCounts("miniapp", mk(0, 1, 0, 0), baseTxt), true);
+check("C 变体 冒出 1 条 critical (=1)",
+  gate.checkCounts("miniapp", mk(1, 0, 0, 0), baseTxt), true);
+check("D 变体 降到 0/0/1/0 (=1) 对合成基线 3 应提示更新基线而不拦",
+  gate.checkCounts("miniapp", mk(0, 0, 1, 0), SYNTH_BASE), false);
 check("E admin 现状 0/0/0/0 对基线 0",
   gate.checkCounts("admin", mk(0, 0, 0, 0), baseTxt), false);
 check("F 变体 admin 冒出 1 条 high",
@@ -52,7 +56,7 @@ check("G 变体 基线里没有该项目段 -> 必须拦下而不是静默放行
   gate.checkCounts("nonexistent", mk(0, 0, 0, 0), baseTxt), true);
 
 console.log("\n=== checkOverrides ===");
-check("H 现状 29 条齐全", gate.checkOverrides(yamlTxt, baseTxt), false);
+check("H 现状 30 条齐全", gate.checkOverrides(yamlTxt, baseTxt), false);
 check("I 变体 删掉 vite 那行", gate.checkOverrides(yamlTxt.replace(/^\s*"vite": 6\.4\.4$/m, ""), baseTxt), true);
 check("J 变体 把 vite 改回 5.2.8（dcloudio 的 peer 锁）", gate.checkOverrides(yamlTxt.replace('"vite": 6.4.4', '"vite": 5.2.8'), baseTxt), true);
 check("K 变体 删掉 ws 那行", gate.checkOverrides(yamlTxt.replace(/^\s*"ws": 8\.21\.0$/m, ""), baseTxt), true);

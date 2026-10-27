@@ -76,7 +76,9 @@ overrides:
   "@babel/core": 7.29.6
   # express 链（vite-plugin-uni 的开发服务器，只在本地 dev 生效）：
   # body-parser / cookie / send / qs / path-to-regexp 各 1~4 条。
-  "body-parser": 1.20.6
+  # body-parser <1.20.9：压缩请求体后残留字节触发 DoS（GHSA-27r3-jxmh-p828）。
+  # 1.20.6 → 1.20.9 为补丁级，Dependabot #270 同一公告。
+  "body-parser": 1.20.9
   "cookie": 0.7.0
   "send": 0.19.0
   "qs": 6.16.0
@@ -88,6 +90,14 @@ overrides:
   # 与 jimp 的 CJS 用法不兼容）和 follow-redirects 1.16.0，high 反而多一条。
   # 只顶 jpeg-js 就把这 2 条 moderate 清掉，且不引入新链路。
   "jpeg-js": 0.4.4
+  # phin <3.7.1：重定向后仍带原请求头（GHSA-x565-32qp-m3vf），补丁线 3.7.1。
+  # 树里只有 @jimp/core@0.10.3 用到 phin 2.x，而它声明的是 ^2.9.3（跨主版本）。
+  # 选 3.7.1 的依据：它本来就在依赖树里（load-bmfont 1.4.2 在用），已随本仓构建
+  # 长期运行验证过。
+  # 兼容性说明：phin 3 是 promise-only，而 @jimp/core 的 request.js 是回调式调用。
+  # 该分支只在 `jimp.read(远程 URL)` 时触发；本仓 jimp 的唯一调用点是 automator 的
+  # 二维码解码（传 Buffer，走 getMIMEFromBuffer），不经 phin，故不受影响。
+  "phin": 3.7.1
   # jsdom → http-proxy-agent 链的 @tootallnate/once（控制流作用域错误，low）。
   "@tootallnate/once": 2.0.1
   # esbuild 0.25.12：<=0.24.2 有开发服务器任意请求漏洞；pnpm 11 需显式允许 build。

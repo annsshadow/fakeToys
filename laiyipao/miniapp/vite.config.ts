@@ -1,7 +1,12 @@
 import { defineConfig } from 'vite'
 import uni from '@dcloudio/vite-plugin-uni'
 
-// vite 必须锁 5.2.8（@dcloudio/vite-plugin-uni 的 peer 硬锁），见 GAME_DESIGN 目录说明
+// vite 声明值必须与 pnpm-workspace.yaml 里 override 的值一致（当前 6.4.4），
+// 见 GAME_DESIGN 目录说明。
+// 历史：@dcloudio/vite-plugin-uni 的 peer 是精确值 5.2.8，2026-10-22 起为了修
+// 15 条 vite advisory 用 override 顶到 6.4.4（5.4.x 线没有后续修复版本）。
+// 2026-10-27 起 package.json 的声明值也改成 6.4.4 —— 声明 5.2.8、实际装 6.4.4
+// 会让 dependabot 按声明值反复报已修的漏洞（一次 20 条）。
 // ⚠️ 这条约束有可执行守卫：src/test/toolchain_pin.test.ts。dependabot 在
 // 2026-09-30 / 2026-10-08 两次自动升级（5.2.8→6.4.3→8.3.4）把 type-check
 // （TS2307，vite 8 无根 types 字段而 TS4.9 不读 exports）、build:h5

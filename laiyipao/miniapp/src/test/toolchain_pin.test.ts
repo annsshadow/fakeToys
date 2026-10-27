@@ -13,7 +13,7 @@
  *
  * | 我们声明的 | 契约来源 | 为什么是精确值 |
  * |---|---|---|
- * | `vite` | `@dcloudio/vite-plugin-uni` 的 `peerDependencies.vite` | `"5.2.8"`，不是区间 |
+ * | `vite` | `pnpm-workspace.yaml` 的 override 目标 | 声明值与实际安装值必须同源；dcloudio 的 peer 是精确值 `5.2.8`，已被安全升级顶替 |
  * | `vue` | `@vue/server-renderer` 的 `peerDependencies.vue` | `"3.4.21"` |
  * | `@dcloudio/types` | `@dcloudio/uni-app` 的 `peerDependencies['@dcloudio/types']` | `3.4.31` |
  * | `@dcloudio/*`（20 个） | 它们彼此按精确版本引用，成套发布 | 任何分裂都装不出可用 uni-app |
@@ -30,6 +30,11 @@
  * **两者互斥，任何配置下都恰好剩一个 unmet peer。** 本项目选择站在 dcloudio 一侧 ——
  * 它在构建路径上（uni-app 用它编译），而 pinia 那侧只是软警告，
  * 实践中 vue 3.4 上 pinia 工作正常。
+ *
+ * `vite`：dcloudio 的 peer 是精确值 `5.2.8`，而本仓 override 到 `6.4.4`
+ * （5.4.x 线没有新一批 advisory 的修复版本，见 pnpm-workspace.yaml）。这是
+ * 第二个刻意保留的 unmet peer，理由同 pinia：构建实际跑的是 override 后的版本，
+ * 且 type-check / test / build:h5 / build:mp-weixin 四件套在 6.4.4 上验证过。
  */
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
@@ -78,17 +83,65 @@ function expectMatchesPeer(
   ).toBe(theirs)
 }
 
+/**
+ * 从 `pnpm-workspace.yaml` 取 `"vite": x.y.z` 这条 override —— 也就是**实际装到的**
+ * vite 版本。
+ *
+ * 两处断言共用（vite 声明值一致性、vitest 的 peer 区间是否覆盖它）。写成函数是
+ * 为了只有一处正则：override 的写法变了，两处同时红，不会只红一处。
+ */
+function readViteOverride(): string {
+  const workspaceYaml = readFileSync(
+    fileURLToPath(new URL('../../pnpm-workspace.yaml', import.meta.url)),
+    'utf8',
+  )
+  const v = /^\s*"vite":\s*([0-9][0-9.]*)\s*$/m.exec(workspaceYaml)?.[1]
+  expect(
+    v,
+    'pnpm-workspace.yaml 里找不到 `"vite": x.y.z` 的 override —— 本守卫靠它取' +
+      '「实际解析到的 vite」，取不到就没法判断声明值/peer 区间是否成立。',
+  ).toBeTruthy()
+  return v as string
+}
+
 describe('工具链 pin 守卫（dependabot 多次打破过，勿删）', () => {
-  it('vite 必须逐字等于 @dcloudio/vite-plugin-uni 的 peer 硬锁', () => {
+  it('vite 声明必须等于 pnpm-workspace.yaml 的 override 目标（dcloudio 的精确 peer 已被安全升级顶替）', () => {
+    // 2026-10-22 起 vite 被 override 顶到 6.4.4：5.4.x 线没有新一批 advisory 的
+    // 修复版本，只能跨大版本。而 @dcloudio/vite-plugin-uni 的 peer 仍是精确值
+    // 5.2.8 —— 这是本仓刻意保留的第二个 unmet peer（第一个是 pinia 要 vue ^3.5.11）。
+    //
+    // 判据三条，缺一条都会退回「声明值与实际安装值错位」的老坑：
+    //   1. dcloudio 仍按精确值 pin（依赖结构没变；变了要重新确认约束在哪）
+    //   2. 我们声明的 vite == override 目标 —— 2026-10-27 前两者是分裂的
+    //      （声明 5.2.8 / 实装 6.4.4），dependabot 按声明值一次报了 20 条已修的漏洞
+    //   3. 声明值不等于 dcloudio 那个 pin —— 等于就意味着 override 被撤，
+    //      那 20 条 advisory 立刻回来
     const peer = (uniPluginPkg as { peerDependencies?: { vite?: string } }).peerDependencies?.vite
-    expectMatchesPeer(
-      declared['vite'],
+    expect(
       peer,
-      'vite',
-      '@dcloudio/vite-plugin-uni',
-      '依赖机器人升级会改这一行 —— 改它会让 type-check（TS2307）与 ' +
-        'build:h5（Rolldown 解析 vue-demi 失败）同时挂掉。',
-    )
+      '读不到 @dcloudio/vite-plugin-uni 的 peerDependencies.vite —— ' +
+        '依赖结构变了，先确认这条约束还在不在，再改本守卫。',
+    ).toBeTruthy()
+    expect(
+      peer,
+      `@dcloudio/vite-plugin-uni 的 peer vite 从精确值变成了 "${peer}"。` +
+        '区间意味着「装哪个都行」，而本仓只验证过 override 的那一个版本。',
+    ).toMatch(EXACT_SEMVER)
+
+    const overrideVite = readViteOverride()
+    expect(
+      declared['vite'],
+      `package.json 的 vite 是 "${declared['vite']}"，而 pnpm-workspace.yaml 把它 ` +
+        `override 到 "${overrideVite}"。两者必须一致：声明值与实际安装值分裂时，` +
+        'dependabot 会按声明值反复报已经修掉的漏洞（2026-10-27 一次 20 条），' +
+        '读代码的人也会以为跑的是老版本。',
+    ).toBe(overrideVite)
+    expect(
+      declared['vite'],
+      `package.json 的 vite 又回到 dcloudio 的 pin "${peer}"。` +
+        '等于撤掉了安全升级 —— vite 5.4.x 线没有这批 advisory 的修复版本，' +
+        '那 20 条会立刻回来。要降回去必须先在 audit 里确认它们真的不再命中。',
+    ).not.toBe(peer)
   })
 
   it('vue 必须逐字等于 dcloudio 钉的 @vue/compiler-sfc 版本', () => {
@@ -229,18 +282,9 @@ describe('工具链 pin 守卫（dependabot 多次打破过，勿删）', () => 
         '本断言失去依据，先确认新契约再改这里。',
     ).toBeTruthy()
 
-    // override 的 vite 主版本：从 pnpm-workspace.yaml 的 `"vite": x.y.z` 取。
-    const workspaceYaml = readFileSync(
-      fileURLToPath(new URL('../../pnpm-workspace.yaml', import.meta.url)),
-      'utf8',
-    )
-    const overrideVite = /^\s*"vite":\s*([0-9][0-9.]*)\s*$/m.exec(workspaceYaml)?.[1]
-    expect(
-      overrideVite,
-      'pnpm-workspace.yaml 里找不到 `"vite": x.y.z` 的 override —— 本守卫靠它取' +
-        '「实际解析到的 vite」，取不到就没法判断 vitest 的 peer 是否被满足。',
-    ).toBeTruthy()
-    const overrideMajor = String(overrideVite).split('.')[0]
+    // override 的 vite 主版本：与上面那条 vite 断言共用同一个取数函数。
+    const overrideVite = readViteOverride()
+    const overrideMajor = overrideVite.split('.')[0]
 
     // peer 形如 "^6.0.0 || ^7.0.0 || ^8.0.0"：把每个分支的主版本抠出来比。
     const peerMajors = [...String(peerVite).matchAll(/\^?(\d+)\./g)].map((m) => m[1])
