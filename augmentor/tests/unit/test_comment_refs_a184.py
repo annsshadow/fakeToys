@@ -89,10 +89,12 @@ REPO = ROOT.parent
 DOCS_DIR = REPO / "docs" / "augmentor"
 
 IDX_SKIP = frozenset({".git", "__pycache__", ".pytest_cache", "node_modules",
-                        ".backups"})
+                        ".backups", "dist"})
 # `.backups` = 套件自写的运行时快照目录（gitignored，不入仓）：索引收它会让测试套件
 # 每跑一次全量门禁就为下一次普查造出新的文件名候选（`index.json`/`snap.json`），
 # 引用被翻进 ambiguous 欠账档、棘轮自伤（L145，B215）。SCAN_SKIP 一直有它，索引侧对齐。
+# `dist` = 前端构建产物（同样 gitignored）：跑没跑过 npm run build 会让文件数与引用数
+# 跟着变，而 CI 克隆里没有它——与 `.backups` 同一条「读数不能被本机状态改写」理由。
 SCAN_SKIP = IDX_SKIP | {"bak", "htmlcov", ".venv", "venv", ".mypy_cache"}
 #: 顶层（ROOT 直接子级）的未入仓用户数据目录，仅按「恰好是 ROOT 的子目录」逐层判，
 #: 不误伤嵌套的 `augmentor/data` 包（包里 `image.py`/`cleaner.py` 是入仓产品码，
@@ -157,7 +159,12 @@ CEILING = {
     # 修法要动 `REF` 形状而不是改数字，另立待办。
     # 已用「stash 全部本地改动后重跑普查」对照：HEAD 读数同为 463 ⇒ 这次位移不是本轮
     # 改动造成的，是更早的账本批累积的存量（棘轮档语义要求涨也记账，记的就是这一条）。
-    "ambiguous": 463,
+    # 2026-10-27 A184 增量重钉 463 → **497**（+34）。扫描面接上 docs/augmentor 的 14 份
+    # Markdown 后先量到 +35：config.py / pipeline.py / api.ts 这类裸文件名在 augmentor 与
+    # docs 两份语料里都能数出多份候选，按既有口径落「歧义」而不是「死链」；修 15 条死引用
+    # 时其中 1 条（原 docs/ARCHITECTURE.md）改写后仍有多候选，故净 +34。逐条判定见
+    # 10-27 计划 §2 的增量探针。
+    "ambiguous": 497,
     # 2026-10-22 重钉 0 → **1**：唯一一条是 OPTIMIZATION_LOOP_2.md 第 3192 行 A315 那段
     # 散文举例「顶层三处」范围不够时写的运行期产物路径（checkpoints/ckpt.json，反引号
     # 形状）——它正是本档的语义（"没有 ⇒ 单独成档 runtime_ns，判它死等于把散文当契约"）：
@@ -166,47 +173,31 @@ CEILING = {
     # （本注释刻意不再用反引号复述那条路径 —— 反引号形状会被普查收成新引用，
     #  第一版就这么自己给自己造了第 2 条。）
     "runtime_ns": 1,
-    # 2026-10-22 重钉 768 → **731**（−37）。`scratch` 量的是「Temp 里有同名工件」的引用，
-    # 而 Temp 是**未入仓**的取证草稿目录（本轮 git status 里它始终不出现在改动清单），
-    # 内容随各轮取证脚本增删而变：同名工件少了 37 个，这些引用并未消失，而是改判
-    # `scratch_missing`（见下一格 +293）。两档之和 731+633=1364 与重钉前 768+340=1108
-    # 相比的净增，才对应案面的真实新增。**因此这两格不能单独读**，要连着看。
-    "scratch": 731,
-    # 2026-10-22 重钉 340 → **633**（+293）。新增成员同样是账本两卷的反引号散名与短
-    # 哈希（实测 OPTIMIZATION_LOOP_2.md 208 条 / OPTIMIZATION_LOOP.md 179 条）：它们既不
-    # 在入仓索引里、Temp 里也没有同名工件，于是落「指向不入仓工件」档。既有先例：
-    # `.error` / `.results` / `.loads` 这类代码标识符的屬性访问也走这一档（HEAD 里
-    # `json.loads` 已被同样计入 6 次）—— 属判据把「反引号形状」一律当路径的粗糙处。
-    # 与 `scratch` 那一格联动记账（同一批引用的两副面孔），见上一格注释。
-    "scratch_missing": 634,
-# L154 面位移：config.py / config_validator.py 插行后 4 条行引用降名字锚（L1 两条 +
-# 架构文档两条），裸名形状入 ambiguous 桶（见下方实测值）；守卫 docstring 与静态面
-# 注释新引 A140 现量房那支普查脚本名，scratch 随之 +1。案面=产品布局变更，按「动
-# 案面要重跑普查再改这里」条款逐格归因；dead_line 降锚后回 0 未再动。
-# L145 面位移（289 → 302）：运行时快照目录从索引排除后，13 条只能靠该目录的
-# 文件候选落定的引用（两个散名与两条全路径）翻进本档。案面=索引口径变更，按
-# 「动案面要重跑普查再改这里」条款逐格归因；ambiguous 327 与其余各档原地未动。
-# L178 面位移（索引口径变更，按 L145 同式逐格归因）：顶层未入仓用户数据目录
-# `data`/`bak`（`data/versions/` 每跑一次全量门禁被 create_version 追加新目录、`bak/`
-# 是手动备份）从索引移出——但**只按「恰好是 ROOT 直接子目录」逐层判**（`_walks` 的
-# `top_skip`），不误伤嵌套的 `augmentor/data` 包（其 `image.py` 等是入仓产品码、被 web
-# 注释引用，必须留在索引才解析得成 live；首版用任意深度同名跳法把它也抹掉，翻成
-# dead_path 红 2 条，已回退）。重钉四格：`ambiguous` 328 → **300**（`train_data.json`
-# 等散名不再被 data//bak/ 同名件灌进歧义档，另含本账 L178 条目自身新引散名 +1）、
-# `runtime_ns` 30 → **0**（30 条全是 `data/*` 示例路径，data/ 出索引后首段不在源码目录
-# 集，翻成 scratch_missing）、`scratch` 730 → **768** 与 `scratch_missing` 302 → **339**
-# （`data/*` 与 `bak/*` 的引用改判「指向不入仓工件」两档，含账本条目新引 +5/+1）。
-# 三档硬 0 与 `live` 面（2488）未动。
-# 案面=索引口径变更、非清账，按「动案面要重跑普查再改这里」条款就地重钉；此后棘轮
-# 只量已入仓案面，对 data//bak/ 的磁盘运行期漂移免疫。
+    #: `scratch` / `scratch_missing` **不进 CEILING**：两格的分界线是 Temp/ 里有没有同名
+    #: 未入仓工件，而 Temp/ 是取证草稿目录、内容随各轮脚本增删变化 —— 同一批引用在作者树
+    #: 与干净克隆里会落进不同的格（本机实测 0 / 1365，作者树 731 / 634），单格钉死就是拿
+    #: 环境噪声撞常数。判据改为只钉**两档之和**（见 SCRATCH_PAIR），与 L79 的
+    #: authoring_tree 口径同源。历史上这两格曾经单独钉过（2026-10-22 的 731 / 634），
+    #: 那份读数保留在 git 历史里，不再作为可执行常量。
 }
+
+#: 「指向不入仓工件」两档之和（2026-10-27 重钉 1365 → **1484**）
+#:
+#: 为什么只钉和：`scratch` 与 `scratch_missing` 的分界线是「Temp/ 里有没有同名工件」，
+#: 而 Temp/ 不入仓、内容随取证脚本增删变化。作者树里 731 / 634，干净克隆里 0 / 1365，
+#: 单格读数不可移植；两档之和 1365 才是可移植的案面读数。
+#:
+#: 本轮两笔：docs/augmentor 的 14 份 Markdown 接进扫描面 ⇒ +120（data/* 示例路径、
+#: 短哈希、代码标识符形状）；上面那段 L178 历史归因收成本注时删掉了一条含反引号
+#: train_data.json 的旧引用 ⇒ −1。净 1365 → 1484。
+SCRATCH_PAIR = 1484
 
 #: 反空转下界：这几个数**不是缺陷计数**，而是「普查真的看见了多大一片」的证据。
 #: 删引用是改进，不该被下界卡住；它只负责证明扫描没空转 —— 路径拼错、跳过清单写歪、
 #: git ls-files 返回空，三种事故都会让「全部死档为 0」靠「什么都没扫到」拿到手。
 #: `anchor_claims`（L245）是内容维的同一格保险：现量 24 条主张，归因正则写歪、括弧形状改成
 #: 别的写法，都会让 `dead_anchor` 靠「一条主张都没看见」伪造成绿。
-FLOOR = {"files": 400, "refs": 3000, "symbol_live": 300, "anchor_claims": 20}
+FLOOR = {"files": 400, "refs": 3000, "symbol_live": 300, "anchor_claims": 40}
 
 #: 判据能产出的**全部桶名**（词汇表，与 `reference_state` 的返回集 + 两档符号 + dead_line 对齐）。
 #: `live` 与 `symbol_live` 是好引用，不进 `CEILING`；`dead_line` 只能由 `span_state` 产出、
@@ -280,10 +271,22 @@ def source_dirs():
 
 @functools.lru_cache(maxsize=None)
 def lines_of(rel):
-    try:
-        return (ROOT / rel).read_text(encoding="utf-8").splitlines()
-    except (UnicodeDecodeError, OSError):
-        return None
+    """按**两套坐标**读同一份案面：augmentor 相对（ROOT）与仓库根相对（REPO）
+
+    `docs/augmentor/*.md` 2026-10-14 从 `augmentor/docs/` 迁出后只存在于仓库根一侧；
+    扫描面接上它们之后，行号/内容两维（`span_state` / `anchor_state`）要读的就是那份。
+    先问 ROOT 再问 REPO：`docs/...` 在 ROOT 下不存在，不会与产品文件撞名；反过来若哪天
+    仓库根也放一份同名产品文件，仍以 augmentor 内那份为准（历史坐标不变）。
+    """
+    for base in (ROOT, REPO):
+        path = base / rel
+        if not path.is_file():
+            continue
+        try:
+            return path.read_text(encoding="utf-8").splitlines()
+        except (UnicodeDecodeError, OSError):
+            return None
+    return None
 
 
 def python_comments(text):
@@ -323,7 +326,13 @@ def script_comments(text):
 
 @functools.lru_cache(maxsize=1)
 def corpus():
-    """扫描面全文：`((相对路径, ((行号, 文本), ...)), ...)`"""
+    """扫描面全文：`((相对路径, ((行号, 文本), ...)), ...)`
+
+    **两套坐标都在场**：产品树按 augmentor 相对（`_walks`），汇出到仓库根的
+    docs/augmentor 下 Markdown 按仓库根相对（`_repo_docs_walks`）。后者此前只喂索引、不喂语料，
+    于是 FAQ 与 ARCHITECTURE/API 三卷里的引用**没有任何守卫在读**——
+    10-26 台账 §8 第 4 条把这条记成已知缺口，本轮（A184 增量）补齐。
+    """
     rows = []
     for rel, path in _walks(include_temp=False, skip=SCAN_SKIP):
         ext = pathlib.PurePath(rel).suffix
@@ -339,6 +348,16 @@ def corpus():
         else:
             notes = script_comments("\n".join(text))
         rows.append((rel, tuple(notes)))
+    for _name, parts in _repo_docs_walks():
+        # 坐标直接用 `_repo_docs_walks` 交回的段元组 —— 用文件名拼会丢掉 system/ 子目录，
+        # 而 `lines_of` 读不到时只会静默跳过（那正是「扫描面缩了却仍全绿」的成形方式）。
+        full_rel = "/".join(parts)
+        if pathlib.PurePath(full_rel).suffix not in SCAN_EXT:
+            continue
+        text = lines_of(full_rel)
+        if text is None:
+            continue
+        rows.append((full_rel, tuple(enumerate(text, 1))))
     return tuple(rows)
 
 
@@ -690,6 +709,18 @@ class TestCensusIsProven:
             bucket, live = name_bucket(rel, index, src)
             assert bucket is None and live == rel, (rel, bucket, live)
 
+    def test_repo_level_docs_are_in_the_corpus(self):
+        """仓库根的 docs/augmentor 必须在**语料**里，不只是索引里
+
+        只进索引不进语料，等于「能解析但没人读」——FAQ 的 31 条代码引用、ARCHITECTURE
+        与 API 三卷的成百条定位引用会一起退回 10-26 台账 §8 第 4 条那个缺口。
+        三个靶子覆盖三种布局：顶层单文件、顶层卷、system/ 子目录（子目录用文件名拼路径会丢层）。
+        """
+        rels = {rel for rel, _ in corpus()}
+        for rel in ("docs/augmentor/FAQ.md", "docs/augmentor/API.md",
+                    "docs/augmentor/system/01-overview-and-terminology.md"):
+            assert rel in rels, rel
+
     def test_the_rulers_own_regex_still_cannot_see_a_yaml_line_ref(self):
         """钉住「为什么需要这一支」：L79 的行号正则写死 Python 后缀，YAML 引用它读不到
 
@@ -711,8 +742,11 @@ class TestCensusIsProven:
         模块顶部，`reference_state` 的返回集变了就必须同时改它。
         """
         assert set(CEILING) <= BUCKETS, set(CEILING) - BUCKETS
-        # 好引用与「symbol_live」不进 CEILING；其余每一档都必须钉一个常数
-        assert BUCKETS - set(CEILING) == {"live", "symbol_live"}, BUCKETS - set(CEILING)
+        # 好引用与「symbol_live」不进 CEILING；工件的两档由 SCRATCH_PAIR 合钉（单格不可移植）
+        assert BUCKETS - set(CEILING) == {
+            "live", "symbol_live", "scratch", "scratch_missing"}, BUCKETS - set(CEILING)
+        # 合钉的那两档不许被漏掉：词汇表里在、CEILING 里不在的只允许这四格
+        assert {"scratch", "scratch_missing"} <= BUCKETS
         # 合并优先级的表不许写出词汇表之外的档名
         assert set(_LIVE_ORDER) <= BUCKETS, set(_LIVE_ORDER) - BUCKETS
 
@@ -747,13 +781,24 @@ class TestHardZero:
 class TestRatchetsAreExact:
     """四档欠账/工件读数精确相等（只降不升；改进也得同时改常数并留一句「谁清的」）"""
 
-    @pytest.mark.parametrize("bucket", ["ambiguous", "runtime_ns", "scratch",
-                                        "scratch_missing"])
+    @pytest.mark.parametrize("bucket", ["ambiguous", "runtime_ns"])
     def test_bucket_matches_its_ceiling(self, bucket):
-        require_authoring_tree()
         counts, _, _ = census()
         assert counts[bucket] == CEILING[bucket], \
             "%s 现量 %d，常数是 %d" % (bucket, counts[bucket], CEILING[bucket])
+
+    def test_scratch_pair_matches_its_ceiling(self):
+        """工件两档只钉**和**：Temp/ 不入仓，作者树与干净克隆的单格读数必然不同
+
+        这条在两种树上都跑（不像 `test_bucket_matches_its_ceiling` 依赖作者工作树），
+        因为「和」恰恰是两边共有的那一格；若哪天有人把 docs/augmentor 从扫描面摘掉，
+        和会掉回 1365，当场红。
+        """
+        counts, _, _ = census()
+        pair = counts["scratch"] + counts["scratch_missing"]
+        assert pair == SCRATCH_PAIR, \
+            "scratch + scratch_missing 现量 %d（%d + %d），常数是 %d" % (
+                pair, counts["scratch"], counts["scratch_missing"], SCRATCH_PAIR)
 
     def test_the_good_references_outweigh_the_debt(self):
         """好引用必须压过全部欠账：这条比例是「普查在量案面而不是在量噪声」的读数"""

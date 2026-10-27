@@ -186,7 +186,7 @@ $ python cli.py validate-config --config typo_config.yaml
   - **默认档一字未改**：14 条命令在「无 `logging` 节 / `logging:` / `logging: {}`」三臂下
     rc 与两个 stdout/stderr 逐字节相同（`l57/ab.txt` 判据 1），出厂 `config.yaml` 里这一节
     现在是一段**注释块**（写了才生效，没写就还是今天的形状）。
-  详见 `docs/ARCHITECTURE.md` §3.32、`tests/unit/test_logging_wiring_a97.py`（82 例）与
+  详见 `docs/augmentor/ARCHITECTURE.md` §3.32、`tests/unit/test_logging_wiring_a97.py`（82 例）与
   `tests/integration/test_cli_logging_wiring.py`（17 例，真子进程）。
 - **配置节写成 null 或标量（A101，L57）**：只写节名不给值（`logging:`）或写成标量
   （`logging: app.log`）在改前抛 `AttributeError: 'NoneType' object has no attribute 'get'`，
@@ -468,7 +468,7 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
 > 6,902 条按 `instruction` 分层时它有 6,531 个键、紧凑 JSON 404,362 字节，是四计数响应的
 > 5,119 倍，也违反上面那条约定。空 `stratify_key` 一律 400，不静默退化成随机或不分层。
 > `shuffle` 在两条支路上的口径**不同**（分层支路只回排段内顺序、默认支路连成员一起改且
-> `seed` 空转），细节见 `SplitRequest` 文档串与 `docs/ARCHITECTURE.md` §3.17。
+> `seed` 空转），细节见 `SplitRequest` 文档串与 `docs/augmentor/ARCHITECTURE.md` §3.17。
 >
 > `convert` 的 `target_format` 自 L84 起合法值是 12 个：容器四形 `json` / `jsonl` / `csv` /
 > `tsv`、六个行内 schema，加上 Excel 写边的 `excel` / `xlsx`（同一份权威
@@ -1329,7 +1329,7 @@ print(report["pass_rate"], report["improvement_suggestions"])
 
 ## 11. 排查（API 面）
 
-只列 REST 面特有的坑；依赖缺失、词云乱码等通用问题见 `docs/README.md` §9。
+只列 REST 面特有的坑；依赖缺失、词云乱码等通用问题见 `docs/augmentor/README.md` §9。
 
 **Q：`POST` 请求返回 400，报「路径不在白名单内」**
 A：所有 `input_file` / `filename` 都是**服务端路径**、不是 URL，且必须落在路径
