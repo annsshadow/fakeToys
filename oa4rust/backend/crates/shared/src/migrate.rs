@@ -190,3 +190,78 @@ pub async fn applied_versions(pool: &Pool) -> anyhow::Result<Vec<String>> {
         .await?;
     Ok(rows.into_iter().map(|r| r.get::<_, String>(0)).collect())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ──────────────────────────────────────────────────────────────────────
+    // 迁移运行器此前**覆盖率 0%**（116 行）。它是启动路径上唯一会改数据库结构的
+    // 组件，而且失败方式极其安静：一条迁移写错 → 启动失败；顺序错 → 后续迁移
+    // 全红；幂等坏 → 每次重启都重放一遍。
+    //
+    // 这里用真实的 PG（`testing::test_pool()`，读 `DATABASE_URL`）跑完整链路。
+    // 两条用例合并成一个 `#[tokio::test]`：`MIGRATIONS_DIR` 是进程级环境变量，
+    // 拆成并行用例会互相干扰。
+    // ──────────────────────────────────────────────────────────────────────
+
+    const MIGRATIONS_DIR_KEY: &str = "MIGRATIONS_DIR";
+
+    #[tokio::test]
+    async fn migrations_are_ordered_idempotent_and_fail_loud_on_missing_dir() {
+        let pool = crate::testing::test_pool();
+
+        // ① 从当前库状态跑一遍：全量应用（或全量跳过，取决于库是否已迁移过）
+        let first = run_migrations(&pool).await.expect("first migration run");
+        assert!(
+            first.total() > 0,
+            "迁移目录里必须至少有一条正向迁移（rollback 不计）"
+        );
+        assert!(
+            first.applied.iter().all(|f| f.ends_with(".sql")),
+            "报告里记的是文件名"
+        );
+        assert!(
+            first.applied.iter().all(|f| !f.contains("rollback")),
+            "rollback 迁移不得被自动应用"
+        );
+
+        // ② 再跑一遍：必须全部跳过（幂等）。重放的后果是重复建表/重复插种子，
+        //    在容器化部署里表现为「重启一次就失败一次」。
+        let second = run_migrations(&pool).await.expect("second migration run");
+        assert!(
+            second.applied.is_empty(),
+            "第二次运行不应再应用任何迁移，实际: {:?}",
+            second.applied
+        );
+        assert_eq!(
+            second.skipped.len(),
+            first.total(),
+            "第二次应把第一次的全部记为 skipped"
+        );
+
+        // ③ 追踪表必须与实际应用数一致，且版本号唯一（主键保证，这里做行为级校验）
+        let versions = applied_versions(&pool).await.expect("applied_versions");
+        assert_eq!(versions.len(), first.total());
+        let mut unique = versions.clone();
+        unique.sort();
+        unique.dedup();
+        assert_eq!(unique.len(), versions.len(), "schema_migrations 出现重复版本");
+
+        // ④ 目录不存在时必须**报错**而不是「0 条迁移、静默成功」。
+        //    静默成功的后果是：部署时漏拷 migrations/，服务照常启动，
+        //    然后在第一次查询时炸在缺表上——现场完全看不出根因。
+        let saved = std::env::var(MIGRATIONS_DIR_KEY).ok();
+        std::env::set_var(MIGRATIONS_DIR_KEY, "definitely-not-a-real-dir-oa4rust");
+        let err = run_migrations(&pool).await.expect_err("missing dir must fail");
+        let msg = format!("{err}");
+        assert!(
+            msg.contains("migrations directory not found"),
+            "错误信息应点明目录缺失，实际: {msg}"
+        );
+        match saved {
+            Some(v) => std::env::set_var(MIGRATIONS_DIR_KEY, v),
+            None => std::env::remove_var(MIGRATIONS_DIR_KEY),
+        }
+    }
+}
