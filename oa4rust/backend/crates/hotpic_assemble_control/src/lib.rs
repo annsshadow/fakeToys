@@ -196,7 +196,7 @@ pub async fn list_hotpics(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, title, image_url, creator, create_time::text AS create_time FROM x_hotpic WHERE deleted_at IS NULL ORDER BY create_time DESC",
+            "SELECT id, title, image_url, creator, create_time::text AS create_time FROM x_hotpic WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 100",
             &[],
         )
         .await

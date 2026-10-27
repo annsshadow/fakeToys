@@ -208,7 +208,7 @@ pub async fn list_control_sections(
 
     let rows = client
         .query(
-            "SELECT id, name, enabled FROM x_bbs_assemble_control_section ORDER BY sort",
+            "SELECT id, name, enabled FROM x_bbs_assemble_control_section ORDER BY sort LIMIT 100",
             &[],
         )
         .await
@@ -387,7 +387,7 @@ pub async fn list_forums(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, name, description, sort, creator, create_time::text FROM x_bbs_forum WHERE deleted_at IS NULL ORDER BY sort ASC",
+            "SELECT id, name, description, sort, creator, create_time::text FROM x_bbs_forum WHERE deleted_at IS NULL ORDER BY sort ASC LIMIT 100",
             &[],
         )
         .await

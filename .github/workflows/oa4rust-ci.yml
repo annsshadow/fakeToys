@@ -587,3 +587,29 @@ jobs:
           python-version: "3.x"
       - name: FI-002 static column scan (ratchet against baseline)
         run: python scripts/fi002_column_scan.py
+
+  # L-REST 无界 SELECT 静态扫描（2026-10-27，第六轮 §6 收口）
+  #
+  # 与 FI-002 同源：复用 rust_literals() / SRC_ROOTS，不另造一套 SQL 字面量
+  # 提取器。区别是它不碰 migrations，只按**顶层 SQL 形状**分桶，把「没有
+  # LIMIT/FETCH」的列表查询单独记账，并与
+  # docs/audits/artifacts/limit_unbounded.tsv 做文件级棘轮：
+  # 新文件出现 unbounded、或既有文件计数增加即红；修掉一条会提示收敛。
+  #
+  # 本轮只给 7 处高置信列表加 LIMIT，其余 624 条进基线；导出/聚合/全遍历
+  # 不盲改（见计划 §6.3）。扫描器自身有总字面量/文件数/分桶地板，防止
+  # 「正则坏了、什么都没扫到」被当成绿。
+  limit-scan:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: oa4rust/backend
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.x"
+      - name: L-REST unbounded SELECT scan (ratchet against baseline)
+        run: python scripts/limit_scan.py

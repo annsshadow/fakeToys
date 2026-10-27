@@ -69,6 +69,9 @@ oa4rust/backend/scripts/**
 !oa4rust/backend/scripts/pilot_gate.py
 # live DB 对账脚本：111/112 声明列 ↔ information_schema 形状分叉检测（有库轮次）
 !oa4rust/backend/scripts/schema_diff.py
+# L-REST 无界 SELECT 扫描器：CI 的 limit-scan job 调用，基线棘轮缺它不可复现
+# （见 docs/plans/2026-10-27-gap-closure-round.md §6）
+!oa4rust/backend/scripts/limit_scan.py
 
 # log
 *.log

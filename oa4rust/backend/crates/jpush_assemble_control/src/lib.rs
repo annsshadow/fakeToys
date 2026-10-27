@@ -166,7 +166,7 @@ pub async fn list_jpushs(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, title, content, target, creator, create_time FROM x_jpush WHERE deleted_at IS NULL ORDER BY create_time DESC",
+            "SELECT id, title, content, target, creator, create_time FROM x_jpush WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 100",
             &[],
         )
         .await

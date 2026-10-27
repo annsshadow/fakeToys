@@ -199,7 +199,7 @@ pub async fn list_components(pool: Extension<Pool>) -> Result<Json<ActionResult<
 
     let rows = client
         .query(
-            "SELECT id, name, type, creator, create_time::text FROM x_component WHERE deleted_at IS NULL ORDER BY create_time::timestamp DESC",
+            "SELECT id, name, type, creator, create_time::text FROM x_component WHERE deleted_at IS NULL ORDER BY create_time::timestamp DESC LIMIT 100",
             &[],
         )
         .await

@@ -691,7 +691,7 @@ pub async fn list_to_enable(
     let rows = client
         .query(
             "SELECT id, from_person, to_person, role_id, enabled, created_at, updated_at \
-             FROM x_empower WHERE to_person = $1 AND enabled = true AND deleted_at IS NULL ORDER BY created_at DESC",
+             FROM x_empower WHERE to_person = $1 AND enabled = true AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 100",
             &[&current_person],
         )
         .await
