@@ -64,6 +64,15 @@ export default defineConfig({
     include: ['src/**/*.test.ts'],
     environment: 'node',
     globals: true,
+    // ⚠️ 默认 5s 超时对本项目是错的：`src/game/**` 的平衡性用例要跑完整 100 关
+    // 战斗模拟，单条实测 10~40s（armor_shape 34s、elem_coef_diag 28s）。
+    // 默认值下这些用例会**随机**超时（2026-10-27 实测 revive_extra_hp 在并发
+    // 负载下红过一次，串行跑又绿）—— 这种「负载型假红」最坏的地方是它会顺带
+    // 让覆盖率报告整份作废：vitest 在用例失败时跳过 coverage 输出，
+    // 于是「覆盖率没数」和「真失败」被混成同一件事。
+    // 放到 120s 仍然能抓住真的死循环（那些会远超 2 分钟）。
+    testTimeout: 120000,
+    hookTimeout: 60000,
     coverage: {
       // src/test/** 是测试基建（uni mock / 生命周期替身 / 夹具），不是产品代码。
       // src/game/types.ts 是纯类型声明（interface / type / 字面量联合），

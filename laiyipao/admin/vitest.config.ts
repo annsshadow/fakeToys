@@ -59,7 +59,11 @@ export default defineConfig({
       provider: 'v8',
       include: ['src/**'],
       // 生成型声明文件与样式，忽略掉免得算进覆盖率分母
-      exclude: ['src/env.d.ts', 'src/styles/**', 'src/components.d.ts'],
+      // `src/api/types.gen.ts` 由 `laiyipao/server/cmd/tygen` 生成、且是纯
+      // `interface`/`type`（编译后无运行时代码）——覆盖率对它恒为 0%，
+      // 纳入统计只会把 `src/api` 目录的分数按比例拉低，而任何测试都无法
+      // 「覆盖」它。它的一致性由 `server/internal/tygen` 的逐字节比对守卫负责。
+      exclude: ['src/env.d.ts', 'src/styles/**', 'src/components.d.ts', 'src/api/types.gen.ts'],
       reporter: ['text'],
     },
   },
