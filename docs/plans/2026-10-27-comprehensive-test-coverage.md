@@ -11,10 +11,15 @@
 
 | 批次 | 目标 | 结果 |
 | --- | --- | --- |
-| B1 Go + PG | 让 `service`/`httpapi` 可测 | **已解锁并实测**：Docker 放行 `wsl.exe` 后起 `postgres:16`（宿主 15432）→ 除 `service` 外全部包跑通，见 §4.6 |
+| B1 Go + PG | 让 `service`/`httpapi` 可测 | **完成**：起 `postgres:16`（宿主 15432）+ 建 `laiyipao` 库（migrate+seed）→ 全包跑通；`service` 86.6、`store` 48.7→89.7、**`httpapi` 26.6→86.0**（74 条 e2e 原为静默 SKIP），见 §4.6 |
 | B2 Rust `shared` | 57.47% → 75% | **65.84%**（含测试代码口径）／**61.24%**（产品代码口径）；`session.rs` 17.31→52.56、`rate_limit.rs` 45.85→83.88、`scheduler.rs` 52.17→90.76、`token.rs` 72.27→88.60、`config.rs` 0→100 |
 | B3 `laiyipao/admin` | 87.34% → 92% | **88.61%**；`src/api/index.ts` 66.15→96.92、`src/utils` 76.92→100 |
 | B4 `oa4rust/mobile` | 接线 mobile 测试 | **前提有误（已更正）**：mobile 本来就有独立配置且在 CI 里跑；真实缺口是 `services/index.ts` 43.24% → **100%**，整体 79.52% → **99.76%** |
+| B5 miniapp 残余 | 70% / 67% 两个工具模块 | 均到 **100%**（17 条） |
+| B6 frontend 收尾 | `sandbox`/`sessionCache` 分支 | **复核后撤回**：已被既有用例覆盖，再补是剧场 |
+| B7 auto-checkin / cool | 接覆盖率 | auto-checkin **53.27% 行**（首次有数）；`cool` 登记为 G3 不接线 |
+| B8 变异抽样 | 验证断言有没有牙齿 | 3 个变异体：**M1 存活 → 补断言 → 被杀**，M2/M3 直接被杀 |
+| B9 门禁接线 | 阈值 + CI | 三个前端 ratchet 阈值 + 各自 CI 覆盖率步骤（已本地验证） |
 
 **本轮抓到 4 个真缺陷**（3 个已修，1 个仅登记）：
 1. `RateLimiter::init_redis()` 在 tokio 运行时内**直接 panic**（`SessionManager` 同名方法有守卫，它没有）——已修；
@@ -263,6 +268,55 @@ cd oa4rust/backend && cargo llvm-cov -p shared --lib --summary-only
 修法（不是加 sleep）：把解析抽成纯函数 `dialect_from(name)` 与 `dialect_name_from_env()`，`dialect()` 只负责缓存；方言优先级用例改为断言解析层（不再碰全局）；新增 `testing::ENV_LOCK`，改环境变量的用例与迁移用例共用这把锁。
 
 
+### 4.7 第四轮（B6 复核 / B7 / B8 变异抽样，2026-10-27 深夜）
+
+#### B6 复核：原判断有误，两项都不需要补测试
+
+计划里写「`sandbox.ts` 分支 73%、`sessionCache.ts` 分支 50% 值得补 3~5 条」。实际读代码 + 读既有用例后撤回：
+
+- `sandbox.ts`：`sandbox.test.ts` 已经覆盖了 foreign-source 忽略、缺 marker 忽略、超时强制返回、`allow-scripts` 属性、`srcdoc` 注入、`destroySandbox` 摘监听。剩余分支是 `?? undefined` 这类防御性回落，补了也只是让数字好看。
+- `sessionCache.ts`：三条用例已覆盖「换人清缓存 / 登出清 / 不变不清」。50% 分支来自 `if (who !== prev)` 的 false 边——而 watch 对原始值只在**变化时**触发，false 边在实现上不可达（纯防御代码）。
+
+结论：**这里再补测试就是覆盖率剧场**，与 §1 的判据 R1 直接冲突。
+
+#### B7 —— `auto-checkin` 首次接上覆盖率口径
+
+`auto-checkin` 一直有 40 条 `node:test` 用例，但**没有任何覆盖率口径**。接入 Node 内置覆盖（无需新依赖）：
+
+```
+node --import tsx --test --experimental-test-coverage test/*.test.ts
+```
+
+基线：**53.27% 行 / 71.86% 分支**。缺口集中在站点适配器（G2：需要真实网络/Playwright 会话）：
+
+| 文件 | 行覆盖 | 性质 |
+| --- | ---: | --- |
+| `sites/justwoker.ts` | 28.72% | 站点适配器，需真实会话 |
+| `sites/agentrouter.ts` | 31.48% | 同上 |
+| `sites/vyceai.ts` | 38.54% | 同上 |
+| `runner.ts` | 49.76% | 编排器，含浏览器生命周期 |
+| `sites/newapi-client.ts` | 53.35% | 已有 oauth/logout 用例，其余为网络分支 |
+| `scheduler.ts` | 54.17% | 定时调度 |
+| `server.ts` | 71.60% | — |
+| `store.ts` | 88.60% | — |
+
+`cool/`（单文件 Java `EncryptUtil`）**不接线**：仓库里没有 Maven/Gradle，编译脚本依赖外部 `commons-codec` jar；为一个工具类搭测试脚手架的成本高于收益，登记为 G3。
+
+#### B8 —— 变异抽样（3 个变异体，抓出 1 个真问题）
+
+不用装新工具：手工注入变异体 → 跑对应用例 → 还原（每步都留了备份）。
+
+| 变异体 | 位置 | 变异 | 结果 |
+| --- | --- | --- | --- |
+| M1 | `minigrad/optim.py` AdamW | `m / (1 - b1**t)` → `m / (1 - b1)`（去掉时间指数） | **存活**（17/17 全绿）→ 补断言后 **被杀** |
+| M2 | `mobile/src/services/index.ts` | 去掉 `uni.setStorageSync(KEY, token)` | **被杀**（`expected undefined to be 'h5-...'`） |
+| M3 | `shared/src/session.rs` | 过期分支去掉 `remove_session` | **被杀**（`left: 1, right: 0`） |
+
+**M1 存活暴露了真实缺陷（在测试里）**：`b1**t` 在 `t=1` 时恒等于 `b1`，所以「只验第一步」的断言对这个最经典的 Adam 抄错点**完全无感**。补的断言是恒定梯度下**每一步**位移都恰好等于 `lr`（偏差校正的标准性质），t=2 起两者才分叉（正确 0.1 vs 变异后 0.19）。
+
+这条正是 §7 想要的东西：覆盖率 100% 不等于断言有效。
+
+
 ---
 
 ## 5. 后续批次（B1–B9）
@@ -472,3 +526,8 @@ cd oa4rust/backend && cargo llvm-cov -p shared --lib --summary-only
 | 2026-10-27 夜 | B2 | `migrate.rs` 用真 PG 补 1 条矩阵式用例 | 0→70.55%；`shared` 行 67.45（产品 ≈62.6） |
 | 2026-10-27 夜 | B2 | 修 D8：方言全局 `OnceLock` 与 env 测试的竞态 | 抽纯函数 + `ENV_LOCK`，全量 215 passed |
 | 2026-10-27 夜 | B9 | 三个前端加覆盖率 ratchet 阈值 | admin 87/82/86/89、miniapp 93/88/92/94、mobile 99/91/99/99 |
+| 2026-10-27 夜 | B1 | 修 httpapi e2e 夹具 DSN（认 DATABASE_URL） | 74 条 SKIP → 0；覆盖率 **26.6→86.0**，6.5s→89s |
+| 2026-10-27 夜 | B9 | 覆盖率接入 CI（三个前端各一步） | 本地 `pnpm test:coverage` 逐个验过 |
+| 2026-10-27 深夜 | B6 | 复核后撤回：两项都已被既有用例覆盖 | 不补（避免剧场） |
+| 2026-10-27 深夜 | B7 | auto-checkin 接 Node 内置覆盖率 | 基线 53.27% 行 / 71.86% 分支 |
+| 2026-10-27 深夜 | B8 | 3 个变异体抽样 | M1 存活→补断言→被杀；M2/M3 被杀 |
