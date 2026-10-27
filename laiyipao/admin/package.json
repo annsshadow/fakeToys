@@ -12,6 +12,7 @@
     "type-check": "vue-tsc --noEmit",
     "type-check:test": "tsc --noEmit -p tsconfig.vitest.json",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "size": "node scripts/size-report.mjs",
     "size:check": "node scripts/size-report.mjs --check"
   },

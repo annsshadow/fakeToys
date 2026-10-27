@@ -61,6 +61,11 @@ jobs:
         run: pnpm test
       - name: Run mobile Vitest tests
         run: pnpm test:mobile
+      # 覆盖率门禁（2026-10-27）：mobile 的 `services/index.ts` 已 100%、
+      # 整体 99.76% 语句 / 100% 行，阈值写在 mobile/vitest.config.ts 里。
+      # 单跑一次约 2 秒，代价可忽略；作用是把「新增端点包装器但没补用例」变成红。
+      - name: Run mobile coverage gate
+        run: pnpm test:mobile:coverage
       - name: Type-check all packages
         run: pnpm typecheck
       - name: Run Biome gate on the whole frontend

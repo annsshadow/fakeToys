@@ -145,6 +145,10 @@ jobs:
           fi
       - name: Run Vitest tests
         run: pnpm test
+      # 覆盖率门禁（2026-10-27）：阈值写在 vitest.config.ts（ratchet，只许升）。
+      # 代价约 +3s；作用是拦住「新加视图但没写用例」。
+      - name: Run coverage gate
+        run: pnpm test:coverage
       - name: Build (vue-tsc + vite)
         # 0 告警门禁：构建退出码为 0 不代表没有告警（Vite/Rollup/lightningcss 都是
         # "打印一行 (!) 然后继续"），所以落盘后由 assert-no-warnings.sh 断言。
@@ -232,6 +236,10 @@ jobs:
         run: pnpm type-check:test
       - name: Run Vitest tests
         run: pnpm test
+      # 覆盖率门禁（2026-10-27）：阈值写在 vitest.config.ts（ratchet，只许升）。
+      # ⚠️ `src/game/**` 的平衡性用例要跑完整 100 关模拟，覆盖率跑一次约 +15s。
+      - name: Run coverage gate
+        run: pnpm test:coverage
       - name: Build H5
         run: |
           set -o pipefail
