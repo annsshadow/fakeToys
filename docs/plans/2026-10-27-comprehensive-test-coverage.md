@@ -11,7 +11,7 @@
 
 | 批次 | 目标 | 结果 |
 | --- | --- | --- |
-| B1 Go + PG | 让 `service`/`httpapi` 可测 | **阻塞**：Docker Desktop 依赖 `wsl.exe`（沙箱程序黑名单）、`initdb.exe` 无法执行、`postgresql-x64-15` 服务启动需管理员且数据目录从未初始化 |
+| B1 Go + PG | 让 `service`/`httpapi` 可测 | **已解锁并实测**：Docker 放行 `wsl.exe` 后起 `postgres:16`（宿主 15432）→ 除 `service` 外全部包跑通，见 §4.6 |
 | B2 Rust `shared` | 57.47% → 75% | **65.84%**（含测试代码口径）／**61.24%**（产品代码口径）；`session.rs` 17.31→52.56、`rate_limit.rs` 45.85→83.88、`scheduler.rs` 52.17→90.76、`token.rs` 72.27→88.60、`config.rs` 0→100 |
 | B3 `laiyipao/admin` | 87.34% → 92% | **88.61%**；`src/api/index.ts` 66.15→96.92、`src/utils` 76.92→100 |
 | B4 `oa4rust/mobile` | 接线 mobile 测试 | **前提有误（已更正）**：mobile 本来就有独立配置且在 CI 里跑；真实缺口是 `services/index.ts` 43.24% → **100%**，整体 79.52% → **99.76%** |
@@ -174,6 +174,7 @@ cd oa4rust/backend && cargo llvm-cov -p shared --lib --summary-only
 | D5 | `oa4rust/backend/src/main.rs:77` | `session_manager.init_redis() && rate_limiter.init_redis()`——第一个在 `async fn main` 里**恒返回 false**（运行时守卫），`&&` 短路 ⇒ 第二个永不执行 ⇒ `redis_available` 恒为 false | **Redis 会话存储与分布式限流在正常启动路径下是死代码**，日志却永远打「Redis unreachable」，运维会以为 Redis 挂了 | 仅登记（改动涉及启动语义）：应改用 `init_redis_async().await`，并用 `&`（非短路）让两者都尝试 |
 | D6 | `shared/src/scheduler.rs::systemtime_to_cron` | 「一次性任务」被映射成**重复** cron：`now+30s` → `*/30 * * * * *`，即每 30 秒跑一次、永不停止；`≥1h` 或过去时间直接退化成「每天 0 点」 | `schedule_once` 的语义与实现不符，重复执行会造成副作用累积 | 仅登记（属设计变更）：正确做法是生成 `sec min hour day month *` 的精确表达式 |
 | D7 | `shared/src/scheduler.rs` 的 `scheduler_tests` | 只测了文件里自带的 `MockScheduler`，真实现 `TokioCronScheduler` 一行未跑 | 「测了 mock 而不是被测对象」，替身永远绿 | **已补** 11 条直接驱动真实实现的用例 |
+| D8 | `shared/src/db/dialect.rs::dialect()` | 全局 `OnceLock` 只能初始化一次，而测试靠改 `DB_DIALECT` 来断言优先级 ⇒ 「谁先跑」决定全局方言 | 迁移用例在 env=mysql 的瞬间初始化方言，114 条 PG 迁移被改写成 MySQL 语法执行，报 `syntax error at end of input`（看起来像迁移文件坏了） | **已修**：抽 `dialect_from()` / `dialect_name_from_env()` 纯函数；`dialect()` 只负责缓存；新增 `testing::ENV_LOCK` 串行化改环境的用例 |
 
 ### 4.5 第二轮（B2 / B3 / B4，2026-10-27 晚）
 
@@ -204,6 +205,62 @@ cd oa4rust/backend && cargo llvm-cov -p shared --lib --summary-only
 **真实缺口**：`mobile/src/services/index.ts` 只有 43.24%——130+ 个端点包装器里只有十几个被 `index.test.ts` 摸过。
 - 新增 `src/services/index.surface.test.ts`（8 条）：穷举导出表，对**每个**端点方法断言「恰好发一次 `/api/` 请求、方法合法、不抛异常」；再断言所有拼出的 URL 不含 `undefined`/`[object Object]`/`NaN`（插值漏写 `${}` 的典型症状）；最后补 `clientDeviceToken()` 的 5 条（首次生成后稳定、storage 故障降级、Web Crypto 16 字节、无 crypto 时降级且两次不同）。
 - 结果：`services/index.ts` **43.24% → 100%**，整体 **79.52% → 99.76%**（语句）/ **78.18% → 100%**（行），用例 **121 → 129**。
+
+
+### 4.6 第三轮（B1 解锁 / B5 / B2 收尾，2026-10-27 夜）
+
+#### B1 —— Go 服务层基线（Docker 放行后首次测全）
+
+前置：`docker run -d --name fakeToys-pg -e POSTGRES_USER=o2server -e POSTGRES_PASSWORD=password -e POSTGRES_DB=oa4rust -p 15432:5432 postgres:16`，`DATABASE_URL=postgres://o2server:password@localhost:15432/oa4rust?sslmode=disable`。
+
+**关键坑（必须记住）**：`go test ./...` 默认超时 10 分钟，而 `internal/service`（97 个测试文件、每个建一次性库 + 跑迁移）在本机要 **10 分钟以上**，会以 `panic: test timed out after 10m0s` 结束——看起来像「测试挂了」，其实是超时。CI 里一直写着 `-timeout 1200s`（工作流第 109 行，注释「防假性超时」）。**本地跑必须带同样的参数**。
+
+| 包 | 覆盖率 | 说明 |
+| --- | ---: | --- |
+| `internal/domain` | 95.9% | 业务规则，本来就不依赖 DB |
+| `internal/seeder` | 91.5% | 种子数据 |
+| `internal/auth` | 91.1% | — |
+| `internal/config` | 90.4% | — |
+| `internal/store` | **89.7%**（原 48.7%，其余为连接失败） | 连接池/事务/迁移执行 |
+| `internal/tygen` | 77.4% | 类型生成器 |
+| `cmd/migrate` | 59.1% | — |
+| `cmd/vectors` | 46.9% | — |
+| `cmd/seed` | 40.7% | — |
+| `cmd/prune` | 39.5% | — |
+| **`internal/httpapi`** | **26.6%** | **最大缺口**：35 个测试文件只覆盖了四分之一语句 |
+| `cmd/api` | 0.0% | `main` 无测试（G3 薄壳） |
+| `cmd/tygen` | 0.0% | CLI 入口，逻辑在 `internal/tygen` |
+| `internal/service` | **86.6%** | 97 个测试文件，本机 **849s（约 14 分钟）**，必须带 `-timeout 1200s` |
+
+**结论**：Go 侧「无 PG 就测不了」的问题解决后，主干其实不差（`service` 86.6 / `store` 89.7 / `domain` 95.9），**唯一真实的塌陷是 `httpapi` 26.6%**——路由/中间件/参数解析层，35 个测试文件只覆盖了四分之一语句。这是下一批的首要目标（B1 的剩余部分）。
+
+#### B5 —— `laiyipao/miniapp` 残余分支
+
+| 文件 | 前 | 后 | 新增 | 关键断言 |
+| --- | ---: | ---: | ---: | --- |
+| `utils/statusBar.ts` | 70% | **100%** | 9 | 取不到高度返回 0（不猜）；但**渲染**时 0 必须给 20rpx 兜底（安卓/H5 常态是 0，返回 `0rpx` 等于完全不让开顶部）；px→rpx 按 `windowWidth` 换算而非固定比值（44px@375 → 88rpx，@750 → 44rpx）；`windowWidth=0` 回退 375（否则 `Infinityrpx` 是无效 CSS） |
+| `utils/labels.ts` | 分支 66.66% | **100%** | 8 | 已知 key 必须译成中文且**与原 key 不同**（`coin: 'coin'` 这种漏改查得到、不报错，与回落分支无法区分）；未知 key 原样返回（返回空串会让新道具显示空白，看起来像「数量是 0」） |
+
+#### B2 收尾 —— `migrate.rs` 0% → 覆盖
+
+迁移运行器此前 **116 行零覆盖**，而它是启动路径上唯一会改库结构的组件。用真实 PG 跑完整链路（23 秒应用 114 条正向迁移）：
+
+- 幂等：第二次运行 `applied` 为空、`skipped` 等于第一次总数（重放的后果是容器每重启一次失败一次）；
+- 只跑正向：`applied` 里不得出现 `rollback`；
+- 追踪表与实应用数一致、版本不重复；
+- `MIGRATIONS_DIR` 指向不存在的目录时必须**报错**（静默成功会让「部署漏拷 migrations/」变成启动后才炸在缺表上，现场看不出根因）。
+
+结果：`migrate.rs` **0% → 70.55%**；`shared` 行覆盖 **65.84% → 67.45%**（含测试代码口径），**产品口径 ≈62.6%**。全量 215 passed / 0 failed。
+
+#### 顺带修掉一个测试基础设施竞态（D8）
+
+跑全量时 `migrate` 用例报 `ERROR: syntax error at end of input`，单独跑却通过。根因不在迁移文件：
+
+- `db::dialect::dialect()` 背后是 `OnceLock`，**全进程只初始化一次**；
+- 而 `dialect.rs` 的用例靠 `set_var("DB_DIALECT","mysql")` + `dialect()` 来断言「DB_DIALECT 优先」；
+- 两者并发时，「谁先初始化」决定全局方言：迁移用例若在 env 被设成 mysql 的瞬间初始化方言，114 条 PG 迁移就被**改写成 MySQL 语法**执行 → 报语法错。
+
+修法（不是加 sleep）：把解析抽成纯函数 `dialect_from(name)` 与 `dialect_name_from_env()`，`dialect()` 只负责缓存；方言优先级用例改为断言解析层（不再碰全局）；新增 `testing::ENV_LOCK`，改环境变量的用例与迁移用例共用这把锁。
 
 
 ---
@@ -409,3 +466,9 @@ cd oa4rust/backend && cargo llvm-cov -p shared --lib --summary-only
 | 2026-10-27 晚 | B3 | admin 补 16 条 + 移出 `types.gen.ts` | 87.34→88.61；`api/index.ts` 66→97 |
 | 2026-10-27 晚 | B4 | 更正前提 + 补 mobile 表面测试 8 条 | 79.52→99.76（行 100）；`services/index.ts` 43→100 |
 | 2026-10-27 晚 | — | 登记 D4–D7（含 Redis 启动短路、一次性任务变重复 cron） | 未改，待决策 |
+| 2026-10-27 夜 | B1 | Docker 放行 wsl 后起 `postgres:16`（宿主 15432） | 除 `service` 外全部包跑通；`store` 48.7→89.7、`seeder` 91.5、`httpapi` **26.6（新缺口）** |
+| 2026-10-27 夜 | B1 | `service` 包需 `-timeout 1200s`（默认 10 分钟会以 timeout 结束） | **86.6%**，849s |
+| 2026-10-27 夜 | B5 | miniapp 补 17 条 | `statusBar` 70→100、`labels` 分支 67→100 |
+| 2026-10-27 夜 | B2 | `migrate.rs` 用真 PG 补 1 条矩阵式用例 | 0→70.55%；`shared` 行 67.45（产品 ≈62.6） |
+| 2026-10-27 夜 | B2 | 修 D8：方言全局 `OnceLock` 与 env 测试的竞态 | 抽纯函数 + `ENV_LOCK`，全量 215 passed |
+| 2026-10-27 夜 | B9 | 三个前端加覆盖率 ratchet 阈值 | admin 87/82/86/89、miniapp 93/88/92/94、mobile 99/91/99/99 |
