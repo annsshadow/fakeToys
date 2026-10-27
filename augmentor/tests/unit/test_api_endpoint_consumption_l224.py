@@ -484,19 +484,25 @@ class TestRulerSeesTheRealSurface:
         assert not outside, f"这些文件绕过服务层直接拼路径：{outside}"
 
     def test_corpus_excludes_test_files(self):
-        """语料口径本身：22 只产品文件在场（含 `api.ts`），22 只测试替身被排除在外
+        """语料口径本身：23 只产品文件在场（含 `api.ts`），23 只测试替身被排除在外
 
         旧写法里的第二支 `assert not any(p == API_TS for p in tests)` 是构造式恒真 ——
         `tests` 是按 `.test.` 筛出来的，而 `API_TS` 叫 `api.ts`，两条名单永不相交。
         改成读**排除是否真的排掉了东西**：两侧规模各自钉住，且在场判据直接点名服务层。
+
+        22 → **23** 是 Z 批次（zod 运行时校验）的连带位移，两侧各多一只真文件：
+        `web/src/schemas/main-schemas.ts`（产品）与
+        `web/src/schemas/main-schemas.conformance.test.ts`（测试替身）。
+        不是口径松了：schema 文件不发 `api.<verb>` 调用（`test_http_paths_live_only_in_the_service_layer`
+        仍是绿的），替身也仍被 `.test.` 排掉；判据方向一个字没动，只是语料规模搬家。
         """
-        assert len(front_source_files()) == 22, \
-            f"前端产品语料现量 22 只，实得 {len(front_source_files())} 只 ⇒ 口径变了"
+        assert len(front_source_files()) == 23, \
+            f"前端产品语料现量 23 只，实得 {len(front_source_files())} 只 ⇒ 口径变了"
         assert API_TS in front_source_files(), "服务层那一份必须在这把尺子的语料里"
         excluded = [p for p in FRONT_SRC.rglob("*")
                     if p.is_file() and p.suffix in {".ts", ".tsx", ".vue", ".js"}
                     and ".test." in p.name]
-        assert len(excluded) == 22, f"被排除的测试替身现量 22 只，实得 {len(excluded)} 只"
+        assert len(excluded) == 23, f"被排除的测试替身现量 23 只，实得 {len(excluded)} 只"
 
 
 class TestNoGhostCalls:
