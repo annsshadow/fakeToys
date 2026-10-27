@@ -238,20 +238,35 @@ impl SqlDialect for KingbaseDialect {
 
 static DIALECT: OnceLock<Box<dyn SqlDialect>> = OnceLock::new();
 
+/// 按方言名构造实例：**纯函数**，不读环境、不碰全局。
+///
+/// 为什么要单独抽出来：`dialect()` 背后的 `OnceLock` 全进程只能初始化一次，
+/// 而「哪个测试先跑到」决定了它初始化成什么。此前 `dialect.rs` 的用例靠
+/// `set_var("DB_DIALECT","mysql")` + `dialect()` 来断言优先级 —— 于是：
+///   - 若它先跑，全局被钉成 mysql，任何后续需要 postgres 的测试（例如迁移运行器）
+///     都会拿 MySQL 语法去打 PG，报 `syntax error at end of input`；
+///   - 若它后跑，`OnceLock` 已是 postgres，它自己的断言反而红。
+/// 抽成纯函数后，优先级由 `dialect_name_from_env()` 表达，映射由本函数表达，
+/// 两者都能脱离全局状态被测。
+pub fn dialect_from(name: &str) -> Box<dyn SqlDialect> {
+    match name.to_lowercase().as_str() {
+        "mysql" => Box::new(MySQLDialect::new()),
+        "dameng" => Box::new(DamengDialect),
+        "kingbase" => Box::new(KingbaseDialect),
+        _ => Box::new(PostgresDialect::new()),
+    }
+}
+
+/// 从环境变量解析方言名：`DB_DIALECT` 优先于 `DATABASE_DIALECT`，缺省 `postgres`。
+pub fn dialect_name_from_env() -> String {
+    std::env::var("DB_DIALECT")
+        .or_else(|_| std::env::var("DATABASE_DIALECT"))
+        .unwrap_or_else(|_| "postgres".to_string())
+}
+
 pub fn dialect() -> &'static dyn SqlDialect {
     DIALECT
-        .get_or_init(|| {
-            let raw = std::env::var("DB_DIALECT")
-                .or_else(|_| std::env::var("DATABASE_DIALECT"))
-                .unwrap_or_else(|_| "postgres".to_string())
-                .to_lowercase();
-            match raw.as_str() {
-                "mysql" => Box::new(MySQLDialect::new()),
-                "dameng" => Box::new(DamengDialect),
-                "kingbase" => Box::new(KingbaseDialect),
-                _ => Box::new(PostgresDialect::new()),
-            }
-        })
+        .get_or_init(|| dialect_from(&dialect_name_from_env()))
         .as_ref()
 }
 
@@ -362,12 +377,45 @@ mod tests {
 
     #[test]
     fn db_dialect_takes_priority_over_databases_dialect() {
+        // ⚠️ 这条**不能**再通过 `dialect()` 断言：那会初始化全局 OnceLock，
+        // 把方言钉死成 mysql，进而污染所有需要 postgres 的测试（迁移运行器实测
+        // 报 `syntax error at end of input`）。改为断言解析层，优先级逻辑不变。
+        //
+        // 仍要改环境变量，因此与其它改环境的测试共用一把锁（见 testing::ENV_LOCK）。
+        let _guard = crate::testing::ENV_LOCK
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+
+        let saved_db = std::env::var("DB_DIALECT").ok();
+        let saved_database = std::env::var("DATABASE_DIALECT").ok();
+
         std::env::set_var("DB_DIALECT", "mysql");
         std::env::set_var("DATABASE_DIALECT", "postgres");
-        let d = dialect();
-        assert_eq!(d.name(), "mysql");
+        assert_eq!(dialect_name_from_env(), "mysql", "DB_DIALECT 必须优先");
+        assert_eq!(dialect_from(&dialect_name_from_env()).name(), "mysql");
+
         std::env::remove_var("DB_DIALECT");
+        assert_eq!(
+            dialect_name_from_env(),
+            "postgres",
+            "缺 DB_DIALECT 时回落到 DATABASE_DIALECT"
+        );
+
         std::env::remove_var("DATABASE_DIALECT");
+        assert_eq!(dialect_name_from_env(), "postgres", "两者都缺省时回落到 postgres");
+
+        // 大小写不敏感（配置里写成 MySQL 不该被当成未知值）
+        assert_eq!(dialect_from("MySQL").name(), "mysql");
+        assert_eq!(dialect_from("UNKNOWN-DIALECT").name(), "postgres");
+
+        match saved_db {
+            Some(v) => std::env::set_var("DB_DIALECT", v),
+            None => std::env::remove_var("DB_DIALECT"),
+        }
+        match saved_database {
+            Some(v) => std::env::set_var("DATABASE_DIALECT", v),
+            None => std::env::remove_var("DATABASE_DIALECT"),
+        }
     }
 
     #[test]

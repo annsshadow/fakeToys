@@ -209,7 +209,25 @@ mod tests {
 
     #[tokio::test]
     async fn migrations_are_ordered_idempotent_and_fail_loud_on_missing_dir() {
+        // 与其它改环境变量的测试串行：`run_migrations` 内部会调 `dialect()`，
+        // 而那个全局 OnceLock 只能初始化一次。若此刻别的测试正把 `DB_DIALECT`
+        // 设成 mysql，这批 PG 迁移会被改写成 MySQL 语法执行，
+        // 报 `syntax error at end of input`（实测踩过）。
+        let _env_guard = crate::testing::ENV_LOCK
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+
         let pool = crate::testing::test_pool();
+
+        // 迁移只在 postgres 方言下才有意义（其它方言会把 SQL 重写掉）。
+        // 环境里真的配了别的方言时直接跳过，而不是给出一个假的失败。
+        if dialect().name() != "postgres" {
+            eprintln!(
+                "skip: 当前方言是 {}，PG 迁移用例不适用",
+                dialect().name()
+            );
+            return;
+        }
 
         // ① 从当前库状态跑一遍：全量应用（或全量跳过，取决于库是否已迁移过）
         let first = run_migrations(&pool).await.expect("first migration run");

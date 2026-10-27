@@ -9,6 +9,18 @@ use sea_orm::{ConnectOptions, Database, DatabaseConnection};
 
 use crate::middleware::SecurityState;
 
+/// 进程级环境变量测试的串行锁。
+///
+/// 为什么需要它：环境变量是全局状态，而 `db::dialect::dialect()` 背后的
+/// `OnceLock` 全进程只初始化一次。两者叠加的后果是「哪个测试先跑」决定全局方言 ——
+/// 实测过一次：`dialect` 的用例把 `DB_DIALECT` 设成 mysql 的瞬间，迁移运行器的
+/// 测试正好初始化方言，于是 114 条 PG 迁移被改写成 MySQL 语法执行，
+/// 报 `ERROR: syntax error at end of input`（看起来像迁移文件坏了）。
+///
+/// 约定：任何会 `set_var`/`remove_var` 的测试都先拿这把锁，
+/// 尤其是**同时**依赖 `dialect()` 的测试（迁移运行器）。
+pub static ENV_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
 /// 空连接池：用于验证路由存在性（无 DB 时返回 500）。
 pub fn mock_pool() -> Pool {
     let mgr = deadpool_postgres::Manager::new(
