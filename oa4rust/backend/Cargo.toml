@@ -312,7 +312,7 @@ urlencoding = "2"
  async-trait = "0.1"
  sqlparser = "0.51"
  sysinfo = "0.39"
-  utoipa = { version = "4", features = ["axum_extras"] }
+  utoipa = { version = "6", features = ["axum_extras"] }
   utoipa-swagger-ui = { version = "7", features = ["axum"] }
   openapi = { path = "crates/openapi" }
   futures-util = "0.3"
