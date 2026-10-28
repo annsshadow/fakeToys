@@ -19,6 +19,17 @@ process.env.PLAYWRIGHT_BROWSERS_PATH = "Z:" + join("nonexistent", "browsers");
 
 const { addRecord } = await import("../src/store.js");
 const { createApp } = await import("../src/server.js");
+const { isRunning } = await import("../src/runner.js");
+
+/** 等 runner 空闲：run 路由是 fire-and-forget，跨测试边界仍可能在途 */
+async function waitForIdle(timeoutMs = 5000): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (!isRunning()) return;
+    await new Promise((r) => setTimeout(r, 20));
+  }
+  throw new Error("runner 5 秒内未空闲，测试卫生失败");
+}
 import type { AppConfig } from "../src/types.js";
 
 function config(token = ""): AppConfig {
@@ -153,15 +164,22 @@ test("趋势接口：days 夹取到 [7, 90]，返回站点清单与点位", asyn
 
 test("面板触发全部签到：立即 200；进行中再触发 → 409（running 守卫）", async () => {
   await withServer("", async (base) => {
-    const first = await fetch(`${base}/api/run`, { method: "POST" });
+    // 两个请求**同时发出**（不先等第一个返回）：CI 上三个适配器会在数毫秒内
+    // 跳过/失败完毕，若等第一个响应再发第二个，runAll 可能已结束、409 断言
+    // 必 flaky。同时发出时第二个请求的处理必然落在第一个 runAll 的在途窗口内。
+    const pending = [
+      fetch(`${base}/api/run`, { method: "POST" }),
+      fetch(`${base}/api/run`, { method: "POST" }),
+    ];
+    const [first, second] = await Promise.all(pending);
     assert.equal(first.status, 200);
-    // 第一个 runAll 仍在跑（浏览器启动失败也要走完 3 个站点），此时第二个触发必须 409
-    const second = await fetch(`${base}/api/run`, { method: "POST" });
     assert.equal(second.status, 409, "running 守卫必须拦下并发触发");
+    await waitForIdle(); // 不把在途的 runAll 泄漏给下一个测试
   });
 });
 
 test("面板触发单站：未知站点 404（不占锁），已知站点 200", async () => {
+  await waitForIdle(); // 防上一条用例的在途 runAll 污染 isRunning
   await withServer("", async (base) => {
     const unknown = await fetch(`${base}/api/run/no-such-site`, { method: "POST" });
     assert.equal(unknown.status, 404);

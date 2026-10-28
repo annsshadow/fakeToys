@@ -38,6 +38,14 @@ if (!passMatch || !failMatch) {
 }
 if (Number(failMatch[1]) > 0) {
   console.error(`coverage-ratchet: 有 ${failMatch[1]} 条测试失败，先修测试再谈覆盖率`);
+  // 转储失败用例名与输出尾部：CI 日志里否则看不到是谁红
+  const failed = [...output.matchAll(/^[ℹ#]?\s*✖\s+(.+)$/gm)].map((m) => m[1]);
+  const notOk = [...output.matchAll(/^not ok\s+\d+\s+-\s+(.+)$/gm)].map((m) => m[1]);
+  for (const name of [...failed, ...notOk].slice(0, 10)) {
+    console.error(`  失败用例: ${name}`);
+  }
+  console.error("---- 输出尾部 ----");
+  console.error(output.slice(-3000));
   process.exit(1);
 }
 
