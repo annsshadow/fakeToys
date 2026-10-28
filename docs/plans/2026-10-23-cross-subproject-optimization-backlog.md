@@ -288,3 +288,16 @@ dependency-audit job 以「miniapp 漏洞数 1 超过基线 0」变红。已同�
 改用合成零基线，使「从 0 涨 1 必须拦」不再被真实基线升降打碎，A 对齐现状（1 low 持平放行）。
 本机验证：`node laiyipao/scripts/audit-gate.test.cjs` **14/14**；miniapp/admin 真实 `pnpm audit` 过
 `check-counts`（1/0 持平）、`check-overrides`（30 条齐全）。
+
+### 7.11 zstd 家族 RustSec 批次（2026-10-28，floating-rustsec 定时红）
+
+2026-10-16 RustSec 集中发布 zstd 家族一批公告（RUSTSEC-2026-0386…0410，`unsound` 级别，
+`cargo audit --deny unsound` 直接红），打在锁文件里的 `zstd 0.13.3 / zstd-safe 7.3.0 / zstd-sys 2.1.0`。
+链路：`zip 2.4.2 → zstd 0.13.3 → zstd-safe 7.3.0 → zstd-sys 2.1.0`；补丁只发在
+`zstd 0.14.x / zstd-safe 8.x`（zip 2.6.1 实测仍声明 `zstd ^0.13`，链路升不上去）。
+
+| 项 | 内容 |
+|---|---|
+| 处置 | **真修（收依赖面）**：`file_assemble_control` 与 `processplatform_assemble_surface` 的 `zip = "2"` 改为保留默认 features 但去掉 `zstd`（`aes-crypto/bzip2/deflate64/deflate/lzma/time/xz` 全保留）。两处用法只读写 docx/xlsx 类 Office 包（deflate/stored），无 `CompressionMethod::Zstd` 引用（grep 0 命中）。zstd 三件套连带 `jobserver` 一起出树，Cargo.lock **纯删除、无新增** |
+| 本机验证 | `grep 'name = "zstd' Cargo.lock` 计数 0；`cargo fmt --check` 两 crate 干净；本机 host 为 `x86_64-pc-windows-gnu` 且无 gcc/MSVC，**编译验证交 CI**（CI 此前按更大的默认 features 集编译绿，本次只减不增） |
+| 后续 | 若未来确需读 zstd 压缩的压缩包，需等 zip 上游允许 `zstd ^0.14` 再恢复 feature，并复跑 audit |
