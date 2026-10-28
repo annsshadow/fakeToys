@@ -41,10 +41,11 @@ if (Number(failMatch[1]) > 0) {
   process.exit(1);
 }
 
-// 解析逐文件行覆盖：`ℹ  justwoker.ts   |  100.00 |  100.00 |  100.00 |`
+// 解析逐文件行覆盖：`ℹ  justwoker.ts   |  100.00 | ...`（node>=24）
+// 或 `#  justwoker.ts   |  100.00 | ...`（node 22 的 spec/TAP 注释前缀）
 const table = new Map();
 for (const line of output.split(/\r?\n/)) {
-  const m = line.match(/^\s*ℹ\s+(\S+\.ts)\s*\|\s*([\d.]+)/);
+  const m = line.match(/^\s*[ℹ#]\s+(\S+\.ts)\s*\|\s*([\d.]+)/);
   if (m) table.set(m[1], Number(m[2]));
 }
 
