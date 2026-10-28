@@ -223,10 +223,7 @@ mod tests {
         // 迁移只在 postgres 方言下才有意义（其它方言会把 SQL 重写掉）。
         // 环境里真的配了别的方言时直接跳过，而不是给出一个假的失败。
         if dialect().name() != "postgres" {
-            eprintln!(
-                "skip: 当前方言是 {}，PG 迁移用例不适用",
-                dialect().name()
-            );
+            eprintln!("skip: 当前方言是 {}，PG 迁移用例不适用", dialect().name());
             return;
         }
 
@@ -265,14 +262,20 @@ mod tests {
         let mut unique = versions.clone();
         unique.sort();
         unique.dedup();
-        assert_eq!(unique.len(), versions.len(), "schema_migrations 出现重复版本");
+        assert_eq!(
+            unique.len(),
+            versions.len(),
+            "schema_migrations 出现重复版本"
+        );
 
         // ④ 目录不存在时必须**报错**而不是「0 条迁移、静默成功」。
         //    静默成功的后果是：部署时漏拷 migrations/，服务照常启动，
         //    然后在第一次查询时炸在缺表上——现场完全看不出根因。
         let saved = std::env::var(MIGRATIONS_DIR_KEY).ok();
         std::env::set_var(MIGRATIONS_DIR_KEY, "definitely-not-a-real-dir-oa4rust");
-        let err = run_migrations(&pool).await.expect_err("missing dir must fail");
+        let err = run_migrations(&pool)
+            .await
+            .expect_err("missing dir must fail");
         let msg = format!("{err}");
         assert!(
             msg.contains("migrations directory not found"),

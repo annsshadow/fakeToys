@@ -36,6 +36,7 @@
 import ast
 import json
 import threading
+import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Dict, List, Tuple
@@ -274,6 +275,23 @@ def test_twenty_concurrent_dependencies_all_land(tmp_path):
         (f"s{i}", f"t{i}") for i in range(N_CONCURRENT)}
 
 
+def _read_text_retrying(path: Path, attempts: int = 20, backoff: float = 0.01) -> str:
+    """读一份正在被 `os.replace` 的文件，区分「瞬时共享冲突」与「读到半份」
+
+    Windows 上裸 `open` 撞上 `MoveFileExW(REPLACE_EXISTING)` 会瞬时
+    `PermissionError: [Errno 13]`（产品读面走 `path_lock`，不会撞这一格；本用例
+    刻意绕开锁量原子替换的可见性）。这里对共享冲突做有界重试，重试耗尽仍失败就
+    原样上抛——那是真问题，不能当成「没读到」咽掉。读到截断内容仍由调用方的
+    `JSONDecodeError` 分支判红。
+    """
+    for _ in range(attempts - 1):
+        try:
+            return path.read_text(encoding="utf-8")
+        except PermissionError:
+            time.sleep(backoff)
+    return path.read_text(encoding="utf-8")
+
+
 def test_concurrent_mixed_reads_never_see_a_half_written_registry(tmp_path):
     """并发的读者（`GET …/datasets` 那一形）永远拿到合法 JSON，不许读到半份
 
@@ -291,7 +309,7 @@ def test_concurrent_mixed_reads_never_see_a_half_written_registry(tmp_path):
             if not path.exists():
                 continue
             try:
-                json.loads(path.read_text(encoding="utf-8"))
+                json.loads(_read_text_retrying(path))
             except (json.JSONDecodeError, UnicodeDecodeError) as exc:
                 out.append(f"读到半份：{type(exc).__name__}")
         return out

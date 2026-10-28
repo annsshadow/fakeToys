@@ -6,6 +6,7 @@ use std::sync::Arc;
 use std::time::SystemTime;
 
 use async_trait::async_trait;
+use chrono::{DateTime, Datelike, Timelike, Utc};
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 use tracing::{debug, info};
@@ -201,19 +202,33 @@ impl Scheduler for TokioCronScheduler {
     }
 }
 
-/// 将 SystemTime 转换为 cron 表达式（近似，仅用于一次性任务）
+/// 将 SystemTime 转换为**精确到秒**的 7 字段 cron 表达式：
+/// `秒 分 时 日 月 周 年`（周固定 `*`，年用完整年份）。
+///
+/// 一次性任务的语义是「到点只跑一次」，而 6 字段 cron 只能表达周期。
+/// 旧实现用 `*/N` 近似：`now + 30s` 会变成每 30 秒重复执行，`≥1h` 或过去
+/// 时间则退化成「每天 0 点」。这里直接钉死目标时刻；已经过去的时刻钳到
+/// `now + 1s`，避免任务因为调度开销而永远不触发。
 fn systemtime_to_cron(at: SystemTime) -> String {
-    if let Ok(duration) = at.duration_since(SystemTime::now()) {
-        let secs = duration.as_secs();
-        if secs < 60 {
-            return format!("*/{} * * * * *", secs.max(1));
-        }
-        let minutes = (secs / 60) as u32;
-        if minutes < 60 {
-            return format!("0 */{} * * * *", minutes.max(1));
-        }
-    }
-    "0 0 * * * *".to_string()
+    let now = SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .map(|d| d.as_secs() as i64)
+        .unwrap_or(0);
+    let target = at
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .map(|d| d.as_secs() as i64)
+        .unwrap_or(now)
+        .max(now + 1);
+    let dt = DateTime::<Utc>::from_timestamp(target, 0).unwrap_or_else(Utc::now);
+    format!(
+        "{} {} {} {} {} * {}",
+        dt.second(),
+        dt.minute(),
+        dt.hour(),
+        dt.day(),
+        dt.month(),
+        dt.year()
+    )
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -405,11 +420,19 @@ mod tokio_scheduler_tests {
     async fn schedule_once_registers_a_job() {
         let scheduler = TokioCronScheduler::new().await.unwrap();
         scheduler
-            .schedule_once("later".into(), SystemTime::now() + Duration::from_secs(30), noop_handler())
+            .schedule_once(
+                "later".into(),
+                SystemTime::now() + Duration::from_secs(30),
+                noop_handler(),
+            )
             .await
             .unwrap();
 
-        assert!(scheduler.list_jobs().await.unwrap().contains(&"later".to_string()));
+        assert!(scheduler
+            .list_jobs()
+            .await
+            .unwrap()
+            .contains(&"later".to_string()));
     }
 
     #[tokio::test]
@@ -422,8 +445,14 @@ mod tokio_scheduler_tests {
             .await
             .expect_err("malformed cron must be rejected");
 
-        assert!(matches!(err, SchedulerError::SchedulerError(_)), "got {err:?}");
-        assert!(scheduler.list_jobs().await.unwrap().is_empty(), "失败的注册不得留下 id");
+        assert!(
+            matches!(err, SchedulerError::SchedulerError(_)),
+            "got {err:?}"
+        );
+        assert!(
+            scheduler.list_jobs().await.unwrap().is_empty(),
+            "失败的注册不得留下 id"
+        );
     }
 
     #[tokio::test]
@@ -465,58 +494,91 @@ mod tokio_scheduler_tests {
 
     // ─────────────────────────────── systemtime_to_cron（一次性任务的表达式映射）
 
-    /// 解析 `*/N` 里的 N（断言分支与量级，而不是精确到秒 —— 从构造 `at`
-    /// 到被测函数读时钟之间必然流逝几百微秒，写死数字会变成偶发红）。
-    fn step_of(expr: &str) -> u32 {
-        expr.split_whitespace()
-            .find_map(|f| f.strip_prefix("*/"))
-            .and_then(|n| n.parse().ok())
-            .unwrap_or_else(|| panic!("not a step expression: {expr:?}"))
+    /// 从 7 字段表达式重建 UTC 时间戳（周字段固定 `*`，不参与）。
+    fn instant_from_expr(expr: &str) -> i64 {
+        let fields: Vec<&str> = expr.split_whitespace().collect();
+        assert_eq!(fields.len(), 7, "expected 7 fields, got {expr:?}");
+        assert_eq!(fields[5], "*", "weekday must stay '*': {expr:?}");
+        let num = |idx: usize| -> u32 {
+            fields[idx]
+                .parse()
+                .unwrap_or_else(|_| panic!("field {idx} is not numeric: {expr:?}"))
+        };
+        chrono::NaiveDate::from_ymd_opt(num(6) as i32, num(4), num(3))
+            .unwrap_or_else(|| panic!("invalid date in {expr:?}"))
+            .and_hms_opt(num(2), num(1), num(0))
+            .unwrap_or_else(|| panic!("invalid time in {expr:?}"))
+            .and_utc()
+            .timestamp()
+    }
+
+    /// 用真调度器解析表达式，并取出它计算出的下一次触发时刻。
+    fn next_tick_of(expr: &str) -> chrono::DateTime<Utc> {
+        let mut job = Job::new_async_tz(expr, Utc, |_uuid, _lock| {
+            Box::pin(async {}) as std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send>>
+        })
+        .unwrap_or_else(|e| panic!("cron {expr:?} rejected: {e:?}"));
+        job.job_data()
+            .expect("job data")
+            .next_tick_utc()
+            .expect("expression has no next tick")
     }
 
     #[test]
-    fn systemtime_to_cron_maps_seconds_minutes_and_fallback() {
-        let now = SystemTime::now();
+    fn systemtime_to_cron_pins_the_exact_instant_in_seven_fields() {
+        let target = SystemTime::now() + Duration::from_secs(125);
+        let expr = systemtime_to_cron(target);
 
-        // 未来 < 60s：秒级步进（6 字段 cron，秒位是 */N）
-        let secs_expr = systemtime_to_cron(now + Duration::from_secs(30));
-        assert!(
-            (28..=30).contains(&step_of(&secs_expr)),
-            "expected ~30s step, got {secs_expr:?}"
+        assert_eq!(
+            expr.split_whitespace().count(),
+            7,
+            "必须是 7 字段（含年份）：{expr:?}"
         );
-        assert_eq!(secs_expr.split_whitespace().count(), 6, "必须是 6 字段 cron");
-
-        // 未来 < 60min：分钟级步进（秒位固定 0，分位是 */N）
-        let minutes_expr = systemtime_to_cron(now + Duration::from_secs(600));
         assert!(
-            (9..=10).contains(&step_of(&minutes_expr)),
-            "expected ~10min step, got {minutes_expr:?}"
+            !expr.contains("*/"),
+            "一次性任务不得退化成周期表达式：{expr:?}"
         );
-        assert!(minutes_expr.starts_with("0 "), "分钟级分支秒位必须固定为 0");
 
-        // 过去的时间或 ≥1 小时：退化成「每天 0 点」
-        assert_eq!(systemtime_to_cron(now - Duration::from_secs(5)), "0 0 * * * *");
-        assert_eq!(systemtime_to_cron(now + Duration::from_secs(7200)), "0 0 * * * *");
+        let expected = chrono::DateTime::<Utc>::from(target).timestamp();
+        assert_eq!(instant_from_expr(&expr), expected);
+        assert_eq!(
+            next_tick_of(&expr).timestamp(),
+            expected,
+            "表达式必须落在目标秒"
+        );
     }
 
     #[test]
-    fn systemtime_to_cron_never_emits_zero_step() {
-        // `*/0` 是非法表达式。亚秒级未来会被截断成 0 秒，必须钳到 `*/1`，
-        // 否则调用方拿到一个解析不了、任务直接丢失的表达式。
-        let now = SystemTime::now();
-        let expr = systemtime_to_cron(now + Duration::from_millis(200));
-        assert_eq!(expr, "*/1 * * * * *");
-
-        // 恰好「现在」有两种合法结果，取决于读时钟的先后：
-        //   - 已落到过去 → 兜底 `0 0 * * * *`
-        //   - 仍在同一毫秒内 → 截断成 0 秒 → 钳到 `*/1`
-        // 两者都合法，**共同约束**是绝不产生 `*/0`。
-        let now_expr = systemtime_to_cron(SystemTime::now());
-        assert!(
-            now_expr == "0 0 * * * *" || now_expr == "*/1 * * * * *",
-            "unexpected expression for now: {now_expr:?}"
+    fn systemtime_to_cron_keeps_far_future_times_instead_of_midnight_fallback() {
+        let target = SystemTime::now() + Duration::from_secs(7200);
+        let expr = systemtime_to_cron(target);
+        assert_eq!(
+            instant_from_expr(&expr),
+            chrono::DateTime::<Utc>::from(target).timestamp()
         );
-        assert!(!now_expr.contains("*/0"));
+    }
+
+    #[test]
+    fn systemtime_to_cron_clamps_past_times_to_the_next_second() {
+        let before = SystemTime::now();
+        let expr = systemtime_to_cron(before - Duration::from_secs(3600));
+        let after = SystemTime::now();
+
+        let lower = before
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs() as i64;
+        let upper = after
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs() as i64;
+        let instant = instant_from_expr(&expr);
+        assert!(
+            (lower + 1..=upper + 2).contains(&instant),
+            "past target must clamp to now+1s, got {expr:?} ({instant} not in {}..={})",
+            lower + 1,
+            upper + 2
+        );
     }
 
     #[tokio::test]

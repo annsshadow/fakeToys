@@ -115,10 +115,7 @@ mod tests {
 
     impl EnvGuard {
         fn capture() -> Self {
-            let saved = KEYS
-                .iter()
-                .map(|k| (*k, std::env::var(k).ok()))
-                .collect();
+            let saved = KEYS.iter().map(|k| (*k, std::env::var(k).ok())).collect();
             for k in KEYS {
                 std::env::remove_var(k);
             }
@@ -154,7 +151,10 @@ mod tests {
         // ① 完全空环境：走开发默认值，且默认**不**开 Secure cookie
         let dev = AuthConfig::from_env().expect("dev defaults");
         assert_eq!(dev.public_origin, "http://localhost:3000");
-        assert!(!dev.cookie_secure, "开发默认不得静默开启 Secure（否则本地 http 登不上）");
+        assert!(
+            !dev.cookie_secure,
+            "开发默认不得静默开启 Secure（否则本地 http 登不上）"
+        );
         assert_eq!(dev.session_ttl_seconds, DEFAULT_SESSION_TTL_SECONDS);
 
         // ② 源站只允许 scheme + host + 可选 port
@@ -182,7 +182,12 @@ mod tests {
 
         // ④ 布尔解析只认 true/false/1/0
         env.clear_all();
-        for (raw, expected) in [("1", true), ("TRUE", true), ("0", false), (" false ", false)] {
+        for (raw, expected) in [
+            ("1", true),
+            ("TRUE", true),
+            ("0", false),
+            (" false ", false),
+        ] {
             env.set("AUTH_COOKIE_SECURE", raw);
             assert_eq!(
                 AuthConfig::from_env().unwrap().cookie_secure,
@@ -208,7 +213,10 @@ mod tests {
         // ⑥ 生产模式：缺任何一项都必须启动失败（fail closed）
         env.clear_all();
         env.set("RUST_ENV", "production");
-        assert!(AuthConfig::from_env().is_err(), "生产缺 APP_PUBLIC_ORIGIN 必须失败");
+        assert!(
+            AuthConfig::from_env().is_err(),
+            "生产缺 APP_PUBLIC_ORIGIN 必须失败"
+        );
 
         env.set("APP_PUBLIC_ORIGIN", "https://oa.example.com");
         assert!(
@@ -236,10 +244,7 @@ mod tests {
 
         // ⑦ 生产 + http 源站必须被拒（否则 cookie 会明文回传）
         env.set("APP_PUBLIC_ORIGIN", "http://oa.example.com");
-        assert!(
-            AuthConfig::from_env().is_err(),
-            "生产源站必须是 https"
-        );
+        assert!(AuthConfig::from_env().is_err(), "生产源站必须是 https");
 
         // ⑧ `prod` 是 `production` 的别名，且大小写/空白不敏感
         env.clear_all();

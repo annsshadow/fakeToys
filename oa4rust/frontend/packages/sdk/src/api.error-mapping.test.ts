@@ -109,14 +109,10 @@ describe('ApiClient error mapping', () => {
       await expect(client.uploadBytes('/api/file/upload', new Uint8Array([1]))).rejects.toBeInstanceOf(
         AuthenticationError,
       )
-      // 认证彻底失败必须通知上层（路由跳登录页就挂在这个回调上）。
-      //
-      // 这里**故意不断言次数**：当前实现会通知两次 —— 一次来自 refreshSession
-      // 内部那个 401（request() 里的 authenticationFailed），一次来自本方法的
-      // catch。这是已知瑕疵（同一次失败重复通知，若 handler 弹 toast 会弹两条），
-      // 记在 docs/plans 的待修项里。把 2 写死会让「去重」这个修复反而弄红测试，
-      // 所以只钉住真正的契约：至少通知一次。
-      expect(onAuthFailure).toHaveBeenCalled()
+      // 认证彻底失败必须通知上层（路由跳登录页就挂在这个回调上），且**只通知一次**：
+      // refreshSession 内部那个 401 已经走过 authenticationFailed，外层 catch
+      // 必须透传同一个 AuthenticationError，而不是再通知一遍。
+      expect(onAuthFailure).toHaveBeenCalledTimes(1)
     })
 
     it('does not retry twice when the replay also returns 401', async () => {

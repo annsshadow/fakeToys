@@ -299,17 +299,26 @@ def params_bindings():
 
 
 def front_source_files(root=None):
-    """前端源码语料（不含 `*.test.*`）——接线判据不吃测试替身，L211 的教训
+    """前端源码语料（不含测试替身）——接线判据不吃测试替身，L211 的教训
 
     `root` 这一格是自查之后添的：排除档若只能读 `web/src`，「测试替身被排掉了」这件事就
     永远只有空读数。注入臂⑤拿它读一份临时目录（`Panel.tsx` 收、`Panel.test.tsx` 排），
     当场证明这道过滤真的在排东西。
+
+    测试替身有两种命名：`*.test.*`，以及 `web/src/test/` 下的共享夹具
+    （`setup.ts` / `valid-response.ts`）。只按 `.test.` 过滤会把夹具算成产品文件，
+    让「产品语料规模」这个 ratchet 虚涨 —— Z-FULL 加 `test/valid-response.ts` 时
+    就出现过这种假位移。
     """
     out = []
-    for path in sorted((root or FRONT_SRC).rglob("*")):
+    base = root or FRONT_SRC
+    for path in sorted(base.rglob("*")):
         if not path.is_file() or path.suffix not in {".ts", ".tsx", ".vue", ".js"}:
             continue
-        if "__pycache__" in path.parts or ".test." in path.name:
+        rel = path.relative_to(base)
+        if "__pycache__" in path.parts or "test" in rel.parts or "__tests__" in rel.parts:
+            continue
+        if ".test." in path.name:
             continue
         out.append(path)
     return out
@@ -484,25 +493,25 @@ class TestRulerSeesTheRealSurface:
         assert not outside, f"这些文件绕过服务层直接拼路径：{outside}"
 
     def test_corpus_excludes_test_files(self):
-        """语料口径本身：23 只产品文件在场（含 `api.ts`），23 只测试替身被排除在外
+        """语料口径本身：23 只产品文件在场（含 `api.ts`），26 只测试替身被排除在外
 
         旧写法里的第二支 `assert not any(p == API_TS for p in tests)` 是构造式恒真 ——
         `tests` 是按 `.test.` 筛出来的，而 `API_TS` 叫 `api.ts`，两条名单永不相交。
         改成读**排除是否真的排掉了东西**：两侧规模各自钉住，且在场判据直接点名服务层。
 
-        22 → **23** 是 Z 批次（zod 运行时校验）的连带位移，两侧各多一只真文件：
-        `web/src/schemas/main-schemas.ts`（产品）与
-        `web/src/schemas/main-schemas.conformance.test.ts`（测试替身）。
-        不是口径松了：schema 文件不发 `api.<verb>` 调用（`test_http_paths_live_only_in_the_service_layer`
-        仍是绿的），替身也仍被 `.test.` 排掉；判据方向一个字没动，只是语料规模搬家。
+        22 → **23** 是 Z 批次（zod 运行时校验）的连带位移：产品侧多一只
+        `web/src/schemas/main-schemas.ts`。Z-FULL 又添了 `schemas/full-schemas.ts`
+        （产品）与 `test/valid-response.ts` + `test/valid-response.test.ts`（测试替身）。
+        产品数仍是 **23**：`test/` 目录下的共享夹具不是产品文件，不能拿来抬 ratchet。
+        测试替身 23 → **26** = 24 只 `*.test.*` + `test/setup.ts` + `test/valid-response.ts`。
         """
         assert len(front_source_files()) == 23, \
             f"前端产品语料现量 23 只，实得 {len(front_source_files())} 只 ⇒ 口径变了"
         assert API_TS in front_source_files(), "服务层那一份必须在这把尺子的语料里"
         excluded = [p for p in FRONT_SRC.rglob("*")
                     if p.is_file() and p.suffix in {".ts", ".tsx", ".vue", ".js"}
-                    and ".test." in p.name]
-        assert len(excluded) == 23, f"被排除的测试替身现量 23 只，实得 {len(excluded)} 只"
+                    and (".test." in p.name or "test" in p.relative_to(FRONT_SRC).parts)]
+        assert len(excluded) == 26, f"被排除的测试替身现量 26 只，实得 {len(excluded)} 只"
 
 
 class TestNoGhostCalls:

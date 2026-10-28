@@ -167,7 +167,10 @@ mod tests {
         match err {
             AppError::BadRequest(msg) => {
                 assert!(msg.contains('2'), "message should carry the count: {msg}");
-                assert!(msg.contains("1 minutes"), "message should carry the window: {msg}");
+                assert!(
+                    msg.contains("1 minutes"),
+                    "message should carry the window: {msg}"
+                );
             }
             other => panic!("expected BadRequest, got {other:?}"),
         }
@@ -223,7 +226,10 @@ mod tests {
             table.insert("stale".to_string(), vec![now - Duration::from_secs(7200)]);
             table.insert(
                 "mixed".to_string(),
-                vec![now - Duration::from_secs(7200), now - Duration::from_secs(1)],
+                vec![
+                    now - Duration::from_secs(7200),
+                    now - Duration::from_secs(1),
+                ],
             );
             table.insert("fresh".to_string(), vec![now - Duration::from_secs(1)]);
         }
@@ -232,7 +238,11 @@ mod tests {
 
         let table = limiter.attempts.read().await;
         assert!(!table.contains_key("stale"), "全过期的 key 必须整条删除");
-        assert_eq!(table.get("mixed").map(Vec::len), Some(1), "只删过期的时间戳");
+        assert_eq!(
+            table.get("mixed").map(Vec::len),
+            Some(1),
+            "只删过期的时间戳"
+        );
         assert_eq!(table.get("fresh").map(Vec::len), Some(1));
     }
 
@@ -240,11 +250,10 @@ mod tests {
     async fn cleanup_is_also_reachable_through_public_cleanup() {
         // `cleanup()` 是给外部定时器用的公开入口，语义必须与 cleanup_in_memory 一致。
         let limiter = RateLimiter::new();
-        limiter
-            .attempts
-            .write()
-            .await
-            .insert("x".to_string(), vec![Instant::now() - Duration::from_secs(7200)]);
+        limiter.attempts.write().await.insert(
+            "x".to_string(),
+            vec![Instant::now() - Duration::from_secs(7200)],
+        );
 
         limiter.cleanup().await;
 

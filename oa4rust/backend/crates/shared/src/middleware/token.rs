@@ -234,7 +234,10 @@ mod token_parsing_tests {
         // 非 UTF-8 的 Cookie 头不能让提取逻辑 panic 或提前返回：
         // 跳过它，继续看下一个头。
         let mut headers = HeaderMap::new();
-        headers.append(header::COOKIE, HeaderValue::from_bytes(b"\xff\xfe").unwrap());
+        headers.append(
+            header::COOKIE,
+            HeaderValue::from_bytes(b"\xff\xfe").unwrap(),
+        );
         headers.append(
             header::COOKIE,
             HeaderValue::from_str("oa4rust_session=after-binary").unwrap(),
@@ -312,7 +315,10 @@ mod token_parsing_tests {
     #[test]
     fn extract_token_from_headers_matches_authentication() {
         let headers = cookie_headers(&["oa4rust_session=abc"]);
-        assert_eq!(extract_token_from_headers(&headers), Some("abc".to_string()));
+        assert_eq!(
+            extract_token_from_headers(&headers),
+            Some("abc".to_string())
+        );
 
         let headers = HeaderMap::new();
         assert_eq!(extract_token_from_headers(&headers), None);

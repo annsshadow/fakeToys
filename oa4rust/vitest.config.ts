@@ -47,9 +47,10 @@ export default defineConfig({
         'frontend/packages/apis/src/locales/**',
         'frontend/packages/apis/src/api-coverage-generated.test.ts',
         'frontend/packages/apis/src/api-functional-tests.test.ts',
-        'types.ts',
-        'index.ts',
-        'index.js',
+        // 结构不可测：纯类型声明（interface/type），运行时无语句可执行。
+        'frontend/packages/sdk/src/types.ts',
+        // 结构不可测：纯 barrel re-export，逻辑都在被转出的模块里（已各自计入覆盖）。
+        'frontend/packages/sdk/src/index.ts',
       ],
       // Per-file thresholds
       // ── 覆盖率豁免策略（2026-09-18 审计，详见 oa4rust/docs/unit-test-coverage-exemptions.md）：

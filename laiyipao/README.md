@@ -76,6 +76,25 @@ pwsh -NoProfile -File scripts/e2e.ps1
 
 覆盖 19 个步骤（`0`~`17`，含 `10b`）：重置数据、迁移+落库、游客登录、参考种子表、关卡内容（100 关 / 敌人 / 技能 / 反应契约）、钱包初始化、构筑评分、战斗凭证、资源守恒、**重放 422**、**超量击杀 422**、谎报星级被重算、未解锁关卡 403、签到/任务/商店/兑换码、专精每层 4 选 2、排行榜/防线/诊断、后台看板、**验真接口（I-6）**、**技能升级**、未验证上报 401。
 
+### 5. 跑测试（含覆盖率）
+
+在 `laiyipao/server` 目录下执行（目录进入方式见第 1 节）：
+
+```bash
+export TEST_DATABASE_URL="postgres://postgres@127.0.0.1:5432/laiyipao?sslmode=disable"
+go test ./... -timeout 1200s -coverprofile=coverage-go.out -covermode=atomic
+go tool cover -func=coverage-go.out
+```
+
+`internal/httpapi` 的 e2e 与 `internal/service`/`store` 的集成用例按
+`TEST_DATABASE_URL` → `DATABASE_URL` → 本机 `laiyipao` 库的顺序取 DSN。库必须已
+`cmd/migrate` + `cmd/seed`；连不上时 e2e 会 **Skip 而不是失败**——报表只会显示
+「几秒跑完、覆盖率很低」，看起来像测试写得浅，实际是一条都没跑。所以 CI 必须显式提供
+可用的 DSN；Skip 数要在 `-v` 日志里人工复核（当前基线 2 条，均带显式理由）。
+`internal/service` 全套实测 3–15 分钟（机器与并发差异大，
+2026-10-28 单跑 179s，2026-10-27 夜跑 849s），默认 600s 在慢机上会假性超时，固定加
+`-timeout 1200s`。
+
 > 部署与值班请看 **[`docs/laiyipao/OPERATIONS.md`](../docs/laiyipao/OPERATIONS.md)** ——
 > 环境变量全表、迁移回滚、备份恢复、故障处置，
 > 以及「改关卡/公式会让存量战报永久失去可重放性」这件事的处理流程。
@@ -175,6 +194,7 @@ miniapp/src/
 |---|---|---|
 | `ADDR` | `:8080` | 监听地址 |
 | `DATABASE_URL` | — | PG 连接串 |
+| `TEST_DATABASE_URL` | — | 测试专用 DSN；优先于 `DATABASE_URL`，需指向已 migrate+seed 的 `laiyipao` 库 |
 | `BOOTSTRAP_ADMIN_PASS` | `admin12345` | 首次引导的管理员密码，**<10 位会 panic 拒绝**；**`APP_ENV=prod` 时必须显式设置**，否则 panic（默认值是公开的，第 67 轮） |
 | `WECHAT_ENABLED` | `false` | 是否启用微信登录 |
 | `ACCESS_TTL` / `REFRESH_TTL` | `2h` / `720h` | 令牌有效期 |

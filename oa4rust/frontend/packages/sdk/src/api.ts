@@ -92,7 +92,16 @@ export class ApiClient {
     return this.refreshPromise
   }
 
-  private authenticationFailed(): AuthenticationError {
+  /**
+   * 认证失败的唯一出口。
+   *
+   * `refreshSession()` 内部走的是 `request()`，refresh 本身 401 时已经调用过
+   * 本方法并抛出了 `AuthenticationError`。外层 catch 若再调一次，同一次失败
+   * 会通知上层两次（handler 弹 toast 就会弹两条）。传入 `cause` 后，已经通知
+   * 过的错误原样透传，只有「refresh 因非认证原因失败」才补一次通知。
+   */
+  private authenticationFailed(cause?: unknown): AuthenticationError {
+    if (cause instanceof AuthenticationError) return cause
     this.authenticationFailureHandler?.()
     return new AuthenticationError('Session expired, please login again')
   }
@@ -136,8 +145,8 @@ export class ApiClient {
         if (options?.requireAuth !== false && !options?.retried && !this.isRefreshRequest(path)) {
           try {
             await this.refreshSession()
-          } catch {
-            throw this.authenticationFailed()
+          } catch (err) {
+            throw this.authenticationFailed(err)
           }
           return this.request<T>(method, path, { ...options, retried: true })
         }
@@ -196,8 +205,8 @@ export class ApiClient {
       if (resp.status === 401 && options?.requireAuth !== false && !retried) {
         try {
           await this.refreshSession()
-        } catch {
-          throw this.authenticationFailed()
+        } catch (err) {
+          throw this.authenticationFailed(err)
         }
         return this.upload<T>(path, formData, options, true)
       }
@@ -243,7 +252,7 @@ export class ApiClient {
         if (xhr.status === 401 && options?.requireAuth !== false && !retried) {
           this.refreshSession()
             .then(() => this.uploadWithProgressOnce<T>(path, formData, onProgress, options, true).then(resolve, reject))
-            .catch(() => reject(this.authenticationFailed()))
+            .catch((err) => reject(this.authenticationFailed(err)))
           return
         }
         if (xhr.status === 401) {
@@ -297,8 +306,8 @@ export class ApiClient {
       if (resp.status === 401 && options?.requireAuth !== false && !retried) {
         try {
           await this.refreshSession()
-        } catch {
-          throw this.authenticationFailed()
+        } catch (err) {
+          throw this.authenticationFailed(err)
         }
         return this.uploadBytes<T>(path, bytes, options, true)
       }
@@ -332,8 +341,8 @@ export class ApiClient {
       if (resp.status === 401 && options?.requireAuth !== false && !retried) {
         try {
           await this.refreshSession()
-        } catch {
-          throw this.authenticationFailed()
+        } catch (err) {
+          throw this.authenticationFailed(err)
         }
         return this.stream(path, body, onEvent, options, true)
       }

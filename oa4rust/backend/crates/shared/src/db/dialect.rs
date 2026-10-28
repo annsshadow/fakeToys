@@ -403,7 +403,11 @@ mod tests {
         );
 
         std::env::remove_var("DATABASE_DIALECT");
-        assert_eq!(dialect_name_from_env(), "postgres", "两者都缺省时回落到 postgres");
+        assert_eq!(
+            dialect_name_from_env(),
+            "postgres",
+            "两者都缺省时回落到 postgres"
+        );
 
         // 大小写不敏感（配置里写成 MySQL 不该被当成未知值）
         assert_eq!(dialect_from("MySQL").name(), "mysql");

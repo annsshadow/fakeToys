@@ -481,7 +481,12 @@ mod tests {
         })
     }
 
-    fn session_at(token: &str, person: &str, created: NaiveDateTime, expires: NaiveDateTime) -> Session {
+    fn session_at(
+        token: &str,
+        person: &str,
+        created: NaiveDateTime,
+        expires: NaiveDateTime,
+    ) -> Session {
         Session {
             token: token.to_string(),
             person_unique: person.to_string(),
@@ -500,14 +505,21 @@ mod tests {
         let manager = SessionManager::new();
         assert_eq!(count(&manager).await, 0);
         assert!(manager.validate_session("never-issued").await.is_none());
-        assert_eq!(count(&manager).await, 0, "拒绝未知 token 时不应写入任何条目");
+        assert_eq!(
+            count(&manager).await,
+            0,
+            "拒绝未知 token 时不应写入任何条目"
+        );
     }
 
     #[tokio::test]
     async fn default_matches_new() {
         // Default 与 new 必须等价，否则 `#[derive(Default)]` 的调用方会拿到不同配置。
         let manager = SessionManager::default();
-        assert_eq!(manager.auth_config.session_ttl_seconds, DEFAULT_SESSION_TTL_SECONDS);
+        assert_eq!(
+            manager.auth_config.session_ttl_seconds,
+            DEFAULT_SESSION_TTL_SECONDS
+        );
         assert!(manager.pool.is_none());
     }
 
@@ -523,10 +535,7 @@ mod tests {
 
         assert_eq!(session.token, "tok-a");
         assert_eq!(session.person_unique, "person-a");
-        assert_eq!(
-            (session.expires_at - session.created_at).num_seconds(),
-            60
-        );
+        assert_eq!((session.expires_at - session.created_at).num_seconds(), 60);
     }
 
     #[tokio::test]
@@ -537,7 +546,10 @@ mod tests {
             .await
             .unwrap();
 
-        let got = manager.validate_session("tok-a").await.expect("valid session");
+        let got = manager
+            .validate_session("tok-a")
+            .await
+            .expect("valid session");
         assert_eq!(got.person_unique, "person-a");
         assert_eq!(got.token, "tok-a");
     }
@@ -603,7 +615,10 @@ mod tests {
 
         assert!(manager.validate_session("a1").await.is_none());
         assert!(manager.validate_session("a2").await.is_none());
-        assert!(manager.validate_session("b1").await.is_some(), "bob 的会话被误删");
+        assert!(
+            manager.validate_session("b1").await.is_some(),
+            "bob 的会话被误删"
+        );
         assert_eq!(count(&manager).await, 1);
     }
 
