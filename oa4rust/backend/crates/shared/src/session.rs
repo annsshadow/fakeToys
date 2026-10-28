@@ -1077,4 +1077,64 @@ mod tests {
             .await
             .unwrap();
     }
+
+    #[tokio::test]
+    async fn failing_pool_threshold_check_fails_open_and_persist_is_silent() {
+        // 失败池：check_token_threshold 的 pool.get Err 臂 → false（不拦登录）；
+        // persist_to_db 的 `if let Ok(client)` 静默跳过（best-effort 契约）——
+        // 会话仍进内存、create_session 仍 Ok：单实例降级语义的钉子。
+        let manager = SessionManager::with_pool_and_config(
+            crate::testing::failing_pool(),
+            AuthConfig {
+                public_origin: "http://localhost:3000".to_string(),
+                cookie_secure: false,
+                session_ttl_seconds: 600,
+            },
+        );
+        let created = manager
+            .create_session("cov-fp".to_string(), "cov-fp-tok".to_string())
+            .await
+            .unwrap();
+        assert_eq!(created.person_unique, "cov-fp");
+        assert!(manager.validate_session("cov-fp-tok").await.is_some());
+    }
+
+    #[tokio::test]
+    async fn failing_pool_logout_and_broadcast_degrade_gracefully() {
+        let manager = SessionManager::with_pool_and_config(
+            crate::testing::failing_pool(),
+            AuthConfig {
+                public_origin: "http://localhost:3000".to_string(),
+                cookie_secure: false,
+                session_ttl_seconds: 600,
+            },
+        );
+        manager
+            .create_session("cov-fp2".to_string(), "cov-fp2-tok".to_string())
+            .await
+            .unwrap();
+        // remove_session / remove_sessions_by_person / broadcast_logout 在池失败时
+        // 仍要完成内存侧清理（本地登出生效），只是 PG 侧静默跳过
+        manager.remove_session("cov-fp2-tok").await;
+        assert_eq!(count(&manager).await, 0, "登出的内存侧必须生效");
+        manager
+            .create_session("cov-fp3".to_string(), "cov-fp3-tok".to_string())
+            .await
+            .unwrap();
+        manager.remove_sessions_by_person("cov-fp3").await;
+        assert_eq!(count(&manager).await, 0);
+        manager
+            .create_session("cov-fp4".to_string(), "cov-fp4-tok".to_string())
+            .await
+            .unwrap();
+        // 池失败时 broadcast_logout 在 pool.get 处提前返回（不做内存清理）：
+        // 这是有意的降级链——safe_logout 先调 remove_sessions_by_person（内存侧
+        // 独立生效，上面已验证），广播只是冗余的第二道；钉住该契约防误改。
+        manager.broadcast_logout("cov-fp4").await;
+        assert_eq!(
+            count(&manager).await,
+            1,
+            "池失败时广播登出降级为 no-op，内存清理由 remove_sessions_by_person 负责"
+        );
+    }
 }

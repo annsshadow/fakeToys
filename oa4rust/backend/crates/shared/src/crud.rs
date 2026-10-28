@@ -637,4 +637,53 @@ mod batch_insert_tests {
         }
         cov_teardown().await;
     }
+
+    // ── 2026-10-29 覆盖率轮：失败池错误注入（错误臂 = 「连不上库必须显式失败」的契约）──
+    #[tokio::test]
+    async fn failing_pool_makes_crud_paths_fail_loud() {
+        let pool = crate::testing::failing_pool();
+        assert!(
+            matches!(
+                crud_delete(&pool, &COV_SPEC_SOFT, "x").await,
+                Err(AppError::Internal)
+            ),
+            "delete 的 pool.get 错误必须映射 Internal"
+        );
+        assert!(
+            matches!(
+                crud_save(
+                    &pool,
+                    &COV_SPEC_SOFT,
+                    "x",
+                    &serde_json::json!({"name": "n"})
+                )
+                .await,
+                Err(AppError::Internal)
+            ),
+            "save 的 pool.get 错误必须映射 Internal"
+        );
+        assert!(
+            matches!(
+                crud_create_many(&pool, &COV_SPEC_SOFT, &[serde_json::json!({"name": "n"})]).await,
+                Err(AppError::Internal)
+            ),
+            "create_many 的 pool.get 错误必须映射 Internal"
+        );
+        let session = cov_session("cov-err");
+        assert!(
+            matches!(
+                crud_save_owned(
+                    &pool,
+                    &COV_SPEC_SOFT,
+                    "x",
+                    &serde_json::json!({}),
+                    "owner_id",
+                    &session
+                )
+                .await,
+                Err(AppError::Internal)
+            ),
+            "归属校验的 pool.get 错误必须映射 Internal（fail-loud 而非放行）"
+        );
+    }
 }

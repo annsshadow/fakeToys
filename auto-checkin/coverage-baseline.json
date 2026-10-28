@@ -1,5 +1,5 @@
 {
-  "comment": "auto-checkin 覆盖率棘轮（2026-10-29 实测：justwoker 100 / vyceai 99.51 / agentrouter 94.44 / newapi-client 91.69 / runner 88.41 / scheduler 75 / server 92.59 / lock 77.55）。键=src/ 下的文件名，值=行覆盖地板（%），按仓库惯例各留 ~1pt 抖动余量。login.ts 未纳入：无任何测试导入它，覆盖率报表缺席（baseline 条目会被「文件不在报表」挡下）；纳入前提是先为其建 fake-page 层交互式登录流测试。",
+  "comment": "auto-checkin 覆盖率棘轮（2026-10-29 实测：justwoker 100 / vyceai 99.51 / agentrouter 94.44 / newapi-client 91.69 / runner 88.41 / scheduler 75 / server 92.59 / lock 77.55）。键=src/ 下的文件名，值=行覆盖地板（%），按仓库惯例各留 ~1pt 抖动余量。login.ts 于 2026-10-29 纳入（36.76%）：main 的 CLI 体为进程绑定（process.exit/8 分钟等待循环）结构性不可测，clearWafGate/shortUrl 已由 fake-page 测试覆盖并钉地板。",
   "justwoker.ts": 100,
   "vyceai.ts": 99,
   "agentrouter.ts": 94,
@@ -7,5 +7,6 @@
   "runner.ts": 88,
   "scheduler.ts": 74,
   "server.ts": 92,
-  "lock.ts": 77
+  "lock.ts": 77,
+  "login.ts": 36
 }

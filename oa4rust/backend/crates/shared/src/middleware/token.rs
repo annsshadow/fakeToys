@@ -379,4 +379,11 @@ mod token_parsing_tests {
                 .unwrap();
         }
     }
+
+    #[tokio::test]
+    async fn failing_pool_makes_uninitialized_check_fail_closed() {
+        // 初始化窗口判定在池失败时回 false（视作「已初始化」）——
+        // 拒绝在数据库不可用时打开匿名初始化窗口（fail-closed 契约）。
+        assert!(!system_uninitialized(&crate::testing::failing_pool()).await);
+    }
 }

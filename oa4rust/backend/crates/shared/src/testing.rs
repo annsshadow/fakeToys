@@ -259,3 +259,17 @@ pub async fn send_request(
         serde_json::from_slice(&bytes).unwrap_or(serde_json::json!({"error": "invalid json"}));
     (status, json)
 }
+
+/// 指向不可达端口的失败池（错误注入专用）：`get()` 因连接被拒**立即**返回 Err，
+/// 用于覆盖各数据访问函数的 `pool.get().await.map_err(...)` 错误臂——
+/// 健康池永远走不到那些分支，而这恰恰是「数据库连不上时调用方必须显式失败」的契约。
+pub fn failing_pool() -> Pool {
+    let mut cfg = deadpool_postgres::tokio_postgres::Config::new();
+    cfg.host("127.0.0.1")
+        .port(1)
+        .user("cov")
+        .password("cov")
+        .dbname("cov");
+    let mgr = deadpool_postgres::Manager::new(cfg, deadpool_postgres::tokio_postgres::NoTls);
+    Pool::builder(mgr).max_size(1).build().unwrap()
+}

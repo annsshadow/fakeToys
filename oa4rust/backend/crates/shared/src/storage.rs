@@ -410,4 +410,24 @@ mod tests {
         );
         assert!(storage.delete("C:\\evil").await.is_err(), "盘符 key 拒绝");
     }
+
+    #[tokio::test]
+    async fn failing_pool_makes_blob_paths_report_pool_error() {
+        let storage = PgBlobStorage::new(crate::testing::failing_pool());
+        let put_err = storage.put("k", b"v").await.unwrap_err();
+        assert!(
+            put_err.starts_with("pool:"),
+            "put 的池错误必须带 pool: 前缀：{put_err}"
+        );
+        let get_err = storage.get("k").await.unwrap_err();
+        assert!(
+            get_err.starts_with("pool:"),
+            "get 的池错误必须带 pool: 前缀：{get_err}"
+        );
+        let del_err = storage.delete("k").await.unwrap_err();
+        assert!(
+            del_err.starts_with("pool:"),
+            "delete 的池错误必须带 pool: 前缀：{del_err}"
+        );
+    }
 }

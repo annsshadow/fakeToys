@@ -8,6 +8,7 @@ import { getAdapter } from "./sites/index.js";
 import { runSiteInContext } from "./runner.js";
 import { createLogger } from "./logger.js";
 import { acquireRunLock, releaseRunLock, wasInterrupted } from "./lock.js";
+import { pathToFileURL } from "node:url";
 
 /**
  * 一次性手动登录引导：为 GitHub/LinuxDO OAuth 类站点建立持久化会话。
@@ -17,7 +18,7 @@ import { acquireRunLock, releaseRunLock, wasInterrupted } from "./lock.js";
  * 把会话保存到 sessions/<siteId>/，之后自动签到复用。
  * 你的第三方密码只在官方页面输入，工具不接触、不存储。
  */
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const siteId = process.argv[2];
   const log = createLogger("login");
   if (!siteId) {
@@ -132,7 +133,7 @@ async function main(): Promise<void> {
  * 早期版本匹配 innerText 里的"访问验证/滑块"，结果页面已是 JSON 时仍误判为未通过，
  * 白等 4 分钟还占着 run 锁。
  */
-async function clearWafGate(
+export async function clearWafGate(
   page: import("playwright").Page,
   baseUrl: string,
   log: ReturnType<typeof createLogger>,
@@ -166,7 +167,7 @@ async function clearWafGate(
   return false;
 }
 
-function shortUrl(u: string): string {
+export function shortUrl(u: string): string {
   try {
     const x = new URL(u);
     return x.hostname + x.pathname.slice(0, 20);
@@ -175,7 +176,10 @@ function shortUrl(u: string): string {
   }
 }
 
-main().catch((e) => {
-  createLogger("login").error(String(e));
-  process.exit(1);
-});
+// 仅在「直接运行本文件」时执行登录引导；被测试导入时不自动执行
+if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
+  main().catch((e) => {
+    createLogger("login").error(String(e));
+    process.exit(1);
+  });
+}
