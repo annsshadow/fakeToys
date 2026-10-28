@@ -1,0 +1,8 @@
+{
+  "comment": "auto-checkin 覆盖率棘轮（2026-10-29 B7 收口轮实测：justwoker 100 / vyceai 99.51 / agentrouter 94.44 / newapi-client 91.69 / runner 88.41）。键=src/ 下的文件名，值=行覆盖地板（%），按仓库惯例各留 ~1pt 抖动余量。抬地板前先跑 npm run test:coverage 确认现量。",
+  "justwoker.ts": 100,
+  "vyceai.ts": 99,
+  "agentrouter.ts": 94,
+  "newapi-client.ts": 91,
+  "runner.ts": 88
+}

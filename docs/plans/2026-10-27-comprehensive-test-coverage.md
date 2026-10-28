@@ -305,18 +305,30 @@ node --import tsx --test --experimental-test-coverage test/*.test.ts
 
 基线：**53.27% 行 / 71.86% 分支**。缺口集中在站点适配器（G2：需要真实网络/Playwright 会话）：
 
-| 文件 | 行覆盖 | 性质 |
-| --- | ---: | --- |
-| `sites/justwoker.ts` | 28.72% | 站点适配器，需真实会话 |
-| `sites/agentrouter.ts` | 31.48% | 同上 |
-| `sites/vyceai.ts` | 38.54% | 同上 |
-| `runner.ts` | 49.76% | 编排器，含浏览器生命周期 |
-| `sites/newapi-client.ts` | 53.35% | 已有 oauth/logout 用例，其余为网络分支 |
-| `scheduler.ts` | 54.17% | 定时调度 |
-| `server.ts` | 71.60% | — |
-| `store.ts` | 88.60% | — |
+| 文件 | 基线行覆盖 | **2026-10-29 收口后** | 性质 |
+| --- | ---: | ---: | --- |
+| `sites/justwoker.ts` | 28.72% | **100%** | 站点适配器，需真实会话 |
+| `sites/agentrouter.ts` | 31.48% | **94.44%** | 同上 |
+| `sites/vyceai.ts` | 38.54% | **99.51%** | 同上 |
+| `runner.ts` | 49.76% | **88.41%** | 编排器，含浏览器生命周期 |
+| `sites/newapi-client.ts` | 53.35% | **91.69%** | 已有 oauth/logout 用例，其余为网络分支 |
+| `scheduler.ts` | 54.17% | 54.17%（未动） | 定时调度 |
+| `server.ts` | 71.60% | 71.60%（未动） | — |
+| `store.ts` | 88.60% | 88.60%（未动） | — |
 
-`cool/`（单文件 Java `EncryptUtil`）**不接线**：仓库里没有 Maven/Gradle，编译脚本依赖外部 `commons-codec` jar；为一个工具类搭测试脚手架的成本高于收益，登记为 G3。
+**2026-10-29 B7 收口轮**：为 G2 搭建假浏览器层（`test/fake-page.ts`）——`page.evaluate` 支持脚本队列与
+**沙箱执行**两种模式（后者临时替换 globalThis.fetch/localStorage/document，把 fetchSelf 等
+浏览器端回调体一并纳入覆盖）；定位器模拟 Playwright 语义（元素不存在时 fill/click 抛错不记录，
+弹窗在首次真实点击后才出现——忠实 window.open 时序）。新增 41 条用例：四个适配器的
+checkin 全流程分支（成功/已领/余额下降/登录失败/OAuth needManual/WAF/异常）、fetchSelf 的
+token/WAF/refresh/localStorage 兜底各分支、domLogin 表单路径、logout 的基础设施 cookie 保留、
+runner 的 skip/异常收敛/锁守卫（`runner-branches.test.ts` 用 PLAYWRIGHT_BROWSERS_PATH 指向空目录
+让浏览器启动确定性失败，**测试绝不碰真实站点**）。tsc 0 错、86 tests 全绿。
+
+棘轮：`scripts/coverage-ratchet.mjs` + `coverage-baseline.json`（五个目标文件地板 100/99/94/91/88，
+各留 ~1pt 抖动余量），`npm run test:ratchet` 双向自证（正向下限通过、临时抬地板退出 1），
+已接入 auto-checkin CI。**已知 flaky 一次**：冷启动时 run-lock 陈旧文件导致 runner-branches
+一度红，重跑自愈；若 CI 复现，在测试里对锁获取加重试。`cool/`（单文件 Java `EncryptUtil`）**不接线**：仓库里没有 Maven/Gradle，编译脚本依赖外部 `commons-codec` jar；为一个工具类搭测试脚手架的成本高于收益，登记为 G3。
 
 #### B8 —— 变异抽样（3 个变异体，抓出 1 个真问题）
 
