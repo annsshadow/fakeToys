@@ -2945,7 +2945,7 @@ pub async fn attachment_id_work_workId(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, work_id, name, content, creator, create_time FROM x_attachment WHERE work_id = $1",
+            "SELECT id, work_id, name, content, creator, create_time FROM x_attachment WHERE work_id = $1 LIMIT 100",
             &[&work_id],
         )
         .await
@@ -2967,7 +2967,7 @@ pub async fn attachment_id_workcompleted_workCompletedId(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, workcompleted_id, name, content, creator, create_time FROM x_attachment WHERE workcompleted_id = $1",
+            "SELECT id, workcompleted_id, name, content, creator, create_time FROM x_attachment WHERE workcompleted_id = $1 LIMIT 100",
             &[&work_completed_id],
         )
         .await

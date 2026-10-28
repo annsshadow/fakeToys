@@ -2176,7 +2176,7 @@ pub async fn attendanceschedulesetting_list_unit_name(
 
     let rows = client
         .query(
-            "SELECT id, name, setting_data, creator, unit_id FROM x_attendance_schedule_setting WHERE unit_id = $1 ORDER BY create_time DESC",
+            "SELECT id, name, setting_data, creator, unit_id FROM x_attendance_schedule_setting WHERE unit_id = $1 ORDER BY create_time DESC LIMIT 100",
             &[&name],
         )
         .await
@@ -3812,7 +3812,7 @@ pub async fn statisticshow_unit_day_topUnit_name_date(
 
     let rows = client
         .query(
-            "SELECT id, unit_id, work_date, status FROM x_attendance_statisticshow WHERE unit_id = $1 AND work_date = $2 AND unit_id IS NOT NULL",
+            "SELECT id, unit_id, work_date, status FROM x_attendance_statisticshow WHERE unit_id = $1 AND work_date = $2 AND unit_id IS NOT NULL LIMIT 100",
             &[&name, &date],
         )
         .await
@@ -3858,7 +3858,7 @@ pub async fn statisticshow_unit_day_name_date(
 
     let rows = client
         .query(
-            "SELECT id, unit_id, work_date, status FROM x_attendance_statisticshow WHERE unit_id = $1 AND work_date = $2 ORDER BY work_date ASC",
+            "SELECT id, unit_id, work_date, status FROM x_attendance_statisticshow WHERE unit_id = $1 AND work_date = $2 ORDER BY work_date ASC LIMIT 100",
             &[&name, &date],
         )
         .await
@@ -3908,7 +3908,7 @@ pub async fn statisticshow_unit_day_name_year_month(
 
     let rows = client
         .query(
-            "SELECT id, unit_id, work_date, status FROM x_attendance_statisticshow WHERE unit_id = $1 AND year = $2 AND month = $3 ORDER BY work_date ASC",
+            "SELECT id, unit_id, work_date, status FROM x_attendance_statisticshow WHERE unit_id = $1 AND year = $2 AND month = $3 ORDER BY work_date ASC LIMIT 100",
             &[&name, &year, &month],
         )
         .await
@@ -4052,7 +4052,7 @@ pub async fn statisticshow_unit_topUnit_name_year_month(
 
     let rows = client
         .query(
-            "SELECT id, unit_id, year, month, status FROM x_attendance_statisticshow WHERE unit_id = $1 AND year = $2 AND month = $3 ORDER BY year DESC, month DESC",
+            "SELECT id, unit_id, year, month, status FROM x_attendance_statisticshow WHERE unit_id = $1 AND year = $2 AND month = $3 ORDER BY year DESC, month DESC LIMIT 100",
             &[&name, &year, &month],
         )
         .await
@@ -4103,7 +4103,7 @@ pub async fn statisticshow_unit_name_year_month(
 
     let rows = client
         .query(
-            "SELECT id, unit_id, year, month, status FROM x_attendance_statisticshow WHERE unit_id = $1 AND year = $2 AND month = $3 ORDER BY year DESC, month DESC",
+            "SELECT id, unit_id, year, month, status FROM x_attendance_statisticshow WHERE unit_id = $1 AND year = $2 AND month = $3 ORDER BY year DESC, month DESC LIMIT 100",
             &[&name, &year, &month],
         )
         .await
@@ -6330,7 +6330,7 @@ pub async fn v2_my_statistic(
     let pattern = format!("{}%", month);
     let rows = client
         .query(
-            "SELECT status, COUNT(*) AS cnt FROM x_attendance_detail WHERE person_id = $1 AND date LIKE $2 GROUP BY status ORDER BY status",
+            "SELECT status, COUNT(*) AS cnt FROM x_attendance_detail WHERE person_id = $1 AND date LIKE $2 GROUP BY status ORDER BY status LIMIT 100",
             &[&session.person_unique, &pattern],
         )
         .await
@@ -7632,7 +7632,7 @@ pub async fn v2_detail_statistic_record_list(
     let rows = client
         .query(
             "SELECT id, user_id, check_in_time, check_out_time, status, create_time \
-             FROM x_attendance_record WHERE user_id = $1 AND check_in_time LIKE $2 ORDER BY check_in_time ASC",
+             FROM x_attendance_record WHERE user_id = $1 AND check_in_time LIKE $2 ORDER BY check_in_time ASC LIMIT 100",
             &[&person, &pattern],
         )
         .await
@@ -7978,7 +7978,7 @@ pub async fn v2_groupschedule_config_get(
 
     let row = client
         .query_opt(
-            "SELECT id, group_id, config_json, update_time FROM x_attendance_v2_group_schedule_config WHERE group_id = $1",
+            "SELECT id, group_id, config_json, update_time FROM x_attendance_v2_group_schedule_config WHERE group_id = $1 LIMIT 1",
             &[&group_id],
         )
         .await
@@ -8201,7 +8201,7 @@ pub async fn v2_mobile_pre_check(
         .query(
             "SELECT id, check_in_type, check_in_result, source_type, create_time \
              FROM x_attendance_v2_checkin_record WHERE user_id = $1 AND record_date_string LIKE $2 \
-             ORDER BY create_time DESC",
+             ORDER BY create_time DESC LIMIT 100",
             &[&session.person_unique, &pattern],
         )
         .await

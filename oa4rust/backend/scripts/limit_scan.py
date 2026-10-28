@@ -112,7 +112,7 @@ BUCKET_FLOORS = {
     "bounded": 450,
     "aggregate": 200,
     "single_row": 900,
-    "parent_key": 100,
+    "parent_key": 65,
     "key_set": 80,
     "scalar": 15,
     "subquery": 20,

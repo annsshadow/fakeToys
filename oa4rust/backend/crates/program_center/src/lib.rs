@@ -183,7 +183,7 @@ pub async fn collect_list(
 
     let rows = client
         .query(
-            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE person_id = $1 AND deleted_at IS NULL ORDER BY create_time DESC",
+            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE person_id = $1 AND deleted_at IS NULL ORDER BY create_time DESC LIMIT 100",
             &[&session.person_unique],
         )
         .await

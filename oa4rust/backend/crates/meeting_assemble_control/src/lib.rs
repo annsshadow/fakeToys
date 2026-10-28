@@ -41,7 +41,7 @@ pub async fn list_meeting_controls(
 
     let rows = client
         .query(
-            "SELECT id, meeting_id, control_type, enabled, config FROM x_meeting_assemble_control WHERE meeting_id = $1 ORDER BY create_time",
+            "SELECT id, meeting_id, control_type, enabled, config FROM x_meeting_assemble_control WHERE meeting_id = $1 ORDER BY create_time LIMIT 100",
             &[&meeting_id],
         )
         .await
@@ -1735,7 +1735,7 @@ async fn meeting_list_year_year_month_month_day_day_roomId_core(
 
     let rows = client
         .query(
-            "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting WHERE start_time >= $1 AND start_time <= $2 AND room_id = $3 ORDER BY start_time ASC",
+            "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting WHERE start_time >= $1 AND start_time <= $2 AND room_id = $3 ORDER BY start_time ASC LIMIT 100",
             &[&start_date, &end_date, &room_id],
         )
         .await

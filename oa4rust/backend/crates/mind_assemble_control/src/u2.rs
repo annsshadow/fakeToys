@@ -239,7 +239,7 @@ pub async fn mind_share_records(pool: Extension<Pool>, Path(id): Path<String>) -
     let rows = client
         .query(
             "SELECT id, mind_id, person, create_time::text AS create_time \
-             FROM x_mind_share WHERE mind_id = $1 ORDER BY create_time DESC",
+             FROM x_mind_share WHERE mind_id = $1 ORDER BY create_time DESC LIMIT 100",
             &[&id],
         )
         .await

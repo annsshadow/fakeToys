@@ -258,7 +258,7 @@ pub async fn face_list(
     let rows = client
         .query(
             "SELECT id, face_name, face_type, status, create_time::text AS create_time FROM x_person_face \
-             WHERE person_id = $1 AND deleted_at IS NULL ORDER BY create_time DESC",
+             WHERE person_id = $1 AND deleted_at IS NULL ORDER BY create_time DESC LIMIT 100",
             &[&session.person_unique],
         )
         .await

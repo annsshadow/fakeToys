@@ -223,6 +223,42 @@ Z 批次只给主链路 14 个接口接了 zod。剩余 64 个函数的响应仍
 | 13-14 | `processplatform_service_processing` 两条 review 列表 | 工作项 review 记录 | `LIMIT 100` | 记录列表语义 |
 | 15-16 | `processplatform_service_processing` 两条 snap 列表 | 工作项快照列表 | `LIMIT 100` | 快照列表语义 |
 
+**第三轮（10-28 下午，P4 批量收口）**：三组并行勘察（覆盖 parent_key 全部 60 条 P4 明细 + P2 的 11 条
+attendance 统计）后，按「列表语义 + ORDER BY 稳定截断」给 **38 处加 LIMIT**（37 处 `LIMIT 100` +
+1 处单行 get-one `LIMIT 1`），`parent_key 113 → 75`、`bounded 573 → 611`：
+
+| 文件 | 处数 | 端点 |
+|---|---|---|
+| `attendance_assemble_control/lib.rs` | 10 | 排班配置 2179、单位日/月统计 3815/3861/3911/4055/4106、本人状态聚合 6333、单人单日打卡 7634、打卡预检 8202（`LIMIT 100`）；排班配置 get-one 7981（`query_opt`，`LIMIT 1`） |
+| `file_assemble_control/lib.rs` | 1 | 引用附件列表 2892 |
+| `meeting_assemble_control/lib.rs` | 2 | 会议控制项 44、会议室当日会议 1738 |
+| `mind_assemble_control/u2.rs` | 1 | 脑图共享记录 241 |
+| `program_center/lib.rs` | 1 | 个人收藏 186 |
+| `personal_extend/personal.rs` | 1 | 本人人脸条目 260 |
+| `organization_assemble_control/lib.rs` | 5 | 群组 819、单位/身份职务 3081/3231、单位属性 3428、人员属性 4099 |
+| `organization_assemble_control/u2_org.rs` | 2 | 组织直接下级 260/276 |
+| `processplatform_service_processing/lib.rs` | 2 | 工作/已完成工作附件 2948/2970 |
+| `cms_assemble_control/lib.rs` | 6 | 文档附件列表 4040/4112/4269/4341（同 SQL 四克隆）、表单列表 5409、output 列表 5773 |
+| `portal_assemble_designer/lib.rs` | 4 | 字典 941、页面 1797、脚本 2547、组件 2932 |
+| `portal_assemble_surface/lib.rs` | 3 | 页面 1370、脚本 2098、组件 2315 |
+
+**分类冲突的显式裁决**：attendance 3815/3861/3911/4055/4106/6333/7634 在 §6.5 初版被粗分为 P2
+「汇总留基线」；本轮端点级复核证实它们是**有界小集合**（月内日统计 ≤31 行、状态聚合 = 状态种类数、
+单人单日打卡个位数），`LIMIT 100` 在真实数据形态下不截断任何行，按「证据优先」改判加 LIMIT。
+P2 其余（3630/3676/3957 行数=单位人数可超 100、7691 导出链路）维持原分类留基线。
+
+**不改什么（第三轮新增留基线理由，P4 剩余 29 条 + P2 剩余 12 条）**：
+
+- 索引/同步 feed（截断=静默丢数据）：`ai/index.rs:42`、`ai_assemble_control:1759`；
+- 单行期望（`query_opt`，多行语义错误应显式失败）：`ai_assemble_control:1802`、`pp_designer:2449`；
+- 权限/判重检查集合（非展示列表，截断破坏正确性）：`ai_assemble_control:2022,2159`（会话属主检查）、`pp u2:878`（附件复制判重）；
+- 全量组装：`pp_designer:2705`（流程画布元素）、`cms:8514`（EAV 行折叠为单文档对象）；
+- 死 handler（无路由注册）：`cms:5508`；
+- 版本历史累积型（截断属产品决策）：`mind:196`、`mind u2:272`、`portal_designer:1898,2664`；
+- 大数据量列表（需真分页而非裸 100）：`attendance:1501,1663,8025`、`calendar:605`、`file:276`、`cms:4184`（batch_download）；
+- 中置信展示列表（大概率小、未验证真实数据量，留待有库轮次）：`correlation:119`、`meeting:508`、
+  `query_surface:1420`、`endpoints_person2:362`、`endpoints_unit2:482`、`pp:1688,2475,2694,2716,2738`。
+
 别名端点与「同族」的判断依据：同一张表、同一谓词形状、同一列表语义（§6.5 附录逐条核对过）；
 不是「看起来像」就顺手改。`forum_view_all` / `user_forum_list` 此前 §6.3 明确说「本轮不改、留基线」，
 本轮按端点语义复核后决定：它们就是版块列表（`x_bbs_forum` 有主键、`ORDER BY sort` 稳定序），
@@ -245,16 +281,17 @@ Z 批次只给主链路 14 个接口接了 zod。剩余 64 个函数的响应仍
   `message_assemble_communicate` / `processplatform_service_processing` 与 `parent` 包；
 - 改动后的 SQL 在真库可执行（本机 PostgreSQL 容器内 `psql` 直跑；空表 0 行，非空表截断正确）。
 
-### 6.5 `parent_key` 113 条决策表（10-28）
+### 6.5 `parent_key` 决策表（10-28 初版 113 条；第三轮后 75 条）
 
-按端点语义分四类；附录逐条列 `file:line`。数字与 §6.2 修订后的分桶一致（`parent_key=113`）：
+按端点语义分四类。第三轮（§6.3）迁出 38 条后现量 `parent_key=75`（P1 25 / P2 12 / P3 9 / P4 29）；
+初版分类数字保留作历史，现量以 `limit_unbounded.tsv` 为准：
 
-| 类 | 语义 | 决策 | 条数 |
-|---|---|---|---|
-| P1 权限/身份全量 | 角色名/身份名/权限矩阵/组织 scope，调用方要**全量**做鉴权，分页会改变「有没有权限」的语义 | **留基线，不加 LIMIT**（下一轮评估按 scope 收窄而非截断） | 25 |
-| P2 报表/统计/导入/BAM | 月度统计、GROUP BY 汇总、导入结果、BAM 状态看板，语义是「汇总」 | **留基线，不加 LIMIT**（截断即改需求） | 19 |
-| P3 单行唯一性期望 | 谓词是复合业务键（`doc_id + field_name`、`portal_id + name` 等），正常数据下期望 ≤1 行；调用方多走 `query_opt` | **留基线**；若改为 `query` 多行消费需补 LIMIT（见附录标注） | 9 |
-| P4 待分页列表 | 父键下的业务列表（附件、版本、日程、收藏等），可安全截断或需接分页 | 本轮改了 BBS 别名 + 消息/流程列表（已加 LIMIT 100，迁出 `parent_key`）；**剩余 60 条留基线**，下一轮按分页联动批量收口 | 60 |
+| 类 | 语义 | 决策 | 初版条数 | 现量 |
+|---|---|---|---|---|
+| P1 权限/身份全量 | 角色名/身份名/权限矩阵/组织 scope，调用方要**全量**做鉴权，分页会改变「有没有权限」的语义 | **留基线，不加 LIMIT**（评估按 scope 收窄而非截断） | 25 | 25 |
+| P2 报表/统计/导入/BAM | 月度统计、GROUP BY 汇总、导入结果、BAM 状态看板，语义是「汇总」 | **留基线，不加 LIMIT**（截断即改需求）；第三轮对其中 7 条经端点级复核改判「有界小集合」加 LIMIT（见 §6.3 裁决） | 19 | 12 |
+| P3 单行唯一性期望 | 谓词是复合业务键（`doc_id + field_name`、`portal_id + name` 等），正常数据下期望 ≤1 行；调用方多走 `query_opt` | **留基线**；若改为 `query` 多行消费需补 LIMIT | 9 | 9 |
+| P4 待分页列表 | 父键下的业务列表（附件、版本、日程、收藏等） | 第三轮迁出 31 条（§6.3 表）；**剩余 29 条留基线**，分类理由见 §6.3「不改什么」 | 60 | 29 |
 
 P1 明细（25）：`auth`（lib.rs:331,348）、`auth/switch_user.rs:77`、`auth/welink.rs:108`、
 `bbs_assemble_control:1298,1866`、`bbs_assemble_control/u2.rs:1973`（角色绑定）、
@@ -370,6 +407,7 @@ P4 明细（60）：`ai:1759,1802,2022,2159`、`attendance:1501,1663,2179,7981,8
 | O 分页联动 | 已实施并本机全绿 | `pnpm --filter @oa4rust/desktop exec tsc --noEmit` 退出 0（无输出）；`pnpm --filter @oa4rust/desktop build` 退出 0（built in 3.01s）；`biome check` 4 个改动文件 0 错；URL 由 `personPage` 插值、总页数由 `count/size` 计算；BBS 搜索页码改 `page/${page.value}`（**交互未实跑**，无浏览器会话） | 见 §12 |
 | B BOM-FAQ | 已改并本机全绿 | FAQ 顶部 / 「本文件不写什么」/ 文末索引三处指向 `docs/augmentor/DEPLOYMENT.md`；A184 dead_path 0（新增引用是活的） | 见 §12 |
 | G gap-closure（10-28） | 已实施并本机全绿 | 同 L-REST 10-28 修订行；决策表见 §6.5（`parent_key` 113 条按端点语义分 4 类：P1 权限全量 25 / P2 报表导入 19 / P3 单行期望 9 / P4 待分页 60）；CI `limit-scan` job 注释与 `.github/workflows/oa4rust-ci.yml` 同步更新 | 见 §12 |
+| H P4 批量收口（10-28 第三轮） | 已实施并本机全绿 | 三组勘察（60 条 P4 + P2 attendance 11 条逐端点核对 SQL/路由/消费方式）后 38 处加 LIMIT（37×`LIMIT 100` + 1×`LIMIT 1`）：`parent_key 113→75`、`bounded 573→611`；`python scripts/limit_scan.py --update-baseline` 重生成基线 692 条，基线态退出 0；地板 `parent_key 100→65`（比例惯例 ≈87%）；反向自证：`WHERE person_id = $1` 探针 → 退出 1 点名文件，还原退出 0；`cargo check` 8 crate 全绿（attendance/meeting_control/mind_control/program_center/personal_extend/org_control/cms/portal×2 等）；`cargo test` 9 crate 全绿（48+62+32+152+19+267+337+27+26）；`cargo fmt --check` 改动 crate 干净（`pp u2.rs:346` 为既有本机版本差异）；`file_assemble_control` 因本机无 C 工具链（gnu host 无 gcc）check/test 交 CI，此前同 crate 按 zip 更大 features 集编译绿 | 见 §12 |
 
 ## 11. 本轮明确不做
 

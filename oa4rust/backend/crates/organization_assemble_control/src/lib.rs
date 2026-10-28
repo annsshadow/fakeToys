@@ -816,7 +816,7 @@ pub async fn group_list_flag_sub_direct(
 
     let rows = client
         .query(
-            "SELECT g.id, g.name, g.unit_id, g.type, g.creator, g.create_time::text FROM x_org_group g WHERE g.unit_id = $1 AND g.id != $1 AND g.deleted_at IS NULL ORDER BY g.create_time DESC",
+            "SELECT g.id, g.name, g.unit_id, g.type, g.creator, g.create_time::text FROM x_org_group g WHERE g.unit_id = $1 AND g.id != $1 AND g.deleted_at IS NULL ORDER BY g.create_time DESC LIMIT 100",
             &[&flag],
         )
         .await
@@ -3078,7 +3078,7 @@ pub async fn unitduty_list_unit_unitFlag(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty WHERE unit_id = $1 ORDER BY create_time DESC", &[&unit_flag])
+        .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty WHERE unit_id = $1 ORDER BY create_time DESC LIMIT 100", &[&unit_flag])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -3228,7 +3228,7 @@ pub async fn unitduty_list_identity_identityFlag(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty WHERE identity_id = $1 ORDER BY create_time DESC", &[&identity_flag])
+        .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty WHERE identity_id = $1 ORDER BY create_time DESC LIMIT 100", &[&identity_flag])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -3425,7 +3425,7 @@ pub async fn unitattribute_list_unit_flag(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, unit_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_unit_attribute WHERE unit_id = $1 ORDER BY create_time DESC", &[&unit_flag])
+        .query("SELECT id, unit_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_unit_attribute WHERE unit_id = $1 ORDER BY create_time DESC LIMIT 100", &[&unit_flag])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -4096,7 +4096,7 @@ pub async fn personattribute_list_person_personFlag(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, person_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_person_attribute WHERE person_id = $1 AND deleted_at IS NULL ORDER BY create_time DESC", &[&person_flag])
+        .query("SELECT id, person_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_person_attribute WHERE person_id = $1 AND deleted_at IS NULL ORDER BY create_time DESC LIMIT 100", &[&person_flag])
         .await
         .map_err(|_| AppError::Internal)?;
 

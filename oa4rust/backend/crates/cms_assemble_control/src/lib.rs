@@ -4037,7 +4037,7 @@ pub async fn anonymous_fileinfo_download_document_id(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, doc_id, file_id, original_name, size, content_type, upload_person, create_time::text FROM x_cms_fileinfo WHERE doc_id = $1 AND deleted_at IS NULL",
+            "SELECT id, doc_id, file_id, original_name, size, content_type, upload_person, create_time::text FROM x_cms_fileinfo WHERE doc_id = $1 AND deleted_at IS NULL LIMIT 100",
             &[&doc_id],
         )
         .await
@@ -4109,7 +4109,7 @@ pub async fn anonymous_fileinfo_download_document_id_stream(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, doc_id, file_id, original_name, size, content_type, upload_person, create_time::text FROM x_cms_fileinfo WHERE doc_id = $1 AND deleted_at IS NULL",
+            "SELECT id, doc_id, file_id, original_name, size, content_type, upload_person, create_time::text FROM x_cms_fileinfo WHERE doc_id = $1 AND deleted_at IS NULL LIMIT 100",
             &[&doc_id],
         )
         .await
@@ -4266,7 +4266,7 @@ pub async fn fileinfo_download_document_id(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, doc_id, file_id, original_name, size, content_type, upload_person, create_time::text FROM x_cms_fileinfo WHERE doc_id = $1 AND deleted_at IS NULL",
+            "SELECT id, doc_id, file_id, original_name, size, content_type, upload_person, create_time::text FROM x_cms_fileinfo WHERE doc_id = $1 AND deleted_at IS NULL LIMIT 100",
             &[&doc_id],
         )
         .await
@@ -4338,7 +4338,7 @@ pub async fn fileinfo_download_document_id_stream(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, doc_id, file_id, original_name, size, content_type, upload_person, create_time::text FROM x_cms_fileinfo WHERE doc_id = $1 AND deleted_at IS NULL",
+            "SELECT id, doc_id, file_id, original_name, size, content_type, upload_person, create_time::text FROM x_cms_fileinfo WHERE doc_id = $1 AND deleted_at IS NULL LIMIT 100",
             &[&doc_id],
         )
         .await
@@ -5407,7 +5407,7 @@ pub async fn form_list_app_appId(
     let rows = client
         .query(
             "SELECT id, app_id, name, definition, status, creator, create_time::text \
-             FROM x_cms_form WHERE app_id = $1 AND deleted_at IS NULL ORDER BY create_time DESC",
+             FROM x_cms_form WHERE app_id = $1 AND deleted_at IS NULL ORDER BY create_time DESC LIMIT 100",
             &[&app_id],
         )
         .await
@@ -5770,7 +5770,7 @@ pub async fn output_appInfoFlag_select(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, app_id, name, config, creator, create_time::text FROM x_cms_output WHERE app_id = $1 AND deleted_at IS NULL",
+            "SELECT id, app_id, name, config, creator, create_time::text FROM x_cms_output WHERE app_id = $1 AND deleted_at IS NULL LIMIT 100",
             &[&app_info_flag],
         )
         .await

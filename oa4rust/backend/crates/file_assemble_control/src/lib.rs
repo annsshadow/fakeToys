@@ -2890,7 +2890,7 @@ pub async fn file_list_referencetype_referenceType_reference_reference(
     let rows = client
         .query(
             "SELECT id, name, person, reference_type, extension, length, mime_type, create_time::text
-             FROM FILE_FILE WHERE reference_type = $1 AND reference_id = $2 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC",
+             FROM FILE_FILE WHERE reference_type = $1 AND reference_id = $2 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC LIMIT 100",
             &[&reference_type, &reference],
         )
         .await.map_err(|_| AppError::Internal)?;
