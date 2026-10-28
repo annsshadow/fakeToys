@@ -264,6 +264,16 @@ P2 其余（3630/3676/3957 行数=单位人数可超 100、7691 导出链路）�
 本轮按端点语义复核后决定：它们就是版块列表（`x_bbs_forum` 有主键、`ORDER BY sort` 稳定序），
 100 截断不改变正常规模下的语义，故补上。
 
+**中置信条目的数据量验证路径评估（10-29，结论：本地不可判定，已穷尽）**：
+第三轮留基线的 30 条里，「中置信展示列表」类（correlation/meeting/query_surface/person2/unit2/pp
+的 record/version/snap 等 10 条）的加 LIMIT 前提是「单父键行数实际远小于 100」。验证方法：
+对 lyp-pg 的 `oa4rust` 库逐表查 `MAX(单父键子行数)`（`x_correlation`、`x_meeting_invite`、
+`x_org_person_attribute`、`x_record(task_id,type)`、`x_document_version`、`x_snap(work_id,type)`、
+`x_query_neural_calculate(model,work)`、`x_ai_index`）。实测**这些表全部 0 行**——本地开发库没有
+代表性数据，读数无法支撑任何方向的结论。剩余路径只有两条：接入含真实规模数据的库重跑同一组
+查询；或由产品侧对「截断是否可接受」拍板后直接接分页。其余 20 条（索引 feed / 单行期望 /
+检查集合 / 全量组装 / 死 handler / 版本历史 / 需真分页）的处置依赖语义而非数据量，留基线即为终态。
+
 **不改什么（必须留在基线里）**：
 
 - 导出 / 备份 / 迁移 / 全量遍历 / 聚合统计：加 LIMIT 会改变语义，不是「治理」而是「改需求」。
