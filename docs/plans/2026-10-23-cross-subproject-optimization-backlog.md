@@ -279,3 +279,12 @@
 | `qs` ×3（`oa4rust` / `miniapp` / `auto-checkin`） | **已修复** | 三处 override 抬到 **6.16.1**（GHSA-6pq8-jhm2-2vcw 的补丁线）；`pnpm install` / `npm ci` 后实测安装 6.16.1。 |
 | `deepmerge` ×1（`miniapp`，dev） | **已 dismiss（tolerable_risk）** | 4.3.1 为上游最新且 `first_patched_version=null`；仅经 `jest-config@27.5.1`（`@dcloudio/uni-automator`）进入开发链，不合并不可信输入。理由已写入 GitHub 告警。 |
 | 回归 | **通过** | `oa4rust` `pnpm test` **1042 passed**；`miniapp` `pnpm test` **1167 passed / 2 skipped**（`i6.e2e.test.ts` 的 `describe.skipIf`，既有）；`auto-checkin` `npm test` **40 passed**。 |
+
+**同日补（CI 门禁同步）**：上一行只 dismiss 了 GitHub 告警，仓库自己的 `audit-gate` 基线没跟上，`laiyipao CI` 的
+dependency-audit job 以「miniapp 漏洞数 1 超过基线 0」变红。已同步：`audit-baseline.ini` miniapp
+`low/total = 1`（演变日志里记了两项确认：dist/build 产物特征串 0 命中、上游无补丁版本，降级会打破
+`jest-config@27.5.1` 的 `^4.2.2` 声明）；顺带修掉同文件 `[miniapp.overrides]` 里 `qs = 6.16.0` 的陈值
+（fd60f5da7 只抬了 yaml 没抬基线，`check-overrides` 自测 H 用例因此红）；`audit-gate.test.cjs` 的 B/C
+改用合成零基线，使「从 0 涨 1 必须拦」不再被真实基线升降打碎，A 对齐现状（1 low 持平放行）。
+本机验证：`node laiyipao/scripts/audit-gate.test.cjs` **14/14**；miniapp/admin 真实 `pnpm audit` 过
+`check-counts`（1/0 持平）、`check-overrides`（30 条齐全）。

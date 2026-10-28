@@ -39,13 +39,18 @@ console.log("=== checkCounts ===");
 // 基线为 0 之后「降了提示更新基线」这个分支在真实基线上无法触发，
 // 所以 D 用例改用**合成基线**（total=3）单独覆盖那条分支——分支还在，
 // 只是不再由真实数据顺带覆盖。
+// 2026-10-28：miniapp 基线回到 1（deepmerge 4.3.1，dev 链、无补丁版本，
+// 见 audit-baseline.ini 演变记录）。「从 0 涨 1 必须拦」这条判据改用
+// **合成零基线**（B/C），不再被真实基线的升降打碎；A 改为对真实基线的
+// 「持平放行」现状（1 low），真实审计里的那条漏洞就是它。
 const SYNTH_BASE = "[miniapp]\ncritical = 0\nhigh = 1\nmoderate = 2\nlow = 0\ntotal = 3\n";
-check("A miniapp 现状 0/0/0/0 (=0) 对基线 0",
-  gate.checkCounts("miniapp", mk(0, 0, 0, 0), baseTxt), false);
-check("B 变体 涨到 0/1/0/0 (=1) 必须拦下",
-  gate.checkCounts("miniapp", mk(0, 1, 0, 0), baseTxt), true);
-check("C 变体 冒出 1 条 critical (=1)",
-  gate.checkCounts("miniapp", mk(1, 0, 0, 0), baseTxt), true);
+const SYNTH_ZERO = "[miniapp]\ncritical = 0\nhigh = 0\nmoderate = 0\nlow = 0\ntotal = 0\n";
+check("A miniapp 现状 0/0/0/1 (=1) 对真实基线 1 持平放行",
+  gate.checkCounts("miniapp", mk(0, 0, 0, 1), baseTxt), false);
+check("B 变体 合成零基线下涨到 0/1/0/0 (=1) 必须拦下",
+  gate.checkCounts("miniapp", mk(0, 1, 0, 0), SYNTH_ZERO), true);
+check("C 变体 合成零基线下冒出 1 条 critical (=1)",
+  gate.checkCounts("miniapp", mk(1, 0, 0, 0), SYNTH_ZERO), true);
 check("D 变体 降到 0/0/1/0 (=1) 对合成基线 3 应提示更新基线而不拦",
   gate.checkCounts("miniapp", mk(0, 0, 1, 0), SYNTH_BASE), false);
 check("E admin 现状 0/0/0/0 对基线 0",
