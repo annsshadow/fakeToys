@@ -589,6 +589,45 @@ mod tests {
         assert_eq!(status, StatusCode::OK);
     }
 
+    #[tokio::test]
+    async fn test_general_traffic_does_not_consume_auth_rate_limit() {
+        let app = test_app(security_state());
+        let auth_max = crate::middleware::auth_rate_limit() as usize;
+        assert!(auth_max > 1, "test needs at least two attempts of headroom");
+
+        // 用普通端点打满与认证预算同等数量的请求。它们会被认证中间件拒绝（401），
+        // 但必须计入普通桶；修复前它们与认证共用 `ip` 桶，登录会提前 429。
+        for i in 0..auth_max {
+            let status = send(&app, Method::GET, "/api/unit/list", None, None).await;
+            assert_ne!(
+                status,
+                StatusCode::TOO_MANY_REQUESTS,
+                "第 {} 次普通请求不应被限流",
+                i + 1
+            );
+        }
+
+        // 认证桶仍有完整预算：前 auth_max 次成功，第 auth_max+1 次才 429。
+        for i in 0..=auth_max {
+            let status = send(&app, Method::POST, "/api/authentication/login", None, None).await;
+            if i < auth_max {
+                assert_eq!(
+                    status,
+                    StatusCode::OK,
+                    "第 {} 次认证请求应成功（普通流量不得挤占认证预算）",
+                    i + 1
+                );
+            } else {
+                assert_eq!(
+                    status,
+                    StatusCode::TOO_MANY_REQUESTS,
+                    "第 {} 次认证请求应触发 429",
+                    i + 1
+                );
+            }
+        }
+    }
+
     // ──────────────────────────────────────────────────────────────────────────
     // client_ip 信任模型测试
     // ──────────────────────────────────────────────────────────────────────────

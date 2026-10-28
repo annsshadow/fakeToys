@@ -651,15 +651,17 @@ pub async fn rate_limit_middleware(
         return next.run(request).await;
     }
 
-    let max_attempts = if is_auth_rate_limited(&path) {
-        auth_rate_limit()
+    // 认证与普通请求必须用**独立的桶**：两者共用 `ip` 会让普通流量吃掉登录预算
+    // （实测 30 次/分钟的认证上限被 15 个页面请求 + 15 次登录打满，登录提前 429）。
+    let (key, max_attempts) = if is_auth_rate_limited(&path) {
+        (format!("auth:{ip}"), auth_rate_limit())
     } else {
-        general_rate_limit()
+        (format!("general:{ip}"), general_rate_limit())
     };
 
     if state
         .rate_limiter
-        .check_rate_limit(&ip, max_attempts, RATE_LIMIT_WINDOW_MINUTES)
+        .check_rate_limit(&key, max_attempts, RATE_LIMIT_WINDOW_MINUTES)
         .await
         .is_err()
     {
