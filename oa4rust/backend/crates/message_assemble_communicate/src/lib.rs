@@ -773,7 +773,7 @@ pub async fn im_conversation_id_group(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, conversation_id, person_id, role, join_time FROM x_message_conversation_member WHERE conversation_id = $1 ORDER BY join_time", &[&id])
+        .query("SELECT id, conversation_id, person_id, role, join_time FROM x_message_conversation_member WHERE conversation_id = $1 ORDER BY join_time LIMIT 100", &[&id])
         .await
         .map_err(|_| AppError::Internal)?;
 

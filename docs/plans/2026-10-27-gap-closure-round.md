@@ -146,13 +146,14 @@ Z 批次只给主链路 14 个接口接了 zod。剩余 64 个函数的响应仍
 
 ### 6.1 口径
 
-扫描器 `oa4rust/backend/scripts/limit_scan.py` 复用 `fi002_column_scan.py` 的 `SRC_ROOTS` 与 `rust_literals()`，只扫产品码；`#[cfg(test)]` 与 `tests/` 目录不入账。每条 SQL 字面量按**顶层形状**分桶：
+扫描器 `oa4rust/backend/scripts/limit_scan.py` 复用 `fi002_column_scan.py` 的 `SRC_ROOTS` 与 `rust_literals()`，只扫产品码；`#[cfg(test)]` 模块、`tests/`、`*_tests.rs` 不入账（测试夹具不是产品 SQL）。每条 SQL 字面量按**顶层形状**分桶：
 
 | 桶 | 判据 | 是否治理对象 |
 |---|---|---|
 | `bounded` | 有 `LIMIT <n|$n|?|{…}>` 或 `FETCH FIRST n ROWS` | 否 |
-| `aggregate` | 顶层投影只有 `COUNT/EXISTS/SUM/AVG/MIN/MAX` | 否 |
-| `single_row` | `WHERE` 对 `id` / `*_id` 做等值绑定或常量 | 否 |
+| `aggregate` | 顶层投影只有 `COUNT/EXISTS/SUM/AVG/MIN/MAX`（含 `COALESCE(MAX(...))`） | 否 |
+| `single_row` | WHERE 对身份键 `id` / `xid` / `unique_id` 做等值绑定，或同时绑定 ≥2 个 `*_id`（复合身份） | 否 |
+| `parent_key` | WHERE 只对**一个**非身份 `*_id`（外键/父键）做等值绑定 | **是**（逐端点决策） |
 | `key_set` | `WHERE id IN (...)` / `= ANY(...)` | 否 |
 | `scalar` | 无 `FROM` 的标量查询 | 否 |
 | `subquery` | `INSERT/UPDATE/DELETE ... SELECT` | 否 |
@@ -160,18 +161,21 @@ Z 批次只给主链路 14 个接口接了 zod。剩余 64 个函数的响应仍
 
 **已知边界（写进脚本 docstring，不藏着）**：
 
-- `single_row` 的 `*_id = $1` 在复合唯一键或外键上仍可能返回多行；这类「按父键取子列表」不在本轮治理对象内，基线不替它背书。要收口它，需要逐表主键/唯一键知识，属于下一轮。
+- `single_row` 只认**身份键约定**：`id` / `xid` / `unique_id`，或同时绑定 ≥2 个 `*_id`（复合身份，如 `doc_id + person_id`）。`WHERE work_id = $1` / `person_id = $1` 这类「按父键取子列表」归 `parent_key`，与 `unbounded` 一样进基线棘轮。为什么不按数据库主键/唯一键判：历史表大量**没有主键/唯一约束**（例如 `x_attendance_config` 只有普通索引），schema 无法替静态扫描背书；身份键是应用层的稳定约定，复合身份用「同时绑定 ≥2 个 `*_id`」的形状近似。两者都不是数据库唯一性证明，真正的唯一性仍需数据治理（见 OA-P1-3 备注）。
+- `parent_key` 不等于「已批准无界」：它只表示「形状是父键取子列表，需要逐端点决策」。新增一条 `parent_key` 同样会让 CI 红，必须在基线里显式登记理由。
 - `format!` 里的动态表名/列名只解析静态部分；无法判定的整条 SQL 会记入 `skipped` 并在输出里明示，不静默丢弃。
 - `LIMIT {}` / `LIMIT {n}` 是 Rust 格式化占位符，运行期必然有界，统一归 `bounded`。
+- `LIMIT $1` 也归 `bounded`：参数由调用方给，脚本不猜它会不会是 10^9；这是「SQL 形状有上界」与「上界取值是否合理」两件事，后者不在静态扫描能力内。
+- 带 `GROUP BY` 的投影（如 `SELECT status, COUNT(*) ... GROUP BY status`）目前不算 `aggregate`，因为投影不只有聚合函数；它若同时带父键等值会被归 `parent_key`，否则归 `unbounded`。这是保守方向：宁可多登记，不静默放行。
 
 ### 6.2 基线
 
 - 工件：`oa4rust/backend/docs/audits/artifacts/limit_unbounded.tsv`。
-- 键：`file<TAB>bucket<TAB>count`，只登记 `unbounded` 的文件级计数；附首条证据与复核理由。
+- 键：`file<TAB>bucket<TAB>count`，登记 `unbounded` 与 `parent_key` 两个桶的文件级计数；附首条证据与复核理由。
 - 棘轮：
-  - 新文件出现 `unbounded`，或既有文件计数**增加** → 退出 1；
+  - 新文件出现 `unbounded` / `parent_key`，或既有文件计数**增加** → 退出 1；
   - 计数**减少** → 打印收敛提示，退出 0（复核后 `--update-baseline` 收紧）；
-  - 扫描器自身失效（总字面量 < 2600、文件数 < 120）→ 退出 1，防止「什么都没扫到」被当成绿。
+  - 扫描器自身失效（总字面量 < 2600、文件数 < 120、分桶低于地板）→ 退出 1，防止「什么都没扫到」被当成绿。
 - 初始普查（10-27，加 LIMIT 之前、但已把 `LIMIT {…}` 与 `SELECT 1` 探针改判之后）：
   **2745 条 SELECT 字面量 / 138 个文件**，分桶 `aggregate=267 bounded=552 key_set=93 scalar=23
   single_row=1148 subquery=31 unbounded=631`。
@@ -182,31 +186,109 @@ Z 批次只给主链路 14 个接口接了 zod。剩余 64 个函数的响应仍
   移入 scalar，对 unbounded 是净 0（所以 `single_row` 从 1167 落到 1148）。最终一切以
   `limit_unbounded.tsv` 的 624 为准，不以任何口头数字为准。
 
-### 6.3 本轮只改 7 处高置信列表端点
+- **10-28 修订**（本轮）：
+  1. 扫描面排除 `*_tests.rs`（此前把 11 个 `security_gate_tests.rs` 的 83 条测试 SQL 计入产品面）：
+     `aggregate 267→222`、`scalar 23→22`、`single_row 1148→991`、`unbounded 624→617`、
+     `parent_key 0→113`；总字面量 `2745→2662`、文件 `138→127`。
+  2. `single_row` 收紧为身份键约定（`id` / `xid` / `unique_id`，或 ≥2 个 `*_id` 复合身份）：
+     非身份单列父键（`work_id` / `person_id` / `doc_id` …）改判 `parent_key`，与 `unbounded` 一起
+     进基线棘轮；`single_row 991`、`parent_key 113`、`unbounded 617`。
+  3. BBS 两个别名端点与同族 15 条列表加 `LIMIT 100`（§6.3 第二轮）：
+     `bounded 559→573`、`parent_key 127→113`、`unbounded 617`（不变）。
+  4. 基线重生成：`unbounded 617 条 / 82 个文件` + `parent_key 113 条 / 43 个文件`，合计 730 条，
+     `python scripts/limit_scan.py` 基线态退出 0；反向自证（临时探针）在 `unbounded` 与 `parent_key`
+     两个桶上都会红。
 
-| # | 函数 | 现状 | 改法 | 理由 |
+### 6.3 两轮改动
+
+**第一轮（10-27）**：只改 7 处高置信列表端点（历史台账保留，不重写）：
+`list_to_enable` / `list_forums` / `list_control_sections` / `list_hotpics` /
+`list_jpushs` / `list_schedule` / `list_components`，均加 `LIMIT 100`。
+
+**第二轮（10-28，本轮）**：给 BBS 别名端点与 15 条同族 `parent_key` 列表加 `LIMIT 100`：
+
+| # | 位置 | 查询 | 改法 | 理由 |
 |---|---|---|---|---|
-| 1 | `crates/empower/src/lib.rs::list_to_enable` | `ORDER BY created_at DESC` 无 LIMIT，`total` 已单独 COUNT | `LIMIT 100` | 与同文件 `list_to` / `list_current_person` 的 100 一致；owner 授权列表增长型 |
-| 2 | `crates/bbs_assemble_control/src/lib.rs::list_forums` | 版块列表无界 | `LIMIT 100` | 列表语义、前端表格单页展示；与 L 批次 100 档一致 |
-| 3 | `crates/bbs_assemble_control/src/lib.rs::list_control_sections` | 控制台版块清单无界 | `LIMIT 100` | 管理清单，增长型但非导出 |
-| 4 | `crates/hotpic_assemble_control/src/lib.rs::list_hotpics` | 热门图片列表无界 | `LIMIT 100` | 列表语义、前端卡片流 |
-| 5 | `crates/jpush_assemble_control/src/lib.rs::list_jpushs` | 推送列表无界 | `LIMIT 100` | 列表语义、前端表格 |
-| 6 | `crates/meeting/src/lib.rs::list_schedule` | 时间窗内日程无界 | `LIMIT 100` | 日程列表单页展示；时间窗本身已收窄，100 是双保险 |
-| 7 | `crates/component_assemble_control/src/lib.rs::list_components` | 组件清单无界 | `LIMIT 100` | 列表语义、前端表格 |
+| 1 | `bbs/src/section.rs::view_forum` | 版块下子版块列表 | `LIMIT 100` | 列表语义、单页展示 |
+| 2 | `bbs/src/subject.rs::top` | 版块置顶主题列表 | `LIMIT 100` | 置顶数量增长型，前端单页 |
+| 3 | `bbs_assemble_control::list_topics_by_forum` | 版块主题列表 | `LIMIT 100` | 列表语义 |
+| 4 | `bbs_assemble_control::forum_view_all` | 全量版块（别名端点，与 `list_forums` 同形） | `LIMIT 100` | 与第一轮 #2 同族；`x_bbs_forum` 有主键，100 内截断 |
+| 5 | `bbs_assemble_control::user_forum_list` | 全量版块（别名端点） | `LIMIT 100` | 同 #4 |
+| 6 | `bbs_assemble_control::reply_list_sub_id` | 主题回复列表 | `LIMIT 100` | 回复列表语义 |
+| 7 | `bbs_assemble_control::subject_top_section` | 版块置顶主题（别名端点，与 #2 同族） | `LIMIT 100` | 同 #2 |
+| 8 | `bbs_assemble_control::section_viewforum_forumId` | 版块下子版块（别名端点，与 #1 同族） | `LIMIT 100` | 同 #1 |
+| 9 | `bbs_assemble_control::subjectattach_list` | 主题附件列表 | `LIMIT 100` | 附件列表语义 |
+| 10-11 | `bbs_assemble_control/u2.rs` 两个附件列表别名 | 主题附件 | `LIMIT 100` | 与 #9 同族 |
+| 12 | `message_assemble_communicate::im_conversation_id_group` | 会话成员列表 | `LIMIT 100` | 成员列表语义 |
+| 13-14 | `processplatform_service_processing` 两条 review 列表 | 工作项 review 记录 | `LIMIT 100` | 记录列表语义 |
+| 15-16 | `processplatform_service_processing` 两条 snap 列表 | 工作项快照列表 | `LIMIT 100` | 快照列表语义 |
+
+别名端点与「同族」的判断依据：同一张表、同一谓词形状、同一列表语义（§6.5 附录逐条核对过）；
+不是「看起来像」就顺手改。`forum_view_all` / `user_forum_list` 此前 §6.3 明确说「本轮不改、留基线」，
+本轮按端点语义复核后决定：它们就是版块列表（`x_bbs_forum` 有主键、`ORDER BY sort` 稳定序），
+100 截断不改变正常规模下的语义，故补上。
 
 **不改什么（必须留在基线里）**：
 
 - 导出 / 备份 / 迁移 / 全量遍历 / 聚合统计：加 LIMIT 会改变语义，不是「治理」而是「改需求」。
 - 死路由、配置静态表、helper、单行查询：不是列表，或已被上游收窄。
-- 同文件里的别名 handler（例如 BBS 的 `forum_view_all`、`user_forum_list`）本轮不改；它们会留在基线里，下一轮按端点语义逐个决策。**不因为「看起来一样」就顺手改**。
+- `parent_key` 里剩下的 113 条（§6.5 决策表）：本轮只改 BBS 别名（9 处）+ 消息会话成员（1 处）+ 流程 review/snap（4 处）共 14 条，
+  其余按决策表留在基线，下一轮按「分页联动」批量收口。
 
 ### 6.4 验收
 
 - `python scripts/limit_scan.py` 在基线态退出 0；`--update-baseline` 生成的基线可复核；
 - 反向自证：临时新增一条无 LIMIT 列表 SELECT，扫描器退出 1 并点名文件/行号；删除后恢复 0；
-- CI 新增 `limit-scan` job，接在 `fi002-column-scan` 同层；job 失败必须红，不允许 `continue-on-error`；
-- `cargo fmt --check` 覆盖 7 个改动 crate；`cargo test` / clippy 交 CI；
-- 7 处改动后的 SQL 在真库可执行（本机 PostgreSQL 容器内 `psql` 直跑；空表 0 行，非空表截断正确）。
+  对 `parent_key` 桶同样成立（探针用 `WHERE person_id = $1` 形状）；
+- CI 的 `limit-scan` job 接在 `fi002-column-scan` 同层；job 失败必须红，不允许 `continue-on-error`；
+- `cargo fmt --check` 覆盖本轮改动的 6 个 crate；`cargo check` 覆盖 `bbs` / `bbs_assemble_control` /
+  `message_assemble_communicate` / `processplatform_service_processing` 与 `parent` 包；
+- 改动后的 SQL 在真库可执行（本机 PostgreSQL 容器内 `psql` 直跑；空表 0 行，非空表截断正确）。
+
+### 6.5 `parent_key` 113 条决策表（10-28）
+
+按端点语义分四类；附录逐条列 `file:line`。数字与 §6.2 修订后的分桶一致（`parent_key=113`）：
+
+| 类 | 语义 | 决策 | 条数 |
+|---|---|---|---|
+| P1 权限/身份全量 | 角色名/身份名/权限矩阵/组织 scope，调用方要**全量**做鉴权，分页会改变「有没有权限」的语义 | **留基线，不加 LIMIT**（下一轮评估按 scope 收窄而非截断） | 25 |
+| P2 报表/统计/导入/BAM | 月度统计、GROUP BY 汇总、导入结果、BAM 状态看板，语义是「汇总」 | **留基线，不加 LIMIT**（截断即改需求） | 19 |
+| P3 单行唯一性期望 | 谓词是复合业务键（`doc_id + field_name`、`portal_id + name` 等），正常数据下期望 ≤1 行；调用方多走 `query_opt` | **留基线**；若改为 `query` 多行消费需补 LIMIT（见附录标注） | 9 |
+| P4 待分页列表 | 父键下的业务列表（附件、版本、日程、收藏等），可安全截断或需接分页 | 本轮改了 BBS 别名 + 消息/流程列表（已加 LIMIT 100，迁出 `parent_key`）；**剩余 60 条留基线**，下一轮按分页联动批量收口 | 60 |
+
+P1 明细（25）：`auth`（lib.rs:331,348）、`auth/switch_user.rs:77`、`auth/welink.rs:108`、
+`bbs_assemble_control:1298,1866`、`bbs_assemble_control/u2.rs:1973`（角色绑定）、
+`cms:1489,2034`（权限矩阵）、`organization:3622`（组角色）、
+`organization:4277,4543,4592,4800,4852,4907`（身份/组 scope 6 条）、
+`express/endpoints.rs:233,241,250` + `endpoints_org.rs:287` + `endpoints_person2.rs:270,285,323`
+（人员权限投影 6 条）、`organization_assemble_personal:79`、`query_core_express:121`。
+
+P2 明细（19）：`ai/index.rs:42`（AI 索引作业）、`attendance:3630,3676,3815,3861,3911,3957,4055,4106`
+（月度统计 8 条）、`attendance:6333,7691`（GROUP BY 状态汇总 2 条）、`attendance:7634`（记录检索）、
+`organization:4196`（导入结果）、`processplatform_assemble_bam:384,484,1702,1802,1910,2011`
+（BAM 状态看板 6 条）。
+
+P3 明细（9）：`cms:2511,3120`（doc+field 取值，`query_opt` 期望单行）、`cms:6327,6386`
+（app+unique_name 脚本定位）、`message:3272`（会话扩展定位）、`portal_designer:3398`
+（widget name+portal 定位）、`portal_surface:2826`（script name+portal 定位）、
+`org u2_org:1172`（duty name 定位）、`hotpic:105`（application+info_id 图片定位）。
+
+P4 明细（60）：`ai:1759,1802,2022,2159`、`attendance:1501,1663,2179,7981,8025,8202`、
+`calendar:605`、`cms:4040,4112,4184,4269,4341,5409,5508,5773,8514`、`correlation:119`、
+`file:276,2892`、`meeting:508`、`meeting_control:44,1738`、`mind:196`、`mind u2:241,272`、
+`org:819,3081,3231,3428,4099`、`org u2_org:260,276`、
+`endpoints_person2:362`、`endpoints_unit2:482`、`personal_extend:260`、
+`portal_designer:941,1797,1898,2547,2664,2932`、`portal_surface:1370,2098,2315`、
+`pp_designer:2449,2705`、`pp_processing:1688,2475,2694,2716,2738,2948,2970`、
+`pp u2:878`、`program_center:186`、`query_surface:1420`——逐条 `file:line`
+见 `oa4rust/backend/docs/audits/artifacts/limit_unbounded.tsv` 的 `parent_key` 行
+（本轮 113 条全在基线登记，证据列含行号与首条 SQL，随基线文件提交，不在此重复抄录）。
+
+> 判定口径：**只有 P4 且语义是「列表」的才允许直接加 `LIMIT 100`**；P1/P2 是「全量/汇总」语义，
+> 加 LIMIT 等于改需求，必须走「按 scope 收窄」或「接分页」，不能截断；P3 的单行期望靠
+> `query_opt` 兜底（多行会报错，是显式失败），留基线不静默放行。本轮 P4 实际改了
+> BBS 别名 9 条、消息会话成员 1 条、流程 review/snap 各 1 条（共 12 条，见 §6.3 第二轮），
+> P4 剩下的 60 条进基线待下一轮批量收口。
 
 ---
 
@@ -284,15 +366,16 @@ Z 批次只给主链路 14 个接口接了 zod。剩余 64 个函数的响应仍
 | S L-SKIP-LEDGER | 结论已定，随计划提交 | 本文档 §3：明确「原名册不可恢复」、保留「16 ≠ 14」矛盾、不伪造名册 | 见 §12 |
 | A A184 | 本机全绿，已提交 | `pytest tests/unit/test_comment_refs_a184.py -q -o addopts=""`：**26 passed / 1 skipped**；普查读数 `files_seen 627 / refs_total 6967 / live 4985 / symbol_live 952 / ambiguous 497 / scratch_missing 1484 / anchor_claims 40`；dead 四档 0；注入 `docs/augmentor/GHOST_FILE_NOT_REAL.md:12` 后 `dead_path 1` 并点名，还原后无残留 | 见 §12 |
 | Z Z-FULL | 本机全绿，已提交 | `vitest run`：24 files / 415 tests；conformance 93 tests、字段总数 389；`tsc --noEmit` / `biome check` / `vite build` 全 0 错 | 见 §12 |
-| L L-REST | 已实施并自证 | `python scripts/limit_scan.py` 基线态退出 0：2745 条 / 138 文件 / `bounded=559 unbounded=624`；基线 `limit_unbounded.tsv` 624 条 / 76 文件；反向自证：临时 `crates/ai/src/__limit_scan_probe_tmp.rs` → 退出 1 并点名 `unbounded 1 条 > 基线 0 条`，删除后恢复 0；7 条改动 SQL 在本机 PostgreSQL 容器内逐条执行成功（空表 0 行、非空表 1 行）；`rustfmt --check --edition 2021` 对 7 个改动文件无输出（本机无 rustc，编译/测试交 CI） | 见 §12 |
+| L L-REST | 已实施并自证 | 10-27 轮：`python scripts/limit_scan.py` 基线态退出 0：2745 条 / 138 文件 / `bounded=559 unbounded=624`；基线 `limit_unbounded.tsv` 624 条 / 76 文件；反向自证：临时 `crates/ai/src/__limit_scan_probe_tmp.rs` → 退出 1 并点名 `unbounded 1 条 > 基线 0 条`，删除后恢复 0；7 条改动 SQL 在本机 PostgreSQL 容器内逐条执行成功（空表 0 行、非空表 1 行）；`rustfmt --check --edition 2021` 对 7 个改动文件无输出（本机无 rustc，编译/测试交 CI）。**10-28 修订**：扫描面排除 11 个 `security_gate_tests.rs`（83 条测试 SQL 不再入产品面），`single_row` 收紧为身份键约定、拆出 `parent_key` 桶进基线；BBS 别名 9 处 + 消息 1 处 + 流程 4 处 = **14 条列表**加 `LIMIT 100`；`python scripts/limit_scan.py` 基线态退出 0：2662 条 / 127 文件 / `bounded=573 unbounded=617 parent_key=113`；基线 `limit_unbounded.tsv` 合计 730 条 / 82 文件（`unbounded 617 + parent_key 113`）；反向自证在 `unbounded` 与 `parent_key` 两桶均成立（`parent_key` 探针用 `WHERE person_id = $1` 形状，临时 `crates/ai/src/__limit_scan_parent_key_probe.rs` → 退出 1 并点名 `parent_key 1 条 > 基线 0 条`，删除后恢复 0）；`cargo check` 覆盖 6 个改动 crate 全绿；`cargo fmt --check` 覆盖 4 个改动的 `.rs` 文件全绿（`bbs/section.rs`、`bbs/subject.rs`、`bbs_assemble_control/lib.rs + u2.rs`、`message_assemble_communicate/lib.rs`）；`cargo test` 4 个 crate 全绿（7 + 57 + 107 + 71 共 242 通过）；**既有 fmt 基线未动**：`processplatform_service_processing/u2.rs:346` 的 `dict_data_fns!` 宏块在 HEAD 已有 fmt diff，不在本次改动范围 | 见 §12 |
 | O 分页联动 | 已实施并本机全绿 | `pnpm --filter @oa4rust/desktop exec tsc --noEmit` 退出 0（无输出）；`pnpm --filter @oa4rust/desktop build` 退出 0（built in 3.01s）；`biome check` 4 个改动文件 0 错；URL 由 `personPage` 插值、总页数由 `count/size` 计算；BBS 搜索页码改 `page/${page.value}`（**交互未实跑**，无浏览器会话） | 见 §12 |
 | B BOM-FAQ | 已改并本机全绿 | FAQ 顶部 / 「本文件不写什么」/ 文末索引三处指向 `docs/augmentor/DEPLOYMENT.md`；A184 dead_path 0（新增引用是活的） | 见 §12 |
+| G gap-closure（10-28） | 已实施并本机全绿 | 同 L-REST 10-28 修订行；决策表见 §6.5（`parent_key` 113 条按端点语义分 4 类：P1 权限全量 25 / P2 报表导入 19 / P3 单行期望 9 / P4 待分页 60）；CI `limit-scan` job 注释与 `.github/workflows/oa4rust-ci.yml` 同步更新 | 见 §12 |
 
 ## 11. 本轮明确不做
 
 - 不补写 L 批次 14 条跳过名册（不可恢复，见 §3）。
-- 不对 641 条无界 SELECT 逐条加 LIMIT；只治理 7 处高置信列表，其余进基线。
-- 不把 `single_row` 的 `*_id = $1` 重新分类为 unbounded；该口径的边界写在脚本里，下一轮再按主键/唯一键知识收口。
+- 不对 641 条无界 SELECT 逐条加 LIMIT；只治理 7 处高置信列表 + 14 处 10-28 列表（§6.3 第二轮），其余进基线。
+- 不把 `single_row` 的 `*_id = $1` 重新分类为 unbounded；**10-28 修订后口径已变**：非身份单列父键（`work_id` / `person_id` / `doc_id` …）归 `parent_key`，与 `unbounded` 一样进基线棘轮；`parent_key` 的边界与「按 scope 收窄 / 接分页」的下一轮路径写在 §6.5 决策表。
 - 不改后端 `person_list_filter_paging` 的已有分页语义；本轮只把前端接回去。
 - 不在 FAQ 里复制部署细节、端口、卷、域名或密钥注入方式。
 - 不批量格式化既有文件；不修与六项缺口无关的 lint / 格式基线。
@@ -306,6 +389,7 @@ Z 批次只给主链路 14 个接口接了 zod。剩余 64 个函数的响应仍
 | Z-FULL | `1e4ba2280` feat(augmentor/web): Z-FULL——78/78 端点接入 zod 响应契约（70 个全量 schema） |
 | A184 + BOM-FAQ | `499da9a8e` test(augmentor): A184 接入 docs/augmentor 14 份 Markdown；FAQ 补部署索引 |
 | L-REST | `de023d18c` feat(oa4rust): L-REST——无界 SELECT 全量普查 + 基线棘轮，7 处列表加 LIMIT |
+| L-REST 10-28 修订 | `<sha 待回填>` feat(oa4rust): L-REST 修订——扫描面排除测试夹具、single_row 收紧为身份键、拆出 parent_key 桶进基线；BBS 别名 + 消息/流程 12 条列表加 LIMIT 100 |
 | OA-LIMIT-OFFSET | `3c9b39122` fix(oa4rust/web): OA-LIMIT-OFFSET——人员/授权列表接服务端分页，BBS 搜索跟随页码 |
 | 台账回填 | 本章节自身提交 |
 

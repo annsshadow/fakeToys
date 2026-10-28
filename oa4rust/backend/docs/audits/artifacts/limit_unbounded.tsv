@@ -1,23 +1,36 @@
-# L-REST 无界 SELECT 基线（2026-10-27 建立）
+# L-REST 无界 / 父键 SELECT 基线（2026-10-27 建立，2026-10-28 拆出 parent_key）
 #
-# 语义：本文件登记的是**已人工复核、暂未加 LIMIT** 的 unbounded SELECT 文件级计数。
-# 棘轮：新文件出现 unbounded，或既有文件计数增加 → CI 红（scripts/limit_scan.py 退出 1）；
+# 语义：本文件登记的是**已人工复核、暂未加 LIMIT** 的 SELECT 文件级计数：
+#   unbounded  —— 顶层没有 LIMIT，也没有可用于单行/父键判定的谓词；
+#   parent_key —— WHERE 只绑定一个非身份 *_id（父键取子列表），需逐端点决策。
+# 两者都不是「已批准无界」：新增即红，必须在基线里显式登记并写明理由。
+# 棘轮：新文件出现，或既有文件计数增加 → CI 红（scripts/limit_scan.py 退出 1）；
 #       计数减少 → 提示收敛（复核后 --update-baseline 收紧，不要把减少当成失败）。
 # 修完一条就从基线删一条；**不要**为了绿而往这里加新条目。
 #
 # 格式：file<TAB>bucket<TAB>count<TAB>lines<TAB>sample_sql
 # 由 scripts/limit_scan.py --update-baseline 生成，勿手改证据列。
 
+crates/ai/src/index.rs	parent_key	1	42	SELECT xid FROM x_cms_document WHERE xappId = $1 AND xdocStatus = 'publish'
+crates/ai_assemble_control/src/lib.rs	parent_key	4	1759,1802,2022,2159	SELECT id, doc_id, app_id, title, enabled, creator FROM x_ai_index WHERE app_id = $1 ORDER BY create_time DESC
 crates/ai_assemble_control/src/lib.rs	unbounded	3	194,239,913	SELECT id, name, url, enabled, creator, create_time, update_time FROM x_ai_model_config WHERE enabled = true ORDER BY create_time DESC
-crates/attendance_assemble_control/src/lib.rs	unbounded	35	49,164,281,432,1151,1200,1249,1302,1451,1907,1998,2087,2133,2366,2466,2552,2683,2776,2873,2918,3722,3768,4163,5156,5446,5923,5957,6007,6040,6505,6774,6806,6993,7003,8984	SELECT id, rule_name, rule_type, enabled, description FROM x_attendance_assemble_control_rule ORDER BY create_time
+crates/attendance_assemble_control/src/lib.rs	parent_key	17	1501,1663,2179,3630,3676,3815,3861,3911,3957,4055,4106,6333,7634,7691,7981,8025,8202	SELECT id, person_id, date, status FROM x_attendance_detail WHERE file_id = $1 ORDER BY date DESC
+crates/attendance_assemble_control/src/lib.rs	unbounded	34	49,164,281,432,1151,1200,1249,1302,1451,1907,1998,2087,2133,2366,2466,2552,2683,2776,2873,2918,3722,3768,4163,5156,5923,5957,6007,6040,6505,6774,6806,6993,7003,8984	SELECT id, rule_name, rule_type, enabled, description FROM x_attendance_assemble_control_rule ORDER BY create_time
+crates/auth/src/lib.rs	parent_key	2	331,348	SELECT r.name FROM auth_role r JOIN auth_person_role pr ON r.id = pr.role_id WHERE pr.person_id = $1 AND r.deleted_at IS NULL
 crates/auth/src/lib.rs	unbounded	2	862,933	SELECT id, name, parent_id, level FROM auth_unit WHERE deleted_at IS NULL ORDER BY level
 crates/auth/src/sso.rs	unbounded	1	128	SELECT key FROM sso_client WHERE client_name = $1 AND deleted_at IS NULL
+crates/auth/src/switch_user.rs	parent_key	1	77	SELECT r.name FROM auth_role r JOIN auth_person_role pr ON r.id = pr.role_id WHERE pr.person_id = $1 AND r.deleted_at IS NULL
+crates/auth/src/welink.rs	parent_key	1	108	SELECT r.name FROM auth_role r JOIN auth_person_role pr ON pr.role_id = r.id WHERE pr.person_id = $1 AND r.deleted_at IS NULL AND r.disable = false
 crates/bbs/src/forum.rs	unbounded	1	26	SELECT id, name, description FROM bbs_forum_info ORDER BY create_time
 crates/bbs/src/section.rs	unbounded	1	91	SELECT id, name, forum_id, sort, description FROM bbs_section_info ORDER BY sort
-crates/bbs_assemble_control/src/lib.rs	unbounded	6	556,1798,1905,1929,1961,2021	SELECT id, name, description, sort, creator, create_time::text FROM x_bbs_forum WHERE deleted_at IS NULL ORDER BY sort ASC
+crates/bbs_assemble_control/src/lib.rs	parent_key	2	1298,1866	SELECT r.name FROM auth_role r JOIN auth_person_role pr ON r.id = pr.role_id WHERE pr.person_id = $1 AND r.deleted_at IS NULL
+crates/bbs_assemble_control/src/lib.rs	unbounded	4	1905,1929,1961,2021	SELECT id, topic_id, content, creator, create_time::text FROM x_bbs_reply WHERE deleted_at IS NULL ORDER BY create_time::timestamp DESC
+crates/bbs_assemble_control/src/u2.rs	parent_key	1	1973	SELECT id, role_id, object_type, object_code, object_name FROM x_bbs_role_bind WHERE role_id = $1
 crates/bbs_assemble_control/src/u2.rs	unbounded	13	476,487,1473,1666,1753,1797,2012,2122,2191,2200,2347,2696,2766	SELECT name FROM x_program_module WHERE deleted_at IS NULL AND name IS NOT NULL ORDER BY name
+crates/calendar/src/lib.rs	parent_key	1	605	SELECT id, calendar_id, title, content, location, start_time, end_time, all_day, visibility, status, createor FROM CAL_EVENT WHERE calendar_id = $1 AND status = 'OPEN' ORDER BY start_time ASC
 crates/calendar/src/lib.rs	unbounded	2	142,176	SELECT id, name, type, target, color, description, source, createor, is_public, status FROM CAL_CALENDAR WHERE is_public = true AND status = 'OPEN' ORDER BY create_time DESC
 crates/calendar_assemble_control/src/u2.rs	unbounded	4	145,181,250,1082	SELECT id, name, type, target, color, description, createor, is_public, status FROM cal_calendar WHERE status = 'OPEN' AND (createor = $1 OR target = $1) ORDER BY create_time DESC
+crates/cms_assemble_control/src/lib.rs	parent_key	15	1489,2034,2511,3120,4040,4112,4184,4269,4341,5409,5508,5773,6327,6386,8514	SELECT id, app_id, category_id, person_id, role_type, permission_level FROM x_cms_permission WHERE app_id = $1 AND deleted_at IS NULL
 crates/cms_assemble_control/src/lib.rs	unbounded	15	131,321,400,698,1553,3347,5382,6099,6583,6874,6957,7628,10479,10688,11602	SELECT id, name, enabled FROM x_cms_assemble_control_section ORDER BY create_time
 crates/cms_control/src/lib.rs	unbounded	1	62	SELECT id, name, enabled FROM x_cms_control_section ORDER BY create_time
 crates/cms_core_entity/src/lib.rs	unbounded	5	333,338,343,348,353	SELECT id, name, parent_id AS parentId, sort_order AS sortOrder, description, status, create_time::text AS createTime, update_time::text AS updateTime FROM x_cms_column WHERE deleted_at IS NULL ORDER 
@@ -27,62 +40,84 @@ crates/console/src/lib.rs	unbounded	1	477	SELECT id, app_id, app_name, applicati
 crates/control/src/person.rs	unbounded	2	101,372	SELECT id, unique_id, name, mobile, email, locked FROM auth_person WHERE {} AND deleted_at IS NULL
 crates/control/src/unit.rs	unbounded	1	95	SELECT id, name, parent_id, level FROM auth_unit WHERE deleted_at IS NULL ORDER BY level, name
 crates/correlation/src/routes.rs	unbounded	2	41,112	SELECT id, from_bundle, target_bundle, person, site, order_number FROM CORR_C_CORRELATION WHERE from_type = 'cms' ORDER BY order_number
+crates/correlation_service_processing/src/lib.rs	parent_key	1	119	SELECT id, person_id, target_id, "type", creator, create_time FROM x_correlation WHERE person_id = $1 ORDER BY create_time DESC
 crates/correlation_service_processing/src/u2.rs	unbounded	4	139,440,572,588	SELECT id, target_type, target_bundle, COALESCE(site, '') AS site FROM x_correlation WHERE from_type = $1 AND from_bundle = $2
 crates/express/src/lib.rs	unbounded	1	52	SELECT "xtrackingNumber", xstatus, xcompany FROM x_express_info WHERE "xtrackingNumber" = $1 AND xcompany = $2
 crates/file/src/lib.rs	unbounded	2	79,144	SELECT id, name, person, superior FROM FILE_FOLDER WHERE superior IS NULL OR superior = '' ORDER BY name
-crates/file_assemble_control/src/lib.rs	unbounded	23	110,225,821,894,967,1452,1524,1596,1668,1969,2660,2711,2820,2962,3588,3629,3709,3805,3854,4071,4137,4204,4270	SELECT id, name, enabled FROM x_file_assemble_control_storage_pool ORDER BY id
+crates/file_assemble_control/src/lib.rs	parent_key	2	276,2892	SELECT id, name, path, size, creator, create_time, folder_id FROM x_file WHERE folder_id = $1 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC
+crates/file_assemble_control/src/lib.rs	unbounded	22	110,225,821,894,967,1452,1524,1596,1668,2660,2711,2820,2962,3588,3629,3709,3805,3854,4071,4137,4204,4270	SELECT id, name, enabled FROM x_file_assemble_control_storage_pool ORDER BY id
 crates/general/src/lib.rs	unbounded	1	15	SELECT id, name, level, parent_id FROM district WHERE level = $1 ORDER BY name
 crates/general_assemble_control/src/lib.rs	unbounded	20	142,316,389,581,654,727,800,1094,1148,1250,1377,1426,1475,1610,2030,2108,2334,2358,2706,2772	SELECT id, system_name, maintenance_mode, allow_registration, version, create_time::text AS create_time FROM x_general_assemble_control_config WHERE deleted_at IS NULL ORDER BY create_time DESC
+crates/hotpic/src/lib.rs	parent_key	1	105	SELECT id, title, image_url, creator, create_time::text AS create_time FROM x_hotpic WHERE application = $1 AND info_id = $2 AND deleted_at IS NULL ORDER BY create_time DESC
 crates/hotpic_assemble_control/src/lib.rs	unbounded	1	153	SELECT DISTINCT creator as application FROM x_hotpic WHERE deleted_at IS NULL ORDER BY creator ASC
 crates/jpush_assemble_control/src/lib.rs	unbounded	3	71,564,627	SELECT target as id, COUNT(*) as cnt FROM x_jpush WHERE deleted_at IS NULL GROUP BY target ORDER BY target ASC
 crates/ldap/src/sync.rs	unbounded	1	251	SELECT unique_id, email FROM auth_person WHERE deleted_at IS NULL
+crates/meeting/src/lib.rs	parent_key	1	508	SELECT id, meeting_id, invitee, status, create_time FROM x_meeting_invite WHERE meeting_id = $1 ORDER BY create_time
+crates/meeting_assemble_control/src/lib.rs	parent_key	2	44,1738	SELECT id, meeting_id, control_type, enabled, config FROM x_meeting_assemble_control WHERE meeting_id = $1 ORDER BY create_time
 crates/meeting_assemble_control/src/lib.rs	unbounded	29	192,252,312,371,432,457,601,725,774,823,926,982,1048,1098,1217,1266,1315,1364,1413,1462,1519,1576,1629,1682,2643,2699,2759,2819,2878	SELECT id, name, pinyin, pinyin_initial, address, description, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting_building ORDER BY create_time
+crates/message_assemble_communicate/src/lib.rs	parent_key	1	3272	SELECT id FROM x_message_conversation_ext WHERE conversation_id = $1 AND person = $2
 crates/message_assemble_communicate/src/lib.rs	unbounded	9	110,374,597,650,1999,2922,3041,3072,3192	SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE consume = $1 AND consumed = false ORDER BY create_time ASC
+crates/mind/src/lib.rs	parent_key	1	196	SELECT id, mind_id, name, folder_id, description, creator, creator_unit, file_version, shared, create_time, update_time FROM mind_version_info WHERE mind_id = $1 ORDER BY create_time DESC
 crates/mind/src/lib.rs	unbounded	1	126	SELECT id, name, parent_id, order_number, description, creator, creator_unit FROM mind_folder_info ORDER BY order_number
+crates/mind_assemble_control/src/u2.rs	parent_key	2	241,272	SELECT id, mind_id, person, create_time::text AS create_time FROM x_mind_share WHERE mind_id = $1 ORDER BY create_time DESC
 crates/organization_assemble_authentication/src/lib.rs	unbounded	1	1304	SELECT id, client, person_id, scope FROM x_org_oauth_code WHERE code = $1 AND expire_time > NOW()
 crates/organization_assemble_authentication/src/u2.rs	unbounded	1	273	SELECT id, name, COALESCE(message,'') AS message, create_time FROM x_org_bind_record ORDER BY create_time ASC
+crates/organization_assemble_control/src/lib.rs	parent_key	13	819,3081,3231,3428,3622,4099,4196,4277,4543,4592,4800,4852,4907	SELECT g.id, g.name, g.unit_id, g.type, g.creator, g.create_time::text FROM x_org_group g WHERE g.unit_id = $1 AND g.id != $1 AND g.deleted_at IS NULL ORDER BY g.create_time DESC
 crates/organization_assemble_control/src/lib.rs	unbounded	29	595,639,683,728,772,1302,1349,1396,1444,1491,1681,1727,1774,2076,2223,2356,2399,2442,2486,2529,2800,2918,3131,3182,3282,3530,3577,4643,4961	SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group ORDER BY create_time DESC
 crates/organization_assemble_control/src/u2_helpers.rs	unbounded	6	180,233,259,292,326,348	SELECT id FROM {table} WHERE LOWER(TRIM(name)) = LOWER($1) AND {scope_col} = NULLIF($2, '') AND deleted_at IS NULL
 crates/organization_assemble_control/src/u2_misc.rs	unbounded	1	577	SELECT LOWER(TRIM(name)) FROM x_org_person WHERE deleted_at IS NULL AND LOWER(TRIM(name)) = ANY($1)
+crates/organization_assemble_control/src/u2_org.rs	parent_key	3	260,276,1172	SELECT id, name, parent_id, level, sort, creator, create_time::text FROM x_org_unit WHERE parent_id = $1 AND deleted_at IS NULL ORDER BY sort ASC, create_time DESC
 crates/organization_assemble_control/src/u2_org.rs	unbounded	6	161,170,212,439,1218,1257	SELECT id, name, parent_id, level, sort, creator, create_time::text FROM x_org_unit WHERE parent_id IS NULL AND deleted_at IS NULL AND type = $1 ORDER BY sort ASC, create_time DESC
 crates/organization_assemble_control/src/u2_person.rs	unbounded	6	80,363,371,413,422,772	SELECT id FROM x_org_person WHERE LOWER(TRIM(name)) = LOWER($1) AND deleted_at IS NULL
+crates/organization_assemble_express/src/endpoints.rs	parent_key	3	233,241,250	SELECT id FROM x_org_identity WHERE deleted_at IS NULL AND person_id = $1 ORDER BY id
 crates/organization_assemble_express/src/endpoints.rs	unbounded	5	209,353,389,408,584	SELECT id FROM x_org_person WHERE deleted_at IS NULL AND {}
 crates/organization_assemble_express/src/endpoints_attr.rs	unbounded	2	430,526	SELECT id, from_person, to_person, from_identity, to_identity, role_id, enabled FROM x_empower WHERE deleted_at IS NULL AND (from_identity = ANY($1) OR to_identity = ANY($1)) ORDER BY id
 crates/organization_assemble_express/src/endpoints_group2.rs	unbounded	3	93,102,108	WITH RECURSIVE sub AS ( SELECT id FROM x_org_group WHERE deleted_at IS NULL AND PICK_FLAGS UNION SELECT g.id FROM x_org_group g JOIN sub s ON g.parent_id = s.id WHERE g.deleted_at IS NULL) SELECT id F
+crates/organization_assemble_express/src/endpoints_org.rs	parent_key	1	287	SELECT DISTINCT unit_id FROM x_org_identity WHERE person_id = $1 AND deleted_at IS NULL AND unit_id IS NOT NULL
 crates/organization_assemble_express/src/endpoints_org.rs	unbounded	5	46,84,354,496,549	SELECT id, name, parent_id, level FROM x_org_unit WHERE deleted_at IS NULL AND {} ORDER BY level, id
+crates/organization_assemble_express/src/endpoints_person2.rs	parent_key	4	270,285,323,362	SELECT id FROM x_org_identity WHERE deleted_at IS NULL AND person_id = $1 ORDER BY id
 crates/organization_assemble_express/src/endpoints_person2.rs	unbounded	7	32,35,100,104,194,565,580	SELECT DISTINCT p.id FROM x_org_person p JOIN x_org_login_record lr ON lr.person_id = p.id WHERE p.deleted_at IS NULL AND lr.login_time > $1::timestamp ORDER BY p.id
+crates/organization_assemble_express/src/endpoints_unit2.rs	parent_key	1	482	SELECT {} FROM x_org_unit u JOIN x_org_duty d ON d.unit_id = u.id AND d.deleted_at IS NULL WHERE u.deleted_at IS NULL AND d.name = $1 AND ($2::text IS NULL OR d.identity_id = $2) ORDER BY u.id
 crates/organization_assemble_express/src/endpoints_unit2.rs	unbounded	3	264,438,626	SELECT {} FROM x_org_unit WHERE deleted_at IS NULL AND level = ANY($1) ORDER BY level, id
 crates/organization_assemble_express/src/lib.rs	unbounded	1	70	SELECT id, name, superior, level FROM ORG_UNIT WHERE deleted_at IS NULL ORDER BY level, name
+crates/organization_assemble_personal/src/lib.rs	parent_key	1	79	SELECT r.id, r.name FROM x_org_group_member m JOIN x_org_role r ON m.role_id = r.id WHERE m.person_id = $1
 crates/organization_core_express/src/lib.rs	unbounded	2	30,87	SELECT config_value FROM x_org_config WHERE config_key = 'sync_enabled'
 crates/personal/src/regist.rs	unbounded	2	172,190	SELECT id FROM auth_person WHERE mobile = $1 AND deleted_at IS NULL
 crates/personal/src/signature.rs	unbounded	2	113,190	SELECT id, name, person, value, created_at FROM x_custom WHERE person = $1 AND deleted_at IS NULL ORDER BY created_at DESC
 crates/personal/src/u2.rs	unbounded	7	295,429,458,523,711,1031,1317	SELECT id FROM x_custom WHERE person = $1 AND name = $2 AND deleted_at IS NULL
+crates/personal_extend/src/personal.rs	parent_key	1	260	SELECT id, face_name, face_type, status, create_time::text AS create_time FROM x_person_face WHERE person_id = $1 AND deleted_at IS NULL ORDER BY create_time DESC
 crates/portal/src/lib.rs	unbounded	4	115,176,485,528	SELECT id, name, description, status, create_time FROM x_portal WHERE deleted_at IS NULL ORDER BY create_time DESC
+crates/portal_assemble_designer/src/lib.rs	parent_key	7	941,1797,1898,2547,2664,2932,3398	SELECT id, name, app_name, create_time FROM x_portal_dict WHERE portal_id = $1 AND deleted_at IS NULL ORDER BY create_time DESC
 crates/portal_assemble_designer/src/lib.rs	unbounded	21	121,220,1046,1631,1692,1736,2019,2074,2128,2172,2215,2390,2425,2782,2842,3080,3266,3305,3503,3636,3693	SELECT id, name, description, create_time, update_time FROM x_portal_design WHERE deleted_at IS NULL ORDER BY update_time DESC
+crates/portal_assemble_surface/src/lib.rs	parent_key	4	1370,2098,2315,2826	SELECT id, name, category, creator, create_time FROM x_portal_page WHERE portal_id = $1 ORDER BY create_time DESC
 crates/portal_assemble_surface/src/lib.rs	unbounded	16	159,315,620,813,871,927,960,1007,1070,1122,1852,1903,1955,2005,2678,2770	SELECT id, name, category, html, template, creator, create_time, update_time FROM x_portal_surface WHERE category = $1 ORDER BY update_time DESC
 crates/process_bam/src/lib.rs	unbounded	2	63,122	SELECT DISTINCT process_key, process_name, application FROM x_process_bam WHERE status = 'running' AND deleted_at IS NULL ORDER BY process_name ASC
 crates/process_designer/src/lib.rs	unbounded	2	66,111	SELECT id, name, application_category FROM application ORDER BY name
 crates/process_surface/src/lib.rs	unbounded	1	83	SELECT id, flag, name, description FROM oa_process WHERE flag = $1
+crates/processplatform_assemble_bam/src/lib.rs	parent_key	6	384,484,1702,1802,1910,2011	SELECT t.id, t.title, t.person, t.task_status, t.start_time, t.end_time FROM x_task t WHERE t.task_status = 'completed' AND t.person IN ( SELECT id FROM x_org_person WHERE unit_id = $1 ) ORDER BY t.en
 crates/processplatform_assemble_bam/src/lib.rs	unbounded	27	326,441,611,658,704,819,861,912,982,1029,1075,1190,1232,1284,1352,1400,1447,1564,1607,1651,1759,1859,1968,2090,2131,2281,3316	SELECT t.id, t.title, t.person, t.task_status, t.start_time, t.end_time, w.application FROM x_task t JOIN x_work w ON t.work = w.id WHERE t.task_status = 'completed' ORDER BY t.end_time DESC
+crates/processplatform_assemble_designer/src/lib.rs	parent_key	2	2449,2705	SELECT xid, xname, xapplication, "xapplicationName", xformId, "xcreatorPerson", "xcreateTime", "xupdateTime" FROM PP_E_PROCESS WHERE xformid = $1
 crates/processplatform_assemble_designer/src/lib.rs	unbounded	38	526,553,714,745,832,858,884,910,941,1246,1273,1380,1621,1678,1736,1844,2154,2211,2264,2321,2348,2399,2912,3029,3056,3082,3225,3345,3401,3512,4172,4199,4642,4691,4831,4861,4995,5129	SELECT xid, xname, xalias, xdescription, "xapplicationCategory", xicon, "xiconHue", "xcreatorPerson", "xlastUpdateTime", "xlastUpdatePerson", xproperties, "xcreateTime", "xupdateTime" FROM PP_E_APPLIC
-crates/processplatform_assemble_designer/src/u2_script.rs	unbounded	1	95	SELECT COALESCE(MAX(xversion), 0) + 1 AS next FROM PP_E_SCRIPTVERSION WHERE xscript = $1
 crates/processplatform_assemble_surface/src/lib.rs	unbounded	73	242,712,777,887,927,975,1184,2916,3054,3104,3196,3246,3296,3402,3508,3619,3736,3855,3970,4078,4184,6980,7028,7078,7128,7179,7766,8881,9089,9139,9239,9288,9610,9904,10130,10180,10644,11995,12179,12229,12697,13309,13359,13451,13551,14084,14148,14816,15128,15586,16205,16447,17079,18806,19040,19090,19600,21695,24470,24520,24570,24620,25025,25149,25734,26659,27469,27539,27611,27645,27831,28623,28647	SELECT id, name, category, version, creator, create_time, update_time FROM x_process_surface WHERE category = $1 ORDER BY create_time DESC
-crates/processplatform_assemble_surface/src/security_gate_tests.rs	unbounded	1	289	SELECT "xupdateTime" FROM "pp_e_applicationdict" WHERE "xid" = $1
+crates/processplatform_service_processing/src/lib.rs	parent_key	7	1688,2475,2694,2716,2738,2948,2970	SELECT id, work_id, snap_type, snap_data, create_time FROM x_snap WHERE work_id = $1 AND snap_type = $2 ORDER BY create_time DESC
 crates/processplatform_service_processing/src/lib.rs	unbounded	22	57,191,285,925,967,1825,2180,2330,2539,2590,2628,2666,3017,3042,3063,3091,3120,3192,3214,3863,3916,4104	SELECT id, title, activity, activity_token, person, start_time, end_time FROM x_task WHERE work = $1
+crates/processplatform_service_processing/src/u2.rs	parent_key	1	878	SELECT DISTINCT COALESCE(name,'') FROM x_attachment WHERE work_id = $1 AND deleted_at IS NULL
 crates/processplatform_service_processing/src/u2.rs	unbounded	7	473,498,957,1461,2179,2413,2535	SELECT (COALESCE(data,'{}'::jsonb) #> ARRAY[$3::text]) IS NOT NULL AS present FROM x_data WHERE scope = $1 AND bundle = $2
+crates/program_center/src/lib.rs	parent_key	1	186	SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE person_id = $1 AND deleted_at IS NULL ORDER BY create_time DESC
 crates/program_center/src/lib.rs	unbounded	75	48,91,130,390,1339,1385,1438,1491,1544,1597,1648,1750,1796,1871,1928,3015,3109,3155,3469,3563,3609,3655,3737,3792,3838,3904,3957,4113,4300,4428,4460,4493,4558,4804,4857,4910,4968,5019,5070,5123,5176,5229,5282,5333,5427,5611,5743,5859,5912,6350,6400,6951,7009,7067,7106,7147,7982,8129,8189,8401,8621,9415,9984,10241,10732,10988,11041,11079,11112,11880,11979,11995,12238,12295,12430	SELECT id, name, app_id, disable FROM x_applications ORDER BY name
 crates/program_init/src/lib.rs	unbounded	1	319	SELECT id, name, unique_name, enable, host, port, database_name, user_name, url, applied FROM init_external_datasource ORDER BY created_at ASC
 crates/query_assemble_designer/src/lib.rs	unbounded	26	42,295,324,358,516,649,1074,1516,1616,1809,1867,1911,1970,2036,2090,2202,2260,2293,2348,2415,2815,2897,2977,3638,3980,4128	SELECT coalesce(nullif(trim(creator_person), ''), creator, '') AS owner FROM {table} WHERE {key_col} = $1
 crates/query_assemble_designer/src/u2_closures.rs	unbounded	3	407,432,553	SELECT id, name, alias, query_flag, entity_class, type, data, counting_data, creator FROM x_query_statement ORDER BY create_time DESC
+crates/query_assemble_surface/src/lib.rs	parent_key	1	1420	SELECT id, model_flag, work_id, result, creator, create_time FROM x_query_neural_calculate WHERE model_flag = $1 AND work_id = $2 ORDER BY create_time DESC
 crates/query_assemble_surface/src/lib.rs	unbounded	8	144,204,936,1548,1618,2335,2575,3033	SELECT id, name, category, content, creator, create_time, update_time FROM x_query_surface WHERE category = $1 ORDER BY update_time DESC
 crates/query_assemble_surface/src/u2_closures.rs	unbounded	3	278,359,561	SELECT id, name, alias, query_flag, entity_class, type, data FROM x_query_statement WHERE query_flag = $1 ORDER BY create_time DESC
+crates/query_core_express/src/lib.rs	parent_key	1	121	SELECT i.name FROM auth_identity i JOIN auth_person_identity pi ON i.id = pi.identity_id WHERE pi.person_id = $1 AND i.deleted_at IS NULL
 crates/query_core_express/src/lib.rs	unbounded	1	133	SELECT id FROM auth_unit WHERE deleted_at IS NULL
-crates/query_core_express/src/security_gate_tests.rs	unbounded	1	30	SELECT * FROM auth_person
 crates/query_service/src/lib.rs	unbounded	1	61	SELECT id, name, flag, status, creator, create_time FROM x_query_neural_model WHERE deleted_at IS NULL ORDER BY create_time DESC
 crates/query_service_processing/src/lib.rs	unbounded	1	120	SELECT id, name, query_type, count FROM x_query WHERE query_type = ANY($1)
 crates/query_service_processing/src/u2.rs	unbounded	1	361	SELECT status, last_touch_time, last_reset_time FROM x_query_index_state WHERE entity_type = $1 AND freq = $2 AND node = $3
 crates/shared/src/migrate.rs	unbounded	2	116,187	SELECT checksum FROM schema_migrations WHERE version = $1
-crates/shared/src/session.rs	unbounded	4	124,380,462,610	SELECT DISTINCT person_unique FROM auth_token_threshold
+crates/shared/src/session.rs	unbounded	4	113,265,308,408	SELECT DISTINCT person_unique FROM auth_token_threshold
 crates/shared/src/storage.rs	unbounded	1	163	SELECT content FROM x_blob_storage WHERE storage_key = $1
 
-# 合计 624 条 unbounded，76 个文件
+# 合计 730 条（unbounded + parent_key），108 个文件

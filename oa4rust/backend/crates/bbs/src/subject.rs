@@ -38,7 +38,7 @@ pub async fn top(
             "SELECT id, title, author_id, create_time, reply_count, view_count \
              FROM bbs_subject_info \
              WHERE section_id = $1 AND is_top = true AND disable = false \
-             ORDER BY create_time DESC",
+             ORDER BY create_time DESC LIMIT 100",
             &[&section_id],
         )
         .await

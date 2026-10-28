@@ -2193,7 +2193,7 @@ pub async fn data_work_id_path(
         "reviews" => {
             let rows = client
                 .query(
-                    "SELECT id, work_id, reviewer, comment, status, create_time FROM x_review WHERE work_id = $1",
+                    "SELECT id, work_id, reviewer, comment, status, create_time FROM x_review WHERE work_id = $1 LIMIT 100",
                     &[&id],
                 )
                 .await
@@ -2209,7 +2209,7 @@ pub async fn data_work_id_path(
         "snapshots" => {
             let rows = client
                 .query(
-                    "SELECT id, work_id, snap_type, snap_data, create_time FROM x_snap WHERE work_id = $1 ORDER BY create_time DESC",
+                    "SELECT id, work_id, snap_type, snap_data, create_time FROM x_snap WHERE work_id = $1 ORDER BY create_time DESC LIMIT 100",
                     &[&id],
                 )
                 .await
@@ -2367,7 +2367,7 @@ pub async fn process_id_complex(
 
     let reviews = client
         .query(
-            "SELECT id, work_id, reviewer, comment, status, create_time FROM x_review WHERE work_id = $1",
+            "SELECT id, work_id, reviewer, comment, status, create_time FROM x_review WHERE work_id = $1 LIMIT 100",
             &[&id],
         )
         .await
@@ -2376,7 +2376,7 @@ pub async fn process_id_complex(
 
     let snaps = client
         .query(
-            "SELECT id, work_id, snap_type, snap_data, create_time FROM x_snap WHERE work_id = $1 ORDER BY create_time DESC",
+            "SELECT id, work_id, snap_type, snap_data, create_time FROM x_snap WHERE work_id = $1 ORDER BY create_time DESC LIMIT 100",
             &[&id],
         )
         .await

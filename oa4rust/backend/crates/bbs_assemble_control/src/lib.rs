@@ -480,7 +480,7 @@ pub async fn list_topics_by_forum(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, forum_id, title, content, creator, create_time::text FROM x_bbs_topic WHERE forum_id = $1 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC",
+            "SELECT id, forum_id, title, content, creator, create_time::text FROM x_bbs_topic WHERE forum_id = $1 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC LIMIT 100",
             &[&forum_id],
         )
         .await
@@ -553,7 +553,7 @@ pub async fn forum_view_all(pool: Extension<Pool>) -> Result<Json<ActionResult<V
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, name, description, sort, creator, create_time::text FROM x_bbs_forum WHERE deleted_at IS NULL ORDER BY sort ASC",
+            "SELECT id, name, description, sort, creator, create_time::text FROM x_bbs_forum WHERE deleted_at IS NULL ORDER BY sort ASC LIMIT 100",
             &[],
         )
         .await
@@ -701,7 +701,7 @@ pub async fn reply_list_sub_id(
 
     let rows = client
         .query(
-            "SELECT id, topic_id, content, creator, create_time::text FROM x_bbs_reply WHERE topic_id = $1 AND deleted_at IS NULL ORDER BY create_time ASC",
+            "SELECT id, topic_id, content, creator, create_time::text FROM x_bbs_reply WHERE topic_id = $1 AND deleted_at IS NULL ORDER BY create_time ASC LIMIT 100",
             &[&id],
         )
         .await
@@ -752,7 +752,7 @@ pub async fn subject_top_sectionId(
 
     let rows = client
         .query(
-            "SELECT id, forum_id, title, content, creator, create_time::text FROM x_bbs_topic WHERE forum_id = $1 AND is_top = true AND deleted_at IS NULL ORDER BY create_time::timestamp DESC",
+            "SELECT id, forum_id, title, content, creator, create_time::text FROM x_bbs_topic WHERE forum_id = $1 AND is_top = true AND deleted_at IS NULL ORDER BY create_time::timestamp DESC LIMIT 100",
             &[&section_id],
         )
         .await
@@ -825,7 +825,7 @@ pub async fn section_viewforum_forumId(
 
     let rows = client
         .query(
-            "SELECT id, name, forum_id, sort, description FROM x_bbs_section WHERE forum_id = $1 AND deleted_at IS NULL ORDER BY sort",
+            "SELECT id, name, forum_id, sort, description FROM x_bbs_section WHERE forum_id = $1 AND deleted_at IS NULL ORDER BY sort LIMIT 100",
             &[&forum_id],
         )
         .await
@@ -1796,7 +1796,7 @@ pub async fn user_forum_list(pool: Extension<Pool>) -> Result<Json<ActionResult<
     let rows = client
         .query(
             "SELECT id, name, description, sort, creator, create_time::text FROM x_bbs_forum \
-             WHERE deleted_at IS NULL ORDER BY sort ASC",
+             WHERE deleted_at IS NULL ORDER BY sort ASC LIMIT 100",
             &[],
         )
         .await
@@ -2054,7 +2054,7 @@ pub async fn subjectattach_list(
     let rows = client
         .query(
             "SELECT id, url, description FROM x_bbs_subject_attachment \
-             WHERE subject_id = $1 ORDER BY create_time ASC",
+             WHERE subject_id = $1 ORDER BY create_time ASC LIMIT 100",
             &[&_subject_id],
         )
         .await

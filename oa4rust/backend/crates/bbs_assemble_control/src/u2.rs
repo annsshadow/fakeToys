@@ -2524,7 +2524,7 @@ pub async fn u2_attachment_list_by_subject(
     let rows = client
         .query(
             "SELECT id, subject_id, name, extension, url, description, length FROM x_bbs_attachment \
-             WHERE subject_id = $1 AND deleted_at IS NULL ORDER BY create_time",
+             WHERE subject_id = $1 AND deleted_at IS NULL ORDER BY create_time LIMIT 100",
             &[&subject_id],
         )
         .await
@@ -2593,7 +2593,7 @@ pub async fn u2_subjectattach_list(
     let rows = client
         .query(
             "SELECT id, subject_id, name, extension, url, description, length FROM x_bbs_subject_attachment \
-             WHERE subject_id = $1 AND deleted_at IS NULL ORDER BY create_time",
+             WHERE subject_id = $1 AND deleted_at IS NULL ORDER BY create_time LIMIT 100",
             &[&subject_id],
         )
         .await

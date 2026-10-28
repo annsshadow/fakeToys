@@ -29,7 +29,7 @@ pub async fn view_forum(
 
     let rows = client
         .query(
-            "SELECT id, name, forum_id, sort, description FROM bbs_section_info WHERE forum_id = $1 ORDER BY sort",
+            "SELECT id, name, forum_id, sort, description FROM bbs_section_info WHERE forum_id = $1 ORDER BY sort LIMIT 100",
             &[&forum_id],
         )
         .await
