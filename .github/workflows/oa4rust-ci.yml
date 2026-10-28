@@ -674,8 +674,8 @@ jobs:
             cargo llvm-cov -p shared --lib --summary-only | tee /tmp/cov.txt
           LINE_PCT=$(awk '/^TOTAL/ {gsub(/%/,"",$10); print $10}' /tmp/cov.txt)
           echo "shared 行覆盖：${LINE_PCT}%"
-          # 与台账地板对撞；抬高地板前先看台账的「下一轮」约定（每轮 +5）
-          awk -v pct="${LINE_PCT}" 'BEGIN { # 台账地板 92 以 oa4rust-cov 容器（cargo 1.99.1）实测为准；本 job 用 1.98.1，
+          # 台账地板 92 以 oa4rust-cov 容器（cargo 1.99.1）实测为准；本 job 用 1.98.1，
           # 插桩行数有 ~0.1pt 工具链差异（2026-10-29 双实测：容器 92.02 / 本 job 91.93），
           # 故 CI 断言放宽到 91.5——低于它说明覆盖真回退了。
-          awk -v pct="${LINE_PCT}" 'BEGIN { if (pct+0 < 91.5) { print "::error::shared 行覆盖 " pct "% 低于地板 91.5%（容器口径 92）"; exit 1 } }' }'
+          # 与台账地板对撞；抬高地板前先看台账的「下一轮」约定（92 → 94 → 上限 95.6）。
+          awk -v pct="${LINE_PCT}" 'BEGIN { if (pct+0 < 91.5) { print "::error::shared 行覆盖 " pct "% 低于地板 91.5%（容器口径 92）"; exit 1 } }'
