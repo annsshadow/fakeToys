@@ -227,7 +227,7 @@
 | OA-P1-3 索引迁移 | **SQL 就绪，待 PG** | `migrations/110` 三索引 + rollback；SQL 我核对与 handler 谓词一致。 |
 | OA-P2-2 死代码 | **已完成（1 项）** | 脚本化引用计数，删 `file_assemble_control` 一个死包装器；check 干净。生成 crate 接线实际很干净，空间小。 |
 | OA-P2-4 去重 | **仅分析** | 4 条发现留档，不重构。 |
-| OA-P0-2 perf 基线 | **未做（需运行+DB）** | 需起服务 + PG 才能测登录/基线。 |
+| OA-P0-2 perf 基线 | **已完成（2026-10-28）** | `cargo +1.98.1 test --test perf_baseline perf_baseline -- --ignored`（容器 + PG 17.11）：auth avg 1.70 / p50 1.69 / p99 2.73 ms；document avg 1.07 / p50 1.03 / p99 1.58 ms。首次跑出 429，定位并修复「认证/普通请求共用 IP 限流桶」，`shared` 227 passed。基线见 `oa4rust/backend/docs/performance-baseline.md`。 |
 | 既存问题→已修 | **已完成** | `signature/src/lib.rs:1034` `cargo fmt` 不合规（非本轮引入）已修；`cargo fmt --all -- --check` 现通过。 |
 
 ### 7.6 llm-lab / cool

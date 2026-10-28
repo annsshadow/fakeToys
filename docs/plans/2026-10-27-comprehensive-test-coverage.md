@@ -21,13 +21,14 @@
 | B8 变异抽样 | 验证断言有没有牙齿 | 3 个变异体：**M1 存活 → 补断言 → 被杀**，M2/M3 直接被杀 |
 | B9 门禁接线 | 阈值 + CI | 三个前端 ratchet 阈值 + 各自 CI 覆盖率步骤（已本地验证）；Go 总量 85% gate 已接入 `laiyipao-ci.yml` |
 
-**本轮抓到 6 个真缺陷**（6 个已修）：
+**本轮抓到 7 个真缺陷**（7 个已修）：
 1. `RateLimiter::init_redis()` 在 tokio 运行时内**直接 panic**（`SessionManager` 同名方法有守卫，它没有）——已修；
 2. `main.rs:77` 用 `&&` 串联两个 `init_redis()`，而第一个在 async main 里恒为 `false` ⇒ **短路，Redis 永远不会被初始化**，分布式会话与分布式限流在正常启动路径下是死代码——**已于 2026-10-28 删除**（单实例决策，见 `docs/plans/2026-10-28-redis-integration-decision.md`）；
 3. `torchgpt.generate(temperature=0)` 除零 → NaN 崩溃——已修；
 4. `systemtime_to_cron` 把「一次性任务」映射成**重复** cron（`*/30 * * * * *` 每 30 秒跑一次，而非只跑一次）——**已修**：改为精确 7 字段 `sec min hour day month * year`，过去时间钳到 `now+1s`；
 5. `db/rewriter.rs` 的 SQL 重写器：cast 扫描重复输出、`DO $$` 结束符误判、关键字替换会改写字符串/标识符/注释、`""` 转义丢失——**已修**，8 条 `#[ignore]` 全部移除并转绿；
 6. `sdk/api.ts` 的 `authenticationFailed()` 同一次 401 被调用两次（refresh 内 401 + 外层 catch）——**已修**：refresh 失败路径透传原 `AuthenticationError`。
+7. `rate_limit_middleware` 让认证与普通请求共用同一个 `ip` 桶：普通流量会把登录预算吃光（perf 实测第 11 次登录即 429）——**已修**：`auth:<ip>` / `general:<ip>` 独立桶 + 回归测试。
 
 ---
 
@@ -561,7 +562,23 @@ pnpm test:coverage
 cd augmentor
 python -m pytest -q
 # 10157 passed / 0 failed / 6 skipped；TOTAL 99.99%（--cov-fail-under=99）
+
+cd llm-lab
+python -m pytest -q --no-header -p no:cacheprovider --cov=minigrad --cov=torchgpt --cov-branch
+# 95 passed / 0 failed / 0 skipped；TOTAL 99%
+# （951 stmts / 10 missed；168 branch / 6 partial；torch 2.14.1+cpu）
+
+cd oa4rust/backend
+DATABASE_URL=<TEST_DATABASE_URL> cargo +1.98.1 test --test perf_baseline perf_baseline \
+  -- --ignored --nocapture
+# 5 warmup + 50 iterations：
+#   auth     avg 1.70 / p50 1.69 / p99 2.73 ms
+#   document avg 1.07 / p50 1.03 / p99 1.58 ms
 ```
+
+> perf 口径：测试夹具的 bcrypt cost 是 **4**（生产通常 12），登录读数只覆盖
+> HTTP + 中间件 + DB + 廉价哈希校验，是**下界**；详见
+> `oa4rust/backend/docs/audits/2026-08-15-phase4-perf.md` §2。
 
 ---
 
@@ -603,3 +620,6 @@ python -m pytest -q
 | 2026-10-28 | 文档 | `laiyipao/README.md` 补测试/覆盖率跑法；调整 README 以通过结构守卫（去掉重复命令、代码块内 `#` 注释） | `tests/readme_structure.test.ts` **4 passed** |
 | 2026-10-28 | 收尾 | `cargo +1.98.1 fmt --all` 对齐 CI 版本（1.99 本地会改风格） | 补齐 `5a28a52d6` 遗留的 6 个测试文件格式；`fmt --all -- --check` 通过，这 6 个文件的 diff 仅换行/缩进 |
 | 2026-10-28 | 收尾 | `cargo +1.98.1 clippy --workspace --all-targets -- -D warnings`（容器，CI 同版本） | **0 warning / 0 error**，Finished 12m44s；1.99 在 `openapi` 触发已知栈溢出，故按 CI 固定 1.98.1 |
+| 2026-10-28 | llm-lab | 装 `torch 2.14.1+cpu` 后全量复跑（Python 3.12.10） | **95 passed / 0 failed / 0 skipped**；TOTAL **99%**（951 stmts / 10 missed；168 branch / 6 partial）；torchgpt 用例不再跳过 |
+| 2026-10-28 | OA-P0-2 | perf 基线实测（容器 1.98.1 + PG 17.11；5 warmup + 50 iter） | auth **avg 1.70 / p50 1.69 / p99 2.73 ms**；document **avg 1.07 / p50 1.03 / p99 1.58 ms**；基线入档 `oa4rust/backend/docs/performance-baseline.md` |
+| 2026-10-28 | OA-P0-2 | 首次 perf 在第 11 次登录 429：认证/普通请求共用 `ip` 限流桶 | 修 `rate_limit_middleware` 为 `auth:<ip>` / `general:<ip>`；新增回归测试，`shared` **227 passed** |

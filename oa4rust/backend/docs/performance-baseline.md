@@ -1,22 +1,36 @@
 # Performance Baseline & Comparison Report
 
-- **Rust backend**: `http://localhost:3000`
-- **Java backend**: SKIP (unreachable)
-- **Concurrency**: 549 (derived from requests)
+- **Date**: 2026-10-28
+- **Rust backend**: `cargo test --test perf_baseline perf_baseline -- --ignored --nocapture`
+- **Java backend**: SKIP (no reachable Java backend; comparison not attempted)
+- **Iterations**: 5 warm-up + 50 measured request pairs, no other workload
 
 ## Rust Baseline
 
-| Scenario | Total | Success | Errors | Error Rate | QPS | P50 (ms) | P95 (ms) | P99 (ms) |
-|----------|-------|---------|--------|------------|-----|-----------|-----------|-----------|
-| login | 549 | 0 | 549 | 100.00% | 0.16 | 7913.49 | 8175.16 | 8189.10 |
-| work-start | 0 | 0 | 0 | 0.00% | 0.00 | 0.00 | 0.00 | 0.00 |
-| cms | 0 | 0 | 0 | 0.00% | 0.00 | 0.00 | 0.00 | 0.00 |
-
-## Java (o2server) Baseline
-
-Java backend was not reachable. Comparison skipped.
+| Scenario | Samples | Avg (ms) | P50 (ms) | P99 (ms) | Max (ms) |
+|----------|--------:|---------:|---------:|---------:|---------:|
+| `POST /api/authentication` | 50 | 1.70 | 1.69 | 2.73 | 2.73 |
+| `GET /api/cms_assemble_control/data/document` | 50 | 1.07 | 1.03 | 1.58 | 1.58 |
 
 ## Environment
 
-- **Date**: 395806.9360261
-- **Tool**: aiohttp + asyncio (wrk/ab not available in this environment)
+- Host: AMD Ryzen 9 7945HX, 32 vCPU visible to the container, 31 GiB RAM,
+  Docker Desktop on WSL2.
+- Backend: container `oa4rust-cov`, Rust 1.98.1, **debug** (`cargo test`) build.
+- Database: PostgreSQL 17.11 in container `lyp-pg`, `shared_buffers=128MB`,
+  reached over the Docker network.
+- Rate limits raised to 100000 for the test process only (50 logins exceed the
+  production default of 30/minute).
+
+## Caveats
+
+- **Login is not production bcrypt cost.** The integration fixture uses a
+  bcrypt **cost 4** hash; production hashes use a higher cost (typically 12).
+  The auth number is a lower bound covering HTTP + middleware + DB round-trip +
+  a cheap hash verify, not a production login latency.
+- **Debug build.** Release builds will be faster; these numbers are for
+  regression comparison, not capacity planning.
+- **Superseded report.** The previous 2026-08-15 table (`login 549/549 errors`,
+  P50 7913 ms, `work-start`/`cms` all zero) came from an external `aiohttp`
+  script that hit a broken endpoint. It is not a valid baseline and has been
+  replaced by the compile-checked `perf_baseline` test above.
