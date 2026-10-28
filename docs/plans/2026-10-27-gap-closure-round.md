@@ -389,7 +389,7 @@ P4 明细（60）：`ai:1759,1802,2022,2159`、`attendance:1501,1663,2179,7981,8
 | Z-FULL | `1e4ba2280` feat(augmentor/web): Z-FULL——78/78 端点接入 zod 响应契约（70 个全量 schema） |
 | A184 + BOM-FAQ | `499da9a8e` test(augmentor): A184 接入 docs/augmentor 14 份 Markdown；FAQ 补部署索引 |
 | L-REST | `de023d18c` feat(oa4rust): L-REST——无界 SELECT 全量普查 + 基线棘轮，7 处列表加 LIMIT |
-| L-REST 10-28 修订 | `<sha 待回填>` feat(oa4rust): L-REST 修订——扫描面排除测试夹具、single_row 收紧为身份键、拆出 parent_key 桶进基线；BBS 别名 + 消息/流程 12 条列表加 LIMIT 100 |
+| L-REST 10-28 修订 | `d1cf2a73e` feat(oa4rust): L-REST 修订——扫描面排除测试夹具、single_row 收紧为身份键、拆出 parent_key 桶进基线；BBS 别名 + 消息/流程 16 条列表加 LIMIT 100（16 处以 diff 计数为准，§10 的「14 条」与原 §12 草稿的「12 条」是笔误） |
 | OA-LIMIT-OFFSET | `3c9b39122` fix(oa4rust/web): OA-LIMIT-OFFSET——人员/授权列表接服务端分页，BBS 搜索跟随页码 |
 | 台账回填 | 本章节自身提交 |
 
