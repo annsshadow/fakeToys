@@ -294,7 +294,6 @@ mod u2_contract {
     async fn u2_safe_logout_revokes_all_sessions_of_person() {
         let pool = test_pool();
         let sm = SessionManager::with_pool(pool.clone());
-        sm.init_redis(); // 可用时走 Redis，不可用降级内存/DB
         let uid = "u2-safe-logout@P";
         let t1 = format!("tok-{}", uuid::Uuid::new_v4());
         let t2 = format!("tok-{}", uuid::Uuid::new_v4());

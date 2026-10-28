@@ -246,6 +246,7 @@ static DIALECT: OnceLock<Box<dyn SqlDialect>> = OnceLock::new();
 ///   - 若它先跑，全局被钉成 mysql，任何后续需要 postgres 的测试（例如迁移运行器）
 ///     都会拿 MySQL 语法去打 PG，报 `syntax error at end of input`；
 ///   - 若它后跑，`OnceLock` 已是 postgres，它自己的断言反而红。
+///
 /// 抽成纯函数后，优先级由 `dialect_name_from_env()` 表达，映射由本函数表达，
 /// 两者都能脱离全局状态被测。
 pub fn dialect_from(name: &str) -> Box<dyn SqlDialect> {

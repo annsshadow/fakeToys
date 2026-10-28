@@ -19,13 +19,11 @@ pub mod crud;
 pub mod db;
 pub mod error;
 pub mod input_validation;
-pub mod messaging;
 pub mod middleware;
 pub mod migrate;
 pub mod mock_client;
 pub mod netguard;
 pub mod rate_limit;
-pub mod redis;
 pub mod response;
 pub mod router;
 pub mod scheduler;
@@ -39,10 +37,6 @@ pub use deadpool_postgres::Pool;
 pub use rate_limit::RateLimiter;
 pub use session::SessionManager;
 
-pub use messaging::{
-    Envelope, InMemoryBus, MessageBus, MessagingError, MessagingResult, RedisPubSubBus,
-    TokenThresholdEvent,
-};
 use std::ops::Deref;
 
 #[cfg(test)]

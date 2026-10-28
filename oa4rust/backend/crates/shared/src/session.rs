@@ -5,28 +5,23 @@ use base64::Engine;
 use chrono::{Duration, NaiveDateTime, Utc};
 use deadpool_postgres::Pool;
 use hmac::{Hmac, Mac};
-use redis::AsyncCommands;
 use serde::{Deserialize, Serialize};
 use sha2::Sha256;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use tracing::warn;
 
 use crate::config::{AuthConfig, DEFAULT_SESSION_TTL_SECONDS};
 use crate::error::AppError;
-use crate::messaging::{MessageBus, TokenThresholdEvent};
-use crate::redis::RedisPool;
 
 // ──────────────────────────────────────────────────────────────────────────────
 // session
 //
-// 会话存储（内存 + PostgreSQL 持久化 + Redis 分布式缓存）。
-// SessionManager 由 main.rs 构造单一实例注入各 router 与认证中间件。
+// 会话存储（内存 + PostgreSQL 持久化）。单实例部署（2026-10-28 决策），
+// 无跨实例缓存/吊销通道。SessionManager 由 main.rs 构造单一实例注入各 router
+// 与认证中间件。
 // ──────────────────────────────────────────────────────────────────────────────
 
 type HmacSha256 = Hmac<Sha256>;
-
-const SESSION_KEY_PREFIX: &str = "oa4rust:session:";
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Session {
@@ -42,8 +37,6 @@ pub struct SessionManager {
     pub pool: Option<Pool>,
     pub hmac_secret: Option<String>,
     pub auth_config: AuthConfig,
-    pub redis_pool: Arc<std::sync::Mutex<Option<RedisPool>>>,
-    pub message_bus: Option<Arc<dyn MessageBus<TokenThresholdEvent>>>,
 }
 
 impl Default for SessionManager {
@@ -67,8 +60,6 @@ impl SessionManager {
             pool: None,
             hmac_secret: std::env::var("SESSION_HMAC_SECRET").ok(),
             auth_config,
-            redis_pool: Arc::new(std::sync::Mutex::new(None)),
-            message_bus: None,
         };
         manager.start_threshold_scanner().start_session_sweeper()
     }
@@ -90,8 +81,6 @@ impl SessionManager {
             pool: Some(pool),
             hmac_secret: std::env::var("SESSION_HMAC_SECRET").ok(),
             auth_config,
-            redis_pool: Arc::new(std::sync::Mutex::new(None)),
-            message_bus: None,
         };
         manager.start_threshold_scanner().start_session_sweeper()
     }
@@ -136,84 +125,6 @@ impl SessionManager {
             }
         });
         self
-    }
-
-    pub fn init_redis(&self) -> bool {
-        let url = std::env::var("REDIS_URL")
-            .ok()
-            .filter(|s| !s.trim().is_empty())
-            .unwrap_or_else(|| "redis://127.0.0.1:6379".to_string());
-
-        // If we're already inside a tokio runtime, we cannot use block_on.
-        // In that case, we skip Redis initialization and let the caller
-        // use init_redis_async if needed.
-        if tokio::runtime::Handle::try_current().is_ok() {
-            return false;
-        }
-
-        let rt = match tokio::runtime::Runtime::new() {
-            Ok(r) => r,
-            Err(_) => return false,
-        };
-
-        let result = rt.block_on(async {
-            tokio::time::timeout(std::time::Duration::from_secs(2), RedisPool::from_url(&url)).await
-        });
-
-        match result {
-            Ok(Ok(pool)) => {
-                let mut g = self.redis_pool.lock().unwrap();
-                *g = Some(pool);
-                true
-            }
-            Ok(Err(e)) => {
-                warn!(error = %e, "failed to connect to Redis; session store falling back to in-memory");
-                false
-            }
-            Err(_) => {
-                warn!(
-                    "Redis connection timed out after 2s; session store falling back to in-memory"
-                );
-                false
-            }
-        }
-    }
-
-    pub async fn init_redis_async(&self) -> bool {
-        let url = std::env::var("REDIS_URL")
-            .ok()
-            .filter(|s| !s.trim().is_empty())
-            .unwrap_or_else(|| "redis://127.0.0.1:6379".to_string());
-
-        if self.redis_pool.lock().unwrap().is_some() {
-            return true;
-        }
-
-        let result =
-            tokio::time::timeout(std::time::Duration::from_secs(2), RedisPool::from_url(&url))
-                .await;
-
-        match result {
-            Ok(Ok(pool)) => {
-                let mut g = self.redis_pool.lock().unwrap();
-                *g = Some(pool);
-                true
-            }
-            Ok(Err(e)) => {
-                warn!(error = %e, "failed to connect to Redis; session store falling back to in-memory");
-                false
-            }
-            Err(_) => {
-                warn!(
-                    "Redis connection timed out after 2s; session store falling back to in-memory"
-                );
-                false
-            }
-        }
-    }
-
-    fn get_redis_pool(&self) -> Option<RedisPool> {
-        self.redis_pool.lock().unwrap().clone()
     }
 
     fn sign_token(&self, token: &str) -> String {
@@ -274,32 +185,6 @@ impl SessionManager {
             .write()
             .await
             .insert(token.clone(), session.clone());
-
-        if let Some(ref pool) = self.get_redis_pool() {
-            let signed_token = self.sign_token(&token);
-            let key = format!("{}{}", SESSION_KEY_PREFIX, signed_token);
-            let session_json = match serde_json::to_string(&session) {
-                Ok(j) => j,
-                Err(_) => {
-                    Self::persist_to_db(
-                        &self.pool,
-                        &self.hmac_secret,
-                        &token,
-                        &session,
-                        &now,
-                        &expires_at,
-                    )
-                    .await;
-                    return Ok(session);
-                }
-            };
-            let mut conn = pool.0.manager.lock().await.as_ref().map(|m| m.clone());
-            if let Some(conn) = conn.as_mut() {
-                let _ = conn
-                    .set_ex::<_, _, ()>(key, session_json, self.auth_config.session_ttl_seconds)
-                    .await;
-            }
-        }
 
         Self::persist_to_db(
             &self.pool,
@@ -415,45 +300,6 @@ impl SessionManager {
                 None
             }
             None => {
-                if let Some(ref pool) = self.get_redis_pool() {
-                    let signed_token = self.sign_token(token);
-                    let key = format!("{}{}", SESSION_KEY_PREFIX, signed_token);
-                    let result: Option<String> = {
-                        // 锁仅瞬时 clone（ConnectionManager 可 Clone+自动重连），命令执行不持锁
-                        let mut conn = pool.0.manager.lock().await.as_ref().map(|m| m.clone());
-                        match conn.as_mut() {
-                            Some(conn) => conn
-                                .get::<_, Option<String>>(key.clone())
-                                .await
-                                .ok()
-                                .flatten(),
-                            None => None,
-                        }
-                    };
-
-                    if let Some(session_json) = result {
-                        if let Ok(session) = serde_json::from_str::<Session>(&session_json) {
-                            if session.expires_at > Utc::now().naive_utc() {
-                                self.sessions
-                                    .write()
-                                    .await
-                                    .insert(token.to_string(), session.clone());
-                                return Some(session);
-                            } else {
-                                let _ = {
-                                    let mut conn =
-                                        pool.0.manager.lock().await.as_ref().map(|m| m.clone());
-                                    if let Some(conn) = conn.as_mut() {
-                                        conn.del::<_, ()>(key).await.ok()
-                                    } else {
-                                        None
-                                    }
-                                };
-                            }
-                        }
-                    }
-                }
-
                 if let Some(pg_pool) = &self.pool {
                     if let Ok(client) = pg_pool.get().await {
                         let signed_token = self.sign_token(token);
@@ -498,15 +344,6 @@ impl SessionManager {
     pub async fn remove_session(&self, token: &str) {
         self.sessions.write().await.remove(token);
 
-        if let Some(ref pool) = self.get_redis_pool() {
-            let signed_token = self.sign_token(token);
-            let key = format!("{}{}", SESSION_KEY_PREFIX, signed_token);
-            let mut conn = pool.0.manager.lock().await.as_ref().map(|m| m.clone());
-            if let Some(conn) = conn.as_mut() {
-                let _ = conn.del::<_, ()>(key).await;
-            }
-        }
-
         if let Some(pg_pool) = &self.pool {
             if let Ok(client) = pg_pool.get().await {
                 let signed_token = self.sign_token(token);
@@ -533,49 +370,6 @@ impl SessionManager {
             self.sessions.write().await.remove(token);
         }
 
-        if let Some(ref pool) = self.get_redis_pool() {
-            let pattern = format!("{}*", SESSION_KEY_PREFIX);
-            let keys: Vec<String> = {
-                let mut guard = pool.0.manager.lock().await;
-                if let Some(conn) = guard.as_mut() {
-                    conn.keys::<_, Vec<String>>(pattern.clone())
-                        .await
-                        .ok()
-                        .unwrap_or_default()
-                } else {
-                    Vec::new()
-                }
-            };
-
-            for key in keys {
-                let result: Option<String> = {
-                    let mut guard = pool.0.manager.lock().await;
-                    if let Some(conn) = guard.as_mut() {
-                        conn.get::<_, Option<String>>(key.clone())
-                            .await
-                            .ok()
-                            .flatten()
-                    } else {
-                        None
-                    }
-                };
-                if let Some(session_json) = result {
-                    if let Ok(session) = serde_json::from_str::<Session>(&session_json) {
-                        if session.person_unique == person_unique {
-                            let _ = {
-                                let mut guard = pool.0.manager.lock().await;
-                                if let Some(conn) = guard.as_mut() {
-                                    conn.del::<_, ()>(key).await.ok()
-                                } else {
-                                    None
-                                }
-                            };
-                        }
-                    }
-                }
-            }
-        }
-
         if let Some(pg_pool) = &self.pool {
             if let Ok(client) = pg_pool.get().await {
                 if let Err(e) = client
@@ -591,6 +385,10 @@ impl SessionManager {
         }
     }
 
+    /// 按 token 阈值注销本进程内早于阈值的会话。
+    ///
+    /// 单实例部署（2026-10-28 决策）：只做本地内存清理，不再向消息总线广播。
+    /// 函数名保留是为了不改变 `auth::safe_logout` 的调用面。
     pub async fn broadcast_logout(&self, person_unique: &str) {
         let pool = match &self.pool {
             Some(p) => p,
@@ -635,22 +433,7 @@ impl SessionManager {
             self.sessions.write().await.remove(token);
         }
 
-        if let Some(ref bus) = self.message_bus {
-            let now_ms = std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .map(|d| d.as_millis() as u64)
-                .unwrap_or(0);
-            let event = TokenThresholdEvent {
-                person_unique: person_unique.to_string(),
-                threshold_time: threshold.format("%Y-%m-%d %H:%M:%S").to_string(),
-                expired_tokens: expired_tokens.clone(),
-                triggered_at_ms: now_ms,
-            };
-            let _ = bus.publish("token-threshold".to_string(), event).await;
-            tracing::info!(person = %person_unique, expired_count = expired_tokens.len(), "broadcast token-threshold event via message bus");
-        }
-
-        tracing::debug!(person = %person_unique, expired_count = expired_tokens.len(), "multi-instance broadcast: invalidated sessions before threshold");
+        tracing::debug!(person = %person_unique, expired_count = expired_tokens.len(), "single-instance mode: invalidated local sessions before threshold");
     }
 
     pub async fn cleanup_expired_sessions(&self) {
@@ -669,16 +452,6 @@ impl SessionManager {
         for token in &expired {
             self.sessions.write().await.remove(token);
         }
-        if let Some(ref pool) = self.get_redis_pool() {
-            let mut conn = pool.0.manager.lock().await.as_ref().map(|m| m.clone());
-            if let Some(conn) = conn.as_mut() {
-                for token in &expired {
-                    // 与 create/validate/remove 一致：Redis key 存的是签名后的 token。
-                    let key = format!("{}{}", SESSION_KEY_PREFIX, self.sign_token(token));
-                    let _: Result<(), _> = conn.del::<_, ()>(&key).await;
-                }
-            }
-        }
         tracing::info!(expired_count = expired.len(), "cleaned up expired sessions");
     }
 }
@@ -688,11 +461,11 @@ mod tests {
     use super::*;
 
     // ──────────────────────────────────────────────────────────────────────
-    // 为什么这一组只测「无 pool / 无 redis」路径
+    // 为什么这一组只测「无 pool（纯内存）」路径
     //
-    // SessionManager 有三层存储：内存 HashMap → Redis → PostgreSQL。其中 Redis 与
-    // PG 两条分支要求真实外部服务，单测里只能靠 mock 才有意义（而 mock 掉连接层
-    // 等于不测连接层）。剩下的**内存层**恰恰是最容易出错、也最容易漏测的部分：
+    // SessionManager 有两层存储：内存 HashMap → PostgreSQL。PG 分支要求真实
+    // 外部服务，单测里只能靠 mock 才有意义（而 mock 掉连接层等于不测连接层）。
+    // 剩下的**内存层**恰恰是最容易出错、也最容易漏测的部分：
     // 过期判定、惰性清除、按人批量注销——这三条都直接决定「登出到底有没有生效」。
     //
     // 之前这里只有 17% 覆盖，原因不是难写，而是构造函数会 spawn 后台任务
@@ -900,16 +673,6 @@ mod tests {
         let manager = manager_with_ttl(600);
         manager.cleanup_expired_sessions().await;
         assert_eq!(count(&manager).await, 0);
-    }
-
-    #[tokio::test]
-    async fn init_redis_inside_runtime_declines_instead_of_panicking() {
-        // 已有 tokio 运行时的情况下不能再 block_on —— 实现选择「返回 false 让调用方
-        // 走 init_redis_async」。如果这里 panic，所有在 async 上下文里构造
-        // SessionManager 的路径都会炸。
-        let manager = manager_with_ttl(600);
-        assert!(!manager.init_redis());
-        assert!(manager.redis_pool.lock().unwrap().is_none());
     }
 
     #[tokio::test]

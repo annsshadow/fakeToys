@@ -505,12 +505,13 @@ mod tests {
     // ──────────────────────────────────────────────────────────────────────────
 
     #[tokio::test]
-    #[ignore = "pre-existing: redis mock not configured"]
     async fn test_auth_path_rate_limited() {
         let app = test_app(security_state());
-        for i in 0..11 {
+        let max = crate::middleware::auth_rate_limit();
+        assert!(max > 0, "auth rate limit must be positive");
+        for i in 0..=max {
             let status = send(&app, Method::POST, "/api/authentication/login", None, None).await;
-            if i < 10 {
+            if i < max {
                 assert_eq!(status, StatusCode::OK, "第 {} 次认证请求应成功", i + 1);
             } else {
                 assert_eq!(
@@ -524,12 +525,13 @@ mod tests {
     }
 
     #[tokio::test]
-    #[ignore = "pre-existing: redis mock not configured"]
     async fn test_reset_path_counted_in_auth_rate_limit() {
         let app = test_app(security_state());
-        for i in 0..11 {
+        let max = crate::middleware::auth_rate_limit();
+        assert!(max > 0, "auth rate limit must be positive");
+        for i in 0..=max {
             let status = send(&app, Method::POST, "/api/reset", None, None).await;
-            if i < 10 {
+            if i < max {
                 assert_eq!(status, StatusCode::OK, "第 {} 次重置请求应成功", i + 1);
             } else {
                 assert_eq!(
@@ -543,11 +545,12 @@ mod tests {
     }
 
     #[tokio::test]
-    #[ignore = "pre-existing: redis mock not configured"]
     async fn test_rate_limit_keys_are_per_client_ip() {
         let app = test_app(security_state());
-        // IP A：9 次成功
-        for _ in 0..9 {
+        let max = crate::middleware::auth_rate_limit() as usize;
+        assert!(max > 1, "test needs at least two attempts of headroom");
+        // IP A：max-1 次成功
+        for _ in 0..(max - 1) {
             let status = send(
                 &app,
                 Method::POST,
@@ -558,8 +561,8 @@ mod tests {
             .await;
             assert_eq!(status, StatusCode::OK);
         }
-        // IP B：前 10 次成功，第 11 次 429
-        for i in 0..11 {
+        // IP B：前 max 次成功，第 max+1 次 429
+        for i in 0..=max {
             let status = send(
                 &app,
                 Method::POST,
@@ -568,13 +571,13 @@ mod tests {
                 Some("198.51.100.7"),
             )
             .await;
-            if i < 10 {
+            if i < max {
                 assert_eq!(status, StatusCode::OK);
             } else {
                 assert_eq!(status, StatusCode::TOO_MANY_REQUESTS);
             }
         }
-        // IP A 计数不受 IP B 影响：第 10 次仍成功
+        // IP A 计数不受 IP B 影响：第 max 次仍成功
         let status = send(
             &app,
             Method::POST,

@@ -208,6 +208,7 @@ mod tests {
     const MIGRATIONS_DIR_KEY: &str = "MIGRATIONS_DIR";
 
     #[tokio::test]
+    #[allow(clippy::await_holding_lock)] // ENV_LOCK 必须覆盖整段异步迁移，串行化环境变量
     async fn migrations_are_ordered_idempotent_and_fail_loud_on_missing_dir() {
         // 与其它改环境变量的测试串行：`run_migrations` 内部会调 `dialect()`，
         // 而那个全局 OnceLock 只能初始化一次。若此刻别的测试正把 `DB_DIALECT`

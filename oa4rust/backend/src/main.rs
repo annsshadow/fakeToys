@@ -73,15 +73,11 @@ async fn main() -> anyhow::Result<()> {
     let session_manager = SessionManager::with_pool_and_config(pool.clone(), auth_config.clone());
     let rate_limiter = RateLimiter::new();
 
-    // Phase B-U-B2: Redis 为默认 session 存储，不可达时降级为内存+DB 模式
-    let redis_available = session_manager.init_redis() && rate_limiter.init_redis();
-    if redis_available {
-        tracing::info!("Redis backend initialized for session store and rate limiter");
-    } else {
-        tracing::warn!(
-            "Redis unreachable; session store and rate limiter using in-memory fallback"
-        );
-    }
+    // 单实例部署（2026-10-28 决策）：会话为内存 + PostgreSQL 持久化，
+    // 限流为进程内计数，不再依赖外部缓存服务。
+    tracing::info!(
+        "single-instance mode: in-memory session store with PostgreSQL persistence, in-process rate limiting"
+    );
 
     // plan002 U7b: LDAP_SYNC_ENABLE=true 时启动 LDAP 用户自动同步定时 worker（幂等）
     if ldap::sync::init_from_env(pool.clone()) {

@@ -12,7 +12,7 @@
 | 批次 | 目标 | 结果 |
 | --- | --- | --- |
 | B1 Go + PG | 让 `service`/`httpapi` 可测 | **完成**：起 `postgres:16`（宿主 15432）+ 建 `laiyipao` 库（migrate+seed）→ 全包跑通；`service` 86.6、`store` 48.7→89.7、**`httpapi` 26.6→86.0**（74 条 e2e 原为静默 SKIP），见 §4.6 |
-| B2 Rust `shared` | 57.47% → 75% | **65.84%**（含测试代码口径）／**61.24%**（产品代码口径）；`session.rs` 17.31→52.56、`rate_limit.rs` 45.85→83.88、`scheduler.rs` 52.17→90.76、`token.rs` 72.27→88.60、`config.rs` 0→100 |
+| B2 Rust `shared` | 57.47% → 75% | **65.84%**（含测试代码口径）／**61.24%**（产品代码口径）；2026-10-28 删除 Redis 死代码后 **72.51%**（`session.rs` 64.49、`rate_limit.rs` 98.96） |
 | B3 `laiyipao/admin` | 87.34% → 92% | **88.61%**；`src/api/index.ts` 66.15→96.92、`src/utils` 76.92→100 |
 | B4 `oa4rust/mobile` | 接线 mobile 测试 | **前提有误（已更正）**：mobile 本来就有独立配置且在 CI 里跑；真实缺口是 `services/index.ts` 43.24% → **100%**，整体 79.52% → **99.76%** |
 | B5 miniapp 残余 | 70% / 67% 两个工具模块 | 均到 **100%**（17 条） |
@@ -23,7 +23,7 @@
 
 **本轮抓到 4 个真缺陷**（3 个已修，1 个仅登记）：
 1. `RateLimiter::init_redis()` 在 tokio 运行时内**直接 panic**（`SessionManager` 同名方法有守卫，它没有）——已修；
-2. `main.rs:77` 用 `&&` 串联两个 `init_redis()`，而第一个在 async main 里恒为 `false` ⇒ **短路，Redis 永远不会被初始化**，分布式会话与分布式限流在正常启动路径下是死代码——仅登记（改动涉及启动语义）；
+2. `main.rs:77` 用 `&&` 串联两个 `init_redis()`，而第一个在 async main 里恒为 `false` ⇒ **短路，Redis 永远不会被初始化**，分布式会话与分布式限流在正常启动路径下是死代码——**已于 2026-10-28 删除**（单实例决策，见 `docs/plans/2026-10-28-redis-integration-decision.md`）；
 3. `torchgpt.generate(temperature=0)` 除零 → NaN 崩溃——已修；
 4. `systemtime_to_cron` 把「一次性任务」映射成**重复** cron（`*/30 * * * * *` 每 30 秒跑一次，而非只跑一次）——仅登记（属设计变更）。
 
@@ -58,7 +58,7 @@
 | `laiyipao/miniapp` | uni-app + TS | 80 | 1152 | **94.35%** | 89.95% | 95.26% | 本轮首次可测（原先被 flaky 吞掉） |
 | `oa4rust/frontend` | TS | 56 | 1042 | **97.16%** | 84.63% | 97.38% | 本轮 95.87% → 97.16% |
 | `oa4rust/mobile` | uni-app + TS | 11 | 129 | **99.76%** | 92.30% | **100%** | 第二轮 79.52% → 99.76% |
-| `oa4rust/backend` | Rust（85 crates） | 294 个含 `#[test]` 的文件 | 213（`shared`） | **66.74%**（`shared`，含测试代码） | — | 65.84% | 第二轮 57.47% → 66.74% |
+| `oa4rust/backend` | Rust（85 crates） | 294 个含 `#[test]` 的文件 | 200（`shared`，2026-10-28） | **72.51%**（`shared`，含测试代码） | — | 72.51% | 第二轮 57.47% → 65.84%；删除 Redis 死代码后 72.51% |
 | `auto-checkin` | TS | 见子项目 | — | 未测 | — | — | 无覆盖率接线 |
 | `cool` | Java | 1 | — | 未测 | — | — | 单文件工具类 |
 
@@ -176,7 +176,7 @@ cd oa4rust/backend && cargo llvm-cov -p shared --lib --summary-only
 | D2 | 仓库根 `coverage.xml`（2.2MB，2026-10-10） | `line-rate=0.066`、`lines-valid=53743` —— 明显是「从仓库根跑 `--cov` 导致测试没收集到」的残骸 | 任何人读它都会得出「全仓 6.6%」的错误结论 | 删除并加 `.gitignore`；覆盖率产物一律不入库 |
 | D3 | `augmentor` 4 条 ratchet 用例失败（`test_corpus_excludes_test_files` / `test_bucket_matches_its_ceiling[ambiguous]` / `test_comment_refs_a184` / `test_doc_line_refs_l79`） | 依赖作者树 `Temp/` 底料与文档行引用现量 | **非本轮引入**（未改动 augmentor 任何文件） | 单独一轮修 ratchet 口径，不要混进测试增补 |
 | D4 | `shared/src/rate_limit.rs::init_redis` | 在 tokio 运行时内调用会 **panic**（`Cannot start a runtime from within a runtime`），而 `SessionManager::init_redis` 有 `Handle::try_current()` 守卫 | 任何未来在 async 上下文里调它的代码都会把进程带走 | **已修**：补同样的守卫，返回 `false` 交给 `init_redis_async` |
-| D5 | `oa4rust/backend/src/main.rs:77` | `session_manager.init_redis() && rate_limiter.init_redis()`——第一个在 `async fn main` 里**恒返回 false**（运行时守卫），`&&` 短路 ⇒ 第二个永不执行 ⇒ `redis_available` 恒为 false | **Redis 会话存储与分布式限流在正常启动路径下是死代码**，日志却永远打「Redis unreachable」，运维会以为 Redis 挂了 | **已决策删除**（2026-10-28，部署形态=单实例）：见 `docs/plans/2026-10-28-redis-integration-decision.md`。另发现消息总线**无订阅方**、`RedisPubSubBus` 零构造点。删除后这些 Redis 分支直接从覆盖率分母消失，`shared` 剩余缺口主体随之收敛 |
+| D5 | `oa4rust/backend/src/main.rs:77` | `session_manager.init_redis() && rate_limiter.init_redis()`——第一个在 `async fn main` 里**恒返回 false**（运行时守卫），`&&` 短路 ⇒ 第二个永不执行 ⇒ `redis_available` 恒为 false | **Redis 会话存储与分布式限流在正常启动路径下是死代码**，日志却永远打「Redis unreachable」，运维会以为 Redis 挂了 | **已删除**（2026-10-28，部署形态=单实例）：删除 `redis.rs` / `messaging.rs` / `rate_limit_distributed.rs` 及会话、限流内的 Redis 分支；`shared` 行覆盖 67.45→**72.51%**，200 passed / 8 ignored，`cargo tree -i redis` 已无此包。见 `docs/plans/2026-10-28-redis-integration-decision.md` |
 | D6 | `shared/src/scheduler.rs::systemtime_to_cron` | 「一次性任务」被映射成**重复** cron：`now+30s` → `*/30 * * * * *`，即每 30 秒跑一次、永不停止；`≥1h` 或过去时间直接退化成「每天 0 点」 | `schedule_once` 的语义与实现不符，重复执行会造成副作用累积 | 仅登记（属设计变更）：正确做法是生成 `sec min hour day month *` 的精确表达式 |
 | D7 | `shared/src/scheduler.rs` 的 `scheduler_tests` | 只测了文件里自带的 `MockScheduler`，真实现 `TokioCronScheduler` 一行未跑 | 「测了 mock 而不是被测对象」，替身永远绿 | **已补** 11 条直接驱动真实实现的用例 |
 | D8 | `shared/src/db/dialect.rs::dialect()` | 全局 `OnceLock` 只能初始化一次，而测试靠改 `DB_DIALECT` 来断言优先级 ⇒ 「谁先跑」决定全局方言 | 迁移用例在 env=mysql 的瞬间初始化方言，114 条 PG 迁移被改写成 MySQL 语法执行，报 `syntax error at end of input`（看起来像迁移文件坏了） | **已修**：抽 `dialect_from()` / `dialect_name_from_env()` 纯函数；`dialect()` 只负责缓存；新增 `testing::ENV_LOCK` 串行化改环境的用例 |
@@ -339,15 +339,15 @@ node --import tsx --test --experimental-test-coverage test/*.test.ts
   3. 本机装有 PostgreSQL 15，但 `postgresql-x64-15` 服务启动报「无法启动服务」（需管理员权限），且 `C://Program Files\PostgreSQL\15\data` **从未初始化**；手动 `initdb.exe` 被沙箱拦截，无法创建临时集群。
   - **解锁条件**（任一即可）：以管理员身份启动 `postgresql-x64-15` 并完成 `initdb`；或从 Security Center 移除 `wsl.exe` / `initdb.exe` 的程序黑名单；或提供一个可连的 PG（设 `TEST_DATABASE_URL`）。
 
-### B2 —— Rust `shared`：从 57.5% 到 75%（P0）—— **已执行，见 §4.5**（65.84%，未达 75%）
+### B2 —— Rust `shared`：从 57.5% 到 75%（P0）—— **已执行，见 §4.5**（65.84%，未达 75%；2026-10-28 删除 Redis 后 **72.51%**）
 
 按「安全相关 + 缺口最大」排序，逐个文件立小目标：
 
 | 顺序 | 文件 | 当前 | 目标 | 测试切入点 |
 | --- | --- | ---: | ---: | --- |
-| 1 | `session.rs` | 17.31% → 52.56% | 60% | 会话生命周期状态机：创建/过期/续期/并发失效（纯内存，无需 DB） |
+| 1 | `session.rs` | 17.31% → 52.56% → **64.49%** | 60%（已达标） | 会话生命周期状态机：创建/过期/续期/并发失效（纯内存，无需 DB） |
 | 2 | `db/rewriter.rs` | 53.22%（未动） | 75% | SQL 重写是**安全边界**（租户隔离/列过滤），用表驱动正反例 |
-| 3 | `rate_limit.rs` | 45.85% → 83.88% | 80%（已达标） | 令牌桶/滑窗的边界时刻（恰好满、恰好空、时钟回拨） |
+| 3 | `rate_limit.rs` | 45.85% → 83.88% → **98.96%** | 80%（已达标） | 令牌桶/滑窗的边界时刻（恰好满、恰好空、时钟回拨） |
 | 4 | `middleware/token.rs` | 72.27% → 88.60% | 85%（已达标） | 过期/篡改/签名不匹配的分类错误 |
 | 5 | `scheduler.rs` | 52.17% → 90.76% | 70%（已达标） | 调度触发与去重（用注入时钟，不 sleep） |
 | 6 | `migrate.rs` | 0%（需 PG，未动） | 50% | 迁移执行器的顺序/幂等/失败回滚（可用 `test_pool`） |
@@ -531,3 +531,4 @@ cd oa4rust/backend && cargo llvm-cov -p shared --lib --summary-only
 | 2026-10-27 深夜 | B6 | 复核后撤回：两项都已被既有用例覆盖 | 不补（避免剧场） |
 | 2026-10-27 深夜 | B7 | auto-checkin 接 Node 内置覆盖率 | 基线 53.27% 行 / 71.86% 分支 |
 | 2026-10-27 深夜 | B8 | 3 个变异体抽样 | M1 存活→补断言→被杀；M2/M3 被杀 |
+| 2026-10-28 | Redis B | 删除 Redis 集成（`redis.rs` / `messaging.rs` / `rate_limit_distributed.rs` 及会话、限流分支） | `shared` 200 passed / 8 ignored；行覆盖 67.45→**72.51%**；`cargo clippy --workspace --all-targets -- -D warnings` 零告警；`cargo tree -i redis` not found |

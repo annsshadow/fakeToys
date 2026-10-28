@@ -17,7 +17,7 @@ async fn u2_probe_full_app_build() {
 // P5：IM 实时协议 WebSocket 握手的全中间件栈可执行证据。
 //
 // /ws/realtime 不在 AUTH_EXEMPT（IM 属需登录功能）。未认证握手经全栈：
-//   rate_limit（非豁免→内存/Redis 限流，单次不超限）
+//   rate_limit（非豁免→进程内限流，单次不超限）
 //   → csrf_middleware（GET 直接放行——仅拦 POST/PUT/PATCH/DELETE 写方法）
 //   → auth_middleware（非豁免且无会话 Cookie/Bearer → 401 短路，不触 DB）
 // 因此实测 401 同时证明：路由已注册（≠404）、auth 确实拦在握手前（≠101/200）、

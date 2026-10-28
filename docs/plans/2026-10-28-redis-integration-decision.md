@@ -207,3 +207,47 @@ grep -ri redis --include=*.rs crates src   # 期望：无输出
 | 5 | 文档漏改导致下一个人以为还有 Redis | §3 R2/R6 用 grep 做机械核验，不靠记忆 |
 
 **回滚粒度**：B-1..B-6 各自一个 commit，按逆序 `git revert` 即可；行为上回滚等价于恢复「死代码」状态，不影响线上。
+
+---
+
+## 10. 执行记录（2026-10-28）
+
+### 10.1 落地范围
+
+| 批次 | 实际改动 |
+| --- | --- |
+| B-1 | 删除 `crates/shared/src/redis.rs`（150 行）、`messaging.rs`（373 行）；`lib.rs` 移除模块与 re-export |
+| B-2 | `session.rs` 删除 `redis_pool` / `message_bus` 字段、`init_redis*`、Redis 读写删分支；`broadcast_logout` 收敛为本地清理（保留函数名）；保留 `sign_token` / `verify_and_extract` |
+| B-3 | `rate_limit.rs` 删除 `redis_pool`、`init_redis*`、`active_window_counter` 与 Redis 分支；删除 `middleware/rate_limit_distributed.rs`（262 行）及 `WindowCounter` 注入点；`testing.rs` 删除 `is_redis_available` |
+| B-4 | `shared/Cargo.toml` 与根 `Cargo.toml` 删除 `redis` 依赖；`error.rs` 删除 `AppError::Redis`；`main.rs` 改为单实例启动说明；`.env.example` 删除 `REDIS_URL` |
+| B-5 | `docs/oa4rust/05-environment.md` 删除依赖/变量/compose 三处；`docs/ops/redis-cache-strategy.md` 顶部注记改为已移除；CI 删除 Redis 超时注释；`docker-compose.yml` 删除 redis 服务与卷 |
+| B-6 | 更新 `2026-10-27-comprehensive-test-coverage.md` 的 `shared` 基线与 D5；记录实测覆盖率 |
+
+**计划外但必要的连带改动**：`error.rs` 的 `AppError::Redis` 依赖 `redis` crate，删依赖后必须一并删除；`docker-compose.yml` 的 redis 服务与文档表格同属误导面；`shared/src/tests.rs` 三条限流用例原先因「redis mock」被 `#[ignore]`，现已改为按 `OA4RUST_AUTH_RATE_LIMIT` 动态取上限并启用。
+
+### 10.2 退出判据核验
+
+| 编号 | 结果 | 证据 |
+| --- | --- | --- |
+| R1 | ✅ | `main.rs` 启动日志改为 `single-instance mode: in-memory session store with PostgreSQL persistence, in-process rate limiting` |
+| R2 | ✅ | `grep -ri redis --include=*.rs crates src` 无输出（backend 的 `docs/audits` 历史账本保留） |
+| R3 | ✅ | `cargo clippy --workspace --all-targets -- -D warnings` 零告警；`cargo test -p shared --lib` **200 passed / 0 failed / 8 ignored** |
+| R4 | ✅ | `cargo tree -i redis` → `package ID specification 'redis' did not match any packages`；`Cargo.lock` 已更新 |
+| R5 | ✅ | `shared` 行覆盖 **67.45% → 72.51%**（regions 74.28%）；`session.rs` 64.49、`rate_limit.rs` 98.96。Windows GNU 工具链缺少 `profiler_builtins`，故在 Linux 容器内执行同一 `cargo llvm-cov -p shared --lib --summary-only` |
+| R6 | ✅ | 决策文档 §1 所列三份文档均已同步；额外更新 `docs/security/browser-session-cookie.md` 与 `docker-compose.yml` |
+
+### 10.3 验证命令（本次实际执行）
+
+```bash
+cd oa4rust/backend
+cargo clippy --workspace --all-targets -- -D warnings
+DATABASE_URL=postgres://o2server:password@localhost:15432/oa4rust?sslmode=disable \
+  cargo test -p shared --lib
+DATABASE_URL=... cargo llvm-cov -p shared --lib --summary-only
+cargo tree -i redis
+grep -ri redis --include=*.rs crates src
+```
+
+**剩余说明**：`shared` 仍有 8 条 `#[ignore]` 用例（与本决策无关，均为外部服务/历史跳过）；本次未扩大其范围。
+
+**提交形态**：与 §9「B-1..B-6 各自一个 commit」不同，实际合并为**一个 commit**。原因：删代码、删模块声明、删依赖、改调用方互为编译前提，任何一批单独提交都会让该 commit 无法通过 `cargo clippy`；原子提交才能保证每个历史点可构建。回滚仍按 §9 的逆序思路整体 `git revert` 即可。
