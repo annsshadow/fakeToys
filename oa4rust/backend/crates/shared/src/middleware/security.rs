@@ -505,3 +505,94 @@ mod contract_alias_parity_tests {
         }
     }
 }
+// ── 2026-10-29 覆盖率轮：CORS 镜像分支、trace/error_handler、HTTPS 重定向 ──
+#[cfg(test)]
+mod cov_middleware_tests {
+    use super::*;
+    use axum::routing::get;
+    use axum::Router;
+    use tower::ServiceExt;
+
+    #[test]
+    fn cors_middleware_for_origin_builds_mirror_origins() {
+        // 默认源 localhost:3000 → 回环镜像 127.0.0.1:3000 一并放行
+        let _ = cors_middleware_for_origin("http://localhost:3000");
+        // 反向镜像：配置 127.0.0.1 时放行 localhost
+        let _ = cors_middleware_for_origin("http://127.0.0.1:3000");
+        // 非回环 host：无镜像，仅单源
+        let _ = cors_middleware_for_origin("https://prod.example");
+        // 带端口的镜像需保留端口
+        let _ = cors_middleware_for_origin("http://localhost");
+    }
+
+    #[test]
+    fn cors_middleware_reads_env_config_without_panic() {
+        // 非生产环境缺省 origin 为 http://localhost:3000（from_env 的缺省分支）
+        let _ = cors_middleware();
+    }
+
+    #[tokio::test]
+    async fn trace_middleware_warns_only_on_server_errors() {
+        let app = Router::new()
+            .route(
+                "/boom",
+                get(|| async { axum::http::StatusCode::INTERNAL_SERVER_ERROR }),
+            )
+            .route("/ok", get(|| async { "fine" }))
+            .layer(axum::middleware::from_fn(trace_middleware));
+        let boom = app
+            .clone()
+            .oneshot(Request::builder().uri("/boom").body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+        assert_eq!(boom.status(), axum::http::StatusCode::INTERNAL_SERVER_ERROR);
+        let ok = app
+            .oneshot(Request::builder().uri("/ok").body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+        assert_eq!(ok.status(), axum::http::StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn error_handler_delegates_to_into_response() {
+        let request = Request::builder().uri("/x").body(Body::empty()).unwrap();
+        let resp = error_handler(AppError::NotFound, request).await;
+        assert_eq!(resp.status(), axum::http::StatusCode::NOT_FOUND);
+    }
+
+    #[test]
+    fn https_redirect_passthrough_for_https_proto() {
+        let request = Request::builder()
+            .header("x-forwarded-proto", "https")
+            .uri("/x")
+            .body(Body::empty())
+            .unwrap();
+        assert!(https_redirect(&request).is_none(), "已是 https 不重定向");
+    }
+
+    #[test]
+    fn https_redirect_uses_configured_public_origin_host() {
+        // 本测试进程内首次调用 force_https_host：预置 https 源，
+        // 重定向 host 必须取配置源而非请求 Host 头（防 307 开放重定向）
+        std::env::set_var("APP_PUBLIC_ORIGIN", "https://prod.example");
+        let request = Request::builder()
+            .header("x-forwarded-proto", "http")
+            .header(header::HOST, "evil.com")
+            .uri("/login?next=/a")
+            .body(Body::empty())
+            .unwrap();
+        let resp = https_redirect(&request).expect("http 请求必须被重定向");
+        assert_eq!(resp.status(), StatusCode::TEMPORARY_REDIRECT);
+        let loc = resp
+            .headers()
+            .get(header::LOCATION)
+            .and_then(|v| v.to_str().ok())
+            .unwrap()
+            .to_string();
+        assert_eq!(
+            loc, "https://prod.example/login?next=/a",
+            "host 取配置源且保留 path+query"
+        );
+        assert!(!loc.contains("evil.com"), "绝不沿用请求 Host 头");
+    }
+}

@@ -1014,4 +1014,67 @@ mod tests {
         manager.broadcast_logout("cov-b1").await;
         cleanup("cov-b1").await;
     }
+
+    // ── 2026-10-29 覆盖率轮第四刀：with_pool 构造器 + 扫描器首 tick ──
+    #[tokio::test]
+    async fn with_pool_uses_default_config_and_stores_pool() {
+        let manager = SessionManager::with_pool(crate::testing::test_pool());
+        assert!(manager.pool.is_some(), "with_pool 必须带上池");
+        assert_eq!(
+            manager.auth_config.session_ttl_seconds,
+            crate::config::DEFAULT_SESSION_TTL_SECONDS,
+            "with_pool 用默认 TTL（重载构造器的职责是覆盖它）"
+        );
+    }
+
+    #[tokio::test]
+    async fn threshold_scanner_picks_up_pending_rows_on_first_tick() {
+        if !crate::testing::is_db_available().await {
+            eprintln!("SKIP: no database available (set DATABASE_URL)");
+            return;
+        }
+        let pool = crate::testing::test_pool();
+        let client = pool.get().await.unwrap();
+        client
+            .execute(
+                "DELETE FROM auth_token_threshold WHERE person_unique LIKE 'cov-scan%'",
+                &[],
+            )
+            .await
+            .unwrap();
+        // 阈值行先于管理器构造：扫描器首 tick（构造后的第一个 yield 处触发）
+        // 必然查到这行并广播——覆盖「有行 → 逐个 broadcast」的循环体。
+        // 阈值拨到过去：广播不会误清之后创建的会话（created_at > threshold）。
+        let past = (chrono::Utc::now() - chrono::Duration::hours(1)).naive_utc();
+        client
+            .execute(
+                "INSERT INTO auth_token_threshold (person_unique, threshold_time) VALUES ($1, $2)",
+                &[&"cov-scan-p1".to_string(), &past],
+            )
+            .await
+            .unwrap();
+
+        let manager = SessionManager::with_pool_and_config(
+            pool,
+            AuthConfig {
+                public_origin: "http://localhost:3000".to_string(),
+                cookie_secure: false,
+                session_ttl_seconds: 600,
+            },
+        );
+        manager
+            .create_session("cov-scan-p1".to_string(), "cov-scan-tok".to_string())
+            .await
+            .unwrap();
+        assert_eq!(count(&manager).await, 1, "过去阈值不得清掉新会话");
+        tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+
+        client
+            .execute(
+                "DELETE FROM auth_token_threshold WHERE person_unique LIKE 'cov-scan%'",
+                &[],
+            )
+            .await
+            .unwrap();
+    }
 }

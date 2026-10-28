@@ -335,7 +335,7 @@ runner 的 skip/异常收敛/锁守卫（`runner-branches.test.ts` 用 PLAYWRIGH
 => t.stop())` 清理，避免挂住测试进程）、server.ts 71.60→**92.59**（/api/trend 的 days 夹取
 [7,90]、/api/run 与 /api/run/:siteId 的 404/200 与 running 守卫 409；单站 409 不做严格断言——
 单站 runSite 毫秒级完成，第二个请求赶不上 running 窗口，守卫语义已由全部站点路由的 409 覆盖）。
-93 tests 全绿；coverage-baseline.json 加 scheduler.ts=74 / server.ts=92 两档。**已知 flaky 一次**：冷启动时 run-lock 陈旧文件导致 runner-branches
+93 tests 全绿；coverage-baseline.json 加 scheduler.ts=74 / server.ts=92 两档。 **同日再补（棘轮扩容评估）**：`lock.ts`（77.55%，被 runner 测试导入故在报表内）纳入棘轮地板 77；`login.ts` 缓期——无任何测试导入它，覆盖率报表缺席（baseline 条目会被「文件不在报表」挡下），纳入前提是先为其建 fake-page 层交互式登录流测试。**已知 flaky 一次**：冷启动时 run-lock 陈旧文件导致 runner-branches
 一度红，重跑自愈；若 CI 复现，在测试里对锁获取加重试。`cool/`（单文件 Java `EncryptUtil`）**不接线**：仓库里没有 Maven/Gradle，编译脚本依赖外部 `commons-codec` jar；为一个工具类搭测试脚手架的成本高于收益，登记为 G3。
 
 #### B8 —— 变异抽样（3 个变异体，抓出 1 个真问题）
@@ -455,7 +455,7 @@ runner 的 skip/异常收敛/锁守卫（`runner-branches.test.ts` 用 PLAYWRIGH
 | `laiyipao/admin` | 90.32 / 83.28（行/分支，2026-10-28） | 89 / 82（`vitest.config.ts` ratchet，各留 ~1pt 抖动余量） |
 | `laiyipao/miniapp` | 95.38 / 90.29（行/分支，2026-10-28） | 94 / 88（同上） |
 | `oa4rust/frontend` | 97.39 / 84.68（2026-10-28） | ~~保持 per-file 现有 floor，全局加 97 / 84~~ → **已落地（2026-10-28）**：`oa4rust/vitest.config.ts` 顶层 thresholds `statements 97 / branches 84`，`perFile` 收为 false（glob 键仍按 per-file 生效，该开关只管顶层数字阈值）；双向自证：97 通过（exit 0）、临时抬 99 红（`does not meet global threshold`，exit 1）。余量 0.16/0.68 是有意为之的紧棘轮 |
-| `oa4rust/backend(shared)` | **90.12%**（行，2026-10-29 三轮收口；regions 86.50% / functions 89.91%；容器内 `cargo llvm-cov -p shared --lib`，278 tests 全绿） | B2 目标 75 已达成；floor 80/85/**90 均已达成**。三轮轨迹：78.79（真库用例实跑基线）→ 84.42（session PG + mock_client）→ 87.67（crud/rewriter/netguard）→ **90.12**（dialect 96.99 / rbac 94.21 / token 94.17 / response 98.62 / scheduler 95.45 / storage 85.28）。**CI 棘轮已接入**：`shared-coverage` job（workflow_dispatch 触发，TOTAL ≥90 显式断言）。**结构性上限重钉（证据）**：testing.rs 215 + lib.rs 60 + router.rs 10 未覆盖行为下游消费的测试基建/re-export，--lib 口径不可测 → 上限 ≈95.6%；95 要求剩余可测面（353 行）全部清零不现实，**下一轮重钉为 92**，之后按 92→94→95.6 上限推进 |
+| `oa4rust/backend(shared)` | **92.02%**（行，2026-10-29 四轮收口；regions 88.49% / functions 92.02%；容器内 `cargo llvm-cov -p shared --lib`，288 tests 全绿） | B2 目标 75 已达成；floor 80/85/90/**92 均已达成**。四轮轨迹：78.79（真库用例实跑基线）→ 84.42（session PG 真修 + mock_client）→ 87.67（crud/rewriter/netguard）→ 90.12（dialect/rbac/token/response/scheduler/storage）→ **92.02**（session with_pool + 阈值扫描器首 tick、crud_create_many 真库事务体、netguard fetch_limited 公网 happy path（DNS 守卫跳过）、security 95.88（CORS 镜像/trace/error_handler/HTTPS 重定向防开放重定向））。**CI 棘轮已接入**：`shared-coverage` job（workflow_dispatch 触发，TOTAL ≥92 显式断言）。**结构性上限重钉（证据）**：testing.rs 215 + lib.rs 60 + router.rs 10 未覆盖行为下游消费的测试基建/re-export，--lib 口径不可测 → 上限 ≈95.6%；94 要求剩余可测面（~250 行，其中约半数为错误路径闭包/公网依赖）基本清零，**下一轮 94**（激进但未越上限），余量见正文 |
 | `laiyipao/server` | 85.8（语句，合并 profile） | **85**（已接入 CI；基线见 `docs/laiyipao/audits/coverage-2026-10-28.md`） |
 
 ---

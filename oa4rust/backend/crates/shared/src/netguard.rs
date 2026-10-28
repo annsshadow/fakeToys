@@ -362,7 +362,7 @@ mod tests {
     #[tokio::test]
     async fn validate_target_resolves_public_hostname() {
         // 依赖 DNS（容器/CI 均具备）：example.com 解析结果全为全局地址 → 放行
-        let url = reqwest::Url::parse("https://example.com/robots.txt").unwrap();
+        let url = reqwest::Url::parse("https://example.com/").unwrap();
         assert!(validate_target(&url).await.is_ok());
     }
 
@@ -391,5 +391,23 @@ mod tests {
             filename_from_url("https://a.test/", "https://b.test"),
             "remote-file"
         );
+    }
+
+    #[tokio::test]
+    async fn fetch_limited_follows_through_on_public_target() {
+        // 离线环境跳过：本用例依赖公网可达且长期稳定的 example.com
+        if tokio::net::lookup_host(("example.com", 443)).await.is_err() {
+            eprintln!("SKIP: no DNS resolution available");
+            return;
+        }
+        let client = fetch_client().unwrap();
+        let (final_url, body) = fetch_limited(&client, "https://example.com/")
+            .await
+            .unwrap();
+        assert!(
+            final_url.starts_with("https://example.com"),
+            "最终 URL 应仍在源站（无重定向）：{final_url}"
+        );
+        assert!(!body.is_empty(), "example.com 的响应体不应为空");
     }
 }

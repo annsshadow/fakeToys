@@ -604,4 +604,37 @@ mod batch_insert_tests {
         assert!(matches!(err, AppError::Forbidden));
         cov_teardown().await;
     }
+
+    #[tokio::test]
+    async fn crud_create_many_inserts_all_rows_in_one_transaction() {
+        let _guard = COV_LOCK.lock().await;
+        let Some(pool) = cov_setup().await else {
+            return;
+        };
+        let payloads = vec![
+            serde_json::json!({ "name": "a" }),
+            serde_json::json!({ "name": "b" }),
+            serde_json::json!({ "name": "c" }),
+        ];
+        let ids = crud_create_many(&pool, &COV_SPEC_SOFT, &payloads)
+            .await
+            .unwrap();
+        assert_eq!(ids.len(), 3, "每个 payload 一个 uuid");
+        let client = pool.get().await.unwrap();
+        let n = client
+            .query_one("SELECT COUNT(*) AS c FROM shared_cov_t", &[])
+            .await
+            .unwrap()
+            .get::<_, i64>(0);
+        // cov_setup 先放了 2 行 fixture，create_many 再加 3 行
+        assert_eq!(n, 5, "三行都必须真实落库（2 fixture + 3 新增）");
+        for id in &ids {
+            let exists = client
+                .query_opt("SELECT 1 FROM shared_cov_t WHERE id = $1", &[&id])
+                .await
+                .unwrap();
+            assert!(exists.is_some(), "返回的 id {id} 必须真实存在");
+        }
+        cov_teardown().await;
+    }
 }
