@@ -60,6 +60,11 @@ overrides:
   # qs <=6.16.0：stringify(arrayFormat: 'comma') 对带不可调用 toString 的元素抛
   # TypeError（GHSA-6pq8-jhm2-2vcw，DoS），补丁 6.16.1。
   'qs@<6.16.1': '6.16.1'
+  # vue-i18n/@intlify 三件套 11.4.10：escapeParameter 不转义（GHSA-83rm-6c8r-g728 /
+  # CVE-2026-118257 XSS），补丁线 11.4.16（同 minor，sdk 的 ^11.1.2 区间内）。
+  'vue-i18n@11.4.10': '11.4.16'
+  '@intlify/core-base@11.4.10': '11.4.16'
+  '@intlify/shared@11.4.10': '11.4.16'
   'vite@<=6.4.2': '6.4.3'
 allowBuilds:
   core-js: false
