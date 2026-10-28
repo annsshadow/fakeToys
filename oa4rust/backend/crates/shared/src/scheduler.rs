@@ -604,4 +604,96 @@ mod tokio_scheduler_tests {
         }
         assert_eq!(scheduler.list_jobs().await.unwrap().len(), 4);
     }
+
+    // ── 2026-10-29 覆盖率轮：真调度器的「真触发」与非法表达式 ──
+    // 既有用例要么走 MockScheduler（执行的是替身），要么注册了任务但不 start()
+    // ——真实现的 Job 闭包从未被执行过。本组用例让每秒 cron 真跑起来。
+    #[cfg(test)]
+    mod real_scheduler_firing_tests {
+        use super::*;
+
+        fn noop_handler() -> Arc<dyn Fn() + Send + Sync + 'static> {
+            Arc::new(|| {})
+        }
+
+        #[tokio::test]
+        async fn invalid_cron_is_rejected_and_leaves_no_job() {
+            let scheduler = TokioCronScheduler::new().await.unwrap();
+            let err = scheduler
+                .schedule_cron("bad".into(), "not a cron", noop_handler())
+                .await
+                .unwrap_err();
+            assert!(matches!(err, SchedulerError::SchedulerError(_)), "{err:?}");
+            assert!(scheduler.list_jobs().await.unwrap().is_empty());
+        }
+
+        #[tokio::test]
+        async fn started_every_second_job_actually_fires_and_cancel_removes_it() {
+            let scheduler = TokioCronScheduler::new().await.unwrap();
+            let counter = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+            let c = counter.clone();
+            scheduler
+                .schedule_cron(
+                    "cov-ticker".into(),
+                    "* * * * * *",
+                    Arc::new(move || {
+                        c.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                    }),
+                )
+                .await
+                .unwrap();
+            scheduler.start().await.unwrap();
+
+            // 每秒一跳：2.5s 内至少应触发一次（留余量防 CI 慢启动）
+            tokio::time::sleep(std::time::Duration::from_millis(2500)).await;
+            assert!(
+                counter.load(std::sync::atomic::Ordering::SeqCst) >= 1,
+                "已启动的每秒任务必须真的执行过闭包"
+            );
+
+            scheduler.cancel(&"cov-ticker".to_string()).await.unwrap();
+            assert!(
+                !scheduler
+                    .list_jobs()
+                    .await
+                    .unwrap()
+                    .iter()
+                    .any(|j| j == "cov-ticker"),
+                "取消后任务必须从注册表移除"
+            );
+            // 取消不存在的任务 → JobNotFound（fail-loud 而非静默 Ok）
+            let err = scheduler
+                .cancel(&"never-existed".to_string())
+                .await
+                .unwrap_err();
+            assert!(matches!(err, SchedulerError::JobNotFound(_)), "{err:?}");
+
+            scheduler.shutdown().await.unwrap();
+        }
+    }
+
+    #[tokio::test]
+    async fn one_shot_job_fires_when_started() {
+        let scheduler = TokioCronScheduler::new().await.unwrap();
+        let fired = Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let f = fired.clone();
+        scheduler
+            .schedule_once(
+                "cov-once".into(),
+                std::time::SystemTime::now() + std::time::Duration::from_secs(1),
+                Arc::new(move || {
+                    f.store(true, std::sync::atomic::Ordering::SeqCst);
+                }),
+            )
+            .await
+            .unwrap();
+        scheduler.start().await.unwrap();
+        // 一次性任务在 +1s 附近触发；给 3s 余量
+        tokio::time::sleep(std::time::Duration::from_millis(3000)).await;
+        assert!(
+            fired.load(std::sync::atomic::Ordering::SeqCst),
+            "一次性任务必须真的执行过闭包"
+        );
+        scheduler.shutdown().await.unwrap();
+    }
 }

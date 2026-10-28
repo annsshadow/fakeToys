@@ -595,4 +595,57 @@ mod tests {
         // NULL 列省略键（o2server/Gson 语义）
         assert!(v.get("nul").is_none(), "NULL 列应省略键而非落 null");
     }
+
+    // ── 2026-10-29 覆盖率轮：BOOL/数值宽度类型、row_opt_json、Database 错误臂 ──
+    #[tokio::test]
+    async fn row_to_json_covers_bool_and_numeric_widths() {
+        if !crate::testing::is_db_available().await {
+            eprintln!("SKIP: no database available (set DATABASE_URL)");
+            return;
+        }
+        let pool = crate::testing::test_pool();
+        let client = pool.get().await.unwrap();
+        let row = client
+            .query_one(
+                "SELECT true AS b, 1::int2 AS s, 2::int4 AS i, 3::int8 AS l, \
+                    1.5::float4 AS f4, 2.5::float8 AS f8, decode('00ff','hex') AS raw",
+                &[],
+            )
+            .await
+            .unwrap();
+        let v = row_to_json(&row);
+        assert_eq!(v["b"], serde_json::json!(true));
+        assert_eq!(v["s"], serde_json::json!(1));
+        assert_eq!(v["i"], serde_json::json!(2));
+        assert_eq!(v["l"], serde_json::json!(3));
+        assert_eq!(v["f4"], serde_json::json!(1.5));
+        assert_eq!(v["f8"], serde_json::json!(2.5));
+        // 未识别类型（bytea）：静默跳过该列而不是报错（第 35 批口径）
+        assert!(v.get("raw").is_none(), "bytea 应落入 _ => None 分支");
+    }
+
+    #[tokio::test]
+    async fn row_opt_json_maps_some_and_skips_none() {
+        if !crate::testing::is_db_available().await {
+            eprintln!("SKIP: no database available (set DATABASE_URL)");
+            return;
+        }
+        let pool = crate::testing::test_pool();
+        let client = pool.get().await.unwrap();
+        let row = client
+            .query_one("SELECT 'x'::text AS t, NULL::text AS n", &[])
+            .await
+            .unwrap();
+        assert_eq!(
+            row_opt_json::<String>(&row, "t"),
+            Some(serde_json::json!("x"))
+        );
+        assert_eq!(row_opt_json::<String>(&row, "n"), None);
+    }
+
+    #[test]
+    fn app_error_database_arm_maps_to_500_internal_prompt() {
+        let resp = AppError::Database(sqlx::Error::RowNotFound).into_response();
+        assert_eq!(resp.status(), axum::http::StatusCode::INTERNAL_SERVER_ERROR);
+    }
 }

@@ -855,4 +855,163 @@ mod security_audit_registry_tests {
             );
         }
     }
+
+    // ── 2026-10-29 覆盖率轮：角色/组/admin 判定的真库路径（空库 fail-closed + fixture 命中）──
+    #[cfg(test)]
+    mod role_group_tests {
+        use super::*;
+        use crate::testing::is_db_available;
+
+        #[tokio::test]
+        async fn role_group_admin_checks_fail_closed_then_hit_with_fixtures() {
+            if !is_db_available().await {
+                eprintln!("SKIP: no database available (set DATABASE_URL)");
+                return;
+            }
+            let pool = crate::testing::test_pool();
+            let client = pool.get().await.unwrap();
+
+            // 清场 + 空库判定：未知 person 全部 fail-closed 为 false
+            for sql in [
+                "DELETE FROM auth_person_role WHERE person_id LIKE 'cov-rg%'",
+                "DELETE FROM auth_person_group WHERE person_id LIKE 'cov-rg%'",
+                "DELETE FROM auth_role WHERE id LIKE 'cov-rg%'",
+                "DELETE FROM auth_group WHERE id LIKE 'cov-rg%'",
+                "DELETE FROM auth_person WHERE id LIKE 'cov-rg%'",
+            ] {
+                client.execute(sql, &[]).await.unwrap();
+            }
+            assert!(!is_admin(&pool, "cov-rg-nobody").await);
+            assert!(!person_has_role(&pool, "cov-rg-nobody", "cov-rg-role").await);
+            assert!(!person_has_group(&pool, "cov-rg-nobody", "cov-rg-group").await);
+
+            // fixture：人 + 角色（未删未禁）+ 组（未删未禁）
+            client
+            .execute(
+                "INSERT INTO auth_person (id, unique_id, name, password_hash) VALUES ('cov-rg-p1', 'cov-rg-p1', 'cov', 'x')",
+                &[],
+            )
+            .await
+            .unwrap();
+            client
+                .execute(
+                    "INSERT INTO auth_role (id, name) VALUES ('cov-rg-role', 'cov-rg-admin')",
+                    &[],
+                )
+                .await
+                .unwrap();
+            client
+            .execute(
+                "INSERT INTO auth_person_role (person_id, role_id, unit_id) VALUES ('cov-rg-p1', 'cov-rg-role', '')",
+                &[],
+            )
+            .await
+            .unwrap();
+            client
+                .execute(
+                    "INSERT INTO auth_group (id, name) VALUES ('cov-rg-group', 'cov-rg-group')",
+                    &[],
+                )
+                .await
+                .unwrap();
+            client
+            .execute(
+                "INSERT INTO auth_person_group (person_id, group_id) VALUES ('cov-rg-p1', 'cov-rg-group')",
+                &[],
+            )
+            .await
+            .unwrap();
+
+            assert!(person_has_role(&pool, "cov-rg-p1", "cov-rg-admin").await);
+            assert!(person_has_group(&pool, "cov-rg-p1", "cov-rg-group").await);
+            // 未挂 admin 角色的普通人不因 fixture 而变成 admin
+            assert!(!is_admin(&pool, "cov-rg-p1").await);
+
+            // 角色禁用后 fail-closed：disable=true 的角色不再命中
+            client
+                .execute(
+                    "UPDATE auth_role SET disable = true WHERE id = 'cov-rg-role'",
+                    &[],
+                )
+                .await
+                .unwrap();
+            assert!(!person_has_role(&pool, "cov-rg-p1", "cov-rg-admin").await);
+
+            for sql in [
+                "DELETE FROM auth_person_role WHERE person_id LIKE 'cov-rg%'",
+                "DELETE FROM auth_person_group WHERE person_id LIKE 'cov-rg%'",
+                "DELETE FROM auth_role WHERE id LIKE 'cov-rg%'",
+                "DELETE FROM auth_group WHERE id LIKE 'cov-rg%'",
+                "DELETE FROM auth_person WHERE id LIKE 'cov-rg%'",
+            ] {
+                client.execute(sql, &[]).await.unwrap();
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn require_owner_admin_path_bypasses_ownership() {
+        use crate::testing::is_db_available;
+        if !is_db_available().await {
+            eprintln!("SKIP: no database available (set DATABASE_URL)");
+            return;
+        }
+        let pool = crate::testing::test_pool();
+        let client = pool.get().await.unwrap();
+        for sql in [
+            "DELETE FROM auth_person_role WHERE person_id LIKE 'cov-adm%'",
+            "DELETE FROM auth_person WHERE id LIKE 'cov-adm%'",
+        ] {
+            client.execute(sql, &[]).await.unwrap();
+        }
+        // admin fixture：人 + 名为 admin 的角色（is_admin 的判定键是角色名）；
+        // 若库里已有同名角色则沿用（INSERT 冲突时忽略，靠下面的 SELECT 取 id）
+        client
+            .execute(
+                "INSERT INTO auth_role (id, name) VALUES ('cov-adm-role', 'admin') ON CONFLICT (name) DO NOTHING",
+                &[],
+            )
+            .await
+            .ok();
+        client
+            .execute(
+                "INSERT INTO auth_person (id, unique_id, name, password_hash) VALUES ('cov-adm-p1', 'cov-adm-p1', 'adm', 'x')",
+                &[],
+            )
+            .await
+            .unwrap();
+        let role_id: String = client
+            .query_one(
+                "SELECT id FROM auth_role WHERE name = 'admin' ORDER BY id LIMIT 1",
+                &[],
+            )
+            .await
+            .unwrap()
+            .get("id");
+        client
+            .execute(
+                "INSERT INTO auth_person_role (person_id, role_id, unit_id) VALUES ('cov-adm-p1', $1, '')",
+                &[&role_id],
+            )
+            .await
+            .unwrap();
+
+        let admin = crate::session::Session {
+            token: "cov-adm-tok".to_string(),
+            person_unique: "cov-adm-p1".to_string(),
+            created_at: chrono::Utc::now().naive_utc(),
+            expires_at: chrono::Utc::now().naive_utc() + chrono::Duration::hours(1),
+        };
+        // admin 对「别人的行」也放行（IDOR 门禁的管理员旁路）
+        require_owner(&pool, &admin, "some-other-owner")
+            .await
+            .unwrap();
+
+        for sql in [
+            "DELETE FROM auth_person_role WHERE person_id LIKE 'cov-adm%'",
+            "DELETE FROM auth_person WHERE id LIKE 'cov-adm%'",
+        ] {
+            client.execute(sql, &[]).await.unwrap();
+        }
+    }
 }

@@ -323,4 +323,60 @@ mod token_parsing_tests {
         let headers = HeaderMap::new();
         assert_eq!(extract_token_from_headers(&headers), None);
     }
+
+    // ── 2026-10-29 覆盖率轮：初始化窗口判定的真库路径 ──
+    #[cfg(test)]
+    mod system_init_tests {
+        use super::*;
+        use crate::testing::is_db_available;
+
+        #[tokio::test]
+        async fn uninitialized_window_flips_when_first_person_exists() {
+            if !is_db_available().await {
+                eprintln!("SKIP: no database available (set DATABASE_URL)");
+                return;
+            }
+            let pool = crate::testing::test_pool();
+            let client = pool.get().await.unwrap();
+            client
+                .execute("DELETE FROM auth_person WHERE id LIKE 'cov-init%'", &[])
+                .await
+                .unwrap();
+
+            let base: i64 = client
+            .query_one(
+                "SELECT COUNT(*) AS c FROM auth_person WHERE locked = false AND deleted_at IS NULL",
+                &[],
+            )
+            .await
+            .unwrap()
+            .get("c");
+            if base == 0 {
+                assert!(
+                    system_uninitialized(&pool).await,
+                    "无任何未锁定用户时系统处于未初始化窗口"
+                );
+            } else {
+                assert!(
+                    !system_uninitialized(&pool).await,
+                    "已有未锁定用户时窗口必须处于关闭态"
+                );
+            }
+            client
+            .execute(
+                "INSERT INTO auth_person (id, unique_id, name, password_hash) VALUES ('cov-init-p1', 'cov-init-p1', 'init', 'x')",
+                &[],
+            )
+            .await
+            .unwrap();
+            assert!(
+                !system_uninitialized(&pool).await,
+                "存在未锁定用户后窗口必须关闭"
+            );
+            client
+                .execute("DELETE FROM auth_person WHERE id LIKE 'cov-init%'", &[])
+                .await
+                .unwrap();
+        }
+    }
 }

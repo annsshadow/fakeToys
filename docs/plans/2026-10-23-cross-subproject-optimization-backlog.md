@@ -340,3 +340,5 @@ IDOR 归属版——属主放行/非属主 Forbidden/行缺失保 not-found，�
 fetch_limited 的重定向/大响应体路径需公网服务端，留结构性缺口）。265 tests 全绿。
 `shared-coverage` CI job（workflow_dispatch 手动触发 + TOTAL ≥85 断言）已入 oa4rust-ci.yml，
 本机触发验证通过。下一轮 90。
+
+**第三轮（2026-10-29 同日）：87.67% → 90.12%，floor 90 达成，CI 地板同步 90**。目标五文件补测：`db/dialect.rs` 93.52→**96.99**（四方言全方法表驱动，含从未被调用的 cast_text_param/cast_bigint_param 默认方法）、`middleware/rbac.rs` 94.21→**94.21**（角色/组/admin 判定真库路径：空库 fail-closed + fixture 命中 + disable 后 fail-closed + require_owner 的 admin 旁路；净变化小因分母同时变大）、`middleware/token.rs` 94.17→**94.17**（system_uninitialized 未初始化窗口真库判定，按库现状双分支）、`response.rs` 98.62→**98.62**（BOOL/数值宽度类型 + row_opt_json + AppError::Database 臂）、`scheduler.rs` 95.45→**95.45**（真调度器 firing：非法 cron 拒绝、每秒 cron 与一次性任务真触发闭包、cancel JobNotFound；既有 firing 测试走的是 MockScheduler）、`storage.rs` 85.28→**85.28**（PgBlobStorage 往返 + FsBlobStorage 目录穿越防护 + 工厂分支）。278 tests 全绿。**结构性上限重钉**：testing.rs/lib.rs/router.rs 285 行不可测（下游消费）→ --lib 上限 ≈95.6%，下一轮重钉为 92。CI `shared-coverage` job 地板 85→90 同步。

@@ -492,4 +492,34 @@ mod tests {
             "SELECT * FROM t WHERE id = ?"
         );
     }
+
+    // ── 2026-10-29 覆盖率轮：四方言全方法过一遍（含从未被调用的默认方法）──
+    #[test]
+    fn every_dialect_answers_every_trait_method() {
+        for name in ["postgres", "mysql", "dameng", "kingbase"] {
+            let d = dialect_from(name);
+            assert_eq!(d.name(), name);
+            assert!(!d.quote_ident("col").is_empty());
+            assert!(!d.param(3).is_empty());
+            assert!(!d.now().is_empty());
+            assert!(!d.json_type().is_empty());
+            assert!(!d.cast_text("x").is_empty());
+            assert!(!d.cast_bigint("x").is_empty());
+            assert!(!d.ilike_op().is_empty());
+            assert!(!d.format_sql("SELECT 1").is_empty());
+            // 默认方法 cast_text_param / cast_bigint_param：此前没有任何路径调用过
+            assert!(d.cast_text_param(2).contains(&d.param(2)));
+            assert!(d.cast_bigint_param(2).contains(&d.param(2)));
+        }
+        // 精确值钉两代表方言，防静默漂移
+        let pg = dialect_from("postgres");
+        assert_eq!(pg.cast_text_param(2), "$2::text");
+        assert_eq!(pg.cast_bigint_param(2), "$2::bigint");
+        assert_eq!(pg.format_sql("SELECT 1"), "SELECT 1");
+        let kb = dialect_from("kingbase");
+        assert_eq!(kb.cast_text_param(2), "CAST(? AS VARCHAR)");
+        assert_eq!(kb.cast_bigint_param(2), "CAST(? AS BIGINT)");
+        let dm = dialect_from("dameng");
+        assert_eq!(dm.param(1), "$1", "dameng 兼容 PostgreSQL 协议");
+    }
 }
