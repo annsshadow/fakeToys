@@ -301,3 +301,11 @@ dependency-audit job 以「miniapp 漏洞数 1 超过基线 0」变红。已同�
 | 处置 | **真修（收依赖面）**：`file_assemble_control` 与 `processplatform_assemble_surface` 的 `zip = "2"` 改为保留默认 features 但去掉 `zstd`（`aes-crypto/bzip2/deflate64/deflate/lzma/time/xz` 全保留）。两处用法只读写 docx/xlsx 类 Office 包（deflate/stored），无 `CompressionMethod::Zstd` 引用（grep 0 命中）。zstd 三件套连带 `jobserver` 一起出树，Cargo.lock **纯删除、无新增** |
 | 本机验证 | `grep 'name = "zstd' Cargo.lock` 计数 0；`cargo fmt --check` 两 crate 干净；本机 host 为 `x86_64-pc-windows-gnu` 且无 gcc/MSVC，**编译验证交 CI**（CI 此前按更大的默认 features 集编译绿，本次只减不增） |
 | 后续 | 若未来确需读 zstd 压缩的压缩包，需等 zip 上游允许 `zstd ^0.14` 再恢复 feature，并复跑 audit |
+
+**floating-rustsec 验证（2026-10-28 两轮 workflow_dispatch）**：zstd 修复生效——dispatch 审计输出中
+unsound 级命中清零，仅剩 10 条 unmaintained 级 warning（adler/encoding/lzw/proc-macro-error/rusttype/
+stb_truetype/stdweb/ttf-parser/unsafe-libyaml/tokio，warning 类不触发 `--deny unsound`）。但 job 仍红：
+`--deny yanked` 的 yanked 标志来自本地 crates.io 索引缓存，runner 冷缓存 + workflow 无 cache，
+每个 crate 都报「No such crate in crates.io index」。查历史：该 job 的 schedule/dispatch 运行**全部失败过**
+（zstd 公告掩盖了 yanked 环境问题，此前从未绿过）。修复：审计前加 `cargo +1.88.0 fetch --locked`
+预热索引缓存。
