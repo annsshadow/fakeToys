@@ -315,3 +315,7 @@ stb_truetype/stdweb/ttf-parser/unsafe-libyaml/tokio，warning 类不触发 `--de
 补丁线同 minor：**tokio 1.53.3**（2026-10-13 发布，依赖清单与版本要求与 1.53.1 完全一致，已核对
 crates.io API）。本机到 `index.crates.io:443` 持续超时（api.crates.io 可达），无法跑 `cargo update`，
 改为按 API 权威 checksum 手工更新 Cargo.lock 单条目（CI `cargo fetch --locked` 校验和兜底）。
+
+**终态（2026-10-28 dispatch `40726304795`）**：`floating-rustsec` 与 `pinned-rustsec` 双双 **success**
+——该 job 历史上首次全绿（zstd 三件套出树 + yanked 索引预热 + tokio 1.53.3 三项修复全部生效）。
+剩余 10 条 unmaintained 级 warning 不触发任何 deny 规则，属正常观测项。
