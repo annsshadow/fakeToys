@@ -13,6 +13,10 @@ import type { AddressInfo } from "node:net";
 const DATA_DIR = mkdtempSync(join(tmpdir(), "auto-checkin-server-"));
 process.env.AUTO_CHECKIN_DATA_DIR = DATA_DIR;
 
+// run 路由会触发 runAll/runSite → 浏览器启动；指向空目录让其确定性失败，
+// 测试绝不碰真实站点（必须在 server.js 加载 runner 链之前设置）
+process.env.PLAYWRIGHT_BROWSERS_PATH = "Z:" + join("nonexistent", "browsers");
+
 const { addRecord } = await import("../src/store.js");
 const { createApp } = await import("../src/server.js");
 import type { AppConfig } from "../src/types.js";
@@ -131,5 +135,41 @@ test("历史记录：limit 下限夹取（负值不静默丢数据）", async ()
     assert.equal(r.length, 1, "?limit=-5 应被夹到 1，返回最近 1 条而非空集");
     const zero = await (await fetch(`${base}/api/records?limit=0`)).json();
     assert.ok(zero.length >= 1, "?limit=0 走默认 100，不应被夹成 0 条");
+  });
+});
+
+test("趋势接口：days 夹取到 [7, 90]，返回站点清单与点位", async () => {
+  await withServer("", async (base) => {
+    const r = await (await fetch(`${base}/api/trend`)).json();
+    assert.equal(r.days, 30, "缺省 30 天");
+    assert.ok(Array.isArray(r.sites) && r.sites.length >= 3, "应列出全部注册站点");
+    assert.ok("points" in r);
+
+    assert.equal((await (await fetch(`${base}/api/trend?days=5`)).json()).days, 7, "下限夹到 7");
+    assert.equal((await (await fetch(`${base}/api/trend?days=999`)).json()).days, 90, "上限夹到 90");
+    assert.equal((await (await fetch(`${base}/api/trend?days=abc`)).json()).days, 30, "非数字走默认");
+  });
+});
+
+test("面板触发全部签到：立即 200；进行中再触发 → 409（running 守卫）", async () => {
+  await withServer("", async (base) => {
+    const first = await fetch(`${base}/api/run`, { method: "POST" });
+    assert.equal(first.status, 200);
+    // 第一个 runAll 仍在跑（浏览器启动失败也要走完 3 个站点），此时第二个触发必须 409
+    const second = await fetch(`${base}/api/run`, { method: "POST" });
+    assert.equal(second.status, 409, "running 守卫必须拦下并发触发");
+  });
+});
+
+test("面板触发单站：未知站点 404（不占锁），已知站点 200", async () => {
+  await withServer("", async (base) => {
+    const unknown = await fetch(`${base}/api/run/no-such-site`, { method: "POST" });
+    assert.equal(unknown.status, 404);
+
+    // 单站的 409 守卫不在此断言：单站 runSite（浏览器启动失败）毫秒级完成，
+    // 第二个请求必然赶不上 running 窗口，严格断言是 flaky——守卫语义已由
+    // 「全部签到」路由的 409 用例覆盖（同一 isRunning 判据）。
+    const known = await fetch(`${base}/api/run/vyceai`, { method: "POST" });
+    assert.equal(known.status, 200);
   });
 });

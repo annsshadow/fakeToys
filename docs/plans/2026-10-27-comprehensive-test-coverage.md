@@ -312,8 +312,8 @@ node --import tsx --test --experimental-test-coverage test/*.test.ts
 | `sites/vyceai.ts` | 38.54% | **99.51%** | 同上 |
 | `runner.ts` | 49.76% | **88.41%** | 编排器，含浏览器生命周期 |
 | `sites/newapi-client.ts` | 53.35% | **91.69%** | 已有 oauth/logout 用例，其余为网络分支 |
-| `scheduler.ts` | 54.17% | 54.17%（未动） | 定时调度 |
-| `server.ts` | 71.60% | 71.60%（未动） | — |
+| `scheduler.ts` | 54.17% | **75.00%** | 定时调度 |
+| `server.ts` | 71.60% | **92.59%** | — |
 | `store.ts` | 88.60% | 88.60%（未动） | — |
 
 **2026-10-29 B7 收口轮**：为 G2 搭建假浏览器层（`test/fake-page.ts`）——`page.evaluate` 支持脚本队列与
@@ -325,9 +325,17 @@ token/WAF/refresh/localStorage 兜底各分支、domLogin 表单路径、logout 
 runner 的 skip/异常收敛/锁守卫（`runner-branches.test.ts` 用 PLAYWRIGHT_BROWSERS_PATH 指向空目录
 让浏览器启动确定性失败，**测试绝不碰真实站点**）。tsc 0 错、86 tests 全绿。
 
-棘轮：`scripts/coverage-ratchet.mjs` + `coverage-baseline.json`（五个目标文件地板 100/99/94/91/88，
-各留 ~1pt 抖动余量），`npm run test:ratchet` 双向自证（正向下限通过、临时抬地板退出 1），
-已接入 auto-checkin CI。**已知 flaky 一次**：冷启动时 run-lock 陈旧文件导致 runner-branches
+棘轮：`scripts/coverage-ratchet.mjs` + `coverage-baseline.json`（七个文件地板
+100/99/94/91/88/74/92，各留 ~1pt 抖动余量），`npm run test:ratchet` 双向自证（正向下限通过、
+临时抬地板退出 1），已接入 auto-checkin CI。
+
+**同日补：scheduler/server 收口**（复用 fake-page 时代的 env 守卫手法）：scheduler.ts 54.17→**75.00**
+（startScheduler 的非法 cron 拒绝/合法排程/runOnStartup 立即触发——`PLAYWRIGHT_BROWSERS_PATH` 指向
+空目录让启动即运行的 runAll 确定性失败，测试不碰真实站点；node-cron 定时器用 `getTasks().forEach(t
+=> t.stop())` 清理，避免挂住测试进程）、server.ts 71.60→**92.59**（/api/trend 的 days 夹取
+[7,90]、/api/run 与 /api/run/:siteId 的 404/200 与 running 守卫 409；单站 409 不做严格断言——
+单站 runSite 毫秒级完成，第二个请求赶不上 running 窗口，守卫语义已由全部站点路由的 409 覆盖）。
+93 tests 全绿；coverage-baseline.json 加 scheduler.ts=74 / server.ts=92 两档。**已知 flaky 一次**：冷启动时 run-lock 陈旧文件导致 runner-branches
 一度红，重跑自愈；若 CI 复现，在测试里对锁获取加重试。`cool/`（单文件 Java `EncryptUtil`）**不接线**：仓库里没有 Maven/Gradle，编译脚本依赖外部 `commons-codec` jar；为一个工具类搭测试脚手架的成本高于收益，登记为 G3。
 
 #### B8 —— 变异抽样（3 个变异体，抓出 1 个真问题）

@@ -33,3 +33,51 @@ test("字段不足的表达式两个通道都为 null（交给 cron.validate 报
   assert.equal(at, null);
   assert.equal(note, null);
 });
+
+// ─────────────────────────────────────────────────────────────────────────
+// startScheduler 分支（2026-10-29 覆盖率轮）。import 顺序敏感：
+//  AUTO_CHECKIN_DATA_DIR 先设（scheduler→runner→store import 链），
+//  PLAYWRIGHT_BROWSERS_PATH 指向空目录——runOnStartup 会立即触发 runAll，
+//  必须让浏览器启动确定性失败，测试绝不碰真实站点。
+// ─────────────────────────────────────────────────────────────────────────
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
+process.env.AUTO_CHECKIN_DATA_DIR = mkdtempSync(join(tmpdir(), "auto-checkin-sched-"));
+process.env.PLAYWRIGHT_BROWSERS_PATH = "Z:" + join("nonexistent", "browsers");
+
+const cron = (await import("node-cron")).default;
+const { startScheduler } = await import("../src/scheduler.js");
+import type { AppConfig } from "../src/types.js";
+
+function config(schedule: Partial<AppConfig["schedule"]>): AppConfig {
+  return {
+    schedule: { cron: "0 9 * * *", timezone: "Asia/Shanghai", runOnStartup: false, ...schedule },
+    browser: { headless: true, timeoutMs: 1000 },
+    sites: { vyceai: { enabled: false }, agentrouter: { enabled: false }, justwoker: { enabled: false } },
+    panel: { host: "127.0.0.1", port: 0, token: "" },
+  };
+}
+
+test("startScheduler：非法 cron 显式拒绝且不排任何任务", () => {
+  startScheduler(config({ cron: "not a cron" }));
+  assert.equal(cron.getTasks().size, 0, "非法表达式不得留下任何任务");
+});
+
+test("startScheduler：合法表达式注册任务", () => {
+  startScheduler(config({ cron: "0 9 * * *" }));
+  assert.ok(cron.getTasks().size >= 1, "应注册定时任务");
+});
+
+test("startScheduler：runOnStartup 立即触发一轮（浏览器不可用 → runner 收敛不崩）", async () => {
+  startScheduler(config({ cron: "0 9 * * *", runOnStartup: true }));
+  // 启动即运行是 fire-and-forget：给一点时间让 runner 的失败收敛走完
+  await new Promise((r) => setTimeout(r, 200));
+});
+
+test("cleanup：停掉本文件注册的全部定时任务，不让 node-cron 定时器挂住测试进程", () => {
+  for (const t of cron.getTasks().values()) t.stop();
+  cron.getTasks().clear();
+  assert.equal(cron.getTasks().size, 0);
+});
