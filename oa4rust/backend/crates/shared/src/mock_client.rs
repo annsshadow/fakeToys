@@ -193,3 +193,168 @@ pub fn mock_control_pool(
     let pool = MockControlPool::new(client);
     std::sync::Arc::new(DynControlPool::new(std::sync::Arc::new(pool)))
 }
+
+#[cfg(test)]
+mod tests {
+    // mock 是全仓下游 crate 测试的地基：它们的「绿」都建立在
+    // 这里的弹栈顺序与回退语义上。这组用例把这些语义钉死——
+    // mock 自身行为漂移时，先红的必须是这里，而不是下游的假红。
+    use super::*;
+
+    fn err_of(r: Result<(), Box<dyn std::error::Error + Send + Sync>>) -> String {
+        r.err().unwrap().to_string()
+    }
+
+    #[tokio::test]
+    async fn rows_result_maps_to_rowget_with_defaults_on_missing_columns() {
+        let results = MockControlClient::rows(vec![
+            vec![
+                ("id", serde_json::json!(7)),
+                ("name", serde_json::json!("n")),
+                ("flag", serde_json::json!(true)),
+                ("big", serde_json::json!(1_000_000_000_i64)),
+            ],
+            vec![("id", serde_json::json!(8))],
+        ]);
+        let client = MockControlClient::new(results);
+        let rows = client.ctrl_query("SELECT 1", &[]).await.unwrap();
+        assert_eq!(rows.len(), 2);
+        assert_eq!(rows[0].get_i32("id"), 7);
+        assert_eq!(rows[0].get_i64("big"), 1_000_000_000);
+        assert_eq!(rows[0].get_str("name"), "n");
+        assert!(rows[0].get_bool("flag"));
+        // 缺列时按类型给零值，而不是 panic——下游测试依赖这个宽松契约
+        assert_eq!(rows[1].get_str("name"), "");
+        assert_eq!(rows[1].get_i64("big"), 0);
+        assert!(!rows[1].get_bool("flag"));
+    }
+
+    #[tokio::test]
+    async fn query_results_pop_in_stack_order_and_empty_queue_yields_no_rows() {
+        // Row 先入：query 消费的是**栈顶**（pop）——先压 Rows、后压 Row 时，
+        // 第一次 query 拿到的是 Row 分支的回退（空），第二次才是 Rows。
+        let results = Arc::new(Mutex::new(vec![
+            MockQueryResult::Rows(vec![vec![("id", serde_json::json!(1))]]),
+            MockQueryResult::Row(vec![("id", serde_json::json!(2))]),
+        ]));
+        let client = MockControlClient::new(results);
+        // Row 不是 Rows/Empty/Error → `_ => Ok(vec![])`
+        assert!(client.ctrl_query("q", &[]).await.unwrap().is_empty());
+        let rows = client.ctrl_query("q", &[]).await.unwrap();
+        assert_eq!(rows.len(), 1);
+        // 队列耗尽 → `_ => Ok(vec![])`，不 panic
+        assert!(client.ctrl_query("q", &[]).await.unwrap().is_empty());
+    }
+
+    #[tokio::test]
+    async fn empty_and_error_results() {
+        let client = MockControlClient::new(MockControlClient::empty());
+        assert!(client.ctrl_query("q", &[]).await.unwrap().is_empty());
+        let client = MockControlClient::new(Arc::new(Mutex::new(vec![MockQueryResult::Error])));
+        assert_eq!(
+            err_of(client.ctrl_query("q", &[]).await.map(|_| ())),
+            "mock query error"
+        );
+    }
+
+    #[tokio::test]
+    async fn query_one_row_error_or_missing() {
+        let client = MockControlClient::new(MockControlClient::single_row(vec![(
+            "name",
+            serde_json::json!("x"),
+        )]));
+        let row = client.ctrl_query_one("q", &[]).await.unwrap();
+        assert_eq!(row.get_str("name"), "x");
+
+        let client = MockControlClient::new(Arc::new(Mutex::new(vec![MockQueryResult::Error])));
+        assert_eq!(
+            err_of(client.ctrl_query_one("q", &[]).await.map(|_| ())),
+            "mock query error"
+        );
+
+        // Empty / 耗尽 → "mock: no result"
+        let client = MockControlClient::new(MockControlClient::empty());
+        assert_eq!(
+            err_of(client.ctrl_query_one("q", &[]).await.map(|_| ())),
+            "mock: no result"
+        );
+        assert_eq!(
+            err_of(client.ctrl_query_one("q", &[]).await.map(|_| ())),
+            "mock: no result"
+        );
+    }
+
+    #[tokio::test]
+    async fn query_opt_all_branches() {
+        // Row → Some
+        let client = MockControlClient::new(MockControlClient::single_row(vec![(
+            "id",
+            serde_json::json!(3),
+        )]));
+        assert_eq!(
+            client
+                .ctrl_query_opt("q", &[])
+                .await
+                .unwrap()
+                .unwrap()
+                .get_i64("id"),
+            3
+        );
+        // 单行 Rows → Some（下游常用 rows(...) 配 query_opt）
+        let client = MockControlClient::new(MockControlClient::rows(vec![vec![(
+            "id",
+            serde_json::json!(4),
+        )]]));
+        assert_eq!(
+            client
+                .ctrl_query_opt("q", &[])
+                .await
+                .unwrap()
+                .unwrap()
+                .get_i64("id"),
+            4
+        );
+        // Empty → None；耗尽 → None；多行 Rows → None（query_opt 语义：不取多行）
+        let client = MockControlClient::new(MockControlClient::empty());
+        assert!(client.ctrl_query_opt("q", &[]).await.unwrap().is_none());
+        let client = MockControlClient::new(Arc::new(Mutex::new(vec![])));
+        assert!(client.ctrl_query_opt("q", &[]).await.unwrap().is_none());
+        let client = MockControlClient::new(MockControlClient::rows(vec![
+            vec![("id", serde_json::json!(1))],
+            vec![("id", serde_json::json!(2))],
+        ]));
+        assert!(client.ctrl_query_opt("q", &[]).await.unwrap().is_none());
+        // Error → Err
+        let client = MockControlClient::new(Arc::new(Mutex::new(vec![MockQueryResult::Error])));
+        assert_eq!(
+            err_of(client.ctrl_query_opt("q", &[]).await.map(|_| ())),
+            "mock query error"
+        );
+    }
+
+    #[tokio::test]
+    async fn execute_returns_count_column_or_default_one() {
+        let client = MockControlClient::new(MockControlClient::count(42));
+        assert_eq!(client.ctrl_execute("UPDATE 1", &[]).await.unwrap(), 42);
+        // 无 count 列 / Empty / 耗尽 → 默认 1（「至少影响 1 行」的乐观回退）
+        let client = MockControlClient::new(MockControlClient::single_row(vec![(
+            "id",
+            serde_json::json!(1),
+        )]));
+        assert_eq!(client.ctrl_execute("UPDATE 1", &[]).await.unwrap(), 1);
+        let client = MockControlClient::new(MockControlClient::empty());
+        assert_eq!(client.ctrl_execute("UPDATE 1", &[]).await.unwrap(), 1);
+        let client = MockControlClient::new(Arc::new(Mutex::new(vec![])));
+        assert_eq!(client.ctrl_execute("UPDATE 1", &[]).await.unwrap(), 1);
+    }
+
+    #[tokio::test]
+    async fn pool_acquire_hands_out_the_same_client() {
+        let pool = mock_control_pool(MockControlClient::count(5));
+        let client = pool.acquire().await.unwrap();
+        assert_eq!(client.ctrl_execute("UPDATE 1", &[]).await.unwrap(), 5);
+        // 同一 pool 反复 acquire 拿到同一 client（结果队列共享，弹栈语义才成立）
+        let client2 = pool.acquire().await.unwrap();
+        assert_eq!(client2.ctrl_execute("UPDATE 1", &[]).await.unwrap(), 1);
+    }
+}

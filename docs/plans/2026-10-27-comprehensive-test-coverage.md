@@ -435,7 +435,7 @@ node --import tsx --test --experimental-test-coverage test/*.test.ts
 | `laiyipao/admin` | 90.32 / 83.28（行/分支，2026-10-28） | 89 / 82（`vitest.config.ts` ratchet，各留 ~1pt 抖动余量） |
 | `laiyipao/miniapp` | 95.38 / 90.29（行/分支，2026-10-28） | 94 / 88（同上） |
 | `oa4rust/frontend` | 97.39 / 84.68（2026-10-28） | ~~保持 per-file 现有 floor，全局加 97 / 84~~ → **已落地（2026-10-28）**：`oa4rust/vitest.config.ts` 顶层 thresholds `statements 97 / branches 84`，`perFile` 收为 false（glob 键仍按 per-file 生效，该开关只管顶层数字阈值）；双向自证：97 通过（exit 0）、临时抬 99 红（`does not meet global threshold`，exit 1）。余量 0.16/0.68 是有意为之的紧棘轮 |
-| `oa4rust/backend(shared)` | 81.63（行，含测试代码） | B2 目标 75 已达成；下一轮 floor 80，之后每轮 +5 |
+| `oa4rust/backend(shared)` | **84.42%**（行，2026-10-29 覆盖率收口轮； regions 80.22% / functions 85.31%；容器内 `cargo llvm-cov -p shared --lib`，DATABASE_URL 指向全新库使真库用例实跑） | B2 目标 75 已达成；**floor 80 已达成（2026-10-29）**；下一轮 85，之后每轮 +5。注意：CI 无 llvm-cov job，floor 目前靠台账棘轮，接入 CI 是独立改动。测试基建三件（lib.rs re-export 60 / mock_client 107 / testing 215）的未覆盖行主要被**下游 crate** 消费，--lib 口径下有结构性上限 |
 | `laiyipao/server` | 85.8（语句，合并 profile） | **85**（已接入 CI；基线见 `docs/laiyipao/audits/coverage-2026-10-28.md`） |
 
 ---

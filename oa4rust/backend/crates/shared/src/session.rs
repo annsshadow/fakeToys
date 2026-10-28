@@ -23,7 +23,7 @@ use crate::error::AppError;
 
 type HmacSha256 = Hmac<Sha256>;
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Session {
     pub token: String,
     pub person_unique: String,
@@ -220,19 +220,15 @@ impl SessionManager {
                 } else {
                     token.to_string()
                 };
-                let created_at_str = now.format("%Y-%m-%d %H:%M:%S").to_string();
-                let expires_at_str = expires_at.format("%Y-%m-%d %H:%M:%S").to_string();
+                // 列类型是 TIMESTAMP（迁移 017/schema 实测）：必须绑 NaiveDateTime。
+                // 此前按 `%Y-%m-%d %H:%M:%S` 字符串绑定，tokio-postgres 对 timestamp
+                // 列报 WrongType，而 `let _ =` 把错误吞掉——会话从未真正写进 PG。
                 let _ = client
                     .execute(
                         "INSERT INTO auth_session (token, person_id, expires_at, created_at) \
                      VALUES ($1, $2, $3, $4) \
                      ON CONFLICT (token) DO UPDATE SET expires_at = $3",
-                        &[
-                            &signed_token,
-                            &session.person_unique,
-                            &expires_at_str,
-                            &created_at_str,
-                        ],
+                        &[&signed_token, &session.person_unique, expires_at, now],
                     )
                     .await;
                 // 顺带清理已过期会话行（每次登录一次的廉价簿记，失败仅延迟清理不破坏
@@ -260,6 +256,8 @@ impl SessionManager {
             Err(_) => return false,
         };
 
+        // threshold_time 列是 TIMESTAMP（迁移 017）：此前按 String 读，
+        // 行存在时 `Row::get` 直接 panic（安全控制反而变成 500 源）。
         let threshold: Option<NaiveDateTime> = match client
             .query_opt(
                 "SELECT threshold_time FROM auth_token_threshold WHERE person_unique = $1",
@@ -267,10 +265,7 @@ impl SessionManager {
             )
             .await
         {
-            Ok(Some(row)) => {
-                let threshold_str: String = row.get("threshold_time");
-                NaiveDateTime::parse_from_str(&threshold_str, "%Y-%m-%d %H:%M:%S").ok()
-            }
+            Ok(Some(row)) => Some(row.get("threshold_time")),
             _ => return false,
         };
 
@@ -314,14 +309,10 @@ impl SessionManager {
                         {
                             let raw_token =
                                 self.verify_and_extract(&row.get::<_, String>("token"))?;
-                            let created_at_str: String = row.get("created_at");
-                            let expires_at_str: String = row.get("expires_at");
-                            let created_at =
-                                NaiveDateTime::parse_from_str(&created_at_str, "%Y-%m-%d %H:%M:%S")
-                                    .ok()?;
-                            let expires_at =
-                                NaiveDateTime::parse_from_str(&expires_at_str, "%Y-%m-%d %H:%M:%S")
-                                    .ok()?;
+                            // created_at/expires_at 列是 TIMESTAMP：按 NaiveDateTime 读。
+                            // 此前按 String 读会在有行时 panic（同 threshold_time 问题）。
+                            let created_at: NaiveDateTime = row.get("created_at");
+                            let expires_at: NaiveDateTime = row.get("expires_at");
                             let session = Session {
                                 token: raw_token,
                                 person_unique: row.get("person_id"),
@@ -403,6 +394,7 @@ impl SessionManager {
             Err(_) => return,
         };
 
+        // threshold_time 列是 TIMESTAMP（迁移 017）：此前按 String 读会在有行时 panic。
         let threshold: NaiveDateTime = match client
             .query_opt(
                 "SELECT threshold_time FROM auth_token_threshold WHERE person_unique = $1",
@@ -410,14 +402,7 @@ impl SessionManager {
             )
             .await
         {
-            Ok(Some(row)) => {
-                let threshold_str: String = row.get("threshold_time");
-
-                match NaiveDateTime::parse_from_str(&threshold_str, "%Y-%m-%d %H:%M:%S") {
-                    Ok(t) => t,
-                    Err(_) => return,
-                }
-            }
+            Ok(Some(row)) => row.get("threshold_time"),
             _ => return,
         };
 
@@ -703,5 +688,330 @@ mod tests {
         assert_eq!(count(&a).await, 1);
         assert_eq!(count(&b).await, 0);
         assert!(b.validate_session("t").await.is_none());
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
+    // PG 分支（真库）。无库时显式 skip（沿用 response.rs 的守卫惯例），
+    // 2026-10-29 覆盖率轮补测：此前 62% 的缺口几乎全在这里——持久化、
+    // 阈值拦截、库回退重建、删行、按人批量删、阈值注销，这些路径
+    // 直接决定「重启后会话还在吗 / 踢人到底踢没踢掉」。
+    // ──────────────────────────────────────────────────────────────────────
+
+    /// 固定 HMAC 秘钥的带池管理器：签名格式可预测，测试才能直查 auth_session。
+    /// 字段是 `pub`，测试内直接赋值即可（不走 env，避免测试间串扰）。
+    fn db_manager(ttl_seconds: u64, secret: Option<&str>) -> SessionManager {
+        let mut manager = SessionManager::with_pool_and_config(
+            crate::testing::test_pool(),
+            AuthConfig {
+                public_origin: "http://localhost:3000".to_string(),
+                cookie_secure: false,
+                session_ttl_seconds: ttl_seconds,
+            },
+        );
+        manager.hmac_secret = secret.map(|s| s.to_string());
+        manager
+    }
+
+    /// 手动拼装、**不 spawn 后台 sweeper/threshold scanner** 的带池管理器。
+    /// 阈值类用例必须用它：扫描器首 tick 立即执行，会在断言窗口内并发清内存，
+    /// 让「count==1」这类断言变成竞态。
+    fn pool_manager(ttl_seconds: u64, secret: Option<&str>) -> SessionManager {
+        SessionManager {
+            sessions: Arc::new(RwLock::new(std::collections::HashMap::new())),
+            pool: Some(crate::testing::test_pool()),
+            hmac_secret: secret.map(|s| s.to_string()),
+            auth_config: AuthConfig {
+                public_origin: "http://localhost:3000".to_string(),
+                cookie_secure: false,
+                session_ttl_seconds: ttl_seconds,
+            },
+        }
+    }
+
+    async fn db() -> deadpool_postgres::Object {
+        crate::testing::test_pool().get().await.unwrap()
+    }
+
+    async fn cleanup(prefix: &str) {
+        let client = db().await;
+        let _ = client
+            .execute(
+                "DELETE FROM auth_session WHERE person_id LIKE $1 || '%'",
+                &[&prefix.to_string()],
+            )
+            .await;
+        let _ = client
+            .execute(
+                "DELETE FROM auth_token_threshold WHERE person_unique LIKE $1 || '%'",
+                &[&prefix.to_string()],
+            )
+            .await;
+    }
+
+    async fn row_count(token: &str) -> i64 {
+        let client = db().await;
+        client
+            .query_one(
+                "SELECT COUNT(*) FROM auth_session WHERE token = $1",
+                &[&token.to_string()],
+            )
+            .await
+            .unwrap()
+            .get::<_, i64>(0)
+    }
+
+    #[tokio::test]
+    async fn pg_create_session_persists_signed_row() {
+        if !crate::testing::is_db_available().await {
+            eprintln!("SKIP: no database available (set DATABASE_URL)");
+            return;
+        }
+        cleanup("cov-s1").await;
+        let manager = db_manager(600, Some("cov-hmac-secret"));
+        let created = manager
+            .create_session("cov-s1".to_string(), "cov-tok-1".to_string())
+            .await
+            .unwrap();
+
+        // 签名格式：token.<base64url(hmac)>；持久化行用的是签名后的完整串
+        let signed = manager.sign_token("cov-tok-1");
+        assert_ne!(signed, "cov-tok-1", "有秘钥时持久化 token 必须带签名");
+        assert_eq!(row_count(&signed).await, 1);
+
+        let client = db().await;
+        let row = client
+            .query_one(
+                "SELECT person_id, expires_at::text, date_trunc('second', created_at)::text AS created_sec \
+                 FROM auth_session WHERE token = $1",
+                &[&signed],
+            )
+            .await
+            .unwrap();
+        assert_eq!(row.get::<_, String>("person_id"), "cov-s1");
+        // created_at 以 NaiveDateTime 绑定（微秒精度入库），按秒截断后与内存值对齐
+        assert_eq!(
+            row.get::<_, String>("created_sec"),
+            created.created_at.format("%Y-%m-%d %H:%M:%S").to_string()
+        );
+        cleanup("cov-s1").await;
+        assert_eq!(row_count(&signed).await, 0, "清理必须真的删掉行");
+    }
+
+    #[tokio::test]
+    async fn pg_persist_without_secret_writes_raw_token() {
+        if !crate::testing::is_db_available().await {
+            eprintln!("SKIP: no database available (set DATABASE_URL)");
+            return;
+        }
+        cleanup("cov-s9").await;
+        let manager = db_manager(600, None);
+        manager
+            .create_session("cov-s9".to_string(), "cov-tok-9".to_string())
+            .await
+            .unwrap();
+        // 无秘钥时持久化的就是裸 token（历史上未配 SESSION_HMAC_SECRET 的部署形态）
+        assert_eq!(row_count("cov-tok-9").await, 1);
+        cleanup("cov-s9").await;
+    }
+
+    #[tokio::test]
+    async fn pg_threshold_future_blocks_login_and_past_allows() {
+        if !crate::testing::is_db_available().await {
+            eprintln!("SKIP: no database available (set DATABASE_URL)");
+            return;
+        }
+        cleanup("cov-t1").await;
+        let manager = pool_manager(600, None);
+
+        let client = db().await;
+        let future = (Utc::now() + Duration::hours(1)).naive_utc();
+        client
+            .execute(
+                "INSERT INTO auth_token_threshold (person_unique, threshold_time) VALUES ($1, $2)",
+                &[&"cov-t1".to_string(), &future],
+            )
+            .await
+            .unwrap();
+
+        let err = manager
+            .create_session("cov-t1".to_string(), "cov-tok-t".to_string())
+            .await
+            .unwrap_err();
+        assert!(
+            err.to_string().contains("too many active sessions"),
+            "阈值在未来的登录必须被拦截，实际：{err}"
+        );
+        assert_eq!(
+            row_count("cov-tok-t").await,
+            0,
+            "被拦截的登录不得持久化会话"
+        );
+
+        // 阈值过掉之后（登出/改密场景：把阈值拨到过去），同一人重新登录必须放行
+        let past = (Utc::now() - Duration::hours(1)).naive_utc();
+        client
+            .execute(
+                "UPDATE auth_token_threshold SET threshold_time = $2 WHERE person_unique = $1",
+                &[&"cov-t1".to_string(), &past],
+            )
+            .await
+            .unwrap();
+        manager
+            .create_session("cov-t1".to_string(), "cov-tok-t2".to_string())
+            .await
+            .unwrap();
+        assert_eq!(row_count("cov-tok-t2").await, 1);
+        cleanup("cov-t1").await;
+    }
+
+    #[tokio::test]
+    async fn pg_validate_session_falls_back_to_db_and_rehydrates() {
+        if !crate::testing::is_db_available().await {
+            eprintln!("SKIP: no database available (set DATABASE_URL)");
+            return;
+        }
+        cleanup("cov-v1").await;
+        let manager_a = db_manager(600, Some("cov-hmac-secret"));
+        manager_a
+            .create_session("cov-v1".to_string(), "cov-tok-2".to_string())
+            .await
+            .unwrap();
+
+        // 新进程（内存空、同一库同一秘钥）——重启后凭 token 恢复会话
+        let manager_b = db_manager(600, Some("cov-hmac-secret"));
+        assert_eq!(count(&manager_b).await, 0);
+        let restored = manager_b.validate_session("cov-tok-2").await.unwrap();
+        assert_eq!(restored.person_unique, "cov-v1");
+        assert_eq!(restored.token, "cov-tok-2", "恢复出来的是裸 token");
+        assert_eq!(count(&manager_b).await, 1, "库回退命中后必须回填内存缓存");
+
+        // 秘钥不同 → 签名对不上 → 库里有行也查不到（跨部署秘钥轮换的安全性）
+        let manager_c = db_manager(600, Some("other-secret"));
+        assert!(manager_c.validate_session("cov-tok-2").await.is_none());
+        cleanup("cov-v1").await;
+    }
+
+    #[tokio::test]
+    async fn pg_validate_session_ignores_expired_db_row() {
+        if !crate::testing::is_db_available().await {
+            eprintln!("SKIP: no database available (set DATABASE_URL)");
+            return;
+        }
+        cleanup("cov-v2").await;
+        let manager = db_manager(600, None);
+        let signed = manager.sign_token("cov-tok-3");
+        let client = db().await;
+        let past = (Utc::now() - Duration::hours(1)).naive_utc();
+        client
+            .execute(
+                "INSERT INTO auth_session (token, person_id, expires_at, created_at) \
+                 VALUES ($1, $2, $3, $3)",
+                &[&signed, &"cov-v2".to_string(), &past],
+            )
+            .await
+            .unwrap();
+
+        // 库里有行但已过期：SELECT 的 expires_at > NOW() 过滤掉，不得恢复
+        assert!(manager.validate_session("cov-tok-3").await.is_none());
+        cleanup("cov-v2").await;
+    }
+
+    #[tokio::test]
+    async fn pg_remove_session_deletes_db_row() {
+        if !crate::testing::is_db_available().await {
+            eprintln!("SKIP: no database available (set DATABASE_URL)");
+            return;
+        }
+        cleanup("cov-r1").await;
+        let manager = db_manager(600, Some("cov-hmac-secret"));
+        manager
+            .create_session("cov-r1".to_string(), "cov-tok-4".to_string())
+            .await
+            .unwrap();
+        assert_eq!(row_count(&manager.sign_token("cov-tok-4")).await, 1);
+
+        manager.remove_session("cov-tok-4").await;
+        assert_eq!(
+            row_count(&manager.sign_token("cov-tok-4")).await,
+            0,
+            "登出必须同时删掉 PG 行，否则重启后凭旧 token 复活"
+        );
+        cleanup("cov-r1").await;
+    }
+
+    #[tokio::test]
+    async fn pg_remove_sessions_by_person_deletes_only_that_persons_rows() {
+        if !crate::testing::is_db_available().await {
+            eprintln!("SKIP: no database available (set DATABASE_URL)");
+            return;
+        }
+        cleanup("cov-m1").await;
+        cleanup("cov-m2").await;
+        let manager = db_manager(600, Some("cov-hmac-secret"));
+        manager
+            .create_session("cov-m1".to_string(), "cov-tok-5".to_string())
+            .await
+            .unwrap();
+        manager
+            .create_session("cov-m2".to_string(), "cov-tok-6".to_string())
+            .await
+            .unwrap();
+
+        manager.remove_sessions_by_person("cov-m1").await;
+        assert_eq!(row_count(&manager.sign_token("cov-tok-5")).await, 0);
+        assert_eq!(
+            row_count(&manager.sign_token("cov-tok-6")).await,
+            1,
+            "删人只删该人的会话，不得波及其它人"
+        );
+        cleanup("cov-m1").await;
+        cleanup("cov-m2").await;
+    }
+
+    #[tokio::test]
+    async fn pg_broadcast_logout_clears_memory_sessions_before_threshold() {
+        if !crate::testing::is_db_available().await {
+            eprintln!("SKIP: no database available (set DATABASE_URL)");
+            return;
+        }
+        cleanup("cov-b1").await;
+        let manager = pool_manager(600, None);
+        let client = db().await;
+        // 真实时序（safe_logout）：先有会话，登出时才写入阈值 = 登出时刻。
+        // 会话 created_at = now < threshold = now+1s → 广播后必须被清。
+        manager
+            .create_session("cov-b1".to_string(), "cov-tok-7".to_string())
+            .await
+            .unwrap();
+        assert_eq!(count(&manager).await, 1);
+
+        let threshold = (Utc::now() + Duration::seconds(1)).naive_utc();
+        client
+            .execute(
+                "INSERT INTO auth_token_threshold (person_unique, threshold_time) VALUES ($1, $2)",
+                &[&"cov-b1".to_string(), &threshold],
+            )
+            .await
+            .unwrap();
+
+        manager.broadcast_logout("cov-b1").await;
+        assert_eq!(
+            count(&manager).await,
+            0,
+            "阈值注销必须清掉本进程内早于阈值的会话"
+        );
+
+        // 无阈值行的人：直接返回，不得 panic
+        manager.broadcast_logout("cov-b1-nobody").await;
+        // 阈值行被删（query_opt 返回 None）：直接返回，不得 panic
+        client
+            .execute(
+                "DELETE FROM auth_token_threshold WHERE person_unique = $1",
+                &[&"cov-b1".to_string()],
+            )
+            .await
+            .unwrap();
+        manager.broadcast_logout("cov-b1").await;
+        cleanup("cov-b1").await;
     }
 }
