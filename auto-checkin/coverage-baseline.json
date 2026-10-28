@@ -1,5 +1,5 @@
 {
-  "comment": "auto-checkin 覆盖率棘轮（2026-10-29 各档地板抬至实测现量：justwoker 100 / vyceai 99.51 / agentrouter 94.44 / newapi-client 91.69 / runner 88.41 / scheduler 75 / server 92.59 / lock 77.55 / login 36.76）。键=src/ 下的文件名，值=行覆盖地板（%）；测试集确定性高，地板钉现量——任何回退直接红。login.ts 的 main CLI 体为进程绑定结构性不可测。",
+  "comment": "auto-checkin 覆盖率棘轮（2026-10-29 各档地板抬至实测现量：justwoker 100 / vyceai 99.51 / agentrouter 94.44 / newapi-client 91.69 / runner 88.41 / scheduler 75 / server 92.59 / lock 89.86 / login 36.76）。键=src/ 下的文件名，值=行覆盖地板（%）；测试集确定性高，地板钉现量——任何回退直接红。login.ts 的 main CLI 体为进程绑定结构性不可测。",
   "justwoker.ts": 100,
   "vyceai.ts": 99.51,
   "agentrouter.ts": 94.44,
@@ -7,6 +7,6 @@
   "runner.ts": 88.41,
   "scheduler.ts": 75.0,
   "server.ts": 92.59,
-  "lock.ts": 77.55,
+  "lock.ts": 89.86,
   "login.ts": 36.76
 }

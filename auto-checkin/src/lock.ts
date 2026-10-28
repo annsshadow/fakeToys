@@ -101,7 +101,8 @@ function releaseNamedLock(name: LockName): void {
   }
 }
 
-function releaseAllLocks(): void {
+/** 释放本进程持有的全部锁；process exit 处理器调用，测试也直接驱动。 */
+export function releaseAllLocks(): void {
   releaseNamedLock("daemon");
   releaseNamedLock("run");
 }

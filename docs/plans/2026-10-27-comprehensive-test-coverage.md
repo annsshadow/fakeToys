@@ -335,7 +335,9 @@ runner 的 skip/异常收敛/锁守卫（`runner-branches.test.ts` 用 PLAYWRIGH
 => t.stop())` 清理，避免挂住测试进程）、server.ts 71.60→**92.59**（/api/trend 的 days 夹取
 [7,90]、/api/run 与 /api/run/:siteId 的 404/200 与 running 守卫 409；单站 409 不做严格断言——
 单站 runSite 毫秒级完成，第二个请求赶不上 running 窗口，守卫语义已由全部站点路由的 409 覆盖）。
-93 tests 全绿；coverage-baseline.json 加 scheduler.ts=74 / server.ts=92 两档。 **已知 flake（2026-10-29 登记）**：oa4rust CI 的 `query_service_processing` u2_contract 偶发「duplicate key auth_person_unique_id_key (u-r418-qsp-admin)」（其夹具虽有 upsert + 残留清理，并行测试仍可竞争唯一索引，dispatch 40770856346 首跑红、重跑绿）；与本会话改动无关（共享二进制串行执行、fixture id 前缀无交集），根修方向是把该夹具的 DELETE 扩为 `unique_id = $1 OR id = $1`。 **同日再补（棘轮扩容评估）**：`lock.ts`（77.55%，被 runner 测试导入故在报表内）纳入棘轮地板 77；`login.ts` 缓期——无任何测试导入它，覆盖率报表缺席（baseline 条目会被「文件不在报表」挡下），纳入前提是先为其建 fake-page 层交互式登录流测试。**已知 flaky 一次**：冷启动时 run-lock 陈旧文件导致 runner-branches
+93 tests 全绿；coverage-baseline.json 加 scheduler.ts=74 / server.ts=92 两档。 **已知 flake（2026-10-29 登记）**：oa4rust CI 的 `query_service_processing` u2_contract 偶发「duplicate key auth_person_unique_id_key (u-r418-qsp-admin)」（其夹具虽有 upsert + 残留清理，并行测试仍可竞争唯一索引，dispatch 40770856346 首跑红、重跑绿）；与本会话改动无关（共享二进制串行执行、fixture id 前缀无交集），根修方向是把该夹具的 DELETE 扩为 `unique_id = $1 OR id = $1`。 **同日再补（棘轮扩容评估）**：`lock.ts`（77.55→**89.86**：外部锁模拟（proper-lockfile 直接占锁 + owner 文件）覆盖 ELOCKED 臂、
+      readOwner 合法/损坏两臂、releaseAllLocks 双锁释放；剩余 41-43/63-65/97-105 依赖 proper-lockfile
+      内部的失效检测与释放抛错——实测释放已删锁目录不抛错，属结构性不可测）纳入棘轮地板 89.86；`login.ts` 缓期——无任何测试导入它，覆盖率报表缺席（baseline 条目会被「文件不在报表」挡下），纳入前提是先为其建 fake-page 层交互式登录流测试。**已知 flaky 一次**：冷启动时 run-lock 陈旧文件导致 runner-branches
 一度红，重跑自愈；若 CI 复现，在测试里对锁获取加重试。`cool/`（单文件 Java `EncryptUtil`）**不接线**：仓库里没有 Maven/Gradle，编译脚本依赖外部 `commons-codec` jar；为一个工具类搭测试脚手架的成本高于收益，登记为 G3。
 
 #### B8 —— 变异抽样（3 个变异体，抓出 1 个真问题）
