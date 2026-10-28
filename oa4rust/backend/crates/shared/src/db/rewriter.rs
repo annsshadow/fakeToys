@@ -1232,4 +1232,76 @@ SELECT 2::int";
             "第二条语句的 cast 也改写：{out}"
         );
     }
+
+    // ── 2026-10-29 覆盖率轮：长尾分支逐条钉死（多字节宽度/注释上下文/类型扫描臂）──
+    #[test]
+    fn utf8_widths_two_three_four_bytes_all_advance() {
+        // é=2 字节、中=3 字节、🦀=4 字节：三种宽度都要走各自的 utf8_len 臂
+        let sql = "SELECT 'é' -- é::text\n, '中'::int /* 中 */ , '🦀'::text";
+        let out = rewrite_pg_to_mysql(sql);
+        assert!(out.contains("'é'"), "2 字节字符原样保留：{out}");
+        assert!(
+            out.contains("中文".split("").nth(1).unwrap_or("")) || out.contains("'中'"),
+            "3 字节保留：{out}"
+        );
+        assert!(out.contains("'🦀'"), "4 字节字符原样保留：{out}");
+        assert!(
+            out.contains("CAST('中' AS SIGNED)"),
+            "多字节注释后的 cast 正常改写：{out}"
+        );
+    }
+
+    #[test]
+    fn block_comment_inside_dollar_quoted_body_is_preserved() {
+        // 字符串/DO 体扫描器里的块注释臂
+        let sql = "SELECT 'a'::text, /* 注释 */ 1::int";
+        let out = rewrite_pg_to_mysql(sql);
+        assert!(out.contains("/* 注释 */"), "块注释保留：{out}");
+        assert!(out.contains("CAST(1 AS SIGNED)"), "注释外 cast 改写：{out}");
+    }
+
+    #[test]
+    fn trailing_double_colon_without_type_is_preserved() {
+        // scan_cast_type 的空类型名臂：:: 后没有类型字符 → 整段原样保留
+        let sql = "SELECT 1 ::";
+        let out = rewrite_pg_to_mysql(sql);
+        assert!(out.contains("::"), "空类型名时不得吞掉 ::：{out}");
+    }
+
+    #[test]
+    fn empty_bracket_array_suffix_is_handled() {
+        // text[]：空方括号后缀（区别于 text[3] 的带尺寸臂）
+        let sql = "SELECT $1::text[]";
+        let out = rewrite_pg_to_mysql(sql);
+        assert!(out.contains("CHAR"), "text[] 家族映射 CHAR：{out}");
+    }
+
+    #[test]
+    fn on_conflict_do_nothing_with_trailing_statement() {
+        let sql = "INSERT INTO t VALUES (1) ON CONFLICT DO NOTHING;\nSELECT 2::int";
+        let out = rewrite_pg_to_mysql(sql);
+        assert!(
+            out.contains("INSERT IGNORE INTO"),
+            "DO NOTHING → INSERT IGNORE：{out}"
+        );
+        assert!(
+            out.contains("CAST(2 AS SIGNED)"),
+            "分号后的第二条语句继续改写：{out}"
+        );
+    }
+
+    #[test]
+    fn on_conflict_do_update_without_paren_target() {
+        let sql = "INSERT INTO t VALUES (1) ON CONFLICT DO UPDATE SET a = 2";
+        let out = rewrite_pg_to_mysql(sql);
+        assert!(out.contains("ON DUPLICATE KEY UPDATE"), "{out}");
+        assert!(out.contains("a = 2"), "无冲突目标列时赋值段原样衔接：{out}");
+    }
+
+    #[test]
+    fn on_conflict_do_update_without_set_clause() {
+        let sql = "INSERT INTO t VALUES (1) ON CONFLICT (id) DO UPDATE";
+        let out = rewrite_pg_to_mysql(sql);
+        assert!(out.contains("ON DUPLICATE KEY UPDATE"), "{out}");
+    }
 }

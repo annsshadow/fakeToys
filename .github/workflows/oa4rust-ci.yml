@@ -621,7 +621,7 @@ jobs:
 
   # shared 行覆盖棘轮（2026-10-29 落地，workflow_dispatch 手动触发，见文件头说明）。
   # 台账：docs/plans/2026-10-27-comprehensive-test-coverage.md 的 shared 行
-  # （2026-10-29 实测 92.02%（容器）/91.93%（本 job，工具链插桩差 ~0.1pt），地板 92/91.5；本地复跑方式：oa4rust-cov 容器内
+  # （2026-10-29 实测 93.28%（容器）/93.1% 上下（本 job，工具链插桩差 ~0.1pt），地板 93/92.5；本地复跑方式：oa4rust-cov 容器内
   # cargo llvm-cov -p shared --lib --summary-only）。
   shared-coverage:
     if: github.event_name == 'workflow_dispatch'
@@ -667,7 +667,7 @@ jobs:
         env:
           DATABASE_URL: postgres://o2server:password@localhost:5432/oa4rust
           DATABASE_DIALECT: postgres
-      - name: Shared line coverage ratchet (>= 91.5, 容器口径 92)
+      - name: Shared line coverage ratchet (>= 92.5, 容器口径 93.28)
         run: |
           set -euo pipefail
           DATABASE_URL=postgres://o2server:password@localhost:5432/oa4rust \
@@ -676,6 +676,6 @@ jobs:
           echo "shared 行覆盖：${LINE_PCT}%"
           # 台账地板 92 以 oa4rust-cov 容器（cargo 1.99.1）实测为准；本 job 用 1.98.1，
           # 插桩行数有 ~0.1pt 工具链差异（2026-10-29 双实测：容器 92.02 / 本 job 91.93），
-          # 故 CI 断言放宽到 91.5——低于它说明覆盖真回退了。
+          # 故 CI 断言留 0.7pt 工具链余量（92.5）——低于它说明覆盖真回退了。
           # 与台账地板对撞；抬高地板前先看台账的「下一轮」约定（92 → 94 → 上限 95.6）。
-          awk -v pct="${LINE_PCT}" 'BEGIN { if (pct+0 < 91.5) { print "::error::shared 行覆盖 " pct "% 低于地板 91.5%（容器口径 92）"; exit 1 } }'
+          awk -v pct="${LINE_PCT}" 'BEGIN { if (pct+0 < 92.5) { print "::error::shared 行覆盖 " pct "% 低于地板 92.5%（容器口径 93.28）"; exit 1 } }'

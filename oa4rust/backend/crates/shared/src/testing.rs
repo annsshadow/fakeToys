@@ -273,3 +273,119 @@ pub fn failing_pool() -> Pool {
     let mgr = deadpool_postgres::Manager::new(cfg, deadpool_postgres::tokio_postgres::NoTls);
     Pool::builder(mgr).max_size(1).build().unwrap()
 }
+#[cfg(test)]
+mod e2e_chain_tests {
+    use super::*;
+    use crate::middleware::security::SecurityState;
+
+    // ── 2026-10-29 覆盖率轮：test_app_with/send 驱动真实 auth 中间件链 ──
+    // 全内存（SessionManager::new 无池、失败池仅占位）：确定性、无 DB 依赖。
+    #[tokio::test]
+    async fn test_app_drives_the_auth_chain_end_to_end() {
+        let state = SecurityState {
+            session_manager: crate::session::SessionManager::new(),
+            rate_limiter: crate::rate_limit::RateLimiter::new(),
+            pool: crate::testing::failing_pool(),
+        };
+        // 在 state 的会话管理器里建一个真实内存会话（create_session 内部走
+        // check_token_threshold/persist 的无池降级路径——一并被覆盖）
+        state
+            .session_manager
+            .create_session("cov-e2e".to_string(), "cov-e2e-tok".to_string())
+            .await
+            .unwrap();
+        let app = test_app_with(state, crate::testing::failing_pool());
+        // test_session 助手（固定 token/person）此前从未被本 crate 调用
+        let s = crate::testing::test_session("cov-e2e");
+        assert_eq!(s.token, "test-token");
+
+        // ① /health：豁免 ∧ 注册表 Public → 匿名放行
+        assert_eq!(
+            send(&app, axum::http::Method::GET, "/health", None, None).await,
+            axum::http::StatusCode::OK
+        );
+        // ② 受保护路由无凭据 → 401（auth_middleware 的 extract 失败臂）
+        assert_eq!(
+            send(&app, axum::http::Method::GET, "/api/unit/list", None, None).await,
+            axum::http::StatusCode::UNAUTHORIZED
+        );
+        // ③ 空白 Bearer → 401（空 token 臂）
+        assert_eq!(
+            send(
+                &app,
+                axum::http::Method::GET,
+                "/api/unit/list",
+                Some(""),
+                None
+            )
+            .await,
+            axum::http::StatusCode::UNAUTHORIZED
+        );
+        // ④ 伪造 token → 401（validate_session 未命中臂）
+        assert_eq!(
+            send(
+                &app,
+                axum::http::Method::GET,
+                "/api/unit/list",
+                Some("forged"),
+                None
+            )
+            .await,
+            axum::http::StatusCode::UNAUTHORIZED
+        );
+        // ⑤ 真实会话 → 认证通过、注册表 Public 放行 → 200（含 xff 头注入分支）
+        assert_eq!(
+            send(
+                &app,
+                axum::http::Method::GET,
+                "/api/unit/list",
+                Some("cov-e2e-tok"),
+                Some("203.0.113.9")
+            )
+            .await,
+            axum::http::StatusCode::OK
+        );
+        // ⑥ 登录路由：豁免 ∧ Public → 匿名 200
+        assert_eq!(
+            send(
+                &app,
+                axum::http::Method::POST,
+                "/api/authentication/login",
+                None,
+                None
+            )
+            .await,
+            axum::http::StatusCode::OK
+        );
+    }
+
+    #[tokio::test]
+    async fn login_route_is_rate_limited_per_configured_threshold() {
+        // 显式设阈值：第 4 次起必须 429（环境变量每次调用都读，测试内设置即可生效）
+        std::env::set_var("OA4RUST_AUTH_RATE_LIMIT", "3");
+        let state = SecurityState {
+            session_manager: crate::session::SessionManager::new(),
+            rate_limiter: crate::rate_limit::RateLimiter::new(),
+            pool: crate::testing::failing_pool(),
+        };
+        let app = test_app_with(state, crate::testing::failing_pool());
+        let mut saw_429 = false;
+        for _ in 0..8 {
+            let status = send(
+                &app,
+                axum::http::Method::POST,
+                "/api/authentication/login",
+                None,
+                None,
+            )
+            .await;
+            if status == axum::http::StatusCode::TOO_MANY_REQUESTS {
+                saw_429 = true;
+                break;
+            }
+        }
+        std::env::remove_var("OA4RUST_AUTH_RATE_LIMIT");
+        assert!(saw_429, "超过阈值后登录必须 429");
+        std::env::remove_var("OA4RUST_AUTH_RATE_LIMIT");
+    }
+}
