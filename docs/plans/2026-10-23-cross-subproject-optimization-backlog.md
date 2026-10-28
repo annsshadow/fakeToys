@@ -309,3 +309,9 @@ stb_truetype/stdweb/ttf-parser/unsafe-libyaml/tokio，warning 类不触发 `--de
 每个 crate 都报「No such crate in crates.io index」。查历史：该 job 的 schedule/dispatch 运行**全部失败过**
 （zstd 公告掩盖了 yanked 环境问题，此前从未绿过）。修复：审计前加 `cargo +1.88.0 fetch --locked`
 预热索引缓存。
+
+**第三轮 dispatch（预热步骤加入后）**：yanked 检查通过（index 报错清零），新失败点为
+**tokio 1.53.1 的 RUSTSEC-2026-0386**（`AsyncFd::new` 违反 I/O safety，`unsound` 级，2026-10-13 发布）。
+补丁线同 minor：**tokio 1.53.3**（2026-10-13 发布，依赖清单与版本要求与 1.53.1 完全一致，已核对
+crates.io API）。本机到 `index.crates.io:443` 持续超时（api.crates.io 可达），无法跑 `cargo update`，
+改为按 API 权威 checksum 手工更新 Cargo.lock 单条目（CI `cargo fetch --locked` 校验和兜底）。
