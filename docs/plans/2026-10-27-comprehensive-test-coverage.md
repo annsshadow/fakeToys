@@ -21,7 +21,7 @@
 | B8 变异抽样 | 验证断言有没有牙齿 | 3 个变异体：**M1 存活 → 补断言 → 被杀**，M2/M3 直接被杀 |
 | B9 门禁接线 | 阈值 + CI | 三个前端 ratchet 阈值 + 各自 CI 覆盖率步骤（已本地验证）；Go 总量 85% gate 已接入 `laiyipao-ci.yml` |
 
-**本轮抓到 7 个真缺陷**（7 个已修）：
+**本轮抓到 8 个真缺陷**（8 个已修）：
 1. `RateLimiter::init_redis()` 在 tokio 运行时内**直接 panic**（`SessionManager` 同名方法有守卫，它没有）——已修；
 2. `main.rs:77` 用 `&&` 串联两个 `init_redis()`，而第一个在 async main 里恒为 `false` ⇒ **短路，Redis 永远不会被初始化**，分布式会话与分布式限流在正常启动路径下是死代码——**已于 2026-10-28 删除**（单实例决策，见 `docs/plans/2026-10-28-redis-integration-decision.md`）；
 3. `torchgpt.generate(temperature=0)` 除零 → NaN 崩溃——已修；
@@ -29,6 +29,7 @@
 5. `db/rewriter.rs` 的 SQL 重写器：cast 扫描重复输出、`DO $$` 结束符误判、关键字替换会改写字符串/标识符/注释、`""` 转义丢失——**已修**，8 条 `#[ignore]` 全部移除并转绿；
 6. `sdk/api.ts` 的 `authenticationFailed()` 同一次 401 被调用两次（refresh 内 401 + 外层 catch）——**已修**：refresh 失败路径透传原 `AuthenticationError`。
 7. `rate_limit_middleware` 让认证与普通请求共用同一个 `ip` 桶：普通流量会把登录预算吃光（perf 实测第 11 次登录即 429）——**已修**：`auth:<ip>` / `general:<ip>` 独立桶 + 回归测试。
+8. `check-warnings.mjs` 的 `hasPythonModule()` 用 `shell: true` 传 `-c` 参数，Node 拼接后丢引号（`python -c import pytest`），探针恒为 false ⇒ **`llm-lab-tests` 门禁在 CI 里一直静默 SKIP**——**已修**：去掉 shell 并由 CI 安装 `llm-lab/requirements.txt`（numpy + pytest）。
 
 ---
 
@@ -55,7 +56,7 @@
 | 子项目 | 技术栈 | 测试文件 | 用例数 | 语句 | 分支 | 行 | 结论 |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | --- |
 | `augmentor` | Python | 415 | 10160 | **99.99%** | 99.98% | 99.99% | 已饱和，无增补空间 |
-| `llm-lab` | Python + torch | 11 | 94 | **99%** | — | — | 本轮 75% → 99% |
+| `llm-lab` | Python + torch | 11 | 95 | **99%** | — | — | 本轮 75% → 99% |
 | `laiyipao/server` | Go | 215 | — | 见 2.2 | — | — | **一半包需要 PG，无 PG 即无门禁** |
 | `laiyipao/admin` | Vue 3 + TS | 27 | 337 | **88.61%** | 83.28% | 90.32% | 本轮首次可测（原先测不出） |
 | `laiyipao/miniapp` | uni-app + TS | 80 | 1152 | **94.35%** | 89.95% | 95.26% | 本轮首次可测（原先被 flaky 吞掉） |
@@ -107,10 +108,10 @@
 
 ```bash
 # Python（augmentor 已自带 --cov-branch / --cov-fail-under=80）
-cd augmentor && /c/Python314/python.exe -m pytest -q --no-header -p no:cacheprovider
+cd augmentor && python -m pytest -q --no-header -p no:cacheprovider
 
 # Python（llm-lab，pyproject 里只配了 -q，覆盖率需显式给）
-cd llm-lab && /c/Python314/python.exe -m pytest -q --cov=minigrad --cov=torchgpt --cov-branch
+cd llm-lab && python -m pytest -q --cov=minigrad --cov=torchgpt --cov-branch
 
 # Go：有 PG 时
 cd laiyipao/server && go test ./... -count=1 -cover -coverprofile=/tmp/go-cover.out
@@ -514,7 +515,7 @@ node --import tsx --test --experimental-test-coverage test/*.test.ts
 **2026-10-27 收盘（历史基线，保留原读数）**
 
 ```bash
-cd llm-lab && /c/Python314/python.exe -m pytest -q --no-header -p no:cacheprovider \
+cd llm-lab && python -m pytest -q --no-header -p no:cacheprovider \
   --cov=minigrad --cov=torchgpt --cov-branch        # 94 passed, TOTAL 99%
 cd oa4rust && npx vitest run --coverage --coverage.reportsDirectory=coverage-run1
                                                     # 56 files / 1042 tests, 97.16%
@@ -623,3 +624,5 @@ DATABASE_URL=<TEST_DATABASE_URL> cargo +1.98.1 test --test perf_baseline perf_ba
 | 2026-10-28 | llm-lab | 装 `torch 2.14.1+cpu` 后全量复跑（Python 3.12.10） | **95 passed / 0 failed / 0 skipped**；TOTAL **99%**（951 stmts / 10 missed；168 branch / 6 partial）；torchgpt 用例不再跳过 |
 | 2026-10-28 | OA-P0-2 | perf 基线实测（容器 1.98.1 + PG 17.11；5 warmup + 50 iter） | auth **avg 1.70 / p50 1.69 / p99 2.73 ms**；document **avg 1.07 / p50 1.03 / p99 1.58 ms**；基线入档 `oa4rust/backend/docs/performance-baseline.md` |
 | 2026-10-28 | OA-P0-2 | 首次 perf 在第 11 次登录 429：认证/普通请求共用 `ip` 限流桶 | 修 `rate_limit_middleware` 为 `auth:<ip>` / `general:<ip>`；新增回归测试，`shared` **227 passed** |
+| 2026-10-28 | llm-lab | `test_edge_paths.py` 去掉模块级硬 `import torch`；torchgpt 用例加 `requires_torch`，minigrad 用例保留 | 装 torch **95 passed**；模拟无 torch **62 passed / 10 skipped**（8 条 edge + 2 个模块级跳过），退出码 0；README 计数同步 |
+| 2026-10-28 | 门禁 | `hasPythonModule()` 去掉 `shell: true`（丢引号导致探针恒 false，`llm-lab-tests` 一直静默 SKIP）；CI 装 `llm-lab/requirements.txt` 并钉 Python 3.12 | 本地 `--only llm-lab,llm-lab-tests` 由 **SKIP** 变 **PASS**（2 通过 / 0 失败 / 0 跳过） |

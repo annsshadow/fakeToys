@@ -19,15 +19,24 @@ import sys
 import numpy as np
 import pytest
 
-import torch
-import torch.nn.functional as F
-
 from minigrad import train as mg_train
 from minigrad.engine import Tensor
 from minigrad.nn import GPT as MgGPT
 from minigrad.nn import GPTConfig as MgConfig
 from minigrad.nn import Linear, Module
 from torchgpt.config import GPTConfig
+
+try:  # torch 是可选依赖：未装时只跳过 torchgpt 用例，minigrad 轨仍可跑
+    import torch
+    import torch.nn.functional as F
+except ModuleNotFoundError:  # pragma: no cover - 只在无 torch 环境触发
+    # 只吞「模块不存在」；装了但加载失败（DLL/依赖损坏）必须继续抛，不能假装跳过。
+    torch = None
+    F = None
+
+requires_torch = pytest.mark.skipif(
+    torch is None, reason="torch 未安装（见 requirements-torch.txt）"
+)
 
 TINY_TEXT = ("the quick brown fox jumps over the lazy dog. " * 6).strip()
 
@@ -157,6 +166,7 @@ def _tiny_torch_cfg(vocab=11, block=8):
     return GPTConfig(vocab_size=vocab, block_size=block, n_layer=1, n_head=2, n_embd=8)
 
 
+@requires_torch
 def test_sequence_logprob_matches_manual_log_softmax_sum():
     """逐 token 对数似然之和必须与手算一致（DPO 的整个分母都建立在这个量上）。"""
     from torchgpt.dpo import sequence_logprob
@@ -179,6 +189,7 @@ def test_sequence_logprob_matches_manual_log_softmax_sum():
     assert got.item() <= 0  # 概率的乘积不会超过 1
 
 
+@requires_torch
 def test_sequence_logprob_ignores_minus_100_labels():
     """``-100`` 位置必须完全不计入（padding 位的 logits 是噪声，算进去会污染 DPO）。"""
     from torchgpt.dpo import sequence_logprob
@@ -193,6 +204,7 @@ def test_sequence_logprob_ignores_minus_100_labels():
     assert got.item() == pytest.approx(0.0, abs=1e-6)
 
 
+@requires_torch
 def test_sequence_logprob_ignores_first_label_position():
     """第一个 label 位不参与（logits 与 labels 各右移一位）—— 改它不能影响结果。
 
@@ -218,6 +230,7 @@ def test_sequence_logprob_ignores_first_label_position():
 # ────────────────────────────── torchgpt 非 FlashAttention 回退路径一致性
 
 
+@requires_torch
 def test_manual_attention_fallback_matches_flash_path(monkeypatch):
     """没有 ``scaled_dot_product_attention`` 时走手写注意力，结果必须与快路径一致。
 
@@ -246,6 +259,7 @@ def test_manual_attention_fallback_matches_flash_path(monkeypatch):
     assert torch.allclose(got, expected, atol=1e-5), "手写注意力与 SDPA 结果不一致"
 
 
+@requires_torch
 def test_manual_attention_is_causal(monkeypatch):
     """手写注意力必须真的加了下三角 mask：改最后一个 token 不能影响前面的输出。"""
     from torchgpt.model import GPT
@@ -279,6 +293,7 @@ def test_module_parameters_collects_tensor_inside_container():
     assert len(Holder().parameters()) == 2
 
 
+@requires_torch
 def test_lora_linear_starts_as_identity_and_applies_scaled_delta():
     """LoRA 的两个硬约束：初始等价原模型；启用后增量按 alpha/r 缩放。
 
@@ -315,6 +330,7 @@ def test_minigrad_generate_with_zero_temperature_is_deterministic():
     assert len(list(a)) == 2 + 5
 
 
+@requires_torch
 def test_perplexity_without_max_blocks_walks_entire_sequence():
     """不给 ``max_blocks`` 时必须走完所有窗口（不提前 break）。"""
     from torchgpt.eval import perplexity
@@ -331,6 +347,7 @@ def test_perplexity_without_max_blocks_walks_entire_sequence():
     assert full != capped  # 单窗口与全序列不是同一个估计
 
 
+@requires_torch
 def test_torchgpt_main_module_entrypoint(tmp_path, monkeypatch):
     """``python -m torchgpt.main`` 的 ``__main__`` 分支必须可用。
 
@@ -381,7 +398,6 @@ def test_visualize_module_entrypoint(tmp_path, monkeypatch, capsys):
     from minigrad import checkpoint
     from minigrad.tokenizer import CharTokenizer
 
-    torch.manual_seed(0)
     tok = CharTokenizer(TINY_TEXT)
     model = MgGPT(MgConfig(vocab_size=tok.vocab_size, block_size=16, n_layer=1, n_head=2, n_embd=8))
     ckpt = tmp_path / "m.npz"

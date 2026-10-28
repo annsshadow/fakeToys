@@ -2,7 +2,8 @@
 #
 # 为什么单独一个 workflow：各子项目的 CI 只覆盖自己的工具链，而下面这些此前没有
 # 任何 CI 在跑——
-#   - llm-lab 的字节码编译与 pytest（38 个用例，含梯度校验/端到端冒烟）；
+#   - llm-lab 的字节码编译与 pytest（未装 torch 时 62 passed，torchgpt 用例
+#     自动跳过；含梯度校验/端到端冒烟）；
 #   - cool 的 `javac -Xlint:all -Werror`（需要 commons-codec jar，开发机通常没有，
 #     于是这项门禁在本地长期处于 SKIP 状态）；
 #   - 「每个 workspace 成员都继承 [lints] workspace = true」这条静态守卫——
@@ -41,10 +42,12 @@ jobs:
 
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
         with:
-          python-version: "3.x"
+          # 钉 3.12：llm-lab 的 95 条用例在 3.12.10 上验证过；3.x 会漂到
+          # 当天最新的 3.15，新解释器的 DeprecationWarning 会误触本门禁。
+          python-version: "3.12"
 
-      - name: Install pytest (llm-lab-tests 项需要)
-        run: python -m pip install --quiet pytest
+      - name: Install llm-lab test deps (numpy + pytest)
+        run: python -m pip install --quiet -r llm-lab/requirements.txt
 
       # cool 的 javac 门禁需要 commons-codec。版本与 cool/README.md 记录的一致
       # （1.17.1）；下载后按 Maven Central 发布的 SHA-1 校验，避免供应链上
