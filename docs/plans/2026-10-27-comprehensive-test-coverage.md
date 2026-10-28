@@ -373,17 +373,17 @@ node --import tsx --test --experimental-test-coverage test/*.test.ts
 - **退出判据**：`cargo llvm-cov -p shared --lib` 行覆盖 ≥ 75%，且 §7 变异抽样通过。
 - **注意事项**：`[workspace.lints.rust] warnings = "deny"`，新增测试文件同样零告警；不要用 `#[ignore]` 绕过（等于假绿）。
 
-### B3 —— `laiyipao/admin`：87.3% → 92%（P1）—— **已执行，见 §4.5**（88.61%；92% 目标未达成，剩余缺口见下）
+### B3 —— `laiyipao/admin`：87.3% → 92%（P1）—— **已完成（2026-10-28）**（92.48% 语句 / 94.28% 行）
 
 | 文件 | 当前 | 缺口性质 | 做法 |
 | --- | ---: | --- | --- |
-| `src/api/index.ts` | 66.15% | G1：生成型包装器，错误分支没人写 | 用 `msw`/`fetch` 桩表驱动覆盖每个端点的 4xx/5xx 分支 |
-| `src/views/UsersView.vue` | 69.13% | G1：分页/搜索/空态 | 补空列表、搜索无结果、翻页边界 |
-| `src/views/SkillsView.vue` | 73.82% | G1：表单校验失败路径 | 补非法输入、提交失败回滚 |
-| `src/utils/format.ts` | 76.92% | G1：`fmtTime` 的非 RFC3339 回退分支 | 补 `''` / 非法日期 / 带时区偏移三种输入 |
+| `src/api/index.ts` | 96.92% | G1：生成型包装器，错误分支没人写 | 用 `msw`/`fetch` 桩表驱动覆盖每个端点的 4xx/5xx 分支 |
+| `src/views/UsersView.vue` | 97.53% | 详情抽屉 / 操作失败提示 / keep-alive 刷新 | 补详情成功、失败、乱序响应；封禁/解封/发放失败提示；首次激活跳过与二次刷新 |
+| `src/views/SkillsView.vue` | 89.93% | 完整编辑对话框 / 保存校验 / 失败回滚 | 补 `openEdit` 预填、`submitEdit` 空名/负数/非整数校验与失败、patch/描述失败、keep-alive |
+| `src/utils/format.ts` | 100% | G1：`fmtTime` 的非 RFC3339 回退分支 | 补 `''` / 非法日期 / 带时区偏移三种输入 |
 | `src/api/types.gen.ts` | 0% | **G3**：生成物且纯 interface | 已加入 `coverage.exclude` 并写理由（不再拉低分母） |
 
-- **92% 目标未达成（2026-10-28 复核）**：语句 88.61% / 行 90.32%，与 2026-10-27 持平。剩余缺口集中在 `UsersView.vue`（行 69.71%）与 `SkillsView.vue`（行 78.51%）的分页/搜索/表单失败回滚分支；这两块需要真实路由与异步状态编排，本轮未继续投入。ratchet 已按实测值下 1pt 钉住（语句 87 / 分支 82 / 函数 86 / 行 89），下一轮若继续追 92%，从这两只视图开始。
+- **92% 目标已达成（2026-10-28）**：语句 **92.48%**（1674/1810）/ 行 **94.28%**（1501/1592）/ 分支 86.59% / 函数 91.20%，全量 **353 passed**。ratchet 抬到 语句 92 / 分支 85 / 函数 90 / 行 93；当前最低视图为 `RecomputesView.vue`（78.34%），若继续提升从它开始。
 
 ### B4 —— `oa4rust/mobile`（P1）—— **已执行且前提已更正，见 §4.5**
 

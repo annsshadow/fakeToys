@@ -64,15 +64,17 @@ export default defineConfig({
       // 纳入统计只会把 `src/api` 目录的分数按比例拉低，而任何测试都无法
       // 「覆盖」它。它的一致性由 `server/internal/tygen` 的逐字节比对守卫负责。
       exclude: ['src/env.d.ts', 'src/styles/**', 'src/components.d.ts', 'src/api/types.gen.ts'],
-      // 覆盖率 ratchet（2026-10-27 建立）：把实测值写进配置，只许升不许降。
-      // 实测 语句 88.61 / 分支 83.28 / 函数 87.08 / 行 90.32 —— 这里各留 ~1pt 余量，
-      // 因为 v8 计数在不同 Node 版本上会有零点几个百分点的抖动，卡死会变成偶发红。
-      // 掉下来通常意味着「新加了一个视图但没写用例」，那正是该拦住的。
+      // 覆盖率 ratchet（2026-10-27 建立，2026-10-28 抬到 92% 目标）：
+      // 把实测值写进配置，只许升不许降。
+      // 实测 语句 92.48 / 分支 86.59 / 函数 91.20 / 行 94.28 —— 语句按 92% 目标钉住，
+      // 其余各留 ~1pt 余量（v8 计数在不同 Node 版本上会有零点几个百分点的抖动，
+      // 卡死会变成偶发红）。掉下来通常意味着「新加了一个视图但没写用例」，
+      // 那正是该拦住的。
       thresholds: {
-        statements: 87,
-        branches: 82,
-        functions: 86,
-        lines: 89,
+        statements: 92,
+        branches: 85,
+        functions: 90,
+        lines: 93,
       },
       reporter: ['text'],
     },

@@ -7,16 +7,18 @@
  */
 import { flushPromises, mount } from '@vue/test-utils'
 import ElementPlus from 'element-plus'
+import { defineComponent, h, KeepAlive, nextTick, ref } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { AdminUserView } from '@/api'
+import type { AdminUserDetailResp, AdminUserView } from '@/api'
 
 const fetchUsers = vi.hoisted(() => vi.fn())
+const fetchUserDetail = vi.hoisted(() => vi.fn())
 const banUser = vi.hoisted(() => vi.fn())
 const unbanUser = vi.hoisted(() => vi.fn())
 const grantUser = vi.hoisted(() => vi.fn())
 const box = vi.hoisted(() => ({ prompt: vi.fn(), confirm: vi.fn() }))
 
-vi.mock('@/api', () => ({ fetchUsers, banUser, unbanUser, grantUser }))
+vi.mock('@/api', () => ({ fetchUsers, fetchUserDetail, banUser, unbanUser, grantUser }))
 vi.mock('element-plus', async (importOriginal) => {
   const mod = await importOriginal<typeof import('element-plus')>()
   return { ...mod, ElMessageBox: box }
@@ -50,13 +52,87 @@ async function mountUsers(items: AdminUserView[] = [], total = items.length) {
   return wrapper
 }
 
+function detailFixture(overrides: Partial<AdminUserDetailResp> = {}): AdminUserDetailResp {
+  return {
+    user: userFixture({
+      id: 7,
+      nickname: '详情玩家',
+      max_stage: 12,
+      power: 4321,
+      verify_checked: 9,
+      verify_mismatched: 2,
+    }),
+    wallet: { coin: 12345, gem: 67, energy: 89, keys: 3 },
+    mastery_nodes: [11, 12],
+    equipped_skills: [1, 0, 3],
+    equipped_equipment: [21, 22],
+    recent_battles: [
+      {
+        id: 100,
+        user_id: 7,
+        nickname: '详情玩家',
+        level_id: 12,
+        result: 'win',
+        stars: 3,
+        score: 9999,
+        kills: 42,
+        leaked: 0,
+        wave_reached: 10,
+        duration_ms: 60000,
+        reactions: 5,
+        heat_max: 88,
+        replay_hash: 'hash',
+        created_at: '2026-01-02T03:04:05Z',
+        total_enemies: 42,
+        verify_checked: 1,
+        verify_mismatched: 0,
+      },
+    ],
+    verifications: [
+      {
+        id: 1,
+        battle_id: 100,
+        verifier_id: null,
+        admin_verifier_id: null,
+        expected_hash: 'e1',
+        actual_hash: 'a1',
+        matched: true,
+        created_at: '2026-01-02T03:04:05Z',
+      },
+      {
+        id: 2,
+        battle_id: 101,
+        verifier_id: 3,
+        admin_verifier_id: null,
+        expected_hash: 'e2',
+        actual_hash: 'a2',
+        matched: false,
+        created_at: '2026-01-02T03:04:06Z',
+      },
+    ],
+    flow_count: 17,
+    ...overrides,
+  }
+}
+
+function deferred<T>() {
+  let resolve!: (value: T) => void
+  const promise = new Promise<T>((res) => {
+    resolve = res
+  })
+  return { promise, resolve }
+}
+
 type Vm = {
   statusOf: (u: AdminUserView) => { text: string; type: string }
   suspicious: (u: AdminUserView) => boolean
   offset: number
   limit: number
   keyword: string
+  detail: AdminUserDetailResp | null
+  detailLoading: boolean
   load: () => Promise<void>
+  openDetail: (u: AdminUserView) => Promise<void>
   prevPage: () => void
   nextPage: () => void
   onBan: (u: AdminUserView) => Promise<void>
@@ -65,7 +141,9 @@ type Vm = {
 }
 
 beforeEach(() => {
-  vi.clearAllMocks()
+  // reset 而不是 clear：clear 只清调用记录，不清 once 队列；
+  // 前序用例若提前断言失败，未消费的 mockResolvedValueOnce 会串到后续用例。
+  vi.resetAllMocks()
 })
 
 describe('UsersView 列表渲染', () => {
@@ -422,7 +500,7 @@ describe('UsersView 验真信号三态', () => {
  */
 describe('UsersView 破坏性操作需要二次确认（P5-2）', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
+    vi.resetAllMocks()
     fetchUsers.mockResolvedValue({ items: [userFixture({ id: 1, status: 2 })], total: 1 })
   })
 
@@ -493,6 +571,172 @@ describe('UsersView 破坏性操作需要二次确认（P5-2）', () => {
 
     expect(box.confirm).toHaveBeenCalled()
     expect(grantUser).toHaveBeenCalledWith(1, 'coin', 10000)
+    wrapper.unmount()
+  })
+})
+
+describe('UsersView 详情抽屉（P5-7）', () => {
+  it('点击「详情」加载并渲染玩家、钱包、构筑、战报与验真记录', async () => {
+    const row = userFixture({ id: 7, nickname: '详情玩家' })
+    fetchUserDetail.mockResolvedValueOnce(detailFixture())
+    const wrapper = await mountUsers([row])
+
+    const btn = wrapper.findAll('.el-table__row')[0].findAll('button').find((b) => b.text() === '详情')!
+    await btn.trigger('click')
+    await flushPromises()
+
+    expect(fetchUserDetail).toHaveBeenCalledWith(7)
+    const vm = wrapper.vm as unknown as Vm
+    expect(vm.detail?.user.id).toBe(7)
+    expect(vm.detailLoading).toBe(false)
+
+    // el-drawer 默认 append-to-body=false，内容仍在组件树内；
+    // 而 mount 默认挂在游离节点上，所以断言用 wrapper.text() 而不是 body。
+    const text = wrapper.text()
+    expect(text).toContain('玩家详情')
+    expect(text).toContain('详情玩家')
+    expect(text).toContain('12345')
+    expect(text).toContain('67')
+    expect(text).toContain('89')
+    expect(text).toContain('17')
+    // 构筑：0 技能显示「空」，装备与专精按 #/顿号拼接
+    expect(text).toContain('#1 / 空 / #3')
+    expect(text).toContain('#21、#22')
+    expect(text).toContain('11、12')
+    // 战报与验真两态
+    expect(text).toContain('win')
+    expect(text).toContain('9999')
+    expect(text).toContain('一致')
+    expect(text).toContain('不匹配')
+    wrapper.unmount()
+  })
+
+  it('详情加载失败：抽屉保留、提示错误、loading 复位', async () => {
+    fetchUserDetail.mockRejectedValueOnce(new Error('详情库超时'))
+    const wrapper = await mountUsers([userFixture({ id: 7 })])
+
+    await (wrapper.vm as unknown as Vm).openDetail(userFixture({ id: 7 }))
+    await flushPromises()
+
+    const vm = wrapper.vm as unknown as Vm
+    expect(vm.detail).toBeNull()
+    expect(vm.detailLoading).toBe(false)
+    expect(document.body.textContent).toContain('玩家详情加载失败：详情库超时')
+    wrapper.unmount()
+  })
+
+  it('慢响应乱序：只接受最新一次详情请求（序号守卫）', async () => {
+    const first = deferred<AdminUserDetailResp>()
+    const second = deferred<AdminUserDetailResp>()
+    fetchUserDetail.mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise)
+    const wrapper = await mountUsers([userFixture({ id: 1 }), userFixture({ id: 2 })])
+    const vm = wrapper.vm as unknown as Vm
+
+    const p1 = vm.openDetail(userFixture({ id: 1, nickname: '旧请求' }))
+    const p2 = vm.openDetail(userFixture({ id: 2, nickname: '新请求' }))
+
+    // 后发先至：新请求先回，旧请求后回，旧数据不能覆盖新数据。
+    second.resolve(detailFixture({ user: userFixture({ id: 2, nickname: '新请求' }) }))
+    await p2
+    first.resolve(detailFixture({ user: userFixture({ id: 1, nickname: '旧请求' }) }))
+    await p1
+
+    expect(vm.detail?.user.id).toBe(2)
+    expect(vm.detail?.user.nickname).toBe('新请求')
+    expect(vm.detailLoading).toBe(false)
+    wrapper.unmount()
+  })
+})
+
+describe('UsersView 操作失败提示（P2-2）', () => {
+  it('封禁失败（非取消）：提示服务端原因，不静默吞掉 403', async () => {
+    box.prompt.mockResolvedValueOnce({ value: '恶意刷分' })
+    banUser.mockRejectedValueOnce(new Error('403 只读账号'))
+    const wrapper = await mountUsers([userFixture()])
+
+    await (wrapper.vm as unknown as Vm).onBan(userFixture())
+    await flushPromises()
+
+    expect(document.body.textContent).toContain('封禁失败：403 只读账号')
+    wrapper.unmount()
+  })
+
+  it('解封失败：提示服务端原因', async () => {
+    box.confirm.mockResolvedValueOnce('ok')
+    unbanUser.mockRejectedValueOnce(new Error('用户不存在'))
+    const wrapper = await mountUsers([userFixture({ status: 2 })])
+
+    await (wrapper.vm as unknown as Vm).onUnban(userFixture({ status: 2 }))
+    await flushPromises()
+
+    expect(box.confirm).toHaveBeenCalled()
+    expect(unbanUser).toHaveBeenCalledWith(1)
+    expect(document.body.textContent).toContain('解封失败：用户不存在')
+    wrapper.unmount()
+  })
+
+  it('发放失败（确认之后）：提示服务端原因', async () => {
+    box.prompt.mockResolvedValueOnce({ value: 'coin 100' })
+    box.confirm.mockResolvedValueOnce('ok')
+    grantUser.mockRejectedValueOnce(new Error('钱包服务不可用'))
+    const wrapper = await mountUsers([userFixture()])
+
+    await (wrapper.vm as unknown as Vm).onGrant(userFixture())
+    await flushPromises()
+
+    expect(grantUser).toHaveBeenCalledWith(1, 'coin', 100)
+    expect(document.body.textContent).toContain('发放失败：钱包服务不可用')
+    wrapper.unmount()
+  })
+})
+
+describe('UsersView keep-alive 刷新（P5-9）', () => {
+  it('首次激活不重复加载，离开再回来才刷新', async () => {
+    fetchUsers.mockResolvedValue({ items: [userFixture()], total: 1 })
+    const show = ref(true)
+    const Other = defineComponent({ render: () => h('div', 'other') })
+    const Host = defineComponent({
+      setup() {
+        return () =>
+          h(KeepAlive, null, { default: () => (show.value ? h(UsersView) : h(Other)) })
+      },
+    })
+
+    const wrapper = mount(Host, { global: { plugins: [ElementPlus] } })
+    await flushPromises()
+    expect(fetchUsers).toHaveBeenCalledTimes(1)
+
+    show.value = false
+    await nextTick()
+    show.value = true
+    await nextTick()
+    await flushPromises()
+    expect(fetchUsers).toHaveBeenCalledTimes(2)
+    wrapper.unmount()
+  })
+})
+
+describe('UsersView 分页/搜索边界补充', () => {
+  it('上一页在 offset 小于一页时归零（不出现负 offset）', async () => {
+    const wrapper = await mountUsers([userFixture()], 120)
+    const vm = wrapper.vm as unknown as Vm
+    vm.offset = 25
+    vm.prevPage()
+    await flushPromises()
+    expect(vm.offset).toBe(0)
+    wrapper.unmount()
+  })
+
+  it('搜索框清空：重置 offset 并重新加载', async () => {
+    const wrapper = await mountUsers([userFixture()], 120)
+    const vm = wrapper.vm as unknown as Vm
+    vm.offset = 50
+    vm.keyword = '龙'
+
+    wrapper.findComponent({ name: 'ElInput' }).vm.$emit('clear')
+    await flushPromises()
+    expect(vm.offset).toBe(0)
+    expect(fetchUsers).toHaveBeenLastCalledWith({ keyword: '龙', limit: 50, offset: 0 })
     wrapper.unmount()
   })
 })
