@@ -329,4 +329,4 @@ crates.io API）。本机到 `index.crates.io:443` 持续超时（api.crates.io 
 | 补测 | session.rs 新增 8 条真库用例（持久化签名行/裸 token、阈值拦截/放行、库回退重建、过期行拒绝、登出删行、按人批量删、阈值注销——沿用 `is_db_available` 无库 skip 惯例，`pool_manager` 手动拼装避开后台扫描器竞态）；mock_client.rs 补契约自证 7 条（弹栈顺序、四类结果、回退语义——下游 crate 测试的地基） |
 | **真修 bug（FI-003）** | 补测直接暴露：`auth_session`/`auth_token_threshold` 时间列是 TIMESTAMP 而代码按 String 绑定/读取——**会话从未持久化进 PG**（INSERT 被 `let _ =` 吞掉）、表里有阈值行时登录 **panic**、`safe_logout` 写阈值同样被吞——「全端登出使旧 token 失效」整条链路端到端失效。修 session.rs 四处 + auth/safe_logout.rs 一处，改绑 `NaiveDateTime`（明细见 found-issues.md FI-003） |
 | 终态读数 | 行 **84.42%**（-898）/ regions 80.22% / functions 85.31%；`cargo test -p shared --lib` **242 passed / 0 failed**（干净库）；`cargo clippy -p shared --lib -- -D warnings` 零告警；`cargo fmt --check` 干净。floor 80 达成（台账棘轮；CI 尚无 llvm-cov job，接入是独立改动），下一轮 85 |
-| 提交 | `<sha 待回填>` test(oa4rust): shared 覆盖率收口轮 |
+| 提交 | `421d72bff` fix(oa4rust): 会话 PG 层按 TIMESTAMP 真修（FI-003）+ shared 覆盖率收口 78.79%→84.42% |
