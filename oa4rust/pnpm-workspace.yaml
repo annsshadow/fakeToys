@@ -57,7 +57,9 @@ overrides:
   # 以下三项用范围覆盖：同一漏洞在树中存在多份副本，
   # 按版本逐个覆盖会漏掉新解析出的版本。
   'esbuild@<=0.24.2': '0.25.12'
-  'qs@<6.16.0': '6.16.0'
+  # qs <=6.16.0：stringify(arrayFormat: 'comma') 对带不可调用 toString 的元素抛
+  # TypeError（GHSA-6pq8-jhm2-2vcw，DoS），补丁 6.16.1。
+  'qs@<6.16.1': '6.16.1'
   'vite@<=6.4.2': '6.4.3'
 allowBuilds:
   core-js: false

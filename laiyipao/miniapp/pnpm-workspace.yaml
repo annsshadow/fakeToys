@@ -81,7 +81,9 @@ overrides:
   "body-parser": 1.20.9
   "cookie": 0.7.0
   "send": 0.19.0
-  "qs": 6.16.0
+  # qs <=6.16.0：stringify(arrayFormat: 'comma') 对带不可调用 toString 的元素抛
+  # TypeError（GHSA-6pq8-jhm2-2vcw，DoS），补丁 6.16.1。
+  "qs": 6.16.1
   "path-to-regexp": 0.1.13
   # jpeg-js 0.3.7 → 0.4.4（GHSA-w7q9-p3jq-fmhm 资源耗尽 2 条）。
   #

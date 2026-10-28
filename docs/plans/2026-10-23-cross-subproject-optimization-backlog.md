@@ -224,7 +224,7 @@
 | OA-P2-3 sccache | **已完成** | CI 4 个 Rust job 加 env + sccache-action（SHA 钉）；YAML 合法、step 在首个 cargo 前。 |
 | OA-P1-1 连接池统一 | **已完成** | `DbPoolConfig` 单一来源 + 可选 TLS（rustls，规避 aws-lc-rs）；`cargo check -p shared` clean（**我独立复跑确认**）、55 测试过。物理双池未合（deadpool vs SeaORM 客户端库不同，无法共实例）——已记账。 |
 | OA-P1-2 批量插入 | **已完成** | `crud_create_many` + 按 65535 参数上限分片 + 6 单测。 |
-| OA-P1-3 索引迁移 | **SQL 就绪，待 PG** | `migrations/110` 三索引 + rollback；SQL 我核对与 handler 谓词一致。 |
+| OA-P1-3 索引迁移 | **已完成（2026-10-28）** | `migrations/110` 三索引 + rollback；`migrations/113` 补 `idx_x_attendance_config_id`（**非唯一**，避免历史重复 id 阻塞迁移，主键/唯一约束留作单独数据治理）。全新库 `oa4rust_idx_verify` 应用 **115 条迁移 / 0 skipped**，二次运行 **0 applied / 115 skipped**（幂等）；20k 行 EXPLAIN：全局列表走 `idx_x_attendance_config_create_time`，v2 列表/存在性走 `idx_x_attendance_config_category_name`，v2_person 列表/存在性走 `idx_x_attendance_config_category_creator_name`，`UPDATE ... WHERE id=$1` 走 `idx_x_attendance_config_id`。`oa4rust_test` 已应用 113（1 applied / 114 skipped）。 |
 | OA-P2-2 死代码 | **已完成（1 项）** | 脚本化引用计数，删 `file_assemble_control` 一个死包装器；check 干净。生成 crate 接线实际很干净，空间小。 |
 | OA-P2-4 去重 | **仅分析** | 4 条发现留档，不重构。 |
 | OA-P0-2 perf 基线 | **已完成（2026-10-28）** | `cargo +1.98.1 test --test perf_baseline perf_baseline -- --ignored`（容器 + PG 17.11）：auth avg 1.70 / p50 1.69 / p99 2.73 ms；document avg 1.07 / p50 1.03 / p99 1.58 ms。首次跑出 429，定位并修复「认证/普通请求共用 IP 限流桶」，`shared` 227 passed。基线见 `oa4rust/backend/docs/performance-baseline.md`。 |
@@ -271,3 +271,11 @@
 | `c068d6c63` | style(oa4rust)：rustfmt signature，修 CI fmt 既存不合规 |
 
 > 推送时远端提示 **bypassed 3 required status checks**（分支保护）——这 7 个提交的 CI 尚未跑完/通过，需在 GitHub 上确认三端 CI + oa4rust CI 全绿后才算真正合入安全。Dependabot 另报 28 个**既有**依赖漏洞（6 high/19 moderate/3 low），与本次改动无关。
+
+### 7.10 依赖告警清账（2026-10-28）
+
+| 告警 | 处置 | 证据 |
+|---|---|---|
+| `qs` ×3（`oa4rust` / `miniapp` / `auto-checkin`） | **已修复** | 三处 override 抬到 **6.16.1**（GHSA-6pq8-jhm2-2vcw 的补丁线）；`pnpm install` / `npm ci` 后实测安装 6.16.1。 |
+| `deepmerge` ×1（`miniapp`，dev） | **已 dismiss（tolerable_risk）** | 4.3.1 为上游最新且 `first_patched_version=null`；仅经 `jest-config@27.5.1`（`@dcloudio/uni-automator`）进入开发链，不合并不可信输入。理由已写入 GitHub 告警。 |
+| 回归 | **通过** | `oa4rust` `pnpm test` **1042 passed**；`miniapp` `pnpm test` **1167 passed / 2 skipped**（`i6.e2e.test.ts` 的 `describe.skipIf`，既有）；`auto-checkin` `npm test` **40 passed**。 |
