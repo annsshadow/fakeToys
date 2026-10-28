@@ -1145,4 +1145,91 @@ mod tests {
             );";
         assert_eq!(rewrite_pg_to_mysql(sql), expected);
     }
+
+    // ── 2026-10-29 覆盖率轮：注释扫描 / 多字节 / 数组类型 / 多语句 ON CONFLICT ──
+
+    #[test]
+    fn line_comments_are_preserved_and_skipped_by_cast_scan() {
+        let sql = "SELECT 1 -- keep ::text here
+, 'x'::varchar";
+        let out = rewrite_pg_to_mysql(sql);
+        assert!(
+            out.contains("-- keep ::text here"),
+            "注释内容原样保留：{out}"
+        );
+        assert!(
+            out.contains("CAST('x' AS CHAR)"),
+            "注释外的 cast 正常改写：{out}"
+        );
+        let comment = &out[out.find("--").unwrap()..out.find('\n').unwrap()];
+        assert!(!comment.contains("CAST"), "cast 扫描不得进注释：{comment}");
+    }
+
+    #[test]
+    fn block_comments_are_preserved_and_skipped_by_cast_scan() {
+        let sql = "SELECT /* ::text */ 'x'::varchar";
+        let out = rewrite_pg_to_mysql(sql);
+        assert!(out.contains("/* ::text */"), "块注释原样保留：{out}");
+        assert!(out.contains("CAST"), "注释外的 cast 正常改写：{out}");
+    }
+
+    #[test]
+    fn multibyte_identifiers_do_not_break_byte_scanning() {
+        // 中文字符按 UTF-8 多字节推进，注释里的多字节不得吃掉换行
+        let sql = "SELECT '中文内容' -- 中文注释 ::text
+, 1::int";
+        let out = rewrite_pg_to_mysql(sql);
+        assert!(out.contains("中文内容"));
+        assert!(out.contains("中文注释"));
+        assert!(
+            out.contains("CAST(1 AS SIGNED)"),
+            "多字节注释后的 cast 正常改写：{out}"
+        );
+    }
+
+    #[test]
+    fn unrecognized_cast_left_operand_is_preserved_verbatim() {
+        // 左操作数认不出表达式：保留 `::`，至少不丢字符
+        let sql = "SELECT ,::text";
+        let out = rewrite_pg_to_mysql(sql);
+        assert!(out.contains("::text"), "认不出时必须原样保留：{out}");
+    }
+
+    #[test]
+    fn numeric_literal_then_cast_is_tracked() {
+        let sql = "SELECT 123::text";
+        let out = rewrite_pg_to_mysql(sql);
+        assert!(
+            out.contains("CAST(123 AS CHAR)"),
+            "数字字面量 cast 改写：{out}"
+        );
+    }
+
+    #[test]
+    fn sized_array_cast_keeps_dimensions() {
+        let sql = "SELECT $1::text[3]";
+        let out = rewrite_pg_to_mysql(sql);
+        // text[]/text[N] 家族映射 CHAR，维度原样保留
+        assert!(out.contains("CHAR"), "数组 cast 映射 CHAR：{out}");
+        assert!(out.contains("[3]"), "维度不得丢：{out}");
+    }
+
+    #[test]
+    fn on_conflict_do_update_rewrites_to_on_duplicate_key_in_multi_statement() {
+        let sql = "INSERT INTO t (a) VALUES (1) ON CONFLICT (id) DO UPDATE SET a = excluded.a;
+SELECT 2::int";
+        let out = rewrite_pg_to_mysql(sql);
+        assert!(
+            out.contains("ON DUPLICATE KEY UPDATE"),
+            "DO UPDATE → ON DUPLICATE KEY UPDATE：{out}"
+        );
+        assert!(
+            out.contains("a = excluded.a"),
+            "冲突更新赋值原样保留：{out}"
+        );
+        assert!(
+            out.contains("CAST(2 AS SIGNED)"),
+            "第二条语句的 cast 也改写：{out}"
+        );
+    }
 }

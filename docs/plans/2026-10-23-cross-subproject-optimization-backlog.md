@@ -330,3 +330,13 @@ crates.io API）。本机到 `index.crates.io:443` 持续超时（api.crates.io 
 | **真修 bug（FI-003）** | 补测直接暴露：`auth_session`/`auth_token_threshold` 时间列是 TIMESTAMP 而代码按 String 绑定/读取——**会话从未持久化进 PG**（INSERT 被 `let _ =` 吞掉）、表里有阈值行时登录 **panic**、`safe_logout` 写阈值同样被吞——「全端登出使旧 token 失效」整条链路端到端失效。修 session.rs 四处 + auth/safe_logout.rs 一处，改绑 `NaiveDateTime`（明细见 found-issues.md FI-003） |
 | 终态读数 | 行 **84.42%**（-898）/ regions 80.22% / functions 85.31%；`cargo test -p shared --lib` **242 passed / 0 failed**（干净库）；`cargo clippy -p shared --lib -- -D warnings` 零告警；`cargo fmt --check` 干净。floor 80 达成（台账棘轮；CI 尚无 llvm-cov job，接入是独立改动），下一轮 85 |
 | 提交 | `421d72bff` fix(oa4rust): 会话 PG 层按 TIMESTAMP 真修（FI-003）+ shared 覆盖率收口 78.79%→84.42% |
+
+**第二轮（2026-10-29 同日）：84.42% → 87.67%，floor 85 达成，CI 棘轮接入**。目标三文件补测：
+`crud.rs` 66.37→**89.57**（crud_delete 软/硬删/未命中 + `crud_save_owned`/`crud_delete_owned` 的
+IDOR 归属版——属主放行/非属主 Forbidden/行缺失保 not-found，真库用例以模块级互斥锁串行化共享
+临时表）、`db/rewriter.rs` 88.02→**94.15**（regions **100%**：`--`/`/* */` 注释扫描、UTF-8 多字节
+推进、`text[3]` 尺寸数组 cast、多语句 ON CONFLICT DO UPDATE→ON DUPLICATE KEY UPDATE）、
+`netguard.rs` 69.44→**83.06**（validate_target 的 DNS 分支 + filename_from_url 百分号解码；
+fetch_limited 的重定向/大响应体路径需公网服务端，留结构性缺口）。265 tests 全绿。
+`shared-coverage` CI job（workflow_dispatch 手动触发 + TOTAL ≥85 断言）已入 oa4rust-ci.yml，
+本机触发验证通过。下一轮 90。

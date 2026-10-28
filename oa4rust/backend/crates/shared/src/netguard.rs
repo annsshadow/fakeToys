@@ -317,4 +317,79 @@ mod tests {
         let err = fetch_limited(&client, "http://127.0.0.1:5432/").await;
         assert!(matches!(err, Err(FetchError::PrivateAddress)));
     }
+
+    // ── 2026-10-29 覆盖率轮：validate_target 的 DNS 分支与 filename_from_url ──
+
+    #[tokio::test]
+    async fn validate_target_rejects_non_http_schemes() {
+        let url = reqwest::Url::parse("ftp://8.8.8.8/file").unwrap();
+        assert!(matches!(
+            validate_target(&url).await,
+            Err(FetchError::SchemeNotAllowed)
+        ));
+    }
+
+    #[tokio::test]
+    async fn validate_target_rejects_missing_host() {
+        let url = reqwest::Url::parse("http:///path").unwrap();
+        assert!(matches!(
+            validate_target(&url).await,
+            Err(FetchError::InvalidHost)
+        ));
+    }
+
+    #[tokio::test]
+    async fn validate_target_literal_ip_short_circuits_dns() {
+        // 字面量 IP：全局地址放行、私网拒绝（不经 DNS）
+        let public = reqwest::Url::parse("https://8.8.8.8/dns-query").unwrap();
+        assert!(validate_target(&public).await.is_ok());
+        let private = reqwest::Url::parse("http://10.1.2.3/x").unwrap();
+        assert!(matches!(
+            validate_target(&private).await,
+            Err(FetchError::PrivateAddress)
+        ));
+    }
+
+    #[tokio::test]
+    async fn validate_target_unresolvable_hostname_is_invalid_host() {
+        let url = reqwest::Url::parse("http://this-host-does-not-exist.invalid/x").unwrap();
+        assert!(matches!(
+            validate_target(&url).await,
+            Err(FetchError::InvalidHost)
+        ));
+    }
+
+    #[tokio::test]
+    async fn validate_target_resolves_public_hostname() {
+        // 依赖 DNS（容器/CI 均具备）：example.com 解析结果全为全局地址 → 放行
+        let url = reqwest::Url::parse("https://example.com/robots.txt").unwrap();
+        assert!(validate_target(&url).await.is_ok());
+    }
+
+    #[test]
+    fn filename_from_url_prefers_final_url_and_decodes_percent() {
+        assert_eq!(
+            filename_from_url(
+                "https://a.test/raw-name.bin",
+                "https://cdn.test/dir/my%20file.txt",
+            ),
+            "my file.txt"
+        );
+    }
+
+    #[test]
+    fn filename_from_url_falls_back_to_raw_when_final_has_no_path() {
+        assert_eq!(
+            filename_from_url("https://a.test/dir/real.tar.gz", "https://b.test/"),
+            "real.tar.gz"
+        );
+    }
+
+    #[test]
+    fn filename_from_url_falls_back_to_placeholder_when_both_empty() {
+        assert_eq!(
+            filename_from_url("https://a.test/", "https://b.test"),
+            "remote-file"
+        );
+    }
 }

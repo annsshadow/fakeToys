@@ -396,4 +396,212 @@ mod batch_insert_tests {
         let ids = crud_create_many(&pool, &probe_spec(), &[]).await.unwrap();
         assert!(ids.is_empty());
     }
+
+    /// 串行化共享临时表 shared_cov_t 的用例：五条用例并发跑会互相清表
+    static COV_LOCK: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
+
+    // ── 2026-10-29 覆盖率轮：crud_delete 与 IDOR 归属版（真库；无库显式 skip）──
+    // 覆盖缺口几乎全是「需要真库」的删除/归属路径：这些直接决定
+    // 「删掉的是不是自己的行、别人的行删不删得动」。
+
+    const COV_SPEC_SOFT: CrudSpec = CrudSpec {
+        table: "shared_cov_t",
+        columns: &[("name", "name")],
+        soft_delete: true,
+    };
+    const COV_SPEC_HARD: CrudSpec = CrudSpec {
+        table: "shared_cov_t",
+        columns: &[("name", "name")],
+        soft_delete: false,
+    };
+
+    async fn cov_setup() -> Option<Pool> {
+        if !crate::testing::is_db_available().await {
+            eprintln!("SKIP: no database available (set DATABASE_URL)");
+            return None;
+        }
+        let pool = crate::testing::test_pool();
+        let client = pool.get().await.unwrap();
+        client
+            .execute(
+                "CREATE TABLE IF NOT EXISTS shared_cov_t (                     id TEXT PRIMARY KEY, owner_id TEXT, name TEXT, deleted_at TIMESTAMP)",
+                &[],
+            )
+            .await
+            .unwrap();
+        client
+            .execute("DELETE FROM shared_cov_t", &[])
+            .await
+            .unwrap();
+        for (id, owner, name) in [("cov-1", "cov-owner", "a"), ("cov-2", "cov-other", "b")] {
+            client
+                .execute(
+                    "INSERT INTO shared_cov_t (id, owner_id, name) VALUES ($1, $2, $3)",
+                    &[&id, &owner, &name],
+                )
+                .await
+                .unwrap();
+        }
+        Some(pool)
+    }
+
+    async fn cov_teardown() {
+        let pool = crate::testing::test_pool();
+        let client = pool.get().await.unwrap();
+        let _ = client
+            .execute("DROP TABLE IF EXISTS shared_cov_t", &[])
+            .await;
+    }
+
+    fn cov_session(person: &str) -> crate::session::Session {
+        crate::session::Session {
+            token: "cov-tok".to_string(),
+            person_unique: person.to_string(),
+            created_at: chrono::Utc::now().naive_utc(),
+            expires_at: chrono::Utc::now().naive_utc() + chrono::Duration::hours(1),
+        }
+    }
+
+    #[tokio::test]
+    async fn crud_delete_soft_delete_marks_row_and_misses_second_time() {
+        let _guard = COV_LOCK.lock().await;
+        let Some(pool) = cov_setup().await else {
+            return;
+        };
+        // 软删：命中 → true，deleted_at 落值；再删一次（已被软删）→ false
+        assert!(crud_delete(&pool, &COV_SPEC_SOFT, "cov-1").await.unwrap());
+        let client = pool.get().await.unwrap();
+        let deleted_at: Option<String> = client
+            .query_one(
+                "SELECT deleted_at::text FROM shared_cov_t WHERE id = 'cov-1'",
+                &[],
+            )
+            .await
+            .unwrap()
+            .get("deleted_at");
+        assert!(deleted_at.is_some(), "软删必须落 deleted_at");
+        assert!(!crud_delete(&pool, &COV_SPEC_SOFT, "cov-1").await.unwrap());
+        cov_teardown().await;
+    }
+
+    #[tokio::test]
+    async fn crud_delete_hard_delete_removes_row_and_miss_on_unknown_id() {
+        let _guard = COV_LOCK.lock().await;
+        let Some(pool) = cov_setup().await else {
+            return;
+        };
+        assert!(crud_delete(&pool, &COV_SPEC_HARD, "cov-1").await.unwrap());
+        let client = pool.get().await.unwrap();
+        let n = client
+            .query_one(
+                "SELECT COUNT(*) AS c FROM shared_cov_t WHERE id = 'cov-1'",
+                &[],
+            )
+            .await
+            .unwrap()
+            .get::<_, i64>(0);
+        assert_eq!(n, 0, "硬删必须物理移除");
+        assert!(!crud_delete(&pool, &COV_SPEC_HARD, "cov-nope")
+            .await
+            .unwrap());
+        cov_teardown().await;
+    }
+
+    #[tokio::test]
+    async fn crud_save_owned_allows_owner_and_updates_payload() {
+        let _guard = COV_LOCK.lock().await;
+        let Some(pool) = cov_setup().await else {
+            return;
+        };
+        let session = cov_session("cov-owner");
+        let ok = crud_save_owned(
+            &pool,
+            &COV_SPEC_SOFT,
+            "cov-1",
+            &serde_json::json!({ "name": "renamed" }),
+            "owner_id",
+            &session,
+        )
+        .await
+        .unwrap();
+        assert!(ok);
+        let client = pool.get().await.unwrap();
+        let name: String = client
+            .query_one("SELECT name FROM shared_cov_t WHERE id = 'cov-1'", &[])
+            .await
+            .unwrap()
+            .get("name");
+        assert_eq!(name, "renamed");
+        cov_teardown().await;
+    }
+
+    #[tokio::test]
+    async fn crud_save_owned_rejects_non_owner_with_forbidden() {
+        let _guard = COV_LOCK.lock().await;
+        let Some(pool) = cov_setup().await else {
+            return;
+        };
+        let session = cov_session("cov-intruder");
+        let err = crud_save_owned(
+            &pool,
+            &COV_SPEC_SOFT,
+            "cov-2",
+            &serde_json::json!({ "name": "hijack" }),
+            "owner_id",
+            &session,
+        )
+        .await
+        .unwrap_err();
+        assert!(
+            matches!(err, AppError::Forbidden),
+            "非属主必须 Forbidden：{err:?}"
+        );
+        cov_teardown().await;
+    }
+
+    #[tokio::test]
+    async fn crud_owned_missing_row_returns_false_without_owner_check() {
+        let _guard = COV_LOCK.lock().await;
+        let Some(pool) = cov_setup().await else {
+            return;
+        };
+        let session = cov_session("cov-owner");
+        // 行不存在：保 not-found 语义（Ok(false)），即使请求者是陌生人也不报 Forbidden
+        assert!(!crud_save_owned(
+            &pool,
+            &COV_SPEC_SOFT,
+            "cov-missing",
+            &serde_json::json!({ "name": "x" }),
+            "owner_id",
+            &session,
+        )
+        .await
+        .unwrap());
+        assert!(
+            !crud_delete_owned(&pool, &COV_SPEC_SOFT, "cov-missing", "owner_id", &session,)
+                .await
+                .unwrap()
+        );
+        cov_teardown().await;
+    }
+
+    #[tokio::test]
+    async fn crud_delete_owned_owner_path_and_forbidden_path() {
+        let _guard = COV_LOCK.lock().await;
+        let Some(pool) = cov_setup().await else {
+            return;
+        };
+        let owner = cov_session("cov-owner");
+        assert!(
+            crud_delete_owned(&pool, &COV_SPEC_SOFT, "cov-1", "owner_id", &owner)
+                .await
+                .unwrap()
+        );
+        let intruder = cov_session("cov-intruder");
+        let err = crud_delete_owned(&pool, &COV_SPEC_SOFT, "cov-2", "owner_id", &intruder)
+            .await
+            .unwrap_err();
+        assert!(matches!(err, AppError::Forbidden));
+        cov_teardown().await;
+    }
 }
