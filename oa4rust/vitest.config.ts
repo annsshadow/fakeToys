@@ -57,8 +57,15 @@ export default defineConfig({
       //  - 有可执行分支的模块 → 设真实 floor，防止覆盖回退；
       //  - 结构不可测（生成器产物 / uni-app 入口）→ 显式 exclude 并注释理由；
       //  - 剩余未覆盖语句逐文件判定：可测的已补测，不可测的在此声明豁免。
-      perFile: true,
+      // 2026-10-28：perFile 收为 false——vitest 里 glob 键**始终**按 per-file 生效，
+      // 不受该开关影响；该开关只决定**顶层**数字阈值按全局（false）还是逐文件（true）。
+      // 顶层 97/84 是全局棘轮（2026-10-28 实测 statements 97.16 / branches 84.68，
+      // 见 docs/plans/2026-10-27-comprehensive-test-coverage.md「oa4rust/frontend 建议 floor」），
+      // 余量极薄（0.16/0.68）是有意为之：任何一处覆盖回退都会立刻红。
+      perFile: false,
       thresholds: {
+        statements: 97,
+        branches: 84,
         // 生成的一行 HTTP 包装器（62 个 API 模块）无可测分支：api-coverage-generated.test.ts
         // 已实跑每个方法触发 V8 覆盖，剩余 ~3% 未覆盖行是生成器模板的纯转发行，
         // 属结构不可测——维持 90% floor 即豁免线（低于此说明生成测试集坏了）。

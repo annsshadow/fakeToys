@@ -434,7 +434,7 @@ node --import tsx --test --experimental-test-coverage test/*.test.ts
 | `llm-lab` | 99 / — | 95 / 90（需先把 `--cov-branch` 写进 pyproject） |
 | `laiyipao/admin` | 90.32 / 83.28（行/分支，2026-10-28） | 89 / 82（`vitest.config.ts` ratchet，各留 ~1pt 抖动余量） |
 | `laiyipao/miniapp` | 95.38 / 90.29（行/分支，2026-10-28） | 94 / 88（同上） |
-| `oa4rust/frontend` | 97.39 / 84.68（2026-10-28） | 保持 per-file 现有 floor，全局加 97 / 84 |
+| `oa4rust/frontend` | 97.39 / 84.68（2026-10-28） | ~~保持 per-file 现有 floor，全局加 97 / 84~~ → **已落地（2026-10-28）**：`oa4rust/vitest.config.ts` 顶层 thresholds `statements 97 / branches 84`，`perFile` 收为 false（glob 键仍按 per-file 生效，该开关只管顶层数字阈值）；双向自证：97 通过（exit 0）、临时抬 99 红（`does not meet global threshold`，exit 1）。余量 0.16/0.68 是有意为之的紧棘轮 |
 | `oa4rust/backend(shared)` | 81.63（行，含测试代码） | B2 目标 75 已达成；下一轮 floor 80，之后每轮 +5 |
 | `laiyipao/server` | 85.8（语句，合并 profile） | **85**（已接入 CI；基线见 `docs/laiyipao/audits/coverage-2026-10-28.md`） |
 
