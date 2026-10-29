@@ -104,6 +104,11 @@ pub(crate) fn path_matches(path: &str, pattern: &str) -> bool {
 }
 
 pub(crate) fn is_auth_exempt(path: &str) -> bool {
+    // 豁免排除（A5 批）：先精确点名，命中则即使匹配下方通配豁免也不放行。
+    // 防「本意给只读详情的 {param} 豁免」把写路由一并匿名放行（通配段碰撞）。
+    if AUTH_EXEMPT_BLOCKED_PATHS.contains(&path) {
+        return false;
+    }
     // 精确路径匹配（带 {param} 通配）
     AUTH_EXEMPT_PATHS.iter().any(|pattern| path_matches(path, pattern))
         // 前缀匹配（覆盖带动态路径段的子路径）

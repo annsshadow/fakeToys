@@ -131,16 +131,19 @@ mod tests {
                 .oneshot(
                     Request::builder()
                         .uri("/api/attendance/core/entity/rule/rule-001/delete")
-                        .method(axum::http::Method::GET)
+                        .method(axum::http::Method::POST)
                         .body(Body::empty())
                         .unwrap(),
                 )
                 .await
                 .unwrap();
 
+            // 收会话存在档门后，无会话请求应在 DB 访问前被拦（A4 批）。
+            // B3 接线未修前 Extension<DatabaseConnection> 提取失败为 500；
+            // B3 修复后应收敛为 401。
             assert!(
-                response.status() == StatusCode::INTERNAL_SERVER_ERROR
-                    || response.status() == StatusCode::NOT_FOUND
+                response.status() == StatusCode::UNAUTHORIZED
+                    || response.status() == StatusCode::INTERNAL_SERVER_ERROR
             );
         });
     }
@@ -213,16 +216,19 @@ mod tests {
                 .oneshot(
                     Request::builder()
                         .uri("/api/attendance/core/entity/record/record-001/delete")
-                        .method(axum::http::Method::GET)
+                        .method(axum::http::Method::POST)
                         .body(Body::empty())
                         .unwrap(),
                 )
                 .await
                 .unwrap();
 
+            // 收会话存在档门后，无会话请求应在 DB 访问前被拦（A4 批）。
+            // B3 接线未修前 Extension<DatabaseConnection> 提取失败为 500；
+            // B3 修复后应收敛为 401。
             assert!(
-                response.status() == StatusCode::INTERNAL_SERVER_ERROR
-                    || response.status() == StatusCode::NOT_FOUND
+                response.status() == StatusCode::UNAUTHORIZED
+                    || response.status() == StatusCode::INTERNAL_SERVER_ERROR
             );
         });
     }

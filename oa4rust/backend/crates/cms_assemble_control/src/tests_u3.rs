@@ -360,7 +360,7 @@ mod u3_tests {
         }
         let r = comment_commend_u3(
             Extension(mock_pool()),
-            Extension(session(OWNER)),
+            Some(Extension(session(OWNER))),
             axum::extract::Path("c-1".to_string()),
         )
         .await;

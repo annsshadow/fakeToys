@@ -3043,6 +3043,14 @@ async fn u2_require_admin(pool: &Pool, session: &shared::session::Session) -> Re
     }
 }
 
+/// 会话存在档门：无会话（Option<Extension<Session>> = None）→ 401。
+/// 与 other crates 的 require_session 同构，供 GET 写收口（A4 批）使用。
+fn require_session(
+    session: Option<Extension<shared::session::Session>>,
+) -> Result<shared::session::Session, AppError> {
+    session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
+}
+
 /// 可选会话版 admin 门禁：无会话 401、非 admin 403。
 /// 用于挂在 o2server 对齐豁免前缀下的破坏性写 handler（前缀须保持匿名可达供
 /// 只读端点使用，写操作只能在 handler 内拦截，未认证请求拿不到会话即 401）。
@@ -4019,14 +4027,15 @@ pub async fn u2_meeting_put_save(
 #[allow(non_snake_case)]
 pub async fn u2_meeting_checkin_get(
     pool: Extension<Pool>,
-    Extension(session): Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     if u2_meeting_creator(&client, &id).await?.is_none() {
         return Err(AppError::NotFound);
     }
-    let person = session.person_unique.clone();
+    let person = sess.person_unique.clone();
     let checkin_id = uuid::Uuid::new_v4().to_string();
     client
         .execute(

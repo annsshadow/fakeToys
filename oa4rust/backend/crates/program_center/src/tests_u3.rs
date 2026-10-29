@@ -164,11 +164,11 @@ mod u3_tests {
     async fn u3_captcha_code_param_routes_reachable() {
         assert_eq!(
             status_of(
-                "GET",
+                "POST",
                 "/api/program_center/captcha/v2/create/width/200/height/80"
             )
             .await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::UNAUTHORIZED
         );
         assert_eq!(
             status_of(
@@ -179,8 +179,8 @@ mod u3_tests {
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
-            status_of("GET", "/api/program_center/code/create/mobile/13800000000").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            status_of("POST", "/api/program_center/code/create/mobile/13800000000").await,
+            StatusCode::UNAUTHORIZED
         );
         assert_eq!(
             status_of(

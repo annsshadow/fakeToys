@@ -7864,9 +7864,7 @@ pub async fn document_id_view_count(
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 浏览量自增属写面：收有效会话门（无会话 401），防匿名刷量。
-    let Some(Extension(_sess)) = session else {
-        return Err(AppError::Unauthorized);
-    };
+    require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
@@ -8122,6 +8120,14 @@ async fn u2_require_admin(pool: &Pool, session: &shared::session::Session) -> Re
     } else {
         Err(AppError::Forbidden)
     }
+}
+
+/// 会话存在档门：无会话（Option<Extension<Session>> = None）→ 401。
+/// 与 other crates 的 require_session 同构，供 GET 写收口（A4 批）使用。
+fn require_session(
+    session: Option<Extension<shared::session::Session>>,
+) -> Result<shared::session::Session, AppError> {
+    session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
 }
 
 fn u2_body_str(body: &Value, key: &str) -> Option<String> {
@@ -10204,9 +10210,10 @@ pub async fn categoryinfo_list_objects_u3(
 #[allow(non_snake_case)]
 pub async fn comment_commend_u3(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let exists = client
         .query_opt(
@@ -10222,7 +10229,7 @@ pub async fn comment_commend_u3(
     client
         .execute(
             "INSERT INTO x_cms_commend (id, doc_id, person_id) VALUES (gen_random_uuid()::text, $1, $2)",
-            &[&doc_id, &session.person_unique],
+            &[&doc_id, &sess.person_unique],
         )
         .await
         .map_err(|_| AppError::Internal)?;

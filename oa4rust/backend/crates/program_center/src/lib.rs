@@ -1693,8 +1693,10 @@ pub async fn captcha_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
 #[allow(non_snake_case)]
 pub async fn captcha_v2_create_width_width_height_height(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path((width, height)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
     client
@@ -1842,8 +1844,10 @@ pub async fn center_version(pool: Extension<Pool>) -> Result<Json<ActionResult<V
 #[allow(non_snake_case)]
 pub async fn code_create_mobile_mobile(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(mobile): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
     let code = format!(

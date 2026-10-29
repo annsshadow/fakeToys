@@ -32,6 +32,9 @@ pub const AUTH_EXEMPT_PATHS: &[&str] = &[
     // 绑定 / 扫码登录
     "/api/authentication/bind",
     "/api/authentication/bind/meta/{meta}",
+    // 企微扫码登录回调：code 换 userid 后创建/更新人员并签发会话（A4 批定性为
+    // 认证前置族，必须匿名可达；一次性 code 由企微 OAuth 侧验证，等价外部门）。
+    "/api/qiyeweixin/update/person/detail/{code}",
     // OAuth 授权与回调
     "/api/authentication/oauth",
     "/api/authentication/oauth/list",
@@ -497,4 +500,22 @@ pub const AUTH_EXEMPT_PREFIXES: &[&str] = &[
     "/api/attendance/assemble/control/qywxstatistic",
     "/api/meeting/assemble/control/config/system",
     "/api/person/icon",
+];
+
+// ── 豁免排除列表（A5 批，2026-10-29）─────────────────────────────────────────
+// 通配段碰撞：下面这些路径会被上方含 `{param}` 的豁免条目「本意给只读详情的
+// {id}」错误地匿名放行（如 `/api/general/.../invoice/{id}` 把 `/invoice/create`
+// 的 create 当成 id 段）。它们要么是写路由（体内已有门，但中间件层应先拦住），
+// 要么是应该走注册表 Public 判定而非通配豁免的只读端点。逐条精确点名排除，
+// 不让通配豁免成为第二条匿名入口。
+pub const AUTH_EXEMPT_BLOCKED_PATHS: &[&str] = &[
+    // general invoice：写路由，豁免只应覆盖 invoice/{id} 详情读
+    "/api/general/assemble/control/invoice/create",
+    "/api/general/assemble/control/invoice/upload",
+    // meeting：写路由，豁免只应覆盖 meeting/{id} 详情读
+    "/api/meeting/assemble/control/meeting/create",
+    // queryview：写方法但只读的查询端点，匿名可达只应来自 rbac Public 注册，
+    // 不应靠 `/api/queryview/{id}` 的通配碰撞
+    "/api/queryview/search",
+    "/api/queryview/morelikethis",
 ];

@@ -204,8 +204,10 @@ pub async fn record_update(
 #[allow(non_snake_case)]
 pub async fn record_delete(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let deleted = attendance_record::Entity::delete_by_id(id.clone())
         .exec(&db.0)
         .await
@@ -340,8 +342,10 @@ pub async fn rule_update(
 #[allow(non_snake_case)]
 pub async fn rule_delete(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let deleted = attendance_rule::Entity::delete_by_id(id.clone())
         .exec(&db.0)
         .await
@@ -377,7 +381,7 @@ pub fn attendance_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
         )
         .route(
             "/api/attendance/core/entity/record/{id}/delete",
-            get(record_delete),
+            post(record_delete),
         )
         .route("/api/attendance/core/entity/rule/list", get(rule_list))
         .route("/api/attendance/core/entity/rule/create", post(rule_create))
@@ -387,7 +391,7 @@ pub fn attendance_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
         )
         .route(
             "/api/attendance/core/entity/rule/{id}/delete",
-            get(rule_delete),
+            post(rule_delete),
         )
 }
 
