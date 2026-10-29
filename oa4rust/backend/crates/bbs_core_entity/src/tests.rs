@@ -12,7 +12,6 @@ mod tests {
     use shared::response::ActionResult;
     use tower::ServiceExt;
 
-
     #[test]
     fn test_forum_list_returns_success() {
         let rt = tokio::runtime::Runtime::new().unwrap();
@@ -329,5 +328,94 @@ mod tests {
         let json = serde_json::to_string(&subject).unwrap();
         assert!(json.contains("subject-001"));
         assert!(json.contains("Rust异步编程"));
+    }
+
+    // ── B2 抽样复核（2026-10-30）：create_reply 从功能桩改为真实落库 ──
+    // ① 无会话必须 401（门在 DB 前，离线可证）；
+    // ② DB 臂：真实 PG 下落库并可读回，且 creator 取会话身份。
+    #[test]
+    fn create_reply_rejects_without_session() {
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        rt.block_on(async {
+            let db = shared::testing::mock_db().await;
+            let res = crate::create_reply(
+                axum::extract::Extension(db),
+                None,
+                axum::extract::Json(serde_json::json!({
+                    "topicId": "t-1",
+                    "content": "hello",
+                })),
+            )
+            .await;
+            assert!(
+                matches!(res, Err(shared::error::AppError::Unauthorized)),
+                "无会话调用 create_reply 必须 401（门在 DB 前）"
+            );
+        });
+    }
+
+    #[tokio::test]
+    async fn create_reply_inserts_row_with_session() {
+        if !shared::testing::is_db_available().await {
+            eprintln!("skipping create_reply_inserts_row_with_session: DATABASE_URL not reachable");
+            return;
+        }
+        use sea_orm::{ConnectionTrait, Statement};
+        let db = shared::testing::test_sea_orm_pool()
+            .await
+            .expect("PG 连接应成功");
+        let sess = shared::testing::test_session("b2-reply-user");
+        let res = crate::create_reply(
+            axum::extract::Extension(db.clone()),
+            Some(axum::extract::Extension(sess)),
+            axum::extract::Json(serde_json::json!({
+                "subjectId": "b2-reply-subject",
+                "content": "db-arm content",
+            })),
+        )
+        .await;
+        let resp = res.expect("有会话应放行");
+        let id = resp
+            .0
+            .data
+            .as_ref()
+            .and_then(|d| d.get("id"))
+            .and_then(|v| v.as_str())
+            .unwrap_or_default()
+            .to_string();
+        assert!(!id.is_empty(), "落库应返回新 id");
+
+        let backend = db.get_database_backend();
+        let row = db
+            .query_one(Statement::from_sql_and_values(
+                backend,
+                "SELECT content, creator FROM x_bbs_reply WHERE id = $1",
+                vec![id.clone().into()],
+            ))
+            .await
+            .expect("查询 x_bbs_reply 应成功");
+        let (content, creator) = match row {
+            Some(r) => {
+                let c: Option<Option<String>> = r.try_get("", "content").ok();
+                let cr: Option<Option<String>> = r.try_get("", "creator").ok();
+                (c.flatten(), cr.flatten())
+            }
+            None => (None, None),
+        };
+        assert_eq!(content.as_deref(), Some("db-arm content"));
+        assert_eq!(
+            creator.as_deref(),
+            Some("b2-reply-user"),
+            "creator 应取会话身份"
+        );
+
+        // 清理
+        db.execute(Statement::from_sql_and_values(
+            backend,
+            "DELETE FROM x_bbs_reply WHERE id = $1",
+            vec![id.into()],
+        ))
+        .await
+        .expect("清理 x_bbs_reply 应成功");
     }
 }

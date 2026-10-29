@@ -74,7 +74,6 @@ bbs_assemble_control	PUT	/api/bbs/assemble/control/user/setting/code	u2_setting_
 bbs_assemble_control	PUT	/api/bbs/assemble/control/user/subject/my/list/page/{page}/count/{count}	u2_my_subject_list	R6
 bbs_assemble_control	PUT	/api/bbs/assemble/control/user/subject/voterecord/list/page/{page}/count/{count}	u2_voterecord_list	R7
 bbs_assemble_control	PUT	/api/bbs/assemble/control/userinfo	u2_userinfo_filter	R7
-bbs_core_entity	POST	/api/bbs/core/entity/reply	create_reply	R7
 calendar_assemble_control	POST	/api/calendar_assemble_control/event/list/filter/sample/manager	event_list_filter_sample_manager	R6
 calendar_assemble_control	PUT	/api/calendar_assemble_control/calendar/list/filter	calendar_list_filter	R7
 calendar_assemble_control	PUT	/api/calendar_assemble_control/event/list/filter	event_list_filter	R7

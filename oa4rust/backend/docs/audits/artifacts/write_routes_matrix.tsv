@@ -240,7 +240,7 @@ bbs_core_entity	DELETE	/api/bbs/core/entity/section/{id}	delete_section	R5-已�
 bbs_core_entity	DELETE	/api/bbs/core/entity/subject/{id}	delete_subject	R5-已认证+体内门禁
 bbs_core_entity	POST	/api/bbs/core/entity/forum	create_forum	R5-已认证+体内门禁
 bbs_core_entity	POST	/api/bbs/core/entity/forum/{id}	update_forum	R5-已认证+体内门禁
-bbs_core_entity	POST	/api/bbs/core/entity/reply	create_reply	R7-已认证+体内无会话无门禁
+bbs_core_entity	POST	/api/bbs/core/entity/reply	create_reply	R5-已认证+体内门禁
 bbs_core_entity	POST	/api/bbs/core/entity/section	create_section	R5-已认证+体内门禁
 bbs_core_entity	POST	/api/bbs/core/entity/section/{id}	update_section	R5-已认证+体内门禁
 bbs_core_entity	POST	/api/bbs/core/entity/subject	create_subject	R5-已认证+体内门禁

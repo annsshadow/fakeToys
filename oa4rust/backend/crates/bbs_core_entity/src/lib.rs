@@ -666,32 +666,61 @@ pub async fn delete_subject(
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn create_reply(
-    _db: Extension<DatabaseConnection>,
+    db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    // Note: reply is stored in a separate table not covered by this entity migration
-    // Keeping the same raw SQL path for this endpoint
+    // B2 抽样复核（2026-10-30）：此前该端点不落库只回假 success（功能桩）。
+    // 与 bbs_assemble_control::create_reply 对齐：真实写入 x_bbs_reply，
+    // 会话门（无会话 401）先于任何 DB 访问。
+    use sea_orm::{ConnectionTrait, Statement};
+
+    let sess = require_session(session)?;
     let id = uuid::Uuid::new_v4().to_string();
-    let topic_id = payload
-        .get("topicId")
+    let subject_id = payload
+        .get("subjectId")
+        .or_else(|| payload.get("topicId"))
         .and_then(|v| v.as_str())
         .unwrap_or_default()
         .to_string();
-    let _content = payload
+    let content = payload
         .get("content")
         .and_then(|v| v.as_str())
         .unwrap_or_default()
         .to_string();
-    let _creator = payload
+    let creator = payload
         .get("creator")
+        .or_else(|| payload.get("authorId"))
         .and_then(|v| v.as_str())
-        .unwrap_or("system")
+        .filter(|c| !c.trim().is_empty())
+        .unwrap_or(&sess.person_unique)
         .to_string();
+
+    // x_bbs_reply.subject_id/author_id 为 NOT NULL（无默认）；subjectId/topicId 同义，
+    // 归一到 subject 并双写 topic_id（回复列表按 topic_id 过滤，与 assemble_control 一致）。
+    let backend = db.get_database_backend();
+    let stmt = Statement::from_sql_and_values(
+        backend,
+        "INSERT INTO x_bbs_reply (id, subject_id, author_id, topic_id, content, creator, create_time) \
+         VALUES ($1, $2, $3, $4, $5, $6, NOW())",
+        vec![
+            id.clone().into(),
+            subject_id.clone().into(),
+            creator.clone().into(),
+            subject_id.clone().into(),
+            content.into(),
+            creator.into(),
+        ],
+    );
+    db.execute(stmt).await.map_err(|e| {
+        tracing::error!("[bbs_core_entity::create_reply] insert failed: {}", e);
+        AppError::Internal
+    })?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("topicId".to_string(), Value::String(topic_id)),
+            ("topicId".to_string(), Value::String(subject_id)),
         ]),
     ))))
 }
@@ -782,7 +811,6 @@ pub fn bbs_core_entity_router(db: DatabaseConnection) -> Router {
         .route("/api/bbs/core/entity/reply", post(create_reply))
         .route("/api/bbs/core/entity/subject/search", get(search_subjects))
         .layer(Extension(db))
-
 }
 
 #[cfg(test)]

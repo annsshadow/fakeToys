@@ -35,7 +35,7 @@ LY-7（小程序虚拟化，实测列表全部有界）、AU-P1（异步后端�
 |---|---|---|---|
 | **A1** | R4 匿名可达 + 体内无门禁 **13 条** | 路由匿名可达 ∧ handler 体内无任何会话/admin 门 | 含写 SQL 6 / 只读挂写 7 / 体内不可解析 0 |
 | **A2** | R6 已认证 + 读会话无门禁 **14 条** | 有会话但只读不校验 | 含写 SQL **0**（已收口，原 134） / 只读挂写 14 |
-| **A3** | R7 已认证 + 体内无会话无门禁 **631 条** | 全部为「只读挂写方法」 | 含写 0，即**真写面为 0**，属"方法名带写、体内不写"的收口残留 |
+| **A3** | R7 已认证 + 体内无会话无门禁 **630 条** | 全部为「只读挂写方法」 | 含写 0，即**真写面为 0**，属"方法名带写、体内不写"的收口残留 |
 | **A4** | GET 写（csrf / requires_admin 双盲区）**2 条** | GET 路由 ∧ 体内写 SQL ∧ 体内无门禁 | 均为有意保留：企微回调 + 初始化 set_cancel（K1 匿名） |
 | **A5** | 豁免通配段碰撞 **0 条** | 「本意给只读详情的 `{param}` 豁免」把写路由一并匿名放行 | 已清零（AUTH_EXEMPT_BLOCKED_PATHS 点名排除） |
 | **A6** | 真匿名可达面 **192 条** | auth 豁免 ∧ 注册表 Public | A1 14 / A2 29 / A3 149 |
@@ -61,6 +61,17 @@ LY-7（小程序虚拟化，实测列表全部有界）、AU-P1（异步后端�
 >   `check_owner` 门查不到（personal 委托 `empower::delete` 被误读成 K3 无门）。
 >   补全局函数索引回退（仅门检测），`check_owner` 作证 8→12，GET 写清单回到 2 条。
 >
+> **A3/R7 抽样复核（2026-10-30 第三轮）**：对 631 条只读挂写方法按 crate 分层抽样
+> （每 crate 取首/中/尾共 3 条，覆盖 processplatform_assemble_surface 227、cms 66、
+> organization 43、program_center 40、attendance 38 等全部 crate），重点抽查
+> 名字/方法带写嫌疑的样本（`link_service`、`message_test_send`、`cipher_hotpic_*`
+> DELETE、`im_conversation_id_group`、`sso_post_login`、`sms_send`、`cache_receive`、
+> `meeting_id_checkin_code`、`u2_share_password_verify` 等），全部确认为纯 SELECT
+> 或内存操作。**抽样发现并修复一个真实功能桩**：`bbs_core_entity::create_reply`
+> （`/api/bbs/core/entity/reply`）此前不落库只回假 success——已改为真实
+> `INSERT INTO x_bbs_reply`（sea_orm 参数化 SQL）+ `require_session` 会话门，
+> 与 `bbs_assemble_control::create_reply` 对齐；新增离线 401 测试与 DB 臂落库
+> 测试。修复后尺子读数 R7 631→630、R5 +1，含写 SQL 仍为 0。
 > **顺带修复真实限流缺口**：org_auth 登录别名不在 `AUTH_RATE_LIMIT_EXACT`，
 > `rate_limit_middleware` 对「豁免且未列限流」直接跳过 ⇒ 该别名成为无上限的登录
 > 暴力破解入口（契约路径限 30/min/IP，别名不限）。已补入精确名单，并新增
