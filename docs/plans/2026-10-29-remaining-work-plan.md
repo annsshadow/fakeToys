@@ -70,6 +70,13 @@ LY-7（小程序虚拟化，实测列表全部有界）、AU-P1（异步后端�
 | **B6** | 17 条惰性豁免条目 | 豁免表里有、注册表不 Public ⇒ 豁免本身失效（引信不是噪音） | 7 写 + 10 读 | 逐条定性：要么删豁免，要么补 Public 并解释 |
 | **B7** | 三把建议守卫 | ①GET 写禁令（`csrf_middleware` 只覆盖 POST/PUT/PATCH/DELETE，`requires_admin` 同）②Public 兜底点名（`ADMIN_WRITE_PREFIXES` ∩ 注册表 Public 的 15 条交集逐条点名）③测试在册 ≠ 测试在跑（B5 的机械守卫） | 3 个测试 | ①需同批改前端（`MeetingApp.vue` 自检面板仍在用 GET） |
 
+> **B7 已全部落地（2026-10-30）**：①+②合并为 `oa4rust/backend/tests/write_gating_guards.rs`
+> （纯 std 扫描，与 B7③同风格）：①扫全部 GET 路由的写 SQL + 门信号，豁免表仅
+> `qiyeweixin_update_person_detail`（企微回调）与 `set_cancel`（初始化引导）两条；
+> ②扫「admin 写前缀 ∩ 注册表 Public」内真写 handler 的体内门，豁免表仅注册/重置
+> 认证前置族。判据复刻尺子的 `WRITE_SQL_RE`（含注释剥离）、ORM 写、GATE_RE 前缀
+> 匹配、自限定写=归属门（缺陷 26）与死档排除（缺陷 18）。③见 `tests/test_module_registration_guard.rs`。
+
 ### C 类 · 覆盖率条件项
 
 | 编号 | 项 | 现状 | 缺口性质 |

@@ -1377,9 +1377,14 @@ console.log("明细已写 anonymous_write_routes.tsv");
 // 与 `.../reset`、`.../reset/password/anonymous`，见 personal/src/lib.rs:406-416）
 // 是**原样委托同一 handler** 的第二条注册路径，与已登记的三条同匿名语义；
 // 复跑实测 8 条 vs 名单 5 条当场红，故按「新增匿名落笔面必须显式点名」补入，不是放宽判据。
+// 2026-10-30 复跑补登记：`auth GET /api/qiyeweixin/update/person/detail/{code}`（企微扫码登录
+// 回调）在 B6 批补了注册表 Public 后进 A1。该端点是**设计上必须匿名**的认证前置族——
+// 一次性 code 由企微 OAuth 侧验证，回调契约本身是 GET，code 换 userid 后创建/更新人员并
+// 签发会话（A4 批已定性，见 constants.rs 该路径的豁免注释）。补入名单，不是放宽判据。
 const A1_UNCONDITIONAL_WRITE = [
   "auth\tPOST\t/api/authentication",
   "auth\tPOST\t/api/authentication/login",
+  "auth\tGET\t/api/qiyeweixin/update/person/detail/{code}",
   "personal\tPOST\t/api/person/regist",
   "personal\tPUT\t/api/reset",
   "personal\tPOST\t/api/reset/password/anonymous",
