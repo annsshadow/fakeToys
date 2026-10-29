@@ -22,6 +22,10 @@ pub const AUTH_EXEMPT_PATHS: &[&str] = &[
     "/api/organization/assemble/authentication/authentication/captchaRSAPublicKey",
     "/api/organization/assemble/authentication/authentication/mockdeletetoget",
     "/api/organization/assemble/authentication/authentication/safe/logout",
+    // 认证别名验证码（R8 不可解析族复核，2026-10-30）：委托 auth::code / auth::code_send，
+    // 与 /api/authentication/code 同属认证前置，必须匿名可达（发送验证码）。
+    "/api/organization/assemble/authentication/authentication/code",
+    "/api/organization/assemble/authentication/authentication/code/credential/{credential}",
     // program_center 认证别名
     "/api/program_center/authentication",
     // 验证码
@@ -389,6 +393,8 @@ pub const AUTH_RATE_LIMIT_PREFIXES: &[&str] = &[
     "/api/authentication/safe",       // 安全注销
     "/api/authentication/switchuser", // 用户切换
     "/api/person/regist/code",        // 注册验证码发送
+    // 认证别名验证码同限流（2026-10-30）：委托 auth::code，匿名可达必须防枚举
+    "/api/organization/assemble/authentication/authentication/code",
     // 契约别名同限流（2026-10-24 R1）
     "/api/organization/assemble/personal/regist/code",
     "/api/organization/assemble/personal/reset",

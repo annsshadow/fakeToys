@@ -38,6 +38,8 @@ organization_assemble_authentication	POST	/api/organization/assemble/authenticat
 organization_assemble_authentication	DELETE	/api/organization/assemble/authentication/authentication	logout	A3-真匿名+只读
 organization_assemble_authentication	GET	/api/organization/assemble/authentication/authentication	whoami	A3-真匿名+只读
 organization_assemble_authentication	GET	/api/organization/assemble/authentication/authentication/captchaRSAPublicKey	captcha_rsa_public_key	A3-真匿名+只读
+organization_assemble_authentication	POST	/api/organization/assemble/authentication/authentication/code	code	A3-真匿名+只读
+organization_assemble_authentication	GET	/api/organization/assemble/authentication/authentication/code/credential/{credential}	code_send	A3-真匿名+只读
 organization_assemble_authentication	GET	/api/organization/assemble/authentication/authentication/safe/logout	safe_logout_get	A3-真匿名+只读
 organization_assemble_express	GET	/api/person/nick/name/{flag}	person_nick_name_flag	A3-真匿名+只读
 organization_assemble_express	POST	/api/person/list	person_list	A3-真匿名+只读

@@ -7,6 +7,7 @@ auth	POST	/api/authentication/logout	logout	R4
 auth	POST	/api/authentication/code	code	R4
 organization_assemble_authentication	POST	/api/organization/assemble/authentication/authentication	login	R4
 organization_assemble_authentication	DELETE	/api/organization/assemble/authentication/authentication	logout	R4
+organization_assemble_authentication	POST	/api/organization/assemble/authentication/authentication/code	code	R4
 personal	PUT	/api/reset	reset_password	R4
 personal	POST	/api/reset/password/anonymous	reset_password_anonymous	R4
 processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/application/list/range	application_list_range	R4

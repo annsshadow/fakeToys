@@ -916,7 +916,7 @@ organization_assemble_authentication	POST	/api/organization/assemble/authenticat
 organization_assemble_authentication	POST	/api/organization/assemble/authentication/authentication/bind/meta/{meta}	authentication_bind_meta_post	R7-已认证+体内无会话无门禁
 organization_assemble_authentication	POST	/api/organization/assemble/authentication/authentication/captcha	captcha_login	R7-已认证+体内无会话无门禁
 organization_assemble_authentication	POST	/api/organization/assemble/authentication/authentication/check/token	check_token	R5-已认证+体内门禁
-organization_assemble_authentication	POST	/api/organization/assemble/authentication/authentication/code	code	R8-已认证+体内不可解析（宏生成/跨 crate，本尺不背书）
+organization_assemble_authentication	POST	/api/organization/assemble/authentication/authentication/code	code	R4-匿名可达+体内无门禁
 organization_assemble_authentication	POST	/api/organization/assemble/authentication/authentication/switchuser/mockputtopost	switch_user	R5-已认证+体内门禁
 organization_assemble_authentication	POST	/api/organization/assemble/authentication/authentication/two/factory/login	two_factor_login	R7-已认证+体内无会话无门禁
 organization_assemble_authentication	POST	/api/organization/assemble/authentication/bind/meta/{meta}	bind_confirm	R5-已认证+体内门禁
