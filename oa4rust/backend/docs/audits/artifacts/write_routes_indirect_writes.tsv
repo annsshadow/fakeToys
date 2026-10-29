@@ -9,6 +9,8 @@ attendance_assemble_control	GET	/api/attendance/assemble/control/qywx/sync/from/
 attendance_assemble_control	GET	/api/attendance/assemble/control/v2/group/{id}/delete	v2_group_delete	K	delete_owned_record
 attendance_assemble_control	GET	/api/attendance/assemble/control/v2/leave/delete/{id}	v2_leave_delete	K	delete_owned_record
 attendance_assemble_control	GET	/api/attendance/assemble/control/v2/shift/delete/{id}	v2_shift_delete	K	delete_owned_record
+attendance_core_entity	GET	/api/attendance/core/entity/record/{id}/delete	record_delete	K	sea_orm.Entity::delete_by_id
+attendance_core_entity	GET	/api/attendance/core/entity/rule/{id}/delete	rule_delete	K	sea_orm.Entity::delete_by_id
 auth	GET	/api/authentication/oauth/bind/name/{name}/code/{code}/redirecturi/{redirectUri}	oauth_bind_name	K	provider_login
 auth	GET	/api/authentication/oauth/login/dingding/code/{code}	oauth_login_dingding	K	provider_login
 auth	GET	/api/authentication/oauth/login/name/{name}/code/{code}/redirecturi/{redirectUri}	oauth_login_name	K	provider_login
@@ -77,6 +79,7 @@ file_assemble_control	POST	/api/file/assemble/control/file/upload/referencetype/
 file_assemble_control	PUT	/api/file/assemble/control/file/upload/referencetype/{referenceType}/reference/{reference}/scale/{scale}	u2_file_upload_multipart	R6	u2_store_new
 meeting_assemble_control	POST	/api/meeting/assemble/control/attachment/meeting/{meetingId}/upload/{summary}	u2_attachment_upload	R6	u2_attachment_store_new
 meeting_assemble_control	POST	/api/meeting/assemble/control/attachment/meeting/{meetingId}/upload/{summary}/callback/{callback}	u2_attachment_upload_callback	R6	u2_attachment_store_new
+meeting_core_entity	POST	/api/meeting/core/entity/meeting/create	create_meeting	R6	sea_orm.ActiveModel::insert(active_model)
 organization_assemble_authentication	GET	/api/organization/assemble/authentication/oauth/auth	oauth_auth	K	oauth_code_store
 organization_assemble_control	GET	/api/organization/assemble/control/person/{flag}/mockdeletetoget	person_mock_delete_to_get	K	person_delete
 organization_assemble_control	GET	/api/organization/assemble/control/person/{flag}/reserve/mockdeletetoget	person_reserve_mock_delete_to_get	K	person_reserve_delete

@@ -863,9 +863,40 @@ function awaitCall(body, name) {
   }
   return false;
 }
+// 尺子缺陷 28（本批修）：`writeEvidence` 旧判据只认 SQL 字面量（`INSERT INTO` / `UPDATE` /
+// `DELETE FROM`），而 sea_orm 的落笔全在 Rust API 里，一条 SQL 字面量都不出现：
+//   A. 静态实体写 `Entity::insert/insert_many/update_many/delete_many/delete_by_id(..)`；
+//   B. 活动模型写 `let [mut] x[: …]ActiveModel = ..` 之后 `x.insert/update/delete/save(..)`。
+// 于是 ORM 型写面被读成「只读挂写」：它们既不进 GET 写名单，也在 R4/R6/R7 的
+// 「含写 SQL」拆分里被算成只读。现场校准样本：`general_core_entity` 的 12 把 CRUD
+// （dict/dict_item/file/invoice × create/update/delete）本体内既无 SQL 字面量、
+// 也无转调写 helper，修前 12/12 判成非写；同 crate 的 9 条 GET 读面
+// （list/get/download）修后必须仍判非写。
+// 两臂都不按方法名裸扫，避免把 `map.insert(..)` / `Router::delete(handler)` 一类当落笔：
+// A 臂要求 `Entity::` 限定；B 臂只认本体内声明为 ActiveModel 的那个变量。
+const ORM_ENTITY_WRITE_RE = /\bEntity::(insert|insert_many|update_many|delete_many|delete_by_id)\s*\(/;
+const ACTIVE_MODEL_DECL_RES = [
+  /let\s+(?:mut\s+)?([a-z_]\w*)\s*:\s*(?:[\w:]+::)?ActiveModel\s*=/g,
+  /let\s+(?:mut\s+)?([a-z_]\w*)\s*=\s*(?:[\w:]+::)?ActiveModel\s*\{/g,
+];
+function ormWriteEvidence(body) {
+  if (!body) return false;
+  const em = ORM_ENTITY_WRITE_RE.exec(body);
+  if (em) return `sea_orm.Entity::${em[1]}`;
+  const vars = new Set();
+  for (const re of ACTIVE_MODEL_DECL_RES) for (const m of body.matchAll(re)) vars.add(m[1]);
+  for (const v of vars) {
+    const m = new RegExp(`\\b${v}\\s*\\.\\s*(insert|update|delete|save)\\s*\\(`).exec(body);
+    if (m) return `sea_orm.ActiveModel::${m[1]}(${v})`;
+  }
+  return false;
+}
 function writeEvidence(crate, body, depth = 0) {
   if (!body) return false;
   if (WRITE_SQL_RE.test(body)) return true;
+  // 缺陷 28：ORM 落笔与 SQL 字面量同层——都在「本函数体」判定，递归 helper 时同样成立。
+  const orm = ormWriteEvidence(body);
+  if (orm) return orm;
   if (depth >= 3) return false;
   // 缺陷 27：跨 crate 通用落笔按具名白名单作证（callHelperBody 解析不到 crud.rs 内的函数）。
   for (const n of CROSS_CRATE_WRITE_HELPERS) {
@@ -1078,6 +1109,34 @@ const readOnlyLines = [];
     `写 SQL 判据自证（缺陷 22）：含 format! 动态表名写法的 ${dynamicSites} 个函数全部判为写面，0 处漏量`
   );
 }
+// 刀口自证（缺陷 28 的守卫）：用 `general_core_entity` 做正反校准样本——12 把 CRUD
+// （POST create/update/delete）必须全部判为写面，9 条 GET 读面（list/get/download）
+// 必须一条都不判写。样本条数漂移（有人加/删路由）同样喊红：校准值要先复核再改，
+// 不能靠「判据变宽了但样例恰好还过」蒙混。
+{
+  const CAL = "general_core_entity";
+  const isWriteMethod = (r) => ["POST", "PUT", "DELETE", "PATCH"].includes(r.method);
+  const calRoutes = routes.filter((r) => r.crate === CAL);
+  const calWrites = calRoutes.filter(isWriteMethod);
+  const calReads = calRoutes.filter((r) => !isWriteMethod(r));
+  const bodyOf = (r) => fnBody(CAL, r.handlerRef) || "";
+  // SQL 字面量臂在这 12 把上必须 0 命中——否则样本被 SQL 污染，
+  // 就证明不了「修的是 ORM 盲区」，得另选样本或复核。
+  const sqlOnly = calWrites.filter((r) => WRITE_SQL_RE.test(bodyOf(r))).length;
+  const missing = calWrites.filter((r) => writeEvidence(CAL, bodyOf(r)) === false);
+  const noisy = calReads.filter((r) => writeEvidence(CAL, bodyOf(r)) !== false);
+  if (calWrites.length !== 12 || calReads.length !== 9 || sqlOnly || missing.length || noisy.length)
+    throw new Error(
+      `sea_orm 写判据自证失败（缺陷 28）：样本 ${calWrites.length} 写 / ${calReads.length} 读（期望 12/9）；` +
+        `SQL 字面量臂命中 ${sqlOnly} 条（期望 0）；` +
+        `漏判 ${missing.length} 条${missing.length ? `：${missing.map((r) => r.handler).join("、")}` : ""}；` +
+        `误判 ${noisy.length} 条${noisy.length ? `：${noisy.map((r) => r.handler).join("、")}` : ""}`
+    );
+  console.log(
+    `sea_orm 写判据自证（缺陷 28）：${CAL} 的 ${calWrites.length} 把 CRUD SQL 字面量臂命中 ${sqlOnly} 条、` +
+      `ORM 判据命中 ${calWrites.length - missing.length} 条，${calReads.length} 条 GET 读面 0 条误判`
+  );
+}
 for (const name of ["R4-匿名可达+体内无门禁", "R6-已认证+读会话无门禁", "R7-已认证+体内无会话无门禁"]) {
   const total = rb.get(name) || 0;
   const lines = READ_ONLY_ON_WRITE.get(name) || [];
@@ -1240,12 +1299,19 @@ console.log("明细已写 anonymous_write_routes.tsv");
 // 第三十二批：OAuth 三方登录 4 条（oauth/login/qywx·dingding·name + oauth/bind/name）已用
 // `validate_state`（服务端 state CSRF 门）收口，尺子认门后它们离开 A1（有门、非「无门禁」），
 // 名单同步移除这 4 条（9→5）。oidc_callback 本就不在 A1（它是 K3 已认证可达）。
+// 本批复跑补登记：personal 的 3 条契约别名（`/api/organization/assemble/personal/regist`
+// 与 `.../reset`、`.../reset/password/anonymous`，见 personal/src/lib.rs:406-416）
+// 是**原样委托同一 handler** 的第二条注册路径，与已登记的三条同匿名语义；
+// 复跑实测 8 条 vs 名单 5 条当场红，故按「新增匿名落笔面必须显式点名」补入，不是放宽判据。
 const A1_UNCONDITIONAL_WRITE = [
   "auth\tPOST\t/api/authentication",
   "auth\tPOST\t/api/authentication/login",
   "personal\tPOST\t/api/person/regist",
   "personal\tPUT\t/api/reset",
   "personal\tPOST\t/api/reset/password/anonymous",
+  "personal\tPOST\t/api/organization/assemble/personal/regist",
+  "personal\tPUT\t/api/organization/assemble/personal/reset",
+  "personal\tPOST\t/api/organization/assemble/personal/reset/password/anonymous",
 ];
 const a1Now = anonWrites
   .filter((l) => l.includes("\tA1-真匿名+体内写 SQL 且无门禁无会话"))

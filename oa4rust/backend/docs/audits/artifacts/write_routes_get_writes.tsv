@@ -1,4 +1,6 @@
 crate	method	path	handler	bucket
+attendance_core_entity	GET	/api/attendance/core/entity/record/{id}/delete	record_delete	K3-已认证无会话无门禁
+attendance_core_entity	GET	/api/attendance/core/entity/rule/{id}/delete	rule_delete	K3-已认证无会话无门禁
 auth	GET	/api/qiyeweixin/update/person/detail/{code}	qiyeweixin_update_person_detail	K3-已认证无会话无门禁
 cms_assemble_control	GET	/api/document/{id}/view/count	document_id_view_count	K2-读会话无门禁
 cms_assemble_control	GET	/api/comment/{id}/commend	comment_commend_u3	K2-读会话无门禁
