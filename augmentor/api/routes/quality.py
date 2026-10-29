@@ -415,7 +415,9 @@ async def profile_dataset(
             profiler = DataProfiler()
             report = profiler.profile(items)
             if output_path is not None:
-                profiler.save_profile(items, str(output_path))
+                # 落盘用**已经算好的** report：走 save_profile 会按 items 重算
+                # 一遍画像（分词/关键词/语言分布），大文件上等于做两次。
+                profiler.save_profile_report(report, str(output_path))
             return report
 
         return await run_in_thread(profile)

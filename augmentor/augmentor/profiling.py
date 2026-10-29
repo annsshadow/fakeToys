@@ -240,7 +240,23 @@ class DataProfiler:
         Returns:
             实际写入的文件路径
         """
-        content = self.profile_to_json(items)
+        return self.save_profile_report(self.profile(items), output_path)
+
+    def save_profile_report(self, report: Dict[str, Any], output_path: str) -> str:
+        """把**已经算好的**画像落盘。
+
+        调用方常常是"先要一份画像返回给前端，同时存一份到磁盘"——
+        走 `save_profile` 会按 items 重算一遍画像（分词、关键词、语言分布），
+        大文件上等于把最贵的那步做两次。这里直接序列化现成结果。
+
+        Args:
+            report: `profile` 的返回值
+            output_path: 输出路径
+
+        Returns:
+            实际写入的文件路径
+        """
+        content = json.dumps(report, ensure_ascii=False, indent=2)
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(content)
         logger.info(f"画像已保存到 {output_path}")

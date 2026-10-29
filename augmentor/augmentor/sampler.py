@@ -323,14 +323,22 @@ class ActiveSampler:
             选样报告字典
         """
         result = self.recommend_seeds(items)
-        
+
+        # 下标用一次遍历建表，而不是对每个推荐种子调 `items.index`。
+        # `recommend_seeds` 返回的是 **items 里的同一批对象**（引用），
+        # 所以按对象身份建表与 `index` 的"第一个相等项"一致；
+        # 而 `index` 是 O(n) 的 dict 逐键比较，k 个种子就是 O(k·n)。
+        first_index: Dict[int, int] = {}
+        for i, item in enumerate(items):
+            first_index.setdefault(id(item), i)
+
         return {
             "total_items": len(items),
             "recommended_count": len(result.recommended_seeds),
             "coverage_analysis": result.coverage_analysis,
             "recommendations": result.recommendations,
             "recommended_seed_indices": [
-                items.index(seed) for seed in result.recommended_seeds
-                if seed in items
+                first_index[id(seed)] for seed in result.recommended_seeds
+                if id(seed) in first_index
             ]
         }
