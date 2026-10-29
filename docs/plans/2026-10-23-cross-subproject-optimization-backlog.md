@@ -400,3 +400,71 @@ fetch_limited 的重定向/大响应体路径需公网服务端，留结构性�
 
 **仍未做（与上轮一致，需单独战役）**：OA-P0-1 路由补齐 ~73 条（L）、AU-P1 异步 LLM 后端（L）、
 LY-5 配置热加载（结构改动）、LY-7 小程序虚拟化（需视觉验收）、`shared` 覆盖率 92.05 → 93（llvm-cov 小时级）。
+
+### 7.14 配置热加载落地（LY-5）+ LY-7 证据性关闭 + 依赖告警清账（2026-10-29 第十三轮）
+
+#### LY-5 配置热加载：先修「热加载不可能成立」的前提
+
+**根因不是没写 SIGHUP，而是没有可重读的来源。** 本服务配置全部来自环境变量，
+而进程改不了自己的环境 —— 只调一次 `config.Load()` 得到的结果与启动时**逐字节相同**。
+那种"热加载"比不做更糟：运维以为改完就生效了。
+
+| 层 | 改动 | 为什么 |
+|---|---|---|
+| `internal/config` | 新增 `overlay`（原子指针）+ `LoadFile` / `ApplyOverlay` / `OverlaySnapshot`；`env*` 五个辅助函数与 prod 守卫改走 `rawEnv`（覆盖层 → 环境变量） | 需要一个**进程能重新读**的文件来源。`CONFIG_FILE` 指向扁平 JSON（键名与环境变量同名），覆盖层优先、**空串视为未设置**（回退环境变量，这才是运维想要的语义） |
+| `internal/service` | `Cfg config.Config` → `cfg atomic.Pointer[config.Config]`，新增 `Cfg()` 与 `ReloadConfig` | 与既有 `gate atomic.Pointer[RecomputeGate]` 同一形状：换的是"一份完整快照"，读方不会读到换到一半的字段 |
+| `cmd/api` | 启动读 `CONFIG_FILE`；SIGHUP 重读并替换快照 | 重载失败（文件没了 / JSON 坏 / prod 校验 panic）**保留原配置**并回滚覆盖层 —— 一次写错的配置不该打死正在服务的进程 |
+
+**档位边界（最容易做错的一处）**：`PUT /admin/recomputes/mode` 只换 gate、不写文件。
+所以 `ReloadConfig` 只在**文件里显式改了 `SETTLE_RECOMPUTE_MODE`** 时才重建 gate；
+否则一次"只改了 TTL"的 SIGHUP 会把运维刚切过的档悄悄抹回文件值 —— 那比不支持热加载更难查。
+
+**生效范围**：看板/榜单 TTL、结算重算模式、微信端点与凭据（都是每次请求现读）。
+**仍需重启**：数据库连接池、JWT 签名器、监听地址、路由级限流桶（构造期固化）。
+这两句同时写进 `ReloadConfig` 的注释与 `laiyipao/README.md` 的环境变量章节。
+
+**证据**：
+
+- `internal/config`：`LoadFile` 标量转换（整数不得变 `42.000000`）/ 嵌套值必须报错 /
+  文件缺失必须报错 / 覆盖优先与空串回退 / 快照是副本 —— 5 条新用例。
+- `internal/service`：快照替换生效（判据取 TTL，因为 `stats.go` / `economy.go` 是**每次请求现读**）、
+  文件档位没变时保留运行期切档、文件档位变了必须重建 gate、
+  `-race` 下「重载 × 请求读」无竞争 —— 4 条新用例。
+- 全量：`internal/config` / `internal/service` / `internal/httpapi` / `cmd/...` 真库全绿。
+
+**过程中被守卫抓到的三处（都已按原意修好，不是放宽）**：
+
+1. `prod_guard_coverage_test` 扫 `os.Getenv("X")` 判 prod 守卫 —— 改走 `rawEnv` 后认不出。
+   判据同时接受两种写法：**函数名变了，"prod 分支必须显式检查这个键"这条意图没变**，删掉检查仍会红。
+2. 两处 `&service.Service{}` 零值构造直接写 `s.Cfg().X = ...`（旧值字段时代的写法）。
+   改为 `s.cfg.Store(&config.Config{...})` —— 正是本用例要钉住的"改结构体字段是非原子写法"。
+3. `newConfigApp()` 的零值 Service 在 `Register` 里 `Cfg()` 解引用 nil。
+   修法不是给测试开后门，而是让 `Cfg()` 对零值 Service 用 CAS 装一份**实例专属**零值快照
+   （返回共享包变量会让某个用例的写入泄漏到别的用例）。
+
+#### LY-7 小程序虚拟化：**证据性关闭，不做**
+
+原判据是"物品量增长后渲染成本线性放大"。实测目录表规模（`laiyipao` 库）：
+
+| 列表 | 行数 |
+|---|---|
+| `skills` | 42 |
+| `equipment` | 18 |
+| `gems` / `gem_affixes` | 8 / 24 |
+| `skins` | 6 |
+| `shop_items` | 15 |
+| `levels` | 100（**按 6 章分组渲染**，`chapterLevels` 单屏约 17 行） |
+
+全部由**静态内容表**约束，没有任何用户生成的无限列表。给 ≤42 行的静态列表上虚拟化，
+换来的是滚动位置/复用 key 的一类新 bug，而收益为零。**结论：不做**，等出现真正的
+用户生成列表（如战报流、聊天）时再按那时的形状设计。
+
+#### 依赖告警清账（3 条：2 high / 1 low）
+
+| 告警 | 包 | 处置 | 证据 |
+|---|---|---|---|
+| 286 / 288（high，GHSA-83rm-6c8r-g728）<br>291（low，GHSA-8rc2-428q-7ww3） | `@intlify/core-base` / `@intlify/shared` @ **9.14.5** | **dismiss（tolerable_risk）** | 全部依赖路径经 `@dcloudio/uni-cli-shared`（uni-app vite 插件侧的**消息编译器**）；实测 `mobile/dist` 的 **62 个 JS 产物中 `escapeParameter` / `intlify` 标记零命中** ⇒ 该包不进 H5/小程序运行时；9.x 上游 `patched_versions=null`（无修复版），跨大版本升 11.x 会打断 uni 构建链。与应用侧已修到 11.4.16 的 `vue-i18n` 是两棵独立的树 |
+
+> 注意：`oa4rust/pnpm-workspace.yaml` 里把 `@intlify/core-base@9.1.9` 覆盖到 **9.14.5** ——
+> 那个覆盖本身是对的（9.1.9 更旧），但 9.x 全线无补丁，所以覆盖只能把"已知更差的版本"
+> 抬到"同族最新"，告警由 dismiss 收口而不是继续抬版本。
