@@ -10,6 +10,7 @@ import { join } from "node:path";
 // login.ts 被导入时不得自动执行 main（直接运行守卫靠 import.meta.url 判断），
 // 但其 import 链会加载 store——先设隔离目录
 process.env.AUTO_CHECKIN_DATA_DIR = mkdtempSync(join(tmpdir(), "auto-checkin-login-"));
+process.env.AUTO_CHECKIN_LOCK_DIR = mkdtempSync(join(tmpdir(), "auto-checkin-login-lock-"));
 
 const { clearWafGate, shortUrl } = await import("../src/login.js");
 import { FakePage, newApiSelf } from "./fake-page.js";

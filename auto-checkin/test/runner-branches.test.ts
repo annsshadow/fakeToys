@@ -16,6 +16,8 @@ import { join } from "node:path";
 import type { AppConfig } from "../src/types.js";
 
 process.env.AUTO_CHECKIN_DATA_DIR = mkdtempSync(join(tmpdir(), "auto-checkin-runner-"));
+// 锁目录同样隔离：与其它测试文件并行时不能抢仓库里的 .run.lock
+process.env.AUTO_CHECKIN_LOCK_DIR = mkdtempSync(join(tmpdir(), "auto-checkin-runner-lock-"));
 process.env.PLAYWRIGHT_BROWSERS_PATH = "Z:" + join("nonexistent", "browsers");
 delete process.env.VYCEAI_EMAIL;
 delete process.env.VYCEAI_PASSWORD;

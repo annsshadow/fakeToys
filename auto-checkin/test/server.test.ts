@@ -12,6 +12,8 @@ import type { AddressInfo } from "node:net";
 // 必须在导入 store/server 前设置，确保测试用临时数据目录
 const DATA_DIR = mkdtempSync(join(tmpdir(), "auto-checkin-server-"));
 process.env.AUTO_CHECKIN_DATA_DIR = DATA_DIR;
+// 锁目录与数据目录一起隔离，避免与并行测试文件抢同一把 .run.lock
+process.env.AUTO_CHECKIN_LOCK_DIR = DATA_DIR;
 
 // run 路由会触发 runAll/runSite → 浏览器启动；指向空目录让其确定性失败，
 // 测试绝不碰真实站点（必须在 server.js 加载 runner 链之前设置）

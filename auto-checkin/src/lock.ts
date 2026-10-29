@@ -3,7 +3,7 @@
 
 import lockfile from "proper-lockfile";
 import { mkdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { ROOT_DIR } from "./config.js";
 
 /**
@@ -13,10 +13,23 @@ import { ROOT_DIR } from "./config.js";
  *
  * daemon 可以长期运行，但在真正执行签到时会与计划任务/手动登录互斥，
  * 不会因为常驻进程存在而阻止空闲状态下的补跑和 OAuth 恢复。
+ *
+ * ## 锁目录可重定向（AUTO_CHECKIN_LOCK_DIR）
+ *
+ * 锁的语义是「同一个实例内互斥」，所以锁目录必须和实例一起隔离。
+ * 此前锁目录硬编码为 `<repo>/sessions`，而数据目录支持 `AUTO_CHECKIN_DATA_DIR`
+ * 覆盖——两者不一致的后果是：测试各自隔离了数据目录，却仍争抢仓库里同一把
+ * `.run.lock`，`node --test` 并行跑多个文件时互相把对方当成「另一个进程正在签到」
+ * （表现为 runAll 返回空数组、断言全挂，单文件跑却全绿）。同一台机器上跑
+ * 第二份实例（或第二套数据目录）也会撞同一把锁。
  */
+const LOCK_DIR = process.env.AUTO_CHECKIN_LOCK_DIR
+  ? resolve(process.env.AUTO_CHECKIN_LOCK_DIR)
+  : join(ROOT_DIR, "sessions");
+
 const LOCK_FILES = {
-  daemon: join(ROOT_DIR, "sessions", ".daemon.lock"),
-  run: join(ROOT_DIR, "sessions", ".run.lock"),
+  daemon: join(LOCK_DIR, ".daemon.lock"),
+  run: join(LOCK_DIR, ".run.lock"),
 } as const;
 const STALE_LOCK_MS = 5 * 60_000;
 const UPDATE_LOCK_MS = 10_000;
@@ -51,7 +64,7 @@ function readOwner(lockFile: string): { pid: number; token: string } | null {
 function acquireNamedLock(name: LockName): LockResult {
   const lockFile = LOCK_FILES[name];
   const ownerFile = ownerPath(lockFile);
-  mkdirSync(join(ROOT_DIR, "sessions"), { recursive: true });
+  mkdirSync(LOCK_DIR, { recursive: true });
 
   if (heldLocks.has(name)) return { ok: true };
 

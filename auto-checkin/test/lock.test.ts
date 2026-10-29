@@ -3,14 +3,16 @@
 
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { rmSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { rmSync, writeFileSync, mkdirSync, existsSync, mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
-// lock.ts 的锁文件在 <repo>/sessions/（真实目录，gitignored）。测试必须自清理，
-// 避免给并行的 server/runner 用例留陈旧锁（已知 flake 来源）。
-const REPO = join(dirname(fileURLToPath(import.meta.url)), "..");
-const SESSIONS = join(REPO, "sessions");
+// 锁目录必须**自己独占**：`node --test` 并行跑多个测试文件，此前本文件把外部锁
+// 建在仓库真实的 <repo>/sessions/ 下，与并行运行的 runner/server 用例抢同一把
+// `.run.lock`——对方被判定为「另一进程正在签到」，runAll 直接返回空数组。
+// AUTO_CHECKIN_LOCK_DIR 让每个测试文件拥有独立锁目录（必须在 import lock.js 前设）。
+const SESSIONS = mkdtempSync(join(tmpdir(), "auto-checkin-lock-"));
+process.env.AUTO_CHECKIN_LOCK_DIR = SESSIONS;
 const RUN_LOCK = join(SESSIONS, ".run.lock");
 const DAEMON_LOCK = join(SESSIONS, ".daemon.lock");
 
