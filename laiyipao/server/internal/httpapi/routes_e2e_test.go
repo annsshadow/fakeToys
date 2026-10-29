@@ -347,9 +347,9 @@ func TestE2EWechatLogin(t *testing.T) {
 	}))
 	defer wx.Close()
 
-	e.svc.Cfg.WechatAppID = "wx-test"
-	e.svc.Cfg.WechatAppSecret = "sec"
-	e.svc.Cfg.WechatEndpoint = wx.URL
+	e.svc.Cfg().WechatAppID = "wx-test"
+	e.svc.Cfg().WechatAppSecret = "sec"
+	e.svc.Cfg().WechatEndpoint = wx.URL
 
 	// 启用后空 code → 400
 	status, _ = e.post(t, "/api/v1/auth/wechat", "", map[string]any{"code": "  "})
@@ -394,7 +394,7 @@ func TestE2EWechatLogin(t *testing.T) {
 	}
 
 	// 微信服务不可达 → 500
-	e.svc.Cfg.WechatEndpoint = "http://127.0.0.1:1/sns/jscode2session"
+	e.svc.Cfg().WechatEndpoint = "http://127.0.0.1:1/sns/jscode2session"
 	status, _ = e.post(t, "/api/v1/auth/wechat", "", map[string]any{"code": "dead"})
 	if status != fiber.StatusInternalServerError {
 		t.Errorf("微信不可达应 500，实际 %d", status)

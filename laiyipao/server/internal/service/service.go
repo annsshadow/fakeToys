@@ -49,9 +49,22 @@ var (
 
 // Service 聚合全部依赖。
 type Service struct {
-	DB   *store.DB
-	Cfg  config.Config
-	JWT  *auth.Signer
+	DB  *store.DB
+	JWT *auth.Signer
+
+	// cfg 是**配置快照**（原子指针，2026-10-29）。
+	//
+	// 此前是值字段 `Cfg config.Config`，`New` 时拷贝一份就再也不变 ——
+	// 于是 `DASHBOARD_CACHE_TTL` / `LEADERBOARD_CACHE_TTL` / 结算重算模式
+	// 这些「运维想改但不想重启」的旋钮，只能靠重启整进程生效。
+	//
+	// 改成原子指针后，`ReloadConfig` 可以整体换掉快照，而读方永远拿到一份
+	// **完整**的配置（不会读到换到一半的字段）。与 `gate` 同一个理由与形状。
+	//
+	// ⚠️ 读配置一律走 `Cfg()` 取快照后**在同一次调用内复用**：不要写
+	// `if s.Cfg().A > 0 { ... s.Cfg().A ... }` —— 两次 Load 之间可能发生重载。
+	cfg atomic.Pointer[config.Config]
+
 	pool *pgxpool.Pool
 
 	// gate 是结算重算闸门（R1）。
@@ -118,16 +131,63 @@ func LeaderboardCacheKinds() []string {
 func New(db *store.DB, cfg config.Config) *Service {
 	s := &Service{
 		DB:   db,
-		Cfg:  cfg,
 		JWT:  auth.NewSigner(cfg.JWTSecret, cfg.AccessTTL),
 		pool: db.Pool,
 	}
+	s.cfg.Store(&cfg)
 	s.leaderboardCache = make(map[string]*ttlCache[[]LeaderboardEntry], len(leaderboardCacheKinds))
 	for _, kind := range leaderboardCacheKinds {
 		s.leaderboardCache[kind] = &ttlCache[[]LeaderboardEntry]{}
 	}
 	s.initRecomputeGate()
 	return s
+}
+
+// Cfg 返回当前配置快照。
+//
+// 热加载会整体替换这个指针，所以调用方应**取一次、用完**：在一次判断/计算里
+// 反复 `s.Cfg().X` 会读到两个不同代际的配置。
+//
+// 返回指针（而非值拷贝）是为了让测试能就地改单个字段
+// （`ts.Cfg().SettleRecomputeMode = ...`）——这是既有测试的写法。
+func (s *Service) Cfg() *config.Config {
+	if c := s.cfg.Load(); c != nil {
+		return c
+	}
+	// 零值 `&Service{}`（测试里只调不碰库的方法，如 `LoadGameConfig`）没有快照。
+	// 这里装一份**该实例专属**的零值配置，而不是返回共享包变量：
+	//   - 返回共享变量会让某个用例的 `Cfg().X = ...` 泄漏到别的用例；
+	//   - CAS 保证并发下只装一份，且所有读方拿到同一个指针。
+	// 生产路径上 `New` 必装快照，走不到这里。
+	var zero config.Config
+	s.cfg.CompareAndSwap(nil, &zero)
+	return s.cfg.Load()
+}
+
+// ReloadConfig 原子替换配置快照（SIGHUP 热加载入口）。
+//
+// # 生效范围
+//
+// 只影响**每次请求现读**的旋钮：`DASHBOARD_CACHE_TTL`、
+// `LEADERBOARD_CACHE_TTL`、结算重算模式、微信端点/凭据等。
+//
+// # 不生效（改完仍需重启）
+//
+// 构造期固化的东西：数据库连接池大小与生命周期、`JWT` 签名器（密钥与
+// 令牌有效期）、监听地址、路由级限流桶（在 `NewRouter` 时装配）。
+// 这些若也做热加载，等于在运行中替换连接池/中间件链，收益远小于风险。
+func (s *Service) ReloadConfig(cfg config.Config) {
+	prev := s.cfg.Load()
+	s.cfg.Store(&cfg)
+	// 配置文件里**显式改了这一档**才重建 gate。
+	//
+	// 运行期切档的唯一真相是 gate（`PUT /admin/recomputes/mode` 只换 gate、
+	// 不回写文件）。若每次重载都无条件按文件重建，一次「只改了 TTL」的
+	// SIGHUP 就会把运维刚切过的档悄悄抹回去 —— 那是比不支持热加载更糟的
+	// 形状：它看起来生效了，实际是被覆盖了。
+	if prev == nil || prev.SettleRecomputeMode != cfg.SettleRecomputeMode {
+		s.initRecomputeGateWith(cfg.SettleRecomputeMode)
+	}
 }
 
 // FlushStatsCache 立刻失效看板与榜单缓存。
@@ -275,7 +335,7 @@ func (s *Service) GuestLogin(ctx context.Context, guestToken, nickname string) (
 // AppID/Secret 未配置时返回明确错误（501），而不是静默降级成游客登录 ——
 // 静默降级会让"登录失败"变成"登录成功但数据不对应"，极难排查。
 func (s *Service) WechatLogin(ctx context.Context, code string) (TokenPair, error) {
-	if !s.Cfg.WechatEnabled() {
+	if !s.Cfg().WechatEnabled() {
 		return TokenPair{}, fmt.Errorf("%w: 微信登录未启用（缺少 WECHAT_APP_ID / WECHAT_APP_SECRET）", ErrForbidden)
 	}
 	if strings.TrimSpace(code) == "" {
@@ -347,7 +407,7 @@ func (s *Service) issueTokens(ctx context.Context, userID int64, u User) (TokenP
 	}
 	if _, err := s.pool.Exec(ctx,
 		`INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES ($1,$2,$3)`,
-		userID, refreshHash, time.Now().Add(s.Cfg.RefreshTTL)); err != nil {
+		userID, refreshHash, time.Now().Add(s.Cfg().RefreshTTL)); err != nil {
 		return TokenPair{}, fmt.Errorf("store refresh token: %w", err)
 	}
 	return TokenPair{
@@ -1182,7 +1242,7 @@ func (s *Service) LoadGameConfig() GameConfig {
 	cfg.ServerTime = time.Now()
 	// ⚠️ 这一条**依赖实例**（config 里来的开关），所以不能放进 staticConfig
 	// —— 那个 OnceValue 是全局静态的，与 Service 实例无关。
-	cfg.RequireLogin = s.Cfg.PlayerLoginRequired
+	cfg.RequireLogin = s.Cfg().PlayerLoginRequired
 	return cfg
 }
 

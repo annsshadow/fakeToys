@@ -88,7 +88,7 @@ type StageFunnel struct {
 // 报错，而第二次其实数据库已经好了。
 func (s *Service) AdminDashboard(ctx context.Context) (Dashboard, error) {
 	// singleflight：TTL 到期那一刻的并发未命中只跑一次查询，不惊群。
-	return s.dashboardCache.getOrLoad(time.Now(), s.Cfg.DashboardCacheTTL, func() (Dashboard, error) {
+	return s.dashboardCache.getOrLoad(time.Now(), s.Cfg().DashboardCacheTTL, func() (Dashboard, error) {
 		return s.adminDashboardUncached(ctx)
 	})
 }

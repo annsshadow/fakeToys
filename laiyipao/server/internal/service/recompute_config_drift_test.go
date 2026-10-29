@@ -47,7 +47,7 @@ import (
 func TestAdminSkillEditDoesNotAffectRecompute(t *testing.T) {
 	ts := openTestService(t)
 	ctx := context.Background()
-	ts.Service.Cfg.SettleRecomputeMode = RecomputeEnforce
+	ts.Service.Cfg().SettleRecomputeMode = RecomputeEnforce
 	uid := ts.newUser(t, ctx)
 	ts.grant(t, ctx, uid, map[string]int64{"energy": 200})
 

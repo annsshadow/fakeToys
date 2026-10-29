@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -33,6 +34,18 @@ func main() {
 }
 
 func run() error {
+	// CONFIG_FILE：可热加载的配置文件覆盖层（键名与环境变量同名）。
+	//
+	// 环境变量在进程启动后无法再改，所以「SIGHUP 重读配置」必须有一个
+	// 进程能重新读的文件来源，否则热加载只是表演。见 config.overlay 的说明。
+	if path := strings.TrimSpace(os.Getenv("CONFIG_FILE")); path != "" {
+		m, err := config.LoadFile(path)
+		if err != nil {
+			return err
+		}
+		config.ApplyOverlay(m)
+		fmt.Printf("[来一炮 server] 已加载配置文件 %s（%d 个键覆盖环境变量）\n", path, len(m))
+	}
 	cfg := config.Load()
 	fmt.Println("[来一炮 server] 启动配置:", cfg.Redacted())
 
@@ -127,6 +140,25 @@ func run() error {
 		}
 	}()
 
+	// 配置热加载：SIGHUP 重读 CONFIG_FILE，原子替换服务内的配置快照。
+	//
+	// 只影响「每次请求现读」的旋钮（看板/榜单 TTL、结算重算模式、微信端点）。
+	// 连接池、JWT 签名器、监听地址、路由级限流桶在构造期固化，改这些仍需重启
+	// —— 见 service.ReloadConfig 的说明。
+	reload := make(chan os.Signal, 1)
+	signal.Notify(reload, syscall.SIGHUP)
+	go func() {
+		for range reload {
+			if err := reloadConfig(svc); err != nil {
+				fmt.Fprintf(os.Stderr, "[来一炮 server] 配置重载失败，**保留原配置**：%v\n", err)
+				continue
+			}
+			c := svc.Cfg()
+			fmt.Printf("[来一炮 server] 配置已重载（看板 TTL=%s，榜单 TTL=%s，重算档=%s）\n",
+				c.DashboardCacheTTL, c.LeaderboardCacheTTL, c.SettleRecomputeMode)
+		}
+	}()
+
 	fmt.Printf("[来一炮 server] 监听 %s（微信登录通道：%s）\n",
 		cfg.Addr, map[bool]string{true: "已启用", false: "未启用（游客登录）"}[cfg.WechatEnabled()])
 	if cfg.PlayerLoginRequired {
@@ -175,4 +207,40 @@ func startPprof(addr string) {
 			fmt.Fprintln(os.Stderr, "pprof server 退出:", err)
 		}
 	}()
+}
+
+// reloadConfig 重读 CONFIG_FILE 并原子替换服务内的配置快照。
+//
+// # 为什么必须重读文件而不是"再读一次环境变量"
+//
+// 进程改不了自己的环境变量。只调 `config.Load()` 会得到与启动时**逐字节相同**
+// 的结果，于是 SIGHUP 看起来成功、实际什么都没变 —— 那比不支持热加载更糟：
+// 运维会以为改完就生效了。
+//
+// # 失败必须保留原配置
+//
+// `config.Load()` 在 `APP_ENV=prod` 且 DSN 缺 sslmode 时会 panic（启动路径上
+// 就该失败）。重载路径不能沿用这个行为：一次写错的配置文件不该打死正在服务的
+// 进程。所以这里 recover 成错误，并把覆盖层回滚到上一次成功的那份。
+func reloadConfig(svc *service.Service) (err error) {
+	path := strings.TrimSpace(os.Getenv("CONFIG_FILE"))
+	if path == "" {
+		return fmt.Errorf("未设置 CONFIG_FILE：配置只来自环境变量，热加载不可用（改环境变量需重启）")
+	}
+	m, err := config.LoadFile(path)
+	if err != nil {
+		return err
+	}
+
+	prev := config.OverlaySnapshot()
+	defer func() {
+		if r := recover(); r != nil {
+			config.ApplyOverlay(prev)
+			err = fmt.Errorf("重载后配置校验失败（已回滚）：%v", r)
+		}
+	}()
+
+	config.ApplyOverlay(m)
+	svc.ReloadConfig(config.Load())
+	return nil
 }

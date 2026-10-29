@@ -105,7 +105,7 @@ func TestComputeRatingPointsQueryFallback(t *testing.T) {
 // "build wechat request" 而不是 panic。
 func TestCode2SessionRequestBuildError(t *testing.T) {
 	ts := openTestService(t)
-	ts.Cfg.WechatEndpoint = "http://\x7f-bad-host/wx" // DEL 控制字符 → URL 解析失败
+	ts.Cfg().WechatEndpoint = "http://\x7f-bad-host/wx" // DEL 控制字符 → URL 解析失败
 	if _, err := ts.code2Session(context.Background(), "code"); err == nil {
 		t.Error("非法端点应让 code2Session 构造请求失败")
 	}
@@ -127,7 +127,7 @@ func TestCode2SessionBodyReadError(t *testing.T) {
 		}
 	}))
 	defer srv.Close()
-	ts.Cfg.WechatEndpoint = srv.URL
+	ts.Cfg().WechatEndpoint = srv.URL
 	if _, err := ts.code2Session(context.Background(), "code"); err == nil {
 		t.Error("响应体读取失败应报错")
 	}
@@ -146,7 +146,7 @@ func TestWechatLoginMidwayFailures(t *testing.T) {
 
 	t.Run("upsert失败", func(t *testing.T) {
 		ts := openScratchService(t)
-		ts.Cfg.WechatAppID, ts.Cfg.WechatAppSecret, ts.Cfg.WechatEndpoint = "wx", "sec", srv.URL
+		ts.Cfg().WechatAppID, ts.Cfg().WechatAppSecret, ts.Cfg().WechatEndpoint = "wx", "sec", srv.URL
 		ts.renameTable(t, "users", "users_bak")
 		_, err := ts.WechatLogin(ctx, "good")
 		ts.renameTable(t, "users_bak", "users")
@@ -155,7 +155,7 @@ func TestWechatLoginMidwayFailures(t *testing.T) {
 
 	t.Run("initNewUser失败", func(t *testing.T) {
 		ts := openScratchService(t)
-		ts.Cfg.WechatAppID, ts.Cfg.WechatAppSecret, ts.Cfg.WechatEndpoint = "wx", "sec", srv.URL
+		ts.Cfg().WechatAppID, ts.Cfg().WechatAppSecret, ts.Cfg().WechatEndpoint = "wx", "sec", srv.URL
 		// users 完好 → upsert 成功；user_wallets 缺失 → initNewUser 第一步失败
 		ts.renameTable(t, "user_wallets", "user_wallets_bak")
 		_, err := ts.WechatLogin(ctx, "good")

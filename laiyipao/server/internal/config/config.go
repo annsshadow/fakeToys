@@ -2,13 +2,115 @@
 package config
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"os"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 )
+
+// overlay 是**配置文件覆盖层**（nil = 只读环境变量）。
+//
+// # 为什么需要它
+//
+// 本服务的配置全部来自环境变量，而运行中的进程**改不了自己的环境**
+// —— 于是「SIGHUP 重读配置」在纯环境变量模型下是空操作，热加载会变成
+// 一场表演（运维以为生效了，其实什么都没变）。要让热加载真的成立，
+// 必须有一个进程能重新读的**文件**来源。
+//
+// 用法：`CONFIG_FILE` 指向一个扁平 JSON（键名与环境变量同名），
+// 启动时读一次，SIGHUP 时重读。文件里出现的键**覆盖**同名环境变量；
+// 没出现的键仍走环境变量。
+//
+// 空字符串按「未设置」处理（与 env* 辅助函数既有的 `TrimSpace != ""` 口径
+// 一致），所以把某个键写成 "" 等于回退到环境变量。
+var overlay atomic.Pointer[map[string]string]
+
+// rawEnv 读一个配置键：覆盖层优先，其次环境变量。
+//
+// 覆盖层里的**空值视为未设置**（与 env* 辅助函数既有的 `TrimSpace != ""`
+// 口径一致）：否则把某个键写成 "" 会得到「配置为空」而不是「回退」，
+// 而后者才是运维改配置时想要的语义。
+func rawEnv(key string) string {
+	if m := overlay.Load(); m != nil {
+		if v, ok := (*m)[key]; ok && strings.TrimSpace(v) != "" {
+			return v
+		}
+	}
+	return os.Getenv(key)
+}
+
+// ApplyOverlay 安装配置文件覆盖层。传 nil 或空 map 即清除。
+//
+// 并发安全：整体替换指针，读方永远看到一份完整覆盖层。
+func ApplyOverlay(m map[string]string) {
+	if len(m) == 0 {
+		overlay.Store(nil)
+		return
+	}
+	cp := make(map[string]string, len(m))
+	for k, v := range m {
+		cp[k] = v
+	}
+	overlay.Store(&cp)
+}
+
+// OverlaySnapshot 返回当前覆盖层的副本（nil = 没有覆盖）。
+//
+// 用途只有一个：重载失败时把覆盖层回滚到上一次成功的那一份 ——
+// 否则「读到了坏文件」会留下一个半生效的覆盖层，比直接失败更难看懂。
+func OverlaySnapshot() map[string]string {
+	m := overlay.Load()
+	if m == nil {
+		return nil
+	}
+	cp := make(map[string]string, len(*m))
+	for k, v := range *m {
+		cp[k] = v
+	}
+	return cp
+}
+
+// LoadFile 读取扁平 JSON 配置文件（键名与环境变量同名）。
+//
+// 只接受**标量值**：嵌套对象/数组一律报错而不是猜一个序列化形式 ——
+// 猜错的形状会在某个 envList 上静默变成「一个元素」，而配置错误本该
+// 在启动时就吵起来（AGENTS #11 fail loud）。
+func LoadFile(path string) (map[string]string, error) {
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("读配置文件 %s: %w", path, err)
+	}
+	var parsed map[string]any
+	if err := json.Unmarshal(raw, &parsed); err != nil {
+		return nil, fmt.Errorf("解析配置文件 %s（需要扁平 JSON 对象）: %w", path, err)
+	}
+	out := make(map[string]string, len(parsed))
+	for k, v := range parsed {
+		switch val := v.(type) {
+		case string:
+			out[k] = val
+		case bool:
+			out[k] = strconv.FormatBool(val)
+		case float64:
+			// JSON 只有一种数字：整数值不带小数点，避免 "1.000000" 这种
+			// 进 Atoi 失败后静默回退默认值。
+			if val == math.Trunc(val) && math.Abs(val) < 1e15 {
+				out[k] = strconv.FormatInt(int64(val), 10)
+			} else {
+				out[k] = strconv.FormatFloat(val, 'f', -1, 64)
+			}
+		case nil:
+			out[k] = ""
+		default:
+			return nil, fmt.Errorf("配置文件 %s 的键 %q 不是标量（%T）：配置只支持扁平键值", path, k, v)
+		}
+	}
+	return out, nil
+}
 
 // Config 是后端全部运行时配置。所有敏感项（数据库口令、JWT 密钥、微信 AppSecret）
 // 只从环境变量读取，仓库内不保存任何真实值。
@@ -144,14 +246,14 @@ type Config struct {
 }
 
 func env(key, def string) string {
-	if v := strings.TrimSpace(os.Getenv(key)); v != "" {
+	if v := strings.TrimSpace(rawEnv(key)); v != "" {
 		return v
 	}
 	return def
 }
 
 func envInt(key string, def int) int {
-	if v := strings.TrimSpace(os.Getenv(key)); v != "" {
+	if v := strings.TrimSpace(rawEnv(key)); v != "" {
 		if n, err := strconv.Atoi(v); err == nil {
 			return n
 		}
@@ -182,7 +284,7 @@ func envInt32(key string, def int32) int32 {
 // 否则中间件里 `allowSet[""] = true` 会让「无 Origin 头」的请求
 // 命中白名单分支。
 func envList(key string) []string {
-	raw := strings.TrimSpace(os.Getenv(key))
+	raw := strings.TrimSpace(rawEnv(key))
 	if raw == "" {
 		return nil
 	}
@@ -196,7 +298,7 @@ func envList(key string) []string {
 }
 
 func envBool(key string, def bool) bool {
-	if v := strings.TrimSpace(os.Getenv(key)); v != "" {
+	if v := strings.TrimSpace(rawEnv(key)); v != "" {
 		if b, err := strconv.ParseBool(v); err == nil {
 			return b
 		}
@@ -205,7 +307,7 @@ func envBool(key string, def bool) bool {
 }
 
 func envDuration(key string, def time.Duration) time.Duration {
-	if v := strings.TrimSpace(os.Getenv(key)); v != "" {
+	if v := strings.TrimSpace(rawEnv(key)); v != "" {
 		if d, err := time.ParseDuration(v); err == nil {
 			return d
 		}
@@ -285,7 +387,7 @@ func Load() Config {
 		// 为什么用「显式声明」而不是「够长就行」：
 		// 长不等于安全，而默认值本身就是公开的（在 README 与本文件里），
 		// 任何人都能查到。用环境变量是否被设置来判定，语义明确且无法误解。
-		if os.Getenv("BOOTSTRAP_ADMIN_PASS") == "" {
+		if rawEnv("BOOTSTRAP_ADMIN_PASS") == "" {
 			panic("config: APP_ENV=prod 时必须显式设置 BOOTSTRAP_ADMIN_PASS（默认值 admin12345 是公开的，不能用于生产）")
 		}
 	}
@@ -317,7 +419,7 @@ func Load() Config {
 // # 判据与 prod 守卫**同源**
 //
 // 刻意复用 prod 分支完全相同的两个判断（`HasPrefix(JWTSecret,"dev-only")`
-// 与 `os.Getenv("BOOTSTRAP_ADMIN_PASS") == ""`），而不是另写一套
+// 与 `rawEnv("BOOTSTRAP_ADMIN_PASS") == ""`），而不是另写一套
 // 「值是否等于默认字面量」。两套判据迟早会分叉，而分叉之后一定是
 // 「prod 会 panic，但这里不告警」那种最坏的组合。
 //
@@ -331,7 +433,7 @@ func (c Config) DevDefaultWarnings() []string {
 		out = append(out, "JWT_SECRET 未显式声明，正在使用本仓库源码里公开的默认密钥 —— "+
 			"任何读到它的人都能伪造任意账号（含管理员）的访问令牌")
 	}
-	if os.Getenv("BOOTSTRAP_ADMIN_PASS") == "" {
+	if rawEnv("BOOTSTRAP_ADMIN_PASS") == "" {
 		out = append(out, "BOOTSTRAP_ADMIN_PASS 未显式声明，正在使用公开默认口令 admin12345 —— "+
 			"首次启动会创建 admin/admin12345")
 	}

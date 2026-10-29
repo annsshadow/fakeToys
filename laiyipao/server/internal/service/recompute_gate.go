@@ -175,22 +175,24 @@ func (s *Service) recomputeVerdict(ctx context.Context, scope RecomputeScope) (m
 // 读的是 `Cfg.SettleRecomputeMode`（启动配置）：本函数只允许在
 // **构造期**（New）或**测试**里调用——那时没有并发写方。
 func (s *Service) initRecomputeGate() {
-	s.initRecomputeGateWith(s.Cfg.SettleRecomputeMode)
+	s.initRecomputeGateWith(s.Cfg().SettleRecomputeMode)
 }
 
 // initRecomputeGateWith 用**显式档位**构造并替换闸门。
 //
 // # 为什么运行期切档不能走 Cfg（2026-10-24 修数据竞争）
 //
-// `Cfg` 是 `New` 时的**值拷贝**。曾经的 `SetRecomputeMode` 直接写
-// `s.Cfg.SettleRecomputeMode`，而 `RecomputeModeState`（GET
-// /admin/recomputes/mode）并发读同一个字段 —— PUT 与 GET 并发即
-// 数据竞争（`go test -race` 可抓，此前无用例覆盖）。
+// `Cfg` 在 2026-10-29 之前是 `New` 时的**值拷贝**，之后是**原子指针**
+// （支持 SIGHUP 热加载）——但两种形状下「就地改结构体字段」都不是原子的：
+// 曾经的 `SetRecomputeMode` 直接写 `s.Cfg().SettleRecomputeMode`，
+// 而 `RecomputeModeState`（GET /admin/recomputes/mode）并发读同一个字段 ——
+// PUT 与 GET 并发即数据竞争（`go test -race` 可抓，此前无用例覆盖）。
 //
 // 档位的**运行期唯一真相是 gate 本身**：它经 `atomic.Pointer`
 // 整体替换，读侧 `s.gate.Load().Mode()` 永远看到新旧一致的完整
 // 状态。所以运行期切档只换 gate，不碰 Cfg；`Cfg.SettleRecomputeMode`
-// 降级为「启动配置」语义（注释已写明）。
+// 降级为「启动配置」语义（配置里显式改这一档后 SIGHUP 会重建 gate，
+// 见 `ReloadConfig`）。
 func (s *Service) initRecomputeGateWith(mode string) {
 	// 先构造好新 gate，再**一次性**换上去 ——
 	// 中间不存在「Cfg 已改、gate 未换」的窗口。

@@ -109,7 +109,7 @@ func TestSettleFlushesLeaderboardCache(t *testing.T) {
 // 而排障时最依赖的就是这个开关。
 func TestDashboardCacheDisabledByTTL(t *testing.T) {
 	ts := openScratchService(t)
-	ts.Cfg.DashboardCacheTTL = 0
+	ts.Cfg().DashboardCacheTTL = 0
 	ctx := context.Background()
 
 	if _, err := ts.AdminDashboard(ctx); err != nil {
@@ -212,19 +212,19 @@ func TestMyRankNotCached(t *testing.T) {
 // TestDashboardCacheTTLDefaultsAreSane 默认值必须是「有缓存但不长」。
 func TestDashboardCacheTTLDefaultsAreSane(t *testing.T) {
 	ts := openTestService(t)
-	if ts.Cfg.DashboardCacheTTL <= 0 {
-		t.Errorf("默认 DASHBOARD_CACHE_TTL 应 > 0，实际 %v", ts.Cfg.DashboardCacheTTL)
+	if ts.Cfg().DashboardCacheTTL <= 0 {
+		t.Errorf("默认 DASHBOARD_CACHE_TTL 应 > 0，实际 %v", ts.Cfg().DashboardCacheTTL)
 	}
-	if ts.Cfg.DashboardCacheTTL > 5*time.Minute {
+	if ts.Cfg().DashboardCacheTTL > 5*time.Minute {
 		t.Errorf("看板缓存超过 5 分钟就太旧了（运营会以为数据坏了），实际 %v",
-			ts.Cfg.DashboardCacheTTL)
+			ts.Cfg().DashboardCacheTTL)
 	}
-	if ts.Cfg.LeaderboardCacheTTL <= 0 {
-		t.Errorf("默认 LEADERBOARD_CACHE_TTL 应 > 0，实际 %v", ts.Cfg.LeaderboardCacheTTL)
+	if ts.Cfg().LeaderboardCacheTTL <= 0 {
+		t.Errorf("默认 LEADERBOARD_CACHE_TTL 应 > 0，实际 %v", ts.Cfg().LeaderboardCacheTTL)
 	}
 	// 榜单比看板更「玩家可感知」，所以它的缓存不该比看板长
-	if ts.Cfg.LeaderboardCacheTTL > ts.Cfg.DashboardCacheTTL {
+	if ts.Cfg().LeaderboardCacheTTL > ts.Cfg().DashboardCacheTTL {
 		t.Errorf("榜单缓存（%v）不该长于看板缓存（%v）：前者玩家能感知",
-			ts.Cfg.LeaderboardCacheTTL, ts.Cfg.DashboardCacheTTL)
+			ts.Cfg().LeaderboardCacheTTL, ts.Cfg().DashboardCacheTTL)
 	}
 }

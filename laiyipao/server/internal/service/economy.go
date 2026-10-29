@@ -24,13 +24,13 @@ import (
 // 所以这里只在配置完整时才会被调用。
 func (s *Service) code2Session(ctx context.Context, code string) (string, error) {
 	q := url.Values{}
-	q.Set("appid", s.Cfg.WechatAppID)
-	q.Set("secret", s.Cfg.WechatAppSecret)
+	q.Set("appid", s.Cfg().WechatAppID)
+	q.Set("secret", s.Cfg().WechatAppSecret)
 	q.Set("js_code", code)
 	q.Set("grant_type", "authorization_code")
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet,
-		s.Cfg.WechatEndpoint+"?"+q.Encode(), nil)
+		s.Cfg().WechatEndpoint+"?"+q.Encode(), nil)
 	if err != nil {
 		return "", fmt.Errorf("build wechat request: %w", err)
 	}
@@ -115,7 +115,7 @@ func (s *Service) Leaderboard(ctx context.Context, kind string, limit int) ([]Le
 // 与旧行为逐字一致。
 func (s *Service) leaderboardAll(ctx context.Context, kind string) ([]LeaderboardEntry, error) {
 	if c, ok := s.leaderboardCache[kind]; ok {
-		return c.getOrLoad(time.Now(), s.Cfg.LeaderboardCacheTTL, func() ([]LeaderboardEntry, error) {
+		return c.getOrLoad(time.Now(), s.Cfg().LeaderboardCacheTTL, func() ([]LeaderboardEntry, error) {
 			return s.leaderboardQuery(ctx, kind)
 		})
 	}

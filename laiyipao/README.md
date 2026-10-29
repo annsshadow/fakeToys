@@ -198,3 +198,30 @@ miniapp/src/
 | `BOOTSTRAP_ADMIN_PASS` | `admin12345` | 首次引导的管理员密码，**<10 位会 panic 拒绝**；**`APP_ENV=prod` 时必须显式设置**，否则 panic（默认值是公开的，第 67 轮） |
 | `WECHAT_ENABLED` | `false` | 是否启用微信登录 |
 | `ACCESS_TTL` / `REFRESH_TTL` | `2h` / `720h` | 令牌有效期 |
+| `DASHBOARD_CACHE_TTL` / `LEADERBOARD_CACHE_TTL` | `30s` / `15s` | 看板与榜单的进程内缓存有效期；**支持热加载**（见下） |
+| `CONFIG_FILE` | — | 扁平 JSON 配置文件（键名与上表同名）。出现即覆盖同名环境变量；**`SIGHUP` 会重读它** |
+
+### 配置热加载（2026-10-29）
+
+进程改不了自己的环境变量，所以「重读配置」必须有一个**能重读的文件**来源 ——
+只重读环境变量会得到与启动时逐字节相同的结果，热加载就成了表演。
+
+```json
+// /etc/laiyipao/config.json
+{ "DASHBOARD_CACHE_TTL": "60s", "LEADERBOARD_CACHE_TTL": "30s", "SETTLE_RECOMPUTE_MODE": "shadow" }
+```
+
+```bash
+CONFIG_FILE=/etc/laiyipao/config.json ./api          # 启动时读一次
+kill -HUP $(pgrep -f '/api$')                        # 改完文件后重载
+```
+
+- 文件里的空字符串视为「未设置」，回退到环境变量。
+- 覆盖层只接受标量；嵌套对象/数组会**启动失败**（猜一个序列化形式会让
+  `CORS_ALLOW_ORIGINS` 静默变成「一个元素」）。
+- 重载失败（文件不存在 / JSON 坏 / prod 校验不过）**保留原配置**并在 stderr 报错，
+  不会打死正在服务的进程。
+- **生效范围**：看板/榜单 TTL、结算重算模式、微信端点与凭据。
+  **仍需重启**：数据库连接池、JWT 签名器、监听地址、路由级限流桶（构造期固化）。
+- 结算重算模式只有在**文件里显式改了这一项**时才重建闸门；只改 TTL 的重载
+  不会覆盖运维用 `PUT /admin/recomputes/mode` 切过的档。

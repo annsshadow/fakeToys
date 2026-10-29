@@ -201,7 +201,7 @@ func TestSettleRecomputeDoubleSettleWritesLedgerOnce(t *testing.T) {
 func TestSettleRecomputeMismatchIsRecordedOnce(t *testing.T) {
 	ts := openTestService(t)
 	ctx := context.Background()
-	ts.Service.Cfg.SettleRecomputeMode = RecomputeEnforce
+	ts.Service.Cfg().SettleRecomputeMode = RecomputeEnforce
 	uid := ts.newUser(t, ctx)
 	ts.grant(t, ctx, uid, map[string]int64{"energy": 200})
 
@@ -315,7 +315,7 @@ func TestSettleRecomputeSnapshotUnusableIsNotCheating(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			ts := openTestService(t)
 			ctx := context.Background()
-			ts.Service.Cfg.SettleRecomputeMode = RecomputeEnforce
+			ts.Service.Cfg().SettleRecomputeMode = RecomputeEnforce
 			uid := ts.newUser(t, ctx)
 			ts.grant(t, ctx, uid, map[string]int64{"energy": 200})
 
@@ -375,7 +375,7 @@ func TestSettleRecomputeSnapshotUnusableIsNotCheating(t *testing.T) {
 func TestSettleRecomputeBadSnapshotJSONIsNotCheating(t *testing.T) {
 	ts := openTestService(t)
 	ctx := context.Background()
-	ts.Service.Cfg.SettleRecomputeMode = RecomputeEnforce
+	ts.Service.Cfg().SettleRecomputeMode = RecomputeEnforce
 	uid := ts.newUser(t, ctx)
 	ts.grant(t, ctx, uid, map[string]int64{"energy": 200})
 
@@ -413,7 +413,7 @@ func TestSettleRecomputeBadSnapshotJSONIsNotCheating(t *testing.T) {
 func TestSettleRecomputeCountersDistinguishAllBranches(t *testing.T) {
 	ts := openTestService(t)
 	ctx := context.Background()
-	ts.Service.Cfg.SettleRecomputeMode = RecomputeEnforce
+	ts.Service.Cfg().SettleRecomputeMode = RecomputeEnforce
 	ts.resetEngineCounters()
 
 	// ① 空哈希 -> skipped
@@ -481,7 +481,7 @@ func TestSettleRecomputeCountersDistinguishAllBranches(t *testing.T) {
 func TestRecomputeAcceptsClientSideHash(t *testing.T) {
 	ts := openTestService(t)
 	ctx := context.Background()
-	ts.Service.Cfg.SettleRecomputeMode = RecomputeEnforce
+	ts.Service.Cfg().SettleRecomputeMode = RecomputeEnforce
 	ts.resetEngineCounters()
 
 	const fixture = "../../testdata/replay_vectors.json"

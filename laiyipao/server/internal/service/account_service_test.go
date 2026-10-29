@@ -239,9 +239,9 @@ func TestWechatLoginService(t *testing.T) {
 		_, _ = w.Write([]byte(wxResp))
 	}))
 	defer wx.Close()
-	ts.Cfg.WechatAppID = "wx"
-	ts.Cfg.WechatAppSecret = "sec"
-	ts.Cfg.WechatEndpoint = wx.URL
+	ts.Cfg().WechatAppID = "wx"
+	ts.Cfg().WechatAppSecret = "sec"
+	ts.Cfg().WechatEndpoint = wx.URL
 	ctx := context.Background()
 
 	if _, err := ts.WechatLogin(ctx, "  "); !errors.Is(err, ErrBadInput) {
@@ -274,7 +274,7 @@ func TestWechatLoginService(t *testing.T) {
 	}
 
 	// 微信不可达
-	ts.Cfg.WechatEndpoint = "http://127.0.0.1:1/wx"
+	ts.Cfg().WechatEndpoint = "http://127.0.0.1:1/wx"
 	if _, err := ts.WechatLogin(ctx, "dead"); err == nil {
 		t.Error("微信不可达应报错")
 	}

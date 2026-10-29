@@ -24,7 +24,7 @@ func New(svc *service.Service) *Server { return &Server{Svc: svc} }
 func (s *Server) Register(app *fiber.App) {
 	// CORS 的宽松程度取决于环境：dev 放行 `*`（前后端不同端口），
 	// prod 默认一条 CORS 头都不发（等价只允许同源）。
-	SetDevMode(s.Svc.Cfg.Env != "prod")
+	SetDevMode(s.Svc.Cfg().Env != "prod")
 	app.Use(recoverPanic())
 	// ⚠️ 安全响应头必须在**任何**会写响应体的中间件之前，
 	// 否则拿不到它们的输出（与 compress 同理）。
@@ -49,14 +49,14 @@ func (s *Server) Register(app *fiber.App) {
 	// 已按实测数字改写。
 	app.Use(compress.New())
 	app.Use(requestLogger())
-	app.Use(cors(s.Svc.Cfg.CORSAllowOrigins))
+	app.Use(cors(s.Svc.Cfg().CORSAllowOrigins))
 
 	app.Get("/healthz", s.healthz)
 	app.Get("/readyz", s.readyz)
 	// 指标端点：仅在 METRICS_ENABLED=true 时注册。默认不挂，理由见
 	// config.MetricsEnabled —— 缓存命中率对运维有意义、对公网无意义，
 	// 多一个公开端点就多一个面，所以默认朝安全的一侧倒。
-	if s.Svc.Cfg.MetricsEnabled {
+	if s.Svc.Cfg().MetricsEnabled {
 		app.Get("/metrics", s.metrics)
 	}
 
@@ -289,7 +289,7 @@ func (s *Server) guestLogin(c *fiber.Ctx) error {
 	//
 	// 403 + 明确的 code=login_required：客户端据此跳登录页，
 	// 而不是把「登录失败」显示成一句看不懂的报错。
-	if s.Svc.Cfg.PlayerLoginRequired {
+	if s.Svc.Cfg().PlayerLoginRequired {
 		return fail(c, fiber.StatusForbidden, "login_required",
 			"本环境要求账号登录，请使用账号密码登录")
 	}
