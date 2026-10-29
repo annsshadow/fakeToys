@@ -112,4 +112,21 @@ mod security_gate_tests {
             "非 admin 全局配置写必须 403，实得 {res:?}"
         );
     }
+
+    /// R6：u2 `mind_save` 收会话存在档（无会话 401，门在 pool.get() 之前）。
+    #[tokio::test]
+    async fn r6_mind_save_rejects_without_session() {
+        let pool = dead_pool();
+        let res = crate::u2::mind_save(
+            Extension(pool),
+            None,
+            Json(json!({ "name": "n", "content": "c" })),
+        )
+        .await
+        .map(|_| ());
+        assert!(
+            matches!(res, Err(AppError::Unauthorized)),
+            "无会话调用 mind_save 必须 401（门在 pool.get() 之前）"
+        );
+    }
 }

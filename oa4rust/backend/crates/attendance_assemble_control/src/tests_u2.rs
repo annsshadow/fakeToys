@@ -56,10 +56,20 @@ mod u2_tests {
             status_of("GET", "/api/attendance/assemble/control/v2/config/person").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
-        assert_eq!(
-            status_of("POST", "/api/attendance/assemble/control/v2/config/person").await,
-            StatusCode::INTERNAL_SERVER_ERROR
-        );
+        // POST 已加 require_session：带合法 JSON body 的请求在 DB 访问前 401。
+        let app = attendance_assemble_control_router(mock_pool());
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/attendance/assemble/control/v2/config/person")
+                    .method(axum::http::Method::POST)
+                    .header("content-type", "application/json")
+                    .body(Body::from(r#"{}"#))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
     }
 
     // ── v2 group ───────────────────────────────────────────────

@@ -73,6 +73,12 @@ async fn is_attendance_admin(pool: &Pool, person_unique: &str) -> Result<bool, A
     Ok(row.is_some())
 }
 
+fn require_session(
+    session: Option<Extension<Session>>,
+) -> Result<Session, AppError> {
+    session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
+}
+
 #[allow(non_snake_case)]
 pub async fn list_admins(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -459,13 +465,14 @@ pub async fn list_appeal_records(
 #[allow(non_snake_case)]
 pub async fn submit_appeal(
     pool: Extension<Pool>,
-    session: Extension<Session>,
+    session: Option<Extension<Session>>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     // 申诉人/创建者以会话登录人为事实源：客户端 personId 可伪造（替别人提申诉）
-    let person_id = session.person_unique.clone();
+    let person_id = sess.person_unique.clone();
     let appeal_date = payload
         .get("appealDate")
         .and_then(|v| v.as_str())
@@ -476,7 +483,7 @@ pub async fn submit_appeal(
         .and_then(|v| v.as_str())
         .unwrap_or("")
         .to_string();
-    let creator = session.person_unique.clone();
+    let creator = sess.person_unique.clone();
 
     let new_id = uuid::Uuid::new_v4().to_string();
 

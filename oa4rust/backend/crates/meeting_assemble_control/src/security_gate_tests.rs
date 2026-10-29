@@ -344,3 +344,173 @@ mod b54_gate_tests {
             .unwrap();
     }
 }
+
+// ──────────────────────────────────────────────────────────────────────────────
+// A2-R6 批：meeting_assemble_control 已认证+读会话无门禁的写路由补 require_session 门。
+//
+// 覆盖 6 把 handler（TSV 行 63-69）：
+//   u2_attachment_create_from_processplatform / u2_attachment_upload /
+//   u2_attachment_upload_callback / create_meeting / meeting_id_checkin /
+//   u2_room_set_photo
+// 判据：无会话（路由层不注入 Session 扩展）→ 401，门在首个 DB 访问之前，
+// 死池离线可证（旧行为：门缺失时 pool.get() 失败 → 500）。
+// ──────────────────────────────────────────────────────────────────────────────
+#[cfg(test)]
+#[allow(clippy::module_inception)]
+mod r6_gate_tests {
+    use axum::body::Body;
+    use axum::extract::Extension;
+    use axum::http::{Request, StatusCode};
+    use deadpool_postgres::tokio_postgres::{Config, NoTls};
+    use deadpool_postgres::{Manager, Pool};
+    use serde_json::json;
+    use shared::error::AppError;
+    use tower::ServiceExt;
+
+    fn dead_pool() -> Pool {
+        let mgr = Manager::new(Config::new(), NoTls);
+        Pool::builder(mgr).max_size(1).build().unwrap()
+    }
+
+    fn multipart_body() -> Body {
+        Body::from(
+            "--xboundary\r\n\
+             Content-Disposition: form-data; name=\"file\"; filename=\"a.txt\"\r\n\
+             Content-Type: text/plain\r\n\r\nhello\r\n--xboundary--\r\n",
+        )
+    }
+
+    /// 直调 handler（Json 族）：无会话必须 401，且发生在 pool.get() 之前。
+    #[tokio::test]
+    async fn r6_json_writes_reject_without_session() {
+        let pool = dead_pool();
+        let cases: Vec<(&str, Result<(), AppError>)> = vec![
+            (
+                "create_meeting",
+                crate::create_meeting(
+                    Extension(pool.clone()),
+                    None,
+                    axum::extract::Json(json!({
+                        "title": "t", "content": "c",
+                        "startTime": "2026-01-01 00:00:00",
+                        "endTime": "2026-01-01 01:00:00",
+                    })),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "meeting_id_checkin",
+                crate::meeting_id_checkin(
+                    Extension(pool.clone()),
+                    None,
+                    axum::extract::Path("m1".to_string()),
+                    axum::extract::Json(json!({})),
+                )
+                .await
+                .map(|_| ()),
+            ),
+            (
+                "u2_attachment_create_from_processplatform",
+                crate::u2_attachment_create_from_processplatform(
+                    Extension(pool.clone()),
+                    None,
+                    axum::extract::Json(json!({ "meetingId": "m1", "title": "doc" })),
+                )
+                .await
+                .map(|_| ()),
+            ),
+        ];
+        assert_eq!(cases.len(), 3, "本批 Json 族 3 把必须逐把点名");
+        let leaked: Vec<String> = cases
+            .iter()
+            .filter(|(_, r)| !matches!(r, Err(AppError::Unauthorized)))
+            .map(|(k, r)| format!("{k} => {:?}", r.as_ref().err()))
+            .collect();
+        assert!(
+            leaked.is_empty(),
+            "无会话未回 401（出现 Internal 就是门插在读库之后）：{leaked:?}"
+        );
+    }
+
+    /// 路由层（multipart 族 + Json 族）：匿名 POST 必须 401，而非 500/404。
+    #[tokio::test]
+    async fn r6_routes_reject_anonymous_writes() {
+        let app = crate::router(dead_pool());
+        let json = |uri: &str, body: &str| {
+            Request::builder()
+                .uri(uri)
+                .method("POST")
+                .header("content-type", "application/json")
+                .body(Body::from(body.to_string()))
+                .unwrap()
+        };
+        let cases: Vec<(&str, Request<Body>)> = vec![
+            (
+                "create_meeting",
+                json(
+                    "/api/meeting/assemble/control/meeting/create",
+                    r#"{"title":"t","startTime":"2026-01-01 00:00:00","endTime":"2026-01-01 01:00:00"}"#,
+                ),
+            ),
+            (
+                "meeting_id_checkin",
+                json(
+                    "/api/meeting/assemble/control/meeting/m1/checkin",
+                    "{}",
+                ),
+            ),
+            (
+                "u2_attachment_create_from_processplatform",
+                json(
+                    "/api/meeting/assemble/control/attachment/create/from/processplatform",
+                    r#"{"meetingId":"m1"}"#,
+                ),
+            ),
+            (
+                "u2_attachment_upload",
+                Request::builder()
+                    .uri("/api/meeting/assemble/control/attachment/meeting/m1/upload/true")
+                    .method("POST")
+                    .header("content-type", "multipart/form-data; boundary=xboundary")
+                    .body(multipart_body())
+                    .unwrap(),
+            ),
+            (
+                "u2_attachment_upload_callback",
+                Request::builder()
+                    .uri("/api/meeting/assemble/control/attachment/meeting/m1/upload/true/callback/cb1")
+                    .method("POST")
+                    .header("content-type", "multipart/form-data; boundary=xboundary")
+                    .body(multipart_body())
+                    .unwrap(),
+            ),
+            (
+                "u2_room_set_photo",
+                Request::builder()
+                    .uri("/api/meeting/assemble/control/room/r1/photo")
+                    .method("POST")
+                    .header("content-type", "multipart/form-data; boundary=xboundary")
+                    .body(multipart_body())
+                    .unwrap(),
+            ),
+        ];
+        assert_eq!(cases.len(), 6, "本批 6 把写路由必须逐条点名");
+        let mut leaked: Vec<String> = Vec::new();
+        for (name, req) in cases {
+            let status = app
+                .clone()
+                .oneshot(req)
+                .await
+                .unwrap()
+                .status();
+            if status != StatusCode::UNAUTHORIZED {
+                leaked.push(format!("{name} => 期望 401，实际 {status}"));
+            }
+        }
+        assert!(
+            leaked.is_empty(),
+            "匿名写路由未回 401（出现 500 就是门插在读库之后，出现 400/415 是 body 未过提取器）：{leaked:?}"
+        );
+    }
+}

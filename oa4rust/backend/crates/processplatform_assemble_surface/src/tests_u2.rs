@@ -741,24 +741,44 @@ mod u2b_tests {
     #[tokio::test]
     async fn u2b_multipart_upload_routes_reachable() {
         let b = "/api/processplatform/assemble/surface/attachment";
-        for (method, path) in [
-            ("POST", &format!("{b}/upload/work/w-1")),
-            ("POST", &format!("{b}/upload/work/w-1/callback/cb-1")),
-            ("POST", &format!("{b}/upload/workcompleted/wc-1")),
-            ("PUT", &format!("{b}/upload/work/w-1/save/as/name.txt")),
+        // 上传族写面已收会话门：无会话在 pool.get() 之前即 401（不再 500）。
+        // batch/upload/manage 仍走 admin 门但 handler 在门后才触库，离线仍 500。
+        for (method, path, want) in [
+            ("POST", &format!("{b}/upload/work/w-1"), StatusCode::UNAUTHORIZED),
+            (
+                "POST",
+                &format!("{b}/upload/work/w-1/callback/cb-1"),
+                StatusCode::UNAUTHORIZED,
+            ),
+            (
+                "POST",
+                &format!("{b}/upload/workcompleted/wc-1"),
+                StatusCode::UNAUTHORIZED,
+            ),
+            (
+                "PUT",
+                &format!("{b}/upload/work/w-1/save/as/name.txt"),
+                StatusCode::UNAUTHORIZED,
+            ),
             (
                 "POST",
                 &format!("{b}/upload/work/w-1/save/as/name.txt/mockputtopost"),
+                StatusCode::UNAUTHORIZED,
             ),
             (
                 "POST",
                 &format!("{b}/v2/upload/workorworkcompleted/either-1"),
+                StatusCode::UNAUTHORIZED,
             ),
-            ("POST", &format!("{b}/batch/upload/manage")),
+            (
+                "POST",
+                &format!("{b}/batch/upload/manage"),
+                StatusCode::INTERNAL_SERVER_ERROR,
+            ),
         ] {
             assert_eq!(
                 respond(method, path, MP, multipart_body()).await.0,
-                StatusCode::INTERNAL_SERVER_ERROR,
+                want,
                 "multipart upload route failed: {path}"
             );
         }
@@ -776,7 +796,7 @@ mod u2b_tests {
         .await;
         assert_eq!(
             status,
-            StatusCode::INTERNAL_SERVER_ERROR,
+            StatusCode::UNAUTHORIZED,
             "base64 upload route unreachable"
         );
     }
@@ -1046,6 +1066,21 @@ mod u2c_tests {
             .status()
     }
 
+    async fn status_json(method: &str, uri: &str, body: serde_json::Value) -> StatusCode {
+        router(shared::testing::mock_pool())
+            .oneshot(
+                Request::builder()
+                    .uri(uri)
+                    .method(method)
+                    .header("content-type", "application/json")
+                    .body(Body::from(body.to_string()))
+                    .unwrap(),
+            )
+            .await
+            .unwrap()
+            .status()
+    }
+
     const BASE: &str = "/api/processplatform/assemble/surface";
 
     // ── 路由可达性：500 = 路由存在 + 提取器匹配（session 缺失先于 DB 失败） ──
@@ -1107,6 +1142,8 @@ mod u2c_tests {
 
     #[tokio::test]
     async fn u2c_draft_keylock_write_verb_routes_reachable() {
+        // draft/keylock 写面已收会话门：带合法 JSON body（避免 Json 提取先于门而 415），
+        // 无会话应 401（门在 pool.get() 之前，离线可证）。
         for (method, path) in [
             ("PUT", "/draft"),
             ("POST", "/draft/mockputtopost"),
@@ -1114,8 +1151,8 @@ mod u2c_tests {
             ("POST", "/keylock/lock/mockputtopost"),
         ] {
             assert_eq!(
-                status_of(method, &format!("{}{}", BASE, path)).await,
-                StatusCode::INTERNAL_SERVER_ERROR,
+                status_json(method, &format!("{}{}", BASE, path), serde_json::json!({})).await,
+                StatusCode::UNAUTHORIZED,
                 "write route failed: {} {}",
                 method,
                 path
@@ -1156,9 +1193,16 @@ mod u2c_tests {
 
     #[tokio::test]
     async fn u2c_work_v3_retract_and_shift_time_post_routes_reachable() {
+        // work/v3/retract 已收会话门：带合法 JSON body（retractTaskList 缺省会 422），
+        // 无会话应 401（门在 pool.get() 之前，离线可证）。
         assert_eq!(
-            status_of("POST", &format!("{}/work/v3/retract", BASE)).await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            status_json(
+                "POST",
+                &format!("{}/work/v3/retract", BASE),
+                serde_json::json!({"retractTaskList": []})
+            )
+            .await,
+            StatusCode::UNAUTHORIZED
         );
         assert_eq!(
             status_of("POST", &format!("{}/workcompleted/shift/time", BASE)).await,

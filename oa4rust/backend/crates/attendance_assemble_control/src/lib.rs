@@ -39,6 +39,12 @@ pub struct ControlRule {
     pub description: Option<String>,
 }
 
+fn require_session(
+    session: Option<Extension<shared::session::Session>>,
+) -> Result<shared::session::Session, AppError> {
+    session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
+}
+
 pub async fn list_control_rules(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -387,9 +393,7 @@ pub async fn attendanceappealInfo_appeal_id(
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 申诉处理，person 从 body 取（冒名族，另记待修）⇒ 会话存在档。
-    let Some(Extension(_session)) = session else {
-        return Err(AppError::Unauthorized);
-    };
+    require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let status = payload
@@ -1708,9 +1712,7 @@ pub async fn attendancedetail_mobile_recive(
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 考勤明细接收，person 从 body 取（冒名族，另记待修）⇒ 会话存在档。
-    let Some(Extension(_session)) = session else {
-        return Err(AppError::Unauthorized);
-    };
+    require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let person_id = payload
@@ -1791,9 +1793,7 @@ pub async fn attendancedetail_recive(
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 考勤明细接收，person 从 body 取（冒名族，另记待修）⇒ 会话存在档。
-    let Some(Extension(_session)) = session else {
-        return Err(AppError::Unauthorized);
-    };
+    require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = payload
@@ -1825,9 +1825,7 @@ pub async fn attendancedetail_reciveSingle(
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 考勤明细接收，person 从 body 取（冒名族，另记待修）⇒ 会话存在档。
-    let Some(Extension(_session)) = session else {
-        return Err(AppError::Unauthorized);
-    };
+    require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = payload
@@ -6023,9 +6021,10 @@ pub async fn v2_config_person_get(
 /// POST /api/attendance/assemble/control/v2/config/person
 pub async fn v2_config_person_post(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let name = json_str(&payload, "name");
@@ -6038,7 +6037,7 @@ pub async fn v2_config_person_post(
     let existing = client
         .query_opt(
             "SELECT id FROM x_attendance_config WHERE category = 'v2_person' AND name = $1 AND creator = $2",
-            &[&name, &session.person_unique],
+            &[&name, &sess.person_unique],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -6061,7 +6060,7 @@ pub async fn v2_config_person_post(
                 .execute(
                     "INSERT INTO x_attendance_config (id, name, value, category, creator, create_time, update_time) \
                      VALUES ($1, $2, $3, 'v2_person', $4, NOW(), NOW())",
-                    &[&id, &name, &value, &session.person_unique],
+                    &[&id, &name, &value, &sess.person_unique],
                 )
                 .await
                 .map_err(|_| AppError::Internal)?;

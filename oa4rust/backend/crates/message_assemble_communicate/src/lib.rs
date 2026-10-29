@@ -12,6 +12,13 @@ pub mod routes;
 #[cfg(test)]
 mod tests_u2;
 
+/// 写面会话存在档：无会话先 401，在任何 `pool.get()` 之前（离线可证）。
+fn require_session(
+    session: Option<Extension<shared::session::Session>>,
+) -> Result<shared::session::Session, AppError> {
+    session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
+}
+
 // ── message/unread/count（裸路径，桌面 Dashboard 引用；统计未读消息）────────────
 // 未读 = x_message_consume 中 read_status 非 'read' 的待消费条目。
 #[allow(non_snake_case)]
@@ -425,9 +432,7 @@ pub async fn consume_type_type_mockputtopost(
     axum::extract::Path(msg_type): axum::extract::Path<String>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    if session.is_none() {
-        return Err(AppError::Unauthorized);
-    }
+    require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     // W12 收敛：对齐 o2server ActionUpdate（consume/type/{type}）——按 Wi.idList 定位
     // x_message、标记 consumed=true，WrapNumber 返回命中条数；空 body → 0。
@@ -515,9 +520,7 @@ pub async fn im_conversation(
     session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    if session.is_none() {
-        return Err(AppError::Unauthorized);
-    }
+    require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let name = req.get("name").and_then(|v| v.as_str()).unwrap_or_default();
@@ -2045,9 +2048,7 @@ pub async fn instant_currentperson_consumed_mockputtopost(
     session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    if session.is_none() {
-        return Err(AppError::Unauthorized);
-    }
+    require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id_list = req
@@ -2882,9 +2883,7 @@ pub async fn connector_create(
     session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    if session.is_none() {
-        return Err(AppError::Unauthorized);
-    }
+    require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let msg_type = req
@@ -2961,9 +2960,7 @@ pub async fn ws_create(
     session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    if session.is_none() {
-        return Err(AppError::Unauthorized);
-    }
+    require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let person = req

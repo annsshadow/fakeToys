@@ -297,21 +297,23 @@ async fn attachment_download_base64(pool: &Pool, id: &str) -> ApiResult {
 #[allow(non_snake_case)]
 pub async fn u2_attachment_upload(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     Path(subjectId): Path<String>,
     multipart: axum::extract::Multipart,
 ) -> ApiResult {
-    attachment_upload_store(&pool, &session.person_unique, &subjectId, multipart).await
+    let sess = crate::require_session(session)?;
+    attachment_upload_store(&pool, &sess.person_unique, &subjectId, multipart).await
 }
 
 #[allow(non_snake_case)]
 pub async fn u2_attachment_upload_callback(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     Path((subjectId, _callback)): Path<(String, String)>,
     multipart: axum::extract::Multipart,
 ) -> ApiResult {
-    attachment_upload_store(&pool, &session.person_unique, &subjectId, multipart).await
+    let sess = crate::require_session(session)?;
+    attachment_upload_store(&pool, &sess.person_unique, &subjectId, multipart).await
 }
 
 async fn attachment_upload_store(
@@ -693,16 +695,17 @@ pub async fn u2_subject_get(pool: Extension<Pool>, Path(id): Path<String>) -> Ap
 #[allow(non_snake_case)]
 pub async fn u2_subject_save(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     body: axum::extract::Json<Value>,
 ) -> ApiResult {
+    let sess = crate::require_session(session)?;
     let title = match body_str(&body, &["title"]) {
         Some(t) => t,
         None => return Err(AppError::BadRequest("title is required".to_string())),
     };
     let content = body_str(&body, &["content"]).unwrap_or_default();
     // creator 以会话登录人为事实源：客户端传值可伪造归属（冒名发帖）
-    let creator = session.person_unique.clone();
+    let creator = sess.person_unique.clone();
     let forum_id = body_str(&body, &["forumId"]).unwrap_or_default();
     let section_id = body_str(&body, &["sectionId"]).unwrap_or_default();
     let section_name = body_str(&body, &["sectionName"]).unwrap_or_default();
@@ -905,16 +908,17 @@ pub async fn u2_subject_change_section(
 #[allow(non_snake_case)]
 pub async fn u2_vote_submit(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     body: axum::extract::Json<Value>,
 ) -> ApiResult {
+    let sess = crate::require_session(session)?;
     let topic_id = match body_str(&body, &["subjectId", "topicId", "id"]) {
         Some(v) => v,
         None => return Err(AppError::BadRequest("subjectId is required".to_string())),
     };
     let option_id = body_str(&body, &["optionId"]).unwrap_or_default();
     let option_name = body_str(&body, &["optionName"]).unwrap_or_default();
-    let person = session.person_unique.clone();
+    let person = sess.person_unique.clone();
     let record_id = Uuid::new_v4().to_string();
 
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -1272,16 +1276,17 @@ pub async fn u2_reply_filter_list(
 #[allow(non_snake_case)]
 pub async fn u2_user_reply_save(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     body: axum::extract::Json<Value>,
 ) -> ApiResult {
+    let sess = crate::require_session(session)?;
     let content = match body_str(&body, &["content"]) {
         Some(v) => v,
         None => return Err(AppError::BadRequest("content is required".to_string())),
     };
     let topic_id = body_str(&body, &["topicId", "subjectId"]).unwrap_or_default();
     // creator 以会话登录人为事实源：客户端传值可伪造归属（冒名回帖）
-    let creator = session.person_unique.clone();
+    let creator = sess.person_unique.clone();
     let id = Uuid::new_v4().to_string();
 
     let client = pool.get().await.map_err(|_| AppError::Internal)?;

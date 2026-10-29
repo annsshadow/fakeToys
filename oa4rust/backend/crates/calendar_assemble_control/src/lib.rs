@@ -13,6 +13,8 @@ pub mod u2;
 #[cfg(test)]
 mod security_gate_tests_b70;
 #[cfg(test)]
+mod security_gate_tests_r6;
+#[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]

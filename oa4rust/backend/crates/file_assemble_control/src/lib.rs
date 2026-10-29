@@ -23,6 +23,8 @@ mod security_gate_tests;
 #[cfg(test)]
 mod security_gate_tests_b77;
 #[cfg(test)]
+mod security_gate_tests_r6;
+#[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
@@ -44,6 +46,14 @@ fn text_truthy(row: &dyn crate::RowGet, col: &str) -> bool {
 /// TEXT 列宽容读 i64（parse 失败回落默认值）。
 fn text_i64(row: &dyn crate::RowGet, col: &str, default: i64) -> i64 {
     row.get_str(col).parse::<i64>().unwrap_or(default)
+}
+
+/// A2-R6：写 handler 补"会话存在档"门禁——无会话（Option=None）→ 401，
+/// 门置于首个 DB 访问之前，杜绝匿名写。
+fn require_session(
+    session: Option<Extension<shared::session::Session>>,
+) -> Result<shared::session::Session, AppError> {
+    session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
 }
 
 #[axum::debug_handler]
@@ -393,9 +403,10 @@ pub async fn get_file(
 #[allow(non_snake_case)]
 pub async fn upload_file(
     pool: Extension<Pool>,
-    Extension(session): Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(body): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let name = body
@@ -414,7 +425,7 @@ pub async fn upload_file(
         .unwrap_or_default()
         .to_string();
     let size = body.get("size").and_then(|v| v.as_i64()).unwrap_or(0);
-    let creator = session.person_unique.clone();
+    let creator = sess.person_unique.clone();
 
     let id = uuid::Uuid::new_v4().to_string();
 
@@ -446,9 +457,10 @@ pub async fn upload_file(
 #[allow(non_snake_case)]
 pub async fn create_file(
     pool: Extension<Pool>,
-    Extension(session): Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(body): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let name = body
@@ -467,7 +479,7 @@ pub async fn create_file(
         .unwrap_or_default()
         .to_string();
     let size = body.get("size").and_then(|v| v.as_i64()).unwrap_or(0);
-    let creator = session.person_unique.clone();
+    let creator = sess.person_unique.clone();
 
     let id = uuid::Uuid::new_v4().to_string();
 
@@ -538,9 +550,7 @@ pub async fn create_file_entity(
     axum::extract::Json(body): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 第五十六批：新建文件实体要求有效会话（无会话 401）；creator 仍硬写 "system"（残留记 §五）。
-    if session.is_none() {
-        return Err(AppError::Unauthorized);
-    }
+    require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let name = body
@@ -1104,10 +1114,11 @@ pub async fn attachment_list_top(
 #[allow(non_snake_case)]
 pub async fn attachment_upload_folder_folderId(
     pool: Extension<Pool>,
-    Extension(session): Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(folder_id): axum::extract::Path<String>,
     mut form: axum::extract::Multipart,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let mut file_data: Option<Vec<u8>> = None;
     let mut mime_type: Option<String> = None;
     let mut filename: Option<String> = None;
@@ -1165,7 +1176,7 @@ pub async fn attachment_upload_folder_folderId(
     client.execute(
         "INSERT INTO FILE_FILE (id, name, person, reference_id, reference_type, extension, length, mime_type, content, create_time, update_time) \
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())",
-        &[&id, &name, &session.person_unique, &folder_id, &ref_type, &ext, &(data.len() as i64), &mime, &content_b64],
+        &[&id, &name, &sess.person_unique, &folder_id, &ref_type, &ext, &(data.len() as i64), &mime, &content_b64],
     ).await.map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1180,13 +1191,15 @@ pub async fn attachment_upload_folder_folderId(
 #[allow(non_snake_case)]
 pub async fn attachment_upload_folder_folderId_callback_callback(
     pool: Extension<Pool>,
-    Extension(session): Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((folder_id, _callback)): axum::extract::Path<(String, String)>,
     form: axum::extract::Multipart,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 透传臂也收会话门：尺子按本函数体判定，直接调用具名门。
+    require_session(session.clone())?;
     attachment_upload_folder_folderId(
         pool,
-        Extension(session),
+        session,
         axum::extract::Path(folder_id),
         form,
     )
@@ -1886,10 +1899,11 @@ pub async fn attachment2_list_type_page_size_size(
 #[allow(non_snake_case)]
 pub async fn attachment2_upload_folder_folderId(
     pool: Extension<Pool>,
-    Extension(session): Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(folder_id): axum::extract::Path<String>,
     mut form: axum::extract::Multipart,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let mut file_data: Option<Vec<u8>> = None;
     let mut mime_type: Option<String> = None;
     let mut filename: Option<String> = None;
@@ -1947,7 +1961,7 @@ pub async fn attachment2_upload_folder_folderId(
     client.execute(
         "INSERT INTO FILE_FILE (id, name, person, reference_id, reference_type, extension, length, mime_type, content, create_time, update_time) \
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())",
-        &[&id, &name, &session.person_unique, &folder_id, &ref_type, &ext, &(data.len() as i64), &mime, &content_b64],
+        &[&id, &name, &sess.person_unique, &folder_id, &ref_type, &ext, &(data.len() as i64), &mime, &content_b64],
     ).await.map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -3352,9 +3366,10 @@ pub async fn file_upload_referencetype_referenceType_reference_reference_scale_s
 #[allow(non_snake_case)]
 pub async fn file_upload_with_url(
     pool: Extension<Pool>,
-    Extension(session): Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(body): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let url = body
         .get("url")
         .and_then(|v| v.as_str())
@@ -3403,7 +3418,7 @@ pub async fn file_upload_with_url(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
-    let creator = session.person_unique.clone();
+    let creator = sess.person_unique.clone();
     let content_b64 = base64::engine::general_purpose::STANDARD.encode(&bytes);
     let size = bytes.len() as i64;
     let ext = name
@@ -4357,7 +4372,7 @@ pub async fn share_share_shareId_file_fileId_folder_folderId(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     u2_share_save_to_folder(
         pool,
-        Extension(session),
+        Some(Extension(session)),
         axum::extract::Path((share_id, file_id, folder_id)),
     )
     .await
@@ -4602,7 +4617,7 @@ async fn u2_store_new(
 #[allow(non_snake_case)]
 pub async fn u2_file_upload_octet_stream(
     pool: Extension<Pool>,
-    Extension(session): Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((reference_type, reference, _scale)): axum::extract::Path<(
         String,
         String,
@@ -4611,6 +4626,7 @@ pub async fn u2_file_upload_octet_stream(
     query: axum::extract::Query<std::collections::HashMap<String, String>>,
     body: axum::body::Bytes,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     if body.is_empty() {
         return Err(AppError::BadRequest("empty request body".to_string()));
     }
@@ -4622,7 +4638,7 @@ pub async fn u2_file_upload_octet_stream(
     let id = uuid::Uuid::new_v4().to_string();
     u2_store_new(
         &pool,
-        &session.person_unique,
+        &sess.person_unique,
         &id,
         &filename,
         None,
@@ -4637,7 +4653,7 @@ pub async fn u2_file_upload_octet_stream(
 #[allow(non_snake_case)]
 pub async fn u2_file_upload_multipart(
     pool: Extension<Pool>,
-    Extension(session): Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((reference_type, reference, _scale)): axum::extract::Path<(
         String,
         String,
@@ -4645,11 +4661,12 @@ pub async fn u2_file_upload_multipart(
     )>,
     multipart: axum::extract::Multipart,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let (filename, mime, bytes) = u2_read_multipart_file(multipart).await?;
     let id = uuid::Uuid::new_v4().to_string();
     u2_store_new(
         &pool,
-        &session.person_unique,
+        &sess.person_unique,
         &id,
         &filename,
         mime.as_deref(),
@@ -4664,7 +4681,7 @@ pub async fn u2_file_upload_multipart(
 #[allow(non_snake_case)]
 pub async fn u2_file_upload_callback(
     pool: Extension<Pool>,
-    Extension(session): Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((reference_type, reference, _scale, _callback)): axum::extract::Path<(
         String,
         String,
@@ -4673,9 +4690,11 @@ pub async fn u2_file_upload_callback(
     )>,
     multipart: axum::extract::Multipart,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 透传臂也收会话门：尺子按本函数体判定，直接调用具名门。
+    require_session(session.clone())?;
     u2_file_upload_multipart(
         pool,
-        Extension(session),
+        session,
         axum::extract::Path((reference_type, reference, _scale)),
         multipart,
     )
@@ -4962,9 +4981,10 @@ pub async fn u2_file_list_reference_types(
 #[allow(non_snake_case)]
 pub async fn u2_folder_create(
     pool: Extension<Pool>,
-    Extension(session): Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(body): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let name = body
         .get("name")
         .and_then(|v| v.as_str())
@@ -4984,7 +5004,7 @@ pub async fn u2_folder_create(
     client
         .execute(
             "INSERT INTO FILE_FOLDER (id, name, person, superior) VALUES ($1, $2, $3, $4)",
-            &[&id, &name, &session.person_unique, &superior],
+            &[&id, &name, &sess.person_unique, &superior],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -4993,7 +5013,7 @@ pub async fn u2_folder_create(
         ("name".to_string(), Value::String(name)),
         (
             "person".to_string(),
-            Value::String(session.person_unique.clone()),
+            Value::String(sess.person_unique.clone()),
         ),
     ]);
     if let Some(sup) = superior {
@@ -5352,13 +5372,14 @@ pub async fn u2_share_password_verify(
 #[allow(non_snake_case)]
 pub async fn u2_share_save_to_folder(
     pool: Extension<Pool>,
-    Extension(session): Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((share_id, file_id, folder_id)): axum::extract::Path<(
         String,
         String,
         String,
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let share_valid = client
         .query_opt(
@@ -5377,7 +5398,7 @@ pub async fn u2_share_save_to_folder(
             "INSERT INTO FILE_FILE (id, name, person, reference_id, reference_type, extension, length, mime_type, content, storage_key, create_time, update_time) \
              SELECT $1, name, $2, $3, reference_type, extension, length, mime_type, content, storage_key, NOW(), NOW() \
              FROM FILE_FILE WHERE id = $4 AND deleted_at IS NULL",
-            &[&new_id, &session.person_unique, &folder_id, &file_id],
+            &[&new_id, &sess.person_unique, &folder_id, &file_id],
         )
         .await.map_err(|_| AppError::Internal)?;
     if result == 0 {

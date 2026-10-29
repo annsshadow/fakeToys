@@ -4004,9 +4004,7 @@ pub async fn file_id_upload(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 写面：收有效会话门（无会话 401）。
     // x_cms_file 的 creator 列本 upsert 不写，行属主不可判，暂按仅会话存在档收口。
-    let Some(Extension(_session)) = session else {
-        return Err(AppError::Unauthorized);
-    };
+    require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let name = body.get("name").and_then(|v| v.as_str()).unwrap_or("");
     let content_base64 = body
@@ -4673,9 +4671,7 @@ pub async fn fileinfo_update_id_content(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 写面：收有效会话门（无会话 401）。
     // x_cms_fileinfo 的 upload_person 列各插入路径均不写，行属主不可判，暂按仅会话存在档收口。
-    let Some(Extension(_session)) = session else {
-        return Err(AppError::Unauthorized);
-    };
+    require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let original_name = body
         .get("originalName")
@@ -7770,9 +7766,7 @@ pub async fn input_cover(
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 写面：收有效会话门（无会话 401），防匿名应用数据写入。
-    let Some(Extension(_session)) = session else {
-        return Err(AppError::Unauthorized);
-    };
+    require_session(session)?;
     input_cover_impl(&pool, &body).await
 }
 
@@ -7784,9 +7778,7 @@ pub async fn input_cover_mockputtopost(
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 写面：收有效会话门（无会话 401），防匿名应用数据写入。
-    let Some(Extension(_session)) = session else {
-        return Err(AppError::Unauthorized);
-    };
+    require_session(session)?;
     input_cover_impl(&pool, &body).await
 }
 
@@ -7798,9 +7790,7 @@ pub async fn input_create(
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 写面：收有效会话门（无会话 401），防匿名应用数据写入。
-    let Some(Extension(_session)) = session else {
-        return Err(AppError::Unauthorized);
-    };
+    require_session(session)?;
     input_create_impl(&pool, &body).await
 }
 
@@ -7812,9 +7802,7 @@ pub async fn input_create_mockputtopost(
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 写面：收有效会话门（无会话 401），防匿名应用数据写入。
-    let Some(Extension(_session)) = session else {
-        return Err(AppError::Unauthorized);
-    };
+    require_session(session)?;
     input_create_impl(&pool, &body).await
 }
 
@@ -8194,9 +8182,10 @@ pub async fn document_u2_delete(
 #[allow(non_snake_case)]
 pub async fn document_u2_create(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
     let title = u2_body_str(&body, "title").unwrap_or_default();
@@ -8208,7 +8197,7 @@ pub async fn document_u2_create(
         .execute(
             "INSERT INTO x_cms_data_document (id, app_id, category_id, title, content, author_id, status, creator) \
              VALUES ($1, $2, $3, $4, $5, $6, 'draft', $6)",
-            &[&id, &app_id, &category_id, &title, &content, &session.person_unique],
+            &[&id, &app_id, &category_id, &title, &content, &sess.person_unique],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -8617,9 +8606,10 @@ pub async fn document_u2_filter_count(
 #[allow(non_snake_case)]
 pub async fn comment_u2_create(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let doc_id = match u2_body_str(&body, "docId") {
         Some(d) if !d.is_empty() => d,
         _ => return Err(AppError::BadRequest("docId required".to_string())),
@@ -8642,7 +8632,7 @@ pub async fn comment_u2_create(
         .execute(
             "INSERT INTO x_cms_comment (id, doc_id, person_id, content, parent_id) \
              VALUES ($1, $2, $3, $4, $5)",
-            &[&id, &doc_id, &session.person_unique, &content, &parent_id],
+            &[&id, &doc_id, &sess.person_unique, &content, &parent_id],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -8769,9 +8759,10 @@ pub async fn correlation_u2_doc_delete(
 #[allow(non_snake_case)]
 pub async fn file_u2_create(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
     let name = u2_body_str(&body, "name").unwrap_or_default();
@@ -8784,7 +8775,7 @@ pub async fn file_u2_create(
         .execute(
             "INSERT INTO x_cms_file (id, app_id, name, size, content_type, content_base64, creator) \
              VALUES ($1, $2, $3, $4, $5, $6, $7)",
-            &[&id, &app_id, &name, &size, &content_type, &content_base64, &session.person_unique],
+            &[&id, &app_id, &name, &size, &content_type, &content_base64, &sess.person_unique],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -8996,10 +8987,11 @@ pub async fn fileinfo_u2_replace_to_doc(
 #[allow(non_snake_case)]
 pub async fn form_u2_create(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // W12/E2E：全局表单设计器无应用上下文，缺省落 default 桶（对齐 script 处理）
+    let sess = require_session(session)?;
     let app_id = match u2_body_str(&body, "appId") {
         Some(a) if !a.is_empty() => a.to_string(),
         _ => "default".to_string(),
@@ -9035,7 +9027,7 @@ pub async fn form_u2_create(
                 &name,
                 &definition,
                 &status,
-                &session.person_unique,
+                &sess.person_unique,
             ],
         )
         .await
@@ -9185,11 +9177,12 @@ pub async fn form_u2_delete(
 #[allow(non_snake_case)]
 pub async fn script_u2_create(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // W7：全局脚本设计器无应用上下文，缺 appId 时落入 default 桶；
     // 携带真实 appId 时仍校验应用存在
+    let sess = require_session(session)?;
     let app_id = match u2_body_str(&body, "appId") {
         Some(a) if !a.is_empty() => a.to_string(),
         _ => "default".to_string(),
@@ -9215,7 +9208,7 @@ pub async fn script_u2_create(
         .execute(
             "INSERT INTO x_cms_script (id, app_id, name, unique_name, script_content, imported, creator) \
              VALUES ($1, $2, $3, $4, $5, false, $6)",
-            &[&id, &app_id, &name, &unique_name, &content, &session.person_unique],
+            &[&id, &app_id, &name, &unique_name, &content, &sess.person_unique],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -9320,9 +9313,10 @@ pub async fn script_u2_list_manager(
 #[allow(non_snake_case)]
 pub async fn templateform_u2_create(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
     let name = u2_body_str(&body, "name").unwrap_or_default();
@@ -9331,7 +9325,7 @@ pub async fn templateform_u2_create(
         .execute(
             "INSERT INTO x_cms_templateform (id, xname, xcategory, creator_person) \
              VALUES ($1, $2, $3, $4)",
-            &[&id, &name, &category, &session.person_unique],
+            &[&id, &name, &category, &sess.person_unique],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -9371,9 +9365,10 @@ pub async fn templateform_u2_delete(
 #[allow(non_snake_case)]
 pub async fn view_u2_create(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let name = match u2_body_str(&body, "name") {
         Some(n) if !n.is_empty() => n,
         _ => return Err(AppError::BadRequest("name required".to_string())),
@@ -9393,7 +9388,7 @@ pub async fn view_u2_create(
                 &category_id,
                 &name,
                 &view_config,
-                &session.person_unique,
+                &sess.person_unique,
             ],
         )
         .await
@@ -9464,9 +9459,10 @@ pub async fn view_u2_delete(
 #[allow(non_snake_case)]
 pub async fn viewcategory_u2_create(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let name = match u2_body_str(&body, "name") {
         Some(n) if !n.is_empty() => n,
         _ => return Err(AppError::BadRequest("name required".to_string())),
@@ -9478,7 +9474,7 @@ pub async fn viewcategory_u2_create(
         .execute(
             "INSERT INTO x_cms_viewcategory (id, name, parent_id, creator) \
              VALUES ($1, $2, $3, $4)",
-            &[&id, &name, &parent_id, &session.person_unique],
+            &[&id, &name, &parent_id, &sess.person_unique],
         )
         .await
         .map_err(|_| AppError::Internal)?;

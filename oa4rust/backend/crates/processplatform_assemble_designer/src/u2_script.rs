@@ -20,9 +20,10 @@ fn body_str<'a>(body: &'a Value, key: &str) -> Option<&'a str> {
 /// POST /api/processplatform/assemble/designer/script —— 新建脚本并落 v1 版本快照
 pub async fn create(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = crate::require_session(session)?;
     let name = body_str(&body, "name")
         .unwrap_or_default()
         .trim()
@@ -35,7 +36,7 @@ pub async fn create(
         .unwrap_or_default()
         .to_string();
     let id = Uuid::new_v4().to_string();
-    let creator = session.person_unique.clone();
+    let creator = sess.person_unique.clone();
 
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
@@ -66,13 +67,14 @@ pub async fn create(
 /// PUT /api/processplatform/assemble/designer/script/{id} —— 更新脚本并落新版本快照
 pub async fn update(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = crate::require_session(session)?;
     let name = body_str(&body, "name").map(str::to_string);
     let code = body_str(&body, "code").map(str::to_string);
-    let creator = session.person_unique.clone();
+    let creator = sess.person_unique.clone();
 
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;

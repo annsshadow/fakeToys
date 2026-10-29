@@ -23,6 +23,13 @@ pub mod routes;
 
 use entities::{meeting, meeting_room};
 
+/// 写面会话存在档：无会话先 401，在任何 DB 访问之前（离线可证）。
+fn require_session(
+    session: Option<Extension<shared::session::Session>>,
+) -> Result<shared::session::Session, AppError> {
+    session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
+}
+
 #[cfg(test)]
 mod security_gate_tests;
 #[cfg(test)]
@@ -452,9 +459,10 @@ pub async fn meeting_list_by_room(
 #[allow(non_snake_case)]
 pub async fn create_meeting(
     db: Extension<DatabaseConnection>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     AxumJson(payload): AxumJson<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let title = payload
         .get("title")
         .and_then(|v| v.as_str())
@@ -487,7 +495,7 @@ pub async fn create_meeting(
         .parse()
         .map_err(|_| AppError::BadRequest("invalid \"endTime\"".to_string()))?;
     // 组织者以会话登录人为事实源：客户端 organizerId 可伪造（冒名归属，IDOR 面）。
-    let organizer_id = session.person_unique.clone();
+    let organizer_id = sess.person_unique.clone();
 
     let id = uuid::Uuid::new_v4().to_string();
 

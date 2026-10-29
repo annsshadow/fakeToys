@@ -25901,15 +25901,16 @@ pub async fn attachment_u2b_download_transfer(
 #[allow(non_snake_case)]
 pub async fn attachment_u2b_upload_work(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(work): axum::extract::Path<String>,
     multipart: axum::extract::Multipart,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = u4_require_session(session)?;
     let (name, bytes) = u2_read_multipart_file(multipart).await?;
     let id = uuid::Uuid::new_v4().to_string();
     u2_att_store_new(
         &pool,
-        &session.person_unique,
+        &sess.person_unique,
         &id,
         &name,
         bytes,
@@ -25922,15 +25923,16 @@ pub async fn attachment_u2b_upload_work(
 #[allow(non_snake_case)]
 pub async fn attachment_u2b_upload_work_callback(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((work, _callback)): axum::extract::Path<(String, String)>,
     multipart: axum::extract::Multipart,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = u4_require_session(session)?;
     let (name, bytes) = u2_read_multipart_file(multipart).await?;
     let id = uuid::Uuid::new_v4().to_string();
     u2_att_store_new(
         &pool,
-        &session.person_unique,
+        &sess.person_unique,
         &id,
         &name,
         bytes,
@@ -25943,15 +25945,16 @@ pub async fn attachment_u2b_upload_work_callback(
 #[allow(non_snake_case)]
 pub async fn attachment_u2b_upload_workcompleted(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(wc): axum::extract::Path<String>,
     multipart: axum::extract::Multipart,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = u4_require_session(session)?;
     let (name, bytes) = u2_read_multipart_file(multipart).await?;
     let id = uuid::Uuid::new_v4().to_string();
     u2_att_store_new(
         &pool,
-        &session.person_unique,
+        &sess.person_unique,
         &id,
         &name,
         bytes,
@@ -25964,15 +25967,16 @@ pub async fn attachment_u2b_upload_workcompleted(
 #[allow(non_snake_case)]
 pub async fn attachment_u2b_upload_save_as(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((work, save_as)): axum::extract::Path<(String, String)>,
     multipart: axum::extract::Multipart,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = u4_require_session(session)?;
     let (_upstream_name, bytes) = u2_read_multipart_file(multipart).await?;
     let id = uuid::Uuid::new_v4().to_string();
     u2_att_store_new(
         &pool,
-        &session.person_unique,
+        &sess.person_unique,
         &id,
         &save_as,
         bytes,
@@ -25985,27 +25989,30 @@ pub async fn attachment_u2b_upload_save_as(
 #[allow(non_snake_case)]
 pub async fn attachment_u2b_upload_save_as_mockputtopost(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     path: axum::extract::Path<(String, String)>,
     multipart: axum::extract::Multipart,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 透传臂也收会话门：尺子按本函数体判定，直接调用具名门。
+    u4_require_session(session.clone())?;
     attachment_u2b_upload_save_as(pool, session, path, multipart).await
 }
 
 #[allow(non_snake_case)]
 pub async fn attachment_u2b_v2_upload_wowc(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(flag): axum::extract::Path<String>,
     multipart: axum::extract::Multipart,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // v2 形状：目标 work/workCompleted 由请求体字段提供，路径 flag 为兜底引用值
+    let sess = u4_require_session(session)?;
     let (name, bytes) = u2_read_multipart_file(multipart).await?;
     let id = uuid::Uuid::new_v4().to_string();
     let ref_col = "\"xwork\" OR \"xworkCompleted\" = $7 --";
     u2_att_store_new(
         &pool,
-        &session.person_unique,
+        &sess.person_unique,
         &id,
         &name,
         bytes,
@@ -26018,11 +26025,12 @@ pub async fn attachment_u2b_v2_upload_wowc(
 #[allow(non_snake_case)]
 pub async fn attachment_u2b_v2_upload_base64(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(flag): axum::extract::Path<String>,
     Json(body): Json<U2B64UploadBody>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     use base64::Engine as _;
+    let sess = u4_require_session(session)?;
     let b64 = body.file_base64.as_deref().unwrap_or_default();
     let bytes = base64::engine::general_purpose::STANDARD
         .decode(b64.trim())
@@ -26035,7 +26043,7 @@ pub async fn attachment_u2b_v2_upload_base64(
     let id = uuid::Uuid::new_v4().to_string();
     u2_att_store_new(
         &pool,
-        &session.person_unique,
+        &sess.person_unique,
         &id,
         &name,
         bytes,
@@ -26079,27 +26087,29 @@ pub async fn attachment_u2b_batch_upload_manage(
 #[allow(non_snake_case)]
 pub async fn attachment_u2b_doc_to_word(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(work_id): axum::extract::Path<String>,
     axum::extract::Json(body): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // o2server ActionDocToWord：content（URL 编码 HTML）+ fileName + site，
     // 按 work→job 找既有附件（site+文件名匹配）更新或新建。本地分支语义 =
     // HTML 包 OLE2/CFB 壳（Word 可打开显示），见 u2_render::html_to_word_binary。
-    doc_to_word_for_job(&pool, &session.person_unique, &work_id, "pp_c_work", body).await
+    let sess = u4_require_session(session)?;
+    doc_to_word_for_job(&pool, &sess.person_unique, &work_id, "pp_c_work", body).await
 }
 
 #[allow(non_snake_case)]
 pub async fn attachment_u2b_doc_to_word_wowc(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(flag): axum::extract::Path<String>,
     axum::extract::Json(body): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // workOrWorkCompleted：先查 work，缺失再查 workcompleted（o2 双表语义）
+    let sess = u4_require_session(session)?;
     match doc_to_word_for_job(
         &pool,
-        &session.person_unique,
+        &sess.person_unique,
         &flag,
         "pp_c_work",
         body.clone(),
@@ -26109,7 +26119,7 @@ pub async fn attachment_u2b_doc_to_word_wowc(
         Err(AppError::NotFound) => {
             doc_to_word_for_job(
                 &pool,
-                &session.person_unique,
+                &sess.person_unique,
                 &flag,
                 "pp_c_workcompleted",
                 body,
@@ -26249,12 +26259,13 @@ fn file_extension_of(name: &str) -> String {
 #[allow(non_snake_case)]
 pub async fn attachment_u2b_html_to_pdf(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(body): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // o2server ActionHtmlToPdf：{workHtml, title?} → iText 本地渲染 → GeneralFile。
     // 这里用 genpdf 简化排版（真实 PDF、内容完整，非浏览器级保真）；workHtml
     // 为空时 o2 落「无内容」。
+    let sess = u4_require_session(session)?;
     let work_html = body
         .get("workHtml")
         .and_then(|v| v.as_str())
@@ -26268,7 +26279,7 @@ pub async fn attachment_u2b_html_to_pdf(
         .unwrap_or_else(|| {
             format!(
                 "{}-{}.pdf",
-                session.person_unique,
+                sess.person_unique,
                 chrono::Utc::now().format("%Y%m%d%H%M%S")
             )
         });
@@ -26279,18 +26290,19 @@ pub async fn attachment_u2b_html_to_pdf(
             "pdf typography (no CJK font found)",
         ));
     };
-    u2_render::general_file_store(&pool, &session.person_unique, &title, &bytes).await
+    u2_render::general_file_store(&pool, &sess.person_unique, &title, &bytes).await
 }
 
 #[allow(non_snake_case)]
 pub async fn attachment_u2b_html_to_image(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(body): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // o2 的 html->image 走云转换；这里用 ab_glyph 文本光栅化做简化排版真实现
     // （与 htmlToPdf 同构：块级结构 + 系统 CJK 字体，白底黑字 A4@150dpi，
     // 内容完整非浏览器级保真）。无字体环境诚实 501。落 GeneralFile 返回 {id}。
+    let sess = u4_require_session(session)?;
     let work_html = body
         .get("workHtml")
         .and_then(|v| v.as_str())
@@ -26304,7 +26316,7 @@ pub async fn attachment_u2b_html_to_image(
         .unwrap_or_else(|| {
             format!(
                 "{}-{}.png",
-                session.person_unique,
+                sess.person_unique,
                 chrono::Utc::now().format("%Y%m%d%H%M%S")
             )
         });
@@ -26314,7 +26326,7 @@ pub async fn attachment_u2b_html_to_image(
             "image typography (no CJK font found)",
         ));
     };
-    u2_render::general_file_store(&pool, &session.person_unique, &title, &bytes).await
+    u2_render::general_file_store(&pool, &sess.person_unique, &title, &bytes).await
 }
 
 #[allow(non_snake_case)]
@@ -26586,12 +26598,13 @@ pub async fn attachment_u2b_invoice_download(
 #[allow(non_snake_case)]
 pub async fn attachment_u2b_upload_with_url(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(body): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // o2server 语义：按 URL 拉取远程文件存为流程附件。
     // SSRF 防护见 shared::netguard（scheme 白名单 + 全局地址校验 + 手动重定向逐跳
     // 复检 + 体积/超时上限）；落盘复用 batch_upload_manage 的 u2_att_store_new。
+    let sess = u4_require_session(session)?;
     let url = body
         .get("url")
         .and_then(|v| v.as_str())
@@ -26620,7 +26633,7 @@ pub async fn attachment_u2b_upload_with_url(
     let id = uuid::Uuid::new_v4().to_string();
     u2_att_store_new(
         &pool,
-        &session.person_unique,
+        &sess.person_unique,
         &id,
         &name,
         bytes,
@@ -27932,19 +27945,21 @@ async fn u2_draft_save(
 #[allow(non_snake_case)]
 pub async fn draft_u2_save(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     Json(wi): Json<U2DraftSaveWi>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    u2_draft_save(&pool, &session, wi).await
+    let sess = u4_require_session(session)?;
+    u2_draft_save(&pool, &sess, wi).await
 }
 
 #[allow(non_snake_case)]
 pub async fn draft_u2_save_mockputtopost(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     Json(wi): Json<U2DraftSaveWi>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    u2_draft_save(&pool, &session, wi).await
+    let sess = u4_require_session(session)?;
+    u2_draft_save(&pool, &sess, wi).await
 }
 
 // ── keylock 加锁：他人持锁则拒绝，空闲则插入持锁行 ───────────────────────────
@@ -28003,19 +28018,21 @@ async fn u2_keylock_lock(
 #[allow(non_snake_case)]
 pub async fn keylock_u2_lock(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     Json(wi): Json<U2KeylockLockWi>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    u2_keylock_lock(&pool, &session, wi).await
+    let sess = u4_require_session(session)?;
+    u2_keylock_lock(&pool, &sess, wi).await
 }
 
 #[allow(non_snake_case)]
 pub async fn keylock_u2_lock_mockputtopost(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     Json(wi): Json<U2KeylockLockWi>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    u2_keylock_lock(&pool, &session, wi).await
+    let sess = u4_require_session(session)?;
+    u2_keylock_lock(&pool, &sess, wi).await
 }
 
 // ── serialnumber 创建 / 流水号生成 ────────────────────────────────────────────
@@ -28238,9 +28255,10 @@ pub struct U2V3RetractWi {
 #[allow(non_snake_case)]
 pub async fn work_u2_v3_retract(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     Json(wi): Json<U2V3RetractWi>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = u4_require_session(session)?;
     if wi.retractTaskList.is_empty() {
         return Ok(Json(ActionResult::error("retractTaskList is required")));
     }
@@ -28274,7 +28292,7 @@ pub async fn work_u2_v3_retract(
         .query_opt(
             "SELECT id FROM \"pp_c_taskcompleted\" WHERE xjob = $1 AND xperson = $2 \
              ORDER BY create_time DESC LIMIT 1",
-            &[&job, &session.person_unique],
+            &[&job, &sess.person_unique],
         )
         .await
         .map_err(|_| AppError::Internal)?;

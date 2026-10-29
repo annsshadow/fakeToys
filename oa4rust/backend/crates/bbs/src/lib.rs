@@ -3,11 +3,19 @@
 
 use axum::{extract::Extension, routing::get, routing::post, Router};
 use deadpool_postgres::Pool;
+use shared::error::AppError;
 
 pub mod forum;
 pub mod routes;
 pub mod section;
 pub mod subject;
+
+/// 会话存在档门：无会话（Option<Extension<Session>> = None）→ 401。
+fn require_session(
+    session: Option<Extension<shared::session::Session>>,
+) -> Result<shared::session::Session, AppError> {
+    session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
+}
 
 pub fn bbs_router(pool: Pool) -> Router {
     Router::new()

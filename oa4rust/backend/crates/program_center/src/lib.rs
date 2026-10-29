@@ -22,6 +22,9 @@ mod tests_u3;
 #[cfg(test)]
 mod security_gate_tests_b67;
 
+#[cfg(test)]
+mod security_gate_tests_r6;
+
 #[derive(Debug, Deserialize)]
 pub struct CollectAddRequest {
     pub title: Option<String>,
@@ -238,17 +241,18 @@ pub async fn collect_list(
 #[allow(non_snake_case)]
 pub async fn collect_add(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(req): Json<CollectAddRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let title = req.title.unwrap_or_default();
     let url = req.url.unwrap_or_default();
     // 归属以会话登录人为事实源：客户端 personId/creator 可伪造（替别人收藏/冒名归属）
-    let person_id = session.person_unique.clone();
-    let creator = session.person_unique.clone();
+    let person_id = sess.person_unique.clone();
+    let creator = sess.person_unique.clone();
 
     client
         .execute(
@@ -296,15 +300,16 @@ fn collect_update_spec() -> shared::crud::CrudSpec {
 #[allow(non_snake_case)]
 pub async fn collect_create(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     body: Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     // 归属以会话登录人为事实源：客户端 personId 可伪造（替别人收藏/冒名归属）
     let mut payload = body.0;
     if let Some(obj) = payload.as_object_mut() {
         obj.insert(
             "personId".to_string(),
-            Value::String(session.person_unique.clone()),
+            Value::String(sess.person_unique.clone()),
         );
     }
     let id = shared::crud_create(&pool, &collect_spec(), &payload).await?;
@@ -9266,9 +9271,10 @@ pub struct WarnLogCreateRequest {
 #[allow(non_snake_case)]
 pub async fn warnlog_create(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     Json(req): Json<WarnLogCreateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -9284,7 +9290,7 @@ pub async fn warnlog_create(
         .execute(
             "INSERT INTO x_program_warn_log (id, level, tag, logger_name, message, detail, host, port, creator_person, create_time) \
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())",
-            &[&id, &level, &tag, &logger_name, &message, &detail, &host, &port, &session.person_unique],
+            &[&id, &level, &tag, &logger_name, &message, &detail, &host, &port, &sess.person_unique],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -10763,9 +10769,10 @@ pub async fn u3_config_dump(pool: Extension<Pool>) -> Result<Json<ActionResult<V
 #[allow(non_snake_case)]
 pub async fn u3_config_change_password_post(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let old_password = json_str(&body, "oldPassword");
     let new_password = json_str(&body, "newPassword");
     if new_password.is_empty() {
@@ -10775,7 +10782,7 @@ pub async fn u3_config_change_password_post(
     let row = client
         .query_opt(
             "SELECT password_hash FROM auth_person WHERE unique_id = $1",
-            &[&session.person_unique],
+            &[&sess.person_unique],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -10805,7 +10812,7 @@ pub async fn u3_config_change_password_post(
     client
         .execute(
             "UPDATE auth_person SET password_hash = $1, updated_at = NOW() WHERE unique_id = $2",
-            &[&hash, &session.person_unique],
+            &[&hash, &sess.person_unique],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -11569,8 +11576,9 @@ async fn u3_module_sync_action(
 #[allow(non_snake_case)]
 pub async fn u3_module_output_put(
     pool: Extension<Pool>,
-    _session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     u3_module_sync_action(&pool, "output").await
 }
 
@@ -11578,8 +11586,9 @@ pub async fn u3_module_output_put(
 #[allow(non_snake_case)]
 pub async fn u3_module_list_put(
     pool: Extension<Pool>,
-    _session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     u3_module_sync_action(&pool, "list_refresh").await
 }
 
@@ -11587,8 +11596,9 @@ pub async fn u3_module_list_put(
 #[allow(non_snake_case)]
 pub async fn u3_module_compare_upload_put(
     pool: Extension<Pool>,
-    _session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     u3_module_sync_action(&pool, "compare_upload").await
 }
 
@@ -11640,15 +11650,16 @@ pub async fn u3_mpweixin_check_post(
 #[allow(non_snake_case)]
 pub async fn u3_mpweixin_template_send_post(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     Json(_body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
     client
         .execute(
             "INSERT INTO x_program_message_log (id, creator_person, create_time) VALUES ($1, $2, NOW())",
-            &[&id, &session.person_unique],
+            &[&id, &sess.person_unique],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -11711,9 +11722,10 @@ pub struct U3PromptErrorLogRequest {
 #[allow(non_snake_case)]
 pub async fn u3_prompterrorlog_create(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     Json(req): Json<U3PromptErrorLogRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
     let exception_class = req
@@ -11725,7 +11737,7 @@ pub async fn u3_prompterrorlog_create(
         .execute(
             "INSERT INTO x_program_prompt_error_log (id, exception_class, logger_name, message, creator_person, create_time) \
              VALUES ($1, $2, $3, $4, $5, NOW())",
-            &[&id, &exception_class, &logger_name, &message, &session.person_unique],
+            &[&id, &exception_class, &logger_name, &message, &sess.person_unique],
         )
         .await
         .map_err(|e| {
@@ -11749,9 +11761,10 @@ pub struct U3UnexpectedErrorLogRequest {
 #[allow(non_snake_case)]
 pub async fn u3_unexpectederrorlog_create(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     Json(req): Json<U3UnexpectedErrorLogRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
     let error_type = req
@@ -11763,7 +11776,7 @@ pub async fn u3_unexpectederrorlog_create(
         .execute(
             "INSERT INTO x_program_unexpected_error_log (id, error_type, message, stack_trace, creator_person, create_time) \
              VALUES ($1, $2, $3, $4, $5, NOW())",
-            &[&id, &error_type, &message, &stack_trace, &session.person_unique],
+            &[&id, &error_type, &message, &stack_trace, &sess.person_unique],
         )
         .await
         .map_err(|e| {
@@ -11779,14 +11792,15 @@ pub async fn u3_unexpectederrorlog_create(
 #[allow(non_snake_case)]
 pub async fn u3_qiyeweixin_create(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
     client
         .execute(
             "INSERT INTO x_program_callback_registration (id, creator_person, create_time) VALUES ($1, $2, NOW())",
-            &[&id, &session.person_unique],
+            &[&id, &sess.person_unique],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -12198,9 +12212,10 @@ pub struct DictCreateRequest {
 #[allow(non_snake_case)]
 pub async fn dict_create(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     Json(req): Json<DictCreateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -12214,7 +12229,7 @@ pub async fn dict_create(
         .execute(
             "INSERT INTO x_program_dict (id, name, flag, app_name, key_name, app_data, creator_person, create_time) \
              VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())",
-            &[&id, &name, &flag, &app_name, &key_name, &app_data, &session.person_unique],
+            &[&id, &name, &flag, &app_name, &key_name, &app_data, &sess.person_unique],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -12392,9 +12407,10 @@ pub struct ScriptSaveRequest {
 #[allow(non_snake_case)]
 pub async fn script_create(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     Json(req): Json<ScriptCreateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -12407,7 +12423,7 @@ pub async fn script_create(
         .execute(
             "INSERT INTO x_program_script (id, name, flag, content, category, creator_person, create_time) \
              VALUES ($1, $2, $3, $4, $5, $6, NOW())",
-            &[&id, &name, &flag, &content, &category, &session.person_unique],
+            &[&id, &name, &flag, &content, &category, &sess.person_unique],
         )
         .await
         .map_err(|_| AppError::Internal)?;

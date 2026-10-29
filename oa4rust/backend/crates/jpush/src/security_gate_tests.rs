@@ -29,7 +29,7 @@ mod security_gate_tests {
         // 客户端伪造 userId="u-impersonate"，会话为 u-owner → 落库必须 u-owner。
         let res = device_create(
             Extension(pool.clone()),
-            Extension(build_session("u-owner")),
+            Some(Extension(build_session("u-owner"))),
             axum::Json(json!({ "userId": "u-impersonate", "platform": "android", "token": "t" })),
         )
         .await;
@@ -52,5 +52,31 @@ mod security_gate_tests {
             )
             .await
             .unwrap();
+    }
+
+    /// 死池：`pool.get()` 必败，用于离线证明"门在库前返回"。
+    fn dead_pool() -> deadpool_postgres::Pool {
+        let mgr = deadpool_postgres::Manager::new(
+            deadpool_postgres::tokio_postgres::Config::new(),
+            deadpool_postgres::tokio_postgres::NoTls,
+        );
+        deadpool_postgres::Pool::builder(mgr).build().unwrap()
+    }
+
+    /// 无会话臂：dead pool + None 会话 → 必须 401（门在 pool.get() 之前）。
+    #[tokio::test]
+    async fn device_create_rejects_without_session() {
+        use shared::error::AppError;
+        let pool = dead_pool();
+        let res = device_create(
+            Extension(pool),
+            None,
+            axum::Json(json!({ "platform": "android", "token": "t" })),
+        )
+        .await;
+        assert!(
+            matches!(res, Err(AppError::Unauthorized)),
+            "无会话调用 device_create 必须 401（门在 pool.get() 之前）"
+        );
     }
 }

@@ -553,7 +553,7 @@ mod u3_tests {
         );
         assert_eq!(
             status_of("POST", "/api/program_center/qiyeweixin").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::UNAUTHORIZED
         );
         assert_eq!(
             status_of("POST", "/api/program_center/qiyeweixin/request/pull/sync").await,
@@ -687,7 +687,11 @@ mod u3_tests {
         // 2026-10 安全审计：jest 清缓存降为 admin 门禁；非 admin 会话（无 DB 时
         // is_admin 查询失败 fail-closed）返回 Forbidden，不再直通写库。
         assert!(matches!(r, Err(shared::error::AppError::Forbidden)));
-        let r = u3_qiyeweixin_create(Extension(pool.clone()), Extension(test_session())).await;
+        let r = u3_qiyeweixin_create(
+            Extension(pool.clone()),
+            Some(Extension(test_session())),
+        )
+        .await;
         assert!(matches!(r, Err(shared::error::AppError::Internal)));
     }
 
@@ -712,7 +716,7 @@ mod u3_tests {
         };
         let r = u3_prompterrorlog_create(
             Extension(pool.clone()),
-            Extension(test_session()),
+            Some(Extension(test_session())),
             axum::Json(req),
         )
         .await;
@@ -725,7 +729,7 @@ mod u3_tests {
         let pool = mock_pool();
         let r = u3_config_change_password_post(
             Extension(pool),
-            Extension(test_session()),
+            Some(Extension(test_session())),
             axum::Json(serde_json::json!({ "oldPassword": "old", "newPassword": "new" })),
         )
         .await;

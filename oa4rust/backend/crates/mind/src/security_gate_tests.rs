@@ -122,4 +122,41 @@ mod security_gate_tests {
             .await
             .unwrap();
     }
+
+    /// 死池：`pool.get()` 必败，用于离线证明"门在库前返回"。
+    fn dead_pool() -> deadpool_postgres::Pool {
+        let mgr = deadpool_postgres::Manager::new(
+            deadpool_postgres::tokio_postgres::Config::new(),
+            deadpool_postgres::tokio_postgres::NoTls,
+        );
+        deadpool_postgres::Pool::builder(mgr).build().unwrap()
+    }
+
+    /// R6：create_mind / create_folder 收会话存在档（无会话 401，门在 pool.get() 之前）。
+    #[tokio::test]
+    async fn r6_create_rejects_without_session() {
+        let pool = dead_pool();
+        let mind_res = crate::create_mind(
+            Extension(pool.clone()),
+            None,
+            axum::Json(serde_json::json!({ "name": "n" })),
+        )
+        .await
+        .map(|_| ());
+        assert!(
+            matches!(mind_res, Err(AppError::Unauthorized)),
+            "无会话调用 create_mind 必须 401（门在 pool.get() 之前）"
+        );
+        let folder_res = crate::create_folder(
+            Extension(pool),
+            None,
+            axum::Json(serde_json::json!({ "name": "f" })),
+        )
+        .await
+        .map(|_| ());
+        assert!(
+            matches!(folder_res, Err(AppError::Unauthorized)),
+            "无会话调用 create_folder 必须 401（门在 pool.get() 之前）"
+        );
+    }
 }

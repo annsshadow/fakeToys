@@ -1994,9 +1994,10 @@ async fn call_llm(messages: &[ChatMessage]) -> Result<String, AppError> {
 #[allow(non_snake_case)]
 pub async fn chat_completion(
     pool: Extension<Pool>,
-    Extension(session): Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(req): Json<ChatCompletionRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let conversation_id = req
         .conversation_id
         .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
@@ -2033,7 +2034,7 @@ pub async fn chat_completion(
     let is_owned_by_others = !owners.is_empty()
         && owners
             .iter()
-            .all(|o| o != &session.person_unique && !o.is_empty() && o != "system");
+            .all(|o| o != &sess.person_unique && !o.is_empty() && o != "system");
 
     if is_owned_by_others {
         return Ok(Json(ActionResult::error("conversation not owned")));
@@ -2069,7 +2070,7 @@ pub async fn chat_completion(
                 &conversation_id,
                 &"user".to_string(),
                 &last_user_message,
-                &session.person_unique,
+                &sess.person_unique,
             ],
         )
         .await
@@ -2093,7 +2094,7 @@ pub async fn chat_completion(
                 &conversation_id,
                 &"assistant".to_string(),
                 &reply,
-                &session.person_unique,
+                &sess.person_unique,
             ],
         )
         .await
@@ -2316,13 +2317,14 @@ fn parse_stream_chunk(data: &str) -> Result<String, AppError> {
 #[allow(non_snake_case)]
 pub async fn chat_completion_stream(
     pool: Extension<Pool>,
-    Extension(session): Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(req): Json<ChatCompletionRequest>,
 ) -> Result<
     Sse<impl futures_util::Stream<Item = Result<axum::response::sse::Event, AppError>>>,
     AppError,
 > {
-    let ctx = process_chat_request(&pool, &session, &req).await?;
+    let sess = require_session(session)?;
+    let ctx = process_chat_request(&pool, &sess, &req).await?;
 
     let llm_stream = call_llm_stream(&ctx.full_messages).await?;
 

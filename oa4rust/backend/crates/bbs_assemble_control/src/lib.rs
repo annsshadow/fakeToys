@@ -26,6 +26,13 @@ pub mod routes;
 /// plan002 U2 — o2server 端点全量闭合（106 条对齐）新增实现。
 pub mod u2;
 
+/// 会话存在档门：无会话（Option<Extension<Session>> = None）→ 401。
+fn require_session(
+    session: Option<Extension<Session>>,
+) -> Result<Session, AppError> {
+    session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
+}
+
 #[cfg(test)]
 mod security_gate_tests;
 #[cfg(test)]
@@ -434,16 +441,17 @@ pub async fn get_forum(
 #[allow(non_snake_case)]
 pub async fn create_topic(
     pool: Extension<Pool>,
-    session: Extension<Session>,
+    session: Option<Extension<Session>>,
     axum::extract::Json(req): Json<CreateTopicRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
     let forum_id = req.forum_id.clone().unwrap_or_default();
     let title = req.title.unwrap_or_default();
     let content = req.content.unwrap_or_default();
     // creator/author 以会话登录人为事实源：客户端传值可伪造归属（冒名发帖）
-    let creator = session.person_unique.clone();
+    let creator = sess.person_unique.clone();
     // x_bbs_topic.author_id/section_id 为 NOT NULL（无默认）：author 缺省回退 creator，
     // section 缺省回退 forum_id（版块维度），杜绝 500。
     let author_id = req.author_id.clone().unwrap_or_else(|| creator.clone());
@@ -504,9 +512,10 @@ pub async fn list_topics_by_forum(
 #[allow(non_snake_case)]
 pub async fn create_reply(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(req): Json<CreateReplyRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
     // x_bbs_reply.subject_id/author_id 为 NOT NULL（无默认）。subjectId/topicId 同义，
@@ -521,7 +530,7 @@ pub async fn create_reply(
         .clone()
         .or_else(|| req.author_id.clone())
         .filter(|c| !c.is_empty())
-        .unwrap_or_else(|| session.person_unique.clone());
+        .unwrap_or_else(|| sess.person_unique.clone());
 
     client
         .execute(

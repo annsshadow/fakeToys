@@ -261,9 +261,10 @@ pub async fn view(
 )]
 pub async fn create(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = crate::require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
     let title = payload
@@ -278,7 +279,7 @@ pub async fn create(
         .to_string();
     // 安全审计 2026-10 四轮 F9：author_id 此前完全取请求体且无会话 → 任一登录用户
     // 可以任意 person 身份发帖（冒名）。改以会话身份为权威，请求体 authorId 不再被读。
-    let author_id = session.person_unique.clone();
+    let author_id = sess.person_unique.clone();
     let content = payload
         .get("content")
         .and_then(|v| v.as_str())

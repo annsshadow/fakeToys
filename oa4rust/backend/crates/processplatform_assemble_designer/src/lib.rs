@@ -18,6 +18,13 @@ use shared::{error::AppError, response::ActionResult};
 pub mod routes;
 pub mod u2_script;
 
+/// 会话存在档门：无会话（Option<Extension<Session>> = None）→ 401。
+fn require_session(
+    session: Option<Extension<Session>>,
+) -> Result<Session, AppError> {
+    session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
+}
+
 #[derive(Debug, Deserialize)]
 pub struct ListQuery {
     pub page: Option<i64>,
@@ -36,9 +43,10 @@ pub struct CreateFlowRequest {
 #[allow(non_snake_case)]
 pub async fn create_flow(
     pool: Extension<Pool>,
-    session: Extension<Session>,
+    session: Option<Extension<Session>>,
     axum::extract::Json(req): Json<CreateFlowRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let name = req.name.unwrap_or_default();
     if name.trim().is_empty() {
         return Ok(Json(ActionResult::error("name is required")));
@@ -49,7 +57,7 @@ pub async fn create_flow(
     let category = req.category.unwrap_or_default();
     let description = req.description.unwrap_or_default();
     let version = 1i32;
-    let creator = session.person_unique.clone();
+    let creator = sess.person_unique.clone();
 
     client
         .execute(
@@ -3828,9 +3836,10 @@ pub async fn application_id_permission_save(
 #[allow(non_snake_case)]
 pub async fn applicationdict_create(
     pool: Extension<Pool>,
-    session: Extension<Session>,
+    session: Option<Extension<Session>>,
     axum::extract::Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let name = body_str(&body, &["name", "xname"]).unwrap_or_default();
     if name.trim().is_empty() {
         return Ok(Json(ActionResult::error("name is required")));
@@ -3854,7 +3863,7 @@ pub async fn applicationdict_create(
 
     let id = uuid::Uuid::new_v4().to_string();
     let ts = now_text();
-    let creator = session.person_unique.clone();
+    let creator = sess.person_unique.clone();
     client
         .execute(
             "INSERT INTO pp_e_applicationdict (xid, \"xname\", xapplication, \"xcreatorPerson\", \"xcreateTime\", \"xupdateTime\", creator_person) \
@@ -4027,9 +4036,10 @@ pub async fn form_list_prev_exact(
 #[allow(non_snake_case)]
 pub async fn item_access_create(
     pool: Extension<Pool>,
-    session: Extension<Session>,
+    session: Option<Extension<Session>>,
     axum::extract::Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let process = body_str(&body, &["process", "processId", "xprocess"]).unwrap_or_default();
     let path = body_str(&body, &["path", "xpath"]).unwrap_or_default();
     if process.trim().is_empty() || path.trim().is_empty() {
@@ -4051,7 +4061,7 @@ pub async fn item_access_create(
         .unwrap_or("item access")
         .to_string();
     let ts = now_text();
-    let creator = session.person_unique.clone();
+    let creator = sess.person_unique.clone();
     client
         .execute(
             "INSERT INTO pp_e_item_access (xid, \"xname\", xprocess, xpath, \"xcreateTime\", \"xupdateTime\", creator_person) \
@@ -4072,9 +4082,10 @@ pub async fn item_access_create(
 #[allow(non_snake_case)]
 pub async fn item_access_bach_save(
     pool: Extension<Pool>,
-    session: Extension<Session>,
+    session: Option<Extension<Session>>,
     axum::extract::Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let items: Vec<Value> = body
         .get("items")
         .and_then(|v| v.as_array())
@@ -4085,7 +4096,7 @@ pub async fn item_access_bach_save(
     }
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let ts = now_text();
-    let creator = session.person_unique.clone();
+    let creator = sess.person_unique.clone();
     // 整批保存包同一事务，且 UPDATE 失败必须传播（此前 `unwrap_or(0)` 吞错：
     // 更新失败被静默当 0 行计入，响应仍报成功，且批次中途失败留半保存态）。
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
@@ -4255,9 +4266,10 @@ fn row_to_item_access_data(row: &Row) -> Value {
 #[allow(non_snake_case)]
 pub async fn mapping_create(
     pool: Extension<Pool>,
-    session: Extension<Session>,
+    session: Option<Extension<Session>>,
     axum::extract::Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let name = body_str(&body, &["name", "xname"]).unwrap_or_default();
     if name.trim().is_empty() {
         return Ok(Json(ActionResult::error("name is required")));
@@ -4279,7 +4291,7 @@ pub async fn mapping_create(
     let source = body_str(&body, &["source", "xsource"]).unwrap_or_default();
     let target = body_str(&body, &["target", "xtarget"]).unwrap_or_default();
     let ts = now_text();
-    let creator = session.person_unique.clone();
+    let creator = sess.person_unique.clone();
     client
         .execute(
             "INSERT INTO pp_e_mapping (xid, \"xname\", xapplication, xsource, xtarget, \"xcreateTime\", \"xupdateTime\", creator_person) \
@@ -4431,9 +4443,10 @@ pub async fn mapping_id_delete(
 #[allow(non_snake_case)]
 pub async fn mergeitemplan_create(
     pool: Extension<Pool>,
-    session: Extension<Session>,
+    session: Option<Extension<Session>>,
     axum::extract::Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let name = body_str(&body, &["name", "xname"]).unwrap_or_default();
     if name.trim().is_empty() {
         return Ok(Json(ActionResult::error("name is required")));
@@ -4453,7 +4466,7 @@ pub async fn mergeitemplan_create(
     }
     let id = uuid::Uuid::new_v4().to_string();
     let ts = now_text();
-    let creator = session.person_unique.clone();
+    let creator = sess.person_unique.clone();
     client
         .execute(
             "INSERT INTO pp_e_mergeitemplan (xid, \"xname\", xapplication, \"xcreateTime\", \"xupdateTime\", creator_person) \
