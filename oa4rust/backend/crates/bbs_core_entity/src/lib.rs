@@ -755,7 +755,7 @@ pub async fn search_subjects(
     ))))
 }
 
-pub fn bbs_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
+pub fn bbs_core_entity_router(db: DatabaseConnection) -> Router {
     Router::new()
         .route("/api/bbs/core/entity/forum/list", get(forum_list))
         .route("/api/bbs/core/entity/forum", post(create_forum))
@@ -781,6 +781,8 @@ pub fn bbs_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
         .route("/api/bbs/core/entity/subject/{id}", delete(delete_subject))
         .route("/api/bbs/core/entity/reply", post(create_reply))
         .route("/api/bbs/core/entity/subject/search", get(search_subjects))
+        .layer(Extension(db))
+
 }
 
 #[cfg(test)]
@@ -791,6 +793,6 @@ mod tests;
 #[cfg(test)]
 mod tests_generated;
 
-pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    crate::bbs_core_entity_router(pool)
+pub fn router(db: DatabaseConnection) -> axum::Router {
+    crate::bbs_core_entity_router(db)
 }

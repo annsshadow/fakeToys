@@ -533,7 +533,7 @@ pub async fn create_version(
 }
 
 /// 创建思维导图核心实体路由
-pub fn mind_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
+pub fn mind_core_entity_router(db: DatabaseConnection) -> Router {
     Router::new()
         .route("/api/mind/core/entity/list", get(list))
         .route("/api/mind/core/entity/folder/list", get(folder_list))
@@ -548,6 +548,8 @@ pub fn mind_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
         .route("/api/mind/core/entity/folder/{id}", post(update_folder))
         .route("/api/mind/core/entity/folder/{id}", delete(delete_folder))
         .route("/api/mind/core/entity/version", post(create_version))
+        .layer(Extension(db))
+
 }
 
 #[cfg(test)]
@@ -558,6 +560,6 @@ mod tests;
 #[cfg(test)]
 mod tests_generated;
 
-pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    crate::mind_core_entity_router(pool)
+pub fn router(db: DatabaseConnection) -> axum::Router {
+    crate::mind_core_entity_router(db)
 }

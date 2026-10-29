@@ -4,7 +4,6 @@
 use axum::{
     extract::Extension, extract::Path, routing::delete, routing::get, routing::post, Json, Router,
 };
-use deadpool_postgres::Pool;
 use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait, QueryOrder, QuerySelect};
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
@@ -213,7 +212,7 @@ pub async fn template_get(
 /// - /api/jpush/core/entity/device/create - 创建设备
 /// - /api/jpush/core/entity/template/list - 模板列表
 /// - /api/jpush/core/entity/template/{id} - 模板详情
-pub fn jpush_core_entity_router(_pool: Pool) -> Router {
+pub fn jpush_core_entity_router(db: DatabaseConnection) -> Router {
     Router::new()
         .route("/api/jpush/core/entity/device/list", get(device_list))
         .route("/api/jpush/core/entity/device/{id}", get(device_get))
@@ -221,6 +220,8 @@ pub fn jpush_core_entity_router(_pool: Pool) -> Router {
         .route("/api/jpush/core/entity/device/create", post(device_create))
         .route("/api/jpush/core/entity/template/list", get(template_list))
         .route("/api/jpush/core/entity/template/{id}", get(template_get))
+        .layer(Extension(db))
+
 }
 
 /// DELETE /api/jpush/core/entity/device/{id} — 删除推送设备
@@ -251,6 +252,6 @@ mod tests;
 #[cfg(test)]
 mod tests_generated;
 
-pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    crate::jpush_core_entity_router(pool)
+pub fn router(db: DatabaseConnection) -> axum::Router {
+    crate::jpush_core_entity_router(db)
 }

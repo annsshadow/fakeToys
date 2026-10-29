@@ -272,7 +272,7 @@ pub async fn workcompleted_list(
     ))))
 }
 
-pub fn processplatform_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
+pub fn processplatform_core_entity_router(db: DatabaseConnection) -> Router {
     Router::new()
         .route("/api/process/work/list", get(work_list))
         .route("/api/process/work/{id}", get(work_get))
@@ -280,6 +280,8 @@ pub fn processplatform_core_entity_router(_pool: deadpool_postgres::Pool) -> Rou
         .route("/api/process/task/{id}", get(task_get))
         .route("/api/process/ticket/list", get(ticket_list))
         .route("/api/process/workcompleted/list", get(workcompleted_list))
+        .layer(Extension(db))
+
 }
 
 #[cfg(test)]
@@ -288,6 +290,6 @@ mod tests;
 #[cfg(test)]
 mod tests_generated;
 
-pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    crate::processplatform_core_entity_router(pool)
+pub fn router(db: DatabaseConnection) -> axum::Router {
+    crate::processplatform_core_entity_router(db)
 }

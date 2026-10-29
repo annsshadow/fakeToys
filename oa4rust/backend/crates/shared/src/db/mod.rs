@@ -166,6 +166,8 @@ pub async fn create_pool() -> Result<Pool, DbError> {
 }
 
 /// 创建 SeaORM DatabaseConnection（sizing/TLS 与 deadpool 池同源，见 DbPoolConfig）。
+/// 懒连接（connect_lazy）：与 deadpool 池一致，构建时不实际建连——无库环境（如
+/// arity 探针、core_entity 的 HTTP 臂测试）也能构建成功，首次查询才尝试连接。
 pub async fn create_sea_orm_pool() -> Result<DatabaseConnection, DbError> {
     let pool_cfg = pool_config();
     let database_url = if pool_cfg.tls {
@@ -178,7 +180,8 @@ pub async fn create_sea_orm_pool() -> Result<DatabaseConnection, DbError> {
     options
         .max_connections(pool_cfg.max_size.min(u32::MAX as usize) as u32)
         .min_connections(pool_cfg.min_idle.min(u32::MAX as usize) as u32)
-        .sqlx_logging(false);
+        .sqlx_logging(false)
+        .connect_lazy(true);
 
     Database::connect(options)
         .await

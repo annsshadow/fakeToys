@@ -6,7 +6,6 @@ use axum::{
     routing::{delete, get, post},
     Json, Router,
 };
-use deadpool_postgres::Pool;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait, QueryFilter,
     QueryOrder, QuerySelect, Set,
@@ -248,7 +247,7 @@ pub async fn delete_by_id(
 /// - /api/hotpic/core/entity/exists/check/{application}/{infoId} - 检查存在
 /// - /api/hotpic/core/entity/create - 创建热图
 /// - /api/hotpic/core/entity/delete/{id} - 删除热图
-pub fn hotpic_core_entity_router(_pool: Pool) -> Router {
+pub fn hotpic_core_entity_router(db: DatabaseConnection) -> Router {
     Router::new()
         .route("/api/hotpic/core/entity/list", get(list))
         .route(
@@ -261,6 +260,8 @@ pub fn hotpic_core_entity_router(_pool: Pool) -> Router {
         )
         .route("/api/hotpic/core/entity/create", post(create))
         .route("/api/hotpic/core/entity/delete/{id}", delete(delete_by_id))
+        .layer(Extension(db))
+
 }
 
 #[cfg(test)]
@@ -271,6 +272,6 @@ mod tests;
 #[cfg(test)]
 mod tests_generated;
 
-pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    crate::hotpic_core_entity_router(pool)
+pub fn router(db: DatabaseConnection) -> axum::Router {
+    crate::hotpic_core_entity_router(db)
 }

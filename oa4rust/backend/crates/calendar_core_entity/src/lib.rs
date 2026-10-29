@@ -714,7 +714,7 @@ pub async fn event_list_by_calendar(
     ))))
 }
 
-pub fn calendar_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
+pub fn calendar_core_entity_router(db: DatabaseConnection) -> Router {
     Router::new()
         .route(
             "/api/calendar/core/entity/calendar/list/public",
@@ -744,6 +744,8 @@ pub fn calendar_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
             "/api/calendar/core/entity/event/list/{calendarId}",
             get(event_list_by_calendar),
         )
+        .layer(Extension(db))
+
 }
 
 #[cfg(test)]
@@ -754,6 +756,6 @@ mod tests;
 #[cfg(test)]
 mod tests_generated;
 
-pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    crate::calendar_core_entity_router(pool)
+pub fn router(db: DatabaseConnection) -> axum::Router {
+    crate::calendar_core_entity_router(db)
 }

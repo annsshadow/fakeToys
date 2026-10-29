@@ -969,7 +969,7 @@ pub async fn bind_delete(
 
 // ── Router ───────────────────────────────────────────────────────────────────
 
-pub fn organization_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
+pub fn organization_core_entity_router(db: DatabaseConnection) -> Router {
     // NOTE: DatabaseConnection must be provided externally via Extension.
     // The pool is kept for backwards compatibility with crates that still use it.
     Router::new()
@@ -1018,6 +1018,8 @@ pub fn organization_core_entity_router(_pool: deadpool_postgres::Pool) -> Router
             "/api/organization/bind/{id}",
             put(bind_update).delete(bind_delete),
         )
+        .layer(Extension(db))
+
 }
 
 #[cfg(test)]
@@ -1028,6 +1030,6 @@ mod tests;
 #[cfg(test)]
 mod tests_generated;
 
-pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    crate::organization_core_entity_router(pool)
+pub fn router(db: DatabaseConnection) -> axum::Router {
+    crate::organization_core_entity_router(db)
 }

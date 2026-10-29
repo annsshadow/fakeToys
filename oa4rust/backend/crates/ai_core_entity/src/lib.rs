@@ -155,7 +155,7 @@ pub async fn conversation_list(
 /// - /api/ai/core/entity/app/list - 应用列表
 /// - /api/ai/core/entity/model/list - 模型列表
 /// - /api/ai/core/entity/conversation/list - 对话列表
-pub fn ai_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
+pub fn ai_core_entity_router(db: DatabaseConnection) -> Router {
     Router::new()
         .route("/api/ai/core/entity/app/list", get(app_list))
         .route("/api/ai/core/entity/model/list", get(model_list))
@@ -163,6 +163,8 @@ pub fn ai_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
             "/api/ai/core/entity/conversation/list",
             get(conversation_list),
         )
+        .layer(Extension(db))
+
 }
 
 #[cfg(test)]
@@ -171,6 +173,6 @@ mod tests;
 #[cfg(test)]
 mod tests_generated;
 
-pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    crate::ai_core_entity_router(pool)
+pub fn router(db: DatabaseConnection) -> axum::Router {
+    crate::ai_core_entity_router(db)
 }

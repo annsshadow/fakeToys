@@ -367,7 +367,7 @@ pub async fn rule_delete(
 }
 
 /// 创建考勤核心实体路由
-pub fn attendance_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
+pub fn attendance_core_entity_router(db: DatabaseConnection) -> Router {
     // 尝试创建数据库连接，测试环境中可能没有活跃的tokio runtime
     Router::new()
         .route("/api/attendance/core/entity/record/list", get(record_list))
@@ -393,6 +393,8 @@ pub fn attendance_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
             "/api/attendance/core/entity/rule/{id}/delete",
             post(rule_delete),
         )
+        .layer(Extension(db))
+
 }
 
 #[cfg(test)]
@@ -403,6 +405,6 @@ mod tests;
 #[cfg(test)]
 mod tests_generated;
 
-pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    crate::attendance_core_entity_router(pool)
+pub fn router(db: DatabaseConnection) -> axum::Router {
+    crate::attendance_core_entity_router(db)
 }

@@ -6,7 +6,6 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
-use deadpool_postgres::Pool;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder,
     QuerySelect,
@@ -935,7 +934,7 @@ pub async fn invoice_delete(
     }
 }
 
-pub fn general_core_entity_router(_pool: Pool) -> Router {
+pub fn general_core_entity_router(db: DatabaseConnection) -> Router {
     Router::new()
         .route("/api/general/dict/list", get(dict_list))
         .route("/api/general/dict/create", post(dict_create))
@@ -958,6 +957,8 @@ pub fn general_core_entity_router(_pool: Pool) -> Router {
         .route("/api/general/invoice/{id}", get(invoice_get))
         .route("/api/general/invoice/update/{id}", post(invoice_update))
         .route("/api/general/invoice/delete/{id}", post(invoice_delete))
+        .layer(Extension(db))
+
 }
 
 #[cfg(test)]
@@ -968,6 +969,6 @@ mod tests;
 #[cfg(test)]
 mod tests_generated;
 
-pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    crate::general_core_entity_router(pool)
+pub fn router(db: DatabaseConnection) -> axum::Router {
+    crate::general_core_entity_router(db)
 }

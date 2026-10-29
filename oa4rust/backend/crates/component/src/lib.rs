@@ -52,7 +52,14 @@ pub async fn list_all(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>
                 "visible".to_string(),
                 Value::Bool(row.get::<_, Option<bool>>("visible").unwrap_or(false)),
             );
-            if let Some(v) = row.get::<_, Option<i32>>("order_number") {
+            // order_number 在历史库可能是 int4 或 int8：try_get 兼容两种，避免 row.get panic。
+            let order_number: Option<i64> = row
+                .try_get::<_, Option<i32>>("order_number")
+                .ok()
+                .flatten()
+                .map(i64::from)
+                .or_else(|| row.try_get::<_, Option<i64>>("order_number").ok().flatten());
+            if let Some(v) = order_number {
                 map.insert(
                     "orderNumber".to_string(),
                     serde_json::Number::from(v).into(),
@@ -85,7 +92,6 @@ pub async fn get_component(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    eprintln!("DEBUG get_component called with id={}", id);
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
@@ -118,7 +124,14 @@ pub async fn get_component(
                 "visible".to_string(),
                 Value::Bool(row.get::<_, Option<bool>>("visible").unwrap_or(false)),
             );
-            if let Some(v) = row.get::<_, Option<i32>>("order_number") {
+            // order_number 在历史库可能是 int4 或 int8：try_get 兼容两种，避免 row.get panic。
+            let order_number: Option<i64> = row
+                .try_get::<_, Option<i32>>("order_number")
+                .ok()
+                .flatten()
+                .map(i64::from)
+                .or_else(|| row.try_get::<_, Option<i64>>("order_number").ok().flatten());
+            if let Some(v) = order_number {
                 map.insert(
                     "orderNumber".to_string(),
                     serde_json::Number::from(v).into(),

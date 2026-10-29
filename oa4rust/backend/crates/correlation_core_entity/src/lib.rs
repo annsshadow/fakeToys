@@ -6,7 +6,6 @@ use axum::{
     routing::{delete, get, post},
     Router,
 };
-use deadpool_postgres::Pool;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder,
     QuerySelect, Set,
@@ -235,7 +234,7 @@ pub async fn delete_by_id(
 /// - /api/correlation/core/entity/list/by/{sourceType}/{sourceId} - 按类型查询关联
 /// - /api/correlation/core/entity/create - 创建关联
 /// - /api/correlation/core/entity/delete/{id} - 删除关联
-pub fn correlation_core_entity_router(_pool: Pool) -> Router {
+pub fn correlation_core_entity_router(db: DatabaseConnection) -> Router {
     Router::new()
         .route("/api/correlation/core/entity/list", get(list))
         .route(
@@ -247,6 +246,8 @@ pub fn correlation_core_entity_router(_pool: Pool) -> Router {
             "/api/correlation/core/entity/delete/{id}",
             delete(delete_by_id),
         )
+        .layer(Extension(db))
+
 }
 
 #[cfg(test)]
@@ -257,6 +258,6 @@ mod tests;
 #[cfg(test)]
 mod tests_generated;
 
-pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    crate::correlation_core_entity_router(pool)
+pub fn router(db: DatabaseConnection) -> axum::Router {
+    crate::correlation_core_entity_router(db)
 }

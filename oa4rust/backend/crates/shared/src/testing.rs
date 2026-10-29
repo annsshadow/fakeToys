@@ -30,6 +30,26 @@ pub fn mock_pool() -> Pool {
     Pool::builder(mgr).max_size(1).build().unwrap()
 }
 
+/// 空 Mock 数据库连接（sea_orm）：用于 *_core_entity 的 HTTP 臂测试。
+/// 无 DB 环境下 handler 的 ORM 访问会得到 `DbErr`（→ 500），而不是在连接提取期
+/// 就 500（B3 接线修复后，router 必须注入 Extension<DatabaseConnection>）。
+/// 用 `connect_lazy(true)` 构建懒连接池，且指向**不可达**的 127.0.0.1:1（IPv4：
+/// Windows 上 `localhost` 会走 ::1 导致连接超时而非立即拒绝，拖慢测试）：
+/// 无论本机是否跑着 PG（5432 可能有测试库），查询都会 connection refused →
+/// DbErr → AppError::Internal（500），测试结果与环境无关。
+pub async fn mock_db() -> sea_orm::DatabaseConnection {
+    let mut opt = sea_orm::ConnectOptions::new(
+        "postgres://o2server:password@127.0.0.1:1/oa4rust".to_string(),
+    );
+    opt.connect_lazy(true)
+        .max_connections(1)
+        .acquire_timeout(std::time::Duration::from_secs(1))
+        .sqlx_logging(false);
+    sea_orm::Database::connect(opt)
+        .await
+        .expect("mock_db: 构建懒连接池不应失败（lazy 模式不实际建连）")
+}
+
 /// 连接到 PostgreSQL 的 deadpool_postgres::Pool，用于单元测试。
 /// 默认使用 oa4rust 测试库（postgres://o2server:password@localhost:5432/oa4rust）。
 /// 连接是延迟建立的——pool.get().await 时才实际建连。

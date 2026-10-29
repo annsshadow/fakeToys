@@ -662,7 +662,7 @@ pub async fn delete_meeting(
 /// - /api/meeting/core/entity/meeting/{id} - 获取单个会议
 /// - /api/meeting/core/entity/meeting/save/{id} - 更新会议
 /// - /api/meeting/core/entity/meeting/delete/{id} - 删除会议
-pub fn meeting_core_entity_router(pool: deadpool_postgres::Pool) -> Router {
+pub fn meeting_core_entity_router(db: DatabaseConnection, pool: Pool) -> Router {
     Router::new()
         .route("/api/meeting/core/entity/room/list", get(room_list))
         .route("/api/meeting/core/entity/room/create", post(create_room))
@@ -690,9 +690,11 @@ pub fn meeting_core_entity_router(pool: deadpool_postgres::Pool) -> Router {
             "/api/meeting/core/entity/meeting/delete/{id}",
             post(delete_meeting),
         )
-        .with_state(pool)
+        // B3：sea_orm ORM 走 db；require_admin 的 is_admin 查询走 deadpool pool。
+        .layer(Extension(db))
+        .layer(Extension(pool))
 }
 
-pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    crate::meeting_core_entity_router(pool)
+pub fn router(db: DatabaseConnection, pool: Pool) -> axum::Router {
+    crate::meeting_core_entity_router(db, pool)
 }

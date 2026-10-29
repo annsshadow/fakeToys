@@ -122,7 +122,7 @@ pub async fn unread_count(
 }
 
 /// 创建消息核心实体路由
-pub fn message_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
+pub fn message_core_entity_router(db: DatabaseConnection) -> Router {
     Router::new()
         .route("/api/message/core/entity/list", get(list))
         .route(
@@ -133,6 +133,8 @@ pub fn message_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
             "/api/message/core/entity/unread/count/{consume}",
             get(unread_count),
         )
+        .layer(Extension(db))
+
 }
 
 #[cfg(test)]
@@ -141,6 +143,6 @@ mod tests;
 #[cfg(test)]
 mod tests_generated;
 
-pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    crate::message_core_entity_router(pool)
+pub fn router(db: DatabaseConnection) -> axum::Router {
+    crate::message_core_entity_router(db)
 }

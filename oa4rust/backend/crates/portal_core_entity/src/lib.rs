@@ -377,7 +377,7 @@ pub async fn script_list(
     ))))
 }
 
-pub fn portal_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
+pub fn portal_core_entity_router(db: DatabaseConnection) -> Router {
     Router::new()
         .route("/api/portal/portal/list", get(portal_list))
         .route("/api/portal/widget/list", get(widget_list))
@@ -387,6 +387,8 @@ pub fn portal_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
         .route("/api/portal/page/update", post(page_update))
         .route("/api/portal/page/remove", post(page_remove))
         .route("/api/portal/script/list", get(script_list))
+        .layer(Extension(db))
+
 }
 
 #[cfg(test)]
@@ -395,6 +397,6 @@ mod tests;
 #[cfg(test)]
 mod tests_generated;
 
-pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    crate::portal_core_entity_router(pool)
+pub fn router(db: DatabaseConnection) -> axum::Router {
+    crate::portal_core_entity_router(db)
 }
