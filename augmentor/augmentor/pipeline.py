@@ -173,6 +173,41 @@ class AugmentorPipeline:
         digest = hashlib.md5(resolved.encode('utf-8')).hexdigest()[:12]
         return f"augment_{digest}"
     
+    def _variants_prompt(self, item: Dict) -> str:
+        """构造「把 instruction 改写成 N 种问法」的提示词。
+
+        同步与异步两支**必须**用同一份提示词：两处各拼一遍，改一处忘另一处
+        的症状是「异步档生成的变体风格不一样」，而那不是任何测试会红的东西。
+        """
+        instruction = item.get("instruction", "")
+
+        # 原 JSON 用 json.dumps 生成而不是手拼字符串字面量：instruction 里带引号或
+        # 换行时，手拼的 `"instruction": "{instruction}"` 会把发给模型的 prompt 里的
+        # JSON 结构撑破（A109）。
+        seed_json = json.dumps([{"instruction": instruction}], ensure_ascii=False)
+        return f"""作为AI领域数据增强专家，你的任务是把原JSON对象中的instruction字段内容在保持相同含义的情况下，扩充为{self.config.augmentation.variants_per_seed}种不同的提问方式，新JSON对象只需包含instruction字段，并将新JSON对象追加到JSON数组里面，注意最终结果只需要JSON数组，不需要任何说明文字，原JSON对象如下：{seed_json}"""
+
+    def _parse_variants(self, response: str, output: str) -> List[Dict]:
+        """把模型响应解析成变体列表（同步/异步共用）。
+
+        # 为什么复用 `extract_json_array`
+
+        仓库里那个提取器已带自测（直接解析 / 代码围栏 / 首个 '[' 到末个 ']'
+        的括号切片），而不是「首个字符必须是 [」的手搓判据 —— 后者会让
+        ```json 围栏或前置一句说明的正常响应静默变成 0 个变体（A108）。
+        它无法解析时抛 `ModelResponseError`，由调用方收成一行 warning。
+        """
+        variants = extract_json_array(response)
+        result = []
+        for v in variants[:self.config.augmentation.variants_per_seed]:
+            if isinstance(v, dict) and "instruction" in v:
+                result.append({
+                    "instruction": v["instruction"],
+                    "input": "",
+                    "output": output
+                })
+        return result
+
     def _generate_variants(self, item: Dict) -> List[Dict]:
         """为单条数据生成变体
         
@@ -184,38 +219,61 @@ class AugmentorPipeline:
         """
         if self.model_backend is None:
             return []
-        
-        instruction = item.get("instruction", "")
+
         output = item.get("output", "")
-
-        # 原 JSON 用 json.dumps 生成而不是手拼字符串字面量：instruction 里带引号或
-        # 换行时，手拼的 `"instruction": "{instruction}"` 会把发给模型的 prompt 里的
-        # JSON 结构撑破（A109）。
-        seed_json = json.dumps([{"instruction": instruction}], ensure_ascii=False)
-        prompt = f"""作为AI领域数据增强专家，你的任务是把原JSON对象中的instruction字段内容在保持相同含义的情况下，扩充为{self.config.augmentation.variants_per_seed}种不同的提问方式，新JSON对象只需包含instruction字段，并将新JSON对象追加到JSON数组里面，注意最终结果只需要JSON数组，不需要任何说明文字，原JSON对象如下：{seed_json}"""
-
         try:
-            response = self.model_backend.generate(prompt)
-            # 复用仓库里已带自测的 robust 提取器（直接解析 / 代码围栏 / 首个 '[' 到
-            # 末个 ']' 的括号切片），而不是「首个字符必须是 [」的手搓判据 —— 后者会让
-            # ```json 围栏或前置一句说明的正常响应静默变成 0 个变体（A108）。
-            # extract_json_array 是流水线唯一正确的解析器：这里的产物恒为 JSON 数组，
-            # 而它无法解析时抛 ModelResponseError，由下面的 except 收成一行 warning。
-            variants = extract_json_array(response)
-            result = []
-            for v in variants[:self.config.augmentation.variants_per_seed]:
-                if isinstance(v, dict) and "instruction" in v:
-                    result.append({
-                        "instruction": v["instruction"],
-                        "input": "",
-                        "output": output
-                    })
-            return result
+            response = self.model_backend.generate(self._variants_prompt(item))
+            return self._parse_variants(response, output)
         except Exception as e:
             logger.warning(f"生成变体失败: {e}")
 
         return []
-    
+
+    async def _agenerate_variants(self, item: Dict) -> List[Dict]:
+        """`_generate_variants` 的异步孪生体。
+
+        **异常语义必须与同步版一字不差**：模型侧的任何失败都被吞成一行 warning +
+        空列表。改成"抛给调用方"会让一条坏数据把整批 `gather` 打挂 —— 而
+        同步档的行为是「这条没有变体，继续下一条」。
+
+        提示词与解析共用 `_variants_prompt` / `_parse_variants`，两支只差
+        `await` 那一格。
+        """
+        if self.model_backend is None:
+            return []
+
+        output = item.get("output", "")
+        try:
+            response = await self.model_backend.agenerate(self._variants_prompt(item))
+            return self._parse_variants(response, output)
+        except Exception as e:
+            logger.warning(f"生成变体失败（异步）: {e}")
+
+        return []
+
+    def _filter_by_score(self, item: Dict, variants: List[Dict]) -> List[Dict]:
+        """逐条打分，只留 `passed` 的变体（同步/异步两支共用）。
+
+        ⚠️ 这里刻意**逐条** `score` 而不是走 `filter_by_quality`：后者会拿
+        `existing_generated` 当参照集，而并行档下多个工作线程共用同一个
+        scorer 时那会变成锁竞争 —— 流水线的并行路径一直用「不使用已有生成
+        文本」的简化口径，别在重构时顺手改回批量版（会改变多样性判定的语义）。
+        """
+        filtered = []
+        for v in variants:
+            score = self.quality_scorer.score(
+                item.get("instruction", ""),
+                v.get("instruction", ""),
+                v.get("output", "")
+            )
+            if score.passed:
+                filtered.append({
+                    "instruction": v.get("instruction", ""),
+                    "input": "",
+                    "output": v.get("output", "")
+                })
+        return filtered
+
     def _process_single_item(self, 
                             idx: int, 
                             item: Dict, 
@@ -238,29 +296,7 @@ class AugmentorPipeline:
             
             # 质量检查
             if use_quality_check and variants:
-                items_to_score = []
-                for v in variants:
-                    items_to_score.append({
-                        "original": item.get("instruction", ""),
-                        "generated": v.get("instruction", ""),
-                        "output": v.get("output", "")
-                    })
-                
-                # 简化的质量检查（不使用已有生成文本，避免锁竞争）
-                filtered = []
-                for score_item in items_to_score:
-                    score = self.quality_scorer.score(
-                        score_item["original"],
-                        score_item["generated"],
-                        score_item["output"]
-                    )
-                    if score.passed:
-                        filtered.append({
-                            "instruction": score_item["generated"],
-                            "input": "",
-                            "output": score_item["output"]
-                        })
-                variants = filtered
+                variants = self._filter_by_score(item, variants)
             
             result_queue.put((idx, True, variants))
             
@@ -285,14 +321,129 @@ class AugmentorPipeline:
                 # 报告里 139 笔明细**全部**来自对方。不传才落实例属性。
                 (errors if errors is not None else self._process_errors).append(error_info)
             result_queue.put((idx, False, []))
-    
+
+    async def _process_single_item_async(self,
+                                         idx: int,
+                                         item: Dict,
+                                         use_quality_check: bool,
+                                         errors: List[Dict]) -> tuple:
+        """`_process_single_item` 的异步版：直接返回 `(idx, ok, variants)`。
+
+        # 为什么不用信箱
+
+        同步档用「每条目一只 `Queue`」是因为工作线程的返回值不可靠（A365 的三个
+        坑：少投一次就整批挂死、`future` 的返回值没人读、配对靠顺序）。协程里
+        `gather` **本身就带返回值且顺序确定**，再套一层信箱只会把那些坑重新引入。
+
+        # 打分为什么丢线程
+
+        `_filter_by_score` 可能走 embedding 编码（CPU/阻塞），放在事件循环里会
+        卡住所有并发中的协程 —— 那正好抵消了异步省下来的等待。`to_thread` 把它
+        挪出去，并发度仍由外层信号量约束，不会出现线程爆炸。
+        """
+        try:
+            variants = await self._agenerate_variants(item)
+
+            if use_quality_check and variants:
+                variants = await asyncio.to_thread(self._filter_by_score, item, variants)
+
+            return idx, True, variants
+        except Exception as e:
+            logger.error(f"处理第 {idx} 条数据失败（异步）: {e}")
+            # 事件循环里单线程追加，不需要 self._lock；落点与同步版一致（本批清单）。
+            errors.append({
+                "index": idx,
+                "error_type": type(e).__name__,
+                "message": str(e),
+                "item_preview": str(item)[:100] if item else ""
+            })
+            return idx, False, []
+
+    async def _run_batch_async(self,
+                               remaining_indices: List[int],
+                               items: List[Dict],
+                               use_quality_check: bool,
+                               errors: List[Dict],
+                               concurrency: int) -> List[tuple]:
+        """并发跑一批，返回**与 `remaining_indices` 同序**的 `(idx, ok, variants)`。
+
+        `gather` 保序 ⇒ 后面的进度与断点按原下标推进，不会出现「结果记到别人名下」。
+        信号量约束在飞请求数：它替代的是线程池大小，但等待期间不占线程。
+        """
+        sem = asyncio.Semaphore(max(1, concurrency))
+
+        async def _one(idx: int) -> tuple:
+            async with sem:
+                return await self._process_single_item_async(
+                    idx, items[idx], use_quality_check, errors
+                )
+
+        return list(await asyncio.gather(*(_one(idx) for idx in remaining_indices)))
+
+    def _supports_native_async(self) -> bool:
+        """当前后端有没有**原生**异步实现（覆写了 `_acall_api`）。
+
+        没有原生实现时 `agenerate` 走 `asyncio.to_thread` —— 语义等价，但每个在飞
+        请求仍占一个线程，等于把线程池换了个壳。那种情况下用同步线程池更直白，
+        也少一层协程开销，所以这里据实判定而不是"有 agenerate 就算支持"。
+        """
+        backend = self.model_backend
+        if backend is None:
+            return False
+        from .models.base import ModelBackend
+
+        # `getattr` 而不是直接取属性：测试里常用鸭子类型的替身（只实现
+        # `generate` / `agenerate`），直接取属性会 AttributeError。
+        impl = getattr(type(backend), "_acall_api", None)
+        return impl is not None and impl is not ModelBackend._acall_api
+
+    def _absorb_outcome(self,
+                        idx: int,
+                        success: bool,
+                        variants: List[Dict],
+                        *,
+                        all_results: List[Dict],
+                        existing_generated: List[str],
+                        max_existing_window: int,
+                        use_checkpoint: bool,
+                        ckpt,
+                        processed: int,
+                        total: int):
+        """把一笔结果并入累计。返回 `(existing_generated, processed)`。
+
+        ⚠️ 必须返回 `existing_generated`：滑动窗口那一步是**重新绑定**（切片），
+        不是原地改。不返回就会让窗口失效 —— 症状是内存随批数无界增长，而
+        任何功能测试都不会红。
+
+        抽出来是因为同步（线程池 + 信箱）与异步（gather）两支都要做这件事，
+        而这里恰恰是最容易分叉的地方（断点推进的成功/失败两支必须对称）。
+        """
+        if success:
+            all_results.extend(variants)
+            existing_generated.extend([v.get("instruction", "") for v in variants])
+            # 滑动窗口，限制内存使用
+            if len(existing_generated) > max_existing_window:
+                existing_generated = existing_generated[-max_existing_window:]
+
+            if use_checkpoint:
+                self.checkpoint_manager.update_progress(idx, True, checkpoint=ckpt)
+
+            processed += 1
+            if processed % 10 == 0:
+                logger.info(f"已处理 {processed}/{total}")
+        else:
+            if use_checkpoint:
+                self.checkpoint_manager.update_progress(idx, False, checkpoint=ckpt)
+        return existing_generated, processed
+
     def augment_dataset(self,
                        input_file: str,
                        output_file: str,
                        use_checkpoint: bool = True,
                        use_quality_check: Optional[bool] = None,
                        use_dedup: Optional[bool] = None,
-                       use_parallel: bool = True) -> Dict:
+                       use_parallel: bool = True,
+                       use_async: bool = False) -> Dict:
         """增强整个数据集 - 优化版
         
         Args:
@@ -305,6 +456,21 @@ class AugmentorPipeline:
                 交给 `config.quality.enabled`；显式 True/False = 调用方点了，配置让位
             use_dedup: 是否使用去重，同上，交给 `config.dedup.enabled`
             use_parallel: 是否使用并行处理
+            use_async: 并行档是否走**异步**引擎（默认 False = 原线程池路径）。
+
+                打开后：每个条目的等待（模型 HTTP）不再占线程，并发度由信号量
+                约束而不是线程池大小 —— 同样的并发数下线程数从 N 降到 1。
+                只有后端**覆写了** `_acall_api`（原生异步）才真的生效；否则
+                自动回退线程池并打一条 warning（功能相同，只是不省线程）。
+
+                ⚠️ **输出顺序会变**：线程档用 `as_completed`，落盘顺序是**完成序**
+                （哪条先跑完先写，同一输入跑两遍可能不同）；异步档用 `gather`，
+                落盘顺序是**提交序**（下标序，可复现）。变体之间本无序，内容逐条
+                相同，但"输出文件长什么样"确实变了 —— 需要逐字节复现的场景请用
+                异步档，需要与历史输出逐字节比对请保持默认档。
+
+                默认关闭是刻意的：现有测试与调用方都按同步口径 mock `generate`，
+                默认切异步会让它们悄悄走到另一条路径上。
         
         Returns:
             处理报告。含 `errors` 键（L206）：本批失败条目的明细清单
@@ -375,7 +541,45 @@ class AugmentorPipeline:
             else:
                 logger.warning(f"断点显示已处理 {skipped} 条，但输出文件不存在，仅能保留本轮结果")
         
-        if use_parallel and len(remaining_indices) > 1:
+        # 异步档的准入判定放在分支之前：`use_async=True` 但后端没有原生异步时，
+        # 下面会落回线程池那条分支（而不是让 to_thread 把线程池换个壳）。
+        async_ok = bool(use_async) and self._supports_native_async()
+        if use_async and not async_ok:
+            logger.warning(
+                "use_async=True 但当前后端没有原生异步实现（未覆写 _acall_api），"
+                "已回退线程池：功能相同，但等待期间仍占线程"
+            )
+
+        if use_parallel and len(remaining_indices) > 1 and async_ok:
+            # 并发度沿用 num_threads 这个旋钮：它就是"同时发多少请求"，
+            # 与线程池大小是同一语义，只是现在不再等于线程数。
+            available_cores = max(1, (os.cpu_count() or 1) - 1)
+            concurrency = min(
+                self.config.augmentation.num_threads,
+                len(remaining_indices),
+                available_cores * 2
+            )
+            logger.info(
+                f"异步引擎: 并发 {concurrency}（核心: {available_cores}, 任务: {len(remaining_indices)}）"
+            )
+
+            outcomes = asyncio.run(self._run_batch_async(
+                remaining_indices, items, use_quality_check, errors, concurrency
+            ))
+            processed = 0
+            for idx, success, variants in outcomes:
+                existing_generated, processed = self._absorb_outcome(
+                    idx, success, variants,
+                    all_results=all_results,
+                    existing_generated=existing_generated,
+                    max_existing_window=max_existing_window,
+                    use_checkpoint=use_checkpoint,
+                    ckpt=ckpt,
+                    processed=processed,
+                    total=len(remaining_indices),
+                )
+
+        elif use_parallel and len(remaining_indices) > 1:
             # 优化线程池：根据任务规模动态调整线程数，避免过度并发
             available_cores = max(1, (os.cpu_count() or 1) - 1)
             num_threads = min(
@@ -433,24 +637,16 @@ class AugmentorPipeline:
                         })
                         success, variants = False, []
                     
-                    if success:
-                        all_results.extend(variants)
-                        existing_generated.extend([v.get("instruction", "") for v in variants])
-                        # 滑动窗口，限制内存使用
-                        if len(existing_generated) > max_existing_window:
-                            existing_generated = existing_generated[-max_existing_window:]
-                        
-                        if use_checkpoint:
-                            self.checkpoint_manager.update_progress(idx, True,
-                                                                    checkpoint=ckpt)
-                        
-                        processed += 1
-                        if processed % 10 == 0:
-                            logger.info(f"已处理 {processed}/{len(remaining_indices)}")
-                    else:
-                        if use_checkpoint:
-                            self.checkpoint_manager.update_progress(idx, False,
-                                                                    checkpoint=ckpt)
+                    existing_generated, processed = self._absorb_outcome(
+                        idx, success, variants,
+                        all_results=all_results,
+                        existing_generated=existing_generated,
+                        max_existing_window=max_existing_window,
+                        use_checkpoint=use_checkpoint,
+                        ckpt=ckpt,
+                        processed=processed,
+                        total=len(remaining_indices),
+                    )
         else:
             # 串行处理
             for idx in remaining_indices:

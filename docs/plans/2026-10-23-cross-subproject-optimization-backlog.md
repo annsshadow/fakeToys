@@ -576,3 +576,63 @@ LY-5 配置热加载（结构改动）、LY-7 小程序虚拟化（需视觉验�
 `openai_model.py:71 → 73`（`OPTIMIZATION_LOOP.md` 3 处）、
 `base.py:75/93/278 → 76/94/279`（`docs/augmentor/FAQ.md` 3 处）；
 `test_export_census_sentinel_l177` 的语料规模按既有惯例 415 → 416（第十八次）。
+
+### 7.18 AU-P1 第二批：`augment_dataset` 的异步引擎（2026-10-29）
+
+上一轮交付的是**传输层**（`async_with_retries` / `agenerate` / OpenAI 原生 httpx），
+这一轮把消费者接上：`augment_dataset(..., use_async=True)`。
+
+#### 切法：只换并行档的引擎，不动前后处理
+
+`augment_dataset` 是 270 行的单一方法（加载 → 断点 → 并行/串行 → 去重 → 落盘 →
+版本快照 → 报告）。整段重写成异步孪生体会让两版漂移，所以只做两件事：
+
+1. **抽出 `_absorb_outcome`**：把「一笔结果并入累计 + 推进断点 + 每 10 条出声」抽成
+   一个函数，同步（线程池 + 信箱）与异步（`gather`）两支共用。
+   ⚠️ 它必须**返回** `existing_generated`：滑动窗口那一步是重新绑定（切片），
+   不返回就会让窗口失效 —— 症状是内存随批数无界增长，而任何功能测试都不会红。
+2. **新增异步分支**，串行分支与线程池分支原样保留（`if ... and async_ok / elif / else`）。
+
+#### 准入判定：有 `agenerate` ≠ 有原生异步
+
+`_supports_native_async()` 判的是后端**覆写了 `_acall_api`**。没有覆写时
+`agenerate` 走 `asyncio.to_thread` —— 语义等价但每个在飞请求仍占一个线程，
+等于把线程池换了个壳。那种情况下自动回退线程池并**打一条 warning**：
+静默回退会让「我开了异步」变成一句无法验证的话。
+
+#### 实测抓到的真实行为差异（已写进 docstring 与用例）
+
+| | 线程档 | 异步档 |
+|---|---|---|
+| 输出顺序 | **完成序**（`as_completed`，同一输入跑两遍可能不同） | **提交序**（`gather` 保序，可复现） |
+| 内容 | 逐条相同 | 逐条相同 |
+
+这不是缺陷，但它是"开了异步之后输出文件长什么样"的一部分，所以判据写成
+「内容按多重集相等 + 顺序另行钉死」，而不是"逐字节相同"——后者要么假绿，
+要么逼着异步档去模仿一个不可复现的顺序。
+
+#### 暴露面
+
+- 库：`augment_dataset(..., use_async=False)`，**默认关闭**。默认关是刻意的：
+  现有测试与调用方都按同步口径 mock `generate`，默认切异步会让它们悄悄走到
+  另一条路径上。
+- API：`POST /api/augment/start` 的请求体新增 `use_async`（默认 `false`）。
+  端点**不做**"后端有没有原生异步"的判断 —— 那是 pipeline 的职责，
+  端点再判一遍就成了第二份权威。
+- CLI：`augment --use-async`。`dest` 显式写成 `use_async` —— Python 保留字
+  `async` 会让 `args.async` 直接语法错，这类坑在加参数时只犯一次就够了。
+
+#### 验证
+
+新增 `tests/unit/test_pipeline_async_batch_au_p1b.py` 6 条：
+
+- 内容与同步档逐条相同（多重集比较）；
+- 异步档输出顺序 == 提交序，且两次运行逐字节一致（可复现）；
+- 并发**真的重叠**（6 条各睡 20ms，`max_in_flight > 1` 且 ≤ 条数）；
+- 单条失败不拖垮整批（失败条目 0 变体，其余照常）；
+- 没有原生异步的后端会回退线程池**并出声**；
+- 断点逐条推进（`processed_items == 条数`）。
+
+顺带按现量重钉：`OPTIMIZATION_LOOP_2.md` 的 `pipeline.py:718 → 914`（3 处）、
+`pipeline.py:352 → 518`、`api/routes/augment.py:118 → 125`；
+`test_export_census_sentinel_l177` 语料规模 416 → 417（第十九次）。

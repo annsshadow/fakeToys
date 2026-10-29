@@ -130,6 +130,12 @@ def build_parser() -> argparse.ArgumentParser:
     augment_parser.add_argument("--no-quality", action="store_true", help="禁用质量检查")
     augment_parser.add_argument("--no-dedup", action="store_true", help="禁用去重")
     augment_parser.add_argument("--no-checkpoint", action="store_true", help="禁用断点续传")
+    # 并行档改走异步引擎（AU-P1）。`dest` 不能叫 `async`（Python 保留字，
+    # `args.async` 直接语法错），所以显式写成 `use_async`。
+    augment_parser.add_argument(
+        "--use-async", dest="use_async", action="store_true",
+        help="并行档走异步引擎（后端无原生异步时自动回退线程池）",
+    )
 
     # 导出命令
     # 两种输出模式由参数决定（原先由 --enhanced 决定）：

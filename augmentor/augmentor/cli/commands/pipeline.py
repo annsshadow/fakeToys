@@ -16,7 +16,8 @@ def run_augment(args, config):
         args.output,
         use_checkpoint=not args.no_checkpoint,
         use_quality_check=False if args.no_quality else None,  # L215：旗标没点=交给 config.quality.enabled
-        use_dedup=False if args.no_dedup else None  # 同上，交给 config.dedup.enabled
+        use_dedup=False if args.no_dedup else None,  # 同上，交给 config.dedup.enabled
+        use_async=getattr(args, "use_async", False),
     )
     _print(result)
 
