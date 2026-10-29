@@ -197,9 +197,7 @@ pub const AUTH_EXEMPT_PATHS: &[&str] = &[
     "/api/bbs/assemble/control/bbstopic/list",
     "/api/bbs/assemble/control/bbstopic/{id}",
     // meeting 只读查询（会议列表、详情）
-    "/api/meeting/assemble/control/meeting",
     "/api/meeting/assemble/control/meeting/list",
-    "/api/meeting/assemble/control/meeting/{id}",
     "/api/meeting/assemble/control/meeting/coming",
     "/api/meeting/assemble/control/meeting/coming/list",
     "/api/meeting/assemble/control/meeting/calendar",
@@ -217,13 +215,8 @@ pub const AUTH_EXEMPT_PATHS: &[&str] = &[
     "/api/file/assemble/control/fileinfo/{id}",
     // query 只读查询（查询设计、视图）
     "/api/queryview",
-    "/api/queryview/list",
     "/api/queryview/{id}",
-    "/api/queryview/view/{id}",
-    "/api/queryview/table/{flag}",
     "/api/queryview/table/list/{id}",
-    "/api/queryview/statement/{id}",
-    "/api/queryview/stat/{id}",
     "/api/queryview/stat/list",
     // cms 只读查询（内容管理）
     "/api/cms/assemble/control/cmsdocument",
@@ -241,7 +234,6 @@ pub const AUTH_EXEMPT_PATHS: &[&str] = &[
     "/api/neural/{id}",
     // ── plan006 U5 扩展：R401J200 豁免追加 ──
     // processplatform 扩展：附件/文件/可用流程/可用身份/字典
-    "/api/processplatform/assemble/surface/attachment/list/work/{workId}",
     "/api/processplatform/assemble/surface/attachment/list/task/{taskId}",
     "/api/processplatform/assemble/surface/work/list/application/{applicationFlag}/process/{processFlag}",
     "/api/processplatform/assemble/surface/work/list/process/{processFlag}/person/{person}",
@@ -252,10 +244,8 @@ pub const AUTH_EXEMPT_PATHS: &[&str] = &[
     "/api/processplatform/assemble/surface/available/work/process/{processFlag}",
     "/api/processplatform/assemble/surface/work/list/activity/{activityId}",
     "/api/processplatform/assemble/surface/application/list",
-    "/api/processplatform/assemble/surface/process/list/application/{applicationFlag}",
     "/api/processplatform/assemble/surface/process/list/person/{person}",
     "/api/processplatform/assemble/surface/process/list/unit/{unit}",
-    "/api/processplatform/assemble/surface/task/list/work/{workId}",
     "/api/processplatform/assemble/surface/task/list/identity/{identity}",
     "/api/processplatform/assemble/surface/task/list/person/{person}",
     "/api/processplatform/assemble/surface/task/list/unit/{unit}",
@@ -296,7 +286,6 @@ pub const AUTH_EXEMPT_PATHS: &[&str] = &[
     "/api/queryview/list/application/{applicationFlag}",
     "/api/queryview/view/list",
     "/api/queryview/view/list/application/{applicationFlag}",
-    "/api/queryview/table/list/{id}/next/{count}",
     "/api/queryview/table/list/{id}/list/{listId}/prev/{count}",
     "/api/queryview/table/list/{id}/list/{listId}/next/{count}",
     "/api/queryview/search/list/{viewFlag}/query/{queryFlag}",
@@ -518,4 +507,7 @@ pub const AUTH_EXEMPT_BLOCKED_PATHS: &[&str] = &[
     // 不应靠 `/api/queryview/{id}` 的通配碰撞
     "/api/queryview/search",
     "/api/queryview/morelikethis",
+    // queryview/list：B6 惰性豁免条目——注册表 Authenticated 要求登录，
+    // 删除显式豁免后仍被 `{id}` 通配覆盖，精确阻断使「豁免失效」与注册表一致。
+    "/api/queryview/list",
 ];

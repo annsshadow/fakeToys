@@ -331,6 +331,12 @@ impl PermissionRegistry {
         registry.register_prefix("/api/queryview/morelikethis", PermissionLevel::Public);
         registry.register_prefix("/api/queryview/search", PermissionLevel::Public);
         registry.register_prefix("/api/script/list/manager", PermissionLevel::Public);
+        // 企微扫码登录回调（B6）：一次性 code 由企微 OAuth 侧验证，必须先于认证可达。
+        // 豁免表已含该路径，这里补 Public 注册，消除「豁免 ∧ ¬Public」的惰性死态。
+        registry.register_exact(
+            "/api/qiyeweixin/update/person/detail/{code}",
+            PermissionLevel::Public,
+        );
         // processplatform assemble/surface 查询端点：o2server 侧无需认证（消除 R401/R500）
         registry.register_prefix(
             "/api/processplatform/assemble/surface/application/list",

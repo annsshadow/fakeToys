@@ -28,6 +28,7 @@ auth	GET	/api/authentication/oauth/login/qywx/code/{code}	oauth_login_qywx	A2-�
 auth	GET	/api/authentication/oauth/login/dingding/code/{code}	oauth_login_dingding	A2-真匿名+体内写 SQL 但读会话或有门禁
 auth	GET	/api/authentication/oauth/login/name/{name}/code/{code}/redirecturi/{redirectUri}	oauth_login_name	A2-真匿名+体内写 SQL 但读会话或有门禁
 auth	GET	/api/authentication/oauth/bind/name/{name}/code/{code}/redirecturi/{redirectUri}	oauth_bind_name	A2-真匿名+体内写 SQL 但读会话或有门禁
+auth	GET	/api/qiyeweixin/update/person/detail/{code}	qiyeweixin_update_person_detail	A1-真匿名+体内写 SQL 且无门禁无会话
 meeting_assemble_control	GET	/api/meeting/assemble/control/config/system/config	config_system_config	A3-真匿名+只读
 meeting_assemble_control	POST	/api/meeting/assemble/control/config/system/config/manage	config_system_config_manage	A2-真匿名+体内写 SQL 但读会话或有门禁
 meeting_assemble_control	GET	/api/meeting/assemble/control/config/system/config/manage	u2_config_manage_get	A3-真匿名+只读
@@ -189,5 +190,3 @@ program_center	GET	/api/program_center/authentication	authentication_who	A3-真�
 program_init	GET	/api/secret/check	check	A3-条件匿名（仅未初始化窗口）+只读
 program_init	POST	/api/secret/set	set	A1-条件匿名（仅未初始化窗口）+体内写 SQL 且无门禁无会话
 program_init	GET	/api/secret/set/cancel	set_cancel	A1-条件匿名（仅未初始化窗口）+体内写 SQL 且无门禁无会话
-query_assemble_surface	POST	/api/queryview/search	search_post	A3-真匿名+只读
-query_assemble_surface	POST	/api/queryview/morelikethis	morelikethis_post	A3-真匿名+只读

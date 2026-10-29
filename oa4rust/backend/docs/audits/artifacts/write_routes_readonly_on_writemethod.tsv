@@ -622,8 +622,8 @@ query_assemble_surface	POST	/api/queryview/importmodel/record/{recordId}	importm
 query_assemble_surface	POST	/api/queryview/importmodel/record/{recordId}/{status}	importmodel_record_recordId_status_p2	R7
 query_assemble_surface	POST	/api/queryview/importmodel/{flag}/{flag}/{query}/{queryFlag}	importmodel_flag_flag_query_queryFlag_p4	R7
 query_assemble_surface	POST	/api/queryview/importmodel/{id}	importmodel_id	R7
-query_assemble_surface	POST	/api/queryview/morelikethis	morelikethis_post	R4
-query_assemble_surface	POST	/api/queryview/search	search_post	R4
+query_assemble_surface	POST	/api/queryview/morelikethis	morelikethis_post	R7
+query_assemble_surface	POST	/api/queryview/search	search_post	R7
 query_assemble_surface	POST	/api/queryview/stat/execute/mockputtopost/{id}	stat_execute	R7
 query_assemble_surface	POST	/api/queryview/stat/flag/{flag}/query/{queryFlag}/execute/mockputtopost	stat_execute_with_query_mock	R7
 query_assemble_surface	POST	/api/queryview/stat/{id}/execute/mockputtopost	stat_execute	R7

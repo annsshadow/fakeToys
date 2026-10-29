@@ -91,6 +91,8 @@ function segPrefix(path, prefix) {
   return path === prefix || path.startsWith(`${prefix}/`);
 }
 function isAuthExempt(method, p) {
+  // B6：与中间件同口径——AUTH_EXEMPT_BLOCKED_PATHS 点名的路径即使匹配通配豁免也不算豁免。
+  if (EXEMPT_BLOCKED.includes(p)) return false;
   return (
     EXEMPT_PATHS.some((pat) => pathMatches(p, pat)) ||
     EXEMPT_PREFIXES.some((pre) => segPrefix(p, pre))
@@ -1605,12 +1607,15 @@ for (const [key, helper] of [
   if (gatedByRoute.get(key) !== helper)
     witnessGaps.push(`缺陷 25 见证缺失（门埋在第二层的链未被 ${helper} 作证）：${key.replace(/\t/g, " ")}`);
 }
-// 缺陷 25 反向见证：放宽链条不等于发门。`html/to/pdf` 与 `html/to/image` 两把**确实没有归属门**
-// （它们不读附件，`workHtml` 直接来自 body → 渲染 → `general_file_store` 落一条 GeneralFile），
-// 必须继续挂在无门禁行动面；若哪天它们被链式追踪"作证"出门来，就是恒真化被踩住的信号。
+// 缺陷 25 反向见证：放宽链条不等于发门。原钉 `html/to/pdf` 与 `html/to/image` 本批（A2 收口）
+// 真的加上了 `u4_require_session` 具名门（不是尺子误判），钉子被合法冲掉。
+// 换钉到两条**设计上必须匿名/条件匿名**的协议 GET 写：`qiyeweixin_update_person_detail`
+// （企微扫码登录回调，一次性 code 由企微侧验证，加会话门会打断登录）与 `set_cancel`
+// （首次引导 `/api/secret/set*` 族，加会话门会打断初始化）。它们长期确无门禁；
+// 若哪天被链式追踪"作证"出门来，就是恒真化被踩住的信号。
 for (const key of [
-  "processplatform_assemble_surface\tPOST\t/api/processplatform/assemble/surface/attachment/html/to/pdf\tattachment_u2b_html_to_pdf",
-  "processplatform_assemble_surface\tPOST\t/api/processplatform/assemble/surface/attachment/html/to/image\tattachment_u2b_html_to_image",
+  "auth\tGET\t/api/qiyeweixin/update/person/detail/{code}\tqiyeweixin_update_person_detail",
+  "program_init\tGET\t/api/secret/set/cancel\tset_cancel",
 ]) {
   if (gatedByRoute.has(key))
     witnessGaps.push(`缺陷 25 反向见证失效（无门路由被链式追踪误作证 ${gatedByRoute.get(key)}）：${key.replace(/\t/g, " ")}`);
@@ -1649,9 +1654,13 @@ for (const l of indirectGated) {
 // 冲掉；换钉到 `personal PUT /api/reset`（`reset_password`）——密码重置是**设计上匿名**的入口
 // （加会话门等于打断「忘记密码」流程，故长期确无门禁），且体内确有 `apply_reset` 转调，
 // 同样是「把 helper 转调当门禁」的强载荷。
+// 第四十二批再改钉：原第二条 `attachment_u2b_doc_to_word` 本批（A2 收口）真的加上了
+// `u4_require_session` 具名门（不是尺子误判），钉子被合法冲掉；换钉到 `reset_password_anonymous`
+// ——匿名口令重置，与 reset_password 同族（设计上匿名、无门禁），且体内确有 `apply_reset` 转调，
+// 「把 helper 转调当门禁」的载荷与原钉同强。
 const NEG_WITNESS_1920 = [
   "personal\tPUT\t/api/reset\treset_password",
-  "processplatform_assemble_surface\tPOST\t/api/processplatform/assemble/surface/attachment/doc/to/word/work/{workId}\tattachment_u2b_doc_to_word",
+  "personal\tPOST\t/api/reset/password/anonymous\treset_password_anonymous",
   "auth\tGET\t/api/authentication/oauth/login/qywx/code/{code}\toauth_login_qywx",
 ];
 for (const key of NEG_WITNESS_1920) {

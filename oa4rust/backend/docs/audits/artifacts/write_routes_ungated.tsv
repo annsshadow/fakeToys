@@ -11,8 +11,6 @@ personal	PUT	/api/reset	reset_password	R4
 personal	POST	/api/reset/password/anonymous	reset_password_anonymous	R4
 processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/application/list/range	application_list_range	R4
 program_init	POST	/api/secret/set	set	R4
-query_assemble_surface	POST	/api/queryview/search	search_post	R4
-query_assemble_surface	POST	/api/queryview/morelikethis	morelikethis_post	R4
 ai_assemble_control	POST	/api/ai_assemble_control/file/list/paging/{page}/size/{size}	file_list_paging_page_size_size	R7
 ai_assemble_control	POST	/api/ai_assemble_control/file/list	file_list_with_ids	R7
 ai_assemble_control	POST	/api/ai_assemble_control/index/list/paging/{page}/size/{size}	index_list_paging_page_size_size	R7
@@ -622,6 +620,8 @@ query_assemble_surface	POST	/api/queryview/statement/list/query/{queryFlag}	stat
 query_assemble_surface	PUT	/api/queryview/stat/{id}/execute	stat_execute	R7
 query_assemble_surface	POST	/api/queryview/stat/{id}/execute/mockputtopost	stat_execute	R7
 query_assemble_surface	POST	/api/queryview/stat/execute/mockputtopost/{id}	stat_execute	R7
+query_assemble_surface	POST	/api/queryview/search	search_post	R7
+query_assemble_surface	POST	/api/queryview/morelikethis	morelikethis_post	R7
 query_assemble_surface	POST	/api/queryview/bundle/v2/post/{id}	view_bundle_v2_post	R7
 query_assemble_surface	POST	/api/queryview/importmodel/list/record/item/paging/{page}/size/{size}	importmodel_list_record_item_paging_page_size_size	R7
 query_assemble_surface	POST	/api/queryview/importmodel/list/record/paging/{page}/size/{size}	importmodel_list_record_paging_page_size_size	R7
