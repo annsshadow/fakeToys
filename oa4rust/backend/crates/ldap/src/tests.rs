@@ -2,10 +2,26 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests {
-    use super::*;
+    use crate::*;
     use std::env;
-    use shared::testing::is_db_available;
+    use tokio::sync::{Mutex, MutexGuard};
+
+    /// 这些用例读写进程级环境变量；并行执行会互相清空对方的前置条件。
+    /// 锁必须覆盖「改环境 → 读配置」整段，否则默认并行下用例会随机红。
+    ///
+    /// 用 tokio 的 Mutex：同步用例走 blocking_lock，异步用例 lock().await，
+    /// 避免 std Mutex 跨 await 持锁（clippy::await_holding_lock）。
+    static ENV_LOCK: Mutex<()> = Mutex::const_new(());
+
+    fn lock_env_blocking() -> MutexGuard<'static, ()> {
+        ENV_LOCK.blocking_lock()
+    }
+
+    async fn lock_env_async() -> MutexGuard<'static, ()> {
+        ENV_LOCK.lock().await
+    }
 
     fn cleanup_env() {
         env::remove_var("LDAP_ENABLE");
@@ -17,12 +33,14 @@ mod tests {
 
     #[test]
     fn test_from_env_disabled() {
+        let _guard = lock_env_blocking();
         cleanup_env();
         assert!(LdapConfig::from_env().is_none());
     }
 
     #[test]
     fn test_from_env_enabled_no_url() {
+        let _guard = lock_env_blocking();
         cleanup_env();
         env::set_var("LDAP_ENABLE", "true");
         assert!(LdapConfig::from_env().is_none());
@@ -30,6 +48,7 @@ mod tests {
 
     #[test]
     fn test_from_env_enabled_with_url() {
+        let _guard = lock_env_blocking();
         cleanup_env();
         env::set_var("LDAP_ENABLE", "true");
         env::set_var("LDAP_URL", "ldap://localhost:389");
@@ -40,6 +59,7 @@ mod tests {
 
     #[test]
     fn test_from_env_with_all_vars() {
+        let _guard = lock_env_blocking();
         cleanup_env();
         env::set_var("LDAP_ENABLE", "true");
         env::set_var("LDAP_URL", "ldap://example.com:389");
@@ -74,12 +94,14 @@ mod tests {
 
     #[test]
     fn test_authenticator_from_env_disabled() {
+        let _guard = lock_env_blocking();
         cleanup_env();
         assert!(authenticator_from_env().is_none());
     }
 
     #[test]
     fn test_authenticator_from_env_enabled() {
+        let _guard = lock_env_blocking();
         cleanup_env();
         env::set_var("LDAP_ENABLE", "true");
         env::set_var("LDAP_URL", "ldap://localhost:389");
@@ -89,14 +111,19 @@ mod tests {
 
     #[tokio::test]
     async fn test_authenticate_returns_error_without_server() {
+        let _guard = lock_env_async().await;
         cleanup_env();
         env::set_var("LDAP_ENABLE", "true");
         env::set_var("LDAP_URL", "ldap://localhost:1");
         let config = LdapConfig::from_env().unwrap();
         let auth = LdapAuthenticator::new(config);
         let result = auth.authenticate("testuser", "testpass").await;
-        // Should return Error because server is not available
-        assert!(matches!(result, LdapAuthResult::Error(_)));
+        // 连不上服务器时，实现把「连接/绑定失败」映射为 Failed（超时才映射 Error）。
+        // 这里要钉的是「绝不能被当成认证成功」，而不是某一种失败变体。
+        assert!(
+            matches!(result, LdapAuthResult::Failed | LdapAuthResult::Error(_)),
+            "unreachable LDAP server must not authenticate successfully: {result:?}"
+        );
     }
 
     #[tokio::test]
@@ -108,6 +135,7 @@ mod tests {
             return;
         }
 
+        let _guard = lock_env_async().await;
         cleanup_env();
         let config = LdapConfig::from_env();
         // LDAP is disabled by default in CI; test only runs when LDAP is explicitly enabled

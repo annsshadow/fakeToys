@@ -28725,6 +28725,8 @@ pub async fn route_u2_list_by_ids(
 }
 
 #[cfg(test)]
+mod tests;
+#[cfg(test)]
 mod tests_generated;
 
 #[cfg(test)]

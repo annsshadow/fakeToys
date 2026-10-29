@@ -17,6 +17,7 @@ async-trait.workspace = true
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["full"] }
+shared = { path = "../shared" }
 
 [lints]
 workspace = true

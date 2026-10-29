@@ -2993,6 +2993,7 @@ dependencies = [
  "deadpool-postgres",
  "ldap3",
  "serde",
+ "shared",
  "tokio",
  "tracing",
  "uuid",

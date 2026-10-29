@@ -236,7 +236,13 @@ async fn test_publish_surface_route_exists() {
     assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
 }
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests {
+    use super::*;
+    use axum::body::Body;
+    use axum::http::{Method, Request, StatusCode};
+    use tower::util::ServiceExt;
+
     #[tokio::test]
     async fn test_get_processplatform_assemble_surface_g() {
         let pool = build_test_pool();
