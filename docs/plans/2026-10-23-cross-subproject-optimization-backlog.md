@@ -352,3 +352,51 @@ fetch_limited 的重定向/大响应体路径需公网服务端，留结构性�
 | @intlify 三件套 ×7（high，GHSA-83rm-6c8r-g728 / GHSA-8rc2-428q-7ww3 escapeParameter/srcdoc XSS） | **oa4rust：已修复（override 11.4.10→11.4.16，pnpm audit 清零）**；**miniapp ×3：dismiss（tolerable_risk）** | oa4rust 的 vue-i18n@11.4.10 由 sdk `^11.1.2` 引入，同 minor 补丁线 11.4.16 内升级（`pnpm test` 1042 passed）；miniapp 的 @intlify 9.x 是 @dcloudio/uni-cli-shared 构建链精确 pin（跨大版本升 11.x 打断 uni 构建链），树内无 vue-i18n 运行时（暴露仅构建期消息编译），上游公告明确 v9/v10 不再支持不修——GitHub 告警 279/280/281 已 dismiss，待 dcloudio 适配 v11 后随构建链升级 |
 
 **第五轮（2026-10-29 同日）：92.02% → 92.05%（错误注入轮，增量小因新测试代码同时扩大分母），94 证据性重钉为 93**。`testing.rs` 新增 `failing_pool()`（127.0.0.1:1 连接拒绝池，get() 立即 Err），覆盖 crud save/delete/create_many/save_owned、storage put/get/delete、token system_uninitialized fail-closed、session 降级链（含「broadcast_logout 池失败降级 no-op，内存清理由 remove_sessions_by_person 独立负责」的契约钉子）的 pool.get 错误臂。293 tests 全绿。94 的重钉证据：剩余未覆盖主体为 testing.rs 215（下游消费，下一轮用其助手写集成式用例）、netguard fetch_limited 内部（自身 SSRF 守卫挡回环）、rewriter 长尾 SQL 分支 ~46（逐条输出钉死）、scheduler/security 的结构性不可达臂。**同日：auto-checkin login.ts 纳入棘轮（36.76%，地板 36）**——login.ts 重构为可导出（main/clearWafGate/shortUrl + import.meta.url 直接运行守卫），clearWafGate/shortUrl 由 fake-page 测试覆盖；main 的 CLI 体为进程绑定结构性不可测。coverage-baseline.json 八档 + login.ts = 九档全绿。
+
+### 7.13 全仓门禁归零 + 四个子项目的实测优化（2026-10-29 第十二轮）
+
+**起点是基线不绿**：`node scripts/check-warnings.mjs` 13 项 = 10 通过 / **2 失败** / 1 跳过。
+两项失败都不是"告警"，而是真实缺陷，先修它们再谈优化。
+
+| 项 | 根因（实测，不是推断） | 修法 | 证据 |
+|---|---|---|---|
+| auto-checkin 4 条用例红（全量跑）/ 单文件跑全绿 | `src/lock.ts` 的锁目录**硬编码** `ROOT_DIR/sessions`，而数据目录支持 `AUTO_CHECKIN_DATA_DIR` 覆盖。测试各自隔离了数据目录，却仍争抢仓库里同一把 `.run.lock`；`node --test` 并行跑测试文件时互相被判定为"另一进程正在签到" → `runAll` 返回空数组（`0 !== 3`）、`runSite` 返回 `undefined` | 新增 `AUTO_CHECKIN_LOCK_DIR`（缺省仍是 `ROOT_DIR/sessions`），5 个测试文件各自指向临时目录 | 101 → **102 passed / 0 failed**（新增 `store-corrupt.test.ts`）；`tsc --noEmit` 0 错 |
+| augmentor/web `tsc --noEmit` 7 处红 | `@types/node@^26.6.5` 在 `package.json` 里**声明了但没装**（`node_modules/@types/node` 不存在）→ `node:fs` 解析不到，`readdirSync(..., {encoding:'utf8'})` 退化成 `any` 再连锁出 4 处 implicit any | `npm install` 同步 `node_modules`（依赖本来就声明过，不是加依赖） | `tsc --noEmit` exit 0；契约测试 93 passed |
+
+#### 修完基线后的新增优化（逐项有验证）
+
+| 项目 | 位置 | 症状 | 改动 | 验证 |
+|---|---|---|---|---|
+| laiyipao | `service/progression.go` `validateDefenseOwnership` | 每个 id 一次 `SELECT COUNT(*)`：技能 ≤12 + 装备 ≤18 + 专精节点可达 **96** ⇒ 一次保存最坏 **126 次往返**，全在 HTTP 同步路径上 | 三类各压成一条 `= ANY($2)`（`requireAllOwned`），往返固定 3 次；报错仍按**入参顺序**取第一个缺失项，用户可见错误不随 PG 计划漂移 | `TestSaveDefense*` 4 条真库通过 |
+| laiyipao | `service/service.go` `LoadWallet` | 无条件 `SET updated_at = now()`：`n=0`（距上次恢复不足一格）也产生新元组 + WAL + 行锁。客户端 3~5 分钟拉一次、恢复间隔 6 分钟 ⇒ **绝大多数读取都是 n=0**，最热读端点变成持续写放大源 | 改 `cur`/`regen` 两分支：`n>0` 才写，`n=0` 直接返回现有值；仍是一条语句一次往返 | 新增 `TestLoadWalletDoesNotWriteWhenNoRegen`：用 **xmin**（行版本）断言 n=0 时**没有产生新版本**，跨格时能量 +1 且版本必变；既有 4 条体力用例全绿 |
+| laiyipao | `service/game.go` `bumpTasks` | 结算事务内**每个指标一次** `SELECT ... WHERE metric=$1`，多出的往返把事务与行锁持有时间一起拉长（结算是最热写路径） | 一条 `metric = ANY($1)` + Go 侧分组，往返数与指标数无关 | `TestSettleBattleMidwayFailures` 等 Task/Settle/Battle/Achievement 全绿（该用例的错误前缀断言随之从 `query tasks metric` 改为 `query tasks`，理由写在用例里） |
+| laiyipao | `service/adminuserdetail.go` 两处 `rows.Next()` | 迭代中途断连时装备/验真列表**只填一半**而函数返回 nil 错误——运营看到的是"这个玩家只有 2 件装备"而不是故障 | 补 `rows.Err()` | 同上 |
+| laiyipao | `service/progression.go` `ListDefenses` | `if err == nil { mine = &own }`：连接断/超时/权限失败全落进"没保存过防线"分支，接口 200 + `mine=null` | 区分 `ErrNoRows`（真的没有）与其它错误（fail-loud） | 同上 |
+| augmentor | `privacy.py` `sanitize_text` | 每个模式先 `findall` 判空再 `sub` 替换——同一段文本扫两遍（8+ 模式 × 每字段） | `subn` 一次扫描同时拿结果与命中数 | 106 passed（privacy/profiling/sampler） |
+| augmentor | `profiling.py` / `api/routes/quality.py` | `report = profile(items)` 之后又 `save_profile(items)` 重算一遍画像（分词/关键词/语言分布） | 新增 `save_profile_report(report, path)`；`save_profile` 委托给它，API 层传已算好的 report | 同上 |
+| augmentor | `sampler.py` 选样报告 | `items.index(seed)` 对每个推荐种子做一次 O(n) 的 dict 逐键比较 ⇒ O(k·n) | 一次遍历建 `id → 下标` 表（推荐种子本就是 items 里的同一批对象引用） | 同上 |
+| augmentor | `api/routes/system_ops.py` `GET /api/system/backups` | `list_backups` 在 `async def` 里同步 `json.load(index.json)`，阻塞事件循环；同文件其余端点都走 `run_in_thread` | 改 `await run_in_thread(list_backups, ...)` | 279 passed（`-k backup`） |
+| augmentor | `model_manager.py` `get_sentence_model` | 只捕 `ImportError`；离线/下载失败抛 `OSError` 直接逃逸成 500，且 `_sentence_model` 仍为 None ⇒ **每次调用都重试一次秒级加载** | 与 ImportError 同口径回退哨兵 + 记日志（进程内只付一次代价） | 16 passed |
+| auto-checkin | `src/store.ts` `readFromDisk` | 记录文件损坏时静默返回空账，下一次 `addRecord` 以"空账 + 1 条"整份重写 ⇒ **一次坏 JSON 等于全部历史被覆盖**，且无信号 | 损坏文件改名隔离为 `records.corrupt-<时间戳>.json` 再按空账继续；隔离失败也不让读路径抛 | 新增 `test/store-corrupt.test.ts`（逐字节校验隔离文件内容 + 之后仍可正常写入） |
+| auto-checkin | `coverage-baseline.json` | `lock.ts` 行覆盖 89.86% → 91.3%（新增分支被覆盖），棘轮提示需抬地板 | 地板 89.86 → 91.3 | `npm run test:ratchet` 九档全绿 |
+
+#### 分析后**主动回退**的一项（记账，避免下轮重复尝试）
+
+`augmentor/cache.py` 的 `DiskCache.set` 每次都在 `_enforce_size_limit` 里对全部条目做 `stat`（N 条 ⇒ 单次 O(N)、累计 O(N²)）。
+试过"维护增量总字节数、未超上限直接短路"，**被两道既有守卫拦下**且拦得对：孤儿元数据清理正是这一步的另一半职责，
+短路后「文件被外部删除 ⇒ 元数据残留」的保证失效（`test_orphan_metadata_is_cleaned_up`、`test_enforce_size_survives_the_file_vanishing_before_stat`）。
+加"账上条目 == 盘上文件"的目录枚举核对能同时满足两边，但那两条用例把 `_get_cache_path(key).stat()` 本身钉成了判据
+（`table["a"].fired is True`），改动等于改判据。**结论：不改**，等有真实万级条目缓存时再连同守卫一起重设计。
+
+#### 本轮门禁终态
+
+| 端 | 结果 |
+|---|---|
+| `check-warnings.mjs --only go,auto-checkin,augmentor-web` | 3 通过 / 0 失败 |
+| auto-checkin `tsx --test` | **102 passed / 0 failed**；`tsc --noEmit` 干净；覆盖率棘轮九档全绿 |
+| laiyipao `go build` / `vet` / `gofmt` | 干净；`service`（Task/Settle/Battle/Achievement/Defense/Wallet/Energy/Loadout/AdminUserDetail）+ `httpapi` 真库全绿 |
+| augmentor 全量 pytest | **10156 passed / 4 failed / 3 skipped** —— 4 条全部是**基线既红**（pillow 环境性 + bucket[ambiguous] + scratch_pair + doc_line_refs），与基线同集合，无新增 |
+| augmentor/web | `tsc --noEmit` 干净；契约测试 93 passed |
+
+**仍未做（与上轮一致，需单独战役）**：OA-P0-1 路由补齐 ~73 条（L）、AU-P1 异步 LLM 后端（L）、
+LY-5 配置热加载（结构改动）、LY-7 小程序虚拟化（需视觉验收）、`shared` 覆盖率 92.05 → 93（llvm-cov 小时级）。
