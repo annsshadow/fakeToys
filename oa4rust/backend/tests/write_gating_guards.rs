@@ -357,14 +357,14 @@ fn find_handler_body(crate_name: &str, handler: &str) -> Option<String> {
     if let Some(mod_name) = module {
         for f in &files {
             if f.file_stem().is_some_and(|s| s == mod_name) {
-                if let Some(body) = slice_fn(&std::fs::read(f).ok()?, &name) {
+                if let Some(body) = slice_fn(&std::fs::read(f).ok()?, name) {
                     return Some(body);
                 }
             }
         }
     }
     for f in &files {
-        if let Some(body) = slice_fn(&std::fs::read(f).ok()?, &name) {
+        if let Some(body) = slice_fn(&std::fs::read(f).ok()?, name) {
             return Some(body);
         }
     }
@@ -989,10 +989,13 @@ fn read_const_str_list(src: &str, name: &str) -> Vec<String> {
     out
 }
 
+/// 注册表条目：路径 + 权限级别。
+type RegistryEntry = (String, String);
+
 /// 从 rbac.rs 解析注册表：返回 (exact 表, prefix 表)，元素为 (路径, 级别)。
 /// 复刻尺子的正则口径：`register(_exact|_prefix)?("path", PermissionLevel::X)`，
 /// 容忍跨行与空白。
-fn read_registry(src: &str) -> (Vec<(String, String)>, Vec<(String, String)>) {
+fn read_registry(src: &str) -> (Vec<RegistryEntry>, Vec<RegistryEntry>) {
     let mut exact = Vec::new();
     let mut prefixes = Vec::new();
     let bytes = src.as_bytes();
@@ -1048,12 +1051,11 @@ fn read_registry(src: &str) -> (Vec<(String, String)>, Vec<(String, String)>) {
             j += 1;
         }
         let level = String::from_utf8_lossy(&bytes[level_start..j]).into_owned();
-        if level.starts_with("PermissionLevel::") {
-            let level = level["PermissionLevel::".len()..].to_string();
+        if let Some(short) = level.strip_prefix("PermissionLevel::") {
             if is_exact {
-                exact.push((path, level));
+                exact.push((path, short.to_string()));
             } else {
-                prefixes.push((path, level));
+                prefixes.push((path, short.to_string()));
             }
         }
         i = pos + 1;

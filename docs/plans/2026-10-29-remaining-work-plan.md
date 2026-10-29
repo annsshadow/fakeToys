@@ -87,7 +87,7 @@ LY-7（小程序虚拟化，实测列表全部有界）、AU-P1（异步后端�
 
 | 编号 | 项 | 现状 | 处置 |
 |---|---|---|---|
-| **D1** | llm-lab pytest 门禁 SKIP | 本机 `C:/Python314` 有 pytest；门禁默认解释器没有 | 在门禁脚本里显式指定解释器，或文档注明"该门禁需真实 Python 环境"。**不要**把它当成"已通过" |
+| **D1** | llm-lab pytest 门禁 SKIP | ~~本机 `C:/Python314` 有 pytest；门禁默认解释器没有~~ | **已消解（2026-10-30）**：环境更新后默认 `python` 已带 pytest 9.1.1，门禁 `llm-lab (pytest 行为面)` 真实 PASS（6.7s），不再是 SKIP。门禁脚本的 `requires` 守门会在解释器缺 pytest 时显式 SKIP 并说明，无需改代码 |
 
 ---
 
