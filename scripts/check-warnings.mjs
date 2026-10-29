@@ -217,6 +217,17 @@ const CHECKS = [
     },
     timeout: 2 * 60 * 1000,
   },
+  {
+    id: 'r7-readonly-cross-check',
+    label: 'oa4rust R7 只读挂写交叉验证（0 疑似含写）',
+    cwd: 'oa4rust/backend',
+    cmd: 'python scripts/cross_check_r7_readonly.py',
+    // 周期回归检查（2026-10-30）：对尺子判为「R7 只读挂写方法」的全部路由用独立
+    // 判据（注释剥离 + 写 SQL 关键字 + ORM 写扫描）复核，出现疑似含写候选即失败。
+    // 与 audit_write_gating.mjs 的 writeEvidence 是不同实现，互为印证。
+    pattern: /疑似含写候选/,
+    timeout: 2 * 60 * 1000,
+  },
 ]
 
 const args = process.argv.slice(2)

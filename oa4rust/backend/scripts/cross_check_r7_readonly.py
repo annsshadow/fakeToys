@@ -236,13 +236,15 @@ def main():
         if has_write(body):
             candidates.append((crate, method, path, handler))
 
-    print(f"R7 共 {len(rows)} 条，成功提取函数体 {checked} 条")
-    if not candidates:
-        print("交叉验证：0 条疑似含写候选（尺子判只读可信）")
-    else:
-        print(f"疑似含写候选 {len(candidates)} 条：")
+    print(f"R7 只读挂写交叉验证：{len(rows)} 条，成功提取 {checked} 条函数体")
+    if candidates:
+        # 门禁判据（check-warnings.mjs）：输出含「疑似含写候选」即失败。
+        print(f"疑似含写候选 {len(candidates)} 条（门禁失败）：")
         for c in candidates:
             print("\t".join(c))
+        return 1
+    print("通过：0 条疑似含写")
+    return 0
 
 
 if __name__ == "__main__":
