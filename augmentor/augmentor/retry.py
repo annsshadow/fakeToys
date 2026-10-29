@@ -8,6 +8,7 @@
 默认即 `MAX_RETRY_AFTER`）+ 可选抖动，sleeper 可注入以便测试。
 """
 
+import asyncio
 import logging
 import random
 import time
@@ -235,6 +236,99 @@ def with_retries(func: Callable[..., Any],
                 if on_retry:
                     on_retry(attempt + 1, exc, delay)
                 sleeper(delay)
+
+    raise last_exc
+
+
+async def async_with_retries(func: Callable[..., Any],
+                              *args,
+                              max_retries: int = 3,
+                              base_delay: float = 1.0,
+                              factor: float = 2.0,
+                              max_delay: float = 30.0,
+                              max_retry_wait: float = MAX_RETRY_AFTER,
+                              jitter: float = 0.0,
+                              rng: Optional[random.Random] = None,
+                              retry_on: Tuple[Type[BaseException], ...] = (Exception,),
+                              sleeper: Optional[Callable[[float], Any]] = None,
+                              on_retry: Optional[Callable[[int, BaseException, float], None]] = None,
+                              classify: Optional[Callable[[BaseException], Tuple[bool, Optional[float]]]] = None,
+                              **kwargs) -> Tuple[Any, RetryStats]:
+    """`with_retries` 的异步孪生体：`await func(*args, **kwargs)` + 同一套策略。
+
+    # 为什么不是"把同步版丢线程池"就完事
+
+    线程池只能把阻塞调用搬走，**搬不走等待**：一次 429 退避 30 秒仍然占着一个
+    线程。原生异步后端（httpx/aiohttp）在等待期间不占线程，这才是 AU-P1 要的。
+
+    # 策略与同步版**逐位一致**（共享同一批纯函数）
+
+    参数校验、`compute_delay`、`classify_error`、`RetryStats`、两副封顶的边界
+    （服务端指令只归 `max_retry_wait`、退避只归 `max_delay`）全部复用，本函数
+    只把 `sleeper(delay)` 换成 `await sleeper(delay)`、把 `func(...)` 换成
+    `await func(...)`。两版若各写一份退避逻辑，迟早在"服务端让等 90 秒"这类
+    边界上分叉，而分叉的症状是"重试得太早"，很难被测试抓到。
+
+    Args:
+        func: 返回可等待对象的可调用对象（async 函数或返回 coroutine 的 lambda）
+        sleeper: 等待函数，默认 `asyncio.sleep`；测试可注入一个只记录不睡眠的替身
+        其余参数与 `with_retries` 同名同义，见其文档。
+
+    Returns:
+        (func 的返回值, RetryStats)
+
+    Raises:
+        与 `with_retries` 一致：参数非法在**调用 func 之前**抛；不可重试错误立即
+        抛出；重试耗尽后抛出最后一次异常。
+    """
+    # 判参排在循环之前：func 可能是一次真实的付费 API 调用
+    require_count("max_retries", max_retries, minimum=0)
+    require_seconds("base_delay", base_delay, minimum=0.0)
+    require_positive("factor", factor)
+    require_seconds("max_delay", max_delay, minimum=0.0)
+    require_seconds("max_retry_wait", max_retry_wait, minimum=0.0,
+                    maximum=MAX_RETRY_AFTER)
+    require_ratio("jitter", jitter)
+
+    sleep = sleeper if sleeper is not None else asyncio.sleep
+    stats = RetryStats()
+    last_exc: Optional[BaseException] = None
+
+    for attempt in range(0, max_retries + 1):
+        stats.attempts = attempt + 1
+        try:
+            result = await func(*args, **kwargs)
+            stats.succeeded = True
+            return result, stats
+        except retry_on as exc:
+            last_exc = exc
+
+            retryable = True
+            suggested: Optional[float] = None
+            if classify is not None:
+                retryable, suggested = classify(exc)
+
+            if not retryable:
+                logger.warning(
+                    "第 %d 次调用失败（%s），判定为不可重试，立即放弃",
+                    attempt + 1, type(exc).__name__,
+                )
+                break
+            if attempt < max_retries:
+                if suggested is not None:
+                    delay = min(max_retry_wait, max(0.0, float(suggested)))
+                else:
+                    delay = compute_delay(attempt + 1, base_delay, factor, max_delay,
+                                          jitter=jitter, rng=rng)
+
+                stats.delays.append(delay)
+                logger.warning(
+                    "第 %d 次调用失败（%s），%.2fs 后重试",
+                    attempt + 1, type(exc).__name__, delay,
+                )
+                if on_retry:
+                    on_retry(attempt + 1, exc, delay)
+                await sleep(delay)
 
     raise last_exc
 

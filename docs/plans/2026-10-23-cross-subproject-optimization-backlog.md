@@ -549,3 +549,30 @@ LY-5 配置热加载（结构改动）、LY-7 小程序虚拟化（需视觉验�
 - 性能：以 `docs/performance-baseline.md` 的实测绝对值为准（不再写"与 Java 基线相当"）；
 - 回归：`unit-tests` / `integration-tests` / `startup-smoke` / `openapi-guard` /
   `fi002-column-scan` / `limit-scan` / `shared-coverage`。
+
+### 7.17 AU-P1 异步 LLM 后端：传输层落地（2026-10-29）
+
+**做了什么**：把「异步」做成**可用且与同步版逐位等价**的能力，而不是另起一套。
+
+| 层 | 改动 | 为什么这样切 |
+|---|---|---|
+| `retry.py` | 新增 `async_with_retries`，与 `with_retries` **共享**参数校验、`compute_delay`、`classify_error`、`RetryStats` 与两副封顶边界 | 只把 `func(...)` 换成 `await func(...)`、`sleeper` 换成 `await sleeper(...)`。两版若各写一份退避逻辑，迟早在「服务端让等 90 秒」这类边界上分叉，而症状是"重试得太早"，很难被测试抓到 |
+| `models/base.py` | 抽出 `_cache_lookup` / `_cache_store`（`generate` 与 `agenerate` 共用）；新增 `_acall_api`（默认 `asyncio.to_thread`）与 `agenerate` | 缓存与统计口径必须同源，否则"同步慢还是异步慢"无法对比 |
+| `models/openai_model.py` | `_build_request` / `_parse_response` 抽出（同步异步共用）；`_acall_api` 走 `httpx.AsyncClient`，**httpx 缺失时回退线程池** | httpx 目前只在 `requirements-dev.txt`；做成可选依赖，异步接口不会因缺包变成 ImportError |
+| `tests/unit/test_async_generate_au_p1.py` | 11 条：策略一致（含"坏参数在发请求前判掉"）、不可重试立即放弃、缓存命中不打 API、五个计数器同口径、原生 httpx 路径真的走了客户端、缺 httpx 回退、`aclose` | 异步的价值主张是"退避时不占线程"，这条无法用"跑完没崩"证明 |
+
+**一处必须记住的坑**：`httpx.AsyncClient` 绑定创建它的事件循环，跨循环复用（测试里连续
+`asyncio.run`）会报 "Event loop is closed"。客户端因此跟着 loop 走：换循环就关旧的、重开。
+
+**明确未做（下一轮的起点，不是遗漏）**：`pipeline.py:198` 的 `self.model_backend.generate(prompt)`
+仍在同步 `augment_seed` 里，批次接口走 `ThreadPoolExecutor`。要真正吃到异步收益，需要
+`augment_seed` 的异步孪生体（它的内部还有质量检查/去重/断点等一长串同步步骤）——
+那是独立的 L 级重构，本轮的交付物是**让那条路有东西可接**。
+
+**验证**：新增 11 条用例全绿；既有 `test_model_backend(s)` / `test_model_cache` / `test_retry*`
+共 174 条全绿；augmentor 全量 10163 passed（4 条为基线既红：pillow 环境性 + 3 条棘轮）。
+
+**顺带修**：产品文件插行把在册文档引用顶移，按现量重钉 ——
+`openai_model.py:71 → 73`（`OPTIMIZATION_LOOP.md` 3 处）、
+`base.py:75/93/278 → 76/94/279`（`docs/augmentor/FAQ.md` 3 处）；
+`test_export_census_sentinel_l177` 的语料规模按既有惯例 415 → 416（第十八次）。

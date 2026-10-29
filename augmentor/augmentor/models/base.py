@@ -3,6 +3,7 @@
 
 """模型后端基类 - 优化版"""
 
+import asyncio
 import hashlib
 import json
 import logging
@@ -13,7 +14,7 @@ from typing import Optional
 from ..config import (DEFAULT_REQUEST_TIMEOUT, REQUEST_TIMEOUT_RANGE, ModelConfig)
 from ..cache import MemoryCache, DiskCache
 from ..exceptions import ModelGenerateError, ModelResponseError
-from ..retry import with_retries, classify_error, MAX_RETRY_AFTER
+from ..retry import with_retries, async_with_retries, classify_error, MAX_RETRY_AFTER
 from ..validation import require_count, require_ratio, require_seconds
 
 logger = logging.getLogger(__name__)
@@ -339,6 +340,44 @@ class ModelBackend(ABC):
             self._generation_cache = cache
         cache.set(key, value)
 
+    def _cache_lookup(self, prompt: str) -> Optional[str]:
+        """内存 → 磁盘两级缓存查询。
+
+        命中时**仍然计一次 request**（既有语义，别改）：统计口径问的是
+        「有多少次生成请求被回答」，不是「有多少次真的打了网络」。
+
+        抽出来是为了让 `generate` 与 `agenerate` 共用同一份缓存语义 ——
+        两处各写一遍迟早会在「磁盘命中要不要回填内存」这类细节上分叉。
+        """
+        cache_key = self._cache_key(prompt)
+        cached = self._cache_get(cache_key)
+        if cached is not None:
+            logger.debug("内存缓存命中，直接返回结果")
+            with self._lock:
+                self._request_count += 1
+            return cached
+
+        disk_cached = (
+            self._response_cache.get(cache_key) if self._response_cache is not None else None
+        )
+        if isinstance(disk_cached, str):
+            logger.debug("磁盘缓存命中，回填内存缓存")
+            self._cache_put(cache_key, disk_cached)
+            with self._lock:
+                self._request_count += 1
+            return disk_cached
+        return None
+
+    def _cache_store(self, prompt: str, result: str) -> None:
+        """写回两级缓存。磁盘写失败**不得**让已经成功的生成变成失败。"""
+        cache_key = self._cache_key(prompt)
+        self._cache_put(cache_key, result)
+        if self._response_cache is not None:
+            try:
+                self._response_cache.set(cache_key, result)
+            except OSError:
+                logger.warning("磁盘响应缓存写入失败，本次结果不回填磁盘", exc_info=True)
+
     def generate(self, prompt: str, max_retries: Optional[int] = None, retry_delay: Optional[float] = None) -> str:
         """生成文本（带指数退避重试）
 
@@ -365,23 +404,9 @@ class ModelBackend(ABC):
         delay = retry_delay if retry_delay is not None else self._default_retry_delay
 
         # 缓存复用优化：内存缓存 → 磁盘缓存 → 真正调用
-        cache_key = self._cache_key(prompt)
-        cached = self._cache_get(cache_key)
+        cached = self._cache_lookup(prompt)
         if cached is not None:
-            logger.debug("内存缓存命中，直接返回结果")
-            with self._lock:
-                self._request_count += 1  # 命中仍计入统计（既有语义）
             return cached
-
-        disk_cached = (
-            self._response_cache.get(cache_key) if self._response_cache is not None else None
-        )
-        if isinstance(disk_cached, str):
-            logger.debug("磁盘缓存命中，回填内存缓存")
-            self._cache_put(cache_key, disk_cached)
-            with self._lock:
-                self._request_count += 1
-            return disk_cached
 
         def _attempt() -> str:
             with self._lock:
@@ -430,15 +455,103 @@ class ModelBackend(ABC):
                 f"API 调用失败，共尝试 {attempts} 次: {e}"
             ) from e
 
-        self._cache_put(cache_key, result)
-        if self._response_cache is not None:
-            # 磁盘写入失败不应让已经成功的生成变成失败
-            try:
-                self._response_cache.set(cache_key, result)
-            except OSError:
-                logger.warning("磁盘响应缓存写入失败，本次结果不回填磁盘", exc_info=True)
+        self._cache_store(prompt, result)
         return result
     
+    async def _acall_api(self, prompt: str) -> str:
+        """原生异步调用一次（不含重试）。
+
+        默认实现把同步 `_call_api` 丢进线程池：语义完全等价，但**省不下线程**
+        —— 等待期间线程仍被占着。真正要省，由后端覆写本方法（如
+        `OpenAIBackend` 走 httpx 的异步客户端）。
+
+        这样设计的理由：`agenerate` 对**所有**后端立刻可用（不会因为某个后端
+        没实现就抛 NotImplementedError），而原生异步是一个后端一个后端地接，
+        不需要一次性改完五个。
+        """
+        return await asyncio.to_thread(self._call_api, prompt)
+
+    async def agenerate(self, prompt: str,
+                        max_retries: Optional[int] = None,
+                        retry_delay: Optional[float] = None) -> str:
+        """`generate` 的异步版：语义、缓存、统计口径与它**逐位一致**。
+
+        # 与 generate 的唯一差别是"等待时是否占线程"
+
+        重试策略走 `async_with_retries`（与 `with_retries` 共享参数校验、
+        `compute_delay`、`classify_error` 与两副封顶），退避期间 `await
+        asyncio.sleep`，不占线程。这才是 AU-P1 要的东西 —— 只把同步调用丢线程池
+        的话，一次 30 秒退避仍然占着一个 worker。
+
+        # 统计口径刻意保持一致
+
+        `request_count` / `error_count` / `retry_count` / `retry_wait_seconds` /
+        `total_generate_seconds` 五个计数器与同步版同义：命中缓存也计一次
+        request，`_acall_api` 抛错也计一次 error，退避等待计入 retry_wait。
+        两版计数口径一旦不同，"同步跑得慢还是异步跑得慢"就无法对比了。
+
+        Args:
+            prompt: 输入提示
+            max_retries: **总尝试次数**（含首次），None 时用后端默认档位
+            retry_delay: 首次重试的基础等待（秒）
+
+        Returns:
+            模型生成的文本
+
+        Raises:
+            ModelGenerateError: 重试耗尽仍失败，或遇到不可重试错误
+            DataValidationError: 参数非法（在发出任何请求之前）
+        """
+        require_count("max_retries", max_retries, minimum=0)
+        require_seconds("retry_delay", retry_delay, minimum=0.0)
+        attempts = max(1, max_retries if max_retries is not None else self._default_attempts)
+        delay = retry_delay if retry_delay is not None else self._default_retry_delay
+
+        cached = self._cache_lookup(prompt)
+        if cached is not None:
+            return cached
+
+        async def _attempt() -> str:
+            with self._lock:
+                self._request_count += 1
+            started = time.monotonic()
+            try:
+                return await self._acall_api(prompt)
+            except Exception:
+                with self._lock:
+                    self._error_count += 1
+                raise
+            finally:
+                elapsed = time.monotonic() - started
+                with self._lock:
+                    self._total_generate_seconds += elapsed
+                logger.debug("异步模型调用完成：prompt %d 字符，耗时 %.3fs",
+                             len(prompt), elapsed)
+
+        def _record_retry(_attempt_no: int, _exc: BaseException, wait: float) -> None:
+            with self._lock:
+                self._retry_count += 1
+                self._retry_wait_seconds += wait
+
+        try:
+            result, _stats = await async_with_retries(
+                _attempt,
+                max_retries=attempts - 1,
+                base_delay=delay,
+                max_delay=self._MAX_RETRY_DELAY,
+                max_retry_wait=self._default_max_retry_wait,
+                jitter=self._default_retry_jitter,
+                classify=classify_error,
+                on_retry=_record_retry,
+            )
+        except Exception as e:
+            raise ModelGenerateError(
+                f"API 调用失败，共尝试 {attempts} 次: {e}"
+            ) from e
+
+        self._cache_store(prompt, result)
+        return result
+
     @property
     def request_count(self) -> int:
         """请求次数"""
