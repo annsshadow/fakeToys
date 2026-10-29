@@ -399,7 +399,11 @@ fetch_limited 的重定向/大响应体路径需公网服务端，留结构性�
 | augmentor/web | `tsc --noEmit` 干净；契约测试 93 passed |
 
 **仍未做（与上轮一致，需单独战役）**：OA-P0-1 路由补齐 ~73 条（L）、AU-P1 异步 LLM 后端（L）、
-LY-5 配置热加载（结构改动）、LY-7 小程序虚拟化（需视觉验收）、`shared` 覆盖率 92.05 → 93（llvm-cov 小时级）。
+LY-5 配置热加载（结构改动）、LY-7 小程序虚拟化（需视觉验收）。
+
+> **勘误（2026-10-29 晚）**：上一句原先把 `shared` 覆盖率 92.05 → 93 也列在这里，**是过时的** ——
+> 同日第六轮已收到 **93.28%**（floor 93 达成，302 tests 全绿），
+> 权威读数见 `docs/plans/2026-10-27-comprehensive-test-coverage.md`。此处不再重复记账。
 
 ### 7.14 配置热加载落地（LY-5）+ LY-7 证据性关闭 + 依赖告警清账（2026-10-29 第十三轮）
 
@@ -468,3 +472,49 @@ LY-5 配置热加载（结构改动）、LY-7 小程序虚拟化（需视觉验�
 > 注意：`oa4rust/pnpm-workspace.yaml` 里把 `@intlify/core-base@9.1.9` 覆盖到 **9.14.5** ——
 > 那个覆盖本身是对的（9.1.9 更旧），但 9.x 全线无补丁，所以覆盖只能把"已知更差的版本"
 > 抬到"同族最新"，告警由 dismiss 收口而不是继续抬版本。
+
+### 7.15 OA-P0-1 路由补齐：为什么本轮**不动手**，以及可执行的分解（2026-10-29）
+
+**结论先行**：这一项**不能靠"照着路径名把 handler 写出来"推进**。仓库内只有
+`scripts/all_java_handlers.json`（`fn / method / path` 三元组），**没有 Java 源码**，
+也没有该模块的契约夹具（`tests/fixtures/` 下只有 `pilot_access.fixture`）。
+响应形状、分页字段名、错误码、软删语义全部只能靠猜 —— 猜出来的实现会编译通过、
+测试通过（自己写的测试），而**对外是错的**。这正是本仓库审计口径里最贵的一种债：
+它让"3/76"变成"看起来 76/76"。
+
+#### 实测分解（`all_java_handlers.json`，共 76 条）
+
+| 分组 | 条数 | 可承载的表 | 依赖 |
+|---|---|---|---|
+| `empower` | 21 | `x_org_empower`（072） | 委托授权语义（enable/disable、manager 变体、list next/prev 游标） |
+| `person` | 9 | `auth_person`（mobile/email/icon/theme/lang） | `icon` 上传需 blob 存储语义 |
+| `custom` | 8 | `x_org_custom`（029） | 表结构完整（id/identity_id/field_name/field_value/deleted_at） |
+| `empowerlog` | 7 | `x_org_empower_log`（072） | 同上 + 分页契约 |
+| `regist` | 7 | — | **短信验证码基建**（`regist/code/mobile/{mobile}`） |
+| `exmail` | 6 | — | **邮件服务 + SSO** |
+| `reset` | 6 | — | 凭据校验 + 验证码 |
+| `definition` | 5 | `x_org_definition`（029） | 表结构完整（id/name/category/type_/deleted_at） |
+| `signature` | 4 | **缺失** | 需先补 `x_org_signature` 迁移 |
+| `password` | 2 | `auth_person` | 口令哈希与强度策略 |
+| `icon` | 1 | — | 见 person |
+
+其中 **15 条是 `mock*` 兼容别名**（`mockputtopost` / `mockdeletetoget`），
+它们是"同一 handler 的另一种 HTTP 动词"，等对应的真路由落地后是纯机械补挂。
+
+#### 建议的推进顺序（每一批都可独立验收）
+
+1. **样板批（13 条）**：`custom` 8 + `definition` 5 —— 两张表结构已完整，语义最窄（按 name 取/改/软删）。
+   先做这一批是为了**定形状**：响应包（`ActionResult` 包裹层）、`{name}` 到底指 `field_name` 还是
+   记录 `id`、软删后 `get` 回 404 还是空对象。这三件事定了，后面 60 条才有统一模板。
+2. **委托批（28 条）**：`empower` 21 + `empowerlog` 7 —— 表已建，但要先定"委托"的授权模型
+   （谁能给谁委托、manager 与普通委托的关系），属产品决策。
+3. **基建批（21 条）**：`regist` / `reset` / `exmail` / `password` —— 需要短信/邮件服务商与
+   验证码存储，属于部署侧前置条件。
+4. **签名批（4 条）**：先补 `x_org_signature` 迁移，再做。
+
+#### 启动条件（缺一不可）
+
+- 要么拿到 Java 侧响应样例（哪怕每个端点一条真实响应 JSON），要么产品明确拍定响应形状；
+- `custom` / `definition` 两组的 `{name}` 语义确认。
+
+在此之前，本项保持 **3/76**，并在本文件记账 —— 不做"猜一个形状然后宣称完成"。
