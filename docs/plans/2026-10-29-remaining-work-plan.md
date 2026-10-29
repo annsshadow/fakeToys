@@ -90,6 +90,10 @@ LY-7（小程序虚拟化，实测列表全部有界）、AU-P1（异步后端�
 |---|---|---|---|---|
 | **B1** | 尺子缺陷 28：ORM-blindness | `writeEvidence` 只扫 deadpool SQL 字面量，不识别 sea_orm `ActiveModel::insert/update/delete` ⇒ ORM 型写被读成"只读挂写" | 修一处判据 | 需先用 `general_core_entity` 的 12 把 CRUD 做正反样本 |
 | **B2** | 遗留 29：invoke token 零验签 | `/invoke/{flag}/client/{client}/token/{token}/execute` 的 token 只判非空；`x_program_invoke` 表**无 token 存储列** | 1 条路由 + 1 次迁移 | 需拍"token 从哪来"（产品/对接方） |
+
+> **B2 前置设计已产出（2026-10-30）**：见 `docs/plans/2026-10-30-b2-invoke-token-design.md`。
+> 推荐**方案 A**（静态 token、admin 配置、HMAC-SHA256+盐 hash 存储、PUT 覆盖即轮换），
+> 含迁移 SQL 草案、管理端/校验端改动方案、安全要点与 5 项待拍板问题。拍板后按该文档落地。
 | **B3** | 遗留 30：`*_core_entity` 接线 | **已实测最小样本**：`file_core_entity::file_core_entity_router(_pool: Pool)` 参数被忽略、全程不挂 `Extension<DatabaseConnection>`，而该 crate 有 7 处 handler 要它 ⇒ 这些路由的 HTTP 面必 500 | 账本记 16 个 crate，**现量 19 个**，需逐 crate 复核（见 §四 反例） | 每 crate 一批，与门禁回归同批 |
 
 > **B3 已复核完成（2026-10-30）**：逐一检查全部 19 个 `*_core_entity` crate 的 router
@@ -99,6 +103,11 @@ LY-7（小程序虚拟化，实测列表全部有界）、AU-P1（异步后端�
 > `program_center_core_entity` 的 sea_orm 仅用于 `#[cfg(test)]` mock router，真实路由走
 > deadpool Pool + `None` 连接选项（已删空转池创建，见该文件注释）。无漏接。
 | **B4** | 遗留 31：bbs `create_reply` 功能桩 | handler 不落库却返回假 success，前端会误信回复已建 | 1 次迁移 + 1 个 handler | 需 `x_bbs_reply` 表设计 |
+
+> **B4 已确认完成（2026-10-30）**：`crates/bbs_assemble_control/src/lib.rs:513 create_reply`
+> 已真实 `INSERT INTO x_bbs_reply`（subject_id/author_id 归一 + 会话门 `require_session`），
+> 非功能桩；`x_bbs_reply` 表迁移齐全（migrations 021 建表、033 补 creator/topic_id、
+> 037 加 deleted_at、067 加 accepted）。原「需表设计」依赖已不存在，无需再排期。
 | **B5** | 6 个游离 `tests.rs` | 文件在、`lib.rs` 无 `mod` 声明 ⇒ 里面的断言**一条都不参与编译**：`console` / `ldap` / `openapi` / `orm` / `processplatform_assemble_surface` / `processplatform_core_express` | 6 个 crate | 注册时需两处返工：`use super::*` 改 `use crate::*`；DB 臂补 `is_db_available()` skip |
 | **B6** | 17 条惰性豁免条目 | 豁免表里有、注册表不 Public ⇒ 豁免本身失效（引信不是噪音） | 7 写 + 10 读 | 逐条定性：要么删豁免，要么补 Public 并解释 |
 | **B7** | 三把建议守卫 | ①GET 写禁令（`csrf_middleware` 只覆盖 POST/PUT/PATCH/DELETE，`requires_admin` 同）②Public 兜底点名（`ADMIN_WRITE_PREFIXES` ∩ 注册表 Public 的 15 条交集逐条点名）③测试在册 ≠ 测试在跑（B5 的机械守卫） | 3 个测试 | ①需同批改前端（`MeetingApp.vue` 自检面板仍在用 GET） |
@@ -114,7 +123,7 @@ LY-7（小程序虚拟化，实测列表全部有界）、AU-P1（异步后端�
 
 | 编号 | 项 | 现状 | 缺口性质 |
 |---|---|---|---|
-| **C1** | `shared` 覆盖率 93.28% → 94% | floor 93 已达成 | 需 ~50 行，全部依赖**进程隔离**（`security` 的 OnceLock 环境臂与 parity 测试互斥）或**公网夹具**（`netguard fetch_limited` 被自身 SSRF 守卫挡回环）。属条件项，不作为默认目标 |
+| **C1** | `shared` 覆盖率 93.28% → 94% | floor 93 已达成 | 需 ~50 行，全部依赖**进程隔离**（`security` 的 OnceLock 环境臂与 parity 测试互斥）或**公网夹具**（`netguard fetch_limited` 被自身 SSRF 守卫挡回环）。属条件项，不作为默认目标。2026-10-30 复核：本机 `cargo llvm-cov` 在 GNU 工具链下编译 shared 失败（E0463，环境性），覆盖率以计划记录为基线，待工具链可用或换环境复测 |
 
 ### D 类 · 环境与工具
 
