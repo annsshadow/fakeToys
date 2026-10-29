@@ -1,9 +1,9 @@
 // Copyright (C) 2026 annsshadow
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-//! 写门禁机械守卫（B7① + B7②）。
+//! 写门禁机械守卫（B7① + B7② + A2③）。
 //!
-//! 这两把守卫把「写路由必须带有效门禁」从人工取证变成机器可测，与
+//! 这三把守卫把「写路由必须带有效门禁」从人工取证变成机器可测，与
 //! `tests/test_module_registration_guard.rs`（B7③）同一风格：纯 std 扫描，
 //! 不依赖外部命令，`cargo test` 直接可跑。
 //!
@@ -21,6 +21,15 @@
 //! Public 前缀的交集里，写路由没有中间件 admin 兜底——handler 层是唯一
 //! 门禁。落在此集合内的写 handler 必须带体内归属/角色/会话门；新增不带
 //! 门的写 handler 直接红。注册等设计上必须匿名的路由在豁免表里点名。
+//!
+//! # A2③ · 写方法路由无门禁必须无真写
+//!
+//! 审计 A2 批把 R6「已认证+读会话无门禁」的 135 条含写 SQL 收口到 0，
+//! 残余 14 条全部是只读挂写方法（list/filter/search 挂 POST/PUT，无写面）。
+//! 本守卫把这条收口钉成机器判据：凡 POST/PUT/PATCH/DELETE 路由，handler
+//! 含写 SQL 且体内无门信号（无会话/归属/角色门），就必须落在
+//! `INTENTIONAL_ANONYMOUS_WRITES` 点名名单（认证前置族：登录/登出/验证码/
+//! 注册/口令重置/系统初始化/企微回调）里；否则红。
 
 use std::path::{Path, PathBuf};
 
@@ -49,6 +58,40 @@ const INTENTIONAL_UNGATED_INTERSECTION_WRITES: &[&str] = &[
     "/api/organization/assemble/personal/reset",
     "/api/organization/assemble/personal/reset/mockputtopost",
     "/api/organization/assemble/personal/reset/password/anonymous",
+];
+
+/// 写方法（POST/PUT/PATCH/DELETE）路由中，设计上必须匿名且不带体内门的写
+/// handler 点名名单（A2③）。全部属于认证前置族，已在 AUTH_EXEMPT_PATHS +
+/// 注册表 Public 双锁登记，并有认证限流兜底（`AUTH_RATE_LIMIT_*`）：
+/// - 登录 / 登出 / 验证码（含 organization_assemble_authentication 别名）
+/// - 注册（含契约别名）
+/// - 口令重置（含契约别名）
+/// - 系统初始化（`/api/secret/*`，仅系统未初始化时可写）
+/// - 企微扫码登录回调（一次性 code 由企微 OAuth 侧验证）
+const INTENTIONAL_ANONYMOUS_WRITES: &[&str] = &[
+    "/api/authentication",
+    "/api/authentication/login",
+    "/api/authentication/logout",
+    "/api/authentication/code",
+    "/api/authentication/code/credential/{credential}",
+    "/api/authentication/captcha",
+    "/api/authentication/captcha/width/{width}/height/{height}",
+    "/api/secret/captcha/verify",
+    "/api/organization/assemble/authentication/authentication",
+    "/api/organization/assemble/authentication/authentication/code",
+    "/api/program_center/authentication",
+    "/api/person/regist",
+    "/api/person/regist/code",
+    "/api/organization/assemble/personal/regist",
+    "/api/reset",
+    "/api/reset/password/anonymous",
+    "/api/reset/code",
+    "/api/reset/set",
+    "/api/organization/assemble/personal/reset",
+    "/api/organization/assemble/personal/reset/password/anonymous",
+    "/api/secret/set",
+    "/api/secret/check",
+    "/api/qiyeweixin/update/person/detail/{code}",
 ];
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -901,21 +944,38 @@ fn has_gate_depth(crate_name: &str, body: &str, depth: usize) -> bool {
     if depth > 3 {
         return false;
     }
+    // 前缀词表：标识符**以该词开头**即门。必须遍历全部出现位置——
+    // 第一个命中可能是「以该词结尾的函数名」（如 `meeting_require_owner` 里的
+    // `require_owner`，前面是 `_` 边界失败），真实调用点在后头。
     let bytes = body.as_bytes();
     let direct_hit = GATE_PREFIX_IDENTIFIERS.iter().any(|g| {
         let kw = g.as_bytes();
-        find_subslice(bytes, kw).is_some_and(|pos| pos == 0 || !is_word_char(bytes[pos - 1]))
+        let mut search = 0;
+        while let Some(rel) = find_subslice(&bytes[search..], kw) {
+            let pos = search + rel;
+            if pos == 0 || !is_word_char(bytes[pos - 1]) {
+                return true;
+            }
+            search = pos + kw.len();
+        }
+        false
     });
     if direct_hit {
         return true;
     }
     let exact_hit = GATE_EXACT_IDENTIFIERS.iter().any(|g| {
         let kw = g.as_bytes();
-        find_subslice(bytes, kw).is_some_and(|pos| {
+        let mut search = 0;
+        while let Some(rel) = find_subslice(&bytes[search..], kw) {
+            let pos = search + rel;
             let before_ok = pos == 0 || !is_word_char(bytes[pos - 1]);
             let after_ok = pos + kw.len() == bytes.len() || !is_word_char(bytes[pos + kw.len()]);
-            before_ok && after_ok
-        })
+            if before_ok && after_ok {
+                return true;
+            }
+            search = pos + kw.len();
+        }
+        false
     });
     if exact_hit {
         return true;
@@ -1209,6 +1269,80 @@ fn admin_write_public_intersection_writes_have_in_body_gates() {
          修复：给 handler 加 require_owner / require_admin / require_session 等体内门；\n\
          若该路由设计上就不设门（如注册），登记进 INTENTIONAL_UNGATED_INTERSECTION_WRITES 并写明理由。\n\
          本次共检查 {checked} 条交集写路由。",
+        violations.join("\n")
+    );
+}
+
+/// A2③：写方法路由的 handler 含写 SQL 且无任何门信号 → 必须落在
+/// `INTENTIONAL_ANONYMOUS_WRITES` 点名名单（认证前置族）里。
+///
+/// 这是 A2 批「R6 含写 SQL 135→0」的机器守卫：审计收口后 R6/R7 残余全部是
+/// 只读挂写方法（list/filter/search 挂 POST/PUT），如果新增一条「写方法 +
+/// 写 SQL + 无门」的路由且不在认证前置族名单里，中间件层又没有门禁兜底，
+/// 就当场红。
+#[test]
+fn write_method_routes_without_gate_must_be_allowlisted_anonymous() {
+    let constants_src = std::fs::read_to_string(
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("crates/shared/src/middleware/constants.rs"),
+    )
+    .expect("读取 constants.rs 失败");
+    let rbac_src = std::fs::read_to_string(
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("crates/shared/src/middleware/rbac.rs"),
+    )
+    .expect("读取 rbac.rs 失败");
+    let admin_prefixes = read_const_str_list(&constants_src, "ADMIN_WRITE_PREFIXES");
+    let (exact, prefixes) = read_registry(&rbac_src);
+
+    let routes = extract_routes();
+    let mut checked = 0usize;
+    let mut violations = Vec::new();
+    for r in &routes {
+        if !matches!(r.method.as_str(), "POST" | "PUT" | "PATCH" | "DELETE") {
+            continue;
+        }
+        let Some(body) = find_handler_body(&r.crate_name, &r.handler) else {
+            continue;
+        };
+        // 死档路由：路径参数段数不足，写 SQL 永不执行
+        if is_dead_route(&r.path, &body) {
+            continue;
+        }
+        if !has_write_sql(&body) {
+            continue;
+        }
+        if has_gate(&r.crate_name, &body) {
+            continue;
+        }
+        // 中间件 admin 兜底：命中 ADMIN_WRITE_PREFIXES（POST/PUT/DELETE）且注册表
+        // 非 Public 的路由由 requires_admin 在中间件层兜住，无需体内门
+        let admin_hit = admin_prefixes.iter().any(|pre| seg_prefix(&r.path, pre));
+        let is_public = registry_level(&r.path, &exact, &prefixes).as_deref() == Some("Public");
+        if admin_hit && !is_public {
+            continue;
+        }
+        checked += 1;
+        if INTENTIONAL_ANONYMOUS_WRITES.contains(&r.path.as_str()) {
+            continue;
+        }
+        violations.push(format!(
+            "{} {} {} -> {}",
+            r.crate_name, r.method, r.path, r.handler
+        ));
+    }
+    violations.sort();
+    violations.dedup();
+    assert!(
+        checked > 0,
+        "没有扫到任何「写方法 + 写 SQL + 无门」的路由——扫描可能失效，请检查测试前提"
+    );
+    assert!(
+        violations.is_empty(),
+        "以下写方法路由的 handler 含写 SQL 且无任何会话/归属/角色门，也不在认证前置族名单里：\n{}\n\
+         \n\
+         A2 收口后 R6/R7 残余全部是只读挂写方法（含写 SQL = 0）；出现新的无门禁真写面必须\n\
+         要么补门（require_session/require_owner/require_admin），要么把路由登记进\n\
+         INTENTIONAL_ANONYMOUS_WRITES 并写明为什么可以匿名写。\n\
+         本次共检查 {checked} 条无门禁写方法路由。",
         violations.join("\n")
     );
 }

@@ -31,14 +31,20 @@ LY-7（小程序虚拟化，实测列表全部有界）、AU-P1（异步后端�
 **先读口径**：这些数字是「尺子的读数」，不是漏洞清单 —— 每一档的判据不同，
 引用前必须看该行落在哪一档。
 
-| 编号 | 读数（2026-10-29 复跑） | 判据 | 规模 |
+| 编号 | 读数（2026-10-30 复跑） | 判据 | 规模 |
 |---|---|---|---|
-| **A1** | R4 匿名可达 + 体内无门禁 **14 条** | 路由匿名可达 ∧ handler 体内无任何会话/admin 门 | 含写 SQL 5 / 只读挂写 7 / 体内不可解析 2 |
-| **A2** | R6 已认证 + 读会话无门禁 **149 条** | 有会话但只读不校验 | 含写 SQL **134** / 只读挂写 15 |
-| **A3** | R7 已认证 + 体内无会话无门禁 **629 条** | 全部为「只读挂写方法」 | 含写 0，即**真写面为 0**，属"方法名带写、体内不写"的收口残留 |
-| **A4** | GET 写（csrf / requires_admin 双盲区）**10 条** | GET 路由 ∧ 体内写 SQL ∧ 体内无门禁 | K1 匿名 1 / K2 读会话 3 / K3 无会话 6 |
-| **A5** | 豁免通配段碰撞 **6 条** | 「本意给只读详情的 `{param}` 豁免」把写路由一并匿名放行 | 3 条含写 SQL 但体内有门禁、3 条只读 |
-| **A6** | 真匿名可达面 **192 条** | auth 豁免 ∧ 注册表 Public | A1 10 / A2 29 / A3 153 |
+| **A1** | R4 匿名可达 + 体内无门禁 **13 条** | 路由匿名可达 ∧ handler 体内无任何会话/admin 门 | 含写 SQL 5 / 只读挂写 5 / 体内不可解析 3 |
+| **A2** | R6 已认证 + 读会话无门禁 **14 条** | 有会话但只读不校验 | 含写 SQL **0**（已收口，原 134） / 只读挂写 14 |
+| **A3** | R7 已认证 + 体内无会话无门禁 **631 条** | 全部为「只读挂写方法」 | 含写 0，即**真写面为 0**，属"方法名带写、体内不写"的收口残留 |
+| **A4** | GET 写（csrf / requires_admin 双盲区）**2 条** | GET 路由 ∧ 体内写 SQL ∧ 体内无门禁 | 均为有意保留：企微回调 + 初始化 set_cancel（K1 匿名） |
+| **A5** | 豁免通配段碰撞 **0 条** | 「本意给只读详情的 `{param}` 豁免」把写路由一并匿名放行 | 已清零（AUTH_EXEMPT_BLOCKED_PATHS 点名排除） |
+| **A6** | 真匿名可达面 **192 条** | auth 豁免 ∧ 注册表 Public | A1 13 / A2 29 / A3 153 |
+
+> **A 类收口状态（2026-10-30）**：A1/A2/A4/A5 均已按「先逐条定性，保留设计上必须
+> 匿名的认证前置族（登录/注册/口令重置/系统初始化/企微回调），其余补门或改方法」
+> 完成收口。A2 的 R6 残余 14 条已逐条定性：全部是只读挂写方法（list/filter/search
+> 挂 POST/PUT，纯 SELECT），含写 SQL 0，无需补门；机器守卫见
+> `tests/write_gating_guards.rs` 的 A2③。
 
 **A 类怎么排**（按"危害 × 收敛速度"）：
 
@@ -65,6 +71,13 @@ LY-7（小程序虚拟化，实测列表全部有界）、AU-P1（异步后端�
 | **B1** | 尺子缺陷 28：ORM-blindness | `writeEvidence` 只扫 deadpool SQL 字面量，不识别 sea_orm `ActiveModel::insert/update/delete` ⇒ ORM 型写被读成"只读挂写" | 修一处判据 | 需先用 `general_core_entity` 的 12 把 CRUD 做正反样本 |
 | **B2** | 遗留 29：invoke token 零验签 | `/invoke/{flag}/client/{client}/token/{token}/execute` 的 token 只判非空；`x_program_invoke` 表**无 token 存储列** | 1 条路由 + 1 次迁移 | 需拍"token 从哪来"（产品/对接方） |
 | **B3** | 遗留 30：`*_core_entity` 接线 | **已实测最小样本**：`file_core_entity::file_core_entity_router(_pool: Pool)` 参数被忽略、全程不挂 `Extension<DatabaseConnection>`，而该 crate 有 7 处 handler 要它 ⇒ 这些路由的 HTTP 面必 500 | 账本记 16 个 crate，**现量 19 个**，需逐 crate 复核（见 §四 反例） | 每 crate 一批，与门禁回归同批 |
+
+> **B3 已复核完成（2026-10-30）**：逐一检查全部 19 个 `*_core_entity` crate 的 router
+> 签名与 `Extension` 注入——16 个需要 sea_orm 的 crate 全部为
+> `router(db: DatabaseConnection)` 且 `.layer(Extension(db))`；`component_core_entity`
+> 与 `query_core_entity` 的 handler 零 DatabaseConnection 引用（纯 deadpool Pool，注入正常）；
+> `program_center_core_entity` 的 sea_orm 仅用于 `#[cfg(test)]` mock router，真实路由走
+> deadpool Pool + `None` 连接选项（已删空转池创建，见该文件注释）。无漏接。
 | **B4** | 遗留 31：bbs `create_reply` 功能桩 | handler 不落库却返回假 success，前端会误信回复已建 | 1 次迁移 + 1 个 handler | 需 `x_bbs_reply` 表设计 |
 | **B5** | 6 个游离 `tests.rs` | 文件在、`lib.rs` 无 `mod` 声明 ⇒ 里面的断言**一条都不参与编译**：`console` / `ldap` / `openapi` / `orm` / `processplatform_assemble_surface` / `processplatform_core_express` | 6 个 crate | 注册时需两处返工：`use super::*` 改 `use crate::*`；DB 臂补 `is_db_available()` skip |
 | **B6** | 17 条惰性豁免条目 | 豁免表里有、注册表不 Public ⇒ 豁免本身失效（引信不是噪音） | 7 写 + 10 读 | 逐条定性：要么删豁免，要么补 Public 并解释 |
