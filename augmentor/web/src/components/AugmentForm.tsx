@@ -15,6 +15,7 @@ interface AugmentFormValues {
   useQuality: boolean
   useDedup: boolean
   useCheckpoint: boolean
+  useAsync: boolean
 }
 
 const ENABLE_OPTIONS = [
@@ -57,7 +58,8 @@ export default function AugmentForm({ onSubmitted }: AugmentFormProps) {
         values.outputFile,
         values.useQuality,
         values.useDedup,
-        values.useCheckpoint
+        values.useCheckpoint,
+        values.useAsync
       )
       message.success('增强任务已提交，可在进度面板查看状态')
       onSubmitted?.()
@@ -76,7 +78,8 @@ export default function AugmentForm({ onSubmitted }: AugmentFormProps) {
         initialValues={{
           useQuality: true,
           useDedup: true,
-          useCheckpoint: true
+          useCheckpoint: true,
+          useAsync: false
         }}
         onFinish={handleSubmit}
       >
@@ -107,6 +110,9 @@ export default function AugmentForm({ onSubmitted }: AugmentFormProps) {
             <Select style={{ width: 110 }} options={ENABLE_OPTIONS} />
           </Form.Item>
           <Form.Item name="useCheckpoint" label="断点续传" style={{ marginBottom: 0 }}>
+            <Select style={{ width: 110 }} options={ENABLE_OPTIONS} />
+          </Form.Item>
+          <Form.Item name="useAsync" label="异步引擎" style={{ marginBottom: 0 }}>
             <Select style={{ width: 110 }} options={ENABLE_OPTIONS} />
           </Form.Item>
         </Space>

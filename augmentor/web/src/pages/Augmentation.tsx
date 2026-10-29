@@ -11,6 +11,9 @@ export default function Augmentation() {
   const [useQuality, setUseQuality] = useState(true)
   const [useDedup, setUseDedup] = useState(true)
   const [useCheckpoint, setUseCheckpoint] = useState(true)
+  // 异步引擎默认关：只有后端覆写了原生异步（目前是 OpenAI）才真的省线程，
+  // 其余后端会由服务端自动回退线程池并打 warning。
+  const [useAsync, setUseAsync] = useState(false)
   const [running, setRunning] = useState(false)
   const [progress, setProgress] = useState<AugmentProgressDetail | null>(null)
   const [checkpoints, setCheckpoints] = useState<string[]>([])
@@ -85,7 +88,7 @@ export default function Augmentation() {
 
     setRunning(true)
     try {
-      await startAugmentation(inputFile, outputFile, useQuality, useDedup, useCheckpoint)
+      await startAugmentation(inputFile, outputFile, useQuality, useDedup, useCheckpoint, useAsync)
       message.success('增强任务已启动')
       // 上一轮到终态时把表关了；这里重新打开，否则第二次点「开始增强」页面不会再刷进度。
       setPolling(true)
@@ -133,6 +136,10 @@ export default function Augmentation() {
             <div>
               <label>断点续传：</label>
               <Switch checked={useCheckpoint} onChange={setUseCheckpoint} />
+            </div>
+            <div>
+              <label>异步引擎：</label>
+              <Switch checked={useAsync} onChange={setUseAsync} />
             </div>
           </div>
           <Button

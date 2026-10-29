@@ -485,19 +485,24 @@ export const startAugmentation = async (
   outputFile: string,
   useQuality: boolean,
   useDedup: boolean,
-  useCheckpoint: boolean
+  useCheckpoint: boolean,
+  useAsync: boolean = false
 ): Promise<StartAugmentResponse> => {
+  const payload: Record<string, unknown> = {
+    input_file: inputFile,
+    output_file: outputFile,
+    use_quality: useQuality,
+    use_dedup: useDedup,
+    use_checkpoint: useCheckpoint,
+  }
+  // 只在**开启**时才带这个键：默认档的请求体因此与改动前逐字节一致。
+  // 凭空多一个 `use_async: false` 会让按整份 body 断言的既有用例变红，
+  // 而那是噪声，不是回归。
+  if (useAsync) payload.use_async = true
   return checkedResponse<StartAugmentResponse>(
     'startAugmentation',
     startAugmentResponseSchema,
-    () =>
-      api.post('/augment/start', {
-        input_file: inputFile,
-        output_file: outputFile,
-        use_quality: useQuality,
-        use_dedup: useDedup,
-        use_checkpoint: useCheckpoint,
-      })
+    () => api.post('/augment/start', payload)
   )
 }
 
