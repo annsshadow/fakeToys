@@ -220,29 +220,27 @@ jobs:
           DATABASE_DIALECT: postgres
           DATABASE_URL: postgres://o2server:password@localhost:5432/oa4rust
 
-  # ── plan002 U9: Java-Rust 行为对比接入 CI ──────────────────────────────────
-  # 该 job 依赖外部 Java 容器（o2server），冷启动约 10 分钟，且对比结果可能因
-  # 外部 Java 服务状态波动。因此设为 allow-failure（continue-on-error），
-  # 失败不影响主构建（unit-tests / integration-tests）。
-  behavior-compare:
+  # ── 启动冒烟：迁移 → 起服务 → /health ────────────────────────────────────
+  # 2026-10-29：oa4rust 是**独立系统**，Java 契约奇偶不再是目标。
+  # 原 behavior-compare / behavior-gate 两个 job 随之删除，理由（都是可核验的）：
+  #   1. 比较器本体 `tests/behavior_compare.rs` **从未入仓**，「Run behavior
+  #      comparison」一步恒发 notice 跳过；behavior-gate 只能靠「没有报告就
+  #      exit 0」收场 —— 它从来没有真正拦过任何东西。
+  #   2. behavior-compare 仍要拉一个 o2server(Java) 容器做双栈播种，冷启动约
+  #      10 分钟，且结果随外部服务状态波动。
+  # 其中唯一有真实覆盖价值的是「迁移 + 起服务 + /health」：迁移坏没坏、进程
+  # 起不起得来，这两个问题与 Java 无关。保留成独立 job，成本不到 1 分钟。
+  startup-smoke:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
-    # 2026-10-24 定位说明：本 job 的**当前价值**是三件事——① 双栈播种基线
-    # （Rust seeds + seed_java.py --process-form 对真 o2server）；② Rust 服务
-    # 启动冒烟（含表迁移 + /health）；③ u2_probe 之外没有别的 route-conflict
-    # 常驻面。比较器本体（tests/behavior_compare.rs）**尚不存在**（W12 待办），
-    # 「Run behavior comparison」一步恒发 notice 跳过；report_check / cluster
-    # 两步因此也恒空转。故保留本 job 跑 push（播种与启动冒烟是真覆盖），
-    # 但不为不存在的比较器再加码；比较器落地时本 job 自动升级为真比较。
-    # u2_probe 已移至 integration-tests job 常驻（2026-10-24 去重）——
-    # 本 job 曾重复跑同一探针，白等一次全量 test 构建。
-    outputs:
-      java_not_ready: ${{ steps.readiness.outputs.java_not_ready }}
-      report_produced: ${{ steps.report_check.outputs.report_produced }}
     defaults:
       run:
         working-directory: oa4rust/backend
-    continue-on-error: true
+    env:
+      SCCACHE_GHA_ENABLED: "true"
+      RUSTC_WRAPPER: sccache
+      DATABASE_URL: postgres://o2server:password@localhost:5432/oa4rust
+      DATABASE_DIALECT: postgres
     services:
       postgres:
         image: postgres@sha256:f1c3376c26f2609ab9f29f71f824103fe2fcd8ee0346485cb6122a4f93df6f94
@@ -257,28 +255,13 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-    env:
-      DATABASE_URL: postgres://o2server:password@localhost:5432/oa4rust
-      DATABASE_DIALECT: postgres
-      RUST_LOG: warn
-      # sccache 编译缓存（同 quality job）：本 job 含 `cargo build --bin oa4rust`
-      # 全量编译，是四个 rust job 中收益最大的一个。
-      SCCACHE_GHA_ENABLED: "true"
-      RUSTC_WRAPPER: sccache
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-
       - name: Install Rust
         uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87
         with:
-          # 钉 1.98.1：rustc 1.99.0（stable 2026-09-28）编译 openapi crate 触发
-          # SIGSEGV（stack overflow ICE），CI 全部 rust job 失败；
-          # 2026-09-30 main 门禁在 1.98.1 上全绿。
+          # 与 integration-tests 同钉 1.98.1（1.99.0 编译 openapi crate 会 ICE）。
           toolchain: 1.98.1
-
-      # sccache-action 安装 sccache 二进制；配合 job 级 env 的
-      # RUSTC_WRAPPER=sccache + SCCACHE_GHA_ENABLED 走 GHA cache 后端。
-      # 必须位于首个 cargo 调用（Cache cargo registry 之后的各 run）之前。
       - name: Setup sccache
         uses: mozilla-actions/sccache-action@7d986dd989559c6ecdb630a3fd2557667be217ad # v0.0.9
       - name: Cache cargo registry
@@ -286,262 +269,30 @@ jobs:
         with:
           path: ~/.cargo/registry
           key: ${{ runner.os }}-cargo-registry-${{ hashFiles('oa4rust/backend/Cargo.lock') }}
-
-      # ── 回归基线：若 fail_baseline 已建立（末行为整数），注入容忍上限 ──
-      # 末行为 'bootstrap' 哨兵时保持严格模式（任何 FAIL 即失败，job 因
-      # continue-on-error 不阻断主构建）；建立基线后测试仅在回归（超出基线）时失败。
-      - name: Resolve behavior-compare FAIL baseline
+      - name: Apply migrations
+        run: cargo run --bin oa4rust -- --migrate-only
+      - name: Boot the server and assert /health
+        # 判据：进程活着 **且** /health 返回 2xx。只断言「进程没退出」会漏掉
+        # 「监听起来了但路由没挂」；只断言 curl 成功会漏掉「起来又崩」。
         run: |
-          b="$(tail -n 1 tests/behavior_comparison/fail_baseline || true)"
-          case "$b" in
-            '' | bootstrap)
-              echo "Behavior-compare baseline not established (bootstrap) — running strict mode"
-              ;;
-            *)
-              echo "BEHAVIOR_COMPARE_MAX_FAILS=$b" >> "$GITHUB_ENV"
-              echo "Behavior-compare regression baseline active: max $b fails"
-              ;;
-          esac
-
-      # 提前拉起 o2server，使冷启动（~10min）与后续 cargo 编译并行
-      - name: Start o2server (Java) container
-        run: |
-          docker run -d --name o2server \
-            -p 18080:80 \
-            -e MYSQL_ROOT_PASSWORD=o2oa@2022 \
-            o2oa/o2server@sha256:0735c7806150d6de34fdc83df3cd94c2a5aa9cd0b79b6a8948e12a44b68b5a8f
-
-      - name: Build server binary
-        run: cargo build --bin oa4rust
-
-      # u2_probe（路由无冲突冒烟）已移到 integration-tests job 常驻，此处不再重复。
-
-      # 启动 Rust 服务（启动时自动应用表迁移），等待 /health 就绪。
-      # 用 nohup 使后台进程跨 step 存活（否则 step 结束会被回收）。
-      - name: Start Rust server
-        run: |
-          nohup ./target/debug/oa4rust > rust_server.log 2>&1 &
-          echo $! > rust_server.pid
+          set -euo pipefail
+          cargo build --bin oa4rust
+          ./target/debug/oa4rust &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
           for i in $(seq 1 60); do
-            if curl -fsS http://localhost:3000/health >/dev/null 2>&1; then
-              echo "Rust server ready"; break
-            fi
-            sleep 5
-          done
-
-      # 就绪探针：POST /jaxrs/secret/set 初始化，再 GET /jaxrs/server/execute。
-      # 超时上限 ≥15 分钟（100 次 × 10s），避免 o2server 冷启动导致 CI 误失败。
-      # 就绪与否通过 job output java_not_ready 向 behavior-gate 透传：Java 不可达
-      # 时 gate 不应把缺少 report 当 regression 记红（外部依赖缺失≠回归）。
-      - name: Wait for o2server readiness
-        id: readiness
-        run: |
-          ready=0
-          for i in $(seq 1 100); do
-            code=$(curl -s -o /dev/null -w '%{http_code}' -X POST \
-              http://localhost:18080/jaxrs/secret/set \
-              -H 'Content-Type: application/json' \
-              -d '{"secret":"o2oa@2022"}' || true)
-            if [ "$code" != "000" ] && [ "$code" != "502" ] && [ "$code" != "503" ]; then
-              ex=$(curl -s -o /dev/null -w '%{http_code}' \
-                http://localhost:18080/jaxrs/server/execute || true)
-              if [ "$ex" != "000" ]; then
-                echo "o2server ready after $((i * 10))s (secret/set=$code, server/execute=$ex)"
-                echo "java_not_ready=false" >> "$GITHUB_OUTPUT"
-                ready=1
-                break
-              fi
-            fi
-            sleep 10
-          done
-          if [ "$ready" -ne 1 ]; then
-            echo "java_not_ready=true" >> "$GITHUB_OUTPUT"
-            echo "::warning::o2server not ready within timeout; behavior comparison will SKIP Java side"
-          fi
-
-      # ── S1/S2: Java 侧全量播种（计划 rev8）─────────────────────────────────
-      # 双侧同种子（组织域 + testadmin + §7 流程/表单）使基线与本地双栈
-      # 全播种环境同口径；创建类调用非幂等，重放 500 即"已就位"。
-      - name: Set up Python
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
-        with:
-          python-version: "3.x"
-      - name: Seed Java side (full-seed dual-stack baseline)
-        # 本 job 的 defaults.run.working-directory 为 oa4rust/backend，而播种脚本在
-        # 仓库根 scripts/ 下；写死相对路径会在 CI 报 "can't open file
-        # '.../oa4rust/scripts/seed_java.py'"（main 上即为此状态）。
-        # 因此这里显式回到仓库根再执行。
-        working-directory: ${{ github.workspace }}
-        run: python scripts/seed_java.py --process-form
-
-      # ── U1: 应用 Rust 侧共享种子 ───────────────────────────────────────────
-      # 种子覆盖组织域（unit/person/group/role/identity）与内容域（CMS/BBS/Meeting），
-      # 使字面模板 URL 在 Rust 侧命中已建资源。fail-fast：种子失败即终止 job。
-      - name: Apply behavior-compare seed fixtures
-        run: |
-          psql "postgres://o2server:password@localhost:5432/oa4rust" \
-            -f tests/behavior_comparison/seeds/seed_fixtures.sql
-          echo "Seed fixtures applied successfully"
-
-      # 本 job 存在两处既有矛盾（均为 main 存量，非本 PR 引入）：
-      #   1. 「Wait for o2server readiness」超时只发 ::warning:: 并声明
-      #      "will SKIP Java side"，但 scripts/seed_java.py 旧版会 SystemExit。
-      #      → 已在脚本侧对齐：未显式 --init/--required 时优雅跳过。
-      #   2. 此处 `cargo test --test behavior_compare` 指向的目标
-      #      （oa4rust/tests/behavior_compare.rs）在仓库中并不存在，
-      #      Cargo.toml 也没有对应 [[test]] 定义 → 必然报
-      #      "no test target named `behavior_compare`"。
-      #      → 在目标存在前先探测，缺失则跳过并给出 notice，
-      #        与后续 Cluster/Upload 步骤的 "报告可能不存在" 预期一致。
-      - name: Run behavior comparison (Rust vs Java)
-        run: |
-          if [ -f tests/behavior_compare.rs ]; then
-            cargo test --test behavior_compare -- --nocapture
-          else
-            echo "::notice::tests/behavior_compare.rs not present — skipping behavior comparison."
-            echo "::notice::The comparator implementation is not yet part of this repo;"
-            echo "::notice::see oa4rust/backend/tests/behavior_comparison/ and the W12 convergence backlog."
-          fi
-        env:
-          BEHAVIOR_COMPARE: "1"
-          JAVA_SERVICE_URL: http://localhost:18080
-
-      # 探测是否真的产出了 behavior-report.md，并经 job output 透传给 behavior-gate。
-      # 当前仓库尚无比较器实现（tests/behavior_compare.rs 不存在，上一步恒跳过），
-      # 或 Java 侧不可达时，都不会有报告——这类"无报告可比"属 W12 待办/外部阻塞，
-      # 不是回归。gate 据此信号在无报告时放行（exit 0），有报告时才真正判回归。
-      - name: Check behavior report produced
-        id: report_check
-        if: always()
-        run: |
-          if [ -f target/debug/behavior-report.md ] && [ -s target/debug/behavior-report.md ]; then
-            echo "report_produced=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "report_produced=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      # ── U1: 差异聚类 ──────────────────────────────────────────────────────
-      # 全量 compare 后自动跑聚类脚本，产出机读 TSV + 人审 Markdown。
-      # 仅当 behavior-report.md 存在时执行（Java 不可达时报告为空，跳过聚类）。
-      - name: Cluster behavior diffs
-        if: always()
-        run: |
-          if [ -f target/debug/behavior-report.md ] && [ -s target/debug/behavior-report.md ]; then
-            python scripts/cluster_behavior_diffs.py \
-              --report target/debug/behavior-report.md \
-              --out-dir target/ \
-              --format tsv,md
-            echo "Clustering artifacts generated"
-          else
-            echo "::notice::No behavior-report.md found — skipping diff clustering"
-          fi
-
-      # ── U1: 聚类产物上传 ─────────────────────────────────────────────────
-      - name: Upload diff clustering artifacts
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: diff-clustering-${{ github.run_id }}
-          path: |
-            oa4rust/backend/target/diff_candidates.tsv
-            oa4rust/backend/target/diff_candidates.md
-          retention-days: 30
-
-      # ── U1: 报告产物上传 ─────────────────────────────────────────────────
-      # behavior-report.md 在测试步骤中自动生成（target/debug/），
-      # 上传为 GitHub Actions artifact，FAIL 数变化可在 PR 上直接观察。
-      - name: Upload behavior-compare report
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: behavior-report-${{ github.run_id }}
-          path: oa4rust/backend/target/debug/behavior-report.md
-          retention-days: 30
-
-      # ── U1: 基线注记 ─────────────────────────────────────────────────────
-      # CI 仅执行 Rust 侧种子，本地双栈全播种环境更完整，
-      # FAIL 数差异属预期，在 PR 描述中预防性说明。
-      - name: Print baseline note
-        if: always()
-        run: |
-          echo "::notice::CI baseline (plan S2, 2026-09-13): dual-stack full-seed — Java seeded via scripts/seed_java.py, Rust via migrations + seed_fixtures.sql. Reference run: 157 FAIL / 1856 PASS / 2029 SKIP; gate baseline 170 (fail_baseline)."
-
-      - name: Teardown
-        if: always()
-        run: |
-          if [ -f rust_server.pid ]; then kill "$(cat rust_server.pid)" || true; fi
-          docker rm -f o2server || true
-
-  # ── plan002 U9: 行为对比回归门禁 ───────────────────────────────────────────
-  # 从 fail_baseline 读取基线并与 behavior-report.md 中解析出的 FAIL 数
-  # 对比：基线为 'bootstrap' 哨兵时记录观测值并通过（提示提交者落基线）；
-  # 基线为整数时仅当 观测值 > 基线（回归）才失败并阻断构建。
-  # 报告经 Actions artifacts API 拉取（zip 解包），不依赖 download-artifact
-  # 的具体版本。外部依赖缺失判定：behavior-compare 因 o2server(Java) 未就绪而
-  # 跳过 Java 侧时，会经 job output java_not_ready=true 透传；本 job 据此把
-  # 「缺 report」判为外部阻塞（exit 0）而非 regression（continue-on-error 掩盖后
-  # needs.result 恒非 skipped，不能靠 result 判定，故改用 output 信号）。
-  behavior-gate:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
-    needs: behavior-compare
-    steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-
-      - name: Fetch behavior report artifact
-        # 仅当 behavior-compare 真的产出了报告才拉取。无报告（比较器未入仓 / Java 不可达）
-        # 属 W12 待办或外部阻塞，不是回归：跳过 Fetch，Enforce 步据同一信号 exit 0。
-        if: always() && needs.behavior-compare.outputs.report_produced == 'true'
-        run: |
-          meta="$(curl -fsS -H "Authorization: token $GITHUB_TOKEN" \
-            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/artifacts?name=behavior-report-${GITHUB_RUN_ID}&per_page=1" || true)"
-          echo "$meta" | python3 -c '
-          import io, json, os, sys, urllib.request, zipfile
-          try:
-              arts = json.load(sys.stdin).get("artifacts", [])
-          except Exception:
-              arts = []
-          if not arts:
-              print("::error::behavior-compare completed without a behavior-report artifact")
-              sys.exit(1)
-          url = arts[0]["archive_download_url"]
-          req = urllib.request.Request(url, headers={"Authorization": "token " + os.environ["GITHUB_TOKEN"]})
-          zf = zipfile.ZipFile(io.BytesIO(urllib.request.urlopen(req).read()))
-          names = [n for n in zf.namelist() if n.endswith("behavior-report.md")]
-          if not names:
-              print("::error::behavior-report artifact is missing behavior-report.md")
-              sys.exit(1)
-          open("behavior-report.md", "wb").write(zf.read(names[0]))
-          print(f"Downloaded {names[0]}")
-          '
-
-      - name: Enforce FAIL regression baseline
-        if: always()
-        run: |
-          baseline="$(tail -n 1 oa4rust/backend/tests/behavior_comparison/fail_baseline)"
-          report="behavior-report.md"
-          if [ ! -f "$report" ]; then
-            if [ "${{ needs.behavior-compare.outputs.report_produced }}" != "true" ]; then
-              echo "::notice::behavior-compare produced no report (comparator not yet in repo / Java side unavailable); nothing to enforce — W12 backlog, not a regression"
+            if curl -fsS -o /dev/null http://127.0.0.1:3000/health; then
+              echo "::notice::/health OK after ${i}s"
               exit 0
             fi
-            echo "::error::behavior-compare did not produce behavior-report.md"
-            exit 1
-          fi
-          failed="$(grep -oE '^- \*\*Failed:\*\* [0-9]+' "$report" | grep -oE '[0-9]+' | head -n 1 || true)"
-          if [ -z "$failed" ]; then
-            echo "::error::Could not parse the Failed count from behavior-report.md"
-            exit 1
-          fi
-          if [ "$baseline" = "bootstrap" ] || [ -z "$baseline" ]; then
-            echo "::notice::Behavior-compare baseline not established. Observed FAIL count: ${failed}. To activate the regression gate, commit ${failed} as the last line of oa4rust/backend/tests/behavior_comparison/fail_baseline."
-            exit 0
-          fi
-          if [ "$failed" -gt "$baseline" ]; then
-            echo "::error::Behavior-compare regression: ${failed} FAILs exceed baseline ${baseline}"
-            exit 1
-          fi
-          echo "::notice::Behavior-compare within baseline: ${failed} FAILs <= ${baseline}"
+            if ! kill -0 "$server_pid" 2>/dev/null; then
+              echo "::error::server exited before becoming healthy"
+              exit 1
+            fi
+            sleep 1
+          done
+          echo "::error::server did not answer /health within 60s"
+          exit 1
 
   # ── plan002 U9 / R8: OpenAPI 安全方案守卫 ────────────────────────────────────
   # scripts/gen_openapi_paths.py 重新生成 OpenAPI lib.rs 时，会把 Bearer 安全方案

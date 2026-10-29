@@ -518,3 +518,34 @@ LY-5 配置热加载（结构改动）、LY-7 小程序虚拟化（需视觉验�
 - `custom` / `definition` 两组的 `{name}` 语义确认。
 
 在此之前，本项保持 **3/76**，并在本文件记账 —— 不做"猜一个形状然后宣称完成"。
+
+### 7.16 决策变更：oa4rust 为独立系统，Java 契约奇偶不再是目标（2026-10-29）
+
+**用户决定**：不再考虑 Java 相关的一切，oa4rust 就是独立系统。
+
+这条决定**关闭了 OA-P0-1**（上一节刚做完分解）：所谓「缺 73 条路由」的前提是
+「Java 有 76 个 handler，Rust 只有 3 条」。前提没了，缺口也就不存在。
+补哪些路由、响应什么形状，此后由 oa4rust 自己的契约与需求决定，
+而不是「Java 有所以我也要有」。
+
+#### 随之清理的（都是"依赖 Java 才有意义"的东西）
+
+| 位置 | 原状 | 处置 | 理由 |
+|---|---|---|---|
+| `.github/workflows/oa4rust-ci.yml` | `behavior-compare`（拉 o2server 容器做双栈播种 + 比对，`continue-on-error`）+ `behavior-gate`（按 FAIL 基线拦回归） | **两 job 删除**，换成 `startup-smoke`（迁移 → 起服务 → 断言 `/health` 2xx） | 比较器本体 `tests/behavior_compare.rs` 从未入仓，"Run behavior comparison" 一步恒发 notice 跳过；`behavior-gate` 只能靠「没有报告就 exit 0」收场 ⇒ **它从来没拦过任何东西**。而它每次要拉一个 Java 容器、冷启动约 10 分钟。唯一有真实覆盖价值的是「迁移坏没坏 + 进程起不起得来」，与 Java 无关，保留成本 < 1 分钟 |
+| `oa4rust/backend/docs/plans/routing-completion-plan.md` | 以 Java handler 数为分母盘点覆盖率 | 顶部加**废止**说明 | 分母不成立了；保留是为了记录当时的口径与 `scripts/all_java_handlers.json` 的来源 |
+| `oa4rust/backend/docs/gray-release-playbook.md` | 整套「影子流量比对 / mirror backend / toggle_module 切回 Java」 | 顶部加**归档**说明 | 没有双栈就没有灰度切流；新部署按 `README` + `performance-baseline.md` 的绝对指标验收 |
+
+#### 明确保留的（不要误删）
+
+- **契约别名**（`CONTRACT_ALIAS_PAIRS` 73 条，`/api/organization/assemble/personal/*`
+  ↔ `/api/person/*`）：那是**客户端路径兼容**，不是 Java 兼容。删了会直接打断已发布的客户端。
+- `scripts/all_java_handlers.json` 等盘点产物：历史口径来源，留着不影响运行；
+  CI 已不再调用。
+
+#### 新的验收口径（替代"与 Java 一致"）
+
+- 功能：以 oa4rust 自己的 OpenAPI（`crates/openapi`）与 `openapi-guard` 为准；
+- 性能：以 `docs/performance-baseline.md` 的实测绝对值为准（不再写"与 Java 基线相当"）；
+- 回归：`unit-tests` / `integration-tests` / `startup-smoke` / `openapi-guard` /
+  `fi002-column-scan` / `limit-scan` / `shared-coverage`。

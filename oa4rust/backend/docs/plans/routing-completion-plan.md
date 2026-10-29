@@ -1,6 +1,13 @@
 # OA4Rust Routing Completion Plan
 ## Date: 2026-09-03
 
+> ⛔ **本计划已废止（2026-10-29）**：oa4rust 是**独立系统**，不再追求与 Java 侧
+> 的 handler 奇偶。文中 `x_organization_assemble_personal 76 个 Java handler / 缺 73 条`
+> 这类判据**不再成立**，不要按它补路由 —— 补什么、怎么响应，由 oa4rust 自己的
+> 契约决定，而不是"Java 有所以我也要有"。
+>
+> 保留本文是为了记录当时的盘点口径与 `scripts/all_java_handlers.json` 的来源。
+
 ## Current Status Summary
 
 | Module | Java Handlers | Rust Routes | Status |
