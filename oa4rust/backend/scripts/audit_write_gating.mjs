@@ -584,7 +584,23 @@ function fnBody(crate, ref) {
         const cross = v.startsWith("@");
         const parts = (cross ? v.slice(1) : v).split("::");
         const root = cross ? path.join(CRATES, parts.shift(), "src") : dir;
-        for (const f of [path.join(root, ...parts) + ".rs", path.join(root, ...parts, "mod.rs")]) {
+        // 尺子缺陷 30（2026-10-30 修）：跨 crate 限定符 `auth::login` 的 `auth` 是
+        // crate 名、`login` 在根 `lib.rs` 里，旧逻辑只试 `crates/auth/src/login.rs`
+        // 与 `login/mod.rs`，解析不到就回落全 crate 扫描（也扫不到别的 crate）⇒
+        // org_auth 契约别名委托 auth::login 的**写面整体隐形**（被读成 A3-只读，
+        // 且不在 A1 名单）。补回退：crate 根 `lib.rs`（跨 crate 根模块/单段模块
+        // 都可能落在根文件），以及模块文件 `<mod>.rs`（`auth::u2::login` →
+        // `crates/auth/src/u2.rs`）。
+        const candidates = [
+          path.join(root, ...parts) + ".rs",
+          path.join(root, ...parts, "mod.rs"),
+          path.join(root, "lib.rs"),
+        ];
+        if (parts.length >= 1) {
+          candidates.push(path.join(root, parts[0]) + ".rs");
+          candidates.push(path.join(root, parts[0], "mod.rs"));
+        }
+        for (const f of candidates) {
           if (!fs.existsSync(f)) continue;
           tried.push(path.relative(BACKEND, f));
           const b = sliceFn(fs.readFileSync(f, "utf8"), name);
@@ -662,8 +678,35 @@ function indexCrateFns(crate) {
 // crate/std，落盘会把未解析名单刷成噪音。已知欠账：`super::f(..)` 要有调用方文件上下文
 // 才能定位父模块，这里不猜（返回 null），宁少证不假证。
 const qualHelperCache = new Map();
-function callHelperBody(crate, qual, name) {
-  if (!qual) return indexCrateFns(crate).get(name) || null;
+// 尺子缺陷 31（2026-10-30 修）：fnBody 缺陷 30 修复后，handler 可能解析到**别的
+// crate**（如 personal 路由委托 `empower::delete`），其体内裸名调用的 helper
+// （`check_owner`）在路由所在 crate 的索引里查不到 ⇒ gateEvidence 把已加门的写面
+// 读成无门禁（K3 假阳）。给门检测加**全局函数索引**回退：跨 crate 裸名 helper
+// 在全局索引里找。只用于 gateEvidence（门检测），writeEvidence 不启用——
+// 写判据全局回退会把别的 crate 的同名 helper 误认成真落笔（假阳方向）。
+const globalFnIndexCache = new Map();
+function globalFnIndex() {
+  if (globalFnIndexCache.size) return globalFnIndexCache;
+  for (const crate of fs.readdirSync(CRATES)) {
+    const dir = path.join(CRATES, crate, "src");
+    if (!fs.existsSync(dir)) continue;
+    for (const [n, b] of indexCrateFns(crate)) {
+      if (!globalFnIndexCache.has(n)) globalFnIndexCache.set(n, []);
+      globalFnIndexCache.get(n).push([crate, b]);
+    }
+  }
+  return globalFnIndexCache;
+}
+function callHelperBody(crate, qual, name, gateFallback = false) {
+  if (!qual) {
+    const local = indexCrateFns(crate).get(name);
+    if (local || !gateFallback) return local || null;
+    const hits = globalFnIndex().get(name) || [];
+    for (const [, b] of hits) {
+      if (b) return b;
+    }
+    return null;
+  }
   const key = `${crate}|${qual}|${name}`;
   if (qualHelperCache.has(key)) return qualHelperCache.get(key);
   const segs = qual.split("::").filter(Boolean);
@@ -679,7 +722,15 @@ function callHelperBody(crate, qual, name) {
         root = path.join(CRATES, parts[0], "src");
         parts.shift();
       }
+      // 与 fnBody 缺陷 30 同口径：跨 crate 根模块（parts 为空）与单段模块
+      // 都可能落在 crate 根 lib.rs 或模块文件里。
       candidates.push(path.join(root, ...parts) + ".rs", path.join(root, ...parts, "mod.rs"));
+      if (parts.length === 0 || parts.length === 1) {
+        candidates.push(path.join(root, "lib.rs"));
+      }
+      if (parts.length >= 1) {
+        candidates.push(path.join(root, parts[0]) + ".rs", path.join(root, parts[0], "mod.rs"));
+      }
     }
   }
   let body = null;
@@ -765,7 +816,9 @@ function gateEvidence(crate, body, depth = 0) {
   // 旧正则的前视断言排除 `:`，限定路径调用点整条扫不到，本把门只作证裸名那 13 把。
   for (const m of body.matchAll(/(?<![.\w])((?:[A-Za-z_]\w*::)*)([a-z_]\w*)\s*\(/g)) {
     const n = m[2];
-    const hb = callHelperBody(crate, m[1], n);
+    // 尺子缺陷 31：fnBody 可能把 handler 解析到别的 crate，其体内的裸名 helper
+    // 在本 crate 索引查不到时回退全局索引（只用于门检测）。
+    const hb = callHelperBody(crate, m[1], n, true);
     if (!hb || hb === body) continue;
     if (!callPropagates(body, n)) continue;
     const nested = gateEvidence(crate, hb, depth + 1);
@@ -1391,6 +1444,10 @@ const A1_UNCONDITIONAL_WRITE = [
   "personal\tPOST\t/api/organization/assemble/personal/regist",
   "personal\tPUT\t/api/organization/assemble/personal/reset",
   "personal\tPOST\t/api/organization/assemble/personal/reset/password/anonymous",
+  // 2026-10-30 尺子缺陷 30 修复后可见：org_auth 契约别名委托 auth::login（原样
+  // 同 handler 的第三注册路径），登录写面与契约路径 /api/authentication 等权，
+  // 补入名单（同时已在 AUTH_RATE_LIMIT_EXACT 限流）。
+  "organization_assemble_authentication\tPOST\t/api/organization/assemble/authentication/authentication",
 ];
 const a1Now = anonWrites
   .filter((l) => l.includes("\tA1-真匿名+体内写 SQL 且无门禁无会话"))
@@ -1635,7 +1692,18 @@ for (const key of [
 const LITERAL_REJECT_RE = /AppError::(Forbidden|Unauthorized)/;
 for (const l of indirectGated) {
   const p = l.split("\t");
-  const hb = indexCrateFns(p[0]).get(p[4]) || "";
+  // 尺子缺陷 31：跨 crate 作证的 helper（personal 路由委托 empower::delete 的
+  // check_owner）在路由 crate 的索引里取不到，回退全局索引（与 gateEvidence 同口径）。
+  let hb = indexCrateFns(p[0]).get(p[4]) || "";
+  if (!hb) {
+    const hits = globalFnIndex().get(p[4]) || [];
+    for (const [, b] of hits) {
+      if (b) {
+        hb = b;
+        break;
+      }
+    }
+  }
   if (!hb) {
     witnessGaps.push(`缺陷 20 独立反证：作证的 helper ${p[0]}::${p[4]} 体内取不到`);
     continue;

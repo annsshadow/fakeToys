@@ -200,7 +200,11 @@ organization_assemble_control	POST	/api/organization/assemble/control/role/{flag
 organization_assemble_control	POST	/api/organization/assemble/control/unit/{flag}/mockputtopost	unit_mock_put_to_post	unit_edit
 organization_assemble_control	POST	/api/organization/assemble/control/unitattribute/{flag}/mockputtopost	unit_attribute_mock_put_to_post	unit_attribute_edit
 organization_assemble_control	POST	/api/organization/assemble/control/unitduty/{flag}/mockputtopost	duty_mock_put_to_post	duty_edit
+personal	GET	/api/organization/assemble/personal/empower/{id}/mockdeletetoget	delete	check_owner
+personal	GET	/api/person/empower/{id}/mockdeletetoget	delete	check_owner
+personal	POST	/api/organization/assemble/personal/empower/{id}/mockputtopost	update	check_owner
 personal	POST	/api/organization/assemble/personal/person/icon/mockputtopost	upload_multipart_alias	upload
+personal	POST	/api/person/empower/{id}/mockputtopost	update	check_owner
 personal	POST	/api/person/icon/mockputtopost	upload_multipart_alias	upload
 processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/attachment/{id}/preview/image/page/{page}	attachment_u2b_preview_image_page	u2_gate_att_or_business_error
 processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/attachment/{id}/preview/pdf	attachment_u2b_preview_pdf	u2_gate_att_or_business_error

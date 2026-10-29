@@ -1,69 +1,47 @@
 crate	handler_ref	why_fell_back
-bbs_assemble_control	u2::u2_subject_complete	crates\bbs_assemble_control\src\u2.rs 内无该 fn
-bbs_assemble_control	u2::u2_subject_lock	crates\bbs_assemble_control\src\u2.rs 内无该 fn
-bbs_assemble_control	u2::u2_subject_non_cream	crates\bbs_assemble_control\src\u2.rs 内无该 fn
-bbs_assemble_control	u2::u2_subject_non_original	crates\bbs_assemble_control\src\u2.rs 内无该 fn
-bbs_assemble_control	u2::u2_subject_non_recommend_index	crates\bbs_assemble_control\src\u2.rs 内无该 fn
-bbs_assemble_control	u2::u2_subject_non_top_to_bbs	crates\bbs_assemble_control\src\u2.rs 内无该 fn
-bbs_assemble_control	u2::u2_subject_non_top_to_forum	crates\bbs_assemble_control\src\u2.rs 内无该 fn
-bbs_assemble_control	u2::u2_subject_non_top_to_main_section	crates\bbs_assemble_control\src\u2.rs 内无该 fn
-bbs_assemble_control	u2::u2_subject_non_top_to_section	crates\bbs_assemble_control\src\u2.rs 内无该 fn
-bbs_assemble_control	u2::u2_subject_set_cream	crates\bbs_assemble_control\src\u2.rs 内无该 fn
-bbs_assemble_control	u2::u2_subject_set_original	crates\bbs_assemble_control\src\u2.rs 内无该 fn
-bbs_assemble_control	u2::u2_subject_set_recommend_index	crates\bbs_assemble_control\src\u2.rs 内无该 fn
-bbs_assemble_control	u2::u2_subject_top_to_bbs	crates\bbs_assemble_control\src\u2.rs 内无该 fn
-bbs_assemble_control	u2::u2_subject_top_to_forum	crates\bbs_assemble_control\src\u2.rs 内无该 fn
-bbs_assemble_control	u2::u2_subject_top_to_main_section	crates\bbs_assemble_control\src\u2.rs 内无该 fn
-bbs_assemble_control	u2::u2_subject_top_to_section	crates\bbs_assemble_control\src\u2.rs 内无该 fn
-bbs_assemble_control	u2::u2_subject_uncomplete	crates\bbs_assemble_control\src\u2.rs 内无该 fn
-bbs_assemble_control	u2::u2_subject_unlock	crates\bbs_assemble_control\src\u2.rs 内无该 fn
-organization_assemble_authentication	auth::code	限定符（含别名）无对应模块文件
-organization_assemble_authentication	auth::code_send	限定符（含别名）无对应模块文件
-organization_assemble_authentication	auth::login	限定符（含别名）无对应模块文件
-organization_assemble_authentication	auth::logout	限定符（含别名）无对应模块文件
-organization_assemble_authentication	auth::whoami	限定符（含别名）无对应模块文件
-personal	empower::delete	限定符（含别名）无对应模块文件
-personal	empower::manager_delete	限定符（含别名）无对应模块文件
-personal	empower::manager_update	限定符（含别名）无对应模块文件
-personal	empower::update	限定符（含别名）无对应模块文件
-process_designer	super::application_create	限定符（含别名）无对应模块文件
-process_designer	super::application_get	限定符（含别名）无对应模块文件
-process_designer	super::application_list	限定符（含别名）无对应模块文件
-process_designer	super::application_list_summary	限定符（含别名）无对应模块文件
-process_designer	super::application_remove	限定符（含别名）无对应模块文件
-process_designer	super::application_update	限定符（含别名）无对应模块文件
-process_designer	super::designer_get_route	限定符（含别名）无对应模块文件
-process_express	super::application_list	限定符（含别名）无对应模块文件
-process_express	super::read_count	限定符（含别名）无对应模块文件
-process_express	super::task_count	限定符（含别名）无对应模块文件
-process_surface	super::get_by_flag	限定符（含别名）无对应模块文件
-process_surface	super::list_ids	限定符（含别名）无对应模块文件
-process_surface	super::record_list	限定符（含别名）无对应模块文件
-processplatform_service_processing	u2::dict_del_1	crates\processplatform_service_processing\src\u2.rs 内无该 fn
-processplatform_service_processing	u2::dict_del_2	crates\processplatform_service_processing\src\u2.rs 内无该 fn
-processplatform_service_processing	u2::dict_del_3	crates\processplatform_service_processing\src\u2.rs 内无该 fn
-processplatform_service_processing	u2::dict_del_4	crates\processplatform_service_processing\src\u2.rs 内无该 fn
-processplatform_service_processing	u2::dict_del_5	crates\processplatform_service_processing\src\u2.rs 内无该 fn
-processplatform_service_processing	u2::dict_del_6	crates\processplatform_service_processing\src\u2.rs 内无该 fn
-processplatform_service_processing	u2::dict_del_7	crates\processplatform_service_processing\src\u2.rs 内无该 fn
-processplatform_service_processing	u2::dict_del_8	crates\processplatform_service_processing\src\u2.rs 内无该 fn
-processplatform_service_processing	u2::dict_set_1	crates\processplatform_service_processing\src\u2.rs 内无该 fn
-processplatform_service_processing	u2::dict_set_2	crates\processplatform_service_processing\src\u2.rs 内无该 fn
-processplatform_service_processing	u2::dict_set_3	crates\processplatform_service_processing\src\u2.rs 内无该 fn
-processplatform_service_processing	u2::dict_set_4	crates\processplatform_service_processing\src\u2.rs 内无该 fn
-processplatform_service_processing	u2::dict_set_5	crates\processplatform_service_processing\src\u2.rs 内无该 fn
-processplatform_service_processing	u2::dict_set_6	crates\processplatform_service_processing\src\u2.rs 内无该 fn
-processplatform_service_processing	u2::dict_set_7	crates\processplatform_service_processing\src\u2.rs 内无该 fn
-processplatform_service_processing	u2::dict_set_8	crates\processplatform_service_processing\src\u2.rs 内无该 fn
-query_service_processing	u2h::high_freq_document_reset	crates\query_service_processing\src\u2.rs 内无该 fn
-query_service_processing	u2h::high_freq_document_touch	crates\query_service_processing\src\u2.rs 内无该 fn
-query_service_processing	u2h::high_freq_work_reset	crates\query_service_processing\src\u2.rs 内无该 fn
-query_service_processing	u2h::high_freq_work_touch	crates\query_service_processing\src\u2.rs 内无该 fn
-query_service_processing	u2h::high_freq_workcompleted_reset	crates\query_service_processing\src\u2.rs 内无该 fn
-query_service_processing	u2h::high_freq_workcompleted_touch	crates\query_service_processing\src\u2.rs 内无该 fn
-query_service_processing	u2h::low_freq_document_reset	crates\query_service_processing\src\u2.rs 内无该 fn
-query_service_processing	u2h::low_freq_document_touch	crates\query_service_processing\src\u2.rs 内无该 fn
-query_service_processing	u2h::low_freq_work_reset	crates\query_service_processing\src\u2.rs 内无该 fn
-query_service_processing	u2h::low_freq_work_touch	crates\query_service_processing\src\u2.rs 内无该 fn
-query_service_processing	u2h::low_freq_workcompleted_reset	crates\query_service_processing\src\u2.rs 内无该 fn
-query_service_processing	u2h::low_freq_workcompleted_touch	crates\query_service_processing\src\u2.rs 内无该 fn
+bbs_assemble_control	u2::u2_subject_complete	crates\bbs_assemble_control\src\u2.rs / crates\bbs_assemble_control\src\lib.rs / crates\bbs_assemble_control\src\u2.rs 内无该 fn
+bbs_assemble_control	u2::u2_subject_lock	crates\bbs_assemble_control\src\u2.rs / crates\bbs_assemble_control\src\lib.rs / crates\bbs_assemble_control\src\u2.rs 内无该 fn
+bbs_assemble_control	u2::u2_subject_non_cream	crates\bbs_assemble_control\src\u2.rs / crates\bbs_assemble_control\src\lib.rs / crates\bbs_assemble_control\src\u2.rs 内无该 fn
+bbs_assemble_control	u2::u2_subject_non_original	crates\bbs_assemble_control\src\u2.rs / crates\bbs_assemble_control\src\lib.rs / crates\bbs_assemble_control\src\u2.rs 内无该 fn
+bbs_assemble_control	u2::u2_subject_non_recommend_index	crates\bbs_assemble_control\src\u2.rs / crates\bbs_assemble_control\src\lib.rs / crates\bbs_assemble_control\src\u2.rs 内无该 fn
+bbs_assemble_control	u2::u2_subject_non_top_to_bbs	crates\bbs_assemble_control\src\u2.rs / crates\bbs_assemble_control\src\lib.rs / crates\bbs_assemble_control\src\u2.rs 内无该 fn
+bbs_assemble_control	u2::u2_subject_non_top_to_forum	crates\bbs_assemble_control\src\u2.rs / crates\bbs_assemble_control\src\lib.rs / crates\bbs_assemble_control\src\u2.rs 内无该 fn
+bbs_assemble_control	u2::u2_subject_non_top_to_main_section	crates\bbs_assemble_control\src\u2.rs / crates\bbs_assemble_control\src\lib.rs / crates\bbs_assemble_control\src\u2.rs 内无该 fn
+bbs_assemble_control	u2::u2_subject_non_top_to_section	crates\bbs_assemble_control\src\u2.rs / crates\bbs_assemble_control\src\lib.rs / crates\bbs_assemble_control\src\u2.rs 内无该 fn
+bbs_assemble_control	u2::u2_subject_set_cream	crates\bbs_assemble_control\src\u2.rs / crates\bbs_assemble_control\src\lib.rs / crates\bbs_assemble_control\src\u2.rs 内无该 fn
+bbs_assemble_control	u2::u2_subject_set_original	crates\bbs_assemble_control\src\u2.rs / crates\bbs_assemble_control\src\lib.rs / crates\bbs_assemble_control\src\u2.rs 内无该 fn
+bbs_assemble_control	u2::u2_subject_set_recommend_index	crates\bbs_assemble_control\src\u2.rs / crates\bbs_assemble_control\src\lib.rs / crates\bbs_assemble_control\src\u2.rs 内无该 fn
+bbs_assemble_control	u2::u2_subject_top_to_bbs	crates\bbs_assemble_control\src\u2.rs / crates\bbs_assemble_control\src\lib.rs / crates\bbs_assemble_control\src\u2.rs 内无该 fn
+bbs_assemble_control	u2::u2_subject_top_to_forum	crates\bbs_assemble_control\src\u2.rs / crates\bbs_assemble_control\src\lib.rs / crates\bbs_assemble_control\src\u2.rs 内无该 fn
+bbs_assemble_control	u2::u2_subject_top_to_main_section	crates\bbs_assemble_control\src\u2.rs / crates\bbs_assemble_control\src\lib.rs / crates\bbs_assemble_control\src\u2.rs 内无该 fn
+bbs_assemble_control	u2::u2_subject_top_to_section	crates\bbs_assemble_control\src\u2.rs / crates\bbs_assemble_control\src\lib.rs / crates\bbs_assemble_control\src\u2.rs 内无该 fn
+bbs_assemble_control	u2::u2_subject_uncomplete	crates\bbs_assemble_control\src\u2.rs / crates\bbs_assemble_control\src\lib.rs / crates\bbs_assemble_control\src\u2.rs 内无该 fn
+bbs_assemble_control	u2::u2_subject_unlock	crates\bbs_assemble_control\src\u2.rs / crates\bbs_assemble_control\src\lib.rs / crates\bbs_assemble_control\src\u2.rs 内无该 fn
+processplatform_service_processing	u2::dict_del_1	crates\processplatform_service_processing\src\u2.rs / crates\processplatform_service_processing\src\lib.rs / crates\processplatform_service_processing\src\u2.rs 内无该 fn
+processplatform_service_processing	u2::dict_del_2	crates\processplatform_service_processing\src\u2.rs / crates\processplatform_service_processing\src\lib.rs / crates\processplatform_service_processing\src\u2.rs 内无该 fn
+processplatform_service_processing	u2::dict_del_3	crates\processplatform_service_processing\src\u2.rs / crates\processplatform_service_processing\src\lib.rs / crates\processplatform_service_processing\src\u2.rs 内无该 fn
+processplatform_service_processing	u2::dict_del_4	crates\processplatform_service_processing\src\u2.rs / crates\processplatform_service_processing\src\lib.rs / crates\processplatform_service_processing\src\u2.rs 内无该 fn
+processplatform_service_processing	u2::dict_del_5	crates\processplatform_service_processing\src\u2.rs / crates\processplatform_service_processing\src\lib.rs / crates\processplatform_service_processing\src\u2.rs 内无该 fn
+processplatform_service_processing	u2::dict_del_6	crates\processplatform_service_processing\src\u2.rs / crates\processplatform_service_processing\src\lib.rs / crates\processplatform_service_processing\src\u2.rs 内无该 fn
+processplatform_service_processing	u2::dict_del_7	crates\processplatform_service_processing\src\u2.rs / crates\processplatform_service_processing\src\lib.rs / crates\processplatform_service_processing\src\u2.rs 内无该 fn
+processplatform_service_processing	u2::dict_del_8	crates\processplatform_service_processing\src\u2.rs / crates\processplatform_service_processing\src\lib.rs / crates\processplatform_service_processing\src\u2.rs 内无该 fn
+processplatform_service_processing	u2::dict_set_1	crates\processplatform_service_processing\src\u2.rs / crates\processplatform_service_processing\src\lib.rs / crates\processplatform_service_processing\src\u2.rs 内无该 fn
+processplatform_service_processing	u2::dict_set_2	crates\processplatform_service_processing\src\u2.rs / crates\processplatform_service_processing\src\lib.rs / crates\processplatform_service_processing\src\u2.rs 内无该 fn
+processplatform_service_processing	u2::dict_set_3	crates\processplatform_service_processing\src\u2.rs / crates\processplatform_service_processing\src\lib.rs / crates\processplatform_service_processing\src\u2.rs 内无该 fn
+processplatform_service_processing	u2::dict_set_4	crates\processplatform_service_processing\src\u2.rs / crates\processplatform_service_processing\src\lib.rs / crates\processplatform_service_processing\src\u2.rs 内无该 fn
+processplatform_service_processing	u2::dict_set_5	crates\processplatform_service_processing\src\u2.rs / crates\processplatform_service_processing\src\lib.rs / crates\processplatform_service_processing\src\u2.rs 内无该 fn
+processplatform_service_processing	u2::dict_set_6	crates\processplatform_service_processing\src\u2.rs / crates\processplatform_service_processing\src\lib.rs / crates\processplatform_service_processing\src\u2.rs 内无该 fn
+processplatform_service_processing	u2::dict_set_7	crates\processplatform_service_processing\src\u2.rs / crates\processplatform_service_processing\src\lib.rs / crates\processplatform_service_processing\src\u2.rs 内无该 fn
+processplatform_service_processing	u2::dict_set_8	crates\processplatform_service_processing\src\u2.rs / crates\processplatform_service_processing\src\lib.rs / crates\processplatform_service_processing\src\u2.rs 内无该 fn
+query_service_processing	u2h::high_freq_document_reset	crates\query_service_processing\src\lib.rs / crates\query_service_processing\src\u2.rs / crates\query_service_processing\src\lib.rs / crates\query_service_processing\src\u2.rs 内无该 fn
+query_service_processing	u2h::high_freq_document_touch	crates\query_service_processing\src\lib.rs / crates\query_service_processing\src\u2.rs / crates\query_service_processing\src\lib.rs / crates\query_service_processing\src\u2.rs 内无该 fn
+query_service_processing	u2h::high_freq_work_reset	crates\query_service_processing\src\lib.rs / crates\query_service_processing\src\u2.rs / crates\query_service_processing\src\lib.rs / crates\query_service_processing\src\u2.rs 内无该 fn
+query_service_processing	u2h::high_freq_work_touch	crates\query_service_processing\src\lib.rs / crates\query_service_processing\src\u2.rs / crates\query_service_processing\src\lib.rs / crates\query_service_processing\src\u2.rs 内无该 fn
+query_service_processing	u2h::high_freq_workcompleted_reset	crates\query_service_processing\src\lib.rs / crates\query_service_processing\src\u2.rs / crates\query_service_processing\src\lib.rs / crates\query_service_processing\src\u2.rs 内无该 fn
+query_service_processing	u2h::high_freq_workcompleted_touch	crates\query_service_processing\src\lib.rs / crates\query_service_processing\src\u2.rs / crates\query_service_processing\src\lib.rs / crates\query_service_processing\src\u2.rs 内无该 fn
+query_service_processing	u2h::low_freq_document_reset	crates\query_service_processing\src\lib.rs / crates\query_service_processing\src\u2.rs / crates\query_service_processing\src\lib.rs / crates\query_service_processing\src\u2.rs 内无该 fn
+query_service_processing	u2h::low_freq_document_touch	crates\query_service_processing\src\lib.rs / crates\query_service_processing\src\u2.rs / crates\query_service_processing\src\lib.rs / crates\query_service_processing\src\u2.rs 内无该 fn
+query_service_processing	u2h::low_freq_work_reset	crates\query_service_processing\src\lib.rs / crates\query_service_processing\src\u2.rs / crates\query_service_processing\src\lib.rs / crates\query_service_processing\src\u2.rs 内无该 fn
+query_service_processing	u2h::low_freq_work_touch	crates\query_service_processing\src\lib.rs / crates\query_service_processing\src\u2.rs / crates\query_service_processing\src\lib.rs / crates\query_service_processing\src\u2.rs 内无该 fn
+query_service_processing	u2h::low_freq_workcompleted_reset	crates\query_service_processing\src\lib.rs / crates\query_service_processing\src\u2.rs / crates\query_service_processing\src\lib.rs / crates\query_service_processing\src\u2.rs 内无该 fn
+query_service_processing	u2h::low_freq_workcompleted_touch	crates\query_service_processing\src\lib.rs / crates\query_service_processing\src\u2.rs / crates\query_service_processing\src\lib.rs / crates\query_service_processing\src\u2.rs 内无该 fn

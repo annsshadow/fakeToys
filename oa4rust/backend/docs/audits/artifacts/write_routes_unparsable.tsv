@@ -1,10 +1,3 @@
 crate	method	path	handler	bucket	route_site
 empower	DELETE	/api/organization/assemble/personal/empower/{id}	empower_delete	R1	router.rs:95
 empower	DELETE	/api/person/empower/{id}	empower_delete	R1	router.rs:29
-organization_assemble_authentication	DELETE	/api/organization/assemble/authentication/authentication	logout	R4	lib.rs:1025
-organization_assemble_authentication	POST	/api/organization/assemble/authentication/authentication	login	R4	lib.rs:1025
-organization_assemble_authentication	POST	/api/organization/assemble/authentication/authentication/code	code	R4	lib.rs:1045
-personal	POST	/api/organization/assemble/personal/empower/manager/{id}/mockputtopost	manager_update	R1	lib.rs:380
-personal	POST	/api/organization/assemble/personal/empower/{id}/mockputtopost	update	R1	lib.rs:382
-personal	POST	/api/person/empower/manager/{id}/mockputtopost	manager_update	R1	lib.rs:303
-personal	POST	/api/person/empower/{id}/mockputtopost	update	R1	lib.rs:299

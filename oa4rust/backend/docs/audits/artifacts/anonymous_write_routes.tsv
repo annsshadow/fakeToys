@@ -34,7 +34,7 @@ meeting_assemble_control	POST	/api/meeting/assemble/control/config/system/config
 meeting_assemble_control	GET	/api/meeting/assemble/control/config/system/config/manage	u2_config_manage_get	A3-真匿名+只读
 organization_assemble_authentication	GET	/api/organization/assemble/authentication/authentication/mode	mode	A3-真匿名+只读
 organization_assemble_authentication	GET	/api/organization/assemble/authentication/authentication/mockdeletetoget	logout_get	A3-真匿名+只读
-organization_assemble_authentication	POST	/api/organization/assemble/authentication/authentication	login	A3-真匿名+只读
+organization_assemble_authentication	POST	/api/organization/assemble/authentication/authentication	login	A1-真匿名+体内写 SQL 且无门禁无会话
 organization_assemble_authentication	DELETE	/api/organization/assemble/authentication/authentication	logout	A3-真匿名+只读
 organization_assemble_authentication	GET	/api/organization/assemble/authentication/authentication	whoami	A3-真匿名+只读
 organization_assemble_authentication	GET	/api/organization/assemble/authentication/authentication/captchaRSAPublicKey	captcha_rsa_public_key	A3-真匿名+只读

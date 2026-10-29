@@ -193,8 +193,10 @@ mind_assemble_control	PUT	/api/mind/assemble/control/mind/filter/list/{id}/next/
 mind_assemble_control	PUT	/api/mind/assemble/control/mind/filter/recived/{id}/next/{page}	mind_filter_received	R6
 mind_assemble_control	PUT	/api/mind/assemble/control/mind/filter/recycle/{id}/next/{page}	mind_filter_recycle	R6
 mind_assemble_control	PUT	/api/mind/assemble/control/mind/filter/shared/{id}/next/{page}	mind_filter_shared	R6
+organization_assemble_authentication	DELETE	/api/organization/assemble/authentication/authentication	logout	R4
 organization_assemble_authentication	POST	/api/organization/assemble/authentication/authentication/bind/meta/{meta}	authentication_bind_meta_post	R7
 organization_assemble_authentication	POST	/api/organization/assemble/authentication/authentication/captcha	captcha_login	R7
+organization_assemble_authentication	POST	/api/organization/assemble/authentication/authentication/code	code	R4
 organization_assemble_authentication	POST	/api/organization/assemble/authentication/authentication/two/factory/login	two_factor_login	R7
 organization_assemble_authentication	POST	/api/organization/assemble/authentication/dingding/info	dingding_info	R7
 organization_assemble_authentication	POST	/api/organization/assemble/authentication/oauth/info	oauth_info_post	R7
