@@ -952,33 +952,53 @@ func (s *Service) LevelStars(ctx context.Context, userID int64) (map[int]int, er
 
 // bumpTasks 按指标累加任务进度。周期内的同一任务只保留最大值，
 // 避免反复战斗把累计型任务刷爆。
+//
+// # 一次查询取全部指标（2026-10-29）
+//
+// 原实现 `for metric, delta := range deltas { SELECT ... WHERE metric = $1 }`：
+// 每个指标一次往返。本函数在**结算事务内**被调用，多出来的往返不只是延迟，
+// 而是把事务与行锁的持有时间一起拉长（结算是最热的写路径）。
+// 改成一条 `metric = ANY($1)` 后在 Go 侧按 metric 分组，往返数与指标数无关。
 func (s *Service) bumpTasks(ctx context.Context, tx pgx.Tx, userID int64, deltas map[string]int64, now time.Time) error {
-	for metric, delta := range deltas {
-		// 累计型指标取"当前值"，单局型取"本局增量"
-		value := delta
-		rows, err := tx.Query(ctx,
-			`SELECT id, target, scope FROM tasks WHERE enabled AND metric = $1`, metric)
-		if err != nil {
-			return fmt.Errorf("query tasks metric %s: %w", metric, err)
-		}
-		type taskRow struct {
-			id, target int
-			scope      string
-		}
-		var list []taskRow
-		for rows.Next() {
-			var t taskRow
-			if err := rows.Scan(&t.id, &t.target, &t.scope); err != nil {
-				rows.Close()
-				return err
-			}
-			list = append(list, t)
-		}
-		rows.Close()
-		if err := rows.Err(); err != nil {
+	if len(deltas) == 0 {
+		return nil
+	}
+	metrics := make([]string, 0, len(deltas))
+	for metric := range deltas {
+		metrics = append(metrics, metric)
+	}
+
+	type taskRow struct {
+		id, target int
+		scope      string
+		metric     string
+	}
+	rows, err := tx.Query(ctx,
+		`SELECT id, target, scope, metric FROM tasks WHERE enabled AND metric = ANY($1)`, metrics)
+	if err != nil {
+		return fmt.Errorf("query tasks: %w", err)
+	}
+	byMetric := make(map[string][]taskRow, len(metrics))
+	for rows.Next() {
+		var t taskRow
+		if err := rows.Scan(&t.id, &t.target, &t.scope, &t.metric); err != nil {
+			rows.Close()
 			return err
 		}
+		byMetric[t.metric] = append(byMetric[t.metric], t)
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return err
+	}
 
+	for _, metric := range metrics {
+		list := byMetric[metric]
+		if len(list) == 0 {
+			continue
+		}
+		// 累计型指标取"当前值"，单局型取"本局增量"
+		value := deltas[metric]
 		for _, t := range list {
 			day := periodStart(now, t.scope)
 			if t.scope == "achievement" {

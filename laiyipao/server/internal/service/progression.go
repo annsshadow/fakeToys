@@ -511,9 +511,17 @@ func (s *Service) ListDefenses(ctx context.Context, userID int64) (mine *Defense
 		Scan(&own.ID, &own.OwnerID, &own.OwnerName, &own.Name, &own.Power,
 			&own.ElementCoverage, &own.MasteryDone, &own.Wins, &own.Losses,
 			&own.ShieldedUntil, &own.Snapshot, &own.SnapshotHash)
-	if err == nil {
+	switch {
+	case err == nil:
 		// snapshot 落库是 jsonb，Scan 进 map 后即已解码，无需再 Unmarshal
 		mine = &own
+	case errors.Is(err, pgx.ErrNoRows):
+		// 还没保存过防线：mine 保持 nil，前端据此显示「尚未布置」。
+	default:
+		// ⚠️ 原实现是 `if err == nil { mine = &own }`——连接断、超时、权限失败		// 全都落进「没保存过防线」这一支，接口 200 + mine=null。
+		// 「你没有防线」和「查不到防线」对玩家是两件事：前者要去布置，
+		// 后者要去报障。这里必须 fail-loud。
+		return nil, nil, fmt.Errorf("load own defense: %w", err)
 	}
 	return mine, candidates, nil
 }
@@ -597,51 +605,30 @@ var validDefenseWorks = map[string]bool{
 // 让所有挑战者的模拟结果失去意义。
 //
 // 参照实现是 SaveLoadout（loadout.go），它对技能做了同样的校验。
+//
+// # 为什么是批量查询（2026-10-29）
+//
+// 原实现对每个 id 单独 `SELECT COUNT(*)`：技能 ≤12、装备 ≤18、专精节点可达
+// 96，最坏一次保存要 **126 次往返**，全部发生在 HTTP 请求的同步路径上。
+// 三类各压成一条 `= ANY($2)`，往返固定为 3 次。
+//
+// 报错**仍按入参顺序**取第一个缺失项——逐条版的用户可见错误是「第一个缺失的
+// 那个 id」，批量版若按查询返回顺序报错会让同一个请求的错误信息随 PG 计划漂移。
 func (s *Service) validateDefenseOwnership(ctx context.Context, userID int64, in SaveDefenseInput) error {
 	if len(in.Skills) > 12 {
 		return fmt.Errorf("%w: 技能数量 %d 过多", ErrBadInput, len(in.Skills))
 	}
-	for _, id := range in.Skills {
-		if id <= 0 {
-			continue
-		}
-		var n int
-		if err := s.pool.QueryRow(ctx,
-			`SELECT COUNT(*) FROM user_skills WHERE user_id = $1 AND skill_id = $2`,
-			userID, id).Scan(&n); err != nil {
-			return err
-		}
-		if n == 0 {
-			return fmt.Errorf("%w: 技能 %d 未解锁", ErrBadInput, id)
-		}
+	if err := s.requireAllOwned(ctx, userID, "user_skills", "skill_id", in.Skills,
+		"技能 %d 未解锁"); err != nil {
+		return err
 	}
-	for _, id := range in.Equipment {
-		if id <= 0 {
-			continue
-		}
-		var n int
-		if err := s.pool.QueryRow(ctx,
-			`SELECT COUNT(*) FROM user_equipment WHERE user_id = $1 AND equipment_id = $2`,
-			userID, id).Scan(&n); err != nil {
-			return err
-		}
-		if n == 0 {
-			return fmt.Errorf("%w: 装备 %d 未拥有", ErrBadInput, id)
-		}
+	if err := s.requireAllOwned(ctx, userID, "user_equipment", "equipment_id", in.Equipment,
+		"装备 %d 未拥有"); err != nil {
+		return err
 	}
-	for _, node := range in.MasteryNodes {
-		if node <= 0 {
-			continue
-		}
-		var n int
-		if err := s.pool.QueryRow(ctx,
-			`SELECT COUNT(*) FROM user_mastery_nodes WHERE user_id = $1 AND node_id = $2`,
-			userID, node).Scan(&n); err != nil {
-			return err
-		}
-		if n == 0 {
-			return fmt.Errorf("%w: 专精节点 %d 未投入", ErrBadInput, node)
-		}
+	if err := s.requireAllOwned(ctx, userID, "user_mastery_nodes", "node_id", in.MasteryNodes,
+		"专精节点 %d 未投入"); err != nil {
+		return err
 	}
 	if len(in.Works) > 3 {
 		return fmt.Errorf("%w: 工程装置最多 3 个", ErrBadInput)
@@ -655,6 +642,51 @@ func (s *Service) validateDefenseOwnership(ctx context.Context, userID int64, in
 	// 而重开护盾既无冷却也无成本 —— 等于免费获得无限免偷。
 	if in.ShieldHours < 0 || in.ShieldHours > MaxDefenseShieldHours {
 		return fmt.Errorf("%w: 护盾时长须在 0..%d 小时", ErrBadInput, MaxDefenseShieldHours)
+	}
+	return nil
+}
+
+// requireAllOwned 用一条 `= ANY($2)` 校验 ids 全部归 userID 所有。
+//
+// table / column 是本文件内的编译期常量，不来自外部输入，故直接拼进 SQL
+// （列名与表名无法参数化）；值始终走占位符。
+func (s *Service) requireAllOwned(
+	ctx context.Context, userID int64, table, column string, ids []int, missingFmt string,
+) error {
+	wanted := make([]int32, 0, len(ids))
+	for _, id := range ids {
+		if id > 0 {
+			wanted = append(wanted, int32(id))
+		}
+	}
+	if len(wanted) == 0 {
+		return nil
+	}
+	query := fmt.Sprintf(
+		`SELECT %s FROM %s WHERE user_id = $1 AND %s = ANY($2)`, column, table, column)
+	rows, err := s.pool.Query(ctx, query, userID, wanted)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	owned := make(map[int32]struct{}, len(wanted))
+	for rows.Next() {
+		var id int32
+		if err := rows.Scan(&id); err != nil {
+			return err
+		}
+		owned[id] = struct{}{}
+	}
+	// 迭代中途断连必须报错：否则「查了一半」会被当成「这些都没拥有」，
+	// 玩家看到的是「技能 7 未解锁」而不是数据库故障。
+	if err := rows.Err(); err != nil {
+		return err
+	}
+	for _, id := range wanted {
+		if _, ok := owned[id]; !ok {
+			return fmt.Errorf("%w: "+missingFmt, ErrBadInput, id)
+		}
 	}
 	return nil
 }

@@ -954,25 +954,42 @@ func (s *Service) LoadWallet(ctx context.Context, userID int64) (Wallet, error) 
 	// 分两次往返纯属历史拆分；本函数挂在每次进页面都会拉的
 	// fetchWallet 上，省下的是最热路径的一次往返。
 	//
-	// 语义逐位保持：
-	//   - 行不存在 → UPDATE 命中 0 行 → RETURNING 无行 → ErrNoRows，
-	//     与原「Exec 成功 + SELECT ErrNoRows」落到同一个 ErrNotFound 分支；
-	//   - RETURNING 返回的是**更新后**的值（energy 与 energy_updated_at 都含
-	//     本次恢复），与原 SELECT 读到的一致。
+	// 2026-10-29：**没有恢复量时不写库**。
+	//
+	// 原写法无条件 `SET updated_at = now()`，于是即使 `n = 0`（距上次恢复
+	// 不足一格）也每次产生一个新元组 + WAL + 行锁。客户端 3~5 分钟拉一次钱包，
+	// 而恢复间隔是 6 分钟 —— 绝大多数读取都是「n = 0」，等于把最热的读端点
+	// 变成持续的写放大源（`user_wallets` 的 dead tuple 与 autovacuum 压力）。
+	//
+	// 现在用 `cur` 先算 n，只有 `n > 0` 才走 `regen` 分支写库；`n = 0` 直接
+	// 返回 `cur` 的现有值。仍是**一条语句、一次往返**，语义逐位保持：
+	//   - 行不存在 → cur 为空 → 两个分支都无行 → ErrNoRows → ErrNotFound，
+	//     与原「UPDATE 命中 0 行」落到同一个分支；
+	//   - 有恢复 → 返回 RETURNING 的**更新后**值（energy 与 energy_updated_at
+	//     都含本次恢复），与原 SELECT 读到的一致；
+	//   - `updated_at` 的语义修正为「数据真的变了」——读一次不再算一次修改。
+	//
+	// 满体力时仍然推进时间戳（`n > 0` 就写）：否则玩家消耗体力后会按
+	// 「上次满体力那一刻」起算，瞬间回满。
 	var w Wallet
 	err := s.pool.QueryRow(ctx, `
-		WITH k AS (
-		  SELECT GREATEST(0, FLOOR(EXTRACT(EPOCH FROM (now() - energy_updated_at)) / $3))::int AS n
+		WITH cur AS (
+		  SELECT coin, gem, energy, keys, energy_updated_at,
+		         GREATEST(0, FLOOR(EXTRACT(EPOCH FROM (now() - energy_updated_at)) / $3))::int AS n
 		    FROM user_wallets WHERE user_id = $1
+		), regen AS (
+		  UPDATE user_wallets w
+		     SET energy = LEAST($2::int, w.energy + cur.n),
+		         energy_updated_at = w.energy_updated_at
+		                         + make_interval(secs => (cur.n * $3)::double precision),
+		         updated_at = now()
+		    FROM cur
+		   WHERE w.user_id = $1 AND cur.n > 0
+		  RETURNING w.coin, w.gem, w.energy, w.keys, w.energy_updated_at
 		)
-		UPDATE user_wallets w
-		   SET energy = LEAST($2::int, w.energy + k.n),
-		       energy_updated_at = w.energy_updated_at
-		                       + make_interval(secs => (k.n * $3)::double precision),
-		       updated_at = now()
-		  FROM k
-		 WHERE w.user_id = $1
-		RETURNING w.coin, w.gem, w.energy, w.keys, w.energy_updated_at`,
+		SELECT coin, gem, energy, keys, energy_updated_at FROM regen
+		UNION ALL
+		SELECT coin, gem, energy, keys, energy_updated_at FROM cur WHERE cur.n = 0`,
 		userID, energyMax, energyIntervalSecs).
 		Scan(&w.Coin, &w.Gem, &w.Energy, &w.Keys, &w.EnergyUpdatedAt)
 	if errors.Is(err, pgx.ErrNoRows) {

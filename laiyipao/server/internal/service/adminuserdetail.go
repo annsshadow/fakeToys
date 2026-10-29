@@ -188,6 +188,11 @@ func (s *Service) AdminUserDetail(ctx context.Context, userID int64) (AdminUserD
 			}
 			equipmentIDs = append(equipmentIDs, id)
 		}
+		// 迭代中途断连必须报错。少了这句，装备列表会「安静地」只返回前半截，
+		// 而运营看到的是一份完整的 200 —— 他会以为这个玩家只装了 2 件装备。
+		if err := rows.Err(); err != nil {
+			errs[3] = fmt.Errorf("load user equipment: %w", err)
+		}
 	})
 
 	// 6) 最近战报
@@ -220,6 +225,11 @@ func (s *Service) AdminUserDetail(ctx context.Context, userID int64) (AdminUserD
 				return
 			}
 			verifications = append(verifications, v)
+		}
+		// 同 equipment 段：半份验真记录比报错更危险——「没有不匹配记录」
+		// 与「没读到不匹配记录」在页面上长得一模一样。
+		if err := vrows.Err(); err != nil {
+			errs[5] = fmt.Errorf("load user verifications: %w", err)
 		}
 	})
 

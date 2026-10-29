@@ -219,7 +219,10 @@ func TestSettleBattleMidwayFailures(t *testing.T) {
 		ts.renameTable(t, "tasks", "tasks_bak")
 		_, err = ts.SettleBattle(ctx, uid, tp.TokenID, loseSettleInput())
 		ts.renameTable(t, "tasks_bak", "tasks")
-		mustErr(t, err, "query tasks metric")
+		// 2026-10-29：查询改成一条 `metric = ANY($1)` 批量取（原为每指标一次），
+		// 错误前缀随之从 "query tasks metric" 变为 "query tasks"。
+		// 断言要的是「任务查询失败必须带上下文地冒出」，不是逐字措辞。
+		mustErr(t, err, "query tasks")
 	})
 
 	t.Run("任务行写入失败", func(t *testing.T) {
