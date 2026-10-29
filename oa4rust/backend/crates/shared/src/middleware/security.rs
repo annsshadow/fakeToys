@@ -509,6 +509,24 @@ mod contract_alias_parity_tests {
             }
         }
     }
+
+    #[test]
+    fn org_auth_login_alias_is_rate_limited_like_canonical() {
+        // 2026-10-30：org_auth 契约别名 `/api/organization/assemble/authentication/authentication`
+        // 原样委托 auth::login（与契约路径 POST /api/authentication 同一 handler）。
+        // 它豁免 + Public（双锁同开），若不在认证限流名单，rate_limit_middleware
+        // 对「豁免且未列限流」直接跳过 ⇒ 该别名成为无上限的登录暴力破解入口。
+        let alias = "/api/organization/assemble/authentication/authentication";
+        let canonical = "/api/authentication";
+        assert!(is_auth_exempt(alias), "登录别名必须在豁免表（契约匿名）");
+        assert!(is_registry_public(alias), "登录别名必须 Public（双锁同开）");
+        assert_eq!(
+            is_auth_rate_limited(alias),
+            is_auth_rate_limited(canonical),
+            "登录别名与契约路径限流不一致：{alias} 必须与 {canonical} 同权（否则暴力破解绕行）"
+        );
+        assert!(is_auth_rate_limited(alias), "登录别名必须命中认证限流");
+    }
 }
 // ── 2026-10-29 覆盖率轮：CORS 镜像分支、trace/error_handler、HTTPS 重定向 ──
 #[cfg(test)]

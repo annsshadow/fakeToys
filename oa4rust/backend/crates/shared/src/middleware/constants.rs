@@ -377,6 +377,10 @@ pub const AUTH_EXEMPT_PATHS: &[&str] = &[
 // 认证类端点（计入 10 次/分钟/IP 的认证限流）。
 // 精确限流仅限"明文凭证尝试"：登录契约路径（POST /api/authentication）
 // 与其自造别名（/api/authentication/login）；以及密码重置与初始化端点（前缀）。
+// 2026-10-30：org_auth 契约别名 `/api/organization/assemble/authentication/
+// authentication` 原样委托 auth::login（post(auth::login)），此前不在本名单，
+// rate_limit_middleware 对「豁免且未列限流」直接跳过 ⇒ 该别名成为无上限的登录
+// 暴力破解入口。补入精确名单，与契约路径 POST /api/authentication 等权。
 pub const AUTH_RATE_LIMIT_EXACT: &[&str] = &[
     "/api/authentication",
     "/api/authentication/login",
@@ -385,6 +389,8 @@ pub const AUTH_RATE_LIMIT_EXACT: &[&str] = &[
     "/api/person/regist",
     // 契约别名同限流（2026-10-24 R1）：匿名面等权，防批量建号/验证码枚举
     "/api/organization/assemble/personal/regist",
+    // org_auth 登录契约别名同限流（2026-10-30）：委托 auth::login，防绕行
+    "/api/organization/assemble/authentication/authentication",
     "/api/secret/captcha/verify",
 ];
 pub const AUTH_RATE_LIMIT_PREFIXES: &[&str] = &[
