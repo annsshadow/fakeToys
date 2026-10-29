@@ -32,6 +32,7 @@ function readConstList(src, name) {
 const csrc = fs.readFileSync(CONSTANTS, "utf8");
 const EXEMPT_PATHS = readConstList(csrc, "AUTH_EXEMPT_PATHS");
 const EXEMPT_PREFIXES = readConstList(csrc, "AUTH_EXEMPT_PREFIXES");
+const EXEMPT_BLOCKED = readConstList(csrc, "AUTH_EXEMPT_BLOCKED_PATHS");
 const ADMIN_WRITE_PREFIXES = readConstList(csrc, "ADMIN_WRITE_PREFIXES");
 
 // rbac.rs 注册表：`authorize_middleware` 命中 Public 会**提前 return**，
@@ -816,6 +817,69 @@ const NO_BODY_BY_BUCKET = new Map(); // bucket -> 体内取不到的条数
 // 于是连「含写 SQL」都读不到：真落笔少算 14 条、GET 无门禁面少算 10 条（方向是**漏量**）。
 // 修法：UPDATE 的表名位再允许一条 `{` 前缀（`{}` 与 `{ident}` 同形状）。
 const WRITE_SQL_RE = /\b(INSERT\s+INTO|UPDATE\s+(?:\x5C?["\x60]?[A-Za-z_]\w*|\{)|DELETE\s+FROM)/i;
+// 尺子缺陷 29（A4 批修）：WRITE_SQL_RE 不排注释，`// Update the entry ...` 这类注释
+// 里的 "Update the" 会被读成 `UPDATE` 写语句（现场：qiyeweixin_bind_callback 只写内存
+// store，却因一行 `// Update the entry with external_user_id` 注释进 GET 写清单）。
+// 写判据只扫代码不扫注释；剥离器跳过字符串/字符字面量，避免 `"https://…"` 里的 `//`
+// 被当成行注释（Rust 原始字符串的 `#` 边界不单独处理，但其内容在字符串分支内已被保护）。
+function stripRustComments(src) {
+  let out = "";
+  let i = 0;
+  const n = src.length;
+  while (i < n) {
+    const c = src[i];
+    const d = src[i + 1];
+    if (c === "/" && d === "/") {
+      while (i < n && src[i] !== "\n") i++;
+    } else if (c === "/" && d === "*") {
+      i += 2;
+      while (i < n && !(src[i] === "*" && src[i + 1] === "/")) i++;
+      i = Math.min(i + 2, n);
+    } else if (c === '"') {
+      out += c;
+      i++;
+      while (i < n) {
+        out += src[i];
+        if (src[i] === "\\") {
+          i++;
+          if (i < n) {
+            out += src[i];
+            i++;
+          }
+          continue;
+        }
+        if (src[i] === '"') {
+          i++;
+          break;
+        }
+        i++;
+      }
+    } else if (c === "'") {
+      out += c;
+      i++;
+      while (i < n) {
+        out += src[i];
+        if (src[i] === "\\") {
+          i++;
+          if (i < n) {
+            out += src[i];
+            i++;
+          }
+          continue;
+        }
+        if (src[i] === "'") {
+          i++;
+          break;
+        }
+        i++;
+      }
+    } else {
+      out += c;
+      i++;
+    }
+  }
+  return out;
+}
 // 定向自证用：只要体内出现「转义引号表名」写法，WRITE_SQL_RE 就必须判它是写语句
 const ESCAPED_TABLE_RE = /(UPDATE|DELETE\s+FROM|INSERT\s+INTO)\s+\x5C["\x60][A-Za-z_]/i;
 // 定向自证用（缺陷 22）：体内出现 `format!` 动态表名的写语句，同样必须判它是写语句
@@ -893,21 +957,23 @@ function ormWriteEvidence(body) {
 }
 function writeEvidence(crate, body, depth = 0) {
   if (!body) return false;
-  if (WRITE_SQL_RE.test(body)) return true;
+  // 缺陷 29：写判据只扫代码不扫注释（见 stripRustComments 上方说明）。
+  const code = stripRustComments(body);
+  if (WRITE_SQL_RE.test(code)) return true;
   // 缺陷 28：ORM 落笔与 SQL 字面量同层——都在「本函数体」判定，递归 helper 时同样成立。
-  const orm = ormWriteEvidence(body);
+  const orm = ormWriteEvidence(code);
   if (orm) return orm;
   if (depth >= 3) return false;
   // 缺陷 27：跨 crate 通用落笔按具名白名单作证（callHelperBody 解析不到 crud.rs 内的函数）。
   for (const n of CROSS_CRATE_WRITE_HELPERS) {
-    if (awaitCall(body, n)) return n;
+    if (awaitCall(code, n)) return n;
   }
   // 尺子缺陷 24 同族第二处：写 SQL 的转发追踪也不能只看裸名调用点
   // （现场 `u2_render::general_file_store(..)` INSERT 进 x_general_assemble_general_file，修前隐形）。
-  for (const m of body.matchAll(/(?<![.\w])((?:[A-Za-z_]\w*::)*)([a-z_]\w*)\s*\(/g)) {
+  for (const m of code.matchAll(/(?<![.\w])((?:[A-Za-z_]\w*::)*)([a-z_]\w*)\s*\(/g)) {
     const n = m[2];
     const hb = callHelperBody(crate, m[1], n);
-    if (!hb || hb === body || !awaitCall(body, n)) continue;
+    if (!hb || hb === body || !awaitCall(code, n)) continue;
     if (writeEvidence(crate, hb, depth + 1)) return n;
   }
   return false;
@@ -1201,7 +1267,12 @@ console.log("明细已写 write_routes_get_writes.tsv");
 // 整条匿名放行——本批 R4 里的 `invoice_upload`（匿名 INSERT + creator 取 body）就是这么来的。
 // 这里按同一口径复刻，只点名「豁免命中里至少有一个通配段正对着路由的字面量段」的碰撞，
 // 并按体内是否含写 SQL / 是否读会话 / 是否有门禁分三档。
+// A5 批（缺陷 30）：`AUTH_EXEMPT_BLOCKED_PATHS` 是中间件层的精确排除——被点名的路径
+// 即使匹配通配豁免也不放行。碰撞普查与中间件同口径：blocked 路径不再报碰撞。
+// 另外，本身就在 `AUTH_EXEMPT_PATHS` 显式点名（无通配）的路径也不报碰撞——
+// 它的匿名来自显式豁免，不是被 `{param}` 误吞（如 `/api/queryview/list`）。
 function exemptCollisions(p) {
+  if (EXEMPT_PATHS.includes(p)) return [];
   const a = segs(p);
   const out = [];
   for (const pat of EXEMPT_PATHS) {
@@ -1218,6 +1289,7 @@ function exemptCollisions(p) {
 const collisions = [];
 const cb = new Map();
 for (const r of routes) {
+  if (EXEMPT_BLOCKED.includes(r.path)) continue;
   const eatenBy = exemptCollisions(r.path);
   if (!eatenBy.length) continue;
   const body = fnBody(r.crate, r.handlerRef);
@@ -1645,8 +1717,13 @@ for (const key of [
     witnessGaps.push(`缺陷 23 见证缺失（u2_gate_by_sql 定门未被认出，桶 ${bucket || "K"}）：${key.replace(/\t/g, " ")}`);
 }
 // 反向：体内确无判定入口的 GET 写档不许被认成有门（防词表扩成恒真）。
+// 第四十一批换钉：原钉 `document_id_view_count` 本批（A4 收口）真的加上了
+// `require_session` 具名门（不是尺子误判），钉子被合法冲掉；换钉到 `set_cancel`——
+// 它是**设计上匿名**的初始化引导端点（首次引导 `/api/secret/set*` 族，加会话门会打断
+// 初始化），体内确无任何门名，且它确在 GET 写无门禁档，「把无门档认成已加门」的
+// 放宽会被这条当场抓住，载荷与原钉同强。
 for (const key of [
-  "cms_assemble_control\tGET\t/api/document/{id}/view/count\tdocument_id_view_count",
+  "program_init\tGET\t/api/secret/set/cancel\tset_cancel",
 ]) {
   if (!kRoutes.has(key))
     witnessGaps.push(`缺陷 23 反向见证失效（无门档被误判成已加门）：${key.replace(/\t/g, " ")}`);

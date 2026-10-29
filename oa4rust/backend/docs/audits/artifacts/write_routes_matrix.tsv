@@ -144,8 +144,10 @@ attendance_assemble_control	PUT	/api/attendance/assemble/control/statisticshow/f
 attendance_assemble_control	PUT	/api/attendance/assemble/control/statisticshow/filter/unitMonth/list/{id}/next/{count}	statisticshow_filter_unitMonth_list_id_next_count	R7-已认证+体内无会话无门禁
 attendance_assemble_control	PUT	/api/attendance/assemble/control/statisticshow/filter/unitMonth/list/{id}/prev/{count}	statisticshow_filter_unitMonth_list_id_prev_count	R7-已认证+体内无会话无门禁
 attendance_core_entity	POST	/api/attendance/core/entity/record/create	record_create	R5-已认证+体内门禁
+attendance_core_entity	POST	/api/attendance/core/entity/record/{id}/delete	record_delete	R5-已认证+体内门禁
 attendance_core_entity	POST	/api/attendance/core/entity/record/{id}/update	record_update	R5-已认证+体内门禁
 attendance_core_entity	POST	/api/attendance/core/entity/rule/create	rule_create	R5-已认证+体内门禁
+attendance_core_entity	POST	/api/attendance/core/entity/rule/{id}/delete	rule_delete	R5-已认证+体内门禁
 attendance_core_entity	POST	/api/attendance/core/entity/rule/{id}/update	rule_update	R5-已认证+体内门禁
 auth	DELETE	/api/authentication	logout	R4-匿名可达+体内无门禁
 auth	POST	/api/authentication	login	R4-匿名可达+体内无门禁
@@ -829,6 +831,7 @@ meeting_core_entity	POST	/api/meeting/core/entity/meeting/save/{id}	update_meeti
 meeting_core_entity	POST	/api/meeting/core/entity/room/create	create_room	R5-已认证+体内门禁
 meeting_core_entity	POST	/api/meeting/core/entity/room/delete/{id}	delete_room	R5-已认证+体内门禁
 meeting_core_entity	POST	/api/meeting/core/entity/room/save/{id}	update_room	R5-已认证+体内门禁
+message	POST	/api/message/consume/{id}/type/{type}	update_single	R5-已认证+体内门禁
 message	POST	/api/message/custom/create	custom_create	R5-已认证+体内门禁
 message	POST	/api/message/mark_read/{id}	mark_read	R5-已认证+体内门禁
 message_assemble_communicate	DELETE	/api/message/assemble/communicate/im/conversation/{id}/group	im_conversation_id_group	R7-已认证+体内无会话无门禁
@@ -1964,6 +1967,8 @@ program_center	POST	/api/program_center/apppack/pack/info/android/start	apppack_
 program_center	POST	/api/program_center/apppack/pack/info/file/publish	apppack_publish	R5-已认证+体内门禁
 program_center	POST	/api/program_center/appstyle/current/update	appstyle_current_update	R7-已认证+体内无会话无门禁
 program_center	POST	/api/program_center/bar/create/mass/from/count	bar_create_mass_from_count	R7-已认证+体内无会话无门禁
+program_center	POST	/api/program_center/captcha/v2/create/width/{width}/height/{height}	captcha_v2_create_width_width_height_height	R5-已认证+体内门禁
+program_center	POST	/api/program_center/code/create/mobile/{mobile}	code_create_mobile_mobile	R5-已认证+体内门禁
 program_center	POST	/api/program_center/code/list/paging/{page}/size/{size}	code_list_paging_page_size_size	R7-已认证+体内无会话无门禁
 program_center	POST	/api/program_center/collect	collect_add	R6-已认证+读会话无门禁
 program_center	POST	/api/program_center/collect/add	collect_add	R6-已认证+读会话无门禁

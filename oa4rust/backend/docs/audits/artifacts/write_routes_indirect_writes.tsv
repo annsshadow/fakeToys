@@ -9,8 +9,6 @@ attendance_assemble_control	GET	/api/attendance/assemble/control/qywx/sync/from/
 attendance_assemble_control	GET	/api/attendance/assemble/control/v2/group/{id}/delete	v2_group_delete	K	delete_owned_record
 attendance_assemble_control	GET	/api/attendance/assemble/control/v2/leave/delete/{id}	v2_leave_delete	K	delete_owned_record
 attendance_assemble_control	GET	/api/attendance/assemble/control/v2/shift/delete/{id}	v2_shift_delete	K	delete_owned_record
-attendance_core_entity	GET	/api/attendance/core/entity/record/{id}/delete	record_delete	K	sea_orm.Entity::delete_by_id
-attendance_core_entity	GET	/api/attendance/core/entity/rule/{id}/delete	rule_delete	K	sea_orm.Entity::delete_by_id
 auth	GET	/api/authentication/oauth/bind/name/{name}/code/{code}/redirecturi/{redirectUri}	oauth_bind_name	K	provider_login
 auth	GET	/api/authentication/oauth/login/dingding/code/{code}	oauth_login_dingding	K	provider_login
 auth	GET	/api/authentication/oauth/login/name/{name}/code/{code}/redirecturi/{redirectUri}	oauth_login_name	K	provider_login

@@ -1,4 +1,5 @@
 crate	method	path	handler	bucket	eaten_by	registry_level
+auth	GET	/api/qiyeweixin/update/person/detail/{code}	qiyeweixin_update_person_detail	D1-惰性豁免条目（需登录，豁免本身失效）+体内写 SQL	/api/qiyeweixin/update/person/detail/{code}	prefix:/api→Authenticated
 general_assemble_control	POST	/api/general/assemble/control/invoice/create	invoice_create	D1-惰性豁免条目（需登录，豁免本身失效）+体内写 SQL	/api/general/assemble/control/invoice/{id}	prefix:/api→Authenticated
 general_assemble_control	POST	/api/general/assemble/control/invoice/upload	invoice_upload	D1-惰性豁免条目（需登录，豁免本身失效）+体内写 SQL	/api/general/assemble/control/invoice/{id}	prefix:/api→Authenticated
 meeting_assemble_control	POST	/api/meeting/assemble/control/meeting/create	create_meeting	D1-惰性豁免条目（需登录，豁免本身失效）+体内写 SQL	/api/meeting/assemble/control/meeting/{id}	prefix:/api/meeting→Authenticated
