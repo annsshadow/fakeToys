@@ -19357,7 +19357,7 @@ use tower::util::ServiceExt;
     // ── x_cms_core_entity → cms_core_entity (36 routes) ──
     #[tokio::test]
     async fn parity__cms_core_entity__article_create() {
-        let router = oa4rust::cms_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::cms_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -19379,7 +19379,7 @@ use tower::util::ServiceExt;
     }
     #[tokio::test]
     async fn parity__cms_core_entity__article_list() {
-        let router = oa4rust::cms_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::cms_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -19401,7 +19401,7 @@ use tower::util::ServiceExt;
     }
     #[tokio::test]
     async fn parity__cms_core_entity__article_get() {
-        let router = oa4rust::cms_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::cms_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -19423,7 +19423,7 @@ use tower::util::ServiceExt;
     }
     #[tokio::test]
     async fn parity__cms_core_entity__category_create() {
-        let router = oa4rust::cms_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::cms_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -19445,7 +19445,7 @@ use tower::util::ServiceExt;
     }
     #[tokio::test]
     async fn parity__cms_core_entity__category_list() {
-        let router = oa4rust::cms_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::cms_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -19467,7 +19467,7 @@ use tower::util::ServiceExt;
     }
     #[tokio::test]
     async fn parity__cms_core_entity__category_get() {
-        let router = oa4rust::cms_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::cms_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -19489,7 +19489,7 @@ use tower::util::ServiceExt;
     }
     #[tokio::test]
     async fn parity__cms_core_entity__cms_entity_column_create() {
-        let router = oa4rust::cms_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::cms_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -19511,7 +19511,7 @@ use tower::util::ServiceExt;
     }
     #[tokio::test]
     async fn parity__cms_core_entity__cms_entity_column_delete() {
-        let router = oa4rust::cms_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::cms_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -19533,7 +19533,7 @@ use tower::util::ServiceExt;
     }
     #[tokio::test]
     async fn parity__cms_core_entity__cms_entity_column_delete_1() {
-        let router = oa4rust::cms_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::cms_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -19555,7 +19555,7 @@ use tower::util::ServiceExt;
     }
     #[tokio::test]
     async fn parity__cms_core_entity__cms_entity_column_list() {
-        let router = oa4rust::cms_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::cms_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -19577,7 +19577,7 @@ use tower::util::ServiceExt;
     }
     #[tokio::test]
     async fn parity__cms_core_entity__cms_entity_column_save() {
-        let router = oa4rust::cms_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::cms_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -19599,7 +19599,7 @@ use tower::util::ServiceExt;
     }
     #[tokio::test]
     async fn parity__cms_core_entity__cms_entity_column_save_1() {
-        let router = oa4rust::cms_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::cms_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -19621,7 +19621,7 @@ use tower::util::ServiceExt;
     }
     #[tokio::test]
     async fn parity__cms_core_entity__cms_entity_column_manager_create() {
-        let router = oa4rust::cms_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::cms_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -19643,7 +19643,7 @@ use tower::util::ServiceExt;
     }
     #[tokio::test]
     async fn parity__cms_core_entity__cms_entity_column_manager_delete() {
-        let router = oa4rust::cms_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::cms_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -19665,7 +19665,7 @@ use tower::util::ServiceExt;
     }
     #[tokio::test]
     async fn parity__cms_core_entity__cms_entity_column_manager_delete_1() {
-        let router = oa4rust::cms_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::cms_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -19687,7 +19687,7 @@ use tower::util::ServiceExt;
     }
     #[tokio::test]
     async fn parity__cms_core_entity__cms_entity_column_manager_list() {
-        let router = oa4rust::cms_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::cms_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -19709,7 +19709,7 @@ use tower::util::ServiceExt;
     }
     #[tokio::test]
     async fn parity__cms_core_entity__cms_entity_column_manager_save() {
-        let router = oa4rust::cms_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::cms_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -19731,7 +19731,7 @@ use tower::util::ServiceExt;
     }
     #[tokio::test]
     async fn parity__cms_core_entity__cms_entity_column_manager_save_1() {
-        let router = oa4rust::cms_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::cms_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -19753,7 +19753,7 @@ use tower::util::ServiceExt;
     }
     #[tokio::test]
     async fn parity__cms_core_entity__cms_entity_index_create() {
-        let router = oa4rust::cms_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::cms_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -19775,7 +19775,7 @@ use tower::util::ServiceExt;
     }
     #[tokio::test]
     async fn parity__cms_core_entity__cms_entity_index_delete() {
-        let router = oa4rust::cms_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::cms_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -19797,7 +19797,7 @@ use tower::util::ServiceExt;
     }
     #[tokio::test]
     async fn parity__cms_core_entity__cms_entity_index_delete_1() {
-        let router = oa4rust::cms_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::cms_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -19819,7 +19819,7 @@ use tower::util::ServiceExt;
     }
     #[tokio::test]
     async fn parity__cms_core_entity__cms_entity_index_list() {
-        let router = oa4rust::cms_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::cms_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -19841,7 +19841,7 @@ use tower::util::ServiceExt;
     }
     #[tokio::test]
     async fn parity__cms_core_entity__cms_entity_index_save() {
-        let router = oa4rust::cms_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::cms_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -19863,7 +19863,7 @@ use tower::util::ServiceExt;
     }
     #[tokio::test]
     async fn parity__cms_core_entity__cms_entity_index_save_1() {
-        let router = oa4rust::cms_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::cms_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -19885,7 +19885,7 @@ use tower::util::ServiceExt;
     }
     #[tokio::test]
     async fn parity__cms_core_entity__cms_entity_module_create() {
-        let router = oa4rust::cms_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::cms_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -19907,7 +19907,7 @@ use tower::util::ServiceExt;
     }
     #[tokio::test]
     async fn parity__cms_core_entity__cms_entity_module_delete() {
-        let router = oa4rust::cms_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::cms_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -19929,7 +19929,7 @@ use tower::util::ServiceExt;
     }
     #[tokio::test]
     async fn parity__cms_core_entity__cms_entity_module_delete_1() {
-        let router = oa4rust::cms_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::cms_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -19951,7 +19951,7 @@ use tower::util::ServiceExt;
     }
     #[tokio::test]
     async fn parity__cms_core_entity__cms_entity_module_list() {
-        let router = oa4rust::cms_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::cms_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -19973,7 +19973,7 @@ use tower::util::ServiceExt;
     }
     #[tokio::test]
     async fn parity__cms_core_entity__cms_entity_module_save() {
-        let router = oa4rust::cms_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::cms_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -19995,7 +19995,7 @@ use tower::util::ServiceExt;
     }
     #[tokio::test]
     async fn parity__cms_core_entity__cms_entity_module_save_1() {
-        let router = oa4rust::cms_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::cms_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -20017,7 +20017,7 @@ use tower::util::ServiceExt;
     }
     #[tokio::test]
     async fn parity__cms_core_entity__cms_entity_note_create() {
-        let router = oa4rust::cms_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::cms_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -20039,7 +20039,7 @@ use tower::util::ServiceExt;
     }
     #[tokio::test]
     async fn parity__cms_core_entity__cms_entity_note_delete() {
-        let router = oa4rust::cms_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::cms_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -20061,7 +20061,7 @@ use tower::util::ServiceExt;
     }
     #[tokio::test]
     async fn parity__cms_core_entity__cms_entity_note_delete_1() {
-        let router = oa4rust::cms_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::cms_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -20083,7 +20083,7 @@ use tower::util::ServiceExt;
     }
     #[tokio::test]
     async fn parity__cms_core_entity__cms_entity_note_list() {
-        let router = oa4rust::cms_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::cms_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -20105,7 +20105,7 @@ use tower::util::ServiceExt;
     }
     #[tokio::test]
     async fn parity__cms_core_entity__cms_entity_note_save() {
-        let router = oa4rust::cms_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::cms_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -20127,7 +20127,7 @@ use tower::util::ServiceExt;
     }
     #[tokio::test]
     async fn parity__cms_core_entity__cms_entity_note_save_1() {
-        let router = oa4rust::cms_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::cms_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -40175,7 +40175,7 @@ use tower::util::ServiceExt;
     // ── x_organization_core_entity → organization_core_entity (18 routes) ──
     #[tokio::test]
     async fn parity__organization_core_entity__bind_create() {
-        let router = oa4rust::organization_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::organization_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -40197,7 +40197,7 @@ use tower::util::ServiceExt;
     }
     #[tokio::test]
     async fn parity__organization_core_entity__bind_list() {
-        let router = oa4rust::organization_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::organization_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -40219,7 +40219,7 @@ use tower::util::ServiceExt;
     }
     #[tokio::test]
     async fn parity__organization_core_entity__bind_update() {
-        let router = oa4rust::organization_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::organization_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -40241,7 +40241,7 @@ use tower::util::ServiceExt;
     }
     #[tokio::test]
     async fn parity__organization_core_entity__custom_create() {
-        let router = oa4rust::organization_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::organization_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -40263,7 +40263,7 @@ use tower::util::ServiceExt;
     }
     #[tokio::test]
     async fn parity__organization_core_entity__custom_list() {
-        let router = oa4rust::organization_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::organization_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -40285,7 +40285,7 @@ use tower::util::ServiceExt;
     }
     #[tokio::test]
     async fn parity__organization_core_entity__custom_update() {
-        let router = oa4rust::organization_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::organization_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -40307,7 +40307,7 @@ use tower::util::ServiceExt;
     }
     #[tokio::test]
     async fn parity__organization_core_entity__definition_create() {
-        let router = oa4rust::organization_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::organization_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -40329,7 +40329,7 @@ use tower::util::ServiceExt;
     }
     #[tokio::test]
     async fn parity__organization_core_entity__definition_list() {
-        let router = oa4rust::organization_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::organization_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -40351,7 +40351,7 @@ use tower::util::ServiceExt;
     }
     #[tokio::test]
     async fn parity__organization_core_entity__definition_update() {
-        let router = oa4rust::organization_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::organization_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -40373,7 +40373,7 @@ use tower::util::ServiceExt;
     }
     #[tokio::test]
     async fn parity__organization_core_entity__group_create() {
-        let router = oa4rust::organization_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::organization_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -40395,7 +40395,7 @@ use tower::util::ServiceExt;
     }
     #[tokio::test]
     async fn parity__organization_core_entity__group_list() {
-        let router = oa4rust::organization_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::organization_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -40417,7 +40417,7 @@ use tower::util::ServiceExt;
     }
     #[tokio::test]
     async fn parity__organization_core_entity__group_update() {
-        let router = oa4rust::organization_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::organization_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -40439,7 +40439,7 @@ use tower::util::ServiceExt;
     }
     #[tokio::test]
     async fn parity__organization_core_entity__identity_create() {
-        let router = oa4rust::organization_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::organization_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -40461,7 +40461,7 @@ use tower::util::ServiceExt;
     }
     #[tokio::test]
     async fn parity__organization_core_entity__identity_list() {
-        let router = oa4rust::organization_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::organization_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -40483,7 +40483,7 @@ use tower::util::ServiceExt;
     }
     #[tokio::test]
     async fn parity__organization_core_entity__identity_update() {
-        let router = oa4rust::organization_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::organization_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -40505,7 +40505,7 @@ use tower::util::ServiceExt;
     }
     #[tokio::test]
     async fn parity__organization_core_entity__person_create() {
-        let router = oa4rust::organization_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::organization_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -40527,7 +40527,7 @@ use tower::util::ServiceExt;
     }
     #[tokio::test]
     async fn parity__organization_core_entity__person_list() {
-        let router = oa4rust::organization_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::organization_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -40549,7 +40549,7 @@ use tower::util::ServiceExt;
     }
     #[tokio::test]
     async fn parity__organization_core_entity__person_update() {
-        let router = oa4rust::organization_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::organization_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -70133,7 +70133,7 @@ use tower::util::ServiceExt;
     // ── x_processplatform_core_entity → processplatform_core_entity (6 routes) ──
     #[tokio::test]
     async fn parity__processplatform_core_entity__task_list() {
-        let router = oa4rust::processplatform_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::processplatform_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -70155,7 +70155,7 @@ use tower::util::ServiceExt;
     }
     #[tokio::test]
     async fn parity__processplatform_core_entity__task_get() {
-        let router = oa4rust::processplatform_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::processplatform_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -70177,7 +70177,7 @@ use tower::util::ServiceExt;
     }
     #[tokio::test]
     async fn parity__processplatform_core_entity__ticket_list() {
-        let router = oa4rust::processplatform_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::processplatform_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -70199,7 +70199,7 @@ use tower::util::ServiceExt;
     }
     #[tokio::test]
     async fn parity__processplatform_core_entity__work_list() {
-        let router = oa4rust::processplatform_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::processplatform_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -70221,7 +70221,7 @@ use tower::util::ServiceExt;
     }
     #[tokio::test]
     async fn parity__processplatform_core_entity__work_get() {
-        let router = oa4rust::processplatform_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::processplatform_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()
@@ -70243,7 +70243,7 @@ use tower::util::ServiceExt;
     }
     #[tokio::test]
     async fn parity__processplatform_core_entity__workcompleted_list() {
-        let router = oa4rust::processplatform_core_entity::router(shared::testing::test_pool());
+        let router = oa4rust::processplatform_core_entity::router(shared::testing::mock_db().await);
         let response = router
             .oneshot(
                 axum::http::Request::builder()

@@ -6,11 +6,10 @@
 //! 门禁。这些是 ORM 写，审计尺子"含写"指标不可见（ORM-blindness，§五 尺子缺陷
 //! 28）——R7 降 3 但"含写"不变属预期；本批以离线 401 臂交叉验证。
 //!
-//! 注：本 crate（乃至除 program_center_core_entity 外的全部 *_core_entity）的
-//! router 从不提供 `Extension<DatabaseConnection>` ⇒ HTTP 面 extraction 先失败
-//! （500），routes 实为死路（§五 新增系统性接线缺陷项，本批只做静态收门 +
-//! 直调臂验证；接线修复模式见 §五：program_center_core_entity 的 async router
-//! + `shared::db::create_sea_orm_pool()` + `.layer(Extension(db))`）。
+//! 注：本 crate（乃至全部 *_core_entity）的 router 在 B3 批已修复——接收
+//! `sea_orm::DatabaseConnection` 并注入 `Extension<DatabaseConnection>`，HTTP 面
+//! 不再在 extraction 期 500（接线前 routes 实为死路，见 §五 系统性接线缺陷项）。
+//! 本批仍保留直调臂（绕过路由层，直接验证门在 DB 访问前生效）。
 //!
 //! 证据臂（直调 handler，绕过 extraction，与 b65/b70/b72 同型）：
 //! 1. 真 sea_orm 连接 + `None` 会话 → 全部 `Err(AppError::Unauthorized)`，

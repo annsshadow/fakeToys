@@ -5,24 +5,16 @@
 mod tests {
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
-    use deadpool_postgres::{Manager, Pool};
     use shared::response::ActionResult;
     use tower::ServiceExt;
 
-    fn build_test_pool() -> Pool {
-        let mgr = Manager::new(
-            deadpool_postgres::tokio_postgres::Config::new(),
-            deadpool_postgres::tokio_postgres::NoTls,
-        );
-        Pool::builder(mgr).build().unwrap()
-    }
 
     #[test]
     fn test_record_list_returns_success() {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
-            let pool = build_test_pool();
-            let app = crate::attendance_core_entity_router(pool);
+            let db = shared::testing::mock_db().await;
+            let app = crate::attendance_core_entity_router(db);
 
             let response = app
                 .clone()
@@ -44,8 +36,8 @@ mod tests {
     fn test_rule_list_returns_success() {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
-            let pool = build_test_pool();
-            let app = crate::attendance_core_entity_router(pool);
+            let db = shared::testing::mock_db().await;
+            let app = crate::attendance_core_entity_router(db);
 
             let response = app
                 .clone()
@@ -67,8 +59,8 @@ mod tests {
     fn test_rule_create_returns_success() {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
-            let pool = build_test_pool();
-            let app = crate::attendance_core_entity_router(pool);
+            let db = shared::testing::mock_db().await;
+            let app = crate::attendance_core_entity_router(db);
 
             let response = app
                 .clone()
@@ -85,10 +77,8 @@ mod tests {
                 .await
                 .unwrap();
 
-            assert!(
-                response.status() == StatusCode::INTERNAL_SERVER_ERROR
-                    || response.status() == StatusCode::NOT_FOUND
-            );
+            // B3 接线后：无会话请求在 DB 访问前被 require_session 拦为 401。
+            assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
         });
     }
 
@@ -96,8 +86,8 @@ mod tests {
     fn test_rule_update_returns_success() {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
-            let pool = build_test_pool();
-            let app = crate::attendance_core_entity_router(pool);
+            let db = shared::testing::mock_db().await;
+            let app = crate::attendance_core_entity_router(db);
 
             let response = app
                 .clone()
@@ -112,10 +102,8 @@ mod tests {
                 .await
                 .unwrap();
 
-            assert!(
-                response.status() == StatusCode::INTERNAL_SERVER_ERROR
-                    || response.status() == StatusCode::NOT_FOUND
-            );
+            // B3 接线后：无会话请求在 DB 访问前被 require_session 拦为 401。
+            assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
         });
     }
 
@@ -123,8 +111,8 @@ mod tests {
     fn test_rule_delete_returns_success() {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
-            let pool = build_test_pool();
-            let app = crate::attendance_core_entity_router(pool);
+            let db = shared::testing::mock_db().await;
+            let app = crate::attendance_core_entity_router(db);
 
             let response = app
                 .clone()
@@ -138,13 +126,8 @@ mod tests {
                 .await
                 .unwrap();
 
-            // 收会话存在档门后，无会话请求应在 DB 访问前被拦（A4 批）。
-            // B3 接线未修前 Extension<DatabaseConnection> 提取失败为 500；
-            // B3 修复后应收敛为 401。
-            assert!(
-                response.status() == StatusCode::UNAUTHORIZED
-                    || response.status() == StatusCode::INTERNAL_SERVER_ERROR
-            );
+            // B3 接线后：无会话请求在 DB 访问前被 require_session 拦为 401。
+            assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
         });
     }
 
@@ -152,8 +135,8 @@ mod tests {
     fn test_record_create_returns_success() {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
-            let pool = build_test_pool();
-            let app = crate::attendance_core_entity_router(pool);
+            let db = shared::testing::mock_db().await;
+            let app = crate::attendance_core_entity_router(db);
 
             let response = app
                 .clone()
@@ -170,10 +153,8 @@ mod tests {
                 .await
                 .unwrap();
 
-            assert!(
-                response.status() == StatusCode::INTERNAL_SERVER_ERROR
-                    || response.status() == StatusCode::NOT_FOUND
-            );
+            // B3 接线后：无会话请求在 DB 访问前被 require_session 拦为 401。
+            assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
         });
     }
 
@@ -181,8 +162,8 @@ mod tests {
     fn test_record_update_returns_success() {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
-            let pool = build_test_pool();
-            let app = crate::attendance_core_entity_router(pool);
+            let db = shared::testing::mock_db().await;
+            let app = crate::attendance_core_entity_router(db);
 
             let response = app
                 .clone()
@@ -197,10 +178,8 @@ mod tests {
                 .await
                 .unwrap();
 
-            assert!(
-                response.status() == StatusCode::INTERNAL_SERVER_ERROR
-                    || response.status() == StatusCode::NOT_FOUND
-            );
+            // B3 接线后：无会话请求在 DB 访问前被 require_session 拦为 401。
+            assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
         });
     }
 
@@ -208,8 +187,8 @@ mod tests {
     fn test_record_delete_returns_success() {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
-            let pool = build_test_pool();
-            let app = crate::attendance_core_entity_router(pool);
+            let db = shared::testing::mock_db().await;
+            let app = crate::attendance_core_entity_router(db);
 
             let response = app
                 .clone()
@@ -223,13 +202,8 @@ mod tests {
                 .await
                 .unwrap();
 
-            // 收会话存在档门后，无会话请求应在 DB 访问前被拦（A4 批）。
-            // B3 接线未修前 Extension<DatabaseConnection> 提取失败为 500；
-            // B3 修复后应收敛为 401。
-            assert!(
-                response.status() == StatusCode::UNAUTHORIZED
-                    || response.status() == StatusCode::INTERNAL_SERVER_ERROR
-            );
+            // B3 接线后：无会话请求在 DB 访问前被 require_session 拦为 401。
+            assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
         });
     }
 

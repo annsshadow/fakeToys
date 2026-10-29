@@ -6,22 +6,14 @@ mod tests {
     use crate::entities::{org_group::Model as Group, org_person::Model as Person};
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
-    use deadpool_postgres::{Manager, Pool};
     use shared::response::ActionResult;
     use tower::ServiceExt;
 
-    fn build_test_pool() -> Pool {
-        let mgr = Manager::new(
-            deadpool_postgres::tokio_postgres::Config::new(),
-            deadpool_postgres::tokio_postgres::NoTls,
-        );
-        Pool::builder(mgr).build().unwrap()
-    }
 
     #[tokio::test]
     async fn test_definition_list_returns_success() {
-        let pool = build_test_pool();
-        let app = crate::organization_core_entity_router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::organization_core_entity_router(db);
 
         let response = app
             .clone()
@@ -40,8 +32,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_group_list_returns_success() {
-        let pool = build_test_pool();
-        let app = crate::organization_core_entity_router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::organization_core_entity_router(db);
 
         let response = app
             .clone()
@@ -60,8 +52,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_identity_list_returns_success() {
-        let pool = build_test_pool();
-        let app = crate::organization_core_entity_router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::organization_core_entity_router(db);
 
         let response = app
             .clone()
@@ -80,8 +72,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_person_list_returns_success() {
-        let pool = build_test_pool();
-        let app = crate::organization_core_entity_router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::organization_core_entity_router(db);
 
         let response = app
             .clone()
@@ -100,8 +92,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_custom_list_returns_success() {
-        let pool = build_test_pool();
-        let app = crate::organization_core_entity_router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::organization_core_entity_router(db);
 
         let response = app
             .clone()
@@ -120,8 +112,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_bind_list_returns_success() {
-        let pool = build_test_pool();
-        let app = crate::organization_core_entity_router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::organization_core_entity_router(db);
 
         let response = app
             .clone()
@@ -140,8 +132,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_definition_create_returns_error_without_db() {
-        let pool = build_test_pool();
-        let app = crate::organization_core_entity_router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::organization_core_entity_router(db);
 
         let response = app
             .clone()
@@ -154,7 +146,7 @@ mod tests {
                         serde_json::to_string(&serde_json::json!({
                             "name": "测试定义",
                             "category": "test",
-                            "type": "string"
+                            "type_": "string"
                         }))
                         .unwrap(),
                     ))
@@ -163,13 +155,14 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+        // definition_create 有会话门：无会话在 DB 访问前 401（B3 接线后）。
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
     }
 
     #[tokio::test]
     async fn test_person_update_returns_error_without_db() {
-        let pool = build_test_pool();
-        let app = crate::organization_core_entity_router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::organization_core_entity_router(db);
 
         let response = app
             .clone()
@@ -194,8 +187,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_group_update_returns_error_without_db() {
-        let pool = build_test_pool();
-        let app = crate::organization_core_entity_router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::organization_core_entity_router(db);
 
         let response = app
             .clone()
@@ -221,8 +214,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_definition_create_missing_fields_returns_200_with_error_body() {
-        let pool = build_test_pool();
-        let app = crate::organization_core_entity_router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::organization_core_entity_router(db);
 
         let response = app
             .clone()
@@ -233,7 +226,9 @@ mod tests {
                     .header("content-type", "application/json")
                     .body(Body::from(
                         serde_json::to_string(&serde_json::json!({
-                            "name": ""
+                            "name": "",
+                            "category": "test",
+                            "type_": "string"
                         }))
                         .unwrap(),
                     ))
@@ -242,14 +237,14 @@ mod tests {
             .await
             .unwrap();
 
-        // No DB connection on router = 500; the validation path returns 200 with error body when DB is present.
-        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+        // definition_create 有会话门：无会话在 DB 访问前 401（B3 接线后）。
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
     }
 
     #[tokio::test]
     async fn test_person_create_returns_error_without_db() {
-        let pool = build_test_pool();
-        let app = crate::organization_core_entity_router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::organization_core_entity_router(db);
 
         let response = app
             .clone()
@@ -275,8 +270,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_person_delete_returns_error_without_db() {
-        let pool = build_test_pool();
-        let app = crate::organization_core_entity_router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::organization_core_entity_router(db);
 
         let response = app
             .clone()
@@ -295,8 +290,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_group_create_returns_error_without_db() {
-        let pool = build_test_pool();
-        let app = crate::organization_core_entity_router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::organization_core_entity_router(db);
 
         let response = app
             .clone()
@@ -322,8 +317,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_identity_create_returns_error_without_db() {
-        let pool = build_test_pool();
-        let app = crate::organization_core_entity_router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::organization_core_entity_router(db);
 
         let response = app
             .clone()
@@ -336,7 +331,7 @@ mod tests {
                         serde_json::to_string(&serde_json::json!({
                             "person_id": "person-001",
                             "name": "Identity Test",
-                            "type": "account"
+                            "type_": "account"
                         }))
                         .unwrap(),
                     ))
@@ -345,13 +340,14 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+        // identity_create 有会话门：无会话在 DB 访问前 401（B3 接线后）。
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
     }
 
     #[tokio::test]
     async fn test_bind_create_returns_error_without_db() {
-        let pool = build_test_pool();
-        let app = crate::organization_core_entity_router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::organization_core_entity_router(db);
 
         let response = app
             .clone()
@@ -372,13 +368,14 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+        // bind_create 有会话门：无会话在 DB 访问前 401（B3 接线后）。
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
     }
 
     #[tokio::test]
     async fn test_custom_create_returns_error_without_db() {
-        let pool = build_test_pool();
-        let app = crate::organization_core_entity_router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::organization_core_entity_router(db);
 
         let response = app
             .clone()
@@ -400,7 +397,8 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+        // custom_create 有会话门：无会话在 DB 访问前 401（B3 接线后）。
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
     }
 
     #[test]

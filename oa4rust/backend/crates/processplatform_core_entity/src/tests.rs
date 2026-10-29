@@ -5,22 +5,14 @@
 mod tests {
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
-    use deadpool_postgres::{Manager, Pool};
     use shared::response::ActionResult;
     use tower::ServiceExt;
 
-    fn build_test_pool() -> Pool {
-        let mgr = Manager::new(
-            deadpool_postgres::tokio_postgres::Config::new(),
-            deadpool_postgres::tokio_postgres::NoTls,
-        );
-        Pool::builder(mgr).build().unwrap()
-    }
 
     #[tokio::test]
     async fn test_work_list_route_exists() {
-        let pool = build_test_pool();
-        let app = crate::processplatform_core_entity_router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::processplatform_core_entity_router(db);
 
         let response = app
             .oneshot(
@@ -38,8 +30,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_work_get_route_exists() {
-        let pool = build_test_pool();
-        let app = crate::processplatform_core_entity_router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::processplatform_core_entity_router(db);
 
         let response = app
             .oneshot(
@@ -57,8 +49,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_task_list_route_exists() {
-        let pool = build_test_pool();
-        let app = crate::processplatform_core_entity_router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::processplatform_core_entity_router(db);
 
         let response = app
             .oneshot(
@@ -76,8 +68,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_task_get_route_exists() {
-        let pool = build_test_pool();
-        let app = crate::processplatform_core_entity_router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::processplatform_core_entity_router(db);
 
         let response = app
             .oneshot(
@@ -95,8 +87,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_ticket_list_route_exists() {
-        let pool = build_test_pool();
-        let app = crate::processplatform_core_entity_router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::processplatform_core_entity_router(db);
 
         let response = app
             .oneshot(
@@ -114,8 +106,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_workcompleted_list_route_exists() {
-        let pool = build_test_pool();
-        let app = crate::processplatform_core_entity_router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::processplatform_core_entity_router(db);
 
         let response = app
             .oneshot(
@@ -145,15 +137,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_db_error_returns_internal() {
-        let mut cfg = deadpool_postgres::tokio_postgres::Config::new();
-        cfg.host("invalid-host-that-does-not-exist")
-            .port(1)
-            .user("invalid")
-            .password("invalid")
-            .dbname("nonexistent");
-        let mgr = Manager::new(cfg, deadpool_postgres::tokio_postgres::NoTls);
-        let pool = Pool::builder(mgr).build().unwrap();
-        let app = crate::processplatform_core_entity_router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::processplatform_core_entity_router(db);
 
         let response = app
             .oneshot(

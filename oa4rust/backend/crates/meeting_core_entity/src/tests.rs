@@ -9,22 +9,14 @@ mod tests {
     };
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
-    use deadpool_postgres::{Manager, Pool};
     use shared::response::ActionResult;
     use tower::ServiceExt;
 
-    fn build_test_pool() -> Pool {
-        let mgr = Manager::new(
-            deadpool_postgres::tokio_postgres::Config::new(),
-            deadpool_postgres::tokio_postgres::NoTls,
-        );
-        Pool::builder(mgr).build().unwrap()
-    }
 
     #[tokio::test]
     async fn test_room_list_returns_internal_error_without_db() {
-        let pool = build_test_pool();
-        let app = meeting_core_entity_router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = meeting_core_entity_router(db, shared::testing::mock_pool());
 
         let response = app
             .clone()
@@ -43,8 +35,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_room_route_accessible() {
-        let pool = build_test_pool();
-        let app = meeting_core_entity_router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = meeting_core_entity_router(db, shared::testing::mock_pool());
 
         let response = app
             .oneshot(
@@ -63,8 +55,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_room_route_accessible() {
-        let pool = build_test_pool();
-        let app = meeting_core_entity_router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = meeting_core_entity_router(db, shared::testing::mock_pool());
 
         let response = app
             .oneshot(
@@ -85,8 +77,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_update_room_route_accessible() {
-        let pool = build_test_pool();
-        let app = meeting_core_entity_router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = meeting_core_entity_router(db, shared::testing::mock_pool());
 
         let response = app
             .oneshot(
@@ -105,8 +97,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_update_room_returns_error_without_db() {
-        let pool = build_test_pool();
-        let app = meeting_core_entity_router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = meeting_core_entity_router(db, shared::testing::mock_pool());
 
         let response = app
             .clone()
@@ -129,8 +121,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_delete_room_route_accessible() {
-        let pool = build_test_pool();
-        let app = meeting_core_entity_router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = meeting_core_entity_router(db, shared::testing::mock_pool());
 
         let response = app
             .oneshot(
@@ -151,8 +143,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_meeting_list_returns_internal_error_without_db() {
-        let pool = build_test_pool();
-        let app = meeting_core_entity_router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = meeting_core_entity_router(db, shared::testing::mock_pool());
 
         let response = app
             .clone()
@@ -171,8 +163,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_meeting_list_by_room_returns_internal_error() {
-        let pool = build_test_pool();
-        let app = meeting_core_entity_router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = meeting_core_entity_router(db, shared::testing::mock_pool());
 
         let response = app
             .clone()
@@ -186,10 +178,8 @@ mod tests {
             .await
             .unwrap();
 
-        assert!(
-            response.status() == StatusCode::INTERNAL_SERVER_ERROR
-                || response.status() == StatusCode::NOT_FOUND
-        );
+        // 只读 GET，无会话门；无 DB 时返回 500。
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
     }
 
     #[test]

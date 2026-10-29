@@ -11,8 +11,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_list() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::router(db);
         let response = app
             .oneshot(
                 Request::builder()
@@ -32,8 +32,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_folder_list() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::router(db);
         let response = app
             .oneshot(
                 Request::builder()
@@ -54,8 +54,8 @@ mod tests {
     // SKIPPED: version_list not accessible
     #[tokio::test]
     async fn test_create_mind() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::router(db);
         let response = app
             .oneshot(
                 Request::builder()
@@ -75,8 +75,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_update_mind() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::router(db);
         let response = app
             .oneshot(
                 Request::builder()
@@ -96,8 +96,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_delete_mind() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::router(db);
         let response = app
             .oneshot(
                 Request::builder()
@@ -117,8 +117,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_folder() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::router(db);
         let response = app
             .oneshot(
                 Request::builder()
@@ -138,8 +138,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_update_folder() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::router(db);
         let response = app
             .oneshot(
                 Request::builder()
@@ -159,8 +159,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_delete_folder() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::router(db);
         let response = app
             .oneshot(
                 Request::builder()
@@ -180,8 +180,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_version() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::router(db);
         let response = app
             .oneshot(
                 Request::builder()

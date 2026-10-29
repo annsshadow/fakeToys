@@ -6,22 +6,14 @@ mod tests {
     use crate::Correlation;
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
-    use deadpool_postgres::{Manager, Pool};
     use shared::response::ActionResult;
     use tower::ServiceExt;
 
-    fn build_test_pool() -> Pool {
-        let mgr = Manager::new(
-            deadpool_postgres::tokio_postgres::Config::new(),
-            deadpool_postgres::tokio_postgres::NoTls,
-        );
-        Pool::builder(mgr).build().unwrap()
-    }
 
     #[tokio::test]
     async fn test_list_returns_success() {
-        let pool = build_test_pool();
-        let app = crate::correlation_core_entity_router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::correlation_core_entity_router(db);
 
         let response = app
             .clone()
@@ -40,8 +32,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_list_by_source_returns_success() {
-        let pool = build_test_pool();
-        let app = crate::correlation_core_entity_router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::correlation_core_entity_router(db);
 
         let response = app
             .clone()
@@ -55,11 +47,8 @@ mod tests {
             .await
             .unwrap();
 
-        // 由于没有数据库，会返回 INTERNAL_SERVER_ERROR (500)
-        assert!(
-            response.status() == StatusCode::INTERNAL_SERVER_ERROR
-                || response.status() == StatusCode::NOT_FOUND
-        );
+        // 只读 GET，无会话门；无 DB 时返回 500。
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
     }
 
     #[test]
@@ -89,8 +78,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_route_exists() {
-        let pool = build_test_pool();
-        let app = crate::correlation_core_entity_router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::correlation_core_entity_router(db);
 
         let response = app
             .clone()
@@ -105,16 +94,14 @@ mod tests {
             .await
             .unwrap();
 
-        assert!(
-            response.status() == StatusCode::INTERNAL_SERVER_ERROR
-                || response.status() == StatusCode::OK
-        );
+        // create 有会话门：无会话在 DB 访问前 401（B3 接线后）。
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
     }
 
     #[tokio::test]
     async fn test_delete_route_exists() {
-        let pool = build_test_pool();
-        let app = crate::correlation_core_entity_router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::correlation_core_entity_router(db);
 
         let response = app
             .clone()
@@ -128,11 +115,8 @@ mod tests {
             .await
             .unwrap();
 
-        assert!(
-            response.status() == StatusCode::INTERNAL_SERVER_ERROR
-                || response.status() == StatusCode::OK
-                || response.status() == StatusCode::NOT_FOUND
-        );
+        // delete 有会话门：无会话在 DB 访问前 401（B3 接线后）。
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
     }
 
     #[test]

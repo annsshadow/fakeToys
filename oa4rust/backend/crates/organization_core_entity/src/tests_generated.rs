@@ -11,8 +11,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_definition_list() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::router(db);
         let response = app
             .oneshot(
                 Request::builder()
@@ -32,8 +32,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_group_list() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::router(db);
         let response = app
             .oneshot(
                 Request::builder()
@@ -53,8 +53,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_identity_list() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::router(db);
         let response = app
             .oneshot(
                 Request::builder()
@@ -74,8 +74,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_person_list() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::router(db);
         let response = app
             .oneshot(
                 Request::builder()
@@ -96,8 +96,8 @@ mod tests {
     // SKIPPED: custom_list not accessible
     #[tokio::test]
     async fn test_bind_list() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::router(db);
         let response = app
             .oneshot(
                 Request::builder()
@@ -117,8 +117,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_definition_create() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::router(db);
         let response = app
             .oneshot(
                 Request::builder()
@@ -140,8 +140,8 @@ mod tests {
     // SKIPPED: definition_delete not accessible
     #[tokio::test]
     async fn test_group_create() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::router(db);
         let response = app
             .oneshot(
                 Request::builder()
@@ -161,8 +161,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_group_update() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::router(db);
         let response = app
             .oneshot(
                 Request::builder()
@@ -186,8 +186,8 @@ mod tests {
     // SKIPPED: identity_delete not accessible
     #[tokio::test]
     async fn test_person_create() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::router(db);
         let response = app
             .oneshot(
                 Request::builder()
@@ -209,8 +209,8 @@ mod tests {
     // SKIPPED: person_delete not accessible
     #[tokio::test]
     async fn test_custom_create() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::router(db);
         let response = app
             .oneshot(
                 Request::builder()
@@ -232,8 +232,8 @@ mod tests {
     // SKIPPED: custom_delete not accessible
     #[tokio::test]
     async fn test_bind_create() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::router(db);
         let response = app
             .oneshot(
                 Request::builder()
@@ -253,8 +253,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_bind_update() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::router(db);
         let response = app
             .oneshot(
                 Request::builder()

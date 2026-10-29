@@ -13,20 +13,13 @@ mod tests {
     use std::str::FromStr;
     use tower::ServiceExt;
 
-    fn build_test_pool() -> Pool {
-        let mgr = Manager::new(
-            deadpool_postgres::tokio_postgres::Config::new(),
-            deadpool_postgres::tokio_postgres::NoTls,
-        );
-        Pool::builder(mgr).build().unwrap()
-    }
 
     #[test]
     fn test_category_list_returns_success() {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
-            let pool = build_test_pool();
-            let app = crate::cms_core_entity_router(pool);
+            let db = shared::testing::mock_db().await;
+            let app = crate::cms_core_entity_router(db);
 
             let response = app
                 .clone()
@@ -48,8 +41,8 @@ mod tests {
     fn test_category_get_returns_success() {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
-            let pool = build_test_pool();
-            let app = crate::cms_core_entity_router(pool);
+            let db = shared::testing::mock_db().await;
+            let app = crate::cms_core_entity_router(db);
 
             let response = app
                 .clone()
@@ -73,8 +66,8 @@ mod tests {
         // This test verifies the route is accessible.
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
-            let pool = build_test_pool();
-            let app = crate::cms_core_entity_router(pool);
+            let db = shared::testing::mock_db().await;
+            let app = crate::cms_core_entity_router(db);
 
             let response = app
                 .clone()
@@ -96,8 +89,8 @@ mod tests {
     fn test_category_update_returns_success() {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
-            let pool = build_test_pool();
-            let app = crate::cms_core_entity_router(pool);
+            let db = shared::testing::mock_db().await;
+            let app = crate::cms_core_entity_router(db);
 
             // Note: cms uses GET for update route (category/{id}) - not a PUT endpoint
             let response = app
@@ -112,11 +105,8 @@ mod tests {
                 .await
                 .unwrap();
 
-            // Will return 500 without DB or 404 if route missing
-            assert!(
-                response.status() == StatusCode::INTERNAL_SERVER_ERROR
-                    || response.status() == StatusCode::NOT_FOUND
-            );
+            // 这是只读 GET（category 详情），无会话门；无 DB 时返回 500。
+            assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
         });
     }
 
@@ -124,8 +114,8 @@ mod tests {
     fn test_article_create_returns_success() {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
-            let pool = build_test_pool();
-            let app = crate::cms_core_entity_router(pool);
+            let db = shared::testing::mock_db().await;
+            let app = crate::cms_core_entity_router(db);
 
             let response = app
                 .clone()
@@ -148,8 +138,8 @@ mod tests {
     fn test_article_list_returns_success() {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
-            let pool = build_test_pool();
-            let app = crate::cms_core_entity_router(pool);
+            let db = shared::testing::mock_db().await;
+            let app = crate::cms_core_entity_router(db);
 
             let response = app
                 .clone()
@@ -171,8 +161,8 @@ mod tests {
     fn test_article_get_returns_success() {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
-            let pool = build_test_pool();
-            let app = crate::cms_core_entity_router(pool);
+            let db = shared::testing::mock_db().await;
+            let app = crate::cms_core_entity_router(db);
 
             let response = app
                 .clone()
@@ -239,8 +229,8 @@ mod tests {
     fn test_cms_core_entity_list_routes_registered() {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
-            let pool = build_test_pool();
-            let app = crate::cms_core_entity_router(pool);
+            let db = shared::testing::mock_db().await;
+            let app = crate::cms_core_entity_router(db);
             for uri in [
                 "/api/cms/core/entity/column/list",
                 "/api/cms/core/entity/column_manager/list",

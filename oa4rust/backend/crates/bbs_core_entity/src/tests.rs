@@ -9,24 +9,16 @@ mod tests {
     };
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
-    use deadpool_postgres::{Manager, Pool};
     use shared::response::ActionResult;
     use tower::ServiceExt;
 
-    fn build_test_pool() -> Pool {
-        let mgr = Manager::new(
-            deadpool_postgres::tokio_postgres::Config::new(),
-            deadpool_postgres::tokio_postgres::NoTls,
-        );
-        Pool::builder(mgr).build().unwrap()
-    }
 
     #[test]
     fn test_forum_list_returns_success() {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
-            let pool = build_test_pool();
-            let app = crate::bbs_core_entity_router(pool);
+            let db = shared::testing::mock_db().await;
+            let app = crate::bbs_core_entity_router(db);
 
             let response = app
                 .clone()
@@ -48,8 +40,8 @@ mod tests {
     fn test_section_list_returns_success() {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
-            let pool = build_test_pool();
-            let app = crate::bbs_core_entity_router(pool);
+            let db = shared::testing::mock_db().await;
+            let app = crate::bbs_core_entity_router(db);
 
             let response = app
                 .clone()
@@ -71,8 +63,8 @@ mod tests {
     fn test_subject_top_list_returns_success() {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
-            let pool = build_test_pool();
-            let app = crate::bbs_core_entity_router(pool);
+            let db = shared::testing::mock_db().await;
+            let app = crate::bbs_core_entity_router(db);
 
             let response = app
                 .clone()
@@ -94,8 +86,8 @@ mod tests {
     fn test_subject_list_returns_success() {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
-            let pool = build_test_pool();
-            let app = crate::bbs_core_entity_router(pool);
+            let db = shared::testing::mock_db().await;
+            let app = crate::bbs_core_entity_router(db);
 
             let response = app
                 .clone()
@@ -117,8 +109,8 @@ mod tests {
     fn test_forum_create_returns_success() {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
-            let pool = build_test_pool();
-            let app = crate::bbs_core_entity_router(pool);
+            let db = shared::testing::mock_db().await;
+            let app = crate::bbs_core_entity_router(db);
 
             let response = app
                 .clone()
@@ -133,10 +125,7 @@ mod tests {
                 .await
                 .unwrap();
 
-            assert!(
-                response.status() == StatusCode::INTERNAL_SERVER_ERROR
-                    || response.status() == StatusCode::NOT_FOUND
-            );
+            assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
         });
     }
 
@@ -144,8 +133,8 @@ mod tests {
     fn test_forum_update_returns_success() {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
-            let pool = build_test_pool();
-            let app = crate::bbs_core_entity_router(pool);
+            let db = shared::testing::mock_db().await;
+            let app = crate::bbs_core_entity_router(db);
 
             let response = app
                 .clone()
@@ -160,10 +149,7 @@ mod tests {
                 .await
                 .unwrap();
 
-            assert!(
-                response.status() == StatusCode::INTERNAL_SERVER_ERROR
-                    || response.status() == StatusCode::NOT_FOUND
-            );
+            assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
         });
     }
 
@@ -171,8 +157,8 @@ mod tests {
     fn test_forum_delete_returns_success() {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
-            let pool = build_test_pool();
-            let app = crate::bbs_core_entity_router(pool);
+            let db = shared::testing::mock_db().await;
+            let app = crate::bbs_core_entity_router(db);
 
             let response = app
                 .clone()
@@ -186,10 +172,7 @@ mod tests {
                 .await
                 .unwrap();
 
-            assert!(
-                response.status() == StatusCode::INTERNAL_SERVER_ERROR
-                    || response.status() == StatusCode::NOT_FOUND
-            );
+            assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
         });
     }
 
@@ -197,8 +180,8 @@ mod tests {
     fn test_section_create_returns_success() {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
-            let pool = build_test_pool();
-            let app = crate::bbs_core_entity_router(pool);
+            let db = shared::testing::mock_db().await;
+            let app = crate::bbs_core_entity_router(db);
 
             let response = app
                 .clone()
@@ -213,10 +196,7 @@ mod tests {
                 .await
                 .unwrap();
 
-            assert!(
-                response.status() == StatusCode::INTERNAL_SERVER_ERROR
-                    || response.status() == StatusCode::NOT_FOUND
-            );
+            assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
         });
     }
 
@@ -224,8 +204,8 @@ mod tests {
     fn test_section_delete_returns_success() {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
-            let pool = build_test_pool();
-            let app = crate::bbs_core_entity_router(pool);
+            let db = shared::testing::mock_db().await;
+            let app = crate::bbs_core_entity_router(db);
 
             let response = app
                 .clone()
@@ -239,10 +219,7 @@ mod tests {
                 .await
                 .unwrap();
 
-            assert!(
-                response.status() == StatusCode::INTERNAL_SERVER_ERROR
-                    || response.status() == StatusCode::NOT_FOUND
-            );
+            assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
         });
     }
 
@@ -250,8 +227,8 @@ mod tests {
     fn test_subject_create_returns_success() {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
-            let pool = build_test_pool();
-            let app = crate::bbs_core_entity_router(pool);
+            let db = shared::testing::mock_db().await;
+            let app = crate::bbs_core_entity_router(db);
 
             let response = app
                 .clone()
@@ -268,10 +245,7 @@ mod tests {
                 .await
                 .unwrap();
 
-            assert!(
-                response.status() == StatusCode::INTERNAL_SERVER_ERROR
-                    || response.status() == StatusCode::NOT_FOUND
-            );
+            assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
         });
     }
 
@@ -279,8 +253,8 @@ mod tests {
     fn test_subject_delete_returns_success() {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
-            let pool = build_test_pool();
-            let app = crate::bbs_core_entity_router(pool);
+            let db = shared::testing::mock_db().await;
+            let app = crate::bbs_core_entity_router(db);
 
             let response = app
                 .clone()
@@ -294,10 +268,7 @@ mod tests {
                 .await
                 .unwrap();
 
-            assert!(
-                response.status() == StatusCode::INTERNAL_SERVER_ERROR
-                    || response.status() == StatusCode::NOT_FOUND
-            );
+            assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
         });
     }
 

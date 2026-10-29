@@ -11,8 +11,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_room_list() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::router(db, shared::testing::mock_pool());
         let response = app
             .oneshot(
                 Request::builder()
@@ -32,8 +32,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_room() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::router(db, shared::testing::mock_pool());
         let response = app
             .oneshot(
                 Request::builder()
@@ -53,8 +53,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_room() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::router(db, shared::testing::mock_pool());
         let response = app
             .oneshot(
                 Request::builder()
@@ -74,8 +74,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_update_room() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::router(db, shared::testing::mock_pool());
         let response = app
             .oneshot(
                 Request::builder()
