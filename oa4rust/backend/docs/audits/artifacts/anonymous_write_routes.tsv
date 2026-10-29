@@ -138,8 +138,28 @@ personal	PUT	/api/person/definition/{name}	definition_edit	A2-真匿名+体内�
 personal	POST	/api/person/definition/{name}	definition_edit	A2-真匿名+体内写 SQL 但读会话或有门禁
 personal	DELETE	/api/person/definition/{name}	definition_delete	A2-真匿名+体内写 SQL 但读会话或有门禁
 personal	POST	/api/person/definition/{name}/mockputtopost	definition_edit	A2-真匿名+体内写 SQL 但读会话或有门禁
+personal	GET	/api/organization/assemble/personal/custom/manager/person/{person}/name/{name}	custom_manager_get	A3-真匿名+只读
+personal	PUT	/api/organization/assemble/personal/custom/manager/person/{person}/name/{name}	custom_manager_edit	A2-真匿名+体内写 SQL 但读会话或有门禁
+personal	POST	/api/organization/assemble/personal/custom/manager/person/{person}/name/{name}/mockputtopost	custom_manager_edit	A2-真匿名+体内写 SQL 但读会话或有门禁
+personal	DELETE	/api/organization/assemble/personal/custom/{name}	custom_delete	A2-真匿名+体内写 SQL 但读会话或有门禁
+personal	GET	/api/organization/assemble/personal/custom/{name}	custom_get	A3-真匿名+只读
+personal	PUT	/api/organization/assemble/personal/custom/{name}	custom_edit	A2-真匿名+体内写 SQL 但读会话或有门禁
+personal	DELETE	/api/organization/assemble/personal/definition/{name}	definition_delete	A2-真匿名+体内写 SQL 但读会话或有门禁
+personal	GET	/api/organization/assemble/personal/definition/{name}	definition_get	A3-真匿名+只读
+personal	PUT	/api/organization/assemble/personal/definition/{name}	definition_edit	A2-真匿名+体内写 SQL 但读会话或有门禁
+personal	POST	/api/organization/assemble/personal/definition/{name}/mockputtopost	definition_edit	A2-真匿名+体内写 SQL 但读会话或有门禁
+personal	GET	/api/organization/assemble/personal/icon/{person}	get	A3-真匿名+只读
+personal	POST	/api/organization/assemble/personal/person/icon	set_icon_octet_stream	A2-真匿名+体内写 SQL 但读会话或有门禁
+personal	POST	/api/organization/assemble/personal/person/icon/mockputtopost	upload_multipart_alias	A2-真匿名+体内写 SQL 但读会话或有门禁
+personal	POST	/api/organization/assemble/personal/regist	register	A1-真匿名+体内写 SQL 且无门禁无会话
+personal	PUT	/api/organization/assemble/personal/reset	reset_password	A1-真匿名+体内写 SQL 且无门禁无会话
+personal	GET	/api/organization/assemble/personal/reset/check/credential/{credential}	check_credential	A3-真匿名+只读
+personal	GET	/api/organization/assemble/personal/reset/code/credential/{credential}	send_code	A3-真匿名+只读
+personal	POST	/api/organization/assemble/personal/reset/password/anonymous	reset_password_anonymous	A1-真匿名+体内写 SQL 且无门禁无会话
 personal_extend	PUT	/api/person/icon	upload	A2-真匿名+体内写 SQL 但读会话或有门禁
 personal_extend	GET	/api/person/icon	get_current_icon	A3-真匿名+只读
+personal_extend	GET	/api/organization/assemble/personal/person/icon	get_current_icon	A3-真匿名+只读
+personal_extend	PUT	/api/organization/assemble/personal/person/icon	upload	A2-真匿名+体内写 SQL 但读会话或有门禁
 processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/control/workorworkcompleted/{workOrWorkCompleted}	control_workorworkcompleted_workOrWorkCompleted	A3-真匿名+只读
 processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/readrecord/list/workorworkcompleted/{workOrWorkCompleted}	readrecord_list_workorworkcompleted_workOrWorkCompleted	A3-真匿名+只读
 processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/record/list/job/job/paging/{page}/{size}/{size}	record_list_job_job_paging_page_size_size	A3-真匿名+只读

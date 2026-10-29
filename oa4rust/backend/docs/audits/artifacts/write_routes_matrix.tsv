@@ -599,13 +599,20 @@ correlation_service_processing	POST	/api/correlation/service/processing/delete/{
 correlation_service_processing	POST	/api/correlation/service/processing/link	link_service	R7-已认证+体内无会话无门禁
 correlation_service_processing	POST	/api/correlation/service/processing/save/{id}	save_correlation	R5-已认证+体内门禁
 correlation_service_processing	POST	/api/correlation/service/processing/unlink/{sourceType}/{sourceId}/{targetType}/{targetId}	unlink_service	R5-已认证+体内门禁
+empower	DELETE	/api/organization/assemble/personal/empower/manager/{id}	manager_delete	R1-中间件 admin
+empower	DELETE	/api/organization/assemble/personal/empower/{id}	empower_delete	R1-中间件 admin
 empower	DELETE	/api/person/empower/manager/{id}	manager_delete	R1-中间件 admin
 empower	DELETE	/api/person/empower/{id}	empower_delete	R1-中间件 admin
+empower	POST	/api/organization/assemble/personal/empower	create	R1-中间件 admin
+empower	POST	/api/organization/assemble/personal/empower/manager	manager_create	R1-中间件 admin
+empower	POST	/api/organization/assemble/personal/empower/manager/list/paging/{page}/size/{size}	manager_list_paging	R1-中间件 admin
 empower	POST	/api/person/empower	create	R1-中间件 admin
 empower	POST	/api/person/empower/manager	manager_create	R1-中间件 admin
 empower	POST	/api/person/empower/manager/list/paging/{page}/size/{size}	manager_list_paging	R1-中间件 admin
 empower	POST	/api/person/empower/{id}/disable	disable	R1-中间件 admin
 empower	POST	/api/person/empower/{id}/enable	enable	R1-中间件 admin
+empower	PUT	/api/organization/assemble/personal/empower/manager/{id}	manager_update	R1-中间件 admin
+empower	PUT	/api/organization/assemble/personal/empower/{id}	update	R1-中间件 admin
 empower	PUT	/api/person/empower/manager/{id}	manager_update	R1-中间件 admin
 empower	PUT	/api/person/empower/{id}	update	R1-中间件 admin
 express	POST	/api/express/group/list	express_group_list	R7-已认证+体内无会话无门禁
@@ -1159,7 +1166,7 @@ organization_assemble_express	POST	/api/unitduty/list/name	unitduty_list_name	R7
 organization_assemble_express	POST	/api/unitduty/list/name/identity	unitduty_list_name_identity	R7-已认证+体内无会话无门禁
 organization_assemble_express	POST	/api/unitduty/list/name/unit	unitduty_list_name_unit	R7-已认证+体内无会话无门禁
 organization_assemble_express	POST	/api/unitduty/list/unit/object	unitduty_list_unit_object	R7-已认证+体内无会话无门禁
-organization_assemble_personal	POST	/api/organization/assemble/personal/custom/{id}/mockputtopost	custom_mockputtopost	R5-已认证+体内门禁
+organization_assemble_personal	POST	/api/organization/assemble/personal/custom/{id}/mockputtopost	custom_mockputtopost	R1-中间件 admin
 organization_core_entity	DELETE	/api/organization/bind/{id}	bind_delete	R5-已认证+体内门禁
 organization_core_entity	DELETE	/api/organization/custom/{id}	custom_delete	R5-已认证+体内门禁
 organization_core_entity	DELETE	/api/organization/definition/{id}	definition_delete	R5-已认证+体内门禁
@@ -1178,9 +1185,29 @@ organization_core_entity	PUT	/api/organization/definition/{id}	definition_update
 organization_core_entity	PUT	/api/organization/group/{id}	group_update	R1-中间件 admin
 organization_core_entity	PUT	/api/organization/identity/{id}	identity_update	R5-已认证+体内门禁
 organization_core_entity	PUT	/api/organization/person/{id}	person_update	R1-中间件 admin
+personal	DELETE	/api/organization/assemble/personal/custom/{name}	custom_delete	R1-中间件 admin
+personal	DELETE	/api/organization/assemble/personal/definition/{name}	definition_delete	R1-中间件 admin
+personal	DELETE	/api/organization/assemble/personal/empowerlog/{id}	log_delete	R1-中间件 admin
 personal	DELETE	/api/person/custom/{name}	custom_delete	R1-中间件 admin
 personal	DELETE	/api/person/definition/{name}	definition_delete	R1-中间件 admin
 personal	DELETE	/api/person/empowerlog/{id}	log_delete	R1-中间件 admin
+personal	POST	/api/organization/assemble/personal/custom/manager/person/{person}/name/{name}/mockputtopost	custom_manager_edit	R1-中间件 admin
+personal	POST	/api/organization/assemble/personal/definition/{name}/mockputtopost	definition_edit	R1-中间件 admin
+personal	POST	/api/organization/assemble/personal/empower/manager/{id}/mockputtopost	manager_update	R1-中间件 admin
+personal	POST	/api/organization/assemble/personal/empower/{id}/mockputtopost	update	R1-中间件 admin
+personal	POST	/api/organization/assemble/personal/empowerlog/list/currentperson/paging/{page}/size/{size}	log_currentperson_paging	R1-中间件 admin
+personal	POST	/api/organization/assemble/personal/empowerlog/list/to/currentperson/paging/{page}/size/{size}	log_to_currentperson_paging	R1-中间件 admin
+personal	POST	/api/organization/assemble/personal/empowerlog/manager/list/paging/{page}/size/{size}	log_manager_paging	R1-中间件 admin
+personal	POST	/api/organization/assemble/personal/exmail	exmail_callback_post	R1-中间件 admin
+personal	POST	/api/organization/assemble/personal/password/mockputtopost	change	R1-中间件 admin
+personal	POST	/api/organization/assemble/personal/person/icon	set_icon_octet_stream	R1-中间件 admin
+personal	POST	/api/organization/assemble/personal/person/icon/mockputtopost	upload_multipart_alias	R1-中间件 admin
+personal	POST	/api/organization/assemble/personal/person/mockputtopost	edit_person	R1-中间件 admin
+personal	POST	/api/organization/assemble/personal/person/password/mockputtopost	change	R1-中间件 admin
+personal	POST	/api/organization/assemble/personal/regist	register	R1-中间件 admin
+personal	POST	/api/organization/assemble/personal/reset/mockputtopost	reset_password_mockputtopost	R1-中间件 admin
+personal	POST	/api/organization/assemble/personal/reset/password/anonymous	reset_password_anonymous	R1-中间件 admin
+personal	POST	/api/organization/assemble/personal/signature/upload	upload	R1-中间件 admin
 personal	POST	/api/person/custom/manager/person/{person}/name/{name}/mockputtopost	custom_manager_edit	R1-中间件 admin
 personal	POST	/api/person/custom/{name}	custom_edit	R1-中间件 admin
 personal	POST	/api/person/definition/{name}	definition_edit	R1-中间件 admin
@@ -1203,6 +1230,13 @@ personal	POST	/api/person/signature/upload	upload	R1-中间件 admin
 personal	POST	/api/reset/check/password	check_password	R7-已认证+体内无会话无门禁
 personal	POST	/api/reset/mockputtopost	reset_password_mockputtopost	R5-已认证+体内门禁
 personal	POST	/api/reset/password/anonymous	reset_password_anonymous	R4-匿名可达+体内无门禁
+personal	PUT	/api/organization/assemble/personal/custom/manager/person/{person}/name/{name}	custom_manager_edit	R1-中间件 admin
+personal	PUT	/api/organization/assemble/personal/custom/{name}	custom_edit	R1-中间件 admin
+personal	PUT	/api/organization/assemble/personal/definition/{name}	definition_edit	R1-中间件 admin
+personal	PUT	/api/organization/assemble/personal/password	change	R1-中间件 admin
+personal	PUT	/api/organization/assemble/personal/person	edit_person	R1-中间件 admin
+personal	PUT	/api/organization/assemble/personal/person/password	change	R1-中间件 admin
+personal	PUT	/api/organization/assemble/personal/reset	reset_password	R1-中间件 admin
 personal	PUT	/api/person	edit_person	R1-中间件 admin
 personal	PUT	/api/person/custom/manager/person/{person}/name/{name}	custom_manager_edit	R1-中间件 admin
 personal	PUT	/api/person/custom/{name}	custom_edit	R1-中间件 admin
@@ -1214,6 +1248,7 @@ personal_extend	POST	/api/person/signature/save	save_signature	R1-中间件 admi
 personal_extend	POST	/api/personal/face/create	face_create	R5-已认证+体内门禁
 personal_extend	POST	/api/personal/face/delete/{id}	face_delete	R5-已认证+体内门禁
 personal_extend	POST	/api/personal/face/save/{id}	face_save	R5-已认证+体内门禁
+personal_extend	PUT	/api/organization/assemble/personal/person/icon	upload	R1-中间件 admin
 personal_extend	PUT	/api/person/icon	upload	R1-中间件 admin
 personal_extend	PUT	/api/personal/face/save/{id}	face_save	R5-已认证+体内门禁
 personal_extend	PUT	/api/personal/update	update_info	R5-已认证+体内门禁

@@ -140,10 +140,13 @@ cms_assemble_control	PUT	/api/surface/appdict/{appDictFlag}/appInfo/{appInfoFlag
 cms_assemble_control	PUT	/api/surface/appdict/{appDictFlag}/appInfo/{appInfoFlag}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}/{path7}/data	surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_path3_path4_path5_path6_path7_data_put	appdict_data_write
 cms_express	POST	/api/cms/view/publish/{id}	view_publish	check_cms_publish
 cms_express	POST	/api/cms/view/unpublish/{id}	view_unpublish	check_cms_publish
+empower	GET	/api/organization/assemble/personal/empower/{id}/disable	disable	check_owner
+empower	GET	/api/organization/assemble/personal/empower/{id}/enable	enable	check_owner
 empower	GET	/api/person/empower/{id}/disable	disable	check_owner
 empower	GET	/api/person/empower/{id}/enable	enable	check_owner
 empower	POST	/api/person/empower/{id}/disable	disable	check_owner
 empower	POST	/api/person/empower/{id}/enable	enable	check_owner
+empower	PUT	/api/organization/assemble/personal/empower/{id}	update	check_owner
 empower	PUT	/api/person/empower/{id}	update	check_owner
 file_assemble_control	POST	/api/attachment/update/callback/callback/{id}	attachment_id_update_callback_callback	attachment_id_update
 file_assemble_control	POST	/api/attachment/{id}/update/callback/{callback}	u2_attachment_update_content_callback	u2_attachment_update_content
@@ -197,6 +200,7 @@ organization_assemble_control	POST	/api/organization/assemble/control/role/{flag
 organization_assemble_control	POST	/api/organization/assemble/control/unit/{flag}/mockputtopost	unit_mock_put_to_post	unit_edit
 organization_assemble_control	POST	/api/organization/assemble/control/unitattribute/{flag}/mockputtopost	unit_attribute_mock_put_to_post	unit_attribute_edit
 organization_assemble_control	POST	/api/organization/assemble/control/unitduty/{flag}/mockputtopost	duty_mock_put_to_post	duty_edit
+personal	POST	/api/organization/assemble/personal/person/icon/mockputtopost	upload_multipart_alias	upload
 personal	POST	/api/person/icon/mockputtopost	upload_multipart_alias	upload
 processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/attachment/{id}/preview/image/page/{page}	attachment_u2b_preview_image_page	u2_gate_att_or_business_error
 processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/attachment/{id}/preview/pdf	attachment_u2b_preview_pdf	u2_gate_att_or_business_error

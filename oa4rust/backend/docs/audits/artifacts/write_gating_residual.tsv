@@ -3,11 +3,12 @@ B-匿名可达且无体内门禁	auth	lib.rs	200	login	POST /api/authentication 
 B-匿名可达且无体内门禁	general_assemble_control	lib.rs	1508	invoice_create	POST /api/general/assemble/control/invoice/create	x_general_assemble_invoice
 B-匿名可达且无体内门禁	general_assemble_control	lib.rs	1837	invoice_upload	POST /api/general/assemble/control/invoice/upload	x_general_assemble_invoice
 B-匿名可达且无体内门禁	meeting_assemble_control	lib.rs	2094	create_meeting	POST /api/meeting/assemble/control/meeting/create (+1 处)	x_meeting
-G-Public早退吞掉admin兜底且无体内门禁	personal	regist.rs	40	register	POST /api/person/regist [Public 命中 exact:/api/person/regist]	auth_person
-G-Public早退吞掉admin兜底且无体内门禁	personal	u2.rs	238	custom_edit	PUT /api/person/custom/{name} (+1 处) [Public 命中 prefix:/api/person/custom]	x_custom
-G-Public早退吞掉admin兜底且无体内门禁	personal	u2.rs	280	custom_delete	DELETE /api/person/custom/{name} (+1 处) [Public 命中 prefix:/api/person/custom]	x_custom
-G-Public早退吞掉admin兜底且无体内门禁	personal	u2.rs	441	definition_edit	PUT /api/person/definition/{name} (+2 处) [Public 命中 prefix:/api/person/definition]	x_org_definition,SET
-G-Public早退吞掉admin兜底且无体内门禁	personal	u2.rs	508	definition_delete	DELETE /api/person/definition/{name} (+1 处) [Public 命中 prefix:/api/person/definition]	x_org_definition
-G-Public早退吞掉admin兜底且无体内门禁	personal_extend	avatar.rs	53	upload	PUT /api/person/icon [Public 命中 prefix:/api/person/icon]	auth_person
+G-Public早退吞掉admin兜底且无体内门禁	organization_assemble_personal	lib.rs	110	custom_mockputtopost	POST /api/organization/assemble/personal/custom/{id}/mockputtopost [Public 命中 prefix:/api/organization/assemble/personal/custom]	x_org_custom
+G-Public早退吞掉admin兜底且无体内门禁	personal	regist.rs	40	register	POST /api/person/regist (+1 处) [Public 命中 exact:/api/person/regist]	auth_person
+G-Public早退吞掉admin兜底且无体内门禁	personal	u2.rs	238	custom_edit	PUT /api/person/custom/{name} (+2 处) [Public 命中 prefix:/api/person/custom]	x_custom
+G-Public早退吞掉admin兜底且无体内门禁	personal	u2.rs	280	custom_delete	DELETE /api/person/custom/{name} (+3 处) [Public 命中 prefix:/api/person/custom]	x_custom
+G-Public早退吞掉admin兜底且无体内门禁	personal	u2.rs	441	definition_edit	PUT /api/person/definition/{name} (+4 处) [Public 命中 prefix:/api/person/definition]	x_org_definition,SET
+G-Public早退吞掉admin兜底且无体内门禁	personal	u2.rs	508	definition_delete	DELETE /api/person/definition/{name} (+3 处) [Public 命中 prefix:/api/person/definition]	x_org_definition
+G-Public早退吞掉admin兜底且无体内门禁	personal_extend	avatar.rs	53	upload	PUT /api/person/icon (+1 处) [Public 命中 prefix:/api/person/icon]	auth_person
 B-匿名可达且无体内门禁	program_init	lib.rs	139	set	POST /api/secret/set [Public 命中 prefix:/api/secret/set]	secret_config
 B-匿名可达且无体内门禁	program_init	lib.rs	186	set_cancel	GET /api/secret/set/cancel [Public 命中 prefix:/api/secret/set]	secret_config
