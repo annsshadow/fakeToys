@@ -72,6 +72,14 @@ LY-7（小程序虚拟化，实测列表全部有界）、AU-P1（异步后端�
 > `INSERT INTO x_bbs_reply`（sea_orm 参数化 SQL）+ `require_session` 会话门，
 > 与 `bbs_assemble_control::create_reply` 对齐；新增离线 401 测试与 DB 臂落库
 > 测试。修复后尺子读数 R7 631→630、R5 +1，含写 SQL 仍为 0。
+>
+> **R7 全量机器交叉验证（2026-10-30 第四轮）**：新增
+> `scripts/cross_check_r7_readonly.py` 对全部 630 条 R7 只读挂写方法做**独立判据**
+> 交叉验证（注释剥离 + INSERT/UPDATE/DELETE 关键字 + sea_orm ORM 写扫描，与
+> 尺子 writeEvidence 不同实现）：627 条成功提取函数体，**0 条疑似含写**；仅
+> 3 条未提取（`organization_assemble_authentication` 的跨 crate 委托 handler，
+> 尺子缺陷 30 修复后已能解析）。结论：R7 含写 SQL = 0 在独立判据下成立，尺子
+> 读数可信，无需继续人工逐条复核。
 > **顺带修复真实限流缺口**：org_auth 登录别名不在 `AUTH_RATE_LIMIT_EXACT`，
 > `rate_limit_middleware` 对「豁免且未列限流」直接跳过 ⇒ 该别名成为无上限的登录
 > 暴力破解入口（契约路径限 30/min/IP，别名不限）。已补入精确名单，并新增
@@ -134,7 +142,7 @@ LY-7（小程序虚拟化，实测列表全部有界）、AU-P1（异步后端�
 
 | 编号 | 项 | 现状 | 缺口性质 |
 |---|---|---|---|
-| **C1** | `shared` 覆盖率 93.28% → 94% | floor 93 已达成 | 需 ~50 行，全部依赖**进程隔离**（`security` 的 OnceLock 环境臂与 parity 测试互斥）或**公网夹具**（`netguard fetch_limited` 被自身 SSRF 守卫挡回环）。属条件项，不作为默认目标。2026-10-30 复核：本机 `cargo llvm-cov` 在 GNU 工具链下编译 shared 失败（E0463，环境性），覆盖率以计划记录为基线，待工具链可用或换环境复测 |
+| **C1** | `shared` 覆盖率 93.28% → 94% | floor 93 已达成 | 需 ~50 行，全部依赖**进程隔离**（`security` 的 OnceLock 环境臂与 parity 测试互斥）或**公网夹具**（`netguard fetch_limited` 被自身 SSRF 守卫挡回环）。属条件项，不作为默认目标。2026-10-30 复核：本机 `cargo llvm-cov` 报 `can't find crate for profiler_builtins`——Windows GNU 工具链的 rustup 发行版（stable 与 nightly 均实测）**不带 `profiler_builtins` rlib**，`-C instrument-coverage` 无法链接。这是工具链系统性限制，非代码问题；覆盖率以计划记录 93.28% 为基线，待 MSVC 工具链或 Linux 环境可用时复测 |
 
 ### D 类 · 环境与工具
 
