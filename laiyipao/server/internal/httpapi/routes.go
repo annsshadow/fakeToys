@@ -254,6 +254,9 @@ func (s *Server) Register(app *fiber.App) {
 	defenses := v1.Group("/defenses", requireUser(s.Svc))
 	defenses.Get("/", s.listDefenses)
 	defenses.Post("/save", authRateLimit("savedefense", economyWriteLimit), s.saveDefense)
+	// 删除自己的防线（2026-10-31 实质优化第 32 轮）：
+	// 玩家不想被挑战时此前没有任何办法清空防线。
+	defenses.Delete("/", s.deleteMyDefense)
 	defenses.Post("/:id/challenge", authRateLimit("challenge", economyWriteLimit), s.challengeDefense)
 
 	// ---- 管理端 ----

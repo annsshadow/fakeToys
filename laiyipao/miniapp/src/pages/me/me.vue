@@ -125,6 +125,16 @@
         <view v-if="myDefense" class="btn" style="margin-top: 12rpx" @click="toggleShield">
           {{ shielded ? '关闭 24h 护盾' : '开启 24h 护盾' }}
         </view>
+        <!-- 删除防线（2026-10-31 实质优化第 32 轮）：
+             玩家不想被挑战时，此前没有任何办法清空防线。 -->
+        <view
+          v-if="myDefense"
+          class="btn"
+          style="margin-top: 12rpx; color: var(--bad)"
+          @click="onDeleteMyDefense"
+        >
+          删除防线
+        </view>
       </view>
 
       <view v-if="candidates.length" class="card">
@@ -859,6 +869,35 @@ async function toggleShield() {
     })
     myDefense.value = res.defense
     shielded.value = !shielded.value
+  } catch (e) {
+    uni.showToast({ title: (e as Error).message, icon: 'none' })
+  }
+}
+
+/**
+ * 删除防线（2026-10-31 实质优化第 32 轮）。
+ *
+ * 删除后其他玩家无法再挑战你，相关挑战记录也会一并删除。
+ * 必须二次确认（不可恢复）。
+ */
+async function onDeleteMyDefense() {
+  const confirmed = await new Promise<boolean>((resolve) => {
+    uni.showModal({
+      title: '删除防线',
+      content: '删除后其他玩家将无法挑战你，该防线的挑战记录也会一并删除。确定继续？',
+      confirmText: '删除',
+      cancelText: '取消',
+      success: (r) => resolve(!!r.confirm),
+      fail: () => resolve(false),
+    })
+  })
+  if (!confirmed) return
+  try {
+    await api.deleteMyDefense()
+    myDefense.value = null
+    shielded.value = false
+    uni.showToast({ title: '防线已删除', icon: 'none' })
+    await loadDefenses()
   } catch (e) {
     uni.showToast({ title: (e as Error).message, icon: 'none' })
   }

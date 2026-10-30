@@ -1064,6 +1064,14 @@ export function saveDefense(payload: any) {
   return request<any>('/defenses/save', { method: 'POST', body: payload })
 }
 
+/**
+ * 删除自己的防线（2026-10-31 实质优化第 32 轮）。
+ * 玩家不想被挑战时，此前没有任何办法清空防线。
+ */
+export function deleteMyDefense() {
+  return request<{ ok: boolean }>('/defenses', { method: 'DELETE' })
+}
+
 export function challengeDefense(id: number, payload: any) {
   return request<any>(`/defenses/${id}/challenge`, { method: 'POST', body: payload })
 }

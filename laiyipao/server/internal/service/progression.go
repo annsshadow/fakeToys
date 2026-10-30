@@ -789,6 +789,26 @@ func (s *Service) SaveDefense(ctx context.Context, userID int64, in SaveDefenseI
 	}, nil
 }
 
+// DeleteMyDefense 删除玩家自己的防线（2026-10-31 实质优化第 32 轮）。
+//
+// 此前玩家布置防线后只能覆盖保存，无法清空 —— 不想被挑战时
+// 没有任何办法让别人找不到自己。删除后：
+//   - 其他玩家无法再挑战该防线；
+//   - `defense_challenges` 随外键 CASCADE 删除（挑战历史里这条消失，
+//     可接受，见 MyChallengeHistory 注释）。
+//
+// 不存在防线时返回 ErrNotFound（区别于「删除成功但什么都没发生」）。
+func (s *Service) DeleteMyDefense(ctx context.Context, userID int64) error {
+	ct, err := s.pool.Exec(ctx, `DELETE FROM defenses WHERE owner_id = $1`, userID)
+	if err != nil {
+		return fmt.Errorf("delete my defense: %w", err)
+	}
+	if ct.RowsAffected() == 0 {
+		return fmt.Errorf("%w: 你还没有设置防线", ErrNotFound)
+	}
+	return nil
+}
+
 // ChallengeInput 是挑战请求。
 type ChallengeInput struct {
 	// ⚠️ 第 132 轮：seed 由 int64 改成**字符串**，与结算面（battle/economy/

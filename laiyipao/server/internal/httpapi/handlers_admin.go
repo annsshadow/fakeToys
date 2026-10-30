@@ -40,6 +40,14 @@ func (s *Server) saveDefense(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"defense": view})
 }
 
+// deleteMyDefense 删除当前玩家的防线（2026-10-31 实质优化第 32 轮）。
+func (s *Server) deleteMyDefense(c *fiber.Ctx) error {
+	if err := s.Svc.DeleteMyDefense(c.Context(), userIDFrom(c)); err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(fiber.Map{"ok": true})
+}
+
 func (s *Server) challengeDefense(c *fiber.Ctx) error {
 	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
 	if err != nil {
