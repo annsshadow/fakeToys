@@ -21,7 +21,13 @@
 | 11 | 2026-10-30 | augmentor 棘轮重钉（ambiguous 497→500、scratch_pair 1484→1483） | `3552a64f8` | test_comment_refs_a184 26 passed；git 侧存活测试通过 |
 | 12 | 2026-10-30 | migrate `read_dir` 失败分支（迁移目录是文件时报错而非静默 0 条） | `f5de00a79` | shared 321 绿；94.74% |
 | 13 | 2026-10-30 | netguard `filename_from_url` 解析失败分支 | `4cc80fa52` | shared 322 绿；94.75% |
-| 15轮验证 | 2026-10-30 | augmentor 全量零失败确认（棘轮重钉 + git 侧修复后 10174 passed / 0 failed） | 计划文档基线行 | augmentor 全绿 |
+| 14 | 2026-10-30 | `PermissionRegistry::default()` 覆盖 | `55e2bf653` `64c96fe57` | shared 323 绿；94.79% |
+| 15 | 2026-10-30 | migrate 坏迁移 SQL loud 失败分支 | `495c1f43b` | shared 323 绿；94.83% |
+| 16 | 2026-10-30 | 方言 `Default` 实现覆盖 | `f7aed5aaf`→`e661be4b0` | shared 325 绿；94.89% |
+| 17 | 2026-10-30 | CSRF 回环镜像分支 + 权限判定不可达池 fail-closed | `a9e72c135` `aec01ae1f` | shared 327 绿；**94.99%** |
+| 18 | 2026-10-30 | 安全基线验证（auto-checkin 0 漏洞 / rustsec 例外有效） | `9b1707251` | 依赖审计通过 |
+| 19 | 2026-10-30 | `create_pool_with_url` 无 host fail-fast panic 分支 | `874c6f77a` `0109edcf7` | shared 328 绿；94.99% |
+| 20 | 2026-10-30 | augmentor 全量零失败确认（棘轮重钉 + git 侧修复后 10174 passed / 0 failed） | 计划文档基线行 | augmentor 全绿 |
 | ... | | 持续迭代至 100 轮 | | |
 
-> 状态：进行中。当前累计 17 轮，距 100 轮还差 83 轮。
+> 状态：进行中。当前累计 20 轮，距 100 轮还差 80 轮。
