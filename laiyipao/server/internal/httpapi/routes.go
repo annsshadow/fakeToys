@@ -452,12 +452,18 @@ func (s *Server) me(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
+	// 2026-10-31（实质优化第 34 轮）：账号信息（注册时间/最后登录）。
+	account, err := s.Svc.MyAccount(c.Context(), userID)
+	if err != nil {
+		return failErr(c, err)
+	}
 	return c.JSON(fiber.Map{
 		"user_id":      userID,
 		"build":        build,
 		"build_rating": rating,
 		"power":        s.Svc.ComputePowerFor(build),
 		"max_stage":    maxStage,
+		"account":      account,
 	})
 }
 

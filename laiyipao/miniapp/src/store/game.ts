@@ -68,6 +68,9 @@ export const useGameStore = defineStore('game', () => {
   const isGuest = ref(true)
   const loggedIn = ref(false)
   const loginError = ref('')
+  // 账号信息（2026-10-31 实质优化第 34 轮）：注册时间/最后登录。
+  const accountCreatedAt = ref('')
+  const accountLastLoginAt = ref('')
 
   // ---- 配置 ----
   const config = ref<GameConfig | null>(null)
@@ -467,6 +470,11 @@ export const useGameStore = defineStore('game', () => {
       // 才有值，老玩家重进 App 恒从 0 开始（解锁关卡 / 最高关卡显示全错位）。
       // setMaxStage 只增不减，不会压掉本会话刚结算出的更高值。
       if (typeof me.max_stage === 'number') setMaxStage(me.max_stage)
+      // 2026-10-31（实质优化第 34 轮）：账号信息展示。
+      if (me.account) {
+        accountCreatedAt.value = me.account.created_at ?? ''
+        accountLastLoginAt.value = me.account.last_login_at ?? ''
+      }
     } catch (e) {
       // 静默：页面会展示已有数据，不因刷新失败而白屏
       console.warn('[来一炮] 刷新玩家信息失败', (e as Error).message)
@@ -554,6 +562,9 @@ export const useGameStore = defineStore('game', () => {
     equippedMasteryNodes,
     statusBarHeight,
     readStatusBarHeight,
+    // 2026-10-31（实质优化第 34 轮）：账号信息。
+    accountCreatedAt,
+    accountLastLoginAt,
     loadEquipment,
     loadMasteryNodes,
     enemyMap,

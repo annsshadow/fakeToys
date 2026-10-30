@@ -42,6 +42,7 @@
 | 31 | 2026-10-31 | **后台用户搜索支持按 user_id 精确查找**：运营拿到 user_id（战报/工单）时只能翻列表找，无法直接粘贴 ID 搜索 | `AdminListUsers`/`AdminExportUsers` 查询增加 `u.id::text = $1`（keyword 是数字时精确匹配）；哨兵从 `$1='%%'` 改为 `$1=''`（空 kw 仍返回全部）；参数顺序调整（kw/pattern）；同步导出查询保持同口径 | 服务层新增 3 用例（id 精确命中/不存在空结果/非数字仍按昵称）、e2e 2 用例（401/精确命中）全绿；`internal/service` 227s 全绿、`internal/httpapi` 96s 全绿 |
 | 32 | 2026-10-31 | **玩家删除自己的防线**：玩家布置防线后只能覆盖保存，无法清空——不想被挑战时没有任何办法 | 服务层 `DeleteMyDefense`（DELETE by owner_id、0 行 → ErrNotFound、挑战记录随 CASCADE 删除）；`DELETE /api/v1/defenses`（requireUser）；miniapp me.vue「删除防线」按钮（二次确认、删除后清空本地防线状态） | 服务层 3 用例、e2e 3 用例（401/删除成功/未设置 404）全绿；`internal/service` 232s 全绿、`internal/httpapi` 106s 全绿、miniapp 1171 passed、type-check 通过 |
 | 33 | 2026-10-31 | **后台订单明细列表**：后台此前只有订单计数（paid/pending），玩家反馈「扣款没到账」时运营无从查起 | 服务层 `AdminListOrders`（JOIN users 取昵称、订单号/SKU/金额/状态/provider/时间、limit 夹到 50、空列表非 nil）；`GET /api/v1/admin/orders`；admin EconomyView「支付订单」卡片（分页、金额元、状态标签）；types.gen.ts/index.ts 同步新类型 | 服务层 4 用例、e2e 2 用例（401/记录正确）全绿；`internal/service` 238s 全绿、`internal/httpapi` 98s 全绿、admin 353 passed、type-check 通过 |
+| 34 | 2026-10-31 | **「我的」页面展示账号信息**：玩家看不到自己的注册时间与最后登录时间 | `User` 增加 `LastLoginAt`；`loadUser` 查询补 `last_login_at`；新增公开方法 `MyAccount`；`/me` 响应增加 `account` 对象；miniapp store 保存 `accountCreatedAt/accountLastLoginAt`，me.vue 顶部显示「注册于/最近登录」；同步更新 reactions.test.ts mock | 服务层 3 用例、e2e 1 用例（/me 含 account 时间戳）全绿；`internal/service` 231s 全绿、`internal/httpapi` 104s 全绿、miniapp 1171 passed、type-check 通过 |
 | ... | | 持续至 100 轮 | | |
 
-> 状态：进行中。当前累计 **33 轮实质优化**，距 100 轮还差 67 轮。
+> 状态：进行中。当前累计 **34 轮实质优化**，距 100 轮还差 66 轮。

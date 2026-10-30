@@ -260,6 +260,8 @@ type User struct {
 	IsGuest   bool      `json:"is_guest"`
 	Status    int       `json:"status"`
 	CreatedAt time.Time `json:"created_at"`
+	// 2026-10-31（实质优化第 34 轮）：最后登录时间，/me 展示用。
+	LastLoginAt time.Time `json:"last_login_at"`
 }
 
 // TokenPair 是一次签发结果。
@@ -594,9 +596,9 @@ func (s *Service) initNewUser(ctx context.Context, userID int64) error {
 func (s *Service) loadUser(ctx context.Context, id int64) (User, error) {
 	var u User
 	err := s.pool.QueryRow(ctx,
-		`SELECT id, nickname, avatar_url, is_guest, status, created_at
+		`SELECT id, nickname, avatar_url, is_guest, status, created_at, last_login_at
 		 FROM users WHERE id = $1`, id).
-		Scan(&u.ID, &u.Nickname, &u.AvatarURL, &u.IsGuest, &u.Status, &u.CreatedAt)
+		Scan(&u.ID, &u.Nickname, &u.AvatarURL, &u.IsGuest, &u.Status, &u.CreatedAt, &u.LastLoginAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return User{}, fmt.Errorf("%w: user %d", ErrNotFound, id)
 	}
@@ -604,6 +606,12 @@ func (s *Service) loadUser(ctx context.Context, id int64) (User, error) {
 		return User{}, fmt.Errorf("load user: %w", err)
 	}
 	return u, nil
+}
+
+// MyAccount 返回当前玩家的账号信息（2026-10-31 实质优化第 34 轮）。
+// 包装 loadUser 供 HTTP 层调用（/me 展示注册时间/最后登录）。
+func (s *Service) MyAccount(ctx context.Context, userID int64) (User, error) {
+	return s.loadUser(ctx, userID)
 }
 
 // ResolveUser 从 access token 解析用户 ID。

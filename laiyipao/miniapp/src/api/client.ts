@@ -823,6 +823,13 @@ export function fetchMe() {
     power: number
     /** 已通关最高关卡（第 142 轮：服务端权威进度，客户端刷新档案时恢复解锁态） */
     max_stage: number
+    /** 账号信息（2026-10-31 实质优化第 34 轮）：注册时间/最后登录 */
+    account: {
+      created_at: string
+      last_login_at: string
+      is_guest: boolean
+      nickname: string
+    }
   }>('/me')
 }
 

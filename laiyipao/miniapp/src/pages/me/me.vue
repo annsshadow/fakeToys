@@ -33,6 +33,13 @@
               {{ nicknameMsg }}
             </text>
             <text class="dim" style="display: block">ID {{ store.userId }}</text>
+            <!-- 账号信息（2026-10-31 实质优化第 34 轮） -->
+            <text v-if="store.accountCreatedAt" class="dim" style="display: block">
+              注册于 {{ fmtAccountTime(store.accountCreatedAt) }}
+            </text>
+            <text v-if="store.accountLastLoginAt" class="dim" style="display: block">
+              最近登录 {{ fmtAccountTime(store.accountLastLoginAt) }}
+            </text>
             <!-- ⚠️ 这里原本写「微信账号」，但微信通道在本项目**未接通**
                  （WECHAT_APP_ID 未配置 → /auth/wechat 返回 501），
                  而 `is_guest=false` 现在还多了一种来源：**账号口令登录**。
@@ -484,6 +491,18 @@ function fmtChallengeTime(iso: string): string {
   const hh = String(d.getHours()).padStart(2, '0')
   const mi = String(d.getMinutes()).padStart(2, '0')
   return `${mm}/${dd} ${hh}:${mi}`
+}
+
+/** 账号时间显示（2026-10-31 实质优化第 34 轮）：完整日期 + 时分。 */
+function fmtAccountTime(iso: string): string {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return iso
+  const y = d.getFullYear()
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  const hh = String(d.getHours()).padStart(2, '0')
+  const mi = String(d.getMinutes()).padStart(2, '0')
+  return `${y}-${mm}-${dd} ${hh}:${mi}`
 }
 
 async function loadChallengeHistory() {
