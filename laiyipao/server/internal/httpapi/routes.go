@@ -606,7 +606,8 @@ func (s *Server) getLevel(c *fiber.Ctx) error {
 	if err != nil || id < 1 || id > domain.TotalLevels {
 		return fail(c, fiber.StatusBadRequest, "bad_input", "关卡 ID 非法")
 	}
-	return c.JSON(domain.GenerateLevel(id))
+	// 2026-10-30（实质优化第 14 轮）：进程内缓存，不再每次请求重新生成。
+	return c.JSON(domain.CachedLevel(id))
 }
 
 func (s *Server) startBattle(c *fiber.Ctx) error {
