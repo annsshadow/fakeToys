@@ -5,6 +5,7 @@ import {
   fetchBattles,
   fetchBattleDetail,
   verifyBattle,
+  exportBattlesCsv,
   type AdminBattleDetailView,
   type AdminBattleView,
   type VerifyResult,
@@ -102,6 +103,33 @@ async function load() {
     ElMessage.error(`战报加载失败：${(e as Error).message}`)
   } finally {
     loading.value = false
+  }
+}
+
+/**
+ * 导出战报列表 CSV（2026-10-30 实质优化第 13 轮）。
+ *
+ * 过滤条件与列表一致（user_id / level_id / only_mismatched）。
+ * readonly 角色也可导出（读操作）。下载文件名带日期。
+ */
+async function onExportCsv() {
+  try {
+    const blob = await exportBattlesCsv({
+      user_id: userId.value,
+      level_id: levelId.value,
+      only_mismatched: onlyMismatched.value || undefined,
+    })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `battles_${new Date().toISOString().slice(0, 10)}.csv`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+    ElMessage.success(`已导出 ${battles.value.length} 条战报（当前筛选结果）`)
+  } catch (e) {
+    ElMessage.error(`导出失败：${(e as Error).message}`)
   }
 }
 
@@ -243,6 +271,7 @@ const asRow = (r: unknown) => r as AdminBattleView
           style="width: 120px"
         />
         <el-button @click="((page = 1), load())">筛选</el-button>
+        <el-button @click="onExportCsv">导出 CSV</el-button>
         <el-checkbox v-model="onlyMismatched" style="margin-left: 12px">
           只看验真不匹配
         </el-checkbox>

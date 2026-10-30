@@ -319,6 +319,24 @@ export function fetchBattles(
 }
 
 /**
+ * 导出战报列表 CSV（2026-10-30 实质优化第 13 轮）。
+ *
+ * 过滤条件与 `fetchBattles` 一致（user_id / level_id / only_mismatched）。
+ * 返回带 UTF-8 BOM 的 CSV Blob（Excel 中文兼容）。readonly 可导出。
+ */
+export function exportBattlesCsv(params: {
+  user_id?: number
+  level_id?: number
+  only_mismatched?: boolean
+} = {}) {
+  const q = new URLSearchParams()
+  if (params.user_id) q.set('user_id', String(params.user_id))
+  if (params.level_id) q.set('level_id', String(params.level_id))
+  if (params.only_mismatched) q.set('only_mismatched', '1')
+  return api.getBlob(`/admin/battles/export?${q}`)
+}
+
+/**
  * 战报详情。
  *
  * ⚠️ 2026-10-21：此前这个端点返回的是**复现信息**（`ReplayInfo`：
