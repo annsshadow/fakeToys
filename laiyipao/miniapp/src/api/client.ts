@@ -1133,6 +1133,23 @@ export function myPurchases(): Promise<{ items: PurchaseItem[] }> {
 }
 
 /**
+ * 我的兑换记录（2026-10-30 实质优化第 21 轮）。
+ *
+ * 服务端 `GET /me/redemptions` 返回最近 20 条兑换码使用记录
+ * （兑换码/奖励快照/时间）。
+ */
+export interface RedemptionItem {
+  id: number
+  code: string
+  reward: Record<string, number>
+  created_at: string
+}
+
+export function myRedemptions(): Promise<{ items: RedemptionItem[] }> {
+  return request<{ items: RedemptionItem[] }>('/me/redemptions')
+}
+
+/**
  * 卡关诊断（L-1）。
  *
  * 2026-10-21（P2-7）：`failed_times` 此前由客户端**硬编码成 2**，

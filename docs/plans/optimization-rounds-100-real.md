@@ -29,6 +29,7 @@
 | 18 | 2026-10-31 | **玩家「我的挑战记录」**：玩家只能看到最近一次挑战结果，历史记录完全没有入口 | 新迁移 `00020`（`defense_challenges (challenger_id, created_at DESC)` 索引）；服务层 `MyChallengeHistory`（JOIN defenses/users，loot 解析，limit 夹到 20）；`GET /api/v1/me/challenges`；miniapp me.vue「挑战历史」列表（胜负/对手/防线/时间）；顺带修正 ownership 守卫的归属列映射（`defense_challenges` 实际归属列是 `challenger_id` 而非 `user_id`） | 服务层 4 用例、e2e 3 用例（401/记录正确/空历史）全绿；`internal/service` 194s 全绿、`internal/httpapi` 全绿、miniapp 1167 passed、type-check 通过 |
 | 19 | 2026-10-31 | **玩家「我的战报历史」**：玩家打完关卡后没有任何历史战报入口（后台有列表，玩家侧只有单条验真/回放端点） | 服务层 `MyBattleHistory`（走 `idx_battle_records_user` 索引，limit 夹到 20）；`GET /api/v1/me/battles`；miniapp me.vue「最近战报」列表（关卡/胜负/星级/分数/时间，onShow 加载） | 服务层 4 用例、e2e 3 用例（401/记录正确/空历史）全绿；`internal/service` 195s 全绿、`internal/httpapi` 55s 全绿、miniapp 1167 passed、type-check 通过 |
 | 20 | 2026-10-31 | **玩家「我的购买记录」**：每次商城购买都落 `user_purchases`，但玩家端没有任何入口（买了什么、花了多少只能靠记忆） | 服务层 `MyPurchases`（JOIN shop_items 取道具名/品类、价格快照 JSONB 解析、limit 夹到 20）；`GET /api/v1/me/purchases`；miniapp me.vue「购买记录」列表（道具名/价格/时间，`priceText` 用 currencyName 本地化） | 服务层 4 用例、e2e 3 用例（401/记录正确/空历史）全绿；`internal/service` 209s 全绿、`internal/httpapi` 58s 全绿、miniapp 1167 passed、type-check 通过 |
+| 21 | 2026-10-31 | **玩家「我的兑换记录」**：每次兑换码使用都落 `redeem_usages`，但玩家端只有输入框、没有任何历史入口 | 服务层 `MyRedemptions`（JOIN redeem_codes 取码与奖励快照、JSONB 解析、limit 夹到 20）；`GET /api/v1/me/redemptions`；miniapp me.vue「兑换记录」列表（码/奖励/时间） | 服务层 4 用例、e2e 3 用例（401/记录正确/空历史）全绿；`internal/service` 207s 全绿、`internal/httpapi` 66s 全绿、miniapp 1167 passed、type-check 通过 |
 | ... | | 持续至 100 轮 | | |
 
-> 状态：进行中。当前累计 **20 轮实质优化**，距 100 轮还差 80 轮。
+> 状态：进行中。当前累计 **21 轮实质优化**，距 100 轮还差 79 轮。

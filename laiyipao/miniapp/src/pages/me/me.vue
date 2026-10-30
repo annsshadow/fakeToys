@@ -249,6 +249,19 @@
           <text class="dim">{{ fmtChallengeTime(p.created_at) }}</text>
         </view>
       </view>
+
+      <!-- 兑换记录（2026-10-30 实质优化第 21 轮）。
+           玩家每次兑换都落库，但没有任何历史入口。 -->
+      <view v-if="redemptionHistory.length" class="card">
+        <text class="card-title">兑换记录</text>
+        <view v-for="r in redemptionHistory" :key="r.id" class="ch-row">
+          <view class="flex-1 row" style="gap: 8rpx; min-width: 0">
+            <text class="mono ellipsis">{{ r.code }}</text>
+            <text class="dim ellipsis">{{ priceText(r.reward) }}</text>
+          </view>
+          <text class="dim">{{ fmtChallengeTime(r.created_at) }}</text>
+        </view>
+      </view>
     </view>
 
     <!--
@@ -482,6 +495,18 @@ async function loadPurchases() {
     purchaseHistory.value = res.items ?? []
   } catch {
     // 购买记录是辅助信息，加载失败不打扰主流程
+  }
+}
+
+// 兑换记录（2026-10-30 实质优化第 21 轮）。
+const redemptionHistory = ref<api.RedemptionItem[]>([])
+
+async function loadRedemptions() {
+  try {
+    const res = await api.myRedemptions()
+    redemptionHistory.value = res.items ?? []
+  } catch {
+    // 兑换记录是辅助信息，加载失败不打扰主流程
   }
 }
 
@@ -958,6 +983,7 @@ onShow(async () => {
     await loadChallengeHistory()
     await loadBattleHistory()
     await loadPurchases()
+    await loadRedemptions()
   }
 })
 
