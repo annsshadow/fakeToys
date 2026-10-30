@@ -51,13 +51,12 @@ function installRequestCapture(): Captured[] {
 }
 
 /** 导出表里所有「对象形态的 API 分组」（值必须是普通对象，排除 type / 函数 / 常量）。 */
-function apiGroups(): Array<[string, Record<string, unknown>]> {
-  return Object.entries(services).filter((entry): entry is [string, Record<string, unknown>] => {
-    const value = entry[1]
+function apiGroups(): Array<[string, object]> {
+  return Object.entries(services).filter(([, value]) => {
     if (!value || typeof value !== 'object' || Array.isArray(value)) return false
     // 只保留「至少有一个函数成员」的对象，避免把普通常量对象算进来
     return Object.values(value).some((v) => typeof v === 'function')
-  })
+  }) as Array<[string, object]>
 }
 
 describe('mobile services surface', () => {
