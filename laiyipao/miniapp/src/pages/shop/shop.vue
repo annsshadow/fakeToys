@@ -122,28 +122,46 @@ function soldOut(it: ShopItem): boolean {
 async function load() {
   loading.value = true
   loadError.value = ''
-  try {
-    const r = await api.fetchShop()
-    items.value = Array.isArray(r) ? r : (r?.items ?? [])
-  } catch (e) {
+  // 钱包与商品**真正并发**（2026-10-31 实质优化第 30 轮）：
+  // 此前的注释写着「并发」，实现却是先等商品再等钱包 ——
+  // 两件事互不依赖，串起来会让首屏白等一倍时间。
+  // 各自的错误独立处理：商品失败显示错误但不影响钱包；
+  // 钱包失败静默（价格已写在每行里，不影响下单判断）。
+  const [shopResult, walletResult] = await Promise.all([
+    api.fetchShop().then(
+      (r): { items: ShopItem[]; error: string } => ({
+        items: Array.isArray(r) ? r : (r?.items ?? []),
+        error: '',
+      }),
+      (e: Error): { items: ShopItem[]; error: string } => ({
+        items: [],
+        error: e.message,
+      }),
+    ),
+    api.fetchWallet().then(
+      (w): { wallet: typeof wallet.value; ok: boolean } => ({ wallet: w, ok: true }),
+      (): { wallet: typeof wallet.value; ok: boolean } => ({
+        wallet: { coin: 0, gem: 0, energy: 0, keys: 0 },
+        ok: false,
+      }),
+    ),
+  ])
+
+  items.value = shopResult.items
+  loadError.value = shopResult.error
+  if (shopResult.error) {
     // 拉不到商城 ≠ 商城是空的；后者会误导玩家去别处找。
-    items.value = []
-    loadError.value = (e as Error).message
-    uni.showToast({ title: loadError.value, icon: 'none' })
-  } finally {
-    loading.value = false
+    uni.showToast({ title: shopResult.error, icon: 'none' })
   }
-  // 钱包与商品并发：两件事互不依赖，串起来会让首屏白等一倍时间。
-  try {
-    wallet.value = await api.fetchWallet()
-  } catch {
-    // 钱包拿不到就不显示余额：价格已经写在每一行里，不影响下单判断。
+  if (walletResult.ok) {
+    wallet.value = walletResult.wallet
   }
   groups.value = CATEGORY_ORDER.map((c) => ({
     key: c.key,
     label: c.label,
     items: items.value.filter((x) => (x.category || '') === c.key),
   })).filter((g) => g.items.length > 0)
+  loading.value = false
 }
 
 async function doBuy(it: ShopItem) {

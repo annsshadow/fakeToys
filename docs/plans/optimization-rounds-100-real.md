@@ -38,6 +38,7 @@
 | 27 | 2026-10-31 | **玩家「我的订单历史」**：支付订单（mock provider）记录在 `orders` 表，玩家端此前没有任何入口 | 服务层 `MyOrders`（订单号/SKU/金额（分）/状态/provider/时间、limit 夹到 20）；`GET /api/v1/me/orders`；miniapp me.vue「订单记录」列表（SKU/金额（元）/状态中文/订单号/时间） | 服务层 4 用例、e2e 3 用例（401/记录正确/空历史）全绿；`internal/service` 253s 全绿、`internal/httpapi` 104s 全绿、miniapp 1167 passed、type-check 通过 |
 | 28 | 2026-10-31 | **运营看板新增「今日签到/今日兑换」指标**：看板此前没有这两个活跃指标，运营判断今日活跃只能靠猜 | `Dashboard.Economy` 新增 `SignInsToday`/`RedeemsToday`；`adminDashboardUncached` 新增两条聚合查询（沿用看板 CURRENT_DATE 口径）；admin DashboardView「订单」KPI 卡片展示；同步更新日界文档守卫（CURRENT_DATE 3→5 处）与 ownership 豁免（`user_sign_ins` 看板聚合）+ types.gen.ts Dashboard 类型 | 新增 `TestDashboardSignInsAndRedeemsToday`（今日计入/昨日不计入）全绿；守卫测试（日界/ownership）全绿；`internal/service` 215s 全绿、`internal/httpapi` 88s 全绿、admin 353 passed、type-check 通过 |
 | 29 | 2026-10-31 | **me 页 onShow 并行加载**：8 个独立数据请求此前串行 await，首屏要等 N 个 RTT | `me.vue` onShow 改为 `Promise.all` 并行（请求互不依赖，只等最慢的一个）；新增源码守卫测试 `me_page_parallel_load.test.ts`（断言 onShow 含 `Promise.all([` 且无串行 `await loadX()` 行，防止改回串行） | miniapp type-check 通过；1169 tests（+2 守卫）全绿 |
+| 30 | 2026-10-31 | **shop 页商品/钱包真正并行**：注释写着「并发」，实现却是先等商品再等钱包，首屏白等一倍时间 | `shop.vue load()` 改为 `Promise.all` 同时拉取商品列表与钱包（各自错误独立处理：商品失败显示错误、钱包失败静默）；新增源码守卫测试 `shop_parallel_load.test.ts`（断言 load 含 `Promise.all([` 且无串行 `await api.fetchWallet()` 行） | miniapp type-check 通过；1171 tests（+2 守卫）全绿 |
 | ... | | 持续至 100 轮 | | |
 
-> 状态：进行中。当前累计 **29 轮实质优化**，距 100 轮还差 71 轮。
+> 状态：进行中。当前累计 **30 轮实质优化**，距 100 轮还差 70 轮。
