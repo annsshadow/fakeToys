@@ -1165,6 +1165,62 @@ func (s *Service) ChallengeDefense(ctx context.Context, userID, defenseID int64,
 	return res, err
 }
 
+// ChallengeHistoryItem 是玩家挑战历史的一行（2026-10-30 实质优化第 18 轮）。
+type ChallengeHistoryItem struct {
+	ID            int64          `json:"id"`
+	DefenseID     int64          `json:"defense_id"`
+	DefenseName   string         `json:"defense_name"`
+	OwnerNickname string         `json:"owner_nickname"`
+	OwnerPower    int64          `json:"owner_power"`
+	Won           bool           `json:"won"`
+	DurationMs    int            `json:"duration_ms"`
+	HpLeftPct     int            `json:"hp_left_pct"`
+	Loot          map[string]int `json:"loot"`
+	CreatedAt     time.Time      `json:"created_at"`
+}
+
+// MyChallengeHistory 返回当前玩家最近的防线挑战记录。
+//
+// 此前玩家只能看到**最近一次**挑战结果（客户端本地保存），
+// 历史记录完全没有入口 —— 想回顾「昨天挑战谁赢了、偷了多少」
+// 只能靠记忆。这里补上服务端权威的历史列表。
+//
+// 注意：防线被删除时挑战记录会随 `ON DELETE CASCADE` 消失，
+// 这是可接受的（对手防线已不存在，回看没有意义）。
+func (s *Service) MyChallengeHistory(ctx context.Context, userID int64, limit int) ([]ChallengeHistoryItem, error) {
+	if limit <= 0 || limit > 50 {
+		limit = 20
+	}
+	rows, err := s.pool.Query(ctx, `
+		SELECT dc.id, dc.defense_id, COALESCE(d.name, ''), COALESCE(u.nickname, ''),
+		       d.power, dc.won, dc.duration_ms, dc.hp_left_pct, dc.loot, dc.created_at
+		FROM defense_challenges dc
+		JOIN defenses d ON d.id = dc.defense_id
+		LEFT JOIN users u ON u.id = d.owner_id
+		WHERE dc.challenger_id = $1
+		ORDER BY dc.created_at DESC
+		LIMIT $2`, userID, limit)
+	if err != nil {
+		return nil, fmt.Errorf("my challenge history: %w", err)
+	}
+	defer rows.Close()
+
+	out := []ChallengeHistoryItem{}
+	for rows.Next() {
+		var it ChallengeHistoryItem
+		var lootRaw []byte
+		if err := rows.Scan(&it.ID, &it.DefenseID, &it.DefenseName, &it.OwnerNickname,
+			&it.OwnerPower, &it.Won, &it.DurationMs, &it.HpLeftPct, &lootRaw, &it.CreatedAt); err != nil {
+			return nil, fmt.Errorf("scan challenge history: %w", err)
+		}
+		if err := json.Unmarshal(lootRaw, &it.Loot); err != nil {
+			return nil, fmt.Errorf("unmarshal challenge loot: %w", err)
+		}
+		out = append(out, it)
+	}
+	return out, rows.Err()
+}
+
 func (s *Service) dailyChallengeCountersTx(ctx context.Context, tx txType, userID int64) (attempts, stolen int, err error) {
 	// ⚠️ 第 98 轮：`challenge_date` 由 **Go** 决定，与每日任务 / 签到 / 商城同一个口径。
 	// 详见 dailyChallengeCounters 上方的说明。

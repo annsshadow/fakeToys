@@ -51,7 +51,8 @@ const userTablePrefix = "user_"
 // 映射到它们的**归属列名**。
 //
 // ⚠️ 归属列名**不统一**：绝大多数表叫 `user_id`，
-// 而 `defenses` / `defense_challenges` 叫 `owner_id`。
+// `defenses` 叫 `owner_id`，`defense_challenges` 叫 `challenger_id`
+// （挑战者视角；防守方视角走 defense_id，见 00020 迁移注释）。
 //
 // 我第一版只认 `USER_ID`，于是那三张表的合法查询全被误报 ——
 // 而**守卫误报比漏报更危险**：它会让人以为某处没守，
@@ -60,7 +61,7 @@ var battleScopedTables = map[string]string{
 	"battle_records":     "user_id",
 	"battle_tokens":      "user_id",
 	"defenses":           "owner_id",
-	"defense_challenges": "user_id",
+	"defense_challenges": "challenger_id",
 }
 
 // ownerScopedVerbs 是本守卫管辖的语句类型。

@@ -139,6 +139,9 @@ func (s *Server) Register(app *fiber.App) {
 	// 那条只覆盖了 equipped_slot；这里补的是**看得见**与**洗得动**。
 	me.Get("/gems", s.listGems)
 	me.Post("/gems/:id/wash", s.washGem)
+	// 我的挑战记录（2026-10-30 实质优化第 18 轮）。
+	// 玩家此前只能看到最近一次挑战结果，历史记录没有入口。
+	me.Get("/challenges", s.myChallengeHistory)
 
 	wallet := v1.Group("/wallet", requireUser(s.Svc))
 	wallet.Get("/", s.wallet)
@@ -654,6 +657,15 @@ func (s *Server) listGems(c *fiber.Ctx) error {
 		return failErr(c, err)
 	}
 	return c.JSON(fiber.Map{"gems": gems})
+}
+
+// myChallengeHistory 返回当前玩家最近的防线挑战记录。
+func (s *Server) myChallengeHistory(c *fiber.Ctx) error {
+	items, err := s.Svc.MyChallengeHistory(c.Context(), userIDFrom(c), 20)
+	if err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(fiber.Map{"items": items})
 }
 
 // washGem 消耗 1 枚洗练券，重 roll 这颗宝石的词条（品质不变）。
