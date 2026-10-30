@@ -541,6 +541,14 @@ export function updateRedeemCode(id: number, payload: {
   return api.put<AdminRedeemCodeResp>(`/admin/redeem-codes/${id}`, payload)
 }
 
+/**
+ * 导出兑换码 CSV（2026-10-31 实质优化第 37 轮）。
+ * 运营需要把已生成码的清单带走做线下核对/客服分发。readonly 可导出。
+ */
+export function exportRedeemCodesCsv() {
+  return api.getBlob('/admin/redeem-codes/export')
+}
+
 export function fetchAuditLogs(limit = 100, offset = 0) {
   // 2026-10-21（P5-1）：审计日志也要能翻页 —— 固定 100 条时，
   // 更早的操作**根本看不到**。

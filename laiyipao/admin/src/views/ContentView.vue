@@ -10,6 +10,7 @@ import {
   createRedeemCode,
   updateRedeemCode,
   setRedeemCodeEnabled,
+  exportRedeemCodesCsv,
   fetchAuditLogs,
   exportAuditLogsCsv,
   type AdminAnnouncementView,
@@ -91,6 +92,27 @@ async function onExportAuditLogs() {
     a.remove()
     URL.revokeObjectURL(url)
     ElMessage.success(`已导出 ${logs.value.length} 条审计日志（当前页）`)
+  } catch (e) {
+    ElMessage.error(`导出失败：${(e as Error).message}`)
+  }
+}
+
+/**
+ * 导出兑换码 CSV（2026-10-31 实质优化第 37 轮）。
+ * 运营需要把已生成码的清单带走做线下核对/客服分发。
+ */
+async function onExportRedeemCodes() {
+  try {
+    const blob = await exportRedeemCodesCsv()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `redeem_codes_${new Date().toISOString().slice(0, 10)}.csv`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+    ElMessage.success(`已导出 ${codes.value.length} 条兑换码（当前页）`)
   } catch (e) {
     ElMessage.error(`导出失败：${(e as Error).message}`)
   }
@@ -420,6 +442,10 @@ loadAll()
         </el-card>
 
         <el-card shadow="never" style="margin-top: 12px">
+          <div style="display: flex; align-items: center; justify-content: flex-end; margin-bottom: 8px">
+            <span class="muted" style="margin-right: 8px">共 {{ codeTotal }} 条</span>
+            <el-button size="small" @click="onExportRedeemCodes">导出 CSV</el-button>
+          </div>
           <el-table :data="codes" size="small" stripe>
             <el-table-column prop="id" label="ID" width="55" />
             <el-table-column prop="code" label="兑换码" min-width="150" />

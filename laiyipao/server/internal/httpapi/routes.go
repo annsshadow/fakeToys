@@ -330,6 +330,8 @@ func (s *Server) Register(app *fiber.App) {
 	adm.Put("/announcements/:id", requireWritable(), s.adminUpdateAnnouncement)
 	adm.Delete("/announcements/:id", requireWritable(), s.adminDeleteAnnouncement)
 	adm.Get("/redeem-codes", s.adminRedeemCodes)
+	// 兑换码 CSV 导出（2026-10-31 实质优化第 37 轮）：读操作，readonly 可访问。
+	adm.Get("/redeem-codes/export", s.adminExportRedeemCodes)
 	adm.Post("/redeem-codes", requireWritable(), s.adminCreateRedeemCode)
 	// 兑换码启用/禁用（2026-10-31 实质优化第 24 轮）：
 	// 运营创建错误码后此前无法停用（只能等过期）。

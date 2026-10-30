@@ -915,6 +915,77 @@ func (s *Service) AdminCreateRedeemCode(ctx context.Context, code string, reward
 	}, nil
 }
 
+// AdminExportRedeemCodes 导出兑换码列表为 CSV（2026-10-31 实质优化第 37 轮）。
+//
+// 与用户/战报/审计导出同族：运营需要把已生成码的清单带走做线下核对/
+// 客服分发。UTF-8 BOM（Excel 中文兼容），上限 100_000 行。
+func (s *Service) AdminExportRedeemCodes(ctx context.Context) ([]byte, error) {
+	rows, err := s.pool.Query(ctx,
+		`SELECT id, code, reward, max_uses, used_count, expires_at, enabled
+		 FROM redeem_codes ORDER BY id LIMIT 100000`)
+	if err != nil {
+		return nil, fmt.Errorf("export redeem codes: %w", err)
+	}
+	defer rows.Close()
+
+	var buf bytes.Buffer
+	buf.WriteString("\xEF\xBB\xBF")
+	w := csv.NewWriter(&buf)
+	header := []string{"id", "code", "reward", "max_uses", "used_count", "expires_at", "enabled"}
+	if err := w.Write(header); err != nil {
+		return nil, fmt.Errorf("write csv header: %w", err)
+	}
+
+	for rows.Next() {
+		var id, maxUses, usedCount int
+		var code string
+		var rewardRaw []byte
+		var expiresAt *time.Time
+		var enabled bool
+		if err := rows.Scan(&id, &code, &rewardRaw, &maxUses, &usedCount, &expiresAt, &enabled); err != nil {
+			return nil, fmt.Errorf("scan redeem code: %w", err)
+		}
+		var rewardText string
+		var m map[string]int
+		if err := json.Unmarshal(rewardRaw, &m); err == nil {
+			parts := make([]string, 0, len(m))
+			for k, v := range m {
+				parts = append(parts, k+":"+strconv.Itoa(v))
+			}
+			sort.Strings(parts)
+			rewardText = strings.Join(parts, " ")
+		}
+		rec := []string{
+			strconv.Itoa(id),
+			code,
+			rewardText,
+			strconv.Itoa(maxUses),
+			strconv.Itoa(usedCount),
+			formatNullableTime(expiresAt),
+			strconv.FormatBool(enabled),
+		}
+		if err := w.Write(rec); err != nil {
+			return nil, fmt.Errorf("write csv row: %w", err)
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	w.Flush()
+	if err := w.Error(); err != nil {
+		return nil, fmt.Errorf("flush csv: %w", err)
+	}
+	return buf.Bytes(), nil
+}
+
+// formatNullableTime 把可空时间转成 CSV 单元格（NULL → 空串）。
+func formatNullableTime(t *time.Time) string {
+	if t == nil {
+		return ""
+	}
+	return t.Format(time.RFC3339)
+}
+
 // AdminSetRedeemCodeEnabled 启用/禁用兑换码（2026-10-31 实质优化第 24 轮）。
 //
 // 此前兑换码只有创建/列表，运营创建错误码后**无法停用**（只能等过期）。

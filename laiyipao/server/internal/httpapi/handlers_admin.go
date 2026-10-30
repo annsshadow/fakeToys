@@ -851,6 +851,17 @@ func (s *Server) adminRedeemCodes(c *fiber.Ctx) error {
 	return c.JSON(service.NormalizeNilSlices(service.AdminRedeemCodesResp{Items: items, Total: total}))
 }
 
+// adminExportRedeemCodes 导出兑换码 CSV（2026-10-31 实质优化第 37 轮）。
+func (s *Server) adminExportRedeemCodes(c *fiber.Ctx) error {
+	data, err := s.Svc.AdminExportRedeemCodes(c.Context())
+	if err != nil {
+		return failErr(c, err)
+	}
+	c.Set("Content-Type", "text/csv; charset=utf-8")
+	c.Set("Content-Disposition", `attachment; filename="redeem_codes.csv"`)
+	return c.Send(data)
+}
+
 func (s *Server) adminCreateRedeemCode(c *fiber.Ctx) error {
 	var body struct {
 		Code      string         `json:"code"`
