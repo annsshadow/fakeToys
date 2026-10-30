@@ -384,5 +384,26 @@ mod tests {
             None => std::env::remove_var(MIGRATIONS_DIR_KEY),
         }
         std::fs::remove_file(&file_path).ok();
+
+        // ⑧ 坏迁移 SQL 必须 loud 失败（第二十轮补）：迁移文件内容非法时，
+        // 事务内执行必须报错并点名文件——不能静默跳过（否则坏迁移在部署里
+        // 被当作已应用，启动照常、首次查询才炸）。
+        let bad_dir =
+            std::env::temp_dir().join(format!("oa4rust_bad_migration_{}", std::process::id()));
+        std::fs::create_dir_all(&bad_dir).expect("创建临时迁移目录");
+        std::fs::write(bad_dir.join("001_bad.sql"), "THIS IS NOT SQL;").expect("写坏迁移");
+        let saved5 = std::env::var(MIGRATIONS_DIR_KEY).ok();
+        std::env::set_var(MIGRATIONS_DIR_KEY, bad_dir.to_str().expect("UTF-8 路径"));
+        let err7 = run_migrations(&pool).await.expect_err("坏迁移必须失败");
+        let msg7 = format!("{err7}");
+        assert!(
+            msg7.contains("001_bad.sql"),
+            "错误信息应点名坏迁移文件，实际: {msg7}"
+        );
+        match saved5 {
+            Some(v) => std::env::set_var(MIGRATIONS_DIR_KEY, v),
+            None => std::env::remove_var(MIGRATIONS_DIR_KEY),
+        }
+        std::fs::remove_dir_all(&bad_dir).ok();
     }
 }
