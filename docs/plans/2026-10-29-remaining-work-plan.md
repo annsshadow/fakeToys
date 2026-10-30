@@ -172,7 +172,7 @@ LY-7（小程序虚拟化，实测列表全部有界）、AU-P1（异步后端�
 
 | 编号 | 项 | 现状 | 缺口性质 |
 |---|---|---|---|
-| **C1** | `shared` 覆盖率 93.28% → 94% | floor 93 已达成 | 需 ~50 行，全部依赖**进程隔离**（`security` 的 OnceLock 环境臂与 parity 测试互斥）或**公网夹具**（`netguard fetch_limited` 被自身 SSRF 守卫挡回环）。属条件项，不作为默认目标。2026-10-30 复核：本机 `cargo llvm-cov` 报 `can't find crate for profiler_builtins`——Windows GNU 工具链的 rustup 发行版（stable 与 nightly 均实测）**不带 `profiler_builtins` rlib**，`-C instrument-coverage` 无法链接。这是工具链系统性限制，非代码问题；覆盖率以计划记录 93.28% 为基线，待 MSVC 工具链或 Linux 环境可用时复测 |
+| **C1** | `shared` 覆盖率 93.28% → 94% | **工具链限制已突破（2026-10-30 第六轮）** | 需 ~50 行，全部依赖**进程隔离**（`security` 的 OnceLock 环境臂与 parity 测试互斥）或**公网夹具**（`netguard fetch_limited` 被自身 SSRF 守卫挡回环）。属条件项，不作为默认目标。**2026-10-30 第六轮进展**：Windows GNU 工具链仍不带 `profiler_builtins`（stable/nightly 实测均无法 `-C instrument-coverage`），但发现 `oa4rust-cov` Docker 容器（Debian 12 + rustc 1.99.1 + cargo-llvm-cov + llvm-tools）是**可用的 Linux 覆盖率环境**——容器内 `cargo llvm-cov -p shared --lib` 已跑通。容器内实测当前覆盖率 **93.17%**（行），距 94% 差 ~90 行，主要缺口为 `testing.rs` 测试基建（136 行未覆盖，67.23%）与 `netguard` 公网成功路径（56 行，依赖公网可达）；这两块仍是条件项。**顺带修复一个真实测试并发缺陷**：`db/mod.rs` 的 `pool_construction_tests` 通过进程级 `DATABASE_URL` 传参（设 `"not-a-postgres-url"` / 清除），与并行跑的 crud 真库臂互相污染（容器内全量跑 5 failed：`RelativeUrlWithoutBase` + Connection refused）。已将 `create_pool` / `create_sea_orm_pool` 参数化（新增 `*_with_url` 带参版本），测试不再修改 `DATABASE_URL`；回退分支改由纯函数 `resolve_database_url` 验证。修复后容器内 shared 306 全绿、clippy 零告警、覆盖率 93.17%。 |
 
 ### D 类 · 环境与工具
 

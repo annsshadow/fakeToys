@@ -195,8 +195,8 @@
 | LY-4 可观测 | **已完成** | ttlCache 命中/未命中原子计数 + `Service.CacheStats()`；`/metrics`（Prometheus 文本，`METRICS_ENABLED` 默认关）；pprof 独立回环端口（`PPROF_ADDR` 默认空）。`renderCacheMetrics` 纯函数单测通过；build/vet 干净。 |
 | LY-6 CI DB 集成测试 | **核实后已在 CI（无需改）** | `laiyipao-ci.yml` 的 `server` job 自 2026-10-10 就接了 PostgreSQL service，建库+迁移+播种后跑全量 `go test ./... -timeout 1200s`（含 httpapi 层集成用例）。计划前提「HTTP 集成测试在 CI 从不跑」**不成立**——与 LY-1 同族的假阳性。 |
 | LY-5 配置热加载 | **未做（记账）** | `Service.Cfg` 是 `New` 时的**值拷贝**，SIGHUP 重读不会传播到运行中的 Service；需先把 Cfg 改指针/原子——结构性改动，不草率做。 |
-| LY-7 小程序虚拟化 | **未做（记账）** | 前端改动、本机无法视觉验收；当前背包/商城列表有界。 |
-| LY-8 AdminUserDetail 并发查询 | **未做（记账）** | 串行查询**正确**；改并发（errgroup）需 PG 验证错误处理无回归。 |
+| LY-7 小程序虚拟化 | **不做（已实测有界）** | 前端改动、本机无法视觉验收；实测 `skills` 42 / `equipment` 18 / `gems` 8 / `shop` 15 / `levels` 100，列表全部有界（已在剩余计划销账）。 |
+| LY-8 AdminUserDetail 并发查询 | **已完成（2026-10-24，早于本清单登记）** | `internal/service/adminuserdetail.go` 已用 WaitGroup 并发 7 段（用户行保持串行先取，其余 6 段并发），错误语义按段序优先返回与串行版一致；SQL 不变。`TestAdminUserDetail` / `TestAdminUserDetailNeverWritesWallet` 真库通过（2026-10-30 本机 PG 复跑 ok）。 |
 
 ### 7.3 augmentor（Python）—— agent 实施 + 我复核
 
@@ -206,6 +206,7 @@
 | AU-P3 死缓存兜底 | **已完成（我独立复跑）** | `base.py` 直用 `self._generation_cache`；`test_noop_write_l89.py` 通过。 |
 | AU-Q2 except 收窄 | **已完成（我独立复跑）** | 36 处收窄 + `AugmentorError→HTTPError` 映射（500→400）；`test_narrow_excepts_auq2.py` 通过。三项合计我复跑 **31 passed**。 |
 | AU-P2 惰性导入 | **已延期（记账，非完成）** | agent **两次**报「已落地 + pytest 通过 + 贴 diff」，但两次核对 `__init__.py` 的 `git diff` 均为空、全包无 `__getattr__`——改动从未落盘。根因：`__all__` 有 **220 个名字横跨约 30 个模块**，完整惰性 `_LATE` 映射稍不完整就会让 `from augmentor import *` 失败；且 augmentor 是**批处理型工具、非热服务**，冷启动导入开销价值本就低。风险/收益不成比例 → 延期，留待专门且可验证的一轮。 |
+| AU-Q3 `Temp/` 测试去重 | **已消解（目录已不存在）** | 2026-10-30 复核：`augmentor/` 下无 `Temp/` 目录（`ls augmentor/Temp` 不存在），同名测试重叠的前提已消失，无需排期。 |
 
 > **过程教训（记账）**：agent 自报「done」必须核对**磁盘文件**，不能只信结论与 diff 文本——本例两次 diff 都是凭空生成的。AU-Q1/P3/Q2 因文件确实已改 + 我独立复跑通过，判为真；AU-P2 因文件零改动，判为虚报。
 
