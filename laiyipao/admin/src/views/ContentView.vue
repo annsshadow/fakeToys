@@ -8,6 +8,7 @@ import {
   deleteAnnouncement,
   fetchRedeemCodes,
   createRedeemCode,
+  updateRedeemCode,
   setRedeemCodeEnabled,
   fetchAuditLogs,
   exportAuditLogsCsv,
@@ -41,6 +42,8 @@ const codeForm = ref({
   max_uses: 100,
   expires_at: '',
 })
+// 编辑中的兑换码 id（null = 非编辑态，2026-10-31 实质优化第 25 轮）
+const editingCodeId = ref<number | null>(null)
 
 /** 三张表的分页（2026-10-21 P2-6）：此前固定 50/50/100 条且**没有分页器**，
  *  而接口返回的 `total` 是全量 —— 更早的公告 / 兑换码 / 审计记录**根本看不到**。 */
@@ -195,23 +198,54 @@ async function submitCode() {
     ElMessage.error('奖励格式错误，应为「coin:10000, gem:100」')
     return
   }
-  if (!codeForm.value.code.trim()) {
+  if (editingCodeId.value === null && !codeForm.value.code.trim()) {
     ElMessage.error('兑换码不能为空')
     return
   }
   try {
-    await createRedeemCode({
-      code: codeForm.value.code.trim(),
-      reward,
-      max_uses: codeForm.value.max_uses,
-      expires_at: codeForm.value.expires_at || undefined,
-    })
-    ElMessage.success('兑换码已创建')
+    if (editingCodeId.value !== null) {
+      await updateRedeemCode(editingCodeId.value, {
+        reward,
+        max_uses: codeForm.value.max_uses,
+        expires_at: codeForm.value.expires_at || undefined,
+      })
+      ElMessage.success('兑换码已更新')
+      editingCodeId.value = null
+    } else {
+      await createRedeemCode({
+        code: codeForm.value.code.trim(),
+        reward,
+        max_uses: codeForm.value.max_uses,
+        expires_at: codeForm.value.expires_at || undefined,
+      })
+      ElMessage.success('兑换码已创建')
+    }
     codeForm.value = { code: '', reward: 'coin:10000', max_uses: 100, expires_at: '' }
     await loadAll()
   } catch (e) {
     ElMessage.error((e as Error).message)
   }
+}
+
+/**
+ * 编辑兑换码（2026-10-31 实质优化第 25 轮）。
+ * 改奖励/次数/过期时间此前只能停用后重建（码会变，已分享的全作废）。
+ */
+function startEditCode(c: AdminRedeemCodeView) {
+  editingCodeId.value = c.id
+  codeForm.value = {
+    code: c.code,
+    reward: Object.entries(c.reward ?? {})
+      .map(([k, v]) => `${k}:${v}`)
+      .join(', '),
+    max_uses: c.max_uses,
+    expires_at: c.expires_at ? new Date(c.expires_at).toISOString().slice(0, 19) + 'Z' : '',
+  }
+}
+
+function cancelEditCode() {
+  editingCodeId.value = null
+  codeForm.value = { code: '', reward: 'coin:10000', max_uses: 100, expires_at: '' }
 }
 
 /**
@@ -361,10 +395,11 @@ loadAll()
 
       <!-- 兑换码 -->
       <el-tab-pane label="兑换码" name="codes">
-        <el-card shadow="never" header="生成兑换码">
+        <el-card shadow="never" :header="editingCodeId !== null ? '编辑兑换码' : '生成兑换码'">
           <el-form :inline="true">
             <el-form-item label="码">
-              <el-input v-model="codeForm.code" placeholder="LYP-2026-XXXX" style="width: 180px" />
+              <el-input v-model="codeForm.code" placeholder="LYP-2026-XXXX" style="width: 180px"
+                :disabled="editingCodeId !== null" />
             </el-form-item>
             <el-form-item label="奖励">
               <el-input v-model="codeForm.reward" placeholder="coin:10000, gem:100" style="width: 220px" />
@@ -376,7 +411,10 @@ loadAll()
               <el-input v-model="codeForm.expires_at" placeholder="2026-12-31T23:59:59Z" style="width: 200px" />
             </el-form-item>
             <el-form-item>
-              <el-button type="primary" @click="submitCode">生成</el-button>
+              <el-button type="primary" @click="submitCode">
+                {{ editingCodeId !== null ? '更新' : '生成' }}
+              </el-button>
+              <el-button v-if="editingCodeId !== null" @click="cancelEditCode">取消编辑</el-button>
             </el-form-item>
           </el-form>
         </el-card>
@@ -404,9 +442,10 @@ loadAll()
                 </el-tag>
               </template>
             </el-table-column>
-            <!-- 启用/禁用（2026-10-31 实质优化第 24 轮） -->
-            <el-table-column label="操作" width="80" fixed="right">
+            <!-- 编辑/启用/禁用（2026-10-31 实质优化第 24/25 轮） -->
+            <el-table-column label="操作" width="120" fixed="right">
               <template #default="{ row }">
+                <el-button size="small" text @click="startEditCode(row as AdminRedeemCodeView)">编辑</el-button>
                 <el-button size="small" text :type="row.enabled ? 'danger' : 'success'"
                   @click="onToggleRedeemCode(row as AdminRedeemCodeView)">
                   {{ row.enabled ? '停用' : '启用' }}

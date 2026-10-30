@@ -509,6 +509,18 @@ export function setRedeemCodeEnabled(id: number, enabled: boolean) {
   return api.put<AdminRedeemCodeResp>(`/admin/redeem-codes/${id}/enabled`, { enabled })
 }
 
+/**
+ * 更新兑换码（2026-10-31 实质优化第 25 轮）。
+ * 改奖励/次数/过期时间此前只能停用后重建（码会变，已分享的全作废）。
+ */
+export function updateRedeemCode(id: number, payload: {
+  reward: Record<string, number>
+  max_uses: number
+  expires_at?: string
+}) {
+  return api.put<AdminRedeemCodeResp>(`/admin/redeem-codes/${id}`, payload)
+}
+
 export function fetchAuditLogs(limit = 100, offset = 0) {
   // 2026-10-21（P5-1）：审计日志也要能翻页 —— 固定 100 条时，
   // 更早的操作**根本看不到**。
