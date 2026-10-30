@@ -8,6 +8,7 @@ import {
   unbanUser,
   grantUser,
   resetPlayerPassword,
+  exportUsersCsv,
   type AdminUserDetailResp,
   type AdminUserView,
 } from '@/api'
@@ -287,6 +288,29 @@ async function onResetPassword(u: AdminUserView) {
   }
 }
 
+/**
+ * 导出用户列表 CSV（2026-10-30 实质优化第 12 轮）。
+ *
+ * 过滤条件与列表一致（keyword 模糊搜昵称）。readonly 角色也可导出
+ * （读操作）。下载文件名带日期。
+ */
+async function onExportCsv() {
+  try {
+    const blob = await exportUsersCsv(keyword.value || undefined)
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `users_${new Date().toISOString().slice(0, 10)}.csv`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+    ElMessage.success(`已导出 ${users.value.length} 名用户（当前筛选结果）`)
+  } catch (e) {
+    ElMessage.error(`导出失败：${(e as Error).message}`)
+  }
+}
+
 onMounted(load)
 
 /**
@@ -350,6 +374,7 @@ const asRow = (r: unknown) => r as AdminUserView
           @keyup.enter="((offset = 0), load())"
         />
         <el-button @click="((offset = 0), load())">查询</el-button>
+        <el-button @click="onExportCsv">导出 CSV</el-button>
         <span class="toolbar-spacer" />
         <span class="muted">共 {{ total }} 名用户 · 第 {{ page }} / {{ pageCount }} 页</span>
         <el-button size="small" :disabled="offset <= 0" @click="prevPage">上一页</el-button>

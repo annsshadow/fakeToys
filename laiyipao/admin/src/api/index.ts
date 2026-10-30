@@ -252,6 +252,18 @@ export function fetchUsers(params: { keyword?: string; limit?: number; offset?: 
 }
 
 /**
+ * 导出用户列表 CSV（2026-10-30 实质优化第 12 轮）。
+ *
+ * 过滤条件与 `fetchUsers` 一致（keyword 模糊搜昵称）。
+ * 返回带 UTF-8 BOM 的 CSV Blob（Excel 中文兼容）。readonly 可导出。
+ */
+export function exportUsersCsv(keyword?: string) {
+  const q = new URLSearchParams()
+  if (keyword) q.set('keyword', keyword)
+  return api.getBlob(`/admin/users/export?${q}`)
+}
+
+/**
  * 玩家详情（2026-10-21 P5-7）。
  *
  * 此前后台**只能看到用户列表的一行**，运营要回答「他最近打了什么 /

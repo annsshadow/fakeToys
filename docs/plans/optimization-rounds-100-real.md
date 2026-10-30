@@ -20,6 +20,7 @@
 | 9 | 2026-10-30 | **laiyipao 玩家修改昵称**：昵称只在登录/引导时设置一次，之后永远改不了（排行榜/防线/战报全是默认名） | 后端新增 `PUT /api/v1/me/nickname`（`UpdateNickname`：TrimSpace、上限 MaxNicknameLen=64、主键更新）+ 限流守卫 + 前端昵称行内编辑（`client.ts updateNickname` + me.vue 改名入口，保存后刷新资料） | 服务层 5 用例、e2e 3 用例全绿；`internal/service` 240s 全绿、`internal/httpapi` 全绿、miniapp 1167 passed、type-check 通过 |
 | 10 | 2026-10-30 | **wallet_flows 归档命令化**：经济流水原始凭证此前永不删、也只有一个手写 SQL 才能压缩，无限增长最终拖慢备份与查询 | `cmd/prune` 新增 `--archive-wallet-flows`：自动建冷表 `wallet_flows_archive`（LIKE INCLUDING ALL）、CTE 原子分批搬移、默认 dry-run、永不进删除白名单；OPERATIONS.md 6.4 改为命令用法；注册 `laiyipao_prune_test_` 前缀 | 参数校验 2 新增用例 + 数据库集成测试 3 用例（dry-run 不动 / apply 搬移幂等 / 默认不碰）全绿；`cmd/prune`、`scratchdb` 及全部非 service/httpapi 包通过 |
 | 11 | 2026-10-30 | **后台重置玩家密码**：玩家侧已有改密/转正，但运营缺少兜底（账号遗忘/被盗强制轮换只能封禁或改环境变量重启） | 后端新增 `POST /api/v1/admin/users/:id/reset-password`（`AdminResetPlayerPassword`：bcrypt 更新 + 同事务吊销全部 refresh token、只对已有账号开放、审计 `reset_password`）+ `requireWritable` 门禁 + admin 用户详情「重置密码」按钮（密码输入校验、确认文案说明会登出所有设备） | 服务层 5 用例、e2e 5 用例（401/403/成功/太短/游客）全绿；`internal/service` 234s 全绿、`internal/httpapi` 全绿、admin 353 passed、type-check 通过 |
+| 12 | 2026-10-30 | **后台用户列表 CSV 导出**：后台列表此前没有任何导出入口，运营做数据分析只能手动翻页或直接查库 | 后端新增 `GET /api/v1/admin/users/export`（`AdminExportUsers`：与列表同口径 keyword 过滤、UTF-8 BOM、上限 10 万行、绝不导出 guest_token 等敏感凭证；注册在 `/users/:id` 之前避免被参数匹配吞掉）+ admin 前端「导出 CSV」按钮（`getBlob` 下载、readonly 可导出） | 服务层 3 用例、e2e 3 用例（401/readonly 放行/内容正确）全绿；`internal/service` 207s 全绿、`internal/httpapi` 全绿、admin 353 passed、type-check 通过 |
 | ... | | 持续至 100 轮 | | |
 
-> 状态：进行中。当前累计 **11 轮实质优化**，距 100 轮还差 89 轮。
+> 状态：进行中。当前累计 **12 轮实质优化**，距 100 轮还差 88 轮。
