@@ -1087,3 +1087,29 @@ func TestAdminLogoutFailsOnDBError(t *testing.T) {
 		t.Fatal("无 admin_tokens 表时 AdminLogout 必须返回错误")
 	}
 }
+
+// TestAdminLoginFailsOnDBError 覆盖 AdminLogin 的数据库错误路径：
+// admin_users 表不可达（postgres 系统库无业务表）时必须返回错误，
+// 不能误报「用户名或密码错误」（那会把 DB 故障伪装成认证失败）。
+func TestAdminLoginFailsOnDBError(t *testing.T) {
+	cfg := config.Load()
+	cfg.DatabaseURL = "postgres://postgres@127.0.0.1:5432/postgres?sslmode=disable"
+	cfg.DBMaxConns = 2
+	cfg.DBMinConns = 0
+	ctx := context.Background()
+
+	db, err := store.Open(ctx, cfg)
+	if err != nil {
+		t.Skipf("postgres 系统库连不上，跳过：%v", err)
+	}
+	defer db.Close()
+
+	s := New(db, cfg)
+	_, err = s.AdminLogin(ctx, "nobody", "wrong")
+	if err == nil {
+		t.Fatal("无 admin_users 表时 AdminLogin 必须返回错误")
+	}
+	if errors.Is(err, ErrUnauthorized) {
+		t.Fatalf("DB 故障不得伪装成认证失败：%v", err)
+	}
+}
