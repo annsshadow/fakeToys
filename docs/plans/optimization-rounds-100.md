@@ -20,6 +20,8 @@
 | 10 | 2026-10-30 | augmentor 基线确认（4 failed→2，pillow 消解）+ 轮次计数台账建立 | 本文档 + 计划文档基线行 | augmentor 10172 passed / 2 failed（基线棘轮） |
 | 11 | 2026-10-30 | augmentor 棘轮重钉（ambiguous 497→500、scratch_pair 1484→1483） | `3552a64f8` | test_comment_refs_a184 26 passed；git 侧存活测试通过 |
 | 12 | 2026-10-30 | migrate `read_dir` 失败分支（迁移目录是文件时报错而非静默 0 条） | `f5de00a79` | shared 321 绿；94.74% |
+| 13 | 2026-10-30 | netguard `filename_from_url` 解析失败分支 | `4cc80fa52` | shared 322 绿；94.75% |
+| 15轮验证 | 2026-10-30 | augmentor 全量零失败确认（棘轮重钉 + git 侧修复后 10174 passed / 0 failed） | 计划文档基线行 | augmentor 全绿 |
 | ... | | 持续迭代至 100 轮 | | |
 
-> 状态：进行中。当前累计 12 轮，距 100 轮还差 88 轮。
+> 状态：进行中。当前累计 13 轮，距 100 轮还差 87 轮。
