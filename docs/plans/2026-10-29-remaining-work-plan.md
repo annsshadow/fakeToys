@@ -15,7 +15,7 @@
 | auto-checkin | 102 passed；覆盖率棘轮九档全绿 |
 | laiyipao | service / httpapi / cmd / config 真库全绿；配置热加载已落地 |
 | augmentor | 10173 passed / 4 failed（4 条为基线既红：pillow 环境性 + 3 条棘轮）；web 416 tests 全绿 |
-| oa4rust | 97 crates 编译零告警；`shared` 覆盖率 **93.28%**（floor 93 已达成） |
+| oa4rust | 97 crates 编译零告警；`shared` 覆盖率 **94.12%**（容器内实测，floor 93 与 C1 94 目标均达成） |
 | oa4rust 定位 | **独立系统**，不再与 Java 对齐（CI 的 Java 双栈对比门禁已删，换成启动冒烟） |
 
 **已关闭、不要再排期**：OA-P0-1（Java 契约奇偶，前提消失）、LY-5（配置热加载，已落地）、
@@ -172,7 +172,7 @@ LY-7（小程序虚拟化，实测列表全部有界）、AU-P1（异步后端�
 
 | 编号 | 项 | 现状 | 缺口性质 |
 |---|---|---|---|
-| **C1** | `shared` 覆盖率 93.28% → 94% | **工具链限制已突破（2026-10-30 第六轮），第七轮继续收口** | 需 ~50 行，全部依赖**进程隔离**（`security` 的 OnceLock 环境臂与 parity 测试互斥）或**公网夹具**（`netguard fetch_limited` 被自身 SSRF 守卫挡回环）。属条件项，不作为默认目标。**第六轮**：发现 `oa4rust-cov` Docker 容器是可用 Linux 覆盖率环境，跑通 `cargo llvm-cov -p shared --lib`；修复 `db/mod.rs` 测试并发污染（参数化 `create_pool_with_url` / `create_sea_orm_pool_with_url` + 纯函数 `resolve_database_url`），覆盖率 93.17%。**第七轮**：① `middleware/security.rs` 三个 OnceLock 环境臂（`TRUSTED_PROXY_IPS` / `FORCE_HTTPS` / `APP_PUBLIC_ORIGIN`）参数化——新增 `trusted_proxy_ips_from` / `force_https_from` / `force_https_host_from` 纯函数与 `https_redirect_with` 带参入口，测试不再设置环境变量、不依赖 OnceLock 初始化顺序（消除进程隔离互斥条件项）；② 清理 `response.rs` 中重复的旧版 `AppError` 枚举 + `IntoResponse`（零引用死代码，5 变体与正式 `crate::error::AppError` 8 变体漂移），测试改引正式 `crate::AppError`；③ 补 `AppError` 全 8 变体映射测试（Database/InternalAnyhow/Forbidden/NotImplemented 此前缺覆盖）。容器内 shared 310 全绿、clippy 零告警、覆盖率 93.20%（行），距 94% 差 ~76 行；剩余缺口 `testing.rs` 测试基建 136 行 + `netguard` 公网 56 行仍为条件项。 |
+| **C1** | `shared` 覆盖率 93.28% → 94% | **✅ 已达成（2026-10-30 第八轮，容器内实测 94.12%）** | 需 ~50 行，全部依赖**进程隔离**（`security` 的 OnceLock 环境臂与 parity 测试互斥）或**公网夹具**（`netguard fetch_limited` 被自身 SSRF 守卫挡回环）。属条件项，不作为默认目标。**第六轮**：发现 `oa4rust-cov` Docker 容器是可用 Linux 覆盖率环境，跑通 `cargo llvm-cov -p shared --lib`；修复 `db/mod.rs` 测试并发污染（参数化 `create_pool_with_url` / `create_sea_orm_pool_with_url` + 纯函数 `resolve_database_url`），覆盖率 93.17%。**第七轮**：① `middleware/security.rs` 三个 OnceLock 环境臂（`TRUSTED_PROXY_IPS` / `FORCE_HTTPS` / `APP_PUBLIC_ORIGIN`）参数化（`trusted_proxy_ips_from` / `force_https_from` / `force_https_host_from` 纯函数 + `https_redirect_with` 带参入口），消除进程隔离互斥；② 清理 `response.rs` 重复旧版 `AppError` 死代码；③ 补全 8 变体映射测试。覆盖率 93.20%。**第八轮（达成）**：① `migrate.rs` 补校验和变更分支（存储 checksum 与文件不一致时更新并 skip 不重放）与空迁移分支（空 SQL 仍落版本记录）测试；② 清理 `input_validation.rs` 半成品 `StringValidator`/`Validator` 死代码（全仓零引用）；③ 补 `DynControlPool` + `Arc<dyn ControlClient>` 委托全链路测试；④ 补 `mock_pool`/`mock_db`/`is_db_available` 测试基建覆盖。容器内 shared **314 全绿**、clippy 零告警、**行覆盖率 94.12%**（>94% 目标）、函数覆盖 91.30%、分支覆盖 94.29%。 |
 
 ### D 类 · 环境与工具
 
@@ -192,7 +192,7 @@ LY-7（小程序虚拟化，实测列表全部有界）、AU-P1（异步后端�
 | **第 4 批** | B3（`*_core_entity` 接线，逐 crate） | ✅ 已完成（2026-10-30 复核）：19 个 crate 全部核实无漏接 |
 | **第 5 批** | A2 的 134 条含写 SQL（按 crate 递减） | ✅ 已完成：R6 含写 SQL 135→0（补 `require_session` 门）；残余 14 条全部只读挂写，机器守卫 A2③钉住 |
 | **第 6 批** | B2 / B4 / B6（各需一次产品拍板或迁移） | ✅ 已完成：B2 invoke token 落库验签（迁移 114，commit 68e37124d）；B4 create_reply 真实落库；B6 惰性豁免 18→0 |
-| **条件项** | C1（覆盖率 94）、A3 的 629 条 | 有资源再说；A3 不按数字排期（R7 交叉验证已独立判据确认真写面 0） |
+| **条件项** | ~~C1（覆盖率 94）~~（已达成）、A3 的 629 条 | C1 于第八轮达成（94.12%）；A3 不按数字排期（R7 交叉验证已独立判据确认真写面 0） |
 
 ---
 
