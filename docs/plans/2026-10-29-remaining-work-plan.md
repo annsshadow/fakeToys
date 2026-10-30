@@ -18,7 +18,7 @@
 | auto-checkin | 102 passed；覆盖率棘轮九档全绿 |
 | laiyipao | service / httpapi / cmd / config 真库全绿；配置热加载已落地 |
 | augmentor | **10174 passed / 0 failed / 6 skipped（全绿，2026-10-30 棘轮重钉后首次全量零失败）**；web 416 tests 全绿 |
-| oa4rust | 97 crates 编译零告警；`shared` 覆盖率 **94.99%**（容器内实测，floor 93 与 C1 94 目标均达成） |
+| oa4rust | 97 crates 编译零告警；`shared` 覆盖率 **95.01%**（容器内实测，floor 93 与 C1 94 目标均达成） |
 | oa4rust 定位 | **独立系统**，不再与 Java 对齐（CI 的 Java 双栈对比门禁已删，换成启动冒烟） |
 
 **已关闭、不要再排期**：OA-P0-1（Java 契约奇偶，前提消失）、LY-5（配置热加载，已落地）、
