@@ -1150,6 +1150,27 @@ export function myRedemptions(): Promise<{ items: RedemptionItem[] }> {
 }
 
 /**
+ * 我的支付订单（2026-10-31 实质优化第 27 轮）。
+ *
+ * 服务端 `GET /me/orders` 返回最近 20 条支付订单
+ * （订单号/SKU/金额（分）/状态/时间）。
+ */
+export interface OrderItem {
+  id: number
+  order_no: string
+  sku: string
+  amount: number
+  status: string
+  provider: string
+  created_at: string
+  delivered_at: string | null
+}
+
+export function myOrders(): Promise<{ items: OrderItem[] }> {
+  return request<{ items: OrderItem[] }>('/me/orders')
+}
+
+/**
  * 卡关诊断（L-1）。
  *
  * 2026-10-21（P2-7）：`failed_times` 此前由客户端**硬编码成 2**，

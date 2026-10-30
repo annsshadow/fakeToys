@@ -262,6 +262,23 @@
           <text class="dim">{{ fmtChallengeTime(r.created_at) }}</text>
         </view>
       </view>
+
+      <!-- 订单记录（2026-10-31 实质优化第 27 轮）。
+           支付订单（mock provider）此前玩家端没有任何入口。 -->
+      <view v-if="orderHistory.length" class="card">
+        <text class="card-title">订单记录</text>
+        <view v-for="o in orderHistory" :key="o.id" class="ch-row">
+          <view class="flex-1" style="min-width: 0">
+            <text class="mono ellipsis" style="display: block">
+              {{ o.sku }} · {{ (o.amount / 100).toFixed(2) }} 元
+            </text>
+            <text class="dim ellipsis" style="display: block">
+              {{ orderStatusText(o.status) }} · {{ o.order_no }}
+            </text>
+          </view>
+          <text class="dim">{{ fmtChallengeTime(o.created_at) }}</text>
+        </view>
+      </view>
     </view>
 
     <!--
@@ -507,6 +524,28 @@ async function loadRedemptions() {
     redemptionHistory.value = res.items ?? []
   } catch {
     // 兑换记录是辅助信息，加载失败不打扰主流程
+  }
+}
+
+// 订单记录（2026-10-31 实质优化第 27 轮）。
+const orderHistory = ref<api.OrderItem[]>([])
+
+function orderStatusText(s: string): string {
+  const map: Record<string, string> = {
+    pending: '待支付',
+    paid: '已支付',
+    delivered: '已发货',
+    refunded: '已退款',
+  }
+  return map[s] ?? s
+}
+
+async function loadOrders() {
+  try {
+    const res = await api.myOrders()
+    orderHistory.value = res.items ?? []
+  } catch {
+    // 订单记录是辅助信息，加载失败不打扰主流程
   }
 }
 
@@ -984,6 +1023,7 @@ onShow(async () => {
     await loadBattleHistory()
     await loadPurchases()
     await loadRedemptions()
+    await loadOrders()
   }
 })
 
