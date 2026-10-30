@@ -54,6 +54,7 @@
 | 44 | 2026-10-30 | laiyipao AdminLogout 错误路径测试（42P01 → 返回错误） | `3ecc148af` | service 全量 193s 通过 |
 | 45 | 2026-10-30 | laiyipao EnsureContentSeeded 错误路径测试 | 本次提交 | 单测 PASS |
 | 46 | 2026-10-30 | laiyipao AdminLogin 错误路径测试（DB 故障不伪装成认证失败） | 本次提交 | 单测 PASS |
+| 47 | 2026-10-30 | laiyipao AdminEquipment 错误路径测试（防静默截断） | 本次提交 | 单测 PASS |
 | ... | | 持续迭代至 100 轮 | | |
 
-> 状态：进行中。当前累计 46 轮，距 100 轮还差 54 轮。
+> 状态：进行中。当前累计 47 轮，距 100 轮还差 53 轮。
