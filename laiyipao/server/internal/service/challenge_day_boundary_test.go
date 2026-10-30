@@ -215,9 +215,9 @@ func TestStatsDayBoundaryIsDocumented(t *testing.T) {
 	if n == 0 {
 		t.Skip("stats.go 里已无 CURRENT_DATE —— 若是有意改的，请把本用例与那条决定一起删掉")
 	}
-	if n != 3 {
-		t.Errorf("stats.go 里有 %d 处 CURRENT_DATE，期望 3 处\n"+
-			"（今日新增 x2 + 14 天曲线的 generate_series）。\n"+
+	if n != 5 {
+		t.Errorf("stats.go 里有 %d 处 CURRENT_DATE，期望 5 处\n"+
+			"（今日新增 x2 + 14 天曲线的 generate_series + 今日签到/今日兑换 x2）。\n"+
 			"数量变了说明有改动，请同步更新本用例与 README 的说明。", n)
 	}
 	t.Logf("stats.go 保留 %d 处 CURRENT_DATE —— 运营看板口径，**有意不改**。"+

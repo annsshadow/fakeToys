@@ -36,6 +36,7 @@
 | 25 | 2026-10-31 | **兑换码编辑**：改奖励/次数/过期时间此前只能停用后重建（码会变，已印刷/已分享的全作废） | 服务层 `AdminUpdateRedeemCode`（更新 reward/max_uses/expires_at、空奖励 ErrBadInput、0 行 → ErrNotFound）；`PUT /api/v1/admin/redeem-codes/:id`（requireWritable + 审计，RFC3339 同创建口径）；admin ContentView「编辑兑换码」（回填表单、码字段锁定、更新/取消） | 服务层 4 用例、e2e 4 用例（401/403/更新成功/404）全绿；`internal/service` 263s 全绿、`internal/httpapi` 108s 全绿、admin 353 passed、type-check 通过 |
 | 26 | 2026-10-31 | **后台删除玩家防线**：违规防线名（侮辱/广告等）运营此前只能看到、无法处理 | 服务层 `AdminDeleteDefense`（DELETE、0 行 → ErrNotFound、挑战记录随 CASCADE 删除）；`DELETE /api/v1/admin/defenses/:id`（requireWritable + 审计）；admin DefensesView「删除」操作列（二次确认并提示连带删除挑战记录） | 服务层 3 用例、e2e 4 用例（401/403/删除成功/404）全绿；`internal/service` 274s 全绿、`internal/httpapi` 116s 全绿、admin 353 passed、type-check 通过 |
 | 27 | 2026-10-31 | **玩家「我的订单历史」**：支付订单（mock provider）记录在 `orders` 表，玩家端此前没有任何入口 | 服务层 `MyOrders`（订单号/SKU/金额（分）/状态/provider/时间、limit 夹到 20）；`GET /api/v1/me/orders`；miniapp me.vue「订单记录」列表（SKU/金额（元）/状态中文/订单号/时间） | 服务层 4 用例、e2e 3 用例（401/记录正确/空历史）全绿；`internal/service` 253s 全绿、`internal/httpapi` 104s 全绿、miniapp 1167 passed、type-check 通过 |
+| 28 | 2026-10-31 | **运营看板新增「今日签到/今日兑换」指标**：看板此前没有这两个活跃指标，运营判断今日活跃只能靠猜 | `Dashboard.Economy` 新增 `SignInsToday`/`RedeemsToday`；`adminDashboardUncached` 新增两条聚合查询（沿用看板 CURRENT_DATE 口径）；admin DashboardView「订单」KPI 卡片展示；同步更新日界文档守卫（CURRENT_DATE 3→5 处）与 ownership 豁免（`user_sign_ins` 看板聚合）+ types.gen.ts Dashboard 类型 | 新增 `TestDashboardSignInsAndRedeemsToday`（今日计入/昨日不计入）全绿；守卫测试（日界/ownership）全绿；`internal/service` 215s 全绿、`internal/httpapi` 88s 全绿、admin 353 passed、type-check 通过 |
 | ... | | 持续至 100 轮 | | |
 
-> 状态：进行中。当前累计 **27 轮实质优化**，距 100 轮还差 73 轮。
+> 状态：进行中。当前累计 **28 轮实质优化**，距 100 轮还差 72 轮。

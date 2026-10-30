@@ -46,6 +46,9 @@ type Dashboard struct {
 		GemOut        int64 `json:"gem_out"`
 		OrdersPaid    int64 `json:"orders_paid"`
 		OrdersPending int64 `json:"orders_pending"`
+		// 2026-10-31（实质优化第 28 轮）：今日签到数 / 今日兑换次数。
+		SignInsToday int64 `json:"sign_ins_today"`
+		RedeemsToday int64 `json:"redeems_today"`
 	} `json:"economy"`
 	// I-6：验真健康度
 	Verification struct {
@@ -154,6 +157,18 @@ func (s *Service) adminDashboardUncached(ctx context.Context) (Dashboard, error)
 		FROM orders`,
 		&d.Economy.OrdersPaid, &d.Economy.OrdersPending); err != nil {
 		return d, fmt.Errorf("dashboard orders: %w", err)
+	}
+	// 2026-10-31（实质优化第 28 轮）：今日签到 / 今日兑换 ——
+	// 运营看板此前没有这两个活跃指标。
+	if err := scan(`
+		SELECT COUNT(*) FROM user_sign_ins WHERE sign_date = CURRENT_DATE`,
+		&d.Economy.SignInsToday); err != nil {
+		return d, fmt.Errorf("dashboard sign-ins: %w", err)
+	}
+	if err := scan(`
+		SELECT COUNT(*) FROM redeem_usages WHERE created_at >= CURRENT_DATE`,
+		&d.Economy.RedeemsToday); err != nil {
+		return d, fmt.Errorf("dashboard redeems: %w", err)
 	}
 
 	if err := scan(`

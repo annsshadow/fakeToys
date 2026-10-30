@@ -164,6 +164,9 @@ var ownershipExemptions = map[string]string{
 		"是为了拿到 owner_id 做后续判定。归属检查在**同一事务内**紧接着做：" +
 		"`if ownerID == userID { return ErrForbidden }`。" +
 		"所以这里不按 owner_id 过滤是正确的 —— 过滤了反而挑战不了任何人。",
+	"stats.go.adminDashboardUncached:user_sign_ins": "运营看板「今日签到数」聚合（2026-10-31 实质优化第 28 轮）：" +
+		"跨用户 COUNT，只吐计数、不返回任何一行的私有数据；端点挂在 admin 路由组" +
+		"（routes.go 的 adm 组，requireAdmin 之后）。按 user_id 过滤会让看板永远只显示一个人。",
 }
 
 // scanUnscopedQueries 扫出「按用户分区但没有 user_id 过滤」的查询。
