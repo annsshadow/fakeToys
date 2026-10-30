@@ -1177,3 +1177,24 @@ func TestAdminLevelRowFailsOnDBError(t *testing.T) {
 		t.Fatal("无 levels 表时 AdminLevelRow 必须返回错误")
 	}
 }
+
+// TestAdminLevelWavesFailsOnDBError 覆盖 AdminLevelWaves 的数据库错误路径：
+// level_waves 表不可达时必须返回错误，不能返回空波次让运营以为「这关没有刷怪」。
+func TestAdminLevelWavesFailsOnDBError(t *testing.T) {
+	cfg := config.Load()
+	cfg.DatabaseURL = "postgres://postgres@127.0.0.1:5432/postgres?sslmode=disable"
+	cfg.DBMaxConns = 2
+	cfg.DBMinConns = 0
+	ctx := context.Background()
+
+	db, err := store.Open(ctx, cfg)
+	if err != nil {
+		t.Skipf("postgres 系统库连不上，跳过：%v", err)
+	}
+	defer db.Close()
+
+	s := New(db, cfg)
+	if _, err := s.AdminLevelWaves(ctx, 1); err == nil {
+		t.Fatal("无 level_waves 表时 AdminLevelWaves 必须返回错误")
+	}
+}
