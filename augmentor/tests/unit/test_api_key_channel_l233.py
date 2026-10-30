@@ -312,7 +312,7 @@ class TestTheHonestProse:
         用户只会觉得提示不准，不会怀疑门禁本身。这里把页面那半句与 `GATED_TOTAL` /
         `GATED_CONSUMED` 绑死：接线数再变，两处必须一起动。
         """
-        page = SETTINGS_TSX.read_text(encoding="utf-8")
+        page = re.sub(r"\s+", " ", SETTINGS_TSX.read_text(encoding="utf-8"))
         assert f"有 {GATED_TOTAL} 条挂着这道门禁" in page, (
             f"门禁总数现量是 {GATED_TOTAL}，卡上那句影响面要跟着改")
         assert f"其中 {GATED_CONSUMED} 条是页面上已" in page, (
