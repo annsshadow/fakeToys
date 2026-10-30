@@ -314,8 +314,14 @@ fn https_redirect(request: &Request<Body>) -> Option<Response> {
     https_redirect_with(force_https_host(), request)
 }
 
-pub async fn security_headers_middleware(request: Request<Body>, next: Next) -> Response {
-    if force_https() {
+/// 安全响应头中间件的核心逻辑。`force_https_enabled` 参数化：测试可直接覆盖
+/// FORCE_HTTPS=true 的 307 分支，不依赖进程级 OnceLock 的初始化顺序（C1 条件项）。
+async fn security_headers_response(
+    request: Request<Body>,
+    next: Next,
+    force_https_enabled: bool,
+) -> Response {
+    if force_https_enabled {
         if let Some(response) = https_redirect(&request) {
             return response;
         }
@@ -364,6 +370,10 @@ pub async fn security_headers_middleware(request: Request<Body>, next: Next) -> 
     );
 
     response
+}
+
+pub async fn security_headers_middleware(request: Request<Body>, next: Next) -> Response {
+    security_headers_response(request, next, force_https()).await
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -707,6 +717,58 @@ mod cov_middleware_tests {
             trusted_proxy_ips_from(String::new()),
             vec!["127.0.0.1".to_string(), "::1".to_string()],
             "未配置时默认仅信任本地回环"
+        );
+    }
+
+    #[tokio::test]
+    async fn security_headers_force_https_redirects_before_downstream() {
+        // 参数化入口直接喂 force=true，绕过进程级 OnceLock：FORCE_HTTPS 开启时
+        // 必须在下游执行前返回 307（防开放重定向：未配置源时回退请求 Host）。
+        let app = Router::new()
+            .route("/login", get(|| async { "downstream" }))
+            .layer(axum::middleware::from_fn(|req, next| {
+                security_headers_response(req, next, true)
+            }));
+        let resp = app
+            .oneshot(
+                Request::builder()
+                    .header("x-forwarded-proto", "http")
+                    .header(header::HOST, "evil.com")
+                    .uri("/login")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), StatusCode::TEMPORARY_REDIRECT);
+        let loc = resp
+            .headers()
+            .get(header::LOCATION)
+            .and_then(|v| v.to_str().ok())
+            .unwrap()
+            .to_string();
+        assert_eq!(loc, "https://evil.com/login", "未配置源时回退请求 Host");
+    }
+
+    #[tokio::test]
+    async fn security_headers_add_headers_when_https_not_forced() {
+        let app = Router::new()
+            .route("/x", get(|| async { "downstream" }))
+            .layer(axum::middleware::from_fn(|req, next| {
+                security_headers_response(req, next, false)
+            }));
+        let resp = app
+            .oneshot(Request::builder().uri("/x").body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), StatusCode::OK, "下游应正常执行");
+        assert!(
+            resp.headers().contains_key(header::X_CONTENT_TYPE_OPTIONS),
+            "应带 X-Content-Type-Options"
+        );
+        assert!(
+            resp.headers().contains_key(header::CONTENT_SECURITY_POLICY),
+            "应带 CSP"
         );
     }
 }
