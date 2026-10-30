@@ -1135,3 +1135,24 @@ func TestAdminEquipmentFailsOnDBError(t *testing.T) {
 		t.Fatal("无 equipment 表时 AdminEquipment 必须返回错误")
 	}
 }
+
+// TestAdminListDefensesFailsOnDBError 覆盖 AdminListDefenses 的数据库错误路径：
+// defenses 表不可达时 count 查询必须报错，不能返回 (0, nil) 让运营以为防线为空。
+func TestAdminListDefensesFailsOnDBError(t *testing.T) {
+	cfg := config.Load()
+	cfg.DatabaseURL = "postgres://postgres@127.0.0.1:5432/postgres?sslmode=disable"
+	cfg.DBMaxConns = 2
+	cfg.DBMinConns = 0
+	ctx := context.Background()
+
+	db, err := store.Open(ctx, cfg)
+	if err != nil {
+		t.Skipf("postgres 系统库连不上，跳过：%v", err)
+	}
+	defer db.Close()
+
+	s := New(db, cfg)
+	if _, _, err := s.AdminListDefenses(ctx, 50, 0); err == nil {
+		t.Fatal("无 defenses 表时 AdminListDefenses 必须返回错误")
+	}
+}
