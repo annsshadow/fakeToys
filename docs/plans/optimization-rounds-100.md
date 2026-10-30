@@ -53,6 +53,7 @@
 | 43 | 2026-10-30 | mcp_server 代码质量审查（仅 1 处启动期合理 expect，无 unwrap 蔓延） | — | 代码审查 |
 | 44 | 2026-10-30 | laiyipao AdminLogout 错误路径测试（42P01 → 返回错误） | `3ecc148af` | service 全量 193s 通过 |
 | 45 | 2026-10-30 | laiyipao EnsureContentSeeded 错误路径测试 | 本次提交 | 单测 PASS |
+| 46 | 2026-10-30 | laiyipao AdminLogin 错误路径测试（DB 故障不伪装成认证失败） | 本次提交 | 单测 PASS |
 | ... | | 持续迭代至 100 轮 | | |
 
-> 状态：进行中。当前累计 45 轮，距 100 轮还差 55 轮。
+> 状态：进行中。当前累计 46 轮，距 100 轮还差 54 轮。
