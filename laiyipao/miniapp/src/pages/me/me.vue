@@ -236,6 +236,19 @@
           <text class="dim">{{ fmtChallengeTime(b.created_at) }}</text>
         </view>
       </view>
+
+      <!-- 购买记录（2026-10-30 实质优化第 20 轮）。
+           玩家每次商城购买都落库，但没有任何入口查看历史。 -->
+      <view v-if="purchaseHistory.length" class="card">
+        <text class="card-title">购买记录</text>
+        <view v-for="p in purchaseHistory" :key="p.id" class="ch-row">
+          <view class="flex-1 row" style="gap: 8rpx; min-width: 0">
+            <text class="mono">{{ p.item_name }}</text>
+            <text class="dim ellipsis">{{ priceText(p.price) }}</text>
+          </view>
+          <text class="dim">{{ fmtChallengeTime(p.created_at) }}</text>
+        </view>
+      </view>
     </view>
 
     <!--
@@ -451,6 +464,24 @@ async function loadBattleHistory() {
     battleHistory.value = res.items ?? []
   } catch {
     // 战报历史是辅助信息，加载失败不打扰主流程
+  }
+}
+
+// 购买记录（2026-10-30 实质优化第 20 轮）。
+const purchaseHistory = ref<api.PurchaseItem[]>([])
+
+function priceText(price: Record<string, number>): string {
+  const entries = Object.entries(price)
+  if (!entries.length) return ''
+  return entries.map(([k, v]) => `${v} ${currencyName(k)}`).join(' + ')
+}
+
+async function loadPurchases() {
+  try {
+    const res = await api.myPurchases()
+    purchaseHistory.value = res.items ?? []
+  } catch {
+    // 购买记录是辅助信息，加载失败不打扰主流程
   }
 }
 
@@ -926,6 +957,7 @@ onShow(async () => {
     await loadDefenses()
     await loadChallengeHistory()
     await loadBattleHistory()
+    await loadPurchases()
   }
 })
 

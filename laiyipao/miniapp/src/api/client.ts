@@ -1113,6 +1113,26 @@ export function myBattleHistory(): Promise<{ items: BattleHistoryItem[] }> {
 }
 
 /**
+ * 我的购买记录（2026-10-30 实质优化第 20 轮）。
+ *
+ * 服务端 `GET /me/purchases` 返回最近 20 条商城购买记录
+ * （道具名/品类/价格快照/购买日期）。
+ */
+export interface PurchaseItem {
+  id: number
+  item_id: number
+  item_name: string
+  category: string
+  price: Record<string, number>
+  purchase_date: string
+  created_at: string
+}
+
+export function myPurchases(): Promise<{ items: PurchaseItem[] }> {
+  return request<{ items: PurchaseItem[] }>('/me/purchases')
+}
+
+/**
  * 卡关诊断（L-1）。
  *
  * 2026-10-21（P2-7）：`failed_times` 此前由客户端**硬编码成 2**，
