@@ -190,10 +190,63 @@
       ⚠️ 必须二次确认：它会**吊销该账号的全部会话**（不只是这台设备），
       在别的设备上登录的玩家会一起掉线。这是刻意的（登出的语义是
       「这个人不信任了」），但也必须让用户知道。
+
+      修改密码（2026-10-30 实质优化第 7 轮）：
+      账号口令登录的玩家此前**没有改密入口** —— 口令只能由运维改环境变量
+      重启服务来轮换。这里补上 `POST /me/password` 的客户端入口：
+      验证原口令 → 更新哈希 → 吊销全部旧会话（其它设备需要重新登录）。
+      游客号没有口令，不显示该入口。
     -->
     <view class="card">
       <text class="card-title">账号</text>
-      <text class="muted" style="display: block; margin-bottom: 16rpx">
+
+      <template v-if="!store.isGuest">
+        <view v-if="!changingPassword">
+          <text class="muted" style="display: block; margin-bottom: 16rpx">
+            定期更换口令，可以防止旧口令泄露后账号被他人登录。
+          </text>
+          <button class="btn" style="margin-bottom: 16rpx" @click="changingPassword = true">修改密码</button>
+        </view>
+        <view v-else class="pwd-form">
+          <input
+            v-model="oldPassword"
+            class="inp"
+            type="text"
+            password
+            placeholder="原口令"
+            placeholder-class="ph"
+            :disabled="passwordSubmitting"
+          />
+          <input
+            v-model="newPassword"
+            class="inp"
+            type="text"
+            password
+            placeholder="新口令（至少 10 位）"
+            placeholder-class="ph"
+            :disabled="passwordSubmitting"
+            @confirm="submitPassword"
+          />
+          <view
+            class="btn btn-primary"
+            :class="{ 'btn-disabled': passwordSubmitting || !oldPassword || !newPassword }"
+            @click="submitPassword"
+          >
+            {{ passwordSubmitting ? '提交中…' : '确认修改' }}
+          </view>
+          <view class="btn" style="margin-top: 12rpx" @click="cancelPassword">取消</view>
+          <text
+            v-if="passwordMsg"
+            class="muted"
+            style="display: block; margin-top: 12rpx"
+            :style="{ color: passwordErr ? 'var(--bad)' : 'var(--ok)' }"
+          >
+            {{ passwordMsg }}
+          </text>
+        </view>
+      </template>
+
+      <text class="muted" style="display: block; margin: 16rpx 0">
         退出后本机的令牌立即失效，并会通知服务端吊销该账号的全部登录会话（其他设备也会被登出）。
       </text>
       <button class="btn" @click="confirmLogout">退出登录</button>
@@ -255,6 +308,57 @@ const simulating = ref(0)
 const lastChallenge = ref<(ChallengeOutcome & { stolen?: Record<string, number> }) | null>(null)
 
 const DEFENSE_WORK_CODES = ['slow_belt', 'block_wall', 'tesla_grid']
+
+/**
+ * 修改密码（2026-10-30 实质优化第 7 轮）。
+ *
+ * 服务端 `POST /me/password` 会验证原口令，并在同一事务里更新哈希、
+ * 吊销该账号**全部** refresh token —— 改密成功后其它设备上的旧会话
+ * 将无法续期，需要重新登录。因此成功提示里要如实说明这一点，
+ * 否则用户在平板上发现「被登出」会当成 bug。
+ */
+const changingPassword = ref(false)
+const oldPassword = ref('')
+const newPassword = ref('')
+const passwordSubmitting = ref(false)
+const passwordMsg = ref('')
+const passwordErr = ref(false)
+
+function cancelPassword() {
+  changingPassword.value = false
+  oldPassword.value = ''
+  newPassword.value = ''
+  passwordMsg.value = ''
+  passwordErr.value = false
+}
+
+async function submitPassword() {
+  if (passwordSubmitting.value) return
+  passwordMsg.value = ''
+  passwordErr.value = false
+  if (!oldPassword.value || !newPassword.value) {
+    passwordMsg.value = '原口令与新口令都不能为空'
+    passwordErr.value = true
+    return
+  }
+  if (newPassword.value.length < 10) {
+    passwordMsg.value = '新口令至少 10 位'
+    passwordErr.value = true
+    return
+  }
+  passwordSubmitting.value = true
+  try {
+    const res = await api.changePassword(oldPassword.value, newPassword.value)
+    passwordMsg.value = `修改成功，已吊销 ${res.revoked} 个旧会话（其他设备需重新登录）`
+    oldPassword.value = ''
+    newPassword.value = ''
+  } catch (e) {
+    passwordErr.value = true
+    passwordMsg.value = (e as Error)?.message || '修改失败，请稍后再试'
+  } finally {
+    passwordSubmitting.value = false
+  }
+}
 
 /**
  * 退出登录。
@@ -603,6 +707,27 @@ onUnload(() => {
 .nick {
   font-size: 32rpx;
   font-weight: 600;
+}
+
+/* 修改密码表单的输入框（与 login.vue 同款外观）。 */
+.inp {
+  display: block;
+  height: 80rpx;
+  padding: 0 20rpx;
+  margin-bottom: 16rpx;
+  background: var(--panel-2);
+  border: 1rpx solid var(--border);
+  border-radius: 12rpx;
+  font-size: 26rpx;
+  color: var(--text);
+}
+
+.ph {
+  color: var(--dim);
+}
+
+.pwd-form {
+  margin-bottom: 8rpx;
 }
 
 .res-grid {

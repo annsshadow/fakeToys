@@ -15,7 +15,7 @@
 | 4 | 2026-10-30 | **Gemini 后端原生异步**（AU-P1 完成五后端全覆盖） | `augmentor/models/gemini.py` 新增异步方法；新增 `tests/unit/test_gemini_async_au_p1.py`（3 用例） | Gemini 异步 3 passed；相关回归 67 passed |
 | 5 | 2026-10-30 | **异步重试取消传播保护**：CancelledError 显式不进重试循环，不被包装成生成错误 | `augmentor/retry.py` 循环开头显式重抛；新增 3 个取消传播测试 | 相关回归 70 passed |
 | 6 | 2026-10-30 | **augment_async 入口改走原生异步批处理**（消除线程池占用，与 use_async=True 路径一致） | `augmentor/pipeline.py` 复用 `_run_batch_async`；新增入口测试（并发重叠断言） | 相关回归 119 passed |
-| 7 | | | | |
+| 7 | 2026-10-30 | **laiyipao 玩家「修改密码」功能**：此前账号只有引导创建、无改密入口，口令只能运维改环境变量重启轮换 | 后端新增 `POST /api/v1/me/password`（`ChangePassword`：验旧密 → bcrypt 更新 → 同事务吊销全部 refresh token）+ 限流守卫 + 前端 `miniapp` 接入改密入口（`client.ts changePassword` + me.vue 表单） | 服务层 8 用例、e2e 5 用例全绿；`internal/service` 227s 全绿、`internal/httpapi` 全绿、miniapp 1167 passed、type-check 通过 |
 | ... | | 持续至 100 轮 | | |
 
-> 状态：进行中。当前累计 **6 轮实质优化**，距 100 轮还差 94 轮。
+> 状态：进行中。当前累计 **7 轮实质优化**，距 100 轮还差 93 轮。

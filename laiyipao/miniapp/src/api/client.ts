@@ -540,6 +540,20 @@ export function login(username: string, password: string): Promise<TokenPair> {
   })
 }
 
+/**
+ * 修改当前账号口令（`POST /me/password`）。
+ *
+ * 服务端会先验证原口令，再更新哈希，并在**同一事务**里吊销该账号
+ * 全部 refresh token —— 改密成功后，其它设备上的旧会话将无法续期，
+ * 需要重新登录。返回的 `revoked` 就是被吊销的会话数。
+ */
+export function changePassword(oldPassword: string, newPassword: string): Promise<{ revoked: number }> {
+  return request<{ revoked: number }>('/me/password', {
+    method: 'POST',
+    body: { old_password: oldPassword, new_password: newPassword },
+  })
+}
+
 /** 本地是否有一枚「看起来还能用」的 access token。 */
 export function hasUsableToken(): boolean {
   const t = get(TOKEN_KEY)
