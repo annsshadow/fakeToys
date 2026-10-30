@@ -996,6 +996,50 @@ func (s *Service) MyPurchases(ctx context.Context, userID int64, limit int) ([]M
 	return out, rows.Err()
 }
 
+// MyOrderItem 是玩家支付订单的一行（2026-10-31 实质优化第 27 轮）。
+type MyOrderItem struct {
+	ID          int64      `json:"id"`
+	OrderNo     string     `json:"order_no"`
+	SKU         string     `json:"sku"`
+	Amount      int        `json:"amount"` // 分
+	Status      string     `json:"status"`
+	Provider    string     `json:"provider"`
+	CreatedAt   time.Time  `json:"created_at"`
+	DeliveredAt *time.Time `json:"delivered_at"`
+}
+
+// MyOrders 返回当前玩家最近的支付订单。
+//
+// `orders` 记录的是支付订单（当前 mock provider，协议与状态机与真实
+// 支付一致）。玩家端此前没有任何入口 —— 订单状态（pending/paid/
+// delivered/refunded）玩家完全不可见。
+func (s *Service) MyOrders(ctx context.Context, userID int64, limit int) ([]MyOrderItem, error) {
+	if limit <= 0 || limit > 50 {
+		limit = 20
+	}
+	rows, err := s.pool.Query(ctx,
+		`SELECT id, order_no, sku, amount, status, provider, created_at, delivered_at
+		 FROM orders
+		 WHERE user_id = $1
+		 ORDER BY created_at DESC
+		 LIMIT $2`, userID, limit)
+	if err != nil {
+		return nil, fmt.Errorf("my orders: %w", err)
+	}
+	defer rows.Close()
+
+	out := []MyOrderItem{}
+	for rows.Next() {
+		var it MyOrderItem
+		if err := rows.Scan(&it.ID, &it.OrderNo, &it.SKU, &it.Amount, &it.Status,
+			&it.Provider, &it.CreatedAt, &it.DeliveredAt); err != nil {
+			return nil, fmt.Errorf("scan order: %w", err)
+		}
+		out = append(out, it)
+	}
+	return out, rows.Err()
+}
+
 func (s *Service) GetReplay(ctx context.Context, userID, battleID int64) (ReplayInfo, error) {
 	return s.getReplay(ctx, userID, battleID, true)
 }
