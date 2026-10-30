@@ -273,6 +273,16 @@ export function grantUser(id: number, currency: string, amount: number) {
   return api.post<AdminGrantResp>(`/admin/users/${id}/grant`, { currency, amount })
 }
 
+/**
+ * 后台重置玩家密码（2026-10-30 实质优化第 11 轮）。
+ *
+ * 玩家侧已有改密/转正，但运营缺少兜底：账号遗忘 / 被盗需要强制轮换时
+ * 只能封禁或改环境变量重启。重置会更新哈希并吊销该账号全部会话。
+ */
+export function resetPlayerPassword(id: number, newPassword: string) {
+  return api.post(`/admin/users/${id}/reset-password`, { new_password: newPassword })
+}
+
 // ---------- 战斗记录与验真 ----------
 
 export function fetchBattles(

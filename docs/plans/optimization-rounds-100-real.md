@@ -19,6 +19,7 @@
 | 8 | 2026-10-30 | **laiyipao 游客账号转正**：游客数据只靠 localStorage 的 guest_token 保护，清缓存/换设备即永久丢失 | 后端新增 `POST /api/v1/me/upgrade`（`UpgradeGuestAccount`：用户名唯一性先查后写、bcrypt 密码、guest_token 保留不变、is_guest 翻转）+ 限流守卫 + 前端游客「设置账号密码」入口（`client.ts upgradeAccount` + me.vue 表单，成功后自动刷新身份） | 服务层 7 用例、e2e 4 用例全绿；`internal/service` 227s 全绿、`internal/httpapi` 全绿、miniapp 1167 passed、type-check 通过 |
 | 9 | 2026-10-30 | **laiyipao 玩家修改昵称**：昵称只在登录/引导时设置一次，之后永远改不了（排行榜/防线/战报全是默认名） | 后端新增 `PUT /api/v1/me/nickname`（`UpdateNickname`：TrimSpace、上限 MaxNicknameLen=64、主键更新）+ 限流守卫 + 前端昵称行内编辑（`client.ts updateNickname` + me.vue 改名入口，保存后刷新资料） | 服务层 5 用例、e2e 3 用例全绿；`internal/service` 240s 全绿、`internal/httpapi` 全绿、miniapp 1167 passed、type-check 通过 |
 | 10 | 2026-10-30 | **wallet_flows 归档命令化**：经济流水原始凭证此前永不删、也只有一个手写 SQL 才能压缩，无限增长最终拖慢备份与查询 | `cmd/prune` 新增 `--archive-wallet-flows`：自动建冷表 `wallet_flows_archive`（LIKE INCLUDING ALL）、CTE 原子分批搬移、默认 dry-run、永不进删除白名单；OPERATIONS.md 6.4 改为命令用法；注册 `laiyipao_prune_test_` 前缀 | 参数校验 2 新增用例 + 数据库集成测试 3 用例（dry-run 不动 / apply 搬移幂等 / 默认不碰）全绿；`cmd/prune`、`scratchdb` 及全部非 service/httpapi 包通过 |
+| 11 | 2026-10-30 | **后台重置玩家密码**：玩家侧已有改密/转正，但运营缺少兜底（账号遗忘/被盗强制轮换只能封禁或改环境变量重启） | 后端新增 `POST /api/v1/admin/users/:id/reset-password`（`AdminResetPlayerPassword`：bcrypt 更新 + 同事务吊销全部 refresh token、只对已有账号开放、审计 `reset_password`）+ `requireWritable` 门禁 + admin 用户详情「重置密码」按钮（密码输入校验、确认文案说明会登出所有设备） | 服务层 5 用例、e2e 5 用例（401/403/成功/太短/游客）全绿；`internal/service` 234s 全绿、`internal/httpapi` 全绿、admin 353 passed、type-check 通过 |
 | ... | | 持续至 100 轮 | | |
 
-> 状态：进行中。当前累计 **10 轮实质优化**，距 100 轮还差 90 轮。
+> 状态：进行中。当前累计 **11 轮实质优化**，距 100 轮还差 89 轮。

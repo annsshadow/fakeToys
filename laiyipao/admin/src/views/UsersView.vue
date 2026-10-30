@@ -7,6 +7,7 @@ import {
   banUser,
   unbanUser,
   grantUser,
+  resetPlayerPassword,
   type AdminUserDetailResp,
   type AdminUserView,
 } from '@/api'
@@ -250,6 +251,42 @@ async function onGrant(u: AdminUserView) {
   }
 }
 
+/**
+ * 重置玩家密码（2026-10-30 实质优化第 11 轮）。
+ *
+ * 玩家侧已有改密/转正，但运营缺少兜底：账号遗忘 / 被盗需要强制轮换时
+ * 只能封禁或改环境变量重启。重置会更新哈希并吊销该账号全部会话
+ * （其它设备立即被登出），提示里必须说清这一点。
+ */
+async function onResetPassword(u: AdminUserView) {
+  let newPassword = ''
+  try {
+    const { value } = await ElMessageBox.prompt(
+      `为「${u.nickname}」设置新密码（至少 10 位）？该玩家所有设备将被登出，并会写入审计日志。`,
+      '重置密码',
+      {
+        inputType: 'password',
+        inputPlaceholder: '新密码（至少 10 位）',
+        confirmButtonText: '重置',
+        cancelButtonText: '取消',
+        inputValidator: (v: string) =>
+          (v && v.trim().length >= 10) || '密码至少 10 位',
+      },
+    )
+    newPassword = (value ?? '').trim()
+  } catch (e) {
+    if (isCancel(e)) return
+    ElMessage.error(`重置失败：${(e as Error).message}`)
+    return
+  }
+  try {
+    await resetPlayerPassword(u.id, newPassword)
+    ElMessage.success('已重置，该玩家所有会话已吊销')
+  } catch (e) {
+    ElMessage.error(`重置失败：${(e as Error).message}`)
+  }
+}
+
 onMounted(load)
 
 /**
@@ -444,6 +481,19 @@ const asRow = (r: unknown) => r as AdminUserView
               <el-empty description="没有验真记录" :image-size="60" />
             </template>
           </el-table>
+
+          <div class="section-title">账号操作</div>
+          <div class="drawer-actions">
+            <el-button
+              type="danger"
+              plain
+              :disabled="isReadonly"
+              @click="onResetPassword(detail.user)"
+            >
+              重置密码
+            </el-button>
+            <span v-if="isReadonly" class="dim">只读账号不可操作</span>
+          </div>
         </template>
       </div>
     </el-drawer>
@@ -462,5 +512,11 @@ const asRow = (r: unknown) => r as AdminUserView
 .muted {
   color: var(--lyp-muted);
   font-size: 12px;
+}
+
+.drawer-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 </style>
