@@ -18,6 +18,8 @@
 | 8 | 2026-10-30 | 性能基线复测（auth 2.19ms / document 1.36ms 无回归）+ 容器运维要点 D3 | `4eaa93c09` | perf_baseline 5 passed |
 | 9 | 2026-10-30 | ControlClient/RowGet 真库实现覆盖（8 方法全链路） | `c996a9908` `f7d97eb2d` | 321 绿；**94.74%** |
 | 10 | 2026-10-30 | augmentor 基线确认（4 failed→2，pillow 消解）+ 轮次计数台账建立 | 本文档 + 计划文档基线行 | augmentor 10172 passed / 2 failed（基线棘轮） |
+| 11 | 2026-10-30 | augmentor 棘轮重钉（ambiguous 497→500、scratch_pair 1484→1483） | `3552a64f8` | test_comment_refs_a184 26 passed；git 侧存活测试通过 |
+| 12 | 2026-10-30 | migrate `read_dir` 失败分支（迁移目录是文件时报错而非静默 0 条） | `f5de00a79` | shared 321 绿；94.74% |
 | ... | | 持续迭代至 100 轮 | | |
 
-> 状态：进行中。当前累计 10 轮，距 100 轮还差 90 轮。
+> 状态：进行中。当前累计 12 轮，距 100 轮还差 88 轮。
