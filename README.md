@@ -74,7 +74,7 @@
 | augmentor 单测 | **10174 passed / 0 failed** | 100 轮优化台账 · 第 20 轮 |
 | 编译告警门禁 | **13 通过 / 0 失败 / 1 跳过** | `node scripts/check-warnings.mjs` |
 | 全仓提交 | **3404** | `git rev-list --count HEAD` |
-| 优化轮次 | **26 / 100** | `docs/plans/optimization-rounds-100.md` |
+| 优化轮次 | **29 / 100** | `docs/plans/optimization-rounds-100.md` |
 
 </div>
 
@@ -171,13 +171,16 @@ node scripts/check-warnings.mjs --only rust,admin
 
 这个仓库正跑着一条**有台账、可复现、不允许中途糊弄**的优化流水线。每轮 = 勘察 → 实现 → 验证 → 提交 → 推送，全程记账。
 
-**当前进度：26 / 100 轮**
+**当前进度：29 / 100 轮**
 
 <details>
 <summary><b>📖 最近 10 轮台账（点击展开）</b></summary>
 
 | 轮次 | 日期 | 主题 | 验证 |
 |---|---|---|---|
+| 29 | 2026-10-30 | laiyipao admin 前端 bundle 验证（echarts 已按需、element-plus 自动导入） | 工程卫生验证 |
+| 28 | 2026-10-30 | augmentor web ECharts 按需引入（vendor 1.1MB→567KB，-49%） | 416 测试全绿；门禁 13/0/1 |
+| 27 | 2026-10-30 | 全仓 rustfmt 格式统一（41 个文件，排除不可格式化的宏文件） | 门禁 13/0/1；fmt --check 通过 |
 | 26 | 2026-10-30 | 全 workspace 测试修复夹具 E23505 竞态（改 `upsert_fixture_person`） | 该 crate 27 绿；**全 workspace 零失败**；门禁 13/0/1 |
 | 25 | 2026-10-30 | 可解析但无 host URL 的 fail-fast panic 分支 | shared 329 绿；**行覆盖突破 95%** |
 | 24 | 2026-10-30 | oa4rust 前端 bundle 验证（main 41KB，vendor 独立 chunk） | 工程卫生 |
@@ -185,9 +188,6 @@ node scripts/check-warnings.mjs --only rust,admin
 | 22 | 2026-10-30 | C1 终值更新（94.99%）+ augmentor 测试运维要点 | 文档工程 |
 | 21 | 2026-10-30 | 计划文档引用轮次台账；augmentor web bundle 分析 | 文档工程 |
 | 20 | 2026-10-30 | augmentor 全量零失败确认（棘轮重钉） | **10174 passed / 0 failed** |
-| 19 | 2026-10-30 | `create_pool_with_url` 无 host fail-fast panic 分支 | shared 328 绿；94.99% |
-| 18 | 2026-10-30 | 安全基线验证（auto-checkin 0 漏洞 / rustsec 例外有效） | 依赖审计通过 |
-| 17 | 2026-10-30 | CSRF 回环镜像分支 + 权限判定不可达池 fail-closed | shared 327 绿；**94.99%** |
 
 </details>
 
