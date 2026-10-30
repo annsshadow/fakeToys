@@ -3,10 +3,12 @@
 
 """百度 ERNIE 模型后端 - 优化版"""
 
+import asyncio
 import time
 import logging
 import threading
-from typing import Optional
+from typing import Any, Optional
+
 from .base import ModelBackend, extract_json_array
 from ..config import ModelConfig
 from ..exceptions import ModelGenerateError, ModelNotConfiguredError
@@ -66,6 +68,10 @@ class ERNIEBackend(ModelBackend):
         self._access_token = None
         self._token_expires_at = 0
         self._token_lock = threading.Lock()
+        # 异步客户端与 token 锁（同其他后端；token 缓存 30 天，锁只防首次并发刷新）。
+        self._async_client: Optional[Any] = None
+        self._async_loop: Optional[Any] = None
+        self._async_token_lock: Optional[asyncio.Lock] = None
     
     def _get_access_token(self) -> str:
         """获取访问令牌（带过期检测）
@@ -104,40 +110,117 @@ class ERNIEBackend(ModelBackend):
             logger.info(f"获取访问令牌成功，有效期 {expires_in} 秒")
             return self._access_token
     
+    def _build_request(self, prompt: str) -> tuple:
+        """构造 (headers, payload)。同步与异步两条路径用同一份请求体。"""
+        headers = {"Content-Type": "application/json"}
+        payload = {
+            "temperature": self.config.temperature,
+            "top_p": self.config.top_p,
+            "max_output_tokens": self.config.max_output_tokens,
+            "messages": [{"role": "user", "content": prompt}],
+        }
+        return headers, payload
+
+    @staticmethod
+    def _parse_response(data: Any) -> str:
+        """从响应体取 result。同步/异步共用。"""
+        if data.get("is_truncated"):
+            raise ModelGenerateError("响应被截断")
+        return data.get("result", "")
+
     def _call_api(self, prompt: str) -> str:
         """调用 ERNIE API（使用连接池）
-        
+
         Args:
             prompt: 输入提示
-        
+
         Returns:
             模型生成的文本
         """
         access_token = self._get_access_token()
         url = f"{self.CHAT_URL}?access_token={access_token}"
-        
-        payload = {
-            "temperature": self.config.temperature,
-            "top_p": self.config.top_p,
-            "max_output_tokens": self.config.max_output_tokens,
-            "messages": [
-                {"role": "user", "content": prompt}
-            ]
-        }
-        
-        headers = {"Content-Type": "application/json"}
-        
+        headers, payload = self._build_request(prompt)
+
         session = self._get_session()
         response = session.post(url, json=payload, headers=headers,
                                 timeout=self._request_timeout)
         response.raise_for_status()
-        
-        data = response.json()
-        
-        if data.get("is_truncated"):
-            raise ModelGenerateError("响应被截断")
-        
-        return data.get("result", "")
+
+        return self._parse_response(response.json())
+
+    async def _aget_access_token(self, httpx_module: Any) -> str:
+        """异步获取访问令牌（带过期检测；asyncio.Lock 防并发刷新风暴）。"""
+        if self._access_token and time.time() < self._token_expires_at - 300:
+            return self._access_token
+
+        if self._async_token_lock is None:
+            self._async_token_lock = asyncio.Lock()
+        async with self._async_token_lock:
+            if self._access_token and time.time() < self._token_expires_at - 300:
+                return self._access_token
+
+            client = await self._async_client_for(httpx_module)
+            response = await client.post(
+                self.TOKEN_URL,
+                params={
+                    "grant_type": "client_credentials",
+                    "client_id": self.config.api_key,
+                    "client_secret": self.config.secret_key,
+                },
+            )
+            response.raise_for_status()
+            data = response.json()
+            token = data.get("access_token")
+            expires_in = data.get("expires_in", 2592000)
+            if not token:
+                raise ModelGenerateError(f"获取访问令牌失败: {data}")
+            self._access_token = token
+            self._token_expires_at = time.time() + expires_in
+            logger.info("获取访问令牌成功（异步），有效期 %s 秒", expires_in)
+            return token
+
+    async def _acall_api(self, prompt: str) -> str:
+        """原生异步调用 ERNIE API（httpx.AsyncClient）。
+
+        同其他后端：httpx 可选，缺它回退基类线程池实现；AsyncClient 跟随事件循环。
+        """
+        try:
+            import httpx
+        except ImportError:
+            logger.warning(
+                "httpx 不可用，异步调用回退为线程池（功能不受影响，但不省线程）"
+            )
+            return await super()._acall_api(prompt)
+
+        access_token = await self._aget_access_token(httpx)
+        url = f"{self.CHAT_URL}?access_token={access_token}"
+        headers, payload = self._build_request(prompt)
+        client = await self._async_client_for(httpx)
+        response = await client.post(url, json=payload, headers=headers)
+        response.raise_for_status()
+        return self._parse_response(response.json())
+
+    async def _async_client_for(self, httpx_module: Any) -> Any:
+        """取当前事件循环可用的 AsyncClient（换循环则重建）。"""
+        loop = asyncio.get_running_loop()
+        if self._async_client is not None and self._async_loop is loop:
+            return self._async_client
+        if self._async_client is not None:
+            old, self._async_client = self._async_client, None
+            try:
+                await old.aclose()
+            except Exception:
+                logger.debug("关闭上一个异步客户端失败（循环可能已关闭）", exc_info=True)
+        self._async_client = httpx_module.AsyncClient(timeout=self._request_timeout)
+        self._async_loop = loop
+        return self._async_client
+
+    async def aclose(self) -> None:
+        """关闭异步客户端（与基类 close() 同族，只是必须 await）。"""
+        client, self._async_client = self._async_client, None
+        self._async_loop = None
+        if client is not None:
+            await client.aclose()
     
     def extract_json_from_response(self, response: str) -> list:
         """从响应中提取 JSON 数组
