@@ -476,6 +476,44 @@ func (s *Service) AdminDeleteDefense(ctx context.Context, defenseID int64) error
 	return nil
 }
 
+// AdminListOrders 返回支付订单列表（2026-10-31 实质优化第 33 轮）。
+//
+// 后台此前只有 `AdminEconomy` 里的订单**计数**（paid/pending），
+// 没有订单明细 —— 玩家反馈「扣款了没到账」时运营无从查起。
+func (s *Service) AdminListOrders(ctx context.Context, limit, offset int) ([]AdminOrderView, int64, error) {
+	if limit <= 0 || limit > 200 {
+		limit = 50
+	}
+	if offset < 0 {
+		offset = 0
+	}
+	var total int64
+	if err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM orders`).Scan(&total); err != nil {
+		return nil, 0, fmt.Errorf("admin orders count: %w", err)
+	}
+	rows, err := s.pool.Query(ctx, `
+		SELECT o.id, o.user_id, COALESCE(u.nickname, ''), o.order_no, o.sku,
+		       o.amount, o.status, o.provider, o.created_at, o.delivered_at
+		FROM orders o
+		LEFT JOIN users u ON u.id = o.user_id
+		ORDER BY o.id DESC LIMIT $1 OFFSET $2`, limit, offset)
+	if err != nil {
+		return nil, 0, fmt.Errorf("admin orders: %w", err)
+	}
+	defer rows.Close()
+	// 非 nil 空切片：客户端对 null 调 .length 会抛（与项目其它列表一致）。
+	out := []AdminOrderView{}
+	for rows.Next() {
+		var v AdminOrderView
+		if err := rows.Scan(&v.ID, &v.UserID, &v.Nickname, &v.OrderNo, &v.SKU,
+			&v.Amount, &v.Status, &v.Provider, &v.CreatedAt, &v.DeliveredAt); err != nil {
+			return nil, 0, err
+		}
+		out = append(out, v)
+	}
+	return out, total, rows.Err()
+}
+
 // AdminEconomy 返回经济流水与商城配置。
 func (s *Service) AdminEconomy(ctx context.Context) (AdminEconomyResp, error) {
 	rows, err := s.pool.Query(ctx, `

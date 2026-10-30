@@ -92,6 +92,12 @@ type AdminDefensesResp struct {
 	Total int64              `json:"total"`
 }
 
+// AdminOrdersResp 是 `GET /admin/orders` 的响应（2026-10-31 实质优化第 33 轮）。
+type AdminOrdersResp struct {
+	Items []AdminOrderView `json:"items"`
+	Total int64            `json:"total"`
+}
+
 // AdminShopItemResp 是 `PUT /admin/shop/:id` 的响应。
 type AdminShopItemResp struct {
 	Item AdminShopUpdateResp `json:"item"`

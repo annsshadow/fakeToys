@@ -200,6 +200,20 @@ type AdminEconomyFlowView struct {
 	Delta    int64  `json:"delta"`
 }
 
+// AdminOrderView 是后台订单列表的一行（2026-10-31 实质优化第 33 轮）。
+type AdminOrderView struct {
+	ID          int64      `json:"id"`
+	UserID      int64      `json:"user_id"`
+	Nickname    string     `json:"nickname"`
+	OrderNo     string     `json:"order_no"`
+	SKU         string     `json:"sku"`
+	Amount      int        `json:"amount"` // 分
+	Status      string     `json:"status"`
+	Provider    string     `json:"provider"`
+	CreatedAt   time.Time  `json:"created_at"`
+	DeliveredAt *time.Time `json:"delivered_at"`
+}
+
 // AdminShopItemView 是商城商品行。
 type AdminShopItemView struct {
 	ID       int    `json:"id"`

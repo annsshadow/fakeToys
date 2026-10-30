@@ -30,6 +30,8 @@ import type {
   AdminDefensesResp,
   AdminEconomyFlowView,
   AdminEconomyResp,
+  AdminOrderView,
+  AdminOrdersResp,
   AdminEquipmentResp,
   AdminEquipmentView,
   AdminGrantResp,
@@ -80,6 +82,8 @@ export type {
   AdminDefensesResp,
   AdminEconomyFlowView,
   AdminEconomyResp,
+  AdminOrderView,
+  AdminOrdersResp,
   AdminEquipmentResp,
   AdminEquipmentView,
   AdminGrantResp,
@@ -469,6 +473,14 @@ export function deleteDefense(id: number) {
 
 export function fetchEconomy() {
   return api.get<AdminEconomyResp>('/admin/economy')
+}
+
+/**
+ * 订单列表（2026-10-31 实质优化第 33 轮）。
+ * 后台此前只有订单计数，没有明细可查。
+ */
+export function fetchAdminOrders(limit = 50, offset = 0) {
+  return api.get<AdminOrdersResp>(`/admin/orders?limit=${limit}&offset=${offset}`)
 }
 
 export function updateShopItem(id: number, patch: AdminShopPatch) {

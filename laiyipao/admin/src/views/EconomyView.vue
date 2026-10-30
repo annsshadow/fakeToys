@@ -2,11 +2,13 @@
 import {onMounted, ref, computed, onActivated} from 'vue'
 import { useAdminRole } from '@/utils/adminRole'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { isCancel } from '@/utils/format'
+import { isCancel, fmtTime } from '@/utils/format'
 import {
   fetchEconomy,
+  fetchAdminOrders,
   updateShopItem,
   type AdminEconomyFlowView,
+  type AdminOrderView,
   type AdminShopItemView,
 } from '@/api'
 
@@ -17,6 +19,11 @@ const loading = ref(false)
 const { isReadonly } = useAdminRole()
 const flows = ref<AdminEconomyFlowView[]>([])
 const shop = ref<AdminShopItemView[]>([])
+// 订单列表（2026-10-31 实质优化第 33 轮）。
+const orders = ref<AdminOrderView[]>([])
+const orderTotal = ref(0)
+const ORDER_PAGE_SIZE = 50
+const orderPage = ref(1)
 
 const CURRENCY_LABEL: Record<string, string> = {
   coin: '金币',
@@ -94,6 +101,17 @@ async function load() {
     ElMessage.error(`经济数据加载失败：${(e as Error).message}`)
   } finally {
     loading.value = false
+  }
+}
+
+/** 加载订单列表（2026-10-31 实质优化第 33 轮）。 */
+async function loadOrders() {
+  try {
+    const res = await fetchAdminOrders(ORDER_PAGE_SIZE, (orderPage.value - 1) * ORDER_PAGE_SIZE)
+    orders.value = res.items
+    orderTotal.value = res.total ?? res.items.length
+  } catch (e) {
+    ElMessage.error(`订单加载失败：${(e as Error).message}`)
   }
 }
 
@@ -197,7 +215,10 @@ async function toggleOnSale(row: AdminShopItemView) {
  */
 const asRow = (r: unknown) => r as AdminShopItemView
 
-onMounted(load)
+onMounted(() => {
+  load()
+  loadOrders()
+})
 
 /**
  * 2026-10-21（P5-9）：缓存视图重新可见时刷新数据。
@@ -223,6 +244,7 @@ onActivated(() => {
     return
   }
 load()
+loadOrders()
 })
 </script>
 
@@ -277,6 +299,43 @@ load()
           <el-empty :description="emptyText" :image-size="60" />
         </template>
 </el-table>
+    </el-card>
+
+    <!-- 订单明细（2026-10-31 实质优化第 33 轮） -->
+    <el-card shadow="never" header="支付订单" style="margin-top: 12px">
+      <el-table :data="orders" size="small" stripe>
+        <el-table-column prop="id" label="ID" width="55" />
+        <el-table-column prop="order_no" label="订单号" min-width="170" />
+        <el-table-column prop="nickname" label="玩家" min-width="110" />
+        <el-table-column prop="sku" label="SKU" min-width="100" />
+        <el-table-column label="金额" width="90">
+          <template #default="{ row }">{{ (row.amount / 100).toFixed(2) }} 元</template>
+        </el-table-column>
+        <el-table-column label="状态" width="90">
+          <template #default="{ row }">
+            <el-tag :type="row.status === 'paid' || row.status === 'delivered' ? 'success' : 'info'" size="small">
+              {{ row.status }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="provider" label="渠道" width="80" />
+        <el-table-column label="创建时间" width="160">
+          <template #default="{ row }">{{ fmtTime(row.created_at) }}</template>
+        </el-table-column>
+        <template #empty>
+          <el-empty description="暂无订单" :image-size="60" />
+        </template>
+      </el-table>
+      <el-pagination
+        v-if="orderTotal > ORDER_PAGE_SIZE"
+        v-model:current-page="orderPage"
+        :page-size="ORDER_PAGE_SIZE"
+        :total="orderTotal"
+        layout="prev, pager, next, total"
+        size="small"
+        background
+        @current-change="loadOrders"
+      />
     </el-card>
 
     <el-card shadow="never" header="商城商品" style="margin-top: 12px">

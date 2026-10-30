@@ -727,6 +727,23 @@ func (s *Server) adminEconomy(c *fiber.Ctx) error {
 	return c.JSON(service.NormalizeNilSlices(data))
 }
 
+// adminOrders 返回支付订单列表（2026-10-31 实质优化第 33 轮）。
+func (s *Server) adminOrders(c *fiber.Ctx) error {
+	limit, err := queryInt(c, "limit", 50)
+	if err != nil {
+		return failErr(c, err)
+	}
+	offset, err := queryInt(c, "offset", 0)
+	if err != nil {
+		return failErr(c, err)
+	}
+	items, total, err := s.Svc.AdminListOrders(c.Context(), limit, offset)
+	if err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(service.NormalizeNilSlices(service.AdminOrdersResp{Items: items, Total: total}))
+}
+
 func (s *Server) adminUpdateShop(c *fiber.Ctx) error {
 	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
 	if err != nil {
