@@ -11,7 +11,8 @@
 |---|---|---|---|---|
 | 1 | 2026-10-30 | **Ollama 后端原生异步**（AU-P1 扩展）：httpx.AsyncClient、请求体同步/异步同源、可选依赖回退 | `augmentor/models/ollama.py` 新增 `_build_request`/`_acall_api`/`_async_client_for`/`aclose`；新增 `tests/unit/test_ollama_async_au_p1.py`（3 用例） | Ollama 异步 3 passed；相关回归 55 passed |
 | 2 | 2026-10-30 | **Claude 后端原生异步**（AU-P1 扩展）：httpx.AsyncClient + 响应解析同步/异步共用 | `augmentor/models/claude.py` 新增 `_build_request`/`_parse_response`/`_acall_api`/`_async_client_for`/`aclose`；新增 `tests/unit/test_claude_async_au_p1.py`（3 用例） | Claude 异步 3 passed；相关回归 55 passed |
-| 3 | | | | |
+| 3 | 2026-10-30 | **ERNIE 后端原生异步**（AU-P1 扩展）：httpx.AsyncClient + asyncio.Lock 异步 token 刷新 | `augmentor/models/ernie.py` 新增 `_aget_access_token`/`_acall_api`/`_async_client_for`/`aclose` 等；新增 `tests/unit/test_ernie_async_au_p1.py`（3 用例） | ERNIE 异步 3 passed；相关回归 64 passed |
+| 4 | | | | |
 | ... | | 持续至 100 轮 | | |
 
-> 状态：进行中。当前累计 **2 轮实质优化**，距 100 轮还差 98 轮。
+> 状态：进行中。当前累计 **3 轮实质优化**，距 100 轮还差 97 轮。
