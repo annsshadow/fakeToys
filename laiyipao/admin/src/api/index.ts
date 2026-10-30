@@ -493,3 +493,12 @@ export function fetchAuditLogs(limit = 100, offset = 0) {
   // 更早的操作**根本看不到**。
   return api.get<AdminAuditLogsResp>(`/admin/audit-logs?limit=${limit}&offset=${offset}`)
 }
+
+/**
+ * 导出审计日志 CSV（2026-10-30 实质优化第 15 轮）。
+ *
+ * 合规归档需要全量快照。返回带 UTF-8 BOM 的 CSV Blob。readonly 可导出。
+ */
+export function exportAuditLogsCsv() {
+  return api.getBlob('/admin/audit-logs/export')
+}

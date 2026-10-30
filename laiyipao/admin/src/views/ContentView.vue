@@ -7,6 +7,7 @@ import {
   fetchRedeemCodes,
   createRedeemCode,
   fetchAuditLogs,
+  exportAuditLogsCsv,
   type AdminAnnouncementView,
   type AdminAuditLogView,
   type AdminRedeemCodeView,
@@ -61,6 +62,29 @@ async function loadAll() {
     ElMessage.error(`运营数据加载失败：${(e as Error).message}`)
   } finally {
     loading.value = false
+  }
+}
+
+/**
+ * 导出审计日志 CSV（2026-10-30 实质优化第 15 轮）。
+ *
+ * 合规归档需要全量快照。readonly 角色也可导出（读操作）。
+ * 文件名带日期。
+ */
+async function onExportAuditLogs() {
+  try {
+    const blob = await exportAuditLogsCsv()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `audit_logs_${new Date().toISOString().slice(0, 10)}.csv`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+    ElMessage.success(`已导出 ${logs.value.length} 条审计日志（当前页）`)
+  } catch (e) {
+    ElMessage.error(`导出失败：${(e as Error).message}`)
   }
 }
 
@@ -321,6 +345,10 @@ loadAll()
       <!-- 审计日志 -->
       <el-tab-pane label="审计日志" name="logs">
         <el-card shadow="never">
+          <div style="display: flex; align-items: center; justify-content: flex-end; margin-bottom: 8px">
+            <span class="muted" style="margin-right: 8px">共 {{ logTotal }} 条</span>
+            <el-button size="small" @click="onExportAuditLogs">导出 CSV</el-button>
+          </div>
           <el-table :data="logs" size="small" stripe>
             <el-table-column prop="id" label="ID" width="55" />
             <el-table-column prop="username" label="管理员" width="110" />
