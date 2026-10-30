@@ -15,7 +15,7 @@
 | auto-checkin | 102 passed；覆盖率棘轮九档全绿 |
 | laiyipao | service / httpapi / cmd / config 真库全绿；配置热加载已落地 |
 | augmentor | 10173 passed / 4 failed（4 条为基线既红：pillow 环境性 + 3 条棘轮）；web 416 tests 全绿 |
-| oa4rust | 97 crates 编译零告警；`shared` 覆盖率 **94.29%**（容器内实测，floor 93 与 C1 94 目标均达成） |
+| oa4rust | 97 crates 编译零告警；`shared` 覆盖率 **94.25%**（容器内实测，floor 93 与 C1 94 目标均达成） |
 | oa4rust 定位 | **独立系统**，不再与 Java 对齐（CI 的 Java 双栈对比门禁已删，换成启动冒烟） |
 
 **已关闭、不要再排期**：OA-P0-1（Java 契约奇偶，前提消失）、LY-5（配置热加载，已落地）、
@@ -172,13 +172,14 @@ LY-7（小程序虚拟化，实测列表全部有界）、AU-P1（异步后端�
 
 | 编号 | 项 | 现状 | 缺口性质 |
 |---|---|---|---|
-| **C1** | `shared` 覆盖率 93.28% → 94% | **✅ 已达成（2026-10-30 第八轮，第九轮巩固到 94.29%）** | 需 ~50 行，全部依赖**进程隔离**（`security` 的 OnceLock 环境臂与 parity 测试互斥）或**公网夹具**（`netguard fetch_limited` 被自身 SSRF 守卫挡回环）。属条件项，不作为默认目标。**第六轮**：发现 `oa4rust-cov` Docker 容器是可用 Linux 覆盖率环境，跑通 `cargo llvm-cov -p shared --lib`；修复 `db/mod.rs` 测试并发污染（参数化 `create_pool_with_url` / `create_sea_orm_pool_with_url` + 纯函数 `resolve_database_url`），覆盖率 93.17%。**第七轮**：① `middleware/security.rs` 三个 OnceLock 环境臂参数化；② 清理 `response.rs` 重复旧版 `AppError` 死代码；③ 补全 8 变体映射测试。覆盖率 93.20%。**第八轮（达成）**：① `migrate.rs` 补校验和变更分支与空迁移分支测试；② 清理 `input_validation.rs` 半成品死代码；③ 补 `DynControlPool` 全链路测试；④ 补 mock 基建覆盖。**行覆盖率 94.12%**。**第九轮（巩固）**：① `netguard` 补 HTTP 错误状态分支测试（example.com 稳定 404，公网可达时覆盖）；② 补 `upsert_fixture_person` / `is_unique_violation` 真库覆盖（幂等 upsert + 23505 识别）。容器内 shared **316 全绿**、clippy 零告警、**行覆盖率 94.29%**、函数 91.66%、分支 94.68%。 |
+| **C1** | `shared` 覆盖率 93.28% → 94% | **✅ 已达成（2026-10-30 第八轮，第九/十轮巩固）** | 需 ~50 行，全部依赖**进程隔离**（`security` 的 OnceLock 环境臂与 parity 测试互斥）或**公网夹具**（`netguard fetch_limited` 被自身 SSRF 守卫挡回环）。属条件项，不作为默认目标。**第六轮**：发现 `oa4rust-cov` Docker 容器是可用 Linux 覆盖率环境，跑通 `cargo llvm-cov -p shared --lib`；修复 `db/mod.rs` 测试并发污染，覆盖率 93.17%。**第七轮**：security OnceLock 环境臂参数化 + 清理 `response.rs` 重复死代码 + 补全 8 变体映射测试，93.20%。**第八轮（达成）**：migrate 分支测试 + 死代码清理 + DynControlPool/mock 基建覆盖，**94.12%**。**第九轮（巩固）**：netguard HTTP 错误状态分支 + `upsert_fixture_person`/`is_unique_violation` 真库覆盖，**94.29%**。**第十轮（巩固）**：`security_headers_middleware` 拆出 `security_headers_response(req, next, force_https_enabled)` 参数化核心，FORCE_HTTPS=true 的 307 分支与 false 的安全头分支均可测（Router + from_fn 闭包绕过 OnceLock）。容器内 shared **318 全绿**、clippy 零告警、行覆盖率 **94.25%**、函数 91.98%、分支 94.64%。 |
 
 ### D 类 · 环境与工具
 
 | 编号 | 项 | 现状 | 处置 |
 |---|---|---|---|
 | **D1** | llm-lab pytest 门禁 SKIP | ~~本机 `C:/Python314` 有 pytest；门禁默认解释器没有~~ | **已消解（2026-10-30）**：环境更新后默认 `python` 已带 pytest 9.1.1，门禁 `llm-lab (pytest 行为面)` 真实 PASS（6.7s），不再是 SKIP。门禁脚本的 `requires` 守门会在解释器缺 pytest 时显式 SKIP 并说明，无需改代码 |
+| **D2** | cool Java 门禁 SKIP（无 JDK） | 本机无 JDK（`javac` 不在 PATH，`JAVA_HOME` 未设置）；`cool/lib/` 无 commons-codec jar。jar 可从 Maven Central 下载（本机可达），但缺 javac 无法编译 | **环境限制（2026-10-30 登记）**：门禁脚本在缺 jar 时显式 SKIP；补 jar 后若无 javac 会变 FAIL，反而破坏门禁。保持 SKIP 为正确状态。待安装 JDK 后可下载 jar（`curl -sL -o cool/lib/commons-codec-1.16.1.jar https://repo1.maven.org/maven2/commons-codec/commons-codec/1.16.1/commons-codec-1.16.1.jar`）并跑通 cool 编译。`*.jar` 已被根 .gitignore 忽略，不会入仓 |
 
 ---
 
@@ -225,14 +226,14 @@ LY-7（小程序虚拟化，实测列表全部有界）、AU-P1（异步后端�
 ## 五、复跑命令
 
 ```bash
-# 全仓门禁（12 项）
+# 全仓门禁（14 项）
 node scripts/check-warnings.mjs
 
 # 写门禁尺子（会刷新 docs/audits/artifacts/*.tsv，复跑后注意是否需要提交）
 cd oa4rust/backend && node scripts/audit_write_gating.mjs
 
-# 单 crate 覆盖率
-cd oa4rust/backend && cargo llvm-cov -p shared --lib --summary-only
+# 单 crate 覆盖率（Windows GNU 工具链无 profiler_builtins，必须在 Linux 容器内跑）
+docker exec oa4rust-cov sh -c 'cd /src && DATABASE_URL="postgres://o2server:password@lyp-pg:5432/oa4rust_cov" CARGO_TARGET_DIR=/tmp/cov-target cargo llvm-cov -p shared --lib --summary-only'
 
 # 子项目测试
 cd auto-checkin && npx tsx --test test/*.test.ts && npm run test:ratchet
