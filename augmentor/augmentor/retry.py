@@ -300,6 +300,11 @@ async def async_with_retries(func: Callable[..., Any],
             result = await func(*args, **kwargs)
             stats.succeeded = True
             return result, stats
+        except asyncio.CancelledError:
+            # 取消必须立即向上传播：不能因为调用方把 retry_on 配宽（如
+            # (BaseException,)）就把「用户取消」误判成「可重试失败」反复重试。
+            # 退避期间的取消同样会落在这里，不允许进入下一次 attempt。
+            raise
         except retry_on as exc:
             last_exc = exc
 

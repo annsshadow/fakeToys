@@ -264,3 +264,48 @@ def test_openai_aclose_closes_client(monkeypatch):
 
     asyncio.run(run())
     assert _FakeAsyncClient.instances[0].closed is True
+
+
+# ── 取消传播（2026-10-30 第二批第 5 轮）────────────────────────────────────
+# 异步批处理/服务关停时 asyncio 会取消任务。取消绝不能进重试循环（即使调用方把
+# retry_on 配宽成 BaseException），也不能被 agenerate 的 except Exception 包装成
+# ModelGenerateError —— 否则「用户取消了」会被误报成「API 调用失败」。
+
+def test_async_retry_propagates_cancellation_even_with_wide_retry_on():
+    calls = []
+
+    async def boom():
+        calls.append(1)
+        raise asyncio.CancelledError()
+
+    with pytest.raises(asyncio.CancelledError):
+        asyncio.run(async_with_retries(boom, max_retries=3, retry_on=(BaseException,)))
+
+    assert len(calls) == 1, "取消必须立即传播，不允许进入重试"
+
+
+def test_async_retry_propagates_cancellation_during_backoff():
+    slept = []
+
+    async def boom():
+        raise ValueError("瞬时可重试错误")
+
+    async def sleeper(delay):
+        slept.append(delay)
+        raise asyncio.CancelledError()
+
+    with pytest.raises(asyncio.CancelledError):
+        asyncio.run(
+            async_with_retries(
+                boom, max_retries=2, base_delay=1.0, sleeper=sleeper,
+            )
+        )
+    assert len(slept) == 1, "退避中的取消必须立即传播，不再进入下一次尝试"
+
+
+def test_agenerate_propagates_cancellation_not_wrapped_as_generate_error():
+    backend = _DummyBackend()
+    backend.script = [asyncio.CancelledError()]
+
+    with pytest.raises(asyncio.CancelledError):
+        asyncio.run(backend.agenerate("hi", max_retries=2, retry_delay=0.0))
