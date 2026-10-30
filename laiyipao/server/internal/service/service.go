@@ -106,6 +106,9 @@ type Service struct {
 	// leaderboardCache 按 kind 分键。三个键在 New 里一次建好，
 	// 之后**只读这个 map**（不再增删），所以不需要外层锁。
 	leaderboardCache map[string]*ttlCache[[]LeaderboardEntry]
+	// signInCalendarCache 是签到日历预览的缓存（2026-10-30 实质优化第 17 轮）。
+	// 日历是 seeder 写入的静态配置，TTL 见 config.SignInCalendarCacheTTL。
+	signInCalendarCache ttlCache[[]SignInCalendarDay]
 }
 
 // leaderboardCacheKinds 是与 `leaderboardKinds` 同步的三个榜。
@@ -219,13 +222,14 @@ func (s *Service) flushLeaderboards() {
 
 // CacheStats 是进程内缓存的命中/未命中快照（getOrLoad 口径）。
 type CacheStats struct {
-	DashboardHits, DashboardMisses     int64
-	LeaderboardHits, LeaderboardMisses int64
+	DashboardHits, DashboardMisses           int64
+	LeaderboardHits, LeaderboardMisses       int64
+	SignInCalendarHits, SignInCalendarMisses int64
 }
 
-// CacheStats 汇总看板与三个榜单缓存的命中/未命中计数，供 /metrics 观测。
+// CacheStats 汇总看板、榜单与签到日历缓存的命中/未命中计数，供 /metrics 观测。
 //
-// 为什么值得暴露：缓存命中率是这两个缓存**唯一**的健康信号 ——
+// 为什么值得暴露：缓存命中率是这些缓存**唯一**的健康信号 ——
 // 命中率骤降意味着 TTL 被设太小或击穿没被单飞兜住，而这两者都不会报错，
 // 只是变慢。没有它，线上只能看到「看板接口偶发变慢」这种说不清的现象。
 func (s *Service) CacheStats() CacheStats {
@@ -236,6 +240,7 @@ func (s *Service) CacheStats() CacheStats {
 		st.LeaderboardHits += h
 		st.LeaderboardMisses += m
 	}
+	st.SignInCalendarHits, st.SignInCalendarMisses = s.signInCalendarCache.Stats()
 	return st
 }
 

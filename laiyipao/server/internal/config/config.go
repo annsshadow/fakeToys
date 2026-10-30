@@ -200,6 +200,14 @@ type Config struct {
 	DashboardCacheTTL   time.Duration
 	LeaderboardCacheTTL time.Duration
 
+	// SignInCalendarCacheTTL 是签到日历预览的进程内缓存有效期
+	// （2026-10-30 实质优化第 17 轮）。
+	//
+	// `sign_in_calendar` 是 seeder 写入的**静态配置**（后台没有修改入口），
+	// 每次签到页打开都查一次库是纯浪费。60 秒 TTL 完全够；
+	// 设成 `0` 即关闭缓存（排查时与其它缓存同一条命令）。
+	SignInCalendarCacheTTL time.Duration
+
 	// 默认管理员（仅在 admin_users 为空时引导创建）
 	BootstrapAdminUser string
 	BootstrapAdminPass string
@@ -347,9 +355,10 @@ func Load() Config {
 
 		OfflineCapHours: envInt("OFFLINE_CAP_HOURS", 12),
 
-		// 30s / 15s：见字段注释里的取舍。0 = 关闭缓存。
-		DashboardCacheTTL:   envDuration("DASHBOARD_CACHE_TTL", 30*time.Second),
-		LeaderboardCacheTTL: envDuration("LEADERBOARD_CACHE_TTL", 15*time.Second),
+		// 30s / 15s / 60s：见字段注释里的取舍。0 = 关闭缓存。
+		DashboardCacheTTL:      envDuration("DASHBOARD_CACHE_TTL", 30*time.Second),
+		LeaderboardCacheTTL:    envDuration("LEADERBOARD_CACHE_TTL", 15*time.Second),
+		SignInCalendarCacheTTL: envDuration("SIGNIN_CALENDAR_CACHE_TTL", 60*time.Second),
 
 		BootstrapAdminUser: env("BOOTSTRAP_ADMIN_USER", "admin"),
 		BootstrapAdminPass: env("BOOTSTRAP_ADMIN_PASS", "admin12345"),

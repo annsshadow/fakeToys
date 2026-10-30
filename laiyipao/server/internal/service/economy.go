@@ -307,25 +307,30 @@ type SignInCalendarDay struct {
 // 与玩家实际拿到的 `SignInResult.Reward` 对不上。
 // 故把日历作为权威来源下发，客户端预览改读它。
 func (s *Service) SignInCalendar(ctx context.Context) ([]SignInCalendarDay, error) {
-	rows, err := s.pool.Query(ctx,
-		`SELECT day_index, reward FROM sign_in_calendar ORDER BY day_index`)
-	if err != nil {
-		return nil, fmt.Errorf("load sign-in calendar: %w", err)
-	}
-	defer rows.Close()
-	out := []SignInCalendarDay{}
-	for rows.Next() {
-		var d SignInCalendarDay
-		var rewardRaw []byte
-		if err := rows.Scan(&d.Day, &rewardRaw); err != nil {
-			return nil, err
+	// 2026-10-30（实质优化第 17 轮）：日历是 seeder 写入的静态配置
+	// （后台没有修改入口），每次签到页打开都查库是纯浪费。
+	// TTL 缓存 + singleflight；0 = 关闭缓存（见 config.SignInCalendarCacheTTL）。
+	return s.signInCalendarCache.getOrLoad(time.Now(), s.Cfg().SignInCalendarCacheTTL, func() ([]SignInCalendarDay, error) {
+		rows, err := s.pool.Query(ctx,
+			`SELECT day_index, reward FROM sign_in_calendar ORDER BY day_index`)
+		if err != nil {
+			return nil, fmt.Errorf("load sign-in calendar: %w", err)
 		}
-		if err := json.Unmarshal(rewardRaw, &d.Reward); err != nil {
-			return nil, fmt.Errorf("unmarshal sign-in reward day %d: %w", d.Day, err)
+		defer rows.Close()
+		out := []SignInCalendarDay{}
+		for rows.Next() {
+			var d SignInCalendarDay
+			var rewardRaw []byte
+			if err := rows.Scan(&d.Day, &rewardRaw); err != nil {
+				return nil, err
+			}
+			if err := json.Unmarshal(rewardRaw, &d.Reward); err != nil {
+				return nil, fmt.Errorf("unmarshal sign-in reward day %d: %w", d.Day, err)
+			}
+			out = append(out, d)
 		}
-		out = append(out, d)
-	}
-	return out, rows.Err()
+		return out, rows.Err()
+	})
 }
 
 // SignIn 执行每日签到。
