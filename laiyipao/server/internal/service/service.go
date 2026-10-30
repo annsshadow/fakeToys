@@ -109,6 +109,9 @@ type Service struct {
 	// signInCalendarCache 是签到日历预览的缓存（2026-10-30 实质优化第 17 轮）。
 	// 日历是 seeder 写入的静态配置，TTL 见 config.SignInCalendarCacheTTL。
 	signInCalendarCache ttlCache[[]SignInCalendarDay]
+	// announcementsCache 是公告列表的缓存（2026-10-31 实质优化第 22 轮）。
+	// 公告是公开端点、变化频率极低，TTL 见 config.AnnouncementsCacheTTL。
+	announcementsCache ttlCache[[]AnnouncementView]
 }
 
 // leaderboardCacheKinds 是与 `leaderboardKinds` 同步的三个榜。
@@ -225,9 +228,11 @@ type CacheStats struct {
 	DashboardHits, DashboardMisses           int64
 	LeaderboardHits, LeaderboardMisses       int64
 	SignInCalendarHits, SignInCalendarMisses int64
+	AnnouncementsHits, AnnouncementsMisses   int64
 }
 
-// CacheStats 汇总看板、榜单与签到日历缓存的命中/未命中计数，供 /metrics 观测。
+// CacheStats 汇总看板、榜单、签到日历与公告缓存的命中/未命中计数，
+// 供 /metrics 观测。
 //
 // 为什么值得暴露：缓存命中率是这些缓存**唯一**的健康信号 ——
 // 命中率骤降意味着 TTL 被设太小或击穿没被单飞兜住，而这两者都不会报错，
@@ -241,6 +246,7 @@ func (s *Service) CacheStats() CacheStats {
 		st.LeaderboardMisses += m
 	}
 	st.SignInCalendarHits, st.SignInCalendarMisses = s.signInCalendarCache.Stats()
+	st.AnnouncementsHits, st.AnnouncementsMisses = s.announcementsCache.Stats()
 	return st
 }
 

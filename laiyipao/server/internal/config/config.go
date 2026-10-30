@@ -208,6 +208,14 @@ type Config struct {
 	// 设成 `0` 即关闭缓存（排查时与其它缓存同一条命令）。
 	SignInCalendarCacheTTL time.Duration
 
+	// AnnouncementsCacheTTL 是公告列表的进程内缓存有效期
+	// （2026-10-31 实质优化第 22 轮）。
+	//
+	// 公告是**公开端点**（无鉴权），每次首页首屏都会拉取；
+	// 而公告由运营人工发布，变化频率极低。30 秒 TTL 完全够，
+	// 设成 `0` 即关闭缓存（排查时与其它缓存同一条命令）。
+	AnnouncementsCacheTTL time.Duration
+
 	// 默认管理员（仅在 admin_users 为空时引导创建）
 	BootstrapAdminUser string
 	BootstrapAdminPass string
@@ -359,6 +367,7 @@ func Load() Config {
 		DashboardCacheTTL:      envDuration("DASHBOARD_CACHE_TTL", 30*time.Second),
 		LeaderboardCacheTTL:    envDuration("LEADERBOARD_CACHE_TTL", 15*time.Second),
 		SignInCalendarCacheTTL: envDuration("SIGNIN_CALENDAR_CACHE_TTL", 60*time.Second),
+		AnnouncementsCacheTTL:  envDuration("ANNOUNCEMENTS_CACHE_TTL", 30*time.Second),
 
 		BootstrapAdminUser: env("BOOTSTRAP_ADMIN_USER", "admin"),
 		BootstrapAdminPass: env("BOOTSTRAP_ADMIN_PASS", "admin12345"),
