@@ -142,6 +142,9 @@ func (s *Server) Register(app *fiber.App) {
 	// 我的挑战记录（2026-10-30 实质优化第 18 轮）。
 	// 玩家此前只能看到最近一次挑战结果，历史记录没有入口。
 	me.Get("/challenges", s.myChallengeHistory)
+	// 我的战报历史（2026-10-30 实质优化第 19 轮）。
+	// 玩家打完关卡后没有任何历史战报入口。
+	me.Get("/battles", s.myBattleHistory)
 
 	wallet := v1.Group("/wallet", requireUser(s.Svc))
 	wallet.Get("/", s.wallet)
@@ -662,6 +665,15 @@ func (s *Server) listGems(c *fiber.Ctx) error {
 // myChallengeHistory 返回当前玩家最近的防线挑战记录。
 func (s *Server) myChallengeHistory(c *fiber.Ctx) error {
 	items, err := s.Svc.MyChallengeHistory(c.Context(), userIDFrom(c), 20)
+	if err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(fiber.Map{"items": items})
+}
+
+// myBattleHistory 返回当前玩家最近的战斗记录。
+func (s *Server) myBattleHistory(c *fiber.Ctx) error {
+	items, err := s.Svc.MyBattleHistory(c.Context(), userIDFrom(c), 20)
 	if err != nil {
 		return failErr(c, err)
 	}

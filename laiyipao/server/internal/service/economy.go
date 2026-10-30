@@ -861,6 +861,49 @@ func parseCardPicks(raw string) []int {
 // 下一行的注释说「这些数据公开是设计使然（否则无人能验真）」——
 // 那句话说的是**数据内容**公开，不是**谁的**战报公开。
 // 你验证自己的对局本来就不需要读别人的。
+// MyBattleHistoryItem 是玩家战报历史的一行（2026-10-30 实质优化第 19 轮）。
+type MyBattleHistoryItem struct {
+	ID        int64     `json:"id"`
+	LevelID   int       `json:"level_id"`
+	Result    string    `json:"result"`
+	Stars     int       `json:"stars"`
+	Score     int64     `json:"score"`
+	Kills     int       `json:"kills"`
+	Leaked    int       `json:"leaked"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+// MyBattleHistory 返回当前玩家最近的战斗记录。
+//
+// 玩家打完关卡后没有任何历史战报入口（后台有 `AdminListBattles`，
+// 玩家侧只有单条验真/回放端点）。这里补上玩家视角的战绩列表。
+func (s *Service) MyBattleHistory(ctx context.Context, userID int64, limit int) ([]MyBattleHistoryItem, error) {
+	if limit <= 0 || limit > 50 {
+		limit = 20
+	}
+	rows, err := s.pool.Query(ctx,
+		`SELECT id, level_id, result, stars, score, kills, leaked, created_at
+		 FROM battle_records
+		 WHERE user_id = $1
+		 ORDER BY created_at DESC
+		 LIMIT $2`, userID, limit)
+	if err != nil {
+		return nil, fmt.Errorf("my battle history: %w", err)
+	}
+	defer rows.Close()
+
+	out := []MyBattleHistoryItem{}
+	for rows.Next() {
+		var it MyBattleHistoryItem
+		if err := rows.Scan(&it.ID, &it.LevelID, &it.Result, &it.Stars,
+			&it.Score, &it.Kills, &it.Leaked, &it.CreatedAt); err != nil {
+			return nil, fmt.Errorf("scan battle history: %w", err)
+		}
+		out = append(out, it)
+	}
+	return out, rows.Err()
+}
+
 func (s *Service) GetReplay(ctx context.Context, userID, battleID int64) (ReplayInfo, error) {
 	return s.getReplay(ctx, userID, battleID, true)
 }
