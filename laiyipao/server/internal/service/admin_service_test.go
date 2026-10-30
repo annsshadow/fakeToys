@@ -1156,3 +1156,24 @@ func TestAdminListDefensesFailsOnDBError(t *testing.T) {
 		t.Fatal("无 defenses 表时 AdminListDefenses 必须返回错误")
 	}
 }
+
+// TestAdminLevelRowFailsOnDBError 覆盖 AdminLevelRow 的数据库错误路径：
+// levels 表不可达时必须返回错误，不能回零值行让运营误以为关卡不存在/被重置。
+func TestAdminLevelRowFailsOnDBError(t *testing.T) {
+	cfg := config.Load()
+	cfg.DatabaseURL = "postgres://postgres@127.0.0.1:5432/postgres?sslmode=disable"
+	cfg.DBMaxConns = 2
+	cfg.DBMinConns = 0
+	ctx := context.Background()
+
+	db, err := store.Open(ctx, cfg)
+	if err != nil {
+		t.Skipf("postgres 系统库连不上，跳过：%v", err)
+	}
+	defer db.Close()
+
+	s := New(db, cfg)
+	if _, err := s.AdminLevelRow(ctx, 1); err == nil {
+		t.Fatal("无 levels 表时 AdminLevelRow 必须返回错误")
+	}
+}
