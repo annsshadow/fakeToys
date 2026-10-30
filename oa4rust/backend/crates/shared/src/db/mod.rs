@@ -455,4 +455,20 @@ mod pool_construction_tests {
             .expect_err("invalid URL must fail even with TLS");
         assert!(matches!(err, DbError::PoolError(_)), "got {err:?}");
     }
+
+    #[test]
+    #[should_panic(expected = "invalid DATABASE_URL")]
+    fn create_pool_with_url_without_host_panics() {
+        // URL 缺少 host（`@` 后直接 `/db`）时必须在构建阶段 panic（fail-fast），
+        // 而不是带一个空 host 的配置进入运行期（连接行为不可预期）。
+        let rt = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .expect("build rt");
+        rt.block_on(async {
+            let _ = create_pool_with_url("postgres://user:pass@/db".to_string())
+                .await
+                .expect("must panic");
+        });
+    }
 }
