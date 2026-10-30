@@ -459,6 +459,23 @@ func (s *Service) AdminListDefenses(ctx context.Context, limit int, offset int) 
 	return out, total, rows.Err()
 }
 
+// AdminDeleteDefense 删除玩家防线（2026-10-31 实质优化第 26 轮）。
+//
+// 防线名会显示在玩家端挑战列表/排行榜上，违规内容（侮辱、广告等）
+// 运营此前只能看到、无法处理（玩家不主动改就一直挂着）。
+// 删除后 `defense_challenges` 随外键 CASCADE 消失（玩家挑战历史
+// 里对这条防线的记录也会消失 —— 可接受，见 MyChallengeHistory 注释）。
+func (s *Service) AdminDeleteDefense(ctx context.Context, defenseID int64) error {
+	ct, err := s.pool.Exec(ctx, `DELETE FROM defenses WHERE id = $1`, defenseID)
+	if err != nil {
+		return fmt.Errorf("delete defense: %w", err)
+	}
+	if ct.RowsAffected() == 0 {
+		return fmt.Errorf("%w: 防线 %d 不存在", ErrNotFound, defenseID)
+	}
+	return nil
+}
+
 // AdminEconomy 返回经济流水与商城配置。
 func (s *Service) AdminEconomy(ctx context.Context) (AdminEconomyResp, error) {
 	rows, err := s.pool.Query(ctx, `

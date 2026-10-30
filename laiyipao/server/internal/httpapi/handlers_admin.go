@@ -697,6 +697,20 @@ func (s *Server) adminDefenses(c *fiber.Ctx) error {
 	return c.JSON(service.NormalizeNilSlices(service.AdminDefensesResp{Items: items, Total: total}))
 }
 
+// adminDeleteDefense 删除玩家防线（2026-10-31 实质优化第 26 轮）。
+func (s *Server) adminDeleteDefense(c *fiber.Ctx) error {
+	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
+	if err != nil || id < 1 {
+		return fail(c, fiber.StatusBadRequest, "bad_input", "防线 ID 非法")
+	}
+	if err := s.Svc.AdminDeleteDefense(c.Context(), id); err != nil {
+		return failErr(c, err)
+	}
+	s.Svc.Audit(c.Context(), adminIDFrom(c), "delete_defense",
+		strconv.FormatInt(id, 10), c.IP(), nil)
+	return c.JSON(fiber.Map{"ok": true})
+}
+
 func (s *Server) adminEconomy(c *fiber.Ctx) error {
 	data, err := s.Svc.AdminEconomy(c.Context())
 	if err != nil {

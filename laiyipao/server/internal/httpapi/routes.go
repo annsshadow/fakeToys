@@ -309,6 +309,9 @@ func (s *Server) Register(app *fiber.App) {
 	// readonly 账号绝不能做（它会 403，而不是被静默地切成功）。
 	adm.Put("/recomputes/mode", requireWritable(), s.adminSetRecomputeMode)
 	adm.Get("/defenses", s.adminDefenses)
+	// 删除玩家防线（2026-10-31 实质优化第 26 轮）：
+	// 违规防线名运营此前只能看到、无法处理。
+	adm.Delete("/defenses/:id", requireWritable(), s.adminDeleteDefense)
 	adm.Get("/economy", s.adminEconomy)
 	adm.Put("/shop/:id", requireWritable(), s.adminUpdateShop)
 	adm.Get("/announcements", s.adminAnnouncements)
