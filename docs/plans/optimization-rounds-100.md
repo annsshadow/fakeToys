@@ -36,6 +36,7 @@
 | 26 | 2026-10-30 | 全 workspace 测试发现并修复 query_service_processing 夹具 E23505 竞态（改 upsert_fixture_person） | `d111d6f1f` | 该 crate 27 绿；**全 workspace 测试零失败**；门禁 13/0/1 |
 | 27 | 2026-10-30 | 全仓 rustfmt 格式统一（41 个文件，排除不可格式化的 dict_data_fns! 宏文件） | `36ebc429e` | 门禁 13/0/1；fmt --check 通过 |
 | 28 | 2026-10-30 | augmentor web ECharts 按需引入（vendor 1.1MB→567KB，-49%） | `1b54dd344` | 416 测试全绿；门禁 13/0/1 |
+| 29 | 2026-10-30 | laiyipao admin 前端 bundle 验证（echarts 已按需、element-plus 自动导入） | — | 工程卫生验证 |
 | ... | | 持续迭代至 100 轮 | | |
 
-> 状态：进行中。当前累计 28 轮，距 100 轮还差 72 轮。
+> 状态：进行中。当前累计 29 轮，距 100 轮还差 71 轮。
