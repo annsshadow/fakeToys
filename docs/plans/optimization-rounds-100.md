@@ -38,6 +38,7 @@
 | 28 | 2026-10-30 | augmentor web ECharts 按需引入（vendor 1.1MB→567KB，-49%） | `1b54dd344` | 416 测试全绿；门禁 13/0/1 |
 | 29 | 2026-10-30 | laiyipao admin 前端 bundle 验证（echarts 已按需、element-plus 自动导入） | — | 工程卫生验证 |
 | 30 | 2026-10-30 | oa4rust 前端依赖漏洞清零（4 漏洞→0：@intlify 9.x 升 11.4.16、vite 6.4.5） | `25402dd2b` | audit 0 漏洞；mobile 双端构建成功；门禁 13/0/1 |
+| 31 | 2026-10-30 | 全仓依赖漏洞审计（oa4rust/laiyipao/augmentor/auto-checkin 全部 0 漏洞） | — | 全仓 audit 清零 |
 | ... | | 持续迭代至 100 轮 | | |
 
-> 状态：进行中。当前累计 30 轮，距 100 轮还差 70 轮。
+> 状态：进行中。当前累计 31 轮，距 100 轮还差 69 轮。
