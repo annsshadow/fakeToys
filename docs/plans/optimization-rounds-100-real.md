@@ -14,7 +14,8 @@
 | 3 | 2026-10-30 | **ERNIE 后端原生异步**（AU-P1 扩展）：httpx.AsyncClient + asyncio.Lock 异步 token 刷新 | `augmentor/models/ernie.py` 新增 `_aget_access_token`/`_acall_api`/`_async_client_for`/`aclose` 等；新增 `tests/unit/test_ernie_async_au_p1.py`（3 用例） | ERNIE 异步 3 passed；相关回归 64 passed |
 | 4 | 2026-10-30 | **Gemini 后端原生异步**（AU-P1 完成五后端全覆盖） | `augmentor/models/gemini.py` 新增异步方法；新增 `tests/unit/test_gemini_async_au_p1.py`（3 用例） | Gemini 异步 3 passed；相关回归 67 passed |
 | 5 | 2026-10-30 | **异步重试取消传播保护**：CancelledError 显式不进重试循环，不被包装成生成错误 | `augmentor/retry.py` 循环开头显式重抛；新增 3 个取消传播测试 | 相关回归 70 passed |
-| 6 | | | | |
+| 6 | 2026-10-30 | **augment_async 入口改走原生异步批处理**（消除线程池占用，与 use_async=True 路径一致） | `augmentor/pipeline.py` 复用 `_run_batch_async`；新增入口测试（并发重叠断言） | 相关回归 119 passed |
+| 7 | | | | |
 | ... | | 持续至 100 轮 | | |
 
-> 状态：进行中。当前累计 **5 轮实质优化**，距 100 轮还差 95 轮。
+> 状态：进行中。当前累计 **6 轮实质优化**，距 100 轮还差 94 轮。
