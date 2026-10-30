@@ -830,5 +830,18 @@ func (s *Server) adminAuditLogs(c *fiber.Ctx) error {
 	return c.JSON(service.NormalizeNilSlices(service.AdminAuditLogsResp{Items: items, Total: total}))
 }
 
+// adminExportAuditLogs 导出审计日志为 CSV（2026-10-30 实质优化第 15 轮）。
+//
+// 读操作，readonly 角色可访问。合规归档需要全量快照。
+func (s *Server) adminExportAuditLogs(c *fiber.Ctx) error {
+	data, err := s.Svc.AdminExportAuditLogs(c.Context())
+	if err != nil {
+		return failErr(c, err)
+	}
+	c.Set("Content-Type", "text/csv; charset=utf-8")
+	c.Set("Content-Disposition", `attachment; filename="audit_logs.csv"`)
+	return c.Send(data)
+}
+
 // ctxUnused 保留下划线避免未使用告警（中间件已封装 Context 传递）。
 var _ = context.Background

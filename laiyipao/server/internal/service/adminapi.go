@@ -1,7 +1,9 @@
 package service
 
 import (
+	"bytes"
 	"context"
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"sort"
@@ -863,4 +865,68 @@ func (s *Service) AdminListAuditLogs(ctx context.Context, limit, offset int) ([]
 		})
 	}
 	return out, total, rows.Err()
+}
+
+// AdminExportAuditLogs 导出审计日志为 CSV（2026-10-30 实质优化第 15 轮）。
+//
+// 与用户/战报导出同族：合规归档需要全量快照而不是分页。
+// 上限 100_000 行；UTF-8 BOM（Excel 中文兼容）。
+//
+// 与列表的差异：detail 是原始 JSONB 文本**不解析**直接导出 ——
+// 列表对坏 jsonb 报 500 是 fail-loud 的有意取舍（见 AdminListAuditLogs），
+// 而导出是归档，应尽量把原始证据留下来，不能被一行坏数据中断。
+func (s *Service) AdminExportAuditLogs(ctx context.Context) ([]byte, error) {
+	rows, err := s.pool.Query(ctx,
+		`SELECT id, admin_id, username, action, target, detail, created_at
+		 FROM admin_audit_logs ORDER BY id DESC LIMIT 100000`)
+	if err != nil {
+		return nil, fmt.Errorf("export audit logs: %w", err)
+	}
+	defer rows.Close()
+
+	var buf bytes.Buffer
+	buf.WriteString("\xEF\xBB\xBF")
+	w := csv.NewWriter(&buf)
+	header := []string{"id", "admin_id", "username", "action", "target", "detail", "created_at"}
+	if err := w.Write(header); err != nil {
+		return nil, fmt.Errorf("write csv header: %w", err)
+	}
+
+	for rows.Next() {
+		var id, adminID *int64
+		var username, action, target string
+		var detail []byte
+		var createdAt time.Time
+		if err := rows.Scan(&id, &adminID, &username, &action, &target, &detail, &createdAt); err != nil {
+			return nil, fmt.Errorf("scan export audit log: %w", err)
+		}
+		rec := []string{
+			nullableID(id),
+			nullableID(adminID),
+			username,
+			action,
+			target,
+			string(detail),
+			createdAt.Format(time.RFC3339),
+		}
+		if err := w.Write(rec); err != nil {
+			return nil, fmt.Errorf("write csv row: %w", err)
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	w.Flush()
+	if err := w.Error(); err != nil {
+		return nil, fmt.Errorf("flush csv: %w", err)
+	}
+	return buf.Bytes(), nil
+}
+
+// nullableID 把可空 id 转成 CSV 单元格（NULL → 空串）。
+func nullableID(id *int64) string {
+	if id == nil {
+		return ""
+	}
+	return strconv.FormatInt(*id, 10)
 }

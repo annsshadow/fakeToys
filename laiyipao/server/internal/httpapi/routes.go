@@ -304,6 +304,8 @@ func (s *Server) Register(app *fiber.App) {
 	adm.Get("/redeem-codes", s.adminRedeemCodes)
 	adm.Post("/redeem-codes", requireWritable(), s.adminCreateRedeemCode)
 	adm.Get("/audit-logs", s.adminAuditLogs)
+	// 审计日志导出（2026-10-30 实质优化第 15 轮）：合规归档，读操作。
+	adm.Get("/audit-logs/export", s.adminExportAuditLogs)
 }
 
 // --- 基础 ---
