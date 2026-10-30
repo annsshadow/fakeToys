@@ -554,6 +554,20 @@ export function changePassword(oldPassword: string, newPassword: string): Promis
   })
 }
 
+/**
+ * 游客账号转正（`POST /me/upgrade`）。
+ *
+ * 游客号的数据只靠本地 localStorage 里的 guest_token 保护 —— 清缓存 /
+ * 换设备就永久丢失。设置用户名 + 密码后，可以在任何设备登录回同一个号。
+ * 服务端会保留 guest_token（老客户端冷启动仍能找回同一账号）。
+ */
+export function upgradeAccount(username: string, password: string): Promise<{ ok: boolean }> {
+  return request<{ ok: boolean }>('/me/upgrade', {
+    method: 'POST',
+    body: { username, password },
+  })
+}
+
 /** 本地是否有一枚「看起来还能用」的 access token。 */
 export function hasUsableToken(): boolean {
   const t = get(TOKEN_KEY)

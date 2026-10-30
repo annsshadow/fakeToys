@@ -196,6 +196,12 @@
       重启服务来轮换。这里补上 `POST /me/password` 的客户端入口：
       验证原口令 → 更新哈希 → 吊销全部旧会话（其它设备需要重新登录）。
       游客号没有口令，不显示该入口。
+
+      游客转正（2026-10-30 实质优化第 8 轮）：
+      游客号的全部数据只靠本地 guest_token 保护，清缓存 / 换设备就永久丢失。
+      这里补上 `POST /me/upgrade` 的客户端入口：设置用户名 + 密码后，
+      可以在任何设备登录回同一个号（guest_token 保留，老客户端不受影响）。
+      已转正的账号显示改密入口，不再显示本入口。
     -->
     <view class="card">
       <text class="card-title">账号</text>
@@ -242,6 +248,52 @@
             :style="{ color: passwordErr ? 'var(--bad)' : 'var(--ok)' }"
           >
             {{ passwordMsg }}
+          </text>
+        </view>
+      </template>
+
+      <template v-else>
+        <view v-if="!upgrading">
+          <text class="muted" style="display: block; margin-bottom: 16rpx">
+            当前是游客账号，数据只保存在本机。设置用户名和密码后，
+            可以在任何设备登录回同一个账号。
+          </text>
+          <button class="btn" style="margin-bottom: 16rpx" @click="upgrading = true">设置账号密码</button>
+        </view>
+        <view v-else class="pwd-form">
+          <input
+            v-model="upgradeUsername"
+            class="inp"
+            type="text"
+            placeholder="用户名"
+            placeholder-class="ph"
+            :disabled="upgradeSubmitting"
+          />
+          <input
+            v-model="upgradePassword"
+            class="inp"
+            type="text"
+            password
+            placeholder="密码（至少 10 位）"
+            placeholder-class="ph"
+            :disabled="upgradeSubmitting"
+            @confirm="submitUpgrade"
+          />
+          <view
+            class="btn btn-primary"
+            :class="{ 'btn-disabled': upgradeSubmitting || !upgradeUsername || !upgradePassword }"
+            @click="submitUpgrade"
+          >
+            {{ upgradeSubmitting ? '提交中…' : '确认升级' }}
+          </view>
+          <view class="btn" style="margin-top: 12rpx" @click="cancelUpgrade">取消</view>
+          <text
+            v-if="upgradeMsg"
+            class="muted"
+            style="display: block; margin-top: 12rpx"
+            :style="{ color: upgradeErr ? 'var(--bad)' : 'var(--ok)' }"
+          >
+            {{ upgradeMsg }}
           </text>
         </view>
       </template>
@@ -357,6 +409,63 @@ async function submitPassword() {
     passwordMsg.value = (e as Error)?.message || '修改失败，请稍后再试'
   } finally {
     passwordSubmitting.value = false
+  }
+}
+
+/**
+ * 游客账号转正（2026-10-30 实质优化第 8 轮）。
+ *
+ * 服务端 `POST /me/upgrade` 会写入用户名 + 密码哈希，并把 is_guest 翻转为
+ * false（guest_token 保留，老客户端冷启动仍能找回同一账号）。
+ * 成功后刷新 profile，让页面从「游客」切换为「账号」视图。
+ */
+const upgrading = ref(false)
+const upgradeUsername = ref('')
+const upgradePassword = ref('')
+const upgradeSubmitting = ref(false)
+const upgradeMsg = ref('')
+const upgradeErr = ref(false)
+
+function cancelUpgrade() {
+  upgrading.value = false
+  upgradeUsername.value = ''
+  upgradePassword.value = ''
+  upgradeMsg.value = ''
+  upgradeErr.value = false
+}
+
+async function submitUpgrade() {
+  if (upgradeSubmitting.value) return
+  upgradeMsg.value = ''
+  upgradeErr.value = false
+  const username = upgradeUsername.value.trim()
+  if (!username || !upgradePassword.value) {
+    upgradeMsg.value = '用户名与密码都不能为空'
+    upgradeErr.value = true
+    return
+  }
+  if (username.includes(' ')) {
+    upgradeMsg.value = '用户名不能包含空格'
+    upgradeErr.value = true
+    return
+  }
+  if (upgradePassword.value.length < 10) {
+    upgradeMsg.value = '密码至少 10 位'
+    upgradeErr.value = true
+    return
+  }
+  upgradeSubmitting.value = true
+  try {
+    await api.upgradeAccount(username, upgradePassword.value)
+    upgradeMsg.value = '升级成功，现在可以在任何设备登录这个账号了'
+    upgradePassword.value = ''
+    // 刷新 /me，让 is_guest 翻转为 false，页面自动切换为「修改密码」视图
+    await store.refreshProfile()
+  } catch (e) {
+    upgradeErr.value = true
+    upgradeMsg.value = (e as Error)?.message || '升级失败，请稍后再试'
+  } finally {
+    upgradeSubmitting.value = false
   }
 }
 
