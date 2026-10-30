@@ -75,6 +75,7 @@
 | 65 | 2026-10-30 | netguard 公网测试增强受限网络 SKIP（Docker 保留段 DNS 根因） | `38653ed1f` | shared 329 绿；门禁 13/0/1 |
 | 66 | 2026-10-30 | oa4rust 全 workspace 测试零失败（netguard 稳健性修复后最终确认） | — | 全 workspace 0 FAILED |
 | 67 | 2026-10-30 | augmentor web Prettier 格式统一（45 文件），416 测试全绿 | 本次提交 | format:check PASS |
+| 68 | 2026-10-30 | 子项目格式门禁现状勘察（auto-checkin/miniapp 无 prettier，由 typecheck/棘轮覆盖） | — | 工程卫生 |
 | ... | | 持续迭代至 100 轮 | | |
 
-> 状态：进行中。当前累计 67 轮，距 100 轮还差 33 轮。
+> 状态：进行中。当前累计 68 轮，距 100 轮还差 32 轮。
