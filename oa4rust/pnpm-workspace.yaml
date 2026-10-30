@@ -8,9 +8,10 @@ packages:
 # 对应告警见 GitHub Dependabot（mobile 的 uni-app 工具链）。
 overrides:
   '@babel/core@7.25.2': '7.29.6'
-  '@intlify/core-base@9.1.9': '9.14.5'
-  '@intlify/message-compiler@9.1.9': '9.14.5'
+  '@intlify/core-base@9.1.9': '11.4.16'
+  '@intlify/message-compiler@9.1.9': '11.4.16'
   '@intlify/message-resolver@9.1.9': '9.1.11'
+  '@intlify/shared@9.1.9': '11.4.16'
   'adm-zip@0.5.16': '0.6.1'
   # body-parser <1.20.9：压缩请求体后残留字节触发 DoS（GHSA-27r3-jxmh-p828）。
   # 旧覆盖只抬到 1.20.6，仍在受影响区间；改用范围覆盖吃掉树里所有副本。
@@ -65,7 +66,7 @@ overrides:
   'vue-i18n@11.4.10': '11.4.16'
   '@intlify/core-base@11.4.10': '11.4.16'
   '@intlify/shared@11.4.10': '11.4.16'
-  'vite@<=6.4.2': '6.4.3'
+  'vite@<6.4.5': '6.4.5'
 allowBuilds:
   core-js: false
   core-js-pure: false
