@@ -1015,15 +1015,21 @@ onMounted(async () => {
 
 onShow(async () => {
   if (store.loggedIn) {
-    await store.refreshProfile()
-    // 从「背包」页改过槽位再回来时，这里重新拉一次权威槽位。
-    await store.loadLoadout()
-    await loadDefenses()
-    await loadChallengeHistory()
-    await loadBattleHistory()
-    await loadPurchases()
-    await loadRedemptions()
-    await loadOrders()
+    // 2026-10-31（实质优化第 29 轮）：这些请求互不依赖，此前串行 await
+    // 让 me 页首屏要等 N 个 RTT；改为并行后只等最慢的那一个。
+    // `refreshProfile`/`loadLoadout` 会写 store，其余只写本页 ref，
+    // 并行不会互相覆盖。
+    await Promise.all([
+      store.refreshProfile(),
+      // 从「背包」页改过槽位再回来时，这里重新拉一次权威槽位。
+      store.loadLoadout(),
+      loadDefenses(),
+      loadChallengeHistory(),
+      loadBattleHistory(),
+      loadPurchases(),
+      loadRedemptions(),
+      loadOrders(),
+    ])
   }
 })
 
