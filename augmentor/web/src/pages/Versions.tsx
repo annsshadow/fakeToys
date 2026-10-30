@@ -11,9 +11,34 @@ import {
   Popconfirm,
   type TableColumnsType,
 } from 'antd'
-import { PlusOutlined, RollbackOutlined, DeleteOutlined, DiffOutlined, HistoryOutlined, EyeOutlined, DatabaseOutlined } from '@ant-design/icons'
-import { apiErrorDetail, getVersions, createVersion, deleteVersion, rollbackVersion, diffVersions, getDataFiles, getVersion, getVersionData, getVersionHistory } from '../services/api'
-import type { DataItem, VersionDetail, VersionDiffResponse, VersionHistoryEntry, VersionInfo } from '../types/api'
+import {
+  PlusOutlined,
+  RollbackOutlined,
+  DeleteOutlined,
+  DiffOutlined,
+  HistoryOutlined,
+  EyeOutlined,
+  DatabaseOutlined,
+} from '@ant-design/icons'
+import {
+  apiErrorDetail,
+  getVersions,
+  createVersion,
+  deleteVersion,
+  rollbackVersion,
+  diffVersions,
+  getDataFiles,
+  getVersion,
+  getVersionData,
+  getVersionHistory,
+} from '../services/api'
+import type {
+  DataItem,
+  VersionDetail,
+  VersionDiffResponse,
+  VersionHistoryEntry,
+  VersionInfo,
+} from '../types/api'
 
 export default function Versions() {
   const [versions, setVersions] = useState<VersionInfo[]>([])
@@ -49,7 +74,7 @@ export default function Versions() {
   const loadFiles = async () => {
     try {
       const result = await getDataFiles()
-      setFiles(result.files.map(f => f.name))
+      setFiles(result.files.map((f) => f.name))
     } catch (err) {
       message.error(apiErrorDetail(err, '加载文件列表失败'))
     }
@@ -148,58 +173,77 @@ export default function Versions() {
       title: '版本 ID',
       dataIndex: 'version_id',
       key: 'version_id',
-      render: (text: string) => <Tag>{text}</Tag>
+      render: (text: string) => <Tag>{text}</Tag>,
     },
     {
       title: '标签',
       dataIndex: 'label',
-      key: 'label'
+      key: 'label',
     },
     {
       title: '描述',
       dataIndex: 'description',
       key: 'description',
-      ellipsis: true
+      ellipsis: true,
     },
     {
       title: '数据条数',
       dataIndex: 'item_count',
-      key: 'item_count'
+      key: 'item_count',
     },
     {
       title: '创建时间',
       dataIndex: 'created_at',
-      key: 'created_at'
+      key: 'created_at',
     },
     {
       title: '操作',
       key: 'action',
       render: (_, record) => (
         <Space>
-          <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => handleShowDetail(record.version_id)}>详情</Button>
-          <Button type="link" size="small" icon={<DatabaseOutlined />} onClick={() => handleShowData(record.version_id)}>数据</Button>
+          <Button
+            type="link"
+            size="small"
+            icon={<EyeOutlined />}
+            onClick={() => handleShowDetail(record.version_id)}
+          >
+            详情
+          </Button>
+          <Button
+            type="link"
+            size="small"
+            icon={<DatabaseOutlined />}
+            onClick={() => handleShowData(record.version_id)}
+          >
+            数据
+          </Button>
           <Popconfirm
             title="确定回滚到此版本？"
             onConfirm={() => handleRollback(record.version_id)}
           >
-            <Button type="link" size="small" icon={<RollbackOutlined />}>回滚</Button>
+            <Button type="link" size="small" icon={<RollbackOutlined />}>
+              回滚
+            </Button>
           </Popconfirm>
-          <Popconfirm
-            title="确定删除此版本？"
-            onConfirm={() => handleDelete(record.version_id)}
-          >
-            <Button type="link" size="small" danger icon={<DeleteOutlined />}>删除</Button>
+          <Popconfirm title="确定删除此版本？" onConfirm={() => handleDelete(record.version_id)}>
+            <Button type="link" size="small" danger icon={<DeleteOutlined />}>
+              删除
+            </Button>
           </Popconfirm>
         </Space>
-      )
-    }
+      ),
+    },
   ]
 
   return (
     <div>
       <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between' }}>
         <Space>
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateModalVisible(true)}>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => setCreateModalVisible(true)}
+          >
             创建版本
           </Button>
           <Button icon={<DiffOutlined />} onClick={() => setDiffModalVisible(true)}>
@@ -228,8 +272,10 @@ export default function Versions() {
               style={{ width: '100%', padding: '4px 8px', borderRadius: 4 }}
             >
               <option value="">请选择文件</option>
-              {files.map(file => (
-                <option key={file} value={file}>{file}</option>
+              {files.map((file) => (
+                <option key={file} value={file}>
+                  {file}
+                </option>
               ))}
             </select>
           </div>
@@ -257,7 +303,10 @@ export default function Versions() {
         title="版本对比"
         open={diffModalVisible}
         onOk={handleDiff}
-        onCancel={() => { setDiffModalVisible(false); setDiffResult(null) }}
+        onCancel={() => {
+          setDiffModalVisible(false)
+          setDiffResult(null)
+        }}
         width={600}
       >
         <Space direction="vertical" style={{ width: '100%' }}>
@@ -269,8 +318,10 @@ export default function Versions() {
               style={{ width: '100%', padding: '4px 8px', borderRadius: 4 }}
             >
               <option value="">请选择版本</option>
-              {versions.map(v => (
-                <option key={v.version_id} value={v.version_id}>{v.label} ({v.version_id})</option>
+              {versions.map((v) => (
+                <option key={v.version_id} value={v.version_id}>
+                  {v.label} ({v.version_id})
+                </option>
               ))}
             </select>
           </div>
@@ -282,17 +333,25 @@ export default function Versions() {
               style={{ width: '100%', padding: '4px 8px', borderRadius: 4 }}
             >
               <option value="">请选择版本</option>
-              {versions.map(v => (
-                <option key={v.version_id} value={v.version_id}>{v.label} ({v.version_id})</option>
+              {versions.map((v) => (
+                <option key={v.version_id} value={v.version_id}>
+                  {v.label} ({v.version_id})
+                </option>
               ))}
             </select>
           </div>
           {diffResult && (
             <Card size="small" title="对比结果">
               <Space direction="vertical">
-                <div>新增: <Tag color="green">{diffResult.added_count}</Tag></div>
-                <div>移除: <Tag color="red">{diffResult.removed_count}</Tag></div>
-                <div>修改: <Tag color="orange">{diffResult.modified_count}</Tag></div>
+                <div>
+                  新增: <Tag color="green">{diffResult.added_count}</Tag>
+                </div>
+                <div>
+                  移除: <Tag color="red">{diffResult.removed_count}</Tag>
+                </div>
+                <div>
+                  修改: <Tag color="orange">{diffResult.modified_count}</Tag>
+                </div>
               </Space>
             </Card>
           )}
@@ -313,7 +372,9 @@ export default function Versions() {
             <div>标签：{detail.label}</div>
             <div>描述：{detail.description}</div>
             <div>创建时间：{detail.created_at}</div>
-            <div>数据条数：<Tag>{detail.item_count}</Tag></div>
+            <div>
+              数据条数：<Tag>{detail.item_count}</Tag>
+            </div>
             <div>
               元数据：
               <pre data-testid="version-metadata" style={{ maxHeight: 160, overflow: 'auto' }}>
@@ -326,8 +387,13 @@ export default function Versions() {
                 rowKey={(_, index) => String(index)}
                 pagination={{ pageSize: 5 }}
                 columns={[
-                  { title: 'instruction', dataIndex: 'instruction', key: 'instruction', ellipsis: true },
-                  { title: 'output', dataIndex: 'output', key: 'output', ellipsis: true }
+                  {
+                    title: 'instruction',
+                    dataIndex: 'instruction',
+                    key: 'instruction',
+                    ellipsis: true,
+                  },
+                  { title: 'output', dataIndex: 'output', key: 'output', ellipsis: true },
                 ]}
                 dataSource={detailItems}
               />
@@ -356,8 +422,8 @@ export default function Versions() {
             {
               title: '详情',
               key: 'detail',
-              render: (_, record: VersionHistoryEntry) => JSON.stringify(record.detail)
-            }
+              render: (_, record: VersionHistoryEntry) => JSON.stringify(record.detail),
+            },
           ]}
           dataSource={history}
         />

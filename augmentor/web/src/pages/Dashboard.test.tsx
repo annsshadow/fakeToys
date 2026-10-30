@@ -22,16 +22,17 @@ import type { AppConfig } from '../types/api'
 // antd v5 的主题与响应式 hook 依赖这两个浏览器 API，jsdom 不提供。
 window.matchMedia =
   window.matchMedia ||
-  ((query: string) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: () => {},
-    removeListener: () => {},
-    addEventListener: () => {},
-    removeEventListener: () => {},
-    dispatchEvent: () => false,
-  }) as unknown as MediaQueryList)
+  ((query: string) =>
+    ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    }) as unknown as MediaQueryList)
 class RO {
   observe() {}
   unobserve() {}
@@ -113,7 +114,9 @@ describe('Dashboard 统计卡的渲染面', () => {
     spies.getConfig.mockResolvedValue(CONFIG)
     spies.getModels.mockResolvedValue({ models: ['ernie', 'openai'], default: 'ernie' })
     spies.getVersions.mockResolvedValue({
-      versions: [{ version_id: 'v-1', label: 'l', description: 'd', created_at: 't', item_count: 2 }],
+      versions: [
+        { version_id: 'v-1', label: 'l', description: 'd', created_at: 't', item_count: 2 },
+      ],
     })
 
     render(<Dashboard />)
@@ -139,9 +142,7 @@ describe('Dashboard 统计卡的渲染面', () => {
 
     const { container } = render(<Dashboard />)
 
-    await waitFor(() =>
-      expect(container.querySelectorAll('.ant-tag')).toHaveLength(2)
-    )
+    await waitFor(() => expect(container.querySelectorAll('.ant-tag')).toHaveLength(2))
     // 「默认模型」统计卡的值也是 ernie，所以按标签元素查而不是按文本查
     const tags = Array.from(container.querySelectorAll('.ant-tag'))
     expect(tags.map((t) => t.textContent)).toEqual(['ernie', 'openai'])

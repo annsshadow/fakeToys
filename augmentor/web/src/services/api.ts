@@ -80,14 +80,17 @@ import {
   zodErrorMessage,
 } from '../schemas/main-schemas'
 import type {
-  AggregateResponse, AnalyzeResponse,
+  AggregateResponse,
+  AnalyzeResponse,
   AnnotateResponse,
   AppConfig,
   AuditResponse,
   AugmentProgress,
   AutoConfigResponse,
   BackupInfo,
-  BackupListResponse, BackupVerifyResponse, BackupCleanupResponse,
+  BackupListResponse,
+  BackupVerifyResponse,
+  BackupCleanupResponse,
   BatchExportResponse,
   BenchmarkResponse,
   CheckpointListResponse,
@@ -103,7 +106,8 @@ import type {
   DatasetValidationResponse,
   DatasetRegistryEntry,
   DatasetRegistryListResponse,
-  DedupResponse, DependencyDiagnostics,
+  DedupResponse,
+  DependencyDiagnostics,
   DependencyGraphResponse,
   EvaluateResponse,
   ExportFormatsResponse,
@@ -126,7 +130,11 @@ import type {
   SemanticSearchResponse,
   ProfilingResponse,
   QualityEvaluationResponse,
-  QualityReportResponse, QualitySnapshotResponse, RagResponse, RestoreBackupResponse, SampleResponse,
+  QualityReportResponse,
+  QualitySnapshotResponse,
+  RagResponse,
+  RestoreBackupResponse,
+  SampleResponse,
   SplitResponse,
   SanitizeResponse,
   SearchResponse,
@@ -134,7 +142,8 @@ import type {
   StatisticsResponse,
   StatusResponse,
   StreamReportResponse,
-  TestSuiteResponse, TranslateResponse,
+  TestSuiteResponse,
+  TranslateResponse,
   UpdateConfigResponse,
   UploadResponse,
   VersionDataResponse,
@@ -187,7 +196,7 @@ export const setApiKey = (key: string): void => {
   }
 }
 
-api.interceptors.request.use(config => {
+api.interceptors.request.use((config) => {
   const key = getApiKey()
   if (key) {
     config.headers.set(API_KEY_HEADER, key)
@@ -328,7 +337,7 @@ export const bulkErrorDetail = (error: unknown, fallback: string): string => {
 const checkedResponse = async <T>(
   name: string,
   schema: z.ZodType,
-  action: () => Promise<AxiosResponseLike>
+  action: () => Promise<AxiosResponseLike>,
 ): Promise<T> => {
   const response = await action()
   const parsed = schema.safeParse(response.data)
@@ -363,10 +372,8 @@ const checkedData = <T>(name: string, schema: z.ZodType, data: unknown): T => {
 
 // 数据管理
 export const getDataFiles = async (): Promise<DataFileListResponse> => {
-  return checkedResponse<DataFileListResponse>(
-    'getDataFiles',
-    dataFileListResponseSchema,
-    () => api.get('/data/list')
+  return checkedResponse<DataFileListResponse>('getDataFiles', dataFileListResponseSchema, () =>
+    api.get('/data/list'),
   )
 }
 
@@ -382,7 +389,7 @@ export const getBackupSourceCandidates = async (): Promise<DataFileListResponse>
   return checkedResponse<DataFileListResponse>(
     'getBackupSourceCandidates',
     dataFileListResponseSchema,
-    () => api.get('/data/list?all_files=true')
+    () => api.get('/data/list?all_files=true'),
   )
 }
 
@@ -398,15 +405,12 @@ export const loadData = async (
   filename: string,
   page: number,
   pageSize: number,
-  search: string
+  search: string,
 ): Promise<DataPageResponse> => {
-  return checkedResponse<DataPageResponse>(
-    'loadData',
-    dataPageResponseSchema,
-    () =>
-      api.get(`/data/load/${filename}`, {
-        params: { page, page_size: pageSize, search },
-      })
+  return checkedResponse<DataPageResponse>('loadData', dataPageResponseSchema, () =>
+    api.get(`/data/load/${filename}`, {
+      params: { page, page_size: pageSize, search },
+    }),
   )
 }
 
@@ -421,7 +425,7 @@ export const loadData = async (
 export const updateDataItem = async (
   filename: string,
   index: number,
-  item: unknown
+  item: unknown,
 ): Promise<MutationResponse> => {
   const response = await api.put(`/data/update/${filename}`, item, {
     params: { index },
@@ -431,7 +435,7 @@ export const updateDataItem = async (
 
 export const deleteDataItem = async (
   filename: string,
-  index: number
+  index: number,
 ): Promise<MutationResponse> => {
   const response = await api.delete(`/data/delete/${filename}`, {
     params: { index },
@@ -448,24 +452,21 @@ export const deleteDataItem = async (
  * 无条件 append 而不是「有值才加」：后端默认值就是 `""`，两种写法同一条代码路径，
  * 前端少一条要测的分支。
  */
-export const uploadData = async (
-  file: File,
-  inputFormat = ''
-): Promise<UploadResponse> => {
+export const uploadData = async (file: File, inputFormat = ''): Promise<UploadResponse> => {
   const formData = new FormData()
   formData.append('file', file)
   formData.append('input_format', inputFormat)
   return checkedResponse<UploadResponse>('uploadData', uploadResponseSchema, () =>
     api.post('/data/upload', formData, {
       timeout: BULK_REQUEST_TIMEOUT_MS,
-    })
+    }),
   )
 }
 
 export const exportData = async (
   inputFile: string,
   outputDir: string,
-  formats?: string[]
+  formats?: string[],
 ): Promise<DatasetExportResponse> => {
   const response = await api.post(
     '/data/export',
@@ -474,7 +475,7 @@ export const exportData = async (
       output_dir: outputDir,
       formats,
     },
-    { timeout: BULK_REQUEST_TIMEOUT_MS }
+    { timeout: BULK_REQUEST_TIMEOUT_MS },
   )
   return checkedData<DatasetExportResponse>('exportData', exportResponseSchema, response.data)
 }
@@ -486,7 +487,7 @@ export const startAugmentation = async (
   useQuality: boolean,
   useDedup: boolean,
   useCheckpoint: boolean,
-  useAsync: boolean = false
+  useAsync: boolean = false,
 ): Promise<StartAugmentResponse> => {
   const payload: Record<string, unknown> = {
     input_file: inputFile,
@@ -502,15 +503,13 @@ export const startAugmentation = async (
   return checkedResponse<StartAugmentResponse>(
     'startAugmentation',
     startAugmentResponseSchema,
-    () => api.post('/augment/start', payload)
+    () => api.post('/augment/start', payload),
   )
 }
 
 export const getProgress = async (): Promise<AugmentProgress> => {
-  return checkedResponse<AugmentProgress>(
-    'getProgress',
-    augmentProgressSchema,
-    () => api.get('/augment/progress')
+  return checkedResponse<AugmentProgress>('getProgress', augmentProgressSchema, () =>
+    api.get('/augment/progress'),
   )
 }
 
@@ -518,48 +517,42 @@ export const getCheckpoints = async (): Promise<CheckpointListResponse> => {
   return checkedResponse<CheckpointListResponse>(
     'getCheckpoints',
     checkpointListResponseSchema,
-    () => api.get('/augment/checkpoints')
+    () => api.get('/augment/checkpoints'),
   )
 }
 
 // 数据分析
 export const analyzeData = async (filename: string): Promise<AnalyzeResponse> => {
   return checkedResponse<AnalyzeResponse>('analyzeData', analyzeResponseSchema, () =>
-    api.get(`/analyze/${filename}`)
+    api.get(`/analyze/${filename}`),
   )
 }
 
 export const visualizeData = async (filename: string): Promise<VisualizeResponse> => {
-  return checkedResponse<VisualizeResponse>(
-    'visualizeData',
-    visualizeResponseSchema,
-    () => api.get(`/visualize/${filename}`)
+  return checkedResponse<VisualizeResponse>('visualizeData', visualizeResponseSchema, () =>
+    api.get(`/visualize/${filename}`),
   )
 }
 
 // 版本管理
 export const getVersions = async (): Promise<VersionListResponse> => {
-  return checkedResponse<VersionListResponse>(
-    'getVersions',
-    versionListResponseSchema,
-    () => api.get('/versions')
+  return checkedResponse<VersionListResponse>('getVersions', versionListResponseSchema, () =>
+    api.get('/versions'),
   )
 }
 
 export const createVersion = async (
   filename: string,
   label: string,
-  description: string
+  description: string,
 ): Promise<CreateVersionResponse> => {
   // L277：`filename` 改走 axios 的 `params`，不再拼进路径串。拼串时一个含 `&` / `=` / `#`
   // 或空格的文件名会把 query 拆开、截断甚至整个丢掉 `#` 之后的部分（`a&b.json` 实测变成
   // `filename=a` 外加一个野键 `b.json`），编码交给 axios，键名仍是契约里的 `filename`。
   // `params` 块紧贴调用（同 L231 为 `createBackup` 定下的口径），别让绑定窗口去够它。
   const body = { label, description }
-  return checkedResponse<CreateVersionResponse>(
-    'createVersion',
-    createVersionResponseSchema,
-    () => api.post('/versions/create', body, { params: { filename } })
+  return checkedResponse<CreateVersionResponse>('createVersion', createVersionResponseSchema, () =>
+    api.post('/versions/create', body, { params: { filename } }),
   )
 }
 
@@ -569,16 +562,14 @@ export const getVersion = async (versionId: string): Promise<VersionDetail> => {
 }
 
 export const getVersionData = async (versionId: string): Promise<VersionDataResponse> => {
-  return checkedResponse<VersionDataResponse>(
-    'getVersionData',
-    versionDataResponseSchema,
-    () => api.get(`/versions/${versionId}/data`)
+  return checkedResponse<VersionDataResponse>('getVersionData', versionDataResponseSchema, () =>
+    api.get(`/versions/${versionId}/data`),
   )
 }
 
 export const diffVersions = async (
   version1: string,
-  version2: string
+  version2: string,
 ): Promise<VersionDiffResponse> => {
   const response = await api.post('/versions/diff', {
     version1,
@@ -597,17 +588,19 @@ export const deleteVersion = async (versionId: string): Promise<MutationResponse
   return checkedData<MutationResponse>('deleteVersion', successResponseSchema, response.data)
 }
 
-export const getVersionHistory = async (
-  limit: number = 20
-): Promise<VersionHistoryResponse> => {
+export const getVersionHistory = async (limit: number = 20): Promise<VersionHistoryResponse> => {
   const response = await api.get('/versions/history', { params: { limit } })
-  return checkedData<VersionHistoryResponse>('getVersionHistory', versionHistoryResponseSchema, response.data)
+  return checkedData<VersionHistoryResponse>(
+    'getVersionHistory',
+    versionHistoryResponseSchema,
+    response.data,
+  )
 }
 
 // 质量评估
 export const evaluateQuality = async (
   inputFile: string,
-  threshold: number = 0.6
+  threshold: number = 0.6,
 ): Promise<QualityEvaluationResponse> => {
   return checkedResponse<QualityEvaluationResponse>(
     'evaluateQuality',
@@ -616,31 +609,35 @@ export const evaluateQuality = async (
       api.post('/quality/evaluate', {
         input_file: inputFile,
         threshold,
-      })
+      }),
   )
 }
 
 export const dedupData = async (
   inputFile: string,
-  threshold: number = 0.9
+  threshold: number = 0.9,
 ): Promise<DedupResponse> => {
   return checkedResponse<DedupResponse>('dedupData', dedupResponseSchema, () =>
     api.post('/quality/dedup', {
       input_file: inputFile,
       threshold,
-    })
+    }),
   )
 }
 
 export const qualityReport = async (
   inputFile: string,
-  threshold: number = 0.6
+  threshold: number = 0.6,
 ): Promise<QualityReportResponse> => {
   const response = await api.post('/quality/report', {
     input_file: inputFile,
     threshold,
   })
-  return checkedData<QualityReportResponse>('qualityReport', qualityReportResponseSchema, response.data)
+  return checkedData<QualityReportResponse>(
+    'qualityReport',
+    qualityReportResponseSchema,
+    response.data,
+  )
 }
 
 export const cleanData = async (inputFile: string): Promise<CleanResponse> => {
@@ -655,7 +652,7 @@ export const annotateData = async (inputFile: string): Promise<AnnotateResponse>
 
 export const runBenchmark = async (
   inputFile: string,
-  threshold: number = 0.6
+  threshold: number = 0.6,
 ): Promise<BenchmarkResponse> => {
   const response = await api.post('/quality/benchmark', {
     input_file: inputFile,
@@ -667,13 +664,17 @@ export const runBenchmark = async (
 // 导出
 export const getExportFormats = async (): Promise<ExportFormatsResponse> => {
   const response = await api.get('/export/formats')
-  return checkedData<ExportFormatsResponse>('getExportFormats', exportFormatsResponseSchema, response.data)
+  return checkedData<ExportFormatsResponse>(
+    'getExportFormats',
+    exportFormatsResponseSchema,
+    response.data,
+  )
 }
 
 export const previewExport = async (
   inputFile: string,
   format: string,
-  size: number = 5
+  size: number = 5,
 ): Promise<ExportPreviewResponse> => {
   const response = await api.post('/export/preview', {
     input_file: inputFile,
@@ -686,7 +687,7 @@ export const previewExport = async (
 export const batchExport = async (
   datasets: Record<string, string>,
   outputDir: string,
-  formats: string[]
+  formats: string[],
 ): Promise<BatchExportResponse> => {
   const response = await api.post(
     '/export/batch',
@@ -695,7 +696,7 @@ export const batchExport = async (
       output_dir: outputDir,
       formats,
     },
-    { timeout: BULK_REQUEST_TIMEOUT_MS }
+    { timeout: BULK_REQUEST_TIMEOUT_MS },
   )
   return checkedData<BatchExportResponse>('batchExport', batchExportResponseSchema, response.data)
 }
@@ -703,7 +704,11 @@ export const batchExport = async (
 // 多模态
 export const getMultimodalFormats = async (): Promise<MultimodalFormatsResponse> => {
   const response = await api.get('/multimodal/formats')
-  return checkedData<MultimodalFormatsResponse>('getMultimodalFormats', multimodalFormatsResponseSchema, response.data)
+  return checkedData<MultimodalFormatsResponse>(
+    'getMultimodalFormats',
+    multimodalFormatsResponseSchema,
+    response.data,
+  )
 }
 
 /**
@@ -715,17 +720,23 @@ export const getMultimodalFormats = async (): Promise<MultimodalFormatsResponse>
 export const processMultimodal = async (
   text?: string,
   image?: string,
-  audio?: string
+  audio?: string,
 ): Promise<MultimodalRecord> => {
   const response = await api.post('/multimodal/process', { text, image, audio })
-  return checkedData<MultimodalRecord>('processMultimodal', multimodalRecordResponseSchema, response.data)
+  return checkedData<MultimodalRecord>(
+    'processMultimodal',
+    multimodalRecordResponseSchema,
+    response.data,
+  )
 }
 
-export const scanMultimodal = async (
-  directory: string
-): Promise<MultimodalScanResponse> => {
+export const scanMultimodal = async (directory: string): Promise<MultimodalScanResponse> => {
   const response = await api.post('/multimodal/scan', { directory })
-  return checkedData<MultimodalScanResponse>('scanMultimodal', multimodalScanResponseSchema, response.data)
+  return checkedData<MultimodalScanResponse>(
+    'scanMultimodal',
+    multimodalScanResponseSchema,
+    response.data,
+  )
 }
 
 // 配置管理
@@ -742,7 +753,11 @@ export const getConfig = async (): Promise<AppConfig> => {
  */
 export const updateConfig = async (config: unknown): Promise<UpdateConfigResponse> => {
   const response = await api.post('/config', config)
-  return checkedData<UpdateConfigResponse>('updateConfig', configUpdateResponseSchema, response.data)
+  return checkedData<UpdateConfigResponse>(
+    'updateConfig',
+    configUpdateResponseSchema,
+    response.data,
+  )
 }
 
 export const getModels = async (): Promise<ModelsResponse> => {
@@ -785,7 +800,11 @@ export const getDemoData = async (): Promise<DataItem[]> => {
 
 export const getPiiPatterns = async (): Promise<PiiPatternsResponse> => {
   const response = await api.get('/privacy/patterns')
-  return checkedData<PiiPatternsResponse>('getPiiPatterns', piiPatternsResponseSchema, response.data)
+  return checkedData<PiiPatternsResponse>(
+    'getPiiPatterns',
+    piiPatternsResponseSchema,
+    response.data,
+  )
 }
 
 /**
@@ -797,12 +816,12 @@ export const getPiiPatterns = async (): Promise<PiiPatternsResponse> => {
 export const sanitizeData = async (
   inputFile: string,
   fields?: string[],
-  includeExtra: boolean = false
+  includeExtra: boolean = false,
 ): Promise<SanitizeResponse> => {
   const response = await api.post('/privacy/sanitize', {
     input_file: inputFile,
     fields,
-    include_extra: includeExtra
+    include_extra: includeExtra,
   })
   return checkedData<SanitizeResponse>('sanitizeData', sanitizeResponseSchema, response.data)
 }
@@ -812,12 +831,12 @@ export const sanitizeData = async (
 export const checkLeakage = async (
   trainFile: string,
   testFile: string,
-  fuzzyThreshold: number = 0.8
+  fuzzyThreshold: number = 0.8,
 ): Promise<LeakageResponse> => {
   const response = await api.post('/leakage/check', {
     train_file: trainFile,
     test_file: testFile,
-    fuzzy_threshold: fuzzyThreshold
+    fuzzy_threshold: fuzzyThreshold,
   })
   return checkedData<LeakageResponse>('checkLeakage', leakageResponseSchema, response.data)
 }
@@ -831,11 +850,11 @@ export const checkLeakage = async (
  */
 export const auditDataset = async (
   inputFile: string,
-  referenceFile?: string
+  referenceFile?: string,
 ): Promise<AuditResponse> => {
   const response = await api.post('/audit', {
     input_file: inputFile,
-    reference_file: referenceFile
+    reference_file: referenceFile,
   })
   return checkedData<AuditResponse>('auditDataset', auditReportSchema, response.data)
 }
@@ -846,13 +865,13 @@ export const detectOutliers = async (
   inputFile: string,
   method: string = 'zscore',
   threshold: number = 3,
-  field: string = 'length'
+  field: string = 'length',
 ): Promise<OutliersResponse> => {
   const response = await api.post('/quality/outliers', {
     input_file: inputFile,
     method,
     threshold,
-    field
+    field,
   })
   return checkedData<OutliersResponse>('detectOutliers', outlierResponseSchema, response.data)
 }
@@ -871,13 +890,17 @@ export const profileDataset = async (inputFile: string): Promise<ProfilingRespon
  */
 export const languageProfile = async (
   inputFile: string,
-  textKey?: string
+  textKey?: string,
 ): Promise<LanguageProfileResponse> => {
   const response = await api.post('/dataset/language-profile', {
     input_file: inputFile,
-    text_key: textKey
+    text_key: textKey,
   })
-  return checkedData<LanguageProfileResponse>('languageProfile', languageProfileResponseSchema, response.data)
+  return checkedData<LanguageProfileResponse>(
+    'languageProfile',
+    languageProfileResponseSchema,
+    response.data,
+  )
 }
 
 /**
@@ -891,12 +914,12 @@ export const languageProfile = async (
 export const evaluateDataset = async (
   generatedFile: string,
   referenceFile: string,
-  includeDetails: boolean = false
+  includeDetails: boolean = false,
 ): Promise<EvaluateResponse> => {
   const response = await api.post('/dataset/evaluate', {
     generated_file: generatedFile,
     reference_file: referenceFile,
-    include_details: includeDetails
+    include_details: includeDetails,
   })
   return checkedData<EvaluateResponse>('evaluateDataset', evaluateResponseSchema, response.data)
 }
@@ -910,7 +933,11 @@ export const evaluateDataset = async (
  */
 export const getVectorStatus = async (): Promise<VectorStatusResponse> => {
   const response = await api.get('/dataset/vector-status')
-  return checkedData<VectorStatusResponse>('getVectorStatus', vectorStatusResponseSchema, response.data)
+  return checkedData<VectorStatusResponse>(
+    'getVectorStatus',
+    vectorStatusResponseSchema,
+    response.data,
+  )
 }
 
 // ============ 内容检索 / 结构校验 / 配置推荐（A279 第二批接线，L226） ============
@@ -927,14 +954,14 @@ export const getVectorStatus = async (): Promise<VectorStatusResponse> => {
 export const searchDataset = async (
   inputFile: string,
   query: string,
-  opts: { method?: string; limit?: number; offset?: number } = {}
+  opts: { method?: string; limit?: number; offset?: number } = {},
 ): Promise<SearchResponse> => {
   const response = await api.post('/dataset/search', {
     input_file: inputFile,
     query,
     method: opts.method,
     limit: opts.limit,
-    offset: opts.offset
+    offset: opts.offset,
   })
   return checkedData<SearchResponse>('searchDataset', searchResponseSchema, response.data)
 }
@@ -947,13 +974,17 @@ export const searchDataset = async (
  */
 export const validateDataset = async (
   inputFile: string,
-  preset?: string
+  preset?: string,
 ): Promise<DatasetValidationResponse> => {
   const response = await api.post('/dataset/validate', {
     input_file: inputFile,
-    preset
+    preset,
   })
-  return checkedData<DatasetValidationResponse>('validateDataset', validationResponseSchema, response.data)
+  return checkedData<DatasetValidationResponse>(
+    'validateDataset',
+    validationResponseSchema,
+    response.data,
+  )
 }
 
 /**
@@ -962,11 +993,13 @@ export const validateDataset = async (
  * 只读推荐，不写配置：它回的是「按这份数据的观测该用哪几档阈值」，
  * 真要落地仍走 `updateConfig`，两者分开才留得住「我看了建议、我决定不改」这一步。
  */
-export const autoConfigRecommend = async (
-  inputFile: string
-): Promise<AutoConfigResponse> => {
+export const autoConfigRecommend = async (inputFile: string): Promise<AutoConfigResponse> => {
   const response = await api.post('/dataset/auto-config', { input_file: inputFile })
-  return checkedData<AutoConfigResponse>('autoConfigRecommend', autoConfigResponseSchema, response.data)
+  return checkedData<AutoConfigResponse>(
+    'autoConfigRecommend',
+    autoConfigResponseSchema,
+    response.data,
+  )
 }
 
 // ============ 影响评估 / 语义检索（A279 第三批接线，L227） ============
@@ -983,7 +1016,7 @@ export const autoConfigRecommend = async (
 export const assessImpact = async (
   beforeFile: string,
   afterFile: string,
-  opts: { textField?: string; minScaleGain?: number } = {}
+  opts: { textField?: string; minScaleGain?: number } = {},
 ): Promise<ImpactResponse> => {
   const response = await api.post('/dataset/impact', {
     before_file: beforeFile,
@@ -1004,7 +1037,7 @@ export const assessImpact = async (
 export const semanticSearch = async (
   inputFile: string,
   query: string,
-  opts: { topK?: number; textKey?: string } = {}
+  opts: { topK?: number; textKey?: string } = {},
 ): Promise<SemanticSearchResponse> => {
   const response = await api.post('/dataset/semantic-search', {
     input_file: inputFile,
@@ -1012,7 +1045,11 @@ export const semanticSearch = async (
     top_k: opts.topK,
     text_key: opts.textKey,
   })
-  return checkedData<SemanticSearchResponse>('semanticSearch', semanticSearchResponseSchema, response.data)
+  return checkedData<SemanticSearchResponse>(
+    'semanticSearch',
+    semanticSearchResponseSchema,
+    response.data,
+  )
 }
 
 // ============ 字段级统计 / 特征普查 / 双集对比（A279 第四批接线，L228） ============
@@ -1028,7 +1065,7 @@ export const semanticSearch = async (
  */
 export const datasetStats = async (
   inputFile: string,
-  opts: { fields?: string[] } = {}
+  opts: { fields?: string[] } = {},
 ): Promise<StatisticsResponse> => {
   const response = await api.post('/dataset/stats', {
     input_file: inputFile,
@@ -1044,9 +1081,7 @@ export const datasetStats = async (
  * 所以本层没有可省的默认可写；稀疏阈值 0.1 住在 `augmentor/feature_detect.py:59`，
  * 这只端点不开放调整。
  */
-export const detectFeatures = async (
-  inputFile: string
-): Promise<FeaturesResponse> => {
+export const detectFeatures = async (inputFile: string): Promise<FeaturesResponse> => {
   const response = await api.post('/dataset/features', { input_file: inputFile })
   return checkedData<FeaturesResponse>('detectFeatures', featuresResponseSchema, response.data)
 }
@@ -1062,7 +1097,7 @@ export const detectFeatures = async (
 export const compareDatasets = async (
   datasetA: string,
   datasetB: string,
-  opts: { nameA?: string; nameB?: string; keyFields?: string[] } = {}
+  opts: { nameA?: string; nameB?: string; keyFields?: string[] } = {},
 ): Promise<CompareResponse> => {
   const response = await api.post('/dataset/compare', {
     dataset_a: datasetA,
@@ -1088,7 +1123,7 @@ export const compareDatasets = async (
 export const convertDataset = async (
   inputFile: string,
   outputFile: string,
-  opts: { targetFormat?: string; sourceFormat?: string } = {}
+  opts: { targetFormat?: string; sourceFormat?: string } = {},
 ): Promise<ConvertResponse> => {
   const response = await api.post('/dataset/convert', {
     input_file: inputFile,
@@ -1109,7 +1144,7 @@ export const convertDataset = async (
 export const mergeDatasets = async (
   inputs: string[],
   outputFile: string,
-  opts: { deduplicate?: boolean } = {}
+  opts: { deduplicate?: boolean } = {},
 ): Promise<MergeResponse> => {
   const response = await api.post('/dataset/merge', {
     inputs,
@@ -1139,7 +1174,7 @@ export const splitDataset = async (
     stratify?: boolean
     stratifyKey?: string
     shuffle?: boolean
-  } = {}
+  } = {},
 ): Promise<SplitResponse> => {
   const response = await api.post('/dataset/split', {
     input_file: inputFile,
@@ -1179,7 +1214,7 @@ export const sampleDataset = async (
     ratio?: number
     seed?: number
     stratifyKey?: string
-  } = {}
+  } = {},
 ): Promise<SampleResponse> => {
   const response = await api.post('/dataset/sample', {
     input_file: inputFile,
@@ -1206,7 +1241,7 @@ export const sampleDataset = async (
 export const aggregateDatasets = async (
   datasets: Record<string, string>,
   outputFile: string,
-  opts: { strategy?: string; targetSize?: number } = {}
+  opts: { strategy?: string; targetSize?: number } = {},
 ): Promise<AggregateResponse> => {
   const response = await api.post('/dataset/aggregate', {
     datasets,
@@ -1229,7 +1264,7 @@ export const aggregateDatasets = async (
 export const convertToRag = async (
   inputFile: string,
   outputFile: string,
-  opts: { format?: string } = {}
+  opts: { format?: string } = {},
 ): Promise<RagResponse> => {
   const response = await api.post('/dataset/rag', {
     input_file: inputFile,
@@ -1268,7 +1303,7 @@ export const listBackups = async (backupDir?: string): Promise<BackupListRespons
  */
 export const createBackup = async (
   inputFile: string,
-  opts: { name?: string; backupDir?: string } = {}
+  opts: { name?: string; backupDir?: string } = {},
 ): Promise<BackupInfo> => {
   // 请求体提到上面一行：`params` 块与所属调用的间隔必须在消费对账那把尺子的窗口内
   // （`test_api_endpoint_consumption_l224.py` 的 `PARAMS_MAX_GAP = 60`），否则这一条调用的
@@ -1291,14 +1326,18 @@ export const createBackup = async (
 export const restoreBackup = async (
   backupId: string,
   outputFile: string,
-  backupDir?: string
+  backupDir?: string,
 ): Promise<RestoreBackupResponse> => {
   const response = await api.post(
     `/system/backups/${encodeURIComponent(backupId)}/restore`,
     { output_file: outputFile },
-    { params: { backup_dir: backupDir || undefined } }
+    { params: { backup_dir: backupDir || undefined } },
   )
-  return checkedData<RestoreBackupResponse>('restoreBackup', restoreBackupResponseSchema, response.data)
+  return checkedData<RestoreBackupResponse>(
+    'restoreBackup',
+    restoreBackupResponseSchema,
+    response.data,
+  )
 }
 
 /**
@@ -1309,7 +1348,7 @@ export const restoreBackup = async (
  */
 export const deleteBackup = async (
   backupId: string,
-  backupDir?: string
+  backupDir?: string,
 ): Promise<MutationResponse> => {
   const response = await api.delete(`/system/backups/${encodeURIComponent(backupId)}`, {
     params: { backup_dir: backupDir || undefined },
@@ -1326,12 +1365,16 @@ export const deleteBackup = async (
  * 自 L244 起有 CLI 动作（`backup --action verify`，查到损坏时退出码 1，A329 已收）。
  */
 export const verifyBackups = async (
-  opts: { backupId?: string; backupDir?: string } = {}
+  opts: { backupId?: string; backupDir?: string } = {},
 ): Promise<BackupVerifyResponse> => {
   const response = await api.get('/system/backups/verify', {
     params: { backup_id: opts.backupId || undefined, backup_dir: opts.backupDir || undefined },
   })
-  return checkedData<BackupVerifyResponse>('verifyBackups', backupVerifyResponseSchema, response.data)
+  return checkedData<BackupVerifyResponse>(
+    'verifyBackups',
+    backupVerifyResponseSchema,
+    response.data,
+  )
 }
 
 /**
@@ -1343,13 +1386,17 @@ export const verifyBackups = async (
  * 输入框，因为「清理」的后果不可逆。
  */
 export const cleanupBackups = async (
-  opts: { maxBackups?: number; backupDir?: string } = {}
+  opts: { maxBackups?: number; backupDir?: string } = {},
 ): Promise<BackupCleanupResponse> => {
   const body = { max_backups: opts.maxBackups ?? 10 }
   const response = await api.post('/system/backups/cleanup', body, {
     params: { backup_dir: opts.backupDir || undefined },
   })
-  return checkedData<BackupCleanupResponse>('cleanupBackups', backupCleanupResponseSchema, response.data)
+  return checkedData<BackupCleanupResponse>(
+    'cleanupBackups',
+    backupCleanupResponseSchema,
+    response.data,
+  )
 }
 
 // ============ 系统 · 数据集血缘（A279 第八批接线，L232） ============
@@ -1365,12 +1412,16 @@ export const cleanupBackups = async (
  * 另有一条口径：注册表目录不存在时这两支只读端点**不会**把它建出来（A307，L249 收口）。
  */
 export const listDependencyDatasets = async (
-  registryPath?: string
+  registryPath?: string,
 ): Promise<DatasetRegistryListResponse> => {
   const response = await api.get('/system/dependency/datasets', {
     params: { registry_path: registryPath || undefined },
   })
-  return checkedData<DatasetRegistryListResponse>('listDependencyDatasets', dependencyDatasetListResponseSchema, response.data)
+  return checkedData<DatasetRegistryListResponse>(
+    'listDependencyDatasets',
+    dependencyDatasetListResponseSchema,
+    response.data,
+  )
 }
 
 /**
@@ -1389,7 +1440,7 @@ export const listDependencyDatasets = async (
 export const registerDependencyDataset = async (
   name: string,
   inputFile: string,
-  opts: { description?: string; tags?: string[]; registryPath?: string } = {}
+  opts: { description?: string; tags?: string[]; registryPath?: string } = {},
 ): Promise<DatasetRegistryEntry> => {
   // 请求体提到调用之前：`params` 块与所属调用的间隔必须落在消费对账那把尺子的窗口内
   // （`test_api_endpoint_consumption_l224.py` 的 `PARAMS_MAX_GAP = 60`），否则 `registry_path`
@@ -1403,7 +1454,11 @@ export const registerDependencyDataset = async (
   const response = await api.post('/system/dependency/datasets', body, {
     params: { registry_path: opts.registryPath || undefined },
   })
-  return checkedData<DatasetRegistryEntry>('registerDependencyDataset', datasetInfoResponseSchema, response.data)
+  return checkedData<DatasetRegistryEntry>(
+    'registerDependencyDataset',
+    datasetInfoResponseSchema,
+    response.data,
+  )
 }
 
 /**
@@ -1416,12 +1471,16 @@ export const registerDependencyDataset = async (
  * register/list/graph/validate，边只能由 SDK 的 `add_dependency` 建立（A309）。
  */
 export const getDependencyGraph = async (
-  registryPath?: string
+  registryPath?: string,
 ): Promise<DependencyGraphResponse> => {
   const response = await api.get('/system/dependency/graph', {
     params: { registry_path: registryPath || undefined },
   })
-  return checkedData<DependencyGraphResponse>('getDependencyGraph', dependencyGraphResponseSchema, response.data)
+  return checkedData<DependencyGraphResponse>(
+    'getDependencyGraph',
+    dependencyGraphResponseSchema,
+    response.data,
+  )
 }
 
 // ============ 系统 · 监控 / 自测 / 迁移 / 流式 / 配置校验（A279 第九批接线，L234） ============
@@ -1435,7 +1494,11 @@ export const getDependencyGraph = async (
  */
 export const runQualityMonitor = async (inputFile: string): Promise<QualitySnapshotResponse> => {
   const response = await api.post('/system/monitor', { input_file: inputFile })
-  return checkedData<QualitySnapshotResponse>('runQualityMonitor', qualitySnapshotResponseSchema, response.data)
+  return checkedData<QualitySnapshotResponse>(
+    'runQualityMonitor',
+    qualitySnapshotResponseSchema,
+    response.data,
+  )
 }
 
 /**
@@ -1449,13 +1512,17 @@ export const runQualityMonitor = async (inputFile: string): Promise<QualitySnaps
  */
 export const runDatasetAutoTest = async (
   inputFile: string,
-  opts: { suite?: string } = {}
+  opts: { suite?: string } = {},
 ): Promise<TestSuiteResponse> => {
   const response = await api.post('/system/auto-test', {
     input_file: inputFile,
     suite: opts.suite || undefined,
   })
-  return checkedData<TestSuiteResponse>('runDatasetAutoTest', testSuiteResponseSchema, response.data)
+  return checkedData<TestSuiteResponse>(
+    'runDatasetAutoTest',
+    testSuiteResponseSchema,
+    response.data,
+  )
 }
 
 /**
@@ -1472,7 +1539,7 @@ export const runDatasetAutoTest = async (
 export const migrateDataset = async (
   inputFile: string,
   outputFile: string,
-  opts: { rules?: string[] } = {}
+  opts: { rules?: string[] } = {},
 ): Promise<MigrationResponse> => {
   const response = await api.post('/system/migrate', {
     input_file: inputFile,
@@ -1495,7 +1562,7 @@ export const migrateDataset = async (
 export const streamProcess = async (
   inputFile: string,
   outputFile: string,
-  opts: { operation?: string; chunkSize?: number; outputFormat?: string } = {}
+  opts: { operation?: string; chunkSize?: number; outputFormat?: string } = {},
 ): Promise<StreamReportResponse> => {
   const response = await api.post('/system/stream', {
     input_file: inputFile,
@@ -1504,7 +1571,11 @@ export const streamProcess = async (
     chunk_size: opts.chunkSize && opts.chunkSize > 0 ? opts.chunkSize : undefined,
     output_format: opts.outputFormat || undefined,
   })
-  return checkedData<StreamReportResponse>('streamProcess', streamReportResponseSchema, response.data)
+  return checkedData<StreamReportResponse>(
+    'streamProcess',
+    streamReportResponseSchema,
+    response.data,
+  )
 }
 
 /**
@@ -1517,12 +1588,16 @@ export const streamProcess = async (
  * 也是躲判决的，不是形状卫生。
  */
 export const validateConfigFile = async (
-  opts: { path?: string } = {}
+  opts: { path?: string } = {},
 ): Promise<ConfigValidationResponse> => {
   const response = await api.post('/system/validate-config', {
     path: opts.path || undefined,
   })
-  return checkedData<ConfigValidationResponse>('validateConfigFile', configValidationResponseSchema, response.data)
+  return checkedData<ConfigValidationResponse>(
+    'validateConfigFile',
+    configValidationResponseSchema,
+    response.data,
+  )
 }
 
 // ============ 质量 · 健康门禁（A279 第十批接线，L235） ============
@@ -1560,7 +1635,7 @@ export const healthGate = async (
     duplicateRateMax?: number
     completenessMin?: number
     blockOnWarning?: boolean
-  } = {}
+  } = {},
 ): Promise<HealthGateResponse> => {
   const response = await api.post('/quality/health-gate', {
     input_file: inputFile,
@@ -1590,7 +1665,11 @@ export const healthGate = async (
  */
 export const systemDependencies = async (): Promise<DependencyDiagnostics> => {
   const response = await api.get('/system/dependencies')
-  return checkedData<DependencyDiagnostics>('systemDependencies', dependenciesResponseSchema, response.data)
+  return checkedData<DependencyDiagnostics>(
+    'systemDependencies',
+    dependenciesResponseSchema,
+    response.data,
+  )
 }
 
 /**
@@ -1623,7 +1702,7 @@ export const translateDataset = async (
     targetLang?: string
     textKey?: string
     keepOriginal?: boolean
-  } = {}
+  } = {},
 ): Promise<TranslateResponse> => {
   const response = await api.post('/dataset/translate', {
     input_file: inputFile,

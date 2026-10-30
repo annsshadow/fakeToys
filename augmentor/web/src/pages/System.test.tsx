@@ -23,16 +23,17 @@ import { message } from 'antd'
 
 window.matchMedia =
   window.matchMedia ||
-  ((query: string) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: () => {},
-    removeListener: () => {},
-    addEventListener: () => {},
-    removeEventListener: () => {},
-    dispatchEvent: () => false,
-  }) as unknown as MediaQueryList)
+  ((query: string) =>
+    ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    }) as unknown as MediaQueryList)
 class RO {
   observe() {}
   unobserve() {}
@@ -163,12 +164,12 @@ describe('System 依赖缺失态', () => {
     const { container } = render(<System />)
 
     await waitFor(() =>
-      expect(screen.getByText('缺少必需依赖，部分功能将不可用')).toBeInTheDocument()
+      expect(screen.getByText('缺少必需依赖，部分功能将不可用')).toBeInTheDocument(),
     )
     expect(screen.getByText(/缺失：faiss/)).toBeInTheDocument()
     // 明细里 faiss 一行标红「未安装」
     expect(
-      Array.from(container.querySelectorAll('.ant-tag-red')).map((t) => t.textContent)
+      Array.from(container.querySelectorAll('.ant-tag-red')).map((t) => t.textContent),
     ).toContain('未安装')
     // 降级功能标签
     const orange = container.querySelector('.ant-tag-orange')
@@ -193,9 +194,9 @@ describe('System 依赖缺失态', () => {
  */
 describe('System 模型重试读数（L237 补渲染）', () => {
   const statistic = (container: HTMLElement, title: string) =>
-    Array.from(container.querySelectorAll('.ant-statistic')).find(
-      (s) => s.querySelector('.ant-statistic-title')?.textContent === title
-    )?.querySelector('.ant-statistic-content-value')?.textContent
+    Array.from(container.querySelectorAll('.ant-statistic'))
+      .find((s) => s.querySelector('.ant-statistic-title')?.textContent === title)
+      ?.querySelector('.ant-statistic-content-value')?.textContent
 
   it('后端在、重试过 0 次时两格显示 0（不是「无后端」）', async () => {
     spies.getServiceStatus.mockResolvedValue(HEALTHY)
@@ -232,9 +233,7 @@ describe('System 模型重试读数（L237 补渲染）', () => {
 
     const { container } = render(<System />)
 
-    await waitFor(() =>
-      expect(statistic(container, '累计生成耗时（秒）')).toBe('无后端')
-    )
+    await waitFor(() => expect(statistic(container, '累计生成耗时（秒）')).toBe('无后端'))
     // 其余两格不受影响
     expect(statistic(container, '模型重试次数')).toBe('0')
   })
@@ -244,9 +243,7 @@ describe('System 模型重试读数（L237 补渲染）', () => {
 
     render(<System />)
 
-    await waitFor(() =>
-      expect(document.body.textContent).toContain('「无后端」是 null，不是 0')
-    )
+    await waitFor(() => expect(document.body.textContent).toContain('「无后端」是 null，不是 0'))
     expect(document.body.textContent).toContain('/api/health')
   })
 })
@@ -257,10 +254,9 @@ describe('System 失败路径', () => {
 
     render(<System />)
 
-    await waitFor(
-      () => expect(document.body.textContent).toContain('获取服务状态失败'),
-      { timeout: 10000 }
-    )
+    await waitFor(() => expect(document.body.textContent).toContain('获取服务状态失败'), {
+      timeout: 10000,
+    })
     // L236 起门是 diag（自取一面 ?? 综合状态里那份）：这一格两面都空 ⇒ 整块不渲染
     expect(screen.queryByText('依赖明细')).not.toBeInTheDocument()
   })
@@ -304,9 +300,7 @@ describe('System 依赖诊断独立取数（L236 接线）', () => {
     render(<System />)
 
     expect(await screen.findByText(/必需依赖齐备/)).toBeInTheDocument()
-    expect(
-      screen.queryByText(/这份依赖诊断来自不碰管道的那条端点/)
-    ).not.toBeInTheDocument()
+    expect(screen.queryByText(/这份依赖诊断来自不碰管道的那条端点/)).not.toBeInTheDocument()
   })
 
   it('卡上那颗刷新只打依赖诊断那条端点，不再重取综合状态', async () => {
@@ -346,8 +340,8 @@ describe('System 向量库状态（L225 接线）', () => {
     // antd Statistic 给整数加千分位分隔符：渲染的是 1,200 而不是 1200（实测）
     expect(
       Array.from(container.querySelectorAll('.ant-statistic-content-value')).map(
-        (el) => el.textContent
-      )
+        (el) => el.textContent,
+      ),
     ).toEqual(expect.arrayContaining(['1,200', '512']))
     expect(screen.getByText('backend: faiss')).toBeInTheDocument()
     expect(screen.getByText('collection: augmentor_v1')).toBeInTheDocument()
@@ -378,10 +372,9 @@ describe('System 向量库状态（L225 接线）', () => {
 
     // 两面的取数各自独立发起，向量面失败不该把服务状态一起拖掉
     expect(await screen.findByText(/必需依赖齐备/)).toBeInTheDocument()
-    await waitFor(
-      () => expect(document.body.textContent).toContain('获取向量库状态失败'),
-      { timeout: 10000 }
-    )
+    await waitFor(() => expect(document.body.textContent).toContain('获取向量库状态失败'), {
+      timeout: 10000,
+    })
     expect(screen.getByText('向量库状态未取到')).toBeInTheDocument()
     expect(screen.queryByText('自动建库')).not.toBeInTheDocument()
   })

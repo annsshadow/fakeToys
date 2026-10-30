@@ -26,16 +26,17 @@ import { message } from 'antd'
 
 window.matchMedia =
   window.matchMedia ||
-  ((query: string) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: () => {},
-    removeListener: () => {},
-    addEventListener: () => {},
-    removeEventListener: () => {},
-    dispatchEvent: () => false,
-  }) as unknown as MediaQueryList)
+  ((query: string) =>
+    ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    }) as unknown as MediaQueryList)
 class RO {
   observe() {}
   unobserve() {}
@@ -98,9 +99,7 @@ const fx = vi.hoisted(() => {
   }
   const CLEANUP_OK = { deleted_count: 2, max_backups: 1 }
   const FILES = {
-    files: [
-      { name: 'train_data1.json', path: 'D:\\data\\train_data1.json', size: 2 },
-    ],
+    files: [{ name: 'train_data1.json', path: 'D:\\data\\train_data1.json', size: 2 }],
   }
   return {
     CHECKSUM,
@@ -214,9 +213,7 @@ async function waitBackups() {
  * `getAllByLabelText` 回两个元素），所以按标签取会撞「多个匹配」。这里显式挑 INPUT。
  */
 function sourceInput(): HTMLInputElement {
-  const input = screen
-    .getAllByLabelText('备份源文件')
-    .find((el) => el.tagName === 'INPUT')
+  const input = screen.getAllByLabelText('备份源文件').find((el) => el.tagName === 'INPUT')
   if (!input) {
     throw new Error('备份源文件的输入框没渲染出来')
   }
@@ -240,7 +237,7 @@ describe('System 备份列表渲染', () => {
     expect(screen.getAllByText(CHECKSUM.slice(0, 12))).toHaveLength(3)
     expect(screen.queryByText(CHECKSUM)).not.toBeInTheDocument()
     const cell = Array.from(container.querySelectorAll('span[title]')).find(
-      (el) => el.getAttribute('title') === CHECKSUM
+      (el) => el.getAttribute('title') === CHECKSUM,
     )
     expect(cell).toBeTruthy()
   })
@@ -254,7 +251,7 @@ describe('System 创建备份', () => {
     fireEvent.click(screen.getByRole('button', { name: '创建备份' }))
 
     await waitFor(() =>
-      expect(document.body.textContent).toContain('先填要备份的那份服务端数据文件')
+      expect(document.body.textContent).toContain('先填要备份的那份服务端数据文件'),
     )
     expect(spies.createBackup).not.toHaveBeenCalled()
   })
@@ -271,13 +268,11 @@ describe('System 创建备份', () => {
     fireEvent.click(screen.getByRole('button', { name: '创建备份' }))
 
     await waitFor(() =>
-      expect(spies.createBackup).toHaveBeenCalledWith('data/p.json', { name: 'mybak' })
+      expect(spies.createBackup).toHaveBeenCalledWith('data/p.json', { name: 'mybak' }),
     )
     await waitFor(() => expect(document.body.textContent).toContain('已备份 5 条 ⇒ mybak'))
     // 创建成功后重新取一次列表，否则页面上看不见刚建的那一条
-    await waitFor(() =>
-      expect(spies.listBackups.mock.calls.length).toBeGreaterThan(callsBefore)
-    )
+    await waitFor(() => expect(spies.listBackups.mock.calls.length).toBeGreaterThan(callsBefore))
   })
 
   it('白名单外被判 403 时，页面上是服务端那句判决而不是「失败了」', async () => {
@@ -292,9 +287,7 @@ describe('System 创建备份', () => {
     })
     fireEvent.click(screen.getByRole('button', { name: '创建备份' }))
 
-    await waitFor(() =>
-      expect(document.body.textContent).toContain('路径超出允许的数据目录范围')
-    )
+    await waitFor(() => expect(document.body.textContent).toContain('路径超出允许的数据目录范围'))
   })
 })
 
@@ -321,7 +314,7 @@ describe('System 恢复与删除', () => {
 
     await waitFor(() => expect(spies.restoreBackup).toHaveBeenCalledWith('mybak', 'r.json'))
     await waitFor(() =>
-      expect(document.body.textContent).toContain('已恢复 5 条 ⇒ D:\\data\\r.json')
+      expect(document.body.textContent).toContain('已恢复 5 条 ⇒ D:\\data\\r.json'),
     )
   })
 
@@ -337,9 +330,7 @@ describe('System 恢复与删除', () => {
 
     await waitFor(() => expect(spies.deleteBackup).toHaveBeenCalledWith('mybak'))
     await waitFor(() => expect(document.body.textContent).toContain('已删除备份 mybak'))
-    await waitFor(() =>
-      expect(spies.listBackups.mock.calls.length).toBeGreaterThan(callsBefore)
-    )
+    await waitFor(() => expect(spies.listBackups.mock.calls.length).toBeGreaterThan(callsBefore))
   })
 })
 
@@ -406,7 +397,7 @@ describe('System 校验完整性（L243，A299 的读数面）', () => {
     // 回执那句要 waitFor：同步读 `document.body.textContent` 实测拿不到它，
     // 而表格那一格已经在了（同族前例：`已备份 5 条 ⇒ mybak` 也是这么等的）。
     await waitFor(() =>
-      expect(document.body.textContent).toContain('2 只备份的校验和对不上，恢复它们会拿 409')
+      expect(document.body.textContent).toContain('2 只备份的校验和对不上，恢复它们会拿 409'),
     )
     const text = document.body.textContent || ''
     // 好 / 坏 / 文件丢了：三只 id 都在，判决三格各就各位
@@ -430,9 +421,7 @@ describe('System 校验完整性（L243，A299 的读数面）', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '校验备份完整性' }))
 
-    await waitFor(() =>
-      expect(document.body.textContent).toContain('已校验 1 只备份，全部对得上')
-    )
+    await waitFor(() => expect(document.body.textContent).toContain('已校验 1 只备份，全部对得上'))
   })
 
   it('取不到时只报这一句，备份列表照旧渲染', async () => {
@@ -481,12 +470,10 @@ describe('System 清理旧备份（L243，A300 的写面）', () => {
     // 数字框初值 10 = 服务端默认，页面不送 backup_dir（落点由服务端白名单首根决定）
     await waitFor(() => expect(spies.cleanupBackups).toHaveBeenCalledWith({ maxBackups: 10 }))
     await waitFor(() =>
-      expect(document.body.textContent).toContain('已删除 2 只旧备份，保留最新 1 只')
+      expect(document.body.textContent).toContain('已删除 2 只旧备份，保留最新 1 只'),
     )
     // 删完必须重取列表，否则页面上还挂着已被删掉的那几条
-    await waitFor(() =>
-      expect(spies.listBackups.mock.calls.length).toBeGreaterThan(callsBefore)
-    )
+    await waitFor(() => expect(spies.listBackups.mock.calls.length).toBeGreaterThan(callsBefore))
   })
 
   it('确认框上写的就是当前那格份数', async () => {
@@ -511,9 +498,7 @@ describe('System 清理旧备份（L243，A300 的写面）', () => {
     fireEvent.click(screen.getByRole('button', { name: '清理旧备份' }))
     fireEvent.click(screen.getByRole('button', { name: 'OK' }))
 
-    await waitFor(() =>
-      expect(document.body.textContent).toContain('缺少或无效的 X-API-Key')
-    )
+    await waitFor(() => expect(document.body.textContent).toContain('缺少或无效的 X-API-Key'))
   })
 })
 
@@ -525,10 +510,9 @@ describe('System 备份面的失败只降级自己', () => {
 
     expect(await screen.findByText(/必需依赖齐备/)).toBeInTheDocument()
     expect(await screen.findByText('备份列表未取到')).toBeInTheDocument()
-    await waitFor(
-      () => expect(document.body.textContent).toContain('获取备份列表失败'),
-      { timeout: 10000 }
-    )
+    await waitFor(() => expect(document.body.textContent).toContain('获取备份列表失败'), {
+      timeout: 10000,
+    })
   })
 
   it('候选取不到时只报候选那一句，备份列表照旧渲染', async () => {
@@ -539,9 +523,8 @@ describe('System 备份面的失败只降级自己', () => {
     render(<System />)
 
     await waitBackups()
-    await waitFor(
-      () => expect(document.body.textContent).toContain('获取数据文件列表失败'),
-      { timeout: 10000 }
-    )
+    await waitFor(() => expect(document.body.textContent).toContain('获取数据文件列表失败'), {
+      timeout: 10000,
+    })
   })
 })

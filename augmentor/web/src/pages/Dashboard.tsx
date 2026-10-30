@@ -20,7 +20,7 @@ export default function Dashboard() {
 
   const loadVersions = () => {
     getVersions()
-      .then(result => {
+      .then((result) => {
         const list = result.versions || []
         setVersions(list)
         setCurrentVersion(list.length ? list[0].version_id : null)
@@ -29,9 +29,15 @@ export default function Dashboard() {
   }
 
   useEffect(() => {
-    healthCheck().then(setHealth).catch((err) => message.error(apiErrorDetail(err, '服务健康检查失败')))
-    getConfig().then(setConfig).catch((err) => message.error(apiErrorDetail(err, '加载配置失败')))
-    getModels().then(setModels).catch((err) => message.error(apiErrorDetail(err, '加载模型列表失败')))
+    healthCheck()
+      .then(setHealth)
+      .catch((err) => message.error(apiErrorDetail(err, '服务健康检查失败')))
+    getConfig()
+      .then(setConfig)
+      .catch((err) => message.error(apiErrorDetail(err, '加载配置失败')))
+    getModels()
+      .then(setModels)
+      .catch((err) => message.error(apiErrorDetail(err, '加载模型列表失败')))
     loadVersions()
   }, [])
 
@@ -80,10 +86,7 @@ export default function Dashboard() {
           <Card title="可用模型" style={{ marginTop: 16 }}>
             <Space wrap>
               {(models?.models || []).map((name: string) => (
-                <Tag
-                  key={name}
-                  color={name === models?.default ? 'green' : 'blue'}
-                >
+                <Tag key={name} color={name === models?.default ? 'green' : 'blue'}>
                   {name}
                 </Tag>
               ))}

@@ -13,16 +13,17 @@ import { message } from 'antd'
 
 window.matchMedia =
   window.matchMedia ||
-  ((query: string) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: () => {},
-    removeListener: () => {},
-    addEventListener: () => {},
-    removeEventListener: () => {},
-    dispatchEvent: () => false,
-  }) as unknown as MediaQueryList)
+  ((query: string) =>
+    ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    }) as unknown as MediaQueryList)
 class RO {
   observe() {}
   unobserve() {}
@@ -63,9 +64,7 @@ describe('Multimodal 格式提示', () => {
   it('Alert 从 formats 渲染图像/音频扩展名', async () => {
     render(<Multimodal />)
 
-    await waitFor(() =>
-      expect(document.body.textContent).toContain('支持图像格式：.png、.jpg')
-    )
+    await waitFor(() => expect(document.body.textContent).toContain('支持图像格式：.png、.jpg'))
     expect(document.body.textContent).toContain('支持音频格式：.wav')
   })
 })
@@ -129,9 +128,9 @@ describe('Multimodal 目录扫描', () => {
     await waitFor(() => expect(spies.scanMultimodal).toHaveBeenCalledWith('data/mm'))
     // 「有效」在统计标题与记录标签里都出现，故按统计标题类精确定位三张统计
     await waitFor(() => expect(screen.getByText('记录数')).toBeInTheDocument())
-    const statTitles = Array.from(
-      container.querySelectorAll('.ant-statistic-title')
-    ).map((el) => el.textContent)
+    const statTitles = Array.from(container.querySelectorAll('.ant-statistic-title')).map(
+      (el) => el.textContent,
+    )
     expect(statTitles).toEqual(['记录数', '有效', '错误'])
   })
 })

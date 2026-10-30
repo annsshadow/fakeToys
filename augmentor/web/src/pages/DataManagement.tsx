@@ -13,9 +13,43 @@ import {
   InputNumber,
   type TableColumnsType,
 } from 'antd'
-import { DownloadOutlined, DeleteOutlined, EditOutlined, UploadOutlined, PlayCircleOutlined } from '@ant-design/icons'
-import { apiErrorDetail, bulkErrorDetail, isTimeoutError, getDataFiles, loadData, updateDataItem, deleteDataItem, exportData, uploadData, getDemoData, convertDataset, mergeDatasets, splitDataset, sampleDataset, aggregateDatasets, convertToRag, translateDataset } from '../services/api'
-import type { AggregateResponse, ConvertResponse, DataFileInfo, DataItem, MergeResponse, RagResponse, SampleResponse, SplitResponse, TranslateResponse } from '../types/api'
+import {
+  DownloadOutlined,
+  DeleteOutlined,
+  EditOutlined,
+  UploadOutlined,
+  PlayCircleOutlined,
+} from '@ant-design/icons'
+import {
+  apiErrorDetail,
+  bulkErrorDetail,
+  isTimeoutError,
+  getDataFiles,
+  loadData,
+  updateDataItem,
+  deleteDataItem,
+  exportData,
+  uploadData,
+  getDemoData,
+  convertDataset,
+  mergeDatasets,
+  splitDataset,
+  sampleDataset,
+  aggregateDatasets,
+  convertToRag,
+  translateDataset,
+} from '../services/api'
+import type {
+  AggregateResponse,
+  ConvertResponse,
+  DataFileInfo,
+  DataItem,
+  MergeResponse,
+  RagResponse,
+  SampleResponse,
+  SplitResponse,
+  TranslateResponse,
+} from '../types/api'
 
 /**
  * 上传时可显式声明的源格式
@@ -28,9 +62,19 @@ import type { AggregateResponse, ConvertResponse, DataFileInfo, DataItem, MergeR
  * L229 起它同时是**转换卡「源格式」下拉**的清单：读边只有这一份权威。
  */
 const UPLOAD_FORMAT_CHOICES = [
-  'json', 'jsonl', 'csv', 'tsv', 'alpaca', 'sharegpt', 'chatml',
-  'llama_factory', 'vicuna', 'belle',
-  'excel', 'xlsx', 'xls',
+  'json',
+  'jsonl',
+  'csv',
+  'tsv',
+  'alpaca',
+  'sharegpt',
+  'chatml',
+  'llama_factory',
+  'vicuna',
+  'belle',
+  'excel',
+  'xlsx',
+  'xls',
 ]
 
 /**
@@ -43,8 +87,18 @@ const UPLOAD_FORMAT_CHOICES = [
  * 且 detail 里逐条列出这十二个合法目标——页面不必再自造一份解释。
  */
 const CONVERT_TARGET_FORMATS = [
-  'json', 'jsonl', 'csv', 'tsv', 'alpaca', 'sharegpt', 'chatml',
-  'llama_factory', 'vicuna', 'belle', 'excel', 'xlsx',
+  'json',
+  'jsonl',
+  'csv',
+  'tsv',
+  'alpaca',
+  'sharegpt',
+  'chatml',
+  'llama_factory',
+  'vicuna',
+  'belle',
+  'excel',
+  'xlsx',
 ]
 
 /**
@@ -180,7 +234,7 @@ export default function DataManagement() {
     try {
       const items = await getDemoData()
       const file = new File([JSON.stringify(items, null, 2)], 'demo_data.json', {
-        type: 'application/json'
+        type: 'application/json',
       })
       // 显式传 `json` 而不是用页面上的声明值：这份内容是我们自己序列化的，格式没有
       // 未知数；若跟着用户的下拉框走，选了 `csv` 的人一点「加载演示数据」就会收到
@@ -234,7 +288,7 @@ export default function DataManagement() {
         } catch (err) {
           message.error(apiErrorDetail(err, '删除失败'))
         }
-      }
+      },
     })
   }
 
@@ -271,10 +325,12 @@ export default function DataManagement() {
     try {
       // `convertSource` 是空串（「自动」）时服务层会把这一格整个丢掉，
       // 让「省略」与「显式声明」在 API 面上保持两种形状。
-      setConvertResult(await convertDataset(selectedFile, convertOut, {
-        targetFormat: convertTarget,
-        sourceFormat: convertSource,
-      }))
+      setConvertResult(
+        await convertDataset(selectedFile, convertOut, {
+          targetFormat: convertTarget,
+          sourceFormat: convertSource,
+        }),
+      )
     } catch (err) {
       message.error(apiErrorDetail(err, '格式转换失败'))
     } finally {
@@ -306,15 +362,17 @@ export default function DataManagement() {
     try {
       // 比例用 `?? undefined` 而不是 `|| undefined`：`0` 是有意义的档位
       // （实测 `1.0/0/0` 回 `6/0/0` 且三段键都在），清空输入才是「交回服务端默认」。
-      setSplitResult(await splitDataset(selectedFile, splitOutDir, {
-        trainRatio: trainRatio ?? undefined,
-        valRatio: valRatio ?? undefined,
-        testRatio: testRatio ?? undefined,
-        seed: splitSeed ?? undefined,
-        stratify: splitStratify,
-        stratifyKey,
-        shuffle: splitShuffle,
-      }))
+      setSplitResult(
+        await splitDataset(selectedFile, splitOutDir, {
+          trainRatio: trainRatio ?? undefined,
+          valRatio: valRatio ?? undefined,
+          testRatio: testRatio ?? undefined,
+          seed: splitSeed ?? undefined,
+          stratify: splitStratify,
+          stratifyKey,
+          shuffle: splitShuffle,
+        }),
+      )
     } catch (err) {
       message.error(apiErrorDetail(err, '分割失败'))
     } finally {
@@ -362,13 +420,15 @@ export default function DataManagement() {
     try {
       // 数值格一律 `?? undefined` 而不是 `|| undefined`：`0` 是有意义的档位（实测 `size=0`
       // ⇒ 200 并在盘上留一份 `[]`），清空输入才是「这一格不发」。
-      setSampleResult(await sampleDataset(selectedFile, sampleOut, {
-        method: sampleMethod,
-        size: sampleSize ?? undefined,
-        ratio: sampleRatio ?? undefined,
-        seed: sampleSeed ?? undefined,
-        stratifyKey: sampleKey,
-      }))
+      setSampleResult(
+        await sampleDataset(selectedFile, sampleOut, {
+          method: sampleMethod,
+          size: sampleSize ?? undefined,
+          ratio: sampleRatio ?? undefined,
+          seed: sampleSeed ?? undefined,
+          stratifyKey: sampleKey,
+        }),
+      )
     } catch (err) {
       message.error(apiErrorDetail(err, '采样失败'))
     } finally {
@@ -408,10 +468,12 @@ export default function DataManagement() {
     }
     setLoading(true)
     try {
-      setAggResult(await aggregateDatasets(datasets, aggOut, {
-        strategy: aggStrategy,
-        targetSize: aggTargetSize ?? undefined,
-      }))
+      setAggResult(
+        await aggregateDatasets(datasets, aggOut, {
+          strategy: aggStrategy,
+          targetSize: aggTargetSize ?? undefined,
+        }),
+      )
     } catch (err) {
       message.error(apiErrorDetail(err, '聚合失败'))
     } finally {
@@ -457,12 +519,14 @@ export default function DataManagement() {
     }
     setLoading(true)
     try {
-      setTrResult(await translateDataset(selectedFile, {
-        outputFile: trOut,
-        targetLang: trLang,
-        textKey: trTextKey,
-        keepOriginal: trKeep,
-      }))
+      setTrResult(
+        await translateDataset(selectedFile, {
+          outputFile: trOut,
+          targetLang: trLang,
+          textKey: trTextKey,
+          keepOriginal: trKeep,
+        }),
+      )
     } catch (err) {
       setTrResult(null)
       message.error(apiErrorDetail(err, '翻译失败'))
@@ -475,19 +539,19 @@ export default function DataManagement() {
     {
       title: '索引',
       width: 60,
-      render: (_, __, index) => absoluteIndex(index) + 1
+      render: (_, __, index) => absoluteIndex(index) + 1,
     },
     {
       title: '问题 (instruction)',
       dataIndex: 'instruction',
       key: 'instruction',
-      ellipsis: true
+      ellipsis: true,
     },
     {
       title: '回答 (output)',
       dataIndex: 'output',
       key: 'output',
-      ellipsis: true
+      ellipsis: true,
     },
     {
       title: '操作',
@@ -508,8 +572,8 @@ export default function DataManagement() {
             onClick={() => handleDelete(absoluteIndex(index))}
           />
         </Space>
-      )
-    }
+      ),
+    },
   ]
 
   return (
@@ -521,13 +585,18 @@ export default function DataManagement() {
             onChange={(e) => setSelectedFile(e.target.value)}
             style={{ padding: '4px 8px', borderRadius: 4 }}
           >
-            {files.map(file => (
-              <option key={file.name} value={file.name}>{file.name}</option>
+            {files.map((file) => (
+              <option key={file.name} value={file.name}>
+                {file.name}
+              </option>
             ))}
           </select>
           <Input.Search
             placeholder="搜索问题或回答"
-            onSearch={(value) => { setSearch(value); setPage(1) }}
+            onSearch={(value) => {
+              setSearch(value)
+              setPage(1)
+            }}
             style={{ width: 300 }}
           />
         </Space>
@@ -541,7 +610,9 @@ export default function DataManagement() {
           >
             <option value="">自动（按扩展名）</option>
             {UPLOAD_FORMAT_CHOICES.map((fmt) => (
-              <option key={fmt} value={fmt}>{fmt}</option>
+              <option key={fmt} value={fmt}>
+                {fmt}
+              </option>
             ))}
           </select>
           <Upload
@@ -550,13 +621,25 @@ export default function DataManagement() {
             beforeUpload={(file) => handleUpload(file)}
             disabled={uploading}
           >
-            <Button icon={<UploadOutlined />} loading={uploading}>上传数据</Button>
+            <Button icon={<UploadOutlined />} loading={uploading}>
+              上传数据
+            </Button>
           </Upload>
-          <Button icon={<PlayCircleOutlined />} onClick={handleLoadDemo}>加载演示数据</Button>
-          <Button icon={<DownloadOutlined />} onClick={() => handleExport('jsonl')}>导出 JSONL</Button>
-          <Button icon={<DownloadOutlined />} onClick={() => handleExport('llama_factory')}>导出 Llama-Factory</Button>
-          <Button icon={<DownloadOutlined />} onClick={() => handleExport('alpaca')}>导出 Alpaca</Button>
-          <Button icon={<DownloadOutlined />} onClick={() => handleExport('sharegpt')}>导出 ShareGPT</Button>
+          <Button icon={<PlayCircleOutlined />} onClick={handleLoadDemo}>
+            加载演示数据
+          </Button>
+          <Button icon={<DownloadOutlined />} onClick={() => handleExport('jsonl')}>
+            导出 JSONL
+          </Button>
+          <Button icon={<DownloadOutlined />} onClick={() => handleExport('llama_factory')}>
+            导出 Llama-Factory
+          </Button>
+          <Button icon={<DownloadOutlined />} onClick={() => handleExport('alpaca')}>
+            导出 Alpaca
+          </Button>
+          <Button icon={<DownloadOutlined />} onClick={() => handleExport('sharegpt')}>
+            导出 ShareGPT
+          </Button>
         </Space>
       </div>
 
@@ -576,7 +659,10 @@ export default function DataManagement() {
           showSizeChanger
           showQuickJumper
           showTotal={(total) => `共 ${total} 条`}
-          onChange={(p, ps) => { setPage(p); setPageSize(ps) }}
+          onChange={(p, ps) => {
+            setPage(p)
+            setPageSize(ps)
+          }}
         />
       </div>
 
@@ -620,7 +706,9 @@ export default function DataManagement() {
               style={{ marginLeft: 6, padding: '4px 8px', borderRadius: 4 }}
             >
               {CONVERT_TARGET_FORMATS.map((fmt) => (
-                <option key={fmt} value={fmt}>{fmt}</option>
+                <option key={fmt} value={fmt}>
+                  {fmt}
+                </option>
               ))}
             </select>
           </label>
@@ -634,7 +722,9 @@ export default function DataManagement() {
             >
               <option value="">自动（按扩展名）</option>
               {UPLOAD_FORMAT_CHOICES.map((fmt) => (
-                <option key={fmt} value={fmt}>{fmt}</option>
+                <option key={fmt} value={fmt}>
+                  {fmt}
+                </option>
               ))}
             </select>
           </label>
@@ -645,16 +735,20 @@ export default function DataManagement() {
             onChange={(e) => setConvertOut(e.target.value)}
             style={{ width: 220 }}
           />
-          <Button onClick={handleConvert} loading={loading}>转换选中的文件</Button>
+          <Button onClick={handleConvert} loading={loading}>
+            转换选中的文件
+          </Button>
         </Space>
         <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75 }}>
-          源格式那张表比目标格式多一个 <code>xls</code>：读边认它，写边刻意不认（老 BIFF 容器写出来是假的）。
+          源格式那张表比目标格式多一个 <code>xls</code>：读边认它，写边刻意不认（老 BIFF
+          容器写出来是假的）。
         </div>
         {convertResult && (
           <div aria-label="转换回执" style={{ marginTop: 8 }}>
             按 <code>{convertResult.source_format}</code> 读入，落成{' '}
             <code>{convertResult.target_format}</code>：{convertResult.input_count} 条进 /{' '}
-            {convertResult.output_count} 条出 ⇒ {convertResult.output_file}（源 {convertResult.input_file}）
+            {convertResult.output_count} 条出 ⇒ {convertResult.output_file}（源{' '}
+            {convertResult.input_file}）
           </div>
         )}
       </Card>
@@ -666,11 +760,13 @@ export default function DataManagement() {
               <Checkbox
                 key={file.name}
                 checked={mergeInputs.includes(file.name)}
-                onChange={(e) => setMergeInputs(
-                  e.target.checked
-                    ? [...mergeInputs, file.name]
-                    : mergeInputs.filter((name) => name !== file.name)
-                )}
+                onChange={(e) =>
+                  setMergeInputs(
+                    e.target.checked
+                      ? [...mergeInputs, file.name]
+                      : mergeInputs.filter((name) => name !== file.name),
+                  )
+                }
               >
                 {file.name}
               </Checkbox>
@@ -687,11 +783,14 @@ export default function DataManagement() {
             <Checkbox checked={mergeDedup} onChange={(e) => setMergeDedup(e.target.checked)}>
               去重
             </Checkbox>
-            <Button onClick={handleMerge} loading={loading}>合并勾选的文件</Button>
+            <Button onClick={handleMerge} loading={loading}>
+              合并勾选的文件
+            </Button>
           </Space>
         </Space>
         <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75 }}>
-          这一档只控「开 / 关」：SDK 里那个宽松 / 保守两档的去重阈值在这只端点上不可调（见账本 A290）。
+          这一档只控「开 / 关」：SDK 里那个宽松 / 保守两档的去重阈值在这只端点上不可调（见账本
+          A290）。
         </div>
         {mergeResult && (
           <div aria-label="合并回执" style={{ marginTop: 8 }}>
@@ -765,11 +864,14 @@ export default function DataManagement() {
             <Checkbox checked={splitShuffle} onChange={(e) => setSplitShuffle(e.target.checked)}>
               先打乱
             </Checkbox>
-            <Button onClick={handleSplit} loading={loading}>分割选中的文件</Button>
+            <Button onClick={handleSplit} loading={loading}>
+              分割选中的文件
+            </Button>
           </Space>
         </Space>
         <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75 }}>
-          两条支路的判据不同：比例之和的容差默认支是 0.01、分层支是 1e-6，负数只有分层支会拦（A289）。
+          两条支路的判据不同：比例之和的容差默认支是 0.01、分层支是
+          1e-6，负数只有分层支会拦（A289）。
           分层字段给一个不存在的名字**不报错**——它把全部条目塌成一个分组，分段数看起来与用默认键时一样。
         </div>
         {splitResult && (
@@ -809,7 +911,9 @@ export default function DataManagement() {
               style={{ marginLeft: 6, padding: '4px 8px', borderRadius: 4 }}
             >
               {SAMPLE_METHODS.map((method) => (
-                <option key={method} value={method}>{method}</option>
+                <option key={method} value={method}>
+                  {method}
+                </option>
               ))}
             </select>
           </label>
@@ -857,20 +961,22 @@ export default function DataManagement() {
             onChange={(e) => setSampleOut(e.target.value)}
             style={{ width: 220 }}
           />
-          <Button onClick={handleSample} loading={loading}>采样选中的文件</Button>
+          <Button onClick={handleSample} loading={loading}>
+            采样选中的文件
+          </Button>
         </Space>
         <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75 }}>
           条数与比例同给时**条数赢**（实测 3 与 0.9 同给 ⇒ 出 3 条）；条数超过总条数会被夹到总条数；
-          条数 0、或比例小到取整归零，都**不报错**——交付一份内容为 <code>[]</code> 的空文件。
-          seed 留空则同一份输入两次采样结果不同（实测三次跑出三份）。
+          条数 0、或比例小到取整归零，都**不报错**——交付一份内容为 <code>[]</code> 的空文件。 seed
+          留空则同一份输入两次采样结果不同（实测三次跑出三份）。
         </div>
         <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
           比例越界**一律 400**，三种方法一种结局：判决是那句「ratio 必须是 0.0 到 1.0 之间的比例」，
           且 400 之前不落任何产物。改前这里是三种方法三种后果（random 支回 400 且是 CPython 的英文
           原话、systematic 支用负数切片交**前 10 条**、分层支交 0 条），那一格的账就是 **A292**，
           范围维在 L277 收口。
-          分层那一档：字段名不存在**不报错**（全部塌成一个分组），而分组键只取字段值的**前 10 个字符**——
-          前 10 个字相同的两条会被当成同一层，配额因此按折叠后的组数摊（A296）。
+          分层那一档：字段名不存在**不报错**（全部塌成一个分组），而分组键只取字段值的**前 10
+          个字符**—— 前 10 个字相同的两条会被当成同一层，配额因此按折叠后的组数摊（A296）。
         </div>
         {sampleResult && (
           <div aria-label="采样回执" style={{ marginTop: 8 }}>
@@ -884,7 +990,10 @@ export default function DataManagement() {
         <Space wrap direction="vertical" align="start">
           <Space wrap>
             {files.map((file) => (
-              <span key={file.name} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <span
+                key={file.name}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+              >
                 <Checkbox
                   aria-label={`聚合来源 ${file.name}`}
                   checked={aggSelected.includes(file.name)}
@@ -913,7 +1022,9 @@ export default function DataManagement() {
                 style={{ marginLeft: 6, padding: '4px 8px', borderRadius: 4 }}
               >
                 {AGGREGATE_STRATEGIES.map((strategy) => (
-                  <option key={strategy} value={strategy}>{strategy}</option>
+                  <option key={strategy} value={strategy}>
+                    {strategy}
+                  </option>
                 ))}
               </select>
             </label>
@@ -933,14 +1044,17 @@ export default function DataManagement() {
               onChange={(e) => setAggOut(e.target.value)}
               style={{ width: 220 }}
             />
-            <Button onClick={handleAggregate} loading={loading}>聚合勾选的来源</Button>
+            <Button onClick={handleAggregate} loading={loading}>
+              聚合勾选的来源
+            </Button>
           </Space>
         </Space>
         <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75 }}>
-          来源名由**页面**起（初始取文件名去掉扩展名，可改）：契约只收「名字 → 文件」的映射，不替你取名。
-          判重恒认 <code>instruction</code>、一致性恒认 <code>output</code> —— SDK 的 key_fields /
-          value_fields / random_state 在这只端点上一个都不可设，所以同问不同答的两条会被并成一条（留第一条），
-          而 weighted **不可复现**：同一份请求两次跑出的落盘内容不同（A293）。
+          来源名由**页面**起（初始取文件名去掉扩展名，可改）：契约只收「名字 →
+          文件」的映射，不替你取名。 判重恒认 <code>instruction</code>、一致性恒认{' '}
+          <code>output</code> —— SDK 的 key_fields / value_fields / random_state
+          在这只端点上一个都不可设，所以同问不同答的两条会被并成一条（留第一条）， 而 weighted
+          **不可复现**：同一份请求两次跑出的落盘内容不同（A293）。
         </div>
         <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
           目标条数只对 weighted 生效，配其余三支**完全空转**（实测填 1 配 union 仍交全量，A294）；
@@ -952,8 +1066,10 @@ export default function DataManagement() {
             落盘 {aggResult.aggregated_count} 条，去重删掉 {aggResult.removed_duplicates} 条 ⇒{' '}
             {aggResult.output_file}
             <div style={{ marginTop: 4, fontSize: 12 }}>
-              各源读入：{Object.entries(aggResult.source_counts)
-                .map(([name, count]) => `${name} ${count} 条`).join(' / ')}
+              各源读入：
+              {Object.entries(aggResult.source_counts)
+                .map(([name, count]) => `${name} ${count} 条`)
+                .join(' / ')}
             </div>
             {aggResult.conflicts.length > 0 && (
               <div style={{ marginTop: 4, fontSize: 12 }}>
@@ -982,7 +1098,9 @@ export default function DataManagement() {
             >
               <option value="">服务端默认（config.rag.default_format）</option>
               {RAG_FORMATS.map((fmt) => (
-                <option key={fmt} value={fmt}>{fmt}</option>
+                <option key={fmt} value={fmt}>
+                  {fmt}
+                </option>
               ))}
             </select>
           </label>
@@ -993,12 +1111,15 @@ export default function DataManagement() {
             onChange={(e) => setRagOut(e.target.value)}
             style={{ width: 220 }}
           />
-          <Button onClick={handleRag} loading={loading}>转成 RAG 格式</Button>
+          <Button onClick={handleRag} loading={loading}>
+            转成 RAG 格式
+          </Button>
         </Space>
         <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75 }}>
-          留空即交回服务端（那一格读 config.rag.default_format，实测 llamaindex），回执报的是**生效**的那一档；
-          送空串与省略实测等价，所以服务层把空串丢成不发这一格。切块的两个旋钮 chunk_size / chunk_overlap
-          **只从服务端配置读**，请求里多送会被静默忽略（实测产物逐字相同）。
+          留空即交回服务端（那一格读 config.rag.default_format，实测
+          llamaindex），回执报的是**生效**的那一档；
+          送空串与省略实测等价，所以服务层把空串丢成不发这一格。切块的两个旋钮 chunk_size /
+          chunk_overlap **只从服务端配置读**，请求里多送会被静默忽略（实测产物逐字相同）。
         </div>
         <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
           三档的记录数都等于输入条数（短文本不触发切块），但落盘的键集各不相同：langchain 2 键、
@@ -1007,8 +1128,8 @@ export default function DataManagement() {
         </div>
         {ragResult && (
           <div aria-label="RAG 回执" style={{ marginTop: 8 }}>
-            按 <code>{ragResult.format}</code> 落 {ragResult.record_count} 条记录
-            （输入 {ragResult.input_count} 条）⇒ {ragResult.output_file}
+            按 <code>{ragResult.format}</code> 落 {ragResult.record_count} 条记录 （输入{' '}
+            {ragResult.input_count} 条）⇒ {ragResult.output_file}
           </div>
         )}
       </Card>
@@ -1048,14 +1169,15 @@ export default function DataManagement() {
         <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75 }}>
           落盘口是本轮（L236 / A283①）新加的：输出文件名留空即**不落盘**，整份译文只在本次响应里、
           刷新页面就没了，所以页面把这一格收成必填。给了就把译文原子写进白名单数据根，回执报的是
-          **已 resolve 的绝对路径**。越界落点回 403 且模型调用 **0** 次——花钱路径上的参数错误先出声。
-          目标语言留空即读 config.multilingual.default_target_lang（实测 en），清单外的值回 400 且
-          detail 把支持清单列全、同样一次模型都不调。multilingual.enabled 出厂 false ⇒ 400
+          **已 resolve 的绝对路径**。越界落点回 403 且模型调用 **0**
+          次——花钱路径上的参数错误先出声。 目标语言留空即读
+          config.multilingual.default_target_lang（实测 en），清单外的值回 400 且 detail
+          把支持清单列全、同样一次模型都不调。multilingual.enabled 出厂 false ⇒ 400
           「翻译路径未启用」，那道闸在读盘之前。
         </div>
         <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
-          翻译字段名这一格后端判三档（A322，L238 起）：空串、纯空白、以及数据集里根本不存在
-          的键都回 **400**，detail 带上首条实际字段，且**一次模型都不调、一个字节都不落盘**。
+          翻译字段名这一格后端判三档（A322，L238 起）：空串、纯空白、以及数据集里根本不存在 的键都回
+          **400**，detail 带上首条实际字段，且**一次模型都不调、一个字节都不落盘**。
           改前这一档回的是 200：failed=0、模型 0 次，产物里凭空多出三个键——那一列、它的
           _original，还有一个 language 目标语言戳（一个字没翻也照盖）。留心的仍是同一件事：
           **别把「200 且 failed=0」读成翻成了**，没翻成的条目回退原文，形状与成功时相同。

@@ -74,7 +74,7 @@ const rawUiSources = {
 } as Record<string, string>
 
 const uiSources = Object.fromEntries(
-  Object.entries(rawUiSources).filter(([name]) => !name.endsWith('.test.tsx'))
+  Object.entries(rawUiSources).filter(([name]) => !name.endsWith('.test.tsx')),
 )
 
 describe('服务层与页面的接线', () => {
@@ -84,14 +84,16 @@ describe('服务层与页面的接线', () => {
     // 反向元断言：glob 模式写错时 `uiSources` 会是空对象，
     // 于是「没有未接线函数」恒成立，测试变成摆设。
     expect(names).toContain('../App.tsx')
-    expect(names.filter(name => name.startsWith('../pages/')).length).toBeGreaterThanOrEqual(10)
-    expect(names.filter(name => name.startsWith('../components/')).length).toBeGreaterThanOrEqual(4)
+    expect(names.filter((name) => name.startsWith('../pages/')).length).toBeGreaterThanOrEqual(10)
+    expect(names.filter((name) => name.startsWith('../components/')).length).toBeGreaterThanOrEqual(
+      4,
+    )
   })
 
   it('语料面不含任何 *.test.tsx（L211：测试替身表不算接线）', () => {
     // 若 glob 面再次被扩回含测试文件，本用例先红，指向上一条的过滤为什么存在。
-    expect(Object.keys(uiSources).filter(name => name.endsWith('.test.tsx'))).toEqual([])
-    expect(Object.keys(rawUiSources).some(name => name.endsWith('.test.tsx'))).toBe(true)
+    expect(Object.keys(uiSources).filter((name) => name.endsWith('.test.tsx'))).toEqual([])
+    expect(Object.keys(rawUiSources).some((name) => name.endsWith('.test.tsx'))).toBe(true)
   })
 
   it('import 语句本身不算「已接线」（否则本守门形同虚设）', () => {
@@ -103,7 +105,7 @@ describe('服务层与页面的接线', () => {
 
   it('注释里提到函数名也不算「已接线」', () => {
     const stripped = stripComments(
-      '/** 说明：这里改用 `getDemoData()` 了 */\n// const z = getDemoData()\nconst y = 1\n'
+      '/** 说明：这里改用 `getDemoData()` 了 */\n// const z = getDemoData()\nconst y = 1\n',
     )
 
     expect(stripped).not.toContain('getDemoData')
@@ -112,7 +114,7 @@ describe('服务层与页面的接线', () => {
 
   it('除白名单外，api.ts 导出的每个函数都在页面里被引用', () => {
     const apiNames = Object.keys(api).filter(
-      name => typeof (api as Record<string, unknown>)[name] === 'function'
+      (name) => typeof (api as Record<string, unknown>)[name] === 'function',
     )
 
     // 同样要防空转：命名空间枚举失败（长度 0）时下面的差集也是空的
@@ -120,7 +122,7 @@ describe('服务层与页面的接线', () => {
 
     const haystack = Object.values(uiSources).map(stripComments).map(stripImports).join('\n')
     const unwired = apiNames.filter(
-      name => !KNOWN_UNWIRED.includes(name) && !new RegExp(`\\b${name}\\b`).test(haystack)
+      (name) => !KNOWN_UNWIRED.includes(name) && !new RegExp(`\\b${name}\\b`).test(haystack),
     )
 
     expect(unwired).toEqual([])

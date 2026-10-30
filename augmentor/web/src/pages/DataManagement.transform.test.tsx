@@ -18,16 +18,17 @@ import { message } from 'antd'
 
 window.matchMedia =
   window.matchMedia ||
-  ((query: string) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: () => {},
-    removeListener: () => {},
-    addEventListener: () => {},
-    removeEventListener: () => {},
-    dispatchEvent: () => false,
-  }) as unknown as MediaQueryList)
+  ((query: string) =>
+    ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    }) as unknown as MediaQueryList)
 class RO {
   observe() {}
   unobserve() {}
@@ -114,7 +115,7 @@ afterEach(() => {
   for (const key of ['convertDataset', 'mergeDatasets', 'splitDataset'] as const) {
     spies[key].mockClear()
     spies[key].mockResolvedValue(
-      key === 'convertDataset' ? CONVERT_OK : key === 'mergeDatasets' ? MERGE_OK : SPLIT_OK
+      key === 'convertDataset' ? CONVERT_OK : key === 'mergeDatasets' ? MERGE_OK : SPLIT_OK,
     )
   }
 })
@@ -129,8 +130,7 @@ beforeEach(() => {
  * L230 之后页面上还有 4 个 `InputNumber`（采样条数 / 比例 / seed、聚合目标条数，都在分割卡
  * **之后**），所以这一段一律 `slice(0, 4)`：分割那四格的位置没动，动的是清单的长度。
  */
-const spinbuttons = () =>
-  (screen.getAllByRole('spinbutton') as HTMLInputElement[]).slice(0, 4)
+const spinbuttons = () => (screen.getAllByRole('spinbutton') as HTMLInputElement[]).slice(0, 4)
 
 /**
  * 按名字点按钮：用**子串**正则而不是精确可及名
@@ -163,8 +163,7 @@ const labeled = (name: string) => document.querySelector(`[aria-label="${name}"]
  */
 async function waitFiles(container: HTMLElement) {
   await waitFor(
-    () =>
-      expect((container.querySelector('select') as HTMLSelectElement)?.value).toBe('a.json'),
+    () => expect((container.querySelector('select') as HTMLSelectElement)?.value).toBe('a.json'),
     { timeout: 10000 },
   )
 }
@@ -200,7 +199,7 @@ describe('转换卡的渲染面', () => {
       expect(spies.convertDataset).toHaveBeenCalledWith('a.json', 'out.jsonl', {
         targetFormat: 'jsonl',
         sourceFormat: '',
-      })
+      }),
     )
     await waitFor(() => expect(labeled('转换回执')?.textContent).toContain('out.jsonl'))
   })
@@ -235,8 +234,7 @@ describe('转换卡的渲染面', () => {
 })
 
 describe('合并卡的渲染面', () => {
-  const check = (name: string) =>
-    fireEvent.click(screen.getByRole('checkbox', { name }))
+  const check = (name: string) => fireEvent.click(screen.getByRole('checkbox', { name }))
 
   it('勾两份文件并点名输出 ⇒ inputs 是两份、去重按默认开', async () => {
     const { container } = render(<DataManagement />)
@@ -250,7 +248,7 @@ describe('合并卡的渲染面', () => {
     await waitFor(() =>
       expect(spies.mergeDatasets).toHaveBeenCalledWith(['a.json', 'b.json'], 'merged.json', {
         deduplicate: true,
-      })
+      }),
     )
     await waitFor(() => expect(labeled('合并回执')).not.toBeNull())
     // 三个数都要看得见：只报「成功」等于把去重删了多少条吞掉。
@@ -272,7 +270,7 @@ describe('合并卡的渲染面', () => {
     await waitFor(() =>
       expect(spies.mergeDatasets).toHaveBeenCalledWith(['a.json'], 'm.json', {
         deduplicate: false,
-      })
+      }),
     )
   })
 

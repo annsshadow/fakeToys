@@ -19,7 +19,7 @@ interface VersionTimelineProps {
 export default function VersionTimeline({
   versions,
   onRollback,
-  currentVersion
+  currentVersion,
 }: VersionTimelineProps) {
   if (!versions?.length) {
     return (
@@ -43,7 +43,7 @@ export default function VersionTimeline({
     <Card title="版本历史">
       <Timeline
         mode="left"
-        items={versions.map(version => ({
+        items={versions.map((version) => ({
           color: version.version_id === currentVersion ? 'green' : 'blue',
           children: (
             <div>
@@ -58,9 +58,7 @@ export default function VersionTimeline({
               <div style={{ color: '#888', fontSize: 12 }}>
                 {version.created_at} · {version.item_count} 条
               </div>
-              {version.description && (
-                <div style={{ fontSize: 12 }}>{version.description}</div>
-              )}
+              {version.description && <div style={{ fontSize: 12 }}>{version.description}</div>}
               {version.version_id !== currentVersion && (
                 <Button
                   size="small"
@@ -72,7 +70,7 @@ export default function VersionTimeline({
                 </Button>
               )}
             </div>
-          )
+          ),
         }))}
       />
     </Card>

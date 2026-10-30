@@ -27,16 +27,17 @@ const DUMMY_MSG = (() => {}) as unknown as ReturnType<typeof message.warning>
 
 window.matchMedia =
   window.matchMedia ||
-  ((query: string) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: () => {},
-    removeListener: () => {},
-    addEventListener: () => {},
-    removeEventListener: () => {},
-    dispatchEvent: () => false,
-  }) as unknown as MediaQueryList)
+  ((query: string) =>
+    ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    }) as unknown as MediaQueryList)
 class RO {
   observe() {}
   unobserve() {}
@@ -177,9 +178,7 @@ async function waitDatasets() {
  * `getAllByLabelText` 回两个元素），所以按标签取会撞「多个匹配」。这里显式挑 INPUT。
  */
 function inputOf(label: string): HTMLInputElement {
-  const input = screen
-    .getAllByLabelText(label)
-    .find((element) => element.tagName === 'INPUT')
+  const input = screen.getAllByLabelText(label).find((element) => element.tagName === 'INPUT')
   expect(input, `按 ${label} 取不到 INPUT`).toBeTruthy()
   return input as HTMLInputElement
 }
@@ -210,12 +209,8 @@ describe('System 数据集血缘列表与图', () => {
     expect(screen.getByText('图中边')).toBeInTheDocument()
     expect(screen.getByText('校验问题')).toBeInTheDocument()
     // 悬空边那一条 issue 要带着服务端那句原话出现在页面上
-    expect(
-      await screen.findByText(/依赖关系上有 1 处问题/)
-    ).toBeInTheDocument()
-    expect(
-      screen.getByText('missing_target：目标数据集不存在: ghost12345')
-    ).toBeInTheDocument()
+    expect(await screen.findByText(/依赖关系上有 1 处问题/)).toBeInTheDocument()
+    expect(screen.getByText('missing_target：目标数据集不存在: ghost12345')).toBeInTheDocument()
   })
 
   it('血缘那一面取不到只降级自己，服务状态与备份面照常渲染', async () => {
@@ -269,15 +264,15 @@ describe('System 登记数据集', () => {
       expect(spies.registerDependencyDataset).toHaveBeenCalledWith('dsC', 'ds_a.json', {
         description: '第三份',
         tags: ['t1', 't2'],
-      })
+      }),
     )
     expect(ok).toHaveBeenCalledWith('已登记 dsC（183fb9f0，7 条）')
     // 登记成功后列表与图都要重取（不是只刷一边）
     await waitFor(() =>
-      expect(spies.listDependencyDatasets.mock.calls.length).toBeGreaterThan(before)
+      expect(spies.listDependencyDatasets.mock.calls.length).toBeGreaterThan(before),
     )
     await waitFor(() =>
-      expect(spies.getDependencyGraph.mock.calls.length).toBeGreaterThan(graphBefore)
+      expect(spies.getDependencyGraph.mock.calls.length).toBeGreaterThan(graphBefore),
     )
     ok.mockRestore()
   })
@@ -293,7 +288,7 @@ describe('System 登记数据集', () => {
     fireEvent.change(inputOf('数据集源文件'), { target: { value: 'D:\\outside\\x.json' } })
     fireEvent.click(screen.getByLabelText('登记数据集'))
     await waitFor(() =>
-      expect(err).toHaveBeenCalledWith(expect.stringContaining('路径超出允许的数据目录范围'))
+      expect(err).toHaveBeenCalledWith(expect.stringContaining('路径超出允许的数据目录范围')),
     )
     err.mockRestore()
   })

@@ -16,16 +16,17 @@ import { message } from 'antd'
 // antd v5 的主题与响应式 hook 依赖这两个浏览器 API，jsdom 不提供。
 window.matchMedia =
   window.matchMedia ||
-  ((query: string) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: () => {},
-    removeListener: () => {},
-    addEventListener: () => {},
-    removeEventListener: () => {},
-    dispatchEvent: () => false,
-  }) as unknown as MediaQueryList)
+  ((query: string) =>
+    ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    }) as unknown as MediaQueryList)
 class RO {
   observe() {}
   unobserve() {}
@@ -44,8 +45,12 @@ vi.mock('../services/api', async (importOriginal) => {
   spies.getDataFiles = vi.fn().mockResolvedValue({ files: [] })
   spies.loadData = vi.fn().mockResolvedValue({ items: [], total: 0 })
   spies.uploadData = vi.fn().mockResolvedValue({ success: true, path: 'x.json', count: 2 })
-  return { ...actual, getDataFiles: spies.getDataFiles, loadData: spies.loadData,
-    uploadData: spies.uploadData }
+  return {
+    ...actual,
+    getDataFiles: spies.getDataFiles,
+    loadData: spies.loadData,
+    uploadData: spies.uploadData,
+  }
 })
 
 import DataManagement from './DataManagement'
@@ -106,7 +111,7 @@ describe('上传控件的渲染面', () => {
     // 这条钉的是 A162 ② 的**产品后果**：用户看得见「按 csv 解析」那句，而不是一句「上传失败」。
     await waitFor(
       () => expect(document.body.textContent).toContain('上传内容整份是一份合法 JSON'),
-      { timeout: 10000 }
+      { timeout: 10000 },
     )
   })
 

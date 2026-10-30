@@ -1,5 +1,19 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Alert, Button, Card, Col, Input, InputNumber, Row, Select, Space, Statistic, Table, Tag, message } from 'antd'
+import {
+  Alert,
+  Button,
+  Card,
+  Col,
+  Input,
+  InputNumber,
+  Row,
+  Select,
+  Space,
+  Statistic,
+  Table,
+  Tag,
+  message,
+} from 'antd'
 import ReactEChartsCore from 'echarts-for-react/lib/core'
 import echarts from '../lib/echarts'
 import {
@@ -46,7 +60,7 @@ const SEARCH_METHOD_OPTIONS = [
   { value: 'contains', label: '包含子串' },
   { value: 'ngram', label: 'N-gram 相似度' },
   { value: 'fuzzy', label: '模糊匹配' },
-  { value: 'regex', label: '正则' }
+  { value: 'regex', label: '正则' },
 ]
 
 /**
@@ -101,9 +115,18 @@ const formatSnapshotValue = (raw: number, kind: 'count' | 'decimal'): string =>
  * 固定是 2×条目数——这两处都不跟着勾选项变。
  */
 const STAT_QUALITY_PRESENTATION: Record<string, { label: string; caliber: string }> = {
-  completeness: { label: '完整性', caliber: '（instruction 非空数 + output 非空数）÷（2 × 条目数），与 fields 无关' },
-  diversity: { label: '多样性', caliber: '唯一 instruction 数 ÷ instruction 非空条数，与 fields 无关' },
-  consistency: { label: '一致性', caliber: 'instruction 与 output 都非空且互不相等的条数 ÷ 条目数，与 fields 无关' },
+  completeness: {
+    label: '完整性',
+    caliber: '（instruction 非空数 + output 非空数）÷（2 × 条目数），与 fields 无关',
+  },
+  diversity: {
+    label: '多样性',
+    caliber: '唯一 instruction 数 ÷ instruction 非空条数，与 fields 无关',
+  },
+  consistency: {
+    label: '一致性',
+    caliber: 'instruction 与 output 都非空且互不相等的条数 ÷ 条目数，与 fields 无关',
+  },
 }
 
 /** `_infer_type`（`augmentor/feature_detect.py:105`）的五档字面量，后端没有常数可引 */
@@ -154,7 +177,11 @@ const WINNER_PRESENTATION: Record<string, { label: string; color: string }> = {
 }
 
 /** 质量面对称三组（A/B 同键），组内键集合取自真实回执 */
-const SIDE_FACES: { title: string; a: 'dedup_a' | 'length_a' | 'vocabulary_a'; b: 'dedup_b' | 'length_b' | 'vocabulary_b' }[] = [
+const SIDE_FACES: {
+  title: string
+  a: 'dedup_a' | 'length_a' | 'vocabulary_a'
+  b: 'dedup_b' | 'length_b' | 'vocabulary_b'
+}[] = [
   { title: '去重面', a: 'dedup_a', b: 'dedup_b' },
   { title: '长度面（固定按 instruction，端点未暴露这一档）', a: 'length_a', b: 'length_b' },
   { title: '词汇面（固定按 instruction，端点未暴露这一档）', a: 'vocabulary_a', b: 'vocabulary_b' },
@@ -242,7 +269,7 @@ export default function Analysis() {
   const loadFiles = useCallback(async () => {
     try {
       const result = await getDataFiles()
-      setFiles(result.files.map(f => f.name))
+      setFiles(result.files.map((f) => f.name))
     } catch {
       console.error('加载文件列表失败')
     }
@@ -384,7 +411,7 @@ export default function Analysis() {
         await semanticSearch(selectedFile, semanticQuery, {
           topK: semanticTopK,
           textKey: semanticTextKey,
-        })
+        }),
       )
     } catch (err) {
       message.error(apiErrorDetail(err, '语义检索失败'))
@@ -445,7 +472,7 @@ export default function Analysis() {
       setComparison(
         await compareDatasets(selectedFile, compareFile, {
           keyFields: compareKeyFields.length ? compareKeyFields : undefined,
-        })
+        }),
       )
     } catch (err) {
       message.error(apiErrorDetail(err, '双集对比失败'))
@@ -467,7 +494,7 @@ export default function Analysis() {
         await assessImpact(selectedFile, afterFile, {
           textField: impactField,
           minScaleGain: minScaleGain,
-        })
+        }),
       )
     } catch (err) {
       message.error(apiErrorDetail(err, '影响评估失败'))
@@ -478,68 +505,74 @@ export default function Analysis() {
 
   const getQuestionTypeChartOption = () => {
     if (!analysis?.coverage_analysis?.question_type_distribution) return {}
-    
+
     const data = analysis.coverage_analysis.question_type_distribution
     return {
       title: { text: '问题类型分布', left: 'center' },
       tooltip: { trigger: 'item' },
-      series: [{
-        type: 'pie',
-        radius: '50%',
-        data: Object.entries(data).map(([name, value]) => ({
-          name,
-          value: Math.round((value as number) * 100)
-        }))
-      }]
+      series: [
+        {
+          type: 'pie',
+          radius: '50%',
+          data: Object.entries(data).map(([name, value]) => ({
+            name,
+            value: Math.round((value as number) * 100),
+          })),
+        },
+      ],
     }
   }
 
   const getLengthChartOption = () => {
     if (!analysis?.coverage_analysis?.length_distribution) return {}
-    
+
     const data = analysis.coverage_analysis.length_distribution
     return {
       title: { text: '长度分布', left: 'center' },
       tooltip: { trigger: 'axis' },
       xAxis: {
         type: 'category',
-        data: ['短 (<10)', '中 (10-30)', '长 (>30)']
+        data: ['短 (<10)', '中 (10-30)', '长 (>30)'],
       },
       yAxis: { type: 'value', name: '比例 (%)' },
-      series: [{
-        type: 'bar',
-        data: [
-          Math.round((data.short || 0) * 100),
-          Math.round((data.medium || 0) * 100),
-          Math.round((data.long || 0) * 100)
-        ]
-      }]
+      series: [
+        {
+          type: 'bar',
+          data: [
+            Math.round((data.short || 0) * 100),
+            Math.round((data.medium || 0) * 100),
+            Math.round((data.long || 0) * 100),
+          ],
+        },
+      ],
     }
   }
 
   const topicColumns = [
     { title: '关键词', dataIndex: 'word', key: 'word' },
-    { title: '频次', dataIndex: 'count', key: 'count' }
+    { title: '频次', dataIndex: 'count', key: 'count' },
   ]
 
   const topicData = analysis?.coverage_analysis?.topic_distribution?.top_words
-    ? Object.entries(analysis.coverage_analysis.topic_distribution.top_words).map(([word, count]) => ({
-        word,
-        count
-      }))
+    ? Object.entries(analysis.coverage_analysis.topic_distribution.top_words).map(
+        ([word, count]) => ({
+          word,
+          count,
+        }),
+      )
     : []
 
   // 高亮展开成行：一个命中条目可能在多个字段命中，每个字段一行。SDK 给的是固定三段
   // `[命中前, 命中文本, 命中后]`；`hit` 单列才看得出「命中的究竟是什么」，`context`
   // 把三段拼回原文给上下文——两列都要，只留 context 等于把高亮退化成再列一遍原文。
-  const highlightRows = (searchResult?.highlights || []).flatMap(entry =>
+  const highlightRows = (searchResult?.highlights || []).flatMap((entry) =>
     Object.entries(entry.highlights).map(([field, parts]) => ({
       key: `${entry.index}-${field}`,
       index: entry.index,
       field,
       hit: parts[1] ?? '',
-      context: parts.join('')
-    }))
+      context: parts.join(''),
+    })),
   )
 
   return (
@@ -551,8 +584,10 @@ export default function Analysis() {
           onChange={setSelectedFile}
           placeholder="选择要分析的文件"
         >
-          {files.map(file => (
-            <Select.Option key={file} value={file}>{file}</Select.Option>
+          {files.map((file) => (
+            <Select.Option key={file} value={file}>
+              {file}
+            </Select.Option>
           ))}
         </Select>
       </div>
@@ -567,7 +602,10 @@ export default function Analysis() {
             </Col>
             <Col span={6}>
               <Card>
-                <Statistic title="平均长度" value={analysis.statistics?.avg_length?.toFixed(1) || 0} />
+                <Statistic
+                  title="平均长度"
+                  value={analysis.statistics?.avg_length?.toFixed(1) || 0}
+                />
               </Card>
             </Col>
             <Col span={6}>
@@ -585,12 +623,20 @@ export default function Analysis() {
           <Row gutter={16} style={{ marginBottom: 16 }}>
             <Col span={12}>
               <Card>
-                <ReactEChartsCore echarts={echarts} option={getQuestionTypeChartOption()} style={{ height: 300 }} />
+                <ReactEChartsCore
+                  echarts={echarts}
+                  option={getQuestionTypeChartOption()}
+                  style={{ height: 300 }}
+                />
               </Card>
             </Col>
             <Col span={12}>
               <Card>
-                <ReactEChartsCore echarts={echarts} option={getLengthChartOption()} style={{ height: 300 }} />
+                <ReactEChartsCore
+                  echarts={echarts}
+                  option={getLengthChartOption()}
+                  style={{ height: 300 }}
+                />
               </Card>
             </Col>
           </Row>
@@ -630,15 +676,12 @@ export default function Analysis() {
                 pagination={false}
                 columns={[
                   { title: '基准指标', dataIndex: 'metric' },
-                  { title: '数值', dataIndex: 'value' }
+                  { title: '数值', dataIndex: 'value' },
                 ]}
-                dataSource={Object.entries(benchmark.metrics || {}).map(
-                  ([metric, value]) => ({
-                    metric,
-                    value:
-                      typeof value === 'number' ? value.toFixed(4) : String(value)
-                  })
-                )}
+                dataSource={Object.entries(benchmark.metrics || {}).map(([metric, value]) => ({
+                  metric,
+                  value: typeof value === 'number' ? value.toFixed(4) : String(value),
+                }))}
               />
             )}
           </Card>
@@ -655,7 +698,7 @@ export default function Analysis() {
                 pagination={false}
                 columns={[
                   { title: '图表', dataIndex: 'name', key: 'name' },
-                  { title: '落盘路径', dataIndex: 'path', key: 'path' }
+                  { title: '落盘路径', dataIndex: 'path', key: 'path' },
                 ]}
                 dataSource={Object.entries(charts).map(([name, path]) => ({ name, path }))}
               />
@@ -689,13 +732,13 @@ export default function Analysis() {
                   columns={[
                     { title: '检测标签', dataIndex: 'label' },
                     { title: '条数', dataIndex: 'count' },
-                    { title: '占比 (%)', dataIndex: 'ratio' }
+                    { title: '占比 (%)', dataIndex: 'ratio' },
                   ]}
                   dataSource={Object.entries(profile.distribution)
                     .map(([label, count]) => ({
                       label,
                       count,
-                      ratio: ((profile.ratios[label] || 0) * 100).toFixed(1)
+                      ratio: ((profile.ratios[label] || 0) * 100).toFixed(1),
                     }))
                     .sort((a, b) => b.count - a.count)}
                 />
@@ -711,8 +754,10 @@ export default function Analysis() {
                 onChange={setReferenceFile}
                 placeholder="选择参照集"
               >
-                {files.map(file => (
-                  <Select.Option key={file} value={file}>{file}</Select.Option>
+                {files.map((file) => (
+                  <Select.Option key={file} value={file}>
+                    {file}
+                  </Select.Option>
                 ))}
               </Select>
               <Button type="primary" loading={loading} onClick={handleEvaluate}>
@@ -730,11 +775,11 @@ export default function Analysis() {
                   pagination={false}
                   columns={[
                     { title: '指标', dataIndex: 'metric' },
-                    { title: '数值', dataIndex: 'value' }
+                    { title: '数值', dataIndex: 'value' },
                   ]}
                   dataSource={Object.entries(evaluation.metrics).map(([metric, value]) => ({
                     metric,
-                    value: value.toFixed(4)
+                    value: value.toFixed(4),
                   }))}
                 />
               </>
@@ -747,7 +792,7 @@ export default function Analysis() {
                 style={{ width: 260 }}
                 placeholder="检索词"
                 value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 onPressEnter={handleSearch}
               />
               <Select
@@ -799,7 +844,7 @@ export default function Analysis() {
                       { title: '条目下标', dataIndex: 'index', width: 100 },
                       { title: '字段', dataIndex: 'field', width: 120 },
                       { title: '命中片段', dataIndex: 'hit', width: 160 },
-                      { title: '上下文', dataIndex: 'context', ellipsis: true }
+                      { title: '上下文', dataIndex: 'context', ellipsis: true },
                     ]}
                     dataSource={highlightRows}
                   />
@@ -814,7 +859,7 @@ export default function Analysis() {
                 style={{ width: 260 }}
                 placeholder="查询文本"
                 value={semanticQuery}
-                onChange={e => setSemanticQuery(e.target.value)}
+                onChange={(e) => setSemanticQuery(e.target.value)}
                 onPressEnter={handleSemantic}
               />
               {/* 下界放 0 而不是 1：实测 `top_k=0` 在后端是合法的「只要回显、不要命中」
@@ -824,7 +869,7 @@ export default function Analysis() {
                 min={0}
                 max={50}
                 value={semanticTopK}
-                onChange={value => setSemanticTopK(value ?? 5)}
+                onChange={(value) => setSemanticTopK(value ?? 5)}
               />
               {/* 被编码字段：这一档改的是「拿什么去算相似度」，命中表里那一列文本也跟着换。
                   实测只影响回显的 `text`，排序与 `backend`/`dimension` 的回显口径不变。 */}
@@ -834,7 +879,7 @@ export default function Analysis() {
                 onChange={setSemanticTextKey}
                 options={[
                   { value: 'instruction', label: '编码 instruction' },
-                  { value: 'output', label: '编码 output' }
+                  { value: 'output', label: '编码 output' },
                 ]}
               />
               <Button type="primary" loading={loading} onClick={handleSemantic}>
@@ -852,7 +897,11 @@ export default function Analysis() {
                   <Tag>集合 {semanticResult.collection}</Tag>
                 </Space>
                 {semanticResult.results.length === 0 ? (
-                  <Alert type="warning" showIcon message="没有命中（前 K 条取到 0 条或数据面为空）" />
+                  <Alert
+                    type="warning"
+                    showIcon
+                    message="没有命中（前 K 条取到 0 条或数据面为空）"
+                  />
                 ) : (
                   <Table
                     size="small"
@@ -861,13 +910,13 @@ export default function Analysis() {
                     columns={[
                       { title: '条目下标', dataIndex: 'index', width: 100 },
                       { title: '相似度', dataIndex: 'score', width: 120 },
-                      { title: '命中文本', dataIndex: 'text', ellipsis: true }
+                      { title: '命中文本', dataIndex: 'text', ellipsis: true },
                     ]}
-                    dataSource={semanticResult.results.map(hit => ({
+                    dataSource={semanticResult.results.map((hit) => ({
                       index: hit.index,
                       // 相似度是相对排序量，不是「匹配了百分之几」，保留四位原样给
                       score: hit.score.toFixed(4),
-                      text: hit.text
+                      text: hit.text,
                     }))}
                   />
                 )}
@@ -883,7 +932,7 @@ export default function Analysis() {
                 placeholder="增强后数据集"
                 value={afterFile || undefined}
                 onChange={setAfterFile}
-                options={files.map(f => ({ value: f, label: f }))}
+                options={files.map((f) => ({ value: f, label: f }))}
               />
               <Select
                 style={{ width: 180 }}
@@ -891,7 +940,7 @@ export default function Analysis() {
                 onChange={setImpactField}
                 options={[
                   { value: 'instruction', label: '看 instruction' },
-                  { value: 'output', label: '看 output' }
+                  { value: 'output', label: '看 output' },
                 ]}
               />
               {/* 判决门槛：`beneficial` 的两条判据里只有这一条可调（另一条 −0.05 是
@@ -901,7 +950,7 @@ export default function Analysis() {
               <InputNumber
                 step={0.05}
                 value={minScaleGain}
-                onChange={value => setMinScaleGain(value ?? 0)}
+                onChange={(value) => setMinScaleGain(value ?? 0)}
               />
               <Button type="primary" loading={loading} onClick={handleImpact}>
                 运行影响评估
@@ -932,17 +981,17 @@ export default function Analysis() {
                     { title: '增益项', dataIndex: 'label' },
                     { title: '键', dataIndex: 'key', width: 180 },
                     { title: '量纲', dataIndex: 'caliber', width: 220 },
-                    { title: '数值', dataIndex: 'value', width: 120 }
+                    { title: '数值', dataIndex: 'value', width: 120 },
                   ]}
                   dataSource={Object.entries(impact.gains).map(([key, value]) => ({
                     key,
                     label: GAIN_PRESENTATION[key]?.label ?? key,
                     caliber: GAIN_PRESENTATION[key]?.caliber ?? '未知口径',
-                    value: value.toFixed(4)
+                    value: value.toFixed(4),
                   }))}
                 />
                 <Row gutter={16}>
-                  {(['before', 'after'] as const).map(side => (
+                  {(['before', 'after'] as const).map((side) => (
                     <Col span={12} key={side}>
                       <Table
                         size="small"
@@ -951,7 +1000,7 @@ export default function Analysis() {
                         title={() => (side === 'before' ? '基线侧' : '增强后侧')}
                         columns={[
                           { title: '指标', dataIndex: 'name' },
-                          { title: '数值', dataIndex: 'value', width: 120 }
+                          { title: '数值', dataIndex: 'value', width: 120 },
                         ]}
                         dataSource={SNAPSHOT_PRESENTATION.map(([key, name, kind]) => ({
                           name,
@@ -973,7 +1022,7 @@ export default function Analysis() {
                 placeholder="限定字段（留空＝全部字段）"
                 value={statsFields}
                 onChange={setStatsFields}
-                options={statFieldUniverse.map(f => ({ value: f, label: f }))}
+                options={statFieldUniverse.map((f) => ({ value: f, label: f }))}
               />
               <Button type="primary" loading={loading} onClick={handleStats}>
                 运行字段统计
@@ -1013,7 +1062,7 @@ export default function Analysis() {
                   pagination={false}
                   style={{ marginBottom: 16 }}
                   expandable={{
-                    expandedRowRender: row =>
+                    expandedRowRender: (row) =>
                       row.top_values.length === 0 ? (
                         <span>该字段没有可统计的非空值</span>
                       ) : (
@@ -1023,11 +1072,11 @@ export default function Analysis() {
                           pagination={false}
                           columns={[
                             { title: '取值', dataIndex: 'value' },
-                            { title: '次数', dataIndex: 'count', width: 100 }
+                            { title: '次数', dataIndex: 'count', width: 100 },
                           ]}
                           dataSource={row.top_values.map(([value, count]) => ({ value, count }))}
                         />
-                      )
+                      ),
                   }}
                   columns={[
                     { title: '字段', dataIndex: 'field' },
@@ -1038,9 +1087,9 @@ export default function Analysis() {
                     { title: '中位长度', dataIndex: 'median', width: 100 },
                     { title: '最短 – 最长', dataIndex: 'span', width: 120 },
                     { title: '标准差', dataIndex: 'std', width: 100 },
-                    { title: '唯一值数', dataIndex: 'unique', width: 100 }
+                    { title: '唯一值数', dataIndex: 'unique', width: 100 },
                   ]}
-                  dataSource={Object.values(stats.field_statistics).map(entry => ({
+                  dataSource={Object.values(stats.field_statistics).map((entry) => ({
                     field: entry.field_name,
                     total: entry.total_count,
                     filled: `${entry.filled_count} / ${entry.empty_count}`,
@@ -1050,7 +1099,7 @@ export default function Analysis() {
                     span: `${entry.min_length} – ${entry.max_length}`,
                     std: formatMeasure(entry.std_deviation),
                     unique: entry.unique_count,
-                    top_values: entry.top_values
+                    top_values: entry.top_values,
                   }))}
                 />
                 {Object.keys(stats.quality_metrics).length === 0 ? (
@@ -1065,13 +1114,13 @@ export default function Analysis() {
                       { title: '质量指标', dataIndex: 'label' },
                       { title: '键', dataIndex: 'key', width: 160 },
                       { title: '口径', dataIndex: 'caliber' },
-                      { title: '数值', dataIndex: 'value', width: 110 }
+                      { title: '数值', dataIndex: 'value', width: 110 },
                     ]}
                     dataSource={Object.entries(stats.quality_metrics).map(([key, value]) => ({
                       key,
                       label: STAT_QUALITY_PRESENTATION[key]?.label ?? key,
                       caliber: STAT_QUALITY_PRESENTATION[key]?.caliber ?? '未知口径',
-                      value: formatRatio(value)
+                      value: formatRatio(value),
                     }))}
                   />
                 )}
@@ -1084,13 +1133,16 @@ export default function Analysis() {
                     title={() => '文本长度面（按回执的实际字段，非按页面猜的字段）'}
                     columns={[
                       { title: '指标', dataIndex: 'name' },
-                      { title: '数值', dataIndex: 'value', width: 120 }
+                      { title: '数值', dataIndex: 'value', width: 120 },
                     ]}
                     dataSource={[
-                      { name: '平均长度', value: formatMeasure(stats.content_statistics.text_length.avg) },
+                      {
+                        name: '平均长度',
+                        value: formatMeasure(stats.content_statistics.text_length.avg),
+                      },
                       { name: '最短长度', value: stats.content_statistics.text_length.min },
                       { name: '最长长度', value: stats.content_statistics.text_length.max },
-                      { name: '长度合计', value: stats.content_statistics.text_length.total }
+                      { name: '长度合计', value: stats.content_statistics.text_length.total },
                     ]}
                   />
                 )}
@@ -1107,10 +1159,10 @@ export default function Analysis() {
                       title={() => '高频词（[值, 次数] 二元组，与 analyze 那只端点的字典形状不同）'}
                       columns={[
                         { title: '词', dataIndex: 'word' },
-                        { title: '次数', dataIndex: 'count', width: 100 }
+                        { title: '次数', dataIndex: 'count', width: 100 },
                       ]}
                       dataSource={stats.content_statistics.vocabulary.top_words.map(
-                        ([word, count]) => ({ word, count })
+                        ([word, count]) => ({ word, count }),
                       )}
                     />
                   </>
@@ -1152,25 +1204,32 @@ export default function Analysis() {
                     { title: '推断类型', dataIndex: 'featureType', width: 120 },
                     { title: '覆盖率', dataIndex: 'coverage', width: 110 },
                     { title: '唯一值占比', dataIndex: 'uniqueRatio', width: 120 },
-                    { title: '判据', dataIndex: 'description', width: 120 }
+                    { title: '判据', dataIndex: 'description', width: 120 },
                   ]}
                   dataSource={[...features.field_features]
                     .sort((a, b) => a.coverage - b.coverage)
-                    .map(entry => ({
+                    .map((entry) => ({
                       name: entry.name,
                       featureType: FEATURE_TYPE_LABELS[entry.feature_type] ?? entry.feature_type,
                       coverage: formatRatio(entry.coverage),
                       uniqueRatio: formatRatio(entry.unique_ratio),
-                      description: entry.description
+                      description: entry.description,
                     }))}
                 />
                 {features.sparse_fields.length === 0 ? (
-                  <Alert type="success" showIcon style={{ marginBottom: 16 }} message="无稀疏字段" />
+                  <Alert
+                    type="success"
+                    showIcon
+                    style={{ marginBottom: 16 }}
+                    message="无稀疏字段"
+                  />
                 ) : (
                   <Space wrap style={{ marginBottom: 16 }}>
                     <span>稀疏字段：</span>
-                    {features.sparse_fields.map(name => (
-                      <Tag key={name} color="orange">{name}</Tag>
+                    {features.sparse_fields.map((name) => (
+                      <Tag key={name} color="orange">
+                        {name}
+                      </Tag>
                     ))}
                   </Space>
                 )}
@@ -1185,15 +1244,19 @@ export default function Analysis() {
                     size="small"
                     rowKey="intent"
                     pagination={false}
-                    title={() => '意图条数（与上方「覆盖度分析」那张图同一分类器，这边是条数、那边是占比）'}
+                    title={() =>
+                      '意图条数（与上方「覆盖度分析」那张图同一分类器，这边是条数、那边是占比）'
+                    }
                     columns={[
                       { title: '意图', dataIndex: 'intent' },
-                      { title: '条数', dataIndex: 'count', width: 120 }
+                      { title: '条数', dataIndex: 'count', width: 120 },
                     ]}
-                    dataSource={Object.entries(features.intent_distribution).map(([intent, count]) => ({
-                      intent,
-                      count
-                    }))}
+                    dataSource={Object.entries(features.intent_distribution).map(
+                      ([intent, count]) => ({
+                        intent,
+                        count,
+                      }),
+                    )}
                   />
                 )}
               </>
@@ -1208,7 +1271,7 @@ export default function Analysis() {
                 placeholder="B 侧数据集"
                 value={compareFile || undefined}
                 onChange={setCompareFile}
-                options={files.map(f => ({ value: f, label: f }))}
+                options={files.map((f) => ({ value: f, label: f }))}
               />
               <Select
                 mode="multiple"
@@ -1217,186 +1280,190 @@ export default function Analysis() {
                 value={compareKeyFields}
                 onChange={setCompareKeyFields}
                 options={Object.keys(comparison?.overlap_comparison.field_comparisons ?? {}).map(
-                  f => ({ value: f, label: f })
+                  (f) => ({ value: f, label: f }),
                 )}
               />
               <Button type="primary" loading={loading} onClick={handleCompare}>
                 运行双集对比
               </Button>
             </Space>
-            {comparison && (() => {
-              const quality = comparison.quality_comparison
-              const overlap = comparison.overlap_comparison
-              const aSide = faceEntries(quality.quality_a)
-              const bSide = faceEntries(quality.quality_b)
-              const diffSide = faceEntries(quality.quality_diff)
-              return (
-                <>
-                  <Space wrap style={{ marginBottom: 12 }}>
-                    <Tag color={WINNER_PRESENTATION[quality.winner]?.color ?? 'default'}>
-                      {WINNER_PRESENTATION[quality.winner]?.label ?? `未知判定：${quality.winner}`}
-                    </Tag>
-                    <Alert
-                      type="info"
-                      showIcon
-                      style={{ width: 'auto' }}
-                      message="判决只看平均质量分（之差小于 0.01 判平手），通过率与长度面不参与"
-                    />
-                    {/* 幽灵匹配键比幽灵字段名更危险：实测给一个两侧都没有的键，
+            {comparison &&
+              (() => {
+                const quality = comparison.quality_comparison
+                const overlap = comparison.overlap_comparison
+                const aSide = faceEntries(quality.quality_a)
+                const bSide = faceEntries(quality.quality_b)
+                const diffSide = faceEntries(quality.quality_diff)
+                return (
+                  <>
+                    <Space wrap style={{ marginBottom: 12 }}>
+                      <Tag color={WINNER_PRESENTATION[quality.winner]?.color ?? 'default'}>
+                        {WINNER_PRESENTATION[quality.winner]?.label ??
+                          `未知判定：${quality.winner}`}
+                      </Tag>
+                      <Alert
+                        type="info"
+                        showIcon
+                        style={{ width: 'auto' }}
+                        message="判决只看平均质量分（之差小于 0.01 判平手），通过率与长度面不参与"
+                      />
+                      {/* 幽灵匹配键比幽灵字段名更危险：实测给一个两侧都没有的键，
                         两份毫不相干的数据会回 `common_items: 1`、`similarity_score: 1.0`
                         ——把「毫无重叠」谎报成「完全重叠」。所以候选只从回执的字段并集里取。 */}
-                    <Tag>
-                      本次匹配键：
-                      {compareKeyFields.length
-                        ? compareKeyFields.join('、')
-                        : 'instruction（请求未发 key_fields，取 SDK 默认）'}
-                    </Tag>
-                  </Space>
-                  <Table
-                    size="small"
-                    rowKey="key"
-                    pagination={false}
-                    style={{ marginBottom: 16 }}
-                    title={() => `基本信息：A ${quality.dataset_a_name}（${quality.dataset_a_count} 条） / B ${quality.dataset_b_name}（${quality.dataset_b_count} 条）`}
-                    columns={[
-                      { title: '质量面指标', dataIndex: 'label' },
-                      { title: '键', dataIndex: 'key', width: 140 },
-                      { title: '口径', dataIndex: 'caliber' },
-                      { title: 'A 侧', dataIndex: 'a', width: 110 },
-                      { title: 'B 侧', dataIndex: 'b', width: 110 },
-                      { title: '差值（B − A）', dataIndex: 'diff', width: 130 }
-                    ]}
-                    dataSource={[...aSide].map(([key, value]) => {
-                      const shown = (raw: number) =>
-                        (QUALITY_FACE_PRESENTATION[key]?.kind ?? 'score') === 'rate'
-                          ? formatRatio(raw)
-                          : formatMeasure(raw)
-                      return {
-                        key,
-                        label: QUALITY_FACE_PRESENTATION[key]?.label ?? key,
-                        caliber: QUALITY_FACE_PRESENTATION[key]?.caliber ?? '未知口径',
-                        a: shown(value),
-                        b: shown(bSide.get(key) ?? 0),
-                        diff: shown(diffSide.get(key) ?? 0)
-                      }
-                    })}
-                  />
-                  {SIDE_FACES.map(face => (
+                      <Tag>
+                        本次匹配键：
+                        {compareKeyFields.length
+                          ? compareKeyFields.join('、')
+                          : 'instruction（请求未发 key_fields，取 SDK 默认）'}
+                      </Tag>
+                    </Space>
                     <Table
                       size="small"
-                      key={face.a}
-                      rowKey="name"
+                      rowKey="key"
                       pagination={false}
                       style={{ marginBottom: 16 }}
-                      title={() => face.title}
+                      title={() =>
+                        `基本信息：A ${quality.dataset_a_name}（${quality.dataset_a_count} 条） / B ${quality.dataset_b_name}（${quality.dataset_b_count} 条）`
+                      }
+                      columns={[
+                        { title: '质量面指标', dataIndex: 'label' },
+                        { title: '键', dataIndex: 'key', width: 140 },
+                        { title: '口径', dataIndex: 'caliber' },
+                        { title: 'A 侧', dataIndex: 'a', width: 110 },
+                        { title: 'B 侧', dataIndex: 'b', width: 110 },
+                        { title: '差值（B − A）', dataIndex: 'diff', width: 130 },
+                      ]}
+                      dataSource={[...aSide].map(([key, value]) => {
+                        const shown = (raw: number) =>
+                          (QUALITY_FACE_PRESENTATION[key]?.kind ?? 'score') === 'rate'
+                            ? formatRatio(raw)
+                            : formatMeasure(raw)
+                        return {
+                          key,
+                          label: QUALITY_FACE_PRESENTATION[key]?.label ?? key,
+                          caliber: QUALITY_FACE_PRESENTATION[key]?.caliber ?? '未知口径',
+                          a: shown(value),
+                          b: shown(bSide.get(key) ?? 0),
+                          diff: shown(diffSide.get(key) ?? 0),
+                        }
+                      })}
+                    />
+                    {SIDE_FACES.map((face) => (
+                      <Table
+                        size="small"
+                        key={face.a}
+                        rowKey="name"
+                        pagination={false}
+                        style={{ marginBottom: 16 }}
+                        title={() => face.title}
+                        columns={[
+                          { title: '指标', dataIndex: 'name' },
+                          { title: 'A 侧', dataIndex: 'a', width: 120 },
+                          { title: 'B 侧', dataIndex: 'b', width: 120 },
+                        ]}
+                        dataSource={Object.entries(
+                          quality[face.a] as unknown as Record<string, number>,
+                        ).map(([key, value]) => ({
+                          name: SIDE_METRIC_LABELS[key] ?? key,
+                          a: formatMeasure(value),
+                          b: formatMeasure(
+                            (quality[face.b] as unknown as Record<string, number>)[key] ?? 0,
+                          ),
+                        }))}
+                      />
+                    ))}
+                    <Table
+                      size="small"
+                      rowKey="key"
+                      pagination={false}
+                      style={{ marginBottom: 16 }}
+                      title={() => '重叠面九项指标'}
                       columns={[
                         { title: '指标', dataIndex: 'name' },
-                        { title: 'A 侧', dataIndex: 'a', width: 120 },
-                        { title: 'B 侧', dataIndex: 'b', width: 120 }
+                        { title: '键', dataIndex: 'key', width: 160 },
+                        { title: '数值', dataIndex: 'value', width: 200 },
                       ]}
-                      dataSource={Object.entries(
-                        quality[face.a] as unknown as Record<string, number>
-                      ).map(([key, value]) => ({
-                        name: SIDE_METRIC_LABELS[key] ?? key,
-                        a: formatMeasure(value),
-                        b: formatMeasure(
-                          (quality[face.b] as unknown as Record<string, number>)[key] ?? 0
-                        )
+                      dataSource={OVERLAP_METRIC_PRESENTATION.map(([key, name, kind]) => ({
+                        key,
+                        name,
+                        value: formatOverlapValue(overlap.metrics[key], kind),
                       }))}
                     />
-                  ))}
-                  <Table
-                    size="small"
-                    rowKey="key"
-                    pagination={false}
-                    style={{ marginBottom: 16 }}
-                    title={() => '重叠面九项指标'}
-                    columns={[
-                      { title: '指标', dataIndex: 'name' },
-                      { title: '键', dataIndex: 'key', width: 160 },
-                      { title: '数值', dataIndex: 'value', width: 200 }
-                    ]}
-                    dataSource={OVERLAP_METRIC_PRESENTATION.map(([key, name, kind]) => ({
-                      key,
-                      name,
-                      value: formatOverlapValue(overlap.metrics[key], kind)
-                    }))}
-                  />
-                  <Table
-                    size="small"
-                    rowKey="field"
-                    pagination={false}
-                    style={{ marginBottom: 16 }}
-                    title={() => '字段对照（逐条值差异在行内展开）'}
-                    expandable={{
-                      expandedRowRender: row =>
-                        row.differences.length === 0 ? (
-                          <span>该字段没有逐条值差异（两侧配上的条目在这一档同值）</span>
-                        ) : (
-                          <Table
-                            size="small"
-                            rowKey={(_, i) => String(i)}
-                            pagination={{ pageSize: 8 }}
-                            // 明细条目的键集合实测固定是 `{instruction, value_a, value_b}`（匹配键不影响它），
-                            // 列头仍从条目键的并集里取：SDK 哪天换形状，页面跟着回执走而不是跟着注释走。
-                            columns={Object.keys(row.differences[0]).map(key => ({
-                              title: key,
-                              dataIndex: key
-                            }))}
-                            dataSource={row.differences.map(item =>
-                              Object.fromEntries(
-                                Object.entries(item).map(([k, v]) => [
-                                  k,
-                                  typeof v === 'string' ? v : JSON.stringify(v)
-                                ])
-                              )
-                            )}
-                          />
-                        )
-                    }}
-                    columns={[
-                      { title: '字段', dataIndex: 'field' },
-                      { title: '仅 A', dataIndex: 'inA', width: 90 },
-                      { title: '仅 B', dataIndex: 'inB', width: 90 },
-                      { title: '两侧都有', dataIndex: 'inBoth', width: 100 },
-                      { title: '类型不一致', dataIndex: 'mismatch', width: 100 },
-                      { title: '值差异条数', dataIndex: 'diffCount', width: 110 }
-                    ]}
-                    dataSource={Object.values(overlap.field_comparisons).map(entry => ({
-                      field: entry.field_name,
-                      inA: entry.in_a_only,
-                      inB: entry.in_b_only,
-                      inBoth: entry.in_both,
-                      mismatch: entry.type_mismatches,
-                      diffCount: entry.value_differences.length,
-                      differences: entry.value_differences
-                    }))}
-                  />
-                  {/* 两套摘要各自成段，不是一句话的两半：口径不同，合并渲染会把结论混起来 */}
-                  <Row gutter={16}>
-                    <Col span={12}>
-                      <div style={{ whiteSpace: 'pre-line' }}>
-                        <strong>质量面摘要</strong>
-                        {quality.summary}
-                      </div>
-                    </Col>
-                    <Col span={12}>
-                      <div style={{ whiteSpace: 'pre-line' }}>
-                        <strong>重叠面摘要</strong>
-                        {overlap.summary}
-                      </div>
-                    </Col>
-                  </Row>
-                  {overlap.recommendations.length > 0 && (
-                    <ul style={{ marginTop: 12 }}>
-                      {overlap.recommendations.map(text => (
-                        <li key={text}>{text}</li>
-                      ))}
-                    </ul>
-                  )}
-                </>
-              )
-            })()}
+                    <Table
+                      size="small"
+                      rowKey="field"
+                      pagination={false}
+                      style={{ marginBottom: 16 }}
+                      title={() => '字段对照（逐条值差异在行内展开）'}
+                      expandable={{
+                        expandedRowRender: (row) =>
+                          row.differences.length === 0 ? (
+                            <span>该字段没有逐条值差异（两侧配上的条目在这一档同值）</span>
+                          ) : (
+                            <Table
+                              size="small"
+                              rowKey={(_, i) => String(i)}
+                              pagination={{ pageSize: 8 }}
+                              // 明细条目的键集合实测固定是 `{instruction, value_a, value_b}`（匹配键不影响它），
+                              // 列头仍从条目键的并集里取：SDK 哪天换形状，页面跟着回执走而不是跟着注释走。
+                              columns={Object.keys(row.differences[0]).map((key) => ({
+                                title: key,
+                                dataIndex: key,
+                              }))}
+                              dataSource={row.differences.map((item) =>
+                                Object.fromEntries(
+                                  Object.entries(item).map(([k, v]) => [
+                                    k,
+                                    typeof v === 'string' ? v : JSON.stringify(v),
+                                  ]),
+                                ),
+                              )}
+                            />
+                          ),
+                      }}
+                      columns={[
+                        { title: '字段', dataIndex: 'field' },
+                        { title: '仅 A', dataIndex: 'inA', width: 90 },
+                        { title: '仅 B', dataIndex: 'inB', width: 90 },
+                        { title: '两侧都有', dataIndex: 'inBoth', width: 100 },
+                        { title: '类型不一致', dataIndex: 'mismatch', width: 100 },
+                        { title: '值差异条数', dataIndex: 'diffCount', width: 110 },
+                      ]}
+                      dataSource={Object.values(overlap.field_comparisons).map((entry) => ({
+                        field: entry.field_name,
+                        inA: entry.in_a_only,
+                        inB: entry.in_b_only,
+                        inBoth: entry.in_both,
+                        mismatch: entry.type_mismatches,
+                        diffCount: entry.value_differences.length,
+                        differences: entry.value_differences,
+                      }))}
+                    />
+                    {/* 两套摘要各自成段，不是一句话的两半：口径不同，合并渲染会把结论混起来 */}
+                    <Row gutter={16}>
+                      <Col span={12}>
+                        <div style={{ whiteSpace: 'pre-line' }}>
+                          <strong>质量面摘要</strong>
+                          {quality.summary}
+                        </div>
+                      </Col>
+                      <Col span={12}>
+                        <div style={{ whiteSpace: 'pre-line' }}>
+                          <strong>重叠面摘要</strong>
+                          {overlap.summary}
+                        </div>
+                      </Col>
+                    </Row>
+                    {overlap.recommendations.length > 0 && (
+                      <ul style={{ marginTop: 12 }}>
+                        {overlap.recommendations.map((text) => (
+                          <li key={text}>{text}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </>
+                )
+              })()}
           </Card>
         </>
       )}

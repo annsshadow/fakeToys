@@ -15,16 +15,17 @@ import { message } from 'antd'
 
 window.matchMedia =
   window.matchMedia ||
-  ((query: string) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: () => {},
-    removeListener: () => {},
-    addEventListener: () => {},
-    removeEventListener: () => {},
-    dispatchEvent: () => false,
-  }) as unknown as MediaQueryList)
+  ((query: string) =>
+    ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    }) as unknown as MediaQueryList)
 class RO {
   observe() {}
   unobserve() {}
@@ -59,7 +60,9 @@ vi.mock('../components/DataList', () => ({
     </button>
   ),
 }))
-vi.mock('../components/ExportDialog', () => ({ default: () => <div data-testid="export-dialog" /> }))
+vi.mock('../components/ExportDialog', () => ({
+  default: () => <div data-testid="export-dialog" />,
+}))
 
 import Export from './Export'
 

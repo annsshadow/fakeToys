@@ -19,16 +19,17 @@ import { message } from 'antd'
 
 window.matchMedia =
   window.matchMedia ||
-  ((query: string) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: () => {},
-    removeListener: () => {},
-    addEventListener: () => {},
-    removeEventListener: () => {},
-    dispatchEvent: () => false,
-  }) as unknown as MediaQueryList)
+  ((query: string) =>
+    ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    }) as unknown as MediaQueryList)
 class RO {
   observe() {}
   unobserve() {}
@@ -116,8 +117,7 @@ beforeEach(() => {
 /** 等文件列表落地再点按钮（`selectedFile` 是异步设成 `files[0]` 的，理由见采样那份用例） */
 async function waitFiles(container: HTMLElement) {
   await waitFor(
-    () =>
-      expect((container.querySelector('select') as HTMLSelectElement)?.value).toBe('a.json'),
+    () => expect((container.querySelector('select') as HTMLSelectElement)?.value).toBe('a.json'),
     { timeout: 10000 },
   )
 }
@@ -195,7 +195,7 @@ describe('翻译卡的初值与三道闸', () => {
         targetLang: 'en',
         textKey: 'instruction',
         keepOriginal: true,
-      })
+      }),
     )
     await waitFor(() => expect(labeled('翻译回执')).not.toBeNull())
     const receipt = labeled('翻译回执')?.textContent || ''
@@ -221,7 +221,7 @@ describe('翻译回执面', () => {
     click()
 
     await waitFor(() =>
-      expect(labeled('翻译回执')?.textContent).toContain('未落盘（只在本次响应里）')
+      expect(labeled('翻译回执')?.textContent).toContain('未落盘（只在本次响应里）'),
     )
   })
 
