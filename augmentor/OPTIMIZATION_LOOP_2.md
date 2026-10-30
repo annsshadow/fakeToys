@@ -289,7 +289,7 @@
 
 | A366 | `augmentor/backup.py:116` 的备份名此前只过「落在根内」那道门：`name="sub/deep"` 建得出 `sub/deep` 这一份，而 `GET /api/backups` 交回的名字带斜杠、`DELETE /api/backups/{name}` 与 `restore` 把它当两个 URL 段 ⇒ 「建得出来却寻不了址」的失踪态：盘上有那一份，索引里那一行却永远够不着 | **新立（L277）并同轮收口**：新公共判据 `augmentor/validation.py:1191 require_path_segment`——分隔符整族（`/` 与反斜杠）、`..` 组件、NUL 与空串一律 `DataValidationError` ⇒ HTTP 400；出生点只接一处（`= require_path_segment(… or …)` 的同行写法，守卫钉「全仓只有一处调用」，接两处就是两套口径）。`web/src/services/api.ts` 的备份名单一路由改走 `encodeURIComponent`：存量名字里可能有 `#`（改前建得出来），裸插值会被浏览器折成 fragment ⇒ 那些历史名字今天仍然删得掉。行为变更：带分隔符的名字改前 **200** 并建子目录、改后 **400** 且不落盘。新守卫 `tests/unit/test_backup_name_path_segment_l277.py`（16 支）；`test_backup_wiring_l231.py` 与 `test_backup_index_collapse_l250.py` 里各一档语料按新口径改判（口径变更不是放宽，各留反证）。定级 M，本轮按用户 goal 授权直接收口。 | ~~M~~ 已收口（L277） |
 
-| A367 | `/api/data/load` 的 `page` / `page_size` 一路落进 `items[start:end]`：`page=0` 与 `page=1` 同答、`page=-1` 折成尾部切片、`page_size=0` 交一份空页还自称分页成功、`page_size=-2` 悄悄删掉末尾两条；更要紧的是**页内下标与盘上下标不同形**——前端拿页内下标发 `PUT /api/data/update`，第二页的第一条会改到第一条 | **新立（L277）并同轮收口**：门口 `api/routes/data.py:172`~`:173` 用 SDK 唯一权威 `require_count("page" / "page_size", minimum=1)` 判掉，判在 `_safe_data_path` 与 `try` **之外**（写在 `try` 里就被 `deps.raise_internal_error` 收敛成 500——A280 那一族本轮不动）；响应新增 `indices`（与返回行同序的盘上 0 基下标），写端点坐标交回唯一权威，前端 `web/src/pages/DataManagement.tsx:110`（`setRowIndices(result.indices)`）改读它——初稿指的 `web/src/services/api.ts` 那一行是注释而非代码，a184 当场判 dead_line。行为变更：`page<1` / `page_size<1` 改前静默错答、改后 **400**；`/api/data/load` 响应体多一格 `indices`（OpenAPI 契约与 TS 类型面同步，见日志块 ⑪）。新守卫 `tests/integration/test_data_page_slice_l277.py`（17 支）。定级 M，本轮按用户 goal 授权直接收口。 | ~~M~~ 已收口（L277） |
+| A367 | `/api/data/load` 的 `page` / `page_size` 一路落进 `items[start:end]`：`page=0` 与 `page=1` 同答、`page=-1` 折成尾部切片、`page_size=0` 交一份空页还自称分页成功、`page_size=-2` 悄悄删掉末尾两条；更要紧的是**页内下标与盘上下标不同形**——前端拿页内下标发 `PUT /api/data/update`，第二页的第一条会改到第一条 | **新立（L277）并同轮收口**：门口 `api/routes/data.py:172`~`:173` 用 SDK 唯一权威 `require_count("page" / "page_size", minimum=1)` 判掉，判在 `_safe_data_path` 与 `try` **之外**（写在 `try` 里就被 `deps.raise_internal_error` 收敛成 500——A280 那一族本轮不动）；响应新增 `indices`（与返回行同序的盘上 0 基下标），写端点坐标交回唯一权威，前端 `web/src/pages/DataManagement.tsx:164`（`setRowIndices(result.indices)`）改读它——初稿指的 `web/src/services/api.ts` 那一行是注释而非代码，a184 当场判 dead_line。行为变更：`page<1` / `page_size<1` 改前静默错答、改后 **400**；`/api/data/load` 响应体多一格 `indices`（OpenAPI 契约与 TS 类型面同步，见日志块 ⑪）。新守卫 `tests/integration/test_data_page_slice_l277.py`（17 支）。定级 M，本轮按用户 goal 授权直接收口。 | ~~M~~ 已收口（L277） |
 
 | A368 | `AugmentorPipeline.augment_async` 的 `use_checkpoint` 是**死参数**：`docs/augmentor/API_CORE.md` 把它写在公开签名上、默认 `True`，函数体一字没读它 ⇒ 异步入口既不建断点也不落盘，`list_checkpoints()` 恒空，中断之后无从续传，而回执里的 `async_mode: true` 让人以为同一套断点机制在跑 | **新立（L277）并同轮收口**（`augmentor/pipeline.py:721` 起）：与同步入口 `augment_dataset` 逐字同式——任务 ID 由输入路径派生、`get_remaining_indices(ck)` 取未做下标、只投余下的条目、每条 `update_progress(index, success, checkpoint=ck)` **带身份**（L275 的运行局部状态那一格在这里必须传，否则又回到「A 的进度落进 B 的断点」）、收尾 `save_checkpoint(ck)`。报告键**不加** `progress`：文档未承诺，加了就是另一族契约变更。新守卫 `tests/unit/test_async_checkpoint_resume_l277.py`（6 支）含反证臂：把 `get_remaining_indices` 改回「返回全部下标」，产物第一行立刻变成变体 ⇒ 续传那一格吃重。`test_run_scoped_checkpoint_state_l275.py` 的 AST 名册因此从 4/1/1 走到 6/2/2。定级 M，本轮按用户 goal 授权直接收口。 | ~~M~~ 已收口（L277） |
 
@@ -3673,7 +3673,8 @@ A282 / A280 / A278 / A276 / A271 / A272 / A273）与 A326 / A327 一律不动。
   **这份复跑读数就是 L240 的终态基准，也是下一轮（L241）要比对的那一格。**
 - **记账批自己抓到的两处，原样入册不覆盖前文**：
   ① 上面批写脚本里那句复验断言（`pairs == newlines`）的量的是「**每一个 `
-` 都前接一个 ``**」
+` 都前接一个 `
+`**」
   ⇒ 它足以证明「无孤立 LF」，配上 `crlf = b"
 " in raw` 为真与 `pairs > 0` 才是「纯 CRLF」。
   第一版把它写成「证明纯 CRLF」，**说的是判据的一半**：单看 `pairs == newlines` 在空文件上恒真。
