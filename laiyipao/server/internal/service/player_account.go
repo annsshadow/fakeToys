@@ -26,11 +26,15 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/jackc/pgx/v5"
 
 	"github.com/laiyipao/server/internal/auth"
 )
+
+// maxUsernameLen 是玩家用户名的最大长度（按字符计，不按字节）。
+const maxUsernameLen = 32
 
 // Login 用用户名 + 密码登录玩家账号。
 //
@@ -80,6 +84,84 @@ func (s *Service) Login(ctx context.Context, username, password string) (TokenPa
 		return TokenPair{}, err
 	}
 	return s.issueTokens(ctx, id, u)
+}
+
+// UpgradeGuestAccount 把游客账号升级为「用户名 + 密码」账号。
+//
+// 游客号的全部数据（钱包 / 进度 / 专精 / 战报 / 防线）只靠一枚存在
+// localStorage 的 `guest_token` 保护 —— 清缓存 / 换设备 / 浏览器隐私模式
+// 一关，这枚凭证就没了，账号等于永久丢失。升级后玩家可以在任何设备
+// 上用用户名 + 密码登录回**同一个号**。
+//
+// 语义要点：
+//
+//   - 仅限纯游客号（`password_hash IS NULL`）。已经是账号登录的行走这里
+//     没有意义，直接拒绝。
+//   - 用户名受 `idx_users_username` 部分唯一索引约束（NULL 不冲突）。
+//     先查后写，把「用户名已被占用」翻译成 ErrBadInput，
+//     而不是让 pgx 的唯一约束错误冒到 500。
+//   - `guest_token` **保留不动**：老客户端冷启动仍会带旧凭证调 GuestLogin，
+//     服务端按 guest_token 匹配回同一行 —— 转正不能把老客户端挤出局。
+//   - 不吊销现有会话：身份没变（还是同一个 user_id），只是多了一把钥匙。
+func (s *Service) UpgradeGuestAccount(ctx context.Context, userID int64, username, password string) error {
+	username = strings.TrimSpace(username)
+	password = strings.TrimSpace(password)
+	if username == "" || password == "" {
+		return fmt.Errorf("%w: 用户名和密码都不能为空", ErrBadInput)
+	}
+	if utf8.RuneCountInString(username) > maxUsernameLen {
+		return fmt.Errorf("%w: 用户名最长 %d 个字符", ErrBadInput, maxUsernameLen)
+	}
+	if strings.ContainsAny(username, " \t\r\n") {
+		return fmt.Errorf("%w: 用户名不能包含空白字符", ErrBadInput)
+	}
+	if len(password) < 10 {
+		return fmt.Errorf("%w: 密码至少 10 位（当前 %d 位）", ErrBadInput, len(password))
+	}
+
+	var (
+		hash   *string
+		status int
+	)
+	err := s.pool.QueryRow(ctx,
+		`SELECT password_hash, status FROM users WHERE id = $1`, userID).
+		Scan(&hash, &status)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return fmt.Errorf("%w: 用户不存在", ErrNotFound)
+		}
+		return fmt.Errorf("load player account: %w", err)
+	}
+	if status != 1 {
+		return fmt.Errorf("%w: 账号已被封禁", ErrForbidden)
+	}
+	if hash != nil && *hash != "" {
+		return fmt.Errorf("%w: 该账号已经是账号登录，不能重复注册", ErrBadInput)
+	}
+
+	// 用户名占用检查（先查后写，避免把唯一约束错误暴露成 500）。
+	var ownerID int64
+	err = s.pool.QueryRow(ctx,
+		`SELECT id FROM users WHERE username = $1`, username).Scan(&ownerID)
+	switch {
+	case err == nil:
+		return fmt.Errorf("%w: 用户名已被使用", ErrBadInput)
+	case !errors.Is(err, pgx.ErrNoRows):
+		return fmt.Errorf("check username: %w", err)
+	}
+
+	newHash, err := HashPassword(password)
+	if err != nil {
+		return err
+	}
+
+	// 保持 guest_token 不变（见函数头注释）。
+	if _, err := s.pool.Exec(ctx,
+		`UPDATE users SET username = $2, password_hash = $3, is_guest = FALSE
+		 WHERE id = $1`, userID, username, newHash); err != nil {
+		return fmt.Errorf("upgrade guest account: %w", err)
+	}
+	return nil
 }
 
 // ChangePassword 修改玩家账号密码，并吊销该账号全部未过期 refresh token。

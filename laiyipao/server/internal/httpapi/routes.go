@@ -208,6 +208,16 @@ func (s *Server) Register(app *fiber.App) {
 	// 额度与理由见 middleware.go 的 passwordChangeLimit。
 	me.Post("/password", authRateLimit("password_change", passwordChangeLimit), s.changePassword)
 
+	// 游客账号转正（2026-10-30 实质优化第 8 轮）。
+	//
+	// 游客号的全部数据只靠 localStorage 里的一枚 guest_token 保护 ——
+	// 清缓存 / 换设备就永久丢失。这个端点让游客设置「用户名 + 密码」，
+	// 之后可以在任何设备登录回同一个号。
+	//
+	// 限流：注册面防刷（防止脚本批量占用户名 / 枚举可用用户名），
+	// 额度与理由见 middleware.go 的 accountUpgradeLimit。
+	me.Post("/upgrade", authRateLimit("account_upgrade", accountUpgradeLimit), s.upgradeGuestAccount)
+
 	// 兑换码既按 IP 也按身份限：IP 额度挡单点爆破，
 	// 身份额度挡「同一个号换 IP 继续试」。
 	redeem := v1.Group("/redeem", requireUser(s.Svc))
@@ -424,6 +434,21 @@ func (s *Server) changePassword(c *fiber.Ctx) error {
 		return failErr(c, err)
 	}
 	return c.JSON(fiber.Map{"revoked": revoked})
+}
+
+// upgradeGuestAccount 把当前游客账号升级为「用户名 + 密码」账号。
+func (s *Server) upgradeGuestAccount(c *fiber.Ctx) error {
+	var body struct {
+		Username string `json:"username"`
+		Password string `json:"password"`
+	}
+	if err := c.BodyParser(&body); err != nil {
+		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+	}
+	if err := s.Svc.UpgradeGuestAccount(c.Context(), userIDFrom(c), body.Username, body.Password); err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(fiber.Map{"ok": true})
 }
 
 // getLoadout 返回当前出战槽位。

@@ -545,6 +545,13 @@ const (
 	// 正常玩家一天改不了一次，10 次/分钟足够宽，同时把暴力试探压住。
 	// 按 user_id 计（authRateLimit），NAT 下多个真实玩家互不挤占。
 	passwordChangeLimit = 10
+
+	// accountUpgradeLimit 是「游客转正」的每用户每分钟上限。
+	//
+	// 转正是注册面：脚本可以批量占用户名 / 枚举「哪个用户名已被占用」。
+	// 正常玩家一生只转正一次，10 次/分钟足够宽，同时把脚本批量注册压住。
+	// 按 user_id 计（authRateLimit），NAT 下多个真实玩家互不挤占。
+	accountUpgradeLimit = 10
 )
 
 // authRateLimit 返回按登录身份计数的限流中间件。
