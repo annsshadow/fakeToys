@@ -33,6 +33,7 @@
 | 23 | 2026-10-30 | 工程卫生：augmentor 启动耗时 234ms（B5-1 有效）+ 全仓 TODO 扫描无遗留 | — | 性能/卫生验证 |
 | 24 | 2026-10-30 | oa4rust 前端 bundle 验证（main 41KB，vendor 独立 chunk 性能优秀） | — | 工程卫生 |
 | 25 | 2026-10-30 | 可解析但无 host URL 的 fail-fast panic 分支 → **行覆盖率突破 95%** | `06c3608c1` | shared 329 绿；**95.01%** |
+| 26 | 2026-10-30 | 全 workspace 测试发现并修复 query_service_processing 夹具 E23505 竞态（改 upsert_fixture_person） | `d111d6f1f` | 该 crate 27 绿；门禁 13/0/1 |
 | ... | | 持续迭代至 100 轮 | | |
 
-> 状态：进行中。当前累计 25 轮，距 100 轮还差 75 轮。
+> 状态：进行中。当前累计 26 轮，距 100 轮还差 74 轮。
