@@ -279,6 +279,20 @@ pub fn dialect() -> &'static dyn SqlDialect {
 mod tests {
     use super::*;
 
+    #[allow(clippy::default_constructed_unit_structs)] // 目的就是覆盖 Default impl
+    #[test]
+    fn postgres_dialect_default_matches_new() {
+        let d = PostgresDialect::default();
+        assert_eq!(d.name(), PostgresDialect::new().name());
+    }
+
+    #[allow(clippy::default_constructed_unit_structs)] // 目的就是覆盖 Default impl
+    #[test]
+    fn mysql_dialect_default_matches_new() {
+        let d = MySQLDialect::default();
+        assert_eq!(d.name(), MySQLDialect::new().name());
+    }
+
     #[test]
     fn postgres_format_sql_is_identity() {
         let sql = "SELECT * FROM t WHERE id = $1 AND name = $2";
