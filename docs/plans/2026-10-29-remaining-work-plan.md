@@ -15,7 +15,7 @@
 | auto-checkin | 102 passed；覆盖率棘轮九档全绿 |
 | laiyipao | service / httpapi / cmd / config 真库全绿；配置热加载已落地 |
 | augmentor | 10173 passed / 4 failed（4 条为基线既红：pillow 环境性 + 3 条棘轮）；web 416 tests 全绿 |
-| oa4rust | 97 crates 编译零告警；`shared` 覆盖率 **94.43%**（容器内实测，floor 93 与 C1 94 目标均达成） |
+| oa4rust | 97 crates 编译零告警；`shared` 覆盖率 **94.74%**（容器内实测，floor 93 与 C1 94 目标均达成） |
 | oa4rust 定位 | **独立系统**，不再与 Java 对齐（CI 的 Java 双栈对比门禁已删，换成启动冒烟） |
 
 **已关闭、不要再排期**：OA-P0-1（Java 契约奇偶，前提消失）、LY-5（配置热加载，已落地）、
@@ -172,7 +172,7 @@ LY-7（小程序虚拟化，实测列表全部有界）、AU-P1（异步后端�
 
 | 编号 | 项 | 现状 | 缺口性质 |
 |---|---|---|---|
-| **C1** | `shared` 覆盖率 93.28% → 94% | **✅ 已达成（2026-10-30 第八轮，第九~十一轮巩固）** | 需 ~50 行，全部依赖**进程隔离**（`security` 的 OnceLock 环境臂与 parity 测试互斥）或**公网夹具**（`netguard fetch_limited` 被自身 SSRF 守卫挡回环）。属条件项，不作为默认目标。**第六轮**：发现 `oa4rust-cov` Docker 容器是可用 Linux 覆盖率环境，跑通 `cargo llvm-cov -p shared --lib`；修复 `db/mod.rs` 测试并发污染，覆盖率 93.17%。**第七轮**：security OnceLock 环境臂参数化 + 清理 `response.rs` 重复死代码 + 补全 8 变体映射测试，93.20%。**第八轮（达成）**：migrate 分支测试 + 死代码清理 + DynControlPool/mock 基建覆盖，**94.12%**。**第九轮（巩固）**：netguard HTTP 错误状态分支 + `upsert_fixture_person`/`is_unique_violation` 真库覆盖，**94.29%**。**第十轮（巩固）**：`security_headers_response` 参数化核心，FORCE_HTTPS 307 分支可测，**94.25%**。**第十一轮（巩固）**：补 `is_unique_violation` 反向（42P01 非冲突错误必须返回 false）+ `upsert_fixture_person` 残留清理分支。容器内 shared **320 全绿**、clippy 零告警、行覆盖率 **94.43%**、函数 92.01%、分支 94.80%。 |
+| **C1** | `shared` 覆盖率 93.28% → 94% | **✅ 已达成（2026-10-30 第八轮，第九~十二轮巩固）** | 需 ~50 行，全部依赖**进程隔离**（`security` 的 OnceLock 环境臂与 parity 测试互斥）或**公网夹具**（`netguard fetch_limited` 被自身 SSRF 守卫挡回环）。属条件项，不作为默认目标。**第六轮**：发现 `oa4rust-cov` Docker 容器是可用 Linux 覆盖率环境，跑通 `cargo llvm-cov -p shared --lib`；修复 `db/mod.rs` 测试并发污染，93.17%。**第七轮**：security OnceLock 环境臂参数化 + 清理死代码 + 补全 8 变体映射，93.20%。**第八轮（达成）**：migrate 分支 + 死代码清理 + DynControlPool/mock 基建覆盖，**94.12%**。**第九轮（巩固）**：netguard 错误状态 + 夹具真库覆盖，**94.29%**。**第十轮（巩固）**：security_headers_response 参数化，**94.25%**。**第十一轮（巩固）**：冲突识别反向 + 残留清理，**94.43%**。**第十二轮（巩固）**：性能基线复测（auth 2.19ms / document 1.36ms，无回归）+ 容器运维要点 D3。**第十三轮（巩固）**：补 `ControlClient for Object` / `RowGet for Row` 真库实现覆盖（8 方法全链路），容器内 shared **321 全绿**、行覆盖率 **94.74%**、函数 92.96%、分支 95.11%。 |
 
 ### D 类 · 环境与工具
 
