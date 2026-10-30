@@ -1,3 +1,2 @@
 crate	method	path	handler	bucket	route_site
-empower	DELETE	/api/organization/assemble/personal/empower/{id}	empower_delete	R1	router.rs:95
-empower	DELETE	/api/person/empower/{id}	empower_delete	R1	router.rs:29
+

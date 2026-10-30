@@ -390,6 +390,36 @@ function moduleAliases(crate) {
   aliasCache.set(crate, m);
   return m;
 }
+// 尺子缺陷 32（2026-10-30 修）：`use super::{ delete as empower_delete, ... }` 这类
+// **分组导入**给 handler 起别名后，路由注册写的是别名（`delete(empower_delete)`），
+// 而函数体只有原名 `delete`。`fnBody` 按字面名扫描找不到 ⇒ 两条 `/api/person/empower/{id}`
+// DELETE 被读成「体内不可解析」（R8），门禁证据取不到。补函数级别名换算：只扫
+// **路由注册文件**（含 `.route(`）里的 `use ... as ...`（单条与分组都覆盖），
+// 建 别名 → 原名 映射；`fnBody` 字面名取不到时按映射换原名再扫。
+const fnAliasCache = new Map();
+function functionAliases(crate) {
+  if (fnAliasCache.has(crate)) return fnAliasCache.get(crate);
+  const m = new Map();
+  const dir = path.join(CRATES, crate, "src");
+  if (fs.existsSync(dir))
+    for (const f of walk(dir)) {
+      const src = fs.readFileSync(f, "utf8");
+      if (!src.includes(".route(")) continue;
+      // 单条 `use a::b as c;` 与分组 `use super::{ a as c, d as e }` 都覆盖。
+      // 正则在整段 use 语句内找 `path as alias`，path 取末段作原名。
+      for (const um of src.matchAll(/\buse\s+[^;]+;/gs)) {
+        const stmt = um[0];
+        for (const am of stmt.matchAll(/\b([A-Za-z_][\w]*(?:::[A-Za-z_][\w]*)*)\s+as\s+([A-Za-z_][\w]*)\b/g)) {
+          const orig = am[1];
+          const alias = am[2];
+          if (alias === "_") continue; // `Engine as _` 匿名导入不算命名别名
+          m.set(alias, orig.split("::").pop() || orig);
+        }
+      }
+    }
+  fnAliasCache.set(crate, m);
+  return m;
+}
 // 尺子缺陷 13（本批修）：缺陷 12 承认了「宏生成的 handler 看不见体内」，但「看不见」不等于「没有」——
 // cms 的 data_path_write_handlers!（68 条）、pp 的 dict_set_*/dict_del_*、bbs 的 topic_toggle_endpoints!
 // 这三族把 body 写在 macro_rules! 模板里。现按 Rust 语义补一级解析：
@@ -559,16 +589,24 @@ function fnBody(crate, ref) {
   const parts = String(ref).split("::").filter(Boolean);
   const name = parts[parts.length - 1];
   const mods = parts.slice(0, -1).filter((p) => p !== "crate" && p !== "self");
-  const scanAll = () => {
+  const scanAll = (scanName = name) => {
     for (const file of walk(dir)) {
-      const b = sliceFn(fs.readFileSync(file, "utf8"), name);
+      const b = sliceFn(fs.readFileSync(file, "utf8"), scanName);
       if (b) return b;
     }
     return "";
   };
+  // 尺子缺陷 32：字面名可能是路由文件里的分组导入别名（`use super::{ delete as empower_delete }`），
+  // 字面扫描失败后按 别名 → 原名 映射换名再扫（只对无模块限定符与回落扫描两处生效）。
+  const scanAllWithAliasFallback = () => {
+    let b = scanAll();
+    if (b) return b;
+    const orig = functionAliases(crate).get(name);
+    return orig && orig !== name ? scanAll(orig) : "";
+  };
   if (fs.existsSync(dir)) {
     if (!mods.length) {
-      body = scanAll();
+      body = scanAllWithAliasFallback();
     } else {
       const al = moduleAliases(crate);
       const variants = [
@@ -615,7 +653,7 @@ function fnBody(crate, ref) {
         unresolvedRefs.push(
           `${crate}\t${ref}\t${tried.length ? `${tried.join(" / ")} 内无该 fn` : "限定符（含别名）无对应模块文件"}`
         );
-        body = scanAll();
+        body = scanAllWithAliasFallback();
       }
     }
   }
@@ -1810,6 +1848,25 @@ for (const key of [
   if (!kRoutes.has(key))
     witnessGaps.push(`缺陷 23 反向见证失效（无门档被误判成已加门）：${key.replace(/\t/g, " ")}`);
 }
+// 缺陷 32：分组导入别名（`use super::{ delete as empower_delete }`）注册的 handler 必须
+// 能解析回原名函数体。正向：empower_delete 两条 DELETE 必须拿到 check_owner 门作证——
+// 别名映射退化（换名扫描失效）时它们退回 R8「体内不可解析」，间接门禁名单当场消失。
+for (const key of [
+  "empower\tDELETE\t/api/person/empower/{id}\tempower_delete",
+  "empower\tDELETE\t/api/organization/assemble/personal/empower/{id}\tempower_delete",
+]) {
+  if (gatedByRoute.get(key) !== "check_owner")
+    witnessGaps.push(`缺陷 32 见证缺失（别名 handler 未解析出体内门禁）：${key.replace(/\t/g, " ")}`);
+}
+// 反向：别名换算不许把只读的 empower_get（`get as empower_get`，纯 SELECT + owner 门）
+// 误判成写面。换名过宽（别名映射到别的写函数）时它会进 GET 写面，当场红。
+for (const key of [
+  "empower\tGET\t/api/person/empower/{id}\tempower_get",
+  "empower\tGET\t/api/organization/assemble/personal/empower/{id}\tempower_get",
+]) {
+  if (kRoutes.has(key))
+    witnessGaps.push(`缺陷 32 反向见证失效（只读别名 handler 被误判成 GET 写面）：${key.replace(/\t/g, " ")}`);
+}
 for (const w of WRITE_HELPER_WITNESSES)
   if (!wHelpers.has(w)) witnessGaps.push(`缺陷 16 见证缺失（间接写 SQL 未见 ${w}）`);
 for (const w of GATE_HELPER_WITNESSES)
@@ -1822,7 +1879,8 @@ console.log(
   `\n判据见证：缺陷 16 ${WRITE_HELPER_WITNESSES.length} 条 / 缺陷 17 ${GATE_HELPER_WITNESSES.length} 条 / ` +
   `缺陷 18 正向 ${DEAD_ALIAS_WITNESSES.length} 条 + 反向 ${LIVE_ALIAS_WITNESSES.length} 条 / ` +
   `缺陷 19 正向 4 条 + 缺陷 20 正向 2 条 + 反向 3 条 / 缺陷 21 反向 2 条 + 正向 1 条 / ` +
-  `缺陷 22 正向 3 条 + helper 1 条 + 反向 3 条 / 缺陷 23 正向 3 条 + 反向 1 条，` +
+  `缺陷 22 正向 3 条 + helper 1 条 + 反向 3 条 / 缺陷 23 正向 3 条 + 反向 1 条 / ` +
+  `缺陷 32 正向 2 条 + 反向 2 条，` +
   `缺口 ${witnessGaps.length} 处`
 );
 for (const g of witnessGaps) console.error(`  ${g}`);
