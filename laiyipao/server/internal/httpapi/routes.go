@@ -218,6 +218,16 @@ func (s *Server) Register(app *fiber.App) {
 	// 额度与理由见 middleware.go 的 accountUpgradeLimit。
 	me.Post("/upgrade", authRateLimit("account_upgrade", accountUpgradeLimit), s.upgradeGuestAccount)
 
+	// 玩家修改昵称（2026-10-30 实质优化第 9 轮）。
+	//
+	// 昵称只在登录/引导时设置一次，之后**永远改不了** —— 排行榜、防线、
+	// 战报上显示的都是那个默认名（游客是「user#xxx」，账号是用户名）。
+	// 这里补上改名入口：`PUT /me/nickname`，上限 MaxNicknameLen=64。
+	//
+	// 限流：昵称会进所有列表响应且被广泛读取，频繁改名可用来刷存在感，
+	// 额度与理由见 middleware.go 的 nicknameChangeLimit。
+	me.Put("/nickname", authRateLimit("nickname_change", nicknameChangeLimit), s.updateNickname)
+
 	// 兑换码既按 IP 也按身份限：IP 额度挡单点爆破，
 	// 身份额度挡「同一个号换 IP 继续试」。
 	redeem := v1.Group("/redeem", requireUser(s.Svc))
@@ -446,6 +456,20 @@ func (s *Server) upgradeGuestAccount(c *fiber.Ctx) error {
 		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
 	}
 	if err := s.Svc.UpgradeGuestAccount(c.Context(), userIDFrom(c), body.Username, body.Password); err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(fiber.Map{"ok": true})
+}
+
+// updateNickname 修改当前玩家的昵称。
+func (s *Server) updateNickname(c *fiber.Ctx) error {
+	var body struct {
+		Nickname string `json:"nickname"`
+	}
+	if err := c.BodyParser(&body); err != nil {
+		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+	}
+	if err := s.Svc.UpdateNickname(c.Context(), userIDFrom(c), body.Nickname); err != nil {
 		return failErr(c, err)
 	}
 	return c.JSON(fiber.Map{"ok": true})

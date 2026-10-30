@@ -552,6 +552,13 @@ const (
 	// 正常玩家一生只转正一次，10 次/分钟足够宽，同时把脚本批量注册压住。
 	// 按 user_id 计（authRateLimit），NAT 下多个真实玩家互不挤占。
 	accountUpgradeLimit = 10
+
+	// nicknameChangeLimit 是改昵称的每用户每分钟上限。
+	//
+	// 昵称会进排行榜 / 战报 / 防线 / 后台列表等所有列表响应，频繁改名
+	// 可用来刷存在感或干扰后台审计。正常玩家一天改不了一次，
+	// 10 次/分钟足够宽。按 user_id 计（authRateLimit），NAT 安全。
+	nicknameChangeLimit = 10
 )
 
 // authRateLimit 返回按登录身份计数的限流中间件。

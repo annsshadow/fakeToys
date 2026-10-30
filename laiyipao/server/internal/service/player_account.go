@@ -86,6 +86,30 @@ func (s *Service) Login(ctx context.Context, username, password string) (TokenPa
 	return s.issueTokens(ctx, id, u)
 }
 
+// UpdateNickname 修改玩家昵称。
+//
+// 昵称会出现在排行榜、战报、防线候选与后台用户列表里，是**玩家可控**且
+// 会被广泛读取的字段（上限见 MaxNicknameLen 的注释）。修改只落一行主键更新，
+// 排行榜缓存（TTL 15s）短暂显示旧名，可接受。
+func (s *Service) UpdateNickname(ctx context.Context, userID int64, nickname string) error {
+	nickname = strings.TrimSpace(nickname)
+	if nickname == "" {
+		return fmt.Errorf("%w: 昵称不能为空", ErrBadInput)
+	}
+	if utf8.RuneCountInString(nickname) > MaxNicknameLen {
+		return fmt.Errorf("%w: 昵称最长 %d 个字符", ErrBadInput, MaxNicknameLen)
+	}
+	ct, err := s.pool.Exec(ctx,
+		`UPDATE users SET nickname = $2 WHERE id = $1`, userID, nickname)
+	if err != nil {
+		return fmt.Errorf("update nickname: %w", err)
+	}
+	if ct.RowsAffected() == 0 {
+		return fmt.Errorf("%w: 用户不存在", ErrNotFound)
+	}
+	return nil
+}
+
 // UpgradeGuestAccount 把游客账号升级为「用户名 + 密码」账号。
 //
 // 游客号的全部数据（钱包 / 进度 / 专精 / 战报 / 防线）只靠一枚存在

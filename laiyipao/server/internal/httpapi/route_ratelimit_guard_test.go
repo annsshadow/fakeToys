@@ -24,6 +24,9 @@ import (
 //
 // 2026-10-30（实质优化第 8 轮）新增 `/me/upgrade`：游客转正是注册面（批量
 // 占用户名 / 枚举用户名），限流不可删 —— 见 accountUpgradeLimit。
+//
+// 2026-10-30（实质优化第 9 轮）新增 `/me/nickname`：昵称进所有列表响应，
+// 频繁改名可刷存在感，限流不可删 —— 见 nicknameChangeLimit。
 func TestEconomyWriteRoutesAreRateLimited(t *testing.T) {
 	required := []string{
 		`battle.Post("/token", authRateLimit(`,
@@ -34,6 +37,7 @@ func TestEconomyWriteRoutesAreRateLimited(t *testing.T) {
 		`defenses.Post("/:id/challenge", authRateLimit(`,
 		`me.Post("/password", authRateLimit(`,
 		`me.Post("/upgrade", authRateLimit(`,
+		`me.Put("/nickname", authRateLimit(`,
 	}
 	src := stripHTTPComments(readHTTPFile(t, "routes.go"))
 	for _, want := range required {
