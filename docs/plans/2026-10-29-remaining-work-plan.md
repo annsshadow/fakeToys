@@ -15,7 +15,7 @@
 | auto-checkin | 102 passed；覆盖率棘轮九档全绿 |
 | laiyipao | service / httpapi / cmd / config 真库全绿；配置热加载已落地 |
 | augmentor | 10173 passed / 4 failed（4 条为基线既红：pillow 环境性 + 3 条棘轮）；web 416 tests 全绿 |
-| oa4rust | 97 crates 编译零告警；`shared` 覆盖率 **94.12%**（容器内实测，floor 93 与 C1 94 目标均达成） |
+| oa4rust | 97 crates 编译零告警；`shared` 覆盖率 **94.29%**（容器内实测，floor 93 与 C1 94 目标均达成） |
 | oa4rust 定位 | **独立系统**，不再与 Java 对齐（CI 的 Java 双栈对比门禁已删，换成启动冒烟） |
 
 **已关闭、不要再排期**：OA-P0-1（Java 契约奇偶，前提消失）、LY-5（配置热加载，已落地）、
@@ -172,7 +172,7 @@ LY-7（小程序虚拟化，实测列表全部有界）、AU-P1（异步后端�
 
 | 编号 | 项 | 现状 | 缺口性质 |
 |---|---|---|---|
-| **C1** | `shared` 覆盖率 93.28% → 94% | **✅ 已达成（2026-10-30 第八轮，容器内实测 94.12%）** | 需 ~50 行，全部依赖**进程隔离**（`security` 的 OnceLock 环境臂与 parity 测试互斥）或**公网夹具**（`netguard fetch_limited` 被自身 SSRF 守卫挡回环）。属条件项，不作为默认目标。**第六轮**：发现 `oa4rust-cov` Docker 容器是可用 Linux 覆盖率环境，跑通 `cargo llvm-cov -p shared --lib`；修复 `db/mod.rs` 测试并发污染（参数化 `create_pool_with_url` / `create_sea_orm_pool_with_url` + 纯函数 `resolve_database_url`），覆盖率 93.17%。**第七轮**：① `middleware/security.rs` 三个 OnceLock 环境臂（`TRUSTED_PROXY_IPS` / `FORCE_HTTPS` / `APP_PUBLIC_ORIGIN`）参数化（`trusted_proxy_ips_from` / `force_https_from` / `force_https_host_from` 纯函数 + `https_redirect_with` 带参入口），消除进程隔离互斥；② 清理 `response.rs` 重复旧版 `AppError` 死代码；③ 补全 8 变体映射测试。覆盖率 93.20%。**第八轮（达成）**：① `migrate.rs` 补校验和变更分支（存储 checksum 与文件不一致时更新并 skip 不重放）与空迁移分支（空 SQL 仍落版本记录）测试；② 清理 `input_validation.rs` 半成品 `StringValidator`/`Validator` 死代码（全仓零引用）；③ 补 `DynControlPool` + `Arc<dyn ControlClient>` 委托全链路测试；④ 补 `mock_pool`/`mock_db`/`is_db_available` 测试基建覆盖。容器内 shared **314 全绿**、clippy 零告警、**行覆盖率 94.12%**（>94% 目标）、函数覆盖 91.30%、分支覆盖 94.29%。 |
+| **C1** | `shared` 覆盖率 93.28% → 94% | **✅ 已达成（2026-10-30 第八轮，第九轮巩固到 94.29%）** | 需 ~50 行，全部依赖**进程隔离**（`security` 的 OnceLock 环境臂与 parity 测试互斥）或**公网夹具**（`netguard fetch_limited` 被自身 SSRF 守卫挡回环）。属条件项，不作为默认目标。**第六轮**：发现 `oa4rust-cov` Docker 容器是可用 Linux 覆盖率环境，跑通 `cargo llvm-cov -p shared --lib`；修复 `db/mod.rs` 测试并发污染（参数化 `create_pool_with_url` / `create_sea_orm_pool_with_url` + 纯函数 `resolve_database_url`），覆盖率 93.17%。**第七轮**：① `middleware/security.rs` 三个 OnceLock 环境臂参数化；② 清理 `response.rs` 重复旧版 `AppError` 死代码；③ 补全 8 变体映射测试。覆盖率 93.20%。**第八轮（达成）**：① `migrate.rs` 补校验和变更分支与空迁移分支测试；② 清理 `input_validation.rs` 半成品死代码；③ 补 `DynControlPool` 全链路测试；④ 补 mock 基建覆盖。**行覆盖率 94.12%**。**第九轮（巩固）**：① `netguard` 补 HTTP 错误状态分支测试（example.com 稳定 404，公网可达时覆盖）；② 补 `upsert_fixture_person` / `is_unique_violation` 真库覆盖（幂等 upsert + 23505 识别）。容器内 shared **316 全绿**、clippy 零告警、**行覆盖率 94.29%**、函数 91.66%、分支 94.68%。 |
 
 ### D 类 · 环境与工具
 
