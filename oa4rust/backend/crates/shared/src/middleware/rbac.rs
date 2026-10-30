@@ -682,6 +682,20 @@ mod tests {
     use super::*;
 
     #[test]
+    fn permission_registry_default_uses_defaults() {
+        // `Default` 委托 `with_defaults()`（与单例 permission_registry 同源）。
+        let d = PermissionRegistry::default();
+        assert_eq!(
+            d.get_permission("/api/authentication"),
+            Some(PermissionLevel::Public)
+        );
+        assert_eq!(
+            d.get_permission("/api/person"),
+            Some(PermissionLevel::Authenticated)
+        );
+    }
+
+    #[test]
     fn registry_matches_exact_before_prefix() {
         let mut reg = PermissionRegistry::new();
         reg.register_prefix("/api/x", PermissionLevel::Authenticated);
