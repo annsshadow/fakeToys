@@ -475,6 +475,19 @@ export function createAnnouncement(payload: { title: string; body: string; publi
   return api.post<AdminAnnouncementResp>('/admin/announcements', payload)
 }
 
+/**
+ * 更新公告（2026-10-31 实质优化第 23 轮）。
+ * 此前只有创建/列表，发错内容无法修改、发错发布状态无法撤回。
+ */
+export function updateAnnouncement(id: number, payload: { title: string; body: string; published: boolean }) {
+  return api.put<AdminAnnouncementResp>(`/admin/announcements/${id}`, payload)
+}
+
+/** 删除公告（2026-10-31 实质优化第 23 轮）。 */
+export function deleteAnnouncement(id: number) {
+  return api.del(`/admin/announcements/${id}`)
+}
+
 export function fetchRedeemCodes(limit = 50, offset = 0) {
   return api.get<AdminRedeemCodesResp>(`/admin/redeem-codes?limit=${limit}&offset=${offset}`)
 }

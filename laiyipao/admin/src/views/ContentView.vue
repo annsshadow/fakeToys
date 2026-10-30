@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import {onMounted, ref, onActivated} from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   fetchAnnouncements,
   createAnnouncement,
+  updateAnnouncement,
+  deleteAnnouncement,
   fetchRedeemCodes,
   createRedeemCode,
   fetchAuditLogs,
@@ -28,6 +30,8 @@ const logTotal = ref(0)
 
 // 公告表单
 const annForm = ref({ title: '', body: '', published: false })
+// 编辑中的公告 id（null = 非编辑态，2026-10-31 实质优化第 23 轮）
+const editingAnnId = ref<number | null>(null)
 
 // 兑换码表单
 const codeForm = ref({
@@ -94,12 +98,55 @@ async function submitAnnouncement() {
     return
   }
   try {
-    await createAnnouncement(annForm.value)
-    ElMessage.success('公告已创建')
+    if (editingAnnId.value !== null) {
+      await updateAnnouncement(editingAnnId.value, annForm.value)
+      ElMessage.success('公告已更新')
+    } else {
+      await createAnnouncement(annForm.value)
+      ElMessage.success('公告已创建')
+    }
+    editingAnnId.value = null
     annForm.value = { title: '', body: '', published: false }
     await loadAll()
   } catch (e) {
     ElMessage.error((e as Error).message)
+  }
+}
+
+/**
+ * 编辑公告（2026-10-31 实质优化第 23 轮）。
+ * 此前只有创建/列表，发错内容无法修改。点击「编辑」把公告回填到表单。
+ */
+function startEditAnn(a: AdminAnnouncementView) {
+  editingAnnId.value = a.id
+  annForm.value = { title: a.title, body: a.body, published: a.published }
+}
+
+function cancelEditAnn() {
+  editingAnnId.value = null
+  annForm.value = { title: '', body: '', published: false }
+}
+
+/**
+ * 删除公告（2026-10-31 实质优化第 23 轮）。
+ * 删除不可恢复，必须二次确认；玩家端缓存最迟 30 秒后消失。
+ */
+async function onDeleteAnn(a: AdminAnnouncementView) {
+  try {
+    await ElMessageBox.confirm(
+      `删除公告「${a.title}」？删除后玩家端将无法看到，且不可恢复。`,
+      '删除公告',
+      { type: 'warning', confirmButtonText: '删除' },
+    )
+  } catch {
+    return // 取消
+  }
+  try {
+    await deleteAnnouncement(a.id)
+    ElMessage.success('公告已删除')
+    await loadAll()
+  } catch (e) {
+    ElMessage.error(`删除失败：${(e as Error).message}`)
   }
 }
 
@@ -206,7 +253,7 @@ loadAll()
       <el-tab-pane label="公告" name="announcements">
         <el-row :gutter="12">
           <el-col :span="10" :xs="24" :sm="24" :md="10">
-            <el-card shadow="never" header="发布公告">
+            <el-card shadow="never" :header="editingAnnId !== null ? '编辑公告' : '发布公告'">
               <el-form label-position="top">
                 <el-form-item label="标题">
                   <el-input v-model="annForm.title" placeholder="例如：1.2 版本更新说明" />
@@ -217,7 +264,10 @@ loadAll()
                 <el-form-item>
                   <el-checkbox v-model="annForm.published">立即发布</el-checkbox>
                 </el-form-item>
-                <el-button type="primary" @click="submitAnnouncement">创建</el-button>
+                <el-button type="primary" @click="submitAnnouncement">
+                  {{ editingAnnId !== null ? '更新' : '创建' }}
+                </el-button>
+                <el-button v-if="editingAnnId !== null" @click="cancelEditAnn">取消编辑</el-button>
               </el-form>
             </el-card>
           </el-col>
@@ -248,6 +298,13 @@ loadAll()
                 </el-table-column>
                 <el-table-column label="创建时间" width="155">
                   <template #default="{ row }">{{ fmtTime(row.created_at) }}</template>
+                </el-table-column>
+                <!-- 编辑/删除（2026-10-31 实质优化第 23 轮） -->
+                <el-table-column label="操作" width="110" fixed="right">
+                  <template #default="{ row }">
+                    <el-button size="small" text @click="startEditAnn(row as AdminAnnouncementView)">编辑</el-button>
+                    <el-button size="small" text type="danger" @click="onDeleteAnn(row as AdminAnnouncementView)">删除</el-button>
+                  </template>
                 </el-table-column>
         <template #empty>
           <el-empty :description="emptyText" :image-size="60" />

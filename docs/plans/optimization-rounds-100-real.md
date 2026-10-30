@@ -31,6 +31,7 @@
 | 20 | 2026-10-31 | **玩家「我的购买记录」**：每次商城购买都落 `user_purchases`，但玩家端没有任何入口（买了什么、花了多少只能靠记忆） | 服务层 `MyPurchases`（JOIN shop_items 取道具名/品类、价格快照 JSONB 解析、limit 夹到 20）；`GET /api/v1/me/purchases`；miniapp me.vue「购买记录」列表（道具名/价格/时间，`priceText` 用 currencyName 本地化） | 服务层 4 用例、e2e 3 用例（401/记录正确/空历史）全绿；`internal/service` 209s 全绿、`internal/httpapi` 58s 全绿、miniapp 1167 passed、type-check 通过 |
 | 21 | 2026-10-31 | **玩家「我的兑换记录」**：每次兑换码使用都落 `redeem_usages`，但玩家端只有输入框、没有任何历史入口 | 服务层 `MyRedemptions`（JOIN redeem_codes 取码与奖励快照、JSONB 解析、limit 夹到 20）；`GET /api/v1/me/redemptions`；miniapp me.vue「兑换记录」列表（码/奖励/时间） | 服务层 4 用例、e2e 3 用例（401/记录正确/空历史）全绿；`internal/service` 207s 全绿、`internal/httpapi` 66s 全绿、miniapp 1167 passed、type-check 通过 |
 | 22 | 2026-10-31 | **公告列表进程内缓存**：公告是公开端点（无鉴权），每次首页首屏都拉取；运营人工发布、变化频率极低 | 新增配置 `ANNOUNCEMENTS_CACHE_TTL`（默认 30s，0=关闭）；Service 增加 `announcementsCache ttlCache[[]AnnouncementView]`（TTL + singleflight + 命中统计进 `CacheStats`）；`ListAnnouncements` 缓存全量（最多 20 条）再按 limit 复制切片（避免共享底层数组被 append 污染），不同 limit 共享同一份缓存 | 缓存集成测试 3 用例（改名后仍命中快照 / TTL=0 关闭 / limit 切片一致性）全绿；`internal/service` 218s 全绿、`internal/httpapi` 61s 全绿、`internal/config` 全绿 |
+| 23 | 2026-10-31 | **后台公告编辑/删除**：公告此前只有创建/列表，发错内容无法修改、发错发布状态无法撤回 | 服务层 `AdminUpdateAnnouncement`（草稿首次发布补 published_at、撤回保留历史时间戳、空标题/正文 ErrBadInput）+ `AdminDeleteAnnouncement`（0 行 → ErrNotFound）；`PUT/DELETE /api/v1/admin/announcements/:id`（requireWritable + 审计）；admin ContentView 公告表格「编辑/删除」操作列、表单支持编辑态（回填/更新/取消） | 服务层 7 用例、e2e 5 用例（401/403/更新成功/删除成功/404）全绿；`internal/service` 264s 全绿、`internal/httpapi` 84s 全绿、admin 353 passed、type-check 通过 |
 | ... | | 持续至 100 轮 | | |
 
-> 状态：进行中。当前累计 **22 轮实质优化**，距 100 轮还差 78 轮。
+> 状态：进行中。当前累计 **23 轮实质优化**，距 100 轮还差 77 轮。
