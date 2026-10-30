@@ -1113,3 +1113,25 @@ func TestAdminLoginFailsOnDBError(t *testing.T) {
 		t.Fatalf("DB 故障不得伪装成认证失败：%v", err)
 	}
 }
+
+// TestAdminEquipmentFailsOnDBError 覆盖 AdminEquipment 的数据库错误路径：
+// equipment 表不可达时必须返回错误，不能返回半份装备列表（静默截断
+// 会让运营以为玩家装备就是这些）。
+func TestAdminEquipmentFailsOnDBError(t *testing.T) {
+	cfg := config.Load()
+	cfg.DatabaseURL = "postgres://postgres@127.0.0.1:5432/postgres?sslmode=disable"
+	cfg.DBMaxConns = 2
+	cfg.DBMinConns = 0
+	ctx := context.Background()
+
+	db, err := store.Open(ctx, cfg)
+	if err != nil {
+		t.Skipf("postgres 系统库连不上，跳过：%v", err)
+	}
+	defer db.Close()
+
+	s := New(db, cfg)
+	if _, err := s.AdminEquipment(ctx); err == nil {
+		t.Fatal("无 equipment 表时 AdminEquipment 必须返回错误")
+	}
+}
