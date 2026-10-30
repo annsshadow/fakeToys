@@ -198,6 +198,16 @@ func (s *Server) Register(app *fiber.App) {
 	// 在最需要它的时候被拒。
 	me.Post("/logout", s.logout)
 
+	// 玩家修改密码（2026-10-30 实质优化第 7 轮）。
+	//
+	// 此前玩家账号**只有引导创建、没有改密入口** —— 共享测试账号的口令
+	// 只能靠改环境变量重启来轮换。这个端点让玩家自己改：
+	// 验证原密码 → 更新 password_hash → 吊销全部 refresh token。
+	//
+	// 限流：改密码是口令爆破面（拿到 access token 后可以无限试旧密码），
+	// 额度与理由见 middleware.go 的 passwordChangeLimit。
+	me.Post("/password", authRateLimit("password_change", passwordChangeLimit), s.changePassword)
+
 	// 兑换码既按 IP 也按身份限：IP 额度挡单点爆破，
 	// 身份额度挡「同一个号换 IP 继续试」。
 	redeem := v1.Group("/redeem", requireUser(s.Svc))
@@ -395,6 +405,25 @@ func (s *Server) logout(c *fiber.Ctx) error {
 		return failErr(c, err)
 	}
 	return c.JSON(res)
+}
+
+// changePassword 修改当前玩家的账号密码。
+//
+// 成功响应带上被吊销的 refresh token 条数（`revoked`），
+// 客户端可用它判断「是否需要主动引导重新登录」。
+func (s *Server) changePassword(c *fiber.Ctx) error {
+	var body struct {
+		OldPassword string `json:"old_password"`
+		NewPassword string `json:"new_password"`
+	}
+	if err := c.BodyParser(&body); err != nil {
+		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+	}
+	revoked, err := s.Svc.ChangePassword(c.Context(), userIDFrom(c), body.OldPassword, body.NewPassword)
+	if err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(fiber.Map{"revoked": revoked})
 }
 
 // getLoadout 返回当前出战槽位。

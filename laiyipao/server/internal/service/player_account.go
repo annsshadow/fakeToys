@@ -82,6 +82,80 @@ func (s *Service) Login(ctx context.Context, username, password string) (TokenPa
 	return s.issueTokens(ctx, id, u)
 }
 
+// ChangePassword 修改玩家账号密码，并吊销该账号全部未过期 refresh token。
+//
+// 返回吊销的 refresh token 条数。语义要点：
+//
+//   - 原密码必须正确。错误与「输入非法」同族（ErrBadInput），
+//     而不是 ErrUnauthorized —— 请求方已经持有效 access token 通过鉴权，
+//     再用 401 会把客户端踢回登录页，体验上是「改个密码被登出」。
+//   - 新密码门槛与其他引导账号一致（至少 10 位），防止绕过引导规则注册弱口令。
+//   - 修改与吊销必须在**同一事务**里：中途失败不能出现
+//     「密码已改但旧 refresh token 仍有效」的中间态。
+//   - 游客号（password_hash 为 NULL）没有密码可改，直接拒绝。
+func (s *Service) ChangePassword(ctx context.Context, userID int64, oldPassword, newPassword string) (int64, error) {
+	oldPassword = strings.TrimSpace(oldPassword)
+	newPassword = strings.TrimSpace(newPassword)
+	if oldPassword == "" || newPassword == "" {
+		return 0, fmt.Errorf("%w: 原密码和新密码都不能为空", ErrBadInput)
+	}
+	if len(newPassword) < 10 {
+		return 0, fmt.Errorf("%w: 新密码至少 10 位（当前 %d 位）", ErrBadInput, len(newPassword))
+	}
+	if oldPassword == newPassword {
+		return 0, fmt.Errorf("%w: 新密码不能与原密码相同", ErrBadInput)
+	}
+
+	var (
+		hash   *string
+		status int
+	)
+	err := s.pool.QueryRow(ctx,
+		`SELECT password_hash, status FROM users WHERE id = $1`, userID).
+		Scan(&hash, &status)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return 0, fmt.Errorf("%w: 用户不存在", ErrNotFound)
+		}
+		return 0, fmt.Errorf("load player account: %w", err)
+	}
+	if hash == nil || *hash == "" {
+		return 0, fmt.Errorf("%w: 该账号没有设置密码，无法修改", ErrBadInput)
+	}
+	if status != 1 {
+		return 0, fmt.Errorf("%w: 账号已被封禁", ErrForbidden)
+	}
+	if err := VerifyPassword(*hash, oldPassword); err != nil {
+		return 0, fmt.Errorf("%w: 原密码不正确", ErrBadInput)
+	}
+
+	newHash, err := HashPassword(newPassword)
+	if err != nil {
+		return 0, err
+	}
+
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("begin change password: %w", err)
+	}
+	defer tx.Rollback(ctx) //nolint:errcheck // 提交后回滚是无害的 ErrTxClosed
+
+	if _, err := tx.Exec(ctx,
+		`UPDATE users SET password_hash = $2 WHERE id = $1`, userID, newHash); err != nil {
+		return 0, fmt.Errorf("update password hash: %w", err)
+	}
+	ct, err := tx.Exec(ctx,
+		`UPDATE refresh_tokens SET revoked_at = now()
+		  WHERE user_id = $1 AND revoked_at IS NULL`, userID)
+	if err != nil {
+		return 0, fmt.Errorf("revoke refresh tokens: %w", err)
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return 0, fmt.Errorf("commit change password: %w", err)
+	}
+	return ct.RowsAffected(), nil
+}
+
 // EnsureBootstrapPlayer 引导创建（或同步）共享测试账号。
 //
 // # 语义：账号是**长期资产**，密码是**可重置**的

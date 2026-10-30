@@ -538,6 +538,13 @@ const (
 	// 每个动作都落库，无限制时一个账号能把库写爆（自我 DoS）并拖慢全站。
 	// 60/分钟对任何真实操作都绰绰有余；NAT 安全，因为按 user_id 计。
 	economyWriteLimit = 60
+
+	// passwordChangeLimit 是改密码的每用户每分钟上限。
+	//
+	// 改密码是口令爆破面：拿到 access token 后攻击者可以对着旧密码无限试。
+	// 正常玩家一天改不了一次，10 次/分钟足够宽，同时把暴力试探压住。
+	// 按 user_id 计（authRateLimit），NAT 下多个真实玩家互不挤占。
+	passwordChangeLimit = 10
 )
 
 // authRateLimit 返回按登录身份计数的限流中间件。
