@@ -433,4 +433,43 @@ mod mock_infra_tests {
         // 无论 DATABASE_URL 是否可达，该探测函数都必须返回 bool 而非 panic。
         let _ = is_db_available().await;
     }
+
+    #[tokio::test]
+    async fn upsert_fixture_person_is_idempotent_and_detects_violation() {
+        // 真库臂：upsert_fixture_person 与 is_unique_violation 主要被其他 crate
+        // 使用，shared 自身从不调用 → 补幂等 + 唯一冲突检测路径。
+        if !is_db_available().await {
+            eprintln!("SKIP: no database available");
+            return;
+        }
+        let pool = test_pool();
+        let client = pool.get().await.expect("获取 client");
+        let pid = format!("fixture-{}", uuid::Uuid::new_v4());
+        let uid = format!("fixture-uid-{}", uuid::Uuid::new_v4());
+
+        // 首次插入 + 幂等重复插入（同 id 走 ON CONFLICT DO UPDATE）。
+        upsert_fixture_person(&client, &pid, &uid, "Fixture Person").await;
+        upsert_fixture_person(&client, &pid, &uid, "Fixture Person 2").await;
+
+        // 用相同 id 不同 unique_id 直接插入 → 主键冲突 23505，is_unique_violation 必须识别。
+        let conflict = client
+            .execute(
+                "INSERT INTO auth_person (id, unique_id, name, password_hash) \
+                 VALUES ($1, $2, 'other', 'x')",
+                &[&pid, &"other-uid"],
+            )
+            .await
+            .expect_err("同 id 重复插入必须主键冲突");
+        assert!(
+            is_unique_violation(&conflict),
+            "23505 应被识别为唯一冲突，实际: {:?}",
+            conflict.code()
+        );
+
+        // 清理。
+        client
+            .execute("DELETE FROM auth_person WHERE id = $1", &[&pid])
+            .await
+            .expect("清理夹具");
+    }
 }
