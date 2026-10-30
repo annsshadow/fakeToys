@@ -3,8 +3,10 @@
 
 """Google Gemini 模型后端"""
 
+import asyncio
 import logging
-from typing import Optional
+from typing import Any, Optional
+
 from .base import ModelBackend, extract_json_array
 from ..config import ModelConfig
 from ..exceptions import ModelGenerateError, ModelNotConfiguredError
@@ -60,6 +62,32 @@ class GeminiBackend(ModelBackend):
             f"{base_url}/{self.API_VERSION}/models/"
             f"{config.model}:generateContent"
         )
+        # 异步客户端与它所属的事件循环（同其他后端）。
+        self._async_client: Optional[Any] = None
+        self._async_loop: Optional[Any] = None
+
+    def _build_request(self, prompt: str) -> tuple:
+        """构造 (headers, payload, params)。同步与异步两条路径用同一份请求体。"""
+        headers = {"Content-Type": "application/json"}
+        params = {"key": self.config.api_key}
+        payload = {
+            "contents": [{"parts": [{"text": prompt}]}],
+            "generationConfig": {
+                "temperature": self.config.temperature,
+                "topP": self.config.top_p,
+                "maxOutputTokens": self.config.max_output_tokens,
+            },
+        }
+        return headers, payload, params
+
+    @staticmethod
+    def _parse_response(data: Any) -> str:
+        """从响应体取首个 candidate 的文本。同步/异步共用。"""
+        candidates = data.get("candidates")
+        if not candidates:
+            raise ModelGenerateError(f"API 响应异常: {data}")
+        parts = candidates[0].get("content", {}).get("parts", [])
+        return "".join(part.get("text", "") for part in parts)
 
     def _call_api(self, prompt: str) -> str:
         """调用 Gemini generateContent API（使用连接池）
@@ -70,20 +98,7 @@ class GeminiBackend(ModelBackend):
         Returns:
             模型生成的文本
         """
-        headers = {"Content-Type": "application/json"}
-        params = {"key": self.config.api_key}
-
-        payload = {
-            "contents": [
-                {"parts": [{"text": prompt}]}
-            ],
-            "generationConfig": {
-                "temperature": self.config.temperature,
-                "topP": self.config.top_p,
-                "maxOutputTokens": self.config.max_output_tokens
-            }
-        }
-
+        headers, payload, params = self._build_request(prompt)
         session = self._get_session()
         response = session.post(
             self.api_url, json=payload, headers=headers, params=params,
@@ -91,14 +106,50 @@ class GeminiBackend(ModelBackend):
         )
         response.raise_for_status()
 
-        data = response.json()
+        return self._parse_response(response.json())
 
-        candidates = data.get("candidates")
-        if not candidates:
-            raise ModelGenerateError(f"API 响应异常: {data}")
+    async def _acall_api(self, prompt: str) -> str:
+        """原生异步调用 Gemini API（httpx.AsyncClient）。
 
-        parts = candidates[0].get("content", {}).get("parts", [])
-        return "".join(part.get("text", "") for part in parts)
+        同其他后端：httpx 可选，缺它回退基类线程池实现；AsyncClient 跟随事件循环。
+        """
+        try:
+            import httpx
+        except ImportError:
+            logger.warning(
+                "httpx 不可用，异步调用回退为线程池（功能不受影响，但不省线程）"
+            )
+            return await super()._acall_api(prompt)
+
+        headers, payload, params = self._build_request(prompt)
+        client = await self._async_client_for(httpx)
+        response = await client.post(
+            self.api_url, json=payload, headers=headers, params=params
+        )
+        response.raise_for_status()
+        return self._parse_response(response.json())
+
+    async def _async_client_for(self, httpx_module: Any) -> Any:
+        """取当前事件循环可用的 AsyncClient（换循环则重建）。"""
+        loop = asyncio.get_running_loop()
+        if self._async_client is not None and self._async_loop is loop:
+            return self._async_client
+        if self._async_client is not None:
+            old, self._async_client = self._async_client, None
+            try:
+                await old.aclose()
+            except Exception:
+                logger.debug("关闭上一个异步客户端失败（循环可能已关闭）", exc_info=True)
+        self._async_client = httpx_module.AsyncClient(timeout=self._request_timeout)
+        self._async_loop = loop
+        return self._async_client
+
+    async def aclose(self) -> None:
+        """关闭异步客户端（与基类 close() 同族，只是必须 await）。"""
+        client, self._async_client = self._async_client, None
+        self._async_loop = None
+        if client is not None:
+            await client.aclose()
 
     def extract_json_from_response(self, response: str) -> list:
         """从响应中提取 JSON 数组
