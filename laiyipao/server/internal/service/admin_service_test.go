@@ -1198,3 +1198,25 @@ func TestAdminLevelWavesFailsOnDBError(t *testing.T) {
 		t.Fatal("无 level_waves 表时 AdminLevelWaves 必须返回错误")
 	}
 }
+
+// TestAdminGrantCurrencyFailsOnDBError 覆盖 AdminGrantCurrency 的数据库错误路径：
+// 用户存在性检查（users 表）不可达时必须返回错误，不能把 DB 故障伪装成
+// 「余额不足」或「用户不存在」。
+func TestAdminGrantCurrencyFailsOnDBError(t *testing.T) {
+	cfg := config.Load()
+	cfg.DatabaseURL = "postgres://postgres@127.0.0.1:5432/postgres?sslmode=disable"
+	cfg.DBMaxConns = 2
+	cfg.DBMinConns = 0
+	ctx := context.Background()
+
+	db, err := store.Open(ctx, cfg)
+	if err != nil {
+		t.Skipf("postgres 系统库连不上，跳过：%v", err)
+	}
+	defer db.Close()
+
+	s := New(db, cfg)
+	if _, err := s.AdminGrantCurrency(ctx, 1, "coin", 10); err == nil {
+		t.Fatal("无 users 表时 AdminGrantCurrency 必须返回错误")
+	}
+}
