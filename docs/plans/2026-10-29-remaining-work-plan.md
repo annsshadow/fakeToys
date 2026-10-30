@@ -14,7 +14,7 @@
 | 今日推送 | 13 个提交（`325296f38 → 500259e94`） |
 | auto-checkin | 102 passed；覆盖率棘轮九档全绿 |
 | laiyipao | service / httpapi / cmd / config 真库全绿；配置热加载已落地 |
-| augmentor | 10173 passed / 4 failed（4 条为基线既红：pillow 环境性 + 3 条棘轮）；web 416 tests 全绿 |
+| augmentor | 10172 passed / 2 failed（2 条为基线棘轮：`ambiguous` 500 vs 497、`scratch_pair` 1483 vs 1484；pillow 环境性失败已消解）；web 416 tests 全绿 |
 | oa4rust | 97 crates 编译零告警；`shared` 覆盖率 **94.74%**（容器内实测，floor 93 与 C1 94 目标均达成） |
 | oa4rust 定位 | **独立系统**，不再与 Java 对齐（CI 的 Java 双栈对比门禁已删，换成启动冒烟） |
 
