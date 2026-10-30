@@ -8,6 +8,7 @@ import {
   deleteAnnouncement,
   fetchRedeemCodes,
   createRedeemCode,
+  setRedeemCodeEnabled,
   fetchAuditLogs,
   exportAuditLogsCsv,
   type AdminAnnouncementView,
@@ -147,6 +148,33 @@ async function onDeleteAnn(a: AdminAnnouncementView) {
     await loadAll()
   } catch (e) {
     ElMessage.error(`删除失败：${(e as Error).message}`)
+  }
+}
+
+/**
+ * 启用/禁用兑换码（2026-10-31 实质优化第 24 轮）。
+ * 运营创建错误码后此前无法停用（只能等过期）。
+ * 禁用立即生效（玩家端 Redeem 的 SQL 带 enabled 条件）。
+ */
+async function onToggleRedeemCode(c: AdminRedeemCodeView) {
+  const next = !c.enabled
+  try {
+    await ElMessageBox.confirm(
+      next
+        ? `重新启用兑换码「${c.code}」？`
+        : `停用兑换码「${c.code}」？玩家将立即无法兑换，且会写入审计日志。`,
+      next ? '启用兑换码' : '停用兑换码',
+      { type: next ? 'info' : 'warning', confirmButtonText: next ? '启用' : '停用' },
+    )
+  } catch {
+    return // 取消
+  }
+  try {
+    const res = await setRedeemCodeEnabled(c.id, next)
+    Object.assign(c, res.item)
+    ElMessage.success(next ? '已启用' : '已停用')
+  } catch (e) {
+    ElMessage.error(`操作失败：${(e as Error).message}`)
   }
 }
 
@@ -374,6 +402,15 @@ loadAll()
                 <el-tag :type="row.enabled ? 'success' : 'info'" size="small">
                   {{ row.enabled ? '可用' : '停用' }}
                 </el-tag>
+              </template>
+            </el-table-column>
+            <!-- 启用/禁用（2026-10-31 实质优化第 24 轮） -->
+            <el-table-column label="操作" width="80" fixed="right">
+              <template #default="{ row }">
+                <el-button size="small" text :type="row.enabled ? 'danger' : 'success'"
+                  @click="onToggleRedeemCode(row as AdminRedeemCodeView)">
+                  {{ row.enabled ? '停用' : '启用' }}
+                </el-button>
               </template>
             </el-table-column>
         <template #empty>

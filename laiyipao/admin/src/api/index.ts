@@ -501,6 +501,14 @@ export function createRedeemCode(payload: {
   return api.post<AdminRedeemCodeResp>('/admin/redeem-codes', payload)
 }
 
+/**
+ * 启用/禁用兑换码（2026-10-31 实质优化第 24 轮）。
+ * 运营创建错误码后此前无法停用（只能等过期）。
+ */
+export function setRedeemCodeEnabled(id: number, enabled: boolean) {
+  return api.put<AdminRedeemCodeResp>(`/admin/redeem-codes/${id}/enabled`, { enabled })
+}
+
 export function fetchAuditLogs(limit = 100, offset = 0) {
   // 2026-10-21（P5-1）：审计日志也要能翻页 —— 固定 100 条时，
   // 更早的操作**根本看不到**。
