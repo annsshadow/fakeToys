@@ -261,7 +261,6 @@ pub fn hotpic_core_entity_router(db: DatabaseConnection) -> Router {
         .route("/api/hotpic/core/entity/create", post(create))
         .route("/api/hotpic/core/entity/delete/{id}", delete(delete_by_id))
         .layer(Extension(db))
-
 }
 
 #[cfg(test)]

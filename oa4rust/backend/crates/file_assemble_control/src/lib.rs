@@ -1197,13 +1197,7 @@ pub async fn attachment_upload_folder_folderId_callback_callback(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 透传臂也收会话门：尺子按本函数体判定，直接调用具名门。
     require_session(session.clone())?;
-    attachment_upload_folder_folderId(
-        pool,
-        session,
-        axum::extract::Path(folder_id),
-        form,
-    )
-    .await
+    attachment_upload_folder_folderId(pool, session, axum::extract::Path(folder_id), form).await
 }
 
 #[axum::debug_handler]

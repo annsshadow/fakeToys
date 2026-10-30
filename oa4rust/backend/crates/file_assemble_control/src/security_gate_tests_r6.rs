@@ -86,11 +86,7 @@ async fn r6_writes_reject_without_session() {
             crate::u2_file_upload_octet_stream(
                 Extension(pool.clone()),
                 None,
-                axum::extract::Path((
-                    "taskReport".to_string(),
-                    "w-9".to_string(),
-                    "1".to_string(),
-                )),
+                axum::extract::Path(("taskReport".to_string(), "w-9".to_string(), "1".to_string())),
                 axum::extract::Query(std::collections::HashMap::new()),
                 axum::body::Bytes::from(vec![1u8, 2, 3]),
             )
@@ -112,11 +108,7 @@ async fn r6_writes_reject_without_session() {
             crate::u2_share_save_to_folder(
                 Extension(pool),
                 None,
-                axum::extract::Path((
-                    "s-1".to_string(),
-                    "f-1".to_string(),
-                    "fd-1".to_string(),
-                )),
+                axum::extract::Path(("s-1".to_string(), "f-1".to_string(), "fd-1".to_string())),
             )
             .await
             .map(|_| ()),
@@ -226,15 +218,14 @@ async fn r6_routes_reject_anonymous_writes() {
             ),
         ),
     ];
-    assert_eq!(cases.len(), 13, "本批 13 条写路由（含 folder/folder2 双挂载）必须逐条点名");
+    assert_eq!(
+        cases.len(),
+        13,
+        "本批 13 条写路由（含 folder/folder2 双挂载）必须逐条点名"
+    );
     let mut leaked: Vec<String> = Vec::new();
     for (name, req) in cases {
-        let status = app
-            .clone()
-            .oneshot(req)
-            .await
-            .unwrap()
-            .status();
+        let status = app.clone().oneshot(req).await.unwrap().status();
         if status != StatusCode::UNAUTHORIZED {
             leaked.push(format!("{name} => 期望 401，实际 {status}"));
         }

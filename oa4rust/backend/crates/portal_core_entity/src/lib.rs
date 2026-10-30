@@ -388,7 +388,6 @@ pub fn portal_core_entity_router(db: DatabaseConnection) -> Router {
         .route("/api/portal/page/remove", post(page_remove))
         .route("/api/portal/script/list", get(script_list))
         .layer(Extension(db))
-
 }
 
 #[cfg(test)]

@@ -394,7 +394,6 @@ pub fn attendance_core_entity_router(db: DatabaseConnection) -> Router {
             post(rule_delete),
         )
         .layer(Extension(db))
-
 }
 
 #[cfg(test)]

@@ -9,7 +9,6 @@ mod tests {
     use shared::response::ActionResult;
     use tower::ServiceExt;
 
-
     #[tokio::test]
     async fn test_device_list_returns_success() {
         let db = shared::testing::mock_db().await;

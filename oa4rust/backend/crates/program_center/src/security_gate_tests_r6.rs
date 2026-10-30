@@ -38,8 +38,10 @@ async fn r6_writes_reject_without_session() {
                 Extension(pool.clone()),
                 None,
                 axum::extract::Json(
-                    serde_json::from_value::<crate::CollectAddRequest>(json!({ "title": "t", "url": "u" }))
-                        .unwrap(),
+                    serde_json::from_value::<crate::CollectAddRequest>(
+                        json!({ "title": "t", "url": "u" }),
+                    )
+                    .unwrap(),
                 ),
             )
             .await
@@ -94,8 +96,10 @@ async fn r6_writes_reject_without_session() {
                 Extension(pool.clone()),
                 None,
                 axum::extract::Json(
-                    serde_json::from_value::<crate::U3PromptErrorLogRequest>(json!({ "message": "boom" }))
-                        .unwrap(),
+                    serde_json::from_value::<crate::U3PromptErrorLogRequest>(
+                        json!({ "message": "boom" }),
+                    )
+                    .unwrap(),
                 ),
             )
             .await
@@ -107,8 +111,10 @@ async fn r6_writes_reject_without_session() {
                 Extension(pool.clone()),
                 None,
                 axum::extract::Json(
-                    serde_json::from_value::<crate::U3UnexpectedErrorLogRequest>(json!({ "message": "boom" }))
-                        .unwrap(),
+                    serde_json::from_value::<crate::U3UnexpectedErrorLogRequest>(
+                        json!({ "message": "boom" }),
+                    )
+                    .unwrap(),
                 ),
             )
             .await
@@ -139,8 +145,10 @@ async fn r6_writes_reject_without_session() {
                 Extension(pool.clone()),
                 None,
                 axum::extract::Json(
-                    serde_json::from_value::<crate::WarnLogCreateRequest>(json!({ "level": "WARN", "message": "m" }))
-                        .unwrap(),
+                    serde_json::from_value::<crate::WarnLogCreateRequest>(
+                        json!({ "level": "WARN", "message": "m" }),
+                    )
+                    .unwrap(),
                 ),
             )
             .await
@@ -205,7 +213,10 @@ async fn r6_routes_reject_anonymous_writes() {
             .unwrap()
     };
     let cases: Vec<(&str, Request<Body>)> = vec![
-        ("collect_add", json("/api/program_center/collect", r#"{"title":"t"}"#)),
+        (
+            "collect_add",
+            json("/api/program_center/collect", r#"{"title":"t"}"#),
+        ),
         (
             "collect_add/add",
             json("/api/program_center/collect/add", r#"{"title":"t"}"#),
@@ -227,14 +238,14 @@ async fn r6_routes_reject_anonymous_writes() {
         ),
         (
             "u3_mpweixin_template_send_post",
-            json(
-                "/api/program_center/mpweixin/message/template/send",
-                "{}",
-            ),
+            json("/api/program_center/mpweixin/message/template/send", "{}"),
         ),
         (
             "u3_prompterrorlog_create",
-            json("/api/program_center/prompterrorlog", r#"{"message":"boom"}"#),
+            json(
+                "/api/program_center/prompterrorlog",
+                r#"{"message":"boom"}"#,
+            ),
         ),
         (
             "u3_unexpectederrorlog_create",
@@ -243,7 +254,10 @@ async fn r6_routes_reject_anonymous_writes() {
                 r#"{"message":"boom"}"#,
             ),
         ),
-        ("u3_qiyeweixin_create", empty("/api/program_center/qiyeweixin", "POST")),
+        (
+            "u3_qiyeweixin_create",
+            empty("/api/program_center/qiyeweixin", "POST"),
+        ),
         (
             "script_create",
             json("/api/program_center/script", r#"{"name":"s"}"#),
@@ -264,12 +278,7 @@ async fn r6_routes_reject_anonymous_writes() {
     assert_eq!(cases.len(), 13, "本批 13 把写路由必须逐条点名");
     let mut leaked: Vec<String> = Vec::new();
     for (name, req) in cases {
-        let status = app
-            .clone()
-            .oneshot(req)
-            .await
-            .unwrap()
-            .status();
+        let status = app.clone().oneshot(req).await.unwrap().status();
         if status != StatusCode::UNAUTHORIZED {
             leaked.push(format!("{name} => 期望 401，实际 {status}"));
         }

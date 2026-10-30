@@ -40,7 +40,8 @@ fn every_test_module_file_is_declared_in_lib_rs() {
     let crates_dir = manifest_dir.join("crates");
     let mut orphans: Vec<String> = Vec::new();
 
-    for entry in std::fs::read_dir(&crates_dir).expect("读取 crates/ 失败——测试前提不成立") {
+    for entry in std::fs::read_dir(&crates_dir).expect("读取 crates/ 失败——测试前提不成立")
+    {
         let entry = entry.expect("遍历 crates/ 失败");
         if !entry.file_type().expect("stat 失败").is_dir() {
             continue;

@@ -179,7 +179,11 @@ async fn r6_routes_reject_anonymous_writes() {
     let cases: Vec<(&str, Request<Body>)> = vec![
         (
             "calendar_create",
-            json("/api/calendar_assemble_control/calendar", "POST", r#"{"name":"c"}"#),
+            json(
+                "/api/calendar_assemble_control/calendar",
+                "POST",
+                r#"{"name":"c"}"#,
+            ),
         ),
         (
             "calendar_delete",
@@ -187,7 +191,11 @@ async fn r6_routes_reject_anonymous_writes() {
         ),
         (
             "event_create",
-            json("/api/calendar_assemble_control/event", "POST", r#"{"title":"t"}"#),
+            json(
+                "/api/calendar_assemble_control/event",
+                "POST",
+                r#"{"title":"t"}"#,
+            ),
         ),
         (
             "event_delete_after",
@@ -211,7 +219,11 @@ async fn r6_routes_reject_anonymous_writes() {
         ),
         (
             "message_create",
-            json("/api/calendar_assemble_control/message", "POST", r#"{"title":"m"}"#),
+            json(
+                "/api/calendar_assemble_control/message",
+                "POST",
+                r#"{"title":"m"}"#,
+            ),
         ),
         (
             "event_update_all/PUT /event/update/all",
@@ -242,15 +254,14 @@ async fn r6_routes_reject_anonymous_writes() {
     // 是**死注册**——路由无 `{id}` 路径参数，而 event_update_all 签名要求
     // `Path<String>`，提取器在 handler 之前拒绝（500），门无法在路由层体现。
     // handler 本身已加 require_session 门（直调臂 401），路由注册按规则不动。
-    assert_eq!(cases.len(), 11, "本批 11 条可达写路由必须逐条点名（死路由 PUT /event 除外）");
+    assert_eq!(
+        cases.len(),
+        11,
+        "本批 11 条可达写路由必须逐条点名（死路由 PUT /event 除外）"
+    );
     let mut leaked: Vec<String> = Vec::new();
     for (name, req) in cases {
-        let status = app
-            .clone()
-            .oneshot(req)
-            .await
-            .unwrap()
-            .status();
+        let status = app.clone().oneshot(req).await.unwrap().status();
         if status != StatusCode::UNAUTHORIZED {
             leaked.push(format!("{name} => 期望 401，实际 {status}"));
         }

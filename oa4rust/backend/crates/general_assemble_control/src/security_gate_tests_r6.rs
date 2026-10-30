@@ -138,7 +138,10 @@ async fn r6_routes_reject_anonymous_writes() {
     let cases: Vec<(&str, Request<Body>)> = vec![
         (
             "excel_upload",
-            json("/api/general/assemble/control/excel/upload", r#"{"name":"e"}"#),
+            json(
+                "/api/general/assemble/control/excel/upload",
+                r#"{"name":"e"}"#,
+            ),
         ),
         (
             "excel_upload_with_url",
@@ -190,12 +193,7 @@ async fn r6_routes_reject_anonymous_writes() {
     assert_eq!(cases.len(), 8, "本批 8 条写路由必须逐条点名");
     let mut leaked: Vec<String> = Vec::new();
     for (name, req) in cases {
-        let status = app
-            .clone()
-            .oneshot(req)
-            .await
-            .unwrap()
-            .status();
+        let status = app.clone().oneshot(req).await.unwrap().status();
         if status != StatusCode::UNAUTHORIZED {
             leaked.push(format!("{name} => 期望 401，实际 {status}"));
         }

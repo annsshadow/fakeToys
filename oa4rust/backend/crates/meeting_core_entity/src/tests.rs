@@ -12,7 +12,6 @@ mod tests {
     use shared::response::ActionResult;
     use tower::ServiceExt;
 
-
     #[tokio::test]
     async fn test_room_list_returns_internal_error_without_db() {
         let db = shared::testing::mock_db().await;

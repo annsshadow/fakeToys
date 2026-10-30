@@ -281,7 +281,6 @@ pub fn processplatform_core_entity_router(db: DatabaseConnection) -> Router {
         .route("/api/process/ticket/list", get(ticket_list))
         .route("/api/process/workcompleted/list", get(workcompleted_list))
         .layer(Extension(db))
-
 }
 
 #[cfg(test)]

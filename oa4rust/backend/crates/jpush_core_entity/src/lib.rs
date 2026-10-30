@@ -221,7 +221,6 @@ pub fn jpush_core_entity_router(db: DatabaseConnection) -> Router {
         .route("/api/jpush/core/entity/template/list", get(template_list))
         .route("/api/jpush/core/entity/template/{id}", get(template_get))
         .layer(Extension(db))
-
 }
 
 /// DELETE /api/jpush/core/entity/device/{id} — 删除推送设备

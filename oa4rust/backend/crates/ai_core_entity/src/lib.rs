@@ -164,7 +164,6 @@ pub fn ai_core_entity_router(db: DatabaseConnection) -> Router {
             get(conversation_list),
         )
         .layer(Extension(db))
-
 }
 
 #[cfg(test)]
