@@ -319,6 +319,9 @@ func (s *Server) Register(app *fiber.App) {
 	adm.Delete("/announcements/:id", requireWritable(), s.adminDeleteAnnouncement)
 	adm.Get("/redeem-codes", s.adminRedeemCodes)
 	adm.Post("/redeem-codes", requireWritable(), s.adminCreateRedeemCode)
+	// 兑换码启用/禁用（2026-10-31 实质优化第 24 轮）：
+	// 运营创建错误码后此前无法停用（只能等过期）。
+	adm.Put("/redeem-codes/:id/enabled", requireWritable(), s.adminSetRedeemCodeEnabled)
 	adm.Get("/audit-logs", s.adminAuditLogs)
 	// 审计日志导出（2026-10-30 实质优化第 15 轮）：合规归档，读操作。
 	adm.Get("/audit-logs/export", s.adminExportAuditLogs)

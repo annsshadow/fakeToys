@@ -851,6 +851,27 @@ func (s *Server) adminCreateRedeemCode(c *fiber.Ctx) error {
 	return c.JSON(service.AdminRedeemCodeResp{Item: item})
 }
 
+// adminSetRedeemCodeEnabled 启用/禁用兑换码（2026-10-31 实质优化第 24 轮）。
+func (s *Server) adminSetRedeemCodeEnabled(c *fiber.Ctx) error {
+	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
+	if err != nil || id < 1 {
+		return fail(c, fiber.StatusBadRequest, "bad_input", "兑换码 ID 非法")
+	}
+	var body struct {
+		Enabled bool `json:"enabled"`
+	}
+	if err := c.BodyParser(&body); err != nil {
+		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+	}
+	item, err := s.Svc.AdminSetRedeemCodeEnabled(c.Context(), int(id), body.Enabled)
+	if err != nil {
+		return failErr(c, err)
+	}
+	s.Svc.Audit(c.Context(), adminIDFrom(c), "set_redeem_enabled",
+		strconv.FormatInt(id, 10), c.IP(), body)
+	return c.JSON(service.AdminRedeemCodeResp{Item: item})
+}
+
 func (s *Server) adminAuditLogs(c *fiber.Ctx) error {
 	limit, err := queryInt(c, "limit", 100)
 	if err != nil {

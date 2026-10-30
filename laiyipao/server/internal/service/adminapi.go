@@ -854,7 +854,37 @@ func (s *Service) AdminCreateRedeemCode(ctx context.Context, code string, reward
 	}
 	return AdminRedeemCodeView{
 		ID: id, Code: code, Reward: reward, MaxUses: maxUses, ExpiresAt: expiresAt,
+		// ⚠️ 2026-10-31（实质优化第 24 轮）：此前漏填 Enabled，
+		// 前端「状态」列把新码显示成「停用」（表里实际是启用）。
+		Enabled: true,
 	}, nil
+}
+
+// AdminSetRedeemCodeEnabled 启用/禁用兑换码（2026-10-31 实质优化第 24 轮）。
+//
+// 此前兑换码只有创建/列表，运营创建错误码后**无法停用**（只能等过期）。
+// 禁用后 `Redeem` 的 SQL 已带 `AND enabled`，玩家端立即无法兑换；
+// `expires_at` 保留不动 —— 重新启用后仍按原过期时间失效。
+func (s *Service) AdminSetRedeemCodeEnabled(ctx context.Context, id int, enabled bool) (AdminRedeemCodeView, error) {
+	row := s.pool.QueryRow(ctx,
+		`UPDATE redeem_codes SET enabled = $2
+		 WHERE id = $1
+		 RETURNING id, code, reward, max_uses, used_count, expires_at, enabled`,
+		id, enabled)
+	var v AdminRedeemCodeView
+	var rewardRaw []byte
+	var expiresAt *time.Time
+	if err := row.Scan(&v.ID, &v.Code, &rewardRaw, &v.MaxUses, &v.UsedCount, &expiresAt, &v.Enabled); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return AdminRedeemCodeView{}, fmt.Errorf("%w: 兑换码 %d 不存在", ErrNotFound, id)
+		}
+		return AdminRedeemCodeView{}, fmt.Errorf("set redeem code enabled: %w", err)
+	}
+	if err := json.Unmarshal(rewardRaw, &v.Reward); err != nil {
+		return AdminRedeemCodeView{}, fmt.Errorf("unmarshal redeem reward: %w", err)
+	}
+	v.ExpiresAt = expiresAt
+	return v, nil
 }
 
 // AdminListAuditLogs 返回操作审计。
