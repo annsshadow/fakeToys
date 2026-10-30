@@ -914,6 +914,8 @@ type MyBattleHistoryItem struct {
 	Kills     int       `json:"kills"`
 	Leaked    int       `json:"leaked"`
 	CreatedAt time.Time `json:"created_at"`
+	// 2026-10-31（实质优化第 35 轮）：回放哈希，供「从战报进入验真」。
+	ReplayHash string `json:"replay_hash"`
 }
 
 // MyBattleHistory 返回当前玩家最近的战斗记录。
@@ -925,7 +927,7 @@ func (s *Service) MyBattleHistory(ctx context.Context, userID int64, limit int) 
 		limit = 20
 	}
 	rows, err := s.pool.Query(ctx,
-		`SELECT id, level_id, result, stars, score, kills, leaked, created_at
+		`SELECT id, level_id, result, stars, score, kills, leaked, replay_hash, created_at
 		 FROM battle_records
 		 WHERE user_id = $1
 		 ORDER BY created_at DESC
@@ -939,7 +941,7 @@ func (s *Service) MyBattleHistory(ctx context.Context, userID int64, limit int) 
 	for rows.Next() {
 		var it MyBattleHistoryItem
 		if err := rows.Scan(&it.ID, &it.LevelID, &it.Result, &it.Stars,
-			&it.Score, &it.Kills, &it.Leaked, &it.CreatedAt); err != nil {
+			&it.Score, &it.Kills, &it.Leaked, &it.ReplayHash, &it.CreatedAt); err != nil {
 			return nil, fmt.Errorf("scan battle history: %w", err)
 		}
 		out = append(out, it)

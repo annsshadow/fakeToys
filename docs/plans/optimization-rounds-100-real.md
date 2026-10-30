@@ -43,6 +43,7 @@
 | 32 | 2026-10-31 | **玩家删除自己的防线**：玩家布置防线后只能覆盖保存，无法清空——不想被挑战时没有任何办法 | 服务层 `DeleteMyDefense`（DELETE by owner_id、0 行 → ErrNotFound、挑战记录随 CASCADE 删除）；`DELETE /api/v1/defenses`（requireUser）；miniapp me.vue「删除防线」按钮（二次确认、删除后清空本地防线状态） | 服务层 3 用例、e2e 3 用例（401/删除成功/未设置 404）全绿；`internal/service` 232s 全绿、`internal/httpapi` 106s 全绿、miniapp 1171 passed、type-check 通过 |
 | 33 | 2026-10-31 | **后台订单明细列表**：后台此前只有订单计数（paid/pending），玩家反馈「扣款没到账」时运营无从查起 | 服务层 `AdminListOrders`（JOIN users 取昵称、订单号/SKU/金额/状态/provider/时间、limit 夹到 50、空列表非 nil）；`GET /api/v1/admin/orders`；admin EconomyView「支付订单」卡片（分页、金额元、状态标签）；types.gen.ts/index.ts 同步新类型 | 服务层 4 用例、e2e 2 用例（401/记录正确）全绿；`internal/service` 238s 全绿、`internal/httpapi` 98s 全绿、admin 353 passed、type-check 通过 |
 | 34 | 2026-10-31 | **「我的」页面展示账号信息**：玩家看不到自己的注册时间与最后登录时间 | `User` 增加 `LastLoginAt`；`loadUser` 查询补 `last_login_at`；新增公开方法 `MyAccount`；`/me` 响应增加 `account` 对象；miniapp store 保存 `accountCreatedAt/accountLastLoginAt`，me.vue 顶部显示「注册于/最近登录」；同步更新 reactions.test.ts mock | 服务层 3 用例、e2e 1 用例（/me 含 account 时间戳）全绿；`internal/service` 231s 全绿、`internal/httpapi` 104s 全绿、miniapp 1171 passed、type-check 通过 |
+| 35 | 2026-10-31 | **「最近战报 → 验真」入口**：玩家对某局结果有疑问时，只能在验真页手动输入 battle_id | `MyBattleHistoryItem` 增加 `replay_hash`；miniapp `BattleHistoryItem` 类型同步；me.vue 战报行加「验真」链接（带 battle_id+hash 跳转 verify 页）；verify 页 `onLoad` 读取 `battle_id` 参数自动填充 | 服务层 4 用例全绿；`internal/service` 237s 全绿、`internal/httpapi` 110s 全绿、miniapp 1171 passed、type-check 通过 |
 | ... | | 持续至 100 轮 | | |
 
-> 状态：进行中。当前累计 **34 轮实质优化**，距 100 轮还差 66 轮。
+> 状态：进行中。当前累计 **35 轮实质优化**，距 100 轮还差 65 轮。

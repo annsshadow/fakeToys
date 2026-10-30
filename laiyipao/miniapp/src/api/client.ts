@@ -1120,6 +1120,7 @@ export interface BattleHistoryItem {
   score: number
   kills: number
   leaked: number
+  replay_hash: string
   created_at: string
 }
 

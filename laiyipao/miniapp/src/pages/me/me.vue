@@ -249,6 +249,8 @@
             <text class="dim ellipsis">
               {{ b.result === 'win' ? '胜利' : '失败' }} · {{ b.stars }} 星 · {{ b.score }} 分
             </text>
+            <!-- 从战报进入验真（2026-10-31 实质优化第 35 轮） -->
+            <text class="dim link" @click="goVerify(b)">验真</text>
           </view>
           <text class="dim">{{ fmtChallengeTime(b.created_at) }}</text>
         </view>
@@ -524,6 +526,16 @@ async function loadBattleHistory() {
   } catch {
     // 战报历史是辅助信息，加载失败不打扰主流程
   }
+}
+
+/**
+ * 从战报进入验真（2026-10-31 实质优化第 35 轮）。
+ * verify 页读取 query 参数自动填充 battle_id。
+ */
+function goVerify(b: api.BattleHistoryItem) {
+  uni.navigateTo({
+    url: `/pages/verify/verify?battle_id=${b.id}&hash=${encodeURIComponent(b.replay_hash ?? '')}`,
+  })
 }
 
 // 购买记录（2026-10-30 实质优化第 20 轮）。
