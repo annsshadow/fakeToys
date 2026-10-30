@@ -19,7 +19,9 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 
+	"github.com/laiyipao/server/internal/config"
 	"github.com/laiyipao/server/internal/domain"
+	"github.com/laiyipao/server/internal/store"
 )
 
 // newAdminFixture 直接在库中插一个管理员（密码 MinCost 加速测试）。
@@ -1061,5 +1063,27 @@ func TestJoinCommaAndToInt64(t *testing.T) {
 		if ok != c.ok || (ok && got != c.want) {
 			t.Errorf("toInt64(%v)（用例 %d）= %d, %t；期望 %d, %t", c.in, i, got, ok, c.want, c.ok)
 		}
+	}
+}
+
+// TestAdminLogoutFailsOnDBError 覆盖 AdminLogout 的数据库错误路径：
+// 吊销 SQL 执行失败时必须返回错误（而不是静默 0 条）。
+// 连接 postgres 系统库（可达但无 admin_tokens 表）→ UPDATE 报 42P01。
+func TestAdminLogoutFailsOnDBError(t *testing.T) {
+	cfg := config.Load()
+	cfg.DatabaseURL = "postgres://postgres@127.0.0.1:5432/postgres?sslmode=disable"
+	cfg.DBMaxConns = 2
+	cfg.DBMinConns = 0
+	ctx := context.Background()
+
+	db, err := store.Open(ctx, cfg)
+	if err != nil {
+		t.Skipf("postgres 系统库连不上，跳过：%v", err)
+	}
+	defer db.Close()
+
+	s := New(db, cfg)
+	if _, err := s.AdminLogout(ctx, 12345); err == nil {
+		t.Fatal("无 admin_tokens 表时 AdminLogout 必须返回错误")
 	}
 }
