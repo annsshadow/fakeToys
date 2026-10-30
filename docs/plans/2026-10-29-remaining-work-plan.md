@@ -240,6 +240,9 @@ cd oa4rust/backend && node scripts/audit_write_gating.mjs
 # 单 crate 覆盖率（Windows GNU 工具链无 profiler_builtins，必须在 Linux 容器内跑）
 docker exec oa4rust-cov sh -c 'cd /src && DATABASE_URL="postgres://o2server:password@lyp-pg:5432/oa4rust_cov" CARGO_TARGET_DIR=/tmp/cov-target cargo llvm-cov -p shared --lib --summary-only'
 
+# 后端依赖安全审计（容器内；例外经 validate_rustsec_exceptions.py --print-args 生成 ignore）
+docker exec oa4rust-cov sh -c 'cd /src && cargo audit'
+
 # 子项目测试
 cd auto-checkin && npx tsx --test test/*.test.ts && npm run test:ratchet
 cd laiyipao/server && TEST_DATABASE_URL='postgres://user:pass@localhost:5432/laiyipao?sslmode=disable' go test ./internal/...
