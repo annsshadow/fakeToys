@@ -328,7 +328,7 @@ func (s *Service) Diagnose(ctx context.Context, userID int64, levelID, failedTim
 	}
 	failedTimes = realFailed
 
-	gl := domain.GenerateLevel(levelID)
+	gl := domain.CachedLevel(levelID)
 
 	// 取最近若干局该关的战报做样本
 	rows, err := s.pool.Query(ctx,
@@ -1187,5 +1187,5 @@ func GeneratedPowerLevel(power int64) domain.GeneratedLevel {
 	if id > domain.TotalLevels {
 		id = domain.TotalLevels
 	}
-	return domain.GenerateLevel(id)
+	return domain.CachedLevel(id)
 }

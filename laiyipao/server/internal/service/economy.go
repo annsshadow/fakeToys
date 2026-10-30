@@ -907,7 +907,7 @@ func (s *Service) getReplay(ctx context.Context, userID, battleID int64, enforce
 	r.Seed = strconv.FormatInt(seed, 10)
 	r.CardPicks = parseCardPicks(cardPicks)
 	r.CreatedAt = createdAt.UTC().Format(timeFormat)
-	r.Level = NewLevelResp(domain.GenerateLevel(r.LevelID))
+	r.Level = NewLevelResp(domain.CachedLevel(r.LevelID))
 
 	// ⚠️ 从玩家侧响应里剥离 settle_input。
 	//

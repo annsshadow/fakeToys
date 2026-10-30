@@ -66,7 +66,7 @@ func (s *Service) AbandonBattle(ctx context.Context, userID int64, tokenID int64
 		if time.Now().After(expiresAt) {
 			return fmt.Errorf("%w: 这局已经过期了", ErrBadInput)
 		}
-		gl := domain.GenerateLevel(levelID)
+		gl := domain.CachedLevel(levelID)
 
 		// 1) 标记凭证已用（条件更新：只有仍未使用的那枚才会被改到）
 		tag, err := tx.Exec(ctx,

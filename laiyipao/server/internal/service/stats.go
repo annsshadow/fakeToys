@@ -836,7 +836,7 @@ func (s *Service) AdminListBattles(ctx context.Context, userID int64, levelID in
 			return n
 		}
 		n := 0
-		for _, w := range domain.GenerateLevel(levelID).Waves {
+		for _, w := range domain.CachedLevel(levelID).Waves {
 			for _, sp := range w.Spawns {
 				n += sp.Count
 			}
@@ -922,7 +922,7 @@ func (s *Service) AdminExportBattles(ctx context.Context, userID int64, levelID 
 			return n
 		}
 		n := 0
-		for _, wave := range domain.GenerateLevel(levelID).Waves {
+		for _, wave := range domain.CachedLevel(levelID).Waves {
 			for _, sp := range wave.Spawns {
 				n += sp.Count
 			}

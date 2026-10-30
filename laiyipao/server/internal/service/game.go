@@ -76,7 +76,7 @@ func (s *Service) StartBattle(ctx context.Context, userID int64, levelID int) (B
 	if levelID < 1 || levelID > domain.TotalLevels {
 		return BattleTokenResp{}, fmt.Errorf("%w: 关卡 %d 不存在", ErrBadInput, levelID)
 	}
-	gl := domain.GenerateLevel(levelID)
+	gl := domain.CachedLevel(levelID)
 
 	// 关卡必须已解锁
 	var maxStage int
@@ -236,7 +236,7 @@ func (s *Service) SettleBattle(ctx context.Context, userID, tokenID int64, in do
 		return SettleResp{}, fmt.Errorf("load battle token: %w", err)
 	}
 
-	gl := domain.GenerateLevel(tok.LevelID)
+	gl := domain.CachedLevel(tok.LevelID)
 	limits := domain.SettleLimits{
 		MinDurationMs: int64(s.Cfg().MinBattleDuration / time.Millisecond),
 	}
