@@ -6,7 +6,6 @@ use deadpool_postgres::tokio_postgres::types::{FromSql, Type};
 use deadpool_postgres::tokio_postgres::Row;
 use serde::Serialize;
 use serde_json::Value;
-use thiserror::Error;
 
 /// 将一行 PostgreSQL 记录转换为 JSON 对象，供通用真实化 handler 复用。
 ///
@@ -92,81 +91,12 @@ pub fn row_opt_json<T: Serialize + for<'a> FromSql<'a>>(row: &Row, col: &str) ->
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// AppError
-//
-// 统一的应用程序错误枚举。所有 HTTP 处理层抛出的错误都应映射到此类型，
-// 使得 IntoResponse 实现可以将错误转换为带状态码和 JSON 体的 HTTP 响应。
-// ──────────────────────────────────────────────────────────────────────────────
-#[derive(Error, Debug)]
-pub enum AppError {
-    /// 数据库操作失败（来自 sqlx）
-    #[error("database error: {0}")]
-    Database(#[from] sqlx::Error),
-
-    /// 内部服务器错误（未预期的运行时异常）
-    #[error("internal server error")]
-    Internal,
-
-    /// 客户端请求参数错误
-    #[error("bad request: {0}")]
-    BadRequest(String),
-
-    /// 身份验证失败（缺少或无效 token）
-    #[error("unauthorized")]
-    Unauthorized,
-
-    /// 请求的资源不存在
-    #[error("not found")]
-    NotFound,
-}
-
-// 将 AppError 转换为 HTTP 响应：
-//   - Database / Internal  → 500 Internal Server Error
-//   - BadRequest           → 400 Bad Request
-//   - Unauthorized         → 401 Unauthorized
-//   - NotFound             → 404 Not Found
-//
-// 错误体与 o2server 错误信封实测形状一致：无 data 字段，元数据字段恒填充，
-// prompt 承载 o2server 异常类名风格字符串（见 legacy_exception_for）。
-impl IntoResponse for AppError {
-    fn into_response(self) -> axum::response::Response {
-        let (status, prompt_kind) = match &self {
-            AppError::Database(_) => (
-                axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-                "ExceptionInternal",
-            ),
-            AppError::Internal => (
-                axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-                "ExceptionInternal",
-            ),
-            AppError::BadRequest(_) => (axum::http::StatusCode::BAD_REQUEST, "ExceptionBadRequest"),
-            AppError::Unauthorized => (
-                axum::http::StatusCode::UNAUTHORIZED,
-                "ExceptionUnauthorized",
-            ),
-            AppError::NotFound => (axum::http::StatusCode::NOT_FOUND, "ExceptionEntityNotExist"),
-        };
-
-        let body = Json(serde_json::json!({
-            "type": "error",
-            "message": self.to_string(),
-            "date": legacy_date_now(),
-            "spent": 0,
-            "size": -1,
-            "count": 0,
-            "position": 0,
-            "prompt": legacy_exception_for(prompt_kind),
-        }));
-
-        (status, body).into_response()
-    }
-}
-
-// ──────────────────────────────────────────────────────────────────────────────
 // error_response
 //
 // 中间件层（认证/授权/限流）统一生成 ActionResult 格式的错误响应。
 // 与 AppError::IntoResponse 保持相同 JSON 结构（o2server 实测形状）。
+// 注：正式的 AppError 枚举与 IntoResponse 实现在 `crate::error`（lib.rs 统一
+// re-export）；response 模块不再重复定义，避免两个枚举漂移。
 // ──────────────────────────────────────────────────────────────────────────────
 pub fn error_response(
     status: axum::http::StatusCode,
@@ -372,6 +302,7 @@ pub fn sanitize_mime(raw: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::AppError;
 
     /// 收集 axum 响应体为 JSON 值。
     async fn response_json(resp: axum::response::Response) -> (axum::http::StatusCode, Value) {
@@ -458,10 +389,14 @@ mod tests {
     #[tokio::test]
     async fn app_error_variants_map_to_their_status_codes() {
         let cases: Vec<(AppError, u16)> = vec![
+            (AppError::Database(sqlx::Error::RowNotFound), 500),
+            (AppError::InternalAnyhow(anyhow::anyhow!("boom")), 500),
             (AppError::Internal, 500),
             (AppError::BadRequest("bad".into()), 400),
             (AppError::Unauthorized, 401),
+            (AppError::Forbidden, 403),
             (AppError::NotFound, 404),
+            (AppError::NotImplemented, 501),
         ];
         for (err, want) in cases {
             let label = format!("{err:?}");

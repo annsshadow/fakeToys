@@ -159,21 +159,26 @@ pub(crate) fn requires_admin(method: &axum::http::Method, path: &str) -> bool {
 // 逗号分隔的 IP 列表，默认空 = 仅信任本地回环 127.0.0.1 / ::1，即本地 nginx）
 // 的 X-Forwarded-For 第一个 IP；其余情况回退 socket 地址（ConnectInfo）。
 // ──────────────────────────────────────────────────────────────────────────────
+/// 从 `TRUSTED_PROXY_IPS` 原始字符串解析可信代理白名单。抽成纯函数：
+/// OnceLock 缓存的是解析结果，测试可以直接喂不同输入覆盖全部分支，
+/// 不必依赖进程内首次初始化的顺序（C1 覆盖率条件项）。
+fn trusted_proxy_ips_from(raw: String) -> Vec<String> {
+    let mut ips: Vec<String> = raw
+        .split(',')
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .collect();
+    if ips.is_empty() {
+        ips.push("127.0.0.1".to_string());
+        ips.push("::1".to_string());
+    }
+    ips
+}
+
 fn trusted_proxy_ips() -> &'static Vec<String> {
     static TRUSTED: OnceLock<Vec<String>> = OnceLock::new();
-    TRUSTED.get_or_init(|| {
-        let raw = env::var("TRUSTED_PROXY_IPS").unwrap_or_default();
-        let mut ips: Vec<String> = raw
-            .split(',')
-            .map(|s| s.trim().to_string())
-            .filter(|s| !s.is_empty())
-            .collect();
-        if ips.is_empty() {
-            ips.push("127.0.0.1".to_string());
-            ips.push("::1".to_string());
-        }
-        ips
-    })
+    TRUSTED
+        .get_or_init(|| trusted_proxy_ips_from(env::var("TRUSTED_PROXY_IPS").unwrap_or_default()))
 }
 
 fn first_xff_ip(request: &Request<Body>) -> Option<String> {
@@ -234,13 +239,24 @@ pub async fn trace_middleware(request: Request<Body>, next: Next) -> Response {
 // FORCE_HTTPS=true 时执行 HTTP→HTTPS 跳转（依据 nginx 透传的 X-Forwarded-Proto）。
 // HSTS 由 nginx 终止层下发，Rust 侧不设置，避免在回环直连场景误伤。
 // ──────────────────────────────────────────────────────────────────────────────
+/// 解析 `FORCE_HTTPS` 环境变量。抽成纯函数：OnceLock 缓存解析结果，
+/// 测试可直接喂不同值覆盖 true/false 两分支（C1 覆盖率条件项）。
+fn force_https_from(v: Option<String>) -> bool {
+    v.map(|v| matches!(v.as_str(), "true" | "1"))
+        .unwrap_or(false)
+}
+
 fn force_https() -> bool {
     static FORCE: OnceLock<bool> = OnceLock::new();
-    *FORCE.get_or_init(|| {
-        env::var("FORCE_HTTPS")
-            .map(|v| matches!(v.as_str(), "true" | "1"))
-            .unwrap_or(false)
-    })
+    *FORCE.get_or_init(|| force_https_from(env::var("FORCE_HTTPS").ok()))
+}
+
+/// 解析 `APP_PUBLIC_ORIGIN` 得到 FORCE_HTTPS 重定向 host。抽成纯函数：
+/// 测试无需设置环境变量即可覆盖 https/非 https/解析失败/缺失全部分支。
+fn force_https_host_from(v: Option<String>) -> Option<String> {
+    v.and_then(|v| url::Url::parse(&v).ok())
+        .filter(|u| u.scheme() == "https")
+        .and_then(|u| u.host_str().map(|h| h.to_string()))
 }
 
 /// FORCE_HTTPS 下重定向的 host：生产固定用 APP_PUBLIC_ORIGIN 的 host。
@@ -249,17 +265,17 @@ fn force_https() -> bool {
 /// 开发环境（未配置或 http 源）回退请求 Host 保持本地直连可用。
 fn force_https_host() -> Option<String> {
     static HOST: OnceLock<Option<String>> = OnceLock::new();
-    HOST.get_or_init(|| {
-        std::env::var("APP_PUBLIC_ORIGIN")
-            .ok()
-            .and_then(|v| url::Url::parse(&v).ok())
-            .filter(|u| u.scheme() == "https")
-            .and_then(|u| u.host_str().map(|h| h.to_string()))
-    })
-    .clone()
+    HOST.get_or_init(|| force_https_host_from(env::var("APP_PUBLIC_ORIGIN").ok()))
+        .clone()
 }
 
-fn https_redirect(request: &Request<Body>) -> Option<Response> {
+/// `https_redirect` 的核心逻辑，host 来源参数化：测试直接喂配置 host 或
+/// `None`（回退请求 Host 头），不必依赖 `force_https_host` 的 OnceLock
+/// 初始化顺序（C1 覆盖率条件项：进程隔离互斥）。
+fn https_redirect_with(
+    configured_host: Option<String>,
+    request: &Request<Body>,
+) -> Option<Response> {
     let proto = request
         .headers()
         .get("x-forwarded-proto")
@@ -269,7 +285,7 @@ fn https_redirect(request: &Request<Body>) -> Option<Response> {
         return None;
     }
 
-    let host = match force_https_host() {
+    let host = match configured_host {
         Some(h) => h,
         None => request
             .headers()
@@ -291,6 +307,11 @@ fn https_redirect(request: &Request<Body>) -> Option<Response> {
         .headers_mut()
         .insert(header::LOCATION, HeaderValue::from_str(&location).ok()?);
     Some(response)
+}
+
+/// FORCE_HTTPS 下对 HTTP 请求生成 307 重定向；https 请求直接放行。
+fn https_redirect(request: &Request<Body>) -> Option<Response> {
+    https_redirect_with(force_https_host(), request)
 }
 
 pub async fn security_headers_middleware(request: Request<Body>, next: Next) -> Response {
@@ -590,21 +611,25 @@ mod cov_middleware_tests {
             .uri("/x")
             .body(Body::empty())
             .unwrap();
-        assert!(https_redirect(&request).is_none(), "已是 https 不重定向");
+        // 用参数化入口，避免初始化 force_https_host 的 OnceLock（进程隔离互斥）
+        assert!(
+            https_redirect_with(None, &request).is_none(),
+            "已是 https 不重定向"
+        );
     }
 
     #[test]
     fn https_redirect_uses_configured_public_origin_host() {
-        // 本测试进程内首次调用 force_https_host：预置 https 源，
+        // 直接喂配置 host，不设置 APP_PUBLIC_ORIGIN（避免污染并行测试）：
         // 重定向 host 必须取配置源而非请求 Host 头（防 307 开放重定向）
-        std::env::set_var("APP_PUBLIC_ORIGIN", "https://prod.example");
         let request = Request::builder()
             .header("x-forwarded-proto", "http")
             .header(header::HOST, "evil.com")
             .uri("/login?next=/a")
             .body(Body::empty())
             .unwrap();
-        let resp = https_redirect(&request).expect("http 请求必须被重定向");
+        let resp = https_redirect_with(Some("prod.example".to_string()), &request)
+            .expect("http 请求必须被重定向");
         assert_eq!(resp.status(), StatusCode::TEMPORARY_REDIRECT);
         let loc = resp
             .headers()
@@ -617,5 +642,71 @@ mod cov_middleware_tests {
             "host 取配置源且保留 path+query"
         );
         assert!(!loc.contains("evil.com"), "绝不沿用请求 Host 头");
+    }
+
+    #[test]
+    fn https_redirect_falls_back_to_request_host_without_configured_origin() {
+        // 未配置 APP_PUBLIC_ORIGIN（或非 https 源）时回退请求 Host 头。
+        let request = Request::builder()
+            .header("x-forwarded-proto", "http")
+            .header(header::HOST, "local.dev")
+            .uri("/x")
+            .body(Body::empty())
+            .unwrap();
+        let resp = https_redirect_with(None, &request).expect("http 请求必须被重定向");
+        let loc = resp
+            .headers()
+            .get(header::LOCATION)
+            .and_then(|v| v.to_str().ok())
+            .unwrap()
+            .to_string();
+        assert_eq!(loc, "https://local.dev/x");
+    }
+
+    #[test]
+    fn force_https_from_env_branches() {
+        assert!(force_https_from(Some("true".to_string())));
+        assert!(force_https_from(Some("1".to_string())));
+        assert!(!force_https_from(Some("false".to_string())));
+        assert!(!force_https_from(Some("yes".to_string())));
+        assert!(!force_https_from(None), "未配置 FORCE_HTTPS 默认不强制");
+    }
+
+    #[test]
+    fn force_https_host_from_env_branches() {
+        assert_eq!(
+            force_https_host_from(Some("https://prod.example".to_string())),
+            Some("prod.example".to_string())
+        );
+        assert_eq!(
+            force_https_host_from(Some("http://prod.example".to_string())),
+            None,
+            "非 https 源不用于重定向 host"
+        );
+        assert_eq!(
+            force_https_host_from(Some("not-a-url".to_string())),
+            None,
+            "解析失败的源忽略"
+        );
+        assert_eq!(force_https_host_from(None), None, "未配置回退请求 Host");
+    }
+
+    #[test]
+    fn trusted_proxy_ips_from_env_branches() {
+        assert_eq!(
+            trusted_proxy_ips_from("10.0.0.1, 10.0.0.2".to_string()),
+            vec!["10.0.0.1".to_string(), "10.0.0.2".to_string()],
+            "显式配置的可信代理列表"
+        );
+        assert_eq!(
+            trusted_proxy_ips_from(" 10.0.0.1 , ".to_string()),
+            vec!["10.0.0.1".to_string()],
+            "trim 并过滤空段"
+        );
+        assert_eq!(
+            trusted_proxy_ips_from(String::new()),
+            vec!["127.0.0.1".to_string(), "::1".to_string()],
+            "未配置时默认仅信任本地回环"
+        );
     }
 }
