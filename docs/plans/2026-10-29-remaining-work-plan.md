@@ -180,6 +180,7 @@ LY-7（小程序虚拟化，实测列表全部有界）、AU-P1（异步后端�
 |---|---|---|---|
 | **D1** | llm-lab pytest 门禁 SKIP | ~~本机 `C:/Python314` 有 pytest；门禁默认解释器没有~~ | **已消解（2026-10-30）**：环境更新后默认 `python` 已带 pytest 9.1.1，门禁 `llm-lab (pytest 行为面)` 真实 PASS（6.7s），不再是 SKIP。门禁脚本的 `requires` 守门会在解释器缺 pytest 时显式 SKIP 并说明，无需改代码 |
 | **D2** | cool Java 门禁 SKIP（无 JDK） | 本机无 JDK（`javac` 不在 PATH，`JAVA_HOME` 未设置）；`cool/lib/` 无 commons-codec jar。jar 可从 Maven Central 下载（本机可达），但缺 javac 无法编译 | **环境限制（2026-10-30 登记）**：门禁脚本在缺 jar 时显式 SKIP；补 jar 后若无 javac 会变 FAIL，反而破坏门禁。保持 SKIP 为正确状态。待安装 JDK 后可下载 jar（`curl -sL -o cool/lib/commons-codec-1.16.1.jar https://repo1.maven.org/maven2/commons-codec/commons-codec/1.16.1/commons-codec-1.16.1.jar`）并跑通 cool 编译。`*.jar` 已被根 .gitignore 忽略，不会入仓 |
+| **D3** | 容器内跑 integration/perf 测试需 curl + RUST_MIN_STACK | `oa4rust-cov` 容器是 Debian 精简镜像：① 无 curl → `utoipa-swagger-ui` 构建脚本下载 swagger-ui zip 失败；② 编译 `openapi`（lib.rs 约 7 万行）时 rustc 默认栈溢出（SIGSEGV） | **运维要点（2026-10-30 登记）**：容器内先 `apt-get install -y curl`；编译/测试命令带 `RUST_MIN_STACK=33554432`（rustc 官方建议值）。示例见 §五复跑命令。这两项只在容器内跑全量 integration 或 perf_baseline 时需要；`cargo llvm-cov -p shared --lib`（仅 shared）不受影响 |
 
 ---
 
