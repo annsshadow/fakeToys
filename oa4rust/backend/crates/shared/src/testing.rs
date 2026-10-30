@@ -472,4 +472,63 @@ mod mock_infra_tests {
             .await
             .expect("清理夹具");
     }
+
+    #[tokio::test]
+    async fn is_unique_violation_rejects_non_conflict_errors() {
+        // 反向：非唯一冲突错误（如 42P01 undefined_table）必须返回 false，
+        // 防止把「表不存在/连接失败」误判成可重试的冲突。
+        if !is_db_available().await {
+            eprintln!("SKIP: no database available");
+            return;
+        }
+        let pool = test_pool();
+        let client = pool.get().await.expect("获取 client");
+        let err = client
+            .execute("SELECT * FROM definitely_not_a_table_oa4rust", &[])
+            .await
+            .expect_err("非法 SQL 必须报错");
+        assert!(
+            !is_unique_violation(&err),
+            "非唯一冲突错误不应识别为冲突，实际 code: {:?}",
+            err.code()
+        );
+    }
+
+    #[tokio::test]
+    async fn upsert_fixture_person_cleans_same_uid_collision() {
+        // upsert_fixture_person 的「清同 unique_id 残留」分支：先插入同
+        // unique_id 不同 id 的脏行，upsert 后残留必须被删掉（否则后续
+        // 唯一索引冲突无法收敛）。
+        if !is_db_available().await {
+            eprintln!("SKIP: no database available");
+            return;
+        }
+        let pool = test_pool();
+        let client = pool.get().await.expect("获取 client");
+        let pid = format!("fixture-{}", uuid::Uuid::new_v4());
+        let uid = format!("fixture-uid-{}", uuid::Uuid::new_v4());
+        let rogue_id = format!("fixture-rogue-{}", uuid::Uuid::new_v4());
+        client
+            .execute(
+                "INSERT INTO auth_person (id, unique_id, name, password_hash) \
+                 VALUES ($1, $2, 'rogue', 'x')",
+                &[&rogue_id, &uid],
+            )
+            .await
+            .expect("插入残留行");
+        upsert_fixture_person(&client, &pid, &uid, "Fixture Person").await;
+        let rogue_exists: bool = client
+            .query_one(
+                "SELECT EXISTS(SELECT 1 FROM auth_person WHERE id = $1)",
+                &[&rogue_id],
+            )
+            .await
+            .expect("查询残留")
+            .get(0);
+        assert!(!rogue_exists, "同 unique_id 的残留行应被清理");
+        client
+            .execute("DELETE FROM auth_person WHERE id = $1", &[&pid])
+            .await
+            .expect("清理夹具");
+    }
 }
