@@ -148,6 +148,9 @@ func (s *Server) Register(app *fiber.App) {
 	// 我的购买记录（2026-10-30 实质优化第 20 轮）。
 	// 玩家每次商城购买都落 user_purchases，但玩家端没有任何入口。
 	me.Get("/purchases", s.myPurchases)
+	// 我的兑换记录（2026-10-30 实质优化第 21 轮）。
+	// 玩家每次兑换都落 redeem_usages，但玩家端没有任何历史入口。
+	me.Get("/redemptions", s.myRedemptions)
 
 	wallet := v1.Group("/wallet", requireUser(s.Svc))
 	wallet.Get("/", s.wallet)
@@ -686,6 +689,15 @@ func (s *Server) myBattleHistory(c *fiber.Ctx) error {
 // myPurchases 返回当前玩家最近的商城购买记录。
 func (s *Server) myPurchases(c *fiber.Ctx) error {
 	items, err := s.Svc.MyPurchases(c.Context(), userIDFrom(c), 20)
+	if err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(fiber.Map{"items": items})
+}
+
+// myRedemptions 返回当前玩家最近的兑换码使用记录。
+func (s *Server) myRedemptions(c *fiber.Ctx) error {
+	items, err := s.Svc.MyRedemptions(c.Context(), userIDFrom(c), 20)
 	if err != nil {
 		return failErr(c, err)
 	}

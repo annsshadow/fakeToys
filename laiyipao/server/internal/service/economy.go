@@ -282,6 +282,49 @@ func (s *Service) MyRank(ctx context.Context, userID int64, kind string) (MyRank
 	return out, nil
 }
 
+// MyRedemptionItem 是玩家兑换记录的一行（2026-10-30 实质优化第 21 轮）。
+type MyRedemptionItem struct {
+	ID        int64          `json:"id"`
+	Code      string         `json:"code"`
+	Reward    map[string]int `json:"reward"`
+	CreatedAt time.Time      `json:"created_at"`
+}
+
+// MyRedemptions 返回当前玩家最近的兑换码使用记录。
+//
+// `redeem_usages` 记录了玩家每次兑换（哪个码、拿到什么、何时），
+// 但玩家端只有输入框、没有任何历史入口。这里补上玩家视角的兑换记录。
+func (s *Service) MyRedemptions(ctx context.Context, userID int64, limit int) ([]MyRedemptionItem, error) {
+	if limit <= 0 || limit > 50 {
+		limit = 20
+	}
+	rows, err := s.pool.Query(ctx,
+		`SELECT ru.id, rc.code, rc.reward, ru.created_at
+		 FROM redeem_usages ru
+		 JOIN redeem_codes rc ON rc.id = ru.code_id
+		 WHERE ru.user_id = $1
+		 ORDER BY ru.created_at DESC
+		 LIMIT $2`, userID, limit)
+	if err != nil {
+		return nil, fmt.Errorf("my redemptions: %w", err)
+	}
+	defer rows.Close()
+
+	out := []MyRedemptionItem{}
+	for rows.Next() {
+		var it MyRedemptionItem
+		var rewardRaw []byte
+		if err := rows.Scan(&it.ID, &it.Code, &rewardRaw, &it.CreatedAt); err != nil {
+			return nil, fmt.Errorf("scan redemption: %w", err)
+		}
+		if err := json.Unmarshal(rewardRaw, &it.Reward); err != nil {
+			return nil, fmt.Errorf("unmarshal redemption reward: %w", err)
+		}
+		out = append(out, it)
+	}
+	return out, rows.Err()
+}
+
 // --- 签到 / 离线 / 兑换 / 商店 ---
 
 // SignInResult 是签到结果。
