@@ -904,6 +904,55 @@ func (s *Service) MyBattleHistory(ctx context.Context, userID int64, limit int) 
 	return out, rows.Err()
 }
 
+// MyPurchaseItem 是玩家购买记录的一行（2026-10-30 实质优化第 20 轮）。
+type MyPurchaseItem struct {
+	ID           int64          `json:"id"`
+	ItemID       int            `json:"item_id"`
+	ItemName     string         `json:"item_name"`
+	Category     string         `json:"category"`
+	Price        map[string]int `json:"price"`
+	PurchaseDate string         `json:"purchase_date"`
+	CreatedAt    time.Time      `json:"created_at"`
+}
+
+// MyPurchases 返回当前玩家最近的商城购买记录。
+//
+// `user_purchases` 记录了玩家每次商城购买（道具、价格快照、日期），
+// 但玩家端没有任何入口 —— 买了什么、花了多少只能靠记忆。
+// 这里补上玩家视角的购买历史。
+func (s *Service) MyPurchases(ctx context.Context, userID int64, limit int) ([]MyPurchaseItem, error) {
+	if limit <= 0 || limit > 50 {
+		limit = 20
+	}
+	rows, err := s.pool.Query(ctx,
+		`SELECT p.id, p.item_id, COALESCE(s.name, ''), COALESCE(s.category, ''),
+		        p.price, p.purchase_date::text, p.created_at
+		 FROM user_purchases p
+		 LEFT JOIN shop_items s ON s.id = p.item_id
+		 WHERE p.user_id = $1
+		 ORDER BY p.created_at DESC
+		 LIMIT $2`, userID, limit)
+	if err != nil {
+		return nil, fmt.Errorf("my purchases: %w", err)
+	}
+	defer rows.Close()
+
+	out := []MyPurchaseItem{}
+	for rows.Next() {
+		var it MyPurchaseItem
+		var priceRaw []byte
+		if err := rows.Scan(&it.ID, &it.ItemID, &it.ItemName, &it.Category,
+			&priceRaw, &it.PurchaseDate, &it.CreatedAt); err != nil {
+			return nil, fmt.Errorf("scan purchase: %w", err)
+		}
+		if err := json.Unmarshal(priceRaw, &it.Price); err != nil {
+			return nil, fmt.Errorf("unmarshal purchase price: %w", err)
+		}
+		out = append(out, it)
+	}
+	return out, rows.Err()
+}
+
 func (s *Service) GetReplay(ctx context.Context, userID, battleID int64) (ReplayInfo, error) {
 	return s.getReplay(ctx, userID, battleID, true)
 }
