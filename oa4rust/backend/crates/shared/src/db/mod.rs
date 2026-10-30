@@ -101,9 +101,16 @@ fn is_truthy(v: &str) -> bool {
 
 const DEFAULT_DATABASE_URL: &str = "postgres://o2server:password@localhost:5432/oa4rust";
 
+/// 解析 DATABASE_URL 环境变量，缺省回退到本地默认值。抽成纯函数便于无环境
+/// 副作用地测试回退分支（测试直接喂 `Err`，不必真的清除进程级环境变量——
+/// 否则会与并行跑的其他读 DATABASE_URL 的测试（如 crud 真库臂）互相污染）。
+fn resolve_database_url(v: Result<String, std::env::VarError>) -> String {
+    v.unwrap_or_else(|_| DEFAULT_DATABASE_URL.to_string())
+}
+
 fn database_url() -> String {
     dotenv().ok();
-    env::var("DATABASE_URL").unwrap_or_else(|_| DEFAULT_DATABASE_URL.to_string())
+    resolve_database_url(env::var("DATABASE_URL"))
 }
 
 /// 给连接 URL 追加 sslmode 查询参数。SeaORM/sqlx 从 URL query 解析 sslmode，
@@ -130,8 +137,13 @@ fn rustls_connector() -> tokio_postgres_rustls::MakeRustlsConnect {
     tokio_postgres_rustls::MakeRustlsConnect::new(config)
 }
 
-pub async fn create_pool() -> Result<Pool, DbError> {
-    let database_url = database_url();
+/// 用显式 URL 构建 deadpool 池（TLS/sizing 仍从 `pool_config()` 读环境变量）。
+///
+/// 独立成带参版本的原因：测试要验证「非法 URL / 指定 URL」路径时**不修改进程级
+/// `DATABASE_URL`**——并发跑的其他测试（crud 真库臂等）会读到脏值（曾导致
+/// `RelativeUrlWithoutBase` / Connection refused 随机红）。生产入口
+/// [`create_pool`] 读取环境变量后委托到这里。
+pub async fn create_pool_with_url(database_url: String) -> Result<Pool, DbError> {
     let pool_cfg = pool_config();
 
     let _dialect_name = env::var("DB_DIALECT")
@@ -165,15 +177,25 @@ pub async fn create_pool() -> Result<Pool, DbError> {
     Ok(pool)
 }
 
-/// 创建 SeaORM DatabaseConnection（sizing/TLS 与 deadpool 池同源，见 DbPoolConfig）。
-/// 懒连接（connect_lazy）：与 deadpool 池一致，构建时不实际建连——无库环境（如
-/// arity 探针、core_entity 的 HTTP 臂测试）也能构建成功，首次查询才尝试连接。
-pub async fn create_sea_orm_pool() -> Result<DatabaseConnection, DbError> {
+pub async fn create_pool() -> Result<Pool, DbError> {
+    create_pool_with_url(database_url()).await
+}
+
+/// 用显式 URL 创建 SeaORM DatabaseConnection（sizing/TLS 与 deadpool 池同源，
+/// 见 `DbPoolConfig`）。懒连接（connect_lazy）：与 deadpool 池一致，构建时不实际
+/// 建连——无库环境（如 arity 探针、core_entity 的 HTTP 臂测试）也能构建成功，
+/// 首次查询才尝试连接。
+///
+/// 独立成带参版本的原因同 [`create_pool_with_url`]：测试不修改进程级
+/// `DATABASE_URL`，避免与并行测试互相污染。
+pub async fn create_sea_orm_pool_with_url(
+    database_url: String,
+) -> Result<DatabaseConnection, DbError> {
     let pool_cfg = pool_config();
     let database_url = if pool_cfg.tls {
-        with_sslmode(&database_url(), "require")
+        with_sslmode(&database_url, "require")
     } else {
-        database_url()
+        database_url
     };
 
     let mut options = ConnectOptions::new(database_url);
@@ -186,6 +208,10 @@ pub async fn create_sea_orm_pool() -> Result<DatabaseConnection, DbError> {
     Database::connect(options)
         .await
         .map_err(|e| DbError::PoolError(e.to_string()))
+}
+
+pub async fn create_sea_orm_pool() -> Result<DatabaseConnection, DbError> {
+    create_sea_orm_pool_with_url(database_url()).await
 }
 
 /// LIKE/ILIKE 通配符转义（% _ \），防关键词注入通配扫描；
@@ -326,17 +352,14 @@ mod pool_construction_tests {
     #[allow(clippy::await_holding_lock)] // ENV_LOCK 必须覆盖整个 await，串行化全局环境变量
     async fn create_pool_builds_lazily_and_honours_max_size() {
         let _guard = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
-        let _env = EnvRestore::apply(&[
-            (
-                "DATABASE_URL",
-                Some("postgres://user:pass@localhost:5432/db"),
-            ),
-            ("DB_TLS", None),
-            ("DB_POOL_MAX_SIZE", Some("3")),
-        ]);
+        // 不再设置 DATABASE_URL：URL 通过参数传入（`create_pool_with_url`），
+        // 避免清除/覆盖进程级环境变量污染并行跑的其他测试（crud 真库臂等）。
+        let _env = EnvRestore::apply(&[("DB_TLS", None), ("DB_POOL_MAX_SIZE", Some("3"))]);
 
         // deadpool 是懒连接：构建 pool 不建连，因此无库环境也能验证 URL 解析与 sizing。
-        let pool = create_pool().await.expect("pool construction");
+        let pool = create_pool_with_url("postgres://user:pass@localhost:5432/db".to_string())
+            .await
+            .expect("pool construction");
         assert_eq!(pool.status().max_size, 3);
     }
 
@@ -344,18 +367,13 @@ mod pool_construction_tests {
     #[allow(clippy::await_holding_lock)]
     async fn create_pool_tls_branch_builds_rustls_manager() {
         let _guard = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
-        let _env = EnvRestore::apply(&[
-            (
-                "DATABASE_URL",
-                Some("postgres://user:pass@localhost:5432/db"),
-            ),
-            ("DB_TLS", Some("1")),
-            ("DB_POOL_MAX_SIZE", Some("2")),
-        ]);
+        let _env = EnvRestore::apply(&[("DB_TLS", Some("1")), ("DB_POOL_MAX_SIZE", Some("2"))]);
 
         // TLS 分支会构造 rustls connector（ring provider + webpki 根证书）。
         // 同样不实际建连；只要 connector 构造失败就会在这里红。
-        let pool = create_pool().await.expect("TLS pool construction");
+        let pool = create_pool_with_url("postgres://user:pass@localhost:5432/db".to_string())
+            .await
+            .expect("TLS pool construction");
         assert_eq!(pool.status().max_size, 2);
     }
 
@@ -363,14 +381,23 @@ mod pool_construction_tests {
     #[allow(clippy::await_holding_lock)]
     async fn create_pool_falls_back_to_default_database_url() {
         let _guard = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
-        let _env = EnvRestore::apply(&[
-            ("DATABASE_URL", None),
-            ("DB_TLS", None),
-            ("DB_POOL_MAX_SIZE", None),
-        ]);
+        let _env = EnvRestore::apply(&[("DB_TLS", None), ("DB_POOL_MAX_SIZE", None)]);
 
-        // 未设 DATABASE_URL 时必须回退到内置本地默认值，而不是 panic。
-        let pool = create_pool().await.expect("default URL must parse");
+        // 回退分支用纯函数验证（不碰进程级 DATABASE_URL，避免污染并行测试）：
+        // 环境变量缺失时 `resolve_database_url` 必须返回内置默认值。
+        assert_eq!(
+            resolve_database_url(Err(std::env::VarError::NotPresent)),
+            DEFAULT_DATABASE_URL
+        );
+        assert_eq!(
+            resolve_database_url(Ok("postgres://user:pass@localhost:5432/db".to_string())),
+            "postgres://user:pass@localhost:5432/db"
+        );
+
+        // 默认 URL 本身必须能构建 pool（懒连接，不实际建连）。
+        let pool = create_pool_with_url(DEFAULT_DATABASE_URL.to_string())
+            .await
+            .expect("default URL must parse");
         assert_eq!(pool.status().max_size, 20);
     }
 
@@ -398,14 +425,14 @@ mod pool_construction_tests {
     async fn create_sea_orm_pool_maps_invalid_url_to_pool_error() {
         let _guard = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let _env = EnvRestore::apply(&[
-            ("DATABASE_URL", Some("not-a-postgres-url")),
             ("DB_TLS", None),
             ("DB_POOL_MAX_SIZE", Some("2")),
             ("DB_POOL_MIN_IDLE", Some("1")),
         ]);
 
         // 非法 URL 在 sqlx 解析阶段就会失败；这条路径不依赖任何真实数据库。
-        let err = create_sea_orm_pool()
+        // URL 通过参数传入，不修改进程级 DATABASE_URL（避免污染并行测试）。
+        let err = create_sea_orm_pool_with_url("not-a-postgres-url".to_string())
             .await
             .expect_err("invalid URL must fail");
         assert!(matches!(err, DbError::PoolError(_)), "got {err:?}");
@@ -416,7 +443,6 @@ mod pool_construction_tests {
     async fn create_sea_orm_pool_tls_branch_appends_sslmode() {
         let _guard = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let _env = EnvRestore::apply(&[
-            ("DATABASE_URL", Some("not-a-postgres-url")),
             ("DB_TLS", Some("on")),
             ("DB_POOL_MAX_SIZE", Some("2")),
             ("DB_POOL_MIN_IDLE", Some("0")),
@@ -424,7 +450,7 @@ mod pool_construction_tests {
 
         // DB_TLS 开时必须先拼 `sslmode=require` 再交给 sqlx；非法 URL 仍会失败，
         // 但失败发生在拼接之后，能覆盖 TLS 分支而不需要真实 TLS 服务器。
-        let err = create_sea_orm_pool()
+        let err = create_sea_orm_pool_with_url("not-a-postgres-url".to_string())
             .await
             .expect_err("invalid URL must fail even with TLS");
         assert!(matches!(err, DbError::PoolError(_)), "got {err:?}");

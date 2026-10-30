@@ -270,6 +270,16 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn db_placeholder_put_get_delete_semantics() {
+        // DbBlobStorage 是占位实现：get 必须显式失败（防止调用方误以为 blob 已落库），
+        // put/delete 是 no-op 成功（当前 blob 走 FILE_FILE.content，不经此后端）。
+        let db = DbBlobStorage;
+        db.put("k", b"v").await.unwrap();
+        assert!(db.get("k").await.is_err());
+        db.delete("k").await.unwrap();
+    }
+
+    #[tokio::test]
     async fn fs_rejects_traversal_keys() {
         let root = temp_root("traversal");
         let fs = FsBlobStorage::new(&root);
