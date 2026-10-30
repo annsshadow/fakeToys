@@ -417,6 +417,7 @@ mod e2e_chain_tests {
 #[cfg(test)]
 mod mock_infra_tests {
     use super::*;
+    use crate::ControlClient;
 
     #[test]
     fn mock_pool_builds_without_connecting() {
@@ -530,5 +531,54 @@ mod mock_infra_tests {
             .execute("DELETE FROM auth_person WHERE id = $1", &[&pid])
             .await
             .expect("清理夹具");
+    }
+
+    #[tokio::test]
+    async fn control_client_object_and_rowget_real_pool_impls() {
+        // lib.rs 的 `ControlClient for deadpool_postgres::Object` 与
+        // `RowGet for tokio_postgres::Row` 是真库实现，之前只被下游 crate 的
+        // 真库测试覆盖、shared 自身从不直接调用 → 补全 8 个方法的覆盖。
+        if !is_db_available().await {
+            eprintln!("SKIP: no database available");
+            return;
+        }
+        let pool = test_pool();
+        let client = pool.get().await.expect("获取 client");
+        let arc: std::sync::Arc<dyn ControlClient> = std::sync::Arc::new(client);
+
+        let rows = arc
+            .ctrl_query(
+                "SELECT 1::int4 AS id, 'x'::text AS name, true AS flag, 1000000000::int8 AS big",
+                &[],
+            )
+            .await
+            .expect("ctrl_query");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].get_i32("id"), 1);
+        assert_eq!(rows[0].get_str("name"), "x");
+        assert!(rows[0].get_bool("flag"), "flag 列应为 true");
+        assert_eq!(rows[0].get_i64("big"), 1_000_000_000);
+
+        let one = arc
+            .ctrl_query_one("SELECT 1::int4 AS id", &[])
+            .await
+            .expect("ctrl_query_one");
+        assert_eq!(one.get_i32("id"), 1);
+
+        let opt = arc
+            .ctrl_query_opt("SELECT 1::int4 AS id", &[])
+            .await
+            .expect("ctrl_query_opt");
+        assert!(opt.is_some());
+
+        // 临时表随连接关闭自动消失；execute 对 DDL 返回 0、对 INSERT 返回行数。
+        arc.ctrl_execute("CREATE TEMP TABLE _cov_ctrl (id int)", &[])
+            .await
+            .expect("create temp");
+        let n = arc
+            .ctrl_execute("INSERT INTO _cov_ctrl VALUES (1)", &[])
+            .await
+            .expect("insert");
+        assert_eq!(n, 1);
     }
 }
