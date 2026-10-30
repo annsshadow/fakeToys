@@ -221,6 +221,21 @@
           <text class="dim">{{ fmtChallengeTime(h.created_at) }}</text>
         </view>
       </view>
+
+      <!-- 最近战报（2026-10-30 实质优化第 19 轮）。
+           玩家打完关卡后没有任何历史战报入口。 -->
+      <view v-if="battleHistory.length" class="card">
+        <text class="card-title">最近战报</text>
+        <view v-for="b in battleHistory" :key="b.id" class="ch-row">
+          <view class="flex-1 row" style="gap: 8rpx; min-width: 0">
+            <text class="mono">第 {{ b.level_id }} 关</text>
+            <text class="dim ellipsis">
+              {{ b.result === 'win' ? '胜利' : '失败' }} · {{ b.stars }} 星 · {{ b.score }} 分
+            </text>
+          </view>
+          <text class="dim">{{ fmtChallengeTime(b.created_at) }}</text>
+        </view>
+      </view>
     </view>
 
     <!--
@@ -424,6 +439,18 @@ async function loadChallengeHistory() {
     challengeHistory.value = res.items ?? []
   } catch {
     // 挑战历史是辅助信息，加载失败不打扰主流程
+  }
+}
+
+// 最近战报（2026-10-30 实质优化第 19 轮）。
+const battleHistory = ref<api.BattleHistoryItem[]>([])
+
+async function loadBattleHistory() {
+  try {
+    const res = await api.myBattleHistory()
+    battleHistory.value = res.items ?? []
+  } catch {
+    // 战报历史是辅助信息，加载失败不打扰主流程
   }
 }
 
@@ -898,6 +925,7 @@ onShow(async () => {
     await store.loadLoadout()
     await loadDefenses()
     await loadChallengeHistory()
+    await loadBattleHistory()
   }
 })
 

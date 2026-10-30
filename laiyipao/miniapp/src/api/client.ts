@@ -1092,6 +1092,27 @@ export function myChallengeHistory(): Promise<{ items: ChallengeHistoryItem[] }>
 }
 
 /**
+ * 我的战报历史（2026-10-30 实质优化第 19 轮）。
+ *
+ * 服务端 `GET /me/battles` 返回最近 20 条战斗记录
+ * （关卡/结果/星级/分数/击杀/漏怪/时间）。
+ */
+export interface BattleHistoryItem {
+  id: number
+  level_id: number
+  result: string
+  stars: number
+  score: number
+  kills: number
+  leaked: number
+  created_at: string
+}
+
+export function myBattleHistory(): Promise<{ items: BattleHistoryItem[] }> {
+  return request<{ items: BattleHistoryItem[] }>('/me/battles')
+}
+
+/**
  * 卡关诊断（L-1）。
  *
  * 2026-10-21（P2-7）：`failed_times` 此前由客户端**硬编码成 2**，

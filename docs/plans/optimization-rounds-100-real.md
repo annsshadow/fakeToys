@@ -27,6 +27,7 @@
 | 16 | 2026-10-30 | **CachedLevel 推广到全部服务层热路径**：战斗开战/结算/放弃、挑战诊断、掉落计算、战力反推关卡、后台列表 total_enemies 仍在每局/每请求重新生成关卡 | 逐一确认 8 个调用点只读后，把 `StartBattle`/`SettleBattle`/`AbandonBattle`/`Diagnose`/`GeneratedPowerLevel`/`NewLevelResp`/两处 `totalEnemies` 全部切到 `domain.CachedLevel`（测试文件保留 `GenerateLevel` 以验证新鲜生成行为） | `internal/service` 211s 全绿、`internal/httpapi` 43s 全绿、`internal/domain` 全绿；生产代码 `grep domain.GenerateLevel(` 仅剩测试文件与注释 |
 | 17 | 2026-10-30 | **签到日历预览进程内缓存**：`sign_in_calendar` 是 seeder 写入的静态配置（后台无修改入口），每次签到页打开都查一次库是纯浪费 | 新增配置 `SIGNIN_CALENDAR_CACHE_TTL`（默认 60s，0=关闭）；Service 增加 `signInCalendarCache ttlCache[[]SignInCalendarDay]`（TTL + singleflight + 命中统计进 `CacheStats`）；`SignInCalendar` 改走 `getOrLoad` | 缓存集成测试 3 用例（改名后仍命中快照 / TTL=0 关闭 / 并发读一致且 misses 按请求计）全绿；`internal/service` 199s 全绿、`internal/httpapi` 47s 全绿、`internal/config` 全绿 |
 | 18 | 2026-10-31 | **玩家「我的挑战记录」**：玩家只能看到最近一次挑战结果，历史记录完全没有入口 | 新迁移 `00020`（`defense_challenges (challenger_id, created_at DESC)` 索引）；服务层 `MyChallengeHistory`（JOIN defenses/users，loot 解析，limit 夹到 20）；`GET /api/v1/me/challenges`；miniapp me.vue「挑战历史」列表（胜负/对手/防线/时间）；顺带修正 ownership 守卫的归属列映射（`defense_challenges` 实际归属列是 `challenger_id` 而非 `user_id`） | 服务层 4 用例、e2e 3 用例（401/记录正确/空历史）全绿；`internal/service` 194s 全绿、`internal/httpapi` 全绿、miniapp 1167 passed、type-check 通过 |
+| 19 | 2026-10-31 | **玩家「我的战报历史」**：玩家打完关卡后没有任何历史战报入口（后台有列表，玩家侧只有单条验真/回放端点） | 服务层 `MyBattleHistory`（走 `idx_battle_records_user` 索引，limit 夹到 20）；`GET /api/v1/me/battles`；miniapp me.vue「最近战报」列表（关卡/胜负/星级/分数/时间，onShow 加载） | 服务层 4 用例、e2e 3 用例（401/记录正确/空历史）全绿；`internal/service` 195s 全绿、`internal/httpapi` 55s 全绿、miniapp 1167 passed、type-check 通过 |
 | ... | | 持续至 100 轮 | | |
 
-> 状态：进行中。当前累计 **18 轮实质优化**，距 100 轮还差 82 轮。
+> 状态：进行中。当前累计 **19 轮实质优化**，距 100 轮还差 81 轮。
