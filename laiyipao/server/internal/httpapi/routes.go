@@ -322,6 +322,9 @@ func (s *Server) Register(app *fiber.App) {
 	// 兑换码启用/禁用（2026-10-31 实质优化第 24 轮）：
 	// 运营创建错误码后此前无法停用（只能等过期）。
 	adm.Put("/redeem-codes/:id/enabled", requireWritable(), s.adminSetRedeemCodeEnabled)
+	// 兑换码编辑（2026-10-31 实质优化第 25 轮）：
+	// 改奖励/次数/过期时间此前只能停用后重建（码会变，已分享的全作废）。
+	adm.Put("/redeem-codes/:id", requireWritable(), s.adminUpdateRedeemCode)
 	adm.Get("/audit-logs", s.adminAuditLogs)
 	// 审计日志导出（2026-10-30 实质优化第 15 轮）：合规归档，读操作。
 	adm.Get("/audit-logs/export", s.adminExportAuditLogs)

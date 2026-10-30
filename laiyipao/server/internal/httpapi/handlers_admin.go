@@ -872,6 +872,39 @@ func (s *Server) adminSetRedeemCodeEnabled(c *fiber.Ctx) error {
 	return c.JSON(service.AdminRedeemCodeResp{Item: item})
 }
 
+// adminUpdateRedeemCode 更新兑换码（2026-10-31 实质优化第 25 轮）。
+func (s *Server) adminUpdateRedeemCode(c *fiber.Ctx) error {
+	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
+	if err != nil || id < 1 {
+		return fail(c, fiber.StatusBadRequest, "bad_input", "兑换码 ID 非法")
+	}
+	var body struct {
+		Reward    map[string]int `json:"reward"`
+		MaxUses   int            `json:"max_uses"`
+		ExpiresAt string         `json:"expires_at"`
+	}
+	if err := c.BodyParser(&body); err != nil {
+		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+	}
+	var expiresAt *time.Time
+	if s := strings.TrimSpace(body.ExpiresAt); s != "" {
+		// 与创建同口径：RFC3339，不接受裸本地时间。
+		parsed, err := time.Parse(time.RFC3339, s)
+		if err != nil {
+			return fail(c, fiber.StatusBadRequest, "bad_input",
+				"expires_at 必须是 RFC3339 格式（如 2026-12-31T23:59:59Z）")
+		}
+		expiresAt = &parsed
+	}
+	item, err := s.Svc.AdminUpdateRedeemCode(c.Context(), int(id), body.Reward, body.MaxUses, expiresAt)
+	if err != nil {
+		return failErr(c, err)
+	}
+	s.Svc.Audit(c.Context(), adminIDFrom(c), "update_redeem_code",
+		strconv.FormatInt(id, 10), c.IP(), body)
+	return c.JSON(service.AdminRedeemCodeResp{Item: item})
+}
+
 func (s *Server) adminAuditLogs(c *fiber.Ctx) error {
 	limit, err := queryInt(c, "limit", 100)
 	if err != nil {

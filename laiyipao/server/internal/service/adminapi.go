@@ -887,6 +887,42 @@ func (s *Service) AdminSetRedeemCodeEnabled(ctx context.Context, id int, enabled
 	return v, nil
 }
 
+// AdminUpdateRedeemCode 更新兑换码（2026-10-31 实质优化第 25 轮）。
+//
+// 第 24 轮补上了启用/禁用，但运营想改奖励/次数上限/过期时间仍只能
+// 停用后重建（码本身会变，已印刷/已分享的码全部作废）。这里补上编辑。
+func (s *Service) AdminUpdateRedeemCode(ctx context.Context, id int, reward map[string]int, maxUses int, expiresAt *time.Time) (AdminRedeemCodeView, error) {
+	if len(reward) == 0 {
+		return AdminRedeemCodeView{}, fmt.Errorf("%w: 奖励不能为空", ErrBadInput)
+	}
+	if maxUses <= 0 {
+		maxUses = 1
+	}
+	raw, err := json.Marshal(reward)
+	if err != nil {
+		return AdminRedeemCodeView{}, err
+	}
+	row := s.pool.QueryRow(ctx,
+		`UPDATE redeem_codes SET reward = $2, max_uses = $3, expires_at = $4
+		 WHERE id = $1
+		 RETURNING id, code, reward, max_uses, used_count, expires_at, enabled`,
+		id, raw, maxUses, expiresAt)
+	var v AdminRedeemCodeView
+	var rewardRaw []byte
+	var vExpiresAt *time.Time
+	if err := row.Scan(&v.ID, &v.Code, &rewardRaw, &v.MaxUses, &v.UsedCount, &vExpiresAt, &v.Enabled); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return AdminRedeemCodeView{}, fmt.Errorf("%w: 兑换码 %d 不存在", ErrNotFound, id)
+		}
+		return AdminRedeemCodeView{}, fmt.Errorf("update redeem code: %w", err)
+	}
+	if err := json.Unmarshal(rewardRaw, &v.Reward); err != nil {
+		return AdminRedeemCodeView{}, fmt.Errorf("unmarshal redeem reward: %w", err)
+	}
+	v.ExpiresAt = vExpiresAt
+	return v, nil
+}
+
 // AdminListAuditLogs 返回操作审计。
 func (s *Service) AdminListAuditLogs(ctx context.Context, limit, offset int) ([]AdminAuditLogView, int64, error) {
 	if limit <= 0 || limit > 500 {
