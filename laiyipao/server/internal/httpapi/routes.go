@@ -272,6 +272,10 @@ func (s *Server) Register(app *fiber.App) {
 	adm.Get("/users/:id", s.adminUserDetail)
 	adm.Post("/users/:id/unban", requireWritable(), s.adminUnbanUser)
 	adm.Post("/users/:id/grant", requireWritable(), s.adminGrantUser)
+	// 后台重置玩家密码（2026-10-30 实质优化第 11 轮）。
+	// 玩家侧已有改密/转正，但运营缺少兜底：账号遗忘 / 被盗需要强制
+	// 轮换时只能封禁或改环境变量重启。重置会吊销该账号全部会话。
+	adm.Post("/users/:id/reset-password", requireWritable(), s.adminResetPlayerPassword)
 	adm.Get("/battles", s.adminBattles)
 	adm.Get("/battles/:id", s.adminBattleDetail)
 	adm.Post("/battles/:id/verify", requireWritable(), s.adminVerifyBattle)

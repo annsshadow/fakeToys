@@ -3,10 +3,13 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/jackc/pgx/v5"
 
 	"github.com/laiyipao/server/internal/domain"
 )
@@ -481,6 +484,65 @@ func (s *Service) AdminSetUserStatus(ctx context.Context, userID int64, banned b
 // 取 1e12：比任何真实的运营发放大 6 个数量级（百万级的活动奖励），
 // 又离 int64 溢出（9.2e18）足够远 —— 连续累加到 9.2e15 次才会碰到边界。
 var MaxAdminGrantAmount = int64(1_000_000_000_000)
+
+// AdminResetPlayerPassword 后台重置玩家账号密码（2026-10-30 实质优化第 11 轮）。
+//
+// 玩家侧已有修改密码（`ChangePassword`）与游客转正（`UpgradeGuestAccount`），
+// 但运营缺少兜底：账号密码遗忘 / 账号被盗需要强制轮换时，只能封禁或
+// 改环境变量重启引导 —— 前者过重，后者只对共享测试账号有效。
+//
+// 语义要点：
+//
+//   - 只对已有用户名密码的账号开放（`password_hash` 非 NULL）。
+//     游客号没有用户名，重置密码后也无法登录，直接拒绝。
+//   - 新密码门槛与其他账号一致（至少 10 位）。
+//   - 更新哈希与吊销全部 refresh token 在**同一事务**里：
+//     中途失败不能出现「密码已改但旧会话仍有效」的中间态。
+//
+// 注意与共享测试账号的交互：`EnsureBootstrapPlayer` 只在**服务启动**时
+// 同步密码，运行中后台重置不会立即被配置覆盖；下次重启后该账号会
+// 恢复为环境变量里的口令 —— 这是「测试账号口令与超管一致」的运维
+// 约定本身要求的，文档见 player_account.go 的 EnsureBootstrapPlayer。
+func (s *Service) AdminResetPlayerPassword(ctx context.Context, userID int64, newPassword string) error {
+	newPassword = strings.TrimSpace(newPassword)
+	if len(newPassword) < 10 {
+		return fmt.Errorf("%w: 新密码至少 10 位（当前 %d 位）", ErrBadInput, len(newPassword))
+	}
+
+	var hash *string
+	err := s.pool.QueryRow(ctx,
+		`SELECT password_hash FROM users WHERE id = $1`, userID).Scan(&hash)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return fmt.Errorf("%w: 用户 %d 不存在", ErrNotFound, userID)
+		}
+		return fmt.Errorf("load player account: %w", err)
+	}
+	if hash == nil || *hash == "" {
+		return fmt.Errorf("%w: 该账号没有用户名密码，无法重置（游客号请先引导转正）", ErrBadInput)
+	}
+
+	newHash, err := HashPassword(newPassword)
+	if err != nil {
+		return err
+	}
+	err = s.DB.Tx(ctx, func(tx txType) error {
+		if _, err := tx.Exec(ctx,
+			`UPDATE users SET password_hash = $2 WHERE id = $1`, userID, newHash); err != nil {
+			return fmt.Errorf("update password hash: %w", err)
+		}
+		if _, err := tx.Exec(ctx,
+			`UPDATE refresh_tokens SET revoked_at = now()
+			  WHERE user_id = $1 AND revoked_at IS NULL`, userID); err != nil {
+			return fmt.Errorf("revoke refresh tokens: %w", err)
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
 
 func (s *Service) AdminGrantCurrency(ctx context.Context, userID int64, currency string, amount int64) (map[string]int64, error) {
 	if amount == 0 {

@@ -388,6 +388,30 @@ func (s *Server) adminGrantUser(c *fiber.Ctx) error {
 	return c.JSON(service.AdminGrantResp{Wallet: wallet})
 }
 
+// adminResetPlayerPassword 后台重置玩家账号密码（2026-10-30 实质优化第 11 轮）。
+//
+// 高危写操作：会更新哈希并吊销该账号全部 refresh token（其它设备被登出），
+// 审计事件 `reset_password` 必须带上目标 id。
+func (s *Server) adminResetPlayerPassword(c *fiber.Ctx) error {
+	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
+	if err != nil {
+		return fail(c, fiber.StatusBadRequest, "bad_input", "user id 非法")
+	}
+	var body struct {
+		NewPassword string `json:"new_password"`
+	}
+	if err := c.BodyParser(&body); err != nil {
+		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+	}
+	if err := s.Svc.AdminResetPlayerPassword(c.Context(), id, body.NewPassword); err != nil {
+		return failErr(c, err)
+	}
+	s.Svc.Audit(c.Context(), adminIDFrom(c), "reset_password",
+		strconv.FormatInt(id, 10), c.IP(),
+		fiber.Map{"user_id": id})
+	return c.JSON(fiber.Map{"ok": true})
+}
+
 func (s *Server) adminBattles(c *fiber.Ctx) error {
 	limit, err := queryInt(c, "limit", 50)
 	if err != nil {
