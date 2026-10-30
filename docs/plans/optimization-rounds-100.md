@@ -55,6 +55,7 @@
 | 45 | 2026-10-30 | laiyipao EnsureContentSeeded 错误路径测试 | 本次提交 | 单测 PASS |
 | 46 | 2026-10-30 | laiyipao AdminLogin 错误路径测试（DB 故障不伪装成认证失败） | 本次提交 | 单测 PASS |
 | 47 | 2026-10-30 | laiyipao AdminEquipment 错误路径测试（防静默截断） | 本次提交 | 单测 PASS |
+| 48 | 2026-10-30 | 本机安装 MinGW gcc（libz-sys 1.1.31 编译需求），race 检测本机可用 | `a7d535fa8` | 门禁 13/0/1；race PASS |
 | ... | | 持续迭代至 100 轮 | | |
 
-> 状态：进行中。当前累计 47 轮，距 100 轮还差 53 轮。
+> 状态：进行中。当前累计 48 轮，距 100 轮还差 52 轮。
