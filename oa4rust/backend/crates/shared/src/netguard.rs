@@ -425,4 +425,24 @@ mod tests {
         );
         assert!(!body.is_empty(), "example.com 的响应体不应为空");
     }
+
+    #[tokio::test]
+    async fn fetch_limited_reports_http_error_status() {
+        // example.com 对任意未知路径稳定返回 404：覆盖「非成功状态码报错」分支。
+        if tokio::net::lookup_host(("example.com", 443)).await.is_err() {
+            eprintln!("SKIP: no DNS resolution available");
+            return;
+        }
+        let client = fetch_client().unwrap();
+        let err = fetch_limited(
+            &client,
+            "https://example.com/definitely-not-a-real-page-oa4rust",
+        )
+        .await
+        .expect_err("404 必须报错");
+        assert!(
+            matches!(err, FetchError::Http(_)),
+            "非成功状态应映射为 Http 错误，实际: {err:?}"
+        );
+    }
 }
