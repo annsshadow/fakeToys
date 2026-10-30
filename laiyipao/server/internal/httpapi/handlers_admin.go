@@ -759,6 +759,43 @@ func (s *Server) adminCreateAnnouncement(c *fiber.Ctx) error {
 	return c.JSON(service.AdminAnnouncementResp{Item: item})
 }
 
+// adminUpdateAnnouncement 更新公告（2026-10-31 实质优化第 23 轮）。
+func (s *Server) adminUpdateAnnouncement(c *fiber.Ctx) error {
+	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
+	if err != nil || id < 1 {
+		return fail(c, fiber.StatusBadRequest, "bad_input", "公告 ID 非法")
+	}
+	var body struct {
+		Title     string `json:"title"`
+		Body      string `json:"body"`
+		Published bool   `json:"published"`
+	}
+	if err := c.BodyParser(&body); err != nil {
+		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+	}
+	item, err := s.Svc.AdminUpdateAnnouncement(c.Context(), int(id), body.Title, body.Body, body.Published)
+	if err != nil {
+		return failErr(c, err)
+	}
+	s.Svc.Audit(c.Context(), adminIDFrom(c), "update_announcement",
+		strconv.FormatInt(id, 10), c.IP(), body)
+	return c.JSON(service.AdminAnnouncementResp{Item: item})
+}
+
+// adminDeleteAnnouncement 删除公告（2026-10-31 实质优化第 23 轮）。
+func (s *Server) adminDeleteAnnouncement(c *fiber.Ctx) error {
+	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
+	if err != nil || id < 1 {
+		return fail(c, fiber.StatusBadRequest, "bad_input", "公告 ID 非法")
+	}
+	if err := s.Svc.AdminDeleteAnnouncement(c.Context(), int(id)); err != nil {
+		return failErr(c, err)
+	}
+	s.Svc.Audit(c.Context(), adminIDFrom(c), "delete_announcement",
+		strconv.FormatInt(id, 10), c.IP(), nil)
+	return c.JSON(fiber.Map{"ok": true})
+}
+
 func (s *Server) adminRedeemCodes(c *fiber.Ctx) error {
 	limit, err := queryInt(c, "limit", 50)
 	if err != nil {

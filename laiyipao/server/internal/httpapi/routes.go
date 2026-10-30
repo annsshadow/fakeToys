@@ -313,6 +313,10 @@ func (s *Server) Register(app *fiber.App) {
 	adm.Put("/shop/:id", requireWritable(), s.adminUpdateShop)
 	adm.Get("/announcements", s.adminAnnouncements)
 	adm.Post("/announcements", requireWritable(), s.adminCreateAnnouncement)
+	// 公告编辑/删除（2026-10-31 实质优化第 23 轮）：
+	// 此前只有创建/列表，发错内容无法修改、发错发布状态无法撤回。
+	adm.Put("/announcements/:id", requireWritable(), s.adminUpdateAnnouncement)
+	adm.Delete("/announcements/:id", requireWritable(), s.adminDeleteAnnouncement)
 	adm.Get("/redeem-codes", s.adminRedeemCodes)
 	adm.Post("/redeem-codes", requireWritable(), s.adminCreateRedeemCode)
 	adm.Get("/audit-logs", s.adminAuditLogs)
