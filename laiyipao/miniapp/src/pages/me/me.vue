@@ -234,6 +234,10 @@
               {{ h.won ? '胜' : '负' }}
             </text>
             <text class="dim ellipsis">{{ h.defense_name }} · {{ h.owner_nickname }}</text>
+            <!-- 偷取明细（2026-10-31 实质优化第 36 轮） -->
+            <text v-if="lootText(h.loot)" class="dim ellipsis" style="color: var(--ok)">
+              +{{ lootText(h.loot) }}
+            </text>
           </view>
           <text class="dim">{{ fmtChallengeTime(h.created_at) }}</text>
         </view>
@@ -545,6 +549,12 @@ function priceText(price: Record<string, number>): string {
   const entries = Object.entries(price)
   if (!entries.length) return ''
   return entries.map(([k, v]) => `${v} ${currencyName(k)}`).join(' + ')
+}
+
+/** 挑战偷取明细（2026-10-31 实质优化第 36 轮）：`100 金币`。 */
+function lootText(loot: Record<string, number> | undefined): string {
+  if (!loot) return ''
+  return priceText(loot)
 }
 
 async function loadPurchases() {
