@@ -281,6 +281,9 @@ func (s *Server) Register(app *fiber.App) {
 	// 轮换时只能封禁或改环境变量重启。重置会吊销该账号全部会话。
 	adm.Post("/users/:id/reset-password", requireWritable(), s.adminResetPlayerPassword)
 	adm.Get("/battles", s.adminBattles)
+	// ⚠️ 必须注册在 `/battles/:id` **之前**：否则 `GET /battles/export`
+	// 会被 `:id` 参数匹配吞掉。导出是读操作，readonly 角色可访问。
+	adm.Get("/battles/export", s.adminExportBattles)
 	adm.Get("/battles/:id", s.adminBattleDetail)
 	adm.Post("/battles/:id/verify", requireWritable(), s.adminVerifyBattle)
 	// 结算重算审计（R1）。两个端点成对：列表看单条，stats 看分布与闸门状态。

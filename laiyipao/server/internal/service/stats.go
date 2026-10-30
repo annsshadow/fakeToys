@@ -858,6 +858,122 @@ func (s *Service) AdminListBattles(ctx context.Context, userID int64, levelID in
 	return out, total, rows.Err()
 }
 
+// AdminExportBattles 导出战报列表为 CSV（2026-10-30 实质优化第 13 轮）。
+//
+// 与 `AdminExportUsers` 同族：运营做数据分析需要全量快照而不是分页。
+// 过滤条件与 `AdminListBattles` 完全一致（user_id / level_id / only_mismatched），
+// 上限 100_000 行。replay_hash 是回放校验哈希（后台本来就可读），
+// 不是账号凭证，可以导出；guest_token 等敏感字段绝不进入。
+func (s *Service) AdminExportBattles(ctx context.Context, userID int64, levelID int, onlyMismatched bool) ([]byte, error) {
+	// 与 AdminListBattles 相同的子查询形态（注释见那边）。
+	vsub := `LEFT JOIN (
+		SELECT battle_id,
+		       COUNT(*) AS checked,
+		       COUNT(*) FILTER (WHERE NOT matched) AS mismatched
+		FROM replay_verifications GROUP BY battle_id
+	) v ON v.battle_id = br.id`
+	if userID != 0 {
+		vsub = `LEFT JOIN (
+		SELECT battle_id,
+		       COUNT(*) AS checked,
+		       COUNT(*) FILTER (WHERE NOT matched) AS mismatched
+		FROM replay_verifications
+		WHERE battle_id IN (SELECT id FROM battle_records WHERE user_id = $1)
+		GROUP BY battle_id
+	) v ON v.battle_id = br.id`
+	}
+
+	where := `($1 = 0 OR br.user_id = $1) AND ($2 = 0 OR br.level_id = $2)`
+	if onlyMismatched {
+		where += ` AND COALESCE(v.mismatched, 0) > 0`
+	}
+
+	rows, err := s.pool.Query(ctx, `
+		SELECT br.id, br.user_id, COALESCE(u.nickname,''), br.level_id, br.result, br.stars, br.score,
+		       br.kills, br.leaked, br.wave_reached, br.duration_ms, br.reactions, br.heat_max,
+		       br.replay_hash, br.created_at,
+		       COALESCE(v.checked, 0), COALESCE(v.mismatched, 0)
+		FROM battle_records br
+		LEFT JOIN users u ON u.id = br.user_id
+		`+vsub+`
+		WHERE `+where+`
+		ORDER BY br.id DESC LIMIT 100000`, userID, levelID)
+	if err != nil {
+		return nil, fmt.Errorf("export battles: %w", err)
+	}
+	defer rows.Close()
+
+	var buf bytes.Buffer
+	buf.WriteString("\xEF\xBB\xBF")
+	w := csv.NewWriter(&buf)
+	header := []string{
+		"id", "user_id", "nickname", "level_id", "result", "stars", "score",
+		"kills", "leaked", "wave_reached", "duration_ms", "reactions", "heat_max",
+		"replay_hash", "created_at", "verify_checked", "verify_mismatched", "total_enemies",
+	}
+	if err := w.Write(header); err != nil {
+		return nil, fmt.Errorf("write csv header: %w", err)
+	}
+
+	// 与列表同源：本关总怪数取自生成器（确定性），按 level_id 缓存。
+	totalCache := map[int]int{}
+	totalEnemies := func(levelID int) int {
+		if n, ok := totalCache[levelID]; ok {
+			return n
+		}
+		n := 0
+		for _, wave := range domain.GenerateLevel(levelID).Waves {
+			for _, sp := range wave.Spawns {
+				n += sp.Count
+			}
+		}
+		totalCache[levelID] = n
+		return n
+	}
+
+	for rows.Next() {
+		var v AdminBattleView
+		if err := rows.Scan(&v.ID, &v.UserID, &v.Nickname, &v.LevelID, &v.Result, &v.Stars,
+			&v.Score, &v.Kills, &v.Leaked, &v.WaveReached, &v.DurationMs, &v.Reactions,
+			&v.HeatMax, &v.ReplayHash, &v.CreatedAt,
+			&v.VerifyChecked, &v.VerifyMismatched); err != nil {
+			return nil, fmt.Errorf("scan export battle: %w", err)
+		}
+		v.TotalEnemies = totalEnemies(v.LevelID)
+		rec := []string{
+			strconv.FormatInt(v.ID, 10),
+			strconv.FormatInt(v.UserID, 10),
+			v.Nickname,
+			strconv.Itoa(v.LevelID),
+			v.Result,
+			strconv.Itoa(v.Stars),
+			strconv.FormatInt(v.Score, 10),
+			strconv.Itoa(v.Kills),
+			strconv.Itoa(v.Leaked),
+			strconv.Itoa(v.WaveReached),
+			strconv.Itoa(v.DurationMs),
+			strconv.Itoa(v.Reactions),
+			strconv.Itoa(v.HeatMax),
+			v.ReplayHash,
+			v.CreatedAt.Format(time.RFC3339),
+			strconv.FormatInt(v.VerifyChecked, 10),
+			strconv.FormatInt(v.VerifyMismatched, 10),
+			strconv.Itoa(v.TotalEnemies),
+		}
+		if err := w.Write(rec); err != nil {
+			return nil, fmt.Errorf("write csv row: %w", err)
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	w.Flush()
+	if err := w.Error(); err != nil {
+		return nil, fmt.Errorf("flush csv: %w", err)
+	}
+	return buf.Bytes(), nil
+}
+
 // --- 内容配置 ---
 
 // AdminUpdateLevel 更新关卡配置。

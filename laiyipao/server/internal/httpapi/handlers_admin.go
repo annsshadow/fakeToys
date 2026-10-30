@@ -464,6 +464,29 @@ func (s *Server) adminBattles(c *fiber.Ctx) error {
 	return c.JSON(service.NormalizeNilSlices(service.AdminBattlesResp{Items: items, Total: total}))
 }
 
+// adminExportBattles 导出战报列表为 CSV（2026-10-30 实质优化第 13 轮）。
+//
+// 读操作，readonly 角色可访问。过滤条件与 `GET /admin/battles` 一致
+// （user_id / level_id / only_mismatched）。
+func (s *Server) adminExportBattles(c *fiber.Ctx) error {
+	userID, err := queryInt(c, "user_id", 0)
+	if err != nil {
+		return failErr(c, err)
+	}
+	levelID, err := queryInt(c, "level_id", 0)
+	if err != nil {
+		return failErr(c, err)
+	}
+	onlyMismatched := c.Query("only_mismatched") == "1" || c.Query("only_mismatched") == "true"
+	data, err := s.Svc.AdminExportBattles(c.Context(), int64(userID), levelID, onlyMismatched)
+	if err != nil {
+		return failErr(c, err)
+	}
+	c.Set("Content-Type", "text/csv; charset=utf-8")
+	c.Set("Content-Disposition", `attachment; filename="battles.csv"`)
+	return c.Send(data)
+}
+
 // adminRecomputes 结算重算审计台账（R1）。
 //
 // 运营要在这里回答的是一个二元问题：**这批不符是引擎漂移还是玩家作弊？**
