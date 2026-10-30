@@ -1069,6 +1069,29 @@ export function challengeDefense(id: number, payload: any) {
 }
 
 /**
+ * 我的挑战历史（2026-10-30 实质优化第 18 轮）。
+ *
+ * 服务端 `GET /me/challenges` 返回最近 20 条防线挑战记录
+ * （对手昵称/防线名/胜负/偷取/时间）。此前玩家只能看到最近一次结果。
+ */
+export interface ChallengeHistoryItem {
+  id: number
+  defense_id: number
+  defense_name: string
+  owner_nickname: string
+  owner_power: number
+  won: boolean
+  duration_ms: number
+  hp_left_pct: number
+  loot: Record<string, number>
+  created_at: string
+}
+
+export function myChallengeHistory(): Promise<{ items: ChallengeHistoryItem[] }> {
+  return request<{ items: ChallengeHistoryItem[] }>('/me/challenges')
+}
+
+/**
  * 卡关诊断（L-1）。
  *
  * 2026-10-21（P2-7）：`failed_times` 此前由客户端**硬编码成 2**，

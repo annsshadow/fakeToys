@@ -201,6 +201,26 @@
           {{ lastChallenge.error }}
         </text>
       </view>
+
+      <!-- 挑战历史（2026-10-30 实质优化第 18 轮）。
+           此前玩家只能看到最近一次挑战结果，历史记录没有入口。 -->
+      <view v-if="challengeHistory.length" class="card">
+        <text class="card-title">挑战历史</text>
+        <view
+          v-for="h in challengeHistory"
+          :key="h.id"
+          class="ch-row"
+          :style="{ borderColor: h.won ? 'var(--ok)' : 'var(--bad)' }"
+        >
+          <view class="flex-1 row" style="gap: 8rpx; min-width: 0">
+            <text class="mono" :style="{ color: h.won ? 'var(--ok)' : 'var(--bad)' }">
+              {{ h.won ? '胜' : '负' }}
+            </text>
+            <text class="dim ellipsis">{{ h.defense_name }} · {{ h.owner_nickname }}</text>
+          </view>
+          <text class="dim">{{ fmtChallengeTime(h.created_at) }}</text>
+        </view>
+      </view>
     </view>
 
     <!--
@@ -384,6 +404,28 @@ const attackLeft = ref(3)
 const shielded = ref(false)
 const simulating = ref(0)
 const lastChallenge = ref<(ChallengeOutcome & { stolen?: Record<string, number> }) | null>(null)
+
+// 挑战历史（2026-10-30 实质优化第 18 轮）。
+const challengeHistory = ref<api.ChallengeHistoryItem[]>([])
+
+function fmtChallengeTime(iso: string): string {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return iso
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  const hh = String(d.getHours()).padStart(2, '0')
+  const mi = String(d.getMinutes()).padStart(2, '0')
+  return `${mm}/${dd} ${hh}:${mi}`
+}
+
+async function loadChallengeHistory() {
+  try {
+    const res = await api.myChallengeHistory()
+    challengeHistory.value = res.items ?? []
+  } catch {
+    // 挑战历史是辅助信息，加载失败不打扰主流程
+  }
+}
 
 const DEFENSE_WORK_CODES = ['slow_belt', 'block_wall', 'tesla_grid']
 
@@ -855,6 +897,7 @@ onShow(async () => {
     // 从「背包」页改过槽位再回来时，这里重新拉一次权威槽位。
     await store.loadLoadout()
     await loadDefenses()
+    await loadChallengeHistory()
   }
 })
 
@@ -911,6 +954,27 @@ onUnload(() => {
 
 .pwd-form {
   margin-bottom: 8rpx;
+}
+
+/* 挑战历史一行。 */
+.ch-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12rpx;
+  padding: 14rpx 0;
+  border-bottom: 1rpx solid var(--border);
+}
+
+.ch-row:last-child {
+  border-bottom: none;
+}
+
+.ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* 昵称编辑：链接样式的「改名」入口。 */
