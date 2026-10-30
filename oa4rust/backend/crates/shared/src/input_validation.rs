@@ -54,53 +54,6 @@ impl ValidationError {
     }
 }
 
-pub trait Validator<T> {
-    fn validate(&self, value: &T) -> Result<(), ValidationError>;
-}
-
-/// 字符串验证器
-pub struct StringValidator<'a> {
-    field: &'static str,
-    value: &'a str,
-}
-
-impl<'a> StringValidator<'a> {
-    pub fn new(field: &'static str, value: &'a str) -> Self {
-        Self { field, value }
-    }
-
-    pub fn required(self) -> Self {
-        if self.value.is_empty() {
-            // We can't return error here, it's a builder pattern
-            // The actual validation happens in validate()
-        }
-        self
-    }
-
-    pub fn min_length(self, min: usize) -> Self {
-        if self.value.len() < min {
-            // Store the error - but we need a different approach
-        }
-        self
-    }
-
-    pub fn max_length(self, max: usize) -> Self {
-        if self.value.len() > max {
-            // Store the error
-        }
-        self
-    }
-
-    pub fn validate(self) -> Result<(), ValidationError> {
-        if self.value.is_empty() {
-            return Err(ValidationError::Required { field: self.field });
-        }
-        // Min/max are checked via builder, but we need to store them
-        // For simplicity, let's use a different approach
-        Ok(())
-    }
-}
-
 /// 验证字符串非空
 pub fn validate_required(field: &'static str, value: &str) -> Result<(), ValidationError> {
     if value.trim().is_empty() {

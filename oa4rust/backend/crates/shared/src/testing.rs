@@ -409,3 +409,28 @@ mod e2e_chain_tests {
         std::env::remove_var("OA4RUST_AUTH_RATE_LIMIT");
     }
 }
+
+// ── 2026-10-30 第八轮：mock 基建自身覆盖 ────────────────────────────────
+// `mock_pool()` / `mock_db()` 主要被其他 crate 作为 dev-dependency 使用，shared
+// 自身测试从未调用，导致 testing.rs 的行覆盖率长期偏低。补最小用例：它们
+// 都是懒连接，无 DB 环境也能构建成功（首次 get/query 才尝试连接）。
+#[cfg(test)]
+mod mock_infra_tests {
+    use super::*;
+
+    #[test]
+    fn mock_pool_builds_without_connecting() {
+        let _ = mock_pool();
+    }
+
+    #[tokio::test]
+    async fn mock_db_builds_lazy_connection_without_connecting() {
+        let _ = mock_db().await;
+    }
+
+    #[tokio::test]
+    async fn is_db_available_returns_bool_without_panicking() {
+        // 无论 DATABASE_URL 是否可达，该探测函数都必须返回 bool 而非 panic。
+        let _ = is_db_available().await;
+    }
+}

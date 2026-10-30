@@ -285,5 +285,79 @@ mod tests {
             Some(v) => std::env::set_var(MIGRATIONS_DIR_KEY, v),
             None => std::env::remove_var(MIGRATIONS_DIR_KEY),
         }
+
+        // ⑤ 校验和变更分支（第八轮补）：已应用且文件被改（存储 checksum 与
+        // 文件不一致）时，运行器必须更新存储的 checksum 并跳过重放——不能失败，
+        // 也不能重放（重放会重复建表/插种子，部署里表现为「重启一次坏一次」）。
+        let target = second.skipped.first().expect("第二次应全部 skip").clone();
+        let bad_checksum = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+        {
+            let c = pool.get().await.expect("获取 client");
+            c.execute(
+                &dialect()
+                    .format_sql("UPDATE schema_migrations SET checksum = $1 WHERE version = $2"),
+                &[&bad_checksum, &target],
+            )
+            .await
+            .expect("把存储 checksum 改成错误值");
+        }
+        let third = run_migrations(&pool).await.expect("third migration run");
+        assert!(
+            third.applied.iter().all(|f| f != &target),
+            "校验和变更后不应重放迁移 {target}"
+        );
+        assert!(
+            third.skipped.contains(&target),
+            "校验和变更后应记为 skipped（已应用，仅更新 checksum）"
+        );
+        {
+            let c = pool.get().await.expect("获取 client");
+            let stored: Option<String> = c
+                .query_opt(
+                    &dialect()
+                        .format_sql("SELECT checksum FROM schema_migrations WHERE version = $1"),
+                    &[&target],
+                )
+                .await
+                .expect("查询 checksum")
+                .map(|r| r.get(0));
+            assert_ne!(
+                stored.as_deref(),
+                Some(bad_checksum),
+                "checksum 应被更新回文件实际值"
+            );
+        }
+
+        // ⑥ 空迁移分支（第八轮补）：SQL 为空（如占位/注释-only 文件）时，仍必须
+        // 落版本记录并记为 applied，但不能执行任何 SQL（无建表副作用）。
+        let empty_dir =
+            std::env::temp_dir().join(format!("oa4rust_empty_migrations_{}", std::process::id()));
+        std::fs::create_dir_all(&empty_dir).expect("创建临时迁移目录");
+        std::fs::write(empty_dir.join("000_empty.sql"), "").expect("写入空迁移");
+        let saved2 = std::env::var(MIGRATIONS_DIR_KEY).ok();
+        std::env::set_var(MIGRATIONS_DIR_KEY, empty_dir.to_str().expect("UTF-8 路径"));
+        let fourth = run_migrations(&pool)
+            .await
+            .expect("empty migration must run");
+        assert_eq!(
+            fourth.applied,
+            vec!["000_empty.sql".to_string()],
+            "空迁移应记为 applied"
+        );
+        assert!(fourth.skipped.is_empty(), "首次运行无 skip");
+        match saved2 {
+            Some(v) => std::env::set_var(MIGRATIONS_DIR_KEY, v),
+            None => std::env::remove_var(MIGRATIONS_DIR_KEY),
+        }
+        {
+            let c = pool.get().await.expect("获取 client");
+            c.execute(
+                &dialect().format_sql("DELETE FROM schema_migrations WHERE version = $1"),
+                &[&"000_empty.sql"],
+            )
+            .await
+            .expect("清理测试版本记录");
+        }
+        std::fs::remove_dir_all(&empty_dir).ok();
     }
 }
