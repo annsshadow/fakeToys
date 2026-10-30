@@ -14,7 +14,7 @@ related: docs/archived-plans/2026-08-13-001-feat-handler-test-coverage-99-plan.m
 
 分两个里程碑补全 oa4rust 的接口对齐审计和单元测试覆盖：M1 生成 Java o2server vs oa4rust 端点对照报告，标记差距并按 P0/P1/P2 分类；M2 为所有业务 crate 添加 handler 级测试，覆盖可测试的 handler。
 
-**当前状态**：M2（测试覆盖）主体已完成，M1（接口审计）尚未启动。详见 [2026-08-13-001 计划](../oa4rust/docs/archived-plans/2026-08-13-001-feat-handler-test-coverage-99-plan.md)。
+**当前状态**：M2（测试覆盖）主体已完成，M1（接口审计）尚未启动。详见 [2026-08-13-001 计划](./2026-08-13-001-feat-handler-test-coverage-99-plan.md)。
 
 ---
 
@@ -471,7 +471,7 @@ oa4rust 有 2,623 个业务 handler 但仅 735 个测试（~15% 覆盖率）。5
 | Milestone | 状态 | 说明 |
 |-----------|------|------|
 | M1: 接口审计 | 未开始 | 需从 Java o2server 提取端点清单并对比 |
-| M2: 测试覆盖 | 已完成 | 详见 [2026-08-13-001](../oa4rust/docs/archived-plans/2026-08-13-001-feat-handler-test-coverage-99-plan.md) |
+| M2: 测试覆盖 | 已完成 | 详见 [2026-08-13-001](./2026-08-13-001-feat-handler-test-coverage-99-plan.md) |
 
 ### M2 完成情况
 
@@ -504,9 +504,9 @@ oa4rust 有 2,623 个业务 handler 但仅 735 个测试（~15% 覆盖率）。5
 
 ## Sources & References
 
-- **Origin document:** [docs/brainstorms/2026-08-12-oa4rust-interface-audit-and-test-coverage-requirements.md](docs/brainstorms/2026-08-12-oa4rust-interface-audit-and-test-coverage-requirements.md)
-- **Endpoint inventory:** [docs/brainstorms/oa4rust-endpoint-inventory.md](docs/brainstorms/oa4rust-endpoint-inventory.md)
-- **Module index:** [docs/brainstorms/o2server-module-index.md](docs/brainstorms/o2server-module-index.md)
+- **Origin document:** [docs/brainstorms/2026-08-12-oa4rust-interface-audit-and-test-coverage-requirements.md](../brainstorms/2026-08-12-oa4rust-interface-audit-and-test-coverage-requirements.md)
+- **Endpoint inventory:** [docs/brainstorms/oa4rust-endpoint-inventory.md](../brainstorms/oa4rust-endpoint-inventory.md)
+- **Module index:** [docs/brainstorms/o2server-module-index.md](../brainstorms/o2server-module-index.md)
 - Related code: `crates/bbs_assemble_control/src/tests.rs`, `crates/correlation_service_processing/src/tests.rs`, `crates/program_center/src/tests.rs`
 
 ---

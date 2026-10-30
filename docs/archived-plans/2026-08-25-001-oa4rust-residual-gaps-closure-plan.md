@@ -396,7 +396,7 @@ origin: docs/brainstorms/2026-08-25-oa4rust-o2server-residual-gaps-requirements.
 
 ## Sources & References
 
-- **Origin document:** [docs/brainstorms/2026-08-25-oa4rust-o2server-residual-gaps-requirements.md](docs/brainstorms/2026-08-25-oa4rust-o2server-residual-gaps-requirements.md)
+- **Origin document:** [docs/brainstorms/2026-08-25-oa4rust-o2server-residual-gaps-requirements.md](../brainstorms/2026-08-25-oa4rust-o2server-residual-gaps-requirements.md)
 - 端点模式: `crates/processplatform_assemble_surface/src/lib.rs:17447`, `routes.rs:1212`
 - BAM crate: `crates/processplatform_assemble_bam/src/routes.rs`
 - 行为对比: `tests/behavior_compare.rs`, `tests/behavior_comparison/endpoints.rs`, `oa4rust/.github/workflows/ci.yml:86`

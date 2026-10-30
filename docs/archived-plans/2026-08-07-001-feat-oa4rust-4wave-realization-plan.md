@@ -720,5 +720,5 @@ origin: docs/brainstorms/2026-08-05-oa4rust-comprehensive-advancement-requiremen
 - **Remaining work:** [docs/brainstorms/oa4rust-remaining-work-2026-08-08.md](../brainstorms/oa4rust-remaining-work-2026-08-08.md)
 - **Endpoint inventory:** [docs/brainstorms/oa4rust-endpoint-inventory.md](../brainstorms/oa4rust-endpoint-inventory.md)
 - Related code: `oa4rust/src/main.rs`, `oa4rust/crates/shared/src/`
-- Related plans: [docs/archived-plans/2026-08-06-001-feat-oa4rust-full-realization-plan.md](../plans/2026-08-06-001-feat-oa4rust-full-realization-plan.md)
+- Related plans: [docs/archived-plans/2026-08-06-001-feat-oa4rust-full-realization-plan.md](./2026-08-06-001-feat-oa4rust-full-realization-plan.md)
 - External docs: Axum 0.8, SQLx 0.7, Deadpool-postgres 0.12

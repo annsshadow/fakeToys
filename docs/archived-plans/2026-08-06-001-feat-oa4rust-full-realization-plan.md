@@ -707,5 +707,5 @@ auth_session 表结构：
 - **Origin document:** [docs/brainstorms/2026-08-05-oa4rust-comprehensive-advancement-requirements.md](../brainstorms/2026-08-05-oa4rust-comprehensive-advancement-requirements.md)
 - Migration status: [docs/brainstorms/oa4rust-migration-status.md](../brainstorms/oa4rust-migration-status.md)
 - Related code: `oa4rust/src/main.rs`, `oa4rust/crates/shared/src/`
-- Related plans: [docs/archived-plans/2026-08-05-001-feat-oa4rust-comprehensive-advancement-plan.md](../plans/2026-08-05-001-feat-oa4rust-comprehensive-advancement-plan.md)
+- Related plans: [docs/archived-plans/2026-08-05-001-feat-oa4rust-comprehensive-advancement-plan.md](./2026-08-05-001-feat-oa4rust-comprehensive-advancement-plan.md)
 - External docs: Axum 0.8, SQLx 0.7, Deadpool-postgres 0.12
