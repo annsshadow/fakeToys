@@ -175,7 +175,7 @@ LY-7（小程序虚拟化，实测列表全部有界）、AU-P1（异步后端�
 
 | 编号 | 项 | 现状 | 缺口性质 |
 |---|---|---|---|
-| **C1** | `shared` 覆盖率 93.28% → 94% | **✅ 已达成（2026-10-30 第八轮，第九~十二轮巩固）** | 需 ~50 行，全部依赖**进程隔离**（`security` 的 OnceLock 环境臂与 parity 测试互斥）或**公网夹具**（`netguard fetch_limited` 被自身 SSRF 守卫挡回环）。属条件项，不作为默认目标。**第六轮**：发现 `oa4rust-cov` Docker 容器是可用 Linux 覆盖率环境，跑通 `cargo llvm-cov -p shared --lib`；修复 `db/mod.rs` 测试并发污染，93.17%。**第七轮**：security OnceLock 环境臂参数化 + 清理死代码 + 补全 8 变体映射，93.20%。**第八轮（达成）**：migrate 分支 + 死代码清理 + DynControlPool/mock 基建覆盖，**94.12%**。**第九轮（巩固）**：netguard 错误状态 + 夹具真库覆盖，**94.29%**。**第十轮（巩固）**：security_headers_response 参数化，**94.25%**。**第十一轮（巩固）**：冲突识别反向 + 残留清理，**94.43%**。**第十二轮（巩固）**：性能基线复测（auth 2.19ms / document 1.36ms，无回归）+ 容器运维要点 D3。**第十三轮（巩固）**：补 `ControlClient for Object` / `RowGet for Row` 真库实现覆盖（8 方法全链路），容器内 shared **321 全绿**、行覆盖率 **94.74%**、函数 92.96%、分支 95.11%。 |
+| **C1** | `shared` 覆盖率 93.28% → 94% | **✅ 已达成并大幅超额（2026-10-30 实测 94.99%）** | 需 ~50 行，全部依赖**进程隔离**（`security` 的 OnceLock 环境臂与 parity 测试互斥）或**公网夹具**（`netguard fetch_limited` 被自身 SSRF 守卫挡回环）。属条件项，不作为默认目标。第六轮发现 Linux 容器可测覆盖率并修复 db 测试并发污染（93.17%）；第七轮 security 环境臂参数化 + 死代码清理（93.20%）；第八轮 migrate 分支 + 基建覆盖达成 94.12%；第九~二十轮持续补分支测试（netguard / 夹具 / security_headers / 冲突反向 / 性能基线 / trait 真库实现 / 方言 Default / CSRF 镜像 / fail-closed / 无 host panic 等），**2026-10-30 终值：行覆盖率 94.99%、函数 93.63%、分支 95.41%**（容器内 shared 328 全绿）。逐轮明细见 `optimization-rounds-100.md`。 |
 
 ### D 类 · 环境与工具
 
@@ -184,6 +184,7 @@ LY-7（小程序虚拟化，实测列表全部有界）、AU-P1（异步后端�
 | **D1** | llm-lab pytest 门禁 SKIP | ~~本机 `C:/Python314` 有 pytest；门禁默认解释器没有~~ | **已消解（2026-10-30）**：环境更新后默认 `python` 已带 pytest 9.1.1，门禁 `llm-lab (pytest 行为面)` 真实 PASS（6.7s），不再是 SKIP。门禁脚本的 `requires` 守门会在解释器缺 pytest 时显式 SKIP 并说明，无需改代码 |
 | **D2** | cool Java 门禁 SKIP（无 JDK） | 本机无 JDK（`javac` 不在 PATH，`JAVA_HOME` 未设置）；`cool/lib/` 无 commons-codec jar。jar 可从 Maven Central 下载（本机可达），但缺 javac 无法编译 | **环境限制（2026-10-30 登记）**：门禁脚本在缺 jar 时显式 SKIP；补 jar 后若无 javac 会变 FAIL，反而破坏门禁。保持 SKIP 为正确状态。待安装 JDK 后可下载 jar（`curl -sL -o cool/lib/commons-codec-1.16.1.jar https://repo1.maven.org/maven2/commons-codec/commons-codec/1.16.1/commons-codec-1.16.1.jar`）并跑通 cool 编译。`*.jar` 已被根 .gitignore 忽略，不会入仓 |
 | **D3** | 容器内跑 integration/perf 测试需 curl + RUST_MIN_STACK | `oa4rust-cov` 容器是 Debian 精简镜像：① 无 curl → `utoipa-swagger-ui` 构建脚本下载 swagger-ui zip 失败；② 编译 `openapi`（lib.rs 约 7 万行）时 rustc 默认栈溢出（SIGSEGV） | **运维要点（2026-10-30 登记）**：容器内先 `apt-get install -y curl`；编译/测试命令带 `RUST_MIN_STACK=33554432`（rustc 官方建议值）。示例见 §五复跑命令。这两项只在容器内跑全量 integration 或 perf_baseline 时需要；`cargo llvm-cov -p shared --lib`（仅 shared）不受影响 |
+| **D4** | augmentor 全量测试期间勿做 git 操作 | `test_ledger_hash_reachability_l270` / `test_log_block_bullet_ownership_l264` 等「git 侧存活」测试依赖远端 ref 面：测试运行中提交/推送会改变 HEAD/refs，导致 3 条用例随机红（实测两次） | **运维要点（2026-10-30 登记）**：augmentor 全量 pytest（约 9-10 分钟）运行期间不要 commit/push；测试开始前先 `git push` 确保 HEAD 在远端。单独复跑 `tests/unit/test_ledger_hash_reachability_l270.py` 可确认非代码问题 |
 
 ---
 
