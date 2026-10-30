@@ -1220,3 +1220,24 @@ func TestAdminGrantCurrencyFailsOnDBError(t *testing.T) {
 		t.Fatal("无 users 表时 AdminGrantCurrency 必须返回错误")
 	}
 }
+
+// TestAdminDashboardFailsOnDBError 覆盖 AdminDashboard 的数据库错误路径：
+// users 表不可达时看板必须返回错误（缓存层不得把失败当空看板缓存）。
+func TestAdminDashboardFailsOnDBError(t *testing.T) {
+	cfg := config.Load()
+	cfg.DatabaseURL = "postgres://postgres@127.0.0.1:5432/postgres?sslmode=disable"
+	cfg.DBMaxConns = 2
+	cfg.DBMinConns = 0
+	ctx := context.Background()
+
+	db, err := store.Open(ctx, cfg)
+	if err != nil {
+		t.Skipf("postgres 系统库连不上，跳过：%v", err)
+	}
+	defer db.Close()
+
+	s := New(db, cfg)
+	if _, err := s.AdminDashboard(ctx); err == nil {
+		t.Fatal("无 users 表时 AdminDashboard 必须返回错误")
+	}
+}
