@@ -10,7 +10,7 @@
 
 | 项 | 状态 |
 |---|---|
-| 全仓门禁 `node scripts/check-warnings.mjs` | **12 通过 / 0 失败 / 1 跳过**（跳过项见 D1） |
+| 全仓门禁 `node scripts/check-warnings.mjs` | **13 通过 / 0 失败 / 1 跳过**（跳过项为 cool Java 缺 commons-codec jar，非代码问题） |
 | 今日推送 | 13 个提交（`325296f38 → 500259e94`） |
 | auto-checkin | 102 passed；覆盖率棘轮九档全绿 |
 | laiyipao | service / httpapi / cmd / config 真库全绿；配置热加载已落地 |
@@ -38,7 +38,7 @@ LY-7（小程序虚拟化，实测列表全部有界）、AU-P1（异步后端�
 | **A3** | R7 已认证 + 体内无会话无门禁 **630 条** | 全部为「只读挂写方法」 | 含写 0，即**真写面为 0**，属"方法名带写、体内不写"的收口残留 |
 | **A4** | GET 写（csrf / requires_admin 双盲区）**2 条** | GET 路由 ∧ 体内写 SQL ∧ 体内无门禁 | 均为有意保留：企微回调 + 初始化 set_cancel（K1 匿名） |
 | **A5** | 豁免通配段碰撞 **0 条** | 「本意给只读详情的 `{param}` 豁免」把写路由一并匿名放行 | 已清零（AUTH_EXEMPT_BLOCKED_PATHS 点名排除） |
-| **A6** | 真匿名可达面 **192 条** | auth 豁免 ∧ 注册表 Public | A1 14 / A2 29 / A3 149 |
+| **A6** | 真匿名可达面 **193 条** | auth 豁免 ∧ 注册表 Public | A1 14 / A2 29 / A3 149（193 = 192 + 企微回调补 Public 注册，B6 落地后的预期 +1） |
 
 > **A 类收口状态（2026-10-30）**：A1/A2/A4/A5 均已按「先逐条定性，保留设计上必须
 > 匿名的认证前置族（登录/注册/口令重置/系统初始化/企微回调），其余补门或改方法」
@@ -84,6 +84,14 @@ LY-7（小程序虚拟化，实测列表全部有界）、AU-P1（异步后端�
 > `rate_limit_middleware` 对「豁免且未列限流」直接跳过 ⇒ 该别名成为无上限的登录
 > 暴力破解入口（契约路径限 30/min/IP，别名不限）。已补入精确名单，并新增
 > `org_auth_login_alias_is_rate_limited_like_canonical` parity 测试钉住。
+>
+> **缺陷 32 修复（2026-10-30 第五轮）**：`use super::{ delete as empower_delete }`
+> 这类**分组导入别名**注册的 handler，`fnBody` 按字面名扫描找不到函数体 ⇒ 两条
+> `/api/person/empower/{id}` DELETE 落 R8「体内不可解析」（实际被 R1 admin 中间件
+> 兜住，无安全缺口，但门禁证据取不到）。尺子新增函数级别名换算（只扫路由注册
+> 文件里的 `use ... as ...`，别名→原名映射后换名再扫），并加缺陷 32 正向 2 条 +
+> 反向 2 条判据见证。复跑实测：R8 2→0、empower_delete 的 `check_owner` 门进入
+> 间接门禁作证名单、其余读数全部不变（R4 13 / R6 14 / R7 630 / GET 写 2 / 碰撞 0）。
 
 **A 类怎么排**（按"危害 × 收敛速度"）：
 
@@ -108,6 +116,13 @@ LY-7（小程序虚拟化，实测列表全部有界）、AU-P1（异步后端�
 | 编号 | 项 | 判据 / 落点 | 规模 | 依赖 |
 |---|---|---|---|---|
 | **B1** | 尺子缺陷 28：ORM-blindness | `writeEvidence` 只扫 deadpool SQL 字面量，不识别 sea_orm `ActiveModel::insert/update/delete` ⇒ ORM 型写被读成"只读挂写" | 修一处判据 | 需先用 `general_core_entity` 的 12 把 CRUD 做正反样本 |
+
+> **B1 已落地（2026-10-29，commit f7d3cd9ac）**：`writeEvidence` 新增两臂——A 臂静态实体写
+> `Entity::insert|insert_many|update_many|delete_many|delete_by_id`，B 臂本体内 ActiveModel
+> 变量随后 `.insert/.update/.delete/.save`。刀口自证：`general_core_entity` 12 把 CRUD 必须
+> 全判写面、9 条 GET 读面 0 误判，样本漂移即红。复跑实测 `meeting_core_entity create`
+> （ActiveModel::insert）从只读挂写进含写、`attendance_core_entity` 2 条 GET delete 进 GET
+> 写面，均符合预期。
 | **B2** | 遗留 29：invoke token 零验签 | `/invoke/{flag}/client/{client}/token/{token}/execute` 的 token 只判非空；`x_program_invoke` 表**无 token 存储列** | 1 条路由 + 1 次迁移 | 需拍"token 从哪来"（产品/对接方） |
 
 > **B2 前置设计已产出（2026-10-30）**：见 `docs/plans/2026-10-30-b2-invoke-token-design.md`。
@@ -128,7 +143,19 @@ LY-7（小程序虚拟化，实测列表全部有界）、AU-P1（异步后端�
 > 非功能桩；`x_bbs_reply` 表迁移齐全（migrations 021 建表、033 补 creator/topic_id、
 > 037 加 deleted_at、067 加 accepted）。原「需表设计」依赖已不存在，无需再排期。
 | **B5** | 6 个游离 `tests.rs` | 文件在、`lib.rs` 无 `mod` 声明 ⇒ 里面的断言**一条都不参与编译**：`console` / `ldap` / `openapi` / `orm` / `processplatform_assemble_surface` / `processplatform_core_express` | 6 个 crate | 注册时需两处返工：`use super::*` 改 `use crate::*`；DB 臂补 `is_db_available()` skip |
+
+> **B5 已落地（2026-10-29，commit 3159da9a3）**：6 个 crate 全部补 `mod tests;` 并按注册
+> 要求返工（`use crate::*`、LDAP 环境变量用例加进程级 ENV_LOCK、不可达 LDAP 断言放宽为
+> `Failed|Error`、空 Config 池 HTTP 臂改 500 钉「进到 SQL 层」）。验证：console 23 / ldap 12 /
+> openapi 17 / orm 2 / processplatform_assemble_surface 638 / processplatform_core_express 16
+> 全绿（2026-10-30 复跑一致）。
 | **B6** | 17 条惰性豁免条目 | 豁免表里有、注册表不 Public ⇒ 豁免本身失效（引信不是噪音） | 7 写 + 10 读 | 逐条定性：要么删豁免，要么补 Public 并解释 |
+
+> **B6 已落地（2026-10-30，commit b3581640d）**：18 条惰性豁免逐条定性——企微扫码登录
+> 回调补 Public 注册（消除惰性死态）；删除 11 条「本意只读查询豁免但注册表 Authenticated」
+> 的失效豁免条目（meeting 2 / processplatform 3 / queryview 6），行为不变（本就要求登录）；
+> `queryview/list` 加入 `AUTH_EXEMPT_BLOCKED_PATHS`（消除 `{id}` 通配碰撞残留）；尺子
+> `isAuthExempt` 感知 blocked，与中间件同口径。复跑实测：惰性豁免 18→0、豁免通配段碰撞 0。
 | **B7** | 三把建议守卫 | ①GET 写禁令（`csrf_middleware` 只覆盖 POST/PUT/PATCH/DELETE，`requires_admin` 同）②Public 兜底点名（`ADMIN_WRITE_PREFIXES` ∩ 注册表 Public 的 15 条交集逐条点名）③测试在册 ≠ 测试在跑（B5 的机械守卫） | 3 个测试 | ①需同批改前端（`MeetingApp.vue` 自检面板仍在用 GET） |
 
 > **B7 已全部落地（2026-10-30）**：①+②合并为 `oa4rust/backend/tests/write_gating_guards.rs`
@@ -156,13 +183,13 @@ LY-7（小程序虚拟化，实测列表全部有界）、AU-P1（异步后端�
 
 | 批次 | 范围 | 验收 |
 |---|---|---|
-| **第 1 批** | B5（6 个游离 tests.rs 注册）+ B7③（机械守卫） | 6 个 crate 的测试真正参与编译；守卫对"文件在、无 mod"直接红 |
-| **第 2 批** | B1（尺子缺陷 28）+ 复跑刷新产物 | 用 `general_core_entity` 的 12 把 CRUD 做正反样本：修前读成只读挂写、修后进"含写" |
-| **第 3 批** | A1 + A4 + A5（30 条入口面） | 每条补门/改方法后，尺子对应档位归零或下降；每 crate 补无 DB 的 401 臂 |
-| **第 4 批** | B3（`*_core_entity` 接线，逐 crate） | 该 crate 的 HTTP 臂从 500 变 200/401；名实矛盾的旧断言同批改 |
-| **第 5 批** | A2 的 134 条含写 SQL（按 crate 递减） | 每 crate 收完，"含写 SQL"计数下降且离线 401 臂通过 |
-| **第 6 批** | B2 / B4 / B6（各需一次产品拍板或迁移） | 见各行依赖 |
-| **条件项** | C1（覆盖率 94）、A3 的 629 条 | 有资源再说；A3 不按数字排期 |
+| **第 1 批** | B5（6 个游离 tests.rs 注册）+ B7③（机械守卫） | ✅ 已完成：6 个 crate 测试真正参与编译（console 23 / ldap 12 / openapi 17 / orm 2 / surface 638 / express 16 全绿）；守卫见 `tests/write_gating_guards.rs` 与 `tests/test_module_registration_guard.rs` |
+| **第 2 批** | B1（尺子缺陷 28）+ 复跑刷新产物 | ✅ 已完成：`general_core_entity` 12 把 CRUD 正反样本全判写面、9 条 GET 读面 0 误判；ORM 写面从「只读挂写」进「含写」（R6 134→135、GET 写 10→12） |
+| **第 3 批** | A1 + A4 + A5（30 条入口面） | ✅ 已完成（2026-10-30 收口）：R4 13 条逐条定性（6 写全为认证前置族 + 7 只读）；GET 写 2 条为有意保留；豁免碰撞 0 |
+| **第 4 批** | B3（`*_core_entity` 接线，逐 crate） | ✅ 已完成（2026-10-30 复核）：19 个 crate 全部核实无漏接 |
+| **第 5 批** | A2 的 134 条含写 SQL（按 crate 递减） | ✅ 已完成：R6 含写 SQL 135→0（补 `require_session` 门）；残余 14 条全部只读挂写，机器守卫 A2③钉住 |
+| **第 6 批** | B2 / B4 / B6（各需一次产品拍板或迁移） | ✅ 已完成：B2 invoke token 落库验签（迁移 114，commit 68e37124d）；B4 create_reply 真实落库；B6 惰性豁免 18→0 |
+| **条件项** | C1（覆盖率 94）、A3 的 629 条 | 有资源再说；A3 不按数字排期（R7 交叉验证已独立判据确认真写面 0） |
 
 ---
 
