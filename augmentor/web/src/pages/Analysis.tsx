@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Alert, Button, Card, Col, Input, InputNumber, Row, Select, Space, Statistic, Table, Tag, message } from 'antd'
-import ReactECharts from 'echarts-for-react'
+import ReactEChartsCore from 'echarts-for-react/lib/core'
+import echarts from '../lib/echarts'
 import {
   analyzeData,
   apiErrorDetail,
@@ -584,12 +585,12 @@ export default function Analysis() {
           <Row gutter={16} style={{ marginBottom: 16 }}>
             <Col span={12}>
               <Card>
-                <ReactECharts option={getQuestionTypeChartOption()} style={{ height: 300 }} />
+                <ReactEChartsCore echarts={echarts} option={getQuestionTypeChartOption()} style={{ height: 300 }} />
               </Card>
             </Col>
             <Col span={12}>
               <Card>
-                <ReactECharts option={getLengthChartOption()} style={{ height: 300 }} />
+                <ReactEChartsCore echarts={echarts} option={getLengthChartOption()} style={{ height: 300 }} />
               </Card>
             </Col>
           </Row>

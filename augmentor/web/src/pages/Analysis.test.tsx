@@ -45,7 +45,7 @@ class RO {
 }
 window.ResizeObserver = window.ResizeObserver || (RO as unknown as typeof ResizeObserver)
 
-vi.mock('echarts-for-react', () => ({ default: () => <div data-testid="echarts-stub" /> }))
+vi.mock('echarts-for-react/lib/core', () => ({ default: () => <div data-testid="echarts-stub" /> }))
 
 const spies = vi.hoisted(() => ({
   getDataFiles: null as unknown as ReturnType<typeof vi.fn>,

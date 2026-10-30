@@ -1,5 +1,6 @@
 import { Card, Row, Col, Empty } from 'antd'
-import ReactECharts from 'echarts-for-react'
+import ReactEChartsCore from 'echarts-for-react/lib/core'
+import echarts from '../lib/echarts'
 import type { QualityReportResponse } from '../types/api'
 
 interface QualityChartProps {
@@ -65,12 +66,12 @@ export default function QualityChart({ report }: QualityChartProps) {
     <Row gutter={16}>
       <Col span={12}>
         <Card>
-          <ReactECharts option={histogramOption} style={{ height: 320 }} />
+          <ReactEChartsCore echarts={echarts} option={histogramOption} style={{ height: 320 }} />
         </Card>
       </Col>
       <Col span={12}>
         <Card>
-          <ReactECharts option={radarOption} style={{ height: 320 }} />
+          <ReactEChartsCore echarts={echarts} option={radarOption} style={{ height: 320 }} />
         </Card>
       </Col>
     </Row>
