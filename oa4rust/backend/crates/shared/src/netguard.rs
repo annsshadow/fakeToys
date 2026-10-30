@@ -393,6 +393,20 @@ mod tests {
         );
     }
 
+    #[test]
+    fn filename_from_url_skips_unparsable_candidate() {
+        // final_url 不是合法 URL → 跳过该候选，回退 raw。
+        assert_eq!(
+            filename_from_url("https://a.test/dir/real.tar.gz", "not a url"),
+            "real.tar.gz"
+        );
+        // 两个候选都无法解析 → 回退 remote-file。
+        assert_eq!(
+            filename_from_url("not a url", "also not a url"),
+            "remote-file"
+        );
+    }
+
     #[tokio::test]
     async fn fetch_limited_follows_through_on_public_target() {
         // 离线环境跳过：本用例依赖公网可达且长期稳定的 example.com
