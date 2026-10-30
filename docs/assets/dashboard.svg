@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="336" viewBox="0 0 1200 336" role="img" aria-label="fakeToys quality dashboard">
+  <defs>
+    <linearGradient id="dbg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#080c1c"/>
+      <stop offset="1" stop-color="#0c1228"/>
+    </linearGradient>
+    <linearGradient id="gRust" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f0874a"/><stop offset="1" stop-color="#f6c453"/>
+    </linearGradient>
+    <linearGradient id="gPy" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6d5efc"/><stop offset="1" stop-color="#a78bfa"/>
+    </linearGradient>
+    <linearGradient id="gGo" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#00b8d4"/><stop offset="1" stop-color="#5eead4"/>
+    </linearGradient>
+    <filter id="soft" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="9" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="336" rx="18" fill="url(#dbg)" stroke="#ffffff" stroke-opacity="0.10"/>
+
+  <text x="46" y="52" font-family="'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif" font-size="22" font-weight="700" fill="#e2e8f0">
+    质量仪表盘
+  </text>
+  <text x="46" y="76" font-family="'PingFang SC','Microsoft YaHei',sans-serif" font-size="13" fill="#94a3b8">
+    实测覆盖率 · 非宣称值 · 口径见各项目文档
+  </text>
+
+  <!-- 圆环 1: oa4rust Rust shared -->
+  <g transform="translate(250,150)">
+    <circle r="62" fill="none" stroke="#ffffff" stroke-opacity="0.08" stroke-width="13"/>
+    <circle r="62" fill="none" stroke="url(#gRust)" stroke-width="13" stroke-linecap="round"
+            stroke-dasharray="370.22 389.56" stroke-dashoffset="389.56"
+            transform="rotate(-90)" filter="url(#soft)">
+      <animate attributeName="stroke-dashoffset" from="389.56" to="19.34" dur="1.6s" fill="freeze" calcMode="spline" keyTimes="0;1" keySplines="0.22 1 0.36 1"/>
+    </circle>
+    <text y="2" text-anchor="middle" font-family="ui-monospace,Consolas,monospace" font-size="30" font-weight="700" fill="#f6c453">95.01%</text>
+    <text y="26" text-anchor="middle" font-family="'PingFang SC','Microsoft YaHei',sans-serif" font-size="12" fill="#94a3b8">行覆盖</text>
+    <text y="88" text-anchor="middle" font-family="ui-monospace,Consolas,monospace" font-size="13" fill="#e2e8f0">🦀 oa4rust</text>
+    <text y="106" text-anchor="middle" font-family="'PingFang SC','Microsoft YaHei',sans-serif" font-size="11" fill="#64748b">Rust · shared crate</text>
+  </g>
+
+  <!-- 圆环 2: augmentor -->
+  <g transform="translate(600,150)">
+    <circle r="62" fill="none" stroke="#ffffff" stroke-opacity="0.08" stroke-width="13"/>
+    <circle r="62" fill="none" stroke="url(#gPy)" stroke-width="13" stroke-linecap="round"
+            stroke-dasharray="389.32 389.56" stroke-dashoffset="389.56"
+            transform="rotate(-90)" filter="url(#soft)">
+      <animate attributeName="stroke-dashoffset" from="389.56" to="0.24" dur="1.6s" fill="freeze" calcMode="spline" keyTimes="0;1" keySplines="0.22 1 0.36 1"/>
+    </circle>
+    <text y="2" text-anchor="middle" font-family="ui-monospace,Consolas,monospace" font-size="30" font-weight="700" fill="#a78bfa">99.88%</text>
+    <text y="26" text-anchor="middle" font-family="'PingFang SC','Microsoft YaHei',sans-serif" font-size="12" fill="#94a3b8">行覆盖</text>
+    <text y="88" text-anchor="middle" font-family="ui-monospace,Consolas,monospace" font-size="13" fill="#e2e8f0">🧪 augmentor</text>
+    <text y="106" text-anchor="middle" font-family="'PingFang SC','Microsoft YaHei',sans-serif" font-size="11" fill="#64748b">Python · 核心包</text>
+  </g>
+
+  <!-- 圆环 3: laiyipao -->
+  <g transform="translate(950,150)">
+    <circle r="62" fill="none" stroke="#ffffff" stroke-opacity="0.08" stroke-width="13"/>
+    <circle r="62" fill="none" stroke="url(#gGo)" stroke-width="13" stroke-linecap="round"
+            stroke-dasharray="335.21 389.56" stroke-dashoffset="389.56"
+            transform="rotate(-90)" filter="url(#soft)">
+      <animate attributeName="stroke-dashoffset" from="389.56" to="54.35" dur="1.6s" fill="freeze" calcMode="spline" keyTimes="0;1" keySplines="0.22 1 0.36 1"/>
+    </circle>
+    <text y="2" text-anchor="middle" font-family="ui-monospace,Consolas,monospace" font-size="30" font-weight="700" fill="#5eead4">85.8%</text>
+    <text y="26" text-anchor="middle" font-family="'PingFang SC','Microsoft YaHei',sans-serif" font-size="12" fill="#94a3b8">语句覆盖</text>
+    <text y="88" text-anchor="middle" font-family="ui-monospace,Consolas,monospace" font-size="13" fill="#e2e8f0">💥 laiyipao</text>
+    <text y="106" text-anchor="middle" font-family="'PingFang SC','Microsoft YaHei',sans-serif" font-size="11" fill="#64748b">Go · 合并 profile</text>
+  </g>
+
+  <g font-family="ui-monospace,Consolas,monospace" font-size="12">
+    <rect x="46" y="272" width="252" height="38" rx="10" fill="#ffffff" fill-opacity="0.05" stroke="#ffffff" stroke-opacity="0.10"/>
+    <text x="66" y="296" fill="#93c5fd">10174</text>
+    <text x="140" y="296" fill="#94a3b8">augmentor 单测全绿</text>
+
+    <rect x="316" y="272" width="252" height="38" rx="10" fill="#ffffff" fill-opacity="0.05" stroke="#ffffff" stroke-opacity="0.10"/>
+    <text x="336" y="296" fill="#5eead4">96</text>
+    <text x="376" y="296" fill="#94a3b8">crate · 651 个 .rs</text>
+
+    <rect x="586" y="272" width="252" height="38" rx="10" fill="#ffffff" fill-opacity="0.05" stroke="#ffffff" stroke-opacity="0.10"/>
+    <text x="606" y="296" fill="#fcd34d">13/14</text>
+    <text x="672" y="296" fill="#94a3b8">门禁检查项通过</text>
+
+    <rect x="856" y="272" width="298" height="38" rx="10" fill="#ffffff" fill-opacity="0.05" stroke="#ffffff" stroke-opacity="0.10"/>
+    <text x="876" y="296" fill="#f9a8d4">26/100</text>
+    <text x="944" y="296" fill="#94a3b8">优化轮次 · 3404 次提交</text>
+  </g>
+</svg>
