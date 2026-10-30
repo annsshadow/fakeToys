@@ -970,6 +970,16 @@ mod security_audit_registry_tests {
     }
 
     #[tokio::test]
+    async fn admin_role_group_checks_fail_closed_on_unreachable_pool() {
+        // 连接失败时必须 fail-closed（返回 false 而非 panic）：mock_pool 指向
+        // 不可达 localhost（容器内无 PG 监听本机回环），pool.get() 必 Err。
+        let pool = crate::testing::mock_pool();
+        assert!(!is_admin(&pool, "anyone").await);
+        assert!(!person_has_role(&pool, "anyone", "any-role").await);
+        assert!(!person_has_group(&pool, "anyone", "any-group").await);
+    }
+
+    #[tokio::test]
     async fn require_owner_admin_path_bypasses_ownership() {
         use crate::testing::is_db_available;
         if !is_db_available().await {
