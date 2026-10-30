@@ -185,6 +185,7 @@ LY-7（小程序虚拟化，实测列表全部有界）、AU-P1（异步后端�
 | **D2** | cool Java 门禁 SKIP（无 JDK） | 本机无 JDK（`javac` 不在 PATH，`JAVA_HOME` 未设置）；`cool/lib/` 无 commons-codec jar。jar 可从 Maven Central 下载（本机可达），但缺 javac 无法编译 | **环境限制（2026-10-30 登记）**：门禁脚本在缺 jar 时显式 SKIP；补 jar 后若无 javac 会变 FAIL，反而破坏门禁。保持 SKIP 为正确状态。待安装 JDK 后可下载 jar（`curl -sL -o cool/lib/commons-codec-1.16.1.jar https://repo1.maven.org/maven2/commons-codec/commons-codec/1.16.1/commons-codec-1.16.1.jar`）并跑通 cool 编译。`*.jar` 已被根 .gitignore 忽略，不会入仓 |
 | **D3** | 容器内跑 integration/perf 测试需 curl + RUST_MIN_STACK | `oa4rust-cov` 容器是 Debian 精简镜像：① 无 curl → `utoipa-swagger-ui` 构建脚本下载 swagger-ui zip 失败；② 编译 `openapi`（lib.rs 约 7 万行）时 rustc 默认栈溢出（SIGSEGV） | **运维要点（2026-10-30 登记）**：容器内先 `apt-get install -y curl`；编译/测试命令带 `RUST_MIN_STACK=33554432`（rustc 官方建议值）。示例见 §五复跑命令。这两项只在容器内跑全量 integration 或 perf_baseline 时需要；`cargo llvm-cov -p shared --lib`（仅 shared）不受影响 |
 | **D4** | augmentor 全量测试期间勿做 git 操作 | `test_ledger_hash_reachability_l270` / `test_log_block_bullet_ownership_l264` 等「git 侧存活」测试依赖远端 ref 面：测试运行中提交/推送会改变 HEAD/refs，导致 3 条用例随机红（实测两次） | **运维要点（2026-10-30 登记）**：augmentor 全量 pytest（约 9-10 分钟）运行期间不要 commit/push；测试开始前先 `git push` 确保 HEAD 在远端。单独复跑 `tests/unit/test_ledger_hash_reachability_l270.py` 可确认非代码问题 |
+| **D5** | 本机无 gcc / ruff 未装 | ① `go test -race` 需 cgo（CGO_ENABLED=1 + gcc），本机无 gcc → laiyipao race 检测不可用；② `ruff` 未安装 → augmentor lint 命令本机不可用 | **环境限制（2026-10-30 登记）**：race 检测由 CI（laiyipao-ci.yml 的 `-race` job）覆盖；ruff 由 CI lint job 覆盖。本机如需跑，安装 MinGW gcc 或 `pip install ruff` |
 
 ---
 
