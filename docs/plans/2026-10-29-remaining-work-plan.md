@@ -73,13 +73,16 @@ LY-7（小程序虚拟化，实测列表全部有界）、AU-P1（异步后端�
 > 与 `bbs_assemble_control::create_reply` 对齐；新增离线 401 测试与 DB 臂落库
 > 测试。修复后尺子读数 R7 631→630、R5 +1，含写 SQL 仍为 0。
 >
-> **R7 全量机器交叉验证（2026-10-30 第四轮）**：新增
+> **R7 全量机器交叉验证（2026-10-30 第四轮，第五轮补全）**：新增
 > `scripts/cross_check_r7_readonly.py` 对全部 630 条 R7 只读挂写方法做**独立判据**
 > 交叉验证（注释剥离 + INSERT/UPDATE/DELETE 关键字 + sea_orm ORM 写扫描，与
 > 尺子 writeEvidence 不同实现）：627 条成功提取函数体，**0 条疑似含写**；仅
 > 3 条未提取（`organization_assemble_authentication` 的跨 crate 委托 handler，
-> 尺子缺陷 30 修复后已能解析）。结论：R7 含写 SQL = 0 在独立判据下成立，尺子
-> 读数可信，无需继续人工逐条复核。
+> 尺子缺陷 30 修复后已能解析）。**第五轮补全**：交叉验证脚本对齐缺陷 30，
+> 增加跨 crate 回退（全仓扫描唯一同名函数体），3 条委托 handler
+> （`auth::two_factor::two_factor_login` / `auth::sso::sso_post_login` /
+> `auth::sso::sso_encrypt`）全部提取成功，630/630 全覆盖，0 条疑似含写。
+> 结论：R7 含写 SQL = 0 在独立判据下成立，尺子读数可信，无需继续人工逐条复核。
 > **顺带修复真实限流缺口**：org_auth 登录别名不在 `AUTH_RATE_LIMIT_EXACT`，
 > `rate_limit_middleware` 对「豁免且未列限流」直接跳过 ⇒ 该别名成为无上限的登录
 > 暴力破解入口（契约路径限 30/min/IP，别名不限）。已补入精确名单，并新增
