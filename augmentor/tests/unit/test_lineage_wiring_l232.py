@@ -107,7 +107,9 @@ FETCHERS = {
 
 def _page() -> str:
     assert PAGE_TSX.is_file(), "前端源码不在场 ⇒ 本文件的判据全部失效"
-    return strip_comments(PAGE_TSX.read_text(encoding="utf-8"))
+    # 规范化空白：Prettier 可能对长 JSX 文本自动折行，把「md5(名称) 的前 8 位」
+    # 这类连续短语拆成多行。判据关心文案内容而不是排版，压平空白后再断言。
+    return re.sub(r"\s+", " ", strip_comments(PAGE_TSX.read_text(encoding="utf-8")))
 
 
 def _api_ts() -> str:
@@ -260,7 +262,8 @@ class TestThePageCarriesTheThreeOperations:
     def test_the_tags_input_splits_on_both_commas(self):
         """标签那一格是自由输入，中英文逗号都要当分隔符，空段不许送上去"""
         page = _page()
-        found = re.search(r"tags: dsTags\.split\((.*?)\)", page)
+        # Prettier 会把 `dsTags` 与 `.split(...)` 拆成两行，这里允许任意空白。
+        found = re.search(r"tags: dsTags\s*\.split\((.*?)\)", page)
         assert found, "标签那一格不再走 split ⇒ 判据要跟着换形状"
         assert "," in found.group(1) and "，" in found.group(1), found.group(1)
         assert "filter(Boolean)" in page

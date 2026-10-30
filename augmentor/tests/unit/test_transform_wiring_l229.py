@@ -98,7 +98,10 @@ ENUM_RE = re.compile(r"全部可选目标: ([^）)]+)")
 
 def _page() -> str:
     assert PAGE_TSX.is_file(), "前端源码不在场 ⇒ 本文件的判据全部失效"
-    return strip_comments(PAGE_TSX.read_text(encoding="utf-8"))
+    # 规范化空白：Prettier 可能对长 JSX 文本自动折行，把「默认支是 0.01、分层支是
+    # 1e-6」这类连续短语拆成多行。判据关心的是文案内容而不是排版，这里把任意
+    # 空白（含换行）压成单个空格后再断言，避免格式漂移造成假红。
+    return re.sub(r"\s+", " ", strip_comments(PAGE_TSX.read_text(encoding="utf-8")))
 
 
 def ts_list(name: str) -> list:
