@@ -1,11 +1,14 @@
 package service
 
 import (
+	"bytes"
 	"context"
+	"encoding/csv"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -393,6 +396,95 @@ func (s *Service) AdminListUsers(ctx context.Context, keyword string, limit, off
 		out = append(out, v)
 	}
 	return out, total, rows.Err()
+}
+
+// AdminExportUsers 导出用户列表为 CSV（2026-10-30 实质优化第 12 轮）。
+//
+// 后台列表（用户 / 战报 / 流水）此前**没有任何导出入口** —— 运营做
+// 数据分析只能手动翻页或直接查库。这里补上用户列表导出：
+//
+//   - 过滤条件与 `AdminListUsers` 完全一致（keyword 走同一转义与口径），
+//     只是不带 LIMIT/OFFSET —— 导出是「全量快照」，不是分页。
+//   - 上限 100_000 行：CSV 全量在运营常规使用里远用不到，这个上限
+//     只是防止一次导出把 API 进程内存打爆。
+//   - 列头用英文，内容用 UTF-8 原文 + BOM（Excel 打开中文不乱码）。
+//
+// 注意：guest_token 等敏感凭证**绝不导出**（理由见 AdminListUsers 的注释）。
+func (s *Service) AdminExportUsers(ctx context.Context, keyword string) ([]byte, error) {
+	kw, err := trimAdminKeyword(keyword)
+	if err != nil {
+		return nil, err
+	}
+	escaped := strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`).Replace(kw)
+	pattern := "%" + escaped + "%"
+
+	rows, err := s.pool.Query(ctx, `
+		SELECT u.id, u.nickname, u.is_guest, u.status,
+		       COALESCE(p.max_stage, 0), COALESCE(p.level_exp, 0),
+		       COALESCE(w.coin, 0), COALESCE(w.gem, 0), u.created_at, u.last_login_at,
+		       COALESCE(v.checked, 0), COALESCE(v.mismatched, 0)
+		FROM users u
+		LEFT JOIN user_progress p ON p.user_id = u.id
+		LEFT JOIN user_wallets w ON w.user_id = u.id
+		LEFT JOIN (
+			SELECT br.user_id,
+			       COUNT(*) AS checked,
+			       COUNT(*) FILTER (WHERE NOT rv.matched) AS mismatched
+			FROM replay_verifications rv
+			JOIN battle_records br ON br.id = rv.battle_id
+			GROUP BY br.user_id
+		) v ON v.user_id = u.id
+		WHERE $1 = '%%' OR u.nickname LIKE $1 ESCAPE '\'::char
+		ORDER BY u.id DESC LIMIT 100000`, pattern)
+	if err != nil {
+		return nil, fmt.Errorf("export users: %w", err)
+	}
+	defer rows.Close()
+
+	var buf bytes.Buffer
+	// UTF-8 BOM：Excel 打开含中文的 CSV 时按 UTF-8 解码，否则乱码。
+	buf.WriteString("\xEF\xBB\xBF")
+	w := csv.NewWriter(&buf)
+	header := []string{
+		"id", "nickname", "is_guest", "status", "max_stage", "power",
+		"coin", "gem", "created_at", "last_login_at", "verify_checked", "verify_mismatched",
+	}
+	if err := w.Write(header); err != nil {
+		return nil, fmt.Errorf("write csv header: %w", err)
+	}
+	for rows.Next() {
+		var v AdminUserView
+		if err := rows.Scan(&v.ID, &v.Nickname, &v.IsGuest, &v.Status, &v.MaxStage,
+			&v.Power, &v.Coin, &v.Gem, &v.CreatedAt, &v.LastLoginAt,
+			&v.VerifyChecked, &v.VerifyMismatched); err != nil {
+			return nil, fmt.Errorf("scan export user: %w", err)
+		}
+		rec := []string{
+			strconv.FormatInt(v.ID, 10),
+			v.Nickname,
+			strconv.FormatBool(v.IsGuest),
+			strconv.Itoa(v.Status),
+			strconv.Itoa(v.MaxStage),
+			strconv.FormatInt(v.Power, 10),
+			strconv.FormatInt(v.Coin, 10),
+			strconv.FormatInt(v.Gem, 10),
+			v.CreatedAt.Format(time.RFC3339),
+			v.LastLoginAt.Format(time.RFC3339),
+			strconv.FormatInt(v.VerifyChecked, 10),
+			strconv.FormatInt(v.VerifyMismatched, 10),
+		}
+		if err := w.Write(rec); err != nil {
+			return nil, fmt.Errorf("write csv row: %w", err)
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	w.Flush()
+	if err := w.Error(); err != nil {
+		return nil, fmt.Errorf("flush csv: %w", err)
+	}
+	return buf.Bytes(), nil
 }
 
 // AdminSetUserStatus 封禁 / 解封玩家。

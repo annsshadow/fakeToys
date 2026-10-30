@@ -267,6 +267,10 @@ func (s *Server) Register(app *fiber.App) {
 	adm.Get("/equipment", s.adminEquipment)
 	adm.Get("/reactions", s.adminReactions)
 	adm.Get("/users", s.adminUsers)
+	// ⚠️ 必须注册在 `/users/:id` **之前**：否则 `GET /users/export`
+	// 会被 `:id` 参数匹配吞掉（export 当 id 解析 → 400）。
+	// 导出是读操作，readonly 角色可访问。
+	adm.Get("/users/export", s.adminExportUsers)
 	adm.Post("/users/:id/ban", requireWritable(), s.adminBanUser)
 	// 2026-10-21（P5-7）：玩家详情（只读）。
 	adm.Get("/users/:id", s.adminUserDetail)

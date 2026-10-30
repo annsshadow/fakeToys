@@ -281,6 +281,20 @@ func (s *Server) adminUsers(c *fiber.Ctx) error {
 	return c.JSON(service.NormalizeNilSlices(service.AdminUsersResp{Items: items, Total: total}))
 }
 
+// adminExportUsers 导出用户列表为 CSV（2026-10-30 实质优化第 12 轮）。
+//
+// 读操作，readonly 角色可访问（导出不改变任何数据）。
+// 过滤条件与 `GET /admin/users` 一致（keyword 模糊搜昵称）。
+func (s *Server) adminExportUsers(c *fiber.Ctx) error {
+	data, err := s.Svc.AdminExportUsers(c.Context(), c.Query("keyword", ""))
+	if err != nil {
+		return failErr(c, err)
+	}
+	c.Set("Content-Type", "text/csv; charset=utf-8")
+	c.Set("Content-Disposition", `attachment; filename="users.csv"`)
+	return c.Send(data)
+}
+
 // adminUserDetail 返回一个玩家的详情（构筑、钱包、最近战报、验真明细）。
 //
 // ⚠️ 2026-10-21（P5-7）：此前后台**只能看到用户列表的一行**，
