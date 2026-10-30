@@ -33,12 +33,7 @@ const DUMMY_ARGS = ['arg0', 'arg1', 'arg2', 'arg3', 'arg4'] as const
 function installRequestCapture(): Captured[] {
   const calls: Captured[] = []
   vi.stubGlobal('uni', {
-    request: (opts: {
-      method: string
-      url: string
-      data?: unknown
-      success: (r: unknown) => void
-    }) => {
+    request: (opts: { method: string; url: string; data?: unknown; success: (r: unknown) => void }) => {
       calls.push({ method: opts.method, url: opts.url, data: opts.data })
       opts.success({ statusCode: 200, data: { success: true, data: null } })
     },
@@ -57,14 +52,12 @@ function installRequestCapture(): Captured[] {
 
 /** 导出表里所有「对象形态的 API 分组」（值必须是普通对象，排除 type / 函数 / 常量）。 */
 function apiGroups(): Array<[string, Record<string, unknown>]> {
-  return Object.entries(services).filter(
-    (entry): entry is [string, Record<string, unknown>] => {
-      const value = entry[1]
-      if (!value || typeof value !== 'object' || Array.isArray(value)) return false
-      // 只保留「至少有一个函数成员」的对象，避免把普通常量对象算进来
-      return Object.values(value).some((v) => typeof v === 'function')
-    },
-  )
+  return Object.entries(services).filter((entry): entry is [string, Record<string, unknown>] => {
+    const value = entry[1]
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return false
+    // 只保留「至少有一个函数成员」的对象，避免把普通常量对象算进来
+    return Object.values(value).some((v) => typeof v === 'function')
+  })
 }
 
 describe('mobile services surface', () => {
