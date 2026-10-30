@@ -428,17 +428,20 @@ go run ./cmd/prune --days=30 --apply
 | `admin_audit_logs` | 建议 ≥ 90 天 | 后台操作审计消失。**保留期应不短于内部合规要求**，默认 30 天对多数场景偏短 |
 | `wallet_flows` | **永不删** | 它是经济系统的原始凭证。删了之后「这个玩家的金币怎么来的」永远无法追 |
 
-`wallet_flows` 要压缩只能**归档到冷表**：
+`wallet_flows` 要压缩只能**归档到冷表**（2026-10-30 起已命令化，见
+`cmd/prune` 的 `--archive-wallet-flows`）：
 
-```sql
--- 在维护窗口执行。先把老数据搬走，再删本表对应行。
-CREATE TABLE IF NOT EXISTS wallet_flows_archive (LIKE wallet_flows INCLUDING ALL);
-WITH moved AS (
-  DELETE FROM wallet_flows WHERE created_at < now() - interval '180 days'
-  RETURNING *
-)
-INSERT INTO wallet_flows_archive SELECT * FROM moved;
+```bash
+# 先看会归档多少行（不搬任何数据）
+go run ./cmd/prune --days=180 --archive-wallet-flows
+
+# 确认后真的搬：老流水进入 wallet_flows_archive，主表对应行被删除
+go run ./cmd/prune --days=180 --archive-wallet-flows --apply
 ```
+
+冷表 `wallet_flows_archive` 由命令自动创建（`LIKE wallet_flows INCLUDING ALL`，
+不含外键）。归档与删除共用同一个 `--days` 截止时间，同样默认 dry-run、
+`--apply` 才真搬，且**永不进入 `--table` 删除白名单**。
 
 ⚠️ 归档表**不进任何查询**，所以它只解决体积，不解决「查得到」。
 需要长期可查的话，导出到对象存储而不是留在同一个库里。
