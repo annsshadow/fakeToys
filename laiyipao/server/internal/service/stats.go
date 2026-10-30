@@ -360,8 +360,9 @@ func (s *Service) AdminListUsers(ctx context.Context, keyword string, limit, off
 	// 的断言，它守的正是「这一列不再可检索」这条新不变式。
 	var total int64
 	if err := s.pool.QueryRow(ctx,
-		`SELECT COUNT(*) FROM users WHERE $1 = '%%' OR nickname LIKE $2 ESCAPE '\'::char`,
-		pattern, pattern).Scan(&total); err != nil {
+		`SELECT COUNT(*) FROM users
+		 WHERE $1 = '' OR nickname LIKE $2 ESCAPE '\'::char OR id::text = $1`,
+		kw, pattern).Scan(&total); err != nil {
 		return nil, 0, fmt.Errorf("count users: %w", err)
 	}
 
@@ -393,8 +394,8 @@ func (s *Service) AdminListUsers(ctx context.Context, keyword string, limit, off
 			JOIN battle_records br ON br.id = rv.battle_id
 			GROUP BY br.user_id
 		) v ON v.user_id = u.id
-		WHERE $1 = '%%' OR u.nickname LIKE $1 ESCAPE '\'::char
-		ORDER BY u.id DESC LIMIT $2 OFFSET $3`, pattern, limit, offset)
+		WHERE $1 = '' OR u.nickname LIKE $2 ESCAPE '\'::char OR u.id::text = $1
+		ORDER BY u.id DESC LIMIT $3 OFFSET $4`, kw, pattern, limit, offset)
 	if err != nil {
 		return nil, 0, fmt.Errorf("list users: %w", err)
 	}
@@ -449,8 +450,8 @@ func (s *Service) AdminExportUsers(ctx context.Context, keyword string) ([]byte,
 			JOIN battle_records br ON br.id = rv.battle_id
 			GROUP BY br.user_id
 		) v ON v.user_id = u.id
-		WHERE $1 = '%%' OR u.nickname LIKE $1 ESCAPE '\'::char
-		ORDER BY u.id DESC LIMIT 100000`, pattern)
+		WHERE $1 = '' OR u.nickname LIKE $2 ESCAPE '\'::char OR u.id::text = $1
+		ORDER BY u.id DESC LIMIT 100000`, kw, pattern)
 	if err != nil {
 		return nil, fmt.Errorf("export users: %w", err)
 	}

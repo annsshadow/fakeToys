@@ -39,6 +39,7 @@
 | 28 | 2026-10-31 | **运营看板新增「今日签到/今日兑换」指标**：看板此前没有这两个活跃指标，运营判断今日活跃只能靠猜 | `Dashboard.Economy` 新增 `SignInsToday`/`RedeemsToday`；`adminDashboardUncached` 新增两条聚合查询（沿用看板 CURRENT_DATE 口径）；admin DashboardView「订单」KPI 卡片展示；同步更新日界文档守卫（CURRENT_DATE 3→5 处）与 ownership 豁免（`user_sign_ins` 看板聚合）+ types.gen.ts Dashboard 类型 | 新增 `TestDashboardSignInsAndRedeemsToday`（今日计入/昨日不计入）全绿；守卫测试（日界/ownership）全绿；`internal/service` 215s 全绿、`internal/httpapi` 88s 全绿、admin 353 passed、type-check 通过 |
 | 29 | 2026-10-31 | **me 页 onShow 并行加载**：8 个独立数据请求此前串行 await，首屏要等 N 个 RTT | `me.vue` onShow 改为 `Promise.all` 并行（请求互不依赖，只等最慢的一个）；新增源码守卫测试 `me_page_parallel_load.test.ts`（断言 onShow 含 `Promise.all([` 且无串行 `await loadX()` 行，防止改回串行） | miniapp type-check 通过；1169 tests（+2 守卫）全绿 |
 | 30 | 2026-10-31 | **shop 页商品/钱包真正并行**：注释写着「并发」，实现却是先等商品再等钱包，首屏白等一倍时间 | `shop.vue load()` 改为 `Promise.all` 同时拉取商品列表与钱包（各自错误独立处理：商品失败显示错误、钱包失败静默）；新增源码守卫测试 `shop_parallel_load.test.ts`（断言 load 含 `Promise.all([` 且无串行 `await api.fetchWallet()` 行） | miniapp type-check 通过；1171 tests（+2 守卫）全绿 |
+| 31 | 2026-10-31 | **后台用户搜索支持按 user_id 精确查找**：运营拿到 user_id（战报/工单）时只能翻列表找，无法直接粘贴 ID 搜索 | `AdminListUsers`/`AdminExportUsers` 查询增加 `u.id::text = $1`（keyword 是数字时精确匹配）；哨兵从 `$1='%%'` 改为 `$1=''`（空 kw 仍返回全部）；参数顺序调整（kw/pattern）；同步导出查询保持同口径 | 服务层新增 3 用例（id 精确命中/不存在空结果/非数字仍按昵称）、e2e 2 用例（401/精确命中）全绿；`internal/service` 227s 全绿、`internal/httpapi` 96s 全绿 |
 | ... | | 持续至 100 轮 | | |
 
-> 状态：进行中。当前累计 **30 轮实质优化**，距 100 轮还差 70 轮。
+> 状态：进行中。当前累计 **31 轮实质优化**，距 100 轮还差 69 轮。
