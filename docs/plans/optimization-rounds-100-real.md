@@ -34,6 +34,7 @@
 | 23 | 2026-10-31 | **后台公告编辑/删除**：公告此前只有创建/列表，发错内容无法修改、发错发布状态无法撤回 | 服务层 `AdminUpdateAnnouncement`（草稿首次发布补 published_at、撤回保留历史时间戳、空标题/正文 ErrBadInput）+ `AdminDeleteAnnouncement`（0 行 → ErrNotFound）；`PUT/DELETE /api/v1/admin/announcements/:id`（requireWritable + 审计）；admin ContentView 公告表格「编辑/删除」操作列、表单支持编辑态（回填/更新/取消） | 服务层 7 用例、e2e 5 用例（401/403/更新成功/删除成功/404）全绿；`internal/service` 264s 全绿、`internal/httpapi` 84s 全绿、admin 353 passed、type-check 通过 |
 | 24 | 2026-10-31 | **兑换码启用/禁用**：运营创建错误码后无法停用（只能等过期）；顺带修复 `AdminCreateRedeemCode` 返回值漏填 `Enabled:true`（前端把新码显示成「停用」） | 服务层 `AdminSetRedeemCodeEnabled`（更新 enabled、0 行 → ErrNotFound、expires_at 保留）；`PUT /api/v1/admin/redeem-codes/:id/enabled`（requireWritable + 审计）；admin ContentView 兑换码表格「停用/启用」操作列（二次确认、禁用立即生效） | 服务层 3 用例、e2e 4 用例（401/403/禁用成功/404）全绿；`internal/service` 241s 全绿、`internal/httpapi` 85s 全绿、admin 353 passed、type-check 通过 |
 | 25 | 2026-10-31 | **兑换码编辑**：改奖励/次数/过期时间此前只能停用后重建（码会变，已印刷/已分享的全作废） | 服务层 `AdminUpdateRedeemCode`（更新 reward/max_uses/expires_at、空奖励 ErrBadInput、0 行 → ErrNotFound）；`PUT /api/v1/admin/redeem-codes/:id`（requireWritable + 审计，RFC3339 同创建口径）；admin ContentView「编辑兑换码」（回填表单、码字段锁定、更新/取消） | 服务层 4 用例、e2e 4 用例（401/403/更新成功/404）全绿；`internal/service` 263s 全绿、`internal/httpapi` 108s 全绿、admin 353 passed、type-check 通过 |
+| 26 | 2026-10-31 | **后台删除玩家防线**：违规防线名（侮辱/广告等）运营此前只能看到、无法处理 | 服务层 `AdminDeleteDefense`（DELETE、0 行 → ErrNotFound、挑战记录随 CASCADE 删除）；`DELETE /api/v1/admin/defenses/:id`（requireWritable + 审计）；admin DefensesView「删除」操作列（二次确认并提示连带删除挑战记录） | 服务层 3 用例、e2e 4 用例（401/403/删除成功/404）全绿；`internal/service` 274s 全绿、`internal/httpapi` 116s 全绿、admin 353 passed、type-check 通过 |
 | ... | | 持续至 100 轮 | | |
 
-> 状态：进行中。当前累计 **25 轮实质优化**，距 100 轮还差 75 轮。
+> 状态：进行中。当前累计 **26 轮实质优化**，距 100 轮还差 74 轮。

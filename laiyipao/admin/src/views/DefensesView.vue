@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {onMounted, ref, computed, onActivated} from 'vue'
-import { ElMessage } from 'element-plus'
-import { fetchDefenses, type AdminDefenseView } from '@/api'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { fetchDefenses, deleteDefense, type AdminDefenseView } from '@/api'
 import { fmtTime } from '@/utils/format'
 
 /** 空态文案（2026-10-21 P5-8）：空表要说清「为什么空」。 */
@@ -58,6 +58,30 @@ async function load() {
     ElMessage.error(`防线加载失败：${(e as Error).message}`)
   } finally {
     loading.value = false
+  }
+}
+
+/**
+ * 删除玩家防线（2026-10-31 实质优化第 26 轮）。
+ * 违规防线名（侮辱/广告等）运营此前只能看到、无法处理。
+ * 删除会连带该防线的挑战记录（CASCADE），需二次确认。
+ */
+async function onDeleteDefense(r: AdminDefenseView) {
+  try {
+    await ElMessageBox.confirm(
+      `删除「${r.owner_name}」的防线「${r.name}」？该玩家将失去防线，相关挑战记录也会删除。`,
+      '删除防线',
+      { type: 'warning', confirmButtonText: '删除' },
+    )
+  } catch {
+    return // 取消
+  }
+  try {
+    await deleteDefense(r.id)
+    ElMessage.success('防线已删除')
+    await load()
+  } catch (e) {
+    ElMessage.error(`删除失败：${(e as Error).message}`)
   }
 }
 
@@ -172,6 +196,12 @@ load()
         </el-table-column>
         <el-table-column label="更新时间" width="155">
           <template #default="{ row }">{{ fmtTime(row.updated_at) }}</template>
+        </el-table-column>
+        <!-- 删除（2026-10-31 实质优化第 26 轮） -->
+        <el-table-column label="操作" width="70" fixed="right">
+          <template #default="{ row }">
+            <el-button size="small" text type="danger" @click="onDeleteDefense(asRow(row))">删除</el-button>
+          </template>
         </el-table-column>
         <template #empty>
           <el-empty :description="emptyText" :image-size="60" />

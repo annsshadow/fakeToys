@@ -457,6 +457,14 @@ export function fetchDefenses(limit = 50, offset = 0) {
   return api.get<AdminDefensesResp>(`/admin/defenses?limit=${limit}&offset=${offset}`)
 }
 
+/**
+ * 删除玩家防线（2026-10-31 实质优化第 26 轮）。
+ * 违规防线名（侮辱/广告等）运营此前只能看到、无法处理。
+ */
+export function deleteDefense(id: number) {
+  return api.del(`/admin/defenses/${id}`)
+}
+
 // ---------- 经济 / 商城 / 公告 / 兑换码 ----------
 
 export function fetchEconomy() {
