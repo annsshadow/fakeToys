@@ -194,6 +194,28 @@ def crate_files(crate: str):
         yield p
 
 
+def all_fn_bodies(name: str):
+    """全仓扫描同名 fn，返回 [(crate, body), ...]（按 crate 排序）。
+
+    与尺子缺陷 30 对齐：R7 表里的 handler 可能是跨 crate 委托
+    （如 organization_assemble_authentication 的 `auth::sso::*`），
+    在路由所在 crate 内没有字面函数体。回退到全仓查找，但只接受
+    **唯一同名命中**，避免同名碰撞导致用错函数体。
+    """
+    hits = []
+    for crate_dir in sorted(CRATES.iterdir()):
+        if not crate_dir.is_dir():
+            continue
+        src = crate_dir / "src"
+        if not src.is_dir():
+            continue
+        for p in sorted(src.rglob("*.rs")):
+            b = find_fn_body(p.read_text(encoding="utf-8", errors="replace"), name)
+            if b:
+                hits.append((crate_dir.name, b))
+    return hits
+
+
 def has_write(body: str) -> bool:
     code = strip_rust(body)
     if WRITE_RE.search(code):
@@ -218,6 +240,8 @@ def main():
 
     candidates = []
     checked = 0
+    cross_crate = 0
+    unresolved = []
     cache = {}
     for crate, method, path, handler, _bucket in rows:
         if (crate, handler) not in cache:
@@ -228,15 +252,30 @@ def main():
                 if b:
                     body = b
                     break
+            if body is None:
+                # 尺子缺陷 30 对齐：跨 crate 委托 handler 在路由 crate 内无函数体，
+                # 全仓回退找唯一同名命中（同名碰撞时宁缺勿滥，记入 unresolved）。
+                hits = all_fn_bodies(handler)
+                if len(hits) == 1:
+                    body = hits[0][1]
+                    cross_crate += 1
             cache[(crate, handler)] = body
         body = cache[(crate, handler)]
         if body is None:
+            unresolved.append((crate, method, path, handler))
             continue
         checked += 1
         if has_write(body):
             candidates.append((crate, method, path, handler))
 
-    print(f"R7 只读挂写交叉验证：{len(rows)} 条，成功提取 {checked} 条函数体")
+    print(
+        f"R7 只读挂写交叉验证：{len(rows)} 条，成功提取 {checked} 条函数体"
+        f"（其中跨 crate 回退 {cross_crate} 条）"
+    )
+    if unresolved:
+        print(f"未提取 {len(unresolved)} 条（同名碰撞或全仓无此函数）：")
+        for u in unresolved:
+            print("\t".join(u))
     if candidates:
         # 门禁判据（check-warnings.mjs）：输出含「疑似含写候选」即失败。
         print(f"疑似含写候选 {len(candidates)} 条（门禁失败）：")
