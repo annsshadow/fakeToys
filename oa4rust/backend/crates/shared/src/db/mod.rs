@@ -471,4 +471,20 @@ mod pool_construction_tests {
                 .expect("must panic");
         });
     }
+
+    #[test]
+    #[should_panic(expected = "no host in DATABASE_URL")]
+    fn create_pool_with_url_scheme_without_host_panics() {
+        // 可解析但 host 为 None 的 URL（如 file:///path）：必须在构建阶段
+        // panic（no host in DATABASE_URL），不能带空 host 配置进入运行期。
+        let rt = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .expect("build rt");
+        rt.block_on(async {
+            let _ = create_pool_with_url("file:///path".to_string())
+                .await
+                .expect("must panic");
+        });
+    }
 }
