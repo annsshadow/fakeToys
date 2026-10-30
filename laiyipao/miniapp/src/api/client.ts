@@ -568,6 +568,18 @@ export function upgradeAccount(username: string, password: string): Promise<{ ok
   })
 }
 
+/**
+ * 修改玩家昵称（`PUT /me/nickname`）。
+ *
+ * 昵称会显示在排行榜、战报与防线列表里。上限 64 个字符。
+ */
+export function updateNickname(nickname: string): Promise<{ ok: boolean }> {
+  return request<{ ok: boolean }>('/me/nickname', {
+    method: 'PUT',
+    body: { nickname },
+  })
+}
+
 /** 本地是否有一枚「看起来还能用」的 access token。 */
 export function hasUsableToken(): boolean {
   const t = get(TOKEN_KEY)

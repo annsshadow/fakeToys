@@ -17,6 +17,7 @@
 | 6 | 2026-10-30 | **augment_async 入口改走原生异步批处理**（消除线程池占用，与 use_async=True 路径一致） | `augmentor/pipeline.py` 复用 `_run_batch_async`；新增入口测试（并发重叠断言） | 相关回归 119 passed |
 | 7 | 2026-10-30 | **laiyipao 玩家「修改密码」功能**：此前账号只有引导创建、无改密入口，口令只能运维改环境变量重启轮换 | 后端新增 `POST /api/v1/me/password`（`ChangePassword`：验旧密 → bcrypt 更新 → 同事务吊销全部 refresh token）+ 限流守卫 + 前端 `miniapp` 接入改密入口（`client.ts changePassword` + me.vue 表单） | 服务层 8 用例、e2e 5 用例全绿；`internal/service` 227s 全绿、`internal/httpapi` 全绿、miniapp 1167 passed、type-check 通过 |
 | 8 | 2026-10-30 | **laiyipao 游客账号转正**：游客数据只靠 localStorage 的 guest_token 保护，清缓存/换设备即永久丢失 | 后端新增 `POST /api/v1/me/upgrade`（`UpgradeGuestAccount`：用户名唯一性先查后写、bcrypt 密码、guest_token 保留不变、is_guest 翻转）+ 限流守卫 + 前端游客「设置账号密码」入口（`client.ts upgradeAccount` + me.vue 表单，成功后自动刷新身份） | 服务层 7 用例、e2e 4 用例全绿；`internal/service` 227s 全绿、`internal/httpapi` 全绿、miniapp 1167 passed、type-check 通过 |
+| 9 | 2026-10-30 | **laiyipao 玩家修改昵称**：昵称只在登录/引导时设置一次，之后永远改不了（排行榜/防线/战报全是默认名） | 后端新增 `PUT /api/v1/me/nickname`（`UpdateNickname`：TrimSpace、上限 MaxNicknameLen=64、主键更新）+ 限流守卫 + 前端昵称行内编辑（`client.ts updateNickname` + me.vue 改名入口，保存后刷新资料） | 服务层 5 用例、e2e 3 用例全绿；`internal/service` 240s 全绿、`internal/httpapi` 全绿、miniapp 1167 passed、type-check 通过 |
 | ... | | 持续至 100 轮 | | |
 
-> 状态：进行中。当前累计 **8 轮实质优化**，距 100 轮还差 92 轮。
+> 状态：进行中。当前累计 **9 轮实质优化**，距 100 轮还差 91 轮。

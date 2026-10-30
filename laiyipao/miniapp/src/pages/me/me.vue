@@ -5,7 +5,33 @@
         <view class="row" style="gap: 20rpx">
           <view class="avatar">炮</view>
           <view class="flex-1">
-            <text class="nick">{{ store.nickname || '玩家' }}</text>
+            <!-- 昵称 + 改名入口（2026-10-30 实质优化第 9 轮）。
+                 昵称只在登录/引导时设置一次，此前**永远改不了**。
+                 `PUT /me/nickname` 补上改名能力，上限 64 字。 -->
+            <view v-if="!editingNickname" class="row" style="gap: 12rpx">
+              <text class="nick">{{ store.nickname || '玩家' }}</text>
+              <text class="dim link" @click="startEditNickname">改名</text>
+            </view>
+            <view v-else class="nick-edit-row">
+              <input
+                v-model="nicknameDraft"
+                class="inp nick-inp"
+                type="text"
+                placeholder="新昵称（≤64 字）"
+                placeholder-class="ph"
+                @confirm="submitNickname"
+              />
+              <view class="btn btn-mini btn-primary" @click="submitNickname">保存</view>
+              <view class="btn btn-mini" @click="cancelEditNickname">取消</view>
+            </view>
+            <text
+              v-if="nicknameMsg"
+              class="dim"
+              style="display: block; margin-top: 4rpx"
+              :style="{ color: nicknameErr ? 'var(--bad)' : 'var(--ok)' }"
+            >
+              {{ nicknameMsg }}
+            </text>
             <text class="dim" style="display: block">ID {{ store.userId }}</text>
             <!-- ⚠️ 这里原本写「微信账号」，但微信通道在本项目**未接通**
                  （WECHAT_APP_ID 未配置 → /auth/wechat 返回 501），
@@ -470,6 +496,54 @@ async function submitUpgrade() {
 }
 
 /**
+ * 修改昵称（2026-10-30 实质优化第 9 轮）。
+ *
+ * 服务端 `PUT /me/nickname` 更新 `users.nickname`，上限 64 字。
+ * 成功后刷新 profile，让顶部昵称立即生效。
+ */
+const editingNickname = ref(false)
+const nicknameDraft = ref('')
+const nicknameMsg = ref('')
+const nicknameErr = ref(false)
+
+function startEditNickname() {
+  nicknameDraft.value = store.nickname || ''
+  nicknameMsg.value = ''
+  nicknameErr.value = false
+  editingNickname.value = true
+}
+
+function cancelEditNickname() {
+  editingNickname.value = false
+  nicknameMsg.value = ''
+  nicknameErr.value = false
+}
+
+async function submitNickname() {
+  const name = nicknameDraft.value.trim()
+  nicknameMsg.value = ''
+  nicknameErr.value = false
+  if (!name) {
+    nicknameMsg.value = '昵称不能为空'
+    nicknameErr.value = true
+    return
+  }
+  if (name.length > 64) {
+    nicknameMsg.value = '昵称最长 64 个字符'
+    nicknameErr.value = true
+    return
+  }
+  try {
+    await api.updateNickname(name)
+    await store.refreshProfile()
+    editingNickname.value = false
+  } catch (e) {
+    nicknameErr.value = true
+    nicknameMsg.value = (e as Error)?.message || '修改失败，请稍后再试'
+  }
+}
+
+/**
  * 退出登录。
  *
  * ⚠️ 为什么**必须二次确认**：服务端吊销的是「该账号的全部会话」，
@@ -837,6 +911,39 @@ onUnload(() => {
 
 .pwd-form {
   margin-bottom: 8rpx;
+}
+
+/* 昵称编辑：链接样式的「改名」入口。 */
+.link {
+  text-decoration: underline;
+  color: var(--ice);
+  font-size: 24rpx;
+  padding: 4rpx 0;
+}
+
+.nick-edit-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 4rpx;
+}
+
+.nick-inp {
+  flex: 1;
+  min-width: 0;
+  height: 64rpx;
+  margin-bottom: 0;
+  font-size: 26rpx;
+}
+
+/* 小按钮：昵称编辑行的保存/取消。 */
+.btn-mini {
+  height: 64rpx;
+  padding: 0 24rpx;
+  font-size: 24rpx;
+  border-radius: 10rpx;
+  white-space: nowrap;
 }
 
 .res-grid {
