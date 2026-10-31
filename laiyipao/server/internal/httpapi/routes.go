@@ -362,6 +362,8 @@ func (s *Server) Register(app *fiber.App) {
 	// 兑换码 CSV 导出（2026-10-31 实质优化第 37 轮）：读操作，readonly 可访问。
 	adm.Get("/redeem-codes/export", s.adminExportRedeemCodes)
 	adm.Post("/redeem-codes", requireWritable(), s.adminCreateRedeemCode)
+	// 兑换码批量生成（2026-11-01 新一轮第 57 轮）：一次生成多个随机码。
+	adm.Post("/redeem-codes/batch", requireWritable(), s.adminCreateRedeemCodesBatch)
 	// 兑换码启用/禁用（2026-10-31 实质优化第 24 轮）：
 	// 运营创建错误码后此前无法停用（只能等过期）。
 	adm.Put("/redeem-codes/:id/enabled", requireWritable(), s.adminSetRedeemCodeEnabled)

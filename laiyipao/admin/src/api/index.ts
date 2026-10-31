@@ -724,6 +724,19 @@ export function createRedeemCode(payload: {
 }
 
 /**
+ * 批量生成兑换码（2026-11-01 新一轮第 57 轮）。
+ * 一次生成 count 个随机码（服务端 crypto/rand 生成）。
+ */
+export function createRedeemCodesBatch(payload: {
+  count: number
+  reward: Record<string, number>
+  max_uses: number
+  expires_at?: string
+}) {
+  return api.post<{ items: AdminRedeemCodeView[] }>('/admin/redeem-codes/batch', payload)
+}
+
+/**
  * 启用/禁用兑换码（2026-10-31 实质优化第 24 轮）。
  * 运营创建错误码后此前无法停用（只能等过期）。
  */

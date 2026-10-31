@@ -15,6 +15,7 @@ const fetchAnnouncements = vi.hoisted(() => vi.fn())
 const createAnnouncement = vi.hoisted(() => vi.fn())
 const fetchRedeemCodes = vi.hoisted(() => vi.fn())
 const createRedeemCode = vi.hoisted(() => vi.fn())
+const createRedeemCodesBatch = vi.hoisted(() => vi.fn())
 const fetchAuditLogs = vi.hoisted(() => vi.fn())
 const fetchAdminRedeemUsages = vi.hoisted(() => vi.fn())
 
@@ -23,6 +24,7 @@ vi.mock('@/api', () => ({
   createAnnouncement,
   fetchRedeemCodes,
   createRedeemCode,
+  createRedeemCodesBatch,
   fetchAuditLogs,
   fetchAdminRedeemUsages,
 }))
@@ -111,7 +113,8 @@ describe('ContentView 列表渲染', () => {
     const { ElInputNumber } = await import('element-plus')
     const wrapper = await mountContent()
     const nums = wrapper.findAllComponents(ElInputNumber)
-    expect(nums).toHaveLength(1)
+    // 第 57 轮起有两个：次数上限 + 批量生成数量（第一个仍是次数上限）
+    expect(nums.length).toBeGreaterThanOrEqual(1)
     await nums[0].vm.$emit('update:modelValue', 7)
     await flushPromises()
     const vm = wrapper.vm as unknown as Vm
@@ -482,6 +485,52 @@ describe('ContentView 审计日志操作中文标签（第 56 轮）', () => {
       { id: 2, username: 'admin', action: 'brand_new_action', target: '1', detail: null, created_at: '2026-01-01T00:00:00Z' },
     ])
     expect(wrapper.text()).toContain('brand_new_action')
+    wrapper.unmount()
+  })
+})
+
+describe('ContentView 兑换码批量生成（第 57 轮）', () => {
+  it('点击批量生成：按当前奖励/次数调用接口并刷新列表', async () => {
+    createRedeemCodesBatch.mockResolvedValue({
+      items: [
+        { id: 1, code: 'ABCDEFGHJKLM', reward: { coin: 100 }, max_uses: 3, expires_at: null, enabled: true },
+        { id: 2, code: 'NPQRSTUVWXYZ', reward: { coin: 100 }, max_uses: 3, expires_at: null, enabled: true },
+      ],
+    })
+    const wrapper = await mountContent()
+    const vm = wrapper.vm as unknown as {
+      codeForm: { code: string; reward: string; max_uses: number; expires_at: string }
+      batchCount: number
+    }
+    vm.codeForm = { code: '', reward: 'coin:100', max_uses: 3, expires_at: '' }
+    vm.batchCount = 2
+
+    const btn = wrapper.findAll('button').find((b) => b.text() === '批量生成')
+    expect(btn, '找不到「批量生成」按钮').toBeTruthy()
+    await btn!.trigger('click')
+    await flushPromises()
+
+    expect(createRedeemCodesBatch).toHaveBeenCalledWith({
+      count: 2,
+      reward: { coin: 100 },
+      max_uses: 3,
+      expires_at: undefined,
+    })
+    expect(document.body.textContent).toContain('已批量生成 2 个兑换码')
+    wrapper.unmount()
+  })
+
+  it('奖励格式错误时批量生成不调用接口', async () => {
+    const wrapper = await mountContent()
+    const vm = wrapper.vm as unknown as { codeForm: { reward: string } }
+    vm.codeForm.reward = '金币 100'
+
+    const btn = wrapper.findAll('button').find((b) => b.text() === '批量生成')
+    await btn!.trigger('click')
+    await flushPromises()
+
+    expect(createRedeemCodesBatch).not.toHaveBeenCalled()
+    expect(document.body.textContent).toContain('奖励格式错误')
     wrapper.unmount()
   })
 })

@@ -66,6 +66,7 @@
 | 54 | 2026-11-01 | **后台公告玩家端预览**：运营发布前想确认玩家看到的实际效果（标题/正文/发布时间），此前只能先发布再在玩家端看 | admin ContentView 公告表单新增「预览玩家端」按钮，用当前表单内容打开预览对话框（标题/正文/发布状态与时间，草稿标注「未发布」）；新增 2 个 admin 测试用例 | admin type-check 通过；375 测试全绿（新增公告预览 2 用例）；无 Go 改动 |
 | 55 | 2026-11-01 | **我的战报分页**：玩家战报历史只返回最近 20 条，更早的记录永远不可达 —— 老玩家想回看早期战报没有任何入口 | 服务层 `MyBattleHistory` 增加 `offset` 分页（LIMIT/OFFSET，负 offset 夹 0）；`GET /me/battles` 解析 `limit`/`offset`；miniapp `myBattleHistory(limit, offset)` 传参，battles.vue 新增「加载更多」（按 offset 追加并去重，返回满一页才显示按钮）；新增服务层分页用例 1 个 + 扩展守卫测试 | 服务层（分页/越界/负 offset）全绿；miniapp type-check 通过、全量 1221 测试全绿；`go test ./...` 全绿 |
 | 56 | 2026-11-01 | **审计日志操作类型中文标签**：服务端 action 是英文机器值（ban_user / grant_currency …），运营读审计时看到的是一串下划线英文 | admin ContentView 新增 `ACTION_LABEL` 映射（31 个常见动作 → 中文），审计日志「操作」列渲染中文标签，未知 action 回退原值（fail-loud）；新增 2 个 admin 测试用例并更新既有断言 | admin type-check 通过；377 测试全绿（新增审计中文标签 2 用例）；无 Go 改动 |
+| 57 | 2026-11-01 | **后台兑换码批量生成**：运营发活动补偿通常一次需要几十个码，此前只能在前端逐个生成/复制 | 服务层 `AdminCreateRedeemCodes`（crypto/rand 生成 12 位随机码，字符集剔除 0/O/1/I，count 1..100，唯一冲突 23505 自动重试不中断批次）；`POST /api/v1/admin/redeem-codes/batch`；admin ContentView 表单新增「批量生成」数量输入 + 按钮（复用当前奖励/次数/过期时间）；新增服务层 3 用例 + e2e 4 用例 + admin 2 用例 | 服务层（批量/数量校验/故障）全绿；e2e（401/403/成功/400）全绿；admin type-check + 379 测试全绿；`go test ./...` 全绿 |
 | ... | | 持续至 100 轮 | | |
 
-> 状态：进行中。当前累计 **56 轮实质优化**，距 100 轮还差 44 轮。
+> 状态：进行中。当前累计 **57 轮实质优化**，距 100 轮还差 43 轮。

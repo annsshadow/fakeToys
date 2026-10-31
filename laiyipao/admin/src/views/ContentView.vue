@@ -12,6 +12,7 @@ import {
   fetchAdminRedeemUsages,
   exportRedeemUsagesCsv,
   createRedeemCode,
+  createRedeemCodesBatch,
   updateRedeemCode,
   setRedeemCodeEnabled,
   exportRedeemCodesCsv,
@@ -438,6 +439,41 @@ async function submitCode() {
 }
 
 /**
+ * 批量生成兑换码（2026-11-01 新一轮第 57 轮）。
+ * 用当前表单的奖励/次数/过期时间，一次生成 batchCount 个随机码。
+ */
+const batchCount = ref(10)
+const batchLoading = ref(false)
+
+async function submitCodeBatch() {
+  const reward = parseReward(codeForm.value.reward)
+  if (!reward) {
+    ElMessage.error('奖励格式错误，应为「coin:10000, gem:100」')
+    return
+  }
+  const count = Math.floor(batchCount.value)
+  if (!count || count < 1 || count > 100) {
+    ElMessage.error('批量数量必须在 1..100')
+    return
+  }
+  batchLoading.value = true
+  try {
+    const res = await createRedeemCodesBatch({
+      count,
+      reward,
+      max_uses: codeForm.value.max_uses,
+      expires_at: codeForm.value.expires_at || undefined,
+    })
+    ElMessage.success(`已批量生成 ${res.items.length} 个兑换码`)
+    await loadAll()
+  } catch (e) {
+    ElMessage.error(`批量生成失败：${(e as Error).message}`)
+  } finally {
+    batchLoading.value = false
+  }
+}
+
+/**
  * 编辑兑换码（2026-10-31 实质优化第 25 轮）。
  * 改奖励/次数/过期时间此前只能停用后重建（码会变，已分享的全作废）。
  */
@@ -712,6 +748,17 @@ loadAll()
             <el-form-item>
               <el-button type="primary" @click="submitCode">
                 {{ editingCodeId !== null ? '更新' : '生成' }}
+              </el-button>
+              <!-- 批量生成（2026-11-01 新一轮第 57 轮）：复用当前奖励/次数/过期时间 -->
+              <el-input-number
+                v-model="batchCount"
+                :min="1"
+                :max="100"
+                :disabled="editingCodeId !== null || batchLoading"
+                style="width: 110px; margin-left: 8px"
+              />
+              <el-button :disabled="editingCodeId !== null || batchLoading" @click="submitCodeBatch">
+                {{ batchLoading ? '批量生成中…' : '批量生成' }}
               </el-button>
               <el-button v-if="editingCodeId !== null" @click="cancelEditCode">取消编辑</el-button>
             </el-form-item>

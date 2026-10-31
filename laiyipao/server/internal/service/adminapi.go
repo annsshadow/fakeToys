@@ -3,6 +3,7 @@ package service
 import (
 	"bytes"
 	"context"
+	"crypto/rand"
 	"encoding/csv"
 	"encoding/json"
 	"errors"
@@ -1371,6 +1372,57 @@ func (s *Service) AdminCreateRedeemCode(ctx context.Context, code string, reward
 		// 前端「状态」列把新码显示成「停用」（表里实际是启用）。
 		Enabled: true,
 	}, nil
+}
+
+// redeemCodeAlphabet 是批量生成的码字符集（避免易混淆字符 0/O/1/I）。
+const redeemCodeAlphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+
+// randomRedeemCode 生成 n 位随机码（crypto/rand，不可预测）。
+func randomRedeemCode(n int) (string, error) {
+	b := make([]byte, n)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+	for i := range b {
+		b[i] = redeemCodeAlphabet[int(b[i])%len(redeemCodeAlphabet)]
+	}
+	return string(b), nil
+}
+
+// AdminCreateRedeemCodes 批量生成兑换码（2026-11-01 新一轮第 57 轮）。
+//
+// 运营发活动补偿通常一次需要几十个码，此前只能在前端逐个生成/复制。
+// 这里一次生成 count 个随机码（crypto/rand，避免可预测），
+// 奖励/次数上限/过期时间与单个创建一致。count 上限 100。
+// 极低概率的码冲突（唯一约束 23505）自动重新生成，不中断批次。
+func (s *Service) AdminCreateRedeemCodes(ctx context.Context, count int, reward map[string]int, maxUses int, expiresAt *time.Time) ([]AdminRedeemCodeView, error) {
+	if count <= 0 || count > 100 {
+		return nil, fmt.Errorf("%w: count 必须在 1..100", ErrBadInput)
+	}
+	if _, err := json.Marshal(reward); err != nil {
+		return nil, err
+	}
+	out := make([]AdminRedeemCodeView, 0, count)
+	seen := map[string]bool{}
+	for len(out) < count {
+		code, err := randomRedeemCode(12)
+		if err != nil {
+			return nil, fmt.Errorf("generate redeem code: %w", err)
+		}
+		if seen[code] {
+			continue
+		}
+		v, err := s.AdminCreateRedeemCode(ctx, code, reward, maxUses, expiresAt)
+		if err != nil {
+			if isUniqueViolation(err) {
+				continue // 极小概率冲突：重新生成
+			}
+			return nil, err
+		}
+		seen[code] = true
+		out = append(out, v)
+	}
+	return out, nil
 }
 
 // AdminExportRedeemCodes 导出兑换码列表为 CSV（2026-10-31 实质优化第 37 轮）。
