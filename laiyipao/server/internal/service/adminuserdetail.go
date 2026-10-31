@@ -2,8 +2,10 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 	"sync"
 	"time"
 
@@ -46,6 +48,17 @@ type AdminUserDetailResp struct {
 	FlowCount int `json:"flow_count"`
 	// Defense 是玩家的防线（未设置防线时为 null）（2026-10-31 新一轮第 31 轮）。
 	Defense *AdminDefenseView `json:"defense"`
+	// BanRecords 是最近 20 条封禁/解封审计（2026-11-01 新一轮第 58 轮）。
+	// 运营打开用户详情能看到「为什么被封、谁封的、什么时候解的」。
+	BanRecords []AdminBanRecordView `json:"ban_records"`
+}
+
+// AdminBanRecordView 是一条封禁/解封审计记录。
+type AdminBanRecordView struct {
+	Action    string          `json:"action"` // ban_user / unban_user
+	Username  string          `json:"username"`
+	Reason    json.RawMessage `json:"reason"` // detail 原样（{reason: "..."}）
+	CreatedAt time.Time       `json:"created_at"`
 }
 
 // AdminVerificationView 是一条验真记录。
@@ -132,7 +145,8 @@ func (s *Service) AdminUserDetail(ctx context.Context, userID int64) (AdminUserD
 		verifications []AdminVerificationView
 		flowCount     int
 		defense       *AdminDefenseView
-		errs          [8]error
+		banRecords    []AdminBanRecordView
+		errs          [9]error
 	)
 	seg := func(i int, fn func()) {
 		wg.Add(1)
@@ -269,6 +283,34 @@ func (s *Service) AdminUserDetail(ctx context.Context, userID int64) (AdminUserD
 		defense = &v
 	})
 
+	// 10) 封禁/解封记录（2026-11-01 新一轮第 58 轮）。
+	// 后台审计的 target 是用户 id 字符串（ban_user/unban_user）。
+	seg(8, func() {
+		rows, err := s.pool.Query(ctx,
+			`SELECT action, username, detail, created_at
+			 FROM admin_audit_logs
+			 WHERE action IN ('ban_user','unban_user') AND target = $1
+			 ORDER BY id DESC LIMIT 20`, strconv.FormatInt(userID, 10))
+		if err != nil {
+			errs[8] = fmt.Errorf("load user ban records: %w", err)
+			return
+		}
+		defer rows.Close()
+		for rows.Next() {
+			var v AdminBanRecordView
+			var detail []byte
+			if err := rows.Scan(&v.Action, &v.Username, &detail, &v.CreatedAt); err != nil {
+				errs[8] = err
+				return
+			}
+			v.Reason = json.RawMessage(detail)
+			banRecords = append(banRecords, v)
+		}
+		if err := rows.Err(); err != nil {
+			errs[8] = fmt.Errorf("load user ban records: %w", err)
+		}
+	})
+
 	wg.Wait()
 	for _, err := range errs {
 		if err != nil {
@@ -289,6 +331,7 @@ func (s *Service) AdminUserDetail(ctx context.Context, userID int64) (AdminUserD
 	out.Verifications = verifications
 	out.FlowCount = flowCount
 	out.Defense = defense
+	out.BanRecords = banRecords
 
 	return out, nil
 }

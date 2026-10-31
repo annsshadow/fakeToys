@@ -140,6 +140,20 @@ function detailFixture(overrides: Partial<AdminUserDetailResp> = {}): AdminUserD
       },
     ],
     flow_count: 17,
+    ban_records: [
+      {
+        action: 'ban_user',
+        username: 'ops_alice',
+        reason: '{"reason":"恶意刷分"}',
+        created_at: '2026-01-02T03:04:05Z',
+      },
+      {
+        action: 'unban_user',
+        username: 'ops_alice',
+        reason: '{"reason":"误封，已解"}',
+        created_at: '2026-01-03T03:04:05Z',
+      },
+    ],
     ...overrides,
   }
 }
@@ -673,6 +687,25 @@ describe('UsersView 详情抽屉（P5-7）', () => {
     expect(vm.detail?.user.id).toBe(2)
     expect(vm.detail?.user.nickname).toBe('新请求')
     expect(vm.detailLoading).toBe(false)
+    wrapper.unmount()
+  })
+
+  it('详情抽屉展示封禁/解封记录与原因（第 58 轮）', async () => {
+    const row = userFixture({ id: 7, nickname: '详情玩家' })
+    fetchUserDetail.mockResolvedValueOnce(detailFixture())
+    const wrapper = await mountUsers([row])
+
+    const btn = wrapper.findAll('.el-table__row')[0].findAll('button').find((b) => b.text() === '详情')!
+    await btn.trigger('click')
+    await flushPromises()
+
+    const text = wrapper.text()
+    expect(text).toContain('封禁 / 解封记录')
+    expect(text).toContain('恶意刷分') // reasonText 从 JSONB 解析出原因
+    expect(text).toContain('ops_alice')
+    // 动作标签：封禁（danger）与解封（success）
+    expect(text).toContain('封禁')
+    expect(text).toContain('解封')
     wrapper.unmount()
   })
 

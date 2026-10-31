@@ -354,6 +354,7 @@ export interface AdminUserDetailResp {
   verifications: AdminVerificationView[]
   flow_count: number
   defense: AdminDefenseView | null
+  ban_records: { action: string; username: string; reason: string; created_at: string }[]
 }
 
 export interface AdminUserResp {

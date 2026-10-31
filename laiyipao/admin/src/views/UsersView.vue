@@ -143,6 +143,22 @@ function verifyTag(u: AdminUserView): { text: string; type: 'info' | 'success' |
   return { text: '未验真', type: 'info' }
 }
 
+/**
+ * 封禁原因可读化（2026-11-01 新一轮第 58 轮）。
+ * 审计 detail 是 JSONB（如 `{"reason":"恶意刷分"}` 或 null）。
+ * 解析失败回退原始文本（fail-loud）。
+ */
+function reasonText(reason: string): string {
+  if (!reason) return '—'
+  try {
+    const obj = JSON.parse(reason)
+    if (obj && typeof obj.reason === 'string' && obj.reason) return obj.reason
+  } catch {
+    // 非 JSON：原样展示
+  }
+  return reason
+}
+
 async function load() {
   loading.value = true
   try {
@@ -593,6 +609,28 @@ const asRow = (r: unknown) => r as AdminUserView
             </el-table-column>
             <template #empty>
               <el-empty description="没有验真记录" :image-size="60" />
+            </template>
+          </el-table>
+
+          <!-- 封禁/解封记录（2026-11-01 新一轮第 58 轮） -->
+          <div class="section-title">封禁 / 解封记录</div>
+          <el-table :data="detail.ban_records" size="small" border>
+            <el-table-column label="动作" width="80">
+              <template #default="{ row }">
+                <el-tag :type="row.action === 'ban_user' ? 'danger' : 'success'" size="small">
+                  {{ row.action === 'ban_user' ? '封禁' : '解封' }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="username" label="操作人" width="110" />
+            <el-table-column label="原因" min-width="160">
+              <template #default="{ row }">{{ reasonText(row.reason) }}</template>
+            </el-table-column>
+            <el-table-column label="时间" min-width="160">
+              <template #default="{ row }">{{ fmtTime(row.created_at) }}</template>
+            </el-table-column>
+            <template #empty>
+              <el-empty description="没有封禁记录" :image-size="60" />
             </template>
           </el-table>
 
