@@ -273,3 +273,20 @@ describe('DefensesView 护盾剩余显示（第 81 轮）', () => {
     wrapper.unmount()
   })
 })
+
+describe('DefensesView 复制防线 ID（第 93 轮）', () => {
+  it('点击防线行「复制」：写入剪贴板并提示', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
+
+    const wrapper = await mountDefenses([defenseFixture({ id: 77 })])
+    const copyBtn = wrapper.findAll('.el-table__row')[0].findAll('button').find((b) => b.text() === '复制')
+    expect(copyBtn, '找不到防线 ID 复制按钮').toBeTruthy()
+    await copyBtn!.trigger('click')
+    await flushPromises()
+
+    expect(writeText).toHaveBeenCalledWith('77')
+    expect(document.body.textContent).toContain('已复制防线 ID 77')
+    wrapper.unmount()
+  })
+})

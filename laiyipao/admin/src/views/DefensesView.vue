@@ -15,6 +15,19 @@ function openUserDetail(userId: number) {
   router.push({ path: '/users', query: { user_id: String(userId) } })
 }
 
+/**
+ * 复制防线 ID（2026-11-01 新一轮第 93 轮）。
+ * 运营把 defense_id 贴到工单/追查时无需手动选中。
+ */
+async function copyDefenseId(id: number) {
+  try {
+    await navigator.clipboard.writeText(String(id))
+    ElMessage.success(`已复制防线 ID ${id}`)
+  } catch {
+    ElMessage.error('复制失败，请手动选择复制')
+  }
+}
+
 /** 空态文案（2026-10-21 P5-8）：空表要说清「为什么空」。 */
 const emptyText = '还没有人设置防线'
 const loading = ref(false)
@@ -279,7 +292,13 @@ load()
       </div>
 
       <el-table :data="rows" size="small" stripe>
-        <el-table-column prop="id" label="ID" width="60" />
+        <el-table-column label="ID" width="100">
+          <!-- 复制防线 ID（2026-11-01 新一轮第 93 轮）：贴工单/追查 -->
+          <template #default="{ row }">
+            <span>{{ row.id }}</span>
+            <el-button size="small" text type="primary" @click="copyDefenseId(row.id)">复制</el-button>
+          </template>
+        </el-table-column>
         <el-table-column prop="owner_id" label="属主 ID" width="80" />
         <el-table-column label="属主" min-width="120">
           <!-- 点击跳转用户详情（2026-11-01 新一轮第 50 轮）：
