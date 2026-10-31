@@ -73,6 +73,16 @@
           <text class="terrain-note-name">{{ terrainName(t.kind) }}</text>
           <text class="terrain-note-descr">{{ terrainDescr(t.kind) }}</text>
         </view>
+        <!-- 敌人组成预览（2026-10-31 新一轮第 29 轮） -->
+        <view v-if="detailWaves.length" class="wave-list">
+          <text class="muted" style="display: block; margin-bottom: 4rpx">敌人组成</text>
+          <view v-for="(w, wi) in detailWaves" :key="wi" class="wave-row">
+            <text class="muted">第 {{ wi + 1 }} 波</text>
+            <text v-for="(sp, si) in w.spawns" :key="si" class="wave-spawn">
+              {{ enemyName(sp.enemy_id) }} ×{{ sp.count }}
+            </text>
+          </view>
+        </view>
         <view class="star-targets">
           <text class="muted">星级门槛</text>
           <text v-for="(s, i) in selected.star_targets" :key="i" class="target">
@@ -104,13 +114,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import {onLoad, onShow} from '@dcloudio/uni-app'
 import { useGameStore } from '@/store/game'
 import { unlockSfx } from '@/audio/sfx'
 import * as api from '@/api/client'
 import { TERRAIN_NAME, TERRAIN_DESCR } from '@/game/terrain'
-import type { LevelSummary, TerrainKind } from '@/game/types'
+import type { LevelSummary, TerrainKind, Wave } from '@/game/types'
 
 const store = useGameStore()
 
@@ -147,6 +157,39 @@ const selected = computed<LevelSummary | null>(() => {
 })
 
 const canEnter = computed(() => !!selected.value && selected.value.id <= store.unlockedLevel)
+
+/**
+ * 敌人组成预览（2026-10-31 新一轮第 29 轮）。
+ *
+ * 选关页此前只显示血量/波次/难度/地形/星级门槛 —— 玩家不知道这关
+ * 会遇到什么敌人（飞行/精英/Boss 等），「这关为什么难」只能进战斗
+ * 试错。`/levels/:id` 本就返回完整波次，这里按需拉取并展示每波敌人。
+ */
+const detailWaves = ref<Wave[]>([])
+
+const enemyNameMap = computed(() => {
+  const m = new Map<number, string>()
+  for (const e of store.config?.enemies ?? []) m.set(e.id, e.name)
+  return m
+})
+
+function enemyName(id: number): string {
+  return enemyNameMap.value.get(id) ?? `#${id}`
+}
+
+watch(selected, async (lv) => {
+  if (!lv) {
+    detailWaves.value = []
+    return
+  }
+  try {
+    const detail = await api.fetchLevel(lv.id)
+    detailWaves.value = detail.waves ?? []
+  } catch {
+    // 敌人预览是辅助信息，拉取失败不阻塞选关
+    detailWaves.value = []
+  }
+}, { immediate: true })
 
 /**
  * 体力消耗文案（2026-10-21 P4-6）。
@@ -384,6 +427,22 @@ onMounted(() => {
   font-size: 24rpx;
   color: var(--muted, #9aa0a6);
   line-height: 1.5;
+}
+
+/* 敌人组成预览（2026-10-31 新一轮第 29 轮） */
+.wave-list {
+  margin-top: 8rpx;
+}
+.wave-row {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 8rpx 16rpx;
+  padding: 4rpx 0;
+  font-size: 24rpx;
+}
+.wave-spawn {
+  color: var(--muted, #9aa0a6);
 }
 
 .star-targets {
