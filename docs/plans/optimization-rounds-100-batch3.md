@@ -68,6 +68,7 @@
 | 56 | 2026-11-01 | **审计日志操作类型中文标签**：服务端 action 是英文机器值（ban_user / grant_currency …），运营读审计时看到的是一串下划线英文 | admin ContentView 新增 `ACTION_LABEL` 映射（31 个常见动作 → 中文），审计日志「操作」列渲染中文标签，未知 action 回退原值（fail-loud）；新增 2 个 admin 测试用例并更新既有断言 | admin type-check 通过；377 测试全绿（新增审计中文标签 2 用例）；无 Go 改动 |
 | 57 | 2026-11-01 | **后台兑换码批量生成**：运营发活动补偿通常一次需要几十个码，此前只能在前端逐个生成/复制 | 服务层 `AdminCreateRedeemCodes`（crypto/rand 生成 12 位随机码，字符集剔除 0/O/1/I，count 1..100，唯一冲突 23505 自动重试不中断批次）；`POST /api/v1/admin/redeem-codes/batch`；admin ContentView 表单新增「批量生成」数量输入 + 按钮（复用当前奖励/次数/过期时间）；新增服务层 3 用例 + e2e 4 用例 + admin 2 用例 | 服务层（批量/数量校验/故障）全绿；e2e（401/403/成功/400）全绿；admin type-check + 379 测试全绿；`go test ./...` 全绿 |
 | 58 | 2026-11-01 | **用户详情增加封禁/解封记录**：运营打开用户详情能看到「为什么被封、谁封的、什么时候解的」—— 此前封禁原因只进审计日志，详情页没有任何入口 | 服务层 `AdminUserDetailResp` 增加 `BanRecords []AdminBanRecordView`（最近 20 条 ban_user/unban_user 审计，detail 原样保留）；并发段新增第 10 段查询（与其它段并行）；apitypes + tygen 重新生成 types.gen.ts；admin UsersView 详情抽屉新增「封禁 / 解封记录」表格（动作标签/操作人/原因可读化/时间）；新增服务层 1 用例 + admin 1 用例 | 服务层（封禁记录内容/排序/detail 保留）全绿；tygen 测试全绿；admin type-check + 380 测试全绿；`go test ./...` 全绿 |
+| 59 | 2026-11-01 | **删除/更新公告后玩家端缓存立即失效**：玩家端公告有 TTL 缓存，运营撤回违规公告后玩家端最迟要等一个 TTL 才消失 —— 撤回不要求秒级生效的假设对违规内容不成立 | 服务层 `AdminCreateAnnouncement`/`AdminUpdateAnnouncement`/`AdminDeleteAnnouncement`在写库成功后调用 `announcementsCache.flush()`（ttlCache 既有失效方法），玩家端下一次拉取立即看到新内容；新增缓存失效集成测试（创建/更新/删除三路，用缓存命中计数验证重新查库） | 服务层定向测试（缓存失效/既有缓存测试）全绿；`go test ./...` 全绿；无前端改动 |
 | ... | | 持续至 100 轮 | | |
 
-> 状态：进行中。当前累计 **58 轮实质优化**，距 100 轮还差 42 轮。
+> 状态：进行中。当前累计 **59 轮实质优化**，距 100 轮还差 41 轮。

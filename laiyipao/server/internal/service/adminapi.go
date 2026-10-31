@@ -1202,6 +1202,9 @@ func (s *Service) AdminCreateAnnouncement(ctx context.Context, title, body strin
 		title, body, published, at).Scan(&id); err != nil {
 		return AdminAnnouncementView{}, fmt.Errorf("create announcement: %w", err)
 	}
+	// 玩家端缓存立即失效（2026-11-01 新一轮第 59 轮）：
+	// 运营发布/更新/撤回公告后，玩家端不再等 TTL 才看到新内容。
+	s.announcementsCache.flush()
 	return AdminAnnouncementView{
 		ID: id, Title: title, Body: body, Published: published, PublishedAt: at,
 	}, nil
@@ -1236,13 +1239,16 @@ func (s *Service) AdminUpdateAnnouncement(ctx context.Context, id int, title, bo
 	}
 	v.PublishedAt = publishedAt
 	v.CreatedAt = createdAt
+	// 玩家端缓存立即失效（2026-11-01 新一轮第 59 轮）。
+	s.announcementsCache.flush()
 	return v, nil
 }
 
 // AdminDeleteAnnouncement 删除公告（2026-10-31 实质优化第 23 轮）。
 //
-// 玩家端公告列表有 30 秒缓存（见 announcementsCache），删除后
-// 玩家端最迟 TTL 后消失 —— 这是刻意的（撤回不要求秒级生效）。
+// 玩家端公告列表有缓存（见 announcementsCache）。删除后**立即失效**
+// 缓存（2026-11-01 新一轮第 59 轮）—— 撤回违规公告时玩家端秒级消失，
+// 不再等 TTL。
 func (s *Service) AdminDeleteAnnouncement(ctx context.Context, id int) error {
 	ct, err := s.pool.Exec(ctx, `DELETE FROM announcements WHERE id = $1`, id)
 	if err != nil {
@@ -1251,6 +1257,7 @@ func (s *Service) AdminDeleteAnnouncement(ctx context.Context, id int) error {
 	if ct.RowsAffected() == 0 {
 		return fmt.Errorf("%w: 公告 %d 不存在", ErrNotFound, id)
 	}
+	s.announcementsCache.flush()
 	return nil
 }
 
