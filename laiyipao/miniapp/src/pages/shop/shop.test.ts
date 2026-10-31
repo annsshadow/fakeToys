@@ -68,6 +68,10 @@ function shopList() {
 
 beforeEach(() => {
   um = installUniMock()
+  // 购买二次确认（2026-11-01 新一轮第 91 轮）：默认视为用户点了「购买」。
+  um.mock.showModal.mockImplementation((opts: any) => {
+    opts.success?.({ confirm: true, cancel: false })
+  })
   mockApi.guestLogin.mockResolvedValue({
     access_token: 'a', refresh_token: 'r', expires_at: '',
     user: { id: 7, nickname: '我', avatar_url: '', is_guest: true, status: 1 },

@@ -181,6 +181,18 @@ async function load() {
 async function doBuy(it: ShopItem) {
   if (buyingId.value !== 0) return
   if (soldOut(it)) return
+  // 购买二次确认（2026-11-01 新一轮第 91 轮）：消耗货币，防止误点误购。
+  const confirmed = await new Promise<boolean>((resolve) => {
+    uni.showModal({
+      title: '确认购买',
+      content: `购买「${it.name}」？将花费 ${priceText(it)}。`,
+      confirmText: '购买',
+      cancelText: '取消',
+      success: (r) => resolve(!!r.confirm),
+      fail: () => resolve(false),
+    })
+  })
+  if (!confirmed) return
   buyingId.value = it.id
   try {
     await api.buyItem(it.id)
