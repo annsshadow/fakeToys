@@ -436,6 +436,22 @@ export function fetchRecomputes(
 }
 
 /**
+ * 重算台账 CSV 导出（2026-11-01 新一轮第 45 轮）。
+ * 与列表同口径的 only_mismatch / user_id / level_id 筛选。
+ */
+export function exportRecomputesCsv(params: {
+  user_id?: number
+  level_id?: number
+  only_mismatch?: boolean
+} = {}) {
+  const q = new URLSearchParams()
+  if (params.user_id) q.set('user_id', String(params.user_id))
+  if (params.level_id) q.set('level_id', String(params.level_id))
+  if (params.only_mismatch) q.set('only_mismatch', '1')
+  return api.getBlob(`/admin/recomputes/export?${q}`)
+}
+
+/**
  * 取总账 + 按关卡分布 + 闸门状态。
  *
  * ⚠️ `hours` 是**时间窗**，缺省 24 小时、服务端上限 30 天。

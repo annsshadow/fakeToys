@@ -24,6 +24,7 @@ import {
   fetchRecomputeStats,
   fetchRecomputeMode,
   setRecomputeMode,
+  exportRecomputesCsv,
   type RecomputeView,
   type RecomputeLevelStat,
   type RecomputeModeState,
@@ -231,6 +232,32 @@ async function load() {
     ElMessage.error(`重算台账加载失败：${(e as Error).message}`)
   } finally {
     loading.value = false
+  }
+}
+
+/**
+ * 导出重算台账 CSV（2026-11-01 新一轮第 45 轮）。
+ * 与列表同口径的 only_mismatch / user_id / level_id 筛选；
+ * readonly 角色也可导出（读操作）。下载文件名带日期。
+ */
+async function onExportCsv() {
+  try {
+    const blob = await exportRecomputesCsv({
+      user_id: userId.value,
+      level_id: levelId.value,
+      only_mismatch: onlyMismatch.value || undefined,
+    })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `recomputes_${new Date().toISOString().slice(0, 10)}.csv`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+    ElMessage.success(`已导出 ${rows.value.length} 条重算记录（当前筛选结果）`)
+  } catch (e) {
+    ElMessage.error(`导出失败：${(e as Error).message}`)
   }
 }
 
@@ -512,6 +539,8 @@ const asLevel = (r: unknown) => r as RecomputeLevelStat
         />
         <el-button @click="load">筛选</el-button>
         <el-checkbox v-model="onlyMismatch" style="margin-left: 12px">只看不符</el-checkbox>
+        <!-- 重算台账 CSV 导出（2026-11-01 新一轮第 45 轮） -->
+        <el-button style="margin-left: 12px" @click="onExportCsv">导出 CSV</el-button>
         <span class="toolbar-spacer" />
         <span class="muted">共 {{ total }} 条</span>
       </div>

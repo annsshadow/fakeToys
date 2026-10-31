@@ -65,7 +65,9 @@ package service
 // 所以升回只允许人工：配置改回来 + 重启。这是刻意的。
 
 import (
+	"bytes"
 	"context"
+	"encoding/csv"
 	"fmt"
 	"os"
 	"strconv"
@@ -721,6 +723,125 @@ func (s *Service) AdminListRecomputes(ctx context.Context, f RecomputeFilter) ([
 		out = append(out, v)
 	}
 	return out, total, rows.Err()
+}
+
+// AdminExportRecomputes 返回重算台账 CSV（UTF-8 BOM，上限 10 万行）。
+//
+// 重算台账是 R1 审计证据：引擎漂移 / 玩家作弊的每一笔不符都记在这里。
+// 列表只能分页看，运营要做离线分析（按玩家/关卡聚合、导出给工具）
+// 需要全量快照。与 AdminListRecomputes 同筛选
+// （only_mismatch / level_id / user_id）。
+func (s *Service) AdminExportRecomputes(ctx context.Context, f RecomputeFilter) ([]byte, error) {
+	conds := []string{"1=1"}
+	args := []any{}
+	add := func(clause string, v any) {
+		args = append(args, v)
+		conds = append(conds, fmt.Sprintf(clause, len(args)))
+	}
+	if f.OnlyMismatch {
+		conds = append(conds, "r.mismatched_fields <> '{}'")
+	}
+	if f.LevelID > 0 {
+		add("r.level_id = $%d", f.LevelID)
+	}
+	if f.UserID > 0 {
+		add("r.user_id = $%d", f.UserID)
+	}
+	where := strings.Join(conds, " AND ")
+
+	rows, err := s.pool.Query(ctx, `
+		SELECT r.id, r.battle_id, r.user_id, COALESCE(u.nickname,''), r.level_id,
+		       r.reported_score, r.reported_kills, r.reported_duration_ms, r.reported_hash,
+		       r.recomputed_score, r.recomputed_kills, r.recomputed_duration_ms, r.recomputed_hash,
+		       r.mismatched_fields, r.mode, r.rejected, r.engine_version, r.created_at
+		FROM settle_recomputes r
+		LEFT JOIN users u ON u.id = r.user_id
+		WHERE `+where+`
+		ORDER BY r.id DESC LIMIT 100000`, args...)
+	if err != nil {
+		return nil, fmt.Errorf("export recomputes: %w", err)
+	}
+	defer rows.Close()
+
+	var buf bytes.Buffer
+	buf.WriteString("\xEF\xBB\xBF")
+	w := csv.NewWriter(&buf)
+	header := []string{
+		"id", "battle_id", "user_id", "nickname", "level_id",
+		"reported_score", "reported_kills", "reported_duration_ms", "reported_hash",
+		"recomputed_score", "recomputed_kills", "recomputed_duration_ms", "recomputed_hash",
+		"mismatched_fields", "mode", "rejected", "engine_version", "created_at",
+	}
+	if err := w.Write(header); err != nil {
+		return nil, fmt.Errorf("write csv header: %w", err)
+	}
+
+	for rows.Next() {
+		var (
+			id, battleID, userID                     int64
+			nickname                                   string
+			levelID                                    int
+			repScore, repKills, repDur                int64
+			repHash                                    string
+			recScore                                    *int64
+			recKills, recDur                            *int
+			recHash                                     *string
+			mismatched                                  []string
+			mode, engineVersion                         string
+			rejected                                    bool
+			createdAt                                   time.Time
+		)
+		if err := rows.Scan(&id, &battleID, &userID, &nickname, &levelID,
+			&repScore, &repKills, &repDur, &repHash,
+			&recScore, &recKills, &recDur, &recHash,
+			&mismatched, &mode, &rejected, &engineVersion, &createdAt); err != nil {
+			return nil, fmt.Errorf("scan export recompute: %w", err)
+		}
+		recScoreS, recKillsS, recDurS, recHashS := "", "", "", ""
+		if recScore != nil {
+			recScoreS = strconv.FormatInt(*recScore, 10)
+		}
+		if recKills != nil {
+			recKillsS = strconv.Itoa(*recKills)
+		}
+		if recDur != nil {
+			recDurS = strconv.Itoa(*recDur)
+		}
+		if recHash != nil {
+			recHashS = *recHash
+		}
+		rec := []string{
+			strconv.FormatInt(id, 10),
+			strconv.FormatInt(battleID, 10),
+			strconv.FormatInt(userID, 10),
+			nickname,
+			strconv.Itoa(levelID),
+			strconv.FormatInt(repScore, 10),
+			strconv.FormatInt(repKills, 10),
+			strconv.FormatInt(repDur, 10),
+			repHash,
+			recScoreS,
+			recKillsS,
+			recDurS,
+			recHashS,
+			strings.Join(mismatched, ";"),
+			mode,
+			strconv.FormatBool(rejected),
+			engineVersion,
+			createdAt.UTC().Format(time.RFC3339),
+		}
+		if err := w.Write(rec); err != nil {
+			return nil, fmt.Errorf("write csv row: %w", err)
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	w.Flush()
+	if err := w.Error(); err != nil {
+		return nil, fmt.Errorf("flush csv: %w", err)
+	}
+	return buf.Bytes(), nil
 }
 
 // RecomputeLevelStat 是按关卡聚合的统计。

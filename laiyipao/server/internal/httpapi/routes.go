@@ -322,6 +322,8 @@ func (s *Server) Register(app *fiber.App) {
 	//   后者一旦存在就会把 /stats 当成 id 匹配掉。
 	adm.Get("/recomputes", s.adminRecomputes)
 	adm.Get("/recomputes/stats", s.adminRecomputeStats)
+	// 重算台账 CSV 导出（2026-11-01 新一轮第 45 轮）：读操作，readonly 可访问。
+	adm.Get("/recomputes/export", s.adminExportRecomputes)
 	// 2026-10-21（P3-3）：档位可读可改。
 	adm.Get("/recomputes/mode", s.adminRecomputeMode)
 	// 切档是**写操作**，而且是「关掉反作弊校验」那种写 ——

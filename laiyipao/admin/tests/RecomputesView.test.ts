@@ -13,14 +13,21 @@
  * 而反复误报的告警等于没有告警。
  */
 import { describe, expect, it, vi, beforeEach } from 'vitest'
+import { flushPromises } from '@vue/test-utils'
 import { mountEl, settle, bodyText } from './helpers'
 
 const fetchRecomputes = vi.fn()
 const fetchRecomputeStats = vi.fn()
+const fetchRecomputeMode = vi.fn()
+const setRecomputeMode = vi.fn()
+const exportRecomputesCsv = vi.fn()
 
 vi.mock('@/api', () => ({
   fetchRecomputes: (...a: unknown[]) => fetchRecomputes(...a),
   fetchRecomputeStats: (...a: unknown[]) => fetchRecomputeStats(...a),
+  fetchRecomputeMode: (...a: unknown[]) => fetchRecomputeMode(...a),
+  setRecomputeMode: (...a: unknown[]) => setRecomputeMode(...a),
+  exportRecomputesCsv: (...a: unknown[]) => exportRecomputesCsv(...a),
 }))
 
 import RecomputesView from '@/views/RecomputesView.vue'
@@ -68,8 +75,20 @@ function summary(over: Record<string, unknown> = {}) {
 beforeEach(() => {
   fetchRecomputes.mockReset()
   fetchRecomputeStats.mockReset()
+  fetchRecomputeMode.mockReset()
+  setRecomputeMode.mockReset()
+  exportRecomputesCsv.mockReset()
   fetchRecomputes.mockResolvedValue({ items: [row()], total: 1 })
   fetchRecomputeStats.mockResolvedValue(summary())
+  fetchRecomputeMode.mockResolvedValue({
+    mode: 'enforce',
+    engine_mode: 'enforce',
+    skills_mode: 'enforce',
+    enforcing: true,
+    configured_mode: 'enforce',
+    demoted: false,
+    demoted_reason: '',
+  })
 })
 
 async function mountView() {
@@ -320,5 +339,44 @@ describe('筛选参数', () => {
   it('总账按所选时间窗请求（熔断看 10 分钟、漂移看 24 小时，两个尺度）', async () => {
     await mountView()
     expect(fetchRecomputeStats.mock.calls[0][0]).toBe(24)
+  })
+})
+
+describe('重算台账 CSV 导出（新一轮第 45 轮）', () => {
+  it('点击导出 CSV：按当前筛选参数调用接口并触发下载', async () => {
+    const wrapper = await mountView()
+    exportRecomputesCsv.mockResolvedValue(new Blob(['\uFEFFid\n']))
+
+    // 设置用户/关卡筛选
+    const vm = wrapper.vm as unknown as { userId: number; levelId: number }
+    vm.userId = 7
+    vm.levelId = 3
+    await wrapper.findAll('button').find((b) => b.text() === '筛选')!.trigger('click')
+    await flushPromises()
+
+    const btn = wrapper.findAll('button').find((b) => b.text() === '导出 CSV')
+    expect(btn, '找不到「导出 CSV」按钮').toBeTruthy()
+    await btn!.trigger('click')
+    await flushPromises()
+
+    expect(exportRecomputesCsv).toHaveBeenCalledWith({
+      user_id: 7,
+      level_id: 3,
+      only_mismatch: true,
+    })
+    expect(bodyText()).toContain('已导出')
+    wrapper.unmount()
+  })
+
+  it('导出失败：弹出错误消息', async () => {
+    const wrapper = await mountView()
+    exportRecomputesCsv.mockRejectedValueOnce(new Error('导出服务不可用'))
+
+    const btn = wrapper.findAll('button').find((b) => b.text() === '导出 CSV')
+    await btn!.trigger('click')
+    await flushPromises()
+
+    expect(bodyText()).toContain('导出失败：导出服务不可用')
+    wrapper.unmount()
   })
 })

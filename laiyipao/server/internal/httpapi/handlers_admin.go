@@ -579,6 +579,33 @@ func (s *Server) adminRecomputes(c *fiber.Ctx) error {
 	return c.JSON(service.NormalizeNilSlices(service.AdminRecomputesResp{Items: items, Total: total}))
 }
 
+// adminExportRecomputes 导出重算台账 CSV（2026-11-01 新一轮第 45 轮）。
+//
+// 与 adminRecomputes 同筛选（only_mismatch / level_id / user_id）；
+// readonly 可访问（读操作，与其它 CSV 导出一致）。
+func (s *Server) adminExportRecomputes(c *fiber.Ctx) error {
+	userID, err := queryInt(c, "user_id", 0)
+	if err != nil {
+		return failErr(c, err)
+	}
+	levelID, err := queryInt(c, "level_id", 0)
+	if err != nil {
+		return failErr(c, err)
+	}
+	onlyMismatch := c.Query("only_mismatch") == "1" || c.Query("only_mismatch") == "true"
+	data, err := s.Svc.AdminExportRecomputes(c.Context(), service.RecomputeFilter{
+		OnlyMismatch: onlyMismatch,
+		LevelID:      levelID,
+		UserID:       int64(userID),
+	})
+	if err != nil {
+		return failErr(c, err)
+	}
+	c.Set("Content-Type", "text/csv; charset=utf-8")
+	c.Set("Content-Disposition", `attachment; filename="recomputes.csv"`)
+	return c.Send(data)
+}
+
 // adminRecomputeStats 重算总账 + 按关卡分布 + **闸门当前状态**。
 //
 // ⚠️ `hours` 是**时间窗**而不是固定范围：熔断看的是 10 分钟窗口，
