@@ -1,8 +1,19 @@
 <script setup lang="ts">
 import {onMounted, ref, computed, onActivated} from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { fetchDefenses, fetchAdminDefenseChallenges, exportDefenseChallengesCsv, deleteDefense, type AdminDefenseView, type AdminDefenseChallengeView } from '@/api'
 import { fmtTime } from '@/utils/format'
+
+const router = useRouter()
+
+/**
+ * 打开指定玩家的用户详情（2026-11-01 新一轮第 50 轮）。
+ * 跳到用户管理页并携带 user_id，UsersView 挂载时会自动打开详情抽屉。
+ */
+function openUserDetail(userId: number) {
+  router.push({ path: '/users', query: { user_id: String(userId) } })
+}
 
 /** 空态文案（2026-10-21 P5-8）：空表要说清「为什么空」。 */
 const emptyText = '还没有人设置防线'
@@ -250,7 +261,21 @@ load()
       <el-table :data="rows" size="small" stripe>
         <el-table-column prop="id" label="ID" width="60" />
         <el-table-column prop="owner_id" label="属主 ID" width="80" />
-        <el-table-column prop="owner_name" label="属主" min-width="120" />
+        <el-table-column label="属主" min-width="120">
+          <!-- 点击跳转用户详情（2026-11-01 新一轮第 50 轮）：
+               防线违规（侮辱名/广告）需要核查玩家本体，从这里直达。 -->
+          <template #default="{ row }">
+            <el-link
+              v-if="row.owner_name"
+              type="primary"
+              underline="never"
+              @click="openUserDetail(row.owner_id)"
+            >
+              {{ row.owner_name }}
+            </el-link>
+            <span v-else class="muted">—</span>
+          </template>
+        </el-table-column>
         <el-table-column label="防线名" min-width="120">
           <template #default="{ row }">{{ row.name || '（未命名）' }}</template>
         </el-table-column>

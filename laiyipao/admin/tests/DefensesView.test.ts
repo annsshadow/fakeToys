@@ -14,6 +14,7 @@
  */
 import { flushPromises, mount } from '@vue/test-utils'
 import ElementPlus from 'element-plus'
+import { createMemoryHistory, createRouter } from 'vue-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const fetchDefenses = vi.hoisted(() => vi.fn())
@@ -40,9 +41,27 @@ function defenseFixture(overrides: Record<string, unknown> = {}) {
   }
 }
 
+/** 属主列是 el-link（第 50 轮），点击跳转用户页 —— 必须注入真实 router。 */
+let lastRouter: ReturnType<typeof createRouter> | null = null
+
+async function makeRouter() {
+  const router = createRouter({
+    history: createMemoryHistory(),
+    routes: [
+      { path: '/defenses', component: { template: '<div />' } },
+      { path: '/users', component: { template: '<div />' } },
+    ],
+  })
+  await router.push('/defenses')
+  await router.isReady()
+  lastRouter = router
+  return router
+}
+
 async function mountDefenses(items: Array<Record<string, unknown>> = [], total = items.length) {
   fetchDefenses.mockResolvedValue({ items, total })
-  const wrapper = mount(DefensesView, { global: { plugins: [ElementPlus] } })
+  const router = await makeRouter()
+  const wrapper = mount(DefensesView, { global: { plugins: [ElementPlus, router] } })
   await flushPromises()
   return wrapper
 }
@@ -143,9 +162,33 @@ describe('DefensesView 渲染细节', () => {
 
   it('加载失败：弹出错误消息', async () => {
     fetchDefenses.mockRejectedValueOnce(new Error('防线服务超时'))
-    const wrapper = mount(DefensesView, { global: { plugins: [ElementPlus] } })
+    const router = await makeRouter()
+    const wrapper = mount(DefensesView, { global: { plugins: [ElementPlus, router] } })
     await flushPromises()
     expect(document.body.textContent).toContain('防线加载失败：防线服务超时')
+    wrapper.unmount()
+  })
+})
+
+describe('DefensesView 属主跳转用户详情（第 50 轮）', () => {
+  it('点击属主昵称：跳转 /users 并携带 owner_id', async () => {
+    const wrapper = await mountDefenses([defenseFixture({ owner_id: 9, owner_name: '铁壁玩家' })])
+    const link = wrapper.find('.el-table .el-link')
+    expect(link.exists(), '找不到属主列链接').toBe(true)
+    expect(link.text()).toBe('铁壁玩家')
+
+    await link.trigger('click')
+    await flushPromises()
+
+    expect(lastRouter?.currentRoute.value.path).toBe('/users')
+    expect(lastRouter?.currentRoute.value.query.user_id).toBe('9')
+    wrapper.unmount()
+  })
+
+  it('无属主昵称时显示「—」，不渲染可点击链接', async () => {
+    const wrapper = await mountDefenses([defenseFixture({ owner_name: '' })])
+    expect(wrapper.find('.el-table .el-link').exists()).toBe(false)
+    expect(wrapper.text()).toContain('—')
     wrapper.unmount()
   })
 })
