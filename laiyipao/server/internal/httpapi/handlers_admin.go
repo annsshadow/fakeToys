@@ -301,7 +301,16 @@ func (s *Server) adminUsers(c *fiber.Ctx) error {
 		v := false
 		isGuest = &v
 	}
-	items, total, err := s.Svc.AdminListUsers(c.Context(), c.Query("keyword", ""), limit, offset, dateFrom, dateTo, isGuest)
+	// 最后登录时间范围（2026-11-01 新一轮第 46 轮）：可选。
+	lastLoginFrom, err := queryTime(c, "last_login_from")
+	if err != nil {
+		return failErr(c, err)
+	}
+	lastLoginTo, err := queryTime(c, "last_login_to")
+	if err != nil {
+		return failErr(c, err)
+	}
+	items, total, err := s.Svc.AdminListUsers(c.Context(), c.Query("keyword", ""), limit, offset, dateFrom, dateTo, isGuest, lastLoginFrom, lastLoginTo)
 	if err != nil {
 		return failErr(c, err)
 	}
@@ -321,7 +330,16 @@ func (s *Server) adminExportUsers(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	data, err := s.Svc.AdminExportUsers(c.Context(), c.Query("keyword", ""), dateFrom, dateTo)
+	// 最后登录时间范围（2026-11-01 新一轮第 46 轮）：与列表同口径。
+	lastLoginFrom, err := queryTime(c, "last_login_from")
+	if err != nil {
+		return failErr(c, err)
+	}
+	lastLoginTo, err := queryTime(c, "last_login_to")
+	if err != nil {
+		return failErr(c, err)
+	}
+	data, err := s.Svc.AdminExportUsers(c.Context(), c.Query("keyword", ""), dateFrom, dateTo, lastLoginFrom, lastLoginTo)
 	if err != nil {
 		return failErr(c, err)
 	}

@@ -336,7 +336,7 @@ type AdminUserView struct {
 }
 
 // AdminListUsers 分页查询玩家。
-func (s *Service) AdminListUsers(ctx context.Context, keyword string, limit, offset int, dateFrom, dateTo *time.Time, isGuest *bool) ([]AdminUserView, int64, error) {
+func (s *Service) AdminListUsers(ctx context.Context, keyword string, limit, offset int, dateFrom, dateTo *time.Time, isGuest *bool, lastLoginFrom, lastLoginTo *time.Time) ([]AdminUserView, int64, error) {
 	if limit <= 0 || limit > 200 {
 		limit = 50
 	}
@@ -380,16 +380,19 @@ func (s *Service) AdminListUsers(ctx context.Context, keyword string, limit, off
 	// 列表查询的 $5/$6 是日期（limit/offset 占 $3/$4）；
 	// COUNT 查询没有 limit/offset，日期改占 $3/$4。
 	// 日期范围（2026-10-31 新一轮第 15 轮）与游客/账号筛选
-	// （2026-11-01 新一轮第 37 轮）：均为可选，nil 不过滤（NULL 时 `IS NULL` 分支恒真）。
+	// （2026-11-01 新一轮第 37 轮）、最后登录时间（2026-11-01 新一轮第 46 轮）：
+	// 均为可选，nil 不过滤（NULL 时 `IS NULL` 分支恒真）。
 	// 列表查询的 $3/$4 是 limit/offset，筛选从 $5 起；
-	// COUNT 查询没有 limit/offset，筛选映射到 $3/$4/$5。
+	// COUNT 查询没有 limit/offset，筛选映射到 $3..$7。
 	where := `($1 = '' OR u.nickname LIKE $2 ESCAPE '\'::char OR u.id::text = $1)
 	          AND ($5::timestamptz IS NULL OR u.created_at >= $5)
 	          AND ($6::timestamptz IS NULL OR u.created_at < $6)
-	          AND ($7::boolean IS NULL OR u.is_guest = $7)`
-	countArgs := []any{kw, pattern, dateFrom, dateTo, isGuest}
-	listArgs := []any{kw, pattern, limit, offset, dateFrom, dateTo, isGuest}
-	countWhere := strings.NewReplacer(`$5`, `$3`, `$6`, `$4`, `$7`, `$5`).Replace(where)
+	          AND ($7::boolean IS NULL OR u.is_guest = $7)
+	          AND ($8::timestamptz IS NULL OR u.last_login_at >= $8)
+	          AND ($9::timestamptz IS NULL OR u.last_login_at < $9)`
+	countArgs := []any{kw, pattern, dateFrom, dateTo, isGuest, lastLoginFrom, lastLoginTo}
+	listArgs := []any{kw, pattern, limit, offset, dateFrom, dateTo, isGuest, lastLoginFrom, lastLoginTo}
+	countWhere := strings.NewReplacer(`$5`, `$3`, `$6`, `$4`, `$7`, `$5`, `$8`, `$6`, `$9`, `$7`).Replace(where)
 
 	var total int64
 	if err := s.pool.QueryRow(ctx,
@@ -459,7 +462,7 @@ func (s *Service) AdminListUsers(ctx context.Context, keyword string, limit, off
 //   - 列头用英文，内容用 UTF-8 原文 + BOM（Excel 打开中文不乱码）。
 //
 // 注意：guest_token 等敏感凭证**绝不导出**（理由见 AdminListUsers 的注释）。
-func (s *Service) AdminExportUsers(ctx context.Context, keyword string, dateFrom, dateTo *time.Time) ([]byte, error) {
+func (s *Service) AdminExportUsers(ctx context.Context, keyword string, dateFrom, dateTo *time.Time, lastLoginFrom, lastLoginTo *time.Time) ([]byte, error) {
 	kw, err := trimAdminKeyword(keyword)
 	if err != nil {
 		return nil, err
@@ -467,15 +470,16 @@ func (s *Service) AdminExportUsers(ctx context.Context, keyword string, dateFrom
 	escaped := strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`).Replace(kw)
 	pattern := "%" + escaped + "%"
 
-	// 日期范围（2026-10-31 新一轮第 15 轮）：可选，nil 不过滤。
-	// 导出查询没有 limit/offset，日期直接占 $3/$4。
-	where := `($1 = '' OR u.nickname LIKE $2 ESCAPE '\'::char OR u.id::text = $1)`
-	args := []any{kw, pattern}
-	if dateFrom != nil || dateTo != nil {
-		where += ` AND ($3::timestamptz IS NULL OR u.created_at >= $3)
-		             AND ($4::timestamptz IS NULL OR u.created_at < $4)`
-		args = append(args, dateFrom, dateTo)
-	}
+	// 日期范围（2026-10-31 新一轮第 15 轮）与最后登录时间
+	// （2026-11-01 新一轮第 46 轮）：**始终**拼入（nil → NULL，
+	// `IS NULL` 分支恒真），保证导出查询参数编号稳定。
+	// 导出查询没有 limit/offset，筛选从 $3 起。
+	where := `($1 = '' OR u.nickname LIKE $2 ESCAPE '\'::char OR u.id::text = $1)
+	          AND ($3::timestamptz IS NULL OR u.created_at >= $3)
+	          AND ($4::timestamptz IS NULL OR u.created_at < $4)
+	          AND ($5::timestamptz IS NULL OR u.last_login_at >= $5)
+	          AND ($6::timestamptz IS NULL OR u.last_login_at < $6)`
+	args := []any{kw, pattern, dateFrom, dateTo, lastLoginFrom, lastLoginTo}
 
 	rows, err := s.pool.Query(ctx, `
 		SELECT u.id, u.nickname, u.is_guest, u.status,

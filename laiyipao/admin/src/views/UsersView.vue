@@ -77,6 +77,12 @@ const offset = ref(0)
  */
 const dateRange = ref<[string, string] | null>(null)
 
+/**
+ * 最后登录时间范围（2026-11-01 新一轮第 46 轮）。
+ * 与注册日期同样的开区间语义：结束日期传**次日** 00:00。
+ */
+const lastLoginRange = ref<[string, string] | null>(null)
+
 function nextDay(day: string): string {
   const d = new Date(day + 'T00:00:00Z')
   d.setUTCDate(d.getUTCDate() + 1)
@@ -149,6 +155,9 @@ async function load() {
       date_to: dateRange.value ? nextDay(dateRange.value[1]) : undefined,
       // 游客/账号筛选（2026-11-01 新一轮第 37 轮）
       is_guest: isGuestFilter.value,
+      // 最后登录时间范围（2026-11-01 新一轮第 46 轮）
+      last_login_from: lastLoginRange.value?.[0] || undefined,
+      last_login_to: lastLoginRange.value ? nextDay(lastLoginRange.value[1]) : undefined,
     })
     users.value = res.items
     total.value = res.total
@@ -326,6 +335,9 @@ async function onExportCsv() {
       // 注册日期范围（2026-10-31 新一轮第 15 轮）：与列表过滤同口径
       date_from: dateRange.value?.[0] || undefined,
       date_to: dateRange.value ? nextDay(dateRange.value[1]) : undefined,
+      // 最后登录时间范围（2026-11-01 新一轮第 46 轮）：与列表同口径
+      last_login_from: lastLoginRange.value?.[0] || undefined,
+      last_login_to: lastLoginRange.value ? nextDay(lastLoginRange.value[1]) : undefined,
     })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -429,6 +441,16 @@ const asRow = (r: unknown) => r as AdminUserView
           end-placeholder="注册结束日期"
           value-format="YYYY-MM-DD"
           style="width: 260px; margin-left: 12px"
+        />
+        <!-- 最后登录时间范围（2026-11-01 新一轮第 46 轮）：查「最近活跃」的用户 -->
+        <el-date-picker
+          v-model="lastLoginRange"
+          type="daterange"
+          range-separator="至"
+          start-placeholder="最后登录开始"
+          end-placeholder="最后登录结束"
+          value-format="YYYY-MM-DD"
+          style="width: 240px; margin-left: 8px"
         />
         <span class="toolbar-spacer" />
         <span class="muted">共 {{ total }} 名用户 · 第 {{ page }} / {{ pageCount }} 页</span>

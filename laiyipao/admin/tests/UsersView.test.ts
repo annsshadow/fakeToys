@@ -802,3 +802,34 @@ describe('UsersView 分页/搜索边界补充', () => {
     wrapper.unmount()
   })
 })
+
+describe('UsersView 最后登录时间筛选（第 46 轮）', () => {
+  it('设置最后登录范围后 fetchUsers 携带 last_login_from/to（结束日期次日）', async () => {
+    const wrapper = await mountUsers([userFixture()], 5)
+    const vm = wrapper.vm as unknown as { lastLoginRange: [string, string] | null }
+
+    vm.lastLoginRange = ['2026-10-01', '2026-10-31']
+    await wrapper.findAll('button').find((b) => b.text() === '查询')!.trigger('click')
+    await flushPromises()
+
+    expect(fetchUsers).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        last_login_from: '2026-10-01',
+        // 服务端 date_to 是开区间：结束日期传次日才能包含 10-31 当天
+        last_login_to: '2026-11-01',
+      }),
+    )
+    wrapper.unmount()
+  })
+
+  it('未设置最后登录范围时参数为 undefined（与其他筛选互不影响）', async () => {
+    const wrapper = await mountUsers([userFixture()])
+    expect(fetchUsers).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        last_login_from: undefined,
+        last_login_to: undefined,
+      }),
+    )
+    wrapper.unmount()
+  })
+})
