@@ -32,7 +32,11 @@
             >
               {{ nicknameMsg }}
             </text>
-            <text class="dim" style="display: block">ID {{ store.userId }}</text>
+            <view class="row" style="align-items: center; gap: 12rpx">
+              <text class="dim">ID {{ store.userId }}</text>
+              <!-- 复制用户 ID（2026-11-01 新一轮第 90 轮）：反馈/社区报问题时用 -->
+              <text class="link" style="font-size: 22rpx" @click="copyUserId">复制</text>
+            </view>
             <!-- 账号信息（2026-10-31 实质优化第 34 轮） -->
             <text v-if="store.accountCreatedAt" class="dim" style="display: block">
               注册于 {{ fmtAccountTime(store.accountCreatedAt) }}
@@ -551,6 +555,19 @@ function onSfxToggle(e: { detail?: { value?: boolean } }) {
   const next = e.detail?.value === true
   setMuted(next)
   sfxMuted.value = next
+}
+
+/**
+ * 复制用户 ID（2026-11-01 新一轮第 90 轮）。
+ * 玩家在社区/反馈中报问题时，把 ID 复制给管理员。
+ */
+function copyUserId() {
+  uni.setClipboardData({
+    data: String(store.userId),
+    success: () => {
+      uni.showToast({ title: '已复制用户 ID', icon: 'success' })
+    },
+  })
 }
 /**
  * 延迟回调的句柄（2026-10-21 P6-7）。
