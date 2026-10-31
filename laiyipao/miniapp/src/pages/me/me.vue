@@ -46,6 +46,10 @@
                  继续写「微信账号」会把口令账号说成微信账号 —— 事实不对，
                  而「我明明是用账号密码登的」这种困惑很难自查。 -->
             <text class="dim">{{ store.isGuest ? '游客账号（未绑定微信）' : '账号登录' }}</text>
+            <!-- 累计星级（2026-11-01 新一轮第 64 轮）：全局进度一眼可见 -->
+            <text class="dim" style="display: block; margin-top: 4rpx">
+              累计星级 {{ totalStars }} / {{ totalStarCap }}
+            </text>
           </view>
         </view>
       </view>
@@ -633,6 +637,20 @@ async function loadOfflineReward() {
     offlineReward.value = await api.offlineRewardStatus()
   } catch {
     // 离线收益是辅助信息，加载失败不打扰主流程
+  }
+}
+
+// 累计星级（2026-11-01 新一轮第 64 轮）。
+const totalStars = ref(0)
+/** 星级上限 = 关卡总数 × 3。 */
+const totalStarCap = computed(() => (store.config?.levels?.length ?? 0) * 3)
+
+async function loadStars() {
+  try {
+    const r = await api.fetchMyStars()
+    totalStars.value = Object.values(r.stars).reduce((sum, n) => sum + n, 0)
+  } catch {
+    // 星级是辅助信息，加载失败不打扰主流程
   }
 }
 
@@ -1272,6 +1290,8 @@ onShow(async () => {
       loadPurchases(),
       loadRedemptions(),
       loadOrders(),
+      // 累计星级（2026-11-01 新一轮第 64 轮）。
+      loadStars(),
     ])
   }
 })
