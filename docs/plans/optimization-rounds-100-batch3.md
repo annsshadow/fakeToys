@@ -91,6 +91,7 @@
 | 79 | 2026-11-01 | **我的页面战斗音效开关**：音效系统支持静音并持久化（`lyp_sfx_muted`），但没有任何 UI 入口 —— 玩家只能被战斗声音打扰 | miniapp `me.vue` 新增「设置」卡：战斗音效 switch（初始读取 `isMuted()`，切换调用 `setMuted` 持久化）；新增守卫测试 `me_sfx_toggle_feature.test.ts` | miniapp type-check 通过、新守卫 2 用例通过、全量 1241 测试全绿 |
 | 80 | 2026-11-01 | **我的战报服务端结果筛选**：第 74 轮的筛选是本地过滤，只对已加载的最近 N 局生效 —— 配合分页加载更多时「筛胜利」会漏掉更早的胜利局 | 服务层 `MyBattleHistory` 增加可选 `result`（win/lose，空串不过滤，LIMIT/OFFSET 参数稳定）；`GET /me/battles` 解析 `result`；miniapp `myBattleHistory(limit, offset, result)` 传参，battles.vue 筛选切换时重新从第一页加载（服务端过滤，对全部历史生效）；新增服务层 1 用例并扩展守卫测试 | 服务层（结果筛选/分页）全绿；miniapp type-check 通过、全量 1241 测试全绿；`go test ./...` 全绿 |
 | 81 | 2026-11-01 | **后台防线列表显示护盾剩余**：防线列表只有「护盾至」绝对时间，运营无法一眼看出哪些防线在护盾期、何时失效 | admin DefensesView「护盾至」列改为「护盾剩余」标签（无护盾/已过期/X 分钟/X.X 小时/X.X 天，有效绿色、过期红色）；admin 测试新增 2 用例 并调整 fixture 默认护盾为空（避免护盾标签干扰胜率选择器） | admin type-check 通过；398 测试全绿（新增护盾剩余 2 用例）；无 Go 改动 |
+| 82 | 2026-11-01 | **导出单个用户钱包流水 CSV**：用户详情只展示最近 10 条流水，运营审计「这个玩家的钱从哪来/去哪了」需要全量明细 —— 此前没有导出入口 | 服务层 `AdminExportUserFlows`（全部 wallet_flows，UTF-8 BOM，上限 10 万行）；`GET /api/v1/admin/users/:id/flows/export`（readonly 可访问）；admin UsersView 详情抽屉「最近钱包流水」旁新增「导出全部流水 CSV」按钮，`exportUserFlowsCsv` API 同步；新增服务层 2 用例 + e2e 3 用例 + admin 2 用例 | 服务层（CSV 内容/BOM/表头/故障）全绿；e2e（401/readonly 200/内容含流水）全绿；admin type-check + 400 测试全绿；`go test ./...` 全绿 |
 | ... | | 持续至 100 轮 | | |
 
-> 状态：进行中。当前累计 **81 轮实质优化**，距 100 轮还差 19 轮。
+> 状态：进行中。当前累计 **82 轮实质优化**，距 100 轮还差 18 轮。

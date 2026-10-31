@@ -18,8 +18,16 @@ const banUser = vi.hoisted(() => vi.fn())
 const unbanUser = vi.hoisted(() => vi.fn())
 const grantUser = vi.hoisted(() => vi.fn())
 const box = vi.hoisted(() => ({ prompt: vi.fn(), confirm: vi.fn() }))
+const exportUserFlowsCsv = vi.hoisted(() => vi.fn())
 
-vi.mock('@/api', () => ({ fetchUsers, fetchUserDetail, banUser, unbanUser, grantUser }))
+vi.mock('@/api', () => ({
+  fetchUsers,
+  fetchUserDetail,
+  banUser,
+  unbanUser,
+  grantUser,
+  exportUserFlowsCsv,
+}))
 vi.mock('element-plus', async (importOriginal) => {
   const mod = await importOriginal<typeof import('element-plus')>()
   return { ...mod, ElMessageBox: box }
@@ -921,6 +929,42 @@ describe('UsersView 需核查筛选（第 60 轮）', () => {
   it('未设置需核查时参数为 undefined', async () => {
     const wrapper = await mountUsers([userFixture()])
     expect(fetchUsers).toHaveBeenLastCalledWith(expect.objectContaining({ suspicious: undefined }))
+    wrapper.unmount()
+  })
+})
+
+describe('UsersView 导出玩家流水 CSV（第 82 轮）', () => {
+  it('详情抽屉点击「导出全部流水 CSV」：按当前玩家 id 调用接口并触发下载', async () => {
+    fetchUserDetail.mockResolvedValueOnce(detailFixture())
+    exportUserFlowsCsv.mockResolvedValue(new Blob(['\uFEFFid\n']))
+    const wrapper = await mountUsers([userFixture({ id: 7, nickname: '详情玩家' })])
+
+    await wrapper.findAll('.el-table__row')[0].findAll('button').find((b) => b.text() === '详情')!.trigger('click')
+    await flushPromises()
+
+    const btn = wrapper.findAll('button').find((b) => b.text().includes('导出全部流水 CSV'))
+    expect(btn, '找不到「导出全部流水 CSV」按钮').toBeTruthy()
+    await btn!.trigger('click')
+    await flushPromises()
+
+    expect(exportUserFlowsCsv).toHaveBeenCalledWith(7)
+    expect(document.body.textContent).toContain('流水 CSV 已导出')
+    wrapper.unmount()
+  })
+
+  it('导出失败：弹出错误消息', async () => {
+    fetchUserDetail.mockResolvedValueOnce(detailFixture())
+    exportUserFlowsCsv.mockRejectedValueOnce(new Error('流水导出服务不可用'))
+    const wrapper = await mountUsers([userFixture({ id: 7, nickname: '详情玩家' })])
+
+    await wrapper.findAll('.el-table__row')[0].findAll('button').find((b) => b.text() === '详情')!.trigger('click')
+    await flushPromises()
+
+    const btn = wrapper.findAll('button').find((b) => b.text().includes('导出全部流水 CSV'))
+    await btn!.trigger('click')
+    await flushPromises()
+
+    expect(document.body.textContent).toContain('导出失败：流水导出服务不可用')
     wrapper.unmount()
   })
 })

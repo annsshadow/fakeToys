@@ -1,7 +1,9 @@
 package service
 
 import (
+	"bytes"
 	"context"
+	"encoding/csv"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -374,4 +376,64 @@ func (s *Service) AdminUserDetail(ctx context.Context, userID int64) (AdminUserD
 	out.RecentFlows = recentFlows
 
 	return out, nil
+}
+
+// AdminExportUserFlows 导出单个用户的全部钱包流水 CSV（UTF-8 BOM）。
+//
+// 详情抽屉只展示最近 10 条流水，运营审计「这个玩家的钱从哪来/去哪了」
+// 需要全量明细（2026-11-01 新一轮第 82 轮）。
+func (s *Service) AdminExportUserFlows(ctx context.Context, userID int64) ([]byte, error) {
+	rows, err := s.pool.Query(ctx,
+		`SELECT id, currency, delta, balance, reason, ref_id, created_at
+		 FROM wallet_flows
+		 WHERE user_id = $1
+		 ORDER BY id DESC LIMIT 100000`, userID)
+	if err != nil {
+		return nil, fmt.Errorf("export user flows: %w", err)
+	}
+	defer rows.Close()
+
+	var buf bytes.Buffer
+	buf.WriteString("\xEF\xBB\xBF")
+	w := csv.NewWriter(&buf)
+	header := []string{"id", "currency", "delta", "balance", "reason", "ref_id", "created_at"}
+	if err := w.Write(header); err != nil {
+		return nil, fmt.Errorf("write csv header: %w", err)
+	}
+
+	for rows.Next() {
+		var (
+			id, delta, balance int64
+			currency, reason   string
+			refID              *int64
+			createdAt          time.Time
+		)
+		if err := rows.Scan(&id, &currency, &delta, &balance, &reason, &refID, &createdAt); err != nil {
+			return nil, fmt.Errorf("scan export user flow: %w", err)
+		}
+		ref := ""
+		if refID != nil {
+			ref = strconv.FormatInt(*refID, 10)
+		}
+		rec := []string{
+			strconv.FormatInt(id, 10),
+			currency,
+			strconv.FormatInt(delta, 10),
+			strconv.FormatInt(balance, 10),
+			reason,
+			ref,
+			createdAt.UTC().Format(time.RFC3339),
+		}
+		if err := w.Write(rec); err != nil {
+			return nil, fmt.Errorf("write csv row: %w", err)
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	w.Flush()
+	if err := w.Error(); err != nil {
+		return nil, fmt.Errorf("flush csv: %w", err)
+	}
+	return buf.Bytes(), nil
 }

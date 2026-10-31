@@ -305,6 +305,8 @@ func (s *Server) Register(app *fiber.App) {
 	adm.Post("/users/:id/ban", requireWritable(), s.adminBanUser)
 	// 2026-10-21（P5-7）：玩家详情（只读）。
 	adm.Get("/users/:id", s.adminUserDetail)
+	// 单用户钱包流水导出（2026-11-01 新一轮第 82 轮）：读操作，readonly 可访问。
+	adm.Get("/users/:id/flows/export", s.adminExportUserFlows)
 	adm.Post("/users/:id/unban", requireWritable(), s.adminUnbanUser)
 	adm.Post("/users/:id/grant", requireWritable(), s.adminGrantUser)
 	// 后台重置玩家密码（2026-10-30 实质优化第 11 轮）。

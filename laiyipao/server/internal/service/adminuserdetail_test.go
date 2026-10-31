@@ -1,7 +1,9 @@
 package service
 
 import (
+	"bytes"
 	"context"
+	"encoding/csv"
 	"strconv"
 	"testing"
 )
@@ -145,5 +147,61 @@ func TestAdminUserDetailRecentFlows(t *testing.T) {
 	}
 	if d.RecentFlows[0].CreatedAt.IsZero() {
 		t.Error("流水应带时间")
+	}
+}
+
+// TestAdminExportUserFlows 守住单用户流水导出（2026-11-01 新一轮第 82 轮）。
+func TestAdminExportUserFlows(t *testing.T) {
+	ts := openScratchService(t)
+	ctx := context.Background()
+
+	uid := ts.newUser(t, ctx)
+	ts.grant(t, ctx, uid, map[string]int64{"coin": 1000, "gem": 50})
+
+	data, err := ts.AdminExportUserFlows(ctx, uid)
+	if err != nil {
+		t.Fatalf("导出失败：%v", err)
+	}
+	if !bytes.HasPrefix(data, []byte("\xEF\xBB\xBF")) {
+		t.Error("CSV 必须以 UTF-8 BOM 开头")
+	}
+	records, err := csv.NewReader(bytes.NewReader(bytes.TrimPrefix(data, []byte("\xEF\xBB\xBF")))).ReadAll()
+	if err != nil {
+		t.Fatalf("解析 CSV 失败：%v", err)
+	}
+	if len(records) < 2 {
+		t.Fatalf("应有表头 + 流水数据，实际 %d 行", len(records))
+	}
+	wantHeader := []string{"id", "currency", "delta", "balance", "reason", "ref_id", "created_at"}
+	if len(records[0]) != len(wantHeader) {
+		t.Fatalf("表头列数 = %d，期望 %d", len(records[0]), len(wantHeader))
+	}
+	for i, h := range wantHeader {
+		if records[0][i] != h {
+			t.Errorf("表头第 %d 列 = %q，期望 %q", i, records[0][i], h)
+		}
+	}
+	// 数据行：至少一条 coin 流水，delta 为正
+	foundCoin := false
+	for _, rec := range records[1:] {
+		if rec[1] == "coin" {
+			foundCoin = true
+			if rec[2] == "" || rec[4] == "" {
+				t.Errorf("流水行字段缺失：%v", rec)
+			}
+		}
+	}
+	if !foundCoin {
+		t.Error("导出应包含 coin 流水")
+	}
+}
+
+// TestAdminExportUserFlowsBrokenPool 守住导出故障路径。
+func TestAdminExportUserFlowsBrokenPool(t *testing.T) {
+	ts := openBrokenService(t)
+	ctx := context.Background()
+
+	if _, err := ts.AdminExportUserFlows(ctx, 1); err == nil {
+		t.Fatal("连接池已关闭时导出必须报错")
 	}
 }

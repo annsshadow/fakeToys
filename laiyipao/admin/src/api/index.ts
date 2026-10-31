@@ -308,6 +308,14 @@ export function exportUsersCsv(params: {
 }
 
 /**
+ * 导出单个用户钱包流水 CSV（2026-11-01 新一轮第 82 轮）。
+ * readonly 可访问（读操作）。
+ */
+export function exportUserFlowsCsv(userId: number) {
+  return api.getBlob(`/admin/users/${userId}/flows/export`)
+}
+
+/**
  * 玩家详情（2026-10-21 P5-7）。
  *
  * 此前后台**只能看到用户列表的一行**，运营要回答「他最近打了什么 /

@@ -388,6 +388,22 @@ func (s *Server) adminUserDetail(c *fiber.Ctx) error {
 	return c.JSON(service.NormalizeNilSlices(detail))
 }
 
+// adminExportUserFlows 导出单个用户的钱包流水 CSV（2026-11-01 新一轮第 82 轮）。
+// readonly 可访问（读操作）。
+func (s *Server) adminExportUserFlows(c *fiber.Ctx) error {
+	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
+	if err != nil || id < 1 {
+		return fail(c, fiber.StatusBadRequest, "bad_input", "user id 非法")
+	}
+	data, err := s.Svc.AdminExportUserFlows(c.Context(), id)
+	if err != nil {
+		return failErr(c, err)
+	}
+	c.Set("Content-Type", "text/csv; charset=utf-8")
+	c.Set("Content-Disposition", `attachment; filename="user_flows.csv"`)
+	return c.Send(data)
+}
+
 func (s *Server) adminBanUser(c *fiber.Ctx) error {
 	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
 	if err != nil {

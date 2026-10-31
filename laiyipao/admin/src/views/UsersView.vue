@@ -10,6 +10,7 @@ import {
   grantUser,
   resetPlayerPassword,
   exportUsersCsv,
+  exportUserFlowsCsv,
   type AdminUserDetailResp,
   type AdminUserView,
 } from '@/api'
@@ -180,6 +181,27 @@ function reasonText(reason: string): string {
     // 非 JSON：原样展示
   }
   return reason
+}
+
+/**
+ * 导出该玩家全部钱包流水（2026-11-01 新一轮第 82 轮）。
+ * 详情抽屉只展示最近 10 条，审计资金需要全量明细。
+ */
+async function onExportUserFlows(userId: number) {
+  try {
+    const blob = await exportUserFlowsCsv(userId)
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `user_${userId}_flows_${new Date().toISOString().slice(0, 10)}.csv`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+    ElMessage.success('流水 CSV 已导出')
+  } catch (e) {
+    ElMessage.error(`导出失败：${(e as Error).message}`)
+  }
 }
 
 async function load() {
@@ -667,7 +689,13 @@ const asRow = (r: unknown) => r as AdminUserView
           </el-table>
 
           <!-- 最近钱包流水（2026-11-01 新一轮第 66 轮）：回答「钱去哪了」 -->
-          <div class="section-title">最近钱包流水</div>
+          <div class="section-title">
+            <span>最近钱包流水</span>
+            <!-- 全量导出（2026-11-01 新一轮第 82 轮）：审计资金需要全量明细 -->
+            <el-button size="small" text type="primary" @click="onExportUserFlows(detail.user.id)">
+              导出全部流水 CSV
+            </el-button>
+          </div>
           <el-table :data="detail.recent_flows" size="small" border>
             <el-table-column label="货币" width="80">
               <template #default="{ row }">{{ CURRENCY_LABEL[row.currency] ?? row.currency }}</template>
