@@ -39,7 +39,7 @@ function defenseFixture(overrides: Record<string, unknown> = {}) {
     mastery_done: 6,
     wins: 50,
     losses: 50,
-    shielded_until: '2026-02-01T08:00:00Z',
+    shielded_until: '',
     snapshot_hash: 'hash0123456789abcdef',
     updated_at: '2026-01-15T12:00:00Z',
     ...overrides,
@@ -249,6 +249,27 @@ describe('DefensesView 挑战记录挑战者跳转用户详情（第 65 轮）',
 
     expect(wrapper.find('.el-dialog .el-link').exists()).toBe(false)
     expect(wrapper.text()).toContain('—')
+    wrapper.unmount()
+  })
+})
+
+describe('DefensesView 护盾剩余显示（第 81 轮）', () => {
+  it('有护盾显示剩余时长，无护盾显示「无」', async () => {
+    const future = new Date(Date.now() + 5 * 3600 * 1000).toISOString()
+    const wrapper = await mountDefenses([
+      defenseFixture({ id: 1, shielded_until: future }),
+      defenseFixture({ id: 2, shielded_until: '' }),
+    ])
+    const text = wrapper.text()
+    expect(text).toContain('5.0 小时')
+    expect(text).toContain('无')
+    wrapper.unmount()
+  })
+
+  it('护盾已过期显示「已过期」', async () => {
+    const past = new Date(Date.now() - 3600 * 1000).toISOString()
+    const wrapper = await mountDefenses([defenseFixture({ id: 1, shielded_until: past })])
+    expect(wrapper.text()).toContain('已过期')
     wrapper.unmount()
   })
 })

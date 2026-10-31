@@ -119,6 +119,26 @@ function rateTone(r: AdminDefenseView): 'success' | 'info' | 'warning' | 'danger
   return 'success'
 }
 
+/**
+ * 护盾剩余时长（2026-11-01 新一轮第 81 轮）。
+ * 无护盾显示「无」；已过期显示「已过期」；否则转「X 分钟 / X.X 小时 / X.X 天」。
+ */
+function shieldRemainText(r: AdminDefenseView): string {
+  if (!r.shielded_until) return '无'
+  const remain = new Date(r.shielded_until).getTime() - Date.now()
+  if (remain <= 0) return '已过期'
+  const mins = Math.floor(remain / 60000)
+  if (mins < 60) return `${mins} 分钟`
+  const hours = remain / 3600000
+  if (hours < 24) return `${hours.toFixed(1)} 小时`
+  return `${(hours / 24).toFixed(1)} 天`
+}
+
+function shieldTagType(r: AdminDefenseView): 'success' | 'info' | 'danger' {
+  if (!r.shielded_until) return 'info'
+  return new Date(r.shielded_until).getTime() > Date.now() ? 'success' : 'danger'
+}
+
 const PAGE_SIZE = 50
 const page = ref(1)
 
@@ -298,8 +318,14 @@ load()
             <el-tag :type="rateTone(asRow(row))" size="small">{{ winRate(asRow(row)) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="护盾至" width="155">
-          <template #default="{ row }">{{ fmtTime(row.shielded_until) }}</template>
+        <el-table-column label="护盾剩余" width="120">
+          <!-- 2026-11-01 新一轮第 81 轮：显示剩余时长而非绝对时间，
+               运营一眼看出哪些防线在护盾期、何时失效。 -->
+          <template #default="{ row }">
+            <el-tag :type="shieldTagType(asRow(row))" size="small">
+              {{ shieldRemainText(asRow(row)) }}
+            </el-tag>
+          </template>
         </el-table-column>
         <el-table-column label="快照哈希" min-width="150">
           <template #default="{ row }">
