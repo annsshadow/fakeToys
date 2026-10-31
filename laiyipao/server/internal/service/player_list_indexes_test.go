@@ -1,12 +1,16 @@
 package service
 
-// 玩家列表端点索引的存在性守卫（2026-10-31 新一轮第 2 轮）。
+// 玩家列表端点 / 排名索引的存在性守卫（2026-10-31 新一轮第 2 / 9 轮）。
 //
 // 迁移 00021 加的三个索引，服务的是 /me 下的三个玩家侧列表端点：
 //
 //   orders            MyOrders        WHERE user_id = $1 ORDER BY created_at DESC
 //   redeem_usages     MyRedemptions   同上
 //   user_purchases    MyPurchases     同上
+//
+// 迁移 00022 加的索引服务 `/me/rank` 的 power 榜（2026-10-31 新一轮第 9 轮）：
+//
+//   user_progress     MyRank(power)   COUNT + 名次比较按 level_exp 过滤
 //
 // 失效方式与看板索引完全一样是**静默**的：索引被删/改名之后，所有查询
 // 照常返回正确结果，只是变成顺序扫描 —— 数据量小时一点都看不出来，
@@ -28,17 +32,16 @@ func TestPlayerListIndexesExist(t *testing.T) {
 
 	want := []struct {
 		name string
-		// 只断言「首列是 user_id、第二列是 created_at」，不断言方向：
-		// btree 索引可以反向扫描，`(user_id, created_at ASC)` 同样能服务
-		// `ORDER BY created_at DESC`。列序才是关键 ——
-		// `(created_at, user_id)` 与 `(user_id, created_at)` 是两个完全
-		// 不同的索引，后者的首列是 user_id，按 user_id 过滤才用得上。
-		// 这正是本轮之前的三个索引各自的问题。
+		// 断言「索引列序的首列 + 第二列前缀」。方向不断言：
+		// btree 索引可以反向扫描，ASC/DESC 都能服务对应查询。
+		// 列序才是关键 —— 首列错了，查询的过滤/范围条件就用不上索引，
+		// 等于没有这个索引。
 		columns string
 	}{
 		{"idx_orders_user", "(user_id, created_at"},
 		{"idx_redeem_usages_user", "(user_id, created_at"},
 		{"idx_user_purchases_user", "(user_id, created_at"},
+		{"idx_user_progress_power", "(level_exp, user_id"},
 	}
 
 	for _, w := range want {

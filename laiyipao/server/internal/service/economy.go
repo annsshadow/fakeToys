@@ -263,14 +263,21 @@ func (s *Service) MyRank(ctx context.Context, userID int64, kind string) (MyRank
 		// 效率榜「分数越低越好」，所以优于我 = 比我小
 		cmp = "<"
 	}
+	// 2026-10-31（新一轮第 9 轮）：scores 从 CTE 改为**内联子查询**。
+	//
+	// 原实现把 `scores` 写成 CTE —— PostgreSQL 会把它**物化**成临时表，
+	// 于是 `COUNT(*)` 与名次比较永远在物化结果上全表扫描，
+	// `user_progress (level_exp, user_id)` 索引（迁移 00022）根本用不上。
+	// 改成 FROM 子查询后，planner 会把无聚合的 power 子查询**拉平**成
+	// 直接对表的引用，`level_exp` 上的索引随即可用。
+	// 分数定义仍来自 `leaderboardScoresSQL`，没有另写一份。
 	q := `
-		WITH scores AS (` + scores + `),
-		     me AS (SELECT score FROM scores WHERE user_id = $1)
 		SELECT
-		    COALESCE((SELECT score FROM me), 0)::bigint,
-		    (SELECT COUNT(*) FROM scores),
-		    CASE WHEN NOT EXISTS (SELECT 1 FROM me) THEN 0
-		         ELSE (SELECT COUNT(*) FROM scores s, me
+		    COALESCE((SELECT score FROM (` + scores + `) scores WHERE user_id = $1), 0)::bigint,
+		    (SELECT COUNT(*) FROM (` + scores + `) scores),
+		    CASE WHEN NOT EXISTS (SELECT 1 FROM (` + scores + `) scores WHERE user_id = $1) THEN 0
+		         ELSE (SELECT COUNT(*) FROM (` + scores + `) s,
+		               (SELECT score FROM (` + scores + `) scores WHERE user_id = $1) me
 		                WHERE s.score ` + cmp + ` me.score
 		                   OR (s.score = me.score AND s.user_id < $1)) + 1
 		    END`
