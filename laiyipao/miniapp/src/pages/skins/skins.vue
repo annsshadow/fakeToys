@@ -12,11 +12,18 @@
       <!-- 皮肤图鉴（服务端下发的权威表） -->
       <view class="card">
         <text class="card-title">皮肤图鉴</text>
+        <!-- 搜索（2026-11-01 新一轮第 78 轮）：按名称/稀有度过滤 -->
+        <input
+          v-model="keyword"
+          class="search-inp"
+          placeholder="搜索皮肤名称 / 稀有度"
+          placeholder-class="ph"
+        />
         <text class="muted" style="display: block; margin-bottom: 12rpx">
           数值与说明直接来自服务端 /config。皮肤被动是<strong>机制型词条</strong>，
           改变战斗方式而非只加数值。
         </text>
-        <view v-for="s in skins" :key="s.id" class="skin">
+        <view v-for="s in filteredSkins" :key="s.id" class="skin">
           <view class="rxn-head">
             <text class="rxn-name">{{ s.name }}</text>
             <text class="dim">{{ rarityLabel(s.rarity) }}</text>
@@ -33,7 +40,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useGameStore } from '@/store/game'
 
 const store = useGameStore()
@@ -55,6 +62,17 @@ interface SkinDef {
  * 客户端**零 UI 消费** —— 玩家不知道皮肤系统长什么样。这里补上图鉴页。
  */
 const skins = computed(() => (store.config?.skins ?? []) as unknown as SkinDef[])
+
+/** 图鉴搜索（2026-11-01 新一轮第 78 轮）：名称/稀有度中文过滤。 */
+const keyword = ref('')
+
+const filteredSkins = computed(() => {
+  const kw = keyword.value.trim().toLowerCase()
+  if (!kw) return skins.value
+  return skins.value.filter((s) => {
+    return s.name.toLowerCase().includes(kw) || rarityLabel(s.rarity).toLowerCase().includes(kw)
+  })
+})
 
 function rarityLabel(r: string): string {
   const map: Record<string, string> = { rare: '稀有', epic: '史诗', legendary: '传说' }
@@ -78,5 +96,22 @@ function passiveLabel(p: string): string {
 .skin {
   border-top: 1rpx solid var(--border, #eee);
   padding: 16rpx 0;
+}
+
+/* 图鉴搜索（2026-11-01 新一轮第 78 轮） */
+.search-inp {
+  display: block;
+  height: 72rpx;
+  padding: 0 20rpx;
+  margin-bottom: 12rpx;
+  background: var(--panel-2, #f5f6f7);
+  border: 1rpx solid var(--border, #eee);
+  border-radius: 12rpx;
+  font-size: 26rpx;
+  color: var(--text, #222);
+}
+
+.ph {
+  color: var(--dim, #9aa0a6);
 }
 </style>
