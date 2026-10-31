@@ -157,6 +157,10 @@
         <view v-if="myDefense" class="btn" style="margin-top: 12rpx" @click="toggleShield">
           {{ shielded ? '关闭 24h 护盾' : '开启 24h 护盾' }}
         </view>
+        <!-- 护盾剩余时间（2026-10-31 新一轮第 33 轮） -->
+        <text v-if="shieldRemainText" class="dim" style="display: block; margin-top: 8rpx; text-align: center">
+          {{ shieldRemainText }}
+        </text>
         <!-- 删除防线（2026-10-31 实质优化第 32 轮）：
              玩家不想被挑战时，此前没有任何办法清空防线。 -->
         <view
@@ -550,6 +554,21 @@ const attackLeft = ref(3)
 const shielded = ref(false)
 const simulating = ref(0)
 const lastChallenge = ref<(ChallengeOutcome & { stolen?: Record<string, number> }) | null>(null)
+
+/**
+ * 护盾剩余时间文案（2026-10-31 新一轮第 33 轮）。
+ * 玩家开启护盾后不知道还剩多久 —— 这里用服务端时钟基准计算并展示。
+ */
+const shieldRemainText = computed(() => {
+  const until = myDefense.value?.shielded_until
+  if (!shielded.value || !until) return ''
+  const remainMs = new Date(until).getTime() - store.estimateServerNowMs()
+  if (remainMs <= 0) return ''
+  const hours = remainMs / 3600000
+  if (hours >= 1) return `护盾剩余 ${hours.toFixed(1)} 小时`
+  const minutes = Math.max(1, Math.round(remainMs / 60000))
+  return `护盾剩余 ${minutes} 分钟`
+})
 
 // 挑战历史（2026-10-30 实质优化第 18 轮）。
 const challengeHistory = ref<api.ChallengeHistoryItem[]>([])
