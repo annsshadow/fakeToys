@@ -843,6 +843,11 @@ func TestAdminEconomy(t *testing.T) {
 	ts := openTestService(t)
 	ctx := context.Background()
 
+	// 造一笔流水，使本用例不依赖其它测试先写入 wallet_flows
+	//（否则单独运行本测试时「钱包流水不应为空」会失败）。
+	uid := ts.newUser(t, ctx)
+	ts.grant(t, ctx, uid, map[string]int64{"coin": 100})
+
 	data, err := ts.AdminEconomy(ctx)
 	if err != nil {
 		t.Fatalf("AdminEconomy：%v", err)

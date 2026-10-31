@@ -37,6 +37,7 @@
 | 25 | 2026-10-31 | **「技能图鉴」页**：`/config.skills` 从第一天起就下发了全部技能的伤害/热量/冷却/穿透/溅射/解锁等级，但客户端只在背包展示**已拥有**的技能 —— 玩家看不到未解锁技能的成长路径 | 新增 miniapp 页面 `pages/skills/skills.vue`（从 `store.config.skills` 读取：名称/元素/主动被动/描述/伤害/热量/冷却/穿透/溅射/连锁/解锁等级，并标注已拥有）；pages.json 注册路由；首页菜单新增「技能」入口；新增源码守卫测试 `skills_feature.test.ts` | miniapp type-check 通过、新守卫 3 用例通过、全量测试通过；`go test ./...` 全绿 |
 | 26 | 2026-10-31 | **「装备图鉴」页**：`/config.equipment` 从第一天起就下发了全部 18 件装备的护甲/加成/解锁等级，但客户端只在背包展示**已拥有**的装备 —— 玩家看不到未解锁装备的成长路径 | 新增 miniapp 页面 `pages/equipment/equipment.vue`（从 `store.config.equipment` 读取：名称/槽位/阶/元素/描述/护甲/加成/解锁等级，并标注已拥有）；pages.json 注册路由；首页菜单新增「装备」入口；新增源码守卫测试 `equipment_feature.test.ts` | miniapp type-check 通过、新守卫 3 用例通过、全量测试通过；`go test ./...` 全绿 |
 | 27 | 2026-10-31 | **「宝石图鉴」页**：`/config.gems` 从第一天起就下发了 8 种宝石的属性与说明，但客户端只在背包展示**已拥有**的宝石实例 —— 玩家看不到全部宝石的成长路径 | 新增 miniapp 页面 `pages/gems/gems.vue`（从 `store.config.gems` 读取：名称/属性（中文映射）/描述，onShow 拉取 `/me/gems` 标注每种宝石的拥有数量）；pages.json 注册路由；首页菜单新增「宝石」入口；新增源码守卫测试 `gems_feature.test.ts` | miniapp type-check 通过、新守卫 3 用例通过、全量测试通过；`go test ./...` 全绿 |
+| 28 | 2026-10-31 | **后台经济流水页加 TTL 缓存**：`AdminEconomy` 每次打开都对 `wallet_flows`（全游戏增长最快的表）做全表聚合（GROUP BY reason/currency），运营看经济页是低频操作却每次都付全表扫描代价 | 新增配置 `ECONOMY_CACHE_TTL`（默认 30s，0=关闭）；Service 增加 `economyCache ttlCache[AdminEconomyResp]`；`AdminEconomy` 改走 `getOrLoad`（未缓存实现 `adminEconomyUncached`，错误不缓存）；顺带修复 `TestAdminEconomy` 依赖测试顺序的脆弱性（先造一笔流水再断言） | 新增 `TestAdminEconomyServedFromCache`（改底表判据：把 `wallet_flows` 改名后 TTL 内第二次调用仍成功且快照一致）通过；`TestAdminEconomy` 可独立运行通过；`TestOpsDocMatchesReality`（`ECONOMY_CACHE_TTL` 已补进 OPERATIONS.md）通过；`go test ./...` 全绿 |
 | ... | | 持续至 100 轮 | | |
 
-> 状态：进行中。当前累计 **27 轮实质优化**，距 100 轮还差 73 轮。
+> 状态：进行中。当前累计 **28 轮实质优化**，距 100 轮还差 72 轮。

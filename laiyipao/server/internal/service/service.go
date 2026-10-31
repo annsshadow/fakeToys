@@ -120,6 +120,9 @@ type Service struct {
 	// tasks 是 seeder 纯静态配置（无后台修改入口），TTL 见 config.TasksCacheTTL；
 	// 玩家当日进度是 per-user 数据，不缓存。
 	tasksCache ttlCache[[]taskConfig]
+	// economyCache 是后台经济流水页的缓存（2026-10-31 新一轮第 28 轮）。
+	// wallet_flows 是增长最快的表，TTL 见 config.EconomyCacheTTL。
+	economyCache ttlCache[AdminEconomyResp]
 }
 
 // leaderboardCacheKinds 是与 `leaderboardKinds` 同步的三个榜。

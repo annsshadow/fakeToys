@@ -616,6 +616,15 @@ func (s *Service) AdminListRedeemUsages(ctx context.Context, limit, offset int, 
 
 // AdminEconomy 返回经济流水与商城配置。
 func (s *Service) AdminEconomy(ctx context.Context) (AdminEconomyResp, error) {
+	// 2026-10-31（新一轮第 28 轮）：wallet_flows 是全游戏增长最快的表，
+	// 每次打开经济页都做全表聚合是浪费。TTL 缓存（config.EconomyCacheTTL，
+	// 0 = 关闭），错误不缓存。
+	return s.economyCache.getOrLoad(time.Now(), s.Cfg().EconomyCacheTTL, func() (AdminEconomyResp, error) {
+		return s.adminEconomyUncached(ctx)
+	})
+}
+
+func (s *Service) adminEconomyUncached(ctx context.Context) (AdminEconomyResp, error) {
 	rows, err := s.pool.Query(ctx, `
 		SELECT reason, currency, COUNT(*), COALESCE(SUM(delta), 0)
 		FROM wallet_flows GROUP BY reason, currency ORDER BY COUNT(*) DESC LIMIT 50`)

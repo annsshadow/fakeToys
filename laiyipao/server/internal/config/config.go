@@ -242,6 +242,14 @@ type Config struct {
 	// 60 秒 TTL 完全够；设成 `0` 即关闭缓存（排查时与其它缓存同一条命令）。
 	TasksCacheTTL time.Duration
 
+	// EconomyCacheTTL 是后台经济流水页的进程内缓存有效期
+	// （2026-10-31 新一轮第 28 轮）。
+	//
+	// `AdminEconomy` 每次打开都要对 `wallet_flows`（全游戏增长最快的表）
+	// 做一次全表聚合（GROUP BY reason/currency）。运营看经济页是低频操作，
+	// 30 秒 TTL 完全够；设成 `0` 即关闭缓存（排查时与其它缓存同一条命令）。
+	EconomyCacheTTL time.Duration
+
 	// 默认管理员（仅在 admin_users 为空时引导创建）
 	BootstrapAdminUser string
 	BootstrapAdminPass string
@@ -397,6 +405,7 @@ func Load() Config {
 		AnnouncementsCacheTTL:  envDuration("ANNOUNCEMENTS_CACHE_TTL", 30*time.Second),
 		ShopCacheTTL:           envDuration("SHOP_CACHE_TTL", 30*time.Second),
 		TasksCacheTTL:          envDuration("TASKS_CACHE_TTL", 60*time.Second),
+		EconomyCacheTTL:        envDuration("ECONOMY_CACHE_TTL", 30*time.Second),
 
 		BootstrapAdminUser: env("BOOTSTRAP_ADMIN_USER", "admin"),
 		BootstrapAdminPass: env("BOOTSTRAP_ADMIN_PASS", "admin12345"),
