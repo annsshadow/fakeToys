@@ -15,6 +15,7 @@
  */
 import { flushPromises, mount } from '@vue/test-utils'
 import ElementPlus from 'element-plus'
+import { createMemoryHistory, createRouter } from 'vue-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const fetchEconomy = vi.hoisted(() => vi.fn())
@@ -54,13 +55,26 @@ function shopFixture(overrides: Row = {}): Row {
   }
 }
 
-async function mountEconomy(flows: Row[] = [], shop: Row[] = []) {
+async function mountEconomy(flows: Row[] = [], shop: Row[] = [], orders: Row[] = []) {
   fetchEconomy.mockResolvedValue({ flows, shop })
-  fetchAdminOrders.mockResolvedValue({ items: [], total: 0 })
-  const wrapper = mount(EconomyView, { global: { plugins: [ElementPlus] } })
+  fetchAdminOrders.mockResolvedValue({ items: orders, total: orders.length })
+  // 玩家列是 el-link（第 48 轮），点击跳转用户页 —— 必须注入真实 router
+  const router = createRouter({
+    history: createMemoryHistory(),
+    routes: [
+      { path: '/economy', component: { template: '<div />' } },
+      { path: '/users', component: { template: '<div />' } },
+    ],
+  })
+  await router.push('/economy')
+  await router.isReady()
+  lastRouter = router
+  const wrapper = mount(EconomyView, { global: { plugins: [ElementPlus, router] } })
   await flushPromises()
   return wrapper
 }
+
+let lastRouter: ReturnType<typeof createRouter> | null = null
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -367,6 +381,44 @@ describe('EconomyView 订单 CSV 导出（新一轮第 40 轮）', () => {
     await flushPromises()
 
     expect(document.body.textContent).toContain('导出失败：导出服务不可用')
+    wrapper.unmount()
+  })
+})
+
+describe('EconomyView 订单玩家跳转用户详情（第 48 轮）', () => {
+  function orderFixture(userId: number, nickname: string): Row {
+    return {
+      id: 1,
+      user_id: userId,
+      nickname,
+      order_no: 'NO1',
+      sku: 'gem_pack',
+      amount: 600,
+      status: 'paid',
+      provider: 'mock',
+      created_at: '2026-01-01T00:00:00Z',
+      delivered_at: null,
+    }
+  }
+
+  it('点击玩家昵称：跳转 /users 并携带 user_id', async () => {
+    const wrapper = await mountEconomy([], [], [orderFixture(9, '订单玩家')])
+    const link = wrapper.find('.el-table .el-link')
+    expect(link.exists(), '找不到玩家列链接').toBe(true)
+    expect(link.text()).toBe('订单玩家')
+
+    await link.trigger('click')
+    await flushPromises()
+
+    expect(lastRouter?.currentRoute.value.path).toBe('/users')
+    expect(lastRouter?.currentRoute.value.query.user_id).toBe('9')
+    wrapper.unmount()
+  })
+
+  it('无昵称的订单显示占位符「—」，不渲染可点击链接', async () => {
+    const wrapper = await mountEconomy([], [], [orderFixture(3, '')])
+    expect(wrapper.find('.el-table .el-link').exists()).toBe(false)
+    expect(wrapper.text()).toContain('—')
     wrapper.unmount()
   })
 })

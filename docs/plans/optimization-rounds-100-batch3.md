@@ -57,6 +57,7 @@
 | 45 | 2026-11-01 | **后台重算台账 CSV 导出**：重算台账是 R1 审计证据，列表只能分页看 —— 运营要做离线分析（按玩家/关卡聚合、导出给工具）需要全量快照 | 服务层 `AdminExportRecomputes`（与列表同筛选 only_mismatch/level_id/user_id，recomputed 为 NULL 导出空串，mismatched_fields 分号连接，UTF-8 BOM，上限 10 万行）；`GET /api/v1/admin/recomputes/export`（readonly 可访问）；admin RecomputesView 新增「导出 CSV」按钮，`exportRecomputesCsv` API 同步；新增服务层 3 用例 + e2e 3 用例 + admin 2 用例 | 服务层（CSV 内容/BOM/表头/筛选/故障）全绿；e2e（401/readonly 200/内容含重算数据）全绿；admin type-check + 365 测试全绿；`go test ./...` 全绿 |
 | 46 | 2026-11-01 | **后台用户列表按最后登录时间筛选**：运营此前只能按注册日期筛用户，但「昨天还在线的玩家」与「昨天注册的玩家」是两批不同的人 —— 注册日期筛选回答不了活跃度问题 | 服务层 `AdminListUsers`/`AdminExportUsers` 增加可选 `lastLoginFrom`/`lastLoginTo`（始终拼入日期条件保证参数编号稳定，COUNT/列表/导出参数分别连续）；handler 解析 `last_login_from`/`last_login_to`；admin UsersView 新增「最后登录」日期范围选择器，`fetchUsers`/`exportUsersCsv` 参数同步；新增服务层 2 用例 + e2e 1 用例 + admin 2 用例 | 服务层（列表/导出最后登录筛选）全绿；e2e（筛选生效/非法日期 400）全绿；admin type-check + 367 测试全绿；`go test ./...` 全绿 |
 | 47 | 2026-11-01 | **战报详情直达验真**：验真页支持 `?battle_id=` 深链，但战报页没有任何入口 —— 玩家想验真一局，必须先记下 battle_id 再手动切到验真页输入 | miniapp `battles.vue` 战报详情新增「去验真此局」按钮（跳转验真页并携带 battle_id）；`verify.vue` 深链增强：携带合法 battle_id 时自动拉取复现信息，战报跳转过来后无需再点一次按钮；新增守卫测试 `battle_verify_link_feature.test.ts` | miniapp type-check 通过、新守卫 2 用例通过、全量 1214 测试全绿 |
+| 48 | 2026-11-01 | **后台订单列表点击玩家跳转用户详情**：运营在订单里发现异常支付（金额异常/渠道可疑）时，需要直达该玩家详情核查 —— 此前只能记下 user_id 再手动切换页面 | admin EconomyView 订单「玩家」列改为可点击 el-link（无昵称显示占位符「—」），点击 `router.push` 到 `/users?user_id=`（复用第 38 轮 UsersView 深链自动打开详情抽屉）；admin 测试补充真实 router 并新增 2 用例 | admin type-check 通过；369 测试全绿（新增订单玩家跳转 2 用例）；无 Go 改动 |
 | ... | | 持续至 100 轮 | | |
 
-> 状态：进行中。当前累计 **47 轮实质优化**，距 100 轮还差 53 轮。
+> 状态：进行中。当前累计 **48 轮实质优化**，距 100 轮还差 52 轮。

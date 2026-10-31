@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {onMounted, ref, computed, onActivated} from 'vue'
+import { useRouter } from 'vue-router'
 import { useAdminRole } from '@/utils/adminRole'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { isCancel, fmtTime } from '@/utils/format'
@@ -164,6 +165,16 @@ async function onExportOrdersCsv() {
   } catch (e) {
     ElMessage.error(`导出失败：${(e as Error).message}`)
   }
+}
+
+const router = useRouter()
+
+/**
+ * 打开指定玩家的用户详情（2026-11-01 新一轮第 48 轮）。
+ * 跳到用户管理页并携带 user_id，UsersView 挂载时会自动打开详情抽屉。
+ */
+function openUserDetail(userId: number) {
+  router.push({ path: '/users', query: { user_id: String(userId) } })
 }
 
 /**
@@ -378,7 +389,21 @@ loadOrders()
       <el-table :data="orders" size="small" stripe>
         <el-table-column prop="id" label="ID" width="55" />
         <el-table-column prop="order_no" label="订单号" min-width="170" />
-        <el-table-column prop="nickname" label="玩家" min-width="110" />
+        <el-table-column label="玩家" min-width="110">
+          <!-- 点击跳转用户详情（2026-11-01 新一轮第 48 轮）：
+               运营在订单里发现异常支付时，需要直达该玩家详情核查。 -->
+          <template #default="{ row }">
+            <el-link
+              v-if="row.nickname"
+              type="primary"
+              underline="never"
+              @click="openUserDetail(row.user_id)"
+            >
+              {{ row.nickname }}
+            </el-link>
+            <span v-else class="muted">—</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="sku" label="SKU" min-width="100" />
         <el-table-column label="金额" width="90">
           <template #default="{ row }">{{ (row.amount / 100).toFixed(2) }} 元</template>
