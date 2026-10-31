@@ -83,6 +83,23 @@
             </text>
           </view>
         </view>
+        <!-- 通关掉落预览（2026-11-01 新一轮第 39 轮） -->
+        <view v-if="dropPreview" class="drop-preview">
+          <text class="muted" style="display: block; margin-bottom: 4rpx">通关掉落</text>
+          <view class="info-row"><text class="muted">基础金币</text><text class="mono">{{ dropPreview.base }}</text></view>
+          <view class="info-row"><text class="muted">三星金币</text><text class="mono">+{{ dropPreview.starCoin }}</text></view>
+          <view v-if="dropPreview.totalEnemies > 0" class="info-row">
+            <text class="muted">击杀金币（约 {{ dropPreview.totalEnemies }} 只）</text>
+            <text class="mono">+{{ dropPreview.killCoin }}</text>
+          </view>
+          <view class="info-row"><text class="muted">反应加成（每 10 次反应）</text><text class="mono">+{{ dropPreview.reactionBonus }}</text></view>
+          <view v-if="dropPreview.keys > 0" class="info-row">
+            <text class="muted">三星钥匙</text><text class="mono">×{{ dropPreview.keys }}</text>
+          </view>
+          <view v-if="dropPreview.energy > 0" class="info-row">
+            <text class="muted">通关返还体力</text><text class="mono">+{{ dropPreview.energy }}</text>
+          </view>
+        </view>
         <view class="star-targets">
           <text class="muted">星级门槛</text>
           <text v-for="(s, i) in selected.star_targets" :key="i" class="target">
@@ -206,6 +223,36 @@ const energyCostText = computed(() => {
   if (back <= 0) return String(cost)
   const net = cost - back
   return net > 0 ? `${cost}（通关净消耗 ${net}）` : `${cost}（通关不扣体力）`
+})
+
+/**
+ * 通关掉落预览（2026-11-01 新一轮第 39 轮）。
+ *
+ * `/config` 的 `drop_rates` 从第一天就下发，但只有 `energy_on_win`
+ * 被体力消耗文案消费 —— 玩家进关前看不到这关能拿多少金币/钥匙，
+ * 「打这关值不值」只能打完看结算。
+ *
+ * 这里汇总成收益预览：基础金币 + 三星金币（3 颗星）+ 击杀金币预估
+ * （按敌人组成求和，实际以战斗表现为准，所以标「约」）+ 反应加成
+ * （每 10 次反应）+ 三星钥匙 + 通关返还体力。
+ * `detailWaves` 拉取失败时击杀预估自动隐藏，其余规则照常展示。
+ */
+const dropPreview = computed(() => {
+  const d = store.config?.drop_rates
+  if (!d) return null
+  const totalEnemies = detailWaves.value.reduce(
+    (sum, w) => sum + w.spawns.reduce((s, sp) => s + sp.count, 0),
+    0,
+  )
+  return {
+    base: d.coin_base,
+    starCoin: d.coin_per_star * 3,
+    killCoin: d.coin_per_kill * totalEnemies,
+    totalEnemies,
+    reactionBonus: d.reaction_bonus,
+    keys: d.keys_on_three_star,
+    energy: d.energy_on_win,
+  }
 })
 
 const startLabel = computed(() => {
@@ -443,6 +490,13 @@ onMounted(() => {
 }
 .wave-spawn {
   color: var(--muted, #9aa0a6);
+}
+
+/* 通关掉落预览（2026-11-01 新一轮第 39 轮） */
+.drop-preview {
+  margin-top: 8rpx;
+  padding-top: 8rpx;
+  border-top: 1rpx dashed var(--border);
 }
 
 .star-targets {
