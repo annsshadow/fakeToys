@@ -34,6 +34,11 @@ type Dashboard struct {
 		Wins          int64   `json:"wins"`
 		AvgDurationMs float64 `json:"avg_duration_ms"`
 	} `json:"battles"`
+	// 2026-10-31（实质优化第 39 轮）：防线总数 / 今日挑战次数。
+	Defenses struct {
+		Total           int64 `json:"total"`
+		ChallengesToday int64 `json:"challenges_today"`
+	} `json:"defenses"`
 	Progression struct {
 		AvgMaxStage   float64 `json:"avg_max_stage"`
 		AvgPower      float64 `json:"avg_power"`
@@ -130,6 +135,19 @@ func (s *Service) adminDashboardUncached(ctx context.Context) (Dashboard, error)
 		FROM battle_records`,
 		&d.Battles.Total, &d.Battles.Today, &d.Battles.Wins, &d.Battles.AvgDurationMs); err != nil {
 		return d, fmt.Errorf("dashboard battles: %w", err)
+	}
+	// 2026-10-31（实质优化第 39 轮）：防线总数 / 今日挑战次数。
+	if err := scan(`
+		SELECT COUNT(*) FILTER (WHERE created_at >= CURRENT_DATE),
+		       COUNT(*)
+		FROM defense_challenges`,
+		&d.Defenses.ChallengesToday, &d.Defenses.Total); err != nil {
+		return d, fmt.Errorf("dashboard challenges: %w", err)
+	}
+	if err := scan(`
+		SELECT COUNT(*) FROM defenses`,
+		&d.Defenses.Total); err != nil {
+		return d, fmt.Errorf("dashboard defenses: %w", err)
 	}
 
 	if err := scan(`

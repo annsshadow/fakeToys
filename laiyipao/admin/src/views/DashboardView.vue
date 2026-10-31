@@ -277,6 +277,9 @@ load()
             <div class="kpi-label">封禁用户</div>
             <div class="kpi-value">{{ data.users.banned }}</div>
             <div class="kpi-sub">100 关通关人次 {{ data.progression.stage_100_clears }}</div>
+            <div class="kpi-sub">
+              防线 {{ data.defenses.total }} · 今日挑战 {{ data.defenses.challenges_today }}
+            </div>
           </el-card>
         </el-col>
       </el-row>

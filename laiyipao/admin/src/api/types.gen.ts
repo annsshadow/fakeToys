@@ -375,6 +375,7 @@ export interface ChapterInfo {
 export interface Dashboard {
   users: { total: number; guests: number; wechat: number; banned: number; new_today: number }
   battles: { total: number; today: number; wins: number; avg_duration_ms: number }
+  defenses: { total: number; challenges_today: number }
   progression: { avg_max_stage: number; avg_power: number; stage_100_clears: number }
   economy: { coin_in: number; coin_out: number; gem_in: number; gem_out: number; orders_paid: number; orders_pending: number; sign_ins_today: number; redeems_today: number }
   verification: { checked: number; matched: number; mismatched: number }

@@ -47,6 +47,7 @@
 | 36 | 2026-10-31 | **挑战历史显示偷取明细**：挑战历史行只有胜负/对手/时间，偷到了什么看不到 | miniapp me.vue 挑战历史行在 `loot` 非空时显示「+100 金币」（新增 `lootText`，复用 `priceText` + `currencyName` 本地化）；服务层 `MyChallengeHistory` 已返回 loot 字段（既有测试覆盖） | miniapp type-check 通过、1171 tests 全绿；`internal/service` 既有 `TestMyChallengeHistorySucceeds` 断言 loot 字段 |
 | 37 | 2026-10-31 | **后台兑换码 CSV 导出**：运营需要把已生成码的清单带走做线下核对/客服分发，此前只能手动翻页 | 服务层 `AdminExportRedeemCodes`（7 列 CSV、reward 转可读文本 `coin:100 gem:5`、UTF-8 BOM、上限 10 万行）；`GET /api/v1/admin/redeem-codes/export`（readonly 可访问）；admin ContentView 兑换码 tab「导出 CSV」按钮 | 服务层 2 用例、e2e 3 用例（401/readonly 放行/内容正确）全绿；`internal/service` 237s 全绿、`internal/httpapi` 112s 全绿、admin 353 passed、type-check 通过 |
 | 38 | 2026-10-31 | **后台公告 CSV 导出**：运营需要把公告清单带走做归档，此前只能分页查看 | 服务层 `AdminExportAnnouncements`（6 列 CSV、UTF-8 BOM、上限 10 万行）；`GET /api/v1/admin/announcements/export`（readonly 可访问）；admin ContentView 公告 tab「导出 CSV」按钮 | 服务层 2 用例、e2e 3 用例（401/readonly 放行/内容正确）全绿；`internal/service` 212s 全绿、`internal/httpapi` 114s 全绿、admin 353 passed、type-check 通过 |
+| 39 | 2026-10-31 | **看板新增「防线总数/今日挑战」指标**：看板此前看不到防线生态（多少防线、今日被挑战多少次） | `Dashboard.Defenses` 新增 `Total`/`ChallengesToday`；`adminDashboardUncached` 新增两条聚合查询；admin DashboardView「封禁用户」卡片展示；types.gen.ts + DashboardView.test.ts mock 同步；日界守卫 CURRENT_DATE 5→6 处 | 新增 `TestDashboardDefensesMetrics`（防线/今日计入/昨日不计入）全绿；守卫测试全绿；`internal/service` 243s 全绿、`internal/httpapi` 114s 全绿、admin 353 passed、type-check 通过 |
 | ... | | 持续至 100 轮 | | |
 
-> 状态：进行中。当前累计 **38 轮实质优化**，距 100 轮还差 62 轮。
+> 状态：进行中。当前累计 **39 轮实质优化**，距 100 轮还差 61 轮。

@@ -29,6 +29,7 @@ function dashboardFixture(overrides: Partial<Dashboard> = {}): Dashboard {
   return {
     users: { total: 1200, guests: 300, wechat: 900, banned: 5, new_today: 12 },
     battles: { total: 0, today: 3, wins: 0, avg_duration_ms: 9000 },
+    defenses: { total: 20, challenges_today: 4 },
     progression: { avg_max_stage: 42.5, avg_power: 8800, stage_100_clears: 2 },
     economy: { coin_in: 100, coin_out: 40, gem_in: 7, gem_out: 3, orders_paid: 9, orders_pending: 1 },
     verification: { checked: 1000, matched: 990, mismatched: 10 },
