@@ -671,7 +671,7 @@ func formatRewardText(m map[string]int) string {
 //
 // 后台此前只有 `AdminEconomy` 里的订单**计数**（paid/pending），
 // 没有订单明细 —— 玩家反馈「扣款了没到账」时运营无从查起。
-func (s *Service) AdminListOrders(ctx context.Context, limit, offset int, status string, dateFrom, dateTo *time.Time) ([]AdminOrderView, int64, error) {
+func (s *Service) AdminListOrders(ctx context.Context, limit, offset int, status string, dateFrom, dateTo *time.Time, provider string) ([]AdminOrderView, int64, error) {
 	if limit <= 0 || limit > 200 {
 		limit = 50
 	}
@@ -687,9 +687,18 @@ func (s *Service) AdminListOrders(ctx context.Context, limit, offset int, status
 	          AND ($3::timestamptz IS NULL OR o.created_at < $3)`
 	countArgs := []any{status, dateFrom, dateTo}
 	listArgs := []any{status, dateFrom, dateTo, limit, offset}
+	// 渠道筛选（2026-11-01 新一轮第 67 轮）：空串不过滤。
+	// 列表占 $6；COUNT 无 limit/offset，映射到 $4。
+	provider = strings.TrimSpace(provider)
+	if provider != "" {
+		where += ` AND o.provider = $6`
+		countArgs = append(countArgs, provider)
+		listArgs = append(listArgs, provider)
+	}
+	countWhere := strings.ReplaceAll(where, "$6", "$4")
 
 	var total int64
-	if err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM orders o WHERE `+where, countArgs...).Scan(&total); err != nil {
+	if err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM orders o WHERE `+countWhere, countArgs...).Scan(&total); err != nil {
 		return nil, 0, fmt.Errorf("admin orders count: %w", err)
 	}
 	rows, err := s.pool.Query(ctx, `
@@ -721,13 +730,19 @@ func (s *Service) AdminListOrders(ctx context.Context, limit, offset int, status
 // 订单是玩家真金白银的支付记录，运营对账、客服核查「扣款了没到账」
 // 需要全量快照，而列表只能分页看（2026-11-01 新一轮第 40 轮）。
 // 与 AdminListOrders 同口径：状态 + 创建日期范围筛选，字段与列表行一致。
-func (s *Service) AdminExportOrders(ctx context.Context, status string, dateFrom, dateTo *time.Time) ([]byte, error) {
+func (s *Service) AdminExportOrders(ctx context.Context, status string, dateFrom, dateTo *time.Time, provider string) ([]byte, error) {
 	status = strings.TrimSpace(status)
 	// 与 AdminListOrders 相同的 where（导出没有 limit/offset，参数就是 $1..$3）。
 	where := `($1 = '' OR o.status = $1)
 	          AND ($2::timestamptz IS NULL OR o.created_at >= $2)
 	          AND ($3::timestamptz IS NULL OR o.created_at < $3)`
 	args := []any{status, dateFrom, dateTo}
+	// 渠道筛选（2026-11-01 新一轮第 67 轮）：与列表同口径，空串不过滤。
+	provider = strings.TrimSpace(provider)
+	if provider != "" {
+		where += ` AND o.provider = $4`
+		args = append(args, provider)
+	}
 
 	rows, err := s.pool.Query(ctx, `
 		SELECT o.id, o.user_id, COALESCE(u.nickname, ''), o.order_no, o.sku,

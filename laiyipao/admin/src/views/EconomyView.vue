@@ -33,6 +33,8 @@ const orderPage = ref(1)
  */
 const orderStatus = ref('')
 const orderDateRange = ref<[string, string] | null>(null)
+// 渠道筛选（2026-11-01 新一轮第 67 轮）。
+const orderProvider = ref('')
 
 function nextDay(day: string): string {
   const d = new Date(day + 'T00:00:00Z')
@@ -127,6 +129,8 @@ async function loadOrders() {
       status: orderStatus.value || undefined,
       date_from: orderDateRange.value?.[0] || undefined,
       date_to: orderDateRange.value ? nextDay(orderDateRange.value[1]) : undefined,
+      // 渠道筛选（2026-11-01 新一轮第 67 轮）
+      provider: orderProvider.value || undefined,
     })
     orders.value = res.items
     orderTotal.value = res.total ?? res.items.length
@@ -152,6 +156,8 @@ async function onExportOrdersCsv() {
       status: orderStatus.value || undefined,
       date_from: orderDateRange.value?.[0] || undefined,
       date_to: orderDateRange.value ? nextDay(orderDateRange.value[1]) : undefined,
+      // 渠道筛选（2026-11-01 新一轮第 67 轮）：与列表同口径
+      provider: orderProvider.value || undefined,
     })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -399,6 +405,13 @@ loadOrders()
           <el-option label="paid" value="paid" />
           <el-option label="delivered" value="delivered" />
           <el-option label="refunded" value="refunded" />
+        </el-select>
+        <!-- 渠道筛选（2026-11-01 新一轮第 67 轮） -->
+        <el-select v-model="orderProvider" placeholder="全部渠道" clearable style="width: 130px; margin-left: 8px" @change="applyOrderFilter">
+          <el-option label="mock" value="mock" />
+          <el-option label="apple" value="apple" />
+          <el-option label="wechat" value="wechat" />
+          <el-option label="alipay" value="alipay" />
         </el-select>
         <el-date-picker
           v-model="orderDateRange"

@@ -464,3 +464,29 @@ describe('EconomyView 商城商品排序（第 62 轮）', () => {
     wrapper.unmount()
   })
 })
+
+describe('EconomyView 订单渠道筛选（第 67 轮）', () => {
+  it('选择渠道后 fetchAdminOrders 携带 provider，清空后不带', async () => {
+    const wrapper = await mountEconomy()
+    const vm = wrapper.vm as unknown as { orderProvider: string }
+    vm.orderProvider = 'apple'
+
+    await wrapper.findAll('button').find((b) => b.text() === '查询')!.trigger('click')
+    await flushPromises()
+    expect(fetchAdminOrders).toHaveBeenLastCalledWith(
+      50,
+      0,
+      expect.objectContaining({ provider: 'apple' }),
+    )
+
+    vm.orderProvider = ''
+    await wrapper.findAll('button').find((b) => b.text() === '查询')!.trigger('click')
+    await flushPromises()
+    expect(fetchAdminOrders).toHaveBeenLastCalledWith(
+      50,
+      0,
+      expect.objectContaining({ provider: undefined }),
+    )
+    wrapper.unmount()
+  })
+})

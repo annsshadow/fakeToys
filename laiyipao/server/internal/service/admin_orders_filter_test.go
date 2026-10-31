@@ -32,7 +32,7 @@ func TestAdminListOrdersFilter(t *testing.T) {
 	seedOrder("pending", now.Add(-1*time.Hour), "c")
 
 	// 只按状态 pending → 2 条（-3h 与 -1h）
-	items, total, err := ts.AdminListOrders(ctx, 50, 0, "pending", nil, nil)
+	items, total, err := ts.AdminListOrders(ctx, 50, 0, "pending", nil, nil, "")
 	if err != nil {
 		t.Fatalf("状态过滤失败：%v", err)
 	}
@@ -47,7 +47,7 @@ func TestAdminListOrdersFilter(t *testing.T) {
 
 	// 只按日期 date_from=-2.5h → 2 条（-2h paid / -1h pending）
 	from := now.Add(-150 * time.Minute)
-	items, total, err = ts.AdminListOrders(ctx, 50, 0, "", &from, nil)
+	items, total, err = ts.AdminListOrders(ctx, 50, 0, "", &from, nil, "")
 	if err != nil {
 		t.Fatalf("日期过滤失败：%v", err)
 	}
@@ -56,7 +56,7 @@ func TestAdminListOrdersFilter(t *testing.T) {
 	}
 
 	// 状态 + 日期组合：pending 且 date_from=-2.5h → 1 条（-1h）
-	items, total, err = ts.AdminListOrders(ctx, 50, 0, "pending", &from, nil)
+	items, total, err = ts.AdminListOrders(ctx, 50, 0, "pending", &from, nil, "")
 	if err != nil {
 		t.Fatalf("组合过滤失败：%v", err)
 	}
@@ -69,7 +69,7 @@ func TestAdminListOrdersBrokenPoolFilter(t *testing.T) {
 	ts := openBrokenService(t)
 	ctx := context.Background()
 
-	if _, _, err := ts.AdminListOrders(ctx, 50, 0, "pending", nil, nil); err == nil {
+	if _, _, err := ts.AdminListOrders(ctx, 50, 0, "pending", nil, nil, ""); err == nil {
 		t.Fatal("连接池已关闭时必须报错，不能静默返回空列表")
 	}
 }

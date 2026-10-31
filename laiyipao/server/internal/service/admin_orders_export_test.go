@@ -27,7 +27,7 @@ func TestAdminExportOrdersCSV(t *testing.T) {
 	uid, _ := newGuestUser(t, ts, "adm_ord_exp")
 	orderNo := seedOrderFor(t, ts, uid, "paid")
 
-	data, err := ts.AdminExportOrders(ctx, "", nil, nil)
+	data, err := ts.AdminExportOrders(ctx, "", nil, nil, "")
 	if err != nil {
 		t.Fatalf("导出失败：%v", err)
 	}
@@ -89,7 +89,7 @@ func TestAdminExportOrdersStatusFilter(t *testing.T) {
 	paidNo := seedOrderFor(t, ts, uid, "paid")
 	pendingNo := seedOrderFor(t, ts, uid, "pending")
 
-	data, err := ts.AdminExportOrders(ctx, "pending", nil, nil)
+	data, err := ts.AdminExportOrders(ctx, "pending", nil, nil, "")
 	if err != nil {
 		t.Fatalf("导出失败：%v", err)
 	}
@@ -132,7 +132,7 @@ func TestAdminExportOrdersDateFilter(t *testing.T) {
 	}
 
 	from := now.Add(-6 * time.Hour)
-	data, err := ts.AdminExportOrders(ctx, "", &from, nil)
+	data, err := ts.AdminExportOrders(ctx, "", &from, nil, "")
 	if err != nil {
 		t.Fatalf("导出失败：%v", err)
 	}
@@ -159,7 +159,7 @@ func TestAdminExportOrdersBrokenPool(t *testing.T) {
 	ts := openBrokenService(t)
 	ctx := context.Background()
 
-	if _, err := ts.AdminExportOrders(ctx, "", nil, nil); err == nil {
+	if _, err := ts.AdminExportOrders(ctx, "", nil, nil, ""); err == nil {
 		t.Fatal("连接池已关闭时导出必须报错，不能静默返回空 CSV")
 	}
 }

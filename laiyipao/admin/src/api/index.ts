@@ -600,7 +600,7 @@ export function fetchEconomy() {
 export function fetchAdminOrders(
   limit = 50,
   offset = 0,
-  params: { status?: string; date_from?: string; date_to?: string } = {},
+  params: { status?: string; date_from?: string; date_to?: string; provider?: string } = {},
 ) {
   const q = new URLSearchParams()
   q.set('limit', String(limit))
@@ -609,6 +609,8 @@ export function fetchAdminOrders(
   if (params.status) q.set('status', params.status)
   if (params.date_from) q.set('date_from', params.date_from)
   if (params.date_to) q.set('date_to', params.date_to)
+  // 渠道筛选（2026-11-01 新一轮第 67 轮）
+  if (params.provider) q.set('provider', params.provider)
   return api.get<AdminOrdersResp>(`/admin/orders?${q}`)
 }
 
@@ -620,11 +622,13 @@ export function exportOrdersCsv(params: {
   status?: string
   date_from?: string
   date_to?: string
+  provider?: string
 } = {}) {
   const q = new URLSearchParams()
   if (params.status) q.set('status', params.status)
   if (params.date_from) q.set('date_from', params.date_from)
   if (params.date_to) q.set('date_to', params.date_to)
+  if (params.provider) q.set('provider', params.provider)
   return api.getBlob(`/admin/orders/export?${q}`)
 }
 

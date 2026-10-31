@@ -76,6 +76,7 @@
 | 64 | 2026-11-01 | **我的页面累计星级**：选关页有章节星级进度，但全局没有汇总 —— 玩家在「我的」页看不到总共拿了多少星 | miniapp `me.vue` 新增 `loadStars`（`fetchMyStars` 汇总全部关卡星级，上限 = 关卡数 × 3），账号卡显示「累计星级 x / y」，并与其它我的页数据并行加载；新增守卫测试 `me_total_stars_feature.test.ts` | miniapp type-check 通过、新守卫 3 用例通过、全量 1226 测试全绿 |
 | 65 | 2026-11-01 | **后台防线挑战记录点击挑战者跳转用户详情**：挑战者反复攻击/偷取异常时，需要直达玩家本体核查 —— 此前只能记下 challenger_id 再手动切换页面 | admin DefensesView 挑战记录对话框「挑战者」列改为可点击 el-link（无昵称显示占位符「—」），点击跳转 `/users?user_id=`（复用第 38 轮深链）；admin 测试补充 `fetchAdminDefenseChallenges` mock 并新增 2 用例 | admin type-check 通过；388 测试全绿（新增挑战者跳转 2 用例）；无 Go 改动 |
 | 66 | 2026-11-01 | **用户详情增加最近钱包流水**：详情页只有 `flow_count` 这个数字，「钱去哪了 / 钱从哪来」要看明细只能去经济页聚合 —— 运营查单个玩家没有入口 | 服务层 `AdminUserDetailResp` 增加 `RecentFlows []AdminUserFlowView`（最近 10 条 wallet_flows：货币/变动/余额/来源/时间），并发段新增第 11 段查询；apitypes + tygen 重新生成 types.gen.ts；admin UsersView 详情抽屉新增「最近钱包流水」表格（货币中文/变动正负色/来源中文映射/余额/时间）；新增服务层 1 用例 + admin 1 用例 | 服务层（流水内容/最新在前）全绿；tygen 测试全绿；admin type-check + 389 测试全绿；`go test ./...` 全绿 |
+| 67 | 2026-11-01 | **后台订单按渠道筛选**：订单有 provider 字段，运营想查「某渠道的订单」（渠道对账/异常支付核查）只能翻页或导出后筛 | 服务层 `AdminListOrders`/`AdminExportOrders` 增加可选 `provider`（空串不过滤，COUNT 参数映射 $6→$4）；handler 解析 `provider`；admin EconomyView 订单筛选新增「渠道」下拉（mock/apple/wechat/alipay），`fetchAdminOrders`/`exportOrdersCsv` 参数同步；新增服务层 2 用例 + e2e 1 用例 + admin 1 用例 | 服务层（列表/导出渠道筛选）全绿；e2e（apple/未知渠道）全绿；admin type-check + 390 测试全绿；`go test ./...` 全绿 |
 | ... | | 持续至 100 轮 | | |
 
-> 状态：进行中。当前累计 **66 轮实质优化**，距 100 轮还差 34 轮。
+> 状态：进行中。当前累计 **67 轮实质优化**，距 100 轮还差 33 轮。

@@ -926,7 +926,9 @@ func (s *Server) adminOrders(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	items, total, err := s.Svc.AdminListOrders(c.Context(), limit, offset, status, dateFrom, dateTo)
+	// 渠道筛选（2026-11-01 新一轮第 67 轮）。
+	provider := c.Query("provider", "")
+	items, total, err := s.Svc.AdminListOrders(c.Context(), limit, offset, status, dateFrom, dateTo, provider)
 	if err != nil {
 		return failErr(c, err)
 	}
@@ -947,7 +949,7 @@ func (s *Server) adminExportOrders(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	data, err := s.Svc.AdminExportOrders(c.Context(), status, dateFrom, dateTo)
+	data, err := s.Svc.AdminExportOrders(c.Context(), status, dateFrom, dateTo, c.Query("provider", ""))
 	if err != nil {
 		return failErr(c, err)
 	}
