@@ -537,8 +537,19 @@ export function updateShopItem(id: number, patch: AdminShopPatch) {
   return api.put<AdminShopItemResp>(`/admin/shop/${id}`, patch)
 }
 
-export function fetchAnnouncements(limit = 50, offset = 0) {
-  return api.get<AdminAnnouncementsResp>(`/admin/announcements?limit=${limit}&offset=${offset}`)
+export function fetchAnnouncements(
+  limit = 50,
+  offset = 0,
+  params: { published?: boolean; date_from?: string; date_to?: string } = {},
+) {
+  const q = new URLSearchParams()
+  q.set('limit', String(limit))
+  q.set('offset', String(offset))
+  // 发布状态 + 创建日期筛选（2026-10-31 新一轮第 21 轮）
+  if (params.published !== undefined) q.set('published', params.published ? '1' : '0')
+  if (params.date_from) q.set('date_from', params.date_from)
+  if (params.date_to) q.set('date_to', params.date_to)
+  return api.get<AdminAnnouncementsResp>(`/admin/announcements?${q}`)
 }
 
 export function createAnnouncement(payload: { title: string; body: string; published: boolean }) {

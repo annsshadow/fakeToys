@@ -804,7 +804,10 @@ func validWalletCurrency(k string) bool {
 }
 
 // AdminListAnnouncements 返回公告。
-func (s *Service) AdminListAnnouncements(ctx context.Context, limit, offset int) ([]AdminAnnouncementView, int64, error) {
+//
+// published / dateFrom / dateTo 均为可选筛选（2026-10-31 新一轮第 21 轮）：
+// published 三态（nil=不限）、日期按 created_at（开区间）。
+func (s *Service) AdminListAnnouncements(ctx context.Context, limit, offset int, published *bool, dateFrom, dateTo *time.Time) ([]AdminAnnouncementView, int64, error) {
 	// ⚠️ 2026-10-21（二轮审计 P2）：负 offset 必须夹到 0 ——
 	// 否则 PostgreSQL 报 `OFFSET must not be negative` → 整页 500。
 	if offset < 0 {
@@ -812,8 +815,18 @@ func (s *Service) AdminListAnnouncements(ctx context.Context, limit, offset int)
 	}
 	// ⚠️ 2026-10-21（二轮审计 P2-6）：`total` 必须是**全量行数**，
 	// 不是当前页的条数 —— 前端要拿它算页数。
+	// 筛选条件（2026-10-31 新一轮第 21 轮）。
+	// 列表查询的 $1/$2 是 limit/offset，筛选从 $3 起；
+	// COUNT 查询没有 limit/offset，筛选映射到 $1/$2/$3。
+	where := `($3::boolean IS NULL OR published = $3)
+	          AND ($4::timestamptz IS NULL OR created_at >= $4)
+	          AND ($5::timestamptz IS NULL OR created_at < $5)`
+	countArgs := []any{published, dateFrom, dateTo}
+	listArgs := []any{limit, offset, published, dateFrom, dateTo}
+	countWhere := strings.NewReplacer(`$3`, `$1`, `$4`, `$2`, `$5`, `$3`).Replace(where)
+
 	var total int64
-	if err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM announcements`).Scan(&total); err != nil {
+	if err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM announcements WHERE `+countWhere, countArgs...).Scan(&total); err != nil {
 		return nil, 0, fmt.Errorf("admin announcements count: %w", err)
 	}
 	// ⚠️ 2026-10-21：limit 必须夹住 ——
@@ -823,7 +836,7 @@ func (s *Service) AdminListAnnouncements(ctx context.Context, limit, offset int)
 		limit = 50
 	}
 	rows, err := s.pool.Query(ctx,
-		`SELECT id, title, body, published, published_at, created_at FROM announcements ORDER BY id DESC LIMIT $1 OFFSET $2`, limit, offset)
+		`SELECT id, title, body, published, published_at, created_at FROM announcements WHERE `+where+` ORDER BY id DESC LIMIT $1 OFFSET $2`, listArgs...)
 	if err != nil {
 		return nil, 0, err
 	}

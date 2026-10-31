@@ -108,7 +108,7 @@ func TestAdminDeleteAnnouncementSucceeds(t *testing.T) {
 	}
 
 	// 库中已无记录
-	items, _, err := ts.AdminListAnnouncements(ctx, 50, 0)
+	items, _, err := ts.AdminListAnnouncements(ctx, 50, 0, nil, nil, nil)
 	if err != nil {
 		t.Fatalf("查询公告失败：%v", err)
 	}

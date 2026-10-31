@@ -912,7 +912,7 @@ func TestAdminAnnouncements(t *testing.T) {
 	if !item.Published {
 		t.Error("published 应原样返回")
 	}
-	items, _, err := ts.AdminListAnnouncements(ctx, 50, 0)
+	items, _, err := ts.AdminListAnnouncements(ctx, 50, 0, nil, nil, nil)
 	if err != nil || len(items) == 0 {
 		t.Fatalf("公告列表应非空：%v", err)
 	}
@@ -921,7 +921,7 @@ func TestAdminAnnouncements(t *testing.T) {
 	if _, err := broken.AdminCreateAnnouncement(ctx, "x", "y", false); err == nil {
 		t.Error("故障态应报错")
 	}
-	if _, _, err := broken.AdminListAnnouncements(ctx, 50, 0); err == nil {
+	if _, _, err := broken.AdminListAnnouncements(ctx, 50, 0, nil, nil, nil); err == nil {
 		t.Error("故障态应报错")
 	}
 }

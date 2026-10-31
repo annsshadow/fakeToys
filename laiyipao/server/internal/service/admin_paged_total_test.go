@@ -28,7 +28,7 @@ func TestAdminPagedListsReportTotal(t *testing.T) {
 	ctx := context.Background()
 
 	// ── 公告 ───────────────────────────────────────────────────────────
-	before, _, err := ts.AdminListAnnouncements(ctx, 50, 0)
+	before, _, err := ts.AdminListAnnouncements(ctx, 50, 0, nil, nil, nil)
 	if err != nil {
 		t.Fatalf("读公告列表失败：%v", err)
 	}
@@ -40,7 +40,7 @@ func TestAdminPagedListsReportTotal(t *testing.T) {
 		_, _ = ts.pool.Exec(context.Background(), `DELETE FROM announcements WHERE id = $1`, ann.ID)
 	})
 
-	items, total, err := ts.AdminListAnnouncements(ctx, 50, 0)
+	items, total, err := ts.AdminListAnnouncements(ctx, 50, 0, nil, nil, nil)
 	if err != nil {
 		t.Fatalf("读公告列表失败：%v", err)
 	}
@@ -52,7 +52,7 @@ func TestAdminPagedListsReportTotal(t *testing.T) {
 	}
 
 	// 翻页：items 变少，total 不变
-	_, total2, err := ts.AdminListAnnouncements(ctx, 1, 0)
+	_, total2, err := ts.AdminListAnnouncements(ctx, 1, 0, nil, nil, nil)
 	if err != nil {
 		t.Fatalf("读公告第一页失败：%v", err)
 	}

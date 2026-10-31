@@ -66,6 +66,16 @@ const redeemUsageVisible = ref(false)
 const logAction = ref('')
 const logDateRange = ref<[string, string] | null>(null)
 
+// 公告筛选（2026-10-31 新一轮第 21 轮）：发布状态 + 创建日期范围。
+const annPublished = ref<boolean | undefined>(undefined)
+const annDateRange = ref<[string, string] | null>(null)
+
+/** 公告筛选变化：回到第一页并重新加载。 */
+function applyAnnFilter() {
+  annPage.value = 1
+  loadAll()
+}
+
 // 兑换码筛选（2026-10-31 新一轮第 20 轮）：码搜索 + 启用/过期状态。
 const codeKeyword = ref('')
 const codeEnabled = ref<boolean | undefined>(undefined)
@@ -104,7 +114,12 @@ async function loadAll() {
   loading.value = true
   try {
     const [a, c, l] = await Promise.all([
-      fetchAnnouncements(PAGE_SIZE, (annPage.value - 1) * PAGE_SIZE),
+      fetchAnnouncements(PAGE_SIZE, (annPage.value - 1) * PAGE_SIZE, {
+        // 公告筛选（2026-10-31 新一轮第 21 轮）
+        published: annPublished.value,
+        date_from: annDateRange.value?.[0] || undefined,
+        date_to: annDateRange.value ? nextDay(annDateRange.value[1]) : undefined,
+      }),
       fetchRedeemCodes(PAGE_SIZE, (codePage.value - 1) * PAGE_SIZE, {
         // 码搜索 + 启用/过期筛选（2026-10-31 新一轮第 20 轮）
         keyword: codeKeyword.value || undefined,
@@ -446,7 +461,23 @@ loadAll()
           </el-col>
           <el-col :span="14" :xs="24" :sm="24" :md="14">
             <el-card shadow="never" header="已有公告">
-              <div style="display: flex; align-items: center; justify-content: flex-end; margin-bottom: 8px">
+              <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px">
+                <!-- 公告筛选（2026-10-31 新一轮第 21 轮） -->
+                <el-select v-model="annPublished" placeholder="发布状态" clearable style="width: 110px" @change="applyAnnFilter">
+                  <el-option label="已发布" :value="true" />
+                  <el-option label="草稿" :value="false" />
+                </el-select>
+                <el-date-picker
+                  v-model="annDateRange"
+                  type="daterange"
+                  range-separator="至"
+                  start-placeholder="创建开始日期"
+                  end-placeholder="创建结束日期"
+                  value-format="YYYY-MM-DD"
+                  style="width: 260px"
+                />
+                <el-button @click="applyAnnFilter">查询</el-button>
+                <span style="flex: 1" />
                 <span class="muted" style="margin-right: 8px">共 {{ annTotal }} 条</span>
                 <el-button size="small" @click="onExportAnnouncements">导出 CSV</el-button>
               </div>

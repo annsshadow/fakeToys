@@ -820,7 +820,25 @@ func (s *Server) adminAnnouncements(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	items, total, err := s.Svc.AdminListAnnouncements(c.Context(), limit, offset)
+	// 发布状态 + 创建日期筛选（2026-10-31 新一轮第 21 轮）。
+	var published *bool
+	switch c.Query("published", "") {
+	case "1", "true":
+		v := true
+		published = &v
+	case "0", "false":
+		v := false
+		published = &v
+	}
+	dateFrom, err := queryTime(c, "date_from")
+	if err != nil {
+		return failErr(c, err)
+	}
+	dateTo, err := queryTime(c, "date_to")
+	if err != nil {
+		return failErr(c, err)
+	}
+	items, total, err := s.Svc.AdminListAnnouncements(c.Context(), limit, offset, published, dateFrom, dateTo)
 	if err != nil {
 		return failErr(c, err)
 	}
