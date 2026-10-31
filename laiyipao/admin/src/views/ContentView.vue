@@ -306,6 +306,20 @@ function previewAnnouncement(a: AdminAnnouncementView) {
   openPreview()
 }
 
+/**
+ * 复制公告正文（2026-11-01 新一轮第 98 轮）。
+ * 运营把公告文案贴到群/工单/其它渠道时，无需手动选中。
+ */
+async function copyAnnBody(a: AdminAnnouncementView) {
+  if (!a.body) return
+  try {
+    await navigator.clipboard.writeText(a.body)
+    ElMessage.success('公告正文已复制')
+  } catch {
+    ElMessage.error('复制失败，请手动选择复制')
+  }
+}
+
 function cancelEditAnn() {
   editingAnnId.value = null
   annForm.value = { title: '', body: '', published: false }
@@ -760,6 +774,7 @@ loadAll()
                     >
                       {{ row.published ? '撤回' : '发布' }}
                     </el-button>
+                    <el-button size="small" text type="primary" @click="copyAnnBody(row as AdminAnnouncementView)">复制正文</el-button>
                     <el-button size="small" text @click="previewAnnouncement(row as AdminAnnouncementView)">预览</el-button>
                     <el-button size="small" text @click="startEditAnn(row as AdminAnnouncementView)">编辑</el-button>
                     <el-button size="small" text type="danger" @click="onDeleteAnn(row as AdminAnnouncementView)">删除</el-button>

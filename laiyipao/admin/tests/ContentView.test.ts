@@ -772,3 +772,24 @@ describe('ContentView 审计日志复制对象（第 95 轮）', () => {
     wrapper.unmount()
   })
 })
+
+describe('ContentView 公告复制正文（第 98 轮）', () => {
+  it('点击公告行「复制正文」：写入剪贴板并提示', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
+
+    const wrapper = await mountContent({
+      announcements: [
+        { id: 1, title: '版本更新', body: '修复若干问题，周末双倍掉落。', published: true, published_at: '2026-01-01T00:00:00Z', created_at: '2026-01-01T00:00:00Z' },
+      ],
+    })
+    const btn = wrapper.findAll('button').find((b) => b.text() === '复制正文')
+    expect(btn, '找不到「复制正文」按钮').toBeTruthy()
+    await btn!.trigger('click')
+    await flushPromises()
+
+    expect(writeText).toHaveBeenCalledWith('修复若干问题，周末双倍掉落。')
+    expect(document.body.textContent).toContain('公告正文已复制')
+    wrapper.unmount()
+  })
+})
