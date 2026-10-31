@@ -47,6 +47,7 @@
 | 35 | 2026-10-31 | **「皮肤图鉴」页**：`/config.skins` 从第一天起就下发了 6 款皮肤的稀有度/被动/说明，但客户端**零 UI 消费** —— 玩家不知道皮肤系统长什么样 | 新增 miniapp 页面 `pages/skins/skins.vue`（从 `store.config.skins` 读取：名称/稀有度中文映射/被动机制词条映射/描述）；pages.json 注册路由；首页菜单新增「皮肤」入口；新增源码守卫测试 `skins_feature.test.ts` | miniapp type-check 通过、新守卫 3 用例通过、全量测试通过；`go test ./...` 全绿 |
 | 36 | 2026-11-01 | **任务进度条**：任务行此前只显示 `progress / target` 文本，完成度不直观 —— 玩家看不出「还差多少到领取线」 | miniapp `signin.vue` 任务行新增进度条（`taskPercent` 计算完成度百分比，进度条宽度 = 完成度，圆角样式）；新增源码守卫测试 `signin_task_progress_feature.test.ts` | miniapp type-check 通过、新守卫 2 用例通过、全量测试通过；`go test ./...` 全绿 |
 | 37 | 2026-11-01 | **后台用户列表按游客/账号筛选**：运营查「游客占比 / 某批游客行为」只能翻页或靠看板计数，无法在列表内直接过滤 | 服务层 `AdminListUsers` 增加可选 `isGuest`（三态 `*bool`，COUNT/列表参数编号分别连续，nil 日期也恒真）；handler 解析 `is_guest` 三态；admin UsersView 增加「账号类型」下拉（游客/账号/不限），`fetchUsers` 参数同步 | 服务层新增 1 用例（游客/账号过滤）通过；e2e 新增 `TestE2EAdminUsersIsGuestFilter`（游客包含/账号不含）通过；admin type-check + 353 测试全绿；`go test ./...` 全绿 |
+| 38 | 2026-11-01 | **战报列表点击玩家跳转用户详情**：运营在战报页发现可疑玩家（异常分数/反应滥用）后，只能记住 user_id 再手动切到用户页搜索 —— 一跳就断 | admin BattlesView 用户列改为可点击 el-link（无昵称显示 #id），点击 `router.push` 到 `/users?user_id=`；UsersView 挂载时读取 `route.query.user_id`，合法正整数则自动打开该玩家详情抽屉；两个视图测试改用真实 router（createMemoryHistory）挂载，消除 `useRoute` 未注入的挂载期异常；顺带把已废弃的 `:underline="false"` 改为 `underline="never"`（消除 el-link deprecation 告警） | admin type-check 通过；358 测试全绿（新增 UsersView 深链 3 用例 + BattlesView 跳转 2 用例）；`go test ./...` 全绿 |
 | ... | | 持续至 100 轮 | | |
 
-> 状态：进行中。当前累计 **37 轮实质优化**，距 100 轮还差 63 轮。
+> 状态：进行中。当前累计 **38 轮实质优化**，距 100 轮还差 62 轮。

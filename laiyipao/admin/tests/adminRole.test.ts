@@ -10,6 +10,7 @@
  */
 import { flushPromises, mount } from '@vue/test-utils'
 import ElementPlus from 'element-plus'
+import { createMemoryHistory, createRouter } from 'vue-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const fetchUsers = vi.hoisted(() => vi.fn())
@@ -41,9 +42,16 @@ function userFixture(overrides: Record<string, unknown> = {}) {
 async function mountUsers(role: 'admin' | 'readonly') {
   fetchUsers.mockResolvedValue({ items: [userFixture()], total: 1 })
   const roleRef = ref(role)
+  // UsersView 的 onMounted 读 `route.query`（第 38 轮深链），必须注入真实 router
+  const router = createRouter({
+    history: createMemoryHistory(),
+    routes: [{ path: '/users', component: { template: '<div />' } }],
+  })
+  await router.push('/users')
+  await router.isReady()
   const wrapper = mount(UsersView, {
     global: {
-      plugins: [ElementPlus],
+      plugins: [ElementPlus, router],
       provide: {
         [ADMIN_ROLE_KEY as symbol]: {
           role: readonly(roleRef),

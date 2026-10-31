@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {onMounted, ref, computed, onActivated} from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import {
   fetchBattles,
@@ -102,6 +103,16 @@ const filterParams = computed(() => ({
   date_from: dateRange.value?.[0] || undefined,
   date_to: dateRange.value ? nextDay(dateRange.value[1]) : undefined,
 }))
+
+const router = useRouter()
+
+/**
+ * 打开指定玩家的用户详情（2026-11-01 新一轮第 38 轮）。
+ * 跳到用户管理页并携带 user_id，UsersView 挂载时会自动打开详情抽屉。
+ */
+function openUserDetail(userId: number) {
+  router.push({ path: '/users', query: { user_id: String(userId) } })
+}
 
 async function load() {
   loading.value = true
@@ -311,7 +322,14 @@ const asRow = (r: unknown) => r as AdminBattleView
 
       <el-table :data="battles" size="small" stripe>
         <el-table-column prop="id" label="ID" width="60" />
-        <el-table-column prop="user_id" label="用户" width="70" />
+        <el-table-column prop="user_id" label="用户" width="110">
+          <!-- 点击跳转用户详情（2026-11-01 新一轮第 38 轮） -->
+          <template #default="{ row }">
+            <el-link type="primary" underline="never" @click="openUserDetail(row.user_id)">
+              {{ row.nickname || ('#' + row.user_id) }}
+            </el-link>
+          </template>
+        </el-table-column>
         <el-table-column prop="level_id" label="关卡" width="70" />
         <el-table-column label="结果" width="70">
           <template #default="{ row }">

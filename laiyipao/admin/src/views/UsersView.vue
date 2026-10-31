@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {onMounted, ref, computed, onActivated} from 'vue'
+import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   fetchUsers,
@@ -340,7 +341,17 @@ async function onExportCsv() {
   }
 }
 
-onMounted(load)
+const route = useRoute()
+
+onMounted(async () => {
+  await load()
+  // 从战报等页面跳转过来时携带 user_id（2026-11-01 新一轮第 38 轮）：
+  // 直接打开该玩家的详情抽屉。
+  const userId = Number(route.query.user_id)
+  if (Number.isInteger(userId) && userId > 0) {
+    openDetail({ id: userId } as AdminUserView)
+  }
+})
 
 /**
  * 2026-10-21（P5-9）：缓存视图重新可见时刷新数据。
