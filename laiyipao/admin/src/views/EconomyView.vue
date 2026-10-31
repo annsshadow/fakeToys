@@ -241,6 +241,33 @@ async function patchShop(row: AdminShopItemView, field: string, label: string) {
 }
 
 /**
+ * 商城商品上下移排序（2026-11-01 新一轮第 62 轮）。
+ * 列表按服务端 sort_order 升序；与相邻商品交换 sort_order（各更新一次），
+ * 然后整页重拉对齐真库。
+ */
+function isFirstShopItem(row: AdminShopItemView): boolean {
+  return shop.value.length === 0 || shop.value[0].id === row.id
+}
+
+function isLastShopItem(row: AdminShopItemView): boolean {
+  return shop.value.length === 0 || shop.value[shop.value.length - 1].id === row.id
+}
+
+async function moveShopItem(row: AdminShopItemView, dir: -1 | 1): Promise<void> {
+  const idx = shop.value.findIndex((s) => s.id === row.id)
+  const target = shop.value[idx + dir]
+  if (!target) return
+  try {
+    await updateShopItem(row.id, { sort_order: target.sort_order })
+    await updateShopItem(target.id, { sort_order: row.sort_order })
+    ElMessage.success('排序已更新')
+    await load()
+  } catch (e) {
+    ElMessage.error(`排序失败：${(e as Error).message}`)
+  }
+}
+
+/**
  * P5-5：上架 / 下架。
  *
  * 服务端 `PUT /admin/shop/:id` 早就支持 `enabled`，但后台**没有入口** ——
@@ -475,6 +502,25 @@ loadOrders()
               @click="toggleOnSale(asRow(row))"
             >
               {{ isOnSale(asRow(row)) ? '下架' : '上架' }}
+            </el-button>
+            <!-- 排序（2026-11-01 新一轮第 62 轮）：与相邻商品交换 sort_order -->
+            <el-button
+              v-if="!isReadonly"
+              size="small"
+              text
+              :disabled="isFirstShopItem(asRow(row))"
+              @click="moveShopItem(asRow(row), -1)"
+            >
+              上移
+            </el-button>
+            <el-button
+              v-if="!isReadonly"
+              size="small"
+              text
+              :disabled="isLastShopItem(asRow(row))"
+              @click="moveShopItem(asRow(row), 1)"
+            >
+              下移
             </el-button>
           </template>
         </el-table-column>

@@ -71,6 +71,7 @@
 | 59 | 2026-11-01 | **删除/更新公告后玩家端缓存立即失效**：玩家端公告有 TTL 缓存，运营撤回违规公告后玩家端最迟要等一个 TTL 才消失 —— 撤回不要求秒级生效的假设对违规内容不成立 | 服务层 `AdminCreateAnnouncement`/`AdminUpdateAnnouncement`/`AdminDeleteAnnouncement`在写库成功后调用 `announcementsCache.flush()`（ttlCache 既有失效方法），玩家端下一次拉取立即看到新内容；新增缓存失效集成测试（创建/更新/删除三路，用缓存命中计数验证重新查库） | 服务层定向测试（缓存失效/既有缓存测试）全绿；`go test ./...` 全绿；无前端改动 |
 | 60 | 2026-11-01 | **后台用户列表按「需核查」筛选**：列表里已有需核查标记（战力>5000 且最高关<=1 的刷分嫌疑），但没有筛选 —— 运营想批量处理只能翻页 | 服务层 `AdminListUsers`/`AdminExportUsers` 增加可选 `suspicious`（三态，COUNT 查询补 JOIN user_progress 使条件可求值）；handler 解析 `suspicious` 三态；admin UsersView 新增「需核查」下拉，`fetchUsers`/`exportUsersCsv` 参数同步；新增服务层 2 用例 + e2e 1 用例 + admin 2 用例 | 服务层（列表/导出三态筛选）全绿；e2e（suspicious=1/0）全绿；admin type-check + 382 测试全绿；`go test ./...` 全绿 |
 | 61 | 2026-11-01 | **背包技能升级收益预览**：背包页只显示当前等级伤害与升级费用，玩家看不到升级后伤害提升多少 —— 「花金币值不值」只能先点了升级再看 | miniapp `bag.vue` 新增 `nextDamageAt`（与 `damageAt` 同一公式、等级 +1），未满级技能行显示「伤害 X → Y」；新增守卫测试 `bag_upgrade_preview_feature.test.ts` | miniapp type-check 通过、新守卫 2 用例通过、全量 1223 测试全绿 |
+| 62 | 2026-11-01 | **后台商城商品上下移排序**：商品展示顺序由服务端 sort_order 决定，但后台只能逐项编辑 —— 调整展示位次要手动算好每个商品的 sort_order 再逐个改 | admin EconomyView 商城表格操作列新增「上移/下移」按钮（首行上移禁用、末行下移禁用），点击与相邻商品交换 `sort_order`（两次 `updateShopItem`）后整页重拉；admin 测试新增 2 用例，并把 beforeEach 改为 `resetAllMocks`（防 once 队列泄漏） | admin type-check 通过；384 测试全绿（新增排序 2 用例）；无 Go 改动 |
 | ... | | 持续至 100 轮 | | |
 
-> 状态：进行中。当前累计 **61 轮实质优化**，距 100 轮还差 39 轮。
+> 状态：进行中。当前累计 **62 轮实质优化**，距 100 轮还差 38 轮。

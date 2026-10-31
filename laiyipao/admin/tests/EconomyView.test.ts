@@ -77,7 +77,9 @@ async function mountEconomy(flows: Row[] = [], shop: Row[] = [], orders: Row[] =
 let lastRouter: ReturnType<typeof createRouter> | null = null
 
 beforeEach(() => {
-  vi.clearAllMocks()
+  // reset 而不是 clear：clear 只清调用记录，不清 mockResolvedValueOnce 队列；
+  // 前序用例若提前断言失败，未消费的 once 会串到后续用例（实测踩过）。
+  vi.resetAllMocks()
 })
 
 describe('EconomyView 通胀监控', () => {
@@ -139,7 +141,7 @@ describe('EconomyView 通胀监控', () => {
       .mockResolvedValueOnce({ value: '超级体力瓶' }) // 改名 → 字符串
     const wrapper = await mountEconomy([], [row])
     const buttons = wrapper.findAll('.el-table__row')[0].findAll('button')
-    expect(buttons.map((b) => b.text())).toEqual(['改价', '限购', '改名', '下架'])
+    expect(buttons.map((b) => b.text())).toEqual(['改价', '限购', '改名', '下架', '上移', '下移'])
 
     await buttons[0].trigger('click')
     await flushPromises()
@@ -419,6 +421,46 @@ describe('EconomyView 订单玩家跳转用户详情（第 48 轮）', () => {
     const wrapper = await mountEconomy([], [], [orderFixture(3, '')])
     expect(wrapper.find('.el-table .el-link').exists()).toBe(false)
     expect(wrapper.text()).toContain('—')
+    wrapper.unmount()
+  })
+})
+
+describe('EconomyView 商城商品排序（第 62 轮）', () => {
+  function shopRow(id: number, sortOrder: number): Row {
+    return shopFixture({ id, sort_order: sortOrder })
+  }
+
+  it('点击「上移」：与前一商品交换 sort_order 并重新加载', async () => {
+    const wrapper = await mountEconomy([], [
+      shopRow(1, 1),
+      shopRow(2, 2),
+      shopRow(3, 3),
+    ])
+    updateShopItem.mockResolvedValue({ id: 1, updated: ['sort_order'] })
+
+    // 第二行点「上移」
+    const rows = wrapper.findAll('.el-table__row')
+    const btns = rows[1].findAll('button')
+    await btns.find((b) => b.text() === '上移')!.trigger('click')
+    await flushPromises()
+
+    // 交换：id=2 拿 id=1 的 sort_order，id=1 拿 id=2 的
+    expect(updateShopItem).toHaveBeenCalledWith(2, { sort_order: 1 })
+    expect(updateShopItem).toHaveBeenCalledWith(1, { sort_order: 2 })
+    expect(document.body.textContent).toContain('排序已更新')
+    wrapper.unmount()
+  })
+
+  it('第一行「上移」禁用，最后一行「下移」禁用', async () => {
+    const wrapper = await mountEconomy([], [
+      shopRow(1, 1),
+      shopRow(2, 2),
+    ])
+    const rows = wrapper.findAll('.el-table__row')
+    const firstBtns = rows[0].findAll('button')
+    expect(firstBtns.find((b) => b.text() === '上移')!.attributes('disabled')).toBeDefined()
+    const lastBtns = rows[1].findAll('button')
+    expect(lastBtns.find((b) => b.text() === '下移')!.attributes('disabled')).toBeDefined()
     wrapper.unmount()
   })
 })
