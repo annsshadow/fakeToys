@@ -635,3 +635,24 @@ describe('ContentView 批量生成码展示与复制（第 72 轮）', () => {
     wrapper.unmount()
   })
 })
+
+describe('ContentView 兑换码行级复制（第 76 轮）', () => {
+  it('点击列表行的「复制」：写入剪贴板并提示', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
+
+    const wrapper = await mountContent({
+      codes: [
+        { id: 1, code: 'LYP-ROW-001', reward: { coin: 100 }, max_uses: 3, used_count: 0, expires_at: null, enabled: true },
+      ],
+    })
+    const copyBtn = wrapper.findAll('button').find((b) => b.text() === '复制')
+    expect(copyBtn, '找不到行级「复制」按钮').toBeTruthy()
+    await copyBtn!.trigger('click')
+    await flushPromises()
+
+    expect(writeText).toHaveBeenCalledWith('LYP-ROW-001')
+    expect(document.body.textContent).toContain('已复制 LYP-ROW-001')
+    wrapper.unmount()
+  })
+})

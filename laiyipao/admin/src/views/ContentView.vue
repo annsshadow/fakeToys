@@ -855,8 +855,10 @@ loadAll()
               </template>
             </el-table-column>
             <!-- 编辑/启用/禁用（2026-10-31 实质优化第 24/25 轮） -->
-            <el-table-column label="操作" width="120" fixed="right">
+            <el-table-column label="操作" width="150" fixed="right">
               <template #default="{ row }">
+                <!-- 复制单个码（2026-11-01 新一轮第 76 轮）：客服/内测分发 -->
+                <el-button size="small" text type="primary" @click="copyRedeemCode(row.code)">复制</el-button>
                 <el-button size="small" text @click="startEditCode(row as AdminRedeemCodeView)">编辑</el-button>
                 <el-button size="small" text :type="row.enabled ? 'danger' : 'success'"
                   @click="onToggleRedeemCode(row as AdminRedeemCodeView)">
