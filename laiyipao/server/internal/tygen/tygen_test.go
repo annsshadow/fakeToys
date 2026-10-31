@@ -74,6 +74,11 @@ func TestRegistryCoversEveryAdminResponse(t *testing.T) {
 		"AdminShopItemView",
 		"AdminEconomyResp",
 		"AdminShopUpdateResp",
+		// 2026-10-31（新一轮第 3 轮）：后台订单列表此前漏登记 ——
+		// 旧批次把类型直接写进了生成物，注册表与守卫名单都没有它，
+		// tygen 一跑就会把类型删掉。这里补上，让守卫名单与注册表对齐。
+		"AdminOrderView",
+		"AdminOrdersResp",
 		"AdminAnnouncementView",
 		"AdminRedeemCodeView",
 		"AdminAuditLogView",

@@ -123,25 +123,6 @@ export interface AdminDefensesResp {
   total: number
 }
 
-/** 后台订单列表的一行（2026-10-31 实质优化第 33 轮）。 */
-export interface AdminOrderView {
-  id: number
-  user_id: number
-  nickname: string
-  order_no: string
-  sku: string
-  amount: number
-  status: string
-  provider: string
-  created_at: string
-  delivered_at: string | null
-}
-
-export interface AdminOrdersResp {
-  items: AdminOrderView[]
-  total: number
-}
-
 export interface AdminEconomyFlowView {
   reason: string
   currency: string
@@ -229,6 +210,24 @@ export interface AdminLogoutResp {
 
 export interface AdminMeResp {
   admin: { id: number; username: string; role: string }
+}
+
+export interface AdminOrderView {
+  id: number
+  user_id: number
+  nickname: string
+  order_no: string
+  sku: string
+  amount: number
+  status: string
+  provider: string
+  created_at: string
+  delivered_at: string | null
+}
+
+export interface AdminOrdersResp {
+  items: AdminOrderView[]
+  total: number
 }
 
 export interface AdminReactionsResp {

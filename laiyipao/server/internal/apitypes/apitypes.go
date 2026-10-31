@@ -42,6 +42,11 @@ var AdminRegistry = tygen.Registry{
 	{Name: "AdminShopItemView", Go: service.AdminShopItemView{}},
 	{Name: "AdminEconomyResp", Go: service.AdminEconomyResp{}},
 	{Name: "AdminShopUpdateResp", Go: service.AdminShopUpdateResp{}},
+	// 2026-10-31（新一轮第 3 轮）：后台订单列表类型此前只存在于
+	// types.gen.ts（旧批次手工补的），未登记注册表 —— tygen 一跑就会把它
+	// 删掉，管理端 EconomyView 的类型跟着断。这里补登记，消除静默漂移。
+	{Name: "AdminOrderView", Go: service.AdminOrderView{}},
+	{Name: "AdminOrdersResp", Go: service.AdminOrdersResp{}},
 	// ── 公告 / 兑换码 / 审计 ──
 	{Name: "AdminAnnouncementView", Go: service.AdminAnnouncementView{}},
 	{Name: "AdminRedeemCodeView", Go: service.AdminRedeemCodeView{}},

@@ -1241,6 +1241,64 @@ func (s *Service) MyChallengeHistory(ctx context.Context, userID int64, limit in
 	return out, rows.Err()
 }
 
+// DefenseChallengeItem 是「我的防线被挑战」历史的一行（2026-10-31 新一轮第 3 轮）。
+type DefenseChallengeItem struct {
+	ID                 int64          `json:"id"`
+	DefenseID          int64          `json:"defense_id"`
+	DefenseName        string         `json:"defense_name"`
+	ChallengerNickname string         `json:"challenger_nickname"`
+	// Won 是**挑战者**是否获胜。防守方视角：won=true 表示「我的防线被攻破」。
+	Won        bool           `json:"won"`
+	DurationMs int            `json:"duration_ms"`
+	HpLeftPct  int            `json:"hp_left_pct"` // 挑战者剩余防线血量百分比
+	Loot       map[string]int `json:"loot"`        // 被偷走的东西
+	CreatedAt  time.Time      `json:"created_at"`
+}
+
+// MyDefenseChallenges 返回当前玩家「我的防线被挑战」的历史记录。
+//
+// 挑战记录此前只有**挑战者**能看（`MyChallengeHistory`）：防守方布置防线后，
+// 谁挑战了我、攻没攻破、被偷了什么，玩家完全看不到 ——
+// 防线被反复偷资源却没有反馈，等于「布置防线」对玩家是单向黑盒。
+// 这里补上防守方视角：按 `defenses.owner_id` 过滤，命中
+// `idx_defense_challenges_defense`（defense_id 首列）索引。
+//
+// 与 `MyChallengeHistory` 同口径：防线被删除时记录随 `ON DELETE CASCADE`
+// 消失（防线已不存在，回看没有意义）。
+func (s *Service) MyDefenseChallenges(ctx context.Context, userID int64, limit int) ([]DefenseChallengeItem, error) {
+	if limit <= 0 || limit > 50 {
+		limit = 20
+	}
+	rows, err := s.pool.Query(ctx, `
+		SELECT dc.id, dc.defense_id, COALESCE(d.name, ''), COALESCE(u.nickname, ''),
+		       dc.won, dc.duration_ms, dc.hp_left_pct, dc.loot, dc.created_at
+		FROM defense_challenges dc
+		JOIN defenses d ON d.id = dc.defense_id
+		LEFT JOIN users u ON u.id = dc.challenger_id
+		WHERE d.owner_id = $1
+		ORDER BY dc.created_at DESC
+		LIMIT $2`, userID, limit)
+	if err != nil {
+		return nil, fmt.Errorf("my defense challenges: %w", err)
+	}
+	defer rows.Close()
+
+	out := []DefenseChallengeItem{}
+	for rows.Next() {
+		var it DefenseChallengeItem
+		var lootRaw []byte
+		if err := rows.Scan(&it.ID, &it.DefenseID, &it.DefenseName, &it.ChallengerNickname,
+			&it.Won, &it.DurationMs, &it.HpLeftPct, &lootRaw, &it.CreatedAt); err != nil {
+			return nil, fmt.Errorf("scan defense challenges: %w", err)
+		}
+		if err := json.Unmarshal(lootRaw, &it.Loot); err != nil {
+			return nil, fmt.Errorf("unmarshal defense challenge loot: %w", err)
+		}
+		out = append(out, it)
+	}
+	return out, rows.Err()
+}
+
 func (s *Service) dailyChallengeCountersTx(ctx context.Context, tx txType, userID int64) (attempts, stolen int, err error) {
 	// ⚠️ 第 98 轮：`challenge_date` 由 **Go** 决定，与每日任务 / 签到 / 商城同一个口径。
 	// 详见 dailyChallengeCounters 上方的说明。

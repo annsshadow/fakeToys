@@ -143,6 +143,9 @@ func (s *Server) Register(app *fiber.App) {
 	// 我的挑战记录（2026-10-30 实质优化第 18 轮）。
 	// 玩家此前只能看到最近一次挑战结果，历史记录没有入口。
 	me.Get("/challenges", s.myChallengeHistory)
+	// 我的防线被挑战记录（2026-10-31 新一轮第 3 轮）。
+	// 挑战历史只有挑战者能看，防守方不知道谁攻过自己的防线。
+	me.Get("/defense/challenges", s.myDefenseChallenges)
 	// 我的战报历史（2026-10-30 实质优化第 19 轮）。
 	// 玩家打完关卡后没有任何历史战报入口。
 	me.Get("/battles", s.myBattleHistory)
@@ -730,6 +733,16 @@ func (s *Server) listGems(c *fiber.Ctx) error {
 // myChallengeHistory 返回当前玩家最近的防线挑战记录。
 func (s *Server) myChallengeHistory(c *fiber.Ctx) error {
 	items, err := s.Svc.MyChallengeHistory(c.Context(), userIDFrom(c), 20)
+	if err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(fiber.Map{"items": items})
+}
+
+// myDefenseChallenges 返回当前玩家「我的防线被挑战」的历史记录
+// （2026-10-31 新一轮第 3 轮）。
+func (s *Server) myDefenseChallenges(c *fiber.Ctx) error {
+	items, err := s.Svc.MyDefenseChallenges(c.Context(), userIDFrom(c), 20)
 	if err != nil {
 		return failErr(c, err)
 	}

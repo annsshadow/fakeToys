@@ -243,6 +243,30 @@
         </view>
       </view>
 
+      <!-- 被挑战记录（2026-10-31 新一轮第 3 轮）。
+           此前只有挑战者能看历史，防守方不知道谁攻过自己的防线。 -->
+      <view v-if="defenseChallengeHistory.length" class="card">
+        <text class="card-title">被挑战记录</text>
+        <view
+          v-for="h in defenseChallengeHistory"
+          :key="h.id"
+          class="ch-row"
+          :style="{ borderColor: h.won ? 'var(--bad)' : 'var(--ok)' }"
+        >
+          <view class="flex-1 row" style="gap: 8rpx; min-width: 0">
+            <text class="mono" :style="{ color: h.won ? 'var(--bad)' : 'var(--ok)' }">
+              {{ h.won ? '被攻破' : '守住' }}
+            </text>
+            <text class="dim ellipsis">{{ h.challenger_nickname }}</text>
+            <!-- 被偷走的东西（防守方视角是损失） -->
+            <text v-if="lootText(h.loot)" class="dim ellipsis" style="color: var(--bad)">
+              -{{ lootText(h.loot) }}
+            </text>
+          </view>
+          <text class="dim">{{ fmtChallengeTime(h.created_at) }}</text>
+        </view>
+      </view>
+
       <!-- 最近战报（2026-10-30 实质优化第 19 轮）。
            玩家打完关卡后没有任何历史战报入口。 -->
       <view v-if="battleHistory.length" class="card">
@@ -489,6 +513,9 @@ const lastChallenge = ref<(ChallengeOutcome & { stolen?: Record<string, number> 
 // 挑战历史（2026-10-30 实质优化第 18 轮）。
 const challengeHistory = ref<api.ChallengeHistoryItem[]>([])
 
+// 被挑战记录（2026-10-31 新一轮第 3 轮）。
+const defenseChallengeHistory = ref<api.DefenseChallengeItem[]>([])
+
 function fmtChallengeTime(iso: string): string {
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return iso
@@ -517,6 +544,16 @@ async function loadChallengeHistory() {
     challengeHistory.value = res.items ?? []
   } catch {
     // 挑战历史是辅助信息，加载失败不打扰主流程
+  }
+}
+
+// 被挑战记录（2026-10-31 新一轮第 3 轮）。
+async function loadDefenseChallengeHistory() {
+  try {
+    const res = await api.myDefenseChallenges()
+    defenseChallengeHistory.value = res.items ?? []
+  } catch {
+    // 被挑战历史是辅助信息，加载失败不打扰主流程
   }
 }
 
@@ -1105,6 +1142,8 @@ onShow(async () => {
       store.loadLoadout(),
       loadDefenses(),
       loadChallengeHistory(),
+      // 被挑战记录（2026-10-31 新一轮第 3 轮）。
+      loadDefenseChallengeHistory(),
       loadBattleHistory(),
       loadPurchases(),
       loadRedemptions(),

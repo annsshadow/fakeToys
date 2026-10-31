@@ -1107,6 +1107,29 @@ export function myChallengeHistory(): Promise<{ items: ChallengeHistoryItem[] }>
 }
 
 /**
+ * 我的防线被挑战记录（2026-10-31 新一轮第 3 轮）。
+ *
+ * 服务端 `GET /me/defense/challenges` 返回最近 20 条「我的防线被挑战」记录
+ * （挑战者昵称/防线名/胜负/偷取/时间）。此前只有挑战者能看历史，
+ * 防守方不知道谁攻过自己的防线。
+ */
+export interface DefenseChallengeItem {
+  id: number
+  defense_id: number
+  defense_name: string
+  challenger_nickname: string
+  won: boolean
+  duration_ms: number
+  hp_left_pct: number
+  loot: Record<string, number>
+  created_at: string
+}
+
+export function myDefenseChallenges(): Promise<{ items: DefenseChallengeItem[] }> {
+  return request<{ items: DefenseChallengeItem[] }>('/me/defense/challenges')
+}
+
+/**
  * 我的战报历史（2026-10-30 实质优化第 19 轮）。
  *
  * 服务端 `GET /me/battles` 返回最近 20 条战斗记录
