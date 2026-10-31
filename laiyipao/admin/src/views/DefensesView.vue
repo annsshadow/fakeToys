@@ -28,6 +28,19 @@ async function copyDefenseId(id: number) {
   }
 }
 
+/**
+ * 复制挑战记录 ID（2026-11-01 新一轮第 99 轮）。
+ * 运营把挑战记录 id 贴到工单时无需手动选中。
+ */
+async function copyChallengeId(id: number) {
+  try {
+    await navigator.clipboard.writeText(String(id))
+    ElMessage.success(`已复制挑战记录 ID ${id}`)
+  } catch {
+    ElMessage.error('复制失败，请手动选择复制')
+  }
+}
+
 /** 空态文案（2026-10-21 P5-8）：空表要说清「为什么空」。 */
 const emptyText = '还没有人设置防线'
 const loading = ref(false)
@@ -385,7 +398,13 @@ load()
         <el-button @click="onExportChallengesCsv">导出 CSV</el-button>
       </div>
       <el-table :data="challenges" size="small" stripe max-height="480">
-        <el-table-column prop="id" label="ID" width="60" />
+        <el-table-column label="ID" width="100">
+          <!-- 复制挑战记录 ID（2026-11-01 新一轮第 99 轮）：贴工单 -->
+          <template #default="{ row }">
+            <span>{{ row.id }}</span>
+            <el-button size="small" text type="primary" @click="copyChallengeId(row.id)">复制</el-button>
+          </template>
+        </el-table-column>
         <el-table-column prop="defense_id" label="防线 ID" width="80" />
         <el-table-column prop="defense_name" label="防线名" min-width="100" />
         <el-table-column label="挑战者" min-width="110">

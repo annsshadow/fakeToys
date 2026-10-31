@@ -290,3 +290,30 @@ describe('DefensesView 复制防线 ID（第 93 轮）', () => {
     wrapper.unmount()
   })
 })
+
+describe('DefensesView 挑战记录复制 ID（第 99 轮）', () => {
+  it('点击挑战记录行「复制」：写入剪贴板并提示', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
+
+    fetchAdminDefenseChallenges.mockResolvedValue({
+      items: [
+        { id: 66, defense_id: 1, defense_name: '铁壁', challenger_id: 7, challenger_nickname: '甲', won: false, duration_ms: 1000, hp_left_pct: 50, loot: {}, created_at: '2026-01-01T00:00:00Z' },
+      ],
+      total: 1,
+    })
+    const wrapper = await mountDefenses([defenseFixture()])
+    const vm = wrapper.vm as unknown as { openChallenges: () => void }
+    vm.openChallenges()
+    await flushPromises()
+
+    const copyBtn = wrapper.findAll('.el-dialog .el-table__row')[0].findAll('button').find((b) => b.text() === '复制')
+    expect(copyBtn, '找不到挑战记录复制按钮').toBeTruthy()
+    await copyBtn!.trigger('click')
+    await flushPromises()
+
+    expect(writeText).toHaveBeenCalledWith('66')
+    expect(document.body.textContent).toContain('已复制挑战记录 ID 66')
+    wrapper.unmount()
+  })
+})
