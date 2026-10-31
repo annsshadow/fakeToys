@@ -331,6 +331,22 @@ function closePreview() {
 }
 
 /**
+ * 公告发布/撤回快捷切换（2026-11-01 新一轮第 84 轮）。
+ * 发错状态（误发/误撤回）不必进编辑再改勾选：行内一键切换。
+ * 撤回是可见性变化，玩家端缓存会被服务端立即失效（第 59 轮）。
+ */
+async function onToggleAnnPublished(a: AdminAnnouncementView) {
+  const next = !a.published
+  try {
+    await updateAnnouncement(a.id, { title: a.title, body: a.body, published: next })
+    ElMessage.success(next ? '公告已发布' : '公告已撤回')
+    await loadAll()
+  } catch (e) {
+    ElMessage.error(`发布状态切换失败：${(e as Error).message}`)
+  }
+}
+
+/**
  * 删除公告（2026-10-31 实质优化第 23 轮）。
  * 删除不可恢复，必须二次确认；玩家端缓存最迟 30 秒后消失。
  */
@@ -722,6 +738,14 @@ loadAll()
                 <!-- 编辑/删除（2026-10-31 实质优化第 23 轮） -->
                 <el-table-column label="操作" width="110" fixed="right">
                   <template #default="{ row }">
+                    <el-button
+                      size="small"
+                      text
+                      :type="row.published ? 'warning' : 'success'"
+                      @click="onToggleAnnPublished(row as AdminAnnouncementView)"
+                    >
+                      {{ row.published ? '撤回' : '发布' }}
+                    </el-button>
                     <el-button size="small" text @click="previewAnnouncement(row as AdminAnnouncementView)">预览</el-button>
                     <el-button size="small" text @click="startEditAnn(row as AdminAnnouncementView)">编辑</el-button>
                     <el-button size="small" text type="danger" @click="onDeleteAnn(row as AdminAnnouncementView)">删除</el-button>

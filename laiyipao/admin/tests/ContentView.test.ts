@@ -13,6 +13,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const fetchAnnouncements = vi.hoisted(() => vi.fn())
 const createAnnouncement = vi.hoisted(() => vi.fn())
+const updateAnnouncement = vi.hoisted(() => vi.fn())
 const fetchRedeemCodes = vi.hoisted(() => vi.fn())
 const createRedeemCode = vi.hoisted(() => vi.fn())
 const createRedeemCodesBatch = vi.hoisted(() => vi.fn())
@@ -22,6 +23,7 @@ const fetchAdminRedeemUsages = vi.hoisted(() => vi.fn())
 vi.mock('@/api', () => ({
   fetchAnnouncements,
   createAnnouncement,
+  updateAnnouncement,
   fetchRedeemCodes,
   createRedeemCode,
   createRedeemCodesBatch,
@@ -653,6 +655,68 @@ describe('ContentView 兑换码行级复制（第 76 轮）', () => {
 
     expect(writeText).toHaveBeenCalledWith('LYP-ROW-001')
     expect(document.body.textContent).toContain('已复制 LYP-ROW-001')
+    wrapper.unmount()
+  })
+})
+
+describe('ContentView 公告发布/撤回快捷切换（第 84 轮）', () => {
+  function annRow(over: Row = {}): Row {
+    return {
+      id: 1,
+      title: '版本更新',
+      body: '修复若干问题',
+      published: true,
+      published_at: '2026-01-01T00:00:00Z',
+      created_at: '2026-01-01T00:00:00Z',
+      ...over,
+    }
+  }
+
+  it('已发布公告点「撤回」：updateAnnouncement(published=false) 并提示', async () => {
+    updateAnnouncement.mockResolvedValue({ id: 1, updated: ['published'] })
+    const wrapper = await mountContent({ announcements: [annRow()] })
+
+    const btn = wrapper.findAll('button').find((b) => b.text() === '撤回')
+    expect(btn, '找不到「撤回」按钮').toBeTruthy()
+    await btn!.trigger('click')
+    await flushPromises()
+
+    expect(updateAnnouncement).toHaveBeenCalledWith(1, {
+      title: '版本更新',
+      body: '修复若干问题',
+      published: false,
+    })
+    expect(document.body.textContent).toContain('公告已撤回')
+    wrapper.unmount()
+  })
+
+  it('草稿点「发布」：updateAnnouncement(published=true) 并提示', async () => {
+    updateAnnouncement.mockResolvedValue({ id: 2, updated: ['published'] })
+    const wrapper = await mountContent({ announcements: [annRow({ id: 2, published: false })] })
+
+    const btn = wrapper.findAll('button').find((b) => b.text() === '发布')
+    expect(btn, '找不到「发布」按钮').toBeTruthy()
+    await btn!.trigger('click')
+    await flushPromises()
+
+    expect(updateAnnouncement).toHaveBeenCalledWith(2, {
+      title: '版本更新',
+      body: '修复若干问题',
+      published: true,
+    })
+    expect(document.body.textContent).toContain('公告已发布')
+    wrapper.unmount()
+  })
+
+  it('切换失败：提示错误', async () => {
+    updateAnnouncement.mockRejectedValueOnce(new Error('公告不存在'))
+    const wrapper = await mountContent({ announcements: [annRow()] })
+
+    const btn = wrapper.findAll('button').find((b) => b.text() === '撤回')
+    await btn!.trigger('click')
+    await flushPromises()
+
+    expect(document.body.textContent).toContain('发布状态切换失败：公告不存在')
     wrapper.unmount()
   })
 })
