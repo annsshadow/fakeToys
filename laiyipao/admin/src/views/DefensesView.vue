@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {onMounted, ref, computed, onActivated} from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { fetchDefenses, fetchAdminDefenseChallenges, deleteDefense, type AdminDefenseView, type AdminDefenseChallengeView } from '@/api'
+import { fetchDefenses, fetchAdminDefenseChallenges, exportDefenseChallengesCsv, deleteDefense, type AdminDefenseView, type AdminDefenseChallengeView } from '@/api'
 import { fmtTime } from '@/utils/format'
 
 /** 空态文案（2026-10-21 P5-8）：空表要说清「为什么空」。 */
@@ -42,6 +42,26 @@ function openChallenges() {
 function applyChallengeFilter() {
   challengePage.value = 1
   loadChallenges()
+}
+
+/** 导出挑战记录 CSV（2026-10-31 新一轮第 32 轮）。 */
+async function onExportChallengesCsv() {
+  try {
+    const blob = await exportDefenseChallengesCsv({
+      defense_id: challengeDefenseId.value,
+      challenger_id: challengeChallengerId.value,
+    })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `defense_challenges_${new Date().toISOString().slice(0, 10)}.csv`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+  } catch (e) {
+    ElMessage.error(`导出失败：${(e as Error).message}`)
+  }
 }
 
 /** 偷取奖励格式：`100 金币`、`5 钻石`，多项用逗号分隔。 */
@@ -292,6 +312,7 @@ load()
           style="width: 130px"
         />
         <el-button @click="applyChallengeFilter">查询</el-button>
+        <el-button @click="onExportChallengesCsv">导出 CSV</el-button>
       </div>
       <el-table :data="challenges" size="small" stripe max-height="480">
         <el-table-column prop="id" label="ID" width="60" />

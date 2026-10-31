@@ -573,6 +573,99 @@ func (s *Service) AdminListDefenseChallenges(ctx context.Context, limit, offset 
 	return out, total, rows.Err()
 }
 
+// AdminExportDefenseChallenges 导出防线挑战记录为 CSV（2026-10-31 新一轮第 32 轮）。
+//
+// 与用户/战报导出同族：运营做防线生态分析需要全量快照而不是分页。
+// 过滤条件与列表一致（defense_id / challenger_id / date_from / date_to），
+// 上限 100_000 行；UTF-8 BOM（Excel 中文兼容）。loot 转可读文本
+// （`coin:100 gem:5`），与公告/兑换码导出的 reward 格式一致。
+func (s *Service) AdminExportDefenseChallenges(ctx context.Context, defenseID, challengerID int64, dateFrom, dateTo *time.Time) ([]byte, error) {
+	where := `($1 = 0 OR dc.defense_id = $1)
+	          AND ($2 = 0 OR dc.challenger_id = $2)
+	          AND ($3::timestamptz IS NULL OR dc.created_at >= $3)
+	          AND ($4::timestamptz IS NULL OR dc.created_at < $4)`
+	rows, err := s.pool.Query(ctx, `
+		SELECT dc.id, dc.defense_id, COALESCE(d.name, ''), dc.challenger_id,
+		       COALESCE(u.nickname, ''), dc.won, dc.duration_ms, dc.hp_left_pct,
+		       dc.loot, dc.created_at
+		FROM defense_challenges dc
+		JOIN defenses d ON d.id = dc.defense_id
+		LEFT JOIN users u ON u.id = dc.challenger_id
+		WHERE `+where+`
+		ORDER BY dc.id DESC LIMIT 100000`, defenseID, challengerID, dateFrom, dateTo)
+	if err != nil {
+		return nil, fmt.Errorf("export defense challenges: %w", err)
+	}
+	defer rows.Close()
+
+	var buf bytes.Buffer
+	buf.WriteString("\xEF\xBB\xBF")
+	w := csv.NewWriter(&buf)
+	header := []string{
+		"id", "defense_id", "defense_name", "challenger_id", "challenger_nickname",
+		"won", "duration_ms", "hp_left_pct", "loot", "created_at",
+	}
+	if err := w.Write(header); err != nil {
+		return nil, fmt.Errorf("write csv header: %w", err)
+	}
+
+	for rows.Next() {
+		var id, defenseID2, challengerID2, duration, hp int64
+		var defenseName, challengerNickname string
+		var won bool
+		var lootRaw []byte
+		var createdAt time.Time
+		if err := rows.Scan(&id, &defenseID2, &defenseName, &challengerID2,
+			&challengerNickname, &won, &duration, &hp, &lootRaw, &createdAt); err != nil {
+			return nil, fmt.Errorf("scan export defense challenge: %w", err)
+		}
+		loot := map[string]int{}
+		if err := json.Unmarshal(lootRaw, &loot); err != nil {
+			return nil, fmt.Errorf("unmarshal export defense challenge loot: %w", err)
+		}
+		rec := []string{
+			strconv.FormatInt(id, 10),
+			strconv.FormatInt(defenseID2, 10),
+			defenseName,
+			strconv.FormatInt(challengerID2, 10),
+			challengerNickname,
+			strconv.FormatBool(won),
+			strconv.FormatInt(duration, 10),
+			strconv.FormatInt(hp, 10),
+			formatRewardText(loot),
+			createdAt.UTC().Format(time.RFC3339),
+		}
+		if err := w.Write(rec); err != nil {
+			return nil, fmt.Errorf("write csv row: %w", err)
+		}
+	}
+	w.Flush()
+	if err := w.Error(); err != nil {
+		return nil, fmt.Errorf("flush csv: %w", err)
+	}
+	return buf.Bytes(), nil
+}
+
+// formatRewardText 把 `{coin:100, gem:5}` 转成 `coin:100 gem:5`
+// （与公告/兑换码 CSV 导出的 reward 格式一致）。
+func formatRewardText(m map[string]int) string {
+	if len(m) == 0 {
+		return ""
+	}
+	parts := make([]string, 0, len(m))
+	for _, k := range []string{"coin", "gem", "energy", "keys"} {
+		if v, ok := m[k]; ok {
+			parts = append(parts, k+":"+strconv.Itoa(v))
+		}
+	}
+	for k, v := range m {
+		if k != "coin" && k != "gem" && k != "energy" && k != "keys" {
+			parts = append(parts, k+":"+strconv.Itoa(v))
+		}
+	}
+	return strings.Join(parts, " ")
+}
+
 // AdminListOrders 返回支付订单列表（2026-10-31 实质优化第 33 轮）。
 //
 // 后台此前只有 `AdminEconomy` 里的订单**计数**（paid/pending），

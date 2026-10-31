@@ -524,6 +524,24 @@ export function fetchAdminDefenseChallenges(
 }
 
 /**
+ * 导出防线挑战记录 CSV（2026-10-31 新一轮第 32 轮）。
+ * 过滤条件与列表一致。返回带 UTF-8 BOM 的 CSV Blob。readonly 可导出。
+ */
+export function exportDefenseChallengesCsv(params: {
+  defense_id?: number
+  challenger_id?: number
+  date_from?: string
+  date_to?: string
+} = {}) {
+  const q = new URLSearchParams()
+  if (params.defense_id) q.set('defense_id', String(params.defense_id))
+  if (params.challenger_id) q.set('challenger_id', String(params.challenger_id))
+  if (params.date_from) q.set('date_from', params.date_from)
+  if (params.date_to) q.set('date_to', params.date_to)
+  return api.getBlob(`/admin/defense-challenges/export?${q}`)
+}
+
+/**
  * 删除玩家防线（2026-10-31 实质优化第 26 轮）。
  * 违规防线名（侮辱/广告等）运营此前只能看到、无法处理。
  */

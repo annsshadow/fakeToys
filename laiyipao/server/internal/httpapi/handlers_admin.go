@@ -778,6 +778,34 @@ func (s *Server) adminDefenseChallenges(c *fiber.Ctx) error {
 	return c.JSON(service.NormalizeNilSlices(service.AdminDefenseChallengesResp{Items: items, Total: total}))
 }
 
+// adminExportDefenseChallenges 导出防线挑战记录 CSV（2026-10-31 新一轮第 32 轮）。
+func (s *Server) adminExportDefenseChallenges(c *fiber.Ctx) error {
+	defenseID, err := queryInt(c, "defense_id", 0)
+	if err != nil {
+		return failErr(c, err)
+	}
+	challengerID, err := queryInt(c, "challenger_id", 0)
+	if err != nil {
+		return failErr(c, err)
+	}
+	dateFrom, err := queryTime(c, "date_from")
+	if err != nil {
+		return failErr(c, err)
+	}
+	dateTo, err := queryTime(c, "date_to")
+	if err != nil {
+		return failErr(c, err)
+	}
+	data, err := s.Svc.AdminExportDefenseChallenges(
+		c.Context(), int64(defenseID), int64(challengerID), dateFrom, dateTo)
+	if err != nil {
+		return failErr(c, err)
+	}
+	c.Set("Content-Type", "text/csv; charset=utf-8")
+	c.Set("Content-Disposition", `attachment; filename="defense_challenges.csv"`)
+	return c.Send(data)
+}
+
 // adminDeleteDefense 删除玩家防线（2026-10-31 实质优化第 26 轮）。
 func (s *Server) adminDeleteDefense(c *fiber.Ctx) error {
 	id, err := strconv.ParseInt(c.Params("id"), 10, 64)

@@ -331,6 +331,8 @@ func (s *Server) Register(app *fiber.App) {
 	// 防线挑战记录（2026-10-31 新一轮第 30 轮）：
 	// 运营此前只能看到防线胜负计数，无法查看挑战明细。
 	adm.Get("/defense-challenges", s.adminDefenseChallenges)
+	// 防线挑战记录 CSV 导出（2026-10-31 新一轮第 32 轮）：读操作，readonly 可访问。
+	adm.Get("/defense-challenges/export", s.adminExportDefenseChallenges)
 	// 删除玩家防线（2026-10-31 实质优化第 26 轮）：
 	// 违规防线名运营此前只能看到、无法处理。
 	adm.Delete("/defenses/:id", requireWritable(), s.adminDeleteDefense)
