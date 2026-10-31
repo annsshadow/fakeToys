@@ -68,7 +68,12 @@
               <view v-if="elementText" class="kv"><text class="muted">元素</text><text class="flex-1">{{ elementText }}</text></view>
               <view v-if="reactionText" class="kv"><text class="muted">反应</text><text class="flex-1">{{ reactionText }}</text></view>
               <view v-if="terrainText" class="kv"><text class="muted">地形</text><text class="flex-1">{{ terrainText }}</text></view>
-              <view class="kv"><text class="muted">回放哈希</text><text class="mono hash">{{ detail.replay_hash }}</text></view>
+              <view class="kv">
+                <text class="muted">回放哈希</text>
+                <text class="mono hash">{{ detail.replay_hash }}</text>
+              </view>
+              <!-- 复制哈希（2026-11-01 新一轮第 87 轮）：用外部工具验真时无需手选 -->
+              <view class="btn copy-hash-btn" @click="copyHash(detail.replay_hash)">复制回放哈希</view>
               <!-- 直达验真（2026-11-01 新一轮第 47 轮）：验真页已支持 battle_id 深链，
                    这里一键跳转，玩家无需手动复制/输入 battle_id。 -->
               <view class="btn verify-btn" @click="goVerify(it.id)">去验真此局</view>
@@ -254,6 +259,20 @@ function goVerify(battleId: number) {
 }
 
 /**
+ * 复制回放哈希（2026-11-01 新一轮第 87 轮）。
+ * 玩家用外部工具重放验真时，无需手动选中一长串字符。
+ */
+function copyHash(hash: string) {
+  if (!hash) return
+  uni.setClipboardData({
+    data: hash,
+    success: () => {
+      uni.showToast({ title: '已复制回放哈希', icon: 'success' })
+    },
+  })
+}
+
+/**
  * 加载更早的战报（2026-11-01 新一轮第 55 轮）。
  * 服务端按时间倒序分页（limit=20/offset），追加到列表并去重。
  */
@@ -339,6 +358,18 @@ onMounted(async () => {
 .hash {
   font-size: 20rpx;
   word-break: break-all;
+}
+
+/* 复制回放哈希（2026-11-01 新一轮第 87 轮） */
+.copy-hash-btn {
+  margin-top: 10rpx;
+  padding: 12rpx 0;
+  text-align: center;
+  font-size: 24rpx;
+  color: var(--fire);
+  background: rgba(255, 107, 53, 0.08);
+  border: 1rpx solid rgba(255, 107, 53, 0.3);
+  border-radius: 10rpx;
 }
 
 /* 加载更多（2026-11-01 新一轮第 55 轮） */
