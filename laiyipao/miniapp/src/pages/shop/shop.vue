@@ -10,7 +10,8 @@
         <view class="flex-1">
           <text class="skill-name">{{ it.name }}</text>
           <text class="dim" style="display: block">{{ priceText(it) }}</text>
-          <text v-if="soldOut(it)" class="dim">今日已买满</text>
+          <!-- 每日限购进度（2026-11-01 新一轮第 49 轮） -->
+          <text v-if="purchaseProgressText(it)" class="dim">{{ purchaseProgressText(it) }}</text>
         </view>
         <view class="skill-act">
           <text v-if="buyingId === it.id" class="dim">购买中…</text>
@@ -117,6 +118,19 @@ function priceText(it: ShopItem): string {
 /** 今日已买满（`limit_per_day` 为 0 表示不限次）。 */
 function soldOut(it: ShopItem): boolean {
   return it.limit_per_day > 0 && it.bought_today >= it.limit_per_day
+}
+
+/**
+ * 每日限购进度文案（2026-11-01 新一轮第 49 轮）。
+ *
+ * 此前只有「今日已买满」/「购买」两种状态 —— 玩家看不到还剩几次
+ * 购买机会，限购商品只能靠试错。有限购时显示「今日已购 x/y」，
+ * 买满显示「今日已买满」；不限购（limit_per_day=0）不显示。
+ */
+function purchaseProgressText(it: ShopItem): string {
+  if (it.limit_per_day <= 0) return ''
+  if (it.bought_today >= it.limit_per_day) return '今日已买满'
+  return `今日已购 ${it.bought_today}/${it.limit_per_day}`
 }
 
 async function load() {
