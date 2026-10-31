@@ -930,7 +930,7 @@ func TestAdminRedeemCodes(t *testing.T) {
 	ts := openTestService(t)
 	ctx := context.Background()
 
-	items, _, err := ts.AdminListRedeemCodes(ctx, 50, 0)
+	items, _, err := ts.AdminListRedeemCodes(ctx, 50, 0, "", nil, nil)
 	if err != nil {
 		t.Fatalf("兑换码列表失败：%v", err)
 	}
@@ -953,7 +953,7 @@ func TestAdminRedeemCodes(t *testing.T) {
 		t.Errorf("自动分配的 id 应为正，得 %v", created.ID)
 	}
 
-	after, _, err := ts.AdminListRedeemCodes(ctx, 50, 0)
+	after, _, err := ts.AdminListRedeemCodes(ctx, 50, 0, "", nil, nil)
 	if err != nil {
 		t.Fatalf("创建后列表失败：%v", err)
 	}

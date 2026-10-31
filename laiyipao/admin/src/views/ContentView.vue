@@ -66,6 +66,17 @@ const redeemUsageVisible = ref(false)
 const logAction = ref('')
 const logDateRange = ref<[string, string] | null>(null)
 
+// 兑换码筛选（2026-10-31 新一轮第 20 轮）：码搜索 + 启用/过期状态。
+const codeKeyword = ref('')
+const codeEnabled = ref<boolean | undefined>(undefined)
+const codeExpired = ref<boolean | undefined>(undefined)
+
+/** 兑换码筛选变化：回到第一页并重新加载。 */
+function applyCodeFilter() {
+  codePage.value = 1
+  loadAll()
+}
+
 function nextDay(day: string): string {
   const d = new Date(day + 'T00:00:00Z')
   d.setUTCDate(d.getUTCDate() + 1)
@@ -94,7 +105,12 @@ async function loadAll() {
   try {
     const [a, c, l] = await Promise.all([
       fetchAnnouncements(PAGE_SIZE, (annPage.value - 1) * PAGE_SIZE),
-      fetchRedeemCodes(PAGE_SIZE, (codePage.value - 1) * PAGE_SIZE),
+      fetchRedeemCodes(PAGE_SIZE, (codePage.value - 1) * PAGE_SIZE, {
+        // 码搜索 + 启用/过期筛选（2026-10-31 新一轮第 20 轮）
+        keyword: codeKeyword.value || undefined,
+        enabled: codeEnabled.value,
+        expired: codeExpired.value,
+      }),
       fetchAuditLogs(PAGE_SIZE, (logPage.value - 1) * PAGE_SIZE, {
         // 审计筛选（2026-10-31 新一轮第 18 轮）
         action: logAction.value || undefined,
@@ -519,7 +535,26 @@ loadAll()
         </el-card>
 
         <el-card shadow="never" style="margin-top: 12px">
-          <div style="display: flex; align-items: center; justify-content: flex-end; margin-bottom: 8px">
+          <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px">
+            <!-- 兑换码筛选（2026-10-31 新一轮第 20 轮） -->
+            <el-input
+              v-model="codeKeyword"
+              placeholder="按码搜索（如 LYP-）"
+              clearable
+              style="width: 180px"
+              @keyup.enter="applyCodeFilter"
+              @clear="applyCodeFilter"
+            />
+            <el-select v-model="codeEnabled" placeholder="启用状态" clearable style="width: 110px" @change="applyCodeFilter">
+              <el-option label="启用" :value="true" />
+              <el-option label="停用" :value="false" />
+            </el-select>
+            <el-select v-model="codeExpired" placeholder="过期状态" clearable style="width: 110px" @change="applyCodeFilter">
+              <el-option label="已过期" :value="true" />
+              <el-option label="未过期" :value="false" />
+            </el-select>
+            <el-button @click="applyCodeFilter">查询</el-button>
+            <span style="flex: 1" />
             <span class="muted" style="margin-right: 8px">共 {{ codeTotal }} 条</span>
             <el-button size="small" @click="onExportRedeemCodes">导出 CSV</el-button>
             <el-button size="small" @click="openRedeemUsages">使用记录</el-button>

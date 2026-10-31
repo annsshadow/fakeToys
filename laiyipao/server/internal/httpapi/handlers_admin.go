@@ -904,7 +904,26 @@ func (s *Server) adminRedeemCodes(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	items, total, err := s.Svc.AdminListRedeemCodes(c.Context(), limit, offset)
+	// 码搜索 + 启用状态 + 过期筛选（2026-10-31 新一轮第 20 轮）。
+	var enabled *bool
+	switch c.Query("enabled", "") {
+	case "1", "true":
+		v := true
+		enabled = &v
+	case "0", "false":
+		v := false
+		enabled = &v
+	}
+	var expired *bool
+	switch c.Query("expired", "") {
+	case "1", "true":
+		v := true
+		expired = &v
+	case "0", "false":
+		v := false
+		expired = &v
+	}
+	items, total, err := s.Svc.AdminListRedeemCodes(c.Context(), limit, offset, c.Query("keyword", ""), enabled, expired)
 	if err != nil {
 		return failErr(c, err)
 	}

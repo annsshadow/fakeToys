@@ -432,7 +432,7 @@ func (s *Service) AdminListDefenses(ctx context.Context, limit, offset int, keyw
 	if err := s.pool.QueryRow(ctx,
 		`SELECT COUNT(*) FROM defenses d JOIN users u ON u.id = d.owner_id WHERE `+countWhere,
 		countArgs...).Scan(&total); err != nil {
-		return nil, 0, err
+		return nil, 0, fmt.Errorf("admin defenses: %w", err)
 	}
 	// ⚠️ 2026-10-21（二轮审计 P2-6）：补 offset ——
 	// 此前只能看前 100 条，而 `total` 是全量 COUNT，于是
@@ -911,7 +911,11 @@ func (s *Service) AdminDeleteAnnouncement(ctx context.Context, id int) error {
 }
 
 // AdminListRedeemCodes 返回兑换码。
-func (s *Service) AdminListRedeemCodes(ctx context.Context, limit, offset int) ([]AdminRedeemCodeView, int64, error) {
+//
+// keyword / enabled / expired 均为可选筛选（2026-10-31 新一轮第 20 轮）：
+// keyword 模糊匹配码（`%`/`_`/`\` 转义为字面量）、enabled 三态（nil=不限）、
+// expired=true 只看已过期（expires_at 非空且早于 now）。
+func (s *Service) AdminListRedeemCodes(ctx context.Context, limit, offset int, keyword string, enabled *bool, expired *bool) ([]AdminRedeemCodeView, int64, error) {
 	// ⚠️ 2026-10-21（二轮审计 P2）：负 offset 必须夹到 0 ——
 	// 否则 PostgreSQL 报 `OFFSET must not be negative` → 整页 500。
 	if offset < 0 {
@@ -919,8 +923,34 @@ func (s *Service) AdminListRedeemCodes(ctx context.Context, limit, offset int) (
 	}
 	// ⚠️ 2026-10-21（二轮审计 P2-6）：`total` 必须是**全量行数**，
 	// 不是当前页的条数 —— 前端要拿它算页数。
+	// 筛选条件（2026-10-31 新一轮第 20 轮）。
+	// 列表查询的 $1/$2 是 limit/offset，筛选从 $3 起；
+	// COUNT 查询没有 limit/offset，筛选映射到 $1/$2/$3。
+	kw, err := trimAdminKeyword(keyword)
+	if err != nil {
+		return nil, 0, err
+	}
+	escaped := strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`).Replace(kw)
+	pattern := "%" + escaped + "%"
+	where := `($3 = '' OR code ILIKE $4)`
+	countArgs := []any{kw, pattern}
+	listArgs := []any{limit, offset, kw, pattern}
+	if enabled != nil {
+		where += ` AND enabled = $5`
+		countArgs = append(countArgs, *enabled)
+		listArgs = append(listArgs, *enabled)
+	}
+	if expired != nil {
+		if *expired {
+			where += ` AND expires_at IS NOT NULL AND expires_at < now()`
+		} else {
+			where += ` AND (expires_at IS NULL OR expires_at >= now())`
+		}
+	}
+	countWhere := strings.NewReplacer(`$3`, `$1`, `$4`, `$2`, `$5`, `$3`).Replace(where)
+
 	var total int64
-	if err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM redeem_codes`).Scan(&total); err != nil {
+	if err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM redeem_codes WHERE `+countWhere, countArgs...).Scan(&total); err != nil {
 		return nil, 0, fmt.Errorf("admin redeem_codes count: %w", err)
 	}
 	// ⚠️ 2026-10-21：limit 必须夹住 ——
@@ -942,7 +972,7 @@ func (s *Service) AdminListRedeemCodes(ctx context.Context, limit, offset int) (
 	// 写在这里是为了让下一次审计**不要**再把它当新问题报一遍。
 	// 要改它 = 改一个有测试守卫的**刻意决定**，那是产品决策，不是修 bug。
 	rows, err := s.pool.Query(ctx,
-		`SELECT id, code, reward, max_uses, used_count, expires_at, enabled FROM redeem_codes ORDER BY id LIMIT $1 OFFSET $2`, limit, offset)
+		`SELECT id, code, reward, max_uses, used_count, expires_at, enabled FROM redeem_codes WHERE `+where+` ORDER BY id LIMIT $1 OFFSET $2`, listArgs...)
 	if err != nil {
 		return nil, 0, err
 	}

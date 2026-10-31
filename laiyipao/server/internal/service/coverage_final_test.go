@@ -61,7 +61,7 @@ func TestResolveAdminDBError(t *testing.T) {
 func TestRedeemCodesBrokenBranches(t *testing.T) {
 	broken := openBrokenService(t)
 	ctx := context.Background()
-	if _, _, err := broken.AdminListRedeemCodes(ctx, 50, 0); err == nil {
+	if _, _, err := broken.AdminListRedeemCodes(ctx, 50, 0, "", nil, nil); err == nil {
 		t.Error("故障态兑换码列表应报错")
 	}
 	if _, err := broken.AdminCreateRedeemCode(ctx, "X", map[string]int{"coin": 1}, 1, nil); err == nil {

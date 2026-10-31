@@ -61,7 +61,7 @@ func TestAdminPagedListsReportTotal(t *testing.T) {
 	}
 
 	// ── 兑换码 ─────────────────────────────────────────────────────────
-	codes, codeTotal, err := ts.AdminListRedeemCodes(ctx, 50, 0)
+	codes, codeTotal, err := ts.AdminListRedeemCodes(ctx, 50, 0, "", nil, nil)
 	if err != nil {
 		t.Fatalf("读兑换码列表失败：%v", err)
 	}

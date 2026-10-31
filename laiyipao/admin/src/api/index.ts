@@ -566,8 +566,19 @@ export function exportAnnouncementsCsv() {
   return api.getBlob('/admin/announcements/export')
 }
 
-export function fetchRedeemCodes(limit = 50, offset = 0) {
-  return api.get<AdminRedeemCodesResp>(`/admin/redeem-codes?limit=${limit}&offset=${offset}`)
+export function fetchRedeemCodes(
+  limit = 50,
+  offset = 0,
+  params: { keyword?: string; enabled?: boolean; expired?: boolean } = {},
+) {
+  const q = new URLSearchParams()
+  q.set('limit', String(limit))
+  q.set('offset', String(offset))
+  // 码搜索 + 启用/过期筛选（2026-10-31 新一轮第 20 轮）
+  if (params.keyword) q.set('keyword', params.keyword)
+  if (params.enabled !== undefined) q.set('enabled', params.enabled ? '1' : '0')
+  if (params.expired !== undefined) q.set('expired', params.expired ? '1' : '0')
+  return api.get<AdminRedeemCodesResp>(`/admin/redeem-codes?${q}`)
 }
 
 /**
