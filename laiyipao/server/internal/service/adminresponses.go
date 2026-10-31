@@ -122,6 +122,13 @@ type AdminRedeemCodesResp struct {
 	Total int64 `json:"total"`
 }
 
+// AdminRedeemUsagesResp 是 `GET /admin/redeem-usages` 的响应
+// （2026-10-31 新一轮第 17 轮）。
+type AdminRedeemUsagesResp struct {
+	Items []AdminRedeemUsageView `json:"items"`
+	Total int64                  `json:"total"`
+}
+
 // AdminRedeemCodeResp 是 `POST /admin/redeem-codes` 的响应。
 type AdminRedeemCodeResp struct {
 	Item AdminRedeemCodeView `json:"item"`

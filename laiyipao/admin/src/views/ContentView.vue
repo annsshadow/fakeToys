@@ -8,6 +8,7 @@ import {
   deleteAnnouncement,
   exportAnnouncementsCsv,
   fetchRedeemCodes,
+  fetchAdminRedeemUsages,
   createRedeemCode,
   updateRedeemCode,
   setRedeemCodeEnabled,
@@ -17,6 +18,7 @@ import {
   type AdminAnnouncementView,
   type AdminAuditLogView,
   type AdminRedeemCodeView,
+  type AdminRedeemUsageView,
 } from '@/api'
 import { fmtTime } from '@/utils/format'
 
@@ -53,6 +55,29 @@ const PAGE_SIZE = 50
 const annPage = ref(1)
 const codePage = ref(1)
 const logPage = ref(1)
+
+// 兑换码使用记录（2026-10-31 新一轮第 17 轮）。
+const redeemUsages = ref<AdminRedeemUsageView[]>([])
+const redeemUsageTotal = ref(0)
+const redeemUsagePage = ref(1)
+const redeemUsageVisible = ref(false)
+
+async function loadRedeemUsages() {
+  try {
+    const res = await fetchAdminRedeemUsages(PAGE_SIZE, (redeemUsagePage.value - 1) * PAGE_SIZE)
+    redeemUsages.value = res.items
+    redeemUsageTotal.value = res.total ?? res.items.length
+  } catch (e) {
+    ElMessage.error(`使用记录加载失败：${(e as Error).message}`)
+  }
+}
+
+/** 打开使用记录对话框并加载第一页（2026-10-31 新一轮第 17 轮）。 */
+function openRedeemUsages() {
+  redeemUsageVisible.value = true
+  redeemUsagePage.value = 1
+  loadRedeemUsages()
+}
 
 async function loadAll() {
   loading.value = true
@@ -471,6 +496,7 @@ loadAll()
           <div style="display: flex; align-items: center; justify-content: flex-end; margin-bottom: 8px">
             <span class="muted" style="margin-right: 8px">共 {{ codeTotal }} 条</span>
             <el-button size="small" @click="onExportRedeemCodes">导出 CSV</el-button>
+            <el-button size="small" @click="openRedeemUsages">使用记录</el-button>
           </div>
           <el-table :data="codes" size="small" stripe>
             <el-table-column prop="id" label="ID" width="55" />
@@ -525,6 +551,35 @@ loadAll()
             @current-change="loadAll"
           />
         </el-card>
+
+        <!-- 兑换码使用记录（2026-10-31 新一轮第 17 轮） -->
+        <el-dialog v-model="redeemUsageVisible" title="兑换码使用记录" width="720px">
+          <el-table :data="redeemUsages" size="small" stripe max-height="480">
+            <el-table-column prop="id" label="ID" width="60" />
+            <el-table-column prop="code" label="兑换码" min-width="150" />
+            <el-table-column prop="nickname" label="玩家" min-width="120" />
+            <el-table-column prop="user_id" label="用户 ID" width="90" />
+            <el-table-column label="奖励" min-width="160">
+              <template #default="{ row }">{{ rewardText(row.reward) }}</template>
+            </el-table-column>
+            <el-table-column label="使用时间" width="160">
+              <template #default="{ row }">{{ fmtTime(row.created_at) }}</template>
+            </el-table-column>
+            <template #empty>
+              <el-empty description="暂无使用记录" :image-size="60" />
+            </template>
+          </el-table>
+          <el-pagination
+            v-if="redeemUsageTotal > PAGE_SIZE"
+            v-model:current-page="redeemUsagePage"
+            :page-size="PAGE_SIZE"
+            :total="redeemUsageTotal"
+            layout="prev, pager, next, total"
+            size="small"
+            background
+            @current-change="loadRedeemUsages"
+          />
+        </el-dialog>
       </el-tab-pane>
 
       <!-- 审计日志 -->

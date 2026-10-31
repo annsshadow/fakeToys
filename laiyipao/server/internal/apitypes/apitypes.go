@@ -51,6 +51,9 @@ var AdminRegistry = tygen.Registry{
 	{Name: "AdminAnnouncementView", Go: service.AdminAnnouncementView{}},
 	{Name: "AdminRedeemCodeView", Go: service.AdminRedeemCodeView{}},
 	{Name: "AdminAuditLogView", Go: service.AdminAuditLogView{}},
+	// 2026-10-31（新一轮第 17 轮）：兑换码使用记录视图。
+	{Name: "AdminRedeemUsageView", Go: service.AdminRedeemUsageView{}},
+	{Name: "AdminRedeemUsagesResp", Go: service.AdminRedeemUsagesResp{}},
 	// ── 响应信封（handler 直接返回它们，前端写的就是这层）──
 	{Name: "AdminLoginResp", Go: service.AdminLoginResp{}},
 	{Name: "AdminMeResp", Go: service.AdminMeResp{}},

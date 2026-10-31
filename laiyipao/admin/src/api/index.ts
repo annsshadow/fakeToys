@@ -46,6 +46,8 @@ import type {
   AdminRedeemCodeResp,
   AdminRedeemCodeView,
   AdminRedeemCodesResp,
+  AdminRedeemUsageView,
+  AdminRedeemUsagesResp,
   AdminRegenerateResp,
   AdminShopItemResp,
   AdminShopItemView,
@@ -98,6 +100,8 @@ export type {
   AdminRedeemCodeResp,
   AdminRedeemCodeView,
   AdminRedeemCodesResp,
+  AdminRedeemUsageView,
+  AdminRedeemUsagesResp,
   AdminRegenerateResp,
   AdminShopItemResp,
   AdminShopItemView,
@@ -554,6 +558,14 @@ export function exportAnnouncementsCsv() {
 
 export function fetchRedeemCodes(limit = 50, offset = 0) {
   return api.get<AdminRedeemCodesResp>(`/admin/redeem-codes?limit=${limit}&offset=${offset}`)
+}
+
+/**
+ * 兑换码使用记录（2026-10-31 新一轮第 17 轮）。
+ * 运营发码后此前无法查看「谁用了 / 奖励是什么」。
+ */
+export function fetchAdminRedeemUsages(limit = 50, offset = 0) {
+  return api.get<AdminRedeemUsagesResp>(`/admin/redeem-usages?limit=${limit}&offset=${offset}`)
 }
 
 export function createRedeemCode(payload: {

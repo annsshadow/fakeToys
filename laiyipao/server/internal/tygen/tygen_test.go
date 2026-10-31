@@ -82,6 +82,9 @@ func TestRegistryCoversEveryAdminResponse(t *testing.T) {
 		"AdminAnnouncementView",
 		"AdminRedeemCodeView",
 		"AdminAuditLogView",
+		// 2026-10-31（新一轮第 17 轮）：兑换码使用记录视图。
+		"AdminRedeemUsageView",
+		"AdminRedeemUsagesResp",
 	}
 	for _, name := range want {
 		if !registered[name] {

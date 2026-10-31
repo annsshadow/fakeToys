@@ -345,6 +345,9 @@ func (s *Server) Register(app *fiber.App) {
 	adm.Put("/announcements/:id", requireWritable(), s.adminUpdateAnnouncement)
 	adm.Delete("/announcements/:id", requireWritable(), s.adminDeleteAnnouncement)
 	adm.Get("/redeem-codes", s.adminRedeemCodes)
+	// 兑换码使用记录（2026-10-31 新一轮第 17 轮）：
+	// 运营发码后此前无法查看「谁用了 / 奖励是什么」。
+	adm.Get("/redeem-usages", s.adminRedeemUsages)
 	// 兑换码 CSV 导出（2026-10-31 实质优化第 37 轮）：读操作，readonly 可访问。
 	adm.Get("/redeem-codes/export", s.adminExportRedeemCodes)
 	adm.Post("/redeem-codes", requireWritable(), s.adminCreateRedeemCode)

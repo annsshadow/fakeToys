@@ -906,6 +906,23 @@ func (s *Server) adminRedeemCodes(c *fiber.Ctx) error {
 	return c.JSON(service.NormalizeNilSlices(service.AdminRedeemCodesResp{Items: items, Total: total}))
 }
 
+// adminRedeemUsages 返回兑换码使用记录列表（2026-10-31 新一轮第 17 轮）。
+func (s *Server) adminRedeemUsages(c *fiber.Ctx) error {
+	limit, err := queryInt(c, "limit", 50)
+	if err != nil {
+		return failErr(c, err)
+	}
+	offset, err := queryInt(c, "offset", 0)
+	if err != nil {
+		return failErr(c, err)
+	}
+	items, total, err := s.Svc.AdminListRedeemUsages(c.Context(), limit, offset)
+	if err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(service.NormalizeNilSlices(service.AdminRedeemUsagesResp{Items: items, Total: total}))
+}
+
 // adminExportRedeemCodes 导出兑换码 CSV（2026-10-31 实质优化第 37 轮）。
 func (s *Server) adminExportRedeemCodes(c *fiber.Ctx) error {
 	data, err := s.Svc.AdminExportRedeemCodes(c.Context())

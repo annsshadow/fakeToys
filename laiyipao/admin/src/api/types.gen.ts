@@ -258,6 +258,20 @@ export interface AdminRedeemCodesResp {
   total: number
 }
 
+export interface AdminRedeemUsageView {
+  id: number
+  code: string
+  user_id: number
+  nickname: string
+  reward: { [key: string]: number }
+  created_at: string
+}
+
+export interface AdminRedeemUsagesResp {
+  items: AdminRedeemUsageView[]
+  total: number
+}
+
 export interface AdminRegenerateResp {
   generated: number
 }

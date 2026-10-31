@@ -525,6 +525,59 @@ func (s *Service) AdminListOrders(ctx context.Context, limit, offset int, status
 	return out, total, rows.Err()
 }
 
+// AdminRedeemUsageView 是兑换码使用记录的一行（2026-10-31 新一轮第 17 轮）。
+type AdminRedeemUsageView struct {
+	ID        int64          `json:"id"`
+	Code      string         `json:"code"`
+	UserID    int64          `json:"user_id"`
+	Nickname  string         `json:"nickname"`
+	Reward    map[string]int `json:"reward"`
+	CreatedAt time.Time      `json:"created_at"`
+}
+
+// AdminListRedeemUsages 返回兑换码使用记录列表。
+//
+// 运营发放兑换码后，想知道「这个码被谁用了 / 某个玩家用了哪些码」，
+// 此前没有任何后台入口（只能直接查库）。这里补上全局使用记录视图。
+func (s *Service) AdminListRedeemUsages(ctx context.Context, limit, offset int) ([]AdminRedeemUsageView, int64, error) {
+	if limit <= 0 || limit > 200 {
+		limit = 50
+	}
+	if offset < 0 {
+		offset = 0
+	}
+	var total int64
+	if err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM redeem_usages`).Scan(&total); err != nil {
+		return nil, 0, fmt.Errorf("admin redeem usages count: %w", err)
+	}
+	rows, err := s.pool.Query(ctx, `
+		SELECT ru.id, rc.code, ru.user_id, COALESCE(u.nickname, ''), rc.reward, ru.created_at
+		FROM redeem_usages ru
+		JOIN redeem_codes rc ON rc.id = ru.code_id
+		LEFT JOIN users u ON u.id = ru.user_id
+		ORDER BY ru.id DESC LIMIT $1 OFFSET $2`, limit, offset)
+	if err != nil {
+		return nil, 0, fmt.Errorf("admin redeem usages: %w", err)
+	}
+	defer rows.Close()
+
+	out := []AdminRedeemUsageView{}
+	for rows.Next() {
+		var v AdminRedeemUsageView
+		var rewardRaw []byte
+		if err := rows.Scan(&v.ID, &v.Code, &v.UserID, &v.Nickname, &rewardRaw, &v.CreatedAt); err != nil {
+			return nil, 0, err
+		}
+		// fail-loud（AGENTS #11）：坏 reward 静默成空 map，运营看到的
+		// 是「这个码没发东西」，会误判补偿流程。
+		if err := json.Unmarshal(rewardRaw, &v.Reward); err != nil {
+			return nil, 0, fmt.Errorf("unmarshal redeem usage reward: %w", err)
+		}
+		out = append(out, v)
+	}
+	return out, total, rows.Err()
+}
+
 // AdminEconomy 返回经济流水与商城配置。
 func (s *Service) AdminEconomy(ctx context.Context) (AdminEconomyResp, error) {
 	rows, err := s.pool.Query(ctx, `
