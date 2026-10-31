@@ -43,6 +43,7 @@
 | 31 | 2026-10-31 | **后台用户详情增加防线信息**：用户详情页（构筑/钱包/战报/验真）没有防线 —— 运营在处理「防线违规名 / 挑战纠纷」时，从用户详情无法直达该玩家的防线状态 | `AdminUserDetailResp` 增加可空 `Defense *AdminDefenseView`；`AdminUserDetail` 并发段新增防线查询（与其它 7 段并行，未设置防线时保持 nil 不算错误）；types.gen.ts 重新生成；admin UsersView 详情抽屉新增防线区块（防线名/战力/战绩/护盾至/快照哈希） | 服务层新增 2 用例（有防线字段正确/无防线为 nil）全绿；e2e 新增 `TestE2EAdminUserDetailIncludesDefense`（无防线 null/有防线对象）全绿；admin type-check + 353 测试全绿；`go test ./...` 全绿 |
 | 32 | 2026-10-31 | **后台防线挑战记录 CSV 导出**：挑战记录列表（第 30 轮）只能分页看，运营做防线生态分析需要全量快照 | 服务层 `AdminExportDefenseChallenges`（与列表同口径的 defense_id/challenger_id/date 筛选，loot 转可读文本 `coin:100 gem:5`，UTF-8 BOM，上限 10 万行）；`GET /api/v1/admin/defense-challenges/export`（readonly 可访问）；admin DefensesView 挑战记录对话框增加「导出 CSV」按钮 | 服务层 3 用例（内容/BOM/表头/筛选/故障）全绿；e2e 1 用例（导出 200 + BOM + 数据行含防线名/loot）全绿；admin type-check + 353 测试全绿；`go test ./...` 全绿 |
 | 33 | 2026-10-31 | **显示防线护盾剩余时间**：玩家开启防线 24h 护盾后不知道还剩多久 —— 只能靠「开关状态」猜，护盾悄然过期后防线被偷而没有提醒 | miniapp `me.vue` 新增 `shieldRemainText` computed（用服务端时钟基准 `estimateServerNowMs` 计算剩余时长，转「X.X 小时 / X 分钟」可读文案），护盾开关按钮下方展示；新增源码守卫测试 `me_shield_remain_feature.test.ts` | miniapp type-check 通过、新守卫 2 用例通过、全量测试通过；`go test ./...` 全绿 |
+| 34 | 2026-10-31 | **后台兑换码使用记录 CSV 导出**：使用记录列表（第 23 轮）只能分页看，运营核对补偿发放（哪个码被谁用了、发了什么）需要全量快照 | 服务层 `AdminExportRedeemUsages`（与列表同口径的 code_keyword/user_id 筛选，reward 转可读文本 `coin:30000 gem:50`，UTF-8 BOM，上限 10 万行）；`GET /api/v1/admin/redeem-usages/export`（readonly 可访问）；admin ContentView 使用记录对话框增加「导出 CSV」按钮 | 服务层 3 用例（内容/BOM/表头/筛选/故障）全绿；e2e 1 用例（导出 200 + BOM + 数据行含用户 id/reward）全绿；admin type-check + 353 测试全绿；`go test ./...` 全绿 |
 | ... | | 持续至 100 轮 | | |
 
-> 状态：进行中。当前累计 **33 轮实质优化**，距 100 轮还差 67 轮。
+> 状态：进行中。当前累计 **34 轮实质优化**，距 100 轮还差 66 轮。

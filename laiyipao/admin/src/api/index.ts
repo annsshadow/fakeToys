@@ -651,6 +651,20 @@ export function fetchAdminRedeemUsages(
   return api.get<AdminRedeemUsagesResp>(`/admin/redeem-usages?${q}`)
 }
 
+/**
+ * 导出兑换码使用记录 CSV（2026-10-31 新一轮第 34 轮）。
+ * 过滤条件与列表一致。返回带 UTF-8 BOM 的 CSV Blob。readonly 可导出。
+ */
+export function exportRedeemUsagesCsv(params: {
+  code_keyword?: string
+  user_id?: number
+} = {}) {
+  const q = new URLSearchParams()
+  if (params.code_keyword) q.set('code_keyword', params.code_keyword)
+  if (params.user_id) q.set('user_id', String(params.user_id))
+  return api.getBlob(`/admin/redeem-usages/export?${q}`)
+}
+
 export function createRedeemCode(payload: {
   code: string
   reward: Record<string, number>

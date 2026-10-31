@@ -783,6 +783,71 @@ func (s *Service) AdminListRedeemUsages(ctx context.Context, limit, offset int, 
 	return out, total, rows.Err()
 }
 
+// AdminExportRedeemUsages 导出兑换码使用记录为 CSV（2026-10-31 新一轮第 34 轮）。
+//
+// 运营核对补偿发放（哪个码被谁用了、发了什么）需要全量快照而不是分页。
+// 过滤条件与列表一致（code_keyword / user_id），上限 100_000 行；
+// UTF-8 BOM（Excel 中文兼容）。reward 转可读文本（`coin:100 gem:5`），
+// 与兑换码导出格式一致。
+func (s *Service) AdminExportRedeemUsages(ctx context.Context, codeKeyword string, userID int64) ([]byte, error) {
+	kw, err := trimAdminKeyword(codeKeyword)
+	if err != nil {
+		return nil, err
+	}
+	escaped := strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`).Replace(kw)
+	pattern := "%" + escaped + "%"
+	where := `($1 = '' OR rc.code ILIKE $2) AND ($3 = 0 OR ru.user_id = $3)`
+	rows, err := s.pool.Query(ctx, `
+		SELECT ru.id, rc.code, ru.user_id, COALESCE(u.nickname, ''), rc.reward, ru.created_at
+		FROM redeem_usages ru
+		JOIN redeem_codes rc ON rc.id = ru.code_id
+		LEFT JOIN users u ON u.id = ru.user_id
+		WHERE `+where+`
+		ORDER BY ru.id DESC LIMIT 100000`, kw, pattern, userID)
+	if err != nil {
+		return nil, fmt.Errorf("export redeem usages: %w", err)
+	}
+	defer rows.Close()
+
+	var buf bytes.Buffer
+	buf.WriteString("\xEF\xBB\xBF")
+	w := csv.NewWriter(&buf)
+	header := []string{"id", "code", "user_id", "nickname", "reward", "created_at"}
+	if err := w.Write(header); err != nil {
+		return nil, fmt.Errorf("write csv header: %w", err)
+	}
+
+	for rows.Next() {
+		var id, userID2 int64
+		var code, nickname string
+		var rewardRaw []byte
+		var createdAt time.Time
+		if err := rows.Scan(&id, &code, &userID2, &nickname, &rewardRaw, &createdAt); err != nil {
+			return nil, fmt.Errorf("scan export redeem usage: %w", err)
+		}
+		reward := map[string]int{}
+		if err := json.Unmarshal(rewardRaw, &reward); err != nil {
+			return nil, fmt.Errorf("unmarshal export redeem usage reward: %w", err)
+		}
+		rec := []string{
+			strconv.FormatInt(id, 10),
+			code,
+			strconv.FormatInt(userID2, 10),
+			nickname,
+			formatRewardText(reward),
+			createdAt.UTC().Format(time.RFC3339),
+		}
+		if err := w.Write(rec); err != nil {
+			return nil, fmt.Errorf("write csv row: %w", err)
+		}
+	}
+	w.Flush()
+	if err := w.Error(); err != nil {
+		return nil, fmt.Errorf("flush csv: %w", err)
+	}
+	return buf.Bytes(), nil
+}
+
 // AdminEconomy 返回经济流水与商城配置。
 func (s *Service) AdminEconomy(ctx context.Context) (AdminEconomyResp, error) {
 	// 2026-10-31（新一轮第 28 轮）：wallet_flows 是全游戏增长最快的表，

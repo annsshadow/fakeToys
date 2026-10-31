@@ -1032,6 +1032,21 @@ func (s *Server) adminRedeemUsages(c *fiber.Ctx) error {
 	return c.JSON(service.NormalizeNilSlices(service.AdminRedeemUsagesResp{Items: items, Total: total}))
 }
 
+// adminExportRedeemUsages 导出兑换码使用记录 CSV（2026-10-31 新一轮第 34 轮）。
+func (s *Server) adminExportRedeemUsages(c *fiber.Ctx) error {
+	userID, err := queryInt(c, "user_id", 0)
+	if err != nil {
+		return failErr(c, err)
+	}
+	data, err := s.Svc.AdminExportRedeemUsages(c.Context(), c.Query("code_keyword", ""), int64(userID))
+	if err != nil {
+		return failErr(c, err)
+	}
+	c.Set("Content-Type", "text/csv; charset=utf-8")
+	c.Set("Content-Disposition", `attachment; filename="redeem_usages.csv"`)
+	return c.Send(data)
+}
+
 // adminExportRedeemCodes 导出兑换码 CSV（2026-10-31 实质优化第 37 轮）。
 func (s *Server) adminExportRedeemCodes(c *fiber.Ctx) error {
 	data, err := s.Svc.AdminExportRedeemCodes(c.Context())

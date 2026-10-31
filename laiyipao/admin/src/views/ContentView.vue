@@ -9,6 +9,7 @@ import {
   exportAnnouncementsCsv,
   fetchRedeemCodes,
   fetchAdminRedeemUsages,
+  exportRedeemUsagesCsv,
   createRedeemCode,
   updateRedeemCode,
   setRedeemCodeEnabled,
@@ -114,6 +115,26 @@ async function loadRedeemUsages() {
 function applyRedeemUsageFilter() {
   redeemUsagePage.value = 1
   loadRedeemUsages()
+}
+
+/** 导出使用记录 CSV（2026-10-31 新一轮第 34 轮）。 */
+async function onExportRedeemUsagesCsv() {
+  try {
+    const blob = await exportRedeemUsagesCsv({
+      code_keyword: redeemCodeKeyword.value || undefined,
+      user_id: redeemUserId.value,
+    })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `redeem_usages_${new Date().toISOString().slice(0, 10)}.csv`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+  } catch (e) {
+    ElMessage.error(`导出失败：${(e as Error).message}`)
+  }
 }
 
 /** 打开使用记录对话框并加载第一页（2026-10-31 新一轮第 17 轮）。 */
@@ -696,6 +717,7 @@ loadAll()
               style="width: 120px"
             />
             <el-button @click="applyRedeemUsageFilter">查询</el-button>
+            <el-button @click="onExportRedeemUsagesCsv">导出 CSV</el-button>
           </div>
           <el-table :data="redeemUsages" size="small" stripe max-height="480">
             <el-table-column prop="id" label="ID" width="60" />
