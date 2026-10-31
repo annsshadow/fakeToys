@@ -261,6 +261,19 @@ async function onExportCsv() {
   }
 }
 
+/**
+ * 复制 battle_id（2026-11-01 新一轮第 88 轮）。
+ * 运营追查某场重算对应的战报时，把 battle_id 贴到工单/战报搜索。
+ */
+async function copyBattleId(battleId: number) {
+  try {
+    await navigator.clipboard.writeText(String(battleId))
+    ElMessage.success(`已复制 battle_id ${battleId}`)
+  } catch {
+    ElMessage.error('复制失败，请手动选择复制')
+  }
+}
+
 function reloadAll() {
   // 两个请求并发：任一失败各自的提示里已经写明了后果，
   // 所以这里不串行 —— 串行会让一次总账超时把证据列表也拖住。
@@ -591,6 +604,21 @@ const asLevel = (r: unknown) => r as RecomputeLevelStat
         <el-table-column prop="engine_version" label="引擎版本" width="120" />
         <el-table-column label="时间" width="155">
           <template #default="{ row }">{{ fmtTime(row.created_at) }}</template>
+        </el-table-column>
+        <!-- 复制 battle_id（2026-11-01 新一轮第 88 轮）：追查到战报/工单 -->
+        <el-table-column label="操作" width="110" fixed="right">
+          <template #default="{ row }">
+            <el-button
+              v-if="asRow(row).battle_id !== 0"
+              size="small"
+              text
+              type="primary"
+              @click="copyBattleId(asRow(row).battle_id)"
+            >
+              复制 battle_id
+            </el-button>
+            <span v-else class="muted">—</span>
+          </template>
         </el-table-column>
         <template #empty>
           <el-empty :description="emptyText" :image-size="60" />

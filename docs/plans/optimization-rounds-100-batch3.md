@@ -97,6 +97,7 @@
 | 85 | 2026-11-01 | **后台战报详情复制回放哈希**：运营要把哈希贴到工单/外部重放工具时，只能手动选中一长串字符复制 | admin BattlesView 详情抽屉「回放哈希」行新增「复制」按钮（`navigator.clipboard` 写入）；admin 测试新增 1 用例 | admin type-check 通过；404 测试全绿（新增复制哈希 1 用例）；无 Go 改动 |
 | 86 | 2026-11-01 | **后台用户列表复制 ID**：运营把 user_id 贴到工单/群聊时，只能手动选中一长串数字复制 | admin UsersView 用户行操作列新增「复制 ID」按钮（`navigator.clipboard` 写入）；admin 测试新增 1 用例并更新既有按钮列表断言 | admin type-check 通过；405 测试全绿（新增复制 ID 1 用例）；无 Go 改动 |
 | 87 | 2026-11-01 | **我的战报详情复制回放哈希**：玩家用外部工具重放验真时，需要手动选中一长串回放哈希复制 | miniapp `battles.vue` 详情哈希行下新增「复制回放哈希」按钮（`uni.setClipboardData` 写入并 toast 提示）；新增守卫测试 `battle_copy_hash_feature.test.ts` | miniapp type-check 通过、新守卫 2 用例通过、全量 1245 测试全绿 |
+| 88 | 2026-11-01 | **后台重算台账复制 battle_id**：运营追查某场重算对应的战报时，需要手动复制 battle_id 到工单/战报搜索 | admin RecomputesView 台账新增「操作」列（battle_id≠0 时渲染「复制 battle_id」按钮，`navigator.clipboard` 写入）；admin 测试新增 2 用例 | admin type-check 通过；407 测试全绿（新增复制 battle_id 2 用例）；无 Go 改动 |
 | ... | | 持续至 100 轮 | | |
 
-> 状态：进行中。当前累计 **87 轮实质优化**，距 100 轮还差 13 轮。
+> 状态：进行中。当前累计 **88 轮实质优化**，距 100 轮还差 12 轮。

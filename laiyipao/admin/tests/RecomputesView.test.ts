@@ -380,3 +380,27 @@ describe('重算台账 CSV 导出（新一轮第 45 轮）', () => {
     wrapper.unmount()
   })
 })
+
+describe('RecomputesView 复制 battle_id（第 88 轮）', () => {
+  it('点击「复制 battle_id」：写入剪贴板并提示', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
+
+    const wrapper = await mountView()
+    const btn = wrapper.findAll('button').find((b) => b.text() === '复制 battle_id')
+    expect(btn, '找不到「复制 battle_id」按钮').toBeTruthy()
+    await btn!.trigger('click')
+    await flushPromises()
+
+    expect(writeText).toHaveBeenCalledWith('900')
+    expect(bodyText()).toContain('已复制 battle_id 900')
+    wrapper.unmount()
+  })
+
+  it('battle_id=0 的行不渲染复制按钮', async () => {
+    fetchRecomputes.mockResolvedValue({ items: [row({ battle_id: 0 })], total: 1 })
+    const wrapper = await mountView()
+    expect(wrapper.findAll('button').find((b) => b.text() === '复制 battle_id')).toBeUndefined()
+    wrapper.unmount()
+  })
+})
