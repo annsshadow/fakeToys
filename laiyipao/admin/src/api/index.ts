@@ -336,6 +336,7 @@ export function fetchBattles(
     only_mismatched?: boolean
     date_from?: string
     date_to?: string
+    result?: string
   } = {},
 ) {
   const q = new URLSearchParams()
@@ -350,6 +351,8 @@ export function fetchBattles(
   // 日期范围（2026-10-31 新一轮第 14 轮）：查「今天/某时间段」的战报。
   if (params.date_from) q.set('date_from', params.date_from)
   if (params.date_to) q.set('date_to', params.date_to)
+  // 结果筛选（2026-11-01 新一轮第 44 轮）：win / lose
+  if (params.result) q.set('result', params.result)
   return api.get<AdminBattlesResp>(`/admin/battles?${q}`)
 }
 
@@ -366,6 +369,7 @@ export function exportBattlesCsv(params: {
   only_mismatched?: boolean
   date_from?: string
   date_to?: string
+  result?: string
 } = {}) {
   const q = new URLSearchParams()
   if (params.user_id) q.set('user_id', String(params.user_id))
@@ -373,6 +377,7 @@ export function exportBattlesCsv(params: {
   if (params.only_mismatched) q.set('only_mismatched', '1')
   if (params.date_from) q.set('date_from', params.date_from)
   if (params.date_to) q.set('date_to', params.date_to)
+  if (params.result) q.set('result', params.result)
   return api.getBlob(`/admin/battles/export?${q}`)
 }
 

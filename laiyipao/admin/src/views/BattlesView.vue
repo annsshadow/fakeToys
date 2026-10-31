@@ -21,6 +21,8 @@ const battles = ref<AdminBattleView[]>([])
 const total = ref(0)
 const userId = ref<number | undefined>(undefined)
 const levelId = ref<number | undefined>(undefined)
+// 结果筛选（2026-11-01 新一轮第 44 轮）：win / lose，空 = 不限。
+const result = ref('')
 
 /** 反应 key → 中文名。取自服务端（见 `@/reactions`）。 */
 const reactionLabel = ref<ReactionLabels>({})
@@ -102,6 +104,8 @@ const filterParams = computed(() => ({
   // 日期范围（2026-10-31 新一轮第 14 轮）：date_from 当天 00:00，date_to 次日 00:00（开区间）
   date_from: dateRange.value?.[0] || undefined,
   date_to: dateRange.value ? nextDay(dateRange.value[1]) : undefined,
+  // 结果筛选（2026-11-01 新一轮第 44 轮）
+  result: result.value || undefined,
 }))
 
 const router = useRouter()
@@ -149,6 +153,8 @@ async function onExportCsv() {
       // 日期范围（2026-10-31 新一轮第 14 轮）：与列表过滤同口径
       date_from: dateRange.value?.[0] || undefined,
       date_to: dateRange.value ? nextDay(dateRange.value[1]) : undefined,
+      // 结果筛选（2026-11-01 新一轮第 44 轮）：与列表同口径
+      result: result.value || undefined,
     })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -301,6 +307,11 @@ const asRow = (r: unknown) => r as AdminBattleView
           placeholder="关卡 ID"
           style="width: 120px"
         />
+        <!-- 结果筛选（2026-11-01 新一轮第 44 轮）：只看胜/负 -->
+        <el-select v-model="result" placeholder="全部结果" clearable style="width: 110px; margin-left: 8px" @change="((page = 1), load())">
+          <el-option label="胜" value="win" />
+          <el-option label="负" value="lose" />
+        </el-select>
         <el-button @click="((page = 1), load())">筛选</el-button>
         <el-button @click="onExportCsv">导出 CSV</el-button>
         <!-- 日期范围（2026-10-31 新一轮第 14 轮）：查「今天/某时间段」的战报 -->

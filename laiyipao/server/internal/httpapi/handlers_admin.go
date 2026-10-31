@@ -501,7 +501,9 @@ func (s *Server) adminBattles(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	items, total, err := s.Svc.AdminListBattles(c.Context(), int64(userID), levelID, limit, onlyMismatched, offset, dateFrom, dateTo)
+	// 结果筛选（2026-11-01 新一轮第 44 轮）：win / lose，空串不过滤。
+	result := c.Query("result", "")
+	items, total, err := s.Svc.AdminListBattles(c.Context(), int64(userID), levelID, limit, onlyMismatched, offset, dateFrom, dateTo, result)
 	if err != nil {
 		return failErr(c, err)
 	}
@@ -530,7 +532,7 @@ func (s *Server) adminExportBattles(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	data, err := s.Svc.AdminExportBattles(c.Context(), int64(userID), levelID, onlyMismatched, dateFrom, dateTo)
+	data, err := s.Svc.AdminExportBattles(c.Context(), int64(userID), levelID, onlyMismatched, dateFrom, dateTo, c.Query("result", ""))
 	if err != nil {
 		return failErr(c, err)
 	}

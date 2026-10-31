@@ -802,7 +802,7 @@ type AdminBattleView struct {
 //
 // onlyMismatched 为真时**只**返回「被验真过且有不匹配记录」的战报，
 // 用来从「这个用户有 3 次不匹配」直接跳到「是哪 3 场」。
-func (s *Service) AdminListBattles(ctx context.Context, userID int64, levelID int, limit int, onlyMismatched bool, offset int, dateFrom, dateTo *time.Time) ([]AdminBattleView, int64, error) {
+func (s *Service) AdminListBattles(ctx context.Context, userID int64, levelID int, limit int, onlyMismatched bool, offset int, dateFrom, dateTo *time.Time, result string) ([]AdminBattleView, int64, error) {
 	if limit <= 0 || limit > 200 {
 		limit = 50
 	}
@@ -870,13 +870,24 @@ func (s *Service) AdminListBattles(ctx context.Context, userID int64, levelID in
 	// COUNT 查询没有 limit/offset，日期改占 $3/$4。
 	countArgs := []any{userID, levelID}
 	listArgs := []any{userID, levelID, limit, offset}
-	if dateFrom != nil || dateTo != nil {
-		where += ` AND ($5::timestamptz IS NULL OR br.created_at >= $5)
-		             AND ($6::timestamptz IS NULL OR br.created_at < $6)`
-		countArgs = append(countArgs, dateFrom, dateTo)
-		listArgs = append(listArgs, dateFrom, dateTo)
+	// 日期范围：**始终**拼入（nil → NULL，`IS NULL` 分支恒真），
+	// 保证 COUNT 与列表的参数编号稳定（列表 $5/$6、COUNT $3/$4）。
+	// 若只在非 nil 时拼入，result 筛选（占 $7/$5）会悬空，
+	// PostgreSQL 报 `could not determine data type of parameter`。
+	where += ` AND ($5::timestamptz IS NULL OR br.created_at >= $5)
+	             AND ($6::timestamptz IS NULL OR br.created_at < $6)`
+	countArgs = append(countArgs, dateFrom, dateTo)
+	listArgs = append(listArgs, dateFrom, dateTo)
+	// 结果筛选（2026-11-01 新一轮第 44 轮）：win / lose，空串不过滤。
+	// 列表占 $7（COUNT 经下方映射到 $5）；COUNT 与列表参数顺序一致：
+	// 日期在前、result 在后。
+	result = strings.TrimSpace(result)
+	if result != "" {
+		where += ` AND br.result = $7`
+		countArgs = append(countArgs, result)
+		listArgs = append(listArgs, result)
 	}
-	countWhere := strings.ReplaceAll(strings.ReplaceAll(where, "$5", "$3"), "$6", "$4")
+	countWhere := strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(where, "$5", "$3"), "$6", "$4"), "$7", "$5")
 
 	var total int64
 	if err := s.pool.QueryRow(ctx,
@@ -935,7 +946,7 @@ func (s *Service) AdminListBattles(ctx context.Context, userID int64, levelID in
 // 过滤条件与 `AdminListBattles` 完全一致（user_id / level_id / only_mismatched），
 // 上限 100_000 行。replay_hash 是回放校验哈希（后台本来就可读），
 // 不是账号凭证，可以导出；guest_token 等敏感字段绝不进入。
-func (s *Service) AdminExportBattles(ctx context.Context, userID int64, levelID int, onlyMismatched bool, dateFrom, dateTo *time.Time) ([]byte, error) {
+func (s *Service) AdminExportBattles(ctx context.Context, userID int64, levelID int, onlyMismatched bool, dateFrom, dateTo *time.Time, result string) ([]byte, error) {
 	// 与 AdminListBattles 相同的子查询形态（注释见那边）。
 	vsub := `LEFT JOIN (
 		SELECT battle_id,
@@ -959,12 +970,17 @@ func (s *Service) AdminExportBattles(ctx context.Context, userID int64, levelID 
 	if onlyMismatched {
 		where += ` AND COALESCE(v.mismatched, 0) > 0`
 	}
-	// 日期范围（2026-10-31 新一轮第 14 轮）：可选，nil 不过滤。
+	// 日期范围（2026-10-31 新一轮第 14 轮）：**始终**拼入（nil → NULL，
+	// `IS NULL` 分支恒真），保证 result 筛选的 $5 稳定存在。
 	// 导出查询没有 limit/offset，日期直接占 $3/$4。
-	if dateFrom != nil || dateTo != nil {
-		where += ` AND ($3::timestamptz IS NULL OR br.created_at >= $3)
-		             AND ($4::timestamptz IS NULL OR br.created_at < $4)`
-		args = append(args, dateFrom, dateTo)
+	where += ` AND ($3::timestamptz IS NULL OR br.created_at >= $3)
+	             AND ($4::timestamptz IS NULL OR br.created_at < $4)`
+	args = append(args, dateFrom, dateTo)
+	// 结果筛选（2026-11-01 新一轮第 44 轮）：与列表同口径。
+	result = strings.TrimSpace(result)
+	if result != "" {
+		where += ` AND br.result = $5`
+		args = append(args, result)
 	}
 
 	rows, err := s.pool.Query(ctx, `

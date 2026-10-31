@@ -27,7 +27,7 @@ func TestAdminListBattlesDateFilter(t *testing.T) {
 	to := now.Add(-90 * time.Minute)    // -1.5h
 
 	// 只传 date_from：包含 mid（-2h）与 new（-1h），不含 old（-3h）
-	list, total, err := ts.AdminListBattles(ctx, 0, 0, 50, false, 0, &from, nil)
+	list, total, err := ts.AdminListBattles(ctx, 0, 0, 50, false, 0, &from, nil, "")
 	if err != nil {
 		t.Fatalf("date_from 过滤失败：%v", err)
 	}
@@ -41,7 +41,7 @@ func TestAdminListBattlesDateFilter(t *testing.T) {
 	}
 
 	// 只传 date_to（开区间 <）：应只含 old（-3h）
-	list, total, err = ts.AdminListBattles(ctx, 0, 0, 50, false, 0, nil, &from)
+	list, total, err = ts.AdminListBattles(ctx, 0, 0, 50, false, 0, nil, &from, "")
 	if err != nil {
 		t.Fatalf("date_to 过滤失败：%v", err)
 	}
@@ -50,7 +50,7 @@ func TestAdminListBattlesDateFilter(t *testing.T) {
 	}
 
 	// 双端 [from, to)：应只含 mid（-2h）
-	list, total, err = ts.AdminListBattles(ctx, 0, 0, 50, false, 0, &from, &to)
+	list, total, err = ts.AdminListBattles(ctx, 0, 0, 50, false, 0, &from, &to, "")
 	if err != nil {
 		t.Fatalf("双端过滤失败：%v", err)
 	}
@@ -70,7 +70,7 @@ func TestAdminExportBattlesDateFilter(t *testing.T) {
 	seedBattleFor(t, ts, uid, 3, "win", 3, now.Add(-1*time.Hour))
 
 	from := now.Add(-150 * time.Minute)
-	data, err := ts.AdminExportBattles(ctx, 0, 0, false, &from, nil)
+	data, err := ts.AdminExportBattles(ctx, 0, 0, false, &from, nil, "")
 	if err != nil {
 		t.Fatalf("date_from 导出失败：%v", err)
 	}

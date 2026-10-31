@@ -201,7 +201,7 @@ func (s *Service) AdminUserDetail(ctx context.Context, userID int64) (AdminUserD
 	// 6) 最近战报
 	seg(4, func() {
 		var err error
-		battles, _, err = s.AdminListBattles(ctx, userID, 0, 10, false, 0, nil, nil)
+		battles, _, err = s.AdminListBattles(ctx, userID, 0, 10, false, 0, nil, nil, "")
 		if err != nil {
 			errs[4] = fmt.Errorf("load user battles: %w", err)
 		}

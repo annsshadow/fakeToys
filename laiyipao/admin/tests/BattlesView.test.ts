@@ -572,3 +572,43 @@ describe('BattlesView 点击玩家跳转用户详情（第 38 轮）', () => {
   })
 })
 
+describe('BattlesView 结果筛选（第 44 轮）', () => {
+  it('结果下拉选择胜/负：fetchBattles 携带 result，清空后不带', async () => {
+    const wrapper = await mountBattles([battleFixture()])
+    const select = wrapper.findComponent({ name: 'ElSelect' })
+    expect(select.exists(), '找不到结果下拉').toBe(true)
+
+    // 选择「胜」：v-model 更新 + change 触发重新加载
+    await select.vm.$emit('update:modelValue', 'win')
+    await select.vm.$emit('change', 'win')
+    await flushPromises()
+    expect(fetchBattles).toHaveBeenLastCalledWith(expect.objectContaining({ result: 'win' }))
+
+    // 清空（clearable）：result 回到 undefined
+    await select.vm.$emit('update:modelValue', '')
+    await select.vm.$emit('change', '')
+    await flushPromises()
+    expect(fetchBattles).toHaveBeenLastCalledWith(expect.objectContaining({ result: undefined }))
+    wrapper.unmount()
+  })
+
+  it('结果筛选与用户/关卡/日期筛选同时生效', async () => {
+    const wrapper = await mountBattles([battleFixture()])
+    const vm = wrapper.vm as unknown as {
+      userId: number | undefined
+      levelId: number | undefined
+      result: string
+    }
+    vm.userId = 7
+    vm.levelId = 3
+    vm.result = 'lose'
+    await wrapper.findAll('button').find((b) => b.text() === '筛选')!.trigger('click')
+    await flushPromises()
+
+    expect(fetchBattles).toHaveBeenLastCalledWith(
+      expect.objectContaining({ user_id: 7, level_id: 3, result: 'lose' }),
+    )
+    wrapper.unmount()
+  })
+})
+

@@ -53,6 +53,7 @@
 | 41 | 2026-11-01 | **「我的战报」页**：`/me/battles` 与 `/me/battles/:id` 端点早已存在，客户端却没有任何战报历史入口 —— 玩家打完一局就再也找不到那一局的记录 | 新增 miniapp 页面 `pages/battles/battles.vue`（`myBattleHistory` 拉取最近 20 场，每行展示胜负/星级/分数/击杀/漏怪/时间；点开按需 `myBattleDetail` 回顾发射命中/波次/热量/剩余血量/掉落/元素/反应/地形/回放哈希，详情缓存避免重复请求）；pages.json 注册路由；首页菜单新增「战报」入口；新增源码守卫测试 `battles_history_feature.test.ts` | miniapp type-check 通过、新守卫 3 用例通过、全量 1206 测试全绿 |
 | 42 | 2026-11-01 | **「公告」列表页**：玩家侧公告端点最多返回 20 条，而首页只展示最新几条 —— 历史公告在首页不可回看，运营发过的活动规则/补偿说明就此消失 | 新增 miniapp 页面 `pages/announcements/announcements.vue`（`fetchAnnouncements(20)` 拉取全量，标题/发布时间/正文全文平铺展示）；pages.json 注册路由；首页公告卡片「共 N 条」改为「全部 N 条 →」入口跳转公告页；新增源码守卫测试 `announcements_page_feature.test.ts`；同步更新首页既有测试断言 | miniapp type-check 通过、新守卫 3 用例通过、全量 1209 测试全绿 |
 | 43 | 2026-11-01 | **战斗结算后查看本局战报**：结算响应带 `battle_id`，但此前没有任何消费 —— 玩家打完只能看到结算面板上的数字，想回顾掉落/元素/反应/地形没有入口 | miniapp `battle.vue` 结算面板新增「查看本局战报」按钮（`battle_id` 合法时跳转战报页并携带 id）；`battles.vue` 支持 `?battle_id=` 深链：`onLoad` 解析参数，列表加载后自动展开该局并拉取详情；新增守卫测试 `battle_result_report_link_feature.test.ts`，并扩展战报页守卫测试 | miniapp type-check 通过、新守卫 2 用例通过、全量 1212 测试全绿 |
+| 44 | 2026-11-01 | **后台战报按结果筛选**：运营此前只能按 user_id / level_id / only_mismatched / 日期过滤，想查「这个用户赢过哪些局 / 哪些关卡胜率低」只能翻页或导出后在 Excel 里筛 | 服务层 `AdminListBattles`/`AdminExportBattles` 增加可选 `result`（win/lose，空串不过滤；日期条件改为**始终拼入**保证 COUNT 与列表参数编号稳定，修复 result 筛选下的 `could not determine data type of parameter`）；handler 解析 `result` 查询参数；admin BattlesView 新增「结果」下拉（胜/负/全部），`fetchBattles`/`exportBattlesCsv` 参数同步；新增服务层 2 用例 + e2e 1 用例 + admin 2 用例 | 服务层（列表/导出结果筛选）全绿；e2e（win/lose/未知值）全绿；admin type-check + 363 测试全绿；`go test ./...` 全绿 |
 | ... | | 持续至 100 轮 | | |
 
-> 状态：进行中。当前累计 **43 轮实质优化**，距 100 轮还差 57 轮。
+> 状态：进行中。当前累计 **44 轮实质优化**，距 100 轮还差 56 轮。
