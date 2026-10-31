@@ -89,6 +89,7 @@
 | 77 | 2026-11-01 | **反应图鉴搜索**：反应图鉴有多种反应链，没有搜索时想找一种反应只能滚动翻找 | miniapp `reactions.vue` 顶部新增搜索框，按反应名实时过滤；新增守卫测试 `reactions_search_feature.test.ts` | miniapp type-check 通过、新守卫 2 用例通过、全量 1237 测试全绿 |
 | 78 | 2026-11-01 | **皮肤图鉴搜索**：皮肤图鉴有 6 款皮肤（稀有/史诗/传说），没有搜索时想找一款皮肤只能滚动翻找 | miniapp `skins.vue` 顶部新增搜索框，按名称 / 稀有度中文实时过滤；新增守卫测试 `skins_search_feature.test.ts` | miniapp type-check 通过、新守卫 2 用例通过、全量 1239 测试全绿 |
 | 79 | 2026-11-01 | **我的页面战斗音效开关**：音效系统支持静音并持久化（`lyp_sfx_muted`），但没有任何 UI 入口 —— 玩家只能被战斗声音打扰 | miniapp `me.vue` 新增「设置」卡：战斗音效 switch（初始读取 `isMuted()`，切换调用 `setMuted` 持久化）；新增守卫测试 `me_sfx_toggle_feature.test.ts` | miniapp type-check 通过、新守卫 2 用例通过、全量 1241 测试全绿 |
+| 80 | 2026-11-01 | **我的战报服务端结果筛选**：第 74 轮的筛选是本地过滤，只对已加载的最近 N 局生效 —— 配合分页加载更多时「筛胜利」会漏掉更早的胜利局 | 服务层 `MyBattleHistory` 增加可选 `result`（win/lose，空串不过滤，LIMIT/OFFSET 参数稳定）；`GET /me/battles` 解析 `result`；miniapp `myBattleHistory(limit, offset, result)` 传参，battles.vue 筛选切换时重新从第一页加载（服务端过滤，对全部历史生效）；新增服务层 1 用例并扩展守卫测试 | 服务层（结果筛选/分页）全绿；miniapp type-check 通过、全量 1241 测试全绿；`go test ./...` 全绿 |
 | ... | | 持续至 100 轮 | | |
 
-> 状态：进行中。当前累计 **79 轮实质优化**，距 100 轮还差 21 轮。
+> 状态：进行中。当前累计 **80 轮实质优化**，距 100 轮还差 20 轮。

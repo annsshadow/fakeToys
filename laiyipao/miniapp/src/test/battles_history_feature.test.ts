@@ -23,7 +23,7 @@ const INDEX_VUE = join(__dirname, '../pages/index/index.vue')
 describe('我的战报历史页守卫', () => {
   it('battles.vue 必须拉取战报列表并展示胜负/星级/分数/击杀', () => {
     const src = readFileSync(BATTLES_VUE, 'utf-8')
-    expect(src).toContain('api.myBattleHistory(20, 0)')
+    expect(src).toContain("api.myBattleHistory(20, 0, filter.value === 'all' ? '' : filter.value)")
     expect(src).toContain('it.result === \'win\'')
     expect(src).toContain('it.kills')
     expect(src).toContain('it.score')
@@ -61,11 +61,10 @@ describe('我的战报历史页守卫', () => {
     expect(src).toContain('load-more')
   })
 
-  it('支持按结果筛选（第 74 轮）：全部/胜/负过滤已加载列表', () => {
+  it('支持按结果筛选（第 74/80 轮）：切换时重新从第一页服务端过滤加载', () => {
     const src = readFileSync(BATTLES_VUE, 'utf-8')
-    expect(src).toContain('filteredItems')
-    expect(src).toContain("filter.value === 'win'")
-    expect(src).toContain("it.result === want")
+    expect(src).toContain('watch(filter, () => {')
+    expect(src).toContain("filter.value === 'all' ? '' : filter.value")
     expect(src).toContain("label: '胜利'")
     expect(src).toContain("label: '失败'")
   })

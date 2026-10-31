@@ -790,7 +790,8 @@ func (s *Server) myBattleHistory(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	items, err := s.Svc.MyBattleHistory(c.Context(), userIDFrom(c), limit, offset)
+	// 结果筛选（2026-11-01 新一轮第 80 轮）：win / lose，空串不过滤。
+	items, err := s.Svc.MyBattleHistory(c.Context(), userIDFrom(c), limit, offset, c.Query("result", ""))
 	if err != nil {
 		return failErr(c, err)
 	}

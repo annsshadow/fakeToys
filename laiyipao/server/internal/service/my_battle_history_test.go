@@ -38,7 +38,7 @@ func TestMyBattleHistorySucceeds(t *testing.T) {
 	winID := seedBattleFor(t, ts, id, 3, "win", 3, time.Now().Add(-1*time.Hour))
 	loseID := seedBattleFor(t, ts, id, 2, "lose", 1, time.Now().Add(-2*time.Hour))
 
-	items, err := ts.MyBattleHistory(ctx, id, 20, 0)
+	items, err := ts.MyBattleHistory(ctx, id, 20, 0, "")
 	if err != nil {
 		t.Fatalf("查询战报历史失败：%v", err)
 	}
@@ -66,7 +66,7 @@ func TestMyBattleHistoryEmpty(t *testing.T) {
 	ctx := context.Background()
 
 	id, _ := newGuestUser(t, ts, "bhist_empty")
-	items, err := ts.MyBattleHistory(ctx, id, 20, 0)
+	items, err := ts.MyBattleHistory(ctx, id, 20, 0, "")
 	if err != nil {
 		t.Fatalf("查询战报历史失败：%v", err)
 	}
@@ -84,7 +84,7 @@ func TestMyBattleHistoryLimitCap(t *testing.T) {
 		seedBattleFor(t, ts, id, i%100+1, "win", 3, time.Now().Add(-time.Duration(i)*time.Minute))
 	}
 
-	items, err := ts.MyBattleHistory(ctx, id, 1000, 0)
+	items, err := ts.MyBattleHistory(ctx, id, 1000, 0, "")
 	if err != nil {
 		t.Fatalf("查询战报历史失败：%v", err)
 	}
@@ -97,7 +97,7 @@ func TestMyBattleHistoryBrokenPool(t *testing.T) {
 	ts := openBrokenService(t)
 	ctx := context.Background()
 
-	_, err := ts.MyBattleHistory(ctx, 1, 20, 0)
+	_, err := ts.MyBattleHistory(ctx, 1, 20, 0, "")
 	if err == nil {
 		t.Fatal("连接池已关闭时查询必须报错，不能静默返回空列表")
 	}
@@ -116,7 +116,7 @@ func TestMyBattleHistoryPagination(t *testing.T) {
 	}
 
 	// 第一页 2 条：最新的两条（i=0 / i=1）
-	page1, err := ts.MyBattleHistory(ctx, id, 2, 0)
+	page1, err := ts.MyBattleHistory(ctx, id, 2, 0, "")
 	if err != nil {
 		t.Fatalf("第一页查询失败：%v", err)
 	}
@@ -128,7 +128,7 @@ func TestMyBattleHistoryPagination(t *testing.T) {
 	}
 
 	// 第二页 2 条：offset=2
-	page2, err := ts.MyBattleHistory(ctx, id, 2, 2)
+	page2, err := ts.MyBattleHistory(ctx, id, 2, 2, "")
 	if err != nil {
 		t.Fatalf("第二页查询失败：%v", err)
 	}
@@ -140,7 +140,7 @@ func TestMyBattleHistoryPagination(t *testing.T) {
 	}
 
 	// 第三页（offset=4）：只剩 1 条（最旧）
-	page3, err := ts.MyBattleHistory(ctx, id, 2, 4)
+	page3, err := ts.MyBattleHistory(ctx, id, 2, 4, "")
 	if err != nil {
 		t.Fatalf("第三页查询失败：%v", err)
 	}
@@ -149,11 +149,48 @@ func TestMyBattleHistoryPagination(t *testing.T) {
 	}
 
 	// 负 offset 夹到 0（不报错）
-	neg, err := ts.MyBattleHistory(ctx, id, 2, -1)
+	neg, err := ts.MyBattleHistory(ctx, id, 2, -1, "")
 	if err != nil {
 		t.Fatalf("负 offset 查询失败：%v", err)
 	}
 	if len(neg) != 2 {
 		t.Errorf("负 offset 应夹到 0 取第一页，实际 %d", len(neg))
+	}
+}
+
+// TestMyBattleHistoryResultFilter 守住结果筛选（2026-11-01 新一轮第 80 轮）。
+func TestMyBattleHistoryResultFilter(t *testing.T) {
+	ts := openScratchService(t)
+	ctx := context.Background()
+
+	id, _ := newGuestUser(t, ts, "bhist_result")
+	winID := seedBattleFor(t, ts, id, 1, "win", 3, time.Now().Add(-time.Hour))
+	loseID := seedBattleFor(t, ts, id, 2, "lose", 0, time.Now().Add(-time.Hour))
+
+	// result=win：只含胜利
+	items, err := ts.MyBattleHistory(ctx, id, 20, 0, "win")
+	if err != nil {
+		t.Fatalf("result=win 查询失败：%v", err)
+	}
+	if len(items) != 1 || items[0].ID != winID {
+		t.Errorf("result=win 应只含胜利战报，实际 %+v", items)
+	}
+
+	// result=lose：只含失败
+	items, err = ts.MyBattleHistory(ctx, id, 20, 0, "lose")
+	if err != nil {
+		t.Fatalf("result=lose 查询失败：%v", err)
+	}
+	if len(items) != 1 || items[0].ID != loseID {
+		t.Errorf("result=lose 应只含失败战报，实际 %+v", items)
+	}
+
+	// result 空串：全部
+	items, err = ts.MyBattleHistory(ctx, id, 20, 0, "")
+	if err != nil {
+		t.Fatalf("result 空串查询失败：%v", err)
+	}
+	if len(items) != 2 {
+		t.Errorf("result 空串应返回全部战报，实际 %d", len(items))
 	}
 }

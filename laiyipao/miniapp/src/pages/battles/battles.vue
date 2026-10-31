@@ -20,7 +20,7 @@
 
       <view v-if="loading" class="card"><text class="muted">加载中…</text></view>
 
-      <view v-else-if="filteredItems.length === 0" class="card">
+      <view v-else-if="items.length === 0" class="card">
         <text class="card-title">暂无战报</text>
         <text class="muted" style="display: block; margin-top: 8rpx">
           打一局战斗后，胜负、星级、分数和击杀都会出现在这里。
@@ -29,7 +29,7 @@
 
       <view v-else class="card" style="padding: 8rpx 24rpx">
         <view
-          v-for="it in filteredItems"
+          v-for="it in items"
           :key="it.id"
           class="battle-row"
           :class="{ expanded: expandedId === it.id }"
@@ -86,7 +86,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { useGameStore } from '@/store/game'
 import * as api from '@/api/client'
@@ -115,11 +115,35 @@ const filters = [
 type BattleFilter = (typeof filters)[number]['key']
 const filter = ref<BattleFilter>('all')
 
-const filteredItems = computed(() => {
-  if (filter.value === 'all') return items.value
-  const want = filter.value === 'win' ? 'win' : 'lose'
-  return items.value.filter((it) => it.result === want)
+/**
+ * 结果筛选（2026-11-01 新一轮第 80 轮）：切换时**重新从第一页加载**，
+ * 服务端按 result 过滤（配合分页，筛选对全部历史生效，而非仅已加载部分）。
+ */
+watch(filter, () => {
+  void reload()
 })
+
+async function reload(): Promise<void> {
+  loading.value = true
+  try {
+    const res = await api.myBattleHistory(20, 0, filter.value === 'all' ? '' : filter.value)
+    items.value = res.items ?? []
+    hasMore.value = (res.items?.length ?? 0) >= 20
+    expandedId.value = 0
+    // 深链（2026-11-01 新一轮第 43 轮）：结算页跳转过来时自动展开刚打的那一局
+    if (focusBattleId.value > 0) {
+      const target = items.value.find((it) => it.id === focusBattleId.value)
+      if (target) {
+        expandedId.value = target.id
+        void loadDetail(target)
+      }
+    }
+  } catch {
+    // 战报加载失败：展示空态，不阻塞页面
+  } finally {
+    loading.value = false
+  }
+}
 const details = ref<Record<number, BattleDetail>>({})
 const detailLoading = ref(false)
 
@@ -251,24 +275,7 @@ async function loadMore() {
 
 onMounted(async () => {
   if (!store.loggedIn) await store.login()
-  loading.value = true
-  try {
-    const res = await api.myBattleHistory(20, 0)
-    items.value = res.items ?? []
-    hasMore.value = (res.items?.length ?? 0) >= 20
-    // 深链（2026-11-01 新一轮第 43 轮）：结算页跳转过来时自动展开刚打的那一局
-    if (focusBattleId.value > 0) {
-      const target = items.value.find((it) => it.id === focusBattleId.value)
-      if (target) {
-        expandedId.value = target.id
-        void loadDetail(target)
-      }
-    }
-  } catch {
-    // 战报加载失败：展示空态，不阻塞页面
-  } finally {
-    loading.value = false
-  }
+  await reload()
 })
 </script>
 

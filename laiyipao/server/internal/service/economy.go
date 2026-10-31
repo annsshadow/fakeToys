@@ -1105,7 +1105,7 @@ type MyBattleHistoryItem struct {
 //
 // 玩家打完关卡后没有任何历史战报入口（后台有 `AdminListBattles`，
 // 玩家侧只有单条验真/回放端点）。这里补上玩家视角的战绩列表。
-func (s *Service) MyBattleHistory(ctx context.Context, userID int64, limit, offset int) ([]MyBattleHistoryItem, error) {
+func (s *Service) MyBattleHistory(ctx context.Context, userID int64, limit, offset int, result string) ([]MyBattleHistoryItem, error) {
 	if limit <= 0 || limit > 50 {
 		limit = 20
 	}
@@ -1113,12 +1113,20 @@ func (s *Service) MyBattleHistory(ctx context.Context, userID int64, limit, offs
 	if offset < 0 {
 		offset = 0
 	}
+	// 结果筛选（2026-11-01 新一轮第 80 轮）：win / lose，空串不过滤。
+	result = strings.TrimSpace(result)
+	args := []any{userID, limit, offset}
+	where := `user_id = $1`
+	if result != "" {
+		where += ` AND result = $4`
+		args = append(args, result)
+	}
 	rows, err := s.pool.Query(ctx,
 		`SELECT id, level_id, result, stars, score, kills, leaked, replay_hash, created_at
 		 FROM battle_records
-		 WHERE user_id = $1
+		 WHERE `+where+`
 		 ORDER BY created_at DESC
-		 LIMIT $2 OFFSET $3`, userID, limit, offset)
+		 LIMIT $2 OFFSET $3`, args...)
 	if err != nil {
 		return nil, fmt.Errorf("my battle history: %w", err)
 	}
