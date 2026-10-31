@@ -569,6 +569,23 @@ function actionLabel(action: string): string {
   return ACTION_LABEL[action] ?? action
 }
 
+/**
+ * 用户相关后台操作集合（2026-11-01 新一轮第 68 轮）。
+ * 这些 action 的 target 是**纯用户 id**（后台运营操作），可以点击跳转用户详情。
+ * 玩家侧审计（update_loadout 等）的 target 是 `user#<id>` 格式，不在此列。
+ */
+const USER_TARGET_ACTIONS = new Set([
+  'ban_user',
+  'unban_user',
+  'grant_currency',
+  'revoke_currency',
+  'reset_password',
+])
+
+function isUserTargetAction(action: string): boolean {
+  return USER_TARGET_ACTIONS.has(action)
+}
+
 onMounted(loadAll)
 
 /**
@@ -947,7 +964,20 @@ loadAll()
               服务端字段是 username / action / target / detail。
               「对象类型」没有独立列（action 已含语义），合并成「对象」= target。
             -->
-            <el-table-column prop="target" label="对象" width="130" />
+            <el-table-column label="对象" width="130">
+              <!-- 用户相关操作的对象可点击跳转（2026-11-01 新一轮第 68 轮） -->
+              <template #default="{ row }">
+                <el-link
+                  v-if="isUserTargetAction(row.action) && /^\d+$/.test(String(row.target))"
+                  type="primary"
+                  underline="never"
+                  @click="openUserDetail(Number(row.target))"
+                >
+                  {{ row.target }}
+                </el-link>
+                <span v-else>{{ row.target }}</span>
+              </template>
+            </el-table-column>
             <el-table-column label="详情" min-width="180">
               <template #default="{ row }">{{ detailText(row.detail) }}</template>
             </el-table-column>

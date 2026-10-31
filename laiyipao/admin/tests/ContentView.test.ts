@@ -489,6 +489,40 @@ describe('ContentView 审计日志操作中文标签（第 56 轮）', () => {
   })
 })
 
+describe('ContentView 审计对象点击跳转用户详情（第 68 轮）', () => {
+  async function mountWithLogs(logs: Row[]) {
+    const wrapper = await mountContent({ logs })
+    await wrapper.findAll('.el-tabs__item').find((t) => t.text() === '审计日志')!.trigger('click')
+    await flushPromises()
+    return wrapper
+  }
+
+  it('用户操作（ban_user）的 target 可点击：跳转 /users 并携带 user_id', async () => {
+    const wrapper = await mountWithLogs([
+      { id: 1, username: 'admin', action: 'ban_user', target: '9', detail: { reason: '刷分' }, created_at: '2026-01-01T00:00:00Z' },
+    ])
+    const link = wrapper.find('.el-table .el-link')
+    expect(link.exists(), '找不到审计对象链接').toBe(true)
+    expect(link.text()).toBe('9')
+
+    await link.trigger('click')
+    await flushPromises()
+
+    expect(lastRouter?.currentRoute.value.path).toBe('/users')
+    expect(lastRouter?.currentRoute.value.query.user_id).toBe('9')
+    wrapper.unmount()
+  })
+
+  it('非用户操作（update_announcement）的 target 不可点击', async () => {
+    const wrapper = await mountWithLogs([
+      { id: 2, username: 'admin', action: 'update_announcement', target: '5', detail: null, created_at: '2026-01-01T00:00:00Z' },
+    ])
+    expect(wrapper.find('.el-table .el-link').exists()).toBe(false)
+    expect(wrapper.text()).toContain('5')
+    wrapper.unmount()
+  })
+})
+
 describe('ContentView 兑换码批量生成（第 57 轮）', () => {
   it('点击批量生成：按当前奖励/次数调用接口并刷新列表', async () => {
     createRedeemCodesBatch.mockResolvedValue({
