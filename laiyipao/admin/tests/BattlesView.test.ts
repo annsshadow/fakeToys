@@ -612,3 +612,38 @@ describe('BattlesView 结果筛选（第 44 轮）', () => {
   })
 })
 
+describe('BattlesView 详情抽屉点击玩家跳转用户详情（第 63 轮）', () => {
+  it('点击详情里的玩家昵称：跳转 /users 并携带 user_id', async () => {
+    fetchBattleDetail.mockResolvedValueOnce({
+      battle: { ...detailBase, id: 1, user_id: 9, nickname: '铁壁玩家' },
+    })
+    const wrapper = await mountBattles([battleFixture({ id: 1, user_id: 9 })])
+    await wrapper.findAll('button').find((b) => b.text() === '详情')!.trigger('click')
+    await flushPromises()
+
+    const link = wrapper.find('.el-drawer .el-descriptions .el-link')
+    expect(link.exists(), '找不到详情抽屉玩家链接').toBe(true)
+    expect(link.text()).toBe('铁壁玩家')
+
+    await link.trigger('click')
+    await flushPromises()
+
+    expect(lastRouter?.currentRoute.value.path).toBe('/users')
+    expect(lastRouter?.currentRoute.value.query.user_id).toBe('9')
+    wrapper.unmount()
+  })
+
+  it('无昵称时显示 #id（不可点击），不渲染链接', async () => {
+    fetchBattleDetail.mockResolvedValueOnce({
+      battle: { ...detailBase, id: 2, user_id: 42, nickname: '' },
+    })
+    const wrapper = await mountBattles([battleFixture({ id: 2, user_id: 42, nickname: '' })])
+    await wrapper.findAll('button').find((b) => b.text() === '详情')!.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('.el-drawer .el-descriptions .el-link').exists()).toBe(false)
+    expect(wrapper.text()).toContain('#42')
+    wrapper.unmount()
+  })
+})
+

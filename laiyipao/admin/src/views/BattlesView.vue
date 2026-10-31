@@ -408,7 +408,20 @@ const asRow = (r: unknown) => r as AdminBattleView
           </el-descriptions-item>
           <el-descriptions-item label="剩余防线血量">{{ detail.hp_left }}</el-descriptions-item>
           <el-descriptions-item label="结算后战力">{{ detail.power_after }}</el-descriptions-item>
-          <el-descriptions-item label="玩家">{{ detail.nickname }}（#{{ detail.user_id }}）</el-descriptions-item>
+          <el-descriptions-item label="玩家">
+            <!-- 点击跳转用户详情（2026-11-01 新一轮第 63 轮）：
+                 在详情里发现异常分数/反应滥用时直达玩家本体。 -->
+            <el-link
+              v-if="detail.nickname"
+              type="primary"
+              underline="never"
+              @click="openUserDetail(detail.user_id)"
+            >
+              {{ detail.nickname }}
+            </el-link>
+            <span v-else>#{{ detail.user_id }}</span>
+            <span class="muted">（#{{ detail.user_id }}）</span>
+          </el-descriptions-item>
           <el-descriptions-item label="结果">
             <el-tag :type="detail.result === 'win' ? 'success' : 'danger'" size="small">
               {{ detail.result === 'win' ? '通关' : '失败' }} · {{ detail.stars }} 星
