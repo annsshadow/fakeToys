@@ -17,6 +17,7 @@
  * 值班的人会以为防护开着。
  */
 import {computed, onMounted, ref, onActivated} from 'vue'
+import { useRouter } from 'vue-router'
 import { useAdminRole } from '@/utils/adminRole'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
@@ -34,6 +35,16 @@ import { fmtTime } from '@/utils/format'
 
 /** 空态文案（2026-10-21 P5-8）：空表要说清「为什么空」。 */
 const emptyText = '没有匹配的重算记录'
+const router = useRouter()
+
+/**
+ * 打开指定玩家的用户详情（2026-11-01 新一轮第 96 轮）。
+ * 跳到用户管理页并携带 user_id，UsersView 挂载时会自动打开详情抽屉。
+ */
+function openUserDetail(userId: number) {
+  router.push({ path: '/users', query: { user_id: String(userId) } })
+}
+
 const loading = ref(false)
 // 2026-10-21（P5-6 / 二轮审计 P2-3）：readonly 账号看不到写入口。
 const { isReadonly } = useAdminRole()
@@ -572,7 +583,20 @@ const asLevel = (r: unknown) => r as RecomputeLevelStat
             <span v-else>{{ asRow(row).battle_id }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="user_id" label="用户" width="80" />
+        <el-table-column label="用户" width="110">
+          <!-- 点击跳转用户详情（2026-11-01 新一轮第 96 轮） -->
+          <template #default="{ row }">
+            <el-link
+              v-if="asRow(row).nickname"
+              type="primary"
+              underline="never"
+              @click="openUserDetail(asRow(row).user_id)"
+            >
+              {{ asRow(row).nickname }}
+            </el-link>
+            <span v-else>#{{ asRow(row).user_id }}</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="level_id" label="关卡" width="70" />
         <el-table-column label="不符字段" min-width="140">
           <template #default="{ row }">

@@ -13,7 +13,8 @@
  * 而反复误报的告警等于没有告警。
  */
 import { describe, expect, it, vi, beforeEach } from 'vitest'
-import { flushPromises } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
+import { createMemoryHistory, createRouter } from 'vue-router'
 import { mountEl, settle, bodyText } from './helpers'
 
 const fetchRecomputes = vi.fn()
@@ -401,6 +402,34 @@ describe('RecomputesView 复制 battle_id（第 88 轮）', () => {
     fetchRecomputes.mockResolvedValue({ items: [row({ battle_id: 0 })], total: 1 })
     const wrapper = await mountView()
     expect(wrapper.findAll('button').find((b) => b.text() === '复制 battle_id')).toBeUndefined()
+    wrapper.unmount()
+  })
+})
+
+describe('RecomputesView 用户跳转用户详情（第 96 轮）', () => {
+  it('点击用户昵称：跳转 /users 并携带 user_id', async () => {
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: '/recomputes', component: { template: '<div />' } },
+        { path: '/users', component: { template: '<div />' } },
+      ],
+    })
+    await router.push('/recomputes')
+    await router.isReady()
+
+    const wrapper = mountEl(RecomputesView, { global: { plugins: [router] } })
+    await settle(wrapper)
+    await flushPromises()
+
+    const link = wrapper.find('.el-table .el-link')
+    expect(link.exists(), '找不到重算用户链接').toBe(true)
+
+    await link.trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.path).toBe('/users')
+    expect(router.currentRoute.value.query.user_id).toBe('7')
     wrapper.unmount()
   })
 })
