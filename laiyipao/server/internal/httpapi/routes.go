@@ -451,54 +451,59 @@ func (s *Server) refresh(c *fiber.Ctx) error {
 
 func (s *Server) me(c *fiber.Ctx) error {
 	userID := userIDFrom(c)
-	// 2026-10-31（新一轮第 1 轮）：`/me` 是最热端点之一（每次冷启动
-	// 必拉）。LoadBuildSnapshot 一趟查 6 张表，其余三个小查询原本串行等它；
-	// 这里在拿到 build 后把 LoadMaxStage / ComputeRatingFor / MyAccount
-	// **并行执行** —— 三个都只读、互不依赖，串行会白等两倍延迟。
+	// 2026-10-31（新一轮第 1 轮 / 第 13 轮）：`/me` 是最热端点之一（每次
+	// 冷启动必拉）。LoadBuildSnapshot 一趟查 6 张表；LoadMaxStage 与
+	// MyAccount **不依赖 build**，与 build 同步启动；ComputeRatingFor
+	// 依赖 build，等 build 到手后再执行（两阶段）。
+	// 总延迟从 `build + max(stage, rating, account)` 降到
+	// `max(build, stage, account) + rating` —— build 是最慢的查询时，
+	// stage/account 的时间不再叠加在 build 之后。
 	// 各 goroutine 只写自己的变量，主协程在 wg.Wait() 之后读取，无数据竞争。
-	build, err := s.Svc.LoadBuildSnapshot(c.Context(), userID)
-	if err != nil {
-		return failErr(c, err)
-	}
-
+	ctx := c.Context()
 	var (
-		maxStage  int
-		rating    domain.BuildRating
-		account   service.User
-		errStage  error
-		errRating error
-		errAcct   error
+		build    map[string]any
+		maxStage int
+		account  service.User
+		errBuild error
+		errStage error
+		errAcct  error
 	)
 	var wg sync.WaitGroup
 	wg.Add(3)
 	go func() {
 		defer wg.Done()
-		// 第 142 轮：max_stage 是「玩家进度」的服务端权威来源。客户端此前只在
-		// 本会话结算后才知道进度，老玩家重进 App 恒从 0 开始。/me 带上它，
-		// 客户端 refreshProfile 即可恢复真实解锁进度。
-		maxStage, errStage = s.Svc.LoadMaxStage(c.Context(), userID)
+		build, errBuild = s.Svc.LoadBuildSnapshot(ctx, userID)
 	}()
 	go func() {
 		defer wg.Done()
-		// 2026-10-21（P3-1）：评分**可能失败**（读不到专精点数）。
-		// 此前它把错误吞成 0 点，于是返回 200 + 一个少了专精加成的评分 ——
-		// 一个看起来合理但**错的**数字。失败就报失败。
-		rating, errRating = s.Svc.ComputeRatingFor(c.Context(), userID, build)
+		// 第 142 轮：max_stage 是「玩家进度」的服务端权威来源。客户端此前只在
+		// 本会话结算后才知道进度，老玩家重进 App 恒从 0 开始。/me 带上它，
+		// 客户端 refreshProfile 即可恢复真实解锁进度。
+		maxStage, errStage = s.Svc.LoadMaxStage(ctx, userID)
 	}()
 	go func() {
 		defer wg.Done()
 		// 2026-10-31（实质优化第 34 轮）：账号信息（注册时间/最后登录）。
-		account, errAcct = s.Svc.MyAccount(c.Context(), userID)
+		account, errAcct = s.Svc.MyAccount(ctx, userID)
 	}()
 	wg.Wait()
+	if errBuild != nil {
+		return failErr(c, errBuild)
+	}
 	if errStage != nil {
 		return failErr(c, errStage)
 	}
-	if errRating != nil {
-		return failErr(c, errRating)
-	}
 	if errAcct != nil {
 		return failErr(c, errAcct)
+	}
+
+	// 第二阶段：评分依赖 build，必须等 build 就绪。
+	// 2026-10-21（P3-1）：评分**可能失败**（读不到专精点数）。
+	// 此前它把错误吞成 0 点，于是返回 200 + 一个少了专精加成的评分 ——
+	// 一个看起来合理但**错的**数字。失败就报失败。
+	rating, err := s.Svc.ComputeRatingFor(ctx, userID, build)
+	if err != nil {
+		return failErr(c, err)
 	}
 	return c.JSON(fiber.Map{
 		"user_id":      userID,
