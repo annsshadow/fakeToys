@@ -225,11 +225,11 @@ describe('ContentView 列表渲染', () => {
     wrapper.unmount()
   })
 
-  it('加载失败（Promise.all 任一失败）：弹出统一错误消息', async () => {
+  it('加载失败：按 tab 独立弹出错误消息（2026-10-31 新一轮第 22 轮）', async () => {
     fetchAnnouncements.mockRejectedValueOnce(new Error('公告服务挂了'))
     const wrapper = mount(ContentView, { global: { plugins: [ElementPlus] } })
     await flushPromises()
-    expect(document.body.textContent).toContain('运营数据加载失败：公告服务挂了')
+    expect(document.body.textContent).toContain('公告加载失败：公告服务挂了')
     wrapper.unmount()
   })
 })

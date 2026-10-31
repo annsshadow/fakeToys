@@ -70,10 +70,10 @@ const logDateRange = ref<[string, string] | null>(null)
 const annPublished = ref<boolean | undefined>(undefined)
 const annDateRange = ref<[string, string] | null>(null)
 
-/** 公告筛选变化：回到第一页并重新加载。 */
+/** 公告筛选变化：回到第一页并只重载公告（2026-10-31 新一轮第 22 轮）。 */
 function applyAnnFilter() {
   annPage.value = 1
-  loadAll()
+  loadAnnouncements()
 }
 
 // 兑换码筛选（2026-10-31 新一轮第 20 轮）：码搜索 + 启用/过期状态。
@@ -84,7 +84,7 @@ const codeExpired = ref<boolean | undefined>(undefined)
 /** 兑换码筛选变化：回到第一页并重新加载。 */
 function applyCodeFilter() {
   codePage.value = 1
-  loadAll()
+  loadCodes()
 }
 
 function nextDay(day: string): string {
@@ -110,46 +110,66 @@ function openRedeemUsages() {
   loadRedeemUsages()
 }
 
-async function loadAll() {
-  loading.value = true
+/** 只加载公告（2026-10-31 新一轮第 22 轮：按 tab 独立加载）。 */
+async function loadAnnouncements() {
   try {
-    const [a, c, l] = await Promise.all([
-      fetchAnnouncements(PAGE_SIZE, (annPage.value - 1) * PAGE_SIZE, {
-        // 公告筛选（2026-10-31 新一轮第 21 轮）
-        published: annPublished.value,
-        date_from: annDateRange.value?.[0] || undefined,
-        date_to: annDateRange.value ? nextDay(annDateRange.value[1]) : undefined,
-      }),
-      fetchRedeemCodes(PAGE_SIZE, (codePage.value - 1) * PAGE_SIZE, {
-        // 码搜索 + 启用/过期筛选（2026-10-31 新一轮第 20 轮）
-        keyword: codeKeyword.value || undefined,
-        enabled: codeEnabled.value,
-        expired: codeExpired.value,
-      }),
-      fetchAuditLogs(PAGE_SIZE, (logPage.value - 1) * PAGE_SIZE, {
-        // 审计筛选（2026-10-31 新一轮第 18 轮）
-        action: logAction.value || undefined,
-        date_from: logDateRange.value?.[0] || undefined,
-        date_to: logDateRange.value ? nextDay(logDateRange.value[1]) : undefined,
-      }),
-    ])
+    const a = await fetchAnnouncements(PAGE_SIZE, (annPage.value - 1) * PAGE_SIZE, {
+      published: annPublished.value,
+      date_from: annDateRange.value?.[0] || undefined,
+      date_to: annDateRange.value ? nextDay(annDateRange.value[1]) : undefined,
+    })
     announcements.value = a.items
     annTotal.value = a.total ?? a.items.length
+  } catch (e) {
+    ElMessage.error(`公告加载失败：${(e as Error).message}`)
+  }
+}
+
+/** 只加载兑换码（2026-10-31 新一轮第 22 轮：按 tab 独立加载）。 */
+async function loadCodes() {
+  try {
+    const c = await fetchRedeemCodes(PAGE_SIZE, (codePage.value - 1) * PAGE_SIZE, {
+      keyword: codeKeyword.value || undefined,
+      enabled: codeEnabled.value,
+      expired: codeExpired.value,
+    })
     codes.value = c.items
     codeTotal.value = c.total ?? c.items.length
+  } catch (e) {
+    ElMessage.error(`兑换码加载失败：${(e as Error).message}`)
+  }
+}
+
+/** 只加载审计日志（2026-10-31 新一轮第 22 轮：按 tab 独立加载）。 */
+async function loadLogs() {
+  try {
+    const l = await fetchAuditLogs(PAGE_SIZE, (logPage.value - 1) * PAGE_SIZE, {
+      action: logAction.value || undefined,
+      date_from: logDateRange.value?.[0] || undefined,
+      date_to: logDateRange.value ? nextDay(logDateRange.value[1]) : undefined,
+    })
     logs.value = l.items
     logTotal.value = l.total ?? l.items.length
   } catch (e) {
-    ElMessage.error(`运营数据加载失败：${(e as Error).message}`)
+    ElMessage.error(`审计日志加载失败：${(e as Error).message}`)
+  }
+}
+
+async function loadAll() {
+  loading.value = true
+  try {
+    await Promise.all([loadAnnouncements(), loadCodes(), loadLogs()])
+  } catch {
+    // 各加载函数已分别报错；这里兜底避免未处理拒绝
   } finally {
     loading.value = false
   }
 }
 
-/** 审计筛选变化：回到第一页并只重载审计（公告/兑换码不动）。 */
+/** 审计筛选变化：回到第一页并只重载审计（2026-10-31 新一轮第 22 轮）。 */
 function applyLogFilter() {
   logPage.value = 1
-  loadAll()
+  loadLogs()
 }
 
 /**
@@ -532,7 +552,7 @@ loadAll()
                 layout="prev, pager, next, total"
                 size="small"
                 background
-                @current-change="loadAll"
+                @current-change="loadAnnouncements"
               />
             </el-card>
           </el-col>
@@ -640,7 +660,7 @@ loadAll()
             layout="prev, pager, next, total"
             size="small"
             background
-            @current-change="loadAll"
+            @current-change="loadCodes"
           />
         </el-card>
 
@@ -736,7 +756,7 @@ loadAll()
             layout="prev, pager, next, total"
             size="small"
             background
-            @current-change="loadAll"
+            @current-change="loadLogs"
           />
         </el-card>
       </el-tab-pane>
