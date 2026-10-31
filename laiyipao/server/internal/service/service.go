@@ -1051,6 +1051,24 @@ func (s *Service) LoadWallet(ctx context.Context, userID int64) (Wallet, error) 
 	// 满体力时仍然推进时间戳（`n > 0` 就写）：否则玩家消耗体力后会按
 	// 「上次满体力那一刻」起算，瞬间回满。
 	var w Wallet
+	// 2026-10-31（新一轮第 4 轮）：道具余额查询与钱包主查询**并行执行**。
+	//
+	// TokenBalance 读 `user_tokens`，主查询读/写 `user_wallets` ——
+	// 两张表、互不依赖，此前却串行：`LoadWallet` 挂在每个页面都会拉的
+	// fetchWallet 上，串行意味着每次都要白等第二次往返。
+	// 这里先发起 TokenBalance，主查询完成后再收结果；主查询失败也先
+	// `wg.Wait()` 再返回，不让 goroutine 泄漏。
+	var (
+		tokens map[string]int64
+		tokErr error
+	)
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		tokens, tokErr = s.TokenBalance(ctx, userID, WalletTokenKinds)
+	}()
+
 	err := s.pool.QueryRow(ctx, `
 		WITH cur AS (
 		  SELECT coin, gem, energy, keys, energy_updated_at,
@@ -1071,6 +1089,7 @@ func (s *Service) LoadWallet(ctx context.Context, userID int64) (Wallet, error) 
 		SELECT coin, gem, energy, keys, energy_updated_at FROM cur WHERE cur.n = 0`,
 		userID, energyMax, energyIntervalSecs).
 		Scan(&w.Coin, &w.Gem, &w.Energy, &w.Keys, &w.EnergyUpdatedAt)
+	wg.Wait()
 	if errors.Is(err, pgx.ErrNoRows) {
 		return Wallet{}, fmt.Errorf("%w: wallet for user %d", ErrNotFound, userID)
 	}
@@ -1078,14 +1097,14 @@ func (s *Service) LoadWallet(ctx context.Context, userID int64) (Wallet, error) 
 		// 恢复与读取已合并，故错误可能来自任一侧——消息里点明，便于排查。
 		return Wallet{}, fmt.Errorf("regen+load wallet: %w", err)
 	}
+	if tokErr != nil {
+		return Wallet{}, tokErr
+	}
 	// 道具余额：未持有过的补 0（TokenBalance 内部按传入列表补齐）。
 	//
 	// 为什么 0 也要出现：客户端要靠「键在不在」区分「0 个」与
 	// 「这个道具不存在」，而后者只可能是服务端漏了下发。
-	w.Tokens, err = s.TokenBalance(ctx, userID, WalletTokenKinds)
-	if err != nil {
-		return Wallet{}, err
-	}
+	w.Tokens = tokens
 	return w, nil
 }
 
