@@ -210,6 +210,9 @@ const menus = [
   // 技能图鉴（2026-10-31 新一轮第 25 轮）：`/config.skills` 的伤害/热量/
   // 解锁等级此前只对已拥有技能可见 —— 未解锁技能全靠猜。
   { path: '/pages/skills/skills', label: '技能', icon: '⚔️' },
+  // 装备图鉴（2026-10-31 新一轮第 26 轮）：`/config.equipment` 的护甲/加成/
+  // 解锁等级此前只对已拥有装备可见。
+  { path: '/pages/equipment/equipment', label: '装备', icon: '🛡️' },
   { path: '/pages/signin/signin', label: '签到', icon: '📅' },
   { path: '/pages/rank/rank', label: '排行', icon: '🏆' },
   { path: '/pages/verify/verify', label: '验真', icon: '🔍' },

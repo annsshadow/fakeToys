@@ -35,6 +35,7 @@
 | 23 | 2026-10-31 | **后台兑换码使用记录按码/用户过滤**：使用记录只有分页，运营查「某个玩家用了哪些码 / 某个码被谁用了」只能翻页 | 服务层 `AdminListRedeemUsages` 增加可选 `codeKeyword`（模糊匹配码，`%`/`_`/`\` 转义）+ `userID`（0 不过滤，COUNT/列表参数编号分别连续）；handler 解析 `code_keyword`/`user_id`；admin ContentView 使用记录对话框增加按码搜索 + 用户 ID 输入 + 查询按钮，`fetchAdminRedeemUsages` 参数同步 | 服务层新增 1 用例（码搜索/用户/组合/无筛选）通过；e2e 新增 `TestE2EAdminRedeemUsagesFilter`（无筛选 3 条/码搜索 1 条/用户 1 条）通过；admin type-check + 353 测试全绿；`go test ./...` 全绿 |
 | 24 | 2026-10-31 | **「敌人图鉴」页**：`/config.enemies` 从第一天起就下发了完整敌人属性（血量/护甲/护盾/攻击/速度/五维抗性），但客户端**零 UI 消费** —— 玩家战斗前无法了解敌人特性，「这关为什么难」只能靠试错 | 新增 miniapp 页面 `pages/enemies/enemies.vue`（从 `store.config.enemies` 读取：名称/类别/描述/属性/非零抗性展示，类别中文映射，抗性千分比转百分比）；pages.json 注册路由；首页菜单新增「敌人」入口；新增源码守卫测试 `enemies_feature.test.ts` | miniapp type-check 通过、新守卫 3 用例通过、全量测试通过；`go test ./...` 全绿 |
 | 25 | 2026-10-31 | **「技能图鉴」页**：`/config.skills` 从第一天起就下发了全部技能的伤害/热量/冷却/穿透/溅射/解锁等级，但客户端只在背包展示**已拥有**的技能 —— 玩家看不到未解锁技能的成长路径 | 新增 miniapp 页面 `pages/skills/skills.vue`（从 `store.config.skills` 读取：名称/元素/主动被动/描述/伤害/热量/冷却/穿透/溅射/连锁/解锁等级，并标注已拥有）；pages.json 注册路由；首页菜单新增「技能」入口；新增源码守卫测试 `skills_feature.test.ts` | miniapp type-check 通过、新守卫 3 用例通过、全量测试通过；`go test ./...` 全绿 |
+| 26 | 2026-10-31 | **「装备图鉴」页**：`/config.equipment` 从第一天起就下发了全部 18 件装备的护甲/加成/解锁等级，但客户端只在背包展示**已拥有**的装备 —— 玩家看不到未解锁装备的成长路径 | 新增 miniapp 页面 `pages/equipment/equipment.vue`（从 `store.config.equipment` 读取：名称/槽位/阶/元素/描述/护甲/加成/解锁等级，并标注已拥有）；pages.json 注册路由；首页菜单新增「装备」入口；新增源码守卫测试 `equipment_feature.test.ts` | miniapp type-check 通过、新守卫 3 用例通过、全量测试通过；`go test ./...` 全绿 |
 | ... | | 持续至 100 轮 | | |
 
-> 状态：进行中。当前累计 **25 轮实质优化**，距 100 轮还差 75 轮。
+> 状态：进行中。当前累计 **26 轮实质优化**，距 100 轮还差 74 轮。
