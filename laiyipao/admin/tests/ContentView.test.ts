@@ -8,6 +8,7 @@
  */
 import { flushPromises, mount } from '@vue/test-utils'
 import ElementPlus from 'element-plus'
+import { createMemoryHistory, createRouter } from 'vue-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const fetchAnnouncements = vi.hoisted(() => vi.fn())
@@ -15,6 +16,7 @@ const createAnnouncement = vi.hoisted(() => vi.fn())
 const fetchRedeemCodes = vi.hoisted(() => vi.fn())
 const createRedeemCode = vi.hoisted(() => vi.fn())
 const fetchAuditLogs = vi.hoisted(() => vi.fn())
+const fetchAdminRedeemUsages = vi.hoisted(() => vi.fn())
 
 vi.mock('@/api', () => ({
   fetchAnnouncements,
@@ -22,17 +24,37 @@ vi.mock('@/api', () => ({
   fetchRedeemCodes,
   createRedeemCode,
   fetchAuditLogs,
+  fetchAdminRedeemUsages,
 }))
 
 import ContentView from '@/views/ContentView.vue'
 
 type Row = Record<string, unknown>
 
+/** 使用记录玩家列是 el-link（第 51 轮），点击跳转用户页 —— 必须注入真实 router。 */
+let lastRouter: ReturnType<typeof createRouter> | null = null
+
+async function makeRouter() {
+  const router = createRouter({
+    history: createMemoryHistory(),
+    routes: [
+      { path: '/content', component: { template: '<div />' } },
+      { path: '/users', component: { template: '<div />' } },
+    ],
+  })
+  await router.push('/content')
+  await router.isReady()
+  lastRouter = router
+  return router
+}
+
 async function mountContent(data: { announcements?: Row[]; codes?: Row[]; logs?: Row[] } = {}) {
   fetchAnnouncements.mockResolvedValue({ items: data.announcements ?? [] })
   fetchRedeemCodes.mockResolvedValue({ items: data.codes ?? [] })
   fetchAuditLogs.mockResolvedValue({ items: data.logs ?? [] })
-  const wrapper = mount(ContentView, { global: { plugins: [ElementPlus] } })
+  fetchAdminRedeemUsages.mockResolvedValue({ items: [], total: 0 })
+  const router = await makeRouter()
+  const wrapper = mount(ContentView, { global: { plugins: [ElementPlus, router] } })
   await flushPromises()
   return wrapper
 }
@@ -350,6 +372,55 @@ describe('ContentView 兑换码表单', () => {
     await vm.submitCode()
     await flushPromises()
     expect(document.body.textContent).toContain('兑换码已存在')
+    wrapper.unmount()
+  })
+})
+
+describe('ContentView 使用记录玩家跳转用户详情（第 51 轮）', () => {
+  function usageFixture(overrides: Row = {}): Row {
+    return {
+      id: 1,
+      code: 'LYP-A',
+      user_id: 7,
+      nickname: '兑换玩家',
+      reward: { coin: 100 },
+      created_at: '2026-01-01T00:00:00Z',
+      ...overrides,
+    }
+  }
+
+  it('点击使用记录玩家昵称：跳转 /users 并携带 user_id', async () => {
+    const wrapper = await mountContent()
+    // ⚠️ mountContent 内部会重置 mock，必须先挂载再设置使用记录数据
+    fetchAdminRedeemUsages.mockResolvedValue({ items: [usageFixture()], total: 1 })
+    // 通过「使用记录」按钮打开对话框（会触发 loadRedeemUsages）
+    const openBtn = wrapper.findAll('button').find((b) => b.text() === '使用记录')
+    expect(openBtn, '找不到「使用记录」按钮').toBeTruthy()
+    await openBtn!.trigger('click')
+    await flushPromises()
+
+    const link = wrapper.find('.el-dialog .el-link')
+    expect(link.exists(), '找不到使用记录玩家列链接').toBe(true)
+    expect(link.text()).toBe('兑换玩家')
+
+    await link.trigger('click')
+    await flushPromises()
+
+    expect(lastRouter?.currentRoute.value.path).toBe('/users')
+    expect(lastRouter?.currentRoute.value.query.user_id).toBe('7')
+    wrapper.unmount()
+  })
+
+  it('无昵称的使用记录显示「—」，不渲染可点击链接', async () => {
+    const wrapper = await mountContent()
+    fetchAdminRedeemUsages.mockResolvedValue({ items: [usageFixture({ nickname: '' })], total: 1 })
+    const openBtn = wrapper.findAll('button').find((b) => b.text() === '使用记录')
+    expect(openBtn, '找不到「使用记录」按钮').toBeTruthy()
+    await openBtn!.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('.el-dialog .el-link').exists()).toBe(false)
+    expect(wrapper.text()).toContain('—')
     wrapper.unmount()
   })
 })

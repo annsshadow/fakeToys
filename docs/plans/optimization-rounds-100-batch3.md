@@ -60,6 +60,7 @@
 | 48 | 2026-11-01 | **后台订单列表点击玩家跳转用户详情**：运营在订单里发现异常支付（金额异常/渠道可疑）时，需要直达该玩家详情核查 —— 此前只能记下 user_id 再手动切换页面 | admin EconomyView 订单「玩家」列改为可点击 el-link（无昵称显示占位符「—」），点击 `router.push` 到 `/users?user_id=`（复用第 38 轮 UsersView 深链自动打开详情抽屉）；admin 测试补充真实 router 并新增 2 用例 | admin type-check 通过；369 测试全绿（新增订单玩家跳转 2 用例）；无 Go 改动 |
 | 49 | 2026-11-01 | **商城每日限购进度显示**：限购商品只有「今日已买满」/「购买」两种状态，玩家看不到还剩几次购买机会 —— 限购商品只能靠试错 | miniapp `shop.vue` 新增 `purchaseProgressText`（`limit_per_day>0` 时显示「今日已购 x/y」，买满显示「今日已买满」，不限购不显示），模板在限购商品行渲染进度文案；新增守卫测试 `shop_limit_progress_feature.test.ts` | miniapp type-check 通过、新守卫 2 用例通过、全量 1216 测试全绿 |
 | 50 | 2026-11-01 | **后台防线列表点击玩家跳转用户详情**：防线违规（侮辱名/广告）需要核查玩家本体 —— 此前只能记下 owner_id 再手动切换页面 | admin DefensesView「属主」列改为可点击 el-link（无昵称显示占位符「—」），点击 `router.push` 到 `/users?user_id=`（复用第 38 轮 UsersView 深链）；admin 测试补充真实 router 并新增 2 用例 | admin type-check 通过；371 测试全绿（新增防线属主跳转 2 用例）；无 Go 改动 |
+| 51 | 2026-11-01 | **后台兑换码使用记录点击玩家跳转用户详情**：核查补偿发放（谁用了码、是不是恶意批量）时需要直达玩家详情 —— 此前只能记下 user_id 再手动切换页面 | admin ContentView 使用记录对话框「玩家」列改为可点击 el-link（无昵称显示占位符「—」），点击 `router.push` 到 `/users?user_id=`（复用第 38 轮 UsersView 深链）；admin 测试补充真实 router 与 `fetchAdminRedeemUsages` mock 并新增 2 用例 | admin type-check 通过；373 测试全绿（新增使用记录玩家跳转 2 用例）；无 Go 改动 |
 | ... | | 持续至 100 轮 | | |
 
-> 状态：进行中。当前累计 **50 轮实质优化**，距 100 轮还差 50 轮。
+> 状态：进行中。当前累计 **51 轮实质优化**，距 100 轮还差 49 轮。

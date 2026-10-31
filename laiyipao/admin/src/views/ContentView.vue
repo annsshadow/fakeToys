@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {onMounted, ref, onActivated} from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   fetchAnnouncements,
@@ -135,6 +136,16 @@ async function onExportRedeemUsagesCsv() {
   } catch (e) {
     ElMessage.error(`导出失败：${(e as Error).message}`)
   }
+}
+
+const router = useRouter()
+
+/**
+ * 打开指定玩家的用户详情（2026-11-01 新一轮第 51 轮）。
+ * 跳到用户管理页并携带 user_id，UsersView 挂载时会自动打开详情抽屉。
+ */
+function openUserDetail(userId: number) {
+  router.push({ path: '/users', query: { user_id: String(userId) } })
 }
 
 /** 打开使用记录对话框并加载第一页（2026-10-31 新一轮第 17 轮）。 */
@@ -722,7 +733,21 @@ loadAll()
           <el-table :data="redeemUsages" size="small" stripe max-height="480">
             <el-table-column prop="id" label="ID" width="60" />
             <el-table-column prop="code" label="兑换码" min-width="150" />
-            <el-table-column prop="nickname" label="玩家" min-width="120" />
+            <el-table-column label="玩家" min-width="120">
+              <!-- 点击跳转用户详情（2026-11-01 新一轮第 51 轮）：
+                   核查补偿发放（谁用了码、是不是恶意批量）时直达玩家详情。 -->
+              <template #default="{ row }">
+                <el-link
+                  v-if="row.nickname"
+                  type="primary"
+                  underline="never"
+                  @click="openUserDetail(row.user_id)"
+                >
+                  {{ row.nickname }}
+                </el-link>
+                <span v-else class="muted">—</span>
+              </template>
+            </el-table-column>
             <el-table-column prop="user_id" label="用户 ID" width="90" />
             <el-table-column label="奖励" min-width="160">
               <template #default="{ row }">{{ rewardText(row.reward) }}</template>
