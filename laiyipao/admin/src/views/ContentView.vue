@@ -626,6 +626,20 @@ function isUserTargetAction(action: string): boolean {
   return USER_TARGET_ACTIONS.has(action)
 }
 
+/**
+ * 复制审计对象（2026-11-01 新一轮第 95 轮）。
+ * 运营把 target（用户/公告/兑换码 id）贴到工单时无需手动选中。
+ */
+async function copyAuditTarget(target: string) {
+  if (!target) return
+  try {
+    await navigator.clipboard.writeText(target)
+    ElMessage.success(`已复制 ${target}`)
+  } catch {
+    ElMessage.error('复制失败，请手动选择复制')
+  }
+}
+
 onMounted(loadAll)
 
 /**
@@ -1035,7 +1049,7 @@ loadAll()
               服务端字段是 username / action / target / detail。
               「对象类型」没有独立列（action 已含语义），合并成「对象」= target。
             -->
-            <el-table-column label="对象" width="130">
+            <el-table-column label="对象" width="160">
               <!-- 用户相关操作的对象可点击跳转（2026-11-01 新一轮第 68 轮） -->
               <template #default="{ row }">
                 <el-link
@@ -1047,6 +1061,8 @@ loadAll()
                   {{ row.target }}
                 </el-link>
                 <span v-else>{{ row.target }}</span>
+                <!-- 复制对象（2026-11-01 新一轮第 95 轮）：追查贴工单 -->
+                <el-button size="small" text type="primary" @click="copyAuditTarget(row.target)">复制</el-button>
               </template>
             </el-table-column>
             <el-table-column label="详情" min-width="180">

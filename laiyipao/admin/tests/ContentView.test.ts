@@ -748,3 +748,27 @@ describe('ContentView 使用记录复制码（第 94 轮）', () => {
     wrapper.unmount()
   })
 })
+
+describe('ContentView 审计日志复制对象（第 95 轮）', () => {
+  it('点击审计行「复制」：写入剪贴板并提示', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
+
+    const wrapper = await mountContent({
+      logs: [
+        { id: 1, username: 'admin', action: 'update_announcement', target: '5', detail: null, created_at: '2026-01-01T00:00:00Z' },
+      ],
+    })
+    await wrapper.findAll('.el-tabs__item').find((t) => t.text() === '审计日志')!.trigger('click')
+    await flushPromises()
+
+    const copyBtn = wrapper.findAll('.el-table button').find((b) => b.text() === '复制')
+    expect(copyBtn, '找不到审计对象复制按钮').toBeTruthy()
+    await copyBtn!.trigger('click')
+    await flushPromises()
+
+    expect(writeText).toHaveBeenCalledWith('5')
+    expect(document.body.textContent).toContain('已复制 5')
+    wrapper.unmount()
+  })
+})
