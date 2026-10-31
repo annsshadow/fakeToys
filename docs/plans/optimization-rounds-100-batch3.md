@@ -74,6 +74,7 @@
 | 62 | 2026-11-01 | **后台商城商品上下移排序**：商品展示顺序由服务端 sort_order 决定，但后台只能逐项编辑 —— 调整展示位次要手动算好每个商品的 sort_order 再逐个改 | admin EconomyView 商城表格操作列新增「上移/下移」按钮（首行上移禁用、末行下移禁用），点击与相邻商品交换 `sort_order`（两次 `updateShopItem`）后整页重拉；admin 测试新增 2 用例，并把 beforeEach 改为 `resetAllMocks`（防 once 队列泄漏） | admin type-check 通过；384 测试全绿（新增排序 2 用例）；无 Go 改动 |
 | 63 | 2026-11-01 | **后台战报详情点击玩家跳转用户详情**：在战报详情里发现异常分数/反应滥用时，需要直达玩家本体核查 —— 此前只能记下 user_id 再手动切换页面 | admin BattlesView 详情抽屉「玩家」行改为可点击 el-link（无昵称显示 #id 占位），点击跳转 `/users?user_id=`（复用第 38 轮深链）；admin 测试新增 2 用例 | admin type-check 通过；386 测试全绿（新增详情跳转 2 用例）；无 Go 改动 |
 | 64 | 2026-11-01 | **我的页面累计星级**：选关页有章节星级进度，但全局没有汇总 —— 玩家在「我的」页看不到总共拿了多少星 | miniapp `me.vue` 新增 `loadStars`（`fetchMyStars` 汇总全部关卡星级，上限 = 关卡数 × 3），账号卡显示「累计星级 x / y」，并与其它我的页数据并行加载；新增守卫测试 `me_total_stars_feature.test.ts` | miniapp type-check 通过、新守卫 3 用例通过、全量 1226 测试全绿 |
+| 65 | 2026-11-01 | **后台防线挑战记录点击挑战者跳转用户详情**：挑战者反复攻击/偷取异常时，需要直达玩家本体核查 —— 此前只能记下 challenger_id 再手动切换页面 | admin DefensesView 挑战记录对话框「挑战者」列改为可点击 el-link（无昵称显示占位符「—」），点击跳转 `/users?user_id=`（复用第 38 轮深链）；admin 测试补充 `fetchAdminDefenseChallenges` mock 并新增 2 用例 | admin type-check 通过；388 测试全绿（新增挑战者跳转 2 用例）；无 Go 改动 |
 | ... | | 持续至 100 轮 | | |
 
-> 状态：进行中。当前累计 **64 轮实质优化**，距 100 轮还差 36 轮。
+> 状态：进行中。当前累计 **65 轮实质优化**，距 100 轮还差 35 轮。

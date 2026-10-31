@@ -343,7 +343,21 @@ load()
         <el-table-column prop="id" label="ID" width="60" />
         <el-table-column prop="defense_id" label="防线 ID" width="80" />
         <el-table-column prop="defense_name" label="防线名" min-width="100" />
-        <el-table-column prop="challenger_nickname" label="挑战者" min-width="110" />
+        <el-table-column label="挑战者" min-width="110">
+          <!-- 点击跳转用户详情（2026-11-01 新一轮第 65 轮）：
+               挑战者反复攻击/偷取异常时，从这里直达玩家本体。 -->
+          <template #default="{ row }">
+            <el-link
+              v-if="row.challenger_nickname"
+              type="primary"
+              underline="never"
+              @click="openUserDetail(row.challenger_id)"
+            >
+              {{ row.challenger_nickname }}
+            </el-link>
+            <span v-else class="muted">—</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="challenger_id" label="挑战者 ID" width="90" />
         <el-table-column label="结果" width="80">
           <template #default="{ row }">

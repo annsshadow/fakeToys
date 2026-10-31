@@ -18,7 +18,12 @@ import { createMemoryHistory, createRouter } from 'vue-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const fetchDefenses = vi.hoisted(() => vi.fn())
-vi.mock('@/api', () => ({ fetchDefenses }))
+const fetchAdminDefenseChallenges = vi.hoisted(() => vi.fn())
+
+vi.mock('@/api', () => ({
+  fetchDefenses,
+  fetchAdminDefenseChallenges,
+}))
 
 import DefensesView from '@/views/DefensesView.vue'
 
@@ -188,6 +193,61 @@ describe('DefensesView 属主跳转用户详情（第 50 轮）', () => {
   it('无属主昵称时显示「—」，不渲染可点击链接', async () => {
     const wrapper = await mountDefenses([defenseFixture({ owner_name: '' })])
     expect(wrapper.find('.el-table .el-link').exists()).toBe(false)
+    expect(wrapper.text()).toContain('—')
+    wrapper.unmount()
+  })
+})
+
+describe('DefensesView 挑战记录挑战者跳转用户详情（第 65 轮）', () => {
+  function challengeFixture(overrides: Record<string, unknown> = {}): Record<string, unknown> {
+    return {
+      id: 1,
+      defense_id: 1,
+      defense_name: '铁壁',
+      challenger_id: 7,
+      challenger_nickname: '挑战者甲',
+      won: false,
+      duration_ms: 12000,
+      hp_left_pct: 40,
+      loot: { coin: 100 },
+      created_at: '2026-01-01T00:00:00Z',
+      ...overrides,
+    }
+  }
+
+  async function openChallenges(wrapper: Awaited<ReturnType<typeof mountDefenses>>) {
+    const vm = wrapper.vm as unknown as { openChallenges: () => void }
+    vm.openChallenges()
+    await flushPromises()
+    return wrapper
+  }
+
+  it('点击挑战者昵称：跳转 /users 并携带 challenger_id', async () => {
+    fetchAdminDefenseChallenges.mockResolvedValue({ items: [challengeFixture()], total: 1 })
+    const wrapper = await mountDefenses([defenseFixture()])
+    await openChallenges(wrapper)
+
+    const link = wrapper.find('.el-dialog .el-link')
+    expect(link.exists(), '找不到挑战者列链接').toBe(true)
+    expect(link.text()).toBe('挑战者甲')
+
+    await link.trigger('click')
+    await flushPromises()
+
+    expect(lastRouter?.currentRoute.value.path).toBe('/users')
+    expect(lastRouter?.currentRoute.value.query.user_id).toBe('7')
+    wrapper.unmount()
+  })
+
+  it('无昵称的挑战者显示「—」，不渲染可点击链接', async () => {
+    fetchAdminDefenseChallenges.mockResolvedValue({
+      items: [challengeFixture({ challenger_nickname: '' })],
+      total: 1,
+    })
+    const wrapper = await mountDefenses([defenseFixture()])
+    await openChallenges(wrapper)
+
+    expect(wrapper.find('.el-dialog .el-link').exists()).toBe(false)
     expect(wrapper.text()).toContain('—')
     wrapper.unmount()
   })
