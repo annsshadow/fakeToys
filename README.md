@@ -74,7 +74,7 @@
 | augmentor 单测 | **10174 passed / 0 failed** | 100 轮优化台账 · 第 20 轮 |
 | 编译告警门禁 | **13 通过 / 0 失败 / 1 跳过** | `node scripts/check-warnings.mjs` |
 | 全仓提交 | **3404** | `git rev-list --count HEAD` |
-| 优化轮次 | **5 / 100** | `docs/plans/optimization-rounds-100-batch3.md` |
+| 优化轮次 | **6 / 100** | `docs/plans/optimization-rounds-100-batch3.md` |
 
 </div>
 

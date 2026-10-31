@@ -647,6 +647,17 @@ type ShopItemView struct {
 	Bought   int            `json:"bought_today"`
 }
 
+// shopItem 是商城条目的**静态部分**（缓存用，不含 per-user 购买数）。
+type shopItem struct {
+	ID       int            `json:"id"`
+	Code     string         `json:"code"`
+	Name     string         `json:"name"`
+	Category string         `json:"category"`
+	Price    map[string]int `json:"price"`
+	Payload  map[string]int `json:"payload"`
+	Limit    int            `json:"limit_per_day"`
+}
+
 // LoadShop 返回商城，附带玩家今日已购次数。
 func (s *Service) LoadShop(ctx context.Context, userID int64) ([]ShopItemView, error) {
 	// ⚠️ 第 97 轮：`purchase_date` 改由 **Go** 决定，与任务/签到同一个口径。
@@ -664,37 +675,80 @@ func (s *Service) LoadShop(ctx context.Context, userID int64) ([]ShopItemView, e
 	//
 	// 传**日期字面量**（与第 89 轮签到同一手法）让日界只由一处决定。
 	today := periodStart(time.Now(), "daily").Format("2006-01-02")
-	rows, err := s.pool.Query(ctx, `
-		SELECT si.id, si.code, si.name, si.category, si.price, si.payload, si.limit_per_day,
-		       (SELECT COUNT(*) FROM user_purchases up
-		         WHERE up.user_id = $1 AND up.item_id = si.id
-		           AND up.purchase_date = $2)
-		FROM shop_items si WHERE si.enabled ORDER BY si.sort_order`, userID, today)
+
+	// 2026-10-31（新一轮第 6 轮）：商品静态部分走 TTL 缓存。
+	//
+	// 原查询对每个商品各做一次关联子查询（`user_purchases` 按
+	// user+item+today 计数），还要每次重新读整张 `shop_items` 配置表。
+	// `shop_items` 是 seeder 写入的配置（后台仅有低频运营修改），
+	// 商品列表拆进缓存（TTL 见 config.ShopCacheTTL，0 = 关闭），
+	// 玩家今日已购次数改为**一条分组查询** —— 商品数越多省得越多。
+	//
+	// ⚠️ 静态列表缓存的是 `shopItem`（无 Bought），per-user 计数绝不缓存。
+	items, err := s.shopCache.getOrLoad(time.Now(), s.Cfg().ShopCacheTTL, func() ([]shopItem, error) {
+		rows, err := s.pool.Query(ctx, `
+			SELECT id, code, name, category, price, payload, limit_per_day
+			FROM shop_items WHERE enabled ORDER BY sort_order`)
+		if err != nil {
+			return nil, fmt.Errorf("load shop: %w", err)
+		}
+		defer rows.Close()
+
+		out := []shopItem{}
+		for rows.Next() {
+			var v shopItem
+			var priceRaw, payloadRaw []byte
+			if err := rows.Scan(&v.ID, &v.Code, &v.Name, &v.Category, &priceRaw, &payloadRaw, &v.Limit); err != nil {
+				return nil, err
+			}
+			// 第 148 轮：fail-loud（AGENTS #11）。price/payload 是 jsonb 经济字段，
+			// `_ =` 会把坏数据静默吞成空 map —— 商品显示成「0 金 / 无内容」。
+			// 购买路径（Buy）本就 fail-loud，这里列表读侧也应同口径报错，
+			// 让坏商品在后台/客户端可见，而不是无声显示成「免费/空包」。
+			if err := json.Unmarshal(priceRaw, &v.Price); err != nil {
+				return nil, fmt.Errorf("load shop: 商品 %d 的 price 非法 jsonb: %w", v.ID, err)
+			}
+			if err := json.Unmarshal(payloadRaw, &v.Payload); err != nil {
+				return nil, fmt.Errorf("load shop: 商品 %d 的 payload 非法 jsonb: %w", v.ID, err)
+			}
+			out = append(out, v)
+		}
+		return out, rows.Err()
+	})
 	if err != nil {
-		return nil, fmt.Errorf("load shop: %w", err)
+		return nil, err
+	}
+
+	// 玩家今日已购次数：一条分组查询替代原来每个商品的关联子查询。
+	bought := map[int]int{}
+	rows, err := s.pool.Query(ctx, `
+		SELECT item_id, COUNT(*) FROM user_purchases
+		WHERE user_id = $1 AND purchase_date = $2
+		GROUP BY item_id`, userID, today)
+	if err != nil {
+		return nil, fmt.Errorf("load shop bought: %w", err)
 	}
 	defer rows.Close()
-
-	var out []ShopItemView
 	for rows.Next() {
-		var v ShopItemView
-		var priceRaw, payloadRaw []byte
-		if err := rows.Scan(&v.ID, &v.Code, &v.Name, &v.Category, &priceRaw, &payloadRaw, &v.Limit, &v.Bought); err != nil {
-			return nil, err
+		var itemID, n int
+		if err := rows.Scan(&itemID, &n); err != nil {
+			return nil, fmt.Errorf("scan shop bought: %w", err)
 		}
-		// 第 148 轮：fail-loud（AGENTS #11）。price/payload 是 jsonb 经济字段，
-		// `_ =` 会把坏数据静默吞成空 map —— 商品显示成「0 金 / 无内容」。
-		// 购买路径（Buy）本就 fail-loud，这里列表读侧也应同口径报错，
-		// 让坏商品在后台/客户端可见，而不是无声显示成「免费/空包」。
-		if err := json.Unmarshal(priceRaw, &v.Price); err != nil {
-			return nil, fmt.Errorf("load shop: 商品 %d 的 price 非法 jsonb: %w", v.ID, err)
-		}
-		if err := json.Unmarshal(payloadRaw, &v.Payload); err != nil {
-			return nil, fmt.Errorf("load shop: 商品 %d 的 payload 非法 jsonb: %w", v.ID, err)
-		}
-		out = append(out, v)
+		bought[itemID] = n
 	}
-	return out, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("scan shop bought: %w", err)
+	}
+
+	out := make([]ShopItemView, 0, len(items))
+	for _, it := range items {
+		out = append(out, ShopItemView{
+			ID: it.ID, Code: it.Code, Name: it.Name, Category: it.Category,
+			Price: it.Price, Payload: it.Payload, Limit: it.Limit,
+			Bought: bought[it.ID],
+		})
+	}
+	return out, nil
 }
 
 // Buy 购买商城商品。

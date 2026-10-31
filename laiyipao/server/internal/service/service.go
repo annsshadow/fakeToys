@@ -112,6 +112,10 @@ type Service struct {
 	// announcementsCache 是公告列表的缓存（2026-10-31 实质优化第 22 轮）。
 	// 公告是公开端点、变化频率极低，TTL 见 config.AnnouncementsCacheTTL。
 	announcementsCache ttlCache[[]AnnouncementView]
+	// shopCache 是商城商品列表**静态部分**的缓存（2026-10-31 新一轮第 6 轮）。
+	// 商品本身是 seeder 配置（低频运营修改），TTL 见 config.ShopCacheTTL；
+	// 玩家「今日已购次数」是 per-user 数据，不缓存。
+	shopCache ttlCache[[]shopItem]
 }
 
 // leaderboardCacheKinds 是与 `leaderboardKinds` 同步的三个榜。

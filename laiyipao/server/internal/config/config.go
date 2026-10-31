@@ -216,6 +216,14 @@ type Config struct {
 	// 设成 `0` 即关闭缓存（排查时与其它缓存同一条命令）。
 	AnnouncementsCacheTTL time.Duration
 
+	// ShopCacheTTL 是商城商品列表静态部分的进程内缓存有效期
+	// （2026-10-31 新一轮第 6 轮）。
+	//
+	// `shop_items` 是 seeder 写入的配置表（后台仅有低频的运营修改入口），
+	// 每次打开商店页都重新查一遍是纯浪费。30 秒 TTL 完全够；
+	// 设成 `0` 即关闭缓存（排查时与其它缓存同一条命令）。
+	ShopCacheTTL time.Duration
+
 	// 默认管理员（仅在 admin_users 为空时引导创建）
 	BootstrapAdminUser string
 	BootstrapAdminPass string
@@ -368,6 +376,7 @@ func Load() Config {
 		LeaderboardCacheTTL:    envDuration("LEADERBOARD_CACHE_TTL", 15*time.Second),
 		SignInCalendarCacheTTL: envDuration("SIGNIN_CALENDAR_CACHE_TTL", 60*time.Second),
 		AnnouncementsCacheTTL:  envDuration("ANNOUNCEMENTS_CACHE_TTL", 30*time.Second),
+		ShopCacheTTL:           envDuration("SHOP_CACHE_TTL", 30*time.Second),
 
 		BootstrapAdminUser: env("BOOTSTRAP_ADMIN_USER", "admin"),
 		BootstrapAdminPass: env("BOOTSTRAP_ADMIN_PASS", "admin12345"),
