@@ -78,6 +78,7 @@
 | 66 | 2026-11-01 | **用户详情增加最近钱包流水**：详情页只有 `flow_count` 这个数字，「钱去哪了 / 钱从哪来」要看明细只能去经济页聚合 —— 运营查单个玩家没有入口 | 服务层 `AdminUserDetailResp` 增加 `RecentFlows []AdminUserFlowView`（最近 10 条 wallet_flows：货币/变动/余额/来源/时间），并发段新增第 11 段查询；apitypes + tygen 重新生成 types.gen.ts；admin UsersView 详情抽屉新增「最近钱包流水」表格（货币中文/变动正负色/来源中文映射/余额/时间）；新增服务层 1 用例 + admin 1 用例 | 服务层（流水内容/最新在前）全绿；tygen 测试全绿；admin type-check + 389 测试全绿；`go test ./...` 全绿 |
 | 67 | 2026-11-01 | **后台订单按渠道筛选**：订单有 provider 字段，运营想查「某渠道的订单」（渠道对账/异常支付核查）只能翻页或导出后筛 | 服务层 `AdminListOrders`/`AdminExportOrders` 增加可选 `provider`（空串不过滤，COUNT 参数映射 $6→$4）；handler 解析 `provider`；admin EconomyView 订单筛选新增「渠道」下拉（mock/apple/wechat/alipay），`fetchAdminOrders`/`exportOrdersCsv` 参数同步；新增服务层 2 用例 + e2e 1 用例 + admin 1 用例 | 服务层（列表/导出渠道筛选）全绿；e2e（apple/未知渠道）全绿；admin type-check + 390 测试全绿；`go test ./...` 全绿 |
 | 68 | 2026-11-01 | **后台审计日志用户操作对象可点击跳转**：审计日志里 ban_user / grant_currency 等操作的 target 是用户 id，运营追查时要手动复制再切页面 | admin ContentView 审计日志「对象」列：对用户相关操作（ban_user/unban_user/grant_currency/revoke_currency/reset_password）且 target 为纯数字时渲染 el-link，点击跳转 `/users?user_id=`（复用第 38 轮深链）；其他操作保持原值不可点击；admin 测试新增 2 用例 | admin type-check 通过；392 测试全绿（新增审计对象跳转 2 用例）；无 Go 改动 |
+| 69 | 2026-11-01 | **后台公告行级玩家端预览**：运营要回看某条已发布公告的玩家端效果，只能先点编辑再点预览 —— 列表里没有直达入口 | admin ContentView 公告行操作列新增「预览」按钮（回填表单并打开玩家端预览对话框）；admin 测试新增 1 用例 | admin type-check 通过；393 测试全绿（新增行级预览 1 用例）；无 Go 改动 |
 | ... | | 持续至 100 轮 | | |
 
-> 状态：进行中。当前累计 **68 轮实质优化**，距 100 轮还差 32 轮。
+> 状态：进行中。当前累计 **69 轮实质优化**，距 100 轮还差 31 轮。

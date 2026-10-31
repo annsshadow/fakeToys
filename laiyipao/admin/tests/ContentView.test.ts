@@ -460,6 +460,23 @@ describe('ContentView 公告玩家端预览（第 54 轮）', () => {
     expect(wrapper.text()).not.toContain('玩家端预览')
     wrapper.unmount()
   })
+
+  it('行级预览（第 69 轮）：点击公告行的「预览」直接打开玩家端预览', async () => {
+    const wrapper = await mountContent({
+      announcements: [
+        { id: 1, title: '版本更新', body: '修复若干问题', published: true, published_at: '2026-01-01T00:00:00Z', created_at: '2026-01-01T00:00:00Z' },
+      ],
+    })
+    const btn = wrapper.findAll('button').find((b) => b.text() === '预览')
+    expect(btn, '找不到公告行「预览」按钮').toBeTruthy()
+    await btn!.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('玩家端预览')
+    expect(wrapper.text()).toContain('版本更新')
+    expect(wrapper.text()).toContain('修复若干问题')
+    wrapper.unmount()
+  })
 })
 
 describe('ContentView 审计日志操作中文标签（第 56 轮）', () => {

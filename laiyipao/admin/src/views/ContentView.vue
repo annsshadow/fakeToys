@@ -297,6 +297,15 @@ function startEditAnn(a: AdminAnnouncementView) {
   annForm.value = { title: a.title, body: a.body, published: a.published }
 }
 
+/**
+ * 行级玩家端预览（2026-11-01 新一轮第 69 轮）。
+ * 在列表里直接看某条公告的玩家端效果（不必先点编辑再预览）。
+ */
+function previewAnnouncement(a: AdminAnnouncementView) {
+  annForm.value = { title: a.title, body: a.body, published: a.published }
+  openPreview()
+}
+
 function cancelEditAnn() {
   editingAnnId.value = null
   annForm.value = { title: '', body: '', published: false }
@@ -698,6 +707,7 @@ loadAll()
                 <!-- 编辑/删除（2026-10-31 实质优化第 23 轮） -->
                 <el-table-column label="操作" width="110" fixed="right">
                   <template #default="{ row }">
+                    <el-button size="small" text @click="previewAnnouncement(row as AdminAnnouncementView)">预览</el-button>
                     <el-button size="small" text @click="startEditAnn(row as AdminAnnouncementView)">编辑</el-button>
                     <el-button size="small" text type="danger" @click="onDeleteAnn(row as AdminAnnouncementView)">删除</el-button>
                   </template>
