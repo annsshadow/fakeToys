@@ -51,7 +51,7 @@
 # 1) 建库
 createdb laiyipao
 
-# 2) 迁移（19 个 goose 迁移，50 张业务表）
+# 2) 迁移（21 个 goose 迁移，50 张业务表）
 cd laiyipao/server
 export DATABASE_URL="postgres://postgres@127.0.0.1:5432/laiyipao?sslmode=disable"
 export BOOTSTRAP_ADMIN_PASS="<至少 10 位，缺省会拒绝启动>"
@@ -143,6 +143,8 @@ cd laiyipao/admin   && pnpm install && pnpm dev          # :5175
 | `OFFLINE_CAP_HOURS` | `12` | 离线收益累计上限 |
 | `DASHBOARD_CACHE_TTL` | `30s` | 运营看板的进程内缓存有效期。**设成 `0` 即关闭缓存**（每次都查库）—— 排查「数字为什么不动」时先关它，不需要发版 |
 | `LEADERBOARD_CACHE_TTL` | `15s` | 三个榜单的进程内缓存有效期。`0` = 关闭。⚠️ `/me/rank`（我的排名）**不受它影响**，永远实时 |
+| `SIGNIN_CALENDAR_CACHE_TTL` | `60s` | 签到日历预览的进程内缓存有效期。`0` = 关闭（日历是 seeder 静态配置，后台无修改入口，通常不用关） |
+| `ANNOUNCEMENTS_CACHE_TTL` | `30s` | 公告列表的进程内缓存有效期。`0` = 关闭（公告是公开端点，首页首屏每次拉取；运营人工发布、变化极低频） |
 | `METRICS_ENABLED` | `false` | 是否挂 `/metrics`（Prometheus 文本格式：TTL 缓存命中/未命中计数等）。**默认不挂**——未设口令的指标端点会泄露内部计数，确认采集端可达再开 |
 | `PPROF_ADDR` | 空 | pprof 性能剖析监听地址（如 `127.0.0.1:6060`）。**默认不启动**；仅绑回环，排障时临时开 |
 | `PLAYER_LOGIN_REQUIRED` | `false` | 玩家是否必须用账号口令登录。开启后 `/auth/guest` 一律 403，并引导一个**与超管同名同口令**的共享测试账号（测试环境用，详见 §2.4） |
